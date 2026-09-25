@@ -22,6 +22,7 @@ import (
 func Router(svc *services.Service) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", healthz(svc))
+	mux.HandleFunc("GET /api/klaim-life/{id}", klaimLife(svc))
 	return mux
 }
 

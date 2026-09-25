@@ -1,7 +1,12 @@
-// Fase 0 - scaffold. Halaman kosong sebagaimana tanda selesai Fase 0
-// memintanya: nol aturan dagang, nol layar modul, nol isi.
-//
-// Layar lahir bersama tiket yang memilikinya, di src/pages/.
+import KlaimLife from './pages/KlaimLife.jsx'
+
+// Tiket 01: satu halaman yang menampilkan klaim Life dan baris-barisnya.
+// Layar modul lain lahir bersama tiketnya sendiri, di src/pages/.
 export default function App() {
-  return null
+  return (
+    <main>
+      <h1>Nusantara Re</h1>
+      <KlaimLife />
+    </main>
+  )
 }

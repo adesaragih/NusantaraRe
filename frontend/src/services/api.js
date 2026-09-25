@@ -42,3 +42,12 @@ export async function cekKesehatan() {
   const { data } = await api.get('/healthz')
   return data
 }
+
+/**
+ * Ambil satu klaim Life beserta SELURUH baris adjustment-nya.
+ * Tiket 01 AC-1 - bukan hanya baris terakhir.
+ */
+export async function ambilKlaimLife(id) {
+  const { data } = await api.get(`/api/klaim-life/${encodeURIComponent(id)}`)
+  return data
+}

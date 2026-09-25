@@ -14,7 +14,7 @@ BIN     := bin/api
 ORACLE_SCHEMA ?= POOLDATA
 ORACLE_DEV_CONTAINER ?= nusantarare-oracle
 
-.PHONY: help run-api run-web build build-api build-web test test-db db-up db-down migrate
+.PHONY: help check run-api run-web build build-api build-web test test-db db-up db-down migrate
 
 help:
 	@echo "run-api    - jalankan backend Go"
@@ -44,6 +44,14 @@ build-web:
 test:
 	$(GO) vet ./...
 	$(GO) test ./...
+
+# Gabungan yang diminta tiket 01 Claim Life: build Go, test Go, test web.
+# Nol Oracle - seam repository dan HTTP dijalankan terpisah lewat `make test-db`.
+check:
+	$(GO) build ./...
+	$(GO) vet ./...
+	$(GO) test ./...
+	cd frontend && $(NPM) test
 
 # Seam `repository` terhadap skema uji Oracle nyata (brief bab 5).
 # Ditandai build tag `db` supaya `make test` tetap lulus tanpa instance.
