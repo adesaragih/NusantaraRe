@@ -1,4 +1,7 @@
-# Nusantara Re - Fase 0 scaffold.
+# Nusantara Re - Makefile aplikasi. Jalankan dari folder APP_RNM/ ini.
+#
+# Bila `make` belum terpasang, tiap target adalah satu-dua perintah biasa:
+# lihat baris di bawah nama targetnya, dan PANDUAN-RANTAI-ALAT.md di folder induk.
 #
 # Nol alamat host di berkas ini. Seluruh koneksi datang dari env var
 # (ADR-U-0004); daftar endpoint sesungguhnya ada di tabel Oracle
@@ -14,13 +17,14 @@ BIN     := bin/api
 ORACLE_SCHEMA ?= POOLDATA
 ORACLE_DEV_CONTAINER ?= nusantarare-oracle
 
-.PHONY: help check run-api run-web build build-api build-web test test-db db-up db-down migrate
+.PHONY: help check typecheck run-api run-web build build-api build-web test test-db db-up db-down migrate
 
 help:
 	@echo "run-api    - jalankan backend Go"
 	@echo "run-web    - jalankan frontend Vite"
 	@echo "build      - build kedua sisi"
 	@echo "test       - go vet + go test (tanpa Oracle)"
+	@echo "typecheck  - periksa tipe TypeScript frontend (tsc --noEmit)"
 	@echo "test-db    - test seam repository terhadap skema uji Oracle"
 	@echo "db-up      - kontainer Oracle pengembangan [usulan]"
 	@echo "db-down    - hentikan dan buang kontainer itu"
@@ -45,12 +49,18 @@ test:
 	$(GO) vet ./...
 	$(GO) test ./...
 
-# Gabungan yang diminta tiket 01 Claim Life: build Go, test Go, test web.
+# Frontend memakai TypeScript (.tsx). Vite tidak memeriksa tipe saat build,
+# jadi pemeriksaannya dijalankan tersendiri di sini dan di awal `npm run build`.
+typecheck:
+	cd frontend && $(NPM) run typecheck
+
+# Gabungan yang diminta tiket 01 Claim Life: build Go, test Go, tipe + test web.
 # Nol Oracle - seam repository dan HTTP dijalankan terpisah lewat `make test-db`.
 check:
 	$(GO) build ./...
 	$(GO) vet ./...
 	$(GO) test ./...
+	cd frontend && $(NPM) run typecheck
 	cd frontend && $(NPM) test
 
 # Seam `repository` terhadap skema uji Oracle nyata (brief bab 5).

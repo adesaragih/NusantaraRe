@@ -224,3 +224,15 @@ Yang diperlukan: DSN, nama skema, dan hak `CREATE TABLE` di skema uji. Begitu ad
    bagian repo — ia diuji lebih dulu atas 7 contoh yang harus kena dan 5 yang harus bersih.
    Menjadikannya alat repo memerlukan tiket tersendiri, sebab `scripts/` termasuk folder yang
    brief bab 1 nyatakan tidak disentuh.
+
+### Pemindahan dan konversi — 25 September 2026 (sore), sesi asisten atas permintaan work owner
+
+Seluruh berkas di tabel "Berkas yang dibuat" kini berada di **`APP_RNM\`** *(dipindah dengan
+`git mv`; riwayat utuh)*, dan frontend dikonversi ke **TypeScript**: `KlaimLife.jsx` → `KlaimLife.tsx`,
+`api.js` → `api.ts`, `api.test.js` → `api.test.ts`, `App.jsx` / `main.jsx` → `.tsx`,
+`store/index.js` → `index.ts`; ditambah `tsconfig.json`, `src/vite-env.d.ts`, dan komentar
+bahasa sederhana untuk pembaca yang baru mengenal Go dan React (`APP_RNM\README-BACA-DULU.md`).
+Perilaku tidak berubah. Dijalankan ulang dari `APP_RNM\` dan lulus: `go vet ./...`,
+`go vet -tags=db ./...`, `gofmt -l` nol, `go build ./...`, `go test ./...` (7 test), `npm run typecheck`
+(`tsc --noEmit`), `npm test` (5 test), `npm run build` (87 modul). Status tetap **`claimed`** — ketiga AC
+yang menunggu Oracle tidak berubah keadaannya.

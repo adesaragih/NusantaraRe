@@ -4,6 +4,12 @@ Disusun 25 September 2026, sesudah audit langsung atas mesin ini.
 Untuk siapa pun yang menyiapkan mesin bagi proyek ini: IT, pengembang berikutnya, atau
 sesi agent berikutnya.
 
+> ⚠️ **Revisi 25 September 2026 (sore):** aplikasi dipindahkan ke `OUTPUT_HASIL_RNM\APP_RNM\`.
+> Setiap `Set-Location 'D:\XML\RNM_BRD\OUTPUT_HASIL_RNM'` di bawah dibaca sebagai
+> `...\OUTPUT_HASIL_RNM\APP_RNM`; `bin\api.exe` kini `APP_RNM\bin\api.exe`; frontend memakai
+> TypeScript, sehingga `npm run typecheck` ikut dijalankan sebelum `npm run build`. Isi lama di
+> bawah tidak diubah. Peta baca untuk pemula: `APP_RNM\README-BACA-DULU.md`.
+
 ---
 
 ## 0. Keadaan mesin ini — terukur, bukan dikira

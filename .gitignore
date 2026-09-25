@@ -1,11 +1,11 @@
-# Fase 0 — scaffold.
+# Aplikasi hidup di APP_RNM/ (25 September 2026). Dokumen tetap di akar.
 node_modules/
 dist/
 *.env
-frontend/.vite/
+.vite/
 
 # Artefak build Go
-/bin/
+/APP_RNM/bin/
 *.exe
 *.test
 *.out

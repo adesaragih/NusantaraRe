@@ -144,30 +144,36 @@ atas beberapa butir yang jawabannya **sudah diketahui**, dan laporkan hasilnya b
 
 ## 5. Struktur folder aplikasi target
 
-**Lokasinya: DI DALAM `OUTPUT_HASIL_RNM\`.** Kode Go dan React di-scaffold di sini — `cmd/`,
-`internal/`, `pkg/`, `frontend/`, `go.mod`, `Makefile` semuanya menjadi anak dari folder ini,
-berdampingan dengan `discovery/`, `docs/`, `CONTEXT.md`, dan `.scratch/`. **Tidak ada repo lain.**
-Saat ini belum satu pun di antaranya ada — seluruh struktur di bawah adalah **target**, bukan
-keadaan sekarang.
+**Lokasinya: `OUTPUT_HASIL_RNM\APP_RNM\`** *(sejak 25 September 2026 sore; sebelumnya langsung di
+`OUTPUT_HASIL_RNM\`)*. Seluruh kode Go dan React ada di dalam `APP_RNM\` — `cmd/`, `internal/`,
+`pkg/`, `frontend/`, `go.mod`, `Makefile` — sedangkan `discovery/`, `docs/`, `CONTEXT.md`,
+`.scratch/`, `dastin/`, `jefri/` tetap di `OUTPUT_HASIL_RNM\`. **Satu repo git, berakar di
+`OUTPUT_HASIL_RNM\`.** Frontend memakai **TypeScript**: komponen `.tsx`, modul lain `.ts`, nol
+`.jsx`. Kode ditulis untuk pembaca yang **baru mengenal Go dan React** — mulai dari
+`APP_RNM\README-BACA-DULU.md`.
 
 ```
-cmd/api/main.go
-internal/
-├── config/
-├── handlers/
-├── models/
-├── repository/
-└── services/
-pkg/utils/
-frontend/                 ← React via Vite
-├── src/assets/
-├── src/components/
-├── src/hooks/
-├── src/pages/
-├── src/services/
-└── src/store/
-go.mod
-Makefile
+APP_RNM/
+├── README-BACA-DULU.md
+├── cmd/api/main.go
+├── internal/
+│   ├── config/
+│   ├── handlers/
+│   ├── models/
+│   ├── repository/
+│   └── services/
+├── pkg/utils/
+├── frontend/               ← React via Vite, TypeScript (.tsx)
+│   ├── src/assets/
+│   ├── src/components/
+│   ├── src/hooks/
+│   ├── src/pages/
+│   ├── src/services/
+│   ├── src/store/
+│   ├── src/App.tsx · src/main.tsx · src/vite-env.d.ts
+│   └── package.json · tsconfig.json · vite.config.ts
+├── go.mod · go.sum
+└── Makefile
 ```
 
 **Arah dependency: `handlers` → `services` → `repository`.** Tidak boleh terbalik, tidak boleh
@@ -214,7 +220,12 @@ harus dijawab sebelum angka mana pun dipindahkan.
 `[terverifikasi]` Plugin `mattpocock-skills@claude-plugins-official` v1.2.3 terpasang (scope user).
 Skill berikut ber-frontmatter **`disable-model-invocation: true`** sehingga **agent tidak dapat
 memanggilnya**: `wayfinder`, `grill-with-docs`, `to-spec`, `to-tickets`,
-`setup-matt-pocock-skills`, `implement`, `triage`, `handoff`, dan 20+ lainnya.
+`setup-matt-pocock-skills`, `implement`, `triage`, `handoff` — **20 dari 35** skill, terverifikasi
+dari frontmatter 25 September 2026.
+
+⚠️ **Ralat 25 September 2026** *(temuan sesi Fase 0, `LAPORAN-FASE-0.md` §4)*: `tdd` dan
+`code-review` **tidak** ber-flag itu — keduanya boleh dipanggil agent, dan memang dipanggil oleh
+`implement`. Kalimat "berhenti" di bawah berlaku untuk yang ber-flag saja.
 
 **Bila diminta menjalankan skill Matt Pocock dan tidak bisa: BERHENTI.** Jangan diam-diam
 mereplikasi alur internal skill. Laporkan:

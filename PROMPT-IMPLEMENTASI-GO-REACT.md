@@ -7,6 +7,12 @@
 > test berkala dan penuh di akhir, lalu `/code-review`, lalu **commit**. Satu sesi mengerjakan
 > satu tiket atau satu rantai pendek yang saling bergantung — bukan satu modul sekaligus.
 >
+> **Revisi 25 September 2026 (sore), oleh work owner:** akar aplikasi pindah ke **`APP_RNM\`**;
+> frontend memakai **TypeScript `.tsx`**, bukan `.jsx`; dan kode **wajib mudah dibaca pemula** Go
+> dan React *(§4, baris terakhir)*. Sesi sebelum revisi ini — Fase 0 dan Claim Life tiket 01 —
+> sudah dipindahkan dan dikonversi; tidak perlu diulang. Mulai membaca dari
+> `APP_RNM\README-BACA-DULU.md`.
+>
 > Ini **migrasi, bukan greenfield**. Kebenaran ada di korpus Pega dan di spec + tiket yang sudah
 > ditulis darinya. Kode yang tidak dapat menunjuk tiketnya **tidak ditulis**.
 
@@ -25,11 +31,13 @@
 
 ## 1. STRUKTUR — tidak boleh menyimpang
 
-Akar aplikasi adalah **`OUTPUT_HASIL_RNM\` itu sendiri** *(`CLAUDE.md` §5: "semuanya menjadi anak
-dari folder ini, tidak ada repo lain")*. Nama `my-web-app/` di bawah ini berarti folder itu.
+Akar aplikasi adalah **`OUTPUT_HASIL_RNM\APP_RNM\`** *(`CLAUDE.md` §5; sejak revisi 25 September
+2026 sore)*. Nama `my-web-app/` di bawah ini berarti folder itu. Dokumen — `.scratch\`, `docs\`,
+`dastin\`, `jefri\`, prompt — tetap di `OUTPUT_HASIL_RNM\`, dan repo git tetap **satu**, berakar di
+`OUTPUT_HASIL_RNM\`.
 
 ```
-my-web-app/                       = OUTPUT_HASIL_RNM\
+my-web-app/                       = OUTPUT_HASIL_RNM\APP_RNM\
 ├── cmd/api/main.go               entry point backend
 ├── internal/
 │   ├── config/                   env var, koneksi Oracle, flag lingkungan
@@ -38,11 +46,11 @@ my-web-app/                       = OUTPUT_HASIL_RNM\
 │   ├── repository/               seluruh SQL — satu-satunya lapisan yang menyentuh Oracle
 │   └── services/                 aturan dagang, transaksi, wewenang
 ├── pkg/utils/                    helper publik tanpa ketergantungan ke internal/
-├── frontend/                     React via Vite, JSX
+├── frontend/                     React via Vite, **TypeScript (.tsx)** — nol .jsx/.js di src/
 │   ├── public/
 │   ├── src/{assets,components,hooks,pages,services,store}/
-│   ├── src/App.jsx · src/main.jsx
-│   ├── package.json · vite.config.js
+│   ├── src/App.tsx · src/main.tsx · src/vite-env.d.ts
+│   ├── package.json · tsconfig.json · vite.config.ts
 ├── go.mod · go.sum
 └── Makefile                      run, build, test, db — kedua sisi
 ```
@@ -66,7 +74,7 @@ semuanya sudah ada.
 | `internal/models` | `Money{Amount, Currency}` dan `Ratio{Value, Scale}` sebagai **tipe berbeda yang tidak dapat dijumlahkan** *(ADR-F-0004)*; desimal memakai **`cockroachdb/apd`** dengan konteks presisi **38** dinyatakan di satu tempat *(keputusan DECIDED-TEKNIS 18-09, `dastin\...\claim-non-prop\3-to-tickets\TICKETS.md` §T-keputusan; `shopspring/decimal` ditolak)*. ⛔ **`float64` tidak boleh muncul di jalur uang mana pun** — termasuk JSON keluar dan React |
 | `internal/repository` | satu antarmuka per agregat; **nama skema eksplisit** di setiap query *(ADR-U-0033)*; transaksi dibuka-ditutup di `services`, **nol `COMMIT` di teks SQL** *(ADR-U-0029)* |
 | `pkg/utils` | konversi teks↔desimal **satu fungsi** untuk seluruh batas procedure *(ADR-U-0034)*; format tanggal dua bentuk *(ADR-U-0022)* |
-| `frontend/` | Vite + React; `services/api.js` satu klien HTTP *(axios)*; `store/` Zustand `[usulan]`; nol angka uang di-parse sebagai `Number` — dibawa sebagai string desimal |
+| `frontend/` | Vite + React + **TypeScript**: komponen `.tsx`, modul lain `.ts`, **nol `.jsx`/`.js` di `src/`**; `tsc --noEmit` wajib lulus *(`npm run typecheck`; `npm run build` menjalankannya lebih dulu)*; bentuk data dari backend dinyatakan sebagai `interface` di `services/api.ts` — satu klien HTTP *(axios)*; `store/` Zustand `[usulan]`; nol angka uang di-parse sebagai `Number` — dibawa sebagai string desimal |
 | `Makefile` | `run-api` · `run-web` · `build` · `test` · `test-db` · `db-up` · `db-down` · `migrate` |
 
 **Pustaka yang belum pernah diputuskan — dipakai sebagai `[usulan]`, dicatat di `go.mod` dengan
@@ -80,7 +88,7 @@ sana dan `db-up` tidak dipakai. ⛔ **Tidak pernah** menunjuk instance produksi.
 **`git init` di `OUTPUT_HASIL_RNM\` adalah bagian Fase 0, bukan usulan.** `/implement` menutup
 setiap sesi dengan **commit**, dan `/code-review` bekerja atas `git diff <titik-tetap>...HEAD` —
 keduanya tidak jalan tanpa repository. `.gitignore`: `node_modules/`, `dist/`, `*.env`,
-`frontend/.vite/`. Commit pertama = scaffold kosong, pesan `fase-0: scaffold`. Korpus di folder
+`.vite/`, `/APP_RNM/bin/`. Commit pertama = scaffold kosong, pesan `fase-0: scaffold`. Korpus di folder
 induk `D:\XML\RNM_BRD\` **tidak** ikut — repo hanya di `OUTPUT_HASIL_RNM\`.
 
 **Tanda selesai Fase 0:** `make build` lulus, `make test` lulus dengan nol test *(kerangka ada)*,
@@ -160,6 +168,7 @@ spec modulnya, tiketnya, dan setiap ADR yang disebut tiket itu.
 | Hilir membaca tabel; penyusun JSON keluar **tidak dibangun** | ADR-U-0028 |
 | Tetapan operasional dari tabel, bukan ditanam | ADR-U-0035 |
 | Generasi = rantai baris; `NOURUT` memasang baris antar generasi; rumus selisih di `services`, nilai lama tidak dihitung ulang; tabel proyeksi bukan sumber | ADR-U-0018 · 0019 · 0020 · 0021 |
+| **Kode ditulis untuk pembaca yang baru mengenal Go dan React**: komentar kepala di tiap berkas menjelaskan *untuk apa berkas ini* dan *dibaca sesudah apa*; istilah *(handler, seam, fixture, `useState`, `interface`)* dijelaskan sekali, dalam bahasa sederhana, saat pertama muncul; satu konsep per komentar; nama fungsi dan variabel berbahasa Indonesia yang terbaca sebagai kalimat; nol singkatan buatan | permintaan work owner 25 September 2026 · `APP_RNM\README-BACA-DULU.md` |
 
 **Setiap klaim perilaku di kode menunjuk buktinya** — komentar satu baris: nomor tiket + AC, atau
 `class / nama / tipe` rule Pega dari `<pxInsName>`. Nama rule saja **bukan** bukti.
@@ -198,8 +207,8 @@ Tiket `15-de-identifikasi-berkas-kasus` di Fac In menetapkan caranya; ikuti untu
 3. Set `Status: claimed` pada berkas tiket.
 4. Tulis test dulu dari acceptance criteria tiket, lalu kodenya, di lapisan yang benar.
 5. Sebelum baris kode pertama: `git rev-parse HEAD` dicatat sebagai **titik tetap** sesi ini.
-   Selama bekerja: `go vet ./...` dan test berkas tunggal berkala; `make test` dan `make test-db`
-   penuh **sekali di akhir**; `make build` lulus.
+   Selama bekerja: `go vet ./...`, `npm run typecheck`, dan test berkas tunggal berkala; `make test`
+   dan `make test-db` penuh **sekali di akhir**; `make build` lulus.
 6. Tambahkan di bawah tiket: `## Implementasi — <tanggal>`: berkas yang dibuat, test yang lulus,
    AC yang ditutup, dan **AC yang belum** beserta alasannya. Set `Status: resolved` hanya bila
    seluruh AC tertutup; bila tidak, tetap `claimed` dengan catatan.

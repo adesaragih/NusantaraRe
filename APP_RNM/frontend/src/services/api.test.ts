@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { jumlahUang, tampilUang } from './api.js'
+import { jumlahUang, tampilUang } from './api'
 
-// Tiket 01 AC-4: tidak ada nilai uang sebagai binary floating point di lapisan
-// mana pun - termasuk di React. Backend mengirimnya sebagai teks desimal;
-// penjaga di bawah memastikan batas itu tidak pernah diseberangi diam-diam.
+// Test ini menjaga SATU aturan: uang di sisi React tetap TEKS, tidak pernah
+// menjadi angka (tiket 01 AC-4; ADR-U-0003, ADR-U-0016).
+//
+// Cara membacanya: `describe` = kelompok kasus, `it` = satu kasus,
+// `expect(x).toBe(y)` = "x harus persis y".
 describe('uang di sisi React', () => {
   it('membawa jumlah sebagai teks, apa adanya', () => {
     const uang = { amount: '1234567890.12345678', currency: 'IDR' }
@@ -20,6 +22,7 @@ describe('uang di sisi React', () => {
   })
 
   it('menolak jumlah yang datang sebagai angka JSON', () => {
+    // UangMasuk sengaja menerima `unknown`, jadi angka boleh dicoba di sini.
     expect(() => jumlahUang({ amount: 1234.5, currency: 'IDR' })).toThrow(TypeError)
   })
 

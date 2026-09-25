@@ -1,0 +1,26 @@
+{
+  // Pengaturan pemeriksa tipe TypeScript (tsc). Vite sendiri tidak memeriksa
+  // tipe saat membangun; karena itu `npm run build` menjalankan `tsc --noEmit`
+  // lebih dulu, dan `npm run typecheck` menjalankannya sendiri.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+
+    // "strict" = seluruh pemeriksaan ketat menyala. Ini yang membuat
+    // `null` dan `undefined` harus ditangani terang-terangan.
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["src", "vite.config.ts"]
+}
