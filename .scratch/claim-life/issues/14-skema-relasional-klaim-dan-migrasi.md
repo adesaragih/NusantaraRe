@@ -1,6 +1,6 @@
 # 14: Skema relasional klaim (6 tabel, berakar di `T_WORK_CLAIM`) + migrasi — **PREFACTOR**
 
-**Status:** ready-for-agent
+**Status:** claimed
 
 **Blocked by:** 01 (kerangka aplikasi + seam API)
 
@@ -589,3 +589,163 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+---
+
+## Implementasi — 25 September 2026
+
+**Status: `claimed`** — **25 dari 53 AC tertutup**, diverifikasi **32 test Go yang benar-benar
+berjalan**. Sesi ini berjalan di **jalur B**: `ORACLE_DSN` kosong, sehingga seluruh test bertag
+`db` **melewati dengan pesan**, bukan lulus diam-diam.
+
+⛔ **Tiket ini tidak dapat `resolved`** walau seluruh kodenya jadi dan hijau, sebab AC nomor 50
+masih `[terbuka]`: apakah `KOMITE_ID` dan `COVER_KEY` dipasangi `REFERENCES T_WORK_CLAIM(ID)`
+belum diputuskan. Bab Blocker tiket ini menyatakannya sendiri.
+
+### Berkas yang dibuat
+
+| Berkas | Total | Berisi |
+| --- | ---: | ---: |
+| `internal/repository/migrations/` — 16 berkas `.sql` | 425 | — |
+| `internal/repository/migrasi.go` | 306 | 285 |
+| `internal/repository/migrasi_test.go` | 304 | 285 |
+| `internal/repository/migrasidata.go` | 324 | 301 |
+| `internal/repository/migrasidata_test.go` | 287 | 261 |
+| `internal/repository/pohonklaim.go` | 397 | 369 |
+| `internal/repository/pohonklaim_db_test.go` | 259 | 236 |
+| `internal/models/pohonklaim.go` | 143 | 132 |
+| **jumlah Go** | **2.020** | **1.869** |
+
+Diubah: `internal/repository/repository.go` (penanda `IS_PEGA_PROD` kini punya pembaca),
+`internal/repository/skemauji/skemauji.go` (memakai migrasi, bukan DDL tangan),
+`internal/models/klaimlife.go` (`BarisAdjustment` membawa `Spreading`),
+`internal/services/klaimlife.go` dan `cmd/api/main.go` (`-migrate` menjalankan migrasi
+sungguhan), `README-BACA-DULU.md` bab 1 dan 5.
+
+### Yang dijalankan, dan hasilnya
+
+| Perintah | Hasil |
+| --- | --- |
+| `go vet ./...` | lulus |
+| `go vet -tags=db ./...` | lulus — test Oracle ikut kompilasi |
+| `gofmt -l` | nol berkas |
+| `go test ./...` | lulus, **32 test** |
+| `go test -tags=db ./internal/...` | **MELEWATI** dengan `ORACLE_DSN belum dikonfigurasi` |
+| `npm run typecheck` · `npm test` | lulus, 5 test — frontend tidak diubah tiket ini |
+
+⭐ **Instrumennya sendiri diuji.** Nama terlarang `WORK_CLAIM_ID` sengaja disisipkan ke berkas
+migrasi; `TestNamaYangDibuangTidakAda` **gagal** seperti seharusnya, lalu berkasnya dipulihkan.
+Tanpa langkah itu, "seluruh test lulus" tidak membuktikan apa-apa.
+
+### AC yang DITUTUP — 25, dengan test yang berjalan
+
+**Bentuk tabel** (nomor 1, 2, 3, 4, 6, 22, 24, 25, 26, 29, 30, 32, 34, 36, 37, 43, 44, 47, 49, 52):
+tujuh tabel ada dengan PK dan FK sesuai diagram; kaskade **hanya** pada relasi 3·4·5·6 dan
+`DOCUMENT_CLAIM` tanpa kaskade; FK adjustment menunjuk **peserta**, bukan header; shared primary
+key terbentuk (`T_GENERAL_CLAIM.ID` sekaligus PK dan FK); `T_WORK_CLAIM.ID` bertipe teks; setiap
+kunci tamu ber-index dan `KOMITE_ID` ber-index **UNIK**; header sudah tidak memuat `CASEID`,
+`CREATE_OP`, `CREATE_OP_NAME`, `TGL_UPDATE`, maupun `PL_NUMBER`, dan memuat ketiga penunjuk polis;
+nol kolom JSON, CLOB, maupun float; nol `T_CLAIMLF_POLICY`, `T_CLAIMLF_MARKETING`,
+`WORK_CLAIM_ID`, `KMT_NO`, dan `T_CLAIMLF_ADJUSTMENT_KOMITE`; penyimpangan sadar dari ADR-U-0006
+dicatat di komentar berkas migrasi.
+
+**Pembongkaran data lama** (nomor 13, 14, 16, 17, 18, dan bagian mengikat nomor 15): seluruh baris
+adjustment ikut pindah — dua baris untuk peserta yang sama menghasilkan **dua** baris, bukan satu
+yang menimpa; jumlah baris sesudah sama dengan sebelumnya; setiap baris menunjuk peserta yang
+benar; uang pindah **tanpa berubah satu digit** dan dibandingkan **tepat**, termasuk
+`1234567890.12345678` dan `0.00000001`; tanggal teks menjadi `DATE` tanpa pergeseran zona, dan yang
+tidak terurai **dilaporkan** lalu dibiarkan kosong — bukan ditebak, bukan menjadi nol; atribut
+tingkat klaim yang **berbeda** antar baris peserta dilaporkan **beserta kedua nilainya**, tidak
+diam-diam dipilih salah satu; nilai yang berasal dari **hardcode** sumber (`ACCEPTATION_DATE` =
+waktu insert, `STS_REJECT` = `0`) dilaporkan apa adanya dan tanggal akseptasi **tidak dikarang**.
+
+### AC yang BELUM ditutup — 28, dan sebabnya
+
+**Menunggu instance Oracle** (nomor 20, 21, 38, 51, 53): migrasi idempoten, jalur mundur,
+kaskade sampai **cicit**, penulisan ganda ke tabel relasional **dan** baris datar warisan, serta
+keduanya dalam **satu transaksi**. Kodenya lengkap dan kompilasi; test-nya ditulis persis menguji
+hal itu di `pohonklaim_db_test.go`, dan ia **melewati** karena tidak ada instance.
+
+**Menunggu keputusan pemilik** (nomor 8, 15, 27, 35, 50): lima AC bertanda `[terbuka]` yang
+executor **tidak menutupnya**. Kolomnya dibuat; isi, pembangkit, dan constraint-nya menunggu.
+
+**Tertulis tetapi belum punya test** (nomor 5, 7, 9, 10, 23, 28, 31, 33, 39, 40, 41, 42, 45, 48):
+kolom dan relasinya ada di berkas migrasi, tetapi belum ada pernyataan test yang menguncinya.
+Dilaporkan sebagai belum ditutup, bukan dihitung lulus.
+
+**Belum dikerjakan** (nomor 11, 19, 46):
+- **11** — ketiga kolom bank ada di tabel, tetapi **pembongkar belum mengisinya** dari nama warisan
+  `NAME_OF_BANK`, `IDBANK`, `ACCOUNTNO`.
+- **19** — `PRODUCT_NAME` dan `PRODUCT_NAME_ID` dari `product_life` relasional belum diambil.
+  Bagian larangannya terpenuhi secara pasif: migrasi tidak menyentuh `m_product_life` sama sekali.
+- **46** — pembongkaran `SpreadingList` dan `RetroLifeList` dari data lama **tidak dapat
+  dikerjakan dari sumber ini**: tabel datar warisan `OS_AKSEPTASI_KLAIM_LIFE` tidak memuat
+  keduanya. ⚠️ Sumbernya adalah blob JSON yang justru dibuang, sehingga jalur bacanya perlu
+  ditetapkan lebih dulu — dicatat sebagai temuan, bukan ditebak.
+
+### Keputusan brief sesi yang diikuti, dan yang sengaja tidak
+
+- **§2 b berlaku** — kolom uang `NUMBER(38,8)`. `NUMBER(38,20)` yang ditemukan sesi sebelumnya
+  memang berasal dari dokumen `dastin\` modul Claim Non-Prop, bukan dari korpus Pega. Butir ini
+  **menutup** pertanyaan terbuka yang diangkat sesi tiket 01.
+- **§2 c masih `[USULAN]`** — karena itu kolom share, persen, dan rate **tidak** diberi
+  `NUMBER(38,8)`; ia memakai `NUMBER` berpresisi arbitrer. Kolomnya dibuat, keputusannya
+  dibiarkan terbuka, persis seperti §1 butir 4 memerintahkan.
+- **§2 d masih `[USULAN]`** — constraint `REFERENCES` untuk `KOMITE_ID` dan `COVER_KEY`
+  **tidak dipasang**, dan itulah sebab tiket ini berakhir `claimed`.
+- **§2 f, g, h berlaku** — migrasi tinggal di `internal/repository/migrations/`, ditanam lewat
+  `//go:embed`, dijalankan `go run ./cmd/api -migrate`; skema uji memanggil migrasi itu, bukan DDL
+  tangan; data lama diuji lewat tabel **tiruan** `OS_AKSEPTASI_KLAIM_LIFE` 55 kolom.
+
+### Code review — lima cacat keras diperbaiki sebelum commit
+
+Poros standar atas titik tetap `a60d3ba`. Seluruhnya diperbaiki; cacah test naik 32 menjadi 34.
+
+1. ⛔ **BOM UTF-8 di `004_t_claimlf_adjustment.sql`.** Byte `EF BB BF` di awal berkas membuat baris
+   komentar pertama **lolos menjadi bagian pernyataan SQL**, dan Oracle akan menolaknya - sementara
+   seluruh test tanpa basis data tetap hijau. ⚠️ Saya sendiri yang menanamnya: berkas itu dipulihkan
+   dengan `Set-Content -Encoding utf8` PowerShell saat menguji instrumen, dan PowerShell 5.1 menulis
+   BOM. BOM-nya dibuang, `gabung()` dibuat kebal terhadapnya, dan **dua test penjaga** ditambahkan -
+   nol BOM di berkas migrasi, dan setiap pernyataan harus mulai dengan kata perintah SQL.
+2. ⛔ **`Hapus` mengklaim membuang `DOCUMENT_CLAIM`, tetapi tidak melakukannya.** Kunci tamunya
+   sengaja tanpa `ON DELETE`, sehingga menghapus header selagi ada baris dokumen akan ditolak
+   Oracle (ORA-02292). Kini dokumen milik seluruh peserta klaim dibuang lebih dulu, dan urutannya
+   dijelaskan di komentar.
+3. **`PeriksaSQL` bolong** pada empat pernyataan `migrasi.go` yang benar-benar sampai ke Oracle,
+   padahal kepala berkasnya menyatakan penjagaan itu. Ditambahkan.
+4. **`BongkarMigrasi` tidak pernah membaca `T_MIGRASI`**, sehingga laporannya menyebut langkah yang
+   tidak berbuat apa-apa sebagai "dijalankan". Kini ia membaca catatan dan melewati langkah yang
+   memang belum pernah dijalankan.
+5. ⛔ **Jalur migrasi data lama buntu, dan ADR-U-0006 belum hidup di kode.** `BongkarBarisLama` tidak
+   pernah mengisi identitas, sedangkan `Simpan` mem-bind-nya ke kolom `NOT NULL`; sementara kelima
+   sequence dibuat tetapi **nol pembaca** - `NEXTVAL` tidak muncul di mana pun. Kini `Simpan`
+   mengambil nomor dari sequence untuk tingkat `T_CLAIMLF_*`, memakai shared PK untuk header, dan
+   **menolak dengan terang** lewat `ErrIdentitasBelumAda` bila nomor akar `CLM-` belum ada -
+   sebab pembangkitnya masih `[terbuka]` dan mengarangnya berarti menetapkan yang belum diputuskan.
+
+Temuan penilaian yang **tidak** diubah: `BarisLama` 55 medan teks, tujuh blok `Qualify` kembar,
+duplikasi pencocokan kode ORA, dan heuristik `BarisHardcode` yang mencampur "0" hardcode dengan "0"
+yang sah. Ketiganya dicatat di sini, bukan didiamkan; yang terakhir perlu keputusan pemilik sebelum
+dipertajam.
+
+### Catatan
+
+1. ⚠️ **`DOCUMENT_CLAIM` dibuat tanpa kolom isi.** `[data DBA]` Daftar kolomnya tidak dapat
+   diturunkan — kelas Pega-nya `ASM-FW-GCNMFW-Int-DOCUMENT_CLAIM`, SQL-nya dibuat Pega sendiri,
+   nol kemunculan di rule SQL mana pun. Yang dibuat hanya kunci utama dan kunci tamu, yang memang
+   sudah ditetapkan. Menuliskan kolom isinya berarti mengarang.
+2. ⚠️ **Selisih nama kolom.** AC nomor 10 menulis `ACCEPTEDNO`; `STRUKTUR-TABEL-CLAIM-LIFE.md`
+   menulis `ACCEPTED_NO`. Migrasi memakai **`ACCEPTED_NO`** mengikuti dokumen struktur, sebab
+   seluruh kolom baru proyek ini snake_case. Selisihnya dicatat, bukan didiamkan.
+3. ⚠️ Kelima puluh lima kolom tabel warisan `[terverifikasi]` dari rule
+   `ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL!RNM!UPDATEOSAKSEPTASICLAIMLIFE_SQL` bertipe
+   `Rule-Connect-SQL` — dibaca langsung dari korpus, bukan dari ingatan.
+4. ⚠️ **Daftar "14 atribut polis berulang" tidak pernah diurutkan** di dokumen mana pun. Yang
+   dibandingkan pembongkar adalah atribut yang bentuk barunya memang menyimpan di tingkat klaim
+   (`NO_CLAIM`, `POLICY_NO`, `BUSINESSNAME`, `CLAIM_RETRO`) — bukan tebakan atas daftar yang tidak
+   ada. Bila daftar sebenarnya ditetapkan, satu variabel di `migrasidata.go` yang berubah.
+5. ⚠️ **Tabel pencatat migrasi `T_MIGRASI` `[usulan]`** — nama dan bentuknya belum pernah
+   diputuskan lewat ADR.
+6. ⚠️ Test bentuk migrasi tinggal di paket `repository`, bukan di seam `services` murni yang
+   disebut brief induk §5. Ia tidak menyentuh basis data sama sekali — yang diuji adalah isi
+   berkas `.sql` yang ditanam ke biner. Perbedaan penempatan dicatat, bukan didiamkan.

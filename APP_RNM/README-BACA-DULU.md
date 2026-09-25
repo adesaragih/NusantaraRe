@@ -13,6 +13,8 @@ Folder ini memuat **seluruh aplikasi** hasil migrasi Pega → Go + React + Oracl
 | `internal/handlers/` | Penerima permintaan HTTP. Tugasnya sempit: baca permintaan, panggil *service*, tulis jawaban JSON |
 | `internal/services/` | Aturan dagang dan perakitan data. Di sinilah "klaim punya peserta, peserta punya baris" disusun |
 | `internal/repository/` | Satu-satunya lapisan yang berbicara ke Oracle. Seluruh SQL ada di sini, dan **hanya** di sini |
+| `internal/repository/migrations/` | Berkas `.sql` bernomor yang membentuk tabel. Satu berkas = satu langkah, dan tiap langkah punya pasangan `_down.sql` untuk membatalkannya. Ditanam ke biner, jadi tidak perlu dicari di disk saat program jalan |
+| `internal/repository/skemauji/` | Menyiapkan skema uji Oracle untuk test bertag `db`: menjalankan migrasi yang sama dengan aplikasi, mengisi fixture buatan, lalu membongkarnya |
 | `internal/models/` | Bentuk data (struct): `Klaim`, `Peserta`, `BarisAdjustment`, `Money`, `Ratio` |
 | `pkg/utils/` | Alat bantu umum: konversi teks ↔ desimal, format tanggal |
 | `frontend/` | Tampilan React (TypeScript, berkas `.tsx`). Dijalankan Vite |
@@ -85,7 +87,8 @@ $env:Path = 'C:\Program Files\Go\bin;C:\Program Files\nodejs;' + $env:Path
 
 | Tujuan | Perintah | Yang diharapkan |
 | --- | --- | --- |
-| Uji backend tanpa Oracle | `go vet ./...` lalu `go test ./...` | `ok nusantarare/internal/models` |
+| Uji backend tanpa Oracle | `go vet ./...` lalu `go test ./...` | `ok` di `internal/models` dan `internal/repository` |
+| Bentuk tabel ke Oracle uji | `go run ./cmd/api -migrate` | menjalankan berkas di `internal/repository/migrations/` sekali masing-masing; aman diulang, dan **menolak** berjalan bila `IS_PEGA_PROD=true` |
 | Uji backend **dengan** Oracle uji | `go test -tags=db ./internal/...` | perlu `ORACLE_DSN` + `ORACLE_SCHEMA`; tanpa itu test **melewati** dengan pesan, bukan lulus diam-diam |
 | Jalankan backend | `go run ./cmd/api` | log `http: mendengarkan di :8080` |
 | Periksa tipe frontend | `cd frontend` lalu `npm run typecheck` | tidak mencetak galat |

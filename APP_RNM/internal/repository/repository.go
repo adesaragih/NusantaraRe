@@ -40,6 +40,10 @@ var (
 type DB struct {
 	sql   *sql.DB
 	skema string
+	// isPegaProd menandai lingkungan yang menunjuk data produksi Pega
+	// (ADR-U-0005). Pembacanya adalah pelari migrasi, yang menolak berjalan
+	// di sana - lihat migrasi.go.
+	isPegaProd bool
 }
 
 // Open membuka koneksi. sql.Open tidak menghubungi server; pemeriksaan
@@ -52,7 +56,7 @@ func Open(cfg config.Config) (*DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("repository: membuka koneksi: %w", err)
 	}
-	return &DB{sql: h, skema: cfg.OracleSchema}, nil
+	return &DB{sql: h, skema: cfg.OracleSchema, isPegaProd: cfg.IsPegaProd}, nil
 }
 
 // Ping memeriksa koneksi.
@@ -74,10 +78,13 @@ func (d *DB) Close() error {
 // Skema mengembalikan nama skema yang dipakai.
 func (d *DB) Skema() string { return d.skema }
 
-// Penanda IS_PEGA_PROD (ADR-U-0005) sengaja TIDAK disimpan di sini: ia sudah
-// ada di config, dan menyalinnya ke lapisan ini hanya menambah keadaan yang
-// belum ada pembacanya. Tiket yang perilakunya memang berbeda di produksi
-// membawanya sendiri lewat services.
+// PegaProduksi menyatakan koneksi ini menunjuk data produksi Pega
+// (ADR-U-0005).
+//
+// Penandanya sempat tidak disimpan di lapisan ini karena belum ada
+// pembacanya; sejak tiket 14 pembacanya ada, yaitu pelari migrasi yang
+// menolak berjalan di produksi.
+func (d *DB) PegaProduksi() bool { return d != nil && d.isPegaProd }
 
 // Qualify mengembalikan nama objek berkualifikasi skema, mis. POOLDATA.T_X.
 //

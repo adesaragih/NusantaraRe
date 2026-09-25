@@ -66,3 +66,15 @@ func (k *KlaimLife) Ambil(ctx context.Context, id string) (*models.Klaim, error)
 	klaim.Peserta = peserta
 	return klaim, nil
 }
+
+// JalankanMigrasi membentuk tabel di basis data yang dikonfigurasi.
+//
+// Ia dipanggil oleh `go run ./cmd/api -migrate` (target `make migrate`).
+// Pelarinya menolak berjalan bila lingkungan menunjuk produksi Pega
+// (ADR-U-0005), dan aman dijalankan berulang kali.
+func (s *Service) JalankanMigrasi(ctx context.Context) (repository.LaporanMigrasi, error) {
+	if !s.PunyaDatabase() {
+		return repository.LaporanMigrasi{}, repository.ErrTanpaOracle
+	}
+	return s.db.JalankanMigrasi(ctx)
+}

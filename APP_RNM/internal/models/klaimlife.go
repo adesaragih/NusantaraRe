@@ -84,7 +84,11 @@ type BarisAdjustment struct {
 	TanggalAkseptasi time.Time
 	// KomiteID kosong bila baris belum pernah dikirim ke Komite. Roster dan
 	// keputusan komite bukan milik Claim Life - ini rujukan, bukan salinan.
+	// Isinya T_WORK_CLAIM.ID baris komite, berformat KMT-xxxxxx.
 	KomiteID string
+	// Spreading adalah pecahan baris ini per treaty-year (tiket 14).
+	// Induknya baris adjustment, bukan peserta dan bukan header klaim.
+	Spreading []Spreading
 }
 
 // Status menerjemahkan kode mentah baris ini.

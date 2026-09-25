@@ -93,5 +93,13 @@ func jalankanMigrasi(svc *services.Service) {
 	if err := svc.CekKesehatan(ctx); err != nil {
 		log.Fatalf("migrasi: tidak dapat menjangkau oracle: %v", err)
 	}
-	log.Printf("migrasi: belum ada migrasi terdaftar untuk skema %s", svc.SkemaAktif())
+	lap, err := svc.JalankanMigrasi(ctx)
+	if err != nil {
+		log.Fatalf("migrasi: %v", err)
+	}
+	log.Printf("migrasi skema %s: %d langkah dijalankan, %d dilewati, %d pernyataan",
+		svc.SkemaAktif(), len(lap.Dijalankan), len(lap.Dilewati), lap.Pernyataan)
+	for _, n := range lap.Dijalankan {
+		log.Printf("  dijalankan: %s", n)
+	}
 }
