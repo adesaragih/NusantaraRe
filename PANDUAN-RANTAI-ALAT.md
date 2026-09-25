@@ -181,11 +181,67 @@ Sesudah itu, jalankan keempat tanda selesai §2 brief dalam bentuk harfiahnya:
 
 ## 4. Docker dan Oracle pengembangan
 
+### ⭐ Periksa dulu: instance pengembangan mungkin sudah ada
+
+Audit 25 September 2026 menemukan mesin ini **sudah memuat konfigurasi klien Oracle
+lama**, dan di dalamnya daftar layanan yang sudah dikenal:
+
+| Temuan | Nilai |
+| --- | --- |
+| Klien Oracle 12.2, **32-bit** | `C:\oracle12i` — ada `sqlplus.exe` |
+| Klien Oracle 9i | `C:\oracle9i` — ada `sqlplus.exe` |
+| `tnsnames.ora` | `C:\oracle12i\network\admin\` — **18 entri** |
+| Alias berpenanda **DEV** | **8** |
+| Alias berpenanda **PROD** | 8 |
+| Alias tanpa penanda lingkungan | 2 |
+
+⛔ **Isi berkas itu tidak dikutip ke mana pun** — ia memuat alamat layanan internal.
+Yang dicatat hanya jumlahnya.
+
+⭐ **Artinya: delapan layanan pengembangan sudah terdaftar di mesin ini.** Sebelum
+memasang Docker sama sekali, tanyakan ke DBA apakah salah satunya dapat dipakai sebagai
+instance pengembangan proyek ini, dan minta kredensial beserta hak `CREATE TABLE` pada
+skema ujinya. Uji sambungannya dengan perkakas yang sudah ada:
+
+```
+C:\oracle12i\bin\sqlplus.exe <pengguna>@<alias DEV>
+```
+
+⛔ **Jangan** memakai alias berpenanda PROD. Brief §7: menjalankan migrasi pada instance
+selain kontainer lokal menuntut persetujuan manusia.
+
 ### Apakah Docker benar-benar perlu?
 
 ⛔ **Tidak, bila DBA menyediakan instance pengembangan.** Brief §2 menyatakannya terang:
 bila instance tersedia, `ORACLE_DSN` menunjuk ke sana dan `db-up` tidak dipakai. Docker
 hanya melayani `make db-up`, yaitu jalan darurat ketika tidak ada instance.
+
+### Oracle Instant Client 23.26 — terpasang, dan kapan ia terpakai
+
+`C:\oracle\instantclient_23_0` (varian **basic**, 36 berkas, 387 MB, `oci.dll` 23.26.1.0),
+terdaftar di `Path` tingkat pengguna.
+
+⚠️ **Backend proyek ini tidak memerlukannya.** Driver `sijms/go-ora/v2` murni Go, dan
+brief §2 memilihnya justru supaya Instant Client tidak diperlukan. Ia berguna untuk
+perkakas DBA 64-bit dan bila kelak driver diganti ke yang berbasis OCI.
+
+**Varian `basic` dipilih, bukan `basiclite`**, sebab charset Oracle sasaran **belum
+diketahui** — nol DDL di korpus, OQ-001 masih terbuka. `basiclite` hanya membawa
+`oraociicus.dll` (US English, charset terbatas); `basic` membawa `oraociei.dll` 298 MB
+dengan seluruh charset dan pesan multi-bahasa, plus `ojdbc11/17.jar` dan `ucp11/17.jar`.
+Memilih lite berarti mengandaikan charset yang tidak dapat diverifikasi.
+
+⚠️ **Jebakan PATH yang tersisa.** `Path` tingkat **mesin** memuat `C:\oracle12i\bin` dan
+`C:\oracle9i\bin`, dan PATH mesin selalu dibaca **sebelum** PATH pengguna. Perkakas baris
+perintah karenanya tetap memakai klien 12.2. Itu **sengaja dibiarkan**: mendahulukan
+Instant Client dapat mematahkan aplikasi 32-bit yang bergantung pada `C:\oracle12i`.
+Buktinya `genezi -v` melaporkan *"Client Shared Library 32-bit - 12.2.0.1.0"*, bukan
+23.26. Bila kelak ada program **64-bit** yang memuat `oci.dll`, ia dapat gagal karena
+menemukan `oci.dll` 32-bit lebih dulu; perbaikannya bukan mengubah PATH mesin, melainkan
+menunjuk direktori DLL secara eksplisit dari program itu.
+
+`sqlplus` **tidak** ikut dalam paket `basic` — ia paket terpisah. Untuk sekarang pakai
+`sqlplus` milik `C:\oracle12i\bin`.
 
 ### Bila tetap dipasang
 
