@@ -1,0 +1,2519 @@
+{
+ "baris": [
+  {
+   "jalur": "ActualValue",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.BrokeragePercent",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.FacultativeShare",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.FacultativeShareBrokerage",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.FacultativeShareList[].ClassofBusinessList",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN"
+  },
+  {
+   "jalur": "ActualValue.FacultativeShareList[].Cover",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.FacultativeShareList[].GrossPremiumList[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.FacultativeShareList[].GrossPremiumList[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.FacultativeShareList[].Layer",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.FacultativeShareList[].LayerPart",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.FacultativeShareList[].LayerPartType",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.FacultativeShareList[].LayerType",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.FacultativeShareList[].Limit",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.FacultativeShareList[].Limit2",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.FacultativeShareList[].NetPremiumList",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN"
+  },
+  {
+   "jalur": "ActualValue.FacultativeShareList[].RnmLimitList[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.FacultativeShareList[].RnmLimitList[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.FacultativeShareList[].TreatyGroupList",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.LimitShareSummaryList[].AggregateLimit",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.LimitShareSummaryList[].AggregateLimit2",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.LimitShareSummaryList[].Deductible",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.LimitShareSummaryList[].Deductible2",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.LimitShareSummaryList[].Limit",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.LimitShareSummaryList[].Limit2",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.LimitShareSummaryList[].MDP",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.LimitShareSummaryList[].MDP2",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.LimitShareSummaryList[].Note",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Limits",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Limits[].EgnpiTotalList[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Limits[].EgnpiTotalList[].CurrencyID",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Limits[].EgnpiTotalList[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Limits[].MDPList[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Limits[].MDPList[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Limits[].PremiumEarnedList[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Limits[].PremiumEarnedList[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.RNMShare",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Share[].AddendumStatus",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN"
+  },
+  {
+   "jalur": "ActualValue.Share[].ClassofBusinessList",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN"
+  },
+  {
+   "jalur": "ActualValue.Share[].Cover",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Share[].GrossPremiumList[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Share[].GrossPremiumList[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Share[].Layer",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Share[].LayerPart",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Share[].LayerPartType",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Share[].LayerType",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Share[].NetPremiumList",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN"
+  },
+  {
+   "jalur": "ActualValue.Share[].RNMSpreadedListDeductRIXOL[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Share[].RNMSpreadedListDeductRIXOL[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Share[].RNMSpreadedListDeductXOL[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Share[].RNMSpreadedListDeductXOL[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Share[].RNMSpreadedListGrossRIXOL[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Share[].RNMSpreadedListGrossRIXOL[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Share[].RNMSpreadedListGrossXOL[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Share[].RNMSpreadedListGrossXOL[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Share[].RNMSpreadedListNetRIXOL[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Share[].RNMSpreadedListNetRIXOL[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Share[].RNMSpreadedListNetXOL[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Share[].RNMSpreadedListNetXOL[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Share[].RNMSpreadedListRIXOL[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Share[].RNMSpreadedListRIXOL[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Share[].RNMSpreadedListXOL[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Share[].RNMSpreadedListXOL[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Share[].RnmLimitList[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Share[].RnmLimitList[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Share[].SpreadingListXOL[].Pct",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Share[].SpreadingListXOL[].ReinsTypeName",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.Share[].SpreadingTotalPctXOL",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN"
+  },
+  {
+   "jalur": "ActualValue.Share[].SpreadingTypeXOL",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN"
+  },
+  {
+   "jalur": "ActualValue.Share[].TreatyGroupList",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalEgnpiAmount",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalEgnpiAmountNP[].AltValue",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN"
+  },
+  {
+   "jalur": "ActualValue.TotalEgnpiAmountNP[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalEgnpiAmountNP[].ID",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "TIDAK TERBACA"
+  },
+  {
+   "jalur": "ActualValue.TotalEgnpiAmountNP[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalEgnpiProportion",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalFacShareDeductionNP[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalFacShareDeductionNP[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalFacShareGrossNP[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalFacShareGrossNP[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalFacShareNetNP[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalFacShareNetNP[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalFacShareRnmNP[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalFacShareRnmNP[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalLimitDeductblNP[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalLimitDeductblNP[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalLimitIOONP[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalLimitIOONP[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalLimitMDPNP[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalLimitMDPNP[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalLimitPremiEarnNP[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalLimitPremiEarnNP[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalLimitsROL",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalShareDeductionNP[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalShareDeductionNP[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalShareGrossNP[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalShareGrossNP[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalShareNetNP[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalShareNetNP[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalShareRnmNP[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalShareRnmNP[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalSpreadedNetPremiRI[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalSpreadedNetPremiRI[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalSpreadedNetPremi[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalSpreadedNetPremi[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalSpreadedRnmProp[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalSpreadedRnmProp[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalSpreadedRnmRIProp[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ActualValue.TotalSpreadedRnmRIProp[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-14",
+   "tabel": "",
+   "alasan": "pohon dibuang seluruhnya; premi aktual menjadi nilai versinya sendiri",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "OLDDATA",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "ADR-0048 butir 2 · GRL-03 · GRL-10",
+   "tabel": "",
+   "alasan": "tidak ada tabel: sisi lama di-SELECT ke versi dasar lewat ID_VERSI_KONTRAK_DASAR",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueBeforeProrate",
+   "gol6": "DIPETAKAN",
+   "nasib": "DIBUANG",
+   "dasar": "GRL-15",
+   "tabel": "",
+   "alasan": "nol penulis di sistem lama; atribut \"berlaku sejak\" dibawa, mesin pro rata sengaja tidak dibangun",
+   "sisi": "IRISAN"
+  },
+  {
+   "jalur": "ValueDifference",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN"
+  },
+  {
+   "jalur": "ValueDifference.BrokeragePercent",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "besaran pokok berselisih; berkunci KUNCI_PADANAN yang MEMUAT mata uang",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.EGNPI[].AddendumStatus",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN"
+  },
+  {
+   "jalur": "ValueDifference.EGNPI[].Amount",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.EGNPI[].AmountIDR",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.EGNPI[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.EGNPI[].Proportion",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.EGNPI[].TreatyGroup",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.FacultativeShare",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "besaran pokok berselisih; berkunci KUNCI_PADANAN yang MEMUAT mata uang",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.FacultativeShareBrokerage",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "besaran pokok berselisih; berkunci KUNCI_PADANAN yang MEMUAT mata uang",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.FacultativeShareList[].Cover",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.FacultativeShareList[].DeductionList[].Comment",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.FacultativeShareList[].DeductionList[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.FacultativeShareList[].DeductionList[].Deduction",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.FacultativeShareList[].DeductionList[].DeductionPct",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.FacultativeShareList[].GrossPremiumList[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.FacultativeShareList[].GrossPremiumList[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.FacultativeShareList[].Layer",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.FacultativeShareList[].LayerPart",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.FacultativeShareList[].LayerPartType",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.FacultativeShareList[].LayerType",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.FacultativeShareList[].Limit",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.FacultativeShareList[].Limit2",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.FacultativeShareList[].NetPremiumList[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.FacultativeShareList[].NetPremiumList[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.FacultativeShareList[].RnmGrossPremiDisplay[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.FacultativeShareList[].RnmGrossPremiDisplay[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.FacultativeShareList[].RnmLimitListDisplay[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.FacultativeShareList[].RnmLimitListDisplay[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.FacultativeShareList[].RnmLimitList[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.FacultativeShareList[].RnmLimitList[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Installment[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Installment[].InstallmentList[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Installment[].InstallmentList[].CurrencyID",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Installment[].InstallmentList[].DueDate",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Installment[].InstallmentList[].Installment",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Installment[].InstallmentList[].InstallmentPct",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Installment[].InstallmentList[].PaymentDate",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Installment[].InstallmentList[].WPC",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.LimitSummaryList[].AggregateLimit",
+   "gol6": "DIPETAKAN",
+   "nasib": "TURUNAN",
+   "dasar": "ADR-0037 · §4.2",
+   "tabel": "",
+   "alasan": "agregat -- tidak disimpan; dihitung saat dibaca",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.LimitSummaryList[].AggregateLimit2",
+   "gol6": "DIPETAKAN",
+   "nasib": "TURUNAN",
+   "dasar": "ADR-0037 · §4.2",
+   "tabel": "",
+   "alasan": "agregat -- tidak disimpan; dihitung saat dibaca",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.LimitSummaryList[].Deductible",
+   "gol6": "DIPETAKAN",
+   "nasib": "TURUNAN",
+   "dasar": "ADR-0037 · §4.2",
+   "tabel": "",
+   "alasan": "agregat -- tidak disimpan; dihitung saat dibaca",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.LimitSummaryList[].Deductible2",
+   "gol6": "DIPETAKAN",
+   "nasib": "TURUNAN",
+   "dasar": "ADR-0037 · §4.2",
+   "tabel": "",
+   "alasan": "agregat -- tidak disimpan; dihitung saat dibaca",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.LimitSummaryList[].Limit",
+   "gol6": "DIPETAKAN",
+   "nasib": "TURUNAN",
+   "dasar": "ADR-0037 · §4.2",
+   "tabel": "",
+   "alasan": "agregat -- tidak disimpan; dihitung saat dibaca",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.LimitSummaryList[].Limit2",
+   "gol6": "DIPETAKAN",
+   "nasib": "TURUNAN",
+   "dasar": "ADR-0037 · §4.2",
+   "tabel": "",
+   "alasan": "agregat -- tidak disimpan; dihitung saat dibaca",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.LimitSummaryList[].MDP",
+   "gol6": "DIPETAKAN",
+   "nasib": "TURUNAN",
+   "dasar": "ADR-0037 · §4.2",
+   "tabel": "",
+   "alasan": "agregat -- tidak disimpan; dihitung saat dibaca",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.LimitSummaryList[].MDP2",
+   "gol6": "DIPETAKAN",
+   "nasib": "TURUNAN",
+   "dasar": "ADR-0037 · §4.2",
+   "tabel": "",
+   "alasan": "agregat -- tidak disimpan; dihitung saat dibaca",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.LimitSummaryList[].Note",
+   "gol6": "DIPETAKAN",
+   "nasib": "TURUNAN",
+   "dasar": "ADR-0037 · §4.2",
+   "tabel": "",
+   "alasan": "agregat -- tidak disimpan; dihitung saat dibaca",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Limits[].AdjRate",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Limits[].Cover",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Limits[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Limits[].Currency2",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Limits[].Deductible",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Limits[].Deductible2",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Limits[].EgnpiTotalList[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Limits[].EgnpiTotalList[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Limits[].Layer",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Limits[].LayerPart",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Limits[].LayerPartType",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Limits[].LayerType",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Limits[].Limit",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Limits[].Limit2",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Limits[].MDPList[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Limits[].MDPList[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Limits[].MDPPct",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Limits[].PremiumEarnedList[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Limits[].PremiumEarnedList[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Limits[].ROLPct",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Limits[].ReinstatementPct",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Limits[].TreatyGroupList",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.RNMShare",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "besaran pokok berselisih; berkunci KUNCI_PADANAN yang MEMUAT mata uang",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].AddendumStatus",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN"
+  },
+  {
+   "jalur": "ValueDifference.Share[].Cover",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].DeductionList[].Comment",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].DeductionList[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].DeductionList[].Deduction",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].DeductionList[].DeductionPct",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].GrossPremiumList[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].GrossPremiumList[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].Layer",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].LayerPart",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].LayerPartType",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].LayerType",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].NetPremiumList[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].NetPremiumList[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].RNMSpreadedListDeductRIXOL[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].RNMSpreadedListDeductRIXOL[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].RNMSpreadedListDeductXOL[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].RNMSpreadedListDeductXOL[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].RNMSpreadedListGrossMinXOL[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].RNMSpreadedListGrossMinXOL[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].RNMSpreadedListGrossRIMinXOL[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].RNMSpreadedListGrossRIMinXOL[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].RNMSpreadedListGrossRIXOL[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].RNMSpreadedListGrossRIXOL[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].RNMSpreadedListGrossXOL[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].RNMSpreadedListGrossXOL[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].RNMSpreadedListNetRIXOL[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].RNMSpreadedListNetRIXOL[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].RNMSpreadedListNetXOL[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].RNMSpreadedListNetXOL[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].RNMSpreadedListRIXOL[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].RNMSpreadedListRIXOL[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].RNMSpreadedListXOL[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].RNMSpreadedListXOL[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].RnmGrossPremiDisplay[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].RnmGrossPremiDisplay[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].RnmLimitListDisplay[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].RnmLimitListDisplay[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].RnmLimitList[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].RnmLimitList[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].SpreadingListXOL[].ParentReinsTypeID",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].SpreadingListXOL[].Pct",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].SpreadingListXOL[].ReinsTypeID",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].SpreadingListXOL[].ReinsTypeName",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.Share[].SpreadingListXOL[].Rp",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "TIDAK TERBACA"
+  },
+  {
+   "jalur": "ValueDifference.Share[].SpreadingListXOL[].Usd",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN"
+  },
+  {
+   "jalur": "ValueDifference.Share[].SpreadingTotalPctXOL",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN"
+  },
+  {
+   "jalur": "ValueDifference.Share[].SpreadingTypeIDXOL",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN"
+  },
+  {
+   "jalur": "ValueDifference.Share[].SpreadingTypeXOL",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN"
+  },
+  {
+   "jalur": "ValueDifference.Share[].TreatyGroupList",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalEgnpiAmount",
+   "gol6": "DIPETAKAN",
+   "nasib": "TURUNAN",
+   "dasar": "ADR-0037 · §4.2",
+   "tabel": "",
+   "alasan": "agregat -- tidak disimpan; dihitung saat dibaca",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalEgnpiAmountNP[].AltValue",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN"
+  },
+  {
+   "jalur": "ValueDifference.TotalEgnpiAmountNP[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalEgnpiAmountNP[].ID",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "TIDAK TERBACA"
+  },
+  {
+   "jalur": "ValueDifference.TotalEgnpiAmountNP[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalEgnpiProportion",
+   "gol6": "DIPETAKAN",
+   "nasib": "TURUNAN",
+   "dasar": "ADR-0037 · §4.2",
+   "tabel": "",
+   "alasan": "agregat -- tidak disimpan; dihitung saat dibaca",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalFacShareDeductionNP[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalFacShareDeductionNP[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalFacShareGrossNP[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalFacShareGrossNP[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalFacShareNetNP[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalFacShareNetNP[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalFacShareRnmNP[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalFacShareRnmNP[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalInstallmentNP[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalInstallmentNP[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalLimitDeductblNP[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalLimitDeductblNP[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalLimitIOONP[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalLimitIOONP[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalLimitMDPNP[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalLimitMDPNP[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalLimitPremiEarnNP[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalLimitPremiEarnNP[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalLimitsROL",
+   "gol6": "DIPETAKAN",
+   "nasib": "TURUNAN",
+   "dasar": "ADR-0037 · §4.2",
+   "tabel": "",
+   "alasan": "agregat -- tidak disimpan; dihitung saat dibaca",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalShareDeductionNP[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalShareDeductionNP[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalShareGrossNP[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalShareGrossNP[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalShareNetNP[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalShareNetNP[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalShareRnmNP[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalShareRnmNP[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalSpreadedNetPremiRI[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalSpreadedNetPremiRI[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalSpreadedNetPremi[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalSpreadedNetPremi[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalSpreadedRnmProp[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalSpreadedRnmProp[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalSpreadedRnmRIProp[].Currency",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "ValueDifference.TotalSpreadedRnmRIProp[].Value",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "ADR-0048 butir 3 · METODE §8.3",
+   "tabel": "NILAI_SELISIH",
+   "alasan": "ruas pembentuk baris selisih",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "EDMEffective",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "GRL-15",
+   "tabel": "VERSI_KONTRAK.TANGGAL_BERLAKU_ADDENDUM",
+   "alasan": "atribut \"berlaku sejak\" dibawa; mesin pro rata tidak dibangun",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "EDMState",
+   "gol6": "DIPETAKAN",
+   "nasib": "DISIMPAN",
+   "dasar": "GRL-13 · GRL-18",
+   "tabel": "VERSI_KONTRAK.JENIS_ADDENDUM",
+   "alasan": "enum dua nilai untuk versi baru; nilai warisan dibawa apa adanya",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "IsEditData",
+   "gol6": "DIBUANG",
+   "nasib": "DIBUANG",
+   "dasar": "ADR-0046 · CONTEXT §3.4",
+   "tabel": "",
+   "alasan": "dilebur ke satu keadaan siklus hidup",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "OLDID",
+   "gol6": "DIBUANG",
+   "nasib": "DISIMPAN",
+   "dasar": "GRL-10 · GRL-17",
+   "tabel": "VERSI_KONTRAK.ID_VERSI_KONTRAK_DASAR",
+   "alasan": "rujukan versi dasar, disimpan TEPAT DI SATU TEMPAT; arti ketiganya dipisah (7-1-OLDID)",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "RevisionState",
+   "gol6": "DIBUANG",
+   "nasib": "DIBUANG",
+   "dasar": "ADR-0046 · CONTEXT §3.4",
+   "tabel": "",
+   "alasan": "dilebur ke satu keadaan siklus hidup",
+   "sisi": "IRISAN"
+  },
+  {
+   "jalur": "ViewState",
+   "gol6": "DIBUANG",
+   "nasib": "DIBUANG",
+   "dasar": "ADR-0046 · CONTEXT §3.4",
+   "tabel": "",
+   "alasan": "dilebur ke satu keadaan siklus hidup",
+   "sisi": "IRISAN+56"
+  },
+  {
+   "jalur": "EDMMaterialType",
+   "gol6": "DITUNDA",
+   "nasib": "DISIMPAN",
+   "dasar": "GRL-20 · KTV-1",
+   "tabel": "VERSI_KONTRAK.SIFAT_MATERIAL_ADDENDUM",
+   "alasan": "atribut MASUKAN -- GRL-12 batal; beku sejak AJUKAN, berjejak selama DRAFT",
+   "sisi": "IRISAN+56"
+  }
+ ],
+ "luar": 388,
+ "tolak": {
+  "bukan .xml": 2
+ }
+}

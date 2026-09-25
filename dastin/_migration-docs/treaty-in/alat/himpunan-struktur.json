@@ -1,0 +1,3449 @@
+{
+ "stru": [
+  "BAGIAN",
+  "BAHAYA",
+  "BATAS_PER_BAHAYA",
+  "BESARAN_DAPAT_DISESUAIKAN",
+  "CATATAN_PERSETUJUAN",
+  "DETAIL_PROPORSIONAL",
+  "DOKUMEN_ADDENDUM",
+  "DOKUMEN_KONTRAK",
+  "EGNPI",
+  "JEJAK_PERUBAHAN",
+  "JENIS_POTONGAN",
+  "JENIS_REASURANSI",
+  "KELAS_BISNIS",
+  "KELOMPOK_TREATY",
+  "KONTRAK",
+  "LAYER",
+  "MATA_UANG",
+  "MATA_UANG_KONTRAK",
+  "NILAI_CADANGAN_PREMI",
+  "NILAI_MDP",
+  "NILAI_MDP_MINIMUM",
+  "NILAI_PENYEBARAN",
+  "NILAI_PREMI_BRUTO",
+  "NILAI_PREMI_BRUTO_MINIMUM",
+  "NILAI_SELISIH",
+  "PEMULIHAN_LIMIT",
+  "PENCAPAIAN",
+  "PENYEBARAN",
+  "PERIODE_AKUMULASI",
+  "PERIODE_PELAPORAN",
+  "PERISTIWA_KONTRAK",
+  "PORTOFOLIO",
+  "POTONGAN",
+  "RETENSI_CEDANT",
+  "RETRO_KELUAR",
+  "RINCIAN_PENYEBARAN",
+  "SKALA_KOASURANSI",
+  "TERMIN",
+  "VERSI_KONTRAK"
+ ],
+ "kamus": [
+  "BAGIAN",
+  "BAHAYA",
+  "BATAS_PER_BAHAYA",
+  "CATATAN_PERSETUJUAN",
+  "DETAIL_PROPORSIONAL",
+  "DOKUMEN_ADDENDUM",
+  "DOKUMEN_KONTRAK",
+  "EGNPI",
+  "JEJAK_PERUBAHAN",
+  "JENIS_POTONGAN",
+  "JENIS_REASURANSI",
+  "KELAS_BISNIS",
+  "KELOMPOK_TREATY",
+  "KONTRAK",
+  "LAYER",
+  "MATA_UANG",
+  "MATA_UANG_KONTRAK",
+  "NILAI_CADANGAN_PREMI",
+  "NILAI_MDP",
+  "NILAI_MDP_MINIMUM",
+  "NILAI_PENYEBARAN",
+  "NILAI_PREMI_BRUTO",
+  "NILAI_PREMI_BRUTO_MINIMUM",
+  "PEMULIHAN_LIMIT",
+  "PENYEBARAN",
+  "PERIODE_AKUMULASI",
+  "PERIODE_PELAPORAN",
+  "PERISTIWA_KONTRAK",
+  "PORTOFOLIO",
+  "POTONGAN",
+  "RETENSI_CEDANT",
+  "RINCIAN_PENYEBARAN",
+  "SKALA_KOASURANSI",
+  "TERMIN",
+  "VERSI_KONTRAK"
+ ],
+ "ddl": [
+  "BAGIAN",
+  "BAHAYA",
+  "BATAS_PER_BAHAYA",
+  "CATATAN_PERSETUJUAN",
+  "DETAIL_PROPORSIONAL",
+  "DOKUMEN_ADDENDUM",
+  "DOKUMEN_KONTRAK",
+  "EGNPI",
+  "JEJAK_PERUBAHAN",
+  "JENIS_POTONGAN",
+  "JENIS_REASURANSI",
+  "KELAS_BISNIS",
+  "KELOMPOK_TREATY",
+  "KONTRAK",
+  "LAYER",
+  "MATA_UANG",
+  "MATA_UANG_KONTRAK",
+  "NILAI_CADANGAN_PREMI",
+  "NILAI_MDP",
+  "NILAI_MDP_MINIMUM",
+  "NILAI_PENYEBARAN",
+  "NILAI_PREMI_BRUTO",
+  "NILAI_PREMI_BRUTO_MINIMUM",
+  "PEMULIHAN_LIMIT",
+  "PENYEBARAN",
+  "PERIODE_AKUMULASI",
+  "PERIODE_PELAPORAN",
+  "PERISTIWA_KONTRAK",
+  "PORTOFOLIO",
+  "POTONGAN",
+  "RETENSI_CEDANT",
+  "RINCIAN_PENYEBARAN",
+  "SKALA_KOASURANSI",
+  "TERMIN",
+  "VERSI_KONTRAK"
+ ],
+ "ddl_rinci": {
+  "BAHAYA": {
+   "berkas": "01_BAHAYA.sql",
+   "pk": "ID_BAHAYA",
+   "kolom": {
+    "ID_BAHAYA": "NUMBER(19)",
+    "KODE": "VARCHAR2(1000 CHAR)",
+    "NAMA": "VARCHAR2(1000 CHAR)",
+    "AKTIF": "VARCHAR2(40 CHAR)"
+   },
+   "fk": []
+  },
+  "DOKUMEN_ADDENDUM": {
+   "berkas": "02_DOKUMEN_ADDENDUM.sql",
+   "pk": "ID_DOKUMEN_ADDENDUM",
+   "kolom": {
+    "ID_DOKUMEN_ADDENDUM": "NUMBER(19)",
+    "NOMOR_DOKUMEN": "VARCHAR2(1000 CHAR)",
+    "TANGGAL_BERLAKU": "DATE"
+   },
+   "fk": []
+  },
+  "JENIS_POTONGAN": {
+   "berkas": "03_JENIS_POTONGAN.sql",
+   "pk": "ID_JENIS_POTONGAN",
+   "kolom": {
+    "ID_JENIS_POTONGAN": "NUMBER(19)",
+    "KODE": "VARCHAR2(1000 CHAR)",
+    "NAMA": "VARCHAR2(1000 CHAR)",
+    "AKTIF": "VARCHAR2(40 CHAR)"
+   },
+   "fk": []
+  },
+  "JENIS_REASURANSI": {
+   "berkas": "04_JENIS_REASURANSI.sql",
+   "pk": "ID_JENIS_REASURANSI",
+   "kolom": {
+    "ID_JENIS_REASURANSI": "NUMBER(19)",
+    "KODE": "VARCHAR2(1000 CHAR)",
+    "NAMA": "VARCHAR2(1000 CHAR)",
+    "AKTIF": "VARCHAR2(40 CHAR)",
+    "ID_INDUK": "NUMBER(19)"
+   },
+   "fk": []
+  },
+  "KELAS_BISNIS": {
+   "berkas": "05_KELAS_BISNIS.sql",
+   "pk": "ID_KELAS_BISNIS",
+   "kolom": {
+    "ID_KELAS_BISNIS": "NUMBER(19)",
+    "KODE": "VARCHAR2(1000 CHAR)",
+    "NAMA": "VARCHAR2(1000 CHAR)",
+    "AKTIF": "VARCHAR2(40 CHAR)"
+   },
+   "fk": []
+  },
+  "KELOMPOK_TREATY": {
+   "berkas": "06_KELOMPOK_TREATY.sql",
+   "pk": "ID_KELOMPOK_TREATY",
+   "kolom": {
+    "ID_KELOMPOK_TREATY": "NUMBER(19)",
+    "KODE": "VARCHAR2(1000 CHAR)",
+    "NAMA": "VARCHAR2(1000 CHAR)",
+    "AKTIF": "VARCHAR2(40 CHAR)"
+   },
+   "fk": []
+  },
+  "KONTRAK": {
+   "berkas": "07_KONTRAK.sql",
+   "pk": "ID_KONTRAK",
+   "kolom": {
+    "ID_KONTRAK": "NUMBER(19)",
+    "NOMOR_KONTRAK_WARISAN": "VARCHAR2(1000 CHAR)",
+    "ID_KONTRAK_DISALIN_DARI": "NUMBER(19)",
+    "ID_CEDANT": "NUMBER(19)",
+    "ID_ASAL_BISNIS": "NUMBER(19)",
+    "SIFAT_PROPORSI": "VARCHAR2(40 CHAR)",
+    "TANGGAL_MULAI": "DATE",
+    "TANGGAL_BERAKHIR": "DATE"
+   },
+   "fk": []
+  },
+  "MATA_UANG": {
+   "berkas": "08_MATA_UANG.sql",
+   "pk": "ID_MATA_UANG",
+   "kolom": {
+    "ID_MATA_UANG": "NUMBER(19)",
+    "KODE": "VARCHAR2(1000 CHAR)",
+    "NAMA": "VARCHAR2(1000 CHAR)",
+    "AKTIF": "VARCHAR2(40 CHAR)"
+   },
+   "fk": []
+  },
+  "VERSI_KONTRAK": {
+   "berkas": "09_VERSI_KONTRAK.sql",
+   "pk": "ID_VERSI_KONTRAK",
+   "kolom": {
+    "ID_VERSI_KONTRAK": "NUMBER(19)",
+    "ID_KONTRAK": "NUMBER(19)",
+    "NOMOR_URUT_VERSI": "NUMBER(9)",
+    "KEADAAN_SIKLUS_HIDUP": "VARCHAR2(40 CHAR)",
+    "KEADAAN_WARISAN_ASLI": "VARCHAR2(1000 CHAR)",
+    "JENIS_ADDENDUM": "VARCHAR2(40 CHAR)",
+    "TANGGAL_BERLAKU_ADDENDUM": "DATE",
+    "NAMA_KONTRAK": "VARCHAR2(1000 CHAR)",
+    "LINGKUP_WILAYAH": "VARCHAR2(1000 CHAR)",
+    "KELAS_BISNIS_KONTRAK": "NUMBER(19)",
+    "KODE_MATA_UANG_KONTRAK": "NUMBER(19)",
+    "ID_REASURADUR_PEMIMPIN": "NUMBER(19)",
+    "ID_KETUA_TREATY": "NUMBER(19)",
+    "PERSEN_BAGIAN_NURE": "NUMBER(38,20)",
+    "BAGIAN_NURE_SERAGAM": "VARCHAR2(40 CHAR)",
+    "PERSEN_BAGIAN_NURE_DIPOTONG": "NUMBER(38,20)",
+    "PERSEN_BROKERAGE": "NUMBER(38,20)",
+    "PERSEN_BAGIAN_FAKULTATIF": "NUMBER(38,20)",
+    "PERSEN_BROKERAGE_FAKULTATIF": "NUMBER(38,20)",
+    "PENGECUALIAN": "VARCHAR2(4000 CHAR)",
+    "KETENTUAN_KHUSUS": "VARCHAR2(4000 CHAR)",
+    "KETERANGAN": "VARCHAR2(4000 CHAR)",
+    "CATATAN": "VARCHAR2(4000 CHAR)",
+    "CATATAN_BORDEREAUX": "VARCHAR2(4000 CHAR)",
+    "MEMAKAI_BORDEREAUX": "VARCHAR2(40 CHAR)",
+    "CARA_PEMBUKUAN": "VARCHAR2(40 CHAR)",
+    "CARA_PEMBUKUAN_XOL": "VARCHAR2(40 CHAR)",
+    "PERIODE_PELAPORAN_KONTRAK": "VARCHAR2(40 CHAR)",
+    "SELANG_PELAPORAN": "NUMBER(9)",
+    "TANGGAL_MULAI_PELAPORAN": "DATE",
+    "TANGGAL_AKHIR_PELAPORAN": "DATE",
+    "HARI_BATAS_PENYERAHAN": "NUMBER(9)",
+    "HARI_BATAS_KONFIRMASI": "NUMBER(9)",
+    "HARI_BATAS_PELUNASAN": "NUMBER(9)",
+    "HARI_PENGINGAT": "NUMBER(9)",
+    "PERIODE_AKUMULASI_KONTRAK": "VARCHAR2(40 CHAR)",
+    "JUMLAH_TERMIN": "NUMBER(9)",
+    "MEMAKAI_PRORATA": "VARCHAR2(40 CHAR)",
+    "BATAS_MAKSIMUM_KELOMPOK": "NUMBER(38,20)",
+    "MATA_UANG_BATAS_KELOMPOK": "VARCHAR2(1000 CHAR)",
+    "BATAS_MAKSIMUM_NON_KELOMPOK": "NUMBER(38,20)",
+    "MATA_UANG_BATAS_NON_KELOMPOK": "VARCHAR2(1000 CHAR)",
+    "BATAS_PILIHAN": "NUMBER(38,20)",
+    "MATA_UANG_BATAS_PILIHAN": "VARCHAR2(1000 CHAR)",
+    "RETRO_BERGANDA": "VARCHAR2(40 CHAR)",
+    "ID_DAFTAR_RETRO": "NUMBER(19)",
+    "SIFAT_MATERIAL_ADDENDUM": "VARCHAR2(40 CHAR)",
+    "ID_DOKUMEN_ADDENDUM": "NUMBER(19)"
+   },
+   "fk": [
+    {
+     "kolom": "ID_KONTRAK",
+     "induk": "KONTRAK",
+     "kolom_induk": "ID_KONTRAK",
+     "on_delete": "(tidak dinyatakan)"
+    },
+    {
+     "kolom": "ID_DOKUMEN_ADDENDUM",
+     "induk": "DOKUMEN_ADDENDUM",
+     "kolom_induk": "ID_DOKUMEN_ADDENDUM",
+     "on_delete": "(tidak dinyatakan)"
+    }
+   ]
+  },
+  "BATAS_PER_BAHAYA": {
+   "berkas": "10_BATAS_PER_BAHAYA.sql",
+   "pk": "ID_BATAS_PER_BAHAYA",
+   "kolom": {
+    "ID_BATAS_PER_BAHAYA": "NUMBER(19)",
+    "ID_VERSI_KONTRAK": "NUMBER(19)",
+    "ID_BAHAYA": "NUMBER(19)",
+    "NILAI_BATAS": "NUMBER(38,20)",
+    "KODE_MATA_UANG": "VARCHAR2(1000 CHAR)",
+    "PERSEN_BAGIAN_DIPAKAI": "NUMBER(38,20)"
+   },
+   "fk": [
+    {
+     "kolom": "ID_VERSI_KONTRAK",
+     "induk": "VERSI_KONTRAK",
+     "kolom_induk": "ID_VERSI_KONTRAK",
+     "on_delete": "(tidak dinyatakan)"
+    },
+    {
+     "kolom": "ID_BAHAYA",
+     "induk": "BAHAYA",
+     "kolom_induk": "ID_BAHAYA",
+     "on_delete": "(tidak dinyatakan)"
+    }
+   ]
+  },
+  "CATATAN_PERSETUJUAN": {
+   "berkas": "11_CATATAN_PERSETUJUAN.sql",
+   "pk": "ID_CATATAN_PERSETUJUAN",
+   "kolom": {
+    "ID_CATATAN_PERSETUJUAN": "NUMBER(19)",
+    "ID_VERSI_KONTRAK": "NUMBER(19)",
+    "WAKTU_KEPUTUSAN": "DATE",
+    "NAMA_PEMUTUS": "VARCHAR2(1000 CHAR)",
+    "DISETUJUI": "VARCHAR2(40 CHAR)",
+    "ALASAN": "VARCHAR2(1000 CHAR)"
+   },
+   "fk": [
+    {
+     "kolom": "ID_VERSI_KONTRAK",
+     "induk": "VERSI_KONTRAK",
+     "kolom_induk": "ID_VERSI_KONTRAK",
+     "on_delete": "(tidak dinyatakan)"
+    }
+   ]
+  },
+  "DOKUMEN_KONTRAK": {
+   "berkas": "12_DOKUMEN_KONTRAK.sql",
+   "pk": "ID_DOKUMEN_KONTRAK",
+   "kolom": {
+    "ID_DOKUMEN_KONTRAK": "NUMBER(19)",
+    "ID_VERSI_KONTRAK": "NUMBER(19)",
+    "ID_DOKUMEN": "NUMBER(19)",
+    "JENIS_DOKUMEN": "VARCHAR2(40 CHAR)",
+    "TANGGAL_LAMPIR": "DATE"
+   },
+   "fk": [
+    {
+     "kolom": "ID_VERSI_KONTRAK",
+     "induk": "VERSI_KONTRAK",
+     "kolom_induk": "ID_VERSI_KONTRAK",
+     "on_delete": "(tidak dinyatakan)"
+    }
+   ]
+  },
+  "EGNPI": {
+   "berkas": "13_EGNPI.sql",
+   "pk": "ID_EGNPI",
+   "kolom": {
+    "ID_EGNPI": "NUMBER(19)",
+    "ID_VERSI_KONTRAK": "NUMBER(19)",
+    "ID_KELOMPOK_TREATY": "NUMBER(19)",
+    "ID_KELAS_BISNIS": "NUMBER(19)",
+    "NILAI_EGNPI": "NUMBER(38,20)",
+    "KODE_MATA_UANG": "VARCHAR2(1000 CHAR)",
+    "TANGGAL_BERLAKU": "DATE",
+    "PROPORSI": "NUMBER(38,20)",
+    "CATATAN": "VARCHAR2(1000 CHAR)"
+   },
+   "fk": [
+    {
+     "kolom": "ID_VERSI_KONTRAK",
+     "induk": "VERSI_KONTRAK",
+     "kolom_induk": "ID_VERSI_KONTRAK",
+     "on_delete": "(tidak dinyatakan)"
+    },
+    {
+     "kolom": "ID_KELOMPOK_TREATY",
+     "induk": "KELOMPOK_TREATY",
+     "kolom_induk": "ID_KELOMPOK_TREATY",
+     "on_delete": "(tidak dinyatakan)"
+    },
+    {
+     "kolom": "ID_KELAS_BISNIS",
+     "induk": "KELAS_BISNIS",
+     "kolom_induk": "ID_KELAS_BISNIS",
+     "on_delete": "(tidak dinyatakan)"
+    }
+   ]
+  },
+  "JEJAK_PERUBAHAN": {
+   "berkas": "14_JEJAK_PERUBAHAN.sql",
+   "pk": "ID_JEJAK_PERUBAHAN",
+   "kolom": {
+    "ID_JEJAK_PERUBAHAN": "NUMBER(19)",
+    "ID_VERSI_KONTRAK": "NUMBER(19)",
+    "WAKTU_PERUBAHAN": "DATE",
+    "PELAKU": "VARCHAR2(1000 CHAR)",
+    "PERAN_PELAKU": "VARCHAR2(1000 CHAR)",
+    "RUAS_YANG_BERUBAH": "VARCHAR2(1000 CHAR)",
+    "NILAI_SEBELUM": "VARCHAR2(4000 CHAR)",
+    "NILAI_SESUDAH": "VARCHAR2(4000 CHAR)"
+   },
+   "fk": [
+    {
+     "kolom": "ID_VERSI_KONTRAK",
+     "induk": "VERSI_KONTRAK",
+     "kolom_induk": "ID_VERSI_KONTRAK",
+     "on_delete": "(tidak dinyatakan)"
+    }
+   ]
+  },
+  "LAYER": {
+   "berkas": "15_LAYER.sql",
+   "pk": "ID_LAYER",
+   "kolom": {
+    "ID_LAYER": "NUMBER(19)",
+    "ID_VERSI_KONTRAK": "NUMBER(19)",
+    "NOMOR_LAYER": "NUMBER(9)",
+    "BAGIAN_LAYER": "NUMBER(9)",
+    "JENIS_LAYER": "VARCHAR2(40 CHAR)",
+    "JENIS_BAGIAN_LAYER": "VARCHAR2(40 CHAR)",
+    "CAKUPAN": "VARCHAR2(1000 CHAR)",
+    "LIMIT": "NUMBER(38,20)",
+    "KODE_MATA_UANG": "VARCHAR2(1000 CHAR)",
+    "DEDUCTIBLE": "NUMBER(38,20)",
+    "MATA_UANG_DEDUCTIBLE": "VARCHAR2(1000 CHAR)",
+    "PERSEN_PENYESUAIAN": "NUMBER(38,20)",
+    "PERSEN_MINIMUM_DEPOSIT": "NUMBER(38,20)",
+    "PORSI_PEMULIHAN_LIMIT": "NUMBER(38,20)",
+    "TARIF_PREMI_PEMULIHAN": "NUMBER(38,20)",
+    "LIMIT_AGREGAT": "NUMBER(38,20)",
+    "MATA_UANG_LIMIT_AGREGAT": "VARCHAR2(1000 CHAR)",
+    "MDP": "NUMBER(38,20)",
+    "MDP_MINIMUM": "NUMBER(38,20)",
+    "PERSEN_MDP_MINIMUM": "NUMBER(38,20)",
+    "MDP_DIGABUNG": "VARCHAR2(40 CHAR)",
+    "TANPA_HITUNG_PREMI_PEMULIHAN": "VARCHAR2(40 CHAR)",
+    "DEDUCTIBLE_KEDUA": "NUMBER(38,20)",
+    "PERSEN_ROL": "NUMBER(38,20)"
+   },
+   "fk": [
+    {
+     "kolom": "ID_VERSI_KONTRAK",
+     "induk": "VERSI_KONTRAK",
+     "kolom_induk": "ID_VERSI_KONTRAK",
+     "on_delete": "(tidak dinyatakan)"
+    }
+   ]
+  },
+  "MATA_UANG_KONTRAK": {
+   "berkas": "16_MATA_UANG_KONTRAK.sql",
+   "pk": "ID_MATA_UANG_KONTRAK",
+   "kolom": {
+    "ID_MATA_UANG_KONTRAK": "NUMBER(19)",
+    "ID_VERSI_KONTRAK": "NUMBER(19)",
+    "KODE_MATA_UANG": "NUMBER(19)",
+    "KURS": "NUMBER(38,20)",
+    "TANGGAL_MULAI_BERLAKU": "DATE",
+    "TANGGAL_AKHIR_BERLAKU": "DATE"
+   },
+   "fk": [
+    {
+     "kolom": "ID_VERSI_KONTRAK",
+     "induk": "VERSI_KONTRAK",
+     "kolom_induk": "ID_VERSI_KONTRAK",
+     "on_delete": "(tidak dinyatakan)"
+    }
+   ]
+  },
+  "PERIODE_AKUMULASI": {
+   "berkas": "17_PERIODE_AKUMULASI.sql",
+   "pk": "ID_PERIODE_AKUMULASI",
+   "kolom": {
+    "ID_PERIODE_AKUMULASI": "NUMBER(19)",
+    "ID_VERSI_KONTRAK": "NUMBER(19)",
+    "PERIODE": "VARCHAR2(1000 CHAR)",
+    "TANGGAL_LAPOR": "DATE",
+    "HARI_BATAS_PENYERAHAN": "NUMBER(9)",
+    "BATAS_PENYERAHAN": "DATE"
+   },
+   "fk": [
+    {
+     "kolom": "ID_VERSI_KONTRAK",
+     "induk": "VERSI_KONTRAK",
+     "kolom_induk": "ID_VERSI_KONTRAK",
+     "on_delete": "(tidak dinyatakan)"
+    }
+   ]
+  },
+  "PERIODE_PELAPORAN": {
+   "berkas": "18_PERIODE_PELAPORAN.sql",
+   "pk": "ID_PERIODE_PELAPORAN",
+   "kolom": {
+    "ID_PERIODE_PELAPORAN": "NUMBER(19)",
+    "ID_VERSI_KONTRAK": "NUMBER(19)",
+    "PERIODE": "VARCHAR2(1000 CHAR)",
+    "TANGGAL_AWAL": "DATE",
+    "BATAS_PENYERAHAN": "DATE",
+    "BATAS_KONFIRMASI": "DATE",
+    "BATAS_PELUNASAN": "DATE"
+   },
+   "fk": [
+    {
+     "kolom": "ID_VERSI_KONTRAK",
+     "induk": "VERSI_KONTRAK",
+     "kolom_induk": "ID_VERSI_KONTRAK",
+     "on_delete": "(tidak dinyatakan)"
+    }
+   ]
+  },
+  "PERISTIWA_KONTRAK": {
+   "berkas": "19_PERISTIWA_KONTRAK.sql",
+   "pk": "ID_PERISTIWA_KONTRAK",
+   "kolom": {
+    "ID_PERISTIWA_KONTRAK": "NUMBER(19)",
+    "ID_VERSI_KONTRAK": "NUMBER(19)",
+    "WAKTU": "DATE",
+    "NAMA_PELAKU": "VARCHAR2(1000 CHAR)",
+    "JENIS_PERISTIWA": "VARCHAR2(40 CHAR)"
+   },
+   "fk": [
+    {
+     "kolom": "ID_VERSI_KONTRAK",
+     "induk": "VERSI_KONTRAK",
+     "kolom_induk": "ID_VERSI_KONTRAK",
+     "on_delete": "(tidak dinyatakan)"
+    }
+   ]
+  },
+  "PORTOFOLIO": {
+   "berkas": "20_PORTOFOLIO.sql",
+   "pk": "ID_PORTOFOLIO",
+   "kolom": {
+    "ID_PORTOFOLIO": "NUMBER(19)",
+    "ID_VERSI_KONTRAK": "NUMBER(19)",
+    "ARAH_PORTOFOLIO": "VARCHAR2(40 CHAR)",
+    "JENIS_PORTOFOLIO": "VARCHAR2(40 CHAR)",
+    "KETERANGAN": "VARCHAR2(1000 CHAR)"
+   },
+   "fk": [
+    {
+     "kolom": "ID_VERSI_KONTRAK",
+     "induk": "VERSI_KONTRAK",
+     "kolom_induk": "ID_VERSI_KONTRAK",
+     "on_delete": "(tidak dinyatakan)"
+    }
+   ]
+  },
+  "RETENSI_CEDANT": {
+   "berkas": "21_RETENSI_CEDANT.sql",
+   "pk": "ID_RETENSI_CEDANT",
+   "kolom": {
+    "ID_RETENSI_CEDANT": "NUMBER(19)",
+    "ID_VERSI_KONTRAK": "NUMBER(19)",
+    "ID_KELOMPOK_TREATY": "NUMBER(19)",
+    "NILAI_RETENSI": "NUMBER(38,20)",
+    "KODE_MATA_UANG": "VARCHAR2(1000 CHAR)",
+    "CATATAN": "VARCHAR2(1000 CHAR)",
+    "PERSEN_BAGIAN_DIPAKAI": "NUMBER(38,20)"
+   },
+   "fk": [
+    {
+     "kolom": "ID_VERSI_KONTRAK",
+     "induk": "VERSI_KONTRAK",
+     "kolom_induk": "ID_VERSI_KONTRAK",
+     "on_delete": "(tidak dinyatakan)"
+    },
+    {
+     "kolom": "ID_KELOMPOK_TREATY",
+     "induk": "KELOMPOK_TREATY",
+     "kolom_induk": "ID_KELOMPOK_TREATY",
+     "on_delete": "(tidak dinyatakan)"
+    }
+   ]
+  },
+  "SKALA_KOASURANSI": {
+   "berkas": "22_SKALA_KOASURANSI.sql",
+   "pk": "ID_SKALA_KOASURANSI",
+   "kolom": {
+    "ID_SKALA_KOASURANSI": "NUMBER(19)",
+    "ID_VERSI_KONTRAK": "NUMBER(19)",
+    "PERSEN_LIMIT": "NUMBER(38,20)",
+    "PERSEN_BAGIAN": "NUMBER(38,20)"
+   },
+   "fk": [
+    {
+     "kolom": "ID_VERSI_KONTRAK",
+     "induk": "VERSI_KONTRAK",
+     "kolom_induk": "ID_VERSI_KONTRAK",
+     "on_delete": "(tidak dinyatakan)"
+    }
+   ]
+  },
+  "TERMIN": {
+   "berkas": "23_TERMIN.sql",
+   "pk": "ID_TERMIN",
+   "kolom": {
+    "ID_TERMIN": "NUMBER(19)",
+    "ID_VERSI_KONTRAK": "NUMBER(19)",
+    "NOMOR_TERMIN": "NUMBER(9)",
+    "PERSEN_TERMIN": "NUMBER(38,20)",
+    "NILAI_TERMIN": "NUMBER(38,20)",
+    "KODE_MATA_UANG": "VARCHAR2(1000 CHAR)",
+    "TANGGAL_JATUH_TEMPO": "DATE",
+    "TANGGAL_BAYAR": "DATE",
+    "WPC": "VARCHAR2(1000 CHAR)"
+   },
+   "fk": [
+    {
+     "kolom": "ID_VERSI_KONTRAK",
+     "induk": "VERSI_KONTRAK",
+     "kolom_induk": "ID_VERSI_KONTRAK",
+     "on_delete": "(tidak dinyatakan)"
+    }
+   ]
+  },
+  "BAGIAN": {
+   "berkas": "24_BAGIAN.sql",
+   "pk": "ID_BAGIAN",
+   "kolom": {
+    "ID_BAGIAN": "NUMBER(19)",
+    "ID_LAYER": "NUMBER(19)",
+    "CAKUPAN": "VARCHAR2(1000 CHAR)",
+    "PERSEN_BAGIAN_NURE": "NUMBER(38,20)",
+    "PREMI_BRUTO": "NUMBER(38,20)",
+    "PREMI_BRUTO_MINIMUM": "NUMBER(38,20)",
+    "ID_SUSUNAN_RETRO": "NUMBER(19)",
+    "PERSEN_BAGIAN_DIPAKAI": "NUMBER(38,20)"
+   },
+   "fk": [
+    {
+     "kolom": "ID_LAYER",
+     "induk": "LAYER",
+     "kolom_induk": "ID_LAYER",
+     "on_delete": "(tidak dinyatakan)"
+    }
+   ]
+  },
+  "DETAIL_PROPORSIONAL": {
+   "berkas": "25_DETAIL_PROPORSIONAL.sql",
+   "pk": "ID_DETAIL_PROPORSIONAL",
+   "kolom": {
+    "ID_DETAIL_PROPORSIONAL": "NUMBER(19)",
+    "ID_LAYER": "NUMBER(19)",
+    "ID_KELOMPOK_TREATY": "NUMBER(19)",
+    "JENIS_TREATY": "VARCHAR2(40 CHAR)",
+    "PERSEN_QUOTA_SHARE": "NUMBER(38,20)",
+    "JUMLAH_LINES_SURPLUS": "NUMBER(9)",
+    "PERSEN_KOMISI_KOTOR": "NUMBER(38,20)",
+    "PERSEN_KOMISI_BERSIH": "NUMBER(38,20)",
+    "PERSEN_CADANGAN_PREMI": "NUMBER(38,20)",
+    "CADANGAN_PREMI": "NUMBER(38,20)",
+    "PERSEN_KAPASITAS_SURPLUS": "NUMBER(38,20)",
+    "ID_SUSUNAN_RETRO": "NUMBER(19)"
+   },
+   "fk": [
+    {
+     "kolom": "ID_LAYER",
+     "induk": "LAYER",
+     "kolom_induk": "ID_LAYER",
+     "on_delete": "(tidak dinyatakan)"
+    },
+    {
+     "kolom": "ID_KELOMPOK_TREATY",
+     "induk": "KELOMPOK_TREATY",
+     "kolom_induk": "ID_KELOMPOK_TREATY",
+     "on_delete": "(tidak dinyatakan)"
+    }
+   ]
+  },
+  "NILAI_MDP": {
+   "berkas": "26_NILAI_MDP.sql",
+   "pk": "ID_NILAI_MDP",
+   "kolom": {
+    "ID_NILAI_MDP": "NUMBER(19)",
+    "ID_LAYER": "NUMBER(19)",
+    "KODE_MATA_UANG": "VARCHAR2(1000 CHAR)",
+    "NILAI": "NUMBER(38,20)"
+   },
+   "fk": [
+    {
+     "kolom": "ID_LAYER",
+     "induk": "LAYER",
+     "kolom_induk": "ID_LAYER",
+     "on_delete": "(tidak dinyatakan)"
+    }
+   ]
+  },
+  "NILAI_MDP_MINIMUM": {
+   "berkas": "27_NILAI_MDP_MINIMUM.sql",
+   "pk": "ID_NILAI_MDP_MINIMUM",
+   "kolom": {
+    "ID_NILAI_MDP_MINIMUM": "NUMBER(19)",
+    "ID_LAYER": "NUMBER(19)",
+    "KODE_MATA_UANG": "VARCHAR2(1000 CHAR)",
+    "NILAI": "NUMBER(38,20)"
+   },
+   "fk": [
+    {
+     "kolom": "ID_LAYER",
+     "induk": "LAYER",
+     "kolom_induk": "ID_LAYER",
+     "on_delete": "(tidak dinyatakan)"
+    }
+   ]
+  },
+  "PEMULIHAN_LIMIT": {
+   "berkas": "28_PEMULIHAN_LIMIT.sql",
+   "pk": "ID_PEMULIHAN_LIMIT",
+   "kolom": {
+    "ID_PEMULIHAN_LIMIT": "NUMBER(19)",
+    "ID_LAYER": "NUMBER(19)",
+    "NOMOR_URUT_PEMULIHAN": "NUMBER(9)",
+    "PERSEN_PEMULIHAN": "NUMBER(38,20)",
+    "PERSEN_TAMBAHAN": "NUMBER(38,20)",
+    "CATATAN": "VARCHAR2(1000 CHAR)"
+   },
+   "fk": [
+    {
+     "kolom": "ID_LAYER",
+     "induk": "LAYER",
+     "kolom_induk": "ID_LAYER",
+     "on_delete": "(tidak dinyatakan)"
+    }
+   ]
+  },
+  "NILAI_CADANGAN_PREMI": {
+   "berkas": "29_NILAI_CADANGAN_PREMI.sql",
+   "pk": "ID_NILAI_CADANGAN_PREMI",
+   "kolom": {
+    "ID_NILAI_CADANGAN_PREMI": "NUMBER(19)",
+    "ID_DETAIL_PROPORSIONAL": "NUMBER(19)",
+    "KODE_MATA_UANG": "VARCHAR2(1000 CHAR)",
+    "NILAI": "NUMBER(38,20)"
+   },
+   "fk": [
+    {
+     "kolom": "ID_DETAIL_PROPORSIONAL",
+     "induk": "DETAIL_PROPORSIONAL",
+     "kolom_induk": "ID_DETAIL_PROPORSIONAL",
+     "on_delete": "(tidak dinyatakan)"
+    }
+   ]
+  },
+  "NILAI_PREMI_BRUTO": {
+   "berkas": "30_NILAI_PREMI_BRUTO.sql",
+   "pk": "ID_NILAI_PREMI_BRUTO",
+   "kolom": {
+    "ID_NILAI_PREMI_BRUTO": "NUMBER(19)",
+    "ID_BAGIAN": "NUMBER(19)",
+    "KODE_MATA_UANG": "VARCHAR2(1000 CHAR)",
+    "NILAI": "NUMBER(38,20)"
+   },
+   "fk": [
+    {
+     "kolom": "ID_BAGIAN",
+     "induk": "BAGIAN",
+     "kolom_induk": "ID_BAGIAN",
+     "on_delete": "(tidak dinyatakan)"
+    }
+   ]
+  },
+  "NILAI_PREMI_BRUTO_MINIMUM": {
+   "berkas": "31_NILAI_PREMI_BRUTO_MINIMUM.sql",
+   "pk": "ID_NILAI_PREMI_BRUTO_MINIMUM",
+   "kolom": {
+    "ID_NILAI_PREMI_BRUTO_MINIMUM": "NUMBER(19)",
+    "ID_BAGIAN": "NUMBER(19)",
+    "KODE_MATA_UANG": "VARCHAR2(1000 CHAR)",
+    "NILAI": "NUMBER(38,20)"
+   },
+   "fk": [
+    {
+     "kolom": "ID_BAGIAN",
+     "induk": "BAGIAN",
+     "kolom_induk": "ID_BAGIAN",
+     "on_delete": "(tidak dinyatakan)"
+    }
+   ]
+  },
+  "PENYEBARAN": {
+   "berkas": "32_PENYEBARAN.sql",
+   "pk": "ID_PENYEBARAN",
+   "kolom": {
+    "ID_PENYEBARAN": "NUMBER(19)",
+    "ID_BAGIAN": "NUMBER(19)",
+    "ID_DETAIL_PROPORSIONAL": "NUMBER(19)",
+    "ID_JENIS_REASURANSI": "NUMBER(19)",
+    "ID_JENIS_REASURANSI_INDUK": "NUMBER(19)",
+    "PERSEN_PENYEBARAN": "NUMBER(38,20)"
+   },
+   "fk": [
+    {
+     "kolom": "ID_BAGIAN",
+     "induk": "BAGIAN",
+     "kolom_induk": "ID_BAGIAN",
+     "on_delete": "(tidak dinyatakan)"
+    },
+    {
+     "kolom": "ID_DETAIL_PROPORSIONAL",
+     "induk": "DETAIL_PROPORSIONAL",
+     "kolom_induk": "ID_DETAIL_PROPORSIONAL",
+     "on_delete": "(tidak dinyatakan)"
+    },
+    {
+     "kolom": "ID_JENIS_REASURANSI",
+     "induk": "JENIS_REASURANSI",
+     "kolom_induk": "ID_JENIS_REASURANSI",
+     "on_delete": "(tidak dinyatakan)"
+    }
+   ]
+  },
+  "POTONGAN": {
+   "berkas": "33_POTONGAN.sql",
+   "pk": "ID_POTONGAN",
+   "kolom": {
+    "ID_POTONGAN": "NUMBER(19)",
+    "ID_BAGIAN": "NUMBER(19)",
+    "ID_DETAIL_PROPORSIONAL": "NUMBER(19)",
+    "ID_JENIS_POTONGAN": "NUMBER(19)",
+    "DASAR_PERHITUNGAN": "VARCHAR2(40 CHAR)",
+    "PERSEN_POTONGAN": "NUMBER(38,20)"
+   },
+   "fk": [
+    {
+     "kolom": "ID_BAGIAN",
+     "induk": "BAGIAN",
+     "kolom_induk": "ID_BAGIAN",
+     "on_delete": "(tidak dinyatakan)"
+    },
+    {
+     "kolom": "ID_DETAIL_PROPORSIONAL",
+     "induk": "DETAIL_PROPORSIONAL",
+     "kolom_induk": "ID_DETAIL_PROPORSIONAL",
+     "on_delete": "(tidak dinyatakan)"
+    },
+    {
+     "kolom": "ID_JENIS_POTONGAN",
+     "induk": "JENIS_POTONGAN",
+     "kolom_induk": "ID_JENIS_POTONGAN",
+     "on_delete": "(tidak dinyatakan)"
+    }
+   ]
+  },
+  "RINCIAN_PENYEBARAN": {
+   "berkas": "34_RINCIAN_PENYEBARAN.sql",
+   "pk": "ID_RINCIAN_PENYEBARAN",
+   "kolom": {
+    "ID_RINCIAN_PENYEBARAN": "NUMBER(19)",
+    "ID_PENYEBARAN": "NUMBER(19)",
+    "ID_JENIS_REASURANSI": "NUMBER(19)",
+    "PERSEN_RINCIAN": "NUMBER(38,20)"
+   },
+   "fk": [
+    {
+     "kolom": "ID_PENYEBARAN",
+     "induk": "PENYEBARAN",
+     "kolom_induk": "ID_PENYEBARAN",
+     "on_delete": "(tidak dinyatakan)"
+    },
+    {
+     "kolom": "ID_JENIS_REASURANSI",
+     "induk": "JENIS_REASURANSI",
+     "kolom_induk": "ID_JENIS_REASURANSI",
+     "on_delete": "(tidak dinyatakan)"
+    }
+   ]
+  },
+  "NILAI_PENYEBARAN": {
+   "berkas": "35_NILAI_PENYEBARAN.sql",
+   "pk": "ID_NILAI_PENYEBARAN",
+   "kolom": {
+    "ID_NILAI_PENYEBARAN": "NUMBER(19)",
+    "ID_RINCIAN_PENYEBARAN": "NUMBER(19)",
+    "NILAI": "NUMBER(38,20)",
+    "KODE_MATA_UANG": "VARCHAR2(1000 CHAR)"
+   },
+   "fk": [
+    {
+     "kolom": "ID_RINCIAN_PENYEBARAN",
+     "induk": "RINCIAN_PENYEBARAN",
+     "kolom_induk": "ID_RINCIAN_PENYEBARAN",
+     "on_delete": "(tidak dinyatakan)"
+    }
+   ]
+  }
+ },
+ "kamus_kolom": {
+  "KONTRAK": [
+   "ID_KONTRAK",
+   "NOMOR_KONTRAK_WARISAN",
+   "ID_KONTRAK_DISALIN_DARI",
+   "ID_CEDANT",
+   "ID_ASAL_BISNIS",
+   "SIFAT_PROPORSI",
+   "TANGGAL_MULAI",
+   "TANGGAL_BERAKHIR"
+  ],
+  "VERSI_KONTRAK": [
+   "ID_VERSI_KONTRAK",
+   "ID_KONTRAK",
+   "NOMOR_URUT_VERSI",
+   "KEADAAN_SIKLUS_HIDUP",
+   "KEADAAN_WARISAN_ASLI",
+   "JENIS_ADDENDUM",
+   "TANGGAL_BERLAKU_ADDENDUM",
+   "NAMA_KONTRAK",
+   "LINGKUP_WILAYAH",
+   "KELAS_BISNIS_KONTRAK",
+   "KODE_MATA_UANG_KONTRAK",
+   "ID_REASURADUR_PEMIMPIN",
+   "ID_KETUA_TREATY",
+   "PERSEN_BAGIAN_NURE",
+   "BAGIAN_NURE_SERAGAM",
+   "PERSEN_BAGIAN_NURE_DIPOTONG",
+   "PERSEN_BROKERAGE",
+   "PERSEN_BAGIAN_FAKULTATIF",
+   "PERSEN_BROKERAGE_FAKULTATIF",
+   "PENGECUALIAN",
+   "KETENTUAN_KHUSUS",
+   "KETERANGAN",
+   "CATATAN",
+   "CATATAN_BORDEREAUX",
+   "MEMAKAI_BORDEREAUX",
+   "CARA_PEMBUKUAN",
+   "CARA_PEMBUKUAN_XOL",
+   "PERIODE_PELAPORAN_KONTRAK",
+   "SELANG_PELAPORAN",
+   "TANGGAL_MULAI_PELAPORAN",
+   "TANGGAL_AKHIR_PELAPORAN",
+   "HARI_BATAS_PENYERAHAN",
+   "HARI_BATAS_KONFIRMASI",
+   "HARI_BATAS_PELUNASAN",
+   "HARI_PENGINGAT",
+   "PERIODE_AKUMULASI_KONTRAK",
+   "JUMLAH_TERMIN",
+   "MEMAKAI_PRORATA",
+   "BATAS_MAKSIMUM_KELOMPOK",
+   "MATA_UANG_BATAS_KELOMPOK",
+   "BATAS_MAKSIMUM_NON_KELOMPOK",
+   "MATA_UANG_BATAS_NON_KELOMPOK",
+   "BATAS_PILIHAN",
+   "MATA_UANG_BATAS_PILIHAN",
+   "RETRO_BERGANDA",
+   "ID_DAFTAR_RETRO",
+   "SIFAT_MATERIAL_ADDENDUM",
+   "ID_DOKUMEN_ADDENDUM"
+  ],
+  "LAYER": [
+   "ID_LAYER",
+   "ID_VERSI_KONTRAK",
+   "NOMOR_LAYER",
+   "BAGIAN_LAYER",
+   "JENIS_LAYER",
+   "JENIS_BAGIAN_LAYER",
+   "CAKUPAN",
+   "LIMIT",
+   "KODE_MATA_UANG",
+   "DEDUCTIBLE",
+   "MATA_UANG_DEDUCTIBLE",
+   "PERSEN_PENYESUAIAN",
+   "PERSEN_MINIMUM_DEPOSIT",
+   "PORSI_PEMULIHAN_LIMIT",
+   "TARIF_PREMI_PEMULIHAN",
+   "LIMIT_AGREGAT",
+   "MATA_UANG_LIMIT_AGREGAT",
+   "MDP",
+   "MDP_MINIMUM",
+   "PERSEN_MDP_MINIMUM",
+   "MDP_DIGABUNG",
+   "TANPA_HITUNG_PREMI_PEMULIHAN",
+   "DEDUCTIBLE_KEDUA",
+   "PERSEN_ROL"
+  ],
+  "DETAIL_PROPORSIONAL": [
+   "ID_DETAIL_PROPORSIONAL",
+   "ID_LAYER",
+   "ID_KELOMPOK_TREATY",
+   "JENIS_TREATY",
+   "PERSEN_QUOTA_SHARE",
+   "JUMLAH_LINES_SURPLUS",
+   "PERSEN_KOMISI_KOTOR",
+   "PERSEN_KOMISI_BERSIH",
+   "PERSEN_CADANGAN_PREMI",
+   "CADANGAN_PREMI",
+   "PERSEN_KAPASITAS_SURPLUS",
+   "ID_SUSUNAN_RETRO"
+  ],
+  "BAGIAN": [
+   "ID_BAGIAN",
+   "ID_LAYER",
+   "CAKUPAN",
+   "PERSEN_BAGIAN_NURE",
+   "PREMI_BRUTO",
+   "PREMI_BRUTO_MINIMUM",
+   "ID_SUSUNAN_RETRO",
+   "PERSEN_BAGIAN_DIPAKAI"
+  ],
+  "PENYEBARAN": [
+   "ID_PENYEBARAN",
+   "ID_BAGIAN",
+   "ID_DETAIL_PROPORSIONAL",
+   "ID_JENIS_REASURANSI",
+   "ID_JENIS_REASURANSI_INDUK",
+   "PERSEN_PENYEBARAN"
+  ],
+  "RINCIAN_PENYEBARAN": [
+   "ID_RINCIAN_PENYEBARAN",
+   "ID_PENYEBARAN",
+   "ID_JENIS_REASURANSI",
+   "PERSEN_RINCIAN"
+  ],
+  "NILAI_PENYEBARAN": [
+   "ID_NILAI_PENYEBARAN",
+   "ID_RINCIAN_PENYEBARAN",
+   "NILAI",
+   "KODE_MATA_UANG"
+  ],
+  "POTONGAN": [
+   "ID_POTONGAN",
+   "ID_BAGIAN",
+   "ID_DETAIL_PROPORSIONAL",
+   "ID_JENIS_POTONGAN",
+   "DASAR_PERHITUNGAN",
+   "PERSEN_POTONGAN"
+  ],
+  "MATA_UANG_KONTRAK": [
+   "ID_MATA_UANG_KONTRAK",
+   "ID_VERSI_KONTRAK",
+   "KODE_MATA_UANG",
+   "KURS",
+   "TANGGAL_MULAI_BERLAKU",
+   "TANGGAL_AKHIR_BERLAKU"
+  ],
+  "RETENSI_CEDANT": [
+   "ID_RETENSI_CEDANT",
+   "ID_VERSI_KONTRAK",
+   "ID_KELOMPOK_TREATY",
+   "NILAI_RETENSI",
+   "KODE_MATA_UANG",
+   "CATATAN",
+   "PERSEN_BAGIAN_DIPAKAI"
+  ],
+  "EGNPI": [
+   "ID_EGNPI",
+   "ID_VERSI_KONTRAK",
+   "ID_KELOMPOK_TREATY",
+   "ID_KELAS_BISNIS",
+   "NILAI_EGNPI",
+   "KODE_MATA_UANG",
+   "TANGGAL_BERLAKU",
+   "PROPORSI",
+   "CATATAN"
+  ],
+  "PORTOFOLIO": [
+   "ID_PORTOFOLIO",
+   "ID_VERSI_KONTRAK",
+   "ARAH_PORTOFOLIO",
+   "JENIS_PORTOFOLIO",
+   "KETERANGAN"
+  ],
+  "PERIODE_PELAPORAN": [
+   "ID_PERIODE_PELAPORAN",
+   "ID_VERSI_KONTRAK",
+   "PERIODE",
+   "TANGGAL_AWAL",
+   "BATAS_PENYERAHAN",
+   "BATAS_KONFIRMASI",
+   "BATAS_PELUNASAN"
+  ],
+  "PERIODE_AKUMULASI": [
+   "ID_PERIODE_AKUMULASI",
+   "ID_VERSI_KONTRAK",
+   "PERIODE",
+   "TANGGAL_LAPOR",
+   "HARI_BATAS_PENYERAHAN",
+   "BATAS_PENYERAHAN"
+  ],
+  "TERMIN": [
+   "ID_TERMIN",
+   "ID_VERSI_KONTRAK",
+   "NOMOR_TERMIN",
+   "PERSEN_TERMIN",
+   "NILAI_TERMIN",
+   "KODE_MATA_UANG",
+   "TANGGAL_JATUH_TEMPO",
+   "TANGGAL_BAYAR",
+   "WPC"
+  ],
+  "SKALA_KOASURANSI": [
+   "ID_SKALA_KOASURANSI",
+   "ID_VERSI_KONTRAK",
+   "PERSEN_LIMIT",
+   "PERSEN_BAGIAN"
+  ],
+  "BATAS_PER_BAHAYA": [
+   "ID_BATAS_PER_BAHAYA",
+   "ID_VERSI_KONTRAK",
+   "ID_BAHAYA",
+   "NILAI_BATAS",
+   "KODE_MATA_UANG",
+   "PERSEN_BAGIAN_DIPAKAI"
+  ],
+  "DOKUMEN_KONTRAK": [
+   "ID_DOKUMEN_KONTRAK",
+   "ID_VERSI_KONTRAK",
+   "ID_DOKUMEN",
+   "JENIS_DOKUMEN",
+   "TANGGAL_LAMPIR"
+  ],
+  "DOKUMEN_ADDENDUM": [
+   "ID_DOKUMEN_ADDENDUM",
+   "NOMOR_DOKUMEN",
+   "TANGGAL_BERLAKU"
+  ],
+  "CATATAN_PERSETUJUAN": [
+   "ID_CATATAN_PERSETUJUAN",
+   "ID_VERSI_KONTRAK",
+   "WAKTU_KEPUTUSAN",
+   "NAMA_PEMUTUS",
+   "DISETUJUI",
+   "ALASAN"
+  ],
+  "JEJAK_PERUBAHAN": [
+   "ID_JEJAK_PERUBAHAN",
+   "ID_VERSI_KONTRAK",
+   "WAKTU_PERUBAHAN",
+   "PELAKU",
+   "PERAN_PELAKU",
+   "RUAS_YANG_BERUBAH",
+   "NILAI_SEBELUM",
+   "NILAI_SESUDAH"
+  ],
+  "PERISTIWA_KONTRAK": [
+   "ID_PERISTIWA_KONTRAK",
+   "ID_VERSI_KONTRAK",
+   "WAKTU",
+   "NAMA_PELAKU",
+   "JENIS_PERISTIWA"
+  ],
+  "PEMULIHAN_LIMIT": [
+   "ID_PEMULIHAN_LIMIT",
+   "ID_LAYER",
+   "NOMOR_URUT_PEMULIHAN",
+   "PERSEN_PEMULIHAN",
+   "PERSEN_TAMBAHAN",
+   "CATATAN"
+  ],
+  "MATA_UANG": [
+   "ID_MATA_UANG",
+   "KODE",
+   "NAMA",
+   "AKTIF"
+  ],
+  "JENIS_POTONGAN": [
+   "ID_JENIS_POTONGAN",
+   "KODE",
+   "NAMA",
+   "AKTIF"
+  ],
+  "JENIS_REASURANSI": [
+   "ID_JENIS_REASURANSI",
+   "KODE",
+   "NAMA",
+   "AKTIF",
+   "ID_INDUK"
+  ],
+  "BAHAYA": [
+   "ID_BAHAYA",
+   "KODE",
+   "NAMA",
+   "AKTIF"
+  ],
+  "KELOMPOK_TREATY": [
+   "ID_KELOMPOK_TREATY",
+   "KODE",
+   "NAMA",
+   "AKTIF"
+  ],
+  "KELAS_BISNIS": [
+   "ID_KELAS_BISNIS",
+   "KODE",
+   "NAMA",
+   "AKTIF"
+  ],
+  "NILAI_PREMI_BRUTO": [
+   "ID_NILAI_PREMI_BRUTO",
+   "ID_BAGIAN",
+   "KODE_MATA_UANG",
+   "NILAI"
+  ],
+  "NILAI_PREMI_BRUTO_MINIMUM": [
+   "ID_NILAI_PREMI_BRUTO_MINIMUM",
+   "ID_BAGIAN",
+   "KODE_MATA_UANG",
+   "NILAI"
+  ],
+  "NILAI_CADANGAN_PREMI": [
+   "ID_NILAI_CADANGAN_PREMI",
+   "ID_DETAIL_PROPORSIONAL",
+   "KODE_MATA_UANG",
+   "NILAI"
+  ],
+  "NILAI_MDP": [
+   "ID_NILAI_MDP",
+   "ID_LAYER",
+   "KODE_MATA_UANG",
+   "NILAI"
+  ],
+  "NILAI_MDP_MINIMUM": [
+   "ID_NILAI_MDP_MINIMUM",
+   "ID_LAYER",
+   "KODE_MATA_UANG",
+   "NILAI"
+  ]
+ },
+ "adj": [
+  "BESARAN_DAPAT_DISESUAIKAN",
+  "NILAI_SELISIH"
+ ],
+ "luar": {
+  "RETRO_KELUAR": "GEL-2 -- arah keluar, SPEC-MODEL-DATA sec 2.3",
+  "PENCAPAIAN": "GEL-3 -- dimodelkan, tidak dibangun sekarang"
+ },
+ "dicabut": {
+  "NILAI_SELISIH": "embargo sec 11.3 DICABUT -- Adjustment sudah to-spec dan to-ticket; tiket 06 PEMBUAT PERTAMA",
+  "BESARAN_DAPAT_DISESUAIKAN": "embargo sec 11.3 DICABUT -- tabel acuan G3, dirujuk NILAI_SELISIH.ID_BESARAN"
+ },
+ "selisih": {
+  "kamus_tanpa_ddl": [],
+  "ddl_tanpa_kamus": [],
+  "kamus_tanpa_struktur": [],
+  "struktur_tanpa_kamus": [
+   "BESARAN_DAPAT_DISESUAIKAN",
+   "NILAI_SELISIH"
+  ]
+ },
+ "fk": [
+  {
+   "kolom": "ID_KONTRAK",
+   "induk": "KONTRAK",
+   "kolom_induk": "ID_KONTRAK",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "VERSI_KONTRAK",
+   "berkas": "09_VERSI_KONTRAK.sql"
+  },
+  {
+   "kolom": "ID_DOKUMEN_ADDENDUM",
+   "induk": "DOKUMEN_ADDENDUM",
+   "kolom_induk": "ID_DOKUMEN_ADDENDUM",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "VERSI_KONTRAK",
+   "berkas": "09_VERSI_KONTRAK.sql"
+  },
+  {
+   "kolom": "ID_VERSI_KONTRAK",
+   "induk": "VERSI_KONTRAK",
+   "kolom_induk": "ID_VERSI_KONTRAK",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "BATAS_PER_BAHAYA",
+   "berkas": "10_BATAS_PER_BAHAYA.sql"
+  },
+  {
+   "kolom": "ID_BAHAYA",
+   "induk": "BAHAYA",
+   "kolom_induk": "ID_BAHAYA",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "BATAS_PER_BAHAYA",
+   "berkas": "10_BATAS_PER_BAHAYA.sql"
+  },
+  {
+   "kolom": "ID_VERSI_KONTRAK",
+   "induk": "VERSI_KONTRAK",
+   "kolom_induk": "ID_VERSI_KONTRAK",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "CATATAN_PERSETUJUAN",
+   "berkas": "11_CATATAN_PERSETUJUAN.sql"
+  },
+  {
+   "kolom": "ID_VERSI_KONTRAK",
+   "induk": "VERSI_KONTRAK",
+   "kolom_induk": "ID_VERSI_KONTRAK",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "DOKUMEN_KONTRAK",
+   "berkas": "12_DOKUMEN_KONTRAK.sql"
+  },
+  {
+   "kolom": "ID_VERSI_KONTRAK",
+   "induk": "VERSI_KONTRAK",
+   "kolom_induk": "ID_VERSI_KONTRAK",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "EGNPI",
+   "berkas": "13_EGNPI.sql"
+  },
+  {
+   "kolom": "ID_KELOMPOK_TREATY",
+   "induk": "KELOMPOK_TREATY",
+   "kolom_induk": "ID_KELOMPOK_TREATY",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "EGNPI",
+   "berkas": "13_EGNPI.sql"
+  },
+  {
+   "kolom": "ID_KELAS_BISNIS",
+   "induk": "KELAS_BISNIS",
+   "kolom_induk": "ID_KELAS_BISNIS",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "EGNPI",
+   "berkas": "13_EGNPI.sql"
+  },
+  {
+   "kolom": "ID_VERSI_KONTRAK",
+   "induk": "VERSI_KONTRAK",
+   "kolom_induk": "ID_VERSI_KONTRAK",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "JEJAK_PERUBAHAN",
+   "berkas": "14_JEJAK_PERUBAHAN.sql"
+  },
+  {
+   "kolom": "ID_VERSI_KONTRAK",
+   "induk": "VERSI_KONTRAK",
+   "kolom_induk": "ID_VERSI_KONTRAK",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "LAYER",
+   "berkas": "15_LAYER.sql"
+  },
+  {
+   "kolom": "ID_VERSI_KONTRAK",
+   "induk": "VERSI_KONTRAK",
+   "kolom_induk": "ID_VERSI_KONTRAK",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "MATA_UANG_KONTRAK",
+   "berkas": "16_MATA_UANG_KONTRAK.sql"
+  },
+  {
+   "kolom": "ID_VERSI_KONTRAK",
+   "induk": "VERSI_KONTRAK",
+   "kolom_induk": "ID_VERSI_KONTRAK",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "PERIODE_AKUMULASI",
+   "berkas": "17_PERIODE_AKUMULASI.sql"
+  },
+  {
+   "kolom": "ID_VERSI_KONTRAK",
+   "induk": "VERSI_KONTRAK",
+   "kolom_induk": "ID_VERSI_KONTRAK",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "PERIODE_PELAPORAN",
+   "berkas": "18_PERIODE_PELAPORAN.sql"
+  },
+  {
+   "kolom": "ID_VERSI_KONTRAK",
+   "induk": "VERSI_KONTRAK",
+   "kolom_induk": "ID_VERSI_KONTRAK",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "PERISTIWA_KONTRAK",
+   "berkas": "19_PERISTIWA_KONTRAK.sql"
+  },
+  {
+   "kolom": "ID_VERSI_KONTRAK",
+   "induk": "VERSI_KONTRAK",
+   "kolom_induk": "ID_VERSI_KONTRAK",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "PORTOFOLIO",
+   "berkas": "20_PORTOFOLIO.sql"
+  },
+  {
+   "kolom": "ID_VERSI_KONTRAK",
+   "induk": "VERSI_KONTRAK",
+   "kolom_induk": "ID_VERSI_KONTRAK",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "RETENSI_CEDANT",
+   "berkas": "21_RETENSI_CEDANT.sql"
+  },
+  {
+   "kolom": "ID_KELOMPOK_TREATY",
+   "induk": "KELOMPOK_TREATY",
+   "kolom_induk": "ID_KELOMPOK_TREATY",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "RETENSI_CEDANT",
+   "berkas": "21_RETENSI_CEDANT.sql"
+  },
+  {
+   "kolom": "ID_VERSI_KONTRAK",
+   "induk": "VERSI_KONTRAK",
+   "kolom_induk": "ID_VERSI_KONTRAK",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "SKALA_KOASURANSI",
+   "berkas": "22_SKALA_KOASURANSI.sql"
+  },
+  {
+   "kolom": "ID_VERSI_KONTRAK",
+   "induk": "VERSI_KONTRAK",
+   "kolom_induk": "ID_VERSI_KONTRAK",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "TERMIN",
+   "berkas": "23_TERMIN.sql"
+  },
+  {
+   "kolom": "ID_LAYER",
+   "induk": "LAYER",
+   "kolom_induk": "ID_LAYER",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "BAGIAN",
+   "berkas": "24_BAGIAN.sql"
+  },
+  {
+   "kolom": "ID_LAYER",
+   "induk": "LAYER",
+   "kolom_induk": "ID_LAYER",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "DETAIL_PROPORSIONAL",
+   "berkas": "25_DETAIL_PROPORSIONAL.sql"
+  },
+  {
+   "kolom": "ID_KELOMPOK_TREATY",
+   "induk": "KELOMPOK_TREATY",
+   "kolom_induk": "ID_KELOMPOK_TREATY",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "DETAIL_PROPORSIONAL",
+   "berkas": "25_DETAIL_PROPORSIONAL.sql"
+  },
+  {
+   "kolom": "ID_LAYER",
+   "induk": "LAYER",
+   "kolom_induk": "ID_LAYER",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "NILAI_MDP",
+   "berkas": "26_NILAI_MDP.sql"
+  },
+  {
+   "kolom": "ID_LAYER",
+   "induk": "LAYER",
+   "kolom_induk": "ID_LAYER",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "NILAI_MDP_MINIMUM",
+   "berkas": "27_NILAI_MDP_MINIMUM.sql"
+  },
+  {
+   "kolom": "ID_LAYER",
+   "induk": "LAYER",
+   "kolom_induk": "ID_LAYER",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "PEMULIHAN_LIMIT",
+   "berkas": "28_PEMULIHAN_LIMIT.sql"
+  },
+  {
+   "kolom": "ID_DETAIL_PROPORSIONAL",
+   "induk": "DETAIL_PROPORSIONAL",
+   "kolom_induk": "ID_DETAIL_PROPORSIONAL",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "NILAI_CADANGAN_PREMI",
+   "berkas": "29_NILAI_CADANGAN_PREMI.sql"
+  },
+  {
+   "kolom": "ID_BAGIAN",
+   "induk": "BAGIAN",
+   "kolom_induk": "ID_BAGIAN",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "NILAI_PREMI_BRUTO",
+   "berkas": "30_NILAI_PREMI_BRUTO.sql"
+  },
+  {
+   "kolom": "ID_BAGIAN",
+   "induk": "BAGIAN",
+   "kolom_induk": "ID_BAGIAN",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "NILAI_PREMI_BRUTO_MINIMUM",
+   "berkas": "31_NILAI_PREMI_BRUTO_MINIMUM.sql"
+  },
+  {
+   "kolom": "ID_BAGIAN",
+   "induk": "BAGIAN",
+   "kolom_induk": "ID_BAGIAN",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "PENYEBARAN",
+   "berkas": "32_PENYEBARAN.sql"
+  },
+  {
+   "kolom": "ID_DETAIL_PROPORSIONAL",
+   "induk": "DETAIL_PROPORSIONAL",
+   "kolom_induk": "ID_DETAIL_PROPORSIONAL",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "PENYEBARAN",
+   "berkas": "32_PENYEBARAN.sql"
+  },
+  {
+   "kolom": "ID_JENIS_REASURANSI",
+   "induk": "JENIS_REASURANSI",
+   "kolom_induk": "ID_JENIS_REASURANSI",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "PENYEBARAN",
+   "berkas": "32_PENYEBARAN.sql"
+  },
+  {
+   "kolom": "ID_BAGIAN",
+   "induk": "BAGIAN",
+   "kolom_induk": "ID_BAGIAN",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "POTONGAN",
+   "berkas": "33_POTONGAN.sql"
+  },
+  {
+   "kolom": "ID_DETAIL_PROPORSIONAL",
+   "induk": "DETAIL_PROPORSIONAL",
+   "kolom_induk": "ID_DETAIL_PROPORSIONAL",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "POTONGAN",
+   "berkas": "33_POTONGAN.sql"
+  },
+  {
+   "kolom": "ID_JENIS_POTONGAN",
+   "induk": "JENIS_POTONGAN",
+   "kolom_induk": "ID_JENIS_POTONGAN",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "POTONGAN",
+   "berkas": "33_POTONGAN.sql"
+  },
+  {
+   "kolom": "ID_PENYEBARAN",
+   "induk": "PENYEBARAN",
+   "kolom_induk": "ID_PENYEBARAN",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "RINCIAN_PENYEBARAN",
+   "berkas": "34_RINCIAN_PENYEBARAN.sql"
+  },
+  {
+   "kolom": "ID_JENIS_REASURANSI",
+   "induk": "JENIS_REASURANSI",
+   "kolom_induk": "ID_JENIS_REASURANSI",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "RINCIAN_PENYEBARAN",
+   "berkas": "34_RINCIAN_PENYEBARAN.sql"
+  },
+  {
+   "kolom": "ID_RINCIAN_PENYEBARAN",
+   "induk": "RINCIAN_PENYEBARAN",
+   "kolom_induk": "ID_RINCIAN_PENYEBARAN",
+   "on_delete": "(tidak dinyatakan)",
+   "anak": "NILAI_PENYEBARAN",
+   "berkas": "35_NILAI_PENYEBARAN.sql"
+  }
+ ],
+ "fk_yatim": [],
+ "tipe_beda": [],
+ "peta_basi": [
+  [
+   "T_TREATY_LIMIT_COB",
+   "KELAS_BISNIS_LAYER"
+  ],
+  [
+   "T_TREATY_LIMIT_AMOUNT",
+   "NILAI_LAYER"
+  ],
+  [
+   "T_TREATY_LIMIT_MEASURE",
+   "BESARAN_LAYER"
+  ],
+  [
+   "T_TREATY_LIMIT_GROUP",
+   "KELOMPOK_LAYER"
+  ],
+  [
+   "T_TREATY_LIMIT_GROUP_COB",
+   "KELAS_BISNIS_KELOMPOK"
+  ],
+  [
+   "T_TREATY_SHARE_SPREADING",
+   "PENYEBARAN_XOL"
+  ],
+  [
+   "T_TREATY_SHARE_SPREAD_AMOUNT",
+   "NILAI_TERSEBAR"
+  ],
+  [
+   "T_TREATY_SHARE_AMOUNT",
+   "NILAI_BAGIAN"
+  ],
+  [
+   "T_TREATY_RETENTION",
+   "RETENSI"
+  ],
+  [
+   "T_TREATY_LIMIT_SUMMARY",
+   "RINGKASAN_LIMIT"
+  ],
+  [
+   "T_TREATY_INSTALLMENT",
+   "ANGSURAN"
+  ],
+  [
+   "T_TREATY_INSTALLMENT_ITEM",
+   "RINCIAN_ANGSURAN"
+  ],
+  [
+   "T_TREATY_ACCUMULATION",
+   "AKUMULASI"
+  ],
+  [
+   "T_TREATY_HAZARD_LIMIT",
+   "BATAS_BAHAYA"
+  ],
+  [
+   "T_TREATY_TOTAL",
+   "REKAP_KONTRAK"
+  ],
+  [
+   "T_TREATY_VALUE_BEFORE_PRORATE",
+   "NILAI_SEBELUM_PRO_RATE"
+  ],
+  [
+   "T_TREATY_AUTHORITY_LIMIT",
+   "BATAS_WEWENANG"
+  ]
+ ],
+ "peta_akar_asing": [],
+ "tanpa_nasib": [
+  [
+   "TreatyIn.ActualValue.EGNPI",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.FacultativeShareList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.FacultativeShareList.GrossPremiumList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.FacultativeShareList.RnmLimitList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.LimitFacShareSummaryList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.LimitShareSummaryList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.LimitSummaryList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.Limits.Currency",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.Limits.Currency2",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.Limits.EgnpiTotalList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.Limits.MDPList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.Limits.PremiumEarnedList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.Share",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.Share.GrossPremiumList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.Share.RNMShare",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.Share.RNMSpreadedListDeductRIXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.Share.RNMSpreadedListDeductXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.Share.RNMSpreadedListGrossRIXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.Share.RNMSpreadedListGrossXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.Share.RNMSpreadedListNetRIXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.Share.RNMSpreadedListNetXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.Share.RNMSpreadedListRIXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.Share.RNMSpreadedListXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.Share.RnmLimitList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.Share.SpreadingListXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.ShareFacultativeReinsurers",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.ShareReins",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.TotalEgnpiAmountNP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.TotalFacShareDeductionNP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.TotalFacShareGrossNP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.TotalFacShareNetNP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.TotalFacShareRnmNP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.TotalLimitDeductblNP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.TotalLimitIOONP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.TotalLimitMDPNP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.TotalLimitPremiEarnNP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.TotalShareDeductionNP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.TotalShareGrossNP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.TotalShareNetNP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.TotalShareRnmNP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.TotalSpreadedNetPremi",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.TotalSpreadedNetPremiRI",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.TotalSpreadedRnmProp",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ActualValue.TotalSpreadedRnmRIProp",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.AddendumPremi",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.EGNPI.Proportion",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.FacultativeShareList.DeductionList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.FacultativeShareList.DeductionList.Deduction",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.FacultativeShareList.DeductionList.DeductionPct",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.FacultativeShareList.GrossPremiumList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.FacultativeShareList.NetPremiumList.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.FacultativeShareList.RnmGrossPremiDisplay",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.FacultativeShareList.RnmGrossPremiDisplay.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.FacultativeShareList.RnmLimitList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.FacultativeShareList.RnmLimitListDisplay",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.FacultativeShareList.RnmLimitListDisplay.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.FacultativeShareList.ShareFacultativeReinsurers",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.LimitShareSummaryList.AggregateLimit",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.LimitShareSummaryList.AggregateLimit2",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.LimitShareSummaryList.Deductible",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.LimitShareSummaryList.Deductible2",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.LimitShareSummaryList.Limit",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.LimitShareSummaryList.Limit2",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.LimitShareSummaryList.MDP",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.LimitShareSummaryList.MDP2",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.LimitSummaryList.AggregateLimit",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.LimitSummaryList.AggregateLimit2",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.LimitSummaryList.Deductible",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.LimitSummaryList.Deductible2",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.LimitSummaryList.Limit",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.LimitSummaryList.Limit2",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.LimitSummaryList.MDP",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.LimitSummaryList.MDP2",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Limits.Currency2",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Limits.Deductible2",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Limits.Detail",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Limits.Detail.AchievementLists",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Limits.Detail.COBList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Limits.Detail.CashLossList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Limits.Detail.CessionList",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Limits.Detail.ClaimCoopList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Limits.Detail.EPIList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Limits.Detail.IOOLimitList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Limits.Detail.PLAList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Limits.Detail.RNMShareList",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Limits.Detail.RetentionList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Limits.Detail.SpreadingList",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Limits.Detail.SpreadingTypeID",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Limits.EgnpiTotalList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Limits.Limit2",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Limits.MDPList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Limits.PremiumEarnedList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Limits.Reinstatement_List",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Limits.Reinstatement_List.ReinstatementPct",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Limits.TreatyGroupList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Limits.TreatyGroupList.ClassOfBusinessList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.AccountingMode",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.AccountingModeNonProp",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.AccumulationList",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.Bordeaux",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.BordereauxNote",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.BrokeragePercent",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.BrokeragePercentP",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.Ceding",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.Commencement",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.CurrencyInstallmentAmount",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.CurrencyList",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.EGNPI",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.EGNPI.Amount",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.EGNPI.AmountIDR",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.EGNPI.Proportion",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.ExclusionsP",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.FacultativeShare",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.FacultativeShareBrokerage",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.FacultativeShareList",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.Installment",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Installment.InstallmentList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Installment.InstallmentList.DueDate",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Installment.InstallmentList.InstallmentPct",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Installment.InstallmentList.PaymentDate",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Installment.InstallmentList.WPC",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.InstallmentNo",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.LeadingReinsSource",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.LimitFacShareSummaryList",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.LimitShareSummaryList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.LimitShareSummaryList.AggregateLimit",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.LimitShareSummaryList.AggregateLimit2",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.LimitShareSummaryList.Deductible",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.LimitShareSummaryList.Deductible2",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.LimitShareSummaryList.Limit",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.LimitShareSummaryList.Limit2",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.LimitShareSummaryList.MDP",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.LimitShareSummaryList.MDP2",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.LimitSummaryList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.LimitSummaryList.AggregateLimit",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.LimitSummaryList.AggregateLimit2",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.LimitSummaryList.Deductible",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.LimitSummaryList.Deductible2",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.LimitSummaryList.Limit",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.LimitSummaryList.Limit2",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.LimitSummaryList.MDP",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.LimitSummaryList.MDP2",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Limits",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Limits.AdjRate",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Limits.Deductible",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Limits.Deductible2",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Limits.EgnpiTotalList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Limits.EgnpiTotalList.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Limits.Limit",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Limits.Limit2",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Limits.MDPList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Limits.MDPList.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Limits.MDPPct",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Limits.PremiumEarnedList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Limits.PremiumEarnedList.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Limits.ROLPct",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.MDPSummaryList",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.Portfolio",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.RNMShare",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.RNMShareP",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.ReportingConfirmation",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.ReportingEnd",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.ReportingInterval",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.ReportingPeriod",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.ReportingPeriodList",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.ReportingSettlement",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.ReportingStart",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.ReportingSubmission",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.Retention",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.RnmShareDeducted",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.DeductionList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.DeductionList.Deduction",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.DeductionList.DeductionPct",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.GrossPremiumList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.GrossPremiumList.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.NetPremiumList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.NetPremiumList.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.RNMSpreadedListDeductRIXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.RNMSpreadedListDeductRIXOL.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.RNMSpreadedListDeductXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.RNMSpreadedListDeductXOL.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.RNMSpreadedListGrossRIXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.RNMSpreadedListGrossRIXOL.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.RNMSpreadedListGrossXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.RNMSpreadedListGrossXOL.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.RNMSpreadedListNetRIXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.RNMSpreadedListNetRIXOL.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.RNMSpreadedListNetXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.RNMSpreadedListNetXOL.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.RNMSpreadedListRIXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.RNMSpreadedListRIXOL.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.RNMSpreadedListXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.RNMSpreadedListXOL.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.RnmGrossPremiDisplay",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.RnmGrossPremiDisplay.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.RnmLimitList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.RnmLimitList.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.RnmLimitListDisplay",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.RnmLimitListDisplay.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.SpreadingTotalPctXOL",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.Share.SpreadingTypeXOL",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.ShareReins",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.SpecialConditionsP",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.TeritorialScope",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.Termination",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalEgnpiAmount",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalEgnpiAmountNP",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalEgnpiProportion",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalFacShareDeductionNP",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalFacShareGrossNP",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalFacShareNetNP",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalFacShareRnmNP",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalInstallmentAmount",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalInstallmentNP",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalInstallmentPct",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalLimitDeductblNP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalLimitDeductblNP.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalLimitIOONP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalLimitIOONP.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalLimitMDPNP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalLimitMDPNP.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalLimitPremiEarnNP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalLimitPremiEarnNP.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalLimitsROL",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalRetentionAmountNP",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalShareDeductionNP",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalShareGrossNP",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalShareNetNP",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalShareRnmNP",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalShareRnmProp",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalSpreadedNetPremi",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalSpreadedNetPremiRI",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalSpreadedRnmProp",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.TotalSpreadedRnmRIProp",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.TreatyContractName",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.OLDDATA.TreatyYear",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.RevisionDate",
+   "Skalar",
+   "hanya-adjustment"
+  ],
+  [
+   "TreatyIn.Share.BrokerageList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.BrokerageList.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.DeductionList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.DeductionList.Deduction",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.DeductionList.DeductionPct",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.GrossPremiumList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.GrossPremiumMinList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.NetPremiumList.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.RNMShare",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.RNMSpreadedListDeductRIXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.RNMSpreadedListDeductXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.RNMSpreadedListGrossRIXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.RNMSpreadedListGrossRIXOL.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.RNMSpreadedListGrossXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.RNMSpreadedListGrossXOL.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.RNMSpreadedListNetRIXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.RNMSpreadedListNetXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.RNMSpreadedListRIXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.RNMSpreadedListRIXOL.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.RNMSpreadedListXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.RNMSpreadedListXOL.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.RnmGrossPremiDisplay",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.RnmGrossPremiDisplay.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.RnmLimitList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.RnmLimitListDisplay",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.RnmLimitListDisplay.Value",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.SpreadingListXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.SpreadingListXOL.DeductionTotalList",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.SpreadingListXOL.GrossPremiumList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.SpreadingListXOL.GrossPremiumMinList",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.SpreadingListXOL.NetPremiumList",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.SpreadingListXOL.Pct",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.SpreadingListXOL.RNMSpreadedListDeductRIXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.SpreadingListXOL.RNMSpreadedListDeductXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.SpreadingListXOL.RNMSpreadedListGrossMinXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.SpreadingListXOL.RNMSpreadedListGrossRIMinXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.SpreadingListXOL.RNMSpreadedListGrossRIXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.SpreadingListXOL.RNMSpreadedListGrossXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.SpreadingListXOL.RNMSpreadedListNetRIXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.SpreadingListXOL.RNMSpreadedListNetXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.SpreadingListXOL.RNMSpreadedListRIXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.SpreadingListXOL.RNMSpreadedListXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.SpreadingListXOL.ReinsTypeName",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.SpreadingListXOL.RnmLimitList",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.SpreadingTotalPctXOL",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.SpreadingTypeIDXOL",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.SpreadingTypeXOL",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.Share.TreatyGroupList.TreatyGroupID",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ShareFacultativeReinsurers.FacultativeLimits",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ShareFacultativeReinsurers.FacultativeLimits.Detail",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueBeforeProrate.BrokeragePercent",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueBeforeProrate.Installment",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueBeforeProrate.LimitShareSummaryList",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueBeforeProrate.RNMShare",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueBeforeProrate.Share",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueBeforeProrate.TotalInstallmentNP",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueBeforeProrate.TotalShareDeductionNP",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueBeforeProrate.TotalShareGrossNP",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueBeforeProrate.TotalShareNetNP",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueBeforeProrate.TotalShareRnmNP",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueBeforeProrate.TotalSpreadedNetPremi",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueBeforeProrate.TotalSpreadedNetPremiRI",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueBeforeProrate.TotalSpreadedRnmProp",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueBeforeProrate.TotalSpreadedRnmRIProp",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.EGNPI",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.FacultativeShareList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.FacultativeShareList.DeductionList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.FacultativeShareList.GrossPremiumList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.FacultativeShareList.NetPremiumList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.FacultativeShareList.RnmGrossPremiDisplay",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.FacultativeShareList.RnmLimitList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.FacultativeShareList.RnmLimitListDisplay",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.Installment",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.Installment.InstallmentList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.LimitFacShareSummaryList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.LimitShareSummaryList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.LimitSummaryList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.Limits",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.Limits.EgnpiTotalList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.Limits.MDPList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.Limits.PremiumEarnedList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.Share",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.Share.DeductionList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.Share.DeductionTotalList",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.Share.GrossPremiumList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.Share.GrossPremiumMinList",
+   "Skalar",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.Share.NetPremiumList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.Share.RNMSpreadedListDeductRIXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.Share.RNMSpreadedListDeductXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.Share.RNMSpreadedListGrossMinXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.Share.RNMSpreadedListGrossRIMinXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.Share.RNMSpreadedListGrossRIXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.Share.RNMSpreadedListGrossXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.Share.RNMSpreadedListNetRIXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.Share.RNMSpreadedListNetXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.Share.RNMSpreadedListRIXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.Share.RNMSpreadedListXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.Share.RnmGrossPremiDisplay",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.Share.RnmLimitList",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.Share.RnmLimitListDisplay",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.Share.SpreadingListXOL",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.TotalEgnpiAmountNP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.TotalFacShareDeductionNP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.TotalFacShareGrossNP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.TotalFacShareNetNP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.TotalFacShareRnmNP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.TotalInstallmentNP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.TotalLimitDeductblNP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.TotalLimitIOONP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.TotalLimitMDPNP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.TotalLimitPremiEarnNP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.TotalShareDeductionNP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.TotalShareGrossNP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.TotalShareNetNP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.TotalShareRnmNP",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.TotalSpreadedNetPremi",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.TotalSpreadedNetPremiRI",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.TotalSpreadedRnmProp",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.ValueDifference.TotalSpreadedRnmRIProp",
+   "Page List",
+   "jalur-penuh"
+  ],
+  [
+   "TreatyIn.pyErrMsg",
+   "Skalar",
+   "jalur-penuh"
+  ]
+ ],
+ "tanpa_fk": [
+  [
+   "JENIS_REASURANSI",
+   "ID_INDUK"
+  ],
+  [
+   "KONTRAK",
+   "ID_KONTRAK_DISALIN_DARI"
+  ],
+  [
+   "KONTRAK",
+   "ID_CEDANT"
+  ],
+  [
+   "KONTRAK",
+   "ID_ASAL_BISNIS"
+  ],
+  [
+   "VERSI_KONTRAK",
+   "ID_REASURADUR_PEMIMPIN"
+  ],
+  [
+   "VERSI_KONTRAK",
+   "ID_KETUA_TREATY"
+  ],
+  [
+   "VERSI_KONTRAK",
+   "ID_DAFTAR_RETRO"
+  ],
+  [
+   "DOKUMEN_KONTRAK",
+   "ID_DOKUMEN"
+  ],
+  [
+   "BAGIAN",
+   "ID_SUSUNAN_RETRO"
+  ],
+  [
+   "DETAIL_PROPORSIONAL",
+   "ID_SUSUNAN_RETRO"
+  ],
+  [
+   "PENYEBARAN",
+   "ID_JENIS_REASURANSI_INDUK"
+  ]
+ ],
+ "cacah": {
+  "simpul": 985,
+  "nasib": 667,
+  "peta": 44
+ },
+ "lulus": false
+}

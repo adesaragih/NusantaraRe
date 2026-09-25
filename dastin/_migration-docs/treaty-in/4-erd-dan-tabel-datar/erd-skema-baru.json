@@ -1,0 +1,2780 @@
+{
+ "tanpa_fk": [
+  [
+   "BAGIAN",
+   "ID_SUSUNAN_RETRO",
+   "DI LUAR SKEMA",
+   "susunan retro -- acuan kapasitas, pemiliknya belum ditetapkan"
+  ],
+  [
+   "BATAS_PER_BAHAYA",
+   "KODE_MATA_UANG",
+   "SEHARUSNYA ADA",
+   "MATA_UANG.KODE -- INV-44 menuntutnya"
+  ],
+  [
+   "DETAIL_PROPORSIONAL",
+   "ID_SUSUNAN_RETRO",
+   "DI LUAR SKEMA",
+   "susunan retro -- acuan kapasitas, pemiliknya belum ditetapkan"
+  ],
+  [
+   "DOKUMEN_KONTRAK",
+   "ID_DOKUMEN",
+   "DI LUAR SKEMA",
+   "DOKUMEN -- penyimpanan berkas DI LUAR basis data (sec 2.8)"
+  ],
+  [
+   "EGNPI",
+   "KODE_MATA_UANG",
+   "SEHARUSNYA ADA",
+   "MATA_UANG.KODE -- INV-44 menuntutnya"
+  ],
+  [
+   "JENIS_REASURANSI",
+   "ID_INDUK",
+   "SEHARUSNYA ADA",
+   "JENIS_REASURANSI -- jenis bersusun, rujukan ke tabelnya sendiri"
+  ],
+  [
+   "KONTRAK",
+   "ID_KONTRAK_DISALIN_DARI",
+   "SEHARUSNYA ADA",
+   "KONTRAK -- rujukan ke tabelnya sendiri, ERD.md sec 2.1"
+  ],
+  [
+   "KONTRAK",
+   "ID_CEDANT",
+   "DI LUAR SKEMA",
+   "CEDANT -- master, DI LUAR skema (ERD.md sec 2.8)"
+  ],
+  [
+   "KONTRAK",
+   "ID_ASAL_BISNIS",
+   "DI LUAR SKEMA",
+   "ASAL_BISNIS -- master, DI LUAR skema (sec 2.8)"
+  ],
+  [
+   "LAYER",
+   "KODE_MATA_UANG",
+   "SEHARUSNYA ADA",
+   "MATA_UANG.KODE -- INV-44 menuntutnya"
+  ],
+  [
+   "LAYER",
+   "MATA_UANG_DEDUCTIBLE",
+   "SEHARUSNYA ADA",
+   "MATA_UANG.KODE -- INV-44 menuntutnya"
+  ],
+  [
+   "LAYER",
+   "MATA_UANG_LIMIT_AGREGAT",
+   "SEHARUSNYA ADA",
+   "MATA_UANG.KODE -- INV-44 menuntutnya"
+  ],
+  [
+   "MATA_UANG_KONTRAK",
+   "KODE_MATA_UANG",
+   "SEHARUSNYA ADA",
+   "MATA_UANG.KODE -- INV-44 menuntutnya"
+  ],
+  [
+   "NILAI_CADANGAN_PREMI",
+   "KODE_MATA_UANG",
+   "SEHARUSNYA ADA",
+   "MATA_UANG.KODE -- INV-44 menuntutnya"
+  ],
+  [
+   "NILAI_MDP",
+   "KODE_MATA_UANG",
+   "SEHARUSNYA ADA",
+   "MATA_UANG.KODE -- INV-44 menuntutnya"
+  ],
+  [
+   "NILAI_MDP_MINIMUM",
+   "KODE_MATA_UANG",
+   "SEHARUSNYA ADA",
+   "MATA_UANG.KODE -- INV-44 menuntutnya"
+  ],
+  [
+   "NILAI_PENYEBARAN",
+   "KODE_MATA_UANG",
+   "SEHARUSNYA ADA",
+   "MATA_UANG.KODE -- INV-44 menuntutnya"
+  ],
+  [
+   "NILAI_PREMI_BRUTO",
+   "KODE_MATA_UANG",
+   "SEHARUSNYA ADA",
+   "MATA_UANG.KODE -- INV-44 menuntutnya"
+  ],
+  [
+   "NILAI_PREMI_BRUTO_MINIMUM",
+   "KODE_MATA_UANG",
+   "SEHARUSNYA ADA",
+   "MATA_UANG.KODE -- INV-44 menuntutnya"
+  ],
+  [
+   "PENYEBARAN",
+   "ID_JENIS_REASURANSI_INDUK",
+   "SEHARUSNYA ADA",
+   "JENIS_REASURANSI.ID_JENIS_REASURANSI"
+  ],
+  [
+   "RETENSI_CEDANT",
+   "KODE_MATA_UANG",
+   "SEHARUSNYA ADA",
+   "MATA_UANG.KODE -- INV-44 menuntutnya"
+  ],
+  [
+   "TERMIN",
+   "KODE_MATA_UANG",
+   "SEHARUSNYA ADA",
+   "MATA_UANG.KODE -- INV-44 menuntutnya"
+  ],
+  [
+   "VERSI_KONTRAK",
+   "KELAS_BISNIS_KONTRAK",
+   "SEHARUSNYA ADA",
+   "KELAS_BISNIS.ID_KELAS_BISNIS"
+  ],
+  [
+   "VERSI_KONTRAK",
+   "KODE_MATA_UANG_KONTRAK",
+   "SEHARUSNYA ADA",
+   "MATA_UANG.KODE -- INV-44 menuntutnya"
+  ],
+  [
+   "VERSI_KONTRAK",
+   "ID_REASURADUR_PEMIMPIN",
+   "DI LUAR SKEMA",
+   "REASURADUR -- master, DI LUAR skema (sec 2.8)"
+  ],
+  [
+   "VERSI_KONTRAK",
+   "ID_KETUA_TREATY",
+   "DI LUAR SKEMA",
+   "REASURADUR -- master, DI LUAR skema"
+  ],
+  [
+   "VERSI_KONTRAK",
+   "MATA_UANG_BATAS_KELOMPOK",
+   "SEHARUSNYA ADA",
+   "MATA_UANG.KODE -- INV-44 menuntutnya"
+  ],
+  [
+   "VERSI_KONTRAK",
+   "MATA_UANG_BATAS_NON_KELOMPOK",
+   "SEHARUSNYA ADA",
+   "MATA_UANG.KODE -- INV-44 menuntutnya"
+  ],
+  [
+   "VERSI_KONTRAK",
+   "MATA_UANG_BATAS_PILIHAN",
+   "SEHARUSNYA ADA",
+   "MATA_UANG.KODE -- INV-44 menuntutnya"
+  ],
+  [
+   "VERSI_KONTRAK",
+   "ID_DAFTAR_RETRO",
+   "DI LUAR SKEMA",
+   "acuan kapasitas -- PEMILIKNYA BELUM DITETAPKAN (eskalasi butir 7)"
+  ]
+ ],
+ "tabel": {
+  "BAHAYA": {
+   "nama": "BAHAYA",
+   "pk": "ID_BAHAYA",
+   "kolom": [
+    {
+     "nama": "ID_BAHAYA",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "KODE",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "NAMA",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "AKTIF",
+     "tipe": "VARCHAR2(40",
+     "wajib": true
+    }
+   ],
+   "fk": [],
+   "cek": false,
+   "berkas": "01_BAHAYA.sql"
+  },
+  "DOKUMEN_ADDENDUM": {
+   "nama": "DOKUMEN_ADDENDUM",
+   "pk": "ID_DOKUMEN_ADDENDUM",
+   "kolom": [
+    {
+     "nama": "ID_DOKUMEN_ADDENDUM",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "NOMOR_DOKUMEN",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "TANGGAL_BERLAKU",
+     "tipe": "DATE",
+     "wajib": false
+    }
+   ],
+   "fk": [],
+   "cek": false,
+   "berkas": "02_DOKUMEN_ADDENDUM.sql"
+  },
+  "JENIS_POTONGAN": {
+   "nama": "JENIS_POTONGAN",
+   "pk": "ID_JENIS_POTONGAN",
+   "kolom": [
+    {
+     "nama": "ID_JENIS_POTONGAN",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "KODE",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "NAMA",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "AKTIF",
+     "tipe": "VARCHAR2(40",
+     "wajib": true
+    }
+   ],
+   "fk": [],
+   "cek": false,
+   "berkas": "03_JENIS_POTONGAN.sql"
+  },
+  "JENIS_REASURANSI": {
+   "nama": "JENIS_REASURANSI",
+   "pk": "ID_JENIS_REASURANSI",
+   "kolom": [
+    {
+     "nama": "ID_JENIS_REASURANSI",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "KODE",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "NAMA",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "AKTIF",
+     "tipe": "VARCHAR2(40",
+     "wajib": true
+    },
+    {
+     "nama": "ID_INDUK",
+     "tipe": "NUMBER(19)",
+     "wajib": false
+    }
+   ],
+   "fk": [],
+   "cek": false,
+   "berkas": "04_JENIS_REASURANSI.sql"
+  },
+  "KELAS_BISNIS": {
+   "nama": "KELAS_BISNIS",
+   "pk": "ID_KELAS_BISNIS",
+   "kolom": [
+    {
+     "nama": "ID_KELAS_BISNIS",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "KODE",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "NAMA",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "AKTIF",
+     "tipe": "VARCHAR2(40",
+     "wajib": true
+    }
+   ],
+   "fk": [],
+   "cek": false,
+   "berkas": "05_KELAS_BISNIS.sql"
+  },
+  "KELOMPOK_TREATY": {
+   "nama": "KELOMPOK_TREATY",
+   "pk": "ID_KELOMPOK_TREATY",
+   "kolom": [
+    {
+     "nama": "ID_KELOMPOK_TREATY",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "KODE",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "NAMA",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "AKTIF",
+     "tipe": "VARCHAR2(40",
+     "wajib": true
+    }
+   ],
+   "fk": [],
+   "cek": false,
+   "berkas": "06_KELOMPOK_TREATY.sql"
+  },
+  "KONTRAK": {
+   "nama": "KONTRAK",
+   "pk": "ID_KONTRAK",
+   "kolom": [
+    {
+     "nama": "ID_KONTRAK",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "NOMOR_KONTRAK_WARISAN",
+     "tipe": "VARCHAR2(1000",
+     "wajib": false
+    },
+    {
+     "nama": "ID_KONTRAK_DISALIN_DARI",
+     "tipe": "NUMBER(19)",
+     "wajib": false
+    },
+    {
+     "nama": "ID_CEDANT",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_ASAL_BISNIS",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "SIFAT_PROPORSI",
+     "tipe": "VARCHAR2(40",
+     "wajib": true
+    },
+    {
+     "nama": "TANGGAL_MULAI",
+     "tipe": "DATE",
+     "wajib": true
+    },
+    {
+     "nama": "TANGGAL_BERAKHIR",
+     "tipe": "DATE",
+     "wajib": true
+    }
+   ],
+   "fk": [],
+   "cek": false,
+   "berkas": "07_KONTRAK.sql"
+  },
+  "MATA_UANG": {
+   "nama": "MATA_UANG",
+   "pk": "ID_MATA_UANG",
+   "kolom": [
+    {
+     "nama": "ID_MATA_UANG",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "KODE",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "NAMA",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "AKTIF",
+     "tipe": "VARCHAR2(40",
+     "wajib": true
+    }
+   ],
+   "fk": [],
+   "cek": false,
+   "berkas": "08_MATA_UANG.sql"
+  },
+  "VERSI_KONTRAK": {
+   "nama": "VERSI_KONTRAK",
+   "pk": "ID_VERSI_KONTRAK",
+   "kolom": [
+    {
+     "nama": "ID_VERSI_KONTRAK",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_KONTRAK",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "NOMOR_URUT_VERSI",
+     "tipe": "NUMBER(9)",
+     "wajib": true
+    },
+    {
+     "nama": "KEADAAN_SIKLUS_HIDUP",
+     "tipe": "VARCHAR2(40",
+     "wajib": true
+    },
+    {
+     "nama": "KEADAAN_WARISAN_ASLI",
+     "tipe": "VARCHAR2(1000",
+     "wajib": false
+    },
+    {
+     "nama": "JENIS_ADDENDUM",
+     "tipe": "VARCHAR2(40",
+     "wajib": false
+    },
+    {
+     "nama": "TANGGAL_BERLAKU_ADDENDUM",
+     "tipe": "DATE",
+     "wajib": false
+    },
+    {
+     "nama": "NAMA_KONTRAK",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "LINGKUP_WILAYAH",
+     "tipe": "VARCHAR2(1000",
+     "wajib": false
+    },
+    {
+     "nama": "KELAS_BISNIS_KONTRAK",
+     "tipe": "NUMBER(19)",
+     "wajib": false
+    },
+    {
+     "nama": "KODE_MATA_UANG_KONTRAK",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_REASURADUR_PEMIMPIN",
+     "tipe": "NUMBER(19)",
+     "wajib": false
+    },
+    {
+     "nama": "ID_KETUA_TREATY",
+     "tipe": "NUMBER(19)",
+     "wajib": false
+    },
+    {
+     "nama": "PERSEN_BAGIAN_NURE",
+     "tipe": "NUMBER(38,20)",
+     "wajib": true
+    },
+    {
+     "nama": "BAGIAN_NURE_SERAGAM",
+     "tipe": "VARCHAR2(40",
+     "wajib": true
+    },
+    {
+     "nama": "PERSEN_BAGIAN_NURE_DIPOTONG",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    },
+    {
+     "nama": "PERSEN_BROKERAGE",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    },
+    {
+     "nama": "PERSEN_BAGIAN_FAKULTATIF",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    },
+    {
+     "nama": "PERSEN_BROKERAGE_FAKULTATIF",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    },
+    {
+     "nama": "PENGECUALIAN",
+     "tipe": "VARCHAR2(4000",
+     "wajib": false
+    },
+    {
+     "nama": "KETENTUAN_KHUSUS",
+     "tipe": "VARCHAR2(4000",
+     "wajib": false
+    },
+    {
+     "nama": "KETERANGAN",
+     "tipe": "VARCHAR2(4000",
+     "wajib": false
+    },
+    {
+     "nama": "CATATAN",
+     "tipe": "VARCHAR2(4000",
+     "wajib": false
+    },
+    {
+     "nama": "CATATAN_BORDEREAUX",
+     "tipe": "VARCHAR2(4000",
+     "wajib": false
+    },
+    {
+     "nama": "MEMAKAI_BORDEREAUX",
+     "tipe": "VARCHAR2(40",
+     "wajib": true
+    },
+    {
+     "nama": "CARA_PEMBUKUAN",
+     "tipe": "VARCHAR2(40",
+     "wajib": true
+    },
+    {
+     "nama": "CARA_PEMBUKUAN_XOL",
+     "tipe": "VARCHAR2(40",
+     "wajib": false
+    },
+    {
+     "nama": "PERIODE_PELAPORAN_KONTRAK",
+     "tipe": "VARCHAR2(40",
+     "wajib": false
+    },
+    {
+     "nama": "SELANG_PELAPORAN",
+     "tipe": "NUMBER(9)",
+     "wajib": false
+    },
+    {
+     "nama": "TANGGAL_MULAI_PELAPORAN",
+     "tipe": "DATE",
+     "wajib": false
+    },
+    {
+     "nama": "TANGGAL_AKHIR_PELAPORAN",
+     "tipe": "DATE",
+     "wajib": false
+    },
+    {
+     "nama": "HARI_BATAS_PENYERAHAN",
+     "tipe": "NUMBER(9)",
+     "wajib": false
+    },
+    {
+     "nama": "HARI_BATAS_KONFIRMASI",
+     "tipe": "NUMBER(9)",
+     "wajib": false
+    },
+    {
+     "nama": "HARI_BATAS_PELUNASAN",
+     "tipe": "NUMBER(9)",
+     "wajib": false
+    },
+    {
+     "nama": "HARI_PENGINGAT",
+     "tipe": "NUMBER(9)",
+     "wajib": false
+    },
+    {
+     "nama": "PERIODE_AKUMULASI_KONTRAK",
+     "tipe": "VARCHAR2(40",
+     "wajib": false
+    },
+    {
+     "nama": "JUMLAH_TERMIN",
+     "tipe": "NUMBER(9)",
+     "wajib": false
+    },
+    {
+     "nama": "MEMAKAI_PRORATA",
+     "tipe": "VARCHAR2(40",
+     "wajib": true
+    },
+    {
+     "nama": "BATAS_MAKSIMUM_KELOMPOK",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    },
+    {
+     "nama": "MATA_UANG_BATAS_KELOMPOK",
+     "tipe": "VARCHAR2(1000",
+     "wajib": false
+    },
+    {
+     "nama": "BATAS_MAKSIMUM_NON_KELOMPOK",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    },
+    {
+     "nama": "MATA_UANG_BATAS_NON_KELOMPOK",
+     "tipe": "VARCHAR2(1000",
+     "wajib": false
+    },
+    {
+     "nama": "BATAS_PILIHAN",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    },
+    {
+     "nama": "MATA_UANG_BATAS_PILIHAN",
+     "tipe": "VARCHAR2(1000",
+     "wajib": false
+    },
+    {
+     "nama": "RETRO_BERGANDA",
+     "tipe": "VARCHAR2(40",
+     "wajib": true
+    },
+    {
+     "nama": "ID_DAFTAR_RETRO",
+     "tipe": "NUMBER(19)",
+     "wajib": false
+    },
+    {
+     "nama": "SIFAT_MATERIAL_ADDENDUM",
+     "tipe": "VARCHAR2(40",
+     "wajib": false
+    },
+    {
+     "nama": "ID_DOKUMEN_ADDENDUM",
+     "tipe": "NUMBER(19)",
+     "wajib": false
+    }
+   ],
+   "fk": [
+    {
+     "kolom": "ID_KONTRAK",
+     "induk": "KONTRAK",
+     "kolom_induk": "ID_KONTRAK",
+     "on_delete": null,
+     "constraint": "FK_VERSI_KONTRAK_1"
+    },
+    {
+     "kolom": "ID_DOKUMEN_ADDENDUM",
+     "induk": "DOKUMEN_ADDENDUM",
+     "kolom_induk": "ID_DOKUMEN_ADDENDUM",
+     "on_delete": null,
+     "constraint": "FK_VERSI_KONTRAK_2"
+    }
+   ],
+   "cek": false,
+   "berkas": "09_VERSI_KONTRAK.sql"
+  },
+  "BATAS_PER_BAHAYA": {
+   "nama": "BATAS_PER_BAHAYA",
+   "pk": "ID_BATAS_PER_BAHAYA",
+   "kolom": [
+    {
+     "nama": "ID_BATAS_PER_BAHAYA",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_VERSI_KONTRAK",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_BAHAYA",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "NILAI_BATAS",
+     "tipe": "NUMBER(38,20)",
+     "wajib": true
+    },
+    {
+     "nama": "KODE_MATA_UANG",
+     "tipe": "VARCHAR2(1000",
+     "wajib": false
+    },
+    {
+     "nama": "PERSEN_BAGIAN_DIPAKAI",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    }
+   ],
+   "fk": [
+    {
+     "kolom": "ID_VERSI_KONTRAK",
+     "induk": "VERSI_KONTRAK",
+     "kolom_induk": "ID_VERSI_KONTRAK",
+     "on_delete": null,
+     "constraint": "FK_BATAS_PER_BAHAYA_1"
+    },
+    {
+     "kolom": "ID_BAHAYA",
+     "induk": "BAHAYA",
+     "kolom_induk": "ID_BAHAYA",
+     "on_delete": null,
+     "constraint": "FK_BATAS_PER_BAHAYA_2"
+    }
+   ],
+   "cek": false,
+   "berkas": "10_BATAS_PER_BAHAYA.sql"
+  },
+  "CATATAN_PERSETUJUAN": {
+   "nama": "CATATAN_PERSETUJUAN",
+   "pk": "ID_CATATAN_PERSETUJUAN",
+   "kolom": [
+    {
+     "nama": "ID_CATATAN_PERSETUJUAN",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_VERSI_KONTRAK",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "WAKTU_KEPUTUSAN",
+     "tipe": "DATE",
+     "wajib": true
+    },
+    {
+     "nama": "NAMA_PEMUTUS",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "DISETUJUI",
+     "tipe": "VARCHAR2(40",
+     "wajib": true
+    },
+    {
+     "nama": "ALASAN",
+     "tipe": "VARCHAR2(1000",
+     "wajib": false
+    }
+   ],
+   "fk": [
+    {
+     "kolom": "ID_VERSI_KONTRAK",
+     "induk": "VERSI_KONTRAK",
+     "kolom_induk": "ID_VERSI_KONTRAK",
+     "on_delete": null,
+     "constraint": "FK_CATATAN_PERSETUJUAN_1"
+    }
+   ],
+   "cek": false,
+   "berkas": "11_CATATAN_PERSETUJUAN.sql"
+  },
+  "DOKUMEN_KONTRAK": {
+   "nama": "DOKUMEN_KONTRAK",
+   "pk": "ID_DOKUMEN_KONTRAK",
+   "kolom": [
+    {
+     "nama": "ID_DOKUMEN_KONTRAK",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_VERSI_KONTRAK",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_DOKUMEN",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "JENIS_DOKUMEN",
+     "tipe": "VARCHAR2(40",
+     "wajib": false
+    },
+    {
+     "nama": "TANGGAL_LAMPIR",
+     "tipe": "DATE",
+     "wajib": true
+    }
+   ],
+   "fk": [
+    {
+     "kolom": "ID_VERSI_KONTRAK",
+     "induk": "VERSI_KONTRAK",
+     "kolom_induk": "ID_VERSI_KONTRAK",
+     "on_delete": null,
+     "constraint": "FK_DOKUMEN_KONTRAK_1"
+    }
+   ],
+   "cek": false,
+   "berkas": "12_DOKUMEN_KONTRAK.sql"
+  },
+  "EGNPI": {
+   "nama": "EGNPI",
+   "pk": "ID_EGNPI",
+   "kolom": [
+    {
+     "nama": "ID_EGNPI",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_VERSI_KONTRAK",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_KELOMPOK_TREATY",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_KELAS_BISNIS",
+     "tipe": "NUMBER(19)",
+     "wajib": false
+    },
+    {
+     "nama": "NILAI_EGNPI",
+     "tipe": "NUMBER(38,20)",
+     "wajib": true
+    },
+    {
+     "nama": "KODE_MATA_UANG",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "TANGGAL_BERLAKU",
+     "tipe": "DATE",
+     "wajib": false
+    },
+    {
+     "nama": "PROPORSI",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    },
+    {
+     "nama": "CATATAN",
+     "tipe": "VARCHAR2(1000",
+     "wajib": false
+    }
+   ],
+   "fk": [
+    {
+     "kolom": "ID_VERSI_KONTRAK",
+     "induk": "VERSI_KONTRAK",
+     "kolom_induk": "ID_VERSI_KONTRAK",
+     "on_delete": null,
+     "constraint": "FK_EGNPI_1"
+    },
+    {
+     "kolom": "ID_KELOMPOK_TREATY",
+     "induk": "KELOMPOK_TREATY",
+     "kolom_induk": "ID_KELOMPOK_TREATY",
+     "on_delete": null,
+     "constraint": "FK_EGNPI_2"
+    },
+    {
+     "kolom": "ID_KELAS_BISNIS",
+     "induk": "KELAS_BISNIS",
+     "kolom_induk": "ID_KELAS_BISNIS",
+     "on_delete": null,
+     "constraint": "FK_EGNPI_3"
+    }
+   ],
+   "cek": false,
+   "berkas": "13_EGNPI.sql"
+  },
+  "JEJAK_PERUBAHAN": {
+   "nama": "JEJAK_PERUBAHAN",
+   "pk": "ID_JEJAK_PERUBAHAN",
+   "kolom": [
+    {
+     "nama": "ID_JEJAK_PERUBAHAN",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_VERSI_KONTRAK",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "WAKTU_PERUBAHAN",
+     "tipe": "DATE",
+     "wajib": true
+    },
+    {
+     "nama": "PELAKU",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "PERAN_PELAKU",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "RUAS_YANG_BERUBAH",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "NILAI_SEBELUM",
+     "tipe": "VARCHAR2(4000",
+     "wajib": false
+    },
+    {
+     "nama": "NILAI_SESUDAH",
+     "tipe": "VARCHAR2(4000",
+     "wajib": false
+    }
+   ],
+   "fk": [
+    {
+     "kolom": "ID_VERSI_KONTRAK",
+     "induk": "VERSI_KONTRAK",
+     "kolom_induk": "ID_VERSI_KONTRAK",
+     "on_delete": null,
+     "constraint": "FK_JEJAK_PERUBAHAN_1"
+    }
+   ],
+   "cek": false,
+   "berkas": "14_JEJAK_PERUBAHAN.sql"
+  },
+  "LAYER": {
+   "nama": "LAYER",
+   "pk": "ID_LAYER",
+   "kolom": [
+    {
+     "nama": "ID_LAYER",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_VERSI_KONTRAK",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "NOMOR_LAYER",
+     "tipe": "NUMBER(9)",
+     "wajib": true
+    },
+    {
+     "nama": "BAGIAN_LAYER",
+     "tipe": "NUMBER(9)",
+     "wajib": false
+    },
+    {
+     "nama": "JENIS_LAYER",
+     "tipe": "VARCHAR2(40",
+     "wajib": true
+    },
+    {
+     "nama": "JENIS_BAGIAN_LAYER",
+     "tipe": "VARCHAR2(40",
+     "wajib": false
+    },
+    {
+     "nama": "CAKUPAN",
+     "tipe": "VARCHAR2(1000",
+     "wajib": false
+    },
+    {
+     "nama": "LIMIT",
+     "tipe": "NUMBER(38,20)",
+     "wajib": true
+    },
+    {
+     "nama": "KODE_MATA_UANG",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "DEDUCTIBLE",
+     "tipe": "NUMBER(38,20)",
+     "wajib": true
+    },
+    {
+     "nama": "MATA_UANG_DEDUCTIBLE",
+     "tipe": "VARCHAR2(1000",
+     "wajib": false
+    },
+    {
+     "nama": "PERSEN_PENYESUAIAN",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    },
+    {
+     "nama": "PERSEN_MINIMUM_DEPOSIT",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    },
+    {
+     "nama": "PORSI_PEMULIHAN_LIMIT",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    },
+    {
+     "nama": "TARIF_PREMI_PEMULIHAN",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    },
+    {
+     "nama": "LIMIT_AGREGAT",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    },
+    {
+     "nama": "MATA_UANG_LIMIT_AGREGAT",
+     "tipe": "VARCHAR2(1000",
+     "wajib": false
+    },
+    {
+     "nama": "MDP",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    },
+    {
+     "nama": "MDP_MINIMUM",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    },
+    {
+     "nama": "PERSEN_MDP_MINIMUM",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    },
+    {
+     "nama": "MDP_DIGABUNG",
+     "tipe": "VARCHAR2(40",
+     "wajib": true
+    },
+    {
+     "nama": "TANPA_HITUNG_PREMI_PEMULIHAN",
+     "tipe": "VARCHAR2(40",
+     "wajib": true
+    },
+    {
+     "nama": "DEDUCTIBLE_KEDUA",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    },
+    {
+     "nama": "PERSEN_ROL",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    }
+   ],
+   "fk": [
+    {
+     "kolom": "ID_VERSI_KONTRAK",
+     "induk": "VERSI_KONTRAK",
+     "kolom_induk": "ID_VERSI_KONTRAK",
+     "on_delete": null,
+     "constraint": "FK_LAYER_1"
+    }
+   ],
+   "cek": false,
+   "berkas": "15_LAYER.sql"
+  },
+  "MATA_UANG_KONTRAK": {
+   "nama": "MATA_UANG_KONTRAK",
+   "pk": "ID_MATA_UANG_KONTRAK",
+   "kolom": [
+    {
+     "nama": "ID_MATA_UANG_KONTRAK",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_VERSI_KONTRAK",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "KODE_MATA_UANG",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "KURS",
+     "tipe": "NUMBER(38,20)",
+     "wajib": true
+    },
+    {
+     "nama": "TANGGAL_MULAI_BERLAKU",
+     "tipe": "DATE",
+     "wajib": true
+    },
+    {
+     "nama": "TANGGAL_AKHIR_BERLAKU",
+     "tipe": "DATE",
+     "wajib": true
+    }
+   ],
+   "fk": [
+    {
+     "kolom": "ID_VERSI_KONTRAK",
+     "induk": "VERSI_KONTRAK",
+     "kolom_induk": "ID_VERSI_KONTRAK",
+     "on_delete": null,
+     "constraint": "FK_MATA_UANG_KONTRAK_1"
+    }
+   ],
+   "cek": false,
+   "berkas": "16_MATA_UANG_KONTRAK.sql"
+  },
+  "PERIODE_AKUMULASI": {
+   "nama": "PERIODE_AKUMULASI",
+   "pk": "ID_PERIODE_AKUMULASI",
+   "kolom": [
+    {
+     "nama": "ID_PERIODE_AKUMULASI",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_VERSI_KONTRAK",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "PERIODE",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "TANGGAL_LAPOR",
+     "tipe": "DATE",
+     "wajib": true
+    },
+    {
+     "nama": "HARI_BATAS_PENYERAHAN",
+     "tipe": "NUMBER(9)",
+     "wajib": false
+    },
+    {
+     "nama": "BATAS_PENYERAHAN",
+     "tipe": "DATE",
+     "wajib": false
+    }
+   ],
+   "fk": [
+    {
+     "kolom": "ID_VERSI_KONTRAK",
+     "induk": "VERSI_KONTRAK",
+     "kolom_induk": "ID_VERSI_KONTRAK",
+     "on_delete": null,
+     "constraint": "FK_PERIODE_AKUMULASI_1"
+    }
+   ],
+   "cek": false,
+   "berkas": "17_PERIODE_AKUMULASI.sql"
+  },
+  "PERIODE_PELAPORAN": {
+   "nama": "PERIODE_PELAPORAN",
+   "pk": "ID_PERIODE_PELAPORAN",
+   "kolom": [
+    {
+     "nama": "ID_PERIODE_PELAPORAN",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_VERSI_KONTRAK",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "PERIODE",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "TANGGAL_AWAL",
+     "tipe": "DATE",
+     "wajib": true
+    },
+    {
+     "nama": "BATAS_PENYERAHAN",
+     "tipe": "DATE",
+     "wajib": true
+    },
+    {
+     "nama": "BATAS_KONFIRMASI",
+     "tipe": "DATE",
+     "wajib": true
+    },
+    {
+     "nama": "BATAS_PELUNASAN",
+     "tipe": "DATE",
+     "wajib": true
+    }
+   ],
+   "fk": [
+    {
+     "kolom": "ID_VERSI_KONTRAK",
+     "induk": "VERSI_KONTRAK",
+     "kolom_induk": "ID_VERSI_KONTRAK",
+     "on_delete": null,
+     "constraint": "FK_PERIODE_PELAPORAN_1"
+    }
+   ],
+   "cek": false,
+   "berkas": "18_PERIODE_PELAPORAN.sql"
+  },
+  "PERISTIWA_KONTRAK": {
+   "nama": "PERISTIWA_KONTRAK",
+   "pk": "ID_PERISTIWA_KONTRAK",
+   "kolom": [
+    {
+     "nama": "ID_PERISTIWA_KONTRAK",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_VERSI_KONTRAK",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "WAKTU",
+     "tipe": "DATE",
+     "wajib": true
+    },
+    {
+     "nama": "NAMA_PELAKU",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "JENIS_PERISTIWA",
+     "tipe": "VARCHAR2(40",
+     "wajib": true
+    }
+   ],
+   "fk": [
+    {
+     "kolom": "ID_VERSI_KONTRAK",
+     "induk": "VERSI_KONTRAK",
+     "kolom_induk": "ID_VERSI_KONTRAK",
+     "on_delete": null,
+     "constraint": "FK_PERISTIWA_KONTRAK_1"
+    }
+   ],
+   "cek": false,
+   "berkas": "19_PERISTIWA_KONTRAK.sql"
+  },
+  "PORTOFOLIO": {
+   "nama": "PORTOFOLIO",
+   "pk": "ID_PORTOFOLIO",
+   "kolom": [
+    {
+     "nama": "ID_PORTOFOLIO",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_VERSI_KONTRAK",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ARAH_PORTOFOLIO",
+     "tipe": "VARCHAR2(40",
+     "wajib": true
+    },
+    {
+     "nama": "JENIS_PORTOFOLIO",
+     "tipe": "VARCHAR2(40",
+     "wajib": true
+    },
+    {
+     "nama": "KETERANGAN",
+     "tipe": "VARCHAR2(1000",
+     "wajib": false
+    }
+   ],
+   "fk": [
+    {
+     "kolom": "ID_VERSI_KONTRAK",
+     "induk": "VERSI_KONTRAK",
+     "kolom_induk": "ID_VERSI_KONTRAK",
+     "on_delete": null,
+     "constraint": "FK_PORTOFOLIO_1"
+    }
+   ],
+   "cek": false,
+   "berkas": "20_PORTOFOLIO.sql"
+  },
+  "RETENSI_CEDANT": {
+   "nama": "RETENSI_CEDANT",
+   "pk": "ID_RETENSI_CEDANT",
+   "kolom": [
+    {
+     "nama": "ID_RETENSI_CEDANT",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_VERSI_KONTRAK",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_KELOMPOK_TREATY",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "NILAI_RETENSI",
+     "tipe": "NUMBER(38,20)",
+     "wajib": true
+    },
+    {
+     "nama": "KODE_MATA_UANG",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "CATATAN",
+     "tipe": "VARCHAR2(1000",
+     "wajib": false
+    },
+    {
+     "nama": "PERSEN_BAGIAN_DIPAKAI",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    }
+   ],
+   "fk": [
+    {
+     "kolom": "ID_VERSI_KONTRAK",
+     "induk": "VERSI_KONTRAK",
+     "kolom_induk": "ID_VERSI_KONTRAK",
+     "on_delete": null,
+     "constraint": "FK_RETENSI_CEDANT_1"
+    },
+    {
+     "kolom": "ID_KELOMPOK_TREATY",
+     "induk": "KELOMPOK_TREATY",
+     "kolom_induk": "ID_KELOMPOK_TREATY",
+     "on_delete": null,
+     "constraint": "FK_RETENSI_CEDANT_2"
+    }
+   ],
+   "cek": false,
+   "berkas": "21_RETENSI_CEDANT.sql"
+  },
+  "SKALA_KOASURANSI": {
+   "nama": "SKALA_KOASURANSI",
+   "pk": "ID_SKALA_KOASURANSI",
+   "kolom": [
+    {
+     "nama": "ID_SKALA_KOASURANSI",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_VERSI_KONTRAK",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "PERSEN_LIMIT",
+     "tipe": "NUMBER(38,20)",
+     "wajib": true
+    },
+    {
+     "nama": "PERSEN_BAGIAN",
+     "tipe": "NUMBER(38,20)",
+     "wajib": true
+    }
+   ],
+   "fk": [
+    {
+     "kolom": "ID_VERSI_KONTRAK",
+     "induk": "VERSI_KONTRAK",
+     "kolom_induk": "ID_VERSI_KONTRAK",
+     "on_delete": null,
+     "constraint": "FK_SKALA_KOASURANSI_1"
+    }
+   ],
+   "cek": false,
+   "berkas": "22_SKALA_KOASURANSI.sql"
+  },
+  "TERMIN": {
+   "nama": "TERMIN",
+   "pk": "ID_TERMIN",
+   "kolom": [
+    {
+     "nama": "ID_TERMIN",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_VERSI_KONTRAK",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "NOMOR_TERMIN",
+     "tipe": "NUMBER(9)",
+     "wajib": true
+    },
+    {
+     "nama": "PERSEN_TERMIN",
+     "tipe": "NUMBER(38,20)",
+     "wajib": true
+    },
+    {
+     "nama": "NILAI_TERMIN",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    },
+    {
+     "nama": "KODE_MATA_UANG",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "TANGGAL_JATUH_TEMPO",
+     "tipe": "DATE",
+     "wajib": true
+    },
+    {
+     "nama": "TANGGAL_BAYAR",
+     "tipe": "DATE",
+     "wajib": false
+    },
+    {
+     "nama": "WPC",
+     "tipe": "VARCHAR2(1000",
+     "wajib": false
+    }
+   ],
+   "fk": [
+    {
+     "kolom": "ID_VERSI_KONTRAK",
+     "induk": "VERSI_KONTRAK",
+     "kolom_induk": "ID_VERSI_KONTRAK",
+     "on_delete": null,
+     "constraint": "FK_TERMIN_1"
+    }
+   ],
+   "cek": false,
+   "berkas": "23_TERMIN.sql"
+  },
+  "BAGIAN": {
+   "nama": "BAGIAN",
+   "pk": "ID_BAGIAN",
+   "kolom": [
+    {
+     "nama": "ID_BAGIAN",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_LAYER",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "CAKUPAN",
+     "tipe": "VARCHAR2(1000",
+     "wajib": false
+    },
+    {
+     "nama": "PERSEN_BAGIAN_NURE",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    },
+    {
+     "nama": "PREMI_BRUTO",
+     "tipe": "NUMBER(38,20)",
+     "wajib": true
+    },
+    {
+     "nama": "PREMI_BRUTO_MINIMUM",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    },
+    {
+     "nama": "ID_SUSUNAN_RETRO",
+     "tipe": "NUMBER(19)",
+     "wajib": false
+    },
+    {
+     "nama": "PERSEN_BAGIAN_DIPAKAI",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    }
+   ],
+   "fk": [
+    {
+     "kolom": "ID_LAYER",
+     "induk": "LAYER",
+     "kolom_induk": "ID_LAYER",
+     "on_delete": null,
+     "constraint": "FK_BAGIAN_1"
+    }
+   ],
+   "cek": false,
+   "berkas": "24_BAGIAN.sql"
+  },
+  "DETAIL_PROPORSIONAL": {
+   "nama": "DETAIL_PROPORSIONAL",
+   "pk": "ID_DETAIL_PROPORSIONAL",
+   "kolom": [
+    {
+     "nama": "ID_DETAIL_PROPORSIONAL",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_LAYER",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_KELOMPOK_TREATY",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "JENIS_TREATY",
+     "tipe": "VARCHAR2(40",
+     "wajib": true
+    },
+    {
+     "nama": "PERSEN_QUOTA_SHARE",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    },
+    {
+     "nama": "JUMLAH_LINES_SURPLUS",
+     "tipe": "NUMBER(9)",
+     "wajib": false
+    },
+    {
+     "nama": "PERSEN_KOMISI_KOTOR",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    },
+    {
+     "nama": "PERSEN_KOMISI_BERSIH",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    },
+    {
+     "nama": "PERSEN_CADANGAN_PREMI",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    },
+    {
+     "nama": "CADANGAN_PREMI",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    },
+    {
+     "nama": "PERSEN_KAPASITAS_SURPLUS",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    },
+    {
+     "nama": "ID_SUSUNAN_RETRO",
+     "tipe": "NUMBER(19)",
+     "wajib": false
+    }
+   ],
+   "fk": [
+    {
+     "kolom": "ID_LAYER",
+     "induk": "LAYER",
+     "kolom_induk": "ID_LAYER",
+     "on_delete": null,
+     "constraint": "FK_DETAIL_PROPORSIONAL_1"
+    },
+    {
+     "kolom": "ID_KELOMPOK_TREATY",
+     "induk": "KELOMPOK_TREATY",
+     "kolom_induk": "ID_KELOMPOK_TREATY",
+     "on_delete": null,
+     "constraint": "FK_DETAIL_PROPORSIONAL_2"
+    }
+   ],
+   "cek": false,
+   "berkas": "25_DETAIL_PROPORSIONAL.sql"
+  },
+  "NILAI_MDP": {
+   "nama": "NILAI_MDP",
+   "pk": "ID_NILAI_MDP",
+   "kolom": [
+    {
+     "nama": "ID_NILAI_MDP",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_LAYER",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "KODE_MATA_UANG",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "NILAI",
+     "tipe": "NUMBER(38,20)",
+     "wajib": true
+    }
+   ],
+   "fk": [
+    {
+     "kolom": "ID_LAYER",
+     "induk": "LAYER",
+     "kolom_induk": "ID_LAYER",
+     "on_delete": null,
+     "constraint": "FK_NILAI_MDP_1"
+    }
+   ],
+   "cek": false,
+   "berkas": "26_NILAI_MDP.sql"
+  },
+  "NILAI_MDP_MINIMUM": {
+   "nama": "NILAI_MDP_MINIMUM",
+   "pk": "ID_NILAI_MDP_MINIMUM",
+   "kolom": [
+    {
+     "nama": "ID_NILAI_MDP_MINIMUM",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_LAYER",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "KODE_MATA_UANG",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "NILAI",
+     "tipe": "NUMBER(38,20)",
+     "wajib": true
+    }
+   ],
+   "fk": [
+    {
+     "kolom": "ID_LAYER",
+     "induk": "LAYER",
+     "kolom_induk": "ID_LAYER",
+     "on_delete": null,
+     "constraint": "FK_NILAI_MDP_MINIMUM_1"
+    }
+   ],
+   "cek": false,
+   "berkas": "27_NILAI_MDP_MINIMUM.sql"
+  },
+  "PEMULIHAN_LIMIT": {
+   "nama": "PEMULIHAN_LIMIT",
+   "pk": "ID_PEMULIHAN_LIMIT",
+   "kolom": [
+    {
+     "nama": "ID_PEMULIHAN_LIMIT",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_LAYER",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "NOMOR_URUT_PEMULIHAN",
+     "tipe": "NUMBER(9)",
+     "wajib": true
+    },
+    {
+     "nama": "PERSEN_PEMULIHAN",
+     "tipe": "NUMBER(38,20)",
+     "wajib": true
+    },
+    {
+     "nama": "PERSEN_TAMBAHAN",
+     "tipe": "NUMBER(38,20)",
+     "wajib": false
+    },
+    {
+     "nama": "CATATAN",
+     "tipe": "VARCHAR2(1000",
+     "wajib": false
+    }
+   ],
+   "fk": [
+    {
+     "kolom": "ID_LAYER",
+     "induk": "LAYER",
+     "kolom_induk": "ID_LAYER",
+     "on_delete": null,
+     "constraint": "FK_PEMULIHAN_LIMIT_1"
+    }
+   ],
+   "cek": false,
+   "berkas": "28_PEMULIHAN_LIMIT.sql"
+  },
+  "NILAI_CADANGAN_PREMI": {
+   "nama": "NILAI_CADANGAN_PREMI",
+   "pk": "ID_NILAI_CADANGAN_PREMI",
+   "kolom": [
+    {
+     "nama": "ID_NILAI_CADANGAN_PREMI",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_DETAIL_PROPORSIONAL",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "KODE_MATA_UANG",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "NILAI",
+     "tipe": "NUMBER(38,20)",
+     "wajib": true
+    }
+   ],
+   "fk": [
+    {
+     "kolom": "ID_DETAIL_PROPORSIONAL",
+     "induk": "DETAIL_PROPORSIONAL",
+     "kolom_induk": "ID_DETAIL_PROPORSIONAL",
+     "on_delete": null,
+     "constraint": "FK_NILAI_CADANGAN_PREMI_1"
+    }
+   ],
+   "cek": false,
+   "berkas": "29_NILAI_CADANGAN_PREMI.sql"
+  },
+  "NILAI_PREMI_BRUTO": {
+   "nama": "NILAI_PREMI_BRUTO",
+   "pk": "ID_NILAI_PREMI_BRUTO",
+   "kolom": [
+    {
+     "nama": "ID_NILAI_PREMI_BRUTO",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_BAGIAN",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "KODE_MATA_UANG",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "NILAI",
+     "tipe": "NUMBER(38,20)",
+     "wajib": true
+    }
+   ],
+   "fk": [
+    {
+     "kolom": "ID_BAGIAN",
+     "induk": "BAGIAN",
+     "kolom_induk": "ID_BAGIAN",
+     "on_delete": null,
+     "constraint": "FK_NILAI_PREMI_BRUTO_1"
+    }
+   ],
+   "cek": false,
+   "berkas": "30_NILAI_PREMI_BRUTO.sql"
+  },
+  "NILAI_PREMI_BRUTO_MINIMUM": {
+   "nama": "NILAI_PREMI_BRUTO_MINIMUM",
+   "pk": "ID_NILAI_PREMI_BRUTO_MINIMUM",
+   "kolom": [
+    {
+     "nama": "ID_NILAI_PREMI_BRUTO_MINIMUM",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_BAGIAN",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "KODE_MATA_UANG",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    },
+    {
+     "nama": "NILAI",
+     "tipe": "NUMBER(38,20)",
+     "wajib": true
+    }
+   ],
+   "fk": [
+    {
+     "kolom": "ID_BAGIAN",
+     "induk": "BAGIAN",
+     "kolom_induk": "ID_BAGIAN",
+     "on_delete": null,
+     "constraint": "FK_NILAI_PREMI_BRUTO_MINIMUM_1"
+    }
+   ],
+   "cek": false,
+   "berkas": "31_NILAI_PREMI_BRUTO_MINIMUM.sql"
+  },
+  "PENYEBARAN": {
+   "nama": "PENYEBARAN",
+   "pk": "ID_PENYEBARAN",
+   "kolom": [
+    {
+     "nama": "ID_PENYEBARAN",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_BAGIAN",
+     "tipe": "NUMBER(19)",
+     "wajib": false
+    },
+    {
+     "nama": "ID_DETAIL_PROPORSIONAL",
+     "tipe": "NUMBER(19)",
+     "wajib": false
+    },
+    {
+     "nama": "ID_JENIS_REASURANSI",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_JENIS_REASURANSI_INDUK",
+     "tipe": "NUMBER(19)",
+     "wajib": false
+    },
+    {
+     "nama": "PERSEN_PENYEBARAN",
+     "tipe": "NUMBER(38,20)",
+     "wajib": true
+    }
+   ],
+   "fk": [
+    {
+     "kolom": "ID_BAGIAN",
+     "induk": "BAGIAN",
+     "kolom_induk": "ID_BAGIAN",
+     "on_delete": null,
+     "constraint": "FK_PENYEBARAN_1"
+    },
+    {
+     "kolom": "ID_DETAIL_PROPORSIONAL",
+     "induk": "DETAIL_PROPORSIONAL",
+     "kolom_induk": "ID_DETAIL_PROPORSIONAL",
+     "on_delete": null,
+     "constraint": "FK_PENYEBARAN_2"
+    },
+    {
+     "kolom": "ID_JENIS_REASURANSI",
+     "induk": "JENIS_REASURANSI",
+     "kolom_induk": "ID_JENIS_REASURANSI",
+     "on_delete": null,
+     "constraint": "FK_PENYEBARAN_3"
+    }
+   ],
+   "cek": true,
+   "berkas": "32_PENYEBARAN.sql"
+  },
+  "POTONGAN": {
+   "nama": "POTONGAN",
+   "pk": "ID_POTONGAN",
+   "kolom": [
+    {
+     "nama": "ID_POTONGAN",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_BAGIAN",
+     "tipe": "NUMBER(19)",
+     "wajib": false
+    },
+    {
+     "nama": "ID_DETAIL_PROPORSIONAL",
+     "tipe": "NUMBER(19)",
+     "wajib": false
+    },
+    {
+     "nama": "ID_JENIS_POTONGAN",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "DASAR_PERHITUNGAN",
+     "tipe": "VARCHAR2(40",
+     "wajib": true
+    },
+    {
+     "nama": "PERSEN_POTONGAN",
+     "tipe": "NUMBER(38,20)",
+     "wajib": true
+    }
+   ],
+   "fk": [
+    {
+     "kolom": "ID_BAGIAN",
+     "induk": "BAGIAN",
+     "kolom_induk": "ID_BAGIAN",
+     "on_delete": null,
+     "constraint": "FK_POTONGAN_1"
+    },
+    {
+     "kolom": "ID_DETAIL_PROPORSIONAL",
+     "induk": "DETAIL_PROPORSIONAL",
+     "kolom_induk": "ID_DETAIL_PROPORSIONAL",
+     "on_delete": null,
+     "constraint": "FK_POTONGAN_2"
+    },
+    {
+     "kolom": "ID_JENIS_POTONGAN",
+     "induk": "JENIS_POTONGAN",
+     "kolom_induk": "ID_JENIS_POTONGAN",
+     "on_delete": null,
+     "constraint": "FK_POTONGAN_3"
+    }
+   ],
+   "cek": true,
+   "berkas": "33_POTONGAN.sql"
+  },
+  "RINCIAN_PENYEBARAN": {
+   "nama": "RINCIAN_PENYEBARAN",
+   "pk": "ID_RINCIAN_PENYEBARAN",
+   "kolom": [
+    {
+     "nama": "ID_RINCIAN_PENYEBARAN",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_PENYEBARAN",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_JENIS_REASURANSI",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "PERSEN_RINCIAN",
+     "tipe": "NUMBER(38,20)",
+     "wajib": true
+    }
+   ],
+   "fk": [
+    {
+     "kolom": "ID_PENYEBARAN",
+     "induk": "PENYEBARAN",
+     "kolom_induk": "ID_PENYEBARAN",
+     "on_delete": null,
+     "constraint": "FK_RINCIAN_PENYEBARAN_1"
+    },
+    {
+     "kolom": "ID_JENIS_REASURANSI",
+     "induk": "JENIS_REASURANSI",
+     "kolom_induk": "ID_JENIS_REASURANSI",
+     "on_delete": null,
+     "constraint": "FK_RINCIAN_PENYEBARAN_2"
+    }
+   ],
+   "cek": false,
+   "berkas": "34_RINCIAN_PENYEBARAN.sql"
+  },
+  "NILAI_PENYEBARAN": {
+   "nama": "NILAI_PENYEBARAN",
+   "pk": "ID_NILAI_PENYEBARAN",
+   "kolom": [
+    {
+     "nama": "ID_NILAI_PENYEBARAN",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "ID_RINCIAN_PENYEBARAN",
+     "tipe": "NUMBER(19)",
+     "wajib": true
+    },
+    {
+     "nama": "NILAI",
+     "tipe": "NUMBER(38,20)",
+     "wajib": true
+    },
+    {
+     "nama": "KODE_MATA_UANG",
+     "tipe": "VARCHAR2(1000",
+     "wajib": true
+    }
+   ],
+   "fk": [
+    {
+     "kolom": "ID_RINCIAN_PENYEBARAN",
+     "induk": "RINCIAN_PENYEBARAN",
+     "kolom_induk": "ID_RINCIAN_PENYEBARAN",
+     "on_delete": null,
+     "constraint": "FK_NILAI_PENYEBARAN_1"
+    }
+   ],
+   "cek": false,
+   "berkas": "35_NILAI_PENYEBARAN.sql"
+  }
+ },
+ "relasi": [
+  {
+   "no": 1,
+   "induk": "LAYER",
+   "anak": "BAGIAN",
+   "kolom": "ID_LAYER",
+   "kard": "1:1",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Layer dan proporsional",
+   "lembar_anak": "Layer dan proporsional"
+  },
+  {
+   "no": 2,
+   "induk": "VERSI_KONTRAK",
+   "anak": "BATAS_PER_BAHAYA",
+   "kolom": "ID_VERSI_KONTRAK",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Kontrak dan versi",
+   "lembar_anak": "Layer dan proporsional"
+  },
+  {
+   "no": 3,
+   "induk": "BAHAYA",
+   "anak": "BATAS_PER_BAHAYA",
+   "kolom": "ID_BAHAYA",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Acuan",
+   "lembar_anak": "Layer dan proporsional"
+  },
+  {
+   "no": 4,
+   "induk": "VERSI_KONTRAK",
+   "anak": "CATATAN_PERSETUJUAN",
+   "kolom": "ID_VERSI_KONTRAK",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Kontrak dan versi",
+   "lembar_anak": "Kontrak dan versi"
+  },
+  {
+   "no": 5,
+   "induk": "LAYER",
+   "anak": "DETAIL_PROPORSIONAL",
+   "kolom": "ID_LAYER",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Layer dan proporsional",
+   "lembar_anak": "Layer dan proporsional"
+  },
+  {
+   "no": 6,
+   "induk": "KELOMPOK_TREATY",
+   "anak": "DETAIL_PROPORSIONAL",
+   "kolom": "ID_KELOMPOK_TREATY",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Acuan",
+   "lembar_anak": "Layer dan proporsional"
+  },
+  {
+   "no": 7,
+   "induk": "VERSI_KONTRAK",
+   "anak": "DOKUMEN_KONTRAK",
+   "kolom": "ID_VERSI_KONTRAK",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Kontrak dan versi",
+   "lembar_anak": "Kontrak dan versi"
+  },
+  {
+   "no": 8,
+   "induk": "VERSI_KONTRAK",
+   "anak": "EGNPI",
+   "kolom": "ID_VERSI_KONTRAK",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Kontrak dan versi",
+   "lembar_anak": "Uang per mata uang"
+  },
+  {
+   "no": 9,
+   "induk": "KELOMPOK_TREATY",
+   "anak": "EGNPI",
+   "kolom": "ID_KELOMPOK_TREATY",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Acuan",
+   "lembar_anak": "Uang per mata uang"
+  },
+  {
+   "no": 10,
+   "induk": "KELAS_BISNIS",
+   "anak": "EGNPI",
+   "kolom": "ID_KELAS_BISNIS",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Acuan",
+   "lembar_anak": "Uang per mata uang"
+  },
+  {
+   "no": 11,
+   "induk": "VERSI_KONTRAK",
+   "anak": "JEJAK_PERUBAHAN",
+   "kolom": "ID_VERSI_KONTRAK",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Kontrak dan versi",
+   "lembar_anak": "Kontrak dan versi"
+  },
+  {
+   "no": 12,
+   "induk": "VERSI_KONTRAK",
+   "anak": "LAYER",
+   "kolom": "ID_VERSI_KONTRAK",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Kontrak dan versi",
+   "lembar_anak": "Layer dan proporsional"
+  },
+  {
+   "no": 13,
+   "induk": "VERSI_KONTRAK",
+   "anak": "MATA_UANG_KONTRAK",
+   "kolom": "ID_VERSI_KONTRAK",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Kontrak dan versi",
+   "lembar_anak": "Uang per mata uang"
+  },
+  {
+   "no": 14,
+   "induk": "DETAIL_PROPORSIONAL",
+   "anak": "NILAI_CADANGAN_PREMI",
+   "kolom": "ID_DETAIL_PROPORSIONAL",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Layer dan proporsional",
+   "lembar_anak": "Uang per mata uang"
+  },
+  {
+   "no": 15,
+   "induk": "LAYER",
+   "anak": "NILAI_MDP",
+   "kolom": "ID_LAYER",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Layer dan proporsional",
+   "lembar_anak": "Uang per mata uang"
+  },
+  {
+   "no": 16,
+   "induk": "LAYER",
+   "anak": "NILAI_MDP_MINIMUM",
+   "kolom": "ID_LAYER",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Layer dan proporsional",
+   "lembar_anak": "Uang per mata uang"
+  },
+  {
+   "no": 17,
+   "induk": "RINCIAN_PENYEBARAN",
+   "anak": "NILAI_PENYEBARAN",
+   "kolom": "ID_RINCIAN_PENYEBARAN",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Penyebaran",
+   "lembar_anak": "Uang per mata uang, Penyebaran"
+  },
+  {
+   "no": 18,
+   "induk": "BAGIAN",
+   "anak": "NILAI_PREMI_BRUTO",
+   "kolom": "ID_BAGIAN",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Layer dan proporsional",
+   "lembar_anak": "Uang per mata uang"
+  },
+  {
+   "no": 19,
+   "induk": "BAGIAN",
+   "anak": "NILAI_PREMI_BRUTO_MINIMUM",
+   "kolom": "ID_BAGIAN",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Layer dan proporsional",
+   "lembar_anak": "Uang per mata uang"
+  },
+  {
+   "no": 20,
+   "induk": "LAYER",
+   "anak": "PEMULIHAN_LIMIT",
+   "kolom": "ID_LAYER",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Layer dan proporsional",
+   "lembar_anak": "Layer dan proporsional"
+  },
+  {
+   "no": 21,
+   "induk": "BAGIAN",
+   "anak": "PENYEBARAN",
+   "kolom": "ID_BAGIAN",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Layer dan proporsional",
+   "lembar_anak": "Penyebaran"
+  },
+  {
+   "no": 22,
+   "induk": "DETAIL_PROPORSIONAL",
+   "anak": "PENYEBARAN",
+   "kolom": "ID_DETAIL_PROPORSIONAL",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Layer dan proporsional",
+   "lembar_anak": "Penyebaran"
+  },
+  {
+   "no": 23,
+   "induk": "JENIS_REASURANSI",
+   "anak": "PENYEBARAN",
+   "kolom": "ID_JENIS_REASURANSI",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Acuan",
+   "lembar_anak": "Penyebaran"
+  },
+  {
+   "no": 24,
+   "induk": "VERSI_KONTRAK",
+   "anak": "PERIODE_AKUMULASI",
+   "kolom": "ID_VERSI_KONTRAK",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Kontrak dan versi",
+   "lembar_anak": "Kontrak dan versi"
+  },
+  {
+   "no": 25,
+   "induk": "VERSI_KONTRAK",
+   "anak": "PERIODE_PELAPORAN",
+   "kolom": "ID_VERSI_KONTRAK",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Kontrak dan versi",
+   "lembar_anak": "Kontrak dan versi"
+  },
+  {
+   "no": 26,
+   "induk": "VERSI_KONTRAK",
+   "anak": "PERISTIWA_KONTRAK",
+   "kolom": "ID_VERSI_KONTRAK",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Kontrak dan versi",
+   "lembar_anak": "Kontrak dan versi"
+  },
+  {
+   "no": 27,
+   "induk": "VERSI_KONTRAK",
+   "anak": "PORTOFOLIO",
+   "kolom": "ID_VERSI_KONTRAK",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Kontrak dan versi",
+   "lembar_anak": "Kontrak dan versi"
+  },
+  {
+   "no": 28,
+   "induk": "BAGIAN",
+   "anak": "POTONGAN",
+   "kolom": "ID_BAGIAN",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Layer dan proporsional",
+   "lembar_anak": "Layer dan proporsional"
+  },
+  {
+   "no": 29,
+   "induk": "DETAIL_PROPORSIONAL",
+   "anak": "POTONGAN",
+   "kolom": "ID_DETAIL_PROPORSIONAL",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Layer dan proporsional",
+   "lembar_anak": "Layer dan proporsional"
+  },
+  {
+   "no": 30,
+   "induk": "JENIS_POTONGAN",
+   "anak": "POTONGAN",
+   "kolom": "ID_JENIS_POTONGAN",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Acuan",
+   "lembar_anak": "Layer dan proporsional"
+  },
+  {
+   "no": 31,
+   "induk": "VERSI_KONTRAK",
+   "anak": "RETENSI_CEDANT",
+   "kolom": "ID_VERSI_KONTRAK",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Kontrak dan versi",
+   "lembar_anak": "Uang per mata uang"
+  },
+  {
+   "no": 32,
+   "induk": "KELOMPOK_TREATY",
+   "anak": "RETENSI_CEDANT",
+   "kolom": "ID_KELOMPOK_TREATY",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Acuan",
+   "lembar_anak": "Uang per mata uang"
+  },
+  {
+   "no": 33,
+   "induk": "PENYEBARAN",
+   "anak": "RINCIAN_PENYEBARAN",
+   "kolom": "ID_PENYEBARAN",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Penyebaran",
+   "lembar_anak": "Penyebaran"
+  },
+  {
+   "no": 34,
+   "induk": "JENIS_REASURANSI",
+   "anak": "RINCIAN_PENYEBARAN",
+   "kolom": "ID_JENIS_REASURANSI",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Acuan",
+   "lembar_anak": "Penyebaran"
+  },
+  {
+   "no": 35,
+   "induk": "VERSI_KONTRAK",
+   "anak": "SKALA_KOASURANSI",
+   "kolom": "ID_VERSI_KONTRAK",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Kontrak dan versi",
+   "lembar_anak": "Kontrak dan versi"
+  },
+  {
+   "no": 36,
+   "induk": "VERSI_KONTRAK",
+   "anak": "TERMIN",
+   "kolom": "ID_VERSI_KONTRAK",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Kontrak dan versi",
+   "lembar_anak": "Uang per mata uang"
+  },
+  {
+   "no": 37,
+   "induk": "KONTRAK",
+   "anak": "VERSI_KONTRAK",
+   "kolom": "ID_KONTRAK",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Kontrak dan versi",
+   "lembar_anak": "Kontrak dan versi"
+  },
+  {
+   "no": 38,
+   "induk": "DOKUMEN_ADDENDUM",
+   "anak": "VERSI_KONTRAK",
+   "kolom": "ID_DOKUMEN_ADDENDUM",
+   "kard": "1:N",
+   "on_delete": "(tidak dinyatakan)",
+   "lembar_induk": "Kontrak dan versi",
+   "lembar_anak": "Kontrak dan versi"
+  }
+ ],
+ "lembar": {
+  "Kontrak dan versi": [
+   "KONTRAK",
+   "VERSI_KONTRAK",
+   "DOKUMEN_ADDENDUM",
+   "JEJAK_PERUBAHAN",
+   "CATATAN_PERSETUJUAN",
+   "PERISTIWA_KONTRAK",
+   "DOKUMEN_KONTRAK",
+   "PERIODE_PELAPORAN",
+   "PERIODE_AKUMULASI",
+   "SKALA_KOASURANSI",
+   "PORTOFOLIO"
+  ],
+  "Layer dan proporsional": [
+   "LAYER",
+   "DETAIL_PROPORSIONAL",
+   "PEMULIHAN_LIMIT",
+   "BAGIAN",
+   "POTONGAN",
+   "BATAS_PER_BAHAYA"
+  ],
+  "Uang per mata uang": [
+   "MATA_UANG_KONTRAK",
+   "EGNPI",
+   "RETENSI_CEDANT",
+   "TERMIN",
+   "NILAI_MDP",
+   "NILAI_MDP_MINIMUM",
+   "NILAI_CADANGAN_PREMI",
+   "NILAI_PREMI_BRUTO",
+   "NILAI_PREMI_BRUTO_MINIMUM",
+   "NILAI_PENYEBARAN"
+  ],
+  "Penyebaran": [
+   "PENYEBARAN",
+   "RINCIAN_PENYEBARAN",
+   "NILAI_PENYEBARAN"
+  ],
+  "Acuan": [
+   "MATA_UANG",
+   "JENIS_POTONGAN",
+   "JENIS_REASURANSI",
+   "BAHAYA",
+   "KELOMPOK_TREATY",
+   "KELAS_BISNIS"
+  ]
+ },
+ "di_lembar": {
+  "KONTRAK": [
+   "Kontrak dan versi"
+  ],
+  "VERSI_KONTRAK": [
+   "Kontrak dan versi"
+  ],
+  "DOKUMEN_ADDENDUM": [
+   "Kontrak dan versi"
+  ],
+  "JEJAK_PERUBAHAN": [
+   "Kontrak dan versi"
+  ],
+  "CATATAN_PERSETUJUAN": [
+   "Kontrak dan versi"
+  ],
+  "PERISTIWA_KONTRAK": [
+   "Kontrak dan versi"
+  ],
+  "DOKUMEN_KONTRAK": [
+   "Kontrak dan versi"
+  ],
+  "PERIODE_PELAPORAN": [
+   "Kontrak dan versi"
+  ],
+  "PERIODE_AKUMULASI": [
+   "Kontrak dan versi"
+  ],
+  "SKALA_KOASURANSI": [
+   "Kontrak dan versi"
+  ],
+  "PORTOFOLIO": [
+   "Kontrak dan versi"
+  ],
+  "LAYER": [
+   "Layer dan proporsional"
+  ],
+  "DETAIL_PROPORSIONAL": [
+   "Layer dan proporsional"
+  ],
+  "PEMULIHAN_LIMIT": [
+   "Layer dan proporsional"
+  ],
+  "BAGIAN": [
+   "Layer dan proporsional"
+  ],
+  "POTONGAN": [
+   "Layer dan proporsional"
+  ],
+  "BATAS_PER_BAHAYA": [
+   "Layer dan proporsional"
+  ],
+  "MATA_UANG_KONTRAK": [
+   "Uang per mata uang"
+  ],
+  "EGNPI": [
+   "Uang per mata uang"
+  ],
+  "RETENSI_CEDANT": [
+   "Uang per mata uang"
+  ],
+  "TERMIN": [
+   "Uang per mata uang"
+  ],
+  "NILAI_MDP": [
+   "Uang per mata uang"
+  ],
+  "NILAI_MDP_MINIMUM": [
+   "Uang per mata uang"
+  ],
+  "NILAI_CADANGAN_PREMI": [
+   "Uang per mata uang"
+  ],
+  "NILAI_PREMI_BRUTO": [
+   "Uang per mata uang"
+  ],
+  "NILAI_PREMI_BRUTO_MINIMUM": [
+   "Uang per mata uang"
+  ],
+  "NILAI_PENYEBARAN": [
+   "Uang per mata uang",
+   "Penyebaran"
+  ],
+  "PENYEBARAN": [
+   "Penyebaran"
+  ],
+  "RINCIAN_PENYEBARAN": [
+   "Penyebaran"
+  ],
+  "MATA_UANG": [
+   "Acuan"
+  ],
+  "JENIS_POTONGAN": [
+   "Acuan"
+  ],
+  "JENIS_REASURANSI": [
+   "Acuan"
+  ],
+  "BAHAYA": [
+   "Acuan"
+  ],
+  "KELOMPOK_TREATY": [
+   "Acuan"
+  ],
+  "KELAS_BISNIS": [
+   "Acuan"
+  ]
+ },
+ "ditambahkan_ke_lembar1": [
+  "PERIODE_PELAPORAN",
+  "PERIODE_AKUMULASI",
+  "SKALA_KOASURANSI",
+  "PORTOFOLIO"
+ ],
+ "luar_skema": {
+  "CEDANT": "master cedant -- dirujuk lewat ID_CEDANT, TIDAK DIMILIKI skema ini",
+  "ASAL_BISNIS": "master source of business -- dirujuk lewat ID_ASAL_BISNIS, TIDAK DIMILIKI",
+  "REASURADUR": "master reasuradur -- dirujuk lewat ID_REASURADUR_PEMIMPIN, TIDAK DIMILIKI",
+  "DAFTAR_RETRO": "acuan pembagian kapasitas -- PEMILIKNYA BELUM DITETAPKAN (eskalasi butir 7)",
+  "DOKUMEN": "penyimpanan berkas di luar basis data -- DOKUMEN_KONTRAK menyimpan RUJUKAN"
+ },
+ "uq": {
+  "VERSI_KONTRAK": [
+   [
+    "ID_KONTRAK",
+    "NOMOR_URUT_VERSI"
+   ]
+  ],
+  "LAYER": [
+   [
+    "ID_VERSI_KONTRAK",
+    "NOMOR_LAYER",
+    "BAGIAN_LAYER"
+   ]
+  ],
+  "DETAIL_PROPORSIONAL": [
+   [
+    "ID_LAYER",
+    "ID_KELOMPOK_TREATY"
+   ]
+  ],
+  "MATA_UANG_KONTRAK": [
+   [
+    "ID_VERSI_KONTRAK",
+    "KODE_MATA_UANG"
+   ]
+  ],
+  "RETENSI_CEDANT": [
+   [
+    "ID_VERSI_KONTRAK",
+    "ID_KELOMPOK_TREATY",
+    "KODE_MATA_UANG"
+   ]
+  ],
+  "EGNPI": [
+   [
+    "ID_VERSI_KONTRAK",
+    "ID_KELOMPOK_TREATY",
+    "KODE_MATA_UANG"
+   ]
+  ],
+  "PERIODE_PELAPORAN": [
+   [
+    "ID_VERSI_KONTRAK",
+    "PERIODE"
+   ]
+  ],
+  "TERMIN": [
+   [
+    "ID_VERSI_KONTRAK",
+    "NOMOR_TERMIN",
+    "KODE_MATA_UANG"
+   ]
+  ],
+  "PERIODE_AKUMULASI": [
+   [
+    "ID_VERSI_KONTRAK",
+    "PERIODE"
+   ]
+  ],
+  "SKALA_KOASURANSI": [
+   [
+    "ID_VERSI_KONTRAK",
+    "PERSEN_LIMIT"
+   ]
+  ],
+  "BATAS_PER_BAHAYA": [
+   [
+    "ID_VERSI_KONTRAK",
+    "ID_BAHAYA"
+   ]
+  ],
+  "POTONGAN": [
+   [
+    "ID_BAGIAN",
+    "ID_JENIS_POTONGAN"
+   ],
+   [
+    "ID_DETAIL_PROPORSIONAL",
+    "ID_JENIS_POTONGAN"
+   ]
+  ],
+  "PENYEBARAN": [
+   [
+    "ID_BAGIAN",
+    "ID_JENIS_REASURANSI"
+   ],
+   [
+    "ID_DETAIL_PROPORSIONAL",
+    "ID_JENIS_REASURANSI"
+   ]
+  ],
+  "BAGIAN": [
+   [
+    "ID_LAYER"
+   ]
+  ],
+  "RINCIAN_PENYEBARAN": [
+   [
+    "ID_PENYEBARAN",
+    "ID_JENIS_REASURANSI"
+   ]
+  ],
+  "PORTOFOLIO": [
+   [
+    "ID_VERSI_KONTRAK",
+    "ARAH_PORTOFOLIO",
+    "JENIS_PORTOFOLIO"
+   ]
+  ],
+  "DOKUMEN_KONTRAK": [
+   [
+    "ID_VERSI_KONTRAK",
+    "ID_DOKUMEN"
+   ]
+  ],
+  "MATA_UANG": [
+   [
+    "KODE"
+   ]
+  ],
+  "JENIS_POTONGAN": [
+   [
+    "KODE"
+   ]
+  ],
+  "JENIS_REASURANSI": [
+   [
+    "KODE"
+   ]
+  ],
+  "BAHAYA": [
+   [
+    "KODE"
+   ]
+  ],
+  "KELOMPOK_TREATY": [
+   [
+    "KODE"
+   ]
+  ],
+  "KELAS_BISNIS": [
+   [
+    "KODE"
+   ]
+  ]
+ },
+ "tolak": {
+  "berkas .sql tanpa CREATE TABLE (kerangka, bukan tabel)": 2
+ },
+ "tanggal": "25 September 2026"
+}

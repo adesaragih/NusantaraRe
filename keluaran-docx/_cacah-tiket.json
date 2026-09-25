@@ -1,0 +1,77 @@
+{
+ "Tiket-claim-life": {
+  "tiket": 15,
+  "byte": 98571,
+  "modul": {
+   "Claim Life": 15
+  }
+ },
+ "Tiket-life-offer": {
+  "tiket": 21,
+  "byte": 114001,
+  "modul": {
+   "PremiumList Life": 9,
+   "Endorsement Life": 12
+  }
+ },
+ "Tiket-life-master": {
+  "tiket": 22,
+  "byte": 103496,
+  "modul": {
+   "Master Product Name Life": 9,
+   "Master Contract Retro Life": 13
+  }
+ },
+ "Tiket-claim-nonlife": {
+  "tiket": 68,
+  "byte": 130893,
+  "modul": {
+   "Claim Fac In": 15,
+   "Claim Prop": 15,
+   "Claim Non Prop": 38
+  }
+ },
+ "Tiket-komite": {
+  "tiket": 50,
+  "byte": 119825,
+  "modul": {
+   "Komite Claim Fac In": 13,
+   "Komite Claim Life": 10,
+   "Komite Claim Prop": 14,
+   "Komite Claim Non Prop": 13
+  }
+ },
+ "Tiket-treaty-realisasi": {
+  "tiket": 40,
+  "byte": 98365,
+  "modul": {
+   "NB Treaty In": 28,
+   "EDM Treaty In": 12
+  }
+ },
+ "Tiket-treaty-master": {
+  "tiket": 66,
+  "byte": 137843,
+  "modul": {
+   "Treaty In": 52,
+   "Treaty In Adjustment": 14
+  }
+ },
+ "Tiket-treaty-arrangement": {
+  "tiket": 12,
+  "byte": 79176,
+  "modul": {
+   "Treaty Contract Out": 12
+  }
+ },
+ "Tiket-facultative-inward": {
+  "tiket": 60,
+  "byte": 121509,
+  "modul": {
+   "NB Fac In": 16,
+   "RNW Fac In": 8,
+   "Endorsment Fac In": 22,
+   "Fac Out": 14
+  }
+ }
+}

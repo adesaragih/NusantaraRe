@@ -1,0 +1,986 @@
+﻿JALUR,KEDALAMAN,NAMA,JENIS,KELAS_PEGA,CACAH_ANAK,REF,CACAH_BERKAS,BUKTI,SUMBER_KELAS,ADA_DI_ADJUSTMENT,BERKAS_CONTOH
+TreatyIn,0,TreatyIn,Page,ASM-FW-GISFW-Int-TREATY_IN,142,0,0,jalur-penuh,dideklarasikan,,
+TreatyIn.AccountingMode,1,AccountingMode,Skalar,(tidak dideklarasikan),0,6,4,jalur-penuh,,ya,Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml | Section/ShowSummary.xml
+TreatyIn.AccountingModeNonProp,1,AccountingModeNonProp,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml | Section/TreatyInNONProportional.xml
+TreatyIn.AccumulationList,1,AccumulationList,Page List,ASM-FW-GISFW-Data-TreatyInAccumulation,2,14,8,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInAccumulationSetSubDue.xml | Activity/TreatyInSetAccountReport.xml | DataTransform/TreatyInAddAccumulation.xml
+TreatyIn.AccumulationList.Period,2,Period,Skalar,(tidak dideklarasikan),0,3,2,jalur-penuh,,ya,Activity/TreatyInSetAccountReport.xml | DataTransform/TreatyInAddAccumulation.xml
+TreatyIn.AccumulationList.ReportDate,2,ReportDate,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInSetAccountReport.xml
+TreatyIn.AccumulationPeriod,1,AccumulationPeriod,Skalar,(tidak dideklarasikan),0,13,6,jalur-penuh,,ya,Activity/TreatyInSetAccountReport.xml | DataTransform/TreatyInAddAccumulation.xml | Harness/InputTreatyInOffer.xml
+TreatyIn.ActualValue,1,ActualValue,Page,ASM-FW-GISFW-Int-TREATY_IN,33,458,40,jalur-penuh,dideklarasikan (27 kali),ya,Activity/FetchQSfromMasterXOL.xml | Activity/GetNilaiTotalAdjustment.xml | Activity/SaveTreatyIn_EDM_Act.xml
+TreatyIn.ActualValue.BrokeragePercent,2,BrokeragePercent,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/TreatyInActualShare.xml | Activity/TreatyInSetBrokerageActual.xml | Section/TreatyInActualShare.xml
+TreatyIn.ActualValue.EGNPI,2,EGNPI,Skalar,(tidak dideklarasikan),0,8,7,jalur-penuh,,ya,Activity/TreatyInActualUpdateValueLimits.xml | Activity/TreatyInActualUpdateValuePremiumIncome.xml | Activity/TreatyInDifferencePremium.xml
+TreatyIn.ActualValue.FacultativeShare,2,FacultativeShare,Skalar,(tidak dideklarasikan),0,5,1,jalur-penuh,,ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.FacultativeShareBrokerage,2,FacultativeShareBrokerage,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInActualShare.xml | Activity/TreatyInSetBrokerageActual.xml
+TreatyIn.ActualValue.FacultativeShareList,2,FacultativeShareList,Page List,ASM-FW-GISFW-Data-TreatyInShare,12,30,9,jalur-penuh,identitas-kelas (12/12 anak cocok),ya,Activity/TreatyInActualShare.xml | Activity/TreatyInDifferenceFacShare.xml | Activity/TreatyInDifferenceSummaryFacShare.xml
+TreatyIn.ActualValue.FacultativeShareList.ClassofBusinessList,3,ClassofBusinessList,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.FacultativeShareList.Cover,3,Cover,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.FacultativeShareList.GrossPremiumList,3,GrossPremiumList,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,4,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.FacultativeShareList.GrossPremiumList.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.FacultativeShareList.GrossPremiumList.Value,4,Value,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.FacultativeShareList.Layer,3,Layer,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.FacultativeShareList.LayerPart,3,LayerPart,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.FacultativeShareList.LayerPartType,3,LayerPartType,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.FacultativeShareList.LayerType,3,LayerType,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.FacultativeShareList.Limit,3,Limit,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.FacultativeShareList.Limit2,3,Limit2,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.FacultativeShareList.NetPremiumList,3,NetPremiumList,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.FacultativeShareList.RnmLimitList,3,RnmLimitList,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,4,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.FacultativeShareList.RnmLimitList.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.FacultativeShareList.RnmLimitList.Value,4,Value,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.FacultativeShareList.TreatyGroupList,3,TreatyGroupList,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.LimitFacShareSummaryList,2,LimitFacShareSummaryList,Page List,(tidak dideklarasikan),0,4,3,jalur-penuh,,ya,Activity/TreatyInSummaryLimitActualFacShare.xml | Harness/TreatyInFacultativeShareCalculation.xml | Section/TreatyInActualFacultativeShareCalculation.xml
+TreatyIn.ActualValue.LimitShareSummaryList,2,LimitShareSummaryList,Page List,ASM-FW-GISFW-Data-LimitSummaryList,9,32,5,jalur-penuh,identitas-kelas (9/9 anak cocok),ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceFacShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ActualValue.LimitShareSummaryList.AggregateLimit,3,AggregateLimit,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ActualValue.LimitShareSummaryList.AggregateLimit2,3,AggregateLimit2,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ActualValue.LimitShareSummaryList.Deductible,3,Deductible,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceFacShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ActualValue.LimitShareSummaryList.Deductible2,3,Deductible2,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceFacShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ActualValue.LimitShareSummaryList.Limit,3,Limit,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceFacShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ActualValue.LimitShareSummaryList.Limit2,3,Limit2,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceFacShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ActualValue.LimitShareSummaryList.MDP,3,MDP,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceFacShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ActualValue.LimitShareSummaryList.MDP2,3,MDP2,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceFacShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ActualValue.LimitShareSummaryList.Note,3,Note,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceFacShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ActualValue.LimitSummaryList,2,LimitSummaryList,Page List,(tidak dideklarasikan),0,5,3,jalur-penuh,,ya,Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInSummaryLimitActual.xml | Section/TreatyInActualLimits.xml
+TreatyIn.ActualValue.Limits,2,Limits,Page List,ASM-FW-GISFW-Data-TreatyInLimits,5,43,8,jalur-penuh,identitas-kelas (5/5 anak cocok),ya,Activity/TreatyInActualShare.xml | Activity/TreatyInActualUpdateValueLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ActualValue.Limits.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,7,3,jalur-penuh,,ya,Activity/TreatyInActualUpdateValueLimits.xml | Activity/TreatyInLimitsActualSetTotal.xml | Activity/TreatyInNPSetTotalActualLimits.xml
+TreatyIn.ActualValue.Limits.Currency2,3,Currency2,Skalar,(tidak dideklarasikan),0,4,2,jalur-penuh,,ya,Activity/TreatyInLimitsActualSetTotal.xml | Activity/TreatyInNPSetTotalActualLimits.xml
+TreatyIn.ActualValue.Limits.EgnpiTotalList,3,EgnpiTotalList,Page List,ASM-FW-GISFW-Data-TreatyInTotal,3,4,1,jalur-penuh,identitas-kelas (3/3 anak cocok),ya,Activity/TreatyInActualUpdateValueLimits.xml
+TreatyIn.ActualValue.Limits.EgnpiTotalList.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualUpdateValueLimits.xml
+TreatyIn.ActualValue.Limits.EgnpiTotalList.CurrencyID,4,CurrencyID,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualUpdateValueLimits.xml
+TreatyIn.ActualValue.Limits.EgnpiTotalList.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualUpdateValueLimits.xml
+TreatyIn.ActualValue.Limits.MDPList,3,MDPList,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,2,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInActualUpdateValueLimits.xml
+TreatyIn.ActualValue.Limits.MDPList.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualUpdateValueLimits.xml
+TreatyIn.ActualValue.Limits.MDPList.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualUpdateValueLimits.xml
+TreatyIn.ActualValue.Limits.PremiumEarnedList,3,PremiumEarnedList,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,3,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInActualUpdateValueLimits.xml
+TreatyIn.ActualValue.Limits.PremiumEarnedList.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualUpdateValueLimits.xml
+TreatyIn.ActualValue.Limits.PremiumEarnedList.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualUpdateValueLimits.xml
+TreatyIn.ActualValue.RNMShare,2,RNMShare,Skalar,(tidak dideklarasikan),0,4,2,jalur-penuh,,ya,Activity/TreatyInActualShare.xml | Section/TreatyInActualShare.xml
+TreatyIn.ActualValue.Share,2,Share,Page List,ASM-FW-GISFW-Data-TreatyInShare,23,105,10,jalur-penuh,identitas-kelas (23/23 anak cocok),ya,Activity/FetchQSfromMasterXOL.xml | Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.Share.AddendumStatus,3,AddendumStatus,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.Share.ClassofBusinessList,3,ClassofBusinessList,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.Share.Cover,3,Cover,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.Share.GrossPremiumList,3,GrossPremiumList,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,8,2,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInActualShare.xml | Activity/TreatyInXOLAddSpreadingDetailActual.xml
+TreatyIn.ActualValue.Share.GrossPremiumList.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInActualShare.xml | Activity/TreatyInXOLAddSpreadingDetailActual.xml
+TreatyIn.ActualValue.Share.GrossPremiumList.Value,4,Value,Skalar,(tidak dideklarasikan),0,3,2,jalur-penuh,,ya,Activity/TreatyInActualShare.xml | Activity/TreatyInXOLAddSpreadingDetailActual.xml
+TreatyIn.ActualValue.Share.Layer,3,Layer,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.Share.LayerPart,3,LayerPart,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.Share.LayerPartType,3,LayerPartType,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.Share.LayerType,3,LayerType,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.Share.NetPremiumList,3,NetPremiumList,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyInActualShare.xml | Activity/TreatyInXOLAddSpreadingDetailActual.xml
+TreatyIn.ActualValue.Share.RNMShare,3,RNMShare,Skalar,(tidak dideklarasikan),0,3,1,jalur-penuh,,ya,Activity/TreatyInXOLAddSpreadingDetailActual.xml
+TreatyIn.ActualValue.Share.RNMSpreadedListDeductRIXOL,3,RNMSpreadedListDeductRIXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,6,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInActualShare.xml | Activity/TreatyInSetBrokerageActual.xml | Activity/TreatyInXOLAddSpreadingDetailActual.xml
+TreatyIn.ActualValue.Share.RNMSpreadedListDeductRIXOL.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/TreatyInActualShare.xml | Activity/TreatyInSetBrokerageActual.xml | Activity/TreatyInXOLAddSpreadingDetailActual.xml
+TreatyIn.ActualValue.Share.RNMSpreadedListDeductRIXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/TreatyInActualShare.xml | Activity/TreatyInSetBrokerageActual.xml | Activity/TreatyInXOLAddSpreadingDetailActual.xml
+TreatyIn.ActualValue.Share.RNMSpreadedListDeductXOL,3,RNMSpreadedListDeductXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,7,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInActualShare.xml | Activity/TreatyInSetBrokerageActual.xml | Activity/TreatyInXOLAddSpreadingDetailActual.xml
+TreatyIn.ActualValue.Share.RNMSpreadedListDeductXOL.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/TreatyInActualShare.xml | Activity/TreatyInSetBrokerageActual.xml | Activity/TreatyInXOLAddSpreadingDetailActual.xml
+TreatyIn.ActualValue.Share.RNMSpreadedListDeductXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/TreatyInActualShare.xml | Activity/TreatyInSetBrokerageActual.xml | Activity/TreatyInXOLAddSpreadingDetailActual.xml
+TreatyIn.ActualValue.Share.RNMSpreadedListGrossRIXOL,3,RNMSpreadedListGrossRIXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,4,2,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInActualShare.xml | Activity/TreatyInSetBrokerageActual.xml
+TreatyIn.ActualValue.Share.RNMSpreadedListGrossRIXOL.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInActualShare.xml | Activity/TreatyInSetBrokerageActual.xml
+TreatyIn.ActualValue.Share.RNMSpreadedListGrossRIXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInActualShare.xml | Activity/TreatyInSetBrokerageActual.xml
+TreatyIn.ActualValue.Share.RNMSpreadedListGrossXOL,3,RNMSpreadedListGrossXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,4,2,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInActualShare.xml | Activity/TreatyInSetBrokerageActual.xml
+TreatyIn.ActualValue.Share.RNMSpreadedListGrossXOL.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInActualShare.xml | Activity/TreatyInSetBrokerageActual.xml
+TreatyIn.ActualValue.Share.RNMSpreadedListGrossXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInActualShare.xml | Activity/TreatyInSetBrokerageActual.xml
+TreatyIn.ActualValue.Share.RNMSpreadedListNetRIXOL,3,RNMSpreadedListNetRIXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,10,5,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/FetchQSfromMasterXOL.xml | Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.Share.RNMSpreadedListNetRIXOL.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,4,4,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyInActualShare.xml | Activity/TreatyInSetBrokerageActual.xml
+TreatyIn.ActualValue.Share.RNMSpreadedListNetRIXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,4,4,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyInActualShare.xml | Activity/TreatyInSetBrokerageActual.xml
+TreatyIn.ActualValue.Share.RNMSpreadedListNetXOL,3,RNMSpreadedListNetXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,10,5,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/FetchQSfromMasterXOL.xml | Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.Share.RNMSpreadedListNetXOL.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,4,4,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyInActualShare.xml | Activity/TreatyInSetBrokerageActual.xml
+TreatyIn.ActualValue.Share.RNMSpreadedListNetXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,4,4,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyInActualShare.xml | Activity/TreatyInSetBrokerageActual.xml
+TreatyIn.ActualValue.Share.RNMSpreadedListRIXOL,3,RNMSpreadedListRIXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,5,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyInActualShare.xml | Activity/TreatyInSetBrokerageActual.xml
+TreatyIn.ActualValue.Share.RNMSpreadedListRIXOL.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInActualShare.xml | Activity/TreatyInSetBrokerageActual.xml
+TreatyIn.ActualValue.Share.RNMSpreadedListRIXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInActualShare.xml | Activity/TreatyInSetBrokerageActual.xml
+TreatyIn.ActualValue.Share.RNMSpreadedListXOL,3,RNMSpreadedListXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,5,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyInActualShare.xml | Activity/TreatyInSetBrokerageActual.xml
+TreatyIn.ActualValue.Share.RNMSpreadedListXOL.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInActualShare.xml | Activity/TreatyInSetBrokerageActual.xml
+TreatyIn.ActualValue.Share.RNMSpreadedListXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInActualShare.xml | Activity/TreatyInSetBrokerageActual.xml
+TreatyIn.ActualValue.Share.RnmLimitList,3,RnmLimitList,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,9,2,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInActualShare.xml | Activity/TreatyInXOLAddSpreadingDetailActual.xml
+TreatyIn.ActualValue.Share.RnmLimitList.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,4,2,jalur-penuh,,ya,Activity/TreatyInActualShare.xml | Activity/TreatyInXOLAddSpreadingDetailActual.xml
+TreatyIn.ActualValue.Share.RnmLimitList.Value,4,Value,Skalar,(tidak dideklarasikan),0,4,2,jalur-penuh,,ya,Activity/TreatyInActualShare.xml | Activity/TreatyInXOLAddSpreadingDetailActual.xml
+TreatyIn.ActualValue.Share.SpreadingListXOL,3,SpreadingListXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,2,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.Share.SpreadingListXOL.Pct,4,Pct,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.Share.SpreadingListXOL.ReinsTypeName,4,ReinsTypeName,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.Share.SpreadingTotalPctXOL,3,SpreadingTotalPctXOL,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.Share.SpreadingTypeXOL,3,SpreadingTypeXOL,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.Share.TreatyGroupList,3,TreatyGroupList,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.ShareFacultativeReinsurers,2,ShareFacultativeReinsurers,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualShare.xml
+TreatyIn.ActualValue.ShareReins,2,ShareReins,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Section/TreatyInActualShare.xml
+TreatyIn.ActualValue.TotalEgnpiAmount,2,TotalEgnpiAmount,Skalar,(tidak dideklarasikan),0,9,5,jalur-penuh,,ya,Activity/TreatyInActualUpdateValuePremiumIncome.xml | Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml
+TreatyIn.ActualValue.TotalEgnpiAmountNP,2,TotalEgnpiAmountNP,Page List,ASM-FW-GISFW-Data-TreatyInTotal,4,10,5,jalur-penuh,identitas-kelas (4/4 anak cocok),ya,Activity/TreatyInActualUpdateValuePremiumIncome.xml | Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml
+TreatyIn.ActualValue.TotalEgnpiAmountNP.AltValue,3,AltValue,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualUpdateValuePremiumIncome.xml
+TreatyIn.ActualValue.TotalEgnpiAmountNP.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualUpdateValuePremiumIncome.xml
+TreatyIn.ActualValue.TotalEgnpiAmountNP.ID,3,ID,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualUpdateValuePremiumIncome.xml
+TreatyIn.ActualValue.TotalEgnpiAmountNP.Value,3,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInActualUpdateValuePremiumIncome.xml
+TreatyIn.ActualValue.TotalEgnpiProportion,2,TotalEgnpiProportion,Skalar,(tidak dideklarasikan),0,7,5,jalur-penuh,,ya,Activity/TreatyInActualUpdateValuePremiumIncome.xml | Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml
+TreatyIn.ActualValue.TotalFacShareDeductionNP,2,TotalFacShareDeductionNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,9,4,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInNPSetTotalActualShare.xml | Activity/TreatyInShareActualSetTotal.xml | Harness/TreatyInFacultativeShareCalculation.xml
+TreatyIn.ActualValue.TotalFacShareDeductionNP.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInNPSetTotalActualShare.xml | Activity/TreatyInShareActualSetTotal.xml
+TreatyIn.ActualValue.TotalFacShareDeductionNP.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInNPSetTotalActualShare.xml | Activity/TreatyInShareActualSetTotal.xml
+TreatyIn.ActualValue.TotalFacShareGrossNP,2,TotalFacShareGrossNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,9,4,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInNPSetTotalActualShare.xml | Activity/TreatyInShareActualSetTotal.xml | Harness/TreatyInFacultativeShareCalculation.xml
+TreatyIn.ActualValue.TotalFacShareGrossNP.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInNPSetTotalActualShare.xml | Activity/TreatyInShareActualSetTotal.xml
+TreatyIn.ActualValue.TotalFacShareGrossNP.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInNPSetTotalActualShare.xml | Activity/TreatyInShareActualSetTotal.xml
+TreatyIn.ActualValue.TotalFacShareNetNP,2,TotalFacShareNetNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,9,4,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInNPSetTotalActualShare.xml | Activity/TreatyInShareActualSetTotal.xml | Harness/TreatyInFacultativeShareCalculation.xml
+TreatyIn.ActualValue.TotalFacShareNetNP.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInNPSetTotalActualShare.xml | Activity/TreatyInShareActualSetTotal.xml
+TreatyIn.ActualValue.TotalFacShareNetNP.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInNPSetTotalActualShare.xml | Activity/TreatyInShareActualSetTotal.xml
+TreatyIn.ActualValue.TotalFacShareRnmNP,2,TotalFacShareRnmNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,9,4,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInNPSetTotalActualShare.xml | Activity/TreatyInShareActualSetTotal.xml | Harness/TreatyInFacultativeShareCalculation.xml
+TreatyIn.ActualValue.TotalFacShareRnmNP.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInNPSetTotalActualShare.xml | Activity/TreatyInShareActualSetTotal.xml
+TreatyIn.ActualValue.TotalFacShareRnmNP.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInNPSetTotalActualShare.xml | Activity/TreatyInShareActualSetTotal.xml
+TreatyIn.ActualValue.TotalLimitDeductblNP,2,TotalLimitDeductblNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,12,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInLimitsActualSetTotal.xml | Activity/TreatyInNPSetTotalActualLimits.xml
+TreatyIn.ActualValue.TotalLimitDeductblNP.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,5,2,jalur-penuh,,ya,Activity/TreatyInLimitsActualSetTotal.xml | Activity/TreatyInNPSetTotalActualLimits.xml
+TreatyIn.ActualValue.TotalLimitDeductblNP.Value,3,Value,Skalar,(tidak dideklarasikan),0,4,2,jalur-penuh,,ya,Activity/TreatyInLimitsActualSetTotal.xml | Activity/TreatyInNPSetTotalActualLimits.xml
+TreatyIn.ActualValue.TotalLimitIOONP,2,TotalLimitIOONP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,12,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInLimitsActualSetTotal.xml | Activity/TreatyInNPSetTotalActualLimits.xml
+TreatyIn.ActualValue.TotalLimitIOONP.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,5,2,jalur-penuh,,ya,Activity/TreatyInLimitsActualSetTotal.xml | Activity/TreatyInNPSetTotalActualLimits.xml
+TreatyIn.ActualValue.TotalLimitIOONP.Value,3,Value,Skalar,(tidak dideklarasikan),0,4,2,jalur-penuh,,ya,Activity/TreatyInLimitsActualSetTotal.xml | Activity/TreatyInNPSetTotalActualLimits.xml
+TreatyIn.ActualValue.TotalLimitMDPNP,2,TotalLimitMDPNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,8,4,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInLimitsActualSetTotal.xml | Activity/TreatyInNPSetTotalActualLimits.xml
+TreatyIn.ActualValue.TotalLimitMDPNP.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInLimitsActualSetTotal.xml | Activity/TreatyInNPSetTotalActualLimits.xml
+TreatyIn.ActualValue.TotalLimitMDPNP.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInLimitsActualSetTotal.xml | Activity/TreatyInNPSetTotalActualLimits.xml
+TreatyIn.ActualValue.TotalLimitPremiEarnNP,2,TotalLimitPremiEarnNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,8,4,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInLimitsActualSetTotal.xml | Activity/TreatyInNPSetTotalActualLimits.xml
+TreatyIn.ActualValue.TotalLimitPremiEarnNP.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInLimitsActualSetTotal.xml | Activity/TreatyInNPSetTotalActualLimits.xml
+TreatyIn.ActualValue.TotalLimitPremiEarnNP.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInLimitsActualSetTotal.xml | Activity/TreatyInNPSetTotalActualLimits.xml
+TreatyIn.ActualValue.TotalLimitsROL,2,TotalLimitsROL,Skalar,(tidak dideklarasikan),0,7,3,jalur-penuh,,ya,Activity/TreatyInLimitsActualSetTotal.xml | Activity/TreatyInNPSetTotalActualLimits.xml | Section/TreatyInActualLimits.xml
+TreatyIn.ActualValue.TotalShareDeductionNP,2,TotalShareDeductionNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,9,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInNPSetTotalActualShare.xml | Activity/TreatyInShareActualSetTotal.xml | Section/TreatyInActualShare.xml
+TreatyIn.ActualValue.TotalShareDeductionNP.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInNPSetTotalActualShare.xml | Activity/TreatyInShareActualSetTotal.xml
+TreatyIn.ActualValue.TotalShareDeductionNP.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInNPSetTotalActualShare.xml | Activity/TreatyInShareActualSetTotal.xml
+TreatyIn.ActualValue.TotalShareGrossNP,2,TotalShareGrossNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,9,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInNPSetTotalActualShare.xml | Activity/TreatyInShareActualSetTotal.xml | Section/TreatyInActualShare.xml
+TreatyIn.ActualValue.TotalShareGrossNP.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInNPSetTotalActualShare.xml | Activity/TreatyInShareActualSetTotal.xml
+TreatyIn.ActualValue.TotalShareGrossNP.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInNPSetTotalActualShare.xml | Activity/TreatyInShareActualSetTotal.xml
+TreatyIn.ActualValue.TotalShareNetNP,2,TotalShareNetNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,9,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInNPSetTotalActualShare.xml | Activity/TreatyInShareActualSetTotal.xml | Section/TreatyInActualShare.xml
+TreatyIn.ActualValue.TotalShareNetNP.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInNPSetTotalActualShare.xml | Activity/TreatyInShareActualSetTotal.xml
+TreatyIn.ActualValue.TotalShareNetNP.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInNPSetTotalActualShare.xml | Activity/TreatyInShareActualSetTotal.xml
+TreatyIn.ActualValue.TotalShareRnmNP,2,TotalShareRnmNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,8,2,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInNPSetTotalActualShare.xml | Activity/TreatyInShareActualSetTotal.xml
+TreatyIn.ActualValue.TotalShareRnmNP.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInNPSetTotalActualShare.xml | Activity/TreatyInShareActualSetTotal.xml
+TreatyIn.ActualValue.TotalShareRnmNP.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInNPSetTotalActualShare.xml | Activity/TreatyInShareActualSetTotal.xml
+TreatyIn.ActualValue.TotalSpreadedNetPremi,2,TotalSpreadedNetPremi,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,9,4,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyInShareActualSetTotal.xml | Activity/TreatyInXOLAddSpreadingDetailActual.xml
+TreatyIn.ActualValue.TotalSpreadedNetPremi.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyInShareActualSetTotal.xml
+TreatyIn.ActualValue.TotalSpreadedNetPremi.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyInShareActualSetTotal.xml
+TreatyIn.ActualValue.TotalSpreadedNetPremiRI,2,TotalSpreadedNetPremiRI,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,9,4,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyInShareActualSetTotal.xml | Activity/TreatyInXOLAddSpreadingDetailActual.xml
+TreatyIn.ActualValue.TotalSpreadedNetPremiRI.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyInShareActualSetTotal.xml
+TreatyIn.ActualValue.TotalSpreadedNetPremiRI.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyInShareActualSetTotal.xml
+TreatyIn.ActualValue.TotalSpreadedRnmProp,2,TotalSpreadedRnmProp,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,9,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyInShareActualSetTotal.xml | Activity/TreatyInXOLAddSpreadingDetailActual.xml
+TreatyIn.ActualValue.TotalSpreadedRnmProp.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyInShareActualSetTotal.xml
+TreatyIn.ActualValue.TotalSpreadedRnmProp.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyInShareActualSetTotal.xml
+TreatyIn.ActualValue.TotalSpreadedRnmRIProp,2,TotalSpreadedRnmRIProp,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,8,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyInShareActualSetTotal.xml | Activity/TreatyInXOLAddSpreadingDetailActual.xml
+TreatyIn.ActualValue.TotalSpreadedRnmRIProp.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyInShareActualSetTotal.xml
+TreatyIn.ActualValue.TotalSpreadedRnmRIProp.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyInShareActualSetTotal.xml
+TreatyIn.AddendumPremi,1,AddendumPremi,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.Bordeaux,1,Bordeaux,Skalar,(tidak dideklarasikan),0,6,5,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml | Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml
+TreatyIn.BordereauxNote,1,BordereauxNote,Skalar,(tidak dideklarasikan),0,4,4,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml | Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml
+TreatyIn.BrokeragePct,1,BrokeragePct,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,RDBList/SaveTreatyIn.xml | RDBList/SaveTreatyInEDM.xml
+TreatyIn.BrokeragePercent,1,BrokeragePercent,Skalar,(tidak dideklarasikan),0,19,11,jalur-penuh,,ya,Activity/SaveTreatyInDetailEdm_Act.xml | Activity/SaveTreatyInDetail_Act.xml | Activity/SaveTreatyInOfferNonProp1_Act.xml
+TreatyIn.BrokeragePercentP,1,BrokeragePercentP,Skalar,(tidak dideklarasikan),0,8,8,jalur-penuh,,ya,Activity/SaveTreatyInDetailEdm_Act.xml | Activity/SaveTreatyInDetail_Act.xml | Activity/SaveTreatyInOfferProportional_Act.xml
+TreatyIn.Ceding,1,Ceding,Skalar,(tidak dideklarasikan),0,24,14,jalur-penuh,,ya,Activity/SaveTreatyInDetailEdm_Act.xml | Activity/SaveTreatyInDetail_Act.xml | Activity/SaveTreatyInOffer_Act.xml
+TreatyIn.CedingID,1,CedingID,Skalar,(tidak dideklarasikan),0,15,12,jalur-penuh,,ya,Activity/CheckDuplicateOffer.xml | Activity/SaveTreatyInDetailEdm_Act.xml | Activity/SaveTreatyInDetail_Act.xml
+TreatyIn.CedingStatusActive,1,CedingStatusActive,Skalar,(tidak dideklarasikan),0,5,4,jalur-penuh,,ya,Activity/TreatyInCheckCedingBlacklist.xml | Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml
+TreatyIn.ChooseStatusAkseptasi,1,ChooseStatusAkseptasi,Skalar,(tidak dideklarasikan),0,21,7,jalur-penuh,,ya,Activity/SetViewTreatyIn_Act.xml | DataTransform/Akseptasi_DT.xml | RDBList/SaveTreatyIn.xml
+TreatyIn.ClassofBusiness,1,ClassofBusiness,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,RDBList/SaveTreatyIn.xml | RDBList/SaveTreatyInEDM.xml
+TreatyIn.CoInScale,1,CoInScale,Skalar,(tidak dideklarasikan),0,4,4,jalur-penuh,,ya,Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml | Section/TreatyInNONProportional.xml
+TreatyIn.Commencement,1,Commencement,Skalar,(tidak dideklarasikan),0,60,22,jalur-penuh,,ya,Activity/CheckDuplicateOffer.xml | Activity/DetailCalculation.xml | Activity/FetchQSfromMaster.xml
+TreatyIn.Comment,1,Comment,Skalar,(tidak dideklarasikan),0,37,17,jalur-penuh,,ya,Activity/AddCommentList_Act.xml | Activity/Akseptasi_Act.xml | Activity/SaveTreatyIn_EDM_Act.xml
+TreatyIn.CommentList,1,CommentList,Page List,ASM-FW-GISFW-Data-SuggestList,4,37,13,jalur-penuh,identitas-kelas (4/4 anak cocok),ya,Activity/AddCommentList_Act.xml | Activity/ConvertHistoryDate.xml | Activity/SetTreatyIn_Act.xml
+TreatyIn.CommentList.Date,2,Date,Skalar,(tidak dideklarasikan),0,6,4,jalur-penuh,,ya,Activity/AddCommentList_Act.xml | Activity/SetTreatyIn_Act.xml | Activity/TreatyInCopy.xml
+TreatyIn.CommentList.IsApproved,2,IsApproved,Skalar,(tidak dideklarasikan),0,7,4,jalur-penuh,,ya,Activity/AddCommentList_Act.xml | Activity/TreatyInDeclineConfirmation_postact.xml | Activity/TreatyInDeclineConfirmation_postactEDM.xml
+TreatyIn.CommentList.OperatorName,2,OperatorName,Skalar,(tidak dideklarasikan),0,12,6,jalur-penuh,,ya,Activity/AddCommentList_Act.xml | Activity/SetTreatyIn_Act.xml | Activity/TreatyInCopy.xml
+TreatyIn.CommentList.Suggest,2,Suggest,Skalar,(tidak dideklarasikan),0,6,4,jalur-penuh,,ya,Activity/AddCommentList_Act.xml | Activity/SetTreatyIn_Act.xml | Activity/TreatyInCopy.xml
+TreatyIn.ContractRefNo,1,ContractRefNo,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml | Section/TreatyInNONProportional.xml
+TreatyIn.Currency,1,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNonSetTotal.xml
+TreatyIn.CurrencyEarthquake,1,CurrencyEarthquake,Skalar,(tidak dideklarasikan),0,4,4,jalur-penuh,,ya,Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml | Section/TreatyInNONProportional.xml
+TreatyIn.CurrencyEgnpiAmount,1,CurrencyEgnpiAmount,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNonSetTotal.xml
+TreatyIn.CurrencyFloodJab,1,CurrencyFloodJab,Skalar,(tidak dideklarasikan),0,4,4,jalur-penuh,,ya,Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml | Section/TreatyInNONProportional.xml
+TreatyIn.CurrencyFloodNat,1,CurrencyFloodNat,Skalar,(tidak dideklarasikan),0,4,4,jalur-penuh,,ya,Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml | Section/TreatyInNONProportional.xml
+TreatyIn.CurrencyInstallmentAmount,1,CurrencyInstallmentAmount,Skalar,(tidak dideklarasikan),0,4,4,jalur-penuh,,ya,Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml | Section/TreatyInNONProportional.xml
+TreatyIn.CurrencyList,1,CurrencyList,Page List,ASM-FW-GISFW-Data-TreatyInCurrencyList,5,18,11,jalur-penuh,identitas-kelas (5/5 anak cocok),ya,Activity/DetailCalculationROL.xml | Activity/GetAchievement.xml | Activity/SetAmountConversion.xml
+TreatyIn.CurrencyList.Conversion,2,Conversion,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvert.xml
+TreatyIn.CurrencyList.Currency,2,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvert.xml
+TreatyIn.CurrencyList.CurrencyID,2,CurrencyID,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInAddCurrency.xml | Activity/TreatyInMappingDataconvert.xml
+TreatyIn.CurrencyList.PeriodEnd,2,PeriodEnd,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvert.xml
+TreatyIn.CurrencyList.PeriodStart,2,PeriodStart,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvert.xml
+TreatyIn.CurrencyRSMD,1,CurrencyRSMD,Skalar,(tidak dideklarasikan),0,4,4,jalur-penuh,,ya,Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml | Section/TreatyInNONProportional.xml
+TreatyIn.EDMEffective,1,EDMEffective,Skalar,(tidak dideklarasikan),0,7,5,jalur-penuh,,ya,DataTransform/TreatyCalculateProratePct.xml | Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml
+TreatyIn.EDMMaterialType,1,EDMMaterialType,Skalar,(tidak dideklarasikan),0,472,19,jalur-penuh,,ya,Harness/InputTreatyInOffer.xml | RDBList/SaveTreatyInEDM.xml | Section/CoBList.xml
+TreatyIn.EDMState,1,EDMState,Skalar,(tidak dideklarasikan),0,67,12,jalur-penuh,,ya,Activity/FetchTreatyExistingProduction.xml | Activity/SaveTreatyIn_EDM_Act.xml | Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.EGNPI,1,EGNPI,Page List,ASM-FW-GISFW-Data-TreatyInEGNPI,9,28,14,jalur-penuh,identitas-kelas (9/9 anak cocok),ya,Activity/DetailCalculation.xml | Activity/TotalEgnpi.xml | Activity/TreatyEDMDifferencePremium.xml
+TreatyIn.EGNPI.Amount,2,Amount,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInDifferencePremium.xml | Activity/TreatyInMappingDataconvert.xml
+TreatyIn.EGNPI.AmountIDR,2,AmountIDR,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInDifferencePremium.xml | Activity/TreatyInMappingDataconvert.xml
+TreatyIn.EGNPI.AsDate,2,AsDate,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvert.xml
+TreatyIn.EGNPI.Currency,2,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInMappingDataconvert.xml | Activity/TreatyInNonAddItem.xml
+TreatyIn.EGNPI.CurrencyID,2,CurrencyID,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInMappingDataconvert.xml | Activity/TreatyInNonAddItem.xml
+TreatyIn.EGNPI.ID,2,ID,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml
+TreatyIn.EGNPI.Proportion,2,Proportion,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferencePremium.xml
+TreatyIn.EGNPI.TreatyGroup,2,TreatyGroup,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvert.xml
+TreatyIn.EGNPI.TreatyGroupID,2,TreatyGroupID,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvert.xml
+TreatyIn.Earthquake,1,Earthquake,Skalar,(tidak dideklarasikan),0,4,4,jalur-penuh,,ya,Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml | Section/TreatyInNONProportional.xml
+TreatyIn.Exclusions,1,Exclusions,Skalar,(tidak dideklarasikan),0,9,7,jalur-penuh,,ya,Activity/TreatyInMappingDataconvert.xml | Activity/TreatyInMappingDataconvertProp.xml | DataTransform/TreatyInCopyConditions.xml
+TreatyIn.ExclusionsP,1,ExclusionsP,Skalar,(tidak dideklarasikan),0,7,6,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml | DataTransform/TreatyInCopyConditions.xml | Harness/InputTreatyInOffer.xml
+TreatyIn.FacShare,1,FacShare,Skalar,(tidak dideklarasikan),0,6,6,jalur-penuh,,ya,Activity/SaveTreatyIn_Act.xml | Activity/TreatyInXOLAddSpreading.xml | Harness/InputTreatyInOffer.xml
+TreatyIn.FacShareBrokerage,1,FacShareBrokerage,Skalar,(tidak dideklarasikan),0,6,6,jalur-penuh,,ya,Activity/SaveTreatyIn_Act.xml | Activity/TreatyInXOLAddSpreading.xml | Harness/InputTreatyInOffer.xml
+TreatyIn.FacultativeShare,1,FacultativeShare,Skalar,(tidak dideklarasikan),0,76,17,jalur-penuh,,ya,Activity/CountRetroShare_Act.xml | Activity/SaveTreatyIn_Act.xml | Activity/TreatyInActualShare.xml
+TreatyIn.FacultativeShareBrokerage,1,FacultativeShareBrokerage,Skalar,(tidak dideklarasikan),0,15,15,jalur-penuh,,ya,Activity/SaveTreatyIn_Act.xml | Activity/TreatyEDMDifferenceDeduction.xml | Activity/TreatyInActualShare.xml
+TreatyIn.FacultativeShareList,1,FacultativeShareList,Page List,ASM-FW-GISFW-Data-TreatyInShare,16,58,10,jalur-penuh,identitas-kelas (16/16 anak cocok),ya,Activity/GetSpreadingRetro.xml | Activity/TreatyEDMDifferenceDeduction.xml | Activity/TreatyInDifferenceDeduction.xml
+TreatyIn.FacultativeShareList.ClassofBusinessList,2,ClassofBusinessList,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml
+TreatyIn.FacultativeShareList.Cover,2,Cover,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml
+TreatyIn.FacultativeShareList.DeductionList,2,DeductionList,Page List,ASM-FW-GISFW-Data-TreatyInDeduction,2,4,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.FacultativeShareList.DeductionList.Deduction,3,Deduction,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.FacultativeShareList.DeductionList.DeductionPct,3,DeductionPct,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.FacultativeShareList.GrossPremiumList,2,GrossPremiumList,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,6,2,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInDifferenceFacShare.xml | Activity/TreatyInNonAddItem.xml
+TreatyIn.FacultativeShareList.GrossPremiumList.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml
+TreatyIn.FacultativeShareList.GrossPremiumList.Value,3,Value,Skalar,(tidak dideklarasikan),0,4,2,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml | Activity/TreatyInNonAddItem.xml
+TreatyIn.FacultativeShareList.Layer,2,Layer,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml
+TreatyIn.FacultativeShareList.LayerPart,2,LayerPart,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml
+TreatyIn.FacultativeShareList.LayerPartType,2,LayerPartType,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml
+TreatyIn.FacultativeShareList.LayerType,2,LayerType,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml
+TreatyIn.FacultativeShareList.Limit,2,Limit,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml
+TreatyIn.FacultativeShareList.Limit2,2,Limit2,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml
+TreatyIn.FacultativeShareList.NetPremiumList,2,NetPremiumList,Page List,(tidak dideklarasikan),1,3,2,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml | Activity/TreatyInNonAddItem.xml
+TreatyIn.FacultativeShareList.NetPremiumList.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.FacultativeShareList.RnmGrossPremiDisplay,2,RnmGrossPremiDisplay,Page List,(tidak dideklarasikan),1,2,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.FacultativeShareList.RnmGrossPremiDisplay.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.FacultativeShareList.RnmLimitList,2,RnmLimitList,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,5,2,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInDifferenceFacShare.xml | Activity/TreatyInNonAddItem.xml
+TreatyIn.FacultativeShareList.RnmLimitList.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml
+TreatyIn.FacultativeShareList.RnmLimitList.Value,3,Value,Skalar,(tidak dideklarasikan),0,3,2,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml | Activity/TreatyInNonAddItem.xml
+TreatyIn.FacultativeShareList.RnmLimitListDisplay,2,RnmLimitListDisplay,Page List,(tidak dideklarasikan),1,2,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.FacultativeShareList.RnmLimitListDisplay.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.FacultativeShareList.ShareFacultativeReinsurers,2,ShareFacultativeReinsurers,Page List,ASM-FW-GISFW-Data-TreatyInShareReins,5,6,1,jalur-penuh,identitas-kelas (5/5 anak cocok),ya,Activity/GetSpreadingRetro.xml
+TreatyIn.FacultativeShareList.ShareFacultativeReinsurers.Amount,3,Amount,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/GetSpreadingRetro.xml
+TreatyIn.FacultativeShareList.ShareFacultativeReinsurers.Amount2,3,Amount2,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/GetSpreadingRetro.xml
+TreatyIn.FacultativeShareList.ShareFacultativeReinsurers.ReinsID,3,ReinsID,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/GetSpreadingRetro.xml
+TreatyIn.FacultativeShareList.ShareFacultativeReinsurers.ReinsName,3,ReinsName,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/GetSpreadingRetro.xml
+TreatyIn.FacultativeShareList.ShareFacultativeReinsurers.SharePct,3,SharePct,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/GetSpreadingRetro.xml
+TreatyIn.FacultativeShareList.TreatyGroupList,2,TreatyGroupList,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml
+TreatyIn.FloodJab,1,FloodJab,Skalar,(tidak dideklarasikan),0,4,4,jalur-penuh,,ya,Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml | Section/TreatyInNONProportional.xml
+TreatyIn.FloodNation,1,FloodNation,Skalar,(tidak dideklarasikan),0,4,4,jalur-penuh,,ya,Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml | Section/TreatyInNONProportional.xml
+TreatyIn.ID,1,ID,Skalar,(tidak dideklarasikan),0,62,43,jalur-penuh,,ya,Activity/CheckDuplicateOffer.xml | Activity/FetchQSfromMasterXOL.xml | Activity/FetchTreatyExistingProduction.xml
+TreatyIn.Information,1,Information,Skalar,(tidak dideklarasikan),0,33,13,jalur-penuh,,ya,Activity/SaveTreatyIn_EDM_Act.xml | Activity/TreatyInAkseptasiEDM_Act.xml | Activity/TreatyInDeclineConfirmation_postact.xml
+TreatyIn.Installment,1,Installment,Page List,ASM-FW-GISFW-Data-TreatyInLimits,2,21,11,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/SaveTreatyInDetailEdm_Act.xml | Activity/SaveTreatyInDetail_Act.xml | Activity/TreatyInNPSetTotal.xml
+TreatyIn.Installment.Currency,2,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml | Activity/TreatyInSetValueInstallment.xml
+TreatyIn.Installment.ID,2,ID,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml
+TreatyIn.InstallmentNo,1,InstallmentNo,Skalar,(tidak dideklarasikan),0,50,10,jalur-penuh,,ya,Activity/SaveTreatyInDetailEdm_Act.xml | Activity/SaveTreatyInDetail_Act.xml | Activity/TreatyEDMCalculateDifference.xml
+TreatyIn.IsEditData,1,IsEditData,Skalar,(tidak dideklarasikan),0,110,10,jalur-penuh,,ya,Activity/SetTreatyIn_Act.xml | Activity/TreatyInCopy.xml | DataTransform/TreatyInSetEdit.xml
+TreatyIn.IsMultipleRetro,1,IsMultipleRetro,Skalar,(tidak dideklarasikan),0,35,9,jalur-penuh,,ya,Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml | Section/ShareRetro.xml
+TreatyIn.IsProRate,1,IsProRate,Skalar,(tidak dideklarasikan),0,19,11,jalur-penuh,,ya,Activity/TreatyEDMCalculateDifference.xml | Activity/TreatyInNonAddItem.xml | Activity/TreatyInXOLAddSpreadingDetail.xml
+TreatyIn.LeadingReinsID,1,LeadingReinsID,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,RDBList/SaveTreatyIn.xml | RDBList/SaveTreatyInEDM.xml
+TreatyIn.LeadingReinsName,1,LeadingReinsName,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml | Section/TreatyInNONProportional.xml
+TreatyIn.LeadingReinsSource,1,LeadingReinsSource,Skalar,(tidak dideklarasikan),0,20,13,jalur-penuh,,ya,Activity/SaveTreatyInDetailEdm_Act.xml | Activity/SaveTreatyInDetail_Act.xml | Activity/SaveTreatyInOffer_Act.xml
+TreatyIn.LeadingReinsSourceID,1,LeadingReinsSourceID,Skalar,(tidak dideklarasikan),0,14,12,jalur-penuh,,ya,Activity/CheckDuplicateOffer.xml | Activity/SaveTreatyInDetailEdm_Act.xml | Activity/SaveTreatyInDetail_Act.xml
+TreatyIn.LimitFacShareSummaryList,1,LimitFacShareSummaryList,Page List,(tidak dideklarasikan),0,5,3,jalur-penuh,,ya,Activity/TreatyInSummaryLimitActualFacShare.xml | Activity/TreatyInSummaryLimitFacShare.xml | Section/TreatyInFacultativeShareCalculation.xml
+TreatyIn.LimitShareSummaryList,1,LimitShareSummaryList,Page List,ASM-FW-GISFW-Data-LimitSummaryList,8,35,7,jalur-penuh,identitas-kelas (8/8 anak cocok),ya,Activity/TreatyInDifferenceFacShare.xml | Activity/TreatyInDifferenceShare.xml | Activity/TreatyInSummaryLimitShare.xml
+TreatyIn.LimitShareSummaryList.AggregateLimit,2,AggregateLimit,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInDifferenceShare.xml
+TreatyIn.LimitShareSummaryList.AggregateLimit2,2,AggregateLimit2,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInDifferenceShare.xml
+TreatyIn.LimitShareSummaryList.Deductible,2,Deductible,Skalar,(tidak dideklarasikan),0,4,2,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.LimitShareSummaryList.Deductible2,2,Deductible2,Skalar,(tidak dideklarasikan),0,4,2,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.LimitShareSummaryList.Limit,2,Limit,Skalar,(tidak dideklarasikan),0,4,2,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.LimitShareSummaryList.Limit2,2,Limit2,Skalar,(tidak dideklarasikan),0,4,2,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.LimitShareSummaryList.MDP,2,MDP,Skalar,(tidak dideklarasikan),0,4,2,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.LimitShareSummaryList.MDP2,2,MDP2,Skalar,(tidak dideklarasikan),0,4,2,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.LimitSummaryList,1,LimitSummaryList,Page List,ASM-FW-GISFW-Data-LimitSummaryList,8,18,7,jalur-penuh,identitas-kelas (8/8 anak cocok),ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInSummaryLimit.xml
+TreatyIn.LimitSummaryList.AggregateLimit,2,AggregateLimit,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceLimits.xml
+TreatyIn.LimitSummaryList.AggregateLimit2,2,AggregateLimit2,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceLimits.xml
+TreatyIn.LimitSummaryList.Deductible,2,Deductible,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceLimits.xml
+TreatyIn.LimitSummaryList.Deductible2,2,Deductible2,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceLimits.xml
+TreatyIn.LimitSummaryList.Limit,2,Limit,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceLimits.xml
+TreatyIn.LimitSummaryList.Limit2,2,Limit2,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceLimits.xml
+TreatyIn.LimitSummaryList.MDP,2,MDP,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInDifferenceLimits.xml
+TreatyIn.LimitSummaryList.MDP2,2,MDP2,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInDifferenceLimits.xml
+TreatyIn.Limits,1,Limits,Page List,ASM-FW-GISFW-Data-TreatyInLimits,24,307,45,jalur-penuh,dideklarasikan,ya,Activity/AddFacRetroProp.xml | Activity/CalculateSharePctToRetro.xml | Activity/CopyLastLimitNP.xml
+TreatyIn.Limits.AdjRate,2,AdjRate,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/SaveTreatyInDetail_Act.xml | Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInMappingDataconvert.xml
+TreatyIn.Limits.Cover,2,Cover,Skalar,(tidak dideklarasikan),0,3,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvert.xml
+TreatyIn.Limits.Currency,2,Currency,Skalar,(tidak dideklarasikan),0,5,3,jalur-penuh,,ya,Activity/CopyLastLimitNP.xml | Activity/TreatyInMappingDataconvert.xml | Activity/TreatyInNPSetTotal.xml
+TreatyIn.Limits.Currency2,2,Currency2,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.Limits.Deductible,2,Deductible,Skalar,(tidak dideklarasikan),0,4,3,jalur-penuh,,ya,Activity/CopyLastLimitNP.xml | Activity/SaveTreatyInDetail_Act.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.Limits.Deductible2,2,Deductible2,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/SaveTreatyInDetail_Act.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.Limits.Detail,2,Detail,Page List,ASM-FW-GISFW-Data-TreatyInLimitsDetail,22,104,7,jalur-penuh,identitas-kelas (22/22 anak cocok),ya,Activity/GetAchievement.xml | Activity/SaveTreatyInDetailEdm_Act.xml | Activity/SaveTreatyInDetail_Act.xml
+TreatyIn.Limits.Detail.AchievementLists,3,AchievementLists,Page List,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/GetAchievement.xml
+TreatyIn.Limits.Detail.COBList,3,COBList,Page List,ASM-FW-GISFW-Data-TreatyInLimits,2,2,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.COBList.ClassOfBusiness,4,ClassOfBusiness,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.COBList.ClassOfBusinessID,4,ClassOfBusinessID,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.CashLossList,3,CashLossList,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,4,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.CashLossList.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.CashLossList.Value,4,Value,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.CessionList,3,CessionList,Skalar,(tidak dideklarasikan),0,6,2,jalur-penuh,,ya,Activity/SaveTreatyInDetailEdm_Act.xml | Activity/SaveTreatyInDetail_Act.xml
+TreatyIn.Limits.Detail.ClaimCoopList,3,ClaimCoopList,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,2,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.ClaimCoopList.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.ClaimCoopList.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.EPIList,3,EPIList,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,19,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/SaveTreatyInDetailEdm_Act.xml | Activity/SaveTreatyInDetail_Act.xml | Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.EPIList.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.EPIList.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.IOOLimitList,3,IOOLimitList,Page List,ASM-FW-GISFW-Data-TreatyInTotal,4,18,4,jalur-penuh,identitas-kelas (4/4 anak cocok),ya,Activity/SaveTreatyInDetailEdm_Act.xml | Activity/SaveTreatyInDetail_Act.xml | Activity/TreatyInFixSpl.xml
+TreatyIn.Limits.Detail.IOOLimitList.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInFixSpl.xml | Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.IOOLimitList.CurrencyID,4,CurrencyID,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInFixSpl.xml
+TreatyIn.Limits.Detail.IOOLimitList.ID,4,ID,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInFixSpl.xml
+TreatyIn.Limits.Detail.IOOLimitList.Value,4,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInFixSpl.xml | Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.PLAList,3,PLAList,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,2,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.PLAList.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.PLAList.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.ProfitCommision,3,ProfitCommision,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.ProfitME,3,ProfitME,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.ProfitYDCF,3,ProfitYDCF,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.QSPct,3,QSPct,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.RIOGR,3,RIOGR,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.RIONR,3,RIONR,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.RNMShareList,3,RNMShareList,Skalar,(tidak dideklarasikan),0,10,3,jalur-penuh,,ya,Activity/SaveTreatyInDetailEdm_Act.xml | Activity/SaveTreatyInDetail_Act.xml | Activity/SaveTreatyInOfferProportional_Act.xml
+TreatyIn.Limits.Detail.RetentionList,3,RetentionList,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,11,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/SaveTreatyInDetailEdm_Act.xml | Activity/SaveTreatyInDetail_Act.xml | Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.RetentionList.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.RetentionList.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.SpreadingList,3,SpreadingList,Skalar,(tidak dideklarasikan),0,5,2,jalur-penuh,,ya,Activity/SaveTreatyInDetailEdm_Act.xml | Activity/SaveTreatyInDetail_Act.xml
+TreatyIn.Limits.Detail.SpreadingTypeID,3,SpreadingTypeID,Skalar,(tidak dideklarasikan),0,8,2,jalur-penuh,,ya,Activity/SaveTreatyInDetailEdm_Act.xml | Activity/SaveTreatyInDetail_Act.xml
+TreatyIn.Limits.Detail.Surplus,3,Surplus,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.TreatyGroup,3,TreatyGroup,Skalar,(tidak dideklarasikan),0,5,2,jalur-penuh,,ya,Activity/GetAchievement.xml | Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.TreatyGroupID,3,TreatyGroupID,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.Detail.TreatyType,3,TreatyType,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Limits.EgnpiTotalList,2,EgnpiTotalList,Page List,ASM-FW-GISFW-Data-TreatyInTotal,3,8,3,jalur-penuh,identitas-kelas (3/3 anak cocok),ya,Activity/CopyLastLimitNP.xml | Activity/TotalEgnpi.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.Limits.EgnpiTotalList.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TotalEgnpi.xml
+TreatyIn.Limits.EgnpiTotalList.CurrencyID,3,CurrencyID,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TotalEgnpi.xml
+TreatyIn.Limits.EgnpiTotalList.Value,3,Value,Skalar,(tidak dideklarasikan),0,3,2,jalur-penuh,,ya,Activity/TotalEgnpi.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.Limits.ID,2,ID,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml | Activity/TreatyInPropAdd.xml
+TreatyIn.Limits.Layer,2,Layer,Skalar,(tidak dideklarasikan),0,11,2,jalur-penuh,,ya,Activity/CopyLastLimitNP.xml | Activity/TreatyInMappingDataconvert.xml
+TreatyIn.Limits.LayerPart,2,LayerPart,Skalar,(tidak dideklarasikan),0,11,2,jalur-penuh,,ya,Activity/CopyLastLimitNP.xml | Activity/TreatyInMappingDataconvert.xml
+TreatyIn.Limits.LayerPartType,2,LayerPartType,Skalar,(tidak dideklarasikan),0,11,2,jalur-penuh,,ya,Activity/CopyLastLimitNP.xml | Activity/TreatyInMappingDataconvert.xml
+TreatyIn.Limits.LayerType,2,LayerType,Skalar,(tidak dideklarasikan),0,11,2,jalur-penuh,,ya,Activity/CopyLastLimitNP.xml | Activity/TreatyInMappingDataconvert.xml
+TreatyIn.Limits.Limit,2,Limit,Skalar,(tidak dideklarasikan),0,5,3,jalur-penuh,,ya,Activity/CopyLastLimitNP.xml | Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInMappingDataconvert.xml
+TreatyIn.Limits.Limit2,2,Limit2,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceLimits.xml
+TreatyIn.Limits.MDPList,2,MDPList,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,16,5,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/SaveTreatyInDetail_Act.xml | Activity/SaveTreatyInOfferNonProp1_Act.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.Limits.MDPList.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,5,2,jalur-penuh,,ya,Activity/TreatyInMappingDataconvert.xml | DataTransform/ReCalculateReinstatement.xml
+TreatyIn.Limits.MDPList.Value,3,Value,Skalar,(tidak dideklarasikan),0,7,3,jalur-penuh,,ya,Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInMappingDataconvert.xml | DataTransform/ReCalculateReinstatement.xml
+TreatyIn.Limits.MDPPct,2,MDPPct,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/SaveTreatyInDetail_Act.xml | Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInMappingDataconvert.xml
+TreatyIn.Limits.PremiumEarnedList,2,PremiumEarnedList,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,5,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/SaveTreatyInDetail_Act.xml | Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInMappingDataconvert.xml
+TreatyIn.Limits.PremiumEarnedList.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvert.xml
+TreatyIn.Limits.PremiumEarnedList.Value,3,Value,Skalar,(tidak dideklarasikan),0,3,2,jalur-penuh,,ya,Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInMappingDataconvert.xml
+TreatyIn.Limits.ROLPct,2,ROLPct,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/SaveTreatyInDetail_Act.xml | Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInMappingDataconvert.xml
+TreatyIn.Limits.ReinstatementPct,2,ReinstatementPct,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvert.xml
+TreatyIn.Limits.ReinstatementValue,2,ReinstatementValue,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvert.xml
+TreatyIn.Limits.Reinstatement_List,2,Reinstatement_List,Page List,ASM-FW-GISFW-Data-TreatyInLimits,3,8,1,jalur-penuh,identitas-kelas (3/3 anak cocok),ya,DataTransform/ReCalculateReinstatement.xml
+TreatyIn.Limits.Reinstatement_List.AdditionalAmount1,3,AdditionalAmount1,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,DataTransform/ReCalculateReinstatement.xml
+TreatyIn.Limits.Reinstatement_List.AdditionalAmount2,3,AdditionalAmount2,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,DataTransform/ReCalculateReinstatement.xml
+TreatyIn.Limits.Reinstatement_List.ReinstatementPct,3,ReinstatementPct,Skalar,(tidak dideklarasikan),0,4,1,jalur-penuh,,ya,DataTransform/ReCalculateReinstatement.xml
+TreatyIn.Limits.TreatyGroupList,2,TreatyGroupList,Page List,ASM-FW-GISFW-Data-TreatyInLimitLayer,3,6,2,jalur-penuh,identitas-kelas (3/3 anak cocok),ya,Activity/CopyLastLimitNP.xml | Activity/TreatyInMappingDataconvert.xml
+TreatyIn.Limits.TreatyGroupList.ClassOfBusinessList,3,ClassOfBusinessList,Page List,ASM-FW-GISFW-Data-TreatyInLimits,2,2,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInMappingDataconvert.xml
+TreatyIn.Limits.TreatyGroupList.ClassOfBusinessList.ClassOfBusiness,4,ClassOfBusiness,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvert.xml
+TreatyIn.Limits.TreatyGroupList.ClassOfBusinessList.ClassOfBusinessID,4,ClassOfBusinessID,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvert.xml
+TreatyIn.Limits.TreatyGroupList.TreatyGroup,3,TreatyGroup,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvert.xml
+TreatyIn.Limits.TreatyGroupList.TreatyGroupID,3,TreatyGroupID,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvert.xml
+TreatyIn.Limits.TreatyType,2,TreatyType,Skalar,(tidak dideklarasikan),0,5,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.MDPSummaryList,1,MDPSummaryList,Page List,(tidak dideklarasikan),0,6,5,jalur-penuh,,ya,Activity/TreatyInSummaryMDP.xml | Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml
+TreatyIn.MaxCoGroup,1,MaxCoGroup,Skalar,(tidak dideklarasikan),0,4,4,jalur-penuh,,ya,Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml | Section/TreatyInNONProportional.xml
+TreatyIn.MaxCoNonGroup,1,MaxCoNonGroup,Skalar,(tidak dideklarasikan),0,4,4,jalur-penuh,,ya,Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml | Section/TreatyInNONProportional.xml
+TreatyIn.NusareSharePct,1,NusareSharePct,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,RDBList/SaveTreatyIn.xml | RDBList/SaveTreatyInEDM.xml
+TreatyIn.OLDDATA,1,OLDDATA,Page,ASM-FW-GISFW-Int-TREATY_IN,69,62,5,jalur-penuh,TIDAK dideklarasikan - bentuk anak sama dengan akar,ya,Activity/TreatyEDMDifferenceDeduction.xml | Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyEDMDifferencePremium.xml
+TreatyIn.OLDDATA.AccountingMode,2,AccountingMode,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.AccountingModeNonProp,2,AccountingModeNonProp,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.AccumulationList,2,AccumulationList,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.Bordeaux,2,Bordeaux,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.BordereauxNote,2,BordereauxNote,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.BrokeragePercent,2,BrokeragePercent,Skalar,(tidak dideklarasikan),0,3,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceDeduction.xml | Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.BrokeragePercentP,2,BrokeragePercentP,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.Ceding,2,Ceding,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.Commencement,2,Commencement,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.CurrencyInstallmentAmount,2,CurrencyInstallmentAmount,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.CurrencyList,2,CurrencyList,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.EGNPI,2,EGNPI,Page List,ASM-FW-GISFW-Data-TreatyInEGNPI,3,3,1,jalur-penuh,identitas-kelas (3/3 anak cocok),ya,Activity/TreatyEDMDifferencePremium.xml
+TreatyIn.OLDDATA.EGNPI.Amount,3,Amount,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferencePremium.xml
+TreatyIn.OLDDATA.EGNPI.AmountIDR,3,AmountIDR,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferencePremium.xml
+TreatyIn.OLDDATA.EGNPI.Proportion,3,Proportion,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferencePremium.xml
+TreatyIn.OLDDATA.ExclusionsP,2,ExclusionsP,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.FacultativeShare,2,FacultativeShare,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.FacultativeShareBrokerage,2,FacultativeShareBrokerage,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.FacultativeShareList,2,FacultativeShareList,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.Installment,2,Installment,Page List,(tidak dideklarasikan),1,4,1,jalur-penuh,,ya,Activity/TreatyInSetValueInstallment.xml
+TreatyIn.OLDDATA.Installment.InstallmentList,3,InstallmentList,Page List,ASM-FW-GISFW-Data-TreatyInInstallment,4,4,1,jalur-penuh,identitas-kelas (4/4 anak cocok),ya,Activity/TreatyInSetValueInstallment.xml
+TreatyIn.OLDDATA.Installment.InstallmentList.DueDate,4,DueDate,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInSetValueInstallment.xml
+TreatyIn.OLDDATA.Installment.InstallmentList.InstallmentPct,4,InstallmentPct,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInSetValueInstallment.xml
+TreatyIn.OLDDATA.Installment.InstallmentList.PaymentDate,4,PaymentDate,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInSetValueInstallment.xml
+TreatyIn.OLDDATA.Installment.InstallmentList.WPC,4,WPC,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInSetValueInstallment.xml
+TreatyIn.OLDDATA.InstallmentNo,2,InstallmentNo,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.LeadingReinsSource,2,LeadingReinsSource,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.LimitFacShareSummaryList,2,LimitFacShareSummaryList,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.LimitShareSummaryList,2,LimitShareSummaryList,Page List,ASM-FW-GISFW-Data-LimitSummaryList,8,8,1,jalur-penuh,identitas-kelas (8/8 anak cocok),ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.LimitShareSummaryList.AggregateLimit,3,AggregateLimit,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.LimitShareSummaryList.AggregateLimit2,3,AggregateLimit2,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.LimitShareSummaryList.Deductible,3,Deductible,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.LimitShareSummaryList.Deductible2,3,Deductible2,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.LimitShareSummaryList.Limit,3,Limit,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.LimitShareSummaryList.Limit2,3,Limit2,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.LimitShareSummaryList.MDP,3,MDP,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.LimitShareSummaryList.MDP2,3,MDP2,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.LimitSummaryList,2,LimitSummaryList,Page List,ASM-FW-GISFW-Data-LimitSummaryList,8,8,1,jalur-penuh,identitas-kelas (8/8 anak cocok),ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.LimitSummaryList.AggregateLimit,3,AggregateLimit,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.LimitSummaryList.AggregateLimit2,3,AggregateLimit2,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.LimitSummaryList.Deductible,3,Deductible,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.LimitSummaryList.Deductible2,3,Deductible2,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.LimitSummaryList.Limit,3,Limit,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.LimitSummaryList.Limit2,3,Limit2,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.LimitSummaryList.MDP,3,MDP,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.LimitSummaryList.MDP2,3,MDP2,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.Limits,2,Limits,Page List,ASM-FW-GISFW-Data-TreatyInLimits,10,10,1,jalur-penuh,identitas-kelas (10/10 anak cocok),ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.Limits.AdjRate,3,AdjRate,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.Limits.Deductible,3,Deductible,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.Limits.Deductible2,3,Deductible2,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.Limits.EgnpiTotalList,3,EgnpiTotalList,Page List,(tidak dideklarasikan),1,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.Limits.EgnpiTotalList.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.Limits.Limit,3,Limit,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.Limits.Limit2,3,Limit2,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.Limits.MDPList,3,MDPList,Page List,(tidak dideklarasikan),1,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.Limits.MDPList.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.Limits.MDPPct,3,MDPPct,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.Limits.PremiumEarnedList,3,PremiumEarnedList,Page List,(tidak dideklarasikan),1,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.Limits.PremiumEarnedList.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.Limits.ROLPct,3,ROLPct,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.MDPSummaryList,2,MDPSummaryList,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.Portfolio,2,Portfolio,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.RNMShare,2,RNMShare,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.RNMShareP,2,RNMShareP,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.ReportingConfirmation,2,ReportingConfirmation,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.ReportingEnd,2,ReportingEnd,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.ReportingInterval,2,ReportingInterval,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.ReportingPeriod,2,ReportingPeriod,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.ReportingPeriodList,2,ReportingPeriodList,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.ReportingSettlement,2,ReportingSettlement,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.ReportingStart,2,ReportingStart,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.ReportingSubmission,2,ReportingSubmission,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.Retention,2,Retention,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.RnmShareDeducted,2,RnmShareDeducted,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.Share,2,Share,Page List,ASM-FW-GISFW-Data-TreatyInShare,16,19,1,jalur-penuh,identitas-kelas (16/16 anak cocok),ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.DeductionList,3,DeductionList,Page List,ASM-FW-GISFW-Data-TreatyInDeduction,2,2,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.DeductionList.Deduction,4,Deduction,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.DeductionList.DeductionPct,4,DeductionPct,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.GrossPremiumList,3,GrossPremiumList,Page List,(tidak dideklarasikan),1,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.GrossPremiumList.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.NetPremiumList,3,NetPremiumList,Page List,(tidak dideklarasikan),1,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.NetPremiumList.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.RNMSpreadedListDeductRIXOL,3,RNMSpreadedListDeductRIXOL,Page List,(tidak dideklarasikan),1,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.RNMSpreadedListDeductRIXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.RNMSpreadedListDeductXOL,3,RNMSpreadedListDeductXOL,Page List,(tidak dideklarasikan),1,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.RNMSpreadedListDeductXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.RNMSpreadedListGrossRIXOL,3,RNMSpreadedListGrossRIXOL,Page List,(tidak dideklarasikan),1,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.RNMSpreadedListGrossRIXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.RNMSpreadedListGrossXOL,3,RNMSpreadedListGrossXOL,Page List,(tidak dideklarasikan),1,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.RNMSpreadedListGrossXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.RNMSpreadedListNetRIXOL,3,RNMSpreadedListNetRIXOL,Page List,(tidak dideklarasikan),1,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.RNMSpreadedListNetRIXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.RNMSpreadedListNetXOL,3,RNMSpreadedListNetXOL,Page List,(tidak dideklarasikan),1,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.RNMSpreadedListNetXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.RNMSpreadedListRIXOL,3,RNMSpreadedListRIXOL,Page List,(tidak dideklarasikan),1,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.RNMSpreadedListRIXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.RNMSpreadedListXOL,3,RNMSpreadedListXOL,Page List,(tidak dideklarasikan),1,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.RNMSpreadedListXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.RnmGrossPremiDisplay,3,RnmGrossPremiDisplay,Page List,(tidak dideklarasikan),1,2,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.RnmGrossPremiDisplay.Value,4,Value,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.RnmLimitList,3,RnmLimitList,Page List,(tidak dideklarasikan),1,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.RnmLimitList.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.RnmLimitListDisplay,3,RnmLimitListDisplay,Page List,(tidak dideklarasikan),1,2,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.RnmLimitListDisplay.Value,4,Value,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.SpreadingTotalPctXOL,3,SpreadingTotalPctXOL,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.Share.SpreadingTypeXOL,3,SpreadingTypeXOL,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.OLDDATA.ShareReins,2,ShareReins,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.SpecialConditionsP,2,SpecialConditionsP,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.TeritorialScope,2,TeritorialScope,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.Termination,2,Termination,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.TotalEgnpiAmount,2,TotalEgnpiAmount,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.TotalEgnpiAmountNP,2,TotalEgnpiAmountNP,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.TotalEgnpiProportion,2,TotalEgnpiProportion,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.TotalFacShareDeductionNP,2,TotalFacShareDeductionNP,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.TotalFacShareGrossNP,2,TotalFacShareGrossNP,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.TotalFacShareNetNP,2,TotalFacShareNetNP,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.TotalFacShareRnmNP,2,TotalFacShareRnmNP,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.TotalInstallmentAmount,2,TotalInstallmentAmount,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.TotalInstallmentNP,2,TotalInstallmentNP,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.TotalInstallmentPct,2,TotalInstallmentPct,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.TotalLimitDeductblNP,2,TotalLimitDeductblNP,Page List,(tidak dideklarasikan),1,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.TotalLimitDeductblNP.Value,3,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.TotalLimitIOONP,2,TotalLimitIOONP,Page List,(tidak dideklarasikan),1,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.TotalLimitIOONP.Value,3,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.TotalLimitMDPNP,2,TotalLimitMDPNP,Page List,(tidak dideklarasikan),1,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.TotalLimitMDPNP.Value,3,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.TotalLimitPremiEarnNP,2,TotalLimitPremiEarnNP,Page List,(tidak dideklarasikan),1,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.TotalLimitPremiEarnNP.Value,3,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.TotalLimitsROL,2,TotalLimitsROL,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml
+TreatyIn.OLDDATA.TotalRetentionAmountNP,2,TotalRetentionAmountNP,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.TotalShareDeductionNP,2,TotalShareDeductionNP,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.TotalShareGrossNP,2,TotalShareGrossNP,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.TotalShareNetNP,2,TotalShareNetNP,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.TotalShareRnmNP,2,TotalShareRnmNP,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.TotalShareRnmProp,2,TotalShareRnmProp,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.TotalSpreadedNetPremi,2,TotalSpreadedNetPremi,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.TotalSpreadedNetPremiRI,2,TotalSpreadedNetPremiRI,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.TotalSpreadedRnmProp,2,TotalSpreadedRnmProp,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.TotalSpreadedRnmRIProp,2,TotalSpreadedRnmRIProp,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.TreatyContractName,2,TreatyContractName,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDDATA.TreatyYear,2,TreatyYear,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.OLDID,1,OLDID,Skalar,(tidak dideklarasikan),0,6,6,jalur-penuh,,ya,Activity/FetchTreatyExistingProduction.xml | Activity/SaveTreatyInOffer_Act.xml | Activity/SaveTreatyIn_EDM_Act.xml
+TreatyIn.OptionLimit,1,OptionLimit,Skalar,(tidak dideklarasikan),0,6,5,jalur-penuh,,ya,Activity/CalculateShareList.xml | Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml
+TreatyIn.Portfolio,1,Portfolio,Page List,ASM-FW-GISFW-Data-TreatyInPortfolio,3,8,6,jalur-penuh,identitas-kelas (3/3 anak cocok),ya,Activity/TreatyInMappingDataconvertProp.xml | Activity/TreatyInPropAdd.xml | Harness/InputTreatyInOffer.xml
+TreatyIn.Portfolio.Description,2,Description,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml | Activity/TreatyInPropAdd.xml
+TreatyIn.Portfolio.Type,2,Type,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Portfolio.TypePortfolio,2,TypePortfolio,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml
+TreatyIn.Position,1,Position,Skalar,(tidak dideklarasikan),0,58,11,jalur-penuh,,ya,Activity/TreatyInCopy.xml | Activity/TreatyInSetToDirector.xml | Activity/TreatyInSetValue.xml
+TreatyIn.PositionUsername,1,PositionUsername,Skalar,(tidak dideklarasikan),0,32,10,jalur-penuh,,ya,Activity/SetTreatyIn_Act.xml | Activity/TreatyInSetToDirector.xml | Activity/TreatyInSetValue.xml
+TreatyIn.ProRateDays,1,ProRateDays,Skalar,(tidak dideklarasikan),0,8,5,jalur-penuh,,ya,DataTransform/TreatyCalculateProratePct.xml | Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml
+TreatyIn.ProRatePercent,1,ProRatePercent,Skalar,(tidak dideklarasikan),0,49,9,jalur-penuh,,ya,Activity/TreatyEDMProRateCalculation.xml | Activity/TreatyInNonAddItem.xml | Activity/TreatyInXOLAddSpreadingDetail.xml
+TreatyIn.ProRateTotalDays,1,ProRateTotalDays,Skalar,(tidak dideklarasikan),0,7,5,jalur-penuh,,ya,DataTransform/TreatyCalculateProratePct.xml | Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml
+TreatyIn.ProportionType,1,ProportionType,Skalar,(tidak dideklarasikan),0,77,19,jalur-penuh,,ya,Activity/CheckDuplicateOffer.xml | Activity/GetMasterTreatyCategory_Act.xml | Activity/SaveTreatyInDetailEdm_Act.xml
+TreatyIn.RNMShare,1,RNMShare,Skalar,(tidak dideklarasikan),0,19,12,jalur-penuh,,ya,Activity/SaveTreatyInDetailEdm_Act.xml | Activity/SaveTreatyInDetail_Act.xml | Activity/SaveTreatyInOfferNonProp1_Act.xml
+TreatyIn.RNMShareAcrossTheBoard,1,RNMShareAcrossTheBoard,Skalar,(tidak dideklarasikan),0,13,8,jalur-penuh,,ya,Activity/CalculateShareList.xml | Activity/TreatyInPropshare.xml | Activity/TreatyInPropshareDetail.xml
+TreatyIn.RNMShareP,1,RNMShareP,Skalar,(tidak dideklarasikan),0,17,11,jalur-penuh,,ya,Activity/CalculateShareList.xml | Activity/GetAchievement.xml | Activity/SaveTreatyInDetailEdm_Act.xml
+TreatyIn.RSMDLimit,1,RSMDLimit,Skalar,(tidak dideklarasikan),0,4,4,jalur-penuh,,ya,Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml | Section/TreatyInNONProportional.xml
+TreatyIn.ReminderDays,1,ReminderDays,Skalar,(tidak dideklarasikan),0,4,4,jalur-penuh,,ya,Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml | Section/TreatyInNONProportional.xml
+TreatyIn.ReportingConfirmation,1,ReportingConfirmation,Skalar,(tidak dideklarasikan),0,8,6,jalur-penuh,,ya,Activity/TreatyInSetAccountReport.xml | Activity/TreatyInSetReport.xml | Harness/InputTreatyInOffer.xml
+TreatyIn.ReportingEnd,1,ReportingEnd,Skalar,(tidak dideklarasikan),0,11,6,jalur-penuh,,ya,Activity/TreatyInSetAccountReport.xml | Activity/TreatyInSetReport.xml | Harness/InputTreatyInOffer.xml
+TreatyIn.ReportingInterval,1,ReportingInterval,Skalar,(tidak dideklarasikan),0,6,6,jalur-penuh,,ya,Activity/TreatyInSetAccountReport.xml | Activity/TreatyInSetReport.xml | Harness/InputTreatyInOffer.xml
+TreatyIn.ReportingPeriod,1,ReportingPeriod,Skalar,(tidak dideklarasikan),0,21,7,jalur-penuh,,ya,Activity/TreatyInSetAccountReport.xml | Activity/TreatyInSetReport.xml | DataTransform/TreatyInSetPeriod.xml
+TreatyIn.ReportingPeriodList,1,ReportingPeriodList,Page List,ASM-FW-GISFW-Data-TreatyInAccountReport,5,15,5,jalur-penuh,identitas-kelas (5/5 anak cocok),ya,Activity/TreatyInSetReport.xml | Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml
+TreatyIn.ReportingPeriodList.ConfirmationDue,2,ConfirmationDue,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInSetReport.xml
+TreatyIn.ReportingPeriodList.InitialDate,2,InitialDate,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInSetReport.xml
+TreatyIn.ReportingPeriodList.Period,2,Period,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInSetReport.xml
+TreatyIn.ReportingPeriodList.SettlementDue,2,SettlementDue,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInSetReport.xml
+TreatyIn.ReportingPeriodList.SubmissionDue,2,SubmissionDue,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInSetReport.xml
+TreatyIn.ReportingSettlement,1,ReportingSettlement,Skalar,(tidak dideklarasikan),0,8,6,jalur-penuh,,ya,Activity/TreatyInSetAccountReport.xml | Activity/TreatyInSetReport.xml | Harness/InputTreatyInOffer.xml
+TreatyIn.ReportingStart,1,ReportingStart,Skalar,(tidak dideklarasikan),0,17,6,jalur-penuh,,ya,Activity/TreatyInSetAccountReport.xml | Activity/TreatyInSetReport.xml | Harness/InputTreatyInOffer.xml
+TreatyIn.ReportingSubmission,1,ReportingSubmission,Skalar,(tidak dideklarasikan),0,8,6,jalur-penuh,,ya,Activity/TreatyInSetAccountReport.xml | Activity/TreatyInSetReport.xml | Harness/InputTreatyInOffer.xml
+TreatyIn.Retention,1,Retention,Page List,ASM-FW-GISFW-Data-TreatyInEGNPI,6,19,9,jalur-penuh,identitas-kelas (6/6 anak cocok),ya,Activity/TreatyInMappingDataconvert.xml | Activity/TreatyInNPSetTotal.xml | Activity/TreatyInNonAddItem.xml
+TreatyIn.Retention.Amount,2,Amount,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvert.xml
+TreatyIn.Retention.Currency,2,Currency,Skalar,(tidak dideklarasikan),0,4,3,jalur-penuh,,ya,Activity/TreatyInMappingDataconvert.xml | Activity/TreatyInNonAddItem.xml | Activity/TreatyInNonSetTotal.xml
+TreatyIn.Retention.CurrencyID,2,CurrencyID,Skalar,(tidak dideklarasikan),0,3,2,jalur-penuh,,ya,Activity/TreatyInMappingDataconvert.xml | Activity/TreatyInNonAddItem.xml
+TreatyIn.Retention.ID,2,ID,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml
+TreatyIn.Retention.TreatyGroup,2,TreatyGroup,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvert.xml
+TreatyIn.Retention.TreatyGroupID,2,TreatyGroupID,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInMappingDataconvert.xml
+TreatyIn.RetroList,1,RetroList,Skalar,(tidak dideklarasikan),0,4,4,jalur-penuh,,ya,Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml | Section/TreatyInNONProportional.xml
+TreatyIn.RevisionDate,1,RevisionDate,Skalar,(tidak dideklarasikan),0,0,0,hanya-adjustment,,ya,
+TreatyIn.RevisionState,1,RevisionState,Skalar,(tidak dideklarasikan),0,13,8,jalur-penuh,,ya,Activity/SetTreatyIn_Act.xml | Activity/TreatyInCopy.xml | DataTransform/Akseptasi_DT.xml
+TreatyIn.RnmShareDeducted,1,RnmShareDeducted,Skalar,(tidak dideklarasikan),0,9,9,jalur-penuh,,ya,Activity/TreatyInActualShare.xml | Activity/TreatyInNonAddItem.xml | Harness/InputTreatyInOffer.xml
+TreatyIn.Share,1,Share,Page List,ASM-FW-GISFW-Data-TreatyInShare,28,237,21,jalur-penuh,identitas-kelas (27/28 anak cocok),ya,Activity/CalculateSharePctToRetro.xml | Activity/GetNilaiTotal.xml | Activity/SaveTreatyInDetailEdm_Act.xml
+TreatyIn.Share.BrokerageList,2,BrokerageList,Page List,(tidak dideklarasikan),1,14,5,jalur-penuh,,ya,Activity/CalculateSharePctToRetro.xml | Activity/TreatyInActualShare.xml | Activity/TreatyInNonAddItem.xml
+TreatyIn.Share.BrokerageList.Value,3,Value,Skalar,(tidak dideklarasikan),0,14,5,jalur-penuh,,ya,Activity/CalculateSharePctToRetro.xml | Activity/TreatyInActualShare.xml | Activity/TreatyInNonAddItem.xml
+TreatyIn.Share.ClassofBusinessList,2,ClassofBusinessList,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml
+TreatyIn.Share.Cover,2,Cover,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml
+TreatyIn.Share.DeductionList,2,DeductionList,Page List,ASM-FW-GISFW-Data-TreatyInDeduction,2,8,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/SaveTreatyInDetailEdm_Act.xml | Activity/SaveTreatyInDetail_Act.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.Share.DeductionList.Deduction,3,Deduction,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInDifferenceShare.xml
+TreatyIn.Share.DeductionList.DeductionPct,3,DeductionPct,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInDifferenceShare.xml
+TreatyIn.Share.GrossPremiumList,2,GrossPremiumList,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,36,9,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/CalculateSharePctToRetro.xml | Activity/SaveTreatyInDetailEdm_Act.xml | Activity/SaveTreatyInDetail_Act.xml
+TreatyIn.Share.GrossPremiumList.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,4,3,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml | Activity/TreatyInXOLAddSpreadingDetail.xml | Activity/TreatyInXOLAddSpreadingDetailActual.xml
+TreatyIn.Share.GrossPremiumList.Value,3,Value,Skalar,(tidak dideklarasikan),0,25,6,jalur-penuh,,ya,Activity/CalculateSharePctToRetro.xml | Activity/TreatyInActualShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.Share.GrossPremiumMinList,2,GrossPremiumMinList,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,2,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInNonAddItem.xml
+TreatyIn.Share.GrossPremiumMinList.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml
+TreatyIn.Share.GrossPremiumMinList.Value,3,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml
+TreatyIn.Share.Layer,2,Layer,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml
+TreatyIn.Share.LayerPart,2,LayerPart,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml
+TreatyIn.Share.LayerPartType,2,LayerPartType,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml
+TreatyIn.Share.LayerType,2,LayerType,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml
+TreatyIn.Share.NetPremiumList,2,NetPremiumList,Page List,(tidak dideklarasikan),1,8,5,jalur-penuh,,ya,Activity/SaveTreatyInDetailEdm_Act.xml | Activity/SaveTreatyInDetail_Act.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.Share.NetPremiumList.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInDifferenceShare.xml
+TreatyIn.Share.RNMShare,2,RNMShare,Skalar,(tidak dideklarasikan),0,3,1,jalur-penuh,,ya,Activity/TreatyInXOLAddSpreadingDetail.xml
+TreatyIn.Share.RNMSpreadedListDeductRIXOL,2,RNMSpreadedListDeductRIXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,8,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInDifferenceShare.xml | Activity/TreatyInSetBrokerage.xml | Activity/TreatyInXOLAddSpreadingDetail.xml
+TreatyIn.Share.RNMSpreadedListDeductRIXOL.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,3,2,jalur-penuh,,ya,Activity/TreatyInSetBrokerage.xml | Activity/TreatyInXOLAddSpreadingDetail.xml
+TreatyIn.Share.RNMSpreadedListDeductRIXOL.Value,3,Value,Skalar,(tidak dideklarasikan),0,5,3,jalur-penuh,,ya,Activity/TreatyInDifferenceShare.xml | Activity/TreatyInSetBrokerage.xml | Activity/TreatyInXOLAddSpreadingDetail.xml
+TreatyIn.Share.RNMSpreadedListDeductXOL,2,RNMSpreadedListDeductXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,11,4,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInDifferenceShare.xml | Activity/TreatyInSetBrokerage.xml | Activity/TreatyInXOLAddSpreadingDetail.xml
+TreatyIn.Share.RNMSpreadedListDeductXOL.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,3,2,jalur-penuh,,ya,Activity/TreatyInSetBrokerage.xml | Activity/TreatyInXOLAddSpreadingDetail.xml
+TreatyIn.Share.RNMSpreadedListDeductXOL.Value,3,Value,Skalar,(tidak dideklarasikan),0,7,4,jalur-penuh,,ya,Activity/TreatyInDifferenceShare.xml | Activity/TreatyInSetBrokerage.xml | Activity/TreatyInXOLAddSpreadingDetail.xml
+TreatyIn.Share.RNMSpreadedListGrossRIXOL,2,RNMSpreadedListGrossRIXOL,Page List,(tidak dideklarasikan),1,2,1,jalur-penuh,,ya,Activity/TreatyInDifferenceShare.xml
+TreatyIn.Share.RNMSpreadedListGrossRIXOL.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInDifferenceShare.xml
+TreatyIn.Share.RNMSpreadedListGrossXOL,2,RNMSpreadedListGrossXOL,Page List,(tidak dideklarasikan),1,2,1,jalur-penuh,,ya,Activity/TreatyInDifferenceShare.xml
+TreatyIn.Share.RNMSpreadedListGrossXOL.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInDifferenceShare.xml
+TreatyIn.Share.RNMSpreadedListNetRIXOL,2,RNMSpreadedListNetRIXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,10,4,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/GetNilaiTotal.xml | Activity/TreatyInDifferenceShare.xml | Activity/TreatyInSetBrokerage.xml
+TreatyIn.Share.RNMSpreadedListNetRIXOL.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,3,2,jalur-penuh,,ya,Activity/TreatyInSetBrokerage.xml | Activity/TreatyInXOLAddSpreadingDetail.xml
+TreatyIn.Share.RNMSpreadedListNetRIXOL.Value,3,Value,Skalar,(tidak dideklarasikan),0,5,3,jalur-penuh,,ya,Activity/TreatyInDifferenceShare.xml | Activity/TreatyInSetBrokerage.xml | Activity/TreatyInXOLAddSpreadingDetail.xml
+TreatyIn.Share.RNMSpreadedListNetXOL,2,RNMSpreadedListNetXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,12,5,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/GetNilaiTotal.xml | Activity/TreatyInDifferenceShare.xml | Activity/TreatyInSetBrokerage.xml
+TreatyIn.Share.RNMSpreadedListNetXOL.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,3,2,jalur-penuh,,ya,Activity/TreatyInSetBrokerage.xml | Activity/TreatyInXOLAddSpreadingDetail.xml
+TreatyIn.Share.RNMSpreadedListNetXOL.Value,3,Value,Skalar,(tidak dideklarasikan),0,7,4,jalur-penuh,,ya,Activity/TreatyInDifferenceShare.xml | Activity/TreatyInSetBrokerage.xml | Activity/TreatyInXOLAddSpreadingDetail.xml
+TreatyIn.Share.RNMSpreadedListRIXOL,2,RNMSpreadedListRIXOL,Page List,(tidak dideklarasikan),1,3,2,jalur-penuh,,ya,Activity/GetNilaiTotal.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.Share.RNMSpreadedListRIXOL.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInDifferenceShare.xml
+TreatyIn.Share.RNMSpreadedListXOL,2,RNMSpreadedListXOL,Page List,(tidak dideklarasikan),1,4,3,jalur-penuh,,ya,Activity/GetNilaiTotal.xml | Activity/SaveTreatyInOfferNonProp1_Act.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.Share.RNMSpreadedListXOL.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInDifferenceShare.xml
+TreatyIn.Share.RnmGrossPremiDisplay,2,RnmGrossPremiDisplay,Page List,(tidak dideklarasikan),1,2,1,jalur-penuh,,ya,Activity/TreatyInDifferenceShare.xml
+TreatyIn.Share.RnmGrossPremiDisplay.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInDifferenceShare.xml
+TreatyIn.Share.RnmLimitList,2,RnmLimitList,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,19,6,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/SaveTreatyInDetailEdm_Act.xml | Activity/SaveTreatyInDetail_Act.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.Share.RnmLimitList.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,6,3,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml | Activity/TreatyInXOLAddSpreadingDetail.xml | Activity/TreatyInXOLAddSpreadingDetailActual.xml
+TreatyIn.Share.RnmLimitList.Value,3,Value,Skalar,(tidak dideklarasikan),0,7,4,jalur-penuh,,ya,Activity/TreatyInDifferenceShare.xml | Activity/TreatyInNonAddItem.xml | Activity/TreatyInXOLAddSpreadingDetail.xml
+TreatyIn.Share.RnmLimitListDisplay,2,RnmLimitListDisplay,Page List,(tidak dideklarasikan),1,2,1,jalur-penuh,,ya,Activity/TreatyInDifferenceShare.xml
+TreatyIn.Share.RnmLimitListDisplay.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInDifferenceShare.xml
+TreatyIn.Share.SpreadingListXOL,2,SpreadingListXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,17,45,6,jalur-penuh,identitas-kelas (17/17 anak cocok),ya,Activity/SaveTreatyInDetail_Act.xml | Activity/SaveTreatyInOfferNonProp1_Act.xml | Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.DeductionTotalList,3,DeductionTotalList,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.GrossPremiumList,3,GrossPremiumList,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,8,2,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/SaveTreatyInDetail_Act.xml | Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.GrossPremiumList.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,4,1,jalur-penuh,,ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.GrossPremiumList.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.GrossPremiumMinList,3,GrossPremiumMinList,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.NetPremiumList,3,NetPremiumList,Skalar,(tidak dideklarasikan),0,4,2,jalur-penuh,,ya,Activity/SaveTreatyInDetail_Act.xml | Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.Pct,3,Pct,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/SaveTreatyInOfferNonProp1_Act.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListDeductRIXOL,3,RNMSpreadedListDeductRIXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,2,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListDeductRIXOL.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListDeductRIXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListDeductXOL,3,RNMSpreadedListDeductXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,2,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListDeductXOL.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListDeductXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListGrossMinXOL,3,RNMSpreadedListGrossMinXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,2,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListGrossMinXOL.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListGrossMinXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListGrossRIMinXOL,3,RNMSpreadedListGrossRIMinXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,2,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListGrossRIMinXOL.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListGrossRIMinXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListGrossRIXOL,3,RNMSpreadedListGrossRIXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,2,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListGrossRIXOL.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListGrossRIXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListGrossXOL,3,RNMSpreadedListGrossXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,2,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListGrossXOL.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListGrossXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListNetRIXOL,3,RNMSpreadedListNetRIXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,2,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListNetRIXOL.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListNetRIXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListNetXOL,3,RNMSpreadedListNetXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,2,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListNetXOL.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListNetXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListRIXOL,3,RNMSpreadedListRIXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,2,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListRIXOL.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListRIXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListXOL,3,RNMSpreadedListXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,2,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListXOL.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.RNMSpreadedListXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingListXOL.ReinsTypeName,3,ReinsTypeName,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/SaveTreatyInOfferNonProp1_Act.xml
+TreatyIn.Share.SpreadingListXOL.RnmLimitList,3,RnmLimitList,Skalar,(tidak dideklarasikan),0,3,2,jalur-penuh,,ya,Activity/SaveTreatyInDetail_Act.xml | Activity/SetSpreadingXOL.xml
+TreatyIn.Share.SpreadingTotalPctXOL,2,SpreadingTotalPctXOL,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInActualShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.Share.SpreadingTypeIDXOL,2,SpreadingTypeIDXOL,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceShare.xml
+TreatyIn.Share.SpreadingTypeXOL,2,SpreadingTypeXOL,Skalar,(tidak dideklarasikan),0,5,3,jalur-penuh,,ya,Activity/SaveTreatyInDetail_Act.xml | Activity/TreatyInActualShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.Share.TreatyGroupList,2,TreatyGroupList,Page List,(tidak dideklarasikan),1,2,2,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml | Activity/TreatyInXOLAddSpreading.xml
+TreatyIn.Share.TreatyGroupList.TreatyGroupID,3,TreatyGroupID,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInXOLAddSpreading.xml
+TreatyIn.ShareFacultativeReinsurers,1,ShareFacultativeReinsurers,Page List,ASM-FW-GISFW-Data-TreatyInShareReins,7,47,14,jalur-penuh,identitas-kelas (7/7 anak cocok),ya,Activity/AddFacRetroProp.xml | Activity/CountRetroShare_Act.xml | Activity/DelSpreadingRetro.xml
+TreatyIn.ShareFacultativeReinsurers.BrokerName,2,BrokerName,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/AddFacRetroProp.xml
+TreatyIn.ShareFacultativeReinsurers.FacultativeLimits,2,FacultativeLimits,Page List,ASM-FW-GISFW-Data-TreatyInLimits,3,13,1,jalur-penuh,identitas-kelas (3/3 anak cocok),ya,Activity/AddFacRetroProp.xml
+TreatyIn.ShareFacultativeReinsurers.FacultativeLimits.Detail,3,Detail,Page List,ASM-FW-GISFW-Data-TreatyInLimitsDetail,11,11,1,jalur-penuh,identitas-kelas (11/11 anak cocok),ya,Activity/AddFacRetroProp.xml
+TreatyIn.ShareFacultativeReinsurers.FacultativeLimits.Detail.CessionList,4,CessionList,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/AddFacRetroProp.xml
+TreatyIn.ShareFacultativeReinsurers.FacultativeLimits.Detail.CessionPct,4,CessionPct,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/AddFacRetroProp.xml
+TreatyIn.ShareFacultativeReinsurers.FacultativeLimits.Detail.IOOLimitList,4,IOOLimitList,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/AddFacRetroProp.xml
+TreatyIn.ShareFacultativeReinsurers.FacultativeLimits.Detail.QSPct,4,QSPct,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/AddFacRetroProp.xml
+TreatyIn.ShareFacultativeReinsurers.FacultativeLimits.Detail.RNMShare,4,RNMShare,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/AddFacRetroProp.xml
+TreatyIn.ShareFacultativeReinsurers.FacultativeLimits.Detail.RNMShareList,4,RNMShareList,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/AddFacRetroProp.xml
+TreatyIn.ShareFacultativeReinsurers.FacultativeLimits.Detail.RetentionPct,4,RetentionPct,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/AddFacRetroProp.xml
+TreatyIn.ShareFacultativeReinsurers.FacultativeLimits.Detail.ShareNote,4,ShareNote,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/AddFacRetroProp.xml
+TreatyIn.ShareFacultativeReinsurers.FacultativeLimits.Detail.TreatyGroup,4,TreatyGroup,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/AddFacRetroProp.xml
+TreatyIn.ShareFacultativeReinsurers.FacultativeLimits.Detail.TreatyGroupID,4,TreatyGroupID,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/AddFacRetroProp.xml
+TreatyIn.ShareFacultativeReinsurers.FacultativeLimits.Detail.TreatyType,4,TreatyType,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/AddFacRetroProp.xml
+TreatyIn.ShareFacultativeReinsurers.FacultativeLimits.TreatyType,3,TreatyType,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/AddFacRetroProp.xml
+TreatyIn.ShareFacultativeReinsurers.FacultativeLimits.TreatyTypeID,3,TreatyTypeID,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/AddFacRetroProp.xml
+TreatyIn.ShareFacultativeReinsurers.ID,2,ID,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml
+TreatyIn.ShareFacultativeReinsurers.Layer,2,Layer,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/GetSpreadingRetro.xml
+TreatyIn.ShareFacultativeReinsurers.ReinsID,2,ReinsID,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/GetSpreadingRetro.xml
+TreatyIn.ShareFacultativeReinsurers.ReinsName,2,ReinsName,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/AddFacRetroProp.xml | Activity/GetSpreadingRetro.xml
+TreatyIn.ShareFacultativeReinsurers.SharePct,2,SharePct,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/GetSpreadingRetro.xml
+TreatyIn.ShareReins,1,ShareReins,Page List,(tidak dideklarasikan),1,8,8,jalur-penuh,,ya,Activity/SetTotalInstallment.xml | Activity/TreatyInNonAddItem.xml | Harness/InputTreatyInOffer.xml
+TreatyIn.ShareReins.ID,2,ID,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNonAddItem.xml
+TreatyIn.SourceStatusActive,1,SourceStatusActive,Skalar,(tidak dideklarasikan),0,5,4,jalur-penuh,,ya,Activity/TreatyInCheckCedingBlacklist.xml | Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml
+TreatyIn.SpecialConditions,1,SpecialConditions,Skalar,(tidak dideklarasikan),0,9,7,jalur-penuh,,ya,Activity/TreatyInMappingDataconvert.xml | Activity/TreatyInMappingDataconvertProp.xml | DataTransform/TreatyInCopyConditions.xml
+TreatyIn.SpecialConditionsP,1,SpecialConditionsP,Skalar,(tidak dideklarasikan),0,7,6,jalur-penuh,,ya,Activity/TreatyInMappingDataconvertProp.xml | DataTransform/TreatyInCopyConditions.xml | Harness/InputTreatyInOffer.xml
+TreatyIn.StatusAkseptasi,1,StatusAkseptasi,Skalar,(tidak dideklarasikan),0,61,22,jalur-penuh,,ya,Activity/AddCommentList_Act.xml | Activity/SaveTreatyIn_Act.xml | Activity/SaveTreatyIn_EDM_Act.xml
+TreatyIn.TeritorialScope,1,TeritorialScope,Skalar,(tidak dideklarasikan),0,6,6,jalur-penuh,,ya,Activity/TreatyInMappingDataconvert.xml | Harness/InputTreatyInOffer.xml | RDBList/SaveTreatyIn.xml
+TreatyIn.Termination,1,Termination,Skalar,(tidak dideklarasikan),0,12,12,jalur-penuh,,ya,Activity/CheckDuplicateOffer.xml | Activity/DetailCalculation.xml | Activity/SaveTreatyInOffer_Act.xml
+TreatyIn.TotalEgnpiAmount,1,TotalEgnpiAmount,Skalar,(tidak dideklarasikan),0,23,9,jalur-penuh,,ya,Activity/TreatyEDMDifferencePremium.xml | Activity/TreatyInActualUpdateValuePremiumIncome.xml | Activity/TreatyInDifferencePremium.xml
+TreatyIn.TotalEgnpiAmountNP,1,TotalEgnpiAmountNP,Page List,ASM-FW-GISFW-Data-TreatyInTotal,4,10,5,jalur-penuh,identitas-kelas (4/4 anak cocok),ya,Activity/TreatyInNPSetTotal.xml | Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml
+TreatyIn.TotalEgnpiAmountNP.AltValue,2,AltValue,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalEgnpiAmountNP.Currency,2,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalEgnpiAmountNP.ID,2,ID,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalEgnpiAmountNP.Value,2,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalEgnpiProportion,1,TotalEgnpiProportion,Skalar,(tidak dideklarasikan),0,10,6,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml | Activity/TreatyInNonSetTotal.xml | Harness/InputTreatyInOffer.xml
+TreatyIn.TotalFacShareDeductionNP,1,TotalFacShareDeductionNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,6,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInNPSetTotal.xml | Activity/TreatyInNPSetTotalActualShare.xml | Section/TreatyInFacultativeShareCalculation.xml
+TreatyIn.TotalFacShareDeductionNP.Currency,2,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalFacShareDeductionNP.Value,2,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalFacShareGrossNP,1,TotalFacShareGrossNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,6,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInNPSetTotal.xml | Activity/TreatyInNPSetTotalActualShare.xml | Section/TreatyInFacultativeShareCalculation.xml
+TreatyIn.TotalFacShareGrossNP.Currency,2,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalFacShareGrossNP.Value,2,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalFacShareNetNP,1,TotalFacShareNetNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,6,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInNPSetTotal.xml | Activity/TreatyInNPSetTotalActualShare.xml | Section/TreatyInFacultativeShareCalculation.xml
+TreatyIn.TotalFacShareNetNP.Currency,2,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalFacShareNetNP.Value,2,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalFacShareRnmNP,1,TotalFacShareRnmNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,6,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInNPSetTotal.xml | Activity/TreatyInNPSetTotalActualShare.xml | Section/TreatyInFacultativeShareCalculation.xml
+TreatyIn.TotalFacShareRnmNP.Currency,2,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalFacShareRnmNP.Value,2,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalInstallmentAmount,1,TotalInstallmentAmount,Skalar,(tidak dideklarasikan),0,7,5,jalur-penuh,,ya,Activity/TreatyInNonSetTotal.xml | Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml
+TreatyIn.TotalInstallmentNP,1,TotalInstallmentNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,10,6,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInNPSetTotal.xml | Activity/TreatyInSetValueInstallment.xml | Harness/InputTreatyInOffer.xml
+TreatyIn.TotalInstallmentNP.Currency,2,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml | Activity/TreatyInSetValueInstallment.xml
+TreatyIn.TotalInstallmentNP.Value,2,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml | Activity/TreatyInSetValueInstallment.xml
+TreatyIn.TotalInstallmentPct,1,TotalInstallmentPct,Skalar,(tidak dideklarasikan),0,7,5,jalur-penuh,,ya,Activity/TreatyInNonSetTotal.xml | Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml
+TreatyIn.TotalLimitDeductblNP,1,TotalLimitDeductblNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,15,9,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInLimitsActualSetTotal.xml
+TreatyIn.TotalLimitDeductblNP.Currency,2,Currency,Skalar,(tidak dideklarasikan),0,4,2,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml | Activity/TreatyInNPSetTotalActualLimits.xml
+TreatyIn.TotalLimitDeductblNP.Value,2,Value,Skalar,(tidak dideklarasikan),0,5,3,jalur-penuh,,ya,Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInLimitsActualSetTotal.xml | Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalLimitIOONP,1,TotalLimitIOONP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,15,9,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInLimitsActualSetTotal.xml
+TreatyIn.TotalLimitIOONP.Currency,2,Currency,Skalar,(tidak dideklarasikan),0,4,2,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml | Activity/TreatyInNPSetTotalActualLimits.xml
+TreatyIn.TotalLimitIOONP.Value,2,Value,Skalar,(tidak dideklarasikan),0,5,3,jalur-penuh,,ya,Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInLimitsActualSetTotal.xml | Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalLimitMDPMinNP,1,TotalLimitMDPMinNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,3,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalLimitMDPMinNP.Currency,2,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalLimitMDPMinNP.Value,2,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalLimitMDPNP,1,TotalLimitMDPNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,10,8,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalLimitMDPNP.Currency,2,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml | Activity/TreatyInNPSetTotalActualLimits.xml
+TreatyIn.TotalLimitMDPNP.Value,2,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalLimitPremiEarnNP,1,TotalLimitPremiEarnNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,10,8,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalLimitPremiEarnNP.Currency,2,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml | Activity/TreatyInNPSetTotalActualLimits.xml
+TreatyIn.TotalLimitPremiEarnNP.Value,2,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalLimitsAdjPct,1,TotalLimitsAdjPct,Skalar,(tidak dideklarasikan),0,3,1,jalur-penuh,,ya,Activity/TreatyInNonSetTotal.xml
+TreatyIn.TotalLimitsDeductible,1,TotalLimitsDeductible,Skalar,(tidak dideklarasikan),0,3,1,jalur-penuh,,ya,Activity/TreatyInNonSetTotal.xml
+TreatyIn.TotalLimitsIOOLimit,1,TotalLimitsIOOLimit,Skalar,(tidak dideklarasikan),0,4,1,jalur-penuh,,ya,Activity/TreatyInNonSetTotal.xml
+TreatyIn.TotalLimitsMdp,1,TotalLimitsMdp,Skalar,(tidak dideklarasikan),0,3,1,jalur-penuh,,ya,Activity/TreatyInNonSetTotal.xml
+TreatyIn.TotalLimitsPremiumEarned,1,TotalLimitsPremiumEarned,Skalar,(tidak dideklarasikan),0,4,1,jalur-penuh,,ya,Activity/TreatyInNonSetTotal.xml
+TreatyIn.TotalLimitsROL,1,TotalLimitsROL,Skalar,(tidak dideklarasikan),0,9,7,jalur-penuh,,ya,Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInNPSetTotal.xml | Activity/TreatyInNonSetTotal.xml
+TreatyIn.TotalRetentionAmount,1,TotalRetentionAmount,Skalar,(tidak dideklarasikan),0,3,1,jalur-penuh,,ya,Activity/TreatyInNonSetTotal.xml
+TreatyIn.TotalRetentionAmountNP,1,TotalRetentionAmountNP,Page List,ASM-FW-GISFW-Data-TreatyInTotal,3,9,5,jalur-penuh,identitas-kelas (3/3 anak cocok),ya,Activity/TreatyInNPSetTotal.xml | Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml
+TreatyIn.TotalRetentionAmountNP.Currency,2,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalRetentionAmountNP.ID,2,ID,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalRetentionAmountNP.Value,2,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalShareDeductionNP,1,TotalShareDeductionNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,11,5,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInNPSetTotal.xml | Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml
+TreatyIn.TotalShareDeductionNP.Currency,2,Currency,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalShareDeductionNP.Value,2,Value,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalShareGross,1,TotalShareGross,Skalar,(tidak dideklarasikan),0,3,1,jalur-penuh,,ya,Activity/TreatyInNonSetTotal.xml
+TreatyIn.TotalShareGrossMinNP,1,TotalShareGrossMinNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,8,5,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInNPSetTotal.xml | Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml
+TreatyIn.TotalShareGrossMinNP.Currency,2,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalShareGrossMinNP.Value,2,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalShareGrossNP,1,TotalShareGrossNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,11,5,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInNPSetTotal.xml | Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml
+TreatyIn.TotalShareGrossNP.Currency,2,Currency,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalShareGrossNP.Value,2,Value,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalShareNet,1,TotalShareNet,Skalar,(tidak dideklarasikan),0,3,1,jalur-penuh,,ya,Activity/TreatyInNonSetTotal.xml
+TreatyIn.TotalShareNetNP,1,TotalShareNetNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,22,8,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/SetTotalInstallment.xml | Activity/TreatyInNPSetTotal.xml | Activity/TreatyInNonAddItem.xml
+TreatyIn.TotalShareNetNP.Currency,2,Currency,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalShareNetNP.Value,2,Value,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalShareRnmLimit,1,TotalShareRnmLimit,Skalar,(tidak dideklarasikan),0,5,3,jalur-penuh,,ya,Activity/TreatyInNonSetTotal.xml | Activity/TreatyInPropshare.xml | Activity/TreatyInPropshareDetail.xml
+TreatyIn.TotalShareRnmNP,1,TotalShareRnmNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,11,5,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInNPSetTotal.xml | Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml
+TreatyIn.TotalShareRnmNP.Currency,2,Currency,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalShareRnmNP.Value,2,Value,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInNPSetTotal.xml
+TreatyIn.TotalShareRnmProp,1,TotalShareRnmProp,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,12,4,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/SetSpreadName.xml | Activity/TreatyInPropshare.xml | Activity/TreatyInPropshareDetail.xml
+TreatyIn.TotalShareRnmProp.Currency,2,Currency,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/SetSpreadName.xml | Activity/TreatyInPropshare.xml | Activity/TreatyInPropshareDetail.xml
+TreatyIn.TotalShareRnmProp.Value,2,Value,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/SetSpreadName.xml | Activity/TreatyInPropshare.xml | Activity/TreatyInPropshareDetail.xml
+TreatyIn.TotalSpreadedNetPremi,1,TotalSpreadedNetPremi,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,25,10,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/GetNilaiTotal.xml | Activity/SetSpreadingXOL.xml | Activity/TreatyInSetBrokerage.xml
+TreatyIn.TotalSpreadedNetPremi.Currency,2,Currency,Skalar,(tidak dideklarasikan),0,6,6,jalur-penuh,,ya,Activity/GetNilaiTotal.xml | Activity/SetSpreadingXOL.xml | Activity/TreatyInSetBrokerage.xml
+TreatyIn.TotalSpreadedNetPremi.Value,2,Value,Skalar,(tidak dideklarasikan),0,6,6,jalur-penuh,,ya,Activity/GetNilaiTotal.xml | Activity/SetSpreadingXOL.xml | Activity/TreatyInSetBrokerage.xml
+TreatyIn.TotalSpreadedNetPremiRI,1,TotalSpreadedNetPremiRI,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,20,10,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/GetNilaiTotal.xml | Activity/SetSpreadingXOL.xml | Activity/TreatyInSetBrokerage.xml
+TreatyIn.TotalSpreadedNetPremiRI.Currency,2,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/GetNilaiTotal.xml | Activity/SetSpreadingXOL.xml
+TreatyIn.TotalSpreadedNetPremiRI.Value,2,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/GetNilaiTotal.xml | Activity/SetSpreadingXOL.xml
+TreatyIn.TotalSpreadedRnmProp,1,TotalSpreadedRnmProp,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,41,14,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/GetNilaiTotal.xml | Activity/SetSpreadName.xml | Activity/SetSpreadingXOL.xml
+TreatyIn.TotalSpreadedRnmProp.Currency,2,Currency,Skalar,(tidak dideklarasikan),0,11,9,jalur-penuh,,ya,Activity/GetNilaiTotal.xml | Activity/SetSpreadName.xml | Activity/SetSpreadingXOL.xml
+TreatyIn.TotalSpreadedRnmProp.Value,2,Value,Skalar,(tidak dideklarasikan),0,11,9,jalur-penuh,,ya,Activity/GetNilaiTotal.xml | Activity/SetSpreadName.xml | Activity/SetSpreadingXOL.xml
+TreatyIn.TotalSpreadedRnmRIProp,1,TotalSpreadedRnmRIProp,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,40,14,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/GetNilaiTotal.xml | Activity/SetSpreadName.xml | Activity/SetSpreadingXOL.xml
+TreatyIn.TotalSpreadedRnmRIProp.Currency,2,Currency,Skalar,(tidak dideklarasikan),0,11,9,jalur-penuh,,ya,Activity/GetNilaiTotal.xml | Activity/SetSpreadName.xml | Activity/SetSpreadingXOL.xml
+TreatyIn.TotalSpreadedRnmRIProp.Value,2,Value,Skalar,(tidak dideklarasikan),0,11,9,jalur-penuh,,ya,Activity/GetNilaiTotal.xml | Activity/SetSpreadName.xml | Activity/SetSpreadingXOL.xml
+TreatyIn.TreatyContractName,1,TreatyContractName,Skalar,(tidak dideklarasikan),0,12,9,jalur-penuh,,ya,Activity/SaveTreatyInDetailEdm_Act.xml | Activity/SaveTreatyInDetail_Act.xml | Activity/TreatyInMappingDataconvert.xml
+TreatyIn.TreatyLeader,1,TreatyLeader,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml | Section/TreatyInNONProportional.xml
+TreatyIn.TreatyYear,1,TreatyYear,Skalar,(tidak dideklarasikan),0,21,18,jalur-penuh,,ya,Activity/CheckDuplicateOffer.xml | Activity/FetchQSfromMaster.xml | Activity/SaveTreatyInDetailEdm_Act.xml
+TreatyIn.ValueBeforeProrate,1,ValueBeforeProrate,Page,ASM-FW-GISFW-Int-TREATY_IN,14,16,2,jalur-penuh,dideklarasikan (1 kali),ya,Activity/TreatyEDMProRateCalculation.xml | Section/TreatyInTabsNPValueDifference_NoProRate.xml
+TreatyIn.ValueBeforeProrate.BrokeragePercent,2,BrokeragePercent,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Section/TreatyInTabsNPValueDifference_NoProRate.xml
+TreatyIn.ValueBeforeProrate.Installment,2,Installment,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Section/TreatyInTabsNPValueDifference_NoProRate.xml
+TreatyIn.ValueBeforeProrate.LimitShareSummaryList,2,LimitShareSummaryList,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Section/TreatyInTabsNPValueDifference_NoProRate.xml
+TreatyIn.ValueBeforeProrate.RNMShare,2,RNMShare,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Section/TreatyInTabsNPValueDifference_NoProRate.xml
+TreatyIn.ValueBeforeProrate.Share,2,Share,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Section/TreatyInTabsNPValueDifference_NoProRate.xml
+TreatyIn.ValueBeforeProrate.TotalInstallmentNP,2,TotalInstallmentNP,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Section/TreatyInTabsNPValueDifference_NoProRate.xml
+TreatyIn.ValueBeforeProrate.TotalShareDeductionNP,2,TotalShareDeductionNP,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Section/TreatyInTabsNPValueDifference_NoProRate.xml
+TreatyIn.ValueBeforeProrate.TotalShareGrossNP,2,TotalShareGrossNP,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Section/TreatyInTabsNPValueDifference_NoProRate.xml
+TreatyIn.ValueBeforeProrate.TotalShareNetNP,2,TotalShareNetNP,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Section/TreatyInTabsNPValueDifference_NoProRate.xml
+TreatyIn.ValueBeforeProrate.TotalShareRnmNP,2,TotalShareRnmNP,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Section/TreatyInTabsNPValueDifference_NoProRate.xml
+TreatyIn.ValueBeforeProrate.TotalSpreadedNetPremi,2,TotalSpreadedNetPremi,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Section/TreatyInTabsNPValueDifference_NoProRate.xml
+TreatyIn.ValueBeforeProrate.TotalSpreadedNetPremiRI,2,TotalSpreadedNetPremiRI,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Section/TreatyInTabsNPValueDifference_NoProRate.xml
+TreatyIn.ValueBeforeProrate.TotalSpreadedRnmProp,2,TotalSpreadedRnmProp,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Section/TreatyInTabsNPValueDifference_NoProRate.xml
+TreatyIn.ValueBeforeProrate.TotalSpreadedRnmRIProp,2,TotalSpreadedRnmRIProp,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Section/TreatyInTabsNPValueDifference_NoProRate.xml
+TreatyIn.ValueDifference,1,ValueDifference,Page,ASM-FW-GISFW-Int-TREATY_IN,33,485,27,jalur-penuh,dideklarasikan (12 kali),ya,Activity/FetchQSfromMasterXOL.xml | Activity/GetNilaiTotal.xml | Activity/GetNilaiTotalAdjustment.xml
+TreatyIn.ValueDifference.BrokeragePercent,2,BrokeragePercent,Skalar,(tidak dideklarasikan),0,4,3,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml | Section/TreatyInTabsNPValueDifferenceProRate.xml
+TreatyIn.ValueDifference.EGNPI,2,EGNPI,Page List,ASM-FW-GISFW-Data-TreatyInEGNPI,6,17,3,jalur-penuh,identitas-kelas (6/6 anak cocok),ya,Activity/TreatyEDMDifferencePremium.xml | Activity/TreatyInDifferencePremium.xml | Section/TreatyInActualSumary.xml
+TreatyIn.ValueDifference.EGNPI.AddendumStatus,3,AddendumStatus,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferencePremium.xml | Activity/TreatyInDifferencePremium.xml
+TreatyIn.ValueDifference.EGNPI.Amount,3,Amount,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferencePremium.xml | Activity/TreatyInDifferencePremium.xml
+TreatyIn.ValueDifference.EGNPI.AmountIDR,3,AmountIDR,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferencePremium.xml | Activity/TreatyInDifferencePremium.xml
+TreatyIn.ValueDifference.EGNPI.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferencePremium.xml | Activity/TreatyInDifferencePremium.xml
+TreatyIn.ValueDifference.EGNPI.Proportion,3,Proportion,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferencePremium.xml | Activity/TreatyInDifferencePremium.xml
+TreatyIn.ValueDifference.EGNPI.TreatyGroup,3,TreatyGroup,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferencePremium.xml | Activity/TreatyInDifferencePremium.xml
+TreatyIn.ValueDifference.FacultativeShare,2,FacultativeShare,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareBrokerage,2,FacultativeShareBrokerage,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareList,2,FacultativeShareList,Page List,ASM-FW-GISFW-Data-TreatyInShare,13,30,6,jalur-penuh,identitas-kelas (13/13 anak cocok),ya,Activity/TreatyEDMDifferenceDeduction.xml | Activity/TreatyInDifferenceDeduction.xml | Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareList.Cover,3,Cover,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareList.DeductionList,3,DeductionList,Page List,ASM-FW-GISFW-Data-TreatyInDeduction,4,4,1,jalur-penuh,identitas-kelas (4/4 anak cocok),ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareList.DeductionList.Comment,4,Comment,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareList.DeductionList.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareList.DeductionList.Deduction,4,Deduction,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareList.DeductionList.DeductionPct,4,DeductionPct,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareList.GrossPremiumList,3,GrossPremiumList,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,2,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareList.GrossPremiumList.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareList.GrossPremiumList.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareList.Layer,3,Layer,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareList.LayerPart,3,LayerPart,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareList.LayerPartType,3,LayerPartType,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareList.LayerType,3,LayerType,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareList.Limit,3,Limit,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareList.Limit2,3,Limit2,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareList.NetPremiumList,3,NetPremiumList,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,2,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareList.NetPremiumList.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareList.NetPremiumList.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareList.RnmGrossPremiDisplay,3,RnmGrossPremiDisplay,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,4,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareList.RnmGrossPremiDisplay.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareList.RnmGrossPremiDisplay.Value,4,Value,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareList.RnmLimitList,3,RnmLimitList,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,2,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareList.RnmLimitList.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareList.RnmLimitList.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareList.RnmLimitListDisplay,3,RnmLimitListDisplay,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,4,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareList.RnmLimitListDisplay.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.FacultativeShareList.RnmLimitListDisplay.Value,4,Value,Skalar,(tidak dideklarasikan),0,2,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShare.xml
+TreatyIn.ValueDifference.Installment,2,Installment,Page List,ASM-FW-GISFW-Data-TreatyInInstallment,2,15,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyEDMProRateCalculation.xml | Activity/TreatyInSetValueDifferenceInstallment.xml | Section/TreatyInTabsNPValueDifferenceProRate.xml
+TreatyIn.ValueDifference.Installment.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInSetValueDifferenceInstallment.xml
+TreatyIn.ValueDifference.Installment.InstallmentList,3,InstallmentList,Page List,ASM-FW-GISFW-Data-TreatyInInstallment,7,7,1,jalur-penuh,identitas-kelas (7/7 anak cocok),ya,Activity/TreatyInSetValueDifferenceInstallment.xml
+TreatyIn.ValueDifference.Installment.InstallmentList.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInSetValueDifferenceInstallment.xml
+TreatyIn.ValueDifference.Installment.InstallmentList.CurrencyID,4,CurrencyID,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInSetValueDifferenceInstallment.xml
+TreatyIn.ValueDifference.Installment.InstallmentList.DueDate,4,DueDate,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInSetValueDifferenceInstallment.xml
+TreatyIn.ValueDifference.Installment.InstallmentList.Installment,4,Installment,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInSetValueDifferenceInstallment.xml
+TreatyIn.ValueDifference.Installment.InstallmentList.InstallmentPct,4,InstallmentPct,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInSetValueDifferenceInstallment.xml
+TreatyIn.ValueDifference.Installment.InstallmentList.PaymentDate,4,PaymentDate,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInSetValueDifferenceInstallment.xml
+TreatyIn.ValueDifference.Installment.InstallmentList.WPC,4,WPC,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInSetValueDifferenceInstallment.xml
+TreatyIn.ValueDifference.LimitFacShareSummaryList,2,LimitFacShareSummaryList,Page List,(tidak dideklarasikan),0,4,2,jalur-penuh,,ya,Activity/TreatyInDifferenceSummaryFacShare.xml | Section/TreatyInActualSumary.xml
+TreatyIn.ValueDifference.LimitShareSummaryList,2,LimitShareSummaryList,Page List,(tidak dideklarasikan),0,6,4,jalur-penuh,,ya,Activity/TreatyEDMProRateCalculation.xml | Activity/TreatyInDifferenceShareSumary.xml | Section/TreatyInActualSumary.xml
+TreatyIn.ValueDifference.LimitSummaryList,2,LimitSummaryList,Page List,ASM-FW-GISFW-Data-LimitSummaryList,9,22,4,jalur-penuh,identitas-kelas (9/9 anak cocok),ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInDifferenceLimitsSumary.xml
+TreatyIn.ValueDifference.LimitSummaryList.AggregateLimit,3,AggregateLimit,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.LimitSummaryList.AggregateLimit2,3,AggregateLimit2,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.LimitSummaryList.Deductible,3,Deductible,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.LimitSummaryList.Deductible2,3,Deductible2,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.LimitSummaryList.Limit,3,Limit,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.LimitSummaryList.Limit2,3,Limit2,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.LimitSummaryList.MDP,3,MDP,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.LimitSummaryList.MDP2,3,MDP2,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.LimitSummaryList.Note,3,Note,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.Limits,2,Limits,Page List,ASM-FW-GISFW-Data-TreatyInLimits,19,49,5,jalur-penuh,identitas-kelas (19/19 anak cocok),ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInDifferenceLimitsSetTotal.xml
+TreatyIn.ValueDifference.Limits.AdjRate,3,AdjRate,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.Limits.Cover,3,Cover,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.Limits.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.Limits.Currency2,3,Currency2,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.Limits.Deductible,3,Deductible,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.Limits.Deductible2,3,Deductible2,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.Limits.EgnpiTotalList,3,EgnpiTotalList,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,5,2,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.Limits.EgnpiTotalList.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,3,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.Limits.EgnpiTotalList.Value,4,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.Limits.Layer,3,Layer,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.Limits.LayerPart,3,LayerPart,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.Limits.LayerPartType,3,LayerPartType,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.Limits.LayerType,3,LayerType,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.Limits.Limit,3,Limit,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.Limits.Limit2,3,Limit2,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.Limits.MDPList,3,MDPList,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,4,2,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.Limits.MDPList.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.Limits.MDPList.Value,4,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.Limits.MDPPct,3,MDPPct,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.Limits.PremiumEarnedList,3,PremiumEarnedList,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,3,2,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.Limits.PremiumEarnedList.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.Limits.PremiumEarnedList.Value,4,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.Limits.ROLPct,3,ROLPct,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.Limits.ReinstatementPct,3,ReinstatementPct,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.Limits.TreatyGroupList,3,TreatyGroupList,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.RNMShare,2,RNMShare,Skalar,(tidak dideklarasikan),0,4,3,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml | Section/TreatyInTabsNPValueDifferenceProRate.xml
+TreatyIn.ValueDifference.Share,2,Share,Page List,ASM-FW-GISFW-Data-TreatyInShare,29,178,12,jalur-penuh,identitas-kelas (29/29 anak cocok),ya,Activity/FetchQSfromMasterXOL.xml | Activity/GetNilaiTotal.xml | Activity/GetNilaiTotalAdjustment.xml
+TreatyIn.ValueDifference.Share.AddendumStatus,3,AddendumStatus,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.Cover,3,Cover,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.DeductionList,3,DeductionList,Page List,ASM-FW-GISFW-Data-TreatyInDeduction,4,8,2,jalur-penuh,identitas-kelas (4/4 anak cocok),ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.DeductionList.Comment,4,Comment,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.DeductionList.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.DeductionList.Deduction,4,Deduction,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.DeductionList.DeductionPct,4,DeductionPct,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.DeductionTotalList,3,DeductionTotalList,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml
+TreatyIn.ValueDifference.Share.GrossPremiumList,3,GrossPremiumList,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,5,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.GrossPremiumList.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.GrossPremiumList.Value,4,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.GrossPremiumMinList,3,GrossPremiumMinList,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml
+TreatyIn.ValueDifference.Share.Layer,3,Layer,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.LayerPart,3,LayerPart,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.LayerPartType,3,LayerPartType,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.LayerType,3,LayerType,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.NetPremiumList,3,NetPremiumList,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,5,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.NetPremiumList.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.NetPremiumList.Value,4,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListDeductRIXOL,3,RNMSpreadedListDeductRIXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,6,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListDeductRIXOL.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListDeductRIXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListDeductXOL,3,RNMSpreadedListDeductXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,6,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListDeductXOL.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListDeductXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListGrossMinXOL,3,RNMSpreadedListGrossMinXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,2,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/FetchQSfromMasterXOL.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListGrossMinXOL.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListGrossMinXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListGrossRIMinXOL,3,RNMSpreadedListGrossRIMinXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,2,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/FetchQSfromMasterXOL.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListGrossRIMinXOL.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListGrossRIMinXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListGrossRIXOL,3,RNMSpreadedListGrossRIXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,6,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListGrossRIXOL.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListGrossRIXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListGrossXOL,3,RNMSpreadedListGrossXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,6,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListGrossXOL.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListGrossXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListNetRIXOL,3,RNMSpreadedListNetRIXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,7,4,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/FetchQSfromMasterXOL.xml | Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListNetRIXOL.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListNetRIXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListNetXOL,3,RNMSpreadedListNetXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,11,4,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/FetchQSfromMasterXOL.xml | Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListNetXOL.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,5,3,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListNetXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListRIXOL,3,RNMSpreadedListRIXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,7,4,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/FetchQSfromMasterXOL.xml | Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListRIXOL.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListRIXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListXOL,3,RNMSpreadedListXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,7,4,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/FetchQSfromMasterXOL.xml | Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyEDMDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListXOL.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RNMSpreadedListXOL.Value,4,Value,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RnmGrossPremiDisplay,3,RnmGrossPremiDisplay,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,8,2,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RnmGrossPremiDisplay.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,4,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RnmGrossPremiDisplay.Value,4,Value,Skalar,(tidak dideklarasikan),0,4,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RnmLimitList,3,RnmLimitList,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,5,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RnmLimitList.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RnmLimitList.Value,4,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RnmLimitListDisplay,3,RnmLimitListDisplay,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,8,2,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RnmLimitListDisplay.Currency,4,Currency,Skalar,(tidak dideklarasikan),0,4,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.RnmLimitListDisplay.Value,4,Value,Skalar,(tidak dideklarasikan),0,4,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.SpreadingListXOL,3,SpreadingListXOL,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,6,14,3,jalur-penuh,identitas-kelas (6/6 anak cocok),ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.SpreadingListXOL.ParentReinsTypeID,4,ParentReinsTypeID,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml
+TreatyIn.ValueDifference.Share.SpreadingListXOL.Pct,4,Pct,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.SpreadingListXOL.ReinsTypeID,4,ReinsTypeID,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.SpreadingListXOL.ReinsTypeName,4,ReinsTypeName,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.SpreadingListXOL.Rp,4,Rp,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml
+TreatyIn.ValueDifference.Share.SpreadingListXOL.Usd,4,Usd,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml
+TreatyIn.ValueDifference.Share.SpreadingTotalPctXOL,3,SpreadingTotalPctXOL,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.SpreadingTypeIDXOL,3,SpreadingTypeIDXOL,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.SpreadingTypeXOL,3,SpreadingTypeXOL,Skalar,(tidak dideklarasikan),0,4,3,jalur-penuh,,ya,Activity/FetchQSfromMasterXOL.xml | Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.Share.TreatyGroupList,3,TreatyGroupList,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceShare.xml | Activity/TreatyInDifferenceShare.xml
+TreatyIn.ValueDifference.TotalEgnpiAmount,2,TotalEgnpiAmount,Skalar,(tidak dideklarasikan),0,8,2,jalur-penuh,,ya,Activity/TreatyEDMDifferencePremium.xml | Activity/TreatyInDifferencePremium.xml
+TreatyIn.ValueDifference.TotalEgnpiAmountNP,2,TotalEgnpiAmountNP,Page List,ASM-FW-GISFW-Data-TreatyInTotal,4,11,3,jalur-penuh,identitas-kelas (4/4 anak cocok),ya,Activity/TreatyEDMDifferencePremium.xml | Activity/TreatyInDifferencePremium.xml | Section/TreatyInActualSumary.xml
+TreatyIn.ValueDifference.TotalEgnpiAmountNP.AltValue,3,AltValue,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferencePremium.xml | Activity/TreatyInDifferencePremium.xml
+TreatyIn.ValueDifference.TotalEgnpiAmountNP.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferencePremium.xml | Activity/TreatyInDifferencePremium.xml
+TreatyIn.ValueDifference.TotalEgnpiAmountNP.ID,3,ID,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferencePremium.xml | Activity/TreatyInDifferencePremium.xml
+TreatyIn.ValueDifference.TotalEgnpiAmountNP.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferencePremium.xml | Activity/TreatyInDifferencePremium.xml
+TreatyIn.ValueDifference.TotalEgnpiProportion,2,TotalEgnpiProportion,Skalar,(tidak dideklarasikan),0,4,2,jalur-penuh,,ya,Activity/TreatyEDMDifferencePremium.xml | Activity/TreatyInDifferencePremium.xml
+TreatyIn.ValueDifference.TotalFacShareDeductionNP,2,TotalFacShareDeductionNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,6,2,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInDifferenceFacShareTotal.xml | Section/TreatyInActualSumary.xml
+TreatyIn.ValueDifference.TotalFacShareDeductionNP.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShareTotal.xml
+TreatyIn.ValueDifference.TotalFacShareDeductionNP.Value,3,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShareTotal.xml
+TreatyIn.ValueDifference.TotalFacShareGrossNP,2,TotalFacShareGrossNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,5,2,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInDifferenceFacShareTotal.xml | Section/TreatyInActualSumary.xml
+TreatyIn.ValueDifference.TotalFacShareGrossNP.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShareTotal.xml
+TreatyIn.ValueDifference.TotalFacShareGrossNP.Value,3,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShareTotal.xml
+TreatyIn.ValueDifference.TotalFacShareNetNP,2,TotalFacShareNetNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,5,2,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInDifferenceFacShareTotal.xml | Section/TreatyInActualSumary.xml
+TreatyIn.ValueDifference.TotalFacShareNetNP.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShareTotal.xml
+TreatyIn.ValueDifference.TotalFacShareNetNP.Value,3,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShareTotal.xml
+TreatyIn.ValueDifference.TotalFacShareRnmNP,2,TotalFacShareRnmNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,4,1,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyInDifferenceFacShareTotal.xml
+TreatyIn.ValueDifference.TotalFacShareRnmNP.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShareTotal.xml
+TreatyIn.ValueDifference.TotalFacShareRnmNP.Value,3,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceFacShareTotal.xml
+TreatyIn.ValueDifference.TotalInstallmentNP,2,TotalInstallmentNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,5,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyEDMProRateCalculation.xml | Activity/TreatyInSetValueDifferenceInstallment.xml | Section/TreatyInTabsNPValueDifferenceProRate.xml
+TreatyIn.ValueDifference.TotalInstallmentNP.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInSetValueDifferenceInstallment.xml
+TreatyIn.ValueDifference.TotalInstallmentNP.Value,3,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInSetValueDifferenceInstallment.xml
+TreatyIn.ValueDifference.TotalLimitDeductblNP,2,TotalLimitDeductblNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,5,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInDifferenceLimitsSetTotal.xml
+TreatyIn.ValueDifference.TotalLimitDeductblNP.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInDifferenceLimitsSetTotal.xml
+TreatyIn.ValueDifference.TotalLimitDeductblNP.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.TotalLimitIOONP,2,TotalLimitIOONP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,5,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInDifferenceLimitsSetTotal.xml
+TreatyIn.ValueDifference.TotalLimitIOONP.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInDifferenceLimitsSetTotal.xml
+TreatyIn.ValueDifference.TotalLimitIOONP.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml
+TreatyIn.ValueDifference.TotalLimitMDPNP,2,TotalLimitMDPNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,7,4,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInDifferenceLimitsSetTotal.xml
+TreatyIn.ValueDifference.TotalLimitMDPNP.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInDifferenceLimitsSetTotal.xml
+TreatyIn.ValueDifference.TotalLimitMDPNP.Value,3,Value,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInDifferenceLimitsSetTotal.xml
+TreatyIn.ValueDifference.TotalLimitPremiEarnNP,2,TotalLimitPremiEarnNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,7,4,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInDifferenceLimitsSetTotal.xml
+TreatyIn.ValueDifference.TotalLimitPremiEarnNP.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInDifferenceLimitsSetTotal.xml
+TreatyIn.ValueDifference.TotalLimitPremiEarnNP.Value,3,Value,Skalar,(tidak dideklarasikan),0,3,3,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInDifferenceLimitsSetTotal.xml
+TreatyIn.ValueDifference.TotalLimitsROL,2,TotalLimitsROL,Skalar,(tidak dideklarasikan),0,5,4,jalur-penuh,,ya,Activity/TreatyEDMDifferenceLimits.xml | Activity/TreatyInDifferenceLimits.xml | Activity/TreatyInDifferenceLimitsSetTotal.xml
+TreatyIn.ValueDifference.TotalShareDeductionNP,2,TotalShareDeductionNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,7,4,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyEDMProRateCalculation.xml | Activity/TreatyInDifferenceShareTotal.xml | Section/TreatyInActualSumary.xml
+TreatyIn.ValueDifference.TotalShareDeductionNP.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceShareTotal.xml
+TreatyIn.ValueDifference.TotalShareDeductionNP.Value,3,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceShareTotal.xml
+TreatyIn.ValueDifference.TotalShareGrossNP,2,TotalShareGrossNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,7,4,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyEDMProRateCalculation.xml | Activity/TreatyInDifferenceShareTotal.xml | Section/TreatyInActualSumary.xml
+TreatyIn.ValueDifference.TotalShareGrossNP.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceShareTotal.xml
+TreatyIn.ValueDifference.TotalShareGrossNP.Value,3,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceShareTotal.xml
+TreatyIn.ValueDifference.TotalShareNetNP,2,TotalShareNetNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,9,5,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyEDMProRateCalculation.xml | Activity/TreatyInDifferenceShareTotal.xml | Activity/TreatyInSetValueDifferenceInstallment.xml
+TreatyIn.ValueDifference.TotalShareNetNP.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceShareTotal.xml
+TreatyIn.ValueDifference.TotalShareNetNP.Value,3,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceShareTotal.xml
+TreatyIn.ValueDifference.TotalShareRnmNP,2,TotalShareRnmNP,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,6,3,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/TreatyEDMProRateCalculation.xml | Activity/TreatyInDifferenceShareTotal.xml | Section/TreatyInTabsNPValueDifferenceProRate.xml
+TreatyIn.ValueDifference.TotalShareRnmNP.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceShareTotal.xml
+TreatyIn.ValueDifference.TotalShareRnmNP.Value,3,Value,Skalar,(tidak dideklarasikan),0,1,1,jalur-penuh,,ya,Activity/TreatyInDifferenceShareTotal.xml
+TreatyIn.ValueDifference.TotalSpreadedNetPremi,2,TotalSpreadedNetPremi,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,8,5,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyEDMProRateCalculation.xml | Activity/TreatyInDifferenceShareTotal.xml
+TreatyIn.ValueDifference.TotalSpreadedNetPremi.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyInDifferenceShareTotal.xml
+TreatyIn.ValueDifference.TotalSpreadedNetPremi.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyInDifferenceShareTotal.xml
+TreatyIn.ValueDifference.TotalSpreadedNetPremiRI,2,TotalSpreadedNetPremiRI,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,8,5,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyEDMProRateCalculation.xml | Activity/TreatyInDifferenceShareTotal.xml
+TreatyIn.ValueDifference.TotalSpreadedNetPremiRI.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyInDifferenceShareTotal.xml
+TreatyIn.ValueDifference.TotalSpreadedNetPremiRI.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyInDifferenceShareTotal.xml
+TreatyIn.ValueDifference.TotalSpreadedRnmProp,2,TotalSpreadedRnmProp,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,7,4,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyEDMProRateCalculation.xml | Activity/TreatyInDifferenceShareTotal.xml
+TreatyIn.ValueDifference.TotalSpreadedRnmProp.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyInDifferenceShareTotal.xml
+TreatyIn.ValueDifference.TotalSpreadedRnmProp.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyInDifferenceShareTotal.xml
+TreatyIn.ValueDifference.TotalSpreadedRnmRIProp,2,TotalSpreadedRnmRIProp,Page List,ASM-FW-GISFW-Data-TreatyInLimitsSpreading,2,7,4,jalur-penuh,identitas-kelas (2/2 anak cocok),ya,Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyEDMProRateCalculation.xml | Activity/TreatyInDifferenceShareTotal.xml
+TreatyIn.ValueDifference.TotalSpreadedRnmRIProp.Currency,3,Currency,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyInDifferenceShareTotal.xml
+TreatyIn.ValueDifference.TotalSpreadedRnmRIProp.Value,3,Value,Skalar,(tidak dideklarasikan),0,2,2,jalur-penuh,,ya,Activity/GetNilaiTotalAdjustment.xml | Activity/TreatyInDifferenceShareTotal.xml
+TreatyIn.ViewState,1,ViewState,Skalar,(tidak dideklarasikan),0,623,36,jalur-penuh,,ya,Activity/SetTreatyIn_Act.xml | Activity/TreatyInCopy.xml | DataTransform/Akseptasi_DT.xml
+TreatyIn.pyErrMsg,1,pyErrMsg,Skalar,(tidak dideklarasikan),0,6,3,jalur-penuh,,ya,Activity/TreatyInCheckCedingBlacklist.xml | Harness/InputTreatyInOffer.xml | Section/InputTreatyInOffer.xml

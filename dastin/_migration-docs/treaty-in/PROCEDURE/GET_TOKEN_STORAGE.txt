@@ -1,0 +1,57 @@
+CREATE OR REPLACE PROCEDURE POOLDATA.GET_TOKEN_STORAGE(
+   VAPPNAME     IN  VARCHAR2,
+   VUSERINPUT   IN  VARCHAR2,
+   VAKSESTOKEN  OUT VARCHAR2,
+   VERRMSG      OUT VARCHAR2
+)
+AS
+   v_expdate      DATE;
+   lv_userinput   VARCHAR2(4000);
+BEGIN
+   -- 1. Validasi: Jangan lanjut jika VAPPNAME null atau kosong
+   IF VAPPNAME IS NULL THEN
+      VAKSESTOKEN := NULL;
+      VERRMSG := 'Error: VAPPNAME tidak boleh kosong.';
+      RETURN; -- Keluar dari prosedur
+   END IF;
+
+   -- 2. Coba ambil token yang belum expired (ambil yang paling baru)
+   BEGIN
+      SELECT KODEAKSES
+        INTO VAKSESTOKEN
+        FROM POOLDATA.GCP_IMAGE
+       WHERE APPNAME = VAPPNAME
+         AND INPUTDATE > SYSDATE
+      ORDER BY INPUTDATE DESC
+      FETCH FIRST 1 ROWS ONLY;
+
+      VERRMSG := NULL;
+      RETURN;
+      
+   EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+         -- 3. Buat token baru jika tidak ditemukan
+         SELECT RAWTOHEX(STANDARD_HASH('ASMAPP' || TO_CHAR(SYSTIMESTAMP,'YYYYMMDDHH24MISSFF3'), 'MD5'))
+           INTO VAKSESTOKEN
+           FROM DUAL;
+
+         v_expdate := SYSDATE + NUMTODSINTERVAL(1, 'MINUTE');
+         lv_userinput := NVL(VUSERINPUT, 'Job');
+
+         -- Insert hanya dilakukan jika validasi di atas lolos
+         INSERT INTO POOLDATA.GCP_IMAGE (
+             APPNAME, KODEAKSES, USERINPUT, INPUTDATE
+         ) VALUES (
+             VAPPNAME, VAKSESTOKEN, lv_userinput, v_expdate
+         );
+
+         VERRMSG := NULL;
+         RETURN;
+   END;
+
+EXCEPTION
+   WHEN OTHERS THEN
+      VAKSESTOKEN := NULL;
+      VERRMSG := 'Error pada GET_TOKEN_STORAGE: ' || SUBSTR(SQLERRM, 1, 3900);
+END GET_TOKEN_STORAGE;
+/

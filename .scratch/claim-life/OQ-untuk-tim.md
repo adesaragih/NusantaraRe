@@ -1,0 +1,118 @@
+# Pertanyaan untuk Tim — pembuka tiket Claim — Life
+
+Dokumen bantu untuk mengumpulkan jawaban dari DBA, Product+UW, Finance, dan IT-infra.
+Tujuannya membuka 6 tiket berstatus `needs-info` menjadi `ready-for-agent`.
+
+**Cara pakai:** bawa ke tiap pemilik peran, isi kolom "Jawaban", lalu jawaban ini akan dicatat ke
+CONTEXT.md/ADR/register lewat skill (bukan diketik langsung ke artefak). Yang tak terjawab tetap
+OQ terbuka — jangan ditebak.
+
+Sumber pertanyaan: `discovery/open-questions.md` (nomor OQ otoritatif di sana). Tiket yang
+diblokir disebut di tiap butir.
+
+---
+
+## Untuk DBA
+
+### OQ-002 — Kontrak `POOLDATA.PROC_GENERATE_SEQUENCE_NUMBER` (memblokir tiket 02, 12)
+Penomoran klaim Life memanggil procedure ini; badannya tidak ada di korpus.
+Yang dibutuhkan:
+1. Format nomor klaim Life yang dihasilkan (retro dan non-retro) — bentuk string persisnya.
+2. Apa yang membedakan nomor retro vs non-retro.
+3. Sequence di-reset per tahun, per lini bisnis, atau berjalan terus (global)?
+4. (untuk tiket 12) Kontrak `GET_TOKEN_STORAGE` — parameter masuk/keluar, dan apakah commit sendiri.
+
+> **Jawaban:**
+
+### OQ-001 — DDL Oracle produksi (memblokir tiket 13; TIDAK memblokir tiket 01)
+Tidak ada DDL di korpus. Untuk migrasi data nyata (tiket 13) dibutuhkan definisi tabel:
+`OS_AKSEPTASI_KLAIM_LIFE`, `JSON_KLAIM`, `M_LIFE_PREMIUM_DETAIL`, dan tabel klaim Life terkait —
+nama kolom, tipe, presisi, nullability, PK/FK, index.
+Catatan: tiket 01 (skema uji provisional) TIDAK menunggu ini — nama kolom sudah terbaca dari SQL,
+tipe longgar. Yang menunggu hanya migrasi produksi.
+
+> **Jawaban:**
+
+### OQ-013 — Batas transaksi & identitas pengguna di dalam stored procedure (memblokir tiket 13)
+Procedure `POOLDATA.*` melakukan `COMMIT` di dalam blok PL/SQL, dan `{OperatorID.pyUserIdentifier}`
+dikirim sebagai parameter. Yang dibutuhkan:
+1. Apakah semua procedure `POOLDATA.*` commit sendiri?
+2. Identitas pengguna dipakai untuk apa di dalam procedure — audit trail, otorisasi, atau keduanya?
+
+> **Jawaban:**
+
+### OQ-018 — pxHostId production (memblokir tiket 13 untuk cutover; sebagian sudah dijawab)
+Sudah dijawab untuk Claim Life: jboss1073 = production, jboss117 = dev (mirroring).
+Sisa untuk cutover: konfirmasi pxHostId `pega-nusre` dan satu id-hash — lingkungan apa?
+
+> **Jawaban:**
+
+### OQ-047 — Daftar endpoint di tabel `M_LINK_SERVICE` (memblokir tiket 12)
+Alamat integrasi (Google Storage, email, Arasapas, konversi) dibaca dari tabel `M_LINK_SERVICE`,
+bukan hanya SystemSettings. Yang dibutuhkan: daftar endpoint aktual (untuk jadi env var), atau
+konfirmasi bahwa semuanya via tabel itu dan strukturnya.
+
+> **Jawaban:**
+
+---
+
+## Untuk Product + Underwriting
+
+### OQ-032 — Sumber nilai `KomiteLoop` (jumlah tingkat tangga komite) (memblokir tiket 10)
+`KomiteLoop` menentukan berapa tingkat persetujuan komite. Nilainya ditentukan Claim Life, tapi
+sumber/aturan penentuannya tidak ada di korpus.
+Pertanyaan: apa yang menentukan jumlah tingkat komite untuk sebuah klaim? (nilai klaim, jenis, dll)
+
+> **Jawaban:**
+
+### OQ-037 — Ambang nominal roster komite (memblokir tiket 10; Finance + Product+UW)
+Komposisi roster komite ditentukan ambang nominal ter-hardcode (mis. batas 30jt/50jt di modul lain).
+Pertanyaan: apa aturan ambang nominal yang menentukan siapa masuk roster komite untuk klaim Life?
+Apakah mata uangnya IDR? Apakah dapat dikonfigurasi?
+
+> **Jawaban:**
+
+### Tinjauan aturan turunan "klaim selesai" (memblokir tiket 04)
+Spec §3 menetapkan (bukan temuan korpus, tapi konsekuensi logis jawaban Anda):
+> Klaim SELESAI bila tidak ada lagi baris AdjustmentList bernilai 0 DAN ada minimal satu baris
+> bernilai 1 (aksep). Bila tak ada 0 dan tak ada 1 → ditolak seluruhnya, tapi masih bisa
+> dilanjutkan dengan baris baru.
+Pertanyaan: apakah aturan ini benar menurut proses bisnis Anda?
+
+> **Jawaban:**
+
+### Satuan pergeseran tanggal DOL (memblokir tiket 06)
+Di ValidasiDOL_Act, cabang TP/TR memakai argumen `@addCalendar(...,1,...)` — [dugaan] +1 hari.
+Definisi fungsi tidak ada di korpus.
+Pertanyaan: untuk tipe TP/TR, apakah jendela validasi Date of Loss digeser +1 hari? Bila ya,
+mengapa (aturan bisnis) — atau ini kekeliruan lama?
+
+> **Jawaban:**
+
+### OQ-060 — Cakupan kolom CURRENCY pada rekam akseptasi Life (memblokir bentuk tipe uang, tiket terkait)
+CURRENCY ada di tingkat baris dan disalin dari baris 1. Pertanyaan: apakah satu klaim Life selalu
+satu mata uang, atau boleh campur antar baris?
+
+> **Jawaban:**
+
+---
+
+## Ringkasan pemetaan OQ → tiket
+
+| OQ | Pemilik | Memblokir tiket |
+| --- | --- | --- |
+| OQ-002 | DBA | 02, 12 |
+| OQ-001 | DBA | 13 (bukan 01) |
+| OQ-013 | DBA | 13 |
+| OQ-018 | IT-infra/DBA | 13 (cutover) |
+| OQ-047 | DBA/Platform | 12 |
+| OQ-032 | Product+UW | 10 |
+| OQ-037 | Finance + Product+UW | 10 |
+| aturan "klaim selesai" | Product+UW (work owner) | 04 |
+| satuan DOL | Product+UW | 06 |
+| OQ-060 | Product+UW + DBA | bentuk tipe uang |
+
+**Setelah terjawab:** jawaban dibawa kembali ke sesi Claude, dicatat ke CONTEXT.md/ADR/register
+lewat alur skill, lalu tiket yang bersangkutan dinaikkan `needs-info` → `ready-for-agent`.
+Yang tetap tak terjawab: tiket tetap `needs-info`, jangan ditebak.
+```

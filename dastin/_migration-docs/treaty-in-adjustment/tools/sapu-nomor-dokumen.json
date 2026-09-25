@@ -1,0 +1,625 @@
+{
+ "DocNo": [],
+ "DocumentNo": [],
+ "DocNumber": [],
+ "NoDoc": [],
+ "NoDokumen": [],
+ "NomorDokumen": [],
+ "AddendumNo": [],
+ "NoAddendum": [],
+ "AddendumNumber": [],
+ "AddendumRef": [],
+ "AddendumID": [],
+ "EndorseNo": [],
+ "EndorsementNo": [],
+ "NoEndorse": [],
+ "RefNo": [],
+ "NoRef": [],
+ "ReferenceNo": [],
+ "ContractRefNo": [
+  [
+   "IRISAN",
+   "TreatyInNONProportionalOldData.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ]
+ ],
+ "RefDoc": [],
+ "DocRef": [],
+ "SlipNo": [],
+ "NoSlip": [],
+ "LetterNo": [],
+ "NoSurat": [],
+ "SuratNo": [],
+ "AmendmentNo": [],
+ "NoAmendment": [],
+ "AddNo": [],
+ "EDMState": [
+  [
+   "IRISAN",
+   "FetchTreatyExistingProduction.xml",
+   "Activity",
+   "PropertiesValue",
+   "@if(TreatyIn.EDMState=\"\",TreatyIn.ID, TreatyIn.OLDID)"
+  ],
+  [
+   "IRISAN",
+   "SaveTreatyIn_EDM_Act.xml",
+   "Activity",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "TreatyEDMDifferenceShare.xml",
+   "Activity",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "TreatyInSetValueInstallment.xml",
+   "Activity",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "TreatyInSubmitEDM.xml",
+   "Activity",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "FetchTreatyExistingProduction.xml",
+   "Activity",
+   "PropertiesValue",
+   "@if(TreatyIn.EDMState=\"\",TreatyIn.ID, TreatyIn.OLDID)"
+  ],
+  [
+   "IRISAN",
+   "SaveTreatyIn_EDM_Act.xml",
+   "Activity",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "TreatyEDMDifferenceShare.xml",
+   "Activity",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "TreatyInEDMSetValue.xml",
+   "Activity",
+   "PropertiesName",
+   "TreatyIn.EDMState"
+  ],
+  [
+   "IRISAN",
+   "TreatyInSetValueInstallment.xml",
+   "Activity",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "TreatyInSubmitEDM.xml",
+   "Activity",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "TreatyCreateEDM.xml",
+   "DataTransform",
+   "pyPropertiesName",
+   "TreatyIn.EDMState"
+  ],
+  [
+   "IRISAN",
+   "TreatyCreateEDM.xml",
+   "DataTransform",
+   "pyPropertiesName",
+   "TreatyIn.EDMState"
+  ],
+  [
+   "IRISAN",
+   "TreatyInSetEditPre.xml",
+   "DataTransform",
+   "pyPropertiesName",
+   "TreatyIn.EDMState==\"1\""
+  ],
+  [
+   "IRISAN",
+   "TreatyInSetEditPre.xml",
+   "DataTransform",
+   "pyPropertiesName",
+   "TreatyIn.EDMState==\"2\""
+  ],
+  [
+   "IRISAN",
+   "TreatyInSetEditPre.xml",
+   "DataTransform",
+   "pyPropertiesName",
+   "TreatyIn.EDMState==\"3\""
+  ],
+  [
+   "56-KHAS",
+   "BrowseTREATY_IN_EDM.xml",
+   "ReportDefinition",
+   "pyTargetProperty",
+   ".EDMState"
+  ],
+  [
+   "IRISAN",
+   "InputTreatyInAdjustment.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "PickerTreatyInMaster.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "PickerTreatyInMasterRevisi.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ]
+ ],
+ "EDMMaterialType": [
+  [
+   "IRISAN",
+   "InputTreatyInOffer.xml",
+   "Harness",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "CoBList.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "DetailEGNPI.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "DetailLimits.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "DetailShare.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "DetailShareRetro.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "InputTreatyInOffer.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "56-KHAS",
+   "Installments.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "Layers.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "LayersEDM.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "MaxRetention.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "Share.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "56-KHAS",
+   "ShareRetro.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "TreatyInNONProportional.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "TreatyInTabsNonProportional.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "TreatyInTabsNPValueDifferenceProRate.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "TreatyInTabsNPValueDifference_NoProRate.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "TreatyInTabsProportional.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "TreatyInEDMSetValue.xml",
+   "Activity",
+   "PropertiesName",
+   "TreatyIn.EDMMaterialType"
+  ],
+  [
+   "IRISAN",
+   "InputTreatyInOffer.xml",
+   "Harness",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "56-KHAS",
+   "BrowseTREATY_IN_EDM.xml",
+   "ReportDefinition",
+   "pyTargetProperty",
+   ".EDMMaterialType"
+  ],
+  [
+   "IRISAN",
+   "CoBList.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "DetailEGNPI.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "DetailLimits.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "DetailShare.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "DetailShareOldData.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "DetailShareRetro.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "InputTreatyInOffer.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "56-KHAS",
+   "Installments.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "Layers.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "LayersEDM.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "LayersOldData.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "MaxRetention.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "Share.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "56-KHAS",
+   "ShareRetro.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "TreatyInNONProportional.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "TreatyInTabsNonProportional.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "TreatyInTabsNPValueDifferenceProRate.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "TreatyInTabsNPValueDifference_NoProRate.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "TreatyInTabsProportional.xml",
+   "Section",
+   "(bukan penulis)",
+   ""
+  ]
+ ],
+ "OLDID": [
+  [
+   "IRISAN",
+   "SaveTreatyInOffer_Act.xml",
+   "Activity",
+   "PropertiesValue",
+   "TreatyIn.OLDID"
+  ],
+  [
+   "IRISAN",
+   "SaveTreatyIn_EDM_Act.xml",
+   "Activity",
+   "PropertiesName",
+   "InputParam.OLDIDPEGA"
+  ],
+  [
+   "IRISAN",
+   "SaveTreatyIn_EDM_Act.xml",
+   "Activity",
+   "PropertiesValue",
+   "TreatyIn.OLDID"
+  ],
+  [
+   "56-KHAS",
+   "TreatyInCopy.xml",
+   "Activity",
+   "PropertiesName",
+   "TreatyIn.OLDID"
+  ],
+  [
+   "IRISAN",
+   "TreatyInMappingDataconvert.xml",
+   "Activity",
+   "PropertiesName",
+   "TreatyIn.OLDID"
+  ],
+  [
+   "56-KHAS",
+   "SaveTreatyInEDM.xml",
+   "RDBList",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "BrowseBusiness_RD.xml",
+   "ReportDefinition",
+   "pyTargetProperty",
+   ".OLDID"
+  ],
+  [
+   "IRISAN",
+   "BrowseCurrencyTreatyIn_RD.xml",
+   "ReportDefinition",
+   "pyTargetProperty",
+   ".OLDID"
+  ],
+  [
+   "IRISAN",
+   "BrowseCurrency_RD.xml",
+   "ReportDefinition",
+   "pyTargetProperty",
+   ".OLDID"
+  ],
+  [
+   "IRISAN",
+   "SaveTreatyInOffer_Act.xml",
+   "Activity",
+   "PropertiesValue",
+   "TreatyIn.OLDID"
+  ],
+  [
+   "IRISAN",
+   "SaveTreatyIn_EDM_Act.xml",
+   "Activity",
+   "PropertiesName",
+   "InputParam.OLDIDPEGA"
+  ],
+  [
+   "IRISAN",
+   "SaveTreatyIn_EDM_Act.xml",
+   "Activity",
+   "PropertiesValue",
+   "TreatyIn.OLDID"
+  ],
+  [
+   "56-KHAS",
+   "TreatyInCopy.xml",
+   "Activity",
+   "PropertiesName",
+   "TreatyIn.OLDID"
+  ],
+  [
+   "IRISAN",
+   "TreatyInEDMSetValue.xml",
+   "Activity",
+   "PropertiesName",
+   "TreatyIn.OLDID"
+  ],
+  [
+   "IRISAN",
+   "TreatyInMappingDataconvert.xml",
+   "Activity",
+   "PropertiesName",
+   "TreatyIn.OLDID"
+  ],
+  [
+   "IRISAN",
+   "TreatyInRevisi_post.xml",
+   "Activity",
+   "PropertiesName",
+   "TreatyIn.OLDID"
+  ],
+  [
+   "IRISAN",
+   "InputTreatyInAdjustment.xml",
+   "Harness",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "CopyAllAttachment2_Sql.xml",
+   "RDBList",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "56-KHAS",
+   "SaveTreatyInEDM.xml",
+   "RDBList",
+   "(bukan penulis)",
+   ""
+  ],
+  [
+   "IRISAN",
+   "BrowseBusiness_RD.xml",
+   "ReportDefinition",
+   "pyTargetProperty",
+   ".OLDID"
+  ],
+  [
+   "IRISAN",
+   "BrowseCurrencyTreatyIn_RD.xml",
+   "ReportDefinition",
+   "pyTargetProperty",
+   ".OLDID"
+  ],
+  [
+   "IRISAN",
+   "BrowseCurrency_RD.xml",
+   "ReportDefinition",
+   "pyTargetProperty",
+   ".OLDID"
+  ],
+  [
+   "56-KHAS",
+   "BrowseTREATY_IN_EDM.xml",
+   "ReportDefinition",
+   "pyTargetProperty",
+   ".OLDID"
+  ]
+ ]
+}

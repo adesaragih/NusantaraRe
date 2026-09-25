@@ -1,0 +1,47 @@
+NAMA_T	PADANAN_DDL	KELOMPOK	INDUK	KUNCI	ASAL_PEGA	JALUR_PEGA
+TREATY_IN	KONTRAK + VERSI_KONTRAK	akar			TreatyIn{} · 99 skalar akar · kelas ASM-FW-GISFW-Int-TREATY_IN · TABEL SUDAH ADA — 20 kolom bisnis nyata, 79 sisanya hanya di M_TREATY_IN.JSONDATA	TreatyIn
+T_TREATY_REVISION	VERSI_KONTRAK · bagian addendum	edm	TREATY_IN	TREATY_IN_ID	TreatyIn.OLDID · EDMState · EDMEffective · EDMMaterialType · RevisionState · RevisionDate · AddendumPremi · padanan lamanya TREATY_IN_EDM / M_TREATY_IN_EDM — TIDAK dipakai sebagai nama karena tabel itu bentuk SALINAN, bukan bagian addendum	TreatyIn
+T_TREATY_LIMITS	LAYER	limit	TREATY_IN	TREATY_IN_ID	TreatyIn.Limits[] · 18 field · ★ inti layer, n=307	TreatyIn.Limits
+T_TREATY_LIMIT_DETAIL	DETAIL_PROPORSIONAL	limit	T_TREATY_LIMITS	LIMIT_ID	TreatyIn.Limits[].Detail[] · 14 field · ★ inti proporsional, n=104	TreatyIn.Limits.Detail
+T_TREATY_LIMIT_COB	KELAS_BISNIS_LAYER	limit	T_TREATY_LIMIT_DETAIL	LIMIT_DETAIL_ID	Limits[].Detail[].COBList[] · ClassOfBusiness · ClassOfBusinessID	TreatyIn.Limits.Detail.COBList
+T_TREATY_LIMIT_AMOUNT	NILAI_LAYER	limit	T_TREATY_LIMIT_DETAIL	LIMIT_DETAIL_ID	Detail[] · EPIList[] RetentionList[] CashLossList[] ClaimCoopList[] PLAList[] IOOLimitList[] — SATU tabel berkolom PERAN, bukan enam tabel	TreatyIn.Limits.Detail.EPIList | TreatyIn.Limits.Detail.RetentionList | TreatyIn.Limits.Detail.CashLossList | TreatyIn.Limits.Detail.ClaimCoopList | TreatyIn.Limits.Detail.PLAList | TreatyIn.Limits.Detail.IOOLimitList
+T_TREATY_LIMIT_ACHIEVEMENT	PENCAPAIAN	limit	T_TREATY_LIMIT_DETAIL	LIMIT_DETAIL_ID	Limits[].Detail[].AchievementLists[] · n=1 · ⚠ kelas TIDAK dideklarasikan di mana pun	TreatyIn.Limits.Detail.AchievementLists
+T_TREATY_LIMIT_MEASURE	BESARAN_LAYER	limit	T_TREATY_LIMITS	LIMIT_ID	Limits[] · MDPList[] EgnpiTotalList[] PremiumEarnedList[] — SATU tabel berkolom PERAN	TreatyIn.Limits.MDPList | TreatyIn.Limits.EgnpiTotalList | TreatyIn.Limits.PremiumEarnedList
+T_TREATY_REINSTATEMENT	PEMULIHAN_LIMIT	limit	T_TREATY_LIMITS	LIMIT_ID	Limits[].Reinstatement_List[] · ReinstatementPct · AdditionalAmount1/2 · nama ber-garis-bawah di sumbernya	TreatyIn.Limits.Reinstatement_List
+T_TREATY_LIMIT_GROUP	KELOMPOK_LAYER	limit	T_TREATY_LIMITS	LIMIT_ID	Limits[].TreatyGroupList[] · TreatyGroup · TreatyGroupID	TreatyIn.Limits.TreatyGroupList
+T_TREATY_LIMIT_GROUP_COB	KELAS_BISNIS_KELOMPOK	limit	T_TREATY_LIMIT_GROUP	LIMIT_GROUP_ID	Limits[].TreatyGroupList[].ClassOfBusinessList[] ◄ KEDALAMAN 4	TreatyIn.Limits.TreatyGroupList.ClassOfBusinessList
+T_TREATY_SHARE	BAGIAN	share	TREATY_IN	TREATY_IN_ID	TreatyIn.Share[] · 10 field · ★ inti penyebaran, n=237	TreatyIn.Share
+T_TREATY_SHARE_SPREADING	PENYEBARAN_XOL	share	T_TREATY_SHARE	SHARE_ID	Share[].SpreadingListXOL[] · Pct · ReinsTypeName · ReinsTypeID, n=45	TreatyIn.Share.SpreadingListXOL
+T_TREATY_SHARE_SPREAD_AMOUNT	NILAI_TERSEBAR	share	T_TREATY_SHARE_SPREADING	SHARE_SPREADING_ID	11 daftar RNMSpreadedList…[] di bawah SpreadingListXOL ◄ KEDALAMAN 4 — SATU tabel berkolom PERAN	TreatyIn.Share.SpreadingListXOL.RNMSpreadedListXOL | TreatyIn.Share.SpreadingListXOL.GrossPremiumList
+T_TREATY_SHARE_AMOUNT	NILAI_BAGIAN	share	T_TREATY_SHARE	SHARE_ID	17 daftar uang langsung di bawah Share[] — GrossPremiumList NetPremiumList RnmLimitList BrokerageList RNMSpreadedList… — SATU tabel berkolom PERAN	TreatyIn.Share.GrossPremiumList | TreatyIn.Share.NetPremiumList | TreatyIn.Share.RnmLimitList | TreatyIn.Share.BrokerageList | TreatyIn.Share.RNMSpreadedListNetXOL
+T_TREATY_SHARE_DEDUCTION	POTONGAN	share	T_TREATY_SHARE	SHARE_ID	Share[].DeductionList[] · Deduction · DeductionPct · Comment	TreatyIn.Share.DeductionList
+T_TREATY_FAC_SHARE	BAGIAN_FAKULTATIF	fac	TREATY_IN	TREATY_IN_ID	TreatyIn.FacultativeShareList[] · 9 field · kelas SAMA dengan Share[], n=58	TreatyIn.FacultativeShareList
+T_TREATY_FAC_SHARE_AMOUNT	NILAI_BAGIAN_FAKULTATIF	fac	T_TREATY_FAC_SHARE	FAC_SHARE_ID	FacultativeShareList[] · GrossPremiumList[] NetPremiumList[] RnmLimitList[] RnmGrossPremiDisplay[] RnmLimitListDisplay[] — SATU tabel berkolom PERAN	TreatyIn.FacultativeShareList.GrossPremiumList | TreatyIn.FacultativeShareList.RnmLimitList
+T_TREATY_FAC_SHARE_DEDUCTION	POTONGAN_FAKULTATIF	fac	T_TREATY_FAC_SHARE	FAC_SHARE_ID	FacultativeShareList[].DeductionList[]	TreatyIn.FacultativeShareList.DeductionList
+T_TREATY_FAC_REINSURER	REASURADUR_FAKULTATIF	fac	TREATY_IN	TREATY_IN_ID	TreatyIn.ShareFacultativeReinsurers[] (n=47) DAN FacultativeShareList[].ShareFacultativeReinsurers[] (n=6) — kelas sama, dua induk	TreatyIn.ShareFacultativeReinsurers | TreatyIn.FacultativeShareList.ShareFacultativeReinsurers
+T_TREATY_FAC_LIMITS	LAYER_FAKULTATIF	fac	T_TREATY_FAC_REINSURER	FAC_REINSURER_ID	ShareFacultativeReinsurers[].FacultativeLimits[] · TreatyType · TreatyTypeID	TreatyIn.ShareFacultativeReinsurers.FacultativeLimits
+T_TREATY_FAC_LIMIT_DETAIL	DETAIL_PROPORSIONAL_FAKULTATIF	fac	T_TREATY_FAC_LIMITS	FAC_LIMIT_ID	FacultativeLimits[].Detail[] · 11 field ◄ KEDALAMAN 4 · kelas SAMA dengan Limits[].Detail[]	TreatyIn.ShareFacultativeReinsurers.FacultativeLimits.Detail
+T_TREATY_CURRENCY	MATA_UANG_KONTRAK	kepala	TREATY_IN	TREATY_IN_ID	TreatyIn.CurrencyList[] · Currency · CurrencyID · Conversion · PeriodStart · PeriodEnd	TreatyIn.CurrencyList
+T_TREATY_EGNPI	EGNPI	kepala	TREATY_IN	TREATY_IN_ID	TreatyIn.EGNPI[] · 9 field · Amount · AmountIDR · Proportion	TreatyIn.EGNPI
+T_TREATY_RETENTION	RETENSI	kepala	TREATY_IN	TREATY_IN_ID	TreatyIn.Retention[] · 6 field · ⚠ memakai kelas TreatyInEGNPI, bukan kelas sendiri	TreatyIn.Retention
+T_TREATY_LIMIT_SUMMARY	RINGKASAN_LIMIT	kepala	TREATY_IN	TREATY_IN_ID	LimitSummaryList[] LimitShareSummaryList[] LimitFacShareSummaryList[] MDPSummaryList[] — SATU tabel berkolom LINGKUP	TreatyIn.LimitSummaryList | TreatyIn.LimitShareSummaryList | TreatyIn.LimitFacShareSummaryList | TreatyIn.MDPSummaryList
+T_TREATY_INSTALLMENT	ANGSURAN	kepala	TREATY_IN	TREATY_IN_ID	TreatyIn.Installment[] · Currency · ID	TreatyIn.Installment
+T_TREATY_INSTALLMENT_ITEM	RINCIAN_ANGSURAN	kepala	T_TREATY_INSTALLMENT	INSTALLMENT_ID	Installment[].InstallmentList[] · DueDate · InstallmentPct · PaymentDate · WPC   [bukti: identitas-kelas — bentuknya hanya terbaca lewat salinan OLDDATA/ValueDifference]	TreatyIn.ValueDifference.Installment.InstallmentList
+T_TREATY_REPORTING_PERIOD	PERIODE_PELAPORAN	kepala	TREATY_IN	TREATY_IN_ID	TreatyIn.ReportingPeriodList[] · Period · InitialDate · SubmissionDue · ConfirmationDue · SettlementDue	TreatyIn.ReportingPeriodList
+T_TREATY_ACCUMULATION	AKUMULASI	kepala	TREATY_IN	TREATY_IN_ID	TreatyIn.AccumulationList[] · Period · ReportDate	TreatyIn.AccumulationList
+T_TREATY_PORTFOLIO	PORTOFOLIO	kepala	TREATY_IN	TREATY_IN_ID	TreatyIn.Portfolio[] · Type · TypePortfolio · Description	TreatyIn.Portfolio
+T_TREATY_HAZARD_LIMIT	BATAS_BAHAYA	kepala	TREATY_IN	TREATY_IN_ID	Earthquake FloodJab FloodNation RSMDLimit MaxCoGroup MaxCoNonGroup + Currency… — 10 skalar berpasangan DIPUTAR jadi daftar	TreatyIn
+T_TREATY_TOTAL	REKAP_KONTRAK	kepala	TREATY_IN	TREATY_IN_ID	20 daftar Total…[] tingkat akar + TotalEgnpiAmountNP + TotalRetentionAmountNP — SATU tabel berkolom PERAN	TreatyIn.TotalShareNetNP | TreatyIn.TotalShareGrossNP | TreatyIn.TotalEgnpiAmountNP | TreatyIn.TotalRetentionAmountNP
+T_TREATY_RETRO_SHARE	BAGIAN_RETRO	kepala	TREATY_IN	TREATY_IN_ID	TreatyIn.ShareReins[] + RetroList · ⚠ kelas TIDAK dideklarasikan di mana pun	TreatyIn.ShareReins
+T_VIEW_COMMENT	CATATAN_PERSETUJUAN	bersama	TREATY_IN	TREATY_IN_ID	TreatyIn.CommentList[] · OperatorName · Date · Suggest · IsApproved · kelas pinjaman SuggestList	TreatyIn.CommentList
+DOCUMENT_TREATY_IN	DOKUMEN_KONTRAK	bersama	TREATY_IN	TREATY_IN_ID	M_ATTACHMENTTREATY_2 + T_STORAGE_IMAGE + CATEGORY_ATTACH_REAS — lewat RDB List, bukan lewat pohon clipboard	
+T_TREATY_VALUE_DIFFERENCE	NILAI_SELISIH	edm	T_TREATY_REVISION	REVISION_ID	TreatyIn.ValueDifference{} · 217 simpul · nilai sekarang − nilai lama · ditulis TreatyEDMCalculateDifference (11 langkah, SELURUHNYA hidup)	TreatyIn.ValueDifference
+T_TREATY_VALUE_BEFORE_PRORATE	NILAI_SEBELUM_PRO_RATE	edm	TREATY_IN	TREATY_IN_ID	TreatyIn.ValueBeforeProrate{} · 15 simpul · kelas sama dengan akar	TreatyIn.ValueBeforeProrate
+— TIDAK DIBUAT —	OLDDATA tidak menjadi tabel	edm			TreatyIn.OLDDATA{} · 142 simpul · ATURAN BISNIS: data lama TIDAK disimpan ulang — ia DISELECT	
+— TIDAK DIBUAT —	ActualValue tidak menjadi tabel	edm			"TreatyIn.ActualValue{} · 152 simpul · ⚠ namanya ""nilai aktual"" tetapi 8 isian menerima SELISIH — lihat struktur-treatyin-lama.md §5.3"	
+T_TREATY_MIG_CORRELATION	MIGRASI_KORELASI	migrasi			jembatan ke sistem lama — pzInsKey · TreatyIn.ID · TreatyIn.OLDID	
+T_TREATY_MIG_LANDING	MIGRASI_PENDARATAN	migrasi			tempat bentuk lama mendarat utuh — M_TREATY_IN.JSONDATA apa adanya	
+T_TREATY_MIG_REJECTED	MIGRASI_NILAI_DITOLAK	migrasi	T_TREATY_MIG_LANDING	LANDING_ID	nilai yang tidak dapat diurai — tercatat, tidak dibulatkan, tidak dibuang	
+T_TREATY_OUTBOUND_ARCHIVE	ARSIP_MUATAN_KELUAR	migrasi	TREATY_IN	TREATY_IN_ID	175 argumen ke PEGA_TREATY_IN / PEGA_M_TREATY_IN_EDM / PEGA_M_TREATY_IN_DETAIL / …_DETAIL_EDM	
+T_TREATY_OFFER	⚠ TIDAK ADA PENULIS HIDUP	lubang			TREATYINOFFER — nol penulis terjangkau (sapuan dua tingkat). BUKAN sumber migrasi, BUKAN dasar rekonsiliasi	
+T_TREATY_AUTHORITY_LIMIT	BATAS_WEWENANG	lubang			TIDAK DITEMUKAN di pohon — batas wewenang persetujuan, menunggu dokumen	

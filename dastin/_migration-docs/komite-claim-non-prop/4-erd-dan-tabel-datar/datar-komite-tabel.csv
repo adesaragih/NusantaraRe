@@ -1,0 +1,86 @@
+TABEL,KOLOM,KUNCI,KETERANGAN_KUNCI,JALUR_PEGA,REF,CACAH_BERKAS,KEYAKINAN
+T_WORK_CLAIM,ID,PK,kunci primer,pyWorkPage.pyID,2,2,jalur-penuh
+T_WORK_CLAIM,COVER_KEY,,,pyWorkPage.pxCoverInsKey,3,3,jalur-penuh
+T_WORK_CLAIM,LINI,,,- (ditetapkan workbook NusantaraRe),,,konvensi
+T_GENERAL_KOMITE,ID,PK,SHARED PK = T_WORK_CLAIM.ID,pyWorkPage.pzInsKey,1,1,jalur-penuh
+T_GENERAL_KOMITE,ACCEPT_STATUS,,,pyWorkPage.AcceptStatus,54,4,jalur-penuh
+T_GENERAL_KOMITE,COMMENT,,,pyWorkPage.Comment,11,3,jalur-penuh
+T_GENERAL_KOMITE,IS_SUBJECTIVITY,,,pyWorkPage.IsSubjectivity,10,3,jalur-penuh
+T_GENERAL_KOMITE,SUBJECTIVITY_NOTE,,,pyWorkPage.SubjectivityNote,1,1,jalur-penuh
+T_GENERAL_KOMITE,KOMITE_COUNT,,,pyWorkPage.KomiteCount,25,3,jalur-penuh
+T_GENERAL_KOMITE,KOMITE_LOOP,,,pyWorkPage.KomiteLoop,17,3,jalur-penuh
+T_GENERAL_KOMITE,IS_CLOSE_FILE,,,pyWorkPage.IsCloseFile,19,4,jalur-penuh
+T_GENERAL_KOMITE,IS_REJECT,,,pyWorkPage.IsReject,18,4,jalur-penuh
+T_GENERAL_KOMITE,IS_PREVIOUS,,,pyWorkPage.IsPrevious,3,2,jalur-penuh
+T_GENERAL_KOMITE,CLM_NO,,,pyWorkPage.CLMNO,1,1,jalur-penuh
+T_GENERAL_KOMITE,CREATED_AT,,,pyWorkPage.pxCreateDateTime,1,1,jalur-penuh
+T_GENERAL_KOMITE,CREATED_BY,,,pyWorkPage.pxCreateOperator,4,4,jalur-penuh
+T_GENERAL_KOMITE,CREATED_BY_NAME,,,pyWorkPage.pxCreateOpName,1,1,jalur-penuh
+T_GENERAL_KOMITE,LOCK_HANDLE,,,pyWorkPage.pxLockHandle,2,1,jalur-penuh
+T_GENERAL_KOMITE,WORK_ID_PREFIX,,,pyWorkPage.pyWorkIDPrefix,29,5,jalur-penuh
+T_GENERAL_KOMITE,INS_KEY,,,pyWorkPage.pzInsKey,1,1,jalur-penuh
+T_KOMITE_KOMITELIST,ID,PK,kunci primer,(surogat pendataran),,,konvensi
+T_KOMITE_KOMITELIST,DATA_KOMITE_ID,FK,-> T_GENERAL_KOMITE.ID,(posisi baris di daftar induk - pxSubscript),,,konvensi
+T_KOMITE_KOMITELIST,KOMITE_ID,,,pyWorkPage.KomiteList.KomiteID,9,2,jalur-penuh
+T_KOMITE_KOMITELIST,KOMITE_APROVAL,,,pyWorkPage.KomiteList.KomiteAproval,2,2,jalur-penuh
+T_KOMITE_KOMITELIST,KOMITE_COMMENT,,,pyWorkPage.KomiteList.KomiteComment,2,2,jalur-penuh
+T_KOMITE_KOMITELIST,DATE_APPROVAL,,,pyWorkPage.KomiteList.DateApproval,3,2,jalur-penuh
+T_KOMITE_KOMITELIST,DATE_APPROVE,,,pyWorkPage.KomiteList.DateApprove,2,2,jalur-penuh
+T_KOMITE_KOMITELIST,KOMITE_EMAIL,,,KomiteList(n).KomiteEmail,2,1,rujukan-relatif
+T_KOMITE_KOMITELIST,ID_KOMITE,,,KomiteList(n).IDKomite,8,2,rujukan-relatif
+T_KOMITE_KOMITELIST,KOMITE_POST,,,KomiteList(n).KomitePost,8,2,rujukan-relatif
+T_KOMITE_KOMITELIST,INITIAL,,,KomiteList(n).Initial,8,2,rujukan-relatif
+T_KOMITE_KOMITELIST,SUBSCRIPT,,,pxSubscript,695,59,jalur-penuh
+T_KOMITE_LOSS_CONTEXT,ID,PK,kunci primer,(surogat pendataran),,,konvensi
+T_KOMITE_LOSS_CONTEXT,DATA_KOMITE_ID,FK,-> T_GENERAL_KOMITE.ID,(halaman bersarang; tidak ada kolom penghubung),,,konvensi
+T_KOMITE_LOSS_CONTEXT,CIRCUM_CAUSE_OF_LOSS,,,pyWorkPage.Komite.CircumtansesCouseOfLoss,1,1,jalur-penuh
+T_KOMITE_LOSS_CONTEXT,EXTENT_OF_LOSS,,,pyWorkPage.Komite.ExtentOfLoss,1,1,jalur-penuh
+T_KOMITE_LOSS_CONTEXT,LEGAL_LIABILITY,,,pyWorkPage.Komite.LegalLiability,1,1,jalur-penuh
+T_KOMITE_LOSS_CONTEXT,OCCUPATION,,,pyWorkPage.Komite.Occupation,1,1,jalur-penuh
+T_KOMITE_LOSS_CONTEXT,REMARKS,,,pyWorkPage.Komite.Remarks,3,3,jalur-penuh
+T_KOMITE_ADJ_SNAPSHOT,ID,PK,kunci primer,(surogat pendataran),,,konvensi
+T_KOMITE_ADJ_SNAPSHOT,DATA_KOMITE_ID,FK,-> T_GENERAL_KOMITE.ID,(halaman bersarang; tidak ada kolom penghubung),,,konvensi
+T_KOMITE_ADJ_SNAPSHOT,ACCEPTED_NO,,,pyWorkPage.Adjustment.AcceptedNo,10,4,jalur-penuh
+T_KOMITE_ADJ_SNAPSHOT,PAYMENT_TYPE,,,pyWorkPage.Adjustment.PaymentType,5,4,jalur-penuh
+T_KOMITE_ADJ_SNAPSHOT,INDEX_OBJECT,,,pyWorkPage.Adjustment.IndexObject,5,2,jalur-penuh
+T_KOMITE_ADJ_SNAPSHOT,CNP_INDEX_INTERIM,,,pyWorkPage.Adjustment.CNPIndexInterim,2,2,jalur-penuh
+T_KOMITE_ADJ_SNAPSHOT,XOL_ID,,,pyWorkPage.Adjustment.XOLID,2,2,jalur-penuh
+T_KOMITE_ADJ_SNAPSHOT,CNP_ACC_NO_ADJUST_F,,,pyWorkPage.Adjustment.CNPAccNoAdjustF,3,2,jalur-penuh
+T_KOMITE_ADJ_SNAPSHOT,CNP_ACC_NO_OTHER_F,,,pyWorkPage.Adjustment.CNPAccNoOtherF,3,2,jalur-penuh
+T_KOMITE_ADJ_SNAPSHOT,CNP_ACC_NO_SALVAGE,,,pyWorkPage.Adjustment.CNPAccNoSalvage,3,2,jalur-penuh
+T_KOMITE_ADJ_SNAPSHOT,CNP_ACC_NO_REINSTATE,,,pyWorkPage.Adjustment.CNPAccNoReinstate,3,2,jalur-penuh
+T_KOMITE_ADJ_SNAPSHOT,IS_PROPOSE_CLOSE,,,pyWorkPage.Adjustment.IsProposeClose,1,1,jalur-penuh
+T_KOMITE_CLAIM_SNAPSHOT,ID,PK,kunci primer,(surogat pendataran),,,konvensi
+T_KOMITE_CLAIM_SNAPSHOT,DATA_KOMITE_ID,FK,-> T_GENERAL_KOMITE.ID,(halaman bersarang; tidak ada kolom penghubung),,,konvensi
+T_KOMITE_CLAIM_SNAPSHOT,NO_CLAIM,,,pyWorkPage.ClaimData.NoClaim,1,1,jalur-penuh
+T_KOMITE_CLAIM_SNAPSHOT,INSURED_NAME,,,pyWorkPage.ClaimData.InsuredName,3,1,jalur-penuh
+T_KOMITE_CLAIM_SNAPSHOT,INSURED_RELATIONSHIP,,,pyWorkPage.ClaimData.InsuredRelationship,1,1,jalur-penuh
+T_KOMITE_CLAIM_SNAPSHOT,PAYABLE,,,pyWorkPage.ClaimData.Payable,1,1,jalur-penuh
+T_KOMITE_CLAIM_SNAPSHOT,TOTAL_LIST_CLAIM_AMOUNT,,,pyWorkPage.ClaimData.TotalListClaimAmount,1,1,jalur-penuh
+T_KOMITE_CLAIM_SNAPSHOT,TOTAL_LIST_CLAIM_AMOUNT_IDR,,,pyWorkPage.ClaimData.TotalListClaimAmountIDR,1,1,jalur-penuh
+T_KOMITE_CLAIM_POLICY,ID,PK,kunci primer,(surogat pendataran),,,konvensi
+T_KOMITE_CLAIM_POLICY,CLAIM_SNAPSHOT_ID,FK,-> T_KOMITE_CLAIM_SNAPSHOT.ID,(halaman bersarang; tidak ada kolom penghubung),,,konvensi
+T_KOMITE_CLAIM_POLICY,END_DATE_TIME,,,pyWorkPage.ClaimData.PolicyData.EndDateTime,2,1,jalur-penuh
+T_KOMITE_CLAIM_ADJ,ID,PK,kunci primer,(surogat pendataran),,,konvensi
+T_KOMITE_CLAIM_ADJ,CLAIM_SNAPSHOT_ID,FK,-> T_KOMITE_CLAIM_SNAPSHOT.ID,(posisi baris di daftar induk - pxSubscript),,,konvensi
+T_KOMITE_CLAIM_ADJ,SUBSCRIPT,,,pxSubscript,695,59,jalur-penuh
+T_KOMITE_ADJ_CURRENCY,ID,PK,kunci primer,(surogat pendataran),,,konvensi
+T_KOMITE_ADJ_CURRENCY,CLAIM_ADJ_ID,FK,-> T_KOMITE_CLAIM_ADJ.ID,(posisi baris di daftar induk - pxSubscript),,,konvensi
+T_KOMITE_ADJ_CURRENCY,CURRENCY_ID,,,pyWorkPage.ClaimData.AdjustmentList.CurencyAdjustment.CurrencyID,6,1,jalur-penuh
+T_KOMITE_ADJ_CURRENCY,SUBSCRIPT,,,pxSubscript,695,59,jalur-penuh
+T_KOMITE_CLAIM_OBJECT,ID,PK,kunci primer,(surogat pendataran),,,konvensi
+T_KOMITE_CLAIM_OBJECT,CLAIM_SNAPSHOT_ID,FK,-> T_KOMITE_CLAIM_SNAPSHOT.ID,(posisi baris di daftar induk - pxSubscript),,,konvensi
+T_KOMITE_CLAIM_OBJECT,SUBSCRIPT,,,pxSubscript,695,59,jalur-penuh
+T_KOMITE_OBJECT_ITEM,ID,PK,kunci primer,(surogat pendataran),,,konvensi
+T_KOMITE_OBJECT_ITEM,CLAIM_OBJECT_ID,FK,-> T_KOMITE_CLAIM_OBJECT.ID,(posisi baris di daftar induk - pxSubscript),,,konvensi
+T_KOMITE_OBJECT_ITEM,SUBSCRIPT,,,pxSubscript,695,59,jalur-penuh
+T_KOMITE_OBJECT_ITEM_ADJ,ID,PK,kunci primer,(surogat pendataran),,,konvensi
+T_KOMITE_OBJECT_ITEM_ADJ,OBJECT_ITEM_ID,FK,-> T_KOMITE_OBJECT_ITEM.ID,(posisi baris di daftar induk - pxSubscript),,,konvensi
+T_KOMITE_OBJECT_ITEM_ADJ,CURRENCY_ID,,,pyWorkPage.ClaimData.ObjectList.ObjectItemList.Adjustment.CurrencyID,6,1,jalur-penuh
+T_KOMITE_OBJECT_ITEM_ADJ,SUBSCRIPT,,,pxSubscript,695,59,jalur-penuh
+T_KOMITE_QUOTATION,ID,PK,kunci primer,(surogat pendataran),,,konvensi
+T_KOMITE_QUOTATION,DATA_KOMITE_ID,FK,-> T_GENERAL_KOMITE.ID,(halaman bersarang; tidak ada kolom penghubung),,,konvensi
+T_KOMITE_QUOTATION,INSURED_NAME,,,pyWorkPage.QuotationData.InsuredName,2,2,jalur-penuh
+T_KOMITE_TREATY_MASTER,ID,PK,kunci primer,(surogat pendataran),,,konvensi
+T_KOMITE_TREATY_MASTER,DATA_KOMITE_ID,FK,-> T_GENERAL_KOMITE.ID,(halaman bersarang; tidak ada kolom penghubung),,,konvensi
+T_KOMITE_TREATY_MASTER,REPORTING_START,,,pyWorkPage.TreatyInMaster.ReportingStart,2,1,jalur-penuh

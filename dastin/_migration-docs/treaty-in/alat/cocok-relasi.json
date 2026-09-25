@@ -1,0 +1,747 @@
+{
+ "erd": [
+  {
+   "induk": "KONTRAK",
+   "anak": "VERSI_KONTRAK",
+   "lambang": "1──<",
+   "hapus": "tolak",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "KONTRAK",
+   "anak": "KONTRAK",
+   "lambang": "1──o<",
+   "hapus": "putus",
+   "luar": false,
+   "gel": false,
+   "catatan": "DISALIN_DARI"
+  },
+  {
+   "induk": "VERSI_KONTRAK",
+   "anak": "VERSI_KONTRAK",
+   "lambang": "1──o<",
+   "hapus": "tolak",
+   "luar": false,
+   "gel": false,
+   "catatan": "ID_VERSI_KONTRAK_DASAR"
+  },
+  {
+   "induk": "VERSI_KONTRAK",
+   "anak": "MATA_UANG_KONTRAK",
+   "lambang": "1──<",
+   "hapus": "ikut hapus",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "VERSI_KONTRAK",
+   "anak": "RETENSI_CEDANT",
+   "lambang": "1──o<",
+   "hapus": "ikut hapus",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "VERSI_KONTRAK",
+   "anak": "EGNPI",
+   "lambang": "1──o<",
+   "hapus": "ikut hapus",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "VERSI_KONTRAK",
+   "anak": "PORTOFOLIO",
+   "lambang": "1──o<",
+   "hapus": "ikut hapus",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "VERSI_KONTRAK",
+   "anak": "PERIODE_PELAPORAN",
+   "lambang": "1──o<",
+   "hapus": "ikut hapus",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "VERSI_KONTRAK",
+   "anak": "PERIODE_AKUMULASI",
+   "lambang": "1──o<",
+   "hapus": "ikut hapus",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "VERSI_KONTRAK",
+   "anak": "TERMIN",
+   "lambang": "1──o<",
+   "hapus": "ikut hapus",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "VERSI_KONTRAK",
+   "anak": "SKALA_KOASURANSI",
+   "lambang": "1──o<",
+   "hapus": "ikut hapus",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "VERSI_KONTRAK",
+   "anak": "BATAS_PER_BAHAYA",
+   "lambang": "1──o<",
+   "hapus": "ikut hapus",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "VERSI_KONTRAK",
+   "anak": "CATATAN_PERSETUJUAN",
+   "lambang": "1──<",
+   "hapus": "tolak",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "VERSI_KONTRAK",
+   "anak": "DOKUMEN_KONTRAK",
+   "lambang": "1──o<",
+   "hapus": "ikut hapus",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "VERSI_KONTRAK",
+   "anak": "JEJAK_PERUBAHAN",
+   "lambang": "1──<",
+   "hapus": "tolak",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "VERSI_KONTRAK",
+   "anak": "LAYER",
+   "lambang": "1──<",
+   "hapus": "ikut hapus",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "LAYER",
+   "anak": "DETAIL_PROPORSIONAL",
+   "lambang": "1──<",
+   "hapus": "ikut hapus",
+   "luar": false,
+   "gel": false,
+   "catatan": "hanya cabang PROPORSIONAL"
+  },
+  {
+   "induk": "LAYER",
+   "anak": "BAGIAN",
+   "lambang": "1──o1",
+   "hapus": "ikut hapus",
+   "luar": false,
+   "gel": false,
+   "catatan": "hanya cabang NON_PROPORSIONAL"
+  },
+  {
+   "induk": "BAGIAN",
+   "anak": "POTONGAN",
+   "lambang": "1──o<",
+   "hapus": "ikut hapus",
+   "luar": false,
+   "gel": false,
+   "catatan": "⎫ satu konsep,"
+  },
+  {
+   "induk": "DETAIL_PROPORSIONAL",
+   "anak": "POTONGAN",
+   "lambang": "1──o<",
+   "hapus": "ikut hapus",
+   "luar": false,
+   "gel": false,
+   "catatan": "⎭ dua pelekatan"
+  },
+  {
+   "induk": "BAGIAN",
+   "anak": "PENYEBARAN",
+   "lambang": "1──o<",
+   "hapus": "ikut hapus",
+   "luar": false,
+   "gel": false,
+   "catatan": "⎫"
+  },
+  {
+   "induk": "DETAIL_PROPORSIONAL",
+   "anak": "PENYEBARAN",
+   "lambang": "1──o<",
+   "hapus": "ikut hapus",
+   "luar": false,
+   "gel": false,
+   "catatan": "⎭"
+  },
+  {
+   "induk": "PENYEBARAN",
+   "anak": "RINCIAN_PENYEBARAN",
+   "lambang": "1──<",
+   "hapus": "ikut hapus",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "RINCIAN_PENYEBARAN",
+   "anak": "NILAI_PENYEBARAN",
+   "lambang": "1──<",
+   "hapus": "ikut hapus",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "VERSI_KONTRAK",
+   "anak": "NILAI_SELISIH",
+   "lambang": "1──o<",
+   "hapus": "ikut hapus",
+   "luar": false,
+   "gel": false,
+   "catatan": "⟦SEKAT⟧"
+  },
+  {
+   "induk": "BESARAN_DAPAT_DISESUAIKAN",
+   "anak": "NILAI_SELISIH",
+   "lambang": "1──<",
+   "hapus": "tolak",
+   "luar": false,
+   "gel": false,
+   "catatan": "⟦SEKAT⟧"
+  },
+  {
+   "induk": "MATA_UANG",
+   "anak": "MATA_UANG_KONTRAK",
+   "lambang": ">o──1",
+   "hapus": "tolak",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "MATA_UANG",
+   "anak": "NILAI_PENYEBARAN",
+   "lambang": ">o──1",
+   "hapus": "tolak",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "JENIS_POTONGAN",
+   "anak": "POTONGAN",
+   "lambang": ">o──1",
+   "hapus": "tolak",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "JENIS_REASURANSI",
+   "anak": "PENYEBARAN",
+   "lambang": ">o──1",
+   "hapus": "tolak",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "BAHAYA",
+   "anak": "BATAS_PER_BAHAYA",
+   "lambang": ">o──1",
+   "hapus": "tolak",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "KELOMPOK_TREATY",
+   "anak": "DETAIL_PROPORSIONAL",
+   "lambang": ">o──1",
+   "hapus": "tolak",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "KELOMPOK_TREATY",
+   "anak": "RETENSI_CEDANT",
+   "lambang": ">o──1",
+   "hapus": "tolak",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "KELOMPOK_TREATY",
+   "anak": "EGNPI",
+   "lambang": ">o──1",
+   "hapus": "tolak",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "KELAS_BISNIS",
+   "anak": "LAYER",
+   "lambang": ">o──1",
+   "hapus": "tolak",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "KELAS_BISNIS",
+   "anak": "VERSI_KONTRAK",
+   "lambang": ">o──1",
+   "hapus": "tolak",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "CEDANT",
+   "anak": "KONTRAK",
+   "lambang": ">──1",
+   "hapus": "tolak",
+   "luar": true,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "ASAL_BISNIS",
+   "anak": "KONTRAK",
+   "lambang": ">──1",
+   "hapus": "tolak",
+   "luar": true,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "REASURADUR",
+   "anak": "VERSI_KONTRAK",
+   "lambang": ">o──1",
+   "hapus": "tolak",
+   "luar": true,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "DOKUMEN",
+   "anak": "DOKUMEN_KONTRAK",
+   "lambang": ">──1",
+   "hapus": "tolak",
+   "luar": true,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "VERSI_KONTRAK",
+   "anak": "RETRO_KELUAR",
+   "lambang": "1──o<",
+   "hapus": "ikut hapus",
+   "luar": false,
+   "gel": true,
+   "catatan": ""
+  },
+  {
+   "induk": "KONTRAK",
+   "anak": "PENCAPAIAN",
+   "lambang": "1──o<",
+   "hapus": "tolak",
+   "luar": false,
+   "gel": true,
+   "catatan": ""
+  },
+  {
+   "induk": "LAYER",
+   "anak": "PEMULIHAN_LIMIT",
+   "lambang": "1──<",
+   "hapus": "ikut hapus",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "VERSI_KONTRAK",
+   "anak": "PERISTIWA_KONTRAK",
+   "lambang": "1──<",
+   "hapus": "ikut hapus",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  }
+ ],
+ "ddl": [
+  {
+   "anak": "VERSI_KONTRAK",
+   "induk": "KONTRAK",
+   "kolom": "ID_KONTRAK",
+   "on_delete": null
+  },
+  {
+   "anak": "VERSI_KONTRAK",
+   "induk": "DOKUMEN_ADDENDUM",
+   "kolom": "ID_DOKUMEN_ADDENDUM",
+   "on_delete": null
+  },
+  {
+   "anak": "BATAS_PER_BAHAYA",
+   "induk": "VERSI_KONTRAK",
+   "kolom": "ID_VERSI_KONTRAK",
+   "on_delete": null
+  },
+  {
+   "anak": "BATAS_PER_BAHAYA",
+   "induk": "BAHAYA",
+   "kolom": "ID_BAHAYA",
+   "on_delete": null
+  },
+  {
+   "anak": "CATATAN_PERSETUJUAN",
+   "induk": "VERSI_KONTRAK",
+   "kolom": "ID_VERSI_KONTRAK",
+   "on_delete": null
+  },
+  {
+   "anak": "DOKUMEN_KONTRAK",
+   "induk": "VERSI_KONTRAK",
+   "kolom": "ID_VERSI_KONTRAK",
+   "on_delete": null
+  },
+  {
+   "anak": "EGNPI",
+   "induk": "VERSI_KONTRAK",
+   "kolom": "ID_VERSI_KONTRAK",
+   "on_delete": null
+  },
+  {
+   "anak": "EGNPI",
+   "induk": "KELOMPOK_TREATY",
+   "kolom": "ID_KELOMPOK_TREATY",
+   "on_delete": null
+  },
+  {
+   "anak": "EGNPI",
+   "induk": "KELAS_BISNIS",
+   "kolom": "ID_KELAS_BISNIS",
+   "on_delete": null
+  },
+  {
+   "anak": "JEJAK_PERUBAHAN",
+   "induk": "VERSI_KONTRAK",
+   "kolom": "ID_VERSI_KONTRAK",
+   "on_delete": null
+  },
+  {
+   "anak": "LAYER",
+   "induk": "VERSI_KONTRAK",
+   "kolom": "ID_VERSI_KONTRAK",
+   "on_delete": null
+  },
+  {
+   "anak": "MATA_UANG_KONTRAK",
+   "induk": "VERSI_KONTRAK",
+   "kolom": "ID_VERSI_KONTRAK",
+   "on_delete": null
+  },
+  {
+   "anak": "PERIODE_AKUMULASI",
+   "induk": "VERSI_KONTRAK",
+   "kolom": "ID_VERSI_KONTRAK",
+   "on_delete": null
+  },
+  {
+   "anak": "PERIODE_PELAPORAN",
+   "induk": "VERSI_KONTRAK",
+   "kolom": "ID_VERSI_KONTRAK",
+   "on_delete": null
+  },
+  {
+   "anak": "PERISTIWA_KONTRAK",
+   "induk": "VERSI_KONTRAK",
+   "kolom": "ID_VERSI_KONTRAK",
+   "on_delete": null
+  },
+  {
+   "anak": "PORTOFOLIO",
+   "induk": "VERSI_KONTRAK",
+   "kolom": "ID_VERSI_KONTRAK",
+   "on_delete": null
+  },
+  {
+   "anak": "RETENSI_CEDANT",
+   "induk": "VERSI_KONTRAK",
+   "kolom": "ID_VERSI_KONTRAK",
+   "on_delete": null
+  },
+  {
+   "anak": "RETENSI_CEDANT",
+   "induk": "KELOMPOK_TREATY",
+   "kolom": "ID_KELOMPOK_TREATY",
+   "on_delete": null
+  },
+  {
+   "anak": "SKALA_KOASURANSI",
+   "induk": "VERSI_KONTRAK",
+   "kolom": "ID_VERSI_KONTRAK",
+   "on_delete": null
+  },
+  {
+   "anak": "TERMIN",
+   "induk": "VERSI_KONTRAK",
+   "kolom": "ID_VERSI_KONTRAK",
+   "on_delete": null
+  },
+  {
+   "anak": "BAGIAN",
+   "induk": "LAYER",
+   "kolom": "ID_LAYER",
+   "on_delete": null
+  },
+  {
+   "anak": "DETAIL_PROPORSIONAL",
+   "induk": "LAYER",
+   "kolom": "ID_LAYER",
+   "on_delete": null
+  },
+  {
+   "anak": "DETAIL_PROPORSIONAL",
+   "induk": "KELOMPOK_TREATY",
+   "kolom": "ID_KELOMPOK_TREATY",
+   "on_delete": null
+  },
+  {
+   "anak": "NILAI_MDP",
+   "induk": "LAYER",
+   "kolom": "ID_LAYER",
+   "on_delete": null
+  },
+  {
+   "anak": "NILAI_MDP_MINIMUM",
+   "induk": "LAYER",
+   "kolom": "ID_LAYER",
+   "on_delete": null
+  },
+  {
+   "anak": "PEMULIHAN_LIMIT",
+   "induk": "LAYER",
+   "kolom": "ID_LAYER",
+   "on_delete": null
+  },
+  {
+   "anak": "NILAI_CADANGAN_PREMI",
+   "induk": "DETAIL_PROPORSIONAL",
+   "kolom": "ID_DETAIL_PROPORSIONAL",
+   "on_delete": null
+  },
+  {
+   "anak": "NILAI_PREMI_BRUTO",
+   "induk": "BAGIAN",
+   "kolom": "ID_BAGIAN",
+   "on_delete": null
+  },
+  {
+   "anak": "NILAI_PREMI_BRUTO_MINIMUM",
+   "induk": "BAGIAN",
+   "kolom": "ID_BAGIAN",
+   "on_delete": null
+  },
+  {
+   "anak": "PENYEBARAN",
+   "induk": "BAGIAN",
+   "kolom": "ID_BAGIAN",
+   "on_delete": null
+  },
+  {
+   "anak": "PENYEBARAN",
+   "induk": "DETAIL_PROPORSIONAL",
+   "kolom": "ID_DETAIL_PROPORSIONAL",
+   "on_delete": null
+  },
+  {
+   "anak": "PENYEBARAN",
+   "induk": "JENIS_REASURANSI",
+   "kolom": "ID_JENIS_REASURANSI",
+   "on_delete": null
+  },
+  {
+   "anak": "POTONGAN",
+   "induk": "BAGIAN",
+   "kolom": "ID_BAGIAN",
+   "on_delete": null
+  },
+  {
+   "anak": "POTONGAN",
+   "induk": "DETAIL_PROPORSIONAL",
+   "kolom": "ID_DETAIL_PROPORSIONAL",
+   "on_delete": null
+  },
+  {
+   "anak": "POTONGAN",
+   "induk": "JENIS_POTONGAN",
+   "kolom": "ID_JENIS_POTONGAN",
+   "on_delete": null
+  },
+  {
+   "anak": "RINCIAN_PENYEBARAN",
+   "induk": "PENYEBARAN",
+   "kolom": "ID_PENYEBARAN",
+   "on_delete": null
+  },
+  {
+   "anak": "RINCIAN_PENYEBARAN",
+   "induk": "JENIS_REASURANSI",
+   "kolom": "ID_JENIS_REASURANSI",
+   "on_delete": null
+  },
+  {
+   "anak": "NILAI_PENYEBARAN",
+   "induk": "RINCIAN_PENYEBARAN",
+   "kolom": "ID_RINCIAN_PENYEBARAN",
+   "on_delete": null
+  }
+ ],
+ "hilang_di_ddl": [
+  {
+   "induk": "KONTRAK",
+   "anak": "KONTRAK",
+   "lambang": "1──o<",
+   "hapus": "putus",
+   "luar": false,
+   "gel": false,
+   "catatan": "DISALIN_DARI"
+  },
+  {
+   "induk": "VERSI_KONTRAK",
+   "anak": "VERSI_KONTRAK",
+   "lambang": "1──o<",
+   "hapus": "tolak",
+   "luar": false,
+   "gel": false,
+   "catatan": "ID_VERSI_KONTRAK_DASAR"
+  },
+  {
+   "induk": "MATA_UANG",
+   "anak": "MATA_UANG_KONTRAK",
+   "lambang": ">o──1",
+   "hapus": "tolak",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "MATA_UANG",
+   "anak": "NILAI_PENYEBARAN",
+   "lambang": ">o──1",
+   "hapus": "tolak",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "KELAS_BISNIS",
+   "anak": "LAYER",
+   "lambang": ">o──1",
+   "hapus": "tolak",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  },
+  {
+   "induk": "KELAS_BISNIS",
+   "anak": "VERSI_KONTRAK",
+   "lambang": ">o──1",
+   "hapus": "tolak",
+   "luar": false,
+   "gel": false,
+   "catatan": ""
+  }
+ ],
+ "hilang_di_erd": [
+  {
+   "anak": "VERSI_KONTRAK",
+   "induk": "DOKUMEN_ADDENDUM",
+   "kolom": "ID_DOKUMEN_ADDENDUM",
+   "on_delete": null
+  },
+  {
+   "anak": "EGNPI",
+   "induk": "KELAS_BISNIS",
+   "kolom": "ID_KELAS_BISNIS",
+   "on_delete": null
+  },
+  {
+   "anak": "NILAI_MDP",
+   "induk": "LAYER",
+   "kolom": "ID_LAYER",
+   "on_delete": null
+  },
+  {
+   "anak": "NILAI_MDP_MINIMUM",
+   "induk": "LAYER",
+   "kolom": "ID_LAYER",
+   "on_delete": null
+  },
+  {
+   "anak": "NILAI_CADANGAN_PREMI",
+   "induk": "DETAIL_PROPORSIONAL",
+   "kolom": "ID_DETAIL_PROPORSIONAL",
+   "on_delete": null
+  },
+  {
+   "anak": "NILAI_PREMI_BRUTO",
+   "induk": "BAGIAN",
+   "kolom": "ID_BAGIAN",
+   "on_delete": null
+  },
+  {
+   "anak": "NILAI_PREMI_BRUTO_MINIMUM",
+   "induk": "BAGIAN",
+   "kolom": "ID_BAGIAN",
+   "on_delete": null
+  },
+  {
+   "anak": "RINCIAN_PENYEBARAN",
+   "induk": "JENIS_REASURANSI",
+   "kolom": "ID_JENIS_REASURANSI",
+   "on_delete": null
+  }
+ ],
+ "kolom_hilang": [
+  [
+   "VERSI_KONTRAK",
+   "ID_VERSI_KONTRAK_DASAR",
+   "VERSI_KONTRAK"
+  ]
+ ],
+ "on_delete_di_ddl": 0,
+ "tolak": {
+  "berkas .sql tanpa CREATE TABLE (kerangka)": 2
+ }
+}

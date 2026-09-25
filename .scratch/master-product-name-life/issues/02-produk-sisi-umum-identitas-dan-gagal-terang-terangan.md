@@ -1,0 +1,94 @@
+# 02: Produk sisi umum — CRUD, identitas dari sequence, gagal terang-terangan
+
+**Status:** ready-for-agent
+
+**Blocked by:** 01 (skema relasional — bentuk barunya harus ada lebih dulu)
+
+## Hasil & nilai pengguna
+
+Sebagai **admin master produk life**, saya dapat membuat, mengubah, dan membaca **definisi produk**
+tanpa menentukan nomor identitasnya sendiri — dan bila penyimpanan gagal, saya **diberi tahu**,
+bukan dibiarkan mengira produk sudah tersimpan. *(User story 1–4, 10 di spec)*
+
+## Area codebase
+
+| Lapisan | Isi |
+| --- | --- |
+| `internal/models` | Entitas produk sisi umum |
+| `internal/repository` | Tulis/baca `product_life`; identitas dari sequence |
+| `internal/services` | Orkestrasi buat/ubah; pemetaan kegagalan menjadi galat domain |
+| `internal/handlers` | Endpoint CRUD produk |
+| `frontend/` | Layar produk — bagian umum |
+
+## Rule Pega sumber
+
+| Rule | Class / Nama / Tipe | Path | Peran |
+| --- | --- | --- | --- |
+| `InwardProductName` | `ASM-FW-GISFW-INT-PRODUCT_LIFE` / `INWARDPRODUCTNAME` / `RULE-HTML-HARNESS` | `Master Product Name Life/Harness/InwardProductName.xml` (540.636 byte) | **titik masuk, satu-satunya Harness** |
+| `SetProductName` | `ASM-FW-GISFW-INT-PRODUCT_LIFE` / `SETPRODUCTNAME` / `RULE-OBJ-ACTIVITY` | `Master Product Name Life/Activity/SetProductName.xml` | **20 field sisi umum** |
+| `SaveProductName_Act` | `ASM-FW-GISFW-INT-PRODUCT_LIFE` / `SAVEPRODUCTNAME_ACT` / `RULE-OBJ-ACTIVITY` | `Master Product Name Life/Activity/SaveProductName_Act.xml` (165.682 byte, 16 langkah) | orkestrator simpan; set `CREATEOP`/`UPDATEOP` |
+| `NewProductLife` | `ASM-FW-GISFW-…` / `NEWPRODUCTLIFE` / `RULE-OBJ-ACTIVITY` | `Master Product Name Life/Activity/NewProductLife.xml` | produk baru |
+
+`[terverifikasi]` **Bukan proses berjenjang** — nol rujukan `StatusAkseptasi`, tanpa
+`Akseptasi_DT`, tanpa tombol Submit/Decline, **nol rule `Flow`**. Ia editor master murni.
+
+`[data DBA]` **Format identitas ditiru**: **`'1' + lpad(sequence, 5, '0')`** — lima digit, misalnya
+`100001`. Sumbernya `M_PRODUCT_LIFE_SEQ`.
+
+`[data DBA]` Kontrak keluaran procedure lama — `StsSave` **100 = sukses / 99 = gagal**, `ErrMsg`
+teks yang **terisi juga saat sukses**, `IDPegaOut` identitas final — **tidak dipakai**, karena
+procedure-nya dibuang (tiket 03). Dicatat sebagai **rujukan**, bukan perilaku.
+
+## ADR terkait
+
+**ADR-0006** (identitas lewat sequence basis data — aplikasi tidak menyusunnya), **ADR-0007**
+(jejak audit), **ADR-0003** (uang non-float pada atribut produk).
+
+## Acceptance criteria
+
+- [ ] Produk dapat dibuat dengan nama, tipe, grup, dan atribut sisi umum lainnya. *(AC 1 spec)*
+- [ ] **Aplikasi tidak menetapkan identitas produk** — identitas dibuat basis data lewat sequence.
+      Test yang menemukan pembentukan identitas di sisi aplikasi **gagal**. *(AC 2 spec; **ADR-0006**)*
+- [ ] ⚠️ Identitas berbentuk **`'1'` + lima digit** (misalnya `100001`) — format lama **ditiru**.
+      *(AC 3 spec; `[keputusan work owner]` — penyimpangan sadar 3)*
+- [ ] Menyimpan produk yang **sudah ada** memperbarui baris itu; **tidak** membuat duplikat.
+      *(AC 4 spec)*
+- [ ] Produk dapat dibaca kembali utuh lewat API. *(AC 5 spec)*
+- [ ] ⚠️ **Gagal terang-terangan**: penyimpanan yang gagal **ditampilkan** dan **tidak pernah** tampak
+      berhasil. *(AC 10 spec; `[keputusan work owner]` — penyimpangan sadar 3)*
+- [ ] Penyimpanan mencatat **siapa** pembuat dan **siapa** pengubah terakhir. *(**ADR-0007**)*
+- [ ] Nilai uang pada atribut produk diperlakukan sebagai **desimal presisi arbitrer**; **tidak**
+      melewati `float` di lapisan mana pun maupun di JSON API. *(AC 28 spec; **ADR-0003**)*
+- [ ] Nilai uang yang ditulis dan dibaca kembali **identik** — tidak ada pembulatan diam.
+      *(AC 29 spec)*
+- [ ] ⚠️ Tidak ada **`PoductName`** di kode baru — hanya `ProductName`. *(AC 50 spec;
+      `[keputusan work owner]` — penyimpangan sadar 5)*
+
+## Blocker
+
+**Tidak ada.**
+
+## Catatan
+
+⚠️ **Salah ketik yang mengenai langkah simpan.** `[terverifikasi]` Ejaan **`PoductName`** (tanpa `r`)
+muncul **20 kali di dua berkas saja** — keduanya activity simpan — dan **tidak pernah dideklarasikan
+sebagai halaman**, sementara `ProductName` muncul **714 kali**. Yang bersalah ketik justru menjaga
+**langkah yang memanggil penyimpanan**.
+
+⚠️ Membuangnya **mengubah perilaku**: guard yang selama ini mungkin tak pernah menyala akan **mulai
+menolak** penyimpanan yang dahulu lolos. Itu disadari, bukan diselundupkan. Validasi lengkapnya ada
+di tiket **05**.
+
+⚠️ `ErrMsg` procedure lama **terisi juga saat sukses** `[data DBA]` — jangan jadikan keberadaan teks
+sebagai penanda kegagalan. Di sistem baru, kegagalan ditentukan hasil transaksi Go sendiri.
+
+## Seam & perintah verifikasi
+
+**Seam: API HTTP** terhadap **skema uji Oracle nyata** — pembuatan identitas lewat sequence tidak
+dapat difake dengan jujur.
+
+```
+go test ./internal/...
+cd frontend && npm test
+make check
+```

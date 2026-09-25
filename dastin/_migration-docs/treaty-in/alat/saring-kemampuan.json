@@ -1,0 +1,817 @@
+{
+ "lingkup": [
+  {
+   "kode": "P-01",
+   "bagian": "A. Kontrak dan versinya ada",
+   "dicoret": false,
+   "kemampuan": "**PK** dapat membuat kontrak baru dan melihatnya kembali dengan pengenalnya; versi pertamanya lahir langsung dalam keadaan `DRAFT`",
+   "gol": "U",
+   "asal": "ADR-0040, ADR-0055 (`LAHIR`), INV-01…04, INV-20",
+   "entitas": "`KONTRAK`, `VERSI_KONTRAK`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": [
+    "ADR-0055",
+    "keadaan",
+    "DRAFT"
+   ]
+  },
+  {
+   "kode": "P-02",
+   "bagian": "A. Kontrak dan versinya ada",
+   "dicoret": false,
+   "kemampuan": "**PK** diperingatkan bahwa kontrak yang diisinya berkunci alami sama dengan kontrak lain, **tanpa dihalangi menyimpan**",
+   "gol": "B",
+   "asal": "ADR-0040 §2",
+   "entitas": "`KONTRAK`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": []
+  },
+  {
+   "kode": "P-03",
+   "bagian": "A. Kontrak dan versinya ada",
+   "dicoret": false,
+   "kemampuan": "**PK** dapat menemukan kembali kontrak memakai **nomor warisan** sistem lama, berdampingan dengan pengenal baru",
+   "gol": "U",
+   "asal": "ADR-0042",
+   "entitas": "`KONTRAK`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": []
+  },
+  {
+   "kode": "P-04",
+   "bagian": "A. Kontrak dan versinya ada",
+   "dicoret": false,
+   "kemampuan": "**PK** dapat mengisi dan mengubah seluruh kepala versi selama versinya `DRAFT`; perubahan atas **jenis** maupun **materialitas** meninggalkan baris jejak, dan **sesudah diajukan keduanya beku** — mengubahnya menuntut versinya dikembalikan ke `DRAFT` lebih dulu",
+   "gol": "U",
+   "asal": "§10.2, GRL-18, KTV-1, ADR-0045",
+   "entitas": "`VERSI_KONTRAK`, `JEJAK_PERUBAHAN`",
+   "keadaan": "tidak terhalang luar — **DIUBAH 24 Sep 2026**, dari *\"dapat diubah selama `DRAFT`\"* yang diam tentang apa yang terjadi sesudahnya",
+   "g2_tepi": [],
+   "kata_keadaan": [
+    "DRAFT",
+    "ajukan"
+   ]
+  },
+  {
+   "kode": "P-05",
+   "bagian": "A. Kontrak dan versinya ada",
+   "dicoret": false,
+   "kemampuan": "**PK** tidak dapat mengubah kunci alami kontrak sesudah kontraknya lahir, dan penolakannya menyebut apa yang ia coba ubah",
+   "gol": "U",
+   "asal": "INV-19 (trigger), ADR-0040",
+   "entitas": "`KONTRAK`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": []
+  },
+  {
+   "kode": "P-06",
+   "bagian": "B. Daftar yang menggantung pada versi",
+   "dicoret": false,
+   "kemampuan": "**PK** dapat mencatat **lebih dari satu** mata uang berlaku pada satu kontrak, masing-masing dengan kurs dan periodenya",
+   "gol": "U",
+   "asal": "ADR-0053, INV-07, INV-44",
+   "entitas": "`MATA_UANG_KONTRAK`, `MATA_UANG`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": []
+  },
+  {
+   "kode": "P-07",
+   "bagian": "B. Daftar yang menggantung pada versi",
+   "dicoret": false,
+   "kemampuan": "**PK** dapat mencatat retensi cedant per kelompok treaty per mata uang",
+   "gol": "L",
+   "asal": "INV-08",
+   "entitas": "`RETENSI_CEDANT`, `KELOMPOK_TREATY`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": []
+  },
+  {
+   "kode": "P-08",
+   "bagian": "B. Daftar yang menggantung pada versi",
+   "dicoret": false,
+   "kemampuan": "**PK** dapat mencatat EGNPI per kelompok treaty per mata uang",
+   "gol": "L",
+   "asal": "INV-09",
+   "entitas": "`EGNPI`, `KELOMPOK_TREATY`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": []
+  },
+  {
+   "kode": "P-09",
+   "bagian": "B. Daftar yang menggantung pada versi",
+   "dicoret": false,
+   "kemampuan": "**PK** dapat mencatat portofolio masuk dan keluar yang menyertai kontrak",
+   "gol": "L",
+   "asal": "§2.3",
+   "entitas": "`PORTOFOLIO`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": []
+  },
+  {
+   "kode": "P-10",
+   "bagian": "B. Daftar yang menggantung pada versi",
+   "dicoret": false,
+   "kemampuan": "**PK** dapat mencatat periode pelaporan beserta tanggal jatuh temponya, dan ditolak bila periodenya di luar periode kontrak",
+   "gol": "L",
+   "asal": "INV-10, INV-55",
+   "entitas": "`PERIODE_PELAPORAN`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": [
+    "tolak"
+   ]
+  },
+  {
+   "kode": "P-11",
+   "bagian": "B. Daftar yang menggantung pada versi",
+   "dicoret": false,
+   "kemampuan": "**PK** dapat mencatat periode akumulasi, dan ditolak bila di luar periode kontrak",
+   "gol": "L",
+   "asal": "INV-11, INV-56",
+   "entitas": "`PERIODE_AKUMULASI`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": [
+    "tolak"
+   ]
+  },
+  {
+   "kode": "P-12",
+   "bagian": "B. Daftar yang menggantung pada versi",
+   "dicoret": false,
+   "kemampuan": "**PK** dapat mencatat termin pembayaran premi bernomor urut",
+   "gol": "L",
+   "asal": "INV-12",
+   "entitas": "`TERMIN`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": []
+  },
+  {
+   "kode": "P-13",
+   "bagian": "B. Daftar yang menggantung pada versi",
+   "dicoret": false,
+   "kemampuan": "**PK** dapat mencatat skala ko-asuransi sebagai **beberapa baris**, bukan satu nilai",
+   "gol": "U",
+   "asal": "INV-13",
+   "entitas": "`SKALA_KOASURANSI`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": []
+  },
+  {
+   "kode": "P-14",
+   "bagian": "B. Daftar yang menggantung pada versi",
+   "dicoret": false,
+   "kemampuan": "**PK** dapat mencatat batas tanggungan untuk **bahaya apa pun yang ada di daftar bahaya**, termasuk bahaya yang ditambahkan kemudian",
+   "gol": "U",
+   "asal": "INV-14, ADR-0038",
+   "entitas": "`BATAS_PER_BAHAYA`, `BAHAYA`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": []
+  },
+  {
+   "kode": "P-15",
+   "bagian": "B. Daftar yang menggantung pada versi",
+   "dicoret": false,
+   "kemampuan": "**PK** dapat melampirkan dokumen pada kontrak, dan dokumennya **dirujuk, bukan disalin**",
+   "gol": "L",
+   "asal": "ADR-0027, INV-59",
+   "entitas": "`DOKUMEN_KONTRAK`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": []
+  },
+  {
+   "kode": "P-16",
+   "bagian": "C. Cabang non-proporsional",
+   "dicoret": false,
+   "kemampuan": "**PK** dapat mencatat layer beserta limit, deductible, MDP, dan ketentuan pemulihan limitnya",
+   "gol": "L",
+   "asal": "§10.3, INV-05",
+   "entitas": "`LAYER`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": []
+  },
+  {
+   "kode": "P-17",
+   "bagian": "C. Cabang non-proporsional",
+   "dicoret": false,
+   "kemampuan": "**PK** dapat mencatat bagian NuRe atas sebuah layer, dan bagian hanya dapat dibuat pada kontrak non-proporsional",
+   "gol": "L",
+   "asal": "INV-33",
+   "entitas": "`BAGIAN`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": []
+  },
+  {
+   "kode": "P-18",
+   "bagian": "C. Cabang non-proporsional",
+   "dicoret": false,
+   "kemampuan": "**PK** dapat menyebarkan bagian NuRe ke susunan retro internal **per jenis reasuransi** per mata uang, dan penyebaran yang tidak berjumlah seratus persen **ditolak**",
+   "gol": "**L?** — lihat §2.3",
+   "asal": "INV-16, INV-47, INV-50, INV-51",
+   "entitas": "`PENYEBARAN`, `RINCIAN_PENYEBARAN`, `NILAI_PENYEBARAN`, `JENIS_REASURANSI`",
+   "keadaan": "**TERTAHAN — DUA penghalang**: (1) INV-50/51 belum terbukti (L-3); (2) **golongannya belum pasti** — uji yang sama dengan `RINCIAN_PENYEBARAN`, §2.3",
+   "g2_tepi": [],
+   "kata_keadaan": [
+    "tolak"
+   ]
+  },
+  {
+   "kode": "P-19",
+   "bagian": "C. Cabang non-proporsional",
+   "dicoret": false,
+   "kemampuan": "**PK** dapat mencatat potongan atas premi, dengan aturan potongan yang **sama** di kedua tempat ia melekat",
+   "gol": "L",
+   "asal": "INV-15, INV-63, §14.1",
+   "entitas": "`POTONGAN`, `JENIS_POTONGAN`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": []
+  },
+  {
+   "kode": "P-20",
+   "bagian": "C. Cabang non-proporsional",
+   "dicoret": false,
+   "kemampuan": "**PK** dapat mencatat cara pembukuan XOL, dan hanya pada kontrak non-proporsional",
+   "gol": "L",
+   "asal": "INV-34, §14.4",
+   "entitas": "`VERSI_KONTRAK`",
+   "keadaan": "**TERTAHAN** — menunggu Uji X-2",
+   "g2_tepi": [
+    "invarian AccountingMode -- menunggu Uji X-2"
+   ],
+   "kata_keadaan": []
+  },
+  {
+   "kode": "P-21",
+   "bagian": "D. Cabang proporsional",
+   "dicoret": false,
+   "kemampuan": "**PK** dapat mencatat ketentuan proporsional per kelompok treaty di dalam sebuah layer",
+   "gol": "L",
+   "asal": "§10.4, INV-06, INV-32",
+   "entitas": "`DETAIL_PROPORSIONAL`, `KELOMPOK_TREATY`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": []
+  },
+  {
+   "kode": "P-22",
+   "bagian": "D. Cabang proporsional",
+   "dicoret": false,
+   "kemampuan": "**PK** mengisi **tepat satu** dari persen quota share atau jumlah lines surplus, ditentukan jenis treaty-nya; mengisi keduanya atau tidak satu pun **ditolak**",
+   "gol": "L",
+   "asal": "INV-30, INV-31",
+   "entitas": "`DETAIL_PROPORSIONAL`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": [
+    "tolak"
+   ]
+  },
+  {
+   "kode": "P-23",
+   "bagian": "D. Cabang proporsional",
+   "dicoret": false,
+   "kemampuan": "**PK** yang mencatat baris surplus tanpa baris quota share pada versi yang sama **menerima kegagalan yang menyebutkan apa yang kurang** — bukan nilai nol",
+   "gol": "U",
+   "asal": "INV-35, ADR-0035",
+   "entitas": "`DETAIL_PROPORSIONAL`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": []
+  },
+  {
+   "kode": "P-27",
+   "bagian": "E. Paket uang",
+   "dicoret": false,
+   "kemampuan": "**PK** melihat angka rupiah yang **sama** pada kontrak yang sudah disetujui, hari ini maupun tahun depan — kursnya dibekukan pada versinya, tidak dibaca ulang saat ditampilkan",
+   "gol": "U",
+   "asal": "ADR-0036, INV-43",
+   "entitas": "`VERSI_KONTRAK`, `MATA_UANG_KONTRAK`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": [
+    "setuju"
+   ]
+  },
+  {
+   "kode": "P-28",
+   "bagian": "E. Paket uang",
+   "dicoret": false,
+   "kemampuan": "**PK** yang perhitungannya gagal melihat **keterangan apa yang gagal**, bukan angka nol dan bukan kurs satu",
+   "gol": "U",
+   "asal": "ADR-0035, INV-38, INV-42",
+   "entitas": "`VERSI_KONTRAK` *(tempat keterangannya)*",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": []
+  },
+  {
+   "kode": "P-29",
+   "bagian": "F. Siklus hidup dan persetujuan",
+   "dicoret": false,
+   "kemampuan": "**PK** dapat mengajukan versi `DRAFT` untuk persetujuan, dan pengajuan yang tidak memenuhi **K1-1 dan K1-2** ditolak dengan menyebut apa yang kurang",
+   "gol": "L",
+   "asal": "ADR-0055 (`AJUKAN`), INV-27, K1-1…2",
+   "entitas": "`VERSI_KONTRAK`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": [
+    "ADR-0055",
+    "setuju",
+    "persetujuan",
+    "tolak",
+    "DRAFT",
+    "AJUKAN",
+    "ajukan",
+    "mengajukan"
+   ]
+  },
+  {
+   "kode": "P-30",
+   "bagian": "F. Siklus hidup dan persetujuan",
+   "dicoret": false,
+   "kemampuan": "Pengajuan yang tidak memenuhi **K1-3 sampai K1-8** menghasilkan **peringatan yang tercatat**, belum penolakan",
+   "gol": "**B**",
+   "asal": "INV-27, K1-3…8, CO-6…CO-8",
+   "entitas": "`VERSI_KONTRAK`",
+   "keadaan": "tidak terhalang luar — wajib mengisi **CARA MENYALAKANNYA** (4 butir)",
+   "g2_tepi": [],
+   "kata_keadaan": []
+  },
+  {
+   "kode": "P-31",
+   "bagian": "F. Siklus hidup dan persetujuan",
+   "dicoret": false,
+   "kemampuan": "**SH** dapat menyetujui versi yang menunggunya, dan versinya berpindah ke antrian **DH**",
+   "gol": "L",
+   "asal": "ADR-0055 (`SETUJUI`)",
+   "entitas": "`VERSI_KONTRAK`, `CATATAN_PERSETUJUAN`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": [
+    "ADR-0055",
+    "menyetujui"
+   ]
+  },
+  {
+   "kode": "P-32",
+   "bagian": "F. Siklus hidup dan persetujuan",
+   "dicoret": false,
+   "kemampuan": "**DH** dapat menyetujui versi yang menunggunya, dan versinya berpindah ke antrian **DR**",
+   "gol": "L",
+   "asal": "ADR-0055",
+   "entitas": "`VERSI_KONTRAK`, `CATATAN_PERSETUJUAN`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": [
+    "ADR-0055",
+    "menyetujui"
+   ]
+  },
+  {
+   "kode": "P-33",
+   "bagian": "F. Siklus hidup dan persetujuan",
+   "dicoret": false,
+   "kemampuan": "**DR** dapat menyetujui versi yang menunggunya, dan versinya menjadi `DISETUJUI` — hanya bila **seluruh K2** terpenuhi",
+   "gol": "L",
+   "asal": "ADR-0055, K2-1…6",
+   "entitas": "`VERSI_KONTRAK`, `CATATAN_PERSETUJUAN`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": [
+    "ADR-0055",
+    "DISETUJUI",
+    "menyetujui"
+   ]
+  },
+  {
+   "kode": "P-34",
+   "bagian": "F. Siklus hidup dan persetujuan",
+   "dicoret": false,
+   "kemampuan": "**SH / DH / DR** dapat mengembalikan versi ke `DRAFT`, dan pengembalian tanpa alasan ditolak",
+   "gol": "L",
+   "asal": "ADR-0055 (`KEMBALIKAN`), §3",
+   "entitas": "`VERSI_KONTRAK`, `CATATAN_PERSETUJUAN`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": [
+    "ADR-0055",
+    "tolak",
+    "DRAFT"
+   ]
+  },
+  {
+   "kode": "P-35",
+   "bagian": "F. Siklus hidup dan persetujuan",
+   "dicoret": false,
+   "kemampuan": "**SH / DH / DR** dapat menolak versi **kontrak**, dan penolakan tanpa alasan ditolak",
+   "gol": "L",
+   "asal": "ADR-0055 (`TOLAK`)",
+   "entitas": "`VERSI_KONTRAK`, `CATATAN_PERSETUJUAN`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": [
+    "ADR-0055",
+    "tolak",
+    "menolak versi"
+   ]
+  },
+  {
+   "kode": "P-58",
+   "bagian": "F. Siklus hidup dan persetujuan",
+   "dicoret": false,
+   "kemampuan": "**SH / DH / DR** dapat menolak versi **addendum**, dan penolakannya **meninggalkan catatan**",
+   "gol": "**B**",
+   "asal": "ADR-0045, ADR-0055 (`TOLAK`)",
+   "entitas": "`VERSI_KONTRAK`, `CATATAN_PERSETUJUAN`",
+   "keadaan": "tidak terhalang luar — wajib **CARA MENYALAKANNYA**",
+   "g2_tepi": [],
+   "kata_keadaan": [
+    "ADR-0055",
+    "menolak versi"
+   ]
+  },
+  {
+   "kode": "P-36",
+   "bagian": "F. Siklus hidup dan persetujuan",
+   "dicoret": false,
+   "kemampuan": "Pemberi keputusan yang **sama dengan pengisi kontraknya**, atau sama dengan pemberi keputusan tingkat sebelumnya, **ditolak**",
+   "gol": "U",
+   "asal": "INV-27, ADR-0052, §3",
+   "entitas": "`VERSI_KONTRAK`, `CATATAN_PERSETUJUAN`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": [
+    "ADR-0052",
+    "tolak"
+   ]
+  },
+  {
+   "kode": "P-37",
+   "bagian": "F. Siklus hidup dan persetujuan",
+   "dicoret": false,
+   "kemampuan": "Perpindahan di luar **tiga belas** yang sah **ditolak**, termasuk setiap perpindahan keluar dari `DISETUJUI` dan `DITOLAK`",
+   "gol": "U",
+   "asal": "INV-22, INV-23 (trigger), ADR-0055",
+   "entitas": "`VERSI_KONTRAK`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": [
+    "ADR-0055",
+    "DISETUJUI",
+    "tolak",
+    "DITOLAK"
+   ]
+  },
+  {
+   "kode": "P-38",
+   "bagian": "F. Siklus hidup dan persetujuan",
+   "dicoret": false,
+   "kemampuan": "Versi berkeadaan `DISETUJUI` **tidak dapat diubah nilainya oleh siapa pun**, dan percobaannya ditolak",
+   "gol": "U",
+   "asal": "INV-24 (trigger), ADR-0036",
+   "entitas": "`VERSI_KONTRAK` dan seluruh anaknya",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": [
+    "keadaan",
+    "DISETUJUI",
+    "tolak"
+   ]
+  },
+  {
+   "kode": "P-39",
+   "bagian": "F. Siklus hidup dan persetujuan",
+   "dicoret": false,
+   "kemampuan": "Satu kontrak hanya dapat punya **satu** versi yang belum selesai; membuat versi kedua yang belum selesai ditolak",
+   "gol": "U",
+   "asal": "INV-25 (indeks unik)",
+   "entitas": "`VERSI_KONTRAK`",
+   "keadaan": "tidak terhalang luar — **baca bersama §2.2: tanpa cara membuang draf, baris ini mengunci kontraknya**",
+   "g2_tepi": [],
+   "kata_keadaan": [
+    "tolak"
+   ]
+  },
+  {
+   "kode": "P-40",
+   "bagian": "F. Siklus hidup dan persetujuan",
+   "dicoret": false,
+   "kemampuan": "**PK** tidak dapat menyetujui kontrak tanpa melewati ketiga tingkat — tidak ada jalan pintas",
+   "gol": "U",
+   "asal": "ADR-0052, eskalasi butir 1",
+   "entitas": "`VERSI_KONTRAK`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": [
+    "ADR-0052",
+    "menyetujui"
+   ]
+  },
+  {
+   "kode": "P-41",
+   "bagian": "F. Siklus hidup dan persetujuan",
+   "dicoret": false,
+   "kemampuan": "Wewenang persetujuan dibatasi **nilai kontrak** menurut batas yang berlaku",
+   "gol": "U",
+   "asal": "eskalasi butir 5",
+   "entitas": "`VERSI_KONTRAK`",
+   "keadaan": "**TERTAHAN** — dokumen batas wewenang belum ada; **tidak dapat dipecah**",
+   "g2_tepi": [],
+   "kata_keadaan": [
+    "setuju",
+    "persetujuan"
+   ]
+  },
+  {
+   "kode": "P-42",
+   "bagian": "G. Versi baru dan addendum",
+   "dicoret": false,
+   "kemampuan": "**PK** dapat membuat versi baru dari **versi berlaku terakhir**, dan versi baru itu mulai dari `DRAFT` serta melewati keempat tingkat; rujukan dasarnya **disimpan eksplisit** — wajib terisi pada versi penyesuaian, wajib kosong pada versi pertama",
+   "gol": "U",
+   "asal": "ADR-0055, ADR-0052, GRL-10, B-3, B-4",
+   "entitas": "`VERSI_KONTRAK`",
+   "keadaan": "tidak terhalang luar — **DIUBAH 24 Sep 2026**, dari *\"dari versi yang sudah `DISETUJUI`\"*, yang mengizinkan dasar yang bukan versi terakhir",
+   "g2_tepi": [],
+   "kata_keadaan": [
+    "ADR-0055",
+    "ADR-0052",
+    "DRAFT"
+   ]
+  },
+  {
+   "kode": "P-43",
+   "bagian": "G. Versi baru dan addendum",
+   "dicoret": false,
+   "kemampuan": "Lapisan beku — cedant, asal bisnis, sifat proporsi, tanggal mulai, tanggal berakhir — **tidak berubah antar versi**",
+   "gol": "U",
+   "asal": "INV-B1, ADR-0040",
+   "entitas": "`KONTRAK`, `VERSI_KONTRAK`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": []
+  },
+  {
+   "kode": "P-44",
+   "bagian": "G. Versi baru dan addendum",
+   "dicoret": false,
+   "kemampuan": "**PK** melihat nilai versi sebelumnya berdampingan dengan versi yang sedang disusun, dan nilai lama itu **di-SELECT, tidak disalin**",
+   "gol": "U",
+   "asal": "INV-B2, `SEAM-ADJUSTMENT.md` §1",
+   "entitas": "`VERSI_KONTRAK`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": []
+  },
+  {
+   "kode": "P-45",
+   "bagian": "G. Versi baru dan addendum",
+   "dicoret": false,
+   "kemampuan": "Tanggal berlaku **pada versi** yang jatuh di luar periode kontraknya **ditolak** — dan tanggal berlaku **pada dokumen addendum adalah ruas yang berbeda** (`P-62`)",
+   "gol": "L",
+   "asal": "INV-54 (trigger), GRL-15, KTV-2",
+   "entitas": "`VERSI_KONTRAK`",
+   "keadaan": "tidak terhalang luar — **DIUBAH 24 Sep 2026**: pembawanya disebut, sebab \"tanggal berlaku\" kini punya **dua** pembawa",
+   "g2_tepi": [],
+   "kata_keadaan": [
+    "tolak"
+   ]
+  },
+  {
+   "kode": "P-57",
+   "bagian": "G. Versi baru dan addendum",
+   "dicoret": false,
+   "kemampuan": "**PK** dapat membatalkan versi `DRAFT` yang ia buat sendiri, dan kontraknya langsung terbuka untuk versi berikutnya — **barisnya tetap tersimpan, nomornya tidak dipakai ulang**",
+   "gol": "**B**",
+   "asal": "ADR-0055 perubahan 24 Sep 2026, INV-04",
+   "entitas": "`VERSI_KONTRAK`",
+   "keadaan": "tidak terhalang luar — wajib **CARA MENYALAKANNYA**",
+   "g2_tepi": [],
+   "kata_keadaan": [
+    "ADR-0055",
+    "batal",
+    "DRAFT"
+   ]
+  },
+  {
+   "kode": "P-46",
+   "bagian": "H. Jejak",
+   "dicoret": false,
+   "kemampuan": "Setiap perpindahan keadaan meninggalkan satu catatan persetujuan bersama pelaku dan waktunya, **tanpa dapat dilewati**",
+   "gol": "U",
+   "asal": "INV-28 (trigger), ADR-0045",
+   "entitas": "`CATATAN_PERSETUJUAN`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": [
+    "keadaan",
+    "setuju",
+    "persetujuan"
+   ]
+  },
+  {
+   "kode": "P-47",
+   "bagian": "H. Jejak",
+   "dicoret": false,
+   "kemampuan": "**PJ** dapat melihat siapa mengubah fakta apa dan kapan, untuk kontrak mana pun",
+   "gol": "**B**",
+   "asal": "ADR-0045, eskalasi butir 4",
+   "entitas": "`JEJAK_PERUBAHAN`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": []
+  },
+  {
+   "kode": "P-48",
+   "bagian": "I. Himpunan acuan",
+   "dicoret": false,
+   "kemampuan": "Himpunan yang dapat bertambah tanpa mengubah arti — mata uang, jenis potongan, jenis reasuransi, bahaya, kelompok treaty, kelas bisnis — dapat **ditambah tanpa mengubah skema**",
+   "gol": "U",
+   "asal": "ADR-0038, INV-62",
+   "entitas": "`MATA_UANG`, `JENIS_POTONGAN`, `JENIS_REASURANSI`, `BAHAYA`, `KELOMPOK_TREATY`, `KELAS_BISNIS`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": []
+  },
+  {
+   "kode": "P-49",
+   "bagian": "I. Himpunan acuan",
+   "dicoret": false,
+   "kemampuan": "Tabel acuan pembagian kapasitas punya **pemilik yang bertanggung jawab atas isinya**",
+   "gol": "U",
+   "asal": "ADR-0050, eskalasi butir 7",
+   "entitas": "*(belum ditetapkan)*",
+   "keadaan": "**TERTAHAN** — pemiliknya belum ditetapkan",
+   "g2_tepi": [],
+   "kata_keadaan": []
+  },
+  {
+   "kode": "P-50",
+   "bagian": "J. Migrasi",
+   "dicoret": false,
+   "kemampuan": "**PM** dapat memindahkan kontrak lama apa adanya, **tanpa menghitung ulang apa pun**",
+   "gol": "U",
+   "asal": "ADR-0042, ADR-0043",
+   "entitas": "seluruh entitas",
+   "keadaan": "tidak terhalang luar — **payung, DIPECAH per kelompok entitas SEBELUM penaksiran**",
+   "g2_tepi": [
+    "hitung ulang / perbaikan data lama (ADR-0043)"
+   ],
+   "kata_keadaan": []
+  },
+  {
+   "kode": "P-51",
+   "bagian": "J. Migrasi",
+   "dicoret": false,
+   "kemampuan": "Kontrak lama yang keadaannya tidak punya padanan mendarat di `WARISAN_TAK_TERPETAKAN` dengan **nilai aslinya tetap tersimpan**",
+   "gol": "U",
+   "asal": "ADR-0054, INV-21, INV-26",
+   "entitas": "`VERSI_KONTRAK`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": [
+    "keadaan"
+   ]
+  },
+  {
+   "kode": "P-52",
+   "bagian": "J. Migrasi",
+   "dicoret": false,
+   "kemampuan": "**PK** dapat memindahkan kontrak ber-`WARISAN_TAK_TERPETAKAN` ke keadaan sah **yang dipilihnya secara eksplisit**",
+   "gol": "**B**",
+   "asal": "ADR-0054",
+   "entitas": "`VERSI_KONTRAK`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": [
+    "keadaan"
+   ]
+  },
+  {
+   "kode": "P-53",
+   "bagian": "J. Migrasi",
+   "dicoret": false,
+   "kemampuan": "**PM** dapat mematikan penegakan trigger selama pemindahan dan menyalakannya kembali, dan **keadaan sakelar itu terlihat**",
+   "gol": "**B**",
+   "asal": "§4.3b, CO-1…CO-8",
+   "entitas": "— *(mekanisme, bukan entitas)*",
+   "keadaan": "tidak terhalang luar — wajib **CARA MENYALAKANNYA**",
+   "g2_tepi": [],
+   "kata_keadaan": [
+    "keadaan"
+   ]
+  },
+  {
+   "kode": "P-54",
+   "bagian": "K. Hilir dan arsip",
+   "dicoret": false,
+   "kemampuan": "**KH** yang tidak dikenal tetap dapat membaca identitas kontrak **dalam bentuk lama**",
+   "gol": "U",
+   "asal": "ADR-0051",
+   "entitas": "bentuk baca atas `KONTRAK`, `VERSI_KONTRAK`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": []
+  },
+  {
+   "kode": "P-55",
+   "bagian": "K. Hilir dan arsip",
+   "dicoret": false,
+   "kemampuan": "**PM** dapat menyimpan dokumen JSON sistem lama sebagai arsip pada saat pemindahan, dan dapat menunjukkan arsip itu ada untuk kontrak mana pun",
+   "gol": "U",
+   "asal": "ADR-0034",
+   "entitas": "arsip",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": []
+  },
+  {
+   "kode": "P-56",
+   "bagian": "L. Menemukan kembali",
+   "dicoret": false,
+   "kemampuan": "**PK** dapat mencari kontrak yang ada — menurut cedant, asal bisnis, periode, sifat proporsi, atau keadaan siklus hidupnya — dan melihat hasilnya sebagai daftar",
+   "gol": "L",
+   "asal": "§10.1, §10.2, ADR-0055",
+   "entitas": "`KONTRAK`, `VERSI_KONTRAK`",
+   "keadaan": "tidak terhalang luar",
+   "g2_tepi": [],
+   "kata_keadaan": [
+    "ADR-0055",
+    "keadaan",
+    "siklus hidup"
+   ]
+  }
+ ],
+ "luar": {
+  "DICORET sebagai SIFAT (U-6)": 3,
+  "kemampuan Adjustment P-60..P-66 -- sudah ditiketkan ronde lalu": 7
+ },
+ "tolak": {
+  "baris P-nn berkolom kurang dari enam": 5
+ },
+ "sudah": {
+  "P-42": 1,
+  "P-60": 2,
+  "P-45": 1,
+  "P-61": 1,
+  "P-65": 3,
+  "P-63": 1,
+  "P-38": 1,
+  "P-04": 1,
+  "P-62": 1,
+  "P-66": 1,
+  "P-64": 1
+ },
+ "peta_tiket": {
+  "P-42": [
+   "01"
+  ],
+  "P-60": [
+   "02",
+   "11"
+  ],
+  "P-45": [
+   "03"
+  ],
+  "P-61": [
+   "04"
+  ],
+  "P-65": [
+   "05",
+   "10",
+   "12"
+  ],
+  "P-63": [
+   "06"
+  ],
+  "P-38": [
+   "07"
+  ],
+  "P-04": [
+   "07"
+  ],
+  "P-62": [
+   "08"
+  ],
+  "P-66": [
+   "09"
+  ],
+  "P-64": [
+   "13"
+  ]
+ }
+}

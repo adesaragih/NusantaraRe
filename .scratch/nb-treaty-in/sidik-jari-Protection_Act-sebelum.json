@@ -1,0 +1,67 @@
+{
+  "EDM Treaty In/Activity/Protection_Act.xml": {
+    "byte": 157304,
+    "md5": "7e88967f6121908af9c8ac58fe0db20f",
+    "mtime": "2026-09-08 10:35",
+    "kelas": "ASM-FW-GISFW-Data-PolicyTreatyIn",
+    "versi": "01-01-56",
+    "diubah_pega": "20200218T073539.490 GMT",
+    "langkah": 16,
+    "property_set": 9,
+    "set_messages": 4,
+    "clear_messages": 1,
+    "call": 1
+  },
+  "Endorsment Fac In/Activity/Protection_Act.xml": {
+    "byte": 351139,
+    "md5": "53575477a0a6a469bf07a8ee75d556ea",
+    "mtime": "2026-08-21 14:24",
+    "kelas": "ASM-FW-GISFW-Work",
+    "versi": "01-01-95",
+    "diubah_pega": "20260819T062428.669 GMT",
+    "langkah": 38,
+    "property_set": 14,
+    "set_messages": 9,
+    "clear_messages": 2,
+    "call": 10
+  },
+  "NB FacIn/Activity/Protection_Act.xml": {
+    "byte": 343271,
+    "md5": "8d6fd933b1e10bbbdab2945ffa681ff6",
+    "mtime": "2026-08-24 11:07",
+    "kelas": "ASM-FW-GISFW-Work",
+    "versi": "01-01-95",
+    "diubah_pega": "20260618T042401.034 GMT",
+    "langkah": 37,
+    "property_set": 13,
+    "set_messages": 9,
+    "clear_messages": 2,
+    "call": 10
+  },
+  "NB Treaty In/Activity/Protection_Act.xml": {
+    "byte": 157304,
+    "md5": "0fe32db411df2f1c337e00f31fb00b67",
+    "mtime": "2026-09-22 15:45",
+    "kelas": "ASM-FW-GISFW-Data-PolicyTreatyIn",
+    "versi": "01-01-56",
+    "diubah_pega": "20200218T073539.490 GMT",
+    "langkah": 16,
+    "property_set": 9,
+    "set_messages": 4,
+    "clear_messages": 1,
+    "call": 1
+  },
+  "RNW Fac In/Activity/Protection_Act.xml": {
+    "byte": 343271,
+    "md5": "8d6fd933b1e10bbbdab2945ffa681ff6",
+    "mtime": "2026-08-24 11:07",
+    "kelas": "ASM-FW-GISFW-Work",
+    "versi": "01-01-95",
+    "diubah_pega": "20260618T042401.034 GMT",
+    "langkah": 37,
+    "property_set": 13,
+    "set_messages": 9,
+    "clear_messages": 2,
+    "call": 10
+  }
+}

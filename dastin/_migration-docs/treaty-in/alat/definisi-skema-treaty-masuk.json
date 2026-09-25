@@ -1,0 +1,2394 @@
+{
+ "urut": [
+  [
+   "10.1",
+   "KONTRAK"
+  ],
+  [
+   "10.2",
+   "VERSI_KONTRAK"
+  ],
+  [
+   "10.3",
+   "LAYER"
+  ],
+  [
+   "10.4",
+   "DETAIL_PROPORSIONAL"
+  ],
+  [
+   "10.5",
+   "BAGIAN"
+  ],
+  [
+   "10.6",
+   "PENYEBARAN"
+  ],
+  [
+   "10.7",
+   "RINCIAN_PENYEBARAN"
+  ],
+  [
+   "10.8",
+   "NILAI_PENYEBARAN"
+  ],
+  [
+   "10.9",
+   "POTONGAN"
+  ],
+  [
+   "10.10",
+   "MATA_UANG_KONTRAK"
+  ],
+  [
+   "10.11",
+   "RETENSI_CEDANT"
+  ],
+  [
+   "10.12",
+   "EGNPI"
+  ],
+  [
+   "10.13",
+   "PORTOFOLIO"
+  ],
+  [
+   "10.14",
+   "PERIODE_PELAPORAN"
+  ],
+  [
+   "10.15",
+   "PERIODE_AKUMULASI"
+  ],
+  [
+   "10.16",
+   "TERMIN"
+  ],
+  [
+   "10.17",
+   "SKALA_KOASURANSI"
+  ],
+  [
+   "10.18",
+   "BATAS_PER_BAHAYA"
+  ],
+  [
+   "10.19",
+   "DOKUMEN_KONTRAK"
+  ],
+  [
+   "10.19a",
+   "DOKUMEN_ADDENDUM"
+  ],
+  [
+   "10.20",
+   "CATATAN_PERSETUJUAN"
+  ],
+  [
+   "10.21",
+   "JEJAK_PERUBAHAN"
+  ],
+  [
+   "10.21a",
+   "PERISTIWA_KONTRAK"
+  ],
+  [
+   "10.3b",
+   "PEMULIHAN_LIMIT"
+  ],
+  [
+   "10.22",
+   "MATA_UANG"
+  ],
+  [
+   "10.22",
+   "JENIS_POTONGAN"
+  ],
+  [
+   "10.22",
+   "JENIS_REASURANSI"
+  ],
+  [
+   "10.22",
+   "BAHAYA"
+  ],
+  [
+   "10.22",
+   "KELOMPOK_TREATY"
+  ],
+  [
+   "10.22",
+   "KELAS_BISNIS"
+  ],
+  [
+   "10.x",
+   "NILAI_PREMI_BRUTO"
+  ],
+  [
+   "10.x",
+   "NILAI_PREMI_BRUTO_MINIMUM"
+  ],
+  [
+   "10.x",
+   "NILAI_CADANGAN_PREMI"
+  ],
+  [
+   "10.x",
+   "NILAI_MDP"
+  ],
+  [
+   "10.x",
+   "NILAI_MDP_MINIMUM"
+  ]
+ ],
+ "kolom": {
+  "KONTRAK": [
+   {
+    "kolom": "ID_KONTRAK",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "pengenal buatan sistem; bukan dari teks, bukan dari cap waktu",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "NOMOR_KONTRAK_WARISAN",
+    "asal": "ID",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": "hanya terisi pada baris hasil migrasi (ADR-0042)",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "ID_KONTRAK_DISALIN_DARI",
+    "asal": "OLDID` pecahan 1",
+    "tipe": "R",
+    "kosong": "ya",
+    "catatan": "rujukan ke `KONTRAK` lain",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_CEDANT",
+    "asal": "CedingID",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "nama cedant **tidak disalin**",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_ASAL_BISNIS",
+    "asal": "LeadingReinsSourceID",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "*source of business*",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "SIFAT_PROPORSI",
+    "asal": "ProportionType",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "`PROPORSIONAL` / `NON_PROPORSIONAL`",
+    "oracle": "VARCHAR2(40 CHAR)"
+   },
+   {
+    "kolom": "TANGGAL_MULAI",
+    "asal": "Commencement",
+    "tipe": "D",
+    "kosong": "tidak",
+    "catatan": "batas **inklusif** (ADR-0022)",
+    "oracle": "DATE"
+   },
+   {
+    "kolom": "TANGGAL_BERAKHIR",
+    "asal": "Termination",
+    "tipe": "D",
+    "kosong": "tidak",
+    "catatan": "batas **inklusif**",
+    "oracle": "DATE"
+   }
+  ],
+  "VERSI_KONTRAK": [
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "NOMOR_URUT_VERSI",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(9)"
+   },
+   {
+    "kolom": "KEADAAN_SIKLUS_HIDUP",
+    "asal": "Position` + `StatusAkseptasi` + 3 bendera",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "⚠ **DELAPAN nilai** — `DIBATALKAN` ditambahkan ADR-0055 perubahan 24 Sep 2026",
+    "oracle": "VARCHAR2(40 CHAR)"
+   },
+   {
+    "kolom": "KEADAAN_WARISAN_ASLI",
+    "asal": "baru",
+    "tipe": "T",
+    "kosong": "ya** — hanya bila keadaannya `WARISAN_TAK_TERPETAKAN`",
+    "catatan": "",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "JENIS_ADDENDUM",
+    "asal": "EDMState",
+    "tipe": "E",
+    "kosong": "ya** — kosong pada versi pertama",
+    "catatan": "",
+    "oracle": "VARCHAR2(40 CHAR)"
+   },
+   {
+    "kolom": "TANGGAL_BERLAKU_ADDENDUM",
+    "asal": "EDMEffective",
+    "tipe": "D",
+    "kosong": "ya** — idem",
+    "catatan": "",
+    "oracle": "DATE"
+   },
+   {
+    "kolom": "NAMA_KONTRAK",
+    "asal": "TreatyContractName",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "LINGKUP_WILAYAH",
+    "asal": "TeritorialScope",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "KELAS_BISNIS_KONTRAK",
+    "asal": "ClassofBusiness",
+    "tipe": "R",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "KODE_MATA_UANG_KONTRAK",
+    "asal": "Currency",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_REASURADUR_PEMIMPIN",
+    "asal": "LeadingReinsID",
+    "tipe": "R",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_KETUA_TREATY",
+    "asal": "TreatyLeader",
+    "tipe": "R",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "PERSEN_BAGIAN_NURE",
+    "asal": "RNMShare` + `RNMShareP",
+    "tipe": "P1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "BAGIAN_NURE_SERAGAM",
+    "asal": "RNMShareAcrossTheBoard",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "VARCHAR2(40 CHAR)"
+   },
+   {
+    "kolom": "PERSEN_BAGIAN_NURE_DIPOTONG",
+    "asal": "RnmShareDeducted",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "PERSEN_BROKERAGE",
+    "asal": "BrokeragePercent` + `…P",
+    "tipe": "P2",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "PERSEN_BAGIAN_FAKULTATIF",
+    "asal": "FacultativeShare` (`FacShare` dibuang, salinan — §14.3)",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "PERSEN_BROKERAGE_FAKULTATIF",
+    "asal": "FacultativeShareBrokerage` (`FacShareBrokerage` dibuang, salinan)",
+    "tipe": "P2",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "PENGECUALIAN",
+    "asal": "Exclusions` + `ExclusionsP",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "VARCHAR2(4000 CHAR)"
+   },
+   {
+    "kolom": "KETENTUAN_KHUSUS",
+    "asal": "SpecialConditions` + `SpecialConditionsP",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "VARCHAR2(4000 CHAR)"
+   },
+   {
+    "kolom": "KETERANGAN",
+    "asal": "Information",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "VARCHAR2(4000 CHAR)"
+   },
+   {
+    "kolom": "CATATAN",
+    "asal": "Comment",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "VARCHAR2(4000 CHAR)"
+   },
+   {
+    "kolom": "CATATAN_BORDEREAUX",
+    "asal": "BordereauxNote",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "VARCHAR2(4000 CHAR)"
+   },
+   {
+    "kolom": "MEMAKAI_BORDEREAUX",
+    "asal": "Bordeaux",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "VARCHAR2(40 CHAR)"
+   },
+   {
+    "kolom": "CARA_PEMBUKUAN",
+    "asal": "AccountingMode",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "VARCHAR2(40 CHAR)"
+   },
+   {
+    "kolom": "CARA_PEMBUKUAN_XOL",
+    "asal": "AccountingModeNonProp",
+    "tipe": "E",
+    "kosong": "ya — **menunggu Uji X-2** (§14.4)",
+    "catatan": "",
+    "oracle": "VARCHAR2(40 CHAR)"
+   },
+   {
+    "kolom": "PERIODE_PELAPORAN_KONTRAK",
+    "asal": "ReportingPeriod",
+    "tipe": "E",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "VARCHAR2(40 CHAR)"
+   },
+   {
+    "kolom": "SELANG_PELAPORAN",
+    "asal": "ReportingInterval",
+    "tipe": "C1",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "NUMBER(9)"
+   },
+   {
+    "kolom": "TANGGAL_MULAI_PELAPORAN",
+    "asal": "ReportingStart",
+    "tipe": "D",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "DATE"
+   },
+   {
+    "kolom": "TANGGAL_AKHIR_PELAPORAN",
+    "asal": "ReportingEnd",
+    "tipe": "D",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "DATE"
+   },
+   {
+    "kolom": "HARI_BATAS_PENYERAHAN",
+    "asal": "ReportingSubmission",
+    "tipe": "C1",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "NUMBER(9)"
+   },
+   {
+    "kolom": "HARI_BATAS_KONFIRMASI",
+    "asal": "ReportingConfirmation",
+    "tipe": "C1",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "NUMBER(9)"
+   },
+   {
+    "kolom": "HARI_BATAS_PELUNASAN",
+    "asal": "ReportingSettlement",
+    "tipe": "C1",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "NUMBER(9)"
+   },
+   {
+    "kolom": "HARI_PENGINGAT",
+    "asal": "ReminderDays",
+    "tipe": "C1",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "NUMBER(9)"
+   },
+   {
+    "kolom": "PERIODE_AKUMULASI_KONTRAK",
+    "asal": "AccumulationPeriod",
+    "tipe": "E",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "VARCHAR2(40 CHAR)"
+   },
+   {
+    "kolom": "JUMLAH_TERMIN",
+    "asal": "InstallmentNo",
+    "tipe": "C1",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "NUMBER(9)"
+   },
+   {
+    "kolom": "MEMAKAI_PRORATA",
+    "asal": "IsProRate",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "VARCHAR2(40 CHAR)"
+   },
+   {
+    "kolom": "BATAS_MAKSIMUM_KELOMPOK",
+    "asal": "MaxCoGroup",
+    "tipe": "U1 paket uang",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "MATA_UANG_BATAS_KELOMPOK",
+    "asal": "**tidak ada di sistem lama**",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": "**denominasi `BATAS_MAKSIMUM_KELOMPOK`** — `KTV-C`. Sistem lama tidak merekam mata uang untuk besaran ini sama sekali; kolomnya disediakan sekarang karena menambahkannya sesudah data masuk mahal. **Dicabut sebelum data dimuat bila `T-6` menyatakan ia selalu mata uang kontrak**",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "BATAS_MAKSIMUM_NON_KELOMPOK",
+    "asal": "MaxCoNonGroup",
+    "tipe": "U1 paket uang",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "MATA_UANG_BATAS_NON_KELOMPOK",
+    "asal": "**tidak ada di sistem lama**",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": "**denominasi `BATAS_MAKSIMUM_NON_KELOMPOK`** — `KTV-C`. Sistem lama tidak merekam mata uang untuk besaran ini sama sekali; kolomnya disediakan sekarang karena menambahkannya sesudah data masuk mahal. **Dicabut sebelum data dimuat bila `T-6` menyatakan ia selalu mata uang kontrak**",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "BATAS_PILIHAN",
+    "asal": "OptionLimit",
+    "tipe": "U1 paket uang",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "MATA_UANG_BATAS_PILIHAN",
+    "asal": "**tidak ada di sistem lama**",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": "**denominasi `BATAS_PILIHAN`** — `KTV-C`. Sistem lama tidak merekam mata uang untuk besaran ini sama sekali; kolomnya disediakan sekarang karena menambahkannya sesudah data masuk mahal. **Dicabut sebelum data dimuat bila `T-6` menyatakan ia selalu mata uang kontrak**",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "RETRO_BERGANDA",
+    "asal": "IsMultipleRetro",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "VARCHAR2(40 CHAR)"
+   },
+   {
+    "kolom": "ID_DAFTAR_RETRO",
+    "asal": "RetroList",
+    "tipe": "R",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "SIFAT_MATERIAL_ADDENDUM",
+    "asal": "EDMMaterialType",
+    "tipe": "E",
+    "kosong": "ya** — kosong pada versi pertama",
+    "catatan": "dua nilai **`MATERIAL`** / **`TIDAK_MATERIAL`**. **Masukan, bukan turunan** (`GRL-20`; `GRL-12` BATAL). Beku sejak `AJUKAN`, berjejak selama `DRAFT` (`KTV-1` Adjustment)",
+    "oracle": "VARCHAR2(40 CHAR)"
+   },
+   {
+    "kolom": "ID_DOKUMEN_ADDENDUM",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "ya",
+    "catatan": "satu dokumen memayungi banyak versi, **lintas kontrak** (`DB-3`, `DB-4` dibantah). **Persetujuan tetap per versi**",
+    "oracle": "NUMBER(19)"
+   }
+  ],
+  "LAYER": [
+   {
+    "kolom": "ID_LAYER",
+    "asal": "Limits[].ID",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "NOMOR_LAYER",
+    "asal": "Layer",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "**kunci alami** di dalam versi",
+    "oracle": "NUMBER(9)"
+   },
+   {
+    "kolom": "BAGIAN_LAYER",
+    "asal": "LayerPart",
+    "tipe": "C1",
+    "kosong": "ya",
+    "catatan": "bagian dari kunci alami",
+    "oracle": "NUMBER(9)"
+   },
+   {
+    "kolom": "JENIS_LAYER",
+    "asal": "LayerType",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "VARCHAR2(40 CHAR)"
+   },
+   {
+    "kolom": "JENIS_BAGIAN_LAYER",
+    "asal": "LayerPartType",
+    "tipe": "E",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "VARCHAR2(40 CHAR)"
+   },
+   {
+    "kolom": "CAKUPAN",
+    "asal": "Cover",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "LIMIT",
+    "asal": "Limit` + `Currency",
+    "tipe": "U1 paket uang",
+    "kosong": "tidak",
+    "catatan": "tingkat **100% treaty**",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "KODE_MATA_UANG",
+    "asal": "`Currency` / `CurrencyID` pada baris yang sama",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "**denominasi paket uang di sebelahnya** — bagian kunci alami (INV-08 / INV-09 / INV-12). Ditambahkan 24 Sep 2026, P-8 golongan B",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "DEDUCTIBLE",
+    "asal": "Deductible",
+    "tipe": "U1 paket uang",
+    "kosong": "tidak",
+    "catatan": "tingkat **100% treaty**",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "MATA_UANG_DEDUCTIBLE",
+    "asal": "**tidak ada di sistem lama**",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": "**denominasi `DEDUCTIBLE`** — `KTV-C`. Sistem lama tidak merekam mata uang untuk besaran ini sama sekali; kolomnya disediakan sekarang karena menambahkannya sesudah data masuk mahal. **Dicabut sebelum data dimuat bila `T-6` menyatakan ia selalu mata uang kontrak**",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "PERSEN_PENYESUAIAN",
+    "asal": "AdjRate",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "PERSEN_MINIMUM_DEPOSIT",
+    "asal": "MDPPct",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "PORSI_PEMULIHAN_LIMIT",
+    "asal": "ReinstatementPct",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "porsi limit yang dipulihkan",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "TARIF_PREMI_PEMULIHAN",
+    "asal": "ReinstatementValue",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "tarif premi untuk pemulihan itu — **pembacaannya punya saingan**, §10.3b",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "LIMIT_AGREGAT",
+    "asal": "AgregateLimit` *(salah eja ada di sumbernya)",
+    "tipe": "U1 paket uang",
+    "kosong": "ya",
+    "catatan": "**BARU** — batas total sepanjang periode, terpisah dari limit per kejadian. Tingkat **BELUM DITENTUKAN**",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "MATA_UANG_LIMIT_AGREGAT",
+    "asal": "**tidak ada di sistem lama**",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": "**denominasi `LIMIT_AGREGAT`** — `KTV-C`. Sistem lama tidak merekam mata uang untuk besaran ini sama sekali; kolomnya disediakan sekarang karena menambahkannya sesudah data masuk mahal. **Dicabut sebelum data dimuat bila `T-6` menyatakan ia selalu mata uang kontrak**",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "MDP",
+    "asal": "MDPList[]",
+    "tipe": "U1 paket uang",
+    "kosong": "ya",
+    "catatan": "deposit premium; tingkat **BELUM DITENTUKAN**",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "MDP_MINIMUM",
+    "asal": "MDPMinList[]",
+    "tipe": "U1 paket uang",
+    "kosong": "ya",
+    "catatan": "**BARU** — tanpa ia, *\"deposit premium sama dengan minimum premium\"* tidak dapat dinyatakan",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "PERSEN_MDP_MINIMUM",
+    "asal": "MDPMinPct",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "**BARU**",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "MDP_DIGABUNG",
+    "asal": "IsCombineMDP",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "**BARU** — MDP dihitung per layer atau gabungan",
+    "oracle": "VARCHAR2(40 CHAR)"
+   },
+   {
+    "kolom": "TANPA_HITUNG_PREMI_PEMULIHAN",
+    "asal": "NoRIPCalculation",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "**BARU** — mematikan perhitungan premi pemulihan pada layer ini",
+    "oracle": "VARCHAR2(40 CHAR)"
+   },
+   {
+    "kolom": "DEDUCTIBLE_KEDUA",
+    "asal": "Limits[].Deductible2",
+    "tipe": "U1",
+    "kosong": "ya",
+    "catatan": "**PULIH dari `L-8`** — `TDA-17`. Tersimpan sebagai **teks** di sistem lama (`@toDecimal` di kedua sisi rumus selisih); migrasi wajib mengubah tipe, dan baris yang gagal konversi **tidak disamarkan jadi nol** (ADR-0035)",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "PERSEN_ROL",
+    "asal": "Limits[].ROLPct",
+    "tipe": "P2",
+    "kosong": "ya",
+    "catatan": "**PULIH dari `L-8`** — `TDA-17`. Rate on line. ⚠ **DIBANTAH `F-15`** — pertanyaan *\"selalu dihitung atau pernah disepakati\"* **terjawab dari sumber**: `DetailCalculationROL` menghitungnya `premi ÷ limit × 100`. Kolomnya **tidak dicabut diam-diam**; keputusannya pemilik proses, `2-to-spec/F-15-PREMI-DIPEROLEH-DAN-ROL-TURUNAN.md`",
+    "oracle": "NUMBER(38,20)"
+   }
+  ],
+  "DETAIL_PROPORSIONAL": [
+   {
+    "kolom": "ID_DETAIL_PROPORSIONAL",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_LAYER",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_KELOMPOK_TREATY",
+    "asal": "TreatyGroupID",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "**kunci alami** di dalam **`LAYER`** — INV-06",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "JENIS_TREATY",
+    "asal": "TreatyType",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "`QUOTA_SHARE` / `SURPLUS`",
+    "oracle": "VARCHAR2(40 CHAR)"
+   },
+   {
+    "kolom": "PERSEN_QUOTA_SHARE",
+    "asal": "QSPct",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "terisi hanya bila `JENIS_TREATY = QUOTA_SHARE`",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "JUMLAH_LINES_SURPLUS",
+    "asal": "Surplus",
+    "tipe": "C1",
+    "kosong": "ya",
+    "catatan": "terisi hanya bila `JENIS_TREATY = SURPLUS`",
+    "oracle": "NUMBER(9)"
+   },
+   {
+    "kolom": "PERSEN_KOMISI_KOTOR",
+    "asal": "RIOGR",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "kepanjangan **belum diketahui**",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "PERSEN_KOMISI_BERSIH",
+    "asal": "RIONR",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "kepanjangan **belum diketahui**",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "PERSEN_CADANGAN_PREMI",
+    "asal": "PremiumReservePct",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "dari inventaris kelas Pega",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "CADANGAN_PREMI",
+    "asal": "ReserveList[]",
+    "tipe": "U1 paket uang",
+    "kosong": "ya",
+    "catatan": "**BARU** — pasangan nilai dari persentase di atas; persentase tanpa nilainya adalah setengah fakta. Tingkat **BELUM DITENTUKAN**",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "PERSEN_KAPASITAS_SURPLUS",
+    "asal": "IOOPct",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "**BARU**",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "ID_SUSUNAN_RETRO",
+    "asal": "SpreadingTypeID",
+    "tipe": "R",
+    "kosong": "ya",
+    "catatan": "**BARU — penunjuk susunan baku yang menyemai penyebaran.** Syarat berdirinya `RINCIAN_PENYEBARAN` sebagai fakta terbukukan (INV-58); lihat §10.4a",
+    "oracle": "NUMBER(19)"
+   }
+  ],
+  "BAGIAN": [
+   {
+    "kolom": "ID_BAGIAN",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_LAYER",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "**relasi**, bukan salinan — §12.2",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "CAKUPAN",
+    "asal": "Cover",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": "tetap atribut bagian (§12.2)",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "PERSEN_BAGIAN_NURE",
+    "asal": "Share[].RNMShare",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "terisi bila `BAGIAN_NURE_SERAGAM` mati; berbeda dari atribut senama pada versi (§10.2) yang berlaku seragam",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "PREMI_BRUTO",
+    "asal": "GrossPremiumList[]",
+    "tipe": "U1 paket uang",
+    "kosong": "tidak",
+    "catatan": "tingkat **BELUM DITENTUKAN** — §10.23",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "PREMI_BRUTO_MINIMUM",
+    "asal": "GrossPremiumMinList[]",
+    "tipe": "U1 paket uang",
+    "kosong": "ya",
+    "catatan": "**BARU** — tidak pernah terlihat pohon",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "ID_SUSUNAN_RETRO",
+    "asal": "SpreadingTypeIDXOL",
+    "tipe": "R",
+    "kosong": "ya",
+    "catatan": "penunjuk susunan baku yang menyemai penyebaran — **syarat INV-58**, §10.4a",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "PERSEN_BAGIAN_DIPAKAI",
+    "asal": "baru",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "wajib bila paket uangnya bertingkat `BAGIAN_NURE` (INV-40)",
+    "oracle": "NUMBER(38,20)"
+   }
+  ],
+  "PENYEBARAN": [
+   {
+    "kolom": "ID_PENYEBARAN",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_BAGIAN",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "ya",
+    "catatan": "`KTV-B` — salah satu dari **dua** pelekatan. **Tepat satu** dari kedua kolom terisi, dijaga `CHECK`. Menggantikan `ID_INDUK_PENYEBARAN`, yang tidak dapat punya kunci asing karena sasarannya bergantung nilai kolom lain (INV-17)",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_DETAIL_PROPORSIONAL",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "ya",
+    "catatan": "`KTV-B` — salah satu dari **dua** pelekatan. **Tepat satu** dari kedua kolom terisi, dijaga `CHECK`. Menggantikan `ID_INDUK_PENYEBARAN`, yang tidak dapat punya kunci asing karena sasarannya bergantung nilai kolom lain (INV-17)",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_JENIS_REASURANSI",
+    "asal": "ReinsTypeID",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "**kunci alami**",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_JENIS_REASURANSI_INDUK",
+    "asal": "ParentReinsTypeID",
+    "tipe": "R",
+    "kosong": "ya",
+    "catatan": "jenis reasuransi **bersusun**; rujukan ke baris lain di tabel acuan yang sama",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "PERSEN_PENYEBARAN",
+    "asal": "Pct",
+    "tipe": "P1",
+    "kosong": "tidak",
+    "catatan": "INV-50 menjumlahkannya",
+    "oracle": "NUMBER(38,20)"
+   }
+  ],
+  "RINCIAN_PENYEBARAN": [
+   {
+    "kolom": "ID_RINCIAN_PENYEBARAN",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_PENYEBARAN",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_JENIS_REASURANSI",
+    "asal": "ReinsID` (prop) / `ReinsTypeID` (XOL)",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "**kunci alami**. Ruas proporsional **bernama pihak tetapi berisi jenis** — §4.4a",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "PERSEN_RINCIAN",
+    "asal": "SharePct",
+    "tipe": "P1",
+    "kosong": "tidak",
+    "catatan": "INV-50 menjumlahkannya per induk",
+    "oracle": "NUMBER(38,20)"
+   }
+  ],
+  "NILAI_PENYEBARAN": [
+   {
+    "kolom": "ID_NILAI_PENYEBARAN",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_RINCIAN_PENYEBARAN",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "NILAI",
+    "asal": "Amount` + `Currency",
+    "tipe": "U1 paket uang",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "KODE_MATA_UANG",
+    "asal": "`Currency` / `CurrencyID` pada baris yang sama",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "**denominasi paket uang di sebelahnya** — bagian kunci alami (INV-08 / INV-09 / INV-12). Ditambahkan 24 Sep 2026, P-8 golongan B",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   }
+  ],
+  "POTONGAN": [
+   {
+    "kolom": "ID_POTONGAN",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "§14.2",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_BAGIAN",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "ya",
+    "catatan": "`KTV-B` — salah satu dari **dua** pelekatan. **Tepat satu** dari kedua kolom terisi, dijaga `CHECK`. Menggantikan `ID_INDUK_POTONGAN`, yang tidak dapat punya kunci asing karena sasarannya bergantung nilai kolom lain (INV-17)",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_DETAIL_PROPORSIONAL",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "ya",
+    "catatan": "`KTV-B` — salah satu dari **dua** pelekatan. **Tepat satu** dari kedua kolom terisi, dijaga `CHECK`. Menggantikan `ID_INDUK_POTONGAN`, yang tidak dapat punya kunci asing karena sasarannya bergantung nilai kolom lain (INV-17)",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_JENIS_POTONGAN",
+    "asal": "Comment",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "§14.2",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "DASAR_PERHITUNGAN",
+    "asal": "baru",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "§14.2",
+    "oracle": "VARCHAR2(40 CHAR)"
+   },
+   {
+    "kolom": "PERSEN_POTONGAN",
+    "asal": "DeductionPct",
+    "tipe": "P2",
+    "kosong": "tidak",
+    "catatan": "§14.2",
+    "oracle": "NUMBER(38,20)"
+   }
+  ],
+  "MATA_UANG_KONTRAK": [
+   {
+    "kolom": "ID_MATA_UANG_KONTRAK",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "KODE_MATA_UANG",
+    "asal": "CurrencyID",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "**kunci alami**; `Currency` (nama) tidak disimpan — INV-59",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "KURS",
+    "asal": "Conversion",
+    "tipe": "K1",
+    "kosong": "tidak",
+    "catatan": "INV-38: selalu lebih besar dari nol",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "TANGGAL_MULAI_BERLAKU",
+    "asal": "PeriodStart",
+    "tipe": "D",
+    "kosong": "tidak",
+    "catatan": "batas inklusif, ADR-0022",
+    "oracle": "DATE"
+   },
+   {
+    "kolom": "TANGGAL_AKHIR_BERLAKU",
+    "asal": "PeriodEnd",
+    "tipe": "D",
+    "kosong": "tidak",
+    "catatan": "batas inklusif",
+    "oracle": "DATE"
+   }
+  ],
+  "RETENSI_CEDANT": [
+   {
+    "kolom": "ID_RETENSI_CEDANT",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_KELOMPOK_TREATY",
+    "asal": "TreatyGroupID",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "bagian **kunci alami**; `TreatyGroup` (nama) tidak disimpan",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "NILAI_RETENSI",
+    "asal": "Amount` + `Currency`/`CurrencyID",
+    "tipe": "U1 paket uang",
+    "kosong": "tidak",
+    "catatan": "bagian **kunci alami** lewat kode mata uangnya. Tingkat **BELUM DITENTUKAN** — §10.23",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "KODE_MATA_UANG",
+    "asal": "`Currency` / `CurrencyID` pada baris yang sama",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "**denominasi paket uang di sebelahnya** — bagian kunci alami (INV-08 / INV-09 / INV-12). Ditambahkan 24 Sep 2026, P-8 golongan B",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "CATATAN",
+    "asal": "Note",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": "**BARU** — ada di kelas, tidak ada di §3.5",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "PERSEN_BAGIAN_DIPAKAI",
+    "asal": "baru",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "bila paket uangnya bertingkat `BAGIAN_NURE` (INV-40)",
+    "oracle": "NUMBER(38,20)"
+   }
+  ],
+  "EGNPI": [
+   {
+    "kolom": "ID_EGNPI",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_KELOMPOK_TREATY",
+    "asal": "TreatyGroupID",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "bagian **kunci alami**",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_KELAS_BISNIS",
+    "asal": "ClassOfBusiness",
+    "tipe": "R",
+    "kosong": "ya",
+    "catatan": "**BARU** — tidak ada di §3.5",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "NILAI_EGNPI",
+    "asal": "Amount` + `Currency`/`CurrencyID",
+    "tipe": "U1 paket uang",
+    "kosong": "tidak",
+    "catatan": "tingkat **BELUM DITENTUKAN**, dan ini **satu dari lima §7 yang naik ke eskalasi**",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "KODE_MATA_UANG",
+    "asal": "`Currency` / `CurrencyID` pada baris yang sama",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "**denominasi paket uang di sebelahnya** — bagian kunci alami (INV-08 / INV-09 / INV-12). Ditambahkan 24 Sep 2026, P-8 golongan B",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "TANGGAL_BERLAKU",
+    "asal": "AsDate",
+    "tipe": "D",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "DATE"
+   },
+   {
+    "kolom": "PROPORSI",
+    "asal": "Proportion",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "**BARU** — belum terpakai di rumus mana pun; dibawa karena membuangnya menghilangkan fakta yang tidak dapat dipulihkan",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "CATATAN",
+    "asal": "Note",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": "**BARU**",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   }
+  ],
+  "PORTOFOLIO": [
+   {
+    "kolom": "ID_PORTOFOLIO",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ARAH_PORTOFOLIO",
+    "asal": "Type",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "masuk atau keluar; bagian **kunci alami**",
+    "oracle": "VARCHAR2(40 CHAR)"
+   },
+   {
+    "kolom": "JENIS_PORTOFOLIO",
+    "asal": "TypePortfolio",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "bagian **kunci alami**",
+    "oracle": "VARCHAR2(40 CHAR)"
+   },
+   {
+    "kolom": "KETERANGAN",
+    "asal": "Description",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   }
+  ],
+  "PERIODE_PELAPORAN": [
+   {
+    "kolom": "ID_PERIODE_PELAPORAN",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "PERIODE",
+    "asal": "Period",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "**kunci alami**",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "TANGGAL_AWAL",
+    "asal": "InitialDate",
+    "tipe": "D",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "DATE"
+   },
+   {
+    "kolom": "BATAS_PENYERAHAN",
+    "asal": "SubmissionDue",
+    "tipe": "D",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "DATE"
+   },
+   {
+    "kolom": "BATAS_KONFIRMASI",
+    "asal": "ConfirmationDue",
+    "tipe": "D",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "DATE"
+   },
+   {
+    "kolom": "BATAS_PELUNASAN",
+    "asal": "SettlementDue",
+    "tipe": "D",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "DATE"
+   }
+  ],
+  "PERIODE_AKUMULASI": [
+   {
+    "kolom": "ID_PERIODE_AKUMULASI",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "PERIODE",
+    "asal": "Period",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "**kunci alami**",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "TANGGAL_LAPOR",
+    "asal": "ReportDate",
+    "tipe": "D",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "DATE"
+   },
+   {
+    "kolom": "HARI_BATAS_PENYERAHAN",
+    "asal": "SubDays",
+    "tipe": "C1",
+    "kosong": "ya",
+    "catatan": "dari inventaris kelas, §12.4",
+    "oracle": "NUMBER(9)"
+   },
+   {
+    "kolom": "BATAS_PENYERAHAN",
+    "asal": "SubDueDate",
+    "tipe": "D",
+    "kosong": "ya",
+    "catatan": "dari inventaris kelas, §12.4",
+    "oracle": "DATE"
+   }
+  ],
+  "TERMIN": [
+   {
+    "kolom": "ID_TERMIN",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "NOMOR_TERMIN",
+    "asal": "InstallmentList[].Installment",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "bagian **kunci alami**, bersama kode mata uang — §10.16a",
+    "oracle": "NUMBER(9)"
+   },
+   {
+    "kolom": "PERSEN_TERMIN",
+    "asal": "InstallmentPct",
+    "tipe": "P1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "NILAI_TERMIN",
+    "asal": "Amount` + `Currency`/`CurrencyID",
+    "tipe": "U1 paket uang",
+    "kosong": "ya",
+    "catatan": "tingkat **BELUM DITENTUKAN** — §10.23",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "KODE_MATA_UANG",
+    "asal": "`Currency` / `CurrencyID` pada baris yang sama",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "**denominasi paket uang di sebelahnya** — bagian kunci alami (INV-08 / INV-09 / INV-12). Ditambahkan 24 Sep 2026, P-8 golongan B",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "TANGGAL_JATUH_TEMPO",
+    "asal": "DueDate",
+    "tipe": "D",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "DATE"
+   },
+   {
+    "kolom": "TANGGAL_BAYAR",
+    "asal": "PaymentDate",
+    "tipe": "D",
+    "kosong": "ya",
+    "catatan": "kosong selama belum dibayar",
+    "oracle": "DATE"
+   },
+   {
+    "kolom": "WPC",
+    "asal": "WPC",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": "**singkatan yang kepanjangannya tidak ada di korpus** — lihat di bawah",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   }
+  ],
+  "SKALA_KOASURANSI": [
+   {
+    "kolom": "ID_SKALA_KOASURANSI",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "PERSEN_LIMIT",
+    "asal": "PctLimit",
+    "tipe": "P1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "PERSEN_BAGIAN",
+    "asal": "CoInShare",
+    "tipe": "P1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(38,20)"
+   }
+  ],
+  "BATAS_PER_BAHAYA": [
+   {
+    "kolom": "ID_BATAS_PER_BAHAYA",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_BAHAYA",
+    "asal": "nama kolom lama",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "**kunci alami**; tabel acuan, ADR-0038",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "NILAI_BATAS",
+    "asal": "Earthquake` / `FloodJab` / `FloodNation` / `RSMDLimit` + mata uangnya",
+    "tipe": "U1 paket uang",
+    "kosong": "tidak",
+    "catatan": "tingkat **BELUM DITENTUKAN** — §10.23",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "KODE_MATA_UANG",
+    "asal": "`Currency` / `CurrencyID` pada baris yang sama",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": "**denominasi paket uang di sebelahnya**. Golongan **B**, dipindahkan dari golongan C oleh `KTV-C` — §10.18 menulis asalnya *\"+ mata uangnya\"*. **Boleh kosong**: ia bukan bagian kunci alami (INV-14 memakai `ID_BAHAYA`)",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "PERSEN_BAGIAN_DIPAKAI",
+    "asal": "baru",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "bila bertingkat `BAGIAN_NURE` (INV-40)",
+    "oracle": "NUMBER(38,20)"
+   }
+  ],
+  "DOKUMEN_KONTRAK": [
+   {
+    "kolom": "ID_DOKUMEN_KONTRAK",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_DOKUMEN",
+    "asal": "lampiran",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "**kunci alami**; rujukan ke luar skema",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "JENIS_DOKUMEN",
+    "asal": "lampiran",
+    "tipe": "E",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "VARCHAR2(40 CHAR)"
+   },
+   {
+    "kolom": "TANGGAL_LAMPIR",
+    "asal": "lampiran",
+    "tipe": "D",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "DATE"
+   }
+  ],
+  "DOKUMEN_ADDENDUM": [
+   {
+    "kolom": "ID_DOKUMEN_ADDENDUM",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "NOMOR_DOKUMEN",
+    "asal": "tidak ada di sistem lama",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "**kunci alami**, unik **global** — `INV-71`. Nomor yang beredar di luar sistem: ditulis di kertas dan disebut orang",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "TANGGAL_BERLAKU",
+    "asal": "baru",
+    "tipe": "D",
+    "kosong": "ya",
+    "catatan": "`KTV-2` — bila kosong, berlaku mengikuti versi yang dipayunginya. **Dicabut bila `DB-16b` dibantah**",
+    "oracle": "DATE"
+   }
+  ],
+  "CATATAN_PERSETUJUAN": [
+   {
+    "kolom": "ID_CATATAN_PERSETUJUAN",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "menggantung pada **versi**, bukan kontrak",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "WAKTU_KEPUTUSAN",
+    "asal": "Date",
+    "tipe": "D",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "DATE"
+   },
+   {
+    "kolom": "NAMA_PEMUTUS",
+    "asal": "OperatorName",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "**dibekukan sebagai teks dengan sengaja** — ia fakta historis siapa memutuskan apa dan kapan (§12.5, ADR-0045)",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "DISETUJUI",
+    "asal": "IsApproved",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "VARCHAR2(40 CHAR)"
+   },
+   {
+    "kolom": "ALASAN",
+    "asal": "Suggest",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   }
+  ],
+  "JEJAK_PERUBAHAN": [
+   {
+    "kolom": "ID_JEJAK_PERUBAHAN",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "WAKTU_PERUBAHAN",
+    "asal": "baru",
+    "tipe": "D",
+    "kosong": "tidak",
+    "catatan": "**`DATE` beresolusi detik.** Dua perubahan dalam detik yang sama tidak dapat dipisahkan olehnya — dan itu tidak merusak apa pun di sini, sebab entitas ini **sengaja tanpa kunci alami**",
+    "oracle": "DATE"
+   },
+   {
+    "kolom": "PELAKU",
+    "asal": "baru",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "dibekukan, sekeluarga dengan `NAMA_PEMUTUS`",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "PERAN_PELAKU",
+    "asal": "baru",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "**peran yang berlaku SAAT ITU** — ADR-0045 isi minimal butir kelima. **POTRET, bukan rujukan** (`KTV-D`): teks, final, **tidak dinormalisasi ulang** ketika entitas peran kelak lahir. Dari mana nilainya diambil masih `F-16`",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "RUAS_YANG_BERUBAH",
+    "asal": "baru",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "NILAI_SEBELUM",
+    "asal": "baru",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": "teks, karena ruasnya beragam tipe",
+    "oracle": "VARCHAR2(4000 CHAR)"
+   },
+   {
+    "kolom": "NILAI_SESUDAH",
+    "asal": "baru",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": "idem",
+    "oracle": "VARCHAR2(4000 CHAR)"
+   }
+  ],
+  "PERISTIWA_KONTRAK": [
+   {
+    "kolom": "ID_PERISTIWA_KONTRAK",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "menggantung pada **versi**",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "WAKTU",
+    "asal": "CommentList[].Date",
+    "tipe": "D",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "DATE"
+   },
+   {
+    "kolom": "NAMA_PELAKU",
+    "asal": "CommentList[].OperatorName",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "dibekukan sebagai teks, sekeluarga `NAMA_PEMUTUS` (§12.5)",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "JENIS_PERISTIWA",
+    "asal": "CommentList[].Suggest` **diurai",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "`SUNTINGAN_INTERNAL` · `ADDENDUM_EKSTERNAL` · `ADDENDUM_PREMI` · `DISALIN` · `REVISI_DIBUAT`",
+    "oracle": "VARCHAR2(40 CHAR)"
+   }
+  ],
+  "PEMULIHAN_LIMIT": [
+   {
+    "kolom": "ID_PEMULIHAN_LIMIT",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_LAYER",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "NOMOR_URUT_PEMULIHAN",
+    "asal": "Reinstatement_List[].ReinstatementValue",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(9)"
+   },
+   {
+    "kolom": "PERSEN_PEMULIHAN",
+    "asal": "Reinstatement_List[].ReinstatementPct",
+    "tipe": "P1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "PERSEN_TAMBAHAN",
+    "asal": "Reinstatement_List[].AdditionalPct",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "NUMBER(38,20)"
+   },
+   {
+    "kolom": "CATATAN",
+    "asal": "Reinstatement_List[].ReinstatementNote",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": "",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   }
+  ],
+  "MATA_UANG": [
+   {
+    "kolom": "ID_MATA_UANG",
+    "asal": "tabel acuan (ADR-0038)",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "KODE",
+    "asal": "tabel acuan (ADR-0038)",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "**kunci alami**, **Bentuk — tak berinduk**: unik di seluruh tabel",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "NAMA",
+    "asal": "tabel acuan (ADR-0038)",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "AKTIF",
+    "asal": "tabel acuan (ADR-0038)",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "nilai lama **tidak pernah dihapus**; ia dimatikan",
+    "oracle": "VARCHAR2(40 CHAR)"
+   }
+  ],
+  "JENIS_POTONGAN": [
+   {
+    "kolom": "ID_JENIS_POTONGAN",
+    "asal": "tabel acuan (ADR-0038)",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "KODE",
+    "asal": "tabel acuan (ADR-0038)",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "**kunci alami**, **Bentuk — tak berinduk**: unik di seluruh tabel",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "NAMA",
+    "asal": "tabel acuan (ADR-0038)",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "AKTIF",
+    "asal": "tabel acuan (ADR-0038)",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "nilai lama **tidak pernah dihapus**; ia dimatikan",
+    "oracle": "VARCHAR2(40 CHAR)"
+   }
+  ],
+  "JENIS_REASURANSI": [
+   {
+    "kolom": "ID_JENIS_REASURANSI",
+    "asal": "tabel acuan (ADR-0038)",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "KODE",
+    "asal": "tabel acuan (ADR-0038)",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "**kunci alami**, **Bentuk — tak berinduk**: unik di seluruh tabel",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "NAMA",
+    "asal": "tabel acuan (ADR-0038)",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "AKTIF",
+    "asal": "tabel acuan (ADR-0038)",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "nilai lama **tidak pernah dihapus**; ia dimatikan",
+    "oracle": "VARCHAR2(40 CHAR)"
+   },
+   {
+    "kolom": "ID_INDUK",
+    "asal": "tabel acuan (ADR-0038)",
+    "tipe": "R",
+    "kosong": "ya",
+    "catatan": "**hanya `JENIS_REASURANSI`** — ia bersusun, §10.6",
+    "oracle": "NUMBER(19)"
+   }
+  ],
+  "BAHAYA": [
+   {
+    "kolom": "ID_BAHAYA",
+    "asal": "tabel acuan (ADR-0038)",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "KODE",
+    "asal": "tabel acuan (ADR-0038)",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "**kunci alami**, **Bentuk — tak berinduk**: unik di seluruh tabel",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "NAMA",
+    "asal": "tabel acuan (ADR-0038)",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "AKTIF",
+    "asal": "tabel acuan (ADR-0038)",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "nilai lama **tidak pernah dihapus**; ia dimatikan",
+    "oracle": "VARCHAR2(40 CHAR)"
+   }
+  ],
+  "KELOMPOK_TREATY": [
+   {
+    "kolom": "ID_KELOMPOK_TREATY",
+    "asal": "tabel acuan (ADR-0038)",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "KODE",
+    "asal": "tabel acuan (ADR-0038)",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "**kunci alami**, **Bentuk — tak berinduk**: unik di seluruh tabel",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "NAMA",
+    "asal": "tabel acuan (ADR-0038)",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "AKTIF",
+    "asal": "tabel acuan (ADR-0038)",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "nilai lama **tidak pernah dihapus**; ia dimatikan",
+    "oracle": "VARCHAR2(40 CHAR)"
+   }
+  ],
+  "KELAS_BISNIS": [
+   {
+    "kolom": "ID_KELAS_BISNIS",
+    "asal": "tabel acuan (ADR-0038)",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "KODE",
+    "asal": "tabel acuan (ADR-0038)",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "**kunci alami**, **Bentuk — tak berinduk**: unik di seluruh tabel",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "NAMA",
+    "asal": "tabel acuan (ADR-0038)",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "AKTIF",
+    "asal": "tabel acuan (ADR-0038)",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "nilai lama **tidak pernah dihapus**; ia dimatikan",
+    "oracle": "VARCHAR2(40 CHAR)"
+   }
+  ],
+  "NILAI_PREMI_BRUTO": [
+   {
+    "kolom": "ID_NILAI_PREMI_BRUTO",
+    "asal": "*baru*",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_BAGIAN",
+    "asal": "*baru*",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "induknya — paket uang ini asalnya **daftar per mata uang** di sistem lama",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "KODE_MATA_UANG",
+    "asal": "`Currency` pada baris daftarnya",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "**kunci alami** di dalam induknya — belum bernomor",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "NILAI",
+    "asal": "`Value` pada baris daftarnya",
+    "tipe": "U1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(38,20)"
+   }
+  ],
+  "NILAI_PREMI_BRUTO_MINIMUM": [
+   {
+    "kolom": "ID_NILAI_PREMI_BRUTO_MINIMUM",
+    "asal": "*baru*",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_BAGIAN",
+    "asal": "*baru*",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "induknya — paket uang ini asalnya **daftar per mata uang** di sistem lama",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "KODE_MATA_UANG",
+    "asal": "`Currency` pada baris daftarnya",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "**kunci alami** di dalam induknya — belum bernomor",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "NILAI",
+    "asal": "`Value` pada baris daftarnya",
+    "tipe": "U1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(38,20)"
+   }
+  ],
+  "NILAI_CADANGAN_PREMI": [
+   {
+    "kolom": "ID_NILAI_CADANGAN_PREMI",
+    "asal": "*baru*",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_DETAIL_PROPORSIONAL",
+    "asal": "*baru*",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "induknya — paket uang ini asalnya **daftar per mata uang** di sistem lama",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "KODE_MATA_UANG",
+    "asal": "`Currency` pada baris daftarnya",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "**kunci alami** di dalam induknya — belum bernomor",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "NILAI",
+    "asal": "`Value` pada baris daftarnya",
+    "tipe": "U1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(38,20)"
+   }
+  ],
+  "NILAI_MDP": [
+   {
+    "kolom": "ID_NILAI_MDP",
+    "asal": "*baru*",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_LAYER",
+    "asal": "*baru*",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "induknya — paket uang ini asalnya **daftar per mata uang** di sistem lama",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "KODE_MATA_UANG",
+    "asal": "`Currency` pada baris daftarnya",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "**kunci alami** di dalam induknya — belum bernomor",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "NILAI",
+    "asal": "`Value` pada baris daftarnya",
+    "tipe": "U1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(38,20)"
+   }
+  ],
+  "NILAI_MDP_MINIMUM": [
+   {
+    "kolom": "ID_NILAI_MDP_MINIMUM",
+    "asal": "*baru*",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "ID_LAYER",
+    "asal": "*baru*",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "induknya — paket uang ini asalnya **daftar per mata uang** di sistem lama",
+    "oracle": "NUMBER(19)"
+   },
+   {
+    "kolom": "KODE_MATA_UANG",
+    "asal": "`Currency` pada baris daftarnya",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "**kunci alami** di dalam induknya — belum bernomor",
+    "oracle": "VARCHAR2(1000 CHAR)"
+   },
+   {
+    "kolom": "NILAI",
+    "asal": "`Value` pada baris daftarnya",
+    "tipe": "U1",
+    "kosong": "tidak",
+    "catatan": "",
+    "oracle": "NUMBER(38,20)"
+   }
+  ]
+ },
+ "klaim": {
+  "KONTRAK": 8,
+  "VERSI_KONTRAK": 45,
+  "LAYER": 21,
+  "DETAIL_PROPORSIONAL": 12,
+  "BAGIAN": 8,
+  "PENYEBARAN": 5,
+  "RINCIAN_PENYEBARAN": 4,
+  "POTONGAN": 5,
+  "MATA_UANG_KONTRAK": 6,
+  "RETENSI_CEDANT": 6,
+  "EGNPI": 8,
+  "PORTOFOLIO": 5,
+  "PERIODE_PELAPORAN": 7,
+  "PERIODE_AKUMULASI": 6,
+  "TERMIN": 8,
+  "SKALA_KOASURANSI": 4,
+  "BATAS_PER_BAHAYA": 5,
+  "DOKUMEN_KONTRAK": 5,
+  "DOKUMEN_ADDENDUM": 3,
+  "CATATAN_PERSETUJUAN": 6,
+  "JEJAK_PERUBAHAN": 8,
+  "PERISTIWA_KONTRAK": 5,
+  "PEMULIHAN_LIMIT": 6,
+  "MATA_UANG": 4,
+  "JENIS_POTONGAN": 4,
+  "JENIS_REASURANSI": 5,
+  "BAHAYA": 4,
+  "KELOMPOK_TREATY": 4,
+  "KELAS_BISNIS": 4
+ },
+ "selisih": [],
+ "paket_c": [
+  [
+   "LAYER",
+   "DEDUCTIBLE"
+  ],
+  [
+   "LAYER",
+   "LIMIT_AGREGAT"
+  ],
+  [
+   "VERSI_KONTRAK",
+   "BATAS_MAKSIMUM_KELOMPOK"
+  ],
+  [
+   "VERSI_KONTRAK",
+   "BATAS_MAKSIMUM_NON_KELOMPOK"
+  ],
+  [
+   "VERSI_KONTRAK",
+   "BATAS_PILIHAN"
+  ]
+ ],
+ "induk_ganda": {
+  "POTONGAN.ID_INDUK_POTONGAN": [
+   "BAGIAN",
+   "DETAIL_PROPORSIONAL"
+  ],
+  "PENYEBARAN.ID_INDUK_PENYEBARAN": [
+   "BAGIAN",
+   "DETAIL_PROPORSIONAL"
+  ]
+ },
+ "mata_uang_c": {
+  "VERSI_KONTRAK.BATAS_MAKSIMUM_KELOMPOK": "MATA_UANG_BATAS_KELOMPOK",
+  "VERSI_KONTRAK.BATAS_MAKSIMUM_NON_KELOMPOK": "MATA_UANG_BATAS_NON_KELOMPOK",
+  "VERSI_KONTRAK.BATAS_PILIHAN": "MATA_UANG_BATAS_PILIHAN",
+  "LAYER.DEDUCTIBLE": "MATA_UANG_DEDUCTIBLE",
+  "LAYER.LIMIT_AGREGAT": "MATA_UANG_LIMIT_AGREGAT"
+ },
+ "tipe": {
+  "U1": [
+   "NUMBER(38,20)",
+   "nilai uang"
+  ],
+  "P1": [
+   "NUMBER(38,20)",
+   "persentase dan porsi"
+  ],
+  "P2": [
+   "NUMBER(38,20)",
+   "tarif brokerage dan pajak"
+  ],
+  "K1": [
+   "NUMBER(38,20)",
+   "kurs"
+  ],
+  "L1": [
+   "NUMBER(38,20)",
+   "limit layer dan premi deposit"
+  ],
+  "C1": [
+   "NUMBER(9)",
+   "cacah dan nomor urut"
+  ],
+  "T": [
+   "VARCHAR2(1000 CHAR)",
+   "teks"
+  ],
+  "D": [
+   "DATE",
+   "tanggal"
+  ],
+  "E": [
+   "VARCHAR2(40 CHAR)",
+   "himpunan tertutup"
+  ],
+  "R": [
+   "NUMBER(19)",
+   "kunci asing"
+  ]
+ },
+ "khusus": {
+  "VERSI_KONTRAK.KETERANGAN": "VARCHAR2(4000 CHAR)",
+  "VERSI_KONTRAK.CATATAN": "VARCHAR2(4000 CHAR)",
+  "VERSI_KONTRAK.PENGECUALIAN": "VARCHAR2(4000 CHAR)",
+  "VERSI_KONTRAK.KETENTUAN_KHUSUS": "VARCHAR2(4000 CHAR)",
+  "VERSI_KONTRAK.CATATAN_BORDEREAUX": "VARCHAR2(4000 CHAR)",
+  "JEJAK_PERUBAHAN.NILAI_SEBELUM": "VARCHAR2(4000 CHAR)",
+  "JEJAK_PERUBAHAN.NILAI_SESUDAH": "VARCHAR2(4000 CHAR)"
+ }
+}

@@ -1,0 +1,154 @@
+CREATE OR REPLACE PROCEDURE POOLDATA.PEGA_TREATY_IN
+(
+DataPega IN CLOB,
+IDPega         IN VARCHAR2,
+P_PROPORTIONTYPE IN VARCHAR2,
+P_TREATYCONTRACTNAME IN VARCHAR2,
+P_TERITORIALSCOPE    IN VARCHAR2,
+P_COMMENCEMENT       IN VARCHAR2,
+P_TERMINATION        IN VARCHAR2,
+P_CLASSOFBUSINESS    IN VARCHAR2,
+P_LEADINGREINSSOURCE    IN VARCHAR2,
+P_LEADINGREINSSOURCEID  IN VARCHAR2,
+P_CEDING    IN VARCHAR2,
+P_CEDINGID  IN VARCHAR2,
+P_LEADINGREINSID    IN VARCHAR2,
+P_NUSARESHAREPCT    IN VARCHAR2,
+P_BROKERAGEPCT      IN VARCHAR2,
+P_INFORMATION       IN VARCHAR2,
+P_POSITIONUSERNAME  IN VARCHAR2,
+P_POSITION          IN VARCHAR2,
+P_STATUSAKSEPTASI   IN VARCHAR2,
+P_CHOOSESTATUSAKSEPTASI IN VARCHAR2,
+P_TREATYYEAR IN VARCHAR2,
+ErrMsg OUT VARCHAR2, 
+IDPegaOut OUT VARCHAR2, 
+StsSave OUT VARCHAR2)
+AS
+id_TreatyIn_ins M_TREATY_IN.ID%TYPE;
+id_TreatyIn_out M_TREATY_IN.ID%TYPE;
+id_site M_SITE_DATABASE.ID%TYPE;
+vID VARCHAR2(10);
+
+
+BEGIN
+
+    IF IDPega = 'UnknownId' THEN
+
+       BEGIN
+          SELECT ID INTO id_site FROM M_SITE_DATABASE WHERE CURRENT_SITE='1';
+       EXCEPTION WHEN OTHERS THEN
+          ErrMsg := 'SELECT M_SITE_DATABASE Error : ' || sqlerrm;
+          ROLLBACK;
+          RETURN;
+       END;
+
+       BEGIN
+          id_TreatyIn_ins := id_site || lpad(to_Char(M_TREATY_IN_SEQ.nextval),6,'0');
+       EXCEPTION WHEN OTHERS THEN
+          ErrMsg := 'Generate Rate Error ' || sqlerrm;
+          ROLLBACK;
+          RETURN;
+       END;
+
+       BEGIN
+          INSERT INTO M_TREATY_IN (ID, JSONDATA) VALUES (id_TreatyIn_ins, replace(DataPega,'UnknownId',id_TreatyIn_ins));
+          INSERT INTO POOLDATA.TREATY_IN (ID,
+                                            PROPORTIONTYPE,
+                                            TREATYCONTRACTNAME,
+                                            TERITORIALSCOPE,
+                                            COMMENCEMENT,
+                                            TERMINATION,
+                                            CLASSOFBUSINESS,
+                                            LEADINGREINSSOURCE,
+                                            LEADINGREINSSOURCEID,
+                                            CEDING,
+                                            CEDINGID,
+                                            LEADINGREINSID,
+                                            NUSARESHAREPCT,
+                                            BROKERAGEPCT,
+                                            INFORMATION,
+                                            POSITIONUSERNAME,
+                                            POSITION,
+                                            STATUSAKSEPTASI,
+                                            CHOOSESTATUSAKSEPTASI,
+                                            TREATYYEAR)
+                VALUES (id_TreatyIn_ins,
+                                            P_PROPORTIONTYPE,
+                                            P_TREATYCONTRACTNAME,    
+                                            P_TERITORIALSCOPE,
+                                            P_COMMENCEMENT,
+                                            P_TERMINATION,
+                                            P_CLASSOFBUSINESS,
+                                            P_LEADINGREINSSOURCE,
+                                            P_LEADINGREINSSOURCEID,
+                                            P_CEDING,
+                                            P_CEDINGID,
+                                            P_LEADINGREINSID,
+                                            P_NUSARESHAREPCT,
+                                            P_BROKERAGEPCT,
+                                            P_INFORMATION,
+                                            P_POSITIONUSERNAME,
+                                            P_POSITION,
+                                            P_STATUSAKSEPTASI,
+                                            P_CHOOSESTATUSAKSEPTASI,    
+                                            P_TREATYYEAR);
+          COMMIT;
+
+          id_TreatyIn_out := id_TreatyIn_ins;
+       EXCEPTION WHEN OTHERS THEN
+          ErrMsg := 'Insert Rate Error : ' || sqlerrm;
+          StsSave:= 0;
+          ROLLBACK;
+          RETURN;
+       END;
+
+       
+    ELSE
+       BEGIN
+          vID := IDPega;
+          UPDATE M_TREATY_IN SET JSONDATA = DataPega WHERE ID = IDPega;
+          UPDATE POOLDATA.TREATY_IN SET PROPORTIONTYPE = P_PROPORTIONTYPE, 
+                                            TREATYCONTRACTNAME = P_TREATYCONTRACTNAME,   
+                                            TERITORIALSCOPE = P_TERITORIALSCOPE,
+                                            COMMENCEMENT = P_COMMENCEMENT,
+                                            TERMINATION = P_TERMINATION,
+                                            CLASSOFBUSINESS = P_CLASSOFBUSINESS,
+                                            LEADINGREINSSOURCE = P_LEADINGREINSSOURCE,
+                                            LEADINGREINSSOURCEID = P_LEADINGREINSSOURCEID,
+                                            CEDING = P_CEDING,
+                                            CEDINGID = P_CEDINGID,
+                                            LEADINGREINSID = P_LEADINGREINSID,
+                                            NUSARESHAREPCT = P_NUSARESHAREPCT,
+                                            BROKERAGEPCT= P_BROKERAGEPCT,
+                                            INFORMATION = P_INFORMATION,
+                                            POSITIONUSERNAME = P_POSITIONUSERNAME,
+                                            POSITION = P_POSITION,
+                                            STATUSAKSEPTASI = P_STATUSAKSEPTASI,
+                                            CHOOSESTATUSAKSEPTASI = P_CHOOSESTATUSAKSEPTASI,   
+                                            TREATYYEAR = P_TREATYYEAR
+                                          WHERE ID = IDPega;
+          COMMIT;
+
+          id_TreatyIn_out := IDPega;
+       EXCEPTION WHEN OTHERS THEN
+          ErrMsg := 'Update Rate Error : ' || sqlerrm;
+          StsSave:= 0;
+          ROLLBACK;
+          RETURN;
+       END;
+       
+    END IF;
+
+    ErrMsg    := 'Data Sudah Disimpan Dengan ID : ' || id_TreatyIn_out;
+    StsSave:= 1;
+    IDPegaOut := id_TreatyIn_out;
+
+EXCEPTION
+    WHEN OTHERS THEN
+    ErrMsg := 'Simpan Rate Error : ' || sqlerrm;
+    StsSave:= 0;
+    ROLLBACK;
+    RETURN;
+END;
+/

@@ -1,0 +1,11 @@
+# Fase 0 — scaffold.
+node_modules/
+dist/
+*.env
+frontend/.vite/
+
+# Artefak build Go
+/bin/
+*.exe
+*.test
+*.out

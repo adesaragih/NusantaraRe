@@ -1,0 +1,674 @@
+rule	step	target_property	expression	divide_scales	file
+AddAkseptasiCNP_Act	3	@param:ClassOfPage	ASM-FW-GCNMFW-Work-ClaimTreatyNonProp		Activity\AddAkseptasiCNP_Act.xml
+AddAkseptasiCNP_Act	6	@param:ClassOfPage	ASM-FW-GCNMFW-Work-ClaimTreatyNonProp		Activity\AddAkseptasiCNP_Act.xml
+AddAkseptasiCNP_Act	7	@param:ClassOfPage	ASM-FW-GCNMFW-Work-ClaimTreatyNonProp		Activity\AddAkseptasiCNP_Act.xml
+AddAkseptasiCNP_Act	16.2.2	.AdjusterFee	.AdjusterFee+Local.AdjusterFee		Activity\AddAkseptasiCNP_Act.xml
+AddAkseptasiCNP_Act	16.2.2	.ClaimAmountCedant	.ClaimAmountCedant+Local.CLaimCedant		Activity\AddAkseptasiCNP_Act.xml
+AddAkseptasiCNP_Act	16.2.2	.CNPOthersFee	.CNPOthersFee+Local.OtherFee		Activity\AddAkseptasiCNP_Act.xml
+AddAkseptasiCNP_Act	16.2.2	.Salvage	.Salvage+Local.Salvage		Activity\AddAkseptasiCNP_Act.xml
+AddAkseptasiCNP_Act	16.2.2	.USD	.USD+Local.ClaimIDR		Activity\AddAkseptasiCNP_Act.xml
+AddAkseptasiCNP_Act	16.2.2	.Value	.Value+Local.Claim		Activity\AddAkseptasiCNP_Act.xml
+AddAkseptasiCNP_Act	17.2.2	.AdjusterFee	.AdjusterFee+Local.AdjusterFee		Activity\AddAkseptasiCNP_Act.xml
+AddAkseptasiCNP_Act	17.2.2	.CNPOthersFee	.CNPOthersFee+Local.OtherFee		Activity\AddAkseptasiCNP_Act.xml
+AddAkseptasiCNP_Act	17.2.2	.Salvage	.Salvage+Local.Salvage		Activity\AddAkseptasiCNP_Act.xml
+AddAkseptasiCNP_Act	17.2.2	.ClaimAmountAdjust	.ClaimAmountAdjust+Local.Claim		Activity\AddAkseptasiCNP_Act.xml
+AddInterestListCNP_Act	2	.ClaimData.InterestList(Local.ListCount+1).pxObjClass	"""ASM-FW-GCNMFW-Data-ObjectItem"""		Activity\AddInterestListCNP_Act.xml
+AddListClaimNP_Act	2.2	pyWorkPage.ClaimData.ListClaimAmount(Local.lengthpage+1).pxObjClass	"""ASM-FW-GISFW-Data-TreatyInTotal"""		Activity\AddListClaimNP_Act.xml
+AddListClaimNP_Act	3.2	pyWorkPage.ClaimData.SpreadingRisk(Local.lengthpage+1).pxObjClass	"""ASM-FW-GISFW-Data-SpreadingRisk"""		Activity\AddListClaimNP_Act.xml
+AddListClaimNP_Act	5.1.1	pyWorkPage.ClaimData.SpreadingClaim(<APPEND>).pxObjClass	"""ASM-FW-GISFW-Data-SpreadingRisk"""		Activity\AddListClaimNP_Act.xml
+AddListClaimNP_Act	6.2	pyWorkPage.ClaimData.ListClaimAcceptation(Local.lengthpage+1).pxObjClass	"""ASM-FW-GISFW-Data-TreatyInTotal"""		Activity\AddListClaimNP_Act.xml
+AdjClaimAmount_Act	2	pyWorkPage.ClaimData.SpreadingRisk(Param.idx).AdjClaimValue	"@if(pyWorkPage.ClaimData.SpreadingRisk(Param.idx).TreatyType==""UR"",pyWorkPage.ClaimData.SpreadingRisk(Param.idx).TotalClaim-pyWorkPage.ClaimData.SpreadingRisk(Param.idx).ClaimEstimation,(pyWorkPage.ClaimData.SpreadingRisk(Param.idx).TotalClaim-(pyWorkPage.ClaimData.SpreadingRisk(Param.idx).ClaimEstimation+@divide(pyWorkPage.ClaimData.SpreadingRisk(Param.idx).AdjusterFee*100,pyWorkPage.ClaimData.SpreadingRisk(Param.idx).ClaimPercentage,20)+@divide(pyWorkPage.ClaimData.SpreadingRisk(Param.idx).CNPOthersFee*100,pyWorkPage.ClaimData.SpreadingRisk(Param.idx).ClaimPercentage,20)-@divide(pyWorkPage.ClaimData.SpreadingRisk(Param.idx).Salvage*100,pyWorkPage.ClaimData.SpreadingRisk(Param.idx).ClaimPercentage,20))))"	20,20,20	Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	2	pyWorkPage.ClaimData.SpreadingRisk(Param.idx).ClaimAmountAdjust	pyWorkPage.ClaimData.SpreadingRisk(Param.idx).AdjClaimValue+pyWorkPage.ClaimData.SpreadingRisk(Param.idx).ClaimEstimation		Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	3	pyWorkPage.ClaimData.SpreadingRisk(Param.idx).ClaimSpreaded	(pyWorkPage.ClaimData.SpreadingRisk(Param.idx).ClaimEstimation+pyWorkPage.ClaimData.SpreadingRisk(Param.idx).AdjClaimValue)*pyWorkPage.ClaimData.SpreadingRisk(Param.idx).ClaimPercentage/100		Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	4.2	Local.TotalClaim	Local.TotalClaim+.ClaimAmountAdjust		Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	4.2	Local.TotalFee	Local.TotalFee + (.AdjusterFee + .CNPOthersFee - .Salvage)		Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	5.1	.ClaimSpreaded	(.ClaimEstimation+.AdjClaimValue)*.ClaimPercentage/100		Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	5.1	.ClaimAmountAdjust	(.ClaimEstimation+.AdjClaimValue)		Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	5.2	Local.TotalAl	Local.TotalAl+(.ClaimEstimation+.AdjClaimValue)		Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	6	pyWorkPage.ClaimData.SpreadingRisk(Local.IdxLastLayer).AdjClaimValue	pyWorkPage.ClaimData.SpreadingRisk(Local.IdxLastLayer).AdjClaimValue+(Local.TotalClaim-Local.TotalAl)		Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	6	pyWorkPage.ClaimData.SpreadingRisk(Local.IdxLastLayer).ClaimSpreaded	(pyWorkPage.ClaimData.SpreadingRisk(Local.IdxLastLayer).ClaimEstimation+pyWorkPage.ClaimData.SpreadingRisk(Local.IdxLastLayer).AdjClaimValue)*pyWorkPage.ClaimData.SpreadingRisk(Local.IdxLastLayer).ClaimPercentage/100		Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	6	pyWorkPage.ClaimData.SpreadingRisk(Local.IdxLastLayer).ClaimAmountAdjust	(pyWorkPage.ClaimData.SpreadingRisk(Local.IdxLastLayer).ClaimEstimation+pyWorkPage.ClaimData.SpreadingRisk(Local.IdxLastLayer).AdjClaimValue)		Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	7	pyWorkPage.ClaimData.SpreadingRisk(Local.IdxLastLayer).TotalClaim	"@if(pyWorkPage.ClaimData.SpreadingRisk(Local.IdxLastLayer).TreatyType==""UR"",pyWorkPage.ClaimData.SpreadingRisk(Local.IdxLastLayer).ClaimAmountAdjust,(pyWorkPage.ClaimData.SpreadingRisk(Local.IdxLastLayer).ClaimAmountAdjust+@divide(pyWorkPage.ClaimData.SpreadingRisk(Local.IdxLastLayer).AdjusterFee*100,pyWorkPage.ClaimData.SpreadingRisk(Local.IdxLastLayer).ClaimPercentage,20)+@divide(pyWorkPage.ClaimData.SpreadingRisk(Local.IdxLastLayer).CNPOthersFee*100,pyWorkPage.ClaimData.SpreadingRisk(Local.IdxLastLayer).ClaimPercentage,20)-@divide(pyWorkPage.ClaimData.SpreadingRisk(Local.IdxLastLayer).Salvage*100,pyWorkPage.ClaimData.SpreadingRisk(Local.IdxLastLayer).ClaimPercentage,20)))"	20,20,20	Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	8	pyWorkPage.ClaimData.SpreadingRisk(Local.IdxLastLayer).CNPOthersFee	(pyWorkPage.ClaimData.SpreadingRisk(Local.IdxLastLayer).TotalClaim)*pyWorkPage.ClaimData.SpreadingRisk(Local.IdxLastLayer).ClaimPercentage/100		Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	9.1	Local.Value	.ClaimEstimation+.AdjClaimValue		Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	9.1	Local.CNPTotalClaim	Local.CNPTotalClaim+.TotalClaim		Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	9.3.1	.IDR	.IDR+Local.Value		Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	9.3.1	.Value	.Value+Local.Kurs		Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	9.3.1	.AdjusterFee	.AdjusterFee+Local.AdjusterFee		Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	9.3.1	.Salvage	.Salvage+Local.Salvage		Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	12.2.1	.CNPTotalClaim	.CNPTotalClaim + Local.tempPayment		Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	13.1.1	Local.tempPayment	Local.tempPayment + .TotalClaim		Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	13.1.1	Local.Value	Local.Value + .ClaimSpreaded		Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	13.1.1	Local.AdjusterFee	Local.AdjusterFee + .AdjusterFee		Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	13.1.1	Local.Salvage	Local.Salvage + .Salvage		Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	13.1.1	Local.CNPOthersFee	Local.CNPOthersFee + .CNPOthersFee		Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	14.2.1	.AdjusterFee	Local.AdjusterFee*@divide(.SharePercentage,100,20)	20	Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	14.2.1	.ClaimSpreaded	Local.TotalClaim*@divide(.SharePercentage,100,20)	20	Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	14.2.1	.CNPOthersFee	Local.OtherFee*@divide(.SharePercentage,100,20)	20	Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	14.2.1	.Salvage	Local.Salvage*@divide(.SharePercentage,100,20)	20	Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	14.3.1	.AdjusterFee	Local.AdjusterFee*@divide(.SharePercentage,100,20)	20	Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	14.3.1	.ClaimSpreaded	Local.TotalClaim*@divide(.SharePercentage,100,20)	20	Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	14.3.1	.CNPOthersFee	Local.OtherFee*@divide(.SharePercentage,100,20)	20	Activity\AdjClaimAmount_Act.xml
+AdjClaimAmount_Act	14.3.1	.Salvage	Local.Salvage*@divide(.SharePercentage,100,20)	20	Activity\AdjClaimAmount_Act.xml
+AdjClaimCNP_Act	2	.SpreadingRisk(Param.idx).AdjClaimValue	"@if(.SpreadingRisk(Param.idx).TreatyType==""UR"",.SpreadingRisk(Param.idx).TotalClaim-.SpreadingRisk(Param.idx).ClaimEstimation,(.SpreadingRisk(Param.idx).TotalClaim-(.SpreadingRisk(Param.idx).ClaimEstimation+@divide(.SpreadingRisk(Param.idx).AdjusterFee*100,.SpreadingRisk(Param.idx).ClaimPercentage,20)+@divide(.SpreadingRisk(Param.idx).CNPOthersFee*100,.SpreadingRisk(Param.idx).ClaimPercentage,20)-@divide(.SpreadingRisk(Param.idx).Salvage*100,.SpreadingRisk(Param.idx).ClaimPercentage,20))))"	20,20,20	Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	2	.SpreadingRisk(Param.idx).ClaimAmountAdjust	.SpreadingRisk(Param.idx).AdjClaimValue+.SpreadingRisk(Param.idx).ClaimEstimation		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	3	.SpreadingRisk(Param.idx).ClaimSpreaded	(.SpreadingRisk(Param.idx).ClaimEstimation+.SpreadingRisk(Param.idx).AdjClaimValue)*@divide(.SpreadingRisk(Param.idx).ClaimPercentage,100,20)	20	Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	6.1	Local.TotalClaim	Local.TotalClaim+.ClaimAmountAdjust		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	6.1	Local.TotalValue	(.ClaimAmountAdjust + .AdjusterFee + .CNPOthersFee ) - .Salvage		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	7.1	.ClaimSpreaded	(.ClaimEstimation+.AdjClaimValue)*.ClaimPercentage/100		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	7.1	.ClaimAmountAdjust	(.ClaimEstimation+.AdjClaimValue)		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	7.1	.TotalClaimRNM	.ClaimSpreaded+.AdjusterFee+.CNPOthersFee-.Salvage		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	7.2	Local.TotalAl	Local.TotalAl+(.ClaimEstimation+.AdjClaimValue)		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	8	.SpreadingRisk(Local.IdxLastLayer).AdjClaimValue	.SpreadingRisk(Local.IdxLastLayer).AdjClaimValue+(Local.TotalClaim-Local.TotalAl)		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	8	.SpreadingRisk(Local.IdxLastLayer).ClaimSpreaded	@if(Local.TotalClaim==0,0,(.SpreadingRisk(Local.IdxLastLayer).ClaimEstimation+.SpreadingRisk(Local.IdxLastLayer).AdjClaimValue)*@divide(.SpreadingRisk(Local.IdxLastLayer).ClaimPercentage,100,20))	20	Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	8	.SpreadingRisk(Local.IdxLastLayer).ClaimAmountAdjust	(.SpreadingRisk(Local.IdxLastLayer).ClaimEstimation+.SpreadingRisk(Local.IdxLastLayer).AdjClaimValue)		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	8	.SpreadingRisk(Local.IdxLastLayer).TotalClaim	"@if(.SpreadingRisk(Local.IdxLastLayer).TreatyType==""UR"",.SpreadingRisk(Local.IdxLastLayer).ClaimAmountAdjust,(.SpreadingRisk(Local.IdxLastLayer).ClaimAmountAdjust+@divide(.SpreadingRisk(Local.IdxLastLayer).AdjusterFee*100,.SpreadingRisk(Local.IdxLastLayer).ClaimPercentage,20)+@divide(.SpreadingRisk(Local.IdxLastLayer).CNPOthersFee*100,.SpreadingRisk(Local.IdxLastLayer).ClaimPercentage,20)-@divide(.SpreadingRisk(Local.IdxLastLayer).Salvage*100,.SpreadingRisk(Local.IdxLastLayer).ClaimPercentage,20)))"	20,20,20	Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	8	.SpreadingRisk(Local.IdxLastLayer).TotalClaim	@if(Local.TotalClaim==0,Local.TotalValue-(.SpreadingRisk(Param.idx).TotalClaim),.SpreadingRisk(Local.IdxLastLayer).TotalClaim)		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	8	.SpreadingRisk(Local.IdxLastLayer).AdjusterFee	Local.TotalAdjFee*@divide(.SpreadingRisk(Local.IdxLastLayer).ClaimPercentage,100,20)	20	Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	8	.SpreadingRisk(Local.IdxLastLayer).CNPOthersFee	Local.TotalOtherFee*@divide(.SpreadingRisk(Local.IdxLastLayer).ClaimPercentage,100,20)	20	Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	8	.SpreadingRisk(Local.IdxLastLayer).Salvage	Local.TotalSalvage*@divide(.SpreadingRisk(Local.IdxLastLayer).ClaimPercentage,100,20)	20	Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	8	.SpreadingRisk(Local.IdxLastLayer).TotalClaimRNM	local.totalclaims+Local.TotalAdjFee*@divide(.SpreadingRisk(Local.IdxLastLayer).ClaimPercentage,100,20)+Local.TotalOtherFee*@divide(.SpreadingRisk(Local.IdxLastLayer).ClaimPercentage,100,20)-Local.TotalSalvage*@divide(.SpreadingRisk(Local.IdxLastLayer).ClaimPercentage,100,20)	20,20,20	Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	10	.SpreadingRisk(Local.IdxLastLayer).AdjusterFee	(.SpreadingRisk(Local.IdxLastLayer).TotalClaim)*@divide(.SpreadingRisk(Local.IdxLastLayer).ClaimPercentage,100,20)	20	Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	11.1	Local.Value	.ClaimEstimation+.AdjClaimValue		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	11.1	.CNPReinstatement	"@if(.TreatyType==""UR"",0,@divide(.TotalClaim,.CNPLimit,20)*.CNPMDP*@divide(.CNPPctReinstate,100,20))"	20,20	Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	11.4	.CNPReinstatementRNM	.CNPReinstatement*@divide(.ClaimPercentage,100,20)	20	Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	11.5.1	.IDR	.IDR+Local.Value		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	11.5.1	.Value	.Value+Local.Kurs		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	11.5.1	.AdjusterFee	.AdjusterFee+Local.AdjusterFee		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	11.5.1	.Salvage	.Salvage+Local.Salvage		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	14.1.1	Local.tempPayment	Local.tempPayment + .TotalClaim		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	14.1.1	Local.Value	Local.Value + .ClaimSpreaded		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	14.1.1	Local.AdjusterFee	Local.AdjusterFee + .AdjusterFee		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	14.1.1	Local.Salvage	Local.Salvage + .Salvage		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	14.1.1	Local.CNPOthersFee	Local.CNPOthersFee + .CNPOthersFee		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	15.2.1	Local.AdjusterFee	.AdjusterFee+Local.AdjusterFee		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	15.2.1	Local.OtherFee	.CNPOthersFee+Local.OtherFee		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	15.2.1	Local.Salvage	.Salvage+Local.Salvage		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	15.2.1	Local.Value	.ClaimSpreaded+Local.Value		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	15.2.1	Local.Reinstatement	.CNPReinstatementRNM+Local.Reinstatement		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	15.3.1	Local.AdjusterFee	Local.AdjusterFee-.AdjusterFee		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	15.3.1	Local.OtherFee	Local.OtherFee-.CNPOthersFee		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	15.3.1	Local.Salvage	Local.Salvage-.Salvage		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	15.3.1	Local.Value	Local.Value-.ClaimSpreaded		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	15.3.1	Local.Reinstatement	Local.Reinstatement-.CNPReinstatementRNM		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	15.4.1	.ClaimSpreaded	Local.Value*@divide(.SharePercentage,100,20)	20	Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	15.4.1	.PremiumSpreaded	Local.Reinstatement*@divide(.SharePercentage,100,20)	20	Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	15.4.1	.AdjusterFee	Local.AdjusterFee*@divide(.SharePercentage,100,20)	20	Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	15.4.1	.CNPOthersFee	Local.OtherFee*@divide(.SharePercentage,100,20)	20	Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	15.4.1	.Salvage	Local.Salvage*@divide(.SharePercentage,100,20)	20	Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	15.4.1	.TotalClaim	.ClaimSpreaded+.AdjusterFee+.CNPOthersFee-.Salvage		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	15.4.1	.NetClaim	.TotalClaim-.PremiumSpreaded		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	15.5.5	.ClaimSpreaded	Local.Value*@divide(.SharePercentage,100,20)	20	Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	15.5.5	.PremiumSpreaded	Local.Reinstatement*@divide(.SharePercentage,100,20)	20	Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	15.5.5	.AdjusterFee	Local.AdjusterFee*@divide(.SharePercentage,100,20)	20	Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	15.5.5	.CNPOthersFee	Local.OtherFee*@divide(.SharePercentage,100,20)	20	Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	15.5.5	.Salvage	Local.Salvage*@divide(.SharePercentage,100,20)	20	Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	15.5.5	.TotalClaim	.ClaimSpreaded+.AdjusterFee+.CNPOthersFee-.Salvage		Activity\AdjClaimCNP_Act.xml
+AdjClaimCNP_Act	15.5.5	.NetClaim	.TotalClaim-.PremiumSpreaded		Activity\AdjClaimCNP_Act.xml
+AttachCAPDF_Act	6	Param.PDFName	"""Claim Analysis "" + @replaceAll(PrintCA.CARI2,"","","""") + "".pdf"""		Activity\AttachCAPDF_Act.xml
+CheckDateDOL_Act	11	Local.DateInput	"@CompareDates(pyWorkPage.ClaimData.DateOfLoss,@CurrentDate(""dd/MM/yyyy"",""""))"		Activity\CheckDateDOL_Act.xml
+CheckDateDOL_Act	12	@param:ContainingClassOfProperty	ASM-FW-GCNMFW-Data-ClaimData		Activity\CheckDateDOL_Act.xml
+CheckDateDOL_Act	14	@param:ContainingClassOfProperty	ASM-FW-GCNMFW-Data-ClaimData		Activity\CheckDateDOL_Act.xml
+CheckDateDOL_Act	16	@param:ContainingClassOfProperty	ASM-FW-GCNMFW-Data-ClaimData		Activity\CheckDateDOL_Act.xml
+CheckDateDOL_Act	17	Param.DOL	@(Pega-RULES:DateTime).addToDate(pyWorkPage.ClaimData.DateOfLoss, 0,0, 0, 0)		Activity\CheckDateDOL_Act.xml
+CheckDateDOL_Act	19	@param:ContainingClassOfProperty	ASM-FW-GCNMFW-Data-ClaimData		Activity\CheckDateDOL_Act.xml
+CheckDateDOL_Act	20	Param.DOL	@(Pega-RULES:DateTime).addToDate(pyWorkPage.ClaimData.DateOfLoss, 0,0, 0, 0)		Activity\CheckDateDOL_Act.xml
+CheckDateDOL_Act	22	@param:ContainingClassOfProperty	ASM-FW-GCNMFW-Data-ClaimData		Activity\CheckDateDOL_Act.xml
+CheckDateDOL_Act	25	@param:ContainingClassOfProperty	ASM-FW-GCNMFW-Data-ClaimData		Activity\CheckDateDOL_Act.xml
+CheckDateDOL_Act	28	@param:ContainingClassOfProperty	ASM-FW-GCNMFW-Data-ClaimData		Activity\CheckDateDOL_Act.xml
+CheckDateDOL_Act	31.2	@param:ContainingClassOfProperty	ASM-FW-GCNMFW-Data-ClaimData		Activity\CheckDateDOL_Act.xml
+CheckDateDOL_Act	32	@param:ContainingClassOfProperty	ASM-FW-GCNMFW-Data-ClaimData		Activity\CheckDateDOL_Act.xml
+CheckDateDOL_Act	35	Param.pyReportClass	"""ASM-FW-GCNMFW-Int-CLAIMREJECTED"""		Activity\CheckDateDOL_Act.xml
+CheckDateDOL_Act	38	@param:ContainingClassOfProperty	ASM-FW-GCNMFW-Data-ClaimData		Activity\CheckDateDOL_Act.xml
+CheckDateReceived_Act	3	Local.DateInput	"@CompareDates(pyWorkPage.ClaimData.DateReceived,@CurrentDate(""dd/MM/yyyy"",""""))"		Activity\CheckDateReceived_Act.xml
+CheckDateReceived_Act	4	@param:ContainingClassOfProperty	ASM-FW-GCNMFW-Data-ClaimData		Activity\CheckDateReceived_Act.xml
+CheckDateReceived_Act	6	@param:ContainingClassOfProperty	ASM-FW-GCNMFW-Data-ClaimData		Activity\CheckDateReceived_Act.xml
+CheckDateReceived_Act	8	@param:ContainingClassOfProperty	ASM-FW-GCNMFW-Data-ClaimData		Activity\CheckDateReceived_Act.xml
+CheckDateReceived_Act	10	@param:ContainingClassOfProperty	ASM-FW-GCNMFW-Data-ClaimData		Activity\CheckDateReceived_Act.xml
+CheckDateReceived_Act	11	Param.ReceivedDate	@(Pega-RULES:DateTime).addToDate(pyWorkPage.ClaimData.DateReceived, 0,0, 0, 0)		Activity\CheckDateReceived_Act.xml
+CheckDateReceived_Act	11	Param.EndFor	"@FormatDateTime(pyWorkPage.ClaimData.PolicyData.EndDateTime,""dd/MM/yyyy"",""Asia/Jakarta"",""in_ID"")"		Activity\CheckDateReceived_Act.xml
+CheckDateReceived_Act	13	@param:ContainingClassOfProperty	ASM-FW-GCNMFW-Data-ClaimData		Activity\CheckDateReceived_Act.xml
+CheckPeriodPolicy_Act	1	Local.CompareDate	"@CompareDates(@FormatDateTime(pyWorkPage.ClaimData.PolicyData.EndDateTime,""dd/MM/yyyy"",""Asia/Jakarta"",""in_ID""),pyWorkPage.ClaimData.EndDateTreaty)"		Activity\CheckPeriodPolicy_Act.xml
+CheckPeriodPolicy_Act	1	Local.EqualDate	"@FormatDateTime(pyWorkPage.ClaimData.PolicyData.EndDateTime,""dd/MM/yyyy"",""Asia/Jakarta"",""in_ID"")==pyWorkPage.ClaimData.EndDateTreaty"		Activity\CheckPeriodPolicy_Act.xml
+CheckPeriodPolicy_Act	6	Local.BeginDate	"@FormatDateTime(pyWorkPage.ClaimData.PolicyData.EndDateTime,""dd/MM/yyyy"",""Asia/Jakarta"",""in_ID"")<pyWorkPage.ClaimData.StartDateTreaty"		Activity\CheckPeriodPolicy_Act.xml
+CheckPeriodPolicy_Act	9	@param:ContainingClassOfProperty	ASM-FW-GCNMFW-Data-ClaimData		Activity\CheckPeriodPolicy_Act.xml
+CheckPeriodPolicy_Act	10	@param:ContainingClassOfProperty	ASM-FW-GCNMFW-Work-ClaimTreatyNonProp		Activity\CheckPeriodPolicy_Act.xml
+CheckReportDate_Act	3	Local.DateInput	"@CompareDates(pyWorkPage.ClaimData.ReportDate,@CurrentDate(""dd/MM/yyyy"",""""))"		Activity\CheckReportDate_Act.xml
+CheckReportDate_Act	3	pyWorkPage.ClaimData.DateReceived	"@CurrentDate(""dd/MM/yyyy"",""in_ID"")"		Activity\CheckReportDate_Act.xml
+CheckReportDate_Act	4	@param:ContainingClassOfProperty	ASM-FW-GCNMFW-Data-ClaimData		Activity\CheckReportDate_Act.xml
+CheckReportDate_Act	6	@param:ContainingClassOfProperty	ASM-FW-GCNMFW-Data-ClaimData		Activity\CheckReportDate_Act.xml
+CheckReportDate_Act	8	@param:ContainingClassOfProperty	ASM-FW-GCNMFW-Data-ClaimData		Activity\CheckReportDate_Act.xml
+CheckReportDate_Act	9	Param.ReportDate	@(Pega-RULES:DateTime).addToDate(pyWorkPage.ClaimData.ReportDate, 0,0, 0, 0)		Activity\CheckReportDate_Act.xml
+CheckReportDate_Act	9	Param.StartDate	"@FormatDateTime(pyWorkPage.ClaimData.PolicyData.StartDateTime,""dd/MM/yyyy"",""Asia/Jakarta"",""in_ID"")"		Activity\CheckReportDate_Act.xml
+CheckReportDate_Act	11	@param:ContainingClassOfProperty	ASM-FW-GCNMFW-Data-ClaimData		Activity\CheckReportDate_Act.xml
+CheckReportDate_Act	12	Param.ReportDate	@(Pega-RULES:DateTime).addToDate(pyWorkPage.ClaimData.ReportDate,0,0,0,0)		Activity\CheckReportDate_Act.xml
+CheckReportDate_Act	12	Param.EndDate	"@FormatDateTime(pyWorkPage.ClaimData.PolicyData.EndDateTime,""dd/MM/yyyy"",""Asia/Jakarta"",""in_ID"")"		Activity\CheckReportDate_Act.xml
+CheckReportDate_Act	14	@param:ContainingClassOfProperty	ASM-FW-GCNMFW-Data-ClaimData		Activity\CheckReportDate_Act.xml
+CloseClaimNP_preAct	4	@param:ClassOfPage	ASM-FW-GCNMFW-Work-ClaimTreatyNonProp		Activity\CloseClaimNP_preAct.xml
+CloseClaimTNonProp	2	@param:ClassOfPage	ASM-FW-GCNMFW-Work-ClaimTreatyNonProp		Activity\CloseClaimTNonProp.xml
+CopyOldataCurr_act	6.1	.USD	.IDR*.Value		Activity\CopyOldataCurr_act.xml
+CopyOldataCurr_act	7.1	.ClaimSpreaded	.SharePercentage*Local.ValueClaim/100		Activity\CopyOldataCurr_act.xml
+CopyOldataCurr_act	7.1	.ClaimEstimation	.ClaimSpreaded * .PremiumSpreaded		Activity\CopyOldataCurr_act.xml
+CopyOldataCurr_act	8.1	.EstimationValue	Local.ValueSpread*.PersenRNM/100		Activity\CopyOldataCurr_act.xml
+CopyOldataCurr_act	8.1	.ConvertValue	.EstimationValue*.KursValue		Activity\CopyOldataCurr_act.xml
+CopyOldataCurr_act	8.1	.ConvertGrossEstimasi	.GrossEstimationPct*.KursValue		Activity\CopyOldataCurr_act.xml
+CopyOldataCurr_act	9.1	.ClaimSpreaded	Local.TotalEstimasi*.SharePercentage/100		Activity\CopyOldataCurr_act.xml
+CopyOldataCurr_act	10.1	.ClaimSpreaded	Local.ClaimSpreaded*.SharePercentage/100		Activity\CopyOldataCurr_act.xml
+CountClaimTNP_Act	10.1	Local.DeductPctValue	@divide(@if(pyWorkPage.ClaimData.TypeDeductible==1,.Value,.CNPTSI)*Local.DeductPct,100,20)	20	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	10.2	Local.Value	Local.Value-.CNPDeductible+.TPL		Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	10.2	Local.ValueKonversi	Local.ValueKonversi+((.Value-.CNPDeductible+.TPL+.CNPOthersFee+.AdjusterFee-.Salvage)*Local.Kurs)		Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	10.2	.USD	.Value*Local.Kurs		Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	10.2	Local.TotalClaimKurs	Local.Value*Local.Kurs		Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	10.2	.ClaimAmountCedant	(Local.Value*@divide(Local.ShareCedant,100,10))	10	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	10.2	Local.TotalClaimAll	((.Value-.CNPDeductible+.TPL+.CNPOthersFee+.AdjusterFee-.Salvage)*Local.Kurs)		Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	10.3	Local.TotalAllocation	"Local.TotalAllocation+@if(Local.CurencyLayer==""IDR"",.USD,@if(Local.CurencyLayer==.Currency,@divide(Local.Value,1,20),@divide(Local.Value,Local.KursExc,20)))"	20,20	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	10.3	Local.TotalAdjFee	"Local.TotalAdjFee+@if(Local.CurencyLayer==""IDR"",(.AdjusterFee*Local.Kurs),@if(Local.CurencyLayer==.Currency,@divide(.AdjusterFee,1,20),@divide(.AdjusterFee,Local.KursExc,20)))"	20,20	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	10.3	Local.TotalSalvage	"Local.TotalSalvage+@if(Local.CurencyLayer==""IDR"",(.Salvage*Local.Kurs),@if(Local.CurencyLayer==.Currency,@divide(.Salvage,1,20),@divide(.Salvage,Local.KursExc,20)))"	20,20	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	10.3	Local.TotalClaimAmount	"Local.TotalClaimAmount+@if(Local.CurencyLayer==""IDR"",.USD,@if(Local.CurencyLayer==.Currency,@divide(.Value,1,20),@divide(.Value,Local.KursExc,20)))"	20,20	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	10.4.1	.PctProrateClaim	@divide(.CNPTotalClaim*100,.AltValue,10)	10	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	10.4.2	.ClaimAmount	.ClaimAmount+Local.Value		Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	10.4.2	.ClaimAmountCedant	".ClaimAmountCedant+@if(Local.CurencyLayer==""IDR"",.USD,@if(Local.CurencyLayer==.Currency,@divide(Local.Value,1,20),@divide(Local.Value,Local.KursExc,20)))"	20,20	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	10.4.2	.AdjusterFee	.AdjusterFee+Local.AdjValue		Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	10.4.2	.Salvage	.Salvage+Local.Salvage		Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	10.4.2	.CNPOthersFee	.CNPOthersFee+Local.OthersFee		Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	10.4.2	.USD	.USD+(Local.Value*Local.Kurs)		Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	10.4.2	Local.ValueAll	(.Value-.CNPDeductible+.TPL)		Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	10.4.2	.CNPTotalClaim	.CNPTotalClaim+Local.TotalClaimAll		Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	10.4.2	.PctProrateClaim	@divide(.CNPTotalClaim*100,.AltValue,5)	5	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	10.5	TempTotalClaim.pxResults(<LAST>).ClaimAmountCedant	"@if(Local.CurencyLayer==""IDR"",.USD,@if(Local.CurencyLayer==.Currency,@divide(Local.Value,1,20),@divide(Local.Value,Local.KursExc,20)))"	20,20	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	10.5	TempTotalClaim.pxResults(<LAST>).USD	Local.Value*Local.Kurs		Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	10.5	TempTotalClaim.pxResults(<LAST>).PctProrateClaim	@divide(TempTotalClaim.pxResults(<LAST>).CNPTotalClaim*100,TempTotalClaim.pxResults(<LAST>).AltValue,5)	5	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	13.2.2	Local.ValueAll	(.Value-.CNPDeductible+.TPL)		Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	13.2.3	Local.Value	Local.Value+@if(pyWorkPage.ClaimData.IsTPL==true,@if(.TPL>(Local.TPLAmTC),.TPL,Local.TPLAmTC),0)		Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	13.2.3	Local.ValueAdjust	Local.Value-.CNPDeductible		Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	13.2.3	Local.Value	@if(pyWorkPage.ClaimData.IsTPL==true,(Local.Value-.CNPDeductible+.CNPOthersFee+.AdjusterFee-.Salvage),(Local.Value-.CNPDeductible+.TPL+.CNPOthersFee+.AdjusterFee-.Salvage))		Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	13.2.3	.CNPDeductible	"@if(.pxListSubscript==""1""||.pxListSubscript!=""1"",@if(pyWorkPage.ClaimData.DeductibleType==true,@if(pyWorkPage.ClaimData.FormType==""1""||(pyWorkPage.ClaimData.FormType==""2""&&pyWorkPage.ClaimData.DeductibleValue>0),@if(pyWorkPage.ClaimData.CurrencyDeductible==.CurrencyID,pyWorkPage.ClaimData.DeductibleValue,@if(pyWorkPage.ClaimData.CurrencyDeductible==""10026"",pyWorkPage.ClaimData.DeductibleValue/.AltValue,pyWorkPage.ClaimData.DeductibleValue*.AltValue)),@if(pyWorkPage.ClaimData.TypeDeductible==""1"",.Value*@divide(pyWorkPage.ClaimData.Amount,100,10),@if(pyWorkPage.ClaimData.CurrencyDeductible==.CurrencyID,pyWorkPage.ClaimData.TSIDeductible*@divide(pyWorkPage.ClaimData.Amount,100,10),@if(pyWorkPage.ClaimData.CurrencyDeductible==""10026"",(pyWorkPage.ClaimData.TSIDeductible/.AltValue)*@divide(pyWorkPage.ClaimData.Amount,100,10),(pyWorkPage.ClaimData.DeductibleValue*.AltValue)*@divide(pyWorkPage.ClaimData.Amount,100,10))))),0),0)"	10,10,10,10	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	13.2.3	.USD	Local.Value*Local.Kurs		Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	13.2.3	.ClaimAmountCedant	Local.Value*@divide(Local.ShareCedant,100,10)	10	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	13.2.3	Local.ClaimValue	Local.ValueAdjust*@divide(Local.ShareCedant,100,10)	10	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	13.2.3	Local.TotalAdjFee	.AdjusterFee*@divide(Local.ShareCedant,100,10)	10	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	13.2.3	Local.TotalSalvage	.Salvage*@divide(Local.ShareCedant,100,10)	10	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	13.2.3	Local.TotalOthersFee	.CNPOthersFee*@divide(Local.ShareCedant,100,10)	10	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	13.2.4.1	.ClaimAmountAdjust	Local.ClaimValue*@divide(.ClaimPercentage,100,10)	10	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	13.2.4.1	.AdjusterFee	Local.TotalAdjFee*@divide(.ClaimPercentage,100,10)	10	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	13.2.4.1	.CNPOthersFee	Local.TotalOthersFee*@divide(.ClaimPercentage,100,10)	10	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	13.2.4.1	.Salvage	Local.TotalSalvage*@divide(.ClaimPercentage,100,10)	10	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	14.1	Local.ValueAll	(.Value-.CNPDeductible+.TPL)		Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	14.2	Local.Value	Local.Value+@if(pyWorkPage.ClaimData.IsTPL==true,@if(.TPL>(Local.TPLAmTC),.TPL,Local.TPLAmTC),0)		Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	14.2	Local.ValueAdjust	Local.Value-.CNPDeductible		Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	14.2	Local.Value	@if(pyWorkPage.ClaimData.IsTPL==true,(Local.Value-.CNPDeductible+.CNPOthersFee+.AdjusterFee-.Salvage),(Local.Value-.CNPDeductible+.TPL+.CNPOthersFee+.AdjusterFee-.Salvage))		Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	14.2	.CNPDeductible	"@if(.pxListSubscript==""1""||.pxListSubscript!=""1"",@if(pyWorkPage.ClaimData.DeductibleType==true,@if(pyWorkPage.ClaimData.FormType==""1""||(pyWorkPage.ClaimData.FormType==""2""&&pyWorkPage.ClaimData.DeductibleValue>0),@if(pyWorkPage.ClaimData.CurrencyDeductible==.CurrencyID,pyWorkPage.ClaimData.DeductibleValue,@if(pyWorkPage.ClaimData.CurrencyDeductible==""10026"",pyWorkPage.ClaimData.DeductibleValue/.AltValue,pyWorkPage.ClaimData.DeductibleValue*.AltValue)),@if(pyWorkPage.ClaimData.TypeDeductible==""1"",.Value*@divide(pyWorkPage.ClaimData.Amount,100,10),@if(pyWorkPage.ClaimData.CurrencyDeductible==.CurrencyID,pyWorkPage.ClaimData.TSIDeductible*@divide(pyWorkPage.ClaimData.Amount,100,10),@if(pyWorkPage.ClaimData.CurrencyDeductible==""10026"",(pyWorkPage.ClaimData.TSIDeductible/.AltValue)*@divide(pyWorkPage.ClaimData.Amount,100,10),(pyWorkPage.ClaimData.DeductibleValue*.AltValue)*@divide(pyWorkPage.ClaimData.Amount,100,10))))),0),0)"	10,10,10,10	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	14.2	.USD	Local.Value*Local.Kurs		Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	14.2	.ClaimAmountCedant	Local.Value*@divide(Local.ShareCedant,100,10)	10	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	14.2	Local.ClaimValue	Local.ValueAdjust*@divide(Local.ShareCedant,100,10)	10	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	14.2	Local.TotalAdjFee	.AdjusterFee*@divide(Local.ShareCedant,100,10)	10	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	14.2	Local.TotalSalvage	.Salvage*@divide(Local.ShareCedant,100,10)	10	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	14.2	Local.TotalOthersFee	.CNPOthersFee*@divide(Local.ShareCedant,100,10)	10	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	14.3.1	.ClaimAmountAdjust	Local.ClaimValue*@divide(.ClaimPercentage,100,10)	10	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	14.3.1	.AdjusterFee	Local.TotalAdjFee*@divide(.ClaimPercentage,100,10)	10	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	14.3.1	.CNPOthersFee	Local.TotalOthersFee*@divide(.ClaimPercentage,100,10)	10	Activity\CountClaimTNP_Act.xml
+CountClaimTNP_Act	14.3.1	.Salvage	Local.TotalSalvage*@divide(.ClaimPercentage,100,10)	10	Activity\CountClaimTNP_Act.xml
+CountLossAllocation_act	2	Local.ShareCedant	@divide(pyWorkPage.ClaimData.ShareCeding,100,10)	10	Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	4	pyWorkPage.ClaimData.CNPSpreadLoss(Param.Index).ClaimAmountAdjust	@divide(pyWorkPage.ClaimData.CNPSpreadLoss(Param.Index).ClaimPercentage,100,10)*Local.ClaimAmount	10	Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	4	pyWorkPage.ClaimData.CNPSpreadLoss(Param.Index).Salvage	@divide(pyWorkPage.ClaimData.CNPSpreadLoss(Param.Index).ClaimPercentage,100,10)*Local.TotalSalvage*Local.ShareCedant	10	Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	4	pyWorkPage.ClaimData.CNPSpreadLoss(Param.Index).AdjusterFee	@divide(pyWorkPage.ClaimData.CNPSpreadLoss(Param.Index).ClaimPercentage,100,10)*Local.TotalAdjFee*Local.ShareCedant	10	Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	4	pyWorkPage.ClaimData.CNPSpreadLoss(Param.Index).CNPOthersFee	@divide(pyWorkPage.ClaimData.CNPSpreadLoss(Param.Index).ClaimPercentage,100,10)*Local.TotalOtherFee*Local.ShareCedant	10	Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	5	pyWorkPage.ClaimData.CNPSpreadLoss(Param.Index).ClaimPercentage	(pyWorkPage.ClaimData.CNPSpreadLoss(Param.Index).ClaimAmountAdjust/Local.ClaimAmount)*100		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	13.3.1	.Value	.Value+Local.Value		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	13.3.1	.AdjusterFee	.AdjusterFee+Local.TotalAdjFee		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	13.3.1	.Salvage	.Salvage+Local.TotalSalvage		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	13.3.1	.CNPOthersFee	.CNPOthersFee+Local.TotalOtherFee		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	17.1	Local.LoopLimit	Local.LoopLimit+1		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	17.1	Local.ClaimValue	(Local.Value+Local.TotalAdjFee+Local.TotalOtherFee)-Local.TotalSalvage		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	17.2.1	Local.LayerLimit	"@if(Local.Currency==""IDR"",(@divide(.Limit,Local.Kurs,10)*Local.ProrateClaim/100),@if(Local.Currency==.Currency,(.Limit*Local.Kurs*Local.ProrateClaim/100),@IF(.Limit2=0,(.Limit/Local.Kurs)*Local.ProrateClaim/100,(.Limit2*Local.ProrateClaim/100))))"	10	Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	17.2.1	Local.LayerLimit	"@if(pyWorkPage.ClaimData.IDMaster==""1000393/R01""||pyWorkPage.ClaimData.IDMaster==""1000393"",@if(.Currency==""IDR"",(@divide(.Limit,Local.Kurs,10)*Local.ProrateClaim/100),@if(Local.Currency==.Currency,(.Limit*Local.Kurs*Local.ProrateClaim/100),(.Limit2*Local.ProrateClaim/100))),Local.LayerLimit)"	10	Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	17.2.1	Local.URLimit	"@if(.Currency==""IDR"",(@divide(.Deductible,Local.Kurs,10)*Local.ProrateClaim/100),@if(Local.Currency==.Currency,(.Deductible*Local.ProrateClaim/100),(@toDecimal(@replaceAll(.Deductible2,"","","".""))*Local.Kurs*Local.ProrateClaim/100)))"	10	Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	17.2.1	Local.URLimit	"@if(pyWorkPage.pzInsKey==""ASM-FW-GCNMFW-WORK CLMNP-367""||pyWorkPage.pzInsKey==""ASM-FW-GCNMFW-WORK CLMNP-382"",@if(.Currency==""IDR"",(@divide(.Deductible,Local.Kurs,10)*Local.ProrateClaim/100),@if(Local.Currency==.Currency,(@toDecimal(@replaceAll(.Deductible2,"","","".""))/Local.Kurs*Local.ProrateClaim/100),(.Deductible*Local.ProrateClaim/100))),Local.URLimit)"	10	Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	17.2.1	Local.UR	"@if((Local.Value+Local.TotalAdjFee+Local.TotalOtherFee)-Local.TotalSalvage>Local.URLimit,@if(.Currency==""IDR"",(@divide(.Deductible,Local.Kurs,10)*Local.ProrateClaim/100),@if(Local.Currency==.Currency,(.Deductible*Local.ProrateClaim/100),(.Deductible*Local.Kurs*Local.ProrateClaim/100))),Local.Value)"	10	Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	17.2.1	Local.TotalUR	"@if((Local.Value+Local.TotalAdjFee+Local.TotalOtherFee)-Local.TotalSalvage>Local.URLimit,@if(Local.Currency==""IDR"",(@divide(.Deductible,Local.Kurs,10)*Local.ProrateClaim/100),@if(Local.Currency==.Currency,(.Deductible*0*Local.ProrateClaim/100),@if(@replaceAll(.Deductible2,"","",""."")==0,(.Deductible/Local.Kurs)*Local.ProrateClaim/100,(@toDecimal(@replaceAll(.Deductible2,"","","".""))*Local.ProrateClaim/100)))),(Local.Value))"	10	Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	17.2.1	Local.Limit	"@if(Local.Currency==""IDR"",(@divide(.Limit,Local.Kurs,10)),@if(Local.Currency==.Currency2,@if(.Limit2==0,(@divide(.Limit,Local.Kurs,10)),.Limit2),(.Limit2*Local.Kurs)))"	10,10	Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	17.2.1	Local.Limit	"@if(pyWorkPage.ClaimData.IDMaster==""1000393/R01"",@if(.Currency==""IDR"",(@divide(.Limit,Local.Kurs,10)),@if(Local.Currency==.Currency,(.Limit),(.Limit*Local.Kurs))),Local.Limit)"	10	Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	17.2.1	InputSpreading.CARI1	"""XL ""+@substring(.Layer,0,1)+@if(@substring(.Layer,0,1) ==""1"",""ST "",@if(@substring(.Layer,0,1)==""2"",""ND "",@if(@substring(.Layer,0,1)==""3"",""RD "",""TH "")))+@if(@toUpperCase(.LayerType)==""SUBLAYER"",""SUB LAYER"",@toUpperCase(.LayerType))"		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	17.2.3	@param:ClassOfPage	ASM-FW-GCNMFW-Work-ClaimTreatyNonProp		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	17.2.6.1	Local.TotalAllocation	Local.TotalAllocation+.TotalClaim		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	17.2.10.1	Local.Mdp	Local.Mdp + @if(.MDP>0,.MDP,.MDP2)		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	17.2.11.1	Local.Mdp	Local.Mdp + @if(.MDP>0,.MDP,.MDP2)		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	17.2.13	Local.Mdp	"@if(Local.CurrencyMDP==Local.Currency, Local.Mdp, @if(Local.CurrencyMDP==""IDR"",@if(Local.KursMDP>0,@divide(Local.Mdp,Local.KursMDP,20),@divide(Local.Mdp,Local.Kurs,20)),@if(Local.KursMDP>0,Local.Mdp*Local.KursMDP,Local.Mdp*Local.Kurs)))"	20,20	Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	17.2.14	pyWorkPage.ClaimData.SpreadingRisk(<LAST>).ClaimEstimation	@if(Local.ClaimValue-Local.TotalAllocation<Local.LayerLimit,Local.ClaimValue-Local.TotalAllocation,Local.LayerLimit)		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	17.2.14	pyWorkPage.ClaimData.SpreadingRisk(<LAST>).TotalClaim	@if(Local.ClaimValue-Local.TotalAllocation<Local.LayerLimit,Local.ClaimValue-Local.TotalAllocation,Local.LayerLimit)		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	17.2.14	pyWorkPage.ClaimData.SpreadingRisk(<LAST>).AdjusterFee	@if(Local.Limit==pyWorkPage.ClaimData.SpreadingRisk(<last>).ClaimEstimation,0,@if(Local.Value==0&&Local.TotalAdjFee!=0,pyWorkPage.ClaimData.SpreadingRisk(<last>).TotalClaim*pyWorkPage.TreatyInMaster.RNMShare/100,Local.TotalAdjFee*@divide(pyWorkPage.TreatyInMaster.RNMShare,100,20)))	20	Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	17.2.14	pyWorkPage.ClaimData.SpreadingRisk(<LAST>).Salvage	@if(Local.Limit==pyWorkPage.ClaimData.SpreadingRisk(<LAST>).ClaimEstimation,0,@if(Local.Value==0 && Local.TotalSalvage!=0,pyWorkPage.ClaimData.SpreadingRisk(<LAST>).TotalClaim*pyWorkPage.TreatyInMaster.RNMShare/100,Local.TotalSalvage*@divide(pyWorkPage.TreatyInMaster.RNMShare,100,20)))	20	Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	17.2.14	pyWorkPage.ClaimData.SpreadingRisk(<LAST>).CNPOthersFee	@if(Local.Limit==pyWorkPage.ClaimData.SpreadingRisk(<last>).ClaimEstimation,0,@if(Local.Value==0&&Local.TotalOtherFee!=0,pyWorkPage.ClaimData.SpreadingRisk(<last>).TotalClaim*pyWorkPage.TreatyInMaster.RNMShare/100,Local.TotalOtherFee*@divide(pyWorkPage.TreatyInMaster.RNMShare,100,20)))	20	Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	17.2.14	pyWorkPage.ClaimData.SpreadingRisk(<LAST>).ClaimSpreaded	@if(Local.Value==0,0,@if(pyWorkPage.ClaimData.SpreadingRisk(<last>).ClaimEstimation==Local.LayerLimit,(pyWorkPage.ClaimData.SpreadingRisk(<last>).ClaimEstimation*pyWorkPage.TreatyInMaster.RNMShare/100)-(pyWorkPage.ClaimData.SpreadingRisk(<last>).AdjusterFee-pyWorkPage.ClaimData.SpreadingRisk(<last>).Salvage+pyWorkPage.ClaimData.SpreadingRisk(<last>).CNPOthersFee),pyWorkPage.ClaimData.SpreadingRisk(<last>).ClaimEstimation*pyWorkPage.TreatyInMaster.RNMShare/100))		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	17.2.14	pyWorkPage.ClaimData.SpreadingRisk(<LAST>).ClaimAmountIDR	"@if(Local.Currency==""IDR"",pyWorkPage.ClaimData.SpreadingRisk(<LAST>).ClaimEstimation,pyWorkPage.ClaimData.SpreadingRisk(<LAST>).ClaimEstimation*Local.Kurs)"		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	17.2.14	pyWorkPage.ClaimData.SpreadingRisk(<LAST>).TotalSpread	@toDecimal(pyWorkPage.ClaimData.SpreadingRisk(<LAST>).ClaimSpreaded)+@toDecimal(pyWorkPage.ClaimData.SpreadingRisk(<LAST>).AdjusterFee)-@toDecimal(pyWorkPage.ClaimData.SpreadingRisk(<LAST>).Salvage)+@toDecimal(pyWorkPage.ClaimData.SpreadingRisk(<LAST>).CNPOthersFee)		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	19.1	Local.Value	.ClaimEstimation+.AdjClaimValue		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	19.2.1	.IDR	.IDR+Local.Value		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	19.2.1	.Value	.Value+Local.Kurs		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	19.2.1	.AdjusterFee	.AdjusterFee+Local.TotalAdjFee		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	19.2.1	.Salvage	.Salvage+Local.TotalSalvage		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	19.2.1	.CNPOthersFee	.CNPOthersFee+Local.TotalOtherFee		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	19.2.1	.ClaimAmount	.ClaimAmount+Local.ClaimAmount		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	19.2.1	.CNPTotalClaim	.CNPTotalClaim+Local.TotalUR		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	21.1	Local.ClaimValue	.Value*@divide(@toDecimal(pyWorkPage.TreatyInMaster.Share(1).SpreadingTotalPctXOL),100,20)	20	Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	21.1	pyWorkPage.ClaimData.SpreadingClaim(<LAST>).AdjusterFee	.AdjusterFee*@divide(@toDecimal(pyWorkPage.TreatyInMaster.Share(1).SpreadingTotalPctXOL),100,20)	20	Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	21.1	pyWorkPage.ClaimData.SpreadingClaim(<LAST>).Salvage	.Salvage*@divide(@toDecimal(pyWorkPage.TreatyInMaster.Share(1).SpreadingTotalPctXOL),100,20)	20	Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	21.1	pyWorkPage.ClaimData.SpreadingClaim(<LAST>).CNPOthersFee	.CNPOthersFee*@divide(@toDecimal(pyWorkPage.TreatyInMaster.Share(1).SpreadingTotalPctXOL),100,20)	20	Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	21.1	pyWorkPage.ClaimData.SpreadingClaim(<LAST>).ClaimAmountIDR	.ClaimAmount*@divide(@toDecimal(pyWorkPage.TreatyInMaster.Share(1).SpreadingTotalPctXOL),100,20)	20	Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	21.1	Local.TotalAdjFee	.AdjusterFee*@divide(@toDecimal(pyWorkPage.TreatyInMaster.Share(1).SpreadingTotalPctXOL),100,20)	20	Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	21.1	Local.TotalSalvage	.Salvage*@divide(@toDecimal(pyWorkPage.TreatyInMaster.Share(1).SpreadingTotalPctXOL),100,20)	20	Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	21.1	Local.TotalOtherFee	.CNPOthersFee*@divide(@toDecimal(pyWorkPage.TreatyInMaster.Share(1).SpreadingTotalPctXOL),100,20)	20	Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	21.1	Local.ClaimAmount	.ClaimAmount*@divide(@toDecimal(pyWorkPage.TreatyInMaster.Share(1).SpreadingTotalPctXOL),100,20)	20	Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	21.2.1	pyWorkPage.ClaimData.SpreadingBreakQS(<APPEND>).TreatyType	"@if(.ReinsTypeID=="""",@if(.ReinsTypeName==""QS (OR)"",""10028"",@if(.ReinsTypeName==""QS (R/I)"",""10004"",.ReinsTypeID)),.ReinsTypeID)"		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	21.2.1	pyWorkPage.ClaimData.SpreadingBreakQS(<LAST>).ClaimSpreaded	Local.ClaimValue*.Pct/100		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	21.2.1	pyWorkPage.ClaimData.SpreadingBreakQS(<LAST>).AdjusterFee	Local.TotalAdjFee*.Pct/100		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	21.2.1	pyWorkPage.ClaimData.SpreadingBreakQS(<LAST>).Salvage	Local.TotalSalvage*.Pct/100		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	21.2.1	pyWorkPage.ClaimData.SpreadingBreakQS(<LAST>).CNPOthersFee	Local.TotalOtherFee*.Pct/100		Activity\CountLossAllocation_act.xml
+CountLossAllocation_act	21.2.1	pyWorkPage.ClaimData.SpreadingBreakQS(<LAST>).ClaimAmountIDR	Local.ClaimAmount*.Pct/100		Activity\CountLossAllocation_act.xml
+CountNetPremi_act	2	.GrossClaim	@divide(.Claim,pyWorkPage.TreatyIn.RNMShareP,4) * 100	4	Activity\CountNetPremi_act.xml
+CountNetPremi_act	3	.GrossClaim	@divide(.Claim,pyWorkPage.TreatyIn.RNMShare,4) * 100	4	Activity\CountNetPremi_act.xml
+CountNetPremi_act	4	.NetPremium	((.PremiOgp-.ResultOgp1)+(.PremiOnp-.ResultOnp1))-(.OveriddingCommOgp*.PremiOgp/100)-(.OveriddingCommOnp*.PremiOnp/100)-.Deduction1-.Deduction2		Activity\CountNetPremi_act.xml
+CountNetPremi_act	5	.BalanceDueTo	.NetPremium-.Claim-.ExcessLoss+.SalvageValue		Activity\CountNetPremi_act.xml
+CountNetPremi_act	6	.BalanceDueTo	.NetPremium +.PPNValue+.PPHValue-.Claim-.ExcessLoss+.SalvageValue		Activity\CountNetPremi_act.xml
+CountNetPremi_act	6	.BalanceBeforePPH	.NetPremium +.PPNValue-.Claim-.ExcessLoss+.SalvageValue		Activity\CountNetPremi_act.xml
+CountNetPremi_act	6	.BalanceBeforeTax	.NetPremium -.Claim-.ExcessLoss+.SalvageValue		Activity\CountNetPremi_act.xml
+CountOverridingCommOgp_Act	2	.ResultOgp2	.PremiOgp*.OveriddingCommOgp		Activity\CountOverridingCommOgp_Act.xml
+CountOverridingCommOgp_Act	3	.OveriddingCommOgp	@Math.divide(.ResultOgp2,.PremiOgp,4)*100		Activity\CountOverridingCommOgp_Act.xml
+CountOverridingCommOnp_Act	2	.ResultOnp2	.PremiOnp*.OveriddingCommOnp		Activity\CountOverridingCommOnp_Act.xml
+CountOverridingCommOnp_Act	3	.OveriddingCommOnp	@Math.divide(.ResultOnp2,.PremiOnp,4)*100		Activity\CountOverridingCommOnp_Act.xml
+CountPctInstallment_Act	1	.ListInstallment(Param.idx).InstallmentPercentage	@Math.divide(@toDecimal(.ListInstallment(Param.idx).Premium),@toDecimal(.BalanceDueTo),4)*100		Activity\CountPctInstallment_Act.xml
+CountReinstatement_Act	2.1	pyWorkPage.ClaimData.ReinstatementList(<LAST>).Salvage	.Salvage*100/pyWorkPage.TreatyInMaster.RNMShare		Activity\CountReinstatement_Act.xml
+CountReinstatement_Act	2.1	pyWorkPage.ClaimData.ReinstatementList(<LAST>).CNPReinstatePremium	((((.ClaimEstimation+.AdjusterFee) -(.Salvage*100/pyWorkPage.TreatyInMaster.RNMShare)) /.CNPLimit)*.CNPMDP)*(.CNPPctReinstate/100)		Activity\CountReinstatement_Act.xml
+CountReinstatement_Act	2.1	pyWorkPage.ClaimData.ReinstatementList(<LAST>).CNPReinsPremiRNM	pyWorkPage.ClaimData.ReinstatementList(<LAST>).CNPReinstatePremium*pyWorkPage.TreatyInMaster.RNMShare/100		Activity\CountReinstatement_Act.xml
+CountResult1Onp_Act	3	.ResultOnp1	".PremiOnp*(.RiCommOnp/@String.toDecimal(""100.00000""))"		Activity\CountResult1Onp_Act.xml
+CountResult1Onp_Act	4	.RiCommOnp	"(.ResultOnp1/.PremiOnp)*@String.toDecimal(""100.00000"")"		Activity\CountResult1Onp_Act.xml
+CountResult1_Act	3	.GrossPremium	@divide(.PremiOgp*100 ,pyWorkPage.TreatyIn.RNMShareP ,4)	4	Activity\CountResult1_Act.xml
+CountResult1_Act	4	.GrossPremium	@divide(.PremiOgp*100 ,pyWorkPage.TreatyIn.RNMShare ,4)	4	Activity\CountResult1_Act.xml
+CountResult1_Act	5	.ResultOgp1	".PremiOgp*(.RiCommOgp/@String.toDecimal(""100.00000""))"		Activity\CountResult1_Act.xml
+CountResult1_Act	6	.RiCommOgp	"(.ResultOgp1/.PremiOgp)*@String.toDecimal(""100.00000"")"		Activity\CountResult1_Act.xml
+CountResult2Ogp_act	3	.ResultOgp2	"(.OveriddingCommOgp/@String.toDecimal(""100.00000""))*.PremiOgp"		Activity\CountResult2Ogp_act.xml
+CountResult2Ogp_act	4	.OveriddingCommOgp	"(.ResultOgp2/.PremiOgp)*@String.toDecimal(""100.00000"")"		Activity\CountResult2Ogp_act.xml
+CountResult2Onp_act	3	.ResultOnp2	"(.OveriddingCommOnp/@String.toDecimal(""100.00000""))*.PremiOnp"		Activity\CountResult2Onp_act.xml
+CountResult2Onp_act	4	.OveriddingCommOnp	"(.ResultOnp2/.PremiOnp) *@String.toDecimal(""100.00000"")"		Activity\CountResult2Onp_act.xml
+CountRiCommOgp_act	2	.ResultOgp1	.PremiOgp*.RiCommOgp		Activity\CountRiCommOgp_act.xml
+CountRiCommOgp_act	3	.RiCommOgp	@Math.divide(.ResultOgp1,.PremiOgp,4)*100		Activity\CountRiCommOgp_act.xml
+CountRiCommOnp_act	1	.ResultOnp1	.PremiOnp*.RiCommOnp		Activity\CountRiCommOnp_act.xml
+CountRiCommOnp_act	2	.RiCommOnp	@Math.divide(.ResultOnp1,.PremiOnp,4)*100		Activity\CountRiCommOnp_act.xml
+CountSpreadingXOL	2.1.2.1	.ClaimSpreaded	.ClaimSpreaded+Local.Claim		Activity\CountSpreadingXOL.xml
+CountSpreadingXOL	2.1.2.1	.AdjusterFee	.AdjusterFee+Local.AdjusterFee		Activity\CountSpreadingXOL.xml
+CountSpreadingXOL	2.1.2.1	.CNPOthersFee	.CNPOthersFee+Local.OtherFee		Activity\CountSpreadingXOL.xml
+CountSpreadingXOL	2.1.2.1	.Salvage	.Salvage+Local.Salvage		Activity\CountSpreadingXOL.xml
+CountSpreadingXOL	2.1.2.1	.PremiumSpreaded	.PremiumSpreaded+Local.Reinstatement		Activity\CountSpreadingXOL.xml
+CountSpreadingXOL	2.1.2.1	.TotalClaim	.ClaimSpreaded+.AdjusterFee+.CNPOthersFee-@toDecimal(.Salvage)		Activity\CountSpreadingXOL.xml
+CountSpreadingXOL	2.2.2.1	.ClaimSpreaded	.ClaimSpreaded+Local.Claim		Activity\CountSpreadingXOL.xml
+CountSpreadingXOL	2.2.2.1	.AdjusterFee	.AdjusterFee+Local.AdjusterFee		Activity\CountSpreadingXOL.xml
+CountSpreadingXOL	2.2.2.1	.CNPOthersFee	.CNPOthersFee+Local.OtherFee		Activity\CountSpreadingXOL.xml
+CountSpreadingXOL	2.2.2.1	.Salvage	.Salvage+Local.Salvage		Activity\CountSpreadingXOL.xml
+CountSpreadingXOL	2.2.2.1	.PremiumSpreaded	.PremiumSpreaded+Local.Reinstatement		Activity\CountSpreadingXOL.xml
+CountSpreadingXOL	2.2.2.1	.TotalClaim	.ClaimSpreaded+.AdjusterFee+.CNPOthersFee-@toDecimal(.Salvage)		Activity\CountSpreadingXOL.xml
+CountSpreading_act	6.2.2	Local.TotalPersen	Local.TotalPersen + .SharePercentage		Activity\CountSpreading_Act.xml
+CountSpreading_act	6.2.4	@param:ContainingClassOfProperty	ASM-FW-GISFW-Data-SpreadingRisk		Activity\CountSpreading_Act.xml
+CountSpreading_act	7.2.2	Estimate.pxResults(Local.IndexEst).EstimationValue	Estimate.pxResults(Local.IndexEst).EstimationValue + Local.TotalEstimasi		Activity\CountSpreading_Act.xml
+CountSpreading_act	8.2.2	pyWorkPage.ClaimData.SpreadingClaim(Local.IndexEst).ClaimSpreaded	@toDecimal(pyWorkPage.ClaimData.SpreadingClaim(Local.IndexEst).SharePercentage)* @toDecimal(Local.Estimation)/100		Activity\CountSpreading_Act.xml
+CountSpreading_act	9.2.1	.ClaimSpreaded	(pyWorkPage.ClaimData.SpreadingClaim(Local.IndexEst).ClaimSpreaded * .SharePercentage)/100		Activity\CountSpreading_Act.xml
+CountTotalInsterest_Act	5.2.2	Cuan.pxResults(Local.IdxTotal).Value	Cuan.pxResults(Local.IdxTotal).Value + Local.Value		Activity\CountTotalInsterest_Act.xml
+CountTotalInsterest_Act	7.1	.TSIPerObjectIDR	@toDecimal(.KursObjectItem)*@toDecimal(.TSIPerObject)		Activity\CountTotalInsterest_Act.xml
+CountTotalInsterest_Act	7.1	Local.TotalInIDR	Local.TotalInIDR + .TSIPerObjectIDR		Activity\CountTotalInsterest_Act.xml
+CountTotalInsterest_Act	11.2.1	.USD	Local.Value* Local.Total		Activity\CountTotalInsterest_Act.xml
+CountTotalInsterest_Act	12.2.1	.ClaimSpreaded	.SharePercentage* Local.Value/100		Activity\CountTotalInsterest_Act.xml
+CountTotalInsterest_Act	12.2.1	.ClaimEstimation	.ClaimSpreaded * .PremiumSpreaded		Activity\CountTotalInsterest_Act.xml
+CountTotalInsterest_Act	13.2.1	.EstimationValue	(@toDecimal(Local.Value)*@toDecimal(.PersenRNM))/100		Activity\CountTotalInsterest_Act.xml
+CountTotalInsterest_Act	13.2.1	.ConvertValue	@toDecimal(.KursValue)*@toDecimal(.EstimationValue)		Activity\CountTotalInsterest_Act.xml
+CountTotalInsterest_Act	13.2.1	.ConvertGrossEstimasi	@toDecimal(.GrossEstimationPct)*@toDecimal(.KursValue)		Activity\CountTotalInsterest_Act.xml
+CountTotalInsterest_Act	13.2.1	Local.ValGross	Local.ValGross + .GrossEstimationPct		Activity\CountTotalInsterest_Act.xml
+CountTotalInsterest_Act	13.2.1	Local.Vall	Local.Vall +.EstimationValue		Activity\CountTotalInsterest_Act.xml
+CountTotalInsterest_Act	13.2.2	Local.ValueIDR	Local.ValueIDR + .ConvertValue		Activity\CountTotalInsterest_Act.xml
+CountTotalInsterest_Act	13.2.2	Local.GrossValueIDR	Local.GrossValueIDR + .ConvertGrossEstimasi		Activity\CountTotalInsterest_Act.xml
+CountTotalInsterest_Act	13.2.3	Local.ValueIDR	Local.ValueIDR + .ConvertValue		Activity\CountTotalInsterest_Act.xml
+CountTotalInsterest_Act	13.2.3	Local.GrossValueIDR	Local.GrossValueIDR + .ConvertGrossEstimasi		Activity\CountTotalInsterest_Act.xml
+CountTotalInsterest_Act	15.2.3	.IDR	Local.GrossValueIDR + .IDR		Activity\CountTotalInsterest_Act.xml
+CountTotalInsterest_Act	15.2.3	.Value	Local.ValueIDR + .Value		Activity\CountTotalInsterest_Act.xml
+CountTotalInsterest_Act	16.2.1	.ClaimSpreaded	(@toDecimal(.SharePercentage)*Local.Value)/100		Activity\CountTotalInsterest_Act.xml
+CountTotalInsterest_Act	17.2.1	.ClaimSpreaded	@divide(.SharePercentage,100,4) * Local.Value	4	Activity\CountTotalInsterest_Act.xml
+CountTotalInterest_Act	2.1	Local.ToIDR	Local.Value*Local.Kurs		Activity\CountTotalInterest_Act.xml
+CountTotalInterest_Act	2.2.1	.Value	.Value+Local.Value		Activity\CountTotalInterest_Act.xml
+CountTotalInterest_Act	2.4	pyWorkPage.ClaimData.TotalSumInsuredIDR	pyWorkPage.ClaimData.TotalSumInsuredIDR+Local.ToIDR		Activity\CountTotalInterest_Act.xml
+CreateChildKomiteCNP_Act	20.3.2	.CNPCurrencyList(<APPEND>).AdjusterFeeValue	Primary.SpreadingRisk(Local.IdxAdjustment).AdjusterFee/@divide(Primary.SpreadingRisk(Local.IdxAdjustment).ClaimPercentage,100,20)	20	Activity\CreateChildKomiteCNP_Act.xml
+CreateChildKomiteCNP_Act	20.3.2	.CNPCurrencyList(<LAST>).SalvageValue	Primary.SpreadingRisk(Local.IdxAdjustment).Salvage/@divide(Primary.SpreadingRisk(Local.IdxAdjustment).ClaimPercentage,100,20)	20	Activity\CreateChildKomiteCNP_Act.xml
+CreateChildKomiteCNP_Act	20.3.2	.CNPCurrencyList(<LAST>).TotalXOLLayerRNM	Primary.SpreadingRisk(Local.IdxAdjustment).TotalClaim*@divide(Primary.SpreadingRisk(Local.IdxAdjustment).ClaimPercentage,100,20)	20	Activity\CreateChildKomiteCNP_Act.xml
+CreateChildKomiteCNP_Act	20.3.2	.CNPCurrencyList(<LAST>).TotalXOLRNM	Primary.SpreadingRisk(Local.IdxAdjustment).TotalClaim*@divide(Primary.SpreadingRisk(Local.IdxAdjustment).ClaimPercentage,100,20)	20	Activity\CreateChildKomiteCNP_Act.xml
+CreateChildKomiteCNP_Act	20.3.2	.CNPCurrencyList(<LAST>).CNPOthersFee	Primary.SpreadingRisk(Local.IdxAdjustment).CNPOthersFee/@divide(Primary.SpreadingRisk(Local.IdxAdjustment).ClaimPercentage,100,20)	20	Activity\CreateChildKomiteCNP_Act.xml
+CreateChildKomiteCNP_Act	20.4	ChildWorkPage.Adjustment.CNPLayerList(<LAST>).CNPCurrencyList(<APPEND>).AdjusterFeeValue	@divide(.AdjusterFee,@divide(pyWorkPage.TreatyInMaster.RNMShare,100,20),20)	20	Activity\CreateChildKomiteCNP_Act.xml
+CreateChildKomiteCNP_Act	20.4	ChildWorkPage.Adjustment.CNPLayerList(<LAST>).CNPCurrencyList(<LAST>).SalvageValue	@divide(.Salvage,@divide(pyWorkPage.TreatyInMaster.RNMShare,100,20),20)	20	Activity\CreateChildKomiteCNP_Act.xml
+CreateChildKomiteCNP_Act	20.4	ChildWorkPage.Adjustment.CNPLayerList(<LAST>).CNPCurrencyList(<LAST>).TotalXOLLayerRNM	.TotalClaim*@divide(.ClaimPercentage,100,20)	20	Activity\CreateChildKomiteCNP_Act.xml
+CreateChildKomiteCNP_Act	20.4	ChildWorkPage.Adjustment.CNPLayerList(<LAST>).CNPCurrencyList(<LAST>).TotalXOLRNM	.TotalClaim*@divide(.ClaimPercentage,100,20)	20	Activity\CreateChildKomiteCNP_Act.xml
+CreateChildKomiteCNP_Act	20.4	ChildWorkPage.Adjustment.CNPLayerList(<LAST>).CNPCurrencyList(<LAST>).CNPOthersFee	@divide(.CNPOthersFee,@divide(pyWorkPage.TreatyInMaster.RNMShare,100,20),20)	20	Activity\CreateChildKomiteCNP_Act.xml
+CreateChildKomiteCNP_Act	21.1.2.1	.GrossValue	local.Value + .GrossValue		Activity\CreateChildKomiteCNP_Act.xml
+CreateChildKomiteCNP_Act	23.2.3	.AdjusterFeeRNM	.AdjusterFeeRNM-Primary.AlokasiXOLPaid(Local.IdxLossOld).AdjusterFee		Activity\CreateChildKomiteCNP_Act.xml
+CreateChildKomiteCNP_Act	23.2.3	.AdjusterFeeValue	.AdjusterFeeValue-@divide(Primary.AlokasiXOLPaid(Local.IdxLossOld).AdjusterFee,@divide(pyWorkPage.TreatyInMaster.RNMShare,100,20),20)	20	Activity\CreateChildKomiteCNP_Act.xml
+CreateChildKomiteCNP_Act	23.2.3	.CNPOthersFee	.CNPOthersFee-@divide(Primary.AlokasiXOLPaid(Local.IdxLossOld).CNPOthersFee,@divide(pyWorkPage.TreatyInMaster.RNMShare,100,20),20)	20	Activity\CreateChildKomiteCNP_Act.xml
+CreateChildKomiteCNP_Act	23.2.3	.CNPOthersFeeRNM	.CNPOthersFeeRNM-Primary.AlokasiXOLPaid(Local.IdxLossOld).CNPOthersFee		Activity\CreateChildKomiteCNP_Act.xml
+CreateChildKomiteCNP_Act	23.2.3	.CNPReinstatement	@if(.CNPReinstatement==0&&Local.PaymentType!=7,0,.CNPReinstatement-Primary.AlokasiXOLPaid(Local.IdxLossOld).CNPReinstatement)		Activity\CreateChildKomiteCNP_Act.xml
+CreateChildKomiteCNP_Act	23.2.3	.CNPReinstatementRNM	@if(.CNPReinstatementRNM==0&&Local.PaymentType!=7,0,.CNPReinstatementRNM-Primary.AlokasiXOLPaid(Local.IdxLossOld).CNPReinstatementRNM)		Activity\CreateChildKomiteCNP_Act.xml
+CreateChildKomiteCNP_Act	23.2.3	.GrossAdjustment	.GrossAdjustment-Primary.AlokasiXOLPaid(Local.IdxLossOld).ClaimAmountAdjust		Activity\CreateChildKomiteCNP_Act.xml
+CreateChildKomiteCNP_Act	23.2.3	.GrossValue	.GrossValue-Primary.AlokasiXOLPaid(Local.IdxLossOld).ClaimSpreaded		Activity\CreateChildKomiteCNP_Act.xml
+CreateChildKomiteCNP_Act	23.2.3	.SalvageRNM	.SalvageRNM-Primary.AlokasiXOLPaid(Local.IdxLossOld).Salvage		Activity\CreateChildKomiteCNP_Act.xml
+CreateChildKomiteCNP_Act	23.2.3	.SalvageValue	.SalvageValue-@divide(Primary.AlokasiXOLPaid(Local.IdxLossOld).Salvage,@divide(pyWorkPage.TreatyInMaster.RNMShare,100,20),20)	20	Activity\CreateChildKomiteCNP_Act.xml
+CreateChildKomiteCNP_Act	23.2.3	.TotalXOL	.GrossAdjustment+.AdjusterFeeValue-.SalvageValue+.CNPOthersFee		Activity\CreateChildKomiteCNP_Act.xml
+CreateChildKomiteCNP_Act	23.2.3	.TotalXOLGross	.GrossAdjustment+.AdjusterFeeValue-.SalvageValue+.CNPOthersFee		Activity\CreateChildKomiteCNP_Act.xml
+CreateChildKomiteCNP_Act	23.2.3	.TotalXOLLayerRNM	.GrossValue+.AdjusterFeeRNM+.CNPOthersFeeRNM-.SalvageRNM		Activity\CreateChildKomiteCNP_Act.xml
+CreateChildKomiteCNP_Act	23.2.3	.TotalXOLRNM	.GrossValue+.AdjusterFeeRNM+.CNPOthersFeeRNM-.SalvageRNM		Activity\CreateChildKomiteCNP_Act.xml
+DeleteAkseptasi_Act	3.2.2.1	.ClaimSpreaded	.ClaimSpreaded+Local.Claim		Activity\DeleteAkseptasi_Act.xml
+DeleteAkseptasi_Act	3.2.2.1	.AdjusterFee	.AdjusterFee+Local.AdjusterFee		Activity\DeleteAkseptasi_Act.xml
+DeleteAkseptasi_Act	3.2.2.1	.PremiumSpreaded	.PremiumSpreaded+Local.Reinstatement		Activity\DeleteAkseptasi_Act.xml
+DeleteAkseptasi_Act	3.2.2.1	.CNPOthersFee	.CNPOthersFee+Local.OtherFee		Activity\DeleteAkseptasi_Act.xml
+DeleteAkseptasi_Act	3.2.2.1	.Salvage	.Salvage+Local.Salvage		Activity\DeleteAkseptasi_Act.xml
+DeleteAkseptasi_Act	3.3.2.1	.ClaimSpreaded	.ClaimSpreaded+Local.Claim		Activity\DeleteAkseptasi_Act.xml
+DeleteAkseptasi_Act	3.3.2.1	.AdjusterFee	.AdjusterFee+Local.AdjusterFee		Activity\DeleteAkseptasi_Act.xml
+DeleteAkseptasi_Act	3.3.2.1	.PremiumSpreaded	.PremiumSpreaded+Local.Reinstatement		Activity\DeleteAkseptasi_Act.xml
+DeleteAkseptasi_Act	3.3.2.1	.CNPOthersFee	.CNPOthersFee+Local.OtherFee		Activity\DeleteAkseptasi_Act.xml
+DeleteAkseptasi_Act	3.3.2.1	.Salvage	.Salvage+Local.Salvage		Activity\DeleteAkseptasi_Act.xml
+DetailCalculation	6.2.2.1	.EgnpiVal	local.Value + .EgnpiVal		Activity\DetailCalculation.xml
+DetailCalculation	6.3.2.1	.Value	local.Value + .Value		Activity\DetailCalculation.xml
+DetailCalculation	12.1.1	Local.Value	Local.Value + .EgnpiVal		Activity\DetailCalculation.xml
+DetailCalculation	16	local.adjrate	@divide(.AdjRate,100,4)	4	Activity\DetailCalculation.xml
+DetailCalculation	17	Primary.PremiumEarnedList(<LAST>).Value	.EgnpiVal * local.adjrate		Activity\DetailCalculation.xml
+DetailCalculation	20	local.mdprate	@divide(.MDPPct,100,4)	4	Activity\DetailCalculation.xml
+DetailCalculation	21.1	Primary.MDPList(<LAST>).Value	.Value * local.mdprate		Activity\DetailCalculation.xml
+DetailCalculation	24	@param:ContainingClassOfProperty	ASM-FW-GISFW-Data-TreatyInLimitLayer		Activity\DetailCalculation.xml
+DetailCalculation	26	.ROL	@divide( .PremiumEarnedList(1).Value, .IOOLimit, 4)	4	Activity\DetailCalculation.xml
+EditXOLAlokasi	3	@param:ClassOfPage	ASM-FW-GCNMFW-Work-ClaimTreatyNonProp		Activity\EditXOLAlokasi.xml
+FillPaymentInstallment	3.2	Local.InstallmentPercentage	Local.InstallmentPercentage + @Math.divide(100, Param.Installment, 4)		Activity\FillPaymentInstallment.xml
+FillPaymentInstallment	3.3	.ListInstallment(<LAST>).InstallmentPercentage	@Math.divide(100, Param.Installment, 4) + (100 - Local.InstallmentPercentage)		Activity\FillPaymentInstallment.xml
+FillPaymentInstallment	3.5	.ListInstallment(<LAST>).Premium	@Math.divide(((Local.premi)*.ListInstallment(<last>).InstallmentPercentage),100,4)		Activity\FillPaymentInstallment.xml
+FillPaymentInstallment	3.5	.ListInstallment(<LAST>).PaymentTotal	@Math.divide(((Local.premi)*.ListInstallment(<LAST>).InstallmentPercentage),100,4)		Activity\FillPaymentInstallment.xml
+FillPaymentInstallment	5.2.2	Local.InstallmentPercentage	Local.InstallmentPercentage + @Math.divide(100, Param.Installment, 4)		Activity\FillPaymentInstallment.xml
+FillPaymentInstallment	5.2.3	.Policy.Payment.ListInstallment(<LAST>).InstallmentPercentage	@Math.divide(100, Param.Installment, 4) + (100 - Local.InstallmentPercentage)		Activity\FillPaymentInstallment.xml
+FillPaymentInstallment	5.2.5	.Policy.Payment.ListInstallment(<LAST>).Premium	@Math.divide(((.Policy.Payment.Premium)*.Policy.Payment.ListInstallment(<LAST>).InstallmentPercentage),100,4)		Activity\FillPaymentInstallment.xml
+FillPaymentInstallment	5.2.5	.Policy.Payment.ListInstallment(<LAST>).PaymentTotal	@Math.divide(((.Policy.Payment.Premium)*.Policy.Payment.ListInstallment(<LAST>).InstallmentPercentage),100,4)		Activity\FillPaymentInstallment.xml
+GenerateCACNP_Act	7	Local.Startdate	"@FormatDateTime(pyWorkPage.ClaimData.PolicyData.StartDateTime,""dd/MM/yyyy"",""Asia/Jakarta"",""in_ID"")"		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	7	Local.enddate	"@FormatDateTime(pyWorkPage.ClaimData.PolicyData.EndDateTime,""dd/MM/yyyy"",""Asia/Jakarta"",""in_ID"")"		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	7	TempPrintCA.CARI4	"@FormatDateTime((pyWorkPage.ClaimData.DateOfLoss+""T050000.000 GMT""),""dd/MM/yyyy"",""Asia/Jakarta"",""in_ID"")"		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	7	TempPrintCA.CARI5	"@FormatDateTime((pyWorkPage.ClaimData.ReportDate+""T050000.000 GMT""),""dd/MM/yyyy"",""Asia/Jakarta"",""in_ID"")"		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	7	TempPrintCA.CARI8	"""Ceding Share (""+Local.ShareCedant+""%)"""		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	10.2.2.1	.Value	.Value+Local.ClaimAmount		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	10.2.2.1	.Salvage	.Salvage+Local.Salvage		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	10.2.2.1	.AdjusterFee	.AdjusterFee+Local.AdjusterFee		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	10.2.2.1	.CNPOthersFee	.CNPOthersFee+Local.OthersFee		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	10.2.4	TempListClaim.ListClaimAmount(<LAST>).Note	"""(ROE 1 ""+Local.Currency+"" = IDR ""+Local.ROE+"")"""		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	10.2.4	TempListClaim.ListClaimAmount(<LAST>).Layer	Local.ClaimAmount-Local.Deductible		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	10.2.4	TempListClaim.ListClaimAmount(<LAST>).ClaimAmountCedant	(Local.ClaimAmount-Local.Deductible+Local.TPL)*pyWorkPage.ClaimData.ShareCeding/100		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	10.2.4	TempListClaim.ListClaimAmount(<LAST>).USD	(Local.ClaimAmount-Local.Deductible)+Local.TPL		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	10.2.4	TempListClaim.ListClaimAmount(<LAST>).CNPMDP	((Local.ClaimAmount-Local.Deductible+Local.TPL)*pyWorkPage.ClaimData.ShareCeding/100)+Local.AdjusterFee		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	10.2.4	TempListClaim.ListClaimAmount(<LAST>).CurrencyID	(((Local.ClaimAmount-Local.Deductible+Local.TPL)*pyWorkPage.ClaimData.ShareCeding/100)+Local.AdjusterFee)-Local.Salvage		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	10.3.2.1.2.1	.ClaimAmountCedant	.ClaimAmountCedant+(Local.ClaimAmount+Local.AdjusterFee-Local.Salvage+Local.OthersFee)		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	10.3.2.1.3	.NetPremiumList(<LAST>).ClaimAmountCedant	Local.ClaimAmount+Local.AdjusterFee-Local.Salvage+Local.OthersFee		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	10.3.3	TempListAlokasi.TreatyInMaster.Share(<LAST>).NetPremiumList(<LAST>).ClaimAmountCedant	Local.ClaimAmount+Local.AdjusterFee-Local.Salvage+Local.OthersFee		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	11.1	Local.AdjusterFee	(.AdjusterFee*100/@if(.ClaimPercentage>0,.ClaimPercentage,100))		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	11.1	Local.OthersFee	(.CNPOthersFee*100/@if(.ClaimPercentage>0,.ClaimPercentage,100))		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	11.1	Local.Salvage	(.Salvage*100/@if(.ClaimPercentage>0,.ClaimPercentage,100))		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	11.2.1	.LayerList(<LAST>).Deductible	Local.ClaimAmount+Local.AdjusterFee+Local.OthersFee-Local.Salvage		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	11.3	TempListAlokasi.LimitLayerList(<LAST>).LayerList(<LAST>).Deductible	Local.ClaimAmount+Local.AdjusterFee+Local.OthersFee-Local.Salvage		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	11.3	TempListAlokasi.LimitLayerList(<LAST>).LayerList(<LAST>).PremiEarned	Local.ClaimCedant+(Local.AdjusterFee*Local.ShareRNM/100)+(Local.OthersFee*Local.ShareRNM/100)-(Local.Salvage*Local.ShareRNM/100)		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	11.4.1	.Value	.Value+Local.Reinstatement		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	12.1	Local.AdjusterFee	(.AdjusterFee*100/@if(.ClaimPercentage>0,.ClaimPercentage,100))		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	12.1	Local.OthersFee	(.CNPOthersFee*100/@if(.ClaimPercentage>0,.ClaimPercentage,100))		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	12.1	Local.Salvage	(.Salvage*100/@if(.ClaimPercentage>0,.ClaimPercentage,100))		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	12.2.1	.LayerList(<LAST>).Deductible	Local.ClaimAmount+Local.AdjusterFee+Local.OthersFee-Local.Salvage		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	12.3	TempListAlokasi.LimitLayerList(<LAST>).LayerList(<LAST>).Deductible	Local.ClaimAmount+Local.AdjusterFee+Local.OthersFee-Local.Salvage		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	12.3	TempListAlokasi.LimitLayerList(<LAST>).LayerList(<LAST>).PremiEarned	Local.ClaimCedant+(Local.AdjusterFee*Local.ShareRNM/100)+(Local.OthersFee*Local.ShareRNM/100)-(Local.Salvage*Local.ShareRNM/100)		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	12.4.1	.Value	.Value-Local.Reinstatement		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	14.2.1	Local.ClaimAmount	"@if(@contains(Local.CheckOld,""Previous""),0-.PremiEarned,.PremiEarned)"		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	14.2.2.1	.Value	.Value+Local.ClaimAmount		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	15.3	TempListAlokasi.TreatyInMaster.CurrencyList(<LAST>).Conversion	.Value-Local.Reinstatement		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	16.2.2	.SpreadingAmount	@toDecimal(.SpreadingAmount)+(Local.ClaimAmount*@toDecimal(TempSpreading.AdjustmentList(Local.IdxTemAdj).SharePersenNusare)/100)		Activity\GenerateCACNP_Act.xml
+GenerateCACNP_Act	16.2.3	.SpreadingQuotaShare(<LAST>).SpreadingAmount	Local.ClaimAmount*@divide(.SharePersenNusare,100,20)	20	Activity\GenerateCACNP_Act.xml
+GenerateCFS_act	2	@param:ClassOfPage	ASM-FW-GCNMFW-Work-ClaimTreatyNonProp		Activity\GenerateCFS_act.xml
+GenerateCFS_act	5	TempPrintCA.CARI2	"@FormatDateTime(pyWorkPage.ClaimData.PolicyData.StartDateTime,""dd/MM/yyyy"",""Asia/Jakarta"",""in_ID"")+"" - ""+@FormatDateTime(pyWorkPage.ClaimData.PolicyData.EndDateTime,""dd/MM/yyyy"",""Asia/Jakarta"",""in_ID"")"		Activity\GenerateCFS_act.xml
+GenerateCFS_act	5	TempPrintCA.CARI3	"@FormatDateTime(pyWorkPage.ClaimData.PolicyData.StartDateTime,""dd/MM/yyyy"",""Asia/Jakarta"",""in_ID"")+"" - ""+@FormatDateTime(pyWorkPage.ClaimData.PolicyData.EndDateTime,""dd/MM/yyyy"",""Asia/Jakarta"",""in_ID"")"		Activity\GenerateCFS_act.xml
+GenerateCFS_act	5	TempPrintCA.CARI4	"@FormatDateTime((pyWorkPage.ClaimData.DateOfLoss+""T050000.000 GMT""),""dd/MM/yyyy"",""Asia/Jakarta"",""in_ID"")"		Activity\GenerateCFS_act.xml
+GenerateCFS_act	5	TempPrintCA.CARI5	"@FormatDateTime((pyWorkPage.ClaimData.ReportDate+""T050000.000 GMT""),""dd/MM/yyyy"",""Asia/Jakarta"",""in_ID"")"		Activity\GenerateCFS_act.xml
+GenerateCFS_act	6.1	Local.ClaimAmount	Local.ClaimAmount-Local.TPL+Local.Deductible		Activity\GenerateCFS_act.xml
+GenerateCFS_act	6.2.1	.ClaimAmountCedant	.ClaimAmountCedant+Local.ClaimAmount		Activity\GenerateCFS_act.xml
+GenerateCFS_act	6.2.1	.AdjusterFee	.AdjusterFee+Local.AdjusterFee		Activity\GenerateCFS_act.xml
+GenerateCFS_act	6.2.1	.CNPOthersFee	.CNPOthersFee+Local.OthersFee		Activity\GenerateCFS_act.xml
+GenerateCFS_act	6.2.1	.Salvage	.Salvage+Local.Salvage		Activity\GenerateCFS_act.xml
+GenerateCFS_act	6.2.1	.CNPDeductible	.CNPDeductible+Local.Deductible		Activity\GenerateCFS_act.xml
+GenerateCFS_act	6.2.1	.TPL	.TPL+Local.TPL		Activity\GenerateCFS_act.xml
+GenerateCFS_act	6.3	TempDataOutStanding.ClaimData.ListClaimAmount(<LAST>).Note	"""( ROE 1 ""+Local.Currency+"" = IDR  ""+Local.Kurs+"")"""		Activity\GenerateCFS_act.xml
+GenerateCFS_act	7.2.1	.AdjusterFee	.AdjusterFee+Local.AdjusterFee		Activity\GenerateCFS_act.xml
+GenerateCFS_act	7.2.1	.CNPOthersFee	.CNPOthersFee+Local.ClaimAmount		Activity\GenerateCFS_act.xml
+GenerateCFS_act	7.2.1	.ClaimAmountAdjust	.ClaimAmountAdjust+Local.OthersFee		Activity\GenerateCFS_act.xml
+GenerateCFS_act	7.2.1	.Salvage	.Salvage+Local.Salvage		Activity\GenerateCFS_act.xml
+GenerateCFS_act	7.2.2.1	.OVR_COMM	.OVR_COMM+Local.ClaimAmount		Activity\GenerateCFS_act.xml
+GenerateCFS_act	7.2.2.1	.COMMISION	.COMMISION+Local.AdjusterFee		Activity\GenerateCFS_act.xml
+GenerateCFS_act	7.2.2.1	.COMMISION_AMOUNT	.COMMISION_AMOUNT+Local.OthersFee		Activity\GenerateCFS_act.xml
+GenerateCFS_act	7.2.2.1	.PREMIUM_SPREADED_NET	.PREMIUM_SPREADED_NET+((Local.ClaimAmount+Local.AdjusterFee+Local.OthersFee)-Local.Salvage)		Activity\GenerateCFS_act.xml
+GenerateCFS_act	7.2.3	.RetroList(<LAST>).PREMIUM_SPREADED_NET	((Local.ClaimAmount+Local.AdjusterFee+Local.OthersFee)-Local.Salvage)		Activity\GenerateCFS_act.xml
+GenerateCFS_act	7.3	TempDataOutStanding.ClaimData.CNPSpreadLoss(<LAST>).RetroList(<LAST>).PREMIUM_SPREADED_NET	((Local.ClaimAmount+Local.AdjusterFee+Local.OthersFee)-Local.Salvage)		Activity\GenerateCFS_act.xml
+GenerateCFS_act	8.2.2.1	.OVR_COMM	.OVR_COMM+@if(Local.PctShareRNM>0,@divide(Local.AdjusterFee*100,Local.PctShareRNM,20)+@divide(Local.OthersFee*100,Local.PctShareRNM,20)-@divide(Local.Salvage*100,Local.PctShareRNM,20),0)	20,20,20	Activity\GenerateCFS_act.xml
+GenerateCFS_act	8.2.2.1	.PERCENTSHARE	.PERCENTSHARE+(Local.ClaimAmountRNM+Local.AdjusterFee+Local.OthersFee-Local.Salvage)		Activity\GenerateCFS_act.xml
+GenerateCFS_act	8.2.2.1	.COMMISION	.COMMISION+Local.AdjusterFee		Activity\GenerateCFS_act.xml
+GenerateCFS_act	8.2.2.1	.COMMISION_AMOUNT	.COMMISION_AMOUNT+Local.OthersFee		Activity\GenerateCFS_act.xml
+GenerateCFS_act	8.2.2.1	.OVR_COMM_AMOUNT	.OVR_COMM_AMOUNT+Local.Salvage		Activity\GenerateCFS_act.xml
+GenerateCFS_act	8.2.3	.RetroList(<APPEND>).OVR_COMM	Local.ClaimAmount+@if(Local.PctShareRNM>0,@divide(Local.AdjusterFee*100,Local.PctShareRNM,20)+@divide(Local.OthersFee*100,Local.PctShareRNM,20)-@divide(Local.Salvage*100,Local.PctShareRNM,20),0)	20,20,20	Activity\GenerateCFS_act.xml
+GenerateCFS_act	8.2.3	.RetroList(<LAST>).PERCENTSHARE	(Local.ClaimAmountRNM+Local.AdjusterFee+Local.OthersFee-Local.Salvage)		Activity\GenerateCFS_act.xml
+GenerateCFS_act	8.3	TempDataOutStanding.ClaimData.SpreadingRisk(<LAST>).RetroList(<LAST>).OVR_COMM	Local.ClaimAmount+@if(Local.PctShareRNM>0,@divide(Local.AdjusterFee*100,Local.PctShareRNM,20)+@divide(Local.OthersFee*100,Local.PctShareRNM,20)-@divide(Local.Salvage*100,Local.PctShareRNM,20),0)	20,20,20	Activity\GenerateCFS_act.xml
+GenerateCFS_act	8.3	TempDataOutStanding.ClaimData.SpreadingRisk(<LAST>).RetroList(<LAST>).PERCENTSHARE	(Local.ClaimAmountRNM+Local.AdjusterFee+Local.OthersFee-Local.Salvage)		Activity\GenerateCFS_act.xml
+GenerateCFS_act	9.1	Local.ClaimAmountRNM	.ClaimSpreaded+(.AdjusterFee+.CNPOthersFee)-.Salvage		Activity\GenerateCFS_act.xml
+GenerateCFS_act	9.2.2.1	.OVR_COMM	.OVR_COMM+Local.ClaimAmountRNM		Activity\GenerateCFS_act.xml
+GenerateCFS_act	10.1	Local.ClaimAmountRNM	.ClaimSpreaded+(.AdjusterFee+.CNPOthersFee)-.Salvage		Activity\GenerateCFS_act.xml
+GenerateCFS_act	10.2.2.1	.OVR_COMM	.OVR_COMM+Local.ClaimAmountRNM		Activity\GenerateCFS_act.xml
+GenerateCFS_act	12	Param.PDFName	"""CFS_""+@replaceAll(pyWorkPage.ClaimData.InsuredName,"","","""")+"".pdf"""		Activity\GenerateCFS_act.xml
+GeneratePlaCNP2_Act	2.1	Local.TotalClaimS	Local.TotalClaimS+((.Value+.AdjusterFee+.CNPOthersFee-.Salvage)*.AltValue)*Local.PctRI/100		Activity\GeneratePlaCNP2_Act.xml
+GeneratePlaCNP2_Act	3.2.1	.MDP	.MDP+Local.ClaimAmount		Activity\GeneratePlaCNP2_Act.xml
+GeneratePlaCNP2_Act	7.1	Local.UR	"@if(.CARI7==""IDR"",@toDecimal(.CARI9),@toDecimal(.CARI9)*Local.Kurs)"		Activity\GeneratePlaCNP2_Act.xml
+GeneratePlaCNP2_Act	7.2	TempListAlokasi.LimitLayerList(<APPEND>).Layer	"""XL ""+@substring(.CARI1,0,1)+@if(@substring(.CARI1,0,1) ==""1"",""ST "",@if(@substring(.CARI1,0,1)==""2"",""ND "",@if(@substring(.CARI1,0,1)==""3"",""RD "",""TH "")))+@if(@toUpperCase(.CARI2)==""SUBLAYER"",""SUB LAYER"",@toUpperCase(.CARI2))"		Activity\GeneratePlaCNP2_Act.xml
+GeneratePlaCNP2_Act	9.1	Local.ClaimAmount	.Value*Local.PctRI/100		Activity\GeneratePlaCNP2_Act.xml
+GeneratePlaCNP2_Act	9.1	Local.TotalClaimS	.Value*Local.PctRI/100		Activity\GeneratePlaCNP2_Act.xml
+GeneratePlaCNP2_Act	9.2.1	Local.UR	"@if(.Currency==""IDR"",.Deductible,.Deductible*Local.KursMaster)"		Activity\GeneratePlaCNP2_Act.xml
+GeneratePlaCNP2_Act	9.2.1	Local.UR	@divide(Local.UR,Local.Kurs,20)*@divide(Local.PctProrate,100,20)	20,20	Activity\GeneratePlaCNP2_Act.xml
+GeneratePlaCNP2_Act	9.2.1	Local.LimitLayer	"@if(.Currency==""IDR"",.Limit,.Limit*Local.KursMaster)"		Activity\GeneratePlaCNP2_Act.xml
+GeneratePlaCNP2_Act	9.2.1	Local.LimitLayer	@divide(Local.LimitLayer,Local.Kurs,20)*@divide(Local.PctProrate,100,20)	20,20	Activity\GeneratePlaCNP2_Act.xml
+GeneratePlaCNP2_Act	9.2.3.1	Local.TotalAlokasi	Local.TotalAlokasi+.CARID2		Activity\GeneratePlaCNP2_Act.xml
+GeneratePlaCNP2_Act	9.2.4	TempLimitOut.pxResults(<LAST>).CARID2	@if(Local.TotalClaimS-Local.TotalAlokasi<Local.LimitLayer,Local.TotalClaimS-Local.TotalAlokasi,Local.LimitLayer)		Activity\GeneratePlaCNP2_Act.xml
+GeneratePlaCNP_Act	7	Local.LastRevisi	@toDecimal(@substring(pyWorkPage.ClaimData.NoPla,24))+1		Activity\GeneratePlaCNP_Act.xml
+GeneratePlaCNP_Act	7	pyWorkPage.ClaimData.NoPla	"pyWorkPage.ClaimData.NoPla+""/""+Local.LastRevisi"		Activity\GeneratePlaCNP_Act.xml
+GeneratePlaCNP_Act	17.2.1	Local.ClaimAmount	Local.ClaimAmount+.IOOLimit		Activity\GeneratePlaCNP_Act.xml
+GeneratePlaCNP_Act	18.1	Local.Enddate	"@FormatDateTime(pyWorkPage.ClaimData.PolicyData.EndDateTime,""dd/MM/yyyy"",""Asia/Jakarta"",""in_ID"")"		Activity\GeneratePlaCNP_Act.xml
+GeneratePlaCNP_Act	18.1	TempDataPLA.CARI3	"@FormatDateTime(pyWorkPage.ClaimData.PolicyData.StartDateTime,""dd/MM/yyyy"",""Asia/Jakarta"",""in_ID"")"		Activity\GeneratePlaCNP_Act.xml
+GeneratePlaCNP_Act	18.1	TempDataPLA.CARI7	"@substring(pyWorkPage.ClaimData.DateOfLoss,6,8)+""/""+@substring(pyWorkPage.ClaimData.DateOfLoss,4,6)+""/""+@substring(pyWorkPage.ClaimData.DateOfLoss,0,4)"		Activity\GeneratePlaCNP_Act.xml
+GeneratePlaCNP_Act	18.5.1.1	.ROL	.PremiEarned*Local.PctReins/100		Activity\GeneratePlaCNP_Act.xml
+GetAdders_Act	5	pyWorkPage.ClaimData.Location	"TempLocation.CARI1 + "", "" + pyWorkPage.ClaimData.RW  + "", "" + pyWorkPage.ClaimData.District + "", "" + pyWorkPage.ClaimData.City + "", "" + pyWorkPage.ClaimData.Province"		Activity\GetAdders_Act.xml
+GetBase64Attachment	3	@param:ObjClass	ASM-FW-GCNMFW-Int-DOCUMENT_CLAIM		Activity\GetBase64Attachment.xml
+GetHistoryMasterID_NP	2	InputSpreading.CARI23	"InputSpreading.CARI22 + ""/R01"""		Activity\GetHistoryMasterID_NP.xml
+GetHistoryMasterID_NP	2	InputSpreading.CARI24	"InputSpreading.CARI22 + ""/R02"""		Activity\GetHistoryMasterID_NP.xml
+GetHistoryMasterID_NP	2	InputSpreading.CARI40	""" CLAIM HISTORY MASTER ID "" + InputSpreading.CARI22"		Activity\GetHistoryMasterID_NP.xml
+GetHistoryMasterID_NP	3	InputSpreading.CARI23	"InputSpreading.CARI22 + ""/R01"""		Activity\GetHistoryMasterID_NP.xml
+GetHistoryMasterID_NP	3	InputSpreading.CARI24	"InputSpreading.CARI22 + ""/R02"""		Activity\GetHistoryMasterID_NP.xml
+GetHistoryMasterID_NP	4	InputSpreading.CARI22	"""1001130/R01"""		Activity\GetHistoryMasterID_NP.xml
+GetHistoryMasterID_NP	4	InputSpreading.CARI23	"""1001130/R01"""		Activity\GetHistoryMasterID_NP.xml
+GetHistoryMasterID_NP	4	InputSpreading.CARI24	"""1001130/R01"""		Activity\GetHistoryMasterID_NP.xml
+GetHistoryMasterID_NP	9.1.1	Local.KursValue	.GrossAdjustment*.KursIDR		Activity\GetHistoryMasterID_NP.xml
+GetHistoryMasterID_NP	9.1.1	Local.TotalValue	Local.TotalValue+.GrossAdjustment		Activity\GetHistoryMasterID_NP.xml
+GetHistoryMasterID_NP	9.1.1	Local.KursValueMDP	.CNPReinstatement*.KursIDR		Activity\GetHistoryMasterID_NP.xml
+GetHistoryMasterID_NP	9.1.1	Local.TotalValueMDP	Local.TotalValueMDP+.CNPReinstatement		Activity\GetHistoryMasterID_NP.xml
+GetInvoiceAttachments	2	@param:ObjClass	ASM-FW-GCNMFW-Int-DOCUMENT_CLAIM		Activity\GetInvoiceAttachments.xml
+GetReportStatus_Act	11	pyWorkPage.ClaimData.ReportAddress	"InputData.CARI10 + "", "" + InputData.CARI11 + "", "" + InputData.CARI12 + "", "" + InputData.CARI13"		Activity\GetReportStatus_Act.xml
+GetSelisihActual_Act	5.2.2.1	.AdjusterFee	.AdjusterFee+Local.AdjusterFee		Activity\GetSelisihActual_Act.xml
+GetSelisihActual_Act	5.2.2.1	.ClaimSpreaded	.ClaimSpreaded+Local.ClaimSpreaded		Activity\GetSelisihActual_Act.xml
+GetSelisihActual_Act	5.2.2.1	.Salvage	.Salvage+Local.Salvage		Activity\GetSelisihActual_Act.xml
+GetSelisihActual_Act	5.2.2.1	.CNPOthersFee	.CNPOthersFee+Local.CNPOthersFee		Activity\GetSelisihActual_Act.xml
+GetSelisihActual_Act	5.2.2.1	.ClaimEstimation	.ClaimEstimation+Local.ClaimEstimation		Activity\GetSelisihActual_Act.xml
+GetSelisihActual_Act	5.2.2.1	.AdjClaimValue	.AdjClaimValue+Local.AdjClaimValue		Activity\GetSelisihActual_Act.xml
+GetSelisihActual_Act	6.4.1.1	InputParamOs.CNPOthersFee	InputParamOs.CNPOthersFee- .CNPOthersFee		Activity\GetSelisihActual_Act.xml
+GetSelisihActual_Act	6.4.1.1	InputParamOs.Adjusterfee	InputParamOs.Adjusterfee- .AdjusterFee		Activity\GetSelisihActual_Act.xml
+GetSelisihActual_Act	6.4.1.1	InputParamOs.Value	InputParamOs.Value- .ClaimSpreaded		Activity\GetSelisihActual_Act.xml
+GetSelisihActual_Act	6.4.1.1	InputParamOs.Salvage	InputParamOs.Salvage- .Salvage		Activity\GetSelisihActual_Act.xml
+GetSelisihActual_Act	6.4.1.1	InputParamOs.GrossValue	InputParamOs.GrossValue- .TotalClaim		Activity\GetSelisihActual_Act.xml
+GetSelisihActual_Act	6.6	InputParamOs.Value	.ClaimSpreaded - InputParamOs.Value		Activity\GetSelisihActual_Act.xml
+GetSelisihActual_Act	6.6	InputParamOs.GrossValue	.TotalClaim - InputParamOs.GrossValue		Activity\GetSelisihActual_Act.xml
+HitServiceToKasir_Act	9.3	TempKasir.CARI9	.TotalClaim - .PremiumSpreaded		Activity\HitServiceToKasir_Act.xml
+HitServiceToKasir_Act	13.2.2.1.1.3	TempKasir.CARI11	@toDecimal(TempKasir.CARI11) + .IndividualRiskPercentage		Activity\HitServiceToKasir_Act.xml
+HitServiceToKasir_Act	13.2.2.1.1.6	TempKasir.CARI9	@toDecimal(TempKasir.CARI9)+.AdjustmentValue		Activity\HitServiceToKasir_Act.xml
+HitServiceToKasir_Act	13.2.2.1.1.7	TempKasir.CARI9	@toDecimal(TempKasir.CARI9)+.AdjusterFeeValue		Activity\HitServiceToKasir_Act.xml
+HitServiceToKasir_Act	13.2.2.1.1.8	TempKasir.CARI9	@toDecimal(TempKasir.CARI9)+.SalvageValue		Activity\HitServiceToKasir_Act.xml
+InputOutStandingCTNP_PostAct	3	@param:ClassOfPage	ASM-FW-GCNMFW-Work-ClaimTreatyNonProp		Activity\InputOutStandingCTNP_PostAct.xml
+InsertDocument_Act	1	@param:NewClass	ASM-FW-GCNMFW-Int-DOCUMENT_CLAIM		Activity\InsertDocument_Act.xml
+ProteksiNilaiClaim	3	@param:ClassOfPage	ASM-FW-GCNMFW-Work-ClaimTreatyNonProp		Activity\ProteksiNilaiClaim.xml
+ProteksiSendKomiteCNP_Act	19	@param:ContainingClassOfProperty	ASM-FW-GCNMFW-Work-ClaimTreatyNonProp		Activity\ProteksiSendKomiteCNP_Act.xml
+ProteksiSendKomiteCNP_Act	23.2.1	Local.TotalAdjustment	(.Value+.CNPOthersFee+.TPL+.AdjusterFee)-.Salvage		Activity\ProteksiSendKomiteCNP_Act.xml
+ProteksiSendKomiteCNP_Act	23.2.3	@param:ContainingClassOfProperty	ASM-FW-GISFW-Data-TreatyInTotal		Activity\ProteksiSendKomiteCNP_Act.xml
+SaveAdjustmentToOSAksep_Act_Tes	4.1	PrevData.AdjusterFeeValue	@divide(.AdjusterFee,@divide(pyWorkPage.TreatyInMaster.RNMShare,100,20),20)	20	Activity\SaveAdjustmentToOSAksep_Act_Tes.xml
+SaveAdjustmentToOSAksep_Act_Tes	4.1	PrevData.SalvageValue	@divide(.Salvage,@divide(pyWorkPage.TreatyInMaster.RNMShare,100,20),20)	20	Activity\SaveAdjustmentToOSAksep_Act_Tes.xml
+SaveAdjustmentToOSAksep_Act_Tes	4.1	PrevData.TotalXOLLayerRNM	.TotalClaim*@divide(.ClaimPercentage,100,20)	20	Activity\SaveAdjustmentToOSAksep_Act_Tes.xml
+SaveAdjustmentToOSAksep_Act_Tes	4.1	PrevData.TotalXOLRNM	.TotalClaim*@divide(.ClaimPercentage,100,20)	20	Activity\SaveAdjustmentToOSAksep_Act_Tes.xml
+SaveAdjustmentToOSAksep_Act_Tes	4.1	PrevData.CNPOthersFee	@divide(.CNPOthersFee,@divide(pyWorkPage.TreatyInMaster.RNMShare,100,20),20)	20	Activity\SaveAdjustmentToOSAksep_Act_Tes.xml
+SaveAdjustmentToOSAksep_Act_Tes	6.2.4	.AdjusterFeeRNM	.AdjusterFeeRNM - PrevData.AdjusterFeeRNM		Activity\SaveAdjustmentToOSAksep_Act_Tes.xml
+SaveAdjustmentToOSAksep_Act_Tes	6.2.4	.AdjusterFeeValue	.AdjusterFeeValue - PrevData.AdjusterFeeValue		Activity\SaveAdjustmentToOSAksep_Act_Tes.xml
+SaveAdjustmentToOSAksep_Act_Tes	6.2.4	.CNPLimit	.CNPLimit - PrevData.CNPLimit		Activity\SaveAdjustmentToOSAksep_Act_Tes.xml
+SaveAdjustmentToOSAksep_Act_Tes	6.2.4	.CNPOthersFee	.CNPOthersFee - PrevData.CNPOthersFee		Activity\SaveAdjustmentToOSAksep_Act_Tes.xml
+SaveAdjustmentToOSAksep_Act_Tes	6.2.4	.CNPOthersFeeRNM	.CNPOthersFeeRNM - PrevData.CNPOthersFeeRNM		Activity\SaveAdjustmentToOSAksep_Act_Tes.xml
+SaveAdjustmentToOSAksep_Act_Tes	6.2.4	.CNPReinstatement	.CNPReinstatement - PrevData.CNPReinstatement		Activity\SaveAdjustmentToOSAksep_Act_Tes.xml
+SaveAdjustmentToOSAksep_Act_Tes	6.2.4	.CNPReinstatementRNM	.CNPReinstatementRNM - PrevData.CNPReinstatementRNM		Activity\SaveAdjustmentToOSAksep_Act_Tes.xml
+SaveAdjustmentToOSAksep_Act_Tes	6.2.4	.GrossAdjustment	.GrossAdjustment - PrevData.GrossAdjustment		Activity\SaveAdjustmentToOSAksep_Act_Tes.xml
+SaveAdjustmentToOSAksep_Act_Tes	6.2.4	.GrossValue	.GrossValue - PrevData.GrossValue		Activity\SaveAdjustmentToOSAksep_Act_Tes.xml
+SaveAdjustmentToOSAksep_Act_Tes	6.2.4	.SalvageRNM	.SalvageRNM - PrevData.SalvageRNM		Activity\SaveAdjustmentToOSAksep_Act_Tes.xml
+SaveAdjustmentToOSAksep_Act_Tes	6.2.4	.SalvageValue	.SalvageValue - PrevData.SalvageValue		Activity\SaveAdjustmentToOSAksep_Act_Tes.xml
+SaveAdjustmentToOSAksep_Act_Tes	6.2.4	.TotalXOL	.TotalXOL - PrevData.TotalXOL		Activity\SaveAdjustmentToOSAksep_Act_Tes.xml
+SaveAdjustmentToOSAksep_Act_Tes	6.2.4	.TotalXOLGross	.TotalXOLGross - PrevData.TotalXOLGross		Activity\SaveAdjustmentToOSAksep_Act_Tes.xml
+SaveAdjustmentToOSAksep_Act_Tes	6.2.4	.TotalXOLLayerRNM	.TotalXOLLayerRNM - PrevData.TotalXOLLayerRNM		Activity\SaveAdjustmentToOSAksep_Act_Tes.xml
+SaveAdjustmentToOSAksep_Act_Tes	6.2.4	.TotalXOLRNM	.TotalXOLRNM - PrevData.TotalXOLRNM		Activity\SaveAdjustmentToOSAksep_Act_Tes.xml
+SaveCNPLayerList_Act	2.2.2	.CNPCurrencyList(<APPEND>).AdjusterFeeValue	Primary.SpreadingRisk(Local.IdxAdjustment).AdjusterFee/@divide(Primary.SpreadingRisk(Local.IdxAdjustment).ClaimPercentage,100,20)	20	Activity\SaveCNPLayerList_Act.xml
+SaveCNPLayerList_Act	2.2.2	.CNPCurrencyList(<LAST>).SalvageValue	Primary.SpreadingRisk(Local.IdxAdjustment).Salvage/@divide(Primary.SpreadingRisk(Local.IdxAdjustment).ClaimPercentage,100,20)	20	Activity\SaveCNPLayerList_Act.xml
+SaveCNPLayerList_Act	2.2.2	.CNPCurrencyList(<LAST>).TotalXOLLayerRNM	Primary.SpreadingRisk(Local.IdxAdjustment).TotalClaim*@divide(Primary.SpreadingRisk(Local.IdxAdjustment).ClaimPercentage,100,20)	20	Activity\SaveCNPLayerList_Act.xml
+SaveCNPLayerList_Act	2.2.2	.CNPCurrencyList(<LAST>).TotalXOLRNM	Primary.SpreadingRisk(Local.IdxAdjustment).TotalClaim*@divide(Primary.SpreadingRisk(Local.IdxAdjustment).ClaimPercentage,100,20)	20	Activity\SaveCNPLayerList_Act.xml
+SaveCNPLayerList_Act	2.2.2	.CNPCurrencyList(<LAST>).CNPOthersFee	Primary.SpreadingRisk(Local.IdxAdjustment).CNPOthersFee/@divide(Primary.SpreadingRisk(Local.IdxAdjustment).ClaimPercentage,100,20)	20	Activity\SaveCNPLayerList_Act.xml
+SaveCNPLayerList_Act	2.3	pyWorkPage.Adjustment.CNPLayerList(<LAST>).CNPCurrencyList(<APPEND>).AdjusterFeeValue	@divide(.AdjusterFee,@divide(pyWorkPage.TreatyInMaster.RNMShare,100,20),20)	20	Activity\SaveCNPLayerList_Act.xml
+SaveCNPLayerList_Act	2.3	pyWorkPage.Adjustment.CNPLayerList(<LAST>).CNPCurrencyList(<LAST>).SalvageValue	@divide(.Salvage,@divide(pyWorkPage.TreatyInMaster.RNMShare,100,20),20)	20	Activity\SaveCNPLayerList_Act.xml
+SaveCNPLayerList_Act	2.3	pyWorkPage.Adjustment.CNPLayerList(<LAST>).CNPCurrencyList(<LAST>).TotalXOLLayerRNM	.TotalClaim*@divide(.ClaimPercentage,100,20)	20	Activity\SaveCNPLayerList_Act.xml
+SaveCNPLayerList_Act	2.3	pyWorkPage.Adjustment.CNPLayerList(<LAST>).CNPCurrencyList(<LAST>).TotalXOLRNM	.TotalClaim*@divide(.ClaimPercentage,100,20)	20	Activity\SaveCNPLayerList_Act.xml
+SaveCNPLayerList_Act	2.3	pyWorkPage.Adjustment.CNPLayerList(<LAST>).CNPCurrencyList(<LAST>).CNPOthersFee	@divide(.CNPOthersFee,@divide(pyWorkPage.TreatyInMaster.RNMShare,100,20),20)	20	Activity\SaveCNPLayerList_Act.xml
+SaveCNPLayerList_Act	3.2.3	.AdjusterFeeRNM	.AdjusterFeeRNM-Primary.AlokasiXOLPaid(Local.IdxLossOld).AdjusterFee		Activity\SaveCNPLayerList_Act.xml
+SaveCNPLayerList_Act	3.2.3	.AdjusterFeeValue	.AdjusterFeeValue-@divide(Primary.AlokasiXOLPaid(Local.IdxLossOld).AdjusterFee,@divide(pyWorkPage.TreatyInMaster.RNMShare,100,20),20)	20	Activity\SaveCNPLayerList_Act.xml
+SaveCNPLayerList_Act	3.2.3	.CNPOthersFee	.CNPOthersFee-@divide(Primary.AlokasiXOLPaid(Local.IdxLossOld).CNPOthersFee,@divide(pyWorkPage.TreatyInMaster.RNMShare,100,20),20)	20	Activity\SaveCNPLayerList_Act.xml
+SaveCNPLayerList_Act	3.2.3	.CNPOthersFeeRNM	.CNPOthersFeeRNM-Primary.AlokasiXOLPaid(Local.IdxLossOld).CNPOthersFee		Activity\SaveCNPLayerList_Act.xml
+SaveCNPLayerList_Act	3.2.3	.CNPReinstatement	.CNPReinstatement-Primary.AlokasiXOLPaid(Local.IdxLossOld).CNPReinstatement		Activity\SaveCNPLayerList_Act.xml
+SaveCNPLayerList_Act	3.2.3	.CNPReinstatementRNM	.CNPReinstatementRNM-Primary.AlokasiXOLPaid(Local.IdxLossOld).CNPReinstatementRNM		Activity\SaveCNPLayerList_Act.xml
+SaveCNPLayerList_Act	3.2.3	.GrossAdjustment	.GrossAdjustment-Primary.AlokasiXOLPaid(Local.IdxLossOld).ClaimAmountAdjust		Activity\SaveCNPLayerList_Act.xml
+SaveCNPLayerList_Act	3.2.3	.GrossValue	.GrossValue-Primary.AlokasiXOLPaid(Local.IdxLossOld).ClaimSpreaded		Activity\SaveCNPLayerList_Act.xml
+SaveCNPLayerList_Act	3.2.3	.SalvageRNM	.SalvageRNM-Primary.AlokasiXOLPaid(Local.IdxLossOld).Salvage		Activity\SaveCNPLayerList_Act.xml
+SaveCNPLayerList_Act	3.2.3	.SalvageValue	.SalvageValue-@divide(Primary.AlokasiXOLPaid(Local.IdxLossOld).Salvage,@divide(pyWorkPage.TreatyInMaster.RNMShare,100,20),20)	20	Activity\SaveCNPLayerList_Act.xml
+SaveCNPLayerList_Act	3.2.3	.TotalXOL	.GrossAdjustment+.AdjusterFeeValue-.SalvageValue+.CNPOthersFee		Activity\SaveCNPLayerList_Act.xml
+SaveCNPLayerList_Act	3.2.3	.TotalXOLGross	.GrossAdjustment+.AdjusterFeeValue-.SalvageValue+.CNPOthersFee		Activity\SaveCNPLayerList_Act.xml
+SaveCNPLayerList_Act	3.2.3	.TotalXOLLayerRNM	.GrossValue+.AdjusterFeeRNM+.CNPOthersFeeRNM-.SalvageRNM		Activity\SaveCNPLayerList_Act.xml
+SaveCNPLayerList_Act	3.2.3	.TotalXOLRNM	.GrossValue+.AdjusterFeeRNM+.CNPOthersFeeRNM-.SalvageRNM		Activity\SaveCNPLayerList_Act.xml
+SaveDataToOSAksep_Act	4	@param:ClassOfPage	ASM-FW-GCNMFW-Work-ClaimTreatyNonProp		Activity\SaveDataToOSAksep_Act.xml
+SaveDataToOSAksep_Act	5	@param:ClassOfPage	ASM-FW-GCNMFW-Work-ClaimTreatyNonProp		Activity\SaveDataToOSAksep_Act.xml
+SaveDataToOSAksep_Act	7.2	@param:ContainingClassOfProperty	ASM-FW-GCNMFW-Data-ClaimData		Activity\SaveDataToOSAksep_Act.xml
+SaveDataToOSAksep_Act	8	@param:ClassOfPage	ASM-FW-GCNMFW-Work-ClaimTreatyNonProp		Activity\SaveDataToOSAksep_Act.xml
+SaveDataToOSAksep_Act	9	@param:ContainingClassOfProperty	ASM-FW-GCNMFW-Data-ClaimData		Activity\SaveDataToOSAksep_Act.xml
+SaveDataToOSAksep_Act	15.6.3	ParamNoClaim.CARI4	"@toDecimal(@CurrentDate(""dd"",""WIB""))"		Activity\SaveDataToOSAksep_Act.xml
+SaveDataToOSAksep_Act	15.6.3	ParamNoClaim.CARI4	"@if(ParamNoClaim.CARI4<=Local.TglProd,@toDecimal(@CurrentDate(""MM"",""WIB"")),@toDecimal(@CurrentDate(""MM"",""WIB""))+1)"		Activity\SaveDataToOSAksep_Act.xml
+SaveDataToOSAksep_Act	15.6.3	ParamNoClaim.CARI4	"@if(@length(ParamNoClaim.CARI4)>1,ParamNoClaim.CARI4,(""0""+ParamNoClaim.CARI4))"		Activity\SaveDataToOSAksep_Act.xml
+SaveDataToOSAksep_Act	15.6.3	ParamNoClaim.CARI2	"@if(ParamNoClaim.CARI4=01&&@CurrentDate(""MM"",""WIB"")=12,@toDecimal(ParamNoClaim.CARI2)+1,@toDecimal(ParamNoClaim.CARI2))"		Activity\SaveDataToOSAksep_Act.xml
+SaveDataToOSAksep_Act	15.6.8	OutNoClaim.pxResults(1).CARI1	"ParamSeq.CARI2+pyWorkPage.ClaimData.QuotationData.BusinessOldId+"".""+ParamSeq.HASIL1+"".TX""+ParamSeq.HASIL2"		Activity\SaveDataToOSAksep_Act.xml
+SaveDataToOSAksep_Act	15.6.9	pyWorkPage.ClaimData.NoClaim	"@replaceAll(pyWorkPage.ClaimData.NoClaim,"".""+Local.CurrentMonth+""."","".""+Local.NextMonth+""."")"		Activity\SaveDataToOSAksep_Act.xml
+SaveDataToOSAksep_Act	15.7.2.1	.AdjusterFee	.AdjusterFee+Local.AdjusterFee		Activity\SaveDataToOSAksep_Act.xml
+SaveDataToOSAksep_Act	15.7.2.1	.ClaimSpreaded	.ClaimSpreaded+Local.ClaimSpreaded		Activity\SaveDataToOSAksep_Act.xml
+SaveDataToOSAksep_Act	15.7.2.1	.Salvage	.Salvage+Local.Salvage		Activity\SaveDataToOSAksep_Act.xml
+SaveDataToOSAksep_Act	15.7.2.1	.CNPOthersFee	.CNPOthersFee+Local.CNPOthersFee		Activity\SaveDataToOSAksep_Act.xml
+SaveDataToOSAksep_Act	15.7.2.1	.ClaimEstimation	.ClaimEstimation+Local.ClaimEstimation		Activity\SaveDataToOSAksep_Act.xml
+SaveDataToOSAksep_Act	15.7.2.1	.AdjClaimValue	.AdjClaimValue+Local.AdjClaimValue		Activity\SaveDataToOSAksep_Act.xml
+SaveDataToOSAksep_Act	15.8.1	InputParamOs.GrossValue	.ClaimEstimation+.AdjClaimValue		Activity\SaveDataToOSAksep_Act.xml
+SaveDataToOSAksep_Act	15.8.3	InputParamOs.CNPOthersFee	InputParamOs.CNPOthersFee-OutOSAcc.pxResults(1).CNPOthersFee		Activity\SaveDataToOSAksep_Act.xml
+SaveDataToOSAksep_Act	15.8.3	InputParamOs.Adjusterfee	InputParamOs.Adjusterfee-OutOSAcc.pxResults(1).Adjusterfee		Activity\SaveDataToOSAksep_Act.xml
+SaveDataToOSAksep_Act	15.8.3	InputParamOs.Value	InputParamOs.Value-OutOSAcc.pxResults(1).Value		Activity\SaveDataToOSAksep_Act.xml
+SaveDataToOSAksep_Act	15.8.3	InputParamOs.Salvage	InputParamOs.Salvage-OutOSAcc.pxResults(1).Salvage		Activity\SaveDataToOSAksep_Act.xml
+SaveDataToOSAksep_Act	15.8.3	InputParamOs.GrossValue	InputParamOs.GrossValue-OutOSAcc.pxResults(1).GrossValue		Activity\SaveDataToOSAksep_Act.xml
+SaveDataToOSAksep_Act	18.1	ParamSpreadIN.CARI1	"@FormatDateTime(pyWorkPage.ClaimData.PolicyData.StartDateTime,""yyyyMMdd"",""Asia/Jakarta"",""in_ID"")"		Activity\SaveDataToOSAksep_Act.xml
+SaveDataToOSAksep_Act	18.5.1	Local.TotalSpread	Local.TotalSpread+(.ClaimAmountIDR*.ClaimPercentage/100)		Activity\SaveDataToOSAksep_Act.xml
+SaveDataToOSAksep_Act	18.6	Local.LimitSpread	"@if(OutSpreading.pxResults(1).CARI7==""IDR"",@toDecimal(OutSpreading.pxResults(1).CARI9),(@toDecimal(OutSpreading.pxResults(1).CARI9)*@if(@toDecimal(OutSpreading.pxResults(1).CARI14)>0,@toDecimal(OutSpreading.pxResults(1).CARI14),1))*0)"		Activity\SaveDataToOSAksep_Act.xml
+SaveDataToOSAksep_Act	18.6	Local.LimitSpread	@if(Local.LimitSpread>0,Local.LimitSpread,@toDecimal(OutSpreading.pxResults(1).CARI10))		Activity\SaveDataToOSAksep_Act.xml
+SaveDataToOSAksep_Act	18.6	Local.TotalSpread	Local.TotalSpread*Local.PctRI/100		Activity\SaveDataToOSAksep_Act.xml
+SaveToOS	6.2.2.1	.AdjusterFee	.AdjusterFee+Local.AdjusterFee		Activity\SaveToOS.xml
+SaveToOS	6.2.2.1	.ClaimSpreaded	.ClaimSpreaded+Local.ClaimSpreaded		Activity\SaveToOS.xml
+SaveToOS	6.2.2.1	.Salvage	.Salvage+Local.Salvage		Activity\SaveToOS.xml
+SaveToOS	6.2.2.1	.CNPOthersFee	.CNPOthersFee+Local.CNPOthersFee		Activity\SaveToOS.xml
+SaveToOS	6.2.2.1	.ClaimEstimation	.ClaimEstimation+Local.ClaimEstimation		Activity\SaveToOS.xml
+SaveToOS	6.2.2.1	.AdjClaimValue	.AdjClaimValue+Local.AdjClaimValue		Activity\SaveToOS.xml
+SaveToOS	6.3.1	InputParamOs.GrossValue	.ClaimEstimation + .AdjClaimValue		Activity\SaveToOS.xml
+SaveToOS	6.3.2.1.1	InputParamOs.CNPOthersFee	InputParamOs.CNPOthersFee- .CNPOthersFee		Activity\SaveToOS.xml
+SaveToOS	6.3.2.1.1	InputParamOs.Adjusterfee	InputParamOs.Adjusterfee- .AdjusterFee		Activity\SaveToOS.xml
+SaveToOS	6.3.2.1.1	InputParamOs.Value	InputParamOs.Value- .ClaimSpreaded		Activity\SaveToOS.xml
+SaveToOS	6.3.2.1.1	InputParamOs.Salvage	InputParamOs.Salvage- .Salvage		Activity\SaveToOS.xml
+SaveToOS	6.3.2.1.1	InputParamOs.GrossValue	InputParamOs.GrossValue- .TotalClaim		Activity\SaveToOS.xml
+SaveToOS	6.3.4	InputParamOs.CNPOthersFee	InputParamOs.CNPOthersFee-OutOSAcc.pxResults(1).CNPOthersFee		Activity\SaveToOS.xml
+SaveToOS	6.3.4	InputParamOs.Adjusterfee	InputParamOs.Adjusterfee-OutOSAcc.pxResults(1).Adjusterfee		Activity\SaveToOS.xml
+SaveToOS	6.3.4	InputParamOs.Value	InputParamOs.Value-OutOSAcc.pxResults(1).Value		Activity\SaveToOS.xml
+SaveToOS	6.3.4	InputParamOs.Salvage	InputParamOs.Salvage-OutOSAcc.pxResults(1).Salvage		Activity\SaveToOS.xml
+SaveToOS	6.3.4	InputParamOs.GrossValue	InputParamOs.GrossValue-OutOSAcc.pxResults(1).GrossValue		Activity\SaveToOS.xml
+SaveToOS	6.3.7	InputParamOs.Value	.ClaimSpreaded - InputParamOs.Value		Activity\SaveToOS.xml
+SaveToOS	6.3.7	InputParamOs.GrossValue	.TotalClaim - InputParamOs.GrossValue		Activity\SaveToOS.xml
+SendEmailKlaim	8.1	Temp.CARI11	@divide(.TotalSharePersen,1,0)	0	Activity\SendEmailKlaim.xml
+SendEmailKlaim	8.2.1	InputData.pxResults(local.idx).CARI12	@divide(.SharePercentage,1,0)	0	Activity\SendEmailKlaim.xml
+SetActualPremium_ACT	3.1	pyWorkPage.ClaimData.SpreadingRisk(<LAST>).TotalClaim	@divide(Local.ActualPremi,@divide(.ClaimPercentage,100,20),20)	20	Activity\SetActualPremium_ACT.xml
+SetActualPremium_ACT	3.2	.TotalClaim	@divide(Local.ActualPremi,@divide(.ClaimPercentage,100,20),20)	20	Activity\SetActualPremium_ACT.xml
+SetActualPremium_ACT	4.1.1	Local.tempPayment	Local.tempPayment + .TotalClaim		Activity\SetActualPremium_ACT.xml
+SetActualPremium_ACT	4.1.1	Local.Value	Local.Value + .ClaimSpreaded		Activity\SetActualPremium_ACT.xml
+SetActualPremium_ACT	4.1.1	Local.AdjusterFee	Local.AdjusterFee + .AdjusterFee		Activity\SetActualPremium_ACT.xml
+SetActualPremium_ACT	4.1.1	Local.Salvage	Local.Salvage + .Salvage		Activity\SetActualPremium_ACT.xml
+SetActualPremium_ACT	4.1.1	Local.CNPOthersFee	Local.CNPOthersFee + .CNPOthersFee		Activity\SetActualPremium_ACT.xml
+SetActualPremium_ACT	5.2.1	.AdjusterFee	Local.AdjusterFee*@divide(.SharePercentage,100,20)	20	Activity\SetActualPremium_ACT.xml
+SetActualPremium_ACT	5.2.1	.ClaimSpreaded	Local.TotalClaim*@divide(.SharePercentage,100,20)	20	Activity\SetActualPremium_ACT.xml
+SetActualPremium_ACT	5.2.1	.CNPOthersFee	Local.OtherFee*@divide(.SharePercentage,100,20)	20	Activity\SetActualPremium_ACT.xml
+SetActualPremium_ACT	5.2.1	.Salvage	Local.Salvage*@divide(.SharePercentage,100,20)	20	Activity\SetActualPremium_ACT.xml
+SetActualPremium_ACT	5.3.1	.AdjusterFee	Local.AdjusterFee*@divide(.SharePercentage,100,20)	20	Activity\SetActualPremium_ACT.xml
+SetActualPremium_ACT	5.3.1	.ClaimSpreaded	Local.TotalClaim*@divide(.SharePercentage,100,20)	20	Activity\SetActualPremium_ACT.xml
+SetActualPremium_ACT	5.3.1	.CNPOthersFee	Local.OtherFee*@divide(.SharePercentage,100,20)	20	Activity\SetActualPremium_ACT.xml
+SetActualPremium_ACT	5.3.1	.Salvage	Local.Salvage*@divide(.SharePercentage,100,20)	20	Activity\SetActualPremium_ACT.xml
+SetCurrency_Act	1	SearchCurrencyValueIn.CARI10	"@CurrentDate(""yyyy"",""Asia/Jakarta"")"		Activity\SetCurrency_Act.xml
+SetCurrency_Act	8.2	Local.DeductValue	"@if(.ClaimData.CurrencyDeductible==Local.Currency,.ClaimData.DeductibleValue,@if(.ClaimData.CurrencyDeductible==""10026"",@if(Local.KURSROE>0,@divide(.ClaimData.DeductibleValue,Local.KURSROE,20),0),.ClaimData.DeductibleValue*Local.KURSROE))"	20	Activity\SetCurrency_Act.xml
+SetCurrency_Act	8.4.1	Local.TotalTSI	Local.TotalTSI+.TSIPerObject		Activity\SetCurrency_Act.xml
+SetCurrency_Act	8.4.1	Local.TotalTPL	Local.TotalTPL+.TPLAmount		Activity\SetCurrency_Act.xml
+SetCurrency_Act	8.5	Local.DeductPctValue	@divide(Local.TotalTSI*Local.DeductPct,100,20)	20	Activity\SetCurrency_Act.xml
+SetCurrency_Act	8.5	pyWorkPage.ClaimData.ListClaimAmount(Param.idx).ClaimAmountCedant	Local.TotalTSI+Local.TotalTPL		Activity\SetCurrency_Act.xml
+SetDataDeductible_act	2	pyWorkPage.ClaimData.TSIDeductible	pyWorkPage.ClaimData.TotalSumInsuredIDR/pyWorkPage.ClaimData.InterestList(1).KursObjectItem		Activity\SetDataDeductible_act.xml
+SetDataDeductible_act	4	pyWorkPage.ClaimData.TSIDeductible	"@if(pyWorkPage.ClaimData.CurrencyDeductible==""10026"",pyWorkPage.ClaimData.TotalSumInsuredIDR,(pyWorkPage.ClaimData.TotalSumInsuredIDR/Local.Kurs))"		Activity\SetDataDeductible_act.xml
+SetEndDate_Act	7	Local.CompareDate	"@CompareDates(@FormatDateTime(pyWorkPage.ClaimData.PolicyData.StartDateTime,""dd/MM/yyyy"",""Asia/Jakarta"",""in_ID""),pyWorkPage.ClaimData.StartDateTreaty)"		Activity\SetEndDate_Act.xml
+SetEndDate_Act	7	Local.EqualDate	"@FormatDateTime(pyWorkPage.ClaimData.PolicyData.StartDateTime,""dd/MM/yyyy"",""Asia/Jakarta"",""in_ID"")==pyWorkPage.ClaimData.StartDateTreaty"		Activity\SetEndDate_Act.xml
+SetEndDate_Act	10	Local.Comparewithend	"@FormatDateTime(pyWorkPage.ClaimData.PolicyData.StartDateTime,""dd/MM/yyyy"",""Asia/Jakarta"",""in_ID"")>pyWorkPage.ClaimData.EndDateTreaty"		Activity\SetEndDate_Act.xml
+SethistoryKlaimTreaty	1.1	.IsCedingConfirm	"""Admin Claim "" + .PICSuggest"		Activity\SethistoryKlaimTreaty.xml
+SetPPNPPH	4	.BrokerageFee	@divide(2.5,100,8) * (.PremiOgp + .PremiOnp)	8	Activity\SetPPNPPH.xml
+SetPPNPPH	4	.BrokerageFeeSebenarnya	"@if(.TypeTax==""Inclusive"",@divide(.Deduction1,@divide(102.2,100,8),8),.Deduction1)"	8	Activity\SetPPNPPH.xml
+SetPPNPPH	4	.PPHValue	.BrokerageFeeSebenarnya* @divide(2,100,8)	8	Activity\SetPPNPPH.xml
+SetPPNPPH	4	.PPNValue	.BrokerageFeeSebenarnya* @divide(2.2,100,8)	8	Activity\SetPPNPPH.xml
+SetTPLNote_Act	2	Local.pct	@divide(.TPLPct,1,2)	2	Activity\SetTPLNote_Act.xml
+SetTPLNote_Act	2	Local.Amount	@divide(.TPLAmount,1,2)	2	Activity\SetTPLNote_Act.xml
+SetTPLNote_Act	2	.TPLNote	"Local.pct +""% of ""+@if(.TPLType==1,""Claim"",""TSI"")+"" min.""+Local.Amount"		Activity\SetTPLNote_Act.xml
+SetTPLNote_Act	2	Local.TPLPctAmount	@if(.TPLType!=1,Local.TPLPct*@toDecimal(.TSIPerObject)/100,0)		Activity\SetTPLNote_Act.xml
+SetTPLNote_Act	3.1	Local.Claim	Local.Claim+.Value		Activity\SetTPLNote_Act.xml
+SetTPLNote_Act	4.1	Local.TPLPctAmount	@if(Local.TPLType==1,Local.TPLPct*Local.Claim/100,Local.TPLPctAmount)		Activity\SetTPLNote_Act.xml
+SetTPLNote_Act	4.2	.ClaimAmountCedant	.Value+.TPL-.CNPDeductible		Activity\SetTPLNote_Act.xml
+SetTPLNote_Act	4.2	.USD	(.Value+.TPL-.CNPDeductible)*.AltValue		Activity\SetTPLNote_Act.xml
+SetTPLNote_Act	5.1	Local.LossClaim	Local.LossClaim-.ClaimAmountAdjust		Activity\SetTPLNote_Act.xml
+SetTPLNote_Act	5.2	.ClaimAmountAdjust	Local.LossClaim*.ClaimPercentage/100		Activity\SetTPLNote_Act.xml
+SetValidateInstallment_Act	3.1	.Premium	pyWorkPage.PolicyTreatyIn.BalanceDueTo* @divide(.InstallmentPercentage,100,4)	4	Activity\SetValidateInstallment_Act.xml
+SetValidateInstallment_Act	3.1	.PaymentTotal	pyWorkPage.PolicyTreatyIn.BalanceDueTo* @divide(.InstallmentPercentage,100,4)	4	Activity\SetValidateInstallment_Act.xml
+SetValidateInstallment_Act	3.2	local.pcttotal	local.pcttotal + .InstallmentPercentage		Activity\SetValidateInstallment_Act.xml
+TotalEgnpi	1.5.2.1	.Value	Local.Value + .Value		Activity\TotalEgnpi.xml
+TreatyInNonSetTotal	3	TreatyIn.TotalRetentionAmount	TreatyIn.TotalRetentionAmount + .Amount		Activity\TreatyInNonSetTotal.xml
+TreatyInNonSetTotal	4	TreatyIn.TotalEgnpiAmount	TreatyIn.TotalEgnpiAmount + .AmountIDR		Activity\TreatyInNonSetTotal.xml
+TreatyInNonSetTotal	5	.Proportion	(.AmountIDR / TreatyIn.TotalEgnpiAmount) * 100		Activity\TreatyInNonSetTotal.xml
+TreatyInNonSetTotal	5	TreatyIn.TotalEgnpiProportion	TreatyIn.TotalEgnpiProportion + .Proportion		Activity\TreatyInNonSetTotal.xml
+TreatyInNonSetTotal	6	TreatyIn.TotalLimitsIOOLimit	TreatyIn.TotalLimitsIOOLimit + .Limit		Activity\TreatyInNonSetTotal.xml
+TreatyInNonSetTotal	6	TreatyIn.TotalLimitsAdjPct	TreatyIn.TotalLimitsAdjPct + .AdjRate		Activity\TreatyInNonSetTotal.xml
+TreatyInNonSetTotal	6	TreatyIn.TotalLimitsDeductible	TreatyIn.TotalLimitsDeductible + .Deductible		Activity\TreatyInNonSetTotal.xml
+TreatyInNonSetTotal	6	TreatyIn.TotalLimitsPremiumEarned	TreatyIn.TotalLimitsPremiumEarned + .PremiumEarned		Activity\TreatyInNonSetTotal.xml
+TreatyInNonSetTotal	6	TreatyIn.TotalLimitsMdp	TreatyIn.TotalLimitsMdp + .MDP		Activity\TreatyInNonSetTotal.xml
+TreatyInNonSetTotal	6	TreatyIn.TotalLimitsROL	(TreatyIn.TotalLimitsPremiumEarned / TreatyIn.TotalLimitsIOOLimit) * 100		Activity\TreatyInNonSetTotal.xml
+TreatyInNonSetTotal	7	TreatyIn.TotalShareRnmLimit	TreatyIn.TotalShareRnmLimit + .NusareLimit		Activity\TreatyInNonSetTotal.xml
+TreatyInNonSetTotal	7	TreatyIn.TotalShareGross	TreatyIn.TotalShareGross + .GrossPremium		Activity\TreatyInNonSetTotal.xml
+TreatyInNonSetTotal	7	TreatyIn.TotalShareNet	TreatyIn.TotalShareNet + .NetPremium		Activity\TreatyInNonSetTotal.xml
+TreatyInNonSetTotal	8	TreatyIn.TotalInstallmentAmount	TreatyIn.TotalInstallmentAmount + .Amount		Activity\TreatyInNonSetTotal.xml
+TreatyInNonSetTotal	8	TreatyIn.TotalInstallmentPct	TreatyIn.TotalInstallmentPct + .InstallmentPct		Activity\TreatyInNonSetTotal.xml

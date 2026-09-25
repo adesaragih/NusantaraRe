@@ -1,0 +1,1432 @@
+{
+ "urut": [
+  [
+   "10.1",
+   "KONTRAK"
+  ],
+  [
+   "10.2",
+   "VERSI_KONTRAK"
+  ],
+  [
+   "10.3",
+   "LAYER"
+  ],
+  [
+   "10.4",
+   "DETAIL_PROPORSIONAL"
+  ],
+  [
+   "10.5",
+   "BAGIAN"
+  ],
+  [
+   "10.6",
+   "PENYEBARAN"
+  ],
+  [
+   "10.7",
+   "RINCIAN_PENYEBARAN"
+  ],
+  [
+   "10.8",
+   "NILAI_PENYEBARAN"
+  ],
+  [
+   "10.9",
+   "POTONGAN"
+  ],
+  [
+   "10.10",
+   "MATA_UANG_KONTRAK"
+  ],
+  [
+   "10.11",
+   "RETENSI_CEDANT"
+  ],
+  [
+   "10.12",
+   "EGNPI"
+  ],
+  [
+   "10.13",
+   "PORTOFOLIO"
+  ],
+  [
+   "10.14",
+   "PERIODE_PELAPORAN"
+  ],
+  [
+   "10.15",
+   "PERIODE_AKUMULASI"
+  ],
+  [
+   "10.16",
+   "TERMIN"
+  ],
+  [
+   "10.17",
+   "SKALA_KOASURANSI"
+  ],
+  [
+   "10.18",
+   "BATAS_PER_BAHAYA"
+  ],
+  [
+   "10.19",
+   "DOKUMEN_KONTRAK"
+  ],
+  [
+   "10.20",
+   "CATATAN_PERSETUJUAN"
+  ],
+  [
+   "10.21",
+   "JEJAK_PERUBAHAN"
+  ],
+  [
+   "10.21a",
+   "PERISTIWA_KONTRAK"
+  ]
+ ],
+ "entitas": {
+  "KONTRAK": [
+   {
+    "kolom": "ID_KONTRAK",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "pengenal buatan sistem; bukan dari teks, bukan dari cap waktu"
+   },
+   {
+    "kolom": "NOMOR_KONTRAK_WARISAN",
+    "asal": "ID",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": "hanya terisi pada baris hasil migrasi (ADR-0042)"
+   },
+   {
+    "kolom": "ID_KONTRAK_DISALIN_DARI",
+    "asal": "OLDID` pecahan 1",
+    "tipe": "R",
+    "kosong": "ya",
+    "catatan": "rujukan ke `KONTRAK` lain"
+   },
+   {
+    "kolom": "ID_CEDANT",
+    "asal": "CedingID",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "nama cedant **tidak disalin**"
+   },
+   {
+    "kolom": "ID_ASAL_BISNIS",
+    "asal": "LeadingReinsSourceID",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "*source of business*"
+   },
+   {
+    "kolom": "SIFAT_PROPORSI",
+    "asal": "ProportionType",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "`PROPORSIONAL` / `NON_PROPORSIONAL`"
+   },
+   {
+    "kolom": "TANGGAL_MULAI",
+    "asal": "Commencement",
+    "tipe": "D",
+    "kosong": "tidak",
+    "catatan": "batas **inklusif** (ADR-0022)"
+   },
+   {
+    "kolom": "TANGGAL_BERAKHIR",
+    "asal": "Termination",
+    "tipe": "D",
+    "kosong": "tidak",
+    "catatan": "batas **inklusif**"
+   }
+  ],
+  "VERSI_KONTRAK": [
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "NOMOR_URUT_VERSI",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "KEADAAN_SIKLUS_HIDUP",
+    "asal": "Position` + `StatusAkseptasi` + 3 bendera",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "⚠ **DELAPAN nilai** — `DIBATALKAN` ditambahkan ADR-0055 perubahan 24 Sep 2026"
+   },
+   {
+    "kolom": "KEADAAN_WARISAN_ASLI",
+    "asal": "baru",
+    "tipe": "T",
+    "kosong": "ya** — hanya bila keadaannya `WARISAN_TAK_TERPETAKAN`",
+    "catatan": ""
+   },
+   {
+    "kolom": "JENIS_ADDENDUM",
+    "asal": "EDMState",
+    "tipe": "E",
+    "kosong": "ya** — kosong pada versi pertama",
+    "catatan": ""
+   },
+   {
+    "kolom": "TANGGAL_BERLAKU_ADDENDUM",
+    "asal": "EDMEffective",
+    "tipe": "D",
+    "kosong": "ya** — idem",
+    "catatan": ""
+   },
+   {
+    "kolom": "NAMA_KONTRAK",
+    "asal": "TreatyContractName",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "LINGKUP_WILAYAH",
+    "asal": "TeritorialScope",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "KELAS_BISNIS_KONTRAK",
+    "asal": "ClassofBusiness",
+    "tipe": "R",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "KODE_MATA_UANG_KONTRAK",
+    "asal": "Currency",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_REASURADUR_PEMIMPIN",
+    "asal": "LeadingReinsID",
+    "tipe": "R",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_KETUA_TREATY",
+    "asal": "TreatyLeader",
+    "tipe": "R",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "PERSEN_BAGIAN_NURE",
+    "asal": "RNMShare` + `RNMShareP",
+    "tipe": "P1",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "BAGIAN_NURE_SERAGAM",
+    "asal": "RNMShareAcrossTheBoard",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "PERSEN_BAGIAN_NURE_DIPOTONG",
+    "asal": "RnmShareDeducted",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "PERSEN_BROKERAGE",
+    "asal": "BrokeragePercent` + `…P",
+    "tipe": "P2",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "PERSEN_BAGIAN_FAKULTATIF",
+    "asal": "FacultativeShare` (`FacShare` dibuang, salinan — §14.3)",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "PERSEN_BROKERAGE_FAKULTATIF",
+    "asal": "FacultativeShareBrokerage` (`FacShareBrokerage` dibuang, salinan)",
+    "tipe": "P2",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "PENGECUALIAN",
+    "asal": "Exclusions` + `ExclusionsP",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "KETENTUAN_KHUSUS",
+    "asal": "SpecialConditions` + `SpecialConditionsP",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "KETERANGAN",
+    "asal": "Information",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "CATATAN",
+    "asal": "Comment",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "CATATAN_BORDEREAUX",
+    "asal": "BordereauxNote",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "MEMAKAI_BORDEREAUX",
+    "asal": "Bordeaux",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "CARA_PEMBUKUAN",
+    "asal": "AccountingMode",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "CARA_PEMBUKUAN_XOL",
+    "asal": "AccountingModeNonProp",
+    "tipe": "E",
+    "kosong": "ya — **menunggu Uji X-2** (§14.4)",
+    "catatan": ""
+   },
+   {
+    "kolom": "PERIODE_PELAPORAN_KONTRAK",
+    "asal": "ReportingPeriod",
+    "tipe": "E",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "SELANG_PELAPORAN",
+    "asal": "ReportingInterval",
+    "tipe": "C1",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "TANGGAL_MULAI_PELAPORAN",
+    "asal": "ReportingStart",
+    "tipe": "D",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "TANGGAL_AKHIR_PELAPORAN",
+    "asal": "ReportingEnd",
+    "tipe": "D",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "HARI_BATAS_PENYERAHAN",
+    "asal": "ReportingSubmission",
+    "tipe": "C1",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "HARI_BATAS_KONFIRMASI",
+    "asal": "ReportingConfirmation",
+    "tipe": "C1",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "HARI_BATAS_PELUNASAN",
+    "asal": "ReportingSettlement",
+    "tipe": "C1",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "HARI_PENGINGAT",
+    "asal": "ReminderDays",
+    "tipe": "C1",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "PERIODE_AKUMULASI_KONTRAK",
+    "asal": "AccumulationPeriod",
+    "tipe": "E",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "JUMLAH_TERMIN",
+    "asal": "InstallmentNo",
+    "tipe": "C1",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "MEMAKAI_PRORATA",
+    "asal": "IsProRate",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "BATAS_MAKSIMUM_KELOMPOK",
+    "asal": "MaxCoGroup",
+    "tipe": "U1 paket uang",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "BATAS_MAKSIMUM_NON_KELOMPOK",
+    "asal": "MaxCoNonGroup",
+    "tipe": "U1 paket uang",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "BATAS_PILIHAN",
+    "asal": "OptionLimit",
+    "tipe": "U1 paket uang",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "RETRO_BERGANDA",
+    "asal": "IsMultipleRetro",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_DAFTAR_RETRO",
+    "asal": "RetroList",
+    "tipe": "R",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "SIFAT_MATERIAL_ADDENDUM",
+    "asal": "EDMMaterialType",
+    "tipe": "E",
+    "kosong": "ya** — kosong pada versi pertama",
+    "catatan": "dua nilai: **`MATERIAL`** / **`TIDAK_MATERIAL`**"
+   }
+  ],
+  "LAYER": [
+   {
+    "kolom": "ID_LAYER",
+    "asal": "Limits[].ID",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "NOMOR_LAYER",
+    "asal": "Layer",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "**kunci alami** di dalam versi"
+   },
+   {
+    "kolom": "BAGIAN_LAYER",
+    "asal": "LayerPart",
+    "tipe": "C1",
+    "kosong": "ya",
+    "catatan": "bagian dari kunci alami"
+   },
+   {
+    "kolom": "JENIS_LAYER",
+    "asal": "LayerType",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "JENIS_BAGIAN_LAYER",
+    "asal": "LayerPartType",
+    "tipe": "E",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "CAKUPAN",
+    "asal": "Cover",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "LIMIT",
+    "asal": "Limit` + `Currency",
+    "tipe": "U1 paket uang",
+    "kosong": "tidak",
+    "catatan": "tingkat **100% treaty**"
+   },
+   {
+    "kolom": "DEDUCTIBLE",
+    "asal": "Deductible",
+    "tipe": "U1 paket uang",
+    "kosong": "tidak",
+    "catatan": "tingkat **100% treaty**"
+   },
+   {
+    "kolom": "PERSEN_PENYESUAIAN",
+    "asal": "AdjRate",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "PERSEN_MINIMUM_DEPOSIT",
+    "asal": "MDPPct",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "PORSI_PEMULIHAN_LIMIT",
+    "asal": "ReinstatementPct",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "porsi limit yang dipulihkan"
+   },
+   {
+    "kolom": "TARIF_PREMI_PEMULIHAN",
+    "asal": "ReinstatementValue",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "tarif premi untuk pemulihan itu — **pembacaannya punya saingan**, §10.3b"
+   },
+   {
+    "kolom": "LIMIT_AGREGAT",
+    "asal": "AgregateLimit` *(salah eja ada di sumbernya)",
+    "tipe": "U1 paket uang",
+    "kosong": "ya",
+    "catatan": "**BARU** — batas total sepanjang periode, terpisah dari limit per kejadian. Tingkat **BELUM DITENTUKAN**"
+   },
+   {
+    "kolom": "MDP",
+    "asal": "MDPList[]",
+    "tipe": "U1 paket uang",
+    "kosong": "ya",
+    "catatan": "deposit premium; tingkat **BELUM DITENTUKAN**"
+   },
+   {
+    "kolom": "MDP_MINIMUM",
+    "asal": "MDPMinList[]",
+    "tipe": "U1 paket uang",
+    "kosong": "ya",
+    "catatan": "**BARU** — tanpa ia, *\"deposit premium sama dengan minimum premium\"* tidak dapat dinyatakan"
+   },
+   {
+    "kolom": "PERSEN_MDP_MINIMUM",
+    "asal": "MDPMinPct",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "**BARU**"
+   },
+   {
+    "kolom": "MDP_DIGABUNG",
+    "asal": "IsCombineMDP",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "**BARU** — MDP dihitung per layer atau gabungan"
+   },
+   {
+    "kolom": "TANPA_HITUNG_PREMI_PEMULIHAN",
+    "asal": "NoRIPCalculation",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "**BARU** — mematikan perhitungan premi pemulihan pada layer ini"
+   },
+   {
+    "kolom": "ID_PEMULIHAN_LIMIT",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_LAYER",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "NOMOR_URUT_PEMULIHAN",
+    "asal": "Reinstatement_List[].ReinstatementValue",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "PERSEN_PEMULIHAN",
+    "asal": "Reinstatement_List[].ReinstatementPct",
+    "tipe": "P1",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "PERSEN_TAMBAHAN",
+    "asal": "Reinstatement_List[].AdditionalPct",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "CATATAN",
+    "asal": "Reinstatement_List[].ReinstatementNote",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": ""
+   }
+  ],
+  "DETAIL_PROPORSIONAL": [
+   {
+    "kolom": "ID_DETAIL_PROPORSIONAL",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_LAYER",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_KELOMPOK_TREATY",
+    "asal": "TreatyGroupID",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "**kunci alami** di dalam **`LAYER`** — INV-06"
+   },
+   {
+    "kolom": "JENIS_TREATY",
+    "asal": "TreatyType",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "`QUOTA_SHARE` / `SURPLUS`"
+   },
+   {
+    "kolom": "PERSEN_QUOTA_SHARE",
+    "asal": "QSPct",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "terisi hanya bila `JENIS_TREATY = QUOTA_SHARE`"
+   },
+   {
+    "kolom": "JUMLAH_LINES_SURPLUS",
+    "asal": "Surplus",
+    "tipe": "C1",
+    "kosong": "ya",
+    "catatan": "terisi hanya bila `JENIS_TREATY = SURPLUS`"
+   },
+   {
+    "kolom": "PERSEN_KOMISI_KOTOR",
+    "asal": "RIOGR",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "kepanjangan **belum diketahui**"
+   },
+   {
+    "kolom": "PERSEN_KOMISI_BERSIH",
+    "asal": "RIONR",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "kepanjangan **belum diketahui**"
+   },
+   {
+    "kolom": "PERSEN_CADANGAN_PREMI",
+    "asal": "PremiumReservePct",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "dari inventaris kelas Pega"
+   },
+   {
+    "kolom": "CADANGAN_PREMI",
+    "asal": "ReserveList[]",
+    "tipe": "U1 paket uang",
+    "kosong": "ya",
+    "catatan": "**BARU** — pasangan nilai dari persentase di atas; persentase tanpa nilainya adalah setengah fakta. Tingkat **BELUM DITENTUKAN**"
+   },
+   {
+    "kolom": "PERSEN_KAPASITAS_SURPLUS",
+    "asal": "IOOPct",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "**BARU**"
+   },
+   {
+    "kolom": "ID_SUSUNAN_RETRO",
+    "asal": "SpreadingTypeID",
+    "tipe": "R",
+    "kosong": "ya",
+    "catatan": "**BARU — penunjuk susunan baku yang menyemai penyebaran.** Syarat berdirinya `RINCIAN_PENYEBARAN` sebagai fakta terbukukan (INV-58); lihat §10.4a"
+   }
+  ],
+  "BAGIAN": [
+   {
+    "kolom": "ID_BAGIAN",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_LAYER",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "**relasi**, bukan salinan — §12.2"
+   },
+   {
+    "kolom": "CAKUPAN",
+    "asal": "Cover",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": "tetap atribut bagian (§12.2)"
+   },
+   {
+    "kolom": "PERSEN_BAGIAN_NURE",
+    "asal": "Share[].RNMShare",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "terisi bila `BAGIAN_NURE_SERAGAM` mati; berbeda dari atribut senama pada versi (§10.2) yang berlaku seragam"
+   },
+   {
+    "kolom": "PREMI_BRUTO",
+    "asal": "GrossPremiumList[]",
+    "tipe": "U1 paket uang",
+    "kosong": "tidak",
+    "catatan": "tingkat **BELUM DITENTUKAN** — §10.23"
+   },
+   {
+    "kolom": "PREMI_BRUTO_MINIMUM",
+    "asal": "GrossPremiumMinList[]",
+    "tipe": "U1 paket uang",
+    "kosong": "ya",
+    "catatan": "**BARU** — tidak pernah terlihat pohon"
+   },
+   {
+    "kolom": "ID_SUSUNAN_RETRO",
+    "asal": "SpreadingTypeIDXOL",
+    "tipe": "R",
+    "kosong": "ya",
+    "catatan": "penunjuk susunan baku yang menyemai penyebaran — **syarat INV-58**, §10.4a"
+   },
+   {
+    "kolom": "PERSEN_BAGIAN_DIPAKAI",
+    "asal": "baru",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "wajib bila paket uangnya bertingkat `BAGIAN_NURE` (INV-40)"
+   }
+  ],
+  "PENYEBARAN": [
+   {
+    "kolom": "ID_PENYEBARAN",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_INDUK_PENYEBARAN",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "dua induk; bentuk fisiknya sesi DDL, syarat mengikat INV-63"
+   },
+   {
+    "kolom": "ID_JENIS_REASURANSI",
+    "asal": "ReinsTypeID",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "**kunci alami**"
+   },
+   {
+    "kolom": "ID_JENIS_REASURANSI_INDUK",
+    "asal": "ParentReinsTypeID",
+    "tipe": "R",
+    "kosong": "ya",
+    "catatan": "jenis reasuransi **bersusun**; rujukan ke baris lain di tabel acuan yang sama"
+   },
+   {
+    "kolom": "PERSEN_PENYEBARAN",
+    "asal": "Pct",
+    "tipe": "P1",
+    "kosong": "tidak",
+    "catatan": "INV-50 menjumlahkannya"
+   }
+  ],
+  "RINCIAN_PENYEBARAN": [
+   {
+    "kolom": "ID_RINCIAN_PENYEBARAN",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_PENYEBARAN",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_JENIS_REASURANSI",
+    "asal": "ReinsID` (prop) / `ReinsTypeID` (XOL)",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "**kunci alami**. Ruas proporsional **bernama pihak tetapi berisi jenis** — §4.4a"
+   },
+   {
+    "kolom": "PERSEN_RINCIAN",
+    "asal": "SharePct",
+    "tipe": "P1",
+    "kosong": "tidak",
+    "catatan": "INV-50 menjumlahkannya per induk"
+   }
+  ],
+  "NILAI_PENYEBARAN": [
+   {
+    "kolom": "ID_NILAI_PENYEBARAN",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_RINCIAN_PENYEBARAN",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "NILAI",
+    "asal": "Amount` + `Currency",
+    "tipe": "U1 paket uang",
+    "kosong": "tidak",
+    "catatan": ""
+   }
+  ],
+  "POTONGAN": [],
+  "MATA_UANG_KONTRAK": [
+   {
+    "kolom": "ID_MATA_UANG_KONTRAK",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "KODE_MATA_UANG",
+    "asal": "CurrencyID",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "**kunci alami**; `Currency` (nama) tidak disimpan — INV-59"
+   },
+   {
+    "kolom": "KURS",
+    "asal": "Conversion",
+    "tipe": "K1",
+    "kosong": "tidak",
+    "catatan": "INV-38: selalu lebih besar dari nol"
+   },
+   {
+    "kolom": "TANGGAL_MULAI_BERLAKU",
+    "asal": "PeriodStart",
+    "tipe": "D",
+    "kosong": "tidak",
+    "catatan": "batas inklusif, ADR-0022"
+   },
+   {
+    "kolom": "TANGGAL_AKHIR_BERLAKU",
+    "asal": "PeriodEnd",
+    "tipe": "D",
+    "kosong": "tidak",
+    "catatan": "batas inklusif"
+   }
+  ],
+  "RETENSI_CEDANT": [
+   {
+    "kolom": "ID_RETENSI_CEDANT",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_KELOMPOK_TREATY",
+    "asal": "TreatyGroupID",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "bagian **kunci alami**; `TreatyGroup` (nama) tidak disimpan"
+   },
+   {
+    "kolom": "NILAI_RETENSI",
+    "asal": "Amount` + `Currency`/`CurrencyID",
+    "tipe": "U1 paket uang",
+    "kosong": "tidak",
+    "catatan": "bagian **kunci alami** lewat kode mata uangnya. Tingkat **BELUM DITENTUKAN** — §10.23"
+   },
+   {
+    "kolom": "CATATAN",
+    "asal": "Note",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": "**BARU** — ada di kelas, tidak ada di §3.5"
+   },
+   {
+    "kolom": "PERSEN_BAGIAN_DIPAKAI",
+    "asal": "baru",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "bila paket uangnya bertingkat `BAGIAN_NURE` (INV-40)"
+   }
+  ],
+  "EGNPI": [
+   {
+    "kolom": "ID_EGNPI",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_KELOMPOK_TREATY",
+    "asal": "TreatyGroupID",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "bagian **kunci alami**"
+   },
+   {
+    "kolom": "ID_KELAS_BISNIS",
+    "asal": "ClassOfBusiness",
+    "tipe": "R",
+    "kosong": "ya",
+    "catatan": "**BARU** — tidak ada di §3.5"
+   },
+   {
+    "kolom": "NILAI_EGNPI",
+    "asal": "Amount` + `Currency`/`CurrencyID",
+    "tipe": "U1 paket uang",
+    "kosong": "tidak",
+    "catatan": "tingkat **BELUM DITENTUKAN**, dan ini **satu dari lima §7 yang naik ke eskalasi**"
+   },
+   {
+    "kolom": "TANGGAL_BERLAKU",
+    "asal": "AsDate",
+    "tipe": "D",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "PROPORSI",
+    "asal": "Proportion",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "**BARU** — belum terpakai di rumus mana pun; dibawa karena membuangnya menghilangkan fakta yang tidak dapat dipulihkan"
+   },
+   {
+    "kolom": "CATATAN",
+    "asal": "Note",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": "**BARU**"
+   }
+  ],
+  "PORTOFOLIO": [
+   {
+    "kolom": "ID_PORTOFOLIO",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ARAH_PORTOFOLIO",
+    "asal": "Type",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "masuk atau keluar; bagian **kunci alami**"
+   },
+   {
+    "kolom": "JENIS_PORTOFOLIO",
+    "asal": "TypePortfolio",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "bagian **kunci alami**"
+   },
+   {
+    "kolom": "KETERANGAN",
+    "asal": "Description",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": ""
+   }
+  ],
+  "PERIODE_PELAPORAN": [
+   {
+    "kolom": "ID_PERIODE_PELAPORAN",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "PERIODE",
+    "asal": "Period",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "**kunci alami**"
+   },
+   {
+    "kolom": "TANGGAL_AWAL",
+    "asal": "InitialDate",
+    "tipe": "D",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "BATAS_PENYERAHAN",
+    "asal": "SubmissionDue",
+    "tipe": "D",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "BATAS_KONFIRMASI",
+    "asal": "ConfirmationDue",
+    "tipe": "D",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "BATAS_PELUNASAN",
+    "asal": "SettlementDue",
+    "tipe": "D",
+    "kosong": "tidak",
+    "catatan": ""
+   }
+  ],
+  "PERIODE_AKUMULASI": [
+   {
+    "kolom": "ID_PERIODE_AKUMULASI",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "PERIODE",
+    "asal": "Period",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "**kunci alami**"
+   },
+   {
+    "kolom": "TANGGAL_LAPOR",
+    "asal": "ReportDate",
+    "tipe": "D",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "HARI_BATAS_PENYERAHAN",
+    "asal": "SubDays",
+    "tipe": "C1",
+    "kosong": "ya",
+    "catatan": "dari inventaris kelas, §12.4"
+   },
+   {
+    "kolom": "BATAS_PENYERAHAN",
+    "asal": "SubDueDate",
+    "tipe": "D",
+    "kosong": "ya",
+    "catatan": "dari inventaris kelas, §12.4"
+   }
+  ],
+  "TERMIN": [
+   {
+    "kolom": "ID_TERMIN",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "NOMOR_TERMIN",
+    "asal": "InstallmentList[].Installment",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": "bagian **kunci alami**, bersama kode mata uang — §10.16a"
+   },
+   {
+    "kolom": "PERSEN_TERMIN",
+    "asal": "InstallmentPct",
+    "tipe": "P1",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "NILAI_TERMIN",
+    "asal": "Amount` + `Currency`/`CurrencyID",
+    "tipe": "U1 paket uang",
+    "kosong": "ya",
+    "catatan": "tingkat **BELUM DITENTUKAN** — §10.23"
+   },
+   {
+    "kolom": "TANGGAL_JATUH_TEMPO",
+    "asal": "DueDate",
+    "tipe": "D",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "TANGGAL_BAYAR",
+    "asal": "PaymentDate",
+    "tipe": "D",
+    "kosong": "ya",
+    "catatan": "kosong selama belum dibayar"
+   },
+   {
+    "kolom": "WPC",
+    "asal": "WPC",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": "**singkatan yang kepanjangannya tidak ada di korpus** — lihat di bawah"
+   }
+  ],
+  "SKALA_KOASURANSI": [
+   {
+    "kolom": "ID_SKALA_KOASURANSI",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "PERSEN_LIMIT",
+    "asal": "PctLimit",
+    "tipe": "P1",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "PERSEN_BAGIAN",
+    "asal": "CoInShare",
+    "tipe": "P1",
+    "kosong": "tidak",
+    "catatan": ""
+   }
+  ],
+  "BATAS_PER_BAHAYA": [
+   {
+    "kolom": "ID_BATAS_PER_BAHAYA",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_BAHAYA",
+    "asal": "nama kolom lama",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "**kunci alami**; tabel acuan, ADR-0038"
+   },
+   {
+    "kolom": "NILAI_BATAS",
+    "asal": "Earthquake` / `FloodJab` / `FloodNation` / `RSMDLimit` + mata uangnya",
+    "tipe": "U1 paket uang",
+    "kosong": "tidak",
+    "catatan": "tingkat **BELUM DITENTUKAN** — §10.23"
+   },
+   {
+    "kolom": "PERSEN_BAGIAN_DIPAKAI",
+    "asal": "baru",
+    "tipe": "P1",
+    "kosong": "ya",
+    "catatan": "bila bertingkat `BAGIAN_NURE` (INV-40)"
+   }
+  ],
+  "DOKUMEN_KONTRAK": [
+   {
+    "kolom": "ID_DOKUMEN_KONTRAK",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_DOKUMEN",
+    "asal": "lampiran",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "**kunci alami**; rujukan ke luar skema"
+   },
+   {
+    "kolom": "JENIS_DOKUMEN",
+    "asal": "lampiran",
+    "tipe": "E",
+    "kosong": "ya",
+    "catatan": ""
+   },
+   {
+    "kolom": "TANGGAL_LAMPIR",
+    "asal": "lampiran",
+    "tipe": "D",
+    "kosong": "tidak",
+    "catatan": ""
+   }
+  ],
+  "CATATAN_PERSETUJUAN": [
+   {
+    "kolom": "ID_CATATAN_PERSETUJUAN",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "menggantung pada **versi**, bukan kontrak"
+   },
+   {
+    "kolom": "WAKTU_KEPUTUSAN",
+    "asal": "Date",
+    "tipe": "D",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "NAMA_PEMUTUS",
+    "asal": "OperatorName",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "**dibekukan sebagai teks dengan sengaja** — ia fakta historis siapa memutuskan apa dan kapan (§12.5, ADR-0045)"
+   },
+   {
+    "kolom": "DISETUJUI",
+    "asal": "IsApproved",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ALASAN",
+    "asal": "Suggest",
+    "tipe": "T",
+    "kosong": "ya",
+    "catatan": ""
+   }
+  ],
+  "JEJAK_PERUBAHAN": [
+   {
+    "kolom": "ID_JEJAK_PERUBAHAN",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "WAKTU_PERUBAHAN",
+    "asal": "baru",
+    "tipe": "D",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "PELAKU",
+    "asal": "baru",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "dibekukan, sekeluarga dengan `NAMA_PEMUTUS`"
+   },
+   {
+    "kolom": "RUAS_YANG_BERUBAH",
+    "asal": "baru",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": ""
+   }
+  ],
+  "PERISTIWA_KONTRAK": [
+   {
+    "kolom": "ID_PERISTIWA_KONTRAK",
+    "asal": "baru",
+    "tipe": "C1",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "ID_VERSI_KONTRAK",
+    "asal": "baru",
+    "tipe": "R",
+    "kosong": "tidak",
+    "catatan": "menggantung pada **versi**"
+   },
+   {
+    "kolom": "WAKTU",
+    "asal": "CommentList[].Date",
+    "tipe": "D",
+    "kosong": "tidak",
+    "catatan": ""
+   },
+   {
+    "kolom": "NAMA_PELAKU",
+    "asal": "CommentList[].OperatorName",
+    "tipe": "T",
+    "kosong": "tidak",
+    "catatan": "dibekukan sebagai teks, sekeluarga `NAMA_PEMUTUS` (§12.5)"
+   },
+   {
+    "kolom": "JENIS_PERISTIWA",
+    "asal": "CommentList[].Suggest` **diurai",
+    "tipe": "E",
+    "kosong": "tidak",
+    "catatan": "`SUNTINGAN_INTERNAL` · `ADDENDUM_EKSTERNAL` · `ADDENDUM_PREMI` · `DISALIN` · `REVISI_DIBUAT`"
+   }
+  ]
+ }
+}

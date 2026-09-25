@@ -1,0 +1,194 @@
+# 08: Kontrak hilir — rekam premium yang dikonsumsi Claim Life
+
+**Status:** ready-for-agent
+
+**Blocked by:** **00 (skema tujuh tabel — PREFACTOR)**, 05a (rekam summary), 05b (alur simpan polis — penulisan detail NB menumpang di sana)
+
+## Hasil & nilai pengguna
+
+Sebagai **admin klaim Life**, saya ingin menemukan premium list dan peserta yang benar untuk klaim
+yang sedang saya proses — berkunci `PL_NUMBER` — **segera setelah** polis
+tersimpan, tanpa menunggu proses terjadwal apa pun, supaya klaim tidak pernah tertahan hanya karena
+baris pesertanya belum sempat ditulis. *(User story 39–40 di spec; **ADR-0001**)*
+
+## Area codebase
+
+`internal/repository` (kueri pencarian premium summary + detail; penulisan detail),
+`internal/services` (pemanggilan **inline** penulisan detail di alur simpan polis; kontrak yang
+dipanggil konteks Claim Life), `internal/handlers` (endpoint pencarian), penandaan **kontrak lintas
+konteks** di tempat bentuk rekam didefinisikan.
+
+## Rule Pega sumber
+
+| Rule | Class / Nama / Tipe | Path | Peran |
+| --- | --- | --- | --- |
+| `InsertLifePremiumDetail_act` | `ASM-FW-GISFW-WORK-LIFE` / `INSERTLIFEPREMIUMDETAIL_ACT` / `RULE-OBJ-ACTIVITY` | `PremiumList Life/Activity/InsertLifePremiumDetail_act.xml` (286.827 byte, `pxUpdateDateTime` `20260211T064342.645 GMT`, ruleset `01-01-91`) | **penulis detail NB** |
+| `SaveMasterLPDet` | `ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL` / `ASM!SAVEMASTERLPDET` / `RULE-CONNECT-SQL` | `PremiumList Life/RDBList/SaveMasterLPDet.xml` **dan** `Endorsement Life/RDBList/SaveMasterLPDet.xml` | `INSERT INTO POOLDATA.M_LIFE_PREMIUM_DETAIL` + `COMMIT;` (baris 252) |
+| `InsertJsonPolisLife_Act` (EDM) | `ASM-FW-GISFW-WORK-ENDORSEMENTLIFE` / `INSERTJSONPOLISLIFE_ACT` / `RULE-OBJ-ACTIVITY` | `Endorsement Life/Activity/InsertJsonPolisLife_Act.xml` | pemicu **inline** detail EDM (step **11.6**) |
+| `GetPesertaClaim_sql1` | `ASM-FW-GCNMFW-WORK-CLAIMLIFE` / `RNM!GETPESERTACLAIM_SQL1` / `RULE-CONNECT-SQL` | `Claim Life/RDBList/GetPesertaClaim_sql1.xml` | **konsumen** |
+| `InsertPLSummary` | `ASM-FW-GISFW-INT-LIFE_PREMIUM_SUMMARY` / `ASM!INSERTPLSUMMARY` / `RULE-CONNECT-SQL` | `PremiumList Life/RDBList/` **dan** `Endorsement Life/RDBList/` | penulis summary |
+
+`[terverifikasi]` **`SaveMasterLPDet` adalah satu rule yang sama** untuk NB dan EDM, bukan dua rule
+serupa: identitas identik, `pxUpdateDateTime` identik (`20260211T064412.717 GMT`), ukuran identik
+(15.537 byte), dan diff atas dua ekspor yang dinormalisasi menyisakan **8 baris** — seluruhnya cap
+waktu ekspor. **Penulisnya sudah seragam; yang berbeda hanyalah pemicunya.**
+
+`[terverifikasi]` Kueri konsumen `GetPesertaClaim_sql1`: `SELECT * FROM POOLDATA.M_LIFE_PREMIUM_DETAIL`
+dengan `WHERE PL_NUMBER = {pyWorkPage.PolicyDataLife.PremiumListSummary.PL_NUMBER}`, ditambah
+pencocokan sebagian (`LIKE`) atas `CERTIFICATE_NO` dan `UPPER(NAME_OF_INSURED)`.
+
+`[terverifikasi]` Kolom `INSERT` `SaveMasterLPDet` memuat **`PL_NUMBER` dan `PL_NUMBER_EDM`**,
+`CERTIFICATE_NO`, `NAME_OF_INSURED`, `POLICY_NO`, `CURRENCY`, seluruh kolom uang gross/`*_REFUND`/
+`*_RETRO`, `RATE`, `PRORATETYPE`, `SUM_AT_RISK_GROSS`, `SUM_AT_RISK_RETRO`, `RETROCEDED_SHARE`; PK
+dari `M_LIFE_PREMIUM_DETAIL_SEQ.nextval`.
+
+`[terverifikasi]` Class integrasi `ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL` adalah **tulang punggung
+domain Life**: Claim Life 46 rule, Endorsement Life 25, PremiumList Life 19, Komite Claim Life 11.
+
+### Peta langkah `InsertLifePremiumDetail_act` `[terverifikasi]`
+
+Penomoran dari `<pyStepPageReference>` — akarnya **`RH_2`**, bukan `RH_1`:
+
+| Step | Langkah | Catatan |
+| --- | --- | --- |
+| 1 | `Property-Set` | set `Param.pyReportName = "SelectNoJsonPolis_RD"`, `Param.pyReportClass = "ASM-FW-GISFW-Work-LIFE"` |
+| **2** | `Call Rule-Obj-Report-Definition.pxRetrieveReportData` | ⚠️ **pemicu batch** — mengambil **daftar** kasus |
+| 3 | *(loop `hasil.pxResults`)* | |
+| 3.1 | `Property-Set` | |
+| 3.2 | `Obj-Open-By-Handle` | buka work object per baris hasil |
+| 3.3 | "Insert to table detail" | |
+| 3.3.1 | `Page-Remove` | |
+| 3.3.2 | `Property-Set` "get ceding co name" | |
+| 3.3.3 | `Property-Set` "insert nilai dari data-batch → int" | precondition `TempError.CARIDESC==1` (baris 3634) |
+| **3.3.4** | `RDB-List` → **`SaveMasterLPDet`** (baris 3730) | precondition **`hasilDetail.pxResults(1).PL_NUMBER==""`** (baris 3820) — **penjaga idempotensi** |
+| 3.4 | `Property-Set` "Pega to jsondata" | |
+| 3.5 | `Obj-Save` | |
+| **3.6** | `Commit` | **AKTIF** |
+
+`[terverifikasi]` **Nol `<pyStepsBlockName>` di berkas ini** — tidak ada langkah ter-remark.
+
+`[terverifikasi]` Report Definition `SelectNoJsonPolis_RD` (class `ASM-FW-GISFW-Work-LIFE`) **dirujuk
+tetapi tidak ada berkasnya di korpus** — asimetri rujukan; pemilih batch itu sendiri tidak terekspor.
+
+## ⚠️ Penajaman kontrak hilir — **satu tabel, dua sudut pandang** `[keputusan work owner]`
+
+Ditambahkan 2026-09-15 dari **verdict V14** grilling Endorsement Life.
+
+Konteks Endorsement Life menulis **baris bernilai negatif** (jurnal balik) ke tabel yang **sama**
+dengan yang ditulis dan dibaca di sini. Aturannya:
+
+| Pembaca | Melihat |
+| --- | --- |
+| **Akuntansi / ringkasan premium** | **seluruh** baris — positif **dan** negatif; nettonya dari penjumlahan |
+| **Klaim** | **hanya peserta hidup** — yang belum dibatalkan dan belum dihapus |
+
+`[terverifikasi]` Penandanya adalah kolom **`EDMSTATUS`** pada `M_LIFE_PREMIUM_DETAIL`, terbaca dari
+daftar `INSERT` di `SaveMasterLPDet`: ia diisi dari `TempValue.EDMStatus` dengan nilai
+`Old` / `New` / `Delete` / `Batal`. Kolom `STATUS` **bukan** penandanya — ia berisi `0` untuk
+`QR`/`QP` dan `1` untuk `TP`/`TR` (jenis transaksi).
+
+⚠️ `[terverifikasi]` **Jalur new business — yakni tiket ini — tidak mengisi `EDMSTATUS` sama
+sekali.** Sensus `InsertLifePremiumDetail_act` (`ASM-FW-GISFW-WORK-LIFE` /
+`INSERTLIFEPREMIUMDETAIL_ACT` / `RULE-OBJ-ACTIVITY`): **nol** kemunculan. Baris NB karena itu masuk
+dengan `EDMSTATUS` kosong/NULL — dan **harus tetap terlihat** oleh klaim.
+
+`[terverifikasi]` Kueri klaim hari ini **belum menegakkan** kontrak ini: `GetPesertaClaim_sql1`
+(`ASM-FW-GCNMFW-WORK-CLAIMLIFE` / `RNM!GETPESERTACLAIM_SQL1` / `RULE-CONNECT-SQL`) menyaring hanya
+dengan `PL_NUMBER`, `CERTIFICATE_NO`, dan `NAME_OF_INSURED` — **tanpa** penyaring status. ⚠️ Apakah
+Pega menyaring di lapisan lain **tidak terbukti dari korpus**; ini **kontrak yang wajib ditegakkan
+sistem baru**.
+
+**Penegakannya milik konteks Claim Life** (spec §16, AC 25–30; tiket 02 Claim Life). Tiket ini
+mengikatnya sebagai **syarat kontrak** yang harus terbukti lewat test kontrak lintas konteks.
+
+## ⚠️ Penyimpangan sadar — tanpa job, penulisan INLINE `[keputusan work owner]`
+
+| | Pega existing | Sistem baru |
+| --- | --- | --- |
+| **Logika penulisan NB** | `InsertLifePremiumDetail_act` | **TETAP** `InsertLifePremiumDetail_act` — tidak diganti, tidak ditulis ulang |
+| **Pemicu NB** | **job/batch** (step 2 `pxRetrieveReportData` + loop step 3) | **INLINE saat proses insert/simpan polis** |
+| **Pemicu EDM** | inline di alur simpan (step 11.6) | inline di alur simpan — **tidak berubah** |
+
+**Yang disamakan adalah TIMING, bukan logikanya.** Step 2 dan loop step 3 **tidak dimigrasikan** —
+keduanya semata mesin batch. Yang dimigrasikan adalah **badan per-kasus** (3.1–3.6), dipanggil sekali
+untuk kasus yang sedang disimpan.
+
+**Konsekuensi positif:** data peserta langsung tersedia untuk klaim **tanpa jeda job**, dan NB
+seragam dengan EDM.
+
+## ADR terkait
+
+**ADR-0001** (batas konteks Claim Life ↔ hulu; perubahan bentuk rekam = perubahan kontrak),
+**ADR-0011** (bentuk `PremiumListSummary` / `PremiumListDetail` yang dipakai mesin status klaim),
+**ADR-0003** (uang non-float menyeberang batas), **ADR-0015** (batas transaksi dipegang Go —
+`SaveMasterLPDet` commit sendiri, jadi ia titik potong).
+
+## Acceptance criteria
+
+- [ ] Baris peserta **new business** ditulis ke `M_LIFE_PREMIUM_DETAIL` lewat logika
+      `InsertLifePremiumDetail_act` (`ASM-FW-GISFW-WORK-LIFE` / `INSERTLIFEPREMIUMDETAIL_ACT`),
+      dipanggil **INLINE sebagai bagian alur simpan polis** — **bukan** oleh job, cron, worker
+      terjadwal, atau antrean tunda. Test yang menemukan penjadwal di jalur ini **gagal**.
+      `[keputusan work owner]`
+- [ ] **Setelah simpan polis NB berhasil**, baris `M_LIFE_PREMIUM_DETAIL` untuk `PL_NUMBER` itu
+      **sudah ada** — dibuktikan dengan membacanya **segera** sesudah respons simpan, tanpa menunggu
+      apa pun.
+- [ ] Baris itu **dapat dibaca jalur baca klaim**: kueri bergaya `GetPesertaClaim_sql1` — berkunci
+      `PL_NUMBER`, dengan pencocokan sebagian pada `CERTIFICATE_NO` dan `NAME_OF_INSURED` **tanpa
+      peduli huruf besar/kecil** — mengembalikannya.
+- [ ] `SaveMasterLPDet` dipakai **apa adanya** sebagai penulis bersama — tidak dibuatkan salinan,
+      tidak divariasikan per jalur. Kolom `PL_NUMBER_EDM` tetap ada di skema dan **dibiarkan kosong**
+      oleh jalur new business. *(pengisiannya milik konteks Endorsement Life)*
+- [ ] Penjaga idempotensi dipertahankan: penulisan hanya terjadi bila baris untuk `PL_NUMBER` itu
+      belum ada (setara precondition `PL_NUMBER==""` pada step 3.3.4). Menyimpan ulang polis yang
+      sama **tidak** menggandakan baris — dibuktikan dengan menyimpan dua kali lalu menghitung baris.
+- [ ] `SaveMasterLPDet` diperlakukan sebagai **titik potong transaksi** (ia `COMMIT;` sendiri, baris
+      252): dipanggil **setelah** transaksi penomoran + summary commit, konsisten dengan aturan
+      urutan transaksi campuran. *(AC 20–21, 24 spec)*
+- [ ] Kegagalan penulisan detail **tidak** membatalkan premium list yang sudah tersimpan; keadaannya
+      **terdeteksi** dan pemanggilan ulang aman berkat penjaga idempotensi. *(AC 23 spec)*
+- [ ] Rekam `M_LIFE_PREMIUM_SUMMARY` dan `M_LIFE_PREMIUM_DETAIL` jalur new business dapat ditemukan
+      lewat `PL_NUMBER`. *(AC 28 spec)* *(pencarian lewat `PL_NUMBER_EDM` diuji di konteks Endorsement Life)*
+- [ ] Nilai uang ditulis dan dibaca sebagai **desimal presisi arbitrer**; nilai yang ditulis hulu
+      dibaca hilir **identik**, tanpa pembulatan di perbatasan. *(AC 16 spec; **ADR-0003**)*
+- [ ] Bentuk kedua rekam ditandai di kode sebagai **kontrak lintas konteks**; mengubahnya memaksa
+      pembaruan sadar di sisi Claim Life. *(AC 29 spec; **ADR-0001**)*
+- [ ] ⚠️ **Jalur baca klaim menyaring peserta batal/delete.** Pembacaan peserta bergaya
+      `GetPesertaClaim_sql1` **tidak menampilkan** baris ber-`EDMSTATUS` `'Batal'` atau `'Delete'`
+      — hanya **peserta hidup**. `[keputusan work owner]` *(verdict V14 grilling Endorsement Life;
+      AC 25 spec Claim Life)*
+- [ ] Peserta **new business** tetap muncul di jalur baca klaim meski jalur NB **tidak mengisi**
+      `EDMSTATUS` (kosong/NULL). ⚠️ Penyaring naif `NOT IN ('Delete','Batal')` membuang seluruh
+      peserta NB di Oracle — test wajib memuat kasus ini. *(AC 26 spec Claim Life)*
+- [ ] **Jalur baca akuntansi/ringkasan premium TIDAK menyaring** — ia melihat **seluruh** baris,
+      positif maupun negatif, karena nettonya diperoleh dari penjumlahan. **Satu tabel, dua sudut
+      pandang**, dan itu disengaja. *(AC 49 spec Endorsement Life)*
+- [ ] Ada test kontrak yang menembus dari simpan polis sampai pencarian bergaya Claim Life — **satu
+
+### Penyimpanan relasional ⚠️ BARU 2026-09-16 — spec §12
+
+- [ ] ⚠️ Claim Life membaca peserta dari **`T_PREMIUM_LIST_DETAIL`**, bukan dari
+      `M_LIFE_PREMIUM_DETAIL` maupun dari CLOB JSON. Kontrak bacanya tetap sama bentuknya.
+      *(AC 33 spec; penyimpangan sadar 1)*
+- [ ] ⚠️ Aturan **peserta hidup** (`EDMSTATUS` bukan `Delete`/`Batal`, NULL tetap muncul) berlaku
+      **apa adanya** pada tabel baru — pindah tabel **tidak** mengubah aturannya.
+- [ ] ⚠️ Kolom `PL_NUMBER` pada tabel peserta **ber-index** sejak hari pertama — ia kunci baca Claim
+      Life pada tabel berjutaan baris. *(AC 49 spec)*
+      seam**, API HTTP, terhadap skema uji Oracle.
+
+## Blocker
+
+**Tidak ada.** **OQ-068 ditutup 2026-09-15** — `[terverifikasi]` + `[keputusan work owner]`.
+
+Sebelumnya tiket ini `needs-info` karena korpus tidak memperlihatkan penulis `M_LIFE_PREMIUM_DETAIL`
+di jalur new business — hanya `SaveMasterLPDet` di Endorsement. Work owner kemudian menambahkan
+`InsertLifePremiumDetail_act` **dan** salinan `SaveMasterLPDet` ke `PremiumList Life/`, lalu
+menetapkan bahwa logikanya dipakai apa adanya sementara **pemicunya** diubah dari job menjadi inline.
+Jalur NB kini terbukti dan seragam dengan EDM.
+
+## Perintah verifikasi
+
+```
+go test ./internal/...
+cd frontend && npm test
+```

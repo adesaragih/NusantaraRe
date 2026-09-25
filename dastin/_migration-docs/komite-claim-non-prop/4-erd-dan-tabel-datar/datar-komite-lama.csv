@@ -1,0 +1,689 @@
+JALUR,AKAR,KEDALAMAN,NAMA,BENTUK,KELAS_PEGA,CACAH_ANAK,REF,CACAH_BERKAS,BERKAS_CONTOH
+Adjustment,Adjustment,0,Adjustment,Page,ASM-FW-GCNMFW-Data-Adjustment,24,0,0,
+Adjustment.AlokasiXOLPaid,Adjustment,1,AlokasiXOLPaid,skalar,,0,1,1,Section/ShowTransfer.xml
+Adjustment.BranchOfBank,Adjustment,1,BranchOfBank,skalar,,0,1,1,Section/ShowTransfer.xml
+Adjustment.BranchOfBank2,Adjustment,1,BranchOfBank2,skalar,,0,1,1,Section/ShowTransfer.xml
+Adjustment.CNPFlagReinstate,Adjustment,1,CNPFlagReinstate,skalar,,0,1,1,Activity/KomitePostAdjustment.xml
+Adjustment.CNPSpreadLoss,Adjustment,1,CNPSpreadLoss,skalar,,0,1,1,Section/ShowTransfer.xml
+Adjustment.Currency,Adjustment,1,Currency,skalar,,0,1,1,Section/ShowTransfer.xml
+Adjustment.Currency2,Adjustment,1,Currency2,skalar,,0,1,1,Section/ShowTransfer.xml
+Adjustment.FlagCurrency,Adjustment,1,FlagCurrency,skalar,,0,1,1,Section/ShowTransfer.xml
+Adjustment.IsPropReserved,Adjustment,1,IsPropReserved,skalar,,0,1,1,Section/ShowTransfer.xml
+Adjustment.IsProposeClose,Adjustment,1,IsProposeClose,skalar,,0,2,1,Section/ShowTransfer.xml
+Adjustment.ListClaimAcceptation,Adjustment,1,ListClaimAcceptation,skalar,,0,1,1,Section/ShowTransfer.xml
+Adjustment.NameOfBank,Adjustment,1,NameOfBank,skalar,,0,1,1,Section/ShowTransfer.xml
+Adjustment.NameOfBank2,Adjustment,1,NameOfBank2,skalar,,0,1,1,Section/ShowTransfer.xml
+Adjustment.NoAccount,Adjustment,1,NoAccount,skalar,,0,1,1,Section/ShowTransfer.xml
+Adjustment.NoAccount2,Adjustment,1,NoAccount2,skalar,,0,1,1,Section/ShowTransfer.xml
+Adjustment.Payable,Adjustment,1,Payable,skalar,,0,1,1,Section/ShowTransfer.xml
+Adjustment.PayableTo,Adjustment,1,PayableTo,skalar,,0,1,1,Section/ShowTransfer.xml
+Adjustment.PersenRNM,Adjustment,1,PersenRNM,skalar,,0,1,1,Section/ShowTransfer.xml
+Adjustment.SpreadingAdjustment,Adjustment,1,SpreadingAdjustment,skalar,,0,1,1,Section/ShowTransfer.xml
+Adjustment.SpreadingQuotaShare,Adjustment,1,SpreadingQuotaShare,skalar,,0,1,1,Section/ShowTransfer.xml
+Adjustment.SpreadingRisk,Adjustment,1,SpreadingRisk,skalar,,0,1,1,Section/ShowTransfer.xml
+Adjustment.SwiftCode,Adjustment,1,SwiftCode,skalar,,0,4,1,Section/ShowTransfer.xml
+Adjustment.SwiftCode2,Adjustment,1,SwiftCode2,skalar,,0,2,1,Section/ShowTransfer.xml
+Adjustment.Type,Adjustment,1,Type,skalar,,0,1,1,Section/ShowTransfer.xml
+AllAttachments,AllAttachments,0,AllAttachments,Page,Code-Pega-List,1,0,0,
+AllAttachments.pxResults,AllAttachments,1,pxResults,skalar,Link-Attachment,0,2,2,Activity/InsertJsonClaimTreatyNonProp_act.xml | excludeXML/GetBase64Attachment.xml
+AttachmentLinksOpened,AttachmentLinksOpened,0,AttachmentLinksOpened,Page,Code-Pega-List,1,0,0,
+AttachmentLinksOpened.pxResults,AttachmentLinksOpened,1,pxResults,skalar,Data-WorkAttach-File,0,2,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+BankAccount,BankAccount,0,BankAccount,Page,Code-Pega-List,1,0,0,
+BankAccount.pxResults,BankAccount,1,pxResults,Page List,ASM-FW-GISFW-Int-BANKACCOUNT,1,2,1,Activity/HitServiceToKasirKMT_Act.xml
+BankAccount.pxResults.IDOFBANK,BankAccount,2,IDOFBANK,skalar,,0,1,1,Activity/HitServiceToKasirKMT_Act.xml
+DOCUMENT_CLAIM,DOCUMENT_CLAIM,0,DOCUMENT_CLAIM,Page,Code-Pega-List,3,0,0,
+DOCUMENT_CLAIM.INSERTDOCUMENT_ACT,DOCUMENT_CLAIM,1,INSERTDOCUMENT_ACT,skalar,,0,2,2,Activity/GenerateAccCNP_act.xml | Activity/KomitePostAdjustmentCWP.xml
+DOCUMENT_CLAIM.InsertDocument_Act,DOCUMENT_CLAIM,1,InsertDocument_Act,skalar,,0,4,2,Activity/GenerateAccCNP_act.xml | Activity/KomitePostAdjustmentCWP.xml
+DOCUMENT_CLAIM.pxResults,DOCUMENT_CLAIM,1,pxResults,skalar,ASM-FW-GCNMFW-Int-DOCUMENT_CLAIM,0,2,1,excludeXML/GetBase64Attachment.xml
+DataAttach,DataAttach,0,DataAttach,Page,Data-WorkAttach-File,1,0,0,
+DataAttach.pyAttachStream,DataAttach,1,pyAttachStream,skalar,,0,1,1,excludeXML/GetBase64Attachment.xml
+DataChronology,DataChronology,0,DataChronology,Page,ASM-FW-GISFW-Data-Search,1,0,0,
+DataChronology.CARI1,DataChronology,1,CARI1,skalar,,0,5,3,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml | DataTransform/InsertChronology_DT.xml
+DataImage,DataImage,0,DataImage,Page,ASM-FW-GISFW-Int-T_STORAGE_IMAGE,1,0,0,
+DataImage.URLImage,DataImage,1,URLImage,skalar,,0,7,1,excludeXML/GetBase64Attachment.xml
+Email,Email,0,Email,Page,Code-Pega-List,1,0,0,
+Email.pxResults,Email,1,pxResults,Page List,ASM-FW-GISFW-Data-Search,1,4,1,Activity/HitServiceToKasirKMT_Act.xml
+Email.pxResults.HASIL1,Email,2,HASIL1,skalar,,0,3,1,Activity/HitServiceToKasirKMT_Act.xml
+InService,InService,0,InService,Page,ASM-FW-GCNMFW-Work-Int-os_akseptasi_klaim,3,0,0,
+InService.CASEID,InService,1,CASEID,skalar,,0,2,2,Activity/KonversiKlaim_Act.xml | ConnectREST/KonversiKlaimNonLife.xml
+InService.NOPOLIS,InService,1,NOPOLIS,skalar,,0,2,2,Activity/KonversiKlaim_Act.xml | ConnectREST/KonversiKlaimNonLife.xml
+InService.STS_REJECT,InService,1,STS_REJECT,skalar,,0,2,2,Activity/KonversiKlaim_Act.xml | ConnectREST/KonversiKlaimNonLife.xml
+InputData,InputData,0,InputData,Page,ASM-FW-GISFW-Data-Search,20,0,0,
+InputData.CARI1,InputData,1,CARI1,skalar,,0,7,6,Activity/InsertOSKlaimCNP.xml | Activity/InsertOSSubjectivityCNP.xml | Activity/SaveRejectOSKomiteCNP.xml
+InputData.CARI10,InputData,1,CARI10,skalar,,0,8,7,Activity/InsertOSKlaimCNP.xml | Activity/InsertOSSubjectivityCNP.xml | Activity/KomitePostAdjustment.xml
+InputData.CARI12,InputData,1,CARI12,skalar,,0,3,3,RDBList/SaveDataToOsAkseptasiNP.xml | RDBList/SaveOSClaim_SQL.xml | RDBList/SaveOSSubjectivity_SQL.xml
+InputData.CARI13,InputData,1,CARI13,skalar,,0,3,3,RDBList/SaveDataToOsAkseptasiNP.xml | RDBList/SaveOSClaim_SQL.xml | RDBList/SaveOSSubjectivity_SQL.xml
+InputData.CARI16,InputData,1,CARI16,skalar,,0,4,4,Activity/SaveRejectOSKomiteCNP.xml | RDBList/SaveDataToOsAkseptasiNP.xml | RDBList/SaveOSClaim_SQL.xml
+InputData.CARI17,InputData,1,CARI17,skalar,,0,2,2,RDBList/SaveOSClaim_SQL.xml | RDBList/SaveOSSubjectivity_SQL.xml
+InputData.CARI18,InputData,1,CARI18,skalar,,0,4,3,Activity/InsertOSKlaimCNP.xml | RDBList/SaveDataToOsAkseptasiNP.xml | RDBList/SaveOSClaim_SQL.xml
+InputData.CARI2,InputData,1,CARI2,skalar,,0,9,7,Activity/InsertOSKlaimCNP.xml | Activity/InsertOSSubjectivityCNP.xml | Activity/InsertXOLKlaimCNP.xml
+InputData.CARI20,InputData,1,CARI20,skalar,,0,3,2,Activity/InsertOSKlaimCNP.xml | RDBList/SaveOSClaim_SQL.xml
+InputData.CARI21,InputData,1,CARI21,skalar,,0,2,2,Activity/InsertOSSubjectivityCNP.xml | RDBList/SaveOSSubjectivity_SQL.xml
+InputData.CARI29,InputData,1,CARI29,skalar,,0,7,6,Activity/InsertOSKlaimCNP.xml | Activity/InsertOSSubjectivityCNP.xml | Activity/SaveRejectOSKomiteCNP.xml
+InputData.CARI3,InputData,1,CARI3,skalar,,0,7,6,Activity/InsertOSKlaimCNP.xml | Activity/InsertOSSubjectivityCNP.xml | Activity/SaveRejectOSKomiteCNP.xml
+InputData.CARI5,InputData,1,CARI5,skalar,,0,2,2,Activity/InsertXOLKlaimCNP.xml | RDBList/SaveXOLClaim_SQL.xml
+InputData.CARI50,InputData,1,CARI50,skalar,,0,2,2,Activity/InsertXOLKlaimCNP.xml | RDBList/SaveXOLClaim_SQL.xml
+InputData.CARI51,InputData,1,CARI51,skalar,,0,2,2,Activity/InsertXOLKlaimCNP.xml | RDBList/SaveXOLClaim_SQL.xml
+InputData.CARI52,InputData,1,CARI52,skalar,,0,2,2,Activity/InsertXOLKlaimCNP.xml | RDBList/SaveXOLClaim_SQL.xml
+InputData.CARI53,InputData,1,CARI53,skalar,,0,2,2,Activity/InsertXOLKlaimCNP.xml | RDBList/SaveXOLClaim_SQL.xml
+InputData.CARI54,InputData,1,CARI54,skalar,,0,2,2,Activity/InsertXOLKlaimCNP.xml | RDBList/SaveXOLClaim_SQL.xml
+InputData.CARI55,InputData,1,CARI55,skalar,,0,1,1,Activity/InsertXOLKlaimCNP.xml
+InputData.pxResults,InputData,1,pxResults,Page List,ASM-FW-GISFW-Data-Search,6,9,2,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml
+InputData.pxResults.CARI10,InputData,2,CARI10,skalar,,0,1,1,Activity/SendEmailKlaim_KMT.xml
+InputData.pxResults.CARI11,InputData,2,CARI11,skalar,,0,1,1,Activity/SendEmailKlaim_KMT.xml
+InputData.pxResults.CARI12,InputData,2,CARI12,skalar,,0,1,1,Activity/SendEmailKlaim_KMT.xml
+InputData.pxResults.CARI13,InputData,2,CARI13,skalar,,0,2,1,Activity/SendEmailKlaim_KMT.xml
+InputData.pxResults.CARI14,InputData,2,CARI14,skalar,,0,1,1,Activity/SendEmailKlaim_KMT.xml
+InputData.pxResults.CARI15,InputData,2,CARI15,skalar,,0,1,1,Activity/SendEmailKlaim_KMT.xml
+InputParam,InputParam,0,InputParam,Page,ASM-FW-GISFW-Data-Search,11,0,0,
+InputParam.CARI12,InputParam,1,CARI12,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+InputParam.CARI13,InputParam,1,CARI13,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+InputParam.CARI17,InputParam,1,CARI17,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+InputParam.CARI23,InputParam,1,CARI23,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+InputParam.CARI24,InputParam,1,CARI24,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+InputParam.CARI26,InputParam,1,CARI26,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+InputParam.CARI41,InputParam,1,CARI41,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+InputParam.CARI51,InputParam,1,CARI51,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+InputParam.CARI52,InputParam,1,CARI52,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+InputParam.CARI53,InputParam,1,CARI53,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+InputParam.CARI54,InputParam,1,CARI54,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+InputParamOs,InputParamOs,0,InputParamOs,Page,ASM-FW-GCNMFW-Data-osAkseptasi,17,0,0,
+InputParamOs.Adjusterfee,InputParamOs,1,Adjusterfee,skalar,,0,2,1,Activity/SaveRejectOSKomiteCNP.xml
+InputParamOs.CNPOthersFee,InputParamOs,1,CNPOthersFee,skalar,,0,2,1,Activity/SaveRejectOSKomiteCNP.xml
+InputParamOs.CauseOfLoss,InputParamOs,1,CauseOfLoss,skalar,,0,2,1,Activity/SaveRejectOSKomiteCNP.xml
+InputParamOs.CauseOfLossID,InputParamOs,1,CauseOfLossID,skalar,,0,2,1,Activity/SaveRejectOSKomiteCNP.xml
+InputParamOs.Currency,InputParamOs,1,Currency,skalar,,0,3,3,Activity/SaveRejectOSKomiteCNP.xml | RDBList/GetDataCNPOS.xml | RDBList/SaveDataToOsAkseptasiNP.xml
+InputParamOs.CurrencyID,InputParamOs,1,CurrencyID,skalar,,0,1,1,Activity/SaveRejectOSKomiteCNP.xml
+InputParamOs.EstimationDate,InputParamOs,1,EstimationDate,skalar,,0,1,1,Activity/SaveRejectOSKomiteCNP.xml
+InputParamOs.GrossValue,InputParamOs,1,GrossValue,skalar,,0,2,1,Activity/SaveRejectOSKomiteCNP.xml
+InputParamOs.IDMasterTreaty,InputParamOs,1,IDMasterTreaty,skalar,,0,2,1,Activity/SaveRejectOSKomiteCNP.xml
+InputParamOs.KursValue,InputParamOs,1,KursValue,skalar,,0,1,1,Activity/SaveRejectOSKomiteCNP.xml
+InputParamOs.NoClaim,InputParamOs,1,NoClaim,skalar,,0,2,1,Activity/SaveRejectOSKomiteCNP.xml
+InputParamOs.PersenRNM,InputParamOs,1,PersenRNM,skalar,,0,1,1,Activity/SaveRejectOSKomiteCNP.xml
+InputParamOs.Salvage,InputParamOs,1,Salvage,skalar,,0,2,1,Activity/SaveRejectOSKomiteCNP.xml
+InputParamOs.Type,InputParamOs,1,Type,skalar,,0,1,1,Activity/SaveRejectOSKomiteCNP.xml
+InputParamOs.TypeLoss,InputParamOs,1,TypeLoss,skalar,,0,3,3,Activity/SaveRejectOSKomiteCNP.xml | RDBList/GetDataCNPOS.xml | RDBList/SaveDataToOsAkseptasiNP.xml
+InputParamOs.TypeLossID,InputParamOs,1,TypeLossID,skalar,,0,1,1,Activity/SaveRejectOSKomiteCNP.xml
+InputParamOs.Value,InputParamOs,1,Value,skalar,,0,3,1,Activity/SaveRejectOSKomiteCNP.xml
+InsertDoc,InsertDoc,0,InsertDoc,Page,ASM-FW-GISFW-Int-T_STORAGE_IMAGE,6,0,0,
+InsertDoc.App,InsertDoc,1,App,skalar,,0,2,2,Activity/InsertGoogleStorage_Act.xml | RDBList/Insert_T_Storage_SQL.xml
+InsertDoc.ImageID,InsertDoc,1,ImageID,skalar,,0,3,3,Activity/InsertGoogleStorage_Act.xml | RDBList/GenerateImageID_SQL.xml | RDBList/Insert_T_Storage_SQL.xml
+InsertDoc.Namafile,InsertDoc,1,Namafile,skalar,,0,2,2,Activity/InsertGoogleStorage_Act.xml | RDBList/Insert_T_Storage_SQL.xml
+InsertDoc.URLImage,InsertDoc,1,URLImage,skalar,,0,2,2,Activity/InsertGoogleStorage_Act.xml | RDBList/Insert_T_Storage_SQL.xml
+InsertDoc.appfolder,InsertDoc,1,appfolder,skalar,,0,2,2,Activity/InsertGoogleStorage_Act.xml | RDBList/Insert_T_Storage_SQL.xml
+InsertDoc.exp,InsertDoc,1,exp,skalar,,0,4,2,Activity/InsertGoogleStorage_Act.xml | RDBList/Insert_T_Storage_SQL.xml
+InsertHistory,InsertHistory,0,InsertHistory,Page,ASM-FW-GISFW-Data-Search,5,0,0,
+InsertHistory.CARI1,InsertHistory,1,CARI1,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | RDBList/InsertHistoryAkseptasiPega_Sql.xml
+InsertHistory.CARI2,InsertHistory,1,CARI2,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | RDBList/InsertHistoryAkseptasiPega_Sql.xml
+InsertHistory.CARI4,InsertHistory,1,CARI4,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | RDBList/InsertHistoryAkseptasiPega_Sql.xml
+InsertHistory.CARI5,InsertHistory,1,CARI5,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | RDBList/InsertHistoryAkseptasiPega_Sql.xml
+InsertHistory.CARI6,InsertHistory,1,CARI6,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | RDBList/InsertHistoryAkseptasiPega_Sql.xml
+InsertOSAccWork,InsertOSAccWork,0,InsertOSAccWork,Page,ASM-FW-GCNMFW-Work-ClaimTreatyNonProp,1,0,0,
+InsertOSAccWork.ClaimData,InsertOSAccWork,1,ClaimData,Page,,1,3,1,Activity/SaveRejectOSKomiteCNP.xml
+InsertOSAccWork.ClaimData.SpreadingRisk,InsertOSAccWork,2,SpreadingRisk,Page List,,0,3,1,Activity/SaveRejectOSKomiteCNP.xml
+LatestWorkPage,LatestWorkPage,0,LatestWorkPage,Page,ASM-FW-GCNMFW-Work-KomiteTreatyNonProp,1,0,0,
+LatestWorkPage.Adjustment,LatestWorkPage,1,Adjustment,Page,,1,1,1,Activity/InsertXOLKlaimCNP.xml
+LatestWorkPage.Adjustment.SpreadingRisk,LatestWorkPage,2,SpreadingRisk,skalar,,0,1,1,Activity/InsertXOLKlaimCNP.xml
+Local,Local,0,Local,Page,,70,0,0,
+Local.AdjClaimValue,Local,1,AdjClaimValue,skalar,,0,2,1,Activity/SaveRejectOSKomiteCNP.xml
+Local.AdjusterFee,Local,1,AdjusterFee,skalar,,0,8,3,Activity/GenerateAccCNP_act.xml | Activity/KomitePostAdjustmentCWP.xml | Activity/SaveRejectOSKomiteCNP.xml
+Local.AdjusterFeeRNM,Local,1,AdjusterFeeRNM,skalar,,0,3,1,Activity/GenerateAccCNP_act.xml
+Local.AllXOL,Local,1,AllXOL,skalar,,0,7,1,Activity/GenerateAccCNP_act.xml
+Local.BCC,Local,1,BCC,skalar,,0,5,2,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml
+Local.CNPOthersFee,Local,1,CNPOthersFee,skalar,,0,2,1,Activity/SaveRejectOSKomiteCNP.xml
+Local.Check,Local,1,Check,skalar,,0,9,3,Activity/GenerateAccCNP_act.xml | Activity/KomitePostAdjustmentCWP.xml | Activity/SaveRejectOSKomiteCNP.xml
+Local.Claim,Local,1,Claim,skalar,,0,6,2,Activity/GenerateAccCNP_act.xml | Activity/KomitePostAdjustmentCWP.xml
+Local.ClaimEstimation,Local,1,ClaimEstimation,skalar,,0,2,1,Activity/SaveRejectOSKomiteCNP.xml
+Local.ClaimRNM,Local,1,ClaimRNM,skalar,,0,3,1,Activity/GenerateAccCNP_act.xml
+Local.ClaimSpreaded,Local,1,ClaimSpreaded,skalar,,0,2,1,Activity/SaveRejectOSKomiteCNP.xml
+Local.Currency,Local,1,Currency,skalar,,0,6,2,Activity/GenerateAccCNP_act.xml | Activity/KomitePostAdjustmentCWP.xml
+Local.CurrencySpread,Local,1,CurrencySpread,skalar,,0,4,1,Activity/GenerateAccCNP_act.xml
+Local.CurrentMonth,Local,1,CurrentMonth,skalar,,0,5,1,Activity/KomitePostAdjustment.xml
+Local.DeductAmount,Local,1,DeductAmount,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+Local.Deductible,Local,1,Deductible,skalar,,0,3,1,Activity/KomitePostAdjustmentCWP.xml
+Local.Deductpct,Local,1,Deductpct,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+Local.EmailCC,Local,1,EmailCC,skalar,,0,8,2,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml
+Local.EmailStream,Local,1,EmailStream,skalar,,0,3,1,Activity/KomitePostAdjustmentCWP.xml
+Local.Emailto,Local,1,Emailto,skalar,,0,11,2,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml
+Local.ErrMsgUser,Local,1,ErrMsgUser,skalar,,0,6,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+Local.FlagAdjusterFee,Local,1,FlagAdjusterFee,skalar,,0,4,1,Activity/KomitePostAdjustment.xml
+Local.FlagClaim,Local,1,FlagClaim,skalar,,0,4,1,Activity/KomitePostAdjustment.xml
+Local.FlagOthersFee,Local,1,FlagOthersFee,skalar,,0,4,1,Activity/KomitePostAdjustment.xml
+Local.FlagReinstate,Local,1,FlagReinstate,skalar,,0,1,1,Activity/KomitePostAdjustment.xml
+Local.FlagSalvage,Local,1,FlagSalvage,skalar,,0,4,1,Activity/KomitePostAdjustment.xml
+Local.HTML,Local,1,HTML,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+Local.Idx,Local,1,Idx,skalar,,0,2,1,Activity/GenerateAccCNP_act.xml
+Local.IdxAdjustment,Local,1,IdxAdjustment,skalar,,0,4,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+Local.IdxInterim,Local,1,IdxInterim,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+Local.IdxKomite,Local,1,IdxKomite,skalar,,0,3,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+Local.IdxParent,Local,1,IdxParent,skalar,,0,3,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+Local.IdxSpreading,Local,1,IdxSpreading,skalar,,0,1,1,Activity/KomitePostAdjustment.xml
+Local.IdxSpreadingFin,Local,1,IdxSpreadingFin,skalar,,0,2,1,Activity/KomitePostAdjustment.xml
+Local.ImageID,Local,1,ImageID,skalar,,0,6,1,excludeXML/GetBase64Attachment.xml
+Local.IndexObject,Local,1,IndexObject,skalar,,0,1,1,Activity/HitServiceToKasirKMT_Act.xml
+Local.Inskey,Local,1,Inskey,skalar,,0,3,1,excludeXML/GetBase64Attachment.xml
+Local.IsClose,Local,1,IsClose,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+Local.IsReject,Local,1,IsReject,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+Local.Kategori,Local,1,Kategori,skalar,,0,4,1,excludeXML/GetBase64Attachment.xml
+Local.Key,Local,1,Key,skalar,,0,4,1,excludeXML/GetBase64Attachment.xml
+Local.NextMonth,Local,1,NextMonth,skalar,,0,17,1,Activity/KomitePostAdjustment.xml
+Local.NoAksep,Local,1,NoAksep,skalar,,0,2,1,Activity/HitServiceToKasirKMT_Act.xml
+Local.OtherFee,Local,1,OtherFee,skalar,,0,3,1,Activity/GenerateAccCNP_act.xml
+Local.OtherFeeRNM,Local,1,OtherFeeRNM,skalar,,0,3,1,Activity/GenerateAccCNP_act.xml
+Local.OthersFee,Local,1,OthersFee,skalar,,0,3,1,Activity/KomitePostAdjustmentCWP.xml
+Local.PaymentType,Local,1,PaymentType,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+Local.ROE,Local,1,ROE,skalar,,0,2,1,Activity/KomitePostAdjustmentCWP.xml
+Local.Reinstate,Local,1,Reinstate,skalar,,0,3,1,Activity/GenerateAccCNP_act.xml
+Local.ReinstateRNM,Local,1,ReinstateRNM,skalar,,0,3,1,Activity/GenerateAccCNP_act.xml
+Local.Salvage,Local,1,Salvage,skalar,,0,8,3,Activity/GenerateAccCNP_act.xml | Activity/KomitePostAdjustmentCWP.xml | Activity/SaveRejectOSKomiteCNP.xml
+Local.SalvageRNM,Local,1,SalvageRNM,skalar,,0,3,1,Activity/GenerateAccCNP_act.xml
+Local.ShareCedant,Local,1,ShareCedant,skalar,,0,2,1,Activity/KomitePostAdjustmentCWP.xml
+Local.TPL,Local,1,TPL,skalar,,0,3,1,Activity/KomitePostAdjustmentCWP.xml
+Local.TglProd,Local,1,TglProd,skalar,,0,3,1,Activity/KomitePostAdjustment.xml
+Local.XOLID,Local,1,XOLID,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+Local.XOLRNM,Local,1,XOLRNM,skalar,,0,3,1,Activity/GenerateAccCNP_act.xml
+Local.XOLType,Local,1,XOLType,skalar,,0,2,1,Activity/SaveRejectOSKomiteCNP.xml
+Local.Year,Local,1,Year,skalar,,0,2,1,Activity/KomitePostAdjustment.xml
+Local.cur,Local,1,cur,skalar,,0,2,1,Activity/HitServiceToKasirKMT_Act.xml
+Local.currency,Local,1,currency,skalar,,0,2,1,Activity/SaveRejectOSKomiteCNP.xml
+Local.currentDate,Local,1,currentDate,skalar,,0,4,1,Activity/KomitePostAdjustment.xml
+Local.deskripsi,Local,1,deskripsi,skalar,,0,7,3,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml | Activity/SendErrorDirectKasir.xml
+Local.flag,Local,1,flag,skalar,,0,3,1,Activity/HitServiceToKasirKMT_Act.xml
+Local.idx,Local,1,idx,skalar,,0,5,3,Activity/HitServiceToKasirKMT_Act.xml | Activity/InsertXOLKlaimCNP.xml | Activity/SendEmailKlaim_KMT.xml
+Local.idx2,Local,1,idx2,skalar,,0,7,2,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml
+Local.premiumspreaded,Local,1,premiumspreaded,skalar,,0,2,1,Activity/HitServiceToKasirKMT_Act.xml
+Local.strFileData,Local,1,strFileData,skalar,,0,2,2,Activity/GenerateAccCNP_act.xml | Activity/KomitePostAdjustmentCWP.xml
+Local.subjek,Local,1,subjek,skalar,,0,8,2,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml
+Local.totalclaim,Local,1,totalclaim,skalar,,0,2,1,Activity/HitServiceToKasirKMT_Act.xml
+NewDocument,NewDocument,0,NewDocument,Page,ASM-FW-GCNMFW-Int-DOCUMENT_CLAIM,1,0,0,
+NewDocument.T_STORAGE_ID,NewDocument,1,T_STORAGE_ID,skalar,,0,2,1,Activity/InsertDocument_Act.xml
+OPList,OPList,0,OPList,Page,Code-Pega-List,1,0,0,
+OPList.pxResults,OPList,1,pxResults,Page List,Data-Admin-Operator-ID,1,2,1,Activity/SendErrorDirectKasir.xml
+OPList.pxResults.pyAddresses,OPList,2,pyAddresses,Page List,,1,1,1,Activity/SendErrorDirectKasir.xml
+OPList.pxResults.pyAddresses.pyEmailAddress,OPList,3,pyEmailAddress,skalar,,0,1,1,Activity/SendErrorDirectKasir.xml
+OperatorID,OperatorID,0,OperatorID,Page,Data-Admin-Operator-ID,3,0,0,
+OperatorID.pyPosition,OperatorID,1,pyPosition,skalar,,0,2,1,DataTransform/InsertChronology_DT.xml
+OperatorID.pyUserIdentifier,OperatorID,1,pyUserIdentifier,skalar,,0,9,3,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml | RDBList/GetTokenStorage_SQL.xml
+OperatorID.pyUserName,OperatorID,1,pyUserName,skalar,,0,8,5,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml | Activity/SendEmailKlaimRejectClose_KMT.xml
+OperatorList,OperatorList,0,OperatorList,Page,Code-Pega-List,1,0,0,
+OperatorList.pxResults,OperatorList,1,pxResults,Page List,Data-Admin-Operator-ID,2,10,2,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml
+OperatorList.pxResults.pyEmailAddress,OperatorList,2,pyEmailAddress,skalar,,0,4,2,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml
+OperatorList.pxResults.pyUserName,OperatorList,2,pyUserName,skalar,,0,4,2,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml
+OutNOAcc,OutNOAcc,0,OutNOAcc,Page,Code-Pega-List,1,0,0,
+OutNOAcc.pxResults,OutNOAcc,1,pxResults,Page List,ASM-FW-GISFW-Data-Search,1,4,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+OutNOAcc.pxResults.CARI1,OutNOAcc,2,CARI1,skalar,,0,2,1,Activity/KomitePostAdjustment.xml
+OutOSAcc,OutOSAcc,0,OutOSAcc,Page,Code-Pega-List,1,0,0,
+OutOSAcc.pxResults,OutOSAcc,1,pxResults,Page List,ASM-FW-GCNMFW-Data-osAkseptasi,1,6,1,Activity/SaveRejectOSKomiteCNP.xml
+OutOSAcc.pxResults.CNPOthersFee,OutOSAcc,2,CNPOthersFee,skalar,,0,1,1,Activity/SaveRejectOSKomiteCNP.xml
+OutputData,OutputData,0,OutputData,Page,Code-Pega-List,4,0,0,
+OutputData.BRANCH_CODE,OutputData,1,BRANCH_CODE,skalar,,0,1,1,RDBList/InsertClaimPNC.xml
+OutputData.BRANCH_NAME,OutputData,1,BRANCH_NAME,skalar,,0,1,1,RDBList/InsertClaimPNC.xml
+OutputData.HASIL1,OutputData,1,HASIL1,skalar,,0,1,1,RDBList/SaveXOLClaim_SQL.xml
+OutputData.HASIL2,OutputData,1,HASIL2,skalar,,0,1,1,RDBList/SaveXOLClaim_SQL.xml
+Param,Param,0,Param,Page,,53,0,0,
+Param.Act,Param,1,Act,skalar,,0,3,1,Activity/GenerateAccCNP_act.xml
+Param.BASE64,Param,1,BASE64,skalar,,0,1,1,Activity/InsertDocument_Act.xml
+Param.BCC,Param,1,BCC,skalar,,0,4,3,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml | Activity/SendErrorDirectKasir.xml
+Param.CC,Param,1,CC,skalar,,0,4,3,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml | Activity/SendErrorDirectKasir.xml
+Param.CaseKMT,Param,1,CaseKMT,skalar,,0,3,1,Activity/GenerateAccCNP_act.xml
+Param.CurrencyName,Param,1,CurrencyName,skalar,,0,2,1,ReportDefinition/BrowseCurrency_RD.xml
+Param.Durasi,Param,1,Durasi,skalar,,0,5,1,Activity/InsertGoogleStorage_Act.xml
+Param.Ext,Param,1,Ext,skalar,,0,6,1,Activity/InsertGoogleStorage_Act.xml
+Param.FileBase64,Param,1,FileBase64,skalar,,0,1,1,excludeXML/GetBase64Attachment.xml
+Param.FileName,Param,1,FileName,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+Param.FileURL,Param,1,FileURL,skalar,,0,1,1,excludeXML/GetBase64Attachment.xml
+Param.Folder,Param,1,Folder,skalar,,0,4,1,Activity/InsertGoogleStorage_Act.xml
+Param.FromAPI,Param,1,FromAPI,skalar,,0,2,1,Activity/KomitePostAdjustmentCWP.xml
+Param.HTMLmessage,Param,1,HTMLmessage,skalar,,0,4,3,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml | Activity/SendErrorDirectKasir.xml
+Param.ID,Param,1,ID,skalar,,0,2,1,ReportDefinition/BrowseCurrency_RD.xml
+Param.IDPEGA,Param,1,IDPEGA,skalar,,0,1,1,Activity/InsertDocument_Act.xml
+Param.INSKEY,Param,1,INSKEY,skalar,,0,1,1,Activity/KonversiKlaim_Act.xml
+Param.IdxAdj,Param,1,IdxAdj,skalar,,0,2,2,Activity/GenerateAccCNP_act.xml | Activity/InsertOSKlaimCNP.xml
+Param.IdxSpreading,Param,1,IdxSpreading,skalar,,0,1,1,Activity/InsertOSKlaimCNP.xml
+Param.Image,Param,1,Image,skalar,,0,3,1,Activity/InsertGoogleStorage_Act.xml
+Param.ImageID,Param,1,ImageID,skalar,,0,1,1,Activity/InsertGoogleStorage_Act.xml
+Param.InsHandle,Param,1,InsHandle,skalar,,0,2,1,Activity/KomitePostAdjustmentCWP.xml
+Param.KATEGORI_1,Param,1,KATEGORI_1,skalar,,0,1,1,Activity/InsertDocument_Act.xml
+Param.KATEGORI_2,Param,1,KATEGORI_2,skalar,,0,1,1,Activity/InsertDocument_Act.xml
+Param.Kategori_1,Param,1,Kategori_1,skalar,,0,1,1,Activity/GetLinkService.xml
+Param.Kategori_2,Param,1,Kategori_2,skalar,,0,1,1,Activity/GetLinkService.xml
+Param.MIME,Param,1,MIME,skalar,,0,7,1,Activity/InsertDocument_Act.xml
+Param.Markup,Param,1,Markup,skalar,,0,2,1,Activity/KomitePostAdjustmentCWP.xml
+Param.Message,Param,1,Message,skalar,,0,4,3,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml | Activity/SendErrorDirectKasir.xml
+Param.NAMAFILE,Param,1,NAMAFILE,skalar,,0,2,1,Activity/InsertDocument_Act.xml
+Param.NOAKSEP,Param,1,NOAKSEP,skalar,,0,1,1,Activity/InsertDocument_Act.xml
+Param.NOPOLIS,Param,1,NOPOLIS,skalar,,0,1,1,Activity/KonversiKlaim_Act.xml
+Param.NOPREKAS,Param,1,NOPREKAS,skalar,,0,1,1,Activity/InsertDocument_Act.xml
+Param.Namafile,Param,1,Namafile,skalar,,0,4,1,Activity/InsertGoogleStorage_Act.xml
+Param.NoAdjFee,Param,1,NoAdjFee,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+Param.NoFee,Param,1,NoFee,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+Param.NoReins,Param,1,NoReins,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+Param.NoSalvage,Param,1,NoSalvage,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+Param.PAYMENTDATE,Param,1,PAYMENTDATE,skalar,,0,5,1,Activity/InsertDocument_Act.xml
+Param.PDFName,Param,1,PDFName,skalar,,0,2,1,Activity/KomitePostAdjustmentCWP.xml
+Param.STSREJECT,Param,1,STSREJECT,skalar,,0,1,1,Activity/KonversiKlaim_Act.xml
+Param.STS_KONVERSI,Param,1,STS_KONVERSI,skalar,,0,5,1,Activity/getStatusKonversi_Act.xml
+Param.StreamName,Param,1,StreamName,skalar,,0,2,1,Activity/KomitePostAdjustmentCWP.xml
+Param.Subject,Param,1,Subject,skalar,,0,4,3,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml | Activity/SendErrorDirectKasir.xml
+Param.To,Param,1,To,skalar,,0,4,3,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml | Activity/SendErrorDirectKasir.xml
+Param.UserName,Param,1,UserName,skalar,,0,5,2,Activity/SendEmailKlaimRejectClose_KMT.xml | ReportDefinition/GetEmailUser_RD.xml
+Param.index,Param,1,index,skalar,,0,5,2,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml
+Param.pyNotifyAccountName,Param,1,pyNotifyAccountName,skalar,,0,4,3,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml | Activity/SendErrorDirectKasir.xml
+Param.pyPDFPageOrientation,Param,1,pyPDFPageOrientation,skalar,,0,2,1,Activity/KomitePostAdjustmentCWP.xml
+Param.pyPDFPageSize,Param,1,pyPDFPageSize,skalar,,0,2,1,Activity/KomitePostAdjustmentCWP.xml
+Param.pyReportClass,Param,1,pyReportClass,skalar,,0,1,1,Activity/SendEmailKlaimRejectClose_KMT.xml
+Param.pyReportName,Param,1,pyReportName,skalar,,0,1,1,Activity/SendEmailKlaimRejectClose_KMT.xml
+Param.skipCommit,Param,1,skipCommit,skalar,,0,2,1,Activity/KomitePostAdjustmentCWP.xml
+ParamCekKonversi,ParamCekKonversi,0,ParamCekKonversi,Page,ASM-FW-GISFW-Data-Search,2,0,0,
+ParamCekKonversi.CARI1,ParamCekKonversi,1,CARI1,skalar,,0,3,2,Activity/getStatusKonversi_Act.xml | RDBList/getStatusKonversi_SQL.xml
+ParamCekKonversi.HASIL1,ParamCekKonversi,1,HASIL1,skalar,,0,2,2,Activity/getStatusKonversi_Act.xml | RDBList/getStatusKonversi_SQL.xml
+ParamDataTreaty,ParamDataTreaty,0,ParamDataTreaty,Page,ASM-FW-GISFW-Data-Search,1,0,0,
+ParamDataTreaty.CARI8,ParamDataTreaty,1,CARI8,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+ParamKasir,ParamKasir,0,ParamKasir,Page,ASM-FW-GISFW-Data-Search,4,0,0,
+ParamKasir.CARI1,ParamKasir,1,CARI1,skalar,,0,2,2,ConnectREST/SendAcceptationToKasir.xml | RDBList/InsertLOGDirectKasir_SQL.xml
+ParamKasir.CARI2,ParamKasir,1,CARI2,skalar,,0,3,2,Activity/HitServiceToKasirKMT_Act.xml | RDBList/InsertLOGDirectKasir_SQL.xml
+ParamKasir.CARI3,ParamKasir,1,CARI3,skalar,,0,3,2,Activity/HitServiceToKasirKMT_Act.xml | RDBList/InsertLOGDirectKasir_SQL.xml
+ParamKasir.CARI4,ParamKasir,1,CARI4,skalar,,0,3,2,Activity/HitServiceToKasirKMT_Act.xml | RDBList/InsertLOGDirectKasir_SQL.xml
+ParamSeq,ParamSeq,0,ParamSeq,Page,ASM-FW-GISFW-Data-Search,6,0,0,
+ParamSeq.CARI1,ParamSeq,1,CARI1,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | RDBList/GetSequenceNumber_SQL.xml
+ParamSeq.CARI2,ParamSeq,1,CARI2,skalar,,0,3,2,Activity/KomitePostAdjustment.xml | RDBList/GetSequenceNumber_SQL.xml
+ParamSeq.CARI3,ParamSeq,1,CARI3,skalar,,0,1,1,RDBList/GetSequenceNumber_SQL.xml
+ParamSeq.HASIL1,ParamSeq,1,HASIL1,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | RDBList/GetSequenceNumber_SQL.xml
+ParamSeq.HASIL2,ParamSeq,1,HASIL2,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | RDBList/GetSequenceNumber_SQL.xml
+ParamSeq.HASIL3,ParamSeq,1,HASIL3,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | RDBList/GetKodeProdNonLife_SQL.xml
+PaymenttKasir,PaymenttKasir,0,PaymenttKasir,Page,ASM-FW-GCNMFW-Data-PaymentKasir,1,0,0,
+PaymenttKasir.TAllPaymentData,PaymenttKasir,1,TAllPaymentData,Page List,,2,7,1,Activity/HitServiceToKasirKMT_Act.xml
+PaymenttKasir.TAllPaymentData.Nett,PaymenttKasir,2,Nett,skalar,,0,2,1,Activity/HitServiceToKasirKMT_Act.xml
+PaymenttKasir.TAllPaymentData.NoPolis,PaymenttKasir,2,NoPolis,skalar,,0,5,1,Activity/HitServiceToKasirKMT_Act.xml
+Primary,Primary,0,Primary,Page,,11,0,0,
+Primary.AcceptedDate,Primary,1,AcceptedDate,skalar,,0,4,1,Activity/HitServiceToKasirKMT_Act.xml
+Primary.AcceptedNo,Primary,1,AcceptedNo,skalar,,0,6,1,Activity/HitServiceToKasirKMT_Act.xml
+Primary.ClaimData,Primary,1,ClaimData,Page,,1,7,1,excludeXML/GetBase64Attachment.xml
+Primary.ClaimData.Attachment,Primary,2,Attachment,Page List,,6,7,1,excludeXML/GetBase64Attachment.xml
+Primary.ClaimData.Attachment.AttachStream,Primary,3,AttachStream,skalar,,0,2,1,excludeXML/GetBase64Attachment.xml
+Primary.ClaimData.Attachment.IMAGEID,Primary,3,IMAGEID,skalar,,0,1,1,excludeXML/GetBase64Attachment.xml
+Primary.ClaimData.Attachment.PNOTE,Primary,3,PNOTE,skalar,,0,1,1,excludeXML/GetBase64Attachment.xml
+Primary.ClaimData.Attachment.URLPUBLIC,Primary,3,URLPUBLIC,skalar,,0,1,1,excludeXML/GetBase64Attachment.xml
+Primary.ClaimData.Attachment.pyCategory,Primary,3,pyCategory,skalar,,0,1,1,excludeXML/GetBase64Attachment.xml
+Primary.ClaimData.Attachment.pyMemo,Primary,3,pyMemo,skalar,,0,1,1,excludeXML/GetBase64Attachment.xml
+Primary.NoAccount,Primary,1,NoAccount,skalar,,0,1,1,Activity/HitServiceToKasirKMT_Act.xml
+Primary.PayableTo,Primary,1,PayableTo,skalar,,0,1,1,Activity/HitServiceToKasirKMT_Act.xml
+Primary.PaymentType,Primary,1,PaymentType,skalar,,0,1,1,Activity/HitServiceToKasirKMT_Act.xml
+Primary.StatusKasir,Primary,1,StatusKasir,skalar,,0,1,1,Activity/HitServiceToKasirKMT_Act.xml
+Primary.StatusServiceKasir,Primary,1,StatusServiceKasir,Page,,2,3,1,Activity/HitServiceToKasirKMT_Act.xml
+Primary.StatusServiceKasir.ReponseCode,Primary,2,ReponseCode,skalar,,0,1,1,Activity/HitServiceToKasirKMT_Act.xml
+Primary.StatusServiceKasir.ResponseMsg,Primary,2,ResponseMsg,skalar,,0,2,1,Activity/HitServiceToKasirKMT_Act.xml
+Primary.TransferType,Primary,1,TransferType,skalar,,0,4,1,Activity/KomiteRouter.xml
+Primary.pxListSubscript,Primary,1,pxListSubscript,skalar,,0,1,1,Activity/HitServiceToKasirKMT_Act.xml
+Primary.pyStatusMessage,Primary,1,pyStatusMessage,skalar,,0,1,1,Activity/HitServiceToKasirKMT_Act.xml
+ResponLink,ResponLink,0,ResponLink,Page,ASM-FW-GISFW-Int-M_LINK_SERVICE,1,0,0,
+ResponLink.URL,ResponLink,1,URL,skalar,,0,6,2,Activity/GetLinkService.xml | SystemSettings/LinkService.xml
+STORAGE_IMAGE,STORAGE_IMAGE,0,STORAGE_IMAGE,Page,Code-Pega-List,1,0,0,
+STORAGE_IMAGE.pxResults,STORAGE_IMAGE,1,pxResults,skalar,ASM-FW-GISFW-Int-T_STORAGE_IMAGE,0,1,1,excludeXML/GetBase64Attachment.xml
+TEMPDATA,TEMPDATA,0,TEMPDATA,Page,ASM-FW-GISFW-Data-Search,7,0,0,
+TEMPDATA.HASIL1,TEMPDATA,1,HASIL1,skalar,,0,2,1,Activity/SendErrorDirectKasir.xml
+TEMPDATA.HASIL2,TEMPDATA,1,HASIL2,skalar,,0,2,1,Activity/SendErrorDirectKasir.xml
+TEMPDATA.HASIL3,TEMPDATA,1,HASIL3,skalar,,0,2,1,Activity/SendErrorDirectKasir.xml
+TEMPDATA.HASIL4,TEMPDATA,1,HASIL4,skalar,,0,2,1,Activity/SendErrorDirectKasir.xml
+TEMPDATA.HASIL5,TEMPDATA,1,HASIL5,skalar,,0,2,1,Activity/SendErrorDirectKasir.xml
+TEMPDATA.HASIL6,TEMPDATA,1,HASIL6,skalar,,0,2,1,Activity/SendErrorDirectKasir.xml
+TEMPDATA.HASIL7,TEMPDATA,1,HASIL7,skalar,,0,2,1,Activity/SendErrorDirectKasir.xml
+Temp,Temp,0,Temp,Page,ASM-FW-GISFW-Data-Search,18,0,0,
+Temp.CARI10,Temp,1,CARI10,skalar,,0,7,2,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml
+Temp.CARI11,Temp,1,CARI11,skalar,,0,1,1,Activity/SendEmailKlaim_KMT.xml
+Temp.CARI12,Temp,1,CARI12,skalar,,0,2,1,Activity/SendEmailKlaim_KMT.xml
+Temp.CARI13,Temp,1,CARI13,skalar,,0,2,2,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml
+Temp.CARI14,Temp,1,CARI14,skalar,,0,5,2,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml
+Temp.CARI15,Temp,1,CARI15,skalar,,0,3,1,Activity/SendEmailKlaimRejectClose_KMT.xml
+Temp.CARI16,Temp,1,CARI16,skalar,,0,2,1,Activity/SendEmailKlaim_KMT.xml
+Temp.CARI21,Temp,1,CARI21,skalar,,0,7,2,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml
+Temp.CARI22,Temp,1,CARI22,skalar,,0,11,2,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml
+Temp.CARI23,Temp,1,CARI23,skalar,,0,7,2,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml
+Temp.CARI24,Temp,1,CARI24,skalar,,0,6,2,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml
+Temp.CARI25,Temp,1,CARI25,skalar,,0,6,2,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml
+Temp.CARI26,Temp,1,CARI26,skalar,,0,6,2,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml
+Temp.CARI27,Temp,1,CARI27,skalar,,0,6,2,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml
+Temp.CARI30,Temp,1,CARI30,skalar,,0,1,1,Activity/SendEmailKlaim_KMT.xml
+Temp.CARI31,Temp,1,CARI31,skalar,,0,1,1,Activity/SendEmailKlaim_KMT.xml
+Temp.CARI34,Temp,1,CARI34,skalar,,0,1,1,Activity/SendEmailKlaimRejectClose_KMT.xml
+Temp.CARI35,Temp,1,CARI35,skalar,,0,1,1,Activity/SendEmailKlaimRejectClose_KMT.xml
+TempCeding,TempCeding,0,TempCeding,Page,ASM-FW-GISFW-Data-Search,1,0,0,
+TempCeding.CARI1,TempCeding,1,CARI1,skalar,,0,4,2,Activity/HitServiceToKasirKMT_Act.xml | RDBList/GetEmailCeding_SQL.xml
+TempCommiteClaim,TempCommiteClaim,0,TempCommiteClaim,Page,ASM-FW-GCNMFW-Data-Comitee,2,0,0,
+TempCommiteClaim.Remarks,TempCommiteClaim,1,Remarks,skalar,,0,1,1,Activity/SendEmailKlaimRejectClose_KMT.xml
+TempCommiteClaim.TypeComentAnalysis,TempCommiteClaim,1,TypeComentAnalysis,skalar,,0,1,1,Activity/SendEmailKlaimRejectClose_KMT.xml
+TempDla,TempDla,0,TempDla,Page,ASM-FW-GISFW-Data-Search,6,0,0,
+TempDla.CARI30,TempDla,1,CARI30,skalar,,0,1,1,Activity/KomitePostAdjustment.xml
+TempDla.CARI31,TempDla,1,CARI31,skalar,,0,1,1,Activity/KomitePostAdjustment.xml
+TempDla.CARI32,TempDla,1,CARI32,skalar,,0,1,1,Activity/KomitePostAdjustment.xml
+TempDla.CARI33,TempDla,1,CARI33,skalar,,0,17,2,Activity/HitServiceToKasirKMT_Act.xml | Activity/KomitePostAdjustment.xml
+TempDla.CARI34,TempDla,1,CARI34,skalar,,0,16,2,Activity/HitServiceToKasirKMT_Act.xml | Activity/KomitePostAdjustment.xml
+TempDla.CARI40,TempDla,1,CARI40,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempKasir,TempKasir,0,TempKasir,Page,ASM-FW-GISFW-Data-Search,25,0,0,
+TempKasir.CARI1,TempKasir,1,CARI1,skalar,,0,3,1,Activity/HitServiceToKasirKMT_Act.xml
+TempKasir.CARI10,TempKasir,1,CARI10,skalar,,0,4,1,Activity/HitServiceToKasirKMT_Act.xml
+TempKasir.CARI11,TempKasir,1,CARI11,skalar,,0,4,1,Activity/HitServiceToKasirKMT_Act.xml
+TempKasir.CARI12,TempKasir,1,CARI12,skalar,,0,3,1,Activity/HitServiceToKasirKMT_Act.xml
+TempKasir.CARI13,TempKasir,1,CARI13,skalar,,0,3,1,Activity/HitServiceToKasirKMT_Act.xml
+TempKasir.CARI14,TempKasir,1,CARI14,skalar,,0,3,1,Activity/HitServiceToKasirKMT_Act.xml
+TempKasir.CARI15,TempKasir,1,CARI15,skalar,,0,6,1,Activity/HitServiceToKasirKMT_Act.xml
+TempKasir.CARI16,TempKasir,1,CARI16,skalar,,0,3,1,Activity/HitServiceToKasirKMT_Act.xml
+TempKasir.CARI17,TempKasir,1,CARI17,skalar,,0,3,1,Activity/HitServiceToKasirKMT_Act.xml
+TempKasir.CARI18,TempKasir,1,CARI18,skalar,,0,3,1,Activity/HitServiceToKasirKMT_Act.xml
+TempKasir.CARI19,TempKasir,1,CARI19,skalar,,0,30,1,Activity/HitServiceToKasirKMT_Act.xml
+TempKasir.CARI2,TempKasir,1,CARI2,skalar,,0,3,1,Activity/HitServiceToKasirKMT_Act.xml
+TempKasir.CARI20,TempKasir,1,CARI20,skalar,,0,39,1,Activity/HitServiceToKasirKMT_Act.xml
+TempKasir.CARI21,TempKasir,1,CARI21,skalar,,0,15,1,Activity/HitServiceToKasirKMT_Act.xml
+TempKasir.CARI22,TempKasir,1,CARI22,skalar,,0,3,1,Activity/HitServiceToKasirKMT_Act.xml
+TempKasir.CARI23,TempKasir,1,CARI23,skalar,,0,3,1,Activity/HitServiceToKasirKMT_Act.xml
+TempKasir.CARI24,TempKasir,1,CARI24,skalar,,0,3,1,Activity/HitServiceToKasirKMT_Act.xml
+TempKasir.CARI3,TempKasir,1,CARI3,skalar,,0,3,1,Activity/HitServiceToKasirKMT_Act.xml
+TempKasir.CARI4,TempKasir,1,CARI4,skalar,,0,3,1,Activity/HitServiceToKasirKMT_Act.xml
+TempKasir.CARI5,TempKasir,1,CARI5,skalar,,0,3,1,Activity/HitServiceToKasirKMT_Act.xml
+TempKasir.CARI6,TempKasir,1,CARI6,skalar,,0,3,1,Activity/HitServiceToKasirKMT_Act.xml
+TempKasir.CARI7,TempKasir,1,CARI7,skalar,,0,6,1,Activity/HitServiceToKasirKMT_Act.xml
+TempKasir.CARI8,TempKasir,1,CARI8,skalar,,0,3,1,Activity/HitServiceToKasirKMT_Act.xml
+TempKasir.CARI9,TempKasir,1,CARI9,skalar,,0,8,1,Activity/HitServiceToKasirKMT_Act.xml
+TempKasir.CARIDATETIME,TempKasir,1,CARIDATETIME,skalar,,0,12,1,Activity/HitServiceToKasirKMT_Act.xml
+TempList,TempList,0,TempList,Page,Code-Pega-List,1,0,0,
+TempList.pxResults,TempList,1,pxResults,Page List,ASM-FW-GISFW-Data-SpreadingRisk,5,13,1,Activity/InsertXOLKlaimCNP.xml
+TempList.pxResults.CNPReinstatement,TempList,2,CNPReinstatement,skalar,,0,2,1,Activity/InsertXOLKlaimCNP.xml
+TempList.pxResults.Currency,TempList,2,Currency,skalar,,0,2,1,Activity/InsertXOLKlaimCNP.xml
+TempList.pxResults.KursIDR,TempList,2,KursIDR,skalar,,0,2,1,Activity/InsertXOLKlaimCNP.xml
+TempList.pxResults.TotalClaim,TempList,2,TotalClaim,skalar,,0,2,1,Activity/InsertXOLKlaimCNP.xml
+TempList.pxResults.TreatyName,TempList,2,TreatyName,skalar,,0,2,1,Activity/InsertXOLKlaimCNP.xml
+TempMainWork,TempMainWork,0,TempMainWork,Page,ASM-FW-GCNMFW-Work-ClaimTreatyNonProp,10,0,0,
+TempMainWork.CNPStatusCase,TempMainWork,1,CNPStatusCase,skalar,,0,3,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+TempMainWork.ClaimData,TempMainWork,1,ClaimData,Page,,13,54,4,Activity/GenerateAccCNP_act.xml | Activity/InsertJsonClaimTreatyNonProp_act.xml | Activity/KomitePostAdjustment.xml
+TempMainWork.ClaimData.AdjustmentList,TempMainWork,2,AdjustmentList,Page List,,7,29,2,Activity/GenerateAccCNP_act.xml | Activity/KomitePostAdjustment.xml
+TempMainWork.ClaimData.AdjustmentList.AcceptanceStatus,TempMainWork,3,AcceptanceStatus,skalar,,0,2,1,Activity/KomitePostAdjustment.xml
+TempMainWork.ClaimData.AdjustmentList.AcceptedDate,TempMainWork,3,AcceptedDate,skalar,,0,1,1,Activity/KomitePostAdjustment.xml
+TempMainWork.ClaimData.AdjustmentList.AcceptedNo,TempMainWork,3,AcceptedNo,skalar,,0,5,1,Activity/KomitePostAdjustment.xml
+TempMainWork.ClaimData.AdjustmentList.ComiteeClaim,TempMainWork,3,ComiteeClaim,Page List,,4,9,1,Activity/KomitePostAdjustment.xml
+TempMainWork.ClaimData.AdjustmentList.ComiteeClaim.DateApproval,TempMainWork,4,DateApproval,skalar,,0,2,1,Activity/KomitePostAdjustment.xml
+TempMainWork.ClaimData.AdjustmentList.ComiteeClaim.DateApprove,TempMainWork,4,DateApprove,skalar,,0,2,1,Activity/KomitePostAdjustment.xml
+TempMainWork.ClaimData.AdjustmentList.ComiteeClaim.KomiteAproval,TempMainWork,4,KomiteAproval,skalar,,0,2,1,Activity/KomitePostAdjustment.xml
+TempMainWork.ClaimData.AdjustmentList.ComiteeClaim.KomiteComment,TempMainWork,4,KomiteComment,skalar,,0,2,1,Activity/KomitePostAdjustment.xml
+TempMainWork.ClaimData.AdjustmentList.IsKomite,TempMainWork,3,IsKomite,skalar,,0,1,1,Activity/KomitePostAdjustment.xml
+TempMainWork.ClaimData.AdjustmentList.IsSubjectivity,TempMainWork,3,IsSubjectivity,skalar,,0,4,1,Activity/KomitePostAdjustment.xml
+TempMainWork.ClaimData.AdjustmentList.SubjectivityNote,TempMainWork,3,SubjectivityNote,skalar,,0,1,1,Activity/KomitePostAdjustment.xml
+TempMainWork.ClaimData.Amount,TempMainWork,2,Amount,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempMainWork.ClaimData.ClaimComitee,TempMainWork,2,ClaimComitee,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempMainWork.ClaimData.DateOfLoss,TempMainWork,2,DateOfLoss,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempMainWork.ClaimData.DeductibleValue,TempMainWork,2,DeductibleValue,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempMainWork.ClaimData.InsuredName,TempMainWork,2,InsuredName,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempMainWork.ClaimData.IsFInalAccXOL,TempMainWork,2,IsFInalAccXOL,skalar,,0,1,1,Activity/KomitePostAdjustment.xml
+TempMainWork.ClaimData.IsSubjectivity,TempMainWork,2,IsSubjectivity,skalar,,0,1,1,Activity/KomitePostAdjustment.xml
+TempMainWork.ClaimData.ListClaimAmount,TempMainWork,2,ListClaimAmount,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempMainWork.ClaimData.NoClaim,TempMainWork,2,NoClaim,skalar,,0,9,3,Activity/InsertJsonClaimTreatyNonProp_act.xml | Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+TempMainWork.ClaimData.PolicyData,TempMainWork,2,PolicyData,Page,,2,4,3,Activity/InsertJsonClaimTreatyNonProp_act.xml | Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+TempMainWork.ClaimData.PolicyData.PolicyNo,TempMainWork,3,PolicyNo,skalar,,0,2,2,Activity/InsertJsonClaimTreatyNonProp_act.xml | Activity/KomitePostAdjustment.xml
+TempMainWork.ClaimData.PolicyData.StartDateTime,TempMainWork,3,StartDateTime,skalar,,0,2,1,Activity/KomitePostAdjustmentCWP.xml
+TempMainWork.ClaimData.ReportDate,TempMainWork,2,ReportDate,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempMainWork.ClaimData.ShareCeding,TempMainWork,2,ShareCeding,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempMainWork.IsCloseFile,TempMainWork,1,IsCloseFile,skalar,,0,1,1,Activity/KomitePostAdjustment.xml
+TempMainWork.NamePIC,TempMainWork,1,NamePIC,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempMainWork.OfferFacIn,TempMainWork,1,OfferFacIn,Page,,1,2,1,Activity/KomitePostAdjustment.xml
+TempMainWork.OfferFacIn.QuotationData,TempMainWork,2,QuotationData,Page,,1,2,1,Activity/KomitePostAdjustment.xml
+TempMainWork.OfferFacIn.QuotationData.BusinessOldId,TempMainWork,3,BusinessOldId,skalar,,0,2,1,Activity/KomitePostAdjustment.xml
+TempMainWork.pxCreateOperator,TempMainWork,1,pxCreateOperator,skalar,,0,1,1,Activity/KomitePostAdjustment.xml
+TempMainWork.pxObjClass,TempMainWork,1,pxObjClass,skalar,,0,1,1,Activity/KomitePostAdjustment.xml
+TempMainWork.pyID,TempMainWork,1,pyID,skalar,,0,2,1,Activity/KomitePostAdjustmentCWP.xml
+TempMainWork.pzInsKey,TempMainWork,1,pzInsKey,skalar,,0,4,3,Activity/InsertJsonClaimTreatyNonProp_act.xml | Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+TempMainWork.stsReject,TempMainWork,1,stsReject,skalar,,0,1,1,Activity/KomitePostAdjustment.xml
+TempOSAkseptasi,TempOSAkseptasi,0,TempOSAkseptasi,Page,ASM-FW-GCNMFW-Data-osAkseptasi,8,0,0,
+TempOSAkseptasi.AcceptedNo,TempOSAkseptasi,1,AcceptedNo,skalar,,0,1,1,Activity/InsertOSKlaimCNP.xml
+TempOSAkseptasi.CNPLayerList,TempOSAkseptasi,1,CNPLayerList,skalar,,0,1,1,Activity/InsertOSKlaimCNP.xml
+TempOSAkseptasi.CauseOfLoss,TempOSAkseptasi,1,CauseOfLoss,skalar,,0,1,1,Activity/InsertOSKlaimCNP.xml
+TempOSAkseptasi.CauseOfLossID,TempOSAkseptasi,1,CauseOfLossID,skalar,,0,1,1,Activity/InsertOSKlaimCNP.xml
+TempOSAkseptasi.EstimationDate,TempOSAkseptasi,1,EstimationDate,skalar,,0,1,1,Activity/InsertOSKlaimCNP.xml
+TempOSAkseptasi.NoClaim,TempOSAkseptasi,1,NoClaim,skalar,,0,1,1,Activity/InsertOSKlaimCNP.xml
+TempOSAkseptasi.PersenRNM,TempOSAkseptasi,1,PersenRNM,skalar,,0,1,1,Activity/InsertOSKlaimCNP.xml
+TempOSAkseptasi.Type,TempOSAkseptasi,1,Type,skalar,,0,5,2,Activity/InsertOSKlaimCNP.xml | Activity/InsertOSSubjectivityCNP.xml
+TempOSSubjectivity,TempOSSubjectivity,0,TempOSSubjectivity,Page,ASM-FW-GCNMFW-Data-osAkseptasi,8,0,0,
+TempOSSubjectivity.AcceptedNo,TempOSSubjectivity,1,AcceptedNo,skalar,,0,1,1,Activity/InsertOSSubjectivityCNP.xml
+TempOSSubjectivity.CNPLayerList,TempOSSubjectivity,1,CNPLayerList,skalar,,0,1,1,Activity/InsertOSSubjectivityCNP.xml
+TempOSSubjectivity.CauseOfLoss,TempOSSubjectivity,1,CauseOfLoss,skalar,,0,1,1,Activity/InsertOSSubjectivityCNP.xml
+TempOSSubjectivity.CauseOfLossID,TempOSSubjectivity,1,CauseOfLossID,skalar,,0,1,1,Activity/InsertOSSubjectivityCNP.xml
+TempOSSubjectivity.EstimationDate,TempOSSubjectivity,1,EstimationDate,skalar,,0,1,1,Activity/InsertOSSubjectivityCNP.xml
+TempOSSubjectivity.NoClaim,TempOSSubjectivity,1,NoClaim,skalar,,0,1,1,Activity/InsertOSSubjectivityCNP.xml
+TempOSSubjectivity.PersenRNM,TempOSSubjectivity,1,PersenRNM,skalar,,0,1,1,Activity/InsertOSSubjectivityCNP.xml
+TempOSSubjectivity.Type,TempOSSubjectivity,1,Type,skalar,,0,1,1,Activity/InsertOSSubjectivityCNP.xml
+TempOpenPage,TempOpenPage,0,TempOpenPage,Page,ASM-FW-GCNMFW-Work-ClaimTreatyNonProp,1,0,0,
+TempOpenPage.ClaimData,TempOpenPage,1,ClaimData,Page,,1,1,1,Activity/HitServiceToKasirKMT_Act.xml
+TempOpenPage.ClaimData.ObjectList,TempOpenPage,2,ObjectList,Page List,,1,1,1,Activity/HitServiceToKasirKMT_Act.xml
+TempOpenPage.ClaimData.ObjectList.ObjectItemList,TempOpenPage,3,ObjectItemList,skalar,,0,1,1,Activity/HitServiceToKasirKMT_Act.xml
+TempPNC,TempPNC,0,TempPNC,Page,ASM-FW-GCNMFW-Int-V_POLIS,4,0,0,
+TempPNC.BUSINESS_CODE,TempPNC,1,BUSINESS_CODE,skalar,,0,2,2,Activity/InsertJsonClaimTreatyNonProp_act.xml | RDBList/InsertClaimPNC.xml
+TempPNC.No_Klaim,TempPNC,1,No_Klaim,skalar,,0,2,2,Activity/InsertJsonClaimTreatyNonProp_act.xml | RDBList/InsertClaimPNC.xml
+TempPNC.POLICY_NO,TempPNC,1,POLICY_NO,skalar,,0,2,2,Activity/InsertJsonClaimTreatyNonProp_act.xml | RDBList/InsertClaimPNC.xml
+TempPNC.TSI,TempPNC,1,TSI,skalar,,0,2,2,Activity/InsertJsonClaimTreatyNonProp_act.xml | RDBList/InsertClaimPNC.xml
+TempPrintAcc,TempPrintAcc,0,TempPrintAcc,Page,ASM-FW-GISFW-Data-Search,5,0,0,
+TempPrintAcc.CARI1,TempPrintAcc,1,CARI1,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+TempPrintAcc.CARI2,TempPrintAcc,1,CARI2,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+TempPrintAcc.CARI3,TempPrintAcc,1,CARI3,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+TempPrintAcc.CARI4,TempPrintAcc,1,CARI4,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+TempPrintAcc.CARI5,TempPrintAcc,1,CARI5,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj,TempPrintAccAdj,0,TempPrintAccAdj,Page,ASM-FW-GCNMFW-Work-KomiteTreatyNonProp,3,0,0,
+TempPrintAccAdj.Adjustment,TempPrintAccAdj,1,Adjustment,Page,,14,40,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.Adjustment.AcceptedNo,TempPrintAccAdj,2,AcceptedNo,skalar,,0,2,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.Adjustment.BranchOfBank,TempPrintAccAdj,2,BranchOfBank,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.Adjustment.CNPAccNoAdjustF,TempPrintAccAdj,2,CNPAccNoAdjustF,skalar,,0,2,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.Adjustment.CNPAccNoOtherF,TempPrintAccAdj,2,CNPAccNoOtherF,skalar,,0,2,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.Adjustment.CNPAccNoReinstate,TempPrintAccAdj,2,CNPAccNoReinstate,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.Adjustment.CNPAccNoSalvage,TempPrintAccAdj,2,CNPAccNoSalvage,skalar,,0,2,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.Adjustment.CNPCurrencyList,TempPrintAccAdj,2,CNPCurrencyList,Page List,,13,17,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.Adjustment.CNPCurrencyList.AdjusterFeeRNM,TempPrintAccAdj,3,AdjusterFeeRNM,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.Adjustment.CNPCurrencyList.AdjusterFeeValue,TempPrintAccAdj,3,AdjusterFeeValue,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.Adjustment.CNPCurrencyList.CNPOthersFee,TempPrintAccAdj,3,CNPOthersFee,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.Adjustment.CNPCurrencyList.CNPOthersFeeRNM,TempPrintAccAdj,3,CNPOthersFeeRNM,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.Adjustment.CNPCurrencyList.CNPReinstatement,TempPrintAccAdj,3,CNPReinstatement,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.Adjustment.CNPCurrencyList.CNPReinstatementRNM,TempPrintAccAdj,3,CNPReinstatementRNM,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.Adjustment.CNPCurrencyList.Currency,TempPrintAccAdj,3,Currency,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.Adjustment.CNPCurrencyList.CurrencyID,TempPrintAccAdj,3,CurrencyID,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.Adjustment.CNPCurrencyList.GrossAdjustment,TempPrintAccAdj,3,GrossAdjustment,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.Adjustment.CNPCurrencyList.GrossValue,TempPrintAccAdj,3,GrossValue,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.Adjustment.CNPCurrencyList.SalvageRNM,TempPrintAccAdj,3,SalvageRNM,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.Adjustment.CNPCurrencyList.SalvageValue,TempPrintAccAdj,3,SalvageValue,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.Adjustment.CNPCurrencyList.TotalXOLRNM,TempPrintAccAdj,3,TotalXOLRNM,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.Adjustment.CNPLayerList,TempPrintAccAdj,2,CNPLayerList,skalar,,0,7,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.Adjustment.NameOfBank,TempPrintAccAdj,2,NameOfBank,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.Adjustment.NoAccount,TempPrintAccAdj,2,NoAccount,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.Adjustment.PayableTo,TempPrintAccAdj,2,PayableTo,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.Adjustment.SpreadingAdjustment,TempPrintAccAdj,2,SpreadingAdjustment,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.Adjustment.SpreadingQuotaShare,TempPrintAccAdj,2,SpreadingQuotaShare,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.Adjustment.SwiftCode,TempPrintAccAdj,2,SwiftCode,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.CLMNO,TempPrintAccAdj,1,CLMNO,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.KomiteList,TempPrintAccAdj,1,KomiteList,Page List,,2,4,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.KomiteList.DateApprove,TempPrintAccAdj,2,DateApprove,skalar,,0,3,1,Activity/GenerateAccCNP_act.xml
+TempPrintAccAdj.KomiteList.KomiteID,TempPrintAccAdj,2,KomiteID,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+TempPrintCA,TempPrintCA,0,TempPrintCA,Page,ASM-FW-GISFW-Data-Search,14,0,0,
+TempPrintCA.CARI1,TempPrintCA,1,CARI1,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempPrintCA.CARI2,TempPrintCA,1,CARI2,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempPrintCA.CARI20,TempPrintCA,1,CARI20,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempPrintCA.CARI21,TempPrintCA,1,CARI21,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempPrintCA.CARI22,TempPrintCA,1,CARI22,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempPrintCA.CARI23,TempPrintCA,1,CARI23,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempPrintCA.CARI3,TempPrintCA,1,CARI3,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempPrintCA.CARI35,TempPrintCA,1,CARI35,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempPrintCA.CARI36,TempPrintCA,1,CARI36,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempPrintCA.CARI38,TempPrintCA,1,CARI38,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempPrintCA.CARI4,TempPrintCA,1,CARI4,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempPrintCA.CARI5,TempPrintCA,1,CARI5,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempPrintCA.CARI6,TempPrintCA,1,CARI6,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempPrintCA.CARI7,TempPrintCA,1,CARI7,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempRejCNP,TempRejCNP,0,TempRejCNP,Page,ASM-FW-GCNMFW-Work-ClaimTreatyNonProp,1,0,0,
+TempRejCNP.ClaimData,TempRejCNP,1,ClaimData,Page,,1,10,1,Activity/KomitePostAdjustmentCWP.xml
+TempRejCNP.ClaimData.ListClaimAmount,TempRejCNP,2,ListClaimAmount,Page List,,9,10,1,Activity/KomitePostAdjustmentCWP.xml
+TempRejCNP.ClaimData.ListClaimAmount.AdjusterFee,TempRejCNP,3,AdjusterFee,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempRejCNP.ClaimData.ListClaimAmount.CNPDeductible,TempRejCNP,3,CNPDeductible,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempRejCNP.ClaimData.ListClaimAmount.CNPOthersFee,TempRejCNP,3,CNPOthersFee,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempRejCNP.ClaimData.ListClaimAmount.ClaimAmount,TempRejCNP,3,ClaimAmount,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempRejCNP.ClaimData.ListClaimAmount.Currency,TempRejCNP,3,Currency,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempRejCNP.ClaimData.ListClaimAmount.Note,TempRejCNP,3,Note,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempRejCNP.ClaimData.ListClaimAmount.PctProrateClaim,TempRejCNP,3,PctProrateClaim,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempRejCNP.ClaimData.ListClaimAmount.Salvage,TempRejCNP,3,Salvage,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempRejCNP.ClaimData.ListClaimAmount.TPL,TempRejCNP,3,TPL,skalar,,0,1,1,Activity/KomitePostAdjustmentCWP.xml
+TempSpreadingRisk,TempSpreadingRisk,0,TempSpreadingRisk,Page,Code-Pega-List,1,0,0,
+TempSpreadingRisk.pxResults,TempSpreadingRisk,1,pxResults,Page List,ASM-FW-GISFW-Data-SpreadingRisk,5,8,1,Activity/HitServiceToKasirKMT_Act.xml
+TempSpreadingRisk.pxResults.CurrencyID,TempSpreadingRisk,2,CurrencyID,skalar,,0,1,1,Activity/HitServiceToKasirKMT_Act.xml
+TempSpreadingRisk.pxResults.IDOfBank,TempSpreadingRisk,2,IDOfBank,skalar,,0,1,1,Activity/HitServiceToKasirKMT_Act.xml
+TempSpreadingRisk.pxResults.NoAccount,TempSpreadingRisk,2,NoAccount,skalar,,0,1,1,Activity/HitServiceToKasirKMT_Act.xml
+TempSpreadingRisk.pxResults.PremiumSpreaded,TempSpreadingRisk,2,PremiumSpreaded,skalar,,0,1,1,Activity/HitServiceToKasirKMT_Act.xml
+TempSpreadingRisk.pxResults.TotalClaim,TempSpreadingRisk,2,TotalClaim,skalar,,0,1,1,Activity/HitServiceToKasirKMT_Act.xml
+TglProd,TglProd,0,TglProd,Page,Code-Pega-List,1,0,0,
+TglProd.pxResults,TglProd,1,pxResults,Page List,ASM-FW-GISFW-Int-policyjson,1,3,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+TglProd.pxResults.TANGGAL,TglProd,2,TANGGAL,skalar,,0,1,1,Activity/KomitePostAdjustment.xml
+UploadDoc,UploadDoc,0,UploadDoc,Page,ASM-FW-GISFW-Int-T_STORAGE_IMAGE,7,0,0,
+UploadDoc.App,UploadDoc,1,App,skalar,,0,3,3,Activity/InsertGoogleStorage_Act.xml | RDBList/GetAppName_SQL.xml | RDBList/GetTokenStorage_SQL.xml
+UploadDoc.JSON,UploadDoc,1,JSON,skalar,,0,1,1,ConnectREST/ServiceGoogle.xml
+UploadDoc.Kodestring,UploadDoc,1,Kodestring,skalar,,0,1,1,RDBList/GetTokenStorage_SQL.xml
+UploadDoc.MimeType,UploadDoc,1,MimeType,skalar,,0,2,1,Activity/InsertGoogleStorage_Act.xml
+UploadDoc.Namafile,UploadDoc,1,Namafile,skalar,,0,1,1,Activity/InsertGoogleStorage_Act.xml
+UploadDoc.Response,UploadDoc,1,Response,Page,,3,9,2,Activity/InsertGoogleStorage_Act.xml | ConnectREST/ServiceGoogle.xml
+UploadDoc.Response.URLImage,UploadDoc,2,URLImage,skalar,,0,2,1,Activity/InsertGoogleStorage_Act.xml
+UploadDoc.Response.appfolder,UploadDoc,2,appfolder,skalar,,0,1,1,Activity/InsertGoogleStorage_Act.xml
+UploadDoc.Response.exp,UploadDoc,2,exp,skalar,,0,4,1,Activity/InsertGoogleStorage_Act.xml
+UploadDoc.ext,UploadDoc,1,ext,skalar,,0,3,2,Activity/InsertGoogleStorage_Act.xml | DecisionTable/GetMimeType.xml
+childPageKomite,childPageKomite,0,childPageKomite,Page,ASM-FW-GCNMFW-Work-Komite,1,0,0,
+childPageKomite.TransferType,childPageKomite,1,TransferType,skalar,,0,1,1,Activity/SendEmailKlaimRejectClose_KMT.xml
+linkService,linkService,0,linkService,Page,Code-Pega-List,1,0,0,
+linkService.pxResults,linkService,1,pxResults,Page List,ASM-FW-GISFW-Int-M_LINK_SERVICE,1,2,1,Activity/GetLinkService.xml
+linkService.pxResults.URL,linkService,2,URL,skalar,,0,1,1,Activity/GetLinkService.xml
+pxProcess,pxProcess,0,pxProcess,Page,Code-Pega-Process,2,0,0,
+pxProcess.pxSystemNodeID,pxProcess,1,pxSystemNodeID,skalar,,0,5,1,When/IsPEGASyariah.xml
+pxProcess.pzProductionLevel,pxProcess,1,pzProductionLevel,skalar,,0,5,1,When/IsPEGAPROD.xml
+pxRequestor,pxRequestor,0,pxRequestor,Page,,3,0,0,
+pxRequestor.pxReqContextURI,pxRequestor,1,pxReqContextURI,skalar,,0,2,1,Activity/SendEmailKlaimRejectClose_KMT.xml
+pxRequestor.pxUserIdentifier,pxRequestor,1,pxUserIdentifier,skalar,,0,3,1,Activity/HitServiceToKasirKMT_Act.xml
+pxRequestor.pyUserIdentifier,pxRequestor,1,pyUserIdentifier,skalar,,0,2,1,Activity/InsertDocument_Act.xml
+pyWorkCover,pyWorkCover,0,pyWorkCover,Page,ASM-FW-GCNMFW-Work-ClaimTreatyNonProp,10,0,0,
+pyWorkCover.ClaimData,pyWorkCover,1,ClaimData,Page,ASM-FW-GCNMFW-Data-ClaimData,26,89,9,Activity/GenerateAccCNP_act.xml | Activity/HitServiceToKasirKMT_Act.xml | Activity/InsertOSKlaimCNP.xml
+pyWorkCover.ClaimData.AdjustmentList,pyWorkCover,2,AdjustmentList,Page List,,5,6,1,Activity/GenerateAccCNP_act.xml
+pyWorkCover.ClaimData.AdjustmentList.BranchOfBank,pyWorkCover,3,BranchOfBank,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+pyWorkCover.ClaimData.AdjustmentList.NameOfBank,pyWorkCover,3,NameOfBank,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+pyWorkCover.ClaimData.AdjustmentList.NoAccount,pyWorkCover,3,NoAccount,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+pyWorkCover.ClaimData.AdjustmentList.PayableTo,pyWorkCover,3,PayableTo,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+pyWorkCover.ClaimData.AdjustmentList.SwiftCode,pyWorkCover,3,SwiftCode,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+pyWorkCover.ClaimData.AppointedADJ,pyWorkCover,2,AppointedADJ,skalar,,0,2,1,Section/ShowTransfer.xml
+pyWorkCover.ClaimData.CauseOfLoss,pyWorkCover,2,CauseOfLoss,skalar,,0,5,4,Activity/InsertOSKlaimCNP.xml | Activity/InsertOSSubjectivityCNP.xml | Activity/SaveRejectOSKomiteCNP.xml
+pyWorkCover.ClaimData.CauseOfLossID,pyWorkCover,2,CauseOfLossID,skalar,,0,4,3,Activity/InsertOSKlaimCNP.xml | Activity/InsertOSSubjectivityCNP.xml | Activity/SaveRejectOSKomiteCNP.xml
+pyWorkCover.ClaimData.ConsultantName,pyWorkCover,2,ConsultantName,skalar,,0,2,1,Section/ShowTransfer.xml
+pyWorkCover.ClaimData.DateOfLoss,pyWorkCover,2,DateOfLoss,skalar,,0,1,1,Section/ShowTransfer.xml
+pyWorkCover.ClaimData.DateReceived,pyWorkCover,2,DateReceived,skalar,,0,1,1,Section/ShowTransfer.xml
+pyWorkCover.ClaimData.IDMaster,pyWorkCover,2,IDMaster,skalar,,0,1,1,Activity/InsertOSKlaimCNP.xml
+pyWorkCover.ClaimData.InsuredName,pyWorkCover,2,InsuredName,skalar,,0,10,4,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml | Activity/SendErrorDirectKasir.xml
+pyWorkCover.ClaimData.InsuredRelationshipOthers,pyWorkCover,2,InsuredRelationshipOthers,skalar,,0,1,1,Section/ShowTransfer.xml
+pyWorkCover.ClaimData.Location,pyWorkCover,2,Location,skalar,,0,1,1,Section/ShowTransfer.xml
+pyWorkCover.ClaimData.NoClaim,pyWorkCover,2,NoClaim,skalar,,0,14,6,Activity/HitServiceToKasirKMT_Act.xml | Activity/InsertOSKlaimCNP.xml | Activity/InsertOSSubjectivityCNP.xml
+pyWorkCover.ClaimData.NoPla,pyWorkCover,2,NoPla,skalar,,0,1,1,Section/ShowTransfer.xml
+pyWorkCover.ClaimData.PolicyData,pyWorkCover,2,PolicyData,Page,ASM-FW-GISFW-Data-Policy,3,17,8,Activity/HitServiceToKasirKMT_Act.xml | Activity/InsertOSKlaimCNP.xml | Activity/InsertOSSubjectivityCNP.xml
+pyWorkCover.ClaimData.PolicyData.EndDateTime,pyWorkCover,3,EndDateTime,skalar,,0,1,1,Section/ShowTransfer.xml
+pyWorkCover.ClaimData.PolicyData.PolicyNo,pyWorkCover,3,PolicyNo,skalar,,0,14,8,Activity/HitServiceToKasirKMT_Act.xml | Activity/InsertOSKlaimCNP.xml | Activity/InsertOSSubjectivityCNP.xml
+pyWorkCover.ClaimData.PolicyData.StartDateTime,pyWorkCover,3,StartDateTime,skalar,,0,1,1,Section/ShowTransfer.xml
+pyWorkCover.ClaimData.PolicyNo,pyWorkCover,2,PolicyNo,skalar,,0,1,1,Section/ShowTransfer.xml
+pyWorkCover.ClaimData.QuotationData,pyWorkCover,2,QuotationData,Page,,2,6,3,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml | Activity/SendErrorDirectKasir.xml
+pyWorkCover.ClaimData.QuotationData.CedingCoName,pyWorkCover,3,CedingCoName,skalar,,0,3,3,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml | Activity/SendErrorDirectKasir.xml
+pyWorkCover.ClaimData.QuotationData.SobName,pyWorkCover,3,SobName,skalar,,0,3,3,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml | Activity/SendErrorDirectKasir.xml
+pyWorkCover.ClaimData.ReportAddress,pyWorkCover,2,ReportAddress,skalar,,0,1,1,Section/ShowTransfer.xml
+pyWorkCover.ClaimData.ReportDate,pyWorkCover,2,ReportDate,skalar,,0,1,1,Section/ShowTransfer.xml
+pyWorkCover.ClaimData.ReportDescription,pyWorkCover,2,ReportDescription,skalar,,0,1,1,Section/ShowTransfer.xml
+pyWorkCover.ClaimData.ReportType,pyWorkCover,2,ReportType,skalar,,0,1,1,Section/ShowTransfer.xml
+pyWorkCover.ClaimData.ReporterName,pyWorkCover,2,ReporterName,skalar,,0,1,1,Section/ShowTransfer.xml
+pyWorkCover.ClaimData.ReporterStatus,pyWorkCover,2,ReporterStatus,skalar,,0,1,1,Section/ShowTransfer.xml
+pyWorkCover.ClaimData.ReporterTelp,pyWorkCover,2,ReporterTelp,skalar,,0,1,1,Section/ShowTransfer.xml
+pyWorkCover.ClaimData.SpreadingAdjustment,pyWorkCover,2,SpreadingAdjustment,Page List,,0,2,1,Activity/GenerateAccCNP_act.xml
+pyWorkCover.ClaimData.SpreadingAdjustmentQS,pyWorkCover,2,SpreadingAdjustmentQS,Page List,,0,2,1,Activity/GenerateAccCNP_act.xml
+pyWorkCover.ClaimData.SpreadingRisk,pyWorkCover,2,SpreadingRisk,Page List,,0,2,1,Activity/SaveRejectOSKomiteCNP.xml
+pyWorkCover.IsOutstanding,pyWorkCover,1,IsOutstanding,skalar,,0,1,1,Section/ShowTransfer.xml
+pyWorkCover.NamePIC,pyWorkCover,1,NamePIC,skalar,,0,1,1,Activity/GenerateAccCNP_act.xml
+pyWorkCover.OfferFacIn,pyWorkCover,1,OfferFacIn,Page,ASM-FW-GISFW-Data-OfferFacIn,2,18,5,Activity/HitServiceToKasirKMT_Act.xml | Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml
+pyWorkCover.OfferFacIn.PolicyData,pyWorkCover,2,PolicyData,Page,,1,4,4,Activity/HitServiceToKasirKMT_Act.xml | Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml
+pyWorkCover.OfferFacIn.PolicyData.PolicyNo,pyWorkCover,3,PolicyNo,skalar,,0,4,4,Activity/HitServiceToKasirKMT_Act.xml | Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml
+pyWorkCover.OfferFacIn.QuotationData,pyWorkCover,2,QuotationData,Page,ASM-FW-GISFW-Data-Quotation,5,13,4,Activity/HitServiceToKasirKMT_Act.xml | Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml
+pyWorkCover.OfferFacIn.QuotationData.BusinessName,pyWorkCover,3,BusinessName,skalar,,0,1,1,Section/ShowTransfer.xml
+pyWorkCover.OfferFacIn.QuotationData.BusinessOldId,pyWorkCover,3,BusinessOldId,skalar,,0,3,1,Activity/HitServiceToKasirKMT_Act.xml
+pyWorkCover.OfferFacIn.QuotationData.CedingCoName,pyWorkCover,3,CedingCoName,skalar,,0,2,2,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml
+pyWorkCover.OfferFacIn.QuotationData.InsuredName,pyWorkCover,3,InsuredName,skalar,,0,4,2,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml
+pyWorkCover.OfferFacIn.QuotationData.SobName,pyWorkCover,3,SobName,skalar,,0,2,2,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml
+pyWorkCover.Quotation,pyWorkCover,1,Quotation,Page,,4,4,2,Activity/HitServiceToKasirKMT_Act.xml | Activity/SendErrorDirectKasir.xml
+pyWorkCover.Quotation.CedingCo,pyWorkCover,2,CedingCo,skalar,,0,1,1,Activity/HitServiceToKasirKMT_Act.xml
+pyWorkCover.Quotation.CedingCoName,pyWorkCover,2,CedingCoName,skalar,,0,1,1,Activity/SendErrorDirectKasir.xml
+pyWorkCover.Quotation.InsuredName,pyWorkCover,2,InsuredName,skalar,,0,1,1,Activity/SendErrorDirectKasir.xml
+pyWorkCover.Quotation.SobName,pyWorkCover,2,SobName,skalar,,0,1,1,Activity/SendErrorDirectKasir.xml
+pyWorkCover.TreatyInMaster,pyWorkCover,1,TreatyInMaster,Page,ASM-FW-GISFW-Int-TREATY_IN,5,13,7,Activity/HitServiceToKasirKMT_Act.xml | Activity/InsertOSKlaimCNP.xml | Activity/InsertOSSubjectivityCNP.xml
+pyWorkCover.TreatyInMaster.Ceding,pyWorkCover,2,Ceding,skalar,,0,3,3,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml | Section/ShowTransfer.xml
+pyWorkCover.TreatyInMaster.CedingID,pyWorkCover,2,CedingID,skalar,,0,2,1,Activity/HitServiceToKasirKMT_Act.xml
+pyWorkCover.TreatyInMaster.ID,pyWorkCover,2,ID,skalar,,0,2,1,Activity/SaveRejectOSKomiteCNP.xml
+pyWorkCover.TreatyInMaster.LeadingReinsSource,pyWorkCover,2,LeadingReinsSource,skalar,,0,3,3,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml | Section/ShowTransfer.xml
+pyWorkCover.TreatyInMaster.RNMShare,pyWorkCover,2,RNMShare,skalar,,0,2,2,Activity/InsertOSKlaimCNP.xml | Activity/InsertOSSubjectivityCNP.xml
+pyWorkCover.pxCreateOperator,pyWorkCover,1,pxCreateOperator,skalar,,0,2,1,Activity/SendEmailKlaimRejectClose_KMT.xml
+pyWorkCover.pyID,pyWorkCover,1,pyID,skalar,,0,5,3,Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml | Activity/SendErrorDirectKasir.xml
+pyWorkCover.pyWorkIDPrefix,pyWorkCover,1,pyWorkIDPrefix,skalar,,0,40,5,Activity/HitServiceToKasirKMT_Act.xml | Activity/SendEmailKlaimRejectClose_KMT.xml | When/IsCLM.xml
+pyWorkCover.pzInsKey,pyWorkCover,1,pzInsKey,skalar,,0,9,6,Activity/GenerateAccCNP_act.xml | Activity/HitServiceToKasirKMT_Act.xml | Activity/InsertOSKlaimCNP.xml
+pyWorkPage,pyWorkPage,0,pyWorkPage,Page,ASM-FW-GCNMFW-Work-KomiteTreatyNonProp,24,0,0,
+pyWorkPage.AcceptStatus,pyWorkPage,1,AcceptStatus,skalar,,0,54,4,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml | Activity/SendEmailKlaimRejectClose_KMT.xml
+pyWorkPage.Adjustment,pyWorkPage,1,Adjustment,Page,,13,42,6,Activity/InsertOSKlaimCNP.xml | Activity/InsertOSSubjectivityCNP.xml | Activity/InsertXOLKlaimCNP.xml
+pyWorkPage.Adjustment.AcceptedNo,pyWorkPage,2,AcceptedNo,skalar,,0,10,4,Activity/InsertOSKlaimCNP.xml | Activity/InsertOSSubjectivityCNP.xml | Activity/KomitePostAdjustment.xml
+pyWorkPage.Adjustment.AlokasiXOLPaid,pyWorkPage,2,AlokasiXOLPaid,skalar,,0,1,1,Activity/SetKomiteList_Act.xml
+pyWorkPage.Adjustment.CNPAccNoAdjustF,pyWorkPage,2,CNPAccNoAdjustF,skalar,,0,3,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+pyWorkPage.Adjustment.CNPAccNoOtherF,pyWorkPage,2,CNPAccNoOtherF,skalar,,0,3,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+pyWorkPage.Adjustment.CNPAccNoReinstate,pyWorkPage,2,CNPAccNoReinstate,skalar,,0,3,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+pyWorkPage.Adjustment.CNPAccNoSalvage,pyWorkPage,2,CNPAccNoSalvage,skalar,,0,3,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+pyWorkPage.Adjustment.CNPIndexInterim,pyWorkPage,2,CNPIndexInterim,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+pyWorkPage.Adjustment.CNPLayerList,pyWorkPage,2,CNPLayerList,skalar,,0,3,3,Activity/InsertOSKlaimCNP.xml | Activity/InsertOSSubjectivityCNP.xml | Activity/KomitePostAdjustment.xml
+pyWorkPage.Adjustment.IndexObject,pyWorkPage,2,IndexObject,skalar,,0,5,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+pyWorkPage.Adjustment.IsProposeClose,pyWorkPage,2,IsProposeClose,skalar,,0,1,1,Activity/KomitePostAdjustment.xml
+pyWorkPage.Adjustment.PaymentType,pyWorkPage,2,PaymentType,skalar,,0,5,4,Activity/InsertOSKlaimCNP.xml | Activity/InsertOSSubjectivityCNP.xml | Activity/KomitePostAdjustment.xml
+pyWorkPage.Adjustment.SpreadingRisk,pyWorkPage,2,SpreadingRisk,skalar,,0,1,1,Activity/InsertXOLKlaimCNP.xml
+pyWorkPage.Adjustment.XOLID,pyWorkPage,2,XOLID,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+pyWorkPage.CLMNO,pyWorkPage,1,CLMNO,skalar,,0,1,1,Section/ShowTransfer.xml
+pyWorkPage.ClaimData,pyWorkPage,1,ClaimData,Page,,10,26,6,Activity/GenerateAccCNP_act.xml | Activity/HitServiceToKasirKMT_Act.xml | Activity/KomitePostAdjustment.xml
+pyWorkPage.ClaimData.AdjustmentList,pyWorkPage,2,AdjustmentList,Page List,,1,7,2,Activity/HitServiceToKasirKMT_Act.xml | Section/ReinstatementPremiumDetails.xml
+pyWorkPage.ClaimData.AdjustmentList.CurencyAdjustment,pyWorkPage,3,CurencyAdjustment,Page List,,1,6,1,Activity/HitServiceToKasirKMT_Act.xml
+pyWorkPage.ClaimData.AdjustmentList.CurencyAdjustment.CurrencyID,pyWorkPage,4,CurrencyID,skalar,,0,6,1,Activity/HitServiceToKasirKMT_Act.xml
+pyWorkPage.ClaimData.InsuredName,pyWorkPage,2,InsuredName,skalar,,0,3,1,Activity/KomitePostAdjustmentCWP.xml
+pyWorkPage.ClaimData.InsuredRelationship,pyWorkPage,2,InsuredRelationship,skalar,,0,1,1,Section/ShowTransfer.xml
+pyWorkPage.ClaimData.InterestList,pyWorkPage,2,InterestList,skalar,,0,3,1,Activity/GenerateAccCNP_act.xml
+pyWorkPage.ClaimData.NoClaim,pyWorkPage,2,NoClaim,skalar,,0,1,1,Activity/KomitePostAdjustment.xml
+pyWorkPage.ClaimData.ObjectList,pyWorkPage,2,ObjectList,Page List,,1,6,1,Activity/HitServiceToKasirKMT_Act.xml
+pyWorkPage.ClaimData.ObjectList.ObjectItemList,pyWorkPage,3,ObjectItemList,Page List,,1,6,1,Activity/HitServiceToKasirKMT_Act.xml
+pyWorkPage.ClaimData.ObjectList.ObjectItemList.Adjustment,pyWorkPage,4,Adjustment,Page List,,1,6,1,Activity/HitServiceToKasirKMT_Act.xml
+pyWorkPage.ClaimData.ObjectList.ObjectItemList.Adjustment.CurrencyID,pyWorkPage,5,CurrencyID,skalar,,0,6,1,Activity/HitServiceToKasirKMT_Act.xml
+pyWorkPage.ClaimData.Payable,pyWorkPage,2,Payable,skalar,,0,1,1,Section/ShowTransfer.xml
+pyWorkPage.ClaimData.PolicyData,pyWorkPage,2,PolicyData,Page,,1,2,1,Activity/KomitePostAdjustmentCWP.xml
+pyWorkPage.ClaimData.PolicyData.EndDateTime,pyWorkPage,3,EndDateTime,skalar,,0,2,1,Activity/KomitePostAdjustmentCWP.xml
+pyWorkPage.ClaimData.TotalListClaimAmount,pyWorkPage,2,TotalListClaimAmount,skalar,,0,1,1,Section/ShowTransfer.xml
+pyWorkPage.ClaimData.TotalListClaimAmountIDR,pyWorkPage,2,TotalListClaimAmountIDR,skalar,,0,1,1,Section/ShowTransfer.xml
+pyWorkPage.Comment,pyWorkPage,1,Comment,skalar,,0,11,3,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml | Activity/SendEmailKlaimRejectClose_KMT.xml
+pyWorkPage.IsCloseFile,pyWorkPage,1,IsCloseFile,skalar,,0,19,4,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml | Activity/SaveRejectOSKomiteCNP.xml
+pyWorkPage.IsPrevious,pyWorkPage,1,IsPrevious,skalar,,0,3,2,Activity/SetKomiteList_Act.xml | Section/ShowTransfer.xml
+pyWorkPage.IsReject,pyWorkPage,1,IsReject,skalar,,0,18,4,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml | Activity/SaveRejectOSKomiteCNP.xml
+pyWorkPage.IsSubjectivity,pyWorkPage,1,IsSubjectivity,skalar,,0,10,3,Activity/InsertOSSubjectivityCNP.xml | Activity/InsertXOLKlaimCNP.xml | Activity/KomitePostAdjustment.xml
+pyWorkPage.Komite,pyWorkPage,1,Komite,Page,ASM-FW-GCNMFW-Data-Comitee,5,8,3,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml | Section/ShowTransfer.xml
+pyWorkPage.Komite.CircumtansesCouseOfLoss,pyWorkPage,2,CircumtansesCouseOfLoss,skalar,,0,1,1,Section/ShowTransfer.xml
+pyWorkPage.Komite.ExtentOfLoss,pyWorkPage,2,ExtentOfLoss,skalar,,0,1,1,Section/ShowTransfer.xml
+pyWorkPage.Komite.LegalLiability,pyWorkPage,2,LegalLiability,skalar,,0,1,1,Section/ShowTransfer.xml
+pyWorkPage.Komite.Occupation,pyWorkPage,2,Occupation,skalar,,0,1,1,Section/ShowTransfer.xml
+pyWorkPage.Komite.Remarks,pyWorkPage,2,Remarks,skalar,,0,3,3,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml | Section/ShowTransfer.xml
+pyWorkPage.KomiteCount,pyWorkPage,1,KomiteCount,skalar,,0,25,3,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml | Activity/SendEmailKlaim_KMT.xml
+pyWorkPage.KomiteList,pyWorkPage,1,KomiteList,Page List,,5,20,4,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml | Activity/SetKomiteList_Act.xml
+pyWorkPage.KomiteList.DateApproval,pyWorkPage,2,DateApproval,skalar,,0,3,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+pyWorkPage.KomiteList.DateApprove,pyWorkPage,2,DateApprove,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+pyWorkPage.KomiteList.KomiteAproval,pyWorkPage,2,KomiteAproval,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+pyWorkPage.KomiteList.KomiteComment,pyWorkPage,2,KomiteComment,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+pyWorkPage.KomiteList.KomiteID,pyWorkPage,2,KomiteID,skalar,,0,9,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+pyWorkPage.KomiteLoop,pyWorkPage,1,KomiteLoop,skalar,,0,17,3,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml | Activity/SendEmailKlaim_KMT.xml
+pyWorkPage.QuotationData,pyWorkPage,1,QuotationData,Page,,1,2,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+pyWorkPage.QuotationData.InsuredName,pyWorkPage,2,InsuredName,skalar,,0,2,2,Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+pyWorkPage.SubjectivityNote,pyWorkPage,1,SubjectivityNote,skalar,,0,1,1,Activity/KomitePostAdjustment.xml
+pyWorkPage.TreatyInMaster,pyWorkPage,1,TreatyInMaster,Page,,1,2,1,Activity/KomitePostAdjustmentCWP.xml
+pyWorkPage.TreatyInMaster.ReportingStart,pyWorkPage,2,ReportingStart,skalar,,0,2,1,Activity/KomitePostAdjustmentCWP.xml
+pyWorkPage.pxCoverInsKey,pyWorkPage,1,pxCoverInsKey,skalar,,0,3,3,Activity/InsertXOLKlaimCNP.xml | Activity/KomitePostAdjustment.xml | Activity/KomitePostAdjustmentCWP.xml
+pyWorkPage.pxCreateDateTime,pyWorkPage,1,pxCreateDateTime,skalar,,0,1,1,Section/ShowTransfer.xml
+pyWorkPage.pxCreateOpName,pyWorkPage,1,pxCreateOpName,skalar,,0,1,1,Section/ShowTransfer.xml
+pyWorkPage.pxCreateOperator,pyWorkPage,1,pxCreateOperator,skalar,,0,4,4,Activity/InsertOSKlaimCNP.xml | Activity/SendEmailKlaimRejectClose_KMT.xml | Activity/SendEmailKlaim_KMT.xml
+pyWorkPage.pxLockHandle,pyWorkPage,1,pxLockHandle,skalar,,0,2,1,Activity/KomitePostAdjustmentCWP.xml
+pyWorkPage.pyID,pyWorkPage,1,pyID,skalar,,0,2,2,Activity/InsertOSKlaimCNP.xml | Activity/SendEmailKlaimRejectClose_KMT.xml
+pyWorkPage.pyWorkIDPrefix,pyWorkPage,1,pyWorkIDPrefix,skalar,,0,29,5,Activity/HitServiceToKasirKMT_Act.xml | Activity/SendEmailKlaimRejectClose_KMT.xml | When/IsCLM.xml
+pyWorkPage.pzInsKey,pyWorkPage,1,pzInsKey,skalar,,0,1,1,Activity/KomitePostAdjustment.xml
