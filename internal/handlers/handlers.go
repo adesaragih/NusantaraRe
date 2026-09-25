@@ -1,8 +1,9 @@
 // Package handlers memuat HTTP controller.
 //
 // Arah ketergantungan: handlers -> services -> repository. Paket ini tidak
-// pernah mengimpor repository secara langsung, dan tidak pernah memuat aturan
-// dagang - aturan tinggal di services.
+// mengimpor repository, dan tidak pernah memegang koneksi database: seluruh
+// pertanyaan ke Oracle - termasuk pemeriksaan kesehatan - lewat services.
+// Nol aturan dagang di sini.
 //
 // [usulan] Router memakai net/http bawaan Go 1.22 (pola "GET /path"),
 // sehingga nol ketergantungan pihak ketiga.
@@ -17,19 +18,10 @@ import (
 	"nusantarare/internal/services"
 )
 
-// Kesehatan adalah pemeriksa yang dapat dipanggil Router tanpa membuat
-// handlers bergantung pada repository.
-type Kesehatan interface {
-	Ping(ctx context.Context) error
-}
-
 // Router menyusun seluruh rute.
-//
-// svc boleh nil di Fase 0; ia sudah diterima di sini supaya tiket pertama yang
-// punya endpoint tidak perlu mengubah tanda tangan fungsi ini.
-func Router(svc *services.Service, kesehatan Kesehatan) http.Handler {
+func Router(svc *services.Service) http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /healthz", healthz(kesehatan))
+	mux.HandleFunc("GET /healthz", healthz(svc))
 	return mux
 }
 
@@ -43,14 +35,14 @@ type jawabanSehat struct {
 // Ia tetap menjawab 200 ketika Oracle belum dikonfigurasi: Fase 0 harus dapat
 // dijalankan tanpa instance, dan keadaan database dilaporkan apa adanya di
 // dalam badan jawaban, bukan disembunyikan.
-func healthz(kesehatan Kesehatan) http.HandlerFunc {
+func healthz(svc *services.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		jawab := jawabanSehat{Status: "sehat", Database: "tidak dikonfigurasi"}
 
-		if kesehatan != nil {
+		if svc.PunyaDatabase() {
 			ctx, batal := context.WithTimeout(r.Context(), 3*time.Second)
 			defer batal()
-			if err := kesehatan.Ping(ctx); err != nil {
+			if err := svc.CekKesehatan(ctx); err != nil {
 				jawab.Database = "tidak terjangkau"
 			} else {
 				jawab.Database = "terjangkau"

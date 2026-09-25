@@ -104,6 +104,30 @@ func (m Money) MarshalJSON() ([]byte, error) {
 	return json.Marshal(uangJSON{Amount: utils.FormatDecimal(m.Amount), Currency: m.Currency})
 }
 
+// bacaDesimalJSON membaca satu medan desimal dari JSON.
+//
+// Medan yang ABSEN dan medan bernilai null sama-sama berarti kosong, bukan
+// galat: kolom kosong dan kolom bernilai nol adalah dua hal berbeda
+// (ADR-U-0027). Yang ditolak hanya angka JSON, sebab angka JSON dibaca
+// sebagai float64 oleh pustaka mana pun.
+func bacaDesimalJSON(mentah json.RawMessage) (*apd.Decimal, error) {
+	teksMentah := string(mentah)
+	if len(mentah) == 0 || teksMentah == "null" {
+		return nil, nil
+	}
+	if mentah[0] != '"' {
+		return nil, fmt.Errorf("%w: %s", ErrAngkaJSON, teksMentah)
+	}
+	var teks string
+	if err := json.Unmarshal(mentah, &teks); err != nil {
+		return nil, err
+	}
+	if teks == "" {
+		return nil, nil
+	}
+	return utils.ParseDecimal(teks)
+}
+
 // UnmarshalJSON menolak angka JSON secara tegas.
 func (m *Money) UnmarshalJSON(b []byte) error {
 	var mentah struct {
@@ -113,22 +137,11 @@ func (m *Money) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &mentah); err != nil {
 		return err
 	}
-	if len(mentah.Amount) > 0 && mentah.Amount[0] != '"' {
-		return fmt.Errorf("%w: %s", ErrAngkaJSON, mentah.Amount)
-	}
-	var teks string
-	if err := json.Unmarshal(mentah.Amount, &teks); err != nil {
-		return err
-	}
-	m.Currency = mentah.Currency
-	if teks == "" {
-		m.Amount = nil
-		return nil
-	}
-	d, err := utils.ParseDecimal(teks)
+	d, err := bacaDesimalJSON(mentah.Amount)
 	if err != nil {
 		return err
 	}
+	m.Currency = mentah.Currency
 	m.Amount = d
 	return nil
 }
@@ -164,4 +177,24 @@ func (r Ratio) MarshalJSON() ([]byte, error) {
 		Value string `json:"value"`
 		Scale int32  `json:"scale"`
 	}{Value: utils.FormatDecimal(r.Value), Scale: r.Scale})
+}
+
+// UnmarshalJSON menolak angka JSON, sama tegasnya dengan Money. Rasio ikut
+// jalur uang: pangsa yang dibaca sebagai float64 merusak nilai yang
+// dikalikannya.
+func (r *Ratio) UnmarshalJSON(b []byte) error {
+	var mentah struct {
+		Value json.RawMessage `json:"value"`
+		Scale int32           `json:"scale"`
+	}
+	if err := json.Unmarshal(b, &mentah); err != nil {
+		return err
+	}
+	d, err := bacaDesimalJSON(mentah.Value)
+	if err != nil {
+		return err
+	}
+	r.Value = d
+	r.Scale = mentah.Scale
+	return nil
 }

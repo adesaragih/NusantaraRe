@@ -22,9 +22,15 @@ const DecimalPrecision = 38
 
 var decimalContext = apd.BaseContext.WithPrecision(DecimalPrecision)
 
-// DecimalContext mengembalikan satu-satunya konteks aritmetika desimal.
+// DecimalContext mengembalikan konteks aritmetika desimal.
+//
+// Yang dikembalikan adalah SALINAN. Konteks apd punya medan yang dapat
+// ditulis - Precision di antaranya - sehingga membagikan pointer ke satu
+// nilai bersama membuat presisi 38 dapat diubah satu pemanggil untuk seluruh
+// proses. Presisi dinyatakan di satu tempat, dan tetap begitu.
 func DecimalContext() *apd.Context {
-	return decimalContext
+	salinan := *decimalContext
+	return &salinan
 }
 
 // ErrBukanDesimal dikembalikan bila teks tidak dapat dibaca sebagai desimal.

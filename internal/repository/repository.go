@@ -27,8 +27,8 @@ const namaDriver = "oracle"
 var (
 	// ErrTanpaOracle muncul bila lapisan ini dipakai tanpa ORACLE_DSN.
 	ErrTanpaOracle = errors.New("repository: ORACLE_DSN belum dikonfigurasi")
-	// ErrTransaksiDiSQL muncul bila teks SQL memuat COMMIT atau ROLLBACK.
-	ErrTransaksiDiSQL = errors.New("repository: transaksi tidak boleh ada di teks SQL (ADR-U-0029)")
+	// ErrTransaksiDiSQL muncul bila teks SQL memuat COMMIT.
+	ErrTransaksiDiSQL = errors.New("repository: COMMIT tidak boleh ada di teks SQL (ADR-U-0029)")
 	// ErrObjekTakBernama muncul bila nama objek kosong saat dikualifikasi.
 	ErrObjekTakBernama = errors.New("repository: nama objek kosong")
 )
@@ -38,9 +38,8 @@ var (
 // Skema disimpan di sini supaya setiap query dapat menyebutnya secara
 // eksplisit (ADR-U-0033) tanpa mengandalkan skema bawaan sesi.
 type DB struct {
-	sql    *sql.DB
-	skema  string
-	pegaPr bool
+	sql   *sql.DB
+	skema string
 }
 
 // Open membuka koneksi. sql.Open tidak menghubungi server; pemeriksaan
@@ -53,7 +52,7 @@ func Open(cfg config.Config) (*DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("repository: membuka koneksi: %w", err)
 	}
-	return &DB{sql: h, skema: cfg.OracleSchema, pegaPr: cfg.IsPegaProd}, nil
+	return &DB{sql: h, skema: cfg.OracleSchema}, nil
 }
 
 // Ping memeriksa koneksi.
@@ -75,10 +74,10 @@ func (d *DB) Close() error {
 // Skema mengembalikan nama skema yang dipakai.
 func (d *DB) Skema() string { return d.skema }
 
-// PegaProduksi menyatakan koneksi ini menunjuk data produksi Pega
-// (ADR-U-0005). Dipakai sebagai gerbang oleh tiket yang perilakunya memang
-// berbeda di produksi - bukan sebagai penanda yang didiamkan.
-func (d *DB) PegaProduksi() bool { return d != nil && d.pegaPr }
+// Penanda IS_PEGA_PROD (ADR-U-0005) sengaja TIDAK disimpan di sini: ia sudah
+// ada di config, dan menyalinnya ke lapisan ini hanya menambah keadaan yang
+// belum ada pembacanya. Tiket yang perilakunya memang berbeda di produksi
+// membawanya sendiri lewat services.
 
 // Qualify mengembalikan nama objek berkualifikasi skema, mis. POOLDATA.T_X.
 //
@@ -95,14 +94,14 @@ func (d *DB) Qualify(objek string) (string, error) {
 	return d.skema + "." + objek, nil
 }
 
-var polaTransaksi = regexp.MustCompile(`(?is)\b(COMMIT|ROLLBACK)\b`)
+var polaTransaksi = regexp.MustCompile(`(?is)\bCOMMIT\b`)
 
 // PeriksaSQL menolak teks SQL yang mengurus transaksinya sendiri.
 //
 // Transaksi dibuka dan ditutup oleh aplikasi di lapisan services
-// (ADR-U-0029). Stored procedure ber-ROLLBACK tetap boleh dipanggil, tetapi
-// ia dipanggil TERAKHIR dan penandanya diperiksa - dan itu bukan teks SQL
-// yang ditulis di sini.
+// (ADR-U-0029). Hanya COMMIT yang ditolak: stored procedure ber-ROLLBACK
+// justru DIIZINKAN aturan yang sama - ia dipanggil TERAKHIR dan penandanya
+// diperiksa - sehingga menolak kata ROLLBACK akan menolak pemanggilan yang sah.
 func PeriksaSQL(teks string) error {
 	if polaTransaksi.MatchString(teks) {
 		return fmt.Errorf("%w: %q", ErrTransaksiDiSQL, ringkas(teks))
@@ -145,15 +144,4 @@ func (t *Tx) Rollback() error {
 		return nil
 	}
 	return err
-}
-
-// Aggregate adalah bentuk yang diikuti setiap antarmuka repository: satu
-// antarmuka per agregat, seluruhnya menerima context dan bekerja di dalam
-// transaksi yang dibuka services.
-//
-// Fase 0 tidak punya agregat. Tiket pertama yang menyimpan sesuatu menambah
-// antarmukanya sendiri di berkas tersendiri, mengikuti bentuk ini.
-type Aggregate interface {
-	// Nama agregat, dipakai untuk pesan galat dan log.
-	Nama() string
 }

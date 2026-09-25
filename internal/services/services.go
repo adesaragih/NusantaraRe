@@ -35,6 +35,31 @@ func New(db *repository.DB) *Service {
 	return &Service{db: db}
 }
 
+// PunyaDatabase menyatakan apakah proses dikonfigurasi menyentuh Oracle.
+func (s *Service) PunyaDatabase() bool { return s != nil && s.db != nil }
+
+// CekKesehatan memeriksa apakah Oracle terjangkau.
+//
+// Ia ada DI SINI, bukan di handlers, supaya arah handlers -> services ->
+// repository tidak dipotong: handlers tidak pernah memegang koneksi.
+// Mengembalikan ErrTanpaOracle bila database memang tidak dikonfigurasi -
+// itu keadaan yang sah di Fase 0, bukan kegagalan.
+func (s *Service) CekKesehatan(ctx context.Context) error {
+	if !s.PunyaDatabase() {
+		return repository.ErrTanpaOracle
+	}
+	return s.db.Ping(ctx)
+}
+
+// SkemaAktif mengembalikan nama skema yang dipakai, atau teks kosong bila
+// tidak ada database.
+func (s *Service) SkemaAktif() string {
+	if !s.PunyaDatabase() {
+		return ""
+	}
+	return s.db.Skema()
+}
+
 // DalamTransaksi menjalankan fn di dalam satu transaksi.
 //
 // Transaksi dibuka dan ditutup DI SINI, bukan di dalam teks SQL

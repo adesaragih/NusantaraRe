@@ -2,6 +2,9 @@
 //
 // Fase 0 - scaffold. Berkas ini hanya: baca config -> buka koneksi ->
 // daftarkan handler -> dengarkan. ⛔ Nol aturan dagang di sini.
+//
+// main adalah composition root: ia satu-satunya tempat yang merakit
+// repository dan services. Sesudah dirakit, seluruh pertanyaan lewat services.
 package main
 
 import (
@@ -36,26 +39,23 @@ func main() {
 			log.Fatalf("oracle: %v", err)
 		}
 		defer func() { _ = db.Close() }()
-		log.Printf("oracle: skema %s", db.Skema())
+	}
+
+	svc := services.New(db)
+	if svc.PunyaDatabase() {
+		log.Printf("oracle: skema %s", svc.SkemaAktif())
 	} else {
 		log.Print("oracle: ORACLE_DSN kosong - berjalan tanpa database")
 	}
 
 	if *migrasi {
-		jalankanMigrasi(db)
+		jalankanMigrasi(svc)
 		return
-	}
-
-	// Interface dibiarkan nil bila database tidak ada, supaya /healthz
-	// melaporkan "tidak dikonfigurasi" dan bukan "tidak terjangkau".
-	var kesehatan handlers.Kesehatan
-	if db != nil {
-		kesehatan = db
 	}
 
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddr,
-		Handler:           handlers.Router(services.New(db), kesehatan),
+		Handler:           handlers.Router(svc),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
@@ -84,14 +84,14 @@ func main() {
 // Fase 0 tidak punya migrasi: nol DDL, nol aturan dagang. Berkas migrasi lahir
 // bersama tiket yang memilikinya, dan ⛔ tidak pernah dijalankan terhadap
 // instance produksi.
-func jalankanMigrasi(db *repository.DB) {
-	if db == nil {
+func jalankanMigrasi(svc *services.Service) {
+	if !svc.PunyaDatabase() {
 		log.Fatal("migrasi: ORACLE_DSN wajib terisi")
 	}
 	ctx, batal := context.WithTimeout(context.Background(), 30*time.Second)
 	defer batal()
-	if err := db.Ping(ctx); err != nil {
+	if err := svc.CekKesehatan(ctx); err != nil {
 		log.Fatalf("migrasi: tidak dapat menjangkau oracle: %v", err)
 	}
-	log.Printf("migrasi: belum ada migrasi terdaftar untuk skema %s", db.Skema())
+	log.Printf("migrasi: belum ada migrasi terdaftar untuk skema %s", svc.SkemaAktif())
 }
