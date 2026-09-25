@@ -5,31 +5,62 @@ Tiket: **tidak ada** — Fase 0 adalah pekerjaan pendahuluan.
 
 ---
 
-## 1. ⛔ Fase 0 BELUM selesai menurut definisinya sendiri
+## 1. Fase 0 selesai — dan RALAT atas laporan pertama
 
-Brief §2 menetapkan empat tanda selesai. **Tidak satu pun dapat dijalankan**, sebab
-rantai alatnya tidak ada di mesin ini.
+### ⛔ RALAT-1 · "rantai alat tidak ada" adalah keliru
 
-| Alat | Keadaan |
+Kalimat lama tidak dihapus; ia dikutip di sebelah koreksinya.
+
+> **Lama:** "Brief §2 menetapkan empat tanda selesai. **Tidak satu pun dapat dijalankan**,
+> sebab rantai alatnya tidak ada di mesin ini." — dan tabel yang menyatakan
+> `go · node · npm · docker · make` ⛔ **tidak terpasang**.
+
+⛔ Salah untuk tiga dari lima. **Go, Node, dan npm sudah terpasang sejak semula:**
+
+| Alat | Keadaan sesungguhnya |
 | --- | --- |
+| `go` | ✅ **go1.26.8** — `C:\Program Files\Go\bin\go.exe` |
+| `node` | ✅ **v24.21.0** — `C:\Program Files\nodejs\node.exe` |
+| `npm` | ✅ **11.19.0** |
 | `git` | ✅ 2.55.0 |
-| `go` · `node` · `npm` · `docker` · `make` | ⛔ **tidak terpasang** |
+| `make` | ⛔ benar-benar tidak ada, di mana pun |
+| `docker` | ⛔ benar-benar tidak ada |
 
-| Tanda selesai §2 | Keadaan |
-| --- | --- |
-| `make build` lulus | ⛔ tak dapat dijalankan; **dan akan gagal** — `go.sum` dan `frontend/package-lock.json` belum ada |
-| `make test` lulus dengan nol test | ⛔ tak dapat dijalankan; akan gagal karena sebab yang sama |
-| `make run-api` menjawab `GET /healthz` | ⛔ tak dapat dijalankan |
-| `make run-web` menampilkan satu halaman kosong | ⛔ tak dapat dijalankan |
-| Nol aturan dagang | ✅ terpenuhi |
+**Sebab kekeliruannya, dan ia jujur:** saya menyimpulkan "tidak terpasang" dari
+`command -v go` di dalam shell sesi agent, yang gagal. Ketiganya **terdaftar di `Path`
+tingkat mesin**; yang tidak memuatnya hanya PATH sesi shell itu. ⚠️ **Ketiadaan sebuah
+perintah di PATH satu shell bukan bukti ketiadaan alat di mesin** — itu jebakan yang
+sama bentuknya dengan sensus berjendela salah: instrumennya yang sempit, bukan
+kenyataannya yang kosong.
 
-⛔ **`go.sum` dan `package-lock.json` tidak dapat saya buat.** Keduanya lahir dari
-`go mod download` dan `npm install`, dan keduanya menuntut alat yang tidak ada. Hash
-`go.sum` tidak dapat dikarang: ia dihitung Go sendiri. GitHub terjangkau dari mesin ini,
-jadi begitu Go dan npm terpasang keduanya jadi dalam satu perintah.
+### ✅ Keempat tanda selesai §2, terverifikasi
 
-⭐ **Yang tersisa untuk menutup Fase 0** — satu sesi pendek sesudah alat terpasang:
-`go mod tidy` · `cd frontend && npm install` · lalu empat tanda selesai di atas.
+Sesudah `go mod tidy` dan `npm install` — keduanya berhasil, proxy Go dan registry npm
+terjangkau (`proxy.golang.org`, `sum.golang.org`, `registry.npmjs.org` semuanya 200):
+
+| Tanda selesai §2 | Perintah | Hasil |
+| --- | --- | --- |
+| `make build` lulus | `go build -o bin/api ./cmd/api` | ✅ biner **24,2 MB** |
+| | `npm run build` | ✅ 30 modul, `dist/` **142 kB** |
+| `make test` lulus dengan nol test | `go test ./...` | ✅ lulus, **nol test di tujuh paket** — kerangka ada |
+| `make run-api` menjawab `GET /healthz` | biner dijalankan di `:8099` | ✅ **200** `{"status":"sehat","database":"tidak dikonfigurasi"}`; rute tak dikenal **404** |
+| `make run-web` menampilkan satu halaman kosong | `npm run dev` | ✅ **200**, halaman memuat `#root` dan `/src/main.jsx`, `App` kosong |
+| Nol aturan dagang | — | ✅ terpenuhi |
+
+Ditambah: `go vet ./...` **lulus** dan `gofmt -l` melaporkan **nol** berkas belum rapi.
+
+⭐ **`go.sum` (6 baris) dan `frontend/package-lock.json` (69 kB) sudah dibuat dan
+di-commit.** Kalimat lama *"`go.sum` dan `package-lock.json` tidak dapat saya buat"*
+gugur bersama premisnya.
+
+### ⚠️ Yang benar-benar masih kurang
+
+| | Keadaan | Akibat |
+| --- | --- | --- |
+| `make` | tidak ada di mesin ini; **sumber winget tak terjangkau** dari jaringan ini | Keempat tanda selesai terverifikasi lewat perintah di baliknya, tetapi pemanggilan harfiah `make build` dkk **belum pernah dijalankan** |
+| `docker` | tidak ada; **WSL belum terpasang** dan `HypervisorPresent = False` | `make db-up` tidak dapat dipakai. **Tidak menahan apa pun** bila DBA menyediakan instance pengembangan |
+
+Caranya ada di [PANDUAN-RANTAI-ALAT.md](PANDUAN-RANTAI-ALAT.md).
 
 ---
 
@@ -142,18 +173,26 @@ di `Makefile` yang dibaca sebagai sandi tertanam padahal ia rujukan env.
 | Rahasia atau sandi tertanam | ✅ 0 |
 | Nama orang di kode | ✅ 0 |
 
-⚠️ **Yang TIDAK diperiksa alat ini**: apakah kodenya benar-benar kompilasi. Diagnostik Go
-di IDE hanya melaporkan `undefined: apd` — dan itu karena **modulnya belum pernah
-diunduh** (nol cache modul Go), bukan cacat kode. Permukaan API `apd/v3` yang dipakai
-(`BaseContext.WithPrecision`, `NewFromString`, `Context.Add`/`Sub`, `Text('f')`) **belum
-diverifikasi kompilator**.
+⚠️ **Yang TIDAK diperiksa alat ini**: apakah kodenya benar-benar kompilasi. Itu kini
+dijawab kompilator sungguhan, bukan lagi oleh pemeriksa teks.
+
+> **Lama:** "Permukaan API `apd/v3` yang dipakai (`BaseContext.WithPrecision`,
+> `NewFromString`, `Context.Add`/`Sub`, `Text('f')`) **belum diverifikasi kompilator**."
+
+✅ **Kini terverifikasi.** `go build` dan `go vet ./...` lulus — seluruh permukaan API itu
+benar. Diagnostik `undefined: apd` yang sempat muncul di IDE memang hanya akibat modulnya
+belum terunduh, persis seperti dugaan waktu itu, dan hilang sesudah `go mod tidy`.
 
 ---
 
 ## 6. Butir terbuka — tidak saya tutup sendiri
 
-1. ⛔ **Rantai alat.** Go, Node, npm, Docker, `make` perlu dipasang sebelum Fase 0 dapat
-   ditutup. → pemilik pekerjaan / IT.
+1. ⚠️ **Rantai alat — dua sisa, bukan lima.** Go, Node, dan npm ternyata sudah terpasang
+   (lihat RALAT-1). Yang kurang: **`make`** — perlu diunduh manual sebab sumber winget
+   tak terjangkau dari jaringan ini — dan **Docker**, yang menuntut WSL2 serta
+   virtualisasi dan karenanya perlu hak administrator. Docker **hanya** dipakai
+   `make db-up`; bila DBA menyediakan instance pengembangan, ia tidak diperlukan sama
+   sekali. → pemilik pekerjaan / IT. Caranya di `PANDUAN-RANTAI-ALAT.md`.
 2. ⚠️ `[terbuka]` **Skala kolom uang berselisih antar-dokumen.** Brief §4 menulis
    `NUMBER(38,8)` (ADR-U-0003 · ADR-U-0016); korpus menulis **`NUMBER(38,20)` 171 kali**
    lawan `NUMBER(38,8)` 20 kali dan `NUMBER(38,2)` 7 kali, dan `TICKETS.md` T-38 memutuskan
@@ -187,6 +226,14 @@ diverifikasi kompilator**.
 | `NUMBER(38,20)` : `(38,8)` : `(38,2)` | 171 : 20 : 7 | `grep -o` lintas empat pohon dokumen |
 | Sub-agen standar | 95.629 token, 17 panggilan alat, 247 detik | laporan harness |
 | Sub-agen spec | 76.440 token, 9 panggilan alat, 165 detik | laporan harness |
+| `go vet ./...` | lulus, exit 0 | dijalankan |
+| `go build` | lulus, biner 24.199.168 byte | dijalankan |
+| `go test ./...` | lulus, 7 paket, nol berkas uji | dijalankan |
+| `gofmt -l` | nol berkas belum rapi | dijalankan |
+| `npm install` | 90 paket, 12 detik | dijalankan |
+| `npm run build` | 30 modul, `dist/` 142.466 byte, 602 ms | dijalankan |
+| `GET /healthz` | 200, badan JSON sesuai | dijalankan |
+| `go.sum` · `package-lock.json` | 6 baris · 69.354 byte | dibuat lalu di-commit |
 
 ### ⛔ Tidak diukur
 
@@ -196,7 +243,8 @@ diverifikasi kompilator**.
 | Biaya | Turunan token; tidak diukur |
 | Lama sesi, jam dinding | Tidak dicatat |
 | Panggilan alat sesi utama | Tidak dicatat |
-| Apakah kode kompilasi | ⛔ Tidak ada kompilator di mesin ini |
+| Pemanggilan harfiah `make build` dkk | ⛔ `make` tidak ada di mesin ini; yang diuji adalah perintah di baliknya |
+| Perilaku terhadap Oracle sungguhan | ⛔ Belum ada instance; `/healthz` diuji pada jalur "tidak dikonfigurasi" |
 
 **Pengukuran luar (`claude --print --output-format json`) tidak dijalankan**, sebab ia
 memulai sesi terpisah yang ongkosnya bukan ongkos ronde ini.
