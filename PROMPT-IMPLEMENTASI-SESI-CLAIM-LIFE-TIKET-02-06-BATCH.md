@@ -19,7 +19,7 @@
 
 | | Keadaan |
 | --- | --- |
-| `HEAD` | `347ee57`; tiket 14 *claimed* 40/53; tiket 01 *claimed* 4/7; tiket 02–06 *ready-for-agent*, nol AC dicentang. Untracked: brief ronde 7 dan katalog di atas *(commit di Langkah 0)* |
+| `HEAD` | `f754ad1` *(brief ini, brief ronde 7, dan katalog sudah ter-commit)*; tiket 14 *claimed* 40/53; tiket 01 *claimed* 4/7; tiket 02–06 *ready-for-agent*, nol AC dicentang. Working tree **bersih** — satu-satunya yang belum ter-commit adalah suntingan terakhir berkas brief ini |
 | Uji | **99** test Go PASS; **20** test bertag `db` SKIP dengan pesan; 5 test JS; `vite build` 87 modul |
 | Yang sudah ada dan **dipakai**, bukan ditulis ulang | skema 7 tabel + `T_MIGRASI` *(migrasi tertanam, pra-terbang bentuk, `-migrate`/`-migrate-down`)*; `repository.PohonKlaim.Simpan` *(satu transaksi: 6 tingkat + baris datar warisan + pagar `PeriksaNilaiWarisan`)*; `BongkarBarisLama`/`BarisLamaDari`; `AmbilHeader`, `AmbilPeserta`, `AmbilBaris`, `AmbilSpreading`; `models.Money`/`Ratio`/`Klaim`/`Peserta`/`BarisAdjustment`/`PohonKlaim`, `StatusBarisDariKode`; `services.Pelaku`, `WajibPeran`, `DalamTransaksi`; rute `GET /healthz`, `GET /api/klaim-life/{id}`; frontend satu halaman + proxy dev |
 | Oracle | **G1 masih tertutup** — tidak ada user kosong. Seluruh test db ditulis dan **SKIP dengan pesan**; **nol** `-migrate` |
@@ -143,10 +143,27 @@ angka contoh spec bila ada.
 
 ## 5. URUTAN SESI
 
-**Langkah 0.** Commit yang tertunda **dengan nama**: `docs: brief batch tiket 02–06, brief ronde 7,
-katalog peserta dan treaty` *(brief ini, brief ronde 7, `KATALOG-TABEL-PESERTA-DAN-TREATY.md`)*.
-`git status --porcelain` kosong; SHA dicatat sebagai titik tetap **tiket 02**; uji tanpa Oracle
-hijau.
+**Langkah 0.** `git add PROMPT-IMPLEMENTASI-SESI-CLAIM-LIFE-TIKET-02-06-BATCH.md` lalu commit
+`docs: ralat Langkah 0 dan catatan penjaga, brief batch tiket 02–06` *(hanya berkas ini; tiga dokumen
+lain sudah ter-commit di `f754ad1`)*. `git status --porcelain` kosong; SHA dicatat sebagai titik
+tetap **tiket 02**; uji tanpa Oracle hijau *(99 test, 20 SKIP db, 5 JS)*.
+
+**Tiga penjaga yang PASTI tersentuh sesi ini — perbarui angkanya, jangan dilonggarkan:**
+
+| Penjaga | Sekarang | Sesudah | Sebab |
+| --- | ---: | ---: | --- |
+| `TestSeluruhCreateDapatDibacaNamanya` *(cacah `CREATE`)* | 19 | **20** | `009` menambah `SEQ_WORK_CLAIM` *(aa)* |
+| `TestKolomDDLCocokDenganStruktur` | — | STRUKTUR ikut diralat | `002` `CURRENCY` *(z1)*; blok ralat bertanggal di bab `T_GENERAL_CLAIM`, satu baris kolom baru di tabelnya |
+| Cacah objek `-migrate` *(Langkah A, bila G1)* | 8 · 5 · 15 | **8 · 6 · 15** | sequence baru; `010` hanya `ALTER TABLE … ADD`, nol objek baru |
+
+**Sensus dokumen (ad) — hasil awal, dilanjutkan executor:** kelas Pega `ASM-FW-GCNMFW-Int-DOCUMENT_CLAIM`
+memetakan ke tabel warisan `DOCUMENT_CLAIM` *(14 kolom di brief ronde 4 §9: `NAMAFILE`, `MIME`,
+`KATEGORI_1/2`, `TANGGAL`, `T_STORAGE_ID`, `NOAKSEP`, `NOPREKAS`, `PAYMENTDATE`, `INSKEY_*`,
+`IDPEGA`, `PXCREATEOPERATOR`)*; `InsertDocument_Act` merujuk `InsertGoogleStorage_Act` dan rule
+`Insert_T_Storage_SQL` / `GetLinkStorage_SQL` *(penyimpanan berkas di Google Storage, ADR-U-0010;
+`T_STORAGE_ID` adalah penunjuknya)*. Yang belum dibaca: `Claim Life/Section/DocumentLife.xml`
+*(properti yang diisi manusia)* dan aturan **"lengkap"** di `SaveOutStandingLife_Act` *(kategori mana
+yang wajib per peserta)* — keduanya dibaca executor sebelum menulis `010`, dengan path XML per kolom.
 
 **Per tiket, berurutan 02 → 03 → 06 → 04 → 05:** `Status: claimed` → test dulu pada seam §4 →
 kode → verifikasi penuh → bab Implementasi *(AC ditutup / total; AC terbuka dengan pemiliknya;
