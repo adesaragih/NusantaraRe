@@ -88,6 +88,14 @@ skema baru dalam bentuk itu** (ADR-U-0022), dan jangan pernah masuk fixture.
 > `Claim Life/RDBList/GetProductLife.xml` dimulai `SELECT M_PRODUCT_LIFE.JSONDATA AS CARI1,
 > PRODUCT_LIFE.RICOMM FROM PRODUCT_LIFE …`. Pembaca JSON produk di Pega adalah **`GetProductLife`**;
 > baris kedua dan seterusnya kedua SQL itu **belum dibaca** — executor tiket 03 membacanya utuh.
+>
+> **Ralat kedua, malam yang sama** `[terverifikasi — SQL utuh dibaca executor tiket 03 dan dibaca
+> ulang penyusun]`: `GetJsonProductLife` **juga** membaca JSON produk — `select * from treatyyear_life
+> where id in (select JT.OUTWARDNAMEID from m_product_life a, json_table(A.JSONDATA, '$'
+> COLUMNS(NESTED PATH '$.OutwardList[*]' COLUMNS(OUTWARDNAME, OUTWARDNAMEID))) JT where a.id =
+> {ParamData.CARI1}) order by TO_NUMBER(IDR) asc`. Jadi larangan AC 38 mengenai **kedua** rule, dan
+> objek `treatyyear_life` yang dilihat Pega **punya kolom `IDR`** *(dipakai `ORDER BY`)* — berbeda
+> dari `POOLDATA.TREATYYEAR_LIFE` tujuh kolom di bawah. `[data DBA]`.
 > SQL `GetRateRetro` `[terverifikasi]`: `SELECT AGE AS CARI1, CONTRACT AS CARI2, GENDER AS CARI3,
 > RATE AS CARI4 FROM POOLDATA.RATE_LIFE WHERE IDUSEDBY = {InputData.CARI3}` *(tanpa `ORDER BY`)*;
 > `GetRetroLife_SQL`: `select * from retrocessionlife where idtreatyyear_life ={ParamData.CARI2}

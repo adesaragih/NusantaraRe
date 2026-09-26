@@ -501,3 +501,54 @@ berkas dibaca utuh), katalog `RATE_LIFE`/`PRODUCT_LIFE`/`RETROCESSIONLIFE`/`TREA
 instance pengembangan (definisi view dan agregat, nol baris data), dan pembacaan
 `SpreadingClaimLife_Act`, `GetRateRetro`, `GetRetroLife_SQL` serta baris pertama SQL `GetProductLife`
 dan `GetJsonProductLife` dari korpus. Aturan §1 adalah kata work owner malam ini.*
+
+---
+
+## 11. SESUDAH TIKET 03 — verifikasi independen `7aa0e94`, dan yang membuka sisa tiket 03
+
+**Tereproduksi:** `436eb39` 2 berkas +589/−6 *(Langkah 0, persis dua berkas)*; `7aa0e94` 20 berkas
++2.273/−62; **144 PASS · 0 FAIL · 24 SKIP** *(32 test baru, seluruhnya terdaftar)*; `tsc` bersih ·
+5 test JS · 88 modul; tiket 03 `claimed` **11/28** *(26 + 2 AC baru dari XML; 3 AC diralat di
+tempat; 1 ditutup oleh XML)*; DDL `005`/`006` hanya berubah **komentar**; `010` tujuh kolom lewat
+`ALTER` dan `KolomAlterTambah` membuatnya terlihat pembanding bentuk; pesan gerbang kedua persis
+XML; `desimalUang = 8` pada share, AMOUNT, GROSS, NET; nol kebocoran.
+
+**Dikorroborasi sendiri dari korpus, lewat jalan yang berbeda dari executor:** langkah 5.1
+*(`pyWorkPage.BusinessName==TempProduct1.PlanList(local.idx1).Name`)* dan langkah kaskade
+*(`local.ClaimNet<=.IDR`)* — dua langkah yang **harus** berjalan saat kondisinya benar — sama-sama
+berkode `WhenTrue=2 / WhenFalse=3`. Jadi **`2` = lanjut, `3` = lewati** kini `[terverifikasi]` dari
+dua pasang bukti. Cabang NET: langkah 8.2.1.9.2 `WhenTrue=3` → berjalan bila **bukan** tahun pertama;
+8.2.1.9.3 `WhenFalse=3` → berjalan bila tahun pertama. `hitungRetro` di `spreading.go` cocok.
+`GetJsonProductLife` utuh memang `json_table` atas `OutwardList[*].OUTWARDNAMEID` dengan
+`order by TO_NUMBER(IDR) asc`. Executor benar pada ketiganya.
+
+**Satu catatan kode — kecil, bukan pemblokir, untuk tiket 03 saat disentuh lagi:** `HitungSpreading`
+memeriksa keterurutan menaik pada kapasitas **mata uang klaim**, sedangkan sumbernya mengurutkan
+`TO_NUMBER(IDR)` untuk **kedua** mata uang. Untuk klaim USD, urutan menurut IDR belum tentu menaik
+menurut USD, sehingga Go menolak *(`ErrTreatyTidakTerurut`)* di keadaan yang Pega terima. Periksa
+keterurutan pada `IDR` *(kunci urut sumber)*, atau pindahkan pemeriksaannya ke test repository atas
+`ORDER BY`-nya; tulis kasus USD di test.
+
+**Keputusan yang menahan 14 AC sisa tiket 03 — milik work owner, diminta sekarang:**
+
+| | Keputusan | Rekomendasi |
+| ---: | --- | --- |
+| **aj** *(baru)* | izin langkah migrasi **`011`**: `BRANCH_OF_BANK`, `SWIFT_CODE`, `PAYABLE_TO` pada `T_CLAIMLF_ADJUSTMENT` — layar Pega merujuk **enam** field bank `[terverifikasi]`, tiket menulis tiga | **setujui** — XML menang atas himpunan field; `011` hanya `ALTER`, nol `CREATE`, penjaga cacah tidak berubah |
+| **ag** | sumber `OUTWARDRATEID` per plan **dan** daftar treaty-year *(`OutwardList[*].OUTWARDNAMEID`)* tanpa JSON produk | **ag1**: modul **Master Product Name Life** dijadwalkan **langsung sesudah** Claim Life *(atau disisipkan sebelum tiket 10)*, dengan tabel plan relasional yang memuat `OUTWARDRATEID` dan `OutwardList`; sampai itu, antarmuka yang gagal terang *(sudah ada)* dipertahankan. **ag2** *(tidak direkomendasikan)*: mencabut larangan AC 38 sementara |
+| **ah** | aturan bila `RATE_LIFE` cocok lebih dari satu baris dengan nilai berbeda | Product+UW; sampai ada, dilaporkan — sudah begitu |
+| **ak** *(baru)* | mata uang selain `IDR`/`USD` — XML tanpa cabang | Product+UW; sampai ada, galat terang — sudah begitu |
+| DBA | objek `treatyyear_life` yang dilihat koneksi Pega **berkolom `IDR`/`USD`** *(katalog `POOLDATA` tidak punya)*; `GetCategoryLife_SQL` *(daftar kategori dokumen wajib — tidak ada di korpus)*; user kosong **G1** | `[data DBA]` |
+| o1–o3 | penomoran | masih `[USULAN]` — menahan tiket 02 AC 2, 3, 7–11 dan gerbang "klaim bernomor" tiket 05 |
+
+**Executor: lanjut 06 → 04 → 05 → 15 → 07 … sesuai §3 tanpa menunggu keputusan di atas.** Untuk
+tiket 06: `@addCalendar(.DATE_OF_LOSS,0,0,0,1,0,0,0)` `[terverifikasi]` tujuh argumen angka; tanda
+tangan Pega `addCalendar(tanggal, tahun, bulan, hari, jam, menit, detik, milidetik)` — slot keempat
+**jam** sejalan dengan dokumentasi Pega sejauh ingatan penyusun *(`[dugaan]` — kutip halaman
+dokumentasinya di tiket bila terjangkau)*; replikasi apa adanya, satuan tetap `[terbuka — Product+UW]`.
+Ralat 1 tiket 03 *(Save to Outstanding = `ReasLifeSPV`)* dipakai tiket **07** saat menegakkan peran;
+periksa di sana bahwa tiket 05 *(Reject oleh Admin)* dan 03 tetap saling konsisten. Penambahan `AGE`,
+`SEX`, `PERIOD_MM` peserta ke `kolomSalin` *(bersama `TestUrutanKolomSalinDikunci` dan tiruan skema
+uji)* **boleh** dikerjakan di tiket 03 saat **ag** terbuka — lintas-tiket yang **dinyatakan**.
+
+*Bab 11 disusun 26 September 2026 malam: uji dijalankan ulang, diff 20 berkas dibaca, kode
+precondition dicek pada empat langkah XML, SQL `GetJsonProductLife` dibaca utuh.*
