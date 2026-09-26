@@ -178,8 +178,11 @@ func TestAC41UangDanPersenBertipeDesimal(t *testing.T) {
 				t.Errorf("%s kolom %s tidak ketemu", awalan, n)
 				continue
 			}
-			if !strings.Contains(tipe, "NUMBER") {
-				t.Errorf("%s kolom %s bukan NUMBER: %q", awalan, n, tipe)
+			// Diperketat ronde 3: "memuat kata NUMBER" terlalu longgar -
+			// NUMBER polos lolos, dan justru itu yang terjadi sampai ronde 2.
+			// Keputusan work owner c menetapkan NUMBER(38,8).
+			if !strings.Contains(tipe, "NUMBER(38,8)") {
+				t.Errorf("%s kolom %s bukan NUMBER(38,8): %q", awalan, n, tipe)
 			}
 			for _, terlarang := range []string{"FLOAT", "BINARY_DOUBLE", "BINARY_FLOAT", "VARCHAR"} {
 				if strings.Contains(tipe, terlarang) {

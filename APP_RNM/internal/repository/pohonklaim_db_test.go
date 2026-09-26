@@ -384,3 +384,56 @@ func TestBongkarDataLamaDariTabelTiruan(t *testing.T) {
 		t.Errorf("baris hardcode %d, mau 1", lap.BarisHardcode)
 	}
 }
+
+// ⛔ Nama constraint yang bertabrakan harus MENGGAGALKAN migrasi, bukan dilewati.
+//
+// ORA-02264 berarti nama constraint sudah dipakai objek lain, dan Oracle baru
+// memeriksanya ketika tabelnya belum ada. Jadi ORA-02264 pada sebuah
+// CREATE TABLE berarti tabel itu JUSTRU TIDAK terbuat. Ronde 2 menelannya dan
+// mencatat langkahnya sukses - skema tanpa tabel tercatat sebagai migrasi yang
+// berhasil. Test ini menirukan tabrakan itu dan menuntut migrasi berhenti.
+func TestNamaConstraintBertabrakanMenggagalkanMigrasi(t *testing.T) {
+	db, _, bersihkan := siapkanPohon(t)
+	defer bersihkan()
+	ctx := context.Background()
+
+	sqlDB, skema, err := skemauji.Buka()
+	if err != nil {
+		t.Skipf("lewati: %v", err)
+	}
+	defer func() { _ = sqlDB.Close() }()
+
+	if _, err := db.BongkarMigrasi(ctx); err != nil {
+		t.Fatalf("membongkar: %v", err)
+	}
+	// Tabel lain yang sudah memakai nama constraint milik langkah 001.
+	_, err = sqlDB.ExecContext(ctx, "CREATE TABLE "+skema+
+		".UJI_TABRAKAN (ID VARCHAR2(1), CONSTRAINT PK_T_WORK_CLAIM PRIMARY KEY (ID))")
+	if err != nil {
+		t.Fatalf("membuat tabel penabrak: %v", err)
+	}
+	defer func() {
+		_, _ = sqlDB.ExecContext(ctx, "DROP TABLE "+skema+".UJI_TABRAKAN CASCADE CONSTRAINTS")
+	}()
+
+	_, err = db.JalankanMigrasi(ctx)
+	if err == nil {
+		t.Fatal("migrasi LULUS padahal nama constraint bertabrakan - tabel 001 tidak terbuat")
+	}
+	for _, wajib := range []string{"001", "ORA-02264"} {
+		if !strings.Contains(err.Error(), wajib) {
+			t.Errorf("galat %q tidak menyebut %q", err, wajib)
+		}
+	}
+
+	// Langkah yang gagal TIDAK boleh tercatat selesai.
+	var n int
+	if err := sqlDB.QueryRowContext(ctx,
+		"SELECT COUNT(*) FROM "+skema+".T_MIGRASI WHERE NAMA = :1",
+		"001_t_work_claim").Scan(&n); err != nil {
+		t.Fatalf("membaca T_MIGRASI: %v", err)
+	}
+	if n != 0 {
+		t.Errorf("langkah 001 tercatat %d kali di T_MIGRASI padahal gagal", n)
+	}
+}

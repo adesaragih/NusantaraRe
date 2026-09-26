@@ -188,3 +188,34 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+---
+
+## Implementasi
+
+### Keputusan work owner 26 September 2026 — penomoran klaim
+
+⭐ **`[DIPUTUSKAN]`** — *"jangan ada lagi pemanggilan procedure, segala procedure hardcode dalam
+skrip"*.
+
+Artinya untuk tiket ini: nomor klaim **tidak** diambil dengan memanggil
+`POOLDATA.PROC_GENERATE_SEQUENCE_NUMBER`. Logika penomorannya ditulis di aplikasi.
+
+⚠️ **Konsekuensi yang harus disadari sebelum sesi tiket 02 dimulai:**
+
+1. ⛔ **Keputusan ini menyimpang dari ADR-U-0006**, yang menetapkan penomoran lewat stored procedure
+   dan melarang mereplikasi logikanya. Penyimpangan sadar ini perlu dicatat di ADR — atau ADR-U-0006
+   perlu dicabut/direvisi — supaya tidak terbaca sebagai pelanggaran diam-diam.
+2. ⛔ **AC nomor 2 dan 3 tiket ini bertentangan dengan keputusan tersebut.** AC 2 menuntut nomor
+   *"diperoleh dari `POOLDATA.PROC_GENERATE_SEQUENCE_NUMBER`, bukan dihitung di aplikasi"*; AC 3
+   menuntut aplikasi *"tidak memuat logika pembentukan format nomor apa pun"*. Keduanya harus
+   ditulis ulang sebelum tiket ini dikerjakan; executor tidak mengubah teks AC sendiri.
+3. ⚠️ **Produksi masih memakai procedure yang sama.** Selama dua sistem berjalan berdampingan,
+   dua pembangkit nomor atas satu ruang nomor dapat menghasilkan **nomor bentrok**. Siapa yang
+   memegang urutan selama masa itu belum ditetapkan.
+4. `[data DBA]` Yang tetap diperlukan agar logikanya dapat ditulis ulang dengan benar: **sumber
+   `POOLDATA.PROC_GENERATE_SEQUENCE_NUMBER`** dan DDL tabel `GENERATE_SEQUENCE_NUMBER`, isi
+   `POOLDATA.KODE_PRODUKSI` untuk `TYPE='LIFE'`, serta `POOLDATA.TANGGAL_CLOSING` beserta aturan
+   cutover-nya. Tanpa keempatnya, menulis ulang logika penomoran berarti menebak.
+
+Status tiket tidak diubah: **`ready-for-agent`**, dan butir 1–4 di atas adalah blocker-nya.

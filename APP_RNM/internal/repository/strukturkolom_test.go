@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -365,4 +366,48 @@ func TestGolonganTipeDDLCocokDenganStruktur(t *testing.T) {
 		t.Fatal("nol kolom terbanding tipenya; pembacanya yang rusak")
 	}
 	t.Logf("golongan tipe dibandingkan untuk %d kolom", diperiksa)
+}
+
+// presisiSah mendaftar satu-satunya bentuk NUMBER yang boleh muncul di DDL,
+// beserta sebabnya.
+var presisiSah = map[string]string{
+	"NUMBER(38,8)": "uang, share, persen, dan rate - keputusan work owner c, 26 September 2026",
+	"NUMBER(5)":    "AGE, umur peserta dalam tahun",
+	"NUMBER(19)":   "DOCUMENT_CLAIM.ID, identitas dari sequence",
+}
+
+// ⛔ Tidak satu pun kolom bertipe NUMBER tanpa presisi.
+//
+// NUMBER polos di Oracle berarti presisi arbitrer - Oracle menyimpan apa pun
+// yang diberikan. Itu terdengar aman dan justru tidak: dua kolom yang menyimpan
+// hal sama menjadi bertipe berbeda tanpa ada yang menyadarinya. Persis itu yang
+// terjadi ronde 2 - CEDING_RETENTION bertipe NUMBER(38,8) di berkas 003 tetapi
+// NUMBER polos di 004, dan tidak satu pun test menangkapnya: pembanding golongan
+// sengaja kasar, dan test AC 41 hanya menuntut kata "NUMBER" ada.
+func TestNolNumberTanpaPresisi(t *testing.T) {
+	pola := regexp.MustCompile(`(?m)^\s+([A-Z][A-Z0-9_]*)\s+(NUMBER(?:\([0-9, ]*\))?)`)
+	diperiksa := 0
+	for nama, isi := range seluruhSQL(t, false) {
+		for _, m := range pola.FindAllStringSubmatch(isi, -1) {
+			kolom, tipe := m[1], strings.ReplaceAll(m[2], " ", "")
+			diperiksa++
+			if _, sah := presisiSah[tipe]; !sah {
+				t.Errorf("%s kolom %s bertipe %s; yang sah hanya %v",
+					nama, kolom, tipe, daftarPresisiSah())
+			}
+		}
+	}
+	if diperiksa == 0 {
+		t.Fatal("nol kolom NUMBER terbaca; pembacanya yang rusak, bukan DDL-nya")
+	}
+	t.Logf("%d kolom NUMBER diperiksa presisinya", diperiksa)
+}
+
+func daftarPresisiSah() []string {
+	out := make([]string, 0, len(presisiSah))
+	for k := range presisiSah {
+		out = append(out, k)
+	}
+	sort.Strings(out)
+	return out
 }

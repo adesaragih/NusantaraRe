@@ -30,6 +30,7 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -192,19 +193,66 @@ func (d *DB) siapkanTabelMigrasi(ctx context.Context) error {
 	return nil
 }
 
-// sudahAda mengenali dua galat Oracle yang artinya sama: objek yang hendak
-// dibuat ternyata sudah berdiri.
+// sudahAda mengenali SATU galat Oracle: nama yang hendak dipakai sudah dipakai
+// objek lain - tabel, index, atau sequence (ORA-00955). Itu yang membuat
+// pembuatan objek menjadi idempoten.
 //
-//	ORA-00955  nama sudah dipakai objek lain - tabel, index, sequence
-//	ORA-02264  nama itu sudah dipakai constraint lain
-//
-// Itu yang membuat pembuatan objek menjadi idempoten.
+// ⛔ ORA-02264 sengaja TIDAK termasuk, dan ini ralat atas ronde 2.
+// ORA-02264 berarti "nama itu sudah dipakai constraint lain", dan Oracle baru
+// memeriksanya ketika TABELNYA BELUM ADA - bila tabelnya sudah ada, ia menjawab
+// ORA-00955 lebih dulu. Jadi ORA-02264 pada sebuah CREATE TABLE berarti tabel
+// itu JUSTRU TIDAK terbuat. Menelannya berarti mencatat langkah sebagai sukses
+// atas tabel yang tidak pernah ada - kegagalan yang baru ketahuan jauh di hilir.
 func sudahAda(err error) bool {
-	if err == nil {
-		return false
+	return err != nil && strings.Contains(err.Error(), "ORA-00955")
+}
+
+// polaObjekDibuat menangkap nama objek yang dibuat sebuah pernyataan CREATE.
+var polaObjekDibuat = regexp.MustCompile(
+	`(?is)CREATE\s+(?:UNIQUE\s+)?(?:TABLE|INDEX|SEQUENCE)\s+\{skema\}\.(\w+)`)
+
+// namaObjekDibuat membaca nama objek dari pernyataan CREATE, atau teks kosong
+// bila pernyataannya bukan CREATE yang dikenali.
+func namaObjekDibuat(pernyataan string) string {
+	m := polaObjekDibuat.FindStringSubmatch(pernyataan)
+	if m == nil {
+		return ""
 	}
-	p := err.Error()
-	return strings.Contains(p, "ORA-00955") || strings.Contains(p, "ORA-02264")
+	return strings.ToUpper(m[1])
+}
+
+// objekAda bertanya ke katalog Oracle apakah sebuah objek benar-benar berdiri.
+//
+// Dipakai sesudah sebuah CREATE dilewati karena menjawab ORA-00955. Oracle
+// hanya bilang "nama sudah dipakai"; ia tidak bilang objek APA. Tanpa
+// pemeriksaan ini, nama yang dipakai objek jenis lain akan lolos sebagai
+// "sudah ada".
+//
+// ⚠️ Yang diperiksa keberadaan, BUKAN bentuk. Kolom yang berbeda tidak
+// tertangkap di sini; yang menjaga hal itu jalur mundur - bongkar dulu, baru
+// pasang lagi.
+//
+// SYS.ALL_OBJECTS ditulis berawalan skema, bukan telanjang (ADR-U-0033). Ia
+// dipilih di atas USER_OBJECTS karena skema sasaran belum tentu sama dengan
+// pengguna sambungan, dan di atas DBA_OBJECTS karena yang terakhir menuntut hak
+// istimewa yang tidak perlu. ALL_OBJECTS memperlihatkan objek yang terlihat oleh
+// sesi - dan sesi ini baru saja mencoba membuat objek di skema itu, jadi ia
+// memang punya akses ke sana.
+func (d *DB) objekAda(ctx context.Context, nama string) (bool, error) {
+	// UPPER di kedua sisi: Oracle menyimpan pengenal tanpa kutip dalam huruf
+	// besar, tetapi ORACLE_SCHEMA datang dari env var dan boleh ditulis
+	// bagaimana saja. Tanpa ini, skema yang ditulis huruf kecil membuat
+	// pembuktian menjawab "tidak ada" dan MENGGAGALKAN migrasi yang sehat.
+	q := `SELECT COUNT(*) FROM SYS.ALL_OBJECTS
+	        WHERE UPPER(OWNER) = UPPER(:1) AND UPPER(OBJECT_NAME) = UPPER(:2)`
+	if err := PeriksaSQL(q); err != nil {
+		return false, err
+	}
+	var n int
+	if err := d.sql.QueryRowContext(ctx, q, d.skema, nama).Scan(&n); err != nil {
+		return false, fmt.Errorf("repository: memeriksa keberadaan %s: %w", nama, err)
+	}
+	return n > 0, nil
 }
 
 // pernyataanBuat menjawab apakah sebuah pernyataan SQL membuat objek baru.
@@ -319,6 +367,26 @@ func (d *DB) JalankanMigrasi(ctx context.Context) (LaporanMigrasi, error) {
 				// hal itu bukan kode ini melainkan jalur mundur - bongkar dulu,
 				// baru pasang lagi - dan itulah yang dilakukan skema uji.
 				if pernyataanBuat(q) && sudahAda(err) {
+					// ⛔ Dilewati TIDAK cukup - keberadaannya dibuktikan.
+					// Oracle hanya bilang namanya terpakai, bukan bahwa objek
+					// yang kita maksud ada. Bila ternyata tidak ada, langkah
+					// ini GAGAL dan tidak dicatat di T_MIGRASI.
+					nama := namaObjekDibuat(p)
+					if nama == "" {
+						return lap, fmt.Errorf(
+							"repository: migrasi %s: dilaporkan sudah ada, nama objeknya tidak terbaca: %w",
+							m.Nama, err)
+					}
+					ada, errPeriksa := d.objekAda(ctx, nama)
+					if errPeriksa != nil {
+						return lap, fmt.Errorf("repository: migrasi %s: %w",
+							m.Nama, errPeriksa)
+					}
+					if !ada {
+						return lap, fmt.Errorf(
+							"repository: migrasi %s: %s dilaporkan sudah ada, tidak ditemukan di katalog: %w",
+							m.Nama, nama, err)
+					}
 					lap.ObjekSudahAda = append(lap.ObjekSudahAda,
 						fmt.Sprintf("%s: %s", m.Nama, ringkasPernyataan(q)))
 					continue

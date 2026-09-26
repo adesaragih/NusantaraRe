@@ -15,6 +15,7 @@ package repository
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -146,4 +147,43 @@ func TestCacahKolomWarisanYangDitulisSimpan(t *testing.T) {
 	if kosong != len(seluruh)-mau {
 		t.Errorf("kolom yang tinggal NULL = %d, mau %d", kosong, len(seluruh)-mau)
 	}
+}
+
+// ADR-U-0033: nol nama tabel telanjang di dalam teks query.
+//
+// "Telanjang" berarti tanpa awalan skema. Query begitu benar hanya selama sesi
+// kebetulan menunjuk skema yang tepat, dan salahnya baru muncul saat pindah
+// lingkungan - jauh dari orang yang menulisnya. ADR-U-0033 Akibat 3 menuntut
+// test yang menemukannya gagal; sampai ronde 3 test itu tidak pernah ada, dan
+// SYS.ALL_OBJECTS sempat lolos sebagai ALL_OBJECTS telanjang.
+//
+// Yang dianggap SAH sesudah FROM / INTO / UPDATE / JOIN:
+//   - "%s"            nama yang sudah dilewatkan Qualify
+//   - "A.B"           sudah berawalan skema, termasuk SYS.
+//   - "{skema}.B"     penanda di berkas migrasi
+//   - "DUAL"          tabel semu milik Oracle, tidak punya skema
+func TestNolNamaTabelTelanjangDiQuery(t *testing.T) {
+	pola := regexp.MustCompile(`(?i)\b(FROM|INTO|UPDATE|JOIN)\s+([A-Za-z_{%][\w{}%.]*)`)
+	diperiksa := 0
+	for nama, isi := range berkasGoSelainTest(t) {
+		if !strings.Contains(nama, "/internal/repository/") {
+			continue
+		}
+		for _, m := range pola.FindAllStringSubmatch(isi, -1) {
+			objek := m[2]
+			diperiksa++
+			switch {
+			case strings.Contains(objek, "."): // berawalan skema atau {skema}
+			case strings.Contains(objek, "%s"): // datang dari Qualify
+			case strings.EqualFold(objek, "DUAL"): // tabel semu Oracle
+			default:
+				t.Errorf("%s: %s %s - nama tabel telanjang (ADR-U-0033)",
+					nama, strings.ToUpper(m[1]), objek)
+			}
+		}
+	}
+	if diperiksa == 0 {
+		t.Fatal("nol rujukan tabel terbaca; pembacanya yang rusak")
+	}
+	t.Logf("%d rujukan tabel diperiksa", diperiksa)
 }

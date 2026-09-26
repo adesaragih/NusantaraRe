@@ -9,6 +9,17 @@
 --   ADR-U-0029  nol COMMIT di teks SQL; transaksi dibuka-ditutup aplikasi
 --   ADR-U-0006  identitas dari sequence, kecuali yang dinyatakan berformat
 --
+-- Kolom share, persen, dan rate bertipe NUMBER(38,8) - keputusan work owner c,
+-- 26 September 2026. Presisinya sama dengan kolom uang, tetapi di Go tipenya
+-- Ratio dan bukan Money: ia perbandingan, bukan mata uang, sehingga keduanya
+-- tidak pernah terjumlahkan. NUMBER tanpa presisi TIDAK dipakai di mana pun -
+-- dijaga TestNolNumberTanpaPresisi.
+-- ⚠️ PENYIMPANGAN SADAR dari ADR-U-0016 Akibat 2, yang berbunyi "kolom persen
+-- tidak termasuk - ia bukan uang, dan tetap mengikuti ketetapan modulnya".
+-- Keputusan work owner c menyamakan presisi kolom persen dan rate dengan kolom
+-- uang. [terbuka] ADR-U-0016 belum diamandemen; sampai itu terjadi, berkas ini
+-- yang memikul catatannya.
+--
 -- Satu baris mewakili satu baris AdjustmentList, dan itulah unit keputusan
 -- mesin status (ADR-U-0011). Induknya PESERTA, bukan header klaim.
 --
@@ -22,12 +33,12 @@
 CREATE TABLE {skema}.T_CLAIMLF_ADJUSTMENT (
   ID                      VARCHAR2(32) NOT NULL,
   PREMIUM_LIST_DETAIL_ID  VARCHAR2(32),
-  SHARE_NUSANTARA_RE      NUMBER,
-  CEDING_RETENTION        NUMBER,
+  SHARE_NUSANTARA_RE      NUMBER(38,8),
+  CEDING_RETENTION        NUMBER(38,8),
   SUM_INSURED             NUMBER(38,8),
   SUM_REASURED            NUMBER(38,8),
-  SHARE_RETRO             NUMBER,
-  RETROCEDED_SHARE        NUMBER,
+  SHARE_RETRO             NUMBER(38,8),
+  RETROCEDED_SHARE        NUMBER(38,8),
   CURRENCY_ID             VARCHAR2(32),
   CURRENCY                VARCHAR2(8),
   CLAIM_AMOUNT            NUMBER(38,8),

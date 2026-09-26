@@ -9,22 +9,33 @@
 --   ADR-U-0029  nol COMMIT di teks SQL; transaksi dibuka-ditutup aplikasi
 --   ADR-U-0006  identitas dari sequence, kecuali yang dinyatakan berformat
 --
+-- Kolom share, persen, dan rate bertipe NUMBER(38,8) - keputusan work owner c,
+-- 26 September 2026. Presisinya sama dengan kolom uang, tetapi di Go tipenya
+-- Ratio dan bukan Money: ia perbandingan, bukan mata uang, sehingga keduanya
+-- tidak pernah terjumlahkan. NUMBER tanpa presisi TIDAK dipakai di mana pun -
+-- dijaga TestNolNumberTanpaPresisi.
+-- ⚠️ PENYIMPANGAN SADAR dari ADR-U-0016 Akibat 2, yang berbunyi "kolom persen
+-- tidak termasuk - ia bukan uang, dan tetap mengikuti ketetapan modulnya".
+-- Keputusan work owner c menyamakan presisi kolom persen dan rate dengan kolom
+-- uang. [terbuka] ADR-U-0016 belum diamandemen; sampai itu terjadi, berkas ini
+-- yang memikul catatannya.
+--
 -- Hasil spreading sebuah baris adjustment, dipecah per treaty-year. Satu baris
 -- mewakili satu treaty-year dari satu baris adjustment.
 --
 -- Nilainya DIBEKUKAN saat adjustment disimpan: perubahan master treaty
 -- sesudahnya tidak mengubah angka yang sudah tersimpan.
 --
--- RETROCADED_SHARE dan RATE adalah share dan rate, bukan uang. Tipe pastinya
--- masih USULAN di brief sesi bab 2c, jadi dipakai NUMBER berpresisi arbitrer.
+-- RETROCADED_SHARE dan RATE adalah share dan rate, bukan uang. Keduanya
+-- bertipe NUMBER(38,8) mengikuti keputusan c di atas, dan di Go bertipe Ratio.
 CREATE TABLE {skema}.T_CLAIMLF_ADJUSTMENT_SPREADING (
   ID                VARCHAR2(32) NOT NULL,
   ADJUSTMENT_ID     VARCHAR2(32),
   TREATY_TYPE_ID    VARCHAR2(32),
   TREATY_TYPE_NAME  VARCHAR2(128),
   TREATY_YEAR_LIFE  VARCHAR2(16),
-  RETROCADED_SHARE  NUMBER,
-  RATE              NUMBER,
+  RETROCADED_SHARE  NUMBER(38,8),
+  RATE              NUMBER(38,8),
   IDR               NUMBER(38,8),
   USD               NUMBER(38,8),
   CURRENCY          VARCHAR2(8),

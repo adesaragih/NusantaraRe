@@ -912,3 +912,156 @@ kolom warisan, dan butir **d** serta **e** memang tidak disentuh.
 4. ⚠️ Tiga test melampaui kesebelas temuan: `TestHandlersTidakMengimporRepository`,
    `TestTabelDikecualikanTetapDibuat`, `TestRingkasPernyataanPendek`. Ketiganya penjaga, bukan
    perubahan perilaku, dan menegakkan aturan yang memang sudah tertulis di `README-BACA-DULU.md`.
+
+---
+
+## Implementasi — ronde 3, 26 September 2026
+
+**Status: `claimed`** — **38 dari 53 AC tertutup** (tidak berubah dari ronde 2), diverifikasi
+**77 test Go yang benar-benar berjalan** (dari 73). Sesi **keempat** berturut-turut di jalur B:
+`ORACLE_DSN` kosong, Langkah A dilewati, seluruh test bertag `db` **melewati dengan pesan**.
+
+⛔ **Tiket tetap tidak dapat `resolved`**, dan sebabnya tidak berubah: butir 2d ditegaskan work
+owner 26 September 2026 untuk **tetap `[USULAN]` untuk kali keempat**, sehingga `REFERENCES` tidak
+dipasang dan AC 50 tetap terbuka. Migrasi juga masih belum pernah dijalankan di Oracle mana pun.
+
+### Sembilan temuan verifikasi ronde 2
+
+| # | Temuan | Keadaan |
+| ---: | --- | --- |
+| 1 | ⛔ Keputusan c baru diterapkan pada `003`; delapan kolom share/rate masih `NUMBER` polos | ✅ kedelapannya menjadi `NUMBER(38,8)`; `TestAC41…` diperketat dari "memuat kata NUMBER" menjadi `NUMBER(38,8)`; **`TestNolNumberTanpaPresisi`** baru menjaga seluruh 30 kolom `NUMBER` |
+| 2 | ⛔ Toleransi `ORA-02264` memalsukan sukses — dan itu usulan brief ronde 2 yang saya jalankan | ✅ `sudahAda` kini **hanya** `ORA-00955`; sesudah sebuah `CREATE` dilewati, keberadaan objeknya **dibuktikan** lewat `ALL_OBJECTS`; test db tabrakan constraint menuntut migrasi **GAGAL** |
+| 3 | ⚠️ AC 12 tidak dicentang dan tidak ada di daftar terbuka | ✅ alasannya ditulis di bawah; daftar terbuka kini **berjumlah 15**, sama dengan kotak `[ ]` |
+| 4 | ⚠️ "Kelemahan terbuka 3" ronde 2 keliru | ✅ ditarik — lihat ralat di bawah |
+| 5 | ⚠️ AC 40 dicentang padahal teksnya menyebut nama tabel lama | ✅ satu baris jejak ditulis di bawah |
+| 6 | ⚠️ Angka bab ronde 2 basi | ✅ diralat di bawah |
+| 7 | ⚠️ Uji tabel warisan mengonfirmasi dirinya sendiri | ⛔ **TIDAK dikerjakan** — ia menuntut berkas `[data DBA]` daftar tipe kolom yang belum ada. Tetap `[terbuka]` |
+| 8 | ⚠️ Kalimat "nama karangan spec" terlalu jauh | ✅ diralat di bawah |
+| 9 | ℹ️ Test membaca STRUKTUR di luar `APP_RNM\` | catatan saja; sengaja `t.Fatalf` bila hilang — **tidak diubah** |
+
+### Ralat atas laporan ronde 2 sendiri
+
+1. **Angka diff basi.** Ronde 2 menulis "24 berkas +2.247/−136". Yang benar, diukur sesudah
+   perbaikan `/code-review`: **`76dcda4`→`8f5453b` = 24 berkas, +2.293 / −136** (termasuk brief);
+   tanpa brief `8b18b00`→`8f5453b` = 23 berkas, +2.123 / −136. `strukturkolom_test.go` bukan
+   231/213 melainkan **368/344**. Sebabnya satu: angkanya diambil **sebelum** perbaikan review.
+   Ronde ini angkanya diambil **sesudah** commit terakhir.
+2. **"`TANGGAL_RESPON` nama karangan spec" terlalu jauh.** Yang nol kemunculan hanya **ejaan**
+   `TANGGAL_RESPON`; properti Pega **`TanggalRespon` memang ada** — 2 kemunculan di
+   `setNoOffer_Act.xml` dan 4 berkas `Section\` Claim Life. Spec menurunkan nama kolomnya dari
+   properti sungguhan. Kesimpulan pokoknya **tetap sahih**: ketiganya tanggal penawaran milik Offer.
+3. **"Kelemahan terbuka 3" ditarik.** Ronde 2 menulis `UX_ADJ_KOMITE_ID` UNIQUE "konsekuensinya
+   belum pernah dibahas". Keliru: `STRUKTUR-TABEL-CLAIM-LIFE.md` bab `T_CLAIMLF_ADJUSTMENT` memuat
+   `[keputusan work owner]` — *"Satu baris `AdjustmentList` = TEPAT satu kasus komite, dan
+   sebaliknya. Karena itu `KOMITE_ID` ber-index UNIK meski nullable"*. Sudah diputuskan, dan index
+   unik Oracle memang mengizinkan banyak `NULL`. **Nol perubahan DDL.**
+4. **Jejak ganti nama.** AC 2, 38, dan 40 menulis `T_CLAIMLF_ADJUSTMENT_SPREADING_RETRO`; **nama
+   fisiknya sejak 26-09-2026 adalah `T_CLAIMLF_ADJ_SPREADING_RETRO`** (keputusan work owner j, batas
+   30 byte pengenal Oracle). Teks AC tidak diubah. ⚠️ Butir m (blok ralat di STRUKTUR) dan n (ganti
+   nama berkas migrasi `006`) **tetap `[USULAN]`** dan **tidak dikerjakan**, sehingga dokumen dan
+   nama berkas masih menulis nama 36 byte.
+
+### Yang dikerjakan pada kode
+
+**Temuan 1 — presisi.** Delapan kolom: `004` `SHARE_NUSANTARA_RE`, `CEDING_RETENTION`,
+`SHARE_RETRO`, `RETROCEDED_SHARE`; `005` `RETROCADED_SHARE`, `RATE`; `006` `PERCENT_SHARE`, `RATE`.
+Sesudahnya seluruh DDL memuat **28 `NUMBER(38,8)`**, satu `NUMBER(5)` (`AGE`), satu `NUMBER(19)`
+(`DOCUMENT_CLAIM.ID`) — **nol `NUMBER` tanpa presisi**. Komentar kepala ketiga berkas menyebut
+keputusan c.
+
+**Temuan 2 — penjaga `ORA-02264`.** `ORA-02264` berarti nama constraint sudah dipakai, dan Oracle
+baru memeriksanya **ketika tabelnya belum ada**; bila tabelnya ada ia menjawab `ORA-00955` lebih
+dulu. Jadi `ORA-02264` pada sebuah `CREATE TABLE` berarti tabel itu **justru tidak terbuat**.
+Sekarang: `sudahAda` hanya `ORA-00955`; setiap `CREATE` yang dilewati **dibuktikan keberadaannya**
+lewat `SELECT COUNT(*) FROM ALL_OBJECTS WHERE OWNER = :1 AND OBJECT_NAME = :2`; nol → galat
+*"dilaporkan sudah ada, tidak ditemukan di katalog"* dan langkahnya **tidak dicatat** di `T_MIGRASI`.
+
+⚠️ Ini menutup **separuh** kelemahan terbuka 2 ronde 2: **keberadaan** kini diperiksa,
+**bentuk** masih tidak. Kolom yang berbeda tetap lolos; yang menjaganya jalur mundur.
+
+### AC 12 — kenapa tetap terbuka
+
+AC 12 menuntut *"seluruh uang dan share bertipe **desimal presisi arbitrer**"*. Tiga klausa lainnya
+terpenuhi dan teruji: tanggal `DATE`, kolom nullable, dan identitas dari sequence — yang terakhir
+tercakup penyimpangan sadar **AC 34** (nomor bisnis berformat untuk `T_WORK_CLAIM` dan kedua tabel
+ber-shared-PK; ADR-U-0006 tetap berlaku untuk `T_CLAIMLF_*` dan `DOCUMENT_CLAIM`).
+
+⛔ Klausa pertamanya **dibalik oleh keputusan work owner c**: `NUMBER(38,8)` adalah presisi
+**tetap**, bukan arbitrer. Executor tidak mencentang AC yang teksnya sendiri sudah tidak berlaku;
+yang diperlukan satu baris dari work owner yang menyatakan c menggantikan klausa itu.
+
+### AC yang masih terbuka — 15, sama dengan jumlah kotak `[ ]`
+
+| Sebab | Nomor |
+| --- | --- |
+| Menunggu instance Oracle | 20, 21, 38, 51, 53 |
+| Menunggu work owner | 8, 15, 27, 35, 50 |
+| **Teks AC dibalik keputusan c** | **12** |
+| Di luar tiket ini — konteks Komite | 31, 33 |
+| Pemilik export Pega · modul PremiumList Life | 46 · 19 |
+
+### Keputusan §2 sesi ini
+
+| | Keadaan | Yang dikerjakan |
+| --- | --- | --- |
+| **c** | `[DIPUTUSKAN]` | **dituntaskan** — delapan kolom sisa |
+| **o** | ⭐ `[DIPUTUSKAN]` 26-09: *"jangan ada lagi pemanggilan procedure, segala procedure hardcode dalam skrip"* | dicatat di tiket 02; **tidak** dikerjakan di sini |
+| **d** | `[USULAN]` kali keempat | tidak disentuh; tiket tetap `claimed` |
+| **e′** | `[USULAN]` | `002` tidak disentuh; nol kolom `TANGGAL_*` di DDL mana pun |
+| **m, n** | `[USULAN]` | STRUKTUR tidak disunting; berkas `006` tidak diganti nama |
+
+### Yang dijalankan, dan hasilnya
+
+| Perintah | Hasil |
+| --- | --- |
+| `go vet ./...` · `go vet -tags=db ./...` · `gofmt -l` · `go build ./...` | lulus, nol berkas |
+| `go test ./...` | lulus, **77 test** |
+| `go test -tags=db ./internal/...` | **19 MELEWATI** dengan `ORACLE_DSN belum dikonfigurasi` |
+| `npm run typecheck` · `npm test` · `npm run build` | lulus, 5 test — frontend tidak diubah ronde ini |
+
+⭐ **Tiap penjaga baru diuji gagal dulu pada kasus buruknya**, lalu dipulihkan: satu kolom
+dikembalikan ke `NUMBER` polos → gagal; `ORA-02264` dikembalikan ke `sudahAda` → gagal. Yang kedua
+penting: test ronde 2 justru **mengunci** perilaku yang salah, dan sekarang ia menolaknya.
+
+### Hasil `/code-review` atas titik tetap `62ca5cc`
+
+Dua sumbu ditinjau terpisah. Angka yang keduanya hitung ulang **cocok**: nol `NUMBER` tanpa presisi
+(28 + 1 + 1 = 30), 38 `[x]` + 15 `[ ]` = 53, daftar terbuka berjumlah 15 = jumlah `[ ]`, dan
+butir **d, e′, m, n** memang tidak disentuh.
+
+**Cacat nyata yang diperbaiki sesudah tinjauan:**
+
+| Temuan | Perbaikan |
+| --- | --- |
+| ⛔ **Penjaga palsu.** `TestSeluruhCreateDapatDibacaNamanya` memecah ulang teks yang sudah disambung `seluruhSQL`, sehingga pemisahnya **tidak pernah memisah apa pun** — yang diperiksa hanya **8 dari 19** pernyataan `CREATE`, dan seluruh `CREATE INDEX` lolos | pernyataan diambil dari `daftarMigrasi` apa adanya; cacahnya **dikunci 19** supaya kelemahan yang sama gagal, bukan diam |
+| ⛔ **`ALL_OBJECTS` telanjang** melanggar ADR-U-0033 Akibat 1, dan Akibat 3 menuntut test yang menemukannya gagal — test itu tidak pernah ada | menjadi **`SYS.ALL_OBJECTS`**; **`TestNolNamaTabelTelanjangDiQuery`** baru memeriksa 33 rujukan tabel di paket repository |
+| ⛔ **Komentar `005` bertentangan dengan DDL-nya sendiri** — masih berbunyi *"tipe pastinya masih USULAN … NUMBER berpresisi arbitrer"* enam baris di atas `NUMBER(38,8)` | paragraf basi dicabut |
+| ⚠️ Slot `harusYa` terbuang menjadi duplikat sesudah `ORA-02264` pindah | diisi bentuk pembungkus ketiga yang benar-benar berbeda |
+| ⚠️ `objekAda` membandingkan `OWNER` bergantung huruf besar-kecil; skema huruf kecil akan **menggagalkan migrasi yang sehat** | `UPPER()` di kedua sisi |
+| ⚠️ Galat pemeriksaan tidak membungkus nama langkah, berbeda dari cabang tetangganya | dibungkus |
+
+**⛔ Penyimpangan sadar yang ditemukan tinjauan dan kini dicatat:**
+
+ADR-U-0016 Akibat 2 berbunyi *"Kolom **persen** tidak termasuk — ia bukan uang, dan tetap mengikuti
+ketetapan modulnya"*. Keputusan work owner **c** menyamakan presisi kolom persen dan rate dengan
+kolom uang, sehingga ia **menyimpang dari ADR-U-0016**. ⚠️ `[terbuka]` ADR-U-0016 **belum
+diamandemen** dan tidak ada ADR baru bertanggal 2026-09-26; sampai work owner menuliskannya,
+catatan itu dipikul komentar kepala berkas `004`, `005`, dan `006`.
+
+**Tuduhan yang saya tolak sesudah mengukur ulang:**
+
+- *"Blob index memuat CRLF — 004 = 55, 005 = 43, 006 = 47"*. **Salah.** Diukur byte demi byte
+  lewat `git show`: HEAD, index, dan working tree **semuanya `CR = 0`**. Angka 55/43/47 itu cacah
+  **baris**, bukan cacah CR. ⚠️ Instrumen saya sendiri sempat menghasilkan angka yang sama
+  kelirunya — `grep -c` dengan pola CR di dalam loop shell tidak mengembang seperti dugaan — dan
+  itulah sebabnya angkanya diulang dengan alat kedua sebelum dipercaya.
+- *"`PANDUAN-MENJALANKAN.txt` 376 baris adalah scope creep ronde ini"*. **Bukan milik sesi ini.**
+  Berkas itu dibuat sesi lain dan hanya ikut ter-*stage* oleh `git add -A`; ia sudah dikeluarkan
+  dari commit dan dibiarkan utuh di working tree.
+
+**Yang dicatat tetapi TIDAK diubah:** jalur `nama == ""` menggagalkan `CREATE` yang bentuknya tidak
+dikenali regex (`CREATE OR REPLACE`, `GLOBAL TEMPORARY`, pengenal berkutip) — tidak ada bentuk
+begitu hari ini, dan `TestSeluruhCreateDapatDibacaNamanya` mengunci kesembilan belasnya;
+`migrasi.go` kini juga mengurai DDL dan menanyai katalog (**Divergent Change**), diterima demi
+menjaga pemeriksaan tetap satu tempat dengan pemakainya; dan kode galat Oracle masih berupa teks
+yang tersebar (**Primitive Obsession**).

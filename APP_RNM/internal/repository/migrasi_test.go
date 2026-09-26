@@ -380,11 +380,21 @@ func TestPernyataanMulaiDenganPerintah(t *testing.T) {
 // atau berhenti. Menggolongkan terlalu longgar berarti menelan kerusakan
 // sungguhan, jadi batasnya diuji dari kedua sisi.
 func TestPenggolongGalatObjekSudahAda(t *testing.T) {
+	// Tiga bentuk pembungkus yang berbeda. Yang diuji bukan kode galatnya saja
+	// melainkan bahwa penggolong menemukannya di mana pun ia diletakkan driver -
+	// telanjang, berawalan, dan terbungkus galat lain.
 	harusYa := []string{
 		"ORA-00955: name is already used by an existing object",
-		"oci: ORA-02264: name already used by an existing constraint",
+		"oci: ORA-00955: name is already used by an existing object",
+		"repository: migrasi 001_t_work_claim.sql: go-ora: " +
+			"ORA-00955: name is already used by an existing object",
 	}
 	harusTidak := []string{
+		// ⛔ Ralat ronde 3. ORA-02264 dulu ada di daftar harusYa, dan test ini
+		// justru MENGUNCI perilaku yang salah. ORA-02264 berarti nama
+		// constraint terpakai, dan Oracle baru memeriksanya saat tabelnya belum
+		// ada - jadi ia berarti tabelnya TIDAK terbuat, bukan sudah ada.
+		"ORA-02264: name already used by an existing constraint",
 		"ORA-00942: table or view does not exist",
 		"ORA-01400: cannot insert NULL",
 		"ORA-00972: identifier is too long",
@@ -431,5 +441,62 @@ func TestRingkasPernyataanPendek(t *testing.T) {
 	}
 	if !strings.Contains(got, "T_WORK_CLAIM") {
 		t.Errorf("ringkasan tidak menyebut objeknya: %q", got)
+	}
+}
+
+// Nama objek terbaca dari tiap bentuk pernyataan CREATE yang dipakai migrasi.
+//
+// Pembacaan ini yang menentukan objek mana keberadaannya dibuktikan sesudah
+// sebuah CREATE dilewati. Salah baca berarti pembuktiannya menanyakan objek
+// yang keliru - dan itu sama buruknya dengan tidak membuktikan sama sekali.
+func TestNamaObjekDibuatTerbaca(t *testing.T) {
+	kasus := map[string]string{
+		"CREATE TABLE {skema}.T_WORK_CLAIM (\n  ID VARCHAR2(32))":         "T_WORK_CLAIM",
+		"CREATE INDEX {skema}.IX_PLD_CLAIM_ID ON {skema}.T_X (CLAIM_ID)":  "IX_PLD_CLAIM_ID",
+		"CREATE UNIQUE INDEX {skema}.UX_ADJ_KOMITE_ID ON {skema}.T_Y (A)": "UX_ADJ_KOMITE_ID",
+		"CREATE SEQUENCE {skema}.SEQ_CLAIMLF_PLD START WITH 1":            "SEQ_CLAIMLF_PLD",
+		"create table {skema}.t_kecil (id number(19))":                    "T_KECIL",
+		"INSERT INTO {skema}.T_MIGRASI (NAMA) VALUES (:1)":                "",
+		"DROP TABLE {skema}.T_WORK_CLAIM CASCADE CONSTRAINTS":             "",
+	}
+	for q, mau := range kasus {
+		if got := namaObjekDibuat(q); got != mau {
+			t.Errorf("namaObjekDibuat(%.50s) = %q, mau %q", q, got, mau)
+		}
+	}
+}
+
+// Setiap pernyataan CREATE di berkas migrasi harus dapat dibaca namanya.
+//
+// Kalau ada satu saja yang tidak terbaca, jalur "dilewati lalu dibuktikan"
+// menolak dengan galat - dan lebih baik test ini yang menemukannya lebih dulu,
+// di mesin tanpa Oracle.
+//
+// ⚠️ Versi pertama test ini memecah ulang teks yang sudah disambung seluruhSQL,
+// sehingga pemisahnya tidak pernah memisah apa pun dan yang diperiksa hanya
+// SATU pernyataan per berkas - 8 dari 19. Penjaga yang lebih lemah dari
+// namanya. Sekarang pernyataannya diambil dari daftarMigrasi apa adanya.
+func TestSeluruhCreateDapatDibacaNamanya(t *testing.T) {
+	langkah, err := daftarMigrasi(false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	diperiksa := 0
+	for _, m := range langkah {
+		for _, p := range m.Pernyataan {
+			if !pernyataanBuat(p) {
+				continue
+			}
+			diperiksa++
+			if namaObjekDibuat(p) == "" {
+				t.Errorf("%s: nama objek tidak terbaca dari %q", m.Nama, ringkasPernyataan(p))
+			}
+		}
+	}
+	// Angkanya dikunci: kalau pemisah pernyataan rusak lagi, cacahnya anjlok
+	// dan test ini gagal alih-alih diam-diam memeriksa lebih sedikit.
+	const mau = 19
+	if diperiksa != mau {
+		t.Errorf("pernyataan CREATE diperiksa %d, mau %d", diperiksa, mau)
 	}
 }
