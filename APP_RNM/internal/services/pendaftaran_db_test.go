@@ -45,6 +45,12 @@ func siapkanPendaftaran(t *testing.T) (*services.Service, func()) {
 	if err := skemauji.Pasang(ctx, sqlDB, skema); err != nil {
 		t.Fatalf("memasang skema uji: %v", err)
 	}
+	// Tiruan tabel peserta polis beserta isinya. Pendaftaran membaca peserta
+	// dari sana; tanpa fixture ini test gagal di pembacaan, bukan menguji
+	// pendaftaran.
+	if err := skemauji.IsiPesertaPolis(ctx, sqlDB, skema); err != nil {
+		t.Fatalf("mengisi tiruan peserta polis: %v", err)
+	}
 	db, err := skemauji.BukaRepositori()
 	if err != nil {
 		t.Fatal(err)
@@ -63,10 +69,8 @@ func permintaan() services.PermintaanDaftar {
 		Type:           "QP",
 		KodeBisnis:     "L1",
 		MataUang:       "IDR",
-		// ⚠️ Hanya nomor sertifikat. Nilai polisnya dibaca server dari
-		// M_LIFE_PREMIUM_DETAIL, yang TIDAK ada di skema uji - karena itu
-		// test ini akan gagal membaca peserta sampai fixture tabel peserta
-		// dibuat. [terbuka - tiket 03]
+		// Hanya nomor sertifikat; nilai polisnya dibaca server dari tiruan
+		// M_LIFE_PREMIUM_DETAIL yang dibuat skema uji (tiket 03).
 		Sertifikat: []string{"006"},
 	}
 }
@@ -107,6 +111,45 @@ func TestDaftarMenulisTigaTempatDanBarisDatar(t *testing.T) {
 	// ⛔ Nomor sertifikat berawalan nol tetap utuh (ADR-U-0022).
 	if klaim.Peserta[0].NomorSertifikat != "006" {
 		t.Errorf("nomor sertifikat = %q, mau %q", klaim.Peserta[0].NomorSertifikat, "006")
+	}
+	// ⭐ Keempat tanggal valuasi terbaca kembali SAMA PERSIS. Inilah yang
+	// tiket 06 pijak: validasi DOL membaca jendela ini dari peserta klaim,
+	// bukan bertanya ulang ke tabel 66,8 juta baris.
+	ps := klaim.Peserta[0]
+	for _, k := range []struct{ nama, got, mau string }{
+		{"valuasi gross mulai", ps.ValuasiGrossMulai, "2026-01-01 00:00:00"},
+		{"valuasi gross selesai", ps.ValuasiGrossSelesai, "2026-12-31 00:00:00"},
+		{"valuasi retro mulai", ps.ValuasiRetroMulai, "2026-02-01 00:00:00"},
+		{"valuasi retro selesai", ps.ValuasiRetroSelesai, "2026-11-30 00:00:00"},
+	} {
+		if k.got != k.mau {
+			t.Errorf("%s = %q, mau %q", k.nama, k.got, k.mau)
+		}
+	}
+	// Peserta ber-EDMSTATUS Batal tidak pernah ikut: sertifikat 010 ada di
+	// fixture, tetapi memintanya harus GAGAL.
+	if ps.SumberID != "UJI-SRC-1" {
+		t.Errorf("SOURCE_ID = %q, mau UJI-SRC-1", ps.SumberID)
+	}
+}
+
+// ⛔ Peserta ber-EDMSTATUS 'Batal' tidak dapat didaftarkan.
+//
+// Penyaring hidup diuji terhadap Oracle sungguhan di sini, bukan hanya
+// terhadap dirinya sendiri di test murni.
+func TestPesertaBatalTidakDapatDidaftarkan(t *testing.T) {
+	svc, bersihkan := siapkanPendaftaran(t)
+	defer bersihkan()
+
+	minta := permintaan()
+	minta.Sertifikat = []string{"010"} // fixture: EDMSTATUS = 'Batal'
+	_, err := svc.Pendaftaran().DenganPenomor(&penomorUji{}).
+		Daftar(context.Background(), services.Pelaku{AkunID: "UJI-OPERATOR"}, minta)
+	if err == nil {
+		t.Fatal("peserta batal diterima; penyaring hidup tidak berlaku di jalur pendaftaran")
+	}
+	if !strings.Contains(err.Error(), "010") {
+		t.Errorf("galat tidak menyebut sertifikat yang ditolak: %v", err)
 	}
 }
 

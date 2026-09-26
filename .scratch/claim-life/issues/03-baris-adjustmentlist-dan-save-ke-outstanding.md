@@ -1,6 +1,6 @@
 # 03: Baris `AdjustmentList` + Save ke Outstanding
 
-**Status:** ready-for-agent
+**Status:** claimed
 
 **Blocked by:** 02 (register klaim + penomoran), **14 (skema relasional klaim — PREFACTOR)**
 
@@ -135,3 +135,78 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+---
+
+## Implementasi — 26 September 2026 malam (prasyarat, sesi batch 02–06)
+
+**Status: `claimed`** — **0 dari 26 AC tertutup.** Yang dikerjakan commit ini adalah **dua prasyarat
+§10 brief**, bukan AC tiket ini. Dinyatakan terus terang supaya tidak terbaca sebagai kemajuan yang
+tidak ada.
+
+Test Go **111 → 112**, nol FAIL; test bertag `db` **23 → 24**, seluruhnya SKIP; 88 modul.
+
+### ⛔ Cacat tersembunyi yang ditutup
+
+`services/pendaftaran_db_test.go` (tiket 02) memanggil `AmbilUntukKlaim`, yang membaca
+`M_LIFE_PREMIUM_DETAIL` — tabel yang **skema uji tidak pernah buat**. Hari ini ia SKIP bersama yang
+lain, jadi cacatnya tak terlihat; **dengan Oracle ia akan GAGAL di pembacaan peserta**, bukan
+menguji pendaftaran. Tiga test db tiket 02 karena itu selama ini kosong isinya.
+
+Sekarang skema uji membuat tiruannya: **24 kolom `kolomSalin` + `EDMSTATUS`**, tipe `[data DBA]`
+dari katalog — bukan diturunkan dari nama. Fixture dua peserta: satu ber-`EDMSTATUS` **NULL**
+(new business, harus muncul) dan satu **`Batal`** (harus disaring keluar), sehingga penyaring hidup
+akhirnya teruji terhadap Oracle dan bukan hanya terhadap dirinya sendiri.
+
+⛔ Kolom `KTP` **tidak ikut ditiru**: ia tidak pernah dibaca, dan tabel uji yang menyediakan tempat
+untuk nomor identitas adalah undangan.
+
+### ⛔ Satu cacat saya sendiri, ditemukan saat memverifikasi tipe kolom
+
+`kolomSalin` membaca **`STNC` apa adanya**, padahal katalog menyebutnya **`DATE`** (kolom 29).
+Membaca kolom tanggal tanpa `TO_CHAR` membuat bentuknya bergantung `NLS_DATE_FORMAT` sesi — jebakan
+yang sama yang diperangi sepanjang tiket 14, dan saya sendiri yang memasangnya di tiket 02 lanjutan.
+Sudah dibungkus `TO_CHAR`.
+
+⚠️ `[terbuka]` Kolom tujuannya di `003` bernama `STNC_TREATY` dan bertipe `VARCHAR2(64)`; sumbernya
+`DATE`. Selisih tipe itu belum diputuskan siapa pun, dan executor tidak mengubah DDL tanpa keputusan.
+
+### Penjaga posisi `kolomSalin`
+
+`salinKePeserta` membaca hasil `SELECT` lewat **indeks tetap 0–23**. Satu kolom yang disisipkan di
+tengah menggeser seluruh sisanya **tanpa satu pun galat** — nilai hanya mendarat di medan yang
+salah, dan itu baru terlihat jauh di hilir kalau pernah terlihat. `TestUrutanKolomSalinDikunci`
+mengunci cacahnya (24) dan nama kolom pada tiap posisi.
+
+### Tiruan tabel treaty
+
+`RETROCESSIONLIFE` ditiru **dengan tipe aslinya** — di instance pengembangan ia **VIEW** ber-13
+kolom yang seluruhnya `VARCHAR2(4000)`, termasuk `PERCENTSHARE`, `RATE`, `COMMISION`, `OVR_COMM`.
+⭐ Tiruannya sengaja **tidak** dibuat `NUMBER` yang "lebih benar": justru jalur *teks → `ParseDecimal`
+→ laporkan yang gagal* itulah yang perlu diuji, dan tiruan bertipe `NUMBER` membuat Oracle mengurai
+angkanya lebih dulu sehingga pembacanya tidak pernah menemui teks. `TREATYYEAR_LIFE` ikut, 7 kolom.
+
+### ⛔ `RATE_LIFE` tidak ditiru — dan itu memblokir satu masukan rumus spreading
+
+Katalog baru memuat **enam kolom pertamanya** (`ID`, `IDUSEDBY`, `USEDBY`, `TYPE`, `GENDER`,
+`CONTRACT`), dan **tidak satu pun di antaranya kolom rate**. Menirunya berarti mengarang bentuk, dan
+membaca `RATE` dari tabel yang bentuknya dikarang berarti mengarang angkanya.
+
+Akibatnya pada AC 22: rumus `PREMIUM_SPREADED_GROSS = RATE × (1 + EM_PERCENT) × AMOUNT` kehilangan
+sumber `RATE`-nya. ⚠️ `[data DBA]` — daftar kolom `RATE_LIFE` beserta tipenya diperlukan sebelum
+pembacanya ditulis.
+
+### Penjaga AC 29 dipertajam, bukan dilonggarkan
+
+Tiruan tabel peserta **mendeklarasikan** kolom `EDMSTATUS`, dan penjaga lama menuduhnya sebagai
+penyaring kedua. Aturannya kini membedakan **menyaring** dari **menyebut**: yang dilarang adalah
+bentuk `EDMSTATUS IS`/`NOT IN`/`IN`/`=` di luar pembacanya. ⚠️ Percobaan pertama saya memakai pola
+`"EDMSTATUS)"`, yang cocok dengan **daftar kolom INSERT** — penjaga yang menuduh hal yang bukan
+aturan. Diperbaiki, lalu dibuktikan masih menangkap penyaring kedua yang sungguhan.
+
+### Yang BELUM dikerjakan — seluruh AC tiket ini
+
+26 AC masih terbuka. Yang belum ada sama sekali: `Adjustment.Tambah` dan pewarisan delapan kolom,
+`Spreading.Hitung`, pembaca treaty, gerbang dokumen, langkah migrasi `010` (butir **ad**), kedua
+pintu HTTP, dan seluruh frontend-nya. Sensus `.DocumentList` untuk **ad** baru sampai pada daftar
+berkas korpusnya, belum pada kolomnya.

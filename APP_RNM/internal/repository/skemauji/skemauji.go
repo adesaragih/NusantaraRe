@@ -192,16 +192,37 @@ func Pasang(ctx context.Context, db *sql.DB, skema string) error {
 			return fmt.Errorf("skemauji: membuat tiruan tabel warisan: %w", err)
 		}
 	}
+
+	// Tiruan tabel peserta polis. Tanpa ini, pendaftaran klaim tidak dapat
+	// membaca peserta yang dipilih, dan test db tiket 02 gagal di pembacaan -
+	// bukan menguji pendaftarannya.
+	if _, err := db.ExecContext(ctx, ddlTiruanPesertaPolis(skema)); err != nil {
+		if !strings.Contains(err.Error(), "ORA-00955") {
+			return fmt.Errorf("skemauji: membuat tiruan peserta polis: %w", err)
+		}
+	}
+
+	// Tiruan tabel treaty untuk perhitungan spreading (tiket 03).
+	for _, q := range ddlTiruanTreaty(skema) {
+		if _, err := db.ExecContext(ctx, q); err != nil {
+			if !strings.Contains(err.Error(), "ORA-00955") {
+				return fmt.Errorf("skemauji: membuat tiruan treaty: %w", err)
+			}
+		}
+	}
 	return nil
 }
 
 // Bongkar membuang seluruh objek skema uji lewat jalur mundur migrasi,
 // ditambah tabel tiruan warisan.
 func Bongkar(ctx context.Context, db *sql.DB, skema string) error {
-	q := fmt.Sprintf(`DROP TABLE %s.%s CASCADE CONSTRAINTS`, skema, namaTabelLama)
-	if _, err := db.ExecContext(ctx, q); err != nil {
-		if !strings.Contains(err.Error(), "ORA-00942") { // tabel tidak ada
-			return fmt.Errorf("skemauji: membongkar tiruan warisan: %w", err)
+	for _, nama := range []string{namaTabelLama, namaTabelPesertaPolis,
+		namaTabelRetrosesi, namaTabelTahunTreaty} {
+		q := fmt.Sprintf(`DROP TABLE %s.%s CASCADE CONSTRAINTS`, skema, nama)
+		if _, err := db.ExecContext(ctx, q); err != nil {
+			if !strings.Contains(err.Error(), "ORA-00942") { // tabel tidak ada
+				return fmt.Errorf("skemauji: membongkar tiruan %s: %w", nama, err)
+			}
 		}
 	}
 
@@ -321,4 +342,157 @@ func IsiBarisLama(ctx context.Context, db *sql.DB, skema string, baris []reposit
 		}
 	}
 	return nil
+}
+
+// namaTabelPesertaPolis adalah tabel warisan peserta polis yang ditiru.
+const namaTabelPesertaPolis = "M_LIFE_PREMIUM_DETAIL"
+
+// ddlTiruanPesertaPolis membuat tiruan M_LIFE_PREMIUM_DETAIL.
+//
+// ⛔ Kenapa ini ada: tiket 02 membaca peserta dari tabel itu saat mendaftar,
+// dan skema uji tidak pernah membuatnya - sehingga ketiga test db tiket 02
+// akan GAGAL di pembacaan peserta begitu Oracle ada, bukan menguji pendaftaran.
+// Hari ini semuanya SKIP, jadi cacatnya tidak terlihat.
+//
+// ⚠️ Yang ditiru hanya kolom yang DIBACA kode ini - dua puluh empat kolom
+// kolomSalin ditambah EDMSTATUS. Tabel sungguhannya 85 kolom; menirunya utuh
+// tidak menambah satu pun bukti, dan kolom yang tidak pernah dibaca hanya
+// menambah tempat untuk salah.
+//
+// ⛔ Kolom KTP TIDAK ikut ditiru, dan itu disengaja: ia tidak pernah dibaca,
+// dan tabel uji yang memuat tempat untuk nomor identitas adalah undangan.
+//
+// Tipe kolomnya `[data DBA]` dari KATALOG-TABEL-PESERTA-DAN-TREATY.md, bukan
+// diturunkan dari nama. ⭐ Dua di antaranya mengejutkan: STNC bertipe DATE
+// meski namanya tidak berbunyi begitu, dan seluruh kolom uang NUMBER tanpa
+// presisi.
+func ddlTiruanPesertaPolis(skema string) string {
+	return fmt.Sprintf(`CREATE TABLE %s.%s (
+		ID VARCHAR2(50),
+		PL_NUMBER VARCHAR2(255),
+		POLICY_NO VARCHAR2(255),
+		CERTIFICATE_NO VARCHAR2(255),
+		CURRENCY VARCHAR2(255),
+		STNC DATE,
+		GROSS_VALUATION_BEGIN_DATE DATE,
+		GROSS_VALUATION_EXPIRED_DATE DATE,
+		RETRO_VALUATION_BEGIN_DATE DATE,
+		RETRO_VALUATION_EXPIRED_DATE DATE,
+		WPC DATE,
+		BEGIN_DATE DATE,
+		EFFECTIVE_DATE DATE,
+		LAPSE_DATE DATE,
+		EXPIRED_DATE DATE,
+		SUM_INSURED NUMBER,
+		SUM_REASURED NUMBER,
+		GROSS_PREMIUM NUMBER,
+		NET_PREMIUM NUMBER,
+		CEDING_RETENTION NUMBER,
+		SHARE_NUSANTARA_RE NUMBER,
+		SHARE_RETRO NUMBER,
+		RETROCEDED_SHARE NUMBER,
+		EM_PERCENT NUMBER,
+		EDMSTATUS VARCHAR2(25)
+	)`, skema, namaTabelPesertaPolis)
+}
+
+// IsiPesertaPolis mengisi tiruan itu dengan dua peserta buatan.
+//
+// ⛔ Nol nama orang, nol nomor polis nyata, nol potongan data produksi -
+// seluruhnya berawalan UJI-.
+//
+// ⭐ Satu peserta ber-EDMSTATUS NULL (new business, yang HARUS muncul) dan satu
+// ber-'Batal' (yang HARUS disaring keluar). Tanpa keduanya, penyaring hidup
+// tidak pernah benar-benar diuji terhadap Oracle - hanya terhadap dirinya
+// sendiri di test murni.
+func IsiPesertaPolis(ctx context.Context, db *sql.DB, skema string) error {
+	if err := samakanNLS(ctx, db); err != nil {
+		return err
+	}
+	q := fmt.Sprintf(`INSERT INTO %s.%s
+		(ID, PL_NUMBER, POLICY_NO, CERTIFICATE_NO, CURRENCY, STNC,
+		 GROSS_VALUATION_BEGIN_DATE, GROSS_VALUATION_EXPIRED_DATE,
+		 RETRO_VALUATION_BEGIN_DATE, RETRO_VALUATION_EXPIRED_DATE,
+		 WPC, BEGIN_DATE, EFFECTIVE_DATE, LAPSE_DATE, EXPIRED_DATE,
+		 SUM_INSURED, SUM_REASURED, GROSS_PREMIUM, NET_PREMIUM,
+		 CEDING_RETENTION, SHARE_NUSANTARA_RE, SHARE_RETRO,
+		 RETROCEDED_SHARE, EM_PERCENT, EDMSTATUS)
+		VALUES (:1,:2,:3,:4,:5,
+		 TO_DATE(:6,'YYYY-MM-DD'),
+		 TO_DATE(:7,'YYYY-MM-DD'), TO_DATE(:8,'YYYY-MM-DD'),
+		 TO_DATE(:9,'YYYY-MM-DD'), TO_DATE(:10,'YYYY-MM-DD'),
+		 TO_DATE(:11,'YYYY-MM-DD'), TO_DATE(:12,'YYYY-MM-DD'),
+		 TO_DATE(:13,'YYYY-MM-DD'), TO_DATE(:14,'YYYY-MM-DD'),
+		 TO_DATE(:15,'YYYY-MM-DD'),
+		 :16,:17,:18,:19,:20,:21,:22,:23,:24,:25)`, skema, namaTabelPesertaPolis)
+
+	baris := [][]any{
+		// Peserta hidup: EDMSTATUS NULL, seperti seluruh baris new business.
+		{"UJI-SRC-1", "UJI-PL-1", "UJI-POL-0001", "006", "IDR", "2026-01-01",
+			"2026-01-01", "2026-12-31", "2026-02-01", "2026-11-30",
+			"2026-03-01", "2026-01-01", "2026-01-15", "2027-01-01", "2026-12-31",
+			"1000000", "900000", "50000", "45000", "100000", "800000", "200000",
+			"150000", "0.1", nil},
+		// Peserta batal: HARUS disaring keluar.
+		{"UJI-SRC-2", "UJI-PL-1", "UJI-POL-0001", "010", "IDR", "2026-01-01",
+			"2026-01-01", "2026-12-31", "2026-02-01", "2026-11-30",
+			"2026-03-01", "2026-01-01", "2026-01-15", "2027-01-01", "2026-12-31",
+			"2000000", "1800000", "60000", "55000", "200000", "1600000", "400000",
+			"300000", "0.2", "Batal"},
+	}
+	for _, b := range baris {
+		if _, err := db.ExecContext(ctx, q, b...); err != nil {
+			return fmt.Errorf("skemauji: mengisi tiruan peserta polis: %w", err)
+		}
+	}
+	return nil
+}
+
+// Tabel treaty yang ditiru untuk perhitungan spreading (tiket 03).
+const (
+	namaTabelRetrosesi   = "RETROCESSIONLIFE"
+	namaTabelTahunTreaty = "TREATYYEAR_LIFE"
+)
+
+// ddlTiruanTreaty membuat tiruan tabel treaty.
+//
+// ⭐ RETROCESSIONLIFE di instance pengembangan adalah **VIEW** ber-13 kolom
+// yang SELURUHNYA VARCHAR2(4000) - termasuk PERCENTSHARE, RATE, COMMISION, dan
+// OVR_COMM. Tiruannya dibuat dengan tipe yang sama persis, bukan dengan NUMBER
+// yang "lebih benar": justru jalur "teks -> ParseDecimal -> laporkan yang
+// gagal" itulah yang perlu diuji. Tiruan bertipe NUMBER akan membuat Oracle
+// mengurai angkanya lebih dulu, dan pembacanya tidak pernah menemui teks.
+//
+// ⛔ RATE_LIFE TIDAK ditiru. Katalog baru memuat enam kolom pertamanya
+// (ID, IDUSEDBY, USEDBY, TYPE, GENDER, CONTRACT) dan tidak satu pun di
+// antaranya kolom rate. Menirunya berarti mengarang bentuk, dan membaca rate
+// dari tabel yang bentuknya dikarang berarti mengarang angkanya.
+// [data DBA] - lihat bab Implementasi tiket 03.
+func ddlTiruanTreaty(skema string) []string {
+	return []string{
+		fmt.Sprintf(`CREATE TABLE %s.%s (
+			ID VARCHAR2(4000),
+			IDTREATYYEAR_LIFE VARCHAR2(4000),
+			PERCENTSHARE VARCHAR2(4000),
+			RATE VARCHAR2(4000),
+			COMMISION VARCHAR2(4000),
+			OVR_COMM VARCHAR2(4000),
+			TREATYTYPEID VARCHAR2(4000),
+			TREATYTYPENAME VARCHAR2(4000),
+			TREATYSTARTDATE VARCHAR2(4000),
+			TREATYENDDATE VARCHAR2(4000),
+			USERID VARCHAR2(4000),
+			TGLUPDATE VARCHAR2(4000),
+			REINSURERNAME VARCHAR2(4000)
+		)`, skema, namaTabelRetrosesi),
+		fmt.Sprintf(`CREATE TABLE %s.%s (
+			ID VARCHAR2(100),
+			TREATYYEAR VARCHAR2(100),
+			UNDERWRITINGYEAR VARCHAR2(100),
+			USERID VARCHAR2(100),
+			TGLUPDATE DATE,
+			STARTDATE DATE,
+			ENDDATE DATE
+		)`, skema, namaTabelTahunTreaty),
+	}
 }

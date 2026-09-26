@@ -110,17 +110,36 @@ func TestQueryTabelPesertaSelaluBerindexDanBerbatas(t *testing.T) {
 
 // AC 29: penyaringan terjadi di SATU tempat.
 func TestPenyaringPesertaHanyaSatuTempat(t *testing.T) {
+	// ⚠️ Yang dilarang adalah MENYARING, bukan menyebut. Skema uji membuat
+	// tabel tiruan yang punya kolom EDMSTATUS dan mengisinya - itu deklarasi
+	// bentuk, bukan aturan kedua. Penjaga yang tidak membedakan keduanya akan
+	// memaksa tabel tiruan dibuat tanpa kolom itu, dan penyaringnya justru
+	// tidak pernah teruji terhadap Oracle.
+	// ⚠️ Hanya bentuk PENYARING. "EDMSTATUS)" sempat ikut dan itu keliru: ia
+	// cocok dengan daftar kolom INSERT tiruan, yang bukan aturan sama sekali.
+	penyaring := []string{"EDMSTATUS IS ", "EDMSTATUS NOT IN",
+		"EDMSTATUS IN", "EDMSTATUS ="}
 	ketemu := 0
 	for nama, isi := range berkasGoSelainTest(t) {
-		if strings.Contains(isi, "EDMSTATUS") {
-			ketemu++
-			if !strings.HasSuffix(nama, "/pesertapolis.go") {
-				t.Errorf("%s menyebut EDMSTATUS; penyaringnya harus satu tempat (AC 29)", nama)
+		if !strings.Contains(isi, "EDMSTATUS") {
+			continue
+		}
+		ketemu++
+		if strings.HasSuffix(nama, "/pesertapolis.go") {
+			continue
+		}
+		atas := strings.ToUpper(isi)
+		for _, pola := range penyaring {
+			if strings.Contains(atas, pola) {
+				t.Errorf("%s menyaring dengan %q; penyaringnya harus satu tempat (AC 29)",
+					nama, pola)
 			}
 		}
 	}
-	if ketemu != 1 {
-		t.Errorf("berkas yang menyebut EDMSTATUS = %d, mau 1", ketemu)
+	// Dua berkas menyebutnya: pembacanya, dan skema uji yang membuat tiruannya.
+	const mau = 2
+	if ketemu != mau {
+		t.Errorf("berkas yang menyebut EDMSTATUS = %d, mau %d", ketemu, mau)
 	}
 }
 
@@ -183,5 +202,57 @@ func TestStatusDanStatusOldBukanPenandaHidup(t *testing.T) {
 	}
 	if diperiksa == 0 {
 		t.Fatal("nol berkas pembaca peserta terbaca; pembacanya yang rusak")
+	}
+}
+
+// ⛔ kolomSalin dan salinKePeserta memakai POSISI, dan posisinya dikunci.
+//
+// salinKePeserta membaca hasil SELECT lewat indeks tetap 0-23. Satu kolom yang
+// disisipkan di tengah kolomSalin akan menggeser seluruh sisanya - dan tidak
+// satu pun galat muncul: nilai hanya mendarat di medan yang salah. Tanggal
+// valuasi menjadi tanggal lapse, uang menjadi uang lain, dan itu baru terlihat
+// jauh di hilir, kalau pernah terlihat.
+//
+// Yang dikunci: cacahnya 24, dan nama kolom pada tiap posisi.
+func TestUrutanKolomSalinDikunci(t *testing.T) {
+	// Pemecah kasar: tiap ekspresi dipisah koma di tingkat teratas.
+	var ekspresi []string
+	dalam := 0
+	mulai := 0
+	for i, c := range kolomSalin {
+		switch c {
+		case '(':
+			dalam++
+		case ')':
+			dalam--
+		case ',':
+			if dalam == 0 {
+				ekspresi = append(ekspresi, strings.TrimSpace(kolomSalin[mulai:i]))
+				mulai = i + 1
+			}
+		}
+	}
+	ekspresi = append(ekspresi, strings.TrimSpace(kolomSalin[mulai:]))
+
+	const mau = 24
+	if len(ekspresi) != mau {
+		t.Fatalf("kolomSalin memuat %d ekspresi, mau %d; salinKePeserta membaca "+
+			"posisi 0-%d dan akan bergeser seluruhnya", len(ekspresi), mau, mau-1)
+	}
+
+	// Urutan nama kolom, persis seperti yang dibaca salinKePeserta.
+	urut := []string{
+		"ID", "PL_NUMBER", "POLICY_NO", "CERTIFICATE_NO", "CURRENCY", "STNC",
+		"GROSS_VALUATION_BEGIN_DATE", "GROSS_VALUATION_EXPIRED_DATE",
+		"RETRO_VALUATION_BEGIN_DATE", "RETRO_VALUATION_EXPIRED_DATE",
+		"WPC", "BEGIN_DATE", "EFFECTIVE_DATE", "LAPSE_DATE", "EXPIRED_DATE",
+		"SUM_INSURED", "SUM_REASURED", "GROSS_PREMIUM", "NET_PREMIUM",
+		"CEDING_RETENTION", "SHARE_NUSANTARA_RE", "SHARE_RETRO",
+		"RETROCEDED_SHARE", "EM_PERCENT",
+	}
+	for i, nama := range urut {
+		if !strings.Contains(ekspresi[i], nama) {
+			t.Errorf("posisi %d memuat %q, mau kolom %s", i, ekspresi[i], nama)
+		}
 	}
 }

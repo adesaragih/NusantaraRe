@@ -164,7 +164,15 @@ func PesertaHidup(edmStatus string) bool {
 // Seluruh nama di sini `[terverifikasi]` ada di katalog instance pengembangan
 // (KATALOG-TABEL-PESERTA-DAN-TREATY.md), bukan diturunkan dari nama tabel
 // warisan yang mirip.
-const kolomSalin = `ID, PL_NUMBER, POLICY_NO, CERTIFICATE_NO, CURRENCY, STNC, ` +
+//
+// ⛔ STNC dibungkus TO_CHAR meski namanya tidak berbunyi seperti tanggal:
+// katalog menyebutnya DATE (kolom 29). Membacanya apa adanya membuat bentuknya
+// bergantung NLS_DATE_FORMAT sesi - jebakan yang sama dengan seluruh tanggal
+// lain di proyek ini. ⚠️ [terbuka] Kolom tujuannya di 003 bernama STNC_TREATY
+// dan bertipe VARCHAR2(64); sumbernya DATE. Selisih tipe itu belum diputuskan
+// siapa pun, dan executor tidak mengubah DDL tanpa keputusan.
+const kolomSalin = `ID, PL_NUMBER, POLICY_NO, CERTIFICATE_NO, CURRENCY, ` +
+	`TO_CHAR(STNC, 'YYYY-MM-DD HH24:MI:SS'), ` +
 	`TO_CHAR(GROSS_VALUATION_BEGIN_DATE, 'YYYY-MM-DD HH24:MI:SS'), ` +
 	`TO_CHAR(GROSS_VALUATION_EXPIRED_DATE, 'YYYY-MM-DD HH24:MI:SS'), ` +
 	`TO_CHAR(RETRO_VALUATION_BEGIN_DATE, 'YYYY-MM-DD HH24:MI:SS'), ` +
