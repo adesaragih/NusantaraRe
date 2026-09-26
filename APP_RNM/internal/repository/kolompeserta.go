@@ -56,6 +56,7 @@ var kolomPeserta = []struct {
 	{"RETRO_VALUATION_BEGIN_DATE", kolomTanggal, func(p models.Peserta) string { return p.ValuasiRetroMulai }},
 	{"RETRO_VALUATION_EXPIRED_DATE", kolomTanggal, func(p models.Peserta) string { return p.ValuasiRetroSelesai }},
 	{"WPC", kolomTanggal, func(p models.Peserta) string { return p.WPC }},
+	{"DATE_OF_LOSS", kolomTanggal, func(p models.Peserta) string { return p.TanggalKejadian }},
 	{"BEGIN_DATE", kolomTanggal, func(p models.Peserta) string { return p.TanggalMulai }},
 	{"EFFECTIVE_DATE", kolomTanggal, func(p models.Peserta) string { return p.TanggalEfektif }},
 	{"LAPSE_DATE", kolomTanggal, func(p models.Peserta) string { return p.TanggalLapse }},
@@ -178,6 +179,7 @@ func rakitPeserta(id string, sel []sql.NullString) (models.Peserta, error) {
 	p.ValuasiRetroMulai = teks("RETRO_VALUATION_BEGIN_DATE")
 	p.ValuasiRetroSelesai = teks("RETRO_VALUATION_EXPIRED_DATE")
 	p.WPC = teks("WPC")
+	p.TanggalKejadian = teks("DATE_OF_LOSS")
 	p.TanggalMulai = teks("BEGIN_DATE")
 	p.TanggalEfektif = teks("EFFECTIVE_DATE")
 	p.TanggalLapse = teks("LAPSE_DATE")

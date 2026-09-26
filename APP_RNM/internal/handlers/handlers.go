@@ -29,6 +29,8 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 	mux.HandleFunc("GET /api/klaim-life/{id}", klaimLife(svc))
 	mux.HandleFunc("POST /api/klaim-life", daftarKlaim(svc, stubPelaku))
 	mux.HandleFunc("GET /api/peserta-life", cariPeserta(svc))
+	mux.HandleFunc("PUT /api/klaim-life/{id}/peserta/{pesertaId}/tanggal-kejadian",
+		setTanggalKejadian(svc, stubPelaku))
 	return mux
 }
 

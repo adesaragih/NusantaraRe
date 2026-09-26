@@ -1,0 +1,241 @@
+package services
+
+// Validasi Date of Loss per Type, dan penurunan jenis klaim - tiket 06.
+//
+// Untuk apa berkas ini: menolak tanggal kejadian yang berada di luar jendela
+// valuasi polis, sehingga klaim yang tidak tertanggung tidak pernah masuk ke
+// siklus; dan menurunkan jenis klaim dari kode produk.
+//
+// Dibaca sesudah: dokumen.go.
+//
+// ⛔ Seluruh isi berkas ini MURNI. Jendela valuasi sudah DISALIN ke peserta
+// klaim saat pendaftaran (tiket 02), justru supaya validasi ini tidak perlu
+// menyentuh tabel 66,8 juta baris sama sekali.
+//
+// Istilah:
+//   - DOL            : Date of Loss, tanggal kejadian yang diklaim.
+//   - jendela valuasi: rentang tanggal polis yang menanggung kejadian.
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"strings"
+	"time"
+
+	"nusantarare/internal/models"
+	"nusantarare/internal/repository"
+)
+
+// Nilai Type yang punya cabang di `ValidasiDOL_Act`. Tidak ada nilai lain.
+//
+// ⚠️ `[terbuka - OQ-020]` Arti QP/QR belum dijawab siapa pun; TP = Payable dan
+// TR = Receivable `[keputusan work owner, ADR-U-0012]`. Perilaku kedua cabang
+// sudah terbaca penuh - hanya namanya yang belum, dan nama tidak dipakai
+// menghitung apa pun di sini.
+const (
+	TypeQR = "QR"
+	TypeQP = "QP"
+	TypeTR = "TR"
+	TypeTP = "TP"
+)
+
+// ⛔ DUA ASUMSI PUSTAKA PEGA, bukan fakta korpus. Keduanya diberi nama supaya
+// terlihat, dapat dicari, dan dapat diubah dalam satu baris disertai testnya.
+//
+// `[dugaan - Product+UW]` `pergeseranTPTR`: cabang TP/TR memanggil
+// `@addCalendar(.DATE_OF_LOSS,0,0,0,1,0,0,0)` - TUJUH argumen angka sesudah
+// tanggalnya (`Claim Life/Activity/ValidasiDOL_Act.xml`, baris 698 berkas
+// pecahan; cabang QP/QR di baris 457 memakai rule yang sama dengan seluruh
+// argumen nol, jadi ia tidak bergeser sama sekali). Tujuh angka COCOK dengan
+// tanda tangan `@addCalendar` yang berargumen milidetik -
+// `(tanggal, tahun, bulan, hari, jam, menit, detik, milidetik)` - dan pada
+// tanda tangan itu posisi keempat adalah jam. ⚠️ Definisinya sendiri TIDAK ada
+// di korpus; ini kecocokan cacah argumen, bukan bacaan langsung.
+//
+// `[dugaan - Product+UW]` `bandingKetat`: `@CompareDates(a,b)` bernilai benar
+// bila `a` SESUDAH `b`, ketat. Korpus tidak memuat definisinya.
+//
+// Akibat kedua asumsi itu, jendelanya ASIMETRIS - dan asimetri itu memang
+// berasal dari argumen yang BERBEDA di kedua cabang, bukan dari kami:
+//
+//	QP/QR : (BEGIN, EXPIRED]
+//	TP/TR : [BEGIN, EXPIRED)
+//
+// Daftar LENGKAP kasus yang berbalik bila salah satu asumsi diputuskan lain
+// ada di bab "Pembacaan ulang XML" tiket 06 - satu tempat, supaya tiga salinan
+// tidak berjalan sendiri-sendiri. Ringkasnya: mengubah `bandingKetat` membalik
+// batas di KEDUA ujung dan pada KEDUA cabang, bukan hanya satu kasus.
+const (
+	pergeseranTPTR = time.Hour
+	bandingKetat   = true
+)
+
+var (
+	// ErrDOLTidakSah - pesannya PERSIS `local.errmsg` di XML, tanpa tambahan.
+	// Peserta mana yang bermasalah dibawa GalatDOL di medannya sendiri.
+	ErrDOLTidakSah = errors.New("Invalid DOL")
+	// ErrTypeTidakDikenal - Type di luar keempat nilai di atas.
+	ErrTypeTidakDikenal = errors.New("services: Type klaim tidak dikenal")
+	// ErrDOLKosong - tanggal kejadian tidak diisi sama sekali.
+	ErrDOLKosong = errors.New("services: tanggal kejadian belum diisi")
+	// ErrBusinessCodeTidakDikenal - kode produk di luar daftar acuan.
+	ErrBusinessCodeTidakDikenal = errors.New("services: BusinessCode tidak dikenal")
+)
+
+// GalatDOL adalah DOL yang tidak sah, beserta peserta yang memilikinya.
+//
+// ⛔ `Error()` mengembalikan kalimat XML APA ADANYA. Pengenal pesertanya hidup
+// di medan tersendiri, bukan di dalam kalimat: pesan galat adalah logika
+// bisnis, dan menambahinya berarti sistem baru berbicara dengan kalimat yang
+// tidak pernah ada di sistem lama. Pola yang sama dengan gerbang dokumen
+// tiket 03.
+type GalatDOL struct {
+	PesertaID string
+}
+
+// Error menulis kalimat XML, tanpa tambahan apa pun.
+func (e GalatDOL) Error() string { return ErrDOLTidakSah.Error() }
+
+// Unwrap membuat `errors.Is(err, ErrDOLTidakSah)` bernilai benar tanpa
+// kalimatnya ikut berubah - Unwrap tidak menyentuh Error().
+func (e GalatDOL) Unwrap() error { return ErrDOLTidakSah }
+
+// ValidasiDOL menolak Date of Loss di luar jendela valuasi peserta.
+//
+// Meniru `Claim Life/Activity/ValidasiDOL_Act.xml` langkah 2, 3, dan 4:
+//
+//	langkah 2  Type QR atau QP -> jendela GROSS_VALUATION_*, tanpa pergeseran
+//	langkah 3  Type TR atau TP -> jendela RETROCESSION_VALUATION_*, digeser
+//	langkah 4  galat bila `local.Begin==false || local.Expired==true`
+//
+// ⛔ Type di luar keempat nilai itu adalah GALAT, bukan izin lewat. Di Pega
+// kedua precondition tidak terpenuhi sehingga activity-nya diam saja dan
+// tanggal apa pun lolos; diam seperti itu adalah lubang, bukan aturan.
+func ValidasiDOL(tipe string, dol time.Time, p models.Peserta) error {
+	var gross bool
+	var geser time.Duration
+
+	switch tipe {
+	case TypeQR, TypeQP:
+		gross = true
+	case TypeTR, TypeTP:
+		geser = pergeseranTPTR
+	default:
+		return fmt.Errorf("%w: %q; yang dikenal hanya %s, %s, %s, dan %s",
+			ErrTypeTidakDikenal, tipe, TypeQR, TypeQP, TypeTR, TypeTP)
+	}
+
+	// ⛔ DOL kosong ditolak TERPISAH. Waktu nol adalah tahun 1 Masehi, yang
+	// pasti di luar jendela mana pun - jadi tanpa penjaga ini pengguna
+	// mendapat "Invalid DOL" untuk tanggal yang tidak pernah ia isi, dan
+	// pesan itu menyesatkan ke arah yang salah.
+	if dol.IsZero() {
+		return fmt.Errorf("%w: peserta %s", ErrDOLKosong, p.ID)
+	}
+
+	awal, akhir, err := p.JendelaValuasi(gross)
+	if err != nil {
+		return err
+	}
+
+	// `local.DOL = @addCalendar(...)` - satu-satunya beda kedua cabang.
+	dolGeser := dol.Add(geser)
+
+	// `local.Begin` dan `local.Expired`, lalu gerbang langkah 4:
+	// galat bila `Begin==false || Expired==true`.
+	begin := sesudah(dolGeser, awal)
+	expired := sesudah(dolGeser, akhir)
+	if !begin || expired {
+		return GalatDOL{PesertaID: p.ID}
+	}
+	return nil
+}
+
+// sesudah meniru `@CompareDates(a, b)`.
+func sesudah(a, b time.Time) bool {
+	if bandingKetat {
+		return a.After(b)
+	}
+	return a.After(b) || a.Equal(b)
+}
+
+// ContentNoteDari menurunkan jenis klaim dari kode produk.
+//
+// Aturannya di sini, datanya di `models` - kode yang tidak dikenal adalah
+// keputusan lapisan ini, bukan sifat tabelnya.
+//
+// ⛔ Kode asing menjadi GALAT, bukan jenis kosong. Jenis klaim menggerbangi
+// jalur Medical Check dan Claim Analis di hilir; menebaknya berarti mengarahkan
+// klaim ke jalur yang belum tentu miliknya.
+func ContentNoteDari(kodeBisnis string) (string, error) {
+	note, ada := models.ContentNoteUntuk(kodeBisnis)
+	if !ada {
+		return "", fmt.Errorf("%w: %q", ErrBusinessCodeTidakDikenal, kodeBisnis)
+	}
+	return note, nil
+}
+
+// TanggalKejadian adalah layanan pengisian Date of Loss seorang peserta.
+//
+// ⭐ Inilah jalur yang membuat ValidasiDOL benar-benar menolak sesuatu. Di Pega
+// validasinya dipicu dua Section saat tanggal diubah di layar
+// (`EditDateClaimLife_Section` dan `ClaimLifeDetailGCNM`, lewat
+// `<pyActivity>ValidasiDOL_Act</pyActivity>`); di sini pemicunya satu pintu
+// HTTP yang menyetel tanggal itu.
+type TanggalKejadian struct {
+	svc *Service
+}
+
+// TanggalKejadian menyusun layanan itu.
+func (s *Service) TanggalKejadian() *TanggalKejadian { return &TanggalKejadian{svc: s} }
+
+// Set memvalidasi lalu menyimpan Date of Loss seorang peserta.
+//
+// Urutannya disengaja: Type dan peserta dibaca dari basis data lebih dulu,
+// validasi berjalan atas nilai yang TERSIMPAN, dan penulisan hanya terjadi
+// bila validasinya lolos. Memvalidasi terhadap nilai yang dikirim klien berarti
+// mempercayai klien untuk menyatakan jendela valuasinya sendiri.
+func (t *TanggalKejadian) Set(ctx context.Context, pelaku Pelaku,
+	klaimID, pesertaID string, dol time.Time) error {
+
+	// ⛔ FAIL-CLOSED atas pelaku anonim, alasan yang sama dengan pendaftaran:
+	// tanpa identitas, perubahan tanggal kejadian tidak dapat ditelusuri.
+	if strings.TrimSpace(pelaku.AkunID) == "" {
+		return fmt.Errorf("%w: perubahan tanggal kejadian tanpa identitas pelaku ditolak",
+			ErrTanpaWewenang)
+	}
+	if strings.TrimSpace(klaimID) == "" || strings.TrimSpace(pesertaID) == "" {
+		return fmt.Errorf("%w: pengenal klaim dan peserta wajib diisi", ErrPermintaanTidakSah)
+	}
+	if !t.svc.PunyaDatabase() {
+		return repository.ErrTanpaOracle
+	}
+
+	baca := repository.NewKlaimLife(t.svc.db)
+	tipe, err := baca.TypeKlaim(ctx, klaimID)
+	if err != nil {
+		return err
+	}
+	peserta, err := baca.AmbilPeserta(ctx, klaimID)
+	if err != nil {
+		return err
+	}
+	var target *models.Peserta
+	for i := range peserta {
+		if peserta[i].ID == pesertaID {
+			target = &peserta[i]
+			break
+		}
+	}
+	if target == nil {
+		return fmt.Errorf("%w: peserta %q bukan milik klaim %q",
+			ErrPermintaanTidakSah, pesertaID, klaimID)
+	}
+	if err := ValidasiDOL(tipe, dol, *target); err != nil {
+		return err
+	}
+	return t.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+		return baca.PerbaruiTanggalKejadian(ctx, tx, pesertaID, dol)
+	})
+}

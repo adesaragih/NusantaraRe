@@ -2,6 +2,9 @@ package models
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
+	"strings"
 	"time"
 
 	"nusantarare/pkg/utils"
@@ -204,6 +207,13 @@ type Peserta struct {
 	// STNC treaty, dibawa apa adanya sebagai teks.
 	STNC string
 
+	// TanggalKejadian adalah DATE_OF_LOSS - tanggal kejadian yang diklaim,
+	// dan ia milik PESERTA, bukan klaim. `[terverifikasi]` ValidasiDOL_Act
+	// berkelas Int-LIFE_PREMIUM_DETAIL dan menempelkan pesan galatnya pada
+	// `.DATE_OF_LOSS` peserta (parameter Field langkah 4). Kolomnya sudah
+	// disediakan migrasi 003; tiket 06 yang memakainya.
+	TanggalKejadian string
+
 	// Uang polis. Seluruhnya Money kecuali EMPercent, yang perbandingan -
 	// keduanya sengaja bertipe berbeda supaya tidak pernah terjumlahkan
 	// (ADR-F-0004).
@@ -230,6 +240,55 @@ type Peserta struct {
 	// pelengkap: SaveOutStandingLife_Act menolak menyimpan bila peserta yang
 	// dipilih belum mengunggah dokumen.
 	Dokumen []Dokumen
+}
+
+// ErrValuasiKosong menandai kolom tanggal valuasi yang kosong.
+//
+// ⛔ Kosong DITOLAK, tidak diperlakukan sebagai waktu nol (ADR-U-0022 Akibat 2,
+// ADR-U-0027). Waktu nol adalah tahun 1 Masehi, sehingga setiap tanggal akan
+// tampak sesudah tanggal mulai dan setiap klaim lolos - kegagalan yang arahnya
+// paling berbahaya: diam dan meloloskan.
+var ErrValuasiKosong = errors.New("models: tanggal valuasi peserta kosong")
+
+// JendelaValuasi mengurai sepasang tanggal valuasi peserta menjadi waktu.
+//
+// ⚠️ [terbuka - tiket 14] Tempat SEBENARNYA konversi ini adalah pemuat di
+// `repository` (ADR-U-0022 Akibat 1: "konversi adalah tanggung jawab pemuat di
+// repository, bukan tersebar di lapisan layanan"). Ia ada di sini - pada tipe
+// yang memiliki teksnya, satu tempat dan tidak tersebar - karena kesembilan
+// medan tanggal peserta bertipe TEKS, dan mengubahnya menjadi waktu adalah
+// keputusan sekali untuk seluruh model beserta daftar kolomnya. Itu milik
+// tiket 14, bukan tiket 06.
+//
+// Nama kolom yang dilaporkan adalah nama kolom SEBENARNYA di migrasi 003 -
+// bukan nama medan Go, dan bukan nama ketiga yang dikarang.
+func (p Peserta) JendelaValuasi(gross bool) (mulai, selesai time.Time, err error) {
+	namaMulai, namaSelesai := "RETRO_VALUATION_BEGIN_DATE", "RETRO_VALUATION_EXPIRED_DATE"
+	teksMulai, teksSelesai := p.ValuasiRetroMulai, p.ValuasiRetroSelesai
+	if gross {
+		namaMulai, namaSelesai = "GROSS_VALUATION_BEGIN_DATE", "GROSS_VALUATION_EXPIRED_DATE"
+		teksMulai, teksSelesai = p.ValuasiGrossMulai, p.ValuasiGrossSelesai
+	}
+	if mulai, err = p.uraiTanggal(namaMulai, teksMulai); err != nil {
+		return time.Time{}, time.Time{}, err
+	}
+	if selesai, err = p.uraiTanggal(namaSelesai, teksSelesai); err != nil {
+		return time.Time{}, time.Time{}, err
+	}
+	return mulai, selesai, nil
+}
+
+// uraiTanggal mengurai satu kolom tanggal peserta, menyebut kolom dan peserta.
+func (p Peserta) uraiTanggal(kolom, nilai string) (time.Time, error) {
+	if strings.TrimSpace(nilai) == "" {
+		return time.Time{}, fmt.Errorf("%w: peserta %s kolom %s",
+			ErrValuasiKosong, p.ID, kolom)
+	}
+	w, err := utils.ParseTanggal(nilai)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("models: peserta %s kolom %s: %w", p.ID, kolom, err)
+	}
+	return w, nil
 }
 
 // MarshalJSON menulis peserta untuk kontrak API.

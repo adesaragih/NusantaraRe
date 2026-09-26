@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 
+	"time"
+
 	"nusantarare/internal/models"
 	"nusantarare/pkg/utils"
 )
@@ -212,4 +214,65 @@ func (r *KlaimLife) AmbilBaris(ctx context.Context, klaimID string) (map[string]
 		out[pesertaID] = append(out[pesertaID], b)
 	}
 	return out, rows.Err()
+}
+
+// TypeKlaim membaca `Type` klaim dari baris work object-nya.
+//
+// ⛔ Satu-satunya pembaca `Type`, dan ia membacanya dari satu-satunya tempat
+// yang menyimpannya - `T_WORK_CLAIM.TYPE`. Tiket 06 AC 5: validasi dan
+// penurunan jenis klaim membaca satu field yang sama, bukan dua salinan
+// seperti di Pega.
+//
+// Header klaim dan baris work object berbagi kunci utama (`isiIdentitas`),
+// jadi pengenal klaim dapat dipakai apa adanya.
+func (r *KlaimLife) TypeKlaim(ctx context.Context, klaimID string) (string, error) {
+	tabel, err := r.db.Qualify("T_WORK_CLAIM")
+	if err != nil {
+		return "", err
+	}
+	q := fmt.Sprintf(`SELECT TYPE FROM %s WHERE ID = :1`, tabel)
+	if err := PeriksaSQL(q); err != nil {
+		return "", err
+	}
+	var tipe sql.NullString
+	err = r.db.sql.QueryRowContext(ctx, q, klaimID).Scan(&tipe)
+	if err == sql.ErrNoRows {
+		return "", fmt.Errorf("repository: work object %q tidak ada", klaimID)
+	}
+	if err != nil {
+		return "", fmt.Errorf("repository: membaca Type klaim: %w", err)
+	}
+	return tipe.String, nil
+}
+
+// PerbaruiTanggalKejadian menulis DATE_OF_LOSS seorang peserta.
+//
+// ⛔ Tanggalnya ditulis lewat TO_DATE berformat tetap, sama dengan jalur tulis
+// kolom tanggal peserta yang lain - bentuknya tidak pernah bergantung
+// NLS_DATE_FORMAT sesi (ADR-U-0022).
+func (r *KlaimLife) PerbaruiTanggalKejadian(ctx context.Context, tx *Tx,
+	pesertaID string, dol time.Time) error {
+	tabel, err := r.db.Qualify("T_CLAIMLF_PREMIUMLIST_DETAIL")
+	if err != nil {
+		return err
+	}
+	q := fmt.Sprintf(
+		`UPDATE %s SET DATE_OF_LOSS = TO_DATE(:1, 'YYYY-MM-DD HH24:MI:SS') WHERE ID = :2`,
+		tabel)
+	if err := PeriksaSQL(q); err != nil {
+		return err
+	}
+	hasil, err := tx.tx.ExecContext(ctx, q, utils.FormatTanggalWaktu(dol), pesertaID)
+	if err != nil {
+		return fmt.Errorf("repository: menulis DATE_OF_LOSS: %w", err)
+	}
+	n, err := hasil.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("repository: mencacah baris tersentuh: %w", err)
+	}
+	if n != 1 {
+		return fmt.Errorf("repository: DATE_OF_LOSS peserta %q menyentuh %d baris, mau 1",
+			pesertaID, n)
+	}
+	return nil
 }
