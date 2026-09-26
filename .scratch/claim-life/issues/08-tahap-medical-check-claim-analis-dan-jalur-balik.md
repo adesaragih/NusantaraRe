@@ -1,6 +1,6 @@
 # 08: Tahap Medical Check & Claim Analis + jalur balik
 
-**Status:** ready-for-agent
+**Status:** claimed
 
 **Blocked by:** 07 (penegakan peran) — tiap tahap milik peran tertentu
 
@@ -24,7 +24,7 @@ Claim Analis, kontrol kembalikan).
 | --- | --- | --- |
 | `Claim Life/Flow/Register_Flow.xml` | `ASM-FW-GCNMFW-WORK-CLAIMLIFE` / `REGISTER_FLOW` / `RULE-OBJ-FLOW` | `[terverifikasi]` empat tahap: `Assignment2` "Input Register", `Assignment1` "Outstanding Claim", `Assignment3` "Medical Check", `Assignment4` "Claim Analis" |
 | `Claim Life/When/IsSendtoAdmin.xml` | `ASM-FW-GCNMFW-WORK-CLAIMLIFE` / `ISSENDTOADMIN` / `RULE-OBJ-WHEN` | `[terverifikasi]` `pyWorkPage.SendtoAdmin = 1`; menggerbangi pengembalian dari **tiga titik** di `Register_Flow` |
-| `Claim Life/When/IsSendtoMedical.xml` | `ASM-FW-GCNMFW-WORK-CLAIMLIFE` / `ISSENDTOMEDICAL` / `RULE-OBJ-WHEN` | pengembalian SPV → medis; `[keputusan work owner]` artinya — kondisinya tidak terbaca dari tag |
+| `Claim Life/When/IsSendtoMedical.xml` | `ASM-FW-GCNMFW-WORK-CLAIMLIFE` / `ISSENDTOMEDICAL` / `RULE-OBJ-WHEN` | pengembalian SPV → medis; `[keputusan work owner]` artinya — kondisinya TERBACA - lihat blok ralat |
 | `Claim Life/Section/MedicalCheckClaimLife.xml` | `ASM-FW-GCNMFW-WORK-CLAIMLIFE` / `MEDICALCHECKCLAIMLIFE` / `RULE-OBJ-HTML-SECTION` | layar telaah medis; memuat gerbang `pyPosition` |
 | FlowAction `MEDICALCHECK`, `AKSEPTASICLAIMLIFE` | — | `[terverifikasi]` tindakan pada kedua tahap |
 
@@ -37,13 +37,13 @@ baris tetap Outstanding sepanjang Medical Check dan sampai keputusan Komite).
 
 - [ ] Klaim dapat berpindah Register → Outstanding → Medical Check → Claim Analis, masing-masing
       hanya oleh peran yang berhak.
-- [ ] Status baris adjustment **tetap Outstanding** sepanjang perpindahan tahap — perpindahan tahap
+- [x] Status baris adjustment **tetap Outstanding** sepanjang perpindahan tahap — perpindahan tahap
       bukan keputusan akseptasi.
-- [ ] `ReasLifeMedicalAdvisor` dapat mengembalikan kasus ke `ReasLifeAdmin`.
+- [x] `ReasLifeMedicalAdvisor` dapat mengembalikan kasus ke `ReasLifeAdmin`.
 - [ ] `ReasLifeSPV` dapat mengembalikan kasus ke `ReasLifeAdmin`.
 - [ ] `ReasLifeSPV` dapat mengembalikan kasus ke `ReasLifeMedicalAdvisor`.
 - [ ] Kasus yang dikembalikan muncul kembali di antrean peran tujuan.
-- [ ] Pengembalian **tidak** mengubah status baris adjustment mana pun.
+- [x] Pengembalian **tidak** mengubah status baris adjustment mana pun.
 
 ## Catatan
 
@@ -58,3 +58,103 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+---
+
+## Pembacaan ulang XML — 26 September 2026 malam
+
+| Rule | Byte | Yang diambil |
+| --- | ---: | --- |
+| `Flow/Register_Flow.xml` | 264.216 | `pyPosition` per shape — peran tiap tahap |
+| `When/IsSendtoAdmin.xml` | 15.776 | `pyConditionString` = `pyWorkPage.SendtoAdmin = 1` |
+| `When/IsSendtoMedical.xml` | 18.349 | `pyConditionString` = `pyWorkPage.SendtoMedical = 1` |
+| `Section/Diagnose_Section.xml` | 128.697 | bukti butir **al** |
+
+### ⭐ `IsSendtoMedical` `[ditutup oleh XML — 26-09-2026]`
+
+Tiket ini menandainya *"tidak terbaca dari tag"* dan `[keputusan work owner]`. **Ia terbaca.**
+Kondisinya memang tidak ada di label rule — label-nya masih cetakan kosong
+*"[first value][relation][second value]"* — tetapi `pyConditionString` berbunyi
+**`pyWorkPage.SendtoMedical = 1`** dan `pyConditionValue1` berbunyi
+`compareTwoValues(pyWorkPage.SendtoMedical, "=", 1)`. Simetris persis dengan `IsSendtoAdmin`.
+Pelajarannya: label rule bukan tempat kondisi tinggal.
+
+### ⚠️ `Assignment4` (Claim Analis) — pemegangnya TIDAK ada di Flow
+
+Keempat `Assignment` ada sebagai shape, tetapi **nol** di antara empat belas `pyPosition` di
+`Register_Flow.xml` yang menyebut `Assignment4`. Peran pemegangnya `[terbuka — work owner]` dan
+**tidak ditebak**: `models.PeranTahap` sengaja tidak memuat entrinya, dan memindahkan kasus dari
+tahap itu menghasilkan galat terang.
+
+### ⭐ Bukti butir **al** — ditulis apa pun keadaan PAKET
+
+Kelas `ASM-FW-GISFW-Data-DiagnoseLife` dipakai **enam** rule: `SearchDiagnose_act`, `SetDisease`,
+`SetSTS_Reject`, `Diagnose_Harness`, `Diagnose_Section`, `ClaimLifeDetailGCNM`. Layar diagnosa
+**ada**, dan `Diagnose_Section` mengisi **dua** kolom: **`.ICD_Code`** dan **`.Disease`**. Itulah
+bentuk tabel `T_CLAIMLF_DIAGNOSE` bila work owner menyetujui **al** — bukti dulu, keputusan kemudian.
+
+## Implementasi — 26 September 2026 malam (tiket 08)
+
+**Status: `claimed`** — **3 dari 7 AC tertutup** *(6 sebelum `/code-review`)*. Titik tetap `9b48e32`.
+Verifikasi: vet · vet db · gofmt nol · build · **186 PASS · 0 FAIL** *(dari 182)* · 28 SKIP ·
+`tsc` · 7 JS · 88 modul.
+
+| Berkas | Isi |
+| --- | --- |
+| `models/tahap.go` *(baru)* | `Tahap` tertutup, `Kode()`/`TahapDariKode` pulang-pergi, `PeranTahap` |
+| `services/tahap.go` *(baru)* | `JalurBalik`, `WajibPeranTahap`, `TahapLayanan.Pindah` |
+| `repository/klaimlife.go` | `PerbaruiTahap`, `TahapKlaim` — kolomnya sudah ada di `001`, nol migrasi |
+
+⛔ **Satu cacat desain yang hampir lolos.** Ronde pertama memeriksa peran tahap **tujuan**. Itu
+membalik seluruh jalur balik: pengembalian ke Admin oleh Medical Advisor akan menuntut pelakunya
+berperan **Admin** — yang justru bukan dia. Orang memindahkan pekerjaan yang **sedang ia pegang**,
+jadi yang diperiksa adalah peran tahap **asal**, dibaca dari `PY_POSITION`.
+
+⛔ **Nol tulisan status.** `tahap.go` menyebut `KodeStatus` hanya di dua komentar; penjaga statik
+tiket 07 memeriksanya, dan berkas ini sengaja tidak masuk daftar penulis status.
+
+### ⛔ AC yang belum tertutup — 1
+
+*"Klaim dapat berpindah Register → Outstanding → Medical Check → Claim Analis"* — tiga tahap pertama
+bekerja; **Claim Analis** tidak dapat dimasuki maupun ditinggalkan, sebab pemegangnya tidak ada di
+Flow. `[terbuka — work owner]`
+
+### Ralat menurut XML — 27 September 2026
+
+Bukti: berkas pecahan `Flow/Register_Flow.xml` **114.144 byte** *(bukan 264.216 seperti tertulis di
+bab Pembacaan — angka itu keliru dan diralat di sini)*.
+
+| # | Teks lama | Teks baru | Bukti |
+| ---: | --- | --- | --- |
+| 1 | `PY_POSITION` berisi pengenal shape `"Assignment<n>"` | ⛔ ia berisi **NAMA PERAN** | pecahan 582, 605, 628, 668, 731 — seluruhnya `pyWorkPage.pyPosition` ← `"ReasLifeAdmin"` / `"ReasLifeMedicalAdvisor"` / `"ReasLifeSPV"`; nol baris menyetelnya ke `"Assignment<n>"`; 11 gerbang di korpus membandingkannya dengan nama peran |
+| 2 | *"`IsSendtoMedical` kondisinya tidak terbaca dari tag"* `[keputusan work owner]` | `[ditutup oleh XML]` — `pyWorkPage.SendtoMedical = 1` | `When/IsSendtoMedical.xml` pecahan 165 (`pyConditionString`) dan 318 (`compareTwoValues`); label 317 memang cetakan kosong |
+| 3 | Claim Analis `[terbuka]` *("nol `pyPosition` menyebut `Assignment4`")* | **`ReasLifeSPV`** | ADR-U-0002 tabel pemetaan tahap; ADR itu sendiri menjelaskan diamnya korpus — *"model peran DIRANCANG, bukan dimigrasikan"* |
+| 4 | bukti butir **al** dari `MedicalCheckClaimLife.xml` *(penunjuk brief)* | dari `Section/Diagnose_Section.xml` | `MedicalCheckClaimLife.xml` (745.295 byte) memuat **nol** `DiagnoseLife`, `ICD_Code`, maupun `.Disease`; ia menampilkan peserta (`.ClientName`, `.Note`, `.SourceOfBusiness`). Daftar diagnosanya ada di `Diagnose_Section` pecahan 1657–1658 dan 2973–2974 |
+| 5 | bentuk tabel **al** = dua kolom | **empat**: `.ICD_Code`, `.Disease`, `STS_REJECT`, dan kunci peserta | `SetSTS_Reject` pecahan 241/250/257–258 menulis `.STS_REJECT` pada `.DiagnoseList` kelas `Data-DiagnoseLife`, induknya `Int-LIFE_PREMIUM_DETAIL` — jadi per peserta |
+
+### Hasil `/code-review` atas titik tetap `9b48e32`
+
+⛔ **Cacat terbesar tiket ini milik saya, dan ia tidak akan terlihat tanpa Oracle.** Saya membalik
+arti `PY_POSITION`. Akibatnya setiap pembacaan baris nyata berakhir *"tidak dikenal"* dan
+perpindahan tahap **selalu gagal** — sedangkan seluruh test hijau, sebab tak satu pun menyentuh
+kolomnya. Model ditulis ulang: yang tersimpan adalah **peran pemegang**, dan perpindahan adalah
+**serah terima peran**.
+
+| # | Temuan | Tindakan |
+| ---: | --- | --- |
+| 1 | `PY_POSITION` dibalik artinya | ✅ model ditulis ulang; `TestKolomPyPositionMenyimpanNamaPeran` mengunci arahnya, termasuk bahwa `"Assignment1"` **harus** tetap tak dikenal |
+| 2 | Claim Analis ditandai `[terbuka]` padahal ADR-U-0002 memutuskannya | ✅ `ReasLifeSPV` dipasang; saya memperlakukan diamnya korpus sebagai pertanyaan, padahal ia celah yang ADR itu tutup |
+| 3 | **Nol aturan kesahan perpindahan** — Input Register langsung ke Claim Analis lolos | ✅ `SerahTerimaSah` dari penyambung Flow + ADR-U-0002 |
+| 4 | `JalurBalik` sebagai bendera BEBAS, dan test saya bahkan menegaskan keduanya menyala — keadaan yang mustahil | ✅ diturunkan dari pasangan perannya; keadaan mustahil itu kini tidak dapat dibentuk |
+| 5 | TOCTOU: tahap asal dibaca di luar transaksi tanpa syarat `WHERE` | ✅ `AND PY_POSITION = :asal` |
+| 6 | ADR-U-0007 — jalur balik disebut namanya di ADR, dan `Pindah` merekam nol | ✅ `Jejak` + `JejakBelumDiputuskan`, direkam di dalam transaksi |
+| 7 | `PeranTahap` peta ekspor yang dapat ditulis pemanggil | ✅ `PeranPemegangTahap` |
+| 8 | Blok `Exec`+`RowsAffected` lima salinan | ✅ `pastikanSatuBaris` |
+| 9 | Tiga AC tercentang tanpa terkirim *(dua jalur balik SPV, satu antrean)* | ✅ **dibatalkan centangnya** — 6/7 menjadi **3/7** |
+
+⛔ Tersisa dan dinyatakan: antrean per peran *(nol query, nol pintu, nol layar)*, dua layar tahap,
+dan test `db` untuk perpindahan tahap. Ditambah `[terbuka — work owner]` baru: `PY_POSITION` tidak
+dapat membedakan Input Register dari Outstanding, sebab keduanya dipegang peran yang sama.
+
+**Verifikasi sesudah perbaikan:** vet · vet db · gofmt nol · build · **187 PASS · 0 FAIL** ·
+28 SKIP · `tsc` · 7 JS · 88 modul.

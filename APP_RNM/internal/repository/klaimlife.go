@@ -448,3 +448,82 @@ func (r *KlaimLife) CaseIDKlaim(ctx context.Context, klaimID string) (string, er
 	}
 	return caseID.String, nil
 }
+
+// PerbaruiTahap memindahkan kasus di tangga kerja.
+//
+// ⛔ SATU pernyataan, dan ia TIDAK menyentuh STS_REJECT mana pun. Perpindahan
+// tahap memindahkan pekerjaan, bukan memutuskan klaim (ADR-U-0011).
+//
+// Kolomnya sudah ada di migrasi 001: PY_POSITION, SENDTO_ADMIN, SENDTO_MEDICAL.
+// Nol kolom baru, nol langkah migrasi.
+//
+// ⛔ Tahap ASAL ikut sebagai syarat WHERE. Ia dibaca di luar transaksi, jadi
+// dapat berubah di antara baca dan tulis - dan dua pemindahan serentak dapat
+// sama-sama menang, yang kedua menimpa yang pertama tanpa jejak. Penjaga yang
+// sama sudah dipasang pada perubahan status (tiket 04).
+func (r *KlaimLife) PerbaruiTahap(ctx context.Context, tx *Tx,
+	klaimID, tahapAsal, tahap, sendtoAdmin, sendtoMedical string,
+	saat time.Time) error {
+	tabel, err := r.db.Qualify("T_WORK_CLAIM")
+	if err != nil {
+		return err
+	}
+	q := fmt.Sprintf(`UPDATE %s SET PY_POSITION = :1, SENDTO_ADMIN = :2,
+		 SENDTO_MEDICAL = :3, TGL_UPDATE = :4
+		 WHERE ID = :5 AND PY_POSITION = :6`, tabel)
+	if err := PeriksaSQL(q); err != nil {
+		return err
+	}
+	hasil, err := tx.tx.ExecContext(ctx, q, kosongJadiNil(tahap),
+		kosongJadiNil(sendtoAdmin), kosongJadiNil(sendtoMedical),
+		waktuJadiNil(saat), klaimID, kosongJadiNil(tahapAsal))
+	if err != nil {
+		return fmt.Errorf("repository: memperbarui tahap: %w", err)
+	}
+	n, err := hasil.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("repository: mencacah baris work: %w", err)
+	}
+	if n != 1 {
+		return fmt.Errorf("repository: perpindahan tahap menyentuh %d baris, mau 1 "+
+			"(kasus yang tahapnya sudah berubah sejak dibaca tidak ditimpa)", n)
+	}
+	return nil
+}
+
+// TahapKlaim membaca PY_POSITION baris work object sebuah klaim.
+func (r *KlaimLife) TahapKlaim(ctx context.Context, klaimID string) (string, error) {
+	tabel, err := r.db.Qualify("T_WORK_CLAIM")
+	if err != nil {
+		return "", err
+	}
+	q := fmt.Sprintf(`SELECT PY_POSITION FROM %s WHERE ID = :1`, tabel)
+	if err := PeriksaSQL(q); err != nil {
+		return "", err
+	}
+	var posisi sql.NullString
+	err = r.db.sql.QueryRowContext(ctx, q, klaimID).Scan(&posisi)
+	if err == sql.ErrNoRows {
+		return "", fmt.Errorf("repository: work object %q tidak ada", klaimID)
+	}
+	if err != nil {
+		return "", fmt.Errorf("repository: membaca PY_POSITION: %w", err)
+	}
+	return posisi.String, nil
+}
+
+// pastikanSatuBaris memeriksa sebuah pernyataan menyentuh tepat satu baris.
+//
+// ⛔ Satu tempat. Blok Exec + RowsAffected + "menyentuh %d baris" sudah
+// tersalin lima kali di berkas ini, dan salinan keenam pasti berbeda sedikit
+// dari yang lain - biasanya yang lupa memeriksa cacahnya sama sekali.
+func pastikanSatuBaris(hasil sql.Result, nama string) error {
+	n, err := hasil.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("repository: mencacah baris %s: %w", nama, err)
+	}
+	if n != 1 {
+		return fmt.Errorf("repository: %s menyentuh %d baris, mau 1", nama, n)
+	}
+	return nil
+}
