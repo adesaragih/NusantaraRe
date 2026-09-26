@@ -7,6 +7,8 @@ import {
   tampilUang,
   tolakBarisAdjustment,
   serahkanKeKomite,
+  tambahPutaran,
+  bolehPutaranBaru,
   bolehSerahkanDiLayar,
   dampakHapusKlaim,
   hapusKlaim,
@@ -38,6 +40,7 @@ export default function KlaimLife() {
   const [memuat, setMemuat] = useState<boolean>(false) // sedang menunggu server?
   const [menolak, setMenolak] = useState<string | null>(null) // baris yang sedang ditolak
   const [menyerahkan, setMenyerahkan] = useState<string | null>(null) // baris ke Komite
+  const [memutar, setMemutar] = useState<string | null>(null) // peserta yang dibuka putarannya
   const [dampak, setDampak] = useState<DampakHapus | null>(null) // isi popup konfirmasi
   const [menghapus, setMenghapus] = useState<boolean>(false) // permintaan hapus berjalan
 
@@ -89,6 +92,29 @@ export default function KlaimLife() {
   // Dibaca ulang, bukan diubah di layar: status klaim adalah TURUNAN dari
   // seluruh barisnya, dan menebaknya di sisi klien berarti dua sumber
   // kebenaran yang dapat berbeda.
+  async function putaranBaru(pesertaID: string) {
+    if (!klaim) return
+    setGalat(null)
+    setMemutar(pesertaID)
+    try {
+      await tambahPutaran(klaim.id, pesertaID)
+      setKlaim(await ambilKlaimLife(klaim.id))
+    } catch (err: unknown) {
+      const kode = kodeStatusGalat(err)
+      setGalat(
+        kode === 403
+          ? 'Hanya ReasLifeSPV yang dapat membuka putaran berikutnya.'
+          : kode === 409
+            ? 'Putaran berikutnya hanya lahir sesudah baris terakhir ditolak.'
+            : kode === 501
+              ? 'Jejak audit belum dapat direkam; tempatnya belum diputuskan.'
+              : 'Gagal membuka putaran berikutnya.',
+      )
+    } finally {
+      setMemutar(null)
+    }
+  }
+
   async function serahkan(pesertaID: string, adjID: string) {
     if (!klaim) return
     setGalat(null)
@@ -248,6 +274,21 @@ export default function KlaimLife() {
                 Peserta {p.nomorSertifikat || p.id}{' '}
                 <small>({p.baris.length} baris)</small>
               </h4>
+
+              {/* ⛔ Penolakan bukan akhir: klaim TIDAK terminal (ADR-U-0011).
+                  Yang terminal adalah baris, dan baris berikutnya memulai
+                  putaran baru dengan angka yang diperbaiki. */}
+              {bolehPutaranBaru(p.baris) && (
+                <p>
+                  <button
+                    type="button"
+                    disabled={memutar === p.id}
+                    onClick={() => void putaranBaru(p.id)}
+                  >
+                    {memutar === p.id ? 'Membuka…' : 'Putaran berikutnya'}
+                  </button>
+                </p>
+              )}
 
               {p.baris.length === 0 ? (
                 <p>Belum ada baris adjustment.</p>

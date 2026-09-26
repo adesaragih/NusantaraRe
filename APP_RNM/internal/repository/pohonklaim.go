@@ -148,6 +148,92 @@ func waktuJadiNil(t time.Time) any {
 var ErrIdentitasBelumAda = errors.New(
 	"repository: T_WORK_CLAIM.ID belum terisi; pembangkit nomor CLM-/KMT- masih terbuka")
 
+// sisipBarisAdjustment menulis SATU baris adjustment.
+//
+// Dipakai `Simpan` (pohon utuh) dan `SisipkanBaris` (satu baris lanjutan).
+// Kolom dan urutannya hidup di sini saja.
+func (r *PohonKlaim) sisipBarisAdjustment(ctx context.Context, tx *Tx,
+	tabel, pesertaID string, adj models.BarisAdjustment) error {
+
+	return r.exec(ctx, tx, fmt.Sprintf(`INSERT INTO %s
+		(ID, PREMIUM_LIST_DETAIL_ID, CLAIM_AMOUNT, CURRENCY, STS_REJECT,
+		 ACCEPTED_NO, ACCEPTATION_DATE, KOMITE_ID,
+		 NAME_OF_BANK, ID_BANK, ACCOUNT_NO,
+		 SHARE_NUSANTARA_RE, CEDING_RETENTION, SUM_REASURED, SUM_INSURED,
+		 SHARE_RETRO, RETROCEDED_SHARE, CURRENCY_ID)
+		VALUES (:1,:2,:3,:4,:5,:6,:7,:8,:9,:10,:11,:12,:13,:14,:15,:16,:17,:18)`, tabel),
+		adj.ID, pesertaID, teksDesimal(adj.JumlahKlaim),
+		kosongJadiNil(adj.JumlahKlaim.Currency), kosongJadiNil(adj.KodeStatus),
+		kosongJadiNil(adj.NomorAkseptasi), waktuJadiNil(adj.TanggalAkseptasi),
+		kosongJadiNil(adj.KomiteID),
+		kosongJadiNil(adj.NamaBank), kosongJadiNil(adj.IDBank),
+		kosongJadiNil(adj.NomorRekening),
+		teksDesimal(adj.ShareNusantaraRe), teksDesimal(adj.CedingRetention),
+		teksDesimal(adj.SumReasured), teksDesimal(adj.SumInsured),
+		teksDesimal(adj.ShareRetro), teksDesimal(adj.RetrocededShare),
+		kosongJadiNil(adj.CurrencyID))
+}
+
+// ErrBarisBaruBerkeputusan - baris baru tidak pernah lahir sudah diputus.
+//
+// Keputusan atas baris milik Komite Claim Life
+// `[keputusan work owner 2026-09-15]`; jalur ini hanya melahirkan baris
+// Outstanding.
+var ErrBarisBaruBerkeputusan = errors.New(
+	"repository: baris adjustment baru tidak boleh lahir sudah berkeputusan")
+
+// PeriksaBarisBaru menolak kode status yang bukan pembuka putaran.
+//
+// Hanya Outstanding dan kosong yang lolos: baris baru memulai putaran, ia
+// tidak lahir sudah diputus.
+func PeriksaBarisBaru(kodeStatus string) error {
+	if kodeStatus != "" && kodeStatus != models.KodeOutstanding {
+		return fmt.Errorf("%w: baris baru berkode %q",
+			ErrBarisBaruBerkeputusan, kodeStatus)
+	}
+	return nil
+}
+
+// SisipkanBaris menulis satu baris adjustment putaran berikutnya (tiket 11).
+//
+// Pengenalnya diambil dari `SEQ_CLAIMLF_ADJ` bila kosong - identitas seluruh
+// tabel `T_CLAIMLF_*` berasal dari sequence, bukan dari cap waktu maupun teks
+// yang disusun sendiri (ADR-U-0006).
+//
+// ⛔ Ia menulis STS_REJECT baris BARU, bukan mengubah baris lama. Keputusan
+// atas baris lama milik Komite Claim Life.
+func (r *PohonKlaim) SisipkanBaris(ctx context.Context, tx *Tx,
+	pesertaID string, adj models.BarisAdjustment) (string, error) {
+
+	if strings.TrimSpace(pesertaID) == "" {
+		return "", fmt.Errorf("repository: pengenal peserta kosong")
+	}
+	// ⛔ PENJAGA DI TEMPAT YANG BENAR. Jalur ini melahirkan baris BARU, dan
+	// baris baru tidak pernah lahir sudah berkeputusan. Sebelumnya penjagaan
+	// itu hanya berupa pola atas teks `hasilkomite.go` - dan pola itu dapat
+	// dielakkan oleh `models.BarisAdjustment{KodeStatus: "1"}`, yang memakai
+	// titik dua, bukan tanda sama dengan. Di sini tidak ada bentuk penulisan
+	// yang dapat mengelakkannya: nilainya diperiksa saat jalan.
+	if err := PeriksaBarisBaru(adj.KodeStatus); err != nil {
+		return "", err
+	}
+	tabel, err := r.db.Qualify("T_CLAIMLF_ADJUSTMENT")
+	if err != nil {
+		return "", err
+	}
+	if adj.ID == "" {
+		id, err := r.nomorBerikut(ctx, tx, "SEQ_CLAIMLF_ADJ")
+		if err != nil {
+			return "", err
+		}
+		adj.ID = id
+	}
+	if err := r.sisipBarisAdjustment(ctx, tx, tabel, pesertaID, adj); err != nil {
+		return "", err
+	}
+	return adj.ID, nil
+}
+
 // nomorBerikut mengambil satu nomor dari sequence.
 //
 // "Sequence" adalah pembangkit angka berurut milik Oracle. ADR-U-0006
@@ -305,24 +391,12 @@ func (r *PohonKlaim) Simpan(ctx context.Context, tx *Tx, p models.PohonKlaim) er
 			// hanya CURRENCY yang ditulis, sehingga tujuh kolom lain SELALU
 			// NULL walau DDL menyediakannya - pewarisan yang tiket janjikan
 			// tidak pernah sampai ke basis data.
-			err = r.exec(ctx, tx, fmt.Sprintf(`INSERT INTO %s
-				(ID, PREMIUM_LIST_DETAIL_ID, CLAIM_AMOUNT, CURRENCY, STS_REJECT,
-				 ACCEPTED_NO, ACCEPTATION_DATE, KOMITE_ID,
-				 NAME_OF_BANK, ID_BANK, ACCOUNT_NO,
-				 SHARE_NUSANTARA_RE, CEDING_RETENTION, SUM_REASURED, SUM_INSURED,
-				 SHARE_RETRO, RETROCEDED_SHARE, CURRENCY_ID)
-				VALUES (:1,:2,:3,:4,:5,:6,:7,:8,:9,:10,:11,:12,:13,:14,:15,:16,:17,:18)`, adjT),
-				adj.ID, ps.ID, teksDesimal(adj.JumlahKlaim),
-				kosongJadiNil(adj.JumlahKlaim.Currency), kosongJadiNil(adj.KodeStatus),
-				kosongJadiNil(adj.NomorAkseptasi), waktuJadiNil(adj.TanggalAkseptasi),
-				kosongJadiNil(adj.KomiteID),
-				kosongJadiNil(adj.NamaBank), kosongJadiNil(adj.IDBank),
-				kosongJadiNil(adj.NomorRekening),
-				teksDesimal(adj.ShareNusantaraRe), teksDesimal(adj.CedingRetention),
-				teksDesimal(adj.SumReasured), teksDesimal(adj.SumInsured),
-				teksDesimal(adj.ShareRetro), teksDesimal(adj.RetrocededShare),
-				kosongJadiNil(adj.CurrencyID))
-			if err != nil {
+			// ⛔ SATU pernyataan insert baris adjustment di seluruh
+			// repository, dipakai juga oleh `SisipkanBaris` (tiket 11). Dua
+			// salinan berarti dua kesempatan untuk berbeda - dan yang paling
+			// mudah tertinggal justru kolom warisannya, yang sudah pernah
+			// tertinggal sekali.
+			if err := r.sisipBarisAdjustment(ctx, tx, adjT, ps.ID, adj); err != nil {
 				return err
 			}
 

@@ -7,6 +7,8 @@ import {
   hapusKlaim,
   serahkanKeKomite,
   bolehSerahkanDiLayar,
+  bolehPutaranBaru,
+  tambahPutaran,
   pesanGalat,
   type DampakHapus,
 } from './api'
@@ -137,5 +139,36 @@ describe('kontrol layar bukan pagar', () => {
     }
     expect(bolehSerahkanDiLayar({ ...dasar, komiteId: 'KMT-000001' })).toBe(false)
     expect(bolehSerahkanDiLayar({ ...dasar, status: 'Ditolak', kodeStatus: '2' })).toBe(false)
+  })
+})
+
+// Tiket 11 - klaim tidak terminal.
+describe('putaran berikutnya', () => {
+  const baris = (kodeStatus: string) => ({
+    id: 'UJI-A',
+    status: kodeStatus === '2' ? 'Ditolak' : 'Outstanding',
+    kodeStatus,
+    statusDiketahui: true,
+    jumlahKlaim: { amount: '1', currency: 'IDR' },
+    nomorAkseptasi: '',
+    tanggalAkseptasi: '',
+    komiteId: '',
+  })
+
+  it('membuka putaran hanya sesudah baris TERAKHIR ditolak', () => {
+    // ⛔ Yang menentukan baris terakhir, bukan "ada baris yang pernah
+    // ditolak": klaim yang barisnya ditolak lalu sudah dibuatkan penggantinya
+    // tidak boleh menawarkan putaran ketiga.
+    expect(bolehPutaranBaru([baris('2')])).toBe(true)
+    expect(bolehPutaranBaru([baris('2'), baris('0')])).toBe(false)
+    expect(bolehPutaranBaru([baris('0')])).toBe(false)
+    expect(bolehPutaranBaru([baris('1')])).toBe(false)
+    expect(bolehPutaranBaru([])).toBe(false)
+  })
+
+  it('membuka putaran per PESERTA, bukan per baris', () => {
+    // Unit keputusan adalah baris (ADR-U-0011), tetapi putaran berikutnya
+    // lahir pada pesertanya - barisnya belum ada saat diminta.
+    expect(tambahPutaran.length).toBe(2)
   })
 })

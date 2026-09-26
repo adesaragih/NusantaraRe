@@ -33,6 +33,10 @@ var berkasYangBolehMenulisStatus = map[string]string{
 	"tolak.go":       "WajibPeran(pelaku, PeranRejectOutstanding)",
 	"pendaftaran.go": "WajibPeran(pelaku, PeranInputRegister)",
 	"adjustment.go":  "", // TambahBaris/WarisiKolom - murni, tanpa pelaku
+	// Tiket 11: ia menulis Outstanding pada baris BARU, bukan mengubah
+	// keputusan baris lama. Keputusan atas baris lama milik Komite Claim
+	// Life `[keputusan work owner 2026-09-15]`.
+	"hasilkomite.go": "WajibPeran(pelaku, PeranSimpanOutstanding)",
 
 	// Lapisan repository - ia MENJALANKAN SQL-nya, dan memang tidak memegang
 	// pelaku. Gerbangnya ada di layanan yang memanggilnya; yang dijaga di

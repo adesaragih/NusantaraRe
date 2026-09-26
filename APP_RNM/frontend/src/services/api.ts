@@ -238,6 +238,9 @@ export async function daftarKlaimLife(minta: PermintaanDaftar): Promise<HasilDaf
  * ke Go, pada medan yang berkas ini sendiri tandai "tidak ditampilkan".
  * Kata ini datang dari `models.StatusBaris.String()` dan berubah bersamanya.
  */
+/** Kode mentah STS_REJECT untuk baris yang ditolak. */
+export const KODE_DITOLAK = '2'
+
 export const STATUS_OUTSTANDING = 'Outstanding'
 
 /**
@@ -254,6 +257,36 @@ export const STATUS_OUTSTANDING = 'Outstanding'
  */
 export async function tolakBarisAdjustment(klaimID: string, adjID: string): Promise<void> {
   await api.post(`/api/klaim-life/${encodeURIComponent(klaimID)}/adjustment/${encodeURIComponent(adjID)}/tolak`)
+}
+
+/**
+ * Membuka putaran adjustment berikutnya bagi seorang peserta.
+ *
+ * Inilah yang membuat klaim TIDAK TERMINAL: penolakan Komite menghasilkan
+ * putaran berikutnya, bukan akhir (ADR-U-0011). Yang terminal adalah BARIS.
+ *
+ * Jawaban yang mungkin:
+ *   403 bukan ReasLifeSPV
+ *   409 baris terakhir belum ditolak
+ *   501 tempat jejak audit belum diputuskan (butir am)
+ */
+export async function tambahPutaran(klaimID: string, pesertaID: string): Promise<void> {
+  await api.post(
+    `/api/klaim-life/${encodeURIComponent(klaimID)}` +
+      `/peserta/${encodeURIComponent(pesertaID)}/putaran`,
+  )
+}
+
+/**
+ * Apakah layar menampilkan kontrol "Putaran berikutnya" bagi seorang peserta.
+ *
+ * ⛔ Hanya keadaan BARIS TERAKHIR yang menentukan - dan hanya penolakan yang
+ * membuka putaran baru. Seperti kontrol lain di layar ini, ia kenyamanan
+ * bukan pagar: yang menolak adalah services (403/409).
+ */
+export function bolehPutaranBaru(baris: BarisAdjustment[]): boolean {
+  const terakhir = baris[baris.length - 1]
+  return terakhir !== undefined && terakhir.kodeStatus === KODE_DITOLAK
 }
 
 /**

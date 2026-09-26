@@ -388,6 +388,34 @@ func (r *KlaimLife) CerminkanHeader(ctx context.Context, tx *Tx,
 	return nil
 }
 
+// PasangPenandaDipilih menyetel IS_CHECK peserta menjadi dipilih-untuk-diklaim.
+//
+// ⛔ Kebalikan `CabutPenandaDipilih`, dan ia WAJIB dipanggil ketika putaran
+// adjustment berikutnya lahir. `[terverifikasi]` `Komite Claim Life/Activity/
+// KomitePostAdjustment.xml` pecahan baris 1900, 2117, 4896, 5341, 7622, dan
+// 8067: keenam prasyaratnya menuntut `.IsCheck = true`. Peserta yang
+//
+// ⚠️ SENSUS, jendelanya DINAMAI. Di berkas pecahan `KomitePostAdjustment.xml`
+// kata `IsCheck` muncul di **13** baris; **4** di antaranya tag
+// `<pyStepsPreCondParamsWhen>` langsung (4896, 5341, 7622, 8067), dan **2**
+// lagi tersimpan sebagai `rowdata REPEATINGINDEX="pyStepsPreCondParamsWhen"`
+// (1900, 2117) - masing-masing berpasangan dengan kembaran `<pyExpression>`
+// (1897, 2114) yang berisi kondisi yang sama.
+//
+// Jendela yang dipakai: **LANGKAH PRASYARAT YANG BERBEDA** → **6**. Bila
+// yang dihitung ELEMEN XML pembawa kondisi, angkanya **8**; bila seluruh
+// penyebutan, **13**. Ketiganya benar untuk pertanyaan yang berbeda, dan
+// angka 6 tidak berarti apa-apa tanpa kalimat ini.
+//
+// Audit: `py` + pemecah `><` → `>\n<`, lalu cacah baris ber-`IsCheck` yang
+// juga ber-`pyStepsPreCondParamsWhen` (4) dan yang ber-`rowdata` (2).
+// penandanya masih tercabut sejak penolakan sebelumnya tidak akan pernah
+// diambil Komite - putarannya lahir, lalu mati diam-diam.
+func (r *KlaimLife) PasangPenandaDipilih(ctx context.Context, tx *Tx,
+	pesertaID string) error {
+	return r.setelPenandaDipilih(ctx, tx, pesertaID, "true")
+}
+
 // CabutPenandaDipilih menyetel IS_CHECK peserta menjadi tidak-dipilih.
 //
 // `[terverifikasi]` `RejectOSClaimLife_Act` langkah 2 (pecahan baris 517-518)
@@ -400,6 +428,16 @@ func (r *KlaimLife) CerminkanHeader(ctx context.Context, tx *Tx,
 // (ADR-U-0022), dan bukan NULL: tidak-dipilih adalah pernyataan, sedangkan
 // NULL berarti belum pernah diputuskan.
 func (r *KlaimLife) CabutPenandaDipilih(ctx context.Context, tx *Tx, pesertaID string) error {
+	return r.setelPenandaDipilih(ctx, tx, pesertaID, "false")
+}
+
+// setelPenandaDipilih menulis IS_CHECK peserta.
+//
+// ⛔ Nilainya TEKS - "true"/"false" apa adanya seperti kolomnya, bukan boolean
+// Go yang diformat (ADR-U-0022).
+func (r *KlaimLife) setelPenandaDipilih(ctx context.Context, tx *Tx,
+	pesertaID, nilai string) error {
+
 	tabel, err := r.db.Qualify("T_CLAIMLF_PREMIUMLIST_DETAIL")
 	if err != nil {
 		return err
@@ -408,18 +446,11 @@ func (r *KlaimLife) CabutPenandaDipilih(ctx context.Context, tx *Tx, pesertaID s
 	if err := PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, "false", pesertaID)
+	hasil, err := tx.tx.ExecContext(ctx, q, nilai, pesertaID)
 	if err != nil {
-		return fmt.Errorf("repository: mencabut IS_CHECK: %w", err)
+		return fmt.Errorf("repository: menyetel IS_CHECK menjadi %q: %w", nilai, err)
 	}
-	n, err := hasil.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("repository: mencacah baris peserta: %w", err)
-	}
-	if n != 1 {
-		return fmt.Errorf("repository: pencabutan IS_CHECK menyentuh %d baris, mau 1", n)
-	}
-	return nil
+	return pastikanSatuBaris(hasil, "penyetelan IS_CHECK")
 }
 
 // CaseIDKlaim membaca CASE_ID baris work object sebuah klaim.
