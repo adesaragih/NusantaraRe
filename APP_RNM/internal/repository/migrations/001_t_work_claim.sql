@@ -22,8 +22,19 @@
 --
 -- COVER_KEY menunjuk T_WORK_CLAIM.ID induknya (relasi 1: tabel ini menunjuk
 -- dirinya sendiri). NULL bila baris tidak punya induk.
--- [terbuka] Apakah COVER_KEY dipasangi REFERENCES belum diputuskan (tiket 14
--- bab Blocker), sehingga constraint-nya TIDAK dipasang di sini.
+-- [keputusan work owner 26-09-2026, butir d] COVER_KEY DIPASANGI REFERENCES,
+-- tetap nullable. Oracle karena itu menolak penunjuk yatim: sebuah baris hanya
+-- boleh menunjuk induk yang benar-benar ada, atau tidak menunjuk sama sekali.
+-- Ini FK yang menunjuk tabelnya sendiri, dan itu sah di Oracle.
+--
+-- TANPA "ON DELETE": aturan hapus bawaan Oracle adalah MENOLAK. Kaskade akan
+-- keliru di sini - COVER_KEY penunjuk KE ATAS, bukan kepemilikan, sehingga
+-- menghapus induk tidak boleh ikut menghapus anaknya. Akibatnya menghapus
+-- baris work yang masih ditunjuk baris lain akan GAGAL dengan ORA-02292,
+-- bukan diam-diam membuat penunjuk yatim.
+-- [terbuka] Apakah jalur hapus tiket 15 memilih melepas penunjuknya lebih dulu
+-- atau menolak menghapus - pemiliknya work owner, dan belum teruji: migrasi ini
+-- belum pernah berjalan di Oracle mana pun.
 CREATE TABLE {skema}.T_WORK_CLAIM (
   ID              VARCHAR2(32) NOT NULL,
   COVER_KEY       VARCHAR2(32),
@@ -36,7 +47,9 @@ CREATE TABLE {skema}.T_WORK_CLAIM (
   CREATE_OP       VARCHAR2(64),
   CREATE_OP_NAME  VARCHAR2(128),
   TGL_UPDATE      DATE,
-  CONSTRAINT PK_T_WORK_CLAIM PRIMARY KEY (ID)
+  CONSTRAINT PK_T_WORK_CLAIM PRIMARY KEY (ID),
+  CONSTRAINT FK_WORK_COVER_KEY FOREIGN KEY (COVER_KEY)
+    REFERENCES {skema}.T_WORK_CLAIM (ID)
 )
 /
 CREATE INDEX {skema}.IX_WORK_CLAIM_COVER_KEY ON {skema}.T_WORK_CLAIM (COVER_KEY)

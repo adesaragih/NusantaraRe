@@ -14,11 +14,14 @@
 -- Ratio dan bukan Money: ia perbandingan, bukan mata uang, sehingga keduanya
 -- tidak pernah terjumlahkan. NUMBER tanpa presisi TIDAK dipakai di mana pun -
 -- dijaga TestNolNumberTanpaPresisi.
--- ⚠️ PENYIMPANGAN SADAR dari ADR-U-0016 Akibat 2, yang berbunyi "kolom persen
--- tidak termasuk - ia bukan uang, dan tetap mengikuti ketetapan modulnya".
--- Keputusan work owner c menyamakan presisi kolom persen dan rate dengan kolom
--- uang. [terbuka] ADR-U-0016 belum diamandemen; sampai itu terjadi, berkas ini
--- yang memikul catatannya.
+-- KETETAPAN MODUL CLAIM LIFE atas kolom persen dan rate, SESUAI ADR-U-0016
+-- Akibat 2 - bukan penyimpangan darinya. Akibat 2 berbunyi "kolom persen tidak
+-- termasuk - ia bukan uang, dan tetap mengikuti ketetapan modulnya", yaitu ia
+-- MENYERAHKAN kolom itu ke modul masing-masing. Keputusan work owner c
+-- (26-09-2026) adalah ketetapan modul ini, persis yang diserahkan kepadanya.
+-- Karena itu nol amandemen ADR diperlukan.
+-- `[keputusan work owner 26-09-2026, butir p1]` meralat label "penyimpangan
+-- sadar" yang ditulis ronde 3 di tempat ini.
 --
 -- Satu baris mewakili satu baris AdjustmentList, dan itulah unit keputusan
 -- mesin status (ADR-U-0011). Induknya PESERTA, bukan header klaim.
@@ -28,8 +31,13 @@
 -- adjustment sama dengan tepat satu kasus komite. Oracle mengizinkan banyak
 -- NULL pada index unik, jadi baris yang belum pernah dikirim ke Komite tetap
 -- boleh banyak.
--- [terbuka] Apakah KOMITE_ID dipasangi REFERENCES belum diputuskan (tiket 14
--- bab Blocker), sehingga constraint-nya TIDAK dipasang di sini.
+-- [keputusan work owner 26-09-2026, butir d] KOMITE_ID DIPASANGI REFERENCES ke
+-- T_WORK_CLAIM(ID), tetap nullable. Baris yang belum pernah dikirim ke Komite
+-- tetap NULL; yang sudah, wajib menunjuk baris komite yang benar-benar ada.
+--
+-- TANPA "ON DELETE", sebab alasan yang sama dengan COVER_KEY di 001: ini
+-- penunjuk KE ATAS, bukan kepemilikan. Menghapus baris komite tidak boleh ikut
+-- menghapus baris adjustment yang menunjuknya.
 CREATE TABLE {skema}.T_CLAIMLF_ADJUSTMENT (
   ID                      VARCHAR2(32) NOT NULL,
   PREMIUM_LIST_DETAIL_ID  VARCHAR2(32),
@@ -51,7 +59,9 @@ CREATE TABLE {skema}.T_CLAIMLF_ADJUSTMENT (
   KOMITE_ID               VARCHAR2(32),
   CONSTRAINT PK_T_CLAIMLF_ADJ PRIMARY KEY (ID),
   CONSTRAINT FK_ADJ_PLD FOREIGN KEY (PREMIUM_LIST_DETAIL_ID)
-    REFERENCES {skema}.T_CLAIMLF_PREMIUMLIST_DETAIL (ID) ON DELETE CASCADE
+    REFERENCES {skema}.T_CLAIMLF_PREMIUMLIST_DETAIL (ID) ON DELETE CASCADE,
+  CONSTRAINT FK_ADJ_KOMITE FOREIGN KEY (KOMITE_ID)
+    REFERENCES {skema}.T_WORK_CLAIM (ID)
 )
 /
 CREATE INDEX {skema}.IX_ADJ_PLD_ID ON {skema}.T_CLAIMLF_ADJUSTMENT (PREMIUM_LIST_DETAIL_ID)

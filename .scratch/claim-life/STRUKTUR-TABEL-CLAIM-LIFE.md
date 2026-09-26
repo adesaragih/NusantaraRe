@@ -288,6 +288,32 @@ treaty-year** dari satu baris adjustment. Nilainya **dibekukan** saat adjustment
 
 ## T_CLAIMLF_ADJUSTMENT_SPREADING_RETRO
 
+> **⚠️ RALAT 26 September 2026 — nama fisiknya `T_CLAIMLF_ADJ_SPREADING_RETRO`.**
+>
+> Nama di judul bab ini **36 byte**. `[keputusan work owner butir j, 26-09-2026]`: dipendekkan
+> menjadi **`T_CLAIMLF_ADJ_SPREADING_RETRO` (29 byte)**, dan itulah nama yang dipakai DDL, kode, dan
+> test sejak commit `8f5453b`.
+>
+> ⚠️ **Alasan aslinya — batas 30 byte — kini `[dugaan]`, bukan `[terverifikasi]`.** Oracle
+> menolak pengenal di atas 30 byte dengan `ORA-00972` hanya bila `COMPATIBLE < 12.2`. Katalog
+> instance **pengembangan** dibaca 26-09-2026 siang: versinya **12.2.0.1**, dan `COMPATIBLE`
+> **tidak terbaca** dengan hak yang ada. Versi **produksi** belum diketahui sama sekali. Jadi belum
+> dapat dipastikan apakah nama 36 byte itu sungguh ditolak. Keputusan j **tidak dibatalkan sendiri
+> oleh executor**; bila DBA memastikan `COMPATIBLE >= 12.2` di kedua lingkungan, j dapat ditinjau
+> ulang oleh work owner. Berkas migrasinya ikut diganti nama
+> menjadi `006_t_claimlf_adj_spreading_retro.sql` pada 26-09-2026 `[butir n]`, aman karena migrasi
+> belum pernah dijalankan di Oracle mana pun.
+>
+> `[terverifikasi]` Pemendekan ini sejalan dengan sistem berjalan, bukan menyimpang darinya:
+> seluruh nama tabel fisik yang sungguh dipakai Pega di modul Claim Life berukuran **≤ 23 byte**
+> (terpanjang `OS_AKSEPTASI_KLAIM_LIFE`). Nama 36 byte tidak pernah ada di korpus — ia lahir di
+> dokumen ini, bukan di Pega.
+>
+> Judul bab, tabel relasi, dan diagram di bawah **sengaja tidak ditulis ulang**: yang berubah hanya
+> nama fisiknya, dan menulis ulang dokumen akan menghapus jejak kenapa ia berubah. Di mana pun
+> dokumen ini menulis `T_CLAIMLF_ADJUSTMENT_SPREADING_RETRO`, yang ada di Oracle adalah
+> `T_CLAIMLF_ADJ_SPREADING_RETRO`.
+
 Pecahan spreading per reinsurer. Satu baris mewakili **satu reinsurer** pada satu baris spreading.
 
 | Kolom | Tipe | Null | Kunci | Sumber |

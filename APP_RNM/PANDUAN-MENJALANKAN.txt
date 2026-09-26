@@ -4,6 +4,7 @@ Backend Go + Frontend React (TypeScript) + Oracle
 ================================================================================
 
 Disusun 26 September 2026 dari kode pada commit 8f5453b.
+Diperbarui 26 September 2026 (ronde 4): pagar skema uji bab 3, angka test bab 7.
 Untuk siapa: siapa pun yang ingin menjalankan aplikasi ini di mesin Windows,
 termasuk yang baru mengenal Go dan React.
 
@@ -129,6 +130,25 @@ Setel di jendela backend:
 Ganti bagian di dalam <...> dengan nilai dari DBA. Skema uji adalah skema yang
 DBA sediakan khusus untuk pengembangan, bukan produksi.
 
+PERINGATAN SEBELUM MENJALANKAN TEST BERTAG db (bab 7):
+
+  `go test -tags=db` MENGHAPUS tabel di skema yang ditunjuk ORACLE_SCHEMA.
+  Yang dihapusnya termasuk OS_AKSEPTASI_KLAIM_LIFE, tabel datar warisan.
+  Skema uji harus skema KOSONG yang dibuat DBA khusus untuk itu - bukan
+  POOLDATA, dan bukan skema apa pun yang memuat tabel warisan sungguhan,
+  sekalipun di instance pengembangan.
+
+  Karena itu test bertag db menuntut satu env var lagi, sebagai pengakuan
+  sadar bahwa skema itu memang boleh dihapus isinya:
+
+    $env:ORACLE_SKEMA_UJI = 'true'
+
+  Tanpa itu test BERHENTI dengan galat, bukan lewat. Menunjuk POOLDATA juga
+  ditolak, dan ORACLE_SKEMA_UJI=true tidak mengubahnya.
+
+  Yang TIDAK dipagari: `go run ./cmd/api -migrate`. Ia hanya membuat objek,
+  tidak pernah menghapusnya.
+
 Aturan yang ditegakkan kode:
   - ORACLE_DSN terisi tetapi ORACLE_SCHEMA kosong: backend menolak start,
     pesan "konfigurasi: ORACLE_SCHEMA wajib terisi bila ORACLE_DSN terisi".
@@ -138,7 +158,7 @@ Aturan yang ditegakkan kode:
 Urutan pertama kali:
 
   go run ./cmd/api -migrate
-    membentuk 7 tabel, 5 sequence, 7 index di skema uji, lalu keluar.
+    membentuk 8 tabel, 5 sequence, 7 index di skema uji, lalu keluar.
     Log: "migrasi skema <skema>: 8 langkah dijalankan, 0 dilewati, N pernyataan"
 
   go run ./cmd/api -migrate
@@ -273,16 +293,19 @@ Dari folder APP_RNM:
 
   go vet ./...
   go test ./...
-    harus: ok untuk internal/models dan internal/repository; 73 test lulus;
-    paket lain "[no test files]".
+    harus: ok untuk internal/models, internal/repository, dan
+    internal/repository/skemauji; 83 test lulus; paket lain "[no test files]".
 
   go test -tags=db ./internal/...
-    tanpa ORACLE_DSN: 18 test SKIP dengan pesan
+    tanpa ORACLE_DSN: 19 test SKIP dengan pesan
     "lewati: skemauji: ORACLE_DSN belum dikonfigurasi". Itu perilaku yang
     benar, bukan lulus diam-diam.
-    dengan ORACLE_DSN + ORACLE_SCHEMA: seluruhnya harus PASS. Test membuat
-    skema uji dari migrasi yang sama dengan aplikasi, mengisi data buatan
-    berawalan UJI-, lalu membongkarnya.
+    dengan ORACLE_DSN + ORACLE_SCHEMA + ORACLE_SKEMA_UJI=true: seluruhnya
+    harus PASS. Test membuat skema uji dari migrasi yang sama dengan aplikasi,
+    mengisi data buatan berawalan UJI-, lalu membongkarnya.
+    Baca peringatan bab 3 lebih dulu: test ini MENGHAPUS tabel, dan hanya
+    "ORACLE_DSN kosong" yang dijawab SKIP. Salah konfigurasi, menunjuk
+    produksi, atau menunjuk skema yang bukan skema uji MENGGAGALKAN test.
 
   gofmt -l .
     harus tidak mencetak apa pun.
@@ -319,6 +342,11 @@ Gabungan yang setara "make check" (make tidak terpasang):
                                                                 yang salah
   test db semua SKIP                       ORACLE_DSN kosong    normal tanpa
                                                                 Oracle
+  "skemauji: menolak berjalan di luar     ORACLE_SKEMA_UJI     baca bab 3
+    skema uji"                             belum true, atau     dulu; jangan
+                                           skema = POOLDATA     asal menyetel
+                                                                env supaya
+                                                                lewat
   halaman tampil, "Buka" selalu gagal      celah bab 5          proxy belum ada
   npm run dev: port 5173 dipakai           proses lain          Vite otomatis
                                                                 pindah ke 5174;
@@ -369,6 +397,8 @@ Gabungan yang setara "make check" (make tidak terpasang):
      dan test.
   7. Migrasi hanya terhadap skema uji dari DBA. Instance lain butuh persetujuan
      manusia lebih dulu.
+  8. Test bertag db MENGHAPUS tabel. Skema uji tidak pernah POOLDATA, dan
+     tidak pernah skema yang memuat tabel warisan sungguhan.
 
 ================================================================================
 Akhir panduan. Rujukan lebih dalam: APP_RNM\README-BACA-DULU.md dan

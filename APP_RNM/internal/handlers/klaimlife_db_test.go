@@ -28,6 +28,12 @@ func server(t *testing.T) (*httptest.Server, func()) {
 	t.Helper()
 	sqlDB, skema, err := skemauji.Buka()
 	if err != nil {
+		// Hanya "Oracle belum dikonfigurasi" yang dilewati. Salah
+		// konfigurasi, menunjuk produksi, atau menunjuk skema yang bukan
+		// skema uji harus MENGGAGALKAN - test ini menghapus tabel.
+		if !skemauji.BolehDilewati(err) {
+			t.Fatalf("skema uji menolak: %v", err)
+		}
 		t.Skipf("lewati: %v", err)
 	}
 	ctx := context.Background()

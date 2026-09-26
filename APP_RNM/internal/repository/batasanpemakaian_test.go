@@ -187,3 +187,68 @@ func TestNolNamaTabelTelanjangDiQuery(t *testing.T) {
 	}
 	t.Logf("%d rujukan tabel diperiksa", diperiksa)
 }
+
+// Setiap pemanggil skemauji.Buka memeriksa BolehDilewati sebelum melewat.
+//
+// Kenapa ini dijaga test dan bukan diserahkan ke kehati-hatian: pola enam baris
+// itu disalin ke ENAM tempat di tiga paket. Test db ketujuh yang menyalin
+// bentuk lama - `if err != nil { t.Skipf(...) }` - akan membuka kembali lubang
+// yang ditutup ronde 4, dan tidak ada yang menyadarinya sebab test yang
+// MELEWAT tetap terlihat hijau.
+//
+// Yang dijaga: sesudah setiap `skemauji.Buka()`, dalam sepuluh baris
+// berikutnya, harus ada `BolehDilewati`.
+func TestSetiapPemanggilBukaMemeriksaBolehDilewati(t *testing.T) {
+	var berkas []string
+	err := filepath.Walk(filepath.FromSlash(akarModul), func(p string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			switch info.Name() {
+			case "frontend", "node_modules", "bin", ".git":
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		// Berkas ini sendiri dikecualikan: ia menyebut nama pemanggilnya di
+		// komentar dan di literal polanya, sehingga akan menghitung dirinya
+		// sendiri sebagai empat pemanggil. Alat ukur tidak boleh masuk ke
+		// dalam benda yang diukurnya.
+		if strings.HasSuffix(p, "_test.go") &&
+			!strings.HasSuffix(filepath.ToSlash(p), "/batasanpemakaian_test.go") {
+			berkas = append(berkas, p)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	diperiksa := 0
+	for _, nama := range berkas {
+		isi, err := os.ReadFile(nama)
+		if err != nil {
+			t.Fatal(err)
+		}
+		baris := strings.Split(string(isi), "\n")
+		for i, b := range baris {
+			// Hanya pemanggilan sungguhan - yang hasilnya ditampung - bukan
+			// penyebutan namanya di komentar.
+			if !strings.Contains(b, ":= skemauji.Buka()") {
+				continue
+			}
+			diperiksa++
+			jendela := strings.Join(baris[i:min(len(baris), i+10)], "\n")
+			if !strings.Contains(jendela, "BolehDilewati") {
+				t.Errorf("%s:%d memanggil skemauji.Buka() tanpa memeriksa BolehDilewati; "+
+					"galat pagar skema uji akan dilewati diam-diam", filepath.ToSlash(nama), i+1)
+			}
+		}
+	}
+	const mau = 6
+	if diperiksa != mau {
+		t.Errorf("pemanggil skemauji.Buka() ditemukan %d, mau %d; "+
+			"bila memang bertambah, perbarui angkanya di sini", diperiksa, mau)
+	}
+}

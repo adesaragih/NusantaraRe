@@ -360,6 +360,26 @@ penuh; koeksistensi ditolak), **ADR-0011** (seluruh **baris** adjustment ikut pi
       `TANGGAL_KONFIRMASI_BALIK` (§Blocker). `PL_NUMBER` tetap tidak ada, tetapi karena **diganti
       nama menjadi `POLICY_NO`** di `T_GENERAL_CLAIM` — bukan karena tabel ini menolaknya.
       **Jangan tebak rumah kelima kolom itu.** *(AC 37 spec)*
+      > `[keputusan work owner 26-09-2026, butir e′]` **Tiga dari lima kolom itu sudah ketemu
+      > rumahnya, dan rumahnya bukan Claim Life:** `TANGGAL_RESPON`, `TANGGAL_KONFIRMASI_BALIK`, dan
+      > `TANGGAL_REALISASI` adalah **tanggal PENAWARAN**, milik modul **PremiumList Life**. Penanda
+      > mereka karena itu **`[terbuka — PremiumList Life]`**, bukan `[terbuka]` tiket ini, dan berkas
+      > migrasi `002` **tidak disentuh** — nol kolom `TANGGAL_*` di DDL mana pun.
+      >
+      > `[terverifikasi]` Rantai buktinya, diperiksa **tiga kali dengan dua alat berbeda**:
+      > diketik manusia di `PremiumList Life/Section/InputOfferLife.xml` (label *Tanggal Respon*,
+      > *Tanggal Konfirmasi Balik*, *Tanggal Realisasi*) → disimpan `SaveOfferJsonLife_SQL.xml`
+      > → mendarat di `POOLDATA.JSON_OFFER_LIFE` sebagai `RESPONSE_DATE`, `RECONFIRMATION_DATE`,
+      > `REALIZATION_DATE` → dibaca hidup `GetOfferLife_sql.xml`.
+      >
+      > ⭐ Yang memutuskan: ketiga **nama kolom** itu muncul **nol kali** di seluruh modul Claim;
+      > ketiga **propertinya** muncul di Claim Life hanya di **4 berkas `Section\`** (menampilkan),
+      > dan **nol berkas `Activity\`** (menulis). Pega sendiri karena itu **membaca dan menampilkan**
+      > ketiganya di layar Claim Life, tetapi **tidak pernah menyimpannya** sebagai data klaim.
+      > Membuat kolomnya di skema klaim akan menyalin data milik modul lain.
+      >
+      > ⚠️ **Dua kolom sisanya — `TEAM_GROUP` dan `BUSINESS_ID` — tetap `[terbuka]` penuh.**
+      > Keputusan ini tidak menyentuh keduanya, dan AC 8 karena itu **tetap tidak dicentang**.
 - [x] `T_CLAIMLF_PREMIUMLIST_DETAIL` memuat **kesembilan kolom tambahan** hasil audit — termasuk
       `IS_CHECK` dan ketiga tanggal per peserta. *(AC 39, 40, 41 spec)*
 - [x] `T_CLAIMLF_ADJUSTMENT` memuat `CLAIM_AMOUNT`, `STS_REJECT`, `ACCEPTEDNO`, `ACCEPTATION_DATE`.
@@ -367,10 +387,17 @@ penuh; koeksistensi ditolak), **ADR-0011** (seluruh **baris** adjustment ikut pi
 - [x] `T_CLAIMLF_ADJUSTMENT` memuat **ketiga kolom bank** — `NAME_OF_BANK`, `ID_BANK`, `ACCOUNT_NO` —
       dan migrasi mengisinya dari kolom warisan `NAME_OF_BANK`, `IDBANK`, `ACCOUNTNO`.
       *(AC 56 spec; `[terverifikasi]`)*
-- [ ] ⚠️ Seluruh uang dan share bertipe **desimal presisi arbitrer**; seluruh tanggal **`DATE`**;
+- [x] ⚠️ Seluruh uang dan share bertipe **desimal presisi arbitrer**; seluruh tanggal **`DATE`**;
       seluruh kolom **nullable**; identitas dari **sequence**. Test yang menemukan kolom uang
       bertipe teks atau melewati `float` **gagal**. *(AC 50 spec; **ADR-0003**, **ADR-0006**;
       penyimpangan sadar 7)*
+      > `[keputusan work owner 26-09-2026, butir t]` "Presisi arbitrer" dibaca sebagai **jenis data
+      > desimal non-float, lawan dari `float`** — bacaan yang sejalan dengan rujukan AC ini sendiri
+      > (ADR-U-0003) dan dengan klausa ujinya sendiri di kalimat di atas. `NUMBER(38,8)` ↔
+      > `apd.Decimal` memenuhinya. Klausa **sequence** tercakup penyimpangan sadar AC 34 (nomor
+      > bisnis berformat untuk `T_WORK_CLAIM` dan kedua tabel ber-shared-PK; ADR-U-0006 tetap
+      > berlaku untuk `T_CLAIMLF_*` dan `DOCUMENT_CLAIM`). Ronde 3 membacanya sebagai "`NUMBER`
+      > tanpa presisi" lalu menahannya — bacaan itu diralat di sini.
 - [x] Seluruh klaim Life terbawa **beserta seluruh baris adjustment**-nya — bukan hanya keadaan
       terakhir. Jumlah baris per klaim setelah migrasi **sama** dengan sebelumnya. *(**ADR-0011**)*
 - [x] Setiap baris adjustment hasil migrasi **menunjuk peserta yang benar**. *(AC 34 spec)*
@@ -471,9 +498,25 @@ penuh; koeksistensi ditolak), **ADR-0011** (seluruh **baris** adjustment ikut pi
       *(§`KOMITE_ID` pada `T_CLAIMLF_ADJUSTMENT`; `[keputusan work owner]` REVISI 2026-09-17)*
 - [x] ✅ Tipe `KOMITE_ID` **SUDAH DITETAPKAN 2026-09-18** — teks berformat `KMT-xxxxxx`, mengikuti
       `T_WORK_CLAIM.ID`. *(`[keputusan work owner]`)*
-- [ ] ⚠️ `[terbuka]` **Apakah `KOMITE_ID` dan `COVER_KEY` dipasangi `REFERENCES T_WORK_CLAIM(ID)`**
-      atau dibiarkan tanpa constraint — **belum diputuskan**. Pemilik **DBA / work owner**. Tiket
-      ini **tidak dinyatakan selesai** sebelum jawabannya ada. **Jangan tebak.**
+- [x] ✅ `[DIJAWAB 26-09-2026]` **Apakah `KOMITE_ID` dan `COVER_KEY` dipasangi
+      `REFERENCES T_WORK_CLAIM(ID)`** atau dibiarkan tanpa constraint. Pemilik **DBA / work owner**.
+      ~~`[terbuka]` — belum diputuskan; tiket ini tidak dinyatakan selesai sebelum jawabannya ada.
+      Jangan tebak.~~ *(kalimat ini dicoret, bukan dihapus: ia benar sampai 26-09-2026 dan menjadi
+      alasan tiket tertahan empat sesi)*
+      > ⭐ `[keputusan work owner 26-09-2026, butir d]` sesudah **empat sesi** `[USULAN]`:
+      > **DIPASANGI `REFERENCES`, tetap nullable.** Diterapkan `001` (`FK_WORK_COVER_KEY`, menunjuk
+      > tabelnya sendiri) dan `004` (`FK_ADJ_KOMITE`). Keduanya **tanpa `ON DELETE`** — ini penunjuk
+      > KE ATAS, bukan kepemilikan, sehingga kaskade akan terbalik arah. Dikunci
+      > `TestAC50PenunjukKeAtasBerReferences`, yang juga menolak `ON DELETE` dan `NOT NULL`.
+      >
+      > ⚠️ **`[terbuka]` baru yang lahir dari keputusan ini — pemiliknya tiket 15, bukan tiket
+      > ini.** Model di bab TINGKAT 1 menyatakan baris KOMITE memuat `COVER_KEY = ID baris klaim`.
+      > Dengan FK tanpa `ON DELETE`, menghapus baris klaim yang masih ditunjuk baris komite akan
+      > **ditolak `ORA-02292`**. `PohonKlaim.Hapus` menghapus baris work paling akhir, jadi urutannya
+      > sendiri selamat, tetapi baris komite tidak ikut dibereskannya. Yang harus diputuskan: jalur
+      > hapus melepas penunjuknya lebih dulu, atau penghapusan memang ditolak selama komite ada.
+      > ⛔ **Belum teruji**: migrasi belum pernah berjalan di Oracle mana pun, jadi ini penalaran
+      > atas semantik Oracle, bukan hasil pengamatan.
 
 ### Koreksi: `OS_AKSEPTASI_KLAIM_LIFE` TETAP ditulis ⚠️ 2026-09-16
 
@@ -864,6 +907,9 @@ ternyata tepat 30 — jadi test yang lulus memang benar lulus. Diulang dengan na
 3. ⚠️ Nama berkas `006_t_claimlf_adjustment_spreading_retro.sql` **tidak** ikut diperpendek; yang
    dilihat Oracle adalah nama tabel di dalamnya. Berkas `001`–`008` masih boleh disunting langsung
    selama `T_MIGRASI` belum pernah ada di instance mana pun (brief 2l).
+   > **Ralat 26-09-2026 (ronde 4):** sudah tidak berlaku. `[keputusan work owner butir n]` — kedua
+   > berkas `006` diganti nama menjadi `006_t_claimlf_adj_spreading_retro.sql` (+`_down`). Aman
+   > sebab syarat di kalimat di atas masih terpenuhi: `T_MIGRASI` belum pernah ada di mana pun.
 4. ⚠️ AC mengeja tiga nama berbeda dari STRUKTUR — `ACCEPTEDNO`/`ACCEPTED_NO`,
    `RISLIPRNM`/`RI_SLIP_RNM`, `CASEID`/`CASEID_POLICY`. Ejaan STRUKTUR yang dipakai, dan
    selisihnya ditulis di komentar test AC yang bersangkutan.
@@ -1048,6 +1094,13 @@ kolom uang, sehingga ia **menyimpang dari ADR-U-0016**. ⚠️ `[terbuka]` ADR-U
 diamandemen** dan tidak ada ADR baru bertanggal 2026-09-26; sampai work owner menuliskannya,
 catatan itu dipikul komentar kepala berkas `004`, `005`, dan `006`.
 
+> ⭐ **RALAT 26 September 2026 (ronde 4) — paragraf di atas KELIRU, dan `[terbuka]`-nya DICABUT.**
+> `[keputusan work owner butir p1]`: Akibat 2 tidak melarang apa pun di sini — kalimat *"tetap
+> mengikuti ketetapan modulnya"* justru **menyerahkan** kolom persen kepada modul masing-masing.
+> Keputusan **c** adalah ketetapan modul Claim Life, persis yang diserahkan kepadanya. Jadi c
+> **sesuai** ADR-U-0016, bukan menyimpang darinya, dan **nol amandemen ADR diperlukan**. Label di
+> kepala `004`, `005`, `006` sudah diganti menjadi *"ketetapan modul Claim Life"*.
+
 **Tuduhan yang saya tolak sesudah mengukur ulang:**
 
 - *"Blob index memuat CRLF — 004 = 55, 005 = 43, 006 = 47"*. **Salah.** Diukur byte demi byte
@@ -1065,3 +1118,183 @@ begitu hari ini, dan `TestSeluruhCreateDapatDibacaNamanya` mengunci kesembilan b
 `migrasi.go` kini juga mengurai DDL dan menanyai katalog (**Divergent Change**), diterima demi
 menjaga pemeriksaan tetap satu tempat dengan pemakainya; dan kode galat Oracle masih berupa teks
 yang tersebar (**Primitive Obsession**).
+
+---
+
+## Implementasi — ronde 4, 26 September 2026
+
+**Gerbang yang terbuka: G2 saja.** G1 tertutup (`ORACLE_DSN` kosong — sesi **kelima** berturut-turut
+di jalur B); G3 tertutup sebab empat objek DBA §5 brief belum diserahkan, sehingga o1–o3 tidak
+ditanyakan: keputusannya sendiri tidak cukup membukanya.
+
+**Status: `claimed`** — **40 dari 53 AC tertutup** (dari 38), diverifikasi **83 test Go yang
+benar-benar berjalan** (dari 77). Angka ini diambil **sesudah** perbaikan `/code-review`. Sesuai brief §4, ini ditulis di awal, bukan di akhir.
+
+⛔ **Kenapa belum `resolved` meski butir d akhirnya disahkan.** Syarat `resolved` brief ada empat,
+dan yang terpenuhi baru satu: **d `[DIPUTUSKAN]` dan diterapkan ✅**; migrasi sungguhan 0/8/kosong
+**belum**; seluruh test db PASS **belum**; AC `[terbuka]` tinggal milik luar-executor **belum** —
+lima di antaranya (20, 21, 38, 51, 53) menunggu Oracle, dan itu ada di dalam jangkauan executor
+begitu G1 terbuka.
+
+### Lima temuan verifikasi ronde 3
+
+| # | Temuan | Keadaan |
+| ---: | --- | --- |
+| 1 | ⚠️ Label "PENYIMPANGAN SADAR dari ADR-U-0016 Akibat 2" keliru | ✅ butir **p1**: label diganti di **tiga** `.sql`; `[terbuka]` amandemen ADR **dicabut** lewat blok ralat bertanggal di bab ronde 3 di atas. ⚠️ Brief menyebut label itu ada juga di `presisiSah`; **tidak** — isinya sudah "keputusan work owner c". Komentarnya tetap diperjelas. ⛔ Tempat keempat ini **terlewat** di lintasan pertama dan ditemukan `/code-review` |
+| 2 | ⚠️ Konsekuensi o di tiket 02 kurang satu AC | ✅ ralat ditulis di tiket 02: **AC 2, 3, dan 10** |
+| 3 | ⚠️ AC 12 dibaca terlalu sempit | ✅ butir **t**: dicentang; daftar terbuka turun |
+| 4 | ℹ️ `TestNolNamaTabelTelanjangDiQuery` memindai komentar juga | catatan saja — **tidak diubah**, nol gagal palsu sampai hari ini |
+| 5 | ⛔ Skema uji tidak punya pagar | ✅ ditutup, dan **lebih luas dari yang diminta** — lihat di bawah |
+
+**4 dari 4 temuan yang dapat dikerjakan ditutup**; yang kelima memang hanya catatan.
+
+### Temuan 5 — pagar skema uji, dan satu hal yang brief sendiri tidak lihat
+
+`skemauji.Buka` dan `BukaRepositori` kini **menolak dengan galat** kecuali **dua** syarat terpenuhi:
+env `ORACLE_SKEMA_UJI=true` **dan** `ORACLE_SCHEMA` bukan `POOLDATA`. Pesannya menyebut sebabnya,
+termasuk bahwa test ini **menghapus** tabel. Bawaan `POOLDATA` dicabut dari `Makefile`.
+
+⭐ **Yang tidak tertulis di brief, ditemukan saat mengerjakannya:** memasang pagar di `skemauji`
+saja **tidak cukup** — keenam pemanggilnya menjawab **setiap** galat `Buka()` dengan
+`t.Skipf("lewati: %v", err)`. Pagar itu akan melewati diam-diam, persis yang brief larang. Karena
+itu `BolehDilewati(err)` ditambahkan, dan keenam titik kini `t.Fatalf` untuk apa pun selain
+`ErrTanpaOracle`.
+
+⛔ **Akibat sampingannya menyingkap lubang yang sudah ada sejak dulu:** dengan pola lama,
+`ErrProduksi` — penolakan `IS_PEGA_PROD=true` — **juga** dijawab SKIP. Menunjuk instance produksi
+karena itu menghasilkan lari **hijau yang tidak menguji apa pun**. Sekarang ia menggagalkan test.
+
+⚠️ **Tempat keempat yang tidak disebut brief**: `.env.example` juga memberi `ORACLE_SCHEMA=POOLDATA`.
+Ikut dicabut, dan `ORACLE_SKEMA_UJI` didaftarkan di sana.
+
+`-migrate` **tidak** ikut dipagari, sesuai brief: ia hanya `CREATE`, tidak pernah `DROP`.
+
+### Keputusan §2 sesi ini
+
+| | Keadaan | Yang dikerjakan |
+| --- | --- | --- |
+| **d** | ⭐ `[DIPUTUSKAN]` 26-09 sesudah **empat sesi** — *"pasang `REFERENCES`, nullable"* | `FK_WORK_COVER_KEY` di `001`, `FK_ADJ_KOMITE` di `004`, keduanya **tanpa `ON DELETE`**; fixture diberi baris komite yang sungguh ada; AC 50 dicentang; dikunci `TestAC50PenunjukKeAtasBerReferences` |
+| **p** | `[DIPUTUSKAN]` — **p1** | label di tiga `.sql` diralat; nol amandemen ADR |
+| **t** | `[DIPUTUSKAN]` — centang | AC 12 dicentang, dengan alasannya ditulis di bawah AC-nya |
+| **e′, m, n** | ⭐ didelegasikan ke executor 26-09: *"rekomendasikan saja jawaban paling baik, dan samakan dengan XML logic sistem existing (Pega)"* | **ketiganya dikerjakan**, masing-masing dengan bukti korpusnya — lihat di bawah |
+| **o1, o2, o3** | tidak ditanyakan | G3 tertutup: empat objek DBA belum ada, jadi keputusannya saja tidak membukanya |
+
+### e′, m, n — rekomendasi executor, disandarkan ke korpus Pega
+
+**e′ — ketiga `TANGGAL_*` bukan milik Claim Life.** Diperiksa **ketiga kalinya, dengan alat
+berbeda**: ketiga **nama kolom** (`RESPONSE_DATE`, `RECONFIRMATION_DATE`, `REALIZATION_DATE`) muncul
+**nol kali** di seluruh modul Claim; ketiga **propertinya** muncul di Claim Life hanya di **4 berkas
+`Section\`** dan **nol berkas `Activity\`**. Logic Pega-nya jelas: Claim Life **menampilkan**
+ketiganya, **tidak pernah menyimpannya**. AC 8 diberi catatan `[terbuka — PremiumList Life]` untuk
+tiga kolom itu; `002` tidak disentuh. ⚠️ Dua kolom sisanya (`TEAM_GROUP`, `BUSINESS_ID`) tetap
+`[terbuka]` penuh, sehingga **AC 8 tetap tidak dicentang**.
+
+**m dan n — nama fisik.** ⭐ Bukti korpus yang menentukan: **seluruh nama tabel fisik yang sungguh
+dipakai Pega di modul Claim Life berukuran ≤ 23 byte**, terpanjang `OS_AKSEPTASI_KLAIM_LIFE`. Nama
+36 byte `T_CLAIMLF_ADJUSTMENT_SPREADING_RETRO` **tidak pernah ada di korpus** — ia lahir di dokumen
+spec, bukan di Pega. (`SpreadingRetro` sendiri muncul di korpus hanya di modul **Treaty In**, nol di
+Claim Life.) Memendekkannya karena itu **mengikuti** sistem berjalan, bukan menyimpang darinya.
+**m** → satu blok ralat bertanggal di STRUKTUR bab itu, tanpa menulis ulang judul/diagram/tabel
+relasinya. **n** → `git mv` dua berkas `006` menjadi `006_t_claimlf_adj_spreading_retro.sql`; aman
+sebab `T_MIGRASI` belum pernah ada di mana pun.
+
+### ⚠️ `[terbuka]` baru yang lahir dari keputusan d — pemiliknya tiket 15
+
+Model TINGKAT 1 menyatakan baris KOMITE memuat `COVER_KEY = ID baris klaim`. Dengan FK tanpa
+`ON DELETE`, menghapus baris klaim yang masih ditunjuk baris komite akan **ditolak `ORA-02292`**.
+`PohonKlaim.Hapus` menghapus baris work paling akhir, jadi urutannya sendiri selamat, tetapi baris
+komite tidak dibereskannya. ⛔ **Belum teruji** — penalaran atas semantik Oracle, bukan pengamatan.
+Fixture sengaja membiarkan `COVER_KEY` baris komite NULL supaya AC 38 tidak digagalkan hal yang
+pemiliknya tiket lain; itu **keputusan sadar**, dan dicatat di `skemauji.go`.
+
+### AC yang masih terbuka — 13, sama dengan jumlah kotak `[ ]`
+
+| Sebab | Nomor |
+| --- | --- |
+| Menunggu instance Oracle | 20, 21, 38, 51, 53 |
+| Menunggu work owner | 8, 15, 27, 35 |
+| Di luar tiket ini — konteks Komite | 31, 33 |
+| Pemilik export Pega · modul PremiumList Life | 46 · 19 |
+
+### Yang dijalankan, dan hasilnya
+
+| Perintah | Hasil |
+| --- | --- |
+| `go vet ./...` · `go vet -tags=db ./...` · `gofmt -l` · `go build ./...` | lulus, nol berkas |
+| `go test ./...` | lulus, **83 test** (dari 77), nol FAIL |
+| `go test -tags=db ./internal/...` | **19 MELEWATI** — ⛔ SKIP, bukan PASS |
+| `npm run typecheck` · `npm test` · `npm run build` | lulus, 5 test, 87 modul — frontend tidak diubah |
+
+⭐ **Tiap penjaga baru diuji gagal dulu pada kasus buruknya**, lalu dipulihkan: syarat `POOLDATA`
+dicabut → gagal; syarat env dicabut → gagal; `FK_ADJ_KOMITE` dicabut → gagal; `ON DELETE CASCADE`
+ditambahkan ke FK itu → gagal; `COVER_KEY` dijadikan `NOT NULL` → gagal; satu pemanggil `Buka()`
+dikembalikan ke pola lama → gagal. Ditambah satu uji **tuduhan palsu**: `ON DELETE` dipasang pada
+constraint **tetangga** → test tetap **lulus**, tidak menuduh yang salah.
+
+### ⛔ Yang ditemukan `/code-review`, dan diperbaiki sebelum commit
+
+| # | Temuan | Perbaikan |
+| ---: | --- | --- |
+| 1 | ⛔ **Penjaga nullable AC 50 MATI.** Polanya `KOLOM VARCHAR2(32) NOT NULL` berspasi tunggal, sedangkan DDL **meratakan kolom** dengan banyak spasi — tidak akan pernah cocok. Bab ini sempat mengklaim ia menjaga | teks DDL **dirapatkan** dulu; dibuktikan dengan menjadikan `COVER_KEY` `NOT NULL` → kini gagal |
+| 2 | ⛔ **Jendela pemeriksaan `ON DELETE` salah.** Ia memotong 120 byte **sesudah baris**, dan karena seluruh pernyataan satu berkas disambung menjadi satu teks, jendelanya menembus `CREATE INDEX` di bawahnya — bisa menuduh constraint yang benar | diganti `klausaConstraint`, yang berhenti di `CONSTRAINT` berikutnya atau akhir daftar kolom |
+| 3 | ⛔ **`[terbuka]` amandemen ADR belum dicabut** di bab ronde 3, padahal bab ini sudah mengklaim sebaliknya — **overclaim saya sendiri** | blok ralat bertanggal ditulis di bab ronde 3; klaimnya kini benar |
+| 4 | ⚠️ **AC 50 bercentang sambil menyangkal dirinya** — teksnya masih berbunyi `[terbuka]`, *"belum diputuskan"*, *"tidak dinyatakan selesai sebelum jawabannya ada"* | penanda diganti `✅ [DIJAWAB 26-09-2026]`; kalimat lamanya **dicoret, bukan dihapus** |
+| 5 | ⚠️ **`make db-up` rusak** oleh pencabutan bawaan: ia masih mengirim `APP_USER="$(ORACLE_SCHEMA)"`, kini kosong | `db-up` menolak bila `ORACLE_SCHEMA` kosong atau `POOLDATA` |
+| 6 | ⚠️ **Daftar hitam lebih sempit daripada janji README**: hanya `POOLDATA` persis, sehingga `POOLDATA_DEV` lolos | diperluas menjadi **memuat** `POOLDATA`; dua kasus turunan ditambahkan ke test |
+| 7 | ⚠️ **Pola enam baris disalin ke enam tempat** — test db ketujuh yang lupa akan membuka lubangnya lagi, diam-diam | `TestSetiapPemanggilBukaMemeriksaBolehDilewati` mengunci keenamnya beserta cacahnya |
+| 8 | ⚠️ Duplikasi tiga pemeriksaan di `Buka` dan `BukaRepositori` | diekstrak menjadi `pastikanAman(cfg)` |
+| 9 | ⚠️ `PANDUAN-MENJALANKAN.txt` menulis 81 test | → 83 |
+
+⚠️ **Penjaga baru itu sempat mengukur dirinya sendiri**: ia menemukan **10** pemanggil `Buka()`,
+bukan 6, sebab empat kemunculan di komentar dan literalnya sendiri ikut terhitung. Berkasnya
+dikecualikan dan polanya dipersempit ke pemanggilan yang hasilnya ditampung.
+
+### Tuduhan tinjauan yang saya TOLAK sesudah memeriksa premisnya
+
+1. ⛔ *"Rename 006 memutus ledger `T_MIGRASI`: skema yang sudah menjalankan nama lama akan
+   menjalankannya lagi."* **Premisnya tidak ada.** Migrasi belum pernah berjalan di Oracle mana pun
+   — lima sesi berturut-turut, dan katalog instance pengembangan yang dibaca siang ini tidak memuat
+   `T_MIGRASI`. Brief §2 n justru mensyaratkan rename dilakukan **hanya sebelum** migrasi pertama,
+   dan itulah keadaannya. Tuduhan lanjutannya — *"tanpa satu pun komentar, tiket, atau ADR"* — juga
+   keliru: rename tercatat di blok ralat STRUKTUR dan di bab ini.
+2. ⚠️ *"`BolehDilewati` dan keenam `t.Fatalf` adalah scope creep; Langkah B menuntut nol perubahan
+   perilaku."* **Ditolak sebagian.** Tanpa keduanya pagar §3-5 **tidak terpasang sama sekali** —
+   galatnya akan dijawab `t.Skipf` dan lewat diam-diam, persis yang brief larang. Ia bukan tambahan
+   di luar temuan 5; ia syarat agar temuan 5 berlaku. Langkah B memang menuntut nol perubahan
+   perilaku, tetapi temuan 5 ada di Langkah B dan **isinya sendiri** perubahan perilaku.
+3. ⚠️ *"Blok ralat STRUKTUR melampaui butir m; ia menurunkan dasar keputusan j menjadi `[dugaan]`."*
+   **Diterima sebagai catatan, tidak dibatalkan.** Blok itu awalnya saya tulis dengan alasan
+   "Oracle di bawah 12.2 menolak" — lalu katalog siang ini menunjukkan instance pengembangan
+   **12.2.0.1**. Membiarkan kalimat yang sudah diketahui keliru lebih buruk daripada melampaui m
+   satu paragraf. ⚠️ **Work owner dipersilakan mencabut paragraf itu bila menganggapnya di luar m.**
+   Keputusan **j** sendiri **tidak** dibatalkan executor.
+
+### ⭐ Katalog instance pengembangan dibaca di tengah sesi — brief §9
+
+Sesi verifikasi menyambung ke instance pengembangan (**katalog saja, nol baris data**) dan
+menghasilkan dua dokumen `[data DBA — dibaca sendiri, belum dikonfirmasi DBA]`:
+`TIPE-KOLOM-OS-AKSEPTASI-KLAIM-LIFE.md` dan `SUMBER-PENOMORAN-DBA.md`. Keduanya **tidak ditulis
+sesi ini** dan **tidak ikut commit ronde 4**; keduanya dibaca dan diperiksa nol kredensial, nol
+alamat host, nol baris data.
+
+⭐ **Yang paling penting bagi ronde ini: kredensial itu menunjuk `POOLDATA` — persis nama yang
+sampai pagi ini menjadi bawaan `ORACLE_SCHEMA` di `Makefile` dan `.env.example`.** Skema itu memuat
+**760 tabel, 383 sequence, 198 procedure**, dan `OS_AKSEPTASI_KLAIM_LIFE` di dalamnya berisi
+**13.694 baris**. Menjalankan `go test -tags=db` dengan bawaan itu akan mengirim
+`DROP TABLE POOLDATA.OS_AKSEPTASI_KLAIM_LIFE CASCADE CONSTRAINTS`. Pagar temuan 5 yang dibangun
+sesi ini menolaknya **dua kali**: tanpa `ORACLE_SKEMA_UJI=true`, dan karena skemanya `POOLDATA`.
+Temuan itu ternyata bukan kemungkinan teoretis.
+
+⛔ **G1 tetap tertutup.** `POOLDATA` pengembangan **bukan** skema uji. DBA diminta membuat user
+kosong baru di instance yang sama.
+
+**Akibat lain, dicatat tetapi TIDAK dikerjakan ronde ini** — semuanya `[USULAN]` dan pemiliknya work
+owner:
+
+| Fakta baru | Akibat |
+| --- | --- |
+| ⛔ **`DOCUMENT_CLAIM` sudah ada** di `POOLDATA` dengan **14 kolom berbeda**, 295 baris | Langkah `007` **bertabrakan nama**. Penjaga ronde 3 akan melewatinya sebagai "sudah ada" — keberadaan benar, **bentuk berbeda** — dan mencatat langkahnya sukses. Inilah **separuh kelemahan yang sengaja dibiarkan terbuka ronde 3**, kini terbukti nyata, bukan hipotetis. Keputusan **v** |
+| `OS_AKSEPTASI_KLAIM_LIFE` punya **62** kolom, bukan 55; `STS_REJECT NUMBER(38,0)`, `WPC DATE`, `CLAIM_RETRO NUMBER` — ketiganya ditebak **teks** | Ronde 3 §3-7 kini dapat dikerjakan. Keputusan **w** |
+| Oracle pengembangan **12.2.0.1**; `COMPATIBLE` tidak terbaca | Batas 30 byte yang mendasari keputusan **j** turun menjadi `[dugaan]`. Ralat sudah ditulis di STRUKTUR. **j tidak dibatalkan sendiri oleh executor** |
+| `JSON_OFFER_LIFE` memuat ketiga `*_DATE` bertipe `DATE`, plus `STATUS` dan `OLDID` | **menguatkan e′** — rantai buktinya kini sampai ke katalog, bukan berhenti di XML |
+| Sumber procedure penomoran terbaca utuh: **nol `COMMIT`**, kunci `FOR UPDATE` atas `(CLASS, JENIS, TAHUN)`, format dirakit **pemanggil** | §5-4 terpenuhi; **o1–o3** kini dapat diputuskan tanpa menebak. ⚠️ AC 3 tiket 02 harus mencakup **perakitan format**, yang ternyata ada di rule Pega, bukan di procedure |

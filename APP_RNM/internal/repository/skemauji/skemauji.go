@@ -21,6 +21,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	_ "github.com/sijms/go-ora/v2"
@@ -35,6 +36,78 @@ var ErrTanpaOracle = errors.New("skemauji: ORACLE_DSN belum dikonfigurasi")
 // ErrProduksi menolak pemasangan skema uji pada lingkungan produksi.
 var ErrProduksi = errors.New("skemauji: menolak berjalan saat IS_PEGA_PROD=true")
 
+// ErrBukanSkemaUji menolak berjalan di skema yang belum dinyatakan skema uji.
+//
+// ⛔ Kenapa galat, bukan SKIP: melewati diam-diam berarti pagarnya tidak
+// pernah terlihat oleh orang yang salah menyetel env. Yang dipertaruhkan
+// bukan test yang gagal, melainkan tabel warisan yang terhapus.
+var ErrBukanSkemaUji = errors.New("skemauji: menolak berjalan di luar skema uji")
+
+// envSkemaUji adalah pengakuan sadar dari orang yang menjalankan test bahwa
+// skema yang ditunjuk ORACLE_SCHEMA memang boleh dihapus isinya.
+const envSkemaUji = "ORACLE_SKEMA_UJI"
+
+// namaSkemaWarisan adalah skema Pega yang memuat tabel warisan sungguhan.
+// Ia tidak pernah boleh menjadi skema uji, sekalipun di instance pengembangan.
+const namaSkemaWarisan = "POOLDATA"
+
+// BolehDilewati menyatakan apakah sebuah galat dari Buka layak dijawab t.Skip.
+//
+// Hanya SATU yang layak: Oracle memang belum dikonfigurasi. Selebihnya -
+// salah konfigurasi, menunjuk produksi, atau menunjuk skema yang bukan skema
+// uji - harus menggagalkan test. Sebelum ronde 4 seluruhnya dilewati, sehingga
+// IS_PEGA_PROD=true pun menghasilkan lari hijau yang tidak menguji apa pun.
+func BolehDilewati(err error) bool { return errors.Is(err, ErrTanpaOracle) }
+
+// pastikanAman menjalankan seluruh pemeriksaan pintu masuk, dalam satu urutan.
+//
+// Urutannya disengaja: produksi ditolak lebih dulu, lalu "Oracle memang belum
+// ada" - satu-satunya yang layak dilewati - lalu pagar skema uji. Kedua pintu
+// masuk paket ini memanggil fungsi yang sama, supaya tidak mungkin ada pintu
+// yang tertinggal saat pemeriksaannya bertambah.
+func pastikanAman(cfg config.Config) error {
+	if cfg.IsPegaProd {
+		return ErrProduksi
+	}
+	if !cfg.PunyaOracle() {
+		return ErrTanpaOracle
+	}
+	return periksaPagarSkemaUji(cfg.OracleSchema)
+}
+
+// periksaPagarSkemaUji membaca pengakuan itu dari environment.
+func periksaPagarSkemaUji(skema string) error {
+	return pagarSkemaUji(skema, os.Getenv(envSkemaUji))
+}
+
+// pagarSkemaUji adalah isi keputusannya, dipisah dari environment supaya dapat
+// diuji tanpa Oracle dan tanpa env var.
+//
+// Dua syarat, KEDUANYA harus benar:
+//  1. env ORACLE_SKEMA_UJI bernilai "true"
+//  2. skema yang ditunjuk bukan POOLDATA
+//
+// Syarat kedua tidak dapat ditutupi oleh syarat pertama: menyetel env tidak
+// membuat skema warisan menjadi skema uji.
+func pagarSkemaUji(skema, diakui string) error {
+	if strings.TrimSpace(strings.ToLower(diakui)) != "true" {
+		return fmt.Errorf("%w: env %s belum bernilai true; test bertag db MENGHAPUS tabel "+
+			"di skema yang ditunjuk ORACLE_SCHEMA, termasuk %s. Setel %s=true hanya bila "+
+			"skema itu memang skema uji kosong dari DBA",
+			ErrBukanSkemaUji, envSkemaUji, namaTabelLama, envSkemaUji)
+	}
+	// MEMUAT, bukan sama persis: POOLDATA_DEV dan POOLDATA2 adalah skema
+	// warisan juga. Untuk operasi yang MENGHAPUS, menolak terlalu banyak jauh
+	// lebih murah daripada meloloskan satu yang salah.
+	if strings.Contains(strings.ToUpper(strings.TrimSpace(skema)), namaSkemaWarisan) {
+		return fmt.Errorf("%w: ORACLE_SCHEMA menunjuk %s, skema warisan Pega yang memuat "+
+			"tabel sungguhan; test bertag db akan menghapusnya. Pakai skema uji kosong, "+
+			"dan %s=true tidak mengubah hal ini",
+			ErrBukanSkemaUji, namaSkemaWarisan, envSkemaUji)
+	}
+	return nil
+}
+
 // namaTabelLama adalah tabel datar warisan yang ditiru untuk uji migrasi.
 const namaTabelLama = "OS_AKSEPTASI_KLAIM_LIFE"
 
@@ -46,11 +119,8 @@ func Buka() (*sql.DB, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	if cfg.IsPegaProd {
-		return nil, "", ErrProduksi
-	}
-	if !cfg.PunyaOracle() {
-		return nil, "", ErrTanpaOracle
+	if err := pastikanAman(cfg); err != nil {
+		return nil, "", err
 	}
 	db, err := sql.Open("oracle", cfg.OracleDSN)
 	if err != nil {
@@ -63,6 +133,9 @@ func Buka() (*sql.DB, string, error) {
 func BukaRepositori() (*repository.DB, error) {
 	cfg, err := config.Load()
 	if err != nil {
+		return nil, err
+	}
+	if err := pastikanAman(cfg); err != nil {
 		return nil, err
 	}
 	return repository.Open(cfg)
@@ -169,6 +242,7 @@ func Bongkar(ctx context.Context, db *sql.DB, skema string) error {
 //   - nomor sertifikat "006" - berawalan nol, harus tetap teks (ADR-U-0022)
 //   - jumlah berdesimal delapan angka - harus utuh, tidak lewat float
 //   - dua peserta, masing-masing lebih dari satu baris
+//   - satu baris komite yang sungguh ada, ditunjuk KOMITE_ID lewat FK
 func IsiContoh(ctx context.Context, db *sql.DB, skema string) error {
 	if err := samakanNLS(ctx, db); err != nil {
 		return err
@@ -180,6 +254,19 @@ func IsiContoh(ctx context.Context, db *sql.DB, skema string) error {
 		{fmt.Sprintf(`INSERT INTO %s.T_WORK_CLAIM (ID, LINI, TYPE, CASE_ID)
 			VALUES (:1, :2, :3, :4)`, skema),
 			[]any{"CLM-UJI001", "LIFE", "UJI-TYPE", "UJI-CASE-1"}},
+
+		// Baris komite yang ditunjuk KOMITE_ID di bawah. Sejak keputusan work
+		// owner d (26-09-2026) KOMITE_ID ber-REFERENCES ke T_WORK_CLAIM(ID),
+		// jadi penunjuk yatim tidak lagi diterima Oracle - fixture harus
+		// menyediakan barisnya, persis seperti data sungguhan harus.
+		//
+		// COVER_KEY-nya sengaja dibiarkan NULL. Mengisinya dengan CLM-UJI001
+		// akan membuat penghapusan klaim (AC 38) ditolak ORA-02292, sebab FK
+		// COVER_KEY tanpa ON DELETE menolak menghapus induk yang masih
+		// ditunjuk. Itu pertanyaan jalur hapus tiket 15, bukan tiket ini.
+		{fmt.Sprintf(`INSERT INTO %s.T_WORK_CLAIM (ID, LINI, TYPE, CASE_ID)
+			VALUES (:1, :2, :3, :4)`, skema),
+			[]any{"KMT-UJI001", "LIFE", "UJI-KOMITE", "UJI-CASE-KMT"}},
 
 		{fmt.Sprintf(`INSERT INTO %s.T_GENERAL_CLAIM
 			(ID, CLAIM_NO, POLICY_NO, BUSINESS_NAME, STS_REJECT)

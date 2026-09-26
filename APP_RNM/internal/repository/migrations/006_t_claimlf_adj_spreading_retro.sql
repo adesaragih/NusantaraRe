@@ -14,11 +14,14 @@
 -- Ratio dan bukan Money: ia perbandingan, bukan mata uang, sehingga keduanya
 -- tidak pernah terjumlahkan. NUMBER tanpa presisi TIDAK dipakai di mana pun -
 -- dijaga TestNolNumberTanpaPresisi.
--- ⚠️ PENYIMPANGAN SADAR dari ADR-U-0016 Akibat 2, yang berbunyi "kolom persen
--- tidak termasuk - ia bukan uang, dan tetap mengikuti ketetapan modulnya".
--- Keputusan work owner c menyamakan presisi kolom persen dan rate dengan kolom
--- uang. [terbuka] ADR-U-0016 belum diamandemen; sampai itu terjadi, berkas ini
--- yang memikul catatannya.
+-- KETETAPAN MODUL CLAIM LIFE atas kolom persen dan rate, SESUAI ADR-U-0016
+-- Akibat 2 - bukan penyimpangan darinya. Akibat 2 berbunyi "kolom persen tidak
+-- termasuk - ia bukan uang, dan tetap mengikuti ketetapan modulnya", yaitu ia
+-- MENYERAHKAN kolom itu ke modul masing-masing. Keputusan work owner c
+-- (26-09-2026) adalah ketetapan modul ini, persis yang diserahkan kepadanya.
+-- Karena itu nol amandemen ADR diperlukan.
+-- `[keputusan work owner 26-09-2026, butir p1]` meralat label "penyimpangan
+-- sadar" yang ditulis ronde 3 di tempat ini.
 --
 -- Pecahan spreading per reinsurer. Satu baris mewakili satu reinsurer pada
 -- satu baris spreading. Ini tingkat keenam, cicit dari baris adjustment.

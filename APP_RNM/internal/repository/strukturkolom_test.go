@@ -371,6 +371,8 @@ func TestGolonganTipeDDLCocokDenganStruktur(t *testing.T) {
 // presisiSah mendaftar satu-satunya bentuk NUMBER yang boleh muncul di DDL,
 // beserta sebabnya.
 var presisiSah = map[string]string{
+	// Persen dan rate ikut di sini atas KETETAPAN MODUL Claim Life, yang
+	// ADR-U-0016 Akibat 2 serahkan kepada modul - bukan penyimpangan darinya.
 	"NUMBER(38,8)": "uang, share, persen, dan rate - keputusan work owner c, 26 September 2026",
 	"NUMBER(5)":    "AGE, umur peserta dalam tahun",
 	"NUMBER(19)":   "DOCUMENT_CLAIM.ID, identitas dari sequence",

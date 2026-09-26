@@ -14,6 +14,7 @@ package repository
 // yang bersangkutan - bukan didiamkan.
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 
@@ -251,4 +252,77 @@ func TestAC45Dan48RujukanKomiteBukanIndeksPosisi(t *testing.T) {
 	if !berIndex {
 		t.Error("tidak ada CREATE INDEX atas T_CLAIMLF_ADJUSTMENT (KOMITE_ID)")
 	}
+}
+
+// AC 50: penunjuk KE ATAS dipasangi REFERENCES T_WORK_CLAIM(ID).
+//
+// `[keputusan work owner 26-09-2026, butir d]` sesudah empat sesi berstatus
+// [USULAN]. Kedua kolomnya tetap nullable; yang dilarang hanyalah menunjuk
+// baris yang tidak ada.
+//
+// Test ini juga mengunci bahwa keduanya TANPA "ON DELETE": kaskade di penunjuk
+// ke atas akan membuat penghapusan satu baris komite ikut menghapus baris
+// adjustment yang menunjuknya - kebalikan dari arah kepemilikan.
+func TestAC50PenunjukKeAtasBerReferences(t *testing.T) {
+	kasus := []struct {
+		awalan, kolom, constraint string
+	}{
+		{"001_", "COVER_KEY", "FK_WORK_COVER_KEY"},
+		{"004_", "KOMITE_ID", "FK_ADJ_KOMITE"},
+	}
+	for _, k := range kasus {
+		sql := sqlTabel(t, k.awalan)
+		if !strings.Contains(sql, "CONSTRAINT "+k.constraint+" FOREIGN KEY ("+k.kolom+")") {
+			t.Errorf("%s: %s tidak dipasangi FOREIGN KEY", k.awalan, k.kolom)
+			continue
+		}
+		// Hanya klausa milik constraint INI yang diperiksa. Jendela sekian
+		// byte akan menembus pernyataan berikutnya - seluruh pernyataan satu
+		// berkas disambung menjadi satu teks - sehingga ON DELETE milik
+		// constraint lain akan dituduhkan ke constraint ini.
+		klausa := klausaConstraint(sql, k.constraint)
+		if !strings.Contains(klausa, "REFERENCES {SKEMA}.T_WORK_CLAIM (ID)") {
+			t.Errorf("%s: %s tidak menunjuk T_WORK_CLAIM (ID); klausanya: %q",
+				k.awalan, k.kolom, klausa)
+		}
+		if strings.Contains(klausa, "ON DELETE") {
+			t.Errorf("%s: %s memakai ON DELETE; penunjuk ke atas bukan kepemilikan",
+				k.awalan, k.kolom)
+		}
+		// Nullable: kolomnya tidak boleh dideklarasikan NOT NULL.
+		//
+		// DDL meratakan kolom dengan BANYAK spasi, jadi teksnya dirapatkan
+		// dulu. Tanpa itu pola berspasi tunggal tidak pernah cocok dan
+		// penjaganya mati - persis yang terjadi sampai tinjauan ronde 4.
+		if strings.Contains(rapatkanSpasi(sql), k.kolom+" VARCHAR2(32) NOT NULL") {
+			t.Errorf("%s: %s NOT NULL; keputusan d menuntutnya tetap nullable", k.awalan, k.kolom)
+		}
+	}
+}
+
+// spasiBeruntun dipakai merapatkan perataan kolom pada DDL.
+var spasiBeruntun = regexp.MustCompile(`[ \t]+`)
+
+// rapatkanSpasi mengubah setiap deretan spasi menjadi satu spasi.
+func rapatkanSpasi(s string) string { return spasiBeruntun.ReplaceAllString(s, " ") }
+
+// klausaConstraint memotong teks SATU constraint, dari sesudah namanya sampai
+// tepat sebelum constraint berikutnya atau akhir daftar kolom.
+//
+// Kenapa perlu: seluruh pernyataan sebuah berkas migrasi disambung menjadi satu
+// teks, sehingga memotong "sekian byte sesudah nama constraint" akan ikut
+// menelan pernyataan CREATE INDEX di bawahnya dan menuduhkan isinya ke sini.
+func klausaConstraint(sql, nama string) string {
+	awal := strings.Index(sql, "CONSTRAINT "+nama)
+	if awal < 0 {
+		return ""
+	}
+	sisa := sql[awal+len("CONSTRAINT "+nama):]
+	akhir := len(sisa)
+	for _, batas := range []string{"CONSTRAINT ", "\n)"} {
+		if i := strings.Index(sisa, batas); i >= 0 && i < akhir {
+			akhir = i
+		}
+	}
+	return rapatkanSpasi(sisa[:akhir])
 }

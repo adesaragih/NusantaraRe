@@ -218,4 +218,21 @@ Artinya untuk tiket ini: nomor klaim **tidak** diambil dengan memanggil
    `POOLDATA.KODE_PRODUKSI` untuk `TYPE='LIFE'`, serta `POOLDATA.TANGGAL_CLOSING` beserta aturan
    cutover-nya. Tanpa keempatnya, menulis ulang logika penomoran berarti menebak.
 
+**Ralat 26 September 2026 (ronde 4) atas butir 2 — AC-nya tiga, bukan dua.** **AC 10** ikut
+bertentangan. Teksnya: *"Batas transaksi dipegang **Go**: commit terjadi segera setelah nomor
+terbentuk, sehingga lock `SELECT … FOR UPDATE` pada `GENERATE_SEQUENCE_NUMBER` tidak menahan
+pendaftar lain."* AC itu memerikan pembagian kerja procedure-dipanggil-di-dalam-transaksi-Go: Go
+memegang batas transaksi, dan lock baris counter terjadi di pihak yang membentuk nomor. Begitu
+keputusan **o** mencabut pemanggilan procedure, `SELECT … FOR UPDATE` harus dikirim Go sendiri,
+dan kalimat AC-nya tidak lagi memerikan apa yang dibangun.
+
+⚠️ `[dugaan]` Bahwa lock itu **hari ini** berada di dalam badan
+`PROC_GENERATE_SEQUENCE_NUMBER` adalah kesimpulan dari ADR-U-0006 dan dari bunyi AC-nya, **bukan
+hal yang sudah dilihat**: sumber procedure-nya justru butir 4 di atas, dan belum diserahkan. Yang
+`[terverifikasi]` hanyalah bahwa AC 10 menyebut lock itu, dan bahwa keputusan o mengubah siapa yang
+mengirimnya.
+
+Jadi yang harus ditulis ulang work owner sebelum tiket ini dikerjakan: **AC 2, AC 3, dan AC 10**.
+Executor tidak mengubah teks AC sendiri.
+
 Status tiket tidak diubah: **`ready-for-agent`**, dan butir 1–4 di atas adalah blocker-nya.

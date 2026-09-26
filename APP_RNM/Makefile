@@ -12,9 +12,15 @@ NPM     ?= npm
 API_PKG := ./cmd/api
 BIN     := bin/api
 
-# Skema uji yang dibuat oleh `make db-up`. Ditimpa lewat env bila DBA
-# menyediakan instance pengembangan.
-ORACLE_SCHEMA ?= POOLDATA
+# Skema uji yang dibuat oleh `make db-up`.
+#
+# TANPA BAWAAN, dan itu disengaja. Sampai 26-09-2026 baris ini berbunyi
+# `?= POOLDATA` - nama skema warisan Pega. `make test-db` MENGHAPUS tabel di
+# skema yang ditunjuk, termasuk OS_AKSEPTASI_KLAIM_LIFE, jadi bawaan itu cukup
+# untuk menghapus tabel warisan sungguhan di instance pengembangan. Nilainya
+# kini wajib datang dari DBA lewat env, dan skemauji menolak POOLDATA apa pun
+# yang terjadi.
+ORACLE_SCHEMA ?=
 ORACLE_DEV_CONTAINER ?= nusantarare-oracle
 
 .PHONY: help check typecheck run-api run-web build build-api build-web test test-db db-up db-down migrate
@@ -26,6 +32,7 @@ help:
 	@echo "test       - go vet + go test (tanpa Oracle)"
 	@echo "typecheck  - periksa tipe TypeScript frontend (tsc --noEmit)"
 	@echo "test-db    - test seam repository terhadap skema uji Oracle"
+	@echo "             (MENGHAPUS tabel; perlu ORACLE_SKEMA_UJI=true)"
 	@echo "db-up      - kontainer Oracle pengembangan [usulan]"
 	@echo "db-down    - hentikan dan buang kontainer itu"
 	@echo "migrate    - jalankan migrasi terhadap ORACLE_DSN"
@@ -65,6 +72,8 @@ check:
 
 # Seam `repository` terhadap skema uji Oracle nyata (brief bab 5).
 # Ditandai build tag `db` supaya `make test` tetap lulus tanpa instance.
+# ⛔ MENGHAPUS tabel di skema yang ditunjuk ORACLE_SCHEMA. Menuntut pengakuan
+# sadar lewat ORACLE_SKEMA_UJI=true, dan menolak POOLDATA.
 test-db:
 	$(GO) test -tags=db ./internal/repository/...
 
@@ -72,6 +81,8 @@ test-db:
 # ditanam di berkas ini. Tidak pernah menunjuk instance produksi.
 db-up:
 	@test -n "$$ORACLE_DEV_PASSWORD" || (echo "setel ORACLE_DEV_PASSWORD dulu" && exit 1)
+	@test -n "$(ORACLE_SCHEMA)" || (echo "setel ORACLE_SCHEMA dulu - bawaannya dicabut 26-09-2026" && exit 1)
+	@test "$(ORACLE_SCHEMA)" != "POOLDATA" || (echo "ORACLE_SCHEMA tidak boleh POOLDATA" && exit 1)
 	docker run -d --name $(ORACLE_DEV_CONTAINER) -p 1521:1521 \
 	  -e ORACLE_PASSWORD="$$ORACLE_DEV_PASSWORD" \
 	  -e APP_USER="$(ORACLE_SCHEMA)" \

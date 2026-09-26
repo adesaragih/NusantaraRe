@@ -91,12 +91,19 @@ $env:Path = 'C:\Program Files\Go\bin;C:\Program Files\nodejs;' + $env:Path
 | --- | --- | --- |
 | Uji backend tanpa Oracle | `go vet ./...` lalu `go test ./...` | `ok` di `internal/models` dan `internal/repository` |
 | Bentuk tabel ke Oracle uji | `go run ./cmd/api -migrate` | menjalankan berkas di `internal/repository/migrations/` sekali masing-masing; aman diulang, dan **menolak** berjalan bila `IS_PEGA_PROD=true` |
-| Uji backend **dengan** Oracle uji | `go test -tags=db ./internal/...` | perlu `ORACLE_DSN` + `ORACLE_SCHEMA`; tanpa itu test **melewati** dengan pesan, bukan lulus diam-diam |
+| Uji backend **dengan** Oracle uji | `go test -tags=db ./internal/...` | perlu `ORACLE_DSN` + `ORACLE_SCHEMA` + `ORACLE_SKEMA_UJI=true`; tanpa `ORACLE_DSN` test **melewati** dengan pesan, bukan lulus diam-diam |
 | Jalankan backend | `go run ./cmd/api` | log `http: mendengarkan di :8080` |
 | Periksa tipe frontend | `cd frontend` lalu `npm run typecheck` | tidak mencetak galat |
 | Uji frontend | `npm test` | `5 passed` |
 | Jalankan frontend | `npm run dev` | buka `http://localhost:5173/` |
 | Bangun frontend | `npm run build` | menjalankan `tsc` dulu, lalu Vite membuat `dist/` |
+
+⛔ **`go test -tags=db` MENGHAPUS tabel di skema yang ditunjuk `ORACLE_SCHEMA`** — termasuk
+`OS_AKSEPTASI_KLAIM_LIFE`, tabel datar warisan. Karena itu ia menolak berjalan kecuali
+`ORACLE_SKEMA_UJI=true` **dan** `ORACLE_SCHEMA` bukan `POOLDATA`; penolakannya berupa **galat**,
+bukan lewat. Tunjuk hanya skema uji kosong yang dibuat DBA khusus untuk itu, tidak pernah skema
+mana pun yang memuat tabel warisan sungguhan — sekalipun di instance pengembangan. `-migrate`
+tidak ikut dipagari: ia hanya `CREATE`, tidak pernah `DROP`.
 
 Dengan `make`: `make test` · `make typecheck` · `make check` · `make test-db` · `make build`.
 
