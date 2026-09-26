@@ -55,7 +55,7 @@ func server(t *testing.T) (*httptest.Server, func()) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	srv := httptest.NewServer(handlers.Router(services.New(db)))
+	srv := httptest.NewServer(handlers.Router(services.New(db), false))
 	return srv, func() {
 		srv.Close()
 		_ = skemauji.Bongkar(ctx, sqlDB, skema)

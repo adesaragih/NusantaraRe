@@ -1579,3 +1579,19 @@ komentarnya sendiri sebagai pilihan sadar.
 menghilangkan nol depannya"*. Benar secara mekanis, tetapi bukan kelonggaran pagar: keputusan **s**
 bersandar pada agregat yang menunjukkan **nol** nilai `STS_REJECT` berawalan nol. Pagar ini menjaga
 "bukan angka", bukan "berawalan nol" — dan itu memang yang diminta.
+
+
+---
+
+## Implementasi — ronde 7, 26 September 2026 malam (satu baris, dari sesi batch 02–06)
+
+Tiket ini **tidak dikerjakan** sesi itu. Yang dicatat hanya langkah migrasi yang ditambahkannya,
+sebab skema ini pemiliknya tiket 14:
+
+| Langkah | Isi | Sebab |
+| --- | --- | --- |
+| **`009_seq_work_claim.sql`** | `SEQ_WORK_CLAIM` | `[keputusan work owner butir aa]` — tiket 02 tidak dapat membuat satu baris `T_WORK_CLAIM` pun tanpa pembangkit identitas. Ia menutup sebagian AC 35 tiket ini: angka urutannya kini ada; awalan `CLM-`/`KMT-` dan `LPAD(6)` dirakit di Go. ⛔ **Tanpa reset tahunan** — nol bukti korpus |
+| **`002` disunting langsung** | kolom `CURRENCY` | `[keputusan work owner butir z1]` — menutup `[terbuka]` ronde 6: `ClaimRetro` menjadi uang, dan uang tanpa mata uang tidak bermakna. Sah karena `T_MIGRASI` belum pernah ada di instance mana pun (§2 l) |
+
+Akibatnya pada penjaga tiket ini: `TestSeluruhCreateDapatDibacaNamanya` **19 → 20**, dan cacah objek
+yang diharapkan sesudah `-migrate` **8 · 5 · 15 → 8 · 6 · 15**. AC tiket 14 **tidak berubah: 40/53**.

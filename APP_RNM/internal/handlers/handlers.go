@@ -19,10 +19,16 @@ import (
 )
 
 // Router menyusun seluruh rute.
-func Router(svc *services.Service) http.Handler {
+//
+// stubPelaku datang dari konfigurasi dan disetel SEKALI di sini. Ia bukan
+// autentikasi - lihat pelaku.go - dan konfigurasi sudah menolaknya bila
+// lingkungan menunjuk produksi.
+func Router(svc *services.Service, stubPelaku bool) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", healthz(svc))
 	mux.HandleFunc("GET /api/klaim-life/{id}", klaimLife(svc))
+	mux.HandleFunc("POST /api/klaim-life", daftarKlaim(svc, stubPelaku))
+	mux.HandleFunc("GET /api/peserta-life", cariPeserta(svc))
 	return mux
 }
 

@@ -1,6 +1,6 @@
 # 02: Register klaim Life + penomoran
 
-**Status:** ready-for-agent
+**Status:** claimed
 
 **Blocked by:** 01 (kerangka aplikasi + seam API), **14 (skema relasional klaim — PREFACTOR)**
 
@@ -56,7 +56,7 @@ END;
       aplikasi.
 - [ ] Aplikasi **tidak** memuat logika pembentukan format nomor apa pun. *(ADR-0006)*
 - [ ] Dua pendaftaran berurutan menghasilkan dua nomor berbeda.
-- [ ] Rule penomoran lama **tidak** dimigrasikan: tidak ada padanan `Generate_NoKlaim_Life` maupun
+- [x] Rule penomoran lama **tidak** dimigrasikan: tidak ada padanan `Generate_NoKlaim_Life` maupun
       `Generate_NoKlaim_LifeRetro` di kode. `[terverifikasi]` keduanya tidak terindeks sebagai
       rujukan aktif di `SaveOutStandingLife_Act`.
 - [ ] Halaman React Register dapat mengirim pendaftaran dan menampilkan nomor yang diterima.
@@ -78,7 +78,7 @@ END;
       **REVISI 2026-09-18:** ⛔ pendaftaran **tidak** menulis tabel polis maupun marketing — keduanya
       **dihapus**. Test yang menemukan penulisan ke tabel polis atau marketing milik klaim
       **gagal**. *(AC 32 spec — koreksi 2026-09-16; `[keputusan work owner]`)*
-- [ ] ⚠️ **Tidak ada blob JSON** sebagai penyimpan isi klaim. *(AC 31 spec; penyimpangan sadar 1)*
+- [x] ⚠️ **Tidak ada blob JSON** sebagai penyimpan isi klaim. *(AC 31 spec; penyimpangan sadar 1)*
 - [ ] Header memuat keempat field `PremiumListSummary` — `CLAIM_NO`, `PL_NUMBER`, `RISLIPRNM`,
       `BUSINESS_NAME` — beserta `CASEID` dan `CLAIM_RETRO`. *(AC 36 spec)*
 - [ ] ⚠️ `[terbuka]` **AC INI KOSONG ARTINYA sejak 2026-09-18 — TIDAK DIHAPUS, MENUNGGU JAWABAN.**
@@ -136,17 +136,17 @@ kolom berakhiran status (daftar `INSERT` di `SaveMasterLPDet`, `ASM-FW-GISFW-INT
 `InsertLifePremiumDetail_act` (`ASM-FW-GISFW-WORK-LIFE` / `INSERTLIFEPREMIUMDETAIL_ACT`): **nol**
 kemunculan. Baris NB masuk dengan `EDMSTATUS` kosong/NULL.
 
-- [ ] Pencarian peserta **tidak menampilkan** peserta ber-`EDMSTATUS` `'Batal'` maupun `'Delete'`.
+- [x] Pencarian peserta **tidak menampilkan** peserta ber-`EDMSTATUS` `'Batal'` maupun `'Delete'`.
       *(AC 25 spec)*
-- [ ] Peserta **new business** (`EDMSTATUS` kosong/NULL) **tetap muncul**. ⚠️ Penyaring naif
+- [x] Peserta **new business** (`EDMSTATUS` kosong/NULL) **tetap muncul**. ⚠️ Penyaring naif
       `EDMSTATUS NOT IN ('Delete','Batal')` membuang seluruh peserta NB di Oracle — test wajib
       memuat kasus ini dan **harus gagal** bila penyaringnya naif. *(AC 26 spec)*
-- [ ] Peserta ber-`EDMSTATUS` `'Old'` dan `'New'` **tetap muncul**. *(AC 27 spec)*
+- [x] Peserta ber-`EDMSTATUS` `'Old'` dan `'New'` **tetap muncul**. *(AC 27 spec)*
 - [ ] Baris bernilai **negatif** hasil jurnal balik endorsement **tidak pernah** sampai ke layar
       Register maupun ke perhitungan klaim. *(AC 28 spec)*
-- [ ] Penyaringan terjadi di **satu tempat** — repository pembaca peserta. Test yang menemukan jalur
+- [x] Penyaringan terjadi di **satu tempat** — repository pembaca peserta. Test yang menemukan jalur
       baca peserta tanpa penyaring **gagal**. *(AC 29 spec)*
-- [ ] `STATUS` dan `STATUSOLD` **tidak** dipakai sebagai penanda hidup/mati. *(AC 30 spec)*
+- [x] `STATUS` dan `STATUSOLD` **tidak** dipakai sebagai penanda hidup/mati. *(AC 30 spec)*
 - [ ] Jalur baca **akuntansi/ringkasan premium** — bila ada di konteks ini — **tidak** menyaring:
       ia melihat seluruh baris positif dan negatif. **Satu tabel, dua sudut pandang.**
 
@@ -248,3 +248,131 @@ Jadi yang harus ditulis ulang work owner sebelum tiket ini dikerjakan: **AC 2, A
 Executor tidak mengubah teks AC sendiri.
 
 Status tiket tidak diubah: **`ready-for-agent`**, dan butir 1–4 di atas adalah blocker-nya.
+
+---
+
+## Implementasi — 26 September 2026 malam (sesi batch 02–06)
+
+**Keputusan §2 yang dipakai:** **aa** `[DIPUTUSKAN]` (sequence `SEQ_WORK_CLAIM`, migrasi `009`),
+**z1** `[DIPUTUSKAN]` (kolom `CURRENCY` di `002`), **ab** `[DIPUTUSKAN]` (stub pelaku berpagar).
+**Yang ditunggu:** **o1–o3** — dan itulah yang menahan sebagian besar AC tiket ini.
+
+**Status: `claimed`** — **7 dari 26 AC tertutup**. Test Go **99 → 111**, nol FAIL; test bertag
+`db` **20 → 23**, seluruhnya SKIP; frontend 87 → 88 modul. Angka diambil **sesudah** perbaikan
+`/code-review`.
+
+### Apa yang sekarang berjalan
+
+`POST /api/klaim-life` dan `GET /api/peserta-life?pl=…&n=…` ada; `services.Pendaftaran.Daftar`
+menulis baris work object, header, peserta terpilih, **dan** baris datar warisan dalam **satu
+transaksi**, memakai `PohonKlaim.Simpan` yang sudah ada — nol `INSERT` baru untuk tabel yang sudah
+punya penulis. Halaman React `Register` mencari peserta, memilih, dan mengirim.
+
+### ⛔ Kenapa nomor klaim belum dapat dibentuk
+
+AC 2, 3, dan 7–11 menuntut nomor datang dari `POOLDATA.PROC_GENERATE_SEQUENCE_NUMBER`. Keputusan
+work owner **o** (26-09-2026) melarang memanggil procedure mana pun. Keduanya tidak dapat benar
+sekaligus, dan teks AC hanya boleh diubah work owner.
+
+Yang dilakukan executor: **memisahkan tempatnya**, bukan memilih pihak. `services.Penomor` adalah
+antarmuka; implementasi bawaannya `PenomorBelumDiputuskan` mengembalikan **galat terang** yang
+menyebut butir o dan nomor AC yang bertentangan. Pintu HTTP menjawab **501**, bukan 500 — ini bukan
+kerusakan melainkan keputusan yang belum diambil. ⛔ Nomor karangan yang tampak benar jauh lebih
+berbahaya daripada galat: nomor klaim dibaca manusia dan dipakai di luar sistem ini.
+
+⭐ Satu test mengunci bahwa **nomor tidak diambil bila permintaan ditolak**. Nomor yang sudah
+terbentuk tidak dapat dikembalikan ke urutannya, jadi mengambilnya sebelum validasi berarti membuang
+satu nomor setiap kali borang salah isi — dan lubang nomor itu terlihat oleh orang di luar sistem.
+
+### Butir aa — identitas work object
+
+`SEQ_WORK_CLAIM` (langkah `009`) memberi **angka urutannya**; awalan `CLM-`/`KMT-` dan `LPAD(6)`
+dirakit di Go, sebab awalan bergantung jenis baris dan itu aturan dagang, bukan DDL. ⛔ **Tanpa
+reset tahunan** — korpus tidak memuat satu pun bukti bahwa Pega me-reset urutan ini, dan mengarang
+reset membuat dua baris bernomor sama pada tahun berbeda.
+
+### Butir ac — kolom negatif, dijawab korpus
+
+Brief meminta executor membaca verdict **V14** grilling Endorsement Life. Hasilnya: V14 **tidak
+menyebut kolom bertanda negatif** sama sekali. Yang ditetapkannya adalah **mekanismenya** — baris
+negatif hasil jurnal balik ditulis ke tabel yang **sama** dan hidup berdampingan dengan baris
+positifnya; akuntansi melihat keduanya, dan kontrak Claim Life berbunyi *"peserta yang sudah EDM
+Batal atau soft-delete TIDAK BOLEH MUNCUL"*.
+
+Jadi AC 23 dipenuhi lewat penyaring `EDMSTATUS`, bukan lewat penyaring tanda. ⛔ Executor **tidak
+mengarang** kolom bertanda negatif yang tidak ada di mana pun.
+
+### ⛔ Tabel peserta berisi 66,8 juta baris — dan itu mengubah cara kodenya ditulis
+
+Katalog instance pengembangan: index pada `PL_NUMBER`, `CERTIFICATE_NO`, `POLICY_NO`, dan **tidak
+ada** index berawalan `EDMSTATUS`. Query tanpa penyaring ber-index bukan "agak lambat" melainkan
+pemindaian penuh yang menahan basis data. Dua aturan dipasang dan **dijaga test statik**: setiap
+query menyaring dengan `PL_NUMBER`/`CERTIFICATE_NO`, dan setiap query berbatas hasil.
+
+⚠️ Penyaring naif `EDMSTATUS = ''` **keliru**, dan bukan sedikit: agregat menghitung **59,1 juta**
+baris `NULL` dan **nol** baris teks kosong — peserta new business justru yang `NULL`, sehingga
+penyaring naif membuang hampir seluruh tabel tanpa satu pun galat.
+
+### Butir ab — stub pelaku, dan apa yang ia BUKAN
+
+⛔ **Ini bukan autentikasi.** Header `X-Pelaku`/`X-Peran` dapat ditulis siapa saja yang dapat
+mengirim permintaan. Tiga pagar dipasang: mati secara bawaan; **ditolak saat memuat konfigurasi**
+bila `IS_PEGA_PROD=true` (bukan saat permintaan pertama — proses yang menyala akan melayani
+permintaan sebelum ada yang sempat menyadarinya); dan seluruh uji wewenang berjalan di seam
+`services` dengan `Pelaku` langsung, sehingga aturannya tidak bergantung pada jalur ini sama sekali.
+
+### AC yang masih terbuka — 18
+
+| Sebab | Nomor |
+| --- | --- |
+| **Menunggu butir o** (teks AC bertentangan dengan keputusan work owner) | 2, 3, 7, 8, 9, 10, 11 |
+| ⛔ **Penyaring tanda tidak dipasang** — dicabut centangnya sesudah tinjauan | 23 |
+| Menunggu Oracle (G1) — jalurnya ada, buktinya belum | 1, 4, 12, 14, 18, 19 |
+| `[terbuka]` sejak 2026-09-18, kosong artinya | 15, 16 |
+| Pemilik lain — PremiumList Life · layar Register bernomor | 17 · 6 |
+| Tidak berlaku di konteks ini (jalur baca akuntansi) | 26 |
+
+### Penjaga yang tersentuh, dan angkanya diperbarui — bukan dilonggarkan
+
+`TestSeluruhCreateDapatDibacaNamanya` **19 → 20** (sequence baru); `TestKolomDDLCocokDenganStruktur`
+menuntut STRUKTUR diralat untuk `CURRENCY`, dan blok ralat bertanggal ditulis di sana.
+
+⚠️ **Dua penjaga baru gagal membuktikan dirinya pada percobaan pertama**, dan keduanya diperbaiki
+sebelum dipakai: penjaga query mencari `PL_NUMBER` **di mana pun** — termasuk di daftar kolom
+`SELECT` dan di `ORDER BY` — sehingga meluluskan query yang penyaringnya dicabut; dan penjaga AC 25
+mencocokkan `STATUS` di dalam `EDMSTATUS`, menuduh penyaring yang justru benar.
+
+
+### ⛔ Yang ditemukan `/code-review`, dan diperbaiki sebelum commit
+
+| # | Temuan | Perbaikan |
+| ---: | --- | --- |
+| 1 | ⛔ **Jalur tulis tidak berpagar wewenang.** `Daftar` tidak pernah memeriksa pelaku, sehingga permintaan tanpa identitas — keadaan **bawaan** saat stub mati, yaitu keadaan produksi — tetap menulis klaim dengan `CREATE_OP_NAME` kosong. Bukan gagal-tertutup, melainkan **gagal-anonim** | pendaftaran menolak pelaku tanpa identitas; ⚠️ peran yang sebenarnya tetap `[terbuka — tiket 07]` |
+| 2 | ⛔ **Penjaga AC 25 MATI.** Polanya ditulis `\b` di dalam raw string, dan di sana dua backslash berarti backslash **harfiah** — ia tidak pernah cocok dengan apa pun. Bab ini sempat membanggakannya sebagai penjaga yang diperbaiki | → ``; dibuktikan dengan menjalankan kedua pola berdampingan atas `"WHERE STATUS = 1"` |
+| 3 | ⛔ **AC 23 dicentang tanpa dasar.** Penyaring tanda memang tidak dipasang, dan bab ini mengakuinya di paragraf yang sama | centangnya **dicabut** |
+| 4 | ⛔ **Sequence dibakar sebelum penomoran yang pasti gagal.** `SEQ_WORK_CLAIM` non-transaksional, jadi setiap `POST` membuang satu pengenal lalu menjawab 501 — melanggar prinsip yang berkas itu sendiri tulis | urutan ditukar: nomor dulu, baru pengenal |
+| 5 | ⛔ **AC 29 justru dilanggar**: aturan penyaring hidup ada **dua kali** dan berbeda — SQL tanpa `TRIM`, Go dengan `TRIM`, dan `PesertaHidup` nol pemanggil produksi. `"Batal "` berspasi lolos SQL | `TRIM` di SQL, dan hasil disaring ulang lewat `PesertaHidup` sehingga aturannya punya satu rumah |
+| 6 | ⛔ **Butir z1 separuh**: kolom `CURRENCY` ada di DDL tetapi tidak ditulis maupun dibaca — daftar klaim USD, baca lagi, mata uangnya hilang | ditulis di `INSERT` header dan dibaca `AmbilHeader` |
+| 7 | ⚠️ **Test db tiket 02 hilang seluruhnya** — satu baris utuh §4 brief tidak dikerjakan | tiga test db ditulis: tiga tempat + baris datar, dua pengenal berbeda, dan penomoran gagal membatalkan seluruh transaksi |
+| 8 | ⚠️ `stubPelakuAktif` variabel paket yang diubah `Router` — dua Router dalam satu proses berbagi satu saklar | dibawa sebagai argumen |
+| 9 | ⚠️ Pesan 501 membocorkan nama objek basis data ke badan HTTP | rinciannya tinggal di log |
+| 10 | ⚠️ Frontend: kunci pilihan memakai nomor sertifikat saja, sehingga sertifikat kembar antar polis tercentang berbarengan; polis dan mata uang diambil dari peserta pertama tanpa memeriksa campuran | kunci menjadi polis+sertifikat; campuran polis/mata uang ditolak di layar |
+
+⚠️ **Pelajaran yang saya catat sendiri:** saat memeriksa temuan 2, alat ukur pertama saya **tertelan
+perangkap yang sama** — heredoc memakan backslash gandanya, sehingga kedua pola menjadi identik dan
+hasilnya "tidak ada masalah". Saya nyaris menolak tuduhan yang benar. Yang menyelamatkannya hanya
+satu: angka yang identik untuk pola yang seharusnya berbeda terlihat mencurigakan, dan diukur ulang
+dengan alat yang ditulis tanpa heredoc.
+
+### Yang MASIH belum dikerjakan dari §4 brief
+
+⚠️ **Peserta belum disalin lengkap.** Brief menuntut peserta terpilih disalin *"termasuk keempat
+tanggal valuasi, `WPC`, `IS_CHECK`"*; `models.Peserta` belum punya medan itu dan `INSERT` peserta
+belum menulisnya. ⛔ **Akibatnya tiket 06 terblokir**: §3 brief menyandarkan validasi DOL pada kolom
+itu justru supaya tidak perlu query ulang ke tabel 66 juta baris.
+
+### Penjaga ketiga §5 — dicatat di sini karena belum dapat dijalankan
+
+Cacah objek sesudah `-migrate` berubah **8 · 5 · 15 → 8 · 6 · 15**: satu sequence baru
+(`SEQ_WORK_CLAIM`, langkah `009`), nol tabel dan nol index baru. ⛔ Belum dapat dibuktikan — G1
+tertutup dan `-migrate` belum pernah berjalan di Oracle mana pun.

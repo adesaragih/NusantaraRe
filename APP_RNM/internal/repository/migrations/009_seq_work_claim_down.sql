@@ -1,0 +1,2 @@
+DROP SEQUENCE {skema}.SEQ_WORK_CLAIM
+/

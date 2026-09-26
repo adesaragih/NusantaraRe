@@ -495,7 +495,9 @@ func TestSeluruhCreateDapatDibacaNamanya(t *testing.T) {
 	}
 	// Angkanya dikunci: kalau pemisah pernyataan rusak lagi, cacahnya anjlok
 	// dan test ini gagal alih-alih diam-diam memeriksa lebih sedikit.
-	const mau = 19
+	// Dua puluh sejak 26-09-2026: langkah 009 menambah SEQ_WORK_CLAIM
+	// (butir aa, tiket 02). 7 tabel + 6 sequence + 7 index = 20.
+	const mau = 20
 	if diperiksa != mau {
 		t.Errorf("pernyataan CREATE diperiksa %d, mau %d", diperiksa, mau)
 	}
@@ -587,7 +589,7 @@ func TestKolomCreateTableMembacaSeluruhTabel(t *testing.T) {
 	}
 	// Tujuh, bukan delapan: T_MIGRASI dibuat siapkanTabelMigrasi, di luar
 	// berkas migrasi. Sesudah migrasi, katalog memang memuat delapan tabel.
-	// 7 tabel + 5 sequence + 7 index = 19 pernyataan CREATE, cocok dengan
+	// 7 tabel + 6 sequence + 7 index = 20 pernyataan CREATE, cocok dengan
 	// cacah yang dikunci TestSeluruhCreateDapatDibacaNamanya.
 	const mauTabel = 7
 	if tabel != mauTabel {

@@ -43,6 +43,15 @@ type Config struct {
 	// `-migrate-down`. `-migrate` tidak: ia hanya membuat objek.
 	SkemaUjiDiakui bool
 
+	// AuthStub menyalakan pembacaan pelaku dari header HTTP.
+	//
+	// ⛔ INI BUKAN AUTENTIKASI. Header dapat ditulis siapa saja yang dapat
+	// mengirim permintaan, jadi ia tidak membuktikan apa pun. Ia penunda
+	// sampai tiket 07 / IAM memasang sumber peran yang sebenarnya
+	// (ADR-U-0030), supaya jalur wewenang dapat dibangun dan diuji lebih
+	// dulu. Mati secara bawaan, dan ditolak keras saat IS_PEGA_PROD=true.
+	AuthStub bool
+
 	// Layanan memetakan nama layanan luar ke alamatnya, seluruhnya dari env.
 	Layanan map[string]string
 }
@@ -108,6 +117,7 @@ func Load() (Config, error) {
 	}
 
 	c.SkemaUjiDiakui = strings.EqualFold(strings.TrimSpace(os.Getenv(EnvSkemaUji)), "true")
+	c.AuthStub = strings.EqualFold(strings.TrimSpace(os.Getenv("AUTH_STUB")), "true")
 
 	raw := strings.TrimSpace(os.Getenv("IS_PEGA_PROD"))
 	if raw != "" {
@@ -116,6 +126,17 @@ func Load() (Config, error) {
 			return Config{}, fmt.Errorf("%w: IS_PEGA_PROD bukan boolean: %q", ErrKonfigurasi, raw)
 		}
 		c.IsPegaProd = b
+	}
+
+	// ⛔ Stub pelaku TIDAK PERNAH hidup di lingkungan produksi. Ini ditolak
+	// saat memuat konfigurasi, bukan saat permintaan pertama tiba: proses yang
+	// menyala dengan keduanya benar akan melayani permintaan sebelum ada yang
+	// sempat menyadarinya.
+	if c.AuthStub && c.IsPegaProd {
+		return Config{}, fmt.Errorf(
+			"%w: AUTH_STUB=true ditolak saat IS_PEGA_PROD=true; stub pelaku membaca peran "+
+				"dari header HTTP dan tidak membuktikan apa pun (ADR-U-0005, ADR-U-0030)",
+			ErrKonfigurasi)
 	}
 
 	if c.OracleDSN != "" && c.OracleSchema == "" {

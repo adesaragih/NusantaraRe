@@ -148,3 +148,62 @@ export async function ambilKlaimLife(id: string): Promise<Klaim> {
 export function kodeStatusGalat(err: unknown): number | undefined {
   return axios.isAxiosError(err) ? err.response?.status : undefined
 }
+
+// ---------------------------------------------------------------------------
+// TIKET 02 — pendaftaran klaim.
+// ---------------------------------------------------------------------------
+
+/** Satu calon peserta hasil pencarian. Sumber: repository.CalonPeserta. */
+export interface CalonPeserta {
+  NomorPremiList: string
+  NomorPolis: string
+  NomorSertifikat: string
+  NamaTertanggung: string
+  MataUang: string
+  EDMStatus: string
+}
+
+/** Isi satu pendaftaran klaim. */
+export interface PermintaanDaftar {
+  nomorPremiList: string
+  nomorPolis: string
+  type: string
+  kodeBisnis: string
+  mataUang: string
+  sertifikat: string[]
+}
+
+/** Jawaban pendaftaran yang berhasil. */
+export interface HasilDaftar {
+  id: string
+  nomorKlaim: string
+}
+
+/**
+ * Mencari calon peserta satu premium list.
+ *
+ * ⛔ `pl` wajib: tabel peserta berisi 66,8 juta baris dan hanya ber-index pada
+ * PL_NUMBER. Backend menolak permintaan tanpa itu dengan 400, dan itu memang
+ * yang benar — pencarian tanpa penyaring bukan "pencarian luas", melainkan
+ * pemindaian penuh yang menahan basis data.
+ */
+export async function cariPesertaLife(pl: string, batas = 50): Promise<CalonPeserta[]> {
+  const { data } = await api.get<CalonPeserta[] | null>('/api/peserta-life', {
+    params: { pl, n: batas },
+  })
+  // Go menulis slice kosong sebagai null; layar menginginkan daftar kosong.
+  return data ?? []
+}
+
+/**
+ * Mendaftarkan klaim baru.
+ *
+ * ⚠️ Backend dapat menjawab 501 bila cara membentuk nomor klaim belum
+ * diputuskan work owner. Itu BUKAN kerusakan, dan pesannya menyebut apa yang
+ * ditunggu — layar meneruskannya apa adanya, tidak menggantinya dengan
+ * "terjadi kesalahan".
+ */
+export async function daftarKlaimLife(minta: PermintaanDaftar): Promise<HasilDaftar> {
+  const { data } = await api.post<HasilDaftar>('/api/klaim-life', minta)
+  return data
+}

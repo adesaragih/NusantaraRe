@@ -40,31 +40,31 @@ func (r *KlaimLife) AmbilHeader(ctx context.Context, id string) (*models.Klaim, 
 	}
 	// CLAIM_RETRO dibaca lewat TO_CHAR ber-argumen NLS: ia uang (butir w2), dan
 	// uang tidak pernah lewat float maupun bergantung setelan sesi
-	// (ADR-U-0003, ADR-U-0016).
+	// (ADR-U-0003, ADR-U-0016). CURRENCY menyertainya sejak butir z1.
 	q := fmt.Sprintf(
-		`SELECT ID, CLAIM_NO, POLICY_NO, BUSINESS_NAME, STS_REJECT, `+fmtDesimal+
+		`SELECT ID, CLAIM_NO, POLICY_NO, BUSINESS_NAME, STS_REJECT, CURRENCY, `+fmtDesimal+
 			` FROM %s WHERE ID = :1`, "CLAIM_RETRO", tabel)
 	if err := PeriksaSQL(q); err != nil {
 		return nil, err
 	}
 
 	var (
-		kID                            string
-		nomorKlaim, nomorPolis, bisnis sql.NullString
-		kodeStatus, claimRetro         sql.NullString
+		kID                              string
+		nomorKlaim, nomorPolis, bisnis   sql.NullString
+		kodeStatus, mataUang, claimRetro sql.NullString
 	)
 	err = r.db.sql.QueryRowContext(ctx, q, id).
-		Scan(&kID, &nomorKlaim, &nomorPolis, &bisnis, &kodeStatus, &claimRetro)
+		Scan(&kID, &nomorKlaim, &nomorPolis, &bisnis, &kodeStatus, &mataUang, &claimRetro)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca header klaim: %w", err)
 	}
-	// ⚠️ Mata uangnya KOSONG di sini: T_GENERAL_CLAIM tidak punya kolom mata
-	// uang, dan menebaknya berarti mengarang. Yang membacanya bersama peserta
-	// mendapat mata uang dari baris adjustment.
-	retro, err := uraiUang(kID, "CLAIM_RETRO", claimRetro, "")
+	// ✅ Mata uangnya datang dari kolom CURRENCY header sejak butir z1
+	// (26-09-2026). Sampai kolom itu ada, nilai ini bermata uang kosong -
+	// benar secara mekanis, tidak berguna bagi pembacanya.
+	retro, err := uraiUang(kID, "CLAIM_RETRO", claimRetro, mataUang.String)
 	if err != nil {
 		return nil, err
 	}

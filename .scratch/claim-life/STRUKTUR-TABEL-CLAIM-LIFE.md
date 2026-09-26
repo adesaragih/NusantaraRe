@@ -139,6 +139,7 @@ Header klaim Life. Satu baris mewakili **satu klaim**. `ID`-nya **sama persis** 
 | `RI_SLIP_RNM` | teks | ya | | keputusan tiket 14 |
 | `BUSINESS_NAME` | teks | ya | | korpus `BUSINESSNAME` — UpdOS, InsOS |
 | `CLAIM_RETRO` | desimal | ya | | korpus `CLAIM_RETRO` — UpdOS, InsOS; ✅ **ralat 26-09-2026**, lihat bawah |
+| `CURRENCY` | teks | ya | | ⭐ **BARU 26-09-2026** — `[keputusan work owner butir z1]`, lihat bawah |
 | `CASEID_POLICY` | teks | ya | | keputusan tiket 14 — penunjuk polis |
 | `POLICY_NO` | teks | ya | | keputusan tiket 14 (ganti nama dari `PL_NUMBER`); korpus `POLICY_NO` — UpdOS, InsOS |
 | `ENDORSMENT_NO` | teks | ya | | keputusan tiket 14 — penunjuk polis |
@@ -524,3 +525,24 @@ uang**, sedangkan uang tanpa mata uang tidak bermakna. Saat klaim dibongkar dari
 mata uangnya diambil dari baris adjustment; saat header dibaca sendirian lewat `AmbilHeader`, ia
 **kosong**. Menambahkan kolom mata uang ke header adalah keputusan tersendiri, dan executor tidak
 mengarangnya. Pemilik: work owner.
+
+
+---
+
+## ⭐ KOLOM BARU 26 September 2026 malam — `T_GENERAL_CLAIM.CURRENCY`
+
+`[keputusan work owner butir z1]`. Kolom ini **tidak** ada di korpus Pega maupun di tabel warisan;
+ia lahir dari `[terbuka]` yang dicatat ronde 6.
+
+**Sebabnya:** keputusan **w2** menjadikan `CLAIM_RETRO` **uang**, dan uang tanpa mata uang tidak
+bermakna — `Money` yang `Currency`-nya kosong dapat dijumlahkan dengan uang mata uang lain tanpa
+ada yang mencegah. Sampai kolom ini ada, `AmbilHeader` mengembalikan `ClaimRetro` bermata uang
+kosong: benar secara mekanis, tidak berguna bagi pembacanya.
+
+**Kenapa di header, bukan per baris:** agregat instance pengembangan menunjukkan **nol** klaim yang
+baris-barisnya bermata uang campur. Satu kolom di tingkat header karena itu cukup. ⚠️ Dan bila
+kelak ada yang campur, `BongkarBarisLama` sudah melaporkannya sebagai `Temuan` sejak ronde 6 —
+tidak dipilih diam-diam.
+
+Langkah migrasinya `002` yang disunting langsung, sah selama `T_MIGRASI` belum pernah ada di
+instance mana pun (brief §2 l) — dan pada 26-09-2026 itu masih benar.

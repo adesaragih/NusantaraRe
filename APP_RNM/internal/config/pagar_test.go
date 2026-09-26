@@ -98,3 +98,38 @@ func TestPastikanSkemaUjiMembacaEnv(t *testing.T) {
 		t.Errorf("%s seharusnya ditolak meski %s=true", NamaSkemaWarisan, EnvSkemaUji)
 	}
 }
+
+// ⛔ Stub pelaku DITOLAK di lingkungan produksi, saat memuat konfigurasi.
+//
+// `[keputusan work owner 26-09-2026, butir ab]`. Stub membaca peran dari
+// header HTTP, yang dapat ditulis siapa saja - ia tidak membuktikan apa pun.
+// Penolakannya terjadi saat Load, bukan saat permintaan pertama tiba: proses
+// yang menyala dengan keduanya benar akan melayani permintaan sebelum ada yang
+// sempat menyadarinya.
+func TestAuthStubDitolakDiProduksi(t *testing.T) {
+	t.Setenv("AUTH_STUB", "true")
+	t.Setenv("IS_PEGA_PROD", "true")
+	if _, err := Load(); err == nil {
+		t.Fatal("AUTH_STUB=true diterima saat IS_PEGA_PROD=true")
+	}
+
+	// Di luar produksi ia boleh, dan harus benar-benar terbaca.
+	t.Setenv("IS_PEGA_PROD", "false")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cfg.AuthStub {
+		t.Error("AUTH_STUB=true tidak terbaca di luar produksi")
+	}
+
+	// Bawaannya MATI: stub harus disetel sadar, tidak pernah menyala sendiri.
+	t.Setenv("AUTH_STUB", "")
+	cfg, err = Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.AuthStub {
+		t.Error("AUTH_STUB menyala tanpa disetel; bawaannya harus mati")
+	}
+}

@@ -281,10 +281,13 @@ func (r *PohonKlaim) Simpan(ctx context.Context, tx *Tx, p models.PohonKlaim) er
 
 	// Tingkat 2 - header klaim. ID-nya SAMA dengan ID work object: shared PK.
 	err = r.exec(ctx, tx, fmt.Sprintf(`INSERT INTO %s
-		(ID, CLAIM_NO, POLICY_NO, BUSINESS_NAME, STS_REJECT)
-		VALUES (:1,:2,:3,:4,:5)`, header),
+		(ID, CLAIM_NO, POLICY_NO, BUSINESS_NAME, STS_REJECT, CURRENCY)
+		VALUES (:1,:2,:3,:4,:5,:6)`, header),
 		p.Work.ID, kosongJadiNil(p.Klaim.NomorKlaim), kosongJadiNil(p.Klaim.NomorPolis),
-		kosongJadiNil(p.Klaim.NamaBisnis), kosongJadiNil(p.Klaim.KodeStatus))
+		kosongJadiNil(p.Klaim.NamaBisnis), kosongJadiNil(p.Klaim.KodeStatus),
+		// Butir z1: mata uang header, supaya ClaimRetro yang dibaca kembali
+		// punya mata uang - uang tanpa mata uang tidak bermakna.
+		kosongJadiNil(p.Klaim.ClaimRetro.Currency))
 	if err != nil {
 		return err
 	}

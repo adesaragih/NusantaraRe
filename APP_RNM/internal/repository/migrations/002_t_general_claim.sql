@@ -37,6 +37,17 @@ CREATE TABLE {skema}.T_GENERAL_CLAIM (
   RI_SLIP_RNM      VARCHAR2(64),
   BUSINESS_NAME    VARCHAR2(255),
   CLAIM_RETRO      NUMBER(38,8),
+  -- [keputusan work owner 26-09-2026, butir z1] Mata uang header.
+  --
+  -- Ia lahir dari [terbuka] ronde 6: CLAIM_RETRO menjadi uang, dan uang tanpa
+  -- mata uang tidak bermakna. Sampai kolom ini ada, AmbilHeader mengembalikan
+  -- ClaimRetro bermata uang KOSONG - benar secara mekanis, tidak berguna bagi
+  -- siapa pun yang membacanya.
+  --
+  -- Agregat instance pengembangan: nol klaim yang barisnya bermata uang
+  -- campur, jadi satu kolom di tingkat header memang cukup. Bila kelak ada
+  -- yang campur, BongkarBarisLama sudah melaporkannya sebagai Temuan.
+  CURRENCY         VARCHAR2(8),
   CASEID_POLICY    VARCHAR2(64),
   POLICY_NO        VARCHAR2(64),
   ENDORSMENT_NO    VARCHAR2(64),

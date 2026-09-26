@@ -64,7 +64,7 @@ func main() {
 
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddr,
-		Handler:           handlers.Router(svc),
+		Handler:           handlers.Router(svc, cfg.AuthStub),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
