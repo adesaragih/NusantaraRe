@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
-import { jumlahUang, tampilUang, dampakHapusKlaim, hapusKlaim, type DampakHapus} from './api'
+import {
+  jumlahUang,
+  tampilUang,
+  dampakHapusKlaim,
+  hapusKlaim,
+  serahkanKeKomite,
+  bolehSerahkanDiLayar,
+  pesanGalat,
+  type DampakHapus,
+} from './api'
 
 // Test ini menjaga SATU aturan: uang di sisi React tetap TEKS, tidak pernah
 // menjadi angka (tiket 01 AC-4; ADR-U-0003, ADR-U-0016).
@@ -69,5 +78,64 @@ describe('pratinjau dampak penghapusan', () => {
     expect(dampakHapusKlaim.constructor.name).toBe('AsyncFunction')
     expect(hapusKlaim.constructor.name).toBe('AsyncFunction')
     expect(dampakHapusKlaim).not.toBe(hapusKlaim)
+  })
+})
+
+// Tiket 10 - kontrak penyerahan ke Komite di sisi klien.
+describe('penyerahan ke Komite', () => {
+  it('menyerahkan BARIS, bukan klaim - pengenal peserta ikut di jalurnya', () => {
+    // Unit keputusan adalah baris (ADR-U-0011). Jalur yang hanya membawa
+    // pengenal klaim akan memaksa server menebak baris mana yang dimaksud.
+    expect(serahkanKeKomite.length).toBe(3)
+    expect(serahkanKeKomite.constructor.name).toBe('AsyncFunction')
+  })
+
+  it('meneruskan pesan server apa adanya, dan diam bila tidak ada', () => {
+    // "Name of bank cannot be empty" adalah kalimat sistem lama yang sengaja
+    // dipertahankan; ia harus sampai ke pengguna tanpa diparafrase.
+    const galatAxios = {
+      isAxiosError: true,
+      response: { status: 422, data: { error: 'Name of bank cannot be empty' } },
+    }
+    expect(pesanGalat(galatAxios)).toBe('Name of bank cannot be empty')
+    expect(pesanGalat({ isAxiosError: true, response: { status: 500, data: {} } })).toBeUndefined()
+    expect(pesanGalat(new Error('bukan galat axios'))).toBeUndefined()
+  })
+})
+
+// Tiket 10 AC: gerbang rekening ditegakkan di LAYANAN, dan tetap ditegakkan
+// meskipun kontrol layarnya ditampilkan.
+describe('kontrol layar bukan pagar', () => {
+  it('menampilkan Send ke Komite untuk baris yang rekeningnya kosong', () => {
+    // ⛔ Inilah buktinya. Layar menampilkan tombol untuk baris ini, sehingga
+    // bila gerbang rekening tidak ada di services, ia tidak ada di mana pun.
+    // Baris di bawah TIDAK punya medan bank sama sekali - dan tombolnya tetap
+    // tampil, sebagaimana seharusnya.
+    const barisTanpaBank = {
+      id: 'UJI-A-1',
+      status: 'Outstanding',
+      kodeStatus: '0',
+      statusDiketahui: true,
+      jumlahKlaim: { amount: '1500000', currency: 'IDR' },
+      nomorAkseptasi: '',
+      tanggalAkseptasi: '',
+      komiteId: '',
+    }
+    expect(bolehSerahkanDiLayar(barisTanpaBank)).toBe(true)
+  })
+
+  it('menyembunyikan kontrol untuk baris yang sudah diserahkan atau sudah diputus', () => {
+    const dasar = {
+      id: 'UJI-A-2',
+      status: 'Outstanding',
+      kodeStatus: '0',
+      statusDiketahui: true,
+      jumlahKlaim: { amount: '1', currency: 'IDR' },
+      nomorAkseptasi: '',
+      tanggalAkseptasi: '',
+      komiteId: '',
+    }
+    expect(bolehSerahkanDiLayar({ ...dasar, komiteId: 'KMT-000001' })).toBe(false)
+    expect(bolehSerahkanDiLayar({ ...dasar, status: 'Ditolak', kodeStatus: '2' })).toBe(false)
   })
 })

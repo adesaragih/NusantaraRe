@@ -512,11 +512,34 @@ func (r *KlaimLife) TahapKlaim(ctx context.Context, klaimID string) (string, err
 	return posisi.String, nil
 }
 
-// pastikanSatuBaris memeriksa sebuah pernyataan menyentuh tepat satu baris.
+// PerbaruiKomiteID menautkan baris adjustment ke kasus Komite yang baru lahir.
 //
-// ⛔ Satu tempat. Blok Exec + RowsAffected + "menyentuh %d baris" sudah
-// tersalin lima kali di berkas ini, dan salinan keenam pasti berbeda sedikit
-// dari yang lain - biasanya yang lupa memeriksa cacahnya sama sekali.
+// Tiket 10 AC 61. Rujukan, BUKAN salinan: roster dan keputusan per anggota
+// tetap milik konteks Komite Claim Life.
+//
+// KOMITE_ID lama ikut di WHERE dan wajib NULL. Baris yang sudah tertaut sejak
+// dibaca tidak ditimpa - tanpa klausa itu dua penyerahan bersamaan menghasilkan
+// dua kasus komite dan hanya satu yang teringat.
+func (r *KlaimLife) PerbaruiKomiteID(ctx context.Context, tx *Tx,
+	adjID, komiteID string) error {
+
+	tabel, err := r.db.Qualify("T_CLAIMLF_ADJUSTMENT")
+	if err != nil {
+		return err
+	}
+	q := fmt.Sprintf(
+		`UPDATE %s SET KOMITE_ID = :1 WHERE ID = :2 AND KOMITE_ID IS NULL`, tabel)
+	if err := PeriksaSQL(q); err != nil {
+		return err
+	}
+	hasil, err := tx.tx.ExecContext(ctx, q, kosongJadiNil(komiteID), adjID)
+	if err != nil {
+		return fmt.Errorf("repository: menautkan baris ke Komite: %w", err)
+	}
+	return pastikanSatuBaris(hasil, "penautan baris ke Komite")
+}
+
+// pastikanSatuBaris menuntut sebuah pernyataan menyentuh tepat satu baris.
 func pastikanSatuBaris(hasil sql.Result, nama string) error {
 	n, err := hasil.RowsAffected()
 	if err != nil {

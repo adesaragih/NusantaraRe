@@ -158,6 +158,19 @@ export function kodeStatusGalat(err: unknown): number | undefined {
   return axios.isAxiosError(err) ? err.response?.status : undefined
 }
 
+/**
+ * Pesan galat dari badan jawaban, bila ada.
+ *
+ * ⛔ Dipakai HANYA untuk pesan yang memang milik server dan bermakna bagi
+ * pengguna - mis. "Name of bank cannot be empty", kalimat sistem lama yang
+ * sengaja dipertahankan. Untuk 5xx pesannya TIDAK dicetak.
+ */
+export function pesanGalat(err: unknown): string | undefined {
+  if (!axios.isAxiosError(err)) return undefined
+  const data = err.response?.data as { error?: unknown } | undefined
+  return typeof data?.error === 'string' && data.error !== '' ? data.error : undefined
+}
+
 // ---------------------------------------------------------------------------
 // TIKET 02 — pendaftaran klaim.
 // ---------------------------------------------------------------------------
@@ -241,6 +254,43 @@ export const STATUS_OUTSTANDING = 'Outstanding'
  */
 export async function tolakBarisAdjustment(klaimID: string, adjID: string): Promise<void> {
   await api.post(`/api/klaim-life/${encodeURIComponent(klaimID)}/adjustment/${encodeURIComponent(adjID)}/tolak`)
+}
+
+/**
+ * Apakah layar menampilkan kontrol "Send ke Komite" untuk sebuah baris.
+ *
+ * ⛔ Sengaja TIDAK memeriksa rekening pembayaran, dan tidak memeriksa peran.
+ * Layar tidak tahu peran siapa pun, dan gerbang rekening adalah aturan dagang
+ * - aturan dagang yang ditegakkan di layar dapat dilewati siapa pun yang
+ * memanggil API langsung. Kontrol ini kenyamanan, BUKAN pagar; yang menolak
+ * adalah services (403/422).
+ */
+export function bolehSerahkanDiLayar(b: BarisAdjustment): boolean {
+  return b.status === STATUS_OUTSTANDING && b.komiteId === ''
+}
+
+/**
+ * Menyerahkan satu baris adjustment ke Komite Life.
+ *
+ * Komite adalah SISTEM LUAR. Yang diserahkan adalah barisnya, bukan klaimnya:
+ * unit keputusan tetap baris (ADR-U-0011).
+ *
+ * Jawaban yang mungkin, dan artinya berbeda-beda:
+ *   403 peran tidak berwenang untuk Type ini (QP/QR hanya SPV)
+ *   409 baris sudah diserahkan, atau bukan lagi Outstanding
+ *   422 rekening pembayaran belum lengkap, mata uang campur, atau roster kosong
+ *   501 tempat roster/kasus komite belum diputuskan work owner (butir af)
+ */
+export async function serahkanKeKomite(
+  klaimID: string,
+  pesertaID: string,
+  adjID: string,
+): Promise<void> {
+  await api.post(
+    `/api/klaim-life/${encodeURIComponent(klaimID)}` +
+      `/peserta/${encodeURIComponent(pesertaID)}` +
+      `/adjustment/${encodeURIComponent(adjID)}/komite`,
+  )
 }
 
 /** Cacah baris yang akan ikut terhapus bersama sebuah klaim. */

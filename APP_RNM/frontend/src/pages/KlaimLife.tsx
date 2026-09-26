@@ -3,8 +3,11 @@ import { useState, type FormEvent } from 'react'
 import {
   ambilKlaimLife,
   kodeStatusGalat,
+  pesanGalat,
   tampilUang,
   tolakBarisAdjustment,
+  serahkanKeKomite,
+  bolehSerahkanDiLayar,
   dampakHapusKlaim,
   hapusKlaim,
   STATUS_OUTSTANDING,
@@ -34,6 +37,7 @@ export default function KlaimLife() {
   const [galat, setGalat] = useState<string | null>(null) // pesan bila gagal
   const [memuat, setMemuat] = useState<boolean>(false) // sedang menunggu server?
   const [menolak, setMenolak] = useState<string | null>(null) // baris yang sedang ditolak
+  const [menyerahkan, setMenyerahkan] = useState<string | null>(null) // baris ke Komite
   const [dampak, setDampak] = useState<DampakHapus | null>(null) // isi popup konfirmasi
   const [menghapus, setMenghapus] = useState<boolean>(false) // permintaan hapus berjalan
 
@@ -85,6 +89,35 @@ export default function KlaimLife() {
   // Dibaca ulang, bukan diubah di layar: status klaim adalah TURUNAN dari
   // seluruh barisnya, dan menebaknya di sisi klien berarti dua sumber
   // kebenaran yang dapat berbeda.
+  async function serahkan(pesertaID: string, adjID: string) {
+    if (!klaim) return
+    setGalat(null)
+    setMenyerahkan(adjID)
+    try {
+      await serahkanKeKomite(klaim.id, pesertaID, adjID)
+      setKlaim(await ambilKlaimLife(klaim.id))
+    } catch (err: unknown) {
+      const kode = kodeStatusGalat(err)
+      setGalat(
+        kode === 403
+          ? 'Peran Anda tidak berwenang menyerahkan baris bertipe ini ke Komite.'
+          : kode === 409
+            ? 'Baris sudah diserahkan, atau bukan lagi Outstanding.'
+            : kode === 422
+              ? // ⛔ Pesan 422 dicetak APA ADANYA. Salah satunya berbunyi
+                // "Name of bank cannot be empty" - kalimat sistem lama, yang
+                // dikenali pengguna lama. Menggantinya dengan kalimat kita
+                // sendiri memutus pengenalan itu.
+                (pesanGalat(err) ?? 'Penyerahan ditolak.')
+              : kode === 501
+                ? 'Penyerahan belum dapat disimpan; tempatnya belum diputuskan.'
+                : 'Gagal menyerahkan baris ke Komite.',
+      )
+    } finally {
+      setMenyerahkan(null)
+    }
+  }
+
   async function tolak(adjID: string) {
     if (!klaim) return
     setGalat(null)
@@ -227,6 +260,7 @@ export default function KlaimLife() {
                       <th>Jumlah klaim</th>
                       <th>Nomor akseptasi</th>
                       <th>Tindakan</th>
+                      <th>Komite</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -256,6 +290,26 @@ export default function KlaimLife() {
                             >
                               {menolak === b.id ? 'Menolak…' : 'Reject Outstanding'}
                             </button>
+                          ) : (
+                            '—'
+                          )}
+                        </td>
+                        <td>
+                          {/* Wewenangnya bergantung Type (QP/QR hanya SPV), dan
+                              layar TIDAK tahu peran siapa pun. Yang diperiksa di
+                              sini hanya keadaan baris; perannya ditegakkan
+                              services (403). Menyembunyikan tombol adalah
+                              kenyamanan, bukan pagar. */}
+                          {bolehSerahkanDiLayar(b) ? (
+                            <button
+                              type="button"
+                              disabled={menyerahkan === b.id}
+                              onClick={() => void serahkan(p.id, b.id)}
+                            >
+                              {menyerahkan === b.id ? 'Menyerahkan…' : 'Send ke Komite'}
+                            </button>
+                          ) : b.komiteId ? (
+                            <span title={b.komiteId}>sudah diserahkan</span>
                           ) : (
                             '—'
                           )}
