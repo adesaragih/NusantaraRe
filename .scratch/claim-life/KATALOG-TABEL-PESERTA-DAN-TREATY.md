@@ -1,6 +1,6 @@
 # Katalog tabel warisan yang dipakai tiket 02, 03, dan 06 — instance pengembangan
 
-`[data DBA — dibaca sendiri 26 September 2026 malam, belum dikonfirmasi DBA]`
+`[data DBA — dibaca sendiri 26 September 2026 malam, dilengkapi malam yang sama (RATE_LIFE, PRODUCT_LIFE, agregat treaty), belum dikonfirmasi DBA]`
 
 Sumber: `ALL_TAB_COLUMNS`, `ALL_IND_COLUMNS`, `ALL_INDEXES`, dan **agregat** (`COUNT`, `GROUP BY`)
 pada instance **pengembangan**, skema `POOLDATA`. Nol baris data dibaca. Produksi belum dibaca.
@@ -83,6 +83,16 @@ skema baru dalam bentuk itu** (ADR-U-0022), dan jangan pernah masuk fixture.
 `GetRateRetro` → `POOLDATA.RATE_LIFE`, `GetProductLife` → view `PRODUCT_LIFE`, dan
 `GetJsonProductLife` → `m_product_life.JSONDATA` ⛔ *(dilarang AC 38; jangan ditiru)*.
 
+> **Ralat 26 September 2026 malam** `[terverifikasi — baris pertama tag `pyBrowseSQL` tiap berkas]`:
+> `Claim Life/RDBList/GetJsonProductLife.xml` dimulai `select * from treatyyear_life`, sedangkan
+> `Claim Life/RDBList/GetProductLife.xml` dimulai `SELECT M_PRODUCT_LIFE.JSONDATA AS CARI1,
+> PRODUCT_LIFE.RICOMM FROM PRODUCT_LIFE …`. Pembaca JSON produk di Pega adalah **`GetProductLife`**;
+> baris kedua dan seterusnya kedua SQL itu **belum dibaca** — executor tiket 03 membacanya utuh.
+> SQL `GetRateRetro` `[terverifikasi]`: `SELECT AGE AS CARI1, CONTRACT AS CARI2, GENDER AS CARI3,
+> RATE AS CARI4 FROM POOLDATA.RATE_LIFE WHERE IDUSEDBY = {InputData.CARI3}` *(tanpa `ORDER BY`)*;
+> `GetRetroLife_SQL`: `select * from retrocessionlife where idtreatyyear_life ={ParamData.CARI2}
+> order by id asc`. Larangan AC 38 berlaku pada **pembacaan JSON produk**, apa pun nama rule-nya.
+
 ### `RETROCESSIONLIFE` — **VIEW**, 13 kolom, **seluruhnya `VARCHAR2(4000)`**
 
 `ID` (7), `IDTREATYYEAR_LIFE`, `PERCENTSHARE`, `RATE`, `COMMISION`, `OVR_COMM`, `TREATYTYPEID`,
@@ -97,11 +107,81 @@ terurai, bukan menebak; pemisah desimal yang dipakai view belum diketahui — pe
 `ID VARCHAR2(100)`, `TREATYYEAR VARCHAR2(100)`, `UNDERWRITINGYEAR VARCHAR2(100)`,
 `USERID VARCHAR2(100)`, `TGLUPDATE DATE`, `STARTDATE DATE`, `ENDDATE DATE`.
 
-### `RATE_LIFE` — tabel, enam kolom pertama terbaca
+### `RATE_LIFE` — **VIEW**, 8 kolom — dilengkapi 26 September 2026 malam
 
-`ID VARCHAR2(10)`, `IDUSEDBY`, `USEDBY`, `TYPE`, `GENDER`, `CONTRACT` (semuanya `VARCHAR2(4000)`).
-Sisanya belum dibaca; cacah baris belum dibaca. Executor tiket 03 melengkapinya dari katalog
-sebelum menulis pembaca.
+> Ralat: catatan sebelumnya menyebutnya "tabel, enam kolom pertama terbaca". Ia **view** atas
+> `M_RATE_LIFE` *(`ID VARCHAR2(10)`, `JSONDATA CLOB`)*: `SELECT a.ID, a.JSONDATA.IDUSEDBY,
+> a.JSONDATA.USEDBY, a.JSONDATA.TYPE, a.JSONDATA.GENDER, a.JSONDATA.CONTRACT, a.JSONDATA.AGE,
+> a.JSONDATA.RATE FROM M_RATE_LIFE a`.
+
+| # | Kolom | Tipe | Isi (agregat) |
+| ---: | --- | --- | --- |
+| 1 | `ID` | `VARCHAR2(10)` NOT NULL | 98.305 baris, seluruhnya unik |
+| 2 | `IDUSEDBY` | `VARCHAR2(4000)` | teks angka; 348 nilai berbeda; nol NULL — **kunci pencarian** `GetRateRetro` |
+| 3 | `USEDBY` | `VARCHAR2(4000)` | 347 nilai berbeda *(nama; tidak disalin)* |
+| 4 | `TYPE` | `VARCHAR2(4000)` | **NULL di seluruh baris** |
+| 5 | `GENDER` | `VARCHAR2(4000)` | `U` 98.004 · `M` 201 · `F` 99 · NULL 1 |
+| 6 | `CONTRACT` | `VARCHAR2(4000)` | teks angka 0–120, 88 nilai berbeda; NULL 10.203 |
+| 7 | `AGE` | `VARCHAR2(4000)` | teks angka 0–120, 102 nilai berbeda; NULL 3 |
+| 8 | `RATE` | `VARCHAR2(4000)` | nol NULL; **90.436 baris memuat koma** *(desimal Indonesia)*, 3.226 memuat titik, 4.113 bernilai `0`; panjang 1–20; nilai bertitik/bulat terbesar 2.182. Bentuk: `angka,angka` 89.872 · `angka.angka` 3.224 · bulat 4.645 · **tidak polos 564** *(556 berspasi tepi; 2 memuat koma dan titik sekaligus)* |
+
+⚠️ Tidak ada index *(view atas CLOB — tiap pembacaan mengurai JSON; query agregat memakan
+puluhan detik)*. Kombinasi `(IDUSEDBY, GENDER, AGE, CONTRACT)` = 86.981, **2.693 di antaranya ganda**
+→ dengan `GetRateRetro` tanpa `ORDER BY`, baris yang "menang" di Pega tidak ditentukan; pembaca Go
+mengurutkan dan **melaporkan** ambiguitas *(brief modul §5 ah)*. Pega mengurai `RATE` lewat
+`@toDecimal(@replaceAll(.CARI4, ",", "."))` `[terverifikasi]` — koma memang bentuk yang diharapkan.
+
+### `RETROCESSIONLIFE` — definisi dan agregat (26 September 2026 malam)
+
+Definisi view: `SELECT a.ID, a.JSONDATA.IDTREATYYEAR_LIFE, a.JSONDATA.PERCENTSHARE, a.JSONDATA.RATE,
+a.JSONDATA.COMMISION, a.JSONDATA.OVR_COMM, a.JSONDATA.TREATYTYPEID, b.JSONDATA.Note AS
+TREATYTYPENAME, a.JSONDATA.TREATYSTARTDATE, a.JSONDATA.TREATYENDDATE, a.JSONDATA.USERID,
+a.JSONDATA.TGLUPDATE, a.JSONDATA.REINSURERNAME FROM M_RETROCESSIONLIFE a, M_REINSURANCETYPE b WHERE
+a.JSONDATA.TREATYTYPEID = b.ID`. `M_RETROCESSIONLIFE` **juga** punya kolom bertipe di samping
+`JSONDATA`: `IDTREATYYEAR_LIFE VARCHAR2(10)`, `PERCENTSHARE`/`RATE`/`COMMISION`/`OVR_COMM` `NUMBER`,
+`TREATYTYPEID VARCHAR2(10)`, `TREATYSTARTDATE`/`TREATYENDDATE VARCHAR2(10)`, `USERID VARCHAR2(100)`,
+`REINSURERNAME VARCHAR2(1000)`, `TREATYTYPENAME VARCHAR2(100)`. Di DEV **13 dari 13 baris**: nilai
+kolom bertipe **sama persis** dengan nilai JSON-nya *(`PERCENTSHARE`, `RATE`, `COMMISION`,
+`OVR_COMM`, `IDTREATYYEAR_LIFE`, `TREATYSTARTDATE` dibandingkan sebagai teks)*, dan seluruh
+`TREATYTYPEID` punya pasangan di `M_REINSURANCETYPE`. `M_REINSURANCETYPE`: `ID VARCHAR2(5)`, `OLD_LJR_ID CHAR(2)`, `OLD_LJT_ID
+CHAR(3)`, `JSONDATA CLOB`.
+
+| Agregat DEV | Nilai |
+| --- | --- |
+| Baris | **13** |
+| `RATE` | 1 NULL; sisanya angka satu karakter, tanpa koma |
+| `PERCENTSHARE` | angka bertitik, 5–100; **jumlah per treaty-year = 100** *(total 500 untuk 5 treaty-year)* |
+| `COMMISION`, `OVR_COMM` | seluruhnya angka bertitik/bulat |
+| `TREATYSTARTDATE`/`TREATYENDDATE` | 10 karakter, pola `DD/MM/YYYY` *(bagian pertama tanggal akhir > 12 di seluruh baris)* |
+| `IDTREATYYEAR_LIFE` | `1000032` (4) · `1000033` (4) · `1000034` (3) · `1000035` (1) · `1000036` (1) — **nol** yang cocok dengan `TREATYYEAR_LIFE.ID` |
+| Jenis treaty (`TREATYTYPEID`/`TREATYTYPENAME`) | `10196` QS (4) · `10197` 2ND QS (4) · `10198` SURPLUS (3) · `10199` 2ND SURPLUS (1) · `10200` OR (1) |
+| Reinsurer berbeda | 4 *(nama tidak disalin)* |
+
+### `TREATYYEAR_LIFE` — isi DEV (2 baris konfigurasi; bukan data orang)
+
+| `ID` | `TREATYYEAR` | `UNDERWRITINGYEAR` | `STARTDATE` | `ENDDATE` |
+| --- | --- | --- | --- | --- |
+| `1000078` | `2018` | `2018` | 2018-01-01 | 2024-12-31 |
+| `1000079` | `2025` | `2025` | 2025-01-01 | 2036-12-31 |
+
+⚠️ **Tidak ada kolom `IDR`/`USD`** di sini, padahal `SpreadingClaimLife_Act` membaca `.IDR`/`.USD`
+per baris treaty-year *(kaskade kapasitas)* dan `GetJsonProductLife` dimulai `select * from
+treatyyear_life` *(tanpa skema)*. `[data DBA]` objek `treatyyear_life` yang dilihat koneksi Pega dan
+sumber kapasitas `IDR`/`USD`.
+
+### `PRODUCT_LIFE` — VIEW 36 kolom atas `M_PRODUCT_LIFE.JSONDATA`
+
+`M_PRODUCT_LIFE`: `ID VARCHAR2(6)`, `JSONDATA CLOB`, `RIRISKID VARCHAR2(10)`, `RIRISK VARCHAR2(100)`.
+Kolom view *(semua `VARCHAR2(4000)` kecuali `ID VARCHAR2(6)`)*: `TYPE`, `TYPE_CEDING`, `CEDING`,
+`CEDINGID`, `SOBNAME`, `SOBID`, `CAUSEID`, `GRUP`, `PRODUCTNAME`, `PRODUCTCODE`, `PRODUCTTYPEID`,
+`PRODUCTTYPE`, `RIRISKID`, `RIRISK`, `RIRATEID`, `RIRATE`, `RICOMMID`, `RICOMM`, `INWARDNAME`,
+`UNDERWRITINGLIMITLIST`, `OUTWARDNAMEID`, `OUTWARDNAME`, `OUTWARDRATEID`, `OUTWARDRATE`,
+`OUTWARDCOMMID`, `OUTWARDCOMM`, `BENEFITID`, `BENEFIT`, `CAUSE`, `OVR_COMM` *(dari
+`OutwardList[0]`)*, `POLICYHODER`, `POLICYHODERNAME`, `TREATYNUMBER`, `CREATEOP`, `UPDATEOP`.
+`OUTWARDRATEID` di sini **tingkat produk**; yang dipakai `SpreadingClaimLife_Act` adalah
+`OUTWARDRATEID` **per plan** di dalam `PlanList` JSON *(plan yang `Name`-nya = `BusinessName`
+klaim)* — tidak tersedia lewat view ini. ⛔ JSON produk tidak dibaca *(AC 38)*; lihat brief modul
+§5 **ag**.
 
 ## Yang dokumen ini TIDAK putuskan
 
