@@ -213,6 +213,44 @@ mana pun selain **ab** · menambah langkah migrasi di luar `009`/`010`/`002` · 
 
 ---
 
+## 9. SESUDAH TIKET 02 — verifikasi independen `753cef2`, dan yang harus terjadi sebelum tiket 03
+
+**Yang tereproduksi:** 26 berkas +1.598/−27; 23 test db SKIP dengan pesan; 88 modul; 7/26 AC
+*(5, 13, 20, 21, 22, 24, 25)*; keputusan aa, z1, ab diterapkan; sepuluh perbaikan tinjauan ada di
+kode *(pagar pelaku, `\b`, urutan nomor→pengenal, `TRIM` di SQL + `PesertaHidup`, `CURRENCY` ditulis
+dan dibaca, stub sebagai argumen, 501 tanpa nama objek, kunci polis+sertifikat)*.
+
+⛔ **Yang TIDAK benar: `753cef2` memuat satu test MERAH.** `go test ./...` = **110 PASS, 1 FAIL**,
+bukan "111, nol FAIL" seperti ditulis log dan bab Implementasi. `TestSetiapPemanggilBukaMemeriksaBolehDilewati`
+mengunci cacah pemanggil `skemauji.Buka()` = 7, sedangkan `services/pendaftaran_db_test.go` — yang
+lahir dari perbaikan tinjauan nomor 7 — menjadi pemanggil **ke-8**. Verifikasi penuh dijalankan
+**sebelum** perbaikan tinjauan, lalu tidak diulang. Aturan §1-5 karena itu diperjelas: **verifikasi
+penuh dijalankan lagi sesudah perbaikan `/code-review`, tepat sebelum commit.**
+
+**Langkah 02-L — commit lanjutan tiket 02, sebelum apa pun yang lain**
+*(pesan `claim-life: tiket 02 lanjutan — penjaga hijau, peserta disalin lengkap`)*:
+
+| # | Yang dikerjakan |
+| ---: | --- |
+| 1 | `TestSetiapPemanggilBukaMemeriksaBolehDilewati`: `mau` 7 → **8**, komentar menyebut `pendaftaran_db_test.go`; ralat satu baris di bab Implementasi tiket 02: *"110 PASS + 1 FAIL saat commit, diperbaiki di lanjutan"* — bukan menghapus klaim lama |
+| 2 | **Peserta disalin lengkap** *(§4 tiket 02, belum dikerjakan; prasyarat tiket 06)*. `models.Peserta` bertambah: `SumberID` *(kolom `ID` M_LIFE_PREMIUM_DETAIL → `SOURCE_ID`)*, `IsCheck`, `TanggalValuasiGrossMulai/Selesai`, `TanggalValuasiRetroMulai/Selesai`, `WPC`, `TanggalMulai/Efektif/Berakhir/Lapse`, `STNC`, dan uang polis `SumInsured`, `SumReasured`, `GrossPremium`, `NetPremium`, `CedingRetention`, `ShareNusantaraRe`, `ShareRetro`, `RetrocededShare` *(Money)*, `EMPercent` *(Ratio)*. ⛔ **Nol nama orang di model**: `NAME_OF_INSURED`/`POLICY_HOLDER` tetap hanya di `CalonPeserta` untuk layar, tidak disalin ke `T_CLAIMLF_PREMIUMLIST_DETAIL` *(kolomnya ada di DDL, tetap NULL sampai keputusan work owner — catat)* |
+| 3 | **Server membaca ulang peserta terpilih sendiri** lewat `(PL_NUMBER, CERTIFICATE_NO)` *(keduanya ber-index)* di dalam `Daftar`, lalu menyalinnya — klien hanya mengirim nomor sertifikat. Nilai polis **tidak** dipercaya dari badan HTTP. Query-nya ikut aturan penjaga: ber-index dan berbatas |
+| 4 | `PohonKlaim.Simpan` menulis kolom peserta baru; `AmbilPeserta` membacanya *(TO_CHAR untuk angka dan tanggal)*; test murni pulang-pergi model ↔ `BarisLama` bila tersentuh; test db *(SKIP)*: keempat tanggal valuasi terbaca kembali sama persis |
+| 5 | `CalonPeserta` diberi tag JSON camelCase *(`nomorSertifikat`, …)* seperti kontrak lain; `api.ts` mengikuti |
+| 6 | Daftar "AC terbuka" tiket 02 berjumlah **19**, bukan 18 *(7 + 1 + 6 + 2 + 2 + 1)*; angkanya diralat |
+
+**Keputusan baru untuk work owner — `[USULAN]`:**
+
+| | Keputusan | Keadaan |
+| ---: | --- | --- |
+| ae | **`CASEID` klaim baru.** `Daftar` membiarkannya kosong, sehingga baris datar warisan klaim baru **tidak dapat dikelompokkan** oleh hilir yang membaca `OS_AKSEPTASI_KLAIM_LIFE` per `CASEID` *(Arasapas)*, dan `Hapus`/`CacahBarisLama` memakai sumbu itu. Usulan **ae1**: `CASEID` = pengenal work object *(`CLM-xxxxxx`)* — di Pega pun `CASEID` adalah pengenal work object-nya, jadi ini paritas, bukan satu nilai dua arti; dicatat sebagai penyimpangan sadar di tiket 02. **ae2**: tetap kosong sampai work owner menetapkan sumber lain | `[USULAN]` — rekomendasi **ae1** |
+
+**Sesudah 02-L hijau dan ter-commit:** lanjut **03 → 06 → 04 → 05** persis §4–§5, tiap tiket satu
+unit. Butir **o** masih menahan AC 2, 3, 7–11 tiket 02; tidak ada tiket berikutnya yang bergantung
+padanya, jadi ia tidak menghalangi rantai.
+
+---
+
 *Disusun 26 September 2026 malam atas permintaan work owner "proses 5 tiket sekaligus": kelima
 tiket dibaca utuh, rantai ketergantungan 02→03→06→04→05 diturunkan dari kolom "Blocked by", katalog
 tabel peserta dan treaty dibaca dari instance pengembangan (agregat saja).*
