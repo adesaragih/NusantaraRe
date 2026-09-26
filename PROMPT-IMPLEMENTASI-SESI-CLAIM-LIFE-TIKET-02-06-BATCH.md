@@ -1,0 +1,201 @@
+# PROMPT — sesi implementasi: Claim Life **lima tiket sekaligus** — 02, 03, 06, 04, 05
+
+> **Skill:** ketik `/mattpocock-skills:implement` sebagai manusia, lalu tempel berkas ini **utuh**.
+> Brief induk **`PROMPT-IMPLEMENTASI-GO-REACT.md`** berlaku seluruhnya **kecuali §6 kalimat "satu
+> sesi, satu tiket"**, yang diganti bab 1 berkas ini atas permintaan work owner 26 September 2026.
+> Brief tiket 14 ronde 5–7 tetap menjadi rujukan skema, pagar, dan katalog.
+>
+> **Urutan baca sebelum satu baris kode:** brief induk §4–§8 → `APP_RNM\README-BACA-DULU.md` →
+> kelima tiket **utuh** *(`.scratch\claim-life\issues\02…06`)* → `STRUKTUR-TABEL-CLAIM-LIFE.md`
+> **seluruhnya** → `KATALOG-TABEL-PESERTA-DAN-TREATY.md`, `TIPE-KOLOM-OS-AKSEPTASI-KLAIM-LIFE.md`,
+> `SUMBER-PENOMORAN-DBA.md` → `CONTEXT.md` bab BusinessCode dan peran → §2–§4 berkas ini.
+>
+> **SESI INI:** claim-life · tiket **02, 03, 06, 04, 05** berurutan · tiket 14 dan 01 **tidak
+> disentuh** kecuali dinyatakan di §4.
+
+---
+
+## 0. KEADAAN AWAL — 26 September 2026 malam
+
+| | Keadaan |
+| --- | --- |
+| `HEAD` | `347ee57`; tiket 14 *claimed* 40/53; tiket 01 *claimed* 4/7; tiket 02–06 *ready-for-agent*, nol AC dicentang. Untracked: brief ronde 7 dan katalog di atas *(commit di Langkah 0)* |
+| Uji | **99** test Go PASS; **20** test bertag `db` SKIP dengan pesan; 5 test JS; `vite build` 87 modul |
+| Yang sudah ada dan **dipakai**, bukan ditulis ulang | skema 7 tabel + `T_MIGRASI` *(migrasi tertanam, pra-terbang bentuk, `-migrate`/`-migrate-down`)*; `repository.PohonKlaim.Simpan` *(satu transaksi: 6 tingkat + baris datar warisan + pagar `PeriksaNilaiWarisan`)*; `BongkarBarisLama`/`BarisLamaDari`; `AmbilHeader`, `AmbilPeserta`, `AmbilBaris`, `AmbilSpreading`; `models.Money`/`Ratio`/`Klaim`/`Peserta`/`BarisAdjustment`/`PohonKlaim`, `StatusBarisDariKode`; `services.Pelaku`, `WajibPeran`, `DalamTransaksi`; rute `GET /healthz`, `GET /api/klaim-life/{id}`; frontend satu halaman + proxy dev |
+| Oracle | **G1 masih tertutup** — tidak ada user kosong. Seluruh test db ditulis dan **SKIP dengan pesan**; **nol** `-migrate` |
+| Kredensial pengembangan | ada di `APP_RNM\.env` milik work owner; menunjuk `POOLDATA` — **hanya** untuk `go run ./cmd/api` *(baca)*, tidak pernah untuk test db atau migrasi |
+
+---
+
+## 1. LIMA TIKET DALAM SATU SESI — aturannya
+
+1. **Urutan tetap: 02 → 03 → 06 → 04 → 05.** Itu urutan ketergantungannya *(03 butuh klaim dari
+   02; 06 adalah gerbang simpan di 03; 04 menurunkan status dari baris 03; 05 memakai mesin 04)*.
+   Tidak boleh dibolak-balik.
+2. **Tiap tiket tetap satu unit penuh** brief induk §6 butir 3–8: `Status: claimed` → test dulu →
+   kode → bab `## Implementasi — <tanggal>` → `/code-review` atas **titik tetap tiket itu** *(SHA
+   sesudah commit tiket sebelumnya)* → **satu commit per tiket** dengan pesan
+   `claim-life: tiket NN — <judul>` + baris `Tiket:`. Nol commit gabungan.
+3. **Blocker di dalam tiket tidak menghentikan sesi.** AC yang menunggu keputusan *(§2)* atau
+   Oracle diberi tanda di bab Implementasi dan tiket tetap `claimed`; sesi **lanjut** ke tiket
+   berikutnya. Yang dilarang brief induk §6-2 adalah mengerjakan tiket lain **diam-diam** —
+   di sini lanjutnya **dinyatakan**, per tiket, dengan alasannya.
+4. **Berhenti total** hanya bila: tiket sebelumnya gagal `go test ./...` dan tidak dapat
+   dipulihkan; `/code-review` menemukan cacat AC yang tidak dapat ditutup di sesi itu; atau ada
+   hal di §7. Bila berhenti di tengah, tiket yang belum disentuh tetap `ready-for-agent`.
+5. **Verifikasi penuh** *(vet, vet db, gofmt, build, test, test db, typecheck, test JS, build JS)*
+   dijalankan **sekali di akhir tiap tiket** sebelum commit-nya, bukan hanya di akhir sesi.
+6. **Laporan akhir** memuat bab per tiket *(AC ditutup / total, SHA)* dan satu telemetri sesi.
+
+---
+
+## 2. KEPUTUSAN WORK OWNER YANG MENYENTUH KELIMA TIKET
+
+| | Keputusan | Bukti / keadaan | Pemakai |
+| ---: | --- | --- | --- |
+| o1–o3 | **Penomoran klaim** *(brief ronde 4 §2, ronde 5)*. Tiket 02 AC 2, 3, 7–11 menyebut `PROC_GENERATE_SEQUENCE_NUMBER`; keputusan o melarang memanggil procedure. Sampai AC-nya ditulis ulang work owner, executor **memisahkan** penomoran di balik antarmuka `services.Penomor` *(§4 tiket 02)* dan **tidak** menulis logikanya. Bila `[DIPUTUSKAN]` sebelum sesi, executor menulis `PenomorCounter` dari `SUMBER-PENOMORAN-DBA.md` **termasuk perakitan format** `<prefix>K<kode>.MM.YYYY.<5 digit>` yang di Pega dirakit pemanggil | sumber procedure sudah terbaca — `[USULAN]` | 02 |
+| aa | **Generator `CLM-xxxxxx` / `KMT-xxxxxx`** — tiket 14 AC 35 `[terbuka]`, tetapi tiket 02 **tidak dapat membuat satu baris `T_WORK_CLAIM` pun** tanpa itu. Usulan: sequence `SEQ_WORK_CLAIM` *(langkah migrasi baru `009`)* + `LPAD(6,'0')`, awalan menurut jenis baris, **tanpa reset tahunan**, dibaca lewat `nomorBerikut` yang sudah ada | fixture memakai `CLM-UJI001`; nol bukti korpus soal reset — `[USULAN]` | 02 |
+| z | Mata uang header *(brief ronde 7)* — usulan **z1** kolom `CURRENCY` di `002` | agregat: 0 klaim campur — `[USULAN]` | 02 |
+| ab | **Siapa pelaku permintaan HTTP.** `services.WajibPeran` sudah ada; sumber peran adalah satu tabel *(ADR-U-0030)* yang belum ada, dan tiket 07 yang menegakkannya. Tiket 05 butuh `ReasLifeAdmin` **sekarang**. Usulan: handler membaca pelaku dari header `X-Pelaku` *(akun)* dan `X-Peran` *(daftar peran)* **hanya bila** env `AUTH_STUB=true`, ditolak keras saat `IS_PEGA_PROD=true`, dan seluruh test wewenang berjalan di seam `services` dengan `Pelaku` langsung. Ini **bukan** autentikasi; ia penunda sampai tiket 07/IAM | `[USULAN]` — perlu persetujuan IAM/work owner | 05, 03 |
+| ac | **Baris negatif jurnal balik** *(tiket 02 AC 28)*: kolom mana yang bertanda negatif belum ditulis di tiket. Executor membaca verdict V14 grilling Endorsement Life dan menulis kolomnya di tiket 02 bab Implementasi sebagai `[dugaan]` bila spec tidak tegas; penyaringnya tetap dipasang | spec Endorsement Life — `[USULAN]` | 02 |
+| ad | **Kolom isi `T_CLAIMLF_DOCUMENT`** *(tiket 03 dokumen per peserta)*: diturunkan dari sensus `.DocumentList` di `SaveOutStandingLife_Act` — executor melakukan sensus itu dan menulis hasilnya sebagai langkah migrasi **`010`** *(tabel `007` hanya punya PK + FK)*, dengan bukti path XML per kolom | korpus — `[USULAN]` | 03 |
+| — | `PREMIUM_SPREADED_NET` dua cabang *(tiket 03)*: **tidak** ditebak; kolom diisi `NULL` dan dilaporkan `[terbuka — Product+UW]` | korpus | 03 |
+| — | `@addCalendar(...,0,0,0,1,0,0,0)` *(tiket 06)*: direplikasi apa adanya, satuannya `[dugaan]` **hari**; ditulis di test dan tiket | korpus | 06 |
+| k, l | tetap | | semua |
+
+Seluruh baris `[USULAN]` disahkan dengan mengganti kata itu menjadi `[DIPUTUSKAN]` **di berkas ini**
+sebelum sesi. Yang masih `[USULAN]` saat sesi berjalan diperlakukan sebagaimana kolom "keadaan"
+menyatakan — **tidak** ditebak.
+
+---
+
+## 3. FAKTA KATALOG YANG MENGUBAH CARA MENULIS KODE
+
+| Fakta *(katalog pengembangan, agregat saja)* | Akibat |
+| --- | --- |
+| `M_LIFE_PREMIUM_DETAIL` **66,8 juta baris**, 85 kolom; index pada `PL_NUMBER`, `CERTIFICATE_NO`, `POLICY_NO`, **tidak** pada `EDMSTATUS` | pencarian peserta **wajib** berawalan `PL_NUMBER` *(atau `CERTIFICATE_NO`)* dan berbatas hasil *(`FETCH FIRST :n ROWS ONLY`)*; nol query tanpa penyaring ber-index; test statik menolak `SELECT` atas tabel ini tanpa `PL_NUMBER`/`CERTIFICATE_NO` di `WHERE` |
+| `EDMSTATUS`: `NULL` 59,1 juta · `Batal` 7,7 juta · `Old` 661 · `New` 148 · `Delete` 142 · `''` **0** | baris NB = `NULL`; penyaring `EDMSTATUS IS NULL OR EDMSTATUS NOT IN ('Batal','Delete')`; test AC 26 memuat kasus `NULL` **dan** `''` |
+| Keempat tanggal valuasi + `WPC` ada di `M_LIFE_PREMIUM_DETAIL` sebagai `DATE` | tiket 06 membacanya dari peserta yang **disalin** ke `T_CLAIMLF_PREMIUMLIST_DETAIL` saat dipilih *(kolomnya sudah ada di `003`)*, bukan query ulang ke tabel 66 juta baris |
+| `RETROCESSIONLIFE` adalah **VIEW** ber-13 kolom `VARCHAR2(4000)` semua; `TREATYYEAR_LIFE` tabel 7 kolom; `RATE_LIFE` sebagian terbaca | angka spreading tiba sebagai **teks**: urai lewat `utils.ParseDecimal`, laporkan yang gagal; pemisah desimalnya belum diketahui — periksa dengan agregat sebelum menulis pembaca |
+| `GetJsonProductLife` → `m_product_life.JSONDATA` | ⛔ **tidak ditiru** *(tiket 02 AC 38)*; nama produk dari view `PRODUCT_LIFE` |
+| `STS_REJECT` di DEV bernilai 0/1/2/**4** | mesin status 04 memetakan `4` ke *tidak diketahui* dan **tidak** pernah menulis 4; artinya `[terbuka — tiket 04/work owner]` |
+
+---
+
+## 4. RENCANA PER TIKET — seam, pintu, dan yang dikunci test
+
+Seam tetap tiga *(brief induk §5)*: `repository` ↔ skema uji *(db, SKIP tanpa Oracle)*, HTTP ↔
+skema uji, `services` murni. Uang: `Money`/`Ratio` dari teks; nol float; nilai dibandingkan dengan
+angka contoh spec bila ada.
+
+### Tiket 02 — Register klaim + penomoran
+
+| Bagian | Isi |
+| --- | --- |
+| Pintu | `POST /api/klaim-life` *(daftar: `PL_NUMBER`, penunjuk polis, `TYPE`, `BUSINESS_CODE`, daftar peserta terpilih)* → 201 `{id, nomorKlaim}`; `GET /api/peserta-life?pl=<PL_NUMBER>&n=<batas>` |
+| `services` | `Pendaftaran.Daftar(ctx, pelaku, permintaan)`: satu transaksi *(`DalamTransaksi`)*: `T_WORK_CLAIM` *(ID dari **aa**, `LINI=LIFE`, `TYPE`, `CASE_ID`)* → `T_GENERAL_CLAIM` *(shared PK; `CLAIM_NO` dari `Penomor`)* → peserta terpilih disalin ke `T_CLAIMLF_PREMIUMLIST_DETAIL` *(termasuk keempat tanggal valuasi, `WPC`, `IS_CHECK`)* → baris datar warisan lewat `BarisLamaDari` + `PeriksaNilaiWarisan`. `Penomor` = antarmuka `NomorBerikut(ctx, tx, jenis, tanggal) (nomor string, err)`; implementasi **sementara** `PenomorBelumDiputuskan` mengembalikan galat terang *(AC 2, 3, 7–11 `[terbuka — o]`)*; test memakai `PenomorPalsu` |
+| `repository` | `PesertaPolis.Cari(ctx, plNumber, batas)` atas `M_LIFE_PREMIUM_DETAIL` dengan penyaring §3 dan **ac**; `Pendaftaran.Simpan` **memakai** `PohonKlaim.Simpan` yang ada — tidak menulis INSERT baru untuk tabel yang sudah punya penulis |
+| Test murni | penyaring `EDMSTATUS` *(NULL, '', Old, New, Batal, Delete)*; baris negatif; `Penomor` dipanggil **sekali** per pendaftaran dan **sesudah** validasi; kegagalan `Penomor` membatalkan seluruh transaksi |
+| Test db *(SKIP)* | pendaftaran menulis 3 tempat + baris datar dalam satu transaksi; dua pendaftaran = dua `ID` berbeda; `T_WORK_CLAIM.LINI = 'LIFE'`; nol tulisan ke tabel polis/marketing *(negatif: test yang menemukan tabel itu **gagal**)* |
+| Frontend | halaman `Register`: cari peserta per `PL_NUMBER`, pilih, kirim; menampilkan nomor **atau** pesan "nomor belum dapat dibentuk" *(o belum diputuskan)* — uang tetap teks |
+| Tetap terbuka | AC 15, 16 *(kosong artinya)*, 17 *(pemilik PremiumList Life)*; AC 2, 3, 7–11 sampai **o** |
+
+### Tiket 03 — Baris `AdjustmentList` + Save ke Outstanding
+
+| Bagian | Isi |
+| --- | --- |
+| Pintu | `POST /api/klaim-life/{id}/peserta/{pesertaId}/adjustment` *(tambah baris)*; `POST /api/klaim-life/{id}/simpan-outstanding` *(gerbang dokumen + DOL tiket 06, lalu status `0`)*; `GET /api/klaim-life/{id}` yang ada sudah menampilkan baris |
+| `services` | `Adjustment.Tambah`: baris ke-2 dst **mewarisi 8 kolom** dari baris pertama peserta itu, **tidak** mewarisi status; `STS_REJECT` diisi `0` **oleh aksi Save ke Outstanding**, bukan saat insert *(test menolak hardcode: baris yang belum disimpan ke Outstanding **tidak** punya status)*; `ACCEPTATION_DATE` **tidak** disentuh; bank boleh kosong; `Spreading.Hitung(baris, treaty)` murni: `AMOUNT = RetrocadedShare × PERCENT_SHARE ÷ 100`, `PREMIUM_SPREADED_GROSS = RATE × (1 + EM_PERCENT) × AMOUNT`, `PREMIUM_SPREADED_NET = NULL` `[terbuka]`; tanpa retro → nol baris spreading, **bukan** galat |
+| `repository` | pembaca treaty *(`RETROCESSIONLIFE`, `TREATYYEAR_LIFE`, `RATE_LIFE`)* — teks → `ParseDecimal`, galat dilaporkan; penulisan lewat `PohonKlaim.Simpan`; dokumen: langkah migrasi **`010`** kolom isi *(**ad**)* + `Dokumen.Daftar/Simpan` |
+| Test murni | pewarisan 8 kolom; rumus spreading dibandingkan **angka contoh spec/korpus** bila ada, kalau tidak dengan angka bulat yang ditulis di test beserta turunannya; gerbang dokumen menyebut **peserta mana**; satu transaksi *(kegagalan spreading membatalkan baris)* |
+| Test db *(SKIP)* | dua peserta × dua putaran = empat baris tertelusur; spreading dibekukan *(ubah treaty sesudah simpan → angka tetap)*; dokumen `SELECT` biasa |
+| Frontend | daftar baris per peserta dengan status **kata**; formulir baris + tiga field bank; tombol Save ke Outstanding dengan pesan gerbang |
+
+### Tiket 06 — Validasi DOL per `Type` + `ContentNote`
+
+| Bagian | Isi |
+| --- | --- |
+| `models` | `BusinessCode` → `ContentNote` sebagai **tabel data** dari `CONTEXT.md` L1–L21 *(satu `map`/slice, nol `if` bercabang)*; nilai `ContentNote` tertutup: `DEATH`, `HEALTH`, `CI`, `TPD`, `TI` |
+| `services` | `ValidasiDOL(tipe, dol, peserta)`: `QP`/`QR` → jendela `GROSS_VALUATION_*`; `TP`/`TR` → `RETRO_VALUATION_*` **dengan pergeseran** `+1` satuan `[dugaan: hari]`; gagal → galat setara `"Invalid DOL"` yang menyebut peserta; dipanggil dari Save ke Outstanding tiket 03; **satu** field `Type` |
+| Test murni | tiap `Type` × *(di dalam, tepat di batas, di luar, tanggal kosong)*; pemetaan 21 kode; kode di luar daftar → galat, bukan `DEATH` diam-diam |
+| Tetap terbuka | satuan `@addCalendar` *(Product+UW)*; arti `QP`/`QR` *(OQ-020)* |
+
+### Tiket 04 — Mesin status per baris
+
+| Bagian | Isi |
+| --- | --- |
+| `models` | `StatusBaris` sudah ada; tambah `Klaim.StatusTurunan()`: *selesai* ⇔ nol Outstanding **dan** ≥1 Aksep; *ditolak seluruhnya* ⇔ nol Outstanding dan nol Aksep; selain itu *berjalan*. **Tidak** disimpan sebagai kolom |
+| `services` | `Transisi(baris, ke)`: dari Outstanding ke Aksep/Ditolak saja; dari Aksep/Ditolak ke apa pun → galat *(kefinalan, ADR-U-0011)*; kode `4` → tidak diketahui, tidak pernah ditulis; pencerminan `STS_REJECT`/`ACCEPTED_NO` ke `T_CLAIMLF_PREMIUMLIST_DETAIL` dan `T_GENERAL_CLAIM` **dalam transaksi yang sama** dengan penulisan baris *(satu fungsi repository `PohonKlaim.PerbaruiStatusBaris`)* |
+| Pintu | `GET /api/klaim-life/{id}` menambah `statusKlaim` *(kata)* dan tiap baris membawa `status` *(sudah ada)*; riwayat = seluruh baris, bukan yang terakhir |
+| Test murni | tabel transisi lengkap *(termasuk yang **ditolak**)*; aturan turunan pada 6 kombinasi; menolak satu baris tidak menutup klaim |
+| Test db *(SKIP)* | pencerminan dua tingkat terjadi bersamaan; baris final tidak berubah lewat jalur mana pun |
+
+### Tiket 05 — Reject Outstanding oleh Admin
+
+| Bagian | Isi |
+| --- | --- |
+| Pintu | `POST /api/klaim-life/{id}/adjustment/{adjId}/tolak` → 200 baris terbaru; 403 bila bukan `ReasLifeAdmin`; 409 bila baris bukan Outstanding; 422 bila klaim belum bernomor |
+| `services` | `Tolak(ctx, pelaku, klaimID, adjID)`: `WajibPeran(pelaku, "ReasLifeAdmin")` → klaim punya `CLAIM_NO` → baris Outstanding → `Transisi(baris, Ditolak)` *(tiket 04)*; nilai `2` **menurut aksi**, sama dengan jalur Komite; pencerminan bersamaan |
+| Pelaku | sesuai **ab**; tanpa `AUTH_STUB=true` pintu HTTP menjawab 401 dan test HTTP-nya SKIP dengan pesan, test `services` tetap jalan |
+| Test murni | jalur **ditolak** diuji: peran salah, baris Aksep, baris sudah Ditolak, klaim tanpa nomor; jalur berhasil: hanya baris itu berubah, klaim tetap menerima baris baru |
+
+---
+
+## 5. URUTAN SESI
+
+**Langkah 0.** Commit yang tertunda **dengan nama**: `docs: brief batch tiket 02–06, brief ronde 7,
+katalog peserta dan treaty` *(brief ini, brief ronde 7, `KATALOG-TABEL-PESERTA-DAN-TREATY.md`)*.
+`git status --porcelain` kosong; SHA dicatat sebagai titik tetap **tiket 02**; uji tanpa Oracle
+hijau.
+
+**Per tiket, berurutan 02 → 03 → 06 → 04 → 05:** `Status: claimed` → test dulu pada seam §4 →
+kode → verifikasi penuh → bab Implementasi *(AC ditutup / total; AC terbuka dengan pemiliknya;
+keputusan §2 yang dipakai atau ditunggu)* → `/code-review` atas titik tetap tiket itu → perbaiki
+temuan AC → commit → SHA baru = titik tetap tiket berikutnya.
+
+**Migrasi baru** *(`009` sequence work claim bila **aa**; `010` kolom dokumen bila **ad**; `002`
+`CURRENCY` bila **z1**)*: berkas lanjutan **bernomor baru**, kecuali `002` yang masih boleh
+disunting langsung *(§2 l — `T_MIGRASI` belum ada di mana pun; nyatakan itu di tiket)*.
+`TestKolomDDLCocokDenganStruktur` menuntut STRUKTUR ikut diralat *(blok bertanggal)*.
+
+**Tiket 14 dan 01** tidak disentuh, **kecuali** satu baris di tiket 14 bab Implementasi ronde 7
+*(ditulis sesi ini)*: langkah migrasi mana yang ditambah sesi ini dan kenapa.
+
+**Laporan akhir sesi**: satu bab per tiket + telemetri §8.
+
+---
+
+## 6. GAYA KODE — tetap mengikat
+
+Brief ronde 5 §6. Tambahan untuk batch: tiap paket/berkas baru menyebut **tiket** pemiliknya di
+komentar kepala; nama fungsi layanan mengikuti kata kerja tiket *(`Daftar`, `Tambah`,
+`SimpanOutstanding`, `ValidasiDOL`, `Transisi`, `Tolak`)*; frontend tetap `.tsx`, uang teks.
+
+---
+
+## 7. YANG MEMERLUKAN PERSETUJUAN MANUSIA — berhenti dan tanya
+
+Brief ronde 5 §7, ditambah: **menyimpan baris apa pun** dari `M_LIFE_PREMIUM_DETAIL` ke artefak
+*(termasuk fixture — buat sendiri `UJI-*`; kolom `KTP` **tidak pernah** masuk fixture)* · membaca
+`m_product_life.JSONDATA` · menulis logika penomoran tanpa **o** `[DIPUTUSKAN]` · membaca peran dari
+mana pun selain **ab** · menambah langkah migrasi di luar `009`/`010`/`002` · menyentuh tiket 07–15.
+
+---
+
+## 8. TELEMETRI EKSEKUSI — bab wajib di laporan akhir
+
+| Besaran | Cara ukur |
+| --- | --- |
+| Per tiket: AC ditutup / total, AC terbuka dengan pemilik, SHA titik tetap dan commit | tiket + `git log` |
+| Per tiket: test murni · test db *(SKIP/PASS)* · test JS ditambah | `go test -v` sebelum/sesudah |
+| Keputusan §2 yang `[DIPUTUSKAN]` vs ditunggu, dan AC mana yang terkena | tulis di baris pertama tiap bab |
+| Query ke `M_LIFE_PREMIUM_DETAIL`: seluruhnya ber-`PL_NUMBER`/`CERTIFICATE_NO` dan berbatas | test statik |
+| Berkas dibuat / diubah per tiket, baris berisi | `git diff --stat <titik tetap tiket>..<commit tiket>` |
+| Sub-agen review per tiket: token, panggilan | laporan harness |
+| Token sesi utama · biaya · jam dinding | **⛔ tidak diukur** — nyatakan |
+
+---
+
+*Disusun 26 September 2026 malam atas permintaan work owner "proses 5 tiket sekaligus": kelima
+tiket dibaca utuh, rantai ketergantungan 02→03→06→04→05 diturunkan dari kolom "Blocked by", katalog
+tabel peserta dan treaty dibaca dari instance pengembangan (agregat saja).*
