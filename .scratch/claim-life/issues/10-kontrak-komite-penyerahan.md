@@ -174,16 +174,18 @@ per bab → Acceptance criteria 10/13, Rujukan Komite 2/5 dengan 1 milik tiket l
 
 | Angka | Nilai | Cara 1 | Cara 2 | Label |
 | --- | --- | --- | --- | --- |
-| test Go | **200 PASS · 0 FAIL · 31 SKIP** *(dari 189/28)* | `go test -tags=db ./internal/... -v`, cacah awalan `--- PASS`/`--- FAIL`/`--- SKIP` → 231 | `grep -rhoE '^func Test[A-Za-z0-9_]+' internal/ --include=*_test.go \| sort -u \| wc -l` → **230**, 31 di antaranya bertag db | `[terverifikasi]` |
+| test Go | **200 PASS · 0 FAIL · 31 SKIP** *(dari 189/28)* | `go test -tags=db ./internal/... -v`, cacah awalan `--- PASS`/`--- FAIL`/`--- SKIP` → 231 | `grep -rhoE '^func Test[A-Za-z0-9_]+' internal/ --include=*_test.go \| wc -l` → **231** (tanpa `sort -u`; lihat ralat di bawah) | `[terverifikasi]` |
 | vet | bersih, termasuk `-tags=db` | `go vet ./...` | `go vet -tags=db ./...` | `[terverifikasi]` |
 | gofmt | nol berkas | `gofmt -l internal/ cmd/ pkg/` | `gofmt -l` atas tiap berkas baru satu per satu | `[terverifikasi]` |
 | test JS | **11 PASS** *(dari 7)* | `npm test` → `Tests 11 passed` | `grep -c "  it(" src/services/api.test.ts` → 11 | `[terverifikasi]` |
 | modul frontend | **88** | `npm run build` → `88 modules transformed` | 8 berkas sumber `.ts`/`.tsx` + dependensi node | `[terverifikasi]` |
 
-⚠️ **Cara 1 dan cara 2 berselisih satu** pada test Go: 231 lawan 230. Sebabnya terbaca, bukan
-misteri — `TestPagarSkemaUjiMenuntutDuaSyarat` bernama sama di **dua** paket, jadi pelari
-menghitungnya dua kali dan `sort -u` sekali. Selisih yang dapat dijelaskan; bukan angka yang
-tidak cocok.
+⛔ **Ralat 27-09-2026 — selisih itu cacat CARA HITUNG saya, bukan selisih sungguhan.** Cara 2
+memakai `sort -u`, yang membuang `TestPagarSkemaUjiMenuntutDuaSyarat` — nama yang memang ada di
+**dua** paket dan memang dijalankan dua kali. Tanpa `sort -u` kedua cara sepakat **231**.
+CLAUDE.md §4 bab 4a melarang memilih salah satu bila keduanya berselisih; yang benar di sini
+bukan memilih 231, melainkan **membetulkan cara keduanya** sehingga tidak ada selisih untuk
+dipilih.
 
 | Berkas | Isi |
 | --- | --- |

@@ -28,13 +28,34 @@ var (
 // Service adalah akar seluruh layanan.
 type Service struct {
 	db *repository.DB
+	// lingkungan menggerbangi EFEK KELUAR saja, tidak pernah penyimpanan.
+	//
+	// ⛔ Bawaannya BUKAN produksi, dan itu disengaja: gagal tertutup, bukan
+	// gagal terbuka. Proses yang lupa menyetelnya tidak akan mengirim email
+	// kepada orang sungguhan.
+	lingkungan Lingkungan
 }
 
 // New membuat Service. db boleh nil bila proses berjalan tanpa Oracle;
 // layanan yang memerlukannya akan menolak saat dipanggil.
 func New(db *repository.DB) *Service {
-	return &Service{db: db}
+	return &Service{db: db, lingkungan: BukanProduksi}
 }
+
+// DenganLingkungan menyetel lingkungan efek keluarnya.
+//
+// ⚠️ Dipanggil SEKALI saat proses menyala, dari `cmd/api`, dengan nilai dari
+// `config.IsPegaProd` (ADR-U-0005). Tanpa pemanggilan itu tidak ada efek
+// keluar yang pernah berjalan di mana pun - dan tidak adanya pemanggil itulah
+// yang membuat AC lingkungan sempat tercentang secara hampa.
+func (s *Service) DenganLingkungan(l Lingkungan) *Service {
+	salin := *s
+	salin.lingkungan = l
+	return &salin
+}
+
+// Lingkungan menyebut lingkungan efek keluar proses ini.
+func (s *Service) Lingkungan() Lingkungan { return s.lingkungan }
 
 // PunyaDatabase menyatakan apakah proses dikonfigurasi menyentuh Oracle.
 func (s *Service) PunyaDatabase() bool { return s != nil && s.db != nil }

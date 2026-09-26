@@ -43,7 +43,14 @@ func main() {
 		defer func() { _ = db.Close() }()
 	}
 
-	svc := services.New(db)
+	// ⛔ Lingkungan efek keluar dipasang SEKALI di sini, dari `config.IsPegaProd`
+	// (ADR-U-0005). Tanpa baris ini tidak ada efek keluar yang pernah berjalan
+	// di mana pun - dan AC lingkungan akan tercentang secara hampa.
+	//
+	// ⚠️ Ia menggerbangi EFEK KELUAR saja, tidak pernah penyimpanan: klaim
+	// tetap tersimpan di lingkungan non-produksi.
+	svc := services.New(db).DenganLingkungan(
+		services.LingkunganDariFlag(cfg.IsPegaProd))
 	if svc.PunyaDatabase() {
 		log.Printf("oracle: skema %s", svc.SkemaAktif())
 	} else {

@@ -258,10 +258,12 @@ func (KasusKomiteBelumDiputuskan) Buat(context.Context, *repository.Tx,
 
 // Penyerahan menyerahkan baris adjustment ke Komite.
 type Penyerahan struct {
-	svc    *Service
-	roster SumberRoster
-	kasus  PembuatKasusKomite
-	jejak  Jejak
+	svc      *Service
+	roster   SumberRoster
+	kasus    PembuatKasusKomite
+	jejak    Jejak
+	penyalur *Penyalur
+	terakhir HasilSalur
 }
 
 // Komite menyusun layanan itu dengan ketiga ketergantungan yang gagal terang.
@@ -271,6 +273,10 @@ func (s *Service) Komite() *Penyerahan {
 		roster: RosterBelumDiputuskan{},
 		kasus:  KasusKomiteBelumDiputuskan{},
 		jejak:  JejakBelumDiputuskan{},
+		// Lingkungannya datang dari Service, yang menerimanya sekali dari
+		// `config.IsPegaProd`. Bawaan Service sendiri BUKAN produksi.
+		penyalur: NewPenyalur(s.lingkungan, AntreanBelumDiputuskan{},
+			EfekKeluarClaimLife(ResolverBelumDiputuskan{})...),
 	}
 }
 
@@ -285,6 +291,13 @@ func (p *Penyerahan) DenganRoster(r SumberRoster) *Penyerahan {
 func (p *Penyerahan) DenganKasus(k PembuatKasusKomite) *Penyerahan {
 	salin := *p
 	salin.kasus = k
+	return &salin
+}
+
+// DenganPenyalur mengganti penyalur efek keluarnya.
+func (p *Penyerahan) DenganPenyalur(s *Penyalur) *Penyerahan {
+	salin := *p
+	salin.penyalur = s
 	return &salin
 }
 
@@ -371,7 +384,7 @@ func (p *Penyerahan) Serahkan(ctx context.Context, pelaku Pelaku,
 	// Kelahiran kasus komite, penautan baris, dan jejaknya berada dalam SATU
 	// transaksi. Penunjuk dua arah yang ditulis di dua transaksi dapat berakhir
 	// menunjuk sebelah pihak saja.
-	return p.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	if err := p.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
 		komiteID, err := p.kasus.Buat(ctx, tx, MuatanKomite{
 			KlaimID:       klaimID,
 			AdjustmentID:  adjID,
@@ -394,8 +407,40 @@ func (p *Penyerahan) Serahkan(ctx context.Context, pelaku Pelaku,
 			AkunID:       pelaku.AkunID,
 			Waktu:        saat,
 		})
+	}); err != nil {
+		return err
+	}
+
+	// ⛔ Efek keluar berjalan SESUDAH transaksinya selesai, dan hasilnya TIDAK
+	// menjadi galat penyerahan. `[terverifikasi]` urutan yang sama di
+	// `Claim Life/Activity/CreateKMTLife_Act.xml`: `Obj-Save` di pecahan baris
+	// 2081, lalu `Call SendEmailKlaimLF` di baris 2213 - email menyusul simpan,
+	// bukan mendahuluinya.
+	//
+	// ⚠️ Konsekuensi yang diterima (ADR-U-0008): penyerahan dapat berhasil
+	// sementara email kepada Komite masih tertunda di antrean.
+	hasil := p.penyalur.Salurkan(ctx, MuatanEfek{
+		KlaimID:      klaimID,
+		AdjustmentID: adjID,
+		AkunID:       pelaku.AkunID,
+		Waktu:        saat,
 	})
+	// ⛔ Hasilnya TIDAK dibuang. Ronde pertama membuangnya utuh - padahal
+	// komentar `GagalDiantre` sendiri berbunyi "dilaporkan, bukan ditelan".
+	// Kegagalan yang bahkan tidak dapat DIANTRE hilang untuk selamanya, dan
+	// itu kegagalan sistem, bukan keadaan normal.
+	//
+	// ⚠️ Ia tetap TIDAK menggagalkan penyerahan (ADR-U-0008): yang
+	// dikembalikan hasilnya, bukan galat.
+	p.terakhir = hasil
+	return nil
 }
+
+// HasilEfekTerakhir menyebut apa yang terjadi pada efek keluar penyerahan
+// terakhir yang dijalankan instance ini.
+//
+// ⚠️ Dibaca pemanggil yang ingin MELAPORKAN, bukan yang ingin menggagalkan.
+func (p *Penyerahan) HasilEfekTerakhir() HasilSalur { return p.terakhir }
 
 // cariBarisPeserta mencari satu baris milik peserta tertentu.
 func cariBarisPeserta(perBaris map[string][]models.BarisAdjustment,

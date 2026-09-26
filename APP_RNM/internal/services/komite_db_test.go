@@ -243,3 +243,60 @@ func TestPenyerahanGagalTidakMeninggalkanPenautanSeparuh(t *testing.T) {
 			"penautan separuh jadi", sesudah.KomiteID)
 	}
 }
+
+// efekGagalUji selalu gagal - meniru layanan luar yang sedang mati.
+type efekGagalUji struct{ dipanggil int }
+
+func (e *efekGagalUji) Nama() string { return "UJI-EFEK-MATI" }
+func (e *efekGagalUji) Jalankan(context.Context, services.MuatanEfek) error {
+	e.dipanggil++
+	return errors.New("uji: layanan luar sedang mati")
+}
+
+// TestEfekKeluarGagalTidakMenGagalkanPenyerahan - AC 19 tiket 12.
+//
+// ⛔ Ini pemasangan produksi `Penyalur` yang sesungguhnya diuji. Tanpa test
+// ini, `Penyalur` akan bernasib seperti `WajibWewenangKomite` di tiket 07:
+// lahir tanpa pemanggil, dan AC-nya tercentang atas bentuk saja.
+func TestEfekKeluarGagalTidakMenGagalkanPenyerahan(t *testing.T) {
+	svc, tutup := siapkanPendaftaran(t)
+	defer tutup()
+	db, tutupDB := repoUji(t)
+	defer tutupDB()
+
+	pohon := pohonUjiKomite(t, svc, db, "CLM-UJI713", "UJI-BANK", "UJI-006", "0012345")
+	pesertaID, baris := barisPertama(t, db, pohon.Work.ID)
+
+	efek := &efekGagalUji{}
+	antre := &antreanUji{}
+	// Lingkungan PRODUKSI: efeknya benar-benar dijalankan, dan gagal.
+	penyalur := services.NewPenyalur(services.Produksi, antre, efek)
+
+	err := svc.Komite().DenganRoster(&rosterUji{tingkat: 1}).
+		DenganKasus(&kasusUji{id: "KMT-UJI-713"}).DenganJejak(&jejakUji{}).
+		DenganPenyalur(penyalur).
+		Serahkan(context.Background(), services.Pelaku{AkunID: "UJI-AKUN",
+			Peran: []string{services.PeranAdmin}},
+			pohon.Work.ID, pesertaID, baris.ID, saatUjiKomite)
+
+	// ⛔ Penyerahannya BERHASIL meski efek keluarnya gagal.
+	if err != nil {
+		t.Fatalf("penyerahan gagal karena efek keluar: %v", err)
+	}
+	if efek.dipanggil != 1 {
+		t.Errorf("efek keluar dijalankan %d kali, mau 1", efek.dipanggil)
+	}
+	// Penautannya tetap tersimpan - dibaca ULANG dari Oracle.
+	if _, sesudah := barisPertama(t, db, pohon.Work.ID); sesudah.KomiteID != "KMT-UJI-713" {
+		t.Errorf("KOMITE_ID = %q; efek keluar yang gagal membatalkan penautan",
+			sesudah.KomiteID)
+	}
+	// Dan kegagalannya TIDAK hilang: ia masuk antrean.
+	if len(antre.catatan) != 1 || antre.catatan[0].Nama != "UJI-EFEK-MATI" {
+		t.Errorf("antrean = %+v, mau satu catatan UJI-EFEK-MATI", antre.catatan)
+	}
+	if antre.catatan[0].KlaimID != pohon.Work.ID {
+		t.Errorf("catatan menunjuk klaim %q, mau %q",
+			antre.catatan[0].KlaimID, pohon.Work.ID)
+	}
+}
