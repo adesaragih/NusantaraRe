@@ -251,6 +251,37 @@ padanya, jadi ia tidak menghalangi rantai.
 
 ---
 
+## 10. SESUDAH 02-L — verifikasi independen `f439107`, dan dua tambahan untuk tiket 03
+
+**Yang tereproduksi:** 13 berkas +522/−76; **111 PASS · 0 FAIL · 23 SKIP** dengan pesan; 88 modul;
+7/26 AC, daftar terbuka 19 = kotak `[ ]`; satu daftar kolom peserta untuk tulis dan baca
+*(`kolompeserta.go`)*; server membaca ulang peserta lewat `(PL_NUMBER, CERTIFICATE_NO)` berbatas 1;
+`CASEID` = pengenal *(ae1)*; nol nama orang dan nol `KTP` disalin; tag JSON camelCase; ralat "nol
+FAIL" ditulis tanpa menghapus klaim lama. Tiket 02 boleh ditinggalkan `claimed` menunggu **o**.
+
+⚠️ **Yang tersembunyi, dan gagal begitu G1 terbuka:** `services/pendaftaran_db_test.go` kini memanggil
+`AmbilUntukKlaim`, yang membaca `M_LIFE_PREMIUM_DETAIL` — tabel warisan yang **tidak dibuat skema
+uji** *(skema uji hanya memuat hasil migrasi dan tiruan `OS_AKSEPTASI_KLAIM_LIFE`)*. Hari ini ia SKIP
+bersama yang lain; dengan Oracle ia **FAIL** di `AmbilUntukKlaim`, bukan menguji pendaftaran.
+Executor sudah menandainya `[terbuka — tiket 03]` di komentar test, dan itu tempat yang benar.
+
+**Dua tambahan untuk tiket 03, dikerjakan di awal sebelum AC-nya:**
+
+| # | Tambahan | Cara |
+| ---: | --- | --- |
+| 1 | **Tiruan `M_LIFE_PREMIUM_DETAIL` di skema uji** | `skemauji` membuat tabel tiruan berkolom **persis 24 kolom `kolomSalin`** + `EDMSTATUS` *(tipe dari `KATALOG-TABEL-PESERTA-DAN-TREATY.md`, bukan tebakan)*, `Bongkar` membuangnya seperti tiruan warisan; fixture `UJI-*` dua peserta *(satu `EDMSTATUS` NULL, satu `Batal` — supaya penyaring teruji di Oracle)*; pagar `pagarSkemaUji` tetap berlaku. Sesudahnya ketiga test db tiket 02 **benar-benar** menguji pendaftaran saat G1 |
+| 2 | **Tiruan tabel treaty** untuk spreading | `RETROCESSIONLIFE` *(di DEV **view** ber-`VARCHAR2(4000)` — tiruannya tabel dengan tipe yang sama, supaya jalur "teks → `ParseDecimal`" teruji)*, `TREATYYEAR_LIFE`, `RATE_LIFE` *(kolomnya dilengkapi dari katalog dulu — `KATALOG-…md` baru memuat 6 kolom pertama)* |
+
+**Satu penjaga kecil untuk `kolomSalin`:** `salinKePeserta` memakai posisi tetap 0–23 atas teks
+`kolomSalin`; satu kolom disisipkan di tengah akan menggeser seluruh posisi tanpa satu pun galat.
+Test murni: cacah ekspresi di `kolomSalin` = 24 **dan** urutan namanya dikunci *(pola
+`TestUrutanKolomDanTujuanScanSejajar`)*. Boleh masuk tiket 03 bersama tambahan 1.
+
+**Lanjut 03 → 06 → 04 → 05** persis §4–§5. Tiket 03 yang terbesar; bila sesi harus berhenti di
+tengahnya, berhenti **sesudah commit** yang hijau, dan tiket berikutnya tetap `ready-for-agent`.
+
+---
+
 *Disusun 26 September 2026 malam atas permintaan work owner "proses 5 tiket sekaligus": kelima
 tiket dibaca utuh, rantai ketergantungan 02→03→06→04→05 diturunkan dari kolom "Blocked by", katalog
 tabel peserta dan treaty dibaca dari instance pengembangan (agregat saja).*
