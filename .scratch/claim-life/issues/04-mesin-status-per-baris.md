@@ -1,6 +1,6 @@
 # 04: Mesin status per baris + aturan turunan "klaim selesai"
 
-**Status:** ready-for-agent
+**Status:** claimed
 
 **Blocked by:** 03 (baris `AdjustmentList` + Save ke Outstanding)
 
@@ -27,7 +27,8 @@ menyimpannya sebagai kolom.
 | `Claim Life/Activity/SaveOutStandingLife_Act.xml` | `ASM-FW-GCNMFW-WORK-CLAIMLIFE` / `SAVEOUTSTANDINGLIFE_ACT` / `RULE-OBJ-ACTIVITY` | penulis `0` |
 | `Komite Claim Life/Activity/KomitePostAdjustment.xml` | `ASM-FW-GCNMFW-WORK-KOMITELIFE` / `KOMITEPOSTADJUSTMENT` / `RULE-OBJ-ACTIVITY` | `[terverifikasi]` penulis `1` (6 `Property-Set`) dan `2` (2 `Property-Set`) |
 | `Claim Life/Activity/RejectOSClaimLife_Act.xml` | `ASM-FW-GISFW-DATA-ADJUSTMENTLIFE` / `REJECTOSCLAIMLIFE_ACT` / `RULE-OBJ-ACTIVITY` | `[terverifikasi]` penulis `2` dari sisi Admin |
-| `Claim Life/Activity/SetSTS_Reject.xml` | `ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL` / `SETSTS_REJECT` / `RULE-OBJ-ACTIVITY` | `[terverifikasi]` penurunan status klaim → baris (`.STS_REJECT = Primary.STS_REJECT`) |
+| `Claim Life/Activity/SetSTS_Reject.xml` | `ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL` / `SETSTS_REJECT` / `RULE-OBJ-ACTIVITY` | ⚠️ **DIRALAT 26-09-2026 menurut XML** — bukan "penurunan status klaim → baris". `[terverifikasi]` ia `Property-Set` atas **`.DiagnoseList`** (kelas `Data-DiagnoseLife`, pecahan 236–258): status **peserta** disalin ke tiap baris **diagnosa**, bukan ke baris adjustment. Pemanggilnya hanya `Section/ClaimLifeDetailGCNM.xml` |
+| `Claim Life/Activity/serviceInsertArasapasClaimLife_act.xml` | `ASM-FW-GCNMFW-WORK-CLAIMLIFE` / `SERVICEINSERTARASAPASCLAIMLIFE_ACT` | ⭐ **BARU 26-09-2026** — `[terverifikasi]` satu-satunya penulis tingkat **header**: `pyWorkPage.ClaimData.STS_REJECT` dan `.ACCEPTEDNO` dari baris adjustment, di putaran bersarang tanpa henti (pecahan 371–418) |
 
 `[terverifikasi]` **Sensus penulis lengkap** ada di register **OQ-061**: tidak ada satu pun rule di
 `Claim Life` maupun `Komite Claim Life` yang menulis `0` setelah `1` atau `2`.
@@ -39,11 +40,11 @@ bekerja pada tingkat baris).
 
 ## Acceptance criteria
 
-- [ ] Baris yang sudah bernilai Aksep atau Ditolak **tidak dapat berubah lagi** melalui jalur mana
+- [x] Baris yang sudah bernilai Aksep atau Ditolak **tidak dapat berubah lagi** melalui jalur mana
       pun. *(AC 2 spec)*
-- [ ] Menolak sebuah baris **tidak** menutup klaim; klaim tetap dapat menerima baris baru.
+- [x] Menolak sebuah baris **tidak** menutup klaim; klaim tetap dapat menerima baris baru.
       *(AC 4 spec)*
-- [ ] Status "Ditolak" pada sebuah baris **selalu** berarti baris itu ditolak — **tidak pernah**
+- [x] Status "Ditolak" pada sebuah baris **selalu** berarti baris itu ditolak — **tidak pernah**
       berarti klaim selesai, apa pun sumber penolakannya.
 - [ ] ⚠️ **Diselaraskan 2026-09-16:** pencerminan terjadi pada kolom `STS_REJECT` /
       `ACCEPTED_NO` di **`T_CLAIMLF_PREMIUMLIST_DETAIL`** dan **`T_GENERAL_CLAIM`** (spec §2b) — unit
@@ -51,11 +52,11 @@ bekerja pada tingkat baris).
       **peserta**. *(AC 33 spec; penyimpangan sadar 2)*
 - [ ] `PremiumListDetail` dan header klaim **selalu mencerminkan** baris adjustment terakhir, dan
       **tidak** ditulis sebagai status mandiri. *(AC 7 spec)*
-- [ ] Klaim dilaporkan "selesai" **hanya** bila tidak ada baris berstatus Outstanding **dan** ada
+- [x] Klaim dilaporkan "selesai" **hanya** bila tidak ada baris berstatus Outstanding **dan** ada
       sekurangnya satu baris berstatus Aksep. *(AC 8 spec)*
-- [ ] Bila tidak ada baris Outstanding dan tidak ada pula yang Aksep, klaim berada dalam keadaan
+- [x] Bila tidak ada baris Outstanding dan tidak ada pula yang Aksep, klaim berada dalam keadaan
       **ditolak seluruhnya** — dan tetap dapat dilanjutkan dengan baris baru.
-- [ ] Riwayat lengkap seluruh baris pada satu klaim dapat dilihat, sehingga putaran Komite terbaca.
+- [x] Riwayat lengkap seluruh baris pada satu klaim dapat dilihat, sehingga putaran Komite terbaca.
       *(User story 27 spec)*
 
 ## Catatan penutupan (2026-09-14)
@@ -99,3 +100,131 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+---
+
+## Pembacaan ulang XML — 26 September 2026 malam
+
+Yang sudah dibaca di tiket 03 tidak dibaca ulang; dirujuk saja. Yang **baru** dibaca giliran ini:
+sensus penulis `STS_REJECT` di **seluruh** korpus `Claim Life`, dan `serviceInsertArasapasClaimLife_act`
+(81.079 byte → 1.893 baris pecahan).
+
+**Sensus penulis `STS_REJECT`** — ⚠️ **DIRALAT di bab hasil review di bawah: yang benar ENAM
+`Property-Set` di LIMA rule.** Tabel di bawah ini adalah sensus ronde pertama yang **kurang satu
+baris**; ia dibiarkan terbaca apa adanya supaya kekeliruannya tidak hilang:
+
+| Rule | Properti | Tingkat | Nilai |
+| --- | --- | --- | --- |
+| `SaveOutStandingLife_Act` | `.STS_REJECT` | baris adjustment | `0` *(tiket 03, bergerbang `PrintFaceClaim`)* |
+| `RejectOSClaimLife_Act` | `.STS_REJECT` | baris adjustment | `2` |
+| `RejectOSClaimLife_Act` | `PremiumListDetail(local.IndexPremium).STS_REJECT` | **peserta** | `2` |
+| `SetSTS_Reject` | `.STS_REJECT` atas `.DiagnoseList` | **diagnosa** | `Primary.STS_REJECT` |
+| `serviceInsertArasapasClaimLife_act` | `pyWorkPage.ClaimData.STS_REJECT` | **header klaim** | `.STS_REJECT` |
+
+### ⭐ Tiga hal yang mengubah tiket
+
+**1. Header klaim MEMANG dicerminkan — dan sumbernya baris TERAKHIR.** `[terverifikasi]`
+`serviceInsertArasapasClaimLife_act` langkah 1 mengulang `PremiumListDetail`, langkah 1.1 mengulang
+`.AdjustmentList`, dan langkah 1.1.1 *(pecahan baris 371–418)* menyetel
+`pyWorkPage.ClaimData.ACCEPTEDNO = .ACCEPTEDNO` dan `pyWorkPage.ClaimData.STS_REJECT = .STS_REJECT`
+**tanpa precondition** dan tanpa henti. Nilai yang bertahan milik baris yang diulang terakhir — persis
+AC *"header klaim selalu mencerminkan baris adjustment terakhir"*, yang sampai kini hanya berdiri di
+atas catatan work owner. Kini `[terverifikasi]`.
+
+**2. Kedua tingkat TIDAK mencerminkan baris yang sama.** Peserta mengikuti baris yang **berubah**
+(`local.IndexPremium` = peserta pemilik baris itu); header mengikuti baris **terakhir**. Karena itu
+`PerbaruiStatusBaris` dan `CerminkanHeader` dipisah, bukan disatukan demi kerapian.
+
+**3. `SetSTS_Reject` bukan bagian mesin status — ralat tabel "Rule Pega sumber".** Teks lama: *"penurunan
+status klaim → baris"*. Yang sebenarnya: ia `Property-Set` atas **`.DiagnoseList`** *(kelas
+`Data-DiagnoseLife`, pecahan 236–258)*, menyalin status **peserta** ke tiap baris **diagnosa** — bukan
+ke baris adjustment. Pemanggilnya hanya `Section/ClaimLifeDetailGCNM.xml`, jadi ia tindakan layar.
+⛔ `DiagnoseList` tidak ada di skema kita; pencerminan ke sana **tidak ditiru** sampai butir **al**
+diputuskan.
+
+### Pertanyaan yang XML tidak jawab
+
+| # | Pertanyaan | Pemilik |
+| ---: | --- | --- |
+| 1 | Apakah `DiagnoseList` menjadi tabel — butir **al** | work owner *(bukti dari tiket 08)* |
+| 2 | Arti kode `4` di data warisan | work owner |
+
+---
+
+## Implementasi — 26 September 2026 malam (tiket 04)
+
+**Status: `claimed`** — **6 dari 8 AC tertutup.** Titik tetap `e1bd6e3`.
+Angka verifikasi ada di bab hasil review di bawah, sesudah perbaikannya.
+
+| Berkas | Isi |
+| --- | --- |
+| `models/statusklaim.go` *(baru)* | `StatusKlaim` tertutup + `Klaim.StatusTurunan()` |
+| `models/klaimlife.go` | `statusTurunan` masuk kontrak API, berdampingan dengan `kodeStatus` mentah |
+| `services/statusbaris.go` *(baru)* | `Transisi`, `TandaiOutstandingKlaim`, `BarisTerakhir`, layanan `Status.Ubah` |
+| `repository/klaimlife.go` | `PerbaruiStatusBaris` *(baris + peserta)*, `CerminkanHeader` |
+| `models/kodestatus_test.go` *(baru)* | penjaga statik: literal kode status hanya di `models` |
+
+**Penjaga aturan bisnis, masing-masing dibuktikan dapat gagal:** kefinalan dilepas → 2 test merah ·
+gerbang sudah-berstatus dilepas → 1 test merah · syarat *"ada Aksep"* dilepas → 2 test merah ·
+literal kode lewat variabel lokal → penjaga statik merah.
+
+⚠️ Penjaga literal kode **percobaan pertama lebih sempit daripada kalimatnya sendiri**: ia hanya
+mencocokkan `KodeStatus = "n"`, sehingga mutasi lewat variabel lokal lolos dan hijaunya tak berarti.
+Polanya diperlebar dan dibuktikan ulang. Test `TestMenolakSatuBarisTidakMenutupKlaim` juga diperkuat
+di ronde yang sama: ia semula tidak dapat gagal ketika kefinalan dilepas dari jalur `TandaiOutstanding`.
+
+### ⛔ Yang BELUM ditutup — 2 AC
+
+| AC | Sebab |
+| --- | --- |
+| *"pencerminan terjadi pada `STS_REJECT`/`ACCEPTED_NO` di peserta dan header"* | mekanismenya ada, teruji, dan dipanggil `Status.Ubah` — tetapi **pintu HTTP-nya milik tiket 05**. Ditutup di sana, bukan dicentang di sini dengan pemanggil yang belum ada |
+| *"`PremiumListDetail` dan header selalu mencerminkan baris terakhir"* | sama |
+
+⚠️ Pencerminan ke **diagnosa** tidak ditiru: butir **al** masih `[USULAN]`, tabelnya tidak dibuat, dan
+menebaknya berarti mengarang tabel. Bila **al** disahkan, pencerminan itu ditambahkan di **tiket 08**
+bersama tabelnya — bukan di sini.
+
+### Hasil `/code-review` atas titik tetap `e1bd6e3`
+
+⛔ **Sensus di bab di atas SALAH, dan labelnya `[terverifikasi]`.** Yang benar **enam** `Property-Set`
+di **lima** rule. Yang terlewat: `Activity/SaveAdjustment_Act.xml` *(pecahan 1833–1899)*, yang
+menyetel **`.AdjustmentList(<LAST>).STS_REJECT = 1`** bersama `.ACCEPTEDNO` dan
+`.ACCEPTATION_DATE = @CurrentDateTime()` dalam **satu** `Property-Set`, tanpa precondition.
+
+**Sebabnya pola pencarian saya sendiri.** Sensus memakai `<PropertiesName>[^<]*STS_REJECT`;
+teks yang sudah didekode memuat `<LAST>`, sehingga `[^<]*` berhenti di tanda `<` dan baris itu tak
+pernah cocok. Kelas kekeliruan yang persis sama dengan yang saya buru sepanjang sesi ini — penjaga
+atau pencarian yang lebih sempit daripada kalimatnya. Pola benar: `<PropertiesName>.*STS_REJECT`.
+
+**Dua akibat nyata pada kode, bukan sekadar catatan:**
+
+1. `1` **bukan hanya ditulis Komite** — jalur simpan Claim Life sendiri menulisnya. Dokumentasi
+   `Transisi` yang menisbatkannya ke `KomitePostAdjustment` saja sudah diralat.
+2. **`ACCEPTATION_DATE` lahir bersama akseptasi.** Tiket 03 AC 43 benar bahwa ia tidak distempel
+   saat insert; kini terbaca **di mana** ia distempel. `Transisi` menerima jam sebagai argumen dan
+   menstempelnya hanya pada Aksep; `PerbaruiStatusBaris` menulis kolomnya.
+
+| # | Sumbu | Temuan | Tindakan |
+| ---: | --- | --- | --- |
+| 1 | Spec | penulis keenam terlewat; `[terverifikasi]` palsu | ✅ sensus diralat di sini dan di komentar `repository/klaimlife.go` |
+| 2 | Standards | **ADR-U-0007 dilanggar** — `Ubah` menerima `pelaku` lalu membuangnya; nol jejak | ✅ antarmuka `Jejak` + `JejakBelumDiputuskan` yang **gagal terang**, direkam **di dalam** transaksi yang sama. Pola `Penomor` tiket 02. Butir **am** masih `[USULAN]`, jadi tabelnya tidak dibuat |
+| 3 | Standards | **TOCTOU** — baris dibaca di luar transaksi, `UPDATE` tanpa syarat kode lama; kefinalan hanya berlaku di dalam proses | ✅ `AND STS_REJECT = :kodeLama`; dua permintaan serentak tidak lagi dapat sama-sama menang |
+| 4 | Standards | komentar berkata "TIGA tingkat" padahal menulis dua; klaim "seluruh isi MURNI" padahal `Ubah` menyentuh Oracle | ✅ keduanya diralat |
+| 5 | Standards + Spec | `TandaiOutstandingKlaim` salinan kembar `TandaiOutstanding` | ✅ tiket 03 kini **mendelegasi**; satu tempat aturannya |
+| 6 | Standards | `BarisTerakhir` menulis lewat parameter **nilai** — kemampuan menulis yang menyelinap | ✅ parameternya penunjuk, sehingga terlihat |
+| 7 | Standards | penjaga literal kode bocor *(SQL `'2'` tak tertangkap)* **dan** salah tuduh *(komentar tidak dibuang)*, tanpa pemeriksaan diri | ✅ ketiganya diperbaiki — dan penjaga yang diperlebar langsung menemukan satu pelanggaran **lama** di `migrasidata.go`, yang ikut dibetulkan |
+| 8 | Standards | `StatusTurunan` menghitung kode asing `"4"` sebagai *"ditolak seluruhnya"* | ✅ keadaan baru `KlaimTidakDapatDipastikan`. Melaporkan klaim SUDAH diputus padahal keputusannya justru yang tak terbaca adalah arah kekeliruan terburuk |
+| 9 | Standards | ADR-U-0029 Akibat 2 — nol test kegagalan di tengah | ✅ dua test `db` baru *(SKIP tanpa Oracle)*: pencerminan tiga tingkat, dan pembatalan yang tidak meninggalkan separuh jadi |
+| 10 | Spec | AC *"klaim selesai"* tercentang padahal `statusTurunan` tidak pernah sampai ke layar | ✅ dikabelkan ke `api.ts` dan `KlaimLife.tsx`, berdampingan dengan kode mentah dan dibedakan terang |
+
+### ⛔ Yang tetap terbuka sesudah review
+
+| Butir | Pemilik |
+| --- | --- |
+| Gerbang peran: ADR-U-0011 menuntut `ReasLifeAdmin` untuk reject; `Ubah` baru menuntut identitas | tiket 07; `WajibPeran` sudah ada dan masih nol pemanggil |
+| Tabel jejak audit — butir **am** | work owner |
+| Penulis keenam menulis pula ke tabel **datar** warisan lewat `UpdateOsAkseptasiClaimLife_sql`; `Ubah` belum menyentuhnya | tiket 05 *(ADR-U-0042, jalur `BarisLamaDari`)* |
+| *"Baris terakhir"* = ID terbesar menurut urutan baca; hubungannya dengan *"yang paling akhir diputus"* tidak dinyatakan di mana pun | work owner |
+
+**Verifikasi sesudah perbaikan:** vet · vet db · gofmt nol · build · **167 PASS · 0 FAIL** *(dari
+158)* · **26 SKIP** · `tsc` · 5 JS · 88 modul.

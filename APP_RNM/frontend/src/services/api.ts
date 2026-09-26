@@ -56,6 +56,15 @@ export interface Klaim {
   nomorPolis: string
   namaBisnis: string
   kodeStatus: string
+  /**
+   * Status klaim yang DIHITUNG dari seluruh barisnya - "Berjalan", "Selesai",
+   * "Ditolak seluruhnya", "Tidak dapat dipastikan", atau "Belum berbaris".
+   *
+   * ⛔ Ini BUKAN terjemahan `kodeStatus`. `kodeStatus` adalah cerminan mentah
+   * baris terakhir di kolom `STS_REJECT`; yang di bawah ini kesimpulan atas
+   * seluruh baris. Keduanya dapat berbeda, dan memang boleh berbeda.
+   */
+  statusTurunan: string
   peserta: Peserta[]
   cacahBaris: number
 }

@@ -15,7 +15,6 @@ package services
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/cockroachdb/apd/v3"
@@ -140,17 +139,6 @@ func TandaiOutstanding(pohon *models.PohonKlaim) int {
 	if pohon == nil {
 		return 0
 	}
-	n := 0
-	for i := range pohon.Klaim.Peserta {
-		for j := range pohon.Klaim.Peserta[i].Baris {
-			b := &pohon.Klaim.Peserta[i].Baris[j]
-			// Padanan `.PrintFaceClaim==""`: baris yang belum berstatus.
-			if strings.TrimSpace(b.KodeStatus) != "" {
-				continue
-			}
-			b.KodeStatus = models.KodeOutstanding
-			n++
-		}
-	}
-	return n
+	// Aturannya hidup di TandaiOutstandingKlaim (tiket 04) - satu tempat.
+	return TandaiOutstandingKlaim(&pohon.Klaim)
 }

@@ -355,28 +355,34 @@ func (k Klaim) MarshalJSON() ([]byte, error) {
 	if peserta == nil {
 		peserta = []Peserta{}
 	}
-	// ⛔ TIDAK ada kata status di tingkat klaim. spec.md, "Aturan yang
+	// ⛔ KodeStatus header dibawa MENTAH, tanpa tafsir. spec.md, "Aturan yang
 	// mengikat": "**`STS_REJECT` adalah status baris**, bukan status klaim" dan
 	// "Nilai `2` selalu berarti 'baris ini ditolak', tidak pernah 'klaim
-	// selesai'". Header hanyalah cerminan baris terakhir - turunan, bukan unit
-	// keputusan - sehingga menerjemahkannya menjadi kata akan mengarang status
-	// klaim yang tidak pernah ditetapkan siapa pun. Kode mentahnya dibawa apa
-	// adanya, tanpa tafsir.
+	// selesai'". Kolom itu cerminan baris terakhir, bukan unit keputusan, dan
+	// menerjemahkannya menjadi kata akan mengarang status yang tidak pernah
+	// ditetapkan siapa pun.
+	//
+	// ⭐ Diperluas tiket 04: yang berhak menjadi KATA adalah StatusTurunan,
+	// yang DIHITUNG dari seluruh baris - bukan dibaca dari kolom cermin itu.
+	// Keduanya sengaja berdampingan di kontrak: yang satu fakta mentah dari
+	// basis data, yang lain kesimpulan yang dapat dipertanggungjawabkan.
 	return json.Marshal(struct {
-		ID         string    `json:"id"`
-		NomorKlaim string    `json:"nomorKlaim"`
-		NomorPolis string    `json:"nomorPolis"`
-		NamaBisnis string    `json:"namaBisnis"`
-		KodeStatus string    `json:"kodeStatus"`
-		ClaimRetro Money     `json:"claimRetro"`
-		Peserta    []Peserta `json:"peserta"`
-		CacahBaris int       `json:"cacahBaris"`
+		ID            string    `json:"id"`
+		NomorKlaim    string    `json:"nomorKlaim"`
+		NomorPolis    string    `json:"nomorPolis"`
+		NamaBisnis    string    `json:"namaBisnis"`
+		KodeStatus    string    `json:"kodeStatus"`
+		StatusTurunan string    `json:"statusTurunan"`
+		ClaimRetro    Money     `json:"claimRetro"`
+		Peserta       []Peserta `json:"peserta"`
+		CacahBaris    int       `json:"cacahBaris"`
 	}{
-		ID:         k.ID,
-		NomorKlaim: k.NomorKlaim,
-		NomorPolis: k.NomorPolis,
-		NamaBisnis: k.NamaBisnis,
-		KodeStatus: k.KodeStatus,
+		StatusTurunan: k.StatusTurunan().String(),
+		ID:            k.ID,
+		NomorKlaim:    k.NomorKlaim,
+		NomorPolis:    k.NomorPolis,
+		NamaBisnis:    k.NamaBisnis,
+		KodeStatus:    k.KodeStatus,
 		// Money punya MarshalJSON sendiri: jumlahnya TEKS, tidak pernah angka
 		// JSON (ADR-U-0003). Tanpa baris ini nilai yang sudah dibaca dari
 		// Oracle dibuang diam-diam saat serialisasi - separuh butir w2 mati.

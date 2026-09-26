@@ -276,3 +276,114 @@ func (r *KlaimLife) PerbaruiTanggalKejadian(ctx context.Context, tx *Tx,
 	}
 	return nil
 }
+
+// PerbaruiStatusBaris menulis status ke baris adjustment DAN ke pesertanya.
+//
+// Header klaim TIDAK ditulis di sini - sumbernya baris yang berbeda; lihat
+// CerminkanHeader. Pemanggil menjalankan keduanya dalam satu transaksi.
+//
+// `[terverifikasi]` sasarannya diturunkan dari sensus penulis `STS_REJECT` di
+// seluruh korpus Claim Life - ENAM Property-Set di LIMA rule:
+//
+//	baris adjustment : SaveOutStandingLife_Act  `.STS_REJECT = 0`
+//	                   RejectOSClaimLife_Act    `.STS_REJECT = 2`
+//	                   SaveAdjustment_Act       `.AdjustmentList(<LAST>)` = 1,
+//	                                            beserta ACCEPTEDNO dan
+//	                                            ACCEPTATION_DATE
+//	peserta          : RejectOSClaimLife_Act
+//	                   `PremiumListDetail(idx).STS_REJECT = 2`
+//	header klaim     : serviceInsertArasapasClaimLife_act
+//	                   `pyWorkPage.ClaimData.STS_REJECT = .STS_REJECT`
+//	diagnosa         : SetSTS_Reject atas `.DiagnoseList` - TIDAK ditiru,
+//	                   tabelnya belum ada (butir al masih `[USULAN]`)
+//
+// ⛔ SYARAT KODE LAMA ikut di WHERE. Baris dibaca di luar transaksi, jadi ia
+// dapat berubah di antara baca dan tulis. Tanpa syarat itu, kefinalan hanya
+// berlaku di dalam satu proses dan dua permintaan serentak dapat sama-sama
+// menang - yang kedua menimpa keputusan yang pertama tanpa jejak.
+// ⚠️ Kedua tingkat TIDAK mencerminkan baris yang sama, dan itu bacaan XML
+// bukan penyederhanaan kami: peserta mengikuti baris yang BERUBAH
+// (`RejectOSClaimLife_Act` memakai `local.IndexPremium`, yaitu peserta pemilik
+// baris itu), sedangkan header mengikuti baris TERAKHIR yang diulang
+// (`serviceInsertArasapasClaimLife_act`, putaran bersarang tanpa henti).
+// Karena itu header punya methodnya sendiri, `CerminkanHeader`.
+func (r *KlaimLife) PerbaruiStatusBaris(ctx context.Context, tx *Tx,
+	pesertaID, adjID, kodeLama, kode, nomorAksep string, tglAksep time.Time) error {
+
+	adj, err := r.db.Qualify("T_CLAIMLF_ADJUSTMENT")
+	if err != nil {
+		return err
+	}
+	pes, err := r.db.Qualify("T_CLAIMLF_PREMIUMLIST_DETAIL")
+	if err != nil {
+		return err
+	}
+
+	// Peserta tidak punya kolom ACCEPTED_NO - hanya baris dan header punya.
+	langkah := []struct {
+		nama string
+		q    string
+		args []any
+	}{
+		// ACCEPTATION_DATE ditulis bersama status, seperti `SaveAdjustment_Act`
+		// yang menyetel ketiganya dalam satu Property-Set.
+		{"baris adjustment", fmt.Sprintf(
+			`UPDATE %s SET STS_REJECT = :1, ACCEPTED_NO = :2, ACCEPTATION_DATE = :3
+			  WHERE ID = :4 AND STS_REJECT = :5`, adj),
+			[]any{kosongJadiNil(kode), kosongJadiNil(nomorAksep),
+				waktuJadiNil(tglAksep), adjID, kosongJadiNil(kodeLama)}},
+		{"peserta", fmt.Sprintf(
+			`UPDATE %s SET STS_REJECT = :1 WHERE ID = :2`, pes),
+			[]any{kosongJadiNil(kode), pesertaID}},
+	}
+	for _, l := range langkah {
+		if err := PeriksaSQL(l.q); err != nil {
+			return err
+		}
+		hasil, err := tx.tx.ExecContext(ctx, l.q, l.args...)
+		if err != nil {
+			return fmt.Errorf("repository: mencerminkan status ke %s: %w", l.nama, err)
+		}
+		n, err := hasil.RowsAffected()
+		if err != nil {
+			return fmt.Errorf("repository: mencacah baris %s: %w", l.nama, err)
+		}
+		if n != 1 {
+			return fmt.Errorf("repository: pencerminan ke %s menyentuh %d baris, mau 1 "+
+				"(baris yang statusnya sudah berubah sejak dibaca tidak ditimpa)",
+				l.nama, n)
+		}
+	}
+	return nil
+}
+
+// CerminkanHeader menyalin status BARIS TERAKHIR ke header klaim.
+//
+// Dipisah dari PerbaruiStatusBaris karena sumbernya baris yang BERBEDA - lihat
+// komentar di atas. Pemanggilnya wajib menjalankan keduanya dalam satu
+// transaksi yang sama.
+func (r *KlaimLife) CerminkanHeader(ctx context.Context, tx *Tx,
+	klaimID, kode, nomorAksep string) error {
+	hdr, err := r.db.Qualify("T_GENERAL_CLAIM")
+	if err != nil {
+		return err
+	}
+	q := fmt.Sprintf(
+		`UPDATE %s SET STS_REJECT = :1, ACCEPTED_NO = :2 WHERE ID = :3`, hdr)
+	if err := PeriksaSQL(q); err != nil {
+		return err
+	}
+	hasil, err := tx.tx.ExecContext(ctx, q,
+		kosongJadiNil(kode), kosongJadiNil(nomorAksep), klaimID)
+	if err != nil {
+		return fmt.Errorf("repository: mencerminkan status ke header klaim: %w", err)
+	}
+	n, err := hasil.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("repository: mencacah baris header: %w", err)
+	}
+	if n != 1 {
+		return fmt.Errorf("repository: pencerminan ke header menyentuh %d baris, mau 1", n)
+	}
+	return nil
+}

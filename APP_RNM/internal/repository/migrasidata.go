@@ -232,7 +232,8 @@ func BongkarBarisLama(baris []BarisLama) ([]models.PohonKlaim, LaporanRekonsilia
 			for _, b := range br {
 				adj, temuan := barisAdjustmentDari(b)
 				lap.Temuan = append(lap.Temuan, temuan...)
-				if b.STS_REJECT == "0" || strings.TrimSpace(b.ACCEPTATION_DATE) != "" {
+				if b.STS_REJECT == models.KodeOutstanding ||
+					strings.TrimSpace(b.ACCEPTATION_DATE) != "" {
 					lap.BarisHardcode++
 				}
 				ps.Baris = append(ps.Baris, adj)

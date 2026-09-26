@@ -69,6 +69,11 @@ export default function KlaimLife() {
             <dd>{klaim.namaBisnis || '—'}</dd>
             <dt>Jumlah baris</dt>
             <dd>{klaim.cacahBaris}</dd>
+            {/* Status klaim adalah TURUNAN dari baris-barisnya, bukan kolom
+                tersimpan. Yang ditampilkan kata, bukan angka - dan bukan pula
+                terjemahan `kodeStatus`, yang hanya cerminan baris terakhir. */}
+            <dt>Status klaim</dt>
+            <dd>{klaim.statusTurunan}</dd>
           </dl>
 
           {/* `.map` = ulangi blok di bawah untuk SETIAP peserta.
