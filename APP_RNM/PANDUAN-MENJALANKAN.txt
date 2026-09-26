@@ -5,6 +5,8 @@ Backend Go + Frontend React (TypeScript) + Oracle
 
 Disusun 26 September 2026 dari kode pada commit 8f5453b.
 Diperbarui 26 September 2026 (ronde 4): pagar skema uji bab 3, angka test bab 7.
+Diperbarui 26 September 2026 (sore): pemuat .env bab 3, .env frontend bab 4,
+proxy Vite bab 5 (celahnya sudah tertutup), PATH permanen bab 1.
 Untuk siapa: siapa pun yang ingin menjalankan aplikasi ini di mesin Windows,
 termasuk yang baru mengenal Go dan React.
 
@@ -13,7 +15,9 @@ Yang sudah dicoba sungguhan saat panduan ini ditulis:
   - Server dev Vite dijalankan: halaman tampil.
   - Rute klaim tanpa Oracle: menjawab 503 dengan pesan yang jelas.
 
-Yang BELUM bisa: frontend dev berbicara ke backend lewat browser. Lihat bab 5.
+Sejak sore 26 September 2026 frontend dev sudah bicara ke backend lewat proxy
+Vite (bab 5). Yang masih menunggu: tabel baru di Oracle, jadi tombol "Buka"
+belum menampilkan klaim sampai migrasi dijalankan di skema uji dari DBA.
 
 --------------------------------------------------------------------------------
 DAFTAR ISI
@@ -23,7 +27,7 @@ DAFTAR ISI
   2. Backend TANPA Oracle (bisa dijalankan hari ini)
   3. Backend DENGAN Oracle (setelah DBA memberi skema uji)
   4. Frontend
-  5. Celah yang harus diketahui: frontend dev belum bisa bicara ke backend
+  5. Bagaimana frontend dev bicara ke backend: proxy Vite
   6. Dua jendela, urutan lengkap
   7. Uji sebelum dan sesudah mengubah apa pun
   8. Bila tersangkut
@@ -66,9 +70,19 @@ PATH shell. Tanpa langkah ini semua perintah di bawah gagal dengan pesan
 Catatan:
   - Baris pertama hanya berlaku di jendela PowerShell itu. Buka jendela baru,
     ulangi baris itu.
-  - Bila ingin permanen, tambahkan kedua folder itu ke Path pengguna lewat
-    Windows Settings > System > About > Advanced system settings >
-    Environment Variables. Itu perubahan mesin, bukan bagian dari repositori.
+  - Sudah dibuat PERMANEN untuk akun pengguna mesin ini pada 26 September 2026
+    (kedua folder ada di Path pengguna, dibaca ulang dari registry). Jendela
+    yang dibuka SESUDAH itu langsung mengenal go dan node. Terminal di dalam
+    VS Code, Kiro, atau Windows Terminal yang dibuka SEBELUM itu tetap memakai
+    PATH lama: tutup editornya sepenuhnya (File > Exit), buka lagi.
+  - Skrip .ps1 (muat-env.ps1, bab 3) hanya boleh dijalankan bila kebijakan
+    eksekusi PowerShell mengizinkannya. Sekali saja, tanpa hak admin:
+
+      Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+    Tanpa itu, dot-source skrip gagal dengan pesan "running scripts is
+    disabled on this system". Pemuat versi cmd (muat-env.cmd) tidak
+    terpengaruh kebijakan ini.
   - "make" TIDAK terpasang. Setiap target di Makefile adalah satu-dua perintah
     biasa; panduan ini menulis perintahnya langsung.
 
@@ -117,18 +131,34 @@ Mengubah port (bila 8080 sudah dipakai proses lain):
 3. BACKEND DENGAN ORACLE (SETELAH DBA MEMBERI SKEMA UJI)
 ================================================================================
 
-PENTING: backend TIDAK membaca berkas .env. Berkas .env.example hanya daftar
-nama variabel. Nilainya disetel di terminal, dan TIDAK PERNAH ditulis ke
-berkas, chat, tiket, atau prompt.
+PENTING: backend Go TIDAK membaca berkas .env sendiri; ia hanya membaca env
+var proses. Karena itu ada dua skrip pemuat di folder APP_RNM yang membaca
+APP_RNM\.env lalu menyetel env var untuk jendela yang sedang terbuka:
 
-Setel di jendela backend:
+  PowerShell:   . .\muat-env.ps1        (titik, spasi, nama skrip: dot-source)
+  cmd.exe:      call muat-env.cmd
+
+Isi APP_RNM\.env (salin dari .env.example; berkas .env tidak masuk git):
+
+  HTTP_ADDR=:8080
+  ORACLE_DSN=oracle://<pengguna>:<sandi>@<host>:<port>/<service>
+  ORACLE_SCHEMA=<nama skema uji dari DBA>
+  IS_PEGA_PROD=false
+
+  - <sandi> boleh dibiarkan apa adanya: muat-env.ps1 menanyakannya saat dimuat,
+    tanpa menampilkan dan tanpa menulisnya ke mana pun. muat-env.cmd tidak
+    punya prompt tersembunyi, jadi untuk cmd isi sandinya di .env.
+  - Bagian <...> lainnya diisi dari nilai yang diberikan DBA.
+  - ORACLE_DSN tidak pernah dicetak kedua skrip ke layar.
+
+Tanpa skrip, ketiga nilai itu bisa disetel langsung di jendela backend:
 
   $env:ORACLE_DSN    = 'oracle://<pengguna>:<sandi>@<host>:<port>/<service>'
   $env:ORACLE_SCHEMA = '<nama skema uji dari DBA>'
   $env:IS_PEGA_PROD  = 'false'
 
-Ganti bagian di dalam <...> dengan nilai dari DBA. Skema uji adalah skema yang
-DBA sediakan khusus untuk pengembangan, bukan produksi.
+Skema uji adalah skema KOSONG yang DBA sediakan khusus untuk pengembangan,
+bukan produksi, dan bukan POOLDATA (lihat peringatan di bawah).
 
 PERINGATAN SEBELUM MENJALANKAN TEST BERTAG db (bab 7):
 
@@ -211,57 +241,43 @@ Perintah lain, semua dari folder frontend:
   npm run preview      sajikan isi dist/ untuk dicoba (bukan server dev)
 
 Env var frontend:
-  Berbeda dari Go, Vite MEMBACA berkas frontend\.env. Hanya variabel berawalan
-  VITE_ yang diteruskan ke browser. Saat ini satu-satunya: VITE_API_BASE_URL.
-  Kosong berarti "alamat yang sama dengan halaman". Berkas .env tidak masuk
-  git (pola *.env di .gitignore). Lihat bab 5 sebelum mengisinya.
+  Berbeda dari Go, Vite MEMBACA berkas frontend\.env sendiri. Tidak perlu
+  skrip pemuat. Dua variabel di dalamnya (contoh di frontend\.env.example):
+
+    VITE_API_BASE_URL=                    kosong = alamat sama dengan halaman
+    DEV_PROXY_TARGET=http://localhost:8080  tujuan proxy dev, lihat bab 5
+
+  Hanya variabel berawalan VITE_ yang ikut ke browser; DEV_PROXY_TARGET tidak.
+  Berkas .env tidak masuk git (pola *.env di .gitignore).
 
 ================================================================================
-5. CELAH YANG HARUS DIKETAHUI: FRONTEND DEV BELUM BISA BICARA KE BACKEND
+5. BAGAIMANA FRONTEND DEV BICARA KE BACKEND: PROXY VITE
 ================================================================================
 
-Ini ditemukan saat mencoba, bukan dugaan:
+Saat dev, halaman dilayani Vite di port 5173 dan backend Go di port 8080.
+Browser tidak boleh memanggil 8080 langsung (backend tidak mengirim header
+CORS, jadi browser memblokirnya). Jalan keluarnya: Vite MENERUSKAN permintaan
+/api/* dan /healthz ke backend, sehingga bagi browser semuanya satu alamat.
 
-  a. vite.config.ts TIDAK punya pengaturan proxy. Permintaan /api/... dari
-     halaman jatuh ke server Vite sendiri, dan Vite menjawabnya dengan
-     index.html. Halaman tidak pernah menerima JSON dari Go.
+Pengaturannya ada di vite.config.ts dan dibaca dari frontend\.env:
 
-  b. Mengisi frontend\.env dengan VITE_API_BASE_URL=http://localhost:8080
-     membuat browser memanggil backend langsung, tetapi backend TIDAK mengirim
-     header CORS (Access-Control-Allow-Origin). Browser memblokir jawabannya.
+  DEV_PROXY_TARGET=http://localhost:8080
 
-  c. Backend tidak menyajikan folder dist/. Jadi jalur "satu asal" (frontend
-     dan API dari alamat yang sama) juga belum ada.
+  - Terisi  : /api dan /healthz diteruskan ke alamat itu (keadaan normal).
+  - Kosong  : tanpa proxy. Permintaan /api jatuh ke Vite sendiri dan dijawab
+              index.html, jadi tombol "Buka" tidak pernah sampai ke Go.
+  - Nilainya tidak ikut ke bundel browser, dan nol alamat host tertulis di
+    kode (ADR-U-0004). Samakan port-nya dengan HTTP_ADDR di APP_RNM\.env.
 
-Akibatnya hari ini:
-  - Backend dan frontend bisa dijalankan dan dicek SENDIRI-SENDIRI (bab 2, 4).
-  - Tombol "Buka" di halaman belum sampai ke Go. Ia menampilkan "Gagal membaca
-    klaim." atau halaman kosong, apa pun id yang diketik.
+Sudah dibuktikan 26 September 2026: lewat alamat Vite, /healthz menjawab JSON
+dari Go, dan /api/klaim-life/<id> menjawab kode status milik Go (503 tanpa
+Oracle), bukan index.html. Hanya berlaku untuk `npm run dev`; `npm run build`
+tidak memakai proxy.
 
-Ini bukan cacat tiket 01: AC-nya diuji lewat seam HTTP dan repository, bukan
-lewat browser. Tetapi celah ini harus ditutup sebelum ada yang mencoba lewat
-browser.
-
-[USULAN] penutup paling kecil, dikerjakan di sesi implementasi berikutnya,
-bukan diubah sendiri di sini: proxy di vite.config.ts yang alamat tujuannya
-dibaca dari env var, bukan ditulis sebagai literal:
-
-  server: {
-    port: 5173,
-    proxy: process.env.VITE_PROXY_TARGET
-      ? {
-          '/api':     process.env.VITE_PROXY_TARGET,
-          '/healthz': process.env.VITE_PROXY_TARGET,
-        }
-      : undefined,
-  },
-
-Cara memakainya setelah ada:
-
-  $env:VITE_PROXY_TARGET = 'http://localhost:8080'
-  npm run dev
-
-Tanpa CORS, tanpa alamat host di berkas mana pun (ADR-U-0004).
+Batas yang masih ada sesudah proxy: tombol "Buka" baru menampilkan klaim bila
+tabel baru (T_GENERAL_CLAIM dkk) sudah ada di skema yang ditunjuk backend DAN
+berisi data. Selama migrasi belum pernah dijalankan, backend menjawab 500 dan
+halaman menulis "Gagal membaca klaim." Itu keadaan data, bukan celah jalur.
 
 ================================================================================
 6. DUA JENDELA, URUTAN LENGKAP
@@ -269,16 +285,14 @@ Tanpa CORS, tanpa alamat host di berkas mana pun (ADR-U-0004).
 
 JENDELA 1 (backend):
 
-  $env:Path = 'C:\Program Files\Go\bin;C:\Program Files\nodejs;' + $env:Path
   Set-Location 'D:\XML\RNM_BRD\OUTPUT_HASIL_RNM\APP_RNM'
-  # bila Oracle ada: setel ORACLE_DSN, ORACLE_SCHEMA, IS_PEGA_PROD (bab 3)
+  . .\muat-env.ps1          # memuat .env (bab 3) dan mengisi PATH sesi
   go run ./cmd/api
 
 JENDELA 2 (frontend):
 
-  $env:Path = 'C:\Program Files\Go\bin;C:\Program Files\nodejs;' + $env:Path
   Set-Location 'D:\XML\RNM_BRD\OUTPUT_HASIL_RNM\APP_RNM\frontend'
-  # bila proxy bab 5 sudah ada: $env:VITE_PROXY_TARGET = 'http://localhost:8080'
+  . ..\muat-env.ps1         # cukup untuk PATH; proxy dibaca dari frontend\.env
   npm run dev
 
 Lalu buka http://localhost:5173/ di browser.
@@ -347,7 +361,10 @@ Gabungan yang setara "make check" (make tidak terpasang):
                                            skema = POOLDATA     asal menyetel
                                                                 env supaya
                                                                 lewat
-  halaman tampil, "Buka" selalu gagal      celah bab 5          proxy belum ada
+  halaman tampil, "Buka" selalu gagal      DEV_PROXY_TARGET     isi frontend\
+                                           kosong, backend      .env (bab 5),
+                                           mati, atau tabel     jalankan
+                                           belum ada (bab 5)    backend dulu
   npm run dev: port 5173 dipakai           proses lain          Vite otomatis
                                                                 pindah ke 5174;
                                                                 baca lognya

@@ -196,6 +196,39 @@ menyentuh `dastin\` / `jefri\` · `git push`.
 
 ---
 
+## 9. TAMBAHAN 26 SEPTEMBER 2026 SIANG — katalog instance pengembangan sudah dibaca
+
+Work owner memberi kredensial `POOLDATA` instance pengembangan. Sesi verifikasi menyambung
+(**hanya membaca katalog**), dan hasilnya mengubah beberapa hal di atas. Dua dokumen baru:
+`.scratch\claim-life\TIPE-KOLOM-OS-AKSEPTASI-KLAIM-LIFE.md` dan
+`.scratch\claim-life\SUMBER-PENOMORAN-DBA.md`, keduanya `[data DBA — dibaca sendiri, belum
+dikonfirmasi DBA]`. Kredensial **tidak** ditulis di mana pun; port yang benar berbeda dari entri TNS
+yang diberikan (port bawaan Oracle yang terbuka), dan DBA diminta memastikannya.
+
+| Fakta | Akibat pada brief ini |
+| --- | --- |
+| Oracle **12.2.0.1**; `COMPATIBLE` tidak terbaca dengan hak `POOLDATA` | §5-3 tetap ke DBA. Bila `COMPATIBLE ≥ 12.2`, pengenal 128 byte sah dan keputusan **j** dapat ditinjau ulang — **bukan** dibatalkan sendiri |
+| `POOLDATA` pengembangan memuat **760 tabel, 383 sequence, 198 procedure** | ⛔ **Bukan skema uji.** G1 **belum** terbuka: `-migrate` dan test db **tidak** boleh menunjuk skema ini. DBA diminta membuat **user kosong baru** pada instance yang sama |
+| **`DOCUMENT_CLAIM` sudah ada** di `POOLDATA`: 14 kolom (`ID VARCHAR2(100) NOT NULL`, `IDPEGA`, `TANGGAL`, `NAMAFILE`, `MIME`, `KATEGORI_1/2`, `NOAKSEP`, `NOPREKAS`, `PAYMENTDATE`, `INSKEY_LINK`, `INSKEY_DATA`, `T_STORAGE_ID`, `PXCREATEOPERATOR`), 295 baris — inilah tabel kelas Pega `Int-DOCUMENT_CLAIM` yang STRUKTUR sebut "tidak dapat diturunkan" | ⛔ Langkah `007` bertabrakan nama. Dengan penjaga ronde 3, `CREATE` dilewati sebagai "sudah ada" *(keberadaan benar, **bentuk berbeda**)* dan langkah dicatat sukses — persis kelemahan yang dicatat. **Keputusan baru v** di bawah |
+| `OS_AKSEPTASI_KLAIM_LIFE` punya **62** kolom, bukan 55; di dalam 55: `STS_REJECT NUMBER(38,0)`, `CLAIM_RETRO NUMBER`, `WPC DATE` — ketiganya ditebak teks; `WPC` di DDL `003` dan STRUKTUR juga teks | §3-7 ronde 3 **kini dapat dikerjakan** (dokumen tipe kolom ada). `CLAIM_RETRO` dan `WPC` butuh keputusan **w** |
+| `T_PREMIUM_LIST` **tidak ada** di `POOLDATA` pengembangan (nol objek bernama `*PREMIUM_LIST*`); `M_LIFE_PREMIUM_DETAIL`, `JSON_OFFER_LIFE`, `M_PRODUCT_LIFE`, view `PRODUCT_LIFE` ada | `[terbuka — PremiumList Life]` nama tabel polis di tiket 02/14 perlu dipastikan; bukan ronde ini |
+| `JSON_OFFER_LIFE` memuat `RESPONSE_DATE`, `RECONFIRMATION_DATE`, `REALIZATION_DATE` bertipe `DATE`, plus `STATUS`, `OLDID` | menguatkan **e′** |
+| Procedure penomoran terbaca utuh (93 baris): **nol `COMMIT`** di dalamnya; kunci `FOR UPDATE` atas `(CLASS, JENIS, TAHUN)`; format lengkap dirakit **pemanggil**; `ClaimLife` memakai `JENIS = RNML-K` | §5-4 terpenuhi. **o1–o3** kini dapat diputuskan tanpa menebak; OQ-013 punya bukti *(penutupannya milik work owner)*. AC 3 tiket 02 harus mencakup **perakitan format** yang hari ini ada di rule Pega, bukan di procedure |
+| `POOLDATA` punya `CREATE TABLE / SEQUENCE / INDEX / VIEW / PROCEDURE`, `UNLIMITED TABLESPACE` | user kosong baru boleh diberi hak yang sama minus `PROCEDURE`/`VIEW` |
+
+**Keputusan baru:**
+
+| | Keputusan | Keadaan |
+| ---: | --- | --- |
+| v | **Nama tabel dokumen.** Dua jalan: **(v1)** tabel baru diganti nama `T_CLAIMLF_DOCUMENT` *(atau nama lain yang tidak ada di katalog)*, `DOCUMENT_CLAIM` warisan dibiarkan dan **tidak** disentuh; **(v2)** pakai `DOCUMENT_CLAIM` warisan apa adanya, dengan pemetaan kolom baru → 14 kolom itu, sesuai ADR-U-0042 *(bentuknya kini **dapat** direkayasa balik)*. Yang tidak sah: menjalankan `007` terhadap skema mana pun yang sudah memuat `DOCUMENT_CLAIM` | `[USULAN]` — rekomendasi **v1** untuk skema uji sekarang, **v2** ditinjau saat tiket dokumen dikerjakan |
+| w | **`WPC` dan `CLAIM_RETRO`.** Tabel warisan: `WPC DATE`, `CLAIM_RETRO NUMBER`. DDL baru `003` menulis `WPC VARCHAR2(32)`; `002` menulis `CLAIM_RETRO` *(tipe periksa)*; `BarisLama` dan `Simpan` memperlakukan keduanya teks. Usulan: ikuti tabel warisan — `WPC DATE`, `CLAIM_RETRO` angka (`NUMBER(38,8)` bila uang, `Ratio` bila perbandingan — **artinya belum diketahui**, tanya work owner); STRUKTUR diberi ralat bertanggal | `[USULAN]` |
+
+**Langkah A direvisi:** sebelum A-1, executor **membaca ulang** `ORACLE_SCHEMA` dan menjalankan
+`SELECT COUNT(*) FROM SYS.ALL_OBJECTS WHERE OWNER = UPPER(:1)` — harus **0** *(skema kosong)*;
+bila tidak nol, berhenti dan tanya. Pagar §3-5 tetap wajib.
+
+---
+
 *Disusun 26 September 2026 dari verifikasi independen commit `7b832e6`: 77 test dijalankan ulang,
 diff 11 berkas dibaca utuh, ADR-U-0006 dan ADR-U-0016 dibaca utuh, cacah kolom `NUMBER`, pernyataan
 `CREATE`, dan byte CR dihitung ulang dengan alat sendiri.*
