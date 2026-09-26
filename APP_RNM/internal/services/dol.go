@@ -116,14 +116,15 @@ func ValidasiDOL(tipe string, dol time.Time, p models.Peserta) error {
 	var gross bool
 	var geser time.Duration
 
+	if !TypeDikenal(tipe) {
+		return fmt.Errorf("%w: %q; yang dikenal hanya %s, %s, %s, dan %s",
+			ErrTypeTidakDikenal, tipe, TypeQR, TypeQP, TypeTR, TypeTP)
+	}
 	switch tipe {
 	case TypeQR, TypeQP:
 		gross = true
 	case TypeTR, TypeTP:
 		geser = pergeseranTPTR
-	default:
-		return fmt.Errorf("%w: %q; yang dikenal hanya %s, %s, %s, dan %s",
-			ErrTypeTidakDikenal, tipe, TypeQR, TypeQP, TypeTR, TypeTP)
 	}
 
 	// ⛔ DOL kosong ditolak TERPISAH. Waktu nol adalah tahun 1 Masehi, yang

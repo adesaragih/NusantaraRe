@@ -104,7 +104,11 @@ func (p penomorPencatat) NomorBerikut(context.Context, *repository.Tx, string, t
 }
 
 // pelakuUji adalah pelaku yang membawa identitas, seperlunya saja.
-func pelakuUji() Pelaku { return Pelaku{AkunID: "UJI-OPERATOR"} }
+// pelakuUji berperan Input Register sejak tiket 07: pendaftaran menulis
+// status Outstanding, jadi ia salah satu jalur pengubah status.
+func pelakuUji() Pelaku {
+	return Pelaku{AkunID: "UJI-OPERATOR", Peran: []string{PeranInputRegister}}
+}
 
 // Pendaftaran tanpa Oracle gagal terang, bukan diam.
 func TestDaftarTanpaOracleGagal(t *testing.T) {

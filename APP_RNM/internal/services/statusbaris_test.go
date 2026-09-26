@@ -165,19 +165,22 @@ func TestBarisTerakhirAdalahSumberPencerminan(t *testing.T) {
 // Oracle masing-masing gagal terang.
 func TestUbahStatusMenjagaPagarnya(t *testing.T) {
 	svc := services.New(nil)
-	pelaku := services.Pelaku{AkunID: "UJI-AKUN"}
+	// Berperan sah: yang diuji di sini pagar PENGENAL dan Oracle, bukan
+	// pagar peran - yang punya testnya sendiri di wewenang_test.go.
+	pelaku := services.Pelaku{AkunID: "UJI-AKUN",
+		Peran: []string{services.PeranRejectOutstanding}}
 	if err := svc.Status().Ubah(context.Background(), services.Pelaku{},
-		"CLM-1", "P-1", "A-1", models.StatusAksep, saatUji); !errors.Is(
+		"CLM-1", "P-1", "A-1", models.StatusDitolak, saatUji); !errors.Is(
 		err, services.ErrTanpaIdentitas) {
 		t.Errorf("pelaku anonim: galat = %v, mau ErrTanpaIdentitas", err)
 	}
 	if err := svc.Status().Ubah(context.Background(), pelaku,
-		"CLM-1", "", "A-1", models.StatusAksep, saatUji); !errors.Is(
+		"CLM-1", "", "A-1", models.StatusDitolak, saatUji); !errors.Is(
 		err, services.ErrPermintaanTidakSah) {
 		t.Errorf("peserta kosong: galat = %v, mau ErrPermintaanTidakSah", err)
 	}
 	if err := svc.Status().Ubah(context.Background(), pelaku,
-		"CLM-1", "P-1", "A-1", models.StatusAksep, saatUji); !errors.Is(
+		"CLM-1", "P-1", "A-1", models.StatusDitolak, saatUji); !errors.Is(
 		err, repository.ErrTanpaOracle) {
 		t.Errorf("tanpa Oracle: galat = %v, mau ErrTanpaOracle", err)
 	}

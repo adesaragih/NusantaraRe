@@ -32,7 +32,7 @@ import (
 //
 // ⚠️ Gerbang itu menguji `.STS_REJECT` TINGKAT BARIS - bukti bahwa wewenang
 // pun diukur per baris, bukan per klaim.
-const PeranRejectOutstanding = "ReasLifeAdmin"
+const PeranRejectOutstanding = PeranAdmin
 
 var (
 	// ErrKlaimBelumBernomor - padanan `CLAIM_NO != ''` pada gerbang XML.

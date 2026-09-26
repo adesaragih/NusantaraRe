@@ -23,13 +23,14 @@ import (
 
 // PeranHapusKlaim adalah peran yang boleh menghapus klaim.
 //
-// ⚠️ `[terbuka - tiket 07]` Korpus TIDAK memuat satu pun rule yang menghapus
-// kasus klaim - pencarian `Obj-Delete`, `pxDelete`, dan nama berkas
-// `*Delete*`/`*Hapus*` di 136 berkas `Claim Life` hanya menemukan penghapusan
-// DOKUMEN dan penomoran ulang peserta. Jadi peran ini BUKAN bacaan XML
-// melainkan turunan dari tiket ini sendiri ("Sebagai ReasLifeAdmin, saya dapat
-// menghapus"), dan tiket 07 yang menetapkannya bersama gerbang yang lain.
-const PeranHapusKlaim = "ReasLifeAdmin"
+// ⚠️ Korpus TIDAK memuat satu pun rule yang menghapus kasus klaim -
+// pencarian `Obj-Delete`, `pxDelete`, dan nama berkas `*Delete*`/`*Hapus*` di
+// 136 berkas `Claim Life` hanya menemukan penghapusan DOKUMEN dan penomoran
+// ulang peserta. Jadi peran ini BUKAN bacaan XML melainkan turunan dari tiket
+// 15 sendiri ("Sebagai ReasLifeAdmin, saya dapat menghapus"). Tiket 07 sudah
+// lewat dan tidak menemukan gerbang XML untuk penghapusan; nilainya tetap,
+// sumbernya kini dinyatakan terus terang.
+const PeranHapusKlaim = PeranAdmin
 
 var (
 	// ErrKlaimSudahDiKomite - klaim yang sudah diserahkan tidak dihapus.

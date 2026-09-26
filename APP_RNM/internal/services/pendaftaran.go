@@ -124,12 +124,19 @@ func (p *Pendaftaran) Daftar(ctx context.Context, pelaku Pelaku, minta Permintaa
 	// tertutup melainkan pagar yang gagal ANONIM: jejaknya hilang, dan tidak
 	// ada yang tahu siapa mendaftarkan klaim itu.
 	//
-	// ⚠️ Peran yang SEBENARNYA diperlukan untuk mendaftar belum ditetapkan -
-	// sumbernya satu tabel (ADR-U-0030) dan tiket 07 yang menegakkannya.
-	// Yang dituntut di sini karena itu minimum yang dapat dipertanggungjawabkan:
-	// permintaan harus membawa identitas. [terbuka - tiket 07]
+	// ⛔ Identitas, lalu PERAN. Gerbang perannya dipasang tiket 07 - komentar
+	// di sini sebelumnya menandainya `[terbuka - tiket 07]`, dan tiket itu
+	// sekarang sudah lewat. `[terverifikasi]` `Flow/Register_Flow.xml`:
+	// `Assignment2` (Input Register) dipegang `ReasLifeAdmin`.
+	//
+	// ⚠️ Pendaftaran MENULIS status Outstanding lewat TandaiOutstanding, jadi
+	// ia salah satu jalur pengubah status - dan jalur pengubah status yang
+	// tidak bergerbang adalah lubang, bukan kelonggaran.
 	if err := WajibIdentitas(pelaku); err != nil {
 		return hasil, fmt.Errorf("%w: klaim mencatat siapa yang membuatnya", err)
+	}
+	if err := WajibPeran(pelaku, PeranInputRegister); err != nil {
+		return hasil, err
 	}
 	if err := minta.Periksa(); err != nil {
 		return hasil, err

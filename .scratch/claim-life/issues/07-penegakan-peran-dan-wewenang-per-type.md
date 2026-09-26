@@ -1,6 +1,6 @@
 # 07: Penegakan peran di lapisan layanan + wewenang kirim-Komite per `Type`
 
-**Status:** ready-for-agent
+**Status:** claimed
 
 **Blocked by:** 05 (reject Outstanding oleh Admin) — gerbang perlu tindakan nyata untuk dijaga
 
@@ -45,16 +45,16 @@ konteks Komite/IAM digarap).
 
 ## Acceptance criteria
 
-- [ ] `ReasLifeMedicalAdvisor` **tidak dapat** mengubah status akseptasi baris mana pun. *(AC 9 spec)*
+- [x] `ReasLifeMedicalAdvisor` **tidak dapat** mengubah status akseptasi baris mana pun. *(AC 9 spec)*
 - [ ] Untuk klaim ber-`Type` `QP` atau `QR`, **hanya `ReasLifeSPV`** yang dapat mengirim ke Komite;
       upaya oleh peran lain ditolak. *(AC 10 spec)*
 - [ ] Untuk klaim ber-`Type` `TP` atau `TR`, `ReasLifeAdmin` **dapat** mengirim ke Komite.
       *(AC 11 spec)*
-- [ ] Penolakan wewenang terjadi **di lapisan layanan**, dan tetap terjadi meskipun kontrol UI-nya
+- [x] Penolakan wewenang terjadi **di lapisan layanan**, dan tetap terjadi meskipun kontrol UI-nya
       ditampilkan. *(AC 12 spec)*
-- [ ] Wewenang dan validasi membaca **satu** field `Type` yang sama — tidak ada dua salinan yang
+- [x] Wewenang dan validasi membaca **satu** field `Type` yang sama — tidak ada dua salinan yang
       dapat berbeda.
-- [ ] Tidak ada nama orang ter-hardcode di lapisan mana pun; wewenang diukur dari peran akun.
+- [x] Tidak ada nama orang ter-hardcode di lapisan mana pun; wewenang diukur dari peran akun.
 
 ## Catatan
 
@@ -73,3 +73,80 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+---
+
+## Pembacaan ulang XML — 26 September 2026 malam
+
+XML tiket ini **sudah dibaca dan dicatat** di tiket 03 *(gerbang `AdjustmentDetail_Section`)* dan
+tiket 04 *(sensus penulis status)*; sesuai brief lanjutan 2 §1.4-c, keduanya dirujuk, bukan dibaca
+ulang. Yang **baru** dibaca giliran ini: `Flow/Register_Flow.xml` — peran per tahap.
+
+| Tahap | `pyPosition` `[terverifikasi]` |
+| --- | --- |
+| `Assignment2` *(Input Register)* | `ReasLifeAdmin` |
+| `Assignment1` *(Outstanding Claim)* | `ReasLifeAdmin` |
+| `Assignment3` *(Medical Check)* | `ReasLifeMedicalAdvisor` |
+| `Decision3` | `ReasLifeMedicalAdvisor` |
+| `Decision1` | `ReasLifeSPV` |
+
+⭐ **`ReasLifeMedicalAdvisor` tidak muncul di satu pun gerbang status.** Ia memegang tahap telaah
+medis dan keputusan medis, bukan keputusan akseptasi — dan itulah dasar AC 9.
+
+⚠️ **Selisih tiket ↔ XML yang dicatat, bukan dipersempit.** Gerbang Komite berbunyi
+`pyPosition=='ReasLifeSPV' || Type='TP' || Type='TR'`. Bacaan **harfiah**nya: untuk `TP`/`TR`
+gerbangnya terbuka **tanpa memeriksa peran sama sekali**. Tiket menuliskannya *"`ReasLifeAdmin`
+dapat mengirim"*. Keduanya sejalan selama Admin memang yang memegang tahapnya, tetapi mempersempit
+kode menjadi *"hanya Admin"* akan **menolak SPV pada TP/TR** padahal XML menerimanya. Kode mengikuti
+XML; identitas tetap wajib — gerbang yang terbuka bukan gerbang yang hilang.
+
+## Implementasi — 26 September 2026 malam (tiket 07)
+
+**Status: `claimed`** — **4 dari 6 AC tertutup** *(6 sebelum `/code-review`; dua AC Komite dibatalkan centangnya karena fungsinya nol pemanggil)*. Titik tetap `c7fcd27`.
+Verifikasi: vet · vet db · gofmt nol · build · **182 PASS · 0 FAIL** *(dari 176)* · 28 SKIP ·
+`tsc` · 7 JS · 88 modul.
+
+| Berkas | Isi |
+| --- | --- |
+| `services/wewenang.go` *(baru)* | `PeranMedicalAdvisor`, `WajibPeranPengubahStatus`, `WajibWewenangKomite` |
+| `services/statusbaris.go` | gerbang peran dipasang di `ubah` — **satu** jalan menuju tulisan status, dilewati `Ubah` dan `Tolak` |
+| `models/satutype_test.go` | dua penjaga statik baru |
+
+⛔ **Peran tidak diberi nama kedua.** `PeranSimpanOutstanding` *(SPV, tiket 03)* dan
+`PeranRejectOutstanding` *(Admin, tiket 05)* dipakai apa adanya. Satu peran, satu nama, walau tempat
+lahirnya berbeda.
+
+### ⛔ Penjaga nama orang: percobaan pertama melanggar aturan yang dijaganya
+
+Ronde pertama memuat **daftar nama operator nyata** dari korpus sebagai pola terlarang — dan itu
+sendiri melanggar pagar keamanan brief induk: *"nilai nama orang tidak disalin ke artefak mana pun"*.
+Penjaga yang melanggar aturannya sendiri salah **bentuk**, bukan perlu dikecualikan. Ia ditulis ulang
+menjadi **struktural**: pemberian teks tetap ke medan yang namanya menandakan nama orang
+(`OpName`, `PolicyHolder`, `NameOfInsured`, …), dengan nilai sintetis `UJI-*` dikecualikan — sebab
+bentuk itu justru yang pagar keamanan **tuntut** untuk fixture. Dibuktikan menggigit: menyisipkan
+`CreateOpName: "<nama>"` membuatnya merah.
+
+**Penjaga aturan bisnis lain, dibuktikan dapat gagal:** gerbang peran dilepas dari `ubah` → penjaga
+statik merah; Medical Advisor mengubah status → 3 test merah.
+
+### Hasil `/code-review` atas titik tetap `c7fcd27`
+
+⛔ **Review membuktikan penjaga saya HIJAU di bawah mutasi.** Sub-agen menambahkan satu fungsi
+penulis status di berkas `services` yang **baru**, dan penjaga statik saya tetap hijau — sebab ia
+membaca **satu** berkas dan mencari **satu** potongan teks, sambil mengaku memeriksa *"setiap fungsi
+layanan yang mengubah status"*. Pengakuan yang lebih luas daripada yang diperiksanya; pelajaran yang
+berkas itu sendiri catat, saya ulangi.
+
+| # | Temuan | Tindakan |
+| ---: | --- | --- |
+| 1 | ⛔ **Daftar peran yang DATAR** — `{SPV, Admin}` untuk tujuan apa pun, sehingga **SPV dapat menolak baris** lewat `Ubah`, melewati gerbang Admin di `Tolak` beserta syarat klaim-bernomornya | ✅ gerbangnya kini bergantung **tujuan**: Ditolak → Admin *(gerbang 15399)*; Aksep → **ditolak bagi siapa pun di modul ini**, sebab `[terverifikasi]` hanya Komite yang menulis `1` |
+| 2 | ⛔ **Dua penulis status melewati gerbang**: `Pendaftaran.Daftar` *(lewat `TandaiOutstanding`)* dan komentar `hapus.go` yang masih menunggu tiket ini | ✅ `Daftar` bergerbang `PeranInputRegister` *(`Assignment2` = `ReasLifeAdmin`)*; komentar `hapus.go` diralat |
+| 3 | ⛔ **Penjaga statik tidak menjaga** *(terbukti lewat mutasi di atas)* | ✅ ditulis ulang: menelusuri **seluruh** `internal/`, berdaftar-izin per berkas beserta gerbang yang wajib dipanggil, dan menolak penulis status di berkas yang tidak terdaftar. Dibuktikan menangkap mutasi yang sama |
+| 4 | **`WajibWewenangKomite` nol pemanggil produksi** — AC 10 dan 11 tercentang padahal tidak ada yang dapat dicoba, apalagi ditolak | ✅ **dibatalkan centangnya**; keduanya ditutup di **tiket 10** bersama pintunya |
+| 5 | Teks `"ReasLifeAdmin"` tertulis di **tiga** berkas walau tiket ini menulis *"satu peran, satu nama"* | ✅ `PeranAdmin`/`PeranSPV`/`PeranMedicalAdvisor` satu tempat; izin tetap bernama sendiri sebab artinya berbeda |
+| 6 | `switch` keempat `Type` di dua berkas, urutan cabang berbeda | ✅ `TypeDikenal` satu tempat |
+| 7 | Penjaga nama orang: pola dapat dielakkan; letaknya di `models_test` yang membaca `../services` — membalik arah ketergantungan | ✅ dipindah ke `services`; pola menerima kutip-balik dan `UJI-` diperiksa di **awal** teks, bukan di mana saja; **batasnya dinyatakan** di komentar — nama lewat konstanta perantara atau perbandingan `AkunID == "..."` tidak tertangkap |
+
+⚠️ Dua catatan yang tetap terbuka: `PeranSimpanOutstanding` masih nol pemanggil *(pintunya milik
+sisa tiket 03)*, dan `WajibWewenangKomite` menerima `Type` dari pemanggil — saat tiket 10
+mengabelnya, ia wajib membacanya lewat `KlaimLife.TypeKlaim`, bukan menerima teks.

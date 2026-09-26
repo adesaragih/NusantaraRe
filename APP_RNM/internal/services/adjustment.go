@@ -92,7 +92,7 @@ func nilaiAtauNol(d *apd.Decimal) *apd.Decimal {
 // ⚠️ Tiket 03 semula menulis `ReasLifeAdmin`. XML menang atas tiket (aturan
 // work owner 26-09-2026), dan tiket sudah diralat. Yang bergerbang
 // `ReasLifeAdmin` adalah REJECT Outstanding - tiket 05, kondisi baris 15399.
-const PeranSimpanOutstanding = "ReasLifeSPV"
+const PeranSimpanOutstanding = PeranSPV
 
 // TambahBaris membentuk satu baris adjustment baru bagi seorang peserta.
 //

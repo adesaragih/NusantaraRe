@@ -233,6 +233,12 @@ func (st *Status) ubah(ctx context.Context, pelaku Pelaku,
 	if err := WajibIdentitas(pelaku); err != nil {
 		return err
 	}
+	// ⛔ Gerbang peran tiket 07: setiap fungsi yang mengubah status memanggil
+	// ini, dan penjaga statik memeriksanya. Medical Advisor menelaah, ia tidak
+	// memutuskan akseptasi (AC 9 spec).
+	if err := WajibPeranPengubahStatus(pelaku, ke); err != nil {
+		return err
+	}
 	if strings.TrimSpace(klaimID) == "" || strings.TrimSpace(pesertaID) == "" ||
 		strings.TrimSpace(adjID) == "" {
 		return fmt.Errorf("%w: pengenal klaim, peserta, dan baris wajib diisi",
