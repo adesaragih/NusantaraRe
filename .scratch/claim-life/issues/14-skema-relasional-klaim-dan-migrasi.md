@@ -1595,3 +1595,24 @@ sebab skema ini pemiliknya tiket 14:
 
 Akibatnya pada penjaga tiket ini: `TestSeluruhCreateDapatDibacaNamanya` **19 → 20**, dan cacah objek
 yang diharapkan sesudah `-migrate` **8 · 5 · 15 → 8 · 6 · 15**. AC tiket 14 **tidak berubah: 40/53**.
+
+### Tambahan dari tiket 03 — 26 September 2026 malam
+
+Satu baris per aturan brief modul §4, ditulis oleh executor tiket 03 dan tidak mengubah AC tiket ini.
+
+- **Langkah migrasi `010_kolom_t_claimlf_document.sql`** (+`_down`) menambahkan tujuh kolom isi
+  `T_CLAIMLF_DOCUMENT` — butir **ad**. Penjaga cacah `CREATE` **tidak** dilonggarkan: langkah ini
+  `ALTER`, bukan `CREATE`, dan `KolomAlterTambah` dipasang supaya kolom yang lahir lewat `ALTER`
+  tetap terlihat pembanding bentuk.
+- **Tiga ralat tipe di `models`, menurut XML**: `Spreading.RetrocadedShare` `Ratio` → `Money`
+  (`SpreadingClaimLife_Act` mengisinya dengan sisa `CLAIM_GROSS` atau kapasitas treaty-year);
+  `SpreadingRetro.Commision` dan `.OvrComm` `Money` → `Ratio` (XML membagi keduanya seratus).
+  **Nol langkah migrasi** diperlukan — `NUMBER(38,8)` sudah benar untuk keduanya; komentar DDL
+  `005` dan `006` yang menyatakan sebaliknya sudah diralat di tempat.
+- **`models.BarisAdjustment` kehilangan tujuh dari delapan kolom warisan** yang DDL `004`
+  sediakan, dan INSERT-nya hanya menulis `CURRENCY` — sehingga `SHARE_NUSANTARA_RE`,
+  `CEDING_RETENTION`, `SUM_REASURED`, `SUM_INSURED`, `SHARE_RETRO`, `RETROCEDED_SHARE`, dan
+  `CURRENCY_ID` **selalu NULL**. Medan, INSERT, dan SELECT sudah dilengkapi di tiket 03.
+- ⚠️ `[terbuka]` Medan tanggal di `models` masih `time.Time` biasa untuk kolom nullable, yang tidak
+  dapat membedakan NULL dari `0001-01-01` (ADR-U-0022 Akibat 2). `Dokumen` yang baru memakai
+  `*time.Time`; menyeragamkan sisanya adalah keputusan sekali untuk seluruh model — milik tiket ini.

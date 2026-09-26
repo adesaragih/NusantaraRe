@@ -72,10 +72,16 @@ type Spreading struct {
 	TreatyTypeID   string
 	TreatyTypeName string
 	TreatyYearLife string
-	// RetrocadedShare dan Rate adalah RASIO, bukan uang, dan karena itu tidak
-	// dapat dijumlahkan dengan Money (ADR-F-0004).
-	RetrocadedShare Ratio
-	Rate            Ratio
+	// RetrocadedShare adalah UANG, bukan rasio - diralat 26-09-2026 menurut
+	// SpreadingClaimLife_Act langkah 8.2.1.4-7, yang mengisinya dengan sisa
+	// CLAIM_GROSS atau dengan kapasitas IDR/USD treaty-year. Keduanya nilai
+	// uang. Nama berakhiran _SHARE di korpus ini memang menipu - lihat
+	// ADR-0003 dan bab Catatan tiket 03.
+	RetrocadedShare Money
+	// Rate tetap RASIO, dan karena itu tidak pernah terjumlahkan dengan Money
+	// (ADR-F-0004). Yang disimpan adalah rate MENTAH per mil, bukan hasil
+	// baginya seribu.
+	Rate Ratio
 	// IDR dan USD adalah nilai uang; nama kolomnya sekaligus mata uangnya.
 	IDR      Money
 	USD      Money
@@ -94,26 +100,52 @@ type SpreadingRetro struct {
 	PercentShare  Ratio
 	Amount        Money
 	Rate          Ratio
-	// [terbuka] Rumus PremiumSpreadedNet punya dua cabang di rule yang sama;
-	// pemiliknya Product dan Underwriting. Di sini ia hanya disimpan apa
+	// Kedua cabang PremiumSpreadedNet ternyata dipilih oleh TAHUN POLIS -
+	// lihat bab "Pembacaan ulang XML" tiket 03. Di sini ia hanya disimpan apa
 	// adanya, tidak dihitung ulang.
 	PremiumSpreadedGross Money
 	PremiumSpreadedNet   Money
-	Commision            Money
-	OvrComm              Money
-	TreatyTypeID         string
-	TreatyTypeName       string
+	// Commision dan OvrComm adalah PERSEN, bukan uang - diralat 26-09-2026:
+	// SpreadingClaimLife_Act membagi keduanya seratus sebelum memakainya
+	// (@divide(.COMMISION,100,5) dan @divide(.OVR_COMM,100,5)). Menyimpannya
+	// sebagai Money membuat persen dapat dijumlahkan dengan uang, yang justru
+	// dilarang ADR-F-0004.
+	Commision      Ratio
+	OvrComm        Ratio
+	TreatyTypeID   string
+	TreatyTypeName string
 }
 
 // Dokumen adalah satu dokumen pendukung milik seorang peserta.
 //
-// [terbuka] [data DBA] Kolom isinya TIDAK DAPAT DITURUNKAN dari korpus - kelas
-// Pega-nya ASM-FW-GCNMFW-Int-DOCUMENT_CLAIM dan SQL-nya dibuat Pega sendiri.
-// Yang pasti hanya identitas dan induknya. Menambah medan lain berarti
-// mengarang.
+// Kolom isinya dihitung DUA KALI dari sumber yang berbeda, 26-09-2026:
+// katalog POOLDATA.DOCUMENT_CLAIM (14 kolom) dan seluruh Property-Set di
+// InsertDocument_Act sebelum Obj-Save (12 properti). Keduanya cocok - lihat
+// STRUKTUR-TABEL-CLAIM-LIFE.md bab kolom isi. Yang sengaja TIDAK ikut: kunci
+// internal Pega (IDPEGA, INSKEY_*), pelaku (milik jejak audit tiket 09), dan
+// NOAKSEP/NOPREKAS yang rumahnya baris adjustment.
 type Dokumen struct {
 	ID        int64
 	PesertaID string
+	NamaFile  string
+	Mime      string
+	// Kategori1 dan Kategori2 keduanya ditulis InsertDocument_Act; yang
+	// ditampilkan Section/DocumentLife.xml kepada manusia adalah Kategori2.
+	Kategori1  string
+	Kategori2  string
+	TStorageID string
+	// ⛔ Kedua tanggal PENUNJUK, dan nil BUKAN tanggal nol. Kolomnya nullable
+	// (ADR-U-0027), dan ADR-U-0022 Akibat 2 berbunyi "teks kosong pada kolom
+	// angka atau tanggal menjadi KOSONG, bukan nol dan bukan tanggal nol".
+	// time.Time biasa tidak dapat membedakan NULL dari 0001-01-01, dan yang
+	// membaca kolom itu tidak akan pernah tahu mana yang ia pegang.
+	//
+	// ⚠️ [terbuka - tiket 14] Medan tanggal lain di model ini (mis.
+	// BarisAdjustment.TanggalAkseptasi) masih time.Time biasa dan punya
+	// masalah yang sama. Mengubahnya menyentuh pembaca dan penulis yang sudah
+	// ada; itu keputusan sekali untuk seluruh model, bukan keputusan tiket 03.
+	Tanggal     *time.Time
+	PaymentDate *time.Time
 }
 
 // PohonKlaim adalah satu klaim utuh, dari akar work object sampai daun.

@@ -87,15 +87,18 @@ func contohPohon(t *testing.T) models.PohonKlaim {
 					Spreading: []models.Spreading{{
 						ID: "UJI-S-1", TreatyTypeName: "UJI-TREATY", TreatyYearLife: "2026",
 						IDR: uang("500000.5"), Currency: "IDR",
-						// Rasio, bukan uang - keduanya sengaja bertipe berbeda.
-						RetrocadedShare: rasio("0.12345678"),
+						// RetrocadedShare UANG (diralat 26-09-2026 menurut
+						// SpreadingClaimLife_Act langkah 8.2.1.4-7); Rate rasio.
+						// Keduanya sengaja bertipe berbeda.
+						RetrocadedShare: uang("0.12345678"),
 						Rate:            rasio("0.075"),
 						Retro: []models.SpreadingRetro{
 							{ID: "UJI-RT-1", ReinsurerName: "UJI-REINSURER",
 								Amount: uang("250000.25"), PercentShare: rasio("0.6"),
 								Rate: rasio("0.0125"), PremiumSpreadedGross: uang("99999.99999999"),
 								PremiumSpreadedNet: uang("88888.88888888"),
-								Commision:          uang("1234.5"), OvrComm: uang("0.00000001")},
+								// COMMISION dan OVR_COMM adalah PERSEN, bukan uang.
+								Commision: rasio("1234.5"), OvrComm: rasio("0.00000001")},
 							{ID: "UJI-RT-2", ReinsurerName: "UJI-REINSURER-2",
 								Amount: uang("0.00000001"), PercentShare: rasio("0.4")},
 						},
@@ -270,14 +273,14 @@ func TestBacaSampaiCicit(t *testing.T) {
 	for _, k := range []struct {
 		nama, mau, dapat string
 	}{
-		{"spreading RETROCADED_SHARE", "0.12345678", utils.FormatDecimal(sprd.RetrocadedShare.Value)},
+		{"spreading RETROCADED_SHARE", "0.12345678", utils.FormatDecimal(sprd.RetrocadedShare.Amount)},
 		{"spreading RATE", "0.075", utils.FormatDecimal(sprd.Rate.Value)},
 		{"retro PERCENT_SHARE", "0.6", utils.FormatDecimal(rt.PercentShare.Value)},
 		{"retro RATE", "0.0125", utils.FormatDecimal(rt.Rate.Value)},
 		{"retro PREMIUM_SPREADED_GROSS", "99999.99999999", utils.FormatDecimal(rt.PremiumSpreadedGross.Amount)},
 		{"retro PREMIUM_SPREADED_NET", "88888.88888888", utils.FormatDecimal(rt.PremiumSpreadedNet.Amount)},
-		{"retro COMMISION", "1234.5", utils.FormatDecimal(rt.Commision.Amount)},
-		{"retro OVR_COMM", "0.00000001", utils.FormatDecimal(rt.OvrComm.Amount)},
+		{"retro COMMISION", "1234.5", utils.FormatDecimal(rt.Commision.Value)},
+		{"retro OVR_COMM", "0.00000001", utils.FormatDecimal(rt.OvrComm.Value)},
 	} {
 		if k.dapat != k.mau {
 			t.Errorf("%s = %q, mau %q", k.nama, k.dapat, k.mau)

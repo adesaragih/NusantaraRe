@@ -206,6 +206,34 @@ func tampakCreateTabel(pernyataan string) bool {
 	return polaCreateLonggar.MatchString(pernyataan)
 }
 
+// polaAlterTambah mengenali ALTER TABLE ... ADD ( ... ).
+//
+// ⛔ Kenapa ini perlu: langkah migrasi lanjutan menambah kolom lewat ALTER,
+// bukan CREATE. Tanpa pemecah ini, kolom yang lahir di ALTER TIDAK TERLIHAT
+// oleh satu penjaga pun - tidak oleh pembanding STRUKTUR, tidak oleh
+// pra-terbang bentuk. Kolom yang tidak terlihat penjaga adalah kolom yang
+// boleh salah tanpa ada yang tahu.
+var polaAlterTambah = regexp.MustCompile(
+	`(?is)ALTER\s+TABLE\s+\{skema\}\.(\w+)\s+ADD\s*\((.*?)\n\)`)
+
+// KolomAlterTambah membaca nama tabel dan kolom yang DITAMBAHKAN satu ALTER.
+//
+// Nama tabel kosong berarti pernyataan itu bukan ALTER TABLE ... ADD.
+func KolomAlterTambah(pernyataan string) (string, []string) {
+	m := polaAlterTambah.FindStringSubmatch(pernyataan)
+	if m == nil {
+		return "", nil
+	}
+	var kolom []string
+	for _, b := range strings.Split(m[2], ",") {
+		atas := strings.ToUpper(strings.TrimSpace(b))
+		if k := polaKolomDDL.FindStringSubmatch(atas); k != nil {
+			kolom = append(kolom, k[1])
+		}
+	}
+	return strings.ToUpper(m[1]), kolom
+}
+
 // KolomCreateTable membaca nama tabel dan daftar kolomnya dari satu pernyataan.
 //
 // Nama tabel kosong berarti pernyataan itu bukan CREATE TABLE. Baris CONSTRAINT

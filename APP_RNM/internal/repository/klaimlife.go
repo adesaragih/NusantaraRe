@@ -133,12 +133,21 @@ func (r *KlaimLife) AmbilBaris(ctx context.Context, klaimID string) (map[string]
 	if err != nil {
 		return nil, err
 	}
+	// Kedelapan kolom warisan ikut dibaca sejak 26-09-2026: menulisnya tanpa
+	// membacanya membuat separuh pewarisan mati tanpa satu pun test gagal -
+	// cacat yang persis sama sudah terjadi pada CLAIM_RETRO di tiket 14.
 	q := fmt.Sprintf(
 		`SELECT a.PREMIUM_LIST_DETAIL_ID, a.ID, `+fmtDesimal+`, a.CURRENCY,
-		        a.STS_REJECT, a.ACCEPTED_NO, a.ACCEPTATION_DATE, a.KOMITE_ID
+		        a.STS_REJECT, a.ACCEPTED_NO, a.ACCEPTATION_DATE, a.KOMITE_ID,
+		        `+fmtDesimal+`, `+fmtDesimal+`, `+fmtDesimal+`, `+fmtDesimal+`,
+		        `+fmtDesimal+`, `+fmtDesimal+`, a.CURRENCY_ID
 		   FROM %s a JOIN %s p ON p.ID = a.PREMIUM_LIST_DETAIL_ID
 		  WHERE p.CLAIM_ID = :1
-		  ORDER BY a.PREMIUM_LIST_DETAIL_ID, a.ID`, "a.CLAIM_AMOUNT", adj, pes)
+		  ORDER BY a.PREMIUM_LIST_DETAIL_ID, a.ID`,
+		"a.CLAIM_AMOUNT",
+		"a.SHARE_NUSANTARA_RE", "a.CEDING_RETENTION", "a.SUM_REASURED",
+		"a.SUM_INSURED", "a.SHARE_RETRO", "a.RETROCEDED_SHARE",
+		adj, pes)
 	if err := PeriksaSQL(q); err != nil {
 		return nil, err
 	}
@@ -153,8 +162,12 @@ func (r *KlaimLife) AmbilBaris(ctx context.Context, klaimID string) (map[string]
 		var pesertaID, id string
 		var jumlah, mataUang, kodeStatus, nomorAksep, komiteID sql.NullString
 		var tglAksep sql.NullTime
+		var warisan [6]sql.NullString
+		var mataUangID sql.NullString
 		if err := rows.Scan(&pesertaID, &id, &jumlah, &mataUang,
-			&kodeStatus, &nomorAksep, &tglAksep, &komiteID); err != nil {
+			&kodeStatus, &nomorAksep, &tglAksep, &komiteID,
+			&warisan[0], &warisan[1], &warisan[2], &warisan[3],
+			&warisan[4], &warisan[5], &mataUangID); err != nil {
 			return nil, fmt.Errorf("repository: membaca satu baris adjustment: %w", err)
 		}
 
@@ -167,6 +180,23 @@ func (r *KlaimLife) AmbilBaris(ctx context.Context, klaimID string) (map[string]
 			// terpisah, dan membuang mata uang hanya karena jumlahnya NULL
 			// menghilangkan fakta yang tersimpan.
 			JumlahKlaim: models.Money{Currency: mataUang.String},
+			CurrencyID:  mataUangID.String,
+		}
+		// Urutan tujuan mengikuti urutan kolom di SELECT di atas, persis.
+		tujuanWarisan := []*models.Money{
+			&b.ShareNusantaraRe, &b.CedingRetention, &b.SumReasured,
+			&b.SumInsured, &b.ShareRetro, &b.RetrocededShare,
+		}
+		namaWarisan := []string{
+			"SHARE_NUSANTARA_RE", "CEDING_RETENTION", "SUM_REASURED",
+			"SUM_INSURED", "SHARE_RETRO", "RETROCEDED_SHARE",
+		}
+		for i := range tujuanWarisan {
+			m, err := uraiUang(id, namaWarisan[i], warisan[i], mataUang.String)
+			if err != nil {
+				return nil, err
+			}
+			*tujuanWarisan[i] = m
 		}
 		// Kolom kosong tetap kosong; ia tidak menjadi nol (ADR-U-0027).
 		if jumlah.Valid && jumlah.String != "" {

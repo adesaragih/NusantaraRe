@@ -364,7 +364,23 @@ Pecahan spreading per reinsurer. Satu baris mewakili **satu reinsurer** pada sat
 
 Dokumen pendukung klaim, **per peserta**. Tabel **LINTAS-LINI**.
 
-⛔ **Kolomnya tidak ditulis di sini.** `[data DBA]` Kelasnya `ASM-FW-GCNMFW-Int-DOCUMENT_CLAIM`;
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID` | bulat | tidak | PK | keputusan tiket 14 — dari sequence |
+| `PREMIUM_LIST_DETAIL_ID` | teks | ya | FK | keputusan tiket 14 — → `T_CLAIMLF_PREMIUMLIST_DETAIL.ID` |
+| `NAMA_FILE` | teks | ya | | katalog `DOCUMENT_CLAIM.NAMAFILE`; ditulis `InsertDocument_Act` |
+| `MIME` | teks | ya | | katalog `DOCUMENT_CLAIM.MIME`; `InsertDocument_Act` menulisnya HURUF KECIL (`@toLowerCase`) |
+| `KATEGORI_1` | teks | ya | | katalog; `Param.KATEGORI_1` di `InsertDocument_Act` |
+| `KATEGORI_2` | teks | ya | | katalog; satu-satunya kategori yang diisi manusia di `Section/DocumentLife.xml` |
+| `TANGGAL` | DATE | ya | | katalog `DOCUMENT_CLAIM.TANGGAL` |
+| `T_STORAGE_ID` | teks | ya | | penunjuk berkas di Google Storage (ADR-U-0010) |
+| `PAYMENT_DATE` | DATE | ya | | katalog `DOCUMENT_CLAIM.PAYMENTDATE` |
+
+⭐ **Ketujuh kolom isi ditambahkan 26-09-2026** lewat langkah migrasi `010`, `[keputusan work owner
+butir ad]`. Sumbernya dan tujuh kolom warisan yang sengaja TIDAK ikut dijelaskan di blok akhir
+dokumen ini, yang **dihitung dua kali dari sumber berbeda**.
+
+~~⛔ **Kolomnya tidak ditulis di sini.**~~ `[data DBA]` Kelasnya `ASM-FW-GCNMFW-Int-DOCUMENT_CLAIM`;
 SQL-nya dibuat Pega sendiri dan **nol kemunculan** di rule SQL mana pun, sehingga daftar kolomnya
 tidak dapat diturunkan dari korpus maupun dari keputusan yang sudah ada. Menuliskannya berarti
 mengarang.
@@ -546,3 +562,71 @@ tidak dipilih diam-diam.
 
 Langkah migrasinya `002` yang disunting langsung, sah selama `T_MIGRASI` belum pernah ada di
 instance mana pun (brief §2 l) — dan pada 26-09-2026 itu masih benar.
+
+
+---
+
+## ⭐ KOLOM ISI `T_CLAIMLF_DOCUMENT` — 26 September 2026 malam
+
+`[keputusan work owner butir ad]`, tiket 03. Bab `T_CLAIMLF_DOCUMENT` di atas menulis *"kolomnya
+tidak ditulis di sini"* dan menyebutnya `[data DBA]`; sejak sensus ini kolomnya **dapat**
+diturunkan, dan langkah migrasi `010` menambahkannya.
+
+### Dari mana kolomnya datang — dan kenapa BUKAN dari tempat yang diminta
+
+Brief meminta sensus `.DocumentList` di `SaveOutStandingLife_Act`. Di sana hanya ada **satu**
+rujukan, dan kelasnya **`Link-Attachment`** — lampiran bawaan Pega, bukan tabel karangan. Sensus
+itu karena itu tidak menghasilkan kolom apa pun, dan melaporkannya sebagai "nol kolom" akan
+menyesatkan.
+
+Kolomnya datang dari `InsertDocument_Act`, yang milik kelas `ASM-FW-GCNMFW-Int-DOCUMENT_CLAIM` dan
+memakai **`Obj-Save`** — Pega menulis SELURUH properti kelas itu, sehingga tidak ada daftar kolom
+eksplisit sama sekali. Kolomnya **adalah** keempat belas kolom tabel warisan `DOCUMENT_CLAIM` yang
+sudah dibaca dari katalog instance pengembangan (brief ronde 4 §9).
+
+Tabelnya ditulis di bab `T_CLAIMLF_DOCUMENT` di atas, bukan di sini: bab berjudul
+bukan-nama-tabel tidak dibaca pembanding kolom, dan tabel yang tidak terbaca pembanding adalah
+tabel yang boleh salah tanpa ada yang tahu.
+
+### ⚠️ Tujuh kolom warisan yang TIDAK ikut, dan sebabnya
+
+`IDPEGA`, `INSKEY_LINK`, `INSKEY_DATA`, `PXCREATEOPERATOR` — kunci internal mesin lama; sistem baru
+bukan Pega, dan kolom yang isinya pengenal Pega tidak berarti apa-apa di sini. `NOAKSEP` dan
+`NOPREKAS` — nomor akseptasi dan prekas hidup di **baris adjustment**; menyalinnya ke dokumen
+membuat satu nilai punya dua rumah.
+
+### ⭐ Cacah kedua, dari sumber yang berbeda — 26 September 2026 malam
+
+Aturan sensus CLAUDE.md §4a menuntut tiap angka dihitung **dua cara yang sungguh berbeda**. Cacah
+pertama di atas berasal dari **katalog** `POOLDATA.DOCUMENT_CLAIM` (14 kolom). Cacah kedua berasal
+dari **rule yang menulisnya**: seluruh `Property-Set` di `InsertDocument_Act` sebelum `Obj-Save`
+`[terverifikasi]` baris 647-940 berkas pecahan — `.ID`, `.TANGGAL`, `.IDPEGA`, `.NAMAFILE`,
+`.MIME`, `.KATEGORI_1`, `.KATEGORI_2`, `.NOAKSEP`, `.NOPREKAS`, `.PAYMENTDATE`,
+`.pxCreateOperator`, ditambah `.T_STORAGE_ID` yang diisi activity storage dan menjadi precondition
+`Obj-Save`-nya. Dua belas properti, seluruhnya termuat di keempat belas kolom katalog; dua kolom
+katalog yang tersisa (`INSKEY_LINK`, `INSKEY_DATA`) memang tidak pernah disentuh rule ini. Kedua
+cacah **cocok**, dan itulah yang membuat daftar tujuh kolom di atas bukan tebakan.
+
+`Section/DocumentLife.xml` menguatkannya dari sisi layar: daftar dokumen beriterasi
+`.DocumentClaimList` dan menampilkan `.NAMAFILE` dan `.KATEGORI_2`, dengan pratinjau bergerbang
+`.MIME` dan `.T_STORAGE_ID`.
+
+### ⭐ Aturan "dokumen lengkap" — mekanismenya TERBACA, daftarnya tidak
+
+Diralat 26-09-2026 malam. Blok ini sebelumnya menyatakan aturannya tidak dapat diturunkan sama
+sekali. Pembacaan ulang `SaveOutStandingLife_Act` langkah 12 menunjukkan **mekanismenya**:
+`GetCategoryLife_SQL` menghasilkan daftar kategori **wajib**; tiap `.pyCategory` pada dokumen
+peserta dikumpulkan ke `Category2`, **di-dedup** oleh satu langkah Java atas `.CARI1`; pesan
+*"Documents are incomplete, please complete the documents"* muncul bila **cacah kategori berbeda
+yang terunggah tidak sama dengan cacah kategori wajib**.
+
+⛔ Yang tetap `[terbuka — DBA/work owner]`: **isi** daftar wajibnya. `GetCategoryLife_SQL` tidak ada
+di korpus — seluruh 29 berkas `Claim Life/RDBList/` sudah dicacah. Juga terbuka: kolom mana pada
+tabel relasional yang memegang kategori pembanding, sebab gerbang Pega membacanya dari daftar
+**lampiran** (`.pyCategory`), bukan dari `KATEGORI_1`/`KATEGORI_2`.
+
+### ⚠️ Gerbang dokumen yang KEDUA, yang blok ini dulu lewatkan
+
+Langkah 3 `SaveOutStandingLife_Act` memakai daftar yang **berbeda** (`.DocumentClaimList`) dan
+syarat yang berbeda: ia hanya berjalan bila `Type` **bukan** `TP`/`TR`, peserta `.IsAccept=="true"`,
+dan peserta itu **nol dokumen**; pesannya menyebut **nomor urut** peserta.

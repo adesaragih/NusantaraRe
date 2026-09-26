@@ -301,17 +301,27 @@ func (r *PohonKlaim) Simpan(ctx context.Context, tx *Tx, p models.PohonKlaim) er
 		}
 
 		for _, adj := range ps.Baris {
+			// Kedelapan kolom warisan ikut ditulis sejak 26-09-2026. Sebelumnya
+			// hanya CURRENCY yang ditulis, sehingga tujuh kolom lain SELALU
+			// NULL walau DDL menyediakannya - pewarisan yang tiket janjikan
+			// tidak pernah sampai ke basis data.
 			err = r.exec(ctx, tx, fmt.Sprintf(`INSERT INTO %s
 				(ID, PREMIUM_LIST_DETAIL_ID, CLAIM_AMOUNT, CURRENCY, STS_REJECT,
 				 ACCEPTED_NO, ACCEPTATION_DATE, KOMITE_ID,
-				 NAME_OF_BANK, ID_BANK, ACCOUNT_NO)
-				VALUES (:1,:2,:3,:4,:5,:6,:7,:8,:9,:10,:11)`, adjT),
+				 NAME_OF_BANK, ID_BANK, ACCOUNT_NO,
+				 SHARE_NUSANTARA_RE, CEDING_RETENTION, SUM_REASURED, SUM_INSURED,
+				 SHARE_RETRO, RETROCEDED_SHARE, CURRENCY_ID)
+				VALUES (:1,:2,:3,:4,:5,:6,:7,:8,:9,:10,:11,:12,:13,:14,:15,:16,:17,:18)`, adjT),
 				adj.ID, ps.ID, teksDesimal(adj.JumlahKlaim),
 				kosongJadiNil(adj.JumlahKlaim.Currency), kosongJadiNil(adj.KodeStatus),
 				kosongJadiNil(adj.NomorAkseptasi), waktuJadiNil(adj.TanggalAkseptasi),
 				kosongJadiNil(adj.KomiteID),
 				kosongJadiNil(adj.NamaBank), kosongJadiNil(adj.IDBank),
-				kosongJadiNil(adj.NomorRekening))
+				kosongJadiNil(adj.NomorRekening),
+				teksDesimal(adj.ShareNusantaraRe), teksDesimal(adj.CedingRetention),
+				teksDesimal(adj.SumReasured), teksDesimal(adj.SumInsured),
+				teksDesimal(adj.ShareRetro), teksDesimal(adj.RetrocededShare),
+				kosongJadiNil(adj.CurrencyID))
 			if err != nil {
 				return err
 			}
@@ -323,7 +333,7 @@ func (r *PohonKlaim) Simpan(ctx context.Context, tx *Tx, p models.PohonKlaim) er
 					VALUES (:1,:2,:3,:4,:5,:6,:7,:8,:9,:10)`, sprT),
 					spr.ID, adj.ID, kosongJadiNil(spr.TreatyTypeID),
 					kosongJadiNil(spr.TreatyTypeName), kosongJadiNil(spr.TreatyYearLife),
-					teksRasio(spr.RetrocadedShare), teksRasio(spr.Rate),
+					teksDesimal(spr.RetrocadedShare), teksRasio(spr.Rate),
 					teksDesimal(spr.IDR), teksDesimal(spr.USD),
 					kosongJadiNil(spr.Currency))
 				if err != nil {
@@ -339,8 +349,8 @@ func (r *PohonKlaim) Simpan(ctx context.Context, tx *Tx, p models.PohonKlaim) er
 						rt.ID, spr.ID, kosongJadiNil(rt.ReinsurerName),
 						teksRasio(rt.PercentShare), teksDesimal(rt.Amount),
 						teksRasio(rt.Rate), teksDesimal(rt.PremiumSpreadedGross),
-						teksDesimal(rt.PremiumSpreadedNet), teksDesimal(rt.Commision),
-						teksDesimal(rt.OvrComm), kosongJadiNil(rt.TreatyTypeID),
+						teksDesimal(rt.PremiumSpreadedNet), teksRasio(rt.Commision),
+						teksRasio(rt.OvrComm), kosongJadiNil(rt.TreatyTypeID),
 						kosongJadiNil(rt.TreatyTypeName))
 					if err != nil {
 						return err
@@ -521,7 +531,10 @@ func (r *PohonKlaim) AmbilSpreading(ctx context.Context, klaimID string) (
 		if s.USD, err = uraiUang(id, "USD", usd, "USD"); err != nil {
 			return nil, err
 		}
-		if s.RetrocadedShare, err = uraiRasio(id, "RETROCADED_SHARE", retrocaded); err != nil {
+		// RETROCADED_SHARE adalah uang, dan mata uangnya kolom CURRENCY baris
+		// ini - bukan IDR/USD, yang di sini nama kolom KAPASITAS treaty-year.
+		if s.RetrocadedShare, err = uraiUang(id, "RETROCADED_SHARE", retrocaded,
+			mataUang.String); err != nil {
 			return nil, err
 		}
 		if s.Rate, err = uraiRasio(id, "RATE", rate); err != nil {
@@ -599,10 +612,10 @@ func (r *PohonKlaim) ambilRetro(ctx context.Context, tabel, spreadingID string) 
 		if rt.PremiumSpreadedNet, err = uraiUang(id, "PREMIUM_SPREADED_NET", net, ""); err != nil {
 			return nil, err
 		}
-		if rt.Commision, err = uraiUang(id, "COMMISION", komisi, ""); err != nil {
+		if rt.Commision, err = uraiRasio(id, "COMMISION", komisi); err != nil {
 			return nil, err
 		}
-		if rt.OvrComm, err = uraiUang(id, "OVR_COMM", ovr, ""); err != nil {
+		if rt.OvrComm, err = uraiRasio(id, "OVR_COMM", ovr); err != nil {
 			return nil, err
 		}
 		out = append(out, rt)

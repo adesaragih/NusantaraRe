@@ -29,9 +29,14 @@
 -- Ejaan COMMISION dipertahankan apa adanya dari dokumen struktur, termasuk
 -- kekeliruan ejaannya, supaya tidak lahir dua nama untuk satu kolom.
 --
--- [terbuka] Rumus PREMIUM_SPREADED_NET punya dua cabang di rule yang sama.
--- Pemiliknya Product dan Underwriting, dan jawabannya diperlukan sebelum tiket
--- 03. Kolomnya dibuat; rumusnya tidak ditebak di sini.
+-- DITUTUP OLEH XML 26-09-2026. Kedua cabang PREMIUM_SPREADED_NET memang ada,
+-- dan yang memilihnya adalah TAHUN POLIS: langkah 8.2.1.9.3 ("Tahun pertama")
+-- memakai GROSS - Discount - Comm, langkah 8.2.1.9.2 ("Bukan tahun pertama")
+-- memakai GROSS - Comm. Lihat bab "Pembacaan ulang XML" tiket 03.
+--
+-- RALAT 26-09-2026: COMMISION dan OVR_COMM adalah PERSEN, bukan uang - XML
+-- membagi keduanya seratus sebelum memakainya. Di Go keduanya kini Ratio.
+-- Tipe kolomnya tetap NUMBER(38,8); nol langkah migrasi baru diperlukan.
 CREATE TABLE {skema}.T_CLAIMLF_ADJ_SPREADING_RETRO (
   ID                      VARCHAR2(32) NOT NULL,
   SPREADING_ID            VARCHAR2(32),

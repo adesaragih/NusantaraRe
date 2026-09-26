@@ -42,6 +42,19 @@ func (s StatusBaris) String() string {
 // Diketahui membedakan status yang benar-benar tertulis di spec dari yang tidak.
 func (s StatusBaris) Diketahui() bool { return s != StatusTidakDiketahui }
 
+// Kode mentah kolom STS_REJECT, ditulis dan dibandingkan sebagai TEKS
+// (ADR-U-0022). Menamainya di satu tempat membuat penulisnya dapat dicari:
+// nol yang tersebar sebagai literal di banyak berkas tidak dapat ditelusuri.
+//
+// ⛔ Kode "4" SENGAJA tidak punya nama di sini. Ia ada di data warisan,
+// artinya belum diputuskan work owner, dan sistem baru tidak pernah
+// menulisnya. Nama akan membuatnya tampak seperti pilihan yang sah.
+const (
+	KodeOutstanding = "0"
+	KodeAksep       = "1"
+	KodeDitolak     = "2"
+)
+
 // StatusBarisDariKode menerjemahkan nilai kolom `STS_REJECT`.
 //
 // ⚠️ Namanya menyesatkan: nilai "1" berarti **DIAKSEP**, bukan ditolak.
@@ -58,11 +71,11 @@ func (s StatusBaris) Diketahui() bool { return s != StatusTidakDiketahui }
 // Karena itu "00" dan "01" BUKAN "0" dan "1".
 func StatusBarisDariKode(kode string) StatusBaris {
 	switch kode {
-	case "0":
+	case KodeOutstanding:
 		return StatusOutstanding
-	case "1":
+	case KodeAksep:
 		return StatusAksep
-	case "2":
+	case KodeDitolak:
 		return StatusDitolak
 	default:
 		return StatusTidakDiketahui
@@ -77,8 +90,25 @@ type BarisAdjustment struct {
 	// KodeStatus adalah nilai mentah `STS_REJECT`, disimpan sebagai teks dan
 	// tidak pernah dikonversi ke bilangan (ADR-U-0022).
 	KodeStatus string
+	// Kedelapan kolom WARISAN: baris kedua dan seterusnya menyalinnya dari
+	// baris PERTAMA peserta yang sama (`SetIndexAdjustmentList` langkah 3).
+	// Keenamnya uang meski namanya berakhiran _SHARE - nama kolom di korpus
+	// ini terbukti menipu; klasifikasinya ADR-U-0003, bukan namanya.
+	//
+	// ⚠️ Kedelapan nama itu hidup di DUA tempat sekaligus: di sini sebagai
+	// medan, dan di `services.KolomDiwarisi()` sebagai daftar nama kolom yang
+	// dikunci test. Keduanya sengaja - daftar nama itulah yang membuktikan
+	// STS_REJECT tidak ikut.
+	ShareNusantaraRe Money
+	CedingRetention  Money
+	SumReasured      Money
+	SumInsured       Money
+	ShareRetro       Money
+	RetrocededShare  Money
+	CurrencyID       string
 	// JumlahKlaim adalah `CLAIM_AMOUNT` beserta `CURRENCY`-nya. Uang tidak
-	// pernah float (ADR-U-0003, ADR-U-0016).
+	// pernah float (ADR-U-0003, ADR-U-0016). Ia BUKAN kolom warisan: tiap
+	// baris punya jumlah klaimnya sendiri.
 	JumlahKlaim      Money
 	NomorAkseptasi   string
 	TanggalAkseptasi time.Time
@@ -195,6 +225,11 @@ type Peserta struct {
 	// ada keputusan work owner. [terbuka]
 
 	Baris []BarisAdjustment
+
+	// Dokumen pendukung peserta ini. Ia GERBANG simpan ke Outstanding, bukan
+	// pelengkap: SaveOutStandingLife_Act menolak menyimpan bila peserta yang
+	// dipilih belum mengunggah dokumen.
+	Dokumen []Dokumen
 }
 
 // MarshalJSON menulis peserta untuk kontrak API.

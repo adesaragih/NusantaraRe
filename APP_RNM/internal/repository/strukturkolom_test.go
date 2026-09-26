@@ -31,10 +31,12 @@ const letakStruktur = "../../../.scratch/claim-life/STRUKTUR-TABEL-CLAIM-LIFE.md
 
 // tabelDikecualikan mendaftar tabel yang STRUKTUR sengaja tidak memuat
 // kolomnya, beserta sebabnya.
-var tabelDikecualikan = map[string]string{
-	"T_CLAIMLF_DOCUMENT": "[data DBA] kelas Pega ASM-FW-GCNMFW-Int-DOCUMENT_CLAIM, " +
-		"nol kemunculan di rule SQL mana pun; daftar kolomnya tidak dapat diturunkan",
-}
+// ⭐ Kosong sejak 26-09-2026. T_CLAIMLF_DOCUMENT dulu dikecualikan dengan
+// alasan "daftar kolomnya tidak dapat diturunkan"; sejak butir ad kolomnya
+// ADA - ia keempat belas kolom tabel warisan DOCUMENT_CLAIM yang dibaca dari
+// katalog, dikurangi yang memang milik Pega. Pengecualian yang alasannya sudah
+// tidak berlaku adalah lubang, bukan keringanan.
+var tabelDikecualikan = map[string]string{}
 
 // namaTabelBeda memetakan nama tabel di STRUKTUR ke nama yang dipakai DDL.
 var namaTabelBeda = map[string]string{
@@ -77,6 +79,18 @@ func kolomMenurutStruktur(t *testing.T) map[string][]string {
 			hasil[kini] = nil
 			continue
 		}
+		// ⛔ Judul BUKAN-tabel mengakhiri bab tabel sebelumnya.
+		//
+		// Tanpa ini, tiap blok ralat bertanggal yang ditambahkan di akhir
+		// dokumen - dan seluruhnya berjudul bukan-nama-tabel - barisnya
+		// diatribusikan ke tabel terakhir yang kebetulan disebut. Ronde 5 dan
+		// 6 menambahkan tiga blok begitu, dan kolom di dalamnya diam-diam
+		// dihitung sebagai kolom tabel lain. Baru terlihat saat satu
+		// pengecualian dicabut.
+		if strings.HasPrefix(baris, "## ") {
+			kini = ""
+			continue
+		}
 		if kini == "" || !strings.HasPrefix(baris, "|") {
 			continue
 		}
@@ -106,6 +120,13 @@ func kolomMenurutDDL(t *testing.T) map[string][]string {
 		for _, p := range m.Pernyataan {
 			if nama, kolom := KolomCreateTable(p); nama != "" {
 				hasil[nama] = kolom
+				continue
+			}
+			// Kolom yang lahir di ALTER ikut dihitung: tanpa itu, langkah
+			// migrasi lanjutan menambah kolom yang tak terlihat penjaga
+			// mana pun.
+			if nama, kolom := KolomAlterTambah(p); nama != "" {
+				hasil[nama] = append(hasil[nama], kolom...)
 			}
 		}
 	}

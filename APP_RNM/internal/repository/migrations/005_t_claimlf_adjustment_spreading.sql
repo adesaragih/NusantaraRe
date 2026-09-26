@@ -29,8 +29,13 @@
 -- Nilainya DIBEKUKAN saat adjustment disimpan: perubahan master treaty
 -- sesudahnya tidak mengubah angka yang sudah tersimpan.
 --
--- RETROCADED_SHARE dan RATE adalah share dan rate, bukan uang. Keduanya
--- bertipe NUMBER(38,8) mengikuti keputusan c di atas, dan di Go bertipe Ratio.
+-- RALAT 26-09-2026 menurut XML: RETROCADED_SHARE adalah UANG, bukan share.
+-- SpreadingClaimLife_Act langkah 8.2.1.4-7 mengisinya dengan sisa CLAIM_GROSS
+-- atau dengan kapasitas IDR/USD treaty-year - keduanya nilai uang. Di Go ia
+-- kini bertipe Money. Nama berakhiran _SHARE di korpus ini memang menipu;
+-- klasifikasinya ADR-0003, bukan namanya. RATE tetap rate, bertipe Ratio.
+-- Tipe kolomnya sendiri TIDAK berubah: NUMBER(38,8) sudah benar untuk
+-- keduanya, jadi nol langkah migrasi baru diperlukan.
 CREATE TABLE {skema}.T_CLAIMLF_ADJUSTMENT_SPREADING (
   ID                VARCHAR2(32) NOT NULL,
   ADJUSTMENT_ID     VARCHAR2(32),
