@@ -13,7 +13,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"nusantarare/internal/models"
 	"nusantarare/internal/services"
 )
 
@@ -43,23 +42,15 @@ func daftarKlaim(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			return
 		}
 
-		peserta := make([]models.Peserta, 0, len(masuk.Sertifikat))
-		for _, s := range masuk.Sertifikat {
-			peserta = append(peserta, models.Peserta{
-				NomorPremiList:  masuk.NomorPremiList,
-				NomorPolis:      masuk.NomorPolis,
-				NomorSertifikat: s,
-				MataUang:        masuk.MataUang,
-			})
-		}
-
+		// ⛔ Hanya NOMOR sertifikat yang diteruskan. Nilai polis dibaca server
+		// sendiri dari sumbernya - lihat repository.AmbilUntukKlaim.
 		pohon, err := svc.Pendaftaran().Daftar(r.Context(), pelakuDari(r, stubPelaku), services.PermintaanDaftar{
 			NomorPremiList: masuk.NomorPremiList,
 			NomorPolis:     masuk.NomorPolis,
 			Type:           masuk.Type,
 			KodeBisnis:     masuk.KodeBisnis,
 			MataUang:       masuk.MataUang,
-			Peserta:        peserta,
+			Sertifikat:     masuk.Sertifikat,
 		})
 		switch {
 		case errors.Is(err, services.ErrPermintaanTidakSah):

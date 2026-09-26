@@ -63,10 +63,11 @@ func permintaan() services.PermintaanDaftar {
 		Type:           "QP",
 		KodeBisnis:     "L1",
 		MataUang:       "IDR",
-		Peserta: []models.Peserta{
-			{NomorPremiList: "UJI-PL-1", NomorPolis: "UJI-POL-0001",
-				NomorSertifikat: "006", MataUang: "IDR"},
-		},
+		// ⚠️ Hanya nomor sertifikat. Nilai polisnya dibaca server dari
+		// M_LIFE_PREMIUM_DETAIL, yang TIDAK ada di skema uji - karena itu
+		// test ini akan gagal membaca peserta sampai fixture tabel peserta
+		// dibuat. [terbuka - tiket 03]
+		Sertifikat: []string{"006"},
 	}
 }
 

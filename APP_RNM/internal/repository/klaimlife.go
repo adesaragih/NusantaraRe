@@ -84,9 +84,10 @@ func (r *KlaimLife) AmbilPeserta(ctx context.Context, klaimID string) ([]models.
 	if err != nil {
 		return nil, err
 	}
-	q := fmt.Sprintf(
-		`SELECT ID, PL_NUMBER, POLICY_NO, CERTIFICATE_NO, CURRENCY
-		   FROM %s WHERE CLAIM_ID = :1 ORDER BY ID`, tabel)
+	// Daftar kolomnya datang dari kolompeserta.go, sama dengan yang dipakai
+	// saat menulis. Angka dan tanggal dibungkus TO_CHAR di sana.
+	q := fmt.Sprintf(`SELECT ID, %s FROM %s WHERE CLAIM_ID = :1 ORDER BY ID`,
+		selectPeserta(), tabel)
 	if err := PeriksaSQL(q); err != nil {
 		return nil, err
 	}
@@ -99,18 +100,20 @@ func (r *KlaimLife) AmbilPeserta(ctx context.Context, klaimID string) ([]models.
 	out := []models.Peserta{}
 	for rows.Next() {
 		var id string
-		var pl, polis, sertifikat, mataUang sql.NullString
-		if err := rows.Scan(&id, &pl, &polis, &sertifikat, &mataUang); err != nil {
+		sel := make([]sql.NullString, len(kolomPeserta))
+		tujuan := make([]any, 0, len(sel)+1)
+		tujuan = append(tujuan, &id)
+		for i := range sel {
+			tujuan = append(tujuan, &sel[i])
+		}
+		if err := rows.Scan(tujuan...); err != nil {
 			return nil, fmt.Errorf("repository: membaca baris peserta: %w", err)
 		}
-		out = append(out, models.Peserta{
-			ID:              id,
-			NomorPremiList:  pl.String,
-			NomorPolis:      polis.String,
-			NomorSertifikat: sertifikat.String,
-			MataUang:        mataUang.String,
-			Baris:           []models.BarisAdjustment{},
-		})
+		ps, err := rakitPeserta(id, sel)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, ps)
 	}
 	return out, rows.Err()
 }

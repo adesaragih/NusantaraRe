@@ -246,9 +246,10 @@ func TestSetiapPemanggilBukaMemeriksaBolehDilewati(t *testing.T) {
 			}
 		}
 	}
-	// Tujuh sejak 26-09-2026: TestBentukTabelBerbedaMenggagalkanMigrasi
-	// (butir x) ikut membuka koneksi uji sendiri.
-	const mau = 7
+	// Delapan sejak 26-09-2026 malam: TestBentukTabelBerbedaMenggagalkanMigrasi
+	// (butir x) dan services/pendaftaran_db_test.go (tiket 02) masing-masing
+	// membuka koneksi uji sendiri.
+	const mau = 8
 	if diperiksa != mau {
 		t.Errorf("pemanggil skemauji.Buka() ditemukan %d, mau %d; "+
 			"bila memang bertambah, perbarui angkanya di sini", diperiksa, mau)

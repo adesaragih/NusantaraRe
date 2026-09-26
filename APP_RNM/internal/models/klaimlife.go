@@ -148,7 +148,53 @@ type Peserta struct {
 	NomorPolis      string
 	NomorSertifikat string
 	MataUang        string
-	Baris           []BarisAdjustment
+
+	// SumberID adalah kolom ID baris asalnya di M_LIFE_PREMIUM_DETAIL,
+	// disimpan di SOURCE_ID. Ia jejak: dari baris polis mana peserta klaim ini
+	// disalin.
+	SumberID string
+	// IsCheck menandai peserta yang DIPILIH untuk diklaim (AC 8 tiket 03).
+	IsCheck string
+
+	// Empat tanggal valuasi dan WPC. ⭐ Disalin saat pendaftaran justru supaya
+	// tiket 06 dapat memvalidasi DOL TANPA query ulang ke tabel 66,8 juta
+	// baris - satu-satunya alasan kolom ini ada di sini.
+	ValuasiGrossMulai   string
+	ValuasiGrossSelesai string
+	ValuasiRetroMulai   string
+	ValuasiRetroSelesai string
+	WPC                 string
+
+	// Tanggal polis.
+	TanggalMulai   string
+	TanggalEfektif string
+	TanggalLapse   string
+	TanggalExpired string
+
+	// STNC treaty, dibawa apa adanya sebagai teks.
+	STNC string
+
+	// Uang polis. Seluruhnya Money kecuali EMPercent, yang perbandingan -
+	// keduanya sengaja bertipe berbeda supaya tidak pernah terjumlahkan
+	// (ADR-F-0004).
+	SumInsured       Money
+	SumReasured      Money
+	GrossPremium     Money
+	NetPremium       Money
+	CedingRetention  Money
+	ShareNusantaraRe Money
+	ShareRetro       Money
+	RetrocededShare  Money
+	EMPercent        Ratio
+
+	// ⛔ NAMA ORANG SENGAJA TIDAK ADA DI SINI. NAME_OF_INSURED dan
+	// POLICY_HOLDER punya kolomnya di DDL, tetapi tidak disalin: nama
+	// tertanggung hanya diperlukan LAYAR saat memilih, dan itu dilayani
+	// CalonPeserta. Menyalinnya ke tabel klaim berarti menduplikasi data
+	// pribadi tanpa satu pun AC yang memintanya. Kolomnya tetap NULL sampai
+	// ada keputusan work owner. [terbuka]
+
+	Baris []BarisAdjustment
 }
 
 // MarshalJSON menulis peserta untuk kontrak API.

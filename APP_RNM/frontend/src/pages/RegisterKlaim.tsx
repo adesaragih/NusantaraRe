@@ -49,7 +49,7 @@ export default function RegisterKlaim() {
   // unik di dalam polisnya - dua peserta bersertifikat "006" dari polis
   // berbeda akan tercentang berbarengan bila kuncinya sertifikat saja.
   function kunci(p: CalonPeserta): string {
-    return `${p.NomorPolis}|${p.NomorSertifikat}`
+    return `${p.nomorPolis}|${p.nomorSertifikat}`
   }
 
   function pilih(k: string) {
@@ -66,8 +66,8 @@ export default function RegisterKlaim() {
       // menolak campuran lebih dulu, sebab mendaftarkan klaim bermata uang
       // campur akan menyimpan satu mata uang untuk semuanya tanpa ada yang
       // menyadarinya.
-      const polis = new Set(terpilih.map((p) => p.NomorPolis))
-      const uang = new Set(terpilih.map((p) => p.MataUang))
+      const polis = new Set(terpilih.map((p) => p.nomorPolis))
+      const uang = new Set(terpilih.map((p) => p.mataUang))
       if (polis.size > 1 || uang.size > 1) {
         setGalat('Peserta terpilih berbeda polis atau mata uang. Pilih yang sepolis dan semata-uang.')
         return
@@ -75,11 +75,11 @@ export default function RegisterKlaim() {
       setHasil(
         await daftarKlaimLife({
           nomorPremiList: pl,
-          nomorPolis: terpilih[0]?.NomorPolis ?? '',
+          nomorPolis: terpilih[0]?.nomorPolis ?? '',
           type,
           kodeBisnis,
-          mataUang: terpilih[0]?.MataUang ?? '',
-          sertifikat: terpilih.map((p) => p.NomorSertifikat),
+          mataUang: terpilih[0]?.mataUang ?? '',
+          sertifikat: terpilih.map((p) => p.nomorSertifikat),
         }),
       )
     } catch (e) {
@@ -122,9 +122,9 @@ export default function RegisterKlaim() {
                   />
                 </td>
                 {/* Nomor sertifikat TEKS: "006" bukan 6 (ADR-U-0022). */}
-                <td>{p.NomorSertifikat}</td>
-                <td>{p.NamaTertanggung}</td>
-                <td>{p.NomorPolis}</td>
+                <td>{p.nomorSertifikat}</td>
+                <td>{p.namaTertanggung}</td>
+                <td>{p.nomorPolis}</td>
               </tr>
             ))}
           </tbody>

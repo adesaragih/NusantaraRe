@@ -22,6 +22,8 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+
+	"nusantarare/internal/models"
 )
 
 // namaTabelPeserta adalah tabel warisan peserta polis.
@@ -44,12 +46,12 @@ func NewPesertaPolis(db *DB) *PesertaPolis { return &PesertaPolis{db: db} }
 // Sengaja TIDAK memuat seluruh 85 kolom tabel itu: yang dibawa hanya yang
 // dipakai layar untuk memilih, dan ⛔ kolom KTP tidak pernah ikut.
 type CalonPeserta struct {
-	NomorPremiList  string
-	NomorPolis      string
-	NomorSertifikat string
-	NamaTertanggung string
-	MataUang        string
-	EDMStatus       string
+	NomorPremiList  string `json:"nomorPremiList"`
+	NomorPolis      string `json:"nomorPolis"`
+	NomorSertifikat string `json:"nomorSertifikat"`
+	NamaTertanggung string `json:"namaTertanggung"`
+	MataUang        string `json:"mataUang"`
+	EDMStatus       string `json:"edmStatus"`
 }
 
 // penyaringHidup menyingkirkan peserta yang sudah batal atau dihapus lunak.
@@ -149,4 +151,138 @@ func PesertaHidup(edmStatus string) bool {
 		// menampilkan satu baris berlebih, sebab yang hilang tidak terlihat.
 		return true
 	}
+}
+
+// kolomSalin adalah kolom M_LIFE_PREMIUM_DETAIL yang disalin ke klaim.
+//
+// ⛔ NAME_OF_INSURED dan POLICY_HOLDER SENGAJA TIDAK ADA di sini. Nama
+// tertanggung hanya diperlukan layar saat memilih, dan itu dilayani
+// CalonPeserta. Menyalinnya ke tabel klaim berarti menduplikasi data pribadi
+// tanpa satu pun AC yang memintanya. ⛔ Kolom KTP tidak pernah dibaca sama
+// sekali.
+//
+// Seluruh nama di sini `[terverifikasi]` ada di katalog instance pengembangan
+// (KATALOG-TABEL-PESERTA-DAN-TREATY.md), bukan diturunkan dari nama tabel
+// warisan yang mirip.
+const kolomSalin = `ID, PL_NUMBER, POLICY_NO, CERTIFICATE_NO, CURRENCY, STNC, ` +
+	`TO_CHAR(GROSS_VALUATION_BEGIN_DATE, 'YYYY-MM-DD HH24:MI:SS'), ` +
+	`TO_CHAR(GROSS_VALUATION_EXPIRED_DATE, 'YYYY-MM-DD HH24:MI:SS'), ` +
+	`TO_CHAR(RETRO_VALUATION_BEGIN_DATE, 'YYYY-MM-DD HH24:MI:SS'), ` +
+	`TO_CHAR(RETRO_VALUATION_EXPIRED_DATE, 'YYYY-MM-DD HH24:MI:SS'), ` +
+	`TO_CHAR(WPC, 'YYYY-MM-DD HH24:MI:SS'), ` +
+	`TO_CHAR(BEGIN_DATE, 'YYYY-MM-DD HH24:MI:SS'), ` +
+	`TO_CHAR(EFFECTIVE_DATE, 'YYYY-MM-DD HH24:MI:SS'), ` +
+	`TO_CHAR(LAPSE_DATE, 'YYYY-MM-DD HH24:MI:SS'), ` +
+	`TO_CHAR(EXPIRED_DATE, 'YYYY-MM-DD HH24:MI:SS'), ` +
+	`TO_CHAR(SUM_INSURED, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''), ` +
+	`TO_CHAR(SUM_REASURED, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''), ` +
+	`TO_CHAR(GROSS_PREMIUM, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''), ` +
+	`TO_CHAR(NET_PREMIUM, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''), ` +
+	`TO_CHAR(CEDING_RETENTION, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''), ` +
+	`TO_CHAR(SHARE_NUSANTARA_RE, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''), ` +
+	`TO_CHAR(SHARE_RETRO, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''), ` +
+	`TO_CHAR(RETROCEDED_SHARE, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''), ` +
+	`TO_CHAR(EM_PERCENT, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,''')`
+
+// AmbilUntukKlaim membaca peserta terpilih dan menyiapkannya untuk disalin.
+//
+// ⛔ Kenapa server membaca ulang alih-alih memercayai badan permintaan: nilai
+// polis - uang, tanggal valuasi, share - menentukan angka klaim dan jendela
+// DOL. Menerimanya dari klien berarti siapa pun yang dapat mengirim permintaan
+// dapat menentukannya. Klien hanya menyebut NOMOR SERTIFIKAT; sisanya dibaca
+// server dari sumbernya.
+//
+// Penyaringnya sama dengan Cari: ber-index pada (PL_NUMBER, CERTIFICATE_NO),
+// berbatas hasil, dan peserta batal/delete tidak pernah ikut.
+func (r *PesertaPolis) AmbilUntukKlaim(ctx context.Context, nomorPremiList string,
+	sertifikat []string) ([]models.Peserta, error) {
+	if strings.TrimSpace(nomorPremiList) == "" {
+		return nil, fmt.Errorf("repository: menyalin peserta tanpa nomor premium list")
+	}
+	if len(sertifikat) == 0 {
+		return nil, nil
+	}
+	tabel, err := r.db.Qualify(namaTabelPeserta)
+	if err != nil {
+		return nil, err
+	}
+
+	var out []models.Peserta
+	// Satu sertifikat satu query: keduanya ber-index, dan daftar IN yang
+	// panjang membuat Oracle membuat rencana baru untuk tiap panjang daftar.
+	for _, no := range sertifikat {
+		q := fmt.Sprintf(`SELECT %s FROM %s
+		        WHERE PL_NUMBER = :1 AND CERTIFICATE_NO = :2 AND %s
+		        FETCH FIRST 1 ROWS ONLY`, kolomSalin, tabel, penyaringHidup)
+		if err := PeriksaSQL(q); err != nil {
+			return nil, err
+		}
+		baris := r.db.sql.QueryRowContext(ctx, q, nomorPremiList, no)
+		sel := make([]sql.NullString, 24)
+		tujuan := make([]any, len(sel))
+		for i := range sel {
+			tujuan[i] = &sel[i]
+		}
+		if err := baris.Scan(tujuan...); err != nil {
+			if err == sql.ErrNoRows {
+				return nil, fmt.Errorf(
+					"repository: peserta sertifikat %q pada premium list %q tidak ada "+
+						"atau sudah batal/delete", no, nomorPremiList)
+			}
+			return nil, fmt.Errorf("repository: membaca peserta %q: %w", no, err)
+		}
+		p, err := salinKePeserta(sel)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+	return out, nil
+}
+
+// salinKePeserta menyusun models.Peserta dari satu baris kolomSalin.
+func salinKePeserta(sel []sql.NullString) (models.Peserta, error) {
+	teks := func(i int) string { return sel[i].String }
+	p := models.Peserta{
+		SumberID:        teks(0),
+		NomorPremiList:  teks(1),
+		NomorPolis:      teks(2),
+		NomorSertifikat: teks(3),
+		MataUang:        teks(4),
+		STNC:            teks(5),
+		// ⭐ Dipilih pengguna, jadi penandanya "1" - inilah penyimpan aturan
+		// mana peserta yang diklaim (AC 8 tiket 03).
+		IsCheck:             "1",
+		ValuasiGrossMulai:   teks(6),
+		ValuasiGrossSelesai: teks(7),
+		ValuasiRetroMulai:   teks(8),
+		ValuasiRetroSelesai: teks(9),
+		WPC:                 teks(10),
+		TanggalMulai:        teks(11),
+		TanggalEfektif:      teks(12),
+		TanggalLapse:        teks(13),
+		TanggalExpired:      teks(14),
+		Baris:               []models.BarisAdjustment{},
+	}
+	uang := []struct {
+		i  int
+		ke *models.Money
+	}{
+		{15, &p.SumInsured}, {16, &p.SumReasured}, {17, &p.GrossPremium},
+		{18, &p.NetPremium}, {19, &p.CedingRetention}, {20, &p.ShareNusantaraRe},
+		{21, &p.ShareRetro}, {22, &p.RetrocededShare},
+	}
+	for _, u := range uang {
+		m, err := uraiUang(p.NomorSertifikat, "kolom polis", sel[u.i], p.MataUang)
+		if err != nil {
+			return models.Peserta{}, err
+		}
+		*u.ke = m
+	}
+	rasio, err := uraiRasio(p.NomorSertifikat, "EM_PERCENT", sel[23])
+	if err != nil {
+		return models.Peserta{}, err
+	}
+	p.EMPercent = rasio
+	return p, nil
 }

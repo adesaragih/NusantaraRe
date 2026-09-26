@@ -63,9 +63,13 @@ type PermintaanDaftar struct {
 	Type           string
 	KodeBisnis     string
 	MataUang       string
-	// Peserta yang DIPILIH pengguna dari hasil pencarian. Tiap peserta dibawa
-	// apa adanya; baris adjustment-nya lahir di tiket 03, bukan di sini.
-	Peserta []models.Peserta
+	// Sertifikat adalah NOMOR SERTIFIKAT peserta yang dipilih pengguna.
+	//
+	// ⛔ Hanya nomornya. Nilai polis - uang, tanggal valuasi, share - dibaca
+	// server sendiri dari sumbernya, sebab nilai itu menentukan angka klaim
+	// dan jendela DOL. Menerimanya dari badan permintaan berarti siapa pun
+	// yang dapat mengirim permintaan dapat menentukannya.
+	Sertifikat []string
 }
 
 // Periksa memastikan permintaan cukup untuk membentuk klaim.
@@ -81,7 +85,7 @@ func (p PermintaanDaftar) Periksa() error {
 		return fmt.Errorf("%w: Type wajib terisi; ia yang menentukan jendela DOL", ErrPermintaanTidakSah)
 	case kosong(p.KodeBisnis):
 		return fmt.Errorf("%w: kode bisnis wajib terisi; ia yang menentukan prefix nomor", ErrPermintaanTidakSah)
-	case len(p.Peserta) == 0:
+	case len(p.Sertifikat) == 0:
 		return fmt.Errorf("%w: nol peserta dipilih; klaim tanpa peserta tidak berarti apa-apa",
 			ErrPermintaanTidakSah)
 	}
@@ -153,18 +157,29 @@ func (p *Pendaftaran) Daftar(ctx context.Context, pelaku Pelaku, minta Permintaa
 			return err
 		}
 
+		// ⛔ Peserta dibaca ULANG dari sumbernya, bukan diterima dari klien.
+		peserta, err := repository.NewPesertaPolis(p.svc.db).
+			AmbilUntukKlaim(ctx, minta.NomorPremiList, minta.Sertifikat)
+		if err != nil {
+			return err
+		}
+
 		hasil = models.PohonKlaim{
 			Work: models.WorkClaim{
 				ID:   pengenal,
 				Lini: models.LiniLife,
 				Type: minta.Type,
-				// ⚠️ CaseID SENGAJA dibiarkan kosong. Di data warisan ia
-				// pengenal Pega yang MENGELOMPOKKAN baris datar satu klaim
-				// (lihat BongkarBarisLama), bukan kunci utama baris baru.
-				// Menyamakannya dengan pengenal work object membuat satu nilai
-				// memikul dua arti, dan Hapus serta CacahBarisLama memakai
-				// kedua sumbu itu. Dari mana CASEID klaim baru datang belum
-				// ditetapkan. [terbuka - work owner]
+				// `[keputusan work owner 26-09-2026, butir ae1]` CASEID =
+				// pengenal work object.
+				//
+				// ⚠️ Ronde sebelumnya saya menolak ini dengan alasan "satu
+				// nilai dua arti" - dan itu keliru: di Pega pun CASEID ADALAH
+				// pengenal work object-nya, jadi menyamakannya adalah paritas
+				// dengan sistem berjalan. Membiarkannya kosong justru yang
+				// merusak: baris datar warisan klaim baru tidak dapat
+				// dikelompokkan hilir yang membaca per CASEID, dan Hapus serta
+				// CacahBarisLama memakai sumbu itu.
+				CaseID:       pengenal,
 				CreateOpName: pelaku.AkunID,
 			},
 			Klaim: models.Klaim{
@@ -172,7 +187,7 @@ func (p *Pendaftaran) Daftar(ctx context.Context, pelaku Pelaku, minta Permintaa
 				NomorKlaim: nomor,
 				NomorPolis: minta.NomorPolis,
 				ClaimRetro: models.Money{Currency: minta.MataUang},
-				Peserta:    minta.Peserta,
+				Peserta:    peserta,
 			},
 		}
 		return pohon.Simpan(ctx, tx, hasil)

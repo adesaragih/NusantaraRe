@@ -376,3 +376,51 @@ itu justru supaya tidak perlu query ulang ke tabel 66 juta baris.
 Cacah objek sesudah `-migrate` berubah **8 · 5 · 15 → 8 · 6 · 15**: satu sequence baru
 (`SEQ_WORK_CLAIM`, langkah `009`), nol tabel dan nol index baru. ⛔ Belum dapat dibuktikan — G1
 tertutup dan `-migrate` belum pernah berjalan di Oracle mana pun.
+
+
+---
+
+## Implementasi — lanjutan tiket 02, 26 September 2026 malam
+
+⛔ **Ralat atas bab di atas: commit `753cef2` MEMUAT SATU TEST MERAH.** Bab itu dan pesan commit-nya
+menulis *"111 test, nol FAIL"*; yang sebenarnya **110 PASS + 1 FAIL**.
+`TestSetiapPemanggilBukaMemeriksaBolehDilewati` mengunci cacah pemanggil `skemauji.Buka()` = 7,
+sedangkan `services/pendaftaran_db_test.go` — yang lahir dari perbaikan tinjauan nomor 7 — menjadi
+pemanggil **kedelapan**.
+
+**Sebabnya satu, dan bukan kebetulan:** verifikasi penuh saya jalankan **sebelum** perbaikan
+`/code-review`, lalu tidak diulang sesudahnya. Klaim lama **tidak dihapus** dari bab di atas; ia
+diralat di sini, supaya jejaknya tetap terbaca.
+
+### Yang dikerjakan lanjutan ini
+
+| # | Isi |
+| ---: | --- |
+| 1 | Cacah pemanggil **7 → 8**; `go test ./...` kini **111 PASS, 0 FAIL** |
+| 2 | ⭐ **Peserta disalin lengkap** — `models.Peserta` bertambah `SumberID`, `IsCheck`, keempat tanggal valuasi, `WPC`, empat tanggal polis, `STNC`, delapan medan uang, dan `EMPercent` (`Ratio`). Inilah **prasyarat tiket 06**: validasi DOL membaca jendela valuasi dari sini, bukan bertanya ulang ke tabel 66,8 juta baris |
+| 3 | ⛔ **Server membaca ulang peserta sendiri** lewat `(PL_NUMBER, CERTIFICATE_NO)` — keduanya ber-index. Klien kini hanya mengirim **nomor sertifikat**; nilai polis tidak pernah dipercaya dari badan HTTP, sebab nilai itu menentukan angka klaim dan jendela DOL |
+| 4 | Satu daftar kolom (`kolompeserta.go`) dipakai **tulis dan baca**. Menulisnya dua kali adalah cara paling mudah membuat urutan bind berselisih, dan selisih itu tidak terlihat sampai ada nilai yang mendarat di kolom yang salah |
+| 5 | `CalonPeserta` diberi tag JSON camelCase; `api.ts` dan halaman Register mengikuti |
+| 6 | ⭐ **butir ae1** — `CASEID` = pengenal work object |
+
+### ⭐ Butir ae1 — dan ralat atas penolakan saya sendiri
+
+Ronde tinjauan lalu saya menolak menyamakan `CASEID` dengan pengenal work object, dengan alasan
+*"satu nilai dua arti"*. **Itu keliru.** Di Pega pun `CASEID` **adalah** pengenal work object-nya,
+jadi menyamakannya adalah **paritas** dengan sistem berjalan. Yang justru merusak adalah
+membiarkannya kosong: baris datar warisan klaim baru tidak dapat dikelompokkan hilir yang membaca
+`OS_AKSEPTASI_KLAIM_LIFE` per `CASEID`, dan `Hapus` serta `CacahBarisLama` memakai sumbu itu.
+`[keputusan work owner butir ae1]`.
+
+### ⛔ Nol nama orang disalin
+
+`NAME_OF_INSURED` dan `POLICY_HOLDER` punya kolomnya di DDL, tetapi **tidak disalin**. Nama
+tertanggung hanya diperlukan **layar** saat memilih, dan itu dilayani `CalonPeserta`. Menyalinnya ke
+tabel klaim berarti menduplikasi data pribadi tanpa satu pun AC yang memintanya. Kolomnya tetap
+`NULL`. ⛔ Kolom `KTP` tidak pernah dibaca sama sekali. `[terbuka — work owner]`
+
+### Ralat cacah AC terbuka
+
+Daftar "AC yang masih terbuka" di bab sebelumnya menulis **18**; yang benar **19**
+(7 butir o + 1 penyaring tanda + 6 menunggu Oracle + 2 kosong artinya + 2 pemilik lain + 1 tidak
+berlaku). Sensusnya sendiri benar: **7 `[x]` + 19 `[ ]` = 26**.

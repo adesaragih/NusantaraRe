@@ -293,13 +293,10 @@ func (r *PohonKlaim) Simpan(ctx context.Context, tx *Tx, p models.PohonKlaim) er
 	}
 
 	for _, ps := range p.Klaim.Peserta {
-		err = r.exec(ctx, tx, fmt.Sprintf(`INSERT INTO %s
-			(ID, CLAIM_ID, PL_NUMBER, POLICY_NO, CERTIFICATE_NO, CURRENCY)
-			VALUES (:1,:2,:3,:4,:5,:6)`, pesertaT),
-			ps.ID, p.Work.ID, kosongJadiNil(ps.NomorPremiList),
-			kosongJadiNil(ps.NomorPolis), kosongJadiNil(ps.NomorSertifikat),
-			kosongJadiNil(ps.MataUang))
-		if err != nil {
+		// Daftar kolomnya datang dari kolompeserta.go - satu daftar untuk
+		// tulis dan baca, supaya urutan bind tidak mungkin berselisih.
+		q, nilai := insertPeserta(pesertaT, ps.ID, p.Work.ID, ps)
+		if err = r.exec(ctx, tx, q, nilai...); err != nil {
 			return err
 		}
 

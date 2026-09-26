@@ -155,12 +155,12 @@ export function kodeStatusGalat(err: unknown): number | undefined {
 
 /** Satu calon peserta hasil pencarian. Sumber: repository.CalonPeserta. */
 export interface CalonPeserta {
-  NomorPremiList: string
-  NomorPolis: string
-  NomorSertifikat: string
-  NamaTertanggung: string
-  MataUang: string
-  EDMStatus: string
+  nomorPremiList: string
+  nomorPolis: string
+  nomorSertifikat: string
+  namaTertanggung: string
+  mataUang: string
+  edmStatus: string
 }
 
 /** Isi satu pendaftaran klaim. */

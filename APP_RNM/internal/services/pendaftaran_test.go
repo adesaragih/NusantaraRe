@@ -13,7 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
 )
 
@@ -25,7 +24,7 @@ func permintaanUji() PermintaanDaftar {
 		Type:           "QP",
 		KodeBisnis:     "L1",
 		MataUang:       "IDR",
-		Peserta:        []models.Peserta{{NomorSertifikat: "006"}},
+		Sertifikat:     []string{"006"},
 	}
 }
 
@@ -36,7 +35,7 @@ func TestPermintaanDaftarMenolakYangTidakLengkap(t *testing.T) {
 		"nomor premium list spasi": func(p *PermintaanDaftar) { p.NomorPremiList = "   " },
 		"tanpa Type":               func(p *PermintaanDaftar) { p.Type = "" },
 		"tanpa kode bisnis":        func(p *PermintaanDaftar) { p.KodeBisnis = "" },
-		"nol peserta":              func(p *PermintaanDaftar) { p.Peserta = nil },
+		"nol peserta":              func(p *PermintaanDaftar) { p.Sertifikat = nil },
 	}
 	for nama, ubah := range kasus {
 		t.Run(nama, func(t *testing.T) {
