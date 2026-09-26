@@ -125,7 +125,7 @@ func TestDaftarTanpaPelakuDitolak(t *testing.T) {
 	p := &Pendaftaran{svc: New(nil), penomor: penomorPencatat{n: &dipanggil}}
 	for _, pelaku := range []Pelaku{{}, {AkunID: "   "}} {
 		_, err := p.Daftar(context.Background(), pelaku, permintaanUji())
-		if !errors.Is(err, ErrTanpaWewenang) {
+		if !errors.Is(err, ErrTanpaIdentitas) {
 			t.Errorf("pelaku %+v diterima; galatnya %v", pelaku, err)
 		}
 	}

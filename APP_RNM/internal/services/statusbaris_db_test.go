@@ -123,9 +123,16 @@ func TestUbahStatusMencerminkanTigaTingkat(t *testing.T) {
 		t.Error("ACCEPTATION_DATE tidak terstempel saat baris diaksep")
 	}
 	// Peserta ikut tercermin.
+	//
+	// ⚠️ Ronde pertama test ini membaca ulang peserta lalu TIDAK MEMERIKSA
+	// apa pun - pembacaan yang menenangkan tanpa membuktikan. AC pencerminan
+	// ke peserta karena itu tidak pernah benar-benar teruji.
 	peserta, err = baca.AmbilPeserta(ctx, pohon.Work.ID)
 	if err != nil {
 		t.Fatalf("membaca ulang peserta: %v", err)
+	}
+	if peserta[0].KodeStatus != models.KodeAksep {
+		t.Errorf("STS_REJECT peserta = %q, mau %q", peserta[0].KodeStatus, models.KodeAksep)
 	}
 	// Header ikut tercermin.
 	hdr, err := baca.AmbilHeader(ctx, pohon.Work.ID)
@@ -187,5 +194,76 @@ func TestKegagalanDiTengahTidakMeninggalkanSeparuhJadi(t *testing.T) {
 	if hdr.KodeStatus == models.KodeAksep {
 		t.Error("header tertinggal Aksep padahal transaksinya batal - " +
 			"pencerminan separuh jadi")
+	}
+}
+
+// TestTolakMencabutPenandaDipilihDiTransaksiYangSama - tiket 05.
+//
+// `[terverifikasi]` `RejectOSClaimLife_Act` langkah 2 menulis STS_REJECT baris,
+// STS_REJECT peserta, dan IsCheck peserta dalam SATU Property-Set. Test ini
+// membuktikan ketiganya benar-benar terjadi - bukan hanya bahwa kodenya ada.
+func TestTolakMencabutPenandaDipilihDiTransaksiYangSama(t *testing.T) {
+	svc, tutup := siapkanPendaftaran(t)
+	defer tutup()
+
+	db, tutupDB := repoUji(t)
+	defer tutupDB()
+	pohon := pohonUjiStatus(t, svc, db)
+	ctx := context.Background()
+	baca := repository.NewKlaimLife(db)
+	peserta, _ := baca.AmbilPeserta(ctx, pohon.Work.ID)
+	perBaris, _ := baca.AmbilBaris(ctx, pohon.Work.ID)
+	adj := perBaris[peserta[0].ID]
+
+	saat := time.Date(2026, 9, 26, 22, 0, 0, 0, time.UTC)
+	pelaku := services.Pelaku{
+		AkunID: "UJI-AKUN", Peran: []string{services.PeranRejectOutstanding}}
+	err := svc.Status().DenganJejak(&jejakUji{}).Tolak(ctx, pelaku,
+		pohon.Work.ID, adj[0].ID, saat)
+	if err != nil {
+		t.Fatalf("Tolak: %v", err)
+	}
+
+	perBaris, _ = baca.AmbilBaris(ctx, pohon.Work.ID)
+	if got := perBaris[peserta[0].ID][0].KodeStatus; got != models.KodeDitolak {
+		t.Errorf("kode baris = %q, mau %q", got, models.KodeDitolak)
+	}
+	peserta, _ = baca.AmbilPeserta(ctx, pohon.Work.ID)
+	if peserta[0].KodeStatus != models.KodeDitolak {
+		t.Errorf("STS_REJECT peserta = %q, mau %q", peserta[0].KodeStatus, models.KodeDitolak)
+	}
+	if peserta[0].IsCheck != "false" {
+		t.Errorf("IS_CHECK peserta = %q, mau false - penolakan mencabut penanda dipilih",
+			peserta[0].IsCheck)
+	}
+}
+
+// TestTolakYangGagalTidakMencabutPenanda - atomicity-nya, bukan hanya bentuknya:
+// bila jejak gagal, pencabutan IS_CHECK ikut batal.
+func TestTolakYangGagalTidakMencabutPenanda(t *testing.T) {
+	svc, tutup := siapkanPendaftaran(t)
+	defer tutup()
+
+	db, tutupDB := repoUji(t)
+	defer tutupDB()
+	pohon := pohonUjiStatus(t, svc, db)
+	ctx := context.Background()
+	baca := repository.NewKlaimLife(db)
+	peserta, _ := baca.AmbilPeserta(ctx, pohon.Work.ID)
+	perBaris, _ := baca.AmbilBaris(ctx, pohon.Work.ID)
+	adj := perBaris[peserta[0].ID]
+	sebelum := peserta[0].IsCheck
+
+	pelaku := services.Pelaku{
+		AkunID: "UJI-AKUN", Peran: []string{services.PeranRejectOutstanding}}
+	err := svc.Status().DenganJejak(jejakGagal{}).Tolak(ctx, pelaku,
+		pohon.Work.ID, adj[0].ID, time.Now())
+	if !errors.Is(err, errJejakSengaja) {
+		t.Fatalf("galat = %v, mau errJejakSengaja", err)
+	}
+	peserta, _ = baca.AmbilPeserta(ctx, pohon.Work.ID)
+	if peserta[0].IsCheck != sebelum {
+		t.Errorf("IS_CHECK = %q sesudah transaksi batal, mau tetap %q",
+			peserta[0].IsCheck, sebelum)
 	}
 }

@@ -56,8 +56,11 @@ func daftarKlaim(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 		case errors.Is(err, services.ErrPermintaanTidakSah):
 			galat(w, http.StatusBadRequest, err.Error())
 			return
-		case errors.Is(err, services.ErrTanpaWewenang):
+		case errors.Is(err, services.ErrTanpaIdentitas):
 			galat(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+			return
+		case errors.Is(err, services.ErrTanpaWewenang):
+			galat(w, http.StatusForbidden, "peran tidak mencukupi")
 			return
 		case errors.Is(err, services.ErrPenomorBelumDiputuskan):
 			// ⛔ 501, bukan 500: ini bukan kerusakan melainkan keputusan yang
@@ -65,8 +68,8 @@ func daftarKlaim(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			//
 			// ⚠️ Pesan dalamnya TIDAK diteruskan: ia menyebut nama objek basis
 			// data, dan badan jawaban HTTP dibaca siapa pun yang dapat
-			// mengirim permintaan (semangat ADR-U-0004). Rincian tinggal di
-			// log server.
+			// mengirim permintaan (CLAUDE.md bab 4 butir 10). Rincian tinggal
+			// di log server.
 			galat(w, http.StatusNotImplemented,
 				"nomor klaim belum dapat dibentuk: caranya belum diputuskan work owner")
 			return

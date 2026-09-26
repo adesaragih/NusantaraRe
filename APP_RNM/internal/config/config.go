@@ -1,7 +1,7 @@
 // Package config membaca seluruh konfigurasi dari environment variable.
 //
 // ⛔ Nol literal host, endpoint, kata sandi, atau DSN di berkas ini maupun di
-// berkas lain mana pun (ADR-U-0004, CLAUDE.md bab 10). Daftar endpoint
+// berkas lain mana pun (ADR-U-0013, CLAUDE.md bab 10). Daftar endpoint
 // sesungguhnya ada di tabel Oracle M_LINK_SERVICE yang isinya belum ada di
 // korpus (OQ-047) - sampai ia ada, alamat datang dari env.
 package config

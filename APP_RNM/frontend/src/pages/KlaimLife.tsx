@@ -1,6 +1,13 @@
 import { useState, type FormEvent } from 'react'
 
-import { ambilKlaimLife, kodeStatusGalat, tampilUang, type Klaim } from '../services/api'
+import {
+  ambilKlaimLife,
+  kodeStatusGalat,
+  tampilUang,
+  tolakBarisAdjustment,
+  STATUS_OUTSTANDING,
+  type Klaim,
+} from '../services/api'
 
 // ============================================================================
 // pages/KlaimLife.tsx — halaman "buka satu klaim Life" (tiket 01 AC-2).
@@ -23,6 +30,37 @@ export default function KlaimLife() {
   const [klaim, setKlaim] = useState<Klaim | null>(null) // klaim yang berhasil dibaca
   const [galat, setGalat] = useState<string | null>(null) // pesan bila gagal
   const [memuat, setMemuat] = useState<boolean>(false) // sedang menunggu server?
+  const [menolak, setMenolak] = useState<string | null>(null) // baris yang sedang ditolak
+
+  // Menolak satu baris, lalu MEMBACA ULANG klaimnya dari server.
+  //
+  // Dibaca ulang, bukan diubah di layar: status klaim adalah TURUNAN dari
+  // seluruh barisnya, dan menebaknya di sisi klien berarti dua sumber
+  // kebenaran yang dapat berbeda.
+  async function tolak(adjID: string) {
+    if (!klaim) return
+    setGalat(null)
+    setMenolak(adjID)
+    try {
+      await tolakBarisAdjustment(klaim.id, adjID)
+      setKlaim(await ambilKlaimLife(klaim.id))
+    } catch (err: unknown) {
+      const kode = kodeStatusGalat(err)
+      setGalat(
+        kode === 403
+          ? 'Hanya ReasLifeAdmin yang dapat menolak baris.'
+          : kode === 409
+            ? 'Baris sudah diputus dan tidak dapat ditolak lagi.'
+            : kode === 422
+              ? 'Klaim belum bernomor.'
+              : kode === 501
+                ? 'Jejak audit belum dapat direkam; tempatnya belum diputuskan.'
+                : 'Gagal menolak baris.',
+      )
+    } finally {
+      setMenolak(null)
+    }
+  }
 
   // Dipanggil saat tombol "Buka" ditekan (form dikirim).
   async function cari(e: FormEvent<HTMLFormElement>) {
@@ -95,6 +133,7 @@ export default function KlaimLife() {
                       <th>Status</th>
                       <th>Jumlah klaim</th>
                       <th>Nomor akseptasi</th>
+                      <th>Tindakan</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -109,6 +148,25 @@ export default function KlaimLife() {
                         </td>
                         <td>{tampilUang(b.jumlahKlaim) || '—'}</td>
                         <td>{b.nomorAkseptasi || '—'}</td>
+                        <td>
+                          {/* Gerbang XML: `pyPosition=='ReasLifeAdmin' &&
+                              CLAIM_NO != '' && .STS_REJECT == 0`. Dua syarat
+                              terakhir dapat diperiksa di sini; PERANNYA tidak —
+                              layar tidak tahu peran siapa pun, dan yang
+                              menegakkannya services (403). Menyembunyikan
+                              tombol di sini adalah kenyamanan, bukan pagar. */}
+                          {b.status === STATUS_OUTSTANDING && klaim.nomorKlaim ? (
+                            <button
+                              type="button"
+                              disabled={menolak === b.id}
+                              onClick={() => void tolak(b.id)}
+                            >
+                              {menolak === b.id ? 'Menolak…' : 'Reject Outstanding'}
+                            </button>
+                          ) : (
+                            '—'
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

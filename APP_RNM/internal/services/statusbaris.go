@@ -211,10 +211,27 @@ func (st *Status) DenganJejak(j Jejak) *Status {
 // klaim sesudah perubahan itu - lihat BarisTerakhir.
 func (st *Status) Ubah(ctx context.Context, pelaku Pelaku,
 	klaimID, pesertaID, adjID string, ke models.StatusBaris, saat time.Time) error {
+	return st.ubah(ctx, pelaku, klaimID, pesertaID, adjID, ke, saat, false)
+}
 
-	if strings.TrimSpace(pelaku.AkunID) == "" {
-		return fmt.Errorf("%w: perubahan status tanpa identitas pelaku ditolak",
-			ErrTanpaWewenang)
+// ubah adalah badan Ubah, dengan satu tulisan tambahan yang dapat dinyalakan.
+//
+// ⛔ `cabutPenanda` ada supaya penolakan Admin (tiket 05) dapat mencabut
+// IS_CHECK peserta di transaksi yang SAMA. Rule Pega menulis ketiganya dalam
+// satu Property-Set; dua transaksi berarti keadaan yang dapat tertinggal
+// separuh - persis yang tiket 04 tolak untuk pencerminan statusnya sendiri.
+//
+// ⚠️ Bendera, bukan kaitan fungsi. Ronde pertama memakai `func(...) error`
+// yang dapat melakukan apa saja, namanya menyebut mekanismenya bukan akibatnya,
+// dan letaknya SESUDAH perekaman jejak - sehingga di jalur nyata ia tidak
+// pernah tercapai, karena jejak bawaan selalu gagal. Bendera bernama membuat
+// yang dilakukannya terbaca, dan urutannya kini bersama tulisan yang lain.
+func (st *Status) ubah(ctx context.Context, pelaku Pelaku,
+	klaimID, pesertaID, adjID string, ke models.StatusBaris, saat time.Time,
+	cabutPenanda bool) error {
+
+	if err := WajibIdentitas(pelaku); err != nil {
+		return err
 	}
 	if strings.TrimSpace(klaimID) == "" || strings.TrimSpace(pesertaID) == "" ||
 		strings.TrimSpace(adjID) == "" {
@@ -268,6 +285,14 @@ func (st *Status) Ubah(ctx context.Context, pelaku Pelaku,
 		if err := baca.CerminkanHeader(ctx, tx, klaimID,
 			akhir.KodeStatus, akhir.NomorAkseptasi); err != nil {
 			return err
+		}
+		// ⛔ Bersama tulisan yang lain, SEBELUM jejak. Rule Pega menulis
+		// ketiganya dalam satu Property-Set; jejak adalah tambahan kita
+		// (ADR-U-0007), dan tambahan tidak boleh mendahului yang ditiru.
+		if cabutPenanda {
+			if err := baca.CabutPenandaDipilih(ctx, tx, pesertaID); err != nil {
+				return err
+			}
 		}
 		// ⛔ Jejak direkam DI DALAM transaksi yang sama. Jejak yang ditulis
 		// terpisah dapat hilang sendirian, dan transisi tanpa jejak persis

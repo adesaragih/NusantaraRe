@@ -49,6 +49,7 @@ var kolomPeserta = []struct {
 	{"CURRENCY", kolomTeks, func(p models.Peserta) string { return p.MataUang }},
 	{"SOURCE_ID", kolomTeks, func(p models.Peserta) string { return p.SumberID }},
 	{"IS_CHECK", kolomTeks, func(p models.Peserta) string { return p.IsCheck }},
+	{"STS_REJECT", kolomTeks, func(p models.Peserta) string { return p.KodeStatus }},
 	{"STNC_TREATY", kolomTeks, func(p models.Peserta) string { return p.STNC }},
 
 	{"GROSS_VALUATION_BEGIN_DATE", kolomTanggal, func(p models.Peserta) string { return p.ValuasiGrossMulai }},
@@ -172,6 +173,7 @@ func rakitPeserta(id string, sel []sql.NullString) (models.Peserta, error) {
 	p.MataUang = teks("CURRENCY")
 	p.SumberID = teks("SOURCE_ID")
 	p.IsCheck = teks("IS_CHECK")
+	p.KodeStatus = teks("STS_REJECT")
 	p.STNC = teks("STNC_TREATY")
 
 	p.ValuasiGrossMulai = teks("GROSS_VALUATION_BEGIN_DATE")

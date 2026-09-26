@@ -252,8 +252,8 @@ func TestSetTanggalKejadianTanpaPelakuDitolak(t *testing.T) {
 	svc := services.New(nil)
 	err := svc.TanggalKejadian().Set(context.Background(), services.Pelaku{},
 		"CLM-000001", "UJI-P-1", saat(t, "2025-06-01 00:00:00"))
-	if !errors.Is(err, services.ErrTanpaWewenang) {
-		t.Fatalf("galat = %v, mau ErrTanpaWewenang", err)
+	if !errors.Is(err, services.ErrTanpaIdentitas) {
+		t.Fatalf("galat = %v, mau ErrTanpaIdentitas", err)
 	}
 }
 

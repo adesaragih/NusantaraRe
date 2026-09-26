@@ -188,6 +188,14 @@ type Peserta struct {
 	SumberID string
 	// IsCheck menandai peserta yang DIPILIH untuk diklaim (AC 8 tiket 03).
 	IsCheck string
+	// KodeStatus adalah CERMIN `STS_REJECT` baris adjustment yang terakhir
+	// diputus, bukan keputusan tersendiri (tiket 04).
+	//
+	// ⛔ Ditambahkan 26-09-2026 karena kolomnya DITULIS sejak tiket 04 tetapi
+	// tidak pernah DIBACA - sehingga AC pencerminan ke peserta tidak dapat
+	// dibuktikan, dan separuh pencerminan dapat mati tanpa satu pun test
+	// gagal. Cacat yang persis sama pernah terjadi pada CLAIM_RETRO.
+	KodeStatus string
 
 	// Empat tanggal valuasi dan WPC. ⭐ Disalin saat pendaftaran justru supaya
 	// tiket 06 dapat memvalidasi DOL TANPA query ulang ke tabel 66,8 juta

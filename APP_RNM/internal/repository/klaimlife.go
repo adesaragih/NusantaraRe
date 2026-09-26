@@ -387,3 +387,37 @@ func (r *KlaimLife) CerminkanHeader(ctx context.Context, tx *Tx,
 	}
 	return nil
 }
+
+// CabutPenandaDipilih menyetel IS_CHECK peserta menjadi tidak-dipilih.
+//
+// `[terverifikasi]` `RejectOSClaimLife_Act` langkah 2 (pecahan baris 517-518)
+// menyetel `PremiumListDetail(local.IndexPremium).IsCheck = "false"` bersama
+// kedua penulisan STS_REJECT-nya. Peserta yang barisnya dibatalkan berhenti
+// terhitung "dipilih untuk diklaim", sehingga ia dapat dipilih ulang dengan
+// baris pengganti.
+//
+// Nilainya ditulis "false" persis seperti rule-nya - teks, bukan bilangan
+// (ADR-U-0022), dan bukan NULL: tidak-dipilih adalah pernyataan, sedangkan
+// NULL berarti belum pernah diputuskan.
+func (r *KlaimLife) CabutPenandaDipilih(ctx context.Context, tx *Tx, pesertaID string) error {
+	tabel, err := r.db.Qualify("T_CLAIMLF_PREMIUMLIST_DETAIL")
+	if err != nil {
+		return err
+	}
+	q := fmt.Sprintf(`UPDATE %s SET IS_CHECK = :1 WHERE ID = :2`, tabel)
+	if err := PeriksaSQL(q); err != nil {
+		return err
+	}
+	hasil, err := tx.tx.ExecContext(ctx, q, "false", pesertaID)
+	if err != nil {
+		return fmt.Errorf("repository: mencabut IS_CHECK: %w", err)
+	}
+	n, err := hasil.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("repository: mencacah baris peserta: %w", err)
+	}
+	if n != 1 {
+		return fmt.Errorf("repository: pencabutan IS_CHECK menyentuh %d baris, mau 1", n)
+	}
+	return nil
+}

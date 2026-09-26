@@ -80,8 +80,11 @@ func setTanggalKejadian(svc *services.Service, stubPelaku bool) http.HandlerFunc
 		case errors.Is(err, services.ErrPermintaanTidakSah):
 			galat(w, http.StatusBadRequest, err.Error())
 			return
-		case errors.Is(err, services.ErrTanpaWewenang):
+		case errors.Is(err, services.ErrTanpaIdentitas):
 			galat(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+			return
+		case errors.Is(err, services.ErrTanpaWewenang):
+			galat(w, http.StatusForbidden, "peran tidak mencukupi")
 			return
 		case err != nil:
 			galat(w, http.StatusInternalServerError, "gagal menyimpan tanggal kejadian")

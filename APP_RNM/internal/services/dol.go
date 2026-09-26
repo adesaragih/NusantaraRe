@@ -201,9 +201,8 @@ func (t *TanggalKejadian) Set(ctx context.Context, pelaku Pelaku,
 
 	// ⛔ FAIL-CLOSED atas pelaku anonim, alasan yang sama dengan pendaftaran:
 	// tanpa identitas, perubahan tanggal kejadian tidak dapat ditelusuri.
-	if strings.TrimSpace(pelaku.AkunID) == "" {
-		return fmt.Errorf("%w: perubahan tanggal kejadian tanpa identitas pelaku ditolak",
-			ErrTanpaWewenang)
+	if err := WajibIdentitas(pelaku); err != nil {
+		return err
 	}
 	if strings.TrimSpace(klaimID) == "" || strings.TrimSpace(pesertaID) == "" {
 		return fmt.Errorf("%w: pengenal klaim dan peserta wajib diisi", ErrPermintaanTidakSah)

@@ -168,8 +168,8 @@ func TestUbahStatusMenjagaPagarnya(t *testing.T) {
 	pelaku := services.Pelaku{AkunID: "UJI-AKUN"}
 	if err := svc.Status().Ubah(context.Background(), services.Pelaku{},
 		"CLM-1", "P-1", "A-1", models.StatusAksep, saatUji); !errors.Is(
-		err, services.ErrTanpaWewenang) {
-		t.Errorf("pelaku anonim: galat = %v, mau ErrTanpaWewenang", err)
+		err, services.ErrTanpaIdentitas) {
+		t.Errorf("pelaku anonim: galat = %v, mau ErrTanpaIdentitas", err)
 	}
 	if err := svc.Status().Ubah(context.Background(), pelaku,
 		"CLM-1", "", "A-1", models.StatusAksep, saatUji); !errors.Is(

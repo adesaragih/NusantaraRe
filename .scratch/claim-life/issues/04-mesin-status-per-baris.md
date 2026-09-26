@@ -46,11 +46,11 @@ bekerja pada tingkat baris).
       *(AC 4 spec)*
 - [x] Status "Ditolak" pada sebuah baris **selalu** berarti baris itu ditolak — **tidak pernah**
       berarti klaim selesai, apa pun sumber penolakannya.
-- [ ] ⚠️ **Diselaraskan 2026-09-16:** pencerminan terjadi pada kolom `STS_REJECT` /
+- [x] ⚠️ **Diselaraskan 2026-09-16:** pencerminan terjadi pada kolom `STS_REJECT` /
       `ACCEPTED_NO` di **`T_CLAIMLF_PREMIUMLIST_DETAIL`** dan **`T_GENERAL_CLAIM`** (spec §2b) — unit
       keputusannya tetap baris `T_CLAIMLF_ADJUSTMENT` (**ADR-0011**), yang kini menggantung pada
       **peserta**. *(AC 33 spec; penyimpangan sadar 2)*
-- [ ] `PremiumListDetail` dan header klaim **selalu mencerminkan** baris adjustment terakhir, dan
+- [x] `PremiumListDetail` dan header klaim **selalu mencerminkan** baris adjustment terakhir, dan
       **tidak** ditulis sebagai status mandiri. *(AC 7 spec)*
 - [x] Klaim dilaporkan "selesai" **hanya** bila tidak ada baris berstatus Outstanding **dan** ada
       sekurangnya satu baris berstatus Aksep. *(AC 8 spec)*
@@ -228,3 +228,9 @@ atau pencarian yang lebih sempit daripada kalimatnya. Pola benar: `<PropertiesNa
 
 **Verifikasi sesudah perbaikan:** vet · vet db · gofmt nol · build · **167 PASS · 0 FAIL** *(dari
 158)* · **26 SKIP** · `tsc` · 5 JS · 88 modul.
+
+### Dua AC sisa ditutup oleh tiket 05 — 26 September 2026 malam
+
+Pintu `POST /api/klaim-life/{id}/adjustment/{adjId}/tolak` (tiket 05, commit di bawah) memanggil
+`Status.Ubah`, sehingga pencerminan ke peserta dan ke header benar-benar terjadi. Keduanya kini
+tercentang: yang menahannya memang hanya pemanggil, bukan mekanismenya.

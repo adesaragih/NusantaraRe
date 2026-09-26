@@ -216,3 +216,29 @@ export async function daftarKlaimLife(minta: PermintaanDaftar): Promise<HasilDaf
   const { data } = await api.post<HasilDaftar>('/api/klaim-life', minta)
   return data
 }
+
+/**
+ * Kata status baris yang berarti "masih menunggu keputusan".
+ *
+ * ⛔ Kata, bukan kode mentah. Ronde pertama membandingkan `kodeStatus === '0'`
+ * - salinan KETIGA dari `models.KodeOutstanding` yang tidak terhubung apa pun
+ * ke Go, pada medan yang berkas ini sendiri tandai "tidak ditampilkan".
+ * Kata ini datang dari `models.StatusBaris.String()` dan berubah bersamanya.
+ */
+export const STATUS_OUTSTANDING = 'Outstanding'
+
+/**
+ * Menolak satu baris adjustment yang masih Outstanding.
+ *
+ * ⛔ Penolakan membatalkan BARIS itu saja - klaimnya tetap hidup dan baris
+ * pengganti dapat diinput sesudahnya.
+ *
+ * Jawaban yang mungkin, dan artinya berbeda-beda:
+ *   403 bukan ReasLifeAdmin
+ *   409 baris sudah diputus
+ *   422 klaim belum bernomor (butir o belum diputuskan)
+ *   501 tempat jejak audit belum diputuskan (butir am)
+ */
+export async function tolakBarisAdjustment(klaimID: string, adjID: string): Promise<void> {
+  await api.post(`/api/klaim-life/${encodeURIComponent(klaimID)}/adjustment/${encodeURIComponent(adjID)}/tolak`)
+}

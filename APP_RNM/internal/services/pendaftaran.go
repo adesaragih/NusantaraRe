@@ -128,9 +128,8 @@ func (p *Pendaftaran) Daftar(ctx context.Context, pelaku Pelaku, minta Permintaa
 	// sumbernya satu tabel (ADR-U-0030) dan tiket 07 yang menegakkannya.
 	// Yang dituntut di sini karena itu minimum yang dapat dipertanggungjawabkan:
 	// permintaan harus membawa identitas. [terbuka - tiket 07]
-	if strings.TrimSpace(pelaku.AkunID) == "" {
-		return hasil, fmt.Errorf("%w: pendaftaran tanpa identitas pelaku ditolak; "+
-			"klaim mencatat siapa yang membuatnya", ErrTanpaWewenang)
+	if err := WajibIdentitas(pelaku); err != nil {
+		return hasil, fmt.Errorf("%w: klaim mencatat siapa yang membuatnya", err)
 	}
 	if err := minta.Periksa(); err != nil {
 		return hasil, err

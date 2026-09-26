@@ -12,6 +12,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"nusantarare/internal/repository"
 )
@@ -109,6 +110,23 @@ func (p Pelaku) PunyaPeran(peran string) bool {
 		}
 	}
 	return false
+}
+
+// ErrTanpaIdentitas menandai permintaan tanpa pengenal akun.
+//
+// ⛔ DIPISAH dari ErrTanpaWewenang 26-09-2026. Satu galat yang berarti dua hal
+// - "aku tidak tahu kamu siapa" dan "aku tahu kamu siapa, tetapi kamu tidak
+// boleh" - memaksa pemanggil menebak, dan dua handler memang menerjemahkannya
+// ke dua kode HTTP yang berbeda untuk galat yang sama. 401 dan 403 menjawab
+// pertanyaan yang berbeda.
+var ErrTanpaIdentitas = errors.New("services: permintaan tanpa identitas pelaku")
+
+// WajibIdentitas menolak permintaan tanpa pengenal akun.
+func WajibIdentitas(p Pelaku) error {
+	if strings.TrimSpace(p.AkunID) == "" {
+		return ErrTanpaIdentitas
+	}
+	return nil
 }
 
 // WajibPeran mengembalikan galat bila peran tidak dimiliki.
