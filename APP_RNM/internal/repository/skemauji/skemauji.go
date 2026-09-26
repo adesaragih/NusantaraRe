@@ -82,34 +82,23 @@ func samakanNLS(ctx context.Context, db *sql.DB) error {
 
 // ddlTabelLama membuat tiruan tabel datar warisan.
 //
-// Kelima puluh lima kolomnya `[terverifikasi]` dari rule
+// Kelima puluh lima nama kolomnya `[terverifikasi]` dari rule
 // ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL!RNM!UPDATEOSAKSEPTASICLAIMLIFE_SQL
-// bertipe Rule-Connect-SQL. Tipe kolomnya TIDAK diketahui - korpus tidak
-// memuat DDL - sehingga di sini seluruhnya teks longgar, cukup untuk menguji
-// pembongkaran. Itu sah untuk skema uji dan tidak sah untuk produksi.
-const ddlTabelLama = `CREATE TABLE %[1]s.` + namaTabelLama + ` (
-	CASEID VARCHAR2(64), NO_CLAIM VARCHAR2(64), POLICY_NO VARCHAR2(64),
-	POLICY_HOLDER VARCHAR2(255), CERTIFICATE_NO VARCHAR2(64),
-	NAME_OF_INSURED VARCHAR2(255), SEX VARCHAR2(8), DOB VARCHAR2(32),
-	AGE VARCHAR2(8), PLAN VARCHAR2(128),
-	BEGIN_DATE VARCHAR2(32), LAPSE_DATE VARCHAR2(32), EXPIRED_DATE VARCHAR2(32),
-	STATUS VARCHAR2(32), EM_PERCENT VARCHAR2(64),
-	CURRENCY VARCHAR2(8), SUM_INSURED VARCHAR2(64), CEDING_RETENTION VARCHAR2(64),
-	SUM_REASURED VARCHAR2(64), SHARE_NUSANTARA_RE VARCHAR2(64),
-	CLAIM_AMOUNT VARCHAR2(64), WPC VARCHAR2(32), PL_NUMBER VARCHAR2(64),
-	DISEASE VARCHAR2(255), ICD_CODE VARCHAR2(32),
-	NOTES VARCHAR2(1000), CEDINGCO VARCHAR2(64), CEDINGCONAME VARCHAR2(255),
-	SOB VARCHAR2(64), SOBNAME VARCHAR2(255),
-	BUSINESSID VARCHAR2(64), BUSINESSNAME VARCHAR2(255), SHARE_RETRO VARCHAR2(64),
-	KETERANGAN VARCHAR2(1000), ACCEPTATION_DATE VARCHAR2(32),
-	NO_ACCEPTATION VARCHAR2(64), STS_REJECT VARCHAR2(8), CLAIM_RETRO VARCHAR2(64),
-	RETROID VARCHAR2(64), RETRONAME VARCHAR2(255),
-	SECURITYREINSURERID VARCHAR2(64), SECURITYREINSURER VARCHAR2(255),
-	TYPECEDING VARCHAR2(64), TYPE VARCHAR2(32), CONFIRMATION_DATE VARCHAR2(32),
-	CLAIM_RECEIVED_DATE VARCHAR2(32), COMPLETE_DATE VARCHAR2(32), ID VARCHAR2(64),
-	NAME_OF_BANK VARCHAR2(255), IDBANK VARCHAR2(64),
-	ACCOUNTNO VARCHAR2(64), CREATEOPNAME VARCHAR2(128), PRODUCTNAMEID VARCHAR2(64),
-	PRODUCTNAME VARCHAR2(255), RETROCEDED_SHARE VARCHAR2(64))`
+// bertipe Rule-Connect-SQL. ⚠️ [data DBA] TIPE kolomnya tidak diketahui -
+// korpus tidak memuat DDL - dan yang dipakai di sini adalah dugaan terbaik atas
+// nama kolomnya. Itu sah untuk skema uji dan tidak sah untuk produksi.
+//
+// Daftarnya TIDAK ditulis ulang di sini. Ia datang dari repository, tempat
+// pembaca dan penulis mengambil daftar yang sama, sehingga ketiganya tidak
+// mungkin berselisih nama maupun urutan.
+func ddlTabelLama(skema string) string {
+	var kolom []string
+	for _, n := range repository.NamaKolomBarisLama() {
+		kolom = append(kolom, n+" "+repository.TipeKolomBarisLama(n))
+	}
+	return fmt.Sprintf("CREATE TABLE %s.%s (%s)", skema, namaTabelLama,
+		strings.Join(kolom, ", "))
+}
 
 // Pasang membangun skema uji dari keadaan bersih.
 //
@@ -132,7 +121,7 @@ func Pasang(ctx context.Context, db *sql.DB, skema string) error {
 		return fmt.Errorf("skemauji: menjalankan migrasi: %w", err)
 	}
 
-	if _, err := db.ExecContext(ctx, fmt.Sprintf(ddlTabelLama, skema)); err != nil {
+	if _, err := db.ExecContext(ctx, ddlTabelLama(skema)); err != nil {
 		if !strings.Contains(err.Error(), "ORA-00955") { // nama sudah dipakai
 			return fmt.Errorf("skemauji: membuat tiruan tabel warisan: %w", err)
 		}
@@ -232,17 +221,15 @@ func IsiBarisLama(ctx context.Context, db *sql.DB, skema string, baris []reposit
 	if err := samakanNLS(ctx, db); err != nil {
 		return err
 	}
-	q := fmt.Sprintf(`INSERT INTO %s.%s
-		(ID, CASEID, NO_CLAIM, POLICY_NO, CERTIFICATE_NO, PL_NUMBER, BUSINESSNAME,
-		 CLAIM_RETRO, CURRENCY, CLAIM_AMOUNT, STS_REJECT, NO_ACCEPTATION,
-		 ACCEPTATION_DATE, TYPE, CREATEOPNAME)
-		VALUES (:1,:2,:3,:4,:5,:6,:7,:8,:9,:10,:11,:12,:13,:14,:15)`, skema, namaTabelLama)
+	kolom := repository.NamaKolomBarisLama()
+	var penampung []string
+	for i, n := range kolom {
+		penampung = append(penampung, repository.PenampungTulisLama(n, i+1))
+	}
+	q := fmt.Sprintf("INSERT INTO %s.%s (%s) VALUES (%s)", skema, namaTabelLama,
+		strings.Join(kolom, ", "), strings.Join(penampung, ", "))
 	for _, b := range baris {
-		_, err := db.ExecContext(ctx, q,
-			b.ID, b.CASEID, b.NO_CLAIM, b.POLICY_NO, b.CERTIFICATE_NO, b.PL_NUMBER,
-			b.BUSINESSNAME, b.CLAIM_RETRO, b.CURRENCY, b.CLAIM_AMOUNT, b.STS_REJECT,
-			b.NO_ACCEPTATION, b.ACCEPTATION_DATE, b.TYPE, b.CREATEOPNAME)
-		if err != nil {
+		if _, err := db.ExecContext(ctx, q, repository.NilaiBarisLama(b)...); err != nil {
 			return fmt.Errorf("skemauji: mengisi baris lama %s: %w", b.ID, err)
 		}
 	}

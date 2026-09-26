@@ -2,5 +2,5 @@
 --
 -- Dijalankan MENURUN: langkah bernomor besar dibongkar lebih dulu, supaya
 -- anak hilang sebelum induknya.
-DROP TABLE {skema}.T_CLAIMLF_ADJUSTMENT_SPREADING_RETRO CASCADE CONSTRAINTS
+DROP TABLE {skema}.T_CLAIMLF_ADJ_SPREADING_RETRO CASCADE CONSTRAINTS
 /

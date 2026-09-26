@@ -258,7 +258,13 @@ func barisAdjustmentDari(b BarisLama) (models.BarisAdjustment, []Temuan) {
 		NomorAkseptasi: b.NO_ACCEPTATION,
 		// Ketiga kolom bank pindah dari nama warisannya.
 		// NAME_OF_BANK tetap, IDBANK -> ID_BANK, ACCOUNTNO -> ACCOUNT_NO.
-		JumlahKlaim: models.Money{Currency: b.CURRENCY},
+		// Dipindah apa adanya sebagai teks: nomor rekening berawalan nol
+		// adalah hal biasa, dan mengubahnya menjadi angka menghilangkan nol
+		// itu (ADR-U-0022).
+		NamaBank:      b.NAME_OF_BANK,
+		IDBank:        b.IDBANK,
+		NomorRekening: b.ACCOUNTNO,
+		JumlahKlaim:   models.Money{Currency: b.CURRENCY},
 	}
 
 	if teks := strings.TrimSpace(b.CLAIM_AMOUNT); teks != "" {
@@ -317,6 +323,11 @@ func BarisLamaDari(p models.PohonKlaim) []BarisLama {
 				ACCEPTATION_DATE: utils.FormatTanggal(adj.TanggalAkseptasi),
 				TYPE:             p.Work.Type,
 				CREATEOPNAME:     p.Work.CreateOpName,
+				// Kembali ke nama warisannya, arah berlawanan dengan
+				// barisAdjustmentDari di atas.
+				NAME_OF_BANK: adj.NamaBank,
+				IDBANK:       adj.IDBank,
+				ACCOUNTNO:    adj.NomorRekening,
 			})
 		}
 	}

@@ -1,4 +1,4 @@
--- T_CLAIMLF_ADJUSTMENT_SPREADING_RETRO - pecahan per reinsurer
+-- T_CLAIMLF_ADJ_SPREADING_RETRO - pecahan per reinsurer
 --
 -- Migrasi tiket 14 Claim Life. Satu berkas = satu langkah migrasi.
 -- Pernyataan dipisahkan oleh baris yang hanya berisi tanda garis miring.
@@ -18,7 +18,7 @@
 -- [terbuka] Rumus PREMIUM_SPREADED_NET punya dua cabang di rule yang sama.
 -- Pemiliknya Product dan Underwriting, dan jawabannya diperlukan sebelum tiket
 -- 03. Kolomnya dibuat; rumusnya tidak ditebak di sini.
-CREATE TABLE {skema}.T_CLAIMLF_ADJUSTMENT_SPREADING_RETRO (
+CREATE TABLE {skema}.T_CLAIMLF_ADJ_SPREADING_RETRO (
   ID                      VARCHAR2(32) NOT NULL,
   SPREADING_ID            VARCHAR2(32),
   REINSURER_NAME          VARCHAR2(255),
@@ -37,5 +37,5 @@ CREATE TABLE {skema}.T_CLAIMLF_ADJUSTMENT_SPREADING_RETRO (
 )
 /
 CREATE INDEX {skema}.IX_SPR_RETRO_SPR_ID
-  ON {skema}.T_CLAIMLF_ADJUSTMENT_SPREADING_RETRO (SPREADING_ID)
+  ON {skema}.T_CLAIMLF_ADJ_SPREADING_RETRO (SPREADING_ID)
 /

@@ -285,3 +285,66 @@ func TestPulangPergiPohonDanBarisDatar(t *testing.T) {
 		}
 	}
 }
+
+// AC 11: ketiga kolom bank ikut pindah, dengan nama barunya.
+//
+// Nama warisannya berbeda dari nama baru: NAME_OF_BANK tetap, IDBANK menjadi
+// ID_BANK, ACCOUNTNO menjadi ACCOUNT_NO. Ronde 1 membuat kolomnya di tabel
+// tetapi pembongkarnya tidak pernah mengisi - test ini yang menguncinya.
+func TestKolomBankIkutPindah(t *testing.T) {
+	b := contohBaris("R1", "UJI-CASE-1", "006", "100.00")
+	b.NAME_OF_BANK = "UJI BANK NUSANTARA"
+	b.IDBANK = "UJI-BANK-014"
+	// ⛔ Berawalan nol dengan sengaja: nomor rekening adalah TEKS. Kalau ia
+	// pernah menjadi bilangan, nol di depannya hilang dan test ini gagal.
+	b.ACCOUNTNO = "0012345678"
+
+	pohon, lap := BongkarBarisLama([]BarisLama{b})
+	if len(pohon) != 1 || len(pohon[0].Klaim.Peserta) != 1 ||
+		len(pohon[0].Klaim.Peserta[0].Baris) != 1 {
+		t.Fatalf("bentuk pohon tidak seperti yang diharapkan: %+v", pohon)
+	}
+	adj := pohon[0].Klaim.Peserta[0].Baris[0]
+
+	if adj.NamaBank != "UJI BANK NUSANTARA" {
+		t.Errorf("NamaBank = %q, mau %q", adj.NamaBank, "UJI BANK NUSANTARA")
+	}
+	if adj.IDBank != "UJI-BANK-014" {
+		t.Errorf("IDBank = %q, mau %q", adj.IDBank, "UJI-BANK-014")
+	}
+	if adj.NomorRekening != "0012345678" {
+		t.Errorf("NomorRekening = %q, mau %q - nol di depan hilang?",
+			adj.NomorRekening, "0012345678")
+	}
+	for _, tm := range lap.Temuan {
+		if strings.Contains(tm.Medan, "BANK") || strings.Contains(tm.Medan, "ACCOUNT") {
+			t.Errorf("kolom bank menghasilkan temuan yang tidak diharapkan: %+v", tm)
+		}
+	}
+}
+
+// Ketiga kolom bank kembali ke nama warisannya saat baris datar disusun ulang.
+func TestKolomBankPulangPergi(t *testing.T) {
+	b := contohBaris("R1", "UJI-CASE-1", "006", "100.00")
+	b.NAME_OF_BANK = "UJI BANK NUSANTARA"
+	b.IDBANK = "UJI-BANK-014"
+	b.ACCOUNTNO = "0012345678"
+
+	pohon, _ := BongkarBarisLama([]BarisLama{b})
+	if len(pohon) != 1 {
+		t.Fatalf("klaim terbentuk %d, mau 1", len(pohon))
+	}
+	kembali := BarisLamaDari(pohon[0])
+	if len(kembali) != 1 {
+		t.Fatalf("dapat %d baris, mau 1", len(kembali))
+	}
+	if kembali[0].NAME_OF_BANK != b.NAME_OF_BANK {
+		t.Errorf("NAME_OF_BANK = %q, mau %q", kembali[0].NAME_OF_BANK, b.NAME_OF_BANK)
+	}
+	if kembali[0].IDBANK != b.IDBANK {
+		t.Errorf("IDBANK = %q, mau %q", kembali[0].IDBANK, b.IDBANK)
+	}
+	if kembali[0].ACCOUNTNO != b.ACCOUNTNO {
+		t.Errorf("ACCOUNTNO = %q, mau %q", kembali[0].ACCOUNTNO, b.ACCOUNTNO)
+	}
+}

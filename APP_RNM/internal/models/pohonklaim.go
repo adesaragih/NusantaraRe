@@ -41,10 +41,14 @@ type WorkClaim struct {
 	ID string
 	// CoverKey menunjuk WorkClaim induknya. Kosong bila baris ini tidak punya
 	// induk - misalnya baris klaim, yang memang akar.
-	CoverKey      string
-	Lini          string
-	PyPosition    string
-	AcceptStatus  string
+	CoverKey   string
+	Lini       string
+	PyPosition string
+	// AcceptStatus sengaja TIDAK ada di sini. Hasil akseptasi milik kasus
+	// komite, dan T_GENERAL_KOMITE.ACCEPT_STATUS sudah menyimpannya - keputusan
+	// work owner 2026-09-18, lihat STRUKTUR-TABEL-CLAIM-LIFE.md bab
+	// "ACCEPT_STATUS - DIBUANG dari tabel ini". Diagram di tiket 14 masih
+	// mencantumkannya; diagram itu yang tertinggal, bukan berkas ini.
 	SendtoAdmin   string
 	SendtoMedical string
 	Type          string

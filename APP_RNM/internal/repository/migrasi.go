@@ -59,7 +59,15 @@ type Migrasi struct {
 type LaporanMigrasi struct {
 	Dijalankan []string // langkah yang baru dijalankan kali ini
 	Dilewati   []string // langkah yang memang sudah pernah dijalankan
-	Pernyataan int      // cacah pernyataan SQL yang dieksekusi
+	// Pernyataan mencacah yang benar-benar DIEKSEKUSI. Pernyataan yang
+	// dilewati karena objeknya sudah ada tidak ikut dihitung; ia muncul
+	// di ObjekSudahAda, dan memang tidak dikirim ke Oracle.
+	Pernyataan int
+	// ObjekSudahAda mencatat pernyataan CREATE yang dilewati karena objeknya
+	// ternyata sudah berdiri. Ia TIDAK kosong hanya pada keadaan tidak normal -
+	// lihat JalankanMigrasi - sehingga pemanggil yang menemukannya berisi tahu
+	// bahwa ada langkah yang dulu gagal separuh jalan.
+	ObjekSudahAda []string
 }
 
 // pecahPernyataan memecah isi berkas .sql menjadi pernyataan terpisah.
@@ -142,6 +150,20 @@ func daftarMigrasi(mundur bool) ([]Migrasi, error) {
 	return out, nil
 }
 
+// PernyataanLangkah mengembalikan pernyataan SQL satu langkah migrasi, apa
+// adanya, dengan penanda {skema} MASIH utuh.
+//
+// Dipakai test db supaya ia dapat menjalankan pernyataan yang BENAR-BENAR ada
+// di langkah itu - bukan pernyataan tiruan yang bentuknya berbeda. Menirukan
+// kegagalan separuh jalan dengan objek berbentuk lain akan menguji hal lain.
+func PernyataanLangkah(nama string) ([]string, error) {
+	isi, err := berkasMigrasi.ReadFile(path.Join("migrations", nama))
+	if err != nil {
+		return nil, fmt.Errorf("repository: membaca %s: %w", nama, err)
+	}
+	return pecahPernyataan(string(isi)), nil
+}
+
 // kunciLangkah menyamakan nama berkas maju dan mundur menjadi satu kunci,
 // supaya jalur mundur tahu langkah mana yang dibatalkannya.
 func kunciLangkah(nama string) string {
@@ -170,10 +192,38 @@ func (d *DB) siapkanTabelMigrasi(ctx context.Context) error {
 	return nil
 }
 
-// sudahAda mengenali galat Oracle "nama sudah dipakai objek lain" (ORA-00955).
-// Itu yang membuat pembuatan tabel pencatat menjadi idempoten.
+// sudahAda mengenali dua galat Oracle yang artinya sama: objek yang hendak
+// dibuat ternyata sudah berdiri.
+//
+//	ORA-00955  nama sudah dipakai objek lain - tabel, index, sequence
+//	ORA-02264  nama itu sudah dipakai constraint lain
+//
+// Itu yang membuat pembuatan objek menjadi idempoten.
 func sudahAda(err error) bool {
-	return err != nil && strings.Contains(err.Error(), "ORA-00955")
+	if err == nil {
+		return false
+	}
+	p := err.Error()
+	return strings.Contains(p, "ORA-00955") || strings.Contains(p, "ORA-02264")
+}
+
+// pernyataanBuat menjawab apakah sebuah pernyataan SQL membuat objek baru.
+//
+// Hanya pernyataan CREATE yang boleh dilewati saat objeknya sudah ada. ALTER,
+// INSERT, atau DROP yang menjawab galat serupa BUKAN keadaan yang sama, dan
+// menelannya akan menyembunyikan kerusakan sungguhan.
+func pernyataanBuat(q string) bool {
+	return strings.HasPrefix(strings.ToUpper(strings.TrimSpace(q)), "CREATE")
+}
+
+// ringkasPernyataan mengambil beberapa kata pertama sebuah pernyataan, supaya
+// laporan menyebut objek yang dimaksud tanpa menyalin seluruh DDL-nya.
+func ringkasPernyataan(q string) string {
+	kata := strings.Fields(q)
+	if len(kata) > 4 {
+		kata = kata[:4]
+	}
+	return strings.Join(kata, " ")
 }
 
 // tidakAda mengenali galat Oracle "tabel atau view tidak ada" (ORA-00942)
@@ -257,6 +307,22 @@ func (d *DB) JalankanMigrasi(ctx context.Context) (LaporanMigrasi, error) {
 				return lap, fmt.Errorf("%s: %w", m.Nama, err)
 			}
 			if _, err := d.sql.ExecContext(ctx, q); err != nil {
+				// DDL Oracle menutup transaksinya sendiri. Bila sebuah langkah
+				// dulu gagal di pernyataan kedua, pernyataan pertamanya sudah
+				// terlanjur jadi dan T_MIGRASI tidak sempat mencatat apa pun -
+				// sehingga percobaan berikutnya mengulang langkah itu dari awal
+				// dan mati di ORA-00955. Objek yang sudah berdiri dilewati,
+				// dicatat, lalu langkahnya diteruskan sampai tuntas.
+				// ⚠️ Risiko yang DITERIMA sadar: Oracle hanya bilang "nama itu
+				// sudah dipakai", bukan "objeknya berbentuk sama". Objek lama
+				// yang berbeda bentuk karena itu ikut diterima. Yang menjaga
+				// hal itu bukan kode ini melainkan jalur mundur - bongkar dulu,
+				// baru pasang lagi - dan itulah yang dilakukan skema uji.
+				if pernyataanBuat(q) && sudahAda(err) {
+					lap.ObjekSudahAda = append(lap.ObjekSudahAda,
+						fmt.Sprintf("%s: %s", m.Nama, ringkasPernyataan(q)))
+					continue
+				}
 				return lap, fmt.Errorf("repository: migrasi %s: %w", m.Nama, err)
 			}
 			lap.Pernyataan++

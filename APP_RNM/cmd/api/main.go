@@ -102,4 +102,9 @@ func jalankanMigrasi(svc *services.Service) {
 	for _, n := range lap.Dijalankan {
 		log.Printf("  dijalankan: %s", n)
 	}
+	// Daftar ini biasanya kosong. Kalau berisi, ada langkah yang dulu gagal di
+	// tengah jalan: sebagian objeknya sudah berdiri sebelum percobaan ini.
+	for _, n := range lap.ObjekSudahAda {
+		log.Printf("  dilewati, objeknya sudah ada: %s", n)
+	}
 }

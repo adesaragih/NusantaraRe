@@ -17,6 +17,8 @@ import (
 	"context"
 	"testing"
 
+	"strings"
+
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
 	"nusantarare/internal/repository/skemauji"
@@ -58,6 +60,13 @@ func contohPohon(t *testing.T) models.PohonKlaim {
 		}
 		return m
 	}
+	rasio := func(s string) models.Ratio {
+		r, err := models.NewRatio(s, 8)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return r
+	}
 	return models.PohonKlaim{
 		Work: models.WorkClaim{
 			ID: "CLM-UJI900", Lini: models.LiniLife, Type: "UJI-TYPE", CaseID: "UJI-CASE-900",
@@ -72,9 +81,17 @@ func contohPohon(t *testing.T) models.PohonKlaim {
 					Spreading: []models.Spreading{{
 						ID: "UJI-S-1", TreatyTypeName: "UJI-TREATY", TreatyYearLife: "2026",
 						IDR: uang("500000.5"), Currency: "IDR",
+						// Rasio, bukan uang - keduanya sengaja bertipe berbeda.
+						RetrocadedShare: rasio("0.12345678"),
+						Rate:            rasio("0.075"),
 						Retro: []models.SpreadingRetro{
-							{ID: "UJI-RT-1", ReinsurerName: "UJI-REINSURER", Amount: uang("250000.25")},
-							{ID: "UJI-RT-2", ReinsurerName: "UJI-REINSURER-2", Amount: uang("0.00000001")},
+							{ID: "UJI-RT-1", ReinsurerName: "UJI-REINSURER",
+								Amount: uang("250000.25"), PercentShare: rasio("0.6"),
+								Rate: rasio("0.0125"), PremiumSpreadedGross: uang("99999.99999999"),
+								PremiumSpreadedNet: uang("88888.88888888"),
+								Commision:          uang("1234.5"), OvrComm: uang("0.00000001")},
+							{ID: "UJI-RT-2", ReinsurerName: "UJI-REINSURER-2",
+								Amount: uang("0.00000001"), PercentShare: rasio("0.4")},
 						},
 					}},
 				}},
@@ -97,6 +114,57 @@ func TestMigrasiIdempoten(t *testing.T) {
 	}
 	if len(lap.Dilewati) == 0 {
 		t.Error("tidak satu pun langkah dilaporkan dilewati")
+	}
+}
+
+// Langkah yang dulu gagal SEPARUH JALAN tetap dapat dituntaskan.
+//
+// DDL Oracle menutup transaksinya sendiri. Bila sebuah langkah gagal di
+// pernyataan kedua, pernyataan pertamanya sudah terlanjur jadi sementara
+// T_MIGRASI tidak mencatat apa pun - sehingga percobaan berikutnya mengulang
+// langkah itu dari awal dan mati di ORA-00955. Test ini menirukan keadaan itu:
+// skema dibongkar habis, satu objek dibuat sendirian, lalu migrasi harus LULUS
+// dan melaporkan objek yang dilewatinya.
+func TestLangkahGagalSeparuhJalanTetapSelesai(t *testing.T) {
+	db, _, bersihkan := siapkanPohon(t)
+	defer bersihkan()
+	ctx := context.Background()
+
+	sqlDB, skema, err := skemauji.Buka()
+	if err != nil {
+		t.Skipf("lewati: %v", err)
+	}
+	defer func() { _ = sqlDB.Close() }()
+
+	if _, err := db.BongkarMigrasi(ctx); err != nil {
+		t.Fatalf("membongkar: %v", err)
+	}
+	// ⛔ Pernyataan yang dijalankan adalah pernyataan PERTAMA langkah 001 yang
+	// sesungguhnya - bukan tabel bikinan sendiri yang bentuknya berbeda.
+	// Menirukan kegagalan separuh jalan dengan objek berbentuk lain akan
+	// menguji hal lain, dan lebih buruk: ia akan membuat skema cacat tercatat
+	// sebagai migrasi yang sukses.
+	pernyataan, err := repository.PernyataanLangkah("001_t_work_claim.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(pernyataan) == 0 {
+		t.Fatal("langkah 001 tidak memuat pernyataan")
+	}
+	if _, err := sqlDB.ExecContext(ctx,
+		strings.ReplaceAll(pernyataan[0], "{skema}", skema)); err != nil {
+		t.Fatalf("membuat sisa objek: %v", err)
+	}
+
+	lap, err := db.JalankanMigrasi(ctx)
+	if err != nil {
+		t.Fatalf("migrasi menolak meneruskan langkah yang separuh jadi: %v", err)
+	}
+	if len(lap.ObjekSudahAda) == 0 {
+		t.Error("objek yang sudah berdiri tidak dilaporkan; ia dilewati diam-diam")
+	}
+	if len(lap.Dijalankan) == 0 {
+		t.Error("tidak satu pun langkah dituntaskan")
 	}
 }
 
@@ -181,6 +249,34 @@ func TestBacaSampaiCicit(t *testing.T) {
 	if got := utils.FormatDecimal(daftar[0].Retro[1].Amount.Amount); got != "0.00000001" {
 		t.Errorf("jumlah retro = %q, mau 0.00000001", got)
 	}
+
+	// ⛔ SELURUH kolom uang dan rasio diperiksa pulang-pergi, satu per satu.
+	// Ronde 1 hanya membaca IDR/USD dan AMOUNT, sehingga tujuh kolom lain
+	// pulang kosong tanpa ada satu pun test yang menyadarinya.
+	sprd := daftar[0]
+	rt := sprd.Retro[0]
+	for _, k := range []struct {
+		nama, mau, dapat string
+	}{
+		{"spreading RETROCADED_SHARE", "0.12345678", utils.FormatDecimal(sprd.RetrocadedShare.Value)},
+		{"spreading RATE", "0.075", utils.FormatDecimal(sprd.Rate.Value)},
+		{"retro PERCENT_SHARE", "0.6", utils.FormatDecimal(rt.PercentShare.Value)},
+		{"retro RATE", "0.0125", utils.FormatDecimal(rt.Rate.Value)},
+		{"retro PREMIUM_SPREADED_GROSS", "99999.99999999", utils.FormatDecimal(rt.PremiumSpreadedGross.Amount)},
+		{"retro PREMIUM_SPREADED_NET", "88888.88888888", utils.FormatDecimal(rt.PremiumSpreadedNet.Amount)},
+		{"retro COMMISION", "1234.5", utils.FormatDecimal(rt.Commision.Amount)},
+		{"retro OVR_COMM", "0.00000001", utils.FormatDecimal(rt.OvrComm.Amount)},
+	} {
+		if k.dapat != k.mau {
+			t.Errorf("%s = %q, mau %q", k.nama, k.dapat, k.mau)
+		}
+	}
+
+	// Kolom yang memang KOSONG di fixture pulang kosong - bukan menjadi nol.
+	if !sprd.Retro[1].Commision.Kosong() {
+		t.Errorf("COMMISION yang tidak diisi pulang sebagai %v, seharusnya kosong",
+			sprd.Retro[1].Commision)
+	}
 }
 
 // Menghapus klaim mengkaskade sampai tingkat terdalam. Test memeriksa CICIT
@@ -246,7 +342,38 @@ func TestBongkarDataLamaDariTabelTiruan(t *testing.T) {
 		t.Fatalf("mengisi tabel tiruan: %v", err)
 	}
 
-	pohon, lap := repository.BongkarBarisLama(masuk)
+	// ⛔ Dibaca KEMBALI dari tabel, bukan dari slice di memori. Ronde 1
+	// menulis ke tabel lalu mengabaikannya dan membongkar slice yang sama -
+	// sehingga pembacaan dari Oracle tidak pernah teruji sama sekali.
+	repo, err := skemauji.BukaRepositori()
+	if err != nil {
+		t.Fatalf("membuka repositori: %v", err)
+	}
+	defer func() { _ = repo.Close() }()
+
+	kembali, err := repository.NewPohonKlaim(repo).AmbilBarisLama(ctx, "UJI-CASE-800")
+	if err != nil {
+		t.Fatalf("membaca baris lama: %v", err)
+	}
+	if len(kembali) != len(masuk) {
+		t.Fatalf("baris terbaca %d, mau %d", len(kembali), len(masuk))
+	}
+	// Digit demi digit: uang pulang persis seperti yang ditulis.
+	for i, b := range kembali {
+		if b.CLAIM_AMOUNT != masuk[i].CLAIM_AMOUNT {
+			t.Errorf("baris %s CLAIM_AMOUNT = %q, mau %q - pemisah desimal NLS?",
+				b.ID, b.CLAIM_AMOUNT, masuk[i].CLAIM_AMOUNT)
+		}
+		if b.CERTIFICATE_NO != masuk[i].CERTIFICATE_NO {
+			t.Errorf("baris %s CERTIFICATE_NO = %q, mau %q - nol di depan hilang?",
+				b.ID, b.CERTIFICATE_NO, masuk[i].CERTIFICATE_NO)
+		}
+		if b.STS_REJECT != masuk[i].STS_REJECT {
+			t.Errorf("baris %s STS_REJECT = %q, mau %q", b.ID, b.STS_REJECT, masuk[i].STS_REJECT)
+		}
+	}
+
+	pohon, lap := repository.BongkarBarisLama(kembali)
 	if len(pohon) != 1 {
 		t.Fatalf("klaim terbentuk %d, mau 1", len(pohon))
 	}

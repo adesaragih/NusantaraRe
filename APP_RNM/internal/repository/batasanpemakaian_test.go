@@ -1,0 +1,149 @@
+package repository
+
+// Penjaga batas pemakaian - TANPA Oracle.
+//
+// Untuk apa berkas ini: beberapa aturan proyek ini tidak dapat dijaga oleh
+// kompilator maupun oleh test perilaku, sebab yang dilarang bukan hasilnya
+// melainkan SIAPA yang memanggil. Test di sini membaca berkas sumber sebagai
+// teks dan memeriksa hal itu.
+//
+// Dibaca sesudah: pohonklaim.go.
+//
+// Istilah:
+//   - test statik : test yang membaca kode sumber, bukan menjalankannya.
+
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+// akarModul menunjuk folder APP_RNM dari folder paket ini.
+const akarModul = "../.."
+
+// berkasGoSelainTest mengumpulkan seluruh berkas .go yang BUKAN test.
+func berkasGoSelainTest(t *testing.T) map[string]string {
+	t.Helper()
+	hasil := map[string]string{}
+	err := filepath.Walk(filepath.FromSlash(akarModul), func(p string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			// frontend dan hasil bangun tidak memuat kode Go yang relevan.
+			switch info.Name() {
+			case "frontend", "node_modules", "bin", ".git":
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if !strings.HasSuffix(p, ".go") || strings.HasSuffix(p, "_test.go") {
+			return nil
+		}
+		isi, err := os.ReadFile(p)
+		if err != nil {
+			return err
+		}
+		hasil[filepath.ToSlash(p)] = string(isi)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(hasil) == 0 {
+		t.Fatal("nol berkas .go terbaca; pembacanya yang rusak, bukan kodenya")
+	}
+	return hasil
+}
+
+// Hapus tidak boleh dipanggil dari kode yang bukan test.
+//
+// Hapus adalah DELETE fisik. ADR-U-0031 menetapkan penghapusan klaim di jalur
+// pengguna berupa penanda ditambah nilai balik, dan pelaksananya tiket 15.
+// Selama tiket itu belum dikerjakan, satu-satunya pemakai yang sah adalah test
+// yang membuktikan kaskade (AC 38).
+func TestHapusTidakDipanggilDiLuarTest(t *testing.T) {
+	for nama, isi := range berkasGoSelainTest(t) {
+		// Definisi metodenya sendiri jelas bukan pemanggilan.
+		for _, baris := range strings.Split(isi, "\n") {
+			if strings.Contains(baris, "func (r *PohonKlaim) Hapus(") {
+				continue
+			}
+			if strings.Contains(baris, ".Hapus(") {
+				t.Errorf("%s memanggil .Hapus(): %s", nama, strings.TrimSpace(baris))
+			}
+		}
+	}
+}
+
+// Lapisan handlers tidak boleh menyentuh repository langsung.
+//
+// Arah ketergantungan proyek ini satu arah: handlers -> services -> repository.
+// Memotongnya membuat aturan dagang tersebar ke lapisan yang tugasnya hanya
+// menerima permintaan HTTP.
+func TestHandlersTidakMengimporRepository(t *testing.T) {
+	diperiksa := 0
+	for nama, isi := range berkasGoSelainTest(t) {
+		if !strings.Contains(nama, "/internal/handlers/") {
+			continue
+		}
+		diperiksa++
+		if strings.Contains(isi, `"nusantarare/internal/repository"`) {
+			t.Errorf("%s mengimpor repository; seharusnya lewat services", nama)
+		}
+	}
+	if diperiksa == 0 {
+		t.Fatal("nol berkas handlers terbaca; pembacanya yang rusak")
+	}
+}
+
+// Baris datar warisan ditulis 18 dari 55 kolom - dan angkanya dikunci di sini.
+//
+// `Simpan` menulis sebagian kolom saja; 37 sisanya tinggal NULL dan didaftar
+// namanya di komentar fungsi itu. Komentar dapat basi tanpa ada yang tahu, jadi
+// pembagiannya dikunci test. Kalau kelak sebuah kolom mulai ditulis - misalnya
+// tiket 02 atau 03 membawa atribut polisnya - test ini gagal, dan komentar itu
+// ikut diperbarui alih-alih menyesatkan diam-diam.
+func TestCacahKolomWarisanYangDitulisSimpan(t *testing.T) {
+	isi, ada := berkasGoSelainTest(t)["../../internal/repository/pohonklaim.go"]
+	if !ada {
+		t.Fatal("pohonklaim.go tidak terbaca; pembacanya yang rusak")
+	}
+	awal := strings.Index(isi, "INSERT INTO %s\n\t\t\t(ID, CASEID")
+	if awal < 0 {
+		t.Fatal("pernyataan INSERT baris datar warisan tidak ketemu")
+	}
+	akhir := strings.Index(isi[awal:], ")\n\t\t\tVALUES")
+	if akhir < 0 {
+		t.Fatal("akhir daftar kolom tidak ketemu")
+	}
+	daftar := isi[awal : awal+akhir]
+	daftar = daftar[strings.Index(daftar, "(")+1:]
+
+	ditulis := map[string]bool{}
+	for _, n := range strings.Split(daftar, ",") {
+		if n = strings.TrimSpace(n); n != "" {
+			ditulis[n] = true
+		}
+	}
+	const mau = 18
+	if len(ditulis) != mau {
+		t.Errorf("Simpan menulis %d kolom warisan, komentar fungsinya menyebut %d",
+			len(ditulis), mau)
+	}
+	seluruh := NamaKolomBarisLama()
+	var kosong int
+	for _, n := range seluruh {
+		if !ditulis[n] {
+			kosong++
+		}
+		delete(ditulis, n)
+	}
+	if len(ditulis) != 0 {
+		t.Errorf("Simpan menulis kolom yang tidak ada di daftar 55: %v", ditulis)
+	}
+	if kosong != len(seluruh)-mau {
+		t.Errorf("kolom yang tinggal NULL = %d, mau %d", kosong, len(seluruh)-mau)
+	}
+}

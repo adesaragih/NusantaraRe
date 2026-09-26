@@ -10,6 +10,7 @@ package repository
 // Justru itu yang dikerjakan di sini.
 
 import (
+	"errors"
 	"regexp"
 	"strings"
 	"testing"
@@ -128,7 +129,7 @@ func TestTujuhTabelDibuat(t *testing.T) {
 		"T_CLAIMLF_PREMIUMLIST_DETAIL",
 		"T_CLAIMLF_ADJUSTMENT",
 		"T_CLAIMLF_ADJUSTMENT_SPREADING",
-		"T_CLAIMLF_ADJUSTMENT_SPREADING_RETRO",
+		"T_CLAIMLF_ADJ_SPREADING_RETRO",
 		"DOCUMENT_CLAIM",
 	}
 	for _, tb := range mau {
@@ -324,6 +325,33 @@ func TestBerkasMigrasiTanpaBOM(t *testing.T) {
 	}
 }
 
+// Berkas migrasi tidak boleh memuat byte carriage return.
+//
+// Sepupu dekat jebakan BOM di atas. Alat Windows - PowerShell, penyunting yang
+// disetel salah, git tanpa .gitattributes - menulis akhiran baris CRLF. CR yang
+// terbawa masuk ke teks pernyataan yang dikirim ke Oracle, dan sekali lagi
+// seluruh test tanpa basis data tetap hijau sementara instance menolaknya.
+// Berkas .gitattributes di akar repositori menjaga sisi git; test ini menjaga
+// sisi berkas.
+func TestBerkasMigrasiTanpaCR(t *testing.T) {
+	entri, err := berkasMigrasi.ReadDir("migrations")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entri) == 0 {
+		t.Fatal("nol berkas migrasi terbaca; pembacanya yang rusak")
+	}
+	for _, e := range entri {
+		isi, err := berkasMigrasi.ReadFile("migrations/" + e.Name())
+		if err != nil {
+			t.Fatal(err)
+		}
+		if n := strings.Count(string(isi), "\r"); n > 0 {
+			t.Errorf("%s memuat %d byte CR; akhiran barisnya harus LF", e.Name(), n)
+		}
+	}
+}
+
 // Pernyataan pertama setiap berkas harus benar-benar mulai dengan kata perintah
 // SQL - bukan dengan sisa komentar.
 func TestPernyataanMulaiDenganPerintah(t *testing.T) {
@@ -343,5 +371,65 @@ func TestPernyataanMulaiDenganPerintah(t *testing.T) {
 				}
 			}
 		}
+	}
+}
+
+// Toleransi "objek sudah ada" hanya berlaku untuk galat yang memang berarti itu.
+//
+// Ini penggolong galat yang menentukan apakah migrasi meneruskan langkahnya
+// atau berhenti. Menggolongkan terlalu longgar berarti menelan kerusakan
+// sungguhan, jadi batasnya diuji dari kedua sisi.
+func TestPenggolongGalatObjekSudahAda(t *testing.T) {
+	harusYa := []string{
+		"ORA-00955: name is already used by an existing object",
+		"oci: ORA-02264: name already used by an existing constraint",
+	}
+	harusTidak := []string{
+		"ORA-00942: table or view does not exist",
+		"ORA-01400: cannot insert NULL",
+		"ORA-00972: identifier is too long",
+		"sambungan terputus",
+	}
+	for _, p := range harusYa {
+		if !sudahAda(errors.New(p)) {
+			t.Errorf("sudahAda(%q) = false, seharusnya true", p)
+		}
+	}
+	for _, p := range harusTidak {
+		if sudahAda(errors.New(p)) {
+			t.Errorf("sudahAda(%q) = true, seharusnya false", p)
+		}
+	}
+	if sudahAda(nil) {
+		t.Error("sudahAda(nil) = true, seharusnya false")
+	}
+}
+
+// Hanya pernyataan CREATE yang boleh dilewati saat objeknya sudah ada.
+func TestHanyaCreateYangBolehDilewati(t *testing.T) {
+	kasus := map[string]bool{
+		"CREATE TABLE {skema}.T_X (ID VARCHAR2(32))": true,
+		"  create index {skema}.IX_X on ...":         true,
+		"CREATE SEQUENCE {skema}.SEQ_X":              true,
+		"ALTER TABLE {skema}.T_X ADD (Y DATE)":       false,
+		"DROP TABLE {skema}.T_X":                     false,
+		"INSERT INTO {skema}.T_MIGRASI VALUES (1)":   false,
+	}
+	for q, harap := range kasus {
+		if pernyataanBuat(q) != harap {
+			t.Errorf("pernyataanBuat(%q) = %v, seharusnya %v", q, !harap, harap)
+		}
+	}
+}
+
+// Ringkasan pernyataan menyebut objeknya tanpa menyalin seluruh DDL.
+func TestRingkasPernyataanPendek(t *testing.T) {
+	q := "CREATE TABLE {skema}.T_WORK_CLAIM (\n  ID VARCHAR2(32) NOT NULL,\n  LINI VARCHAR2(16)\n)"
+	got := ringkasPernyataan(q)
+	if strings.Contains(got, "VARCHAR2") {
+		t.Errorf("ringkasan masih memuat badan DDL: %q", got)
+	}
+	if !strings.Contains(got, "T_WORK_CLAIM") {
+		t.Errorf("ringkasan tidak menyebut objeknya: %q", got)
 	}
 }

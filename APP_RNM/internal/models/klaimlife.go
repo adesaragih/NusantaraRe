@@ -86,6 +86,16 @@ type BarisAdjustment struct {
 	// keputusan komite bukan milik Claim Life - ini rujukan, bukan salinan.
 	// Isinya T_WORK_CLAIM.ID baris komite, berformat KMT-xxxxxx.
 	KomiteID string
+	// Ketiga medan bank adalah tujuan pembayaran klaim baris ini. Nama
+	// warisannya berbeda: NAME_OF_BANK tetap, IDBANK menjadi ID_BANK, dan
+	// ACCOUNTNO menjadi ACCOUNT_NO.
+	//
+	// ⛔ NomorRekening tetap TEKS dan tidak pernah menjadi bilangan. Nomor
+	// rekening berawalan nol adalah hal biasa, dan mengubahnya menjadi angka
+	// menghilangkan nol itu (ADR-U-0022).
+	NamaBank      string
+	IDBank        string
+	NomorRekening string
 	// Spreading adalah pecahan baris ini per treaty-year (tiket 14).
 	// Induknya baris adjustment, bukan peserta dan bukan header klaim.
 	Spreading []Spreading

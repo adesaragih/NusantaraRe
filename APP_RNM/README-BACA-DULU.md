@@ -14,6 +14,7 @@ Folder ini memuat **seluruh aplikasi** hasil migrasi Pega → Go + React + Oracl
 | `internal/services/` | Aturan dagang dan perakitan data. Di sinilah "klaim punya peserta, peserta punya baris" disusun |
 | `internal/repository/` | Satu-satunya lapisan yang berbicara ke Oracle. Seluruh SQL ada di sini, dan **hanya** di sini |
 | `internal/repository/migrations/` | Berkas `.sql` bernomor yang membentuk tabel. Satu berkas = satu langkah, dan tiap langkah punya pasangan `_down.sql` untuk membatalkannya. Ditanam ke biner, jadi tidak perlu dicari di disk saat program jalan |
+| `internal/repository/barislamakolom.go` | Daftar **55 kolom** tabel datar warisan, ditulis SEKALI. Pembaca, penulis fixture, dan tabel tiruan mengambil daftar yang sama, sehingga urutan `SELECT` dan urutan `Scan` tidak mungkin berselisih |
 | `internal/repository/skemauji/` | Menyiapkan skema uji Oracle untuk test bertag `db`: menjalankan migrasi yang sama dengan aplikasi, mengisi fixture buatan, lalu membongkarnya |
 | `internal/models/` | Bentuk data (struct): `Klaim`, `Peserta`, `BarisAdjustment`, `Money`, `Ratio` |
 | `pkg/utils/` | Alat bantu umum: konversi teks ↔ desimal, format tanggal |
@@ -72,6 +73,7 @@ yang dipakainya.
 | **seam** | Titik tempat test menggerakkan sistem: lewat HTTP, lewat *repository*, atau lewat *service* murni |
 | **fixture** | Data contoh buatan untuk test — selalu berawalan `UJI-`, tidak pernah data sungguhan |
 | **skema uji** | Tabel sementara yang dibuat test lalu dibuang lagi (`internal/repository/skemauji/`) |
+| **test statik** | Test yang membaca kode sumber sebagai teks, bukan menjalankannya. Dipakai untuk aturan yang tidak dapat dijaga kompilator — misalnya "`Hapus` tidak boleh dipanggil di luar test" (`batasanpemakaian_test.go`) |
 | **komponen** (React) | Fungsi yang mengembalikan tampilan |
 | **`useState`** | Kotak penyimpan nilai di dalam komponen; mengganti isinya menggambar ulang tampilan |
 | **`interface`** (TypeScript) | Bentuk data; hanya ada saat pemeriksaan tipe, tidak ikut ke browser |
@@ -104,7 +106,8 @@ Dengan `make`: `make test` · `make typecheck` · `make check` · `make test-db`
    React membawanya sebagai **teks** desimal. Float membulatkan diam-diam. *(ADR-U-0003, ADR-U-0016)*
 2. **Kode dan nomor tetap teks.** `"006"` bukan `6`. Mengubahnya menjadi bilangan menghilangkan
    nol di depan dan memecahkan penggolong. *(ADR-U-0022)*
-3. **Nol alamat host, kata sandi, atau nomor polis sungguhan di kode dan test.** Alamat dari
+3. **Akhiran baris berkas `.sql` dan `.go` selalu LF, tanpa BOM.** Alat Windows menulis CRLF dan BOM diam-diam; keduanya lolos ke teks SQL dan ditolak Oracle, sementara seluruh test tanpa basis data tetap hijau. Dijaga `.gitattributes` di akar dan dua test penjaga.
+4. **Nol alamat host, kata sandi, atau nomor polis sungguhan di kode dan test.** Alamat dari
    env var; data uji berawalan `UJI-`. *(ADR-U-0004)*
 
 Rujukan `ADR-U-nnnn` menunjuk `..\docs\adr\`; `ADR-D-<modul>-nnnn` ke `..\dastin\...\docs\adr\`;
