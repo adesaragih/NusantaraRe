@@ -43,7 +43,8 @@ DAFTAR ISI
   Backend Go      dua rute HTTP:                              localhost:8080
                     GET /healthz
                     GET /api/klaim-life/{id}
-                  satu flag: -migrate (bentuk tabel, keluar)
+                  dua flag: -migrate (bentuk tabel, keluar)
+                            -migrate-down (bongkar skema uji, keluar)
   Frontend React  satu halaman: kotak "Pengenal klaim"        localhost:5173
                   dan tombol "Buka"
   Oracle          belum ada instance pengembangan.            dari env var
@@ -178,6 +179,26 @@ PERINGATAN SEBELUM MENJALANKAN TEST BERTAG db (bab 7):
 
   Yang TIDAK dipagari: `go run ./cmd/api -migrate`. Ia hanya membuat objek,
   tidak pernah menghapusnya.
+
+MEMBONGKAR SKEMA UJI
+
+  go run ./cmd/api -migrate-down
+
+  Menjalankan jalur mundur setiap langkah yang TERCATAT selesai di T_MIGRASI,
+  dari yang terakhir ke yang pertama, lalu keluar. Log menyebut tiap langkah
+  yang dibongkar.
+
+  Dipagari sama persis dengan test bertag db, dan menolak dengan galat bila:
+    - IS_PEGA_PROD=true
+    - ORACLE_SKEMA_UJI belum 'true'
+    - ORACLE_SCHEMA memuat POOLDATA
+
+  Kenapa lewat flag ini dan bukan sqlplus: membongkar dengan menyalin isi
+  berkas *_down.sql ke sqlplus MELEWATI T_MIGRASI, sehingga langkah yang tidak
+  pernah tercatat ikut dibongkar dan catatannya jadi berbohong. Flag ini
+  membongkar HANYA yang tercatat.
+
+  -migrate dan -migrate-down tidak boleh diberikan bersamaan.
 
 Aturan yang ditegakkan kode:
   - ORACLE_DSN terisi tetapi ORACLE_SCHEMA kosong: backend menolak start,

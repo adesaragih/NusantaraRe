@@ -14,7 +14,7 @@ Folder ini memuat **seluruh aplikasi** hasil migrasi Pega → Go + React + Oracl
 | `internal/services/` | Aturan dagang dan perakitan data. Di sinilah "klaim punya peserta, peserta punya baris" disusun |
 | `internal/repository/` | Satu-satunya lapisan yang berbicara ke Oracle. Seluruh SQL ada di sini, dan **hanya** di sini |
 | `internal/repository/migrations/` | Berkas `.sql` bernomor yang membentuk tabel. Satu berkas = satu langkah, dan tiap langkah punya pasangan `_down.sql` untuk membatalkannya. Ditanam ke biner, jadi tidak perlu dicari di disk saat program jalan |
-| `internal/repository/barislamakolom.go` | Daftar **55 kolom** tabel datar warisan, ditulis SEKALI. Pembaca, penulis fixture, dan tabel tiruan mengambil daftar yang sama, sehingga urutan `SELECT` dan urutan `Scan` tidak mungkin berselisih |
+| `internal/repository/barislamakolom.go` | Daftar **62 kolom** tabel datar warisan beserta tipenya dari katalog Oracle, ditulis SEKALI; **55** di antaranya yang ditulis rule Pega. Pembaca, penulis fixture, dan tabel tiruan mengambil daftar yang sama, sehingga urutan `SELECT` dan urutan `Scan` tidak mungkin berselisih |
 | `internal/repository/skemauji/` | Menyiapkan skema uji Oracle untuk test bertag `db`: menjalankan migrasi yang sama dengan aplikasi, mengisi fixture buatan, lalu membongkarnya |
 | `internal/models/` | Bentuk data (struct): `Klaim`, `Peserta`, `BarisAdjustment`, `Money`, `Ratio` |
 | `pkg/utils/` | Alat bantu umum: konversi teks ↔ desimal, format tanggal |

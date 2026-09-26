@@ -25,6 +25,8 @@ import (
 
 func main() {
 	migrasi := flag.Bool("migrate", false, "jalankan migrasi lalu keluar")
+	bongkar := flag.Bool("migrate-down", false,
+		"BONGKAR skema uji lalu keluar - MENGHAPUS tabel; perlu ORACLE_SKEMA_UJI=true")
 	flag.Parse()
 
 	cfg, err := config.Load()
@@ -48,6 +50,13 @@ func main() {
 		log.Print("oracle: ORACLE_DSN kosong - berjalan tanpa database")
 	}
 
+	if *migrasi && *bongkar {
+		log.Fatal("pilih salah satu: -migrate atau -migrate-down, tidak keduanya")
+	}
+	if *bongkar {
+		bongkarMigrasi(svc, cfg)
+		return
+	}
 	if *migrasi {
 		jalankanMigrasi(svc)
 		return
@@ -76,6 +85,43 @@ func main() {
 	defer batal()
 	if err := srv.Shutdown(tutup); err != nil {
 		log.Printf("http: penutupan tidak bersih: %v", err)
+	}
+}
+
+// bongkarMigrasi adalah titik masuk `-migrate-down`.
+//
+// ⛔ Ia MENGHAPUS tabel, dan karena itu dipagari sama persis dengan test bertag
+// db: menolak IS_PEGA_PROD=true, menolak tanpa ORACLE_SKEMA_UJI=true, dan
+// menolak skema yang memuat POOLDATA. Pagarnya satu-satunya, tinggal di
+// internal/config, supaya jalur ini dan jalur test tidak mungkin berselisih.
+//
+// Kenapa flag ini ada: sampai 26-09-2026 jalur mundur hanya punya pemanggil
+// test. Orang yang ingin membongkar skema uji terpaksa menyalin isi berkas
+// *_down.sql ke sqlplus - dan itu MELEWATI pengaman T_MIGRASI, yang membongkar
+// hanya langkah yang benar-benar tercatat selesai.
+func bongkarMigrasi(svc *services.Service, cfg config.Config) {
+	if !svc.PunyaDatabase() {
+		log.Fatal("bongkar: ORACLE_DSN wajib terisi")
+	}
+	if cfg.IsPegaProd {
+		log.Fatal("bongkar: menolak berjalan saat IS_PEGA_PROD=true (ADR-U-0005)")
+	}
+	if err := cfg.PastikanSkemaUji(); err != nil {
+		log.Fatalf("bongkar: %v", err)
+	}
+	ctx, batal := context.WithTimeout(context.Background(), 30*time.Second)
+	defer batal()
+	if err := svc.CekKesehatan(ctx); err != nil {
+		log.Fatalf("bongkar: tidak dapat menjangkau oracle: %v", err)
+	}
+	lap, err := svc.BongkarMigrasi(ctx)
+	if err != nil {
+		log.Fatalf("bongkar: %v", err)
+	}
+	log.Printf("bongkar skema %s: %d langkah dibongkar, %d dilewati",
+		svc.SkemaAktif(), len(lap.Dijalankan), len(lap.Dilewati))
+	for _, n := range lap.Dijalankan {
+		log.Printf("  dibongkar: %s", n)
 	}
 }
 

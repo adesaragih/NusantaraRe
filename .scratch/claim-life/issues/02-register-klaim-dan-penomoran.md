@@ -226,11 +226,23 @@ memegang batas transaksi, dan lock baris counter terjadi di pihak yang membentuk
 keputusan **o** mencabut pemanggilan procedure, `SELECT … FOR UPDATE` harus dikirim Go sendiri,
 dan kalimat AC-nya tidak lagi memerikan apa yang dibangun.
 
-⚠️ `[dugaan]` Bahwa lock itu **hari ini** berada di dalam badan
+~~⚠️ `[dugaan]` Bahwa lock itu **hari ini** berada di dalam badan
 `PROC_GENERATE_SEQUENCE_NUMBER` adalah kesimpulan dari ADR-U-0006 dan dari bunyi AC-nya, **bukan
-hal yang sudah dilihat**: sumber procedure-nya justru butir 4 di atas, dan belum diserahkan. Yang
-`[terverifikasi]` hanyalah bahwa AC 10 menyebut lock itu, dan bahwa keputusan o mengubah siapa yang
-mengirimnya.
+hal yang sudah dilihat**: sumber procedure-nya justru butir 4 di atas, dan belum diserahkan.~~
+
+✅ **`[terverifikasi]` 26 September 2026 sore — dugaan di atas terbukti, penandanya naik.** Sumber
+procedure sudah dibaca dan disimpan di `.scratch\claim-life\SUMBER-PENOMORAN-DBA.md`. Badan
+procedure memuat `SELECT no_seq … FROM POOLDATA.GENERATE_SEQUENCE_NUMBER WHERE class = :p_class AND
+jenis = :p_jenis AND tahun = :v_tahun FOR UPDATE`. Jadi lock itu memang **di dalam** procedure, atas
+`(CLASS, JENIS, TAHUN)`.
+
+⭐ **Dua fakta yang ikut terbaca, dan keduanya mengubah teks AC yang harus ditulis work owner:**
+**(a)** procedure **tidak memuat satu pun `COMMIT`** — batas transaksi memang sudah dipegang
+pemanggil, sehingga AC 10 lebih mudah dipenuhi daripada dikira. **(b)** format lengkap
+`<prefix>K<kode>.MM.YYYY.<5 digit>` **dirakit pemanggil Pega**, bukan procedure; procedure hanya
+mengeluarkan `LPAD(no_seq,5,'0')` dan `MM.YYYY`. Karena itu teks pengganti **AC 3** harus mencakup
+**perakitan format**, bukan hanya pembacaan counter — usulan teks di brief ronde 4 §2 o2 belum
+menyebut itu.
 
 Jadi yang harus ditulis ulang work owner sebelum tiket ini dikerjakan: **AC 2, AC 3, dan AC 10**.
 Executor tidak mengubah teks AC sendiri.

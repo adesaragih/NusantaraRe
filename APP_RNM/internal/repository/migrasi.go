@@ -171,6 +171,182 @@ func kunciLangkah(nama string) string {
 	return strings.TrimSuffix(strings.TrimSuffix(nama, ".sql"), "_down")
 }
 
+// ---------------------------------------------------------------------------
+// Pra-terbang bentuk tabel
+//
+// Ronde 3 menutup separuh masalah: sebuah CREATE yang dilewati kini dibuktikan
+// KEBERADAAN objeknya di katalog. Yang tidak diperiksa adalah BENTUKNYA. Pada
+// 26-09-2026 kelemahan itu terbukti nyata: DOCUMENT_CLAIM sudah ada di skema
+// warisan dengan empat belas kolom yang sama sekali berbeda dari DDL 007.
+// Tanpa pemeriksaan bentuk, migrasi akan melewatinya, mencatat langkahnya
+// sukses, dan aplikasi berjalan di atas tabel yang kolomnya bukan miliknya.
+//
+// `[keputusan work owner 26-09-2026, butir x]`: bentuk diperiksa SEBELUM satu
+// pernyataan pun dikirim. Yang dibandingkan hanya NAMA kolom, tanpa memandang
+// urutan maupun huruf besar-kecil - tipe dan panjang sengaja tidak, sebab
+// selisih tipe belum tentu salah dan akan menghasilkan penolakan palsu.
+// ---------------------------------------------------------------------------
+
+var (
+	// polaCreateTabel memisahkan nama tabel dari badan CREATE TABLE.
+	polaCreateTabel = regexp.MustCompile(`(?is)CREATE\s+TABLE\s+\{skema\}\.(\w+)\s*\((.*?)\n\)`)
+	// polaKolomDDL mengenali satu baris deklarasi kolom di dalam badan itu.
+	polaKolomDDL = regexp.MustCompile(`^([A-Z][A-Z0-9_]*)\s+\S`)
+)
+
+// tampakCreateTabel mengenali pernyataan CREATE TABLE secara longgar.
+//
+// Dipakai HANYA untuk menolak pernyataan yang terlihat seperti CREATE TABLE
+// tetapi tidak dapat diurai KolomCreateTable. Tanpa penjaga ini, satu tabel
+// yang ditulis dengan bentuk lain - misalnya seluruhnya dalam satu baris -
+// akan melewati pemeriksaan bentuk tanpa ada yang menyadarinya.
+var polaCreateLonggar = regexp.MustCompile(`(?is)CREATE\s+TABLE\s`)
+
+func tampakCreateTabel(pernyataan string) bool {
+	return polaCreateLonggar.MatchString(pernyataan)
+}
+
+// KolomCreateTable membaca nama tabel dan daftar kolomnya dari satu pernyataan.
+//
+// Nama tabel kosong berarti pernyataan itu bukan CREATE TABLE. Baris CONSTRAINT
+// dan REFERENCES dilewati: keduanya bukan kolom.
+func KolomCreateTable(pernyataan string) (string, []string) {
+	m := polaCreateTabel.FindStringSubmatch(pernyataan)
+	if m == nil {
+		return "", nil
+	}
+	var kolom []string
+	for _, b := range strings.Split(m[2], "\n") {
+		atas := strings.ToUpper(strings.TrimSpace(b))
+		if atas == "" || strings.HasPrefix(atas, "CONSTRAINT") ||
+			strings.HasPrefix(atas, "REFERENCES") {
+			continue
+		}
+		if k := polaKolomDDL.FindStringSubmatch(atas); k != nil {
+			kolom = append(kolom, k[1])
+		}
+	}
+	return strings.ToUpper(m[1]), kolom
+}
+
+// SelisihKolom menyebut kolom yang diminta DDL tetapi tidak ada di katalog, dan
+// sebaliknya.
+//
+// Perbandingannya tanpa urutan dan tanpa huruf besar-kecil: Oracle menyimpan
+// pengenal tanpa kutip dalam huruf besar, dan urutan kolom katalog mengikuti
+// urutan pembuatan, bukan urutan berkas migrasi.
+func SelisihKolom(ddl, katalog []string) (kurang, lebih []string) {
+	adaDi := func(daftar []string) map[string]bool {
+		m := make(map[string]bool, len(daftar))
+		for _, n := range daftar {
+			m[strings.ToUpper(strings.TrimSpace(n))] = true
+		}
+		return m
+	}
+	diKatalog, diDDL := adaDi(katalog), adaDi(ddl)
+	for _, n := range ddl {
+		if !diKatalog[strings.ToUpper(strings.TrimSpace(n))] {
+			kurang = append(kurang, strings.ToUpper(strings.TrimSpace(n)))
+		}
+	}
+	for _, n := range katalog {
+		if !diDDL[strings.ToUpper(strings.TrimSpace(n))] {
+			lebih = append(lebih, strings.ToUpper(strings.TrimSpace(n)))
+		}
+	}
+	sort.Strings(kurang)
+	sort.Strings(lebih)
+	return kurang, lebih
+}
+
+// kolomKatalog membaca nama kolom sebuah tabel dari katalog Oracle.
+func (d *DB) kolomKatalog(ctx context.Context, tabel string) ([]string, error) {
+	q := `SELECT COLUMN_NAME FROM SYS.ALL_TAB_COLUMNS
+	        WHERE UPPER(OWNER) = UPPER(:1) AND UPPER(TABLE_NAME) = UPPER(:2)
+	        ORDER BY COLUMN_ID`
+	if err := PeriksaSQL(q); err != nil {
+		return nil, err
+	}
+	baris, err := d.sql.QueryContext(ctx, q, d.skema, tabel)
+	if err != nil {
+		return nil, fmt.Errorf("repository: membaca kolom %s: %w", tabel, err)
+	}
+	defer func() { _ = baris.Close() }()
+	var out []string
+	for baris.Next() {
+		var n string
+		if err := baris.Scan(&n); err != nil {
+			return nil, fmt.Errorf("repository: membaca kolom %s: %w", tabel, err)
+		}
+		out = append(out, n)
+	}
+	if err := baris.Err(); err != nil {
+		return nil, fmt.Errorf("repository: membaca kolom %s: %w", tabel, err)
+	}
+	return out, nil
+}
+
+// praTerbangBentuk memeriksa SELURUH langkah sebelum satu pun dijalankan.
+//
+// Mengembalikan himpunan nama tabel yang sudah ada DAN bentuknya cocok -
+// itulah yang boleh dilewati. Tabel yang bentuknya berbeda menghentikan
+// migrasi di sini, sebelum ada yang ditulis ke mana pun.
+func (d *DB) praTerbangBentuk(ctx context.Context, langkah []Migrasi,
+	selesai map[string]bool) (map[string]bool, error) {
+	cocok := map[string]bool{}
+	for _, m := range langkah {
+		// ⛔ Langkah yang SUDAH tercatat tidak diperiksa, dan itu bukan sekadar
+		// penghematan. Tabel yang dibuat langkah selesai adalah milik basis
+		// data sejak saat itu: DBA boleh menambahkan kolom audit padanya, dan
+		// itu sah. Memeriksanya di sini membuat satu kolom tambahan
+		// MENGGAGALKAN seluruh migrasi berikutnya - termasuk langkah baru yang
+		// tidak ada hubungannya - dan satu-satunya pemulihan adalah membongkar
+		// seluruh skema. Yang dijaga pra-terbang hanyalah langkah yang HENDAK
+		// dijalankan.
+		if selesai[kunciLangkah(m.Nama)] {
+			continue
+		}
+		for _, p := range m.Pernyataan {
+			nama, kolomDDL := KolomCreateTable(p)
+			if nama == "" {
+				// ⛔ Pernyataan yang TAMPAK CREATE TABLE tetapi tidak terurai
+				// tidak boleh lewat diam-diam: ia akan jatuh ke pemeriksaan
+				// keberadaan saja, dan bentuknya tidak pernah dibandingkan -
+				// persis lubang yang pra-terbang ini dibuat untuk menutup.
+				if tampakCreateTabel(p) {
+					return nil, fmt.Errorf(
+						"repository: migrasi %s: ada CREATE TABLE yang tidak dapat diurai "+
+							"nama dan kolomnya, sehingga bentuknya tidak dapat diperiksa. "+
+							"Tulis ulang pernyataannya mengikuti bentuk berkas migrasi lain", m.Nama)
+				}
+				continue
+			}
+			ada, err := d.objekAda(ctx, nama)
+			if err != nil {
+				return nil, fmt.Errorf("repository: migrasi %s: %w", m.Nama, err)
+			}
+			if !ada {
+				continue // akan dibuat; tidak ada bentuk untuk dibandingkan
+			}
+			kolomKat, err := d.kolomKatalog(ctx, nama)
+			if err != nil {
+				return nil, fmt.Errorf("repository: migrasi %s: %w", m.Nama, err)
+			}
+			kurang, lebih := SelisihKolom(kolomDDL, kolomKat)
+			if len(kurang) > 0 || len(lebih) > 0 {
+				return nil, fmt.Errorf(
+					"repository: migrasi %s: tabel %s sudah ada di skema %s tetapi BENTUKNYA BERBEDA "+
+						"- kolom yang diminta migrasi tetapi tidak ada: %v; kolom yang ada tetapi "+
+						"tidak diminta: %v. Migrasi dihentikan sebelum satu pernyataan pun dikirim; "+
+						"tidak ada yang diubah",
+					m.Nama, nama, d.skema, kurang, lebih)
+			}
+			cocok[nama] = true
+		}
+	}
+	return cocok, nil
+}
+
 // siapkanTabelMigrasi membuat tabel pencatat bila belum ada.
 func (d *DB) siapkanTabelMigrasi(ctx context.Context) error {
 	tabel, err := d.Qualify(namaTabelMigrasi)
@@ -343,6 +519,13 @@ func (d *DB) JalankanMigrasi(ctx context.Context) (LaporanMigrasi, error) {
 		return lap, err
 	}
 
+	// Pra-terbang: bentuk tiap tabel yang sudah ada diperiksa lebih dulu, dan
+	// migrasi berhenti di sini bila ada yang berbeda (butir x).
+	bentukCocok, err := d.praTerbangBentuk(ctx, langkah, selesai)
+	if err != nil {
+		return lap, err
+	}
+
 	for _, m := range langkah {
 		kunci := kunciLangkah(m.Nama)
 		if selesai[kunci] {
@@ -361,11 +544,11 @@ func (d *DB) JalankanMigrasi(ctx context.Context) (LaporanMigrasi, error) {
 				// sehingga percobaan berikutnya mengulang langkah itu dari awal
 				// dan mati di ORA-00955. Objek yang sudah berdiri dilewati,
 				// dicatat, lalu langkahnya diteruskan sampai tuntas.
-				// ⚠️ Risiko yang DITERIMA sadar: Oracle hanya bilang "nama itu
-				// sudah dipakai", bukan "objeknya berbentuk sama". Objek lama
-				// yang berbeda bentuk karena itu ikut diterima. Yang menjaga
-				// hal itu bukan kode ini melainkan jalur mundur - bongkar dulu,
-				// baru pasang lagi - dan itulah yang dilakukan skema uji.
+				// ✅ Risiko bentuk DITUTUP 26-09-2026 (butir x): pra-terbang
+				// di atas sudah membandingkan kolom tiap tabel yang ada dengan
+				// katalog, dan migrasi tidak sampai ke sini bila ada yang
+				// berbeda. Yang boleh dilewati hanyalah tabel yang namanya
+				// tercatat di bentukCocok.
 				if pernyataanBuat(q) && sudahAda(err) {
 					// ⛔ Dilewati TIDAK cukup - keberadaannya dibuktikan.
 					// Oracle hanya bilang namanya terpakai, bukan bahwa objek
@@ -376,6 +559,20 @@ func (d *DB) JalankanMigrasi(ctx context.Context) (LaporanMigrasi, error) {
 						return lap, fmt.Errorf(
 							"repository: migrasi %s: dilaporkan sudah ada, nama objeknya tidak terbaca: %w",
 							m.Nama, err)
+					}
+					// Tabel: cukup dibuktikan lewat pra-terbang, yang sudah
+					// memeriksa keberadaan DAN bentuk. Nama yang tidak ada di
+					// sana berarti tabelnya muncul sesudah pra-terbang - dan
+					// bentuknya belum pernah diperiksa siapa pun.
+					if namaTabel, _ := KolomCreateTable(p); namaTabel != "" {
+						if !bentukCocok[namaTabel] {
+							return lap, fmt.Errorf(
+								"repository: migrasi %s: tabel %s dilaporkan sudah ada, "+
+									"tetapi bentuknya belum pernah diperiksa - ia muncul sesudah "+
+									"pra-terbang. Migrasi dihentikan: %w", m.Nama, namaTabel, err)
+						}
+						lap.ObjekSudahAda = append(lap.ObjekSudahAda, nama)
+						continue
 					}
 					ada, errPeriksa := d.objekAda(ctx, nama)
 					if errPeriksa != nil {

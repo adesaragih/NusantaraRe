@@ -418,7 +418,7 @@ func (r *PohonKlaim) Hapus(ctx context.Context, tx *Tx, id, caseID string) error
 	if err != nil {
 		return err
 	}
-	dokT, err := r.db.Qualify("DOCUMENT_CLAIM")
+	dokT, err := r.db.Qualify("T_CLAIMLF_DOCUMENT")
 	if err != nil {
 		return err
 	}

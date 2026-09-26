@@ -1298,3 +1298,160 @@ owner:
 | Oracle pengembangan **12.2.0.1**; `COMPATIBLE` tidak terbaca | Batas 30 byte yang mendasari keputusan **j** turun menjadi `[dugaan]`. Ralat sudah ditulis di STRUKTUR. **j tidak dibatalkan sendiri oleh executor** |
 | `JSON_OFFER_LIFE` memuat ketiga `*_DATE` bertipe `DATE`, plus `STATUS` dan `OLDID` | **menguatkan e′** — rantai buktinya kini sampai ke katalog, bukan berhenti di XML |
 | Sumber procedure penomoran terbaca utuh: **nol `COMMIT`**, kunci `FOR UPDATE` atas `(CLASS, JENIS, TAHUN)`, format dirakit **pemanggil** | §5-4 terpenuhi; **o1–o3** kini dapat diputuskan tanpa menebak. ⚠️ AC 3 tiket 02 harus mencakup **perakitan format**, yang ternyata ada di rule Pega, bukan di procedure |
+
+---
+
+## Implementasi — ronde 5, 26 September 2026
+
+**Gerbang: G0 dan G2 terbuka; G1 dan G3 tertutup.** Sesi ini yang pertama punya pekerjaan kode
+nyata tanpa menunggu Oracle. G1 tetap tertutup — DBA belum membuat user kosong, dan `POOLDATA`
+bukan skema uji. Karena itu **tiket tetap `claimed`**, dan kalimat ini ditulis di awal.
+
+**40 dari 53 AC** (tidak berubah — yang dikerjakan ronde ini bukan AC baru melainkan pembetulan
+dasar yang dipijak AC lain), diverifikasi **91 test Go yang benar-benar berjalan** (dari 83) dan
+**20 test bertag `db`** (dari 19). Angka diambil **sesudah** perbaikan `/code-review`.
+
+### Empat temuan verifikasi ronde 4
+
+| # | Temuan | Keadaan |
+| ---: | --- | --- |
+| 1 | ⭐ Tipe kolom warisan kini diketahui; tiga di antaranya ditebak keliru | ✅ ditutup — lihat di bawah |
+| 2 | ⭐ Pra-terbang bentuk (butir x) | ✅ ditutup penuh, termasuk penolakan di `JalankanMigrasi` |
+| 3 | ⚠️ `[dugaan]` lock `FOR UPDATE` di tiket 02 | ✅ naik ke `[terverifikasi]`, dengan dua fakta tambahan |
+| 4 | ℹ️ `PANDUAN-MENJALANKAN.txt` bab 5 | ✅ sudah diralat sesi verifikasi; isinya cocok dengan `vite.config.ts` yang kini punya proxy |
+| 5 | ⚠️ Jalur mundur tidak punya pintu masuk manusia | ✅ flag **`-migrate-down`** — lihat di bawah |
+
+### Temuan 1 — tebakan yang dibongkar katalog
+
+Sampai hari ini tipe kolom `OS_AKSEPTASI_KLAIM_LIFE` **ditebak dari nama kolom**, dan tabel TIRUAN
+di skema uji dibuat dari tebakan yang sama. ⛔ Akibatnya test pulang-pergi **menguji tiruan
+terhadap dirinya sendiri** — itulah temuan ronde 3 §3-7 yang menunggu data DBA selama dua ronde.
+
+Sekarang `kolomWarisan` adalah **satu tabel 62 kolom** yang diturunkan dari katalog, dan
+`kolomAngkaLama`, `kolomTanggalLama`, serta `TipeKolomBarisLama` **semuanya diturunkan darinya** —
+bukan lagi tiga daftar yang bisa berselisih. Tiga tebakan yang meleset: `STS_REJECT` `NUMBER(38,0)`,
+`CLAIM_RETRO` `NUMBER`, `WPC` `DATE`. Ketiganya dulu teks, sehingga dibaca **tanpa `TO_CHAR`** dan
+bentuknya bergantung setelan NLS sesi.
+
+Tabel tiruan kini **62 kolom** (dari 55): tujuh kolom yang tidak pernah ditulis rule ikut dibuat,
+supaya `INSERT` 55 kolom diuji terhadap tabel yang berbentuk sama dengan produksi.
+
+⛔ **Yang ikut tersingkap, dan tidak disebut brief:** fixture `contohBaris` mengisi `CLAIM_RETRO`
+dengan teks `"UJI-RETRO"`. Selama tiruan bertipe `VARCHAR2` semuanya itu lolos; terhadap tiruan
+berbentuk benar, Oracle menjawab **`ORA-01722`**. Fixture diperbaiki, dan
+`TestNilaiKolomAngkaSelaluAngkaAtauKosong` kini mengunci bahwa setiap nilai yang menuju kolom angka
+berupa angka atau kosong.
+
+### Temuan 2 — pra-terbang bentuk
+
+`[keputusan work owner butir x]`. `JalankanMigrasi` kini memeriksa **seluruh langkah sebelum satu
+pernyataan pun dikirim**: tiap `CREATE TABLE` yang tabelnya sudah ada dibandingkan kolomnya dengan
+`SYS.ALL_TAB_COLUMNS`. Berbeda → migrasi **berhenti**, pesannya menyebut tabel dan kedua arah
+selisihnya, dan **nol langkah tercatat** di `T_MIGRASI`. `ObjekSudahAda` hanya memuat tabel yang
+bentuknya cocok.
+
+⭐ Pemecah kolom DDL **diangkat dari test ke kode** (`KolomCreateTable`), dan test struktur kini
+memakai pemecah yang sama — sehingga yang diuji adalah alat yang sungguh dipakai saat migrasi
+berjalan, bukan kembarannya.
+
+Ini menutup **sisa** kelemahan ronde 3, yang sengaja dibiarkan separuh: keberadaan objek dibuktikan,
+bentuknya tidak.
+
+### Keputusan §2 sesi ini
+
+| | Keadaan | Yang dikerjakan |
+| --- | --- | --- |
+| **x** | ⭐ `[DIPUTUSKAN]` — sahkan penuh | pra-terbang lengkap + test murni + test db |
+| **butir 5 brief** | ⛔ **terlewat di lintasan pertama** | baris ini **ditambahkan ke brief sesudah commit Langkah 0**, jadi tidak pernah terbaca saat merencanakan sesi. Ditemukan `/code-review` dan **dikerjakan penuh** sebelum commit |
+| **w** | `[DIPUTUSKAN]` — ikuti warisan | `003` `WPC DATE`; STRUKTUR diberi ralat bertanggal. ⚠️ `CLAIM_RETRO` **tidak disentuh**: tipenya diketahui (`NUMBER`), **artinya tidak** — uang atau perbandingan belum dijawab, jadi `002` tetap `VARCHAR2(64)` dan itu `[terbuka]` |
+| **v** | `[DIPUTUSKAN]` — **v1** | `DOCUMENT_CLAIM` → **`T_CLAIMLF_DOCUMENT`**; berkas `007` dan `SEQ_` ikut; tabel warisan 295 baris **tidak disentuh sama sekali**; STRUKTUR diberi blok ralat |
+| **y, j** | `[terbuka]` / `[USULAN]` | tidak disentuh — pemiliknya tiket 15 dan work owner |
+| **o1–o3** | `[USULAN]` | G3 tertutup. Dua fakta baru dicatat di tiket 02 |
+
+### Yang dijalankan, dan hasilnya
+
+| Perintah | Hasil |
+| --- | --- |
+| `go vet ./...` · `go vet -tags=db ./...` · `gofmt -l` · `go build ./...` | lulus, nol berkas |
+| `go test ./...` | lulus, **89 test** (dari 83), nol FAIL |
+| `go test -tags=db ./internal/...` | **20 MELEWATI** (dari 19) — ⛔ SKIP, bukan PASS |
+| `npm run typecheck` · `npm test` · `npm run build` | lulus, 5 test, 87 modul |
+
+⭐ **Tiap penjaga baru diuji gagal dulu pada kasus buruknya**, lalu dipulihkan: `WPC` dikembalikan ke
+teks → gagal; satu baris katalog dihapus dari tabel Go → gagal; kolom angka diisi teks → gagal;
+arah "kolom lebih" pada pembanding bentuk dilumpuhkan → gagal.
+
+⚠️ **Dua kali penjaga menangkap asumsi saya sendiri:** cacah `CREATE TABLE` yang saya tulis 8
+ternyata **7** (yang kedelapan, `T_MIGRASI`, dibuat di luar berkas migrasi), dan cacah pemanggil
+`skemauji.Buka()` bertambah menjadi 7 karena test db baru. Keduanya dikunci angkanya.
+
+
+### ⛔ Temuan 5 — jalur mundur akhirnya punya pintu masuk manusia
+
+Sampai hari ini `BongkarMigrasi` **hanya** punya satu pemanggil: skema uji. Siapa pun yang ingin
+membongkar skema uji sendiri terpaksa menyalin isi berkas `*_down.sql` ke sqlplus — dan itu
+**melewati pengaman `T_MIGRASI`**, yang membongkar hanya langkah yang benar-benar tercatat selesai.
+Catatan migrasi karena itu bisa berbohong tanpa ada yang tahu.
+
+Sekarang ada **`go run ./cmd/api -migrate-down`**, dipagari **sama persis** dengan test bertag `db`:
+menolak `IS_PEGA_PROD=true`, menolak tanpa `ORACLE_SKEMA_UJI=true`, menolak skema yang memuat
+`POOLDATA`. ⭐ Pagarnya **diangkat ke `internal/config`** supaya hanya ada **satu** — `cmd/api` tidak
+boleh mengimpor paket penunjang test, sehingga menaruhnya di `skemauji` akan memaksa jalur kedua
+menyalin logikanya, dan salinan yang berselisih adalah cara paling mudah kehilangan tabel.
+
+### ⛔ Yang ditemukan `/code-review`, dan diperbaiki sebelum commit
+
+| # | Temuan | Perbaikan |
+| ---: | --- | --- |
+| 1 | ⛔ **Butir 5 brief tidak dikerjakan sama sekali** | dikerjakan penuh: flag, pagar terangkat, test murni, paragraf panduan |
+| 2 | ⛔ **Jaminan `CLAIM_RETRO` KOSONG** — `BarisLamaDari` tidak pernah mengisinya, jadi test melewatinya lewat cabang "kosong itu sah". Bab ini sempat mengklaim "mengunci setiap nilai yang menuju kolom angka" | klaimnya diralat di sini dan di kepala test; yang terkunci memang **fixture**, bukan kode. `[terbuka]` baru ditulis — lihat di bawah |
+| 3 | ⛔ **Pra-terbang memeriksa langkah yang SUDAH tercatat**, sehingga satu kolom audit yang ditambahkan DBA pada tabel lama akan **menggagalkan seluruh migrasi berikutnya**, termasuk langkah baru yang tidak ada hubungannya | langkah yang `selesai` dilewati pra-terbang |
+| 4 | ⛔ **Lubang: `CREATE TABLE` yang tidak terurai lolos tanpa pemeriksaan bentuk** — regex menuntut `
+)`, sehingga tabel yang ditulis satu baris jatuh ke pemeriksaan keberadaan saja | `tampakCreateTabel` menolak pernyataan yang terlihat `CREATE TABLE` tetapi tidak terurai |
+| 5 | ⚠️ `README-BACA-DULU.md` dan komentar kepala `barislamakolom.go` masih menulis **55 kolom** | → 62, dengan 55 disebut sebagai yang ditulis rule |
+| 6 | ⚠️ Kepala `tipewarisan_test.go` mengklaim menutup "menguji tiruan terhadap dirinya sendiri" | diralat: yang dibuktikan hanya **dokumen == kode**; bahwa dokumen == Oracle bersandar pada satu pembacaan katalog DEV yang belum dikonfirmasi DBA |
+
+### ⛔ `[terbuka]` baru — `STS_REJECT`: ADR-U-0022 lawan katalog
+
+ADR-U-0022 menetapkan **kode tetap teks**, dan `models` mengunci `KodeStatus` sebagai teks bebas
+lewat `TestKodeStatusTidakPernahJadiBilangan`. Katalog menyebut `OS_AKSEPTASI_KLAIM_LIFE.STS_REJECT`
+bertipe **`NUMBER(38,0)`**. Keduanya tidak dapat benar sekaligus: `Simpan` mem-bind teks itu apa
+adanya, sehingga kode status non-angka akan dijawab **`ORA-01722`** di lapangan.
+
+⛔ **Executor tidak memutuskannya.** Menambah penolakan di jalur tulis berarti diam-diam memihak
+katalog dan melanggar ADR; membiarkannya berarti menunggu galat di lapangan. Pemilik: **work owner**.
+Sampai dijawab, yang dilakukan test hanyalah mencegah fixture menambah kasus baru yang pasti gagal.
+
+### Tuduhan tinjauan yang saya TOLAK sesudah memeriksa premisnya
+
+⛔ *"`003` diubah di tempat tanpa jalur naik; skema uji lama tetap memegang `WPC VARCHAR2(32)`."*
+**Premisnya tidak ada.** Migrasi belum pernah berjalan di Oracle mana pun — enam sesi berturut-turut
+— dan katalog instance pengembangan yang dibaca 26-09 tidak memuat `T_MIGRASI`. Brief §2 l
+menetapkan berkas `001`–`008` boleh disunting langsung **selama** keadaan itu berlaku, dan Langkah C
+brief ronde 5 mengulanginya kata demi kata. Yang benar dari tuduhan itu hanya catatannya: pra-terbang
+membandingkan **nama kolom**, bukan tipe — dan itu memang tertulis di komentarnya sendiri.
+
+### ⚠️ Sisa rename v1 yang BUKAN milik tiket ini
+
+`T_CLAIMLF_DOCUMENT` sudah konsisten di seluruh SQL, kode, dan test. Nama lama masih tersisa sebagai
+**tabel baru** di `spec.md`, `issues/03`, `issues/15`, dan `revisi-penyimpanan-json-dibuang.md`.
+Keempatnya **bukan milik executor tiket 14** — executor tidak menyunting tiket lain maupun berkas
+tersegel. Diserahkan ke work owner. ✅ Yang memang **harus** tetap `DOCUMENT_CLAIM`: nama kelas Pega
+`ASM-FW-GCNMFW-Int-DOCUMENT_CLAIM`, dan seluruh rujukan ke tabel **warisan**.
+
+### TELEMETRI EKSEKUSI
+
+| Besaran | Nilai |
+| --- | --- |
+| Gerbang terbuka | **G0, G2** · G1 tertutup (DBA belum membuat user kosong) · G3 tertutup |
+| Keputusan diterapkan | **x** (penuh), **w** (`WPC DATE`; `CLAIM_RETRO` ditahan), **v1** |
+| Temuan §3 ditutup | **5 / 5** |
+| AC tiket 14 | **40 / 53**; daftar terbuka **13** = jumlah kotak `[ ]` |
+| AC tiket 01 | **4 / 7** — tidak disentuh |
+| **Kolom tabel tiruan warisan** | **62** *(harus 62)* |
+| **Selisih peta tipe lawan katalog** | **0** *(harus 0)* |
+| `-migrate` sungguhan | ⛔ **tidak dijalankan** — G1 tertutup |
+| Objek DB per `OBJECT_TYPE` | ⛔ **kosong** — tidak ada migrasi yang berjalan |
+| Test | **91 PASS · 0 FAIL** (tanpa tag) · **20 SKIP** bertag `db` — ⛔ **SKIP, bukan PASS** · 5 test JS · 87 modul |
+| Sub-agen review | standards **118.845 token / 19 panggilan / 264 detik**; spec **125.788 token / 29 panggilan / 313 detik** |
+| Token sesi utama · biaya · jam dinding | ⛔ **tidak diukur** |

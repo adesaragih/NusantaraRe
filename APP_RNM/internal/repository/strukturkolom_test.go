@@ -32,7 +32,7 @@ const letakStruktur = "../../../.scratch/claim-life/STRUKTUR-TABEL-CLAIM-LIFE.md
 // tabelDikecualikan mendaftar tabel yang STRUKTUR sengaja tidak memuat
 // kolomnya, beserta sebabnya.
 var tabelDikecualikan = map[string]string{
-	"DOCUMENT_CLAIM": "[data DBA] kelas Pega ASM-FW-GCNMFW-Int-DOCUMENT_CLAIM, " +
+	"T_CLAIMLF_DOCUMENT": "[data DBA] kelas Pega ASM-FW-GCNMFW-Int-DOCUMENT_CLAIM, " +
 		"nol kemunculan di rule SQL mana pun; daftar kolomnya tidak dapat diturunkan",
 }
 
@@ -57,8 +57,6 @@ var namaKolomBeda = map[string]string{
 var (
 	polaJudulTabel = regexp.MustCompile(`^##\s+([A-Z][A-Z0-9_]+)\s*$`)
 	polaSelKolom   = regexp.MustCompile("^`([A-Z][A-Z0-9_]*)`$")
-	polaCreate     = regexp.MustCompile(`(?is)CREATE\s+TABLE\s+\{skema\}\.(\w+)\s*\((.*?)\n\)`)
-	polaKolomDDL   = regexp.MustCompile(`^([A-Z][A-Z0-9_]*)\s+\S`)
 )
 
 // kolomMenurutStruktur membaca dokumen STRUKTUR menjadi peta tabel -> kolom.
@@ -91,25 +89,24 @@ func kolomMenurutStruktur(t *testing.T) map[string][]string {
 }
 
 // kolomMenurutDDL membaca berkas migrasi maju menjadi peta tabel -> kolom.
+//
+// Pemecahnya sendiri TIDAK lagi tinggal di sini. Sejak 26-09-2026 ia adalah
+// KolomCreateTable di migrasi.go, sebab pra-terbang bentuk (butir x)
+// membutuhkan pemecah yang sama saat aplikasi berjalan sungguhan. Satu pemecah
+// untuk keduanya berarti test ini menguji alat yang benar-benar dipakai, bukan
+// kembarannya.
 func kolomMenurutDDL(t *testing.T) map[string][]string {
 	t.Helper()
 	hasil := map[string][]string{}
-	for _, isi := range seluruhSQL(t, false) {
-		for _, m := range polaCreate.FindAllStringSubmatch(isi, -1) {
-			nama, badan := strings.ToUpper(m[1]), m[2]
-			var kolom []string
-			for _, b := range strings.Split(badan, "\n") {
-				b = strings.TrimSpace(b)
-				atas := strings.ToUpper(b)
-				if b == "" || strings.HasPrefix(atas, "CONSTRAINT") ||
-					strings.HasPrefix(atas, "REFERENCES") {
-					continue
-				}
-				if k := polaKolomDDL.FindStringSubmatch(atas); k != nil {
-					kolom = append(kolom, k[1])
-				}
+	langkah, err := daftarMigrasi(false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, m := range langkah {
+		for _, p := range m.Pernyataan {
+			if nama, kolom := KolomCreateTable(p); nama != "" {
+				hasil[nama] = kolom
 			}
-			hasil[nama] = kolom
 		}
 	}
 	return hasil
@@ -299,7 +296,7 @@ func tipeMenurutDDL(t *testing.T) map[string]map[string]string {
 	polaKolomTipe := regexp.MustCompile(`^([A-Z][A-Z0-9_]*)\s+([A-Z0-9_]+(?:\([^)]*\))?)`)
 	hasil := map[string]map[string]string{}
 	for _, isi := range seluruhSQL(t, false) {
-		for _, m := range polaCreate.FindAllStringSubmatch(isi, -1) {
+		for _, m := range polaCreateTabel.FindAllStringSubmatch(isi, -1) {
 			nama, badan := strings.ToUpper(m[1]), m[2]
 			kolom := map[string]string{}
 			for _, b := range strings.Split(badan, "\n") {
@@ -375,7 +372,7 @@ var presisiSah = map[string]string{
 	// ADR-U-0016 Akibat 2 serahkan kepada modul - bukan penyimpangan darinya.
 	"NUMBER(38,8)": "uang, share, persen, dan rate - keputusan work owner c, 26 September 2026",
 	"NUMBER(5)":    "AGE, umur peserta dalam tahun",
-	"NUMBER(19)":   "DOCUMENT_CLAIM.ID, identitas dari sequence",
+	"NUMBER(19)":   "T_CLAIMLF_DOCUMENT.ID, identitas dari sequence",
 }
 
 // ⛔ Tidak satu pun kolom bertipe NUMBER tanpa presisi.

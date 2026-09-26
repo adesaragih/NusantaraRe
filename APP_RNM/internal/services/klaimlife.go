@@ -78,3 +78,19 @@ func (s *Service) JalankanMigrasi(ctx context.Context) (repository.LaporanMigras
 	}
 	return s.db.JalankanMigrasi(ctx)
 }
+
+// BongkarMigrasi menjalankan jalur mundur tiap langkah yang TERCATAT selesai.
+//
+// ⛔ Ia MENGHAPUS tabel. Sampai 26-09-2026 satu-satunya pemanggilnya adalah
+// skema uji, sehingga orang yang ingin membongkar skema uji sendiri terpaksa
+// menyalin isi berkas *_down.sql ke sqlplus - dan itu melewati pengaman
+// T_MIGRASI, yang hanya membongkar langkah yang benar-benar tercatat.
+//
+// Pemanggilnya WAJIB memagari lebih dulu lewat Config.PastikanSkemaUji.
+// Lapisan ini tidak membaca environment sendiri.
+func (s *Service) BongkarMigrasi(ctx context.Context) (repository.LaporanMigrasi, error) {
+	if !s.PunyaDatabase() {
+		return repository.LaporanMigrasi{}, repository.ErrTanpaOracle
+	}
+	return s.db.BongkarMigrasi(ctx)
+}

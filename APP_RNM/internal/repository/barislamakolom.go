@@ -2,7 +2,8 @@ package repository
 
 // Daftar kolom tabel datar warisan - satu sumber untuk semua pemakainya.
 //
-// Untuk apa berkas ini: OS_AKSEPTASI_KLAIM_LIFE punya 55 kolom, dan tiga tempat
+// Untuk apa berkas ini: OS_AKSEPTASI_KLAIM_LIFE punya 62 kolom - rule warisan
+// MENULIS 55 di antaranya - dan tiga tempat
 // berbeda perlu menyebutnya dalam urutan yang sama - pembaca (AmbilBarisLama),
 // penulis fixture (skemauji.IsiBarisLama), dan tabel tiruan. Menyalin daftar
 // itu tiga kali adalah cara paling pasti untuk membuat urutan SELECT dan urutan
@@ -33,26 +34,142 @@ type medanLama struct {
 	Nilai *string
 }
 
+// KolomWarisan memasangkan satu kolom OS_AKSEPTASI_KLAIM_LIFE dengan tipenya.
+type KolomWarisan struct {
+	Kolom string
+	Tipe  string
+}
+
+// kolomWarisan adalah SELURUH 62 kolom OS_AKSEPTASI_KLAIM_LIFE beserta tipenya,
+// berurut sama dengan katalog.
+//
+// ⭐ SUMBER: `[data DBA]` .scratch\claim-life\TIPE-KOLOM-OS-AKSEPTASI-KLAIM-LIFE.md,
+// dibaca dari ALL_TAB_COLUMNS instance pengembangan 26 September 2026 - bukan
+// lagi tebakan atas nama kolom. TestPetaTipeCocokDenganKatalog membandingkan
+// tabel ini dengan dokumen itu baris demi baris, sehingga keduanya tidak dapat
+// berselisih diam-diam.
+//
+// ⚠️ Tabelnya 62 kolom; rule warisan hanya MENULIS 55 di antaranya. Ketujuh
+// sisanya tetap didaftar di sini supaya tabel TIRUAN di skema uji berbentuk
+// sama dengan tabel sungguhan - kalau tidak, test pulang-pergi menguji bentuk
+// yang tidak pernah ada di produksi.
+//
+// ⛔ Tiga di antaranya dulu DITEBAK teks dan ternyata bukan: STS_REJECT
+// NUMBER(38,0), CLAIM_RETRO NUMBER, WPC DATE. Tebakan itulah yang membuat
+// tiruan lama bertipe VARCHAR2 semua, sehingga jebakan NLS justru lolos uji.
+var kolomWarisan = []KolomWarisan{
+	{"CASEID", "VARCHAR2(100)"},
+	{"NO_CLAIM", "VARCHAR2(100)"},
+	{"NO_ACCEPTATION", "VARCHAR2(100)"},
+	{"STS_REJECT", "NUMBER(38,0)"},
+	{"ACCEPTATION_DATE", "DATE"},
+	{"POLICY_NO", "VARCHAR2(100)"},
+	{"POLICY_HOLDER", "VARCHAR2(1000)"},
+	{"CERTIFICATE_NO", "VARCHAR2(100)"},
+	{"NAME_OF_INSURED", "VARCHAR2(1000)"},
+	{"SEX", "VARCHAR2(50)"},
+	{"DOB", "DATE"},
+	{"AGE", "NUMBER(38,0)"},
+	{"PLAN", "VARCHAR2(255)"},
+	{"BEGIN_DATE", "DATE"},
+	{"LAPSE_DATE", "DATE"},
+	{"EXPIRED_DATE", "DATE"},
+	{"STATUS", "VARCHAR2(100)"},
+	{"CURRENCY", "VARCHAR2(100)"},
+	{"STS_KONVERSI", "CHAR(1)"},
+	{"TGL_KONVERSI", "DATE"},
+	{"WPC", "DATE"},
+	{"PL_NUMBER", "VARCHAR2(100)"},
+	{"DISEASE", "VARCHAR2(1000)"},
+	{"ICD_CODE", "VARCHAR2(10)"},
+	{"NOTES", "VARCHAR2(1000)"},
+	{"CEDINGCO", "VARCHAR2(100)"},
+	{"CEDINGCONAME", "VARCHAR2(1000)"},
+	{"SOB", "VARCHAR2(100)"},
+	{"SOBNAME", "VARCHAR2(1000)"},
+	{"BUSINESSID", "VARCHAR2(100)"},
+	{"BUSINESSNAME", "VARCHAR2(100)"},
+	{"KETERANGAN", "VARCHAR2(1000)"},
+	{"EM_PERCENT", "NUMBER"},
+	{"SUM_INSURED", "NUMBER"},
+	{"CEDING_RETENTION", "NUMBER"},
+	{"SUM_REASURED", "NUMBER"},
+	{"SHARE_NUSANTARA_RE", "NUMBER"},
+	{"CLAIM_AMOUNT", "NUMBER"},
+	{"SHARE_RETRO", "NUMBER"},
+	{"CLAIM_RETRO", "NUMBER"},
+	{"RETROID", "VARCHAR2(100)"},
+	{"RETRONAME", "VARCHAR2(100)"},
+	{"SECURITYREINSURERID", "VARCHAR2(100)"},
+	{"SECURITYREINSURER", "VARCHAR2(100)"},
+	{"TYPECEDING", "VARCHAR2(50)"},
+	{"TYPE", "VARCHAR2(10)"},
+	{"CONFIRMATION_DATE", "DATE"},
+	{"CLAIM_RECEIVED_DATE", "DATE"},
+	{"COMPLETE_DATE", "DATE"},
+	{"ID", "VARCHAR2(100)"},
+	{"NAME_OF_BANK", "VARCHAR2(100)"},
+	{"IDBANK", "VARCHAR2(100)"},
+	{"ACCOUNTNO", "VARCHAR2(100)"},
+	{"PRODUCTNAMEID", "VARCHAR2(100)"},
+	{"PRODUCTNAME", "VARCHAR2(1000)"},
+	{"CREATEOPNAME", "VARCHAR2(100)"},
+	{"RETROCEDED_SHARE", "NUMBER"},
+	{"LAYER_1", "VARCHAR2(10)"},
+	{"LAYER_2", "VARCHAR2(10)"},
+	{"LAYER_3", "VARCHAR2(10)"},
+	{"LAYER_4", "VARCHAR2(10)"},
+	{"INDEXLIST", "VARCHAR2(10)"},
+}
+
 // kolomAngkaLama menyebut kolom yang isinya bilangan.
 //
 // Ia dibaca lewat TO_CHAR ber-argumen NLS supaya tiba sebagai TEKS dengan titik
 // sebagai pemisah desimal, apa pun setelan sesi (ADR-U-0003, ADR-U-0016).
 // Tanpa itu, sesi ber-NLS koma menyerahkan "1234,56" dan seluruh pembacaan
 // uang rusak diam-diam.
-var kolomAngkaLama = map[string]bool{
-	"AGE": true, "EM_PERCENT": true, "SUM_INSURED": true,
-	"CEDING_RETENTION": true, "SUM_REASURED": true, "SHARE_NUSANTARA_RE": true,
-	"CLAIM_AMOUNT": true, "SHARE_RETRO": true, "RETROCEDED_SHARE": true,
-}
+//
+// Isinya DITURUNKAN dari kolomWarisan, bukan ditulis ulang: satu daftar yang
+// salah lebih baik daripada dua daftar yang berselisih.
+var kolomAngkaLama = golonganWarisan("NUMBER")
 
 // kolomTanggalLama menyebut kolom yang isinya tanggal.
 //
 // Dibaca dengan bentuk yang sama persis dengan yang dikenal utils.ParseTanggal,
 // supaya tidak ada tanggal yang bergantung pada NLS_DATE_FORMAT sesi.
-var kolomTanggalLama = map[string]bool{
-	"DOB": true, "BEGIN_DATE": true, "LAPSE_DATE": true, "EXPIRED_DATE": true,
-	"ACCEPTATION_DATE": true, "CONFIRMATION_DATE": true,
-	"CLAIM_RECEIVED_DATE": true, "COMPLETE_DATE": true,
+var kolomTanggalLama = golonganWarisan("DATE")
+
+// golonganWarisan mengumpulkan kolom yang tipenya berawalan awalan tertentu.
+func golonganWarisan(awalan string) map[string]bool {
+	hasil := map[string]bool{}
+	for _, k := range kolomWarisan {
+		if strings.HasPrefix(k.Tipe, awalan) {
+			hasil[k.Kolom] = true
+		}
+	}
+	return hasil
+}
+
+// tipeWarisan memetakan nama kolom ke tipe katalognya.
+var tipeWarisan = func() map[string]string {
+	m := map[string]string{}
+	for _, k := range kolomWarisan {
+		m[k.Kolom] = k.Tipe
+	}
+	return m
+}()
+
+// NamaKolomTabelWarisan mengeluarkan keenam puluh dua nama kolom, berurut sama
+// dengan katalog.
+//
+// Dipakai skema uji untuk membuat tabel tiruan. Berbeda dari
+// NamaKolomBarisLama, yang hanya kelima puluh lima kolom yang DITULIS rule.
+func NamaKolomTabelWarisan() []string {
+	out := make([]string, 0, len(kolomWarisan))
+	for _, k := range kolomWarisan {
+		out = append(out, k.Kolom)
+	}
+	return out
 }
 
 // fmtTanggalOracle adalah bentuk tanggal yang diminta dari Oracle. Ia cocok
@@ -169,16 +286,14 @@ func salinKeBarisLama(b *BarisLama, nilai []sql.NullString) {
 // bentuk aslinya: kalau tiruannya berisi teks semua, test pulang-pergi tidak
 // menguji apa pun tentang TO_CHAR, dan jebakan NLS justru lolos.
 func TipeKolomBarisLama(kolom string) string {
-	switch {
-	case kolom == "AGE":
-		return "NUMBER(5)"
-	case kolomAngkaLama[kolom]:
-		return "NUMBER(38,8)"
-	case kolomTanggalLama[kolom]:
-		return "DATE"
-	default:
-		return "VARCHAR2(255)"
+	if t, ada := tipeWarisan[kolom]; ada {
+		return t
 	}
+	// Kolom di luar katalog tidak boleh dikarang bentuknya. Pemanggilnya
+	// hanya skema uji, dan daftarnya datang dari kolomWarisan juga, jadi
+	// cabang ini hanya tercapai bila seseorang memanggilnya dengan nama
+	// karangan - dan teks ini yang akan muncul di DDL-nya.
+	return ""
 }
 
 // PenampungTulisLama menyusun penampung VALUES untuk satu kolom.

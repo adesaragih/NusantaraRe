@@ -138,7 +138,7 @@ Header klaim Life. Satu baris mewakili **satu klaim**. `ID`-nya **sama persis** 
 | `STS_REJECT` | teks | ya | | korpus `STS_REJECT` — UpdOS, InsOS |
 | `RI_SLIP_RNM` | teks | ya | | keputusan tiket 14 |
 | `BUSINESS_NAME` | teks | ya | | korpus `BUSINESSNAME` — UpdOS, InsOS |
-| `CLAIM_RETRO` | teks | ya | | korpus `CLAIM_RETRO` — UpdOS, InsOS |
+| `CLAIM_RETRO` | teks | ya | | korpus `CLAIM_RETRO` — UpdOS, InsOS; ⚠️ **`[terbuka]` 26-09-2026**, lihat bawah |
 | `CASEID_POLICY` | teks | ya | | keputusan tiket 14 — penunjuk polis |
 | `POLICY_NO` | teks | ya | | keputusan tiket 14 (ganti nama dari `PL_NUMBER`); korpus `POLICY_NO` — UpdOS, InsOS |
 | `ENDORSMENT_NO` | teks | ya | | keputusan tiket 14 — penunjuk polis |
@@ -197,7 +197,7 @@ Peserta yang diklaim. Satu baris mewakili **satu peserta di dalam satu klaim**.
 | `SHARE_RETRO` | angka desimal | ya | | korpus `SHARE_RETRO` — SaveLPD, UpdOS |
 | `RETROCEDED_SHARE` | angka desimal | ya | | korpus `RETROCEDED_SHARE` — SaveLPD, UpdOS |
 | `CEDING_RETENTION` | angka desimal | ya | | korpus `CEDING_RETENTION` — SaveLPD, UpdOS |
-| `WPC` | teks | ya | | korpus `WPC` — SaveLPD, UpdOS |
+| `WPC` | DATE | ya | | korpus `WPC` — SaveLPD, UpdOS; ⚠️ **ralat 26-09-2026**, lihat bawah |
 | `STNC_TREATY` | teks | ya | | keputusan tiket 14; korpus `STNC` — SaveLPD |
 | `IS_CHECK` | teks | ya | | keputusan tiket 14 — penanda peserta dipilih untuk diklaim |
 | `STATUS` | teks | ya | | korpus `STATUS` — SaveLPD, UpdOS |
@@ -214,7 +214,7 @@ Peserta yang diklaim. Satu baris mewakili **satu peserta di dalam satu klaim**.
 
 - induknya `T_GENERAL_CLAIM` lewat `CLAIM_ID` · 1:N · ON DELETE **CASCADE**
 - anaknya `T_CLAIMLF_ADJUSTMENT` lewat `PREMIUM_LIST_DETAIL_ID` · 1:N · ON DELETE **CASCADE**
-- anaknya `DOCUMENT_CLAIM` lewat `PREMIUM_LIST_DETAIL_ID` · 1:N · ON DELETE **di Go**
+- anaknya `T_CLAIMLF_DOCUMENT` lewat `PREMIUM_LIST_DETAIL_ID` · 1:N · ON DELETE **di Go**
 
 ---
 
@@ -340,7 +340,26 @@ Pecahan spreading per reinsurer. Satu baris mewakili **satu reinsurer** pada sat
 
 ---
 
-## DOCUMENT_CLAIM
+## T_CLAIMLF_DOCUMENT
+
+> ⭐ **RALAT 26 September 2026 — bab ini dulu bernama `DOCUMENT_CLAIM`.**
+>
+> `[keputusan work owner butir v1]`. Katalog instance pengembangan dibaca 26-09-2026 dan
+> **`POOLDATA.DOCUMENT_CLAIM` ternyata SUDAH ADA**: 14 kolom milik kelas Pega
+> `ASM-FW-GCNMFW-Int-DOCUMENT_CLAIM` (`IDPEGA`, `NAMAFILE`, `MIME`, `KATEGORI_1/2`, `NOAKSEP`,
+> `NOPREKAS`, `PAYMENTDATE`, `INSKEY_LINK`, `INSKEY_DATA`, `T_STORAGE_ID`, `PXCREATEOPERATOR`, …),
+> berisi **295 baris**. Kolom itu bukan kolom yang didaftar bab ini.
+>
+> Membuat tabel bernama sama berarti salah satu dari dua hal, dan keduanya buruk: migrasi gagal
+> `ORA-00955`, atau — lebih buruk — migrasi **melewatinya sebagai "sudah ada"** dan aplikasi
+> berjalan di atas tabel yang kolomnya bukan miliknya. Karena itu tabel baru memakai nama
+> sendiri, **`T_CLAIMLF_DOCUMENT`**, dan `POOLDATA.DOCUMENT_CLAIM` warisan **tidak disentuh sama
+> sekali**.
+>
+> Berkas migrasinya ikut: `007_t_claimlf_document.sql` (+`_down`), beserta
+> `SEQ_T_CLAIMLF_DOCUMENT`. ⚠️ Memakai tabel warisan apa adanya dengan pemetaan kolom
+> **(v2, ADR-U-0042)** tetap terbuka untuk ditinjau saat tiket dokumen dikerjakan — bentuknya kini
+> dapat direkayasa balik, dan itu keputusan tersendiri.
 
 Dokumen pendukung klaim, **per peserta**. Tabel **LINTAS-LINI**.
 
@@ -399,7 +418,7 @@ TINGKAT 5  |        |        +--1:N-- T_CLAIMLF_ADJUSTMENT_SPREADING
 TINGKAT 6  |        |                 +--1:N-- T_CLAIMLF_ADJUSTMENT_SPREADING_RETRO
            |        |                          FK SPREADING_ID
            |        |                             -> T_CLAIMLF_ADJUSTMENT_SPREADING.ID  CASCADE
-TINGKAT 4  |        +--1:N-- DOCUMENT_CLAIM                      <- LINTAS-LINI
+TINGKAT 4  |        +--1:N-- T_CLAIMLF_DOCUMENT                  <- LINTAS-LINI
            |                 FK PREMIUM_LIST_DETAIL_ID -> ...DETAIL.ID   (Life saja)
            |                 ON DELETE di Go -- induk beda tabel per lini
            |
@@ -418,7 +437,7 @@ TINGKAT 4  |        +--1:N-- DOCUMENT_CLAIM                      <- LINTAS-LINI
 | 4 | `T_CLAIMLF_PREMIUMLIST_DETAIL` | `T_CLAIMLF_ADJUSTMENT` | `PREMIUM_LIST_DETAIL_ID` | 1:N | CASCADE |
 | 5 | `T_CLAIMLF_ADJUSTMENT` | `T_CLAIMLF_ADJUSTMENT_SPREADING` | `ADJUSTMENT_ID` | 1:N | CASCADE |
 | 6 | `T_CLAIMLF_ADJUSTMENT_SPREADING` | `T_CLAIMLF_ADJUSTMENT_SPREADING_RETRO` | `SPREADING_ID` | 1:N | CASCADE |
-| 7 | `T_CLAIMLF_PREMIUMLIST_DETAIL` | `DOCUMENT_CLAIM` | `PREMIUM_LIST_DETAIL_ID` | 1:N | **di Go** |
+| 7 | `T_CLAIMLF_PREMIUMLIST_DETAIL` | `T_CLAIMLF_DOCUMENT` | `PREMIUM_LIST_DETAIL_ID` | 1:N | **di Go** |
 | 8 | `T_WORK_CLAIM` | `T_GENERAL_KOMITE` | **tidak ada kolom terpisah** — `T_GENERAL_KOMITE.ID` = `T_WORK_CLAIM.ID` baris komite (**shared PK**) | 1:1 | di Go |
 | 9 | `T_GENERAL_KOMITE` | `T_KOMITE_KOMITELIST` | `DATA_KOMITE_ID` | 1:N | CASCADE |
 | 10 | **tabel adjustment menurut `LINI`** — LIFE `T_CLAIMLF_ADJUSTMENT` · PROP `T_CLAIMP_ADJUSTMENT` | `T_GENERAL_KOMITE` | `ADJUSTMENT_ID` **NOT NULL, index UNIK, tanpa `REFERENCES`** | **1:1** | di Go |
@@ -432,7 +451,7 @@ PK sudah ber-index dengan sendirinya. Seluruh kunci tamu lain **ber-index**.
 ## Catatan — belum ditetapkan, TIDAK menghambat berkas ini
 
 - `[terbuka]` `COMMISION` kurang satu huruf S, tetapi `[terverifikasi]` **itu ejaan korpus** — 369 berkas XML, 2.691 kemunculan; `COMMISSION` (dua S) **juga** ada di korpus, 83 berkas. Korpus memakai kedua ejaan. Perbaikan belum diputuskan
-- `[data DBA]` daftar kolom `DOCUMENT_CLAIM`
+- `[data DBA]` daftar kolom `T_CLAIMLF_DOCUMENT`
 - `[data DBA]` presisi fisik seluruh kolom
 - `[terbuka]` `REFERENCES T_WORK_CLAIM(ID)` pada `KOMITE_ID` dan `COVER_KEY`
 - `[terbuka]` kolom nomor klaim (`NO_CLAIM`) dan nomor akseptasi (`NO_ACCEPTATION`) belum punya rumah
@@ -448,3 +467,27 @@ PK sudah ber-index dengan sendirinya. Seluruh kunci tamu lain **ber-index**.
 - `[terbuka]` siapa yang memasang aturan **`LINI` baris komite == `LINI` baris `COVER_KEY`** di Go — `CHECK` tidak sanggup menjaganya
 - `[terbuka]` bila Claim Non Prop kelak punya tabel adjustment sendiri, tujuan `T_GENERAL_KOMITE.ADJUSTMENT_ID` menjadi **tiga**
 - `[terbuka]` tipe `AGE` sebagai bilangan bulat belum dikonfirmasi DBA
+
+
+---
+
+## ⚠️ RALAT 26 September 2026 — tiga tipe kolom yang ditebak dari namanya
+
+Sampai hari ini tipe kolom `OS_AKSEPTASI_KLAIM_LIFE` tidak diketahui: korpus Pega tidak memuat DDL,
+dan dokumen ini menurunkan tipenya dari **nama** kolom. Katalog `ALL_TAB_COLUMNS` instance
+pengembangan dibaca 26-09-2026 dan disimpan sebagai `[data DBA]` di
+`.scratch\claim-life\TIPE-KOLOM-OS-AKSEPTASI-KLAIM-LIFE.md`. Tiga tebakan meleset:
+
+| Kolom | Ditulis dokumen ini | Katalog | Keadaan |
+| --- | --- | --- | --- |
+| `WPC` | teks | **`DATE`** | ✅ `[keputusan work owner butir w]` — baris di atas diralat menjadi **tanggal**, dan `003_t_claimlf_premiumlist_detail.sql` menjadi `WPC DATE`. Nol kode Go menyentuh kolom itu di tabel baru |
+| `STS_REJECT` | teks | **`NUMBER(38,0)`** | ✅ peta tipe dan tabel tiruan skema uji mengikuti katalog. Baris dokumen ini tidak diubah: `STS_REJECT` di tabel **baru** memang teks atas keputusan terpisah *(kode status, ADR-U-0022)*, dan yang diralat hanyalah pembacaan tabel **warisan** |
+| `CLAIM_RETRO` | teks | **`NUMBER`** | ⚠️ **`[terbuka]`** — tipenya diketahui, **artinya tidak**. Uang atau perbandingan? Selama itu belum dijawab, `002_t_general_claim.sql` **tidak disentuh** dan tetap `VARCHAR2(64)`. Pemilik: work owner |
+
+⛔ **Yang ikut tersingkap:** fixture test mengisi `CLAIM_RETRO` dengan teks `"UJI-RETRO"`. Selama
+tabel tiruan bertipe `VARCHAR2` semuanya, itu lolos; terhadap tabel yang berbentuk sama dengan
+warisan, Oracle menjawab `ORA-01722`. Fixture sudah diperbaiki, dan satu test murni kini mengunci
+bahwa setiap nilai yang menuju kolom angka berupa angka atau kosong.
+
+⚠️ Produksi **belum** dibaca. Bentuk di produksi diasumsikan sama dengan pengembangan; DBA yang
+dapat memastikannya.

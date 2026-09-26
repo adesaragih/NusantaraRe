@@ -41,15 +41,15 @@ var ErrProduksi = errors.New("skemauji: menolak berjalan saat IS_PEGA_PROD=true"
 // ⛔ Kenapa galat, bukan SKIP: melewati diam-diam berarti pagarnya tidak
 // pernah terlihat oleh orang yang salah menyetel env. Yang dipertaruhkan
 // bukan test yang gagal, melainkan tabel warisan yang terhapus.
-var ErrBukanSkemaUji = errors.New("skemauji: menolak berjalan di luar skema uji")
+var ErrBukanSkemaUji = config.ErrBukanSkemaUji
 
 // envSkemaUji adalah pengakuan sadar dari orang yang menjalankan test bahwa
 // skema yang ditunjuk ORACLE_SCHEMA memang boleh dihapus isinya.
-const envSkemaUji = "ORACLE_SKEMA_UJI"
+const envSkemaUji = config.EnvSkemaUji
 
 // namaSkemaWarisan adalah skema Pega yang memuat tabel warisan sungguhan.
 // Ia tidak pernah boleh menjadi skema uji, sekalipun di instance pengembangan.
-const namaSkemaWarisan = "POOLDATA"
+const namaSkemaWarisan = config.NamaSkemaWarisan
 
 // BolehDilewati menyatakan apakah sebuah galat dari Buka layak dijawab t.Skip.
 //
@@ -90,22 +90,7 @@ func periksaPagarSkemaUji(skema string) error {
 // Syarat kedua tidak dapat ditutupi oleh syarat pertama: menyetel env tidak
 // membuat skema warisan menjadi skema uji.
 func pagarSkemaUji(skema, diakui string) error {
-	if strings.TrimSpace(strings.ToLower(diakui)) != "true" {
-		return fmt.Errorf("%w: env %s belum bernilai true; test bertag db MENGHAPUS tabel "+
-			"di skema yang ditunjuk ORACLE_SCHEMA, termasuk %s. Setel %s=true hanya bila "+
-			"skema itu memang skema uji kosong dari DBA",
-			ErrBukanSkemaUji, envSkemaUji, namaTabelLama, envSkemaUji)
-	}
-	// MEMUAT, bukan sama persis: POOLDATA_DEV dan POOLDATA2 adalah skema
-	// warisan juga. Untuk operasi yang MENGHAPUS, menolak terlalu banyak jauh
-	// lebih murah daripada meloloskan satu yang salah.
-	if strings.Contains(strings.ToUpper(strings.TrimSpace(skema)), namaSkemaWarisan) {
-		return fmt.Errorf("%w: ORACLE_SCHEMA menunjuk %s, skema warisan Pega yang memuat "+
-			"tabel sungguhan; test bertag db akan menghapusnya. Pakai skema uji kosong, "+
-			"dan %s=true tidak mengubah hal ini",
-			ErrBukanSkemaUji, namaSkemaWarisan, envSkemaUji)
-	}
-	return nil
+	return config.PagarSkemaUji(skema, diakui)
 }
 
 // namaTabelLama adalah tabel datar warisan yang ditiru untuk uji migrasi.
@@ -157,16 +142,24 @@ func samakanNLS(ctx context.Context, db *sql.DB) error {
 //
 // Kelima puluh lima nama kolomnya `[terverifikasi]` dari rule
 // ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL!RNM!UPDATEOSAKSEPTASICLAIMLIFE_SQL
-// bertipe Rule-Connect-SQL. ⚠️ [data DBA] TIPE kolomnya tidak diketahui -
-// korpus tidak memuat DDL - dan yang dipakai di sini adalah dugaan terbaik atas
-// nama kolomnya. Itu sah untuk skema uji dan tidak sah untuk produksi.
+// bertipe Rule-Connect-SQL. ✅ [data DBA] TIPE kolomnya SUDAH DIKETAHUI sejak
+// 26-09-2026: dibaca dari ALL_TAB_COLUMNS instance pengembangan dan disimpan di
+// .scratch/claim-life/TIPE-KOLOM-OS-AKSEPTASI-KLAIM-LIFE.md. Tiruan ini tidak
+// lagi menebak, dan tabelnya 62 kolom - bukan 55. ⚠️ Produksi belum dibaca;
+// DBA yang dapat memastikan bentuknya sama.
 //
 // Daftarnya TIDAK ditulis ulang di sini. Ia datang dari repository, tempat
 // pembaca dan penulis mengambil daftar yang sama, sehingga ketiganya tidak
 // mungkin berselisih nama maupun urutan.
+//
+// ⭐ 26-09-2026: tiruan memakai KEENAM PULUH DUA kolom katalog, bukan lagi
+// kelima puluh lima yang ditulis rule. Tujuh sisanya tidak pernah ditulis
+// maupun dibaca kode ini, tetapi ada di tabel sungguhan - dan tiruan yang
+// kekurangan kolom tidak membuktikan bahwa INSERT 55 kolom berhasil pada
+// tabel 62 kolom.
 func ddlTabelLama(skema string) string {
 	var kolom []string
-	for _, n := range repository.NamaKolomBarisLama() {
+	for _, n := range repository.NamaKolomTabelWarisan() {
 		kolom = append(kolom, n+" "+repository.TipeKolomBarisLama(n))
 	}
 	return fmt.Sprintf("CREATE TABLE %s.%s (%s)", skema, namaTabelLama,

@@ -130,7 +130,7 @@ func TestTujuhTabelDibuat(t *testing.T) {
 		"T_CLAIMLF_ADJUSTMENT",
 		"T_CLAIMLF_ADJUSTMENT_SPREADING",
 		"T_CLAIMLF_ADJ_SPREADING_RETRO",
-		"DOCUMENT_CLAIM",
+		"T_CLAIMLF_DOCUMENT",
 	}
 	for _, tb := range mau {
 		if !strings.Contains(sql, "CREATE TABLE {SKEMA}."+tb+" (") {
@@ -280,7 +280,7 @@ func TestSequenceUntukTabelYangMemakainya(t *testing.T) {
 	sql := gabungSemua(t)
 	for _, s := range []string{
 		"SEQ_CLAIMLF_PLD", "SEQ_CLAIMLF_ADJ", "SEQ_CLAIMLF_SPR",
-		"SEQ_CLAIMLF_SPR_RETRO", "SEQ_DOCUMENT_CLAIM",
+		"SEQ_CLAIMLF_SPR_RETRO", "SEQ_T_CLAIMLF_DOCUMENT",
 	} {
 		if !strings.Contains(sql, "CREATE SEQUENCE {SKEMA}."+s) {
 			t.Errorf("sequence %s tidak dibuat", s)
@@ -498,5 +498,102 @@ func TestSeluruhCreateDapatDibacaNamanya(t *testing.T) {
 	const mau = 19
 	if diperiksa != mau {
 		t.Errorf("pernyataan CREATE diperiksa %d, mau %d", diperiksa, mau)
+	}
+}
+
+// Pembanding bentuk tabel menyebut kedua arah selisihnya.
+//
+// Ini bagian MURNI dari pra-terbang butir x: ia tidak menyentuh Oracle sama
+// sekali, sehingga perilakunya terkunci di setiap `go test` biasa. Yang
+// dibandingkan hanya NAMA kolom - tipe sengaja tidak, sebab selisih tipe belum
+// tentu salah dan akan menghasilkan penolakan palsu.
+func TestSelisihKolomMenyebutKeduaArah(t *testing.T) {
+	kasus := []struct {
+		nama          string
+		ddl, katalog  []string
+		kurang, lebih []string
+	}{
+		{"sama persis",
+			[]string{"ID", "NAMA"}, []string{"ID", "NAMA"}, nil, nil},
+		{"urutan berbeda tetap sama",
+			[]string{"ID", "NAMA"}, []string{"NAMA", "ID"}, nil, nil},
+		{"huruf kecil di katalog tetap sama",
+			[]string{"ID", "NAMA"}, []string{"id", "nama"}, nil, nil},
+		{"katalog kurang satu kolom",
+			[]string{"ID", "NAMA", "TGL"}, []string{"ID", "NAMA"},
+			[]string{"TGL"}, nil},
+		{"katalog punya kolom yang tidak diminta",
+			[]string{"ID"}, []string{"ID", "IDPEGA", "NAMAFILE"},
+			nil, []string{"IDPEGA", "NAMAFILE"}},
+		{"berselisih di kedua arah",
+			[]string{"ID", "TGL"}, []string{"ID", "IDPEGA"},
+			[]string{"TGL"}, []string{"IDPEGA"}},
+		{"tabel katalog kosong",
+			[]string{"ID"}, nil, []string{"ID"}, nil},
+	}
+	for _, k := range kasus {
+		t.Run(k.nama, func(t *testing.T) {
+			kurang, lebih := SelisihKolom(k.ddl, k.katalog)
+			if !samaDaftar(kurang, k.kurang) {
+				t.Errorf("kurang = %v, mau %v", kurang, k.kurang)
+			}
+			if !samaDaftar(lebih, k.lebih) {
+				t.Errorf("lebih = %v, mau %v", lebih, k.lebih)
+			}
+		})
+	}
+}
+
+func samaDaftar(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// KolomCreateTable membaca nama dan kolom dari setiap CREATE TABLE migrasi.
+//
+// Cacahnya dikunci: delapan CREATE TABLE. Pernyataan yang BUKAN CREATE TABLE -
+// CREATE INDEX dan CREATE SEQUENCE - harus mengembalikan nama kosong, kalau
+// tidak pra-terbang akan mencari "bentuk" sebuah sequence.
+func TestKolomCreateTableMembacaSeluruhTabel(t *testing.T) {
+	langkah, err := daftarMigrasi(false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tabel, bukanTabel := 0, 0
+	for _, m := range langkah {
+		for _, p := range m.Pernyataan {
+			nama, kolom := KolomCreateTable(p)
+			if nama == "" {
+				bukanTabel++
+				continue
+			}
+			tabel++
+			if len(kolom) == 0 {
+				t.Errorf("%s: tabel %s terbaca tanpa satu pun kolom", m.Nama, nama)
+			}
+			for _, k := range kolom {
+				if strings.HasPrefix(k, "CONSTRAINT") || strings.HasPrefix(k, "REFERENCES") {
+					t.Errorf("%s: %s menganggap %q sebagai kolom", m.Nama, nama, k)
+				}
+			}
+		}
+	}
+	// Tujuh, bukan delapan: T_MIGRASI dibuat siapkanTabelMigrasi, di luar
+	// berkas migrasi. Sesudah migrasi, katalog memang memuat delapan tabel.
+	// 7 tabel + 5 sequence + 7 index = 19 pernyataan CREATE, cocok dengan
+	// cacah yang dikunci TestSeluruhCreateDapatDibacaNamanya.
+	const mauTabel = 7
+	if tabel != mauTabel {
+		t.Errorf("CREATE TABLE terbaca %d, mau %d", tabel, mauTabel)
+	}
+	if bukanTabel == 0 {
+		t.Error("nol pernyataan bukan-tabel; CREATE INDEX dan SEQUENCE seharusnya ada")
 	}
 }

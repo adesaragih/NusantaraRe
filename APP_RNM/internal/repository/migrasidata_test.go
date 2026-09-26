@@ -26,7 +26,11 @@ func contohBaris(id, caseID, sertifikat, jumlah string) BarisLama {
 		POLICY_NO:      "UJI-POL-0001",
 		CERTIFICATE_NO: sertifikat,
 		BUSINESSNAME:   "UJI BISNIS",
-		CLAIM_RETRO:    "UJI-RETRO",
+		// ⛔ Angka, bukan teks bertanda UJI-. Katalog menyebut CLAIM_RETRO
+		// NUMBER; nilai "UJI-RETRO" yang dipakai sampai 26-09-2026 akan
+		// dijawab ORA-01722 oleh tabel tiruan yang kini berbentuk sama dengan
+		// tabel sungguhan. Ia tetap penanda yang mudah dikenali di keluaran.
+		CLAIM_RETRO:    "7777.7777",
 		PL_NUMBER:      "UJI-PL-1",
 		CURRENCY:       "IDR",
 		CLAIM_AMOUNT:   jumlah,

@@ -461,3 +461,71 @@ func TestNamaConstraintBertabrakanMenggagalkanMigrasi(t *testing.T) {
 		t.Errorf("langkah 001 tercatat %d kali di T_MIGRASI padahal gagal", n)
 	}
 }
+
+// Tabel yang sudah ada dengan BENTUK berbeda menggagalkan migrasi.
+//
+// `[keputusan work owner 26-09-2026, butir x]`. Ini kelemahan ronde 3 yang
+// sengaja dibiarkan separuh: keberadaan objek dibuktikan, bentuknya tidak.
+// Pada 26-09-2026 ia terbukti nyata - DOCUMENT_CLAIM sudah ada di skema
+// warisan dengan empat belas kolom yang bukan milik DDL 007.
+//
+// Yang dituntut: migrasi GAGAL, galatnya menyebut nama tabel dan kolom yang
+// berselisih, dan TIDAK SATU PUN langkah tercatat di T_MIGRASI - sebab
+// pra-terbang berhenti sebelum satu pernyataan pun dikirim.
+func TestBentukTabelBerbedaMenggagalkanMigrasi(t *testing.T) {
+	db, _, bersihkan := siapkanPohon(t)
+	defer bersihkan()
+	ctx := context.Background()
+
+	sqlDB, skema, err := skemauji.Buka()
+	if err != nil {
+		if !skemauji.BolehDilewati(err) {
+			t.Fatalf("skema uji menolak: %v", err)
+		}
+		t.Skipf("lewati: %v", err)
+	}
+	defer func() { _ = sqlDB.Close() }()
+
+	if _, err := db.BongkarMigrasi(ctx); err != nil {
+		t.Fatalf("membongkar: %v", err)
+	}
+	// Tabel bernama sama dengan yang dibuat 007, tetapi kolomnya sengaja
+	// BUKAN kolom 007 - meniru keadaan DOCUMENT_CLAIM warisan di POOLDATA.
+	//
+	// ⚠️ Sesudah keputusan v1 tabel baru bernama T_CLAIMLF_DOCUMENT, sehingga
+	// DOCUMENT_CLAIM warisan tidak lagi bertabrakan dengan migrasi mana pun.
+	// Yang diuji di sini karena itu bukan tabrakan nama itu, melainkan PAGAR
+	// BENTUK-nya: tabel apa pun yang sudah ada dengan kolom yang berbeda harus
+	// menghentikan migrasi.
+	_, err = sqlDB.ExecContext(ctx, "CREATE TABLE "+skema+
+		".T_CLAIMLF_DOCUMENT (ID VARCHAR2(100) NOT NULL, IDPEGA VARCHAR2(100), NAMAFILE VARCHAR2(255))")
+	if err != nil {
+		t.Fatalf("membuat tiruan tabel warisan: %v", err)
+	}
+	defer func() {
+		_, _ = sqlDB.ExecContext(ctx, "DROP TABLE "+skema+".T_CLAIMLF_DOCUMENT CASCADE CONSTRAINTS")
+	}()
+
+	_, err = db.JalankanMigrasi(ctx)
+	if err == nil {
+		t.Fatal("migrasi LULUS padahal T_CLAIMLF_DOCUMENT berbentuk lain - " +
+			"aplikasi akan berjalan di atas tabel yang kolomnya bukan miliknya")
+	}
+	// Pesannya harus menyebut tabelnya, salah satu kolom yang tidak diminta,
+	// dan salah satu kolom yang diminta tetapi tidak ada.
+	for _, wajib := range []string{"T_CLAIMLF_DOCUMENT", "IDPEGA", "BENTUKNYA BERBEDA"} {
+		if !strings.Contains(err.Error(), wajib) {
+			t.Errorf("galat %q tidak menyebut %q", err, wajib)
+		}
+	}
+
+	// ⛔ NOL langkah tercatat: pra-terbang berhenti sebelum eksekusi.
+	var n int
+	if err := sqlDB.QueryRowContext(ctx,
+		"SELECT COUNT(*) FROM "+skema+".T_MIGRASI").Scan(&n); err != nil {
+		t.Fatalf("membaca T_MIGRASI: %v", err)
+	}
+	if n != 0 {
+		t.Errorf("%d langkah tercatat di T_MIGRASI padahal pra-terbang menolak", n)
+	}
+}

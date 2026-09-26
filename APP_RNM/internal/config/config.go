@@ -36,8 +36,63 @@ type Config struct {
 	// (ADR-U-0005). Dipakai sebagai gerbang perilaku, bukan sebagai hiasan.
 	IsPegaProd bool
 
+	// SkemaUjiDiakui adalah pengakuan sadar bahwa skema yang ditunjuk
+	// OracleSchema boleh DIHAPUS isinya. Dibaca dari ORACLE_SKEMA_UJI.
+	//
+	// Hanya operasi merusak yang memakainya - test bertag db dan
+	// `-migrate-down`. `-migrate` tidak: ia hanya membuat objek.
+	SkemaUjiDiakui bool
+
 	// Layanan memetakan nama layanan luar ke alamatnya, seluruhnya dari env.
 	Layanan map[string]string
+}
+
+// ErrBukanSkemaUji menolak operasi merusak di luar skema uji.
+var ErrBukanSkemaUji = errors.New("konfigurasi: menolak operasi merusak di luar skema uji")
+
+// EnvSkemaUji adalah nama env var pengakuan itu.
+const EnvSkemaUji = "ORACLE_SKEMA_UJI"
+
+// NamaSkemaWarisan adalah skema Pega yang memuat tabel warisan sungguhan.
+const NamaSkemaWarisan = "POOLDATA"
+
+// PagarSkemaUji memutuskan apakah operasi MERUSAK boleh menyentuh skema ini.
+//
+// Dipisah dari environment supaya dapat diuji tanpa Oracle dan tanpa env var.
+// Dua syarat, KEDUANYA harus benar:
+//  1. env ORACLE_SKEMA_UJI bernilai "true"
+//  2. nama skema tidak memuat POOLDATA
+//
+// Syarat kedua tidak dapat ditutupi oleh syarat pertama: menyetel env tidak
+// membuat skema warisan menjadi skema uji.
+//
+// Tempatnya di sini, bukan di paket skema uji, sebab DUA pemanggil
+// membutuhkannya: test bertag db dan flag `-migrate-down` di cmd/api - dan
+// cmd/api tidak boleh mengimpor paket penunjang test.
+func PagarSkemaUji(skema, diakui string) error {
+	if strings.TrimSpace(strings.ToLower(diakui)) != "true" {
+		return fmt.Errorf("%w: env %s belum bernilai true; operasi ini MENGHAPUS tabel "+
+			"di skema yang ditunjuk ORACLE_SCHEMA. Setel %s=true hanya bila skema itu "+
+			"memang skema uji kosong dari DBA", ErrBukanSkemaUji, EnvSkemaUji, EnvSkemaUji)
+	}
+	// MEMUAT, bukan sama persis: POOLDATA_DEV dan POOLDATA2 adalah skema
+	// warisan juga. Untuk operasi yang MENGHAPUS, menolak terlalu banyak jauh
+	// lebih murah daripada meloloskan satu yang salah.
+	if strings.Contains(strings.ToUpper(strings.TrimSpace(skema)), NamaSkemaWarisan) {
+		return fmt.Errorf("%w: ORACLE_SCHEMA menunjuk %s, yang memuat nama skema warisan Pega %s; "+
+			"tabel sungguhan ada di sana. Pakai skema uji kosong, dan %s=true tidak mengubah hal ini",
+			ErrBukanSkemaUji, skema, NamaSkemaWarisan, EnvSkemaUji)
+	}
+	return nil
+}
+
+// PastikanSkemaUji menjalankan pagar itu atas konfigurasi yang terbaca.
+func (c Config) PastikanSkemaUji() error {
+	diakui := "false"
+	if c.SkemaUjiDiakui {
+		diakui = "true"
+	}
+	return PagarSkemaUji(c.OracleSchema, diakui)
 }
 
 // ErrKonfigurasi membungkus seluruh kegagalan pembacaan konfigurasi.
@@ -51,6 +106,8 @@ func Load() (Config, error) {
 		OracleSchema: strings.TrimSpace(os.Getenv("ORACLE_SCHEMA")),
 		Layanan:      map[string]string{},
 	}
+
+	c.SkemaUjiDiakui = strings.EqualFold(strings.TrimSpace(os.Getenv(EnvSkemaUji)), "true")
 
 	raw := strings.TrimSpace(os.Getenv("IS_PEGA_PROD"))
 	if raw != "" {

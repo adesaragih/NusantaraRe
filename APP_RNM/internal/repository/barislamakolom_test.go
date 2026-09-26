@@ -69,6 +69,11 @@ func TestUrutanKolomDanTujuanScanSejajar(t *testing.T) {
 }
 
 // Kolom angka dan tanggal dibungkus TO_CHAR; kolom teks tidak.
+//
+// ⛔ Ralat 26-09-2026: STS_REJECT dulu didaftar di sini sebagai kolom TEKS,
+// dan itu keliru - katalog menyebutnya NUMBER(38,0). WPC juga, dan ia DATE.
+// Keduanya kini dibungkus, sehingga pembacaannya tidak lagi bergantung setelan
+// NLS sesi.
 func TestEkspresiBacaMembungkusYangSeharusnya(t *testing.T) {
 	kasus := map[string]string{
 		"CLAIM_AMOUNT":     "TO_CHAR",
@@ -76,9 +81,11 @@ func TestEkspresiBacaMembungkusYangSeharusnya(t *testing.T) {
 		"AGE":              "TO_CHAR",
 		"ACCEPTATION_DATE": "TO_CHAR",
 		"DOB":              "TO_CHAR",
+		"STS_REJECT":       "TO_CHAR",
+		"CLAIM_RETRO":      "TO_CHAR",
+		"WPC":              "TO_CHAR",
 		"CERTIFICATE_NO":   "",
 		"POLICY_NO":        "",
-		"STS_REJECT":       "",
 	}
 	for kolom, mau := range kasus {
 		e := ekspresiBacaLama(kolom)
@@ -166,15 +173,26 @@ func TestTanggalDinormalkanSebelumDitulis(t *testing.T) {
 	}
 }
 
-// Tipe kolom tiruan mengikuti penggolongannya.
+// Tipe kolom tiruan mengikuti KATALOG, bukan penggolongan yang ditebak.
+//
+// ⛔ Ralat 26-09-2026: angka di test ini dulu adalah tebakan yang rapi -
+// NUMBER(38,8) untuk semua kolom angka, VARCHAR2(255) untuk semua teks,
+// NUMBER(5) untuk AGE. Tabel sungguhan tidak serapi itu, dan tiruan yang
+// bentuknya beda dari yang ditiru tidak menguji apa pun tentang bentuk.
 func TestTipeKolomTiruanMengikutiGolongan(t *testing.T) {
 	kasus := map[string]string{
-		"AGE":              "NUMBER(5)",
-		"CLAIM_AMOUNT":     "NUMBER(38,8)",
-		"SUM_INSURED":      "NUMBER(38,8)",
+		"AGE":              "NUMBER(38,0)",
+		"STS_REJECT":       "NUMBER(38,0)",
+		"CLAIM_AMOUNT":     "NUMBER",
+		"SUM_INSURED":      "NUMBER",
+		"CLAIM_RETRO":      "NUMBER",
 		"ACCEPTATION_DATE": "DATE",
 		"DOB":              "DATE",
-		"POLICY_NO":        "VARCHAR2(255)",
+		"WPC":              "DATE",
+		"POLICY_NO":        "VARCHAR2(100)",
+		"POLICY_HOLDER":    "VARCHAR2(1000)",
+		"ICD_CODE":         "VARCHAR2(10)",
+		"STS_KONVERSI":     "CHAR(1)",
 	}
 	for kolom, mau := range kasus {
 		if got := TipeKolomBarisLama(kolom); got != mau {

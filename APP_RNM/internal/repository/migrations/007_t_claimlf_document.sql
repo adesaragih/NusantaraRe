@@ -20,13 +20,13 @@
 -- kemunculan di rule SQL mana pun. Menuliskan kolom isinya berarti mengarang.
 -- Yang dibuat di sini hanya kunci utama dan kunci tamu, yang keduanya memang
 -- sudah ditetapkan. Kolom isinya menunggu DBA.
-CREATE TABLE {skema}.DOCUMENT_CLAIM (
+CREATE TABLE {skema}.T_CLAIMLF_DOCUMENT (
   ID                      NUMBER(19) NOT NULL,
   PREMIUM_LIST_DETAIL_ID  VARCHAR2(32),
-  CONSTRAINT PK_DOCUMENT_CLAIM PRIMARY KEY (ID),
+  CONSTRAINT PK_T_CLAIMLF_DOCUMENT PRIMARY KEY (ID),
   CONSTRAINT FK_DOC_PLD FOREIGN KEY (PREMIUM_LIST_DETAIL_ID)
     REFERENCES {skema}.T_CLAIMLF_PREMIUMLIST_DETAIL (ID)
 )
 /
-CREATE INDEX {skema}.IX_DOC_PLD_ID ON {skema}.DOCUMENT_CLAIM (PREMIUM_LIST_DETAIL_ID)
+CREATE INDEX {skema}.IX_DOC_PLD_ID ON {skema}.T_CLAIMLF_DOCUMENT (PREMIUM_LIST_DETAIL_ID)
 /
