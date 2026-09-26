@@ -38,8 +38,12 @@ func (r *KlaimLife) AmbilHeader(ctx context.Context, id string) (*models.Klaim, 
 	if err != nil {
 		return nil, err
 	}
+	// CLAIM_RETRO dibaca lewat TO_CHAR ber-argumen NLS: ia uang (butir w2), dan
+	// uang tidak pernah lewat float maupun bergantung setelan sesi
+	// (ADR-U-0003, ADR-U-0016).
 	q := fmt.Sprintf(
-		`SELECT ID, CLAIM_NO, POLICY_NO, BUSINESS_NAME, STS_REJECT FROM %s WHERE ID = :1`, tabel)
+		`SELECT ID, CLAIM_NO, POLICY_NO, BUSINESS_NAME, STS_REJECT, `+fmtDesimal+
+			` FROM %s WHERE ID = :1`, "CLAIM_RETRO", tabel)
 	if err := PeriksaSQL(q); err != nil {
 		return nil, err
 	}
@@ -47,14 +51,22 @@ func (r *KlaimLife) AmbilHeader(ctx context.Context, id string) (*models.Klaim, 
 	var (
 		kID                            string
 		nomorKlaim, nomorPolis, bisnis sql.NullString
-		kodeStatus                     sql.NullString
+		kodeStatus, claimRetro         sql.NullString
 	)
-	err = r.db.sql.QueryRowContext(ctx, q, id).Scan(&kID, &nomorKlaim, &nomorPolis, &bisnis, &kodeStatus)
+	err = r.db.sql.QueryRowContext(ctx, q, id).
+		Scan(&kID, &nomorKlaim, &nomorPolis, &bisnis, &kodeStatus, &claimRetro)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca header klaim: %w", err)
+	}
+	// ⚠️ Mata uangnya KOSONG di sini: T_GENERAL_CLAIM tidak punya kolom mata
+	// uang, dan menebaknya berarti mengarang. Yang membacanya bersama peserta
+	// mendapat mata uang dari baris adjustment.
+	retro, err := uraiUang(kID, "CLAIM_RETRO", claimRetro, "")
+	if err != nil {
+		return nil, err
 	}
 	return &models.Klaim{
 		ID:         kID,
@@ -62,6 +74,7 @@ func (r *KlaimLife) AmbilHeader(ctx context.Context, id string) (*models.Klaim, 
 		NomorPolis: nomorPolis.String,
 		NamaBisnis: bisnis.String,
 		KodeStatus: kodeStatus.String,
+		ClaimRetro: retro,
 	}, nil
 }
 

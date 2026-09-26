@@ -164,7 +164,43 @@ func BongkarBarisLama(baris []BarisLama) ([]models.PohonKlaim, LaporanRekonsilia
 				NomorKlaim: rows[0].NO_CLAIM,
 				NomorPolis: rows[0].POLICY_NO,
 				NamaBisnis: rows[0].BUSINESSNAME,
+				// Mata uangnya datang dari baris adjustment: header warisan
+				// tidak punya kolom mata uang sendiri (butir w2).
+				ClaimRetro: models.Money{Currency: rows[0].CURRENCY},
 			},
+		}
+
+		// ⛔ Mata uang header diambil dari baris PERTAMA, dan itu hanya benar
+		// bila seluruh baris klaim menyepakatinya. CURRENCY bukan anggota
+		// atributKlaim - jadi tanpa pemeriksaan ini, klaim bermata-uang campur
+		// akan mendapat mata uang sembarang TANPA ada yang tahu. Uang yang
+		// mata uangnya dipilih diam-diam adalah persis hal yang ADR-F-0004
+		// dan seluruh disiplin uang proyek ini cegah.
+		mataUang := map[string]bool{}
+		for _, b := range rows {
+			mataUang[strings.TrimSpace(b.CURRENCY)] = true
+		}
+		if len(mataUang) > 1 {
+			lap.Temuan = append(lap.Temuan, Temuan{
+				Jenis: TemuanAtributBerbeda, Sumber: caseID, Medan: "CURRENCY",
+				Catatan: fmt.Sprintf("baris satu klaim memakai %d mata uang berbeda; "+
+					"mata uang ClaimRetro diambil dari baris pertama", len(mataUang)),
+			})
+		}
+
+		// CLAIM_RETRO adalah UANG di tingkat header (butir w2). Diurai dengan
+		// pola yang sama seperti jumlah klaim: yang gagal DILAPORKAN, tidak
+		// ditebak dan tidak membuat proses berhenti.
+		if teks := strings.TrimSpace(rows[0].CLAIM_RETRO); teks != "" {
+			d, err := utils.ParseDecimal(teks)
+			if err != nil {
+				lap.Temuan = append(lap.Temuan, Temuan{
+					Jenis: TemuanUangTakTerurai, Sumber: rows[0].ID, Medan: "CLAIM_RETRO",
+					Catatan: fmt.Sprintf("nilai %q tidak dapat diurai: %v", teks, err),
+				})
+			} else {
+				p.Klaim.ClaimRetro.Amount = d
+			}
 		}
 
 		urutPeserta := []string{}
@@ -316,6 +352,10 @@ func BarisLamaDari(p models.PohonKlaim) []BarisLama {
 				PL_NUMBER:      ps.NomorPremiList,
 				CURRENCY:       adj.JumlahKlaim.Currency,
 				CLAIM_AMOUNT:   utils.FormatDecimal(adj.JumlahKlaim.Amount),
+				// Nilai header disalin ke TIAP baris datar - begitulah tabel
+				// warisan menyimpannya, dan rekonsiliasi memang menuntut
+				// seluruh baris satu klaim menyepakatinya (atributKlaim).
+				CLAIM_RETRO:    utils.FormatDecimal(p.Klaim.ClaimRetro.Amount),
 				STS_REJECT:     adj.KodeStatus,
 				NO_ACCEPTATION: adj.NomorAkseptasi,
 				// Tanggal ditulis dalam satu bentuk yang sama dengan yang

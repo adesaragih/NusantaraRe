@@ -254,3 +254,123 @@ func TestSetiapPemanggilBukaMemeriksaBolehDilewati(t *testing.T) {
 			"bila memang bertambah, perbarui angkanya di sini", diperiksa, mau)
 	}
 }
+
+// Nama tabel lama hanya boleh muncul sebagai rujukan ke yang WARISAN.
+//
+// `[keputusan work owner 26-09-2026, butir v1]` mengganti nama tabel dokumen
+// yang BARU menjadi T_CLAIMLF_DOCUMENT, sebab POOLDATA.DOCUMENT_CLAIM sudah ada
+// dengan empat belas kolom milik kelas Pega dan 295 baris. Rename itu tuntas di
+// SQL dan kode, tetapi tertinggal di lima komentar - dan komentar yang menyebut
+// nama tabel yang tidak ada akan menyesatkan pembaca berikutnya, yang justru
+// pembaca yang paling membutuhkan komentar itu.
+//
+// Dua bentuk yang SAH, dan hanya dua:
+//   - "Int-DOCUMENT_CLAIM"  nama kelas Pega, bukan nama tabel; tidak berubah
+//   - satu baris dengan kata "warisan"  rujukan sadar ke tabel warisan
+func TestNamaTabelDokumenLamaHanyaUntukWarisan(t *testing.T) {
+	var berkas []string
+	akar := filepath.FromSlash(akarModul + "/internal/repository")
+	err := filepath.Walk(akar, func(p string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		n := filepath.ToSlash(p)
+		// Berkas ini sendiri menyebut nama itu di komentar dan literalnya, jadi
+		// ia akan menghitung dirinya sendiri. Alat ukur tidak boleh masuk ke
+		// dalam benda yang diukurnya.
+		//
+		// ⚠️ Pengecualian ini TIDAK dipakai menyembunyikan pelanggaran: setiap
+		// baris berkas ini yang menyebut nama lama ditulis agar lulus aturannya
+		// sendiri - lewat frasa Int-, atau bersama kata "warisan".
+		if strings.HasSuffix(n, "/batasanpemakaian_test.go") {
+			return nil
+		}
+		if strings.HasSuffix(n, ".sql") || strings.HasSuffix(n, ".go") {
+			berkas = append(berkas, p)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(berkas) == 0 {
+		t.Fatal("nol berkas terbaca; pembacanya yang rusak")
+	}
+
+	const lama = "DOCUMENT_CLAIM"
+	diperiksa := 0
+	for _, nama := range berkas {
+		isi, err := os.ReadFile(nama)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for i, baris := range strings.Split(string(isi), "\n") {
+			if !strings.Contains(baris, lama) {
+				continue
+			}
+			diperiksa++
+			// Hanya nama kelas Pega yang dibuang sebelum memeriksa. Nama
+			// tabel BARU tidak perlu dibuang: "T_CLAIMLF_DOCUMENT" tidak
+			// memuat "DOCUMENT_CLAIM" sebagai potongan teks.
+			bersih := strings.ReplaceAll(baris, "Int-"+lama, "")
+			if !strings.Contains(bersih, lama) {
+				continue
+			}
+			if strings.Contains(strings.ToLower(baris), "warisan") {
+				continue
+			}
+			t.Errorf("%s:%d menyebut %s sebagai tabel BARU; namanya kini "+
+				"T_CLAIMLF_DOCUMENT (butir v1): %s",
+				filepath.ToSlash(nama), i+1, lama, strings.TrimSpace(baris))
+		}
+	}
+	if diperiksa == 0 {
+		t.Fatal("nol baris memuat nama itu; pembacanya yang rusak, bukan kodenya")
+	}
+	t.Logf("%d baris memuat nama lama, seluruhnya sah", diperiksa)
+}
+
+// Jalur tulis baris datar warisan memanggil pagar nilainya.
+//
+// ⛔ Kenapa ini dijaga terpisah dari pagar itu sendiri: menguji
+// PeriksaNilaiWarisan membuktikan fungsinya benar, BUKAN bahwa ia dipasang.
+// Saat pagar itu ditulis (butir s1), mencabut pemanggilannya dari Simpan tidak
+// menggagalkan satu test pun - fungsinya tetap lulus sendirian, dan jalur tulis
+// diam-diam kembali mengirim teks ke kolom NUMBER. Test ini menutup selisih
+// antara "ada" dan "dipakai".
+// ⛔ "Satu jalur" ternyata tidak cukup: tinjauan menemukan jalur KEDUA,
+// skemauji.IsiBarisLama, yang mem-bind NilaiBarisLama mentah ke tabel tiruan -
+// persis jalur yang melahirkan ORA-01722 pada ronde 5. Test ini karena itu
+// memeriksa SELURUH penulis dan mengunci cacahnya, supaya jalur ketiga tidak
+// dapat muncul tanpa pagar.
+//
+// ⚠️ Batasnya, dikatakan terus terang: ia membaca TEKS, jadi menulis
+// `_ = PeriksaNilaiWarisan(b)` - memanggil lalu membuang galatnya - akan
+// meluluskannya. Yang dijaga "dipanggil atau tidak", bukan "dipakai benar".
+func TestSetiapJalurTulisWarisanDipagari(t *testing.T) {
+	// Dua penanda penulis: bind medan satu per satu (Simpan), dan bind lewat
+	// daftar nilai (IsiBarisLama).
+	penanda := []string{"BarisLamaDari(p)", "NilaiBarisLama(b)"}
+	ditemukan := 0
+	for nama, isi := range berkasGoSelainTest(t) {
+		for _, tanda := range penanda {
+			if !strings.Contains(isi, tanda) {
+				continue
+			}
+			ditemukan++
+			if !strings.Contains(isi, "PeriksaNilaiWarisan(b)") {
+				t.Errorf("%s menulis baris datar warisan lewat %s tanpa memanggil "+
+					"PeriksaNilaiWarisan; nilai bukan-angka akan sampai ke Oracle "+
+					"sebagai ORA-01722 (butir s1)", nama, tanda)
+			}
+		}
+	}
+	const mau = 2
+	if ditemukan != mau {
+		t.Errorf("penulis baris datar warisan ditemukan %d, mau %d; bila memang "+
+			"bertambah, pagarnya dipasang dulu lalu angka ini diperbarui", ditemukan, mau)
+	}
+}

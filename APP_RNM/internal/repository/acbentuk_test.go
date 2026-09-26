@@ -46,14 +46,14 @@ func wajibMemuat(t *testing.T, sql, tabel string, nama []string) {
 	}
 }
 
-// AC 5: kunci tamu DOCUMENT_CLAIM menunjuk PESERTA, bukan header klaim.
+// AC 5: kunci tamu T_CLAIMLF_DOCUMENT menunjuk PESERTA, bukan header klaim.
 func TestAC05DokumenMenunjukPeserta(t *testing.T) {
 	sql := sqlTabel(t, "007_")
 	if !strings.Contains(sql, "REFERENCES {SKEMA}.T_CLAIMLF_PREMIUMLIST_DETAIL (ID)") {
-		t.Error("FK DOCUMENT_CLAIM tidak menunjuk T_CLAIMLF_PREMIUMLIST_DETAIL (ID)")
+		t.Error("FK T_CLAIMLF_DOCUMENT tidak menunjuk T_CLAIMLF_PREMIUMLIST_DETAIL (ID)")
 	}
 	if strings.Contains(sql, "REFERENCES {SKEMA}.T_GENERAL_CLAIM") {
-		t.Error("DOCUMENT_CLAIM menggantung pada header klaim - seharusnya pada peserta")
+		t.Error("T_CLAIMLF_DOCUMENT menggantung pada header klaim - seharusnya pada peserta")
 	}
 }
 

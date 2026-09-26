@@ -143,3 +143,32 @@ func TestBarisMelekatPadaPesertanya(t *testing.T) {
 		t.Errorf("baris pertama hilang - hanya baris terakhir yang tersimpan")
 	}
 }
+
+// ClaimRetro ikut ke JSON, sebagai TEKS.
+//
+// ⛔ Tinjauan ronde 6 menemukan medan ini dibaca dari Oracle lalu dibuang saat
+// serialisasi: MarshalJSON mendaftar medannya satu per satu, dan yang baru
+// terlewat. Separuh butir w2 mati tanpa satu test pun gagal.
+func TestKlaimMembawaClaimRetroKeJSON(t *testing.T) {
+	uang, err := NewMoney("7777.7777", "IDR")
+	if err != nil {
+		t.Fatal(err)
+	}
+	k := Klaim{ID: "UJI-1", ClaimRetro: uang}
+	b, err := json.Marshal(k)
+	if err != nil {
+		t.Fatal(err)
+	}
+	teks := string(b)
+	if !strings.Contains(teks, `"claimRetro"`) {
+		t.Fatalf("JSON tidak memuat claimRetro: %s", teks)
+	}
+	// ⛔ Angka JSON dilarang: setiap pustaka membacanya sebagai float64
+	// (ADR-U-0003). Jumlahnya harus muncul di dalam tanda kutip.
+	if !strings.Contains(teks, `"7777.7777"`) {
+		t.Errorf("jumlah claimRetro bukan teks berkutip: %s", teks)
+	}
+	if strings.Contains(teks, `:7777.7777`) {
+		t.Errorf("jumlah claimRetro ditulis sebagai angka JSON: %s", teks)
+	}
+}

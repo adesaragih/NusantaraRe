@@ -151,7 +151,7 @@ var ErrIdentitasBelumAda = errors.New(
 // nomorBerikut mengambil satu nomor dari sequence.
 //
 // "Sequence" adalah pembangkit angka berurut milik Oracle. ADR-U-0006
-// menetapkan identitas T_CLAIMLF_* dan DOCUMENT_CLAIM berasal dari sini -
+// menetapkan identitas seluruh tabel T_CLAIMLF_* berasal dari sini -
 // bukan dari cap waktu, bukan dari teks yang disusun sendiri.
 func (r *PohonKlaim) nomorBerikut(ctx context.Context, tx *Tx, sequence string) (string, error) {
 	nama, err := r.db.Qualify(sequence)
@@ -367,6 +367,12 @@ func (r *PohonKlaim) Simpan(ctx context.Context, tx *Tx, p models.PohonKlaim) er
 	// PRODUCTNAME) menunggu tahap yang mengisinya - medical check, penutupan,
 	// dan modul PremiumList Life.
 	for _, b := range BarisLamaDari(p) {
+		// ⛔ Dipagari SEBELUM bind: kolom yang di tabel warisan bertipe NUMBER
+		// harus menerima bilangan, dan galat yang menyebut kolom serta nilainya
+		// jauh lebih berguna daripada ORA-01722 (butir s1).
+		if err = PeriksaNilaiWarisan(b); err != nil {
+			return err
+		}
 		err = r.exec(ctx, tx, fmt.Sprintf(`INSERT INTO %s
 			(ID, CASEID, NO_CLAIM, POLICY_NO, CERTIFICATE_NO, PL_NUMBER, BUSINESSNAME,
 			 CLAIM_RETRO, CURRENCY, CLAIM_AMOUNT, STS_REJECT, NO_ACCEPTATION,
@@ -400,9 +406,9 @@ func (r *PohonKlaim) Simpan(ctx context.Context, tx *Tx, p models.PohonKlaim) er
 //
 // Tabel anak di relasi 3, 4, 5, dan 6 ikut terhapus oleh kaskade Oracle sampai
 // tingkat terdalam. Yang TIDAK kaskade dan karena itu dihapus di sini adalah
-// DOCUMENT_CLAIM (lintas-lini), baris datar warisan, dan akar work object.
+// T_CLAIMLF_DOCUMENT (lintas-lini), baris datar warisan, dan akar work object.
 //
-// Urutannya penting: DOCUMENT_CLAIM dibuang LEBIH DULU. Kunci tamunya sengaja
+// Urutannya penting: T_CLAIMLF_DOCUMENT dibuang LEBIH DULU. Kunci tamunya sengaja
 // tanpa ON DELETE, sehingga menghapus header selagi masih ada baris dokumen
 // akan ditolak Oracle dengan ORA-02292 (induk masih punya anak).
 func (r *PohonKlaim) Hapus(ctx context.Context, tx *Tx, id, caseID string) error {

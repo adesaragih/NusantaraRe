@@ -138,7 +138,7 @@ Header klaim Life. Satu baris mewakili **satu klaim**. `ID`-nya **sama persis** 
 | `STS_REJECT` | teks | ya | | korpus `STS_REJECT` — UpdOS, InsOS |
 | `RI_SLIP_RNM` | teks | ya | | keputusan tiket 14 |
 | `BUSINESS_NAME` | teks | ya | | korpus `BUSINESSNAME` — UpdOS, InsOS |
-| `CLAIM_RETRO` | teks | ya | | korpus `CLAIM_RETRO` — UpdOS, InsOS; ⚠️ **`[terbuka]` 26-09-2026**, lihat bawah |
+| `CLAIM_RETRO` | desimal | ya | | korpus `CLAIM_RETRO` — UpdOS, InsOS; ✅ **ralat 26-09-2026**, lihat bawah |
 | `CASEID_POLICY` | teks | ya | | keputusan tiket 14 — penunjuk polis |
 | `POLICY_NO` | teks | ya | | keputusan tiket 14 (ganti nama dari `PL_NUMBER`); korpus `POLICY_NO` — UpdOS, InsOS |
 | `ENDORSMENT_NO` | teks | ya | | keputusan tiket 14 — penunjuk polis |
@@ -482,7 +482,7 @@ pengembangan dibaca 26-09-2026 dan disimpan sebagai `[data DBA]` di
 | --- | --- | --- | --- |
 | `WPC` | teks | **`DATE`** | ✅ `[keputusan work owner butir w]` — baris di atas diralat menjadi **tanggal**, dan `003_t_claimlf_premiumlist_detail.sql` menjadi `WPC DATE`. Nol kode Go menyentuh kolom itu di tabel baru |
 | `STS_REJECT` | teks | **`NUMBER(38,0)`** | ✅ peta tipe dan tabel tiruan skema uji mengikuti katalog. Baris dokumen ini tidak diubah: `STS_REJECT` di tabel **baru** memang teks atas keputusan terpisah *(kode status, ADR-U-0022)*, dan yang diralat hanyalah pembacaan tabel **warisan** |
-| `CLAIM_RETRO` | teks | **`NUMBER`** | ⚠️ **`[terbuka]`** — tipenya diketahui, **artinya tidak**. Uang atau perbandingan? Selama itu belum dijawab, `002_t_general_claim.sql` **tidak disentuh** dan tetap `VARCHAR2(64)`. Pemilik: work owner |
+| `CLAIM_RETRO` | teks | **`NUMBER`** | ✅ **`[terbuka]` DICABUT 26-09-2026 malam** — `[keputusan work owner butir w2]`: ia **UANG**, dan `002_t_general_claim.sql` menjadi `NUMBER(38,8)`. Lihat blok di bawah |
 
 ⛔ **Yang ikut tersingkap:** fixture test mengisi `CLAIM_RETRO` dengan teks `"UJI-RETRO"`. Selama
 tabel tiruan bertipe `VARCHAR2` semuanya, itu lolos; terhadap tabel yang berbentuk sama dengan
@@ -491,3 +491,36 @@ bahwa setiap nilai yang menuju kolom angka berupa angka atau kosong.
 
 ⚠️ Produksi **belum** dibaca. Bentuk di produksi diasumsikan sama dengan pengembangan; DBA yang
 dapat memastikannya.
+
+
+---
+
+## ✅ RALAT 26 September 2026 malam — `CLAIM_RETRO` adalah UANG
+
+`[keputusan work owner butir w2]`. Ronde 5 menahannya: tipe `NUMBER` sudah diketahui dari katalog,
+**artinya belum** — uang atau perbandingan. Menebaknya akan mengulang persis kesalahan yang baru
+saja dibongkar, jadi ia ditahan satu ronde.
+
+Buktinya kini ada, dan menunjuk satu arah:
+
+| Bukti | Angka |
+| --- | --- |
+| Nilai di rentang 0–1 *(ciri perbandingan pecahan)* | **0** |
+| Nilai di rentang 1–100 *(ciri persen)* | **0** |
+| Nilai di atas 100 | **4.778** |
+| Nilai berdesimal | **475** |
+| Baris dengan `CLAIM_RETRO` < `CLAIM_AMOUNT` | **8.755** *(782 sama; 220 lebih besar — anomali data, dicatat)* |
+| Label Pega di `AdjustmentDetail_Section` | *"Claim Retro"*, di samping label uang lain |
+
+⚠️ Seluruhnya **agregat** instance pengembangan: cacah dan rentang saja, **nol baris data dibaca**.
+
+**Akibatnya:** `002_t_general_claim.sql` `CLAIM_RETRO` menjadi **`NUMBER(38,8)`**; di Go ia
+`models.Money`, bukan `Ratio` — keduanya sengaja bertipe berbeda supaya tidak pernah terjumlahkan
+(ADR-F-0004). `BarisLamaDari` kini menuliskannya ke tiap baris datar, dan nilai itu dibaca kembali
+saat klaim dibongkar dari tabel warisan.
+
+⚠️ **`[terbuka]` baru yang lahir dari keputusan ini:** `T_GENERAL_CLAIM` **tidak punya kolom mata
+uang**, sedangkan uang tanpa mata uang tidak bermakna. Saat klaim dibongkar dari tabel warisan,
+mata uangnya diambil dari baris adjustment; saat header dibaca sendirian lewat `AmbilHeader`, ia
+**kosong**. Menambahkan kolom mata uang ke header adalah keputusan tersendiri, dan executor tidak
+mengarangnya. Pemilik: work owner.

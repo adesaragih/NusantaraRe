@@ -214,7 +214,7 @@ func TestAdjustmentMenggantungPadaPeserta(t *testing.T) {
 	}
 }
 
-// Kaskade hanya pada relasi 3, 4, 5, 6. DOCUMENT_CLAIM (relasi 7) ditangani
+// Kaskade hanya pada relasi 3, 4, 5, 6. T_CLAIMLF_DOCUMENT (relasi 7) ditangani
 // di Go, jadi kunci tamunya TANPA ON DELETE.
 func TestKaskadeHanyaPadaEmpatRelasi(t *testing.T) {
 	berkas := seluruhSQL(t, false)
@@ -275,7 +275,7 @@ func TestKunciTamuBerIndex(t *testing.T) {
 	}
 }
 
-// ADR-U-0006: identitas T_CLAIMLF_* dan DOCUMENT_CLAIM dari sequence.
+// ADR-U-0006: identitas seluruh tabel T_CLAIMLF_* dari sequence.
 func TestSequenceUntukTabelYangMemakainya(t *testing.T) {
 	sql := gabungSemua(t)
 	for _, s := range []string{

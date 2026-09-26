@@ -32,6 +32,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"nusantarare/pkg/utils"
 )
 
 // berkasKatalogWarisan adalah dokumen [data DBA] hasil pembacaan ALL_TAB_COLUMNS.
@@ -190,23 +192,22 @@ func TestKolomDitulisAdalahBagianDariKatalog(t *testing.T) {
 // diketahui bertipe NUMBER pada 26-09-2026, sesudah keduanya diperlakukan
 // sebagai teks selama berbulan-bulan.
 //
-// ⚠️ APA YANG SEBENARNYA TERKUNCI DI SINI - dikatakan terus terang, sebab
-// laporan ronde 5 sempat mengklaim lebih:
+// ✅ KEDUA LUBANG YANG DICATAT RONDE 5 SUDAH DITUTUP, 26-09-2026 malam:
 //
-//   - CLAIM_RETRO TIDAK diuji apa pun oleh test ini. BarisLamaDari tidak
-//     pernah mengisinya, jadi nilainya selalu kosong dan selalu lolos lewat
-//     cabang "kosong itu sah". Jaminan yang diminta brief belum ada.
-//   - STS_REJECT diisi dari models KodeStatus, yang SENGAJA teks bebas dan
-//     dikunci begitu oleh TestKodeStatusTidakPernahJadiBilangan. Test ini
-//     lulus hanya karena fixture memakai "1"; kode status non-angka akan
-//     tetap sampai ke Oracle dan dijawab ORA-01722.
+//   - CLAIM_RETRO dulu tidak diuji apa pun oleh test ini, sebab BarisLamaDari
+//     tidak pernah mengisinya sehingga selalu lolos lewat cabang "kosong itu
+//     sah". Sejak butir w2 ia UANG di tingkat header dan sungguh ditulis ke
+//     tiap baris datar - lihat TestClaimRetroPulangPergiSebagaiUang.
+//   - STS_REJECT dulu hanya lulus karena fixture memakai "1". Sejak butir s1
+//     jalur tulis sendiri dipagari PeriksaNilaiWarisan, yang menolak nilai
+//     bukan-angka dengan galat menyebut kolom dan isinya.
 //
-// ⛔ [terbuka] Itu pertentangan nyata antara ADR-U-0022 (kode tetap teks) dan
-// katalog (STS_REJECT NUMBER(38,0)), dan executor TIDAK memutuskannya:
-// menambah penolakan di jalur tulis berarti diam-diam memihak katalog dan
-// melanggar ADR; membiarkannya berarti menunggu ORA-01722 di lapangan.
-// Pemiliknya work owner. Yang dilakukan test ini sampai itu dijawab: menjaga
-// agar fixture tidak menambah kasus baru yang pasti gagal.
+// ⭐ Bingkai "ADR-U-0022 lawan katalog" yang saya tulis ronde 5 terlalu lebar,
+// dan work owner mempersempitnya: ADR-U-0022 melindungi kode BERAWALAN NOL
+// seperti "006"; STS_REJECT adalah angka satu digit menurut aksi, dan agregat
+// instance pengembangan menunjukkan nol nilai berawalan nol dan nol nilai
+// non-angka. Skema baru karena itu tetap menyimpannya sebagai teks - ADR utuh -
+// dan yang ditambah hanya pagar kompatibilitas di jalur tulis warisan.
 func TestNilaiKolomAngkaSelaluAngkaAtauKosong(t *testing.T) {
 	masuk := []BarisLama{
 		contohBaris("R1", "UJI-CASE-1", "006", "1234567890.12345678"),
@@ -244,4 +245,156 @@ func TestNilaiKolomAngkaSelaluAngkaAtauKosong(t *testing.T) {
 		t.Fatal("nol kolom angka diperiksa; pembacanya yang rusak")
 	}
 	t.Logf("%d nilai kolom angka diperiksa", diperiksa)
+}
+
+// Pagar jalur tulis menolak nilai yang tidak dapat masuk ke kolom NUMBER.
+//
+// `[keputusan work owner 26-09-2026, butir s1]`. Ia PAGAR KOMPATIBILITAS, bukan
+// konversi: skema baru tetap menyimpan kode sebagai teks (ADR-U-0022 utuh), dan
+// yang dijaga hanya jalur tulis ke tabel datar warisan - tempat kolomnya memang
+// bertipe NUMBER menurut katalog.
+//
+// Nilainya galat terang, bukan ORA-01722: pesan Oracle menuding tipe data dan
+// tidak menyebut kolom mana yang salah maupun isinya.
+func TestPagarNilaiWarisanMenolakBukanAngka(t *testing.T) {
+	kasus := []struct {
+		nama   string
+		ubah   func(*BarisLama)
+		mauSah bool
+	}{
+		{"kode status satu digit", func(b *BarisLama) { b.STS_REJECT = "1" }, true},
+		{"kode status kosong", func(b *BarisLama) { b.STS_REJECT = "" }, true},
+		{"kode status berspasi", func(b *BarisLama) { b.STS_REJECT = "  2  " }, true},
+		{"uang berdesimal panjang", func(b *BarisLama) { b.CLAIM_AMOUNT = "1234567890.12345678" }, true},
+		{"uang negatif", func(b *BarisLama) { b.CLAIM_RETRO = "-500.25" }, true},
+		{"kode status berupa kata", func(b *BarisLama) { b.STS_REJECT = "DITOLAK" }, false},
+		{"uang dengan pemisah ribuan", func(b *BarisLama) { b.CLAIM_AMOUNT = "1,234.00" }, false},
+		{"uang berkoma desimal", func(b *BarisLama) { b.CLAIM_RETRO = "1234,56" }, false},
+		{"teks bertanda UJI", func(b *BarisLama) { b.CLAIM_RETRO = "UJI-RETRO" }, false},
+	}
+	for _, k := range kasus {
+		t.Run(k.nama, func(t *testing.T) {
+			b := contohBaris("R1", "UJI-CASE-1", "006", "250000")
+			k.ubah(&b)
+			err := PeriksaNilaiWarisan(b)
+			if k.mauSah {
+				if err != nil {
+					t.Errorf("pagar menolak nilai yang sah: %v", err)
+				}
+				return
+			}
+			if err == nil {
+				t.Fatal("pagar meloloskan nilai yang akan dijawab ORA-01722")
+			}
+			// Pesannya harus menyebut kolomnya DAN nilainya - itulah yang
+			// tidak dilakukan galat Oracle.
+			if !strings.Contains(err.Error(), "ORA-01722") {
+				t.Errorf("pesan tidak menyebut galat yang dihindarinya: %v", err)
+			}
+		})
+	}
+}
+
+// Kolom teks TIDAK ikut dipagari - nomor rekening berawalan nol harus lolos.
+//
+// Ini sisi lain pagar s1, dan yang membuatnya bukan "semua harus angka":
+// ADR-U-0022 menetapkan kode dan nomor tetap teks, dan tabel warisan memang
+// menyimpan ketiga kolom bank sebagai VARCHAR2.
+func TestPagarNilaiWarisanTidakMenyentuhKolomTeks(t *testing.T) {
+	b := contohBaris("R1", "UJI-CASE-1", "006", "250000")
+	b.ACCOUNTNO = "0012345678"
+	b.CERTIFICATE_NO = "006"
+	b.NAME_OF_BANK = "BANK UJI"
+	if err := PeriksaNilaiWarisan(b); err != nil {
+		t.Errorf("pagar menyentuh kolom teks: %v", err)
+	}
+}
+
+// CLAIM_RETRO pulang-pergi sebagai uang, dan jaminannya tidak lagi kosong.
+//
+// ⛔ Ronde 5 mengklaim jalur tulis mengunci kolom angka; tinjauan menunjukkan
+// klaim itu KOSONG untuk CLAIM_RETRO, sebab BarisLamaDari tidak pernah
+// mengisinya sehingga selalu lolos lewat cabang "kosong itu sah". Sejak butir
+// w2 ia UANG di tingkat header dan sungguh-sungguh ditulis.
+func TestClaimRetroPulangPergiSebagaiUang(t *testing.T) {
+	masuk := []BarisLama{
+		contohBaris("R1", "UJI-CASE-1", "006", "250000"),
+		contohBaris("R2", "UJI-CASE-1", "010", "125000"),
+	}
+	pohon, lap := BongkarBarisLama(masuk)
+	if len(pohon) != 1 {
+		t.Fatalf("klaim %d, mau 1", len(pohon))
+	}
+	for _, tm := range lap.Temuan {
+		if tm.Medan == "CLAIM_RETRO" {
+			t.Fatalf("CLAIM_RETRO dilaporkan tidak terurai: %+v", tm)
+		}
+	}
+	mau := masuk[0].CLAIM_RETRO
+	if got := utils.FormatDecimal(pohon[0].Klaim.ClaimRetro.Amount); got != mau {
+		t.Errorf("ClaimRetro = %q, mau %q", got, mau)
+	}
+	// Mata uangnya datang dari baris adjustment, sebab header warisan tidak
+	// punya kolom mata uang sendiri.
+	if got := pohon[0].Klaim.ClaimRetro.Currency; got != masuk[0].CURRENCY {
+		t.Errorf("mata uang ClaimRetro = %q, mau %q", got, masuk[0].CURRENCY)
+	}
+
+	balik := BarisLamaDari(pohon[0])
+	if len(balik) != len(masuk) {
+		t.Fatalf("baris balik %d, mau %d", len(balik), len(masuk))
+	}
+	for i, b := range balik {
+		if b.CLAIM_RETRO != mau {
+			t.Errorf("baris %d: CLAIM_RETRO = %q, mau %q", i, b.CLAIM_RETRO, mau)
+		}
+	}
+}
+
+// ⛔ Bentuk yang TO_CHAR TM9 keluarkan harus diterima pagar itu sendiri.
+//
+// Ini jebakan yang nyaris lolos: ekspresiBacaLama membaca kolom NUMBER lewat
+// TO_CHAR ber-format TM9, dan TM9 mengeluarkan ".5" untuk setengah - tanpa nol
+// di depan titik. Pola yang menuntut digit di depan titik karena itu akan
+// menolak nilai yang baru saja dibacanya sendiri dari Oracle, dan pulang-pergi
+// baris warisan patah di tengah tanpa ada yang menyentuh datanya.
+func TestPagarMenerimaBentukKeluaranTM9(t *testing.T) {
+	for _, nilai := range []string{".5", "-.25", "5.", "+5", "0.5", "-0.5"} {
+		b := contohBaris("R1", "UJI-CASE-1", "006", "250000")
+		b.CLAIM_RETRO = nilai
+		if err := PeriksaNilaiWarisan(b); err != nil {
+			t.Errorf("pagar menolak %q, yang justru dapat datang dari TO_CHAR TM9: %v",
+				nilai, err)
+		}
+	}
+}
+
+// Mata uang yang berbeda antar baris satu klaim DILAPORKAN, bukan dipilih diam-diam.
+//
+// CURRENCY bukan anggota atributKlaim, sehingga tanpa pemeriksaan sendiri
+// ClaimRetro akan mendapat mata uang baris pertama tanpa ada yang tahu.
+func TestMataUangCampurDilaporkan(t *testing.T) {
+	masuk := []BarisLama{
+		contohBaris("R1", "UJI-CASE-1", "006", "250000"),
+		contohBaris("R2", "UJI-CASE-1", "010", "125000"),
+	}
+	masuk[1].CURRENCY = "USD"
+	_, lap := BongkarBarisLama(masuk)
+	ketemu := false
+	for _, tm := range lap.Temuan {
+		if tm.Medan == "CURRENCY" && tm.Jenis == TemuanAtributBerbeda {
+			ketemu = true
+		}
+	}
+	if !ketemu {
+		t.Error("mata uang berbeda antar baris tidak dilaporkan; " +
+			"ClaimRetro akan memakai mata uang baris pertama diam-diam")
+	}
+	// Seragam: nol temuan mata uang.
+	_, lapSeragam := BongkarBarisLama(masuk[:1])
+	for _, tm := range lapSeragam.Temuan {
+		if tm.Medan == "CURRENCY" {
+			t.Errorf("mata uang seragam dilaporkan berbeda: %+v", tm)
+		}
+	}
 }

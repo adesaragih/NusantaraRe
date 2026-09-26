@@ -176,8 +176,8 @@ func kunciLangkah(nama string) string {
 //
 // Ronde 3 menutup separuh masalah: sebuah CREATE yang dilewati kini dibuktikan
 // KEBERADAAN objeknya di katalog. Yang tidak diperiksa adalah BENTUKNYA. Pada
-// 26-09-2026 kelemahan itu terbukti nyata: DOCUMENT_CLAIM sudah ada di skema
-// warisan dengan empat belas kolom yang sama sekali berbeda dari DDL 007.
+// 26-09-2026 kelemahan itu terbukti nyata: tabel warisan DOCUMENT_CLAIM sudah
+// ada di POOLDATA dengan empat belas kolom yang sama sekali berbeda dari 007.
 // Tanpa pemeriksaan bentuk, migrasi akan melewatinya, mencatat langkahnya
 // sukses, dan aplikasi berjalan di atas tabel yang kolomnya bukan miliknya.
 //

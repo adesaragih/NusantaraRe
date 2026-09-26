@@ -180,7 +180,24 @@ type Klaim struct {
 	// cerminan baris adjustment terakhir - turunan, bukan unit keputusan.
 	// Unit keputusan tetap baris (ADR-U-0011).
 	KodeStatus string
-	Peserta    []Peserta
+
+	// ClaimRetro adalah bagian retro dari jumlah klaim, di tingkat header.
+	//
+	// `[keputusan work owner 26-09-2026, butir w2]` ia UANG, bukan
+	// perbandingan. Buktinya agregat instance pengembangan: nol nilai di
+	// rentang 0-1 maupun 1-100, 4.778 nilai di atas 100, 475 berdesimal - dan
+	// label Pega berbunyi "Claim Retro" di samping label uang lain. Karena itu
+	// Money, bukan Ratio: keduanya sengaja bertipe berbeda supaya tidak pernah
+	// terjumlahkan (ADR-F-0004).
+	//
+	// ⚠️ [terbuka] T_GENERAL_CLAIM tidak punya kolom mata uang, sehingga
+	// Currency-nya datang dari baris adjustment saat klaim dibongkar dari tabel
+	// warisan, dan KOSONG saat header dibaca sendirian. Menambah kolom mata
+	// uang ke header adalah keputusan tersendiri, dan executor tidak
+	// mengarangnya.
+	ClaimRetro Money
+
+	Peserta []Peserta
 }
 
 // CacahBaris menghitung seluruh baris adjustment di seluruh peserta.
@@ -211,6 +228,7 @@ func (k Klaim) MarshalJSON() ([]byte, error) {
 		NomorPolis string    `json:"nomorPolis"`
 		NamaBisnis string    `json:"namaBisnis"`
 		KodeStatus string    `json:"kodeStatus"`
+		ClaimRetro Money     `json:"claimRetro"`
 		Peserta    []Peserta `json:"peserta"`
 		CacahBaris int       `json:"cacahBaris"`
 	}{
@@ -219,6 +237,10 @@ func (k Klaim) MarshalJSON() ([]byte, error) {
 		NomorPolis: k.NomorPolis,
 		NamaBisnis: k.NamaBisnis,
 		KodeStatus: k.KodeStatus,
+		// Money punya MarshalJSON sendiri: jumlahnya TEKS, tidak pernah angka
+		// JSON (ADR-U-0003). Tanpa baris ini nilai yang sudah dibaca dari
+		// Oracle dibuang diam-diam saat serialisasi - separuh butir w2 mati.
+		ClaimRetro: k.ClaimRetro,
 		Peserta:    peserta,
 		CacahBaris: k.CacahBaris(),
 	})

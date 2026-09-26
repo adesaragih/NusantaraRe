@@ -23,6 +23,7 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"nusantarare/pkg/utils"
@@ -306,6 +307,54 @@ func PenampungTulisLama(kolom string, urutan int) string {
 		return fmt.Sprintf(`TO_DATE(:%d, 'YYYY-MM-DD HH24:MI:SS')`, urutan)
 	}
 	return fmt.Sprintf(":%d", urutan)
+}
+
+// polaAngkaWarisan mengenali bentuk desimal yang dipakai jalur uang ini.
+//
+// Pemisahnya HANYA titik, sebab itulah yang dipakai seluruh jalur uang proyek
+// ini (ADR-U-0003). Tanda di depan boleh + atau -.
+//
+// ⚠️ Nol di depan titik boleh HILANG, dan itu bukan kelonggaran: TO_CHAR
+// ber-format TM9 - yang dipakai ekspresiBacaLama di berkas ini juga -
+// mengeluarkan ".5" untuk setengah, bukan "0.5". Pola yang menuntut digit di
+// depan titik karena itu akan menolak nilai yang baru saja dibacanya sendiri
+// dari Oracle, dan pulang-pergi baris warisan patah di tengah.
+//
+// ⛔ Ia BUKAN daftar lengkap yang Oracle terima: notasi ilmiah (1E5) sengaja
+// ditolak, sebab tidak satu pun jalur proyek ini memproduksinya dan menerimanya
+// hanya memperluas permukaan tanpa guna.
+var polaAngkaWarisan = regexp.MustCompile(`^[-+]?(\d+(\.\d*)?|\.\d+)$`)
+
+// PeriksaNilaiWarisan menolak nilai yang tidak dapat masuk ke kolom NUMBER.
+//
+// ⛔ Kenapa ini ada `[keputusan work owner 26-09-2026, butir s1]`: BarisLama
+// menyimpan SELURUH kolom sebagai teks Go, dan penulisnya mem-bind teks itu apa
+// adanya. Untuk kolom yang di tabel warisan bertipe NUMBER, Oracle
+// mengonversinya secara implisit - dan teks yang bukan bilangan dijawab
+// ORA-01722 saat menyimpan. Galat itu menuding TIPE DATA, tidak menyebut kolom
+// mana yang salah maupun nilainya, sehingga orang yang menerimanya harus
+// menebak. Pagar ini menggantinya dengan galat yang menyebut keduanya.
+//
+// Ia PAGAR KOMPATIBILITAS, bukan konversi: nilainya tidak diubah, dan skema
+// baru tetap menyimpan kode sebagai teks (ADR-U-0022 utuh). Yang dijaga hanya
+// jalur tulis ke tabel datar warisan.
+//
+// Kosong tetap sah: ia menjadi NULL (ADR-U-0027).
+func PeriksaNilaiWarisan(b BarisLama) error {
+	for _, m := range medanBarisLama(&b) {
+		if !kolomAngkaLama[m.Kolom] {
+			continue
+		}
+		nilai := strings.TrimSpace(*m.Nilai)
+		if nilai == "" || polaAngkaWarisan.MatchString(nilai) {
+			continue
+		}
+		return fmt.Errorf(
+			"repository: baris warisan %s: kolom %s berisi %q, dan kolom itu bertipe "+
+				"NUMBER di "+namaTabelLama+" - Oracle akan menjawab ORA-01722",
+			b.ID, m.Kolom, nilai)
+	}
+	return nil
 }
 
 // NilaiBarisLama mengeluarkan kelima puluh lima nilai, berurut sama dengan

@@ -1,4 +1,4 @@
--- DOCUMENT_CLAIM - dokumen pendukung per peserta
+-- T_CLAIMLF_DOCUMENT - dokumen pendukung per peserta
 --
 -- Migrasi tiket 14 Claim Life. Satu berkas = satu langkah migrasi.
 -- Pernyataan dipisahkan oleh baris yang hanya berisi tanda garis miring.

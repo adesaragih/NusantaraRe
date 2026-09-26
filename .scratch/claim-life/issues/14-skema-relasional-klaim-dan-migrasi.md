@@ -1455,3 +1455,127 @@ tersegel. Diserahkan ke work owner. ✅ Yang memang **harus** tetap `DOCUMENT_CL
 | Test | **91 PASS · 0 FAIL** (tanpa tag) · **20 SKIP** bertag `db` — ⛔ **SKIP, bukan PASS** · 5 test JS · 87 modul |
 | Sub-agen review | standards **118.845 token / 19 panggilan / 264 detik**; spec **125.788 token / 29 panggilan / 313 detik** |
 | Token sesi utama · biaya · jam dinding | ⛔ **tidak diukur** |
+
+---
+
+## Implementasi — ronde 6, 26 September 2026 malam
+
+**Gerbang: G0 dan G2 terbuka; G1 dan G3 tertutup.** G1 tetap tertutup — DBA belum membuat user
+kosong. **Tiket tetap `claimed`**, dan itu ditulis di awal, bukan di akhir. Tujuh sesi berturut-turut
+berakhir begitu karena satu hal yang sama.
+
+**40 dari 53 AC** (tidak berubah), diverifikasi **99 test Go yang benar-benar berjalan** (dari 91)
+dan **20 test bertag `db`**. Angka diambil **sesudah** perbaikan `/code-review`.
+
+### Ralat atas bab ronde 5 sendiri
+
+⚠️ Tabel *"Yang dijalankan"* di bab ronde 5 menulis **89 test**; telemetri di bab yang sama dan
+hasil nyata **91**. Sebabnya: dua test paket `config` lahir **sesudah** tabel itu ditulis, dan
+tabelnya tidak ikut diperbarui saat angka telemetri diambil ulang. Yang benar **91**.
+
+### Empat temuan verifikasi ronde 5
+
+| # | Temuan | Keadaan |
+| ---: | --- | --- |
+| 1 | ⚠️ Bab ronde 5 menulis 89, seharusnya 91 | ✅ diralat di atas |
+| 2 | ⚠️ Nama lama tertinggal di komentar untuk tabel **baru** | ✅ ditutup, dan lebih luas dari yang diminta — lihat di bawah |
+| 3 | ⚠️ Sisa nama lama di `spec.md`, tiket 03, tiket 15, `revisi-*` | ⛔ **bukan executor** — berkas milik work owner dan tiket lain; tidak disunting |
+| 4 | ℹ️ Pra-terbang membandingkan nama kolom, bukan tipe | catatan saja — tidak diubah |
+
+### Temuan 2 — dan enam sisa yang brief sendiri tidak sebut
+
+Brief mendaftar lima tempat. Penjaga statik yang dibangun untuk menutupnya menemukan **enam lagi**
+di berkas test: `acbentuk_test.go` (3), `migrasi_test.go` (2), `pohonklaim_db_test.go` (1).
+Seluruhnya diperbaiki.
+
+`TestNamaTabelDokumenLamaHanyaUntukWarisan` kini mengizinkan nama lama **hanya** dalam dua bentuk:
+frasa `Int-DOCUMENT_CLAIM` (nama kelas Pega, bukan nama tabel) atau satu baris yang memuat kata
+**warisan** (rujukan sadar ke tabel warisan). Dua komentar yang menyebut tabel warisan ditulis ulang
+supaya kata "warisan" berada di baris yang sama — bukan dikecualikan diam-diam.
+
+### Keputusan §2 sesi ini
+
+| | Keadaan | Yang dikerjakan |
+| --- | --- | --- |
+| **s** | ⭐ `[DIPUTUSKAN]` — **s1** | `PeriksaNilaiWarisan` menolak nilai bukan-angka di jalur tulis tabel warisan, dengan galat menyebut kolom **dan** isinya. `models` **tidak disentuh**: kode tetap teks, ADR-U-0022 utuh |
+| **w2** | ⭐ `[DIPUTUSKAN]` — uang | `002` `CLAIM_RETRO NUMBER(38,8)`; `models.Klaim.ClaimRetro Money`; `AmbilHeader` membacanya lewat `TO_CHAR` ber-NLS; `BarisLamaDari` menuliskannya ke tiap baris datar; STRUKTUR diberi ralat bertanggal dan `[terbuka]`-nya dicabut |
+| **s′** | `[terbuka — tiket 04]` | kode `4` (77 baris di DEV) tidak dikenal siapa pun; tidak disentuh |
+| **y, j, o1–o3, v2** | `[USULAN]` / `[terbuka]` | tidak disentuh |
+
+⭐ **Bingkai saya sendiri ronde 5 terlalu lebar, dan work owner mempersempitnya.** Saya menulis
+"ADR-U-0022 lawan katalog"; ADR itu melindungi kode **berawalan nol** seperti `"006"`, sedangkan
+`STS_REJECT` adalah angka satu digit menurut aksi. Agregat DEV memastikannya: **0** (8.044) · **1**
+(5.227) · **2** (346) · **4** (77), **nol** nilai berawalan nol, **nol** nilai non-angka. Tidak ada
+pertentangan sebesar yang saya laporkan.
+
+### ⚠️ `[terbuka]` baru yang lahir dari w2
+
+`T_GENERAL_CLAIM` **tidak punya kolom mata uang**, sedangkan uang tanpa mata uang tidak bermakna.
+Saat klaim dibongkar dari tabel warisan, mata uangnya diambil dari baris adjustment; saat header
+dibaca sendirian lewat `AmbilHeader`, ia **kosong**. Menambahkan kolom mata uang ke header adalah
+keputusan tersendiri, dan executor **tidak mengarangnya**. Pemilik: work owner.
+
+### Agregat tabel warisan yang dibaca (§7 brief)
+
+⚠️ Keputusan s dan w2 bersandar pada agregat instance **pengembangan** yang dibaca sesi verifikasi:
+sebaran nilai `STS_REJECT`, dan untuk `CLAIM_RETRO` cacah per rentang (0–1, 1–100, >100),
+cacah berdesimal, serta cacah perbandingannya dengan `CLAIM_AMOUNT`. ⛔ **Cacah dan rentang saja —
+nol baris data dibaca, nol baris disalin ke artefak mana pun.**
+
+### Yang dijalankan, dan hasilnya
+
+| Perintah | Hasil |
+| --- | --- |
+| `go vet ./...` · `go vet -tags=db ./...` · `gofmt -l` · `go build ./...` | lulus, nol berkas |
+| `go test ./...` | lulus, **99 test** (dari 91), nol FAIL |
+| `go test -tags=db ./internal/...` | **20 MELEWATI** — ⛔ SKIP, bukan PASS |
+| `npm run typecheck` · `npm test` · `npm run build` | lulus, 5 test, 87 modul — frontend tidak diubah |
+
+⭐ **Tiap penjaga baru diuji gagal dulu pada kasus buruknya**, lalu dipulihkan: nama lama
+dikembalikan untuk tabel baru → gagal; pemanggilan pagar dicabut dari `Simpan` → gagal.
+
+⛔ **Satu cacat saya sendiri tertangkap di sela itu:** saat pagar s1 baru selesai, mencabut
+pemanggilannya dari `Simpan` **tidak menggagalkan satu test pun** — yang teruji hanya fungsinya,
+bukan pemasangannya. `TestSimpanMemanggilPagarNilaiWarisan` menutup selisih antara "ada" dan
+"dipakai".
+
+
+### ⛔ Yang ditemukan `/code-review`, dan diperbaiki sebelum commit
+
+| # | Temuan | Perbaikan |
+| ---: | --- | --- |
+| 1 | ⛔ **`MarshalJSON` tidak diperbarui** — `ClaimRetro` dibaca dari Oracle lalu **dibuang diam-diam** saat serialisasi. Separuh butir w2 mati, dan nol test gagal | medan `claimRetro` ditambahkan; `Money` menulisnya sebagai **teks**, bukan angka JSON (ADR-U-0003). Dikunci `TestKlaimMembawaClaimRetroKeJSON` |
+| 2 | ⛔ **Jalur tulis KEDUA tidak dipagari.** `skemauji.IsiBarisLama` mem-bind `NilaiBarisLama` mentah ke tabel tiruan — persis jalur yang melahirkan `ORA-01722` di ronde 5 | dipagari; `TestSetiapJalurTulisWarisanDipagari` kini memeriksa **seluruh** penulis dan mengunci cacahnya |
+| 3 | ⛔ **Pola angka menolak keluaran `TO_CHAR TM9` sendiri.** TM9 mengeluarkan `".5"`, bukan `"0.5"`; pola yang menuntut digit di depan titik akan menolak nilai yang baru saja dibacanya dari Oracle, dan pulang-pergi baris warisan patah di tengah | pola diperluas ke bentuk yang sungguh diproduksi; notasi ilmiah tetap ditolak dengan sengaja. Dikunci `TestPagarMenerimaBentukKeluaranTM9` |
+| 4 | ⚠️ **Mata uang campur dipilih diam-diam.** `CURRENCY` bukan anggota `atributKlaim`, jadi klaim bermata-uang campur mendapat mata uang baris pertama tanpa ada yang tahu | dilaporkan sebagai `Temuan`; dikunci `TestMataUangCampurDilaporkan` |
+| 5 | ⚠️ **Premis palsu di penjaga nama**: komentarnya berbunyi *"nama baru MEMUAT nama lama"* — `T_CLAIMLF_DOCUMENT` **tidak** memuat `DOCUMENT_CLAIM`, sehingga satu baris `ReplaceAll` adalah kode mati yang dibenarkan premis keliru | premis dan kode matinya dicabut |
+| 6 | ⚠️ Pengecualian berkas penjaga terhadap dirinya sendiri menyembunyikan dua barisnya yang melanggar | kedua baris dibuat **patuh**, dan komentarnya menyatakan pengecualian itu tidak dipakai menyembunyikan apa pun |
+| 7 | ⚠️ Nama tabel warisan ditulis ulang sebagai literal padahal konstantanya ada | memakai `namaTabelLama` |
+
+### Yang saya akui melebihi permintaan, dan sebabnya
+
+⚠️ **Lingkup penjaga nama dilebarkan** dari `migrations/*.sql` + `pohonklaim.go` ke seluruh
+`internal/repository`. Itu menemukan **enam** sisa yang brief tidak sebut — tetapi juga membuat saya
+menyunting dua baris yang brief justru sebut **sudah benar** (`migrasi.go` 179, test db 469): kata
+"warisan" dipindah ke baris yang sama agar aturan per-baris dapat membedakannya. Isinya tidak
+berubah, hanya letak katanya. ⚠️ Langkah B menjanjikan `go test` bertambah **satu**; nyatanya
+**delapan**, sebab tiap perbaikan tinjauan membawa penjaganya sendiri.
+
+⚠️ **`BongkarBarisLama` kini juga MEMBACA `CLAIM_RETRO`**, sedangkan brief hanya meminta arah tulis.
+Tanpa arah baca, nilai yang ditulis `BarisLamaDari` tidak pernah dapat kembali, dan butir w2 hanya
+setengah jalan.
+
+### Tuduhan tinjauan yang saya TOLAK sesudah memeriksa premisnya
+
+⛔ *"`002` diubah di tempat tanpa langkah `ALTER`; skema yang sudah dimigrasi tetap `VARCHAR2(64)`,
+lalu `AmbilHeader` menjalankan `TO_CHAR` atasnya dan pecah."* **Premisnya tidak ada.** Migrasi belum
+pernah berjalan di Oracle mana pun — tujuh sesi — dan katalog instance pengembangan tidak memuat
+`T_MIGRASI`. Brief §2 l menetapkan berkas `001`–`008` boleh disunting langsung **selama** keadaan
+itu berlaku, dan Langkah C brief ronde 6 mengulanginya. Yang benar dari tuduhan itu hanya
+catatannya: pra-terbang membandingkan **nama** kolom, bukan tipe — dan itu memang tertulis di
+komentarnya sendiri sebagai pilihan sadar.
+
+⚠️ Satu lagi saya terima **sebagian**: *"pagar meloloskan `"006"` untuk `STS_REJECT`, lalu Oracle
+menghilangkan nol depannya"*. Benar secara mekanis, tetapi bukan kelonggaran pagar: keputusan **s**
+bersandar pada agregat yang menunjukkan **nol** nilai `STS_REJECT` berawalan nol. Pagar ini menjaga
+"bukan angka", bukan "berawalan nol" — dan itu memang yang diminta.

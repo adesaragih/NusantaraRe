@@ -309,6 +309,13 @@ func IsiBarisLama(ctx context.Context, db *sql.DB, skema string, baris []reposit
 	q := fmt.Sprintf("INSERT INTO %s.%s (%s) VALUES (%s)", skema, namaTabelLama,
 		strings.Join(kolom, ", "), strings.Join(penampung, ", "))
 	for _, b := range baris {
+		// ⛔ Dipagari sama seperti jalur tulis aplikasi (butir s1). Inilah
+		// jalur yang melahirkan ORA-01722 pada ronde 5: fixture mengisi
+		// CLAIM_RETRO dengan teks, dan tiruan yang berbentuk benar menolaknya.
+		// Fixture yang salah harus berteriak di sini, bukan di Oracle.
+		if err := repository.PeriksaNilaiWarisan(b); err != nil {
+			return err
+		}
 		if _, err := db.ExecContext(ctx, q, repository.NilaiBarisLama(b)...); err != nil {
 			return fmt.Errorf("skemauji: mengisi baris lama %s: %w", b.ID, err)
 		}

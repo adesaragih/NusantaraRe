@@ -12,7 +12,7 @@
 -- Sequence adalah pembangkit angka berurut milik Oracle. ADR-U-0006
 -- menetapkan identitas berasal dari sequence, bukan dari cap waktu maupun teks.
 --
--- ADR-U-0006 berlaku untuk T_CLAIMLF_* dan DOCUMENT_CLAIM. Ia TIDAK berlaku
+-- ADR-U-0006 berlaku untuk seluruh tabel T_CLAIMLF_*. Ia TIDAK berlaku
 -- untuk T_WORK_CLAIM dan kedua tabel ber-shared-PK: identitas ketiganya adalah
 -- nomor bisnis berformat, dan itu penyimpangan sadar yang dicatat di tiket 14.
 --

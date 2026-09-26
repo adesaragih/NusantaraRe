@@ -466,8 +466,8 @@ func TestNamaConstraintBertabrakanMenggagalkanMigrasi(t *testing.T) {
 //
 // `[keputusan work owner 26-09-2026, butir x]`. Ini kelemahan ronde 3 yang
 // sengaja dibiarkan separuh: keberadaan objek dibuktikan, bentuknya tidak.
-// Pada 26-09-2026 ia terbukti nyata - DOCUMENT_CLAIM sudah ada di skema
-// warisan dengan empat belas kolom yang bukan milik DDL 007.
+// Pada 26-09-2026 ia terbukti nyata - tabel warisan DOCUMENT_CLAIM sudah ada
+// di POOLDATA dengan empat belas kolom yang bukan milik 007.
 //
 // Yang dituntut: migrasi GAGAL, galatnya menyebut nama tabel dan kolom yang
 // berselisih, dan TIDAK SATU PUN langkah tercatat di T_MIGRASI - sebab
