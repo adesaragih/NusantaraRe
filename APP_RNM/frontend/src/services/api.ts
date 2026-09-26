@@ -242,3 +242,50 @@ export const STATUS_OUTSTANDING = 'Outstanding'
 export async function tolakBarisAdjustment(klaimID: string, adjID: string): Promise<void> {
   await api.post(`/api/klaim-life/${encodeURIComponent(klaimID)}/adjustment/${encodeURIComponent(adjID)}/tolak`)
 }
+
+/** Cacah baris yang akan ikut terhapus bersama sebuah klaim. */
+export interface DampakHapus {
+  header: number
+  peserta: number
+  adjustment: number
+  spreading: number
+  spreadingRetro: number
+  dokumen: number
+  barisWork: number
+  /**
+   * Baris `OS_AKSEPTASI_KLAIM_LIFE` ber-CASEID sama.
+   *
+   * ⚠️ Nasib baris ini saat klaim dihapus BELUM diputuskan work owner.
+   * Angkanya ditampilkan justru supaya keputusan yang belum diambil itu
+   * terlihat oleh yang menekan tombol, bukan tersembunyi di dalam kaskade.
+   */
+  barisDatarWarisan: number
+  /** ⛔ SENGAJA tidak memuat `barisDatarWarisan` - lihat di atas. */
+  total: number
+}
+
+/**
+ * Menghitung dampak penghapusan - TANPA menghapus apa pun.
+ *
+ * Inilah yang membuat "Batal" benar-benar membatalkan: jalur ini tidak punya
+ * satu pun tulisan untuk dibatalkan.
+ */
+export async function dampakHapusKlaim(klaimID: string): Promise<DampakHapus> {
+  const { data } = await api.get<DampakHapus>(
+    `/api/klaim-life/${encodeURIComponent(klaimID)}/dampak-hapus`,
+  )
+  return data
+}
+
+/**
+ * Menghapus klaim.
+ *
+ * ⛔ Saat ini SELALU menjawab 501: ADR-U-0031 menetapkan penghapusan berupa
+ * PENANDA, bukan hapus fisik, dan kolom penandanya belum diputuskan.
+ */
+export async function hapusKlaim(klaimID: string): Promise<DampakHapus> {
+  const { data } = await api.delete<DampakHapus>(
+    `/api/klaim-life/${encodeURIComponent(klaimID)}`,
+  )
+  return data
+}

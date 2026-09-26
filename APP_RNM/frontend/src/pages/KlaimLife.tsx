@@ -5,7 +5,10 @@ import {
   kodeStatusGalat,
   tampilUang,
   tolakBarisAdjustment,
+  dampakHapusKlaim,
+  hapusKlaim,
   STATUS_OUTSTANDING,
+  type DampakHapus,
   type Klaim,
 } from '../services/api'
 
@@ -31,6 +34,51 @@ export default function KlaimLife() {
   const [galat, setGalat] = useState<string | null>(null) // pesan bila gagal
   const [memuat, setMemuat] = useState<boolean>(false) // sedang menunggu server?
   const [menolak, setMenolak] = useState<string | null>(null) // baris yang sedang ditolak
+  const [dampak, setDampak] = useState<DampakHapus | null>(null) // isi popup konfirmasi
+  const [menghapus, setMenghapus] = useState<boolean>(false) // permintaan hapus berjalan
+
+  // Membuka popup: MEMBACA dampak, tidak menghapus apa pun.
+  async function bukaKonfirmasiHapus() {
+    if (!klaim) return
+    setGalat(null)
+    try {
+      setDampak(await dampakHapusKlaim(klaim.id))
+    } catch {
+      setGalat('Gagal menghitung dampak penghapusan.')
+    }
+  }
+
+  // ⛔ Batal hanya menutup popup. Tidak ada yang perlu dibatalkan, sebab
+  // membuka popup tidak menulis apa pun.
+  function batalHapus() {
+    setDampak(null)
+    setGalat(null)
+  }
+
+  async function lanjutkanHapus() {
+    if (!klaim) return
+    setGalat(null)
+    setMenghapus(true)
+    try {
+      await hapusKlaim(klaim.id)
+      setKlaim(null)
+      setDampak(null)
+    } catch (err: unknown) {
+      const kode = kodeStatusGalat(err)
+      setGalat(
+        kode === 501
+          ? 'Penghapusan klaim adalah penanda, bukan hapus fisik (ADR-U-0031). Kolom penandanya belum diputuskan work owner.'
+          : kode === 409
+            ? 'Klaim sudah diserahkan ke Komite dan tidak dapat dihapus.'
+            : kode === 403
+              ? 'Hanya ReasLifeAdmin yang dapat menghapus klaim.'
+              : 'Gagal menghapus klaim.',
+      )
+      setDampak(null)
+    } finally {
+      setMenghapus(false)
+    }
+  }
 
   // Menolak satu baris, lalu MEMBACA ULANG klaimnya dari server.
   //
@@ -116,6 +164,51 @@ export default function KlaimLife() {
 
           {/* `.map` = ulangi blok di bawah untuk SETIAP peserta.
               `key` wajib ada supaya React tahu baris mana yang berubah. */}
+          <p>
+            <button type="button" onClick={() => void bukaKonfirmasiHapus()}>
+              Hapus klaim…
+            </button>
+          </p>
+
+          {/* Popup konfirmasi: angka dulu, keputusan kemudian. Tiap jenis
+              disebut sendiri - satu angka total menyembunyikan tingkat mana
+              yang ternyata lebih besar dari dugaan. */}
+          {dampak && (
+            <aside>
+              <h4>Hapus klaim {klaim.nomorKlaim || klaim.id}?</h4>
+              <p>Yang akan ikut terhapus:</p>
+              <ul>
+                <li>Header klaim: {dampak.header}</li>
+                <li>Peserta: {dampak.peserta}</li>
+                <li>Baris adjustment: {dampak.adjustment}</li>
+                <li>Spreading: {dampak.spreading}</li>
+                <li>Spreading retro: {dampak.spreadingRetro}</li>
+                <li>Dokumen: {dampak.dokumen}</li>
+                <li>Baris work: {dampak.barisWork}</li>
+              </ul>
+              <p>Total {dampak.total} baris.</p>
+              {/* ⛔ Baris datar warisan BUKAN bagian daftar di atas dan tidak
+                  dijumlahkan ke totalnya. Nasibnya saat klaim dihapus belum
+                  diputuskan work owner; menaruhnya di bawah judul "yang akan
+                  ikut terhapus" berarti menjawab pertanyaan itu diam-diam. */}
+              <p>
+                ⚠️ Selain itu terdapat {dampak.barisDatarWarisan} baris datar warisan
+                ber-CASEID sama. <strong>Nasibnya belum diputuskan</strong>: apakah ikut
+                terhapus atau ditinggal karena hilir sudah membacanya.
+              </p>
+              <button
+                type="button"
+                disabled={menghapus}
+                onClick={() => void lanjutkanHapus()}
+              >
+                {menghapus ? 'Menghapus…' : 'Ya, hapus'}
+              </button>{' '}
+              <button type="button" onClick={batalHapus}>
+                Batal
+              </button>
+            </aside>
+          )}
+
           {klaim.peserta.map((p) => (
             <section key={p.id}>
               <h4>

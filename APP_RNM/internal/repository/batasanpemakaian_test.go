@@ -58,21 +58,35 @@ func berkasGoSelainTest(t *testing.T) map[string]string {
 	return hasil
 }
 
-// Hapus tidak boleh dipanggil dari kode yang bukan test.
+// PohonKlaim.HapusFisik tidak boleh dipanggil dari kode yang bukan test.
 //
-// Hapus adalah DELETE fisik. ADR-U-0031 menetapkan penghapusan klaim di jalur
-// pengguna berupa penanda ditambah nilai balik, dan pelaksananya tiket 15.
-// Selama tiket itu belum dikerjakan, satu-satunya pemakai yang sah adalah test
-// yang membuktikan kaskade (AC 38).
-func TestHapusTidakDipanggilDiLuarTest(t *testing.T) {
+// ADR-U-0031 `[keputusan work owner]`: penghapusan klaim di jalur pengguna
+// adalah PENANDA ditambah nilai balik, dan Akibat 1-nya berbunyi "nol perintah
+// hapus fisik pada jalur pengguna di lapisan mana pun". Satu-satunya pemakai
+// yang sah adalah test yang membuktikan kaskade `ON DELETE CASCADE` (AC 38) -
+// itu pembuktian bentuk basis data, bukan jalur pengguna.
+//
+// ⚠️ Dua ronde sebelumnya keduanya salah, dan cara salahnya berlawanan.
+// Pola pertama mencocokkan `.Hapus(` apa pun, sehingga `services.Penghapusan
+// .Hapus` - yang justru MENOLAK menghapus - ikut tertuduh. Pola kedua
+// mencocokkan `.Hapus(ctx, tx` dan karena itu LOLOS oleh nama variabel lain
+// (`trx`, `h.tx`) maupun pemanggilan yang terpotong baris, padahal
+// komentarnya mengaku menangkap "setiap pemanggilan". Sebab keduanya sama:
+// dua hal berbeda memakai satu nama.
+//
+// Yang diperbaiki adalah NAMANYA, bukan polanya. Hapus fisik kini bernama
+// `HapusFisik`, sehingga penjaga ini mencocokkan nama - bukan menebak bentuk
+// pemanggilan - dan tidak dapat lolos oleh nama variabel maupun baris yang
+// terpotong.
+func TestHapusFisikTidakDipanggilDiLuarTest(t *testing.T) {
 	for nama, isi := range berkasGoSelainTest(t) {
-		// Definisi metodenya sendiri jelas bukan pemanggilan.
 		for _, baris := range strings.Split(isi, "\n") {
-			if strings.Contains(baris, "func (r *PohonKlaim) Hapus(") {
+			// Definisi metodenya sendiri jelas bukan pemanggilan.
+			if strings.Contains(baris, "func (r *PohonKlaim) HapusFisik(") {
 				continue
 			}
-			if strings.Contains(baris, ".Hapus(") {
-				t.Errorf("%s memanggil .Hapus(): %s", nama, strings.TrimSpace(baris))
+			if strings.Contains(baris, "HapusFisik(") {
+				t.Errorf("%s memanggil hapus fisik: %s", nama, strings.TrimSpace(baris))
 			}
 		}
 	}
@@ -373,5 +387,44 @@ func TestSetiapJalurTulisWarisanDipagari(t *testing.T) {
 	if ditemukan != mau {
 		t.Errorf("penulis baris datar warisan ditemukan %d, mau %d; bila memang "+
 			"bertambah, pagarnya dipasang dulu lalu angka ini diperbarui", ditemukan, mau)
+	}
+}
+
+// Jalur penghapusan tidak boleh menyentuh tabel peserta polis sumbernya.
+//
+// Tiket 15 AC: "Menghapus klaim tidak menyentuh M_LIFE_PREMIUM_DETAIL - ia
+// hanya dibaca sebagai sumber snapshot peserta", dan "tidak menghapus peserta
+// di premium list sumbernya". Tanpa penjaga ini kedua AC itu benar secara
+// kebetulan, dan kebetulan tidak bertahan.
+func TestJalurHapusTidakMenyentuhTabelSumber(t *testing.T) {
+	const sumber = "M_LIFE_PREMIUM_DETAIL"
+	berkasHapus := []string{"pohonklaim.go", "hapus.go"}
+	diperiksa := 0
+	for nama, isi := range berkasGoSelainTest(t) {
+		dasar := filepath.Base(nama)
+		cocok := false
+		for _, b := range berkasHapus {
+			if dasar == b {
+				cocok = true
+			}
+		}
+		if !cocok {
+			continue
+		}
+		diperiksa++
+		for _, baris := range strings.Split(isi, "\n") {
+			if !strings.Contains(baris, sumber) {
+				continue
+			}
+			// Menyebutnya di komentar adalah penjelasan, bukan sentuhan.
+			if strings.HasPrefix(strings.TrimSpace(baris), "//") {
+				continue
+			}
+			t.Errorf("%s menyentuh %s di jalur hapus: %s",
+				nama, sumber, strings.TrimSpace(baris))
+		}
+	}
+	if diperiksa < 2 {
+		t.Fatalf("hanya %d berkas jalur hapus terbaca; pembacanya yang rusak", diperiksa)
 	}
 }

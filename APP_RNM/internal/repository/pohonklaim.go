@@ -421,7 +421,7 @@ func (r *PohonKlaim) Simpan(ctx context.Context, tx *Tx, p models.PohonKlaim) er
 // Urutannya penting: T_CLAIMLF_DOCUMENT dibuang LEBIH DULU. Kunci tamunya sengaja
 // tanpa ON DELETE, sehingga menghapus header selagi masih ada baris dokumen
 // akan ditolak Oracle dengan ORA-02292 (induk masih punya anak).
-func (r *PohonKlaim) Hapus(ctx context.Context, tx *Tx, id, caseID string) error {
+func (r *PohonKlaim) HapusFisik(ctx context.Context, tx *Tx, id, caseID string) error {
 	header, err := r.db.Qualify("T_GENERAL_CLAIM")
 	if err != nil {
 		return err
@@ -685,4 +685,73 @@ func (r *PohonKlaim) CacahBarisLama(ctx context.Context, caseID string) (int, er
 		return 0, fmt.Errorf("repository: mencacah baris lama: %w", err)
 	}
 	return n, nil
+}
+
+// Dampak menghitung baris yang akan ikut terhapus bersama sebuah klaim.
+//
+// ⛔ Dihitung dari DATA, bukan diperkirakan: angka yang ditampilkan peringatan
+// wajib sama persis dengan yang benar-benar terhapus, dan perkiraan tidak
+// pernah sama persis.
+//
+// ⚠️ Tujuh `SELECT COUNT` terpisah, bukan satu kueri berjenjang. Satu kueri
+// akan lebih rapi dan lebih sulit dibaca, sedangkan tiap angka di sini muncul
+// sendiri-sendiri di layar dan wajib dapat ditelusuri sendiri-sendiri.
+func (r *PohonKlaim) Dampak(ctx context.Context, klaimID, caseID string) (
+	models.DampakHapus, error) {
+	var d models.DampakHapus
+
+	nama := []string{"T_CLAIMLF_PREMIUMLIST_DETAIL", "T_CLAIMLF_ADJUSTMENT",
+		"T_CLAIMLF_ADJUSTMENT_SPREADING", namaTabelRetro, "T_CLAIMLF_DOCUMENT",
+		"T_WORK_CLAIM", namaTabelLama, "T_GENERAL_CLAIM"}
+	tabel := make([]string, len(nama))
+	for i, n := range nama {
+		t, err := r.db.Qualify(n)
+		if err != nil {
+			return d, err
+		}
+		tabel[i] = t
+	}
+	pes, adj, spr, retro, dok, work, datar, hdr := tabel[0], tabel[1], tabel[2],
+		tabel[3], tabel[4], tabel[5], tabel[6], tabel[7]
+
+	// Tiap baris: kueri, argumen, dan tujuan angkanya.
+	langkah := []struct {
+		q     string
+		arg   string
+		tuju  *int
+		jenis string
+	}{
+		{fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE CLAIM_ID = :1`, pes),
+			klaimID, &d.Peserta, "peserta"},
+		{fmt.Sprintf(`SELECT COUNT(*) FROM %s a JOIN %s p
+		      ON p.ID = a.PREMIUM_LIST_DETAIL_ID WHERE p.CLAIM_ID = :1`, adj, pes),
+			klaimID, &d.Adjustment, "adjustment"},
+		{fmt.Sprintf(`SELECT COUNT(*) FROM %s s JOIN %s a ON a.ID = s.ADJUSTMENT_ID
+		      JOIN %s p ON p.ID = a.PREMIUM_LIST_DETAIL_ID WHERE p.CLAIM_ID = :1`,
+			spr, adj, pes), klaimID, &d.Spreading, "spreading"},
+		{fmt.Sprintf(`SELECT COUNT(*) FROM %s t JOIN %s s ON s.ID = t.SPREADING_ID
+		      JOIN %s a ON a.ID = s.ADJUSTMENT_ID
+		      JOIN %s p ON p.ID = a.PREMIUM_LIST_DETAIL_ID WHERE p.CLAIM_ID = :1`,
+			retro, spr, adj, pes), klaimID, &d.SpreadingRetro, "spreading retro"},
+		{fmt.Sprintf(`SELECT COUNT(*) FROM %s d JOIN %s p
+		      ON p.ID = d.PREMIUM_LIST_DETAIL_ID WHERE p.CLAIM_ID = :1`, dok, pes),
+			klaimID, &d.Dokumen, "dokumen"},
+		{fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE ID = :1`, work),
+			klaimID, &d.WorkClaim, "baris work"},
+		{fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE CASEID = :1`, datar),
+			caseID, &d.BarisDatarWarisan, "baris datar warisan"},
+		// Header klaim itu sendiri - ia baris pertama yang dihapus, dan
+		// melewatkannya membuat Total kurang satu dari yang sebenarnya.
+		{fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE ID = :1`, hdr),
+			klaimID, &d.Header, "header klaim"},
+	}
+	for _, l := range langkah {
+		if err := PeriksaSQL(l.q); err != nil {
+			return d, err
+		}
+		if err := r.db.sql.QueryRowContext(ctx, l.q, l.arg).Scan(l.tuju); err != nil {
+			return d, fmt.Errorf("repository: mencacah %s: %w", l.jenis, err)
+		}
+	}
+	return d, nil
 }

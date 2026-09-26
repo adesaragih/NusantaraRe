@@ -421,3 +421,30 @@ func (r *KlaimLife) CabutPenandaDipilih(ctx context.Context, tx *Tx, pesertaID s
 	}
 	return nil
 }
+
+// CaseIDKlaim membaca CASE_ID baris work object sebuah klaim.
+//
+// ⛔ DIBACA, tidak diandaikan sama dengan pengenal klaim. Butir ae1 memang
+// memutuskan `CASEID = pengenal work object` untuk klaim yang sistem ini
+// buat sendiri, tetapi itu keputusan pengisian - bukan jaminan bentuk. Klaim
+// yang kelak dimigrasikan (tiket 13) membawa CASE_ID warisannya sendiri, dan
+// kode yang mengandaikan keduanya sama akan mencacah baris milik klaim lain.
+func (r *KlaimLife) CaseIDKlaim(ctx context.Context, klaimID string) (string, error) {
+	tabel, err := r.db.Qualify("T_WORK_CLAIM")
+	if err != nil {
+		return "", err
+	}
+	q := fmt.Sprintf(`SELECT CASE_ID FROM %s WHERE ID = :1`, tabel)
+	if err := PeriksaSQL(q); err != nil {
+		return "", err
+	}
+	var caseID sql.NullString
+	err = r.db.sql.QueryRowContext(ctx, q, klaimID).Scan(&caseID)
+	if err == sql.ErrNoRows {
+		return "", fmt.Errorf("repository: work object %q tidak ada", klaimID)
+	}
+	if err != nil {
+		return "", fmt.Errorf("repository: membaca CASE_ID: %w", err)
+	}
+	return caseID.String, nil
+}

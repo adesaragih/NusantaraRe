@@ -246,6 +246,28 @@ func TestBacaSampaiCicit(t *testing.T) {
 	}
 	_ = tx.Commit()
 
+	// Sesudah hapus, SETIAP tingkat wajib nol - diperiksa satu per satu,
+	// bukan lewat satu angka total yang dapat menutupi satu tingkat yang
+	// tertinggal.
+	sesudah, err := repo.Dampak(ctx, p.Work.ID, p.Work.CaseID)
+	if err != nil {
+		t.Fatalf("mencacah dampak sesudah hapus: %v", err)
+	}
+	for _, k := range []struct {
+		nama string
+		got  int
+	}{
+		{"header", sesudah.Header}, {"peserta", sesudah.Peserta},
+		{"adjustment", sesudah.Adjustment}, {"spreading", sesudah.Spreading},
+		{"spreading retro", sesudah.SpreadingRetro},
+		{"dokumen", sesudah.Dokumen}, {"baris work", sesudah.WorkClaim},
+		{"baris datar warisan", sesudah.BarisDatarWarisan},
+	} {
+		if k.got != 0 {
+			t.Errorf("sesudah hapus masih ada %d %s", k.got, k.nama)
+		}
+	}
+
 	spr, err := repo.AmbilSpreading(ctx, p.Work.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -309,8 +331,30 @@ func TestHapusMengkaskadeSampaiCicit(t *testing.T) {
 	}
 	_ = tx.Commit()
 
+	// ⭐ Dampak dihitung SEBELUM menghapus, lalu dibandingkan dengan yang
+	// benar-benar hilang. Itulah satu-satunya cara membuktikan AC "jumlah yang
+	// ditampilkan popup sama persis dengan yang benar-benar terhapus" -
+	// membandingkan angka dengan dirinya sendiri tidak membuktikan apa pun.
+	sebelum, err := repo.Dampak(ctx, p.Work.ID, p.Work.CaseID)
+	if err != nil {
+		t.Fatalf("mencacah dampak: %v", err)
+	}
+	for _, k := range []struct {
+		nama string
+		got  int
+	}{
+		{"header", sebelum.Header}, {"peserta", sebelum.Peserta},
+		{"adjustment", sebelum.Adjustment}, {"spreading", sebelum.Spreading},
+		{"spreading retro", sebelum.SpreadingRetro}, {"baris work", sebelum.WorkClaim},
+	} {
+		if k.got == 0 {
+			t.Errorf("dampak %s = 0 sebelum hapus; fixture-nya yang kosong, "+
+				"sehingga perbandingan sesudah hapus tidak membuktikan apa pun", k.nama)
+		}
+	}
+
 	tx2, _ := db.Mulai(ctx)
-	if err := repo.Hapus(ctx, tx2, p.Work.ID, p.Work.CaseID); err != nil {
+	if err := repo.HapusFisik(ctx, tx2, p.Work.ID, p.Work.CaseID); err != nil {
 		_ = tx2.Rollback()
 		t.Fatalf("menghapus pohon: %v", err)
 	}
