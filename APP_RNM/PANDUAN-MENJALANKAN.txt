@@ -1,0 +1,376 @@
+================================================================================
+PANDUAN MENJALANKAN APLIKASI NUSANTARA RE (APP_RNM)
+Backend Go + Frontend React (TypeScript) + Oracle
+================================================================================
+
+Disusun 26 September 2026 dari kode pada commit 8f5453b.
+Untuk siapa: siapa pun yang ingin menjalankan aplikasi ini di mesin Windows,
+termasuk yang baru mengenal Go dan React.
+
+Yang sudah dicoba sungguhan saat panduan ini ditulis:
+  - Backend dijalankan tanpa Oracle: /healthz menjawab 200.
+  - Server dev Vite dijalankan: halaman tampil.
+  - Rute klaim tanpa Oracle: menjawab 503 dengan pesan yang jelas.
+
+Yang BELUM bisa: frontend dev berbicara ke backend lewat browser. Lihat bab 5.
+
+--------------------------------------------------------------------------------
+DAFTAR ISI
+--------------------------------------------------------------------------------
+  0. Apa yang ada saat ini
+  1. Sekali per jendela PowerShell: kenalkan go dan node (PATH)
+  2. Backend TANPA Oracle (bisa dijalankan hari ini)
+  3. Backend DENGAN Oracle (setelah DBA memberi skema uji)
+  4. Frontend
+  5. Celah yang harus diketahui: frontend dev belum bisa bicara ke backend
+  6. Dua jendela, urutan lengkap
+  7. Uji sebelum dan sesudah mengubah apa pun
+  8. Bila tersangkut
+  9. Peta folder singkat
+ 10. Aturan yang tidak boleh dilanggar
+
+================================================================================
+0. APA YANG ADA SAAT INI
+================================================================================
+
+  Sisi            Yang ada                                    Alamat
+  --------------  ------------------------------------------  -----------------
+  Backend Go      dua rute HTTP:                              localhost:8080
+                    GET /healthz
+                    GET /api/klaim-life/{id}
+                  satu flag: -migrate (bentuk tabel, keluar)
+  Frontend React  satu halaman: kotak "Pengenal klaim"        localhost:5173
+                  dan tombol "Buka"
+  Oracle          belum ada instance pengembangan.            dari env var
+                  Tanpa itu backend tetap jalan; rute klaim
+                  menjawab 503.
+
+Lokasi aplikasi:  D:\XML\RNM_BRD\OUTPUT_HASIL_RNM\APP_RNM
+Semua perintah di bawah dijalankan dari PowerShell di folder itu, kecuali
+disebut lain.
+
+================================================================================
+1. SEKALI PER JENDELA POWERSHELL: KENALKAN go DAN node
+================================================================================
+
+Go 1.26.8 dan Node 24.21.0 sudah terpasang di mesin ini, tetapi TIDAK ada di
+PATH shell. Tanpa langkah ini semua perintah di bawah gagal dengan pesan
+"tidak dikenal sebagai nama cmdlet".
+
+  $env:Path = 'C:\Program Files\Go\bin;C:\Program Files\nodejs;' + $env:Path
+  Set-Location 'D:\XML\RNM_BRD\OUTPUT_HASIL_RNM\APP_RNM'
+  go version        # harus: go version go1.26.8 windows/amd64
+  node --version    # harus: v24.21.0
+
+Catatan:
+  - Baris pertama hanya berlaku di jendela PowerShell itu. Buka jendela baru,
+    ulangi baris itu.
+  - Bila ingin permanen, tambahkan kedua folder itu ke Path pengguna lewat
+    Windows Settings > System > About > Advanced system settings >
+    Environment Variables. Itu perubahan mesin, bukan bagian dari repositori.
+  - "make" TIDAK terpasang. Setiap target di Makefile adalah satu-dua perintah
+    biasa; panduan ini menulis perintahnya langsung.
+
+================================================================================
+2. BACKEND TANPA ORACLE (BISA DIJALANKAN HARI INI)
+================================================================================
+
+Jalankan:
+
+  go run ./cmd/api
+
+Log yang benar:
+
+  oracle: ORACLE_DSN kosong - berjalan tanpa database
+  http: mendengarkan di :8080
+
+Cek dari jendela PowerShell LAIN, atau dari browser:
+
+  Invoke-WebRequest -UseBasicParsing http://localhost:8080/healthz |
+    Select-Object -Expand Content
+
+  Jawaban:  {"status":"sehat","database":"tidak dikonfigurasi"}
+
+  Invoke-WebRequest -UseBasicParsing http://localhost:8080/api/klaim-life/UJI-1
+
+  Jawaban:  kode 503, badan {"galat":"database belum dikonfigurasi"}
+            (PowerShell menampilkannya sebagai galat merah; itu memang
+            jawaban yang diharapkan tanpa Oracle.)
+
+Berhenti: tekan Ctrl+C di jendela backend. Server menutup rapi, paling lama
+10 detik.
+
+Bila ingin berkas exe alih-alih "go run":
+
+  go build -o bin\api.exe .\cmd\api
+  .\bin\api.exe
+
+Folder bin\ tidak masuk git.
+
+Mengubah port (bila 8080 sudah dipakai proses lain):
+
+  $env:HTTP_ADDR = ':8081'
+  go run ./cmd/api
+
+================================================================================
+3. BACKEND DENGAN ORACLE (SETELAH DBA MEMBERI SKEMA UJI)
+================================================================================
+
+PENTING: backend TIDAK membaca berkas .env. Berkas .env.example hanya daftar
+nama variabel. Nilainya disetel di terminal, dan TIDAK PERNAH ditulis ke
+berkas, chat, tiket, atau prompt.
+
+Setel di jendela backend:
+
+  $env:ORACLE_DSN    = 'oracle://<pengguna>:<sandi>@<host>:<port>/<service>'
+  $env:ORACLE_SCHEMA = '<nama skema uji dari DBA>'
+  $env:IS_PEGA_PROD  = 'false'
+
+Ganti bagian di dalam <...> dengan nilai dari DBA. Skema uji adalah skema yang
+DBA sediakan khusus untuk pengembangan, bukan produksi.
+
+Aturan yang ditegakkan kode:
+  - ORACLE_DSN terisi tetapi ORACLE_SCHEMA kosong: backend menolak start,
+    pesan "konfigurasi: ORACLE_SCHEMA wajib terisi bila ORACLE_DSN terisi".
+  - IS_PEGA_PROD=true: migrasi menolak berjalan. Jangan pernah menunjuk alias
+    atau instance produksi.
+
+Urutan pertama kali:
+
+  go run ./cmd/api -migrate
+    membentuk 7 tabel, 5 sequence, 7 index di skema uji, lalu keluar.
+    Log: "migrasi skema <skema>: 8 langkah dijalankan, 0 dilewati, N pernyataan"
+
+  go run ./cmd/api -migrate
+    dijalankan ULANG sebagai bukti aman diulang.
+    Log yang benar: "0 langkah dijalankan, 8 dilewati"
+
+  go run ./cmd/api
+    jalankan server seperti bab 2.
+
+Setelah itu:
+  - /healthz menjawab {"status":"sehat","database":"terjangkau"}
+  - /api/klaim-life/<id> menjawab 404 {"galat":"klaim tidak ada"} untuk id
+    yang belum ada. Data klaim belum ada sampai tiket 02 (register klaim)
+    dikerjakan.
+
+Bila sesi berikutnya butuh Oracle lagi, setel ulang ketiga variabel itu.
+Env var hilang saat jendela ditutup.
+
+================================================================================
+4. FRONTEND
+================================================================================
+
+Pertama kali saja di mesin baru (di mesin ini sudah terpasang):
+
+  Set-Location frontend
+  npm install
+
+Jalankan server dev:
+
+  Set-Location frontend        # bila belum di dalamnya
+  npm run dev
+
+Log yang benar:
+
+  VITE v5.4.x  ready in ... ms
+  Local:   http://localhost:5173/
+
+Buka http://localhost:5173/ di browser. Judul "Nusantara Re", subjudul
+"Klaim Life", kotak "Pengenal klaim", dan tombol "Buka" tampil.
+Berhenti: Ctrl+C.
+
+Perintah lain, semua dari folder frontend:
+
+  Perintah             Guna
+  -------------------  ---------------------------------------------------------
+  npm run typecheck    periksa tipe TypeScript (tsc --noEmit); tanpa keluaran
+                       bila bersih
+  npm test             vitest, saat ini 5 test
+  npm run build        tsc dulu, lalu Vite membuat folder dist/
+  npm run preview      sajikan isi dist/ untuk dicoba (bukan server dev)
+
+Env var frontend:
+  Berbeda dari Go, Vite MEMBACA berkas frontend\.env. Hanya variabel berawalan
+  VITE_ yang diteruskan ke browser. Saat ini satu-satunya: VITE_API_BASE_URL.
+  Kosong berarti "alamat yang sama dengan halaman". Berkas .env tidak masuk
+  git (pola *.env di .gitignore). Lihat bab 5 sebelum mengisinya.
+
+================================================================================
+5. CELAH YANG HARUS DIKETAHUI: FRONTEND DEV BELUM BISA BICARA KE BACKEND
+================================================================================
+
+Ini ditemukan saat mencoba, bukan dugaan:
+
+  a. vite.config.ts TIDAK punya pengaturan proxy. Permintaan /api/... dari
+     halaman jatuh ke server Vite sendiri, dan Vite menjawabnya dengan
+     index.html. Halaman tidak pernah menerima JSON dari Go.
+
+  b. Mengisi frontend\.env dengan VITE_API_BASE_URL=http://localhost:8080
+     membuat browser memanggil backend langsung, tetapi backend TIDAK mengirim
+     header CORS (Access-Control-Allow-Origin). Browser memblokir jawabannya.
+
+  c. Backend tidak menyajikan folder dist/. Jadi jalur "satu asal" (frontend
+     dan API dari alamat yang sama) juga belum ada.
+
+Akibatnya hari ini:
+  - Backend dan frontend bisa dijalankan dan dicek SENDIRI-SENDIRI (bab 2, 4).
+  - Tombol "Buka" di halaman belum sampai ke Go. Ia menampilkan "Gagal membaca
+    klaim." atau halaman kosong, apa pun id yang diketik.
+
+Ini bukan cacat tiket 01: AC-nya diuji lewat seam HTTP dan repository, bukan
+lewat browser. Tetapi celah ini harus ditutup sebelum ada yang mencoba lewat
+browser.
+
+[USULAN] penutup paling kecil, dikerjakan di sesi implementasi berikutnya,
+bukan diubah sendiri di sini: proxy di vite.config.ts yang alamat tujuannya
+dibaca dari env var, bukan ditulis sebagai literal:
+
+  server: {
+    port: 5173,
+    proxy: process.env.VITE_PROXY_TARGET
+      ? {
+          '/api':     process.env.VITE_PROXY_TARGET,
+          '/healthz': process.env.VITE_PROXY_TARGET,
+        }
+      : undefined,
+  },
+
+Cara memakainya setelah ada:
+
+  $env:VITE_PROXY_TARGET = 'http://localhost:8080'
+  npm run dev
+
+Tanpa CORS, tanpa alamat host di berkas mana pun (ADR-U-0004).
+
+================================================================================
+6. DUA JENDELA, URUTAN LENGKAP
+================================================================================
+
+JENDELA 1 (backend):
+
+  $env:Path = 'C:\Program Files\Go\bin;C:\Program Files\nodejs;' + $env:Path
+  Set-Location 'D:\XML\RNM_BRD\OUTPUT_HASIL_RNM\APP_RNM'
+  # bila Oracle ada: setel ORACLE_DSN, ORACLE_SCHEMA, IS_PEGA_PROD (bab 3)
+  go run ./cmd/api
+
+JENDELA 2 (frontend):
+
+  $env:Path = 'C:\Program Files\Go\bin;C:\Program Files\nodejs;' + $env:Path
+  Set-Location 'D:\XML\RNM_BRD\OUTPUT_HASIL_RNM\APP_RNM\frontend'
+  # bila proxy bab 5 sudah ada: $env:VITE_PROXY_TARGET = 'http://localhost:8080'
+  npm run dev
+
+Lalu buka http://localhost:5173/ di browser.
+
+Menghentikan: Ctrl+C di masing-masing jendela.
+
+================================================================================
+7. UJI SEBELUM DAN SESUDAH MENGUBAH APA PUN
+================================================================================
+
+Dari folder APP_RNM:
+
+  go vet ./...
+  go test ./...
+    harus: ok untuk internal/models dan internal/repository; 73 test lulus;
+    paket lain "[no test files]".
+
+  go test -tags=db ./internal/...
+    tanpa ORACLE_DSN: 18 test SKIP dengan pesan
+    "lewati: skemauji: ORACLE_DSN belum dikonfigurasi". Itu perilaku yang
+    benar, bukan lulus diam-diam.
+    dengan ORACLE_DSN + ORACLE_SCHEMA: seluruhnya harus PASS. Test membuat
+    skema uji dari migrasi yang sama dengan aplikasi, mengisi data buatan
+    berawalan UJI-, lalu membongkarnya.
+
+  gofmt -l .
+    harus tidak mencetak apa pun.
+
+Dari folder frontend:
+
+  npm run typecheck
+  npm test
+    harus: 5 passed.
+  npm run build
+    harus: tsc bersih, lalu "built in ... ms".
+
+Gabungan yang setara "make check" (make tidak terpasang):
+
+  go build ./... ; go vet ./... ; go test ./...
+  Set-Location frontend ; npm run typecheck ; npm test ; Set-Location ..
+
+================================================================================
+8. BILA TERSANGKUT
+================================================================================
+
+  Gejala                                   Sebab                Tindakan
+  ---------------------------------------  -------------------  ----------------
+  "go" / "npm" tidak dikenal               PATH sesi            bab 1
+  "bind: ... address already in use"       port 8080 dipakai    $env:HTTP_ADDR
+                                                                = ':8081'
+  "konfigurasi: ORACLE_SCHEMA wajib        DSN diisi, skema     isi
+    terisi bila ORACLE_DSN terisi"         tidak                ORACLE_SCHEMA
+  "migrasi: ORACLE_DSN wajib terisi"       -migrate tanpa DSN   bab 3
+  "migrasi: tidak dapat menjangkau         DSN salah / jaringan cek DSN dengan
+    oracle"                                                     DBA
+  migrasi menolak, menyebut produksi       IS_PEGA_PROD=true    jangan lanjut;
+                                                                itu instance
+                                                                yang salah
+  test db semua SKIP                       ORACLE_DSN kosong    normal tanpa
+                                                                Oracle
+  halaman tampil, "Buka" selalu gagal      celah bab 5          proxy belum ada
+  npm run dev: port 5173 dipakai           proses lain          Vite otomatis
+                                                                pindah ke 5174;
+                                                                baca lognya
+  "npm install" lambat / gagal             jaringan ke          coba lagi; tidak
+                                           registry.npmjs.org   perlu di mesin
+                                                                ini (sudah ada)
+
+================================================================================
+9. PETA FOLDER SINGKAT
+================================================================================
+
+  APP_RNM\
+    cmd\api\main.go              titik masuk backend; flag -migrate
+    internal\config\             baca env var: HTTP_ADDR, ORACLE_DSN,
+                                 ORACLE_SCHEMA, IS_PEGA_PROD, SERVICE_*
+    internal\handlers\           rute HTTP; tidak menyentuh Oracle langsung
+    internal\services\           aturan dagang dan perakitan data
+    internal\repository\         satu-satunya lapisan yang berbicara ke Oracle
+    internal\repository\migrations\
+                                 berkas .sql bernomor 001-008 (+ _down)
+    internal\repository\skemauji\
+                                 skema uji Oracle untuk test bertag db
+    internal\models\             bentuk data (struct)
+    pkg\utils\                   desimal dan tanggal
+    frontend\                    React + TypeScript, dijalankan Vite
+    Makefile                     daftar perintah (make tidak terpasang)
+    .env.example                 nama variabel backend, tanpa nilai
+    README-BACA-DULU.md          peta baca untuk pemula
+
+  Arah ketergantungan, selalu satu arah:
+    handlers -> services -> repository -> Oracle
+
+================================================================================
+10. ATURAN YANG TIDAK BOLEH DILANGGAR
+================================================================================
+
+  1. Nol alamat host, kata sandi, DSN, atau nomor polis sungguhan di berkas
+     mana pun: kode, test, .env.example, tiket, prompt, chat. Nilai hanya di
+     env var terminal. (ADR-U-0004)
+  2. Jangan pernah menunjuk instance atau alias produksi. IS_PEGA_PROD=true
+     memang dibuat untuk menolak migrasi.
+  3. Uang tidak pernah float. Dari Oracle sebagai teks (TO_CHAR), di Go
+     apd.Decimal, di JSON teks, di React string. (ADR-U-0003, ADR-U-0016)
+  4. Kode dan nomor tetap teks: "006" bukan 6. (ADR-U-0022)
+  5. Data uji selalu berawalan UJI-, tidak pernah data sungguhan.
+  6. Berkas .sql dan .go berakhiran baris LF, tanpa BOM. Dijaga .gitattributes
+     dan test.
+  7. Migrasi hanya terhadap skema uji dari DBA. Instance lain butuh persetujuan
+     manusia lebih dulu.
+
+================================================================================
+Akhir panduan. Rujukan lebih dalam: APP_RNM\README-BACA-DULU.md dan
+OUTPUT_HASIL_RNM\PANDUAN-RANTAI-ALAT.md.
+================================================================================
