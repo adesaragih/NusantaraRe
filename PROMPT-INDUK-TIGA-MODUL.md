@@ -58,6 +58,15 @@ modul ditempel **hanya** di sesi folder itu. Sesi yang menerima brief modul lain
 *"milik sesi worktree X"* dan tidak mengerjakannya. Kedua worktree sudah di-fast-forward asisten ke
 `9352e45` *(memuat perbaikan envelope `galat`)*.
 
+## 0.3 MODE SESI TUNGGAL *(27-09-2026 malam)* — diterima; penyatuan tiap giliran
+
+Sesi Claim Life mengerjakan tiket 00 kedua modul lain dari worktree-nya masing-masing *(membaca
+brief modul yang tertempel dua kali sebagai "kerjakan dari sesi ini")*. Itu **diterima** dan menjadi
+aturan: **brief modul yang tertempel di sesi ini dikerjakan sesi ini, berurutan, di `main`** sesudah
+kedua cabang modul disatukan *(brief `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-1.md` §5)*. Kedua
+worktree tetap ada dan di-fast-forward pada akhir tiap giliran, supaya sesi paralel *(§3)* dapat dibuka
+kapan saja dari SHA yang sama. Pembagian berkas §2 dan rentang migrasi berlaku di kedua mode.
+
 ## 1. TATA LETAK — worktree, cabang, port
 
 | Modul | Tempat kerja | Cabang | Backend | Vite |
@@ -105,9 +114,10 @@ Korpus `D:\XML\RNM_BRD\` tetap READ-ONLY dari semua worktree.
 
 | Sesi | Tempel utuh | Titik mulai |
 | --- | --- | --- |
-| Claim Life | `PROMPT-IMPLEMENTASI-MODUL-CLAIM-LIFE-LANJUTAN-12.md` *(lanjutan 11 sudah dijalankan sampai `9352e45`)* | `main` @ `9352e45` atau lebih baru |
-| PremiumList Life | `PROMPT-IMPLEMENTASI-MODUL-PREMIUMLIST-LIFE.md` | `modul/premiumlist-life` @ `9352e45` — buka sesi di `.worktrees\premiumlist-life` |
-| Komite Claim Life | `PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-LIFE.md` | `modul/komite-claim-life` @ `9352e45` — buka sesi di `.worktrees\komite-claim-life` |
+| **Sesi tunggal** *(mode §0.3)* | `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-1.md` *(§2 Claim Life, §3 PremiumList, §4 Komite)* | `main` @ `639b85e` sesudah Langkah 0 brief itu |
+| Claim Life | `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-1.md` §2 *(lanjutan 12 sudah dijalankan sampai `639b85e`)* | `main` @ `639b85e` atau lebih baru |
+| PremiumList Life | `PROMPT-IMPLEMENTASI-MODUL-PREMIUMLIST-LIFE.md` | `modul/premiumlist-life` @ `83658a8` *(tiket 00 selesai)* — buka sesi di `.worktrees\premiumlist-life` |
+| Komite Claim Life | `PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-LIFE.md` | `modul/komite-claim-life` @ `7709c0c` *(tiket 00 selesai)* — buka sesi di `.worktrees\komite-claim-life` |
 
 Aturan yang sama di ketiganya: XML menang dan tiket diralat dengan bukti; penyarangan dibaca sebagai
 **pohon**; mekanisme giliran lanjutan 8 §1 *(nol pesan di antara paket, catatan ke berkas laporan
