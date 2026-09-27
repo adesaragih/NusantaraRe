@@ -6,9 +6,14 @@ package services
 // Penulisan ke Oracle diuji terpisah oleh uji berskema.
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
+	"strings"
 	"testing"
 	"time"
+
+	"nusantarare/internal/repository"
 )
 
 func TestBackoffBerlipatDanBerplafon(t *testing.T) {
@@ -107,4 +112,107 @@ func jumlahMedanJSON(t *testing.T, v any) int {
 		t.Fatalf("membaca muatan: %v", err)
 	}
 	return len(peta)
+}
+
+// Muatan yang ditulis lalu dibaca kembali menghasilkan pengenal yang sama.
+//
+// ⛔ Perjalanan bolak-balik, bukan pemeriksaan satu arah. Penulis dan pembaca
+// muatan berada di dua tempat; yang menjaganya tetap sepaham hanyalah test
+// yang melewati keduanya.
+func TestMuatanOutboxBolakBalik(t *testing.T) {
+	saat := time.Date(2026, 3, 4, 5, 6, 7, 0, time.UTC)
+	asal := MuatanEfek{
+		KlaimID:      "RNML-K-9",
+		AdjustmentID: "ADJ-9",
+		AkunID:       "akun-9",
+		Waktu:        saat,
+	}
+	teks, err := json.Marshal(muatanOutbox{
+		KlaimID:      asal.KlaimID,
+		AdjustmentID: asal.AdjustmentID,
+		AkunID:       asal.AkunID,
+		Waktu:        asal.Waktu.Format(time.RFC3339),
+	})
+	if err != nil {
+		t.Fatalf("merakit: %v", err)
+	}
+	balik := bacaMuatan(string(teks), time.Time{})
+	if balik.KlaimID != asal.KlaimID || balik.AdjustmentID != asal.AdjustmentID ||
+		balik.AkunID != asal.AkunID {
+		t.Errorf("pengenal berubah: %+v, mau %+v", balik, asal)
+	}
+	if !balik.Waktu.Equal(asal.Waktu) {
+		t.Errorf("waktu = %v, mau %v", balik.Waktu, asal.Waktu)
+	}
+}
+
+// Muatan rusak TIDAK menggagalkan pembacaan - ia jatuh ke waktu cadangan.
+//
+// ⛔ Baris outbox berumur panjang; bentuk JSON-nya dapat berubah di antara
+// saat ia ditulis dan saat ia menyerah. Jejak berpengenal kosong masih lebih
+// berguna daripada kegagalan yang tidak tercatat sama sekali.
+func TestMuatanRusakTidakMenggagalkan(t *testing.T) {
+	cadangan := time.Date(2026, 5, 5, 0, 0, 0, 0, time.UTC)
+	for _, rusak := range []string{"", "{", "bukan json", `{"waktu":"kemarin"}`} {
+		m := bacaMuatan(rusak, cadangan)
+		if !m.Waktu.Equal(cadangan) {
+			t.Errorf("bacaMuatan(%q).Waktu = %v, mau waktu cadangan %v",
+				rusak, m.Waktu, cadangan)
+		}
+	}
+}
+
+// jejakPalsu mencatat apa yang direkam, tanpa Oracle.
+type jejakPalsu struct{ catatan []CatatanJejak }
+
+func (j *jejakPalsu) Rekam(_ context.Context, _ *repository.Tx, c CatatanJejak) error {
+	j.catatan = append(j.catatan, c)
+	return nil
+}
+
+// AC 20 tiket 12: kegagalan PERMANEN masuk jalur audit.
+//
+// ⛔ Dan kegagalan yang masih akan dicoba lagi TIDAK. Mencatatnya berarti
+// membanjiri jejak audit dengan delapan baris untuk satu email yang akhirnya
+// terkirim.
+func TestHanyaKegagalanPermanenMasukJejak(t *testing.T) {
+	saat := time.Date(2026, 7, 8, 9, 10, 11, 0, time.UTC)
+	c := CatatanEfekGagal{
+		MuatanEfek: MuatanEfek{KlaimID: "RNML-K-3", AdjustmentID: "ADJ-3",
+			AkunID: "akun-3", Waktu: saat},
+		Nama:  NamaEfekEmail,
+		Sebab: "sambungan ditolak",
+	}
+	palsu := &jejakPalsu{}
+	a := antreanOracle{jejak: palsu}
+	if err := a.rekamMenyerah(context.Background(), nil, c); err != nil {
+		t.Fatalf("merekam: %v", err)
+	}
+	if len(palsu.catatan) != 1 {
+		t.Fatalf("%d catatan jejak, mau 1", len(palsu.catatan))
+	}
+	j := palsu.catatan[0]
+	if j.Dari != TahapEfekKeluar+":"+NamaEfekEmail {
+		t.Errorf("Dari = %q, mau %q", j.Dari, TahapEfekKeluar+":"+NamaEfekEmail)
+	}
+	if j.Ke != TahapEfekMenyerah {
+		t.Errorf("Ke = %q, mau %q", j.Ke, TahapEfekMenyerah)
+	}
+	if j.KlaimID != c.KlaimID || j.AdjustmentID != c.AdjustmentID {
+		t.Errorf("jejak tidak menunjuk pekerjaannya: %+v", j)
+	}
+	// ⛔ Pesan galat TIDAK ikut ke jejak: ia dapat menyebut nama objek basis
+	// data, alamat, bahkan nilai kolom. Rinciannya tinggal di GALAT_TERAKHIR.
+	if strings.Contains(j.Dari, c.Sebab) || strings.Contains(j.Ke, c.Sebab) {
+		t.Errorf("pesan galat bocor ke jejak audit: %+v", j)
+	}
+}
+
+// Tanpa penjejak, menyerah GAGAL TERANG - tidak diam-diam tak tercatat.
+func TestMenyerahTanpaPenjejakGagalTerang(t *testing.T) {
+	a := antreanOracle{}
+	err := a.rekamMenyerah(context.Background(), nil, CatatanEfekGagal{})
+	if !errors.Is(err, ErrJejakBelumDiputuskan) {
+		t.Errorf("galat = %v, mau ErrJejakBelumDiputuskan", err)
+	}
 }

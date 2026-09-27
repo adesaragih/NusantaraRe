@@ -67,6 +67,23 @@ func Backoff(percobaan int) time.Duration {
 	return jeda
 }
 
+// Kosakata jejak audit untuk kegagalan efek keluar.
+//
+// ⛔ AC 20 tiket 12 menuntut kegagalan tercatat di JALUR AUDIT, bukan hanya
+// di log layanan. Outbox saja tidak cukup: outbox adalah antrean kerja,
+// dan orang yang bertanya "apa yang terjadi pada klaim ini" membaca jejak
+// auditnya, bukan antrean pekerja.
+//
+// ⚠️ Hanya kegagalan PERMANEN yang masuk jejak. Kegagalan yang masih akan
+// dicoba lagi belum menjadi sejarah klaim - mencatatnya berarti membanjiri
+// jejak audit dengan delapan baris untuk satu email yang akhirnya terkirim.
+const (
+	// TahapEfekKeluar mengisi kolom `DARI` - asal transisinya.
+	TahapEfekKeluar = "efek-keluar"
+	// TahapEfekMenyerah mengisi kolom `KE`.
+	TahapEfekMenyerah = "gagal-permanen"
+)
+
 // muatanOutbox adalah bentuk JSON yang disimpan di kolom `MUATAN`.
 //
 // ⛔ PENGENAL DAN WAKTU SAJA. Nol nama orang, nol email, nol alamat, nol
@@ -87,11 +104,13 @@ type muatanOutbox struct {
 type antreanOracle struct {
 	svc   *Service
 	pohon *repository.PohonKlaim
+	jejak Jejak
 }
 
 // AntreanEfekOracle menyusun antre-ulang yang menulis ke `T_EFEK_KELUAR`.
 func AntreanEfekOracle(svc *Service) Antrean {
-	return antreanOracle{svc: svc, pohon: repository.NewPohonKlaim(svc.db)}
+	return antreanOracle{svc: svc, pohon: repository.NewPohonKlaim(svc.db),
+		jejak: PerekamJejakOracle(svc)}
 }
 
 // Antre menyimpan satu kegagalan untuk dicoba lagi - atau untuk ditunggu
@@ -128,8 +147,37 @@ func (a antreanOracle) Antre(ctx context.Context, c CatatanEfekGagal) error {
 				c.Waktu.Add(Backoff(1)), c.Sebab, c.Waktu)
 		}
 		// ⛔ Permanen: nol jadwal. Ia menunggu manusia, bukan menunggu waktu.
-		return a.pohon.TuntaskanEfek(ctx, tx, id,
-			repository.StatusEfekGagalPermanen, time.Time{}, c.Sebab, c.Waktu)
+		if err := a.pohon.TuntaskanEfek(ctx, tx, id,
+			repository.StatusEfekGagalPermanen, time.Time{}, c.Sebab,
+			c.Waktu); err != nil {
+			return err
+		}
+		// ⛔ Dan ia masuk JALUR AUDIT, dalam transaksi yang sama (AC 20
+		// tiket 12). Transaksi terpisah berarti ada saat ketika outbox
+		// berkata menyerah sementara jejaknya belum mengatakan apa pun.
+		return a.rekamMenyerah(ctx, tx, c)
+	})
+}
+
+// rekamMenyerah menulis satu kegagalan permanen ke jejak audit.
+//
+// ⚠️ `Dari`/`Ke` TIDAK memuat pesan galatnya. Pesan galat dapat menyebut
+// nama objek basis data, alamat, bahkan nilai kolom; rinciannya tinggal di
+// kolom `GALAT_TERAKHIR` outbox. Yang masuk jejak: efek apa, dan bahwa ia
+// menyerah.
+func (a antreanOracle) rekamMenyerah(ctx context.Context, tx *repository.Tx,
+	c CatatanEfekGagal) error {
+
+	if a.jejak == nil {
+		return ErrJejakBelumDiputuskan
+	}
+	return a.jejak.Rekam(ctx, tx, CatatanJejak{
+		AdjustmentID: c.AdjustmentID,
+		KlaimID:      c.KlaimID,
+		Dari:         TahapEfekKeluar + ":" + c.Nama,
+		Ke:           TahapEfekMenyerah,
+		AkunID:       c.AkunID,
+		Waktu:        c.Waktu,
 	})
 }
 
@@ -146,12 +194,21 @@ type PekerjaEfek struct {
 	svc       *Service
 	pohon     *repository.PohonKlaim
 	pelaksana PelaksanaEfek
+	// penjejak dipinjam dari antrean: DUA jalur dapat menyerah - yang
+	// pertama saat efeknya gagal permanen sejak awal, yang kedua saat
+	// jatah percobaannya habis di sini. Keduanya wajib meninggalkan
+	// jejak yang sama bentuknya, jadi keduanya memanggil kode yang sama.
+	penjejak antreanOracle
 }
 
 // NewPekerjaEfek menyusun pekerjanya.
 func NewPekerjaEfek(svc *Service, p PelaksanaEfek) *PekerjaEfek {
-	return &PekerjaEfek{svc: svc, pohon: repository.NewPohonKlaim(svc.db),
-		pelaksana: p}
+	return &PekerjaEfek{
+		svc:       svc,
+		pohon:     repository.NewPohonKlaim(svc.db),
+		pelaksana: p,
+		penjejak:  antreanOracle{svc: svc, jejak: PerekamJejakOracle(svc)},
+	}
 }
 
 // SatuPutaran memungut SATU efek, menjalankannya, lalu menuntaskannya.
@@ -187,12 +244,52 @@ func (w *PekerjaEfek) SatuPutaran(ctx context.Context, saat time.Time) error {
 		// ⛔ DUA jalan menuju menyerah: tidak layak dicoba ulang, ATAU jatah
 		// percobaannya habis. Ronde pertama hanya punya yang pertama, dan
 		// kegagalan jaringan yang tak kunjung pulih akan berputar selamanya.
-		if !LayakDicobaUlang(jalanErr) || baris.Percobaan >= percobaanMaksimum {
+		menyerah := !LayakDicobaUlang(jalanErr) ||
+			baris.Percobaan >= percobaanMaksimum
+		if menyerah {
 			status, jadwal = repository.StatusEfekGagalPermanen, time.Time{}
 		}
-		return w.pohon.TuntaskanEfek(ctx, tx, baris.ID, status, jadwal,
-			jalanErr.Error(), saat)
+		if err := w.pohon.TuntaskanEfek(ctx, tx, baris.ID, status, jadwal,
+			jalanErr.Error(), saat); err != nil {
+			return err
+		}
+		if !menyerah {
+			return nil
+		}
+		// ⛔ Jalur menyerah KEDUA - jatah percobaan habis. AC 20 tiket 12
+		// berlaku di sini persis seperti di jalur pertama; email yang
+		// menyerah sesudah delapan percobaan sama tidak terkirimnya
+		// dengan yang menyerah seketika.
+		return w.penjejak.rekamMenyerah(ctx, tx, CatatanEfekGagal{
+			MuatanEfek: bacaMuatan(baris.Muatan, saat),
+			Nama:       baris.Jenis,
+			Sebab:      jalanErr.Error(),
+		})
 	})
+}
+
+// bacaMuatan membaca kembali muatan JSON sebuah baris outbox.
+//
+// ⚠️ Muatan yang TIDAK terbaca tidak menggagalkan penyerahan. Baris outbox
+// berumur panjang; bentuk JSON-nya dapat berubah di antara saat ia ditulis
+// dan saat ia menyerah. Jejak dengan pengenal kosong masih lebih berguna
+// daripada kegagalan yang tidak tercatat sama sekali - dan `RUJUKAN` di
+// outbox tetap menyimpan tautannya.
+func bacaMuatan(teks string, saat time.Time) MuatanEfek {
+	var m muatanOutbox
+	if err := json.Unmarshal([]byte(teks), &m); err != nil {
+		return MuatanEfek{Waktu: saat}
+	}
+	waktu, err := time.Parse(time.RFC3339, m.Waktu)
+	if err != nil {
+		waktu = saat
+	}
+	return MuatanEfek{
+		KlaimID:      m.KlaimID,
+		AdjustmentID: m.AdjustmentID,
+		AkunID:       m.AkunID,
+		Waktu:        waktu,
+	}
 }
 
 // PenyalurClaimLifeOracle menyusun penyalur dengan KETIGA ketergantungan yang
