@@ -17,6 +17,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -202,4 +203,69 @@ func (p *Pendaftaran) Daftar(ctx context.Context, pelaku Pelaku, minta Permintaa
 		return models.PohonKlaim{}, err
 	}
 	return hasil, nil
+}
+
+// Kunci penghitung nomor klaim Life.
+//
+// `[data DBA]` `GENERATE_SEQUENCE_NUMBER` berkunci `(CLASS, JENIS, TAHUN)`.
+// `CLASS` dan `JENIS` menentukan seri; `TAHUN` memisahkan tahun buku.
+const (
+	ClassNomorKlaimLife = "CLAIMLIFE"
+	JenisNomorKlaimLife = "K"
+)
+
+// AwalanNomorKlaim adalah awalan nomor bisnis klaim.
+//
+// `[terverifikasi]` bentuk `<awalan>K<kode bisnis>.MM.YYYY.<5 digit>` sejajar
+// dengan nomor akseptasi `RNML-A…` / `RNML-AR…`
+// (`Generate_NoAccept_Life.xml` baris 85); huruf tengahnya yang membedakan
+// seri - `K` klaim, `A` akseptasi.
+const AwalanNomorKlaim = "RNML-"
+
+// RakitNomorKlaim menyusun nomor bisnis klaim.
+//
+// ⚠️ LIMA digit seperti `LPAD(v_seq,5,'0')`, dan urut yang sudah lebih panjang
+// TIDAK dipotong - memotongnya menerbitkan nomor yang bertabrakan.
+func RakitNomorKlaim(kodeBisnis, mmYYYY string, urut int) string {
+	u := strconv.Itoa(urut)
+	if len(u) < 5 {
+		u = strings.Repeat("0", 5-len(u)) + u
+	}
+	return AwalanNomorKlaim + JenisNomorKlaimLife + kodeBisnis + "." + mmYYYY + "." + u
+}
+
+// penomorCounter menulis ulang `PROC_GENERATE_SEQUENCE_NUMBER` di Go.
+//
+// ⛔ `[keputusan work owner]` butir **o1**: procedure tidak dipanggil. Yang
+// tetap di Oracle hanya `SELECT … FOR UPDATE`, sebab kunci baris memang milik
+// basis data.
+type penomorCounter struct{ pohon *repository.PohonKlaim }
+
+// PenomorCounterOracle menyusun penomor yang memakai penghitung Oracle.
+func PenomorCounterOracle(svc *Service) Penomor {
+	return penomorCounter{pohon: repository.NewPohonKlaim(svc.db)}
+}
+
+// NomorBerikut menerbitkan satu nomor klaim baru.
+//
+// Urutannya persis procedure-nya: hari tutup buku → periode → kunci baris →
+// naikkan → rakit.
+func (p penomorCounter) NomorBerikut(ctx context.Context, tx *repository.Tx,
+	kodeBisnis string, saat time.Time) (string, error) {
+
+	if strings.TrimSpace(kodeBisnis) == "" {
+		return "", fmt.Errorf("%w: kode bisnis kosong; nomor klaim memuatnya",
+			ErrPermintaanTidakSah)
+	}
+	hariClosing, err := p.pohon.HariClosing(ctx, tx)
+	if err != nil {
+		return "", err
+	}
+	periode := repository.HitungPeriodeNomor(saat, hariClosing)
+	urut, err := p.pohon.UrutNomorBerikut(ctx, tx,
+		ClassNomorKlaimLife, JenisNomorKlaimLife, periode, saat)
+	if err != nil {
+		return "", err
+	}
+	return RakitNomorKlaim(kodeBisnis, periode.MMYYYY, urut), nil
 }

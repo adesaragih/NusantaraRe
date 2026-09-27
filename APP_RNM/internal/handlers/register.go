@@ -44,7 +44,7 @@ func daftarKlaim(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 
 		// ⛔ Hanya NOMOR sertifikat yang diteruskan. Nilai polis dibaca server
 		// sendiri dari sumbernya - lihat repository.AmbilUntukKlaim.
-		pohon, err := svc.Pendaftaran().Daftar(r.Context(), pelakuDari(r, stubPelaku), services.PermintaanDaftar{
+		pohon, err := svc.Pendaftaran().DenganPenomor(services.PenomorCounterOracle(svc)).Daftar(r.Context(), pelakuDari(r, stubPelaku), services.PermintaanDaftar{
 			NomorPremiList: masuk.NomorPremiList,
 			NomorPolis:     masuk.NomorPolis,
 			Type:           masuk.Type,

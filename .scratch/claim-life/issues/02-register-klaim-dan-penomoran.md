@@ -424,3 +424,30 @@ tabel klaim berarti menduplikasi data pribadi tanpa satu pun AC yang memintanya.
 Daftar "AC yang masih terbuka" di bab sebelumnya menulis **18**; yang benar **19**
 (7 butir o + 1 penyaring tanda + 6 menunggu Oracle + 2 kosong artinya + 2 pemilik lain + 1 tidak
 berlaku). Sensusnya sendiri benar: **7 `[x]` + 19 `[ ]` = 26**.
+
+---
+
+### Ralat menurut keputusan work owner — 27 September 2026 (A2, butir o1/o2/o3)
+
+⛔ **AC yang menyebut procedure diralat.** Teks lama menuntut memanggil
+`POOLDATA.PROC_GENERATE_SEQUENCE_NUMBER`; `[keputusan work owner]` *"jangan ada lagi pemanggilan
+procedure, segala procedure hardcode dalam skrip"* melarangnya. **ADR-U-0043** ditulis, dan ia
+**meng-supersede ADR-U-0006** pada bagian penomoran bisnis.
+
+| Butir | Teks lama | Teks baru |
+| --- | --- | --- |
+| penerbit nomor klaim | panggil `PROC_GENERATE_SEQUENCE_NUMBER` | logikanya **ditulis ulang di Go** (`PenomorCounterOracle`); yang tetap di Oracle hanya `SELECT … FOR UPDATE` |
+| periode | *(tidak disebut)* | hari tutup buku dari `TANGGAL_CLOSING`; lewat hari itu → geser satu bulan **beserta tahunnya** |
+| cabang cutover | *(tidak disebut)* | `TRUNC(now) <= 02/01/2026` → `12.2025`/`2025`; **dipertahankan** meski sudah lewat, sebab pengurai nomor lama tiket 13 memerlukannya |
+| bentuk nomor | *(tidak disebut)* | `RNML-K<kode bisnis>.<MM.YYYY>.<5 digit>` |
+
+⚠️ **Tulisan ke tabel warisan yang disengaja:** `GENERATE_SEQUENCE_NUMBER` di-`UPDATE`/`INSERT`
+aplikasi. Inheren pada keputusan ini — penghitung yang tidak disimpan bukan penghitung. Dicatat,
+bukan disembunyikan.
+
+⚠️ **Label tidak dinaikkan.** Bentuk procedure-nya berlabel `[data DBA — belum dikonfirmasi DBA]` di
+sumbernya; kode yang menirunya memakai label yang sama.
+
+`PenomorBelumDiputuskan` **tetap menjadi bawaan** — gagal tertutup. `register.go` yang memasang
+`PenomorCounterOracle`, sehingga jalur pendaftaran berhenti menjawab 501.
+
