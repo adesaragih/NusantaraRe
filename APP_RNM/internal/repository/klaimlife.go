@@ -493,21 +493,32 @@ func (r *KlaimLife) CaseIDKlaim(ctx context.Context, klaimID string) (string, er
 // sama-sama menang, yang kedua menimpa yang pertama tanpa jejak. Penjaga yang
 // sama sudah dipasang pada perubahan status (tiket 04).
 func (r *KlaimLife) PerbaruiTahap(ctx context.Context, tx *Tx,
-	klaimID, tahapAsal, tahap, sendtoAdmin, sendtoMedical string,
+	klaimID, tahapAsal, tahapTujuan, peranTujuan, sendtoAdmin, sendtoMedical string,
 	saat time.Time) error {
 	tabel, err := r.db.Qualify("T_WORK_CLAIM")
 	if err != nil {
 		return err
 	}
+	// ⛔ BUTIR at: `TAHAP` ikut ditulis, dan penjaga optimisnya kini
+	// memakai TAHAP - bukan PY_POSITION. Alasannya memaksa: pada
+	// perpindahan Input Register ⇄ Outstanding Claim `PY_POSITION` TIDAK
+	// BERUBAH (keduanya ReasLifeAdmin), sehingga penjaga ber-PY_POSITION
+	// tidak dapat mendeteksi kasus yang sudah dipindahkan orang lain
+	// sejak dibaca.
+	//
+	// ⚠️ `NVL` dipakai untuk baris LAMA yang `TAHAP`-nya masih kosong:
+	// tanpa itu setiap perpindahan pertama baris lama akan menyentuh nol
+	// baris dan gagal, padahal tidak ada yang salah dengannya.
 	q := fmt.Sprintf(`UPDATE %s SET PY_POSITION = :1, SENDTO_ADMIN = :2,
-		 SENDTO_MEDICAL = :3, TGL_UPDATE = :4
-		 WHERE ID = :5 AND PY_POSITION = :6`, tabel)
+		 SENDTO_MEDICAL = :3, TGL_UPDATE = :4, TAHAP = :5
+		 WHERE ID = :6 AND NVL(TAHAP, :7) = :8`, tabel)
 	if err := PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, kosongJadiNil(tahap),
+	hasil, err := tx.tx.ExecContext(ctx, q, kosongJadiNil(peranTujuan),
 		kosongJadiNil(sendtoAdmin), kosongJadiNil(sendtoMedical),
-		waktuJadiNil(saat), klaimID, kosongJadiNil(tahapAsal))
+		waktuJadiNil(saat), kosongJadiNil(tahapTujuan),
+		klaimID, kosongJadiNil(tahapAsal), kosongJadiNil(tahapAsal))
 	if err != nil {
 		return fmt.Errorf("repository: memperbarui tahap: %w", err)
 	}
@@ -524,23 +535,42 @@ func (r *KlaimLife) PerbaruiTahap(ctx context.Context, tx *Tx,
 
 // TahapKlaim membaca PY_POSITION baris work object sebuah klaim.
 func (r *KlaimLife) TahapKlaim(ctx context.Context, klaimID string) (string, error) {
+	_, peran, err := r.TahapDanPeran(ctx, klaimID)
+	return peran, err
+}
+
+// TahapDanPeran membaca TAHAP dan PY_POSITION sebuah kasus sekaligus.
+//
+// ⛔ BUTIR at. Keduanya dibaca BERSAMA, dalam satu kueri, karena keduanya
+// menjawab pertanyaan yang berbeda dan pemanggil memerlukan keduanya:
+// `TAHAP` mengatakan di anak tangga mana kasusnya berdiri, `PY_POSITION`
+// mengatakan peran siapa yang memegangnya. Dua kueri berarti ada jendela
+// ketika keduanya dibaca dari keadaan yang berbeda.
+//
+// ⚠️ `TAHAP` KOSONG dikembalikan kosong, bukan ditebak di sini. Yang
+// menebaknya `services` lewat `models.TahapDariPeran`, dan ia menebak
+// dengan sadar: baris lama yang sebenarnya di Input Register akan tampak
+// Outstanding. Menebak di repository menyembunyikan bahwa itu tebakan.
+func (r *KlaimLife) TahapDanPeran(ctx context.Context, klaimID string) (
+	tahap, peran string, err error) {
+
 	tabel, err := r.db.Qualify("T_WORK_CLAIM")
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	q := fmt.Sprintf(`SELECT PY_POSITION FROM %s WHERE ID = :1`, tabel)
+	q := fmt.Sprintf(`SELECT TAHAP, PY_POSITION FROM %s WHERE ID = :1`, tabel)
 	if err := PeriksaSQL(q); err != nil {
-		return "", err
+		return "", "", err
 	}
-	var posisi sql.NullString
-	err = r.db.sql.QueryRowContext(ctx, q, klaimID).Scan(&posisi)
+	var kolomTahap, posisi sql.NullString
+	err = r.db.sql.QueryRowContext(ctx, q, klaimID).Scan(&kolomTahap, &posisi)
 	if err == sql.ErrNoRows {
-		return "", fmt.Errorf("repository: work object %q tidak ada", klaimID)
+		return "", "", fmt.Errorf("repository: work object %q tidak ada", klaimID)
 	}
 	if err != nil {
-		return "", fmt.Errorf("repository: membaca PY_POSITION: %w", err)
+		return "", "", fmt.Errorf("repository: membaca tahap kasus: %w", err)
 	}
-	return posisi.String, nil
+	return kolomTahap.String, posisi.String, nil
 }
 
 // PerbaruiKomiteID menautkan baris adjustment ke kasus Komite yang baru lahir.

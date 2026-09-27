@@ -1656,3 +1656,25 @@ sendiri.
 
 ⚠️ **Migrasi belum pernah dijalankan di Oracle mana pun** — G1 tetap berlaku.
 
+## Ralat menurut XML — 27 September 2026 (butir at dan au)
+
+**Dua kolom ditambahkan ke `T_WORK_CLAIM`** lewat migrasi `016_kolom_tahap_dan_tgl_create.sql`
+*(+ `_down`)*. AC 34/35 tiket ini **tetap** — yang berubah isinya, bukan janjinya.
+
+| Kolom | Tipe | Null | Sebab, dengan bukti |
+| --- | --- | --- | --- |
+| `TAHAP` | `VARCHAR2(32)` | ya | butir **at**. `PY_POSITION` tidak dapat membedakan `Input Register` dari `Outstanding Claim` — keduanya `ReasLifeAdmin` — sedangkan `Send Back to Register` (`Section/InputOSClaimLife.xml:21404` → `<pyLocalAction>SendtoAdmin` 21433) membuktikan keduanya keadaan yang berbeda dan dapat dituju kembali. Isinya nama assignment VERBATIM `pyTaskName` (`Flow/Register_Flow.xml` 358 · 343 · 268 · 313) |
+| `TGL_CREATE` | `DATE` | ya | butir **au**, padanan `pxCreateDateTime`. `TGL_UPDATE` **ditimpa** tiap perpindahan, sehingga sesudah satu serah terima ia tidak lagi menyatakan kapan kasusnya lahir. Kotak masuk diurutkan dengan waktu buat (`ReportDefinition/InboxPremiumList.xml:736`, `DESC` 733) |
+
+**Keduanya NULLABLE** dan itu disengaja (ADR-U-0027): baris yang sudah ada belum punya nilainya, dan
+kosong **berbeda** dari tebakan. Pengisian baris lama dilakukan di **kode** sebagai langkah bernama
+pada migrasi data tiket 13 — `TAHAP` dari `PY_POSITION` lewat `TahapDariPeran`, `TGL_CREATE` dari
+`TGL_UPDATE` — dan dicatat sebagai **turunan**, bukan sebagai fakta.
+
+**`CREATE_OP` kini benar-benar diisi** saat pendaftaran (`pelaku.AkunID`, padanan
+`pxCreateOperator`). Sebelumnya hanya `CREATE_OP_NAME` yang ditulis; tanpa `CREATE_OP` kotak masuk
+Admin tidak dapat menyaring "kasus milik saya" sama sekali — dan itulah yang `Register_Flow.xml`
+1351 (`ToWorklist`) dan 1508 (`Current operator`) rutekan.
+
+`STRUKTUR-TABEL-CLAIM-LIFE.md` bab `T_WORK_CLAIM` diperbarui bersamaan; penjaga
+`TestKolomDDLCocokDenganStruktur` menegakkan keduanya sejalan.

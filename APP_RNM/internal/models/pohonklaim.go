@@ -56,6 +56,22 @@ type WorkClaim struct {
 	CreateOp      string
 	CreateOpName  string
 	TglUpdate     time.Time
+	// Tahap adalah nama assignment VERBATIM `pyTaskName` - butir **at**.
+	//
+	// ⛔ Ada karena `PyPosition` TIDAK dapat membedakan Input Register
+	// dari Outstanding Claim: keduanya dipegang `ReasLifeAdmin`,
+	// sedangkan `Send Back to Register` membuktikan keduanya keadaan
+	// yang berbeda (`Section/InputOSClaimLife.xml:21404`).
+	Tahap string
+	// TglCreate adalah waktu kasus LAHIR - butir **au**, padanan
+	// `pxCreateDateTime`.
+	//
+	// ⚠️ Terpisah dari `TglUpdate`, yang DITIMPA tiap perpindahan.
+	// Kotak masuk diurutkan dengan yang ini
+	// (`ReportDefinition/InboxPremiumList.xml:736`); mengurutkannya
+	// dengan waktu ubah membuat daftar melompat-lompat setiap kali
+	// seseorang memindah kasus lain.
+	TglCreate time.Time
 }
 
 // BarisKlaim menyatakan work object ini adalah baris klaim, bukan baris komite.

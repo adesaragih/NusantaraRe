@@ -117,42 +117,60 @@ func (tl *TahapLayanan) Pindah(ctx context.Context, pelaku Pelaku,
 	// berperan Admin, yang justru bukan dia. Orang memindahkan pekerjaan yang
 	// SEDANG IA PEGANG.
 	baca := repository.NewKlaimLife(tl.svc.db)
-	// ⛔ Yang tersimpan di PY_POSITION adalah NAMA PERAN, bukan pengenal
-	// shape. Ronde pertama menganggapnya `"Assignment<n>"`, dan akibatnya
-	// setiap pembacaan baris nyata berakhir "tidak dikenal".
-	peranAsal, err := baca.TahapKlaim(ctx, klaimID)
+	// ⛔ BUTIR at: TAHAP dan PY_POSITION dibaca BERSAMA. Yang tersimpan
+	// di PY_POSITION adalah NAMA PERAN, bukan pengenal shape - ronde
+	// pertama menganggapnya `"Assignment<n>"` dan setiap pembacaan baris
+	// nyata berakhir "tidak dikenal".
+	kolomTahap, peranAsal, err := baca.TahapDanPeran(ctx, klaimID)
 	if err != nil {
 		return err
 	}
-	asal := models.TahapDariPeran(peranAsal)
+	// ⚠️ Kolom TAHAP menang; PY_POSITION hanya CADANGAN untuk baris lama.
+	// Baris lama yang sebenarnya di Input Register akan tampak Outstanding
+	// sampai kolomnya terisi - diterima, dan dicatat di models.TahapDariPeran.
+	asal := models.TahapDariNama(kolomTahap)
 	if !asal.Diketahui() {
-		return fmt.Errorf("%w: peran pemegang %q", ErrTahapTidakDikenal, peranAsal)
+		asal = models.TahapDariPeran(peranAsal)
+	}
+	if !asal.Diketahui() {
+		return fmt.Errorf("%w: tahap %q, peran pemegang %q",
+			ErrTahapTidakDikenal, kolomTahap, peranAsal)
+	}
+	peranAsalTahap, ada := models.PeranPemegangTahap(asal)
+	if !ada {
+		return fmt.Errorf("%w: tahap %q", ErrPeranTahapBelumDiputuskan, asal)
 	}
 	// Orang memindahkan pekerjaan yang SEDANG IA PEGANG.
-	if err := WajibPeran(pelaku, peranAsal); err != nil {
+	if err := WajibPeran(pelaku, peranAsalTahap); err != nil {
 		return err
 	}
 	peranTujuan, ada := models.PeranPemegangTahap(ke)
 	if !ada {
 		return fmt.Errorf("%w: tahap %q", ErrPeranTahapBelumDiputuskan, ke)
 	}
-	if !models.SerahTerimaSah(peranAsal, peranTujuan) {
-		return fmt.Errorf("%w: %s -> %s", ErrPerpindahanTidakSah, peranAsal, peranTujuan)
+	// ⛔ Perpindahan diperiksa antar-TAHAP, bukan antar-PERAN: peta peran
+	// tidak dapat menyatakan Input Register ⇄ Outstanding Claim, yang
+	// keduanya dipegang ReasLifeAdmin.
+	if !models.SerahTerimaSah(asal, ke) {
+		return fmt.Errorf("%w: %s -> %s", ErrPerpindahanTidakSah, asal, ke)
 	}
-	keAdmin, keMedical := models.JalurBalikPeran(peranAsal, peranTujuan)
+	keAdmin, keMedical := models.JalurBalikTahap(asal, ke)
 	admin, medical := JalurBalik{KeAdmin: keAdmin, KeMedical: keMedical}.NilaiSendto()
 	return tl.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
-		if err := baca.PerbaruiTahap(ctx, tx, klaimID, peranAsal, peranTujuan,
-			admin, medical, saat); err != nil {
+		if err := baca.PerbaruiTahap(ctx, tx, klaimID, asal.String(), ke.String(),
+			peranTujuan, admin, medical, saat); err != nil {
 			return err
 		}
 		return tl.jejak.Rekam(ctx, tx, CatatanJejak{
 			// ⛔ KlaimID, bukan AdjustmentID: yang berpindah KASUSNYA.
 			KlaimID: klaimID,
-			Dari:    peranAsal,
-			Ke:      peranTujuan,
-			AkunID:  pelaku.AkunID,
-			Waktu:   saat,
+			// ⚠️ Jejak mencatat TAHAP, bukan peran: perpindahan Admin→Admin
+			// punya peran asal dan tujuan yang SAMA, dan jejak yang
+			// mencatat peran akan berbunyi "dari Admin ke Admin".
+			Dari:   asal.String(),
+			Ke:     ke.String(),
+			AkunID: pelaku.AkunID,
+			Waktu:  saat,
 		})
 	})
 }

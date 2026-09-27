@@ -188,3 +188,44 @@ dapat membedakan Input Register dari Outstanding, sebab keduanya dipegang peran 
 warisan yang `Simpan` tulis. Jalurnya **gagal terang** dengan `ErrKodeBisnisBelumTersimpan` (HTTP 501)
 sampai kolomnya lahir di **A1**. Tidak dikarang.
 
+## Ralat menurut XML — 27 September 2026 (butir at)
+
+**Yang diralat:** `[terbuka — work owner]` "pembedaan Input Register vs Outstanding Claim tidak
+tersimpan di kolom mana pun". **Ditutup oleh XML**, bukan oleh keputusan manusia.
+
+**Bukti, path + baris** *(korpus READ-ONLY)*:
+
+| Bukti | Isi |
+| --- | --- |
+| `Flow/Register_Flow.xml` 358 · 343 · 268 · 313 | `<pyTaskName>` keempat assignment: `Input Register`, `Outstanding Claim`, `Medical Check`, `Claim Analis`. Keempatnya **keadaan** kasus |
+| `Section/InputOSClaimLife.xml` **21404** | `<pyLabel>Send Back to Register</pyLabel>` |
+| `Section/InputOSClaimLife.xml` **21433** | `<pyLocalAction>SendtoAdmin</pyLocalAction>` |
+| `Section/InputOSClaimLife.xml` 21349 · 21839 · 21863 | `Send to Medical Check` → `SendtoAdmin_Act1` |
+
+`Input Register` **dapat dituju kembali**. Ia bukan tahap yang hanya dilewati sekali, melainkan
+keadaan yang tombol di layar Outstanding kembalikan kasus kepadanya. Tanpa kolom yang menyatakannya,
+kotak masuk Admin menyatukan dua antrian yang di Pega terpisah.
+
+**Keputusan at** `[DIPUTUSKAN 27-09-2026; work owner dapat memveto sebelum migrasi dijalankan di
+Oracle mana pun]`: `T_WORK_CLAIM.TAHAP VARCHAR2(32)` menyimpan nama assignment VERBATIM `pyTaskName`.
+`PY_POSITION` **tetap** — ia peran pemegangnya (ADR-U-0002); kedua kolom menjawab dua pertanyaan
+berbeda.
+
+**Akibatnya pada kode:**
+
+| Sebelum | Sesudah |
+| --- | --- |
+| `serahTerimaSah` peta **PERAN** | peta **TAHAP** — peta peran tidak dapat menyatakan Admin→Admin |
+| `JalurBalikPeran(dari, ke string)` | `JalurBalikTahap(dari, ke Tahap)`; Register ⇄ Outstanding **bukan** jalur balik (tidak ada yang dikembalikan kepada siapa pun) |
+| `TahapKlaim` membaca `PY_POSITION` | `TahapDanPeran` membaca **keduanya dalam satu kueri** |
+| penjaga optimis `UPDATE … AND PY_POSITION = :n` | `AND NVL(TAHAP, :n) = :n` — pada Register ⇄ Outstanding `PY_POSITION` **tidak berubah**, sehingga penjaga lama tidak dapat mendeteksi kasus yang sudah dipindah orang lain |
+| jejak mencatat peran asal → peran tujuan | mencatat **tahap** asal → tujuan; jejak berperan akan berbunyi "dari Admin ke Admin" |
+
+**AC yang bergeser:** tidak ada AC tiket ini yang berubah centangnya — yang ditutup adalah `[terbuka]`
+di badan tiket, bukan sebuah AC.
+
+⚠️ **Masih terbuka, dan disebut namanya:** prasyarat `pyWorkPage.pyPosition=="ReasLifeMedicalAdvisor"`
+pada `SendtoAdmin_Act` **dan** `SendtoAdmin_Act1` belum dijelaskan — dengan posisi Admin langkahnya
+dilewati (`WhenFalse=3`), lalu bagaimana `Send Back to Register` bekerja dari layar Outstanding yang
+dipegang Admin? Pertanyaan **pohon**, dijawab di A3 kelompok Outstanding dengan membaca
+`Register_Flow.xml` 583–772 beserta urutan shape-nya. Bukan alasan menunda at.

@@ -166,11 +166,17 @@ func (p *Pendaftaran) Daftar(ctx context.Context, pelaku Pelaku, minta Permintaa
 		return hasil, repository.ErrTanpaOracle
 	}
 
+	// ⛔ SATU jam untuk seluruh pendaftaran. Dua `time.Now()` terpisah
+	// membuat nomor dan baris work-nya berbeda stempel beberapa
+	// milidetik - cukup untuk jatuh di sisi berlawanan tengah malam,
+	// dan periode nomor ditentukan tanggal.
+	saat := time.Now()
+
 	// TRANSAKSI PERTAMA - hanya nomornya, sependek mungkin.
 	var nomor string
 	if err := p.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
 		var err error
-		nomor, err = p.penomor.NomorBerikut(ctx, tx, minta.KodeBisnis, time.Now())
+		nomor, err = p.penomor.NomorBerikut(ctx, tx, minta.KodeBisnis, saat)
 		return err
 	}); err != nil {
 		return hasil, err
@@ -209,6 +215,24 @@ func (p *Pendaftaran) Daftar(ctx context.Context, pelaku Pelaku, minta Permintaa
 				// CacahBarisLama memakai sumbu itu.
 				CaseID:       pengenal,
 				CreateOpName: pelaku.AkunID,
+				// ⛔ BUTIR au: `CREATE_OP` adalah padanan `pxCreateOperator`,
+				// dan ITULAH yang worklist Pega rutekan (`Register_Flow.xml`
+				// 1351 `ToWorklist`, 1508 `Current operator`). Tanpa kolom ini
+				// terisi, kotak masuk Admin tidak dapat menyaring "kasus
+				// milik saya" sama sekali.
+				CreateOp: pelaku.AkunID,
+				// ⛔ BUTIR at: kasus BARU berada di Outstanding Claim, bukan
+				// Input Register. `Assignment2` (Input Register) SELESAI pada
+				// saat borang register disimpan - yang tersimpan di sini
+				// adalah hasilnya. Kasus kembali ke Input Register hanya lewat
+				// `Send Back to Register` (`InputOSClaimLife.xml:21404`).
+				Tahap: models.TahapOutstanding.String(),
+				// ⛔ Peran pemegangnya tetap ditulis: `TAHAP` mengatakan di anak
+				// tangga mana, `PY_POSITION` mengatakan peran siapa.
+				PyPosition: models.PeranAdminLife,
+				// BUTIR au: waktu LAHIR, terpisah dari waktu ubah.
+				TglCreate: saat,
+				TglUpdate: saat,
 			},
 			Klaim: models.Klaim{
 				ID:         pengenal,

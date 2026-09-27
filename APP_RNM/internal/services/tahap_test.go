@@ -67,41 +67,85 @@ func TestKolomPyPositionMenyimpanNamaPeran(t *testing.T) {
 // ⛔ Ronde pertama menguji `JalurBalik` sebagai bendera BEBAS, dan bahkan
 // menegaskan `{KeAdmin, KeMedical}` keduanya menyala - keadaan yang tidak
 // mungkin, sebab keduanya menunjuk tujuan yang berbeda. Kini ia diturunkan
-// dari pasangan perannya, sehingga keadaan mustahil itu tidak dapat dibentuk.
+// dari pasangan TAHAPnya, sehingga keadaan mustahil itu tidak dapat dibentuk.
+//
+// ⛔ BUTIR at: tangganya kini antar-TAHAP, bukan antar-PERAN. Peta peran
+// tidak dapat menyatakan Input Register ⇄ Outstanding Claim - keduanya
+// dipegang `ReasLifeAdmin` - sehingga satu perpindahan yang XML tunjukkan
+// dengan terang (`Send Back to Register`, `InputOSClaimLife.xml:21404`)
+// tidak punya tempat di dalamnya.
 func TestSerahTerimaDanJalurBalik(t *testing.T) {
 	kasus := []struct {
-		dari, ke       string
+		dari, ke       models.Tahap
 		sah            bool
 		mauAdm, mauMed bool
 		apa            string
 	}{
-		{models.PeranAdminLife, models.PeranMedicalLife, true, false, false,
-			"maju: Admin -> Medical"},
-		{models.PeranMedicalLife, models.PeranSPVLife, true, false, false,
-			"maju: Medical -> SPV"},
-		{models.PeranMedicalLife, models.PeranAdminLife, true, true, false,
+		// ⛔ Admin → Admin: kemajuan Register → Outstanding saat borang
+		// register disimpan, dan kembalinya lewat `Send Back to Register`.
+		// KEDUANYA sah, dan KEDUANYA bukan jalur balik antarperan:
+		// tidak ada yang "dikembalikan" kepada siapa pun.
+		{models.TahapInputRegister, models.TahapOutstanding, true, false, false,
+			"maju: Input Register -> Outstanding"},
+		{models.TahapOutstanding, models.TahapInputRegister, true, false, false,
+			"balik dalam tangan Admin: Outstanding -> Input Register"},
+		{models.TahapOutstanding, models.TahapMedicalCheck, true, false, false,
+			"maju: Outstanding -> Medical"},
+		{models.TahapMedicalCheck, models.TahapClaimAnalis, true, false, false,
+			"maju: Medical -> Analis"},
+		{models.TahapMedicalCheck, models.TahapOutstanding, true, true, false,
 			"balik: Medical -> Admin"},
-		{models.PeranSPVLife, models.PeranAdminLife, true, true, false,
-			"balik: SPV -> Admin"},
-		{models.PeranSPVLife, models.PeranMedicalLife, true, false, true,
-			"balik: SPV -> Medical"},
+		{models.TahapClaimAnalis, models.TahapOutstanding, true, true, false,
+			"balik: Analis -> Admin"},
+		{models.TahapClaimAnalis, models.TahapMedicalCheck, true, false, true,
+			"balik: Analis -> Medical"},
 		// ⛔ Lompatan yang tidak ada di tangga.
-		{models.PeranAdminLife, models.PeranSPVLife, false, false, false,
-			"lompat: Admin -> SPV"},
-		{models.PeranAdminLife, models.PeranAdminLife, false, false, false,
+		{models.TahapOutstanding, models.TahapClaimAnalis, false, false, false,
+			"lompat: Outstanding -> Analis"},
+		{models.TahapInputRegister, models.TahapMedicalCheck, false, false, false,
+			"lompat: Register -> Medical"},
+		{models.TahapOutstanding, models.TahapOutstanding, false, false, false,
 			"ke dirinya sendiri"},
+		{models.TahapTidakDikenal, models.TahapOutstanding, false, false, false,
+			"dari tahap yang tidak dikenal"},
 	}
 	for _, k := range kasus {
 		if got := models.SerahTerimaSah(k.dari, k.ke); got != k.sah {
 			t.Errorf("%s: SerahTerimaSah = %v, mau %v", k.apa, got, k.sah)
 		}
-		adm, med := models.JalurBalikPeran(k.dari, k.ke)
+		adm, med := models.JalurBalikTahap(k.dari, k.ke)
 		if adm != k.mauAdm || med != k.mauMed {
 			t.Errorf("%s: jalur balik = (%v, %v), mau (%v, %v)",
 				k.apa, adm, med, k.mauAdm, k.mauMed)
 		}
 		if adm && med {
 			t.Errorf("%s: kedua penanda menyala sekaligus - mustahil", k.apa)
+		}
+	}
+}
+
+// TestTahapDariNamaKebalikanString - butir at.
+//
+// ⛔ Perjalanan bolak-balik. Kolom `TAHAP` menyimpan nama yang `String()`
+// hasilkan; bila `TahapDariNama` tidak dapat membacanya kembali, kasus yang
+// sudah tersimpan menjadi tak terbaca - dan gerbang tangganya diam-diam
+// jatuh ke cadangan `PY_POSITION` yang tidak dapat membedakan kedua tahap
+// Admin.
+func TestTahapDariNamaKebalikanString(t *testing.T) {
+	semua := []models.Tahap{
+		models.TahapInputRegister, models.TahapOutstanding,
+		models.TahapMedicalCheck, models.TahapClaimAnalis,
+	}
+	for _, tahap := range semua {
+		if balik := models.TahapDariNama(tahap.String()); balik != tahap {
+			t.Errorf("TahapDariNama(%q) = %v, mau %v", tahap.String(), balik, tahap)
+		}
+	}
+	// Nama asing menjadi TIDAK DIKENAL, bukan tebakan: kolom berisi nilai
+	// asing adalah kolom yang ditulis di luar aplikasi ini.
+	for _, asing := range []string{"", "Outstanding", "ReasLifeAdmin", "Assignment1"} {
+		if got := models.TahapDariNama(asing); got.Diketahui() {
+			t.Errorf("TahapDariNama(%q) = %v; itu bukan nama tahap", asing, got)
 		}
 	}
 }

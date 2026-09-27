@@ -266,3 +266,62 @@ func TestPenomoranDiTransaksiSendiri(t *testing.T) {
 			"akan menahan pendaftar lain selama seluruh pendaftaran")
 	}
 }
+
+// Butir at + au: pendaftaran mengisi TAHAP, TGL_CREATE, dan CREATE_OP.
+//
+// ⛔ Penjaga penyambungan. Ketiganya kolom baru, dan kolom baru yang tidak
+// pernah diisi TIDAK BERBUNYI sama sekali: barisnya tersimpan, layarnya
+// tampil, dan kotak masuk hanya diam-diam kosong.
+func TestPendaftaranMengisiTahapDanWaktuBuat(t *testing.T) {
+	isi, err := os.ReadFile("pendaftaran.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tubuh := ""
+	for _, fn := range strings.Split(string(isi), "\nfunc ") {
+		if strings.HasPrefix(fn, "(p *Pendaftaran) Daftar(") {
+			tubuh = fn
+			break
+		}
+	}
+	if tubuh == "" {
+		t.Fatal("fungsi Daftar tidak ditemukan; pembacanya yang rusak")
+	}
+
+	// ⚠️ Jarak spasinya TIDAK ikut diperiksa: gofmt menyejajarkan medan per
+	// KELOMPOK, dan komentar di antaranya memutus kelompok. Penjaga yang
+	// mengunci spasi akan jatuh karena pemformatan, bukan karena kolomnya
+	// hilang.
+	for _, wajib := range []string{
+		// Kasus BARU berada di Outstanding Claim: Assignment2 (Input
+		// Register) SELESAI saat borang register disimpan.
+		"models.TahapOutstanding.String()",
+		"models.PeranAdminLife",
+		"Tahap:",
+		"PyPosition:",
+		"TglCreate:",
+		"CreateOp:",
+	} {
+		if !strings.Contains(tubuh, wajib) {
+			t.Errorf("Daftar tidak menulis %q; kolomnya akan tinggal kosong "+
+				"dan kotak masuk diam-diam kosong", wajib)
+		}
+	}
+
+	// ⛔ SATU jam untuk seluruh pendaftaran: dua `time.Now()` terpisah dapat
+	// jatuh di sisi berlawanan tengah malam, dan periode nomor ditentukan
+	// TANGGAL.
+	//
+	// ⚠️ Komentar dibuang lebih dulu. Ronde pertama mencacah teks mentah dan
+	// menghitung 2 - yang kedua adalah komentar yang MENJELASKAN aturan ini.
+	// Penjaga yang menuduh penjelasannya sendiri akan dihapus orang.
+	var kode []string
+	for _, b := range strings.Split(tubuh, "\n") {
+		if !strings.HasPrefix(strings.TrimSpace(b), "//") {
+			kode = append(kode, b)
+		}
+	}
+	if n := strings.Count(strings.Join(kode, "\n"), "time.Now()"); n != 1 {
+		t.Errorf("Daftar memanggil time.Now() %d kali, mau 1", n)
+	}
+}

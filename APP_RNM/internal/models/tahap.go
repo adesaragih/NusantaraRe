@@ -97,11 +97,19 @@ func PeranPemegangTahap(t Tahap) (string, bool) {
 
 // TahapDariPeran menerjemahkan nilai kolom `PY_POSITION` menjadi tahap.
 //
-// ⚠️ TIDAK TUNGGAL bagi Admin. `ReasLifeAdmin` memegang DUA tahap - Input
-// Register dan Outstanding - sehingga kolom itu tidak dapat membedakan
-// keduanya. Yang dikembalikan adalah Outstanding, tahap Admin yang lebih jauh
-// di tangga; pembedaan Register vs Outstanding tidak tersimpan di kolom mana
-// pun. `[terbuka - work owner]` bila pembedaan itu kelak diperlukan.
+// ⛔ CADANGAN, bukan sumber - sejak butir **at** (27-09-2026). Sumber tahap
+// adalah kolom `TAHAP`; fungsi ini hanya dipakai untuk baris LAMA yang
+// kolomnya masih kosong.
+//
+// ⚠️ TIDAK TUNGGAL bagi Admin, dan di situlah batasnya: `ReasLifeAdmin`
+// memegang DUA tahap - Input Register dan Outstanding Claim - sehingga
+// `PY_POSITION` sendirian tidak dapat membedakan keduanya. Yang
+// dikembalikan Outstanding, tahap Admin yang lebih jauh di tangga; baris
+// lama yang sebenarnya berada di Input Register karena itu akan tampak
+// Outstanding sampai kolom `TAHAP`-nya terisi. Itu diterima dan dicatat,
+// bukan ditebak lebih jauh.
+//
+// `[terbuka]` yang dahulu berdiri di sini DITUTUP butir at: kolomnya ada.
 func TahapDariPeran(peran string) Tahap {
 	switch peran {
 	case PeranAdminLife:
@@ -115,44 +123,79 @@ func TahapDariPeran(peran string) Tahap {
 	}
 }
 
-// serahTerimaSah adalah perpindahan PERAN yang boleh terjadi.
+// serahTerimaSah adalah perpindahan TAHAP yang boleh terjadi.
 //
-// `[terverifikasi]` ADR-U-0002: `SendtoAdmin = 1` mengembalikan dari
-// `ReasLifeMedicalAdvisor` **atau** `ReasLifeSPV` ke `ReasLifeAdmin`;
-// `SendtoMedical = 1` mengembalikan dari `ReasLifeSPV` ke
-// `ReasLifeMedicalAdvisor`. Arah majunya dari penyambung `Register_Flow`:
-// Admin → Medical Advisor → SPV.
+// ⛔ BUTIR at (27-09-2026): dahulu peta PERAN. Peta peran tidak dapat
+// menyatakan Admin → Admin, sehingga satu perpindahan yang XML tunjukkan
+// dengan terang - `Send Back to Register` - tidak punya tempat di dalamnya.
+// `[terverifikasi]` `Section/InputOSClaimLife.xml` 21404 `<pyLabel>Send
+// Back to Register</pyLabel>`, 21433 `<pyLocalAction>SendtoAdmin`.
+//
+// `[terverifikasi]` ADR-U-0002 tetap berlaku untuk jalur baliknya:
+// `SendtoAdmin = 1` mengembalikan dari Medical Check **atau** Claim Analis
+// ke tangan Admin; `SendtoMedical = 1` mengembalikan dari Claim Analis ke
+// Medical Check. Arah majunya dari penyambung `Register_Flow`.
 //
 // ⛔ Tanpa daftar ini setiap pasangan sah - termasuk lompatan yang tidak ada
 // di tangga. Tangga yang setiap anaknya dapat dilompati bukan tangga.
 //
-// ⚠️ Register → Outstanding TIDAK ada di sini: keduanya dipegang peran yang
-// sama, sehingga `PY_POSITION` tidak berubah dan tidak ada serah terima.
-var serahTerimaSah = map[string]map[string]bool{
-	PeranAdminLife:   {PeranMedicalLife: true},
-	PeranMedicalLife: {PeranSPVLife: true, PeranAdminLife: true},
-	PeranSPVLife:     {PeranAdminLife: true, PeranMedicalLife: true},
+// ⚠️ Input Register ⇄ Outstanding Claim keduanya dipegang `ReasLifeAdmin`,
+// sehingga `PY_POSITION` TIDAK berubah pada perpindahan itu - yang berubah
+// hanya `TAHAP`. Itulah sebabnya peta ini tidak dapat lagi berupa peta peran.
+var serahTerimaSah = map[Tahap]map[Tahap]bool{
+	TahapInputRegister: {TahapOutstanding: true},
+	TahapOutstanding:   {TahapInputRegister: true, TahapMedicalCheck: true},
+	TahapMedicalCheck:  {TahapClaimAnalis: true, TahapOutstanding: true},
+	TahapClaimAnalis:   {TahapOutstanding: true, TahapMedicalCheck: true},
 }
 
-// SerahTerimaSah menyatakan kasus boleh berpindah dari satu peran ke lainnya.
-func SerahTerimaSah(dari, ke string) bool { return serahTerimaSah[dari][ke] }
+// SerahTerimaSah menyatakan kasus boleh berpindah dari satu tahap ke lainnya.
+func SerahTerimaSah(dari, ke Tahap) bool { return serahTerimaSah[dari][ke] }
 
-// JalurBalikPeran menyatakan serah terima itu PENGEMBALIAN, bukan kemajuan.
+// JalurBalikTahap menyatakan serah terima itu PENGEMBALIAN, bukan kemajuan.
 //
-// Diturunkan dari pasangan perannya, tidak diterima sebagai bendera bebas:
+// Diturunkan dari pasangan tahapnya, tidak diterima sebagai bendera bebas:
 // bendera bebas membolehkan `SENDTO_ADMIN=1` ditulis pada perpindahan menuju
 // Medical Check, dan membolehkan keduanya menyala sekaligus - padahal keduanya
 // menunjuk tujuan yang berbeda dan tidak mungkin bersamaan.
-func JalurBalikPeran(dari, ke string) (keAdmin, keMedical bool) {
+//
+// ⚠️ Kemajuan Input Register → Outstanding Claim BUKAN jalur balik, dan
+// kembalinya Outstanding → Input Register JUGA bukan `SENDTO_ADMIN`:
+// keduanya di tangan Admin yang sama, jadi tidak ada yang "dikembalikan"
+// kepada siapa pun. Benderanya menandai pengembalian ANTARPERAN.
+func JalurBalikTahap(dari, ke Tahap) (keAdmin, keMedical bool) {
 	if !SerahTerimaSah(dari, ke) {
 		return false, false
 	}
+	peranDari, _ := PeranPemegangTahap(dari)
+	peranKe, _ := PeranPemegangTahap(ke)
+	if peranDari == peranKe {
+		return false, false
+	}
 	switch {
-	case ke == PeranAdminLife:
+	case peranKe == PeranAdminLife:
 		return true, false
-	case ke == PeranMedicalLife && dari == PeranSPVLife:
+	case ke == TahapMedicalCheck && dari == TahapClaimAnalis:
 		return false, true
 	default:
 		return false, false
 	}
+}
+
+// TahapDariNama menerjemahkan isi kolom `TAHAP` menjadi tahap - butir at.
+//
+// ⛔ Ia kebalikan `String()`, dan keduanya memakai peta yang SAMA
+// (`namaTahap`). Dua peta terpisah berarti ada saat ketika sebuah tahap dapat
+// ditulis tetapi tidak dapat dibaca kembali.
+//
+// ⚠️ Nama yang tidak dikenal menjadi `TahapTidakDikenal`, bukan tebakan.
+// Kolom yang berisi nilai asing adalah kolom yang seseorang tulis di luar
+// aplikasi ini, dan menebak artinya menyembunyikan itu.
+func TahapDariNama(nama string) Tahap {
+	for t, n := range namaTahap {
+		if n == nama {
+			return t
+		}
+	}
+	return TahapTidakDikenal
 }

@@ -353,14 +353,16 @@ func (r *PohonKlaim) Simpan(ctx context.Context, tx *Tx, p models.PohonKlaim) er
 	// Tingkat 1 - akar work object.
 	err = r.exec(ctx, tx, fmt.Sprintf(`INSERT INTO %s
 		(ID, COVER_KEY, LINI, PY_POSITION, SENDTO_ADMIN,
-		 SENDTO_MEDICAL, TYPE, CASE_ID, CREATE_OP, CREATE_OP_NAME, TGL_UPDATE)
-		VALUES (:1,:2,:3,:4,:5,:6,:7,:8,:9,:10,:11)`, work),
+		 SENDTO_MEDICAL, TYPE, CASE_ID, CREATE_OP, CREATE_OP_NAME, TGL_UPDATE,
+		 TAHAP, TGL_CREATE)
+		VALUES (:1,:2,:3,:4,:5,:6,:7,:8,:9,:10,:11,:12,:13)`, work),
 		p.Work.ID, kosongJadiNil(p.Work.CoverKey), kosongJadiNil(p.Work.Lini),
 		kosongJadiNil(p.Work.PyPosition),
 		kosongJadiNil(p.Work.SendtoAdmin), kosongJadiNil(p.Work.SendtoMedical),
 		kosongJadiNil(p.Work.Type), kosongJadiNil(p.Work.CaseID),
 		kosongJadiNil(p.Work.CreateOp), kosongJadiNil(p.Work.CreateOpName),
-		waktuJadiNil(p.Work.TglUpdate))
+		waktuJadiNil(p.Work.TglUpdate),
+		kosongJadiNil(p.Work.Tahap), waktuJadiNil(p.Work.TglCreate))
 	if err != nil {
 		return err
 	}

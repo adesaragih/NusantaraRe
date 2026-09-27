@@ -45,7 +45,9 @@ klaim, bisa baris kasus komite.
 | `CASE_ID` | teks | ya | | korpus `CASEID` — UpdOS, InsOS |
 | `CREATE_OP` | teks | ya | | keputusan tiket 14 |
 | `CREATE_OP_NAME` | teks | ya | | korpus `CREATEOPNAME` — UpdOS, InsOS |
-| `TGL_UPDATE` | DATE | ya | | keputusan tiket 14 |
+| `TGL_UPDATE` | DATE | ya | | keputusan tiket 14 — waktu UBAH, ditimpa tiap perpindahan |
+| `TAHAP` | teks | ya | | **butir at** `[DIPUTUSKAN 27-09-2026]` — nama assignment VERBATIM `pyTaskName` (`Register_Flow.xml` 358 · 343 · 268 · 313). Ada karena `PY_POSITION` tidak dapat membedakan **Input Register** dari **Outstanding Claim** (keduanya `ReasLifeAdmin`), sedangkan `Send Back to Register` (`InputOSClaimLife.xml:21404`) membuktikan keadaan itu dapat dituju kembali |
+| `TGL_CREATE` | DATE | ya | | **butir au** — padanan `pxCreateDateTime`; kotak masuk diurutkan dengannya (`InboxPremiumList.xml:736`). `TGL_UPDATE` tidak dapat dipakai: ia ditimpa tiap perpindahan |
 
 ### Delapan awalan `ID` — satu pasang per lini
 
