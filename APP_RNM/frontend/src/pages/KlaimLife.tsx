@@ -53,9 +53,21 @@ export default function KlaimLife() {
   // dan satu kotak galat bersama akan menuding peserta yang salah.
   const [galatTanggal, setGalatTanggal] = useState<Record<string, string>>({})
 
+  // Peserta yang permintaannya sedang terbang. ⛔ Bukan satu penanda untuk
+  // seluruh layar: dua peserta boleh diubah berbarengan, dan satu penanda
+  // bersama akan mengunci kotak peserta lain tanpa sebab yang terlihat.
+  const [tanggalSibuk, setTanggalSibuk] = useState<Record<string, boolean>>({})
+
   /** Mengirim tanggal kejadian satu peserta; validasinya di server. */
   async function ubahTanggal(pesertaID: string, nilai: string): Promise<void> {
     if (klaim === null || nilai === '') return
+    // ⛔ Menolak permintaan kedua selagi yang pertama terbang. Tanpa ini,
+    // dua pengubahan beruntun berlomba: yang kedua tiba lebih dulu, lalu
+    // `ambilKlaimLife` milik yang PERTAMA mendarat dan menimpa layar dengan
+    // potret yang sudah kedaluwarsa - tanggal yang baru saja disimpan tampak
+    // hilang, dan pemakai mengetiknya lagi.
+    if (tanggalSibuk[pesertaID] === true) return
+    setTanggalSibuk((lama) => ({ ...lama, [pesertaID]: true }))
     setGalatTanggal((lama) => {
       const { [pesertaID]: _dibuang, ...sisa } = lama
       return sisa
@@ -70,6 +82,8 @@ export default function KlaimLife() {
         ...lama,
         [pesertaID]: pesanGalat(e) ?? 'Tanggal kejadian ditolak.',
       }))
+    } finally {
+      setTanggalSibuk((lama) => ({ ...lama, [pesertaID]: false }))
     }
   }
   const [dampak, setDampak] = useState<DampakHapus | null>(null) // isi popup konfirmasi
@@ -346,6 +360,7 @@ export default function KlaimLife() {
                   <input
                     type="date"
                     defaultValue={p.tanggalKejadian}
+                    disabled={tanggalSibuk[p.id] === true}
                     onChange={(e) => {
                       void ubahTanggal(p.id, e.target.value)
                     }}

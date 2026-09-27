@@ -418,3 +418,77 @@ yang ia lakukan.
 
 ⚠️ `go vet` menemukan apa yang test **tidak** temukan: `t.Context()` menuntut go1.24 sedangkan modul
 ini go1.22. Testnya hijau, vet-nya merah. Diganti `context.Background()`.
+
+---
+
+## Giliran lanjutan 11 — paket 3: lima total menunggu rule yang hilang (`639e97a`)
+
+### Temuan: rujukan menggantung pada **angka uang**
+
+`Section/ClaimLifeDetailGCNM.xml` memanggil **`CheckTotalAdjustmentClaim` sepuluh kali**, tetapi
+activity itu **tidak punya satu pun berkas rule di seluruh korpus**. Diperiksa dua cara:
+`find -iname "*CheckTotalAdjustment*"` → nol hasil; `grep -rl` → satu-satunya berkas yang
+menyebutnya adalah section itu sendiri.
+
+Kesepuluh pemanggilan menempel pada **lima medan total uang**, dua per medan:
+
+| Medan | `pyLabelPreview` | Pemanggilan |
+| --- | ---: | --- |
+| `Total Share Nusantara Re` | b20914 | b20970, b21091 |
+| `Total Sum Insured` | b21201 | b21262, b21377 |
+| `Total Sum Reasured` | b21488 | b21546, b21664 |
+| `Total Share Retro` | b21775 | b21836, b21951 |
+| `Total Claim Amount` | b22063 | b22120, b22238 |
+
+⛔ **Kelimanya tidak dijumlahkan sendiri.** "Total" terdengar seperti penjumlahan kolomnya, tetapi
+pertanyaan yang menentukan tidak terjawab: baris yang **mana** yang ikut — seluruhnya, atau hanya
+yang `IsCheck`? Termasuk yang `STS_REJECT = 2`? Jalur tolak **mencabut `IsCheck`*
+*(`RejectOSClaimLife_Act`)*, jadi jawabannya berpengaruh nyata — dan ini angka uang *(ADR-U-0003)*.
+
+Kelima medannya **tetap tampil** dengan penanda dan menyebut nama rule-nya. Paritas yang tampak
+lengkap padahal tidak adalah paritas yang tidak akan dicari lagi *(pelajaran butir av)*.
+
+**Dua uji menjaganya dari dua arah**, keduanya dibuktikan: menambahkan angka pada salah satu total
+→ merah; dan uji kedua memeriksa bahwa rujukannya **ada** (10×) **dan** berkasnya **tidak ada** —
+bila ekspornya kelak dilengkapi, uji itulah yang gagal, dan gagalnya **kabar baik**.
+
+Dilaporkan **OQ-H**; PARITAS baris 18 diralat *(Koreksi 2 benar bahwa ia tidak ada, tetapi
+melewatkan bagian terpenting: ia **dirujuk**)*.
+
+**Telemetri:** JS 179 → **193** · build 46 → **47** modul *(panelnya terpakai, bukan kode mati)*.
+
+---
+
+## Giliran lanjutan 11 — paket 4: `Edit Date` terhubung ke layar (`d10427e`)
+
+### Temuan: rute tanpa pemanggil
+
+`PUT /api/klaim-life/{id}/peserta/{pesertaId}/tanggal-kejadian` ada di backend **sejak tiket 06**,
+lengkap dengan `ValidasiDOL` dan ujinya. Tetapi **nol pemanggil di React**. Jalurnya karena itu
+tidak pernah dapat dijalankan orang — dan itu **tidak berbunyi di uji mana pun**: backend hijau,
+layar hijau, fiturnya tidak ada.
+
+Sumbernya: b14115 `Edit Date` → b14144 `pyLocalAction ShowEditClaimLife` → `EditDateClaimLife_Section`;
+validasinya `ValidasiDOL_Act`, dipanggil section yang sama di b11177 dan b11298.
+
+⛔ Kontrolnya berdiri **per peserta**, bukan per klaim: `ValidasiDOL_Act` berkelas
+`Int-LIFE_PREMIUM_DETAIL` dan menempelkan galatnya pada `.DATE_OF_LOSS` **peserta**. Galatnya pun
+disimpan per peserta — satu kotak galat bersama akan menuding peserta yang salah.
+
+`TanggalKejadian` kini menyeberang di JSON peserta. Sebelumnya medannya sengaja tidak dikirim,
+sehingga kotak tanggal selalu terbuka **kosong** — dan kosong terbaca *"belum diisi"* padahal
+mungkin sudah. Penjaga ikut dipasang di uji marshaller itu: **nama orang tetap tidak menyeberang**,
+sebab medan pada marshaller mudah bertambah satu per satu.
+
+### Balapan yang ditutup sebelum sempat terjadi
+
+Dua pengubahan beruntun dapat berlomba: yang kedua tiba lebih dulu, lalu `ambilKlaimLife` milik
+yang **pertama** mendarat dan menimpa layar dengan potret kedaluwarsa — tanggal yang baru saja
+disimpan tampak hilang, dan pemakai mengetiknya lagi. Kotaknya kini terkunci selagi permintaannya
+terbang, **per peserta** *(penanda bersama akan mengunci kotak peserta lain tanpa sebab yang
+terlihat)*.
+
+⚠️ Uji sempat merah karena **ujinya**, bukan kodenya: `new Response('', {status: 204})` ditolak
+konstruktor — spesifikasi Fetch menuntut 204 berbadan `null`.
+
+**Telemetri:** Go 295 → **296 PASS · 0 FAIL · 34 SKIP** · JS 193 → **199** · build 47 modul.
