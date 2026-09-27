@@ -187,6 +187,8 @@ type Peserta struct {
 	// disalin.
 	SumberID string
 	// IsCheck menandai peserta yang DIPILIH untuk diklaim (AC 8 tiket 03).
+	//
+	// ⛔ Nilainya SELALU PenandaDipilih, tidak pernah "1" atau "Y".
 	IsCheck string
 	// KodeStatus adalah CERMIN `STS_REJECT` baris adjustment yang terakhir
 	// diputus, bukan keputusan tersendiri (tiket 04).
@@ -350,6 +352,21 @@ func (p Peserta) MarshalJSON() ([]byte, error) {
 		Baris:           baris,
 	})
 }
+
+// PenandaDipilih adalah SATU-SATUNYA nilai yang berarti "peserta ini diklaim".
+//
+// ⛔ VERBATIM dari rule, bukan pilihan gaya:
+//
+//	`Activity/SetIndexAdjustmentList.xml` b328  `.IsCheck` = `true`
+//	`Activity/SavePesertaClaim.xml` b1812, b1997, b2413  `.IsCheck=="true"`
+//
+// ⛔ CACAT YANG PERNAH ADA, dan sebab konstanta ini lahir: jalur
+// pendaftaran menuliskan "1" sedangkan gerbang akseptasi menuntut "true",
+// sehingga setiap peserta yang baru didaftarkan DITOLAK saat hendak diaksep -
+// dan seluruh jalur akseptasi tidak dapat dijalankan untuk klaim baru.
+// Kedua sisi benar menurut dirinya sendiri; hanya pertemuannya yang salah,
+// dan tidak ada satu pun uji yang memaksa keduanya bertemu.
+const PenandaDipilih = "true"
 
 // Klaim adalah satu klaim Life beserta seluruh pesertanya.
 //

@@ -313,9 +313,15 @@ func salinKePeserta(sel []sql.NullString) (models.Peserta, error) {
 		NomorSertifikat: teks(3),
 		MataUang:        teks(4),
 		STNC:            teks(5),
-		// ⭐ Dipilih pengguna, jadi penandanya "1" - inilah penyimpan aturan
-		// mana peserta yang diklaim (AC 8 tiket 03).
-		IsCheck:             "1",
+		// ⭐ Dipilih pengguna - inilah penyimpan aturan mana peserta yang
+		// diklaim (AC 8 tiket 03).
+		//
+		// ⛔ RALAT 27-09-2026: baris ini menuliskan "1", sedangkan gerbang
+		// akseptasi menuntut "true" (`SavePesertaClaim.xml` b1812 menguji
+		// `.IsCheck=="true"`, `SetIndexAdjustmentList.xml` b328 menuliskan
+		// `true`). Akibatnya setiap peserta yang baru didaftarkan ditolak
+		// saat hendak diaksep. Nilainya kini datang dari satu konstanta.
+		IsCheck:             models.PenandaDipilih,
 		ValuasiGrossMulai:   teks(6),
 		ValuasiGrossSelesai: teks(7),
 		ValuasiRetroMulai:   teks(8),

@@ -147,7 +147,7 @@ func RakitNomorAkseptasi(awalan, kodeBisnis, mm, yy, urut string) string {
 // DIMAKSUD - `IsCheck && (QP || QR)` - sebab meloloskan baris peserta yang
 // tidak dipilih ke akseptasi adalah cacat, bukan fitur.
 func PeriksaBolehAksep(p models.Peserta, b models.BarisAdjustment) error {
-	if !strings.EqualFold(strings.TrimSpace(p.IsCheck), "true") {
+	if !PesertaDipilih(p) {
 		return fmt.Errorf("%w: peserta %q ber-IS_CHECK %q",
 			ErrPesertaTidakDipilih, p.ID, p.IsCheck)
 	}
@@ -386,4 +386,17 @@ func (p penerbitOracle) Terbitkan(ctx context.Context, tx *repository.Tx,
 		return "", fmt.Errorf("%w: %q", repository.ErrNomorAkseptasiBerganda, nomor)
 	}
 	return nomor, nil
+}
+
+// PesertaDipilih menjawab apakah peserta itu ditandai untuk diklaim.
+//
+// ⛔ SATU rumah bagi aturannya. Sebelum ini perbandingannya tertulis di
+// tempat pemakaiannya, dan jalur penulis di repository memakai nilai LAIN -
+// tak satu pun uji memaksa keduanya bertemu.
+//
+// ⚠️ Longgar saat MEMBACA (EqualFold + TrimSpace) tetapi ketat saat
+// MENULIS (models.PenandaDipilih). Data warisan boleh saja menyimpan "TRUE"
+// atau " true "; yang tidak boleh adalah kita sendiri menambah ragam baru.
+func PesertaDipilih(p models.Peserta) bool {
+	return strings.EqualFold(strings.TrimSpace(p.IsCheck), models.PenandaDipilih)
 }
