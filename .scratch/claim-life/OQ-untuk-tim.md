@@ -324,3 +324,71 @@ menyimpulkan tentang **medannya**, tanpa menanyakan *siapa lagi yang menulis pro
 akseptasi sampai tombol simpan ditekan lagi. Di sistem baru ia dihitung saat dibaca, jadi tidak
 pernah basi. Arah selisihnya disengaja — dan bila produksi justru mengandalkan angka yang **tersimpan**
 *(mis. untuk laporan yang harus cocok dengan cetakan lama)*, beri tahu kami: itu mengubah keputusan.
+
+---
+
+## 27 September 2026 — OQ-I (`Close Claim` dari Outstanding: selesai, atau pindah?)
+
+**OQ-I** *(untuk pemilik ekspor / pengembang Pega — kami sudah memutuskan, dan ingin dikoreksi bila salah)*.
+
+`Close Claim` bukan konektor alur. `Flow/Register_Flow.xml` dibaca utuh: **12 konektor**, dan tidak
+satu pun bernama `CloseClaim`. Ia **local action** — `pyLocalAction>CloseClaim` muncul di tepat dua
+section: `Section/InputOSClaimLife.xml` **b22837, b22988** dan
+`Section/InputAkseptasiClaimLife.xml` **b21457, b21602**.
+
+Activity-nya `ProtectCloseClaim_act` berakhir dengan `Call FinishAssignment` **b838** yang **seluruh
+parameternya kosong** *(`TaskStatus`, `PerformFormName`, `ReviewFormName`, `pyHarness`,
+`DisplayHarness false`)*. Satu-satunya shape yang menetapkan status kerja adalah **End1**:
+`<rowdata REPEATINGINDEX="End1">` **b883**, `pyMOId End1` **b885**, `Data-MO-Event-End` **b901**,
+`<pyWorkStatus>Resolved-Completed</pyWorkStatus>` **b899**. Sembilan shape lain ber-`pyWorkStatus`
+kosong.
+
+⛔ **Yang ekspor tidak jawab:** dari `Assignment1` *(Outstanding Claim)* tidak ada jalur ke End1
+tanpa melewati Medical Check dan Claim Analis. Perilaku mesin Pega untuk `FinishAssignment` yang
+dipanggil dari local action **tanpa konektor senama** tidak dapat diturunkan dari ekspor.
+
+> **Pertanyaannya:** di produksi, ketika `Close Claim` ditekan pada layar **Outstanding**, kasusnya
+> **selesai** — atau ia justru berpindah ke **Medical Check** mengikuti konektor `Else`?
+
+**Yang kami bangun sementara ini** *(keputusan bb, dan ia dapat diveto)*: `Close Claim` **menutup**
+kasus. `T_WORK_CLAIM.STATUS_WORK` diisi `Resolved-Completed` VERBATIM, `TAHAP` **dikosongkan**, dan
+setiap rute pengubah menolak kasus itu sesudahnya. Dasarnya niat nyata tombol tersebut: labelnya,
+konfirmasi b499 *"Are you sure want to Close Claim?"*, dan gerbang **"is not approved yet"** yang
+menahan setiap peserta yang belum diaksep. Ketiganya hanya masuk akal bila tombolnya menutup —
+tombol yang sekadar memindahkan kasus tidak perlu menuntut seluruh peserta sudah diaksep.
+
+⚠️ Bila jawabannya "pindah ke Medical Check", yang berubah kecil: satu migrasi mundur dan satu rute.
+Mohon dijawab sebelum modul ini dipakai di produksi.
+
+---
+
+## 27 September 2026 — OQ-J (saringan dokumen `KATEGORI_1 = .DOCUMENT` tidak dapat ditiru)
+
+**OQ-J** *(untuk pemilik ekspor / DBA)*.
+
+`Activity/LoadDocumentLife_ACT.xml` memuat daftar dokumen dengan `Obj-Browse` *(langkah 1.2
+**b495**)*: `ObjClass` `ASM-FW-GCNMFW-Int-DOCUMENT_CLAIM`, `PageName` `DOCUMENT_CLAIM`,
+`RowKey` `ID`, dan **satu** saringan — `Field` **`.KATEGORI_1`**, `Condition` **`=`**,
+`Value` **`.DOCUMENT`**.
+
+Activity itu berkelas `Int-LIFE_PREMIUM_DETAIL`, jadi `.DOCUMENT` adalah properti **peserta**.
+Langkah 1.4 **b904** memperkuatnya: prasyaratnya **b1404** `.DOCUMENT==""` dengan `WhenTrue=3`
+*(lewati)* — peserta tanpa nilai `DOCUMENT` tidak memuat dokumen apa pun.
+
+⛔ **Masalahnya:** kolom `DOCUMENT` **tidak ada** di `T_CLAIMLF_PREMIUMLIST_DETAIL`, dan tidak ada
+di daftar kolom mana pun yang kami terima. Kami karena itu **tidak dapat meniru saringan itu**.
+
+**Yang kami pakai sebagai gantinya:** kunci tamu `T_CLAIMLF_DOCUMENT.PREMIUM_LIST_DETAIL_ID` —
+relasi yang di model baru memang memiliki dokumen tersebut. Untuk data yang lahir di sistem baru
+keduanya sama; untuk data warisan, **belum tentu**.
+
+> **Pertanyaannya:** (a) kolom apa `\.DOCUMENT` itu pada baris peserta, dan (b) apakah
+> `KATEGORI_1` benar-benar dipakai sebagai penghubung ke peserta, atau ia penggolong jenis dokumen
+> yang kebetulan bernilai sama?
+
+⚠️ **Satu penyimpangan lagi, disengaja dan dicatat.** Langkah 1.4.2 **b1129** berprasyarat **b1310**
+`DataImage.URLImage==""` dengan `WhenTrue=3` — baris yang **URL penyimpanannya kosong tidak ikut
+ditambahkan** ke daftar. Karena penyambungan ke Google Storage belum dilakukan, URL-nya selalu
+kosong, sehingga meniru gerbang itu membuat daftar **selalu kosong** dan layar berkata *"tidak ada
+dokumen"* untuk peserta yang dokumennya lengkap. Barisnya karena itu **tetap ditampilkan**, dengan
+penanda bahwa pranalanya menunggu penyambungan.

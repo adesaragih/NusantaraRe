@@ -277,3 +277,56 @@ Pega.
 
 **AC:** tidak ada AC tiket ini yang berubah centangnya — jalur baliknya kini punya rute dan kontrol,
 tetapi pembuktian perilakunya menuntut Oracle.
+
+## Penutupan kasus (`Close Claim`) — bukti XML, 27 September 2026 (butir bb)
+
+⛔ **Nol tiket menyebut `CloseClaim` sebelum bab ini.** Tombolnya ada di layar sejak A2 sebagai
+pemeriksa gerbang saja, dan penutupannya tidak pernah punya rumah di tiket mana pun. Ia diletakkan
+di tiket ini karena yang berubah adalah **tangga kerjanya**: penugasan diselesaikan, dan kasusnya
+keluar dari keempat tab kotak masuk.
+
+### Apa yang XML katakan
+
+`Flow/Register_Flow.xml` dibaca utuh 27-09-2026 *(`pyTo` mendahului `pyFrom` di DOM; 12 konektor)*.
+**Tidak ada** konektor bernama `CloseClaim`. `CloseClaim` adalah **local action**:
+
+| Berkas | Baris |
+| --- | --- |
+| `Section/InputOSClaimLife.xml` | `pyLocalAction>CloseClaim` **b22837**, **b22988** |
+| `Section/InputAkseptasiClaimLife.xml` | `pyLocalAction>CloseClaim` **b21457**, **b21602** |
+
+Dua section, tidak lebih — itulah **cacah berkas** yang menentukan dari tahap mana penutupan
+ditawarkan: **Outstanding Claim** dan **Claim Analis**.
+
+Activity-nya `ProtectCloseClaim_act` berakhir `Call FinishAssignment` **b838**, seluruh parameternya
+**kosong**. Satu-satunya shape yang menetapkan status kerja adalah **End1**:
+
+```
+b883  <rowdata REPEATINGINDEX="End1">
+b885  <pyMOId>End1</pyMOId>
+b899  <pyWorkStatus>Resolved-Completed</pyWorkStatus>
+b901  <pxObjClass>Data-MO-Event-End</pxObjClass>
+```
+
+Sembilan shape lain ber-`pyWorkStatus` **kosong**.
+
+### Yang dibangun
+
+| Sisi | Isi |
+| --- | --- |
+| Skema | migrasi **017** `T_WORK_CLAIM.STATUS_WORK VARCHAR2(32)` *(+ `_down`)*. Satu-satunya nilai: `Resolved-Completed` **VERBATIM b899**. **NULL = belum ditutup** — status Pega untuk kasus berjalan tidak ada di ekspor dan **tidak dikarang** |
+| Backend | `POST /api/klaim-life/{id}/tutup`. Gerbang `PenghalangTutupKlaim` → **409** berisi **seluruh** penghalang beserta kalimat rule-nya. Lolos → satu transaksi: `STATUS_WORK`, `TAHAP` **dikosongkan**, `TGL_UPDATE`, jejak *(ADR-U-0007)*. Hanya dari kedua tahap di atas, dan hanya oleh pemegang tahap itu |
+| Sesudah tutup | **Setiap** rute pengubah ditolak — satu pintu `services.PastikanKasusTerbuka`, dan **dua** penjaga statik: yang satu menagih pemanggilannya dari daftar layanan pengubah, yang lain menagih layanan bertransaksi **baru** masuk daftar itu |
+| Frontend | Tombol hanya pada kedua tahap; konfirmasi **VERBATIM b499** `Are you sure want to Close Claim?`; berhasil → jendela ditutup *(`closeContainer` b1129)* dan klaimnya dilepas dari layar |
+
+⛔ **`TAHAP` dikosongkan, bukan diisi tahap kelima.** Penugasannya memang selesai, dan kotak masuk
+adalah worklist. Tahap kelima *"Selesai"* akan menjadi antrean yang tidak pernah dikerjakan siapa
+pun, dan XML tidak menyebutnya.
+
+⚠️ **Yang ekspor tidak jawab, dan karena itu `[terbuka]` — OQ-I**: perilaku mesin Pega untuk
+`FinishAssignment` dari local action **tanpa konektor senama**. Dari `Assignment1` tidak ada jalur
+ke End1 tanpa melewati Medical Check dan Claim Analis. Yang ditiru adalah **niat nyata** tombolnya —
+label, konfirmasi, dan gerbang *"is not approved yet"* hanya masuk akal bila ia menutup.
+
+**AC:** tidak ada AC tiket ini yang berubah centangnya. Yang bertambah adalah **transisi kelima**
+pada tangga kerja: keluar dari tangga.

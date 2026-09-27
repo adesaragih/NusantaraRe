@@ -124,6 +124,15 @@ func (h *Penghapusan) Hapus(ctx context.Context, pelaku Pelaku,
 	if err := h.tolakBilaSudahDiKomite(ctx, klaimID); err != nil {
 		return d, err
 	}
+
+	// ⛔ BUTIR bb: kasus yang sudah ditutup tidak dapat diubah lagi.
+	// Satu pintu untuk seluruh rute pengubah - lihat
+	// services.PastikanKasusTerbuka, yang pemanggilannya ditagih penjaga
+	// statik. Diperiksa SESUDAH wewenang: pemanggil yang tidak berhak tidak
+	// berhak pula tahu keadaan kasusnya.
+	if err := h.svc.PastikanKasusTerbuka(ctx, klaimID); err != nil {
+		return d, err
+	}
 	return d, fmt.Errorf("%w: kolom penandanya belum ada, dan menambahkannya "+
 		"menuntut langkah migrasi yang keputusannya belum disahkan work owner",
 		ErrHapusFisikDilarang)

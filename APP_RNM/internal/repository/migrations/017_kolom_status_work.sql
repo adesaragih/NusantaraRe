@@ -1,0 +1,43 @@
+-- Status kerja work object - keputusan bb (Close Claim MENUTUP kasus).
+--
+-- Pemilik: A3 kelompok Detail & Tutup (brief lanjutan 12 §1,
+-- `[DIPUTUSKAN 27-09-2026]`, diturunkan dari XML; work owner dapat memveto
+-- sebelum migrasi ini dijalankan di Oracle mana pun).
+--
+-- ⛔ KENAPA KOLOM INI ADA.
+--
+-- `Close Claim` di Pega adalah LOCAL ACTION, bukan konektor alur.
+-- `[terverifikasi]` `pyLocalAction>CloseClaim` muncul di
+-- `Section/InputOSClaimLife.xml` baris 22837 dan 22988, dan
+-- `Section/InputAkseptasiClaimLife.xml` baris 21457 dan 21602 - dua layar,
+-- tidak lebih. Activity-nya `ProtectCloseClaim_act` berakhir dengan
+-- `Call FinishAssignment` (baris 838) yang SELURUH parameternya kosong.
+--
+-- Di `Flow/Register_Flow.xml` TIDAK ADA konektor bernama `CloseClaim`. Yang
+-- menetapkan status kerja hanya satu shape: `<rowdata REPEATINGINDEX="End1">`
+-- baris 883, `pyMOId End1` baris 885, `pxObjClass Data-MO-Event-End` baris
+-- 901, dan `<pyWorkStatus>Resolved-Completed</pyWorkStatus>` baris 899.
+-- Sembilan shape lainnya ber-`pyWorkStatus` KOSONG.
+--
+-- ⛔ SATU-SATUNYA NILAI YANG BOLEH DITULIS: `Resolved-Completed`, VERBATIM
+-- dari baris 899. Status bawaan Pega untuk kasus yang sedang berjalan
+-- (`New`, `Open`, `Pending-*`) TIDAK ADA di ekspor ini, dan tidak dikarang:
+-- kasus terbuka berkolom NULL.
+--
+-- ⚠️ NULLABLE, dan itu disengaja (ADR-U-0027). Kosong berarti "kasus ini
+-- belum ditutup", bukan "statusnya tidak diketahui" - dan seluruh baris yang
+-- sudah ada memang belum ditutup. Tidak ada pengisian mundur.
+--
+-- ⚠️ VARCHAR2(32) memuat `Resolved-Completed` (18 karakter) dengan sisa untuk
+-- status Pega lain bila kelak ekspornya lengkap. Ia TEKS, bukan angka: kode
+-- status disimpan apa adanya (ADR-U-0022).
+--
+-- ⛔ Kolom `TAHAP` (migrasi 016) DIKOSONGKAN saat tutup, bukan diisi tahap
+-- kelima. Penugasannya memang selesai - `FinishAssignment` - dan kotak masuk
+-- adalah worklist, sehingga kasus yang tertutup hilang dari keempat tab.
+-- Tahap kelima "Selesai" akan menjadi antrean yang tidak pernah dikerjakan
+-- siapa pun, dan XML tidak menyebutnya.
+ALTER TABLE {skema}.T_WORK_CLAIM ADD (
+  STATUS_WORK VARCHAR2(32)
+)
+/

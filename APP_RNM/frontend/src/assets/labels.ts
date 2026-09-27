@@ -348,3 +348,32 @@ export const DETAIL = {
   /** b22063 `pyLabelPreview`. */
   totalClaimAmount: 'Total Claim Amount',
 } as const
+
+/**
+ * Layar dokumen pendukung — `Section/DocumentLife.xml`.
+ *
+ * Nomor baris dibaca 27-09-2026 dari korpus apa adanya.
+ *
+ * ⛔ Ketiga tombol selain `Refresh` BELUM terpasang: unggah, unduh, dan
+ * hapus dokumen adalah kelompok Dokumen, yang menyentuh penyimpanan luar
+ * (Google Storage, ADR-U-0010) dan outbox `T_LOG_SERVICE_RNM`. Labelnya ada
+ * di sini supaya layar dapat MENYEBUT apa yang belum ada, bukan diam —
+ * layar yang tampak lengkap padahal tidak adalah layar yang tidak akan
+ * dicari lagi (pelajaran butir av).
+ */
+export const DOKUMEN = {
+  /** b611 `pyLabel` -> `pyAction refresh` b619. */
+  muatUlang: 'Refresh',
+  /** b1245 `pyLabel` -> `localAction` b1254 `AttachDocumentLife` b1273. */
+  tambahLampiran: 'Add attachment',
+  /** b3502 `pyLabel` -> `runActivity` b3511 `DownloadDocumentClaim` b3519. */
+  lihatOfficeOnline: 'View Office Online',
+  /**
+   * b4288 `pyLabel` -> `localAction` b4297 `ConfirmDeleteAttachment` b4317.
+   *
+   * ⚠️ Tombolnya menjalankan DUA aksi pada satu klik: local action DAN
+   * `closeContainer` b4441 — pola yang sama dengan `Close Claim`.
+   */
+  hapus: 'Delete',
+} as const
+

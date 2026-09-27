@@ -635,3 +635,98 @@ membaca `undefined` dan menampilkan sel **kosong** — tanpa satu pun galat, per
 
 **Telemetri:** Go 300 → **307 PASS · 0 FAIL · 34 SKIP** · JS 201 → **207** · `tsc` bersih ·
 `go vet` bersih · build **47** modul · **nol** migrasi baru.
+
+---
+
+## Giliran lanjutan 12 — kelompok 1: `Close Claim` menutup, dan daftar dokumen tampil
+
+### Bagian A — penutupan kasus (butir bb)
+
+Alur dibaca **utuh**, dan yang ditemukan membalik catatan lama: `Flow/Register_Flow.xml` punya 12
+konektor dan **tidak satu pun bernama `CloseClaim`**. Ia **local action**, dan cacah berkasnya yang
+menentukan segalanya — `pyLocalAction>CloseClaim` ada di **tepat dua** section:
+
+| Section | Baris | Tahap |
+| --- | --- | --- |
+| `InputOSClaimLife.xml` | b22837, b22988 | Outstanding Claim |
+| `InputAkseptasiClaimLife.xml` | b21457, b21602 | Claim Analis |
+
+Hanya shape **End1** yang menetapkan status kerja: `<rowdata REPEATINGINDEX="End1">` b883,
+`pyMOId End1` b885, `Data-MO-Event-End` b901, `pyWorkStatus` **`Resolved-Completed`** b899.
+Sembilan shape lain kosong.
+
+⚠️ **Satu jebakan pembacaan yang hampir menjerat saya.** `grep` atas `pyShapeType` dan
+`pyWorkStatus` berdampingan menampilkan `Resolved-Completed` b899 tepat di bawah
+`Data-MO-Event-Start` b867 — seolah status itu milik shape **Start**. Ia bukan: b883 membuka
+`rowdata` baru. Pohonnya harus dibaca lewat batas `rowdata`, bukan lewat kedekatan baris. Aturan
+yang sama yang pernah menyembunyikan dua loop di `DeletePesertaClaimLife`.
+
+**Yang dibangun:** migrasi `017` *(`STATUS_WORK VARCHAR2(32)`, NULL = belum ditutup, satu-satunya
+nilai VERBATIM b899)* · `POST /api/klaim-life/{id}/tutup` → 409 berisi **seluruh** penghalang ·
+satu transaksi mengisi status, **mengosongkan `TAHAP`**, dan merekam jejak · tombol hanya pada kedua
+tahap itu, konfirmasi **VERBATIM b499**, berhasil → jendela ditutup *(`closeContainer` b1129)*.
+
+### Satu pintu untuk tujuh rute, sebab tujuh tempat adalah tujuh tempat untuk lupa
+
+Sesudah tutup, **setiap** rute pengubah harus menolak. Ditulis ulang di tujuh berkas, aturan itu
+suatu hari hanya akan ada di enam — dan yang ketujuh **tidak akan berbunyi**, sebab tiap berkas
+hijau sendirian. Bentuk cacat yang sudah terjadi tiga kali di modul ini.
+
+Jadi: satu fungsi `PastikanKasusTerbuka`, dan **dua** penjaga statik yang saling menutup arah:
+
+| Penjaga | Arah yang dijaga |
+| --- | --- |
+| `TestSetiapLayananPengubahMemeriksaKasusTerbuka` | tiap layanan di daftar **memanggilnya** |
+| `TestDaftarLayananPengubahMencakupSeluruhRutePengubah` | tiap layanan **bertransaksi** ada di daftar, atau punya alasan tertulis bernama |
+
+Yang kedua **langsung menemukan dua berkas** yang saya lewatkan — `services.go` *(mendefinisikan
+`DalamTransaksi`)* dan `statusbaris.go`. Yang kedua nyata: `Status.Ubah` dan `Status.Tolak`
+sama-sama menyalurkan ke badan `ubah`, jadi penjaganya saya **pindahkan ke sana** dan cabut dari
+`tolak.go`. Penjaga di dua pintu menuju satu ruang adalah dua tempat untuk lupa.
+
+⚠️ **Dan penjaga lama menangkap kesalahan saya.** `TestUbahStatusMenjagaPagarnya` merah: saya
+menaruh pemeriksaan itu **sebelum** pemeriksaan bentuk permintaan, sehingga permintaan tanpa
+pengenal peserta dijawab *"ORACLE_DSN belum dikonfigurasi"* alih-alih *"pengenal wajib diisi"* —
+penjaga yang benar, diletakkan di tempat yang membuat galat lain berbohong. Dipindahkan ke sesudah
+pemeriksaan bentuk.
+
+### Bagian B — daftar dokumen (`DocumentLife`)
+
+`LoadDocumentLife_ACT.xml` dibaca sebagai pohon. **Nomor barisnya berbeda jauh dari brief** — brief
+menyebut b755/b861/b1164/b1377/b1516; bacaan ini b388/b495/b797/b1011/b1149. Yang dipakai bacaan
+ini, selisihnya dicatat.
+
+Dua temuan yang mengubah apa yang dibangun, **keduanya prasyarat ber-`WhenTrue=3` (LEWATI)**:
+
+1. **b1404 `.DOCUMENT==""`** menggerbangi seluruh langkah 1.4. Saringan browse-nya
+   `Field .KATEGORI_1` `=` `Value .DOCUMENT` — dan kolom `DOCUMENT` **tidak ada** di
+   `T_CLAIMLF_PREMIUMLIST_DETAIL`. Saringan itu **tidak dapat ditiru**; yang dipakai FK
+   `PREMIUM_LIST_DETAIL_ID`. Dilaporkan **OQ-J**.
+2. **b1310 `DataImage.URLImage==""`** menggerbangi langkah 1.4.2 — baris yang URL penyimpanannya
+   kosong **tidak ikut ditambahkan** ke daftar. Karena Google Storage belum tersambung, URL-nya
+   selalu kosong; meniru gerbang itu membuat daftar **selalu kosong**, dan layar akan berkata
+   *"tidak ada dokumen"* untuk peserta yang dokumennya lengkap. Barisnya **tetap tampil** dengan
+   penanda. Penyimpangan sadar, dinyatakan di kode, di PARITAS, dan di OQ-J.
+
+Keempat tombol section itu *(`Refresh` b611, `Add attachment` b1245, `View Office Online` b3502,
+`Delete` b4288 — yang terakhir menjalankan **dua** aksi seperti `Close Claim`)* hadir sebagai
+`BelumTersedia` bernama; unggah/unduh/hapus milik kelompok Dokumen.
+
+### Penjaga yang dibuat gagal lebih dulu, lalu dipulihkan
+
+| Penjaga | Dibuat gagal dengan | Berbunyi |
+| --- | --- | --- |
+| `SetiapLayananPengubahMemeriksaKasusTerbuka` | cabut panggilan dari `dol.go` | `dol.go (Set) tidak memanggil…` |
+| `bolehTutupDiLayar` | tambahkan `Medical Check` ke daftar tahap | dua uji sekaligus |
+| status kerja dibandingkan persis | sisipkan `.trim()` | `expected true to be false` |
+| `barisDokumen` memakai KATEGORI_2 | tukar ke `kategori1` | `expected 'SALAH' to be 'BENAR'` |
+| himpunan kunci baris dokumen | selundupkan medan `namaTertanggung` | himpunan kunci berubah |
+| `NamaJSONDokumenDikunci` | cabut tag `json:"namaFile"` | `NamaFile` muncul berhuruf besar |
+
+Dan **dua penjaga lama berbunyi tanpa diminta, keduanya benar**: `strukturkolom_test` menolak DDL
+`STATUS_WORK` yang belum ada di STRUKTUR-TABEL *(didokumentasikan, bukan dilonggarkan)*, dan
+`TestNamaTabelDokumenLamaHanyaUntukWarisan` menolak nama warisan `DOCUMENT_CLAIM` di komentar saya
+yang tidak menyebutnya warisan *(komentarnya yang diperbaiki)*.
+
+**Telemetri:** Go 307 → **316 PASS · 0 FAIL · 34 SKIP** · JS 207 → **224** · `tsc` bersih ·
+`go vet` bersih · build 47 → **48** modul · migrasi **017** *(dari keputusan bb yang tercatat)*.

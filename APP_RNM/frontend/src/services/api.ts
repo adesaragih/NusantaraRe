@@ -60,6 +60,34 @@ export interface TotalPeserta {
   jumlahKlaim: Uang
 }
 
+/**
+ * Satu dokumen pendukung milik seorang peserta.
+ *
+ * Sumber: `T_CLAIMLF_DOCUMENT`, dirakit backend saat Detail dibaca — meniru
+ * `Activity/LoadDocumentLife_ACT.xml`.
+ *
+ * ⛔ `urlPublic` TIDAK ADA di sini dan itu disengaja. Di Pega URL-nya
+ * datang dari `GetUrlGoogleStorage_Act` (langkah 1.4.1 b1011); penyambungan
+ * ke penyimpanan luar belum dilakukan, dan URL yang dikarang adalah pranala
+ * yang membawa orang ke tempat yang salah. Yang ada hanya penunjuknya,
+ * `tStorageId` — ADR-U-0010: isi berkas tidak pernah masuk basis data.
+ */
+export interface Dokumen {
+  id: number
+  pesertaId: string
+  /** Nama BERKAS unggahan. Bukan nama orang. */
+  namaFile: string
+  mime: string
+  kategori1: string
+  /** Yang ditampilkan kepada manusia di `DocumentLife.xml`. */
+  kategori2: string
+  /** Penunjuk berkas di penyimpanan luar. Kosong berarti belum terunggah. */
+  tStorageId: string
+  /** Teks apa adanya; kosong berarti kolomnya NULL, bukan tanggal nol. */
+  tanggal: string
+  paymentDate: string
+}
+
 /** Satu peserta yang diklaim, beserta baris-barisnya sendiri. */
 export interface Peserta {
   id: string
@@ -78,6 +106,8 @@ export interface Peserta {
   baris: BarisAdjustment[]
   /** Keenam total uang peserta ini, dihitung backend. Lihat TotalPeserta. */
   total: TotalPeserta
+  /** Dokumen pendukung peserta ini. Daftar kosong, tidak pernah null. */
+  dokumen: Dokumen[]
 }
 
 /** Satu klaim Life beserta seluruh pesertanya. */
@@ -98,6 +128,21 @@ export interface Klaim {
   statusTurunan: string
   peserta: Peserta[]
   cacahBaris: number
+  /**
+   * Nama assignment VERBATIM dari `T_WORK_CLAIM.TAHAP`.
+   *
+   * ⚠️ Boleh KOSONG: backend tidak pernah menyisipkan ke `T_WORK_CLAIM`, jadi
+   * klaim tanpa baris work adalah keadaan nyata. Kosong = tahap tidak
+   * diketahui, dan tombol yang bergantung tahap TIDAK ditawarkan.
+   */
+  tahap: string
+  /**
+   * `T_WORK_CLAIM.STATUS_WORK` — butir bb.
+   *
+   * Kosong berarti kasus BELUM ditutup. Satu-satunya nilai lain yang pernah
+   * ditulis adalah `STATUS_WORK_SELESAI`.
+   */
+  statusWork: string
 }
 
 /** Jawaban GET /healthz. */
@@ -202,7 +247,7 @@ async function minta<T>(jalur: string, opsi: OpsiMinta = {}): Promise<T> {
   }
 
   if (!jawab.ok) {
-    const o = (isi ?? {}) as { galat?: unknown }
+    const o = (isi ?? {}) as { galat?: unknown; penghalang?: unknown }
     throw new ApiFailure(jawab.status, {
       code: 'DITOLAK_BACKEND',
       // ⛔ Kuncinya `galat`, bukan `error`. `handlers.galat` di Go menulis
@@ -216,6 +261,13 @@ async function minta<T>(jalur: string, opsi: OpsiMinta = {}): Promise<T> {
       // tidak pernah dipaksa bertemu lagi. Kontraknya dikunci dua sisi -
       // `envelopegalat.test.ts` di sini, `envelopegalat_test.go` di Go.
       message: typeof o.galat === 'string' && o.galat !== '' ? o.galat : undefined,
+      // ⛔ SELURUH penghalang dibawa, bukan yang pertama. Pega memasang
+      // pesannya di dalam loop, sekali per peserta yang tertandai; melaporkan
+      // satu saja memaksa pemakai menutup berulang kali dan menemukan satu
+      // penghalang baru setiap kali.
+      penghalang: Array.isArray(o.penghalang)
+        ? (o.penghalang as PenghalangTutup[])
+        : undefined,
     })
   }
   return isi as T
@@ -654,6 +706,17 @@ export interface IsiGalatApi {
   code?: KodeGalatApi
   message?: string
   fields?: GalatMedan[]
+  /**
+   * Daftar peserta yang menahan penutupan — hanya pada 409 dari
+   * `POST /api/klaim-life/{id}/tutup`.
+   *
+   * ⛔ Ia ikut di amplop yang SAMA, bukan di bentuk kedua. Cacat `galat` vs
+   * `error` lahir persis dari dua bentuk amplop yang masing-masing benar
+   * menurut dirinya sendiri; menambah bentuk ketiga untuk satu rute akan
+   * mengulanginya. Bentuknya `{ galat, penghalang }`, dikunci
+   * `TestBadanPenghalangMemakaiAmplopYangSama` di Go.
+   */
+  penghalang?: PenghalangTutup[]
 }
 
 /**
@@ -851,4 +914,70 @@ export async function periksaBolehTutup(klaimID: string): Promise<HasilPeriksaTu
   return minta<HasilPeriksaTutup>(
     `/api/klaim-life/${encodeURIComponent(klaimID)}/boleh-tutup`,
   )
+}
+
+/**
+ * Status kerja kasus yang sudah ditutup — VERBATIM `Register_Flow.xml` b899.
+ *
+ * ⛔ Satu-satunya nilai yang pernah ditulis. Status Pega untuk kasus yang
+ * sedang berjalan tidak ada di ekspor dan tidak dikarang: kasus terbuka
+ * berkolom kosong.
+ */
+export const STATUS_WORK_SELESAI = 'Resolved-Completed'
+
+/** Kedua tahap yang layarnya menawarkan `Close Claim` — cacah berkas. */
+export const TAHAP_PENAWAR_TUTUP = ['Outstanding Claim', 'Claim Analis']
+
+/**
+ * Apakah tombol `Close Claim` pantas ditawarkan untuk klaim ini.
+ *
+ * ⛔ Dua syarat, dan keduanya dari XML:
+ *
+ *   1. tahapnya menawarkannya — `pyLocalAction>CloseClaim` hanya ada di
+ *      `InputOSClaimLife.xml` (b22837, b22988) dan
+ *      `InputAkseptasiClaimLife.xml` (b21457, b21602);
+ *   2. kasusnya belum tertutup.
+ *
+ * ⚠️ Ini HANYA menentukan tampil atau tidaknya tombol. Gerbang sebenarnya
+ * ada di backend dan diperiksa lagi di sana — layar yang menjadi satu-satunya
+ * penjaga adalah layar yang dapat dilewati dengan satu permintaan.
+ */
+export function bolehTutupDiLayar(klaim: Klaim | null): boolean {
+  if (klaim === null) return false
+  if (klaim.statusWork === STATUS_WORK_SELESAI) return false
+  return TAHAP_PENAWAR_TUTUP.includes(klaim.tahap)
+}
+
+/** Apakah kasus ini sudah ditutup dan karena itu tidak dapat diubah lagi. */
+export function kasusTertutup(klaim: Klaim | null): boolean {
+  return klaim !== null && klaim.statusWork === STATUS_WORK_SELESAI
+}
+
+/**
+ * Daftar penghalang dari sebuah galat 409, bila ada.
+ *
+ * Kosong berarti galat itu bukan penolakan gerbang — mis. 403 atau 503 —
+ * dan pemanggil harus menampilkan pesannya, bukan daftar kosong.
+ */
+export function penghalangDariGalat(err: unknown): PenghalangTutup[] {
+  if (!(err instanceof ApiFailure)) return []
+  return err.detail.penghalang ?? []
+}
+
+/**
+ * Menutup kasus — `POST /api/klaim-life/{id}/tutup`.
+ *
+ * ⛔ Keputusan bb. Di Pega `Close Claim` adalah LOCAL ACTION, dan alurnya
+ * tidak punya konektor senama; perilaku mesinnya untuk `FinishAssignment`
+ * dari local action tidak dapat diturunkan dari ekspor (OQ-I). Yang ditiru
+ * adalah niat nyatanya — label, konfirmasi b499, dan gerbang "not approved
+ * yet" hanya masuk akal bila tombolnya MENUTUP.
+ *
+ * Jawaban 409 membawa SELURUH penghalang, bukan yang pertama; pemanggil
+ * membacanya lewat `penghalangDariGalat`.
+ */
+export async function tutupKlaim(klaimID: string): Promise<void> {
+  await minta<void>(`/api/klaim-life/${encodeURIComponent(klaimID)}/tutup`, {
+    metode: 'POST',
+  })
 }

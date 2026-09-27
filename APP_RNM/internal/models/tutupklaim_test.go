@@ -151,3 +151,63 @@ func TestKodeStatusDibandingkanPersis(t *testing.T) {
 		t.Error("kode yang persis ditolak")
 	}
 }
+
+// Uji keputusan bb - `Close Claim` MENUTUP kasus.
+
+func TestStatusWorkSelesaiVerbatim(t *testing.T) {
+	// ⛔ Dikunci harfiah. Satu-satunya tempat status kerja ditetapkan di
+	// seluruh alur adalah shape End1 (`Register_Flow.xml` b899); bila teks
+	// ini bergeser satu huruf, baris kita tidak akan cocok dengan baris
+	// Pega di basis data yang sama.
+	if StatusWorkSelesai != "Resolved-Completed" {
+		t.Errorf("StatusWorkSelesai = %q, mau %q", StatusWorkSelesai, "Resolved-Completed")
+	}
+}
+
+func TestKasusTertutup(t *testing.T) {
+	t.Run("kosong berarti BELUM ditutup", func(t *testing.T) {
+		// ⛔ Kosong bukan "tidak diketahui" (ADR-U-0027). Seluruh baris yang
+		// sudah ada berkolom kosong, dan seluruhnya memang belum ditutup.
+		if KasusTertutup("") {
+			t.Error("kolom kosong dibaca sebagai tertutup")
+		}
+	})
+	t.Run("hanya nilai PERSIS yang menutup", func(t *testing.T) {
+		for _, mirip := range []string{
+			" Resolved-Completed", "Resolved-Completed ", "resolved-completed",
+			"Resolved", "Resolved-Complete", "\tResolved-Completed",
+		} {
+			if KasusTertutup(mirip) {
+				t.Errorf("%q dibaca sebagai tertutup; hanya %q yang menutup",
+					mirip, StatusWorkSelesai)
+			}
+		}
+		if !KasusTertutup(StatusWorkSelesai) {
+			t.Error("nilai yang persis tidak dibaca sebagai tertutup")
+		}
+	})
+}
+
+func TestTahapMenawarkanTutup(t *testing.T) {
+	// ⛔ Cacah berkas, bukan pilihan kami: `pyLocalAction>CloseClaim` ada di
+	// TEPAT DUA section - InputOSClaimLife (b22837, b22988) dan
+	// InputAkseptasiClaimLife (b21457, b21602).
+	boleh := map[Tahap]bool{TahapOutstanding: true, TahapClaimAnalis: true}
+	for _, tahap := range []Tahap{
+		TahapInputRegister, TahapOutstanding, TahapMedicalCheck, TahapClaimAnalis,
+	} {
+		if got := TahapMenawarkanTutup(tahap); got != boleh[tahap] {
+			t.Errorf("TahapMenawarkanTutup(%v) = %v, mau %v", tahap, got, boleh[tahap])
+		}
+	}
+	// ⚠️ Dan daftarnya SATU, dipakai gerbang dan layar bersama-sama.
+	daftar := TahapPenawarTutup()
+	if len(daftar) != 2 || daftar[0] != TahapOutstanding || daftar[1] != TahapClaimAnalis {
+		t.Errorf("TahapPenawarTutup() = %v, mau [Outstanding, Claim Analis]", daftar)
+	}
+	for _, tahap := range daftar {
+		if !TahapMenawarkanTutup(tahap) {
+			t.Errorf("daftar memuat %v tetapi gerbang menolaknya - dua sumber kebenaran", tahap)
+		}
+	}
+}

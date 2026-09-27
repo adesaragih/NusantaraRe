@@ -3,12 +3,17 @@ import { useState, type FormEvent } from 'react'
 import { DETAIL } from '../assets/labels'
 import { BelumTersedia } from '../components/ui/dasar'
 import { PanelTotalPeserta } from '../components/PanelTotalPeserta'
+import { PanelDokumenPeserta } from '../components/PanelDokumenPeserta'
 
 import {
   ambilKlaimLife,
   kodeStatusGalat,
   pesanGalat,
   periksaBolehTutup,
+  tutupKlaim,
+  bolehTutupDiLayar,
+  kasusTertutup,
+  penghalangDariGalat,
   ubahTanggalKejadian,
   type HasilPeriksaTutup,
   tampilUang,
@@ -65,6 +70,11 @@ export default function KlaimLife() {
   const [gerbangTutup, setGerbangTutup] = useState<HasilPeriksaTutup | null>(null)
   const [tutupSibuk, setTutupSibuk] = useState(false)
 
+  // Sudah dikonfirmasi pemakai? Konfirmasinya VERBATIM b499.
+  const [mintaKonfirmasi, setMintaKonfirmasi] = useState(false)
+  // Nomor klaim yang BARU SAJA ditutup - dipakai kalimat penutupnya.
+  const [tutupSelesai, setTutupSelesai] = useState<string | null>(null)
+
   /** Memeriksa kesiapan tutup; TIDAK menutup apa pun. */
   async function periksaTutup(): Promise<void> {
     if (klaim === null || tutupSibuk) return
@@ -82,6 +92,52 @@ export default function KlaimLife() {
           },
         ],
       })
+    } finally {
+      setTutupSibuk(false)
+    }
+  }
+
+  /**
+   * Menutup kasus. Butir bb.
+   *
+   * ⛔ Gerbangnya dijalankan LAGI di server; yang di layar hanya menentukan
+   * apakah tombolnya ditawarkan. Layar yang menjadi satu-satunya penjaga
+   * adalah layar yang dapat dilewati dengan satu permintaan.
+   */
+  async function jalankanTutup(): Promise<void> {
+    if (klaim === null || tutupSibuk) return
+    const nomor = klaim.nomorKlaim !== '' ? klaim.nomorKlaim : klaim.id
+    setTutupSibuk(true)
+    try {
+      await tutupKlaim(klaim.id)
+      // Padanan `closeContainer` b1129: jendelanya DITUTUP. Layar ini
+      // berdiri sendiri dengan kotak pengenal, jadi menutup jendela di sini
+      // berarti melepas klaimnya dari layar - bukan memuatnya ulang.
+      //
+      // ⛔ Memuat ulang justru salah: sesudah tutup, TAHAP dikosongkan dan
+      // kasusnya hilang dari kotak masuk. Layar yang memuat ulang akan
+      // menampilkan kasus yang sudah tidak dapat disentuh, lengkap dengan
+      // tombol-tombolnya, dan tiap tombol akan ditolak satu per satu.
+      setMintaKonfirmasi(false)
+      setGerbangTutup(null)
+      setKlaim(null)
+      setTutupSelesai(nomor)
+    } catch (e) {
+      const halangan = penghalangDariGalat(e)
+      setGerbangTutup({
+        boleh: false,
+        penghalang:
+          halangan.length > 0
+            ? halangan
+            : [
+                {
+                  urutan: 0,
+                  nomorSertifikat: '',
+                  pesan: pesanGalat(e) ?? 'Klaim tidak dapat ditutup.',
+                },
+              ],
+      })
+      setMintaKonfirmasi(false)
     } finally {
       setTutupSibuk(false)
     }
@@ -278,6 +334,10 @@ export default function KlaimLife() {
     e.preventDefault() // jangan biarkan browser memuat ulang halaman
     setGalat(null)
     setKlaim(null)
+    // Kalimat penutup klaim SEBELUMNYA dibersihkan: membiarkannya membuat
+    // orang membaca "Klaim X ditutup" di atas detail klaim Y.
+    setTutupSelesai(null)
+    setGerbangTutup(null)
     setMemuat(true)
     try {
       setKlaim(await ambilKlaimLife(id.trim()))
@@ -307,6 +367,16 @@ export default function KlaimLife() {
 
       {/* `galat && (...)` = tampilkan hanya bila galat terisi. */}
       {galat && <p role="alert">{galat}</p>}
+
+      {/* ⛔ Kalimat penutup, sesudah `closeContainer` melepas klaimnya dari
+          layar. Tanpa ini penutupan terlihat seperti layar yang kosong tiba-
+          tiba, dan orang akan menekan Buka lagi untuk memeriksa. */}
+      {tutupSelesai !== null && (
+        <p role="status">
+          Klaim {tutupSelesai} ditutup. Kasusnya selesai dan hilang dari kotak
+          masuk; tidak ada lagi yang dapat diubah padanya.
+        </p>
+      )}
 
       {klaim && (
         <article>
@@ -433,6 +503,14 @@ export default function KlaimLife() {
                   menjumlah (models.HitungTotalPeserta); layar menampilkan. */}
               <PanelTotalPeserta total={p.total} />
 
+              {/* Daftar dokumen pendukung peserta ini -
+                  `Section/DocumentLife.xml` + `LoadDocumentLife_ACT`.
+                  ⛔ Milik PESERTA: `T_CLAIMLF_DOCUMENT.PREMIUM_LIST_DETAIL_ID`
+                  menunjuk baris peserta, dan activity pemuatnya berkelas
+                  `Int-LIFE_PREMIUM_DETAIL`. Unggah, unduh, dan hapus milik
+                  kelompok Dokumen; tombolnya dinyatakan, bukan disembunyikan. */}
+              <PanelDokumenPeserta dokumen={p.dokumen} />
+
               {/* `Find Disease` b5061 `pxButton` -> `showHarness` b5071
                   `Diagnose_Harness`. Popup diagnosis itu milik kelompok
                   MEDIS: sumbernya `DISEASE_LIFE` yang 97.586 baris, dan
@@ -549,23 +627,75 @@ export default function KlaimLife() {
 
       {klaim !== null && (
         <section className="os__aksi">
-          {/* `CloseClaim_Section.xml` b1081. ⛔ Tombolnya BELUM MENUTUP:
-              di Pega satu klik menjalankan `refresh` -> `ProtectCloseClaim_act`
-              b1101 (yang memeriksa LALU memanggil FinishAssignment) dan
-              `closeContainer` b1129. Yang ada di sini baru pemeriksaannya,
-              dan labelnya mengatakannya - tombol yang menjanjikan lebih
-              daripada yang ia lakukan adalah cacat yang paling mahal
-              ditemukan belakangan. */}
-          <button type="button" disabled={tutupSibuk} onClick={() => void periksaTutup()}>
-            Periksa kesiapan: {DETAIL.tutupKlaim}
-          </button>
+          {/* `CloseClaim_Section.xml` b1081 -> `pyActivity` b1101
+              `ProtectCloseClaim_act` DAN `closeContainer` b1129: satu klik,
+              dua aksi. Keduanya kini ditiru (butir bb).
+
+              ⛔ Tombolnya hanya ditawarkan pada tahap yang di Pega
+              menawarkannya: `pyLocalAction>CloseClaim` ada di TEPAT DUA
+              section - InputOSClaimLife (b22837, b22988) dan
+              InputAkseptasiClaimLife (b21457, b21602). Menawarkannya di
+              Medical Check atau Input Register berarti membuat pintu yang di
+              sistem lama tidak ada.
+
+              ⚠️ Ini HANYA menentukan tampil atau tidaknya. Gerbang
+              sebenarnya ada di backend dan diperiksa lagi di sana. */}
+          {!bolehTutupDiLayar(klaim) && (
+            <p role="note">
+              {kasusTertutup(klaim)
+                ? 'Kasus ini sudah ditutup.'
+                : `${DETAIL.tutupKlaim} hanya tersedia pada tahap Outstanding Claim dan Claim Analis.`}
+            </p>
+          )}
+
+          {bolehTutupDiLayar(klaim) && (
+            <>
+              <button
+                type="button"
+                disabled={tutupSibuk}
+                onClick={() => void periksaTutup()}
+              >
+                Periksa kesiapan: {DETAIL.tutupKlaim}
+              </button>{' '}
+              <button
+                type="button"
+                disabled={tutupSibuk}
+                onClick={() => {
+                  setMintaKonfirmasi(true)
+                }}
+              >
+                {DETAIL.tutupKlaim}
+              </button>
+            </>
+          )}
+
+          {/* ⛔ Konfirmasinya VERBATIM `CloseClaim_Section.xml` b499
+              `pyValue` -> `pyCaption` b1499. Penutupan tidak dapat dibatalkan,
+              dan satu klik tanpa tanya adalah satu klik yang salah. */}
+          {mintaKonfirmasi && (
+            <div role="alertdialog" aria-label={DETAIL.konfirmasiTutup}>
+              <p>{DETAIL.konfirmasiTutup}</p>
+              <button
+                type="button"
+                disabled={tutupSibuk}
+                onClick={() => void jalankanTutup()}
+              >
+                Ya, tutup klaim
+              </button>{' '}
+              <button
+                type="button"
+                disabled={tutupSibuk}
+                onClick={() => {
+                  setMintaKonfirmasi(false)
+                }}
+              >
+                Batal
+              </button>
+            </div>
+          )}
 
           {gerbangTutup !== null && gerbangTutup.boleh && (
-            <p role="status">
-              Seluruh peserta sudah diaksep. {DETAIL.konfirmasiTutup}{' '}
-              <strong>Penutupannya sendiri belum terpasang</strong> — tahap
-              tujuan sesudah tutup belum dibaca dari alurnya.
-            </p>
+            <p role="status">Seluruh peserta sudah diaksep.</p>
           )}
           {gerbangTutup !== null && !gerbangTutup.boleh && (
             <div role="alert">

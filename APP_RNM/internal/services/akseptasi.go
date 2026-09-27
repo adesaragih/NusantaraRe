@@ -245,6 +245,15 @@ func (a *Akseptasi) SimpanAdjustment(ctx context.Context, pelaku Pelaku,
 	if !a.svc.PunyaDatabase() {
 		return "", repository.ErrTanpaOracle
 	}
+
+	// ⛔ BUTIR bb: kasus yang sudah ditutup tidak dapat diubah lagi.
+	// Satu pintu untuk seluruh rute pengubah - lihat
+	// services.PastikanKasusTerbuka, yang pemanggilannya ditagih penjaga
+	// statik. Diperiksa SESUDAH wewenang: pemanggil yang tidak berhak tidak
+	// berhak pula tahu keadaan kasusnya.
+	if err := a.svc.PastikanKasusTerbuka(ctx, klaimID); err != nil {
+		return "", err
+	}
 	if a.penerbit == nil {
 		return "", ErrPenomorBelumDiputuskan
 	}

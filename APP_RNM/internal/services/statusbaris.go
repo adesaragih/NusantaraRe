@@ -257,6 +257,21 @@ func (st *Status) ubah(ctx context.Context, pelaku Pelaku,
 		return repository.ErrTanpaOracle
 	}
 
+	// ⛔ BUTIR bb: kasus yang sudah ditutup tidak dapat diubah lagi.
+	// Letaknya DI SINI, bukan di Tolak maupun di Ubah: keduanya menyalurkan
+	// ke badan ini, dan penjaga yang dipasang di dua pintu menuju satu ruang
+	// adalah dua tempat untuk lupa.
+	//
+	// ⚠️ SESUDAH pemeriksaan bentuk permintaan, bukan sebelumnya. Ronde
+	// pertama menaruhnya tepat sesudah gerbang peran, dan permintaan tanpa
+	// pengenal peserta lalu dijawab "ORACLE_DSN belum dikonfigurasi" alih-alih
+	// "pengenal wajib diisi" - penjaga yang benar, diletakkan di tempat yang
+	// membuat galat lain berbohong. Uji TestUbahStatusMenjagaPagarnya yang
+	// menangkapnya.
+	if err := st.svc.PastikanKasusTerbuka(ctx, klaimID); err != nil {
+		return err
+	}
+
 	baca := repository.NewKlaimLife(st.svc.db)
 	peserta, err := baca.AmbilPeserta(ctx, klaimID)
 	if err != nil {

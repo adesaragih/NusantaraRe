@@ -49,6 +49,9 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 	mux.HandleFunc("POST /api/klaim-life/{id}/tahap/{tujuan}", pindahTahap(svc, stubPelaku))
 	// Gerbang Close Claim: memeriksa, belum menyelesaikan penugasan.
 	mux.HandleFunc("GET /api/klaim-life/{id}/boleh-tutup", bolehTutup(svc))
+	// Penutupan kasus - butir bb. POST, sebab ia MENGUBAH: STATUS_WORK
+	// diisi Resolved-Completed dan TAHAP dikosongkan.
+	mux.HandleFunc("POST /api/klaim-life/{id}/tutup", tutupKlaim(svc, stubPelaku))
 	mux.HandleFunc("POST /api/klaim-life/{id}/adjustment/{adjId}/tolak",
 		tolakBaris(svc, stubPelaku))
 	mux.HandleFunc("PUT /api/klaim-life/{id}/peserta/{pesertaId}/tanggal-kejadian",

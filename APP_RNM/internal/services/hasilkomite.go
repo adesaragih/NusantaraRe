@@ -163,6 +163,15 @@ func (pt *Putaran) Tambah(ctx context.Context, pelaku Pelaku,
 		return repository.ErrTanpaOracle
 	}
 
+	// ⛔ BUTIR bb: kasus yang sudah ditutup tidak dapat diubah lagi.
+	// Satu pintu untuk seluruh rute pengubah - lihat
+	// services.PastikanKasusTerbuka, yang pemanggilannya ditagih penjaga
+	// statik. Diperiksa SESUDAH wewenang: pemanggil yang tidak berhak tidak
+	// berhak pula tahu keadaan kasusnya.
+	if err := pt.svc.PastikanKasusTerbuka(ctx, klaimID); err != nil {
+		return err
+	}
+
 	baca := repository.NewKlaimLife(pt.svc.db)
 	perBaris, err := baca.AmbilBaris(ctx, klaimID)
 	if err != nil {

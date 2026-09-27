@@ -104,3 +104,51 @@ func PenghalangTutupKlaim(baris []BarisTutup) []Penghalang {
 func BolehTutupKlaim(baris []BarisTutup) bool {
 	return len(PenghalangTutupKlaim(baris)) == 0
 }
+
+// StatusWorkSelesai adalah SATU-SATUNYA nilai yang pernah ditulis ke
+// `T_WORK_CLAIM.STATUS_WORK`.
+//
+// ⛔ VERBATIM dari `Flow/Register_Flow.xml` baris 899, di dalam
+// `<rowdata REPEATINGINDEX="End1">` (baris 883) yang ber-`pyMOId` End1
+// (885) dan `pxObjClass` `Data-MO-Event-End` (901). Sembilan shape lainnya
+// ber-`pyWorkStatus` KOSONG, jadi hanya End1 yang menetapkan status kerja.
+//
+// ⛔ Status Pega untuk kasus yang sedang BERJALAN (`New`, `Open`,
+// `Pending-…`) tidak ada di ekspor ini dan TIDAK DIKARANG: kasus terbuka
+// berkolom kosong. Kosong berarti "belum ditutup", bukan "tidak diketahui"
+// (ADR-U-0027).
+const StatusWorkSelesai = "Resolved-Completed"
+
+// KasusTertutup menjawab apakah baris work sudah ditutup.
+//
+// ⛔ Dibandingkan PERSIS, tanpa merapikan spasi - alasan yang sama dengan
+// gerbang di atas: pembanding yang lebih longgar daripada aslinya akan
+// memperlakukan kasus yang di sistem lama masih terbuka sebagai tertutup,
+// dan menolak setiap perubahan atasnya tanpa jalan keluar yang terlihat.
+func KasusTertutup(statusWork string) bool { return statusWork == StatusWorkSelesai }
+
+// tahapPenawarTutup adalah kedua tahap yang layarnya menawarkan `Close Claim`.
+//
+// ⛔ Bukan pilihan kami, melainkan cacah berkas. `pyLocalAction>CloseClaim`
+// muncul di TEPAT DUA section:
+//
+//	`Section/InputOSClaimLife.xml`         b22837, b22988  -> Outstanding Claim
+//	`Section/InputAkseptasiClaimLife.xml`  b21457, b21602  -> Claim Analis
+//
+// ⚠️ Layar Medical Check dan Input Register TIDAK menawarkannya, jadi
+// menutup dari sana adalah pintu yang di sistem lama tidak ada. Menambahkan
+// pintu yang tidak ada sama saja mengarang fitur - hanya arahnya terbalik
+// dari mengarang menu.
+var tahapPenawarTutup = map[Tahap]bool{
+	TahapOutstanding: true,
+	TahapClaimAnalis: true,
+}
+
+// TahapMenawarkanTutup menjawab apakah tahap itu boleh menutup kasus.
+func TahapMenawarkanTutup(t Tahap) bool { return tahapPenawarTutup[t] }
+
+// TahapPenawarTutup mengembalikan kedua tahap itu, berurutan tetap.
+//
+// ⚠️ Ada supaya layar dan pesan galat menyebut daftar yang SAMA dengan
+// gerbangnya, bukan daftar kedua yang ditulis ulang di tempat lain.
+func TahapPenawarTutup() []Tahap { return []Tahap{TahapOutstanding, TahapClaimAnalis} }

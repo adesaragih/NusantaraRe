@@ -214,7 +214,7 @@ func TestPesertaJSONMembawaTanggalKejadian(t *testing.T) {
 	// dihitung saat dibaca). Ia melewati penjaga ini lebih dulu, dan itu
 	// memang tugasnya: medan baru pada marshaller harus DILIHAT orang,
 	// bukan menyelinap. ⛔ Nama orang tetap TIDAK ADA di sini.
-	mau := []string{"baris", "id", "isCheck", "mataUang", "nomorPolis",
+	mau := []string{"baris", "dokumen", "id", "isCheck", "mataUang", "nomorPolis",
 		"nomorPremiList", "nomorSertifikat", "tanggalKejadian", "total"}
 	if !reflect.DeepEqual(kunci, mau) {
 		t.Errorf("kunci JSON peserta = %v, mau %v; medan baru harus disengaja",

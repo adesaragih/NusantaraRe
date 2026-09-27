@@ -373,6 +373,15 @@ func (p *Penyerahan) Serahkan(ctx context.Context, pelaku Pelaku,
 		return repository.ErrTanpaOracle
 	}
 
+	// ⛔ BUTIR bb: kasus yang sudah ditutup tidak dapat diubah lagi.
+	// Satu pintu untuk seluruh rute pengubah - lihat
+	// services.PastikanKasusTerbuka, yang pemanggilannya ditagih penjaga
+	// statik. Diperiksa SESUDAH wewenang: pemanggil yang tidak berhak tidak
+	// berhak pula tahu keadaan kasusnya.
+	if err := p.svc.PastikanKasusTerbuka(ctx, klaimID); err != nil {
+		return err
+	}
+
 	baca := repository.NewKlaimLife(p.svc.db)
 
 	// ⛔ Wewenangnya bergantung Type, dan Type hanya ada di baris klaim. Ini

@@ -48,6 +48,7 @@ klaim, bisa baris kasus komite.
 | `TGL_UPDATE` | DATE | ya | | keputusan tiket 14 — waktu UBAH, ditimpa tiap perpindahan |
 | `TAHAP` | teks | ya | | **butir at** `[DIPUTUSKAN 27-09-2026]` — nama assignment VERBATIM `pyTaskName` (`Register_Flow.xml` 358 · 343 · 268 · 313). Ada karena `PY_POSITION` tidak dapat membedakan **Input Register** dari **Outstanding Claim** (keduanya `ReasLifeAdmin`), sedangkan `Send Back to Register` (`InputOSClaimLife.xml:21404`) membuktikan keadaan itu dapat dituju kembali |
 | `TGL_CREATE` | DATE | ya | | **butir au** — padanan `pxCreateDateTime`; kotak masuk diurutkan dengannya (`InboxPremiumList.xml:736`). `TGL_UPDATE` tidak dapat dipakai: ia ditimpa tiap perpindahan |
+| `STATUS_WORK` | teks | ya | | **butir bb** `[DIPUTUSKAN 27-09-2026]` — status kerja kasus. **Satu-satunya nilai yang ditulis: `Resolved-Completed`**, VERBATIM `Register_Flow.xml` baris 899 *(shape `End1`, `rowdata REPEATINGINDEX="End1"` baris 883, `Data-MO-Event-End` baris 901; sembilan shape lain ber-`pyWorkStatus` kosong)*. **NULL = kasus belum ditutup** — status bawaan Pega untuk kasus berjalan tidak ada di ekspor dan tidak dikarang. Saat tutup, `TAHAP` **dikosongkan** *(`FinishAssignment` tanpa parameter, `ProtectCloseClaim_act` baris 838)* |
 
 ### Delapan awalan `ID` — satu pasang per lini
 

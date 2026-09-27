@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"time"
@@ -565,12 +566,94 @@ func (r *KlaimLife) TahapDanPeran(ctx context.Context, klaimID string) (
 	var kolomTahap, posisi sql.NullString
 	err = r.db.sql.QueryRowContext(ctx, q, klaimID).Scan(&kolomTahap, &posisi)
 	if err == sql.ErrNoRows {
-		return "", "", fmt.Errorf("repository: work object %q tidak ada", klaimID)
+		return "", "", fmt.Errorf("%w: %q", ErrWorkTidakAda, klaimID)
 	}
 	if err != nil {
 		return "", "", fmt.Errorf("repository: membaca tahap kasus: %w", err)
 	}
 	return kolomTahap.String, posisi.String, nil
+}
+
+// ErrWorkTidakAda - baris `T_WORK_CLAIM` klaim itu tidak ada.
+//
+// ⚠️ Bersentinel sendiri, sebab pemanggil harus dapat MEMBEDAKANNYA dari
+// galat basis data. Aplikasi ini tidak pernah MENYISIPKAN ke T_WORK_CLAIM -
+// baris itu lahir di sistem lama - sehingga klaim tanpa baris work adalah
+// keadaan yang nyata, bukan kerusakan. Layar Detail memperlakukannya sebagai
+// "tahap tidak diketahui" dan karena itu tidak menawarkan Close Claim;
+// galat lain tetap menggagalkan pembacaan.
+var ErrWorkTidakAda = errors.New("repository: work object tidak ada")
+
+// StatusWorkKlaim membaca `STATUS_WORK` baris work object sebuah klaim.
+//
+// Butir bb. Kosong berarti kasusnya BELUM ditutup - bukan tidak diketahui
+// (ADR-U-0027), dan seluruh baris yang sudah ada memang belum ditutup.
+func (r *KlaimLife) StatusWorkKlaim(ctx context.Context, klaimID string) (string, error) {
+	tabel, err := r.db.Qualify("T_WORK_CLAIM")
+	if err != nil {
+		return "", err
+	}
+	q := fmt.Sprintf(`SELECT STATUS_WORK FROM %s WHERE ID = :1`, tabel)
+	if err := PeriksaSQL(q); err != nil {
+		return "", err
+	}
+	var status sql.NullString
+	err = r.db.sql.QueryRowContext(ctx, q, klaimID).Scan(&status)
+	if err == sql.ErrNoRows {
+		return "", fmt.Errorf("%w: %q", ErrWorkTidakAda, klaimID)
+	}
+	if err != nil {
+		return "", fmt.Errorf("repository: membaca status kerja kasus: %w", err)
+	}
+	return status.String, nil
+}
+
+// TutupKasus menutup kasus: status kerja diisi, TAHAP DIKOSONGKAN.
+//
+// Butir bb. Padanan `Call FinishAssignment` (`ProtectCloseClaim_act` b838)
+// yang seluruh parameternya kosong, ditambah `pyWorkStatus` shape End1
+// (`Register_Flow.xml` b899).
+//
+// ⛔ `TAHAP = NULL`, bukan tahap kelima. Penugasannya memang SELESAI, dan
+// kotak masuk adalah worklist - kasus yang tertutup hilang dari keempat tab.
+// Tahap kelima "Selesai" akan menjadi antrean yang tidak pernah dikerjakan
+// siapa pun, dan XML tidak menyebutnya.
+//
+// ⛔ `STATUS_WORK IS NULL` ikut di WHERE. Tanpa itu, dua penutupan bersamaan
+// sama-sama berhasil dan yang kedua menimpa TGL_UPDATE penutupan pertama -
+// jejak yang menunjuk waktu yang salah. Dengan klausa itu yang kedua
+// menyentuh nol baris dan berkata jelas.
+//
+// ⚠️ `NVL(TAHAP, :n)` sama seperti PerbaruiTahap: baris LAMA yang TAHAP-nya
+// masih kosong tetap dapat ditutup dari tahap yang disimpulkan PY_POSITION.
+func (r *KlaimLife) TutupKasus(ctx context.Context, tx *Tx,
+	klaimID, tahapAsal, statusWork string, saat time.Time) error {
+
+	tabel, err := r.db.Qualify("T_WORK_CLAIM")
+	if err != nil {
+		return err
+	}
+	q := fmt.Sprintf(`UPDATE %s SET STATUS_WORK = :1, TAHAP = NULL, TGL_UPDATE = :2
+		 WHERE ID = :3 AND NVL(TAHAP, :4) = :5 AND STATUS_WORK IS NULL`, tabel)
+	if err := PeriksaSQL(q); err != nil {
+		return err
+	}
+	hasil, err := tx.tx.ExecContext(ctx, q, kosongJadiNil(statusWork),
+		waktuJadiNil(saat), klaimID,
+		kosongJadiNil(tahapAsal), kosongJadiNil(tahapAsal))
+	if err != nil {
+		return fmt.Errorf("repository: menutup kasus: %w", err)
+	}
+	n, err := hasil.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("repository: mencacah baris work: %w", err)
+	}
+	if n != 1 {
+		return fmt.Errorf("repository: penutupan kasus menyentuh %d baris, mau 1 "+
+			"(kasus yang tahapnya sudah berubah sejak dibaca, atau yang sudah "+
+			"tertutup, tidak ditimpa)", n)
+	}
+	return nil
 }
 
 // PerbaruiKomiteID menautkan baris adjustment ke kasus Komite yang baru lahir.
@@ -610,4 +693,111 @@ func pastikanSatuBaris(hasil sql.Result, nama string) error {
 		return fmt.Errorf("repository: %s menyentuh %d baris, mau 1", nama, n)
 	}
 	return nil
+}
+
+// AmbilDokumen membaca seluruh dokumen pendukung satu klaim, per peserta.
+//
+// Meniru `Activity/LoadDocumentLife_ACT.xml`, dibaca sebagai pohon
+// 27-09-2026 (nomor baris hasil `sed -e 's/></>\n</g'`):
+//
+//	langkah 1     b320
+//	  1.1 b369  `Param.inskey` = `@If(pyWorkCover.pzInsKey="",pyWorkPage.pzInsKey,
+//	            pyWorkCover.pzInsKey)` b388-389
+//	  1.2 b495  `Obj-Browse` - `ObjClass` `ASM-FW-GCNMFW-Int-DOCUMENT_CLAIM`,
+//	            `PageName` `DOCUMENT_CLAIM` (nama halaman warisan), `RowKey` `ID`,
+//	            saring `Field .KATEGORI_1` `Condition =` `Value .DOCUMENT`
+//	  1.3 b778  `.DocumentClaimList` = `DOCUMENT_CLAIM.pxResults` (warisan) b797
+//	  1.4 b904  halaman langkah warisan `DOCUMENT_CLAIM.pxResults` b908, MENGULANG
+//	            (b1423), prasyarat b1404 `.DOCUMENT==""` WhenTrue=3 -> LEWATI
+//	    `Local.ImageID` = `.T_STORAGE_ID` b924-925; `DataImage.URLImage` = "" b970
+//	    1.4.1 b1011 `Call GetUrlGoogleStorage_Act`
+//	    1.4.2 b1129 prasyarat b1310 `DataImage.URLImage==""` WhenTrue=3 -> LEWATI
+//	          `…DocumentClaimList(<APPEND>).IMAGEID`  = `Local.ImageID`   b1149
+//	          `…DocumentClaimList(<LAST>).URLPUBLIC`  = `DataImage.URLImage` b1195
+//	          `…DocumentClaimList(<LAST>).PNOTE`      = `.NAMAFILE`       b1216
+//	          `…DocumentClaimList(<LAST>).pyMemoo`    = `.NAMAFILE`       b1237
+//
+// ⚠️ Nomor baris di brief lanjutan 12 §2 berbeda jauh dari bacaan ini
+// (b755/b861/b1164/b1377/b1516/b1562/b1583). Yang dipakai adalah bacaan ini,
+// dan selisihnya DICATAT - aturannya "bila bacaan Anda berbeda, yang menang
+// adalah bacaan Anda".
+//
+// ⛔ DUA PENYIMPANGAN SADAR, dan keduanya dinyatakan.
+//
+//  1. Saringan Pega adalah `KATEGORI_1 = <.DOCUMENT peserta>` pada halaman
+//     peserta - BUKAN pengenal kasus. Kolom `DOCUMENT` itu tidak ada di
+//     `T_CLAIMLF_PREMIUMLIST_DETAIL`, sehingga saringan itu tidak dapat
+//     ditiru apa adanya. Yang dipakai: FK `PREMIUM_LIST_DETAIL_ID` - relasi
+//     yang di model baru MEMANG memiliki dokumen itu. Dilaporkan OQ-J.
+//  2. Pega MEMBUANG baris yang URL penyimpanannya kosong (prasyarat b1310).
+//     Di DEV panggilan ke Google Storage tidak dilakukan, sehingga URL-nya
+//     SELALU kosong - meniru gerbang itu akan membuat daftar SELALU kosong,
+//     dan layar akan berkata "tidak ada dokumen" untuk peserta yang
+//     dokumennya lengkap. Barisnya karena itu tetap dikembalikan; yang
+//     menandai "URL menunggu pengirim" adalah layar.
+func (r *KlaimLife) AmbilDokumen(ctx context.Context, klaimID string) (
+	map[string][]models.Dokumen, error) {
+
+	dok, err := r.db.Qualify("T_CLAIMLF_DOCUMENT")
+	if err != nil {
+		return nil, err
+	}
+	pes, err := r.db.Qualify("T_CLAIMLF_PREMIUMLIST_DETAIL")
+	if err != nil {
+		return nil, err
+	}
+	q := fmt.Sprintf(
+		`SELECT d.PREMIUM_LIST_DETAIL_ID, d.ID, d.NAMA_FILE, d.MIME,
+		        d.KATEGORI_1, d.KATEGORI_2, d.T_STORAGE_ID, d.TANGGAL,
+		        d.PAYMENT_DATE
+		   FROM %s d JOIN %s p ON p.ID = d.PREMIUM_LIST_DETAIL_ID
+		  WHERE p.CLAIM_ID = :1
+		  ORDER BY d.PREMIUM_LIST_DETAIL_ID, d.ID`, dok, pes)
+	if err := PeriksaSQL(q); err != nil {
+		return nil, err
+	}
+	baris, err := r.db.sql.QueryContext(ctx, q, klaimID)
+	if err != nil {
+		return nil, fmt.Errorf("repository: membaca dokumen klaim: %w", err)
+	}
+	defer baris.Close()
+
+	keluar := map[string][]models.Dokumen{}
+	for baris.Next() {
+		var (
+			pesertaID                       sql.NullString
+			id                              sql.NullInt64
+			nama, mime, kat1, kat2, storage sql.NullString
+			tanggal, bayar                  sql.NullTime
+		)
+		if err := baris.Scan(&pesertaID, &id, &nama, &mime, &kat1, &kat2,
+			&storage, &tanggal, &bayar); err != nil {
+			return nil, fmt.Errorf("repository: memindai dokumen: %w", err)
+		}
+		d := models.Dokumen{
+			ID:         id.Int64,
+			PesertaID:  pesertaID.String,
+			NamaFile:   nama.String,
+			Mime:       mime.String,
+			Kategori1:  kat1.String,
+			Kategori2:  kat2.String,
+			TStorageID: storage.String,
+		}
+		// ⛔ NULL tetap nil, bukan tanggal nol. Tanggal nol adalah tahun 1
+		// Masehi, dan pembaca hilir tidak dapat membedakannya dari kolom
+		// yang memang kosong (ADR-U-0027).
+		if tanggal.Valid {
+			t := tanggal.Time
+			d.Tanggal = &t
+		}
+		if bayar.Valid {
+			t := bayar.Time
+			d.PaymentDate = &t
+		}
+		keluar[d.PesertaID] = append(keluar[d.PesertaID], d)
+	}
+	if err := baris.Err(); err != nil {
+		return nil, fmt.Errorf("repository: membaca dokumen klaim: %w", err)
+	}
+	return keluar, nil
 }

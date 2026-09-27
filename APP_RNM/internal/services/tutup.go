@@ -15,16 +15,34 @@ package services
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"strings"
+	"time"
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
 )
 
-// TutupKlaim membungkus pemeriksaan gerbang tutup.
-type TutupKlaim struct{ svc *Service }
+// TutupKlaim membungkus pemeriksaan gerbang tutup dan penutupannya.
+type TutupKlaim struct {
+	svc   *Service
+	jejak Jejak
+}
 
-// Tutup menyusun layanannya.
-func (s *Service) Tutup() *TutupKlaim { return &TutupKlaim{svc: s} }
+// Tutup menyusun layanannya dengan jejak bawaan yang gagal terang.
+//
+// ⛔ ADR-U-0007 menuntut setiap transisi kasus terekam. Penutupan adalah
+// transisi yang paling tidak dapat dibatalkan dari semuanya, jadi ia tidak
+// boleh terjadi tanpa jejak - dan jejak bawaannya sengaja GAGAL, bukan diam.
+func (s *Service) Tutup() *TutupKlaim {
+	return &TutupKlaim{svc: s, jejak: JejakBelumDiputuskan{}}
+}
+
+// DenganJejak mengganti perekamnya - dipakai test, dan kelak oleh tiket 09.
+func (t *TutupKlaim) DenganJejak(j Jejak) *TutupKlaim {
+	return &TutupKlaim{svc: t.svc, jejak: j}
+}
 
 // HasilPeriksaTutup adalah jawaban gerbang.
 type HasilPeriksaTutup struct {
@@ -90,4 +108,146 @@ func (t *TutupKlaim) Periksa(ctx context.Context, id string) (HasilPeriksaTutup,
 		})
 	}
 	return HasilPeriksaTutup{Boleh: len(tampil) == 0, Penghalang: tampil}, nil
+}
+
+// ErrMasihAdaPenghalang - penutupan ditolak karena ada peserta yang belum
+// diaksep. Ia membawa penghalangnya, sebab pesan tanpa daftar memaksa
+// pemakai menutup berulang kali untuk menemukan satu penghalang tiap kali.
+var ErrMasihAdaPenghalang = errors.New("services: klaim belum boleh ditutup")
+
+// ErrKasusSudahTertutup - perubahan atas kasus yang sudah ditutup.
+var ErrKasusSudahTertutup = errors.New("services: kasus sudah ditutup")
+
+// ErrTahapTidakMenutup - penutupan dari tahap yang layarnya tidak
+// menawarkannya.
+var ErrTahapTidakMenutup = errors.New("services: tahap ini tidak menawarkan Close Claim")
+
+// GalatPenghalang membawa daftar penghalang menyeberang lapisan.
+//
+// ⚠️ Daftarnya ikut di dalam galat, bukan dikembalikan terpisah: handler yang
+// harus memanggil dua fungsi untuk menyusun satu jawaban adalah handler yang
+// suatu hari memanggil satu saja.
+type GalatPenghalang struct{ Penghalang []PenghalangTampil }
+
+func (g *GalatPenghalang) Error() string {
+	return fmt.Sprintf("%v: %d peserta menahan", ErrMasihAdaPenghalang, len(g.Penghalang))
+}
+
+func (g *GalatPenghalang) Unwrap() error { return ErrMasihAdaPenghalang }
+
+// Tutup menutup kasus: padanan `Call FinishAssignment` (b838).
+//
+// ⛔ KEPUTUSAN bb, dan penyimpangannya DINYATAKAN. `Flow/Register_Flow.xml`
+// tidak punya konektor bernama `CloseClaim` - ia local action, dan perilaku
+// mesin Pega untuk `FinishAssignment` dari local action tanpa konektor
+// senama TIDAK DAPAT diturunkan dari ekspor (OQ-I). Yang ditiru adalah niat
+// nyatanya: label `Close Claim`, konfirmasi b499 "Are you sure want to Close
+// Claim?", dan gerbang "is not approved yet" yang menahan seluruh peserta
+// yang belum diaksep. Ketiganya hanya masuk akal bila tombolnya MENUTUP.
+//
+// Urutan pemeriksaannya sengaja: identitas -> kasus terbuka -> tahap
+// menawarkan -> peran pemegang tahap -> gerbang peserta. Gerbang peserta
+// PALING AKHIR karena ia yang paling mahal (membaca seluruh klaim) dan
+// paling tidak berguna bila pemanggilnya memang tidak berhak.
+func (t *TutupKlaim) Tutup(ctx context.Context, pelaku Pelaku, klaimID string,
+	saat time.Time) error {
+
+	if err := WajibIdentitas(pelaku); err != nil {
+		return err
+	}
+	if strings.TrimSpace(klaimID) == "" {
+		return fmt.Errorf("%w: pengenal klaim wajib diisi", ErrWajibIsi)
+	}
+	if t == nil || t.svc == nil || !t.svc.PunyaDatabase() {
+		return repository.ErrTanpaOracle
+	}
+
+	baca := repository.NewKlaimLife(t.svc.db)
+	status, err := baca.StatusWorkKlaim(ctx, klaimID)
+	if err != nil {
+		return err
+	}
+	if models.KasusTertutup(status) {
+		return fmt.Errorf("%w: %s", ErrKasusSudahTertutup, klaimID)
+	}
+
+	// ⛔ Tahap ASAL, sama seperti perpindahan: orang menutup kasus yang
+	// SEDANG IA PEGANG. Kolom TAHAP menang; PY_POSITION cadangan baris lama.
+	kolomTahap, peranAsal, err := baca.TahapDanPeran(ctx, klaimID)
+	if err != nil {
+		return err
+	}
+	asal := models.TahapDariNama(kolomTahap)
+	if !asal.Diketahui() {
+		asal = models.TahapDariPeran(peranAsal)
+	}
+	if !asal.Diketahui() {
+		return fmt.Errorf("%w: tahap %q, peran pemegang %q",
+			ErrTahapTidakDikenal, kolomTahap, peranAsal)
+	}
+	if !models.TahapMenawarkanTutup(asal) {
+		return fmt.Errorf("%w: %s (yang menawarkannya %v)",
+			ErrTahapTidakMenutup, asal, models.TahapPenawarTutup())
+	}
+	peranTahap, ada := models.PeranPemegangTahap(asal)
+	if !ada {
+		return fmt.Errorf("%w: tahap %q", ErrPeranTahapBelumDiputuskan, asal)
+	}
+	if err := WajibPeran(pelaku, peranTahap); err != nil {
+		return err
+	}
+
+	hasil, err := t.Periksa(ctx, klaimID)
+	if err != nil {
+		return err
+	}
+	if !hasil.Boleh {
+		return &GalatPenghalang{Penghalang: hasil.Penghalang}
+	}
+
+	return t.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+		if err := baca.TutupKasus(ctx, tx, klaimID, asal.String(),
+			models.StatusWorkSelesai, saat); err != nil {
+			return err
+		}
+		return t.jejak.Rekam(ctx, tx, CatatanJejak{
+			// ⛔ KlaimID, bukan AdjustmentID: yang tertutup KASUSNYA.
+			KlaimID: klaimID,
+			Dari:    asal.String(),
+			// ⚠️ Tujuannya status kerja, bukan tahap: sesudah tutup TAHAP
+			// kosong, dan jejak yang mencatat "ke: (kosong)" tidak dapat
+			// dibaca siapa pun setahun kemudian.
+			Ke:     models.StatusWorkSelesai,
+			AkunID: pelaku.AkunID,
+			Waktu:  saat,
+		})
+	})
+}
+
+// PastikanKasusTerbuka menolak perubahan atas kasus yang sudah ditutup.
+//
+// ⛔ SATU pintu untuk SELURUH rute pengubah, dan itu disengaja. Aturan yang
+// ditulis ulang di tujuh berkas adalah aturan yang suatu hari hanya ada di
+// enam - dan yang ketujuh tidak akan berbunyi, sebab tiap berkas hijau
+// sendirian. `TestSetiapLayananPengubahMemeriksaKasusTerbuka` menagih
+// pemanggilannya.
+//
+// ⚠️ Diletakkan di `Service`, bukan di `TutupKlaim`: yang memanggilnya adalah
+// layanan LAIN, dan menaruhnya pada tipe gerbang tutup akan membuat setiap
+// layanan pengubah menyusun gerbang tutup hanya untuk bertanya.
+func (s *Service) PastikanKasusTerbuka(ctx context.Context, klaimID string) error {
+	if s == nil || !s.PunyaDatabase() {
+		return repository.ErrTanpaOracle
+	}
+	if strings.TrimSpace(klaimID) == "" {
+		return fmt.Errorf("%w: pengenal klaim wajib diisi", ErrWajibIsi)
+	}
+	status, err := repository.NewKlaimLife(s.db).StatusWorkKlaim(ctx, klaimID)
+	if err != nil {
+		return err
+	}
+	if models.KasusTertutup(status) {
+		return fmt.Errorf("%w: %s tidak dapat diubah lagi", ErrKasusSudahTertutup, klaimID)
+	}
+	return nil
 }

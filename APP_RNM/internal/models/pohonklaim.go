@@ -141,15 +141,18 @@ type SpreadingRetro struct {
 // internal Pega (IDPEGA, INSKEY_*), pelaku (milik jejak audit tiket 09), dan
 // NOAKSEP/NOPREKAS yang rumahnya baris adjustment.
 type Dokumen struct {
-	ID        int64
-	PesertaID string
-	NamaFile  string
-	Mime      string
+	// ⛔ Nama JSON DITULIS. Tanpa tag, Go mengirim `ID`/`NamaFile`
+	// berhuruf besar dan React membaca `undefined` tanpa satu pun galat -
+	// daftar dokumen yang tampil kosong padahal barisnya ada.
+	ID        int64  `json:"id"`
+	PesertaID string `json:"pesertaId"`
+	NamaFile  string `json:"namaFile"`
+	Mime      string `json:"mime"`
 	// Kategori1 dan Kategori2 keduanya ditulis InsertDocument_Act; yang
 	// ditampilkan Section/DocumentLife.xml kepada manusia adalah Kategori2.
-	Kategori1  string
-	Kategori2  string
-	TStorageID string
+	Kategori1  string `json:"kategori1"`
+	Kategori2  string `json:"kategori2"`
+	TStorageID string `json:"tStorageId"`
 	// ⛔ Kedua tanggal PENUNJUK, dan nil BUKAN tanggal nol. Kolomnya nullable
 	// (ADR-U-0027), dan ADR-U-0022 Akibat 2 berbunyi "teks kosong pada kolom
 	// angka atau tanggal menjadi KOSONG, bukan nol dan bukan tanggal nol".
@@ -160,8 +163,8 @@ type Dokumen struct {
 	// BarisAdjustment.TanggalAkseptasi) masih time.Time biasa dan punya
 	// masalah yang sama. Mengubahnya menyentuh pembaca dan penulis yang sudah
 	// ada; itu keputusan sekali untuk seluruh model, bukan keputusan tiket 03.
-	Tanggal     *time.Time
-	PaymentDate *time.Time
+	Tanggal     *time.Time `json:"tanggal"`
+	PaymentDate *time.Time `json:"paymentDate"`
 }
 
 // PohonKlaim adalah satu klaim utuh, dari akar work object sampai daun.

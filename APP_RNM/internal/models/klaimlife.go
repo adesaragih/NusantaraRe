@@ -323,6 +323,12 @@ func (p Peserta) MarshalJSON() ([]byte, error) {
 	if baris == nil {
 		baris = []BarisAdjustment{}
 	}
+	// Daftar KOSONG, bukan nil: `encoding/json` menulis nil sebagai `null`,
+	// dan layar yang menerima `null` harus menjaganya sendiri.
+	dokumen := p.Dokumen
+	if dokumen == nil {
+		dokumen = []Dokumen{}
+	}
 	return json.Marshal(struct {
 		ID              string `json:"id"`
 		NomorPremiList  string `json:"nomorPremiList"`
@@ -346,6 +352,14 @@ func (p Peserta) MarshalJSON() ([]byte, error) {
 		// ⭐ Total menyeberang sejak ralat 27-09-2026: enam total, bukan
 		// lima, dan bukan penanda "belum tersedia". Ia turunan, bukan kolom.
 		Total TotalPeserta `json:"total"`
+		// ⭐ Dokumen menyeberang sejak kelompok 1 giliran 12. Tanpa ini
+		// layar Detail memanggil rute kedua hanya untuk menampilkan daftar
+		// yang sudah ada di tangan - dan rute kedua itu tidak pernah dibuat,
+		// sehingga daftarnya tidak pernah tampil.
+		//
+		// ⛔ NAMA BERKAS ikut; nama ORANG tidak. `NAMA_FILE` adalah nama
+		// berkas unggahan, bukan nama tertanggung.
+		Dokumen []Dokumen `json:"dokumen"`
 	}{
 		// ⛔ Diisi BERNAMA, bukan berposisi. Tujuh medan berurutan yang
 		// enam di antaranya bertipe string: dua yang tertukar tetap
@@ -360,6 +374,7 @@ func (p Peserta) MarshalJSON() ([]byte, error) {
 		TanggalKejadian: p.TanggalKejadian,
 		Baris:           baris,
 		Total:           p.Total,
+		Dokumen:         dokumen,
 	})
 }
 
@@ -422,6 +437,21 @@ type Klaim struct {
 	ClaimRetro Money
 
 	Peserta []Peserta
+
+	// Tahap adalah `T_WORK_CLAIM.TAHAP` - nama assignment VERBATIM. Ia tidak
+	// datang dari `AmbilHeader` (yang membaca T_GENERAL_CLAIM) melainkan
+	// dirakit `services.KlaimLife.Ambil` dari baris work.
+	//
+	// ⚠️ Boleh KOSONG. Aplikasi ini tidak pernah menyisipkan ke
+	// T_WORK_CLAIM - baris itu lahir di sistem lama - jadi klaim tanpa baris
+	// work adalah keadaan nyata, bukan kerusakan. Kosong berarti tahapnya
+	// tidak diketahui, dan layar karena itu tidak menawarkan Close Claim.
+	Tahap string
+
+	// StatusWork adalah `T_WORK_CLAIM.STATUS_WORK` - butir bb. Kosong berarti
+	// kasusnya BELUM ditutup (ADR-U-0027); satu-satunya nilai lain yang
+	// pernah ditulis adalah models.StatusWorkSelesai.
+	StatusWork string
 }
 
 // CacahBaris menghitung seluruh baris adjustment di seluruh peserta.
@@ -460,6 +490,17 @@ func (k Klaim) MarshalJSON() ([]byte, error) {
 		ClaimRetro    Money     `json:"claimRetro"`
 		Peserta       []Peserta `json:"peserta"`
 		CacahBaris    int       `json:"cacahBaris"`
+		// ⭐ Tahap dan StatusWork menyeberang sejak butir bb. Layar Detail
+		// memerlukan KEDUANYA untuk memutuskan apakah tombol `Close Claim`
+		// pantas ditawarkan: `pyLocalAction>CloseClaim` hanya ada di dua
+		// section (Outstanding, Akseptasi), dan kasus yang sudah tertutup
+		// tidak menawarkannya lagi.
+		//
+		// ⚠️ Keduanya boleh KOSONG: aplikasi ini tidak pernah menyisipkan
+		// ke T_WORK_CLAIM, sehingga klaim tanpa baris work adalah keadaan
+		// nyata. Kosong = tahap tidak diketahui = tombolnya tidak ditawarkan.
+		Tahap      string `json:"tahap"`
+		StatusWork string `json:"statusWork"`
 	}{
 		StatusTurunan: k.StatusTurunan().String(),
 		ID:            k.ID,
@@ -473,5 +514,7 @@ func (k Klaim) MarshalJSON() ([]byte, error) {
 		ClaimRetro: k.ClaimRetro,
 		Peserta:    peserta,
 		CacahBaris: k.CacahBaris(),
+		Tahap:      k.Tahap,
+		StatusWork: k.StatusWork,
 	})
 }

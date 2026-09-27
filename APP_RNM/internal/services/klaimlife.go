@@ -57,10 +57,20 @@ func (k *KlaimLife) Ambil(ctx context.Context, id string) (*models.Klaim, error)
 	if err != nil {
 		return nil, err
 	}
+	// Dokumen pendukung per peserta - `LoadDocumentLife_ACT` (lihat
+	// repository.AmbilDokumen untuk pohon langkahnya dan dua penyimpangan
+	// sadarnya).
+	dokumen, err := k.repo.AmbilDokumen(ctx, id)
+	if err != nil {
+		return nil, err
+	}
 
 	for i := range peserta {
 		if b, ada := baris[peserta[i].ID]; ada {
 			peserta[i].Baris = b
+		}
+		if d, ada := dokumen[peserta[i].ID]; ada {
+			peserta[i].Dokumen = d
 		}
 		// Keenam total uang peserta dihitung DI SINI, saat dibaca, dan
 		// tidak disimpan (models.HitungTotalPeserta punya bukti XML-nya).
@@ -78,6 +88,30 @@ func (k *KlaimLife) Ambil(ctx context.Context, id string) (*models.Klaim, error)
 		peserta[i].Total = total
 	}
 	klaim.Peserta = peserta
+
+	// ⭐ BUTIR bb: tahap dan status kerja ikut menyeberang, sebab layar Detail
+	// memerlukan keduanya untuk memutuskan apakah `Close Claim` pantas
+	// ditawarkan. Keduanya hidup di T_WORK_CLAIM, bukan di header klaim.
+	//
+	// ⚠️ Baris work yang TIDAK ADA bukan galat. Aplikasi ini tidak pernah
+	// menyisipkan ke T_WORK_CLAIM - baris itu lahir di sistem lama - jadi
+	// klaim tanpa baris work adalah keadaan nyata. Ia menjadi tahap kosong,
+	// dan tahap kosong tidak menawarkan tombol apa pun (gagal TERTUTUP).
+	// Galat LAIN tetap menggagalkan pembacaan: menelan galat basis data di
+	// sini akan membuat layar diam-diam menyembunyikan tombol yang
+	// seharusnya ada, dan tidak ada yang tahu kenapa.
+	tahap, _, err := k.repo.TahapDanPeran(ctx, id)
+	if err != nil && !errors.Is(err, repository.ErrWorkTidakAda) {
+		return nil, err
+	}
+	if err == nil {
+		klaim.Tahap = tahap
+		status, err := k.repo.StatusWorkKlaim(ctx, id)
+		if err != nil && !errors.Is(err, repository.ErrWorkTidakAda) {
+			return nil, err
+		}
+		klaim.StatusWork = status
+	}
 	return klaim, nil
 }
 
