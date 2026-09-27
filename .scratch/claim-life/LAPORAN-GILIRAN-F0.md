@@ -513,3 +513,49 @@ menentukan justru titik di depan `.TotalClaimAmount` dan kelas section-nya.
 bernama *(sebelumnya labelnya ada tetapi tidak pernah tampil — uji cacah label membuatnya tampak
 selesai)*; dan gerbang tutup kini punya **pemanggil React** — sebelumnya ia persis "rute tanpa
 pemanggil" yang paket 4 sendiri kecam.
+
+---
+
+## Giliran lanjutan 11 — paket 5: penanda DIPILIH (`bc012f8`)
+
+### Cacat ketiga dengan bentuk yang sama persis
+
+Jalur **pendaftaran** menulis `IsCheck: "1"`; gerbang **akseptasi** menuntut `"true"`. Setiap
+peserta yang baru didaftarkan karena itu **ditolak** saat hendak diaksep — daftarkan klaim, tekan
+`Save Adjustment`, tertolak. **Nol uji merah.**
+
+Kedua sisi benar menurut dirinya sendiri: pendaftaran benar menurut komentarnya, akseptasi benar
+menurut XML. Hanya **pertemuannya** yang salah — dan tidak ada satu pun uji yang memaksa keduanya
+bertemu. Itu bentuk yang **sama persis** dengan dua cacat sebelumnya di giliran ini:
+
+| # | Cacat | Bentuknya |
+| ---: | --- | --- |
+| 1 | envelope galat *(`galat` vs `error`)* | dua sisi, masing-masing benar sendiri |
+| 2 | rute tanpa pemanggil *(tanggal kejadian)* | satu sisi ada, sisi lain tidak pernah dibuat |
+| 3 | penanda dipilih *(`"1"` vs `"true"`)* | dua sisi, masing-masing benar sendiri |
+
+XML menjawab tegas, dan yang keliru **komentar kita sendiri**: `SetIndexAdjustmentList.xml` b328
+menuliskan `true`, dan `SavePesertaClaim.xml` b1812/b1997/b2413 mengujinya `.IsCheck=="true"`.
+Nilai `"1"` tidak punya dasar XML mana pun.
+
+Kini satu konstanta *(`models.PenandaDipilih`)* dan satu pembaca *(`services.PesertaDipilih`)*,
+ditambah **penjaga statik**: nol berkas sumber menulis penanda itu dengan nilai harfiah. Penjaga
+statiknya diperlukan sebab jalur penulis kedua tidak akan membuat uji perilaku mana pun merah
+sampai ada yang mencoba mengaksep peserta yang lahir dari jalur itu.
+
+### Ralat catatan giliran sebelumnya
+
+Laporan paket 1 menulis `SetIndexAdjustmentList` *"belum dibangun, milik Akseptasi"*. **Keliru** —
+ia **sudah ditiru lengkap**:
+
+| Langkah | Baris XML | Di kode |
+| --- | --- | --- |
+| 1 `.IsCheck = true` | b281, b328 | `services/adjustment.go:112`, dengan kutipan barisnya |
+| 2 `.IndexPremiumList` | b436 | **tidak perlu** — penunjuk balik posisi digantikan FK relasional |
+| 3 warisan delapan kolom dari `.AdjustmentList(1)` | b570–b743 | `services.WarisiKolom`, delapan kolom persis |
+
+Yang saya lakukan sebelumnya adalah membaca XML-nya lalu **tidak memeriksa apakah kode sudah
+punya jawabannya**. Itu kesalahan arah sebaliknya dari biasanya, dan sama mahalnya: ia hampir
+membuat pekerjaan yang sudah ada dikerjakan dua kali.
+
+**Telemetri:** Go 297 → **300 PASS · 0 FAIL · 34 SKIP** · JS 201 · vet bersih · 0 migrasi baru.
