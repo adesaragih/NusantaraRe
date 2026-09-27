@@ -9,6 +9,8 @@ package services
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -135,5 +137,56 @@ func TestDaftarTanpaPelakuDitolak(t *testing.T) {
 	}
 	if dipanggil != 0 {
 		t.Errorf("penomor dipanggil %d kali untuk pelaku anonim", dipanggil)
+	}
+}
+
+// AC tiket 02: awalan nomor klaim DI-LOOKUP, bukan konstanta.
+//
+// ⛔ Penjaga arah-balik. Ronde sebelumnya menanam `"RNML-"` sebagai konstanta
+// Go - benar untuk lingkungan yang kebetulan dipakai saat kode ditulis, dan
+// salah di mana pun `KODE_PRODUKSI` berisi awalan lain. Salahnya tidak
+// terlihat: nomornya tetap terbentuk, tetap tersimpan, dan baru ketahuan
+// ketika seseorang mencarinya dan tidak menemukannya.
+//
+// ⚠️ Yang dijaga NILAINYA, bukan nama konstantanya - mengganti nama konstanta
+// tidak memperbaiki apa pun.
+func TestNolAwalanNomorKlaimSebagaiLiteral(t *testing.T) {
+	// Awalan produksi yang `[data DBA]` sebut untuk lini Life.
+	const awalanDBA = "RNML-"
+	berkas, err := filepath.Glob(filepath.Join(".", "*.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	diperiksa := 0
+	for _, nama := range berkas {
+		if strings.HasSuffix(nama, "_test.go") {
+			continue
+		}
+		isi, err := os.ReadFile(nama)
+		if err != nil {
+			t.Fatal(err)
+		}
+		diperiksa++
+		for _, baris := range strings.Split(string(isi), "\n") {
+			potong := strings.TrimSpace(baris)
+			// Komentar boleh menyebutnya - justru di sanalah alasannya
+			// dicatat. Yang dilarang literalnya di dalam kode.
+			if strings.HasPrefix(potong, "//") {
+				continue
+			}
+			if !strings.Contains(baris, `"`+awalanDBA) {
+				continue
+			}
+			// Awalan AKSEPTASI (`RNML-A`, `RNML-AR`) dikecualikan dan
+			// alasannya dinyatakan: keduanya TIDAK ada di `KODE_PRODUKSI`.
+			if strings.Contains(baris, `"`+awalanDBA+"A") {
+				continue
+			}
+			t.Errorf("%s memuat awalan nomor %q sebagai literal; ia milik "+
+				"KODE_PRODUKSI dan harus di-lookup:\n\t%s", nama, awalanDBA, potong)
+		}
+	}
+	if diperiksa == 0 {
+		t.Fatal("nol berkas diperiksa; pembacanya yang rusak")
 	}
 }

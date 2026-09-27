@@ -214,24 +214,39 @@ const (
 	JenisNomorKlaimLife = "K"
 )
 
-// AwalanNomorKlaim adalah awalan nomor bisnis klaim.
+// ⛔ KONSTANTA `AwalanNomorKlaim` DIBUANG, ronde 27-09-2026.
 //
-// `[terverifikasi]` bentuk `<awalan>K<kode bisnis>.MM.YYYY.<5 digit>` sejajar
-// dengan nomor akseptasi `RNML-A…` / `RNML-AR…`
-// (`Generate_NoAccept_Life.xml` baris 85); huruf tengahnya yang membedakan
-// seri - `K` klaim, `A` akseptasi.
-const AwalanNomorKlaim = "RNML-"
+// Ia bernilai `"RNML-"` - benar untuk lingkungan yang kebetulan dipakai
+// saat kode ditulis, dan AC tiket 02 melarangnya dengan kalimat yang tidak
+// dapat disalahartikan: *"Prefix diperoleh lewat lookup ke
+// `POOLDATA.KODE_PRODUKSI` (`TYPE='LIFE'`), tidak ditanam sebagai konstanta
+// di kode."* Awalan itu MILIK basis data.
+//
+// `[terverifikasi]` `Claim Life/RDBList/GetKodeProdLife_SQL.xml` baris 85.
+// Bentuk `<awalan>K<kode bisnis>.MM.YYYY.<5 digit>` sejajar dengan nomor
+// akseptasi `RNML-A…`/`RNML-AR…` (`Generate_NoAccept_Life.xml` baris 85);
+// huruf tengahnya yang membedakan seri - `K` klaim, `A` akseptasi.
+//
+// ⚠️ Nomor AKSEPTASI masih merakit awalannya sendiri (`AwalanAkseptasiGross`
+// / `AwalanAkseptasiRetro` di akseptasi.go). Itu dinyatakan, bukan
+// dilewatkan: awalan akseptasi TIDAK ada di `KODE_PRODUKSI` - tabel itu
+// hanya punya `RNML-`, sedangkan akseptasi menuntut `RNML-A` dan `RNML-AR`.
+// Menyatukannya menuntut keputusan work owner tentang dari mana huruf
+// `A`/`AR` datang, dan itu `[terbuka]`.
 
 // RakitNomorKlaim menyusun nomor bisnis klaim.
 //
 // ⚠️ LIMA digit seperti `LPAD(v_seq,5,'0')`, dan urut yang sudah lebih panjang
 // TIDAK dipotong - memotongnya menerbitkan nomor yang bertabrakan.
-func RakitNomorKlaim(kodeBisnis, mmYYYY string, urut int) string {
+//
+// ⚠️ `awalan` DITERIMA, tidak diambil sendiri: fungsi ini murni supaya
+// bentuk nomornya dapat diuji tanpa Oracle. Yang mengambilnya penomornya.
+func RakitNomorKlaim(awalan, kodeBisnis, mmYYYY string, urut int) string {
 	u := strconv.Itoa(urut)
 	if len(u) < 5 {
 		u = strings.Repeat("0", 5-len(u)) + u
 	}
-	return AwalanNomorKlaim + JenisNomorKlaimLife + kodeBisnis + "." + mmYYYY + "." + u
+	return awalan + JenisNomorKlaimLife + kodeBisnis + "." + mmYYYY + "." + u
 }
 
 // penomorCounter menulis ulang `PROC_GENERATE_SEQUENCE_NUMBER` di Go.
@@ -248,14 +263,20 @@ func PenomorCounterOracle(svc *Service) Penomor {
 
 // NomorBerikut menerbitkan satu nomor klaim baru.
 //
-// Urutannya persis procedure-nya: hari tutup buku → periode → kunci baris →
-// naikkan → rakit.
+// Urutannya: awalan → hari tutup buku → periode → kunci baris → naikkan →
+// rakit. Empat langkah tengahnya persis procedure-nya; awalan di depan
+// sebab nomor tanpa awalan bukan nomor.
 func (p penomorCounter) NomorBerikut(ctx context.Context, tx *repository.Tx,
 	kodeBisnis string, saat time.Time) (string, error) {
 
 	if strings.TrimSpace(kodeBisnis) == "" {
 		return "", fmt.Errorf("%w: kode bisnis kosong; nomor klaim memuatnya",
 			ErrPermintaanTidakSah)
+	}
+	// ⛔ Awalannya di-LOOKUP, bukan konstanta - lihat catatan di atas.
+	awalan, err := p.pohon.AwalanProduksi(ctx, tx, repository.TipeKodeProduksiLife)
+	if err != nil {
+		return "", err
 	}
 	hariClosing, err := p.pohon.HariClosing(ctx, tx)
 	if err != nil {
@@ -267,5 +288,5 @@ func (p penomorCounter) NomorBerikut(ctx context.Context, tx *repository.Tx,
 	if err != nil {
 		return "", err
 	}
-	return RakitNomorKlaim(kodeBisnis, periode.MMYYYY, urut), nil
+	return RakitNomorKlaim(awalan, kodeBisnis, periode.MMYYYY, urut), nil
 }

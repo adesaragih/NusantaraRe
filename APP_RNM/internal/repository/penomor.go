@@ -196,3 +196,58 @@ func (r *PohonKlaim) UrutNomorBerikut(ctx context.Context, tx *Tx,
 	}
 	return urut, nil
 }
+
+// ErrKodeProduksiKosong - `KODE_PRODUKSI` tidak punya baris untuk tipe itu.
+var ErrKodeProduksiKosong = errors.New(
+	"repository: KODE_PRODUKSI tidak memberi awalan untuk tipe yang diminta")
+
+// TipeKodeProduksiLife adalah nilai `TYPE` untuk lini Life.
+//
+// `[terverifikasi]` `Claim Life/RDBList/GetKodeProdLife_SQL.xml` baris 85:
+// `SELECT KODE AS "ParamSeq.HASIL3" FROM POOLDATA.KODE_PRODUKSI WHERE
+// TYPE ='LIFE'`.
+const TipeKodeProduksiLife = "LIFE"
+
+// AwalanProduksi membaca awalan nomor bisnis sebuah lini.
+//
+// ⛔ DI-LOOKUP, BUKAN KONSTANTA. Ronde sebelumnya menanam `"RNML-"` sebagai
+// konstanta Go - dan AC tiket 02 melarangnya dengan kalimat yang tidak dapat
+// disalahartikan: *"Prefix diperoleh lewat lookup ke `POOLDATA.KODE_PRODUKSI`
+// (`TYPE='LIFE'`), tidak ditanam sebagai konstanta di kode."*
+//
+// Alasannya bukan kerapian: awalan itu MILIK basis data, dan lingkungan yang
+// berbeda dapat memakai awalan berbeda. Konstanta Go membuat seluruh nomor
+// yang terbit di lingkungan mana pun memakai awalan lingkungan yang
+// kebetulan dipakai saat kode ditulis.
+//
+// ⚠️ `TYPE` diterima sebagai parameter, bukan ditanam: `KODE_PRODUKSI`
+// melayani lebih dari satu lini, dan Claim Prop kelak membaca tabel yang sama.
+func (r *PohonKlaim) AwalanProduksi(ctx context.Context, tx *Tx,
+	tipe string) (string, error) {
+
+	tabel, err := r.db.Qualify("KODE_PRODUKSI")
+	if err != nil {
+		return "", err
+	}
+	q := fmt.Sprintf(`SELECT KODE FROM %s WHERE TYPE = :1`, tabel)
+	if err := PeriksaSQL(q); err != nil {
+		return "", err
+	}
+	var teks sql.NullString
+	if err := tx.tx.QueryRowContext(ctx, q, tipe).Scan(&teks); err != nil {
+		if err == sql.ErrNoRows {
+			return "", fmt.Errorf("%w: %q", ErrKodeProduksiKosong, tipe)
+		}
+		return "", fmt.Errorf("repository: membaca awalan produksi %q: %w", tipe, err)
+	}
+	// ⛔ Kosong GAGAL TERANG. Awalan kosong menghasilkan nomor seperti
+	// `KL1.08.2026.00936` - yang terlihat sah, tersimpan, dan baru ketahuan
+	// salah ketika seseorang mencarinya dan tidak menemukannya.
+	if !teks.Valid || strings.TrimSpace(teks.String) == "" {
+		return "", fmt.Errorf("%w: %q", ErrKodeProduksiKosong, tipe)
+	}
+	// ⚠️ TIDAK dipangkas spasinya di dalam: `"RNML-"` berakhir tanda hubung,
+	// dan awalan yang berakhir spasi pun milik basis data. Yang dibuang hanya
+	// spasi di kedua ujung, sebab kolomnya `VARCHAR2` dan bukan `CHAR`.
+	return strings.TrimSpace(teks.String), nil
+}
