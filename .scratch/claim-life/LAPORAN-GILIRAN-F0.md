@@ -996,3 +996,93 @@ seperti `showHarness` b5081: lebih setia, bukan kurang.
 
 **Telemetri:** Go 328 → **329 PASS · 0 FAIL · 34 SKIP** · JS 241 → **242** · `tsc`, `vet`, `gofmt`
 bersih · build 50 modul · nol migrasi baru.
+
+---
+
+## Giliran tiga modul 1 — §5 penyatuan, §1 OQ-K.1, §2 A bagian 1
+
+### §5 — penyatuan tiga cabang
+
+| Langkah | SHA | Hasil |
+| --- | --- | --- |
+| `merge --no-ff modul/komite-claim-life` | `df1353d` | tanpa konflik |
+| `merge --no-ff modul/premiumlist-life` | `c1d3b8c` | **dua konflik**, keduanya diselesaikan dengan mengambil **kedua sisi** |
+| `--ff-only` kedua worktree | `c1d3b8c` | ketiganya sejajar |
+
+Konfliknya tepat di tempat yang brief duga: `migrasi_test.go` dan `strukturkolom_test.go`. Dan
+keduanya **benar**, dengan cara yang saling melengkapi:
+
+- sisi PremiumList **menyempitkan LINGKUP** penjaga kaskade *(001–049 milik Claim Life; kebijakan
+  kedua modul berbeda dan keduanya disengaja)*;
+- sisi Komite **memperbaiki ISI**-nya *(relasi 9 masuk daftar; penjaga itu sempat menahan
+  perbaikan cacat `013`)*.
+
+⚠️ Kedua pelajaran itu **satu**, dan saya satukan di komentarnya: *daftar yang ditulis sebelum modul
+kedua lahir berhenti menjadi penjaga dan mulai menjadi pagar.* Yang satu menyempitkan lingkupnya,
+yang lain memperbaiki isinya — keduanya perlu.
+
+`letakStruktur` kini **tiga** dokumen. Dua di antaranya menggambarkan tabel yang sama
+*(`T_GENERAL_KOMITE`, `T_KOMITE_KOMITELIST` — batas antara dua konteks)*, dijaga
+`TestDokumenSTRUKTURSepakatAtasTabelBersama`.
+
+**Telemetri:** Go 329 → **334 PASS · 0 FAIL · 34 SKIP** · JS **242** · 50 modul.
+
+### §1 butir 1 — ⛔ tebakan saya, dan namanya ada di korpus sepanjang waktu
+
+`kolomNomorPenyakit = "NUMBER_"` saya tulis beralasan *"`NUMBER` kata cadangan Oracle, jadi kolomnya
+pasti bernama lain — dan nama itu tidak ada di korpus"*.
+
+Separuh pertamanya benar. **Separuh keduanya salah**:
+
+```
+ReportDefinition/BrowseDiseaseLife_RD.xml
+  b598  <pyFieldName>.Number</pyFieldName>
+  b599  <pyFieldLabel>ID</pyFieldLabel>      <- namanya, di baris berikutnya
+```
+
+Baris b599 **ada di keluaran grep saya sendiri** saat saya membaca report definition itu untuk
+mengambil `pyMaxRecords` dan penyaringnya. Saya memperlakukannya sebagai **label layar**.
+
+Katalog DEV membenarkan: `POOLDATA.DISEASE_LIFE` berkolom `ID`, `ICD_CODE`, `DISEASE`.
+
+⚠️ Pelajarannya sempit dan tajam, dan berbeda dari yang sudah saya catat: *sebelum menyatakan
+sesuatu "tidak ada di korpus", periksa apa yang **sudah terbaca** — bukan hanya apa yang sudah
+dicari.* Uji penggantinya menyebut tebakan lama **dengan namanya**, supaya ia tidak kembali lewat
+"perapian" berikutnya.
+
+### §2 A bagian 1 — ⛔ ralat kedua: grid yang saya baca separuh
+
+OQ-K.2 saya tulis: *"`.DiagnoseList` RepeatGrid (banyak) lawan kolom tunggal — satu lawan banyak,
+keputusan skema"*. Jawabannya ada **dua baris di bawah** tempat saya berhenti:
+
+```
+b4690  <pyLabel>Add</pyLabel>     -> addRow    b4700/b4841
+b6160  <pyLabel>Delete</pyLabel>  -> deleteRow b6170
+```
+
+Grid memang **dapat** berarti tampilan satu baris. Grid ber-`Add` **dan** ber-`Delete` **tidak
+dapat**. Saya berhenti pada bentuk tampilannya tanpa membaca tombolnya — bentuk kesalahan yang sama
+dengan `Close Claim` *("berhenti di aksi pertama")* dan OQ-H *("berhenti pada rule yang namanya
+tertulis")*. **Ketiga kalinya.**
+
+Migrasi `018` lahir: `T_CLAIMLF_DIAGNOSE`, FK peserta `ON DELETE CASCADE`, `URUTAN` =
+`.pxListSubscript`, sequence, index.
+
+⛔ **Lebar `DISEASE` 1000 terukur, bukan selera.** Sumbernya `DISEASE_LIFE.DISEASE` `VARCHAR2(1000)`
+dengan isi terpanjang **290** `[data DBA]`. `VARCHAR2(255)` di kolom peserta **terbukti kurang** —
+ia akan menolak nama penyakit yang sah. `018` melebarkannya pula.
+
+⛔ **Kaskade dengan bukti**: `SetDisease.xml` b389 menutup dengan `Obj-Save pyWorkPage`, bukan
+menyimpan halaman diagnosa sendiri — daftarnya hidup **di dalam** halaman peserta. Daftar penjaga
+**diperbarui**, bukan dilawan *(pelajaran tiket 00 Komite, dua jam sebelumnya)*.
+
+**OQ-L dibuka, lebih sempit:** daftar pilihan `GROUPDIAGNOSE`. Dropdown b5863 ber-`pyListSource`
+**`associated`** — daftarnya hidup pada **rule properti** di kelas `Data-DiagnoseLife`, dan rule itu
+tidak ada di ekspor *(`GROUPDIAGNOSE` muncul di tepat satu berkas)*. Kolomnya dibuat; nilainya tidak
+dikarang.
+
+**Gerbang sunting dicatat:** `pyDisabledWhen` `.STS_REJECT=='1' || .STS_REJECT=='2'` muncul **empat
+kali** di dalam grid — baris yang sudah diaksep atau ditolak tidak dapat disunting lagi.
+
+**Telemetri:** Go **334 PASS · 0 FAIL · 34 SKIP** · JS **242** · migrasi `001`–`018`, `030`,
+`050`–`056`.
