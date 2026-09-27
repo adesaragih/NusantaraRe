@@ -143,6 +143,7 @@ Header klaim Life. Satu baris mewakili **satu klaim**. `ID`-nya **sama persis** 
 | `CASEID_POLICY` | teks | ya | | keputusan tiket 14 — penunjuk polis |
 | `POLICY_NO` | teks | ya | | keputusan tiket 14 (ganti nama dari `PL_NUMBER`); korpus `POLICY_NO` — UpdOS, InsOS |
 | `ENDORSMENT_NO` | teks | ya | | keputusan tiket 14 — penunjuk polis |
+| `BUSINESS_CODE` | teks | ya | | **temuan audit A0**, A1 — nomor akseptasi memuatnya (`Generate_NoAccept_Life` 85), model relasional tidak menyimpannya |
 
 **Index:** tidak ada di luar PK.
 
@@ -244,6 +245,9 @@ unit keputusan mesin status (**ADR-0011**).
 | `ID_BANK` | teks | ya | | korpus `IDBANK` — UpdOS |
 | `ACCOUNT_NO` | teks | ya | | korpus `ACCOUNTNO` — UpdOS |
 | `KOMITE_ID` | teks | ya | FK | keputusan tiket 14 — → `T_WORK_CLAIM.ID` baris komite |
+| `BRANCH_OF_BANK` | teks | ya | | **butir aj**, A1 — `AdjustmentDetail_Section` 6870 `BranchOfBank` |
+| `SWIFT_CODE` | teks | ya | | **butir aj**, A1 — `AdjustmentDetail_Section` 6665 `SwiftCode` |
+| `PAYABLE_TO` | teks | ya | | **butir aj**, A1 — `AdjustmentDetail_Section` 5929 `PayableTo` |
 
 **Index:** `PREMIUM_LIST_DETAIL_ID` · `KOMITE_ID` **(UNIK)**.
 
@@ -630,3 +634,65 @@ tabel relasional yang memegang kategori pembanding, sebab gerbang Pega membacany
 Langkah 3 `SaveOutStandingLife_Act` memakai daftar yang **berbeda** (`.DocumentClaimList`) dan
 syarat yang berbeda: ia hanya berjalan bila `Type` **bukan** `TP`/`TR`, peserta `.IsAccept=="true"`,
 dan peserta itu **nol dokumen**; pesannya menyebut **nomor urut** peserta.
+
+---
+
+## T_CLAIMLF_JEJAK
+
+**Butir am**, A1 — jejak audit setiap transisi dan setiap jalur balik (ADR-U-0007).
+
+⚠️ `ADJUSTMENT_ID` **tidak** ber-FK: jejak harus selamat dari penghapusan apa pun, dan jejak yang
+ikut terhapus bersama yang dijejakinya bukan jejak.
+
+⚠️ `DARI` dan `KE` memuat **dua kosakata** dalam satu kolom: kode status (`"0"`, `"1"`, `"2"`) pada
+transisi baris, dan nama peran (`"ReasLifeAdmin"`) pada jalur balik tahap. Disengaja — keduanya
+adalah "keadaan sebelum" dan "keadaan sesudah".
+
+| Kolom | Tipe | Boleh kosong | Kunci | Catatan |
+| --- | --- | --- | --- | --- |
+| `ID` | teks | tidak | PK | dari `SEQ_CLAIMLF_JEJAK` (ADR-U-0006) |
+| `ADJUSTMENT_ID` | teks | ya | index | baris yang dijejaki; unit keputusan adalah baris (ADR-U-0011) |
+| `KLAIM_ID` | teks | ya | index | dipakai jalur balik tahap, yang tidak menunjuk baris |
+| `DARI` | teks | ya | | keadaan sebelum |
+| `KE` | teks | ya | | keadaan sesudah |
+| `AKUN_ID` | teks | tidak | | identitas AKUN, bukan nama orang (ADR-U-0002) |
+| `WAKTU` | TIMESTAMP | tidak | | KAPAN-nya |
+
+---
+
+## T_GENERAL_KOMITE
+
+**Butir af**, A1 — bentuknya dari tiket 00 Komite Claim Life; tiket itu kelak **memverifikasi**,
+bukan membuat ulang.
+
+⛔ **Shared primary key:** `ID` = `T_WORK_CLAIM.ID` baris komite, teks `KMT-xxxxxx`. Nol kolom
+`WORK_CLAIM_ID` *(REVISI 2026-09-18)* — dua jalan menuju satu baris akhirnya berbeda.
+
+| Kolom | Tipe | Boleh kosong | Kunci | Catatan |
+| --- | --- | --- | --- | --- |
+| `ID` | teks | tidak | PK, FK | → `T_WORK_CLAIM.ID` *(shared PK)* |
+| `ADJUSTMENT_ID` | teks | ya | FK, index | → `T_CLAIMLF_ADJUSTMENT.ID`; penunjuk dua arah dengan `KOMITE_ID` |
+| `KOMITE_LOOP` | angka bulat | ya | | tinggi tangga — `KomitePostAdjustment` 1322 |
+| `KOMITE_COUNT` | angka bulat | ya | | tingkat sekarang — 1398, 6172, 9028 |
+| `ACCEPT_STATUS` | teks | ya | | `"1"` aksep / `"2"` tolak — gerbang 5695, 8119, 8648, 8887 |
+
+---
+
+## T_KOMITE_KOMITELIST
+
+**Butir af**, A1 — keputusan per anggota, satu baris per tingkat.
+
+⚠️ `ID_KOMITE` dan `KOMITE_EMAIL` memuat **data orang**. Dibaca saat jalan dari `EMAILKOMITE`;
+nol baris disalin ke fixture, tiket, maupun log.
+
+| Kolom | Tipe | Boleh kosong | Kunci | Catatan |
+| --- | --- | --- | --- | --- |
+| `ID` | teks | tidak | PK | dari `SEQ_KOMITE_KOMITELIST` (ADR-U-0006) |
+| `KOMITE_ID` | teks | tidak | FK, index | → `T_GENERAL_KOMITE.ID` |
+| `KOMITE_URUT` | angka bulat | ya | | urutan tingkat |
+| `ID_KOMITE` | teks | ya | | **data orang** |
+| `KOMITE_EMAIL` | teks | ya | | **data orang** |
+| `KOMITE_APROVAL` | teks | ya | | `"0"`/`"1"`/`"2"` — kode, bukan bilangan (ADR-U-0022); ejaan `APROVAL` (sic) |
+| `KOMITE_COMMENT` | teks | ya | | `KomitePostAdjustment` 893, 5945 |
+| `DATE_APPROVE` | DATE | ya | | 935, 5965 |
+

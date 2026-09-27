@@ -37,6 +37,23 @@ import (
 var polaKolomStatusKedua = regexp.MustCompile(
 	`(?i)(ACCEPT_?STATUS|APROVAL|APPROVAL|DATE_?APPROVE|APPROVE_?DATE|KOMITE_COMMENT|COMMENT_?TEXT)`)
 
+// berkasMilikKonteksKomite adalah DDL yang memang milik konteks Komite.
+//
+// ⛔ Penjaga ini lahir di tiket 11 dengan premis *"roster dan keputusan per
+// anggota BUKAN milik konteks ini"* - dan premis itu BENAR sampai butir **af**
+// disahkan. Brief lanjutan 4 §1 `[DIPUTUSKAN 27-09-2026]` menempatkan
+// `T_GENERAL_KOMITE` dan `T_KOMITE_KOMITELIST` di rangkaian migrasi INI, dan
+// tiket 00 Komite kelak MEMVERIFIKASI-nya, bukan membuat ulang.
+//
+// Yang dijaga karena itu DIPERSEMPIT, bukan dilonggarkan: tabel Claim Life
+// sendiri - `T_CLAIMLF_*`, `T_GENERAL_CLAIM`, `T_WORK_CLAIM` - tetap TIDAK
+// boleh memuat status kedua. `ACCEPT_STATUS` dan `KOMITE_APROVAL` sah HANYA
+// di berkas di bawah, sebab di sanalah ia memang subjeknya.
+var berkasMilikKonteksKomite = map[string]string{
+	"migrations/013_tabel_komite.sql":      "butir af - tabel Komite; subjeknya memang keputusan per anggota",
+	"migrations/013_tabel_komite_down.sql": "jalur mundur berkas di atas",
+}
+
 // TestNolKolomStatusKeduaDiSkema - ADR-U-0001, diperiksa di DDL.
 func TestNolKolomStatusKeduaDiSkema(t *testing.T) {
 	// ⛔ MENELUSURI, bukan membaca satu direktori. Ronde pertama memakai
@@ -44,7 +61,7 @@ func TestNolKolomStatusKeduaDiSkema(t *testing.T) {
 	// sehingga `migrations/komite/011.sql` dan `012.SQL` tidak pernah dibaca.
 	// Keduanya dibangun sebagai elakan dan terbukti hijau.
 	dir := filepath.Join("..", "repository", "migrations")
-	diperiksa := 0
+	diperiksa, dikecualikanKomite := 0, 0
 	err := filepath.Walk(dir, func(jalur string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -57,6 +74,11 @@ func TestNolKolomStatusKeduaDiSkema(t *testing.T) {
 			return err
 		}
 		diperiksa++
+		if alasan, milik := cocokAkhiranJalur(berkasMilikKonteksKomite, jalur); milik {
+			t.Logf("dikecualikan: %s (%s)", filepath.ToSlash(jalur), alasan)
+			dikecualikanKomite++
+			return nil
+		}
 		if m := polaKolomStatusKedua.FindString(string(isi)); m != "" {
 			t.Errorf("%s: memuat %q; keputusan Komite dipetakan ke STS_REJECT "+
 				"DI BATAS dan tidak disimpan sebagai status kedua (ADR-U-0001). "+
@@ -72,6 +94,11 @@ func TestNolKolomStatusKeduaDiSkema(t *testing.T) {
 	// selamanya, dan hijau selamanya tidak dapat dibedakan dari aman.
 	if diperiksa < 10 {
 		t.Fatalf("hanya %d berkas migrasi terbaca; pembacanya yang rusak", diperiksa)
+	}
+	// ⛔ Pengecualian dikunci ke jumlah petanya: ia tidak boleh tumbuh diam-diam.
+	if dikecualikanKomite != len(berkasMilikKonteksKomite) {
+		t.Errorf("%d berkas dikecualikan sebagai milik Komite, petanya memuat %d",
+			dikecualikanKomite, len(berkasMilikKonteksKomite))
 	}
 }
 
@@ -189,4 +216,15 @@ func TestKonteksIniTidakPernahMenulisKeputusan(t *testing.T) {
 				"Komite, ia tidak pernah mengubah status baris lama", terlarang)
 		}
 	}
+}
+
+// cocokAkhiranJalur mencari entri peta yang akhiran jalurnya cocok.
+func cocokAkhiranJalur(peta map[string]string, jalur string) (string, bool) {
+	rel := filepath.ToSlash(jalur)
+	for akhiran, alasan := range peta {
+		if strings.HasSuffix(rel, akhiran) {
+			return alasan, true
+		}
+	}
+	return "", false
 }

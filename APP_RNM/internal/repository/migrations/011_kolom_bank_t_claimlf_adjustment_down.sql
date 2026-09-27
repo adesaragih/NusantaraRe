@@ -1,0 +1,5 @@
+-- Jalur mundur 011 - butir aj.
+ALTER TABLE {skema}.T_CLAIMLF_ADJUSTMENT DROP (
+  BRANCH_OF_BANK, SWIFT_CODE, PAYABLE_TO
+)
+/

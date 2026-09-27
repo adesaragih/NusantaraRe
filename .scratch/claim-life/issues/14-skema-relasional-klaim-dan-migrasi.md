@@ -1616,3 +1616,43 @@ Satu baris per aturan brief modul §4, ditulis oleh executor tiket 03 dan tidak 
 - ⚠️ `[terbuka]` Medan tanggal di `models` masih `time.Time` biasa untuk kolom nullable, yang tidak
   dapat membedakan NULL dari `0001-01-01` (ADR-U-0022 Akibat 2). `Dokumen` yang baru memakai
   `*time.Time`; menyeragamkan sisanya adalah keputusan sekali untuk seluruh model — milik tiket ini.
+
+---
+
+### Langkah migrasi baru — A1, 27 September 2026
+
+Paket §1 brief lanjutan 4 `[DIPUTUSKAN]`. Satu baris per langkah, sesuai aturan brief.
+
+| Langkah | Isi | Butir | Sumber |
+| --- | --- | --- | --- |
+| `011_kolom_bank_t_claimlf_adjustment` | `ALTER T_CLAIMLF_ADJUSTMENT ADD (BRANCH_OF_BANK, SWIFT_CODE, PAYABLE_TO)` | **aj** | `Section/AdjustmentDetail_Section.xml` — enam medan bank: 5929 `PayableTo`, 6122/6245 `NameOfBank`, 6665 `SwiftCode`, 6870 `BranchOfBank`, 7049 `NoAccount`. Tiga sudah ada sejak tiket 14 |
+| `012_t_claimlf_jejak` | `CREATE T_CLAIMLF_JEJAK` + 2 index + `SEQ_CLAIMLF_JEJAK` | **am** | ADR-U-0007; AC tiket 09. Membuka **lima** pintu yang menjawab 501 |
+| `013_tabel_komite` | `CREATE T_GENERAL_KOMITE`, `T_KOMITE_KOMITELIST` + 2 index + `SEQ_KOMITE_KOMITELIST` | **af** | bentuk dari tiket 00 Komite §"Bentuk yang dibangun"; kosakata kolom `[terverifikasi]` `KomitePostAdjustment.xml` 893, 912, 935, 993, 1322, 1398, 5899, 5945, 5965 |
+| `014_kolom_business_code` | `ALTER T_GENERAL_CLAIM ADD (BUSINESS_CODE)` | **temuan audit A0** | nomor akseptasi memuatnya (`Generate_NoAccept_Life` 85), model relasional tidak menyimpannya |
+
+⛔ **Butir `al` TIDAK dikerjakan — syaratnya tidak terpenuhi.** §1 mensyaratkan bukti bahwa
+`MedicalCheckClaimLife`/`Diagnose_Section` mengisi `.DiagnoseList`. Sensus: `MedicalCheckClaimLife`
+**nol** kemunculan; `Diagnose_Section` memakai `.ICD_Code` (2173, 2549) dan `.Disease` (2321, 2543,
+2661) tetapi **bukan** listnya. Ditambah bab 7 butir 4: `ICD_CODE` **sudah ada** sebagai kolom
+peserta di `003`. Keputusan tabel diagnosa ditunda ke kelompok **Medis** A3, sesudah `SetDisease`
+dan `SearchDiagnose_act` dibaca utuh.
+
+⛔ **`ALTER T_WORK_CLAIM ADD COVER_KEY` yang §1 sebut TIDAK diperlukan** — `COVER_KEY` sudah ada di
+`001_t_work_claim.sql` sejak tiket 14.
+
+**Penjaga cacah DIPERBARUI dengan angkanya, bukan dilonggarkan:** pernyataan `CREATE` 20 → **29**
+*(10 tabel + 8 sequence + 11 index)*; `CREATE TABLE` 7 → **10**. Dibuktikan: menghapus satu index
+memerahkan penjaganya dengan angka yang tepat *(28 ≠ 29)*.
+
+⚠️ **Tiga penjaga lain menyala dan diperbaiki, bukan dilonggarkan:** `NUMBER(10)` bukan presisi yang
+sah → `NUMBER(5)`; STRUKTUR menuntut tiap kolom baru didaftarkan; dan `golonganStruktur` ternyata
+tidak mengenal `timestamp` sama sekali — kosakatanya yang kurang, dan ditambah dengan alasan.
+
+⛔ **Penjaga status kedua DIPERSEMPIT, dengan sebab.** `TestNolKolomStatusKeduaDiSkema` lahir di
+tiket 11 dengan premis *"keputusan per anggota bukan milik konteks ini"* — benar sampai **af**
+disahkan. Kini tabel Komite dikecualikan **per berkas**, jumlah pengecualiannya dikunci, dan
+dibuktikan penjaganya **tetap** menggigit bila `ACCEPT_STATUS` disisipkan ke tabel Claim Life
+sendiri.
+
+⚠️ **Migrasi belum pernah dijalankan di Oracle mana pun** — G1 tetap berlaku.
+

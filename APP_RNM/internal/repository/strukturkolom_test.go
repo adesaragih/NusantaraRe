@@ -271,7 +271,13 @@ func golonganStruktur(tipe string) string {
 	switch {
 	case t == "teks":
 		return "teks"
-	case t == "date":
+	case t == "date", t == "timestamp":
+		// ⛔ `timestamp` ditambahkan A1 27-09-2026, bukan untuk meloloskan
+		// sesuatu melainkan karena kosakatanya memang kurang: `golonganDDL`
+		// sudah menggolongkan TIMESTAMP sebagai tanggal sejak awal, sedangkan
+		// sisi STRUKTUR hanya mengenal DATE. Jejak audit memakai TIMESTAMP
+		// dengan alasan: dua transisi dapat terjadi dalam detik yang sama, dan
+		// DATE Oracle tidak dapat membedakannya.
 		return "tanggal"
 	case strings.Contains(t, "desimal"), strings.Contains(t, "bulat"),
 		strings.Contains(t, "angka"):
