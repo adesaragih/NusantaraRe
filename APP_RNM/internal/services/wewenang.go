@@ -15,7 +15,6 @@ package services
 //   - peran : `pyPosition` di sistem lama - jabatan pemroses, bukan orangnya.
 
 import (
-	"errors"
 	"fmt"
 
 	"nusantarare/internal/models"
@@ -51,9 +50,17 @@ const (
 	PeranInputRegister = PeranAdmin
 )
 
-// ErrAksepBukanDariModulIni - Aksep ditulis Komite, bukan modul ini.
-var ErrAksepBukanDariModulIni = errors.New(
-	"services: status Aksep ditulis modul Komite, bukan Claim Life")
+// ⛔ `ErrAksepBukanDariModulIni` DIHAPUS — audit A0, 27-09-2026.
+//
+// Ia berdiri di atas bacaan bahwa akseptasi hanya milik Komite. Menurut XML
+// itu keliru: `[terverifikasi]` `Claim Life/Activity/SaveAdjustment_Act.xml`
+// pecahan baris 1833, 1879, 1899 menulis `ACCEPTEDNO`, `STS_REJECT = 1`, dan
+// `ACCEPTATION_DATE` DI CLAIM LIFE SENDIRI, dipicu tombol "Save Adjustment"
+// di `Section/ClaimLifeDetailGCNM.xml` (22641 → 22665).
+//
+// Akseptasi punya DUA jalur; modul ini hanya mengenal satu. Gerbangnya kini
+// `WajibPemegangTahap` beserta prasyarat XML di `PeriksaBolehAksep`
+// (akseptasi.go).
 
 // WajibPeranPengubahStatus menolak pelaku yang tidak boleh menulis status KE.
 //
@@ -75,10 +82,19 @@ func WajibPeranPengubahStatus(p Pelaku, ke models.StatusBaris) error {
 	case models.StatusDitolak:
 		return WajibPeran(p, PeranRejectOutstanding)
 	case models.StatusAksep:
-		// ⛔ Ditolak bagi SIAPA PUN dari modul ini. Jalurnya lewat Komite, dan
-		// pembacanya lahir di tiket 11. Melonggarkannya kepada Admin atau SPV
-		// berarti mengarang wewenang yang korpus tidak berikan kepada mereka.
-		return fmt.Errorf("%w: pakai jalur Komite (tiket 11)", ErrAksepBukanDariModulIni)
+		// ⛔ Aksep punya DUA jalur, dan keduanya sah:
+		//
+		//   1. Komite memutuskan  → `KomitePostAdjustment` (tiket 11, dibaca)
+		//   2. Claim Life sendiri → `SaveAdjustment_Act` (audit A0, ditiru)
+		//
+		// Gerbang jalur kedua BUKAN daftar peran datar melainkan PEMEGANG
+		// TAHAP - `[terverifikasi — pohon XML]` tombolnya tidak dibungkus
+		// gerbang peran mana pun, dan yang menentukan adalah dari layar tahap
+		// mana ia diluncurkan. Pemeriksaannya di `SimpanAdjustment`, sebab ia
+		// menuntut tahap klaim yang hanya dapat dibaca dari basis data.
+		//
+		// Di sini karena itu Aksep TIDAK ditolak lagi.
+		return nil
 	default:
 		return fmt.Errorf("%w: tujuan %v bukan keputusan akhir yang dapat ditulis di sini",
 			ErrTransisiTidakSah, ke)

@@ -306,13 +306,18 @@ func (p Peserta) MarshalJSON() ([]byte, error) {
 		baris = []BarisAdjustment{}
 	}
 	return json.Marshal(struct {
-		ID              string            `json:"id"`
-		NomorPremiList  string            `json:"nomorPremiList"`
-		NomorPolis      string            `json:"nomorPolis"`
-		NomorSertifikat string            `json:"nomorSertifikat"`
-		MataUang        string            `json:"mataUang"`
-		Baris           []BarisAdjustment `json:"baris"`
-	}{p.ID, p.NomorPremiList, p.NomorPolis, p.NomorSertifikat, p.MataUang, baris})
+		ID              string `json:"id"`
+		NomorPremiList  string `json:"nomorPremiList"`
+		NomorPolis      string `json:"nomorPolis"`
+		NomorSertifikat string `json:"nomorSertifikat"`
+		MataUang        string `json:"mataUang"`
+		// ⭐ IsCheck menyeberang sejak audit A0: layar memerlukannya untuk
+		// memutuskan apakah kontrol "Save Adjustment" tampil - prasyarat XML
+		// `SaveAdjustment_Act` menuntut peserta DIPILIH.
+		IsCheck string            `json:"isCheck"`
+		Baris   []BarisAdjustment `json:"baris"`
+	}{p.ID, p.NomorPremiList, p.NomorPolis, p.NomorSertifikat, p.MataUang,
+		p.IsCheck, baris})
 }
 
 // Klaim adalah satu klaim Life beserta seluruh pesertanya.
@@ -323,6 +328,19 @@ type Klaim struct {
 	NomorKlaim string
 	NomorPolis string
 	NamaBisnis string
+	// KodeBisnis adalah `BUSINESSID` - kode produk, bukan namanya.
+	//
+	// ⛔ TEMUAN AUDIT A0, 27-09-2026: nomor akseptasi memuatnya
+	// (`'RNML-A'||{pyWorkPage.BusinessCode}||…`, `Generate_NoAccept_Life.xml`
+	// baris 85), tetapi model relasional TIDAK menyimpannya - `T_GENERAL_CLAIM`
+	// hanya punya `BUSINESS_NAME`, dan `BUSINESSID` bukan salah satu dari 18
+	// kolom datar warisan yang `Simpan` tulis. Ia dipakai sekali saat
+	// pendaftaran lalu hilang.
+	//
+	// ⚠️ Medannya ada di sini SEJAK SEKARANG supaya jalur akseptasi dapat
+	// menyebutnya dan gagal terang; kolomnya lahir di A1, dan sampai itu
+	// nilainya selalu kosong.
+	KodeBisnis string
 	// KodeStatus adalah `STS_REJECT` di tingkat header. Ia dibawa apa adanya
 	// dan TIDAK pernah diterjemahkan menjadi kata: spec.md menyatakan ia
 	// cerminan baris adjustment terakhir - turunan, bukan unit keputusan.

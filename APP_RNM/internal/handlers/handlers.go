@@ -31,6 +31,8 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 	mux.HandleFunc("GET /api/peserta-life", cariPeserta(svc))
 	mux.HandleFunc("GET /api/klaim-life/{id}/dampak-hapus", dampakHapus(svc, stubPelaku))
 	mux.HandleFunc("DELETE /api/klaim-life/{id}", hapusKlaim(svc, stubPelaku))
+	mux.HandleFunc("POST /api/klaim-life/{id}/peserta/{pesertaId}/akseptasi",
+		simpanAdjustment(svc, stubPelaku))
 	mux.HandleFunc("POST /api/klaim-life/{id}/peserta/{pesertaId}/putaran",
 		tambahPutaran(svc, stubPelaku))
 	mux.HandleFunc(

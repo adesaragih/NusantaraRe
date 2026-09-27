@@ -245,3 +245,78 @@ atau chat)*, endpoint storage/email/Arasapas **nyata**, menulis ke tabel warisan
 dibaca statistiknya, klaim review dicek di kode), sensus aksi layar dan flow action dari korpus,
 pembacaan struktur `GET_TOKEN_STORAGE` (literal rahasianya disamarkan, tidak disalin), katalog
 `M_LINK_SERVICE`, `EMAILKOMITE`, `GCP_IMAGE` (agregat), dan tiket 00 modul Komite.*
+
+---
+
+## 7. JAWABAN XML ATAS PERTANYAAN A0 — "siapa yang boleh menekan Save Adjustment" — 27 September 2026
+
+**Verifikasi `9aca1a7` (A0 kelompok 1):** 4 berkas +173/−19; 229 PASS · 0 FAIL · 34 SKIP; 13 JS; 88
+modul; `AUDIT-XML-ULANG.md` 6 tepat · 3 kurang tepat · 2 belum ditiru. Cocok.
+
+**Aturan baru `[DIPUTUSKAN — work owner]`: pertanyaan yang dapat dijawab XML dijawab dari XML, bukan
+dibawa ke manusia — dan pertanyaan tentang PENYARANGAN (gerbang mana membungkus tombol mana) dijawab
+dengan membaca berkas sebagai POHON, bukan dengan `grep` baris.** Alatnya ada di mesin ini:
+
+```powershell
+$x = New-Object System.Xml.XmlDocument; $x.Load('D:\XML\RNM_BRD\Claim Life\Section\<Section>.xml')
+foreach ($n in $x.SelectNodes("//pyActivity[text()='<Activity>']")) {
+  $a = $n.ParentNode
+  while ($a -ne $null -and $a.NodeType -eq 'Element') {
+    foreach ($c in $a.ChildNodes) { if ($c.Name -match 'pyCondition|VisibleWhen|pyWhen' -and $c.InnerText.Trim() -ne '') { $a.Name + ' :: ' + $c.Name + '=' + $c.InnerText } }
+    $a = $a.ParentNode } }
+```
+
+Nomor baris berkas pecahan tetap dikutip sebagai bukti; pohonnya yang memutuskan siapa membungkus siapa.
+
+**Jawabannya `[terverifikasi — dibaca asisten sebagai pohon XML, 27 September 2026]`:**
+
+| # | Temuan | Bukti |
+| ---: | --- | --- |
+| 1 | Kedua kemunculan `SaveAdjustment_Act` di `ClaimLifeDetailGCNM` adalah **satu tombol** yang sama dalam dua format aksi Pega *(`pyBehaviors` lama dan `pyActions` baru)*: event `click` → `refresh` + activity `SaveAdjustment_Act`, target `thisSection`; sel tombol `rowdata[2] label="Save Adjustment"` | pohon: kedua `pyActivity` bermuara di sel yang sama |
+| 2 | **Nol gerbang peran** yang membungkus tombol itu: seluruh leluhurnya bervisibilitas `ALWAYS` *(layout "Adjustment" di dalam layout "Title")*. `pyCondition` `1=2` yang terlihat "bertetangga" adalah `pyContainerVisibleWhen` **layout lain** yang selalu tersembunyi, bukan pembungkus tombol; gerbang `ReasLifeSPV`/`MedicalAdvisor`/`Admin` di section itu membungkus **bagian lain** | pohon leluhur tombol |
+| 3 | Section ini dibuka lewat flow action **`ViewClaimDetailLifeGCNM`** *(`pyUsedAs = LOCALANDCONNECTOR`, `pyLocalActionActivity = ObjSave_Act`, `pySectionReference = ClaimLifeDetailGCNM`)* yang **diluncurkan dari tiga layar tahap** — `InputOSClaimLife`, `MedicalCheckClaimLife`, `InputAkseptasiClaimLife` — masing-masing lewat `pyEditAction` di dalam kontainer `pyContainerVisibleWhen = pyWorkPage.Save = 1` *(bukan peran)*; juga dari `ShowEditClaimLife` *(`EditDateClaimLife_Section`)* dan `RejectOSClaimLife` *(`RejectOSClaimLife_Sec`)* | grep pemanggil + pohon ketiga section |
+| 4 | **Siapa memegang tahap** *(`Register_Flow`)*: `Assignment2` Input Register → `pyRouteTo = Current operator`; `Assignment1` Outstanding Claim → router **Operator = `pyWorkPage.pxCreateOperator`** *(pendaftar)*, `pyPosition` disetel `"ReasLifeAdmin"` pada transisi `InputRegisterClaimLife` dan semua `IsSendtoAdmin`; `Assignment3` Medical Check → **Workbasket `ReasLifeMedicalAdvisor`**, `pyPosition = "ReasLifeMedicalAdvisor"` pada transisi `OSClaimLife` dan `IsSendtoMedical`; `Assignment4` Claim Analis → **Workbasket `ReasLifeSPV`**, `pyPosition = "ReasLifeSPV"` pada transisi `MedicalCheck`; `AkseptasiClaimLife` adalah aksi `Assignment4` → `Decision2` → `End1` *(`Resolved-Completed`)* | shape dan transisi flow, 14 `Property-Set pyWorkPage.pyPosition` |
+| 5 | Karena itu **yang boleh menekan "Save Adjustment" = pemegang tahap yang layarnya meluncurkan detail**: `ReasLifeAdmin` di Outstanding Claim, `ReasLifeMedicalAdvisor` di Medical Check, `ReasLifeSPV` di Claim Analis — **pilihan 1** executor, bukan pilihan 2. Gerbang sesungguhnya ada di **activity**: per peserta `.IsCheck=true`, `ACCEPTEDNO` kosong, `STS_REJECT` `"0"`, dan `Type` | tabel di bawah |
+
+**`SaveAdjustment_Act` `[terverifikasi]`** *(kelas `Int-LIFE_PREMIUM_DETAIL`, berkas pecahan 4.120 baris;
+langkah 1 mengulang `pyWorkPage.PremiumListSummary.PremiumListDetail`)*:
+
+| Langkah | Isi | Baris |
+| --- | --- | ---: |
+| 1.1 | `Local.NextMonth = @if(hari>25, bulan+1, bulan)`, dua digit, `13 → 01`; `TempGenerate.CARI1 = NextMonth`; `CARI2 = YY` *(kedua cabang `@if` memberi nilai yang sama — **tahun tidak ikut bergeser** saat bulan 12 → 01)* | 390–605 |
+| 1.2 | **`Generate_NoAccept_Life`** *(QP/QR)*: `'RNML-A' ‖ BusinessCode ‖ '.' ‖ CARI1 ‖ '.' ‖ CARI2 ‖ '.' ‖ LPAD(ACCEPTATIONNOLIFE_SEQ.NEXTVAL, 5, '0')`; precondition `.IsCheck=true && Type=="QP" \|\| Type=="QR"` *(True=2, False=3)* | 692–837 |
+| 1.3 | **`Generate_NoAccept_LifeRetro`** *(TP/TR)*: `'RNML-AR' ‖ …` sama; precondition `.IsCheck=true && Type=="TP" \|\| Type=="TR"` | 886–1031 |
+| 1.4 | `TempInputDetail.CARI1…CARI34` — baris datar warisan per peserta *(termasuk `NAME_OF_INSURED`, `POLICY_HOLDER`, `DOB`, `SEX`, `DISEASE`, `ICD_CODE`, `NOTES`, `KETERANGAN`, `CedingCo`, `SourceOfBusiness`, `BusinessID/Name`)*; `InputParam.CARI50 = HASIL1` *(nomor akseptasi)*, `CARI51 = 1`; gerbang `TempError.CARIDESC==1` | 1080–1768 |
+| 1.5 | `.AdjustmentList(<LAST>).ACCEPTEDNO = HASIL1`; `.STS_REJECT = 1`; `.ACCEPTATION_DATE = @CurrentDateTime()` | 1833–1900 |
+| 1.6 | per `.AdjustmentList`: uang ke `TempInputDetail.CARI17…21, 33`, `CARI35 = .ACCEPTEDNO`; 1.6.1 **`GetAcceptedNoCL`** *(`SELECT NO_ACCEPTATION FROM OS_AKSEPTASI_KLAIM_LIFE WHERE NO_ACCEPTATION = …` — cek keunikan)*; 1.6.2 **`UpdateOsAkseptasiClaimLife_sql`** bergerbang `.PrintFaceClaim==1 && OutData.pxResults(1).CARI1==""` | 1980–2626 |
+
+**Yang harus dikerjakan executor sekarang — di A0, tanpa berhenti:**
+
+1. `Aksep`/`SaveAdjustment` menjadi jalur sah modul ini: `services.Status.Ubah(…, Aksep)` dipanggil oleh
+   `services.SimpanAdjustment(ctx, pelaku, klaimID, pesertaID)` dengan gerbang **XML** *(peserta
+   `IS_CHECK`, `ACCEPTEDNO` kosong, baris `STS_REJECT = "0"`, `Type`)* dan gerbang peran
+   **`WajibPemegangTahap(pelaku, klaim)`** *(Outstanding → `ReasLifeAdmin`; Medical Check →
+   `ReasLifeMedicalAdvisor`; Claim Analis → `ReasLifeSPV`)*. `ErrAksepBukanDariModulIni` **dihapus**;
+   tiket 04, 07, 08 diralat dengan bukti tabel di atas *(§1.2-b)*; ADR-U-0002 diberi catatan
+   `[terverifikasi]` bahwa Pega tidak menggerbangi tombol ini dengan peran — bila work owner ingin
+   **hanya SPV**, itu penyimpangan sadar yang **dicatat nanti**, bukan diputuskan executor.
+2. **Nomor akseptasi** *(bukan nomor klaim)*: sequence **`POOLDATA.ACCEPTATIONNOLIFE_SEQ`** `[data DBA:
+   ada, `INCREMENT BY 1`, `NOCACHE`, `NOCYCLE`, terakhir 3.508]* + format `RNML-A<BusinessCode>.<MM>.<YY>.<NNNNN>`
+   *(retro `RNML-AR…`)*, `MM` = bulan berikut bila tanggal > 25 *(ambang 25 — OQ-030, kini `[terverifikasi]`
+   di sini)*. **Keputusan `ap` `[DIPUTUSKAN — prinsip o]`:** dibaca lewat `nomorBerikut("ACCEPTATIONNOLIFE_SEQ")`
+   yang sudah ada *(`Qualify` → skema; skema uji membuat tiruannya)*; **bukan** `PenomorCounter`
+   *(itu untuk `RNML-K`)*. Keunikan diperiksa terhadap `NO_ACCEPTATION` seperti `GetAcceptedNoCL`.
+3. Dua **cacat rule Pega** yang tidak ditiru, dilaporkan: *(a)* precondition 1.2/1.3 tanpa kurung —
+   `&&` mengikat lebih erat dari `||`, sehingga `QR`/`TR` lolos **tanpa** `IsCheck`; Go memakai bacaan
+   yang dimaksud *(`IsCheck && (QP||QR)`)*; *(b)* tahun tidak bergeser saat bulan bergeser 12 → 01;
+   Go menggeser tahunnya. Keduanya `[penyimpangan sadar — dilaporkan ke work owner]` di tiket.
+4. Baris datar warisan pada akseptasi mengikuti jalur `BarisLamaDari` yang ada; nama orang tetap
+   **tidak** masuk tabel baru. Kolom diagnosa peserta *(`DISEASE`, `ICD_CODE`, `NOTES`, `KETERANGAN`)*
+   `[data DBA]` memang kolom baris peserta di `OS_AKSEPTASI_KLAIM_LIFE` — bukti untuk **al** bahwa
+   diagnosa **per peserta** mungkin sudah cukup sebagai kolom `003` *(`ICD_CODE` sudah ada)*; `SetDisease`
+   dan `SearchDiagnose_act` dibaca di kelompok Medis A3 sebelum memutuskan tabel.
+5. Titik audit yang **tidak bergantung** jawaban ini *(tulisan datar sesudah reject, field pendaftaran,
+   `IsCheck`, kolom dokumen)* dilanjutkan seperti yang executor rencanakan; sesudah itu A1 → A4 → Bagian B.
+
+**Pesan singkat untuk sesi executor:** *"Jawabannya dari XML: pilihan 1. Baca bab 7 brief lanjutan 4,
+terapkan, lanjutkan A0 tanpa berhenti; pertanyaan penyarangan berikutnya dijawab dengan pohon XML."*

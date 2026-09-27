@@ -234,3 +234,33 @@ atau pencarian yang lebih sempit daripada kalimatnya. Pola benar: `<PropertiesNa
 Pintu `POST /api/klaim-life/{id}/adjustment/{adjId}/tolak` (tiket 05, commit di bawah) memanggil
 `Status.Ubah`, sehingga pencerminan ke peserta dan ke header benar-benar terjadi. Keduanya kini
 tercentang: yang menahannya memang hanya pemanggil, bukan mekanismenya.
+
+---
+
+### Ralat menurut XML — 27 September 2026 (audit A0, brief lanjutan 4 bab 7)
+
+⛔ **Akseptasi punya DUA jalur; tiket ini hanya mengenal satu.**
+
+| Butir | Teks lama | Teks baru | Bukti |
+| --- | --- | --- | --- |
+| siapa menulis status Aksep | *"Aksep ditulis modul Komite, bukan Claim Life"* — `ErrAksepBukanDariModulIni` menolak tujuan Aksep bagi siapa pun | **Claim Life mengaksep sendiri** lewat `SaveAdjustment_Act`; sentinelnya **DIHAPUS** | `Claim Life/Activity/SaveAdjustment_Act.xml` pecahan baris **1833** (`ACCEPTEDNO`), **1879** (`STS_REJECT = 1`), **1899** (`ACCEPTATION_DATE = @CurrentDateTime()`) |
+| gerbang peran jalur itu | — *(tidak dikenal)* | **pemegang TAHAP**, bukan daftar peran datar | `[terverifikasi — pohon XML]` tombol "Save Adjustment" (`Section/ClaimLifeDetailGCNM.xml` **22641 → 22665**) tidak dibungkus gerbang peran mana pun; seluruh leluhurnya ALWAYS. `pyCondition 1=2` yang tampak bertetangga adalah `pyContainerVisibleWhen` **layout lain** |
+| prasyarat dagangnya | — | peserta `.IsCheck=true`, `.ACCEPTEDNO==""`, baris `.STS_REJECT=="0"`, dan `Type` | pecahan **854** (QP/QR) dan **1048** (TP/TR) |
+
+⚠️ **DUA cacat rule Pega yang sengaja TIDAK ditiru — dilaporkan ke work owner:**
+
+1. **Prasyarat tanpa kurung.** Baris **837** dan **1031** berbunyi
+   `.IsCheck=true && Type=="QP" || Type=="QR"`. Karena `&&` mengikat lebih erat daripada `||`,
+   bacaan harfiahnya meloloskan `QR` dan `TR` **tanpa** memeriksa `IsCheck` sama sekali. Go memakai
+   bacaan yang **dimaksud** — `IsCheck && (QP||QR)`.
+2. **Tahun tidak bergeser.** Baris **605** berbunyi
+   `@if(MM=="12" && NextMonth=="01", @toDecimal(@CurrentDate("YY")), @toDecimal(@CurrentDate("YY")))`
+   — **kedua cabangnya identik**, sehingga nomor Januari memakai tahun Desember. Go menggeser
+   tahunnya.
+
+⭐ **Temuan yang menghentikan jalur ini di satu tempat:** nomor akseptasi memuat **kode bisnis**
+(`'RNML-A'||{pyWorkPage.BusinessCode}||…`), tetapi model relasional kita **tidak menyimpannya** —
+`T_GENERAL_CLAIM` hanya punya `BUSINESS_NAME`, dan `BUSINESSID` bukan salah satu dari 18 kolom datar
+warisan yang `Simpan` tulis. Jalurnya **gagal terang** dengan `ErrKodeBisnisBelumTersimpan` (HTTP 501)
+sampai kolomnya lahir di **A1**. Tidak dikarang.
+

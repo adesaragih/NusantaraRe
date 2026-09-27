@@ -46,6 +46,8 @@ export interface Peserta {
   nomorPolis: string
   nomorSertifikat: string
   mataUang: string
+  /** Penanda DIPILIH untuk diklaim (`IS_CHECK`). Teks, bukan boolean. */
+  isCheck: string
   baris: BarisAdjustment[]
 }
 
@@ -257,6 +259,54 @@ export const STATUS_OUTSTANDING = 'Outstanding'
  */
 export async function tolakBarisAdjustment(klaimID: string, adjID: string): Promise<void> {
   await api.post(`/api/klaim-life/${encodeURIComponent(klaimID)}/adjustment/${encodeURIComponent(adjID)}/tolak`)
+}
+
+/**
+ * Menyimpan akseptasi baris adjustment TERAKHIR seorang peserta.
+ *
+ * ⭐ Jalur ini LAHIR dari audit XML: `SaveAdjustment_Act` mengaksep di Claim
+ * Life sendiri, dan sebelumnya kami hanya mengenal jalur Komite.
+ *
+ * Yang boleh menekannya adalah PEMEGANG TAHAP klaim — bukan satu peran tetap.
+ * Layar tidak tahu peran siapa pun; yang menolak adalah services (403).
+ *
+ * Jawaban yang mungkin:
+ *   403 bukan pemegang tahap klaim ini
+ *   409 peserta belum dipilih, baris sudah bernomor, atau bukan Outstanding
+ *   501 kode bisnis belum tersimpan (temuan audit A0), atau tempat jejak belum ada
+ */
+export async function simpanAdjustment(
+  klaimID: string,
+  pesertaID: string,
+): Promise<string> {
+  const jawab = await api.post<{ nomorAkseptasi: string }>(
+    `/api/klaim-life/${encodeURIComponent(klaimID)}` +
+      `/peserta/${encodeURIComponent(pesertaID)}/akseptasi`,
+  )
+  return jawab.data.nomorAkseptasi
+}
+
+/**
+ * Apakah layar menampilkan kontrol "Save Adjustment" bagi seorang peserta.
+ *
+ * ⛔ Meniru prasyarat XML `SaveAdjustment_Act` (pecahan 854, 1048): peserta
+ * DIPILIH, baris terakhir belum bernomor akseptasi, dan masih Outstanding.
+ *
+ * ⚠️ Peran TIDAK diperiksa di sini, dan itu sesuai XML: pohon section
+ * membuktikan tombolnya tidak dibungkus gerbang peran mana pun. Yang
+ * menggerbanginya pemegang tahap, dan itu hanya services yang tahu.
+ */
+export function bolehSimpanAdjustment(
+  peserta: { isCheck: string },
+  baris: BarisAdjustment[],
+): boolean {
+  if (peserta.isCheck.toLowerCase() !== 'true') return false
+  const terakhir = baris[baris.length - 1]
+  return (
+    terakhir !== undefined &&
+    terakhir.nomorAkseptasi === '' &&
+    terakhir.status === STATUS_OUTSTANDING
+  )
 }
 
 /**

@@ -8,6 +8,8 @@ import {
   serahkanKeKomite,
   bolehSerahkanDiLayar,
   bolehPutaranBaru,
+  bolehSimpanAdjustment,
+  simpanAdjustment,
   tambahPutaran,
   pesanGalat,
   type DampakHapus,
@@ -170,5 +172,44 @@ describe('putaran berikutnya', () => {
     // Unit keputusan adalah baris (ADR-U-0011), tetapi putaran berikutnya
     // lahir pada pesertanya - barisnya belum ada saat diminta.
     expect(tambahPutaran.length).toBe(2)
+  })
+})
+
+// Audit A0 - jalur akseptasi Claim Life sendiri (SaveAdjustment_Act).
+describe('kontrol Save Adjustment', () => {
+  const baris = (kodeStatus: string, nomorAkseptasi = '') => ({
+    id: 'UJI-A',
+    status: kodeStatus === '0' ? 'Outstanding' : kodeStatus === '1' ? 'Aksep' : 'Ditolak',
+    kodeStatus,
+    statusDiketahui: true,
+    jumlahKlaim: { amount: '1', currency: 'IDR' },
+    nomorAkseptasi,
+    tanggalAkseptasi: '',
+    komiteId: '',
+  })
+  const dipilih = { isCheck: 'true' }
+
+  it('meniru prasyarat XML: dipilih, belum bernomor, masih Outstanding', () => {
+    expect(bolehSimpanAdjustment(dipilih, [baris('0')])).toBe(true)
+    // ⛔ Peserta TIDAK dipilih - prasyarat `.IsCheck=true`.
+    expect(bolehSimpanAdjustment({ isCheck: 'false' }, [baris('0')])).toBe(false)
+    expect(bolehSimpanAdjustment({ isCheck: '' }, [baris('0')])).toBe(false)
+    // ⛔ Sudah bernomor - prasyarat `.ACCEPTEDNO==""`.
+    expect(bolehSimpanAdjustment(dipilih, [baris('0', 'RNML-AL1.04.26.00001')])).toBe(false)
+    // ⛔ Bukan Outstanding - prasyarat `.STS_REJECT=="0"`.
+    expect(bolehSimpanAdjustment(dipilih, [baris('1')])).toBe(false)
+    expect(bolehSimpanAdjustment(dipilih, [baris('2')])).toBe(false)
+    expect(bolehSimpanAdjustment(dipilih, [])).toBe(false)
+  })
+
+  it('memeriksa baris TERAKHIR, bukan sembarang baris', () => {
+    // `.AdjustmentList(<LAST>)` - XML menstempel baris terakhir.
+    expect(bolehSimpanAdjustment(dipilih, [baris('2'), baris('0')])).toBe(true)
+    expect(bolehSimpanAdjustment(dipilih, [baris('0'), baris('1')])).toBe(false)
+  })
+
+  it('mengaksep per PESERTA, dan mengembalikan nomornya', () => {
+    expect(simpanAdjustment.length).toBe(2)
+    expect(simpanAdjustment.constructor.name).toBe('AsyncFunction')
   })
 })

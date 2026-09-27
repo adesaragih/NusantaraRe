@@ -8,6 +8,8 @@ import {
   tolakBarisAdjustment,
   serahkanKeKomite,
   tambahPutaran,
+  simpanAdjustment,
+  bolehSimpanAdjustment,
   bolehPutaranBaru,
   bolehSerahkanDiLayar,
   dampakHapusKlaim,
@@ -41,6 +43,7 @@ export default function KlaimLife() {
   const [menolak, setMenolak] = useState<string | null>(null) // baris yang sedang ditolak
   const [menyerahkan, setMenyerahkan] = useState<string | null>(null) // baris ke Komite
   const [memutar, setMemutar] = useState<string | null>(null) // peserta yang dibuka putarannya
+  const [mengaksep, setMengaksep] = useState<string | null>(null) // peserta yang diaksep
   const [dampak, setDampak] = useState<DampakHapus | null>(null) // isi popup konfirmasi
   const [menghapus, setMenghapus] = useState<boolean>(false) // permintaan hapus berjalan
 
@@ -92,6 +95,30 @@ export default function KlaimLife() {
   // Dibaca ulang, bukan diubah di layar: status klaim adalah TURUNAN dari
   // seluruh barisnya, dan menebaknya di sisi klien berarti dua sumber
   // kebenaran yang dapat berbeda.
+  async function aksep(pesertaID: string) {
+    if (!klaim) return
+    setGalat(null)
+    setMengaksep(pesertaID)
+    try {
+      const nomor = await simpanAdjustment(klaim.id, pesertaID)
+      setKlaim(await ambilKlaimLife(klaim.id))
+      setGalat(`Baris diaksep dengan nomor ${nomor}.`)
+    } catch (err: unknown) {
+      const kode = kodeStatusGalat(err)
+      setGalat(
+        kode === 403
+          ? 'Hanya pemegang tahap klaim ini yang dapat mengaksep barisnya.'
+          : kode === 409
+            ? (pesanGalat(err) ?? 'Baris tidak dalam keadaan yang dapat diaksep.')
+            : kode === 501
+              ? (pesanGalat(err) ?? 'Akseptasi belum dapat disimpan.')
+              : 'Gagal mengaksep baris.',
+      )
+    } finally {
+      setMengaksep(null)
+    }
+  }
+
   async function putaranBaru(pesertaID: string) {
     if (!klaim) return
     setGalat(null)
@@ -278,6 +305,23 @@ export default function KlaimLife() {
               {/* ⛔ Penolakan bukan akhir: klaim TIDAK terminal (ADR-U-0011).
                   Yang terminal adalah baris, dan baris berikutnya memulai
                   putaran baru dengan angka yang diperbaiki. */}
+              {/* ⭐ Jalur akseptasi Claim Life sendiri - SaveAdjustment_Act.
+                  Prasyaratnya dari XML: peserta DIPILIH, baris terakhir belum
+                  bernomor, dan masih Outstanding. Perannya TIDAK diperiksa di
+                  layar: pohon XML membuktikan tombolnya tidak bergerbang
+                  peran, dan yang menggerbanginya pemegang tahap. */}
+              {bolehSimpanAdjustment(p, p.baris) && (
+                <p>
+                  <button
+                    type="button"
+                    disabled={mengaksep === p.id}
+                    onClick={() => void aksep(p.id)}
+                  >
+                    {mengaksep === p.id ? 'Menyimpan…' : 'Save Adjustment'}
+                  </button>
+                </p>
+              )}
+
               {bolehPutaranBaru(p.baris) && (
                 <p>
                   <button

@@ -23,9 +23,9 @@ atas nama berakhiran `_Act`/`_act`/`_SQL`/`_sql`/`_Section`/`_Flow`/`_Harness` d
 
 | # | Rule *(path pecahan)* | Kode | Tiket/AC | Verdict | Bukti |
 | ---: | --- | --- | --- | --- | --- |
-| 1 | `Activity/SaveAdjustment_Act.xml` 1833 · 1879 · 1899 | — | 04, 08 | ⛔ **belum ditiru** | menulis `.AdjustmentList(<LAST>).ACCEPTEDNO`, `.STS_REJECT = 1`, `.ACCEPTATION_DATE = @CurrentDateTime()`. **Akseptasi di Claim Life sendiri** |
+| 1 | `Activity/SaveAdjustment_Act.xml` 1833 · 1879 · 1899 | `services/akseptasi.go` | 04, 07, 08 | ✅ **DITIRU — A0 kelompok 2** | menulis `.AdjustmentList(<LAST>).ACCEPTEDNO`, `.STS_REJECT = 1`, `.ACCEPTATION_DATE = @CurrentDateTime()`. **Akseptasi di Claim Life sendiri** |
 | 1a | idem, gerbang 854 dan 1048 | — | — | — | `.ACCEPTEDNO=="" && .IsCheck=true && .STS_REJECT=="0"` **dan** `Type=="QP"\|\|"QR"` (854) atau `Type=="TP"\|\|"TR"` (1048); `WhenTrue=2`/`WhenFalse=3` |
-| 1b | pemicu: `Section/ClaimLifeDetailGCNM.xml` 22641 → 22665 | — | — | — | tombol berlabel **"Save Adjustment"**. Kemunculan kedua di 22773 bertetangga `pyCondition 1=2` (selalu palsu) — **mana yang hidup belum dapat dipastikan dari kedekatan baris saja**, `[terbuka]` |
+| 1b | pemicu: `Section/ClaimLifeDetailGCNM.xml` 22641 → 22665 | — | — | ✅ **DITUTUP oleh pohon XML** | kedua kemunculan adalah **satu tombol** dalam dua format aksi Pega (`pyBehaviors` lama, `pyActions` baru); **nol gerbang peran** membungkusnya, seluruh leluhurnya ALWAYS; `pyCondition 1=2` adalah `pyContainerVisibleWhen` **layout lain**. Sectionnya diluncurkan flow action `ViewClaimDetailLifeGCNM` dari tiga layar tahap |
 | 2 | `Activity/ValidasiDOL_Act.xml` 458 · 698 | `services/dol.go` | 06 | ⛔ **kurang tepat → DIPERBAIKI** | 698 menggeser DOL **satu HARI**, bukan satu jam. Lihat §"Ralat pergeseran DOL" |
 | 3 | `Activity/LoadDataPeserta_Act.xml` 1097 · 1143 · 1163 · 1183 · 1203 · 1223 · 1243 · 1263 | — | — | ⚠️ **tidak ditiru, dinyatakan** | kedelapan tanggal peserta dimuat lewat `@addCalendar(...,0,0,0,0,7,0,0)` = **+7 jam (WIB)**. Sistem kita menyimpan dan menampilkan konsisten, jadi tidak menggeser; `TestTanggalDiuraiTanpaGeserZona` mengatur jalur MIGRASI, hal yang berbeda. `[terbuka — work owner]` bila tampilan harus sama persis dengan Pega |
 | 4 | `Activity/SendtoAdmin_Act.xml` 259 · `SendtoAdmin_Act1.xml` 282 · `SendtoMedical_Act.xml` 260 | `services/tahap.go` | 08 | ✅ **tepat** | ketiganya satu `Property-Set`: `"1"`, **`"0"`**, `"1"`. `JalurBalik{}.NilaiSendto()` menulis `""` untuk yang bukan jalur balik — setara pembersihan `_Act1` |
@@ -82,3 +82,28 @@ korpus tidak memuat definisinya, dan nilai bandingnya tidak dapat diturunkan dar
 (`@CompareDates("20240103","20240102")` di `SavePesertaClaim` 674 dan
 `@CompareDates("02/02/2024","14/11/2022")` di `ValidasiDOL_Act` 737 keduanya "a sesudah b",
 sehingga tidak membedakan ketat dari tidak ketat).
+
+---
+
+## A0 kelompok 2 — jalur akseptasi Claim Life *(brief lanjutan 4 bab 7)*
+
+**Pertanyaan penyarangan dijawab POHON XML, bukan `grep` baris** — aturan baru
+`[DIPUTUSKAN — work owner]`. Jawabannya: **pilihan 1**, pemegang tahap.
+
+| Yang dibangun | Isi |
+| --- | --- |
+| `services/akseptasi.go` | `AwalanNomorAkseptasi`, `PeriodeNomorAkseptasi`, `RakitNomorAkseptasi`, `PeriksaBolehAksep`, `WajibPemegangTahap`, `SimpanAdjustment`, `penerbitOracle` |
+| `repository/nomorakseptasi.go` | `UrutAkseptasiBerikut` *(sequence)*, `NomorAkseptasiDipakai` *(meniru `GetAcceptedNoCL`)* |
+| `handlers/akseptasi.go` + rute | `POST /api/klaim-life/{id}/peserta/{pesertaId}/akseptasi` |
+| `frontend/` | `simpanAdjustment`, `bolehSimpanAdjustment`, tombol **"Save Adjustment"**, `isCheck` menyeberang ke JSON |
+| dihapus | `ErrAksepBukanDariModulIni` — ia menolak jalur yang XML punya |
+
+**Dua penjaga lama menangkap pelanggaran saya, dan itu memang tugasnya:**
+`TestSetiapPenulisStatusBergerbangPeran` menuntut `akseptasi.go` didaftarkan beserta gerbangnya;
+`TestHandlersTidakMengimporRepository` dan `TestNolNamaTabelTelanjangDiQuery` menangkap impor yang
+memotong arah ketergantungan dan nama tabel telanjang di komentar. Ketiganya diperbaiki, bukan
+dilonggarkan.
+
+**Telemetri:** rute HTTP **9 → 11**; kontrol React **5 → 7**; test Go **229 → 235**; test JS
+**13 → 16**. Sensus dua cara sepakat **269**.
+

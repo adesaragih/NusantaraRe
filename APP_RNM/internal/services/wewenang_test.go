@@ -42,15 +42,21 @@ func TestMedicalAdvisorTidakDapatMengubahStatus(t *testing.T) {
 		models.StatusDitolak); !errors.Is(err, services.ErrTanpaWewenang) {
 		t.Errorf("SPV menolak baris: galat = %v, mau ErrTanpaWewenang", err)
 	}
-	// ⛔ Aksep tidak ditulis modul ini sama sekali - jalurnya lewat Komite.
+	// ⛔ RALAT audit A0. Kasus ini semula menuntut Aksep DITOLAK bagi siapa
+	// pun di modul ini, dengan alasan "jalurnya lewat Komite". Menurut XML itu
+	// keliru: `SaveAdjustment_Act` (pecahan 1833, 1879, 1899) mengaksep DI
+	// CLAIM LIFE SENDIRI.
+	//
+	// Kini Aksep lolos lapisan peran, dan yang menggerbanginya PEMEGANG TAHAP
+	// beserta prasyarat XML - diperiksa `SimpanAdjustment`, sebab keduanya
+	// menuntut keadaan yang hanya terbaca dari basis data.
 	for _, peran := range []string{
 		services.PeranSimpanOutstanding, services.PeranRejectOutstanding,
 	} {
 		if err := services.WajibPeranPengubahStatus(
-			pelakuBerperan(peran), models.StatusAksep); !errors.Is(
-			err, services.ErrAksepBukanDariModulIni) {
-			t.Errorf("peran %q menulis Aksep: galat = %v, mau ErrAksepBukanDariModulIni",
-				peran, err)
+			pelakuBerperan(peran), models.StatusAksep); err != nil {
+			t.Errorf("peran %q menuju Aksep ditolak di lapisan peran: %v; "+
+				"gerbangnya kini pemegang tahap, bukan daftar peran", peran, err)
 		}
 	}
 }

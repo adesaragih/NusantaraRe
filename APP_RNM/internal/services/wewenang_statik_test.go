@@ -37,6 +37,10 @@ var berkasYangBolehMenulisStatus = map[string]string{
 	// keputusan baris lama. Keputusan atas baris lama milik Komite Claim
 	// Life `[keputusan work owner 2026-09-15]`.
 	"hasilkomite.go": "WajibPeran(pelaku, PeranSimpanOutstanding)",
+	// Audit A0: jalur akseptasi Claim Life sendiri (SaveAdjustment_Act).
+	// Gerbangnya PEMEGANG TAHAP, bukan daftar peran datar - pohon XML
+	// membuktikan tombolnya tidak bergerbang peran.
+	"akseptasi.go": "WajibPemegangTahap(pelaku, tahap)",
 
 	// Lapisan repository - ia MENJALANKAN SQL-nya, dan memang tidak memegang
 	// pelaku. Gerbangnya ada di layanan yang memanggilnya; yang dijaga di
