@@ -4,6 +4,7 @@ import { DETAIL } from '../assets/labels'
 import { PanelTotalPeserta } from '../components/PanelTotalPeserta'
 import { PanelDokumenPeserta } from '../components/PanelDokumenPeserta'
 import { CariDiagnosa } from '../components/CariDiagnosa'
+import { PanelPindahTahap } from '../components/PanelPindahTahap'
 
 import {
   ambilKlaimLife,
@@ -329,6 +330,20 @@ export default function KlaimLife() {
     }
   }
 
+  // Membaca ulang klaim yang SEDANG terbuka.
+  //
+  // ⚠️ Dipakai sesudah perpindahan tahap: tahapnya berubah, dan tombol
+  // yang ditawarkan layar ikut berubah. Tanpa pembacaan ulang, layar tetap
+  // menawarkan tombol tahap LAMA - dan tiap kliknya ditolak 409.
+  async function muatUlang(): Promise<void> {
+    if (klaim === null) return
+    try {
+      setKlaim(await ambilKlaimLife(klaim.id))
+    } catch {
+      setGalat('Gagal membaca ulang klaim sesudah perpindahan.')
+    }
+  }
+
   // Dipanggil saat tombol "Buka" ditekan (form dikirim).
   async function cari(e: FormEvent<HTMLFormElement>) {
     e.preventDefault() // jangan biarkan browser memuat ulang halaman
@@ -633,6 +648,18 @@ export default function KlaimLife() {
 
       {klaim !== null && (
         <section className="os__aksi">
+          {/* ⛔ Tiap tahap menawarkan PERSIS perpindahan yang section-nya
+              punya - lihat PanelPindahTahap. Menyalin tombol antarlayar
+              membuka jalur yang di sistem lama tidak ada, dan backend
+              menolaknya 409. */}
+          <PanelPindahTahap
+            klaimID={klaim.id}
+            tahap={klaim.tahap}
+            sesudahPindah={() => {
+              void muatUlang()
+            }}
+          />
+
           {/* `CloseClaim_Section.xml` b1081 -> `pyActivity` b1101
               `ProtectCloseClaim_act` DAN `closeContainer` b1129: satu klik,
               dua aksi. Keduanya kini ditiru (butir bb).

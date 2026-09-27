@@ -377,3 +377,41 @@ export const DOKUMEN = {
   hapus: 'Delete',
 } as const
 
+/**
+ * Tombol layar **Medical Check** — `Section/MedicalCheckClaimLife.xml`.
+ *
+ * ⛔ Dua tombol perpindahan, tidak lebih. `Send to Medical Check` TIDAK ada
+ * di sini — ia milik layar Outstanding *(`TOMBOL_OS`)*. Tiap layar hanya
+ * menawarkan perpindahan yang section-nya sendiri punya; menyalin tombol
+ * antarlayar berarti membuka jalur yang di sistem lama tidak ada.
+ */
+export const TOMBOL_MEDIS = {
+  /** b18572 `pyLabel`. Bukan perpindahan — ia menyimpan. */
+  simpan: 'Save',
+  /** b20256 → `pyLocalAction SendtoAdmin` b20285 → tahap `outstanding`. */
+  kembaliKeAdmin: 'Send Back to Admin',
+  /**
+   * b21151 → `SendtoAdmin_Act1` b21174 **dan** `finishAssignment` b21202.
+   *
+   * ⚠️ DUA aksi pada satu klik, pola yang sama dengan `Close Claim` dan
+   * `Delete`. Yang membawa akibat tahap adalah `finishAssignment` →
+   * Transition1 → Decision1 → `Else` → Claim Analis.
+   */
+  kirimKeAnalis: 'Send to Claim Analyst',
+} as const
+
+/**
+ * Tombol layar **Claim Analis** — `Section/InputAkseptasiClaimLife.xml`.
+ *
+ * `Close Claim` b21428 ada di layar ini pula, tetapi labelnya sudah hidup di
+ * `DETAIL.tutupKlaim` — satu label, satu tempat.
+ */
+export const TOMBOL_AKSEPTASI = {
+  /** b18543 `pyLabel`. */
+  simpan: 'Save',
+  /** b20221 → `SendtoAdmin` b20250 → tahap `outstanding`. */
+  kembaliKeAdmin: 'Send Back to Admin',
+  /** b20467 → `SendtoMedical` b20496 → tahap `medical-check`. */
+  kembaliKeMedis: 'Send Back to Medical',
+} as const
+

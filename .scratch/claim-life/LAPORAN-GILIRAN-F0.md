@@ -849,3 +849,45 @@ bersama giliran ini.
 
 **Telemetri:** Go 322 → **328 PASS · 0 FAIL · 34 SKIP** · JS 224 → **234** · `tsc` bersih ·
 `go vet` bersih · build 48 → **49** modul · **nol** migrasi baru.
+
+---
+
+## Giliran lanjutan 12 — kelompok 4: tiap layar menawarkan perpindahannya sendiri
+
+### Temuan: backendnya sudah lengkap, layarnya yang tidak
+
+Keempat perpindahan yang kelompok Medis dan Akseptasi perlukan **sudah sah** di
+`models.serahTerimaSah` sejak F0.4, dan rutenya `POST …/tahap/{tujuan}` sudah ada. Yang tidak ada
+adalah **tombolnya**: hanya layar Outstanding yang punya, dan Medical Check serta Claim Analis tidak
+punya satu pun.
+
+Bentuk cacat yang sama dengan `Edit Date` giliran lalu — jalur backend lengkap, teruji, dan **tidak
+dapat dijalankan siapa pun**. Ia tidak berbunyi di uji mana pun: backend hijau, layar hijau, fiturnya
+tidak ada. Kali ini tiga jalur sekaligus.
+
+### Cacah berkas, bukan tata letak
+
+| Layar | Tombol | Baris | Tujuan |
+| --- | --- | ---: | --- |
+| `InputOSClaimLife` | `Send Back to Register` | b21404 | Input Register |
+| | `Send to Medical Check` | b21839 | Medical Check |
+| `MedicalCheckClaimLife` | `Send Back to Admin` | b20256 | Outstanding |
+| | `Send to Claim Analyst` | b21151 | Claim Analis |
+| `InputAkseptasiClaimLife` | `Send Back to Admin` | b20221 | Outstanding |
+| | `Send Back to Medical` | b20467 | Medical Check |
+
+⛔ **Menyalin tombol antarlayar membuka jalur yang di sistem lama tidak ada** — dan `SerahTerimaSah`
+akan menolaknya 409, sehingga yang lahir hanya tombol yang selalu gagal. Ujinya mengunci cacahnya
+dari kedua arah, plus satu yang menjaga hal yang lebih halus: **tidak satu pun tombol menunjuk
+tahapnya sendiri**.
+
+⚠️ Dan dua kalimat yang menuju tahap yang **sama** sengaja tidak disatukan: `Send to Medical Check`
+*(Outstanding)* dan `Send Back to Medical` *(Claim Analis)* keduanya menuju Medical Check.
+Menukarnya tidak akan membuat satu pun uji perilaku merah — jadi ada uji yang mengunci teksnya.
+
+⚠️ Sesudah perpindahan, klaimnya **dibaca ulang**. Tanpa itu layar tetap menawarkan tombol tahap
+LAMA, dan tiap kliknya ditolak 409 — pemakai akan menyimpulkan perpindahannya gagal padahal
+berhasil.
+
+**Telemetri:** Go **328 PASS · 0 FAIL · 34 SKIP** *(tak berubah — kelompok ini murni layar)* ·
+JS 234 → **240** · `tsc` bersih · build 49 → **50** modul · **nol** migrasi baru.
