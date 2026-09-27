@@ -136,3 +136,49 @@ export const PRODUK = {
   nama: 'Nusantara Re',
   sub: 'Reasuransi',
 } as const
+
+/**
+ * Menu sidebar — HANYA yang berbukti korpus (brief lanjutan 7 §1.2).
+ *
+ * ⛔ Aturan 7 brief 6 DICABUT. Sidebar tidak memuat sebelas modul lain, tidak
+ * memuat butir `BelumTersedia`, dan tidak memuat *Dokumen / Komite / Detail &
+ * Tutup / Cari Polis / Medical Check / Claim Analis* sebagai menu. Semua itu
+ * dibuka DARI DALAM kasus lewat flow action dan popup — begitu Pega
+ * melakukannya, dan menu yang tidak ada di sistem lama adalah menu yang
+ * dikarang.
+ *
+ * ⛔ `Claim Life` sebagai nama kelompok: `[terverifikasi]`
+ * `Flow/Register_Flow.xml:270` `<pyWorkTypeName>ClaimLife</pyWorkTypeName>`.
+ *
+ * ⚠️ `inbox` `[tidak ada di korpus]` sebagai label. Yang ada hanyalah
+ * KOSAKATA-nya: berkas struktur pengekspor bernama `Struktur_InboxClaimLife`
+ * dan report `InboxPremiumList`. Tidak ada harness portal Claim Life di
+ * ekspor — modul yang punya menu portal diekspor bersama harness portalnya
+ * (NB Treaty In `SFAPortalOpportunities`), dan Claim Life tidak.
+ * `[terbuka — pemilik ekspor Pega]` apakah portalnya ada; bila jawabannya
+ * datang, menu MENGIKUTI XML-nya.
+ */
+export const MENU = {
+  /** Nama kelompok — `Register_Flow.xml:270` `pyWorkTypeName`. */
+  kelompokClaimLife: 'Claim Life',
+  /** `[tidak ada di korpus]` — kosakata `InboxPremiumList` / `Struktur_InboxClaimLife`. */
+  inbox: 'Inbox Claim Life',
+  /** VERBATIM `Flow/Register_Flow.xml:155` `<pyLabel>Register</pyLabel>`. */
+  register: 'Register',
+} as const
+
+/**
+ * Nama modul lain yang TIDAK BOLEH muncul di sidebar.
+ *
+ * ⛔ Daftar ini dipakai penjaga, bukan tampilan. Ia ada supaya "menambah satu
+ * menu saja" untuk modul yang belum berbukti menjadi kegagalan uji, bukan
+ * keputusan sepi yang tidak ada yang tinjau.
+ */
+export const MODUL_LAIN_TERLARANG = [
+  'Treaty',
+  'Endorsement',
+  'Fac',
+  'Prop',
+  'Master',
+  'Premium',
+] as const

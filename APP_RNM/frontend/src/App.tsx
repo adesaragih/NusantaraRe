@@ -1,52 +1,41 @@
 import { useState } from 'react'
 
-import { PagarGalat } from './PagarGalat'
 import KlaimLife from './pages/KlaimLife'
 import Masuk from './pages/Masuk'
 import RegisterKlaim from './pages/RegisterKlaim'
+import { Shell, type Halaman } from './components/Shell'
 import { sesi, type Sesi } from './store/sesi'
 
-// App = kerangka terluar tampilan.
+// App = gerbang sesi + Shell.
 //
-// ⚠️ SEMENTARA. F0.3 menggantikan isi cabang "sudah masuk" dengan Shell
-// referensi (sidebar, topbar, palet), dan F0.5 memindahkan kedua halaman ini
-// ke dalamnya. Yang lahir di F0.2 hanyalah GERBANGnya: tanpa sesi, tidak ada
-// halaman yang dirender - sebab setiap permintaannya akan ditolak backend
-// tanpa identitas, dan layar penuh galat 401 tidak menjelaskan apa pun.
+// ⛔ Sesudah F0.3, NOL halaman dirender di luar Shell. Cabang "sudah masuk"
+// yang F0.2 tinggalkan - dua halaman ditumpuk di bawah satu bilah - dibuang.
+//
+// ⚠️ Halaman `inbox` lahir di F0.4; sampai itu ia menyatakan dirinya belum ada
+// DI DALAM Shell, bukan lewat butir menu `BelumTersedia`. Menu tetap dua, dan
+// keduanya berbukti korpus.
 export default function App() {
   // Sesi dibaca SEKALI saat menyala: memuat ulang (F5) di tab yang sama tetap
   // masuk, sebab `sessionStorage` bertahan selama tab hidup.
   const [masuk, setMasuk] = useState<Sesi | null>(() => sesi.baca())
+  const [halaman, setHalaman] = useState<Halaman>('inbox')
 
   if (masuk === null) {
     return <Masuk onMasuk={setMasuk} />
   }
 
   return (
-    // ⛔ PagarGalat membungkus isinya: satu galat render di satu halaman tidak
-    // boleh memutihkan seluruh layar tanpa pesan.
-    <PagarGalat>
-      <main>
-        <header className="bilah-sesi">
-          <h1>Nusantara Re</h1>
-          <span className="bilah-sesi__pelaku">
-            {masuk.akunID}
-            <code className="bilah-sesi__peran">{masuk.peran.join(', ')}</code>
-          </span>
-          <button
-            type="button"
-            className="bilah-sesi__keluar"
-            onClick={() => {
-              sesi.hapus()
-              setMasuk(null)
-            }}
-          >
-            Keluar
-          </button>
-        </header>
-        <RegisterKlaim />
-        <KlaimLife />
-      </main>
-    </PagarGalat>
+    <Shell
+      masuk={masuk}
+      halaman={halaman}
+      onPindah={setHalaman}
+      onKeluar={() => {
+        setMasuk(null)
+      }}
+    >
+      {halaman === 'register' && <RegisterKlaim />}
+      {halaman === 'detail' && <KlaimLife />}
+      {halaman === 'inbox' && <KlaimLife />}
+    </Shell>
   )
 }
