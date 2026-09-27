@@ -76,7 +76,12 @@ func daftarKlaim(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	}
 }
 
-// cariPeserta melayani GET /api/peserta-life?pl=<PL_NUMBER>&n=<batas>.
+// cariPeserta melayani
+// GET /api/peserta-life?pl=<PL_NUMBER>&sertifikat=<teks>&nama=<teks>&n=<batas>.
+//
+// `sertifikat` dan `nama` adalah kotak pencarian `Find Insured` layar Register
+// (`Section/InputRegisterClaimLife.xml:16576` -> `LoadDataPesertaSpesifik_Act`).
+// Keduanya boleh kosong; kosong berarti tidak menyaring.
 func cariPeserta(svc *services.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
@@ -93,7 +98,8 @@ func cariPeserta(svc *services.Service) http.HandlerFunc {
 		}
 		batas, _ := strconv.Atoi(r.URL.Query().Get("n"))
 
-		hasil, err := svc.Peserta().Cari(r.Context(), pl, batas)
+		hasil, err := svc.Peserta().Cari(r.Context(), pl,
+			r.URL.Query().Get("sertifikat"), r.URL.Query().Get("nama"), batas)
 		if err != nil {
 			galat(w, http.StatusInternalServerError, "gagal mencari peserta")
 			return

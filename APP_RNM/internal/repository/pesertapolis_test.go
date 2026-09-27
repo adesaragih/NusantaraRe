@@ -8,6 +8,8 @@ package repository
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
@@ -41,7 +43,7 @@ func TestPesertaHidupMenyaringBatalDanDelete(t *testing.T) {
 func TestCariMenolakTanpaNomorPremiList(t *testing.T) {
 	r := &PesertaPolis{}
 	for _, kosong := range []string{"", "   "} {
-		if _, err := r.Cari(context.Background(), kosong, 10); err == nil {
+		if _, err := r.Cari(context.Background(), kosong, "", "", 10); err == nil {
 			t.Errorf("pencarian dengan nomor %q diterima; ia memindai 66 juta baris", kosong)
 		}
 	}
@@ -68,37 +70,63 @@ func TestQueryTabelPesertaSelaluBerindexDanBerbatas(t *testing.T) {
 				break
 			}
 			j += i
-			panjang := strings.Index(isi[j:], "`")
-			if panjang < 0 {
-				panjang = len(isi) - j
+			// ⚠️ Jendela bacanya adalah SELURUH FUNGSI yang memuat SELECT
+			// itu, bukan satu literal, dan ia dimulai dari kepala fungsinya.
+			// Sejak SQL pencarian dirakit (sqlCariPeserta), penyaring dan
+			// batasnya TIDAK berada di literal yang sama dengan kata SELECT:
+			// penyaringnya tersusun di slice syarat SEBELUM SELECT ditulis.
+			// Jendela yang berhenti di backtick pertama menuduh query yang
+			// justru berpagar lengkap - dan penjaga yang menuduh hal yang benar
+			// akan dilonggarkan orang, bukan dipatuhi.
+			kepala := strings.LastIndex(isi[:j], "\nfunc ")
+			if kepala < 0 {
+				kepala = 0
 			}
-			q := strings.ToUpper(isi[j : j+panjang])
+			ekor := strings.Index(isi[j:], "\n}")
+			if ekor < 0 {
+				ekor = len(isi) - j
+			}
+			jendela := isi[kepala : j+ekor]
+			q := strings.ToUpper(tanpaKomentar(jendela))
 			i = j + len("SELECT")
 			diperiksa++
 
-			// ⛔ Penyaringnya dicari SESUDAH WHERE, bukan di mana pun. Kolom
-			// yang diminta SELECT hampir selalu memuat PL_NUMBER juga, jadi
-			// memeriksa seluruh teks akan meluluskan query yang penyaringnya
-			// dicabut - penjaga yang memberi rasa aman palsu. Ditemukan saat
-			// penjaga ini diuji pada kasus buruknya.
-			// Klausa WHERE saja, DIBATASI ujungnya. Tanpa batas itu,
-			// "ORDER BY CERTIFICATE_NO" ikut terbaca sebagai penyaring -
-			// lubang kedua yang ditemukan saat penjaga ini diuji.
-			where := ""
-			if k := strings.Index(q, "WHERE"); k >= 0 {
-				where = q[k:]
-				for _, ujung := range []string{"ORDER BY", "GROUP BY", "FETCH FIRST"} {
-					if u := strings.Index(where, ujung); u >= 0 {
-						where = where[:u]
-					}
-				}
+			// ⛔ Kolomnya harus DIBANDINGKAN, bukan sekadar disebut.
+			// Daftar SELECT hampir selalu memuat PL_NUMBER juga, sehingga
+			// memeriksa penyebutannya saja akan meluluskan query yang
+			// penyaringnya dicabut - penjaga yang memberi rasa aman palsu.
+			// Yang dicari karena itu nama kolom yang diikuti operator.
+			if !dibandingkan(q, "PL_NUMBER") &&
+				!dibandingkan(q, "CERTIFICATE_NO") {
+				t.Errorf("%s: query tanpa penyaring ber-index; tabel peserta "+
+					"berisi 66,8 juta baris dan tidak ber-index pada EDMSTATUS", nama)
 			}
-			if !strings.Contains(where, "PL_NUMBER") && !strings.Contains(where, "CERTIFICATE_NO") {
-				t.Errorf("%s: query tanpa penyaring ber-index; tabel peserta berisi "+
-					"66,8 juta baris dan tidak ber-index pada EDMSTATUS", nama)
-			}
-			if !strings.Contains(q, "FETCH FIRST") && !strings.Contains(q, "ROWNUM") {
+			if !strings.Contains(q, "FETCH FIRST") &&
+				!strings.Contains(q, "ROWNUM") {
 				t.Errorf("%s: query ke tabel peserta tanpa batas hasil", nama)
+			}
+
+			// ⛔ BATAS PENJAGA INI, dinyatakan supaya tidak menenangkan
+			// secara palsu: untuk SQL yang DIRAKIT dari potongan, pemindaian
+			// teks tidak dapat membedakan penyaring WAJIB dari penyaring
+			// BERSYARAT. Di sqlCariPeserta, 'CERTIFICATE_NO LIKE' yang hanya
+			// terpasang bila kotaknya terisi tetap terbaca sebagai penyaring,
+			// sehingga hilangnya 'PL_NUMBER = :1' yang wajib TIDAK terlihat.
+			// Dibuktikan: mencabut PL_NUMBER membuat penjaga ini tetap hijau.
+			//
+			// Karena itu SQL rakitan wajib punya uji yang MENYEBUT nama
+			// fungsinya - di sanalah bentuk akhirnya diperiksa atas seluruh
+			// kombinasi masukan. Mencabut PL_NUMBER atau FETCH FIRST membuat
+			// TestSQLCariPesertaSelaluBerpagar merah; keduanya sudah diuji.
+			if strings.Contains(jendela, "` +") {
+				fn := namaFungsi(isi[kepala:])
+				if fn == "" {
+					t.Errorf("%s: SQL dirakit di luar fungsi bernama", nama)
+				} else if !adaUjiMenyebut(t, fn) {
+					t.Errorf("%s: %s merakit SQL tetapi tidak satu pun uji "+
+						"menyebut namanya; bentuk akhirnya karena itu tidak "+
+						"pernah diperiksa", nama, fn)
+				}
 			}
 		}
 	}
@@ -106,6 +134,82 @@ func TestQueryTabelPesertaSelaluBerindexDanBerbatas(t *testing.T) {
 		t.Fatal("nol query ke tabel peserta terbaca; pembacanya yang rusak, bukan kodenya")
 	}
 	t.Logf("%d query ke tabel peserta diperiksa", diperiksa)
+}
+
+// tanpaKomentar membuang komentar baris Go sebelum SQL dipindai.
+//
+// ⛔ Tanpa ini, satu kalimat komentar yang menyebut "PL_NUMBER =" sudah
+// cukup memuaskan penjaga, dan query di bawahnya boleh tak berpenyaring.
+func tanpaKomentar(teks string) string {
+	var b strings.Builder
+	for _, baris := range strings.Split(teks, "\n") {
+		if k := strings.Index(baris, "//"); k >= 0 {
+			baris = baris[:k]
+		}
+		b.WriteString(baris)
+		b.WriteByte('\n')
+	}
+	return b.String()
+}
+
+// namaFungsi membaca nama fungsi dari potongan yang diawali "\nfunc ".
+func namaFungsi(teks string) string {
+	i := strings.Index(teks, "func ")
+	if i < 0 {
+		return ""
+	}
+	sisa := teks[i+len("func "):]
+	if strings.HasPrefix(sisa, "(") { // metode: lewati penerimanya
+		if j := strings.Index(sisa, ")"); j >= 0 {
+			sisa = strings.TrimSpace(sisa[j+1:])
+		}
+	}
+	j := strings.IndexAny(sisa, "([")
+	if j < 0 {
+		return ""
+	}
+	return strings.TrimSpace(sisa[:j])
+}
+
+// adaUjiMenyebut mencari nama fungsi itu di berkas _test.go paket ini.
+func adaUjiMenyebut(t *testing.T, fn string) bool {
+	t.Helper()
+	berkas, err := filepath.Glob("*_test.go")
+	if err != nil || len(berkas) == 0 {
+		t.Fatalf("nol berkas uji terbaca: %v", err)
+	}
+	for _, f := range berkas {
+		isi, err := os.ReadFile(f)
+		if err != nil {
+			continue
+		}
+		if strings.Contains(string(isi), fn+"(") {
+			return true
+		}
+	}
+	return false
+}
+
+// dibandingkan menjawab apakah sebuah kolom dipakai sebagai PENYARING.
+//
+// Yang membedakan penyaring dari sebutan biasa adalah operatornya: kolom di
+// daftar SELECT diikuti koma, kolom di WHERE diikuti '=' atau 'LIKE'. Tanpa
+// pembedaan itu, query yang penyaringnya dicabut tetap lolos hanya karena
+// nama kolomnya muncul di daftar SELECT.
+func dibandingkan(teks, kolom string) bool {
+	for i := 0; ; {
+		j := strings.Index(teks[i:], kolom)
+		if j < 0 {
+			return false
+		}
+		j += i
+		sisa := strings.TrimLeft(teks[j+len(kolom):], " \t")
+		if strings.HasPrefix(sisa, "=") ||
+			strings.HasPrefix(sisa, "LIKE") {
+			return true
+		}
+		i = j + len(kolom)
+	}
 }
 
 // AC 29: penyaringan terjadi di SATU tempat.
@@ -207,13 +311,20 @@ func TestStatusDanStatusOldBukanPenandaHidup(t *testing.T) {
 
 // ⛔ kolomSalin dan salinKePeserta memakai POSISI, dan posisinya dikunci.
 //
-// salinKePeserta membaca hasil SELECT lewat indeks tetap 0-23. Satu kolom yang
+// salinKePeserta membaca hasil SELECT lewat indeks tetap 0-27. Satu kolom yang
 // disisipkan di tengah kolomSalin akan menggeser seluruh sisanya - dan tidak
 // satu pun galat muncul: nilai hanya mendarat di medan yang salah. Tanggal
 // valuasi menjadi tanggal lapse, uang menjadi uang lain, dan itu baru terlihat
 // jauh di hilir, kalau pernah terlihat.
 //
-// Yang dikunci: cacahnya 24, dan nama kolom pada tiap posisi.
+// Yang dikunci: cacahnya 28, dan nama kolom pada tiap posisi.
+//
+// ⚠️ Empat kolom TERAKHIR (24-27) berbeda sifatnya dari dua puluh empat
+// yang pertama: ia BAHAN, bukan isi. Tidak satu pun mendarat langsung di
+// medan models.Peserta - keempatnya masuk ke dua aturan pemilihan di
+// pilihpeserta.go. Karena itu posisinya dikunci TERPISAH di bawah:
+// menggesernya membuat umur terbaca dari kolom share, dan sebaliknya,
+// tanpa satu pun galat.
 func TestUrutanKolomSalinDikunci(t *testing.T) {
 	// Pemecah kasar: tiap ekspresi dipisah koma di tingkat teratas.
 	var ekspresi []string
@@ -234,7 +345,7 @@ func TestUrutanKolomSalinDikunci(t *testing.T) {
 	}
 	ekspresi = append(ekspresi, strings.TrimSpace(kolomSalin[mulai:]))
 
-	const mau = 24
+	const mau = 28
 	if len(ekspresi) != mau {
 		t.Fatalf("kolomSalin memuat %d ekspresi, mau %d; salinKePeserta membaca "+
 			"posisi 0-%d dan akan bergeser seluruhnya", len(ekspresi), mau, mau-1)
@@ -249,10 +360,33 @@ func TestUrutanKolomSalinDikunci(t *testing.T) {
 		"SUM_INSURED", "SUM_REASURED", "GROSS_PREMIUM", "NET_PREMIUM",
 		"CEDING_RETENTION", "SHARE_NUSANTARA_RE", "SHARE_RETRO",
 		"RETROCEDED_SHARE", "EM_PERCENT",
+
+		// Bahan bagi pilihpeserta.go, bukan isi medan.
+		"SHARE_NUSANTARA_RE_GROSS", "AGE", "ENTRY_AGE", "CURRENT_AGE",
 	}
 	for i, nama := range urut {
-		if !strings.Contains(ekspresi[i], nama) {
-			t.Errorf("posisi %d memuat %q, mau kolom %s", i, ekspresi[i], nama)
+		// ⛔ Nama diambil PERSIS, bukan lewat strings.Contains. Dengan
+		// Contains, ekspresi SHARE_NUSANTARA_RE_GROSS lolos sebagai
+		// SHARE_NUSANTARA_RE, dan ENTRY_AGE lolos sebagai AGE - persis dua
+		// pasangan yang ada di daftar ini. Penjaga yang meloloskan kolom yang
+		// salah lebih buruk daripada tidak ada penjaga, sebab ia menenangkan.
+		if got := namaKolom(ekspresi[i]); got != nama {
+			t.Errorf("posisi %d memuat kolom %q (dari %q), mau %s",
+				i, got, ekspresi[i], nama)
 		}
 	}
+}
+
+// namaKolom mengeluarkan nama kolom dari satu ekspresi SELECT.
+//
+// Bentuk yang ditemui hanya dua: nama telanjang, dan TO_CHAR(NAMA, ...).
+func namaKolom(ekspresi string) string {
+	e := strings.TrimSpace(ekspresi)
+	if i := strings.Index(e, "("); i >= 0 {
+		e = e[i+1:]
+		if j := strings.IndexAny(e, ",)"); j >= 0 {
+			e = e[:j]
+		}
+	}
+	return strings.TrimSpace(e)
 }

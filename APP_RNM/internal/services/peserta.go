@@ -20,10 +20,11 @@ func (s *Service) Peserta() *PesertaLayanan { return &PesertaLayanan{svc: s} }
 //
 // Penyaring peserta hidup dan batas hasil dipasang di repository, bukan di
 // sini: AC 29 tiket 02 menuntut penyaringan terjadi di SATU tempat.
-func (p *PesertaLayanan) Cari(ctx context.Context, nomorPremiList string, batas int) (
-	[]repository.CalonPeserta, error) {
+func (p *PesertaLayanan) Cari(ctx context.Context, nomorPremiList, sertifikat, nama string,
+	batas int) ([]repository.CalonPeserta, error) {
 	if !p.svc.PunyaDatabase() {
 		return nil, repository.ErrTanpaOracle
 	}
-	return repository.NewPesertaPolis(p.svc.db).Cari(ctx, nomorPremiList, batas)
+	return repository.NewPesertaPolis(p.svc.db).
+		Cari(ctx, nomorPremiList, sertifikat, nama, batas)
 }

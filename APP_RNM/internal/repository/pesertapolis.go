@@ -21,6 +21,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"nusantarare/internal/models"
@@ -72,12 +73,62 @@ type CalonPeserta struct {
 // "penyaringan terjadi di satu tempat" - dilanggar tanpa satu pun test gagal.
 const penyaringHidup = `(EDMSTATUS IS NULL OR TRIM(EDMSTATUS) NOT IN ('Batal','Delete'))`
 
+// sqlCariPeserta menyusun query pencarian peserta beserta nilai bind-nya.
+//
+// Dipisah dari Cari supaya bentuk SQL-nya dapat diuji tanpa Oracle: kedua
+// pagarnya - penyaring ber-index dan batas hasil - adalah hal yang paling
+// mahal bila hilang, dan test yang memerlukan basis data tidak pernah jalan
+// di mesin pengembang.
+//
+// Ditiru dari `RDBList/GetPesertaClaim_sql1.xml:85`, dengan SATU penyimpangan
+// yang disengaja dan dilaporkan (OQ-E):
+//
+//	Pega memasang KEDUA `LIKE` tanpa syarat. Di Oracle `X LIKE '%'` bernilai
+//	FALSE ketika X NULL, sehingga kotak pencarian yang dibiarkan KOSONG pun
+//	diam-diam membuang setiap peserta yang NAME_OF_INSURED-nya NULL. Kita
+//	memasang `LIKE` hanya untuk kotak yang terisi, sehingga kotak kosong
+//	berarti "jangan saring" - yang memang dibaca orang dari kotak kosong.
+//
+// ⚠️ Isi kotak TIDAK di-escape dari `%` dan `_`, sama seperti Pega. Pemakai
+// yang mengetik `%` memperluas pencariannya sendiri, dan hasilnya tetap
+// terkurung PL_NUMBER dan batas hasil.
+func sqlCariPeserta(tabel, nomorPremiList, sertifikat, nama string, batas int) (
+	string, []any) {
+	syarat := []string{"PL_NUMBER = :1", penyaringHidup}
+	arg := []any{nomorPremiList}
+
+	if s := strings.TrimSpace(sertifikat); s != "" {
+		arg = append(arg, s)
+		syarat = append(syarat,
+			"CERTIFICATE_NO LIKE '%'||:"+strconv.Itoa(len(arg))+"||'%'")
+	}
+	if n := strings.TrimSpace(nama); n != "" {
+		// b405 `@toUpperCase`. Huruf besarnya dikerjakan di Go, bukan lewat
+		// UPPER(:bind) di SQL, supaya nilai yang dikirim dan nilai yang
+		// dibandingkan adalah satu hal yang sama dan terlihat di log bind.
+		arg = append(arg, strings.ToUpper(n))
+		syarat = append(syarat,
+			"UPPER(NAME_OF_INSURED) LIKE '%'||:"+strconv.Itoa(len(arg))+"||'%'")
+	}
+
+	q := `SELECT PL_NUMBER, POLICY_NO, CERTIFICATE_NO, NAME_OF_INSURED, CURRENCY, EDMSTATUS
+		        FROM ` + tabel + `
+		        WHERE ` + strings.Join(syarat, " AND ") + `
+		        ORDER BY CERTIFICATE_NO
+		        FETCH FIRST ` + strconv.Itoa(batas) + ` ROWS ONLY`
+	return q, arg
+}
+
 // Cari mengembalikan calon peserta satu premium list.
 //
 // Batas hasil WAJIB: layar tidak pernah memerlukan 66 juta baris, dan query
 // tanpa batas adalah cara paling mudah menahan basis data tanpa sengaja.
-func (r *PesertaPolis) Cari(ctx context.Context, nomorPremiList string, batas int) (
-	[]CalonPeserta, error) {
+//
+// `sertifikat` dan `nama` adalah kotak pencarian `Find Insured` layar Register
+// (`LoadDataPesertaSpesifik_Act`). Keduanya BOLEH kosong; yang kosong tidak
+// memasang penyaring sama sekali - lihat sqlCariPeserta.
+func (r *PesertaPolis) Cari(ctx context.Context, nomorPremiList, sertifikat, nama string,
+	batas int) ([]CalonPeserta, error) {
 	if strings.TrimSpace(nomorPremiList) == "" {
 		return nil, fmt.Errorf("repository: mencari peserta tanpa nomor premium list; " +
 			"tabel peserta hanya ber-index pada PL_NUMBER, CERTIFICATE_NO, dan POLICY_NO")
@@ -92,15 +143,11 @@ func (r *PesertaPolis) Cari(ctx context.Context, nomorPremiList string, batas in
 	if err != nil {
 		return nil, err
 	}
-	q := fmt.Sprintf(`SELECT PL_NUMBER, POLICY_NO, CERTIFICATE_NO, NAME_OF_INSURED, CURRENCY, EDMSTATUS
-	        FROM %s
-	        WHERE PL_NUMBER = :1 AND %s
-	        ORDER BY CERTIFICATE_NO
-	        FETCH FIRST %d ROWS ONLY`, tabel, penyaringHidup, batas)
+	q, arg := sqlCariPeserta(tabel, nomorPremiList, sertifikat, nama, batas)
 	if err := PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	baris, err := r.db.sql.QueryContext(ctx, q, nomorPremiList)
+	baris, err := r.db.sql.QueryContext(ctx, q, arg...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: mencari peserta %s: %w", nomorPremiList, err)
 	}
@@ -190,7 +237,15 @@ const kolomSalin = `ID, PL_NUMBER, POLICY_NO, CERTIFICATE_NO, CURRENCY, ` +
 	`TO_CHAR(SHARE_NUSANTARA_RE, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''), ` +
 	`TO_CHAR(SHARE_RETRO, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''), ` +
 	`TO_CHAR(RETROCEDED_SHARE, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''), ` +
-	`TO_CHAR(EM_PERCENT, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,''')`
+	`TO_CHAR(EM_PERCENT, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''), ` +
+	// Keempat kolom di bawah ini TIDAK disalin apa adanya: ketiganya
+	// bahan bagi dua aturan pemilihan di pilihpeserta.go. Dibaca di sini
+	// supaya pilihannya terjadi dalam SATU baris yang sama - membacanya
+	// lewat query kedua membuka celah baris berubah di antaranya.
+	`TO_CHAR(SHARE_NUSANTARA_RE_GROSS, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''), ` +
+	`TO_CHAR(AGE, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''), ` +
+	`TO_CHAR(ENTRY_AGE, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''), ` +
+	`TO_CHAR(CURRENT_AGE, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,''')`
 
 // AmbilUntukKlaim membaca peserta terpilih dan menyiapkannya untuk disalin.
 //
@@ -226,7 +281,7 @@ func (r *PesertaPolis) AmbilUntukKlaim(ctx context.Context, nomorPremiList strin
 			return nil, err
 		}
 		baris := r.db.sql.QueryRowContext(ctx, q, nomorPremiList, no)
-		sel := make([]sql.NullString, 24)
+		sel := make([]sql.NullString, 28)
 		tujuan := make([]any, len(sel))
 		for i := range sel {
 			tujuan[i] = &sel[i]
@@ -272,6 +327,16 @@ func salinKePeserta(sel []sql.NullString) (models.Peserta, error) {
 		TanggalExpired:      teks(14),
 		Baris:               []models.BarisAdjustment{},
 	}
+	// ⛔ Share dipilih SEBAGAI TEKS, sebelum diurai jadi Money. XML
+	// membandingkan teksnya dengan "0" (pilihpeserta.go), dan
+	// membandingkannya sesudah penguraian berarti membandingkan desimal -
+	// aturan yang berbeda, yang menganggap "0.00" nol pula.
+	sel[20] = sql.NullString{
+		String: ShareNusantaraReTeks(teks(20), teks(24)),
+		Valid:  true,
+	}
+	p.Umur = UmurPeserta(teks(25), teks(26), teks(27))
+
 	uang := []struct {
 		i  int
 		ke *models.Money

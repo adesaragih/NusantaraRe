@@ -72,6 +72,12 @@ var kolomPeserta = []struct {
 	{"SHARE_RETRO", kolomAngka, func(p models.Peserta) string { return utils.FormatDecimal(p.ShareRetro.Amount) }},
 	{"RETROCEDED_SHARE", kolomAngka, func(p models.Peserta) string { return utils.FormatDecimal(p.RetrocededShare.Amount) }},
 	{"EM_PERCENT", kolomAngka, func(p models.Peserta) string { return utils.FormatDecimal(p.EMPercent.Value) }},
+
+	// ⭐ AGE kolomnya sudah ada di migrasi 003 sejak awal, tetapi tidak
+	// pernah terisi karena kolomSalin tidak membacanya. Diisi sejak
+	// lanjutan 10 §1: `SaveInsuredClaim_Act` memilihnya, jadi ia memang
+	// bagian pendaftaran.
+	{"AGE", kolomAngka, func(p models.Peserta) string { return p.Umur }},
 }
 
 // insertPeserta menyusun pernyataan INSERT beserta nilainya.
@@ -175,6 +181,7 @@ func rakitPeserta(id string, sel []sql.NullString) (models.Peserta, error) {
 	p.IsCheck = teks("IS_CHECK")
 	p.KodeStatus = teks("STS_REJECT")
 	p.STNC = teks("STNC_TREATY")
+	p.Umur = teks("AGE")
 
 	p.ValuasiGrossMulai = teks("GROSS_VALUATION_BEGIN_DATE")
 	p.ValuasiGrossSelesai = teks("GROSS_VALUATION_EXPIRED_DATE")

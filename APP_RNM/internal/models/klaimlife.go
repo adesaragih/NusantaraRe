@@ -215,6 +215,16 @@ type Peserta struct {
 	// STNC treaty, dibawa apa adanya sebagai teks.
 	STNC string
 
+	// Umur adalah umur tertanggung saat baris polisnya disalin, dipilih
+	// dari tiga kolom sumber oleh repository.UmurPeserta
+	// (`SaveInsuredClaim_Act.xml:661`).
+	//
+	// ⛔ TEKS, bukan int. Kolomnya boleh kosong, dan kosong BUKAN nol
+	// (ADR-U-0027): bayi berumur nol tahun dan peserta yang umurnya tidak
+	// tercatat adalah dua keadaan berbeda, dan int tidak dapat
+	// membedakannya tanpa penunjuk.
+	Umur string
+
 	// TanggalKejadian adalah DATE_OF_LOSS - tanggal kejadian yang diklaim,
 	// dan ia milik PESERTA, bukan klaim. `[terverifikasi]` ValidasiDOL_Act
 	// berkelas Int-LIFE_PREMIUM_DETAIL dan menempelkan pesan galatnya pada
