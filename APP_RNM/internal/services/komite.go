@@ -402,6 +402,7 @@ func (p *Penyerahan) Serahkan(ctx context.Context, pelaku Pelaku,
 		}
 		return p.jejak.Rekam(ctx, tx, CatatanJejak{
 			AdjustmentID: adjID,
+			KlaimID:      klaimID,
 			Dari:         baris.KodeStatus,
 			Ke:           "diserahkan ke Komite " + komiteID,
 			AkunID:       pelaku.AkunID,

@@ -331,6 +331,7 @@ func (a *Akseptasi) SimpanAdjustment(ctx context.Context, pelaku Pelaku,
 		}
 		return a.jejak.Rekam(ctx, tx, CatatanJejak{
 			AdjustmentID: baris.ID,
+			KlaimID:      klaimID,
 			Dari:         baris.KodeStatus,
 			Ke:           models.KodeAksep,
 			AkunID:       pelaku.AkunID,

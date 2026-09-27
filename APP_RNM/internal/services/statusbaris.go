@@ -42,11 +42,20 @@ var (
 
 // CatatanJejak adalah satu baris jejak audit sebuah transisi.
 type CatatanJejak struct {
+	// AdjustmentID kosong pada jalur balik TAHAP: yang berpindah kasusnya,
+	// bukan satu baris.
 	AdjustmentID string
-	Dari         string
-	Ke           string
-	AkunID       string
-	Waktu        time.Time
+	// KlaimID selalu terisi.
+	//
+	// ⛔ RALAT A2, 27-09-2026. Sebelum ini `tahap.go` mengisi `AdjustmentID`
+	// dengan pengenal KLAIM - dua hal berbeda dikonflasi, dan jejak jalur
+	// balik akan tampak menunjuk baris adjustment yang tidak pernah ada.
+	// Tabel `T_CLAIMLF_JEJAK` punya kedua kolom; kini modelnya pun.
+	KlaimID string
+	Dari    string
+	Ke      string
+	AkunID  string
+	Waktu   time.Time
 }
 
 // Jejak merekam SIAPA dan KAPAN untuk setiap transisi status.
@@ -305,6 +314,7 @@ func (st *Status) ubah(ctx context.Context, pelaku Pelaku,
 		// yang ADR-U-0007 larang.
 		return st.jejak.Rekam(ctx, tx, CatatanJejak{
 			AdjustmentID: adjID,
+			KlaimID:      klaimID,
 			Dari:         sasaranKodeLama,
 			Ke:           baru.KodeStatus,
 			AkunID:       pelaku.AkunID,
@@ -326,4 +336,25 @@ func cariBaris(k models.Klaim, pesertaID, adjID string) *models.BarisAdjustment 
 		}
 	}
 	return nil
+}
+
+// perekamOracle menulis jejak ke `T_CLAIMLF_JEJAK` - butir am, A2.
+//
+// ⛔ Ia menggantikan `JejakBelumDiputuskan`, yang selama ini membuat KELIMA
+// jalur tulis modul ini menjawab HTTP 501: menolak baris (05), memindah tahap
+// (08), menyerahkan ke Komite (10), membuka putaran (11), dan mengaksep
+// (audit A0).
+type perekamOracle struct{ baca *repository.KlaimLife }
+
+// PerekamJejakOracle menyusun perekam yang menulis ke tabel jejak.
+func PerekamJejakOracle(svc *Service) Jejak {
+	return perekamOracle{baca: repository.NewKlaimLife(svc.db)}
+}
+
+// Rekam menulis satu catatan, DI DALAM transaksi pemanggilnya.
+func (p perekamOracle) Rekam(ctx context.Context, tx *repository.Tx,
+	c CatatanJejak) error {
+
+	return p.baca.SisipJejak(ctx, tx, c.AdjustmentID, c.KlaimID,
+		c.Dari, c.Ke, c.AkunID, c.Waktu)
 }

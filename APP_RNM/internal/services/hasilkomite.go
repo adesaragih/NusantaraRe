@@ -226,6 +226,7 @@ func (pt *Putaran) Tambah(ctx context.Context, pelaku Pelaku,
 		}
 		return pt.jejak.Rekam(ctx, tx, CatatanJejak{
 			AdjustmentID: id,
+			KlaimID:      klaimID,
 			Dari:         "",
 			Ke:           models.KodeOutstanding,
 			AkunID:       pelaku.AkunID,

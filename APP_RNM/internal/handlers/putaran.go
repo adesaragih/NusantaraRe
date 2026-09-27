@@ -22,7 +22,7 @@ func tambahPutaran(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
-		err := svc.Putaran().Tambah(r.Context(), pelakuDari(r, stubPelaku),
+		err := svc.Putaran().DenganJejak(services.PerekamJejakOracle(svc)).Tambah(r.Context(), pelakuDari(r, stubPelaku),
 			r.PathValue("id"), r.PathValue("pesertaId"), time.Now())
 
 		switch {

@@ -147,11 +147,12 @@ func (tl *TahapLayanan) Pindah(ctx context.Context, pelaku Pelaku,
 			return err
 		}
 		return tl.jejak.Rekam(ctx, tx, CatatanJejak{
-			AdjustmentID: klaimID,
-			Dari:         peranAsal,
-			Ke:           peranTujuan,
-			AkunID:       pelaku.AkunID,
-			Waktu:        saat,
+			// ⛔ KlaimID, bukan AdjustmentID: yang berpindah KASUSNYA.
+			KlaimID: klaimID,
+			Dari:    peranAsal,
+			Ke:      peranTujuan,
+			AkunID:  pelaku.AkunID,
+			Waktu:   saat,
 		})
 	})
 }

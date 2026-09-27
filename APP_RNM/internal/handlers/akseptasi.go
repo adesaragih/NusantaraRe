@@ -24,7 +24,7 @@ func simpanAdjustment(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
-		nomor, err := svc.Akseptasi().
+		nomor, err := svc.Akseptasi().DenganJejak(services.PerekamJejakOracle(svc)).
 			DenganPenerbit(services.PenerbitAkseptasiOracle(svc)).
 			SimpanAdjustment(r.Context(), pelakuDari(r, stubPelaku),
 				r.PathValue("id"), r.PathValue("pesertaId"), time.Now())

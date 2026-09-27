@@ -26,7 +26,7 @@ func tolakBaris(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
-		err := svc.Status().Tolak(r.Context(), pelakuDari(r, stubPelaku),
+		err := svc.Status().DenganJejak(services.PerekamJejakOracle(svc)).Tolak(r.Context(), pelakuDari(r, stubPelaku),
 			r.PathValue("id"), r.PathValue("adjId"), time.Now())
 
 		switch {
