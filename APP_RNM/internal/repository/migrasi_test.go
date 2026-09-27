@@ -250,7 +250,7 @@ func TestKolomUangDesimalDanNolJSON(t *testing.T) {
 	// ⛔ DIPERSEMPIT, bukan dilonggarkan - A2, 27-09-2026.
 	//
 	// Yang dilarang adalah ATRIBUT KLAIM yang bersembunyi di dalam dokumen -
-	// itulah inti keputusan "yang dibuang hanya JSON". `T_EFEK_KELUAR.MUATAN`
+	// itulah inti keputusan "yang dibuang hanya JSON". `T_LOG_SERVICE_RNM.MUATAN`
 	// bukan atribut klaim: ia BADAN PESAN antrean, yang memang berbentuk
 	// dokumen dan memang tidak boleh dipecah menjadi kolom - setiap jenis efek
 	// punya bentuk muatannya sendiri.
@@ -267,7 +267,7 @@ func TestKolomUangDesimalDanNolJSON(t *testing.T) {
 	//
 	// Pemeriksaan per berkas tidak dapat salah potong: satu berkas
 	// dikecualikan dengan namanya, sisanya utuh.
-	const berkasOutbox = "015_t_efek_keluar"
+	const berkasOutbox = "015_t_log_service_rnm"
 	dokumenDiOutbox := 0
 	for nama, isi := range seluruhSQL(t, false) {
 		atas := strings.ToUpper(isi)
@@ -284,7 +284,7 @@ func TestKolomUangDesimalDanNolJSON(t *testing.T) {
 	}
 	// Dan outbox-nya memang hanya punya SATU kolom dokumen.
 	if dokumenDiOutbox != 1 {
-		t.Errorf("T_EFEK_KELUAR memuat %d kolom CLOB, mau tepat 1 (MUATAN)",
+		t.Errorf("T_LOG_SERVICE_RNM memuat %d kolom CLOB, mau tepat 1 (MUATAN)",
 			dokumenDiOutbox)
 	}
 	if strings.Contains(sql, "FLOAT") || strings.Contains(sql, "BINARY_DOUBLE") {
@@ -540,7 +540,7 @@ func TestSeluruhCreateDapatDibacaNamanya(t *testing.T) {
 	// ⛔ Diperbarui LAGI - A1 menambah butir af (2 tabel + 1 sequence +
 	// 2 index) dan temuan audit A0 (BUSINESS_CODE, ALTER - tidak dihitung).
 	//
-	// ⛔ Diperbarui LAGI - A2 menambah butir aq: 1 tabel (T_EFEK_KELUAR) +
+	// ⛔ Diperbarui LAGI - A2 menambah butir aq: 1 tabel (T_LOG_SERVICE_RNM) +
 	// 1 sequence + 2 index = 4 pernyataan CREATE baru.
 	//
 	// 11 tabel + 9 sequence + 13 index = 33.

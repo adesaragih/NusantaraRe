@@ -1,4 +1,8 @@
 -- Outbox efek keluar lintas modul - butir aq.
+-- [keputusan work owner 27-09-2026, butir ax] Nama tabel T_LOG_SERVICE_RNM
+-- (semula T_EFEK_KELUAR): ia LOG sekaligus ANTREAN panggilan layanan luar. Nama
+-- index, constraint, dan sequence mengikuti. Migrasi ini belum pernah dijalankan
+-- di Oracle mana pun saat diganti nama, sehingga disunting di tempat.
 --
 -- Pemilik: A2 (brief lanjutan 5 §2, `[DIPUTUSKAN]` turunan tiket 12 AC
 -- "antre-ulang, kegagalan tercatat" + ADR-U-0008; bentuknya milik executor).
@@ -18,7 +22,7 @@
 --
 -- ⚠️ `MUATAN` CLOB berisi JSON. Ia TIDAK boleh memuat nama orang, kredensial,
 -- maupun alamat - hanya pengenal dan angka. Penjaga statik menegakkannya.
-CREATE TABLE {skema}.T_EFEK_KELUAR (
+CREATE TABLE {skema}.T_LOG_SERVICE_RNM (
   ID              VARCHAR2(40)  NOT NULL,
   LINI            VARCHAR2(16)  NOT NULL,
   MODUL           VARCHAR2(32)  NOT NULL,
@@ -31,14 +35,14 @@ CREATE TABLE {skema}.T_EFEK_KELUAR (
   GALAT_TERAKHIR  VARCHAR2(4000),
   DIBUAT          TIMESTAMP     NOT NULL,
   DIPERBARUI      TIMESTAMP,
-  CONSTRAINT PK_EFEK_KELUAR PRIMARY KEY (ID)
+  CONSTRAINT PK_LOG_SERVICE_RNM PRIMARY KEY (ID)
 )
 /
 -- Worker memilih lewat (STATUS, JADWAL_BERIKUT); tanpa index ia memindai
 -- seluruh outbox setiap putaran.
-CREATE INDEX {skema}.IX_EFEK_KELUAR_JADWAL ON {skema}.T_EFEK_KELUAR (STATUS, JADWAL_BERIKUT)
+CREATE INDEX {skema}.IX_LOG_SERVICE_RNM_JADWAL ON {skema}.T_LOG_SERVICE_RNM (STATUS, JADWAL_BERIKUT)
 /
-CREATE INDEX {skema}.IX_EFEK_KELUAR_RUJUKAN ON {skema}.T_EFEK_KELUAR (RUJUKAN)
+CREATE INDEX {skema}.IX_LOG_SERVICE_RNM_RUJUKAN ON {skema}.T_LOG_SERVICE_RNM (RUJUKAN)
 /
-CREATE SEQUENCE {skema}.SEQ_EFEK_KELUAR START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE
+CREATE SEQUENCE {skema}.SEQ_LOG_SERVICE_RNM START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE
 /

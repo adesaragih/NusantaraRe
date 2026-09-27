@@ -77,11 +77,11 @@ func (r *PohonKlaim) AntreEfek(ctx context.Context, tx *Tx,
 		return "", fmt.Errorf("repository: AntreEfek menuntut transaksi; " +
 			"outbox di luar transaksi bisnisnya tidak menjamin apa pun")
 	}
-	id, err := r.nomorBerikut(ctx, tx, "SEQ_EFEK_KELUAR")
+	id, err := r.nomorBerikut(ctx, tx, "SEQ_LOG_SERVICE_RNM")
 	if err != nil {
 		return "", err
 	}
-	tabel, err := r.db.Qualify("T_EFEK_KELUAR")
+	tabel, err := r.db.Qualify("T_LOG_SERVICE_RNM")
 	if err != nil {
 		return "", err
 	}
@@ -145,7 +145,7 @@ func (r *PohonKlaim) PungutEfek(ctx context.Context, tx *Tx,
 		return BarisEfekKeluar{}, fmt.Errorf("repository: PungutEfek menuntut " +
 			"transaksi; kuncian SKIP LOCKED hidup selama transaksinya saja")
 	}
-	tabel, err := r.db.Qualify("T_EFEK_KELUAR")
+	tabel, err := r.db.Qualify("T_LOG_SERVICE_RNM")
 	if err != nil {
 		return BarisEfekKeluar{}, err
 	}
@@ -215,7 +215,7 @@ func (r *PohonKlaim) TuntaskanEfek(ctx context.Context, tx *Tx, id, status strin
 	if tx == nil {
 		return fmt.Errorf("repository: TuntaskanEfek menuntut transaksi")
 	}
-	tabel, err := r.db.Qualify("T_EFEK_KELUAR")
+	tabel, err := r.db.Qualify("T_LOG_SERVICE_RNM")
 	if err != nil {
 		return err
 	}

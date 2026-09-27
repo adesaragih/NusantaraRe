@@ -270,3 +270,19 @@ katalog. Inilah sebabnya kunci dibaca dari activity, bukan ditebak dari nama.
 **Dua jalur menyerah**, keduanya merekam jejak: galat permanen sejak awal, dan jatah 8 percobaan
 habis. Hanya yang **permanen** masuk jejak — mencatat yang masih akan dicoba lagi membanjiri jejak
 audit dengan delapan baris untuk satu email yang akhirnya terkirim.
+
+### Ralat menurut keputusan work owner — 27 September 2026 (butir ax)
+
+Work owner: *"JIKA ITU UNTUK LOG SERVICE MAKA NAMANYA YANG JELAS, T_LOG_SERVICE_RNM."*
+
+| Semula | Menjadi |
+| --- | --- |
+| tabel `T_EFEK_KELUAR` | **`T_LOG_SERVICE_RNM`** |
+| `IX_EFEK_KELUAR_JADWAL`, `IX_EFEK_KELUAR_RUJUKAN`, `PK_EFEK_KELUAR` | `IX_LOG_SERVICE_RNM_JADWAL`, `IX_LOG_SERVICE_RNM_RUJUKAN`, `PK_LOG_SERVICE_RNM` |
+| `SEQ_EFEK_KELUAR` | `SEQ_LOG_SERVICE_RNM` |
+| berkas `015_t_efek_keluar.sql` + `_down` | `015_t_log_service_rnm.sql` + `_down` *(disunting di tempat — migrasi belum pernah dijalankan di Oracle mana pun; `T_MIGRASI` belum ada di DEV)* |
+
+Kolom, makna, dan pola outbox **tetap** (tabel ini log **dan** antrean percobaan ulang; padanan warisan
+`monitoring_klaim_log` dari `InsertLogServiceClaim` tetap tidak dipakai karena hanya log). Kode yang
+mengikuti: `repository/efekkeluar.go`, `services/antrean.go`, `repository/migrasi_test.go`. Nama tipe Go
+`EfekKeluar` tidak berubah — yang diputuskan adalah nama tabel.

@@ -3,7 +3,7 @@ package services
 // Antre-ulang efek keluar dan pekerjanya - butir aq, A2.
 //
 // Untuk apa berkas ini: menutup stub `AntreanBelumDiputuskan`. Kegagalan efek
-// keluar disimpan ke `T_EFEK_KELUAR` dengan jadwal percobaan berikutnya, dan
+// keluar disimpan ke `T_LOG_SERVICE_RNM` dengan jadwal percobaan berikutnya, dan
 // seorang pekerja memungutnya kembali satu per satu.
 //
 // ⛔ Kegagalan PERMANEN tidak pernah dijadwalkan ulang. `LayakDicobaUlang`
@@ -107,7 +107,7 @@ type antreanOracle struct {
 	jejak Jejak
 }
 
-// AntreanEfekOracle menyusun antre-ulang yang menulis ke `T_EFEK_KELUAR`.
+// AntreanEfekOracle menyusun antre-ulang yang menulis ke `T_LOG_SERVICE_RNM`.
 func AntreanEfekOracle(svc *Service) Antrean {
 	return antreanOracle{svc: svc, pohon: repository.NewPohonKlaim(svc.db),
 		jejak: PerekamJejakOracle(svc)}
