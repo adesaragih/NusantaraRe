@@ -36,6 +36,16 @@ type Config struct {
 	// (ADR-U-0005). Dipakai sebagai gerbang perilaku, bukan sebagai hiasan.
 	IsPegaProd bool
 
+	// StorageTokenSalt adalah garam token penyimpanan berkas (butir an).
+	//
+	// ⛔ RAHASIA. Ia TIDAK PERNAH disalin dari procedure ke repo, tidak
+	// dicetak, dan tidak masuk artefak mana pun. Diminta ke DBA lewat jalur
+	// rahasia - bukan lewat repo maupun percakapan.
+	//
+	// Kosong berarti token penyimpanan GAGAL TERANG; itu keadaan yang benar
+	// sampai garamnya diberikan.
+	StorageTokenSalt string
+
 	// SkemaUjiDiakui adalah pengakuan sadar bahwa skema yang ditunjuk
 	// OracleSchema boleh DIHAPUS isinya. Dibaca dari ORACLE_SKEMA_UJI.
 	//
@@ -118,6 +128,10 @@ func Load() (Config, error) {
 
 	c.SkemaUjiDiakui = strings.EqualFold(strings.TrimSpace(os.Getenv(EnvSkemaUji)), "true")
 	c.AuthStub = strings.EqualFold(strings.TrimSpace(os.Getenv("AUTH_STUB")), "true")
+	// ⛔ Tidak di-TrimSpace dan tidak dinormalkan: garam adalah byte apa
+	// adanya, dan membetulkannya diam-diam menghasilkan token yang berbeda
+	// dari yang sistem lama terbitkan.
+	c.StorageTokenSalt = os.Getenv("STORAGE_TOKEN_SALT")
 
 	raw := strings.TrimSpace(os.Getenv("IS_PEGA_PROD"))
 	if raw != "" {
