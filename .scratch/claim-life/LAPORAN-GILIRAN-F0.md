@@ -730,3 +730,64 @@ yang tidak menyebutnya warisan *(komentarnya yang diperbaiki)*.
 
 **Telemetri:** Go 307 → **316 PASS · 0 FAIL · 34 SKIP** · JS 207 → **224** · `tsc` bersih ·
 `go vet` bersih · build 47 → **48** modul · migrasi **017** *(dari keputusan bb yang tercatat)*.
+
+---
+
+## Giliran lanjutan 12 — kelompok 2: aturan dokumen yang dapat diputuskan, dan yang tidak
+
+### Apa yang dibangun, dan kenapa hanya itu
+
+Sembilan activity kelompok ini dibaca sebagai pohon. Empat di antaranya — `InsertGoogleStorage_Act`,
+`GetUrlGoogleStorage_Act`, `DeleteGoogleStorage_Act`, `SendEmailWithAttachments` — **menyambung ke
+layanan luar nyata**, dan menyambungkannya menuntut persetujuan manusia. Jadi yang dibangun giliran
+ini adalah seluruh aturan yang **dapat diputuskan tanpa layanan itu**, dan sisanya **dinyatakan**:
+
+| Aturan | Sumber | Keadaan |
+| --- | --- | --- |
+| Tabel MIME **48 baris** + `otherwise` | `DecisionTable/GetMimeType.xml` b290–b337 / b417–b464, bawaan b89 | ✅ disalin utuh, cacahnya dikunci |
+| MIME pemanggil **menang** atas tabel | prasyarat b586 `Param.MIME==""` `WhenTrue=2` LANJUT | ✅ |
+| Kunci kelompok `DL-`+angka, **tak pernah ditimpa** | `SaveAttachLife.xml` b595–596, b615–616 | ✅ |
+| Pengenal baris `yyyyMMddhhmmssSSS` Asia/Jakarta | `InsertDocument_Act.xml` b647–648 | ✅ *(termasuk cacatnya — di bawah)* |
+| **Unggah dulu, baris kemudian** | prasyarat b1283 `T_STORAGE_ID==""` `WhenTrue=3` LEWATI | ✅ aturannya |
+| Hapus penyimpanan dilewati bila kosong; baris **tetap** dihapus | b472 `WhenTrue=3`; `Obj-Delete` b513 tanpa prasyarat | ✅ aturannya |
+| Unggah / unduh / hapus sebagai **rute** | `InsertGoogleStorage_Act` b1023 dst. | ⛔ menunggu persetujuan penyambungan |
+
+### Cacat warisan yang ditiru, bukan diperbaiki
+
+`.ID` baris dokumen adalah `@CurrentDate("yyyyMMddhhmmssSSS","Asia/Jakarta")` b648. Pada pola
+Java/Pega, **`hh` adalah jam 12-jam**. Jadi pukul 14:05:09.123 dan pukul 02:05:09.123 menghasilkan
+pengenal yang **sama persis**.
+
+Itu cacat, dan saya **tidak memperbaikinya**. Memperbaikinya membuat pengenal baris baru berbeda
+bentuk dari pengenal baris lama, dan keduanya hidup di kolom yang sama — pengenal yang tidak dapat
+diurutkan bersama pendahulunya adalah harga yang lebih mahal daripada tabrakan yang hanya mungkin
+dalam milidetik yang sama. Ia **dikunci uji** justru supaya tidak diam-diam "dirapikan" orang, dan
+uji itu berbunyi ketika saya menggantinya ke jam 24 sebagai percobaan.
+
+### ⛔ Ralat kedua hari ini atas OQ saya sendiri
+
+OQ-J yang saya tulis beberapa jam lalu bertanya *"kolom apa `.DOCUMENT` itu?"*. **Terjawab, oleh
+XML yang belum saya baca saat menulisnya**: `SaveAttachLife` b596 **membuat**nya —
+`"DL-" + angka(@CurrentDateTime())` bila kosong — dan meneruskannya sebagai `KATEGORI_1` b1467.
+Ia kunci kelompok dokumen milik peserta, bukan misteri.
+
+⚠️ Sebabnya **sama persis dengan ralat OQ-H pagi ini**: saya membaca activity **pembaca** lalu
+menyimpulkan tentang sebuah medan, tanpa menanyakan siapa yang **menulis** medan itu. Dua kali dalam
+satu hari, dengan bentuk yang identik. Saya catat bentuknya, bukan hanya kejadiannya: *sebelum
+menyatakan sebuah medan tidak terbaca, cari penulisnya, bukan hanya pembacanya.*
+
+OQ-J tetap terbuka tetapi jauh lebih sempit, dan pertanyaannya kini milik **migrasi data**: apakah
+`KATEGORI_1` pada dokumen warisan selalu cocok dengan satu peserta? Yang tidak cocok tidak akan
+terbawa FK, dan itu harus diketahui **sebelum** migrasi.
+
+### Penjaga yang dibuat gagal lebih dulu, lalu dipulihkan
+
+| Penjaga | Dibuat gagal dengan | Berbunyi |
+| --- | --- | --- |
+| cacah tabel MIME | hapus baris `"et"` | `petaMime = 47 baris, mau 48` |
+| MIME pemanggil menang | balik urutannya | `= "application/pdf", mau image/png` |
+| kunci kelompok tak ditimpa | cabut cabang `sudahAda` | kunci baru menimpa yang lama |
+| cacat jam 12-jam ditiru | ganti pola ke jam 24 | dua pengenal tidak lagi bertabrakan |
+
+**Telemetri:** Go 316 → **322 PASS · 0 FAIL · 34 SKIP** · JS **224** *(tak berubah — kelompok ini
+belum menyentuh layar)* · `tsc` bersih · `go vet` bersih · build 48 modul · **nol** migrasi baru.

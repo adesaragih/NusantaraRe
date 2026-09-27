@@ -392,3 +392,36 @@ ditambahkan** ke daftar. Karena penyambungan ke Google Storage belum dilakukan, 
 kosong, sehingga meniru gerbang itu membuat daftar **selalu kosong** dan layar berkata *"tidak ada
 dokumen"* untuk peserta yang dokumennya lengkap. Barisnya karena itu **tetap ditampilkan**, dengan
 penanda bahwa pranalanya menunggu penyambungan.
+
+### ⛔ Ralat OQ-J — 27 September 2026, beberapa jam sesudah ditulis
+
+**Pertanyaan (a) sudah terjawab, dan yang menjawabnya adalah XML yang belum kami baca saat menulis
+OQ-J.** `Activity/SaveAttachLife.xml` langkah 1.2 **b595-596**:
+
+```
+Primary.DOCUMENT = @if(Primary.DOCUMENT == "",
+                       "DL-" + @pxReplaceAllViaRegex(@CurrentDateTime(),"[^0-9]",""),
+                       Primary.DOCUMENT)
+Local.IDDoc      = Primary.DOCUMENT                                        b615-616
+```
+
+dan langkah 1.7 **b1467** meneruskan `KATEGORI_1 = Local.IDDoc` ke `InsertDocument_Act`.
+
+Jadi `.DOCUMENT` adalah **kunci kelompok dokumen milik peserta** — `DL-` diikuti seluruh angka dari
+waktu saat lampiran PERTAMA disimpan, dibuat sekali lalu **tidak pernah ditimpa**. Setiap dokumen
+peserta itu menyimpan kunci tersebut di `KATEGORI_1`, dan itulah yang disaring
+`LoadDocumentLife_ACT`. Jawaban (b): `KATEGORI_1` **memang penghubung ke peserta**, bukan penggolong
+jenis dokumen — penggolong jenisnya `KATEGORI_2`, yang `DocumentLife.xml` tampilkan.
+
+⚠️ **Sebab kami salah:** OQ-J ditulis sesudah membaca activity **pembaca** saja. Aktivitas
+**penulisnya** yang memegang jawabannya. Bentuk yang sama dengan ralat OQ-H hari ini — berhenti pada
+rule yang namanya tertulis, tanpa menanyakan siapa yang MENULIS medan itu. Dua kali dalam satu hari.
+
+**Yang masih ditanyakan, dan lebih sempit:**
+
+> `T_CLAIMLF_PREMIUMLIST_DETAIL` **tidak punya** kolom `DOCUMENT`. Untuk data yang lahir di sistem
+> baru, FK `PREMIUM_LIST_DETAIL_ID` dan kunci kelompok `DL-…` menunjuk himpunan yang sama, jadi
+> keduanya setara. **Untuk data warisan yang akan dimigrasi (tiket 13), apakah `KATEGORI_1` selalu
+> terisi dan selalu cocok dengan satu peserta?** Bila ada dokumen warisan ber-`KATEGORI_1` yang tidak
+> menunjuk peserta mana pun, ia tidak akan terbawa oleh FK — dan kami perlu tahu sebelum migrasi,
+> bukan sesudah.
