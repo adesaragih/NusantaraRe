@@ -5,6 +5,8 @@ Backend Go + Frontend React (TypeScript) + Oracle
 
 Disusun 26 September 2026 dari kode pada commit 8f5453b.
 Diperbarui 26 September 2026 (ronde 4): pagar skema uji bab 3, angka test bab 7.
+Diperbarui 27 September 2026: AUTH_STUB dua sisi bab 4 (sebab Inbox
+tampak kosong padahal backend sehat).
 Diperbarui 26 September 2026 (sore): pemuat .env bab 3, .env frontend bab 4,
 proxy Vite bab 5 (celahnya sudah tertutup), PATH permanen bab 1.
 Untuk siapa: siapa pun yang ingin menjalankan aplikasi ini di mesin Windows,
@@ -271,6 +273,34 @@ YANG TAMPIL SEJAK F0.5
      memutuskan apa pun. Pita "mode stub" di menu profil
      mengatakannya. Bila VITE_AUTH_STUB bukan true, layar MENYATAKAN
      identitas tidak ada - gagal tertutup, bukan pecah.
+
+     !! DUA SISI, DAN KEDUANYA HARUS MENYALA BERSAMA.
+        Backend punya gerbangnya sendiri di APP_RNM\.env:
+
+          AUTH_STUB=true
+
+        Bila HANYA sisi React yang menyala, React mengirim header
+        X-Pelaku / X-Peran dan Go MEMBUANGNYA, lalu menjawab 401
+        untuk setiap jalur beridentitas.
+
+        Yang terlihat di layar saat itu: Inbox KOSONG. Bukan pesan
+        galat - kosong. Dan kosong terbaca "tidak ada pekerjaan",
+        bukan "permintaan saya ditolak", sehingga tidak ada yang
+        mencurigai konfigurasi.
+
+        Cara memastikan dalam satu perintah, dari jendela mana pun:
+
+          (Invoke-WebRequest http://127.0.0.1:8080/api/klaim-life?tahap=2 `
+             -Headers @{'X-Pelaku'='UJI-ADMIN';'X-Peran'='ReasLifeAdmin'} `
+             -UseBasicParsing).StatusCode
+
+        200 = gerbang kedua sisi menyala. 401 = AUTH_STUB di
+        APP_RNM\.env belum true (atau backend belum dimuat ulang
+        sesudah menyetelnya).
+
+        Perhatikan: tahap di jalur INBOX adalah ANGKA 1..4, sedangkan
+        jalur perpindahan memakai KATA (/tahap/outstanding). Keduanya
+        memang berbeda hari ini.
 
   2. SHELL. Sidebar (dapat dilipat; di ponsel menjadi laci), topbar,
      menu profil, dan palet menu Ctrl+K.
