@@ -45,7 +45,13 @@ export interface BarisDokumen {
   namaFile: string
   /** Kategori yang `DocumentLife.xml` tampilkan kepada manusia. */
   kategori: string
-  /** Teks tanggal apa adanya; kosong berarti kolomnya memang kosong. */
+  /**
+   * Teks tanggal, SUDAH dinormalkan.
+   *
+   * ⛔ Backend mengirim `null` untuk kolom DATE yang NULL (`*time.Time`),
+   * bukan `""`. Keduanya dinormalkan menjadi `''` DI SINI, satu tempat -
+   * sehingga komponen dan ujinya cukup mengenal satu bentuk "kosong".
+   */
   tanggal: string
   /**
    * Apakah berkasnya sudah terunggah ke penyimpanan luar.
@@ -73,7 +79,9 @@ export function barisDokumen(dokumen: Dokumen[]): BarisDokumen[] {
     // `DocumentLife.xml` menampilkan KATEGORI_2 kepada manusia; kategori1
     // adalah penggolong yang dipakai saringan browse-nya.
     kategori: d.kategori2,
-    tanggal: d.tanggal,
+    // ⛔ `?? ''` bukan kosmetik: `null` dan `''` sama-sama berarti "kolomnya
+    // kosong", dan tanpa ini penanda — tidak pernah menyala untuk `null`.
+    tanggal: d.tanggal ?? '',
     terunggah: d.tStorageId !== '',
   }))
 }

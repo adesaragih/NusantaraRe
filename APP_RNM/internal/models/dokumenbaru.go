@@ -1,5 +1,21 @@
 package models
 
+// ⛔ BERKAS INI BELUM PUNYA SATU PUN PEMANGGIL DI LUAR UJI, DAN ITU
+// DISENGAJA - TETAPI HARUS DIBACA SEBAGAI UTANG, BUKAN SEBAGAI SELESAI.
+//
+// KunciKelompokDokumen / IDDokumenBaru / BolehSimpanBarisDokumen / PerluHapusDiPenyimpanan belum dipanggil kode produksi mana pun.
+// Jalur unggah dan hapus dokumen menuntut penyambungan ke Google Storage
+// (`InsertGoogleStorage_Act`, `DeleteGoogleStorage_Act`), dan itu menuntut
+// persetujuan manusia. Aturannya ditiru lebih dulu supaya yang DAPAT
+// diputuskan tidak menunggu yang tidak dapat.
+//
+// ⚠️ Bentuk ini PERSIS "rute tanpa pemanggil" yang tiga kali menjadi cacat
+// di modul ini - backend hijau, layar hijau, fiturnya tidak ada. Bedanya
+// satu dan hanya satu: di sini ketiadaan pemanggil DINYATAKAN, di sana ia
+// tidak. Bila Anda membaca ini dan penyambungan penyimpanan sudah ada,
+// maka pekerjaan yang tersisa adalah MEMANGGILNYA - bukan menulis ulang
+// aturannya.
+
 // Aturan lahirnya satu baris dokumen — kelompok Dokumen.
 //
 // Untuk apa berkas ini: ketika sebuah berkas dilampirkan, Pega menurunkan

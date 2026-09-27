@@ -153,6 +153,41 @@ func TestHitungTotalPeserta(t *testing.T) {
 		}
 	})
 
+	t.Run("kolom bermata uang lain DITOLAK, bukan dilabeli ulang", func(t *testing.T) {
+		// ⛔ Pemeriksaan di atas hanya membaca CurrencyID BARIS. Satu kolom
+		// yang nilai uangnya bermata uang lain karena itu lolos pemeriksaan
+		// itu - dan ronde pertama melabelinya ulang menjadi mata uang
+		// penampung, sehingga ia terjumlah diam-diam di bawah mata uang yang
+		// salah. Money.Add yang seharusnya menolaknya justru dilucuti.
+		b := barisUji(t, "", KodeAksep)
+		usd, err := NewMoney("5", "USD")
+		if err != nil {
+			t.Fatal(err)
+		}
+		b.SumInsured = usd
+		if _, err := HitungTotalPeserta([]BarisAdjustment{b}, "IDR"); !errors.Is(err, ErrTotalMataUangBeragam) {
+			t.Errorf("galat = %v, mau ErrTotalMataUangBeragam", err)
+		}
+	})
+
+	t.Run("nilai uang TANPA label mata uang mengikut penampung", func(t *testing.T) {
+		// Ia bukan mata uang lain; ia hanya belum berlabel. Menolaknya akan
+		// menggagalkan seluruh pembacaan Detail untuk data yang sah.
+		b := barisUji(t, "", KodeAksep)
+		tanpaLabel, err := NewMoney("5", "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		b.SumInsured = tanpaLabel
+		total, err := HitungTotalPeserta([]BarisAdjustment{b}, "IDR")
+		if err != nil {
+			t.Fatalf("HitungTotalPeserta: %v", err)
+		}
+		if got := total.SumInsured.String(); got != "5 IDR" {
+			t.Errorf("SumInsured = %q, mau %q", got, "5 IDR")
+		}
+	})
+
 	t.Run("mata uang peserta kosong: diisi dari baris", func(t *testing.T) {
 		total, err := HitungTotalPeserta([]BarisAdjustment{barisUji(t, "", KodeAksep)}, "")
 		if err != nil {

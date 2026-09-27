@@ -54,6 +54,18 @@ describe('barisDokumen', () => {
     expect(b?.tanggal).toBe('')
   })
 
+  it('tanggal NULL diperlakukan sama dengan kosong', () => {
+    // ⛔ CACAT LINTAS-LAPIS KELIMA, dan ia lahir di giliran yang sama
+    // ketika keempat pendahulunya didaftarkan. Go mengirim `null` untuk
+    // kolom DATE yang NULL (`*time.Time`), sedangkan `api.ts` sempat
+    // menyatakan `tanggal: string`. TypeScript tidak dapat menangkapnya -
+    // tipe yang berbohong tentang data dari jaringan tetap dikompilasi.
+    // Akibatnya `=== ''` tidak pernah menyala, dan tanggal yang memang
+    // kosong tampil sebagai sel kosong alih-alih penanda.
+    const [b] = barisDokumen([dok({ tanggal: null } as Partial<Dokumen>)])
+    expect(b?.tanggal).toBe('')
+  })
+
   it('membawa nama BERKAS, dan tidak ada medan lain yang dapat memuat nama orang', () => {
     // ⛔ Penjaga arah yang sama dengan marshaller peserta: medan pada baris
     // ini mudah bertambah satu per satu, dan satu di antaranya suatu hari

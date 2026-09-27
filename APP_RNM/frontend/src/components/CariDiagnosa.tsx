@@ -67,6 +67,14 @@ export function ringkasanHasil(jumlah: number, batas: number): string {
 }
 
 export function CariDiagnosa({ batas = 50 }: { batas?: number }) {
+  // ⛔ TERTUTUP sampai ditekan, dan itu bukan kosmetik. Tombolnya berdiri
+  // PER PESERTA - `Find Disease` b5061 ada di `ClaimLifeDetailGCNM`, section
+  // berkelas `Int-LIFE_PREMIUM_DETAIL` - sehingga klaim grup berpeserta 500
+  // akan merender 500 formulir pencarian sekaligus bila selalu terbuka,
+  // masing-masing dengan keadaannya sendiri. Di Pega pun b5061 adalah TOMBOL
+  // yang MEMBUKA harness (`showHarness` b5081), bukan formulir yang selalu
+  // tampak. Jadi menutupnya justru lebih setia, bukan kurang.
+  const [terbuka, setTerbuka] = useState(false)
   const [kodeIcd, setKodeIcd] = useState('')
   const [nama, setNama] = useState('')
   const [hasil, setHasil] = useState<Penyakit[] | null>(null)
@@ -85,6 +93,16 @@ export function CariDiagnosa({ batas = 50 }: { batas?: number }) {
     } finally {
       setSibuk(false)
     }
+  }
+
+  if (!terbuka) {
+    return (
+      <p className="diagnosa">
+        <button type="button" onClick={() => setTerbuka(true)}>
+          {LABEL_CARI_DIAGNOSA.buka}
+        </button>
+      </p>
+    )
   }
 
   return (
@@ -106,6 +124,15 @@ export function CariDiagnosa({ batas = 50 }: { batas?: number }) {
         </label>{' '}
         <button type="button" disabled={sibuk} onClick={() => void cari()}>
           {sibuk ? 'Mencari…' : 'Cari'}
+        </button>{' '}
+        <button
+          type="button"
+          disabled={sibuk}
+          onClick={() => {
+            setTerbuka(false)
+          }}
+        >
+          Tutup
         </button>
       </p>
 

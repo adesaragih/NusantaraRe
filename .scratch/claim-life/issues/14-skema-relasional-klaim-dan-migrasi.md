@@ -1678,3 +1678,24 @@ Admin tidak dapat menyaring "kasus milik saya" sama sekali — dan itulah yang `
 
 `STRUKTUR-TABEL-CLAIM-LIFE.md` bab `T_WORK_CLAIM` diperbarui bersamaan; penjaga
 `TestKolomDDLCocokDenganStruktur` menegakkan keduanya sejalan.
+
+## Migrasi 017 — `T_WORK_CLAIM.STATUS_WORK` (butir bb, 27 September 2026)
+
+⚠️ Blok ini ada di tiket **14** karena tiket inilah pemilik skema relasional; keputusannya sendiri
+*(bb)* dan bukti XML-nya ada di tiket **08**, bab *"Penutupan kasus (Close Claim)"*.
+
+| Hal | Isi |
+| --- | --- |
+| Berkas | `017_kolom_status_work.sql` + `017_kolom_status_work_down.sql` |
+| DDL | `ALTER TABLE {skema}.T_WORK_CLAIM ADD (STATUS_WORK VARCHAR2(32))` |
+| Nilai | **hanya** `Resolved-Completed`, VERBATIM `Flow/Register_Flow.xml` b899 *(shape `End1`: `rowdata` b883, `pyMOId` b885, `Data-MO-Event-End` b901)* |
+| NULL | berarti **kasus belum ditutup** *(ADR-U-0027)* — status Pega untuk kasus berjalan tidak ada di ekspor dan **tidak dikarang** |
+| Mundur | `DROP (STATUS_WORK)`; tidak ada pengisian mundur, jadi jalur mundurnya tidak kehilangan apa pun |
+| Pasangannya | `TAHAP` **dikosongkan** saat tutup — padanan `Call FinishAssignment` b838 yang seluruh parameternya kosong |
+
+⛔ **Tidak ada tahap kelima.** Kotak masuk adalah worklist; kasus yang tertutup hilang dari keempat
+tab. Tahap `"Selesai"` akan menjadi antrean yang tidak pernah dikerjakan siapa pun, dan XML tidak
+menyebutnya.
+
+**AC:** tidak ada AC tiket ini yang berubah centangnya. Yang bertambah adalah **satu kolom** pada
+tabel work, beserta jalur mundurnya.

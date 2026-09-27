@@ -83,9 +83,25 @@ export interface Dokumen {
   kategori2: string
   /** Penunjuk berkas di penyimpanan luar. Kosong berarti belum terunggah. */
   tStorageId: string
-  /** Teks apa adanya; kosong berarti kolomnya NULL, bukan tanggal nol. */
-  tanggal: string
-  paymentDate: string
+  /**
+   * Tanggal dokumen. ⛔ `string | null`, dan `null` BERARTI SESUATU.
+   *
+   * Go mengirimnya dari `*time.Time`, jadi kolom NULL menyeberang sebagai
+   * `null` — bukan `""`. Ronde pertama menulis `tanggal: string`, dan
+   * TypeScript tidak dapat menangkapnya: tipe yang berbohong tentang data
+   * yang datang dari jaringan tetap dikompilasi. Akibatnya
+   * `b.tanggal === ''` tidak pernah menyala, dan tanggal yang memang kosong
+   * tampil sebagai sel kosong alih-alih penanda — persis kebalikan dari
+   * yang ADR-U-0027 minta.
+   *
+   * ⚠️ Ini cacat lintas-lapis KELIMA dengan bentuk yang sama di modul ini,
+   * dan ia lahir di giliran yang sama ketika keempat pendahulunya
+   * didaftarkan. Dikunci dua sisi: `TestNamaJSONDokumenDikunci` di Go
+   * memeriksa `"tanggal":null`, dan `PanelDokumenPeserta.test.ts` memeriksa
+   * `null` diperlakukan sama dengan kosong.
+   */
+  tanggal: string | null
+  paymentDate: string | null
 }
 
 /** Satu peserta yang diklaim, beserta baris-barisnya sendiri. */

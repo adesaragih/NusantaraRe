@@ -925,3 +925,74 @@ merah seketika.
 
 **Telemetri:** Go **328 PASS · 0 FAIL · 34 SKIP** · JS 240 → **241** · `tsc` bersih ·
 build **50** modul · **nol** migrasi baru.
+
+---
+
+## Giliran lanjutan 12 — paket telaah: `/code-review` dua sumbu atas enam commit
+
+Titik tetap `8907fba`. Dua penelaah berjalan terpisah — satu atas **standar**, satu atas **spec** —
+supaya tidak saling mencemari. Temuannya saya periksa satu per satu; **dua saya bantah dengan
+bukti**, sisanya saya perbaiki.
+
+### ⛔ Cacat lintas-lapis KELIMA, dan saya yang membuatnya
+
+`models.Dokumen.Tanggal` bertipe `*time.Time`, sehingga kolom `DATE` yang NULL menyeberang sebagai
+**`null`**. `api.ts` menyatakannya **`tanggal: string`**. `PanelDokumenPeserta` memeriksa
+`b.tanggal === ''` — yang **tidak pernah menyala untuk `null`** — sehingga tanggal yang memang
+kosong tampil sebagai **sel kosong**, bukan penanda `—`. Persis kebalikan dari yang ADR-U-0027
+minta, dan `tsc` tidak dapat menangkapnya: tipe yang berbohong tentang data dari jaringan tetap
+dikompilasi.
+
+⚠️ **Ia lahir di giliran yang sama ketika saya mendaftarkan keempat pendahulunya** — envelope
+`galat`, rute tanpa pemanggil, penanda `IsCheck`, nama medan total. Menamai pola tidak membuat saya
+kebal terhadapnya. Yang berubah sekarang: `string | null` di klien, normalisasi di **satu** tempat,
+dan uji yang gagal bila normalisasi itu dicabut.
+
+### Lubang penjaga yang penjaganya sendiri tidak lihat
+
+`TestDaftarLayananPengubahMencakupSeluruhRutePengubah` menemukan calonnya lewat
+`strings.Contains(…, "DalamTransaksi(ctx")`. **`hapus.go` mengubah** (`DELETE /api/klaim-life/{id}`)
+tetapi **tidak memanggilnya sama sekali** — ia lolos penemuan, dan hanya aman karena kebetulan saya
+tulis tangan di daftar. Layanan pengubah baru yang berbentuk seperti `hapus.go` akan lolos dari
+**kedua** penjaga.
+
+Penjaga ketiga kini memakai definisi yang tidak dapat diakali dengan menulis kode berbeda bentuk:
+**tabel rute**. Apa pun yang terdaftar dengan metode selain `GET` adalah pengubah, titik — dan ia
+harus terdaftar beserta berkas layanannya atau punya alasan pengecualian tertulis. Dibuktikan:
+menambahkan satu rute `POST` palsu membuatnya merah seketika.
+
+### Komentar saya sendiri yang berbohong
+
+`totalpeserta.go` menulis `nilai.Currency = kurs` dengan komentar *"yang berbeda sudah ditolak di
+atas"*. **Komentar itu keliru**: pemeriksaan di atas hanya membaca `CurrencyID` **baris**, tidak
+pernah membaca `Currency` tiap nilai uang. Satu kolom bermata uang lain karena itu dijumlahkan
+diam-diam di bawah mata uang yang salah — dan `Money.Add` yang seharusnya menolaknya justru
+**dilucuti lebih dulu**. Kini tiap kolom diperiksa sendiri; yang tanpa label mengikut penampung,
+yang berbeda ditolak.
+
+### Dua temuan yang saya BANTAH, dengan bukti
+
+| Temuan | Bantahan |
+| --- | --- |
+| *"label `totalCedingRetention` ditambahkan tanpa kutipan"* | Kutipannya **ada**, `labels.ts` b333–338: `b20629 pyLabelPreview -> .TotalCedingRetention b20636` |
+| *"`GetListKomiteLife` dijatuhkan diam-diam"* | Ia **sudah ditiru** sejak tiket 10 — `services/komite.go` mengutipnya `[terverifikasi]` di empat tempat *(pecahan baris 449-450, 655, 790)* |
+
+### Temuan yang saya terima sebagian, dengan alasan dipertajam
+
+**Penghapusan dokumen.** Penelaah benar bahwa `Obj-Delete` b513 **tanpa prasyarat**, jadi baris dapat
+dihapus tanpa memanggil layanan luar. Tetapi alasan penundaan tetap berdiri, dan kini saya nyatakan
+lebih tepat: **tidak ada baris yang dapat dihapus tanpa `T_STORAGE_ID`**, sebab penyimpanannya
+digerbangi b1283 — setiap baris yang ada pasti punya berkas. Menghapus barisnya saja akan
+meninggalkan berkas **yatim di penyimpanan**, selamanya, tanpa penunjuk.
+
+**Aturan dokumen tanpa pemanggil.** Benar, dan ini bentuk yang sama dengan "rute tanpa pemanggil".
+Bedanya satu: di sini ketiadaan pemanggil **dinyatakan** — kini di kepala kedua berkasnya, bukan
+hanya di laporan ini.
+
+**Dialog diagnosa per peserta.** Benar bahwa ia berdiri di dalam perulangan peserta — dan itu
+memang letaknya menurut XML *(b5061 di section berkelas `Int-LIFE_PREMIUM_DETAIL`)*. Tetapi klaim
+grup berpeserta 500 akan merender 500 formulir sekaligus. Kini ia **tombol yang membuka**, persis
+seperti `showHarness` b5081: lebih setia, bukan kurang.
+
+**Telemetri:** Go 328 → **329 PASS · 0 FAIL · 34 SKIP** · JS 241 → **242** · `tsc`, `vet`, `gofmt`
+bersih · build 50 modul · nol migrasi baru.

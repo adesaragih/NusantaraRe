@@ -3,6 +3,7 @@ package services
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -123,5 +124,97 @@ func TestDaftarLayananPengubahMencakupSeluruhRutePengubah(t *testing.T) {
 	}
 	if diperiksa == 0 {
 		t.Fatal("nol layanan bertransaksi ditemukan - penjaga ini tidak menjaga apa pun")
+	}
+}
+
+// rutePengubah memetakan SETIAP rute non-GET ke berkas layanan yang
+// melayaninya.
+//
+// ⛔ LUBANG YANG INI TUTUP. Penjaga di atas menemukan calonnya lewat
+// `strings.Contains(…, "DalamTransaksi(ctx")`. `hapus.go` MENGUBAH
+// (`DELETE /api/klaim-life/{id}`) tetapi tidak memanggilnya sama sekali,
+// sehingga ia lolos penemuan dan hanya aman karena kebetulan tertulis tangan
+// di `layananPengubah`. Layanan pengubah BARU yang berbentuk seperti
+// `hapus.go` akan lolos DARI KEDUA penjaga itu - tanpa satu pun uji merah.
+//
+// ⚠️ Yang dipakai di sini bukan lagi bentuk KODEnya melainkan TABEL RUTEnya:
+// apa pun yang terdaftar dengan metode selain GET adalah pengubah, titik.
+// Itu definisi yang tidak dapat diakali dengan menulis kode berbeda bentuk.
+var rutePengubah = map[string]string{
+	"POST /api/klaim-life":                                                    "pendaftaran.go",
+	"DELETE /api/klaim-life/{id}":                                             "hapus.go",
+	"POST /api/klaim-life/{id}/peserta/{pesertaId}/akseptasi":                 "akseptasi.go",
+	"POST /api/klaim-life/{id}/peserta/{pesertaId}/putaran":                   "hasilkomite.go",
+	"POST /api/klaim-life/{id}/peserta/{pesertaId}/adjustment/{adjId}/komite": "komite.go",
+	"POST /api/klaim-life/{id}/tahap/{tujuan}":                                "tahap.go",
+	"POST /api/klaim-life/{id}/tutup":                                         "tutup.go",
+	"POST /api/klaim-life/{id}/adjustment/{adjId}/tolak":                      "statusbaris.go",
+	"PUT /api/klaim-life/{id}/peserta/{pesertaId}/tanggal-kejadian":           "dol.go",
+}
+
+var polaRute = regexp.MustCompile(`mux\.HandleFunc\(\s*\n?\s*"([A-Z]+) ([^"]+)"`)
+
+func TestSetiapRuteNonGETPunyaPenjagaKasusTertutup(t *testing.T) {
+	isi, err := os.ReadFile(filepath.Join("..", "handlers", "handlers.go"))
+	if err != nil {
+		t.Fatalf("membaca tabel rute: %v", err)
+	}
+	cocok := polaRute.FindAllStringSubmatch(string(isi), -1)
+	if len(cocok) == 0 {
+		t.Fatal("nol rute terbaca; pembacanya yang rusak, bukan kodenya")
+	}
+	// Layanan yang sengaja TIDAK memeriksa, beserta alasan tertulis.
+	dikecualikan := map[string]string{
+		"pendaftaran.go": "melahirkan kasus; belum ada kasus untuk ditutup",
+		// Tutup MENUTUP; ia membaca STATUS_WORK sendiri lalu menolak lewat
+		// ErrKasusSudahTertutup. Memanggil PastikanKasusTerbuka di sini
+		// berarti membaca baris yang sama dua kali untuk satu jawaban.
+		"tutup.go": "layanan penutupnya sendiri; memeriksa dengan pembacaan status kerjanya sendiri",
+	}
+	cacahPengubah := 0
+	for _, m := range cocok {
+		metode, jalur := m[1], m[2]
+		if metode == "GET" {
+			continue
+		}
+		cacahPengubah++
+		kunci := metode + " " + jalur
+		berkas, terdaftar := rutePengubah[kunci]
+		if !terdaftar {
+			t.Errorf("rute pengubah %q tidak ada di rutePengubah.\n"+
+				"Butir bb: setiap rute non-GET harus menolak kasus yang sudah "+
+				"ditutup. Daftarkan berkas layanannya, atau tuliskan alasan "+
+				"pengecualiannya - keduanya pekerjaan sadar.", kunci)
+			continue
+		}
+		if alasan, ada := dikecualikan[berkas]; ada {
+			if alasan == "" {
+				t.Errorf("%s dikecualikan tanpa alasan tertulis", berkas)
+			}
+			continue
+		}
+		b, err := os.ReadFile(berkas)
+		if err != nil {
+			t.Errorf("rute %q menunjuk %s yang tidak terbaca: %v", kunci, berkas, err)
+			continue
+		}
+		if !strings.Contains(string(b), "PastikanKasusTerbuka(ctx, klaimID)") {
+			t.Errorf("rute pengubah %q dilayani %s, dan %s tidak memanggil "+
+				"PastikanKasusTerbuka.", kunci, berkas, berkas)
+		}
+	}
+	if cacahPengubah == 0 {
+		t.Fatal("nol rute non-GET ditemukan; pembacanya yang rusak")
+	}
+	// Dan arah sebaliknya: daftar tidak boleh memuat rute yang sudah tidak ada.
+	hidup := map[string]bool{}
+	for _, m := range cocok {
+		hidup[m[1]+" "+m[2]] = true
+	}
+	for kunci := range rutePengubah {
+		if !hidup[kunci] {
+			t.Errorf("rutePengubah memuat %q yang tidak lagi terdaftar di Router; "+
+				"daftar yang menjaga rute mati tidak menjaga apa pun", kunci)
+		}
 	}
 }

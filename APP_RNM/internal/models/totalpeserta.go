@@ -156,9 +156,23 @@ func HitungTotalPeserta(baris []BarisAdjustment, mataUang string) (TotalPeserta,
 			if nilai.Kosong() {
 				continue
 			}
-			// Mata uang baris disamakan dengan mata uang penampung: yang
-			// berbeda sudah ditolak di atas, dan yang kosong mengikut.
-			nilai.Currency = kurs
+			// ⛔ MATA UANG TIAP KOLOM DIPERIKSA SENDIRI, tidak dilabeli
+			// ulang. Ronde pertama menulis `nilai.Currency = kurs` dengan
+			// komentar "yang berbeda sudah ditolak di atas" - dan komentar
+			// itu KELIRU: pemeriksaan di atas hanya membaca `CurrencyID`
+			// BARIS, tidak pernah membaca Currency tiap nilai uang. Satu
+			// kolom bermata uang lain karena itu dijumlahkan diam-diam di
+			// bawah mata uang yang salah, dan `Money.Add` yang seharusnya
+			// menolaknya justru dilucuti lebih dulu (ADR-U-0003).
+			//
+			// Yang KOSONG mengikut penampung: nilai uang tanpa label mata
+			// uang bukan mata uang lain, ia hanya belum berlabel.
+			if nilai.Currency == "" {
+				nilai.Currency = kurs
+			} else if nilai.Currency != kurs {
+				return TotalPeserta{}, fmt.Errorf("%w: kolom %s bermata uang %q, peserta %q",
+					ErrTotalMataUangBeragam, kolom.nama, nilai.Currency, kurs)
+			}
 			if jumlah, err = jumlah.Add(nilai); err != nil {
 				return TotalPeserta{}, fmt.Errorf("total %s: %w", kolom.nama, err)
 			}
