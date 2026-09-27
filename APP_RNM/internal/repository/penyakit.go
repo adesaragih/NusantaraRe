@@ -25,22 +25,34 @@ import (
 
 // Ketiga nama kolom `DISEASE_LIFE`.
 //
-// ⛔ `[terbuka - OQ-K]` DAN INI HARUS DIBACA SEBELUM DIPAKAI DI ORACLE MANA
-// PUN. Ekspor yang kami terima memuat NAMA PROPERTI Pega (`.Number`,
-// `.Disease`, `.ICD_Code`) tetapi **tidak** memuat pemetaan kelas-ke-tabelnya -
-// tidak ada `Rule-Obj-Class` untuk `Int-DISEASE_LIFE` di seluruh korpus.
+// ✅ `[data DBA — katalog DEV 27-09-2026]` OQ-K.1 DITUTUP. Katalog
+// `POOLDATA.DISEASE_LIFE`: `ID` VARCHAR2(100), `ICD_CODE` VARCHAR2(100),
+// `DISEASE` VARCHAR2(1000); 97.586 baris; panjang isi maksimum `ICD_CODE` 7
+// dan `DISEASE` 290.
 //
-//   - `DISEASE` dan `ICD_CODE` `[dugaan kuat]`: keduanya nama kolom yang sama
-//     persis dengan `T_CLAIMLF_PREMIUMLIST_DETAIL` (migrasi 003 b42-43), dan
-//     konvensi korpus ini memetakan properti ke kolom senama berhuruf besar.
-//   - `NUMBER_` `[terbuka]`: `NUMBER` adalah kata cadangan Oracle, sehingga
-//     kolomnya PASTI bernama lain - dan nama itu tidak ada di korpus.
+// ⛔ RALAT ATAS TEBAKAN SAYA SENDIRI. Ronde pertama menulis
+// `kolomNomorPenyakit = "NUMBER_"` dengan alasan *"NUMBER kata cadangan
+// Oracle, jadi kolomnya pasti bernama lain, dan nama itu tidak ada di
+// korpus"*. Separuh pertamanya benar; separuh keduanya KELIRU - namanya ADA
+// di korpus, dan saya membacanya tanpa melihatnya:
 //
-// Ketiganya dikumpulkan DI SINI, satu tempat, supaya koreksi dari DBA adalah
-// satu suntingan dan bukan perburuan. Uji `TestKolomPenyakitBelumDipastikan`
-// menagih OQ-K supaya pertanyaannya tidak hilang bersama giliran ini.
+//	`ReportDefinition/BrowseDiseaseLife_RD.xml`
+//	  b598 `<pyFieldName>.Number</pyFieldName>`
+//	  b599 `<pyFieldLabel>ID</pyFieldLabel>`      <- namanya, di baris berikutnya
+//	  b676-677 pasangan yang sama, kedua kalinya
+//
+// Saya membaca `pyFieldLabel: ID` di keluaran grep saya sendiri dan
+// memperlakukannya sebagai LABEL LAYAR, bukan sebagai nama kolom. Report
+// definition memang memakai `pyFieldLabel` untuk keduanya ketika propertinya
+// bernama lain dari kolomnya. Pelajarannya sempit dan tajam: sebelum
+// menyatakan sesuatu "tidak ada di korpus", periksa apa yang sudah terbaca -
+// bukan hanya apa yang sudah dicari.
+//
+// ⚠️ Lebar aslinya VARCHAR2(100)/(1000), jauh di atas isi terpanjangnya.
+// Itu fakta tabel warisan yang dibaca, bukan yang kita buat; tidak ada yang
+// perlu disesuaikan di sini.
 const (
-	kolomNomorPenyakit = "NUMBER_"
+	kolomNomorPenyakit = "ID"
 	kolomNamaPenyakit  = "DISEASE"
 	kolomICDPenyakit   = "ICD_CODE"
 )

@@ -123,27 +123,36 @@ func TestNormalkanKriteriaPenyakit(t *testing.T) {
 	}
 }
 
-// TestKolomPenyakitBelumDipastikan menagih OQ-K.
+// TestNamaKolomPenyakitDariKatalog mengunci ketiga nama kolom.
 //
-// ⛔ Ekspor yang kami terima TIDAK memuat pemetaan kelas-ke-tabel untuk
-// `Int-DISEASE_LIFE`; yang ada hanya nama properti Pega. Ketiga nama kolom
-// di `penyakit.go` karena itu belum dipastikan, dan `NUMBER_` paling lemah -
-// `NUMBER` kata cadangan Oracle, jadi kolomnya pasti bernama lain.
+// ✅ OQ-K.1 DITUTUP 27-09-2026 dari katalog DEV: `POOLDATA.DISEASE_LIFE`
+// berkolom `ID`, `ICD_CODE`, `DISEASE`. Uji pendahulunya "menagih OQ-K.1" dan
+// sengaja TIDAK memeriksa kebenaran nama - ia tidak bisa. Kini bisa.
 //
-// ⚠️ Uji ini tidak memeriksa kebenaran nama - ia tidak bisa. Yang ia jaga
-// adalah supaya pertanyaannya TIDAK HILANG: ketiganya harus tetap terkumpul
-// di satu tempat, sehingga koreksi DBA adalah satu suntingan dan bukan
-// perburuan. Bila kelak jawabannya datang, ubah konstanta-konstanta itu dan
-// hapus uji ini beserta OQ-K.
-func TestKolomPenyakitBelumDipastikan(t *testing.T) {
+// ⛔ `NUMBER_` adalah TEBAKAN yang keliru, dan namanya ada di korpus
+// sepanjang waktu: `BrowseDiseaseLife_RD.xml` b598 `.Number` diikuti b599
+// `<pyFieldLabel>ID</pyFieldLabel>`. Keluaran grep saya sendiri memuat baris
+// itu, dan saya memperlakukannya sebagai LABEL LAYAR. Uji ini menyebut
+// tebakan itu dengan namanya supaya ia tidak kembali lewat "perapian"
+// berikutnya.
+func TestNamaKolomPenyakitDariKatalog(t *testing.T) {
+	for got, harap := range map[string]string{
+		kolomNomorPenyakit: "ID",
+		kolomNamaPenyakit:  "DISEASE",
+		kolomICDPenyakit:   "ICD_CODE",
+	} {
+		if got != harap {
+			t.Errorf("nama kolom = %q, mau %q (katalog DEV 27-09-2026)", got, harap)
+		}
+	}
+	if kolomNomorPenyakit == "NUMBER_" {
+		t.Error("kolomNomorPenyakit kembali ke tebakan NUMBER_; katalog " +
+			"menyebut ID, dan RD b599 melabelinya ID pula")
+	}
 	q, _ := sqlCariPenyakit(tabelUjiPenyakit, models.KriteriaPenyakit{Nama: "X"}, 50)
 	for _, kolom := range []string{kolomNomorPenyakit, kolomNamaPenyakit, kolomICDPenyakit} {
-		if kolom == "" {
-			t.Fatal("nama kolom kosong")
-		}
 		if !strings.Contains(q, kolom) {
-			t.Errorf("kolom %q tidak lagi dipakai query; bila pemetaannya sudah "+
-				"dipastikan DBA, ubah konstantanya dan tutup OQ-K", kolom)
+			t.Errorf("kolom %q tidak dipakai query", kolom)
 		}
 	}
 	// Nama kolom tidak pernah tertempel dari luar.

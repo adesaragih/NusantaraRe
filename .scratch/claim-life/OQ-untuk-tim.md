@@ -463,3 +463,31 @@ sebagai **`RepeatGrid`** — jadi satu peserta dapat punya **banyak** diagnosa.
 `ICD Code` dan `Disease`, disambung `AND`, batas 500 / halaman 50 dari rule)*, tetapi tombol
 **`Choose` b2509 dinyatakan belum tersedia**. Memilih diagnosa ke kolom tunggal berarti **membuang
 diagnosa kedua dan seterusnya** — diam-diam, dan tanpa ada yang tahu.
+
+### ✅ OQ-K.1 DITUTUP — 27 September 2026 *(katalog DEV)*
+
+`[data DBA — katalog DEV, akun POOLDATA, agregat saja]` `POOLDATA.DISEASE_LIFE` berkolom:
+
+| Kolom | Tipe | Isi terpanjang |
+| --- | --- | ---: |
+| `ID` | `VARCHAR2(100)` | — |
+| `ICD_CODE` | `VARCHAR2(100)` | 7 |
+| `DISEASE` | `VARCHAR2(1000)` | 290 |
+
+97.586 baris. `repository/penyakit.go` kini memakai ketiganya apa adanya.
+
+⛔ **Dan tebakan kami keliru, dengan cara yang layak dicatat.** Kami menulis `NUMBER_` beralasan
+*"`NUMBER` kata cadangan Oracle, jadi kolomnya pasti bernama lain — dan nama itu tidak ada di
+korpus"*. Separuh pertamanya benar. Separuh keduanya **salah**: namanya **ada** di korpus, dan kami
+membacanya tanpa melihatnya —
+
+```
+ReportDefinition/BrowseDiseaseLife_RD.xml
+  b598  <pyFieldName>.Number</pyFieldName>
+  b599  <pyFieldLabel>ID</pyFieldLabel>      <- namanya, di baris berikutnya
+  b676-677  pasangan yang sama, kedua kalinya
+```
+
+Baris b599 **ada di keluaran grep kami sendiri** saat membaca report definition itu, dan kami
+memperlakukannya sebagai **label layar**. Pelajarannya sempit dan tajam: sebelum menyatakan sesuatu
+*"tidak ada di korpus"*, periksa apa yang **sudah terbaca** — bukan hanya apa yang sudah dicari.
