@@ -225,6 +225,12 @@ func TestKaskadeHanyaPadaEmpatRelasi(t *testing.T) {
 		// karena kelak diperbaiki di tempatnya, yang kedua karena ia
 		// perbaikannya.
 		"030_": true,
+		// Relasi 10: diagnosa per peserta (butir bd). Buktinya bukan
+		// selera: `.DiagnoseList` hidup DI DALAM halaman peserta -
+		// `SetDisease.xml` b389 menutup dengan `Obj-Save pyWorkPage`,
+		// bukan menyimpan halaman diagnosa sendiri. Menghapus peserta
+		// karena itu menghapus daftarnya.
+		"018_": true,
 	}
 	for nama, teks := range berkas {
 		if !milikClaimLife(nama) {
@@ -653,8 +659,12 @@ func TestSeluruhCreateDapatDibacaNamanya(t *testing.T) {
 	// pada masing-masing tabel anak lainnya). Nol sequence: pengenalnya
 	// dirakit di repository, pola PengenalWorkBerikut (butir pl3).
 	//
-	// 11+7 = 18 tabel + 9 sequence + 13+6 = 19 index = 46.
-	const mau = 46
+	// ⛔ Diperbarui LAGI - butir bd menambah T_CLAIMLF_DIAGNOSE:
+	// 1 tabel + 1 sequence (SEQ_CLAIMLF_DIAGNOSE) + 1 index (FK peserta).
+	// ALTER pada DISEASE tidak dihitung - ia bukan CREATE.
+	//
+	// 11+7+1 = 19 tabel + 10 sequence + 13+6+1 = 20 index = 49.
+	const mau = 49
 	if diperiksa != mau {
 		t.Errorf("pernyataan CREATE diperiksa %d, mau %d", diperiksa, mau)
 	}
@@ -747,9 +757,10 @@ func TestKolomCreateTableMembacaSeluruhTabel(t *testing.T) {
 	// Tujuh, bukan delapan: T_MIGRASI dibuat siapkanTabelMigrasi, di luar
 	// berkas migrasi. Sesudah migrasi, katalog memang memuat delapan tabel.
 	// 11 tabel Claim Life + 7 tabel PremiumList Life (tiket 00) = 18.
-	// 18 tabel + 9 sequence + 19 index = 46 pernyataan CREATE, cocok dengan
+	// 19 tabel + 10 sequence + 20 index = 49 pernyataan CREATE, cocok dengan
 	// cacah yang dikunci TestSeluruhCreateDapatDibacaNamanya.
-	const mauTabel = 18
+	// +1 tabel, +1 sequence, +1 index dari 018 (butir bd, diagnosa).
+	const mauTabel = 19
 	if tabel != mauTabel {
 		t.Errorf("CREATE TABLE terbaca %d, mau %d", tabel, mauTabel)
 	}

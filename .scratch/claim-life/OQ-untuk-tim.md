@@ -491,3 +491,29 @@ ReportDefinition/BrowseDiseaseLife_RD.xml
 Baris b599 **ada di keluaran grep kami sendiri** saat membaca report definition itu, dan kami
 memperlakukannya sebagai **label layar**. Pelajarannya sempit dan tajam: sebelum menyatakan sesuatu
 *"tidak ada di korpus"*, periksa apa yang **sudah terbaca** — bukan hanya apa yang sudah dicari.
+
+### ✅ OQ-K.2 DITUTUP — 27 September 2026 *(XML, bukan katalog)*
+
+**Banyak diagnosa per peserta.** Jawabannya ada di `Section/ClaimLifeDetailGCNM.xml`, dua baris di
+bawah tempat kami berhenti membaca:
+
+```
+b3914  kelas grid   ASM-FW-GISFW-Data-DiagnoseLife
+b3923  pyPageListProperty  .DiagnoseList
+b4690  <pyLabel>Add</pyLabel>     -> addRow    b4700/b4841
+b6160  <pyLabel>Delete</pyLabel>  -> deleteRow b6170
+```
+
+⚠️ **Sebab kami salah**: kami melihat **grid** dan menyimpulkan *"satu lawan banyak, tidak dapat
+diputuskan"*. Grid memang dapat berarti tampilan satu baris — tetapi grid ber-`Add` **dan**
+ber-`Delete` tidak dapat. Kami berhenti pada bentuk tampilannya tanpa membaca **tombolnya**.
+
+Tabel `T_CLAIMLF_DIAGNOSE` lahir di migrasi `018` *(keputusan **bd**)*.
+
+⛔ **Satu hal TETAP terbuka, dan lebih sempit — OQ-L:** daftar pilihan `GROUPDIAGNOSE`.
+Dropdown b5860/b5863 ber-`pyListSource` **`associated`**, artinya daftarnya hidup pada **rule
+properti** `.GROUPDIAGNOSE` di kelas `Data-DiagnoseLife` — dan rule itu **tidak ada di ekspor**:
+`GROUPDIAGNOSE` muncul di **tepat satu** berkas korpus, yaitu section itu sendiri.
+
+> **Mohon kirimkan** rule properti `.GROUPDIAGNOSE`, atau daftar nilainya. Kolomnya sudah dibuat;
+> nilainya **tidak dikarang**, dan layar menyatakan daftarnya belum ada.

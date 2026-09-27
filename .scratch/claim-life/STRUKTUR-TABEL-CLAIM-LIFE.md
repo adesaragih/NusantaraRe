@@ -348,6 +348,36 @@ Pecahan spreading per reinsurer. Satu baris mewakili **satu reinsurer** pada sat
 
 ---
 
+## T_CLAIMLF_DIAGNOSE
+
+Diagnosa peserta. Satu baris mewakili **satu diagnosa pada satu peserta** — daftarnya banyak,
+dan itu **rancangan**: grid `.DiagnoseList` punya tombol `Add` (b4690 → `addRow`) dan `Delete`
+(b6160 → `deleteRow`).
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID` | bilangan bulat | tidak | PK | keputusan butir bd — `SEQ_CLAIMLF_DIAGNOSE` (**ADR-0006**) |
+| `PREMIUM_LIST_DETAIL_ID` | teks | tidak | FK | keputusan butir bd — → `T_CLAIMLF_PREMIUMLIST_DETAIL.ID`, `ON DELETE CASCADE` |
+| `URUTAN` | bilangan bulat | tidak | | korpus `.pxListSubscript` — urutan grid; `SetSTS_Reject.xml` b241 memutarnya |
+| `ICD_CODE` | teks | ya | | korpus `.ICDCODE` b5616 (read-only) — diisi `SetDisease.xml` b307 |
+| `DISEASE` | teks | ya | | korpus `.DISEASE` b5422 (read-only) — diisi `SetDisease.xml` b260 |
+| `GROUP_DIAGNOSE` | teks | ya | | korpus `.GROUPDIAGNOSE` b5860 — `pxDropdown` b5863, `pyListSource associated`; **daftar pilihannya `[tidak ada di korpus]`** |
+| `STS_REJECT` | teks | ya | | korpus — `SetSTS_Reject.xml` b257 `.STS_REJECT = Primary.STS_REJECT` |
+
+**Index:** `PREMIUM_LIST_DETAIL_ID`.
+
+**Relasi:**
+
+- induknya `T_CLAIMLF_PREMIUMLIST_DETAIL` lewat `PREMIUM_LIST_DETAIL_ID` · 1:N · ON DELETE **CASCADE**
+
+⚠️ **Gerbang sunting**, dibaca dari section dan dicatat: `pyDisabledWhen`
+`.STS_REJECT=='1' || .STS_REJECT=='2'` muncul **empat kali** pada kendali di dalam grid
+(b4600–b6200). Baris yang sudah diaksep atau ditolak **tidak dapat disunting lagi**.
+
+⛔ `DISEASE` berlebar **1000**, bukan 255. Nilainya datang dari `POOLDATA.DISEASE_LIFE.DISEASE`
+`VARCHAR2(1000)` yang isi terpanjangnya **290** `[data DBA — katalog DEV]`; 255 **terbukti kurang**.
+Migrasi `018` melebarkan `T_CLAIMLF_PREMIUMLIST_DETAIL.DISEASE` pula.
+
 ## T_CLAIMLF_DOCUMENT
 
 > ⭐ **RALAT 26 September 2026 — bab ini dulu bernama `DOCUMENT_CLAIM`.**
