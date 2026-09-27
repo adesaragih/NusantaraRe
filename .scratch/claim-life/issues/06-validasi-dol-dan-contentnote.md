@@ -265,3 +265,22 @@ lain adalah regresi yang tidak terlihat bila hanya satu ujung yang diperiksa.
 | AC *"`ContentNote` **terisi**"* | derivasinya benar untuk seluruh 21 kode dan teruji satu per satu, tetapi **belum ada layar** yang menampilkannya. Tidak ada kolom `CONTENT_NOTE`, dan menurut XML memang tidak perlu ada — Pega pun menurunkannya saat itu juga. Yang kurang layarnya, bukan kolomnya |
 | Test `db` untuk pintu tanggal kejadian | jalurnya diuji di seam `services` *(pelaku anonim, pengenal kosong, tanpa Oracle)*; uji pulang-pergi terhadap Oracle menunggu G1 |
 | Frontend formulir DOL | pintunya ada dan menjawab kalimat XML; layarnya belum |
+
+---
+
+### Ralat menurut XML — 27 September 2026 (audit A0)
+
+| Butir | Teks lama | Teks baru | Bukti |
+| --- | --- | --- | --- |
+| pergeseran DOL cabang retro | *"satu JAM"*, `[dugaan — Product+UW]`, atas dasar **kecocokan cacah argumen** | **satu HARI**, `[terverifikasi — turunan]` | `Activity/LoadDataPeserta_Act.xml` pecahan baris 1097, 1143, 1163, 1183, 1203, 1223, 1243, 1263: `@addCalendar(<tanggal>,0,0,0,0,**7**,0,0)`. Tujuh di posisi kelima hanya masuk akal sebagai **jam** (WIB, UTC+7) — bukan menit pada tanggal lahir, bukan minggu. Maka posisi keempat **hari**, dan `ValidasiDOL_Act` 698 menggeser satu hari |
+| nama konstanta | `pergeseranTPTR` | `pergeseranDOLRetro` | ia jendela **retro** (`ValidasiDOL_Act` 719, 746), bukan Type TP/TR |
+
+⛔ **Sepuluh baris kasus `TestBatasJendelaTiapType` berbalik** — inilah "daftar kasus yang berbalik"
+yang bab pembacaan XML tiket ini janjikan. Batas per-jam diganti batas per-hari, dan keduanya
+dibuktikan merah bila konstanta dikembalikan.
+
+⚠️ **AC yang belum tertutup bertambah alasannya:** `ContentNote` di luar `DEATH`. Audit A0 menemukan
+`SaveOutStandingLife_Act` punya **dua** langkah bergerbang `!= "DEATH"` (baris 4054, 4199) di samping
+tiga yang `= "DEATH"` (3446, 3679, 3823) — dan sensus kode kita menunjukkan **10 dari 21** kode bisnis
+bukan DEATH (5 HEALTH, 2 CI, 2 TPD, 1 TI). Cabang itu **terjangkau** dan belum ditiru.
+

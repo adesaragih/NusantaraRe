@@ -78,16 +78,23 @@ func TestBatasJendelaTiapType(t *testing.T) {
 		{"QP", grossSelesai, true, "tepat di tanggal berakhir"},
 		{"QP", "2025-09-01 01:00:00", false, "satu jam sesudah berakhir"},
 
-		// TP/TR - jendela retro, digeser satu jam. Keempat batas, kedua Type.
-		{"TR", "2025-03-31 23:00:00", false, "satu jam sebelum mulai"},
+		// TP/TR - jendela retro, DOL digeser SATU HARI sebelum dibandingkan.
+		//
+		// ⛔ RALAT A0: kasus-kasus ini semula memakai pergeseran satu JAM, dan
+		// batas-batasnya ikut berubah ketika bacaan korpus diralat. Inilah
+		// "daftar kasus yang berbalik" yang komentar tiket 06 janjikan.
+		//
+		// Dengan geser +1 hari, DOL d dibandingkan sebagai d+1hari:
+		//   mulai retro 2025-04-01, berakhir 2025-10-01.
+		{"TR", "2025-03-30 00:00:00", false, "dua hari sebelum mulai: d+1 masih sebelum mulai"},
+		{"TR", "2025-03-31 12:00:00", true, "sehari sebelum mulai: d+1 melewati mulai"},
 		{"TR", retroMulai, true, "tepat di tanggal mulai: pergeseran membuatnya masuk"},
-		{"TR", "2025-04-01 01:00:00", true, "satu jam sesudah mulai"},
-		{"TR", "2025-09-30 23:00:00", true, "satu jam sebelum berakhir"},
+		{"TR", "2025-09-29 00:00:00", true, "dua hari sebelum berakhir: d+1 masih di dalam"},
+		{"TR", "2025-09-30 12:00:00", false, "sehari sebelum berakhir: d+1 melewati akhir"},
 		{"TR", retroSelesai, false, "tepat di tanggal berakhir: pergeseran melewatinya"},
-		{"TP", "2025-03-31 23:00:00", false, "satu jam sebelum mulai"},
+		{"TP", "2025-03-30 00:00:00", false, "dua hari sebelum mulai"},
 		{"TP", retroMulai, true, "tepat di tanggal mulai"},
-		{"TP", "2025-04-01 01:00:00", true, "satu jam sesudah mulai"},
-		{"TP", "2025-09-30 23:00:00", true, "satu jam sebelum berakhir"},
+		{"TP", "2025-09-29 00:00:00", true, "dua hari sebelum berakhir"},
 		{"TP", retroSelesai, false, "tepat di tanggal berakhir"},
 
 		// Cabang yang benar-benar terpisah: tanggal yang sah di satu jendela
@@ -283,5 +290,32 @@ func TestSetTanggalKejadianTanpaOracleGagal(t *testing.T) {
 		saat(t, "2025-06-01 00:00:00"))
 	if !errors.Is(err, repository.ErrTanpaOracle) {
 		t.Fatalf("galat = %v, mau ErrTanpaOracle", err)
+	}
+}
+
+// TestPergeseranDOLSatuHariBukanSatuJam - ralat A0 atas `[dugaan]` tiket 06.
+//
+// ⛔ Tanda tangan `@addCalendar` DITENTUKAN oleh korpus, bukan dicocokkan dari
+// cacah argumen. Jangkarnya `Claim Life/Activity/LoadDataPeserta_Act.xml`
+// pecahan baris 1097, 1143, 1163, 1183, 1203, 1223, 1243, dan 1263 - kedelapan
+// tanggal peserta dimuat lewat `@addCalendar(<tanggal>,0,0,0,0,7,0,0)`.
+//
+// Angka **7** di posisi kelima tidak mungkin menit maupun minggu: tidak ada
+// yang menggeser tanggal LAHIR tujuh menit, dan tujuh minggu akan memindahkan
+// orang ke bulan lain. Tujuh JAM adalah WIB (UTC+7) - normalisasi zona yang
+// wajar untuk data Indonesia. Maka posisi kelima = JAM, dan posisi keempat =
+// HARI, sesuai tanda tangan baku
+// `(tanggal, tahun, bulan, minggu, hari, jam, menit, detik)`.
+//
+// Akibatnya `ValidasiDOL_Act` baris 698 `(.DATE_OF_LOSS,0,0,0,1,0,0,0)`
+// menggeser DOL **satu HARI**, bukan satu jam seperti dugaan ronde pertama -
+// yang menaruh jam di posisi keempat atas dasar kecocokan cacah argumen saja.
+func TestPergeseranDOLSatuHariBukanSatuJam(t *testing.T) {
+	const seharusnya = 24 * time.Hour
+	if services.PergeseranDOLRetro() != seharusnya {
+		t.Errorf("pergeseran = %v, mau %v (satu hari). Jangkarnya angka 7 = WIB "+
+			"di LoadDataPeserta_Act, yang menetapkan posisi kelima sebagai jam "+
+			"dan posisi keempat sebagai hari",
+			services.PergeseranDOLRetro(), seharusnya)
 	}
 }

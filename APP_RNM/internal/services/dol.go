@@ -43,15 +43,24 @@ const (
 // ⛔ DUA ASUMSI PUSTAKA PEGA, bukan fakta korpus. Keduanya diberi nama supaya
 // terlihat, dapat dicari, dan dapat diubah dalam satu baris disertai testnya.
 //
-// `[dugaan - Product+UW]` `pergeseranTPTR`: cabang TP/TR memanggil
-// `@addCalendar(.DATE_OF_LOSS,0,0,0,1,0,0,0)` - TUJUH argumen angka sesudah
-// tanggalnya (`Claim Life/Activity/ValidasiDOL_Act.xml`, baris 698 berkas
-// pecahan; cabang QP/QR di baris 457 memakai rule yang sama dengan seluruh
-// argumen nol, jadi ia tidak bergeser sama sekali). Tujuh angka COCOK dengan
-// tanda tangan `@addCalendar` yang berargumen milidetik -
-// `(tanggal, tahun, bulan, hari, jam, menit, detik, milidetik)` - dan pada
-// tanda tangan itu posisi keempat adalah jam. ⚠️ Definisinya sendiri TIDAK ada
-// di korpus; ini kecocokan cacah argumen, bukan bacaan langsung.
+// ⛔ RALAT A0 — 27-09-2026. Ronde pertama menebak tanda tangannya dari CACAH
+// ARGUMEN saja: `(tanggal, tahun, bulan, hari, jam, menit, detik, milidetik)`,
+// yang menaruh JAM di posisi keempat - dan karena itu membaca
+// `(.DATE_OF_LOSS,0,0,0,1,0,0,0)` sebagai satu JAM.
+//
+// Korpus sendiri menentukannya, dan itu terlewat: `[terverifikasi]`
+// `Claim Life/Activity/LoadDataPeserta_Act.xml` pecahan baris 1097, 1143,
+// 1163, 1183, 1203, 1223, 1243, dan 1263 memuat kedelapan tanggal peserta
+// lewat `@addCalendar(<tanggal>,0,0,0,0,7,0,0)` - angka **7** di posisi
+// KELIMA. Tujuh menit tidak menggeser apa pun yang berarti pada tanggal lahir,
+// dan tujuh minggu memindahkannya ke bulan lain; tujuh JAM adalah WIB (UTC+7).
+// Maka posisi kelima JAM, posisi keempat HARI - tanda tangan baku
+// `(tanggal, tahun, bulan, minggu, hari, jam, menit, detik)`.
+//
+// `[terverifikasi - turunan]` `pergeseranDOLRetro`: `ValidasiDOL_Act` baris
+// 698 menggeser DOL **SATU HARI** sebelum dibandingkan dengan jendela
+// RETROCESSION (baris 719, 746). Cabang jendela GROSS di baris 458 memakai
+// seluruh argumen nol - tidak bergeser sama sekali (baris 486, 526).
 //
 // `[dugaan - Product+UW]` `bandingKetat`: `@CompareDates(a,b)` bernilai benar
 // bila `a` SESUDAH `b`, ketat. Korpus tidak memuat definisinya.
@@ -67,8 +76,9 @@ const (
 // tidak berjalan sendiri-sendiri. Ringkasnya: mengubah `bandingKetat` membalik
 // batas di KEDUA ujung dan pada KEDUA cabang, bukan hanya satu kasus.
 const (
-	pergeseranTPTR = time.Hour
-	bandingKetat   = true
+	// Satu HARI, bukan satu jam - lihat ralat di atas.
+	pergeseranDOLRetro = 24 * time.Hour
+	bandingKetat       = true
 )
 
 var (
@@ -124,7 +134,7 @@ func ValidasiDOL(tipe string, dol time.Time, p models.Peserta) error {
 	case TypeQR, TypeQP:
 		gross = true
 	case TypeTR, TypeTP:
-		geser = pergeseranTPTR
+		geser = pergeseranDOLRetro
 	}
 
 	// ⛔ DOL kosong ditolak TERPISAH. Waktu nol adalah tahun 1 Masehi, yang
@@ -239,3 +249,10 @@ func (t *TanggalKejadian) Set(ctx context.Context, pelaku Pelaku,
 		return baca.PerbaruiTanggalKejadian(ctx, tx, pesertaID, dol)
 	})
 }
+
+// PergeseranDOLRetro membuka pergeseran itu untuk diuji.
+//
+// ⚠️ Fungsi, bukan konstanta yang diekspor: nilainya hasil pembacaan korpus
+// dan boleh berubah bila bacaan itu diralat lagi - dan bila berubah, testnya
+// yang menyebut jangkarnya ikut merah.
+func PergeseranDOLRetro() time.Duration { return pergeseranDOLRetro }
