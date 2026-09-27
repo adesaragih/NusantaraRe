@@ -214,11 +214,31 @@ func TestAdjustmentMenggantungPadaPeserta(t *testing.T) {
 	}
 }
 
-// Kaskade hanya pada relasi 3, 4, 5, 6. T_CLAIMLF_DOCUMENT (relasi 7) ditangani
-// di Go, jadi kunci tamunya TANPA ON DELETE.
+// Kaskade pada relasi 3, 4, 5, 6 - dan relasi 9, roster komite.
+// T_CLAIMLF_DOCUMENT (relasi 7) ditangani di Go, jadi kunci tamunya TANPA
+// ON DELETE.
+//
+// ⛔ RALAT 27-09-2026, dan penjaga ini sempat MENEGAKKAN cacatnya sendiri.
+// Daftar di bawah ditulis ketika hanya migrasi Claim Life ada, dan ia
+// menuntut `013_tabel_komite.sql` TIDAK berkaskade. Tetapi
+// `STRUKTUR-TABEL-KOMITE-CLAIM-LIFE.md` menyebut relasi
+// `T_GENERAL_KOMITE` -> `T_KOMITE_KOMITELIST` sebagai `ON DELETE CASCADE` di
+// TIGA tempat (baris 159, 238, 253), dan 013 membuatnya tanpa `ON DELETE`.
+// Jadi penjaga ini bukan hanya melewatkan cacat - ia menahan perbaikannya.
+//
+// ⚠️ Akibat cacat itu nyata: menghapus satu kasus komite DITOLAK Oracle
+// (ORA-02292) selama masih ada baris roster yang menunjuknya, dan itu jalur
+// yang tiket 05 perlukan. Migrasi `030` memperbaikinya lewat ALTER.
 func TestKaskadeHanyaPadaEmpatRelasi(t *testing.T) {
 	berkas := seluruhSQL(t, false)
-	berkaskade := map[string]bool{"003_": true, "004_": true, "005_": true, "006_": true}
+	berkaskade := map[string]bool{
+		"003_": true, "004_": true, "005_": true, "006_": true,
+		// Relasi 9: roster komite. 013 membuatnya TANPA kaskade (cacat),
+		// 030 memasangnya lewat ALTER. Keduanya terdaftar: yang pertama
+		// karena kelak diperbaiki di tempatnya, yang kedua karena ia
+		// perbaikannya.
+		"030_": true,
+	}
 	for nama, teks := range berkas {
 		isi := strings.ToUpper(teks)
 		ada := strings.Contains(isi, "ON DELETE CASCADE")

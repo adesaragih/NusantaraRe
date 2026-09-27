@@ -1,6 +1,6 @@
 # 00: Skema penyimpanan komite (`T_GENERAL_KOMITE` + `T_KOMITE_KOMITELIST`) + `COVER_KEY` — **PREFACTOR**
 
-**Status:** ready-for-agent
+**Status:** sebagian terkerjakan — verifikasi `013` selesai, dua celah ditambal `030`, penjaga dipasang; `-migrate` menunggu skema uji dan persetujuan
 
 **Blocked by:** **Claim Life tiket `14`** (skema klaim — `T_CLAIMLF_ADJUSTMENT` dan `T_WORK_CLAIM`
 harus ada lebih dulu; tabel di sini merujuk keduanya)
@@ -225,3 +225,95 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+## Implementasi — 27 September 2026 (verifikasi `013` + migrasi `030`)
+
+⚠️ **Butir km1: tiket ini VERIFIKASI, bukan pembuatan ulang.** `013_tabel_komite.sql` sudah membuat
+kedua tabel di `main`. Yang dikerjakan: mencocokkan bentuknya dengan
+`STRUKTUR-TABEL-KOMITE-CLAIM-LIFE.md`, menambal yang **kurang**, dan memasang penjaga.
+
+### ⛔ Ralat tiket ini sendiri — tiga nama kolom
+
+Bab *"Bentuk yang dibangun"* di atas menyebut `KOMITE_ID` *(anggota pemutus)*, `ID_KOMITE`
+*(jabatan)*, dan `KOMITE_APROVAL`. **Ketiganya sudah diganti** `[keputusan work owner]`
+2026-09-18 sore, dan STRUKTUR mencatat penggantiannya di bab *"Tiga nama kolom diganti"*:
+
+| Nama di tiket | Nama sebenarnya | Sebab |
+| --- | --- | --- |
+| `KOMITE_ID` | **`KOMITE_OPERATORID`** | isinya akun **operator** (`KomiteID := .OPERATOR_ID`) |
+| `ID_KOMITE` | **`KOMITE_JABATAN`** | isinya **jabatan** (`IDKomite := .JABATAN`) |
+| `KOMITE_APROVAL` | **`KOMITE_APPROVAL`** | ejaan dibetulkan *(korpus satu P)* |
+
+DDL `013` sudah memakai nama yang **benar**; yang tertinggal adalah teks tiket ini.
+
+### Dua celah bentuk yang ditemukan, dan ditambal `030`
+
+**Celah 1 — kaskade yang dijanjikan tetapi tidak ada.** STRUKTUR menyebut relasi
+`T_GENERAL_KOMITE → T_KOMITE_KOMITELIST` sebagai `ON DELETE CASCADE` di **tiga** tempat
+*(baris 159, 238, 253)*, dan tiket ini mengulanginya. `013` membuat `FK_KOMITELIST_KOMITE`
+**tanpa `ON DELETE`**.
+
+⚠️ Akibatnya nyata: menghapus satu kasus komite akan **ditolak Oracle** (ORA-02292) selama masih ada
+baris roster yang menunjuknya — dan itu jalur yang **tiket 05** perlukan.
+
+⛔ **Dan penjaga kita sendiri menegakkan cacat itu.** `TestKaskadeHanyaPadaEmpatRelasi` ditulis
+ketika hanya migrasi Claim Life ada; daftarnya menuntut `013` **tidak** berkaskade. Jadi ia bukan
+sekadar melewatkan cacat — **ia menahan perbaikannya**. Daftarnya diralat.
+
+**Celah 2 — lebar kolom penunjuk berbeda dari induknya.**
+
+| Kolom | `013` | Induknya |
+| --- | --- | --- |
+| `T_GENERAL_KOMITE.ID` | `VARCHAR2(40)` | `T_WORK_CLAIM.ID` `VARCHAR2(32)` |
+| `T_GENERAL_KOMITE.ADJUSTMENT_ID` | `VARCHAR2(40)` | `T_CLAIMLF_ADJUSTMENT.ID` `VARCHAR2(32)` |
+| `T_KOMITE_KOMITELIST.ID` / `DATA_KOMITE_ID` | `VARCHAR2(40)` | `T_GENERAL_KOMITE.ID` |
+
+⚠️ Oracle **menerima** kunci tamu antarlebar berbeda, jadi ini tidak pernah gagal — **ia hanya
+berbohong**. Kolom 40 karakter yang menunjuk kolom 32 karakter menjanjikan ruang yang tidak dapat
+dipakai: nilai ke-33 sampai ke-40 tidak akan pernah punya induk. **Shared PK yang lebarnya berbeda
+dari induknya bukan shared PK, melainkan kebetulan yang sedang cocok.**
+
+### Yang DICOCOKKAN dan ternyata benar
+
+| Hal | Hasil |
+| --- | --- |
+| `ADJUSTMENT_ID` **tanpa** `REFERENCES` *(dua tabel tujuan menurut `LINI`)* | ✅ sesuai |
+| Index **UNIK** pada `ADJUSTMENT_ID` | ✅ `UX_GENERAL_KOMITE_ADJ` |
+| `ACCEPT_STATUS` / `KOMITE_APPROVAL` **teks**, bukan angka *(ADR-U-0022)* | ✅ |
+| Nol kolom `WORK_CLAIM_ID`, nol `KMT_NO` | ✅ |
+| `T_WORK_CLAIM.COVER_KEY` + `LINI` ada dan nullable | ✅ migrasi `001` |
+| `SEQ_KOMITE_KOMITELIST` ada *(ADR-0006 untuk `T_KOMITE_KOMITELIST.ID`)* | ✅ |
+| Kesembilan nama kolom `T_KOMITE_KOMITELIST` | ✅ cocok STRUKTUR |
+
+### Cacat di penjaga bersama yang ikut ketahuan
+
+Dokumen STRUKTUR kedua tidak dapat ditambahkan sebelum **dua** cacat pemecahnya diperbaiki:
+
+1. **Pemecah bab hanya mengenali `## `.** Dokumen Komite punya dua bab ber-`### ` yang tabelnya
+   berisi nama kolom *(daftar ganti-nama dan daftar penutup)*, sehingga `T_KOMITE_KOMITELIST` tampak
+   punya **26** kolom padahal sembilan. Komentar penjaga itu sendiri mencatat cacat serupa pernah
+   terjadi — tambalannya hanya menutup separuh.
+2. **Pembaca TIPE tidak pernah punya penjaga bab sama sekali.** Bab `### Daftar penutup` bertabel
+   **dua** kolom *(nama + keterangan)*, sehingga **keterangan terbaca sebagai tipe** — *"penyetuju ke
+   berapa"* menjadi golongan tipe, dan penjaga lalu menuduh DDL yang benar.
+
+Dan `tipeMenurutDDL` hanya membaca `CREATE TABLE`, sehingga ia membaca bentuk saat tabel **lahir** —
+bukan bentuknya sesudah seluruh migrasi. Tanpa `ALTER … MODIFY`, penjaga lebar akan menuduh skema
+yang justru sudah diperbaiki `030`.
+
+### Penjaga BARU, tiap satunya dibuat gagal lebih dulu
+
+| Penjaga | Dibuat gagal dengan | Berbunyi |
+| --- | --- | --- |
+| `TestKaskadeHanyaPadaEmpatRelasi` *(diralat)* | cabut `ON DELETE CASCADE` dari `030` | `ada=false, mau=true` |
+| `TestLebarKolomPenunjukSamaDenganIndukNya` | kembalikan `ADJUSTMENT_ID` ke 40 | menyebut kedua tipe |
+| `TestDokumenSTRUKTURSepakatAtasTabelBersama` | sisipkan kolom karangan di satu dokumen | `digambarkan BERBEDA` |
+
+### ⛔ Yang BELUM dijalankan
+
+**`-migrate` belum pernah dijalankan.** `030` berisi `ALTER … MODIFY` yang **menyempitkan** kolom —
+aman hanya bila tidak ada nilai lebih panjang; bila kelak ada, Oracle sendiri menolak (ORA-01441),
+gagal terang. Menjalankannya menuntut skema uji dan **persetujuan manusia**.
+
+**AC yang tercentang:** bentuk kedua tabel + shared PK + FK + index unik + sequence; `COVER_KEY`
+nullable; nol `WORK_CLAIM_ID`/`KMT_NO`. **Belum:** yang menuntut basis data sungguhan.

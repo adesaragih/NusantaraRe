@@ -62,6 +62,16 @@ var berkasKomiteBolehMenyebut = map[string]string{
 	// Yang tetap dijaga: nol berkas LAIN menyentuhnya, dan nol indeks posisi
 	// dipakai sebagai kunci rujukan di mana pun.
 	"internal/repository/kasuskomite.go": "butir af - penulis tangga, meniru CreateKMTLife_Act (activity Claim Life)",
+	// ⛔ Penjaga BENTUK SKEMA, bukan jalur simpan. Ia menyebut kedua nama
+	// tabel justru untuk memeriksa bahwa KEDUA dokumen STRUKTUR - Claim Life
+	// dan Komite Claim Life - sepakat atas bentuknya
+	// (TestDokumenSTRUKTURSepakatAtasTabelBersama). Melarangnya menyebut nama
+	// itu berarti melarang satu-satunya uji yang menjaga batas kedua konteks
+	// tetap satu bentuk.
+	//
+	// ⚠️ Pengecualian ini TIDAK melonggarkan aturannya: berkas itu berkas
+	// UJI, ia tidak menulis satu baris pun ke basis data.
+	"internal/repository/strukturkolom_test.go": "penjaga bentuk skema lintas dokumen; berkas uji, nol jalur simpan",
 }
 
 // TestNolPenyimpanKeputusanKomiteDiKonteksIni menegakkan batas konteks.

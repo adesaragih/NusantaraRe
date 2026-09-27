@@ -20,14 +20,35 @@ package repository
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"sort"
 	"strings"
 	"testing"
 )
 
-// letakStruktur menunjuk dokumen STRUKTUR dari folder paket ini.
-const letakStruktur = "../../../.scratch/claim-life/STRUKTUR-TABEL-CLAIM-LIFE.md"
+// letakStruktur menunjuk SELURUH dokumen STRUKTUR dari folder paket ini.
+//
+// ⛔ DUA dokumen sejak tiket 00 Komite Claim Life, dan keduanya WAJIB -
+// bukan "yang ada saja". Satu berkas migrasi yang tabelnya tidak tercatat di
+// dokumen mana pun adalah tabel yang lahir tanpa keputusan tertulis, dan
+// itulah yang penjaga ini ada untuk cegah.
+//
+// ⚠️ `T_GENERAL_KOMITE` dan `T_KOMITE_KOMITELIST` disebut KEDUA dokumen.
+// Itu bukan kesalahan - keduanya memang batas antara dua konteks - tetapi ia
+// menuntut penjaga sendiri: `TestDokumenSTRUKTURSepakatAtasTabelBersama`.
+var letakStruktur = []string{
+	"../../../.scratch/claim-life/STRUKTUR-TABEL-CLAIM-LIFE.md",
+	"../../../.scratch/komite-claim-life/STRUKTUR-TABEL-KOMITE-CLAIM-LIFE.md",
+}
+
+// tabelBersamaDuaKonteks adalah tabel yang KEDUA dokumen STRUKTUR gambarkan.
+//
+// ⛔ Keduanya batas antara Claim Life dan Komite Claim Life: Claim Life
+// MENYERAHKAN kasus, Komite MEMUTUSKAN. Dokumen yang berbeda isinya berarti
+// salah satu konteks bekerja dari bentuk yang sudah usang - dan bedanya baru
+// terlihat ketika satu sisi menulis kolom yang sisi lain tidak baca.
+var tabelBersamaDuaKonteks = []string{"T_GENERAL_KOMITE", "T_KOMITE_KOMITELIST"}
 
 // tabelDikecualikan mendaftar tabel yang STRUKTUR sengaja tidak memuat
 // kolomnya, beserta sebabnya.
@@ -64,13 +85,22 @@ var (
 // kolomMenurutStruktur membaca dokumen STRUKTUR menjadi peta tabel -> kolom.
 func kolomMenurutStruktur(t *testing.T) map[string][]string {
 	t.Helper()
-	isi, err := os.ReadFile(filepath.FromSlash(letakStruktur))
+	hasil := map[string][]string{}
+	for _, letak := range letakStruktur {
+		bacaSatuStruktur(t, letak, hasil)
+	}
+	return hasil
+}
+
+// bacaSatuStruktur menambahkan kolom satu dokumen STRUKTUR ke peta bersama.
+func bacaSatuStruktur(t *testing.T, letak string, hasil map[string][]string) {
+	t.Helper()
+	isi, err := os.ReadFile(filepath.FromSlash(letak))
 	if err != nil {
 		// Sengaja gagal, bukan melewati. Dokumen ini bagian dari repositori
 		// yang sama; bila ia hilang, test inilah yang harus memberitahu.
-		t.Fatalf("dokumen STRUKTUR tidak terbaca di %s: %v", letakStruktur, err)
+		t.Fatalf("dokumen STRUKTUR tidak terbaca di %s: %v", letak, err)
 	}
-	hasil := map[string][]string{}
 	var kini string
 	for _, baris := range strings.Split(string(isi), "\n") {
 		baris = strings.TrimRight(baris, "\r")
@@ -87,7 +117,16 @@ func kolomMenurutStruktur(t *testing.T) map[string][]string {
 		// 6 menambahkan tiga blok begitu, dan kolom di dalamnya diam-diam
 		// dihitung sebagai kolom tabel lain. Baru terlihat saat satu
 		// pengecualian dicabut.
-		if strings.HasPrefix(baris, "## ") {
+		// ⛔ JUDUL TINGKAT MANA PUN mengakhiri bab tabel - bukan hanya "## ".
+		//
+		// Ronde sebelumnya hanya memeriksa "## ", dan itu menambal separuh
+		// lubang: dokumen STRUKTUR Komite memuat dua bab ber-"### " yang
+		// TABELNYA berisi nama kolom - satu daftar ganti-nama dan satu daftar
+		// penutup. Keduanya akan diatribusikan ke tabel terakhir yang
+		// kebetulan disebut, sehingga `T_KOMITE_KOMITELIST` tampak punya 26
+		// kolom padahal sembilan. Diperiksa 27-09-2026 saat dokumen ketiga
+		// hendak ditambahkan.
+		if strings.HasPrefix(baris, "#") {
 			kini = ""
 			continue
 		}
@@ -96,10 +135,20 @@ func kolomMenurutStruktur(t *testing.T) map[string][]string {
 		}
 		sel := strings.Split(strings.Trim(strings.TrimSpace(baris), "|"), "|")
 		if k := polaSelKolom.FindStringSubmatch(strings.TrimSpace(sel[0])); k != nil {
-			hasil[kini] = append(hasil[kini], k[1])
+			// ⛔ Tabel yang disebut DUA dokumen tidak digabung diam-diam:
+			// nama kolom yang sudah ada dilewati, dan kesepakatan kedua
+			// dokumen diperiksa TestDokumenSTRUKTURSepakatAtasTabelBersama.
+			sudah := false
+			for _, n := range hasil[kini] {
+				if n == k[1] {
+					sudah = true
+				}
+			}
+			if !sudah {
+				hasil[kini] = append(hasil[kini], k[1])
+			}
 		}
 	}
-	return hasil
 }
 
 // kolomMenurutDDL membaca berkas migrasi maju menjadi peta tabel -> kolom.
@@ -210,6 +259,53 @@ func TestKolomDDLCocokDenganStruktur(t *testing.T) {
 	}
 }
 
+// Kedua dokumen STRUKTUR wajib SEPAKAT atas tabel yang keduanya gambarkan.
+//
+// ⛔ `T_GENERAL_KOMITE` dan `T_KOMITE_KOMITELIST` adalah BATAS antara Claim
+// Life dan Komite Claim Life: yang satu menyerahkan kasus, yang lain
+// memutuskan. Dokumen yang berbeda isinya berarti salah satu konteks bekerja
+// dari bentuk yang sudah usang - dan bedanya baru terlihat ketika satu sisi
+// menulis kolom yang sisi lain tidak baca.
+//
+// ⚠️ Diperiksa DARI DOKUMEN, bukan dari DDL. DDL hanya satu, jadi
+// membandingkannya dengan dirinya sendiri tidak membuktikan apa pun tentang
+// kesepakatan kedua konteks.
+func TestDokumenSTRUKTURSepakatAtasTabelBersama(t *testing.T) {
+	if len(letakStruktur) < 2 {
+		t.Skip("hanya satu dokumen STRUKTUR; tidak ada yang dibandingkan")
+	}
+	perDokumen := make([]map[string][]string, 0, len(letakStruktur))
+	for _, letak := range letakStruktur {
+		satu := map[string][]string{}
+		bacaSatuStruktur(t, letak, satu)
+		perDokumen = append(perDokumen, satu)
+	}
+	for _, tabel := range tabelBersamaDuaKonteks {
+		var acuan []string
+		var acuanDari string
+		for i, d := range perDokumen {
+			kolom, ada := d[tabel]
+			if !ada || len(kolom) == 0 {
+				continue
+			}
+			if acuan == nil {
+				acuan, acuanDari = kolom, letakStruktur[i]
+				continue
+			}
+			if !reflect.DeepEqual(acuan, kolom) {
+				t.Errorf("%s digambarkan BERBEDA oleh dua dokumen STRUKTUR.\n"+
+					"  %s: %v\n  %s: %v\n"+
+					"Keduanya batas antara dua konteks; bentuk yang berbeda berarti "+
+					"salah satunya sudah usang.", tabel, acuanDari, acuan,
+					letakStruktur[i], kolom)
+			}
+		}
+		if acuan == nil {
+			t.Errorf("%s tidak digambarkan dokumen STRUKTUR mana pun", tabel)
+		}
+	}
+}
+
 // Tabel yang dikecualikan harus memang ada di DDL - pengecualian bukan alasan
 // untuk lupa membuatnya.
 func TestTabelDikecualikanTetapDibuat(t *testing.T) {
@@ -290,17 +386,39 @@ func golonganStruktur(tipe string) string {
 // tipeMenurutStruktur membaca kolom "Tipe" dokumen STRUKTUR.
 func tipeMenurutStruktur(t *testing.T) map[string]map[string]string {
 	t.Helper()
-	isi, err := os.ReadFile(filepath.FromSlash(letakStruktur))
-	if err != nil {
-		t.Fatalf("dokumen STRUKTUR tidak terbaca: %v", err)
-	}
 	hasil := map[string]map[string]string{}
+	for _, letak := range letakStruktur {
+		bacaSatuTipe(t, letak, hasil)
+	}
+	return hasil
+}
+
+// bacaSatuTipe menambahkan tipe kolom satu dokumen STRUKTUR ke peta bersama.
+func bacaSatuTipe(t *testing.T, letak string, hasil map[string]map[string]string) {
+	t.Helper()
+	isi, err := os.ReadFile(filepath.FromSlash(letak))
+	if err != nil {
+		t.Fatalf("dokumen STRUKTUR tidak terbaca di %s: %v", letak, err)
+	}
 	var kini string
 	for _, baris := range strings.Split(string(isi), "\n") {
 		baris = strings.TrimRight(baris, "\r")
 		if j := polaJudulTabel.FindStringSubmatch(baris); j != nil {
 			kini = j[1]
-			hasil[kini] = map[string]string{}
+			if hasil[kini] == nil {
+				hasil[kini] = map[string]string{}
+			}
+			continue
+		}
+		// ⛔ JUDUL TINGKAT MANA PUN mengakhiri bab tabel. Pembaca kolom sudah
+		// punya penjaga ini; pembaca TIPE tidak pernah punya, dan itu baru
+		// terlihat ketika dokumen kedua ditambahkan: bab "### Daftar penutup"
+		// di STRUKTUR Komite bertabel DUA kolom (nama + keterangan), sehingga
+		// KETERANGAN terbaca sebagai TIPE - "penyetuju ke berapa" menjadi
+		// golongan tipe. Penjaga yang membandingkan tipe lalu menuduh DDL
+		// yang benar.
+		if strings.HasPrefix(baris, "#") {
+			kini = ""
 			continue
 		}
 		if kini == "" || !strings.HasPrefix(baris, "|") {
@@ -314,7 +432,6 @@ func tipeMenurutStruktur(t *testing.T) map[string]map[string]string {
 			hasil[kini][k[1]] = strings.TrimSpace(sel[1])
 		}
 	}
-	return hasil
 }
 
 // tipeMenurutDDL membaca tipe tiap kolom dari berkas migrasi.
@@ -340,7 +457,63 @@ func tipeMenurutDDL(t *testing.T) map[string]map[string]string {
 			hasil[nama] = kolom
 		}
 	}
+	// ⛔ `ALTER … MODIFY` ikut diterapkan, SESUDAH seluruh CREATE terbaca.
+	//
+	// Tanpa ini penjaga lebar kolom membaca bentuk saat tabel LAHIR, bukan
+	// bentuknya sesudah seluruh migrasi berjalan - dan ia akan menuduh skema
+	// yang justru sudah diperbaiki migrasi berikutnya. Penjaga yang menuduh
+	// hal yang benar akan dilonggarkan orang, bukan dipatuhi.
+	//
+	// ⚠️ Urutannya dijaga `daftarMigrasi` lewat `seluruhSQL`; MODIFY yang
+	// mendahului CREATE-nya sendiri tidak mungkin, sebab nomor migrasi naik.
+	terapkanAlterModify(t, hasil)
 	return hasil
+}
+
+// polaAwalModify mengenali baris pembuka `ALTER TABLE {skema}.X MODIFY (`.
+//
+// ⚠️ BERBASIS BARIS, bukan satu regex atas seluruh blok. Regex bertanda
+// kurung bersarang yang mencoba menangkap `VARCHAR2(32)` di dalam `MODIFY(…)`
+// berhenti di kurung tutup PERTAMA, sehingga tipenya terbaca `VARCHAR2`
+// tanpa lebar - dan penjaga lebar lalu membandingkan dua nilai yang
+// dua-duanya salah. Pemecah baris memakai aturan yang sama dengan pembaca
+// CREATE di atas, jadi keduanya tidak dapat berbeda tafsir.
+var polaAwalModify = regexp.MustCompile(
+	`(?i)^ALTER\s+TABLE\s+\{skema\}\.([A-Z][A-Z0-9_]*)\s+MODIFY\s*\($`)
+
+// terapkanAlterModify menimpa tipe kolom dengan bentuk sesudah ALTER MODIFY.
+func terapkanAlterModify(t *testing.T, hasil map[string]map[string]string) {
+	t.Helper()
+	polaKolomTipe := regexp.MustCompile(`^([A-Z][A-Z0-9_]*)\s+([A-Z0-9_]+(?:\([^)]*\))?)`)
+	for nama, isi := range seluruhSQL(t, false) {
+		if strings.Contains(nama, "_down") {
+			continue // jalur mundur bukan bentuk akhir
+		}
+		tabel := ""
+		for _, baris := range strings.Split(isi, "\n") {
+			b := strings.TrimSpace(baris)
+			if m := polaAwalModify.FindStringSubmatch(b); m != nil {
+				tabel = strings.ToUpper(m[1])
+				if hasil[tabel] == nil {
+					t.Errorf("%s: MODIFY atas tabel %s yang tidak pernah dibuat CREATE",
+						nama, tabel)
+					tabel = ""
+				}
+				continue
+			}
+			if tabel == "" {
+				continue
+			}
+			if b == ")" || b == "/" {
+				tabel = ""
+				continue
+			}
+			atas := strings.ToUpper(strings.TrimSuffix(b, ","))
+			if k := polaKolomTipe.FindStringSubmatch(atas); k != nil {
+				hasil[tabel][k[1]] = k[2]
+			}
+		}
+	}
 }
 
 // Golongan tipe tiap kolom DDL cocok dengan yang ditulis STRUKTUR.
@@ -436,4 +609,52 @@ func daftarPresisiSah() []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+// pasanganLebarKolom memasangkan kolom penunjuk dengan kolom yang ditunjuknya.
+//
+// ⛔ Lebar yang berbeda TIDAK pernah gagal di Oracle - ia hanya berbohong.
+// Kolom 40 karakter yang menunjuk kolom 32 karakter menjanjikan ruang yang
+// tidak dapat dipakai: nilai ke-33 sampai ke-40 tidak akan pernah punya
+// induk. Shared PK yang lebarnya berbeda dari induknya bukan shared PK,
+// melainkan kebetulan yang sedang cocok.
+var pasanganLebarKolom = []struct{ anakTabel, anakKolom, indukTabel, indukKolom string }{
+	{"T_GENERAL_KOMITE", "ID", "T_WORK_CLAIM", "ID"},
+	{"T_GENERAL_KOMITE", "ADJUSTMENT_ID", "T_CLAIMLF_ADJUSTMENT", "ID"},
+	{"T_KOMITE_KOMITELIST", "DATA_KOMITE_ID", "T_GENERAL_KOMITE", "ID"},
+	{"T_CLAIMLF_ADJUSTMENT", "KOMITE_ID", "T_WORK_CLAIM", "ID"},
+	{"T_WORK_CLAIM", "COVER_KEY", "T_WORK_CLAIM", "ID"},
+}
+
+func TestLebarKolomPenunjukSamaDenganIndukNya(t *testing.T) {
+	tipe := tipeMenurutDDL(t)
+	diperiksa := 0
+	for _, p := range pasanganLebarKolom {
+		anak, ada := tipe[p.anakTabel]
+		if !ada {
+			t.Errorf("tabel %s tidak ada di DDL", p.anakTabel)
+			continue
+		}
+		induk, ada := tipe[p.indukTabel]
+		if !ada {
+			t.Errorf("tabel %s tidak ada di DDL", p.indukTabel)
+			continue
+		}
+		ta, tb := anak[p.anakKolom], induk[p.indukKolom]
+		if ta == "" || tb == "" {
+			t.Errorf("%s.%s (%q) atau %s.%s (%q) tidak terbaca dari DDL",
+				p.anakTabel, p.anakKolom, ta, p.indukTabel, p.indukKolom, tb)
+			continue
+		}
+		diperiksa++
+		if ta != tb {
+			t.Errorf("%s.%s bertipe %s sedangkan induknya %s.%s bertipe %s.\n"+
+				"Kunci tamu antarlebar berbeda diterima Oracle tetapi menjanjikan "+
+				"ruang yang tidak dapat dipakai.",
+				p.anakTabel, p.anakKolom, ta, p.indukTabel, p.indukKolom, tb)
+		}
+	}
+	if diperiksa == 0 {
+		t.Fatal("nol pasangan diperiksa - penjaga ini tidak menjaga apa pun")
+	}
 }
