@@ -182,3 +182,45 @@ export const MODUL_LAIN_TERLARANG = [
   'Master',
   'Premium',
 ] as const
+
+/**
+ * Label layar Register — VERBATIM `Section/InputRegisterClaimLife.xml`,
+ * dengan nomor barisnya.
+ *
+ * ⛔ Ketiga belas medan datanya terikat ke `.PolicyDataLife.*` — halaman
+ * POLIS, bukan isian bebas. Artinya ia DIISI oleh pemilihan polis, dan layar
+ * kita harus memperlakukannya begitu pula. Mengetiknya sebagai isian kosong
+ * akan membuat orang mengisi ulang apa yang sudah ada di sistem polis.
+ */
+export const REGISTER = {
+  /** b3776 `pxButton` — memuat data polis. */
+  pilihPolis: 'Choose Policy No',
+  /** b7057 `pxButton`. */
+  cariTertanggung: 'Find Insured',
+  /** b20008 `pxButton`. */
+  pilihTertanggung: 'Select Insured',
+  /** b9104 `.PolicyDataLife.Type` `pxDropdown`. */
+  type: 'Type',
+  /** b9890 `.PolicyDataLife.MarketingName` `pxAutoComplete`. */
+  marketing: 'Marketing Officer',
+  /** b11541 `.PolicyDataLife.CedingCoName` `pxTextInput`. */
+  ceding: 'Ceding',
+  /** b11736 `.PolicyDataLife.PolicyHolderName` `pxTextInput`. */
+  pemegangPolis: 'Policy Holder',
+  /** b12171 `.PolicyDataLife.BusinessName` `pxAutoComplete`. */
+  kelasBisnis: 'Class of Business',
+  /** b13384 `.PolicyDataLife.DateReceived` `pxDateTime`. */
+  tanggalEmail: 'Date Received Email',
+  /** b13590 `.PolicyDataLife.TanggalRespon` `pxDateTime`. */
+  tanggalRespon: 'Response Date',
+  /** b13795 `.PolicyDataLife.TanggalKonfirmasi` `pxDateTime`. */
+  tanggalKonfirmasi: 'Confirmation Date',
+  /** b14002 `.PolicyDataLife.Status` `pxTextInput`. */
+  status: 'Status',
+  /** b14406 `.PolicyDataLife.StatusUpdate` `pxTextInput`. */
+  statusDiperbarui: 'Updated Status',
+  /** b14601 `.PolicyDataLife.TanggalRealisasi` `pxDateTime`. */
+  tanggalRealisasi: 'Realization Date',
+  /** b16064 `pxTextInput`. */
+  namaTertanggung: 'Name of Insured',
+} as const

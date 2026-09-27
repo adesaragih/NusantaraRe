@@ -16,7 +16,7 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { LAYAR, PERAN, TAHAP, TOMBOL } from './labels'
+import { LAYAR, PERAN, REGISTER, TAHAP, TOMBOL } from './labels'
 
 const KORPUS = 'D:\\XML\\RNM_BRD\\Claim Life'
 const adaKorpus = existsSync(KORPUS)
@@ -99,5 +99,42 @@ describe('label yang tidak bergantung korpus', () => {
     // Terjemahan berdiri DI SAMPING (TAHAP_ID), bukan menggantikan.
     expect(TAHAP.medicalCheck).toBe('Medical Check')
     expect(TAHAP.claimAnalis).toBe('Claim Analis')
+  })
+})
+
+describe.skipIf(!adaKorpus)('label layar Register berbukti barisnya', () => {
+  // Tiap baris: label, berkas, nomor baris yang `labels.ts` sebut.
+  const medan: Array<[string, number]> = [
+    ['Choose Policy No', 3776],
+    ['Find Insured', 7057],
+    ['Type', 9104],
+    ['Marketing Officer', 9890],
+    ['Ceding', 11541],
+    ['Policy Holder', 11736],
+    ['Class of Business', 12171],
+    ['Date Received Email', 13384],
+    ['Response Date', 13590],
+    ['Confirmation Date', 13795],
+    ['Status', 14002],
+    ['Updated Status', 14406],
+    ['Realization Date', 14601],
+    ['Name of Insured', 16064],
+    ['Select Insured', 20008],
+  ]
+
+  it.each(medan)('%s ada di InputRegisterClaimLife.xml baris %i', (label, nomor) => {
+    expect(baris('Section/InputRegisterClaimLife.xml', nomor)).toContain(
+      `<pyLabelPreview>${label}</pyLabelPreview>`,
+    )
+  })
+
+  it('REGISTER memuat kelima belas label itu, tidak kurang', () => {
+    const nilai = Object.values(REGISTER)
+    for (const [label] of medan) {
+      expect(nilai).toContain(label)
+    }
+    // ⛔ Cacahnya dikunci: medan yang DIHILANGKAN dari layar sama merusaknya
+    // dengan medan yang dikarang, dan yang pertama tidak berbunyi.
+    expect(nilai).toHaveLength(medan.length)
   })
 })

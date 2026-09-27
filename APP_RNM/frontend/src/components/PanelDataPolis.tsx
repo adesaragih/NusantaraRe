@@ -1,0 +1,98 @@
+// Panel data polis layar Register — A3 kelompok Register.
+//
+// Meniru himpunan medan `Section/InputRegisterClaimLife.xml` PERSIS: sebelas
+// medan data ditambah tiga tombol, seluruhnya dengan nomor barisnya di
+// `assets/labels.ts`.
+//
+// ⛔ KESEBELAS MEDAN TERIKAT KE `.PolicyDataLife.*`, bukan isian bebas. Di
+// Pega ia terisi ketika polis dipilih lewat `Choose Policy No` (b3776), dan
+// layar ini memperlakukannya sama: dibaca, tidak diketik. Membuatnya isian
+// kosong akan menyuruh orang mengetik ulang apa yang sudah ada di sistem
+// polis - dan dua salinan data polis akan berbeda pada hari pertama.
+//
+// ⛔ MEDAN YANG BELUM PUNYA SUMBER DINYATAKAN, BUKAN DIHILANGKAN. Backend
+// kita hari ini membaca enam kolom (`repository.CalonPeserta`); tujuh medan
+// sisanya belum punya jalan. Menghilangkannya dari layar membuat paritas
+// tampak lengkap padahal tidak - dan tidak ada yang akan mencarinya lagi.
+// `[terbuka]` masing-masing dicatat di `PARITAS-LAYAR-DAN-AKSI.md`.
+
+import { REGISTER } from '../assets/labels'
+
+/** Satu medan panel: label VERBATIM, nilainya, dan keadaan sumbernya. */
+export interface MedanPolis {
+  label: string
+  nilai: string
+  /** true bila backend belum punya jalan mengisinya. */
+  belumBersumber?: boolean
+}
+
+/**
+ * Menyusun kesebelas medan dari apa yang backend BENAR-BENAR kirim.
+ *
+ * ⚠️ Dipisah dari komponennya supaya dapat diuji tanpa DOM - dan supaya
+ * daftar medan yang belum bersumber dapat dihitung oleh uji, bukan dipercaya
+ * dari komentar.
+ */
+export function medanPolis(sumber: {
+  nomorPolis?: string
+  namaTertanggung?: string
+  mataUang?: string
+  type?: string
+}): MedanPolis[] {
+  const ada = (v: string | undefined): string => (v === undefined || v === '' ? '—' : v)
+  return [
+    // Punya sumber hari ini - dari `GET /api/peserta-life`.
+    { label: REGISTER.type, nilai: ada(sumber.type) },
+    { label: REGISTER.namaTertanggung, nilai: ada(sumber.namaTertanggung) },
+    // ⛔ Belum punya sumber di backend. Dinyatakan, bukan dihilangkan.
+    { label: REGISTER.marketing, nilai: '—', belumBersumber: true },
+    { label: REGISTER.ceding, nilai: '—', belumBersumber: true },
+    { label: REGISTER.pemegangPolis, nilai: '—', belumBersumber: true },
+    { label: REGISTER.kelasBisnis, nilai: '—', belumBersumber: true },
+    { label: REGISTER.tanggalEmail, nilai: '—', belumBersumber: true },
+    { label: REGISTER.tanggalRespon, nilai: '—', belumBersumber: true },
+    { label: REGISTER.tanggalKonfirmasi, nilai: '—', belumBersumber: true },
+    { label: REGISTER.status, nilai: '—', belumBersumber: true },
+    { label: REGISTER.statusDiperbarui, nilai: '—', belumBersumber: true },
+    { label: REGISTER.tanggalRealisasi, nilai: '—', belumBersumber: true },
+  ]
+}
+
+export interface PanelProps {
+  nomorPolis?: string
+  namaTertanggung?: string
+  mataUang?: string
+  type?: string
+}
+
+export function PanelDataPolis(p: PanelProps) {
+  const medan = medanPolis(p)
+  const belum = medan.filter((m) => m.belumBersumber === true).length
+
+  return (
+    <section className="polis">
+      <h3 className="polis__judul">Data Polis</h3>
+      <dl className="polis__daftar">
+        {medan.map((m) => (
+          <div
+            key={m.label}
+            className={`polis__medan${m.belumBersumber === true ? ' polis__medan--belum' : ''}`}
+          >
+            <dt>{m.label}</dt>
+            <dd>{m.nilai}</dd>
+          </div>
+        ))}
+      </dl>
+      {belum > 0 && (
+        <p className="polis__catatan" role="note">
+          <strong>{belum} medan belum bersumber.</strong> Layar Pega
+          mengisinya dari halaman polis (<code>.PolicyDataLife.*</code>) saat
+          nomor polis dipilih. Medannya ditampilkan apa adanya supaya
+          himpunannya tetap sama dengan{' '}
+          <code>InputRegisterClaimLife.xml</code>; jalannya di backend belum
+          ada, dan itu tercatat di <code>PARITAS-LAYAR-DAN-AKSI.md</code>.
+        </p>
+      )}
+    </section>
+  )
+}

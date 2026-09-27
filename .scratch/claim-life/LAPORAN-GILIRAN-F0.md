@@ -81,3 +81,37 @@ TIDAK dirender. Label kolom VERBATIM `InboxPremiumList.xml`, dan ujinya MEMBUKA 
 yang tiap label sebut.
 
 Uji JS 97 → 114; build 45 modul.
+
+---
+
+## F0.5 — panduan  ·  SHA `16d567f`
+
+`PANDUAN-MENJALANKAN.txt` bab 4 diperbarui: layar masuk stub, Shell + menu dua butir beserta
+buktinya, Inbox empat tab, pembedaan antrian PRIBADI vs BERSAMA. Cacah uji JS 5 -> 114.
+
+Satu kalimat yang sengaja ditulis terang: tab Admin akan KOSONG sampai pemakai mendaftarkan klaim
+sendiri (worklist = `CREATE_OP` miliknya). Tanpa itu orang melaporkannya sebagai bug.
+
+---
+
+## A3 kelompok 1 — REGISTER
+
+**Backend:** `repository/rujukan.go` (tiga pembaca berbatas), `services/rujukan.go` (gerbang,
+himpunan tertutup), `handlers/rujukan.go` + rute `GET /api/rujukan/{jenis}?cari=`.
+
+**Frontend:** `components/PanelDataPolis.tsx` (himpunan medan PERSIS section), label `REGISTER`
+dengan 15 nomor baris, `cariRujukan` di `api.ts`, `RegisterKlaim.tsx` memakai label VERBATIM.
+
+**Dua temuan yang mengubah kode:**
+
+1. Penjaga arsitektur `TestHandlersTidakMengimporRepository` menangkap `handlers/rujukan.go`
+   mengimpor repository. Diperbaiki dengan ALIAS di services, bukan struct kembar.
+2. Urutan pemeriksaan salah: jenis rujukan yang salah ketik dijawab "database belum dikonfigurasi".
+   Permintaan diperiksa lebih dulu, baru infrastrukturnya.
+
+**XML dibaca ulang (6 berkas):** `InputRegisterClaimLife.xml` (15 baris label + `pyValue`/`pyFormat`
+tiap medan), `BrowseCedingCoLife_RD.xml`, `BrowseBusinessLife_RD.xml`, `BrowseMarketingOfficer_RD.xml`,
+`InputOSClaimLife.xml`, `Register_Flow.xml`.
+
+**Telemetri:** Go 272 -> 274 PASS · 0 FAIL · 34 SKIP; JS 114 -> 136; build 46 modul.
+Taksiran token giliran ini **+-1,1 juta** (taksiran; angka sejati tidak terlihat dari dalam sesi).

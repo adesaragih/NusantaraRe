@@ -6,6 +6,9 @@
 // peserta; angka klaim lahir di tiket 03. Bila kelak ada, ia tetap TEKS
 // (ADR-U-0003) — tidak pernah number JavaScript, yang membulatkan diam-diam.
 import { useState } from 'react'
+
+import { REGISTER } from '../assets/labels'
+import { PanelDataPolis } from '../components/PanelDataPolis'
 import {
   cariPesertaLife,
   daftarKlaimLife,
@@ -28,6 +31,11 @@ export default function RegisterKlaim() {
   const [hasil, setHasil] = useState<HasilDaftar | null>(null)
   const [galat, setGalat] = useState('')
   const [sibuk, setSibuk] = useState(false)
+
+  // Panel data polis menampilkan polis dari peserta PERTAMA yang
+  // dicentang: di Pega satu klaim menunjuk satu polis, dan peserta
+  // yang dipilih berasal dari premium list yang sama.
+  const pertamaDipilih = peserta.find((p) => dipilih.includes(kunci(p)))
 
   async function cari() {
     setGalat('')
@@ -97,18 +105,21 @@ export default function RegisterKlaim() {
         Nomor premium list
         <input value={pl} onChange={(e) => setPl(e.target.value)} placeholder="PL-..." />
       </label>
+      {/* Label VERBATIM `InputRegisterClaimLife.xml:7057` `pxButton`. */}
       <button onClick={cari} disabled={sibuk || pl.trim() === ''}>
-        Cari peserta
+        {REGISTER.cariTertanggung}
       </button>
 
       {peserta.length > 0 && (
         <table>
           <thead>
             <tr>
-              <th>Pilih</th>
+              {/* Label VERBATIM: Select Insured 20008, Name of Insured
+                  16064, Choose Policy No 3776. */}
+              <th>{REGISTER.pilihTertanggung}</th>
               <th>Sertifikat</th>
-              <th>Tertanggung</th>
-              <th>Polis</th>
+              <th>{REGISTER.namaTertanggung}</th>
+              <th>{REGISTER.pilihPolis}</th>
             </tr>
           </thead>
           <tbody>
@@ -131,8 +142,22 @@ export default function RegisterKlaim() {
         </table>
       )}
 
+      {/* ⛔ Himpunan medan PERSIS section: sebelas medan
+          `.PolicyDataLife.*`. Yang belum punya sumber di backend
+          DINYATAKAN di dalam panel, bukan dihilangkan - paritas yang
+          tampak lengkap padahal tidak adalah paritas yang tidak akan
+          pernah dicari lagi. */}
+      <PanelDataPolis
+        nomorPolis={pertamaDipilih?.nomorPolis}
+        namaTertanggung={pertamaDipilih?.namaTertanggung}
+        mataUang={pertamaDipilih?.mataUang}
+        type={type}
+      />
+
+      {/* Label VERBATIM `InputRegisterClaimLife.xml:9104`
+          `.PolicyDataLife.Type` `pxDropdown`. */}
       <label>
-        Type
+        {REGISTER.type}
         <input value={type} onChange={(e) => setType(e.target.value)} />
       </label>
       <label>
