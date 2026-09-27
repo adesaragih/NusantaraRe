@@ -39,10 +39,6 @@ func tambahPutaran(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			galat(w, http.StatusConflict,
 				"putaran berikutnya hanya lahir sesudah baris terakhir ditolak")
 			return
-		case errors.Is(err, services.ErrJejakBelumDiputuskan):
-			galat(w, http.StatusNotImplemented,
-				"jejak audit belum dapat direkam: tempatnya belum diputuskan work owner")
-			return
 		case errors.Is(err, services.ErrPermintaanTidakSah):
 			galat(w, http.StatusBadRequest, err.Error())
 			return

@@ -28,8 +28,8 @@ func serahkanKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			DenganKasus(services.KasusKomiteOracle(svc)).
 			DenganPenyalur(services.PenyalurClaimLifeOracle(svc)).
 			Serahkan(r.Context(), pelakuDari(r, stubPelaku),
-			r.PathValue("id"), r.PathValue("pesertaId"), r.PathValue("adjId"),
-			time.Now())
+				r.PathValue("id"), r.PathValue("pesertaId"), r.PathValue("adjId"),
+				time.Now())
 
 		switch {
 		case errors.Is(err, services.ErrTanpaIdentitas):
@@ -65,15 +65,6 @@ func serahkanKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 		case errors.Is(err, services.ErrRosterKomiteKosong):
 			galat(w, http.StatusUnprocessableEntity,
 				"tidak ada tingkat komite yang menutup nilai klaim ini")
-			return
-		case errors.Is(err, services.ErrRosterBelumDiputuskan),
-			errors.Is(err, services.ErrKasusKomiteBelumDiputuskan),
-			errors.Is(err, services.ErrJejakBelumDiputuskan):
-			// 501: bukan kerusakan melainkan keputusan yang belum diambil.
-			// Pesan dalamnya tidak diteruskan - ia menyebut nama objek basis
-			// data (CLAUDE.md bab 4 butir 10).
-			galat(w, http.StatusNotImplemented,
-				"penyerahan ke Komite belum dapat disimpan: tempatnya belum diputuskan work owner")
 			return
 		case errors.Is(err, services.ErrPermintaanTidakSah):
 			galat(w, http.StatusBadRequest, err.Error())

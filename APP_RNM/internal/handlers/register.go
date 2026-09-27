@@ -62,17 +62,6 @@ func daftarKlaim(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 		case errors.Is(err, services.ErrTanpaWewenang):
 			galat(w, http.StatusForbidden, "peran tidak mencukupi")
 			return
-		case errors.Is(err, services.ErrPenomorBelumDiputuskan):
-			// ⛔ 501, bukan 500: ini bukan kerusakan melainkan keputusan yang
-			// belum diambil.
-			//
-			// ⚠️ Pesan dalamnya TIDAK diteruskan: ia menyebut nama objek basis
-			// data, dan badan jawaban HTTP dibaca siapa pun yang dapat
-			// mengirim permintaan (CLAUDE.md bab 4 butir 10). Rincian tinggal
-			// di log server.
-			galat(w, http.StatusNotImplemented,
-				"nomor klaim belum dapat dibentuk: caranya belum diputuskan work owner")
-			return
 		case err != nil:
 			galat(w, http.StatusInternalServerError, "gagal mendaftarkan klaim")
 			return

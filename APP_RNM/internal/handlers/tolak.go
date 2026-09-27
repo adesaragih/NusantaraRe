@@ -57,14 +57,6 @@ func tolakBaris(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			galat(w, http.StatusUnprocessableEntity,
 				"klaim belum bernomor; penolakan baris menunggu nomor klaim")
 			return
-		case errors.Is(err, services.ErrJejakBelumDiputuskan):
-			// 501: bukan kerusakan melainkan keputusan yang belum diambil.
-			// Pesan dalamnya tidak diteruskan - ia menyebut nama objek basis
-			// data, dan badan jawaban HTTP dibaca siapa pun yang dapat
-			// mengirim permintaan (CLAUDE.md bab 4 butir 10).
-			galat(w, http.StatusNotImplemented,
-				"jejak audit belum dapat direkam: tempatnya belum diputuskan work owner")
-			return
 		case errors.Is(err, services.ErrPermintaanTidakSah):
 			galat(w, http.StatusBadRequest, err.Error())
 			return

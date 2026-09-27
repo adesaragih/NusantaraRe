@@ -44,6 +44,13 @@ func dariDampak(d models.DampakHapus) dampakJSON {
 	}
 }
 
+// metodeKlaimDiizinkan mengisi header `Allow` pada jawaban 405.
+//
+// ⚠️ Daftarnya harus cocok dengan rute yang benar-benar terdaftar untuk
+// `/api/klaim-life/{id}` di handlers.go. Penjaga statik menegakkannya:
+// header `Allow` yang berbohong lebih buruk daripada tidak ada.
+const metodeKlaimDiizinkan = "GET"
+
 // jawabGalatHapus menerjemahkan galat penghapusan ke kode HTTP.
 //
 // Satu tempat untuk kedua pintu: dua salinan pemetaan galat berarti dua
@@ -63,11 +70,21 @@ func jawabGalatHapus(w http.ResponseWriter, err error) bool {
 		galat(w, http.StatusConflict,
 			"klaim sudah diserahkan ke Komite dan tidak dapat dihapus")
 	case errors.Is(err, services.ErrHapusFisikDilarang):
-		// 501: bukan kerusakan melainkan keputusan yang belum diambil.
-		// ADR-U-0031 menetapkan penghapusan berupa PENANDA; kolomnya belum ada.
-		galat(w, http.StatusNotImplemented,
-			"penghapusan klaim adalah penanda, bukan hapus fisik (ADR-U-0031); "+
-				"kolom penandanya belum diputuskan work owner")
+		// ⛔ 405, BUKAN 501. Ronde sebelumnya menjawab 501 - dan 501
+		// berarti "server ini belum bisa", yaitu janji bahwa suatu hari ia
+		// bisa. ADR-U-0031 justru menetapkan sebaliknya: penghapusan klaim
+		// SELALU berupa penanda + nilai pembalik, TIDAK PERNAH fisik. Jadi
+		// DELETE atas sumber daya ini bukan metode yang belum siap,
+		// melainkan metode yang memang tidak berlaku - dan itu 405.
+		//
+		// ⚠️ Header `Allow` WAJIB menyertai 405 (RFC 9110 §15.5.6).
+		// Tanpanya, klien tidak diberi tahu apa yang boleh ia lakukan
+		// sebagai gantinya, dan 405 menjadi penolakan buta.
+		w.Header().Set("Allow", metodeKlaimDiizinkan)
+		galat(w, http.StatusMethodNotAllowed,
+			"penghapusan klaim selalu berupa penanda dan nilai pembalik, "+
+				"tidak pernah hapus fisik (ADR-U-0031); DELETE tidak berlaku "+
+				"atas sumber daya ini")
 	case errors.Is(err, services.ErrPermintaanTidakSah):
 		galat(w, http.StatusBadRequest, err.Error())
 	default:
