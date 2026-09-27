@@ -107,3 +107,20 @@ dilonggarkan.
 **Telemetri:** rute HTTP **9 → 11**; kontrol React **5 → 7**; test Go **229 → 235**; test JS
 **13 → 16**. Sensus dua cara sepakat **269**.
 
+---
+
+## A0 kelompok 3 — titik yang tidak bergantung jawaban bab 7
+
+| # | Titik | Rule *(path pecahan)* | Verdict | Bukti |
+| ---: | --- | --- | --- | --- |
+| 14 | `IsCheck` di seluruh jalur | `Activity/SetIndexAdjustmentList.xml` **328** → `true`; `Activity/RejectOSClaimLife_Act.xml` **517** → `"false"` | ✅ **tepat** | sensus seluruh `Claim Life\**\*.xml` atas `<PropertiesName>` memuat `IsCheck`: **tepat dua** penulis, tidak lebih. Kode kita: `TambahBaris` → `"true"`, `CabutPenandaDipilih` → `"false"`, `PasangPenandaDipilih` memulihkannya di `Putaran.Tambah` *(temuan review tiket 11, sudah ditutup)* |
+| 13 | hapus klaim | sensus `Obj-Delete\|pxDelete\|RDB-Delete\|DELETE FROM` atas seluruh korpus | ✅ **tepat, dan lebih tajam** | penghapusan **sungguhan hanya SATU**: `Activity/DeleteDocument_Act.xml` **512** `Obj-Delete`. Delapan kemunculan lain seluruhnya `pxWarningMessage` — teks peringatan Pega yang **menyebut** "Obj-Delete", bukan aksi. Kesimpulan tiket 15 *("nol penghapusan fisik klaim")* berdiri di atas bukti ini |
+| 7a | `DeletePesertaClaimLife` | `Activity/DeletePesertaClaimLife.xml` **227 · 316 · 443** | ⭐ **NAMANYA MENIPU** | tiga langkahnya `Property-Set`, `Property-Set`, **`Obj-Save`** — **nol penghapusan**. Ia hanya menyetel `Local.IndexPremium = .pxListSubscript` (249) dan `IndexPremiumList` (337) lalu menyimpan. "Hapus peserta" di Pega **menandai**, tidak menghapus — bukti tambahan bagi ADR-U-0031 |
+| 7b | `SelectAllClaimLife_act` | `Activity/SelectAllClaimLife_act.xml` **247 · 429** | ⛔ **belum ditiru** | `Select.CARI1 = @if(Select.CARI1=="","true",…)` lalu `IsAccept = Select.CARI1` — pilih-semua/batal-semua atas penanda. Layar kita belum punya kontrolnya |
+| 9b | `ContentNote` non-DEATH, **tempat kedua** | `Activity/SavePesertaClaim.xml` **1997** *(`= "DEATH"`)* dan **2413** *(`!= "DEATH"`)* | ⛔ **kurang tepat** | cabang non-DEATH bukan hanya di `SaveOutStandingLife_Act`; ia juga menggerbangi `SavePesertaClaim`. Menguatkan temuan kelompok 1: **10 dari 21** kode bisnis bukan DEATH |
+| — | prasyarat tanpa kurung, **tempat kedua** | `SavePesertaClaim.xml` **1812** | ⚠️ **cacat rule yang sama** | `.IsCheck=="true" && BusinessCode="L1" \|\| "L2" \|\| …` — pola tanpa kurung yang sama dengan `SaveAdjustment_Act` 837/1031. Bukan kebetulan sekali; ia kebiasaan penulisan di korpus ini, dan Go memakai bacaan yang **dimaksud** di mana pun ia muncul |
+
+⭐ **`SavePesertaClaim` adalah rule terbesar yang belum ditiru** — 6.633 baris pecahan, **18 langkah**,
+tujuh prasyarat bergerbang `.IsCheck=="true"`, plus cabang `Protect.pxResults` dan validasi
+`"STNC not valid"` (634). Ia milik kelompok **Register** di A3.
+
