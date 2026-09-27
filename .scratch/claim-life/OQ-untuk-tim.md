@@ -167,3 +167,34 @@ Pemetaan kolom CSV ke medan peserta karena itu **tidak ada di korpus**: ia tersi
 konfigurasi gadget, bukan di rule yang diekspor. **Mohon kirimkan** definisi pemetaan kolomnya
 bila fitur unggah CSV memang dipakai; tanpa itu fitur ini tidak dapat ditiru tanpa mengarang, dan
 kami tidak mengarang.
+
+## 27 September 2026 — OQ-G (paket Detail & Tutup 1)
+
+**OQ-G** *(dua cacat rule, untuk pengembang Pega)*. `ValidasiClaimReceived_Act` dan
+`ValidasiSTNC_Act` berbentuk sama persis, dan keduanya memuat dua hal yang tampak keliru:
+
+**G1 — pesan galat disetel tetapi tidak pernah dipasang.** Keduanya menyetel `local.errmsg`
+*(`"Max Claim invalid"` b451; `"STNC invalid"` b479)* lalu **tidak punya langkah
+`Property-Set-Messages`** — tidak seperti `ValidasiDOL_Act`, yang punya di b842. Menurut XML apa
+adanya, pemakai **tidak pernah melihat** sebab penolakannya; yang tampak hanya `.MAXCLAIM_RECEIVED`
+atau `.STNC` yang tiba-tiba berisi tanggal.
+
+**Mohon konfirmasi** apakah pesan itu memang tidak dimaksudkan tampil. Kami memakai kalimatnya
+**verbatim** supaya teks yang sama dapat dicari di kedua sistem.
+
+**G2 — selisih negatif selalu lolos.** Perbandingannya `@if(selisih <= ambang, "", …)` *(b582,
+b627)* tanpa lantai bawah. Klaim yang **diterima sebelum tanggal kejadiannya** menghasilkan
+selisih negatif, dan negatif selalu `<=` ambang — sehingga ia terbaca **sah**.
+
+Kami **menirunya apa adanya** dan menjaganya dengan `TestLubangSelisihNegatif`, supaya perilaku itu
+terlihat dan tidak berubah diam-diam. **Mohon putuskan** apakah lantai bawah perlu ditambahkan;
+bila ya, test itulah yang gagal lebih dulu dan menagih keputusannya.
+
+**Catatan ambang** *(bukan pertanyaan — penjelasan)*: `MAXEXPIREDCLAIM` dan `MAXDATARECEIVE` dibaca
+`RDBList/GetProductName.xml:84` dari tabel produk warisan lewat
+`pyWorkPage.PolicyDataLife.ProductNameID`. `PolicyDataLife` **menunggu modul PremiumList Life**
+*(keputusan av)*, dan tabelnya sendiri berstatus `[data DBA]` OQ-001. Karena itu aturannya ditulis
+sebagai fungsi murni yang **menerima** ambang; ambang kosong menjawab **galat**, bukan nol.
+
+⚠️ Perhatikan bedanya nama, sebab ia mudah tertukar: propertinya `.MAXDATARECEIVED` *(ber-D)*,
+kolom sumbernya `MAXDATARECEIVE` *(tanpa D)*.

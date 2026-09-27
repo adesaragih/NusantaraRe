@@ -244,3 +244,73 @@ apa yang dikira diuji. Dicatat di `29a7ebf`.
 | Migrasi baru | **0** |
 | Mutasi pembuktian penjaga | **5** *(2 tukar kolom, 2 cabut pagar SQL, 1 singkirkan berkas uji)* — seluruhnya dipulihkan |
 | XML dibaca sebagai pohon | 5 activity + 2 section + 1 Connect-SQL |
+
+---
+
+## Giliran lanjutan 10 — paket 2: layar Register (`a203601`)
+
+| Hal | Isi |
+| --- | --- |
+| Label baru | `Certificate No` b16277 **`<pyLabelFieldValue>`** · `Search` b16553 **`<pyLabel>`** |
+| Tag TIDAK disamakan | diperiksa: **nol** `<pyLabelPreview>Certificate No` di seluruh berkas. Keduanya berdiri di daftar `medanCari` terpisah dengan tagnya sendiri — memaksanya masuk daftar `pyLabelPreview` berarti menguji tag yang tidak ada, lalu melonggarkan ujinya sampai lulus |
+| Ralat tombol | `Find Insured` b7057 **bukan** penjalan pencarian; ia pembuka panelnya. Yang memanggil activity adalah `Search` b16553. Sebelumnya layar memakai label b7057 untuk tombol yang menjalankan pencarian |
+| Huruf besar | dikerjakan **server** *(b405)*, bukan layar — mengubah ketikan orang saat ia mengetik membuat kotaknya terasa rusak, dan aturannya tetap satu rumah |
+| Kotak kosong | **tidak** dikirim sebagai parameter kosong; ujinya mengunci bentuk URL dan dibuktikan merah ketika kosong ikut terkirim |
+| `lib/pilihSemua.ts` | penjungkit **tiga** keadaan b247 — `''` → `'true'` → `'false'` → `'true'`. Keadaannya **teks**: `''` berarti belum pernah ditekan dan harus mencentang, `'false'` berarti baru dilepas. Boolean tidak dapat membedakannya |
+
+⚠️ **`pilihSemua.ts` BELUM PUNYA PEMANGGIL, dan itu dinyatakan, bukan didiamkan.** Tombolnya
+berdiri di layar **Outstanding** *(`InputOSClaimLife.xml` b16633, b16710, b24489)*, dan grid
+pesertanya baru dibangun di kelompok Detail & Tutup. Diperiksa: **nol** `Select All` dan **nol**
+`IsAccept` di `InputRegisterClaimLife.xml` — memasangnya di Register akan mengarang tombol yang
+Pega tidak punya. Aturannya ditulis sekarang bersama ujinya supaya tidak lahir dari ingatan ketika
+gridnya tiba. **Work owner boleh memveto** dan menundanya sampai gridnya ada.
+
+**Telemetri:** JS 150 → **169** · tsc bersih · build **46** modul · 1 mutasi pembuktian
+*(label dikarang `'Cari Peserta'` → penjaga menyala)*.
+
+---
+
+## Giliran lanjutan 10 — paket 3: Detail & Tutup (1) (`27c5e56`)
+
+Dua validasi tanggal berambang produk. Keduanya **berbentuk sama persis**, jadi keduanya memakai
+satu fungsi — `SelisihHari` + `PenandaBatasHari`.
+
+| Validasi | Dari → ke | Ambang | Penanda |
+| --- | --- | --- | --- |
+| `ValidasiClaimReceived_Act` | `DATE_OF_LOSS` → `CLAIM_RECEIVED_DATE` b561 | `MAXEXPIREDCLAIM` b540 | `.MAXCLAIM_RECEIVED` b582 |
+| `ValidasiSTNC_Act` | `EFFECTIVE_DATE` → `RECEIVED_DATE` b598 | `MAXDATARECEIVE` b577 | `.STNC` b627 → kolom `STNC_CLAIM` *(migrasi 002)* |
+
+⚠️ Propertinya `.MAXDATARECEIVED` **ber-D**, kolom sumbernya `MAXDATARECEIVE` **tanpa D**. Mudah
+tertukar, dan tertukarnya tidak berbunyi.
+
+Hasilnya **penanda, bukan bool**: kosong = sah; terisi = tidak sah **dan** isinya tanggal yang
+melanggar, `dd/MM/yyyy`. Bool akan membuang keterangan *mana* tanggalnya.
+
+`@addCalendar` dengan **seluruh** argumen nol *(b498, b519, b526, b556)* tidak menggeser apa pun —
+ia menormalkan nilai menjadi tanggal. Selisihnya karena itu dihitung dari tanggalnya saja;
+menghitungnya berjam membuat dua tanggal berselisih 25 jam terbaca **1** hari dan yang 23 jam
+terbaca **0**.
+
+### Ambangnya tidak ditebak
+
+`RDBList/GetProductName.xml:84` membacanya dari tabel produk warisan lewat
+`PolicyDataLife.ProductNameID`. `PolicyDataLife` **menunggu modul PremiumList Life** *(av)*, dan
+tabelnya `[data DBA]` OQ-001. Fungsinya karena itu **menerima** ambang, dan ambang **kosong
+menjawab galat** — menganggapnya nol akan menandai hampir setiap klaim tidak sah *(ADR-U-0027)*.
+
+### Penjaga yang menyala dan TERNYATA BENAR
+
+`TestMasterViewTidakDisentuh` menuduh berkas baru itu menyebut nama tabel warisan. Pemeriksaan:
+namanya ada di **string pesan galat**, bukan di komentar — dan pesan galat mendarat di log,
+sedangkan nama objek warisan tidak pernah boleh masuk log atau artefak. **Yang diperbaiki pesannya,
+bukan penjaganya.** Keterangan lengkapnya pindah ke komentar kepala berkas, tempat yang memang
+untuk itu.
+
+**Telemetri:** Go 278 → **284 PASS · 0 FAIL · 34 SKIP** · `go vet` bersih · **0** migrasi baru.
+
+### Yang BELUM dikerjakan dari §2, dan sebabnya
+
+`ClaimLifeDetailGCNM` *(Save Adjustment 22590)*, `ShowEditClaimLife` + `EditDateClaimLife_Section`,
+`SetSTS_Reject`, `SetIndexAdjustmentList`, `CloseClaim`, `DocumentLife` — belum dibaca sebagai
+pohon di giliran ini. Ia **tidak** dikerjakan setengah dari ingatan; kelompok berikutnya
+membacanya lebih dulu, sebagaimana lima activity paket 1 dibaca.
