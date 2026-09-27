@@ -19,6 +19,8 @@ import (
 	"strings"
 
 	"nusantarare/internal/models"
+
+	"nusantarare/internal/repository"
 )
 
 var (
@@ -186,4 +188,26 @@ func KategoriBerbeda(p models.Peserta) []string {
 func dipilihUntukDiklaim(p models.Peserta) bool {
 	v := strings.Trim(strings.TrimSpace(p.IsCheck), "'\"")
 	return strings.EqualFold(v, "true") || v == "1" || strings.EqualFold(v, "Y")
+}
+
+// kategoriOracle membaca daftar kategori wajib - butir ar1, A2.
+type kategoriOracle struct{ pohon *repository.PohonKlaim }
+
+// KategoriWajibOracle menyusun pembaca kategori yang memakai Oracle.
+//
+// ⚠️ `ar1` `[USULAN yang disahkan]`, bukan `[terverifikasi]`: rule
+// `GetCategoryLife_SQL` tidak ada di korpus, sehingga tabel mana yang Pega
+// baca tidak dapat dipastikan. Kandidat kedua dicatat di repository dan tidak
+// dipakai.
+func KategoriWajibOracle(svc *Service) SumberKategoriWajib {
+	return kategoriOracle{pohon: repository.NewPohonKlaim(svc.db)}
+}
+
+// KategoriWajib membaca daftar kategori untuk sebuah kode bisnis.
+func (k kategoriOracle) KategoriWajib(ctx context.Context) ([]string, error) {
+	// ⛔ Kode bisnis belum tersimpan di model relasional - temuan audit A0,
+	// kolomnya lahir di `014`. Sampai pembacanya ada, penyaring `BISNIS`
+	// memakai daftar `ALL` saja, dan itu DINYATAKAN, bukan disembunyikan:
+	// keenam baris DEV memang seluruhnya `ALL`.
+	return k.pohon.AmbilKategoriWajib(ctx, "")
 }
