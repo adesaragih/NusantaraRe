@@ -324,6 +324,33 @@ func (st *Status) ubah(ctx context.Context, pelaku Pelaku,
 				return err
 			}
 		}
+		// ⛔ SetSTS_Reject - setiap diagnosa peserta ini mewarisi
+		// keputusannya. DI DALAM transaksi yang sama, dan SESUDAH baris
+		// serta peserta ditulis: pencerminan yang menyusul di transaksi
+		// terpisah dapat gagal sendirian, dan peserta yang sudah ditolak
+		// akan berdiri di samping diagnosa yang masih tampak Outstanding.
+		//
+		// ⚠️ RALAT ATAS BRIEF, 27-09-2026 - dan arah perbaikannya
+		// membenarkan briefnya. Brief menulis "SetSTS_Reject disambungkan ke
+		// rute tolak/akseptasi", seolah rule Pega memanggilnya dari sana.
+		// Ia TIDAK dipanggil dari mana pun: satu-satunya kemunculannya di
+		// seluruh korpus adalah `ClaimLifeDetailGCNM.xml` b3224
+		// `pyDeferLoadRetrievalActivity`, yaitu aktivitas PRA-MUAT
+		// (b3229 `pySpecifyPreLoadActivity` true) wilayah `S5` b3225 - dan
+		// grid diagnosa `L8` b3917 bersarang di dalamnya (S5 -> S6 b3528 ->
+		// L7 b3653 -> L8). Jadi di Pega pencerminan itu terjadi SETIAP KALI
+		// layar dimuat, bukan saat keputusan diambil.
+		//
+		// Yang ditiru adalah INVARIANNYA - "STS_REJECT tiap diagnosa selalu
+		// sama dengan pesertanya" - bukan mekanismenya. Menyalinnya di saat
+		// keputusan (di sini) DAN di saat baris lahir (`SisipDiagnosa`)
+		// menutup kedua arah yang di Pega ditutup oleh pemuatan ulang.
+		// Meniru mekanismenya berarti menulis ke basis data setiap kali
+		// seseorang membuka sebuah layar.
+		if err := cerminkanKeDiagnosa(ctx, st.svc, tx, pesertaID,
+			baru.KodeStatus); err != nil {
+			return err
+		}
 		// ⛔ Jejak direkam DI DALAM transaksi yang sama. Jejak yang ditulis
 		// terpisah dapat hilang sendirian, dan transisi tanpa jejak persis
 		// yang ADR-U-0007 larang.

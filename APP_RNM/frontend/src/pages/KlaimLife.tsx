@@ -3,7 +3,7 @@ import { useState, type FormEvent } from 'react'
 import { DETAIL, TOMBOL_KOMITE } from '../assets/labels'
 import { PanelTotalPeserta } from '../components/PanelTotalPeserta'
 import { PanelDokumenPeserta } from '../components/PanelDokumenPeserta'
-import { CariDiagnosa } from '../components/CariDiagnosa'
+import { GridDiagnosa } from '../components/GridDiagnosa'
 import { PanelPindahTahap } from '../components/PanelPindahTahap'
 
 import {
@@ -526,18 +526,26 @@ export default function KlaimLife() {
                   kelompok Dokumen; tombolnya dinyatakan, bukan disembunyikan. */}
               <PanelDokumenPeserta dokumen={p.dokumen} />
 
-              {/* `Find Disease` b5061 `pxButton` -> `showHarness` b5081
-                  `Diagnose_Harness` -> `Diagnose_Section`.
+              {/* Grid diagnosa - butir bd. `.DiagnoseList` b3923, tiga
+                  kolom (b4188, b4337, b4490) dan tiga tombol: `Add` b4690,
+                  `Find Disease` b5061 (per baris, sel 37), `Delete` b6160.
+
+                  ✅ Penanda OQ-K DICABUT 27-09-2026. Ia berbunyi *"Choose
+                  belum terpasang ... satu lawan banyak"* dan berhenti pada
+                  grid tanpa membaca tombolnya. `Add` DAN `Delete` bersama
+                  hanya masuk akal pada daftar; tabelnya kini ada (migrasi
+                  018), dan `Choose` menulis ke baris yang memanggilnya.
 
                   ⛔ Pencariannya BERBATAS, dan batasnya dari rule:
                   `DISEASE_LIFE` 97.586 baris, `pyMaxRecords` b659 = 500,
-                  `pyPageSize` b514 = 50. Dijepit lagi di backend.
-
-                  ⛔ Tombol `Choose` b2509 belum terpasang: `.DiagnoseList`
-                  b3923 adalah RepeatGrid (banyak diagnosa per peserta)
-                  sedangkan tabelnya hanya punya DISEASE/ICD_CODE tunggal.
-                  Satu lawan banyak - OQ-K. */}
-              <CariDiagnosa />
+                  `pyPageSize` b514 = 50. Dijepit lagi di backend. */}
+              <GridDiagnosa
+                klaimID={klaim.id}
+                peserta={p}
+                onBerubah={async () => {
+                  setKlaim(await ambilKlaimLife(klaim.id))
+                }}
+              />
 
               {/* ⛔ Penolakan bukan akhir: klaim TIDAK terminal (ADR-U-0011).
                   Yang terminal adalah baris, dan baris berikutnya memulai

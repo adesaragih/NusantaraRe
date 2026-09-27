@@ -180,15 +180,32 @@ func TestCacahKolomWarisanYangDitulisSimpan(t *testing.T) {
 // Dan `FOR UPDATE` DILEWATI: ia klausa penguncian baris, bukan pernyataan
 // UPDATE, sehingga kata sesudahnya (`SKIP`, `NOWAIT`, atau tidak ada) bukan
 // nama tabel. Penyempitan ini dibuktikan MASIH MENGGIGIT sebelum dipakai.
+// ⛔ KOMENTAR DIBUANG SEBELUM PENCOCOKAN, sejak 27-09-2026. Tanpa itu
+// prosa yang MENERANGKAN sebuah query - hal biasa di repositori ini -
+// dituduh sebagai query-nya. Yang menyalakannya satu kalimat di
+// `diagnosa.go`: "menirunya dengan N UPDATE berarti daftar berlubang", dan
+// penjaga membaca `UPDATE berarti` sebagai `UPDATE <nama tabel>`.
+//
+// ⚠️ Penjaga yang menuduh hal yang BENAR akan dilonggarkan orang,
+// bukan dipatuhi. Jadi ia dipersempit sekarang - dan dibuktikan MASIH
+// MENGGIGIT sebelum dipakai, sebagaimana penyempitan `FOR UPDATE` di atas.
+//
+// Kembaran yang sudah lebih dulu melakukan hal yang sama, dengan sebab
+// yang sama persis: `polaKomentar` di `models/kodestatus_test.go`.
+var polaKomentarBaris = regexp.MustCompile(`(?m)^\s*//.*$`)
+
+// polaTabelTelanjang mencari kata sesudah FROM / INTO / UPDATE / JOIN.
+var polaTabelTelanjang = regexp.MustCompile(
+	`(?i)(\bFOR\s+)?\b(FROM|INTO|UPDATE|JOIN)\s+([A-Za-z_{%][\w{}%.]*)`)
+
 func TestNolNamaTabelTelanjangDiQuery(t *testing.T) {
-	pola := regexp.MustCompile(
-		`(?i)(\bFOR\s+)?\b(FROM|INTO|UPDATE|JOIN)\s+([A-Za-z_{%][\w{}%.]*)`)
 	diperiksa := 0
 	for nama, isi := range berkasGoSelainTest(t) {
 		if !strings.Contains(nama, "/internal/repository/") {
 			continue
 		}
-		for _, m := range pola.FindAllStringSubmatch(isi, -1) {
+		isi = polaKomentarBaris.ReplaceAllString(isi, "")
+		for _, m := range polaTabelTelanjang.FindAllStringSubmatch(isi, -1) {
 			if m[1] != "" { // klausa `FOR UPDATE`, bukan pernyataan
 				continue
 			}

@@ -21,19 +21,32 @@
 // b659 menyebut 500 dan `pyPageSize` b514 menyebut 50. Layar ini meminta 50
 // dan backend menjepitnya lagi — layar bukan penjaga.
 //
-// ⛔ Tombol `Choose` (b2509 → `SetDisease` b2528) BELUM terpasang, dan
-// sebabnya bukan kemalasan: `SetDisease` menulis `.DISEASE`/`.ICDCODE` pada
-// halaman berkelas `Data-DiagnoseLife`, dan `.DiagnoseList`
-// (`ClaimLifeDetailGCNM.xml` b3923) adalah **RepeatGrid** — banyak diagnosa
-// per peserta. Tetapi `T_CLAIMLF_PREMIUMLIST_DETAIL` hanya punya `DISEASE`
-// dan `ICD_CODE` TUNGGAL (migrasi 003). Satu lawan banyak, dan memilih
-// salah satunya tanpa keputusan berarti membuang diagnosa orang. OQ-K.
+// ✅ Tombol `Choose` (b2509 → `SetDisease` b2528) KINI TERPASANG — butir
+// **bd**, 27-09-2026. Kepala berkas ini dulu berbunyi *"belum terpasang, dan
+// sebabnya bukan kemalasan: ... satu lawan banyak, OQ-K"*. Premisnya keliru:
+// yang dibandingkan adalah RepeatGrid b3923 dengan kolom TUNGGAL
+// `T_CLAIMLF_PREMIUMLIST_DETAIL.DISEASE` warisan migrasi 003, seolah tabel
+// itu satu-satunya tempat yang mungkin. Jawabannya ada dua baris di bawah
+// tempat pembacaan itu berhenti: `Add` b4690 → `addRow` b4700 dan `Delete`
+// b6160 → `deleteRow` b6170. Grid **dapat** berarti tampilan satu baris;
+// grid ber-`Add` DAN ber-`Delete` **tidak dapat**. Tabelnya kini ada
+// (`T_CLAIMLF_DIAGNOSE`, migrasi 018), dan `Choose` menulis ke BARIS yang
+// memanggilnya.
+//
+// ⛔ Karena itu pencarian ini berdiri DI DALAM baris grid, bukan di
+// sampingnya: `Find Disease` b5061 adalah sel 37 pada baris data (b5005),
+// sehingga barisnya sendirilah konteks `Choose`. Tanpa itu, "diagnosa yang
+// mana" harus ditebak.
 
 import { useState } from 'react'
 
 import { DETAIL } from '../assets/labels'
-import { cariPenyakit, pesanGalat, type Penyakit } from '../services/api'
-import { BelumTersedia } from './ui/dasar'
+import {
+  cariPenyakit,
+  pesanGalat,
+  UKURAN_HALAMAN_PENYAKIT,
+  type Penyakit,
+} from '../services/api'
 
 /**
  * Label VERBATIM dari korpus.
@@ -66,7 +79,24 @@ export function ringkasanHasil(jumlah: number, batas: number): string {
   return `${jumlah} diagnosa ditemukan.`
 }
 
-export function CariDiagnosa({ batas = 50 }: { batas?: number }) {
+export function CariDiagnosa({
+  onPilih,
+  sibuk: sibukLuar = false,
+  batas = UKURAN_HALAMAN_PENYAKIT,
+}: {
+  /**
+   * Dipanggil ketika `Choose` ditekan — padanan `SetDisease` b2528.
+   *
+   * ⚠️ WAJIB, bukan opsional. Pencarian tanpa tempat menaruh hasilnya
+   * adalah layar yang menyibukkan orang tanpa mengubah apa pun — dan
+   * "prop opsional yang selalu diisi" hanyalah cabang mati yang menunggu
+   * seseorang lupa mengisinya.
+   */
+  onPilih: (p: Penyakit) => void | Promise<void>
+  /** Ada perubahan lain yang sedang berjalan pada baris ini. */
+  sibuk?: boolean
+  batas?: number
+}) {
   // ⛔ TERTUTUP sampai ditekan, dan itu bukan kosmetik. Tombolnya berdiri
   // PER PESERTA - `Find Disease` b5061 ada di `ClaimLifeDetailGCNM`, section
   // berkelas `Int-LIFE_PREMIUM_DETAIL` - sehingga klaim grup berpeserta 500
@@ -158,8 +188,20 @@ export function CariDiagnosa({ batas = 50 }: { batas?: number }) {
                     <td>{p.nama}</td>
                     <td>{p.kodeIcd}</td>
                     <td>
-                      {/* ⛔ Lihat kepala berkas: satu lawan banyak, OQ-K. */}
-                      <BelumTersedia apa={LABEL_CARI_DIAGNOSA.pilih} />
+                      <button
+                        type="button"
+                        disabled={sibuk || sibukLuar}
+                        onClick={() => {
+                          void (async () => {
+                            await onPilih(p)
+                            // Harness Pega tertutup sesudah `Choose`
+                            // (`SetDisease` b389 menyimpan lalu kembali).
+                            setTerbuka(false)
+                          })()
+                        }}
+                      >
+                        {LABEL_CARI_DIAGNOSA.pilih}
+                      </button>
                     </td>
                   </tr>
                 ))}

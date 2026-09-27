@@ -456,3 +456,69 @@ Daftar pilihan dropdown b5863 hidup pada rule properti `GROUPDIAGNOSE` *(kelas
 `ASM-FW-GISFW-Data-DiagnoseLife`)* yang **tidak ada** di ekspor dan **tidak ada** di katalog DEV.
 b5854 `pyLabelPreview` kolom itu **kosong**, jadi label yang sah satu-satunya adalah kepala kolom
 b4490 `GROUP DIAGNOSE`. Kolomnya dibuat *(018)*; **nilainya tidak dikarang** — butir **bf**.
+
+### ⛔ Dua ralat atas bab di atas — ditulis saat membangunnya, 27 September 2026
+
+**1. Gerbangnya TUJUH kali, bukan empat.** Bab di atas menulis *"satu kalimat di EMPAT tempat"*,
+dan itu benar **untuk grid**. Untuk berkasnya tidak: kalimat yang sama muncul **tujuh** kali di
+`ClaimLifeDetailGCNM.xml`, dan tiga sisanya menjaga **medan catatan**:
+
+| Baris | Kontrol | Tempat |
+| ---: | --- | --- |
+| b2628 | `.ADMIN_NOTES` *(label `ADMIN NOTES` b2611)* | medan catatan |
+| b4682 | `Add` | grid diagnosa |
+| b5059 | `Find Disease` | grid diagnosa |
+| b5870 | `.GROUPDIAGNOSE` | grid diagnosa |
+| b6152 | `Delete` | grid diagnosa |
+| b7335 | `.RECOMMENDATION` *(label `RECOMMENDATION` b7316)* | medan catatan |
+| b15234 | `.NOTES` *(label `CLAIM ANALYST` b15217)* | medan catatan |
+
+⭐ Artinya gerbangnya **lebih luas daripada diagnosa**: peserta yang sudah diputus membekukan
+**seluruh** isian layar Detail. Ketiga medan catatan itu belum dibangun; ketika dibangun, gerbang
+yang sama berlaku. Angka **7** dikunci `TestGerbangDiagnosaVERBATIMDariKorpus`, yang membaca
+berkas korpus **langsung** — bukan salinan.
+
+⚠️ Sebab kekeliruannya sempit: bacaan pertama menyisir rentang grid *(b4100–b6260)* saja, lalu
+kalimatnya ditulis tentang **berkasnya**. Ujinya yang menemukannya, bukan pembacaan ulang.
+
+**2. `SetSTS_Reject` TIDAK dipanggil rute tolak/akseptasi.** Brief giliran ini menulis *"`SetSTS_Reject`
+b241/b257 disambungkan ke rute tolak/akseptasi yang ada"*, seolah rule Pega memanggilnya dari sana.
+Ia **tidak dipanggil dari mana pun**. Satu-satunya kemunculannya di seluruh korpus:
+
+```
+ClaimLifeDetailGCNM.xml  b3224  <pyDeferLoadRetrievalActivity>SetSTS_Reject</...>
+                         b3229  <pySpecifyPreLoadActivity>true</...>
+                         b3225  <pySectionId>S5</pySectionId>
+```
+
+yaitu **aktivitas pra-muat** wilayah `S5`. Dan grid diagnosa bersarang **di dalam** wilayah itu:
+`S5` b3225 → `S6` b3528 → `L7` b3653 → **`L8` b3917** *(gridnya)*; antara b3218 dan b3922 ada
+**tiga** `<pySections` yang dibuka dan **satu** yang ditutup, jadi subtree-nya memang masih terbuka
+di b3923.
+
+Artinya di Pega pencerminan itu terjadi **setiap kali layar dimuat**, bukan saat keputusan diambil.
+
+⚠️ **Yang ditiru adalah INVARIANNYA, bukan mekanismenya**: *"`STS_REJECT` tiap diagnosa selalu sama
+dengan pesertanya"*. Menyalinnya **saat keputusan** *(`statusbaris.go`, satu transaksi)* **dan**
+**saat baris lahir** *(`SisipDiagnosa`)* menutup kedua arah yang di Pega ditutup oleh pemuatan
+ulang. Meniru mekanismenya berarti menulis ke basis data setiap kali seseorang membuka sebuah
+layar — dan arah selisihnya disengaja.
+
+### Yang dibangun — §2 A bagian 2
+
+| Sisi | Isi |
+| --- | --- |
+| Model | `models.Diagnosa` *(tujuh medan, **setiap**-nya bertag JSON eksplisit)*, `DiagnosaTerkunci`, `UrutanBerikutnya`, `RapatkanUrutan`, `PotongDiagnosa`, `TahapBergridPeserta` |
+| Repository | `AmbilDiagnosa` *(satu query per klaim)*, `SisipDiagnosa`, `PerbaruiDiagnosa`, `HapusDiagnosa`, `RapatkanUrutan`, `CerminkanStsReject` |
+| Services | `DiagnosaPeserta.Tambah`/`Ubah`/`Hapus`, ketiganya lewat **satu** `pagari` bergerbang lima |
+| Handlers | tiga rute bersarang di bawah pesertanya; `jawabGalatDiagnosa` **satu** terjemahan untuk ketiganya |
+| Frontend | `GridDiagnosa.tsx` *(tiga kolom VERBATIM, `Add`/`Delete`, `Choose` aktif)*; `CariDiagnosa` pindah **ke dalam** baris grid — `Find Disease` b5061 adalah sel 37 pada baris data |
+
+⛔ **Satu penyimpangan sadar.** `Add` b4700 diikuti `refresh` b4730, **bukan** `save`; di sini baris
+itu **langsung menetap**. Halaman Pega hidup di sesi server dan dapat menampung baris yang belum
+tersimpan; HTTP tidak punya tempat setara. Yang hilang: baris kosong yang ditambahkan lalu
+ditinggalkan akan tersimpan. Yang didapat: `URUTAN` yang sama untuk semua yang melihatnya, dan
+`Delete` yang tidak perlu mengarang perilaku atas baris yang belum ada.
+
+⚠️ `Delete` b6170 **tidak** menyimpang: b6191 `save` *(b6189 `pyActionLabel` `Save`)* membuatnya
+menetap seketika di Pega pula.

@@ -435,3 +435,39 @@ export const TOMBOL_KOMITE = {
   batal: 'Cancel',
 } as const
 
+
+/**
+ * Grid diagnosa — `Section/ClaimLifeDetailGCNM.xml` b3923 `.DiagnoseList`.
+ *
+ * ⛔ Label VERBATIM, termasuk HURUF BESARNYA. Kepala kolom di section itu
+ * ditulis `DIAGNOSE`, bukan `Diagnose` — dan merapikannya berarti layar ini
+ * menyebut kolom dengan kata yang tidak ada di sistem lama. Orang yang
+ * beralih membaca layar, bukan kode.
+ *
+ * ⛔ `GROUP DIAGNOSE` punya kepala kolom tetapi **tidak punya daftar
+ * pilihan**: dropdown b5863 ber-`pyListSource associated`, artinya daftarnya
+ * hidup pada rule properti `.GROUPDIAGNOSE` kelas `Data-DiagnoseLife` — yang
+ * tidak ada di ekspor dan tidak ada di katalog DEV. `pyLabelPreview` sel itu
+ * (b5854) pun KOSONG, jadi kepala kolom b4490 adalah satu-satunya kata yang
+ * sah untuknya. Butir **bf**, **OQ-L**.
+ */
+export const DIAGNOSA = {
+  /** b4188 `pyValue` — kepala kolom pertama. */
+  kolomNama: 'DIAGNOSE',
+  /** b4337 `pyValue` — kepala kolom kedua. */
+  kolomIcd: 'ICD CODE',
+  /** b4490 `pyValue` — kepala kolom ketiga. */
+  kolomKelompok: 'GROUP DIAGNOSE',
+  /** b4690 `pyLabel` -> `addRow` b4700 lalu `refresh` b4730. */
+  tambah: 'Add',
+  /**
+   * b6160 `pyLabel` -> `deleteRow` b6170 **lalu `save` b6191**.
+   *
+   * ⚠️ DUA aksi pada satu klik, dan yang kedua itulah bedanya dengan `Add`:
+   * penghapusan MENETAP seketika, penambahan tidak. Pola yang sama dengan
+   * `Close Claim` dan `Delete` dokumen.
+   */
+  hapus: 'Delete',
+  /** `Diagnose_Section.xml` b2509 `pyLabel` -> `SetDisease` b2528. */
+  pilih: 'Choose',
+} as const

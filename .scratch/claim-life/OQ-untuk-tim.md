@@ -515,5 +515,16 @@ Dropdown b5860/b5863 ber-`pyListSource` **`associated`**, artinya daftarnya hidu
 properti** `.GROUPDIAGNOSE` di kelas `Data-DiagnoseLife` — dan rule itu **tidak ada di ekspor**:
 `GROUPDIAGNOSE` muncul di **tepat satu** berkas korpus, yaitu section itu sendiri.
 
-> **Mohon kirimkan** rule properti `.GROUPDIAGNOSE`, atau daftar nilainya. Kolomnya sudah dibuat;
+> **Mohon kirimkan** ekspor `Rule-Obj-Property GROUPDIAGNOSE` kelas
+> `ASM-FW-GISFW-Data-DiagnoseLife` **beserta daftar lokalnya** — atau, bila lebih mudah, daftar
+> nilai yang pernah dipakai di produksi. Kolomnya sudah dibuat *(migrasi 018, `VARCHAR2(255)`)*;
 > nilainya **tidak dikarang**, dan layar menyatakan daftarnya belum ada.
+
+**Keputusan sementara — butir bf** *(27-09-2026)*: backend menerima `groupDiagnose` sebagai teks
+≤ 255 **tanpa** memeriksa daftar apa pun; frontend menampilkan `BelumTersedia` bernama kepala kolom
+b4490 `GROUP DIAGNOSE`. Nilai yang **sudah** tersimpan tetap ditampilkan — yang belum ada hanyalah
+cara memilihnya. `pyLabelPreview` sel itu *(b5854)* **kosong**, jadi kepala kolom adalah satu-satunya
+kata yang sah untuknya.
+
+⚠️ Ketika OQ-L dijawab, pemeriksaan daftar **menggantikan** pemeriksaan panjang — dan
+panjangnya tetap berlaku.

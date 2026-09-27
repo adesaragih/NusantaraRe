@@ -59,6 +59,16 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 		tolakBaris(svc, stubPelaku))
 	mux.HandleFunc("PUT /api/klaim-life/{id}/peserta/{pesertaId}/tanggal-kejadian",
 		setTanggalKejadian(svc, stubPelaku))
+	// Grid diagnosa - butir bd. Tiga tombol, tiga rute, dan jalurnya
+	// BERSARANG di bawah pesertanya: `SetDisease.xml` b389 menutup dengan
+	// `Obj-Save pyWorkPage`, jadi diagnosa tidak punya hidup di luar peserta
+	// yang memuatnya.
+	mux.HandleFunc("POST /api/klaim-life/{id}/peserta/{pesertaId}/diagnosa",
+		tambahDiagnosa(svc, stubPelaku))
+	mux.HandleFunc("PUT /api/klaim-life/{id}/peserta/{pesertaId}/diagnosa/{diagId}",
+		ubahDiagnosa(svc, stubPelaku))
+	mux.HandleFunc("DELETE /api/klaim-life/{id}/peserta/{pesertaId}/diagnosa/{diagId}",
+		hapusDiagnosa(svc, stubPelaku))
 	return mux
 }
 

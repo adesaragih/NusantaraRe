@@ -124,6 +124,15 @@ export interface Peserta {
   total: TotalPeserta
   /** Dokumen pendukung peserta ini. Daftar kosong, tidak pernah null. */
   dokumen: Dokumen[]
+  /**
+   * Diagnosa peserta ini — butir bd. Daftar kosong, tidak pernah null.
+   *
+   * Daftar, bukan sepasang kolom: b3923 menyajikannya RepeatGrid dengan
+   * tombol Add b4690 dan Delete b6160.
+   */
+  diagnosa: Diagnosa[]
+  /** Cermin STS_REJECT peserta. Kosong berarti belum diputus. */
+  kodeStatus: string
 }
 
 /** Satu klaim Life beserta seluruh pesertanya. */
@@ -484,6 +493,16 @@ export async function daftarKlaimLife(
  */
 /** Kode mentah STS_REJECT untuk baris yang ditolak. */
 export const KODE_DITOLAK = '2'
+
+/**
+ * Kode mentah STS_REJECT untuk baris yang diaksep.
+ *
+ * ⛔ Ia lahir bersama `bolehUbahDiagnosa`, dan sebabnya tajam: gerbang
+ * `pyDisabledWhen` b4682 menyebut **dua** nilai dengan `||`, dan layar yang
+ * hanya mengenal yang ditolak akan membiarkan diagnosa peserta yang sudah
+ * DIAKSEP tetap dapat disunting - separuh gerbang hilang tanpa berbunyi.
+ */
+export const KODE_AKSEP = '1'
 
 export const STATUS_OUTSTANDING = 'Outstanding'
 
@@ -1042,3 +1061,105 @@ export async function cariPenyakit(
   })
 }
 
+
+// ---------------------------------------------------------------------------
+// Grid diagnosa per peserta — butir bd.
+//
+// ⛔ Tiga rute, tiga tombol: `Add` b4690, `Choose` b2509, `Delete` b6160.
+// Jalurnya BERSARANG di bawah pesertanya — `SetDisease.xml` b389 menutup
+// dengan `Obj-Save pyWorkPage`, jadi diagnosa tidak punya hidup di luar
+// peserta yang memuatnya.
+// ---------------------------------------------------------------------------
+
+/** Satu baris `.DiagnoseList` milik seorang peserta. */
+export interface Diagnosa {
+  /**
+   * Pengenal ANGKA — berbeda dengan pengenal klaim dan peserta, yang teks.
+   *
+   * ⚠️ Ia milik kita (`SEQ_CLAIMLF_DIAGNOSE`), bukan warisan Pega: di sana
+   * baris ini hanya punya subscript di dalam halaman induknya. ADR-U-0022
+   * berlaku atas KODE yang datang dari sistem lama, bukan atas identitas
+   * yang kita terbitkan sendiri.
+   */
+  id: number
+  pesertaId: string
+  /** Posisi di grid, mulai 1. Dirapatkan backend sesudah penghapusan. */
+  urutan: number
+  /** `ICD_CODE` — read-only di layar (b5566), diisi dari hasil pencarian. */
+  kodeIcd: string
+  /** `DISEASE` — read-only di layar (b5374). */
+  nama: string
+  /** `GROUP_DIAGNOSE`. ⛔ Daftar pilihannya belum ada — OQ-L, butir bf. */
+  groupDiagnose: string
+  /** Cermin `STS_REJECT` PESERTA, bukan keputusan baris ini sendiri. */
+  kodeStatus: string
+}
+
+/**
+ * Apakah diagnosa peserta ini masih boleh disunting.
+ *
+ * ⛔ VERBATIM `pyDisabledWhen` — satu kalimat di TUJUH tempat pada
+ * `ClaimLifeDetailGCNM.xml`, empat di antaranya di grid ini (b4682 `Add`,
+ * b5059 `Find Disease`, b5870 `GROUPDIAGNOSE`, b6152 `Delete`):
+ *
+ *     .STS_REJECT=='1' || .STS_REJECT=='2'
+ *
+ * ⛔ Yang diuji `STS_REJECT` **PESERTA**. Layar bukan penjaga — backend
+ * menolak permintaannya dengan 409 — tetapi tombol yang tetap hidup padahal
+ * pasti ditolak adalah tombol yang mengajari orang mengabaikan galat.
+ */
+export function bolehUbahDiagnosa(peserta: Peserta): boolean {
+  return peserta.kodeStatus !== KODE_AKSEP && peserta.kodeStatus !== KODE_DITOLAK
+}
+
+/**
+ * `Add` b4690 — menambah baris KOSONG di ekor daftar peserta.
+ *
+ * Mengembalikan baris yang baru lahir, lengkap dengan `id` dan `urutan`,
+ * supaya layar tidak perlu membaca ulang seluruh klaim hanya untuk
+ * menampilkan satu baris kosong.
+ */
+export async function tambahDiagnosa(
+  klaimID: string,
+  pesertaID: string,
+): Promise<Diagnosa> {
+  return minta<Diagnosa>(
+    `/api/klaim-life/${encodeURIComponent(klaimID)}` +
+      `/peserta/${encodeURIComponent(pesertaID)}/diagnosa`,
+    { metode: 'POST' },
+  )
+}
+
+/**
+ * `Choose` b2509 → `SetDisease` — menulis isi satu baris.
+ *
+ * ⛔ `kodeIcd` dan `nama` datang dari baris hasil `GET /api/penyakit-life`,
+ * tidak diketik: keduanya `Read-only` di grid (b5374, b5566). Mengetiknya
+ * berarti nama diagnosa yang tidak ada di katalog dapat masuk, dan tidak ada
+ * satu pun yang akan membandingkannya lagi.
+ */
+export async function ubahDiagnosa(
+  klaimID: string,
+  pesertaID: string,
+  diagID: number,
+  isi: { kodeIcd: string; nama: string; groupDiagnose: string },
+): Promise<void> {
+  await minta<void>(
+    `/api/klaim-life/${encodeURIComponent(klaimID)}` +
+      `/peserta/${encodeURIComponent(pesertaID)}/diagnosa/${diagID}`,
+    { metode: 'PUT', badan: isi },
+  )
+}
+
+/** `Delete` b6160 — `deleteRow` b6170 dan `save` b6191: menetap seketika. */
+export async function hapusDiagnosa(
+  klaimID: string,
+  pesertaID: string,
+  diagID: number,
+): Promise<void> {
+  await minta<void>(
+    `/api/klaim-life/${encodeURIComponent(klaimID)}` +
+      `/peserta/${encodeURIComponent(pesertaID)}/diagnosa/${diagID}`,
+    { metode: 'DELETE' },
+  )
+}

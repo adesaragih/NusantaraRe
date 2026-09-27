@@ -1086,3 +1086,98 @@ kali** di dalam grid — baris yang sudah diaksep atau ditolak tidak dapat disun
 
 **Telemetri:** Go **334 PASS · 0 FAIL · 34 SKIP** · JS **242** · migrasi `001`–`018`, `030`,
 `050`–`056`.
+
+## Giliran tiga modul 2 — paket 0 dan paket 1 (diagnosa bd)
+
+### Paket 0 — `06bf711` *(dokumen; nol kode produksi)*
+
+Tiket 08 mendapat bab bertanggal *"Diagnosa banyak per peserta"*; baris 94-nya — yang masih
+berbunyi *"bila work owner menyetujui **al**"* — diralat. Tiket 14 mendapat bab *"Migrasi 018"*.
+PARITAS 24/25/13c menyebut rute yang akan ada, dan 13c **meralat dirinya sendiri**.
+
+`TestKaskadeHanyaPadaEmpatRelasi` → `TestKaskadeHanyaPadaRelasiTerdaftar`. Daftarnya enam berkas
+sejak 018; nama yang menyebut **angka** berbohong setiap kali relasi berikutnya lahir, nama yang
+menyebut **aturannya** tidak. Nama lamanya ditulis di komentar supaya pencarian atasnya tetap
+sampai. Dibuktikan merah: cabut `ON DELETE CASCADE` dari 018 → `ada=false, mau=true`.
+
+### Paket 1 — §2 A bagian 2: rute dan layar diagnosa
+
+**Yang dibaca lebih dulu**: `ClaimLifeDetailGCNM.xml` b3218–b6260 *(pohon grid)*, `SetDisease.xml`,
+`SetSTS_Reject.xml`, `SearchDiagnose_act.xml`, ketiga pemuat `ClaimLifeDetailGCNM`, dan ketiga
+section bergrid peserta. Rinciannya di tiket 08.
+
+**Tiga temuan yang mengubah kode**, dan ketiganya datang dari turun satu tingkat lagi:
+
+**1. Layar diagnosa terjangkau dari TIGA tahap, bukan satu.** Daftar rule yang **memuat**
+`ClaimLifeDetailGCNM` tidak memuat `MedicalCheckClaimLife` — dan berhenti di situ berarti
+menyimpulkan Medical Advisor tidak dapat menyunting diagnosa. Satu tingkat ke bawah membantahnya:
+`ViewClaimDetailLifeGCNM` adalah `pyEditAction` grid peserta di `InputOSClaimLife` b18252,
+`MedicalCheckClaimLife` b17416, dan `InputAkseptasiClaimLife` b17387 — grid yang **sama**
+*(b15924, b15764, b15735)*. Ketiga pemuat ber-`pyWhenName` kosong dan ber-`pyPrivilegeName` kosong.
+Bentuk kekeliruan yang sama untuk **keempat** kalinya *(Close Claim, OQ-H, OQ-K.2)*.
+
+**2. Gerbangnya tujuh kali, bukan empat.** Bacaan pertama menyisir rentang grid saja. Tiga sisanya
+menjaga `.ADMIN_NOTES` b2628, `.RECOMMENDATION` b7335, dan `.NOTES` b15234 — artinya peserta yang
+sudah diputus membekukan **seluruh** isian layar Detail. Yang menemukannya **uji**, bukan pembacaan
+ulang: `TestGerbangDiagnosaVERBATIMDariKorpus` membaca berkas korpus langsung dan menagih angkanya.
+
+**3. `SetSTS_Reject` tidak dipanggil rute tolak/akseptasi** — ia aktivitas **pra-muat** b3224 wilayah
+`S5`, dan grid bersarang di dalamnya. Yang ditiru invariannya, bukan mekanismenya. Ralat atas brief,
+ditulis di tiket 08.
+
+### ⛔ Cacat lintas-lapis KEENAM — dicegat sebelum berlayar
+
+`models.Diagnosa` ronde pertama ditulis **tanpa satu pun tag JSON**, sementara `api.ts` sudah
+mendeklarasikan `kodeIcd`, `pesertaId`, `groupDiagnose`. Go akan mengirim `KodeICD`, `PesertaID`,
+`GroupDiagnose`; React membaca `undefined`; grid tampil dengan tiga kolom kosong dan **nol galat di
+kedua sisi**. Ditutup `TestNamaJSONDiagnosaDikunci` *(dibuktikan merah dengan tag `kodeICD`)*.
+
+Dan yang **ketujuh** hampir menyusulnya di berkas yang sama: `bolehUbahDiagnosa` membaca
+`peserta.kodeStatus`, yang tidak pernah diseberangkan Go — gerbang layar akan selalu terbuka, dan
+pemakai belajar mengabaikan 409. `KodeStatus` kini menyeberang, dan penjaga himpunan kunci
+menyala lebih dulu.
+
+### Dua penjaga yang menuduh hal yang benar — dipersempit dengan bukti
+
+`TestNolNamaTabelTelanjangDiQuery` menuduh sebuah **kalimat prosa** *("menirunya dengan N UPDATE
+berarti daftar berlubang")* sebagai `UPDATE <nama tabel>`. Komentar kini dibuang sebelum pencocokan
+— sebagaimana `polaKomentar` di `models/kodestatus_test.go` sudah lebih dulu melakukannya, dengan
+sebab yang sama persis. Dibuktikan **masih menggigit**: `FROM T_CLAIMLF_DIAGNOSE` telanjang yang
+ditanam di `diagnosa.go` tetap tertangkap.
+
+⚠️ Penjaga yang menuduh hal yang benar akan **dilonggarkan** orang, bukan dipatuhi — jadi ia
+dipersempit sekarang, bukan dibiarkan sampai seseorang menuliskan pengecualian untuk berkasnya.
+
+### Penjaga yang menyala — dan tidak satu pun dilonggarkan
+
+| Penjaga | Kenapa menyala | Yang dikerjakan |
+| --- | --- | --- |
+| `TestPesertaJSONMembawaTanggalKejadian` | `diagnosa` lalu `kodeStatus` masuk marshaller | keduanya **ditulis** di daftar, bukan daftarnya dilonggarkan |
+| `TestSetiapRuteNonGETPunyaPenjagaKasusTertutup` | tiga rute baru | ketiganya didaftarkan ke `rutePengubah` |
+| `TestSetiapLayananPengubahMemeriksaKasusTerbuka` | layanan baru | `diagnosa.go` → `pagari` didaftarkan |
+| `TestGerbangDiagnosaVERBATIMDariKorpus` | angka 4 salah | diralat menjadi **7**, dengan ketujuh barisnya disebut |
+| `TestNamaJSONDiagnosaDikunci` | tag JSON hilang | tujuh tag eksplisit ditambahkan |
+| `TestNolNamaTabelTelanjangDiQuery` | menuduh prosa | **penjaganya** yang dipersempit, lalu dibuktikan masih menggigit |
+
+### Instrumen yang dibuktikan merah lebih dulu
+
+`TestKaskadeHanyaPadaRelasiTerdaftar` *(cabut kaskade 018)* · `TestNolNamaTabelTelanjangDiQuery`
+*(tanam `FROM T_CLAIMLF_DIAGNOSE`)* · `TestPencerminanDiagnosaDiTransaksiKeputusan` *(ganti
+`baru.KodeStatus` → `sasaranKodeLama`)* · `TestPagariDiagnosaMemeriksaKetigaGerbang` *(cabut
+`DiagnosaTerkunci`)* · `TestNamaJSONDiagnosaDikunci` *(tag `kodeICD`)*.
+
+### TELEMETRI EKSEKUSI
+
+| Hal | Paket 0 | Paket 1 |
+| --- | --- | --- |
+| Commit | `06bf711` | *(berikutnya)* |
+| Go | 334 PASS · 0 FAIL · 34 SKIP | **356 PASS · 0 FAIL · 37 SKIP** |
+| JS | 242 | **252** |
+| `gofmt` / `go vet` / `go vet -tags db` | bersih | bersih |
+| `tsc` / `npm run build` | bersih | bersih · 184,79 kB |
+| Migrasi | `001`–`018`, `030`, `050`–`056` | tidak bertambah |
+| Kebocoran | nol | nol |
+
+⚠️ Angka SKIP naik 34 → 37 karena **tiga** uji `db` baru; ketiganya melewati selama `ORACLE_DSN`
+belum dikonfigurasi. **Melewati bukan lulus** — dan `-migrate` belum dijalankan work owner *(brief
+§4)*, jadi ketiganya memang belum pernah menyentuh Oracle.

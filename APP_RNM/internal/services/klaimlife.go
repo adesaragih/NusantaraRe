@@ -17,6 +17,7 @@ var ErrKlaimTidakAda = errors.New("services: klaim tidak ada")
 // Perakitan ada DI SINI, bukan di repository dan bukan di handlers.
 type KlaimLife struct {
 	repo *repository.KlaimLife
+	diag *repository.Diagnosa
 }
 
 // KlaimLife mengembalikan layanan klaim Life, atau nil bila tanpa database.
@@ -24,7 +25,10 @@ func (s *Service) KlaimLife() *KlaimLife {
 	if !s.PunyaDatabase() {
 		return nil
 	}
-	return &KlaimLife{repo: repository.NewKlaimLife(s.db)}
+	return &KlaimLife{
+		repo: repository.NewKlaimLife(s.db),
+		diag: repository.NewDiagnosa(s.db),
+	}
 }
 
 // Ambil merakit satu klaim beserta seluruh peserta dan seluruh baris
@@ -64,6 +68,12 @@ func (k *KlaimLife) Ambil(ctx context.Context, id string) (*models.Klaim, error)
 	if err != nil {
 		return nil, err
 	}
+	// Diagnosa per peserta - butir bd. Satu query untuk seluruh klaim,
+	// sebentuk dengan dokumen di atasnya.
+	diagnosa, err := k.diag.AmbilDiagnosa(ctx, id)
+	if err != nil {
+		return nil, err
+	}
 
 	for i := range peserta {
 		if b, ada := baris[peserta[i].ID]; ada {
@@ -71,6 +81,9 @@ func (k *KlaimLife) Ambil(ctx context.Context, id string) (*models.Klaim, error)
 		}
 		if d, ada := dokumen[peserta[i].ID]; ada {
 			peserta[i].Dokumen = d
+		}
+		if g, ada := diagnosa[peserta[i].ID]; ada {
+			peserta[i].Diagnosa = g
 		}
 		// Keenam total uang peserta dihitung DI SINI, saat dibaca, dan
 		// tidak disimpan (models.HitungTotalPeserta punya bukti XML-nya).

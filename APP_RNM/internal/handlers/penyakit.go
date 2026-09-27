@@ -5,7 +5,7 @@ package handlers
 //	`GET /api/penyakit-life?icd=&nama=&batas=`
 //
 // Meniru `ReportDefinition/BrowseDiseaseLife_RD.xml` lewat
-// `services.Diagnosa`. GET: ia membaca, tidak mengubah apa pun.
+// `services.PencarianPenyakit`. GET: ia membaca, tidak mengubah apa pun.
 //
 // ⛔ `batas` yang diminta klien TIDAK dipercaya apa adanya - ia dijepit
 // `models.BatasPenyakit` ke `pyMaxRecords` 500. Tabelnya 97.586 baris, dan

@@ -234,6 +234,14 @@ type Peserta struct {
 	// disediakan migrasi 003; tiket 06 yang memakainya.
 	TanggalKejadian string
 
+	// Diagnosa adalah daftar `.DiagnoseList` peserta ini - butir bd.
+	//
+	// ⛔ Daftar, bukan sepasang kolom. `ClaimLifeDetailGCNM.xml` b3923
+	// menyajikannya `RepeatGrid` dengan tombol `Add` b4690 dan `Delete`
+	// b6160; kolom tunggal `DISEASE`/`ICD_CODE` pada peserta (migrasi 003)
+	// adalah warisan yang hanya sanggup menyimpan satu.
+	Diagnosa []Diagnosa
+
 	// Uang polis. Seluruhnya Money kecuali EMPercent, yang perbandingan -
 	// keduanya sengaja bertipe berbeda supaya tidak pernah terjumlahkan
 	// (ADR-F-0004).
@@ -329,6 +337,10 @@ func (p Peserta) MarshalJSON() ([]byte, error) {
 	if dokumen == nil {
 		dokumen = []Dokumen{}
 	}
+	diagnosa := p.Diagnosa
+	if diagnosa == nil {
+		diagnosa = []Diagnosa{}
+	}
 	return json.Marshal(struct {
 		ID              string `json:"id"`
 		NomorPremiList  string `json:"nomorPremiList"`
@@ -360,6 +372,21 @@ func (p Peserta) MarshalJSON() ([]byte, error) {
 		// ⛔ NAMA BERKAS ikut; nama ORANG tidak. `NAMA_FILE` adalah nama
 		// berkas unggahan, bukan nama tertanggung.
 		Dokumen []Dokumen `json:"dokumen"`
+		// ⭐ Diagnosa menyeberang sejak butir bd. Tanpa ini grid diagnosa
+		// harus memanggil rute kedua untuk setiap peserta yang dibuka -
+		// dan klaim grup berpeserta ratusan membuat itu terasa rusak.
+		Diagnosa []Diagnosa `json:"diagnosa"`
+		// ⭐ KodeStatus menyeberang sejak butir bd, dan ia MEDAN KEENAM
+		// yang hampir menjadi cacat lintas-lapis keenam. Layar memerlukannya
+		// untuk meniru gerbang `pyDisabledWhen` b4682 - yang diuji di sana
+		// `.STS_REJECT` PESERTA. Tanpa medan ini `peserta.kodeStatus` di
+		// TypeScript adalah `undefined`, pembandingnya selalu tidak sama,
+		// dan gerbangnya tidak pernah menutup: tombol tetap hidup, backend
+		// menjawab 409, dan pemakai belajar mengabaikan galat.
+		//
+		// ⚠️ Kolomnya DITULIS sejak tiket 04; yang kurang hanya
+		// penyeberangannya. Cacat serupa pernah nyata pada CLAIM_RETRO.
+		KodeStatus string `json:"kodeStatus"`
 	}{
 		// ⛔ Diisi BERNAMA, bukan berposisi. Tujuh medan berurutan yang
 		// enam di antaranya bertipe string: dua yang tertukar tetap
@@ -375,6 +402,8 @@ func (p Peserta) MarshalJSON() ([]byte, error) {
 		Baris:           baris,
 		Total:           p.Total,
 		Dokumen:         dokumen,
+		Diagnosa:        diagnosa,
+		KodeStatus:      p.KodeStatus,
 	})
 }
 
