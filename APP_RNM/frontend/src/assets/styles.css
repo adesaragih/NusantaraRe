@@ -1,0 +1,3956 @@
+/* Token desain — SATU sumber untuk warna, bentuk, jarak, dan bayangan.
+
+   Blok ini sempat TERHAPUS ronde 70 oleh skrip pembersih kelas mati yang
+   regex-nya tidak menangani blok bersarang. Kehilangannya tidak berbunyi:
+   CSS tidak melaporkan var() yang tak terdefinisi — warna hanya berhenti
+   berlaku, dan seluruh layar kehilangan identitasnya sekaligus.
+   Dipulihkan dari transkrip sesi, lalu diperiksa: setiap var() yang dipakai
+   berkas ini punya definisinya di sini. */
+:root {
+  --navy: #03045e;
+  --blue: #0077b6;
+  --blue-dark: #005f92;
+  --bg: #ffffff;
+  --alt-row: #eaf4fb;
+  --border: #d9e2ea;
+  --text: #1c2430;
+  --muted: #5b6875;
+  --danger: #b3261e;
+  --danger-bg: #fdecea;
+  /* SKALA UKURAN HURUF — sembilan tingkat, tanpa pecahan.
+
+     Sebelum ini ada delapan belas ukuran, enam di antaranya berbeda setengah
+     piksel dari tetangganya. Setengah piksel tidak membentuk hierarki: ia
+     hanya membuat dua teks berperan sama tampil sedikit berbeda tanpa
+     seorang pun dapat menyebut mana yang benar. */
+  --fs-2xs: 10px;
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-md: 13px;
+  --fs-base: 14px;
+  --fs-lg: 15px;
+  --fs-xl: 17px;
+  --fs-2xl: 20px;
+  /* KOREKSI TV2-300 (ronde 250): `--fs-hero: 38px` DICABUT.
+     Ronde 249 membiarkannya yatim dengan alasan "ia satu anak tangga
+     dari skala sembilan tingkat". Code-review sumbu Standards
+     membantahnya dengan angka, dan bantahannya berdiri: langkah skala
+     ini 1,1,1,1,1,2,3 — lalu 18. Lompatan 18px bukan anak tangga, ia
+     nilai satu-pakai untuk `.logo--login` yang sudah dicabut. Skalanya
+     kini DELAPAN tingkat, dan setiap tingkatnya punya pemakai. */
+  /* KOREKSI TV2-287 butir 4 (ronde 249): 248px -> 272px. Empat nama menu
+     terpotong pada lebar lama (Exclude Reinsurer In..., Treaty Out Non
+     Prop..., Report Realization Tr..., Summary Production...). Nama menu
+     TIDAK BOLEH diubah (pagar §4.1) dan tooltip `title=` SUDAH ada di
+     kesepuluh item sejak lama — jadi yang melebar panelnya. 272px
+     menyisakan ~190px untuk teks sesudah margin, padding, lencana, dan
+     jarak; nama terpanjang (28 aksara @13px) muat. */
+  --sidebar-w: 272px;
+  --sidebar-w-terlipat: 72px;
+
+  /* §0G.1 (ronde 264) — TINGGI topbar, dibutuhkan DUA pihak sekaligus.
+     Sejak topbar membentang penuh di atas sidebar, panel samping harus
+     menempel MULAI dari bawah topbar, bukan dari tepi atas layar. Angka
+     yang sama karena itu muncul di `.topbar` (tingginya) dan di `.sidebar`
+     (`top` serta `height`). Menuliskannya dua kali adalah cara panel
+     tertinggal setengah bilah saat salah satunya disetel.
+
+     64px = logo 40px + 12px lapang di atas dan di bawah. Ia TETAP di
+     seluruh lebar layar: yang menyusut pada layar sempit hanya jarak
+     kiri-kanannya, sehingga satu nilai ini benar di mana-mana.
+
+     Ia token BENTUK, bukan warna — pagar App.ronde250tampilan.test.ts
+     menghitung token :root yang bernilai HEX, dan nilai ini piksel. */
+  --topbar-h: 64px;
+  /* Jarak layang sidebar dari tepi kiri, dari topbar, dan dari bawah
+     (§0G.2.3). Satu nilai supaya keempat sisinya tidak pernah berbeda. */
+  --nav-layang: 12px;
+
+  /* Token bentuk — bukan warna baru, hanya cara warna yang sama dipakai. */
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  /* --r-xl ditambahkan TV2-291 (ronde 250) untuk lembar besar: modal dan
+     kartu. Ia token BENTUK, bukan warna — pagar §4.3 mengunci palet dan
+     huruf, dan sengaja menyebut token --r-* sebagai alat yang boleh
+     dipakai. Acuan bentuk REFERENCE_UI/4.png memakai sudut ~16px pada
+     modal, terasa jelas lebih lembut daripada 12px pada bidang selebar
+     itu. */
+  --r-xl: 16px;
+  --r-pill: 999px;
+  --sh-1: 0 1px 2px rgba(3, 4, 94, 0.06);
+  --sh-2: 0 2px 8px rgba(3, 4, 94, 0.07), 0 1px 2px rgba(3, 4, 94, 0.05);
+  --sh-3: 0 12px 32px rgba(3, 4, 94, 0.14);
+  --ring: 0 0 0 3px rgba(0, 119, 182, 0.28);
+  --t: 120ms ease;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: "Montserrat", system-ui, sans-serif;
+  font-weight: 400;
+  font-size: var(--fs-base);
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  /* TV2-291 (ronde 250) — "TETAP BISA RESPONSIVE WEBSITE MODERN UI!"
+     Halaman TIDAK PERNAH menggulir mendatar. Tabel lebar menggulir di
+     dalam `.table-wrap` miliknya sendiri; tanpa pagar ini, satu tabel
+     yang melebihi layar akan menggeser SELURUH halaman — termasuk
+     panel menu dan bilah atas yang menempel — dan pemakai kehilangan
+     keduanya justru saat ia sedang menggeser ke kanan. */
+  overflow-x: hidden;
+}
+
+/* Hierarki tipografi: h1 > h2 > h3 > h4 > body.
+   Ukurannya turun cukup tegas sehingga tingkat sebuah judul terbaca dari
+   bentuknya, bukan ditebak dari tempatnya di halaman. Kelas yang sudah punya
+   ukuran sendiri (.modal__title, .panel__title) tetap menang, karena kelas
+   lebih kuat daripada elemen — jadi blok ini menambah dasar, bukan menimpa
+   keputusan yang sudah ada. */
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  color: var(--navy);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.2px;
+}
+h1 {
+  font-size: var(--fs-2xl);
+}
+h2 {
+  font-size: var(--fs-xl);
+}
+h3 {
+  font-size: var(--fs-lg);
+}
+h4 {
+  font-size: var(--fs-md);
+  letter-spacing: 0;
+}
+
+/* Angka disejajarkan per kolom. Pada daftar keuangan, digit yang bergeser
+   membuat mata harus membaca ulang tiap baris. */
+table {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------- logo */
+/* KOREKSI ronde 249, melanjutkan 246/247: SELURUH keluarga `.logo`
+   DICABUT — `.logo`, `.logo--sidebar`, `.logo--login`.
+   Ronde 246/247 mengganti wordmark TEKS "E-TREATY" di sidebar dengan
+   <img> logo resmi dan mencabut `.logo--sidebar`. Ronde 249 melakukan
+   hal yang sama untuk halaman Login (TV2-287 butir 2), sehingga dua
+   kelas yang tersisa kehilangan pemakai JSX terakhirnya — diperiksa
+   dengan sapuan `className="logo`/`logo--` di seluruh src/, nol hasil.
+   Gayanya hidup sekarang di `.topbar__logo-img` (dipindah dari
+   `.sidebar__logo-img` ronde 264) dan `.login__logo`, yang mengatur
+   GAMBAR, bukan huruf. */
+
+/* -------------------------------------------------------------- layout */
+/* §0G.1 (ronde 264) — cangkang kini BERTUMPUK: topbar penuh di atas, lalu
+   baris sidebar+konten di bawahnya. Sebelumnya ia satu baris mendatar dan
+   topbar duduk di dalam kolom kanan, sehingga topbar dan sidebar bertemu di
+   sudut dan terbaca sebagai satu blok siku — keluhan yang §0G.2.3 sebut.
+
+   Halaman TETAP menggulir pada `body`. Susunan "app shell" (tinggi 100vh,
+   isi yang menggulir sendiri) sempat dipertimbangkan dan DITOLAK: ia
+   memindahkan wadah gulir, dan beberapa aturan yang sudah jalan bergantung
+   pada gulir jendela (`.table-wrap { max-height: calc(100vh - 300px) }`,
+   judul kelompok yang menempel). Menukar wadah gulir untuk perubahan
+   presentasi melanggar "nol perubahan pada yang sudah jalan". */
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  /* §0G.2.3 (ronde 264) — TANAH tempat panel melayang.
+     Panel putih di atas halaman putih tidak melayang; ia hanya kehilangan
+     garisnya. Acuan REFERENCE_UI/sidebar_2.jpeg dan SIDEBAR.png sama-sama
+     menaruh panelnya di atas latar sangat muda, dan itulah yang membuat
+     bentuk melayangnya terbaca.
+
+     `--alt-row` (#eaf4fb) adalah biru paling muda yang SUDAH ada di palet —
+     nol hex baru. Yang terlihat hanyalah selokan selebar --nav-layang di
+     sekeliling panel: `.content` tetap putih, dan tidak satu pun halaman
+     berubah warnanya. */
+  background: var(--alt-row);
+}
+.shell__badan {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* KOREKSI TV2-291 (ronde 250) — panel menu PUTIH.
+   Pemilik proyek: "SIDEBAR ITU PUTIH AJA KALI YA TAPI KETIKA MAU DI KLIK
+   BARU ADA GRADIENT BUTTON NYA WARNA BIRU NYA!"
+
+   Ini BUKAN satu baris. Seluruh penanda panel ini dibangun sebagai
+   rgba(255,255,255,alfa) supaya terbaca di atas navy — ikon, hover,
+   pembatas, bilah gulir. Di atas putih setiap satu di antaranya HILANG,
+   bukan memudar. Semuanya ikut diganti di bawah, dan pagar
+   App.ronde250tampilan.test.ts menolak yang tertinggal.
+
+   Kontras DIUKUR lebih dulu (WCAG 2.1, ambang AA teks normal 4,5:1),
+   dan seluruh penggantinya memakai palet yang SUDAH ada — nol hex baru:
+     --muted #5b6875 di atas --bg      5,70:1
+     --text  #1c2430 di atas --bg     15,62:1
+     --bg    #ffffff di atas --blue    4,87:1
+     --bg    #ffffff di atas --navy   17,75:1
+     --muted #5b6875 di atas --alt-row 5,11:1 */
+/* §5.1 RONDE 270 (E.1-E.4) — PANEL BIRU.
+
+   Pemilik proyek 22-09-2026: *"SIDEBAR BALIKKAN DENGAN BACKGROUND BIRU!
+   BUAT YANG ELEGAN, PROFESIONAL, MODERN UI!"*
+
+   "Balikkan" harfiah: ronde 250 (TV2-291) membalik panel ini dari navy ke
+   putih; ronde ini membalikkannya kembali. Yang TIDAK diwarisi dari ronde
+   249 adalah warnanya — `#cfd8e3` dan `#7f8ea3` yang dipakai waktu itu
+   BUKAN token palet, dan PAGAR KERAS §9.8 melarang hex baru. Seluruh
+   skema di bawah dibangun dari kesepuluh token yang ada + alpha putih di
+   atasnya (alpha atas warna yang sudah ada bukan warna baru — pola yang
+   sama dipakai `--sh-1` dan `--ring`).
+
+   ---------------------------------------------------------------------------
+   KENAPA `--blue-dark`, BUKAN `--navy`
+   ---------------------------------------------------------------------------
+
+   Diukur dari acuan pemilik proyek `REFERENCE_UI/SIDEBAR.png`, yang memuat
+   panel yang SAMA dalam varian terang dan varian biru bersebelahan:
+
+	latar panel varian biru  #3339cd  L=0,08038
+	--blue-dark  #005f92     L=0,10260   <- terdekat
+	--navy       #03045e     L=0,00914   <- 9x lebih gelap
+	--blue       #0077b6     L=0,16571
+
+   `--navy` akan menghasilkan panel yang praktis hitam, bukan "background
+   biru". `--blue-dark` yang paling dekat dengan terang acuannya.
+
+   ---------------------------------------------------------------------------
+   E.2 — TABEL KONTRAS, ambang AA 4,5:1
+   ---------------------------------------------------------------------------
+
+   ⚠️ RIWAYAT, BUKAN KEADAAN SEKARANG. Tabel ini dihitung ronde 270 untuk
+   panel `#005F92`. Panelnya sudah berganti dua kali sejak itu (`#0B1120`
+   ronde 271, `#2A4B78` ronde 274), dan setiap angka di kolom kanan ikut
+   berubah. Tabel yang BERLAKU dihitung ulang setiap kali uji berjalan, di
+   `App.ronde270sidebar.test.ts` E.2 — sembilan kasus sejak ronde 274.
+   Jangan mengutip angka dari sini.
+
+	kasus              teks      latar      rasio
+	nama menu          #ffffff   #005f92     6,88:1
+	kepala grup        #eaf4fb   #005f92     6,17:1
+	menu diblokir      #d9e2ea   #005f92     5,25:1
+	lencana 2-huruf    #ffffff   putih .14   5,06:1
+	hover              #ffffff   putih .10   5,52:1
+	TERPILIH teks      #03045e   #eaf4fb    15,92:1
+	TERPILIH lencana   #ffffff   #0077b6     4,87:1
+	bendera SOON       #7a5200   #fff7e6     6,49:1
+
+   ---------------------------------------------------------------------------
+   E.3 — keadaan TERPILIH, dan kenapa ia TIDAK diwarisi
+   ---------------------------------------------------------------------------
+
+   Di panel putih, terpilih dibedakan gradient biru + teks putih. Mewarisi
+   bentuk itu ke atas panel biru membuatnya nyaris tak terlihat:
+
+	                    luminans   x panel   x hover
+	panel --blue-dark    0,10260     1,00      -
+	hover putih .10      0,14013     1,37      1,00
+	pil --blue (warisan) 0,16571     1,62      1,18   <- nyaris sama hover
+	pil --alt-row        0,89159     8,69      6,36   <- dipakai
+
+   Jadi pembedanya DIBALIK: pil TERANG dengan teks navy di atas panel biru.
+   Acuan pemilik proyek memakai bentuk itu pada varian terangnya, dan pil
+   biru-lebih-terang pada varian birunya — tetapi pil birunya sendiri hanya
+   4,54:1 (#676ad8, putih di atasnya), yaitu nyaris menyentuh ambang.
+   Dengan panel yang lebih gelap daripada acuan, mewarisinya akan jatuh di
+   bawah ambang. E.3 memang meminta pembedanya dipikirkan ulang.
+
+   E.4: nol menu baru, nol menu hilang. Yang berubah GAYA, bukan isi. */
+.sidebar {
+  width: var(--sidebar-w);
+  flex: 0 0 var(--sidebar-w);
+  /* ⚠️ RONDE 274 §A.2 — PERGANTIAN WARNA PANEL YANG KELIMA.
+
+     19-09  identitas pengguna dipindah ke kaki sidebar
+     20-09  "SIDEBAR ITU PUTIH AJA KALI YA"          -> var(--bg)
+     22-09  "BALIKKAN DENGAN BACKGROUND BIRU"        -> var(--blue-dark)
+     23-09  "SAYA ACC YANG ANDA REKOMENDASIKAN"      -> #0B1120
+     23-09 10:13  diubah DI LUAR sesi      -> #2A4B78  (DIBALIK ronde 272)
+     23-09  "WARNA SIDE BAR NAVIGATION GANTI KE INI : 2A4B78"  -> #2A4B78
+
+     ✅ TV2-407 DITUTUP di baris terakhir itu, lewat JALAN B.
+
+     Peringatan yang dulu berdiri di sini berbunyi: "JANGAN pasang #2A4B78
+     lagi tanpa mengganti dua warna teks sidebar lebih dulu". Syarat itu
+     KINI TERPENUHI, dan itulah satu-satunya alasan warna ini boleh kembali:
+
+	#8FA3BE menu diblokir  7,31:1 -> 3,43:1   diganti #AEC1D8  4,81:1
+	#4FA3DC cincin fokus   6,82:1 -> 3,20:1   diganti #84C8E9  4,81:1
+
+     Keduanya hex baru, dan keduanya masuk lewat keputusan pemilik proyek
+     23-09-2026 — bukan dipilih di sini. Yang TETAP: #C3D3E8 kepala grup
+     (5,81:1) dan putih nama menu (8,84:1).
+
+     Kenapa peringatannya keras: panel ini 11,9x lebih terang daripada
+     #0B1120 (L 0,00576 -> 0,06880), jadi SETIAP rasio di atasnya turun,
+     sementara CSS-nya tetap sah — tidak ada yang memberi tahu selain pagar
+     kontras. Suntingan 10:13 membuktikannya: satu substitusi buta
+     memerahkan TUJUH uji (dua sidebar, dua pagar hex, tiga plasma, karena
+     `--plasma-a` kebetulan bernilai sama dan ikut tersapu).
+
+     ⚠️ Karena itu penggantian ronde 274 dilakukan PER BARIS, bukan dengan
+     sapuan nilai: hanya `.sidebar` dan `.kelompok__judul` yang berubah.
+     `--plasma-a` SENGAJA dibiarkan #0B1120 — lihat catatan di bloknya.
+
+     ⚠️ `--blue-dark` TETAP ADA sebagai token; ia dipakai di tempat lain.
+     Yang diganti NILAI di aturan ini, bukan tokennya. */
+  background: #2a4b78;
+  color: var(--alt-row);
+  /* §0G.2.3 (ronde 264) — BENTUK MELAYANG.
+     `border-right: 1px solid var(--border)` DICABUT. Garis itulah yang
+     MENGELAS panel ke kolom konten; bersama topbar yang dulu duduk di
+     kolom kanan, keduanya membentuk satu blok siku — persis yang pemilik
+     proyek sebut "masih kaku".
+
+     Penggantinya: sudut membulat + jarak di keempat sisi + bayangan
+     halus, dan satu garis tepi PENUH yang tipis. Garis penuh BUKAN
+     pengulangan las: ia mengelilingi kartu, bukan menyambungkannya ke
+     tetangga — dan acuan SIDEBAR.png varian terang memang memakainya.
+     Tanpa garis itu, kartu putih di atas selokan #eaf4fb hanya
+     mengandalkan bayangan setipis --sh-2, dan tepinya hilang di layar
+     dengan gamma tinggi.
+
+     --r-xl (16px) dipilih, bukan --r-lg: acuan sidebar_3.jpeg memakai
+     sudut yang jelas lebih lembut daripada kartu di dalam halaman, dan
+     --r-xl adalah token yang sudah dipakai modal untuk bidang selebar
+     itu. */
+  /* Ronde 270: garis keliling ikut dibalik. `--border` adalah garis
+     TERANG yang dirancang untuk kartu putih di atas selokan; di atas panel
+     biru ia menjadi bingkai yang lebih terang daripada isinya dan menarik
+     mata ke tepi alih-alih ke menunya. Putih 14% memberi tepi yang terbaca
+     tanpa menjadi bingkai. */
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-2);
+  margin: var(--nav-layang);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  /* §0G.1 (ronde 264): panel mulai DI BAWAH topbar, bukan dari tepi atas
+     layar — topbar kini membentang penuh di atasnya. Tanpa ini panel
+     menempel setinggi satu bilah terlalu ke atas dan tersembunyi di
+     belakangnya. */
+  /* Angka-angka ini MENGIKUTI topbar, dan ronde 281 A menggeser topbar
+     turun satu selokan (ia kini melayang). Geometrinya:
+
+	bilah menempati   [layang, layang + topbar-h]      = [12, 76]
+	sidebar mulai     dasar bilah + satu selokan       = 88
+	sidebar berakhir  100vh - satu selokan             = 100vh - 12
+	tinggi            100vh - 88 - 12 = 100vh - topbar-h - layang*3
+
+     Dulu `layang*1` dan `layang*2`; bertambah satu kelipatan masing-masing
+     karena selokan di ATAS bilah kini ada. Uji D ronde 281 mengikat
+     ANGKANYA (88), bukan ejaan calc-nya. */
+  top: calc(var(--topbar-h) + var(--nav-layang) * 2);
+  height: calc(100vh - var(--topbar-h) - var(--nav-layang) * 3);
+  /* `overflow: hidden` bukan warisan — ia yang membuat sudut membulatnya
+     benar-benar MEMOTONG. Tanpanya butir menu dan bilah gulir tetap
+     bersudut siku dan menonjol keluar lengkungnya. */
+  overflow: hidden;
+  /* Yang dianimasikan LEBARNYA, bukan transform. Isi halaman menempel pada
+     tepi panel dan harus melebar bersamanya; transform hanya menggeser
+     panelnya dan meninggalkan lubang kosong di sebelahnya. */
+  transition:
+    width 180ms ease,
+    flex-basis 180ms ease;
+}
+
+/* Daftar menu menggulir sendiri — bukan seluruh panel. Dengan begitu kaki
+   panel tetap menempel di bawah walau daftar entitasnya panjang. */
+.sidebar__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: 12px;
+  scrollbar-width: thin;
+  /* Ronde 270: ibu jari gulir ikut dibalik — `--border` di atas panel biru
+     hampir sama terangnya dengan kepala grup dan terbaca sebagai garis
+     kedua. */
+  scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+}
+.sidebar__scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.sidebar__scroll::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.35);
+  background-clip: content-box;
+}
+
+/* §0G.1 (ronde 264) — `.sidebar__brand`, `.sidebar__logo-img`,
+   `.sidebar--terlipat .sidebar__logo-img`, dan `.sidebar__brand-sub`
+   DICABUT dari sini. Logonya pindah ke topbar atas instruksi pemilik
+   proyek 21-09-2026; gayanya hidup sekarang di `.topbar__brand` dan
+   `.topbar__logo-img`, di dekat aturan `.topbar` supaya yang membaca
+   topbar melihat seluruh bagiannya di satu tempat.
+
+   Yang IKUT pindah beserta alasannya: `object-fit: contain` + `width:auto`
+   (menjaga rasio aspek — tanpanya logo gepeng), tinggi >= 40px (pemilik
+   proyek "LOGO JUGA GA JELAS" ronde 248), dan larangan latar buram di
+   belakangnya (TV2-311 — kotak putih itu justru yang terlihat).
+
+   Yang TIDAK ikut pindah: `.sidebar__brand-sub` ("Reasuransi Treaty").
+   Bilah setinggi 64px tidak memuat dua baris teks di samping judul
+   halaman, dan acuan REFERENCE_UI/sidebar_2.jpeg memang hanya memuat
+   [wordmark] [garis] [judul]. Kalimatnya tidak dibuang — ia menjadi
+   `title` pada <img>, sehingga tetap terbaca saat disentuh tetikus. */
+
+/* KOREKSI TV2-291 (ronde 250) — `.sidebar__logo-badge` DICABUT.
+   Kartu putih itu dipasang ronde 246/247 dengan alasan "logo JPEG
+   berlatar putih". Latarnya BUKAN putih — diukur ronde 250, ia
+   abu-lavender #E6E5EB, dan nol dari 9.600 piksel tepinya putih murni.
+   Badge itu karena itu tidak pernah menyembunyikan kotak apa pun; ia
+   menggantinya dengan kotak lain. Logonya kini `logo-treaty.png`, aset
+   turunan bertransparansi sungguhan — tidak ada yang perlu dibungkus. */
+
+/* Kelompok sidebar yang dapat dilipat (ronde 103). Judulnya <button>
+   sungguhan supaya keyboard bekerja tanpa kode tambahan; gayanya meniru
+   .sidebar__section supaya perpindahannya tidak mengubah rupa. */
+/* KOREKSI TV2-287 butir 5 (ronde 249): judulnya MENEMPEL saat digulir.
+   Pemilik proyek melaporkan "kelompok pertama tanpa label" — labelnya ADA
+   (App.tsx, KelompokMenu nama="Treaty Master") dan selalu dirender; yang
+   hilang adalah TAMPAKNYA begitu daftar 22 menu digeser ke bawah. Latar
+   navy yang sama dengan panel wajib ikut, atau item yang lewat di
+   belakangnya terbaca menembus judul. */
+/* KOREKSI KEDUA TV2-291 (ronde 250) — cacat di perbaikan ronde 249.
+   Aturan ini menetapkan `background: var(--navy)` lalu, sebelas baris
+   kemudian, `background: transparent`. Yang belakangan MENANG. Jadi
+   judul menempelnya berhasil sementara latarnya tidak pernah ada, dan
+   item yang lewat di belakangnya memang terbaca menembus judul —
+   persis keadaan yang komentar di atas nyatakan harus dicegah. Kini
+   satu deklarasi saja, dan warnanya mengikuti panel. */
+.kelompok__judul {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  /* Ronde 270 — latar sticky mengikuti PANEL. Kalau tidak, item yang
+     lewat di belakangnya terbaca menembus judul; itu cacat yang koreksi
+     kedua TV2-291 sudah perbaiki sekali, dan mengganti warna panel tanpa
+     mengganti ini akan menghidupkannya lagi. */
+  background: #2a4b78;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 14px 20px 8px;
+  border: 0;
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  /* RONDE 274 (A.5) — 5,81:1 di atas panel #2A4B78, terukur 23-09-2026.
+     Angkanya turun dari 12,38:1 karena panelnyalah yang berganti; warnanya
+     sendiri tidak disentuh dan tidak perlu disentuh — ia masih di atas AA.
+
+     `--alt-row` yang dulu di sini memberi 16,89:1 di atas panel lama (kini
+     7,93:1), yaitu SETERANG nama menunya sendiri; kepala grup yang sama
+     terangnya dengan isinya berhenti berfungsi sebagai kepala. #C3D3E8
+     satu tingkat lebih redup dan tetap di atas ambang. */
+  color: #c3d3e8;
+  cursor: pointer;
+  text-align: left;
+}
+.kelompok__judul:hover .kelompok__teks {
+  color: var(--bg);
+}
+.kelompok__judul:focus-visible {
+  /* Cincin fokus WAJIB terbaca di atas panelnya sendiri. `--blue` di atas
+     `--blue-dark` hanya 1,41:1 — cincin yang tidak terlihat bukan cincin. */
+  outline: 2px solid var(--bg);
+  outline-offset: -2px;
+  border-radius: var(--r-sm);
+}
+.kelompok__panah {
+  display: inline-block;
+  transition: transform 0.15s ease;
+  font-size: 10px;
+}
+.kelompok__panah--buka {
+  transform: rotate(90deg);
+}
+/* Isi kelompok menjorok ke dalam - pola menu bertingkat pada umumnya. */
+.kelompok__isi {
+  padding-left: 8px;
+}
+/* Tingkat DUA (disiapkan untuk CITRIX): menjorok lebih dalam, judulnya
+   lebih kecil. Menu Treaty yang ada TIDAK memakai tingkat ini. */
+.kelompok--anak .kelompok__judul {
+  padding: 8px 20px 6px 28px;
+}
+.kelompok--anak .kelompok__isi {
+  padding-left: 16px;
+}
+/* Saat panel terlipat jadi ikon saja, judul kelompok menyusut jadi garis -
+   perilaku yang sama dengan .sidebar__section lama. */
+.sidebar--terlipat .kelompok__judul {
+  height: 1px;
+  margin: 10px 16px;
+  padding: 0;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.22);
+}
+.sidebar--terlipat .kelompok__isi {
+  padding-left: 0;
+}
+
+/* Item nav sebagai pil membulat, bukan baris penuh dengan garis kiri.
+   Pil memberi target klik yang jelas dan terlihat lebih tenang saat aktif. */
+.sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  /* KOREKSI TV2-287 butir 6 (ronde 249): 1px -> 3px. "Jarak antar-item
+     lega" — pada 22 menu, 1px membuat daftarnya terbaca sebagai satu blok
+     padat alih-alih deretan target klik. */
+  margin: 3px 10px;
+  padding: 8px 12px;
+  /* KOREKSI ronde 246/247: var(--r-sm) (6px, sudut tumpul tipis) -> pil
+     penuh, instruksi eksplisit pemilik proyek ("item menu jadi pil
+     membulat", inspirasi tampilan "Oval"). */
+  border-radius: var(--r-pill);
+  /* 6,88:1 di atas --blue-dark. */
+  color: var(--bg);
+  text-decoration: none;
+  font-size: var(--fs-md);
+  cursor: pointer;
+  transition:
+    background var(--t),
+    color var(--t);
+}
+
+/* Kotak singkatan nama menu. Ia berperan sebagai ikon, dan ia sengaja BUKAN
+   gambar: daftar entitasnya datang dari backend, sehingga gambar apa pun yang
+   dipilih di sini akan mengarang arti yang tidak ada di sumbernya. Kotaknya
+   selalu tampil — juga saat panel terbentang — supaya keadaan terlipat tidak
+   memindahkan letak apa pun, hanya menghilangkan teksnya. */
+.sidebar__ikon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 24px;
+  height: 24px;
+  /* KOREKSI TV2-287 butir 3 (ronde 249): var(--r-sm) (6px, kotak
+     bersudut tumpul) -> pil penuh. Pemilik proyek: "BENTUK TABEL DAN MENU
+     MENU NYA TIDAK KAKU AGAK BULAT". Token yang sudah ada, nol nilai
+     baru. */
+  border-radius: var(--r-pill);
+  /* Di atas panel putih, lencana butuh latar yang LEBIH GELAP daripada
+     panelnya — bukan putih-transparan yang dulu dipakai di atas navy.
+     --alt-row adalah biru paling muda di palet, dan teks --muted di
+     atasnya terukur 5,11:1. */
+  /* Ronde 270 — panel BIRU: lencananya kembali ke putih-transparan.
+     `--alt-row` (L=0,89) di atas panel biru menjadi dua puluh dua kotak
+     terang yang lebih menarik mata daripada nama menunya sendiri; putih
+     14% memberi kotak yang terbaca sebagai bagian panel.
+
+     ⚠️ RONDE 274 — angka "5,06:1" yang berdiri di sini SALAH sejak ronde
+     271, dan ditemukan saat mengukur ulang A.5. Ia benar untuk panel
+     `#005F92`, yaitu DUA warna panel yang lalu; ronde 271 memindahkan
+     panel ke `#0B1120` tanpa menghitung ulang komentarnya. Nilainya yang
+     sebenarnya, per panel:
+
+	#005F92   5,06:1     <- angka yang tertulis di sini
+	#0B1120  12,76:1     <- keadaan sebelum ronde 274
+	#2A4B78   6,04:1     <- sekarang
+
+     Bahwa ketiganya lulus adalah keberuntungan, bukan hasil pemeriksaan.
+     Pagar kontraslah yang memeriksanya; komentar tidak memeriksa apa pun,
+     dan komentar yang angkanya diwarisi lebih buruk daripada tanpa angka. */
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--bg);
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+/* ⚠️ RONDE 274 (A.3) — `.sidebar__link:hover .sidebar__ikon` DICABUT.
+   CACAT YANG DIBUAT RONDE INI, dan dinyatakan begitu.
+
+   Aturan itu berbunyi `rgba(255,255,255,0.26)` dengan huruf putih 10px
+   tebal. Ia satu-satunya tempat di sidebar yang menumpuk DUA alpha —
+   putih 26% di atas putih 10% (latar item saat hover) di atas panel.
+   Terukur:
+
+	di atas #0B1120     rgb( 92, 96,106)   6,25:1   lulus
+	di atas #2A4B78     rgb(113,135,165)   3,67:1   GAGAL
+
+   Jadi ia tidak pernah salah sebelum hari ini; mengganti panellah yang
+   menjatuhkannya. Tidak ada pagar yang melihatnya karena kedelapan kasus
+   ronde 270 memeriksa lencana DIAM dan nama menu SAAT HOVER — tidak satu
+   pun lencana SAAT HOVER. Kasus kesembilan ditambahkan ronde ini.
+
+   Yang dicabut hanya PENIMPANYA. Lencana tetap membawa putih 14% miliknya
+   sendiri, dan karena latar itemnya ikut menyala saat hover, ia TETAP
+   menguat — hanya tidak sejauh dulu:
+
+	diam    putih 14% di atas panel               6,04:1
+	hover   putih 14% di atas putih 10% di panel  4,81:1
+
+   Menurunkan alpha bukan jalan keluar: 16% baru menyentuh 4,60:1, dan
+   jaraknya dari 14% saat diam tinggal dua poin — penimpa yang tidak
+   menimpa apa pun. Membalik menjadi tile GELAP lulus dengan lega, tetapi
+   `rgba(0,0,0,…)` nol kali dipakai berkas ini; itu pola warna baru, dan
+   pola baru menunggu keputusan pemilik proyek. */
+/* ⚠️ KOREKSI ronde 270 — CACAT YANG SUDAH ADA, ditemukan saat mengukur
+   ulang E.2 dan BUKAN dibuat ronde ini.
+
+   Aturan ini berbunyi `rgba(255,255,255,0.22)` dengan teks `#fff`, dan
+   komentarnya menyebut ia berdiri di atas gradient biru. Diukur:
+
+	ujung --blue gradient   putih di atas #3895c6 = 3,34:1   DI BAWAH AA
+	ujung --navy gradient   putih di atas #3a3b81 = 9,85:1
+
+   Gradientnya 135deg, jadi ujung `--blue` ada di kiri-atas — persis tempat
+   lencana ini duduk. Jadi titik terburuknya bukan kebetulan, ia letak
+   bakunya. Tidak ada pagar yang menangkapnya karena tidak ada pagar yang
+   menghitung warna KOMPOSIT.
+
+   Sejak ronde ini item aktif berlatar TERANG (--alt-row), jadi lencananya
+   dibalik juga: tile `--blue` dengan huruf putih, 4,87:1. */
+.sidebar__link--active .sidebar__ikon {
+  background: var(--blue);
+  color: var(--bg);
+}
+
+/* Nama menu yang panjang dipotong dengan elipsis, bukan dibungkus ke baris
+   kedua: tinggi item yang tidak seragam membuat daftarnya sulit dipindai. */
+.sidebar__teks {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sidebar__link:hover {
+  /* Putih 10% — satu tingkat di bawah keadaan terpilih, dan tetap jauh
+     lebih gelap daripadanya (0,140 lawan 0,892) supaya hover tidak pernah
+     tertukar dengan terpilih. Putih di atasnya 5,52:1. */
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--bg);
+}
+/* KOREKSI TV2-287 butir 6 (ronde 249): penanda kiri `inset 3px 0 0`
+   DICABUT. Ia bayangan SIKU, dan sejak item berbentuk pil penuh
+   (--r-pill) ujungnya terpotong lengkung — penandanya justru makin samar,
+   kebalikan dari yang dimaksud.
+
+   KOREKSI TV2-291 (ronde 250): cincin tipis + latar biru lembut yang
+   menggantikannya ronde 249 dirancang untuk panel NAVY. Di atas panel
+   putih, biru 26% menjadi nyaris tak terlihat dan teks putih di atasnya
+   tidak terbaca sama sekali.
+
+   Penggantinya yang diminta pemilik proyek sendiri: "KETIKA MAU DI KLIK
+   BARU ADA GRADIENT BUTTON NYA WARNA BIRU NYA". Gradient --blue ->
+   --navy, keduanya token yang SUDAH ada. Teks putih aman di SELURUH
+   bentangnya karena titik paling terangnya (--blue) terukur 4,87:1 —
+   di atas ambang AA. Gradient yang memakai warna lebih terang daripada
+   --blue akan menembus ambang itu, dan pagar uji menolaknya. */
+/* ⚠️ DIBALIK ronde 270 (E.3). Aturan ini berbunyi gradient `--blue` ->
+   `--navy` dengan teks putih, dirancang untuk panel PUTIH.
+
+   Di atas panel biru gradient itu nyaris lenyap: titik paling terangnya
+   (--blue, L=0,166) hanya 1,62x panel dan 1,18x keadaan hover — yaitu
+   pemakai tidak dapat membedakan menu yang sedang dibuka dari menu yang
+   sekadar disentuh tetikus. E.3 menuntut pembedanya dipikirkan ulang,
+   bukan diwarisi, dan inilah sebabnya.
+
+   Pil TERANG dengan teks navy: 8,69x panel, 6,36x hover, teks 15,92:1. */
+.sidebar__link--active {
+  background: var(--alt-row);
+  box-shadow: var(--sh-1);
+  color: var(--navy);
+  font-weight: 600;
+}
+.sidebar__link:focus-visible {
+  outline: none;
+  /* RONDE 274 (A.3) — cincin fokus #84C8E9, 4,81:1 di atas panel #2A4B78.
+
+     #4FA3DC yang ronde 271 pasang di sini memberi 6,82:1 di atas panel
+     lama dan hanya **3,20:1** di atas yang baru. Ia WAJIB ikut diganti,
+     dan penggantinya dipilih pemilik proyek 23-09-2026 — bukan di sini.
+
+     `--ring` (biru 28%) tidak menghasilkan apa pun di atas panel gelap;
+     ronde 270 menggantinya dengan putih 55%. Putih bekerja, tetapi ia
+     warna yang SAMA dengan nama menunya — cincinnya terbaca sebagai teks
+     yang menebal. Aksen biru terang membedakannya tanpa menjadi putih. */
+  box-shadow: 0 0 0 3px #84c8e9;
+}
+
+/* KOREKSI TV2-291 (ronde 250): `.sidebar__catatan` DICABUT — nol
+   pemakai di seluruh `src/`, termasuk berkas uji. Ia sudah yatim
+   SEBELUM ronde ini; code-review sumbu Standards menunjuk bahwa
+   ronde 249 mencabut `.logo` tetapi meninggalkan tiga yatim lain, dan
+   ketidakkonsistenan itu benar. Dua lainnya (`.sidebar__section`,
+   `.aksi-form`) ikut dicabut di tempatnya masing-masing. */
+
+/* §5.2 RONDE 270 (E.5) — `.sidebar__foot` DICABUT.
+
+   Pemilik proyek 22-09-2026: *"(PROFILE AKUN) Sign out -> PINDAHKAN KE
+   BAGIAN SUDUT KANAN ATAS (TOP NAVIGATION BAR)"*.
+
+   ⚠️ Ini instruksi KEDUA atas tempat yang sama, dan ia MEMBALIK yang
+   pertama. Ronde 246/247 memindahkan blok ini DARI topbar KE kaki panel
+   atas instruksi *"identitas pengguna di bagian bawah sidebar"*. Kedua
+   instruksi eksplisit; yang belakangan menang. Riwayatnya ditulis di sini
+   supaya perpindahan ketiga — bila ada — tidak dikira kekeliruan.
+
+   Gayanya hidup sekarang di `.topbar__kanan`, `.topbar__profil`, dan
+   `.profil-menu` di dekat aturan `.topbar`. Yang IKUT pindah: avatar
+   inisial, nama, NIK + department/division, division + branchCode, dan
+   tombol Sign out. Nol baris informasi hilang (E.8). */
+
+.content {
+  flex: 1;
+  background: var(--bg);
+  min-width: 0;
+}
+
+/* Topbar menempel: judul dan tombol keluar tetap terlihat pada daftar
+   panjang. Bayangan halus menggantikan garis keras. */
+/* ================= TOPBAR NAVY — ronde 275 Tahap B =================
+
+   Keputusan pemilik proyek 23-09-2026, verbatim: "UBAH WARNA LOGO, WARNA
+   BIRU GUNAKAN SEBAGAI BACKGROUND DAN BENTUK TOP BAR NAVIGATION NYA
+   SAMAKAN". Acuan: REFERENCE_UI/topbar_nav.jpeg.
+
+   Gradiennya tersusun dari DUA warna yang sudah hidup di berkas ini —
+   `--navy` (#03045e) dan `#2a4b78` milik sidebar — sehingga bilah ini satu
+   keluarga dengan panel di bawahnya dan NOL hex baru masuk (PAGAR KERAS
+   §8). Arah 90deg: gelap di kiri tempat logo berdiri, lebih terang di
+   kanan tempat chip profil duduk.
+
+   SELURUH warna di atasnya diukur ulang terhadap ujung TERANG gradien
+   (#2a4b78, L=0,06880) — ujung itu kasus terburuk, dan menguji ujung
+   gelapnya saja akan melaporkan lulus untuk teks yang justru hilang:
+
+	putih #ffffff          8,84:1   judul, nama profil, toggle, avatar
+	#AEC1D8                4,81:1   sub-teks chip, chevron
+	putih di atas rgba .10 6,73:1   latar toggle & chip
+
+   Keduanya hex yang SUDAH masuk lewat keputusan pemilik proyek ronde 274.
+   ================================================================= */
+.topbar {
+  position: sticky;
+  top: var(--nav-layang);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  /* §0G.1 (ronde 264): tingginya PASTI, bukan hasil penjumlahan padding.
+     `.sidebar` menghitung `top` dan `height`-nya dari nilai yang sama, dan
+     tinggi yang berubah mengikuti isi akan menggeser panel setiap kali
+     judul halaman berganti panjang. Yang menyusut di layar sempit hanya
+     jarak kiri-kanannya. */
+  height: var(--topbar-h);
+  flex: none;
+  padding: 0 28px;
+  /* SATU nada dengan sidebar — keputusan pemilik proyek 24-09-2026
+     (pesan siang): "topbar pakai warna sidebar #2A4B78".
+
+     Sebelumnya `linear-gradient(90deg, var(--navy), #2a4b78)`, yaitu
+     membentang dari #03045e ke #2a4b78. Gradien itu dipasang ronde 275
+     B.2 meniru acuan topbar_nav.jpeg, dan acuannya tidak berubah — yang
+     berubah keputusannya. Dua permukaan yang bersentuhan (bilah dan
+     sidebar) kini benar-benar satu warna, bukan dua yang mirip.
+
+     Kontras di atas #2a4b78 TETAP yang sudah diukur ronde 275/277:
+     putih 8,84:1 · #aec1d8 4,81:1 — dan sekarang seragam di SELURUH
+     lebar bilah, bukan hanya di ujung terangnya. */
+  background: #2a4b78;
+  /* MELAYANG & MEMBULAT — keputusan pemilik proyek 24-09-2026 (pesan
+     malam): "JANGAN KOTAK, AGAK BULAT DIKIT SEPERTI SIDEBAR".
+
+     Acuan `REFERENCE_UI/topbar_nav.jpeg` DIUKUR, bukan dikira:
+
+	tinggi bilah            59 px
+	selokan DI ATAS bilah    8 px   -> melayang, bukan menempel
+	busur sudut kiri-atas   x=16 di baris teratas -> x=0 di baris +13
+	nisbah radius/tinggi    ~0,237
+
+     Diproyeksikan ke --topbar-h (64px) -> radius sepadan 15,2px, dan
+     --r-xl (16px) token terdekat — token yang SAMA dengan sidebar. Jadi
+     "seperti sidebar" terpenuhi dua kali: melayang, dan radius sama.
+
+     Warna di atas bilah pada acuan #ddedfa; latar `.shell` V2 --alt-row
+     #eaf4fb. Nyaris sama, sehingga bilah melayang menghasilkan tampak
+     yang sama TANPA satu pun warna baru.
+
+     `margin` tanpa sisi bawah: `.sidebar` membawa selokan atasnya
+     sendiri, dan menambah selokan bawah di sini akan menjadikan jarak
+     topbar-sidebar 24px sementara jarak ke tepi layar 12px.
+
+     `top` mengikuti selokan, BUKAN 0: dengan `top: 0` bilah menempel
+     kembali ke tepi atas begitu halaman digulir — selokannya hilang
+     persis ketika halaman sedang dipakai. */
+  margin: var(--nav-layang) var(--nav-layang) 0;
+  border-radius: var(--r-xl);
+  /* Bidang melayang berbatas KELILING, bukan hanya bawah: garis bawah
+     saja pada sudut membulat berhenti menggantung di tengah busur.
+     Nilainya mengikuti `.sidebar` apa adanya — nol warna baru. */
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: var(--sh-2);
+}
+
+/* Merek di topbar — logo yang sama, berpindah dari sidebar (ronde 264).
+   `flex: none` supaya ia tidak ikut menyusut ketika judul halaman panjang;
+   yang menyusut judulnya, dan judul punya elipsis. */
+.topbar__brand {
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+.topbar__logo-img {
+  display: block;
+  /* FILTER DICABUT — ronde 279 A.2, dan yang mencabutnya PENGUKURAN.
+
+     Ronde 275 B.3 memasang `brightness(0) invert(1)` karena aset yang
+     ada memang tidak terbaca di navy. Terukur pada aset TERKIRIM:
+
+	logo-treaty.png (master putih)  di #2a4b78   2,40:1   gagal
+	logo-topbar.png (master navy)   di #2a4b78   4,27:1   LULUS >= 3:1
+
+     Pemilik proyek 24-09-2026 menyerahkan master baru yang memang
+     dirancang untuk latar gelap, dan rencana A.2 menyuruh MENGUKUR
+     apakah filternya masih perlu alih-alih meneruskan kebiasaan.
+     Jawabannya tidak: tintanya sudah terang sendiri.
+
+     Memutihkannya tetap memberi angka lebih tinggi (8,84:1), dan itu
+     TIDAK dipilih — ronde 277 mengukur bahwa pemutihan meratakan
+     struktur tonal artwork dan meninggalkan cincin hantu di sekitar
+     lubang huruf. Wordmark yang terbaca dengan warnanya sendiri lebih
+     baik daripada siluet putih yang lebih kontras.
+
+     Dijaga `assets/logo.ronde277.test.ts` (blok ronde 279), yang
+     mengikat HASIL (tinta terbaca di navy) bukan CARA (ada/tidaknya
+     filter). */
+  /* >= 40px: pemilik proyek ronde 248 "LOGO JUGA GA JELAS" pada logo yang
+     terjepit. `width: auto` + `object-fit: contain` menjaga rasio
+     aspeknya, jadi ia tidak gepeng. Aset turunannya terpotong rapat,
+     sehingga 40px tinggi berarti 40px tulisan — bukan 3px tulisan di
+     tengah kanvas kosong. */
+  height: 40px;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+/* Garis pemisah tipis antara merek dan judul halaman — bentuk yang sama
+   dengan acuan REFERENCE_UI/sidebar_2.jpeg. Warna `--border`, token yang
+   sudah ada; nol hex baru. */
+.topbar__pisah {
+  flex: none;
+  width: 1px;
+  height: 24px;
+  /* Hiasan; alpha putih supaya ia terlihat di kedua ujung gradien. */
+  background: rgba(255, 255, 255, 0.26);
+}
+/* Sisi kiri topbar: tombol lipat, judul, dan nama tabel. Dikelompokkan
+   supaya `justify-content: space-between` tetap memisahkan DUA sisi setelah
+   tombol lipat ditambahkan. */
+.topbar__kiri {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+.topbar__ident {
+  min-width: 0;
+}
+
+/* Tombol lipat panel.
+   Ia berada di TOPBAR, bukan di dalam panel samping — sehingga ia tetap
+   terlihat dalam keadaan apa pun. Tombol yang tinggal di dalam panel ikut
+   menyempit bersama panelnya, dan di layar ponsel ia ikut tergeser keluar
+   pandangan: panelnya dapat ditutup tetapi tidak dapat dibuka lagi. */
+.topbar__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  /* Di atas navy: tepi dan latar beralpha PUTIH, bukan --border yang
+     dirancang untuk latar terang. Komposit putih-di-atas-rgba(.10)-di-
+     atas-#2a4b78 terukur 6,73:1. */
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  border-radius: var(--r-sm);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--bg);
+  cursor: pointer;
+  transition:
+    background var(--t),
+    border-color var(--t),
+    color var(--t);
+}
+.topbar__toggle:hover {
+  background: #f4f8fb;
+  border-color: #c3d3e0;
+}
+.topbar__toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.topbar__title {
+  font-size: var(--fs-2xl);
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  /* 8,84:1 di atas ujung TERANG gradien (#2a4b78). */
+  color: var(--bg);
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* §5.2 RONDE 270 (E.5-E.9) — PROFIL + SIGN OUT di SUDUT KANAN ATAS.
+
+   Pemilik proyek 22-09-2026: *"(PROFILE AKUN) Sign out -> PINDAHKAN KE
+   BAGIAN SUDUT KANAN ATAS (TOP NAVIGATION BAR)"*.
+
+   Riwayat lengkapnya di catatan pencabutan `.sidebar__foot` di atas: ini
+   perpindahan KEDUA, dan ia membalik yang pertama. */
+.topbar__kanan {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  /* Jangkar bagi menu turun di bawahnya. */
+  position: relative;
+}
+
+/* Pemicu menu turun: avatar + nama. Ia <button> sungguhan supaya keyboard
+   bekerja tanpa kode tambahan, dan supaya pembaca layar menyebutnya
+   sebagai tombol yang membuka menu. */
+.topbar__profil {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 10px 5px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition:
+    background var(--t),
+    border-color var(--t);
+}
+.topbar__profil:hover {
+  background: var(--alt-row);
+  border-color: var(--blue);
+}
+.topbar__profil:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+/* Nama di bilahnya sendiri: SATU baris, dipotong elipsis. Bilah setinggi
+   64px tidak memuat tiga baris identitas — sisanya hidup di menu turun,
+   dan tidak satu pun barisnya hilang (E.8). */
+/* Baris kedua chip akun — ronde 275 B.4, mengikuti acuan topbar_nav.jpeg
+   yang menaruh nama di atas dan keterangan di bawahnya.
+
+   Datanya dari sesi yang SUDAH ada (user.nik / user.department): nol
+   field karangan, nol endpoint baru. #AEC1D8 terukur 4,81:1 di atas ujung
+   terang gradien — hex yang sama yang ronde 274 pakai, masuk lewat
+   keputusan pemilik proyek. */
+.topbar__profil-sub {
+  font-size: var(--fs-sm);
+  color: #aec1d8;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.topbar__profil-teks {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  min-width: 0;
+}
+.topbar__profil-nama {
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--bg);
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.topbar__profil-panah {
+  font-size: 9px;
+  /* 4,81:1 di atas #2a4b78 — hex yang sama yang ronde 274 pakai untuk
+     menu diblokir, masuk lewat keputusan pemilik proyek. */
+  color: #aec1d8;
+  transition: transform 0.15s ease;
+}
+.topbar__profil-panah--buka {
+  transform: rotate(180deg);
+}
+
+/* ⚠️ E.6 — Sign out TIDAK BOLEH satu klik tanpa sadar.
+
+   Di kaki panel ia tombol lebar yang jauh dari jalur klik biasa. Di sudut
+   kanan atas ia bertetangga dengan kontrol lain, dan tombol telanjang di
+   sana berarti satu klik meleset mengeluarkan pemakai dari pekerjaan yang
+   belum tersimpan. Karena itu ia berada DI DALAM menu turun: membukanya
+   satu tindakan, menekannya tindakan kedua. */
+.profil-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 30;
+  min-width: 232px;
+  padding: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-2);
+}
+.profil-menu__nama {
+  font-size: var(--fs-base);
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.25;
+  letter-spacing: -0.1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Hierarki tiga tingkat DIPERTAHANKAN UTUH dari kaki panel: nama --text >
+   NIK --muted > cabang --muted lebih kecil. Angka kontrasnya tidak berubah
+   karena latarnya tetap panel putih (--text 15,62:1, --muted 5,70:1). */
+.profil-menu__nik {
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  color: var(--muted);
+  line-height: 1.35;
+  letter-spacing: 0.2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.profil-menu__cabang {
+  font-size: var(--fs-2xs);
+  color: var(--muted);
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.profil-menu__pisah {
+  height: 1px;
+  margin: 10px -12px;
+  background: var(--border);
+}
+
+/* Tombol keluar, kini di dalam menu turun.
+   Riwayat: varian "ghost terang" ronde 249 dibuat untuk kaki panel navy;
+   ronde 250 menggantinya dengan ghost biasa untuk kaki panel putih. Menu
+   turun juga berlatar panel putih, jadi bentuk ronde 250 tetap benar dan
+   tidak diubah — yang berubah hanya tempatnya. */
+.btn--keluar {
+  width: 100%;
+  background: var(--bg);
+  border-color: var(--border);
+  color: var(--muted);
+  font-weight: 600;
+}
+.btn--keluar:hover {
+  background: var(--alt-row);
+  border-color: var(--blue);
+  color: var(--text);
+}
+
+/* Avatar inisial: identitas terlihat sekilas tanpa menambah data baru.
+   KOREKSI ronde 270: putih-di-atas-navy dibuat ronde 246 untuk kaki panel
+   NAVY. Di topbar yang berlatar putih, lingkaran putih lenyap sama sekali.
+   Dibalik kembali ke navy-di-atas-putih — bentuk yang sama yang dipakai
+   SEBELUM ronde 246 memindahkannya. Putih di atas --navy 17,75:1. */
+.avatar {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: var(--r-pill);
+  /* DIBALIK ronde 275: di atas bilah navy, lencana navy lenyap. Putih
+     berisi huruf navy terukur 8,84:1 dua arah.  hanya dipakai
+     topbar (App.tsx:647), jadi pembalikan ini tidak menyentuh layar lain. */
+  background: var(--bg);
+  color: #2a4b78;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.4px;
+}
+
+/* Halaman memakai SELURUH sisa ruang setelah panel samping.
+   Sebelumnya ia dibatasi max-width: 1440px, dan itulah sumber ruang kosong di
+   kanan pada layar 1920px — 480px terbuang, dan tabelnya berhenti jauh sebelum
+   tepi. Batas itu masuk akal untuk teks panjang, tetapi layar ini berisi TABEL,
+   dan tabel yang berhenti di tengah layar membuang justru ruang yang paling
+   dibutuhkannya.
+   Diminta eksplisit pemilik proyek. */
+.page {
+  padding: 24px 28px 48px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* --------------------------------------------------------------- tabel */
+/* Pembungkus menggulir sendiri: tabel lebar tidak membuat SELURUH halaman
+   bergeser ke samping. */
+.table-wrap {
+  /* Batas tinggi membuat pembungkus ini benar-benar menggulir, dan itulah
+     yang membuat sticky pada thead bekerja. Tanpa batas tinggi, header
+     sticky hanya menempel pada kotak yang tidak pernah bergulir — ia mati
+     tanpa terlihat mati. */
+  max-height: 62vh;
+  min-height: 160px;
+  width: 100%;
+  box-sizing: border-box;
+  /* TV2-291 (ronde 250) — "BENTUK TABEL NYA JUGA LEBIH MODERN DONG
+     BULAT AN NYA GITU JANGAN KOTAK KAKU".
+
+     Radius dipasang pada PEMBUNGKUS, bukan pada <table>: pembungkus
+     inilah yang menggulir, jadi ia yang punya tepi yang terlihat.
+     `overflow: auto` di bawah sudah memotong isinya mengikuti radius
+     ini — dan itu sebabnya `overflow: hidden` TIDAK dipakai untuk
+     membulatkan sudut, karena itu akan mematikan gulirnya, yaitu
+     mematikan juga `position: sticky` pada thead. */
+  /* TV2-306 (ronde 253) — `border-radius` dan `border` SEBELUMNYA ditulis
+     DUA KALI di aturan yang sama (satu pasang di sini, satu pasang lagi
+     di bawah `overflow`). Deklarasi kembar: yang kedua menang diam-diam,
+     dan pembaca berikutnya menyunting yang salah. Kini satu kali. */
+  border-radius: var(--r-lg);
+  /* KEDUA sumbu menggulir. Sumbu Y karena max-height di atas — dan itulah
+     yang membuat `sticky` pada thead bekerja. Sumbu X hanya menggulir bila
+     kolomnya benar-benar tidak muat, bukan karena judul yang menolak
+     membungkus (lihat .table thead th).
+
+     Ditulis sebagai satu `overflow`, bukan overflow-y + overflow-x: kedua
+     nilainya sama, dan dua baris untuk satu maksud membuat pembaca mencari
+     perbedaan yang tidak ada. */
+  overflow: auto;
+  /* TV2-307 (ronde 253) — garis 1px DICABUT, bayangan DIPERTAHANKAN.
+     Pemilik proyek: "TABEL BUTTON MASIH KAKU POLL BENTUKNYA!!!!"
+
+     Ronde 252 mengukur keempat gambar acuan: pembungkus tabel di sana
+     berdiri dengan BAYANGAN LEMBUT saja, tanpa garis abu di sekelilingnya.
+     Aplikasi memakai KEDUANYA sekaligus, dan tepi yang berlipat itulah
+     yang terbaca sebagai "kotak kaku" — bukan radiusnya, yang justru
+     SUDAH lebih besar daripada acuan (12px lawan ~4px terukur).
+
+     Perubahan BENTUK, bukan warna: nol hex baru. */
+  box-shadow: var(--sh-2);
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--fs-md);
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  /* TV2-327 (ronde 256) — pita judul DITERANGKAN.
+     DAPAT DIBATALKAN. Nilai sebelum ronde 256, supaya pemilik proyek bisa
+     menolaknya setelah melihat tanpa perlu menggali riwayat:
+
+       background: var(--navy);     <- #03045e, navy pekat
+       color: #fff;
+
+     Sebabnya bukan radius. Ronde 252 mengukur REFERENCE_UI/*.png terhadap
+     berkas ini dan menemukan aplikasi SUDAH lebih bulat pada ketiga elemen
+     besar: tombol 0,22 lawan acuan 0,15; kartu 12px lawan ~4px; modal 16px
+     lawan ~4px. Tiga ronde menaikkan radius dan tiga kali gagal memuaskan —
+     yang berbeda dari acuan adalah BOBOT, dan pita navy berhuruf kapital
+     putih ini selisih terbesarnya.
+
+     NOL HEX BARU: keduanya token yang sudah ada, dan kontrasnya sudah
+     terukur di kepala berkas ini — --muted di atas --alt-row = 5,11:1,
+     lulus WCAG AA (ambang 4,5). */
+  background: var(--alt-row);
+  color: var(--muted);
+  /* Pita terang perlu batas bawahnya sendiri: pada pita navy, kontras
+     warnalah yang memisahkan judul dari baris pertama. Setelah diterangkan,
+     pemisah itu hilang dan header menyatu dengan isi saat digulir. */
+  box-shadow: inset 0 -1px 0 var(--border);
+  font-weight: 600;
+  text-align: left;
+  padding: 11px 14px;
+  font-size: var(--fs-sm);
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  /* Header BOLEH membungkus, dan itu perbaikan penting.
+     Sebelumnya `white-space: nowrap` membuat label huruf besar yang panjang
+     (mis. PARENTREINSTYPEID) MEMAKSA tabel lebih lebar daripada layar,
+     sehingga scrollbar horizontal muncul walaupun DATANYA muat. Yang melebar
+     adalah judulnya, bukan isinya.
+     Membungkus dua baris jauh lebih murah daripada menggulir ke samping. */
+  white-space: normal;
+  /* break-word, bukan anywhere: judul membungkus per KATA. "Percent Ujroh
+     Fee Reas" menjadi dua baris utuh, bukan "Percent Ujroh Fee Rea/s". */
+  overflow-wrap: break-word;
+}
+.table tbody td {
+  padding: 10px 14px;
+  /* TV2-308 (ronde 253) — `--border` -> `--alt-row`.
+     Terukur pada acuan REFERENCE_UI 2.png: garis antar-baris berluminans
+     240-248 di atas putih — nyaris tak terlihat. `--border` #d9e2ea
+     berluminans 224, jauh lebih tegas, dan garis tegas berulang 30 kali
+     ke bawah itulah yang membuat grid terasa kaku.
+     `--alt-row` #eaf4fb berluminans 242 dan SUDAH ADA di palet — nol hex
+     baru (PAGAR KERAS §4). */
+  border-bottom: 1px solid var(--alt-row);
+  vertical-align: middle;
+}
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+/* TV2-327 (ronde 256) — ZEBRA DICABUT.
+   DAPAT DIBATALKAN. Nilai sebelum ronde 256:
+
+     .table tbody tr:nth-child(even) { background: rgba(234, 244, 251, .55); }
+
+   Acuan REFERENCE_UI tidak memakai baris selang-seling sama sekali;
+   pemisahnya garis tipis. Garis itu SUDAH terpasang di `.table tbody td`
+   di atas (border-bottom 1px var(--alt-row), dipasang ronde 253), jadi
+   mencabut zebra TIDAK meninggalkan baris tanpa batas — dan uji pagar
+   TV2-327 menahan garis itu agar tidak ikut tercabut.
+
+   Hover (di bawah) menjadi satu-satunya penanda baris, dan itu memang
+   yang acuan lakukan. */
+.table tbody tr {
+  transition: background var(--t);
+}
+.table tbody tr:hover {
+  background: rgba(0, 119, 182, 0.06);
+}
+/* Jarak dikurangi dari 44px menjadi 22px: isinya sekarang blok `.kosong` yang
+   membawa jarak dan ikonnya sendiri, sehingga 44px membuat tabel kosong
+   setinggi setengah layar. */
+.table__empty {
+  padding: 22px 26px;
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--fs-md);
+}
+/* Kolom aksi tidak boleh terpotong saat tabel digulir ke samping. */
+.table__actions {
+  white-space: nowrap;
+  width: 1%;
+}
+
+/* Angka rata KANAN, teks rata kiri — keputusan pemilik proyek.
+
+   Existing sendiri tidak konsisten (UI_EXISTING_REFERENSI §9.4: pyTextAlign
+   Left di panel Arrangement dan tab Treaty In, Right di field pajak/brokerage
+   Realisasi, Center di field Balance Due). Yang ditiru bukan
+   ketidakkonsistenannya, melainkan satu aturan yang membuat digit sejajar
+   sehingga selisih nilai terlihat sekilas — dan itulah gunanya pada layar
+   rekonsiliasi NFR-13.
+
+   `nowrap` menjaga 1.234.567,89 tetap satu baris; tanpa itu pemisah ribuan
+   justru merusak keterbacaan yang hendak ia bantu.
+
+   Perataan diputuskan dari isNumber yang DINYATAKAN backend, bukan dari nama
+   kolom. */
+.table thead th.num,
+.table tbody td.num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* -------------------------------------------------------------- tombol */
+.btn {
+  font-family: inherit;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  padding: 8px 16px;
+  /* TV2-291 (ronde 250): --r-sm (6px) -> --r-md (8px).
+     "BENTUK TABEL NYA JUGA LEBIH MODERN DONG BULAT AN NYA GITU JANGAN
+     KOTAK KAKU". Acuan REFERENCE_UI/2.png memakai ~8px pada tombol
+     bilah alat. Token yang sudah ada; nol nilai baru. */
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  /* TV2-329 (ronde 256) — wadah riak.
+     `overflow: hidden` WAJIB: tanpanya riak mekar KELUAR dari tombol dan
+     menutupi sel di sebelahnya, dan pada tombol di dalam grid itu berarti
+     menutupi data. */
+  position: relative;
+  overflow: hidden;
+  transition:
+    background var(--t),
+    border-color var(--t),
+    box-shadow var(--t),
+    transform var(--t);
+}
+
+/* TV2-329 — RIAK (ripple) dan KILAU (shimmer).
+   ==========================================================================
+   Pemilik proyek 20-09-2026 melampirkan dua komponen Magic UI dan meminta
+   rekomendasi. Rekomendasinya: PORT EFEKNYA, JANGAN PASANG PAKETNYA.
+
+   Perintah yang dilampirkan (`pnpm dlx shadcn@latest add
+   @magicui/ripple-button`) menarik shadcn + Tailwind. Seluruh styling
+   project ini CSS custom berpola BEM; memasangnya berarti merombak
+   fondasinya dan mempertaruhkan ratusan uji demi efek visual. Kedua efek
+   itu murni CSS + sedikit JS, jadi keduanya ditulis ulang di sini.
+
+   NOL HEX BARU: kilau memakai rgba(255,255,255,a) — opacity dari putih
+   yang sudah dipakai di seluruh berkas ini, bukan warna baru. */
+
+.riak {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0);
+  opacity: 0.45;
+  background: currentColor;
+  animation: riak-mekar 600ms ease-out forwards;
+  /* Riak tidak boleh menelan klik berikutnya: ia elemen di ATAS tombol,
+     dan tanpa ini klik cepat berturutan mengenai riaknya, bukan tombol. */
+  pointer-events: none;
+}
+@keyframes riak-mekar {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* KILAU hanya di tombol utama — Save, Add, dan Login.
+   Alasannya TERUKUR, bukan selera: grid Treaty Contract memuat 636 baris;
+   dengan 3 tombol per baris itu ~1.900 elemen beranimasi TANPA HENTI.
+   Dan tombol Delete yang berkilau menarik perhatian ke aksi paling
+   berbahaya di layar. */
+.btn--kilau {
+  /* `position: relative` dan `overflow: hidden` TIDAK diulang di sini —
+     keduanya sudah milik `.btn` sejak riak dipasang, dan menuliskannya
+     dua kali membuat mencabut salah satunya terasa aman padahal tidak.
+     `isolation` yang memang khas kilau: ia yang mengurung z-index
+     ::before/::after supaya cahayanya tidak naik ke atas elemen lain. */
+  isolation: isolate;
+}
+.btn--kilau::before {
+  /* cahaya yang berputar */
+  content: "";
+  position: absolute;
+  z-index: -2;
+  top: 50%;
+  left: 50%;
+  width: 220%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  background: conic-gradient(
+    transparent 0 75%,
+    rgba(255, 255, 255, 0.75) 88%,
+    transparent 100%
+  );
+  animation: kilau-putar 3s linear infinite;
+}
+.btn--kilau::after {
+  /* permukaan tombol menutup tengahnya, menyisakan kilau di tepi */
+  content: "";
+  position: absolute;
+  inset: 2px;
+  z-index: -1;
+  background: var(--blue);
+  border-radius: inherit;
+}
+.btn--kilau:hover::after {
+  background: var(--blue-dark);
+}
+@keyframes kilau-putar {
+  to {
+    rotate: 360deg;
+  }
+}
+
+/* Pencarian SEBARIS (TV2-330/331) — daftar hasil menggantung di bawah
+   kotaknya, bukan di modal kedua. */
+.cari-sebaris {
+  position: relative;
+}
+.cari-sebaris__panel {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-2);
+  max-height: 260px;
+  overflow-y: auto;
+}
+.cari-sebaris__nota {
+  margin: 0;
+  padding: 10px 12px;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.cari-sebaris__daftar {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+}
+.cari-sebaris__baris {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  font-size: var(--fs-md);
+}
+.cari-sebaris__baris--sorot {
+  background: var(--alt-row);
+}
+/* Tombol yang mati: dipudarkan DAN bayangannya dilepas. Bayangan membuat
+   tombol tampak dapat ditekan, dan tombol yang tampak dapat ditekan tetapi
+   tidak menanggapi adalah kegagalan yang pemakai baca sebagai layar macet. */
+.btn:disabled {
+  opacity: 0.55;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+.btn:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn--primary {
+  background: var(--blue);
+  color: #fff;
+  box-shadow: var(--sh-1);
+}
+.btn--primary:hover:not(:disabled) {
+  background: var(--blue-dark);
+}
+.btn--ghost {
+  background: var(--bg);
+  color: var(--navy);
+  border-color: var(--border);
+}
+.btn--ghost:hover:not(:disabled) {
+  background: #f4f8fb;
+  border-color: #c3d3e0;
+}
+.btn--danger {
+  background: var(--bg);
+  color: var(--danger);
+  border-color: #e6b4b0;
+}
+.btn--danger:hover:not(:disabled) {
+  background: var(--danger-bg);
+}
+.btn--sm {
+  padding: 6px 11px;
+  font-size: var(--fs-sm);
+}
+
+/* --------------------------------------------------------------- form */
+/* Jarak antar field mengikuti ritme 8px, bukan angka ganjil. */
+.field {
+  margin-bottom: 16px;
+}
+.field__label {
+  display: block;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  margin-bottom: 5px;
+  color: var(--navy);
+}
+.field__req {
+  color: var(--danger);
+  margin-left: 2px;
+}
+.field__input {
+  width: 100%;
+  font-family: inherit;
+  font-size: var(--fs-md);
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  /* TV2-291: --r-sm -> --r-md, sepadan dengan .btn supaya isian dan
+     tombol yang berdampingan di satu baris tidak bersudut beda. */
+  border-radius: var(--r-md);
+  background: var(--bg);
+  color: var(--text);
+  transition:
+    border-color var(--t),
+    box-shadow var(--t);
+}
+.field__input::placeholder {
+  color: #9aa7b4;
+}
+.field__input:hover {
+  border-color: #c3d3e0;
+}
+.field__input:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: var(--ring);
+}
+.field__input--error {
+  border-color: var(--danger);
+  background: var(--danger-bg);
+}
+
+/* Jejak simpan / identitas baris (Q-50/Q-43b, r166): DITAMPILKAN tetapi
+   bukan isian. Tanpa gaya sendiri ia tak dapat dibedakan dari kotak yang
+   dapat diketik — kelas ini sempat yatim, ditemukan review r166. */
+.field__input--readonly {
+  background: #eef2f7;
+  color: #33415c;
+  cursor: default;
+}
+.field__input--error:focus {
+  box-shadow: 0 0 0 3px rgba(179, 38, 30, 0.22);
+}
+.field__error {
+  margin-top: 5px;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--danger);
+}
+
+/* Kotak sandi + tombol mata (ronde 246/247). Tombol DUDUK DI ATAS input
+   (position: absolute di dalam wrapper relative) — bukan bersaudara di
+   luar `.field__input`, supaya lebar keduanya tetap satu kotak isian
+   visual, bukan dua elemen berdampingan. */
+.field__sandi-wrap {
+  position: relative;
+}
+.field__sandi-wrap .field__input {
+  padding-right: 40px;
+}
+
+/* §2.2 ronde 272 (B.7) — GLIF PEMANDU DI DALAM MEDAN.
+
+   Acuan `REFERENCE_UI/FORM_LOGIN_E-FACULTATIVE.png` menaruh glif di dalam
+   kedua medannya; ronde 270 `#1` mencatatnya sebagai yang masih kurang,
+   dan diukur ulang 23-09-2026 memang masih: `<svg>` di kartu Login NOL.
+
+   ⚠️ DUA kelas baru, dan §8.10 memang mengizinkannya dengan syarat —
+   "nol kelas CSS baru BILA komponen yang ada cukup". Di sini tidak ada
+   yang cukup: `.field__sandi-wrap` memberi ruang KANAN untuk tombol mata,
+   bukan ruang kiri, dan tidak ada komponen lain yang menaruh apa pun di
+   dalam medan. Bentuknya sengaja MENCERMINKAN pasangan itu baris demi
+   baris supaya keduanya dapat dibaca bersebelahan — dan supaya medan
+   sandi dapat memakai KEDUANYA sekaligus.
+
+   Warnanya `--muted` dan ukurannya dari token yang sudah ada: nol hex
+   baru. `pointer-events: none` supaya klik pada glif tetap jatuh ke
+   kotaknya — glif yang menelan klik adalah kotak yang terasa rusak. */
+.field__wrap-ikon {
+  position: relative;
+}
+.field__wrap-ikon .field__input {
+  padding-left: 38px;
+}
+.field__ikon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  pointer-events: none;
+}
+.field__toggle-sandi {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  transition: color var(--t);
+}
+.field__toggle-sandi:hover {
+  color: var(--navy);
+}
+.field__toggle-sandi:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+/* ------------------------------------------------------------- notifikasi */
+/* Batang aksen di kiri: jenis pesan terbaca sebelum teksnya dibaca. */
+.alert {
+  padding: 12px 15px;
+  border-radius: var(--r-md);
+  font-size: var(--fs-md);
+  margin-bottom: 16px;
+  border: 1px solid;
+  border-left-width: 4px;
+}
+.alert--error {
+  background: var(--danger-bg);
+  border-color: #e6b4b0;
+  border-left-color: var(--danger);
+  color: var(--danger);
+}
+.alert--info {
+  background: #eef6fc;
+  border-color: #b9dcf2;
+  border-left-color: var(--blue);
+  color: #0b4a6f;
+}
+/* Hasil BERHASIL. Ronde 101: sebelumnya tidak ada varian ini — satu-satunya
+   kabar baik yang pernah ditampilkan adalah ketiadaan galat, dan ketiadaan
+   galat tidak terbaca sebagai konfirmasi. */
+.alert--ok {
+  background: #eefaf1;
+  border-color: #b5e3c5;
+  border-left-color: #1e8e4b;
+  color: #14532d;
+}
+/* Deretan tombol aksi pada satu baris, melipat di layar sempit. */
+.aksi-baris {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+/* Pemilih pencarian (PilihCari) — satu komponen untuk pola 4/5/9. */
+.pilih-cari__daftar {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  /* 320px menampilkan sekitar 8 dari `limit=20` yang PilihCari ambil
+     (PilihCari.tsx:56) — di bawah setengah, keluhan §2 yang sama.
+     Daftar ini SELALU di dalam modal (PilihCari.tsx:61), jadi tidak ada
+     panel halaman yang ikut berubah. */
+  max-height: 60vh;
+  overflow-y: auto;
+  border: 1px solid #dbe4ec;
+  border-radius: var(--r-md);
+}
+.pilih-cari__baris {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 0;
+  border-bottom: 1px solid #eef2f6;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+.pilih-cari__baris:hover {
+  background: #f2f7fb;
+}
+.pilih-cari__ket {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+/* Baris tanpa nama TETAP tampil dan ditandai — 1,0% baris asuradur memang
+   tanpa nama di sumber; menyembunyikannya membuat reasuradurnya lenyap. */
+.pilih-cari__tanpa-nama {
+  font-style: italic;
+  color: var(--muted);
+}
+.alert--warn {
+  background: #fff7e6;
+  border-color: #f0d9a0;
+  border-left-color: #c98a00;
+  color: #7a5200;
+}
+.alert ul {
+  margin: 7px 0 0;
+  padding-left: 18px;
+}
+.alert strong {
+  font-weight: 600;
+}
+
+/* ---------------------------------------------------------------- login */
+/* SATU kartu putih di TENGAH layar, di atas latar gradient biru gelap.
+   Susunan dua sisi (aside navy + panel putih) dibatalkan — lihat catatan
+   PEMBAHARUAN TAMPILAN (24-08-2026) di kepala berkas.
+
+   Kartunya di tengah dengan flex, bukan grid: yang ditata hanya dua elemen
+   yang bertumpuk (kartu, lalu hak cipta), dan jaraknya diatur `gap` — bukan
+   margin pada salah satunya.
+
+   ---------------------------------------------------------------------------
+   §1 RONDE 271 (A.1–A.4) — TIGA WARNA PLASMA, DI-ACC PEMILIK PROYEK
+   ---------------------------------------------------------------------------
+
+   Riwayat lengkap keputusannya:
+
+     22-09-2026  "GUNAKAN ANIMASI NYA UNTUK TERAPKAN DI BACKGROUND PAGE
+                  LOGIN … (PAKSA TETAPKAN MEMAKAI ITU)"
+                 -> keenam hex componentry dipakai PERSIS (ronde 270 §4)
+     23-09-2026  "TAPI YANG BENAR SESUAIKAN WARNA BACKGROUND NYA (BIRU NYA)
+                  SOALNYA KALAU ANDA LIHAT DI GAMBAR JELEK DAN ANIMASI
+                  TERLALU CEPAT!"
+                 -> lalu "SAYA ACC YANG ANDA REKOMENDASIKAN"
+
+   Ronde 270 memakai warna componentry atas perintah; ronde 271 pemilik
+   proyek MENYESUAIKANNYA sesudah melihatnya di layar. Itu keputusan BARU,
+   bukan pembatalan — dan urutannya penting: yang pertama tidak dapat dinilai
+   sebelum dijalankan.
+
+   ⚠️ PAGAR "nol hex baru" (`tampilan.ronde256.test.ts`) MEMERAH atas ketiga
+   nilai baru ini, dan itu memang tugasnya. Ia DIJANGKARKAN ULANG di sana
+   dengan menyebut keputusan 23-09 — ketiganya dikecualikan SATU PER SATU,
+   dan keenam nilai componentry DICABUT dari daftar kecuali itu supaya ia
+   tidak tumbuh menjadi sembilan.
+
+   ---------------------------------------------------------------------------
+   KENAPA GRADIENT DASARNYA IKUT BERGANTI
+   ---------------------------------------------------------------------------
+
+   Sebelumnya `--navy -> --blue`. D.6 memerintahkan: bila kontras turun di
+   bawah 4,5:1, TURUNKAN opacity latarnya. Perintah itu mengandaikan yang di
+   BAWAH kanvas lebih gelap daripada kanvasnya — dan `--blue` (L=0,16571)
+   jauh lebih TERANG daripada plasma ini (p50 L=0,011). Di atas latar lama,
+   menurunkan opacity justru MENAIKKAN terang layar: tuasnya berjalan
+   terbalik.
+
+   Dengan `--plasma-a -> --plasma-b` (L 0,00424 -> 0,01985) tuasnya monoton:
+   opacity turun = layar menggelap. Ambang 4,5:1 TIDAK disentuh; yang
+   diperbaiki latar yang membuat tuasnya tidak berguna.
+
+   Untung sampingannya terukur: pada `prefers-reduced-motion` kanvasnya tidak
+   pernah dimulai dan gradient inilah satu-satunya latar. Putih di atasnya
+   naik dari 4,79:1 (lama, --blue) menjadi 15,03:1. */
+.login {
+  /* Enam warna ClosingPlasma — lihat blok di atas. Dibaca `lib/closingPlasma.ts`
+     lewat `getComputedStyle(kanvas)`; kanvasnya anak `.login`, jadi token ini
+     terwaris tanpa perlu naik ke `:root`. */
+  /* ⚠️ DIGANTI RONDE 271 §1.1 (A.1) — keputusan pemilik proyek 23-09-2026.
+
+     Keenam nilai `componentry` DICABUT. Pemilik proyek melihat hasilnya di
+     layar dan menilainya: *"TAPI YANG BENAR SESUAIKAN WARNA BACKGROUND NYA
+     (BIRU NYA) SOALNYA KALAU ANDA LIHAT DI GAMBAR JELEK DAN ANIMASI TERLALU
+     CEPAT!"* Penggantinya di-ACC: *"SAYA ACC YANG ANDA REKOMENDASIKAN"*.
+
+     Nilai LAMA disimpan di sini, bukan dihapus — latar ini sudah berganti
+     TIGA kali dan riwayatnya yang membuat pergantian keempat terbaca sebagai
+     keputusan, bukan kekeliruan:
+
+	--plasma-a  #0d0d14  rona 240°  sat 21%  L=0,00424
+	--plasma-b  #1f2540  rona 229°  sat 35%  L=0,01985
+	--plasma-c  #4a6191  rona 221°  sat 32%  L=0,12050
+	--plasma-terang-a/-b/-c  #f0f2f7 #d7dceb #bcc5e0  (nol pembaca, TV2-400)
+
+     # Kenapa yang baru terlihat LEBIH BIRU padahal LEBIH GELAP
+
+     Sebabnya SATURASI, bukan terang. Diverifikasi ulang 23-09-2026:
+
+	           lama                 baru                 beda
+	dasar   #0d0d14 sat 21%  ->  #0B1120 sat 49%     +28 poin
+	tengah  #1f2540 sat 35%  ->  #132A5E sat 66%     +31 poin
+	urat    #4a6191 sat 32%  ->  #1D5BA3 sat 70%     +38 poin
+	L urat  0,12050          ->  0,10388             TURUN
+
+     Yang 21% terbaca abu-hitam; yang 49% terbaca navy. Itu yang pemilik
+     proyek sebut "JELEK".
+
+     ⚠️ Dua usul yang menaikkan TERANG ditolak angkanya sendiri sebelum
+     sampai ke sini: `#4E7FC4` memberi `.login__foot` 3,49:1 dan `#4470AE`
+     memberi 4,17:1 — keduanya di bawah AA. Lebih biru BUKAN lebih terang.
+
+     Ketiga `--plasma-terang-*` ikut dicabut: TV2-400 mencatat ia belum punya
+     satu pun pembaca, dan diperiksa ulang 23-09-2026 — nol rujukan di luar
+     deklarasi `TOKEN_PLASMA` yang juga dicabut ronde ini.
+
+     ⚠️ A.24 (ronde 271) berbunyi: "`#0B1120` sengaja dipakai DUA KALI: di
+     sini sebagai dasar plasma, dan sebagai latar `.sidebar`. Layar Login
+     dan aplikasi harus terasa satu keluarga. Bila salah satunya diubah
+     nanti, ubah keduanya ATAU NYATAKAN KENAPA TIDAK."
+
+     ✅ RONDE 274 — sidebar diubah ke `#2A4B78`, dan ini pernyataannya.
+
+     `--plasma-a` TIDAK ikut diubah karena ikatan yang mewajibkannya sudah
+     putus lebih dulu, bukan karena diabaikan. Ikatan itu mengikat sidebar
+     ke layar LOGIN — dan sejak ronde 272 Login tidak memakai plasma sama
+     sekali: `App.tsx` memasang `mulaiCair` (WebGLLiquid) dengan paletnya
+     sendiri, `--cair-dalam` / `--cair-tengah` / `--cair-sorot`.
+
+     Yang tersisa bagi ketiga `--plasma-*` hanyalah menjaga
+     `closingPlasma.ts` tetap DAPAT DIJALANKAN — jalan pulang, pola yang
+     ronde 270 D.9 tetapkan dan yang `pipeline.ts` masih dipelihara
+     dengannya. Mengubah nilainya tidak mengubah satu piksel pun di layar,
+     dan MENYAPUNYA bersama sidebar justru membalik gradient jalan pulang
+     itu — persis yang terjadi pada suntingan 10:13 yang dibatalkan. */
+  --plasma-a: #0b1120;
+  --plasma-b: #132a5e;
+  --plasma-c: #1d5ba3;
+  /* ⚠️ RONDE 272 §1.1 (A.2-A.3) — PALET LATAR "WebGLLiquid".
+
+     Pemilik proyek 23-09-2026, dan kalimat paksanya berlaku lagi seperti
+     ronde 270: "(PAKSA TETAPKAN MEMAKAI ITU)". Ketiganya dipakai PERSIS
+     sebagaimana diberikan; tidak satu pun digeser untuk memenuhi kontras.
+
+	--cair-dalam   #04050b   L=0,00159   putih di atasnya  20,35:1
+	--cair-tengah  #134d93   L=0,07553   putih di atasnya   8,36:1
+	--cair-sorot   #8cecff   L=0,72786   putih di atasnya   1,35:1
+
+     ⚠️ Warna ketiga MUSTAHIL berada di belakang teks putih: plafon
+     luminans untuk AA 4,5:1 adalah 0,18333, dan ia berada di 0,72786 —
+     EMPAT KALI plafonnya. Ini BERBEDA dari plasma, yang puncaknya
+     `--plasma-c` (0,10388) dan lulus 6,82:1.
+
+     Jawabannya BUKAN menggeser warnanya, melainkan §6.1 jalan (a): tidak
+     ada lagi teks yang berdiri di atas latar ini. `.login__foot` masuk ke
+     DALAM kartu ronde ini. Pagar `webglLiquid.ronde272.test.ts` menuntut
+     keadaan itu bertahan.
+
+     ⚠️ `--plasma-*` di atas TETAP ADA dan TETAP BERNILAI SAMA. Ia bukan
+     sisa yang lupa dibuang: `closingPlasma.ts` masih membacanya, dan
+     ronde 270 D.9 sudah menetapkan polanya ketika Pipeline diganti —
+     modul lama adalah tempat kembali sampai pemilik proyek melihat latar
+     barunya di layar. Mencabut tokennya lebih dulu berarti tidak ada yang
+     dapat dikembalikan bila latar barunya ditolak. */
+  --cair-dalam: #04050b;
+  --cair-tengah: #134d93;
+  --cair-sorot: #8cecff;
+  /* Kepala jalur yang sedang BERGERAK — keputusan pemilik proyek
+     24-09-2026 (pesan malam): "SAAT BERGERAK WARNANYA LEBIH TERLIHAT
+     PUTIHNYA, LALU JEJAK-JEJAKNYA DITERANGIN LAGI".
+
+     Putih murni, dan ia BUKAN hex baru: `--bg` sudah `#ffffff`. Token
+     tersendiri tetap dipakai, bukan `var(--bg)`, karena keduanya tidak
+     berkaitan — mengganti latar halaman kelak tidak boleh diam-diam
+     mengganti warna kepala jalur.
+
+     Kontras putih vs `--login-latar` = 14,442:1 mentah. Yang benar-benar
+     terlihat lebih rendah: kepala hanya menumpuk 2-3 sapuan sebelum pipa
+     bergerak, sehingga pada `alphaKepala` 0,3 ia mencapai 4,684:1. */
+  --cair-kepala: #ffffff;
+  /* ⚠️ RONDE 277 B.3 — aksen Pipeline, dipakai vignette `.login::after`.
+
+     Keputusan pemilik proyek 24-09-2026 menyebut empat warna, dan yang
+     keempat `#2A4B78`. Ia BUKAN hex baru: `.sidebar` sudah memakainya
+     sejak ronde 274 ("WARNA SIDE BAR NAVIGATION GANTI KE INI : 2A4B78").
+     Diberi token di sini karena vignette membutuhkannya berulang kali,
+     dan nilai yang diulang tanpa nama adalah nilai yang berubah separuh.
+
+     Ia juga menjawab catatan A.24 ronde 271 — "Layar Login dan aplikasi
+     harus terasa satu keluarga": warna panel samping kini benar-benar
+     hadir di layar Login, bukan hanya berdekatan. */
+  --pipa-aksen: #2a4b78;
+  /* ⚠️ RONDE 279 B.1 — HEX BARU, dan ia disanksi pemilik proyek.
+
+     Keputusan pemilik proyek 24-09-2026 (pesan siang): *"Login: pipeline
+     dengan latar #1F2555"*, disertai catatan bahwa hex ini memang BARU.
+     PAGAR KERAS §8 melarang hex yang MUNCUL, bukan hex yang DIPUTUSKAN —
+     dan pagar `login.ronde279.test.ts` menuntut ia tampil PERSIS SEKALI
+     di seluruh berkas ini, supaya satu keputusan tetap satu tempat.
+
+     Ia dibaca DUA pihak, dan keduanya wajib:
+
+       kanvas   `TOKEN_PIPA.latar` -> warna dasar yang digambar tiap
+                bingkai. Inilah yang pemakai benar-benar lihat.
+       CSS      gradien di bawah -> yang tampil ketika
+                `prefers-reduced-motion` mematikan kanvasnya.
+
+     Menyetel salah satunya saja mengulang cacat yang komentar gradien di
+     bawah sudah peringatkan: pemakai yang mematikan animasi melihat
+     layar Login berwarna LAIN daripada yang melihatnya menyala.
+
+	L(#1F2555) = 0,02270   putih di atasnya 14,44:1
+	L(#0B1120) = 0,00576   latar lama — 3,9x lebih gelap */
+  --login-latar: #1f2555;
+  /* 100dvh, bukan 100%: tinggi persen hanya berlaku bila SETIAP leluhurnya
+     bertinggi pasti, dan satu saja yang tidak membuat kartu menempel ke atas
+     layar alih-alih berada di tengah. dvh juga ikut menyusut saat bilah
+     alamat ponsel muncul. */
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 32px 20px;
+  /* Gradient ini yang terlihat di 5% yang TIDAK ditutup kanvas (opasitas
+     0,95), dan yang terlihat sepenuhnya bila `prefers-reduced-motion`
+     mematikan kanvasnya. Karena itu ia mengikuti palet cairan, bukan
+     palet plasma — kalau tidak, pemakai yang mematikan animasi melihat
+     layar Login berwarna lain daripada yang melihatnya menyala. */
+  /* Titik awalnya `--login-latar` sejak ronde 279: ia warna yang kanvas
+     gambar, jadi jalur reduce-motion berangkat dari warna yang SAMA. */
+  background: linear-gradient(
+    160deg,
+    var(--login-latar) 0%,
+    var(--cair-tengah) 100%
+  );
+  /* §0G.3 (ronde 264) — rumah bagi dua lapisan awan di bawah.
+     `relative` memberi mereka acuan; `isolate` membuat `z-index: -1`
+     berhenti di latar layar ini alih-alih menembus ke belakang halaman;
+     `hidden` menahan lapisan yang sengaja dibuat lebih besar daripada
+     layar supaya ia tidak menumbuhkan bilah gulir. */
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+/* §4 ronde 270 (TV2-401) — LATAR KANVAS "Closing Plasma".
+
+   MENGGANTIKAN kanvas "Pipeline" ronde 268, yang menggantikan dua lapisan
+   awan CSS ronde 264. Satu lapisan latar, selalu — §0.1.4 menuntutnya, dan
+   alasannya bukan kerapian: dua animasi latar sekaligus berarti beban ganda
+   DAN kontras yang tidak dapat dihitung, karena terangnya menjadi hasil dua
+   sumber yang saling menimpa.
+
+   Gradient `.login` di atas DIPERTAHANKAN: ia terlihat sebelum kanvas
+   melukis bingkai pertamanya, dan ia satu-satunya latar ketika
+   prefers-reduced-motion menyala (kanvasnya tidak pernah dimulai).
+
+   Terang kanvasnya BERBATAS dan batasnya DIHITUNG — lihat
+   `lib/closingPlasma.ts`. Nilai TERTINGGI yang mungkin adalah `--plasma-c`
+   sendiri (L=0,12050), lalu bintik dan kilau menimpanya pada alpha tumpuk
+   0,0976, memberi L=0,16331 lawan ambang AA 0,18333. `.login__foot` putih
+   karena itu terbaca 4,92:1 pada kasus TERBURUK yang dapat muncul, dan
+   17,19:1 pada tengah sebaran acuannya.
+
+   Ronde 264 menetapkan ambang 4,5:1; ronde 268 dan ronde ini mewarisinya.
+   Yang TIDAK diwarisi plafon `--blue`: plafon itu milik mekanisme yang
+   memudarkan jejak di atas latar biru. Plasma mencat ULANG penuh tiap
+   bingkai, jadi tidak ada jejak yang menumpuk antar-bingkai sama sekali —
+   yang menumpuk hanya bintik+kilau di DALAM satu bingkai, dan itulah yang
+   dihitung di atas. */
+.login__latar {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  /* Kanvas elemen sebaris; tanpa `block` ia menyisakan celah garis-dasar
+     di bawahnya yang terlihat sebagai pita tipis. */
+  display: block;
+  pointer-events: none;
+}
+
+/* ⚠️ RONDE 277 B.3 — VIGNETTE, bagian dari rancangan ber-ACC 24-09-2026.
+
+   Rancangannya: *"vignette gelap di tepi supaya kartu menonjol"*, dan
+   kalimat pengikatnya *"LEBIH TERLIHAT TAPI JANGAN NORAK"*.
+
+   Vignette itulah yang membuat keduanya mungkin sekaligus: jalur boleh
+   lebih pekat di TENGAH-atas layar, sementara tepinya diredam sehingga
+   mata tetap jatuh ke kartu. Tanpa ia, menaikkan opasitas berarti
+   menaikkannya di seluruh layar, termasuk tepat di belakang kartu.
+
+   # Kenapa `::after`, bukan lapisan di dalam kanvas
+
+   Menggambarnya di kanvas berarti membayarnya SETIAP bingkai. Vignette
+   tidak bergerak; ia gradien diam. Satu lapisan CSS berbiaya nol per
+   bingkai, dan itu selaras dengan sebab seluruh ronde ini ada — pemilik
+   proyek 24-09-2026: *"ANIMASI TERNYATA TERLALU BERAT"*.
+
+   # Kenapa `z-index: -1` menaruhnya di TEMPAT YANG BENAR
+
+   Kanvas juga `z-index: -1`. Dua elemen ber-z-index sama ditumpuk
+   menurut urutan DOM, dan `::after` selalu sesudah anak-anak nyata —
+   jadi ia di ATAS kanvas. Kartu berada di aliran normal (z-index auto),
+   dan aliran normal selalu di atas lapisan ber-z-index negatif, jadi
+   kartu tetap di ATAS vignette. Ketiganya tersusun tanpa satu pun
+   z-index positif. */
+.login::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse 78% 62% at 50% 44%,
+      transparent 0%,
+      transparent 42%,
+      color-mix(in srgb, var(--cair-dalam) 72%, transparent) 100%
+    ),
+    radial-gradient(
+      ellipse 120% 80% at 50% 120%,
+      color-mix(in srgb, var(--pipa-aksen) 28%, transparent) 0%,
+      transparent 62%
+    );
+}
+
+/* Kartu MASUK sekali, tidak berulang: acuan memperlihatkan gerak, dan
+   gerak yang berulang di belakang formulir yang sedang diisi mengganggu.
+   transform + opacity saja. */
+@keyframes login-kartu-masuk {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.login__card {
+  /* 400px, bukan 560px: kartu berisi DUA kotak isian, dan kotak selebar
+     setengah layar membuat mata berjalan jauh dari label ke isian —
+     formulir pendek terbaca lebih rapi dalam kolom sempit. */
+  width: 400px;
+  /* Di layar yang lebih sempit dari kartunya, kartu MENGECIL alih-alih
+     memaksa halaman menggulir ke samping. */
+  max-width: 100%;
+  /* §1.2 ronde 269 — kartu tidak lagi putih RATA.
+
+     Acuan `REFERENCE_UI/FORM_LOGIN_E-FACULTATIVE.png` (produk saudara,
+     jadi ia gaya rumah dan bukan rujukan asing) memakai gradien vertikal
+     halus dari nyaris-putih ke abu sejuk. Putih rata membuat kartu
+     terbaca sebagai lembar kosong; gradien tipis memberinya bidang.
+
+     Kedua ujungnya token palet — NOL hex baru. Kontras diukur untuk
+     ujung TERGELAP (`--alt-row`), karena itu yang terburuk bagi teks:
+
+       --navy  di atas --alt-row   15,92:1   (judul, label medan)
+       --muted di atas --alt-row    5,11:1   (keterangan, bantuan)
+
+     Keduanya di atas ambang AA 4,5:1. Angka --muted/--alt-row bukan
+     hitungan baru: ia sudah tercatat di kepala berkas ini sejak ronde
+     sebelumnya untuk baris tabel selang-seling. */
+  background: linear-gradient(180deg, var(--bg) 0%, var(--alt-row) 100%);
+  /* Padding seimbang: atas-bawah sedikit lebih lega daripada kiri-kanan,
+     supaya kartu tidak tampak gepeng. */
+  padding: 40px 36px 36px;
+  /* §0G.3 (ronde 264): --r-md (8px) -> --r-xl (16px). Acuan
+     FORM_LOGIN_E-FACULTATIVE.png memakai sudut yang jelas lebih lembut
+     pada kartu selebar ini, dan --r-xl adalah token yang sudah dipakai
+     modal untuk bidang sebesar itu. Bentuk, bukan warna. */
+  border-radius: var(--r-xl);
+  /* Bayangan lebih dalam daripada --sh-3: kartu ini berdiri di atas latar
+     GELAP, dan bayangan setipis kartu di dalam aplikasi tidak terlihat di
+     sana. Garis tepi dihapus — pada latar gelap, garis abu-abu muda tidak
+     memisahkan apa pun.
+
+     KOREKSI ronde 264: warnanya dulu `rgba(1, 2, 30, …)` — biru sangat
+     gelap yang BUKAN salah satu dari sepuluh warna palet. Ia tidak
+     ditemukan dengan membaca; pagar "nol warna baru" yang ditulis ronde
+     ini menabraknya pada jalan pertamanya, dan ia sudah ada jauh sebelum
+     ronde ini. Digantikan `--navy` (3, 4, 94) — warna yang jelas sedang
+     ia dekati. `--navy` sedikit lebih terang, jadi alfanya naik 0,38 ->
+     0,42 supaya kedalaman bayangannya tidak ikut berkurang. */
+  box-shadow: 0 18px 48px rgba(3, 4, 94, 0.42);
+  /* Masuk sekali saat kartu muncul (§0G.3). */
+  animation: login-kartu-masuk 420ms ease-out both;
+}
+.login__brand {
+  text-align: center;
+  margin-bottom: 4px;
+}
+/* TV2-287 butir 2 (ronde 249) — logo resmi di halaman Login.
+   Lebih tinggi daripada di sidebar (40px) karena ia satu-satunya penanda
+   identitas di layar ini, dan kartunya memang sudah berlatar putih
+   sehingga JPEG tanpa transparansi menyatu tanpa perlu badge.
+   `object-fit: contain` + `width: auto` menjaga rasio aspek; `max-width`
+   membuatnya mengecil bersama kartu di layar sempit, bukan meluber. */
+.login__logo {
+  display: inline-block;
+  height: 56px;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+/* §1.2 ronde 269 (A.8) — JUDUL kartu.
+
+   Acuan memakai blok kop bertingkat: wordmark, lalu judul, lalu satu
+   baris keterangan. V2 sebelumnya melompati tingkat tengahnya — logo
+   langsung ke keterangan — sehingga layar Login adalah satu-satunya
+   halaman aplikasi TANPA judul sama sekali.
+
+   Itu bukan hanya soal rupa: halaman tanpa `h1` membuat pembaca layar
+   tidak punya penanda "halaman apa ini", dan lompatan tingkat kop juga
+   yang membuat kartunya terasa "polos" — mata tidak menemukan tempat
+   berhenti antara gambar dan kotak isian.
+
+   Teksnya INGGRIS (`Sign in`), sepadan dengan tombolnya. §3.2 ronde 256
+   menuntut NOL teks antarmuka berbahasa Indonesia dan `Masuk` ada di
+   daftar kata yang dipagarinya — memakai kata acuan apa adanya akan
+   memerahkan pagar itu, dan benar demikian: acuannya berbahasa
+   Indonesia, aplikasi ini tidak. */
+.login__judul {
+  margin: 0 0 4px;
+  text-align: center;
+  font-size: var(--fs-xl);
+  font-weight: 600;
+  color: var(--navy);
+}
+.login__sub {
+  text-align: center;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  margin-bottom: 22px;
+}
+/* §1.2 ronde 269 (A.8) — bantuan yang DAPAT DITINDAKLANJUTI.
+
+   Acuan menutup kartunya dengan satu kalimat yang menyebut SIAPA yang
+   dihubungi. Tanpa itu, pemakai yang sandinya ditolak tidak punya
+   langkah berikutnya selain mencoba lagi — dan mencoba lagi bukan
+   langkah, ia pengulangan.
+
+   Dipisah garis tipis, bukan jarak saja: ia bukan bagian dari formulir,
+   dan pemisah membuat batas itu terlihat tanpa menambah kata. */
+.login__bantuan {
+  margin: 20px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  color: var(--muted);
+}
+/* Medan di dalam kartu Login sedikit lebih lega daripada medan di dalam
+   aplikasi: di sini hanya ada DUA, dan keduanya yang pertama disentuh
+   pemakai setiap hari. Bentuk saja — `.field__input` umum tidak
+   disentuh, sehingga 40-an layar lain tidak ikut berubah. */
+.login__card .field__input {
+  /* ⚠️ SISI KIRI SENGAJA TIDAK DISETEL — TV2-434, ronde 275 A.1.
+     Keluhan pemilik proyek 23-09-2026 (tangkapan layar): teks Login
+     tertimpa ikon. Akarnya BUKAN ikonnya dan BUKAN aturan ikonnya —
+     keduanya benar. Akarnya SATU KATA di baris ini:
+
+       .field__wrap-ikon .field__input   padding-left: 38px   (0,2,0)
+       .login__card      .field__input   padding: 11px 13px   (0,2,0)
+
+     Spesifisitasnya SAMA, dan aturan ini letaknya LEBIH BAWAH — jadi ia
+     menang. `padding` shorthand lalu mereset padding-left ke 13px,
+     sementara `.field__ikon` absolut selebar 36px tetap menempati ruang
+     itu. Teks karena itu mulai di 13px, DI BAWAH ikon.
+
+     Perbaikannya menyerahkan sisi kiri, bukan menaikkan spesifisitas
+     aturan ikon: menaikkannya akan menyembunyikan sebabnya dan
+     membiarkan aturan berikutnya mengulang cacat yang sama. Yang
+     memutuskan sisi kiri kini HANYA dua aturan yang memang tahu soal
+     ikon:
+
+       ada ikon    -> 38px  (.field__wrap-ikon .field__input)
+       tanpa ikon  -> 12px  (.field__input dasar)
+
+     Medan Login hari ini KEDUANYA berikon (App.tsx:219,226), jadi yang
+     berlaku 38px. Medan Login tanpa ikon kelak mendapat 12px, bukan 13px
+     — selisih 1px, nol angka bisnis, dan itu harga yang dibayar supaya
+     sisi kiri diputuskan di satu tempat saja. */
+  padding-block: 11px;
+  padding-right: 13px;
+  font-size: var(--fs-base);
+  /* §2.2 ronde 272 (B.7) — ISIAN BERNUANSA, bukan putih di atas putih.
+
+     Ronde 270 `#1` mencatat ini sebagai yang masih kurang terhadap acuan,
+     dan sebabnya terukur: `.field__input` mewarisi `background: var(--bg)`
+     (#ffffff) sementara ujung ATAS gradient kartu juga #ffffff. Kotaknya
+     karena itu hanya terlihat dari garis tepinya.
+
+     `--alt-row` adalah token yang SUDAH ADA — nol warna baru — dan ia
+     ujung yang sama yang gradient kartu tuju, jadi isian dan kartu tetap
+     satu keluarga. Kontras terukur di atasnya: teks `--text` 14,01:1,
+     label `--navy` 15,92:1. */
+  background: var(--alt-row);
+}
+/* Placeholder di kartu ini SAJA.
+
+   ⚠️ Terukur 23-09-2026, SEBELUM ronde ini menyentuh apa pun:
+   `.field__input::placeholder` memakai #9aa7b4, yang memberi **2,45:1**
+   di atas #ffffff — GAGAL AA, dan itu berlaku di SELURUH aplikasi. Ia
+   bukan cacat yang lahir ronde ini, dan memperbaikinya secara global
+   menggelapkan placeholder di 40-an layar sekaligus membuka risiko ia
+   tertukar dengan nilai yang benar-benar terisi. Itu keputusan tampilan
+   pemilik proyek, dicatat TV2-419.
+
+   Yang dilakukan di sini: lingkup kartu Login saja, memakai token yang
+   sudah ada (`--muted`, 5,11:1 di atas `--alt-row`), mengikuti preseden
+   ronde 270 yang menulis fokus dua lapis "hanya di dalam `.login__card`,
+   sehingga 40-an layar lain tidak ikut berubah". */
+.login__card .field__input::placeholder {
+  color: var(--muted);
+}
+/* Keadaan fokus DIPERKUAT di kartu ini, dan hanya di sini.
+
+   `--ring` umum (3px) cukup di layar terang berlatar putih; di kartu
+   yang berdiri di atas latar gelap bergerak, cincin setipis itu hilang
+   di antara bayangan kartunya sendiri. Dua lapis: cincin `--ring` yang
+   sudah ada, ditambah satu lapis lebih lebar dari warna yang SAMA
+   (`--blue`, yaitu rgba 0/119/182 — bukan warna baru, hanya alfa yang
+   berbeda). */
+.login__card .field__input:focus {
+  box-shadow:
+    var(--ring),
+    0 0 0 6px rgba(0, 119, 182, 0.1);
+  /* Isian kartu ini bernuansa; medan yang SEDANG diisi kembali ke `--bg`
+     sehingga ia lebih TERANG daripada tetangganya. Keadaan yang terbaca
+     dari jarak pandang, dan nol warna baru — kedua ujungnya token. */
+  background: var(--bg);
+}
+/* Glif pemandu ikut menyala bersama cincin fokus. `currentColor` di
+   `sifatIkon` yang membuat satu baris ini cukup. */
+.login__card .field__wrap-ikon:focus-within .field__ikon {
+  color: var(--blue);
+}
+/* Tombol utama kartu Login lebih tinggi daripada tombol bilah alat —
+   ia satu-satunya tindakan di layar ini, dan tinggi adalah cara
+   menyatakannya tanpa menambah warna. */
+.login__card .btn--primary {
+  padding: 11px 16px;
+  font-size: var(--fs-base);
+  /* B.7 — glif + teks berdampingan. `.btn` umum tidak ber-flex (ia
+     menampung teks saja di 100-an tempat lain), jadi penyelarasannya
+     dinyatakan DI SINI, pada selektor yang sudah ada, dan tidak satu pun
+     tombol lain ikut berubah. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+/* Jarak antar kotak isian di kartu login DISERAGAMKAN di sini, bukan lewat
+   style sebaris di komponennya — satu tempat, satu aturan. */
+.login__card .field {
+  margin-bottom: 14px;
+}
+.login__card .field:last-of-type {
+  margin-bottom: 6px;
+}
+/* Hak cipta duduk di BAWAH kartu, di atas latar gelap. Karena itu warnanya
+   putih — `--muted` dirancang untuk latar putih dan tidak akan terbaca di
+   sini.
+
+   KOREKSI §0G.3.6 (ronde 264) — `opacity: 0.7` DICABUT, dan ini TEMUAN
+   yang lebih tua daripada ronde ini. Diukur (WCAG 2.1, ambang AA teks
+   normal 4,5:1), pada titik paling terang latar Login:
+
+     putih opacity 0,70 di atas --blue   3,18:1   GAGAL
+     putih opacity 1,00 di atas --blue   4,87:1   LULUS
+     (di atas --navy, keduanya lulus: 8,75:1 dan 17,75:1)
+
+   Jadi teks itu sudah di bawah ambang SEBELUM animasi ditambahkan; yang
+   dilakukan ronde ini hanya mengukurnya, karena §0G.3.6 menuntut angka
+   dan bukan penilaian mata. Hierarkinya tidak hilang — ia datang dari
+   UKURAN (--fs-xs, 11px, dua tingkat di bawah teks isi). Memudarkan teks
+   sampai di bawah ambang bukan hierarki; itu teks yang sebagian pemakai
+   tidak dapat baca.
+
+   ⚠️ RONDE 272 §6.1 jalan (a) — SELURUH perhitungan di atas TIDAK LAGI
+   BERLAKU untuk aturan ini, dan itu sebabnya ia ditinggalkan utuh sebagai
+   riwayat alih-alih dihapus: ia mencatat kenapa `#fff` pernah benar.
+
+   Teks ini kini berada DI DALAM kartu, bukan di atas latar. Sebabnya
+   terukur: palet WebGLLiquid memuat `--cair-sorot #8cecff` berluminans
+   0,72786 lawan plafon AA 0,18333 — EMPAT KALI. Tidak ada nilai `color`
+   yang memperbaiki itu, dan kedua ujung skala membuktikannya (terukur
+   23-09-2026):
+
+     putih  di atas  #04050b 20,35  ·  #134d93 8,36  ·  #8cecff 1,35 GAGAL
+     hitam  di atas  #04050b  1,03  ·  #134d93 2,51  ·  #8cecff 15,56
+
+   Latarnya bergerak melintasi KETIGA warna, jadi satu warna teks harus
+   lulus di ketiganya — dan tidak ada yang bisa. Satu-satunya perbaikan
+   yang tidak mengubah ketiga warna adalah memindahkan teksnya.
+
+   Di dalam kartu, latar terburuknya ujung gelap gradient kartu
+   (`--alt-row`), dan angkanya sudah tercatat di blok `.login__card`:
+
+     --muted di atas --alt-row   5,11:1   LULUS
+     --muted di atas --bg        5,70:1   LULUS
+
+   `--muted` DIPAKAI, bukan `--navy`: hak cipta adalah teks paling rendah
+   di kartu ini, dan ia harus terbaca lebih redup daripada bantuan di
+   atasnya tanpa jatuh di bawah ambang. */
+.login__foot {
+  /* Jarak lebih rapat daripada `.login__bantuan` (20px) dan TANPA garis
+     pemisah kedua: satu garis sudah memisahkan blok kaki dari formulir,
+     dan garis kedua tepat di bawahnya memecah kaki menjadi dua kotak. */
+  margin: 12px 0 0;
+  text-align: center;
+  font-size: var(--fs-2xs);
+  color: var(--muted);
+}
+
+/* --------------------------------------------------------------- badge */
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------- toolbar */
+.toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.toolbar__spacer {
+  flex: 1;
+}
+/* Baris SARINGAN PEMAKAI (§2 ronde 248) — varian toolbar, bukan komponen
+   baru: bentuknya sama (flex, membungkus, jarak sama), yang berbeda hanya
+   perannya sebagai kelompok kontrol yang menyatu. Latar dan bingkainya
+   memakai token yang sudah ada; nol warna baru. */
+.toolbar--saring {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: var(--alt-row);
+  border-radius: var(--r-md);
+  /* KOREKSI ronde 256 (temuan code-review) — 8px -> 16px.
+     §2.1.2 meminta bilah ini "berjarak lega", tetapi 8px justru MENYEMPIT
+     dari `.toolbar` induk yang 10px: ia lebih rapat daripada bilah biasa,
+     bukan lebih lega. Jaraknya kini dua kali `.saring__grup` (6px) di
+     dalamnya, sehingga batas antar-kelompok terbaca lebih kuat daripada
+     batas label-ke-kotak — itulah yang membuat kelompoknya terlihat
+     sebagai kelompok. */
+  gap: 16px;
+}
+.saring__label {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  /* Label tidak boleh patah di tengah nama: "Treaty" di satu baris dan
+     "Group" di baris berikutnya membuat bilah setinggi dua baris hanya
+     karena lebarnya kurang beberapa piksel. */
+  white-space: nowrap;
+}
+/* TV2-306 (§2.1.2, ronde 256) — satu pasang label+kontrol.
+   Bilahnya `flex-wrap: wrap`, dan tanpa pembungkus ini label dapat
+   berakhir di baris atas sementara kotaknya turun ke baris bawah.
+   Pasangan yang tidak dapat dipisahkan adalah satu elemen flex. */
+.saring__grup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+/* Penanda "grup tidak dikenal" turun ke barisnya SENDIRI (ronde 256,
+   temuan code-review). Sebagai elemen flex biasa, kemunculannya menggeser
+   tombol Clear filter ke kanan — lompatan tata letak yang sama dengan
+   yang baru saja dibunuh pada tombol itu sendiri. */
+.saring__nota {
+  flex-basis: 100%;
+}
+/* Treaty Year 4 digit — kotaknya selebar isinya, bukan selebar kolom.
+   Kotak isian yang jauh lebih lebar daripada nilai yang muat di dalamnya
+   membuat pemakai mengira ia menerima lebih. */
+.field__input--sempit {
+  width: 7ch;
+}
+/* TV2-338 (§2.7 ronde 259) — lebar bilah saring DIUKUR, bukan dipilih.
+
+   Keduanya dulu memakai `--sempit` (7ch), lebar yang dibuat untuk tahun
+   empat digit. Tangkapan layar pemilik proyek memperlihatkan akibatnya
+   pada kotak Treaty Group: hanya ±2 huruf terlihat (`Se`).
+
+     [FACT] probe DEV 20-09-2026, M_TREATYGROUP 40 baris:
+              MAX(LENGTH(TREATYGROUPNAME)) = 37 karakter
+              rata-rata                    = 19 karakter
+     Confidence: HIGH.
+
+   `37ch` memuat nama TERPANJANG yang benar-benar ada, bukan angka bulat
+   yang terdengar aman. `ch` dipilih daripada `px` karena satuan itu
+   mengikuti ukuran huruf bilah ini — bila `--fs-sm` berubah, kotaknya
+   ikut, dan pengukuran di atas tidak menjadi usang diam-diam.
+
+   Tinggi, ukuran huruf, dan jarak TIDAK disentuh: ketiganya diwarisi
+   `.field__input` yang sama dengan seluruh kontrol lain (§2.8). */
+.field__input--tahun {
+  width: 7ch;
+}
+/* Panel NILAI TUNGGAL (§3.2 ronde 259) — `Minimum LOL`, `Max Coins Panel`,
+   `Minimum LOL MB`.
+
+   Ketiganya BUKAN grid: `UI_EXISTING_REFERENSI.md` §4.12 menyebutnya
+   "Panel nilai tunggal (form saja, tanpa grid)", dan
+   `REFERENSI_PEGA_DOCX.md` BAGIAN 3 mencatat ketiganya hanya punya Show
+   lalu Edit — tanpa satu pun langkah Add.
+
+   Bentuknya sengaja MEMINJAM token yang sudah ada (`--alt-row`, `--muted`,
+   `--r-md`, `--fs-sm`) — NOL hex baru, PAGAR KERAS §8. Ia juga tidak
+   memakai ukuran huruf sendiri: label dan nilainya mewarisi skala yang
+   sama dengan panel lain, supaya satu layar tidak punya dua tipografi. */
+.ringkas {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  background: var(--alt-row);
+  border-radius: var(--r-md);
+}
+.ringkas__baris {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 4px 0;
+}
+.ringkas__baris + .ringkas__baris {
+  border-top: 1px solid var(--alt-row);
+}
+.ringkas__label {
+  flex: 0 0 auto;
+  min-width: 14rem;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+.ringkas__nilai {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+/* Layar sempit: label dan nilai menumpuk alih-alih memaksa gulir
+   mendatar (§2.9 memakai aturan yang sama untuk bilah saring). */
+@media (max-width: 640px) {
+  .ringkas__baris {
+    flex-direction: column;
+    gap: 2px;
+  }
+  .ringkas__label {
+    min-width: 0;
+  }
+}
+.field__input--grup {
+  width: 37ch;
+  /* Layar sempit: jangan pernah memaksa gulir mendatar (§2.9). */
+  max-width: 100%;
+}
+.muted {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+/* --------------------------------------------------------------- modal */
+.modal__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(3, 4, 94, 0.42);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: backdrop-masuk 140ms ease;
+}
+/* Modal berbentuk tiga lapis tetap: kepala, isi yang menggulir, kaki.
+   Sebelumnya SELURUH modal yang menggulir, dan akibatnya judul beserta tombol
+   tutup ikut hilang ke atas pada form yang panjang — tepat pada form yang
+   paling sering ingin dibatalkan. */
+.modal {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  /* TV2-291: --r-lg -> --r-xl (16px), mengikuti bentuk lembar modal di
+     REFERENCE_UI/4.png. */
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-3);
+  width: 460px;
+  max-width: 100%;
+  max-height: 86vh;
+  overflow: hidden;
+  animation: modal-masuk 140ms ease;
+}
+
+.modal__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: none;
+  padding: 20px 22px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.modal__title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  letter-spacing: -0.1px;
+  color: var(--navy);
+}
+
+/* Tombol tutup di POJOK KANAN ATAS. Ia tidak menggantikan tombol Batal di
+   kaki modal: keduanya ada, karena keduanya dicari di tempat yang berbeda —
+   yang satu sebagai jalan keluar cepat, yang lain sebagai keputusan. */
+.modal__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  margin: -2px -4px 0 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    background var(--t),
+    border-color var(--t),
+    color var(--t);
+}
+.modal__close:hover {
+  background: #f4f8fb;
+  border-color: var(--border);
+  color: var(--navy);
+}
+.modal__close:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.modal__body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 18px 22px;
+}
+
+.modal__actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex: none;
+  padding: 14px 22px 18px;
+  border-top: 1px solid var(--border);
+}
+/* Batal di KIRI, aksi utama di kanan.
+   Aksi yang membatalkan pekerjaan tidak boleh berada di tempat yang kursor
+   tuju secara refleks setelah mengisi field terakhir. */
+.modal__actions .btn--ghost {
+  margin-right: auto;
+}
+
+/* Modal LEBAR — untuk isi yang berfield banyak dan memakai .form-grid.
+   460px terlalu sempit untuk dua kolom: kotak isiannya menjadi lebih pendek
+   daripada isi yang diketik ke dalamnya.
+
+   RONDE 88: 760px pun masih sempit untuk form penawaran (tiga panel, 20-an
+   field). Lebarnya kini mengikuti layar — `min()` menahan dua hal sekaligus:
+   tidak melebihi 1100px pada monitor lebar (baris isian yang terlalu panjang
+   justru sulit dibaca), dan tidak melebihi 92vw pada layar kecil sehingga
+   backdrop-nya tetap terlihat sebagai bingkai. */
+.modal--lebar {
+  width: min(1100px, 92vw);
+}
+
+/* Di dalam modal lebar, grid isian mengisi ruang yang tersedia: tiga kolom
+   pada 1100px, dua pada ~800px, satu pada telepon — tanpa satu pun angka
+   pemutus tetap. Lebar minimum 280px dipilih dari isi yang paling panjang
+   (nama grup treaty & nama reasuradur), bukan dari selera. */
+.modal--lebar .form-grid {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px 22px;
+}
+
+/* Panel di dalam modal: jarak antar-seksi yang KONSISTEN. Sebelumnya tiap
+   modal mengandalkan margin bawaan panelnya, dan seksi terakhir menempel
+   ke kaki modal. */
+.modal__body > .panel + .panel {
+  margin-top: 16px;
+}
+
+/* Tabel di DALAM modal: pendek, dan tanpa bayangan. Bayangan di atas kartu
+   modal yang sendiri sudah berbayang membuat dua lapis yang saling bersaing.
+
+   NILAI 220px DIPERTAHANKAN DI SINI, dan itu disengaja — lihat aturan
+   berlingkup `.modal` tepat di bawahnya. Kelas ini dipakai di SEPULUH
+   tempat pada tujuh berkas, dan SATU di antaranya BUKAN modal:
+   `pages/offer/OfferSubmit.tsx:205` adalah panel HALAMAN. Mengganti angka
+   di sini akan ikut mengubahnya. */
+.table-wrap--pendek {
+  max-height: 220px;
+  min-height: 0;
+  box-shadow: none;
+}
+
+/* §2 ronde 268 (TV2-375) — pop-up yang memotong datanya.
+
+   Pemilik proyek 22-09-2026: "UNTUK SEMUA MENU YANG POP UP ITU, PASTIKAN
+   UKURAN (HEIGHT) NYA TIDAK TERLALU KECIL TAPI BISA MENAMPILKAN SETENGAH
+   ATAU SELURUH DATANYA LANGSUNG!"
+
+   `max-height` adalah BATAS ATAS, bukan tinggi tetap: tabel berisi tiga
+   baris tetap setinggi tiga baris, sementara yang berisi sembilan belas
+   berhenti di 60vh alih-alih di 220px (~4 baris). Satu nilai memenuhi
+   kedua arah permintaan, jadi tidak ada tinggi per-modal yang perlu
+   disetel satu per satu.
+
+   60vh, bukan 62vh seperti `.table-wrap` generik: modal sendiri dibatasi
+   86vh dan masih harus memuat judul, penyaring, dan tombolnya.
+
+   Kepala tabel SUDAH `position: sticky` (.table thead th) sejak sebelum
+   ronde ini — tanpa itu, menaikkan tinggi justru memperburuk: gulir lebih
+   panjang dengan kolom yang tak lagi berjudul. */
+.modal .table-wrap--pendek {
+  max-height: 60vh;
+}
+
+/* KOREKSI TV2-291 (ronde 250): `.aksi-form` DICABUT — nol pemakai di
+   seluruh `src/`, termasuk berkas uji. Ia dibuat untuk FORM HALAMAN,
+   dan form halaman itu sendiri sudah tidak ada: seluruh Add/Edit kini
+   modal, yang memakai `.modal__actions`. Pagar yang dulu menjaganya
+   (`TestSetiapFormPunyaJalanKeluar`) juga sudah tidak ada di mana pun.
+   Aturan mati yang menjelaskan keputusan tata letak yang sudah
+   dibatalkan lebih menyesatkan daripada berguna. */
+
+/* Lapisan gelap di belakang panel samping pada layar ponsel. Ia juga jalan
+   keluar: menyentuhnya menutup panelnya. */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(3, 4, 94, 0.4);
+  backdrop-filter: blur(2px);
+}
+
+@keyframes modal-masuk {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Ronde 240 — pasangan KELUAR dari modal-masuk. React meng-unmount modal
+   seketika; tanpa kelas ini kotak modal lenyap sebelum animasi apa pun
+   sempat berjalan. `Modal` (dasar.tsx) menunda unmount 140ms lewat
+   `mulaiTutup` supaya kelas ini sempat terlihat. */
+@keyframes modal-keluar {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(6px) scale(0.99);
+  }
+}
+.modal--keluar {
+  animation: modal-keluar 140ms ease forwards;
+}
+
+@keyframes backdrop-masuk {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes backdrop-keluar {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+.modal__backdrop--keluar {
+  animation: backdrop-keluar 140ms ease forwards;
+}
+
+/* DIHAPUS: blok `/* ---------------------------------------------------------- pohon zona */
+/* Jorokan + tombol lipat pada kolom pertama tabel pohon (CZone).
+
+   Kedalaman datang dari backend sebagai angka; di sini ia menjadi jarak.
+   Tombol lipat berukuran tetap — juga pada simpul tanpa anak, yang
+   mendapat ruang kosong seukuran tombolnya supaya kode di seluruh baris
+   tetap sejajar. */
+.pohon__jorok {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.pohon__lipat {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--bg);
+  color: var(--navy);
+  font-size: var(--fs-sm);
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+.pohon__lipat:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+.pohon__lipat--kosong {
+  border-color: transparent;
+  background: none;
+  cursor: default;
+}
+
+/* ---------------------------------------------------- lebar kolom tabel */
+/* Lebar dinamai menurut JENIS ISI, bukan menurut angkanya.
+
+   Sebelum ini 40 kolom membawa `style={{width:N}}` sendiri-sendiri, dan
+   jenis isi yang sama mendapat lebar berbeda di tiap layar: tanggal 110 di
+   satu tabel, 120 di tabel sebelahnya. Menamai jenisnya membuat seluruh
+   kolom tanggal berubah bersama, dan membuat kolom yang keliru jenis
+   langsung terlihat saat membaca JSX-nya. */
+/* Lebar KOTAK ISIAN mengikuti aturan yang sama: dinamai menurut apa yang
+   diisikan, sehingga kotak tahun di layar mana pun selebar kotak tahun di
+   layar lainnya. */
+.isian--kode {
+  width: 96px;
+}
+.isian--tanggal {
+  width: 116px;
+}
+.isian--nilai {
+  width: 160px;
+}
+.isian--teks {
+  width: 240px;
+}
+.col--sempit {
+  width: 72px;
+}
+.col--kode {
+  width: 96px;
+}
+.col--tanggal {
+  width: 116px;
+}
+.col--id {
+  width: 136px;
+}
+.col--nilai {
+  width: 160px;
+}
+.col--nama {
+  width: 160px;
+}
+.col--status {
+  width: 120px;
+}
+.col--teks {
+  width: 240px;
+}
+/* PERATAAN sengaja TIDAK diatur di sini.
+
+   Percobaan pertama memberi `text-align: right` pada .col--kode dan
+   .col--nilai, dan akibatnya kepala kolom rata kanan di atas isi yang rata
+   kiri — karena hanya `<th>`-nya yang membawa kelas itu, sementara `<td>`
+   di bawahnya tidak. Lebar adalah sifat KOLOM (satu tempat, di kepalanya);
+   perataan adalah sifat SEL (setiap baris). Menyatukan keduanya dalam satu
+   kelas membuat yang satu selalu setengah jadi.
+
+   Perataan angka memakai kelas `.num` pada sel yang isinya benar-benar
+   angka. */
+
+/* CATATAN (r189): dulu di sini ada satu blok `@media (max-width: 900px)`
+   yang menumpuk panel samping di ATAS isi halaman.
+
+   Ia digantikan tiga breakpoint di kaki berkas ini (desktop, <=1024px,
+   <=768px). Membiarkan keduanya berdampingan akan membuat lebar 769-900px
+   punya dua aturan yang bertolak belakang: yang lama menjadikan panel sebuah
+   blok statis selebar layar, yang baru menjadikannya deretan ikon selebar
+   72px. Yang menang hanya yang tertulis paling bawah — dan aturan yang kalah
+   tidak berbunyi, ia hanya membuat satu rentang lebar berperilaku lain
+   daripada yang dibaca dari kode. */
+
+/* Entitas yang backend pasti tolak: ditandai, bukan ditawarkan seolah siap.
+   Ia tetap dapat diklik supaya alasannya terbaca di layar.
+
+   KOREKSI TV2-291 (ronde 251, temuan code-review sumbu Spec): kedua
+   aturan di bawah dipilih untuk panel NAVY, dan keduanya terlewat pada
+   sapuan pertama karena mereka duduk ~1.000 baris di bawah klaster
+   `.sidebar` — sapuannya berhenti di klaster itu. Di atas panel PUTIH:
+
+     #8996a6 di atas putih          3,01:1   GAGAL AA (di atas navy: 5,90)
+     #ffd668 di atas rgba(255,193,7,0.22)-over-putih  ~1,2:1  praktis hilang
+
+   Penggantinya memakai palet yang sudah ada. `--muted` (5,70:1) untuk
+   menu yang diblokir — ia memang harus terbaca LEBIH REDUP dari menu
+   biasa, dan di sini keredupan itu datang dari huruf miring + kursor,
+   bukan dari warna yang tidak terbaca. Penanda memakai pasangan
+   peringatan yang SUDAH ada di berkas ini (`#fff7e6`/`#7a5200`),
+   bukan kuning yang dirancang untuk latar gelap. */
+.sidebar__link--blocked {
+  /* RONDE 274 (A.3) — #AEC1D8, 4,81:1 di atas panel #2A4B78.
+
+     #8FA3BE yang ronde 271 pasang di sini memberi 7,31:1 di atas panel
+     lama dan hanya **3,43:1** di atas yang baru — DI BAWAH AMBANG, dan
+     CSS-nya tetap sah. Itu persis kelas yang ronde 270 §5 temukan sekali
+     (lencana aktif 3,34:1 yang bertahan diam-diam karena nol pagar
+     menghitung warna komposit).
+
+     Dua kandidat dari palet yang sudah ada, dihitung ulang di atas panel
+     BARU supaya tidak seorang pun mewarisi angka panel lama:
+
+	--muted  #5b6875   3,30:1 -> 1,55:1   jauh di bawah ambang
+	--border #d9e2ea  14,36:1 -> 6,74:1   lulus, tetapi hampir
+	                                      seterang nama menu (7,93:1)
+	                                      sehingga "diblokir" tidak
+	                                      lagi terbaca redup
+
+     #AEC1D8 memberi jarak yang jelas dari keduanya DAN tetap di atas AA.
+
+     Keredupannya tetap datang terutama dari huruf miring + kursor,
+     sebagaimana catatan di atas. */
+  color: #aec1d8;
+  font-style: italic;
+}
+/* Penanda ini adik dari `.sidebar__teks`, bukan anaknya: float tidak bekerja
+   di dalam item flex, dan menaruhnya di dalam teks yang berelipsis akan
+   membuatnya ikut terpotong bersama nama yang panjang. */
+.sidebar__flag {
+  flex: none;
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: var(--r-pill);
+  background: #fff7e6;
+  color: #7a5200;
+}
+
+/* ================================================================ OFFER
+   Tambahan untuk layar Input Treaty In Offer.
+
+   Tidak ada warna merek baru dan tidak ada font baru: seluruh blok di bawah
+   memakai token yang sudah ada (--navy, --blue, --border, --r-*, --sh-*).
+   Halaman login dan blok .login* di atas TIDAK disentuh.
+
+   Kelas baru hanya dibuat untuk hal yang belum punya kelas: tab, panel
+   bertumpuk, kolom form, dan strip total. */
+
+/* ---------------------------------------------------------------- tab */
+/* Existing memakai tab HANYA di layar ini dan di Exclusion
+   (UI_EXISTING_REFERENSI §7.1), jadi tab dibuat ada — bukan diganti daftar
+   yang bukan pola existing. Garis bawah aktif, bukan kotak terisi: kotak
+   terisi bersaing dengan tombol primer yang tepat di bawahnya. */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.tabs__item {
+  font-family: inherit;
+  font-size: var(--fs-md);
+  font-weight: 500;
+  padding: 9px 14px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: var(--r-sm) var(--r-sm) 0 0;
+  transition:
+    color var(--t),
+    background var(--t),
+    border-color var(--t);
+}
+.tabs__item:hover {
+  background: #f4f8fb;
+  color: var(--navy);
+}
+.tabs__item--aktif {
+  color: var(--navy);
+  font-weight: 600;
+  border-bottom-color: var(--blue);
+}
+.tabs__item:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+/* -------------------------------------------------------------- panel */
+/* Blok bertitel yang bertumpuk — pola existing §7.5 (`Status`,
+   `Summary of Limit`, `Total All Layers`). Ia BUKAN `.card`: kelas itu sudah
+   dihapus dari project, dan panel di sini memang bukan kartu melengkung
+   dengan bayangan melainkan blok bergaris rambut. */
+/* PEMBAHARUAN 24-08-2026 — permintaan pemilik proyek: kartu dengan bayangan
+   ringan dan radius 8px.
+   Sebelumnya panel adalah blok bergaris rambut TANPA kotak, dengan alasan
+   bahwa `.card` sudah dihapus dari project. Alasan itu kini digantikan
+   permintaan yang eksplisit, jadi panel-lah yang menjadi kartunya — daripada
+   menambah kelas `.kartu` yang tidak dipakai satu layar pun. Warnanya tetap:
+   yang berubah hanya garis, radius, dan bayangan. */
+.panel {
+  margin-bottom: 24px;
+  padding: 18px 20px;
+  /* KOREKSI ronde 246/247: border tegas DICABUT, bayangan DINAIKKAN
+     --sh-1 -> --sh-2 — instruksi eksplisit pemilik proyek "kartu/panel
+     berbayang lembut, BUKAN border tegas". Nilai warna/radius TIDAK
+     berubah (--r-md sudah ada sejak sebelumnya).
+     TV2-291 (ronde 250): --r-md -> --r-lg. Kartu selebar panel terbaca
+     kaku pada 8px; acuan REFERENCE_UI/1.png memakai ~12px. */
+  border-radius: var(--r-lg);
+  background: var(--bg);
+  box-shadow: var(--sh-2);
+  animation: panel-masuk 160ms ease;
+}
+
+/* Sengaja TERPISAH dari @keyframes modal-masuk (temuan code-review ronde
+   241) walau nilainya SAMA hari ini — berbagi definisi modal berarti
+   perubahan pada animasi modal diam-diam ikut mengubah SETIAP `.panel`
+   di aplikasi (dipakai jauh di luar Treaty Contract). Nilai boleh sama;
+   definisinya sengaja tidak digabung. */
+@keyframes panel-masuk {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Tabel di dalam kartu tidak berbayang sendiri — dua lapis bayangan pada satu
+   blok terbaca sebagai kotak yang mengapung di atas kotak. */
+.panel .table-wrap {
+  border-radius: var(--r-md);
+  box-shadow: none;
+}
+.panel__title {
+  font-size: var(--fs-md);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--navy);
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.panel__note {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  margin: -4px 0 12px;
+}
+
+/* Panel ANAK — panel di DALAM panel (grid Child pada Treaty Arrangement,
+   `GridDeskripsi.tsx` PanelAnak). TV2-406 / D.2 ronde 274.
+
+   Kelasnya dipakai JSX sejak ronde 270 tanpa satu pun aturan, sehingga
+   panel anak tampil PERSIS seperti induknya — dua kartu berbayang sama,
+   bersebelahan, tanpa tanda mana yang memuat mana.
+
+   Alasan bentuknya sudah tertulis di berkas ini untuk `.panel .table-wrap`
+   di atas: "dua lapis bayangan pada satu blok terbaca sebagai kotak yang
+   mengapung di atas kotak". Yang berlaku untuk tabel di dalam kartu
+   berlaku sama untuk kartu di dalam kartu. Karena itu bayangannya
+   DITURUNKAN (--sh-2 -> --sh-1) dan kedalamannya dinyatakan garis aksen
+   kiri, bukan bayangan kedua.
+
+   Modifiernya TIDAK dicabut seperti `form-grid--2` (ronde 272 §2.1).
+   Preseden itu BERSYARAT — ia dicabut karena kelas dasarnya SUDAH
+   melakukan hal yang sama (`.form-grid` memang sudah 2 kolom). Di sini
+   `.panel` sendiri TIDAK menyatakan kedalaman, jadi syaratnya tidak
+   terpenuhi dan aturannya yang dibutuhkan, bukan pencabutannya.
+
+   Nol hex baru: --sh-1 (:81) dan --border (:15) sudah ada di berkas ini.
+   SD-14 uji pembeda: nol angka, nol keputusan bisnis — hanya pengelompokan
+   yang terbaca (kolom KIRI tabel SD-14). */
+.panel--anak {
+  box-shadow: var(--sh-1);
+  border-left: 3px solid var(--border);
+}
+
+/* Satu kolom. DIPERTAHANKAN untuk panel ber-textarea (Exclusions, Special
+   Conditions): kotak teks panjang dalam dua kolom menjadi terlalu sempit untuk
+   isinya, dan existing pun memakai satu pxTextArea penuh di sana.
+   Lebarnya dibatasi supaya label dan kotak isian tidak terpisah selebar layar. */
+.form-col {
+  max-width: 560px;
+}
+
+/* Grid form — DUA kolom, TIGA pada layar lebar.
+   Ini MENGGANTIKAN pola satu kolom untuk panel berisi banyak field pendek.
+   Catatan penting: existing memakai "1 kolom dominan"
+   (UI_EXISTING_REFERENSI §10), jadi ini penyimpangan SADAR dari sistem lama —
+   diminta eksplisit pemilik proyek supaya form tidak menuntut scroll panjang.
+   Perilaku form tidak berubah sama sekali; hanya tata letaknya. */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 20px;
+  align-items: start;
+}
+@media (min-width: 1400px) {
+  .form-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+/* Layar sempit: satu kolom. Memaksakan dua kolom di lebar telepon menyisakan
+   kotak isian yang terlalu ramping untuk diisi. */
+@media (max-width: 860px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+/* Field yang isinya panjang boleh melebar penuh di dalam grid. */
+.form-grid > .field--lebar {
+  grid-column: 1 / -1;
+}
+
+/* Batal di KIRI Simpan: aksi yang membatalkan pekerjaan tidak boleh berada di
+   tempat yang jempol/kursor tuju secara refleks. Aturannya hidup di
+   `.modal__actions .btn--ghost`; varian `.aksi-form` DICABUT ronde 250
+   bersama induknya yang sudah yatim. */
+
+/* Textarea memakai kotak yang sama dengan input satu baris; yang perlu
+   ditambahkan hanya arah resize. Selektor elemen+kelas, bukan kelas baru,
+   supaya input satu baris tidak ikut dapat diubah tingginya. */
+textarea.field__input {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+/* -------------------------------------------------------------- total */
+/* Strip total di dalam .toolbar. Angkanya dibuat tabular supaya digit tetap
+   sejajar saat nilainya berubah tiap ketikan. */
+.total {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: #f9fbfd;
+}
+.total__label {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Grid total per mata uang (Q-21, r172/r173). Kelas ini sempat YATIM —
+   dipasang komponen tanpa satu pun aturan di sini, sehingga grid total
+   tampil tanpa pembeda dari grid data. Temuan review r173, bentuk yang
+   sama dengan `field__input--readonly` di r170. */
+.total-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: flex-end;
+}
+
+/* Pil penanda kecil di samping angka total.
+
+   TEMUAN r184: `.pil` dan `.pil--ok` sudah dipakai sejak r169 (footer Total
+   Share, Q-41) TANPA satu pun aturan di sini — kelas yatim ketiga, sesudah
+   `field__input--readonly` (r170) dan `total-grid` (r173). Pola yang sama
+   berulang: komponen ditulis, kelasnya dinamai, CSS-nya terlewat, dan tidak
+   ada yang menangkapnya karena tsc/npm test tidak melihat CSS. */
+.pil {
+  display: inline-block;
+  padding: 2px 8px;
+  /* KOREKSI ronde 246/247: literal 999px menduplikasi nilai --r-pill yang
+     sudah ada di :root — "satu sumber, bukan nilai tersebar". */
+  border-radius: var(--r-pill);
+  font-size: var(--fs-sm);
+  background: #eef2f7;
+  color: #33415c;
+  border: 1px solid #dbe4ec;
+}
+/* Terpenuhi — mis. total share TEPAT 100 (SD-05). */
+.pil--ok {
+  background: #e8f6ec;
+  color: #1c6b34;
+  border-color: #b7e0c3;
+}
+/* Angka yang BELUM terverifikasi dari data (Confidence RENDAH). Ia bukan
+   galat: nilainya boleh dipakai, tetapi pembacanya berhak tahu. */
+.pil--hati {
+  background: #fff7e6;
+  color: #7a5200;
+  border-color: #f0d9a0;
+}
+/* Ada nilai yang TIDAK ikut terhitung — total tampak lengkap padahal kurang
+   bila penanda ini tidak muncul (BR-06). */
+.pil--awas {
+  background: #fdecea;
+  color: #8a1c13;
+  border-color: #f5c2bd;
+}
+/* Satu total beserta penanda-penandanya, ditumpuk rapi di kolom yang sama. */
+.total-blok {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+}
+
+/* Wadah total DI BAWAH grid (§13.29, r182) — mengikuti letak existing.
+   Beberapa total dapat berdampingan (tab Limits punya dua), jadi ia flex
+   dengan pembungkusan; rata kanan supaya angkanya sejajar kolom nilai
+   grid di atasnya. */
+.total-bawah {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.table--rapat th,
+.table--rapat td {
+  padding: 0.15rem 0.5rem;
+  font-size: 0.9em;
+}
+.total__nilai {
+  font-size: var(--fs-base);
+  font-weight: 600;
+  color: var(--navy);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Penanda total TEPAT 100 (SD-05, BR-01, BR-02).
+
+   Warnanya sama dengan badge yang sudah ada; yang ditambah hanya NAMA,
+   supaya pembaca kode tidak menemukan `badge--append` atau `badge--hard`
+   pada layar yang tidak berurusan dengan kebijakan hapus. */
+.badge--tepat {
+  background: #eef6fc;
+  color: #0b4a6f;
+}
+.badge--selisih {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+/* Nama endpoint dan nama kolom existing yang dikutip di dalam teks
+   penjelasan. Monospace membedakan kutipan dari prosa di sekitarnya. */
+.alert code {
+  font-family: ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
+  /* TV2-309 (ronde 253) — `4px` literal -> token.
+     Satu-satunya nilai radius di berkas ini yang tidak lewat `--r-*`, dan
+     nilai yang tidak lewat token tidak ikut berubah ketika skala radius
+     disetel — begitulah satu sudut tertinggal kaku tanpa ada yang tahu. */
+  font-size: var(--fs-sm);
+  padding: 1px 4px;
+  border-radius: var(--r-sm);
+  background: rgba(3, 4, 94, 0.06);
+}
+
+/* ============================================ PANEL SAMPING YANG TERLIPAT
+   Seluruh aturan di bawah berlaku HANYA dari 769px ke atas.
+
+   Alasannya: di bawah 769px panel bukan lagi kolom yang menyempit melainkan
+   lapisan yang keluar-masuk, dan di sana teksnya harus SELALU tampil —
+   deretan ikon selebar 72px bukan menu yang berguna di layar ponsel. Dengan
+   membatasinya di sini, blok ponsel di bawah tidak perlu membatalkan satu pun
+   aturan; membatalkan aturan adalah tempat keadaan terlipat dan keadaan
+   lapisan mulai saling menimpa tanpa terlihat. */
+@media (min-width: 769px) {
+  .sidebar--terlipat {
+    width: var(--sidebar-w-terlipat);
+    flex-basis: var(--sidebar-w-terlipat);
+  }
+
+  /* RONDE 264 — dua aturan DICABUT dari daftar ini, keduanya YATIM sejak
+     logonya pindah ke topbar: `.sidebar--terlipat .sidebar__brand` (jarak
+     dan perataan blok merek) dan `.sidebar--terlipat .sidebar__brand-sub`
+     (menyembunyikan "Reasuransi Treaty"). Tidak ada lagi elemen yang
+     memakai kelas itu.
+
+     Keduanya TIDAK ditemukan dengan membaca — pagar TV2-311 yang baru
+     menabraknya pada jalan pertamanya. Itu alasan pagarnya ditulis. */
+  /* Ronde 270: `.sidebar--terlipat .sidebar__foot` ikut dicabut bersama
+     `.sidebar__foot` itu sendiri — blok profilnya pindah ke topbar, dan
+     selektor yang menyembunyikan elemen yang tidak ada lagi adalah yatim
+     yang persis pagar TV2-311 dibuat untuk menangkap. */
+  .sidebar--terlipat .sidebar__teks,
+  .sidebar--terlipat .sidebar__flag {
+    display: none;
+  }
+
+  .sidebar--terlipat .sidebar__link {
+    justify-content: center;
+    gap: 0;
+    margin: 2px 10px;
+    padding: 8px 0;
+  }
+
+  /* KOREKSI TV2-300 (ronde 251, temuan code-review sumbu Standards):
+     `.sidebar--terlipat .sidebar__section` DICABUT. Ia bersaudara dengan
+     `.sidebar__section` yang dicabut lebih dulu di berkas ini, dan ikut
+     yatim bersamanya — nol pemakai di `src/`. Ia juga masih memakai
+     putih-transparan, yang di atas panel yang kini PUTIH tidak
+     menghasilkan apa pun.
+
+     Yang membuatnya lolos patut dicatat: sapuan yang saya tulis
+     berjangkar pada kolom 0 (`/^\.sidebar[^{]*\{/m`), sehingga SELURUH
+     aturan sidebar di dalam `@media` — yang menjorok — tidak pernah
+     tersapu. Pagar yang hanya memeriksa separuh berkas melaporkan
+     "bersih" dengan meyakinkan. Regex ujinya ikut diperbaiki.
+
+     Perannya digantikan `.sidebar--terlipat .kelompok__judul`, yang
+     sudah melakukan hal yang sama untuk elemen yang sungguhan dipakai. */
+}
+
+/* =================================================== KEADAAN MEMUAT
+   Keadaan memuat dan keadaan kosong dibedakan BENTUKNYA, bukan hanya
+   kalimatnya: yang pertama sementara, yang kedua akhir, dan keduanya tidak
+   boleh terlihat sama. */
+.memuat {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 0;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+.spinner {
+  display: inline-block;
+  flex: none;
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(3, 4, 94, 0.16);
+  border-top-color: var(--blue);
+  border-radius: var(--r-pill);
+  animation: putar 620ms linear infinite;
+}
+
+/* Baris palsu setinggi baris sungguhan, sehingga tabelnya tidak melompat
+   ketika data tiba. Warnanya diturunkan dari baris berselang yang sudah ada —
+   bukan abu-abu baru. */
+.skeleton {
+  display: block;
+  height: 11px;
+  border-radius: var(--r-pill);
+  background: linear-gradient(90deg, #eef3f8 25%, #dce7f1 37%, #eef3f8 63%);
+  background-size: 400% 100%;
+  animation: kilau 1.3s ease infinite;
+}
+
+@keyframes putar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes kilau {
+  from {
+    background-position: 100% 50%;
+  }
+  to {
+    background-position: 0 50%;
+  }
+}
+
+/* ==================================================== KEADAAN KOSONG
+   `pesan` menyebut apa yang belum ada, `petunjuk` menyebut apa yang dapat
+   dilakukan. Keduanya dipisah karena keduanya dibaca pada saat berbeda: yang
+   pertama sekilas, yang kedua ketika pemakai memutuskan bertindak. */
+.kosong {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0;
+  text-align: center;
+}
+.kosong__ikon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  border-radius: var(--r-pill);
+  background: #f2f7fb;
+  color: #9aa7b4;
+}
+.kosong__pesan {
+  font-size: var(--fs-base);
+  font-weight: 600;
+  color: var(--navy);
+}
+.kosong__petunjuk {
+  max-width: 380px;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+/* ======================================================== RESPONSIF
+   Tiga lebar, dan batasnya SAMA dengan yang dipakai App.tsx (LAYAR_TABLET,
+   LAYAR_PONSEL). Keduanya harus sama: bila CSS sudah menyusutkan panel
+   sementara JS masih menyangka layarnya lebar, tombolnya melipat panel yang
+   sudah terlipat dan satu klik hilang tanpa sebab yang terlihat. */
+
+/* --- tablet: panelnya dilipat React, di sini hanya jaraknya yang rapat. */
+@media (max-width: 1024px) {
+  .page {
+    padding: 20px 20px 40px;
+  }
+  .topbar {
+    padding: 0 20px;
+  }
+}
+
+/* --- ponsel: panel keluar sebagai LAPISAN, bukan kolom yang mendorong isi.
+       Mendorong isi pada lebar 375px tidak menyisakan ruang untuk isinya. */
+@media (max-width: 768px) {
+  /* TV2-306 (§2.1.5, ronde 256) — bilah saringan MENUMPUK pada layar
+     sempit, bukan berdesakan.
+
+     `flex-wrap: wrap` warisan `.toolbar` sudah mencegah gulir mendatar,
+     tetapi pada lebar kecil ia menghasilkan susunan yang tidak dapat
+     ditebak: satu pasang di baris pertama, satu lagi separuh turun,
+     tombolnya terselip di ujung. Menumpuk PENUH lebih mudah dibaca
+     daripada membungkus setengah-setengah.
+
+     Kotak Treaty Year melepas lebar 7ch-nya di sini — pada satu kolom,
+     kotak selebar 7 karakter di sebelah label terlihat seperti cacat,
+     bukan seperti kehematan. */
+  .toolbar--saring {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .toolbar--saring .saring__grup {
+    justify-content: space-between;
+  }
+  .toolbar--saring .field__input--sempit,
+  .toolbar--saring .field__input--tahun,
+  .toolbar--saring .field__input--grup {
+    width: auto;
+    flex: 1;
+    margin-left: 8px;
+  }
+
+  .sidebar {
+    position: fixed;
+    /* §0G.1 (ronde 264): laci berhenti DI BAWAH topbar, tidak menutupinya.
+       Tombol pembuka/penutup panel tinggal di topbar justru supaya ia
+       selalu terlihat (catatan ronde 246/247); laci yang menutupi topbar
+       akan menyembunyikan satu-satunya jalan keluarnya. */
+    /* ⚠️ RONDE 281 A — angka ini FUNGSIONAL, bukan kosmetik.
+
+       Dulu `var(--topbar-h)` saja, yang mengandaikan topbar menempel di
+       y=0. Sejak topbar melayang, andaian itu batal: laci akan mulai di
+       64px sementara bilah baru berakhir di 76px, sehingga laci MENUTUPI
+       topbar — dan tombol buka/tutupnya ADA di topbar. Peringatan tepat
+       di bawah ini sudah menyebut akibatnya sebelum ia sempat terjadi.
+
+       Uji E ronde 281 mengikat pertidaksamaannya, bukan ejaannya. */
+    top: calc(var(--topbar-h) + var(--nav-layang) * 2);
+    left: 0;
+    z-index: 50;
+    /* Sebagai LACI, panel menempel ke tepi kiri: jarak layang --nav-layang
+       dicabut di sini, atau `translateX(-100%)` menyisakan celah selebar
+       jarak itu dan laci yang "tertutup" tetap mengintip. Sudut kanannya
+       tetap membulat — itu sisi yang menghadap pemakai. */
+    margin: 0;
+    border-radius: 0 var(--r-xl) var(--r-xl) 0;
+    /* Mengikuti `top` di atas: laci mulai satu selokan di bawah dasar
+       bilah, jadi tingginya berkurang sebanyak itu pula. */
+    height: calc(100vh - var(--topbar-h) - var(--nav-layang) * 2);
+    transform: translateX(-100%);
+    transition: transform 200ms ease;
+  }
+  .sidebar--terbuka {
+    transform: none;
+    box-shadow: var(--sh-3);
+  }
+
+  /* KOREKSI §0G.1.5 (ronde 264) — `flex-wrap: wrap` DICABUT.
+     Ia dipasang ronde 246/247 sebagai "jaring pengaman murah bila judul
+     halaman panjang". Instruksi 21-09-2026 melarang persis perilaku itu:
+     "layar sempit, judul dipotong dengan ellipsis, BUKAN membungkus dan
+     mendorong isi ke bawah". Membungkus juga akan merusak tinggi topbar
+     yang kini PASTI — dan `.sidebar` menghitung `top`-nya dari tinggi itu.
+     Jaringnya sudah ada dan lebih tepat: `.topbar__title` memakai
+     `white-space: nowrap` + `text-overflow: ellipsis`. */
+  .topbar {
+    padding: 0 16px;
+  }
+  .topbar__title {
+    font-size: var(--fs-xl);
+  }
+
+  .page {
+    padding: 16px 16px 36px;
+  }
+  .panel {
+    padding: 14px;
+  }
+  .modal__head {
+    padding: 16px 16px 10px;
+  }
+  .modal__body {
+    padding: 14px 16px;
+  }
+  .modal__actions {
+    padding: 12px 16px 14px;
+  }
+  /* Tombol modal melebar penuh: sasaran ibu jari, bukan sasaran tetikus. */
+  .modal__actions .btn {
+    flex: 1;
+  }
+  .table-wrap {
+    max-height: calc(100vh - 300px);
+  }
+}
+
+/* ============================================== GERAK YANG DIKURANGI
+   Sebagian pemakai menyetel sistemnya untuk mengurangi gerak, dan setelan itu
+   dibuat karena gerak dapat memicu keluhan fisik — bukan karena selera. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  /* TV2-329 — riak dan kilau DIMATIKAN, bukan dipercepat.
+     Aturan umum di atas memangkas durasi menjadi 0,01ms, dan itu cukup
+     untuk transisi — tetapi untuk animasi yang MENGGERAKKAN sesuatu ia
+     menghasilkan kedipan, bukan ketenangan. Keduanya karena itu
+     disembunyikan sama sekali.
+
+     Ini bukan tambahan opsional: animasi yang tidak dapat dimatikan
+     menyakiti sebagian pemakai, dan kilau berputar tanpa henti adalah
+     jenis yang paling sering disebut. */
+  .riak {
+    display: none !important;
+  }
+  .btn--kilau::before {
+    animation: none !important;
+    display: none !important;
+  }
+  /* §0.1.2 ronde 268 — latar Pipeline pada prefers-reduced-motion.
+
+     Aturan ronde 264 di sini menunjuk `.login::before/::after`, dua
+     lapisan yang §4 sudah CABUT. Aturan yang menunjuk selektor mati
+     tidak berbahaya, tetapi ia membuat pembaca berikutnya mengira ada
+     sesuatu yang dijaga padahal tidak.
+
+     Penjagaan SEBENARNYA ada di `App.tsx`: loop-nya TIDAK PERNAH
+     dimulai ketika media query ini cocok. Itu lebih kuat daripada CSS
+     — menyembunyikan kanvas lewat CSS tetap meninggalkan
+     requestAnimationFrame yang berjalan 60 kali per detik.
+
+     Aturan di bawah karena itu jaring pengaman KEDUA: ia menutup
+     jendela sempit ketika pemakai mengubah setelan sistemnya SESUDAH
+     layar Login terpasang, sebelum ia dimuat ulang. */
+  .login__latar {
+    display: none !important;
+  }
+  /* Kartu tampil langsung, tanpa naik. `both` pada animasi aslinya
+     menahan bingkai TERAKHIR, jadi mematikannya tidak meninggalkan
+     kartu yang tembus pandang. */
+  .login__card {
+    animation: none !important;
+  }
+}
+
+/* --------------------------------------------------- pemadatan tabel */
+/* Kolom aksi sebelumnya melebar mengikuti tiga tombol berukuran penuh,
+   memakan ruang yang seharusnya milik data. Tombolnya dipadatkan, bukan
+   dihilangkan — target kliknya tetap di atas 28px. */
+.table__actions .btn {
+  padding: 4px 9px;
+  font-size: var(--fs-sm);
+}
+
+/* --------------------------------------------- sel tidak memaksa lebar */
+/* SEL TIDAK DIPECAH DI TENGAH TOKEN (perbaikan ronde 67).
+   Aturan sebelumnya memakai `overflow-wrap: anywhere` agar tabel tidak
+   melebihi layar. Harganya ternyata lebih mahal daripada gulir horizontal:
+   ID "100323" terbaca "1003 23", nomor referensi
+   "QP.01.017.0358.03.2023" terpotong tiga baris, dan angka pecah di tengah
+   digit. Nilai yang salah baca lebih buruk daripada tabel yang harus
+   digulir — apalagi pembungkusnya MEMANG sudah menggulir (overflow-x).
+   Kolom yang isinya kalimat boleh membungkus lewat .cell--wrap. */
+.table tbody td,
+.table tbody td.num,
+.table tbody td.table__actions,
+.table thead th.num {
+  overflow-wrap: normal;
+  white-space: nowrap;
+}
+/* Kolom berisi KALIMAT (catatan, deskripsi, keterangan): membungkus per
+   KATA — tidak pernah di tengah kata — dan dibatasi lebarnya supaya satu
+   kolom tidak menelan seluruh tabel. */
+.table tbody td.cell--wrap {
+  white-space: normal;
+  overflow-wrap: break-word;
+  max-width: 340px;
+}
+
+/* Kolom aksi selebar isinya saja, sehingga sisa lebar jatuh ke kolom data.
+   `width: 1%` pada tabel width:100% adalah cara meminta "sesempit mungkin" —
+   browser melebarkannya sampai isinya muat, tidak kurang. */
+.table th.table__actions,
+.table td.table__actions {
+  width: 1%;
+}
+
+/* ------------------------------------------------- Treaty Excess of Loss */
+/* Dua panel berdampingan, meniru layar existing (tangkapan layar 27-08-2026):
+   daftar Treaty Group di kiri, detail layer di kanan. Pada layar sempit
+   keduanya menumpuk — panel kanan yang sempit membuat lima kolom grid
+   (XLArrID/Layer/IDR/USD/PCT) saling bertindih. */
+.xol {
+  display: grid;
+  grid-template-columns: minmax(280px, 380px) 1fr;
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 1100px) {
+  .xol {
+    grid-template-columns: 1fr;
+  }
+}
+/* Panel kiri dibatasi tingginya: 33 treaty group lebih panjang daripada
+   layar, dan menggulir SELURUH halaman membuat panel kanan ikut hilang. */
+.xol__kiri .table-wrap {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.xol__kanan {
+  min-width: 0;
+}
+
+/* RONDE 88 — panel kanan XOL ditata ulang.
+   Sebelumnya isinya menumpuk lurus ke bawah: kotak saringan, lalu daftar
+   Description selebar 420px, lalu tabel layer. Akibatnya tabel layer
+   (XLARRID / LAYER / IDR / USD) terdesak ke bawah lipatan sementara ruang
+   di sebelah daftar Description menganggur.
+
+   Dua kolom: daftar Description sempit (ia hanya satu kolom teks), tabel
+   layer mengambil SISANYA. Di bawah 1280px keduanya kembali menumpuk —
+   dua kolom pada layar sempit membuat tabel layer lebih sempit lagi. */
+.xol__isi {
+  display: grid;
+  grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 1280px) {
+  .xol__isi {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Daftar Description: tinggi dibatasi supaya lima baris deskripsi tidak
+   mendorong tabel layer keluar layar. */
+.xol__desc .table-wrap {
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+/* Kotak saringan (Year / Rate of Change / Treaty Group / Type) sejajar
+   dalam kisi, bukan mengalir seperti toolbar — empat isian yang panjangnya
+   berbeda membuat labelnya bertangga dan sulit dipindai. */
+.xol__saring {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px 18px;
+  margin-bottom: 14px;
+  align-items: end;
+}
+/* Baris yang DAPAT DIKLIK untuk memilih — seluruh barisnya sasaran, bukan
+   hanya tombol kecil di ujungnya. */
+.row--pilih {
+  cursor: pointer;
+}
+.row--pilih:hover {
+  background: var(--alt-row);
+}
+
+/* Baris terpilih — penanda konteks. Tanpa ini pengguna kehilangan jejak
+   grup/deskripsi mana yang sedang ditampilkan panel kanan. */
+.row--aktif {
+  background: rgba(3, 4, 94, 0.06);
+}
+.row--aktif td {
+  font-weight: 600;
+}
+/* Nilai read-only di dalam toolbar: seukuran field__input supaya barisnya
+   sejajar, tetapi jelas bukan kotak isian. */
+.field__ro {
+  padding: 7px 0;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+/* ------------------------------------------------------- catatan teknis */
+/* Keterangan provenance dilipat (ronde 58): satu baris kecil bergaya muted,
+   bukan panel besar. Detail dibuka hanya oleh yang membutuhkannya. */
+.catatan {
+  margin: 0 0 12px;
+  font-size: var(--fs-sm);
+  color: var(--muted, #667);
+}
+
+/* Kontrol halaman — satu bentuk untuk seluruh daftar (ronde 69).
+   Diletakkan DI BAWAH tabel: itu tempat mata berada setelah membaca baris
+   terakhir, dan di situlah keputusan "lanjut ke halaman berikutnya" diambil. */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.pager__aksi {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Kolom PERTAMA tetap terlihat saat tabel digulir ke samping (ronde 70).
+
+   Dipakai grid berkolom banyak — Laporan Realisasi (20 kolom) dan Limit
+   Treaty In (30-an kolom). Tanpa ini, menggulir ke kolom BALANCE membuat
+   NOREF hilang dari layar, dan angka di layar kehilangan barisnya: pembaca
+   tahu nilainya tetapi tidak tahu nilai SIAPA.
+
+   z-index header kolom pertama lebih tinggi daripada header lain supaya ia
+   tidak tertimpa saat menggulir dua arah sekaligus. */
+.table--kunci-kolom1 tbody td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--bg);
+  box-shadow: 1px 0 0 var(--border);
+}
+.table--kunci-kolom1 thead th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 11;
+}
+
+/* ==========================================================================
+   §1 ronde 268 (TV2-376) — BELAH DUA untuk List Description
+
+   Pemilik proyek 22-09-2026: "KETIKA SHOW DI KLIK LAYAR PENUH SPLIT JADI 2
+   KIRI UNTUK TAMPILAN LIST DESCRIPTION NYA, KANAN NYA TAMPILAN ISI DARI ID
+   ATAU DESCNAME YANG SEDANG DI KLIK."
+
+   Bentuknya MENYALIN `.xol` (:2637), yang sudah membelah dua panel dan
+   sudah dibangun meniru layar existing. Kenapa menyalin alih-alih memakai
+   ulang: `.xol` bernama menurut LAYARNYA (Excess of Loss). Memakai nama itu
+   untuk List Description akan menamai aturan menurut tempat pertama ia
+   dipakai, bukan menurut apa yang ia lakukan — dan penyunting berikutnya
+   yang menyetel `.xol` untuk layar XOL akan mengubah layar ini tanpa tahu.
+
+   Duplikasinya DINYATAKAN: delapan baris grid yang sama di dua tempat.
+   Menyatukannya menuntut menyentuh TreatyExcessOfLoss yang sudah benar,
+   dan §1 A.7 melarangnya ronde ini.
+   ========================================================================= */
+.belah {
+  display: grid;
+  /* §2.1 ronde 269 (B.7) — panel kiri MENYEMPIT karena isinya menyusut.
+     Lebar 280-420px ditetapkan ronde 268 untuk tabel TIGA kolom
+     (ID · DescName · Aksi). B.2 mencabut `ID`, jadi tersisa dua — dan
+     lebar lama menyisakan ruang kosong di kiri sementara panel kanan,
+     yang memuat grid arrangement sampai enam kolom, justru sesak.
+     Tata letak saja: nol angka, nol keputusan bisnis (SD-14). */
+  grid-template-columns: minmax(220px, 320px) 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+/* Tinggi tabel kiri MENYESUAIKAN jumlah baris, dengan batas atas.
+
+   Sesudah saringan IsXOL=0 (ronde 263) daftarnya 19 baris. `max-height`
+   adalah BATAS, bukan tinggi tetap — jadi daftar pendek tetap pendek dan
+   yang 19 baris berhenti di 70vh alih-alih di 220px (~4 baris).
+
+   70vh, lebih tinggi daripada 60vh pada tabel modal biasa: di sini tabelnya
+   ADALAH isi utama panel, bukan satu seksi di antara beberapa. Kepala
+   tabelnya sudah `position: sticky` (.table thead th). */
+.belah__kiri .table-wrap {
+  max-height: 70vh;
+}
+
+/* `min-width: 0` — tanpa ini anak grid menolak menyusut di bawah lebar
+   isinya, dan tabel lebar di panel kanan mendorong panel kiri keluar layar
+   alih-alih menggulir sendiri. Sama seperti `.xol__kanan`. */
+.belah__kanan {
+  min-width: 0;
+}
+
+.belah__kanan .table-wrap {
+  max-height: 60vh;
+}
+
+/* Judul panel kanan — sebelumnya ini palang modal kedua. */
+.belah__judul {
+  margin: 0 0 12px;
+  font-size: var(--fs-lg);
+  color: var(--navy);
+}
+
+/* Baris yang sedang dibuka. Memakai token yang SUDAH ada (--alt-row untuk
+   latar, --navy untuk penanda tepi): nol hex baru, §8.8.
+
+   Penanda tepi kiri dipilih, bukan latar pekat: latar pekat akan melawan
+   zebra baris dan menurunkan kontras teksnya, sementara tepi berdiri di
+   luar sel sehingga rasio teks tidak berubah sama sekali. */
+.belah__baris--aktif > td {
+  background: var(--alt-row);
+}
+.belah__baris--aktif > td:first-child {
+  box-shadow: inset 3px 0 0 0 var(--navy);
+}
+
+/* Layar sempit: dua kolom kurus lebih buruk daripada dua kolom bertumpuk.
+   Ambang 1100px MENGIKUTI `.xol` (:2648) — bukan angka baru. */
+@media (max-width: 1100px) {
+  .belah {
+    grid-template-columns: 1fr;
+  }
+  .belah__kiri .table-wrap {
+    max-height: 40vh;
+  }
+}
+
+/* Modal SELEBAR LAYAR (prop `penuh`). `lebar` berhenti di 1100px — cukup
+   untuk form berkolom banyak, tidak untuk dua panel bertabel. */
+.modal--penuh {
+  width: 96vw;
+  max-width: 96vw;
+}
+
+/* ==========================================================================
+   PALET CARI MENU (Ctrl+K) — TV2-438, ronde 276
+   ==========================================================================
+
+   NOL hex baru (§8 pagar keras): setiap warna di bawah token yang sudah
+   ada. Satu-satunya rgba() adalah tirai, dan ia memakai --navy lewat
+   color-mix supaya ia ikut berubah bila paletnya berubah.
+
+   Tirainya `align-items: flex-start` + padding atas, bukan center: palet
+   yang melompat ke tengah layar memindahkan mata pemakai jauh dari topbar
+   tempat ia baru saja menekan tombol. */
+.palet__tirai {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 12vh;
+  background: color-mix(in srgb, var(--navy) 38%, transparent);
+}
+
+.palet {
+  width: min(560px, calc(100vw - 32px));
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-2);
+  overflow: hidden;
+}
+
+.palet__kotak {
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  padding: 14px 16px;
+  font-size: 15px;
+  font-family: inherit;
+  color: inherit;
+  outline: none;
+}
+
+.palet__daftar {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  overflow-y: auto;
+}
+
+.palet__baris {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* Sorotan dipakai papan ketik DAN tetikus, jadi satu kelas saja — dua
+   gaya yang berbeda membuat pemakai melihat DUA baris terpilih. */
+.palet__baris--sorot {
+  background: var(--alt-row, #eaf4fb);
+}
+
+.palet__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Kelompok adalah KONTEKS, bukan judul: ia memberi tahu di mana menu itu
+   berada di sidebar, sehingga pemakai belajar letaknya sambil memakai
+   pintasnya — bukan menggantikan kebiasaan itu. */
+.palet__kelompok {
+  flex: none;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+.palet__flag {
+  flex: none;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  padding: 0 7px;
+}
+
+.palet__kosong {
+  margin: 0;
+  padding: 18px 16px;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+/* Kendali cari di topbar — TV2-442 (ronde 277).
+
+   Keputusan pemilik proyek 24-09-2026: "GUNAKAN KOTAK DI KANAN SEPERTI
+   ACUAN!". Ia MEMBALIK bentuk tombol ronde 276; riwayat dan alasan yang
+   kalah tertulis di App.tsx, di tempat kendalinya dirender.
+
+   Warnanya mengikuti topbar yang sudah bernavy (ronde 275 Tahap B), jadi
+   putih transparan — sama dengan .topbar__toggle dan .topbar__profil,
+   bukan nilai keempat yang berdiri sendiri. */
+.topbar__cari {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* LEBAR SENDIRI — inilah beda terukur antara "tombol" dan "kotak".
+     Tombol selebar teksnya; medan punya tapak tetap, sehingga mengganti
+     tulisannya tidak menggeser seluruh sisi kanan bilah.
+
+     210px BUKAN rasio acuan (108px pada bilah 51px = 135px pada bilah
+     64px kita). Rasio itu tidak dipakai karena tulisan acuannya sendiri
+     lebih kecil; 210px adalah yang TERSEMPIT yang masih memisahkan chip
+     `Ctrl K` dari tulisannya pada `--fs-sm`. Angka yang dipinjam dari
+     acuan tetapi tidak memuat isinya hanya rapi di atas kertas. */
+  min-width: 210px;
+  padding: 6px 8px 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.1);
+  /* #aec1d8 = 4,81:1 di atas ujung TERANG gradien (#2a4b78) — LULUS AA,
+     dan hex yang SUDAH hidup di berkas ini (.topbar__profil-sub, ronde
+     274). Nol hex baru.
+
+     Sengaja lebih redup daripada putih: tulisan ini PEMANDU, bukan judul,
+     dan di acuan pun ia lebih redup daripada nama profil di sebelahnya.
+     Yang TIDAK boleh adalah meredamnya sampai `--muted` (#5b6875) — di
+     atas latar ini hanya 1,42:1, hilang sama sekali. */
+  color: #aec1d8;
+  font: inherit;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  transition:
+    background var(--t),
+    border-color var(--t);
+}
+.topbar__cari:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+.topbar__cari:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.topbar__kbd {
+  font-family: inherit;
+  font-size: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: var(--r-sm);
+  padding: 1px 5px;
+  color: var(--bg);
+  /* Didorong ke UJUNG KANAN kotak, seperti acuan — glif dan tulisan
+     berkumpul di kiri, chip menempel tepi kanan. */
+  margin-left: auto;
+}
+
+/* Di layar sempit topbar sudah padat; yang disembunyikan TULISANNYA, bukan
+   kendalinya — pintasnya tetap terjangkau, hanya lebih ringkas. Tapak
+   tetapnya ikut dilepas: kotak selebar 210px yang isinya tinggal dua glif
+   adalah ruang kosong yang merebut tempat chip profil. */
+@media (max-width: 760px) {
+  .topbar__cari-teks {
+    display: none;
+  }
+  .topbar__cari {
+    min-width: 0;
+  }
+}

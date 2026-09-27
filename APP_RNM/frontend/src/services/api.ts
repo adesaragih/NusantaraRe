@@ -422,3 +422,78 @@ export async function hapusKlaim(klaimID: string): Promise<DampakHapus> {
   )
   return data
 }
+
+// ---------------------------------------------------------------------------
+// F0.1 — ENVELOPE GALAT, bentuk yang dipakai komponen dasar.
+//
+// ⛔ PILIHAN YANG DINYATAKAN (brief lanjutan 6 §2 aturan 2): `api.ts` kita
+// DIMIGRASI UTUH ke klien `fetch` referensi beserta `ApiFailure`/`bolehUlang`,
+// dan `axios` dilepas. Alasannya bukan selera:
+//
+//   - `components/ui/dasar.tsx` dan `lib/keadaanGalat.ts` yang diadopsi dari
+//     referensi keduanya berbicara dalam `ApiFailure`. Mempertahankan axios
+//     berarti menulis adaptor yang MEREPRODUKSI `ApiFailure` - yaitu menulis
+//     kelas yang sama, ditambah satu lapis lagi yang dapat salah.
+//   - Dua model galat berdampingan berarti dua jalan menampilkan kegagalan
+//     yang sama, dan yang satu akan diam-diam kalah.
+//
+// ⚠️ Migrasi transportnya dilakukan F0.2. Yang lahir di F0.1 hanya BENTUK
+// galatnya, supaya komponen dasar dapat diperiksa tipe-nya.
+//
+// ⚠️ BENTUKNYA TIDAK DISALIN MENTAH dari referensi. Envelope backend kita
+// `{"error": "<kalimat>"}` - satu medan, tanpa `code`, tanpa `fields`; itu
+// yang `handlers.galat` tulis. `ApiFailure` di sini memetakan envelope KITA,
+// bukan envelope aplikasi lain. Menyalin `ErrorCode` beserta kedua belas
+// kodenya berarti menjanjikan kode yang backend kita tidak pernah kirim.
+// ---------------------------------------------------------------------------
+
+/** Kode galat yang benar-benar dapat muncul di jalur kita. */
+export type KodeGalatApi =
+  /** Dipasang KLIEN, bukan backend: jawaban bukan JSON sama sekali.
+   *
+   *  ⛔ Ia berdiri di sini supaya keadaan "backend mati" punya NAMA alih-alih
+   *  menjadi SyntaxError yang tak terbaca siapa pun. */
+  | 'BACKEND_TIDAK_TERJANGKAU'
+  /** Backend menjawab JSON, dan medannya `error`. */
+  | 'DITOLAK_BACKEND'
+
+/** Satu galat per medan. Backend kita belum mengirimnya; bentuknya disiapkan
+ *  supaya layar tidak perlu diubah ketika ia mengirimkannya. */
+export interface GalatMedan {
+  field: string
+  message: string
+}
+
+/** Isi envelope galat, sesudah dinormalkan dari `{"error": …}`. */
+export interface IsiGalatApi {
+  code?: KodeGalatApi
+  message?: string
+  fields?: GalatMedan[]
+}
+
+/**
+ * Galat yang membawa envelope backend apa adanya.
+ *
+ * ⚠️ Nama medannya (`status`, `detail`) mengikuti referensi DENGAN SENGAJA:
+ * `lib/keadaanGalat.ts` mengenali bentuk ini secara struktural, tanpa mengimpor
+ * kelasnya, supaya modul itu tetap murni dan dapat diuji tanpa DOM.
+ */
+export class ApiFailure extends Error {
+  constructor(
+    readonly status: number,
+    readonly detail: IsiGalatApi,
+  ) {
+    super(detail.message ?? 'Permintaan ditolak backend')
+    this.name = 'ApiFailure'
+  }
+
+  /** Pesan untuk satu medan, bila backend melaporkannya. */
+  fieldMessage(nama: string): string | undefined {
+    return this.detail.fields?.find((f) => f.field === nama)?.message
+  }
+
+  /** SELURUH medan yang gagal - bukan yang pertama saja. */
+  get fields(): GalatMedan[] {
+    return this.detail.fields ?? []
+  }
+}
