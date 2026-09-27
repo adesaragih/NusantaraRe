@@ -47,7 +47,7 @@ baris baru), **ADR-0007** (jejak audit).
 
 - [x] Hasil keputusan Komite **terbaca** pada baris `AdjustmentList` yang diserahkan — Aksep atau
       Ditolak. *(AC 4 spec Claim Life)*
-- [ ] Klaim **tetap** dapat menerima baris adjustment baru setelah penolakan Komite.
+- [x] Klaim **tetap** dapat menerima baris adjustment baru setelah penolakan Komite.
 - [x] Baris baru yang ditambahkan setelah penolakan berstatus Outstanding dan **mewarisi delapan
       kolom** dari baris pertama **tanpa** mewarisi status. *(AC 5 spec Claim Life)*
 - [ ] `PremiumListDetail` dan header klaim **mencerminkan** baris terakhir setelah hasil diterapkan.
@@ -216,3 +216,20 @@ daripada gerbang yang memeriksa.
 **lanjut dari sini:** tiket 11 selesai. Berikutnya tiket 13 — migrasi data penuh, yang
 **menuntut persetujuan manusia** sebelum dijalankan.
 
+## Implementasi — 27 September 2026 (A2)
+
+**Satu centang bergeser, dan sebabnya:**
+
+| AC | Sebab bergeser |
+| --- | --- |
+| klaim tetap dapat menerima baris adjustment baru setelah penolakan | jalur "putaran berikutnya" ada dan bergerbang: putaran baru **hanya** lahir sesudah baris terakhir ditolak. Perekam jejaknya sungguhan, jadi putaran yang lahir tercatat siapa dan kapan |
+
+**Yang TIDAK bergeser, dan sebabnya:**
+
+| AC | Sebab tetap terbuka |
+| --- | --- |
+| `PremiumListDetail` dan header klaim **mencerminkan** baris terakhir | pencerminan ada pada jalur akseptasi; jalur **hasil komite** belum — ia masuk Komite tiket 06–07 |
+
+⛔ **Temuan A0 yang jatuh ke sini:** `IS_CHECK` peserta sempat hilang dari kontrak API. Setiap
+putaran lanjutan menuntut peserta tercentang; tanpanya seluruh jalur putaran akan diam-diam
+menolak. Dikembalikan beserta ujinya.

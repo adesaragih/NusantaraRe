@@ -68,7 +68,7 @@ persen; nama kolom tidak dapat dipakai menebak sifatnya).
 - [x] ⚠️ `ACCEPTATION_DATE` **tidak** distempel saat insert; ia diisi **tanggal akseptasi
       sebenarnya** saat baris benar-benar diaksep. *(AC 43 spec; penyimpangan sadar 4)*
 - [ ] Peserta beserta seluruh baris adjustment-nya tersimpan dalam **satu transaksi**. *(AC 49 spec)*
-- [ ] Baris adjustment menyimpan **nama bank**, **id bank**, dan **nomor rekening**, dan ketiganya
+- [x] Baris adjustment menyimpan **nama bank**, **id bank**, dan **nomor rekening**, dan ketiganya
       dapat diisi dari layar rincian adjustment. *(AC 56 spec; `[terverifikasi]` class
       `ASM-FW-GISFW-Data-AdjustmentLife`, tampil di `Claim Life/Section/AdjustmentDetail_Section.xml`)*
 - [ ] Ketiga field bank **boleh kosong saat Save ke Outstanding** — ia baru menjadi gerbang pada
@@ -511,3 +511,23 @@ baris di commit ini menyentuh `AUTH_STUB`. Dan **ad** masih `[USULAN]` di brief 
 adalah *tiket ini mengerjakan pekerjaan yang brief tugaskan padanya*, bukan bahwa keputusannya
 sudah disahkan. `PeranSimpanOutstanding` juga belum punya pemanggil non-test — ia sengaja mendahului
 tiket 07, yang akan memakainya; tanpa itu fakta XML-nya hilang.
+
+## Implementasi — 27 September 2026 (A2, penutupan stub ar1)
+
+**Satu centang bergeser, dan sebabnya:**
+
+| AC | Sebab bergeser |
+| --- | --- |
+| baris adjustment menyimpan nama bank, id bank, nomor rekening | migrasi 011 menambah `BRANCH_OF_BANK`, `SWIFT_CODE`, `PAYABLE_TO` di samping ketiganya — kolomnya kini ada, dan penulisnya mengisinya |
+
+**Yang TIDAK bergeser, dan sebabnya:** sisa AC tiket ini *(satu peserta per baris, empat baris untuk
+dua peserta × dua putaran, tanggal per peserta, satu transaksi, gerbang bank pada Save Adjustment)*
+menuntut **jalan Oracle sungguhan**; bentuknya sudah ada, perilakunya belum dijalankan.
+
+**Gerbang "dokumen lengkap"** *(butir **ar1**)*: daftar kategori wajib dibaca saat jalan dengan
+filter `BISNIS IN ('ALL', <kode bisnis>)`, dibandingkan **cacah** seperti gerbang XML.
+
+⚠️ Keputusannya `[USULAN yang disahkan]`, **bukan** `[terverifikasi]`: rule `GetCategoryLife_SQL`
+**tidak ada di korpus**, jadi mana yang Pega baca tidak terverifikasi. Kandidat kedua — view
+`DOCUMENTCLAIM_LIFE` dari `M_PRODUCT_LIFE.JSONDATA` — dicatat dan **tidak** dipakai, sebab jalur
+JSON produk dilarang AC 38.

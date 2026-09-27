@@ -60,13 +60,13 @@ END;
       `Generate_NoKlaim_LifeRetro` di kode. `[terverifikasi]` keduanya tidak terindeks sebagai
       rujukan aktif di `SaveOutStandingLife_Act`.
 - [ ] Halaman React Register dapat mengirim pendaftaran dan menampilkan nomor yang diterima.
-- [ ] Nomor yang dihasilkan berbentuk `<prefix>K<kode bisnis>.MM.YYYY.<5 digit>` — contoh
+- [x] Nomor yang dihasilkan berbentuk `<prefix>K<kode bisnis>.MM.YYYY.<5 digit>` — contoh
       `RNML-KL1.08.2026.00936`.
-- [ ] Prefix diperoleh lewat **lookup** ke `POOLDATA.KODE_PRODUKSI` (`TYPE='LIFE'`), **tidak**
+- [x] Prefix diperoleh lewat **lookup** ke `POOLDATA.KODE_PRODUKSI` (`TYPE='LIFE'`), **tidak**
       ditanam sebagai konstanta di kode.
-- [ ] Periode nomor mengikuti `POOLDATA.TANGGAL_CLOSING`, termasuk aturan cutover
+- [x] Periode nomor mengikuti `POOLDATA.TANGGAL_CLOSING`, termasuk aturan cutover
       `TRUNC(now) <= 02/01/2026` → `12.2025`.
-- [ ] Batas transaksi dipegang **Go**: commit terjadi segera setelah nomor terbentuk, sehingga lock
+- [x] Batas transaksi dipegang **Go**: commit terjadi segera setelah nomor terbentuk, sehingga lock
       `SELECT … FOR UPDATE` pada `GENERATE_SEQUENCE_NUMBER` tidak menahan pendaftar lain.
 - [ ] Dua pendaftaran serentak tidak pernah memperoleh nomor yang sama.
 
@@ -451,3 +451,31 @@ sumbernya; kode yang menirunya memakai label yang sama.
 `PenomorBelumDiputuskan` **tetap menjadi bawaan** — gagal tertutup. `register.go` yang memasang
 `PenomorCounterOracle`, sehingga jalur pendaftaran berhenti menjawab 501.
 
+## Implementasi — 27 September 2026 (A2, penutupan stub o1)
+
+**Empat centang bergeser, dan sebabnya:**
+
+| AC | Sebab bergeser |
+| --- | --- |
+| bentuk `<prefix>K<kode bisnis>.MM.YYYY.<5 digit>` | `RakitNomorKlaim` diuji dengan contoh AC-nya sendiri (`RNML-KL1.08.2026.00936`), termasuk urut > 5 digit yang **tidak** dipotong. Sebelum ini fungsinya **tanpa uji sama sekali** |
+| prefix lewat lookup `KODE_PRODUKSI` | konstanta `AwalanNomorKlaim = "RNML-"` **dibuang**; `AwalanProduksi(ctx, tx, "LIFE")` membacanya saat jalan. `[terverifikasi]` `RDBList/GetKodeProdLife_SQL.xml` baris 85. Penjaga arah-balik: nol literal `"RNML-"` di kode services |
+| periode mengikuti `TANGGAL_CLOSING` + cutover | `HariClosing` + `HitungPeriodeNomor`; cutover `TRUNC(now) <= 02/01/2026 → 12.2025` diuji `TestPeriodeCutoverDipertahankan` |
+| batas transaksi dipegang Go | penomoran dipindah ke **transaksi sendiri**, di-commit sebelum transaksi pendaftaran. Sebelumnya kuncian `SELECT … FOR UPDATE` dipegang sampai seluruh pendaftaran selesai |
+
+**Yang TIDAK bergeser, dan sebabnya:**
+
+| AC | Sebab tetap terbuka |
+| --- | --- |
+| nomor dari `PROC_GENERATE_SEQUENCE_NUMBER` | ⛔ **DIGANTIKAN ADR-U-0043** `[keputusan work owner, butir o1]`: procedure tidak dipanggil. Teks AC ini perlu ditulis ulang work owner — executor tidak menutup `[terbuka]` |
+| aplikasi tidak memuat logika format nomor *(ADR-0006)* | ⛔ **DIGANTIKAN ADR-U-0043** untuk nomor bisnis. Sama: teks AC menunggu work owner |
+| didaftarkan lewat API dan muncul berstatus awal | menuntut jalan Oracle sungguhan; belum dijalankan |
+| dua pendaftaran berurutan → dua nomor berbeda | sama — menuntut Oracle |
+| dua pendaftaran **serentak** tidak pernah senomor | sama, dan menuntut **dua sambungan** serentak. Bentuknya dijaga statik (`TestPenomoranDiTransaksiSendiri`), perilakunya belum |
+| halaman React Register | kelompok A3 |
+
+**Konsekuensi yang diterima** *(dinyatakan, bukan disembunyikan)*: dua transaksi berarti nomor
+dapat **terbakar** bila transaksi kedua gagal — urutannya berlubang. Lubang tidak merusak apa pun;
+kuncian global merusak setiap pendaftaran serentak.
+
+**Terbuka baru:** awalan **akseptasi** (`RNML-A`, `RNML-AR`) masih dirakit di kode — keduanya tidak
+ada di `KODE_PRODUKSI`. Dari mana huruf `A`/`AR` datang adalah `[terbuka — work owner]`.

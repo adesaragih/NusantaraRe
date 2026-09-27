@@ -41,12 +41,12 @@ Jejak direkam **per baris `AdjustmentList`**, bukan per klaim — karena unit st
 
 ## Acceptance criteria
 
-- [ ] Setiap transisi status baris menghasilkan catatan berisi **pelaku dan waktu**. *(AC 16 spec)*
-- [ ] Setiap pengembalian (`SendtoAdmin`, `SendtoMedical`) menghasilkan catatan berisi **pelaku dan
+- [x] Setiap transisi status baris menghasilkan catatan berisi **pelaku dan waktu**. *(AC 16 spec)*
+- [x] Setiap pengembalian (`SendtoAdmin`, `SendtoMedical`) menghasilkan catatan berisi **pelaku dan
       waktu**. *(AC 17 spec)*
 - [ ] Perubahan nilai `Type` menghasilkan catatan berisi pelaku dan waktu. *(AC 18 spec)* — `Type`
       menyentuh keamanan, bukan sekadar data (**ADR-0012**).
-- [ ] Jejak melekat pada **baris** yang bersangkutan, dan riwayat satu klaim dapat dibaca utuh
+- [x] Jejak melekat pada **baris** yang bersangkutan, dan riwayat satu klaim dapat dibaca utuh
       lintas seluruh barisnya.
 - [ ] Rekam akseptasi lama tetap ditulis sebagaimana adanya — kontrak dengan Komite tidak berubah
       karena tiket ini.
@@ -205,3 +205,25 @@ mengaku lebih banyak daripada yang dikerjakan**, dua kali di butir yang sama.
 
 **lanjut dari sini:** tiket 09 selesai — AC 16/17/18 dan dua AC lain menunggu butir **am**
 disahkan work owner. Berikutnya tiket 10.
+
+## Implementasi — 27 September 2026 (A2, penutupan stub am)
+
+**Tiga centang bergeser, dan sebabnya:**
+
+| AC | Sebab bergeser |
+| --- | --- |
+| setiap transisi status baris → catatan pelaku + waktu | tabel `T_CLAIMLF_JEJAK` *(migrasi 012)* ada; `PerekamJejakOracle` disuntikkan **kelima handler**. Penjaga statik lama sudah menuntut `jejak.Rekam` di fungsi yang sama dengan penulis transisi — kini penulisnya sungguhan, bukan stub |
+| setiap pengembalian `SendtoAdmin`/`SendtoMedical` | jalur balik TAHAP memakai perekam yang sama |
+| jejak melekat pada **baris**, riwayat satu klaim terbaca utuh | ⛔ **RALAT**: `tahap.go` mengisi `AdjustmentID` dengan pengenal **klaim** — dua hal berbeda dikonflasi, dan jejak jalur balik akan tampak menunjuk baris adjustment yang tidak pernah ada. `CatatanJejak` kini punya **`KlaimID` tersendiri**, sejajar dengan kedua kolom tabelnya |
+
+**Yang TIDAK bergeser, dan sebabnya:**
+
+| AC | Sebab tetap terbuka |
+| --- | --- |
+| perubahan nilai `Type` → catatan pelaku + waktu | jalur ubah `Type` belum melewati perekam; menunggu kelompok A3 yang menghadirkan aksinya |
+| rekam akseptasi lama tetap ditulis apa adanya | menuntut jalan Oracle sungguhan terhadap data warisan — A4 |
+
+**Perluasan yang tidak diminta tiket ini, tetapi masuk tabel yang sama:** kegagalan **permanen**
+efek keluar merekam `DARI = "efek-keluar:<nama>"`, `KE = "gagal-permanen"` *(AC 20 tiket 12)*.
+Pesan galatnya **tidak** ikut — ia dapat menyebut nama objek basis data, alamat, bahkan nilai
+kolom; rinciannya tinggal di `GALAT_TERAKHIR` outbox.

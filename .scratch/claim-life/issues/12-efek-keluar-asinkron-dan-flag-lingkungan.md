@@ -47,7 +47,7 @@ alamat layanan keluar), **ADR-0005** (flag lingkungan), **ADR-0007** (kegagalan 
       penyimpangan sadar 1)*
 - [x] Seluruh efek keluar berada **di balik interface**, sehingga dapat diganti dalam test.
 - [x] Kegagalan efek keluar mana pun **tidak menahan** transisi status klaim. *(AC 19 spec)*
-- [ ] Kegagalan tercatat di **jalur audit**, bukan hanya di log layanan, dan **dapat diantre ulang**.
+- [x] Kegagalan tercatat di **jalur audit**, bukan hanya di log layanan, dan **dapat diantre ulang**.
       *(AC 20 spec)*
 - [x] Di lingkungan non-production, klaim **tetap tersimpan**; ketiga efek keluar tidak berjalan.
       *(AC 21 spec)*
@@ -55,12 +55,12 @@ alamat layanan keluar), **ADR-0005** (flag lingkungan), **ADR-0007** (kegagalan 
 - [x] Kegagalan konfigurasi dapat dibedakan dari kegagalan jaringan, agar antre-ulang tidak berputar
       sia-sia.
 - [ ] Dokumen yang sudah diunggah dapat diunduh kembali.
-- [ ] Alamat endpoint keluar di-resolve lewat **runtime lookup** ke `M_LINK_SERVICE` dengan kunci
+- [x] Alamat endpoint keluar di-resolve lewat **runtime lookup** ke `M_LINK_SERVICE` dengan kunci
       `(KATEGORI_1, KATEGORI_2)` — untuk Arasapas: `("Klaim", "insertClaimLife")`.
 - [x] **Tidak ada URL** sebagai literal, konstanta, **maupun env var** di kode. Yang boleh menjadi
       konstanta hanyalah **kunci kategori**. *(**ADR-0013**)*
 - [x] Pemisahan dev–prod terjadi lewat **isi tabel per-database**, bukan lewat percabangan di kode.
-- [ ] Bila kunci kategori tidak ditemukan di `M_LINK_SERVICE`, kegagalan **terang-terangan** dan
+- [x] Bila kunci kategori tidak ditemukan di `M_LINK_SERVICE`, kegagalan **terang-terangan** dan
       masuk jalur audit — bukan diam-diam melewati efek keluar.
 
 ## Catatan penutupan (2026-09-14)
@@ -243,3 +243,30 @@ ketiga elakan itu kini tertangkap semua, apa pun bentuk penulisannya.
 **lanjut dari sini:** tiket 12 selesai. Empat AC menunggu: dua butir **am**, satu persetujuan
 storage, satu persetujuan membaca `M_LINK_SERVICE`. Berikutnya tiket 11.
 
+## Implementasi — 27 September 2026 (A2, penutupan stub aq + resolver)
+
+**Tiga centang bergeser, dan sebabnya:**
+
+| AC | Sebab bergeser |
+| --- | --- |
+| kegagalan tercatat di **jalur audit** dan dapat diantre ulang | outbox `T_EFEK_KELUAR` *(butir **aq**)* menyimpan kegagalan dengan `PERCOBAAN`, `JADWAL_BERIKUT`, `GALAT_TERAKHIR`; worker memungutnya `FOR UPDATE SKIP LOCKED`. **Dan** kegagalan permanen menulis `T_CLAIMLF_JEJAK` — outbox saja antrean kerja, bukan jalur audit |
+| alamat di-resolve lewat runtime lookup `M_LINK_SERVICE` | `AmbilAlamatLayanan(KATEGORI_1, KATEGORI_2)`; keempat kunci dibaca **dari activity-nya**, bukan ditebak dari nama katalog |
+| kunci tidak ditemukan → kegagalan terang-terangan | `ErrAlamatLayananTidakAda` menyebut **kuncinya, bukan nilainya**; nol baris tidak lagi menghasilkan URL kosong seperti XML *(penyimpangan sadar, dicatat di `linkservice.go`)* |
+
+**Yang TIDAK bergeser, dan sebabnya:**
+
+| AC | Sebab tetap terbuka |
+| --- | --- |
+| dokumen yang sudah diunggah dapat diunduh kembali | menghubungkan penyimpanan nyata menuntut **persetujuan manusia**. Yang ditutup butir **aq** adalah *tempat* kegagalannya mendarat, bukan izin memanggil layanannya |
+
+**Temuan yang membantah dugaan brief:** `SendEmailKlaimLF` **tidak** memakai `M_LINK_SERVICE` sama
+sekali — `SendEmailKlaimLF.xml` 2505 `Call SendEmailWithAttachment`, `smtpPort "587"` (2556),
+`smtpHost` literal (2574). SMTP langsung, bukan REST. Brief menduga kuncinya `("SendEmail", …)` dari
+katalog. Inilah sebabnya kunci dibaca dari activity, bukan ditebak dari nama.
+
+`[terbuka — work owner]` dari mana alamat SMTP datang di sistem baru: ADR-U-0013 mengatur
+`M_LINK_SERVICE`, dan jalur ini tidak melewatinya. Host-nya **tidak disalin** ke mana pun.
+
+**Dua jalur menyerah**, keduanya merekam jejak: galat permanen sejak awal, dan jatah 8 percobaan
+habis. Hanya yang **permanen** masuk jejak — mencatat yang masih akan dicoba lagi membanjiri jejak
+audit dengan delapan baris untuk satu email yang akhirnya terkirim.

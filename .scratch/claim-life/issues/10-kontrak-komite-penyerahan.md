@@ -79,7 +79,7 @@ sisi induk: .IsKomite  .KomiteNo  .TotalKomite
 
 ### Rujukan Komite ⚠️ BARU 2026-09-16
 
-- [ ] ⚠️ Penyerahan ke Komite menyimpan **`KOMITE_ID`** = **identitas kasus komite**, yaitu
+- [x] ⚠️ Penyerahan ke Komite menyimpan **`KOMITE_ID`** = **identitas kasus komite**, yaitu
       `T_WORK_CLAIM.ID` baris komite yang baru lahir; baris yang belum pernah dikirim ber-`KOMITE_ID`
       **`NULL`**. *(AC 61 spec; tiket 14; penyimpangan sadar — rujukan, bukan salinan)* — ⚠️
       `[keputusan work owner]` REVISI 2026-09-17; bentuk penautan ini **tidak ada di korpus Pega**,
@@ -294,3 +294,38 @@ ada dan menulis ketiga tabel dalam satu transaksi; *"jumlah tingkat = COUNT rost
 ada dengan filter persis ReportDefinition *(A `.LIMIT_BOTTOM <=`, C `.STS_KLAIM =`, B
 `.STS_AKTIF = "1"`, urut `DEGREE ASC`)*, dan cacahnya diturunkan dari anggotanya.
 
+## Implementasi — 27 September 2026 (A2, penutupan stub af)
+
+**Satu centang bergeser, dan sebabnya:**
+
+| AC | Sebab bergeser |
+| --- | --- |
+| `KOMITE_ID` = identitas **kasus komite** | `BuatKasusKomite` melahirkan baris `T_WORK_CLAIM` berawalan `KMTLF-`, lalu `T_GENERAL_KOMITE` **shared PK** dengannya, lalu satu baris `T_KOMITE_KOMITELIST` per anggota roster — satu transaksi, jejak direkam. Yang dikembalikan pengenal kasusnya, dan itulah yang ditautkan |
+
+**Yang TIDAK bergeser, dan sebabnya:**
+
+| AC | Sebab tetap terbuka |
+| --- | --- |
+| muatan penyerahan memuat nilai klaim, `CURRENCY`, status baris | bentuk muatannya milik Bagian B *(Komite tiket 00–09)*; A2 baru menutup **tempat** kasusnya lahir |
+| keputusan komite dibaca lewat **join**, bukan disalin | sama — pembacaan keputusan ada di Komite tiket 06–07 |
+
+**Dua nama kolom yang MENYESATKAN, dibetulkan dan dicatat** `[keputusan work owner 2026-09-18]`:
+
+| properti korpus | isinya | kolom kita |
+| --- | --- | --- |
+| `KomiteID` | akun **OPERATOR** | `KOMITE_OPERATORID` |
+| `IDKomite` | **JABATAN** | `KOMITE_JABATAN` |
+
+`[terverifikasi]` `CreateKMTLife_Act.xml` 866·972 (`.KomiteID = .OPERATOR_ID`) dan 952·1041
+(`.IDKomite = .JABATAN`). Dua properti bernama nyaris sama, isinya berbeda — dan menyesatkan ke
+**dua arah sekaligus**.
+
+**Penyimpangan dari teks brief, dinyatakan:** brief §2 menyebut awalan `KMT-` dan kolom
+`KOMITE_ID`/`ID_KOMITE`. Yang dipakai `KMTLF-` dan nama di tabel atas, sebab dokumen yang brief §1
+sendiri sebut sebagai sumbernya — `STRUKTUR-TABEL-KOMITE-CLAIM-LIFE.md` — berkata begitu. Ronde
+pertama migrasi 013 salah di **lima tempat**, seluruhnya ketahuan hanya ketika dokumen itu
+benar-benar dibaca alih-alih dikira sudah diketahui.
+
+`[terbuka]` sisi induk `.IsKomite`, `.KomiteNo`, `.TotalKomite` dan `T_CLAIMLF_ADJUSTMENT.KOMITE_ID`
+belum ditulis — brief menyebut "sepuluh langkah utuh" `CreateKMTLife_Act`, dan A2 menutup tiga
+penulisan tabel. Sisanya masuk Bagian B.
