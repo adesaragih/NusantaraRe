@@ -152,3 +152,95 @@ cacatnya dilaporkan OQ-C. Ralat tiket 08.
 (4 berkas): `InputRegisterClaimLife.xml` (blok kontrol read-only), `InputOSClaimLife.xml` (16 baris),
 `Register_Flow.xml` (8 penyambung), `setDetailClaim_act.xml`. Taksiran token **±1,4 juta** giliran
 ini (taksiran).
+
+---
+
+## Giliran lanjutan 10 — paket 1: Register(2) backend (`1c97724`)
+
+### Cara membaca yang dipakai, dan kenapa
+
+Alat baca pohon ditulis lebih dulu *(scratchpad `pohon.py`, `langkah.py`, `kontrol.py`,
+`jendela.py`)*, dan **diuji jangkarnya** sebelum dipercaya: versi pertama melaporkan
+`<pagedata>` di baris 809 padahal ia di baris 3 — nomor barisnya datang dari batas buffer,
+bukan dari XML. Diganti `xml.parsers.expat` + `CurrentLineNumber`, lalu dicocokkan dengan
+`sed -n '3p;5p'`. Alat yang nomor barisnya meleset menghasilkan bukti yang meleset.
+
+Dua kali alat itu sendiri salah dan ketahuan karena hasilnya ganjil:
+`pyStepsActivityName` *(bukan `pyStepsMethod`)* yang memuat metode, dan
+`pyStepsRepeatDefHasRepeat` bernilai **`EMBEDDED`**, bukan `true` — sehingga kedua loop
+`DeletePesertaClaimLife` sempat tidak terlihat.
+
+### Empat temuan yang MEMBANTAH brief lanjutan 10 §1
+
+| # | Brief menyebut | XML sebenarnya | Bukti |
+| --- | --- | --- | --- |
+| 1 | `DeletePesertaClaimLife` = hapus peserta, rute `DELETE .../peserta/{id}` bergerbang tahap+pemegang | Activity ini **tidak menghapus apa pun**. Ia mengindeks ulang `.AdjustmentList(*).IndexPremiumList = Local.IndexPremium` di dalam dua loop `EMBEDDED`, lalu `Obj-Save`. Penghapusan barisnya dikerjakan **klien** | `Activity/DeletePesertaClaimLife.xml` b225 *(`Local.IndexPremium = .pxListSubscript`)*, b337, b417/b583 `ULANG(EMBEDDED)`, b441 `Obj-Save` |
+| 2 | kelompok **Register** | Tombolnya berdiri di layar **Outstanding** | `Section/InputOSClaimLife.xml` b17909, b18039. `SelectAllClaimLife_act` juga: b16633, b16710 |
+| 3 | *(tidak disebut)* | Tombol `DELETE` hanya **terlihat** saat `CLAIM_NO` kosong, dan kliknya menjalankan **dua** aksi berurutan: `deleteRow` di klien lalu `refresh` yang memanggil activity-nya. Konfirmasi **dimatikan** | `pyLabel = DELETE` b17865 · `pyAction = deleteRow` b18017 · `pyNextGenGridDeleteConfirm = false` b18021 · `pyAction = refresh` b18032 · `pyActivity` b18039 · `pyUserData/pyCondition` b18082 |
+| 4 | `GET /api/peserta-life?pl=&nama=` *(dua kriteria)* | **TIGA** kriteria; sertifikat **tidak** di-uppercase | `RDBList/GetPesertaClaim_sql1.xml:85`; `@toUpperCase` hanya pada `CARI3` b405 |
+
+Temuan 3 dibaca dengan **menaiki** pohon dari `pyActivity` ke blok pembungkusnya — bukan jendela
+maju. `pyCondition` berdiri di `<pyUserData>` milik **sel**, sedangkan `pyModes` yang memuat
+tombolnya berakhir di b17938, jauh **sebelum** kondisi itu. Jendela maju dari label `DELETE` akan
+berhenti sebelum b18082 dan melewatkan syarat tampilnya — pengulangan persis kekeliruan butir av.
+
+### `UploadCSVClaimLife_Act` — tiga langkah, nol logika bisnis
+
+`Page-Remove TempWorkPage` b250 · `Page-New TempWorkPage` b340 · `Call pxUploadCSVResults` b488.
+
+Ia **memanggil mesin bawaan platform**, bukan aturan Nusantara Re: tidak ada pemetaan kolom, tidak
+ada validasi, tidak ada penulisan peserta di rule ini. Karena itu **tidak ada rute unggah** yang
+dibangun di paket ini. Bila kelak diperlukan, yang harus digrilling lebih dulu adalah pemetaan
+kolom CSV-nya — dan itu **tidak ada di korpus** *(OQ-F)*.
+
+### Yang dibangun
+
+| Lapis | Isi |
+| --- | --- |
+| `repository/pilihpeserta.go` **baru** | `UmurPeserta`, `ShareNusantaraReTeks` — dua aturan; ujinya mengunci **asimetri** keduanya |
+| `repository/pesertapolis.go` | `kolomSalin` 24 → **28** ekspresi *(+`SHARE_NUSANTARA_RE_GROSS`, `AGE`, `ENTRY_AGE`, `CURRENT_AGE` — **bahan**, bukan isi)*; `sqlCariPeserta` dipisah jadi fungsi murni; `Cari` menerima sertifikat + nama |
+| `repository/kolompeserta.go` | `AGE` masuk daftar tulis/baca — kolomnya **sudah ada** di migrasi 003, hanya tidak pernah terisi |
+| `models/klaimlife.go` | `Peserta.Umur` **teks**, sebab kosong bukan nol *(ADR-U-0027)* |
+| `services/peserta.go`, `handlers/register.go` | penyaring diteruskan; `sertifikat=` dan `nama=` |
+
+**Nol migrasi baru.** Nomor `017`–`029` masih utuh.
+
+### Dua penjaga diperbaiki — keduanya dibuktikan menyala dulu
+
+1. **`TestUrutanKolomSalinDikunci`** memakai `strings.Contains`, sehingga
+   `SHARE_NUSANTARA_RE_GROSS` lolos sebagai `SHARE_NUSANTARA_RE` dan `ENTRY_AGE` lolos sebagai
+   `AGE` — dua pasangan yang justru baru ditambahkan. Diganti pencocokan nama **persis**.
+   *Dibuktikan:* menukar kedua kolom share → penjaga menyebut posisi 20 **dan** 24.
+
+2. **`TestQueryTabelPesertaSelaluBerindexDanBerbatas`** membaca sampai backtick pertama, sehingga
+   SQL yang kini dirakit terbaca terpotong dan ia **menuduh query yang berpagar lengkap**.
+   Diperlebar ke seluruh fungsi, dan komentar dibuang sebelum dipindai.
+
+   ⚠️ Lalu ditemukan **lubang yang lebih dalam, dan dinyatakan terbuka secara tertulis**: untuk SQL
+   rakitan, pemindaian teks tidak dapat membedakan penyaring **wajib** dari penyaring
+   **bersyarat**. `CERTIFICATE_NO LIKE` yang hanya terpasang bila kotaknya terisi sudah cukup
+   memuaskannya. *Dibuktikan:* mencabut `PL_NUMBER = :1` → penjaga **tetap hijau**.
+
+   Karena itu penjaga kini **menuntut** setiap SQL rakitan punya uji yang menyebut nama fungsinya.
+   *Dibuktikan:* berkas uji perakitnya disingkirkan → penjaga menuduh, menyebut `sqlCariPeserta`.
+
+   Yang benar-benar menjaga bentuknya: **`TestSQLCariPesertaSelaluBerpagar`**, dibuktikan **merah**
+   untuk kedua cacat *(penyaring dicabut; batas hasil dicabut)*.
+
+### Ralat cara menghitung uji
+
+Perintah yang benar adalah `go test ./... -tags db`. Tanpa tag `db`, seluruh `*_db_test.go`
+**tidak dikompilasi**, dan larinya melaporkan `0 SKIP` — bukan 34. Itu hijau yang tidak menguji
+apa yang dikira diuji. Dicatat di `29a7ebf`.
+
+### Telemetri paket 1
+
+| Ukuran | Nilai |
+| --- | --- |
+| Commit | `1c97724` *(sesudah `29a7ebf` Langkah 0; `e3d537a`+`53f9ab0` butir ax)* |
+| Go | **274 → 278 PASS · 0 FAIL · 34 SKIP** |
+| `go vet` | bersih |
+| Berkas Go baru | 3 *(`pilihpeserta.go`, `pilihpeserta_test.go`, `caripeserta_test.go`)* |
+| Migrasi baru | **0** |
+| Mutasi pembuktian penjaga | **5** *(2 tukar kolom, 2 cabut pagar SQL, 1 singkirkan berkas uji)* — seluruhnya dipulihkan |
+| XML dibaca sebagai pohon | 5 activity + 2 section + 1 Connect-SQL |

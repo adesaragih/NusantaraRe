@@ -142,3 +142,28 @@ yang terang dari label tombol dan penyambung alurnya, dan cacatnya dilaporkan di
 **OQ-D** *(urutan modul, untuk work owner)*. Sebelas medan layar Register terikat
 `.PolicyDataLife.*` dan terisi dari kasus **PremiumList Life**. Register Claim Life karena itu
 **menunggu modul PremiumList Life** untuk lengkap. Mohon konfirmasi urutan pengerjaan modul.
+
+## 27 September 2026 — dua pertanyaan tambahan (paket Register(2))
+
+**OQ-E** *(cacat halus, untuk pengembang Pega)*. `RDBList/GetPesertaClaim_sql1.xml:85` memasang
+**kedua** `LIKE` tanpa syarat:
+
+> `AND CERTIFICATE_NO LIKE '%'||{SearchPolicyHolder.CARI2}||'%'`
+> `AND UPPER(NAME_OF_INSURED) LIKE '%'||{SearchPolicyHolder.CARI3}||'%'`
+
+Di Oracle, `X LIKE '%'` bernilai **FALSE** ketika `X` NULL. Akibatnya kotak pencarian `Find
+Insured` yang dibiarkan **kosong** pun membuang setiap peserta yang `NAME_OF_INSURED`- atau
+`CERTIFICATE_NO`-nya NULL — baris yang hilang tanpa seorang pun memintanya, dan tanpa pesan.
+
+**Mohon konfirmasi** apakah itu memang dikehendaki. Kami **tidak menirunya**: penyaring hanya
+terpasang untuk kotak yang terisi, sehingga kotak kosong berarti *"jangan saring"* — yang memang
+dibaca orang dari kotak kosong.
+
+**OQ-F** *(untuk pemilik ekspor)*. `Activity/UploadCSVClaimLife_Act.xml` hanya **tiga** langkah:
+`Page-Remove TempWorkPage` *(b250)*, `Page-New TempWorkPage` *(b340)*, lalu
+`Call pxUploadCSVResults` *(b488)* — yaitu mesin unggah **bawaan platform**.
+
+Pemetaan kolom CSV ke medan peserta karena itu **tidak ada di korpus**: ia tersimpan di
+konfigurasi gadget, bukan di rule yang diekspor. **Mohon kirimkan** definisi pemetaan kolomnya
+bila fitur unggah CSV memang dipakai; tanpa itu fitur ini tidak dapat ditiru tanpa mengarang, dan
+kami tidak mengarang.

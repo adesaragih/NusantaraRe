@@ -517,3 +517,58 @@ menunggu modul** — menyimpan kodenya berarti menyimpan kode mati kedua.
 "menunggu modul PremiumList Life"; ujinya mengunci cacahnya pada **11**.
 
 **AC:** tidak ada AC tiket ini yang berubah centangnya — yang diralat adalah cara membacanya.
+
+## Ralat menurut XML — 27 September 2026 (paket Register(2), lanjutan 10 §1)
+
+### 1. `Find Insured` menyaring TIGA kriteria, bukan dua
+
+`RDBList/GetPesertaClaim_sql1.xml:85` *(dipanggil `LoadDataPesertaSpesifik_Act` langkah
+`RDB-List` b485)*:
+
+> `SELECT * FROM POOLDATA.M_LIFE_PREMIUM_DETAIL`
+> `WHERE PL_NUMBER = {pyWorkPage.PolicyDataLife.PremiumListSummary.PL_NUMBER}`
+> `  AND CERTIFICATE_NO LIKE '%'||{SearchPolicyHolder.CARI2}||'%'`
+> `  AND UPPER(NAME_OF_INSURED) LIKE '%'||{SearchPolicyHolder.CARI3}||'%'`
+
+| Kriteria | Perlakuan | Bukti |
+| --- | --- | --- |
+| `PL_NUMBER` | **wajib**, sama dengan | b85 |
+| `CERTIFICATE_NO` | `LIKE` berpagar `%`, **tanpa** `UPPER` | b85 |
+| `NAME_OF_INSURED` | `LIKE` berpagar `%`, **dengan** `UPPER` di kedua sisi | b85 + `@toUpperCase` b405 |
+
+Rutenya karena itu `GET /api/peserta-life?pl=&sertifikat=&nama=&n=`. Meng-`UPPER` sertifikat pun
+akan membuat pencariannya berhenti memakai index-nya — dan tabel itu 66,8 juta baris.
+
+⚠️ **Penyimpangan sadar, dilaporkan OQ-E**: Pega memasang kedua `LIKE` **tanpa syarat**, dan di
+Oracle `X LIKE '%'` bernilai FALSE ketika `X` NULL. Kotak kosong di Pega karena itu membuang
+peserta ber-nama NULL. Kita memasang `LIKE` hanya untuk kotak yang terisi.
+
+### 2. `+7 jam` di `LoadDataPesertaSpesifik_Act` TIDAK ditiru
+
+Langkah b662 mengulang hasil dan menambah **7 jam** ke delapan medan tanggal *(b738 `DOB`, b784
+`BEGIN_DATE`, b804 `EXPIRED_DATE`, b824 `EFFECTIVE_DATE`, b844/b864 valuasi gross, b884/b904
+valuasi retro)* lewat `@addCalendar(...,0,0,0,0,7,0,0)`.
+
+Itu tambalan zona waktu JDBC Pega *(UTC → WIB)*, bukan aturan bisnis. Pembaca kita mengambil
+tanggal lewat `TO_CHAR(..,'YYYY-MM-DD HH24:MI:SS')`, sehingga tidak ada pergeseran yang perlu
+ditambal. **Menirunya justru akan menggeser tanggal tujuh jam ke depan.**
+
+### 3. `Select Insured` — dua medan adalah PILIHAN, bukan salinan
+
+`SaveInsuredClaim_Act` memindahkan 38 medan; **36 di antaranya salinan lurus** yang backend sudah
+salin sendiri saat `POST` *(`kolomSalin`)*. Dua sisanya aturan:
+
+| Medan | Aturan | Baris |
+| --- | --- | --- |
+| `AGE` | `AGE` → `ENTRY_AGE` → `CURRENT_AGE`; hanya **kosong** yang menjatuhkan | b661 |
+| `SHARE_NUSANTARA_RE` | `"0"` **atau** kosong → `SHARE_NUSANTARA_RE_GROSS` | b601, b1412 |
+
+⛔ Keduanya **sengaja asimetris** dalam memperlakukan `"0"`, dan ujinya mengunci perbedaan itu.
+Menyeragamkannya mengubah angka uang: umur bayi nol tahun akan naik menjadi `ENTRY_AGE`.
+
+Uang di Pega dinormalkan `@divide(@toDecimal(@replaceAll(x,",",".")),1,4)` — perbaikan koma
+desimal. Tidak ditiru dan tidak perlu: `TO_CHAR(..,'TM9','NLS_NUMERIC_CHARACTERS=''.,''')` sudah
+memberi titik desimal kanonik langsung dari kolom `NUMBER`.
+
+**AC:** tidak ada AC tiket ini yang berubah centangnya. Kolom `AGE` sudah disediakan migrasi 003
+sejak awal — ia hanya tidak pernah terisi; **nol migrasi baru**.

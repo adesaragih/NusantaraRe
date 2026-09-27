@@ -531,3 +531,61 @@ filter `BISNIS IN ('ALL', <kode bisnis>)`, dibandingkan **cacah** seperti gerban
 **tidak ada di korpus**, jadi mana yang Pega baca tidak terverifikasi. Kandidat kedua — view
 `DOCUMENTCLAIM_LIFE` dari `M_PRODUCT_LIFE.JSONDATA` — dicatat dan **tidak** dipakai, sebab jalur
 JSON produk dilarang AC 38.
+
+## Ralat menurut XML — 27 September 2026 (`DeletePesertaClaimLife` dibaca sebagai pohon)
+
+**Yang diralat:** brief lanjutan 10 §1 menyebut `DeletePesertaClaimLife` sebagai penghapus
+peserta, lengkap dengan rute `DELETE /api/klaim-life/{id}/peserta/{pesertaId}` bergerbang tahap
+dan pemegang. **KELIRU — activity itu tidak menghapus apa pun.**
+
+### Apa yang benar-benar dilakukannya
+
+`Activity/DeletePesertaClaimLife.xml`, dibaca sebagai pohon langkah utuh:
+
+| Baris | Langkah | Isi |
+| ---: | --- | --- |
+| 225 | `Property-Set` pada `pyWorkPage.ClaimData.PremiumListSummary.PremiumListDetail` | `Local.IndexPremium = .pxListSubscript` |
+| 583 | — | loop `pyStepsRepeatDefHasRepeat = EMBEDDED` atas daftar peserta |
+| 314 | `Property-Set` pada `.AdjustmentList` | `.IndexPremiumList = Local.IndexPremium` |
+| 417 | — | loop `EMBEDDED` kedua, atas baris adjustment peserta itu |
+| 441 | `Obj-Save` pada `pyWorkPage` | menyimpan seluruh kasus |
+
+Ia **mengindeks ulang penunjuk balik** setiap baris adjustment ke posisi peserta pemiliknya,
+lalu menyimpan. Namanya menyesatkan.
+
+⚠️ `pyStepsRepeatDefHasRepeat` bernilai **`EMBEDDED`**, bukan `true`. Pembacaan pertama mencari
+`true` dan karena itu **kedua loopnya sempat tidak terlihat** — tanpa loop itu, activity ini
+terbaca seolah hanya menyentuh satu baris.
+
+### Siapa yang menghapus, dan kapan tombolnya ada
+
+Penghapusan barisnya dikerjakan **klien**. Tombolnya di `Section/InputOSClaimLife.xml` — layar
+**Outstanding**, bukan Register:
+
+| Butir | Nilai | Baris |
+| --- | --- | ---: |
+| Label | `DELETE` | 17865 |
+| Aksi 1 | `pyAction = deleteRow` *(hapus baris grid di klien)* | 18017 |
+| Konfirmasi | `pyNextGenGridDeleteConfirm = false` — **tanpa** popup | 18021 |
+| Aksi 2 | `pyAction = refresh` → `pyActivity = DeletePesertaClaimLife` | 18032, 18039 |
+| Syarat tampil | `pyCondition = pyWorkPage.ClaimData.PremiumListSummary.CLAIM_NO == ''` | 18082 |
+
+⛔ **Tombolnya hanya ada selama klaim belum bernomor.** Sesudah `CLAIM_NO` terisi, kolom DELETE
+itu tidak tampil sama sekali — jadi tidak ada "hapus peserta pada klaim yang sudah terdaftar"
+untuk ditiru, dan rute `DELETE` bergerbang tahap+pemegang itu **tidak dibangun**.
+
+⚠️ `pyCondition` berdiri di `<pyUserData>` milik **sel**, sedangkan `pyModes` yang memuat
+tombolnya berakhir di b17938. Jendela baca **maju** dari label `DELETE` berhenti sebelum b18082
+dan melewatkan syarat tampilnya — pengulangan persis kekeliruan butir av. Ia ditemukan dengan
+**menaiki** pohon dari `pyActivity` ke blok pembungkusnya.
+
+### `SelectAllClaimLife_act` — pilih/lepas SEMUA, juga di layar Outstanding
+
+`Activity/SelectAllClaimLife_act.xml`: b247 `Select.CARI1 = @if(Select.CARI1=="","true",
+@if(Select.CARI1=="true","false","true"))` — **penjungkit tiga keadaan**: kosong dianggap belum
+pernah dipakai dan menjadi `"true"`. Lalu loop `EMBEDDED` b550 menyetel `.IsAccept = Select.CARI1`
+*(b429)* pada setiap baris. Pemanggilnya `Section/InputOSClaimLife.xml` b16633, b16710.
+
+**AC:** tidak ada AC tiket ini yang berubah centangnya. Yang diralat adalah **siapa** yang
+menghapus *(klien, bukan activity)*, **di layar mana** *(Outstanding, bukan Register)*, dan
+**kapan** *(hanya selama `CLAIM_NO` kosong)*.
