@@ -47,6 +47,8 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 	// bukan angka: jalur berisi /tahap/2 tidak terbaca siapa pun, dan
 	// angka yang bergeser memindahkan kasus ke tempat yang salah.
 	mux.HandleFunc("POST /api/klaim-life/{id}/tahap/{tujuan}", pindahTahap(svc, stubPelaku))
+	// Gerbang Close Claim: memeriksa, belum menyelesaikan penugasan.
+	mux.HandleFunc("GET /api/klaim-life/{id}/boleh-tutup", bolehTutup(svc))
 	mux.HandleFunc("POST /api/klaim-life/{id}/adjustment/{adjId}/tolak",
 		tolakBaris(svc, stubPelaku))
 	mux.HandleFunc("PUT /api/klaim-life/{id}/peserta/{pesertaId}/tanggal-kejadian",
