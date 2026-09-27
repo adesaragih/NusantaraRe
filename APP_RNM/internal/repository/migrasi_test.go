@@ -214,21 +214,8 @@ func TestAdjustmentMenggantungPadaPeserta(t *testing.T) {
 	}
 }
 
-// Kaskade pada relasi 3, 4, 5, 6 - dan relasi 9, roster komite.
-// T_CLAIMLF_DOCUMENT (relasi 7) ditangani di Go, jadi kunci tamunya TANPA
-// ON DELETE.
-//
-// ⛔ RALAT 27-09-2026, dan penjaga ini sempat MENEGAKKAN cacatnya sendiri.
-// Daftar di bawah ditulis ketika hanya migrasi Claim Life ada, dan ia
-// menuntut `013_tabel_komite.sql` TIDAK berkaskade. Tetapi
-// `STRUKTUR-TABEL-KOMITE-CLAIM-LIFE.md` menyebut relasi
-// `T_GENERAL_KOMITE` -> `T_KOMITE_KOMITELIST` sebagai `ON DELETE CASCADE` di
-// TIGA tempat (baris 159, 238, 253), dan 013 membuatnya tanpa `ON DELETE`.
-// Jadi penjaga ini bukan hanya melewatkan cacat - ia menahan perbaikannya.
-//
-// ⚠️ Akibat cacat itu nyata: menghapus satu kasus komite DITOLAK Oracle
-// (ORA-02292) selama masih ada baris roster yang menunjuknya, dan itu jalur
-// yang tiket 05 perlukan. Migrasi `030` memperbaikinya lewat ALTER.
+// Kaskade hanya pada relasi 3, 4, 5, 6. T_CLAIMLF_DOCUMENT (relasi 7) ditangani
+// di Go, jadi kunci tamunya TANPA ON DELETE.
 func TestKaskadeHanyaPadaEmpatRelasi(t *testing.T) {
 	berkas := seluruhSQL(t, false)
 	berkaskade := map[string]bool{
@@ -240,6 +227,9 @@ func TestKaskadeHanyaPadaEmpatRelasi(t *testing.T) {
 		"030_": true,
 	}
 	for nama, teks := range berkas {
+		if !milikClaimLife(nama) {
+			continue
+		}
 		isi := strings.ToUpper(teks)
 		ada := strings.Contains(isi, "ON DELETE CASCADE")
 		mau := false
@@ -251,6 +241,100 @@ func TestKaskadeHanyaPadaEmpatRelasi(t *testing.T) {
 		if ada != mau {
 			t.Errorf("%s: ON DELETE CASCADE ada=%v, mau=%v", nama, ada, mau)
 		}
+	}
+}
+
+// milikClaimLife menjawab apakah berkas migrasi itu milik modul Claim Life.
+//
+// ⛔ Batasnya NOMOR, dan itu keputusan yang tercatat: Claim Life memakai
+// 001-049, PremiumList Life mulai 050. Memisahkan lewat nama tabel akan
+// gagal pada tabel yang namanya tidak menyebut modulnya.
+func milikClaimLife(nama string) bool {
+	return nama < "050_"
+}
+
+// Seluruh FK pohon polis BERKASKADE - tiket 00 PremiumList Life AC 46.
+//
+// ⛔ Kebijakan yang BERBEDA dari Claim Life, dan sengaja. Pohon polis empat
+// tingkat (polis -> peserta -> spreading -> spreading retro) dan hapus polis
+// harus membersihkan seluruh turunannya; menangani kaskade di Go untuk pohon
+// sedalam itu berarti empat perjalanan pulang-pergi dan satu kesempatan
+// gagal di tengah.
+//
+// ⚠️ Migrasi 050 dan 051 TIDAK punya FK sama sekali - T_WORK_POLIS berdiri
+// sendiri, dan T_PREMIUM_LIST berbagi PK dengannya tanpa constraint. Uji ini
+// menuntut keduanya TANPA kaskade, supaya constraint yang diam-diam
+// ditambahkan di antara keduanya berbunyi.
+func TestSeluruhFKPohonPolisBerkaskade(t *testing.T) {
+	tanpaFK := map[string]bool{"050_": true, "051_": true}
+	diperiksa := 0
+	for nama, teks := range seluruhSQL(t, false) {
+		if milikClaimLife(nama) || strings.Contains(nama, "_down") {
+			continue
+		}
+		diperiksa++
+		isi := strings.ToUpper(teks)
+		punyaFK := strings.Contains(isi, "FOREIGN KEY")
+		berkaskade := strings.Contains(isi, "ON DELETE CASCADE")
+
+		bebas := false
+		for awalan := range tanpaFK {
+			if strings.HasPrefix(nama, awalan) {
+				bebas = true
+			}
+		}
+		if bebas {
+			if punyaFK {
+				t.Errorf("%s punya FOREIGN KEY; 050 dan 051 seharusnya tanpa FK "+
+					"- hubungan keduanya SHARED PK tanpa kolom penyambung", nama)
+			}
+			continue
+		}
+		if !punyaFK {
+			t.Errorf("%s tidak punya FOREIGN KEY; seluruh tabel anak pohon polis "+
+				"menunjuk induknya", nama)
+			continue
+		}
+		if !berkaskade {
+			t.Errorf("%s punya FK TANPA ON DELETE CASCADE (tiket 00 AC 46)", nama)
+		}
+	}
+	if diperiksa == 0 {
+		t.Fatal("nol migrasi PremiumList ditelusuri - penjaga ini tidak menjaga apa pun")
+	}
+}
+
+// Setiap FK pohon polis PUNYA INDEX - tiket 00 AC 49.
+//
+// ⛔ Skala jutaan baris. FK tanpa index membuat setiap hapus induk memindai
+// seluruh tabel anak, dan pada T_PREMIUM_LIST_DETAIL itu berarti memindai
+// jutaan baris untuk menghapus satu polis.
+func TestSetiapFKPohonPolisBerindex(t *testing.T) {
+	diperiksa := 0
+	polaFK := regexp.MustCompile(`FOREIGN KEY \(([A-Z_]+)\)`)
+	for nama, teks := range seluruhSQL(t, false) {
+		if milikClaimLife(nama) || strings.Contains(nama, "_down") {
+			continue
+		}
+		isi := strings.ToUpper(teks)
+		for _, m := range polaFK.FindAllStringSubmatch(isi, -1) {
+			kolom := m[1]
+			diperiksa++
+			// Index-nya harus ada DAN menyebut kolom FK itu, bukan kolom lain.
+			// Index pada kolom lain menenangkan tanpa menjaga: hapus induk
+			// tetap memindai seluruh tabel anak.
+			if !strings.Contains(isi, "CREATE INDEX") {
+				t.Errorf("%s: FK pada %s, dan berkas itu tidak membuat index apa pun",
+					nama, kolom)
+				continue
+			}
+			if !strings.Contains(isi, "("+kolom+")"+"\n") {
+				t.Errorf("%s: ada CREATE INDEX tetapi tidak pada kolom FK %s", nama, kolom)
+			}
+		}
+	}
+	if diperiksa == 0 {
+		t.Fatal("nol FK pohon polis ditemukan - penjaga ini tidak menjaga apa pun")
 	}
 }
 
@@ -563,8 +647,14 @@ func TestSeluruhCreateDapatDibacaNamanya(t *testing.T) {
 	// ⛔ Diperbarui LAGI - A2 menambah butir aq: 1 tabel (T_LOG_SERVICE_RNM) +
 	// 1 sequence + 2 index = 4 pernyataan CREATE baru.
 	//
-	// 11 tabel + 9 sequence + 13 index = 33.
-	const mau = 33
+	// ⛔ Diperbarui LAGI - tiket 00 PremiumList Life menambah TUJUH tabel
+	// (T_WORK_POLIS, T_PREMIUM_LIST, _DETAIL, _SPREADING, _SPREADING_RETRO,
+	// _SUMMARY, T_VIEW_SUGGEST) dan ENAM index FK (dua pada _DETAIL, satu
+	// pada masing-masing tabel anak lainnya). Nol sequence: pengenalnya
+	// dirakit di repository, pola PengenalWorkBerikut (butir pl3).
+	//
+	// 11+7 = 18 tabel + 9 sequence + 13+6 = 19 index = 46.
+	const mau = 46
 	if diperiksa != mau {
 		t.Errorf("pernyataan CREATE diperiksa %d, mau %d", diperiksa, mau)
 	}
@@ -656,9 +746,10 @@ func TestKolomCreateTableMembacaSeluruhTabel(t *testing.T) {
 	}
 	// Tujuh, bukan delapan: T_MIGRASI dibuat siapkanTabelMigrasi, di luar
 	// berkas migrasi. Sesudah migrasi, katalog memang memuat delapan tabel.
-	// 11 tabel + 9 sequence + 13 index = 33 pernyataan CREATE, cocok dengan
+	// 11 tabel Claim Life + 7 tabel PremiumList Life (tiket 00) = 18.
+	// 18 tabel + 9 sequence + 19 index = 46 pernyataan CREATE, cocok dengan
 	// cacah yang dikunci TestSeluruhCreateDapatDibacaNamanya.
-	const mauTabel = 11
+	const mauTabel = 18
 	if tabel != mauTabel {
 		t.Errorf("CREATE TABLE terbaca %d, mau %d", tabel, mauTabel)
 	}

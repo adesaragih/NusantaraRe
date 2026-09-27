@@ -27,28 +27,8 @@ import (
 	"testing"
 )
 
-// letakStruktur menunjuk SELURUH dokumen STRUKTUR dari folder paket ini.
-//
-// ⛔ DUA dokumen sejak tiket 00 Komite Claim Life, dan keduanya WAJIB -
-// bukan "yang ada saja". Satu berkas migrasi yang tabelnya tidak tercatat di
-// dokumen mana pun adalah tabel yang lahir tanpa keputusan tertulis, dan
-// itulah yang penjaga ini ada untuk cegah.
-//
-// ⚠️ `T_GENERAL_KOMITE` dan `T_KOMITE_KOMITELIST` disebut KEDUA dokumen.
-// Itu bukan kesalahan - keduanya memang batas antara dua konteks - tetapi ia
-// menuntut penjaga sendiri: `TestDokumenSTRUKTURSepakatAtasTabelBersama`.
-var letakStruktur = []string{
-	"../../../.scratch/claim-life/STRUKTUR-TABEL-CLAIM-LIFE.md",
-	"../../../.scratch/komite-claim-life/STRUKTUR-TABEL-KOMITE-CLAIM-LIFE.md",
-}
-
-// tabelBersamaDuaKonteks adalah tabel yang KEDUA dokumen STRUKTUR gambarkan.
-//
-// ⛔ Keduanya batas antara Claim Life dan Komite Claim Life: Claim Life
-// MENYERAHKAN kasus, Komite MEMUTUSKAN. Dokumen yang berbeda isinya berarti
-// salah satu konteks bekerja dari bentuk yang sudah usang - dan bedanya baru
-// terlihat ketika satu sisi menulis kolom yang sisi lain tidak baca.
-var tabelBersamaDuaKonteks = []string{"T_GENERAL_KOMITE", "T_KOMITE_KOMITELIST"}
+// letakStruktur menunjuk dokumen STRUKTUR dari folder paket ini.
+const letakStruktur = "../../../.scratch/claim-life/STRUKTUR-TABEL-CLAIM-LIFE.md"
 
 // tabelDikecualikan mendaftar tabel yang STRUKTUR sengaja tidak memuat
 // kolomnya, beserta sebabnya.
@@ -58,6 +38,24 @@ var tabelBersamaDuaKonteks = []string{"T_GENERAL_KOMITE", "T_KOMITE_KOMITELIST"}
 // katalog, dikurangi yang memang milik Pega. Pengecualian yang alasannya sudah
 // tidak berlaku adalah lubang, bukan keringanan.
 var tabelDikecualikan = map[string]string{}
+
+// tabelBukanMilikKita mendaftar tabel yang STRUKTUR gambarkan tetapi yang
+// SENGAJA tidak kita buat, beserta alasannya.
+//
+// ⛔ MEKANISME YANG BERBEDA dari tabelDikecualikan, dan bedanya penting.
+// `tabelDikecualikan` berarti "tabelnya kita buat, kolomnya saja yang tidak
+// dibandingkan" - dan `TestTabelDikecualikanTetapDibuat` menegakkannya.
+// Daftar di bawah berarti "tabelnya BUKAN milik kita": ia lahir di sistem
+// lama, kita hanya membacanya. Memakai mekanisme pertama untuk maksud kedua
+// akan membuat penjaga itu menuntut kita membuat tabel orang lain.
+//
+// ⚠️ Arah sebaliknya dijaga pula: bila DDL kelak MEMBUAT salah satunya,
+// TestTabelBukanMilikKitaTidakDibuat berbunyi - sebab yang berubah saat itu
+// adalah kepemilikannya, dan itu keputusan work owner.
+var tabelBukanMilikKita = map[string]string{
+	"M_TEMPUPLOADLIFE": "tabel warisan penampung unggahan CSV, ditulis " +
+		"`RDBList/InsertDataUploadLife.xml` di sistem lama; dibaca tiket 04, tidak dibuat",
+}
 
 // namaTabelBeda memetakan nama tabel di STRUKTUR ke nama yang dipakai DDL.
 var namaTabelBeda = map[string]string{
@@ -85,17 +83,7 @@ var (
 // kolomMenurutStruktur membaca dokumen STRUKTUR menjadi peta tabel -> kolom.
 func kolomMenurutStruktur(t *testing.T) map[string][]string {
 	t.Helper()
-	hasil := map[string][]string{}
-	for _, letak := range letakStruktur {
-		bacaSatuStruktur(t, letak, hasil)
-	}
-	return hasil
-}
-
-// bacaSatuStruktur menambahkan kolom satu dokumen STRUKTUR ke peta bersama.
-func bacaSatuStruktur(t *testing.T, letak string, hasil map[string][]string) {
-	t.Helper()
-	isi, err := os.ReadFile(filepath.FromSlash(letak))
+	isi, err := os.ReadFile(filepath.FromSlash(letakStruktur))
 	if err != nil {
 		// Sengaja gagal, bukan melewati. Dokumen ini bagian dari repositori
 		// yang sama; bila ia hilang, test inilah yang harus memberitahu.
@@ -212,6 +200,10 @@ func TestKolomDDLCocokDenganStruktur(t *testing.T) {
 			t.Logf("%s dikecualikan: %s", namaDDL, sebab)
 			continue
 		}
+		if sebab, bukanMilik := tabelBukanMilikKita[namaDDL]; bukanMilik {
+			t.Logf("%s bukan milik kita: %s", namaDDL, sebab)
+			continue
+		}
 		ada, punya := ddl[namaDDL]
 		if !punya {
 			t.Errorf("STRUKTUR memuat tabel %s, DDL tidak membuatnya", namaDDL)
@@ -313,6 +305,26 @@ func TestTabelDikecualikanTetapDibuat(t *testing.T) {
 	for nama := range tabelDikecualikan {
 		if _, ada := ddl[nama]; !ada {
 			t.Errorf("%s dikecualikan dari perbandingan kolom, tetapi DDL juga tidak membuatnya", nama)
+		}
+	}
+}
+
+// Tabel yang BUKAN milik kita tidak boleh diam-diam dibuat migrasi.
+//
+// ⛔ Arah sebaliknya dari tabelBukanMilikKita. Bila DDL kelak membuat salah
+// satunya, yang berubah adalah KEPEMILIKAN tabel warisan - dan itu keputusan
+// work owner, bukan keputusan yang boleh menyelinap lewat satu berkas migrasi.
+func TestTabelBukanMilikKitaTidakDibuat(t *testing.T) {
+	ddl := kolomMenurutDDL(t)
+	if len(tabelBukanMilikKita) == 0 {
+		t.Skip("daftarnya kosong; tidak ada yang dijaga")
+	}
+	for nama, sebab := range tabelBukanMilikKita {
+		if _, ada := ddl[nama]; ada {
+			t.Errorf("%s dibuat migrasi, padahal ia dinyatakan bukan milik kita: %s.\n"+
+				"Bila kepemilikannya memang berpindah, cabut namanya dari "+
+				"tabelBukanMilikKita beserta alasannya - itu keputusan work owner.",
+				nama, sebab)
 		}
 	}
 }

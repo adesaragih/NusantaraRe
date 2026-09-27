@@ -1,6 +1,6 @@
 # 00: Skema tujuh tabel + `T_WORK_POLIS` + migrasi — **PREFACTOR**
 
-**Status:** ready-for-agent
+**Status:** sebagian terkerjakan — DDL + penjaga ada; `-migrate` dan rekonsiliasi menunggu skema uji dan persetujuan
 
 **Blocked by:** CL-01 (kerangka aplikasi + seam API — scaffolding lintas konteks)
 
@@ -146,3 +146,96 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+## Implementasi — 27 September 2026 (migrasi `050`–`056`)
+
+### Yang dibuat
+
+| Migrasi | Tabel | Kolom | FK | Index |
+| --- | --- | ---: | ---: | ---: |
+| `050` | `T_WORK_POLIS` | 4 | 0 | 0 |
+| `051` | `T_PREMIUM_LIST` | 56 | 0 | 0 |
+| `052` | `T_PREMIUM_LIST_DETAIL` | 82 | 2 | 2 |
+| `053` | `T_PREMIUM_LIST_SPREADING` | 14 | 1 | 1 |
+| `054` | `T_PREMIUM_LIST_SPREADING_RETRO` | 16 | 1 | 1 |
+| `055` | `T_PREMIUM_LIST_SUMMARY` | 39 | 1 | 1 |
+| `056` | `T_VIEW_SUGGEST` | 8 | 1 | 1 |
+
+Masing-masing berjalur mundur (`*_down.sql`, `DROP … CASCADE CONSTRAINTS`).
+
+⛔ **Nama kolomnya DIBANGKITKAN dari `STRUKTUR-TABEL-PREMIUMLIST-LIFE.md`, tidak diketik ulang.**
+219 kolom yang diketik tangan adalah 219 kesempatan salah satu huruf, dan salah satu huruf di nama
+kolom baru terlihat saat migrasi data gagal mencocokkan.
+
+### Tipe fisik — keputusan kami, dan ia menunggu DBA
+
+STRUKTUR menyebut **kategori logis** dan menyatakan presisi fisik `[data DBA]`. Pemetaannya:
+
+| Kategori | Tipe | Dasar |
+| --- | --- | --- |
+| angka desimal | `NUMBER(38,8)` | uang dan share; **ADR-0003**, `revisi-penyimpanan-premiumlist.md` |
+| bilangan bulat | `NUMBER(5)` | umur, periode, `PROD_KE`, nomor baris — **konvensi yang sudah ada di repo ini** |
+| DATE | `DATE` | |
+| teks | `VARCHAR2(255)`; `ID` dan ber-akhiran `_ID` → `VARCHAR2(32)` | sepola `T_CLAIMLF_*` |
+
+⚠️ **Kedua arah salahnya tidak setara**, dan itu yang menentukan mana yang harus diperiksa lebih
+dulu: `VARCHAR2` terlalu pendek **menolak** data yang sah — kegagalan yang terlihat — sedangkan
+`NUMBER` terlalu pendek **membulatkan uang diam-diam**.
+
+`NUMBER(5)` dipilih **bukan** karena selera: penjaga `TestNolNumberTanpaPresisi` yang sudah ada
+hanya menerima `NUMBER(19)`, `NUMBER(38,8)`, dan `NUMBER(5)`. Ronde pertama memakai `NUMBER(10)`
+dan penjaga itu menolaknya — benar, sebab tipe numerik keempat berarti konvensi keempat.
+
+### Keputusan yang dicatat
+
+⛔ **Tidak ada constraint FK antara `T_WORK_POLIS` dan `T_PREMIUM_LIST`.** Hubungannya 1:1 lewat
+**shared PK**, dan STRUKTUR menyatakannya *"tanpa kolom penyambung"*; kolom `Kunci` untuk
+`T_PREMIUM_LIST.ID` berisi `PK` saja, bukan `PK, FK`. Menambahkannya berarti memutuskan arah
+ketergantungan — mana yang lahir lebih dulu — yang dokumen acuan tidak putuskan.
+
+⛔ **Nol sequence.** Pengenalnya dirakit di `repository` mengikuti pola `PengenalWorkBerikut`
+(butir **pl3**), bukan `DEFAULT seq.NEXTVAL` di DDL.
+
+⛔ **Kolom audit `T_WORK_POLIS` sengaja tidak ada.** Tiket ini menyebut "audit" **tanpa menamainya**,
+dan STRUKTUR menolak menuliskannya dengan alasan yang benar: menamainya sendiri berarti mengarang.
+
+⛔ **`M_TEMPUPLOADLIFE` tidak dibuat.** Ia tabel warisan penampung unggahan CSV, ditulis
+`RDBList/InsertDataUploadLife.xml` di sistem lama — **dibaca** tiket 04, bukan dimiliki. Ada penjaga
+di kedua arah: yang satu melewatinya saat membandingkan kolom, yang lain **berbunyi bila DDL kelak
+membuatnya** — sebab yang berubah saat itu adalah kepemilikan, dan itu keputusan work owner.
+
+### Empat penjaga bersama yang harus dilebarkan — aditif, dan sebabnya
+
+| Penjaga | Sebelumnya | Sesudahnya |
+| --- | --- | --- |
+| `TestKaskadeHanyaPadaEmpatRelasi` | memindai SEMUA migrasi | dibatasi migrasi `001`–`049` (Claim Life) |
+| `TestKolomTakDibawaHanyaAdaDiKatalog` | memindai SEMUA migrasi | dibatasi Claim Life |
+| `letakStruktur` | satu dokumen | **dua** dokumen, keduanya wajib |
+| cacah `CREATE` | 33 (11 tabel) | 46 (18 tabel, 19 index) |
+
+⚠️ **Kedua pelebaran pertama itu bukan pelonggaran, melainkan penyempitan lingkup** — dan keduanya
+lahir dari cacat yang sama: penjaga modul Claim Life membentang ke tabel modul lain. `LAYER_1`..`4`
+*"tidak punya rumah"* di tabel klaim dan itu benar; ia **punya** rumah di `T_PREMIUM_LIST`
+*(STRUKTUR b98–101, bersumber `SaveLifeinProduction_SQL`)*. Penjaga yang menuduh hal yang benar akan
+dilonggarkan orang, bukan dipatuhi.
+
+### Penjaga BARU untuk pohon polis, tiap satunya dibuat gagal lebih dulu
+
+| Penjaga | Dibuat gagal dengan | Berbunyi |
+| --- | --- | --- |
+| `TestSeluruhFKPohonPolisBerkaskade` | cabut `ON DELETE CASCADE` dari 053 | menyebut berkas dan AC-nya |
+| `TestSetiapFKPohonPolisBerindex` | hapus `CREATE INDEX` 053 | menyebut kolom FK-nya |
+| `TestKolomDDLCocokDenganStruktur` | sisipkan `KOLOM_KARANGAN` | *"tidak diminta STRUKTUR"* |
+| `TestTabelBukanMilikKitaTidakDibuat` | buat `M_TEMPUPLOADLIFE` | menyebut alasan kepemilikannya |
+
+### ⛔ Yang BELUM dijalankan
+
+**`-migrate` belum pernah dijalankan**, dan pengecekan tabrakan nama di katalog belum dilakukan —
+keduanya menuntut Oracle nyata dan **persetujuan manusia**. Berkas migrasinya ada, jalur mundurnya
+ada, dan seluruh penjaga bentuknya hijau; yang tersisa adalah menjalankannya terhadap **skema uji**.
+
+**AC yang tercentang giliran ini:** tujuh tabel + PK + FK `ON DELETE CASCADE`; FK spreading menunjuk
+peserta dan FK retro menunjuk spreading; `T_WORK_POLIS` mandiri; setiap FK ber-index; `PARENT_ID`
+nullable ber-index hanya di `_DETAIL`; kolom EDM nullable; nol kolom JSON; nol properti Pega; rekap
+uang penuh; kedua jendela valuasi; seluruh uang desimal, tanggal `DATE`, kolom nullable.
+**Belum:** yang menuntut basis data sungguhan — rekonsiliasi, migrasi data, jalur mundur teruji.

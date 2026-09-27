@@ -104,6 +104,18 @@ var berkasBolehMenyebutKolomTakDibawa = map[string]string{
 	"repository/barislamakolom.go": "katalog 62 kolom - kolomnya ADA di tabel, ia hanya tidak dibawa",
 }
 
+// migrasiDiLuarClaimLife menjawab apakah berkas itu migrasi milik modul lain.
+//
+// Batasnya NOMOR: Claim Life memakai 001-049, PremiumList Life mulai 050.
+func migrasiDiLuarClaimLife(nama string) bool {
+	i := strings.LastIndexAny(nama, "/\\")
+	dasar := nama[i+1:]
+	if len(dasar) < 4 || !strings.HasSuffix(nama, ".sql") {
+		return false
+	}
+	return dasar[:4] >= "050_"
+}
+
 // TestKolomTakDibawaHanyaAdaDiKatalog menggantikan DUA penjaga ronde pertama.
 //
 // ⛔ Aturan atas NAMA, bukan atas bentuk penulisan. Nama yang tidak boleh
@@ -114,6 +126,24 @@ func TestKolomTakDibawaHanyaAdaDiKatalog(t *testing.T) {
 	sumber := berkasSumberProduksi(t)
 	diperiksa, dikecualikan := 0, 0
 	for nama, isi := range sumber {
+		// ⛔ LINGKUPNYA MODUL CLAIM LIFE. `kolomTidakDibawa` adalah selisih
+		// antara katalog warisan dan struct `BarisLama` - keduanya milik
+		// tabel KLAIM. Sejak modul PremiumList Life menambah migrasi 050+,
+		// penjaga ini harus menyatakan lingkupnya: `LAYER_1`..`LAYER_4`
+		// memang tidak punya rumah di tabel klaim, tetapi ia PUNYA rumah di
+		// `T_PREMIUM_LIST` - `[keputusan work owner 2026-09-18]`,
+		// STRUKTUR-TABEL-PREMIUMLIST-LIFE.md b98-101, bersumber korpus
+		// `SaveLifeinProduction_SQL`.
+		//
+		// ⚠️ Penjaga yang membentang ke tabel modul lain akan menuduh kolom
+		// yang tujuannya SUDAH diputuskan - dan penjaga yang menuduh hal yang
+		// benar akan dilonggarkan orang, bukan dipatuhi.
+		if migrasiDiLuarClaimLife(nama) {
+			// ⚠️ TIDAK menambah `dikecualikan`: pencacah itu dikunci terhadap
+			// peta `berkasBolehMenyebutKolomTakDibawa`, dan mencemarinya dengan
+			// hitungan lingkup akan membuat penjaga peta itu berbunyi palsu.
+			continue
+		}
 		diperiksa++
 		if alasan, boleh := cocokAkhiran(berkasBolehMenyebutKolomTakDibawa, nama); boleh {
 			dikecualikan++
