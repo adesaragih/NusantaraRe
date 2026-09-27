@@ -4,6 +4,9 @@ dist/
 *.env
 .vite/
 
+# Worktree git per modul (27 September 2026) - salinan kerja, bukan isi repo
+.worktrees/
+
 # Artefak build Go
 /APP_RNM/bin/
 *.exe
