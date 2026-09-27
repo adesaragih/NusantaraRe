@@ -48,6 +48,16 @@ Perintah work owner: *"JIKA ITU UNTUK LOG SERVICE MAKA NAMANYA YANG JELAS, T_LOG
 
 ---
 
+
+## 0.2 KEJADIAN 27-09-2026 SORE — dua brief modul tertempel di sesi yang salah
+
+Brief PremiumList Life dan Komite Claim Life sempat ditempel ke **sesi Claim Life**; sesi itu benar
+menolaknya *(§3 brief 11)*. Akibatnya kedua cabang modul **nol commit** sampai sekarang. Aturan:
+**satu sesi Claude Code per folder** — sesi modul dibuka di `.worktrees\<modul>` *(§1)*, dan brief
+modul ditempel **hanya** di sesi folder itu. Sesi yang menerima brief modul lain menjawab satu baris
+*"milik sesi worktree X"* dan tidak mengerjakannya. Kedua worktree sudah di-fast-forward asisten ke
+`9352e45` *(memuat perbaikan envelope `galat`)*.
+
 ## 1. TATA LETAK — worktree, cabang, port
 
 | Modul | Tempat kerja | Cabang | Backend | Vite |
@@ -56,7 +66,7 @@ Perintah work owner: *"JIKA ITU UNTUK LOG SERVICE MAKA NAMANYA YANG JELAS, T_LOG
 | **PremiumList Life** | `OUTPUT_HASIL_RNM\.worktrees\premiumlist-life\` | `modul/premiumlist-life` | `:8082` | `5174` |
 | **Komite Claim Life** | `OUTPUT_HASIL_RNM\.worktrees\komite-claim-life\` | `modul/komite-claim-life` | `:8083` | `5175` |
 
-`.worktrees/` sudah masuk `.gitignore`. **Keduanya sudah dibuat asisten 27-09-2026 16.15 dari `85065b9`**, lengkap dengan `.env` per port *(`:8082`/`:8083`, proxy Vite mengikuti, `AUTH_STUB=true`)*, `npm install`, dan `go build` hijau — perintah di bawah hanya catatan cara membuatnya bila perlu diulang:
+`.worktrees/` sudah masuk `.gitignore`. **Keduanya sudah dibuat asisten 27-09-2026 16.15 dari `85065b9`, di-fast-forward ke `9352e45` pukul 18.15**, lengkap dengan `.env` per port *(`:8082`/`:8083`, proxy Vite mengikuti, `AUTH_STUB=true`)*, `npm install`, dan `go build` hijau — perintah di bawah hanya catatan cara membuatnya bila perlu diulang:
 
 ```powershell
 Set-Location 'D:\XML\RNM_BRD\OUTPUT_HASIL_RNM'
@@ -95,9 +105,9 @@ Korpus `D:\XML\RNM_BRD\` tetap READ-ONLY dari semua worktree.
 
 | Sesi | Tempel utuh | Titik mulai |
 | --- | --- | --- |
-| Claim Life | `PROMPT-IMPLEMENTASI-MODUL-CLAIM-LIFE-LANJUTAN-11.md` *(lanjutan 10 sudah dijalankan sampai `85065b9`)* | `main` @ `85065b9` atau lebih baru |
-| PremiumList Life | `PROMPT-IMPLEMENTASI-MODUL-PREMIUMLIST-LIFE.md` | `modul/premiumlist-life` @ `85065b9` — buka sesi di `.worktrees\premiumlist-life` |
-| Komite Claim Life | `PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-LIFE.md` | `modul/komite-claim-life` @ `85065b9` — buka sesi di `.worktrees\komite-claim-life` |
+| Claim Life | `PROMPT-IMPLEMENTASI-MODUL-CLAIM-LIFE-LANJUTAN-12.md` *(lanjutan 11 sudah dijalankan sampai `9352e45`)* | `main` @ `9352e45` atau lebih baru |
+| PremiumList Life | `PROMPT-IMPLEMENTASI-MODUL-PREMIUMLIST-LIFE.md` | `modul/premiumlist-life` @ `9352e45` — buka sesi di `.worktrees\premiumlist-life` |
+| Komite Claim Life | `PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-LIFE.md` | `modul/komite-claim-life` @ `9352e45` — buka sesi di `.worktrees\komite-claim-life` |
 
 Aturan yang sama di ketiganya: XML menang dan tiket diralat dengan bukti; penyarangan dibaca sebagai
 **pohon**; mekanisme giliran lanjutan 8 §1 *(nol pesan di antara paket, catatan ke berkas laporan
