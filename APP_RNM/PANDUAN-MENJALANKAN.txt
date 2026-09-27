@@ -247,9 +247,66 @@ Log yang benar:
   VITE v5.4.x  ready in ... ms
   Local:   http://localhost:5173/
 
-Buka http://localhost:5173/ di browser. Judul "Nusantara Re", subjudul
-"Klaim Life", kotak "Pengenal klaim", dan tombol "Buka" tampil.
-Berhenti: Ctrl+C.
+Buka http://localhost:5173/ di browser. Berhenti: Ctrl+C.
+
+YANG TAMPIL SEJAK F0.5
+
+  1. LAYAR MASUK (stub).
+     Isi "Akun" bebas - bawaannya UJI-ADMIN - dan centang satu atau
+     LEBIH peran:
+
+       ReasLifeAdmin            Admin Klaim Jiwa
+       ReasLifeMedicalAdvisor   Penasihat Medis
+       ReasLifeSPV              Supervisor Klaim
+
+     TIDAK ADA SANDI, dan itu disengaja: layar ini hanya PENGAKUAN yang
+     backend percaya lewat header X-Pelaku / X-Peran. Pita kuning di
+     layar mengatakannya.
+
+     Gerbangnya DUA, dan keduanya harus menyala:
+       frontend\.env   VITE_AUTH_STUB=true
+       backend        stub pelaku aktif (lihat bab 2)
+     Bila VITE_AUTH_STUB bukan 'true', layar masuk MENOLAK memberi
+     jalan - gagal tertutup, bukan gagal terbuka.
+
+     Sesi tersimpan di sessionStorage: menutup tab berarti keluar;
+     tab kedua menuntut masuk lagi; F5 di tab yang sama tetap masuk.
+
+  2. SHELL. Sidebar (dapat dilipat; di ponsel menjadi laci), topbar,
+     menu profil, dan palet menu Ctrl+K.
+
+     MENUNYA DUA BUTIR, dan keduanya berbukti korpus:
+
+       Claim Life          nama kelompok - Register_Flow.xml:270
+         Inbox Claim Life  [tidak ada di korpus] sebagai label
+         Register          VERBATIM Register_Flow.xml:155
+
+     Yang TIDAK ada di menu, dan itu disengaja: sebelas modul lain, dan
+     layar-layar yang di Pega dibuka DARI DALAM kasus (16 flow action +
+     3 popup). Menu yang tidak ada di sistem lama adalah menu yang
+     dikarang.
+
+  3. INBOX CLAIM LIFE (halaman pertama sesudah masuk).
+     Empat tab = empat assignment Register_Flow, judulnya VERBATIM:
+
+       Input Register      ReasLifeAdmin           antrian PRIBADI
+       Outstanding Claim   ReasLifeAdmin           antrian PRIBADI
+       Medical Check       ReasLifeMedicalAdvisor  antrian BERSAMA
+       Claim Analis        ReasLifeSPV             antrian BERSAMA
+
+     Tab yang perannya tidak Anda pegang TIDAK tampil. Masuk dengan
+     ketiga peran sekaligus untuk melihat keempatnya.
+
+     PRIBADI berarti hanya kasus yang AKUN ANDA buat (kolom CREATE_OP).
+     Jadi tab Admin akan KOSONG sampai Anda mendaftarkan klaim sendiri
+     lewat tombol Register - itu benar, bukan kerusakan.
+
+     Tanpa Oracle, isinya galat "database belum dikonfigurasi"; layar
+     tetap tampil.
+
+  4. Tombol Register di kepala Inbox, dan butir menu Register, membuka
+     halaman pendaftaran. Klik satu baris Inbox membuka halaman Detail.
+
 
 Perintah lain, semua dari folder frontend:
 
@@ -257,7 +314,7 @@ Perintah lain, semua dari folder frontend:
   -------------------  ---------------------------------------------------------
   npm run typecheck    periksa tipe TypeScript (tsc --noEmit); tanpa keluaran
                        bila bersih
-  npm test             vitest, saat ini 5 test
+  npm test             vitest, saat ini 114 test di 8 berkas
   npm run build        tsc dulu, lalu Vite membuat folder dist/
   npm run preview      sajikan isi dist/ untuk dicoba (bukan server dev)
 
