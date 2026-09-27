@@ -16,7 +16,7 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { DETAIL, LAYAR, PERAN, REGISTER, TAHAP, TOMBOL } from './labels'
+import { DETAIL, LAYAR, PERAN, REGISTER, TAHAP, TOMBOL, TOMBOL_KOMITE } from './labels'
 
 const KORPUS = 'D:\\XML\\RNM_BRD\\Claim Life'
 const adaKorpus = existsSync(KORPUS)
@@ -207,6 +207,19 @@ describe.skipIf(!adaKorpus)('label layar Detail berbukti barisnya', () => {
     const tutup = berkas('Section/CloseClaim_Section.xml')
     expect(tutup).toContain('<pyActivity>ProtectCloseClaim_act</pyActivity>')
     expect(tutup).toContain('<pyAction>closeContainer</pyAction>')
+  })
+
+  it('tombol Komite VERBATIM dari ClaimComite, bukan karangan', () => {
+    // ⛔ RALAT: layar sempat memakai `Send ke Komite`, campuran
+    // Indonesia-Inggris yang tidak ada di korpus mana pun. Label tombol
+    // diambil dari XML - pemakai sistem lama mencari kalimat yang sama, dan
+    // pengujinya membandingkan kedua layar kata demi kata.
+    expect(baris('Section\\ClaimComite.xml', 7033)).toBe(
+      `<pyLabel>${TOMBOL_KOMITE.serahkan}</pyLabel>`,
+    )
+    expect(baris('Section\\ClaimComite.xml', 7715)).toBe(
+      `<pyLabel>${TOMBOL_KOMITE.batal}</pyLabel>`,
+    )
   })
 
   it('DETAIL memuat kesebelas label itu, tidak kurang', () => {

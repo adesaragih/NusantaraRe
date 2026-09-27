@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 
-import { DETAIL } from '../assets/labels'
+import { DETAIL, TOMBOL_KOMITE } from '../assets/labels'
 import { PanelTotalPeserta } from '../components/PanelTotalPeserta'
 import { PanelDokumenPeserta } from '../components/PanelDokumenPeserta'
 import { CariDiagnosa } from '../components/CariDiagnosa'
@@ -628,7 +628,9 @@ export default function KlaimLife() {
                               disabled={menyerahkan === b.id}
                               onClick={() => void serahkan(p.id, b.id)}
                             >
-                              {menyerahkan === b.id ? 'Menyerahkan…' : 'Send ke Komite'}
+                              {menyerahkan === b.id
+                                ? 'Menyerahkan…'
+                                : TOMBOL_KOMITE.serahkan}
                             </button>
                           ) : b.komiteId ? (
                             <span title={b.komiteId}>sudah diserahkan</span>

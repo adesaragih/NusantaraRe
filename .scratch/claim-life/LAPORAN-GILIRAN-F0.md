@@ -891,3 +891,37 @@ berhasil.
 
 **Telemetri:** Go **328 PASS · 0 FAIL · 34 SKIP** *(tak berubah — kelompok ini murni layar)* ·
 JS 234 → **240** · `tsc` bersih · build 49 → **50** modul · **nol** migrasi baru.
+
+---
+
+## Giliran lanjutan 12 — kelompok 5: label yang dikarang, dan yang dikunci ke XML
+
+### ⛔ Temuan: satu tombol memakai teks yang tidak ada di korpus mana pun
+
+Tombol penyerahan ke Komite di layar Detail berbunyi **`Send ke Komite`** — campuran
+Indonesia-Inggris yang **tidak ada di satu pun berkas korpus**. Labelnya ada di XML dan tidak
+pernah diambil: `Section/ClaimComite.xml` **b7033** `<pyLabel>Send Claim to Committee</pyLabel>`.
+
+Itu bukan cacat kecil. Pemakai sistem lama mencari kalimat yang sama, dan penguji penerimaan
+membandingkan layar lama dengan layar baru **kata demi kata** — tombol yang namanya berbeda terbaca
+sebagai fitur yang berbeda. Dan ia **tidak berbunyi di uji mana pun**: tombolnya bekerja, rutenya
+benar, hanya namanya yang karangan.
+
+Kini `TOMBOL_KOMITE.serahkan` mengambil dari XML, dan ada uji yang **membaca baris b7033 langsung
+dari korpus** — bukan menyalinnya ke dalam uji. Dibuktikan: mengembalikan teks lama membuat uji itu
+merah seketika.
+
+⚠️ Dicatat pula: section-nya bernama `ClaimComite` sedangkan `pyRuleName`-nya `ClaimComiteeLife`
+(b139). Dua ejaan, keduanya salah eja, keduanya warisan — disebut apa adanya supaya dapat dicari.
+
+### Yang TIDAK dikerjakan kelompok ini, dan sebabnya
+
+- Penyerahan ke Komite **sudah ada** sejak tiket 10 *(`services.Penyerahan.Serahkan`,
+  `POST …/adjustment/{adjId}/komite`)*; yang kurang hanya namanya.
+- `SendEmailKlaimLF` → outbox: **menyambung ke layanan email nyata**, dan itu menuntut persetujuan
+  manusia. `EMAILKOMITE` pun berisi nama dan alamat email orang — dibaca saat jalan, tidak pernah
+  disalin ke fixture, tiket, atau log.
+- Berkas `komite_*` **tidak disentuh**, sesuai brief.
+
+**Telemetri:** Go **328 PASS · 0 FAIL · 34 SKIP** · JS 240 → **241** · `tsc` bersih ·
+build **50** modul · **nol** migrasi baru.

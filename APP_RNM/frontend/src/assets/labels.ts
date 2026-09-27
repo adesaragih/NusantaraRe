@@ -415,3 +415,23 @@ export const TOMBOL_AKSEPTASI = {
   kembaliKeMedis: 'Send Back to Medical',
 } as const
 
+/**
+ * Tombol penyerahan ke Komite — `Section/ClaimComite.xml`.
+ *
+ * ⛔ RALAT 27-09-2026. Layar Detail sebelumnya memakai teks karangan
+ * **`Send ke Komite`** — campuran Indonesia-Inggris yang tidak ada di korpus
+ * mana pun. Label tombol diambil dari XML, bukan dikarang: pemakai sistem
+ * lama mencari kalimat yang sama, dan pengujinya membandingkan layar lama
+ * dengan layar baru kata demi kata.
+ *
+ * ⚠️ Section-nya bernama `ClaimComite` tetapi `pyRuleName`-nya
+ * `ClaimComiteeLife` (b139) — dua ejaan, keduanya salah eja bahasa Inggris,
+ * dan keduanya warisan. Disebut apa adanya supaya dapat dicari.
+ */
+export const TOMBOL_KOMITE = {
+  /** b7033 `pyLabel`. */
+  serahkan: 'Send Claim to Committee',
+  /** b7715 `pyLabel`. */
+  batal: 'Cancel',
+} as const
+
