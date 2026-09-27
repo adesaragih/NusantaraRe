@@ -44,7 +44,7 @@
 -- ⛔ KASKADE, dan buktinya bukan selera. `.DiagnoseList` hidup DI DALAM
 -- halaman peserta: `SetDisease.xml` b389 menutup dengan `Obj-Save pyWorkPage`,
 -- bukan menyimpan halaman diagnosa sendiri. Menghapus peserta karena itu
--- menghapus daftarnya. Daftar `TestKaskadeHanyaPadaEmpatRelasi` diperbarui
+-- menghapus daftarnya. Daftar `TestKaskadeHanyaPadaRelasiTerdaftar` diperbarui
 -- DENGAN BUKTI ini - pelajaran tiket 00 Komite: penjaga yang ditulis sebelum
 -- relasi berikutnya lahir berhenti menjadi penjaga dan mulai menjadi pagar.
 --

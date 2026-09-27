@@ -91,7 +91,9 @@ tahap itu menghasilkan galat terang.
 Kelas `ASM-FW-GISFW-Data-DiagnoseLife` dipakai **enam** rule: `SearchDiagnose_act`, `SetDisease`,
 `SetSTS_Reject`, `Diagnose_Harness`, `Diagnose_Section`, `ClaimLifeDetailGCNM`. Layar diagnosa
 **ada**, dan `Diagnose_Section` mengisi **dua** kolom: **`.ICD_Code`** dan **`.Disease`**. Itulah
-bentuk tabel `T_CLAIMLF_DIAGNOSE` bila work owner menyetujui **al** — bukti dulu, keputusan kemudian.
+bentuk tabel `T_CLAIMLF_DIAGNOSE`.
+
+⚠️ **RALAT 27 September 2026.** Kalimat ini semula berbunyi *"bila work owner menyetujui **al** — bukti dulu, keputusan kemudian"*. Keputusannya sudah datang: butir **bd** — **banyak** diagnosa per peserta — dan migrasi **018** sudah membuat tabelnya. Dua kolom yang disebut di atas pun kurang: grid-nya **tiga** kolom *(b4188, b4337, b4490)*, dan `STS_REJECT` menjadi yang keempat karena `SetSTS_Reject` menuliskannya. Bab *"Diagnosa banyak per peserta"* di bawah adalah pembacaan pohon penuhnya.
 
 ## Implementasi — 26 September 2026 malam (tiket 08)
 
@@ -330,3 +332,127 @@ label, konfirmasi, dan gerbang *"is not approved yet"* hanya masuk akal bila ia 
 
 **AC:** tidak ada AC tiket ini yang berubah centangnya. Yang bertambah adalah **transisi kelima**
 pada tangga kerja: keluar dari tangga.
+
+## Diagnosa banyak per peserta — bukti XML, 27 September 2026 (butir bd)
+
+⚠️ Bab ini menggantikan kalimat *"bila work owner menyetujui **al**"* di bab bukti butir **al** di
+atas: **bd** sudah diputuskan, dan migrasi **018** sudah ada. Yang di bawah ini adalah pembacaan
+pohonnya, bukan ringkasan keputusan.
+
+### 1. Grid-nya — `Section/ClaimLifeDetailGCNM.xml`
+
+| Baris | Isi | Artinya |
+| ---: | --- | --- |
+| b3923 | `<pyPageListProperty>.DiagnoseList</pyPageListProperty>` | sumber grid = daftar pada **peserta** |
+| b3915 | `pyPageListPropertyClass` `ASM-FW-GISFW-Data-DiagnoseLife` | kelas barisnya |
+| b3926 | `pyRepeatDirection` `RepeatGrid` | **banyak baris**, bukan satu |
+| b3930 | `pyAllowRowUpdate` `true` | barisnya disunting di tempat |
+| b4182 | `pySmartPromptClass` `ASM-FW-GISFW-Int-LIFE_PREMIUM_DETAIL` | grid-nya hidup di halaman **peserta** |
+
+**Kepala kolom** — b4188 `DIAGNOSE`, b4337 `ICD CODE`, b4490 `GROUP DIAGNOSE`. Tiga kolom, dan
+tidak lebih.
+
+**Baris datanya** — tujuh sel:
+
+| Sel | Baris | Kontrol | Perilaku |
+| ---: | ---: | --- | --- |
+| 35 | b4690 | tombol `Add` | b4700 `addRow` **lalu** b4730 `refresh` |
+| 37 | b5061 | tombol `Find Disease` | b5071 `showHarness` → `Diagnose_Harness` |
+| 38 | b5422 | `.DISEASE` | b5374 `pyEditOptions` **`Read-only`** |
+| 39 | b5616 | `.ICDCODE` | b5566 `pyEditOptions` **`Read-only`** |
+| 40 | b5860 | `.GROUPDIAGNOSE` | b5863 `pyFormat` `pxDropdown`, b5886 `postValue` |
+| 41 | b6160 | tombol `Delete` | b6170 `deleteRow` **lalu** b6191 `save` |
+
+⭐ **`Add` dan `Delete` tidak setara, dan bedanya ada di perilaku keduanya.** `Add` diikuti
+`refresh` — baris kosong muncul, **tidak** disimpan. `Delete` diikuti **`save`** (b6189
+`pyActionLabel` `Save`) — penghapusan **langsung menetap**. Itu bukan detail gaya: ia menentukan
+apakah rute `POST` kami boleh menunda tulisan, dan jawabannya untuk `DELETE` adalah **tidak**.
+
+### 2. Gerbangnya — satu kalimat, empat tempat
+
+```
+.STS_REJECT=='1' || .STS_REJECT=='2'
+```
+
+b4682 *(`Add`)* · b5059 *(`Find Disease`)* · b5870 *(`GROUPDIAGNOSE`)* · b6152 *(`Delete`)*.
+Keempatnya `pyDisabledWhen`, dan keempatnya berpasangan dengan `pyDisabled` / `pyDisabledNew`
+`true`. **Peserta yang sudah diputus — aksep maupun tolak — tidak lagi dapat mengubah diagnosanya.**
+
+### 3. `Activity/SetDisease.xml` — apa yang tombol `Choose` tulis
+
+| Baris | Isi |
+| ---: | --- |
+| b61 | `pyClassName` `ASM-FW-GISFW-Data-DiagnoseLife` |
+| b171, b183 | parameter `Disease`, `ICD_Code` |
+| b238 | langkah 1 `Property-Set` |
+| b260-261 | `.DISEASE` = `Param.Disease` |
+| b307-308 | `.ICDCODE` = `Param.ICD_Code` |
+| b389 | langkah 2 **`Obj-Save`**, b397 `pyStepsObjectName` **`pyWorkPage`**, b407 kelas `ASM-FW-GCNMFW-Work-ClaimLife` |
+
+⛔ **Dua kolom, bukan tiga.** `GROUPDIAGNOSE` **tidak** ditulis `SetDisease`; ia datang dari
+dropdown-nya sendiri *(b5886 `postValue`)*. Rute `PUT` karena itu menerima ketiganya, tetapi
+sumbernya dua: baris hasil pencarian **dan** dropdown.
+
+⛔ **`Obj-Save pyWorkPage`, bukan `Obj-Save` halaman diagnosa.** Daftar itu tidak punya hidup
+sendiri: ia menetap ketika **klaim**-nya menetap. Itulah bukti kaskade migrasi 018 — menghapus
+peserta menghapus diagnosanya — dan bukan selera penormalan.
+
+### 4. `Activity/SetSTS_Reject.xml` — pencerminan keputusan ke setiap diagnosa
+
+| Baris | Isi |
+| ---: | --- |
+| b67 | `pyClassName` `ASM-FW-GISFW-Int-LIFE_PREMIUM_DETAIL` — kelas **peserta** |
+| b235 | langkah 1 `Property-Set` |
+| b241 | `pyStepsObjectName` **`.DiagnoseList`** — halaman langkahnya daftar itu |
+| b257-258 | `.STS_REJECT` = **`Primary.STS_REJECT`** |
+| b345 | `pyStepsRepeatDefHasRepeat` **`EMBEDDED`** — berulang atas daftar itu |
+| b325-332 | prasyarat `WhenTrue` **2** / `WhenFalse` **2** — keduanya LANJUT, jadi **nol gerbang** |
+
+Artinya satu kalimat: **setiap** diagnosa peserta mewarisi `STS_REJECT` **peserta**-nya, tanpa
+syarat. Ia karena itu ditulis di dalam transaksi yang **sama** dengan keputusan barisnya.
+
+### 5. Gerbang tahap — dan satu kesimpulan yang hampir saya ambil terlalu cepat
+
+`ClaimLifeDetailGCNM` dimuat **tiga** rule: `Section/EditDateClaimLife_Section.xml` *(b1983,
+b2112)*, `Section/RejectOSClaimLife_Sec.xml` *(b3155, b3285)*, dan
+`FlowAction/ViewClaimDetailLifeGCNM.xml` *(b90)*. Ketiganya:
+
+| Rule | `pyRuleAvailable` | `pyWhenName` | `pyPrivilegeName` |
+| --- | --- | --- | --- |
+| `ViewClaimDetailLifeGCNM` | `Yes` b54 | **kosong** b278 | **kosong** b337 |
+| `ShowEditClaimLife` | `Yes` b54 | **kosong** b260 | **kosong** b307 |
+| `RejectOSClaimLife` | `Yes` b52 | **kosong** b259 | **kosong** b306 |
+
+⛔ **Nol gerbang tahap, nol privilese.** Satu-satunya gerbang grid ini adalah `STS_REJECT` peserta.
+
+⛔ **Dan ini yang hampir saya salah baca.** Daftar pemuat di atas **tidak** memuat
+`MedicalCheckClaimLife` — dan berhenti di situ berarti menyimpulkan *"Medical Advisor tidak dapat
+menyunting diagnosa"*. Satu langkah lagi ke bawah membantahnya:
+
+```
+Section/InputOSClaimLife.xml        b18252  <pyEditAction>ViewClaimDetailLifeGCNM</pyEditAction>
+Section/MedicalCheckClaimLife.xml   b17416  <pyEditAction>ViewClaimDetailLifeGCNM</pyEditAction>
+Section/InputAkseptasiClaimLife.xml b17387  <pyEditAction>ViewClaimDetailLifeGCNM</pyEditAction>
+```
+
+dan ketiganya menggerakkan grid peserta yang **sama**:
+`pyWorkPage.ClaimData.PremiumListSummary.PremiumListDetail` *(b15924, b15764, b15735)*.
+`MedicalCheckClaimLife` **tidak memuat** section itu — ia **membukanya**, sebagai aksi sunting
+barisnya. Jadi layar diagnosa terjangkau dari **ketiga** tahap bergrid peserta: Outstanding,
+Medical Check, dan Akseptasi — dan justru Medical Advisor-lah yang paling masuk akal mengisinya.
+
+`ShowEditClaimLife` sendiri adalah `pyLocalAction` **di dalam** `ClaimLifeDetailGCNM` *(b14144,
+b14291)*, jadi ia hilir dari ketiga pintu itu, bukan pintu keempat. `RejectOSClaimLife` adalah
+`pyLocalAction` di `AdjustmentDetail_Section` *(b15183, b15333)*.
+
+⚠️ Bentuk kekeliruan yang sama untuk **keempat** kalinya: *berhenti pada X lalu menyimpulkan
+tentang Y*. Pendahulunya `Close Claim` *(berhenti di aksi pertama)*, OQ-H *(berhenti pada rule yang
+namanya tertulis)*, OQ-K.2 *(melihat grid, tidak membaca tombolnya)*. Penawarnya sama setiap kali:
+**turun satu tingkat lagi sebelum menyimpulkan ketiadaan.**
+
+### 6. Yang tetap `[terbuka]` — OQ-L
+
+Daftar pilihan dropdown b5863 hidup pada rule properti `GROUPDIAGNOSE` *(kelas
+`ASM-FW-GISFW-Data-DiagnoseLife`)* yang **tidak ada** di ekspor dan **tidak ada** di katalog DEV.
+b5854 `pyLabelPreview` kolom itu **kosong**, jadi label yang sah satu-satunya adalah kepala kolom
+b4490 `GROUP DIAGNOSE`. Kolomnya dibuat *(018)*; **nilainya tidak dikarang** — butir **bf**.

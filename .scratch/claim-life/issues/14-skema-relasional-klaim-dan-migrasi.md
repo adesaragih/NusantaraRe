@@ -1699,3 +1699,48 @@ menyebutnya.
 
 **AC:** tidak ada AC tiket ini yang berubah centangnya. Yang bertambah adalah **satu kolom** pada
 tabel work, beserta jalur mundurnya.
+
+## Migrasi 018 — `T_CLAIMLF_DIAGNOSE` (butir bd, 27 September 2026)
+
+⚠️ Seperti bab **017** di atas, blok ini ada di tiket **14** karena tiket inilah pemilik skema
+relasional; keputusannya *(bd)* dan bukti XML-nya ada di tiket **08**, bab *"Diagnosa banyak per
+peserta"*.
+
+| Hal | Isi |
+| --- | --- |
+| Berkas | `018_t_claimlf_diagnose.sql` + `018_t_claimlf_diagnose_down.sql` |
+| Tabel | `T_CLAIMLF_DIAGNOSE` — `ID NUMBER(19)` PK, `PREMIUM_LIST_DETAIL_ID VARCHAR2(32)` NOT NULL FK **ON DELETE CASCADE**, `URUTAN NUMBER(5)` NOT NULL, `ICD_CODE VARCHAR2(100)`, `DISEASE VARCHAR2(1000)`, `GROUP_DIAGNOSE VARCHAR2(255)`, `STS_REJECT VARCHAR2(8)` |
+| Indeks | `IX_DIAGNOSE_PESERTA` atas FK-nya — setiap FK pohon polis berindeks *(`TestSetiapFKPohonPolisBerindex`)* |
+| Urutan | `SEQ_CLAIMLF_DIAGNOSE` — identitas dari sequence, ADR-0006 |
+| Sertaan | `ALTER T_CLAIMLF_PREMIUMLIST_DETAIL MODIFY (DISEASE VARCHAR2(1000))` |
+| Mundur | urutan terbalik: sequence, indeks, tabel, lalu `DISEASE` peserta kembali ke lebarnya semula |
+
+### Kenapa kaskade — dan kenapa itu bukan selera penormalan
+
+`Activity/SetDisease.xml` menutup pada b389 dengan **`Obj-Save`** atas **`pyWorkPage`** *(b397;
+kelas `ASM-FW-GCNMFW-Work-ClaimLife` b407)* — **bukan** menyimpan halaman diagnosanya sendiri.
+Daftar itu tidak punya hidup di luar klaim yang memuatnya. Menghapus peserta karena itu menghapus
+diagnosanya, dan `ON DELETE CASCADE` adalah terjemahan langsung dari fakta itu, bukan kemudahan.
+
+### Kenapa `DISEASE` selebar 1000
+
+Katalog DEV `POOLDATA.DISEASE_LIFE` — tabel sumbernya, 97.586 baris — memberi `DISEASE`
+`VARCHAR2(1000)` dengan isi terpanjang **290**. `VARCHAR2(255)` yang dipakai kolom peserta karena
+itu **terbukti** kurang: nama diagnosa terpanjang di tabel sumber tidak muat. Migrasi ini
+melebarkan keduanya sekaligus, supaya penyalinan dari sumber tidak pernah terpenggal diam-diam.
+
+### Kenapa `STS_REJECT VARCHAR2(8)`
+
+Sama persis dengan kolom senama pada peserta *(migrasi 003)*, dan sengaja: `SetSTS_Reject` b257
+menyalin **nilai** peserta ke setiap diagnosa *(`Primary.STS_REJECT`)*, jadi dua lebar berbeda
+untuk satu nilai yang disalin adalah dua kesempatan untuk terpotong. Teks, bukan angka —
+ADR-U-0022.
+
+### Kenapa `URUTAN` ada
+
+`Add` b4700 menyisipkan baris **`After`** *(b4715 `pyPosition`)*, dan grid tanpa urutan stabil
+menampilkan baris yang berbeda setiap kali dibaca. `URUTAN` menyimpan posisi yang dilihat pemakai;
+`DELETE` merapatkannya kembali supaya tidak berlubang.
+
+**AC:** tidak ada AC tiket ini yang berubah centangnya. Yang bertambah adalah **satu tabel** dengan
+jalur mundurnya, dan **satu pelebaran** kolom yang terbukti kurang.

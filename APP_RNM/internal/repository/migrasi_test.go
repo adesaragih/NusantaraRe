@@ -214,9 +214,45 @@ func TestAdjustmentMenggantungPadaPeserta(t *testing.T) {
 	}
 }
 
-// Kaskade hanya pada relasi 3, 4, 5, 6. T_CLAIMLF_DOCUMENT (relasi 7) ditangani
-// di Go, jadi kunci tamunya TANPA ON DELETE.
-func TestKaskadeHanyaPadaEmpatRelasi(t *testing.T) {
+// Kaskade pada relasi 3, 4, 5, 6 - dan relasi 9, roster komite.
+// T_CLAIMLF_DOCUMENT (relasi 7) ditangani di Go, jadi kunci tamunya TANPA
+// ON DELETE.
+//
+// ⚠️ LINGKUPNYA MODUL CLAIM LIFE - migrasi 001-049. Sejak modul
+// PremiumList Life menambah migrasi 050+, penjaga ini harus menyatakan
+// lingkupnya: kebijakan kaskade kedua modul BERBEDA dan keduanya disengaja.
+// Claim Life memilih kaskade pada empat relasi (kini lima); PremiumList Life
+// memilih kaskade pada SELURUH FK (tiket 00 AC 46, dijaga
+// TestSeluruhFKPohonPolisBerkaskade). Penjaga yang membentang ke modul lain
+// akan memaksa salah satunya mengalah tanpa alasan.
+//
+// ⛔ RALAT 27-09-2026, dan penjaga ini sempat MENEGAKKAN cacatnya sendiri.
+// Daftar di bawah ditulis ketika hanya migrasi Claim Life ada, dan ia
+// menuntut `013_tabel_komite.sql` TIDAK berkaskade. Tetapi
+// `STRUKTUR-TABEL-KOMITE-CLAIM-LIFE.md` menyebut relasi
+// `T_GENERAL_KOMITE` -> `T_KOMITE_KOMITELIST` sebagai `ON DELETE CASCADE` di
+// TIGA tempat (baris 159, 238, 253), dan 013 membuatnya tanpa `ON DELETE`.
+// Jadi penjaga ini bukan hanya melewatkan cacat - ia menahan perbaikannya.
+//
+// ⚠️ Akibat cacat itu nyata: menghapus satu kasus komite DITOLAK Oracle
+// (ORA-02292) selama masih ada baris roster yang menunjuknya, dan itu jalur
+// yang tiket 05 perlukan. Migrasi `030` memperbaikinya lewat ALTER.
+//
+// ⛔ KEDUA PELAJARAN ITU SATU, dan disatukan di sini 27-09-2026: daftar yang
+// ditulis sebelum modul kedua lahir berhenti menjadi penjaga dan mulai
+// menjadi pagar. Yang satu menyempitkan LINGKUPnya, yang lain memperbaiki
+// ISInya; keduanya perlu.
+// ⛔ NAMANYA BERUBAH 27-09-2026, dan sebabnya adalah namanya sendiri.
+// Ia lahir sebagai `TestKaskadeHanyaPadaEmpatRelasi` ketika relasi berkaskade
+// memang empat. Kini enam berkas terdaftar, dan nama yang menyebut ANGKA
+// berbohong setiap kali relasi ketujuh lahir - sementara nama yang menyebut
+// ATURANNYA tidak pernah berbohong. Nama lamanya ditulis di sini supaya
+// pencarian atasnya tetap sampai ke tempat ini.
+//
+// ⚠️ Yang dijaga bukan jumlahnya melainkan kesengajaannya: kaskade ada
+// HANYA pada relasi yang terdaftar di bawah, dan mendaftarkan yang baru
+// menuntut bukti - bukan kemudahan.
+func TestKaskadeHanyaPadaRelasiTerdaftar(t *testing.T) {
 	berkas := seluruhSQL(t, false)
 	berkaskade := map[string]bool{
 		"003_": true, "004_": true, "005_": true, "006_": true,
