@@ -320,3 +320,43 @@ langkah 1 mengulang `pyWorkPage.PremiumListSummary.PremiumListDetail`)*:
 
 **Pesan singkat untuk sesi executor:** *"Jawabannya dari XML: pilihan 1. Baca bab 7 brief lanjutan 4,
 terapkan, lanjutkan A0 tanpa berhenti; pertanyaan penyarangan berikutnya dijawab dengan pohon XML."*
+
+---
+
+## 8. VERIFIKASI `f8bbf7a` (A0 kelompok 2–3, A1, A2 sebagian) — dan RALAT ASISTEN soal `@addCalendar` — 27 September 2026
+
+**Tereproduksi:** 7 commit sejak `a2102f0` *(6 kode + 1 docs; laporan menulis 8)*; 48 berkas
++2.480/−58; **239 PASS · 0 FAIL · 34 SKIP**; 16 JS; 88 modul; migrasi **14** *(`011` bank, `012`
+`T_CLAIMLF_JEJAK` + 2 index + sequence, `013` `T_GENERAL_KOMITE` + `T_KOMITE_KOMITELIST` + 2 index +
+sequence, `014` `BUSINESS_CODE`)*; `COVER_KEY` memang sudah ada sejak `001` *(kolom, FK, index)*, jadi
+`013` benar tidak menambahkannya; rute **11**; `ErrAksepBukanDariModulIni` tinggal di komentar; nol
+kebocoran. Audit: 7 tepat · 4 kurang tepat · 2 belum ditiru.
+
+**Ralat asisten `[terverifikasi — sensus korpus]`:** dugaan bab 4-06 brief lanjutan 1 *("slot keempat
+`@addCalendar` = jam")* **salah**, executor benar. Sensus seluruh `@addCalendar` di Claim Life + Komite
+Claim Life: `(0,0,0,0,7,0,0)` ×16 pada `.DOB` di `LoadDataPeserta_Act`/`LoadDataPesertaSpesifik_Act`
+*(`@if(.DOB="","",@addCalendar(.DOB,0,0,0,0,7,0,0))` — **+7 jam = WIB**, jadi slot ke-5 = jam)*;
+`(0,0,0,1,0,0,0)` ×7 *(DOL TP/TR — slot ke-4 = **hari**)*; `('0','1','0','0','0','0','0')` ×4 *(bulan
+berikut — slot ke-2 = bulan)*; `(0,0,0,0,0,0,0)` ×9. Tanda tangan yang cocok dengan ketiganya:
+`addCalendar(tanggal, tahun, bulan, minggu, hari, jam, menit, detik)`. Pergeseran TP/TR = **satu
+hari** *(`pergeseranDOLRetro = 24 * time.Hour`, `[terverifikasi — turunan]`)*; `bandingKetat` tetap
+`[dugaan]`. Tabel batas tiket 06 diralat executor; asisten mencatat kekeliruannya di sini.
+
+**Dikorroborasi:** precondition tanpa kurung di `SavePesertaClaim` 1812
+*(`.IsCheck=="true"&&BusinessCode="L1"||…||"L11"`)* — kelas cacat yang sama dengan `SaveAdjustment_Act`;
+`MedicalCheckClaimLife` memang **nol** `.DiagnoseList`, **tetapi** `DiagnoseList` hidup di
+`ClaimLifeDetailGCNM` *(grid)* dan kelas `Data-DiagnoseLife` dirujuk **29 kali** di `Diagnose_Section`
+*(harness `Diagnose_Harness`, aksi `SearchDiagnose_act`, `SetDisease`)* — jadi **al** bukan "tidak
+ada", melainkan **dibaca di kelompok Medis A3 dari `Diagnose_Section` + grid `ClaimLifeDetailGCNM`**;
+kolom peserta `DISEASE`/`ICD_CODE`/`NOTES`/`KETERANGAN` di tabel warisan `[data DBA]` adalah petunjuk
+bahwa hasil akhirnya satu diagnosa per peserta, daftar hanya pencarian.
+
+**Dua hal kecil untuk A2 sisa, bukan pemblokir:** *(a)* `hapus.go` menjawab **501** untuk
+`ErrHapusFisikDilarang` — itu kebijakan *(ADR-U-0031)*, bukan "belum diimplementasi"; jawab **405**
+atau **409** dengan kalimat kebijakannya; *(b)* cabang 501 untuk `ErrPenomorBelumDiputuskan` dan
+`ErrJejakBelumDiputuskan` di `akseptasi.go`, `putaran.go`, `register.go`, `tolak.go` kini **mati**
+*(stubnya sudah diganti)* — buang bersama tipe stubnya, atau nyatakan mengapa tetap ada.
+
+**Lanjut:** sisa A2 *(af: roster + kasus Komite; resolver `M_LINK_SERVICE`; **an** token)* → A3 →
+A4 → Bagian B, tanpa berhenti. Sesudah A3 kelompok Medis, **al** diputuskan dari bukti, bukan dari
+ketiadaan di satu section.
