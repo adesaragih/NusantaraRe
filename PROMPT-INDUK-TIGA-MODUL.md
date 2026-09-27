@@ -33,6 +33,21 @@ daftarkan satu klaim lewat `Register` dengan nomor premium list yang ada di `M_L
 
 ---
 
+## 0.1 KEPUTUSAN **ax** `[DIPUTUSKAN work owner — 27 September 2026]`: `T_EFEK_KELUAR` → **`T_LOG_SERVICE_RNM`**
+
+Perintah work owner: *"JIKA ITU UNTUK LOG SERVICE MAKA NAMANYA YANG JELAS, T_LOG_SERVICE_RNM."*
+
+| Butir | Ketentuan |
+| --- | --- |
+| Nama | tabel **`T_LOG_SERVICE_RNM`**; index `IX_LOG_SERVICE_RNM_JADWAL` *(STATUS, JADWAL_BERIKUT)* dan `IX_LOG_SERVICE_RNM_RUJUKAN`; sequence `SEQ_LOG_SERVICE_RNM`. Kolom dan maknanya **tetap** *(antrean + catatan hasil tiap panggilan layanan luar: STATUS, PERCOBAAN, JADWAL_BERIKUT, GALAT_TERAKHIR)* — yang berubah hanya namanya |
+| Cara | migrasi `015` **belum pernah dijalankan di Oracle mana pun** *(`T_MIGRASI` tidak ada di DEV)* → berkasnya **disunting di tempat** dan diganti nama `015_t_log_service_rnm.sql` + `_down.sql`; bukan migrasi baru |
+| Kode | `repository/efekkeluar.go`, `services/antrean.go`, `repository/migrasi_test.go` *(nama tabel di uji bentuk)*; nama tipe Go `EfekKeluar` boleh tetap — yang diminta work owner adalah nama **tabel** |
+| Dokumen | tiket 12 blok `### Ralat menurut keputusan work owner — 27 September 2026 (butir ax)`; `STRUKTUR-TABEL-CLAIM-LIFE.md`; PARITAS bila menyebutnya |
+| Siapa, kapan | **sesi Claim Life, di `main`, sebagai commit pertama giliran** `claim-life: ax — T_EFEK_KELUAR menjadi T_LOG_SERVICE_RNM` — **sebelum** `git worktree add` §1, supaya kedua cabang lahir sudah membawa nama baru |
+| Padanan warisan | `pooldata.monitoring_klaim_log` *(ditulis `InsertLogServiceClaim`)* tetap **tidak** dipakai: ia log tanpa antrean; tabel baru ini log **dan** antrean |
+
+---
+
 ## 1. TATA LETAK — worktree, cabang, port
 
 | Modul | Tempat kerja | Cabang | Backend | Vite |
@@ -65,14 +80,14 @@ Korpus `D:\XML\RNM_BRD\` tetap READ-ONLY dari semua worktree.
 | Hal | Aturan |
 | --- | --- |
 | **Nomor migrasi** | Claim Life `017`–`029` · Komite `030`–`049` · PremiumList Life `050`–`079`. Nama berkas `NNN_<isi>.sql` + `_down.sql`; `T_MIGRASI` mencatat per nama, jadi tiga cabang tidak saling menunggu |
-| **Objek Oracle** | himpunan tabel/sequence per modul **terpisah** *(Claim Life `T_WORK_CLAIM`, `T_GENERAL_CLAIM`, `T_CLAIMLF_*`, `T_EFEK_KELUAR`; Komite `T_GENERAL_KOMITE`, `T_KOMITE_KOMITELIST` — sudah dibuat migrasi `013` Claim Life; PremiumList `T_WORK_POLIS`, `T_PREMIUM_LIST*`, `T_VIEW_SUGGEST`)*. Sebelum `-migrate` pertama di cabangnya, executor memeriksa **tabrakan nama** di katalog *(pola keputusan as)* dan mencatat hasilnya |
+| **Objek Oracle** | himpunan tabel/sequence per modul **terpisah** *(Claim Life `T_WORK_CLAIM`, `T_GENERAL_CLAIM`, `T_CLAIMLF_*`, `T_LOG_SERVICE_RNM`; Komite `T_GENERAL_KOMITE`, `T_KOMITE_KOMITELIST` — sudah dibuat migrasi `013` Claim Life; PremiumList `T_WORK_POLIS`, `T_PREMIUM_LIST*`, `T_VIEW_SUGGEST`)*. Sebelum `-migrate` pertama di cabangnya, executor memeriksa **tabrakan nama** di katalog *(pola keputusan as)* dan mencatat hasilnya |
 | **Berkas backend** | paket tetap `internal/{handlers,services,repository,models}`; berkas milik modul **berawalan**: `polis_*.go` *(PremiumList)*, `komite_*.go` *(Komite)*; rute modul di `handlers/rute_<modul>.go` berisi satu fungsi `daftarkanRute<Modul>(mux, svc, stub)` yang dipanggil **satu baris** di `Router` — satu-satunya sentuhan ke `handlers.go` |
 | **Berfile milik modul lain** | **tidak disunting**. Perubahan pada kode bersama *(`services.Service`, `models` bersama, `repository/db`)* hanya **aditif** *(fungsi/berkas baru)*, dicatat di laporan akhir dengan sebabnya |
 | **Frontend** | `src/pages/<modul>/`, `src/assets/labels.<modul>.ts` *(pola bukti baris XML)*, satu `KelompokMenu` per modul di `Shell.tsx` yang isinya dari `butirMenu<Modul>` di berkas modul; `PARITAS-LAYAR-DAN-AKSI.md` dan `LAPORAN-GILIRAN.md` di `.scratch/<modul>/` |
 | **Menu** | hanya yang berbukti XML modul itu *(lanjutan 7 §1)*: PremiumList Life punya harness portal `PremiumLife_harness` *(root sheet struktur)*; Komite **tidak** punya harness → satu butir inbox worklist |
 | **Oracle bersama** | ketiga cabang boleh `-migrate` langkahnya sendiri di DEV *(objek terpisah, ledger per nama)*; **tidak pernah** `-migrate-down` di `POOLDATA`; skema uji kosong dari DBA belum ada → `db` test SKIP di semua cabang |
 | **Penomoran & prosedur** | keputusan **o** berlaku di ketiga modul: prosedur Oracle **tidak dipanggil**, logikanya ditiru di Go *(`PenomorCounter` o1–o3, `SUMBER-PENOMORAN-DBA.md`)*; ADR-U-0029 nol `COMMIT` di SQL |
-| **Kontrak antar modul** | Claim Life → Komite: muatan `serahkanKomite` + `T_EFEK_KELUAR` *(A2)*; Komite → Claim Life: `STS_REJECT` tingkat akhir *(tiket Claim Life 11)*; PremiumList → Claim Life: `T_PREMIUM_LIST` dibaca Claim Life untuk `PolicyDataLife` **sesudah merge** *(keputusan av)* — PremiumList menyediakan pembaca `repository.PolisRingkas(plNumber)` yang didokumentasikan di tiket 08-nya |
+| **Kontrak antar modul** | Claim Life → Komite: muatan `serahkanKomite` + `T_LOG_SERVICE_RNM` *(A2)*; Komite → Claim Life: `STS_REJECT` tingkat akhir *(tiket Claim Life 11)*; PremiumList → Claim Life: `T_PREMIUM_LIST` dibaca Claim Life untuk `PolicyDataLife` **sesudah merge** *(keputusan av)* — PremiumList menyediakan pembaca `repository.PolisRingkas(plNumber)` yang didokumentasikan di tiket 08-nya |
 
 ---
 

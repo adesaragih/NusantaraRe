@@ -60,7 +60,7 @@ resolver `M_LINK_SERVICE` Google/upload, `GenerateImageID_SQL`, `GetAppName_SQL`
 `GetMimeType` → **tabel data** di `models`)*; `DownloadDocumentClaim` → `GetUrlGoogleStorage_Act`
 *(geturl)*; `ConfirmDeleteAttachment` → `DeleteDocument_Act` → `DeleteGoogleStorage_Act` *(delete)*.
 ⛔ Endpoint penyimpanan sungguhan **tidak** dipanggil tanpa persetujuan manusia: jalur keluar lewat
-outbox `T_EFEK_KELUAR` *(aq)* dan pengirim yang di DEV memakai **stub** yang mencatat, bukan mengirim.
+outbox `T_LOG_SERVICE_RNM` *(aq)* dan pengirim yang di DEV memakai **stub** yang mencatat, bukan mengirim.
 Berkas diunggah lewat rute berbatas ukuran dan tipe *(dari `GetMimeType`)*, disimpan sementara di
 folder aplikasi yang dinyatakan di `.env`, **tidak** ke korpus.
 
@@ -103,7 +103,11 @@ migrasi `017`–`029`; sesudah PremiumList Life di-merge, paket kecil berikutnya
 Langkah 0: `git add PROMPT-INDUK-TIGA-MODUL.md PROMPT-IMPLEMENTASI-MODUL-CLAIM-LIFE-LANJUTAN-10.md
 PROMPT-IMPLEMENTASI-MODUL-PREMIUMLIST-LIFE.md PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-LIFE.md
 .gitignore` → commit `docs: induk tiga modul; brief Claim Life 10, PremiumList Life, Komite Claim
-Life` → uji hijau *(274 · 34 SKIP · 150 JS · 46 modul)*. Laporan akhir dan telemetri persis lanjutan
+Life` → uji hijau *(274 · 34 SKIP · 150 JS · 46 modul)*. **Langkah 0.5 — sebelum paket mana pun dan
+sebelum worktree dibuat**: keputusan **ax** induk §0.1 **sudah diterapkan asisten di disk** *(27-09-2026:
+`015_t_log_service_rnm.sql` + `_down` disunting di tempat dan diganti nama; `repository/efekkeluar.go`,
+`services/antrean.go`, `migrasi_test.go`; blok ralat di tiket 12; gofmt/vet/uji hijau 274 · 0 · 34)* —
+**sudah di-commit asisten sebagai `e3d537a`** `claim-life: ax — T_EFEK_KELUAR menjadi T_LOG_SERVICE_RNM`; executor hanya **memverifikasi** *(`git log -1`, `go test -tags=db ./...` hijau)* dan memakai nama baru sejak paket pertama. Laporan akhir dan telemetri persis lanjutan
 8 §6–§7, ditambah tabel **kelompok → tombol XML → rute/kontrol** per kelompok.
 
 ---
