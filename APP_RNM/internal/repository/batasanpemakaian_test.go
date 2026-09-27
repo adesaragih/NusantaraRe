@@ -176,15 +176,23 @@ func TestCacahKolomWarisanYangDitulisSimpan(t *testing.T) {
 //   - "A.B"           sudah berawalan skema, termasuk SYS.
 //   - "{skema}.B"     penanda di berkas migrasi
 //   - "DUAL"          tabel semu milik Oracle, tidak punya skema
+//
+// Dan `FOR UPDATE` DILEWATI: ia klausa penguncian baris, bukan pernyataan
+// UPDATE, sehingga kata sesudahnya (`SKIP`, `NOWAIT`, atau tidak ada) bukan
+// nama tabel. Penyempitan ini dibuktikan MASIH MENGGIGIT sebelum dipakai.
 func TestNolNamaTabelTelanjangDiQuery(t *testing.T) {
-	pola := regexp.MustCompile(`(?i)\b(FROM|INTO|UPDATE|JOIN)\s+([A-Za-z_{%][\w{}%.]*)`)
+	pola := regexp.MustCompile(
+		`(?i)(\bFOR\s+)?\b(FROM|INTO|UPDATE|JOIN)\s+([A-Za-z_{%][\w{}%.]*)`)
 	diperiksa := 0
 	for nama, isi := range berkasGoSelainTest(t) {
 		if !strings.Contains(nama, "/internal/repository/") {
 			continue
 		}
 		for _, m := range pola.FindAllStringSubmatch(isi, -1) {
-			objek := m[2]
+			if m[1] != "" { // klausa `FOR UPDATE`, bukan pernyataan
+				continue
+			}
+			objek := m[3]
 			diperiksa++
 			switch {
 			case strings.Contains(objek, "."): // berawalan skema atau {skema}
@@ -192,7 +200,7 @@ func TestNolNamaTabelTelanjangDiQuery(t *testing.T) {
 			case strings.EqualFold(objek, "DUAL"): // tabel semu Oracle
 			default:
 				t.Errorf("%s: %s %s - nama tabel telanjang (ADR-U-0033)",
-					nama, strings.ToUpper(m[1]), objek)
+					nama, strings.ToUpper(m[2]), objek)
 			}
 		}
 	}

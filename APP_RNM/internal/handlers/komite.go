@@ -25,7 +25,9 @@ func serahkanKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 		}
 		err := svc.Komite().DenganJejak(services.PerekamJejakOracle(svc)).
 			DenganRoster(services.RosterKomiteOracle(svc)).
-			DenganKasus(services.KasusKomiteOracle(svc)).Serahkan(r.Context(), pelakuDari(r, stubPelaku),
+			DenganKasus(services.KasusKomiteOracle(svc)).
+			DenganPenyalur(services.PenyalurClaimLifeOracle(svc)).
+			Serahkan(r.Context(), pelakuDari(r, stubPelaku),
 			r.PathValue("id"), r.PathValue("pesertaId"), r.PathValue("adjId"),
 			time.Now())
 

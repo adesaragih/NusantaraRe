@@ -247,10 +247,45 @@ func TestKolomUangDesimalDanNolJSON(t *testing.T) {
 			t.Errorf("kolom uang %s bertipe teks", kol)
 		}
 	}
-	for _, tipe := range []string{" JSON", "CLOB", "BLOB", "JSON_KLAIM"} {
-		if strings.Contains(sql, tipe) {
-			t.Errorf("migrasi memuat %q - atribut klaim harus menjadi kolom bernama", tipe)
+	// ⛔ DIPERSEMPIT, bukan dilonggarkan - A2, 27-09-2026.
+	//
+	// Yang dilarang adalah ATRIBUT KLAIM yang bersembunyi di dalam dokumen -
+	// itulah inti keputusan "yang dibuang hanya JSON". `T_EFEK_KELUAR.MUATAN`
+	// bukan atribut klaim: ia BADAN PESAN antrean, yang memang berbentuk
+	// dokumen dan memang tidak boleh dipecah menjadi kolom - setiap jenis efek
+	// punya bentuk muatannya sendiri.
+	//
+	// Cakupannya dinyatakan: pengecualian berlaku untuk SATU kolom di SATU
+	// tabel, dan penjaga terpisah memastikan muatan itu tidak memuat nama
+	// orang, kredensial, maupun alamat.
+	// ⛔ DIPERIKSA PER BERKAS, bukan dengan memotong teks gabungan.
+	//
+	// Ronde pertama memotong blok `CREATE TABLE` dari teks yang sudah
+	// digabung - dan potongannya MELESET: 6.382 dari 10.037 karakter ikut
+	// terbuang, sehingga penjaganya berhenti memeriksa sebagian besar
+	// migrasi tanpa ada yang tahu. Ketahuan hanya karena panjangnya dicetak.
+	//
+	// Pemeriksaan per berkas tidak dapat salah potong: satu berkas
+	// dikecualikan dengan namanya, sisanya utuh.
+	const berkasOutbox = "015_t_efek_keluar"
+	dokumenDiOutbox := 0
+	for nama, isi := range seluruhSQL(t, false) {
+		atas := strings.ToUpper(isi)
+		if strings.Contains(nama, berkasOutbox) {
+			dokumenDiOutbox += strings.Count(atas, "CLOB")
+			continue
 		}
+		for _, tipe := range []string{" JSON", "CLOB", "BLOB", "JSON_KLAIM"} {
+			if strings.Contains(atas, tipe) {
+				t.Errorf("%s memuat %q - atribut klaim harus menjadi kolom bernama",
+					nama, tipe)
+			}
+		}
+	}
+	// Dan outbox-nya memang hanya punya SATU kolom dokumen.
+	if dokumenDiOutbox != 1 {
+		t.Errorf("T_EFEK_KELUAR memuat %d kolom CLOB, mau tepat 1 (MUATAN)",
+			dokumenDiOutbox)
 	}
 	if strings.Contains(sql, "FLOAT") || strings.Contains(sql, "BINARY_DOUBLE") {
 		t.Error("ada kolom bertipe float - uang tidak pernah float (ADR-U-0003)")
@@ -505,8 +540,11 @@ func TestSeluruhCreateDapatDibacaNamanya(t *testing.T) {
 	// ⛔ Diperbarui LAGI - A1 menambah butir af (2 tabel + 1 sequence +
 	// 2 index) dan temuan audit A0 (BUSINESS_CODE, ALTER - tidak dihitung).
 	//
-	// 10 tabel + 8 sequence + 11 index = 29.
-	const mau = 29
+	// ⛔ Diperbarui LAGI - A2 menambah butir aq: 1 tabel (T_EFEK_KELUAR) +
+	// 1 sequence + 2 index = 4 pernyataan CREATE baru.
+	//
+	// 11 tabel + 9 sequence + 13 index = 33.
+	const mau = 33
 	if diperiksa != mau {
 		t.Errorf("pernyataan CREATE diperiksa %d, mau %d", diperiksa, mau)
 	}
@@ -598,9 +636,9 @@ func TestKolomCreateTableMembacaSeluruhTabel(t *testing.T) {
 	}
 	// Tujuh, bukan delapan: T_MIGRASI dibuat siapkanTabelMigrasi, di luar
 	// berkas migrasi. Sesudah migrasi, katalog memang memuat delapan tabel.
-	// 10 tabel + 8 sequence + 11 index = 29 pernyataan CREATE, cocok dengan
+	// 11 tabel + 9 sequence + 13 index = 33 pernyataan CREATE, cocok dengan
 	// cacah yang dikunci TestSeluruhCreateDapatDibacaNamanya.
-	const mauTabel = 10
+	const mauTabel = 11
 	if tabel != mauTabel {
 		t.Errorf("CREATE TABLE terbaca %d, mau %d", tabel, mauTabel)
 	}
