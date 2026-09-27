@@ -221,3 +221,44 @@ fungsinya, sehingga tidak ada halaman bersama yang dapat tertimpa.
 
 ⚠️ Ralat susunan kata G2 di atas: yang dibandingkan b582 secara harfiah adalah `TempDetail.CARI2`,
 bukan sebuah local bernama "selisih". Isinya tetap selisih hari itu, dan kesimpulan G2 tidak berubah.
+
+## 27 September 2026 — OQ-H (rujukan menggantung pada LIMA total uang)
+
+**OQ-H** *(untuk pemilik ekspor — menahan lima medan uang)*.
+`Section/ClaimLifeDetailGCNM.xml` memanggil activity **`CheckTotalAdjustmentClaim`** sepuluh kali,
+tetapi activity itu **tidak punya satu pun berkas rule di seluruh korpus**.
+
+Diperiksa dua cara: `find . -iname "*CheckTotalAdjustment*"` → **nol** hasil; dan
+`grep -rl` → satu-satunya berkas yang menyebutnya adalah section itu sendiri, dengan **10**
+kemunculan.
+
+Kesepuluh pemanggilan itu menempel pada **lima medan total**, dua pemanggilan per medan
+*(`postValue` + `refresh`)*:
+
+| Medan | `pyLabelPreview` | Pemanggilan |
+| --- | ---: | --- |
+| `Total Share Nusantara Re` | b20914 | b20970, b21091 |
+| `Total Sum Insured` | b21201 | b21262, b21377 |
+| `Total Sum Reasured` | b21488 | b21546, b21664 |
+| `Total Share Retro` | b21775 | b21836, b21951 |
+| `Total Claim Amount` | b22063 | b22120, b22238 |
+
+⛔ **Akibatnya kami tidak dapat meniru kelima angka itu.** "Total" terdengar seperti penjumlahan
+kolomnya, tetapi pertanyaan yang menentukan tidak terjawab oleh apa pun yang kami punya:
+
+- baris yang **mana** yang ikut dijumlahkan — seluruhnya, atau hanya yang `IsCheck`?
+- apakah baris ber-`STS_REJECT = 2` *(ditolak)* ikut?
+- apakah ia menjumlahkan, atau memeriksa silang terhadap nilai yang sudah tersimpan?
+
+Jalur tolak **mencabut `IsCheck`** *(`RejectOSClaimLife_Act`)*, jadi jawabannya berpengaruh nyata —
+dan ini **angka uang**. Menebaknya melanggar ADR-U-0003, dan angka uang yang ditebak jauh lebih
+berbahaya daripada angka yang dinyatakan belum ada.
+
+**Mohon kirimkan** `CheckTotalAdjustmentClaim`, atau konfirmasikan bahwa ia memang sudah dihapus
+dan kelima medan itu tidak lagi berisi apa-apa di produksi.
+
+**Sementara itu**, layar Detail menampilkan kelima medannya **dengan penanda "belum tersedia"** dan
+menyebut nama rule-nya — bukan dihilangkan *(paritas yang tampak lengkap padahal tidak adalah
+paritas yang tidak akan dicari lagi)*, dan bukan dijumlahkan sendiri. Ada uji yang akan gagal bila
+seseorang menambahkan penjumlahan, dan uji lain yang akan gagal bila ekspornya kelak dilengkapi —
+gagalnya yang terakhir itu **kabar baik**: aturannya sudah dapat ditiru.

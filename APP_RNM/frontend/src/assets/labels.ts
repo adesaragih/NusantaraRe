@@ -284,3 +284,33 @@ export const TOMBOL_OS = {
   /** b24489 `pyButtonLabel Select All` */
   pilihSemua: 'Select All',
 } as const
+
+/**
+ * Layar detail klaim — `Section/ClaimLifeDetailGCNM.xml`.
+ *
+ * ⛔ KELIMA `total…` DIHITUNG OLEH RULE YANG TIDAK ADA DI EKSPOR. Kesepuluh
+ * pemanggilan `CheckTotalAdjustmentClaim` di section itu (b20970, b21091,
+ * b21262, b21377, b21546, b21664, b21836, b21951, b22120, b22238) menunjuk
+ * activity yang NOL berkas rule-nya di seluruh korpus. Kita karena itu tidak
+ * tahu apakah ia menjumlah, menyaring baris yang ditolak, atau memeriksa
+ * silang - dan menebaknya berarti menebak ANGKA UANG. Dilaporkan OQ-H.
+ */
+export const DETAIL = {
+  /** b5061 `pyLabel` `pxButton` -> `showHarness` b5071 `Diagnose_Harness`. */
+  cariPenyakit: 'Find Disease',
+  /** b14115 `pyLabel` -> `pyLocalAction ShowEditClaimLife` b14144. */
+  ubahTanggal: 'Edit Date',
+  /** b22641 `pyLabel` -> `pyActivity SaveAdjustment_Act` b22665. */
+  simpanAdjustment: 'Save Adjustment',
+
+  /** b20914 `pyLabelPreview`. */
+  totalShareNusantaraRe: 'Total Share Nusantara Re',
+  /** b21201 `pyLabelPreview`. */
+  totalSumInsured: 'Total Sum Insured',
+  /** b21488 `pyLabelPreview`. */
+  totalSumReasured: 'Total Sum Reasured',
+  /** b21775 `pyLabelPreview`. */
+  totalShareRetro: 'Total Share Retro',
+  /** b22063 `pyLabelPreview`. */
+  totalClaimAmount: 'Total Claim Amount',
+} as const

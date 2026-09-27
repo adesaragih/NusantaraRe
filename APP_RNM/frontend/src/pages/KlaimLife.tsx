@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from 'react'
 
+import { PanelTotalKlaim } from '../components/PanelTotalKlaim'
+
 import {
   ambilKlaimLife,
   kodeStatusGalat,
@@ -408,6 +410,14 @@ export default function KlaimLife() {
           ))}
         </article>
       )}
+
+      {/* ⛔ Kelima total layar Detail DINYATAKAN belum bersumber, bukan
+          dihilangkan dan bukan dijumlahkan sendiri. Rule penghitungnya
+          (`CheckTotalAdjustmentClaim`) dirujuk sepuluh kali di
+          `ClaimLifeDetailGCNM.xml` tetapi NOL berkasnya ada di ekspor, jadi
+          baris mana yang ikut dihitung belum terjawab - dan ini angka uang
+          (ADR-U-0003). Lihat OQ-H. */}
+      <PanelTotalKlaim />
     </section>
   )
 }

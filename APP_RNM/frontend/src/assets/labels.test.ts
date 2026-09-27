@@ -16,7 +16,7 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { LAYAR, PERAN, REGISTER, TAHAP, TOMBOL } from './labels'
+import { DETAIL, LAYAR, PERAN, REGISTER, TAHAP, TOMBOL } from './labels'
 
 const KORPUS = 'D:\\XML\\RNM_BRD\\Claim Life'
 const adaKorpus = existsSync(KORPUS)
@@ -155,5 +155,52 @@ describe.skipIf(!adaKorpus)('label layar Register berbukti barisnya', () => {
     // ⛔ Cacahnya dikunci: medan yang DIHILANGKAN dari layar sama merusaknya
     // dengan medan yang dikarang, dan yang pertama tidak berbunyi.
     expect(nilai).toHaveLength(medan.length + medanCari.length)
+  })
+})
+
+describe.skipIf(!adaKorpus)('label layar Detail berbukti barisnya', () => {
+  // Tiap label disebut BERSAMA TAG-nya: satu teks dapat berdiri di lebih dari
+  // satu baris dengan tag berbeda (`Name of Insured` b16039/b16064 di layar
+  // Register), dan menyebut angkanya saja membuat dua kutipan yang sah tampak
+  // bertentangan.
+  const medanDetail: Array<[string, number, string]> = [
+    ['Find Disease', 5061, 'pyLabel'],
+    ['Edit Date', 14115, 'pyLabel'],
+    ['Save Adjustment', 22641, 'pyLabel'],
+    ['Total Share Nusantara Re', 20914, 'pyLabelPreview'],
+    ['Total Sum Insured', 21201, 'pyLabelPreview'],
+    ['Total Sum Reasured', 21488, 'pyLabelPreview'],
+    ['Total Share Retro', 21775, 'pyLabelPreview'],
+    ['Total Claim Amount', 22063, 'pyLabelPreview'],
+  ]
+
+  it.each(medanDetail)('%s ada di ClaimLifeDetailGCNM baris %i sebagai <%s>',
+    (label, nomor, tag) => {
+      expect(baris('Section/ClaimLifeDetailGCNM.xml', nomor)).toBe(
+        `<${tag}>${label}</${tag}>`,
+      )
+    })
+
+  it('DETAIL memuat kedelapan label itu, tidak kurang', () => {
+    const nilai = Object.values(DETAIL)
+    for (const [label] of medanDetail) {
+      expect(nilai).toContain(label)
+    }
+    expect(nilai).toHaveLength(medanDetail.length)
+  })
+
+  it('rule CheckTotalAdjustmentClaim dirujuk section tetapi NOL berkasnya', () => {
+    // ⛔ Inti keputusan panel total. Uji ini memeriksa KEDUA sisinya:
+    // rujukannya memang ada (jadi medannya nyata dan harus tampil), dan
+    // rule-nya memang tidak ada (jadi angkanya tidak boleh dikarang).
+    //
+    // Bila kelak ekspornya dilengkapi, uji inilah yang gagal - dan gagalnya
+    // adalah kabar baik: aturannya sudah dapat ditiru.
+    const section = berkas('Section/ClaimLifeDetailGCNM.xml')
+    const rujukan = section.match(/CheckTotalAdjustmentClaim/g) ?? []
+    expect(rujukan).toHaveLength(10)
+    expect(existsSync(join(KORPUS, 'Activity', 'CheckTotalAdjustmentClaim.xml'))).toBe(
+      false,
+    )
   })
 })
