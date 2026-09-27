@@ -251,26 +251,26 @@ Buka http://localhost:5173/ di browser. Berhenti: Ctrl+C.
 
 YANG TAMPIL SEJAK F0.5
 
-  1. LAYAR MASUK (stub).
-     Isi "Akun" bebas - bawaannya UJI-ADMIN - dan centang satu atau
-     LEBIH peran:
+  1. IDENTITAS STUB - TIDAK ADA FORM LOGIN.
+
+     Aplikasi membuka Inbox LANGSUNG. Identitas dibentuk saat menyala
+     dari frontend\.env:
+
+       VITE_AUTH_STUB=true    WAJIB; selain itu tidak ada identitas
+       VITE_STUB_PELAKU=      kosong -> UJI-ADMIN
+       VITE_STUB_PERAN=       kosong -> KETIGA peran; dipisah koma
+
+     Ganti peran = ganti VITE_STUB_PERAN lalu muat ulang. Itu cara
+     melihat tab yang berbeda.
 
        ReasLifeAdmin            Admin Klaim Jiwa
        ReasLifeMedicalAdvisor   Penasihat Medis
        ReasLifeSPV              Supervisor Klaim
 
-     TIDAK ADA SANDI, dan itu disengaja: layar ini hanya PENGAKUAN yang
-     backend percaya lewat header X-Pelaku / X-Peran. Pita kuning di
-     layar mengatakannya.
-
-     Gerbangnya DUA, dan keduanya harus menyala:
-       frontend\.env   VITE_AUTH_STUB=true
-       backend        stub pelaku aktif (lihat bab 2)
-     Bila VITE_AUTH_STUB bukan 'true', layar masuk MENOLAK memberi
-     jalan - gagal tertutup, bukan gagal terbuka.
-
-     Sesi tersimpan di sessionStorage: menutup tab berarti keluar;
-     tab kedua menuntut masuk lagi; F5 di tab yang sama tetap masuk.
+     TIDAK ADA SANDI dan tidak ada layar masuk: keduanya tidak
+     memutuskan apa pun. Pita "mode stub" di menu profil
+     mengatakannya. Bila VITE_AUTH_STUB bukan true, layar MENYATAKAN
+     identitas tidak ada - gagal tertutup, bukan pecah.
 
   2. SHELL. Sidebar (dapat dilipat; di ponsel menjadi laci), topbar,
      menu profil, dan palet menu Ctrl+K.

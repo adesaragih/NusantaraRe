@@ -31,8 +31,6 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 	// dengan POST pendaftaran: satu sumber daya, dua metode.
 	mux.HandleFunc("GET /api/klaim-life", kotakMasuk(svc, stubPelaku))
 	mux.HandleFunc("POST /api/klaim-life", daftarKlaim(svc, stubPelaku))
-	// Tiga dropdown layar Register - A3. Sumbernya ketiga Browse*_RD.
-	mux.HandleFunc("GET /api/rujukan/{jenis}", cariRujukan(svc, stubPelaku))
 	mux.HandleFunc("GET /api/peserta-life", cariPeserta(svc))
 	mux.HandleFunc("GET /api/klaim-life/{id}/dampak-hapus", dampakHapus(svc, stubPelaku))
 	mux.HandleFunc("DELETE /api/klaim-life/{id}", hapusKlaim(svc, stubPelaku))

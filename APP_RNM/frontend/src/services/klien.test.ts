@@ -12,7 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { PERAN } from '../assets/labels'
 import { klasifikasiGalat } from '../lib/keadaanGalat'
-import { sesi } from '../store/sesi'
+
 import { ambilKlaimLife, hapusKlaim, pesanGalat, tolakBarisAdjustment } from './api'
 
 /** Satu panggilan fetch yang tertangkap. */
@@ -23,17 +23,11 @@ interface Tangkapan {
 
 let tertangkap: Tangkapan[] = []
 
-function pasangPenyimpanan(): void {
-  const isi = new Map<string, string>()
-  vi.stubGlobal('sessionStorage', {
-    getItem: (k: string) => isi.get(k) ?? null,
-    setItem: (k: string, v: string) => {
-      isi.set(k, v)
-    },
-    removeItem: (k: string) => {
-      isi.delete(k)
-    },
-  })
+/** Identitas kini datang dari env, bukan dari penyimpanan (F0.6). */
+function pasangIdentitas(akun: string | null, ...peran: string[]): void {
+  vi.stubEnv('VITE_AUTH_STUB', akun === null ? 'false' : 'true')
+  vi.stubEnv('VITE_STUB_PELAKU', akun ?? '')
+  vi.stubEnv('VITE_STUB_PERAN', peran.join(','))
 }
 
 /** Memasang `fetch` tiruan yang menjawab `badan` dengan `status`. */
@@ -56,16 +50,17 @@ function header(t: Tangkapan): Record<string, string> {
 
 beforeEach(() => {
   tertangkap = []
-  pasangPenyimpanan()
+  pasangIdentitas('UJI-ADMIN', PERAN.admin)
 })
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  vi.unstubAllEnvs()
 })
 
 describe('identitas ikut di setiap permintaan', () => {
   it('sesudah masuk, X-Pelaku dan X-Peran TERKIRIM', async () => {
-    sesi.simpan({ akunID: 'UJI-ADMIN', peran: [PERAN.admin] })
+    pasangIdentitas('UJI-ADMIN', PERAN.admin)
     pasangFetch(200, JSON.stringify({ id: 'RNML-000001' }))
 
     await ambilKlaimLife('RNML-000001')
@@ -77,7 +72,7 @@ describe('identitas ikut di setiap permintaan', () => {
   })
 
   it('peran ganda terkirim dipisah koma', async () => {
-    sesi.simpan({ akunID: 'UJI-SEMUA', peran: [PERAN.admin, PERAN.spv] })
+    pasangIdentitas('UJI-SEMUA', PERAN.admin, PERAN.spv)
     pasangFetch(200, JSON.stringify({ id: 'X' }))
 
     await ambilKlaimLife('X')
@@ -85,9 +80,8 @@ describe('identitas ikut di setiap permintaan', () => {
     expect(header(tertangkap[0]!)['X-Peran']).toBe(`${PERAN.admin},${PERAN.spv}`)
   })
 
-  it('sesudah KELUAR, header identitas hilang', async () => {
-    sesi.simpan({ akunID: 'UJI-ADMIN', peran: [PERAN.admin] })
-    sesi.hapus()
+  it('stub MATI → header identitas tidak terkirim', async () => {
+    pasangIdentitas(null)
     pasangFetch(200, JSON.stringify({ id: 'X' }))
 
     await ambilKlaimLife('X')

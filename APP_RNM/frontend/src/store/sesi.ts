@@ -1,37 +1,28 @@
 /**
- * Keadaan sesi — satu-satunya keadaan yang benar-benar GLOBAL.
+ * Identitas pelaku — satu-satunya keadaan yang benar-benar GLOBAL.
  *
- * Isinya hanya "siapa yang sedang masuk, dan memegang peran apa". Data server
- * bukan urusan berkas ini, dan keadaan layar milik layarnya sendiri.
+ * # ⛔ TIDAK ADA FORM LOGIN `[perintah work owner 27-09-2026]`
  *
- * # Kenapa `sessionStorage`, bukan `localStorage`
+ * Form masuk dibuang. Selama `VITE_AUTH_STUB=true`, identitas dibentuk SAAT
+ * APLIKASI MENYALA dari env Vite - bukan dari layar, bukan dari
+ * `sessionStorage`. Alasannya sederhana: layar masuk tanpa sandi bukan
+ * autentikasi, dan mempertahankannya hanya menambah langkah yang tidak
+ * memutuskan apa pun.
  *
- * Pola referensi (`REFERENSI_UI/frontend/src/store/sesi.ts`). Identitas di
- * `localStorage` bertahan melewati penutupan peramban, sehingga sesi yang
- * ditinggalkan tetap hidup pada MESIN BERSAMA — dan mesin bersama persis
- * keadaan di kantor. `sessionStorage` memendekkan umurnya menjadi seumur tab.
+ * ⛔ GAGAL TERTUTUP. `VITE_AUTH_STUB` yang bukan `'true'` - termasuk TIDAK
+ * DISETEL - berarti TIDAK ADA identitas: header tidak dikirim, dan backend
+ * menolak setiap jalur beridentitas. Itu keadaan yang benar sampai IAM ada
+ * (tiket 07 / ADR-U-0030).
  *
- * Yang akan terasa: menutup tab berarti keluar; tab kedua menuntut masuk lagi;
- * memuat ulang (F5) di tab yang sama tetap masuk.
+ * ⛔ Nol sandi diminta, dikirim, atau disimpan - tidak ada tempatnya lagi.
  *
- * # ⛔ Nol sandi
- *
- * Tidak ada sandi yang diminta, dikirim, maupun disimpan — selama `AUTH_STUB`
- * menyala, identitas hanyalah PENGAKUAN yang backend percaya lewat header.
- * Itu sah untuk pengembangan dan TIDAK PERNAH sah untuk produksi; gerbangnya
- * ada di `bolehMasukStub()` di bawah, dan di `stubPelaku` sisi Go.
- *
- * ⚠️ `sessionStorage` dapat MELEMPAR (mode privat, site-data diblokir) dan
- * dapat kembali kosong. Setiap sentuhan dibungkus try/catch: sesi yang tidak
- * dapat disimpan harus berarti "belum masuk", bukan layar yang pecah.
+ * ⚠️ Bentuk `Sesi` DIPERTAHANKAN. Kelak IAM mengisinya; yang berubah hanya
+ * SUMBERnya, bukan bentuk yang dibaca seluruh layar.
  */
 
 import { PERAN, type KodePeran } from '../assets/labels'
 
-/** Kunci penyimpanan — berawalan nama aplikasi supaya tidak bertabrakan. */
-const KUNCI = 'rnm.sesi'
-
-/** Identitas yang sedang masuk. */
+/** Identitas yang sedang dipakai. */
 export interface Sesi {
   /** Dikirim sebagai `X-Pelaku`. */
   akunID: string
@@ -40,8 +31,7 @@ export interface Sesi {
    *
    * `[terverifikasi]` `internal/handlers/pelaku.go` `pelakuDari`: header
    * dipecah pada koma, tiap potongan di-trim, potongan kosong dibuang. Jadi
-   * satu pelaku MEMANG boleh memegang lebih dari satu peran, dan layar tidak
-   * boleh memaksanya memilih satu.
+   * satu pelaku MEMANG boleh memegang lebih dari satu peran.
    */
   peran: KodePeran[]
 }
@@ -53,92 +43,66 @@ export const PERAN_TERSEDIA: readonly KodePeran[] = [
   PERAN.spv,
 ]
 
+/** Akun bawaan bila `VITE_STUB_PELAKU` tidak disetel. */
+const AKUN_BAWAAN = 'UJI-ADMIN'
+
 /**
- * Apakah masuk lewat stub diizinkan.
+ * Apakah identitas stub diizinkan.
  *
- * ⛔ Gerbang ini adalah satu-satunya hal yang memisahkan "pilih peran apa saja
- * dari layar" dari sistem sungguhan. Ia dibaca dari env saat membangun;
- * `VITE_AUTH_STUB` yang tidak disetel berarti TIDAK BOLEH — gagal tertutup.
+ * ⛔ Gerbang ini satu-satunya yang memisahkan "identitas dari env" dari
+ * sistem sungguhan, dan ia gagal tertutup.
  */
 export function bolehMasukStub(): boolean {
   return import.meta.env.VITE_AUTH_STUB === 'true'
 }
 
-function bacaMentah(): string | null {
-  try {
-    return sessionStorage.getItem(KUNCI)
-  } catch {
-    // Penyimpanan diblokir — sama artinya dengan belum masuk.
-    return null
-  }
-}
-
-/** Hanya peran yang dikenal yang diterima kembali dari penyimpanan. */
-function saringPeran(nilai: unknown): KodePeran[] {
-  if (!Array.isArray(nilai)) return []
+/** Hanya peran yang dikenal yang diterima. */
+function saringPeran(nilai: readonly string[]): KodePeran[] {
   const sah: KodePeran[] = []
   for (const p of nilai) {
-    if (typeof p === 'string' && (PERAN_TERSEDIA as readonly string[]).includes(p)) {
-      // ⛔ Disaring, tidak dipercaya apa adanya: isi sessionStorage dapat
-      // disunting siapa pun yang membuka devtools. Backend tetap gerbang
-      // sebenarnya, tetapi layar pun tidak boleh mengarang peran.
-      sah.push(p as KodePeran)
+    const bersih = p.trim()
+    if (bersih !== '' && (PERAN_TERSEDIA as readonly string[]).includes(bersih)) {
+      // ⛔ Disaring, tidak dipercaya apa adanya: env dapat salah ketik, dan
+      // peran yang dikarang akan ditolak backend dengan 403 yang tidak dapat
+      // dijelaskan pemakai.
+      sah.push(bersih as KodePeran)
     }
   }
   return sah
 }
 
-export const sesi = {
-  /** Sesi yang tersimpan, atau `null` bila belum masuk. */
-  baca(): Sesi | null {
-    const mentah = bacaMentah()
-    if (mentah === null || mentah === '') return null
-    try {
-      const isi: unknown = JSON.parse(mentah)
-      if (typeof isi !== 'object' || isi === null) return null
-      const o = isi as Record<string, unknown>
-      const akunID = typeof o.akunID === 'string' ? o.akunID.trim() : ''
-      const peran = saringPeran(o.peran)
-      // ⛔ Sesi tanpa akun atau tanpa peran BUKAN sesi. Mengembalikannya
-      // membuat layar mengira ada yang masuk, lalu backend menolak tiap
-      // permintaan dengan 401 yang tidak dapat dijelaskan pemakai.
-      if (akunID === '' || peran.length === 0) return null
-      return { akunID, peran }
-    } catch {
-      return null
-    }
-  },
+/**
+ * Identitas pelaku, atau `null` bila stub-nya mati.
+ *
+ * ⚠️ Dibaca dari env pada SETIAP panggilan, bukan disimpan di modul: nilai
+ * env dibekukan saat Vite membangun, jadi membacanya ulang tidak mahal - dan
+ * fungsi tanpa keadaan tersembunyi jauh lebih mudah diuji.
+ */
+export function pelakuStub(): Sesi | null {
+  if (!bolehMasukStub()) return null
 
-  /** Menyimpan sesi. Mengembalikan `false` bila penyimpanan menolak. */
-  simpan(s: Sesi): boolean {
-    try {
-      sessionStorage.setItem(KUNCI, JSON.stringify(s))
-      return true
-    } catch {
-      return false
-    }
-  },
+  const akun = (import.meta.env.VITE_STUB_PELAKU ?? '').trim()
+  const daftar = (import.meta.env.VITE_STUB_PERAN ?? '').split(',')
+  const peran = saringPeran(daftar)
 
-  /** Keluar — identitasnya dibuang. */
-  hapus(): void {
-    try {
-      sessionStorage.removeItem(KUNCI)
-    } catch {
-      // Tidak ada yang dapat dilakukan; sesi seumur tab akan hilang sendiri.
-    }
-  },
+  return {
+    akunID: akun === '' ? AKUN_BAWAAN : akun,
+    // ⚠️ Bawaannya KETIGA peran, bukan satu: pengembang yang menyalakan stub
+    // hampir selalu ingin melihat seluruh antrian. Menyempitkannya ke satu
+    // peran membuat tiga dari empat tab menghilang tanpa sebab yang terlihat.
+    peran: peran.length === 0 ? [...PERAN_TERSEDIA] : peran,
+  }
 }
 
 /**
  * Header identitas untuk satu permintaan.
  *
- * ⚠️ Mengembalikan objek KOSONG bila belum masuk - bukan header bernilai
- * kosong. Header `X-Pelaku: ` yang kosong dan header yang tidak ada sama
- * artinya bagi `pelakuDari`, tetapi yang kedua lebih jujur di panel jaringan:
- * ia memperlihatkan bahwa permintaan itu memang anonim.
+ * ⚠️ Objek KOSONG bila stub mati - bukan header bernilai kosong. Keduanya
+ * sama artinya bagi `pelakuDari`, tetapi yang pertama lebih jujur di panel
+ * jaringan: ia memperlihatkan bahwa permintaan itu memang anonim.
  */
 export function headerIdentitas(): Record<string, string> {
-  const s = sesi.baca()
+  const s = pelakuStub()
   if (s === null) return {}
   return {
     'X-Pelaku': s.akunID,

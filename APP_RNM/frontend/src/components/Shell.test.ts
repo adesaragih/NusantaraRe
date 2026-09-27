@@ -111,11 +111,26 @@ describe('perilaku shell yang ditiru referensi', () => {
 describe('nol halaman dirender di luar Shell', () => {
   it('App merender halaman hanya sebagai anak Shell', () => {
     const app = tanpaKomentar(APP)
-    // Satu-satunya yang boleh di luar Shell adalah layar Masuk.
+    // ⛔ Sejak F0.6 satu-satunya yang boleh di luar Shell adalah
+    // pernyataan "identitas tidak ada". Form login DIBUANG.
     const luar = app.slice(0, app.indexOf('<Shell'))
-    expect(luar).toContain('<Masuk')
+    expect(luar).toContain('<BelumTersedia')
     expect(luar).not.toContain('<RegisterKlaim')
     expect(luar).not.toContain('<KlaimLife')
+    expect(luar).not.toContain('<InboxClaimLife')
+  })
+
+  it('nol form login — identitas datang dari env', () => {
+    // `[perintah work owner 27-09-2026]`. Layar masuk tanpa sandi bukan
+    // autentikasi; mempertahankannya hanya menambah langkah yang tidak
+    // memutuskan apa pun.
+    expect(APP).not.toContain('Masuk')
+    expect(APP).toContain('pelakuStub()')
+  })
+
+  it('nol tombol Keluar di Shell — tanpa masuk tidak ada keluar', () => {
+    expect(kode).not.toContain('onKeluar')
+    expect(kode).not.toContain('sesi.hapus')
   })
 
   it('bilah sesi sementara F0.2 sudah dibuang', () => {

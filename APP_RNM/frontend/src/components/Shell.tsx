@@ -17,7 +17,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 
 import { MENU, PERAN_ID, PRODUK } from '../assets/labels'
 import { PagarGalat } from '../PagarGalat'
-import { sesi, type Sesi } from '../store/sesi'
+import { type Sesi } from '../store/sesi'
 import { KelompokMenu } from './KelompokMenu'
 import { IkonCari, IkonPanel, IkonPengguna, IkonTutup } from './ui/dasar'
 
@@ -45,11 +45,10 @@ export interface ShellProps {
   masuk: Sesi
   halaman: Halaman
   onPindah: (h: Halaman) => void
-  onKeluar: () => void
   children: ReactNode
 }
 
-export function Shell({ masuk, halaman, onPindah, onKeluar, children }: ShellProps) {
+export function Shell({ masuk, halaman, onPindah, children }: ShellProps) {
   const [terlipat, setTerlipat] = useState(false)
   const [laciBuka, setLaciBuka] = useState(false)
   const [profilBuka, setProfilBuka] = useState(false)
@@ -200,17 +199,9 @@ export function Shell({ masuk, halaman, onPindah, onKeluar, children }: ShellPro
                     <li key={p}>{PERAN_ID[p]}</li>
                   ))}
                 </ul>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="shell__keluar"
-                  onClick={() => {
-                    sesi.hapus()
-                    onKeluar()
-                  }}
-                >
-                  Keluar
-                </button>
+                {/* ⛔ Tombol Keluar DIBUANG: tanpa masuk tidak ada keluar.
+                    Identitas datang dari env saat aplikasi menyala. */}
+                <p className="shell__profil-stub">mode stub</p>
               </div>
             )}
           </div>

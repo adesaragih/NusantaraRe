@@ -2,39 +2,44 @@ import { useState } from 'react'
 
 import InboxClaimLife from './pages/InboxClaimLife'
 import KlaimLife from './pages/KlaimLife'
-import Masuk from './pages/Masuk'
 import RegisterKlaim from './pages/RegisterKlaim'
 import { Shell, type Halaman } from './components/Shell'
-import { sesi, type Sesi } from './store/sesi'
+import { BelumTersedia } from './components/ui/dasar'
+import { pelakuStub } from './store/sesi'
 
-// App = gerbang sesi + Shell.
+// App = identitas + Shell.
 //
-// ⛔ NOL halaman dirender di luar Shell, kecuali layar Masuk - dan ada ujinya.
+// ⛔ TIDAK ADA FORM LOGIN `[perintah work owner 27-09-2026]`. Aplikasi membuka
+// Inbox langsung; identitasnya datang dari env saat menyala (`store/sesi`).
+//
+// ⛔ Bila stub-nya mati, layar MENYATAKANNYA - bukan pecah, dan bukan pula
+// diam-diam menampilkan daftar kosong yang terbaca "tidak ada pekerjaan".
 export default function App() {
-  // Sesi dibaca SEKALI saat menyala: memuat ulang (F5) di tab yang sama tetap
-  // masuk, sebab `sessionStorage` bertahan selama tab hidup.
-  const [masuk, setMasuk] = useState<Sesi | null>(() => sesi.baca())
+  const masuk = pelakuStub()
   const [halaman, setHalaman] = useState<Halaman>('inbox')
 
   if (masuk === null) {
-    return <Masuk onMasuk={setMasuk} />
+    return (
+      // ⚠️ `BelumTersedia` hanya menerima `apa`: parameter `sebab`-nya
+      // sengaja dibuang di REFERENSI_UI ronde 70 karena diterima lalu
+      // diabaikan. Keterangan teknisnya karena itu berdiri di sini.
+      <section>
+        <BelumTersedia apa="Identitas pelaku" />
+        <p className="polis__catatan" role="note">
+          Selama IAM belum terpasang, identitas dibentuk dari env Vite dan
+          menuntut <code>VITE_AUTH_STUB=true</code>. Tanpa itu setiap
+          permintaan ditolak backend, dan layar ini tidak dapat
+          menampilkan pekerjaan siapa pun.
+        </p>
+      </section>
+    )
   }
 
   return (
-    <Shell
-      masuk={masuk}
-      halaman={halaman}
-      onPindah={setHalaman}
-      onKeluar={() => {
-        setMasuk(null)
-      }}
-    >
+    <Shell masuk={masuk} halaman={halaman} onPindah={setHalaman}>
       {halaman === 'inbox' && (
         <InboxClaimLife
           peran={masuk.peran}
-          // ⚠️ Klik baris membuka layar TAHAP kasus itu. Sampai kelompok A3
-          // masing-masing selesai, ia membuka halaman Detail yang ada -
-          // keterangannya DI DALAM halaman, bukan sebagai butir menu.
           onBuka={() => {
             setHalaman('detail')
           }}

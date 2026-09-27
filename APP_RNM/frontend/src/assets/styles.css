@@ -4615,3 +4615,15 @@ textarea.field__input {
   font-size: 12.5px;
   line-height: 1.5;
 }
+
+/* Penanda mode stub di menu profil — F0.6, menggantikan tombol Keluar. */
+.shell__profil-stub {
+  margin: 0;
+  padding: 6px 9px;
+  border: 1px solid #e0b400;
+  border-radius: 6px;
+  background: #fff8e1;
+  color: #4a3a00;
+  font-size: 11.5px;
+  text-align: center;
+}

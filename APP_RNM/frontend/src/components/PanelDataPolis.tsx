@@ -10,11 +10,24 @@
 // kosong akan menyuruh orang mengetik ulang apa yang sudah ada di sistem
 // polis - dan dua salinan data polis akan berbeda pada hari pertama.
 //
-// ⛔ MEDAN YANG BELUM PUNYA SUMBER DINYATAKAN, BUKAN DIHILANGKAN. Backend
-// kita hari ini membaca enam kolom (`repository.CalonPeserta`); tujuh medan
-// sisanya belum punya jalan. Menghilangkannya dari layar membuat paritas
-// tampak lengkap padahal tidak - dan tidak ada yang akan mencarinya lagi.
-// `[terbuka]` masing-masing dicatat di `PARITAS-LAYAR-DAN-AKSI.md`.
+// ⛔ RALAT PEMBACAAN 27-09-2026. Ronde pertama panel ini menyebut ketiga
+// medan `Ceding`, `Class of Business`, dan `Marketing Officer` sebagai
+// isian ber-autocomplete, dan membangun rute `GET /api/rujukan/{jenis}`
+// untuknya. KELIRU: keempat medan itu - ditambah `Type` - `pyReadOnly`
+// `true` dan `pyEditOptions` `Read-only` di Pega, dengan `pyLabelFor`
+// menunjuk `CedingCoName`, `BusinessName`, `MarketingName`, `Type`.
+//
+// Sebab salahnya layak dicatat: blok kontrolnya berdiri SEBELUM labelnya
+// di DOM section, dan saya membaca jendela KE DEPAN dari label - yaitu
+// grep dengan langkah tambahan, bukan pembacaan pohon. Kodenya dibuang
+// di ketiga lapis.
+//
+// ⛔ MEDAN YANG MENUNGGU DINYATAKAN, BUKAN DIHILANGKAN. `[DIPUTUSKAN
+// work owner, butir av]` sumbernya modul **PremiumList Life**: di Pega
+// `PolicyDataLife` diisi dari kasus modul itu, dan Claim Life TIDAK
+// membaca cermin JSON-nya. Menghilangkan medannya dari layar membuat
+// paritas tampak lengkap padahal tidak - dan tidak ada yang akan
+// mencarinya lagi.
 
 import { REGISTER } from '../assets/labels'
 
@@ -42,9 +55,11 @@ export function medanPolis(sumber: {
   const ada = (v: string | undefined): string => (v === undefined || v === '' ? '—' : v)
   return [
     // Punya sumber hari ini - dari `GET /api/peserta-life`.
-    { label: REGISTER.type, nilai: ada(sumber.type) },
     { label: REGISTER.namaTertanggung, nilai: ada(sumber.namaTertanggung) },
-    // ⛔ Belum punya sumber di backend. Dinyatakan, bukan dihilangkan.
+    // ⛔ `Type` IKUT MENUNGGU: ia `pyReadOnly` true di Pega (b9058,
+    // `pyLabelFor` `Type` b9093) dan terikat `.PolicyDataLife.Type`.
+    // Ronde pertama menjadikannya isian bebas - itu ralat yang sama.
+    { label: REGISTER.type, nilai: ada(sumber.type), belumBersumber: true },
     { label: REGISTER.marketing, nilai: '—', belumBersumber: true },
     { label: REGISTER.ceding, nilai: '—', belumBersumber: true },
     { label: REGISTER.pemegangPolis, nilai: '—', belumBersumber: true },
@@ -85,12 +100,13 @@ export function PanelDataPolis(p: PanelProps) {
       </dl>
       {belum > 0 && (
         <p className="polis__catatan" role="note">
-          <strong>{belum} medan belum bersumber.</strong> Layar Pega
-          mengisinya dari halaman polis (<code>.PolicyDataLife.*</code>) saat
-          nomor polis dipilih. Medannya ditampilkan apa adanya supaya
-          himpunannya tetap sama dengan{' '}
-          <code>InputRegisterClaimLife.xml</code>; jalannya di backend belum
-          ada, dan itu tercatat di <code>PARITAS-LAYAR-DAN-AKSI.md</code>.
+          <strong>{belum} medan menunggu modul PremiumList Life.</strong>{' '}
+          Di Pega medan ini <em>read-only</em> dan terisi dari kasus
+          PremiumList Life lewat <code>.PolicyDataLife.*</code> saat nomor
+          polis dipilih. Claim Life tidak membaca cermin JSON-nya
+          (keputusan work owner <strong>av</strong>), jadi medannya
+          ditampilkan apa adanya supaya himpunannya tetap sama dengan{' '}
+          <code>InputRegisterClaimLife.xml</code>.
         </p>
       )}
     </section>
