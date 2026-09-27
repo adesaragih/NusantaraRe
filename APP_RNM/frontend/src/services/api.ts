@@ -49,6 +49,12 @@ export interface Peserta {
   mataUang: string
   /** Penanda DIPILIH untuk diklaim (`IS_CHECK`). Teks, bukan boolean. */
   isCheck: string
+  /**
+   * `DATE_OF_LOSS` — tanggal kejadian, milik PESERTA dan bukan klaim.
+   *
+   * Teks apa adanya, bentuk `YYYY-MM-DD`. Kosong berarti belum diisi.
+   */
+  tanggalKejadian: string
   baris: BarisAdjustment[]
 }
 
@@ -752,5 +758,39 @@ export async function pindahTahap(klaimID: string, tujuan: TahapJalur): Promise<
   await minta<void>(
     `/api/klaim-life/${encodeURIComponent(klaimID)}/tahap/${tujuan}`,
     { metode: 'POST' },
+  )
+}
+
+// ---------------------------------------------------------------------------
+// TIKET 06 — tanggal kejadian (DOL), dari layar Detail.
+// ---------------------------------------------------------------------------
+
+/**
+ * Mengubah tanggal kejadian satu peserta.
+ *
+ * Tombol `Edit Date` `Section/ClaimLifeDetailGCNM.xml` b14115 →
+ * `pyLocalAction ShowEditClaimLife` b14144 → `EditDateClaimLife_Section`.
+ * Validasinya `ValidasiDOL_Act`, dipanggil section yang sama di b11177 dan
+ * b11298.
+ *
+ * ⚠️ Rutenya sudah ada di backend sejak tiket 06, tetapi TIDAK ADA satu pun
+ * pemanggil di React sampai sekarang — jadi jalurnya tidak pernah dapat
+ * dijalankan dari layar. Rute tanpa pemanggil tidak berbunyi di uji mana pun.
+ *
+ * Kode jawaban yang mungkin:
+ *   204 berhasil
+ *   400 tanggalnya bukan tanggal yang dikenal, atau belum diisi
+ *   403 peran tidak mencukupi
+ *   422 DOL di luar jendela valuasi — badannya membawa `pesertaId`
+ */
+export async function ubahTanggalKejadian(
+  klaimID: string,
+  pesertaID: string,
+  tanggalKejadian: string,
+): Promise<void> {
+  await minta<void>(
+    `/api/klaim-life/${encodeURIComponent(klaimID)}` +
+      `/peserta/${encodeURIComponent(pesertaID)}/tanggal-kejadian`,
+    { metode: 'PUT', badan: { tanggalKejadian } },
   )
 }

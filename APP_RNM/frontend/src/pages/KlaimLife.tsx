@@ -1,11 +1,13 @@
 import { useState, type FormEvent } from 'react'
 
+import { DETAIL } from '../assets/labels'
 import { PanelTotalKlaim } from '../components/PanelTotalKlaim'
 
 import {
   ambilKlaimLife,
   kodeStatusGalat,
   pesanGalat,
+  ubahTanggalKejadian,
   tampilUang,
   tolakBarisAdjustment,
   serahkanKeKomite,
@@ -46,6 +48,30 @@ export default function KlaimLife() {
   const [menyerahkan, setMenyerahkan] = useState<string | null>(null) // baris ke Komite
   const [memutar, setMemutar] = useState<string | null>(null) // peserta yang dibuka putarannya
   const [mengaksep, setMengaksep] = useState<string | null>(null) // peserta yang diaksep
+  // Galat tanggal kejadian PER PESERTA, bukan satu untuk seluruh layar:
+  // `ValidasiDOL_Act` menempelkan pesannya pada `.DATE_OF_LOSS` peserta,
+  // dan satu kotak galat bersama akan menuding peserta yang salah.
+  const [galatTanggal, setGalatTanggal] = useState<Record<string, string>>({})
+
+  /** Mengirim tanggal kejadian satu peserta; validasinya di server. */
+  async function ubahTanggal(pesertaID: string, nilai: string): Promise<void> {
+    if (klaim === null || nilai === '') return
+    setGalatTanggal((lama) => {
+      const { [pesertaID]: _dibuang, ...sisa } = lama
+      return sisa
+    })
+    try {
+      await ubahTanggalKejadian(klaim.id, pesertaID, nilai)
+      setKlaim(await ambilKlaimLife(klaim.id))
+    } catch (e) {
+      // Kalimat server diteruskan apa adanya: 422 menyebut jendela valuasi
+      // mana yang dilanggar, dan kalimat itu yang berguna.
+      setGalatTanggal((lama) => ({
+        ...lama,
+        [pesertaID]: pesanGalat(e) ?? 'Tanggal kejadian ditolak.',
+      }))
+    }
+  }
   const [dampak, setDampak] = useState<DampakHapus | null>(null) // isi popup konfirmasi
   const [menghapus, setMenghapus] = useState<boolean>(false) // permintaan hapus berjalan
 
@@ -303,6 +329,32 @@ export default function KlaimLife() {
                 Peserta {p.nomorSertifikat || p.id}{' '}
                 <small>({p.baris.length} baris)</small>
               </h4>
+
+              {/* Tombol `Edit Date` b14115 -> `pyLocalAction
+                  ShowEditClaimLife` b14144 -> `EditDateClaimLife_Section`.
+                  Validasinya `ValidasiDOL_Act`, dipanggil section yang sama
+                  di b11177 dan b11298 - dan ia berjalan di SERVER, bukan di
+                  sini: jendela valuasi ada di baris polis, bukan di layar.
+
+                  ⛔ Tanggal kejadian milik PESERTA, bukan klaim.
+                  `ValidasiDOL_Act` berkelas Int-LIFE_PREMIUM_DETAIL dan
+                  menempelkan galatnya pada `.DATE_OF_LOSS` peserta - jadi
+                  kontrolnya pun berdiri per peserta. */}
+              <p>
+                <label>
+                  {DETAIL.ubahTanggal}{' '}
+                  <input
+                    type="date"
+                    defaultValue={p.tanggalKejadian}
+                    onChange={(e) => {
+                      void ubahTanggal(p.id, e.target.value)
+                    }}
+                  />
+                </label>
+                {galatTanggal[p.id] !== undefined && (
+                  <span role="alert"> {galatTanggal[p.id]}</span>
+                )}
+              </p>
 
               {/* ⛔ Penolakan bukan akhir: klaim TIDAK terminal (ADR-U-0011).
                   Yang terminal adalah baris, dan baris berikutnya memulai

@@ -172,3 +172,32 @@ func TestKlaimMembawaClaimRetroKeJSON(t *testing.T) {
 		t.Errorf("jumlah claimRetro ditulis sebagai angka JSON: %s", teks)
 	}
 }
+
+// TanggalKejadian harus menyeberang ke layar.
+//
+// ⛔ Tombol `Edit Date` (`ClaimLifeDetailGCNM.xml` b14115) menampilkan tanggal
+// yang SEDANG berlaku. Sebelum kelompok Detail & Tutup, medannya tidak ikut
+// di JSON, sehingga kotaknya selalu terbuka kosong - dan kosong terbaca
+// "belum diisi" padahal mungkin sudah. Orang lalu mengetik ulang tanggal yang
+// sudah benar, dan setiap pengetikan ulang melewati ValidasiDOL lagi.
+func TestPesertaJSONMembawaTanggalKejadian(t *testing.T) {
+	b, err := json.Marshal(Peserta{ID: "P-1", TanggalKejadian: "2026-03-01"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var isi map[string]any
+	if err := json.Unmarshal(b, &isi); err != nil {
+		t.Fatal(err)
+	}
+	if isi["tanggalKejadian"] != "2026-03-01" {
+		t.Errorf("tanggalKejadian = %v, mau teks apa adanya", isi["tanggalKejadian"])
+	}
+	// ⛔ NAMA ORANG tetap TIDAK menyeberang. Medan yang ditambahkan ke
+	// marshaller ini mudah bertambah satu per satu; uji ini menahan yang satu
+	// itu.
+	for _, terlarang := range []string{"namaTertanggung", "nameOfInsured", "pemegangPolis"} {
+		if _, ada := isi[terlarang]; ada {
+			t.Errorf("JSON peserta memuat %q; nama orang tidak pernah menyeberang", terlarang)
+		}
+	}
+}

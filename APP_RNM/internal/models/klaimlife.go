@@ -324,10 +324,19 @@ func (p Peserta) MarshalJSON() ([]byte, error) {
 		// ⭐ IsCheck menyeberang sejak audit A0: layar memerlukannya untuk
 		// memutuskan apakah kontrol "Save Adjustment" tampil - prasyarat XML
 		// `SaveAdjustment_Act` menuntut peserta DIPILIH.
-		IsCheck string            `json:"isCheck"`
-		Baris   []BarisAdjustment `json:"baris"`
+		IsCheck string `json:"isCheck"`
+		// ⭐ TanggalKejadian menyeberang sejak kelompok Detail & Tutup:
+		// tombol `Edit Date` (`ClaimLifeDetailGCNM.xml` b14115) harus
+		// menampilkan tanggal yang SEDANG berlaku. Tanpa itu kotaknya selalu
+		// terbuka kosong, dan pemakai tidak dapat membedakan "belum diisi"
+		// dari "sudah diisi tetapi tidak terlihat" - dan yang kedua membuat
+		// orang mengetik ulang tanggal yang sudah benar.
+		//
+		// ⚠️ TEKS apa adanya, bukan tanggal yang diurai ulang di layar.
+		TanggalKejadian string            `json:"tanggalKejadian"`
+		Baris           []BarisAdjustment `json:"baris"`
 	}{p.ID, p.NomorPremiList, p.NomorPolis, p.NomorSertifikat, p.MataUang,
-		p.IsCheck, baris})
+		p.IsCheck, p.TanggalKejadian, baris})
 }
 
 // Klaim adalah satu klaim Life beserta seluruh pesertanya.
