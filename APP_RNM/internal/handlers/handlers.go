@@ -27,6 +27,9 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", healthz(svc))
 	mux.HandleFunc("GET /api/klaim-life/{id}", klaimLife(svc))
+	// Kotak masuk per tahap - F0.4. Rutenya GET pada koleksi yang sama
+	// dengan POST pendaftaran: satu sumber daya, dua metode.
+	mux.HandleFunc("GET /api/klaim-life", kotakMasuk(svc, stubPelaku))
 	mux.HandleFunc("POST /api/klaim-life", daftarKlaim(svc, stubPelaku))
 	mux.HandleFunc("GET /api/peserta-life", cariPeserta(svc))
 	mux.HandleFunc("GET /api/klaim-life/{id}/dampak-hapus", dampakHapus(svc, stubPelaku))
