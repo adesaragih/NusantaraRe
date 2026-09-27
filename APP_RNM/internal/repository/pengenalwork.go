@@ -6,7 +6,7 @@ package repository
 //
 // Untuk apa berkas ini: seluruh tabel T_CLAIMLF_* memakai identitas angka dari
 // sequence (ADR-U-0006), tetapi T_WORK_CLAIM tidak - identitasnya TEKS
-// BERFORMAT, `CLM-xxxxxx` untuk baris klaim dan `KMT-xxxxxx` untuk baris
+// BERFORMAT, `CLM-xxxxxx` untuk baris klaim dan `KMTLF-xxxxxx` untuk baris
 // komite. Itu penyimpangan sadar yang dicatat tiket 14 AC 34, sebab nomor itu
 // dibaca manusia dan muncul di layar.
 //
@@ -25,8 +25,18 @@ import (
 
 // Awalan pengenal work object, satu per jenis baris.
 const (
-	AwalanKlaim  = "CLM-"
-	AwalanKomite = "KMT-"
+	AwalanKlaim = "CLM-"
+	// ⛔ RALAT A2, 27-09-2026: `KMT-` menjadi `KMTLF-`.
+	//
+	// Sumbernya `.scratch/komite-claim-life/STRUKTUR-TABEL-KOMITE-CLAIM-LIFE.md`,
+	// yang brief lanjutan 4 §1 sebut sebagai bentuk yang dipakai:
+	// `T_GENERAL_KOMITE.ID` = `T_WORK_CLAIM.ID` baris komite, **berawalan
+	// `KMTLF-`**.
+	//
+	// Alasannya terbaca dari dokumen yang sama: `T_GENERAL_KOMITE` LINTAS-LINI
+	// (LIFE dan PROP), sehingga awalan yang tidak menyebut lini membuat dua
+	// modul berbagi ruang nomor yang sama.
+	AwalanKomite = "KMTLF-"
 )
 
 // lebarUrutanWork adalah jumlah digit sesudah awalan.

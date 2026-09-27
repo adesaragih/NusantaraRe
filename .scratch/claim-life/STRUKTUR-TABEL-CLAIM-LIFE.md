@@ -662,16 +662,19 @@ adalah "keadaan sebelum" dan "keadaan sesudah".
 
 ## T_GENERAL_KOMITE
 
-**Butir af**, A1 — bentuknya dari tiket 00 Komite Claim Life; tiket itu kelak **memverifikasi**,
-bukan membuat ulang.
+**Butir af**, A1/A2 — bentuknya dari `.scratch/komite-claim-life/STRUKTUR-TABEL-KOMITE-CLAIM-LIFE.md`,
+yang §1 sebut sebagai sumbernya. Tiket 00 Komite kelak **memverifikasi**, bukan membuat ulang.
 
-⛔ **Shared primary key:** `ID` = `T_WORK_CLAIM.ID` baris komite, teks `KMT-xxxxxx`. Nol kolom
-`WORK_CLAIM_ID` *(REVISI 2026-09-18)* — dua jalan menuju satu baris akhirnya berbeda.
+⛔ **Shared primary key:** `ID` = `T_WORK_CLAIM.ID` baris komite, teks **`KMTLF-xxxxxx`**.
+
+⛔ **`ADJUSTMENT_ID` TANPA `REFERENCES`** — tabel ini **lintas-lini**, jadi satu kolom punya **dua**
+tabel tujuan menurut `T_WORK_CLAIM.LINI`. Oracle hanya dapat menunjuk satu; keutuhannya **dijaga
+kode Go**. `NOT NULL` dan ber-index **UNIK**: satu baris adjustment = tepat satu kasus komite.
 
 | Kolom | Tipe | Boleh kosong | Kunci | Catatan |
 | --- | --- | --- | --- | --- |
-| `ID` | teks | tidak | PK, FK | → `T_WORK_CLAIM.ID` *(shared PK)* |
-| `ADJUSTMENT_ID` | teks | ya | FK, index | → `T_CLAIMLF_ADJUSTMENT.ID`; penunjuk dua arah dengan `KOMITE_ID` |
+| `ID` | teks | tidak | PK, FK | → `T_WORK_CLAIM.ID` *(shared PK)*, awalan `KMTLF-` |
+| `ADJUSTMENT_ID` | teks | tidak | index unik | LIFE → `T_CLAIMLF_ADJUSTMENT.ID`; **tanpa** `REFERENCES` |
 | `KOMITE_LOOP` | angka bulat | ya | | tinggi tangga — `KomitePostAdjustment` 1322 |
 | `KOMITE_COUNT` | angka bulat | ya | | tingkat sekarang — 1398, 6172, 9028 |
 | `ACCEPT_STATUS` | teks | ya | | `"1"` aksep / `"2"` tolak — gerbang 5695, 8119, 8648, 8887 |
@@ -680,19 +683,29 @@ bukan membuat ulang.
 
 ## T_KOMITE_KOMITELIST
 
-**Butir af**, A1 — keputusan per anggota, satu baris per tingkat.
+**Butir af**, A1/A2 — satu baris = satu anggota pada satu jenjang tangga.
 
-⚠️ `ID_KOMITE` dan `KOMITE_EMAIL` memuat **data orang**. Dibaca saat jalan dari `EMAILKOMITE`;
-nol baris disalin ke fixture, tiket, maupun log.
+⛔ **Tiga nama kolom dibetulkan** `[keputusan work owner 2026-09-18 sore]`, sebab nama korpusnya
+**menyesatkan ke dua arah sekaligus**. `[terverifikasi]` sensus 555 berkas: `.KomiteID :=
+.OPERATOR_ID` *(8 penulisan, 5 berkas)* dan `.IDKomite := .JABATAN` *(12 penulisan, 7 berkas)*.
+
+| Nama korpus | Kolom | Isinya |
+| --- | --- | --- |
+| `KomiteID` | **`KOMITE_OPERATORID`** | akun operator |
+| `IDKomite` | **`KOMITE_JABATAN`** | jabatan |
+| `KomiteAproval` *(satu P)* | **`KOMITE_APPROVAL`** | ejaan dibetulkan — penyimpangan sadar |
+
+⚠️ `KOMITE_OPERATORID` dan `KOMITE_EMAIL` memuat **data orang**. Dibaca saat jalan dari
+`EMAILKOMITE`; nol baris disalin ke fixture, tiket, maupun log.
 
 | Kolom | Tipe | Boleh kosong | Kunci | Catatan |
 | --- | --- | --- | --- | --- |
 | `ID` | teks | tidak | PK | dari `SEQ_KOMITE_KOMITELIST` (ADR-U-0006) |
-| `KOMITE_ID` | teks | tidak | FK, index | → `T_GENERAL_KOMITE.ID` |
-| `KOMITE_URUT` | angka bulat | ya | | urutan tingkat |
-| `ID_KOMITE` | teks | ya | | **data orang** |
-| `KOMITE_EMAIL` | teks | ya | | **data orang** |
-| `KOMITE_APROVAL` | teks | ya | | `"0"`/`"1"`/`"2"` — kode, bukan bilangan (ADR-U-0022); ejaan `APROVAL` (sic) |
+| `DATA_KOMITE_ID` | teks | ya | FK, index | → `T_GENERAL_KOMITE.ID` |
+| `KOMITE_URUT` | angka bulat | ya | | jenjang tangga — `DEGREE` roster, menaik |
+| `KOMITE_OPERATORID` | teks | ya | | **data orang** — `CreateKMTLife_Act` 866, 972 |
+| `KOMITE_JABATAN` | teks | ya | | `CreateKMTLife_Act` 952, 1041 |
+| `KOMITE_EMAIL` | teks | ya | | **data orang** — `CreateKMTLife_Act` 932, 1014 |
+| `KOMITE_APPROVAL` | teks | ya | | `"0"` saat roster dibentuk (912, 993); `"1"`/`"2"` saat diputus |
 | `KOMITE_COMMENT` | teks | ya | | `KomitePostAdjustment` 893, 5945 |
 | `DATE_APPROVE` | DATE | ya | | 935, 5965 |
-

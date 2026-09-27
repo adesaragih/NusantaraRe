@@ -39,6 +39,15 @@ var medanTypeYangSah = map[string]string{
 	// Ia bukan salinan kedua melainkan jalan masuk menuju yang pertama.
 	"services/pendaftaran.go": "PermintaanDaftar - muatan permintaan, tidak tersimpan",
 	"handlers/register.go":    "badan JSON - muatan permintaan, tidak tersimpan",
+	// ⛔ A2, butir af. `MuatanKomite.Type` BUKAN salinan kedua dari Type
+	// klaim: ia dibaca dari `T_WORK_CLAIM.TYPE` klaim induk lalu menjadi
+	// `TYPE` milik work object ANAKNYA - baris `KMTLF-` yang berbeda, yang
+	// memang punya kolom itu sendiri. Meniru `pxAddChildWork`, yang menyalin
+	// data halaman ke kasus anak.
+	//
+	// Ia hidup sepanjang satu transaksi lalu hilang; yang tersimpan tetap
+	// satu kolom per baris, bukan dua kolom untuk satu baris.
+	"services/komite.go": "MuatanKomite - Type work object ANAK, satu transaksi",
 }
 
 func TestTypeKlaimHanyaSatuRumahTersimpan(t *testing.T) {

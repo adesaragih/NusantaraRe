@@ -117,7 +117,7 @@ type BarisAdjustment struct {
 	TanggalAkseptasi time.Time
 	// KomiteID kosong bila baris belum pernah dikirim ke Komite. Roster dan
 	// keputusan komite bukan milik Claim Life - ini rujukan, bukan salinan.
-	// Isinya T_WORK_CLAIM.ID baris komite, berformat KMT-xxxxxx.
+	// Isinya T_WORK_CLAIM.ID baris komite, berformat KMTLF-xxxxxx.
 	KomiteID string
 	// Ketiga medan bank adalah tujuan pembayaran klaim baris ini. Nama
 	// warisannya berbeda: NAME_OF_BANK tetap, IDBANK menjadi ID_BANK, dan

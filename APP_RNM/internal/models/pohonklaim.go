@@ -32,7 +32,7 @@ const LiniLife = "LIFE"
 
 // WorkClaim adalah akar pohon: satu baris work object, lintas-lini.
 //
-// ID-nya TEKS BERFORMAT - CLM-xxxxxx untuk baris klaim, KMT-xxxxxx untuk baris
+// ID-nya TEKS BERFORMAT - CLM-xxxxxx untuk baris klaim, KMTLF-xxxxxx untuk baris
 // komite - bukan angka sequence. Itu penyimpangan sadar dari ADR-U-0006 yang
 // dicatat di tiket 14.
 //

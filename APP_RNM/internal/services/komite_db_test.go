@@ -12,6 +12,7 @@ package services_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -29,10 +30,18 @@ type rosterUji struct {
 	ambang  []models.Money
 }
 
-func (r *rosterUji) CacahTingkat(_ context.Context, ambang models.Money,
-	_ string) (int, error) {
+func (r *rosterUji) AmbilAnggota(_ context.Context, ambang models.Money,
+	_ string) ([]services.AnggotaKomite, error) {
 	r.ambang = append(r.ambang, ambang)
-	return r.tingkat, nil
+	out := make([]services.AnggotaKomite, 0, r.tingkat)
+	for i := 1; i <= r.tingkat; i++ {
+		out = append(out, services.AnggotaKomite{
+			IDKomite: fmt.Sprintf("UJI-KOM-%d", i),
+			Email:    fmt.Sprintf("uji%d@uji.invalid", i),
+			Urut:     i,
+		})
+	}
+	return out, nil
 }
 
 // kasusUji menggantikan penyimpan kasus Komite yang belum disahkan (butir af).

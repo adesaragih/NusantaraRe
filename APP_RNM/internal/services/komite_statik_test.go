@@ -48,6 +48,20 @@ var polaIndeksPosisi = regexp.MustCompile(
 // hijau.
 var berkasKomiteBolehMenyebut = map[string]string{
 	"internal/services/komite_statik_test.go": "berkas penjaga ini sendiri - polanya harus tertulis",
+	// ⛔ DIPERSEMPIT, bukan dilonggarkan - A2, 27-09-2026.
+	//
+	// Premis penjaga ini di tiket 10 - *"roster dan keputusan per anggota
+	// bukan milik konteks ini"* - BENAR sampai butir **af** disahkan. Dua hal
+	// membatalkannya:
+	//
+	//   1. Brief lanjutan 4 §1 menempatkan tabelnya di rangkaian migrasi INI.
+	//   2. `[terverifikasi]` `CreateKMTLife_Act.xml` - activity milik **Claim
+	//      Life** - yang menulis tangganya (866, 912, 932, 952). Penulisnya
+	//      memang konteks ini; yang MEMUTUSKAN barulah Komite.
+	//
+	// Yang tetap dijaga: nol berkas LAIN menyentuhnya, dan nol indeks posisi
+	// dipakai sebagai kunci rujukan di mana pun.
+	"internal/repository/kasuskomite.go": "butir af - penulis tangga, meniru CreateKMTLife_Act (activity Claim Life)",
 }
 
 // TestNolPenyimpanKeputusanKomiteDiKonteksIni menegakkan batas konteks.

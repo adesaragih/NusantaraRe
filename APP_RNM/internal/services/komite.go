@@ -25,6 +25,7 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/pkg/utils"
 )
 
 // StatusKlaimRoster menyaring roster ke lini Life.
@@ -208,15 +209,40 @@ func PeriksaSatuMataUang(peserta []models.Peserta) error {
 // ⛔ Antarmuka, bukan query. `POOLDATA.EMAILKOMITE` tabel PRODUKSI: membacanya
 // menuntut persetujuan manusia, dan butir af masih `[USULAN]`.
 type SumberRoster interface {
-	CacahTingkat(ctx context.Context, ambang models.Money, lini string) (int, error)
+	AmbilAnggota(ctx context.Context, ambang models.Money, lini string) ([]AnggotaKomite, error)
+}
+
+// AnggotaKomite adalah satu anggota tangga yang berhak memutuskan.
+//
+// ⛔ RALAT RANCANGAN A2. Antarmuka ini semula mengembalikan CACAH saja - dan
+// cacah tidak dapat membangun tangga: `CreateKMTLife_Act` mengisi
+// `KomiteList(<APPEND>)` dengan `KomiteID`, `IDKomite`, dan `KomiteEmail` per
+// anggota. Yang kurang baru terlihat ketika penulis kasusnya ditulis.
+//
+// ⚠️ `Email` DATA ORANG: ia menyeberang ke pengirim email dan ke
+// `T_KOMITE_KOMITELIST`, dan tidak ke mana pun lagi.
+type AnggotaKomite struct {
+	// KomiteID diisi dari `OPERATOR_ID` roster.
+	//
+	// ⛔ NAMA KOLOM KORPUS MENIPU KE DUA ARAH, dan ini bacaan bukan tebakan:
+	// `[terverifikasi]` `CreateKMTLife_Act.xml` pecahan 866/972
+	// `.KomiteID = .OPERATOR_ID`, dan 952/1041 `.IDKomite = .JABATAN`.
+	// Medan di bawah karena itu dinamai menurut ISInya, dan pemetaan ke nama
+	// kolom terjadi di satu tempat - penulis kasus komite.
+	KomiteID string
+	// IDKomite diisi dari `JABATAN` roster.
+	IDKomite string
+	Email    string
+	// Urut adalah `DEGREE` - jenjang tangga, menaik.
+	Urut int
 }
 
 // RosterBelumDiputuskan gagal terang selama butir af belum disahkan.
 type RosterBelumDiputuskan struct{}
 
-// CacahTingkat selalu gagal, dan menyebut apa yang ditunggu.
-func (RosterBelumDiputuskan) CacahTingkat(context.Context, models.Money, string) (int, error) {
-	return 0, ErrRosterBelumDiputuskan
+// AmbilAnggota selalu gagal, dan menyebut apa yang ditunggu.
+func (RosterBelumDiputuskan) AmbilAnggota(context.Context, models.Money, string) ([]AnggotaKomite, error) {
+	return nil, ErrRosterBelumDiputuskan
 }
 
 // MuatanKomite adalah yang menyeberang ke Komite.
@@ -229,8 +255,18 @@ func (RosterBelumDiputuskan) CacahTingkat(context.Context, models.Money, string)
 // ⚠️ Bentuk muatan ini KONTRAK LINTAS KONTEKS. Mengubahnya bukan perubahan
 // lokal: ia menuntut kesepakatan dengan konteks Komite Claim Life lebih dulu.
 type MuatanKomite struct {
-	KlaimID       string
-	AdjustmentID  string
+	KlaimID      string
+	AdjustmentID string
+	// Lini dan Type diperlukan work object anaknya (`pxAddChildWork`).
+	Lini string
+	Type string
+	// Anggota adalah tangga yang roster tentukan, urut menaik.
+	//
+	// ⛔ Ia ADA di muatan sebab `CreateKMTLife_Act` menulis tangganya BERSAMA
+	// kasusnya - satu transaksi. Menyerahkan cacahnya saja membuat penulis
+	// kasus harus membaca roster untuk kedua kalinya, dan dua bacaan dapat
+	// berbeda.
+	Anggota       []AnggotaKomite
 	JumlahKlaim   models.Money
 	KodeStatus    string
 	TingkatKomite int
@@ -373,10 +409,13 @@ func (p *Penyerahan) Serahkan(ctx context.Context, pelaku Pelaku,
 	if err != nil {
 		return err
 	}
-	tingkat, err := p.roster.CacahTingkat(ctx, ambang, StatusKlaimRoster)
+	anggota, err := p.roster.AmbilAnggota(ctx, ambang, StatusKlaimRoster)
 	if err != nil {
 		return err
 	}
+	// ⛔ Cacahnya DITURUNKAN dari anggotanya, bukan dibaca terpisah: dua
+	// sumber untuk satu angka akhirnya berbeda.
+	tingkat := len(anggota)
 	if err := PeriksaTingkatKomite(tingkat); err != nil {
 		return err
 	}
@@ -388,6 +427,9 @@ func (p *Penyerahan) Serahkan(ctx context.Context, pelaku Pelaku,
 		komiteID, err := p.kasus.Buat(ctx, tx, MuatanKomite{
 			KlaimID:       klaimID,
 			AdjustmentID:  adjID,
+			Lini:          models.LiniLife,
+			Type:          tipe,
+			Anggota:       anggota,
 			JumlahKlaim:   baris.JumlahKlaim,
 			KodeStatus:    baris.KodeStatus,
 			TingkatKomite: tingkat,
@@ -463,4 +505,63 @@ func pesertaDariPeta(perBaris map[string][]models.BarisAdjustment) []models.Pese
 		out = append(out, models.Peserta{ID: id, Baris: daftar})
 	}
 	return out
+}
+
+// rosterOracle membaca roster dari `EMAILKOMITE` - butir af, A2.
+type rosterOracle struct{ pohon *repository.PohonKlaim }
+
+// RosterKomiteOracle menyusun pembaca roster yang memakai Oracle.
+func RosterKomiteOracle(svc *Service) SumberRoster {
+	return rosterOracle{pohon: repository.NewPohonKlaim(svc.db)}
+}
+
+// AmbilAnggota membaca anggota yang menutup ambang, urut menaik.
+//
+// ⚠️ Ambangnya diserahkan sebagai TEKS desimal - uang tidak pernah menjadi
+// float (ADR-U-0003), dan repository membandingkannya lewat `TO_NUMBER`.
+func (r rosterOracle) AmbilAnggota(ctx context.Context, ambang models.Money,
+	lini string) ([]AnggotaKomite, error) {
+
+	if ambang.Kosong() {
+		return nil, fmt.Errorf("%w: ambang roster kosong", ErrPermintaanTidakSah)
+	}
+	baris, err := r.pohon.AmbilRosterKomite(ctx, utils.FormatDecimal(ambang.Amount), lini)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]AnggotaKomite, 0, len(baris))
+	for _, b := range baris {
+		out = append(out, AnggotaKomite{
+			KomiteID: b.OperatorID,
+			IDKomite: b.Jabatan,
+			Email:    b.Email,
+			Urut:     b.Degree,
+		})
+	}
+	return out, nil
+}
+
+// kasusOracle menulis kasus komite beserta tangganya - butir af, A2.
+type kasusOracle struct{ pohon *repository.PohonKlaim }
+
+// KasusKomiteOracle menyusun penulis kasus yang memakai Oracle.
+func KasusKomiteOracle(svc *Service) PembuatKasusKomite {
+	return kasusOracle{pohon: repository.NewPohonKlaim(svc.db)}
+}
+
+// Buat melahirkan kasus komite dan mengembalikan pengenalnya.
+func (k kasusOracle) Buat(ctx context.Context, tx *repository.Tx,
+	m MuatanKomite) (string, error) {
+
+	anggota := make([]repository.AnggotaTangga, 0, len(m.Anggota))
+	for _, a := range m.Anggota {
+		anggota = append(anggota, repository.AnggotaTangga{
+			Urut:       a.Urut,
+			OperatorID: a.KomiteID,
+			Jabatan:    a.IDKomite,
+			Email:      a.Email,
+		})
+	}
+	return k.pohon.BuatKasusKomite(ctx, tx,
+		m.KlaimID, m.AdjustmentID, m.Lini, m.Type, anggota, m.Waktu)
 }

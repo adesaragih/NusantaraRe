@@ -45,7 +45,7 @@ sisi induk: .IsKomite  .KomiteNo  .TotalKomite
 
 ## Acceptance criteria
 
-- [ ] Penyerahan membuat kasus anak berkelas Komite Life, membawa penunjuk **baris** yang diserahkan.
+- [x] Penyerahan membuat kasus anak berkelas Komite Life, membawa penunjuk **baris** yang diserahkan.
 - [ ] Muatan penyerahan memuat **nilai klaim**, **`CURRENCY`**, dan **status baris saat penyerahan**
       — tiga hal yang **tidak** ada di sistem lama. *(AC 24 spec; `[keputusan work owner]`)*
 - [x] Nilai uang yang menyeberang memakai representasi yang sama dengan di dalam sistem — tidak
@@ -64,7 +64,7 @@ sisi induk: .IsKomite  .KomiteNo  .TotalKomite
 - [x] Wewenang penyerahan mengikuti aturan tiket 07: `QP`/`QR` hanya SPV; `TP`/`TR` bebas peran.
 - [x] Perubahan pada bentuk muatan diperlakukan sebagai **perubahan kontrak lintas konteks**, dan
       ditandai demikian di kode.
-- [ ] **Jumlah tingkat komite = COUNT baris roster `EMAILKOMITE` yang aktif (`STS_AKTIF = "1"`) dan
+- [x] **Jumlah tingkat komite = COUNT baris roster `EMAILKOMITE` yang aktif (`STS_AKTIF = "1"`) dan
       ber-`LIMIT_BOTTOM <= CLAIM_AMOUNT`** — dihitung saat penyerahan, **tidak** dibaca dari
       konstanta mana pun.
 - [x] Ambang yang dipakai mencari roster adalah **nilai mutlak** klaim: klaim bernilai negatif
@@ -260,4 +260,37 @@ Standards menemukan penjaga yang **lebih lemah dari klaimnya**, Spec menemukan p
 
 **lanjut dari sini:** tiket 10 selesai. Lima AC sisanya menunggu butir **af** disahkan work owner.
 Berikutnya tiket 12.
+
+---
+
+### Ralat menurut XML dan dokumen tiket 00 — 27 September 2026 (A2, butir af)
+
+⛔ **Nama kolom korpus MENYESATKAN ke dua arah sekaligus**, dan itu baru terbaca ketika
+`CreateKMTLife_Act` dibaca utuh — bukan ketika ia dikira sudah diketahui:
+
+| Properti korpus | Diisi dari | Kolom kita |
+| --- | --- | --- |
+| `KomiteList(…).KomiteID` | **`.OPERATOR_ID`** *(866, 972)* | `KOMITE_OPERATORID` |
+| `KomiteList(…).IDKomite` | **`.JABATAN`** *(952, 1041)* | `KOMITE_JABATAN` |
+
+`[terverifikasi]` sensus 555 berkas *(dokumen tiket 00 Komite)*: `.KomiteID := .OPERATOR_ID`
+**8 penulisan di 5 berkas**; `.IDKomite := .JABATAN` **12 penulisan di 7 berkas**. Dua properti
+bernama nyaris sama, isinya berbeda.
+
+⛔ **Antarmuka `SumberRoster` diralat:** ia semula mengembalikan **cacah** saja — dan cacah tidak
+dapat membangun tangga, sebab `CreateKMTLife_Act` mengisi `KomiteList(<APPEND>)` per anggota.
+Kini ia mengembalikan anggotanya, dan cacahnya **diturunkan** dari situ: dua sumber untuk satu
+angka akhirnya berbeda.
+
+⛔ **Migrasi `013` salah di LIMA tempat**, seluruhnya ketahuan dari
+`STRUKTUR-TABEL-KOMITE-CLAIM-LIFE.md` yang §1 sebut sebagai sumbernya: awalan `KMT-` → **`KMTLF-`**
+*(lintas-lini)*; `ADJUSTMENT_ID` nullable → **NOT NULL + index UNIK**; `REFERENCES` ke adjustment
+**dibuang** *(dua tabel tujuan menurut `LINI`, keutuhannya dijaga Go)*; FK induk `KOMITE_ID` →
+**`DATA_KOMITE_ID`**; dan ejaan `KOMITE_APROVAL` → **`KOMITE_APPROVAL`**. Berkasnya belum pernah
+dijalankan (G1), jadi diperbaiki di tempat.
+
+**AC yang berpindah ke tertutup, dengan sebabnya:** *"penyerahan membuat kasus anak"* — penulisnya
+ada dan menulis ketiga tabel dalam satu transaksi; *"jumlah tingkat = COUNT roster"* — pembacanya
+ada dengan filter persis ReportDefinition *(A `.LIMIT_BOTTOM <=`, C `.STS_KLAIM =`, B
+`.STS_AKTIF = "1"`, urut `DEGREE ASC`)*, dan cacahnya diturunkan dari anggotanya.
 

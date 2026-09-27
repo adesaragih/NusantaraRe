@@ -23,7 +23,9 @@ func serahkanKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
-		err := svc.Komite().DenganJejak(services.PerekamJejakOracle(svc)).Serahkan(r.Context(), pelakuDari(r, stubPelaku),
+		err := svc.Komite().DenganJejak(services.PerekamJejakOracle(svc)).
+			DenganRoster(services.RosterKomiteOracle(svc)).
+			DenganKasus(services.KasusKomiteOracle(svc)).Serahkan(r.Context(), pelakuDari(r, stubPelaku),
 			r.PathValue("id"), r.PathValue("pesertaId"), r.PathValue("adjId"),
 			time.Now())
 

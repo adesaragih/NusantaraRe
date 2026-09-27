@@ -104,7 +104,7 @@ func TestStatusKlaimRosterAdalahLIFE(t *testing.T) {
 // `POOLDATA.EMAILKOMITE` tabel produksi. Yang belum diputuskan terlihat
 // sebagai satu galat yang menyebut apa yang ditunggu.
 func TestRosterBawaanGagalTerang(t *testing.T) {
-	_, err := services.RosterBelumDiputuskan{}.CacahTingkat(
+	_, err := services.RosterBelumDiputuskan{}.AmbilAnggota(
 		context.Background(), uang(t, "1", "IDR"), services.StatusKlaimRoster)
 	if !errors.Is(err, services.ErrRosterBelumDiputuskan) {
 		t.Fatalf("galat = %v, mau ErrRosterBelumDiputuskan", err)
