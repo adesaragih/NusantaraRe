@@ -224,3 +224,59 @@ export const REGISTER = {
   /** b16064 `pxTextInput`. */
   namaTertanggung: 'Name of Insured',
 } as const
+
+/**
+ * Label layar Outstanding — VERBATIM `Section/InputOSClaimLife.xml`.
+ *
+ * ⚠️ Kesebelas medan datanya SAMA dengan layar Register dan terikat
+ * `.PolicyDataLife.*` pula: keduanya menampilkan polis yang sama pada tahap
+ * yang berbeda. Karena itu keduanya memakai `PanelDataPolis` yang sama, dan
+ * keduanya menunggu modul PremiumList Life (butir av).
+ */
+export const OUTSTANDING = {
+  /** b951 */
+  nomorKlaim: 'Claim No',
+  /** b6898 */
+  type: 'Type',
+  /** b7686 */
+  marketing: 'Marketing Officer',
+  /** b9407 */
+  ceding: 'Ceding',
+  /** b9602 */
+  pemegangPolis: 'Policy Holder',
+  /** b10036 */
+  kelasBisnis: 'Class of Business',
+  /** b11250 */
+  tanggalEmail: 'Date Received Email',
+  /** b11456 */
+  tanggalRespon: 'Response Date',
+  /** b11662 */
+  tanggalKonfirmasi: 'Confirmation Date',
+  /** b11868 */
+  status: 'Status',
+  /** b12271 */
+  statusDiperbarui: 'Updated Status',
+  /** b12468 */
+  tanggalRealisasi: 'Realization Date',
+} as const
+
+/**
+ * Tombol layar Outstanding — VERBATIM, dengan barisnya.
+ *
+ * ⛔ Butir **aw**: kedua tombol perpindahan memanggil
+ * `POST /api/klaim-life/{id}/tahap/{tujuan}`. Di Pega keduanya TIDAK menulis
+ * apa pun pada posisi Admin karena prasyarat yang tampaknya salah tempel —
+ * cacat rule warisan, dilaporkan `OQ-untuk-tim.md` OQ-C. Yang ditiru
+ * MAKSUDnya: label tombol, penyambung `Decision3 → Assignment2`, dan
+ * ADR-U-0002 ketiganya menyebut jalur balik ini sebagai fitur.
+ */
+export const TOMBOL_OS = {
+  /** b21404 → `pyLocalAction SendtoAdmin` 21433 → tahap `input-register`. */
+  kembaliKeRegister: 'Send Back to Register',
+  /** b21349 / b21839 → `SendtoAdmin_Act1` 21863 → tahap `medical-check`. */
+  kirimKeMedis: 'Send to Medical Check',
+  /** b22750 */
+  tutupKlaim: 'Close Claim',
+  /** b24489 `pyButtonLabel Select All` */
+  pilihSemua: 'Select All',
+} as const

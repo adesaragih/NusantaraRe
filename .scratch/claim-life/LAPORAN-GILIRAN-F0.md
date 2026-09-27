@@ -115,3 +115,40 @@ tiap medan), `BrowseCedingCoLife_RD.xml`, `BrowseBusinessLife_RD.xml`, `BrowseMa
 
 **Telemetri:** Go 272 -> 274 PASS · 0 FAIL · 34 SKIP; JS 114 -> 136; build 46 modul.
 Taksiran token giliran ini **+-1,1 juta** (taksiran; angka sejati tidak terlihat dari dalam sesi).
+
+---
+
+## F0.6 — form login ditiadakan  ·  SHA `daa9b2c`
+
+Halaman `Masuk` + ujinya dibuang; identitas dari env Vite (`VITE_AUTH_STUB`, `VITE_STUB_PELAKU`,
+`VITE_STUB_PERAN`). Bawaan peran KETIGA-tiganya. Tombol `Keluar` dibuang. JS 136 → 129.
+
+## Ralat av  ·  SHA `1255809`
+
+⛔ **RALAT PEMBACAAN SAYA SENDIRI.** Empat medan (`Type`, `Marketing Officer`, `Ceding`,
+`Class of Business`) `pyReadOnly` true / `Read-only` di Pega, terikat `.PolicyDataLife.*`. Ronde
+sebelumnya saya membangunnya sebagai dropdown + rute + tiga pembaca tabel — **kode mati di tiga
+lapis, nol `.tsx` memakainya**. Sebabnya: blok kontrol berdiri **sebelum** labelnya di DOM, dan
+jendela pembacaan saya menghadap **ke depan**. Itu grep dengan langkah tambahan, bukan pohon.
+
+Dibuang: `repository/rujukan.go`, `services/rujukan.go` (+uji), `handlers/rujukan.go`, rutenya,
+`api.ts cariRujukan`. Tiket 02 + PARITAS §6 + `OQ-untuk-tim.md` (4 pertanyaan).
+
+⛔ **RALAT ANGKA DI PESAN COMMIT `1255809`**: pesannya menulis "Go tetap 274"; angka sebenarnya
+**272** — membuang `rujukan_test.go` menghapus 2 uji. Dicatat di sini, bukan dengan menulis ulang
+sejarah.
+
+## A3 Outstanding — butir aw
+
+Rute `POST /api/klaim-life/{id}/tahap/{tujuan}` (tujuan KATA), `handlers/tahap.go`,
+`pages/OutstandingClaimLife.tsx`, `OUTSTANDING` + `TOMBOL_OS` di `labels.ts` dengan 16 nomor baris.
+
+**Pertanyaan pohon terjawab:** `SendtoAdmin_Act` b338 berprasyarat
+`pyPosition=="ReasLifeMedicalAdvisor"` (WhenFalse=3 = lewati) padahal layar Outstanding dipegang
+Admin → kedua tombol **tidak menulis apa pun** di Pega. Cacat rule warisan; ditiru **maksudnya**,
+cacatnya dilaporkan OQ-C. Ralat tiket 08.
+
+**Telemetri:** Go 272 → 274 PASS · 0 FAIL · 34 SKIP; JS 129 → 150; build 46 modul. XML dibaca ulang
+(4 berkas): `InputRegisterClaimLife.xml` (blok kontrol read-only), `InputOSClaimLife.xml` (16 baris),
+`Register_Flow.xml` (8 penyambung), `setDetailClaim_act.xml`. Taksiran token **±1,4 juta** giliran
+ini (taksiran).

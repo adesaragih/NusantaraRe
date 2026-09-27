@@ -22,7 +22,9 @@ import { KelompokMenu } from './KelompokMenu'
 import { IkonCari, IkonPanel, IkonPengguna, IkonTutup } from './ui/dasar'
 
 /** Halaman yang Shell dapat tampilkan. */
-export type Halaman = 'inbox' | 'register' | 'detail'
+// ⚠️ `outstanding` dan `detail` BUKAN butir menu: di Pega keduanya
+// dibuka DARI DALAM kasus (flow action), bukan dari navigasi.
+export type Halaman = 'inbox' | 'register' | 'outstanding' | 'detail'
 
 /** Satu butir menu. */
 interface ButirMenu {

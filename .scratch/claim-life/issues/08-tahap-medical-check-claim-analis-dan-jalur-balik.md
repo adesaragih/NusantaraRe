@@ -229,3 +229,51 @@ pada `SendtoAdmin_Act` **dan** `SendtoAdmin_Act1` belum dijelaskan — dengan po
 dilewati (`WhenFalse=3`), lalu bagaimana `Send Back to Register` bekerja dari layar Outstanding yang
 dipegang Admin? Pertanyaan **pohon**, dijawab di A3 kelompok Outstanding dengan membaca
 `Register_Flow.xml` 583–772 beserta urutan shape-nya. Bukan alasan menunda at.
+
+## Ralat menurut XML — 27 September 2026 (butir aw)
+
+**Cacat rule warisan, ditiru MAKSUDnya bukan hurufnya.**
+
+Dua tombol di layar Outstanding memanggil perpindahan tahap:
+
+| Tombol | Baris | Jalur |
+| --- | ---: | --- |
+| `Send Back to Register` | `InputOSClaimLife.xml` **21404** | → `<pyLocalAction>SendtoAdmin` **21433** → `SendtoAdmin_Act` |
+| `Send to Medical Check` | **21349** / **21839** | → `SendtoAdmin_Act1` **21863** |
+
+**Yang XML sebenarnya lakukan:** kedua activity berprasyarat
+`pyWorkPage.pyPosition=="ReasLifeMedicalAdvisor"` dengan `WhenTrue=2` dan `WhenFalse=3` *(lewati)* —
+`SendtoAdmin_Act` baris **338**. Layar Outstanding dipegang **`ReasLifeAdmin`**. Jadi **pada posisi
+Admin kedua tombol itu tidak menulis apa pun**: `SendtoAdmin` tidak pernah menjadi `"1"`, `Decision3`
+tidak pernah mengirim kasus kembali ke `Assignment2`, dan kasus **tidak pernah dapat kembali ke Input
+Register**.
+
+Penulis `SendtoAdmin`/`SendtoMedical` di seluruh modul hanya **tiga** activity — `SendtoAdmin_Act`,
+`SendtoAdmin_Act1`, `SendtoMedical_Act` — dan tidak satu pun berjalan pada posisi Admin.
+
+**Mengapa ini dinilai CACAT, bukan maksud bisnis:** tiga hal menyebut jalur balik ini sebagai fitur —
+label tombolnya sendiri, penyambung `Decision3 → Assignment2` yang ada di alurnya, dan ADR-U-0002.
+Prasyaratnya tampak terbalik atau salah tempel.
+
+**Keputusan aw** `[DIPUTUSKAN — 27 September 2026, dari maksud XML yang terang; veto work owner
+terbuka sampai kode ini dijalankan di Oracle mana pun]`:
+
+| Tombol | Perbuatan kita |
+| --- | --- |
+| `Send Back to Register` | `Pindah` ke **Input Register**, jejak audit direkam |
+| `Send to Medical Check` | `Pindah` ke **Medical Check** *(maksud `SendtoAdmin_Act1` = `"0"`)* |
+
+Keduanya bergerbang **pemegang tahap Outstanding** *(services; 403 bila bukan)*, dan perpindahan yang
+tidak ada di tangga dijawab **409** — bukan 400: permintaannya berbentuk benar, keadaan kasusnya yang
+tidak mengizinkan.
+
+Rute: `POST /api/klaim-life/{id}/tahap/{tujuan}`, tujuan berupa **kata** *(`input-register`,
+`outstanding`, `medical-check`, `claim-analis`)* — bukan angka: jalur `/tahap/2` tidak terbaca siapa
+pun, dan angka yang bergeser bila urutan `models.Tahap` berubah memindahkan kasus ke tempat yang
+salah tanpa satu pun galat.
+
+**Cacatnya dilaporkan** ke `OQ-untuk-tim.md` **OQ-C** dengan barisnya, untuk dikonfirmasi pengembang
+Pega.
+
+**AC:** tidak ada AC tiket ini yang berubah centangnya — jalur baliknya kini punya rute dan kontrol,
+tetapi pembuktian perilakunya menuntut Oracle.

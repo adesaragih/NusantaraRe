@@ -676,3 +676,38 @@ export async function ambilKotakMasuk(
     kueri: { tahap, halaman, ukuran },
   })
 }
+
+// ---------------------------------------------------------------------------
+// A3 Outstanding — perpindahan tahap (butir aw).
+// ---------------------------------------------------------------------------
+
+/**
+ * Tahap tujuan sebagai KATA — sama dengan `handlers.tahapTujuan`.
+ *
+ * ⛔ Kata, bukan angka: jalur `/tahap/2` tidak dapat dibaca siapa pun, dan
+ * angka yang bergeser bila urutan `models.Tahap` berubah akan memindahkan
+ * kasus ke tempat yang salah tanpa satu pun galat.
+ */
+export const TAHAP_JALUR = {
+  inputRegister: 'input-register',
+  outstanding: 'outstanding',
+  medicalCheck: 'medical-check',
+  claimAnalis: 'claim-analis',
+} as const
+
+export type TahapJalur = (typeof TAHAP_JALUR)[keyof typeof TAHAP_JALUR]
+
+/**
+ * Memindahkan kasus ke tahap lain.
+ *
+ * Kode jawaban yang mungkin:
+ *   204 berhasil
+ *   403 pelaku bukan pemegang tahap ASALnya
+ *   409 perpindahan itu tidak ada di tangga kerja
+ */
+export async function pindahTahap(klaimID: string, tujuan: TahapJalur): Promise<void> {
+  await minta<void>(
+    `/api/klaim-life/${encodeURIComponent(klaimID)}/tahap/${tujuan}`,
+    { metode: 'POST' },
+  )
+}

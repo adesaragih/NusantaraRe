@@ -41,6 +41,12 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 	mux.HandleFunc(
 		"POST /api/klaim-life/{id}/peserta/{pesertaId}/adjustment/{adjId}/komite",
 		serahkanKomite(svc, stubPelaku))
+	// Perpindahan tahap - butir aw. Dua tombol layar Outstanding
+	// memanggilnya: `Send Back to Register` (InputOSClaimLife.xml
+	// 21404) dan `Send to Medical Check` (21839). Tujuannya KATA,
+	// bukan angka: jalur berisi /tahap/2 tidak terbaca siapa pun, dan
+	// angka yang bergeser memindahkan kasus ke tempat yang salah.
+	mux.HandleFunc("POST /api/klaim-life/{id}/tahap/{tujuan}", pindahTahap(svc, stubPelaku))
 	mux.HandleFunc("POST /api/klaim-life/{id}/adjustment/{adjId}/tolak",
 		tolakBaris(svc, stubPelaku))
 	mux.HandleFunc("PUT /api/klaim-life/{id}/peserta/{pesertaId}/tanggal-kejadian",
