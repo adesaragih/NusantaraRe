@@ -22,6 +22,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"nusantarare/internal/repository"
 )
 
 // Kunci kategori - SATU-SATUNYA hal tentang alamat yang boleh jadi konstanta.
@@ -37,6 +39,25 @@ import (
 const (
 	KategoriKlaim           = "Klaim"
 	KategoriInsertClaimLife = "insertClaimLife"
+	KategoriGoogle          = "Google"
+	KategoriUpload          = "upload"
+	KategoriGetURL          = "geturl"
+	KategoriHapus           = "delete"
+)
+
+// Kunci per efek, DIBACA dari activity-nya masing-masing - bukan ditebak dari
+// nama katalog.
+//
+// `[terverifikasi]` pecahan baris:
+//
+//	InsertGoogleStorage_Act  1775 · 1776  ("Google", "upload")
+//	GetUrlGoogleStorage_Act  1711 · 1712  ("Google", "geturl")
+//	DeleteGoogleStorage_Act  1349 · 1351  ("Google", "delete")
+//	serviceInsertArasapas…    540 ·  541  ("Klaim",  "insertClaimLife")
+var (
+	KunciUnggahBerkas = KunciLayanan{Kategori1: KategoriGoogle, Kategori2: KategoriUpload}
+	KunciURLBerkas    = KunciLayanan{Kategori1: KategoriGoogle, Kategori2: KategoriGetURL}
+	KunciHapusBerkas  = KunciLayanan{Kategori1: KategoriGoogle, Kategori2: KategoriHapus}
 )
 
 // KunciLayanan adalah pasangan `(KATEGORI_1, KATEGORI_2)`.
@@ -326,8 +347,19 @@ func (EfekBerkas) Jalankan(context.Context, MuatanEfek) error {
 
 // EfekEmail memberi tahu anggota Komite saat kasus diserahkan.
 //
-// `[dugaan]` `Claim Life/Activity/SendEmailKlaimLF.xml` - disebut tiket,
-// belum dibaca baris demi baris oleh tiket 12.
+// ⛔ TEMUAN A2: ia TIDAK memakai `M_LINK_SERVICE` sama sekali.
+// `[terverifikasi]` `Claim Life/Activity/SendEmailKlaimLF.xml` pecahan baris
+// 2505 `Call SendEmailWithAttachment`, dengan `smtpPort "587"` (2556) dan
+// `smtpHost` berupa LITERAL di korpus (2574) - SMTP langsung, bukan REST.
+//
+// Brief menduga kuncinya `("SendEmail", …)` dari katalog; membaca
+// activity-nya membantah dugaan itu. Inilah sebabnya kunci dibaca dari
+// activity, bukan ditebak dari nama.
+//
+// ⛔ Host SMTP-nya TIDAK DISALIN ke mana pun - bukan ke kode, bukan ke tiket,
+// bukan ke komentar ini. `[terbuka — work owner]`: dari mana alamat SMTP
+// datang di sistem baru, sebab ADR-U-0013 mengatur `M_LINK_SERVICE` dan
+// jalur ini tidak melewatinya.
 type EfekEmail struct{}
 
 // Nama menyebut efek ini di catatan kegagalan.
@@ -380,4 +412,25 @@ func EfekKeluarClaimLife(r ResolverEndpoint) []EfekKeluar {
 		EfekEmail{},
 		EfekArasapas{Resolver: r},
 	}
+}
+
+// resolverOracle membaca alamat dari `M_LINK_SERVICE` - A2, ADR-U-0013.
+type resolverOracle struct{ pohon *repository.PohonKlaim }
+
+// ResolverLinkServiceOracle menyusun resolver yang membaca saat jalan.
+func ResolverLinkServiceOracle(svc *Service) ResolverEndpoint {
+	return resolverOracle{pohon: repository.NewPohonKlaim(svc.db)}
+}
+
+// Resolve menerjemahkan kunci kategori menjadi alamat.
+//
+// ⛔ Yang dikembalikan hanya URL-nya. `USERNAME` sengaja TIDAK diteruskan:
+// belum ada pemanggil yang memerlukannya, dan nilai rahasia yang beredar
+// tanpa pemakai adalah nilai rahasia yang akhirnya tercetak di suatu tempat.
+func (r resolverOracle) Resolve(ctx context.Context, kunci KunciLayanan) (string, error) {
+	alamat, err := r.pohon.AmbilAlamatLayanan(ctx, kunci.Kategori1, kunci.Kategori2)
+	if err != nil {
+		return "", err
+	}
+	return alamat.URL, nil
 }
