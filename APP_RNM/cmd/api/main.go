@@ -49,8 +49,9 @@ func main() {
 	//
 	// ⚠️ Ia menggerbangi EFEK KELUAR saja, tidak pernah penyimpanan: klaim
 	// tetap tersimpan di lingkungan non-produksi.
-	svc := services.New(db).DenganLingkungan(
-		services.LingkunganDariFlag(cfg.IsPegaProd))
+	svc := services.New(db).
+		DenganLingkungan(services.LingkunganDariFlag(cfg.IsPegaProd)).
+		DenganUnggahanDir(cfg.UnggahanDir)
 	if svc.PunyaDatabase() {
 		log.Printf("oracle: skema %s", svc.SkemaAktif())
 	} else {

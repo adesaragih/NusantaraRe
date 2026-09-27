@@ -700,7 +700,8 @@ func TestSeluruhCreateDapatDibacaNamanya(t *testing.T) {
 	// ALTER pada DISEASE tidak dihitung - ia bukan CREATE.
 	//
 	// 11+7+1 = 19 tabel + 10 sequence + 13+6+1 = 20 index = 49.
-	const mau = 49
+	// +1 tabel dari 019 (butir be, kartu berkas unggahan) = 50.
+	const mau = 50
 	if diperiksa != mau {
 		t.Errorf("pernyataan CREATE diperiksa %d, mau %d", diperiksa, mau)
 	}
@@ -793,10 +794,13 @@ func TestKolomCreateTableMembacaSeluruhTabel(t *testing.T) {
 	// Tujuh, bukan delapan: T_MIGRASI dibuat siapkanTabelMigrasi, di luar
 	// berkas migrasi. Sesudah migrasi, katalog memang memuat delapan tabel.
 	// 11 tabel Claim Life + 7 tabel PremiumList Life (tiket 00) = 18.
-	// 19 tabel + 10 sequence + 20 index = 49 pernyataan CREATE, cocok dengan
+	// 20 tabel + 10 sequence + 20 index = 50 pernyataan CREATE, cocok dengan
 	// cacah yang dikunci TestSeluruhCreateDapatDibacaNamanya.
 	// +1 tabel, +1 sequence, +1 index dari 018 (butir bd, diagnosa).
-	const mauTabel = 19
+	// +1 tabel dari 019 (butir be) - TANPA sequence dan TANPA index:
+	// identitasnya cap waktu `models.IDDokumenBaru`, bukan nomor kita,
+	// dan PK-nya sudah berindeks sendiri.
+	const mauTabel = 20
 	if tabel != mauTabel {
 		t.Errorf("CREATE TABLE terbaca %d, mau %d", tabel, mauTabel)
 	}

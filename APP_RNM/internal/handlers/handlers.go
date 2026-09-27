@@ -69,6 +69,17 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 		ubahDiagnosa(svc, stubPelaku))
 	mux.HandleFunc("DELETE /api/klaim-life/{id}/peserta/{pesertaId}/diagnosa/{diagId}",
 		hapusDiagnosa(svc, stubPelaku))
+	// Dokumen pendukung - butir be. Tiga tombol `DocumentLife.xml`.
+	//
+	// ⛔ Jalur UNDUH tidak bersarang di bawah klaimnya, dan itu meniru
+	// aslinya: `URLPUBLIC` dicari dengan `imageid` saja
+	// (`GetLinkStorage_SQL.xml` b91), dan nilai kolom itulah yang tersimpan
+	// di kartu berkas. Batas klaimnya tetap ditegakkan services.
+	mux.HandleFunc("POST /api/klaim-life/{id}/peserta/{pesertaId}/dokumen",
+		unggahDokumen(svc, stubPelaku))
+	mux.HandleFunc("GET /api/dokumen/{dokId}/isi", isiDokumen(svc, stubPelaku))
+	mux.HandleFunc("DELETE /api/klaim-life/{id}/dokumen/{dokId}",
+		hapusDokumen(svc, stubPelaku))
 	return mux
 }
 

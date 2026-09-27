@@ -62,6 +62,19 @@ type Config struct {
 	// dulu. Mati secara bawaan, dan ditolak keras saat IS_PEGA_PROD=true.
 	AuthStub bool
 
+	// UnggahanDir adalah folder LOKAL tempat berkas unggahan disimpan
+	// (butir be).
+	//
+	// ⛔ BUKAN korpus, dan bukan folder mana pun di bawah `D:/XML/RNM_BRD`
+	// selain `OUTPUT_HASIL_RNM`. Korpus dibaca sebagai bukti; ia tidak
+	// pernah ditulisi.
+	//
+	// Kosong berarti unggahan GAGAL TERANG - itu keadaan yang benar sampai
+	// seseorang memilih foldernya. Bawaan diam-diam ke `./unggahan` akan
+	// membuat berkas pelanggan mendarat di folder kerja siapa pun yang
+	// kebetulan menjalankan server.
+	UnggahanDir string
+
 	// Layanan memetakan nama layanan luar ke alamatnya, seluruhnya dari env.
 	Layanan map[string]string
 }
@@ -132,6 +145,7 @@ func Load() (Config, error) {
 	// adanya, dan membetulkannya diam-diam menghasilkan token yang berbeda
 	// dari yang sistem lama terbitkan.
 	c.StorageTokenSalt = os.Getenv("STORAGE_TOKEN_SALT")
+	c.UnggahanDir = strings.TrimSpace(os.Getenv("UNGGAHAN_DIR"))
 
 	raw := strings.TrimSpace(os.Getenv("IS_PEGA_PROD"))
 	if raw != "" {

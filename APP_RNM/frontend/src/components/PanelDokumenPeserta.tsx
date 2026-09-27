@@ -34,13 +34,21 @@
 // penyambungan. Arah selisihnya disengaja: daftar yang menyebut apa yang
 // belum tersambung lebih jujur daripada daftar yang diam-diam kosong.
 
+import { useState } from 'react'
+
 import { DOKUMEN } from '../assets/labels'
-import type { Dokumen } from '../services/api'
-import { BelumTersedia } from './ui/dasar'
+import {
+  hapusDokumen,
+  pesanGalat,
+  tautanDokumen,
+  unggahDokumen,
+  type Dokumen,
+} from '../services/api'
 
 /** Satu baris daftar, sesudah diputuskan apa yang tampil. */
 export interface BarisDokumen {
-  id: number
+  /** TEKS — lihat `Dokumen.id`: 17 angka di luar jangkauan aman JS. */
+  id: string
   /** Nama berkas. ⛔ Nama BERKAS, tidak pernah nama orang. */
   namaFile: string
   /** Kategori yang `DocumentLife.xml` tampilkan kepada manusia. */
@@ -86,8 +94,36 @@ export function barisDokumen(dokumen: Dokumen[]): BarisDokumen[] {
   }))
 }
 
-export function PanelDokumenPeserta({ dokumen }: { dokumen: Dokumen[] }) {
+export function PanelDokumenPeserta({
+  klaimID,
+  pesertaID,
+  dokumen,
+  onBerubah,
+}: {
+  klaimID: string
+  pesertaID: string
+  dokumen: Dokumen[]
+  /** Dipanggil sesudah setiap perubahan supaya pemanggil membaca ulang. */
+  onBerubah: () => void | Promise<void>
+}) {
   const baris = barisDokumen(dokumen)
+  const [kategori, setKategori] = useState('')
+  const [sibuk, setSibuk] = useState(false)
+  const [galat, setGalat] = useState<string | null>(null)
+
+  async function jalankan(kerja: () => Promise<void>): Promise<void> {
+    if (sibuk) return
+    setSibuk(true)
+    setGalat(null)
+    try {
+      await kerja()
+      await onBerubah()
+    } catch (e) {
+      setGalat(pesanGalat(e) ?? 'Perubahan dokumen gagal.')
+    } finally {
+      setSibuk(false)
+    }
+  }
   return (
     <section className="dokumen">
       <h4 className="dokumen__judul">Dokumen pendukung</h4>
@@ -111,10 +147,28 @@ export function PanelDokumenPeserta({ dokumen }: { dokumen: Dokumen[] }) {
                 <td>{b.kategori}</td>
                 <td>{b.tanggal === '' ? '—' : b.tanggal}</td>
                 <td>
+                  {/* ✅ Penanda "URL menunggu penyambungan" DICABUT
+                      27-09-2026 (butir be): unduhannya kini sungguhan, lewat
+                      rute kita sendiri. Yang TETAP dibedakan adalah baris
+                      yang efek outbox-nya belum selesai — `tStorageId`
+                      kosong berarti SEDANG diproses, bukan hilang. */}
                   {b.terunggah ? (
-                    <span title={PRANALA_MENUNGGU}>{PRANALA_MENUNGGU}</span>
+                    <>
+                      <a href={tautanDokumen(b.id)} download={b.namaFile}>
+                        {DOKUMEN.lihatOfficeOnline}
+                      </a>{' '}
+                      <button
+                        type="button"
+                        disabled={sibuk}
+                        onClick={() => {
+                          void jalankan(() => hapusDokumen(klaimID, b.id))
+                        }}
+                      >
+                        {DOKUMEN.hapus}
+                      </button>
+                    </>
                   ) : (
-                    <span>Belum terunggah</span>
+                    <span title={PRANALA_MENUNGGU}>{PRANALA_MENUNGGU}</span>
                   )}
                 </td>
               </tr>
@@ -123,11 +177,39 @@ export function PanelDokumenPeserta({ dokumen }: { dokumen: Dokumen[] }) {
         </table>
       )}
 
-      {/* ⛔ Ketiganya DINYATAKAN, bukan dihilangkan — lihat kepala berkas. */}
+      {galat !== null && <p role="alert">{galat}</p>}
+
+      {/* `Add attachment` b1245 — kategori WAJIB, sebab gerbang Save ke
+          Outstanding (butir ar1) mencacah kategori yang berbeda. Berkas
+          tanpa kategori akan lolos unggah lalu menahan penyimpanan, dan
+          pemakai baru tahu berbulan-bulan kemudian. */}
       <p className="dokumen__aksi">
-        <BelumTersedia apa={DOKUMEN.tambahLampiran} />{' '}
-        <BelumTersedia apa={DOKUMEN.lihatOfficeOnline} />{' '}
-        <BelumTersedia apa={DOKUMEN.hapus} />
+        <label>
+          Kategori{' '}
+          <input
+            type="text"
+            value={kategori}
+            onChange={(e) => setKategori(e.target.value)}
+          />
+        </label>{' '}
+        <label>
+          {DOKUMEN.tambahLampiran}{' '}
+          <input
+            type="file"
+            disabled={sibuk || kategori.trim() === ''}
+            onChange={(e) => {
+              const f = e.target.files?.[0]
+              // Kotak berkas DIKOSONGKAN lagi: tanpa itu, memilih berkas
+              // yang SAMA dua kali tidak memicu `change` sama sekali, dan
+              // unggahan kedua tampak diabaikan tanpa sebab.
+              e.target.value = ''
+              if (f === undefined) return
+              void jalankan(async () => {
+                await unggahDokumen(klaimID, pesertaID, f, kategori.trim())
+              })
+            }}
+          />
+        </label>
       </p>
     </section>
   )

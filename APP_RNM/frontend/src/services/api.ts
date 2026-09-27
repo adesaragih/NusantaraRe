@@ -73,7 +73,20 @@ export interface TotalPeserta {
  * `tStorageId` — ADR-U-0010: isi berkas tidak pernah masuk basis data.
  */
 export interface Dokumen {
-  id: number
+  /**
+   * ⛔ TEKS, bukan `number`, dan itu bukan pilihan gaya.
+   *
+   * Nilainya cap waktu `yyyyMMddhhmmssSSS` — **17 angka** ≈ 2,0e16 —
+   * sedangkan `Number.MAX_SAFE_INTEGER` ≈ 9,0e15. `JSON.parse`
+   * membulatkannya diam-diam: `20260927103000123` menjadi
+   * `...124`. Tautan unduh lalu menunjuk dokumen yang tidak ada dan
+   * penghapusan mengenai baris yang salah, **tanpa satu pun galat**.
+   *
+   * Go mengirimnya dengan tag `,string`; dikunci dua sisi
+   * (`TestPengenalDokumenMenyeberangSebagaiTeks` di Go, uji tautan di
+   * `PanelDokumenPeserta.test.ts` di sini).
+   */
+  id: string
   pesertaId: string
   /** Nama BERKAS unggahan. Bukan nama orang. */
   namaFile: string
@@ -1162,4 +1175,132 @@ export async function hapusDiagnosa(
       `/peserta/${encodeURIComponent(pesertaID)}/diagnosa/${diagID}`,
     { metode: 'DELETE' },
   )
+}
+
+// ---------------------------------------------------------------------------
+// Dokumen pendukung — butir be: unggah / unduh / hapus lewat outbox.
+// ---------------------------------------------------------------------------
+
+/**
+ * `Add attachment` b1245 → `AttachDocumentLife` b1273.
+ *
+ * ⛔ `multipart/form-data`, dan `Content-Type` SENGAJA tidak disetel tangan:
+ * batas multipart-nya dibangkitkan browser, dan header yang ditulis sendiri
+ * akan menyebut batas yang salah. Karena itu jalur ini tidak lewat `minta`,
+ * yang selalu memasang `application/json`.
+ *
+ * ⛔ Batas ukurannya ditegakkan BACKEND saat menyalin (25 MiB). Yang di sini
+ * hanya supaya permintaannya masuk akal sejak berangkat — layar bukan
+ * penjaga.
+ */
+export async function unggahDokumen(
+  klaimID: string,
+  pesertaID: string,
+  berkas: File,
+  kategori: string,
+): Promise<Dokumen> {
+  const isi = new FormData()
+  isi.append('berkas', berkas)
+  isi.append('kategori', kategori)
+  return mintaFormulir<Dokumen>(
+    `/api/klaim-life/${encodeURIComponent(klaimID)}` +
+      `/peserta/${encodeURIComponent(pesertaID)}/dokumen`,
+    isi,
+  )
+}
+
+/**
+ * `Delete` b4288 → `ConfirmDeleteAttachment` b4317.
+ *
+ * ⚠️ Barisnya hilang SEKETIKA; penghapusan di penyimpanan menyusul lewat
+ * outbox — urutan itu dari rule: `DeleteDocument_Act` b513 `Obj-Delete`
+ * berjalan tanpa prasyarat, hanya panggilan penyimpanannya yang bersyarat
+ * (b472).
+ */
+export async function hapusDokumen(klaimID: string, dokID: string): Promise<void> {
+  await minta<void>(
+    `/api/klaim-life/${encodeURIComponent(klaimID)}/dokumen/` +
+      encodeURIComponent(dokID),
+    { metode: 'DELETE' },
+  )
+}
+
+/**
+ * Tautan unduh satu dokumen — `View Office Online` b3502 dan tautan baris.
+ *
+ * ⛔ Jalurnya TIDAK menyebut klaim, dan itu meniru aslinya: `URLPUBLIC`
+ * dicari dengan `imageid` saja (`GetLinkStorage_SQL.xml` b91). Batas klaimnya
+ * tetap ditegakkan backend.
+ */
+export function tautanDokumen(dokID: string): string {
+  return rakitURL(`/api/dokumen/${encodeURIComponent(dokID)}/isi`)
+}
+
+/**
+ * Apakah dokumen ini sudah benar-benar terunggah.
+ *
+ * ⛔ `tStorageId` kosong berarti efek outbox-nya BELUM selesai — bukan
+ * berkasnya hilang. Layar membedakan keduanya supaya pemakai tahu menunggu,
+ * bukan mengunggah ulang.
+ */
+export function dokumenTerunggah(d: Dokumen): boolean {
+  return d.tStorageId.trim() !== ''
+}
+
+
+/**
+ * Satu permintaan `multipart/form-data`.
+ *
+ * ⛔ Terpisah dari `minta` hanya pada SATU hal: ia tidak memasang
+ * `Content-Type`. Batas multipart-nya dibangkitkan browser, dan header yang
+ * ditulis tangan akan menyebut batas yang salah — permintaan lalu ditolak
+ * server dengan galat yang tidak menyebutkan sebabnya.
+ *
+ * ⚠️ Amplop galatnya SAMA (`ApiFailure`, kunci `galat`). Dua model
+ * galat berdampingan berarti dua jalan menampilkan kegagalan yang sama, dan
+ * yang satu akan diam-diam kalah — pelajaran yang sudah tertulis di kepala
+ * bagian ini.
+ */
+async function mintaFormulir<T>(jalur: string, isi: FormData): Promise<T> {
+  const kendali = new AbortController()
+  const jam = setTimeout(() => {
+    kendali.abort()
+  }, BATAS_WAKTU_MS)
+  let jawab: Response
+  try {
+    jawab = await fetch(rakitURL(jalur), {
+      method: 'POST',
+      headers: { ...headerIdentitas() },
+      body: isi,
+      signal: kendali.signal,
+    })
+  } finally {
+    clearTimeout(jam)
+  }
+  const teks = await jawab.text()
+  let hasil: unknown
+  if (teks.trim() !== '') {
+    try {
+      hasil = JSON.parse(teks)
+    } catch {
+      throw new ApiFailure(jawab.status, {
+        code: 'BACKEND_TIDAK_TERJANGKAU',
+        message:
+          'Jawaban dari server bukan JSON; permintaan tampaknya tidak ' +
+          'sampai ke backend.',
+      })
+    }
+  }
+  if (!jawab.ok) {
+    // ⛔ Kuncinya `galat`, DIBACA DENGAN CARA YANG SAMA seperti `minta`.
+    // Ronde pertama fungsi ini meneruskan badan mentahnya sebagai
+    // `IsiGalatApi` - dan setiap pesan backend pada jalur unggah akan jatuh
+    // ke teks bawaan, persis cacat `galat` vs `error` yang pertama.
+    const o = (hasil ?? {}) as { galat?: unknown }
+    throw new ApiFailure(jawab.status, {
+      code: 'DITOLAK_BACKEND',
+      message: typeof o.galat === 'string' && o.galat !== '' ? o.galat : undefined,
+    })
+  }
+  return hasil as T
 }

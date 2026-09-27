@@ -1181,3 +1181,59 @@ dipersempit sekarang, bukan dibiarkan sampai seseorang menuliskan pengecualian u
 ⚠️ Angka SKIP naik 34 → 37 karena **tiga** uji `db` baru; ketiganya melewati selama `ORACLE_DSN`
 belum dikonfigurasi. **Melewati bukan lulus** — dan `-migrate` belum dijalankan work owner *(brief
 §4)*, jadi ketiganya memang belum pernah menyentuh Oracle.
+
+### Paket 2 — §2 B: dokumen lewat outbox (butir be)
+
+`UNGGAHAN_DIR` lahir *(config + `.env.example` + disambung `cmd/api`)*; migrasi **019**
+`T_CLAIMLF_STORAGE`; `SisipDokumen`/`SatuDokumen`/`HapusDokumen`/kartu berkas di repository;
+`services.Unggahan` dengan `Unggah`/`Unduh`/`Hapus`; `PelaksanaBerkasLokal` sebagai pelaksana
+**stub**; tiga rute; layar `PanelDokumenPeserta` bertombol hidup dan penanda
+*"URL menunggu penyambungan"* dicabut untuk baris yang sudah tertaut.
+
+**Utang yang lunas**: kepala `models/dokumenbaru.go` sejak kelompok Dokumen berbunyi *"BELUM PUNYA
+SATU PUN PEMANGGIL DI LUAR UJI ... harus dibaca sebagai UTANG"*. Pemanggilnya kini ada.
+
+⛔ **Satu antarmuka berubah**: `PelaksanaEfek.Laksanakan` kini menerima `*repository.Tx`. Sebabnya
+keras — efek `storage-unggah` menulis kartu berkas **dan** mengisi `T_STORAGE_ID`, dan kedua
+tulisan itu tidak boleh berdiri sendirian bila penuntasan barisnya gagal. Pola yang sama dengan
+`Jejak.Rekam`. Aman dilakukan: `PekerjaEfek` ternyata punya **nol pemanggil** — dibangun, tidak
+pernah disambung.
+
+### ⛔ CACAT LINTAS-LAPIS KETUJUH — dan yang paling buruk sejauh ini
+
+Enam pendahulunya membuat layar **diam**. Yang ini membuat layar **berbohong**.
+
+Pengenal dokumen adalah cap waktu `@CurrentDate("yyyyMMddhhmmssSSS")` *(`InsertDocument_Act.xml`
+b648)* — **17 angka**, ≈2,0e16. `Number.MAX_SAFE_INTEGER` di JavaScript **9.007.199.254.740.991**
+≈9,0e15. Jadi **setiap** pengenal dokumen berada di luar jangkauan aman, dan `JSON.parse`
+membulatkannya diam-diam:
+
+```
+20260927103000123  ->  20260927103000124
+```
+
+Akibatnya tautan unduh menunjuk dokumen yang **tidak ada**, penghapusan mengenai baris yang salah
+atau tidak ada, dan **nol galat di kedua sisi**. Kolomnya `NUMBER(19)` dan tipenya `int64` — Go
+benar, TypeScript benar, hanya pertemuannya yang salah. Persis bentuk yang sudah enam kali terjadi.
+
+Kini menyeberang sebagai **teks** *(`json:"id,string"`)*, dikunci dua sisi:
+`TestPengenalDokumenMenyeberangSebagaiTeks` di Go dan uji tautan di
+`PanelDokumenPeserta.test.ts` di sini.
+
+⚠️ **Yang menemukannya uji, bukan pembacaan ulang.** Uji itu membandingkan tautan yang dirakit
+dengan tautan yang diharap, dan angkanya berbeda **satu**. Tidak ada pembacaan kode yang akan
+menangkapnya — pembulatan itu sah menurut kedua bahasa.
+
+⚠️ `Diagnosa.ID` **tidak** ikut berubah, dan itu disengaja: ia dari sequence yang mulai dari 1,
+jauh di dalam jangkauan aman. Yang menentukan bukan tipe Go-nya melainkan **besar nilainya** —
+dan itu ditulis di kedua tempat supaya tidak ada yang "menyeragamkan" keduanya nanti.
+
+### TELEMETRI EKSEKUSI — paket 2
+
+| Hal | Isi |
+| --- | --- |
+| Go | **373 PASS · 0 FAIL · 37 SKIP** *(dari 356/37)* |
+| JS | **254** *(dari 252)* |
+| `gofmt` · `go vet` · `go vet -tags db` · `tsc` · build | bersih · 186,49 kB |
+| Migrasi | `001`–`019`, `030`, `050`–`056` |
+| Kebocoran | nol — fixture memakai `UJI-berkas.pdf`, nol nama orang |

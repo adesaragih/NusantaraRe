@@ -186,8 +186,18 @@ func (a antreanOracle) rekamMenyerah(ctx context.Context, tx *repository.Tx,
 // ⛔ Antarmuka, bukan `switch` di dalam pekerja. Pekerja tahu cara memungut
 // dan menuntaskan; ia TIDAK tahu apa arti "berkas" atau "arasapas".
 type PelaksanaEfek interface {
-	Laksanakan(ctx context.Context, b repository.BarisEfekKeluar) error
+	Laksanakan(ctx context.Context, tx *repository.Tx,
+		b repository.BarisEfekKeluar) error
 }
+
+// ⚠️ `tx` MASUK 27-09-2026, bersama butir be. Sebabnya: efek yang
+// menuntaskan dirinya sendiri harus menulis DI DALAM transaksi yang sama
+// dengan penuntasan barisnya - `storage-unggah` mengisi `T_STORAGE_ID` dan
+// menulis kartu berkas, dan kedua tulisan itu tidak boleh berdiri sendirian
+// bila penuntasannya gagal. Pola yang sama dengan `Jejak.Rekam`.
+//
+// ⛔ Pekerja tetap TIDAK tahu apa arti "berkas": ia menyerahkan
+// transaksinya, bukan maknanya.
 
 // PekerjaEfek memungut satu efek yang jatuh tempo dan menuntaskannya.
 type PekerjaEfek struct {
@@ -234,7 +244,7 @@ func (w *PekerjaEfek) SatuPutaran(ctx context.Context, saat time.Time) error {
 		if err != nil {
 			return err
 		}
-		jalanErr := w.pelaksana.Laksanakan(ctx, baris)
+		jalanErr := w.pelaksana.Laksanakan(ctx, tx, baris)
 		if jalanErr == nil {
 			return w.pohon.TuntaskanEfek(ctx, tx, baris.ID,
 				repository.StatusEfekSelesai, time.Time{}, "", saat)

@@ -524,7 +524,14 @@ export default function KlaimLife() {
                   menunjuk baris peserta, dan activity pemuatnya berkelas
                   `Int-LIFE_PREMIUM_DETAIL`. Unggah, unduh, dan hapus milik
                   kelompok Dokumen; tombolnya dinyatakan, bukan disembunyikan. */}
-              <PanelDokumenPeserta dokumen={p.dokumen} />
+              <PanelDokumenPeserta
+                klaimID={klaim.id}
+                pesertaID={p.id}
+                dokumen={p.dokumen}
+                onBerubah={async () => {
+                  setKlaim(await ambilKlaimLife(klaim.id))
+                }}
+              />
 
               {/* Grid diagnosa - butir bd. `.DiagnoseList` b3923, tiga
                   kolom (b4188, b4337, b4490) dan tiga tombol: `Add` b4690,

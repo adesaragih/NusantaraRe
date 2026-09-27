@@ -34,6 +34,22 @@ type Service struct {
 	// gagal terbuka. Proses yang lupa menyetelnya tidak akan mengirim email
 	// kepada orang sungguhan.
 	lingkungan Lingkungan
+	// unggahanDir adalah folder lokal berkas unggahan (butir be). Kosong
+	// berarti unggahan GAGAL TERANG - bukan bawaan diam-diam.
+	unggahanDir string
+}
+
+// DenganUnggahanDir menyetel folder berkas unggahan.
+//
+// ⚠️ Dipanggil SEKALI saat proses menyala, dari `cmd/api`, dengan nilai
+// dari `config.UnggahanDir`. Tanpa pemanggilan itu tidak ada unggahan yang
+// pernah berhasil di mana pun - dan tidak adanya pemanggil itulah yang
+// membuat AC lingkungan sempat tercentang secara hampa (lihat
+// DenganLingkungan).
+func (s *Service) DenganUnggahanDir(dir string) *Service {
+	salin := *s
+	salin.unggahanDir = dir
+	return &salin
 }
 
 // New membuat Service. db boleh nil bila proses berjalan tanpa Oracle;

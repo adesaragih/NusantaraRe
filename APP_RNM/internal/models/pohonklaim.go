@@ -144,7 +144,30 @@ type Dokumen struct {
 	// ⛔ Nama JSON DITULIS. Tanpa tag, Go mengirim `ID`/`NamaFile`
 	// berhuruf besar dan React membaca `undefined` tanpa satu pun galat -
 	// daftar dokumen yang tampil kosong padahal barisnya ada.
-	ID        int64  `json:"id"`
+	// ⛔ `,string` — DIKIRIM SEBAGAI TEKS, dan itu BUKAN gaya.
+	//
+	// Nilainya cap waktu `@CurrentDate("yyyyMMddhhmmssSSS")`
+	// (`InsertDocument_Act.xml` b648), yaitu **17 angka** ≈ 2,0e16.
+	// `Number.MAX_SAFE_INTEGER` di JavaScript 9.007.199.254.740.991 ≈ 9,0e15
+	// — jadi SETIAP pengenal dokumen berada di LUAR jangkauan aman, dan
+	// `JSON.parse` membulatkannya diam-diam:
+	//
+	//	20260927103000123  ->  20260927103000124
+	//
+	// Akibatnya tautan unduh menunjuk dokumen yang tidak ada, penghapusan
+	// mengenai baris yang salah atau tidak ada, dan TIDAK ADA satu pun galat
+	// di kedua sisi. Ini cacat lintas-lapis KETUJUH di modul ini dan yang
+	// paling buruk: enam pendahulunya membuat layar DIAM, yang ini membuat
+	// layar BERBOHONG.
+	//
+	// ⚠️ Ditemukan uji — `PanelDokumenPeserta.test.ts` membandingkan
+	// tautan yang dirakit dengan tautan yang diharap, dan angkanya berbeda
+	// satu. Bukan pembacaan ulang yang menemukannya.
+	//
+	// ⚠️ `Diagnosa.ID` TIDAK berubah, dan itu disengaja: ia dari
+	// sequence yang mulai dari 1, jauh di dalam jangkauan aman. Yang
+	// menentukan bukan tipe Go-nya melainkan BESAR nilainya.
+	ID        int64  `json:"id,string"`
 	PesertaID string `json:"pesertaId"`
 	NamaFile  string `json:"namaFile"`
 	Mime      string `json:"mime"`

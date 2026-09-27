@@ -1,7 +1,18 @@
 package models
 
-// ⛔ BERKAS INI BELUM PUNYA SATU PUN PEMANGGIL DI LUAR UJI, DAN ITU
-// DISENGAJA - TETAPI HARUS DIBACA SEBAGAI UTANG, BUKAN SEBAGAI SELESAI.
+// ✅ UTANG LUNAS 27-09-2026 (butir be). Kepala berkas ini dulu berbunyi
+// "BELUM PUNYA SATU PUN PEMANGGIL DI LUAR UJI ... harus dibaca sebagai
+// UTANG". Pemanggilnya kini ada: `services/unggahan.go` memakai
+// `KunciKelompokDokumen`, `IDDokumenBaru`, `BolehSimpanBarisDokumen`, dan
+// `PerluHapusDiPenyimpanan` di jalur unggah-unduh-hapus yang sungguhan.
+//
+// ⚠️ SATU aturan di bawah TIDAK dipanggil di jalur itu, dan itu
+// penyimpangan sadar: `BolehSimpanBarisDokumen` meniru prasyarat b1283, yang
+// menahan penyimpanan baris selama `T_STORAGE_ID` kosong. Dengan outbox
+// jawabannya belum ada saat baris ditulis, jadi barisnya ditulis lebih dulu
+// dengan kolom itu kosong - sebabnya ada di `repository.SisipDokumen`.
+// Aturannya tetap dipakai di jalur UNDUH: berkas yang belum tertaut dijawab
+// "sedang diproses", bukan "tidak ditemukan".
 //
 // KunciKelompokDokumen / IDDokumenBaru / BolehSimpanBarisDokumen / PerluHapusDiPenyimpanan belum dipanggil kode produksi mana pun.
 // Jalur unggah dan hapus dokumen menuntut penyambungan ke Google Storage

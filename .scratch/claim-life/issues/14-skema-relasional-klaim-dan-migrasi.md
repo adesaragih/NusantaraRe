@@ -1744,3 +1744,29 @@ menampilkan baris yang berbeda setiap kali dibaca. `URUTAN` menyimpan posisi yan
 
 **AC:** tidak ada AC tiket ini yang berubah centangnya. Yang bertambah adalah **satu tabel** dengan
 jalur mundurnya, dan **satu pelebaran** kolom yang terbukti kurang.
+
+## Migrasi 019 — `T_CLAIMLF_STORAGE` (butir be, 27 September 2026)
+
+| Hal | Isi |
+| --- | --- |
+| Berkas | `019_t_claimlf_storage.sql` + `_down` |
+| Tabel | `T_CLAIMLF_STORAGE` — `IMAGEID VARCHAR2(64)` PK, `URLPUBLIC VARCHAR2(2000)`, `APPFOLDER`, `EXPDATE DATE`, `FILENAME`, `APPNAME VARCHAR2(20)`, `STORAGE VARCHAR2(32)` |
+| Sumber kolom | `RDBList/Insert_T_Storage_SQL.xml` b86–b100, dibaca `GetLinkStorage_SQL.xml` b85–b91 |
+| Index | hanya PK |
+| Sequence | **tidak ada** — `IMAGEID` adalah cap waktu `models.IDDokumenBaru`, bukan nomor kita |
+
+⛔ **Tabel kami sendiri, bukan `T_STORAGE_IMAGE`.** Kolomnya ditiru nama demi nama supaya migrasi
+data kelak mekanis; yang tidak ditiru adalah **tempatnya**. Dua sebab, keduanya keras:
+
+1. `T_STORAGE_IMAGE` tabel **bersama** lintas modul dan lintas aplikasi — kolom `APPNAME` ada
+   justru karena itu — dan brief menuntut persetujuan manusia sebelum penyambungan penyimpanan
+   nyata. Menulis ke sana berarti menaruh baris di meja orang lain.
+2. Rule penulisnya, `Insert_T_Storage_SQL.xml` **b102**, ber-**`commit;`**. **ADR-U-0029**
+   melarangnya: transaksi milik pemanggil, bukan milik pernyataan.
+
+⚠️ **Nol FK ke `T_CLAIMLF_DOCUMENT`**, dan itu meniru aslinya: `T_STORAGE_ID` menunjuk `IMAGEID`
+tanpa constraint, sebab di sistem lama barisnya lahir di layanan luar dan boleh mendahului maupun
+menyusul baris dokumennya. FK di sini akan menolak urutan yang sah.
+
+**AC:** tidak ada AC tiket ini yang berubah centangnya. Yang bertambah **satu tabel** dengan jalur
+mundurnya.

@@ -378,6 +378,40 @@ dan itu **rancangan**: grid `.DiagnoseList` punya tombol `Add` (b4690 → `addRo
 `VARCHAR2(1000)` yang isi terpanjangnya **290** `[data DBA — katalog DEV]`; 255 **terbukti kurang**.
 Migrasi `018` melebarkan `T_CLAIMLF_PREMIUMLIST_DETAIL.DISEASE` pula.
 
+⚠️ **RALAT 27-09-2026 atas kalimat di atas:** kalimat gerbang itu muncul **tujuh** kali di
+`ClaimLifeDetailGCNM.xml`, bukan empat. Empat di dalam grid *(b4682, b5059, b5870, b6152)*; tiga
+lagi menjaga medan catatan `.ADMIN_NOTES` b2628, `.RECOMMENDATION` b7335, dan `.NOTES` b15234.
+Artinya peserta yang sudah diputus membekukan **seluruh** isian layar Detail.
+
+## T_CLAIMLF_STORAGE
+
+Kartu berkas unggahan. Satu baris mewakili **satu berkas di penyimpanan**, dan
+`T_CLAIMLF_DOCUMENT.T_STORAGE_ID` menunjuk `IMAGEID`-nya.
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `IMAGEID` | teks | tidak | PK | korpus `Insert_T_Storage_SQL.xml` b86 — nilainya `models.IDDokumenBaru` |
+| `URLPUBLIC` | teks | ya | | korpus b87 — dibaca `GetLinkStorage_SQL.xml` b85 sebagai `UploadDoc.URLImage` |
+| `APPFOLDER` | teks | ya | | korpus b88 |
+| `EXPDATE` | DATE | ya | | korpus b89 — `To_date(..., 'DD/MM/YYYY HH24:MI:SS')` b97 |
+| `FILENAME` | teks | ya | | korpus b90 |
+| `APPNAME` | teks | ya | | korpus b91 — padanan `GCP_IMAGE.APPNAME VARCHAR2(20)` `[data DBA]` |
+| `STORAGE` | teks | ya | | korpus b92 — `Insert_T_Storage_SQL` b100 menulis literal `'standard'` |
+
+**Index:** hanya PK.
+
+**Relasi:** nol kunci tamu — lihat di bawah.
+
+⛔ **TABEL KAMI SENDIRI, bukan `T_STORAGE_IMAGE`.** Kolomnya ditiru nama demi nama supaya
+migrasi data kelak mekanis; yang tidak ditiru adalah **tempatnya**. `T_STORAGE_IMAGE` tabel
+**bersama** lintas modul dan lintas aplikasi — kolom `APPNAME` ada justru karena itu — dan brief
+menuntut persetujuan manusia sebelum penyambungan penyimpanan nyata. Sebab kedua: rule
+penulisnya, `Insert_T_Storage_SQL.xml` b102, ber-`commit;`, yang **ADR-U-0029** larang.
+
+⚠️ **Nol FK ke `T_CLAIMLF_DOCUMENT`**, dan itu meniru aslinya: `T_STORAGE_ID` menunjuk
+`IMAGEID` tanpa constraint, sebab di sistem lama barisnya lahir di layanan luar dan boleh
+mendahului maupun menyusul baris dokumennya. FK di sini akan menolak urutan yang sah.
+
 ## T_CLAIMLF_DOCUMENT
 
 > ⭐ **RALAT 26 September 2026 — bab ini dulu bernama `DOCUMENT_CLAIM`.**

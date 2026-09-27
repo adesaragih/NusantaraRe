@@ -46,3 +46,33 @@ func TestNamaJSONDokumenDikunci(t *testing.T) {
 		t.Errorf("tanggal kosong tidak dikirim sebagai null: %s", b)
 	}
 }
+
+// TestPengenalDokumenMenyeberangSebagaiTeks menjaga cacat ketujuh tetap mati.
+//
+// ⛔ Pengenal dokumen cap waktu 17 angka (`InsertDocument_Act.xml` b648),
+// yaitu ≈2,0e16. `Number.MAX_SAFE_INTEGER` di JavaScript 9.007.199.254.740.991
+// ≈9,0e15. Tanpa `,string`, `JSON.parse` membulatkannya diam-diam dan tautan
+// unduh menunjuk dokumen yang tidak ada - tanpa satu pun galat di kedua sisi.
+//
+// ⚠️ Uji ini memeriksa BENTUK KAWATNYA, bukan tipe Go-nya. Tipe Go boleh
+// tetap int64 - yang harus tidak berubah adalah kutip di sekeliling nilainya.
+func TestPengenalDokumenMenyeberangSebagaiTeks(t *testing.T) {
+	const capWaktu = 20260927103000123
+	b, err := json.Marshal(Dokumen{ID: capWaktu, PesertaID: "UJI-PES-1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(b), `"id":"20260927103000123"`) {
+		t.Errorf("pengenal dokumen tidak berkutip: %s\n"+
+			"Tanpa tag `,string`, JavaScript membulatkannya menjadi "+
+			"20260927103000124 dan tautan unduhnya menunjuk dokumen "+
+			"yang tidak ada.", b)
+	}
+	// ⛔ Dan angkanya memang di luar jangkauan aman JavaScript - kalau suatu
+	// hari tidak lagi, uji ini yang harus dibaca ulang, bukan dihapus.
+	const maxAman = 9007199254740991
+	if capWaktu <= maxAman {
+		t.Errorf("cap waktu %d ternyata masih aman di JavaScript (batas %d); "+
+			"alasan tag `,string` perlu dibaca ulang", capWaktu, maxAman)
+	}
+}

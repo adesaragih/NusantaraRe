@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { DOKUMEN } from '../assets/labels'
-import type { Dokumen } from '../services/api'
+import { dokumenTerunggah, tautanDokumen, type Dokumen } from '../services/api'
 import { barisDokumen, PRANALA_MENUNGGU } from './PanelDokumenPeserta'
 
 // Uji daftar dokumen pendukung — A3 kelompok 1.
@@ -98,3 +98,41 @@ describe('label DocumentLife', () => {
     expect(Object.keys(DOKUMEN)).toHaveLength(4)
   })
 })
+
+// Butir be — unggah/unduh/hapus lewat outbox, 27-09-2026.
+describe('dokumen lewat outbox', () => {
+  it('tautan unduh memakai rute kita, bukan URL layanan luar', () => {
+    // ⛔ Butir be: selama penyambungan nyata belum disetujui, tautannya
+    // rute KITA — dan rute itu berbatas identitas.
+    // ⛔ TEKS, dan uji inilah yang menemukan sebabnya. Ditulis sebagai
+    // angka, `20260927103000123` menjadi `...124` di JavaScript — 17 angka
+    // berada di luar `Number.MAX_SAFE_INTEGER`. Pengenal dokumen karena itu
+    // menyeberang sebagai teks di kedua sisi.
+    const t = tautanDokumen('20260927103000123')
+    expect(t).toContain('/api/dokumen/20260927103000123/isi')
+    expect(t).not.toContain('googleapis')
+  })
+
+  it('tStorageId kosong berarti SEDANG diproses, bukan hilang', () => {
+    // ⛔ Dibedakan supaya pemakai tahu menunggu, bukan mengunggah ulang.
+    // Baris ganda adalah akibat langsung dari layar yang tidak membedakan.
+    expect(dokumenTerunggah(dokUji(''))).toBe(false)
+    expect(dokumenTerunggah(dokUji('   '))).toBe(false)
+    expect(dokumenTerunggah(dokUji('20260927103000123'))).toBe(true)
+  })
+})
+
+/** Dokumen seadanya; hanya `tStorageId` yang diuji di sini. */
+function dokUji(tStorageId: string): Dokumen {
+  return {
+    id: '20260927103000123',
+    pesertaId: 'P-1',
+    namaFile: 'UJI-berkas.pdf',
+    mime: 'application/pdf',
+    kategori1: 'DL-1',
+    kategori2: 'KTP',
+    tStorageId,
+    tanggal: null,
+    paymentDate: null,
+  }
+}

@@ -30,6 +30,7 @@ var layananPengubah = map[string]string{
 	"hapus.go":       "Hapus",
 	"hasilkomite.go": "Tambah",
 	"diagnosa.go":    "pagari",
+	"unggahan.go":    "pagari",
 	"komite.go":      "Serahkan",
 	"tahap.go":       "Pindah",
 	"statusbaris.go": "ubah",
@@ -154,6 +155,8 @@ var rutePengubah = map[string]string{
 	"POST /api/klaim-life/{id}/peserta/{pesertaId}/diagnosa":                  "diagnosa.go",
 	"PUT /api/klaim-life/{id}/peserta/{pesertaId}/diagnosa/{diagId}":          "diagnosa.go",
 	"DELETE /api/klaim-life/{id}/peserta/{pesertaId}/diagnosa/{diagId}":       "diagnosa.go",
+	"POST /api/klaim-life/{id}/peserta/{pesertaId}/dokumen":                   "unggahan.go",
+	"DELETE /api/klaim-life/{id}/dokumen/{dokId}":                             "unggahan.go",
 }
 
 var polaRute = regexp.MustCompile(`mux\.HandleFunc\(\s*\n?\s*"([A-Z]+) ([^"]+)"`)
