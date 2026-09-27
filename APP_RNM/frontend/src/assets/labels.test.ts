@@ -128,13 +128,32 @@ describe.skipIf(!adaKorpus)('label layar Register berbukti barisnya', () => {
     )
   })
 
-  it('REGISTER memuat kelima belas label itu, tidak kurang', () => {
+  // Dua label kotak pencarian `Find Insured`. Keduanya BUKAN
+  // `pyLabelPreview`, dan itu sebabnya ia berdiri terpisah dari `medan`:
+  // memaksanya masuk daftar di atas berarti menguji tag yang tidak ada dan
+  // lalu melonggarkan ujinya sampai lulus. Diperiksa: nol
+  // `<pyLabelPreview>Certificate No` di seluruh berkas.
+  const medanCari: Array<[string, number, string]> = [
+    ['Certificate No', 16277, 'pyLabelFieldValue'],
+    ['Search', 16553, 'pyLabel'],
+  ]
+
+  it.each(medanCari)('%s ada di baris %i sebagai <%s>', (label, nomor, tag) => {
+    expect(baris('Section/InputRegisterClaimLife.xml', nomor)).toBe(
+      `<${tag}>${label}</${tag}>`,
+    )
+  })
+
+  it('REGISTER memuat ketujuh belas label itu, tidak kurang', () => {
     const nilai = Object.values(REGISTER)
     for (const [label] of medan) {
       expect(nilai).toContain(label)
     }
+    for (const [label] of medanCari) {
+      expect(nilai).toContain(label)
+    }
     // ⛔ Cacahnya dikunci: medan yang DIHILANGKAN dari layar sama merusaknya
     // dengan medan yang dikarang, dan yang pertama tidak berbunyi.
-    expect(nilai).toHaveLength(medan.length)
+    expect(nilai).toHaveLength(medan.length + medanCari.length)
   })
 })

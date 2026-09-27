@@ -24,6 +24,11 @@ function pesanGalat(e: unknown): string {
 
 export default function RegisterKlaim() {
   const [pl, setPl] = useState('')
+  // Dua kotak `Find Insured`. Keduanya `pyReadOnly = false` dan
+  // `pxTextInput`: b16277 `Certificate No` -> CARI2, b16039
+  // `Name of Insured` -> CARI3.
+  const [cariSertifikat, setCariSertifikat] = useState('')
+  const [cariNama, setCariNama] = useState('')
   const [type, setType] = useState('QP')
   const [kodeBisnis, setKodeBisnis] = useState('')
   const [peserta, setPeserta] = useState<CalonPeserta[]>([])
@@ -42,7 +47,9 @@ export default function RegisterKlaim() {
     setHasil(null)
     setSibuk(true)
     try {
-      setPeserta(await cariPesertaLife(pl))
+      setPeserta(
+        await cariPesertaLife(pl, { sertifikat: cariSertifikat, nama: cariNama }),
+      )
       setDipilih([])
     } catch (e) {
       setPeserta([])
@@ -105,9 +112,29 @@ export default function RegisterKlaim() {
         Nomor premium list
         <input value={pl} onChange={(e) => setPl(e.target.value)} placeholder="PL-..." />
       </label>
-      {/* Label VERBATIM `InputRegisterClaimLife.xml:7057` `pxButton`. */}
+      {/* ⛔ Kedua kotak penyaring ini BOLEH kosong, dan kosong berarti
+          "jangan saring". Label VERBATIM dari sectionnya: b16277 dan
+          b16039; keduanya `pyReadOnly = false`. */}
+      <label>
+        {REGISTER.sertifikat}
+        <input
+          value={cariSertifikat}
+          onChange={(e) => setCariSertifikat(e.target.value)}
+        />
+      </label>
+      <label>
+        {REGISTER.namaTertanggung}
+        {/* Huruf besarnya dikerjakan server (b405 `@toUpperCase`), bukan di
+            sini: mengubah ketikan orang saat ia mengetik membuat kotaknya
+            terasa rusak, dan aturan pencarian tetap satu tempat. */}
+        <input value={cariNama} onChange={(e) => setCariNama(e.target.value)} />
+      </label>
+
+      {/* Label VERBATIM `InputRegisterClaimLife.xml:16553` `pxButton` ->
+          `LoadDataPesertaSpesifik_Act` b16576. Tombol `Find Insured` b7057
+          adalah pembuka panelnya, bukan penjalan pencarian. */}
       <button onClick={cari} disabled={sibuk || pl.trim() === ''}>
-        {REGISTER.cariTertanggung}
+        {REGISTER.cari}
       </button>
 
       {peserta.length > 0 && (

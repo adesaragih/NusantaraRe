@@ -307,10 +307,42 @@ export interface HasilDaftar {
  * yang benar — pencarian tanpa penyaring bukan "pencarian luas", melainkan
  * pemindaian penuh yang menahan basis data.
  */
-export async function cariPesertaLife(pl: string, batas = 50): Promise<CalonPeserta[]> {
-  const data = await minta<CalonPeserta[] | null>('/api/peserta-life', {
-    kueri: { pl, n: batas },
-  })
+export interface SaringPeserta {
+  /** `SearchPolicyHolder.CARI2` — `CERTIFICATE_NO LIKE %..%`, TIDAK di-uppercase. */
+  sertifikat?: string
+  /** `SearchPolicyHolder.CARI3` — `UPPER(NAME_OF_INSURED) LIKE %..%` (b405). */
+  nama?: string
+}
+
+/**
+ * Mencari calon peserta satu premium list.
+ *
+ * Ketiga kriterianya dari `RDBList/GetPesertaClaim_sql1.xml:85`, dipanggil
+ * `LoadDataPesertaSpesifik_Act` langkah `RDB-List` b485. `pl` WAJIB: tabel
+ * sumbernya 66,8 juta baris dan hanya ber-index pada PL_NUMBER,
+ * CERTIFICATE_NO, dan POLICY_NO.
+ *
+ * ⚠️ Kotak yang dibiarkan kosong TIDAK menyaring. Pega memasang kedua `LIKE`
+ * tanpa syarat, dan di Oracle `X LIKE '%'` bernilai FALSE saat X NULL —
+ * sehingga kotak kosong di sana diam-diam membuang peserta ber-nama NULL.
+ * Penyimpangan sadar, dilaporkan OQ-E.
+ */
+export async function cariPesertaLife(
+  pl: string,
+  saring: SaringPeserta = {},
+  batas = 50,
+): Promise<CalonPeserta[]> {
+  const kueri: Record<string, string | number> = { pl, n: batas }
+  // Hanya kirim yang terisi: parameter kosong dan parameter tidak dikirim
+  // harus berarti hal yang SAMA, dan cara paling aman menjamin itu adalah
+  // tidak pernah mengirim yang kosong.
+  if (saring.sertifikat?.trim() !== undefined && saring.sertifikat.trim() !== '') {
+    kueri.sertifikat = saring.sertifikat.trim()
+  }
+  if (saring.nama?.trim() !== undefined && saring.nama.trim() !== '') {
+    kueri.nama = saring.nama.trim()
+  }
+  const data = await minta<CalonPeserta[] | null>('/api/peserta-life', { kueri })
   // Go menulis slice kosong sebagai null; layar menginginkan daftar kosong.
   return data ?? []
 }

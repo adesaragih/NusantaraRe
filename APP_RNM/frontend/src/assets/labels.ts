@@ -197,6 +197,10 @@ export const REGISTER = {
   pilihPolis: 'Choose Policy No',
   /** b7057 `pxButton`. */
   cariTertanggung: 'Find Insured',
+  /** b16277 `pyLabelFieldValue`, `pyLabelFor` CARI2 -> `SearchPolicyHolder.CARI2`. */
+  sertifikat: 'Certificate No',
+  /** b16553 `pxButton` -> `LoadDataPesertaSpesifik_Act` b16576. */
+  cari: 'Search',
   /** b20008 `pxButton`. */
   pilihTertanggung: 'Select Insured',
   /** b9104 `.PolicyDataLife.Type` `pxDropdown`. */
