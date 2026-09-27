@@ -144,7 +144,18 @@ describe('kegagalan dikenali menurut jenisnya', () => {
   })
 
   it('penolakan backend meneruskan kalimatnya APA ADANYA', async () => {
-    pasangFetch(422, JSON.stringify({ error: 'Name of bank cannot be empty' }))
+    // ⛔ Kuncinya `galat`, dan uji ini SEMPAT MENGUNCI YANG SALAH.
+    //
+    // Sampai 27-09-2026 baris di bawah menyuapkan `{error: ...}` lalu
+    // menuntut kalimatnya lolos - dan ia hijau, sebab klien memang membaca
+    // `error`. Yang diuji bukan kontrak dengan backend, melainkan kontrak
+    // klien dengan dirinya sendiri; backend Go menulis `galat` sejak tiket
+    // 01 dan tidak pernah menulis `error`.
+    //
+    // Itulah sebab cacatnya bertahan: ADA ujinya, dan ujinya ikut keliru.
+    // Sejak sekarang kontraknya dikunci dua sisi - `envelopegalat.test.ts`
+    // di sini dan `envelopegalat_test.go` di Go.
+    pasangFetch(422, JSON.stringify({ galat: 'Name of bank cannot be empty' }))
 
     const galat = await ambilKlaimLife('X').then(
       () => null,

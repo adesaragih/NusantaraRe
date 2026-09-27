@@ -174,11 +174,20 @@ async function minta<T>(jalur: string, opsi: OpsiMinta = {}): Promise<T> {
   }
 
   if (!jawab.ok) {
-    const o = (isi ?? {}) as { error?: unknown }
+    const o = (isi ?? {}) as { galat?: unknown }
     throw new ApiFailure(jawab.status, {
       code: 'DITOLAK_BACKEND',
-      // Envelope backend kita: `{"error": "<kalimat>"}`.
-      message: typeof o.error === 'string' && o.error !== '' ? o.error : undefined,
+      // ⛔ Kuncinya `galat`, bukan `error`. `handlers.galat` di Go menulis
+      // `{"galat": "<kalimat>"}` sejak tiket 01; baris ini sempat membaca
+      // `error`, sehingga SETIAP pesan backend - 401, 403, 409, 503 - jatuh
+      // ke teks bawaan dan pemakai melihat pita merah yang tidak
+      // menyebutkan apa pun.
+      //
+      // ⛔ `error` sengaja TIDAK ikut diterima. Menerima kedua kunci akan
+      // menambal gejalanya dan menyembunyikan sebabnya: sejak itu kedua sisi
+      // tidak pernah dipaksa bertemu lagi. Kontraknya dikunci dua sisi -
+      // `envelopegalat.test.ts` di sini, `envelopegalat_test.go` di Go.
+      message: typeof o.galat === 'string' && o.galat !== '' ? o.galat : undefined,
     })
   }
   return isi as T
@@ -588,8 +597,9 @@ export async function hapusKlaim(klaimID: string): Promise<DampakHapus> {
 // galatnya, supaya komponen dasar dapat diperiksa tipe-nya.
 //
 // ⚠️ BENTUKNYA TIDAK DISALIN MENTAH dari referensi. Envelope backend kita
-// `{"error": "<kalimat>"}` - satu medan, tanpa `code`, tanpa `fields`; itu
-// yang `handlers.galat` tulis. `ApiFailure` di sini memetakan envelope KITA,
+// `{"galat": "<kalimat>"}` - satu medan, tanpa `code`, tanpa `fields`; itu
+// yang `handlers.galat` tulis. (Komentar ini sempat menyebut `error`, dan
+// kekeliruan itulah yang menuntun kode di bawah membaca kunci yang salah.) `ApiFailure` di sini memetakan envelope KITA,
 // bukan envelope aplikasi lain. Menyalin `ErrorCode` beserta kedua belas
 // kodenya berarti menjanjikan kode yang backend kita tidak pernah kirim.
 // ---------------------------------------------------------------------------

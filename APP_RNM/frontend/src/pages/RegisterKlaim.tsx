@@ -12,14 +12,27 @@ import { PanelDataPolis } from '../components/PanelDataPolis'
 import {
   cariPesertaLife,
   daftarKlaimLife,
+  pesanGalat,
   type CalonPeserta,
   type HasilDaftar,
 } from '../services/api'
 
-/** pesanGalat mengambil pesan dari backend apa adanya bila ada. */
-function pesanGalat(e: unknown): string {
-  const jawaban = (e as { response?: { data?: { galat?: string } } })?.response
-  return jawaban?.data?.galat ?? 'Gagal menghubungi server.'
+/**
+ * kalimatGalat memilih kalimat yang ditampilkan pita merah.
+ *
+ * ⛔ Layar ini sempat punya PEMBACA GALATNYA SENDIRI, berbentuk axios
+ * (`e.response.data.galat`) - dan axios sudah dibuang di F0.2. Bentuk itu
+ * karena itu tidak pernah cocok dengan apa pun, sehingga SETIAP penolakan
+ * backend tampil sebagai "Gagal menghubungi server."
+ *
+ * Itu bukan sekadar pesan yang hilang, melainkan pesan yang MENYESATKAN: ia
+ * menuduh jaringan padahal backend menjawab, dan menjawab dengan sebab yang
+ * tepat. Orang yang membacanya akan memeriksa koneksi, bukan datanya.
+ *
+ * Kini satu jalan saja: `pesanGalat` bersama di `services/api`.
+ */
+function kalimatGalat(e: unknown): string {
+  return pesanGalat(e) ?? 'Permintaan ditolak backend.'
 }
 
 export default function RegisterKlaim() {
@@ -61,7 +74,7 @@ export default function RegisterKlaim() {
       setDipilih([])
     } catch (e) {
       setPeserta([])
-      setGalat(pesanGalat(e))
+      setGalat(kalimatGalat(e))
     } finally {
       setSibuk(false)
     }
@@ -106,7 +119,7 @@ export default function RegisterKlaim() {
         }),
       )
     } catch (e) {
-      setGalat(pesanGalat(e))
+      setGalat(kalimatGalat(e))
     } finally {
       setSibuk(false)
     }
