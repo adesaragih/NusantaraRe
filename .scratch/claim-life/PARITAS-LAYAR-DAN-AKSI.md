@@ -127,7 +127,7 @@ ini**, 2 dinyatakan **tidak ditiru dengan bukti**, 1 **tidak ada**, sisanya peke
 | 10 | `AttachDocumentLife` | `AttachDocScreenLife`, `NewAttachLife`, `SaveAttach…` | — | **A3 — Dokumen** |
 | 11 | `ConfirmDeleteAttachment` | `DeleteDocument_Act` | — | **A3 — Dokumen** |
 | 12 | `UploadCSV_ClaimLife` | `UploadCSVClaimLife_Act`, `pxUploadCSVResults` | — | ⛔ **tidak ditiru — MESIN BAWAAN PLATFORM**. Activity-nya hanya tiga langkah *(b250, b340, b488)*, dan langkah ketiganya memanggil `pxUploadCSVResults`. Pemetaan kolom CSV-nya **tidak ada di korpus** *(OQ-F)* |
-| 13 | `CloseClaim` | `CloseClaim_Section` | — | **A3 — Tutup & lihat** |
+| 13 | `CloseClaim` | `CloseClaim_Section` b1081 → `ProtectCloseClaim_act` b1101 | `GET /api/klaim-life/{id}/boleh-tutup` | **sebagian** — GERBANGnya ada dan lengkap *(prasyarat b608 `.STS_REJECT!=1`, b992 `CARI1==""`)*; sisi `Call FinishAssignment` b836 **dinyatakan belum ada** sebab tahap tujuannya belum dibaca dari `Flow/`. Pesannya memakai **nomor sertifikat**, bukan nama — penyimpangan sadar, `kolomSalin` tiket 02 |
 | 14 | `ShowEditClaimLife` | `EditDateClaimLife_Section` | — | **A3 — Tutup & lihat** |
 | 15 | `ViewClaimDetailLifeGCNM` | `ClaimLifeDetailGCNM`, `ObjSave_Act` | *(panel detail)* | **sebagian** |
 | 16 | `PL_DetailAction_ViewPolis` | `PL_DetailViewPolis_Sec` | — | **A3 — Tutup & lihat** |
@@ -290,3 +290,13 @@ panel detail, sejalan dengan sheet baris 115 dan 118.
 **Satu aksi dinyatakan tidak ditiru**: `UploadCSV_ClaimLife` memanggil mesin bawaan platform, dan
 pemetaan kolomnya tidak ada di korpus. Itu menjawab tuntutan brief §1 *("bila hanya UI → dinyatakan
 di PARITAS")*: ia bukan sekadar UI, melainkan **gadget platform** — dan itu pun dinyatakan.
+
+### 7.1 Pembaruan kedua — giliran lanjutan 11
+
+Baris **13** tabel alur *(`CloseClaim`)* diperbarui: gerbangnya ada, penyelesaian penugasannya
+belum — dan itu **dinyatakan**, bukan didiamkan.
+
+Dua aksi dibaca tetapi **sengaja belum dibangun**, sebab pemiliknya kelompok lain:
+`SetIndexAdjustmentList` *(b542—b743: putaran baru **mewarisi** delapan angka dari
+`.AdjustmentList(1)`)* milik **Akseptasi**; `SetSTS_Reject` *(b233: halaman langkahnya
+**`.DiagnoseList`**, bukan AdjustmentList)* milik **Medis**, yang daftar diagnosisnya belum ada.

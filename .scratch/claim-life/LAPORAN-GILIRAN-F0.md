@@ -314,3 +314,107 @@ untuk itu.
 `SetSTS_Reject`, `SetIndexAdjustmentList`, `CloseClaim`, `DocumentLife` — belum dibaca sebagai
 pohon di giliran ini. Ia **tidak** dikerjakan setengah dari ingatan; kelompok berikutnya
 membacanya lebih dulu, sebagaimana lima activity paket 1 dibaca.
+
+---
+
+## Giliran lanjutan 11 — paket 0: envelope galat (`b18de5b`)
+
+**DUA** cacat sejenis, bukan satu, dan keduanya menelan pesan yang backend kirim dengan benar.
+
+### Cacat 1 — kunci envelope tidak sama
+
+`handlers.galat` menulis `{"galat": …}` sejak tiket 01 *(`klaimlife.go:47`)*; `services/api.ts`
+membaca `o.error`. Akibatnya **setiap** pesan backend — 401, 403, 409, 503 — jatuh ke teks bawaan
+*"Permintaan ditolak backend"*.
+
+⛔ **Sebab ia bertahan, dan ini yang paling layak dicatat: ADA ujinya, dan ujinya ikut keliru.**
+`klien.test.ts:147` menyuapkan `{"error": …}` lalu menuntut kalimatnya lolos — dan ia **hijau**,
+sebab klien memang membaca `error`. Yang diuji bukan kontrak dengan backend melainkan kontrak klien
+dengan dirinya sendiri. Komentar `api.ts` pun menyebut envelope `{"error"}`, sehingga **kode,
+komentar, dan uji ketiganya salah bersama-sama** — dan kesalahan yang konsisten tidak berbunyi.
+
+### Cacat 2 — pembaca berbentuk transport yang sudah dibuang
+
+`pages/RegisterKlaim.tsx` punya `pesanGalat` **sendiri** berbentuk axios
+*(`e.response.data.galat`)*, padahal axios dibuang di F0.2. Bentuk itu tidak pernah cocok dengan
+apa pun, sehingga setiap penolakan backend di layar Register tampil sebagai *"Gagal menghubungi
+server."*
+
+⛔ Itu bukan sekadar pesan yang hilang melainkan pesan yang **menyesatkan**: ia menuduh jaringan
+padahal backend menjawab, dan menjawab dengan sebab yang tepat. Orang yang membacanya akan
+memeriksa koneksi, bukan datanya.
+
+### Yang dibangun
+
+`error` **sengaja tidak ikut diterima**. Menerima kedua kunci akan menambal gejalanya dan
+menyembunyikan sebabnya: sejak itu kedua sisi tidak pernah dipaksa bertemu lagi.
+
+Kontraknya dikunci **dua sisi**, sebab cacatnya tidak berbunyi di satu sisi mana pun — backend
+benar, klien benar menurut komentarnya sendiri, dan hanya **pertemuannya** yang salah:
+
+| Berkas | Yang dikunci |
+| --- | --- |
+| `internal/handlers/envelopegalat_test.go` | kunci `galat`, **tepat satu** kunci, nol `error` |
+| `frontend/src/services/envelopegalat.test.ts` | kalimat sampai; `error` **ditolak**; kosong tidak menggantikan teks bawaan |
+| `frontend/src/services/envelopegalat.guard.test.ts` | nol pembaca berbentuk axios di seluruh `src`; kunci hanya dibaca di satu berkas |
+
+Seluruh penjaga **dibuktikan menyala** lebih dulu pada cacat aslinya: `api.ts` dikembalikan membaca
+`error` → 4 uji merah; pembaca axios dikembalikan → penjaga axios merah.
+
+**Telemetri:** Go 285 → **287** · JS 169 → **179** · tsc bersih · build 46 modul.
+
+---
+
+## Giliran lanjutan 11 — paket 1: gerbang Close Claim (`f3443c6`)
+
+`Section/CloseClaim_Section.xml` b1081 `Close Claim` → `pyActivity` b1101 `ProtectCloseClaim_act`.
+Tombol itu **tidak punya aksi lain**: gerbangnya **adalah** aksinya.
+
+| Baris | Langkah | Isi |
+| ---: | --- | --- |
+| 236 | `Property-Set` | `ProtectLife.CARI1 = ""` |
+| 370 · 812 | `Property-Set` + `ULANG(EMBEDDED)` | atas seluruh peserta; b398 `idx`, b445 `name` |
+| 484 | prasyarat **b608 `.STS_REJECT!=1`** | `WhenTrue=2` lanjut / `WhenFalse=3` lewati → b511 tandai, b557 susun pesan |
+| 646 | `Page-Set-Messages` | prasyarat b756 `ProtectLife.CARI1==1` |
+| 836 | `Call FinishAssignment` | prasyarat **b992 `ProtectLife.CARI1==""`** |
+
+⚠️ **`STS_REJECT == 1` berarti DIAKSEP**, bukan ditolak — dipastikan dari `models.KodeAksep = "1"`
+yang sudah ada di kode, bukan dari nama kolomnya. Namanya menyesatkan dan itu warisan.
+
+⛔ Prasyaratnya `!= 1`, **bukan `== 0`**. Peserta berstatus **ditolak** *("2")* juga bukan 1, jadi
+ia menahan pula. Memperlakukan "ditolak" sebagai "selesai" akan menutup klaim yang barisnya belum
+diputus ulang. Ada ujinya.
+
+**Seluruh** penghalang dilaporkan: `Page-Set-Messages` b646 adalah **sublangkah** b370, jadi ia
+berjalan di dalam loop. Melaporkan satu saja memaksa pemakai menutup berulang kali dan menemukan
+satu penghalang baru tiap kali.
+
+Klaim **tanpa peserta boleh ditutup** — ditiru apa adanya dan dinyatakan; kita tidak menambahkan
+larangan yang XML tidak punya.
+
+### Penyimpangan sadar: pesannya memakai nomor sertifikat, bukan nama
+
+Pega menyusun kalimatnya dari `.NAME_OF_INSURED`. Kita **sengaja tidak menyimpan** nama tertanggung
+*(`kolomSalin` tiket 02)*; mengambilnya kembali dari tabel warisan hanya demi sebuah pesan berarti
+membatalkan keputusan itu. Nomor sertifikat menunjuk baris yang sama persis dan tidak memuat nama
+siapa pun; **sisa kalimatnya VERBATIM**. Ada uji yang akan gagal bila seseorang menambahkan medan
+nama.
+
+### Yang DINYATAKAN belum ada
+
+Sisi `Call FinishAssignment` *(b836)*. Tahap tujuan sesudah tutup belum dibaca dari `Flow/`, dan
+menebaknya akan memindahkan kasus ke tempat yang salah **tanpa satu pun galat**. Karena itu rutenya
+`GET`, bukan `POST` — dan metodenya dikunci uji, supaya tombol tidak menjanjikan lebih daripada
+yang ia lakukan.
+
+### Dua bacaan XML untuk kelompok berikutnya
+
+| Aksi | Temuan | Pemiliknya |
+| --- | --- | --- |
+| `SetIndexAdjustmentList` b542–b743 | putaran **baru mewarisi delapan angka** dari `.AdjustmentList(1)`, bukan menghitung ulang | Akseptasi |
+| `SetSTS_Reject` b233 | halaman langkahnya **`.DiagnoseList`** *(bukan AdjustmentList)*, loop `EMBEDDED`, `.STS_REJECT = Primary.STS_REJECT` | Medis — daftar diagnosisnya belum ada |
+
+**Telemetri:** Go 287 → **295 PASS · 0 FAIL · 34 SKIP** · `go vet` bersih · **0** migrasi baru.
+
+⚠️ `go vet` menemukan apa yang test **tidak** temukan: `t.Context()` menuntut go1.24 sedangkan modul
+ini go1.22. Testnya hijau, vet-nya merah. Diganti `context.Background()`.
