@@ -116,3 +116,29 @@ satu mata uang, atau boleh campur antar baris?
 lewat alur skill, lalu tiket yang bersangkutan dinaikkan `needs-info` → `ready-for-agent`.
 Yang tetap tak terjawab: tiket tetap `needs-info`, jangan ditebak.
 ```
+
+## 27 September 2026 — tiga pertanyaan untuk pemilik ekspor / pengembang Pega
+
+**OQ-A.** Apakah ada **harness portal/navigasi** untuk Claim Life *(padanan `SFAPortalOpportunities`
+di NB Treaty In)* beserta tombol Create-nya? Bila ada, mohon diekspor. Sampai terjawab, menu sidebar
+Claim Life adalah **minimum berbukti**: `Inbox Claim Life` *(label `[tidak ada di korpus]`)* dan
+`Register` *(`Register_Flow.xml:155`)*.
+
+**OQ-B.** `Activity\setDetailClaim_act.xml` tampak **residu uji pengembang**: `Obj-Open-By-Handle`
+pada satu handle literal *(b284)*, `Property-Set` tanggal literal Januari–Februari 2026 *(b478,
+b711)*, prasyarat yang membandingkan `.NAME_OF_INSURED` dengan satu nama literal *(b872)*, lalu
+`Obj-Save` *(b960)*. Ia terpasang pada tombol `Choose` popup pencarian polis
+*(`SearchPolicy_Section.xml` 3337–3356, 3468)*. **Mohon konfirmasi** apakah ia memang tidak
+dipakai di produksi; kami **tidak menirunya**.
+
+**OQ-C.** `SendtoAdmin_Act` dan `SendtoAdmin_Act1` keduanya berprasyarat
+`pyWorkPage.pyPosition=="ReasLifeMedicalAdvisor"` *(WhenTrue=2, WhenFalse=3 = lewati)*, padahal
+tombol pemanggilnya — `Send Back to Register` dan `Send to Medical Check` — berdiri di layar
+**Outstanding**, yang `pyPosition`-nya `ReasLifeAdmin`. Akibatnya menurut XML apa adanya: kedua
+tombol itu **tidak menulis apa pun** pada posisi Admin. **Mohon konfirmasi** apakah prasyaratnya
+memang demikian di produksi, atau salah tempel. Keputusan kami *(butir aw)* mengikuti **maksud**
+yang terang dari label tombol dan penyambung alurnya, dan cacatnya dilaporkan di sini.
+
+**OQ-D** *(urutan modul, untuk work owner)*. Sebelas medan layar Register terikat
+`.PolicyDataLife.*` dan terisi dari kasus **PremiumList Life**. Register Claim Life karena itu
+**menunggu modul PremiumList Life** untuk lengkap. Mohon konfirmasi urutan pengerjaan modul.

@@ -479,3 +479,41 @@ kuncian global merusak setiap pendaftaran serentak.
 
 **Terbuka baru:** awalan **akseptasi** (`RNML-A`, `RNML-AR`) masih dirakit di kode — keduanya tidak
 ada di `KODE_PRODUKSI`. Dari mana huruf `A`/`AR` datang adalah `[terbuka — work owner]`.
+
+## Ralat menurut XML — 27 September 2026 (butir av)
+
+**Yang diralat:** ronde A3 Register pertama membangun `Ceding`, `Class of Business`, dan
+`Marketing Officer` sebagai **isian ber-autocomplete**, lengkap dengan rute
+`GET /api/rujukan/{jenis}` dan tiga pembaca tabel. **KELIRU.**
+
+**Bukti, path + baris** *(`Section\InputRegisterClaimLife.xml`)*:
+
+| Medan | `pyReadOnly` | `pyEditOptions` | `pyLabelFor` | terikat |
+| --- | --- | --- | --- | --- |
+| `Type` | `true` b9058 | `Read-only` b9068 | `Type` b9093 | `.PolicyDataLife.Type` |
+| `Marketing Officer` | `true` b9845 | `Read-only` b9855 | `MarketingName` b9879 | `.PolicyDataLife.MarketingName` |
+| `Ceding` | `true` b11493 | `Read-only` b11503 | `CedingCoName` b11529 | `.PolicyDataLife.CedingCoName` |
+| `Class of Business` | `true` b12127 | `Read-only` b12135 | `BusinessName` b12159 | `.PolicyDataLife.BusinessName` |
+
+Keempatnya **read-only** dan terisi dari halaman polis — bukan diketik.
+
+⚠️ **Sebab salah bacanya layak dicatat**, sebab ia akan terulang: blok kontrol berdiri **SEBELUM**
+labelnya di DOM section, dan pembacaan ronde pertama memakai jendela **ke depan** dari label. Itu
+grep dengan langkah tambahan, bukan pembacaan pohon.
+
+**Keputusan av** `[DIPUTUSKAN work owner 27-09-2026]`: sumber kesebelas medan `PolicyDataLife`
+adalah modul **PremiumList Life**. Claim Life **tidak** membaca cermin JSON-nya
+*(`JSON_POLIS`, `POLICYJSONLIFE`, `SEARCH_POLIS`, `pc_*`)*; medannya diisi kelak dari tabel
+relasional modul itu — sejalan dengan ralat 2026-09-18 di kepala tiket ini *("dibaca hidup dari
+tabel polis, `T_PREMIUM_LIST` dkk")*.
+
+**Yang dibuang:** `repository/rujukan.go`, `services/rujukan.go` *(+ujinya)*, `handlers/rujukan.go`,
+rute `GET /api/rujukan/{jenis}`, dan `api.ts` `cariRujukan`/`JENIS_RUJUKAN`/`BarisRujukan`. Kode mati
+di tiga lapis; **nol** berkas `.tsx` pernah memakainya. Tidak dipakai ulang untuk `PreCaimLife_Act`:
+pencarian `BUSINESS` ber-`OLDID` pun bergantung `PolicyDataLife.BusinessCode`, jadi ia **ikut
+menunggu modul** — menyimpan kodenya berarti menyimpan kode mati kedua.
+
+**Di layar sekarang:** `PanelDataPolis` menampilkan **seluruh** medan VERBATIM dengan penanda
+"menunggu modul PremiumList Life"; ujinya mengunci cacahnya pada **11**.
+
+**AC:** tidak ada AC tiket ini yang berubah centangnya — yang diralat adalah cara membacanya.

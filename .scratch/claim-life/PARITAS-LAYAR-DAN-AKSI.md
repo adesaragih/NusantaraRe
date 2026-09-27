@@ -96,7 +96,7 @@ Kolom **keadaan**: `ada` · `A3` *(dikerjakan paket ini)* · `tidak ditiru + buk
 | 25 | `SetDisease` | `Property-Set`, `Obj-Save` | **ya** | — | — | — | **A3 — Medis** *(bukti **al**)* |
 | 26 | `DownloadDocumentClaim` | `Property-Set`, `Call GetUrlGoogleStorage_Act` | tidak | `EfekBerkas` *(gagal terang)* | — | — | **A3 — Dokumen** |
 | 27 | `ProtectCloseClaim_act` | `Property-Set`, `Page-Set-Messages`, `Call FinishAssignment` | tidak | — | — | — | **A3 — Tutup & lihat** |
-| 28 | `setDetailClaim_act` | `Obj-Open-By-Handle`, `Property-Set`, **`Obj-Save`** | **ya** | — | — | — | **A3 — Tutup & lihat** ⛔ *(Koreksi 3: ia MENULIS)* |
+| 28 | `setDetailClaim_act` | `Obj-Open-By-Handle`, `Property-Set`, **`Obj-Save`** | ya | — | — | — | ⛔ **tidak ditiru — RESIDU UJI PENGEMBANG** *(lihat §6)* |
 | 29 | `NextPrev` | `Property-Set`, `Call LoadDataPeserta_Act` | tidak | — | — | — | **tidak ditiru** — paginasi grid; nol metode tulis, dan satu-satunya panggilannya adalah pembaca no. 11 |
 | 30 | `setVisibility_Act` | `Property-Set`, `Page-Remove` | tidak | — | — | — | **tidak ditiru** — nol metode tulis; React menghitung keterlihatan dari keadaannya sendiri |
 | 31 | `SaveOutstandingLife_Act` | *(sama dengan no. 1)* | — | — | — | — | ⛔ **ejaan lain no. 1** *(Koreksi 1)* |
@@ -223,7 +223,7 @@ terbaca dari pohon section. Dipakai `NOTE`, dan pilihannya dicatat di sini alih-
 
 | # | Aksi | Sebelum | Sesudah |
 | ---: | --- | --- | --- |
-| 14 | `SearchPolicyHolder_act` | A3 — Register | **rute + kontrol** lewat `/api/rujukan/ceding` dan dropdown-nya |
+| 14 | `SearchPolicyHolder_act` | A3 — Register | ⛔ **RALAT** — activity ini hanya `Property-Set SearchPolicyHolder.CARI1 = @toUpperCase(…)`: teks pencarian popup `SearchPolicy_Harness`, **bukan** ceding. Ia menunggu popup `Choose Policy No`, yaitu **menunggu modul PremiumList Life** |
 | 11 | `LoadDataPeserta_Act` | ada | tetap — kini tombolnya berlabel VERBATIM `Find Insured` |
 
 **Cacah aksi yang punya rute DAN kontrol: 10 dari 30** *(sebelumnya 9)*.
@@ -235,3 +235,40 @@ terbaca dari pohon section. Dipakai `NOTE`, dan pilihannya dicatat di sini alih-
 | 3 `SaveInsuredClaim_Act` · 10 `DeletePesertaClaimLife` · 12 `LoadDataPesertaSpesifik_Act` · 13 `SelectAllClaimLife_act` | menuntut pembacaan pohon masing-masing activity; belum dibaca utuh giliran ini |
 | 15 `ValidasiClaimReceived_Act` · 16 `ValidasiSTNC_Act` | sama |
 | flow action 12 `UploadCSV_ClaimLife` | menuntut jalur unggah berkas, yang bergantung penyimpanan (`[terbuka]` persetujuan manusia) |
+
+---
+
+## 6. Ralat 27 September 2026 — butir av dan residu uji
+
+### 6.1 Tiga dropdown Register: TIDAK ADA
+
+§5.2 ronde pertama menyebut `Ceding`, `Class of Business`, dan `Marketing Officer` sebagai isian
+ber-autocomplete. **Keliru**: keempat medan *(bersama `Type`)* `pyReadOnly` `true`, `pyEditOptions`
+`Read-only`, `pyLabelFor` menunjuk `CedingCoName` / `BusinessName` / `MarketingName` / `Type`, dan
+terikat `.PolicyDataLife.*`. Baris buktinya di tiket 02 blok ralat.
+
+Sebabnya: blok kontrol berdiri **sebelum** labelnya di DOM, dan jendela pembacaan menghadap **ke
+depan**. Seluruh kode yang lahir dari salah baca itu **dibuang** di tiga lapis.
+
+`[DIPUTUSKAN — av]` sumbernya modul **PremiumList Life**; sebelas medan ditandai *menunggu modul*
+di `PanelDataPolis`, cacahnya dikunci uji.
+
+### 6.2 `setDetailClaim_act` — residu uji pengembang, bukan logika bisnis
+
+`Activity\setDetailClaim_act.xml`, tombol `Choose` popup *(`SearchPolicy_Section.xml` 3337–3356,
+3468)*:
+
+| Baris | Langkah | Yang membuatnya residu |
+| ---: | --- | --- |
+| 284 | `Obj-Open-By-Handle` | handle **satu instance literal** tertulis mati di rule |
+| 478 · 711 | `Property-Set` | tanggal literal Januari–Februari 2026 |
+| 872 | prasyarat | `.NAME_OF_INSURED == "<satu nama literal>"` |
+| 960 | `Obj-Save` | menulis kembali instance itu |
+
+Aktivitas yang hanya berjalan untuk **satu nama orang tertentu** dan membuka **satu kasus tertentu**
+bukan aturan bisnis. **Tidak ditiru.** Nilai literalnya **tidak dikutip ke mana pun** — ia memuat
+nama orang dan pengenal kasus. Dilaporkan ke `OQ-untuk-tim.md` untuk pengembang Pega.
+
+⚠️ Koreksi 3 di §0 tetap berlaku sebagai **metode**: "menulis atau tidak" dijawab dari metode
+langkah. Yang berubah adalah kesimpulan untuk aksi INI — ia menulis, tetapi yang ditulisnya bukan
+sesuatu yang boleh ditiru.
