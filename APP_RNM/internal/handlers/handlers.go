@@ -32,6 +32,9 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 	mux.HandleFunc("GET /api/klaim-life", kotakMasuk(svc, stubPelaku))
 	mux.HandleFunc("POST /api/klaim-life", daftarKlaim(svc, stubPelaku))
 	mux.HandleFunc("GET /api/peserta-life", cariPeserta(svc))
+	// Pencarian diagnosa - kelompok Medis. Tabelnya 97.586 baris, dan
+	// batasnya dari rule (pyMaxRecords 500), bukan dari klien.
+	mux.HandleFunc("GET /api/penyakit-life", cariPenyakit(svc, stubPelaku))
 	mux.HandleFunc("GET /api/klaim-life/{id}/dampak-hapus", dampakHapus(svc, stubPelaku))
 	mux.HandleFunc("DELETE /api/klaim-life/{id}", hapusKlaim(svc, stubPelaku))
 	mux.HandleFunc("POST /api/klaim-life/{id}/peserta/{pesertaId}/akseptasi",

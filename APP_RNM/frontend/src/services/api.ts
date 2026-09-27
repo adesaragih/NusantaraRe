@@ -981,3 +981,48 @@ export async function tutupKlaim(klaimID: string): Promise<void> {
     metode: 'POST',
   })
 }
+
+// ---------------------------------------------------------------------------
+// KELOMPOK MEDIS — pencarian diagnosa.
+// ---------------------------------------------------------------------------
+
+/** Satu baris `DISEASE_LIFE`. */
+export interface Penyakit {
+  /** Pengenal sebagai TEKS — "007" bukan "7" (ADR-U-0022). */
+  nomor: string
+  nama: string
+  kodeIcd: string
+}
+
+/** `pyMaxRecords` b659 — batas atas mutlak, dari rule. */
+export const BATAS_BARIS_PENYAKIT = 500
+
+/** `pyPageSize` b514. */
+export const UKURAN_HALAMAN_PENYAKIT = 50
+
+/**
+ * Mencari diagnosa — `GET /api/penyakit-life`.
+ *
+ * ⛔ `DISEASE_LIFE` berisi **97.586 baris**. Batasnya dijepit LAGI di
+ * backend ke `pyMaxRecords` 500; yang di sini hanya supaya permintaannya
+ * masuk akal sejak berangkat.
+ *
+ * ⛔ Kedua kata kunci disambung **AND** di backend (b535 `A AND B`), dan
+ * keduanya dinaikkan ke huruf besar (`@toUpperCase` b255, b302). Pencarian
+ * dengan kedua kata kunci KOSONG sah — itu yang Pega lakukan, dan batasnya
+ * yang menahan.
+ */
+export async function cariPenyakit(
+  kodeIcd: string,
+  nama: string,
+  batas = UKURAN_HALAMAN_PENYAKIT,
+): Promise<Penyakit[]> {
+  return minta<Penyakit[]>('/api/penyakit-life', {
+    kueri: {
+      icd: kodeIcd,
+      nama,
+      batas: String(Math.min(Math.max(batas, 1), BATAS_BARIS_PENYAKIT)),
+    },
+  })
+}
+

@@ -425,3 +425,41 @@ rule yang namanya tertulis, tanpa menanyakan siapa yang MENULIS medan itu. Dua k
 > terisi dan selalu cocok dengan satu peserta?** Bila ada dokumen warisan ber-`KATEGORI_1` yang tidak
 > menunjuk peserta mana pun, ia tidak akan terbawa oleh FK — dan kami perlu tahu sebelum migrasi,
 > bukan sesudah.
+
+---
+
+## 27 September 2026 — OQ-K (diagnosa: satu kolom lawan satu grid, dan tiga nama kolom)
+
+**OQ-K.1 — `DISEASE_LIFE`: nama kolomnya tidak ada di ekspor** *(untuk DBA)*.
+
+`ReportDefinition/BrowseDiseaseLife_RD.xml` menyebut **properti Pega** — `.Number` *(label `ID`)*,
+`.Disease`, `.ICD_Code` — tetapi ekspor ini **tidak memuat `Rule-Obj-Class`** untuk
+`ASM-FW-GISFW-Int-DISEASE_LIFE`, sehingga pemetaan kelas-ke-tabelnya tidak ada.
+
+| Properti | Kolom yang kami pakai | Dasar |
+| --- | --- | --- |
+| `.Disease` | `DISEASE` | `[dugaan kuat]` — nama yang sama persis dengan `T_CLAIMLF_PREMIUMLIST_DETAIL` *(migrasi 003)* |
+| `.ICD_Code` | `ICD_CODE` | `[dugaan kuat]` — sama |
+| `.Number` | `NUMBER_` | ⛔ `[terbuka]` — **`NUMBER` kata cadangan Oracle**, jadi kolomnya pasti bernama lain, dan nama itu tidak ada di korpus |
+
+> **Mohon dipastikan ketiganya.** Ketiganya terkumpul di satu tempat *(`repository/penyakit.go`,
+> blok `kolomNomorPenyakit` dst.)* supaya koreksi Anda adalah **satu suntingan**, bukan perburuan.
+
+**OQ-K.2 — satu diagnosa atau banyak?** *(untuk pemilik ekspor / work owner)*
+
+`Section/ClaimLifeDetailGCNM.xml` **b3923** `pyPageListProperty` **`.DiagnoseList`**, disajikan
+sebagai **`RepeatGrid`** — jadi satu peserta dapat punya **banyak** diagnosa.
+`Activity/SetDisease.xml` menulis `.DISEASE` b260 dan `.ICDCODE` b307 pada halaman berkelas
+`ASM-FW-GISFW-Data-DiagnoseLife`, lalu `Obj-Save pyWorkPage` b390.
+
+⛔ Tetapi `T_CLAIMLF_PREMIUMLIST_DETAIL` hanya punya **`DISEASE`** dan **`ICD_CODE` TUNGGAL**
+*(migrasi 003)*. **Satu lawan banyak.**
+
+> **Pertanyaannya:** apakah di produksi seorang peserta benar-benar dapat memiliki lebih dari satu
+> diagnosa, atau grid itu hanya cara menampilkan satu baris? Bila benar banyak, diperlukan tabel
+> anak *(mis. `T_CLAIMLF_DIAGNOSA`)* dan itu keputusan skema — bukan keputusan executor.
+
+**Sementara itu:** pencarian diagnosanya **sudah ada dan berbatas** *(`Find Disease` → dua kotak
+`ICD Code` dan `Disease`, disambung `AND`, batas 500 / halaman 50 dari rule)*, tetapi tombol
+**`Choose` b2509 dinyatakan belum tersedia**. Memilih diagnosa ke kolom tunggal berarti **membuang
+diagnosa kedua dan seterusnya** — diam-diam, dan tanpa ada yang tahu.

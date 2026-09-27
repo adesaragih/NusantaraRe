@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from 'react'
 
 import { DETAIL } from '../assets/labels'
-import { BelumTersedia } from '../components/ui/dasar'
 import { PanelTotalPeserta } from '../components/PanelTotalPeserta'
 import { PanelDokumenPeserta } from '../components/PanelDokumenPeserta'
+import { CariDiagnosa } from '../components/CariDiagnosa'
 
 import {
   ambilKlaimLife,
@@ -511,12 +511,18 @@ export default function KlaimLife() {
                   kelompok Dokumen; tombolnya dinyatakan, bukan disembunyikan. */}
               <PanelDokumenPeserta dokumen={p.dokumen} />
 
-              {/* `Find Disease` b5061 `pxButton` -> `showHarness` b5071
-                  `Diagnose_Harness`. Popup diagnosis itu milik kelompok
-                  MEDIS: sumbernya `DISEASE_LIFE` yang 97.586 baris, dan
-                  pencariannya harus berbatas. Tombolnya DINYATAKAN di sini
-                  supaya layarnya tidak tampak lengkap padahal tidak. */}
-              <BelumTersedia apa={DETAIL.cariPenyakit} />
+              {/* `Find Disease` b5061 `pxButton` -> `showHarness` b5081
+                  `Diagnose_Harness` -> `Diagnose_Section`.
+
+                  ⛔ Pencariannya BERBATAS, dan batasnya dari rule:
+                  `DISEASE_LIFE` 97.586 baris, `pyMaxRecords` b659 = 500,
+                  `pyPageSize` b514 = 50. Dijepit lagi di backend.
+
+                  ⛔ Tombol `Choose` b2509 belum terpasang: `.DiagnoseList`
+                  b3923 adalah RepeatGrid (banyak diagnosa per peserta)
+                  sedangkan tabelnya hanya punya DISEASE/ICD_CODE tunggal.
+                  Satu lawan banyak - OQ-K. */}
+              <CariDiagnosa />
 
               {/* ⛔ Penolakan bukan akhir: klaim TIDAK terminal (ADR-U-0011).
                   Yang terminal adalah baris, dan baris berikutnya memulai

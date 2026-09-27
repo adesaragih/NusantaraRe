@@ -791,3 +791,61 @@ terbawa FK, dan itu harus diketahui **sebelum** migrasi.
 
 **Telemetri:** Go 316 → **322 PASS · 0 FAIL · 34 SKIP** · JS **224** *(tak berubah — kelompok ini
 belum menyentuh layar)* · `tsc` bersih · `go vet` bersih · build 48 modul · **nol** migrasi baru.
+
+---
+
+## Giliran lanjutan 12 — kelompok 3: pencarian diagnosa berbatas atas 97.586 baris
+
+### Batasnya bukan karangan kami
+
+`DISEASE_LIFE` berisi **97.586 baris**, dan setiap angka pembatasnya ada di rule:
+
+| Angka | Sumber |
+| ---: | --- |
+| `pyMaxRecords` **500** | `ReportDefinition/BrowseDiseaseLife_RD.xml` b659 |
+| `pyPageSize` **50** | b514 / b747 |
+| `pyQueryTimeoutValue` 30 | b661 |
+| urut `.Number` ASC | b598 `pySortOrder` 1 |
+
+Penyaringnya **`A AND B`** b535/b754 — A `.ICD_Code` `Contains` `Param.ICD_Code`,
+B `.Disease` `Contains` `Param.Disease` — dan keduanya dinaikkan ke huruf besar lebih dulu
+*(`SearchDiagnose_act.xml` b255, b302)*.
+
+⛔ **`CARI1` adalah KODE dan `CARI2` adalah NAMA**, dan itu dibaca dari pemetaannya
+*(`Diagnose_Section.xml` b1645, b1651)* — bukan ditebak dari namanya. "CARI1/CARI2" tidak
+menyebutkan apa pun, dan menukarnya membuat setiap pencarian gagal dengan cara yang terlihat
+seperti *"datanya memang tidak ada"*.
+
+⚠️ **Pencarian dengan kedua kata kunci kosong SAH**, dan itu ditiru: di Pega `Contains ""` cocok
+dengan semua baris, dan yang menahannya hanya `pyMaxRecords`. Justru kombinasi itulah yang paling
+harus berbatas, dan ujinya menguji **seluruh** kombinasi termasuk yang kosong.
+
+⚠️ Dan ketika hasil menyentuh batas, layar **mengatakannya**. Daftar terpotong yang diam terbaca
+sebagai daftar lengkap; pemakai akan menyimpulkan diagnosanya tidak ada, lalu berhenti mencari.
+
+### Dua hal yang SENGAJA tidak dibangun, dan sebabnya
+
+**1. Tombol `Choose` b2509 → `SetDisease` b2528.** `.DiagnoseList` *(`ClaimLifeDetailGCNM.xml`
+b3923)* adalah **`RepeatGrid`** — banyak diagnosa per peserta. Tetapi
+`T_CLAIMLF_PREMIUMLIST_DETAIL` hanya punya `DISEASE` dan `ICD_CODE` **tunggal** *(migrasi 003)*.
+**Satu lawan banyak.** Memilih diagnosa ke kolom tunggal berarti membuang diagnosa kedua dan
+seterusnya — diam-diam. **OQ-K.2**, dan ia keputusan skema, bukan keputusan executor.
+
+**2. Nama kolom `DISEASE_LIFE`.** Ekspor memuat nama **properti Pega** tetapi **tidak** memuat
+`Rule-Obj-Class`-nya, jadi pemetaan kelas-ke-tabel tidak ada. `DISEASE` dan `ICD_CODE` dugaan kuat
+*(sama persis dengan tabel saudaranya)*; `.Number` → `NUMBER_` **terbuka** — `NUMBER` kata cadangan
+Oracle, jadi kolomnya pasti bernama lain. Ketiganya dikumpulkan di **satu blok konstanta** supaya
+koreksi DBA adalah satu suntingan, dan ada uji yang menagih OQ-K.1 supaya pertanyaannya tidak hilang
+bersama giliran ini.
+
+### Penjaga yang dibuat gagal lebih dulu, lalu dipulihkan
+
+| Penjaga | Dibuat gagal dengan | Berbunyi |
+| --- | --- | --- |
+| `QueryPenyakitSelaluBerbatas` | cabut `FETCH FIRST` | kriteria kosong tanpa batas |
+| `KriteriaPenyakitDisambungAND` | ganti `AND` → `OR` | `query memakai OR` |
+| nilai lewat bind, bukan tempel | tempelkan `k.Nama` ke teks | `nilai kriteria tertempel` |
+| jepitan batas di klien | cabut `Math.min` | `expected '1000000' to be '500'` |
+
+**Telemetri:** Go 322 → **328 PASS · 0 FAIL · 34 SKIP** · JS 224 → **234** · `tsc` bersih ·
+`go vet` bersih · build 48 → **49** modul · **nol** migrasi baru.
