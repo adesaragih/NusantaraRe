@@ -4431,3 +4431,128 @@ textarea.field__input {
     display: inline-flex;
   }
 }
+
+/* ====================================================== INBOX CLAIM LIFE */
+.inbox__kepala {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.inbox__judul {
+  margin: 0;
+  font-size: 17px;
+  color: var(--navy);
+}
+
+.inbox__register {
+  margin-left: auto;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.inbox__register:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.inbox__tab {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.inbox__tab-butir {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 9px 14px;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  background: transparent;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.inbox__tab-butir--aktif {
+  border-color: var(--border);
+  background: var(--bg);
+  font-weight: 600;
+  color: var(--navy);
+}
+
+/* Terjemahan berdiri DI SAMPING judul VERBATIM, tidak menggantikannya. */
+.inbox__tab-id {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.inbox__lencana {
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 11px;
+  text-align: center;
+}
+
+.inbox__tabel {
+  width: 100%;
+  margin-top: 14px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.inbox__tabel th,
+.inbox__tabel td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.inbox__tabel th {
+  color: var(--muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.inbox__baris {
+  cursor: pointer;
+}
+
+.inbox__baris:hover {
+  background: #eef4fb;
+}
+
+.inbox__halaman {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.inbox__halaman button {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.inbox__halaman button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

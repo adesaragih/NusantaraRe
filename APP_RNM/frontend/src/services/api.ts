@@ -611,3 +611,68 @@ export class ApiFailure extends Error {
     return this.detail.fields ?? []
   }
 }
+
+// ---------------------------------------------------------------------------
+// F0.4 — KOTAK MASUK per tahap.
+//
+// Bentuknya dari `Claim Life/ReportDefinition/InboxPremiumList.xml`:
+// 50 baris per halaman (592), maksimum 500 (942), urut waktu BUAT menurun
+// (733 · 736).
+// ---------------------------------------------------------------------------
+
+/** Satu baris antrian. Sumber: handlers.barisInboxJSON. */
+export interface BarisInbox {
+  /** Label `Case ID` — `InboxPremiumList.xml:721`. */
+  caseId: string
+  /** Pengenal work; dipakai membuka kasusnya. */
+  id: string
+  /** Nama assignment VERBATIM (butir at). */
+  tahap: string
+  /** Label `Create Operator Name` — baris 751. */
+  createOpName: string
+  /** Label `Create Date/Time` — baris 736. RFC3339, atau kosong. */
+  tglCreate: string
+  /** Label `Work Status` — baris 765. KATA, bukan kode mentah. */
+  status: string
+  nomorKlaim: string
+  nomorPolis: string
+  namaBisnis: string
+  mataUang: string
+}
+
+export interface HalamanInbox {
+  baris: BarisInbox[]
+  /** Cacah SELURUH kasus pada tahap itu — lencana tab memakainya. */
+  total: number
+  tahap: number
+  halaman: number
+  ukuran: number
+  namaTahap: string
+}
+
+/**
+ * Nomor tahap — HARUS sama dengan `models.Tahap` di Go.
+ *
+ * ⛔ Angka di kabel, kata di layar. Nama tahapnya datang dari backend
+ * (`namaTahap`), bukan dikarang di sini: ia nama assignment VERBATIM dan
+ * mengetiknya ulang di dua tempat berarti dua tempat untuk salah.
+ */
+export const TAHAP_NOMOR = {
+  inputRegister: 1,
+  outstanding: 2,
+  medicalCheck: 3,
+  claimAnalis: 4,
+} as const
+
+export type NomorTahap = (typeof TAHAP_NOMOR)[keyof typeof TAHAP_NOMOR]
+
+/** Membaca satu halaman antrian sebuah tahap. */
+export async function ambilKotakMasuk(
+  tahap: NomorTahap,
+  halaman = 1,
+  ukuran?: number,
+): Promise<HalamanInbox> {
+  return await minta<HalamanInbox>('/api/klaim-life', {
+    kueri: { tahap, halaman, ukuran },
+  })
+}

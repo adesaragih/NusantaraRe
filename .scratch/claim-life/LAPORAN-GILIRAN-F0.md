@@ -45,3 +45,39 @@ membuat orang mengganti nama tipenya, bukan memperbaiki menunya.
 **Telemetri:** uji JS 76 -> 97, modul build 41 -> 44, Go tidak tersentuh. XML dibaca ulang: 1
 (`Register_Flow.xml`, baris 155 · 270 · 268 · 313 · 343 · 358). Taksiran token +-40k (taksiran).
 
+---
+
+## at/au — kolom TAHAP dan TGL_CREATE  ·  SHA `cdd7b98`
+
+Migrasi 016; `serahTerimaSah` dari peta PERAN menjadi peta TAHAP; `TahapDanPeran` membaca keduanya
+dalam satu kueri; penjaga optimis `UPDATE` memakai `NVL(TAHAP, …)`; pendaftaran menulis `TAHAP`,
+`TGL_CREATE`, `CREATE_OP`, dan memakai SATU jam. Ralat tiket 08 dan 14; STRUKTUR diperbarui.
+
+XML dibaca ulang: `Register_Flow.xml` (358 · 343 · 268 · 313), `InputOSClaimLife.xml` (21349 ·
+21404 · 21433 · 21839 · 21863), `InboxPremiumList.xml` (736). Go 261 → 263 PASS.
+
+---
+
+## F0.4 backend — rute kotak masuk  ·  SHA `6b1618c`
+
+`GET /api/klaim-life?tahap=&halaman=&ukuran=`; `repository/inbox.go` + `services/inbox.go` +
+`handlers/inbox.go`. Worklist (pribadi) vs workbasket (bersama) dari `Register_Flow.xml`
+1511 · 1508 · 1300 · 1351 · 993 · 1072 · 1119 · 1198 — kedelapan baris diperiksa satu per satu.
+
+⛔ **RALAT ANGKA DI PESAN COMMIT `6b1618c`**: pesannya menulis "Go 263 → 274 PASS"; angka
+sebenarnya **272**. Dicatat di sini alih-alih menulis ulang sejarah. Cacah sesudah paket ini tetap
+272 PASS · 0 FAIL · 34 SKIP.
+
+XML dibaca ulang: `InboxPremiumList.xml` (592 · 721 · 733 · 736 · 751 · 765 · 942),
+`Register_Flow.xml` (delapan baris perutean).
+
+---
+
+## F0.4 frontend — halaman Inbox
+
+`pages/InboxClaimLife.tsx` + `ambilKotakMasuk` di `api.ts` + gaya. Empat tab = empat assignment,
+judul VERBATIM `pyTaskName`, terjemahan Indonesia DI SAMPING. Tab yang perannya tidak dipegang
+TIDAK dirender. Label kolom VERBATIM `InboxPremiumList.xml`, dan ujinya MEMBUKA korpus pada baris
+yang tiap label sebut.
+
+Uji JS 97 → 114; build 45 modul.
