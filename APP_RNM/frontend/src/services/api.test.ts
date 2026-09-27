@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  ApiFailure,
   jumlahUang,
   tampilUang,
   dampakHapusKlaim,
@@ -97,13 +98,28 @@ describe('penyerahan ke Komite', () => {
   it('meneruskan pesan server apa adanya, dan diam bila tidak ada', () => {
     // "Name of bank cannot be empty" adalah kalimat sistem lama yang sengaja
     // dipertahankan; ia harus sampai ke pengguna tanpa diparafrase.
-    const galatAxios = {
-      isAxiosError: true,
-      response: { status: 422, data: { error: 'Name of bank cannot be empty' } },
-    }
-    expect(pesanGalat(galatAxios)).toBe('Name of bank cannot be empty')
-    expect(pesanGalat({ isAxiosError: true, response: { status: 500, data: {} } })).toBeUndefined()
-    expect(pesanGalat(new Error('bukan galat axios'))).toBeUndefined()
+    // ⚠️ Bentuknya berubah di F0.2: klien kini `fetch`, dan galat HTTP
+    // datang sebagai `ApiFailure` - bukan lagi objek axios.
+    const ditolak = new ApiFailure(422, {
+      code: 'DITOLAK_BACKEND',
+      message: 'Name of bank cannot be empty',
+    })
+    expect(pesanGalat(ditolak)).toBe('Name of bank cannot be empty')
+    // Tanpa pesan: diam, bukan kalimat karangan.
+    expect(
+      pesanGalat(new ApiFailure(500, { code: 'DITOLAK_BACKEND' })),
+    ).toBeUndefined()
+    // ⛔ Pesan yang dibuat KLIEN bukan kalimat milik server, jadi ia
+    // TIDAK diteruskan sebagai pesan server.
+    expect(
+      pesanGalat(
+        new ApiFailure(502, {
+          code: 'BACKEND_TIDAK_TERJANGKAU',
+          message: 'Jawaban dari server bukan JSON',
+        }),
+      ),
+    ).toBeUndefined()
+    expect(pesanGalat(new Error('bukan galat HTTP'))).toBeUndefined()
   })
 })
 

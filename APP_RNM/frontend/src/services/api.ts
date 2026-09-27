@@ -9,7 +9,8 @@
 //   - `async` / `await` = menunggu jawaban server tanpa membekukan layar.
 //   - `Promise<Klaim>` = "nanti, kalau sudah datang, isinya Klaim".
 // ============================================================================
-import axios from 'axios'
+
+import { headerIdentitas } from '../store/sesi'
 
 // ---------------------------------------------------------------------------
 // 1. BENTUK DATA yang dikirim backend.
@@ -78,19 +79,110 @@ export interface Kesehatan {
 }
 
 // ---------------------------------------------------------------------------
-// 2. KLIEN HTTP.
+// 2. KLIEN HTTP — `fetch`, bukan axios (F0.2).
 //
-// Alamat backend TIDAK ditulis di kode. Ia dibaca dari env var
-// VITE_API_BASE_URL (berkas .env — contohnya di .env.example). Kosong berarti
-// frontend dan backend disajikan dari alamat yang sama (ADR-U-0004).
+// ⛔ RALAT RUJUKAN ADR: blok ini dahulu menyebut ADR-U-0004. ADR itu
+// DIGANTIKAN ADR-0013 (lihat `docs/adr/0013…` baris `menggantikan:
+// ADR-0004`), dan ADR yang sudah diganti tidak boleh dikutip sebagai
+// alasan — pembaca berikutnya akan mencarinya dan menemukan keputusan
+// yang sudah dicabut.
+//
+// Alamat backend TIDAK ditulis di kode. Ia dibaca dari `VITE_API_BASE_URL`;
+// kosong berarti frontend dan backend disajikan dari alamat yang sama.
+//
+// # Kenapa `fetch`, bukan axios
+//
+// Komponen dasar (`components/ui/dasar.tsx`) dan `lib/keadaanGalat.ts` yang
+// diadopsi dari REFERENSI_UI keduanya berbicara dalam `ApiFailure`.
+// Mempertahankan axios berarti menulis adaptor yang MEREPRODUKSI kelas itu,
+// ditambah satu lapis lagi yang dapat salah. Dua model galat berdampingan
+// berarti dua jalan menampilkan kegagalan yang sama, dan yang satu akan
+// diam-diam kalah.
 // ---------------------------------------------------------------------------
-const baseURL = import.meta.env.VITE_API_BASE_URL ?? ''
+const baseURL: string = import.meta.env.VITE_API_BASE_URL ?? ''
 
-export const api = axios.create({
-  baseURL,
-  timeout: 30000,
-  headers: { 'Content-Type': 'application/json' },
-})
+/** Batas waktu satu permintaan. Sama dengan axios sebelumnya. */
+const BATAS_WAKTU_MS = 30_000
+
+interface OpsiMinta {
+  metode?: 'GET' | 'POST' | 'PUT' | 'DELETE'
+  /** Badan permintaan; di-JSON-kan. `undefined` berarti tanpa badan. */
+  badan?: unknown
+  /** Parameter kueri; nilai `undefined` dilewati. */
+  kueri?: Record<string, string | number | undefined>
+}
+
+function rakitURL(jalur: string, kueri?: OpsiMinta['kueri']): string {
+  if (kueri === undefined) return baseURL + jalur
+  const p = new URLSearchParams()
+  for (const [k, v] of Object.entries(kueri)) {
+    if (v !== undefined) p.set(k, String(v))
+  }
+  const teks = p.toString()
+  return teks === '' ? baseURL + jalur : baseURL + jalur + '?' + teks
+}
+
+/**
+ * Satu permintaan HTTP.
+ *
+ * ⛔ Jawaban yang BUKAN JSON menjadi `BACKEND_TIDAK_TERJANGKAU`, bukan
+ * `SyntaxError`. Proxy pengembangan maupun reverse-proxy produksi menjawab
+ * HTML atau teks biasa ketika upstream-nya mati; tanpa pemetaan ini keadaan
+ * "backend mati" muncul sebagai galat parser yang tidak dapat dibaca siapa
+ * pun, dan layar menampilkannya sebagai "belum ada data".
+ *
+ * ⚠️ Galat JARINGAN (fetch menolak sebelum ada respons) sengaja DILEMPAR
+ * apa adanya sebagai `TypeError`: `lib/keadaanGalat.ts` mengenalinya dan
+ * memberi petunjuk yang benar. Membungkusnya di sini menghapus tipenya.
+ */
+async function minta<T>(jalur: string, opsi: OpsiMinta = {}): Promise<T> {
+  const kendali = new AbortController()
+  const jam = setTimeout(() => {
+    kendali.abort()
+  }, BATAS_WAKTU_MS)
+  let jawab: Response
+  try {
+    jawab = await fetch(rakitURL(jalur, opsi.kueri), {
+      method: opsi.metode ?? 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        // ⛔ Identitas ikut di SETIAP permintaan, dari satu tempat.
+        // Memasangnya per pemanggil berarti satu pemanggil akan lupa.
+        ...headerIdentitas(),
+      },
+      body: opsi.badan === undefined ? undefined : JSON.stringify(opsi.badan),
+      signal: kendali.signal,
+    })
+  } finally {
+    clearTimeout(jam)
+  }
+
+  // 204 dan badan kosong: tidak ada yang perlu diurai.
+  const teks = await jawab.text()
+  let isi: unknown
+  if (teks.trim() !== '') {
+    try {
+      isi = JSON.parse(teks)
+    } catch {
+      throw new ApiFailure(jawab.status, {
+        code: 'BACKEND_TIDAK_TERJANGKAU',
+        message:
+          'Jawaban dari server bukan JSON; permintaan tampaknya tidak ' +
+          'sampai ke backend.',
+      })
+    }
+  }
+
+  if (!jawab.ok) {
+    const o = (isi ?? {}) as { error?: unknown }
+    throw new ApiFailure(jawab.status, {
+      code: 'DITOLAK_BACKEND',
+      // Envelope backend kita: `{"error": "<kalimat>"}`.
+      message: typeof o.error === 'string' && o.error !== '' ? o.error : undefined,
+    })
+  }
+  return isi as T
+}
 
 // ---------------------------------------------------------------------------
 // 3. UANG — aturan yang paling sering ditegur (ADR-U-0003, ADR-U-0016).
@@ -137,7 +229,7 @@ export function tampilUang(uang: UangMasuk | null | undefined): string {
 // ---------------------------------------------------------------------------
 
 export async function cekKesehatan(): Promise<Kesehatan> {
-  const { data } = await api.get<Kesehatan>('/healthz')
+  const data = await minta<Kesehatan>('/healthz')
   return data
 }
 
@@ -147,7 +239,7 @@ export async function cekKesehatan(): Promise<Kesehatan> {
  * internal/handlers/klaimlife.go.
  */
 export async function ambilKlaimLife(id: string): Promise<Klaim> {
-  const { data } = await api.get<Klaim>(`/api/klaim-life/${encodeURIComponent(id)}`)
+  const data = await minta<Klaim>(`/api/klaim-life/${encodeURIComponent(id)}`)
   return data
 }
 
@@ -157,7 +249,7 @@ export async function ambilKlaimLife(id: string): Promise<Klaim> {
  * "klaim tidak ada" (404) dari kegagalan lain.
  */
 export function kodeStatusGalat(err: unknown): number | undefined {
-  return axios.isAxiosError(err) ? err.response?.status : undefined
+  return err instanceof ApiFailure ? err.status : undefined
 }
 
 /**
@@ -168,9 +260,13 @@ export function kodeStatusGalat(err: unknown): number | undefined {
  * sengaja dipertahankan. Untuk 5xx pesannya TIDAK dicetak.
  */
 export function pesanGalat(err: unknown): string | undefined {
-  if (!axios.isAxiosError(err)) return undefined
-  const data = err.response?.data as { error?: unknown } | undefined
-  return typeof data?.error === 'string' && data.error !== '' ? data.error : undefined
+  if (!(err instanceof ApiFailure)) return undefined
+  // ⚠️ Hanya pesan yang BENAR-BENAR datang dari backend. `ApiFailure`
+  // yang dibuat klien (`BACKEND_TIDAK_TERJANGKAU`) punya pesannya
+  // sendiri, dan itu bukan kalimat milik server.
+  if (err.detail.code !== 'DITOLAK_BACKEND') return undefined
+  const pesan = err.detail.message
+  return pesan !== undefined && pesan !== '' ? pesan : undefined
 }
 
 // ---------------------------------------------------------------------------
@@ -212,8 +308,8 @@ export interface HasilDaftar {
  * pemindaian penuh yang menahan basis data.
  */
 export async function cariPesertaLife(pl: string, batas = 50): Promise<CalonPeserta[]> {
-  const { data } = await api.get<CalonPeserta[] | null>('/api/peserta-life', {
-    params: { pl, n: batas },
+  const data = await minta<CalonPeserta[] | null>('/api/peserta-life', {
+    kueri: { pl, n: batas },
   })
   // Go menulis slice kosong sebagai null; layar menginginkan daftar kosong.
   return data ?? []
@@ -227,9 +323,17 @@ export async function cariPesertaLife(pl: string, batas = 50): Promise<CalonPese
  * ditunggu — layar meneruskannya apa adanya, tidak menggantinya dengan
  * "terjadi kesalahan".
  */
-export async function daftarKlaimLife(minta: PermintaanDaftar): Promise<HasilDaftar> {
-  const { data } = await api.post<HasilDaftar>('/api/klaim-life', minta)
-  return data
+// ⚠️ Parameternya DIGANTI NAMA menjadi `permintaan`: nama lamanya `minta`
+// menutupi fungsi klien `minta`, dan pemanggilan di dalamnya menjadi
+// memanggil OBJEK, bukan klien. tsc menangkapnya; tanpa tsc ia akan
+// menjadi galat saat jalan pada satu-satunya jalur pendaftaran klaim.
+export async function daftarKlaimLife(
+  permintaan: PermintaanDaftar,
+): Promise<HasilDaftar> {
+  return await minta<HasilDaftar>('/api/klaim-life', {
+    metode: 'POST',
+    badan: permintaan,
+  })
 }
 
 /**
@@ -258,7 +362,10 @@ export const STATUS_OUTSTANDING = 'Outstanding'
  *   501 tempat jejak audit belum diputuskan (butir am)
  */
 export async function tolakBarisAdjustment(klaimID: string, adjID: string): Promise<void> {
-  await api.post(`/api/klaim-life/${encodeURIComponent(klaimID)}/adjustment/${encodeURIComponent(adjID)}/tolak`)
+  await minta<void>(
+    `/api/klaim-life/${encodeURIComponent(klaimID)}/adjustment/${encodeURIComponent(adjID)}/tolak`,
+    { metode: 'POST' },
+  )
 }
 
 /**
@@ -279,11 +386,12 @@ export async function simpanAdjustment(
   klaimID: string,
   pesertaID: string,
 ): Promise<string> {
-  const jawab = await api.post<{ nomorAkseptasi: string }>(
+  const jawab = await minta<{ nomorAkseptasi: string }>(
     `/api/klaim-life/${encodeURIComponent(klaimID)}` +
       `/peserta/${encodeURIComponent(pesertaID)}/akseptasi`,
+    { metode: 'POST' },
   )
-  return jawab.data.nomorAkseptasi
+  return jawab.nomorAkseptasi
 }
 
 /**
@@ -321,9 +429,10 @@ export function bolehSimpanAdjustment(
  *   501 tempat jejak audit belum diputuskan (butir am)
  */
 export async function tambahPutaran(klaimID: string, pesertaID: string): Promise<void> {
-  await api.post(
+  await minta<void>(
     `/api/klaim-life/${encodeURIComponent(klaimID)}` +
       `/peserta/${encodeURIComponent(pesertaID)}/putaran`,
+    { metode: 'POST' },
   )
 }
 
@@ -369,10 +478,11 @@ export async function serahkanKeKomite(
   pesertaID: string,
   adjID: string,
 ): Promise<void> {
-  await api.post(
+  await minta<void>(
     `/api/klaim-life/${encodeURIComponent(klaimID)}` +
       `/peserta/${encodeURIComponent(pesertaID)}` +
       `/adjustment/${encodeURIComponent(adjID)}/komite`,
+    { metode: 'POST' },
   )
 }
 
@@ -404,7 +514,7 @@ export interface DampakHapus {
  * satu pun tulisan untuk dibatalkan.
  */
 export async function dampakHapusKlaim(klaimID: string): Promise<DampakHapus> {
-  const { data } = await api.get<DampakHapus>(
+  const data = await minta<DampakHapus>(
     `/api/klaim-life/${encodeURIComponent(klaimID)}/dampak-hapus`,
   )
   return data
@@ -417,8 +527,12 @@ export async function dampakHapusKlaim(klaimID: string): Promise<DampakHapus> {
  * PENANDA, bukan hapus fisik, dan kolom penandanya belum diputuskan.
  */
 export async function hapusKlaim(klaimID: string): Promise<DampakHapus> {
-  const { data } = await api.delete<DampakHapus>(
+  // ⛔ DELETE, bukan GET. Rutenya sama persis dengan `ambilKlaimLife`;
+  // yang membedakan hanya METODEnya, dan metode yang hilang membuat
+  // tombol Hapus diam-diam MEMBACA klaim lalu melaporkan berhasil.
+  const data = await minta<DampakHapus>(
     `/api/klaim-life/${encodeURIComponent(klaimID)}`,
+    { metode: 'DELETE' },
   )
   return data
 }
