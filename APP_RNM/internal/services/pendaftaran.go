@@ -109,12 +109,32 @@ func (p *Pendaftaran) DenganPenomor(n Penomor) *Pendaftaran {
 	return &Pendaftaran{svc: p.svc, penomor: n}
 }
 
-// Daftar membentuk satu klaim baru dalam SATU transaksi.
+// Daftar membentuk satu klaim baru dalam DUA transaksi.
 //
 // Urutannya disengaja: permintaan diperiksa lebih dulu, baru nomor diambil.
 // Nomor yang sudah terbentuk tidak dapat dikembalikan ke urutannya, jadi
 // mengambilnya sebelum validasi berarti membuang satu nomor setiap kali
 // pengguna salah mengisi borang.
+//
+// ⛔ DUA TRANSAKSI, dan itu yang AC tiket 02 tuntut dengan kalimatnya
+// sendiri: *"Batas transaksi dipegang Go: commit terjadi segera setelah
+// nomor terbentuk, sehingga lock `SELECT … FOR UPDATE` pada
+// `GENERATE_SEQUENCE_NUMBER` tidak menahan pendaftar lain."*
+//
+// Ronde sebelumnya menomori DI DALAM transaksi pendaftaran - sehingga
+// kuncian baris penghitung dipegang sampai seluruh pendaftaran selesai,
+// termasuk selama pembacaan peserta dan penulisan pohon klaimnya. Satu
+// pendaftar yang lambat menahan SEMUA pendaftar lain di seluruh instalasi.
+//
+// ⚠️ KONSEKUENSI YANG DITERIMA, dinyatakan bukan disembunyikan: bila
+// transaksi KEDUA gagal, nomornya sudah terbakar dan urutannya berlubang.
+// Lubang pada urutan nomor tidak merusak apa pun - nomor tidak dipakai
+// menghitung apa pun - sedangkan kuncian global merusak setiap pendaftaran
+// serentak. Pega pun begitu: procedure-nya commit sendiri di dalam.
+//
+// ⛔ Urutan di dalam transaksi KEDUA tetap penting: `SEQ_WORK_CLAIM`
+// non-transaksional, jadi pengenal yang sudah diambil tidak kembali saat
+// transaksinya dibatalkan.
 func (p *Pendaftaran) Daftar(ctx context.Context, pelaku Pelaku, minta PermintaanDaftar) (
 	models.PohonKlaim, error) {
 	var hasil models.PohonKlaim
@@ -146,19 +166,20 @@ func (p *Pendaftaran) Daftar(ctx context.Context, pelaku Pelaku, minta Permintaa
 		return hasil, repository.ErrTanpaOracle
 	}
 
+	// TRANSAKSI PERTAMA - hanya nomornya, sependek mungkin.
+	var nomor string
+	if err := p.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+		var err error
+		nomor, err = p.penomor.NomorBerikut(ctx, tx, minta.KodeBisnis, time.Now())
+		return err
+	}); err != nil {
+		return hasil, err
+	}
+
+	// TRANSAKSI KEDUA - seluruh pohon klaimnya.
 	err := p.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
 		pohon := repository.NewPohonKlaim(p.svc.db)
 
-		// ⛔ Urutannya: NOMOR dulu, baru pengenal. Alasan yang sama dengan
-		// "validasi sebelum nomor" di atas, dan ia berlaku persis di sini:
-		// SEQ_WORK_CLAIM bersifat non-transaksional, jadi angka yang sudah
-		// diambil TIDAK kembali saat transaksi dibatalkan. Selama butir o
-		// belum diputuskan, penomoran SELALU gagal - dan urutan yang terbalik
-		// membakar satu pengenal pada setiap permintaan yang pasti ditolak.
-		nomor, err := p.penomor.NomorBerikut(ctx, tx, minta.KodeBisnis, time.Now())
-		if err != nil {
-			return err
-		}
 		pengenal, err := pohon.PengenalWorkBerikut(ctx, tx, repository.AwalanKlaim)
 		if err != nil {
 			return err

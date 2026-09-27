@@ -190,3 +190,79 @@ func TestNolAwalanNomorKlaimSebagaiLiteral(t *testing.T) {
 		t.Fatal("nol berkas diperiksa; pembacanya yang rusak")
 	}
 }
+
+// AC tiket 02: nomor berbentuk `<awalan>K<kode bisnis>.MM.YYYY.<5 digit>`.
+//
+// Contoh AC-nya sendiri dipakai sebagai kasus pertama: `RNML-KL1.08.2026.00936`.
+func TestBentukNomorKlaim(t *testing.T) {
+	kasus := []struct {
+		awalan, kodeBisnis, mmYYYY string
+		urut                       int
+		mau                        string
+	}{
+		{"RNML-", "L1", "08.2026", 936, "RNML-KL1.08.2026.00936"},
+		// Satu digit tetap menjadi lima.
+		{"RNML-", "L1", "01.2026", 1, "RNML-KL1.01.2026.00001"},
+		// ⛔ Urut yang sudah LEBIH panjang dari lima TIDAK dipotong.
+		// Memotongnya menerbitkan nomor yang bertabrakan dengan nomor lain.
+		{"RNML-", "L1", "12.2025", 123456, "RNML-KL1.12.2025.123456"},
+		// Awalan datang dari basis data, jadi awalan lain harus ikut terbawa.
+		{"UJI-", "L9", "03.2027", 7, "UJI-KL9.03.2027.00007"},
+	}
+	for _, k := range kasus {
+		dapat := RakitNomorKlaim(k.awalan, k.kodeBisnis, k.mmYYYY, k.urut)
+		if dapat != k.mau {
+			t.Errorf("RakitNomorKlaim(%q,%q,%q,%d) = %q, mau %q",
+				k.awalan, k.kodeBisnis, k.mmYYYY, k.urut, dapat, k.mau)
+		}
+	}
+}
+
+// AC tiket 02: nomor di-commit SEBELUM pendaftaran, bukan bersamanya.
+//
+// ⛔ Penjaga batas transaksi. Ronde sebelumnya menomori di dalam transaksi
+// pendaftaran, sehingga kuncian `SELECT … FOR UPDATE` atas baris penghitung
+// dipegang sampai seluruh pendaftaran selesai - termasuk selama pembacaan
+// peserta dan penulisan pohon klaimnya. Satu pendaftar yang lambat menahan
+// SEMUA pendaftar lain di seluruh instalasi.
+//
+// ⚠️ Penjaga STATIK, dan alasannya dinyatakan: membuktikannya lewat perilaku
+// menuntut Oracle sungguhan dengan dua sambungan serentak. Yang dapat dijaga
+// tanpa Oracle adalah bentuknya - dua transaksi, dan penomoran di yang
+// pertama. Bila itu runtuh, kunciannya kembali menahan semua orang.
+func TestPenomoranDiTransaksiSendiri(t *testing.T) {
+	isi, err := os.ReadFile("pendaftaran.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tubuh := ""
+	for _, fn := range strings.Split(string(isi), "\nfunc ") {
+		if strings.HasPrefix(fn, "(p *Pendaftaran) Daftar(") {
+			tubuh = fn
+			break
+		}
+	}
+	if tubuh == "" {
+		t.Fatal("fungsi Daftar tidak ditemukan; pembacanya yang rusak")
+	}
+	const mauTransaksi = 2
+	if n := strings.Count(tubuh, "p.svc.DalamTransaksi("); n != mauTransaksi {
+		t.Fatalf("Daftar membuka %d transaksi, mau %d - satu untuk nomornya, "+
+			"satu untuk pohon klaimnya", n, mauTransaksi)
+	}
+	// ⚠️ Letak KEDUA dihitung dari awal teks yang sama, bukan dari potongan.
+	// Ronde pertama penjaga ini membandingkan indeks ke dalam POTONGAN
+	// dengan indeks ke dalam teks utuh - dan menuduh kode yang benar.
+	const buka = "p.svc.DalamTransaksi("
+	letakNomor := strings.Index(tubuh, "NomorBerikut(")
+	letakPertama := strings.Index(tubuh, buka)
+	letakKedua := letakPertama + 1 +
+		strings.Index(tubuh[letakPertama+1:], buka)
+	if letakNomor < 0 {
+		t.Fatal("Daftar tidak lagi memanggil NomorBerikut")
+	}
+	if letakNomor > letakKedua {
+		t.Error("NomorBerikut dipanggil di transaksi KEDUA; kuncian penghitung " +
+			"akan menahan pendaftar lain selama seluruh pendaftaran")
+	}
+}
