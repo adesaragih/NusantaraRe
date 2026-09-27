@@ -2,6 +2,8 @@ package models
 
 import (
 	"encoding/json"
+	"reflect"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -192,12 +194,26 @@ func TestPesertaJSONMembawaTanggalKejadian(t *testing.T) {
 	if isi["tanggalKejadian"] != "2026-03-01" {
 		t.Errorf("tanggalKejadian = %v, mau teks apa adanya", isi["tanggalKejadian"])
 	}
-	// ⛔ NAMA ORANG tetap TIDAK menyeberang. Medan yang ditambahkan ke
-	// marshaller ini mudah bertambah satu per satu; uji ini menahan yang satu
-	// itu.
-	for _, terlarang := range []string{"namaTertanggung", "nameOfInsured", "pemegangPolis"} {
-		if _, ada := isi[terlarang]; ada {
-			t.Errorf("JSON peserta memuat %q; nama orang tidak pernah menyeberang", terlarang)
-		}
+	// ⛔ HIMPUNAN KUNCINYA DIKUNCI UTUH, bukan daftar kata terlarang.
+	//
+	// Ronde pertama menyenaraikan tiga nama harfiah - "namaTertanggung",
+	// "nameOfInsured", "pemegangPolis" - dan itu penjaga yang menenangkan
+	// tanpa menjaga: medan bernama "namaPeserta" lolos utuh. Daftar larangan
+	// selalu kalah dari nama yang belum terpikirkan.
+	//
+	// Yang dikunci karena itu kebalikannya: SETIAP kunci yang boleh ada.
+	// Menambah medan apa pun ke marshaller ini menyalakan uji ini, dan orang
+	// yang menambahnya harus menuliskan namanya di sini - yaitu harus
+	// melihatnya.
+	kunci := make([]string, 0, len(isi))
+	for k := range isi {
+		kunci = append(kunci, k)
+	}
+	sort.Strings(kunci)
+	mau := []string{"baris", "id", "isCheck", "mataUang", "nomorPolis",
+		"nomorPremiList", "nomorSertifikat", "tanggalKejadian"}
+	if !reflect.DeepEqual(kunci, mau) {
+		t.Errorf("kunci JSON peserta = %v, mau %v; medan baru harus disengaja",
+			kunci, mau)
 	}
 }

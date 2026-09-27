@@ -181,12 +181,36 @@ describe.skipIf(!adaKorpus)('label layar Detail berbukti barisnya', () => {
       )
     })
 
-  it('DETAIL memuat kedelapan label itu, tidak kurang', () => {
+  // Dua label ini milik `CloseClaim_Section.xml`, bukan section Detail, jadi
+  // buktinya dicari di berkas yang benar - bukan di berkas yang kebetulan
+  // memuat teks yang sama.
+  const medanTutup: Array<[string, number, string]> = [
+    ['Close Claim', 1081, 'pyLabel'],
+    ['Are you sure want to Close Claim?', 499, 'pyValue'],
+  ]
+
+  it.each(medanTutup)('%s ada di CloseClaim_Section baris %i sebagai <%s>',
+    (label, nomor, tag) => {
+      expect(baris('Section/CloseClaim_Section.xml', nomor)).toBe(
+        `<${tag}>${label}</${tag}>`,
+      )
+    })
+
+  it('tombol Close Claim menjalankan DUA aksi, bukan satu', () => {
+    // ⛔ Ronde pertama melaporkan "tombol itu tidak punya aksi lain selain
+    // gerbangnya". Keliru: satu klik menjalankan `refresh` -> activity DAN
+    // `closeContainer`. Uji ini menahan klaim itu supaya tidak diulang.
+    const tutup = berkas('Section/CloseClaim_Section.xml')
+    expect(tutup).toContain('<pyActivity>ProtectCloseClaim_act</pyActivity>')
+    expect(tutup).toContain('<pyAction>closeContainer</pyAction>')
+  })
+
+  it('DETAIL memuat kesepuluh label itu, tidak kurang', () => {
     const nilai = Object.values(DETAIL)
-    for (const [label] of medanDetail) {
+    for (const [label] of [...medanDetail, ...medanTutup]) {
       expect(nilai).toContain(label)
     }
-    expect(nilai).toHaveLength(medanDetail.length)
+    expect(nilai).toHaveLength(medanDetail.length + medanTutup.length)
   })
 
   it('rule CheckTotalAdjustmentClaim dirujuk section tetapi NOL berkasnya', () => {

@@ -773,9 +773,11 @@ export async function pindahTahap(klaimID: string, tujuan: TahapJalur): Promise<
  * Validasinya `ValidasiDOL_Act`, dipanggil section yang sama di b11177 dan
  * b11298.
  *
- * ⚠️ Rutenya sudah ada di backend sejak tiket 06, tetapi TIDAK ADA satu pun
- * pemanggil di React sampai sekarang — jadi jalurnya tidak pernah dapat
- * dijalankan dari layar. Rute tanpa pemanggil tidak berbunyi di uji mana pun.
+ * ⚠️ Fungsi ini lahir belakangan daripada rutenya. Rute backendnya ada sejak
+ * tiket 06 lengkap dengan `ValidasiDOL` dan ujinya, tetapi sampai kelompok
+ * Detail & Tutup NOL pemanggil di React — jadi jalurnya tidak pernah dapat
+ * dijalankan siapa pun, dan itu tidak berbunyi di uji mana pun: backend
+ * hijau, layar hijau, fiturnya tidak ada.
  *
  * Kode jawaban yang mungkin:
  *   204 berhasil
@@ -792,5 +794,39 @@ export async function ubahTanggalKejadian(
     `/api/klaim-life/${encodeURIComponent(klaimID)}` +
       `/peserta/${encodeURIComponent(pesertaID)}/tanggal-kejadian`,
     { metode: 'PUT', badan: { tanggalKejadian } },
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Gerbang Close Claim — `CloseClaim_Section.xml` b1081 -> b1101.
+// ---------------------------------------------------------------------------
+
+/** Satu peserta yang menahan penutupan klaim. */
+export interface PenghalangTutup {
+  urutan: number
+  nomorSertifikat: string
+  /** Kalimat yang dilihat pemakai, disusun SERVER dan verbatim dari rule. */
+  pesan: string
+}
+
+/** Jawaban gerbang tutup. */
+export interface HasilPeriksaTutup {
+  boleh: boolean
+  penghalang: PenghalangTutup[]
+}
+
+/**
+ * Memeriksa apakah klaim boleh ditutup.
+ *
+ * ⛔ GET, dan ia BELUM MENUTUP apa pun. Di Pega tombol `Close Claim`
+ * menjalankan dua aksi pada satu klik — `refresh` → `ProtectCloseClaim_act`
+ * (b1101) yang memeriksa lalu memanggil `FinishAssignment`, dan
+ * `closeContainer` (b1129) yang menutup jendelanya. Yang dibangun di sini
+ * baru pemeriksaannya; sisi penyelesaian penugasan menunggu pembacaan
+ * `Flow/`, sebab tahap tujuannya belum diketahui.
+ */
+export async function periksaBolehTutup(klaimID: string): Promise<HasilPeriksaTutup> {
+  return minta<HasilPeriksaTutup>(
+    `/api/klaim-life/${encodeURIComponent(klaimID)}/boleh-tutup`,
   )
 }

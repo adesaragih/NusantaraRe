@@ -1,13 +1,16 @@
 import { useState, type FormEvent } from 'react'
 
 import { DETAIL } from '../assets/labels'
-import { PanelTotalKlaim } from '../components/PanelTotalKlaim'
+import { BelumTersedia } from '../components/ui/dasar'
+import { PanelTotalPeserta } from '../components/PanelTotalPeserta'
 
 import {
   ambilKlaimLife,
   kodeStatusGalat,
   pesanGalat,
+  periksaBolehTutup,
   ubahTanggalKejadian,
+  type HasilPeriksaTutup,
   tampilUang,
   tolakBarisAdjustment,
   serahkanKeKomite,
@@ -58,8 +61,44 @@ export default function KlaimLife() {
   // bersama akan mengunci kotak peserta lain tanpa sebab yang terlihat.
   const [tanggalSibuk, setTanggalSibuk] = useState<Record<string, boolean>>({})
 
+  // Hasil gerbang tutup. null = belum pernah diperiksa.
+  const [gerbangTutup, setGerbangTutup] = useState<HasilPeriksaTutup | null>(null)
+  const [tutupSibuk, setTutupSibuk] = useState(false)
+
+  /** Memeriksa kesiapan tutup; TIDAK menutup apa pun. */
+  async function periksaTutup(): Promise<void> {
+    if (klaim === null || tutupSibuk) return
+    setTutupSibuk(true)
+    try {
+      setGerbangTutup(await periksaBolehTutup(klaim.id))
+    } catch (e) {
+      setGerbangTutup({
+        boleh: false,
+        penghalang: [
+          {
+            urutan: 0,
+            nomorSertifikat: '',
+            pesan: pesanGalat(e) ?? 'Kesiapan tutup tidak dapat diperiksa.',
+          },
+        ],
+      })
+    } finally {
+      setTutupSibuk(false)
+    }
+  }
+
   /** Mengirim tanggal kejadian satu peserta; validasinya di server. */
   async function ubahTanggal(pesertaID: string, nilai: string): Promise<void> {
+    // Galat lama dibersihkan LEBIH DULU, sebelum keluar karena kotak
+    // dikosongkan. Kalau tidak, pesan penolakan tanggal sebelumnya menempel
+    // di layar untuk kotak yang sudah tidak berisi apa-apa.
+    setGalatTanggal((lama) => {
+      const { [pesertaID]: _dibuang, ...sisa } = lama
+      return sisa
+    })
+    // Kosong tidak dikirim: backend menjawab 400 "tanggal kejadian belum
+    // diisi", dan menyuruh orang menunggu perjalanan bolak-balik hanya untuk
+    // dimarahi soal kotak yang baru saja ia kosongkan bukan pertolongan.
     if (klaim === null || nilai === '') return
     // ⛔ Menolak permintaan kedua selagi yang pertama terbang. Tanpa ini,
     // dua pengubahan beruntun berlomba: yang kedua tiba lebih dulu, lalu
@@ -68,10 +107,6 @@ export default function KlaimLife() {
     // hilang, dan pemakai mengetiknya lagi.
     if (tanggalSibuk[pesertaID] === true) return
     setTanggalSibuk((lama) => ({ ...lama, [pesertaID]: true }))
-    setGalatTanggal((lama) => {
-      const { [pesertaID]: _dibuang, ...sisa } = lama
-      return sisa
-    })
     try {
       await ubahTanggalKejadian(klaim.id, pesertaID, nilai)
       setKlaim(await ambilKlaimLife(klaim.id))
@@ -359,6 +394,12 @@ export default function KlaimLife() {
                   {DETAIL.ubahTanggal}{' '}
                   <input
                     type="date"
+                    // ⛔ `key` memaksa kotaknya LAHIR ULANG ketika tanggal
+                    // yang tersimpan berubah. Tanpa itu `defaultValue` hanya
+                    // dibaca sekali, sehingga sesudah penyimpanan berhasil
+                    // kotaknya tetap memperlihatkan ketikan lama - dan
+                    // pemakai tidak punya cara tahu mana yang tersimpan.
+                    key={`${p.id}:${p.tanggalKejadian}`}
                     defaultValue={p.tanggalKejadian}
                     disabled={tanggalSibuk[p.id] === true}
                     onChange={(e) => {
@@ -370,6 +411,29 @@ export default function KlaimLife() {
                   <span role="alert"> {galatTanggal[p.id]}</span>
                 )}
               </p>
+
+              {/* ⛔ Kelima total ini milik PESERTA, bukan klaim.
+                  `ClaimLifeDetailGCNM.xml` berkelas
+                  `Int-LIFE_PREMIUM_DETAIL` (b84) dan medannya terikat
+                  properti berawalan TITIK pada halaman itu
+                  (`.TotalShareRNM` b20921 dst) - titik berarti "halaman
+                  yang sedang berjalan", dan halaman itu peserta.
+
+                  ⛔ Ronde pertama menaruhnya di tingkat klaim berjudul
+                  "Total klaim". Keliru, dan sebabnya sama dengan butir av:
+                  labelnya dibaca, IKATANNYA tidak.
+
+                  Nilainya tetap belum ada - rule penghitungnya
+                  (`CheckTotalAdjustmentClaim`) nol berkasnya di ekspor,
+                  dan menebak angka uang melanggar ADR-U-0003. OQ-H. */}
+              <PanelTotalPeserta />
+
+              {/* `Find Disease` b5061 `pxButton` -> `showHarness` b5071
+                  `Diagnose_Harness`. Popup diagnosis itu milik kelompok
+                  MEDIS: sumbernya `DISEASE_LIFE` yang 97.586 baris, dan
+                  pencariannya harus berbatas. Tombolnya DINYATAKAN di sini
+                  supaya layarnya tidak tampak lengkap padahal tidak. */}
+              <BelumTersedia apa={DETAIL.cariPenyakit} />
 
               {/* ⛔ Penolakan bukan akhir: klaim TIDAK terminal (ADR-U-0011).
                   Yang terminal adalah baris, dan baris berikutnya memulai
@@ -478,13 +542,38 @@ export default function KlaimLife() {
         </article>
       )}
 
-      {/* ⛔ Kelima total layar Detail DINYATAKAN belum bersumber, bukan
-          dihilangkan dan bukan dijumlahkan sendiri. Rule penghitungnya
-          (`CheckTotalAdjustmentClaim`) dirujuk sepuluh kali di
-          `ClaimLifeDetailGCNM.xml` tetapi NOL berkasnya ada di ekspor, jadi
-          baris mana yang ikut dihitung belum terjawab - dan ini angka uang
-          (ADR-U-0003). Lihat OQ-H. */}
-      <PanelTotalKlaim />
+      {klaim !== null && (
+        <section className="os__aksi">
+          {/* `CloseClaim_Section.xml` b1081. ⛔ Tombolnya BELUM MENUTUP:
+              di Pega satu klik menjalankan `refresh` -> `ProtectCloseClaim_act`
+              b1101 (yang memeriksa LALU memanggil FinishAssignment) dan
+              `closeContainer` b1129. Yang ada di sini baru pemeriksaannya,
+              dan labelnya mengatakannya - tombol yang menjanjikan lebih
+              daripada yang ia lakukan adalah cacat yang paling mahal
+              ditemukan belakangan. */}
+          <button type="button" disabled={tutupSibuk} onClick={() => void periksaTutup()}>
+            Periksa kesiapan: {DETAIL.tutupKlaim}
+          </button>
+
+          {gerbangTutup !== null && gerbangTutup.boleh && (
+            <p role="status">
+              Seluruh peserta sudah diaksep. {DETAIL.konfirmasiTutup}{' '}
+              <strong>Penutupannya sendiri belum terpasang</strong> — tahap
+              tujuan sesudah tutup belum dibaca dari alurnya.
+            </p>
+          )}
+          {gerbangTutup !== null && !gerbangTutup.boleh && (
+            <div role="alert">
+              <p>Klaim belum dapat ditutup:</p>
+              <ul>
+                {gerbangTutup.penghalang.map((p) => (
+                  <li key={`${p.urutan}:${p.nomorSertifikat}`}>{p.pesan}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
+      )}
     </section>
   )
 }

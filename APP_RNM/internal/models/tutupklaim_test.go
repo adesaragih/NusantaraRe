@@ -129,3 +129,25 @@ func TestPesanPenghalangTidakMemuatNama(t *testing.T) {
 		t.Errorf("bentuk pesan berubah: %q", got)
 	}
 }
+
+// ⛔ Kode status dibandingkan PERSIS, tanpa merapikan spasi.
+//
+// Ronde pertama memakai strings.TrimSpace "untuk aman", dan itu justru
+// MELONGGARKAN gerbang uang: " 1 " akan menutup klaim di Go padahal Pega -
+// yang membandingkan `.STS_REJECT != 1` apa adanya (b608) - menahannya.
+// Gerbang yang lebih longgar daripada aslinya menutup klaim yang di sistem
+// lama tidak akan pernah tertutup.
+func TestKodeStatusDibandingkanPersis(t *testing.T) {
+	for _, mirip := range []string{" 1", "1 ", " 1 ", "01", "1.0", "\t1"} {
+		baris := []BarisTutup{{Urutan: 1, NomorSertifikat: "UJI-001", KodeStatus: mirip}}
+		if BolehTutupKlaim(baris) {
+			t.Errorf("kode %q diterima sebagai diaksep; hanya %q yang berarti diaksep",
+				mirip, KodeAksep)
+		}
+	}
+	// Dan yang persis tetap diterima.
+	baris := []BarisTutup{{Urutan: 1, NomorSertifikat: "UJI-001", KodeStatus: KodeAksep}}
+	if !BolehTutupKlaim(baris) {
+		t.Error("kode yang persis ditolak")
+	}
+}

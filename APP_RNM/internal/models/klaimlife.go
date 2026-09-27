@@ -335,8 +335,20 @@ func (p Peserta) MarshalJSON() ([]byte, error) {
 		// ⚠️ TEKS apa adanya, bukan tanggal yang diurai ulang di layar.
 		TanggalKejadian string            `json:"tanggalKejadian"`
 		Baris           []BarisAdjustment `json:"baris"`
-	}{p.ID, p.NomorPremiList, p.NomorPolis, p.NomorSertifikat, p.MataUang,
-		p.IsCheck, p.TanggalKejadian, baris})
+	}{
+		// ⛔ Diisi BERNAMA, bukan berposisi. Tujuh medan berurutan yang
+		// enam di antaranya bertipe string: dua yang tertukar tetap
+		// dikompilasi, tetap lolos uji bentuk, dan baru terlihat ketika
+		// nomor sertifikat muncul di kolom tanggal.
+		ID:              p.ID,
+		NomorPremiList:  p.NomorPremiList,
+		NomorPolis:      p.NomorPolis,
+		NomorSertifikat: p.NomorSertifikat,
+		MataUang:        p.MataUang,
+		IsCheck:         p.IsCheck,
+		TanggalKejadian: p.TanggalKejadian,
+		Baris:           baris,
+	})
 }
 
 // Klaim adalah satu klaim Life beserta seluruh pesertanya.

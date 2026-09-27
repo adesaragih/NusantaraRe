@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { DETAIL } from '../assets/labels'
-import { medanTotal, RULE_TOTAL_HILANG } from './PanelTotalKlaim'
+import { medanTotal, RULE_TOTAL_HILANG } from './PanelTotalPeserta'
 
 // Uji panel total layar Detail.
 //

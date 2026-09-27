@@ -492,3 +492,24 @@ terlihat)*.
 konstruktor — spesifikasi Fetch menuntut 204 berbadan `null`.
 
 **Telemetri:** Go 295 → **296 PASS · 0 FAIL · 34 SKIP** · JS 193 → **199** · build 47 modul.
+
+---
+
+## Ralat giliran lanjutan 11 — sesudah telaah dua sumbu
+
+| # | Klaim ronde pertama | Yang benar | Bukti |
+| ---: | --- | --- | --- |
+| 1 | Panel lima total berdiri di tingkat **klaim**, berjudul "Total klaim" | **Milik PESERTA.** `ClaimLifeDetailGCNM.xml` berkelas `Int-LIFE_PREMIUM_DETAIL` dan medannya terikat properti ber-TITIK pada halaman itu | b84; `.TotalShareRNM` b20921, `.TotalSumInsured` b21208, `.TotalSumReasured` b21495, `.TotalShareRetro` b21782 |
+| 2 | "dua pemanggilan per medan *(`postValue` + `refresh`)*" | **Satu** pemanggilan per medan; `postValue` b20940 tidak membawa `pyActivity`. Kedua kemunculan adalah `refresh` yang sama, terserialisasi di `pyModes` dan `pyActionSets` | b20940, b20952, b21080 |
+| 3 | "tombol `Close Claim` tidak punya aksi lain" | **Dua** aksi sekali klik: `refresh` → activity **dan** `closeContainer`; ada pula konfirmasi yang terlewat | b1101, b1129, b499 |
+| 4 | `TrimSpace` pada kode status gerbang tutup | **Melonggarkan gerbang uang**: `" 1 "` menutup klaim di Go, tidak di Pega. Dibuang; dibandingkan persis, dan ada ujinya | b608 `.STS_REJECT!=1` |
+| 5 | Penjaga "nama orang tidak menyeberang" menyenaraikan **tiga kata terlarang** | Daftar larangan selalu kalah dari nama yang belum terpikirkan *(`namaPeserta` lolos)*. Diganti: **himpunan kunci dikunci utuh** | — |
+
+⚠️ **Sebab nomor 1 layak dicatat**, sebab ia pengulangan butir av dalam bentuk lain: labelnya
+dibaca, **ikatannya** tidak. `Total Claim Amount` terdengar seperti total sebuah klaim; yang
+menentukan justru titik di depan `.TotalClaimAmount` dan kelas section-nya.
+
+**Yang ditambahkan sesudah telaah:** `Find Disease` kini **dirender** sebagai `BelumTersedia`
+bernama *(sebelumnya labelnya ada tetapi tidak pernah tampil — uji cacah label membuatnya tampak
+selesai)*; dan gerbang tutup kini punya **pemanggil React** — sebelumnya ia persis "rute tanpa
+pemanggil" yang paket 4 sendiri kecam.

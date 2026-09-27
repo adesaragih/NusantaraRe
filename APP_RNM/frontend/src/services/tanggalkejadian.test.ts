@@ -4,9 +4,10 @@ import { ApiFailure, pesanGalat, ubahTanggalKejadian } from './api'
 
 // Uji klien tanggal kejadian — tombol `Edit Date` layar Detail.
 //
-// ⚠️ Rutenya ada di backend sejak tiket 06, tetapi nol pemanggil di React.
-// Rute tanpa pemanggil tidak berbunyi di uji mana pun: backend hijau, layar
-// hijau, dan jalurnya tetap tidak pernah dapat dijalankan orang.
+// ⚠️ Berkas ini lahir bersama pemanggil pertamanya. Rute backendnya ada
+// sejak tiket 06, tetapi sampai kelompok Detail & Tutup nol pemanggil di
+// React — dan rute tanpa pemanggil tidak berbunyi di uji mana pun: backend
+// hijau, layar hijau, jalurnya tetap tidak dapat dijalankan orang.
 
 let permintaan: { url: string; init: RequestInit } | null = null
 
@@ -32,13 +33,6 @@ describe('ubahTanggalKejadian', () => {
     await ubahTanggalKejadian('K-1', 'P-9', '2026-03-01')
     expect(permintaan?.init.method).toBe('PUT')
     expect(permintaan?.url).toContain('/api/klaim-life/K-1/peserta/P-9/tanggal-kejadian')
-  })
-
-  it('tanggal kejadian milik PESERTA, jadi pengenal peserta wajib ada di jalur', () => {
-    // ⛔ `ValidasiDOL_Act` berkelas Int-LIFE_PREMIUM_DETAIL dan menempelkan
-    // galatnya pada `.DATE_OF_LOSS` PESERTA. Jalur yang hanya menyebut klaim
-    // akan menyetel tanggal untuk semua peserta sekaligus.
-    expect(ubahTanggalKejadian).toHaveLength(3)
   })
 
   it('pengenal berisi karakter jalur di-encode', async () => {

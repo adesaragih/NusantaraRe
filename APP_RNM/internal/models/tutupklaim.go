@@ -26,10 +26,7 @@ package models
 //
 // Dibaca sesudah: statusklaim.go.
 
-import (
-	"fmt"
-	"strings"
-)
+import "fmt"
 
 // BarisTutup adalah satu peserta sebagaimana dilihat gerbang tutup.
 //
@@ -85,7 +82,13 @@ func PenghalangTutupKlaim(baris []BarisTutup) []Penghalang {
 		// DITOLAK ("2") juga bukan 1, jadi ia menahan pula. Memperlakukan
 		// "ditolak" sebagai "selesai" akan menutup klaim yang barisnya belum
 		// diputus ulang, dan XML tidak pernah mengatakannya.
-		if strings.TrimSpace(b.KodeStatus) == KodeAksep {
+		// ⛔ Dibandingkan PERSIS, tanpa TrimSpace. Ronde pertama memakai
+		// TrimSpace "untuk aman", dan itu justru MELONGGARKAN gerbang uang:
+		// " 1 " akan menutup klaim di sini padahal Pega - yang membandingkan
+		// `.STS_REJECT != 1` apa adanya - menahannya. Paket ini pun sudah
+		// menyatakan aturannya di StatusBarisDariKode: perbandingan atas
+		// TEKS, dan "00" BUKAN "0" (ADR-U-0022).
+		if b.KodeStatus == KodeAksep {
 			continue
 		}
 		out = append(out, Penghalang{Urutan: b.Urutan, NomorSertifikat: b.NomorSertifikat})

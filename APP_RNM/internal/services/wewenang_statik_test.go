@@ -18,8 +18,16 @@ import (
 )
 
 // polaPenulisStatus mencocokkan baris yang MENULIS status baris adjustment.
+//
+// ⛔ `=` yang TIDAK diikuti `=` - yaitu penugasan, bukan perbandingan.
+// Pola lamanya `KodeStatus\s*=` menangkap `b.KodeStatus == KodeAksep` pula,
+// dan itu PEMBACAAN. Ia tidak pernah berbunyi selama satu-satunya pembanding
+// di basis kode menyelipkan `)` di antaranya (`TrimSpace(b.KodeStatus) ==`);
+// begitu tanda kurung itu hilang, penjaga ini menuduh gerbang tutup yang
+// hanya membaca status. Penjaga yang menuduh hal yang benar akan
+// dilonggarkan orang, bukan dipatuhi.
 var polaPenulisStatus = regexp.MustCompile(
-	`KodeStatus\s*=|PerbaruiStatusBaris\(|CerminkanHeader\(|CabutPenandaDipilih\(`)
+	`KodeStatus\s*=([^=]|$)|PerbaruiStatusBaris\(|CerminkanHeader\(|CabutPenandaDipilih\(`)
 
 // berkasYangBolehMenulisStatus adalah berkas layanan yang memang penulisnya,
 // masing-masing dengan gerbang yang wajib ia panggil.

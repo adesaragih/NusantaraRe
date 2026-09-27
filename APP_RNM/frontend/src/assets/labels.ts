@@ -303,6 +303,17 @@ export const DETAIL = {
   /** b22641 `pyLabel` -> `pyActivity SaveAdjustment_Act` b22665. */
   simpanAdjustment: 'Save Adjustment',
 
+  /**
+   * `CloseClaim_Section.xml` b1081 `pyLabel`.
+   *
+   * ⚠️ Tombolnya menjalankan DUA aksi pada satu klik: `refresh` ->
+   * `ProtectCloseClaim_act` b1101, DAN `closeContainer` b1129. Laporan ronde
+   * pertama menulis "tidak punya aksi lain" dan itu keliru.
+   */
+  tutupKlaim: 'Close Claim',
+  /** `CloseClaim_Section.xml` b499 `pyValue` -> `pyCaption` b1499. */
+  konfirmasiTutup: 'Are you sure want to Close Claim?',
+
   /** b20914 `pyLabelPreview`. */
   totalShareNusantaraRe: 'Total Share Nusantara Re',
   /** b21201 `pyLabelPreview`. */

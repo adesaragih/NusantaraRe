@@ -262,3 +262,23 @@ menyebut nama rule-nya — bukan dihilangkan *(paritas yang tampak lengkap padah
 paritas yang tidak akan dicari lagi)*, dan bukan dijumlahkan sendiri. Ada uji yang akan gagal bila
 seseorang menambahkan penjumlahan, dan uji lain yang akan gagal bila ekspornya kelak dilengkapi —
 gagalnya yang terakhir itu **kabar baik**: aturannya sudah dapat ditiru.
+
+### Ralat OQ-H dan laporan tutup — 27 September 2026 *(sesudah telaah paritas)*
+
+Dua klaim kami sendiri terbukti keliru dan diralat di sini, bukan didiamkan.
+
+**R1 — "dua pemanggilan per medan (`postValue` + `refresh`)" KELIRU.** Blok `postValue`
+*(mis. b20940)* **tidak membawa `pyActivity` sama sekali** — hanya `pyActivityClass`. Kedua
+kemunculan per medan adalah aksi **`refresh` yang SAMA**, terserialisasi dua kali oleh Pega:
+sekali di `pyModes`, sekali di `pyActionSets`. Jadi yang benar: **lima medan, lima pemanggilan,
+sepuluh kemunculan teks**. Kesimpulan OQ-H **tidak berubah** — rule-nya tetap tidak ada, dan
+kelima total tetap tidak dapat ditiru.
+
+**R2 — "tombol `Close Claim` tidak punya aksi lain" KELIRU.** Satu klik menjalankan **dua** aksi:
+`refresh` → `ProtectCloseClaim_act` *(b1101)* **dan** `closeContainer` *(b1129)*. Ada pula
+**konfirmasi** yang sebelumnya terlewat: `Are you sure want to Close Claim?` *(b499, `pyCaption`
+b1499)*. Gerbangnya tetap seperti yang dilaporkan; yang salah adalah kalimat "tidak punya aksi
+lain".
+
+⚠️ Keduanya lolos karena bacaan pertama berhenti pada **aksi yang membawa activity**, lalu
+menyimpulkan tentang **seluruh** tombol. Aksi tanpa activity tetap aksi.
