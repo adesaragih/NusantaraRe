@@ -61,9 +61,9 @@ bertambah satu bab. Nol migrasi baru kecuali dari keputusan yang tercatat; nomor
 
 ## 4. LANGKAH 0 · LAPORAN · TELEMETRI
 
-Langkah 0: `git add PROMPT-IMPLEMENTASI-MODUL-CLAIM-LIFE-LANJUTAN-11.md PROMPT-INDUK-TIGA-MODUL.md`
-→ commit `docs: brief lanjutan 11 — Detail & Tutup (2) sampai Komite-handoff; keputusan az, ba;
-worktree dua modul` → uji hijau *(285 · 34 SKIP · 169 JS · 46 modul)*. Laporan akhir dan telemetri
+Langkah 0: brief ini dan induk **sudah di-commit asisten** sebagai `38cc700`; kedua worktree modul
+sudah di-fast-forward ke SHA yang sama. Yang tersisa untuk executor: `git status --porcelain` kosong →
+uji hijau *(285 · 34 SKIP · 169 JS · 46 modul)* → langsung paket 0. Laporan akhir dan telemetri
 persis lanjutan 8 §6–§7; satu pesan, sesudah kelompok 5 *(atau A4)*.
 
 ---
