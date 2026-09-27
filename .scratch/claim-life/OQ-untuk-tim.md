@@ -282,3 +282,45 @@ lain".
 
 ⚠️ Keduanya lolos karena bacaan pertama berhenti pada **aksi yang membawa activity**, lalu
 menyimpulkan tentang **seluruh** tombol. Aksi tanpa activity tetap aksi.
+
+---
+
+### ⛔ Ralat kedua atas OQ-H — 27 September 2026 *(kesimpulannya DICABUT)*
+
+**Fakta OQ-H tetap berdiri:** `CheckTotalAdjustmentClaim` dirujuk **sepuluh kali** oleh
+`Section/ClaimLifeDetailGCNM.xml` dan **nol** berkas rule-nya ada di seluruh korpus.
+
+**Kesimpulan yang digantungkan padanya DICABUT.** OQ-H menutup dengan *"kami tidak dapat meniru
+kelima angka itu; baris yang mana yang ikut belum terjawab"*, dan layar karena itu menampilkan enam
+medan uang sebagai *"belum tersedia"*. Itu **keliru**. Yang hilang hanya pemanggil **refresh** di
+layar. Yang **menghitung** nilainya ada di korpus — dua kali, dengan rumus yang sama persis:
+
+| Activity | Dipanggil dari | Langkah yang menghitung |
+| --- | --- | --- |
+| `Activity/SavePesertaClaim.xml` | `InputRegisterClaimLife.xml` `Submit` b27369 | **8** b4002 ULANG peserta *(`HasRepeat EMBEDDED` b4843, prasyarat kosong b4835)*; reset enam `local.Total*` = `0` b4027–b4159 · **8.1** b4221 ULANG `.AdjustmentList` b4226 *(`EMBEDDED` b4570, **prasyarat kosong** b4562)*; `local.Total… = .KOLOM + local.Total…` b4246, b4292, b4312, b4332, b4352, b4372 · **8.2** b4592 *(tanpa ulang, b4801)*; tulis ke halaman **peserta** b4616–b4743 |
+| `Activity/SaveOutStandingLife_Act.xml` | `InputOSClaimLife.xml` `Save to RNM` b21102 | **23** b10638 · **23.1** b10841 *(`EMBEDDED` b11046)* · **23.2** b11067 → b11091–b11217 |
+
+**Jawaban atas pertanyaan yang kami sebut "tidak terjawab":** ikut dijumlah adalah **seluruh baris
+`.AdjustmentList` peserta itu** — tanpa memandang `STS_REJECT`, tanpa memandang `IsCheck`. Kedua
+langkah penjumlahnya **berprasyarat kosong**. Tidak ada penyaringan sama sekali.
+
+**Dan totalnya ENAM, bukan lima.** `Total Ceding Retention` b20629 / `.TotalCedingRetention` b20636
+luput dari daftar kami karena kami mencacah lewat **rujukan** `CheckTotalAdjustmentClaim` — dan ia
+satu-satunya total yang **tidak punya aksi refresh**, sehingga ia tidak ikut tercacah.
+
+**Sebab salahnya**, dicatat: kami berhenti pada rule yang **namanya tertulis di section**, lalu
+menyimpulkan tentang **medannya**, tanpa menanyakan *siapa lagi yang menulis properti itu*.
+
+#### Yang masih kami tanyakan — OQ-H versi sempit
+
+> `CheckTotalAdjustmentClaim` dirujuk sepuluh kali di `ClaimLifeDetailGCNM` tetapi berkas rule-nya
+> tidak ikut dalam ekspor. **Apakah ia hanya me-refresh keenam medan dengan nilai yang sudah
+> dihitung `SavePesertaClaim` / `SaveOutStandingLife_Act`, atau ia menghitung ulang dengan aturan
+> lain?** Bila yang kedua, mohon kirimkan berkasnya.
+
+**Sementara itu** keenam total dihitung dengan rumus di atas dan disajikan saat Detail dibaca.
+⚠️ **Penyimpangan sadar yang kami catat**: Pega menghitungnya saat `Submit` / `Save to RNM` lalu
+**menyimpan** hasilnya ke halaman peserta, sehingga layar Pega dapat **basi** sesudah putaran atau
+akseptasi sampai tombol simpan ditekan lagi. Di sistem baru ia dihitung saat dibaca, jadi tidak
+pernah basi. Arah selisihnya disengaja — dan bila produksi justru mengandalkan angka yang **tersimpan**
+*(mis. untuk laporan yang harus cocok dengan cetakan lama)*, beri tahu kami: itu mengubah keputusan.

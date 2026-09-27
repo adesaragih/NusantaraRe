@@ -559,3 +559,79 @@ punya jawabannya**. Itu kesalahan arah sebaliknya dari biasanya, dan sama mahaln
 membuat pekerjaan yang sudah ada dikerjakan dua kali.
 
 **Telemetri:** Go 297 → **300 PASS · 0 FAIL · 34 SKIP** · JS 201 · vet bersih · 0 migrasi baru.
+
+---
+
+## Giliran lanjutan 12 — paket 0: enam total peserta, dan OQ-H yang saya simpulkan salah
+
+### Temuan: kesimpulan yang benar bukti-buktinya, salah kesimpulannya
+
+Giliran lalu saya melaporkan **OQ-H**: `CheckTotalAdjustmentClaim` dirujuk sepuluh kali oleh
+`ClaimLifeDetailGCNM.xml` dan **nol** berkas rule-nya ada di korpus, sehingga *"kelima total tidak
+dapat ditiru — baris mana yang ikut belum terjawab, dan itu angka uang"*. Layar karena itu
+menampilkan **enam medan uang** sebagai "belum tersedia".
+
+Faktanya benar. **Kesimpulannya keliru**, dan dua kali keliru:
+
+**1. Yang hilang hanya pemanggil *refresh*.** Yang **menghitung** keenam angka ada di korpus, dua
+kali, dengan rumus yang sama persis:
+
+| Activity | Dipanggil | Langkah |
+| --- | --- | --- |
+| `SavePesertaClaim.xml` | `Submit` b27369 | 8 b4002 *(ULANG peserta, `EMBEDDED` b4843)* · 8.1 b4221 *(ULANG `.AdjustmentList`, `EMBEDDED` b4570)* · 8.2 b4592 *(tulis ke peserta b4616–b4743)* |
+| `SaveOutStandingLife_Act.xml` | `Save to RNM` b21102 | 23 b10638 · 23.1 b10841 *(`EMBEDDED` b11046)* · 23.2 b11067 *(b11091–b11217)* |
+
+Pertanyaan yang saya sebut "tidak terjawab" **terjawab di XML**: kedua langkah penjumlahnya
+**berprasyarat KOSONG** *(`<pyStepsPreCondParamsWhen/>` b4562)*. Jadi **seluruh** baris
+`.AdjustmentList` ikut — termasuk yang `STS_REJECT = 2`, termasuk yang `IsCheck`-nya dicabut.
+Dugaan wajar *("tentu yang ditolak tidak ikut")* justru yang salah, dan itulah kenapa menebak
+berbahaya di kedua arah — bukan hanya arah "mengarang angka".
+
+**2. Totalnya ENAM, bukan lima.** `Total Ceding Retention` b20629 / `.TotalCedingRetention` b20636
+tidak pernah masuk daftar saya, sebab saya mencacah lewat **rujukan** `CheckTotalAdjustmentClaim` —
+dan ia satu-satunya total yang **tidak punya aksi refresh**. Mencacah lewat pemanggil, bukan lewat
+label. Enam hari medan uang itu tidak ada di layar dan **tidak satu pun uji berbunyi**; uji saya
+justru mengunci cacah **lima**, sehingga kekurangannya tampak disengaja.
+
+⚠️ **Sebab kedua kekeliruan itu satu**: saya berhenti pada rule yang **namanya tertulis di section**,
+lalu menyimpulkan tentang **medannya** — tanpa menanyakan *siapa lagi yang menulis properti itu*.
+Bentuk yang sama persis dengan *"Close Claim tidak punya aksi lain"*: berhenti di aksi pertama yang
+membawa activity, lalu menyimpulkan tentang seluruh tombol. Dua kali dalam dua giliran.
+
+### Yang dibangun
+
+Keenam total dihitung `models.HitungTotalPeserta`, dirakit `services.KlaimLife.Ambil` **saat Detail
+dibaca**, dan **tidak disimpan**. Nol kolom `TOTAL_*`; dua penjaga statik menolak migrasi yang
+menambahkannya dan menolak `repository` yang menulisnya.
+
+⚠️ **Penyimpangan sadar, dinyatakan**: Pega **menyimpan** hasilnya saat `Submit`/`Save to RNM`,
+sehingga layar Pega dapat **basi** sesudah putaran atau akseptasi sampai tombol simpan ditekan lagi.
+Di sini tidak pernah basi. Ditanyakan balik ke pemilik ekspor kalau-kalau ada laporan yang justru
+mengandalkan angka tersimpan.
+
+### Uji yang dibuat gagal lebih dulu, lalu dipulihkan
+
+| Penjaga | Dibuat gagal dengan | Berbunyi |
+| --- | --- | --- |
+| `baris DITOLAK ikut dijumlah` | menambahkan saringan `KodeStatus == KodeDitolak` | `JumlahKlaim = "6 IDR", mau "12 IDR"` |
+| `TiapKolomTotalMembacaKolomnyaSendiri` | menukar `SUM_INSURED` ↔ `SUM_REASURED` | tiga uji sekaligus |
+| `EnamKolomTotalDikunci` | menghapus `CEDING_RETENTION` | `kolomTotal = 5, mau 6` |
+| `MigrasiTidakMenyimpanTotalPeserta` | migrasi palsu ber-`TOTAL_CLAIM_AMOUNT` | menyebut berkas dan kolomnya |
+| `RepositoryTidakMenulisTotalPeserta` | `p.Total = models.TotalPeserta{}` di repository | menyebut berkas dan barisnya |
+| label `Total Ceding Retention` b20629 | digeser ke b20630 | membaca `<pyColumnSorting>` |
+| rumus penjumlah di XML | mencari `STS_REJECT + local.Total` | gagal, seperti seharusnya |
+
+Dan **satu penjaga lama berbunyi tanpa diminta**: kunci himpunan kunci JSON peserta menolak medan
+`total` yang baru. Itu tugasnya — medan baru pada marshaller harus **dilihat** orang, bukan
+menyelinap. Saya tuliskan namanya di sana, bukan melonggarkan penjaganya.
+
+### Kontrak dua sisi, sebab ini cacat keempat yang berbentuk sama
+
+Nama keenam medan JSON dikunci **di kedua sisi**: `TestNamaJSONTotalPesertaDikunci` di Go dan blok
+`kontrak JSON TotalPeserta` di `PanelTotalPeserta.test.ts`, masing-masing memuat daftar yang sama
+dan menyebut pasangannya. Tanpa itu, nama medan uang yang berganti di satu sisi membuat React
+membaca `undefined` dan menampilkan sel **kosong** — tanpa satu pun galat, persis seperti envelope
+`galat`, rute tanpa pemanggil, dan `IsCheck` `"1"`.
+
+**Telemetri:** Go 300 → **307 PASS · 0 FAIL · 34 SKIP** · JS 201 → **207** · `tsc` bersih ·
+`go vet` bersih · build **47** modul · **nol** migrasi baru.

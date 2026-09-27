@@ -589,3 +589,48 @@ pernah dipakai dan menjadi `"true"`. Lalu loop `EMBEDDED` b550 menyetel `.IsAcce
 **AC:** tidak ada AC tiket ini yang berubah centangnya. Yang diralat adalah **siapa** yang
 menghapus *(klien, bukan activity)*, **di layar mana** *(Outstanding, bukan Register)*, dan
 **kapan** *(hanya selama `CLAIM_NO` kosong)*.
+
+## Pembacaan ulang XML — 27 September 2026 (`SaveOutStandingLife_Act` langkah 23: enam total peserta)
+
+`SaveOutStandingLife_Act` adalah rule milik tiket ini *(tombol `Save to RNM`, `InputOSClaimLife.xml`
+b21102 → b21126)*. Langkah **23**-nya tidak pernah dibaca sampai selesai di ronde mana pun, dan di
+situ ada perilaku yang tiket ini belum sebut.
+
+### Yang langkah 23 lakukan
+
+| Langkah | Baris | Isi |
+| --- | ---: | --- |
+| 23 | b10638 | `Property-Set` pada `pyWorkPage.ClaimData.PremiumListSummary.PremiumListDetail` *(= **peserta**)*, **ULANG** `EMBEDDED`. Reset enam penampung `local.Total*` ke literal **`0`** b10663–b10795 |
+| 23.1 | b10841 | **ULANG** `EMBEDDED` b11046 atas **`.AdjustmentList`**, **prasyarat kosong**. `local.TotalCedingRetention = .CEDING_RETENTION + local.TotalCedingRetention` b10860; lalu `.SHARE_NUSANTARA_RE` b10906, `.SUM_INSURED` b10926, `.SUM_REASURED` b10946, `.SHARE_RETRO` b10966, `.CLAIM_AMOUNT` b10986 |
+| 23.2 | b11067 | Tanpa ulang. Keenam total ditulis ke halaman **peserta**: `.TotalCedingRetention` b11091, `.TotalShareRNM` b11137, `.TotalSumInsured` b11157, `.TotalSumReasured` b11177, `.TotalShareRetro` b11197, `.TotalClaimAmount` b11217 |
+
+Rumus yang sama persis ada di `SavePesertaClaim.xml` langkah 8 b4002 / 8.1 b4221 / 8.2 b4592 —
+jalur `Submit` pada Register. **Dua tombol, satu rumus.**
+
+### Tiga hal yang ini tegaskan, dan satu yang ia ralat
+
+1. ⛔ **Tidak ada penyaringan.** Langkah 23.1 b10841 dan 8.1 b4221 sama-sama **berprasyarat kosong**
+   *(`<pyStepsPreCondParamsWhen/>`, b4562 pada yang kedua)*. Baris ber-`STS_REJECT = 2` **ikut
+   dijumlah**, dan baris yang `IsCheck`-nya dicabut pun ikut. Dugaan wajar *("tentu yang ditolak
+   tidak ikut")* justru yang salah.
+2. ⛔ **Penampungnya mulai dari literal `0`**, bukan kosong. Peserta **tanpa** baris adjustment
+   karena itu bertotal **`0`** di Pega, bukan kosong — dan itu beda yang terlihat di layar.
+3. ⚠️ **Totalnya ENAM.** `Total Ceding Retention` ikut dihitung *(b10860, b11091)* dan tampil di
+   `ClaimLifeDetailGCNM.xml` b20629. Ia sempat luput dari dokumen kami karena pencacahannya memakai
+   rujukan `CheckTotalAdjustmentClaim`, dan hanya total itu yang **tidak** punya aksi refresh.
+4. ⛔ **RALAT atas OQ-H** *(dokumen `OQ-untuk-tim.md`, blok "Ralat kedua")*: kesimpulan bahwa keenam
+   angka itu "tidak dapat ditiru" **dicabut**. Yang hilang dari ekspor hanya pemanggil **refresh**.
+
+### Yang berubah di kode
+
+Keenam total **dihitung saat Detail dibaca** *(`models.HitungTotalPeserta`, dirakit
+`services.KlaimLife.Ambil`)* dan **tidak disimpan** — nol kolom `TOTAL_*` ditambahkan, dan ada
+penjaga statik yang menolak migrasi yang menambahkannya.
+
+⚠️ **Penyimpangan sadar:** Pega **menyimpan** hasilnya ke halaman peserta saat `Save to RNM`,
+sehingga angkanya dapat **basi** sesudah putaran atau akseptasi sampai tombol itu ditekan lagi. Di
+sini ia tidak pernah basi. Ditanyakan ke pemilik ekspor *(OQ-H versi sempit)* kalau-kalau ada
+laporan yang justru mengandalkan angka tersimpan.
+
+**AC:** tidak ada AC tiket ini yang berubah centangnya. Yang bertambah adalah **perilaku langkah 23**
+yang sebelumnya tidak tercatat di tiket mana pun.

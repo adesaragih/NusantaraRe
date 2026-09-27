@@ -412,21 +412,26 @@ export default function KlaimLife() {
                 )}
               </p>
 
-              {/* ⛔ Kelima total ini milik PESERTA, bukan klaim.
+              {/* ⛔ KEENAM total ini milik PESERTA, bukan klaim.
                   `ClaimLifeDetailGCNM.xml` berkelas
                   `Int-LIFE_PREMIUM_DETAIL` (b84) dan medannya terikat
                   properti berawalan TITIK pada halaman itu
-                  (`.TotalShareRNM` b20921 dst) - titik berarti "halaman
-                  yang sedang berjalan", dan halaman itu peserta.
+                  (`.TotalCedingRetention` b20636, `.TotalShareRNM` b20921
+                  dst) - titik berarti "halaman yang sedang berjalan", dan
+                  halaman itu peserta.
 
                   ⛔ Ronde pertama menaruhnya di tingkat klaim berjudul
                   "Total klaim". Keliru, dan sebabnya sama dengan butir av:
                   labelnya dibaca, IKATANNYA tidak.
 
-                  Nilainya tetap belum ada - rule penghitungnya
-                  (`CheckTotalAdjustmentClaim`) nol berkasnya di ekspor,
-                  dan menebak angka uang melanggar ADR-U-0003. OQ-H. */}
-              <PanelTotalPeserta />
+                  ⛔ Ronde pertama juga menyatakan angkanya "belum ada"
+                  sebab `CheckTotalAdjustmentClaim` nol berkasnya. Diralat
+                  27-09-2026: yang hilang hanya pemanggil refresh; nilainya
+                  dihitung `SavePesertaClaim` 8.1 b4221 / 8.2 b4592 dan
+                  `SaveOutStandingLife_Act` 23.1 b10841 / 23.2 b11067 -
+                  jumlah SELURUH baris adjustment peserta. Backend yang
+                  menjumlah (models.HitungTotalPeserta); layar menampilkan. */}
+              <PanelTotalPeserta total={p.total} />
 
               {/* `Find Disease` b5061 `pxButton` -> `showHarness` b5071
                   `Diagnose_Harness`. Popup diagnosis itu milik kelompok

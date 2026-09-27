@@ -256,6 +256,12 @@ type Peserta struct {
 
 	Baris []BarisAdjustment
 
+	// Total adalah keenam total uang peserta ini, DIHITUNG saat dibaca dan
+	// tidak pernah disimpan - lihat totalpeserta.go. Ia diisi oleh
+	// services.KlaimLife.Ambil; repository tidak pernah menyentuhnya, dan
+	// ada penjaga statik yang menagihnya.
+	Total TotalPeserta
+
 	// Dokumen pendukung peserta ini. Ia GERBANG simpan ke Outstanding, bukan
 	// pelengkap: SaveOutStandingLife_Act menolak menyimpan bila peserta yang
 	// dipilih belum mengunggah dokumen.
@@ -337,6 +343,9 @@ func (p Peserta) MarshalJSON() ([]byte, error) {
 		// ⚠️ TEKS apa adanya, bukan tanggal yang diurai ulang di layar.
 		TanggalKejadian string            `json:"tanggalKejadian"`
 		Baris           []BarisAdjustment `json:"baris"`
+		// ⭐ Total menyeberang sejak ralat 27-09-2026: enam total, bukan
+		// lima, dan bukan penanda "belum tersedia". Ia turunan, bukan kolom.
+		Total TotalPeserta `json:"total"`
 	}{
 		// ⛔ Diisi BERNAMA, bukan berposisi. Tujuh medan berurutan yang
 		// enam di antaranya bertipe string: dua yang tertukar tetap
@@ -350,6 +359,7 @@ func (p Peserta) MarshalJSON() ([]byte, error) {
 		IsCheck:         p.IsCheck,
 		TanggalKejadian: p.TanggalKejadian,
 		Baris:           baris,
+		Total:           p.Total,
 	})
 }
 

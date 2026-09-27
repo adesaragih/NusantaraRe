@@ -40,6 +40,26 @@ export interface BarisAdjustment {
   komiteId: string
 }
 
+/**
+ * Keenam total uang SATU peserta.
+ *
+ * ⛔ TURUNAN, bukan kolom. Tidak ada `TOTAL_*` di basis data; angkanya
+ * dihitung backend saat Detail dibaca, dari SELURUH baris adjustment peserta
+ * itu - `SavePesertaClaim.xml` langkah 8.1 b4221 dan 8.2 b4592, yang
+ * keduanya berprasyarat kosong sehingga baris DITOLAK pun ikut.
+ *
+ * Urutan medan mengikuti urutan layar: b20629, b20914, b21201, b21488,
+ * b21775, b22063.
+ */
+export interface TotalPeserta {
+  cedingRetention: Uang
+  shareNusantaraRe: Uang
+  sumInsured: Uang
+  sumReasured: Uang
+  shareRetro: Uang
+  jumlahKlaim: Uang
+}
+
 /** Satu peserta yang diklaim, beserta baris-barisnya sendiri. */
 export interface Peserta {
   id: string
@@ -56,6 +76,8 @@ export interface Peserta {
    */
   tanggalKejadian: string
   baris: BarisAdjustment[]
+  /** Keenam total uang peserta ini, dihitung backend. Lihat TotalPeserta. */
+  total: TotalPeserta
 }
 
 /** Satu klaim Life beserta seluruh pesertanya. */

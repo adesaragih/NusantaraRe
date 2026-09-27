@@ -167,6 +167,10 @@ describe.skipIf(!adaKorpus)('label layar Detail berbukti barisnya', () => {
     ['Find Disease', 5061, 'pyLabel'],
     ['Edit Date', 14115, 'pyLabel'],
     ['Save Adjustment', 22641, 'pyLabel'],
+    // ⛔ ENAM total, bukan lima. Yang ini sempat luput karena
+    // pencacahannya memakai rujukan `CheckTotalAdjustmentClaim`, dan ia
+    // satu-satunya total yang TIDAK punya aksi refresh.
+    ['Total Ceding Retention', 20629, 'pyLabelPreview'],
     ['Total Share Nusantara Re', 20914, 'pyLabelPreview'],
     ['Total Sum Insured', 21201, 'pyLabelPreview'],
     ['Total Sum Reasured', 21488, 'pyLabelPreview'],
@@ -205,7 +209,7 @@ describe.skipIf(!adaKorpus)('label layar Detail berbukti barisnya', () => {
     expect(tutup).toContain('<pyAction>closeContainer</pyAction>')
   })
 
-  it('DETAIL memuat kesepuluh label itu, tidak kurang', () => {
+  it('DETAIL memuat kesebelas label itu, tidak kurang', () => {
     const nilai = Object.values(DETAIL)
     for (const [label] of [...medanDetail, ...medanTutup]) {
       expect(nilai).toContain(label)
@@ -214,17 +218,64 @@ describe.skipIf(!adaKorpus)('label layar Detail berbukti barisnya', () => {
   })
 
   it('rule CheckTotalAdjustmentClaim dirujuk section tetapi NOL berkasnya', () => {
-    // ⛔ Inti keputusan panel total. Uji ini memeriksa KEDUA sisinya:
-    // rujukannya memang ada (jadi medannya nyata dan harus tampil), dan
-    // rule-nya memang tidak ada (jadi angkanya tidak boleh dikarang).
+    // ⚠️ DIPERTAHANKAN, TETAPI ARTINYA DIRALAT 27-09-2026.
     //
-    // Bila kelak ekspornya dilengkapi, uji inilah yang gagal - dan gagalnya
-    // adalah kabar baik: aturannya sudah dapat ditiru.
+    // Fakta di bawah tetap benar: sepuluh rujukan, nol berkas rule. Yang
+    // keliru adalah KESIMPULAN yang pernah digantungkan padanya - bahwa
+    // angka totalnya karena itu tidak dapat ditiru. Yang hilang hanya
+    // pemanggil REFRESH; nilainya dihitung activity lain yang ADA (lihat
+    // uji berikutnya). Rujukan menggantung ini tetap OQ-H, dengan
+    // pertanyaan yang lebih sempit: kenapa rule refresh-nya tidak ikut.
     const section = berkas('Section/ClaimLifeDetailGCNM.xml')
     const rujukan = section.match(/CheckTotalAdjustmentClaim/g) ?? []
     expect(rujukan).toHaveLength(10)
     expect(existsSync(join(KORPUS, 'Activity', 'CheckTotalAdjustmentClaim.xml'))).toBe(
       false,
     )
+  })
+
+  it('keenam total DIHITUNG oleh dua activity yang ada di korpus', () => {
+    // ⛔ Uji yang menutup ralat itu. Ia memeriksa rumusnya di SUMBER,
+    // bukan di kode kita - sehingga ia akan gagal bila kelak seseorang
+    // menyalin rumus yang berbeda dari yang XML tulis.
+    //
+    // `SavePesertaClaim` langkah 8.1 b4221 dan `SaveOutStandingLife_Act`
+    // langkah 23.1 b10841 sama-sama mengulang `.AdjustmentList` dan
+    // menjumlahkan keenam kolom ke penampung `local.Total*`.
+    for (const nama of ['SavePesertaClaim', 'SaveOutStandingLife_Act']) {
+      const act = berkas(`Activity/${nama}.xml`)
+      for (const kolom of [
+        'CEDING_RETENTION',
+        'SHARE_NUSANTARA_RE',
+        'SUM_INSURED',
+        'SUM_REASURED',
+        'SHARE_RETRO',
+        'CLAIM_AMOUNT',
+      ]) {
+        expect(
+          act,
+          `${nama} harus menjumlahkan ${kolom} ke penampungnya`,
+        ).toContain(`.${kolom} + local.Total`)
+      }
+      // Dan penampungnya di-reset ke literal 0, sehingga peserta tanpa
+      // baris adjustment bertotal 0 - bukan kosong.
+      expect(act).toContain('<PropertiesName>local.TotalClaimAmount</PropertiesName>')
+    }
+  })
+
+  it('langkah penjumlah itu BERPRASYARAT KOSONG - baris ditolak ikut', () => {
+    // ⛔ Ini pembenar satu-satunya untuk "seluruh baris, termasuk yang
+    // ditolak". Bila kelak ternyata ada prasyarat `STS_REJECT`, uji ini
+    // gagal dan keputusan bc harus ditinjau ulang - bukan kodenya diam-diam
+    // disesuaikan.
+    const act = berkas('Activity/SavePesertaClaim.xml')
+    const mulai = act.indexOf('RH_1.pySteps(8).pySteps(1)')
+    const akhir = act.indexOf('RH_1.pySteps(8).pySteps(2)')
+    expect(mulai).toBeGreaterThan(0)
+    expect(akhir).toBeGreaterThan(mulai)
+    const langkah = act.slice(mulai, akhir)
+    expect(langkah).toContain('<pyStepsObjectName>.AdjustmentList</pyStepsObjectName>')
+    expect(langkah).toContain('<pyStepsPreCondParamsWhen/>')
+    expect(langkah).not.toContain('STS_REJECT')
   })
 })

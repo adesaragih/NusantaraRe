@@ -288,12 +288,28 @@ export const TOMBOL_OS = {
 /**
  * Layar detail klaim — `Section/ClaimLifeDetailGCNM.xml`.
  *
- * ⛔ KELIMA `total…` DIHITUNG OLEH RULE YANG TIDAK ADA DI EKSPOR. Kesepuluh
- * pemanggilan `CheckTotalAdjustmentClaim` di section itu (b20970, b21091,
- * b21262, b21377, b21546, b21664, b21836, b21951, b22120, b22238) menunjuk
- * activity yang NOL berkas rule-nya di seluruh korpus. Kita karena itu tidak
- * tahu apakah ia menjumlah, menyaring baris yang ditolak, atau memeriksa
- * silang - dan menebaknya berarti menebak ANGKA UANG. Dilaporkan OQ-H.
+ * ⛔ RALAT 27-09-2026 ATAS KESIMPULAN KAMI SENDIRI. Blok sebelumnya di sini
+ * menyatakan “kelima `total…` dihitung oleh rule yang tidak ada di ekspor”,
+ * lalu menyimpulkan bahwa angkanya tidak dapat ditiru. DUA hal keliru:
+ *
+ * 1. Totalnya ENAM, bukan lima. `Total Ceding Retention` b20629 luput karena
+ *    pencacahannya memakai rujukan `CheckTotalAdjustmentClaim`, dan ia
+ *    satu-satunya total yang TIDAK punya aksi refresh - jadi ia tidak ikut
+ *    tercacah. Mencacah lewat pemanggil, bukan lewat label.
+ * 2. Nilainya BUKAN misteri. `CheckTotalAdjustmentClaim` memang nol berkas
+ *    rule-nya (rujukan menggantung itu nyata, dan tetap OQ-H), tetapi yang
+ *    hilang hanya pemanggil REFRESH di layar. Yang MENGHITUNG keenam angka
+ *    itu ada di korpus dan berprasyarat kosong:
+ *
+ *       `Activity/SavePesertaClaim.xml`        langkah 8 b4002 / 8.1 b4221 / 8.2 b4592
+ *       `Activity/SaveOutStandingLife_Act.xml` langkah 23 b10638 / 23.1 b10841 / 23.2 b11067
+ *
+ *    Rumusnya: jumlah SELURUH baris `.AdjustmentList` peserta itu, tanpa
+ *    memandang `STS_REJECT` dan tanpa memandang `IsCheck`.
+ *
+ * Keenamnya kini dihitung `models.HitungTotalPeserta` dan menyeberang di
+ * JSON peserta. Sebab salah bacanya: berhenti pada rule yang NAMANYA
+ * tertulis di section, tanpa menanyakan siapa lagi yang menulis medan itu.
  */
 export const DETAIL = {
   /** b5061 `pyLabel` `pxButton` -> `showHarness` b5071 `Diagnose_Harness`. */
@@ -314,7 +330,14 @@ export const DETAIL = {
   /** `CloseClaim_Section.xml` b499 `pyValue` -> `pyCaption` b1499. */
   konfirmasiTutup: 'Are you sure want to Close Claim?',
 
-  /** b20914 `pyLabelPreview`. */
+  /**
+   * b20629 `pyLabelPreview` -> `.TotalCedingRetention` b20636.
+   *
+   * ⛔ Total PERTAMA di layar, dan satu-satunya yang tidak punya aksi
+   * refresh - sebab itu ia sempat hilang dari sini selama enam hari.
+   */
+  totalCedingRetention: 'Total Ceding Retention',
+  /** b20914 `pyLabelPreview` -> `.TotalShareRNM` b20921. */
   totalShareNusantaraRe: 'Total Share Nusantara Re',
   /** b21201 `pyLabelPreview`. */
   totalSumInsured: 'Total Sum Insured',

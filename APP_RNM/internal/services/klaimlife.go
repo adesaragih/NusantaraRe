@@ -62,6 +62,20 @@ func (k *KlaimLife) Ambil(ctx context.Context, id string) (*models.Klaim, error)
 		if b, ada := baris[peserta[i].ID]; ada {
 			peserta[i].Baris = b
 		}
+		// Keenam total uang peserta dihitung DI SINI, saat dibaca, dan
+		// tidak disimpan (models.HitungTotalPeserta punya bukti XML-nya).
+		//
+		// Di luar `if ada` dengan sengaja: peserta TANPA baris adjustment
+		// tetap bertotal nol, sebab penampung Pega mulai dari literal 0
+		// (`SavePesertaClaim.xml` b4027..b4159) dan langkah 8.2 b4592
+		// menuliskannya apa adanya. Menaruhnya di dalam `if` akan membuat
+		// peserta itu bertotal KOSONG, dan layar akan berkata "belum ada
+		// datanya" untuk peserta yang datanya lengkap dan berjumlah nol.
+		total, err := models.HitungTotalPeserta(peserta[i].Baris, peserta[i].MataUang)
+		if err != nil {
+			return nil, fmt.Errorf("peserta %s: %w", peserta[i].NomorSertifikat, err)
+		}
+		peserta[i].Total = total
 	}
 	klaim.Peserta = peserta
 	return klaim, nil
