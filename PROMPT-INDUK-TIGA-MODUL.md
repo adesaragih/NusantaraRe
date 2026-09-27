@@ -56,7 +56,7 @@ Perintah work owner: *"JIKA ITU UNTUK LOG SERVICE MAKA NAMANYA YANG JELAS, T_LOG
 | **PremiumList Life** | `OUTPUT_HASIL_RNM\.worktrees\premiumlist-life\` | `modul/premiumlist-life` | `:8082` | `5174` |
 | **Komite Claim Life** | `OUTPUT_HASIL_RNM\.worktrees\komite-claim-life\` | `modul/komite-claim-life` | `:8083` | `5175` |
 
-`.worktrees/` sudah masuk `.gitignore`. Membuatnya *(work owner atau sesi Claim Life, sekali)*:
+`.worktrees/` sudah masuk `.gitignore`. **Keduanya sudah dibuat asisten 27-09-2026 16.15 dari `85065b9`**, lengkap dengan `.env` per port *(`:8082`/`:8083`, proxy Vite mengikuti, `AUTH_STUB=true`)*, `npm install`, dan `go build` hijau — perintah di bawah hanya catatan cara membuatnya bila perlu diulang:
 
 ```powershell
 Set-Location 'D:\XML\RNM_BRD\OUTPUT_HASIL_RNM'
@@ -95,9 +95,9 @@ Korpus `D:\XML\RNM_BRD\` tetap READ-ONLY dari semua worktree.
 
 | Sesi | Tempel utuh | Titik mulai |
 | --- | --- | --- |
-| Claim Life | `PROMPT-IMPLEMENTASI-MODUL-CLAIM-LIFE-LANJUTAN-10.md` | `main` @ `cfc4824` |
-| PremiumList Life | `PROMPT-IMPLEMENTASI-MODUL-PREMIUMLIST-LIFE.md` | `modul/premiumlist-life` dari `main` |
-| Komite Claim Life | `PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-LIFE.md` | `modul/komite-claim-life` dari `main` |
+| Claim Life | `PROMPT-IMPLEMENTASI-MODUL-CLAIM-LIFE-LANJUTAN-11.md` *(lanjutan 10 sudah dijalankan sampai `85065b9`)* | `main` @ `85065b9` atau lebih baru |
+| PremiumList Life | `PROMPT-IMPLEMENTASI-MODUL-PREMIUMLIST-LIFE.md` | `modul/premiumlist-life` @ `85065b9` — buka sesi di `.worktrees\premiumlist-life` |
+| Komite Claim Life | `PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-LIFE.md` | `modul/komite-claim-life` @ `85065b9` — buka sesi di `.worktrees\komite-claim-life` |
 
 Aturan yang sama di ketiganya: XML menang dan tiket diralat dengan bukti; penyarangan dibaca sebagai
 **pohon**; mekanisme giliran lanjutan 8 §1 *(nol pesan di antara paket, catatan ke berkas laporan
