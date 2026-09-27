@@ -198,3 +198,26 @@ sebagai fungsi murni yang **menerima** ambang; ambang kosong menjawab **galat**,
 
 ⚠️ Perhatikan bedanya nama, sebab ia mudah tertukar: propertinya `.MAXDATARECEIVED` *(ber-D)*,
 kolom sumbernya `MAXDATARECEIVE` *(tanpa D)*.
+
+**G3 — nilai antara diparkir di halaman BERSAMA, hanya pada salah satu dari dua rule kembar.**
+
+Kedua rule itu beraturan sama, tetapi menyimpan selisih harinya di tempat yang berbeda:
+
+| Rule | Baris | Tempat selisih disimpan | Sifat |
+| --- | ---: | --- | --- |
+| `ValidasiClaimReceived_Act` | 561 → dibaca 582 | **`TempDetail.CARI2`** | properti pada halaman `TempDetail` |
+| `ValidasiSTNC_Act` | 598 → dibaca 627 | `Local.DateDif` | local sejati |
+
+`TempDetail` **bukan** halaman gores milik rule ini sendiri: `SaveInsuredClaim_Act` memakai halaman
+yang sama untuk menumpuk peserta terpilih *(`TempDetail.pxResults(<APPEND>)`, b535 dst)*. Nilai
+antara yang diparkir di sana karena itu dapat tertimpa di antara penulisan *(b561)* dan pembacaannya
+*(b582)* bila ada rule lain yang menyentuh halaman itu di sela keduanya.
+
+**Mohon konfirmasi** apakah `TempDetail.CARI2` memang dimaksudkan, atau ia sisa penyuntingan
+— rule kembarnya memakai local, dan local memang yang tepat untuk nilai antara.
+
+⚠️ Kami **tidak menirunya**: di sisi Go selisihnya peubah lokal dan tidak pernah meninggalkan
+fungsinya, sehingga tidak ada halaman bersama yang dapat tertimpa.
+
+⚠️ Ralat susunan kata G2 di atas: yang dibandingkan b582 secara harfiah adalah `TempDetail.CARI2`,
+bukan sebuah local bernama "selisih". Isinya tetap selisih hari itu, dan kesimpulan G2 tidak berubah.

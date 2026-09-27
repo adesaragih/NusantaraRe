@@ -11,7 +11,20 @@ package models
 //	`Activity/ValidasiSTNC_Act.xml`           EFFECTIVE_DATE -> RECEIVED_DATE
 //	  ambang `MAXDATARECEIVE`, penanda `.STNC` (kolom `STNC_CLAIM`, migrasi 002)
 //
-// Keduanya berbentuk sama persis, jadi keduanya memakai satu fungsi.
+// Keduanya memakai satu fungsi, sebab ATURANNYA sama: selisih hari
+// dibandingkan dengan ambang, hasilnya penanda.
+//
+// ⚠️ Tetapi keduanya TIDAK sama persis, dan bedanya bukan gaya
+// penulisan: ValidasiClaimReceived_Act b561 menyimpan selisihnya ke
+// `TempDetail.CARI2` - properti pada halaman `TempDetail`, halaman yang
+// SAMA dengan yang dipakai `SaveInsuredClaim_Act` untuk menumpuk peserta
+// (`TempDetail.pxResults(<APPEND>)`) - lalu b582 membacanya kembali.
+// ValidasiSTNC_Act b598 memakai `Local.DateDif`, local sejati.
+//
+// Nilai antara yang diparkir di halaman bersama dapat tertimpa di antara
+// penulisan dan pembacaannya. Dilaporkan OQ-G3. Di sini tidak ada
+// masalah itu: selisihnya peubah lokal Go dan tidak pernah meninggalkan
+// fungsi ini.
 //
 // ⛔ AMBANGNYA BELUM PUNYA SUMBER. Ia dibaca `RDBList/GetProductName.xml:84`:
 //

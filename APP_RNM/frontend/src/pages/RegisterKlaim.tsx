@@ -25,8 +25,16 @@ function pesanGalat(e: unknown): string {
 export default function RegisterKlaim() {
   const [pl, setPl] = useState('')
   // Dua kotak `Find Insured`. Keduanya `pyReadOnly = false` dan
-  // `pxTextInput`: b16277 `Certificate No` -> CARI2, b16039
-  // `Name of Insured` -> CARI3.
+  // `pxTextInput`.
+  //
+  // ⚠️ Barisnya disebut BERSAMA TAG-nya, sebab satu label dapat berdiri di
+  // lebih dari satu baris dengan tag berbeda, dan menyebut angkanya saja
+  // membuat dua kutipan yang sah tampak bertentangan:
+  //
+  //   `Certificate No`   b16277 <pyLabelFieldValue>  -> CARI2
+  //                      (tidak punya <pyLabelPreview> sama sekali)
+  //   `Name of Insured`  b16039 <pyLabelFieldValue>  -> CARI3
+  //                      b16064 <pyLabelPreview>     <- yang dikunci uji
   const [cariSertifikat, setCariSertifikat] = useState('')
   const [cariNama, setCariNama] = useState('')
   const [type, setType] = useState('QP')

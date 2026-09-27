@@ -87,7 +87,39 @@ func TestQueryTabelPesertaSelaluBerindexDanBerbatas(t *testing.T) {
 				ekor = len(isi) - j
 			}
 			jendela := isi[kepala : j+ekor]
+			dirakit := strings.Contains(jendela, "` +")
+
+			// ⛔ Jendela LEBAR itu hanya untuk SQL RAKITAN. Untuk SQL
+			// inline, jaminannya memang berada di literal yang sama, dan
+			// memperlebar jendelanya di situ justru MELONGGARKAN penjaga:
+			// sebuah "PL_NUMBER =" di query LAIN dalam fungsi yang sama
+			// akan menutupi query yang penyaringnya dicabut. Karena itu SQL
+			// inline tetap diperiksa pada klausa WHERE-nya sendiri, seketat
+			// sebelum berkas ini berubah.
 			q := strings.ToUpper(tanpaKomentar(jendela))
+			if !dirakit {
+				lit := isi[j:]
+				if b := strings.Index(lit, "`"); b >= 0 {
+					lit = lit[:b]
+				}
+				q = strings.ToUpper(lit)
+				// Klausa WHERE saja, DIBATASI ujungnya - tanpa batas itu
+				// "ORDER BY CERTIFICATE_NO" ikut terbaca sebagai penyaring.
+				if k := strings.Index(q, "WHERE"); k >= 0 {
+					w := q[k:]
+					for _, ujung := range []string{"ORDER BY", "GROUP BY", "FETCH FIRST"} {
+						if u := strings.Index(w, ujung); u >= 0 {
+							w = w[:u]
+						}
+					}
+					// Batas hasil tetap dicari di SELURUH literal, bukan di WHERE.
+					if !strings.Contains(q, "FETCH FIRST") &&
+						!strings.Contains(q, "ROWNUM") {
+						t.Errorf("%s: query inline tanpa batas hasil", nama)
+					}
+					q = w + " FETCH FIRST"
+				}
+			}
 			i = j + len("SELECT")
 			diperiksa++
 
@@ -118,7 +150,7 @@ func TestQueryTabelPesertaSelaluBerindexDanBerbatas(t *testing.T) {
 			// fungsinya - di sanalah bentuk akhirnya diperiksa atas seluruh
 			// kombinasi masukan. Mencabut PL_NUMBER atau FETCH FIRST membuat
 			// TestSQLCariPesertaSelaluBerpagar merah; keduanya sudah diuji.
-			if strings.Contains(jendela, "` +") {
+			if dirakit {
 				fn := namaFungsi(isi[kepala:])
 				if fn == "" {
 					t.Errorf("%s: SQL dirakit di luar fungsi bernama", nama)

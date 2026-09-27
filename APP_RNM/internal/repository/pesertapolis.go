@@ -238,7 +238,7 @@ const kolomSalin = `ID, PL_NUMBER, POLICY_NO, CERTIFICATE_NO, CURRENCY, ` +
 	`TO_CHAR(SHARE_RETRO, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''), ` +
 	`TO_CHAR(RETROCEDED_SHARE, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''), ` +
 	`TO_CHAR(EM_PERCENT, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''), ` +
-	// Keempat kolom di bawah ini TIDAK disalin apa adanya: ketiganya
+	// Keempat kolom di bawah ini TIDAK disalin apa adanya: keempatnya
 	// bahan bagi dua aturan pemilihan di pilihpeserta.go. Dibaca di sini
 	// supaya pilihannya terjadi dalam SATU baris yang sama - membacanya
 	// lewat query kedua membuka celah baris berubah di antaranya.
@@ -331,22 +331,27 @@ func salinKePeserta(sel []sql.NullString) (models.Peserta, error) {
 	// membandingkan teksnya dengan "0" (pilihpeserta.go), dan
 	// membandingkannya sesudah penguraian berarti membandingkan desimal -
 	// aturan yang berbeda, yang menganggap "0.00" nol pula.
-	sel[20] = sql.NullString{
+	//
+	// ⚠️ Hasilnya disimpan di PEUBAH SENDIRI, tidak ditulis balik ke sel[20].
+	// Menulis balik berarti fungsi bernama "salin..." diam-diam mengubah
+	// slice milik pemanggilnya, dan pemanggil berikutnya membaca nilai yang
+	// bukan lagi isi basis data.
+	share := sql.NullString{
 		String: ShareNusantaraReTeks(teks(20), teks(24)),
 		Valid:  true,
 	}
 	p.Umur = UmurPeserta(teks(25), teks(26), teks(27))
 
 	uang := []struct {
-		i  int
+		v  sql.NullString
 		ke *models.Money
 	}{
-		{15, &p.SumInsured}, {16, &p.SumReasured}, {17, &p.GrossPremium},
-		{18, &p.NetPremium}, {19, &p.CedingRetention}, {20, &p.ShareNusantaraRe},
-		{21, &p.ShareRetro}, {22, &p.RetrocededShare},
+		{sel[15], &p.SumInsured}, {sel[16], &p.SumReasured}, {sel[17], &p.GrossPremium},
+		{sel[18], &p.NetPremium}, {sel[19], &p.CedingRetention}, {share, &p.ShareNusantaraRe},
+		{sel[21], &p.ShareRetro}, {sel[22], &p.RetrocededShare},
 	}
 	for _, u := range uang {
-		m, err := uraiUang(p.NomorSertifikat, "kolom polis", sel[u.i], p.MataUang)
+		m, err := uraiUang(p.NomorSertifikat, "kolom polis", u.v, p.MataUang)
 		if err != nil {
 			return models.Peserta{}, err
 		}

@@ -71,20 +71,20 @@ Kolom **keadaan**: `ada` · `A3` *(dikerjakan paket ini)* · `tidak ditiru + buk
 | ---: | --- | --- | :---: | --- | --- | --- | --- |
 | 1 | `SaveOutStandingLife_Act` | `Page-Clear-Messages`, `Property-Set`, `Page-Set-Messages`, `Page-Remove`, `RDB-List`, `Obj-Browse`, `Java`, `Call InsertJsonClaimLife_Act`, `Call serviceInsertArasapasClaimLife_act`, `Obj-Save` | **ya** | `Pendaftaran.Daftar` + `Status` | `POST /api/klaim-life` | `RegisterKlaim.tsx` | **ada** *(sebagian — jalur `ContentNote != DEATH` belum)* |
 | 2 | `SavePesertaClaim` | `Page-Clear-Messages`, `Property-Set`, `Property-Set-Messages`, `Property-Remove`, `Obj-Browse`, `RDB-List`, `Page-Set-Messages`, `call FinishAssignment` | tidak | `Pendaftaran.Daftar` *(pemilihan peserta)* | `GET /api/peserta-life` | `RegisterKlaim.tsx` | **ada** *(precondition 1812 belum ditiru)* |
-| 3 | `SaveInsuredClaim_Act` | `Property-Set`, `Page-Remove` | tidak | — | — | — | **A3 — Register** |
+| 3 | `SaveInsuredClaim_Act` | `Property-Set`, `Page-Remove` | tidak | `UmurPeserta`, `ShareNusantaraReTeks` *(`repository/pilihpeserta.go`)* | *(di dalam `POST /api/klaim-life`)* | — | **ada** — 36 dari 38 medannya salinan yang backend sudah salin; dua sisanya **pilihan**: `AGE` b661, `SHARE_NUSANTARA_RE` b601/b1412 |
 | 4 | `SaveAdjustment_Act` | `Property-Set`, `RDB-List` | tidak¹ | `Akseptasi.SimpanAdjustment` | `POST …/peserta/{pid}/akseptasi` | tombol **Save Adjustment** di `KlaimLife.tsx` | **ada** |
 | 5 | `RejectOSClaimLife_Act` | `Property-Set`, `RDB-List`, `Obj-Save` | **ya** | `Status.Tolak` | `POST …/adjustment/{aid}/tolak` | tombol Tolak | **ada** |
 | 6 | `CreateKMTLife_Act` | `Property-Set`, `Call pxRetrieveReportData`, `Call pxAddChildWork`, `Obj-Refresh-And-Lock`, `Obj-Save`, `Call SendEmailKlaimLF` | **ya** | `Penyerahan.Serahkan` + `BuatKasusKomite` | `POST …/adjustment/{aid}/komite` | tombol Serahkan | **ada** *(sisi induk belum — lihat §4)* |
 | 7 | `GetListKomiteLife` | `Property-Remove`, `Property-Set`, `Property-Set-Messages`, `Call pxRetrieveReportData`, `Obj-Save` | **ya** | `RosterKomiteOracle` | *(di dalam Serahkan)* | — | **ada** |
 | 8 | `UpdateDateClaimLife_Act` | `Property-Set`, `RDB-List` | **ya²** | `Tanggal.Ubah` | `PUT …/peserta/{pid}/tanggal-kejadian` | — | **ada** *(kontrol React belum)* |
 | 9 | `ValidasiDOL_Act` | `Page-Clear-Messages`, `Property-Set`, `Property-Set-Messages` | tidak | `PeriksaDOL` | *(di dalam `Tanggal.Ubah`)* | — | **ada** |
-| 10 | `DeletePesertaClaimLife` | `Property-Set`, `Obj-Save` | **ya** | — | — | — | **A3 — Register** |
+| 10 | `DeletePesertaClaimLife` | `Property-Set` ×2 *(dua loop `EMBEDDED`)*, `Obj-Save` | **ya** | — | — | — | ⛔ **RALAT** — ia **tidak menghapus**; ia mengindeks ulang `.AdjustmentList(*).IndexPremiumList` lalu menyimpan *(b225, b314, b337, b417, b583, b443)*. Yang menghapus barisnya **klien**: `pyAction = deleteRow` b18017, tanpa konfirmasi b18021. Tombolnya di layar **Outstanding** *(b17909, b18039)*, dan hanya tampil saat `CLAIM_NO` kosong *(b18082)*. Rute `DELETE` bergerbang tahap **tidak dibangun** |
 | 11 | `LoadDataPeserta_Act` | `Property-Set`, `RDB-List` | tidak | `PesertaPolis.AmbilUntukKlaim` | `GET /api/peserta-life` | `RegisterKlaim.tsx` | **ada** |
-| 12 | `LoadDataPesertaSpesifik_Act` | `Page-Remove`, `Property-Set`, `RDB-List` | tidak | — | — | — | **A3 — Register** |
-| 13 | `SelectAllClaimLife_act` | `Property-Set` | tidak | — | — | — | **A3 — Register** |
+| 12 | `LoadDataPesertaSpesifik_Act` | `Page-Remove`, `Property-Set`, `RDB-List`, `Property-Set` ber-ULANG | tidak | `PesertaPolis.Cari` | `GET /api/peserta-life?pl=&sertifikat=&nama=` | kotak `Certificate No` + `Name of Insured` + tombol `Search` | **ada** — **tiga** kriteria *(`GetPesertaClaim_sql1.xml:85`)*; `+7 jam` b738—b904 **tidak ditiru** *(tambalan zona waktu JDBC)*; `LIKE` bersyarat = penyimpangan sadar **OQ-E** |
+| 13 | `SelectAllClaimLife_act` | `Property-Set`, `Property-Set` ber-ULANG `EMBEDDED` | tidak | — | — | `lib/pilihSemua.ts` *(belum ada pemanggil)* | ⛔ **RALAT layar**: **Outstanding** *(b16633, b16710, b24489)*, bukan Register — nol `Select All` dan nol `IsAccept` di section Register. Penjungkit **tiga** keadaan b247 sudah ditulis + diuji; menunggu **grid peserta Outstanding** |
 | 14 | `SearchPolicyHolder_act` | `Property-Set` | tidak | — | — | — | **A3 — Register** |
-| 15 | `ValidasiClaimReceived_Act` | `RDB-List`, `Property-Set` | tidak | — | — | — | **A3 — Register** |
-| 16 | `ValidasiSTNC_Act` | `RDB-List`, `Property-Set` | tidak | — | — | — | **A3 — Register** |
+| 15 | `ValidasiClaimReceived_Act` | `RDB-List`, `Property-Set` | tidak | `models.PenandaBatasHari` | — | — | **dipindah ke A3 — Detail & Tutup** *(sheet b115)*. Aturannya **ada**; ambang `MAXEXPIREDCLAIM` **menunggu modul PremiumList Life** *(`GetProductName.xml:84` lewat `PolicyDataLife.ProductNameID`)*. Tiga cacat rule dilaporkan **OQ-G** |
+| 16 | `ValidasiSTNC_Act` | `RDB-List`, `Property-Set` | tidak | `models.PenandaBatasHari` *(fungsi yang SAMA)* | — | — | **dipindah ke A3 — Detail & Tutup** *(sheet b118)*. Penanda `.STNC` → kolom `STNC_CLAIM` *(migrasi 002)*; ambang `MAXDATARECEIVE` **menunggu modul** |
 | 17 | `CountClaimAmountLife_Act` | `Page-Clear-Messages`, `Property-Set`, `Property-Set-Messages`, `call SpreadingClaimLife_Act` | tidak | `HitungSpreading` | — | — | **ada** *(rute + kontrol belum)* |
 | 18 | `CheckTotalAdjustmentClaim` | — | — | — | — | — | ⛔ **tidak ada di korpus** *(Koreksi 2)* |
 | 19 | `SetIndexAdjustmentList` | `Property-Set` | tidak | `IsCheck` peserta | — | — | **ada** *(dalam kontrak API)* |
@@ -126,7 +126,7 @@ ini**, 2 dinyatakan **tidak ditiru dengan bukti**, 1 **tidak ada**, sisanya peke
 | 9 | `SendtoAdmin` | `SendtoAdmin_Section` | — | **A3 — Medis** |
 | 10 | `AttachDocumentLife` | `AttachDocScreenLife`, `NewAttachLife`, `SaveAttach…` | — | **A3 — Dokumen** |
 | 11 | `ConfirmDeleteAttachment` | `DeleteDocument_Act` | — | **A3 — Dokumen** |
-| 12 | `UploadCSV_ClaimLife` | `UploadCSVClaimLife_Act`, `pxUploadCSVResults` | — | **A3 — Register** |
+| 12 | `UploadCSV_ClaimLife` | `UploadCSVClaimLife_Act`, `pxUploadCSVResults` | — | ⛔ **tidak ditiru — MESIN BAWAAN PLATFORM**. Activity-nya hanya tiga langkah *(b250, b340, b488)*, dan langkah ketiganya memanggil `pxUploadCSVResults`. Pemetaan kolom CSV-nya **tidak ada di korpus** *(OQ-F)* |
 | 13 | `CloseClaim` | `CloseClaim_Section` | — | **A3 — Tutup & lihat** |
 | 14 | `ShowEditClaimLife` | `EditDateClaimLife_Section` | — | **A3 — Tutup & lihat** |
 | 15 | `ViewClaimDetailLifeGCNM` | `ClaimLifeDetailGCNM`, `ObjSave_Act` | *(panel detail)* | **sebagian** |
@@ -272,3 +272,21 @@ nama orang dan pengenal kasus. Dilaporkan ke `OQ-untuk-tim.md` untuk pengembang 
 ⚠️ Koreksi 3 di §0 tetap berlaku sebagai **metode**: "menulis atau tidak" dijawab dari metode
 langkah. Yang berubah adalah kesimpulan untuk aksi INI — ia menulis, tetapi yang ditulisnya bukan
 sesuatu yang boleh ditiru.
+
+---
+
+## 7. Pembaruan 27 September 2026 — giliran lanjutan 10
+
+Baris **3, 10, 12, 13, 15, 16** tabel aksi dan baris **12** tabel alur diperbarui di tempat.
+
+**Dua aksi berpindah kelompok** menurut XML: `ValidasiClaimReceived_Act` dan `ValidasiSTNC_Act`
+**bukan** milik Register — keduanya membandingkan tanggal terhadap ambang produk dan dipakai di
+panel detail, sejalan dengan sheet baris 115 dan 118.
+
+**Dua ralat layar**, keduanya ditemukan dengan **menaiki** pohon dan bukan membaca maju:
+`DeletePesertaClaimLife` dan `SelectAllClaimLife_act` berdiri di `InputOSClaimLife.xml`
+*(Outstanding)*, bukan `InputRegisterClaimLife.xml`.
+
+**Satu aksi dinyatakan tidak ditiru**: `UploadCSV_ClaimLife` memanggil mesin bawaan platform, dan
+pemetaan kolomnya tidak ada di korpus. Itu menjawab tuntutan brief §1 *("bila hanya UI → dinyatakan
+di PARITAS")*: ia bukan sekadar UI, melainkan **gadget platform** — dan itu pun dinyatakan.

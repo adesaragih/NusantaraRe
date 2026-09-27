@@ -336,11 +336,12 @@ export async function cariPesertaLife(
   // Hanya kirim yang terisi: parameter kosong dan parameter tidak dikirim
   // harus berarti hal yang SAMA, dan cara paling aman menjamin itu adalah
   // tidak pernah mengirim yang kosong.
-  if (saring.sertifikat?.trim() !== undefined && saring.sertifikat.trim() !== '') {
-    kueri.sertifikat = saring.sertifikat.trim()
-  }
-  if (saring.nama?.trim() !== undefined && saring.nama.trim() !== '') {
-    kueri.nama = saring.nama.trim()
+  for (const [nama, isi] of [
+    ['sertifikat', saring.sertifikat],
+    ['nama', saring.nama],
+  ] as const) {
+    const bersih = isi?.trim() ?? ''
+    if (bersih !== '') kueri[nama] = bersih
   }
   const data = await minta<CalonPeserta[] | null>('/api/peserta-life', { kueri })
   // Go menulis slice kosong sebagai null; layar menginginkan daftar kosong.
