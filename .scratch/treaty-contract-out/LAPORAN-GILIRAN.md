@@ -164,3 +164,76 @@ Nama layanan `TahunTreatyTCO` (bukan `TahunTreaty`) sebab nama itu sudah dipakai
 | Berkas ditulis / disunting | 16 baru (+±1.9k baris), 11 disunting (+±120) |
 | Putaran instrumen gagal lalu diulang | 3 — heredoc panjang gagal diurai (0 baris jalan) → skrip lewat Write + `py`; `angkaSaja` sudah ada di models (dipakai ulang); `services.TahunTreaty` bertabrakan dengan Claim Life (diberi akhiran TCO) |
 | Token / biaya | tidak terlihat dari dalam sesi — tidak dikarang |
+
+## Jeda — 28-09-2026 (atas permintaan work owner, sesudah tiket 03)
+
+Giliran dijeda atas perintah work owner, sebelum tiket 04. Aturan berhenti GILIRAN-6 (laporan pertama paling cepat
+sesudah tiket 04) dikalahkan oleh perintah jeda langsung. Konteks sesi tidak menipis; jeda ini bukan karena konteks.
+
+| Butir | Keadaan |
+| --- | --- |
+| Tiket terakhir selesai | **03** — tahun treaty, periode, anti-dobel — commit `678fd25` (sebelumnya 01 `1872d26`, 02 `1f2aab5`) |
+| Tiket yang dijeda | **12** — lampiran di tahun treaty (urutan ke-4 brief, sesudah 03) |
+| Pekerjaan tiket 12 yang sudah ada di disk | **nol berkas.** Yang dilakukan baru pembacaan: korpus rantai lampiran dan jalur dokumen yang ada di `main` |
+| Commit WIP | tidak dibuat — pohon kerja bersih saat jeda (`git status` kosong sesudah `678fd25`) |
+| Bab ini | ditulis sesudah pemeriksaan itu dan **belum di-commit** |
+| Sisa urutan | 12 → 04 → 05 → 07 → 08 → 06 → 11 → 09 → 10, lalu uji penuh dan `/code-review` |
+
+### Temuan pembacaan tiket 12 (belum dituangkan ke kode)
+
+Nomor baris = baris mentah berkas korpus (satu tag per baris), diverifikasi dengan `awk 'NR==n'`.
+
+| Unsur | Bukti | Arah yang direncanakan |
+| --- | --- | --- |
+| panel lampiran | `Section/InputTreatyContract.xml` b11721 `Attachment for`, b13074 menyertakan `GridTreatyArrangementAttachment` | panel di form tahun treaty yang sudah punya ID |
+| label panel | `Section/GridTreatyArrangementAttachment.xml`: b578 `Add attachment`, b1023 `Refresh` (→ `LoadAttachmentTreatyOut`), b1785 `For Treaty Contract Out`, b2391 `Download` (→ `DownloadAll_Act`), b2659 `Download All` (→ `TreatyOutDownloadAll_Act`), b3032 `File Name`, b3170 `Type` (sel `.pyCategory` b3705), b3470 tautan nama berkas (→ `TreatyOutDownloadOne`), b3897 `Delete` (→ `DeleteAttachmentTreaty`) | label VERBATIM, diuji terhadap korpus |
+| kunci lampiran di Pega | `Activity/TreatyOutSaveAttachment.xml` b1402 dan `DeleteAttachmentTreaty.xml` b252: `TreatyYear + TreatyYearID`; `RDBList/GetAllAttachment2_Sql.xml` membaca `M_ATTACHMENTTREATY_2 where treatyid = {TreatyIn.ID}` | tidak dibawa; kunci baru = ID tahun treaty; uji statik menolak rujukan ID treaty inward |
+| penulisan di Pega | `RDBList/InsertAtatchment_Sql.xml` → `POOLDATA.PEGA_M_ATTACHMENT` dengan CLOB JSON dan `COMMIT` | tidak dibawa (prosedur tidak dipanggil, nol COMMIT, nol JSON) |
+| pesan tanpa berkas | `TreatyOutSaveAttachment.xml` b376 `"Tidak ada file yg diattach"` | dibawa sebagai penolakan berkas kosong |
+| master kategori | `RDBList/CategoryAttach_SQL.xml` `select * from CATEGORY_ATTACH_REAS order by note`; `Activity/SetCategoryAttachTreatyin.xml` b500 memakai `.NOTE` | dibaca saja, kolom `NOTE` saja; kolom ID master tidak terbukti di korpus, jadi tidak dipakai |
+| jalur dokumen `main` | `services/unggahan.go` (folder `UNGGAHAN_DIR`, batas 25 MiB, outbox `storage-unggah`/`storage-hapus`, pelaksana stub `PelaksanaBerkasLokal`), `repository/efekkeluar.go` (`AntreEfek`, `PungutEfek`, `TuntaskanEfek`), `services/efekkeluar.go` (`ResolverEndpoint`, `KunciUnggahBerkas`, `LayakDicobaUlang`, `ErrPenyimpananBelumDisetujui`), `services/tokenstorage.go` | dipakai ulang; tabel dan fungsi milik Claim Life tidak ditulis |
+
+### Keputusan rancangan yang sudah diambil untuk tiket 12
+
+1. **Migrasi 307** `T_TREATYYEAR_LAMPIRAN`: `ID`, `IDTREATYYEAR` (FK ke `T_TREATYYEAR` tanpa kaskade), `FILENAME`,
+   `FILEMIMETYPE`, `CATEGORY` (teks `NOTE`), `IMAGEID` (kunci penyimpanan acak, lahir bersama barisnya), `T_STORAGE_ID`
+   (terisi hanya setelah unggahan dipastikan), `UKURAN NUMBER(19)`, `USERID`, `TGLUPLOAD`. Sequence
+   `SEQ_T_TREATYYEAR_LAMPIRAN`. Yang ikut diperbarui: bab STRUKTUR, `sequenceDikenalTCO`, kunci cacah CREATE, dan uji
+   kebijakan FK (2 → 3 FK).
+2. **Pengulangan tidak menggandakan berkas** karena kunci penyimpanan (`IMAGEID`) tetap per lampiran. Pelaksana efek
+   bersifat idempoten: baris sudah dihapus berarti selesai tanpa kerja, dan `T_STORAGE_ID` yang sudah terisi juga
+   berarti selesai. Bila berkas antrean sudah hilang, pelaksana menanyakan penyimpanan apakah kunci itu ada.
+3. **Pekerja outbox milik modul ini sendiri.** `PekerjaEfek` bawaan tidak dipakai apa adanya. Jalur menyerahnya menulis
+   jejak Claim Life (`PerekamJejakOracle` → `KlaimLife.SisipJejak`), dan itu penulisan lintas modul. Pekerja modul ini
+   memakai ulang fungsi outbox repository, `Backoff`, dan `LayakDicobaUlang`, lalu menulis jejaknya ke `T_TREATYCO_JEJAK`.
+4. **Tidak ada pekerja outbox yang berjalan di `cmd/api`** untuk modul mana pun (nol pemanggil `SatuPutaran` di kode
+   produksi). Karena itu efek dijalankan sesudah commit unggahan. Endpoint `ulangi` memakai jalan yang sama.
+5. **Hapus selalu mengantre `storage-hapus`.** Objek yang sudah tidak ada di penyimpanan tidak menggagalkan penghapusan.
+6. **Klien penyimpanan di balik antarmuka.** Di DEV dipakai stub lokal di bawah `UNGGAHAN_DIR`. Rangkaian jarak jauh
+   terdiri dari resolver runtime (`ResolverEndpoint` + `KunciUnggahBerkas`), cache token berbatas margin, dan transport.
+   Transport tidak diimplementasikan dan gagal dengan `ErrPenyimpananBelumDisetujui`, yang permanen. Endpoint luar
+   tidak dipanggil.
+7. **Unduhan di layar lewat `fetch` + Blob**, bukan `<a href>`, supaya header identitas `X-Pelaku` ikut terkirim.
+
+⚠️ Pengamatan di luar modul ini, **tidak diverifikasi dengan menjalankannya dan tidak disentuh**: tautan unduh dokumen
+Claim Life (`PanelDokumenPeserta.tsx`, `<a href>`) tidak membawa header identitas. Dalam mode `AUTH_STUB` ia tampaknya
+akan dijawab 401.
+
+### Langkah berikutnya (sesi lanjutan)
+
+1. Mulai dari cabang `modul/treaty-contract-out` @ `678fd25` di worktree `.worktrees/treaty-contract-out`.
+2. Kerjakan tiket 12 menurut rancangan di atas. Bab "Pembacaan ulang XML" dapat diambil dari tabel temuan di atas.
+3. Lanjutkan 04 → 05 → 07 → 08 → 06 → 11 → 09 → 10, satu commit per tiket.
+4. Laporan pertama ke work owner paling cepat sesudah tiket 04, sesuai GILIRAN-6.
+5. Di akhir: uji penuh (`go test ./...`, `go vet -tags=db`, `npm run typecheck`, `vitest run`), lalu `/code-review`.
+
+### TELEMETRI EKSEKUSI — tiket 12 (dijeda, pembacaan saja)
+
+| Ukuran | Nilai |
+| --- | --- |
+| Berkas korpus dibaca | ±16: `GridTreatyArrangementAttachment.xml`, `TreatyOutAttachContent.xml`, `TreatyOutSaveAttachment.xml`, `LoadAttachmentTreatyOut.xml`, `TreatyOutDownloadOne.xml`, `TreatyOutDownloadAll_Act.xml`, `DeleteAttachmentTreaty.xml`, `LoadAttachment.xml`, `SetCategory_act.xml`, `SetCategoryAttachTreatyin.xml`, 9 RDBList lampiran/penyimpanan, `InputTreatyContract.xml` (b11700–b13240), dan 4 `CategoryAttach`/`AttachmentLife` modul lain untuk kolom master |
+| Berkas kode dibaca | ±14: `unggahan.go`, `dokumen.go`, `dokumenunggah.go`, `efekkeluar.go` (services + repository), `antrean.go`, `tokenstorage.go` (services + repository), `linkservice.go`, `handlers/dokumen.go`, `efekkeluar_statik_test.go`, `PanelDokumenPeserta.tsx`, `api.ts` (bagian dokumen), migrasi 007/015/019/020 |
+| Perintah dijalankan | ±24, semuanya baca, ditambah satu penulisan bab ini |
+| Berkas ditulis / disunting | 1: bab ini (+±75 baris) |
+| Putaran instrumen gagal lalu diulang | 1: satu loop `for f in $(grep -rl …)` memecah jalur korpus yang berspasi, lalu diulang dengan jalur yang dikutip |
+| Token / biaya | tidak terlihat dari dalam sesi, jadi tidak dikarang |
