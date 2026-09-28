@@ -123,7 +123,7 @@ Korpus `D:\XML\RNM_BRD\` tetap READ-ONLY dari semua worktree.
 
 | Sesi | Tempel utuh | Titik mulai |
 | --- | --- | --- |
-| **Sesi tunggal** *(mode §0.3)* | `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-6.md` *(GILIRAN-3 A/B/C, 4, 5 tetap rujukan)* | `main` @ `06b1289` atau lebih baru |
+| **Sesi tunggal** *(mode §0.3)* | `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-7.md` *(GILIRAN-3 A/B/C, 4, 5, 6 tetap rujukan)* | `main` @ `8f69682` atau lebih baru |
 | Claim Life *(sesi A)* | `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-3-CLAIM-LIFE.md` | `main` @ `4f40272` atau lebih baru — folder `OUTPUT_HASIL_RNM` |
 | PremiumList Life *(sesi B)* | `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-3-PREMIUMLIST.md` | `modul/premiumlist-life` @ `4f40272` — buka sesi di `.worktrees/premiumlist-life` |
 | Komite Claim Life *(sesi C)* | `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-3-KOMITE.md` | `modul/komite-claim-life` @ `4f40272` — buka sesi di `.worktrees/komite-claim-life` |
