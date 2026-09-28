@@ -927,11 +927,15 @@ export async function pindahTahap(klaimID: string, tujuan: TahapJalur): Promise<
 /** Hasil `Save to RNM` yang berhasil — `services.HasilSimpanRNM`. */
 export interface HasilSimpanRNM {
   nomorKlaim: string
-  /** Nomor diterbitkan saat simpan ini (langkah 13-20), bukan saat pendaftaran. */
+  /** Nomor diterbitkan saat simpan ini (langkah 16-20), bukan saat pendaftaran. */
   nomorBaru: boolean
   /** Baris tanpa status yang kini Outstanding (langkah 22.1.3.2). */
   barisDitandai: number
-  /** Keadaan efek Arasapas langkah 28, sebagai kata. */
+  /**
+   * Keadaan efek Arasapas langkah 28, sebagai kata: `terkirim`, `gagal, …`,
+   * `dilewati: …` (lingkungan bukan produksi, atau kode retro langkah 27), atau
+   * `ditahan: …` bila gerbang langkah 27 bergantung pada `ProdDateTime` (OQ-N5).
+   */
   arasapas: string
 }
 

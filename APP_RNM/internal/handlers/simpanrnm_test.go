@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -48,10 +49,11 @@ func TestGalatSimpanRNMDipetakanKeKodeYangBenar(t *testing.T) {
 		{"wewenang", services.ErrTanpaWewenang, http.StatusForbidden},
 		{"tertutup", services.ErrKasusSudahTertutup, http.StatusConflict},
 		{"tahap", services.ErrSimpanRNMBukanOutstanding, http.StatusConflict},
+		// Bentuk yang benar-benar dikembalikan Simpan: kedua galat terbungkus.
+		{"klaim tidak ada", fmt.Errorf("%w: %w", services.ErrKlaimTidakAda, errors.New("work")),
+			http.StatusNotFound},
 		{"type", services.ErrTypeTidakDikenal, http.StatusUnprocessableEntity},
-		{"ambang", services.ErrAmbangSTNCBelumDiketahui, http.StatusUnprocessableEntity},
-		{"kategori", services.ErrKategoriWajibBelumDiketahui, http.StatusUnprocessableEntity},
-		{"produk", services.ErrAmbangProdukTakDitemukan, http.StatusUnprocessableEntity},
+		{"business", services.ErrBusinessCodeTidakDikenal, http.StatusUnprocessableEntity},
 		{"polis", services.ErrPolisNomorTakDitemukan, http.StatusUnprocessableEntity},
 		{"permintaan", services.ErrPermintaanTidakSah, http.StatusBadRequest},
 		{"lain", errors.New("x"), http.StatusInternalServerError},

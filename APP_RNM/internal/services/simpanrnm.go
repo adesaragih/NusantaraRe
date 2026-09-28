@@ -14,6 +14,15 @@ package services
 // activity. Langkah 11.1, 22.1.1, dan 22.1.3 ber-WHEN tetapi TANPA bendera -
 // WHEN-nya mati, dan langkahnya selalu berjalan.
 //
+// ⛔ `pyStepsBlockName = //` berarti langkahnya DI-REMARK dan tidak pernah
+// jalan, apa pun gerbangnya (`.scratch/claim-prop/grilling-ronde-2.md` Aturan
+// 2). Delapan langkah activity ini ber-remark: 11.3 b3495, 11.9 b4632, 11.11
+// b5009, 12 b6178 (beserta anaknya), 13 b7074, 14 b7293, 15 b7512, 23 b10649.
+// RALAT GILIRAN-11 (temuan /code-review): paket 1 membaca 11.9/11.11 (STNC)
+// dan 12 (dokumen lengkap) sebagai gerbang hidup - pembaca pohon kami tidak
+// mencetak medan itu - sehingga dua penolakan yang tidak pernah terjadi di
+// sistem lama ikut ditegakkan. Keduanya dibuang.
+//
 // Peta langkah -> di sini:
 //
 //	1       Page-Clear-Messages                           -
@@ -22,17 +31,21 @@ package services
 //	6       Page-Remove halaman kerja                       -
 //	7-9     periode penomoran                              milik penomor (tiket 02)
 //	10      Business per BusinessCode                      ContentNoteDari
-//	11.1-6  klaim ganda DEATH / HEALTH (tabel warisan)      gerbang 2 - BACA SAJA
+//	11.1-6  klaim ganda DEATH / HEALTH (tabel warisan)      gerbang 2 - BACA SAJA; 11.3 `//`
 //	11.7-10 DOL dalam jendela, TANPA geser retro            gerbang 3
-//	11.9/11 STNC: hari BEGIN -> DateReceived+1 > ambang     gerbang 4
-//	11.12-17 DOB, BEGIN, EXPIRED, POLICY, CERT, CLAIM_GROSS gerbang 5
-//	12      dokumen LENGKAP (cacah kategori berbeda)       gerbang 6, keluar b6860
-//	13-20   nomor klaim bila CLAIM_NO kosong                penomor yang sama dengan pendaftaran
+//	11.9/11 STNC                                           `//` - TIDAK ditiru
+//	11.12-17 DOB, BEGIN, EXPIRED, POLICY, CERT, CLAIM_GROSS gerbang 4
+//	12      dokumen LENGKAP                                 `//` - TIDAK ditiru
+//	13-15   nomor lewat `Generate_NoKlaim_Life*`            `//` - TIDAK ditiru
+//	16-20   nomor klaim bila CLAIM_NO kosong                penomor yang sama dengan pendaftaran
 //	21, 24  bendera `pyWorkPage.Save`                       ⚠️ TANPA kolom - OQ-N1
 //	22      insert baris warisan + STS_REJECT=0             warisan BACA SAJA (brief); STS_REJECT
 //	                                                        hanya baris tanpa status (tiket 04)
-//	23      enam total peserta                              dihitung saat baca (HitungTotalPeserta)
-//	25-26   JSON + transformasi tampilan JSON               DIBUANG (keputusan 2026-09-16)
+//	23      enam total peserta                              `//` - totalnya dari SavePesertaClaim
+//	                                                        langkah 8 (HitungTotalPeserta, saat baca)
+//	25      InsertJsonClaimLife_Act: 1-2 salin + TUKAR      tukarnya dibaca langkah 27 - PolisRetro
+//	        retro; 3-4 JSON                                 JSON DIBUANG (keputusan 2026-09-16)
+//	26      transformasi tampilan JSON                      DIBUANG (keputusan 2026-09-16)
 //	27      keluar bila RETROID/SECURITYREINSURERID tertentu ArasapasDilewatiRetro
 //	28      Arasapas bila IsPEGAPROD                        penyalur, SESUDAH commit (ADR-U-0008)
 //	29      Obj-Save                                        transaksi tunggal
@@ -52,21 +65,9 @@ import (
 	"nusantarare/pkg/utils"
 )
 
-var (
-	// ErrSimpanRNMDitolak - salah satu gerbang XML menolak; kalimatnya di
-	// PelanggaranRNM.Pesan.
-	ErrSimpanRNMDitolak = errors.New("services: Save to RNM ditolak")
-	// ErrAmbangSTNCBelumDiketahui - ambang `MAXDATARECEIVE` produk kosong.
-	//
-	// ⛔ Gagal terang (ADR-U-0027), bukan nol: nol menolak hampir setiap
-	// klaim, dan ambang yang dikarang meloloskan atau menolak dengan angka
-	// yang tidak diputuskan siapa pun.
-	ErrAmbangSTNCBelumDiketahui = errors.New(
-		"services: ambang MAXDATARECEIVE produk kosong; gerbang STNC Save to RNM tidak dapat dihitung")
-	// ErrTanggalTerimaPolisKosong - `PolicyDataLife.DateReceived` kosong.
-	ErrTanggalTerimaPolisKosong = errors.New(
-		"services: DateReceived polis kosong; gerbang STNC Save to RNM tidak dapat dihitung")
-)
+// ErrSimpanRNMDitolak - salah satu gerbang XML menolak; kalimatnya di
+// PelanggaranRNM.Pesan.
+var ErrSimpanRNMDitolak = errors.New("services: Save to RNM ditolak")
 
 // PelanggaranRNM adalah alasan Save to RNM berhenti - kalimat XML VERBATIM.
 //
@@ -88,7 +89,7 @@ func (p *PelanggaranRNM) Unwrap() error { return ErrSimpanRNMDitolak }
 //
 // ⛔ Nama tertanggung dan tanggal lahir TIDAK dibawa: yang menyeberang hanya
 // JAWABANNYA (kosong? ganda?). Pencocokannya terjadi di SQL - lihat
-// repository.PeriksaGandaWarisan.
+// repository/gandawarisan.go.
 type PesertaRNM struct {
 	models.Peserta
 	// DOBKosong - `M_LIFE_PREMIUM_DETAIL.DOB` peserta ini NULL (langkah 11.12).
@@ -108,14 +109,7 @@ type MasukanRNM struct {
 	Tipe string
 	// ContentNote - `Business.pxResults(1).ContentNote` (langkah 10).
 	ContentNote string
-	// TanggalTerimaPolis - `PolicyDataLife.DateReceived`.
-	TanggalTerimaPolis string
-	// MaxDataReceive - ambang produk (`.MAXDATARECEIVED`, diisi ValidasiSTNC_Act
-	// b577 dari `ProductNameInward.MAXDATARECEIVE`).
-	MaxDataReceive string
-	// KategoriWajib - `GetCategoryLife_SQL` (butir ar1).
-	KategoriWajib []string
-	Peserta       []PesertaRNM
+	Peserta     []PesertaRNM
 }
 
 // Kalimat VERBATIM, termasuk salah eja dan apostrof lengkungnya.
@@ -126,8 +120,8 @@ const (
 	formatSudahDiaksep = "Person number %d has already been accepted."
 	// b2827 `Local.Errmsg`.
 	formatDOLDiLuar = "DOL cannot be blank or outside the valuation period No %d"
-	// b2996 `local.Errmsg8`.
-	formatSTNC = "Begin date exceed STNC No %d"
+	// ⚠️ b2996 `local.Errmsg8` ("Begin date exceed STNC") disusun langkah 11
+	// tetapi hanya ditampilkan 11.11, yang ter-remark - karena itu tidak ada.
 	// b2869, b2890, b2911, b2932, b2953, b2848.
 	formatDOBKosong     = "DOB cannnot be blank No %d"
 	formatBeginKosong   = "Begin Date cannnot be blank No %d"
@@ -178,17 +172,11 @@ func PeriksaSimpanRNM(m MasukanRNM) error {
 			return err
 		}
 	}
-
-	// Gerbang 6 - langkah 12. ⚠️ SELURUH peserta: langkah 12.2 tanpa
-	// precondition, tidak seperti gerbang 1 (lihat PeriksaDokumenLengkap).
-	if len(m.KategoriWajib) == 0 {
-		return fmt.Errorf("%w: daftar kategori wajib kosong", ErrKategoriWajibBelumDiketahui)
-	}
-	for _, p := range peserta {
-		if len(KategoriBerbeda(p)) != len(m.KategoriWajib) {
-			return tolakRNM("12.2.4", ErrDokumenTidakLengkap.Error())
-		}
-	}
+	// ⛔ Langkah 12 "Proteksi Attachment Harus Lengkap" ter-remark (b6178):
+	// Save to RNM TIDAK menuntut dokumen lengkap - dan `GetCategoryLife_SQL`
+	// tidak disebut rule lain mana pun di seluruh korpus, jadi sistem lama
+	// tidak menegakkannya di tempat lain pula.
+	// PeriksaDokumenLengkap menunggu keputusan OQ-N6.
 	return nil
 }
 
@@ -210,18 +198,9 @@ func periksaPesertaRNM(m MasukanRNM, p PesertaRNM, idx int, gross bool) error {
 		return tolakRNM("11.10", fmt.Sprintf(formatDOLDiLuar, idx))
 	}
 
-	// Gerbang 4 - STNC, 11.9 lalu 11.11. BEGIN kosong dilaporkan 11.13.
-	if !kosongTeks(p.TanggalMulai) {
-		lewat, err := stncMelebihiAmbang(p.TanggalMulai, m.TanggalTerimaPolis, m.MaxDataReceive)
-		if err != nil {
-			return err
-		}
-		if lewat {
-			return tolakRNM("11.11", fmt.Sprintf(formatSTNC, idx))
-		}
-	}
+	// ⛔ 11.9 dan 11.11 (STNC) ter-remark (b4632, b5009) - tidak ada gerbang.
 
-	// Gerbang 5 - medan kosong, 11.12-11.17, urut.
+	// Gerbang 4 - medan kosong, 11.12-11.17, urut.
 	switch {
 	case p.DOBKosong:
 		return tolakRNM("11.12", fmt.Sprintf(formatDOBKosong, idx))
@@ -263,45 +242,65 @@ func dolDalamJendelaRNM(p models.Peserta, gross bool) bool {
 	return sesudah(dol, awal) && !sesudah(dol, akhir)
 }
 
-// stncMelebihiAmbang - `@DateTimeDifference(.BEGIN_DATE, DateReceived+1 hari, "D")`
-// > `.MAXDATARECEIVED`.
+// PolisRetro adalah medan polis yang menentukan gerbang langkah 27.
 //
-// `local.Received = @addCalendar(DateReceived,0,0,0,1,0,0,0)` b4643: argumen
-// keempat HARI (ralat A0, dol.go) - jadi satu hari, bukan satu jam.
-func stncMelebihiAmbang(mulai, terimaPolis, ambang string) (bool, error) {
-	if kosongTeks(ambang) {
-		return false, ErrAmbangSTNCBelumDiketahui
-	}
-	batas, err := strconv.Atoi(strings.TrimSpace(ambang))
-	if err != nil {
-		return false, fmt.Errorf("%w: %q bukan bilangan bulat", ErrAmbangSTNCBelumDiketahui, ambang)
-	}
-	if kosongTeks(terimaPolis) {
-		return false, ErrTanggalTerimaPolisKosong
-	}
-	terima, err := utils.ParseTanggal(strings.TrimSpace(terimaPolis))
-	if err != nil {
-		return false, fmt.Errorf("%w: %q", ErrTanggalTerimaPolisKosong, terimaPolis)
-	}
-	selisih, err := models.SelisihHari(mulai, utils.FormatTanggalWaktu(terima.Add(24*time.Hour)))
-	if err != nil {
-		return false, err
-	}
-	return selisih > batas, nil
+// ⛔ Langkah 27 membaca `pyWorkPage.ClaimData.PolicyDataLife`, BUKAN
+// `pyWorkPage.PolicyDataLife`. Salinan itu diisi langkah 25
+// (`InsertJsonClaimLife_Act`): langkah 1 menyalin apa adanya, langkah 2
+// "Tukar SecurityReinsurer dengan RetroName" (TIDAK ter-remark) menukar kedua
+// pengenal - b1152-1153 `ClaimData.RetroID = SecurityReinsurerID`, b1194-1195
+// `ClaimData.SecurityReinsurerID = RetroID` - bila KETIGA WHEN-nya benar:
+//
+//	b1268 `Type=="TP"||Type=="TR"`
+//	b1291 `SecurityReinsurerID!="" && SecurityReinsurer!=""`
+//	b1314 `OfferFacIn.PolicyData.ProdDateTime < "20250207T000000.000 GMT"`
+//
+// Tidak ada sumber `ProdDateTime` di aplikasi ini (OQ-N5).
+type PolisRetro struct {
+	Tipe                string
+	RetroID             string
+	SecurityReinsurerID string
+	SecurityReinsurer   string
 }
 
-// ArasapasDilewatiRetro adalah langkah 27 - MURNI.
-//
-// `[terverifikasi]` b11794 `RetroID=="L0000141" || SecurityReinsurerID=="L0000134"`
-// dan b11817 `RetroID=="1000013"`, keduanya WhenTrue 6 (KELUAR sebelum
-// Arasapas langkah 28).
-//
-// ⚠️ Modul Komite MEMBUANG gerbang yang sama `[keputusan work owner, OQ-064]`
-// untuk `KomitePostAdjustment`. Keputusan itu tidak menyebut Claim Life, jadi
-// di sini XML yang menang - dan selisihnya dilaporkan (OQ-N3).
-func ArasapasDilewatiRetro(retroID, securityReinsurerID string) bool {
+// ErrGerbangRetroTakTerputuskan - hasil langkah 27 bergantung pada penukaran
+// langkah 2 `InsertJsonClaimLife_Act`, dan penukaran itu bergantung pada
+// `ProdDateTime` yang tidak tersedia (OQ-N5).
+var ErrGerbangRetroTakTerputuskan = errors.New(
+	"services: gerbang retro langkah 27 bergantung pada ProdDateTime polis, yang tidak tersedia (OQ-N5)")
+
+// kodeRetroKeluar - b11794 `RetroID=="L0000141" || SecurityReinsurerID==
+// "L0000134"` dan b11817 `RetroID=="1000013"`, keduanya WhenTrue 6.
+func kodeRetroKeluar(retroID, securityReinsurerID string) bool {
 	r, s := strings.TrimSpace(retroID), strings.TrimSpace(securityReinsurerID)
 	return r == "L0000141" || s == "L0000134" || r == "1000013"
+}
+
+// ArasapasDilewatiRetro adalah langkah 27 - MURNI: true berarti activity
+// KELUAR sebelum Arasapas langkah 28.
+//
+// ⛔ Gagal terang, bukan tebakan (ADR-U-0027): bila penukaran MUNGKIN terjadi
+// (b1268 dan b1291 benar) dan hasilnya BERBEDA dengan dan tanpa tukar, hanya
+// `ProdDateTime` (b1314) yang dapat memutuskan - dan ia tidak ada. Selama
+// hasilnya sama, `ProdDateTime` tidak perlu diketahui.
+//
+// ⚠️ Modul Komite MEMBUANG gerbang yang sama `[keputusan work owner, OQ-064]`
+// untuk `KomitePostAdjustment`, dan cutover 7 Feb 2025 dinyatakan tidak
+// dipakai lagi di sana (CONTEXT.md, Komite ronde 1 #4) - untuk blok yang di
+// Komite memang ter-remark. Keduanya tidak menyebut Claim Life, jadi di sini
+// XML yang menang, dan selisihnya dilaporkan (OQ-N3, OQ-N5).
+func ArasapasDilewatiRetro(p PolisRetro) (bool, error) {
+	tanpaTukar := kodeRetroKeluar(p.RetroID, p.SecurityReinsurerID)
+	tipe := strings.ToUpper(strings.TrimSpace(p.Tipe))
+	mungkinTukar := (tipe == TypeTP || tipe == TypeTR) &&
+		!kosongTeks(p.SecurityReinsurerID) && !kosongTeks(p.SecurityReinsurer)
+	if !mungkinTukar {
+		return tanpaTukar, nil
+	}
+	if kodeRetroKeluar(p.SecurityReinsurerID, p.RetroID) != tanpaTukar {
+		return false, ErrGerbangRetroTakTerputuskan
+	}
+	return tanpaTukar, nil
 }
 
 // ErrSimpanRNMBukanOutstanding - tombol `Save to RNM` hanya ada di layar
@@ -312,7 +311,7 @@ var ErrSimpanRNMBukanOutstanding = errors.New(
 // HasilSimpanRNM adalah hasil Save to RNM yang berhasil.
 type HasilSimpanRNM struct {
 	NomorKlaim string `json:"nomorKlaim"`
-	// NomorBaru - nomor diterbitkan di sini (langkah 13-20), bukan saat pendaftaran.
+	// NomorBaru - nomor diterbitkan di sini (langkah 16-20), bukan saat pendaftaran.
 	NomorBaru bool `json:"nomorBaru"`
 	// BarisDitandai - baris tanpa status yang kini Outstanding (langkah 22.1.3.2).
 	BarisDitandai int `json:"barisDitandai"`
@@ -324,7 +323,6 @@ type HasilSimpanRNM struct {
 type SimpanRNM struct {
 	svc      *Service
 	penomor  Penomor
-	kategori SumberKategoriWajib
 	jejak    Jejak
 	penyalur *Penyalur
 }
@@ -332,8 +330,7 @@ type SimpanRNM struct {
 // SimpanRNM menyusun layanannya dengan ketergantungan yang GAGAL TERANG.
 func (s *Service) SimpanRNM() *SimpanRNM {
 	return &SimpanRNM{
-		svc: s, penomor: PenomorBelumDiputuskan{}, kategori: KategoriWajibBelumDiketahui{},
-		jejak: JejakBelumDiputuskan{},
+		svc: s, penomor: PenomorBelumDiputuskan{}, jejak: JejakBelumDiputuskan{},
 		penyalur: NewPenyalur(s.lingkungan, AntreanBelumDiputuskan{},
 			EfekArasapas{Resolver: ResolverBelumDiputuskan{}}),
 	}
@@ -343,8 +340,7 @@ func (s *Service) SimpanRNM() *SimpanRNM {
 // tempat, supaya handler tidak merakit sendiri.
 func SimpanRNMOracle(s *Service) *SimpanRNM {
 	return &SimpanRNM{
-		svc: s, penomor: PenomorCounterOracle(s), kategori: KategoriWajibOracle(s),
-		jejak: PerekamJejakOracle(s),
+		svc: s, penomor: PenomorCounterOracle(s), jejak: PerekamJejakOracle(s),
 		penyalur: NewPenyalur(s.lingkungan, AntreanEfekOracle(s),
 			EfekArasapas{Resolver: ResolverLinkServiceOracle(s)}),
 	}
@@ -393,6 +389,11 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku Pelaku, klaimID string,
 	}
 	// ⛔ BUTIR bb - kasus tertutup tidak dapat diubah lagi.
 	if err := x.svc.PastikanKasusTerbuka(ctx, klaimID); err != nil {
+		// Klaim yang tidak ada dijawab 404, bukan 500 - handler tidak
+		// mengimpor repository, jadi galatnya diterjemahkan di sini.
+		if errors.Is(err, repository.ErrWorkTidakAda) {
+			return hasil, fmt.Errorf("%w: %w", ErrKlaimTidakAda, err)
+		}
 		return hasil, err
 	}
 
@@ -429,23 +430,7 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku Pelaku, klaimID string,
 	if err != nil {
 		return hasil, err
 	}
-	if strings.TrimSpace(polis.ProductNameID) == "" {
-		return hasil, fmt.Errorf("%w: polis %q tidak menyebut produk",
-			ErrAmbangProdukTakDitemukan, klaim.NomorPolis)
-	}
-	ambang, err := repository.NewProdukLife(x.svc.db).Ambang(ctx, polis.ProductNameID)
-	if err != nil {
-		return hasil, err
-	}
-	wajib, err := x.kategori.KategoriWajib(ctx)
-	if err != nil {
-		return hasil, err
-	}
-	m := MasukanRNM{Tipe: tipe, ContentNote: note, MaxDataReceive: ambang.MaxDataReceive,
-		KategoriWajib: wajib}
-	if polis.DateReceived != nil {
-		m.TanggalTerimaPolis = *polis.DateReceived
-	}
+	m := MasukanRNM{Tipe: tipe, ContentNote: note}
 	for _, p := range klaim.Peserta {
 		if strings.TrimSpace(p.SumberID) == "" {
 			return hasil, fmt.Errorf("%w: peserta %q tanpa SOURCE_ID; DOB dan klaim ganda "+
@@ -474,7 +459,7 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku Pelaku, klaimID string,
 
 	hasil.NomorKlaim = klaim.NomorKlaim
 	err = x.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
-		// Langkah 13-20 - hanya bila CLAIM_NO masih kosong.
+		// Langkah 16-20 (13-15 ter-remark) - hanya bila CLAIM_NO masih kosong.
 		if strings.TrimSpace(klaim.NomorKlaim) == "" {
 			nomor, err := x.penomor.NomorBerikut(ctx, tx, polis.BusinessCode, saat)
 			if err != nil {
@@ -489,6 +474,10 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku Pelaku, klaimID string,
 		// tersimpan. ⛔ Baris berstatus TIDAK ditimpa: tanpa bendera `Save`
 		// (OQ-N1) tombolnya dapat ditekan lagi, dan menimpa baris yang sudah
 		// ditolak Admin berarti membatalkan penolakan diam-diam.
+		// ⛔ HANYA baris adjustment (sensus penulis STS_REJECT,
+		// repository.PerbaruiStatusBaris): langkah ini tidak menulis status
+		// peserta, nomor akseptasi, atau tanggalnya - karena itu bukan
+		// PerbaruiStatusBaris, yang menulis keempatnya.
 		for i := range klaim.Peserta {
 			p := &klaim.Peserta[i]
 			for j := range p.Baris {
@@ -496,8 +485,7 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku Pelaku, klaimID string,
 				if strings.TrimSpace(b.KodeStatus) != "" {
 					continue
 				}
-				if err := baca.PerbaruiStatusBaris(ctx, tx, p.ID, b.ID, "",
-					models.KodeOutstanding, "", time.Time{}); err != nil {
+				if err := baca.TandaiBarisOutstanding(ctx, tx, b.ID); err != nil {
 					return err
 				}
 				b.KodeStatus = models.KodeOutstanding
@@ -525,9 +513,21 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku Pelaku, klaimID string,
 
 	// Langkah 27-28 - SESUDAH commit, dan kegagalannya bukan galat simpan
 	// (ADR-U-0008).
-	if ArasapasDilewatiRetro(polis.RetroID, polis.SecurityReinsurerID) {
+	//
+	// ⚠️ Di sistem lama keluar di langkah 27 (kode 6) melewati Obj-Save
+	// langkah 29 juga; di sini tulisan langkah 13-22 sudah di-commit lebih
+	// dulu. Lihat OQ-N3.
+	lewat, err := ArasapasDilewatiRetro(PolisRetro{Tipe: tipe, RetroID: polis.RetroID,
+		SecurityReinsurerID: polis.SecurityReinsurerID, SecurityReinsurer: polis.SecurityReinsurer})
+	switch {
+	case err != nil:
+		// Tidak dikirim: mengirim efek keluar atas tebakan lebih buruk
+		// daripada menahannya dengan alasan yang terbaca.
+		hasil.Arasapas = "ditahan: gerbang retro langkah 27 bergantung pada ProdDateTime " +
+			"polis, yang tidak tersedia (OQ-N5)"
+	case lewat:
 		hasil.Arasapas = "dilewati: kode retro langkah 27"
-	} else {
+	default:
 		hasil.Arasapas = kataHasilSalur(x.penyalur.Salurkan(ctx,
 			MuatanEfek{KlaimID: klaimID, AkunID: pelaku.AkunID, Waktu: saat}))
 	}

@@ -25,7 +25,12 @@ import (
 // XML menjawab tegas nilainya:
 //
 //	`Activity/SetIndexAdjustmentList.xml` b328  `.IsCheck` = `true`
-//	`Activity/SavePesertaClaim.xml` b1812, b1997, b2413  `.IsCheck=="true"`
+//	`Activity/SavePesertaClaim.xml` b3631, b3919  `.IsCheck=="true"`
+//	                                (langkah 7.7 dan 7.8 - keduanya HIDUP)
+//
+// RALAT GILIRAN-11: dulu dikutip b1812, b1997, b2413 - WHEN langkah 7.1
+// (precondition false, mati) serta 7.2 dan 7.4 (`//`, ter-remark). Nilainya
+// sama; hanya buktinya yang dipindah ke baris yang benar-benar berjalan.
 
 func TestPenandaDipilihSatuNilaiSaja(t *testing.T) {
 	// Peserta sebagaimana DIBUAT jalur pendaftaran harus lolos gerbang

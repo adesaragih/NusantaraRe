@@ -95,10 +95,10 @@ akun stub yang **sama** dengan yang mendaftarkan klaim, atau kasusnya tidak akan
 #### 1.3 Data yang harus sudah ada di basis data uji
 
 1. Nomor premium list yang berpeserta (contoh uji: `UJI-PL-1`).
-2. Polisnya ada di modul PremiumList Life (dibaca `GET /api/polis-life/ringkas`), lengkap dengan
-   produk (`ProductNameID`), ambang `MAXDATARECEIVE`, dan `DateReceived` — tanpa itu `Save to RNM`
-   berhenti 422.
-3. Daftar kategori dokumen wajib terisi (untuk `Add attachment` dan gerbang dokumen).
+2. Polisnya ada di modul PremiumList Life (dibaca `GET /api/polis-life/ringkas`) dengan
+   `BusinessCode` yang dikenal — tanpa itu `Save to RNM` berhenti 422. (Ambang produk dan
+   `DateReceived` **tidak** diperlukan `Save to RNM`: langkah STNC-nya ter-remark, lihat §3.4.)
+3. Daftar kategori dokumen wajib terisi (untuk `Add attachment`).
 4. Untuk menguji tombol baris adjustment (`Save Adjustment`, `Reject Outstanding`,
    `Send Claim to Committee`): klaim yang **sudah punya** baris adjustment (data lama). Klaim yang
    didaftarkan lewat layar ini lahir **tanpa** baris adjustment (`BE/repository/pesertapolis.go:334`).
@@ -168,7 +168,7 @@ Kepala: `Claim No: <pengenal>`. Panel `Data Polis` sama dengan Register.
 | # | Kontrol | Memanggil | Siapa | Hasil |
 |---|---|---|---|---|
 | 1 | `Detail klaim` | — | — | Layar Detail (ketik pengenal, §2 langkah 4) |
-| 2 | `Save to RNM` | `POST /api/klaim-life/{id}/outstanding` | `ReasLifeAdmin`, kasus di `Outstanding Claim`, belum ditutup (`BE/services/simpanrnm.go:381-414`) | `Tersimpan ke RNM — nomor klaim <n>` [` (baru diterbitkan)` bila nomor terbit saat itu]`; <k> baris ditandai Outstanding; Arasapas: dilewati: lingkungan bukan produksi (IsPEGAPROD).` Tombol **tetap hidup** dan boleh ditekan ulang (OQ-N1) |
+| 2 | `Save to RNM` | `POST /api/klaim-life/{id}/outstanding` | `ReasLifeAdmin`, kasus di `Outstanding Claim`, belum ditutup (`BE/services/simpanrnm.go:377-415`) | `Tersimpan ke RNM — nomor klaim <n>` [` (baru diterbitkan)` bila nomor terbit saat itu]`; <k> baris ditandai Outstanding; Arasapas: dilewati: lingkungan bukan produksi (IsPEGAPROD).` — atau `Arasapas: dilewati: kode retro langkah 27.` / `Arasapas: ditahan: gerbang retro langkah 27 bergantung pada ProdDateTime polis, yang tidak tersedia (OQ-N5).` Tombol **tetap hidup** dan boleh ditekan ulang (OQ-N1) |
 | 3 | `Send Back to Register` | dialog `Send Back to Admin?` → `Submit` / `Cancel` → `POST …/tahap/input-register` | `ReasLifeAdmin` | Kembali ke Inbox; kasus pindah ke tab `Input Register` |
 | 4 | `Send to Medical Check` | langsung `POST …/tahap/medical-check` (tanpa dialog) | `ReasLifeAdmin` | Kembali ke Inbox; kasus pindah ke tab `Medical Check` |
 
@@ -177,7 +177,7 @@ Kotak masuk membuka layar ini untuk tahap mana pun; untuk tahap lain layar menul
 `Kasus ini berada di tahap <tahap>, bukan Outstanding Claim: tombol layar ini tidak berlaku untuknya. Buka dari layar Detail klaim.`
 — pakai layar Detail.
 
-**Gerbang `Save to RNM`, urut XML — pelanggaran pertama yang dilaporkan** (`BE/services/simpanrnm.go:122-244`).
+**Gerbang `Save to RNM`, urut XML — pelanggaran pertama yang dilaporkan** (`BE/services/simpanrnm.go:140-222`).
 Pesan tampil dua kali (panel merah + baris `role=alert`), itu perilaku layar saat ini.
 
 | Urut | Syarat | Pesan (verbatim, termasuk salah eja) |
@@ -185,17 +185,20 @@ Pesan tampil dua kali (panel merah + baris `role=alert`), itu perilaku layar saa
 | 1 | Tiap peserta punya ≥1 dokumen (dilewati untuk Type `TP`/`TR`) | `The document hasn’t been uploaded person number N` — satu baris per peserta, apostrof lengkung |
 | 2 | Klaim ganda (tabel warisan) | `Person number N has already been accepted.` |
 | 3 | DOL dalam jendela valuasi, **tanpa** geser retro | `DOL cannot be blank or outside the valuation period No N` |
-| 4 | STNC: hari BEGIN → DateReceived+1 ≤ ambang produk | `Begin date exceed STNC No N` |
-| 5 | Medan wajib | `DOB cannnot be blank No N` · `Begin Date cannnot be blank No N` · `Expired Date cannnot be blank No N` · `Policy No cannnot be blank No N, please contact IT` · `Certificate No cannnot be blank No N, please contact IT` · `Claim Gross No N can't null` |
-| 6 | Kategori dokumen berbeda = jumlah kategori wajib | `Documents are incomplete, please complete the documents` |
+| 4 | Medan wajib | `DOB cannnot be blank No N` · `Begin Date cannnot be blank No N` · `Expired Date cannnot be blank No N` · `Policy No cannnot be blank No N, please contact IT` · `Certificate No cannnot be blank No N, please contact IT` · `Claim Gross No N can't null` |
+
+⛔ **Diralat 28-09-2026** (temuan /code-review GILIRAN-11): versi pertama panduan ini memuat dua
+gerbang lagi — STNC (`Begin date exceed STNC No N`) dan dokumen lengkap (`Documents are incomplete,
+please complete the documents`). Keduanya **ter-remark** di XML (langkah 11.9/11.11 dan 12,
+`pyStepsBlockName = //`), jadi sistem lama tidak pernah menolak karenanya, dan `Save to RNM` kini
+pun tidak. Bila salah satu pesan itu muncul, catat sebagai cacat.
 
 Penolakan lain: 403 `hanya pemegang tahap Outstanding Claim yang dapat menyimpan ke RNM`;
 409 `Save to RNM hanya tersedia pada tahap Outstanding Claim`; 409 `kasus sudah ditutup dan tidak dapat diubah`;
-422 data belum lengkap, kalimatnya berawalan `services: ambang MAXDATARECEIVE produk kosong…`,
-`services: DateReceived polis kosong…`, `services: daftar kategori dokumen wajib belum diketahui…`,
-`services: Type klaim tidak dikenal…`, `services: BusinessCode tidak dikenal…`,
-`repository: produk tidak ditemukan di view produk…`, `repository: nomor polis tidak ditemukan di PremiumList Life…`
-(`BE/handlers/simpanrnm.go:22-58`).
+404 `klaim tidak ada`;
+422 data belum lengkap, kalimatnya berawalan `services: Type klaim tidak dikenal…`,
+`services: BusinessCode tidak dikenal…`, `repository: nomor polis tidak ditemukan di PremiumList Life…`
+(`BE/handlers/simpanrnm.go:21-57`).
 
 Penolakan perpindahan (dari `PanelPindahTahap`): 403 `hanya pemegang tahap asal yang dapat memindahkan kasus ini`;
 409 `perpindahan itu tidak ada di tangga kerja klaim`; 409 `tahap kasus ini tidak dikenal`;
@@ -294,7 +297,7 @@ menguji jalur tolaknya.
 1. `Register` → isi `Nomor premium list` → `Search` → centang satu peserta → `Type` → `Kode bisnis` → `Daftarkan klaim`. Catat `<id>`.
 2. `Inbox Claim Life` → tab `Outstanding Claim` → kasus tampil → klik → layar Outstanding.
 3. `Save to RNM` → harapkan gerbang 1 (`The document hasn’t been uploaded person number 1`) bila Type bukan TP/TR.
-4. `Detail klaim` → ketik `<id>` → `Buka` → `Add attachment` dengan kategori wajib → ulangi `Save to RNM` di layar Outstanding sampai lolos atau berhenti di gerbang berikutnya.
+4. `Detail klaim` → ketik `<id>` → `Buka` → `Add attachment` (satu dokumen berkategori apa pun dari daftar cukup) → ulangi `Save to RNM` di layar Outstanding sampai lolos atau berhenti di gerbang berikutnya.
 5. Detail → `Edit Date` (uji batas DOL §5.1) → tiga tanggal + `Save`.
 6. Detail → `Send to Medical Check` → tab `Medical Check` → buka lagi di Detail → `Add` / `Find Disease` / `Choose` / `Delete`.
 7. `Send to Claim Analyst` → di `Claim Analis`: `Send Back to Medical` (dialog `Send Back to Medical?`) → kembali → `Send Back to Admin` (dialog `Send Back to Admin?`).
@@ -325,20 +328,20 @@ Hanya contoh berjam 00:00 yang dapat diketik di kotak tanggal:
 Aturannya: QP/QR `(mulai, akhir]`; TP/TR DOL+1 hari dibandingkan dengan `(mulai, akhir]`. Ganti
 tanggal contoh dengan jendela peserta Anda (jendela itu tidak tampil di layar — lihat §6).
 
-#### 5.2 DOL di `Save to RNM` — tanpa geser retro (`BE/services/simpanrnm_test.go:128-150`)
+#### 5.2 DOL di `Save to RNM` — tanpa geser retro (`BE/services/simpanrnm_test.go:130-157`)
 QR tepat mulai → ditolak; QR tepat akhir → lolos; QP 2025-09-02 → ditolak; **TR tepat mulai
 2025-04-01 → ditolak** (padahal `Edit Date` menerimanya); TP tepat akhir 2025-10-01 → lolos; DOL
 kosong → ditolak. Pesan: `DOL cannot be blank or outside the valuation period No 1`.
 
-#### 5.3 STNC (`simpanrnm_test.go:48-56, 153-163`)
-Peserta `UJI-SERT-1` polis `UJI-POLIS`, BEGIN 2025-01-01, ambang `MAXDATARECEIVE` 30:
-DateReceived 2025-01-30 → +1 = 2025-01-31 = 30 hari → **lolos**; DateReceived 2025-01-31 → 31 hari →
-`Begin date exceed STNC No 1`; ambang kosong → 422 `services: ambang MAXDATARECEIVE produk kosong…`.
+#### 5.3 STNC — tidak ada gerbang (diralat 28-09-2026)
+`SaveOutStandingLife_Act` langkah 11.9/11.11 ter-remark (b4632, b5009): BEGIN_DATE sejauh apa pun
+dari `DateReceived` **tidak** menolak `Save to RNM`. Versi pertama panduan ini menyuruh menguji
+`Begin date exceed STNC No 1` — pesan itu kini tidak boleh muncul.
 
-#### 5.4 Pesan bertumpuk dan urutan (`simpanrnm_test.go:76-200`)
+#### 5.4 Pesan bertumpuk dan urutan (`simpanrnm_test.go:71-195`)
 - Peserta 1 dan 3 tanpa dokumen → dua baris: `The document hasn’t been uploaded person number 1` / `… number 3`.
-- Type `TP` tanpa dokumen → melewati gerbang 1, berhenti di `Documents are incomplete, please complete the documents`.
-- Dua dokumen berkategori sama padahal wajib dua kategori → `Documents are incomplete, please complete the documents`.
+- Type `TP` / `TR` tanpa dokumen → **lolos**: gerbang 1 dilewati, dan langkah 12 ter-remark.
+- Dua dokumen berkategori sama → **lolos** (kelengkapan per kategori tidak ditegakkan — OQ-N6).
 - DOB dan BEGIN sama-sama kosong → yang dilaporkan `DOB cannnot be blank No 1`.
 
 #### 5.5 Close Claim (`FE/services/tutupklaim.test.ts:23-25, 90-161`)
@@ -380,7 +383,8 @@ kotak berisi spasi saja tidak dikirim.
 | Cermin tanggal ke tabel warisan | `UpdateDateClaimLife_SQL` tidak ditiru; kunci nama tertanggung tidak ada — OQ-M2 |
 | `Save to RNM` terkunci sesudah simpan | Bendera `pyWorkPage.Save` tanpa kolom; tombol tetap hidup (tulisan idempoten) — OQ-N1 |
 | Klaim ganda antarklaim baru | Cermin warisan tidak mengisi nama/DOB/CEDINGCO; hanya baris era Pega yang tertangkap — OQ-N2 |
-| Lewati Arasapas untuk tiga kode retro | Mengikuti XML; berlaku-tidaknya OQ-064 belum diputuskan — OQ-N3 |
+| Lewati Arasapas untuk tiga kode retro | Mengikuti XML; berlaku-tidaknya OQ-064 belum diputuskan — OQ-N3. Kodenya dibaca SESUDAH penukaran `InsertJsonClaimLife_Act` langkah 2; bila hasilnya bergantung pada `ProdDateTime` (tanpa sumber), Arasapas **ditahan** — OQ-N5 |
+| Dokumen lengkap per kategori | Tidak ditegakkan: langkah 12 ter-remark di XML; memasangnya adalah keputusan baru — OQ-N6 |
 | Residu `Save to RNM` | Pesan `.Protect` tak pernah muncul; `ADJUSTMENT_DATE`/`PrintFaceClaim` tanpa kolom; `IsAccept` diganti `IS_CHECK` — OQ-N4 |
 | Pilihan `GROUP DIAGNOSE` | Daftar pilihannya tidak ada di ekspor; sel menampilkan `GROUP DIAGNOSE tidak dapat dimuat saat ini.` — OQ-L |
 | Tanggal Respon/Konfirmasi/Realisasi, Confirmation Reserved, Underwriter Note | Tanpa kolom; selalu `—` di panel `Data Polis` |
@@ -1096,7 +1100,7 @@ format `YYYY-MM-DD HH:MM:SS` (`services/komite_inbox.go:91-96`).
 | Efek keluar di non-produksi **dilewati** / pengirim stub; tidak ada penjadwal pekerja outbox di `cmd/api` | Email, Arasapas, Kasir, Google Storage tidak pernah terkirim; outbox Komite tetap "tertunda"; laporan "perlu intervensi" hanya terlihat kosong; tautan berkas Claim Life tetap `URL menunggu penyambungan penyimpanan` | ketiganya |
 | Tidak ada pembuat baris adjustment pertama | Tombol baris Claim Life hanya teruji pada data lama | Claim Life |
 | Tidak ada pembuat kasus PremiumList; tahap `Input Premium Summary` nol konektor masuk | Kasus disiapkan di luar aplikasi; `Summary Premium Life` hanya lewat data yang disiapkan | PremiumList |
-| Keputusan work owner terbuka | OQ-M1…M7, OQ-N1…N4 (Claim Life); OQ-PL-09/10/11; OQ-K-04a/05/05b — rinciannya di tabel "Belum dapat diuji" tiap bab | ketiganya |
+| Keputusan work owner terbuka | OQ-M1…M7, OQ-N1…N6 (Claim Life); OQ-PL-09/10/11; OQ-K-04a/05/05b — rinciannya di tabel "Belum dapat diuji" tiap bab | ketiganya |
 | Identitas stub, bukan IAM | Uji peran = ganti `VITE_STUB_PERAN`; tidak ada layar masuk | ketiganya |
 | `App.tsx` (suntingan work owner yang belum di-commit, tidak disentuh) | Layar Detail Claim Life tidak menerima pengenal klaim (ketik manual); tiap baris Inbox membuka layar Outstanding | Claim Life |
 

@@ -4,7 +4,7 @@
 // SATU medan `.PolicyDataLife.*` (av-2, GILIRAN-11) ditambah tiga tombol, seluruhnya dengan nomor barisnya di
 // `assets/labels.ts`.
 //
-// ⛔ KESEBELAS MEDAN TERIKAT KE `.PolicyDataLife.*`, bukan isian bebas. Di
+// ⛔ KEDUA PULUH SATU MEDAN TERIKAT KE `.PolicyDataLife.*`, bukan isian bebas. Di
 // Pega ia terisi ketika polis dipilih lewat `Choose Policy No` (b3776), dan
 // layar ini memperlakukannya sama: dibaca, tidak diketik. Membuatnya isian
 // kosong akan menyuruh orang mengetik ulang apa yang sudah ada di sistem
@@ -26,12 +26,14 @@
 // PremiumList Life lewat `GET /api/polis-life/ringkas` - tabel relasional
 // `T_PREMIUM_LIST`, bukan cermin JSON-nya `[keputusan work owner]`.
 //
-// Delapan dari sebelas medan kini bersumber. TIGA tidak, dan ketiadaannya
+// Sesudah av-2 (GILIRAN-11) ENAM BELAS dari dua puluh satu medan bersumber
+// (dua medan retro hanya tampil bagi TP/TR). LIMA tidak, dan ketiadaannya
 // tetap DINYATAKAN alih-alih diisi teks kosong:
 //
-//	TanggalRespon · TanggalKonfirmasi · TanggalRealisasi
+//	TanggalRespon · TanggalKonfirmasi · TanggalRealisasi ·
+//	TanggalKonfirmasiBalik · KetentuanUnderwriting
 //
-// Ketiganya properti halaman kerja Pega dan tidak punya kolom di migrasi
+// Kelimanya properti halaman kerja Pega dan tidak punya kolom di migrasi
 // 050-056 mana pun. Menghilangkan medannya dari layar membuat paritas tampak
 // lengkap padahal tidak - dan tidak ada yang akan mencarinya lagi.
 //
@@ -85,10 +87,10 @@ export function medanPolis(sumber: {
   return [
     // Punya sumber hari ini - dari `GET /api/peserta-life`.
     { label: REGISTER.namaTertanggung, nilai: ada(sumber.namaTertanggung) },
-    // ⛔ `Type` IKUT MENUNGGU: ia `pyReadOnly` true di Pega (b9058,
-    // `pyLabelFor` `Type` b9093) dan terikat `.PolicyDataLife.Type`.
-    // Ronde pertama menjadikannya isian bebas - itu ralat yang sama.
-    // Delapan medan yang KINI bersumber - `T_PREMIUM_LIST` lewat butir av.
+    // ⛔ `Type` `pyReadOnly` true di Pega (b9058, `pyLabelFor` `Type` b9093)
+    // dan terikat `.PolicyDataLife.Type`. Ronde pertama menjadikannya isian
+    // bebas - itu ralat yang sama. Ia dan medan sesudahnya bersumber
+    // `T_PREMIUM_LIST` lewat butir av dan av-2.
     //
     // ⚠️ `Type` jatuh kembali ke `sumber.type` bila polisnya belum terbaca:
     // klaim dapat didaftarkan atas polis yang belum ada di PremiumList Life.

@@ -53,15 +53,26 @@ export default function OutstandingClaimLife({
   // untuk kasus tahap mana pun; tanpa ini layar menawarkan tombol Outstanding
   // kepada kasus Medical Check - dan setiap kliknya ditolak 409.
   const [tahapKasus, setTahapKasus] = useState<string | null>(null)
+  // ⛔ Klaim yang GAGAL dimuat dinyatakan, bukan ditelan: tanpa ini layar
+  // tampil kosong tanpa satu tombol pun dan tanpa sebab (temuan /code-review).
+  const [galatMuat, setGalatMuat] = useState<unknown>(null)
 
   useEffect(() => {
     let batal = false
     void (async () => {
+      setGalatMuat(null)
+      let nomorPolis: string
       try {
         const k = await ambilKlaimLife(klaimID)
         if (batal) return
         setTahapKasus(k.tahap)
-        const p = await ambilDataPolis(k.nomorPolis)
+        nomorPolis = k.nomorPolis
+      } catch (e) {
+        if (!batal) setGalatMuat(e)
+        return
+      }
+      try {
+        const p = await ambilDataPolis(nomorPolis)
         if (!batal) setPolis(p)
       } catch {
         // Polis yang belum ada di PremiumList Life BUKAN kerusakan layar ini:
@@ -102,6 +113,13 @@ export default function OutstandingClaimLife({
       {/* Panel yang SAMA dengan layar Register - polis yang sama, tahap
           berbeda. */}
       <PanelDataPolis polis={polis} />
+
+      {galatMuat !== null && (
+        <>
+          <Gagal galat={galatMuat} />
+          {pesanGalat(galatMuat) !== undefined && <p role="alert">{pesanGalat(galatMuat)}</p>}
+        </>
+      )}
 
       {tahapKasus !== null && tahapKasus !== TAHAP.outstandingClaim && (
         <p role="note">

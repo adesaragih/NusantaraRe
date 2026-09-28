@@ -209,7 +209,7 @@ func TestKonteksIniTidakPernahMenulisKeputusan(t *testing.T) {
 	}
 	kode := buangKomentar(string(isi))
 	for _, terlarang := range []string{
-		"PerbaruiStatusBaris(", "CabutPenandaDipilih(", ".Ubah(", ".Tolak(",
+		"PerbaruiStatusBaris(", "TandaiBarisOutstanding(", "CabutPenandaDipilih(", ".Ubah(", ".Tolak(",
 	} {
 		if strings.Contains(kode, terlarang) {
 			t.Errorf("hasilkomite.go memanggil %q; konteks ini MEMBACA keputusan "+

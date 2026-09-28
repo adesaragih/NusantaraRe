@@ -330,7 +330,7 @@ func (r *KlaimLife) PerbaruiTanggalKlaim(ctx context.Context, tx *Tx,
 
 // IsiNomorKlaimKosong menulis CLAIM_NO header klaim yang MASIH kosong.
 //
-// `Save to RNM` langkah 13-20 bergerbang `CLAIM_NO==""` di setiap langkahnya:
+// `Save to RNM` langkah 16-20 bergerbang `CLAIM_NO==""` di setiap langkahnya:
 // nomor ditulis hanya sekali. ⛔ `CLAIM_NO IS NULL` ikut di WHERE, dan nol
 // baris tersentuh adalah GALAT - klaim yang dinomori pihak lain di antara baca
 // dan tulis tidak boleh ditimpa nomor kedua.
@@ -358,14 +358,51 @@ func (r *KlaimLife) IsiNomorKlaimKosong(ctx context.Context, tx *Tx, klaimID, no
 	return nil
 }
 
+// sqlTandaiBarisOutstanding - `Save to RNM` langkah 22.1.3.2.
+const sqlTandaiBarisOutstanding = `UPDATE %s SET STS_REJECT = :1 WHERE ID = :2 AND STS_REJECT IS NULL`
+
+// TandaiBarisOutstanding menulis `STS_REJECT = 0` ke SATU baris adjustment
+// yang belum berstatus - dan HANYA itu.
+//
+// `[terverifikasi]` `SaveOutStandingLife_Act` langkah 22.1.3.2 menyetel
+// `.STS_REJECT = 0` pada baris adjustment saja (sensus di PerbaruiStatusBaris):
+// status peserta, `ACCEPTED_NO`, dan `ACCEPTATION_DATE` tidak disentuh. Karena
+// itu bukan PerbaruiStatusBaris, yang menulis keempatnya.
+//
+// ⛔ `STS_REJECT IS NULL` di WHERE, dan nol baris tersentuh adalah GALAT -
+// baris yang diberi status pihak lain sejak dibaca tidak ditimpa.
+func (r *KlaimLife) TandaiBarisOutstanding(ctx context.Context, tx *Tx, adjID string) error {
+	adj, err := r.db.Qualify("T_CLAIMLF_ADJUSTMENT")
+	if err != nil {
+		return err
+	}
+	q := fmt.Sprintf(sqlTandaiBarisOutstanding, adj)
+	if err := PeriksaSQL(q); err != nil {
+		return err
+	}
+	hasil, err := tx.tx.ExecContext(ctx, q, models.KodeOutstanding, adjID)
+	if err != nil {
+		return fmt.Errorf("repository: menandai baris Outstanding: %w", err)
+	}
+	n, err := hasil.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("repository: mencacah baris tersentuh: %w", err)
+	}
+	if n != 1 {
+		return fmt.Errorf("repository: menandai baris %q menyentuh %d baris, mau 1 "+
+			"(baris yang sudah berstatus sejak dibaca tidak ditimpa)", adjID, n)
+	}
+	return nil
+}
+
 // sqlStatusBarisAdjustment merakit UPDATE baris adjustment bersyarat kode lama.
 //
 // ⛔ Kode lama KOSONG menjadi `STS_REJECT IS NULL`, bukan `= NULL`. Ronde
 // sebelumnya selalu menulis `STS_REJECT = :5`, dan `= NULL` tidak pernah benar
 // di SQL - baris yang belum berstatus karena itu TIDAK PERNAH dapat ditulis,
-// dan setiap percobaan berakhir "menyentuh 0 baris". `Save to RNM` langkah
-// 22.1.3.2 (`.STS_REJECT = 0` untuk baris yang belum pernah tersimpan) adalah
-// penulis pertama yang benar-benar membutuhkannya (GILIRAN-11 paket 1).
+// dan setiap percobaan berakhir "menyentuh 0 baris". (`Save to RNM` kini
+// memakai TandaiBarisOutstanding; perbaikan ini tetap, sebab `= NULL` salah
+// bagi pemanggil mana pun.)
 func sqlStatusBarisAdjustment(adj string, lamaKosong bool) string {
 	syarat := "STS_REJECT = :5"
 	if lamaKosong {
@@ -393,7 +430,7 @@ func kosong(s string) bool { return strings.TrimSpace(s) == "" }
 // `[terverifikasi]` sasarannya diturunkan dari sensus penulis `STS_REJECT` di
 // seluruh korpus Claim Life - ENAM Property-Set di LIMA rule:
 //
-//	baris adjustment : SaveOutStandingLife_Act  `.STS_REJECT = 0`
+//	baris adjustment : SaveOutStandingLife_Act  `.STS_REJECT = 0` (-> TandaiBarisOutstanding)
 //	                   RejectOSClaimLife_Act    `.STS_REJECT = 2`
 //	                   SaveAdjustment_Act       `.AdjustmentList(<LAST>)` = 1,
 //	                                            beserta ACCEPTEDNO dan

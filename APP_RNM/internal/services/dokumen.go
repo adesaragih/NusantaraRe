@@ -3,8 +3,13 @@ package services
 // Gerbang dokumen sebelum Save ke Outstanding - tiket 03.
 //
 // Untuk apa berkas ini: `SaveOutStandingLife_Act` menolak menyimpan bila
-// dokumen peserta belum memenuhi syarat. Ada DUA gerbang di sana, memakai dua
-// daftar yang berbeda, dan berkas ini memisahkan keduanya seperti aslinya.
+// dokumen peserta belum memenuhi syarat. Rule itu MEMUAT dua gerbang, memakai
+// dua daftar yang berbeda, dan berkas ini memisahkan keduanya seperti aslinya.
+//
+// ⛔ RALAT 28-09-2026 (GILIRAN-11, temuan /code-review): hanya gerbang PERTAMA
+// yang hidup. Langkah 12 - gerbang kedua - ber-`pyStepsBlockName = //`
+// (b6178): ter-remark, tidak pernah jalan. Save to RNM (simpanrnm.go) karena
+// itu tidak memanggil PeriksaDokumenLengkap; lihat komentarnya.
 //
 // Dibaca sesudah: adjustment.go.
 //
@@ -113,6 +118,12 @@ func PeriksaDokumenAda(tipe string, peserta []models.Peserta) error {
 // ⛔ Perbandingan cacah dipertahankan APA ADANYA, bukan "diperbaiki" menjadi
 // perbandingan himpunan. Memperbaiki diam-diam berarti sistem baru menolak
 // klaim yang sistem lama terima, tanpa seorang pun memutuskannya.
+//
+// ⛔ TANPA PEMANGGIL PRODUKSI, dan itu disengaja: langkah 12 ter-remark
+// (b6178), jadi sistem lama TIDAK PERNAH menolak simpan karena dokumen tidak
+// lengkap. Memasangnya adalah penyimpangan baru yang harus diputuskan work
+// owner (OQ-N6), bukan paritas - ia dipertahankan hanya sebagai aturan siap
+// pakai bila keputusan itu jatuh; bila tidak, ia dibuang.
 func PeriksaDokumenLengkap(peserta []models.Peserta, wajib []string) error {
 	if len(wajib) == 0 {
 		return fmt.Errorf("%w: daftar kategori wajib kosong", ErrKategoriWajibBelumDiketahui)

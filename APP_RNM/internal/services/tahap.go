@@ -84,17 +84,6 @@ func (tl *TahapLayanan) DenganJejak(j Jejak) *TahapLayanan {
 	return &TahapLayanan{svc: tl.svc, jejak: j}
 }
 
-// Pindah memindahkan kasus ke tahap lain, dengan atau tanpa jalur balik.
-//
-// ⛔ Status baris TIDAK disentuh. Itu bukan kelalaian melainkan aturannya:
-// perpindahan tahap memindahkan PEKERJAAN, bukan memutuskan klaim
-// (ADR-U-0011). Penjaga statik tiket 07 memastikan berkas ini tidak pernah
-// menulis KodeStatus.
-//
-// ⚠️ TANPA argumen jalur balik. Ronde pertama menerimanya sebagai bendera
-// bebas, sehingga `SENDTO_ADMIN=1` dapat ditulis pada perpindahan menuju
-// Medical Check, dan keduanya dapat menyala sekaligus - padahal keduanya
-// menunjuk tujuan yang berbeda. Kini ia DITURUNKAN dari pasangan tahapnya.
 // tahapKasus membaca tahap BERLAKU sebuah kasus; tak dikenal adalah GALAT.
 //
 // ⛔ Satu pintu (GILIRAN-11 paket 4): diagnosa, dialog Edit Date, perpindahan,
@@ -112,6 +101,17 @@ func tahapKasus(ctx context.Context, baca *repository.KlaimLife, klaimID string)
 	return t, nil
 }
 
+// Pindah memindahkan kasus ke tahap lain, dengan atau tanpa jalur balik.
+//
+// ⛔ Status baris TIDAK disentuh. Itu bukan kelalaian melainkan aturannya:
+// perpindahan tahap memindahkan PEKERJAAN, bukan memutuskan klaim
+// (ADR-U-0011). Penjaga statik tiket 07 memastikan berkas ini tidak pernah
+// menulis KodeStatus.
+//
+// ⚠️ TANPA argumen jalur balik. Ronde pertama menerimanya sebagai bendera
+// bebas, sehingga `SENDTO_ADMIN=1` dapat ditulis pada perpindahan menuju
+// Medical Check, dan keduanya dapat menyala sekaligus - padahal keduanya
+// menunjuk tujuan yang berbeda. Kini ia DITURUNKAN dari pasangan tahapnya.
 func (tl *TahapLayanan) Pindah(ctx context.Context, pelaku Pelaku,
 	klaimID string, ke models.Tahap, saat time.Time) error {
 

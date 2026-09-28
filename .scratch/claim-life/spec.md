@@ -691,6 +691,10 @@ distempel `SYSDATE` pada setiap insert.
 `"Documents are incomplete, please complete the documents"`. Dokumen adalah **gerbang simpan**,
 bukan pelengkap — karena itu ia tabel, dan pembacaannya `SELECT` biasa.
 
+> ⛔ **Ralat 28-09-2026** (temuan /code-review GILIRAN-11): pesan kedua milik langkah 12, yang
+> **ter-remark** (`pyStepsBlockName = //`, b6178) — sistem lama hanya menolak dokumen yang **belum
+> diunggah**. Keputusan tabelnya tidak berubah; kelengkapan per kategori menunggu **OQ-N6**.
+
 **`T_WORK_CLAIM`** — tabel work mandiri.
 
 ⚠️ **Penyimpangan sadar 6 — keadaan tangga TIDAK disimpan di header klaim.**

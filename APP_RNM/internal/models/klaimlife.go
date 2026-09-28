@@ -445,7 +445,12 @@ func (p Peserta) MarshalJSON() ([]byte, error) {
 // ⛔ VERBATIM dari rule, bukan pilihan gaya:
 //
 //	`Activity/SetIndexAdjustmentList.xml` b328  `.IsCheck` = `true`
-//	`Activity/SavePesertaClaim.xml` b1812, b1997, b2413  `.IsCheck=="true"`
+//	`Activity/SavePesertaClaim.xml` b3631, b3919  `.IsCheck=="true"`
+//	                                (langkah 7.7 dan 7.8 - keduanya HIDUP)
+//
+// RALAT GILIRAN-11: dulu dikutip b1812, b1997, b2413 - WHEN langkah 7.1
+// (precondition false, mati) serta 7.2 dan 7.4 (`//`, ter-remark). Nilainya
+// sama; hanya buktinya yang dipindah ke baris yang benar-benar berjalan.
 //
 // ⛔ CACAT YANG PERNAH ADA, dan sebab konstanta ini lahir: jalur
 // pendaftaran menuliskan "1" sedangkan gerbang akseptasi menuntut "true",

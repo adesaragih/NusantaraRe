@@ -165,7 +165,7 @@ func TestPenyerahanTidakMemutuskanStatusBaris(t *testing.T) {
 	// yang justru AC 24: status baris SAAT penyerahan ikut menyeberang.
 	// Membaca status untuk dilaporkan bukan memutuskannya.
 	for _, terlarang := range []string{
-		"PerbaruiStatusBaris(", "CerminkanHeader(", "Transisi(",
+		"PerbaruiStatusBaris(", "TandaiBarisOutstanding(", "CerminkanHeader(", "Transisi(",
 		".KodeStatus =", ".Ubah(", ".Tolak(",
 	} {
 		if strings.Contains(kode, terlarang) {

@@ -40,12 +40,10 @@ func jawabGalatSimpanRNM(w http.ResponseWriter, err error) bool {
 		galat(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
 	case errors.Is(err, services.ErrSimpanRNMBukanOutstanding):
 		galat(w, http.StatusConflict, "Save to RNM hanya tersedia pada tahap Outstanding Claim")
+	case errors.Is(err, services.ErrKlaimTidakAda):
+		galat(w, http.StatusNotFound, "klaim tidak ada")
 	case errors.Is(err, services.ErrTypeTidakDikenal),
 		errors.Is(err, services.ErrBusinessCodeTidakDikenal),
-		errors.Is(err, services.ErrAmbangSTNCBelumDiketahui),
-		errors.Is(err, services.ErrTanggalTerimaPolisKosong),
-		errors.Is(err, services.ErrKategoriWajibBelumDiketahui),
-		errors.Is(err, services.ErrAmbangProdukTakDitemukan),
 		errors.Is(err, services.ErrPolisNomorTakDitemukan):
 		// 422: datanya yang belum lengkap untuk diperiksa, bukan aplikasinya
 		// yang rusak - kalimatnya menyebut apa yang kurang.

@@ -664,3 +664,36 @@ pernah muncul; (b) `ADJUSTMENT_DATE` dan `PrintFaceClaim` (langkah 22.1.3.2) tan
 `.IsAccept=="true"` (b1181), yang tidak punya kolom; `IS_CHECK` dipakai sebagai padanan terdekat
 (`[terbuka]` sejak tiket 03).
 
+### Ralat dan tambahan — 28 September 2026 (temuan /code-review GILIRAN-11)
+
+⛔ **Ralat pembacaan.** `pyStepsBlockName = //` berarti langkahnya **ter-remark** dan tidak pernah
+jalan (`claim-prop/grilling-ronde-2.md` Aturan 2); pembaca pohon kami tidak mencetak medan itu.
+Delapan langkah `SaveOutStandingLife_Act` ber-remark: 11.3 (b3495), 11.9 (b4632), 11.11 (b5009),
+12 (b6178), 13–15 (b7074, b7293, b7512), 23 (b10649). Dua di antaranya sempat ditegakkan sebagai
+gerbang — **STNC** (11.9/11.11) dan **dokumen lengkap** (12) — dan kini dibuang. Tanpa OQ: XML-nya tegas.
+
+**OQ-N3 — tambahan.** (1) Langkah 27 membaca `pyWorkPage.ClaimData.PolicyDataLife`, salinan yang
+diisi langkah 25 `InsertJsonClaimLife_Act` — dan langkah 2 activity itu (TIDAK ter-remark) **menukar**
+`RetroID` dengan `SecurityReinsurerID` (b1152–1153, b1194–1195). Gerbangnya kini membaca nilai
+sesudah tukar (`PolisRetro`); lihat OQ-N5. (2) Keluar di langkah 27 (kode 6) di sistem lama juga
+**melewati Obj-Save langkah 29**; di sini tulisan langkah 13–22 sudah di-commit sebelum gerbang itu
+dinilai. Selisihnya waktu simpan halaman kerja, bukan isi tabel — dicatat, tidak ditiru.
+
+**OQ-N5** *(untuk work owner / pemilik data polis)* — penukaran retro `InsertJsonClaimLife_Act`
+langkah 2 bergerbang tiga WHEN: `Type` TP/TR (b1268), `SecurityReinsurerID` dan `SecurityReinsurer`
+terisi (b1291), dan `OfferFacIn.PolicyData.ProdDateTime < "20250207T000000.000 GMT"` (b1314).
+`ProdDateTime` **tidak punya sumber** di aplikasi ini. Selama hasil gerbang langkah 27 sama dengan dan
+tanpa tukar, ia tidak perlu diketahui; bila berbeda, Arasapas **ditahan** dengan kalimat yang
+menyebut sebabnya (`ErrGerbangRetroTakTerputuskan`) — mengirim efek keluar atas tebakan lebih buruk.
+Modul Komite memutuskan "cutover 7 Feb 2025 tidak dipakai lagi" (CONTEXT.md, Komite ronde 1 #4)
+untuk blok yang di **Komite** memang ter-remark (4.14, 5.5); keputusan itu tidak menyebut Claim Life.
+> Berlakukah keputusan Komite #4 juga di sini (tukar cukup dua WHEN), atau adakah sumber `ProdDateTime`?
+
+**OQ-N6** *(untuk work owner)* — **kelengkapan dokumen per kategori.** Spec (penyimpangan sadar 5)
+dan AC 45 tiket 03 menyebut *"Documents are incomplete, please complete the documents"* sebagai
+penolakan simpan `[terverifikasi]` — bukti itu jatuh pada langkah 12 yang **ter-remark**, dan
+`GetCategoryLife_SQL` tidak dipanggil rule lain mana pun di seluruh korpus (satu-satunya
+penyebutnya langkah 12.1 itu sendiri). Sistem lama karena itu **tidak pernah** menolak simpan karena dokumen tidak lengkap;
+yang hidup hanya gerbang "dokumen belum diunggah" (langkah 3–4, menyebut nomor peserta).
+`services.PeriksaDokumenLengkap` tetap ada tanpa pemanggil produksi.
+> Pasang kelengkapan per kategori sebagai **penyimpangan sadar baru**, atau buang `PeriksaDokumenLengkap`?

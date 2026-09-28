@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 	"testing"
@@ -74,6 +75,24 @@ func TestStatusBarisKodeLamaKosongMenjadiISNULL(t *testing.T) {
 	for _, lamaKosong := range []bool{true, false} {
 		if err := PeriksaSQL(sqlStatusBarisAdjustment("A", lamaKosong)); err != nil {
 			t.Error(err)
+		}
+	}
+}
+
+// TestTandaiBarisOutstandingHanyaBarisAdjustment - langkah 22.1.3.2 menulis
+// `.STS_REJECT = 0` baris adjustment SAJA: bukan peserta, bukan nomor atau
+// tanggal akseptasi (sensus di PerbaruiStatusBaris).
+func TestTandaiBarisOutstandingHanyaBarisAdjustment(t *testing.T) {
+	q := fmt.Sprintf(sqlTandaiBarisOutstanding, "A")
+	if err := PeriksaSQL(q); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(q, "STS_REJECT IS NULL") {
+		t.Errorf("baris berstatus dapat ditimpa:\n%s", q)
+	}
+	for _, terlarang := range []string{"ACCEPTED_NO", "ACCEPTATION_DATE", "PREMIUMLIST_DETAIL", ":3"} {
+		if strings.Contains(q, terlarang) {
+			t.Errorf("SQL memuat %q:\n%s", terlarang, q)
 		}
 	}
 }

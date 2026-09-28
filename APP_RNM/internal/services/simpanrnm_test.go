@@ -47,13 +47,7 @@ func pesertaRNM(t *testing.T, id string) services.PesertaRNM {
 
 func masukanRNM(t *testing.T, tipe string, p ...services.PesertaRNM) services.MasukanRNM {
 	t.Helper()
-	return services.MasukanRNM{
-		Tipe: tipe, ContentNote: "DEATH",
-		// BEGIN 2025-01-01 -> terima+1 = 2025-01-31: 30 hari, ambang 30 - lolos.
-		TanggalTerimaPolis: "2025-01-30", MaxDataReceive: "30",
-		KategoriWajib: []string{"KTP", "SURAT"},
-		Peserta:       p,
-	}
+	return services.MasukanRNM{Tipe: tipe, ContentNote: "DEATH", Peserta: p}
 }
 
 func pesanRNM(t *testing.T, err error) string {
@@ -86,14 +80,17 @@ func TestSimpanRNMDokumenBelumDiunggahMenyebutSetiapNomor(t *testing.T) {
 	}
 }
 
-// Langkah 3 `Type=="TP"||"TR"` WhenTrue 3: treaty tidak dituntut berdokumen di
-// gerbang pertama - tetapi gerbang langkah 12 TETAP berlaku.
-func TestSimpanRNMTreatyMelewatiGerbangDokumenAdaSaja(t *testing.T) {
-	p := pesertaRNM(t, "1")
-	p.Dokumen = nil
-	got := pesanRNM(t, services.PeriksaSimpanRNM(masukanRNM(t, "TP", p)))
-	if got != "Documents are incomplete, please complete the documents" {
-		t.Errorf("TP tanpa dokumen: %q, mau pesan langkah 12", got)
+// Langkah 3 `Type=="TP"||"TR"` WhenTrue 3: treaty tidak dituntut berdokumen -
+// dan langkah 12 (dokumen lengkap) ter-remark, jadi TIDAK ada gerbang kedua.
+//
+// ⛔ RALAT GILIRAN-11: uji ini dulu menuntut pesan langkah 12.
+func TestSimpanRNMTreatyTanpaDokumenLolos(t *testing.T) {
+	for _, tipe := range []string{"TP", "TR"} {
+		p := pesertaRNM(t, "1")
+		p.Dokumen = nil
+		if err := services.PeriksaSimpanRNM(masukanRNM(t, tipe, p)); err != nil {
+			t.Errorf("%s tanpa dokumen ditolak: %v", tipe, err)
+		}
 	}
 }
 
@@ -159,19 +156,6 @@ func TestSimpanRNMDOLJendelaTanpaGeserRetro(t *testing.T) {
 	}
 }
 
-// Langkah 11.9/11.11: hari BEGIN_DATE -> DateReceived+1 melebihi ambang produk.
-func TestSimpanRNMSTNC(t *testing.T) {
-	m := masukanRNM(t, "QR", pesertaRNM(t, "1"))
-	m.TanggalTerimaPolis = "2025-01-31" // +1 = 1 Feb: 31 hari > 30
-	if got := pesanRNM(t, services.PeriksaSimpanRNM(m)); got != "Begin date exceed STNC No 1" {
-		t.Errorf("STNC: %q", got)
-	}
-	m.MaxDataReceive = ""
-	if err := services.PeriksaSimpanRNM(m); !errors.Is(err, services.ErrAmbangSTNCBelumDiketahui) {
-		t.Errorf("ambang kosong: %v, mau ErrAmbangSTNCBelumDiketahui", err)
-	}
-}
-
 // Langkah 11.12-11.17, urut, dengan kalimat VERBATIM (termasuk salah ejanya).
 func TestSimpanRNMMedanKosongUrutXML(t *testing.T) {
 	for _, u := range []struct {
@@ -201,18 +185,12 @@ func TestSimpanRNMMedanKosongUrutXML(t *testing.T) {
 	}
 }
 
-// Langkah 12: cacah kategori BERBEDA lawan cacah kategori wajib, SELURUH peserta.
-func TestSimpanRNMDokumenTidakLengkap(t *testing.T) {
+// Langkah 12 ter-remark (b6178): dokumen yang ADA tetapi tidak lengkap lolos.
+func TestSimpanRNMDokumenTidakLengkapLolos(t *testing.T) {
 	p := pesertaRNM(t, "1")
 	p.Dokumen = []models.Dokumen{{Kategori2: "KTP"}, {Kategori2: "KTP"}}
-	got := pesanRNM(t, services.PeriksaSimpanRNM(masukanRNM(t, "QR", p)))
-	if got != "Documents are incomplete, please complete the documents" {
-		t.Errorf("dokumen kembar: %q", got)
-	}
-	m := masukanRNM(t, "QR", pesertaRNM(t, "1"))
-	m.KategoriWajib = nil
-	if err := services.PeriksaSimpanRNM(m); !errors.Is(err, services.ErrKategoriWajibBelumDiketahui) {
-		t.Errorf("kategori wajib kosong: %v", err)
+	if err := services.PeriksaSimpanRNM(masukanRNM(t, "QR", p)); err != nil {
+		t.Errorf("dokumen kembar ditolak: %v", err)
 	}
 }
 
@@ -231,8 +209,46 @@ func TestArasapasDilewatiUntukTigaKodeRetro(t *testing.T) {
 		{"L0000141", "", true}, {"", "L0000134", true}, {"1000013", "", true},
 		{"L0000134", "", false}, {"", "L0000141", false}, {"", "", false},
 	} {
-		if got := services.ArasapasDilewatiRetro(u.retro, u.sec); got != u.lewat {
-			t.Errorf("retro %q sec %q: %v, mau %v", u.retro, u.sec, got, u.lewat)
+		got, err := services.ArasapasDilewatiRetro(services.PolisRetro{
+			Tipe: "QR", RetroID: u.retro, SecurityReinsurerID: u.sec})
+		if err != nil || got != u.lewat {
+			t.Errorf("retro %q sec %q: %v, %v; mau %v", u.retro, u.sec, got, err, u.lewat)
+		}
+	}
+}
+
+// Langkah 27 membaca SALINAN yang mungkin ditukar `InsertJsonClaimLife_Act`
+// langkah 2 (b1268 TP/TR, b1291 SecurityReinsurer terisi, b1314 ProdDateTime).
+func TestArasapasRetroSadarPenukaran(t *testing.T) {
+	polis := func(tipe, retro, sec, secNama string) services.PolisRetro {
+		return services.PolisRetro{Tipe: tipe, RetroID: retro, SecurityReinsurerID: sec,
+			SecurityReinsurer: secNama}
+	}
+	// Tukar MUNGKIN, dan hasilnya BERBEDA -> hanya ProdDateTime yang dapat
+	// memutuskan: gagal terang, bukan tebakan.
+	for _, p := range []services.PolisRetro{
+		polis("TP", "L0000141", "S-1", "UJI-SEC"), // tanpa tukar keluar; ditukar tidak
+		polis("TR", "R-1", "L0000141", "UJI-SEC"), // tanpa tukar tidak; ditukar keluar
+	} {
+		if _, err := services.ArasapasDilewatiRetro(p); !errors.Is(err, services.ErrGerbangRetroTakTerputuskan) {
+			t.Errorf("%+v: %v, mau ErrGerbangRetroTakTerputuskan", p, err)
+		}
+	}
+	// Hasil sama dengan dan tanpa tukar -> ProdDateTime tidak perlu diketahui.
+	for _, u := range []struct {
+		p     services.PolisRetro
+		lewat bool
+	}{
+		{polis("TP", "R-1", "S-1", "UJI-SEC"), false},
+		{polis("TR", "L0000141", "L0000141", "UJI-SEC"), true},
+		// b1291: nama security reinsurer kosong -> tidak pernah ditukar.
+		{polis("TP", "L0000141", "S-1", ""), true},
+		// b1268: bukan TP/TR -> tidak pernah ditukar.
+		{polis("QR", "R-1", "L0000141", "UJI-SEC"), false},
+	} {
+		got, err := services.ArasapasDilewatiRetro(u.p)
+		if err != nil || got != u.lewat {
+			t.Errorf("%+v: %v, %v; mau %v", u.p, got, err, u.lewat)
 		}
 	}
 }

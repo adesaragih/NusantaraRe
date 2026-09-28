@@ -61,6 +61,12 @@ describe('butir aw — dua tombol perpindahan', () => {
     expect(SUMBER).not.toContain('const PERPINDAHAN')
   })
 
+  it('klaim yang gagal dimuat dinyatakan, bukan ditelan', () => {
+    // ⛔ Dulu satu `catch` menelan galat klaim DAN polis: layar kosong tanpa sebab.
+    expect(SUMBER).toContain('setGalatMuat(e)')
+    expect(SUMBER).toContain('<Gagal galat={galatMuat} />')
+  })
+
   it('tombol hanya bagi kasus yang SEBENARNYA di Outstanding Claim', () => {
     // ⛔ Kotak masuk membuka layar ini untuk tahap mana pun (App.tsx).
     expect(SUMBER).toContain('setTahapKasus(k.tahap)')

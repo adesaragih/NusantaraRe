@@ -85,7 +85,7 @@ persen; nama kolom tidak dapat dipakai menebak sifatnya).
 - [x] ⚠️ Dokumen tersimpan **per peserta** di `DOCUMENT_CLAIM` dan dapat dibaca dengan `SELECT`
       biasa — **bukan** lewat mekanisme lampiran bawaan. *(AC 44 spec; penyimpangan sadar 5)* — bukti: `APP_RNM/internal/repository/klaimlife.go:KlaimLife.AmbilDokumen` (`SELECT` biasa atas `T_CLAIMLF_DOCUMENT`), `APP_RNM/internal/services/unggahan.go:Unggahan.Unggah`; uji `TestAC05DokumenMenunjukPeserta`
 - [ ] ⚠️ Menyimpan ke Outstanding **ditolak** bila ada peserta yang dokumennya belum lengkap, dengan
-      pesan yang **menyebut peserta mana**. *(AC 45 spec; penyimpangan sadar 5)* — belum: SEBAGIAN — gerbang dokumen ADA menyebut nomor peserta (`TestSimpanRNMDokumenBelumDiunggahMenyebutSetiapNomor`), tetapi gerbang dokumen LENGKAP langkah 12 VERBATIM tanpa nomor (`TestSimpanRNMDokumenTidakLengkap`); AC ini dibantah XML untuk gerbang kedua
+      pesan yang **menyebut peserta mana**. *(AC 45 spec; penyimpangan sadar 5)* — belum: DIBANTAH XML (ralat 28-09-2026) — satu-satunya gerbang dokumen yang HIDUP adalah "belum diunggah" (langkah 3–4), dan ia menyebut nomor peserta (`TestSimpanRNMDokumenBelumDiunggahMenyebutSetiapNomor`); gerbang "dokumen lengkap" langkah 12 TER-REMARK (b6178), jadi sistem lama tidak pernah menolak karena kelengkapan (`TestSimpanRNMDokumenTidakLengkapLolos`). Memasangnya keputusan baru — OQ-N6
 - [x] Kolom isian `DOCUMENT_CLAIM` **diturunkan dari sensus `.DocumentList`** pada activity di atas,
       dan **keputusannya dicatat** — **jangan tebak dari nama tabel**. *(tiket 14 §Catatan)* — bukti: `APP_RNM/internal/repository/migrations/010_kolom_t_claimlf_document.sql` (tujuh kolom dari sensus `InsertDocument_Act`); uji `TestKolomDDLCocokDenganStruktur`
 - [x] Halaman React menampilkan daftar baris adjustment dengan status masing-masing sebagai kata,
@@ -289,6 +289,10 @@ pasangan yang sama berlaku pada jalur Komite (`GetListKomiteLife` 15564/15873, k
 ini **diralat** dari *ReasLifeAdmin* menjadi *ReasLifeSPV*; penegakannya milik **tiket 07**.
 
 **3. Ada DUA gerbang dokumen, bukan satu, dan keduanya memakai daftar yang berbeda.**
+
+> ⛔ **Ralat 28-09-2026 (temuan /code-review GILIRAN-11).** Langkah 12 ber-`pyStepsBlockName = //`
+> (b6178): gerbang **kedua** di bawah TER-REMARK dan tidak pernah jalan. Yang hidup hanya gerbang
+> pertama. Tabelnya dibiarkan sebagai catatan pembacaan; lihat bab GILIRAN-11 di akhir tiket.
 
 | Gerbang | Langkah | Daftar | Syarat | Pesan |
 | --- | --- | --- | --- | --- |
@@ -673,10 +677,10 @@ berjalan. Langkah 15 ber-TRANS tanpa bendera pula. Kode aksi `6` = keluar activi
    11) **dan** `Save to RNM` di layar Outstanding `InputOSClaimLife` b21102 → b21126, yang dipegang
    **Admin**. Rute ini meniru yang kedua (brief GILIRAN-11 §2 butir 1): gerbangnya pemegang tahap
    Outstanding, `WajibPemegangTahap`. Bab "Hasil & nilai pengguna" karena itu hanya separuh.
-3. **Gerbang dokumen LENGKAP (langkah 12) menyaring SELURUH peserta**, bukan hanya yang dipilih:
-   langkah 12.2 tanpa precondition. `PeriksaDokumenLengkap` (tiket ini, 26-09) melewati peserta
-   tak dipilih — `PeriksaSimpanRNM` tidak memakainya dan memeriksa semuanya. Gerbang dokumen ADA
-   (langkah 3) memang menyaring `.IsAccept=="true"` (b1181; `IS_CHECK` padanan terdekat).
+3. ~~**Gerbang dokumen LENGKAP (langkah 12) menyaring SELURUH peserta**~~ — **DICABUT** (ralat
+   bertanggal di bawah): langkah 12 ter-remark, jadi tidak ada gerbang dokumen lengkap sama sekali.
+   Gerbang dokumen ADA (langkah 3) memang menyaring `.IsAccept=="true"` (b1181; `IS_CHECK` padanan
+   terdekat).
 4. **DOL di Save BERBEDA dengan `ValidasiDOL_Act`**: langkah 11.8 memakai jendela retro **tanpa**
    pergeseran satu hari (b4464 `@addCalendar(.DATE_OF_LOSS,0,0,0,0,0,0,0)`), sedangkan
    `ValidasiDOL_Act` menggeser (b698). Keduanya ditiru apa adanya; uji
@@ -687,7 +691,8 @@ berjalan. Langkah 15 ber-TRANS tanpa bendera pula. Kode aksi `6` = keluar activi
 6. **Klaim ganda (11.2–11.6) membaca `OS_AKSEPTASI_KLAIM_LIFE`** dengan nama dan tanggal lahir
    tertanggung — keduanya tidak disalin ke tabel klaim, jadi dicocokkan di SQL dengan baris sumber
    (`repository/gandawarisan.go`); baris warisan milik aplikasi ini tidak pernah cocok (OQ-N2).
-7. **Langkah 13–20 (nomor)** bergerbang `CLAIM_NO==""` di setiap langkahnya; aplikasi menomori saat
+7. **Langkah 16–20 (nomor)** bergerbang `CLAIM_NO==""` di setiap langkahnya (13–15, jalur
+   `Generate_NoKlaim_Life*`, ter-remark); aplikasi menomori saat
    pendaftaran, jadi cabang ini hanya berjalan bagi klaim tanpa nomor, memakai penomor yang sama.
 8. **Layar Outstanding** menyalin tombol perpindahannya sendiri tanpa konfirmasi
    `Send Back to Admin?`; kini memakai `PanelPindahTahap` (satu daftar, satu dialog).
@@ -697,3 +702,35 @@ berjalan. Langkah 15 ber-TRANS tanpa bendera pula. Kode aksi `6` = keluar activi
 OQ-N1 (bendera `Save`), OQ-N2 (klaim ganda antarklaim baru, cacat SQL health), OQ-N3 (gerbang retro
 langkah 27 lawan OQ-064 Komite), OQ-N4 (residu `.Protect`, `ADJUSTMENT_DATE`/`PrintFaceClaim`,
 `.IsAccept`) — `OQ-untuk-tim.md`.
+
+### ⛔ Ralat bertanggal — 28-09-2026 (temuan /code-review GILIRAN-11)
+
+Sebabnya satu: `pyStepsBlockName = //` berarti langkahnya **ter-remark** dan tidak pernah jalan
+(`claim-prop/grilling-ronde-2.md` Aturan 2), dan pembaca pohon yang dipakai paket 1 tidak mencetak
+medan itu. Delapan langkah activity ini ber-remark: 11.3 b3495, 11.9 b4632, 11.11 b5009, 12 b6178,
+13 b7074, 14 b7293, 15 b7512, 23 b10649.
+
+1. **Gerbang STNC (11.9/11.11) dan dokumen lengkap (12) DIBUANG.** Keduanya menolak simpan yang
+   tidak pernah ditolak sistem lama. `MasukanRNM` tidak lagi membawa ambang `MAXDATARECEIVE`,
+   `DateReceived`, atau daftar kategori; `Simpan` tidak lagi membaca ambang produk dan daftar
+   kategori. Gerbangnya kini empat: dokumen ada, klaim ganda, DOL, medan kosong. Uji
+   `TestSimpanRNMTreatyTanpaDokumenLolos` dan `TestSimpanRNMDokumenTidakLengkapLolos` menggantikan
+   uji yang menuntut pesan langkah 12; uji STNC dibuang. Kelengkapan per kategori: **OQ-N6**.
+2. **Langkah 23 (enam total) ter-remark** — tidak ada perubahan perilaku: totalnya dihitung saat
+   baca dari `SavePesertaClaim` langkah 8, yang hidup (`models.HitungTotalPeserta`).
+3. **Langkah 27 membaca salinan yang MUNGKIN DITUKAR.** `pyWorkPage.ClaimData.PolicyDataLife` diisi
+   `InsertJsonClaimLife_Act` (langkah 25); langkah 2-nya (tidak ter-remark) menukar `RetroID` dan
+   `SecurityReinsurerID` bila TP/TR, security reinsurer terisi, dan `ProdDateTime` < 7 Feb 2025.
+   `ArasapasDilewatiRetro(PolisRetro)` menilai kedua kemungkinan; bila hasilnya berbeda, Arasapas
+   **ditahan** dengan alasan terbaca (**OQ-N5**). Keluar di langkah 27 juga melewati Obj-Save di
+   sistem lama (tambahan **OQ-N3**).
+4. **Langkah 22.1.3.2 menulis baris adjustment SAJA.** Paket 1 memakai `PerbaruiStatusBaris`, yang
+   ikut menulis `STS_REJECT` peserta serta mengosongkan `ACCEPTED_NO`/`ACCEPTATION_DATE` —
+   bertentangan dengan sensus penulis `STS_REJECT` di `repository/klaimlife.go`. Kini
+   `KlaimLife.TandaiBarisOutstanding` (`… SET STS_REJECT = :1 WHERE ID = :2 AND STS_REJECT IS NULL`,
+   nol baris = galat); namanya ditambahkan ke keempat penjaga statik (wewenang, jejak, dua penjaga
+   Komite), dan kedua penjaga pertama terbukti merah terhadap penulis liar.
+5. **Klaim yang tidak ada** dijawab 404 `klaim tidak ada`, bukan 500.
+6. **Bukti `IsCheck == "true"` (AC 8)** dipindah dari b1812/b1997/b2413 — WHEN langkah 7.1
+   (precondition false) serta 7.2/7.4 (`//`) `SavePesertaClaim` — ke b3631 dan b3919 (7.7, 7.8,
+   hidup). Nilainya tidak berubah.
