@@ -84,7 +84,14 @@ func HitungClaimPaid(claimGross Money, persenKlaim Ratio) (Money, error) {
 //
 // Galat bila gross > share (ketat, b949) DAN kode bisnis BUKAN salah satu
 // dari empat kode b972. Galat berarti activity keluar tanpa Spreading.
+//
+// ⛔ Dua uang bermata uang berbeda TIDAK dibandingkan (ADR-F-0004, sama
+// dengan `Money.Add`): IDR melawan USD bukan "lebih besar", melainkan salah.
 func PeriksaClaimGrossTerhadapShare(claimGross, shareNusantaraRe Money, kodeBisnis string) error {
+	if claimGross.Currency != shareNusantaraRe.Currency {
+		return fmt.Errorf("%w: %q lawan %q", ErrMataUangBerbeda,
+			claimGross.Currency, shareNusantaraRe.Currency)
+	}
 	if nolBila(claimGross.Amount).Cmp(nolBila(shareNusantaraRe.Amount)) <= 0 {
 		return nil
 	}

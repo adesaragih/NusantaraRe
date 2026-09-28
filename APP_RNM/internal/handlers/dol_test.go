@@ -37,6 +37,7 @@ func TestGalatTanggalDipetakanKeKodeYangBenar(t *testing.T) {
 		{"tanpa wewenang", services.ErrTanpaWewenang, http.StatusForbidden},
 		{"kasus tertutup", services.ErrKasusSudahTertutup, http.StatusConflict},
 		{"tahap salah", services.ErrTahapTidakBolehUbahTanggal, http.StatusConflict},
+		{"tahap tak dikenal", services.ErrTahapTidakDikenal, http.StatusUnprocessableEntity},
 		{"permintaan tidak sah", services.ErrPermintaanTidakSah, http.StatusBadRequest},
 	} {
 		w := httptest.NewRecorder()

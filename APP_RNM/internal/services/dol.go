@@ -268,11 +268,18 @@ var ErrTahapTidakBolehUbahTanggal = errors.New(
 // `UpdateDateClaimLife_Act`, tombol `Save` `EditDateClaimLife_Section` b1910.
 //
 // Urutan gerbangnya: identitas, pengenal, peran, kasus terbuka, tahap, lalu
-// kepemilikan peserta - pola `DiagnosaPeserta.pagari`.
+// kepemilikan peserta. ⚠️ BEDA dengan `DiagnosaPeserta.pagari`: di sana
+// perannya DITURUNKAN dari tahap dan diperiksa sesudahnya; di sini tahap yang
+// sah hanya satu (Outstanding, dipegang Admin), jadi perannya tetap dan
+// diperiksa lebih dulu - pemanggil tak berhak tidak berhak tahu keadaan kasus.
 //
 // ⛔ Peran DAN tahap, bukan salah satunya. `pyPosition=='ReasLifeAdmin'`
-// adalah posisi KASUS (Register_Flow b582-b731 menyetelnya per tahap); orang
-// mengubah pekerjaan yang sedang ia pegang (pola `TahapLayanan.Pindah`).
+// adalah posisi KASUS (Register_Flow b582-b731 menyetelnya per tahap). Di
+// Pega hanya pemegang penugasan yang dapat membuka kasus di posisi itu -
+// penugasannya dirutekan ke Admin - jadi peran pelaku adalah padanan
+// perutean itu, pola yang sama dengan `TahapLayanan.Pindah` ("orang
+// mengubah pekerjaan yang sedang ia pegang"). Rute BARU ini lahir dengan
+// gerbangnya; rute DOL lama tidak diubah (OQ-M8).
 //
 // ⚠️ Yang TIDAK dilakukan, dan sebabnya ada di kepala `models/tanggalklaim.go`:
 // separuh "CLAIM_NO tidak kosong" gerbangnya (OQ-M1), `ValidasiClaimReceived_Act`
@@ -307,6 +314,10 @@ func (t *TanggalKejadian) SetTanggalKlaim(ctx context.Context, pelaku Pelaku,
 	tahap := models.TahapDariNama(kolomTahap)
 	if !tahap.Diketahui() {
 		tahap = models.TahapDariPeran(peranPemegang)
+	}
+	if !tahap.Diketahui() {
+		return fmt.Errorf("%w: tahap %q, peran pemegang %q",
+			ErrTahapTidakDikenal, kolomTahap, peranPemegang)
 	}
 	if !models.TahapBolehUbahTanggalKlaim(tahap) {
 		return fmt.Errorf("%w: tahap %s", ErrTahapTidakBolehUbahTanggal, tahap)

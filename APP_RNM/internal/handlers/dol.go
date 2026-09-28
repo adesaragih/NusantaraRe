@@ -1,10 +1,12 @@
 package handlers
 
-// Pintu HTTP tanggal kejadian - tiket 06.
+// Pintu HTTP dialog Edit Date - DOL (tiket 06) dan tiga tanggal klaim lain
+// (sensus §3.1, 28-09-2026).
 //
 // Nol aturan dagang di sini: berkas ini menerjemahkan HTTP ke panggilan
 // services dan sebaliknya. Yang memutuskan sah atau tidak adalah
-// services.ValidasiDOL.
+// services.ValidasiDOL (DOL) dan TanggalKejadian.SetTanggalKlaim (gerbang
+// tahap dan peran tiga tanggal lainnya).
 //
 // Dibaca sesudah: handlers.go dan services/dol.go.
 
@@ -105,6 +107,9 @@ func jawabGalatTanggal(w http.ResponseWriter, err error, gagal string) {
 		galat(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
 	case errors.Is(err, services.ErrTahapTidakBolehUbahTanggal):
 		galat(w, http.StatusConflict, "tanggal klaim hanya dapat diubah di tahap Outstanding Claim")
+	case errors.Is(err, services.ErrTahapTidakDikenal):
+		// 422: datanya yang tidak lengkap - tahap kasus tidak dapat dibaca.
+		galat(w, http.StatusUnprocessableEntity, "tahap kasus tidak dikenal")
 	default:
 		galat(w, http.StatusInternalServerError, gagal)
 	}

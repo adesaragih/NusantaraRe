@@ -18,48 +18,74 @@ import (
 // dari daftar, sehingga layanan pengubah KEDELAPAN pun akan tertagih - asal
 // namanya ditambahkan ke sini, dan menambahkannya adalah pekerjaan sadar.
 
-// layananPengubah memetakan berkas layanan ke fungsi masuknya.
+// layananPengubah memetakan berkas layanan ke fungsi masuknya - SETIAP
+// fungsi yang melayani rute pengubah, bukan satu per berkas.
+//
+// ⛔ DIPERKETAT 28-09-2026 (temuan /code-review sensus §3.1). Ronde
+// sebelumnya memeriksa panggilan di BERKAS, bukan di fungsinya: ketika
+// `dol.go` memperoleh fungsi masuk kedua (`SetTanggalKlaim`), menghapus
+// pemeriksaan kasus tertutup dari fungsi itu tetap hijau - panggilan milik
+// `Set` di berkas yang sama membungkam penjaga. Kini tubuh tiap fungsi yang
+// disebut diperiksa sendiri-sendiri.
 //
 // ⚠️ Daftar ini DITULIS TANGAN dan itu disengaja. Menurunkannya otomatis dari
 // "berkas yang memanggil DalamTransaksi" akan membuat penjaga ini menjaga
 // apa pun yang kebetulan ada, bukan apa yang kita putuskan harus dijaga -
 // dan daftar yang menyesuaikan diri tidak pernah gagal.
-var layananPengubah = map[string]string{
+var layananPengubah = map[string][]string{
 	// Komite Claim Life tiket 02 - keputusan tingkat; klaim induk yang
 	// tertutup tidak menerima keputusan komite lagi.
-	"komite_keputusan.go": "Putuskan",
-	"akseptasi.go":        "SimpanAdjustment",
-	"dol.go":              "Set",
-	"hapus.go":            "Hapus",
-	"hasilkomite.go":      "Tambah",
-	"diagnosa.go":         "pagari",
-	"unggahan.go":         "pagari",
-	"komite.go":           "Serahkan",
-	"tahap.go":            "Pindah",
-	"statusbaris.go":      "ubah",
+	"komite_keputusan.go": {"Putuskan"},
+	"akseptasi.go":        {"SimpanAdjustment"},
+	// Dua rute dialog Edit Date: DOL (tiket 06) dan tiga tanggal (§3.1).
+	"dol.go":         {"Set", "SetTanggalKlaim"},
+	"hapus.go":       {"Hapus"},
+	"hasilkomite.go": {"Tambah"},
+	"diagnosa.go":    {"pagari"},
+	"unggahan.go":    {"pagari"},
+	"komite.go":      {"Serahkan"},
+	"tahap.go":       {"Pindah"},
+	"statusbaris.go": {"ubah"},
+}
+
+// tubuhFungsi mengembalikan teks satu fungsi (atau metode) bernama, dari
+// kepalanya sampai sebelum `func` berikutnya di awal baris. Kosong bila tidak ada.
+func tubuhFungsi(teks, nama string) string {
+	pola := regexp.MustCompile(`(?m)^func (\([^)]*\) )?` + regexp.QuoteMeta(nama) + `\(ctx context\.Context`)
+	loc := pola.FindStringIndex(teks)
+	if loc == nil {
+		return ""
+	}
+	sisa := teks[loc[1]:]
+	if j := strings.Index(sisa, "\nfunc "); j >= 0 {
+		sisa = sisa[:j]
+	}
+	return teks[loc[0]:loc[1]] + sisa
 }
 
 func TestSetiapLayananPengubahMemeriksaKasusTerbuka(t *testing.T) {
 	const panggilan = "PastikanKasusTerbuka(ctx, klaimID)"
-	for berkas, fungsi := range layananPengubah {
+	for berkas, daftar := range layananPengubah {
 		isi, err := os.ReadFile(berkas)
 		if err != nil {
 			t.Errorf("membaca %s: %v", berkas, err)
 			continue
 		}
-		teks := string(isi)
-		if !strings.Contains(teks, "func ") || !strings.Contains(teks, fungsi+"(ctx context.Context") {
-			t.Errorf("%s: fungsi masuk %q tidak ditemukan lagi - daftar "+
-				"layananPengubah harus disesuaikan, bukan penjaga ini dimatikan",
-				berkas, fungsi)
-			continue
-		}
-		if !strings.Contains(teks, panggilan) {
-			t.Errorf("%s (%s) tidak memanggil %s.\n"+
-				"Butir bb: sesudah kasus ditutup, SETIAP rute pengubah harus "+
-				"menolak. Rute yang lupa memeriksanya tidak akan membuat satu "+
-				"pun uji lain merah - ia hanya akan mengubah kasus yang sudah "+
-				"selesai.", berkas, fungsi, panggilan)
+		for _, fungsi := range daftar {
+			tubuh := tubuhFungsi(string(isi), fungsi)
+			if tubuh == "" {
+				t.Errorf("%s: fungsi masuk %q tidak ditemukan lagi - daftar "+
+					"layananPengubah harus disesuaikan, bukan penjaga ini dimatikan",
+					berkas, fungsi)
+				continue
+			}
+			if !strings.Contains(tubuh, panggilan) {
+				t.Errorf("%s (%s) tidak memanggil %s.\n"+
+					"Butir bb: sesudah kasus ditutup, SETIAP rute pengubah harus "+
+					"menolak. Rute yang lupa memeriksanya tidak akan membuat satu "+
+					"pun uji lain merah - ia hanya akan mengubah kasus yang sudah "+
+					"selesai.", berkas, fungsi, panggilan)
+			}
 		}
 	}
 }

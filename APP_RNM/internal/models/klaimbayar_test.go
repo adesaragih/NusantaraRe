@@ -83,6 +83,16 @@ func TestGrossMelebihiShareDitolakKecualiEmpatKode(t *testing.T) {
 	if err := PeriksaClaimGrossTerhadapShare(kecil, besar, "L01"); err != nil {
 		t.Errorf("gross < share ditolak: %v", err)
 	}
+	// ⛔ Mata uang berbeda tidak pernah dibandingkan - bahkan untuk L12.
+	usd, err := NewMoney("50", "USD")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, kode := range []string{"L01", "L12"} {
+		if err := PeriksaClaimGrossTerhadapShare(usd, besar, kode); !errors.Is(err, ErrMataUangBerbeda) {
+			t.Errorf("%s: USD lawan IDR = %v, mau ErrMataUangBerbeda", kode, err)
+		}
+	}
 }
 
 // TestRumusClaimPaidVERBATIMDariKorpus - rumus uang dibaca langsung dari XML.

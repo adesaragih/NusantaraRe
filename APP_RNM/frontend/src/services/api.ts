@@ -129,13 +129,15 @@ export interface Peserta {
   /**
    * `DATE_OF_LOSS` — tanggal kejadian, milik PESERTA dan bukan klaim.
    *
-   * Teks apa adanya, bentuk `YYYY-MM-DD`. Kosong berarti belum diisi.
+   * Teks apa adanya, bentuk `YYYY-MM-DD HH24:MI:SS` (`fmtTanggalOracle`).
+   * Kosong berarti belum diisi.
    */
   tanggalKejadian: string
   /**
    * Tiga tanggal klaim lain dialog Edit Date — `CLAIM_RECEIVED_DATE` b1076,
-   * `COMPLETE_DATE` b1387, `CONFIRMATION_DATE` b1626. Teks `YYYY-MM-DD`,
-   * kosong berarti belum diisi.
+   * `COMPLETE_DATE` b1387, `CONFIRMATION_DATE` b1626. Teks
+   * `YYYY-MM-DD HH24:MI:SS` apa adanya dari backend (`fmtTanggalOracle`) —
+   * kotak tanggal memakai `keIsianTanggal`. Kosong berarti belum diisi.
    */
   tanggalTerimaKlaim: string
   tanggalDokumenLengkap: string
@@ -954,8 +956,11 @@ export interface TanggalKlaim {
  * Kode jawaban yang mungkin:
  *   204 berhasil
  *   400 salah satu tanggal bukan tanggal yang dikenal
+ *   401 tanpa identitas pelaku
  *   403 bukan Admin
  *   409 bukan tahap Outstanding Claim, atau kasusnya sudah ditutup
+ *   422 tahap kasus tidak dikenal
+ *   503 basis data belum dikonfigurasi
  */
 export async function ubahTanggalKlaim(
   klaimID: string,

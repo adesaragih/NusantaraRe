@@ -344,7 +344,7 @@ luar berkasnya sendiri)*; kolom **padanan** dari pencarian yang sama di `APP_RNM
 | ⛔ residu *(nol pemanggil, nol padanan)* | 0 |
 | **41 baris "tercatat, belum berkode" — diputuskan 28-09-2026 (giliran 10 §3.1):** | |
 | ↳ ✅ ada / tidak perlu, dengan sebab dari XML | 31 |
-| ↳ 🔧 celah → dibangun | 4 |
+| ↳ 🔧 celah → dibangun *(tiga utuh; `CountClaimAmountLife_Act` aturannya saja, sambungan OQ-M3)* | 4 |
 | ↳ ❓ pertanyaan terbuka — keputusan work owner *(skema, desain, atau authz)* | 6 |
 
 ⛔ **Nol baris "nanti".** Kedelapan celah dibaca satu per satu dan dihakimi: **dua dibangun**
@@ -371,15 +371,24 @@ keadaannya berisi salah satu dari tiga:
 ada di `Activity/SetClaimXOL_Act.xml` b453-b1065 (26 kolom), aksi kedua tombol `Upload CSV`
 `InputRegisterClaimLife` b6763. Yang tersisa bukan data yang hilang melainkan keputusan — OQ-M4.
 
-⚠️ **Temuan di luar 41 baris, dicatat tanpa diubah:** `SaveOutStandingLife_Act` dan
-`Adjustment_Detail` tertulis ✅ di bawah hanya berdasar label (`labels.ts`); nyatanya belum ada
-rute simpan Outstanding dan tidak ada rute yang menyunting jumlah klaim (`TandaiOutstanding` dan
-`PeranSimpanOutstanding` nol pemanggil produksi). Spreading pun belum tersambung (`HitungSpreading`,
-`AmbilSpreading`). Ketiganya menahan OQ-M1 dan OQ-M3.
+⛔ **Empat baris ✅ di luar 41 DIRALAT (temuan /code-review, 28-09-2026)** — bukan dibiarkan:
+`SaveOutStandingLife_Act` dan `Adjustment_Detail` tertulis ✅ hanya berdasar label (`labels.ts`),
+`SpreadingClaimLife_Act` dan `ValidasiClaimReceived_Act` berdasar aturan murni yang nol pemanggil.
+Keadaannya kini ditulis apa adanya di barisnya. `SaveOutStandingLife_Act` adalah **celah terbesar
+yang tersisa** — rute simpan Outstanding — dan tidak dibangun giliran ini: ia bukan salah satu
+dari 41 baris, dan separuh isinya menunggu OQ-M1/M3.
+
+⚠️ **Temuan paritas av-2.** Layar Register dan Outstanding mengikat **21** medan `.PolicyDataLife.*`
+(`InputRegisterClaimLife` b9110-b14813, `InputOSClaimLife` b6905-b12679); `PanelDataPolis`
+menampilkan sebelas. Sepuluh sisanya — `TypeCeding`, `ProRateType`, `WPC`, `RetroName` *(Retro
+Name / Billing Name)*, `SecurityReinsurer`, `SobName`, `ProductNameID`, `ProductName`,
+`TanggalKonfirmasiBalik`, `KetentuanUnderwriting` — belum dibaca kondisi tampilnya. `RETRO_NAME`
+ADA di `T_PREMIUM_LIST` (migrasi 051). Butir av di brief menyebut sepuluh medan dan sudah
+dipenuhi; kesepuluh ini di luar cakupannya, dicatat supaya tidak hilang.
 
 | Rule | Folder | Dipanggil dari | Padanan | Keadaan |
 | --- | --- | --- | --- | --- |
-| `CountClaimAmountLife_Act` | Activity | `Section/AdjustmentDetail_Section.xml:1709` | `internal/models/klaimbayar.go:66`, `:87` | 🔧 **celah → dibangun (aturan murni)** — `CLAIM_PAID = CLAIM_GROSS × @divide(PCTClaim,100,5)` b702/b723; galat b526 bila gross > share (b949) kecuali L12/L13/L14/L18 (b972), lalu KELUAR activity (kode 6 b865) sebelum Spreading. ⚠️ Sambungannya menunggu kolom PCT/CLAIM_PAID dan rute sunting adjustment — **OQ-M3** |
+| `CountClaimAmountLife_Act` | Activity | `Section/AdjustmentDetail_Section.xml:1709` | `internal/models/klaimbayar.go:66`, `:87` | 🔧 **celah → aturan dibangun; sambungan ❓ OQ-M3** — `CLAIM_PAID = CLAIM_GROSS × @divide(PCTClaim,100,5)` b702/b723; galat b526 bila gross > share (b949) kecuali L12/L13/L14/L18 (b972), lalu KELUAR activity (kode 6 b865) sebelum Spreading. ⚠️ Pemicunya b1709 belum hidup: kolom PCT/CLAIM_PAID tidak ada (migrasi `020`+ hanya dari keputusan), dan rute sunting adjustment tanpa kolom itu tidak punya apa pun untuk ditulis — **OQ-M3** |
 | `CreateKMTLife_Act` | Activity | `Section/ClaimComite.xml:7051`, `Harness/Committe_Life.xml:8013` | `internal/repository/kasuskomite.go:8`, `internal/repository/roster.go:35` | ✅ **ada** |
 | `DeleteDocument_Act` | Activity | `FlowAction/ConfirmDeleteAttachment.xml:145` | `frontend/src/services/api.ts:1216`, `internal/models/dokumenbaru.go:61` | ✅ **ada** |
 | `DeleteGoogleStorage_Act` | Activity | `Activity/DeleteDocument_Act.xml:384` | `internal/models/dokumenbaru.go:19`, `internal/models/mimedokumen.go:8` | ✅ **ada** |
@@ -405,7 +414,7 @@ rute simpan Outstanding dan tidak ada rute yang menyunting jumlah klaim (`Tandai
 | `SaveAdjustment_Act` | Activity | `Section/ClaimLifeDetailGCNM.xml:22665` | `frontend/src/assets/labels.ts:319`, `frontend/src/pages/KlaimLife.tsx:560` | ✅ **ada** |
 | `SaveAttachLife` | Activity | `FlowAction/AttachDocumentLife.xml:179` | `internal/models/dokumenbaru.go:38`, `internal/models/mimedokumen.go:32` | ✅ **ada** |
 | `SaveInsuredClaim_Act` | Activity | `Section/InputRegisterClaimLife.xml:20084` | `internal/models/klaimlife.go:222`, `internal/models/validasitanggal.go:20` | ✅ **ada** |
-| `SaveOutStandingLife_Act` | Activity | `Section/InputOSClaimLife.xml:21126` | `frontend/src/assets/labels.test.ts:255`, `frontend/src/assets/labels.ts:305` | ✅ **ada** |
+| `SaveOutStandingLife_Act` | Activity | `Section/InputOSClaimLife.xml:21126` | `frontend/src/assets/labels.test.ts:255`, `frontend/src/assets/labels.ts:305` | ⚠️ **RALAT 28-09-2026: celah, bukan ada** — padanannya hanya LABEL tombol. Rute simpan Outstanding belum ada (`TandaiOutstanding`, `PeranSimpanOutstanding` nol pemanggil produksi). Yang ditiru di tempat lain: penomoran (pendaftaran), cermin warisan (`repository/pohonklaim.go:348`), status Outstanding saat INSERT. Di luar 41 baris; dilaporkan, belum dibangun giliran ini |
 | `SavePesertaClaim` | Activity | `Section/InputRegisterClaimLife.xml:27393` | `frontend/src/assets/labels.test.ts:255`, `frontend/src/assets/labels.ts:304` | ✅ **ada** |
 | `SearchDiagnose_act` | Activity | `Section/Diagnose_Section.xml:568`, `Harness/Diagnose_Harness.xml:1557` | `frontend/src/components/CariDiagnosa.tsx:17`, `internal/models/penyakit.go:20` | ✅ **ada** |
 | `SearchPolicyHolder_act` | Activity | `Section/SearchPolicy_Section.xml:886`, `Harness/SearchPolicy_Harness.xml:1877` | — | ✅ **tidak perlu** (milik PremiumList) — satu langkah huruf besar `SearchPolicyHolder.CARI1` b247-248 di pemilih polis; server sudah menghurufbesarkan cari nama |
@@ -416,25 +425,25 @@ rute simpan Outstanding dan tidak ada rute yang menyunting jumlah klaim (`Tandai
 | `SendtoAdmin_Act1` | Activity | `Section/InputOSClaimLife.xml:21863`, `Section/MedicalCheckClaimLife.xml:21174` | `frontend/src/assets/labels.ts:280`, `frontend/src/pages/OutstandingClaimLife.tsx:12` | ✅ **ada** |
 | `SendtoMedical_Act` | Activity | `Section/SendtoMedical_Section.xml:1290` | `internal/models/tahap.go:166`, `internal/repository/klaimlife.go:545` | ✅ **ada** (invarian ditiru) — satu Property-Set `SendtoMedical="1"` b260-261 = `JalurBalikTahap` + `PerbaruiTahap`; konfirmasinya kini dibangun (baris `SendtoMedical_Section`). Cacat prasyarat b339 = OQ-C |
 | `serviceInsertArasapasClaimLife_act` | Activity | `Activity/SaveOutStandingLife_Act.xml:11857` | `internal/repository/klaimlife.go:296`, `internal/services/efekkeluar.go:36` | ✅ **ada** |
-| `SetClaimXOL_Act` | Activity | `Section/InputRegisterClaimLife.xml:6763` | — | ❓ **[pertanyaan terbuka] OQ-M4** — pemetaan 26 kolom CSV ADA (b453-b1065; **ralat OQ-F**), tetapi memuat uang (`SUM_INSURED`, `CLAIM_AMOUNT`, share), jendela valuasi, dan `NAME_OF_INSURED` dari berkas klien — pendaftaran membaca peserta ULANG dari sumber, dan `ValidasiDOL` bersandar pada jendela yang tersimpan |
+| `SetClaimXOL_Act` | Activity | `Section/InputRegisterClaimLife.xml:6763` | — | ❓ **[pertanyaan terbuka] OQ-M4** — pemetaan CSV ADA — 28 kolom berkas + `PL_NUMBER` dari polis (b478-b1065; **ralat OQ-F**), tetapi memuat uang (`SUM_INSURED`, `CLAIM_AMOUNT`, share), jendela valuasi, dan `NAME_OF_INSURED` dari berkas klien — pendaftaran membaca peserta ULANG dari sumber, dan `ValidasiDOL` bersandar pada jendela yang tersimpan |
 | `SetCurrencyID_Act` | Activity | `Section/AdjustmentDetail_Section.xml:1214` | — | ✅ **ADA sejak 28-09-2026** — `pyPreDataTransform` `AdjustmentDetail_Section.xml` b1206. Ia menerjemahkan `.CURRENCY` → `.CURRENCYID` lewat `GetCurrencyID` b419 **saat layar dimuat**. Ditiru di jalur **baca** (`services/klaimlife.go`), meniru letaknya bukan hanya hasilnya. ⚠️ Sebelumnya `CURRENCYID` hanya DIBAWA `WarisiKolom` dan tidak pernah DITERBITKAN — baris **pertama** peserta lahir tanpa pengenal, dan `HitungTotalPeserta` menolaknya dengan *"mata uang beragam"*: kalimat yang benar tentang hal yang salah |
-| `setDetailClaim_act` | Activity | `Section/SearchPolicy_Section.xml:3356`, `Harness/SearchPolicy_Harness.xml:4334` | — | ✅ **tidak perlu** (residu) — `Obj-Open-By-Handle` berkode keras `CLMLF-8991` (b284/b332) |
+| `setDetailClaim_act` | Activity | `Section/SearchPolicy_Section.xml:3356`, `Harness/SearchPolicy_Harness.xml:4334` | — | ✅ **tidak perlu** (residu) — `Obj-Open-By-Handle` atas SATU pengenal kasus berkode keras (b284/b332) |
 | `SetDisease` | Activity | `Section/Diagnose_Section.xml:2528`, `Harness/Diagnose_Harness.xml:3506` | `frontend/src/assets/labels.ts:471`, `frontend/src/components/CariDiagnosa.tsx:24` | ✅ **ada** |
 | `SetIndexAdjustmentList` | Activity | `Section/ClaimLifeDetailGCNM.xml:17991` | `internal/models/klaimlife.go:97`, `internal/models/totalpeserta.go:51` | ✅ **ada** |
 | `SetMOClaim_Act` | Activity | `Activity/PreCaimLife_Act.xml:889` | — | ✅ **tidak perlu** (JSON dibuang) — menulis `ClaimData.MarketingData.*` (b276-b408, b1182-b1314); nol pembaca `MarketingData` di korpus di luar JSON b1381 |
 | `SetSTS_Reject` | Activity | `Section/ClaimLifeDetailGCNM.xml:3224` | `frontend/src/components/GridDiagnosa.tsx:4`, `internal/models/diagnosa.go:48` | ✅ **ada** |
 | `setVisibility_Act` | Activity | `Section/InputRegisterClaimLife.xml:7134` | — | ✅ **tidak perlu** (keadaan layar, ditiru) — `Find Insured` b7111 menyetel `CARI2=1`, `CARI3=""`, mengosongkan TempDetail (b244-b380); kotak pencariannya `RegisterKlaim.tsx` |
-| `SpreadingClaimLife_Act` | Activity | `Activity/CountClaimAmountLife_Act.xml:1012` | `internal/models/pohonklaim.go:92`, `internal/repository/migrations/005_t_claimlf_adjustment_spreading.sql:33` | ✅ **ada** |
+| `SpreadingClaimLife_Act` | Activity | `Activity/CountClaimAmountLife_Act.xml:1012` | `internal/models/pohonklaim.go:92`, `internal/repository/migrations/005_t_claimlf_adjustment_spreading.sql:33` | ⚠️ **RALAT 28-09-2026: aturan ada, sambungan tidak** — `services/spreading.go` `HitungSpreading` nol pemanggil produksi; masukan rate-nya tanpa pembaca — **OQ-M7** |
 | `UpdateDateClaimLife_Act` | Activity | `Section/EditDateClaimLife_Section.xml:1929` | `internal/services/dol.go:281`, `internal/handlers/dol.go:137`, `frontend/src/components/claimlife/PanelTanggalKlaim.tsx:51` | 🔧 **celah → dibangun** — tiga tanggal `CLAIM_RECEIVED_DATE` b1076, `COMPLETE_DATE` b1387, `CONFIRMATION_DATE` b1626; `Save` b1910 → `PUT …/peserta/{pesertaId}/tanggal-klaim`. Gerbang b1000/b1313/b1550/b1788 ditiru separuh: `pyPosition` = tahap Outstanding + peran Admin; `CLAIM_NO != ''` **OQ-M1** |
 | `UploadCSVClaimLife_Act` | Activity | `FlowAction/UploadCSV_ClaimLife.xml:144` | — | ❓ **[pertanyaan terbuka] OQ-M4** — tiga langkah `pxUploadCSVResults` (b490-b539), tombol tampil bila `PL_NUMBER != '' && CARI2 != 1` (b6386); pemetaannya `SetClaimXOL_Act` (baris itu) |
-| `ValidasiClaimReceived_Act` | Activity | `Section/ClaimLifeDetailGCNM.xml:11457`, `Section/EditDateClaimLife_Section.xml:1120` | `internal/models/validasitanggal.go:9`, `internal/models/validasitanggal_test.go:5` | ✅ **ada** |
+| `ValidasiClaimReceived_Act` | Activity | `Section/ClaimLifeDetailGCNM.xml:11457`, `Section/EditDateClaimLife_Section.xml:1120` | `internal/models/validasitanggal.go:9`, `internal/models/validasitanggal_test.go:5` | ⚠️ **RALAT 28-09-2026: aturan + ambang ada, sambungan tidak** — `services.AmbangKlaim.Hitung` nol pemanggil — **OQ-M9** |
 | `ValidasiDOL_Act` | Activity | `Section/ClaimLifeDetailGCNM.xml:11177`, `Section/EditDateClaimLife_Section.xml:837` | `frontend/src/pages/KlaimLife.tsx:61`, `frontend/src/services/api.ts:906` | ✅ **ada** |
 | `ValidasiSTNC_Act` | Activity | `Section/ClaimLifeDetailGCNM.xml:845` | `internal/models/validasitanggal.go:11`, `internal/models/validasitanggal_test.go:6` | ✅ **ada** |
 | `convertJsonNusareToProductionClaimLife` | ConnectREST | `Activity/serviceInsertArasapasClaimLife_act.xml:660` | — | ✅ **tidak perlu** (JSON dibuang) — dipanggil `serviceInsertArasapas…` b660; REST Arasapas lewat `services/efekkeluar.go` tanpa JSON produksi |
 | `ServiceGoogle` | ConnectREST | `Activity/DeleteGoogleStorage_Act.xml:1478`, `Activity/GetUrlGoogleStorage_Act.xml:1839` | — | ✅ **tidak dibangun — gerbang persetujuan manusia** (sistem luar: Google Storage) — Connect-REST `DeleteGoogleStorage_Act` b1420; pelaksana stub (`services/unggahan.go`) |
 | `SetDisableAddButton` | DataTransform | `Section/ClaimLifeDetailGCNM.xml:19169` | — | ⛔ **TIDAK DITIRU — sebab dinyatakan** — DataTransform kelas `Int-LIFE_PREMIUM_DETAIL` yang melakukan **satu** hal: `.IsCheck = false` (b139–141). Ia `pyPreDataTransform` section `ClaimLifeDetail` (`ClaimLifeDetailGCNM.xml` b19169, section b19208). Artinya **membuka layar mencabut penanda "dipilih"**. Invariannya sudah kami punya lewat jalur yang benar — `RejectOSClaimLife_Act` mencabut `IsCheck` saat baris **ditolak** (`cabutPenanda`, tiket 05). Meniru mekanismenya berarti setiap orang yang MELIHAT layar meng-unselect pesertanya, dan itu perubahan keadaan tanpa ada yang memintanya |
 | `GetMimeType` | DecisionTable | `Activity/InsertGoogleStorage_Act.xml:761` | `internal/models/mimedokumen.go:19` | ✅ **ada** |
-| `Adjustment_Detail` | FlowAction | `Section/ClaimLifeDetailGCNM.xml:19583` | `frontend/src/assets/labels.test.ts:63`, `frontend/src/assets/labels.ts:76` | ✅ **ada** |
+| `Adjustment_Detail` | FlowAction | `Section/ClaimLifeDetailGCNM.xml:19583` | `frontend/src/assets/labels.test.ts:63`, `frontend/src/assets/labels.ts:76` | ⚠️ **RALAT 28-09-2026: sebagian** — panelnya ada (`KlaimLife.tsx`), penyuntingan jumlah klaim tidak — **OQ-M3** |
 | `AkseptasiClaimLife` | FlowAction | `Activity/RejectOSClaimLife_Act.xml:2028`, `Activity/SaveAdjustment_Act.xml:2429` | `frontend/src/assets/labels.test.ts:48`, `frontend/src/assets/labels.ts:57` | ✅ **ada** |
 | `AttachDocumentLife` | FlowAction | `Section/DocumentLife.xml:1273` | `frontend/src/assets/labels.test.ts:65`, `frontend/src/assets/labels.ts:80` | ✅ **ada** |
 | `CloseClaim` | FlowAction | `Activity/ProtectCloseClaim_act.xml:6`, `Section/CloseClaim_Section.xml:6` | `frontend/src/assets/labels.test.ts:50`, `frontend/src/assets/labels.ts:61` | ✅ **ada** |
@@ -460,7 +469,7 @@ rute simpan Outstanding dan tidak ada rute yang menyunting jumlah klaim (`Tandai
 | `Generate_NoAccept_LifeRetro` | RDBList | `Activity/SaveAdjustment_Act.xml:940` | `internal/services/akseptasi.go:64`, `internal/services/akseptasi_test.go:21` | ✅ **ada** |
 | `GenerateImageID_SQL` | RDBList | `Activity/InsertGoogleStorage_Act.xml:2226` | `internal/models/imageid.go:11`, `internal/models/imageid_test.go:37` | ✅ **ada** |
 | `GetAcceptedNoCL` | RDBList | `Activity/SaveAdjustment_Act.xml:2244` | `internal/repository/nomorakseptasi.go:44`, `internal/services/akseptasi.go:190` | ✅ **ada** |
-| `GetAppName_SQL` | RDBList | `Activity/InsertGoogleStorage_Act.xml:1025` | — | ✅ **tidak dibangun — gerbang persetujuan manusia** (Google) — `SELECT APPNAME FROM T_FOLDER_IMAGE` b58. ⚠️ Aplikasi memakai konstanta `NamaAplikasiBerkas` (`services/unggahan.go:93`); saat disambung, dibaca dari tabel |
+| `GetAppName_SQL` | RDBList | `Activity/InsertGoogleStorage_Act.xml:1025` | — | ✅ **tidak perlu** — `SELECT APPNAME FROM T_FOLDER_IMAGE` b58 membaca nama aplikasi LAMA; aplikasi baru menulis namanya SENDIRI, `NamaAplikasiBerkas` (`services/unggahan.go:93`, `[data DBA]` `GCP_IMAGE.APPNAME`, "nilainya milik kita"). Tokennya bagian Google (gerbang persetujuan) |
 | `GetCurrencyID` | RDBList | `Activity/SetCurrencyID_Act.xml:419` | — | ✅ **ADA sejak 28-09-2026** — `repository.MataUang.Pengenal` — `SELECT ID FROM CURRENCY WHERE CURRENCY = :1`, berbatas satu baris (rule aslinya membaca `pxResults(1)`). Tabel warisan, **dibaca saja** |
 | `GetJsonProductLife` | RDBList | `Activity/SpreadingClaimLife_Act.xml:496` | `internal/services/spreading.go:73`, `internal/services/spreading_test.go:54` | ✅ **ada** |
 | `GetKodeProdLife_SQL` | RDBList | `Activity/SaveOutStandingLife_Act.xml:7710` | `internal/repository/penomor.go:206`, `internal/services/pendaftaran.go:270` | ✅ **ada** |
@@ -468,7 +477,7 @@ rute simpan Outstanding dan tidak ada rute yang menyunting jumlah klaim (`Tandai
 | `getMaxPagination_sql` | RDBList | `Activity/getMaxPagination_Act.xml:283` | — | ⛔ **MILIK MODUL PREMIUMLIST** — Dipanggil `getMaxPagination_Act` b283 saja |
 | `GetPesertaClaim_sql` | RDBList | `Activity/LoadDataPesertaSpesifik_Act.xml:545`, `Activity/LoadDataPeserta_Act.xml:892` | `frontend/src/services/api.ts:447`, `internal/repository/caripeserta_test.go:15` | ✅ **ada** |
 | `GetPesertaClaim_sql1` | RDBList | `Activity/LoadDataPesertaSpesifik_Act.xml:545` | `frontend/src/services/api.ts:447`, `internal/repository/caripeserta_test.go:15` | ✅ **ada** |
-| `GetProductLife` | RDBList | `Activity/SpreadingClaimLife_Act.xml:673` | — | ✅ **tidak perlu** (AC 38) — mengurai `M_PRODUCT_LIFE.JSONDATA` b84-86 dengan Java b1016 untuk `OUTWARDRATEID`; pengurai JSON produk dilarang (`repository/ambangproduk.go:21`) |
+| `GetProductLife` | RDBList | `Activity/SpreadingClaimLife_Act.xml:673` | — | ✅ **tidak ditiru sebagai rule** (AC 38) — mengurai `M_PRODUCT_LIFE.JSONDATA` b84-86 dengan Java b1016; pengurai JSON produk dilarang (`repository/ambangproduk.go:21`). ⚠️ NILAI yang dicarinya (`OUTWARDRATEID`, b1416-b1604) tetap dibutuhkan Spreading — sumber penggantinya **OQ-M7** |
 | `GetProductName` | RDBList | `Activity/ValidasiClaimReceived_Act.xml:306`, `Activity/ValidasiSTNC_Act.xml:333` | `internal/models/validasitanggal.go:29`, `internal/models/validasitanggal_test.go:9` | ✅ **ada** |
 | `GetRateRetro` | RDBList | `Activity/SpreadingClaimLife_Act.xml:1750` | `internal/services/spreading.go:107`, `internal/services/spreading_test.go:222` | ✅ **ada** |
 | `GetRetroLife_SQL` | RDBList | `Activity/SpreadingClaimLife_Act.xml:2778` | `internal/services/spreading.go:89` | ✅ **ada** |
@@ -483,7 +492,7 @@ rute simpan Outstanding dan tidak ada rute yang menyunting jumlah klaim (`Tandai
 | `UpdateDateClaimLife_SQL` | RDBList | `Activity/UpdateDateClaimLife_Act.xml:522` | — | ❓ **[pertanyaan terbuka] OQ-M2** — cermin warisan `OS_AKSEPTASI_KLAIM_LIFE` WHERE `CASEID` + `NAME_OF_INSURED` + `CERTIFICATE_NO` (b90): baris warisan kita membiarkan `NAME_OF_INSURED` NULL, jadi UPDATE itu mengenai NOL baris; dan `LAPSE_DATE` diisi DOL (b86) |
 | `UpdateOsAkseptasiClaimLife_sql` | RDBList | `Activity/RejectOSClaimLife_Act.xml:2028`, `Activity/SaveAdjustment_Act.xml:2429` | `internal/repository/migrasidokumen.go:81`, `internal/services/tolak.go:72` | ✅ **ada** |
 | `BrowseBusinessLife_RD` | ReportDefinition | `Section/InputAkseptasiClaimLife.xml:9901`, `Section/InputOSClaimLife.xml:10082` | — | ✅ **tidak perlu** (sel read-only) — `Class of Business` b9992, nilainya `PolicyDataLife.BusinessName` b10043, tampil di `PanelDataPolis` lewat `/api/polis-life/ringkas` |
-| `BrowseCedingCoLife_RD` | ReportDefinition | `Section/InputAkseptasiClaimLife.xml:8013`, `Section/InputOSClaimLife.xml:8197` | — | ✅ **tidak perlu** (sel read-only) — `Billing Name` b8109 = `PolicyDataLife.RetroName` b8159. ⚠️ `RetroName` belum ada di `PolicyDataLife` (`services/polis_ringkas.go`) — residu paritas av |
+| `BrowseCedingCoLife_RD` | ReportDefinition | `Section/InputAkseptasiClaimLife.xml:8013`, `Section/InputOSClaimLife.xml:8197` | — | ✅ **tidak perlu** (sel read-only, RD tidak dipakai) — `Billing Name` b8109 = `PolicyDataLife.RetroName` b8159. ⚠️ Medannya sendiri BELUM tampil — bukan urusan RD ini, melainkan temuan paritas **av-2** di bawah |
 | `BrowseDiseaseLife_RD` | ReportDefinition | `Section/Diagnose_Section.xml:1751`, `Harness/Diagnose_Harness.xml:2734` | `frontend/src/components/CariDiagnosa.tsx:12`, `internal/handlers/penyakit.go:7` | ✅ **ada** |
 | `BrowseFilterBusiness_RD` | ReportDefinition | `Activity/PreCaimLife_Act.xml:339` | — | ✅ **tidak perlu** — satu-satunya pemakainya `PreCaimLife_Act` b339, yang keluarannya tanpa pembaca |
 | `BrowseMarketingOfficer_RD` | ReportDefinition | `Section/InputAkseptasiClaimLife.xml:7545`, `Section/InputOSClaimLife.xml:7731` | — | ✅ **tidak perlu** (sel read-only) — b7641 `pyEditOptions Read-only`, nilainya `PolicyDataLife.MarketingName` b7692, di `PanelDataPolis` |

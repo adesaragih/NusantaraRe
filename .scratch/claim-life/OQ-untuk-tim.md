@@ -563,9 +563,9 @@ punya kolom `PCT_CLAIM` / `CLAIM_PAID`, dan tidak ada rute yang menyunting baris
 > Mohon keputusan migrasi dua kolom itu (tipe, presisi) dan rute sunting adjustment-nya.
 
 **OQ-M4** *(untuk work owner — desain)* — Upload CSV peserta di Register (`UploadCSVClaimLife_Act`
-+ `SetClaimXOL_Act`). ⛔ **Ralat OQ-F**: pemetaannya ADA — 26 kolom *(b453-b1065)*. Tetapi CSV itu
++ `SetClaimXOL_Act`). ⛔ **Ralat OQ-F**: pemetaannya ADA — 28 kolom berkas + `PL_NUMBER` dari polis *(b478-b1065)*. Tetapi CSV itu
 membawa uang *(`SUM_INSURED`, `CLAIM_AMOUNT`, share)*, **jendela valuasi**, dan `NAME_OF_INSURED`
-dari berkas klien, lalu bendera XOL *(b1169)* mencegah pembacaan dari polis menimpanya *(b327)*.
+dari berkas klien, lalu bendera XOL *(b1169)* mencegah pembacaan dari polis menimpanya *(`LoadDataPeserta_Act` b282/b327)*.
 Aplikasi ini sengaja membaca peserta ULANG dari sumbernya saat pendaftaran, dan `ValidasiDOL`
 memvalidasi terhadap jendela yang TERSIMPAN.
 > Apakah klaim XOL boleh membawa peserta di luar PremiumList dari berkas? Bila ya: kolom mana yang
@@ -574,7 +574,10 @@ memvalidasi terhadap jendela yang TERSIMPAN.
 **OQ-M5** *(untuk work owner)* — dialog Reject Outstanding (`RejectOSClaimLife_Sec`): Date b790, PIC
 b975, Remarks b1687, Submit b3117. `RejectOSClaimLife_Act` menambah baris `KomiteList`
 *(`IDKomite="Claim Admin"`, `KomiteAproval=2`, `KomiteComment` = Remarks — b2173-b2263)*. Aplikasi
-menolak baris tanpa dialog dan tanpa alasan; `T_CLAIMLF_JEJAK` tidak punya kolom komentar.
+menolak baris tanpa dialog dan tanpa alasan; `T_CLAIMLF_JEJAK` tidak punya kolom komentar, dan
+`T_KOMITE_KOMITELIST` terikat FK ke `T_GENERAL_KOMITE` (baris "Claim Admin" bukan tingkat komite).
+⚠️ Dialognya sendiri SENGAJA tidak dibangun lebih dulu: dialog yang menerima Remarks lalu
+membuangnya menipu pemakai — ia mengira alasannya tercatat.
 > Di mana alasan penolakan disimpan: kolom komentar di jejak, atau baris riwayat Komite?
 
 **OQ-M6** *(untuk work owner)* — `DeletePesertaClaimLife`. Activity-nya nol hapus *(b249, b337,
@@ -585,15 +588,23 @@ hapus = penanda.
 
 **OQ-M7** *(untuk work owner)* — `RetroDetailClaimLife`, panel rincian grid treaty-year
 (`AdjustmentDetail` b10388-b10389): Reinsurer, Currency, Percent Share, Claim Retro *(b1325-b2498)*.
-Grid induknya belum tampil dan `HitungSpreading` / `AmbilSpreading` nol pemanggil produksi;
-sumber `OUTWARDRATEID` tanpa JSON produk juga belum diputuskan (`GetProductLife`).
-> Menunggu keputusan penyambungan Spreading; panel ini mengikutinya.
+Grid induknya belum tampil, dan tabel yang akan ditampilkannya KOSONG untuk setiap klaim baru:
+`HitungSpreading` (`services/spreading.go`) nol pemanggil produksi karena masukan rate-nya tanpa
+pembaca. Di Pega rate dicari lewat `OUTWARDRATEID` produk — hasil mengurai
+`M_PRODUCT_LIFE.JSONDATA` (`GetProductLife` b84-86, Java b1016, b1416-b1604), yang AC 38 larang —
+atas `RATE_LIFE`, view master yang katalognya `[data DBA]` dan tidak ditiru skema uji.
+> Dari mana `OUTWARDRATEID` dibaca tanpa mengurai `JSONDATA`, dan bolehkah `RATE_LIFE` dibaca
+> (view master, seperti izin sempit butir bh)? Tanpa keduanya Spreading tidak dapat berjalan dan
+> panel ini tidak punya isi.
 
 **OQ-M8** *(untuk work owner — wewenang, temuan)* — rute DOL yang sudah ada
 (`PUT …/tanggal-kejadian`, tiket 06) **tidak** menegakkan gerbang b1000 yang sama: siapa pun yang
 beridentitas dapat mengubah DOL pada kasus terbuka di tahap apa pun. Rute tiga tanggal yang baru
 menegakkannya. Menambahkannya ke rute DOL adalah **perubahan authz** — menunggu persetujuan, tidak
-dilakukan sendiri.
+dilakukan sendiri. Bedanya dengan rute baru bukan standar ganda: rute baru LAHIR dengan gerbang
+yang XML-nya tuntut (posisi kasus → tahap; perutean penugasan ke Admin → peran pelaku, pola
+`TahapLayanan.Pindah`), sedangkan rute DOL sudah dipakai — mempersempitnya mengubah siapa yang
+hari ini boleh mengubah DOL.
 > Samakan gerbang DOL dengan tiga tanggal lainnya (Admin, tahap Outstanding)?
 
 **OQ-M9** *(untuk work owner)* — `ValidasiClaimReceived_Act` b1120, dipicu perubahan
