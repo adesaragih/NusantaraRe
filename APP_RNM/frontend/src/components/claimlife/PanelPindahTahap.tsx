@@ -23,7 +23,12 @@
 
 import { useState } from 'react'
 
-import { TOMBOL_AKSEPTASI, TOMBOL_MEDIS, TOMBOL_OS } from '../../assets/labels.claimlife'
+import {
+  KONFIRMASI_BALIK,
+  TOMBOL_AKSEPTASI,
+  TOMBOL_MEDIS,
+  TOMBOL_OS,
+} from '../../assets/labels.claimlife'
 import {
   pesanGalat,
   pindahTahap,
@@ -35,6 +40,11 @@ import {
 export interface TombolPindah {
   label: string
   tujuan: TahapJalur
+  /**
+   * Pertanyaan local action yang dibuka tombolnya, VERBATIM — atau tidak ada
+   * bila tombolnya memindahkan LANGSUNG. Lihat `KONFIRMASI_BALIK`.
+   */
+  konfirmasi?: string
 }
 
 /**
@@ -51,18 +61,34 @@ export function tombolPindahTahap(tahap: string): TombolPindah[] {
   switch (tahap) {
     case 'Outstanding Claim':
       return [
-        { label: TOMBOL_OS.kembaliKeRegister, tujuan: TAHAP_JALUR.inputRegister },
+        {
+          label: TOMBOL_OS.kembaliKeRegister,
+          tujuan: TAHAP_JALUR.inputRegister,
+          konfirmasi: KONFIRMASI_BALIK.keAdmin,
+        },
         { label: TOMBOL_OS.kirimKeMedis, tujuan: TAHAP_JALUR.medicalCheck },
       ]
     case 'Medical Check':
       return [
-        { label: TOMBOL_MEDIS.kembaliKeAdmin, tujuan: TAHAP_JALUR.outstanding },
+        {
+          label: TOMBOL_MEDIS.kembaliKeAdmin,
+          tujuan: TAHAP_JALUR.outstanding,
+          konfirmasi: KONFIRMASI_BALIK.keAdmin,
+        },
         { label: TOMBOL_MEDIS.kirimKeAnalis, tujuan: TAHAP_JALUR.claimAnalis },
       ]
     case 'Claim Analis':
       return [
-        { label: TOMBOL_AKSEPTASI.kembaliKeAdmin, tujuan: TAHAP_JALUR.outstanding },
-        { label: TOMBOL_AKSEPTASI.kembaliKeMedis, tujuan: TAHAP_JALUR.medicalCheck },
+        {
+          label: TOMBOL_AKSEPTASI.kembaliKeAdmin,
+          tujuan: TAHAP_JALUR.outstanding,
+          konfirmasi: KONFIRMASI_BALIK.keAdmin,
+        },
+        {
+          label: TOMBOL_AKSEPTASI.kembaliKeMedis,
+          tujuan: TAHAP_JALUR.medicalCheck,
+          konfirmasi: KONFIRMASI_BALIK.keMedis,
+        },
       ]
     default:
       return []
@@ -80,6 +106,8 @@ export function PanelPindahTahap({
 }) {
   const [sibuk, setSibuk] = useState<string | null>(null)
   const [galat, setGalat] = useState<string | null>(null)
+  // Tombol jalur balik yang sedang menunggu `Submit` di dialognya.
+  const [menunggu, setMenunggu] = useState<TombolPindah | null>(null)
 
   const tombol = tombolPindahTahap(tahap)
   if (tombol.length === 0) return null
@@ -88,6 +116,7 @@ export function PanelPindahTahap({
     if (sibuk !== null) return
     setSibuk(tujuan)
     setGalat(null)
+    setMenunggu(null)
     try {
       await pindahTahap(klaimID, tujuan)
       sesudahPindah?.()
@@ -107,12 +136,31 @@ export function PanelPindahTahap({
             key={t.tujuan}
             type="button"
             disabled={sibuk !== null}
-            onClick={() => void pindah(t.tujuan)}
+            onClick={() => {
+              // Local action: bertanya dulu. Activity langsung: pindah.
+              if (t.konfirmasi !== undefined) setMenunggu(t)
+              else void pindah(t.tujuan)
+            }}
           >
             {sibuk === t.tujuan ? 'Memindahkan…' : t.label}
           </button>
         ))}
       </p>
+      {menunggu?.konfirmasi !== undefined && (
+        <div role="alertdialog" aria-label={menunggu.konfirmasi}>
+          <p>{menunggu.konfirmasi}</p>
+          <button
+            type="button"
+            disabled={sibuk !== null}
+            onClick={() => void pindah(menunggu.tujuan)}
+          >
+            {KONFIRMASI_BALIK.kirim}
+          </button>{' '}
+          <button type="button" onClick={() => setMenunggu(null)}>
+            Batal
+          </button>
+        </div>
+      )}
       {galat !== null && <p role="alert">{galat}</p>}
     </section>
   )

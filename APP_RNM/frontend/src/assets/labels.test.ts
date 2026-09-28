@@ -19,6 +19,7 @@ import { describe, expect, it } from 'vitest'
 import {
   DETAIL,
   EDIT_DATE,
+  KONFIRMASI_BALIK,
   LAYAR,
   PERAN,
   REGISTER,
@@ -238,6 +239,34 @@ describe.skipIf(!adaKorpus)('label layar Detail berbukti barisnya', () => {
     [EDIT_DATE.konfirmasi, 1619, 'pyLabelPreview'],
     [EDIT_DATE.simpan, 1910, 'pyLabel'],
   ]
+
+  it('konfirmasi jalur balik VERBATIM dari kedua section-nya', () => {
+    expect(baris('Section/SendtoAdmin_Section.xml', 566)).toBe(
+      `<pyValue>${KONFIRMASI_BALIK.keAdmin}</pyValue>`,
+    )
+    expect(baris('Section/SendtoAdmin_Section.xml', 1229)).toBe(
+      `<pyLabel>${KONFIRMASI_BALIK.kirim}</pyLabel>`,
+    )
+    expect(baris('Section/SendtoMedical_Section.xml', 577)).toBe(
+      `<pyValue>${KONFIRMASI_BALIK.keMedis}</pyValue>`,
+    )
+    expect(baris('Section/SendtoMedical_Section.xml', 1267)).toBe(
+      `<pyLabel>${KONFIRMASI_BALIK.kirim}</pyLabel>`,
+    )
+  })
+
+  it('tombol jalur balik membuka local action, tombol maju tidak', () => {
+    // ⛔ Yang menentukan ada-tidaknya konfirmasi: `pyLocalAction` sesudah
+    // label tombolnya. Dibaca di tiga section, bukan ditebak dari namanya.
+    const la = (n: string) => `<pyLocalAction>${n}</pyLocalAction>`
+    expect(baris('Section/InputOSClaimLife.xml', 21433)).toBe(la('SendtoAdmin'))
+    expect(baris('Section/MedicalCheckClaimLife.xml', 20285)).toBe(la('SendtoAdmin'))
+    expect(baris('Section/InputAkseptasiClaimLife.xml', 20250)).toBe(la('SendtoAdmin'))
+    expect(baris('Section/InputAkseptasiClaimLife.xml', 20496)).toBe(la('SendtoMedical'))
+    const act = '<pyActivity>SendtoAdmin_Act1</pyActivity>'
+    expect(baris('Section/InputOSClaimLife.xml', 21863)).toBe(act)
+    expect(baris('Section/MedicalCheckClaimLife.xml', 21174)).toBe(act)
+  })
 
   it.each(medanEditDate)('%s ada di EditDateClaimLife_Section baris %i sebagai <%s>',
     (label, nomor, tag) => {

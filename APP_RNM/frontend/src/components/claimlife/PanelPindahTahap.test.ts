@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { TOMBOL_AKSEPTASI, TOMBOL_MEDIS, TOMBOL_OS } from '../../assets/labels.claimlife'
+import {
+  KONFIRMASI_BALIK,
+  TOMBOL_AKSEPTASI,
+  TOMBOL_MEDIS,
+  TOMBOL_OS,
+} from '../../assets/labels.claimlife'
 import { TAHAP_JALUR } from '../../services/api'
 import { tombolPindahTahap } from './PanelPindahTahap'
 
@@ -15,7 +20,11 @@ describe('tombolPindahTahap', () => {
   it('Outstanding menawarkan Register dan Medical Check', () => {
     // `InputOSClaimLife.xml` b21404, b21839.
     expect(tombolPindahTahap('Outstanding Claim')).toEqual([
-      { label: TOMBOL_OS.kembaliKeRegister, tujuan: TAHAP_JALUR.inputRegister },
+      {
+        label: TOMBOL_OS.kembaliKeRegister,
+        tujuan: TAHAP_JALUR.inputRegister,
+        konfirmasi: KONFIRMASI_BALIK.keAdmin,
+      },
       { label: TOMBOL_OS.kirimKeMedis, tujuan: TAHAP_JALUR.medicalCheck },
     ])
   })
@@ -23,7 +32,11 @@ describe('tombolPindahTahap', () => {
   it('Medical Check menawarkan Admin dan Claim Analyst', () => {
     // `MedicalCheckClaimLife.xml` b20256, b21151.
     expect(tombolPindahTahap('Medical Check')).toEqual([
-      { label: TOMBOL_MEDIS.kembaliKeAdmin, tujuan: TAHAP_JALUR.outstanding },
+      {
+        label: TOMBOL_MEDIS.kembaliKeAdmin,
+        tujuan: TAHAP_JALUR.outstanding,
+        konfirmasi: KONFIRMASI_BALIK.keAdmin,
+      },
       { label: TOMBOL_MEDIS.kirimKeAnalis, tujuan: TAHAP_JALUR.claimAnalis },
     ])
   })
@@ -31,8 +44,16 @@ describe('tombolPindahTahap', () => {
   it('Claim Analis menawarkan Admin dan Medical', () => {
     // `InputAkseptasiClaimLife.xml` b20221, b20467.
     expect(tombolPindahTahap('Claim Analis')).toEqual([
-      { label: TOMBOL_AKSEPTASI.kembaliKeAdmin, tujuan: TAHAP_JALUR.outstanding },
-      { label: TOMBOL_AKSEPTASI.kembaliKeMedis, tujuan: TAHAP_JALUR.medicalCheck },
+      {
+        label: TOMBOL_AKSEPTASI.kembaliKeAdmin,
+        tujuan: TAHAP_JALUR.outstanding,
+        konfirmasi: KONFIRMASI_BALIK.keAdmin,
+      },
+      {
+        label: TOMBOL_AKSEPTASI.kembaliKeMedis,
+        tujuan: TAHAP_JALUR.medicalCheck,
+        konfirmasi: KONFIRMASI_BALIK.keMedis,
+      },
     ])
   })
 
@@ -74,5 +95,25 @@ describe('tombolPindahTahap', () => {
     expect(TOMBOL_MEDIS.kirimKeAnalis).toBe('Send to Claim Analyst')
     expect(TOMBOL_MEDIS.kembaliKeAdmin).toBe('Send Back to Admin')
     expect(TOMBOL_AKSEPTASI.kembaliKeAdmin).toBe('Send Back to Admin')
+  })
+})
+
+describe('konfirmasi jalur balik', () => {
+  it('tombol maju TIDAK bertanya — activity langsung + finishAssignment', () => {
+    // `Send to Medical Check` b21863/b21891, `Send to Claim Analyst` b21174/b21202.
+    const maju = [
+      ...tombolPindahTahap('Outstanding Claim'),
+      ...tombolPindahTahap('Medical Check'),
+    ].filter((t) => !t.label.startsWith('Send Back'))
+    expect(maju).toHaveLength(2)
+    for (const t of maju) expect(t.konfirmasi).toBeUndefined()
+  })
+
+  it('setiap tombol jalur balik bertanya', () => {
+    const balik = ['Outstanding Claim', 'Medical Check', 'Claim Analis']
+      .flatMap((tahap) => tombolPindahTahap(tahap))
+      .filter((t) => t.label.startsWith('Send Back'))
+    expect(balik).toHaveLength(4)
+    for (const t of balik) expect(t.konfirmasi).toBeDefined()
   })
 })

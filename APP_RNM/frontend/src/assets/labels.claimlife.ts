@@ -382,6 +382,30 @@ export const TOMBOL_AKSEPTASI = {
 } as const
 
 /**
+ * Konfirmasi jalur balik — DUA local action, bukan per tombol.
+ *
+ * `[terverifikasi]` tombol yang membuka local action (bukan activity langsung):
+ *
+ *   `SendtoAdmin`   InputOSClaimLife b21433 · MedicalCheckClaimLife b20285 ·
+ *                   InputAkseptasiClaimLife b20250 → `SendtoAdmin_Section`
+ *   `SendtoMedical` InputAkseptasiClaimLife b20496 → `SendtoMedical_Section`
+ *
+ * ⚠️ `Send Back to Register` (Outstanding) pun bertanya "Send Back to Admin?" —
+ * ia membuka local action yang SAMA. Ditiru apa adanya.
+ *
+ * `Send to Medical Check` dan `Send to Claim Analyst` TIDAK bertanya: keduanya
+ * `SendtoAdmin_Act1` + `finishAssignment` langsung (b21863/b21891, b21174/b21202).
+ */
+export const KONFIRMASI_BALIK = {
+  /** `SendtoAdmin_Section.xml` b566 `pyValue`. */
+  keAdmin: 'Send Back to Admin?',
+  /** `SendtoMedical_Section.xml` b577 `pyValue`. */
+  keMedis: 'Send Back to Medical?',
+  /** b1229 (Admin) / b1267 (Medical) `pyLabel` → activity lalu `finishAssignment`. */
+  kirim: 'Submit',
+} as const
+
+/**
  * Tombol penyerahan ke Komite — `Section/ClaimComite.xml`.
  *
  * ⛔ RALAT 27-09-2026. Layar Detail sebelumnya memakai teks karangan
