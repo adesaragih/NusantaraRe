@@ -65,6 +65,29 @@ di `Claim Life` maupun `Komite Claim Life`. Ia hanya **dibaca** di dua tempat �
 `[keputusan work owner]` **Dibuang**, beserta bagian UI `ShowTransfer` yang bergantung padanya.
 Routing tingkat digerakkan **hanya** oleh `.KomiteAproval == 0`. (**OQ-033** tertutup.)
 
+### ✅ Catatan ini DIVERIFIKASI ULANG dan TETAP BENAR — 28 September 2026
+
+Brief giliran 3 §1 menyuruh meralat tiket 02 *"bila mengulanginya"*. Ia **tidak**
+mengulanginya: kalimat di atas berbunyi *"beserta **bagian UI** `ShowTransfer` yang
+bergantung padanya"* — **bagian**, bukan seluruh section — dan ia menyebut **kedua**
+pembacanya dengan benar.
+
+Yang keliru ada di `spec.md` butir 34, yang berbunyi *"layar `ShowTransfer` ... ikut
+dibuang"*. Butir itu **ditarik** 28-09-2026 dengan rantai keterjangkauannya:
+
+```
+Flow/KomiteLife_Flow.xml       b763  pyMOName ViewTransferDtl
+  -> FlowAction/ViewTransferDtl.xml  b91   pySectionReference ShowTransfer
+       -> Section/ShowTransfer.xml         LAYAR KEPUTUSAN KOMITE
+```
+
+`TransferType` muncul di section 1.125.234-byte itu **tepat sekali** (b29177).
+
+⚠️ Dan satu penajaman untuk tiket ini sendiri: pembaca **pertama** —
+`KomiteRouter` b442 — menggerbangi **PEROUTEAN**, yaitu siapa yang menerima
+pekerjaan. Itu lebih berakibat daripada wadah tersembunyi, dan `[terbuka — pemilik
+ekspor]` apakah produksi mengisi `TransferType` dari tempat yang tidak diekspor.
+
 ## Perintah verifikasi
 
 ```

@@ -209,9 +209,32 @@ Ia punya class kerja sendiri, model data sendiri (`KomiteList`), dan roster send
 33. Sebagai **tim migrasi**, saya ingin cabang routing `TransferType` **tidak** ikut pindah, supaya
     kode mati tidak menular. `[terverifikasi]` `TransferType` **tidak pernah diisi** — nol
     `Property-Set` di Claim Life maupun Komite Claim Life; `TransferType == '2'` selalu FALSE.
-34. Sebagai **tim migrasi**, saya ingin layar `ShowTransfer` yang bergantung `TransferType` ikut
-    dibuang. `[keputusan work owner]`; `[terverifikasi]` visible-when `.TransferType==2`
-    (baris ~29177).
+
+    ⚠️ **DIPERTAJAM 28-09-2026.** Ia dibaca di **DUA** tempat, bukan satu:
+    `Activity/KomiteRouter.xml` **b442** `pyStepsPreCondParamsWhen`
+    `Primary.TransferType=='2'`, dan `Section/ShowTransfer.xml` b29177. Yang
+    pertama menggerbangi **PEROUTEAN** — siapa yang menerima pekerjaan — dan itu
+    lebih berakibat daripada sebuah wadah tersembunyi. Nol penulis di kedua korpus;
+    apakah produksi mengisinya dari tempat lain **tidak dapat dijawab ekspor ini**.
+    `[terbuka — pemilik ekspor]`
+34. ~~Sebagai **tim migrasi**, saya ingin layar `ShowTransfer` yang bergantung
+    `TransferType` ikut dibuang.~~ ⛔ **DITARIK 28 September 2026 — butir ini KELIRU.**
+
+    `ShowTransfer` adalah **LAYAR KEPUTUSAN KOMITE**, dan ia terjangkau:
+
+    ```
+    Flow/KomiteLife_Flow.xml       b763  pyMOName ViewTransferDtl
+      -> FlowAction/ViewTransferDtl.xml  b91   pySectionReference ShowTransfer
+           -> Section/ShowTransfer.xml         (layar keputusan)
+    ```
+
+    Yang **mati** hanyalah satu WADAH di dalamnya: `pyContainerVisibleWhen`
+    `.TransferType==2` b29177 — **satu** kemunculan, bukan seluruh sectionnya.
+
+    ⚠️ Bentuk kekeliruannya: *berhenti pada wadah lalu menyimpulkan tentang layarnya.*
+    Section `ShowTransfer.xml` berukuran 1.125.234 byte dan `TransferType` muncul
+    di dalamnya **tepat sekali**; membuang seluruh layar karena satu wadah bergerbang
+    berarti membuang layar tempat komite mengambil keputusannya.
 35. Sebagai **tim migrasi**, saya ingin gerbang EXIT retro **tidak** direplikasi, supaya tidak ada
     klaim yang diam-diam melewati efek keluar. `[keputusan work owner]` (**OQ-064**).
 36. Sebagai **tim migrasi**, saya ingin lima langkah ter-remark **tidak** ikut pindah.
@@ -332,7 +355,7 @@ untuk Email dan Kasir · status **"perlu intervensi"** di UI Komite + laporan ha
 
 | Yang dibuang | Bukti |
 | --- | --- |
-| `TransferType` + cabang routingnya + layar `ShowTransfer` | `[terverifikasi]` nol `Property-Set`; selalu FALSE |
+| ~~`TransferType` + cabang routingnya + layar `ShowTransfer`~~ → **hanya wadah b29177 dan prasyarat `KomiteRouter` b442** | ⛔ **diralat 28-09-2026**: `ShowTransfer` TERJANGKAU lewat `KomiteLife_Flow` b763 → `ViewTransferDtl` b91; ia LAYAR KEPUTUSAN. Nol `Property-Set` tetap benar |
 | Gerbang EXIT step 9 + `1000013` / `L0000141` / `L0000134` | `[keputusan work owner]` (**OQ-064**) |
 | Step 4.4, 4.5 `Generate No Akseptasi` | `[terverifikasi]` `blockname //` + tidak terindeks |
 | Step 4.6 `Set Nilai Akseptasi` | `[terverifikasi]` `blockname //` |
