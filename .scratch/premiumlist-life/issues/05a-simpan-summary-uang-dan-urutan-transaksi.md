@@ -158,3 +158,56 @@ tiket **09**, bukan tiket ini; kolomnya sudah terbaca dari body procedure).
 go test ./internal/...
 cd frontend && npm test
 ```
+
+## Pembacaan XML 28-09-2026 — peta 33 parameter, dan TIGA yang belum tertentukan
+
+`[terverifikasi]` Sumber tiap parameter `PEGA_M_LIFE_PREMIUM_SUMMARY` ditemukan di
+**`Activity/InsertJsonPolisLife_Act.xml`** — bukan di `SubmitPremiumList_Act` maupun
+`SavePremiumList_Act`, yang keduanya hanya mengisi sebagian. Perintah audit:
+
+```
+grep -o "<PropertiesName>TempInputData\.CARI[0-9]*</PropertiesName>\s*<PropertiesValue>[^<]*" \
+  Activity/InsertJsonPolisLife_Act.xml
+```
+
+| Param | Sumber | | Param | Sumber |
+| --- | --- | --- | --- | --- |
+| `CARI2` | `.CURRENCY` | | `CARI19` | `.BROKERAGE_FEE_RETRO` |
+| `CARI3` | `.PREMIUM` ⚠️ | | `CARI20` | `.NET_PREMIUM_RETRO` |
+| `CARI4` | `.COMMISSION` ⚠️ | | `CARI21` | `.GROSS_PREMIUM_REFUND_RETRO` |
+| `CARI5` | `.NET_PREMIUM_REFUND` | | `CARI22` | `.DISCOUNT_PREMIUM_REFUND_RETRO` |
+| `CARI6` | `.GROSS_PREMIUM_REFUND` | | `CARI23` | `.OVR_COMM_REFUND_RETRO` |
+| `CARI7` | `.COMM_REFUND` | | `CARI24` | `.BROKERAGE_FEE_REFUND_RETRO` |
+| `CARI8` | `.BROKERAGE_FEE_REFUND` | | `CARI25` | `.NET_PREMIUM_REFUND_RETRO` |
+| `CARI9` | `.OVR_COMM_REFUND` | | `CARI26` | `.CLAIM` |
+| `CARI10` | `.TAX_REFUND` | | `CARI27` | `.BALANCE` ⚠️ |
+| `CARI11` | `.BROKERAGE_FEE` | | `CARI28` | `.CLAIM_AMOUNT` |
+| `CARI12` | `.OVR_COMM` | | `CARI29` | `.RI_ADMIN_FEE_RETRO` |
+| `CARI13` | `.TAX` | | `CARI30` | `.RI_ADMIN_FEE_REFUND_RETRO` |
+| `CARI14` | `.PROF_COMM` | | `CARI31` | `.RI_ADMIN_FEE_REFUND` |
+| `CARI15` | `.SHARE_RETRO` | | `CARI32` | `.DEDUCTION_REFUND` |
+| `CARI16` | `.GROSS_PREMIUM_RETRO` | | `CARI33` | `.RI_ADMIN_FEE` |
+| `CARI17` | `.DISCOUNT_PREMIUM_RETRO` | | `CARI34` | `.DEDUCTION` |
+| `CARI18` | `.OVR_COMM_RETRO` | | | |
+
+Tiga puluh dua kolom uang plus `CURRENCY` — **33**, sesuai tiket. Dua puluh sembilan di antaranya
+punya kolom bernama **sama** di `T_PREMIUM_LIST_DETAIL` (052), jadi rekapnya `SUM(...) GROUP BY
+CURRENCY` langsung.
+
+### ⛔ OQ-PL-08 — TIGA parameter belum tertentukan sumbernya
+
+| Param | Medan summary | Kenapa belum tertentukan |
+| --- | --- | --- |
+| `CARI3` | `.PREMIUM` | detail punya **`GROSS_PREMIUM`** *dan* **`NET_PREMIUM`**; korpus tidak menyatakan yang mana — dan keduanya angka yang sah, sehingga salah pilih tidak akan pernah berbunyi |
+| `CARI4` | `.COMMISSION` | detail bernama **`COMM`**; kemiripan nama BUKAN bukti pemetaan, dan `COMM` berdampingan dengan `PROF_COMM`/`OVR_COMM` yang juga komisi |
+| `CARI27` | `.BALANCE` | **nol** kolom detail bernama itu. Ia tampaknya angka turunan *(posisi bersih)*, tetapi rumusnya tidak ada di korpus PremiumList Life |
+
+`[terbuka — pemilik kerja]` Ketiganya **kolom uang**, dan uang yang dipetakan dengan tebakan akan
+tersimpan, terbaca, dan terlaporkan sebagai angka yang sah. **Executor tidak menebaknya.** Tiket 05a
+menunggu ketiga pemetaan ini diputuskan; dua puluh sembilan sisanya sudah siap dibangun.
+
+⚠️ Dicari di: `SubmitPremiumList_Act`, `SavePremiumList_Act`, `InsertJsonPolisLife_Act`,
+`ShowLifePremiumSummary.xml`, dan seluruh `Activity/*.xml` lewat pencarian penetapan
+`PropertiesName` yang memuat `.PREMIUM`/`.BALANCE`/`.COMMISSION`. Yang ditemukan hanya penetapan
+`.CLAIM` pada baris DETAIL, bukan pada summary. Rumusnya kemungkinan di Declare Expression atau
+Data Transform yang **tidak ikut** terekspor ke korpus ini.
