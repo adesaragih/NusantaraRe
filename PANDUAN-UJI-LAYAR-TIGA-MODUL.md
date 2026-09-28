@@ -2,7 +2,9 @@
 
 > **Untuk:** work owner yang akan mengeklik aplikasi. **Disusun:** 28 September 2026, GILIRAN-11
 > paket 5, dari kode `main` sesudah commit `fbf1c9b` — **bukan** dari dokumen desain, dan **tanpa**
-> menjalankan aplikasi atau menulis apa pun ke DEV.
+> menjalankan aplikasi atau menulis apa pun ke DEV. **Diperbarui GILIRAN-12** (28-09-2026): unduh
+> dokumen, gerbang yang ter-remark di XML dibuang, dan **§5 uji asap baca-saja** — aplikasi
+> dijalankan terhadap DEV dengan `GET` saja, nol tulisan.
 >
 > - Setiap teks di dalam `kode` atau tanda kutip disalin **apa adanya** dari kode (label, tombol,
 >   pesan) — termasuk salah ejanya (`cannnot`). Bila layar berbeda dari yang tertulis di sini, itu
@@ -1107,3 +1109,61 @@ format `YYYY-MM-DD HH:MM:SS` (`services/komite_inbox.go:91-96`).
 *Disusun dari tiga draf bagian per modul yang dibaca dari kode (read-only), lalu diperiksa dan diralat
 terhadap commit `e3619d4` dan `fbf1c9b` yang lahir dari temuannya: kasus tertutup kini 409 di enam rute
 pengubah Claim Life, pesan hapus 405 memakai kalimat server, layar Outstanding sadar tahap.*
+
+---
+
+## 5. Uji asap baca-saja ke DEV — 28 September 2026 (GILIRAN-12 paket 3)
+
+> **Apa yang dijalankan:** backend `main` (sesudah perbaikan di bawah) dengan `.env` work owner —
+> `IS_PEGA_PROD=false`, `AUTH_STUB=true`, skema `POOLDATA` — **hanya `GET`**, ke setiap rute baca
+> di `BE/handlers/handlers.go` (18 rute). Header stub: `X-Pelaku: UJI-ASAP`, `X-Peran` ketiga peran
+> Claim Life. Yang dicatat hanya **kode jawaban dan cacah**; nol isi baris disalin. `POST`/`PUT`/
+> `DELETE` **tidak** dijalankan (menulis ke DEV menunggu persetujuan work owner). Nol `-migrate`.
+>
+> Sebelum dijalankan, pohon panggilan setiap handler `GET` ditelusuri statis sampai `ExecContext` /
+> `DalamTransaksi` / pengirim efek: nol penulis. (`boleh-tutup` tertandai karena nama `Tutup`
+> kembar — ia memanggil `Periksa`, baca saja; `summary` membuka transaksi untuk bacaan yang
+> konsisten, dua `SELECT` tanpa `FOR UPDATE`.)
+
+| Rute | Kode | Cacah / keterangan |
+|---|---|---|
+| `GET /healthz` | 200 | 1 objek |
+| `GET /api/klaim-life?tahap=1` | 200 | total 0 *(satu dari empat putaran menjawab 500 — lihat di bawah)* |
+| `GET /api/klaim-life?tahap=2` | 200 | total 0 |
+| `GET /api/klaim-life?tahap=3` | 200 | total 0 |
+| `GET /api/klaim-life?tahap=4` | 200 | total 0 |
+| `GET /api/klaim-life/{id}`, `…/dampak-hapus`, `…/boleh-tutup` | — | tidak diuji: nol kasus di keempat tab untuk pelaku stub (tab Admin menyaring `CREATE_OP = X-Pelaku`) |
+| `GET /api/peserta-life?pl=…` | — | tidak diuji: nomor PL tidak terbaca (nol klaim contoh) |
+| `GET /api/peserta-life` (tanpa `pl`) | 400 | `parameter pl (nomor premium list) wajib diisi` — sesuai rancangan |
+| `GET /api/penyakit-life?nama=A&batas=5` | 200 | 5 baris |
+| `GET /api/dokumen/{dokId}/isi` | — | tidak diuji: nol dokumen terunggah |
+| `GET /api/polis-life?posisi=Offer` | 200 | total 0 *(sebelum perbaikan: **500**)* |
+| `GET /api/polis-life?posisi=Premium` | 200 | total 0 *(sebelum perbaikan: **500**)* |
+| `GET /api/polis-life/periode` | 200 | 1 objek |
+| `GET /api/polis-life/ringkas?nomorPolis=…` | — | tidak diuji: nomor polis tidak terbaca |
+| `GET /api/polis-life/{id}`, `…/peserta`, `…/summary` | — | tidak diuji: kotak masuk polis kosong |
+| `GET /api/komite` | 200 | total 0 |
+| `GET /api/komite/laporan-harian` | 200 | 0 baris |
+| `GET /api/komite/{id}`, `…/riwayat` | — | tidak diuji: nol kasus Komite untuk pelaku stub |
+
+**Diperbaiki di giliran ini — kotak masuk polis 500.** Sebabnya `ORA-01008: not all variables
+bound`: kueri halaman memakai `:1` dua kali (`:1 IS NULL OR w.POSITION = :1`) bersama `OFFSET …
+FETCH`. Diuji langsung ke DEV dengan `SELECT` saja: penampung berulang **tanpa** klausa pembatas baris
+terikat benar; **dengan** klausa itu, patah. Perbaikan: penampung unik, nilai posisi dikirim dua kali
+(`BE/repository/polis_inbox.go`), dan penjaga `TestNolPenampungBerulangDiSQLBerpembatasBaris`
+memeriksa setiap SQL berpembatas baris di repository. Nol uji lain yang menangkapnya — semua uji
+repository berjalan tanpa Oracle.
+
+**Tidak dapat direproduksi — `GET /api/klaim-life?tahap=1` 500 sekali.** Muncul satu kali dari empat
+putaran, pada permintaan data pertama sesudah server menyala. Delapan proses baru × tiga panggilan
+langsung ke layanan yang sama: bersih. Dugaan: gangguan sesaat pada koneksi pertama. ⚠️ Handler
+menjawab 500 **tanpa mencatat sebabnya** di log server, jadi kejadiannya tidak dapat ditelusuri —
+celah pengamatan yang dilaporkan ke work owner, belum diubah.
+
+**Yang belum teruji dan sebabnya:** seluruh rute detail — DEV tidak punya kasus yang terlihat oleh
+pelaku stub. Untuk menguji rute detail, jalankan dengan `X-Pelaku` akun yang membuat kasus di DEV,
+atau berikan pengenal kasus contoh; keduanya keputusan work owner.
+
+**Cara mengulang (PowerShell, dari `APP_RNM`):** `. .\muat-env.ps1`, lalu `go run ./cmd/api`, lalu
+`GET` ke rute di atas dengan header `X-Pelaku` dan `X-Peran`. Jangan menyalin isi jawaban ke dokumen.
+

@@ -32,7 +32,7 @@ func TestInboxPolisMemakaiLeftJoinKeDetail(t *testing.T) {
 	if !strings.Contains(q, "ORDER BY p.TGL_INPUT DESC, w.ID") {
 		t.Errorf("urutan tidak stabil:\n%s", q)
 	}
-	if !strings.Contains(q, "OFFSET :2 ROWS FETCH NEXT :3 ROWS ONLY") {
+	if !strings.Contains(q, "OFFSET :3 ROWS FETCH NEXT :4 ROWS ONLY") {
 		t.Errorf("halaman tidak dijepit:\n%s", q)
 	}
 }
@@ -58,12 +58,15 @@ func TestCacahInboxPolisQueryTersendiri(t *testing.T) {
 func TestSaringanPosisiOpsional(t *testing.T) {
 	// ⚠️ Posisi KOSONG berarti seluruh posisi, bukan "tidak ada". Tab
 	// "semua" memakainya, dan `POSITION = ''` akan mengembalikan nol baris.
-	for _, q := range []string{
-		sqlInboxPolis(tabelUjiWorkPolisInbox, tabelUjiPolis, tabelUjiPolisDetail),
-		sqlCacahInboxPolis(tabelUjiWorkPolisInbox),
+	// ⛔ Kueri HALAMAN memakai penampung unik (`:1`, `:2`) - penampung
+	// berulang bersama `OFFSET … FETCH` dijawab ORA-01008 (uji asap DEV,
+	// GILIRAN-12). Kueri cacah tanpa pembatas baris terbukti aman berulang.
+	for q, mau := range map[string]string{
+		sqlInboxPolis(tabelUjiWorkPolisInbox, tabelUjiPolis, tabelUjiPolisDetail): ":1 IS NULL OR w.POSITION = :2",
+		sqlCacahInboxPolis(tabelUjiWorkPolisInbox):                                ":1 IS NULL OR w.POSITION = :1",
 	} {
-		if !strings.Contains(q, ":1 IS NULL OR w.POSITION = :1") {
-			t.Errorf("saringan posisi tidak opsional:\n%s", q)
+		if !strings.Contains(q, mau) {
+			t.Errorf("saringan posisi tidak opsional (mau %q):\n%s", mau, q)
 		}
 	}
 }

@@ -88,6 +88,12 @@ func NewInboxPolis(db *DB) *InboxPolis { return &InboxPolis{db: db} }
 // ⚠️ Urutannya `TGL_INPUT DESC` lalu `ID` - terbaru dahulu, dengan pemutus
 // seri. Daftar tanpa pemutus seri menampilkan baris yang berpindah sendiri
 // di antara dua halaman, dan baris yang berpindah dapat terlewat.
+//
+// ⛔ PENAMPUNG UNIK, nilai posisi dikirim DUA KALI (`:1`, `:2`). Ronde
+// pertama memakai `:1` dua kali; bersama `OFFSET … FETCH` itu dijawab Oracle
+// `ORA-01008: not all variables bound` - setiap pembukaan kotak masuk polis
+// menjadi 500 (uji asap baca-saja DEV, GILIRAN-12 paket 3). Penjaganya
+// `TestNolPenampungBerulangDiSQLBerpembatasBaris`.
 func sqlInboxPolis(work, polis, detail string) string {
 	return fmt.Sprintf(`SELECT w.ID, w.STATUS, w.POSITION,
 	        p.CREATE_OP_NAME, p.CEDING_CO_NAME, p.POLICY_HOLDER_NAME,
@@ -96,9 +102,9 @@ func sqlInboxPolis(work, polis, detail string) string {
 	        (SELECT MAX(d.PL_NUMBER) FROM %s d
 	          WHERE d.PREMIUM_LIST_ID = p.ID) AS PL_NUMBER
 	   FROM %s w LEFT JOIN %s p ON p.ID_PEGA = w.ID
-	  WHERE (:1 IS NULL OR w.POSITION = :1)
+	  WHERE (:1 IS NULL OR w.POSITION = :2)
 	  ORDER BY p.TGL_INPUT DESC, w.ID
-	  OFFSET :2 ROWS FETCH NEXT :3 ROWS ONLY`, detail, work, polis)
+	  OFFSET :3 ROWS FETCH NEXT :4 ROWS ONLY`, detail, work, polis)
 }
 
 // sqlCacahInboxPolis merakit pencacahnya.
@@ -152,7 +158,7 @@ func (r *InboxPolis) Ambil(ctx context.Context, posisi string, halaman, ukuran i
 	if err := PeriksaSQL(q); err != nil {
 		return HalamanInboxPolis{}, err
 	}
-	baris, err := r.db.sql.QueryContext(ctx, q, kosongJadiNil(posisi),
+	baris, err := r.db.sql.QueryContext(ctx, q, kosongJadiNil(posisi), kosongJadiNil(posisi),
 		(halaman-1)*ukuran, ukuran)
 	if err != nil {
 		return HalamanInboxPolis{}, fmt.Errorf("repository: membaca kotak masuk polis: %w", err)
