@@ -50,6 +50,25 @@ Tabel **satu baris per rule** untuk **seluruh** isi korpus `D:\XML\RNM_BRD\Claim
 Setiap **celah** yang punya pemanggil di XML **dibangun di giliran ini** *(satu commit per kelompok celah)*; yang tidak
 punya pemanggil dicatat sebagai residu dengan bukti *(seperti `setDetailClaim_act`)*. Tidak ada baris "nanti".
 
+### 3.1 Sensus `eb9bcef` diverifikasi: 135 baris benar dicacah, tetapi 41 baris **belum diputuskan**
+
+Cacah cocok *(Activity 51, FlowAction 16, Section 20, Harness 3, RDBList 29, ReportDefinition 8, DataTransform 1, DecisionTable 1,
+When 3, ConnectREST 2, SystemSettings 1 = 135)*; 85 **ada**; dua celah dibangun *(`SetCurrencyID_Act`, `GetCurrencyID`)*.
+⛔ Tetapi **41 baris** berkeadaan *"tercatat, belum berkode — dijelaskan di …"* — itu **penunjuk ke dokumen**, bukan keputusan,
+dan §3 melarang baris "nanti". Giliran ini menuntaskan triase: tiap baris menjadi **tidak perlu** *(+ sebab dari XML: tanpa
+pemanggil, residu, milik modul lain, invarian sudah ditiru lewat rule lain — sebut rule dan barisnya)* atau **celah → dibangun
+di giliran ini**. Yang wajib dibaca ulang sebagai pohon sebelum diputuskan, karena punya pemanggil di section yang sudah tampil:
+`SendtoMedical_Act` + `SendtoMedical_Section`, `SendtoAdmin_Section`, `UploadCSVClaimLife_Act` *(flow action 12)*,
+`UpdateDateClaimLife_Act` + `UpdateDateClaimLife_SQL`, `SetMOClaim_Act`, `SetClaimXOL_Act`, `CountClaimAmountLife_Act`,
+`InsertJsonClaimLife_Act` + `InsertJsonClaimLifeGCNM` + `InsertJsonKlaimLife_sql` *(rekam akseptasi warisan — tiket 04)*,
+`GetSequenceNumber_SQL`, `GETTanggalClosing_SQL`, `NewAttachLife`, `SendEmailWithAttachments`, `ServiceGoogle`,
+`RejectOSClaimLife_Sec`, `RetroDetailClaimLife`, `AttachDocScreenLife`, `PreCaimLife_Act`, `setVisibility_Act`, `NextPrev`,
+`ObjSave_Act`, `SearchPolicyHolder_act`, `DeleteStorage_SQL`, `GetAppName_SQL`, `GetProductLife`,
+`convertJsonNusareToProductionClaimLife`. Yang boleh "tidak perlu" dengan bukti yang sudah ada: `setDetailClaim_act` *(residu)*,
+`DeletePesertaClaimLife` *(nol penghapusan)*, `InsertLogServiceClaim` *(keputusan ax)*, `Browse*_RD` + `PL_DetailViewPolis_Sec`
++ `SearchPolicy_*` *(av — menunggu PremiumList)*, `Committe_Life` *(A2 ada)*. Hasilnya menggantikan kolom keadaan di bab
+"Sensus akhir"; nol baris tanpa keputusan. Commit `claim-life: sensus — 41 baris diputuskan; celah dibangun`.
+
 ## 4. av — SESUDAH PREMIUMLIST TIKET 04 MENYATU KE `main`
 
 Asisten menyatukan cabang PremiumList ke `main` sesudah memverifikasi lognya; saat `repository.PolisRingkas` *(pl4)* ada di

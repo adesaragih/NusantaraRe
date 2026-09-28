@@ -19,6 +19,25 @@
 | Migrasi | `057`+ hanya dari keputusan tercatat; `-migrate` **tidak** dijalankan executor |
 | Menu `[dari bukti]` | kelompok **PremiumList Life** → satu butir **`PremiumList`** *(harness portal `PremiumLife_harness` → section `PremiumList`)*; tombol `Input Premium` b16472 dan `Input Offer` b16964 → `runActivity` `CreateInputLife` b3291/b3578/b3939/b4214. Tidak ada butir lain |
 
+## 0.1 PAKET 0 — MIGRASI `056` GAGAL DI DEV: `INITIAL` KATA CADANGAN ORACLE `[keputusan pl6; veto work owner]`
+
+Work owner menjalankan `-migrate` 28-09-2026 09.33: `017`–`020`, `030`, `050`–`055` **terpasang**; `056_t_view_suggest`
+**gagal** dan `T_VIEW_SUGGEST` tidak ada di DEV. Sebabnya bukan `{skema}` *(sebelas langkah lain lolos dengan penanda itu)*,
+melainkan kolom **`INITIAL`**: kata cadangan Oracle — `SELECT 1 AS INITIAL FROM DUAL` → `ORA-00923`; `"INITIAL"` berkutip
+lolos; `NO` lolos. Tidak ada tabel warisan yang memakai nama itu *(katalog DEV: nol kolom `INITIAL`, nol tabel `%SUGGEST%`)*;
+sumbernya properti `.Initial` *(`Activity/AddHistorySuggest.xml`)* dan STRUKTUR baris 393 *(spec §12 `Offer`/`Bind`)*.
+
+**pl6**: kolom diganti nama **`INITIAL_SUGGEST`** *(mengikuti pola saudaranya `DATE_SUGGEST`, `PIC_SUGGEST`, `COMMENT_SUGGEST`)*;
+berkas `056` **disunting di tempat** *(belum pernah terpasang di mana pun: `T_MIGRASI` DEV tanpa `056`, skema uji belum ada)*;
+ralat bertanggal di STRUKTUR baris 393, `spec.md` §12, tiket 00 dan 09; penjaga `TestKolomDDLCocokDenganStruktur` mengikuti.
+Commit `premiumlist-life: tiket 00 — ralat 056, INITIAL kata cadangan Oracle (pl6)`. Sesudah menyatu ke `main`, work owner
+menjalankan `-migrate` lagi; hanya `056` yang tersisa dijalankan.
+
+⚠️ Pohon kerja `main` saat ini memuat **suntingan work owner yang belum di-commit** pada `016_*.sql` *(`{skema}` → `POOLDATA`)*
+yang membuat dua penjaga merah *(`TestSetiapPernyataanSahDanBerskema`, `TestKolomDDLCocokDenganStruktur`)*. Executor **tidak**
+meng-commit dan **tidak** membuangnya — itu keputusan work owner *(pesan asisten 28-09-2026)*; bekerja di cabang/worktree
+modul, atau tunggu pohon `main` bersih.
+
 ## 1. XML — TITIK MASUK *(korpus `D:\XML\RNM_BRD\PremiumList Life\`, dibaca 28-09-2026; nomor baris = `sed -e 's/></>\n</g'`)*
 
 **Flow `InputPolicyHolder.xml`** *(di akar korpus; tidak ada folder `Flow\`)*: task `Input Premium List Detail` b306, `Input
