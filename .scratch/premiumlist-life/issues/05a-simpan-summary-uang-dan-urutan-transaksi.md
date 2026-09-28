@@ -211,3 +211,83 @@ menunggu ketiga pemetaan ini diputuskan; dua puluh sembilan sisanya sudah siap d
 `PropertiesName` yang memuat `.PREMIUM`/`.BALANCE`/`.COMMISSION`. Yang ditemukan hanya penetapan
 `.CLAIM` pada baris DETAIL, bukan pada summary. Rumusnya kemungkinan di Declare Expression atau
 Data Transform yang **tidak ikut** terekspor ke korpus ini.
+
+## OQ-PL-08 DITUTUP 28-09-2026 — dan bacaan brief GILIRAN-8 §1 DIRALAT
+
+`DataTransform/AppendCurrencySummary_DT.xml` dibaca **utuh** (5.992 baris, 121 penetapan).
+Perintah audit — urutan aksi apa adanya, bukan pasangan yang diratakan:
+
+```
+grep -o "<pyActionName>[^<]*\|<pyPropertiesName>[^<]*\|<pyPropertiesValue>[^<]*" \
+  DataTransform/AppendCurrencySummary_DT.xml
+```
+
+### ⚠️ RALAT — cabangnya BUKAN "per jenis baris", dan BUKAN dijumlahkan
+
+GILIRAN-8 §1 membaca `.PREMIUM` sebagai *"Σ `.GROSS_PREMIUM` + Σ `.GROSS_PREMIUM_REFUND` +
+Σ `.GROSS_PREMIUM_RETRO` + Σ `.GROSS_PREMIUM_REFUND_RETRO` (per cabang jenis baris)"*.
+
+**Struktur sesungguhnya — empat `WHEN` yang SALING MENIADAKAN atas `pyWorkPage.Type`:**
+
+```
+WHEN Param.Currency == .CURRENCY          <- pengelompokan per mata uang
+  WHEN pyWorkPage.Type == "QR"  ->  Param.Premium += .GROSS_PREMIUM
+  WHEN pyWorkPage.Type == "QP"  ->  Param.Premium += .GROSS_PREMIUM_REFUND
+  WHEN pyWorkPage.Type == "TP"  ->  Param.Premium += .GROSS_PREMIUM_RETRO
+  WHEN pyWorkPage.Type == "TR"  ->  Param.Premium += .GROSS_PREMIUM_REFUND_RETRO
+```
+
+Satu polis punya **SATU** `Type`, jadi **tepat satu** cabang menyala. `.PREMIUM` adalah Σ **satu**
+kolom yang dipilih `Type` — **bukan** Σ empat kolom.
+
+⛔ **Kenapa selisih ini mahal.** Menjumlahkan keempatnya akan **melipatgandakan** `PREMIUM` untuk
+polis yang barisnya memuat nilai di lebih dari satu kolom itu — dan hasilnya tetap angka yang sah,
+tersimpan, lalu dilaporkan. Tidak satu pun galat akan menunjukkannya.
+
+⚠️ Bacaan brief tampaknya lahir dari mencocokkan `pyPropertiesName`/`pyPropertiesValue` secara
+**berpasangan**, yang meratakan struktur `WHEN`-nya: di ekspor Pega, kondisi sebuah `WHEN` menempati
+medan `pyPropertiesName`, sehingga pasangan yang diratakan terbaca seperti empat penetapan berurutan.
+Yang benar dibaca dari **urutan aksi** (`pyActionName` `WHEN`/`SET`), bukan dari pasangannya.
+
+### Ketiga parameter, VERBATIM
+
+| Param | Rumus |
+| --- | --- |
+| `.PREMIUM` | Σ satu kolom menurut `Type`: `QR`→`GROSS_PREMIUM` · `QP`→`GROSS_PREMIUM_REFUND` · `TP`→`GROSS_PREMIUM_RETRO` · `TR`→`GROSS_PREMIUM_REFUND_RETRO` |
+| `.COMMISSION` | `Σ .COMM` saja — **tanpa** cabang `Type`. `PROF_COMM` dan `OVR_COMM` parameter tersendiri |
+| `.BALANCE` | Σ per `Type`, lalu `@divide(Param.Balance,1,4)` |
+
+**`.BALANCE` per cabang, disalin apa adanya:**
+
+```
+QR  Balance + (GROSS_PREMIUM - DEDUCTION
+               - (RI_ADMIN_FEE + BROKERAGE_FEE + TAX + PROF_COMM + CLAIM))
+QP  Balance + (GROSS_PREMIUM_REFUND + CLAIM_AMOUNT
+               - (DEDUCTION_REFUND + BROKERAGE_FEE_REFUND + RI_ADMIN_FEE_REFUND
+                  + TAX + PROF_COMM + CLAIM))
+TP  Balance + (GROSS_PREMIUM_RETRO - DISCOUNT_PREMIUM_RETRO
+               - RI_ADMIN_FEE_RETRO + BROKERAGE_FEE_RETRO)
+TR  Balance + (GROSS_PREMIUM_REFUND_RETRO - DISCOUNT_PREMIUM_REFUND_RETRO
+               - RI_ADMIN_FEE_REFUND_RETRO + BROKERAGE_FEE_REFUND_RETRO)
+```
+
+⚠️ **Keanehan warisan, VERBATIM, tidak "diperbaiki"** — dan brief benar menandainya:
+
+1. `BROKERAGE_FEE_RETRO` **DITAMBAH** pada cabang `TP`/`TR`, sedangkan `BROKERAGE_FEE` **DIKURANGI**
+   pada cabang `QR`. Biaya yang menambah saldo di satu cabang dan mengurangi di cabang lain.
+2. Cabang `QP` mengurangi `TAX`, `PROF_COMM`, dan `CLAIM` — **bukan** padanan `*_REFUND`-nya,
+   padahal ketiga biaya lain di cabang itu memakai `*_REFUND`.
+3. `@divide(Param.Balance,1,4)` di akhir: pembagian dengan **1** — yaitu pembulatan ke **4** angka
+   desimal, ditulis sebagai pembagian.
+
+Ketiganya disalin apa adanya. Menormalkan tandanya mengubah angka uang yang sudah beredar.
+
+### Bentuk yang akan dibangun
+
+`models` merakit rumusnya **per baris peserta** (murni, dapat diuji tanpa Oracle), lalu dijumlah per
+`CURRENCY`. Dua puluh sembilan kolom sisanya `SUM(...) GROUP BY CURRENCY` langsung — pengelompokan
+per mata uang itu sendiri VERBATIM dari `WHEN Param.Currency == .CURRENCY`.
+
+⛔ Pembulatan empat angka **hanya di akhir**, sesudah penjumlahan — bukan per baris. Membulatkan per
+baris lalu menjumlah menghasilkan angka yang berbeda dari menjumlah lalu membulatkan, dan selisihnya
+tumbuh bersama cacah peserta.
