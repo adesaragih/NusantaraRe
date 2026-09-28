@@ -60,3 +60,55 @@ di `InputDtlTreatyContact.xml` b8004/b8284. Tidak ada OQ ditutup.
 | Berkas ditulis / disunting | 26 baru (+2.9k baris: 14 SQL, 7 Go produksi/uji, 3 dokumen, 1 skemauji, 1 services), 5 disunting (+89/−9) |
 | Putaran instrumen gagal lalu diulang | 2 — (a) heredoc Bash mengubah `\n` menjadi baris baru di `main.go` (jebakan backslash yang tercatat di memory) → diperbaiki lewat Edit; (b) STRUKTUR sempat ditulis ke `.scratch` checkout utama → dipindah ke worktree |
 | Token / biaya | tidak terlihat dari dalam sesi — tidak dikarang |
+
+## Tiket 02 — jenis reasuransi: master dibaca + saringan non-life
+
+**Commit tiket 01:** `1872d26`. **Commit tiket 02:** lihat `git log --oneline` baris `treaty-contract-out: tiket 02`.
+
+### Yang dibangun
+
+| Lapisan | Berkas | Isi |
+| --- | --- | --- |
+| repository | `tco_jenisreasuransi.go` (+`_test`) | `DaftarNonLife`: `FLAG = :1 AND TYPE IN (:2..:4) AND ID NOT LIKE :5..:16`, `ORDER BY NOTE ASC`; tabel kebenaran `LolosSaringanNonLifeTCO`; uji sisi korpus atas `pyFilterValue`/`NotStartsWith` |
+| services | `tco_jenisreasuransi.go` (+`_test`) | pembaca disuntik (bawaan gagal terang); `WajibIdentitas`; master kosong → `ErrMasterJenisReasuransiKosong` |
+| handlers | `rute_treaty_contract_out.go` (+`_test`), `tco_db_test.go` (`db`) | `GET /api/treaty-contract-out/jenis-reasuransi` → `{daftar, total}`; 401/403/503/400/500; seam HTTP dengan Router ber-stub identitas terhadap master tiruan berisi 12 blacklist + awalan + flag + tipe 4 |
+| skemauji | `tco_tiruan.go` | tiruan `REINSURANCETYPE` + `IsiJenisReasuransiTCO` |
+| penjaga | `tco_nama_jujur_test.go`, `namaJujur.test.ts` | nol pengenal `Old`/`testing`/`JSON_KLAIM` di kode modul (Go dan React) |
+| frontend | `assets/labels.treaty-contract-out.ts` (+`_test`), `components/treaty-contract-out/PilihJenisReasuransi.tsx` (+`_test`), `services/api.ts` (aditif) | label VERBATIM b151/b359/b2652/b7925 dijaga terhadap korpus; pemilih tunggal berbasis `Pilih` |
+
+### Kode bersama yang disentuh (aditif, dilaporkan)
+
+| Berkas | Perubahan |
+| --- | --- |
+| `handlers/handlers.go` | +1 baris `daftarkanRuteTreatyContractOut(mux, svc, stubPelaku)` |
+| `handlers/penyuntikan_test.go` | +1 entri peta suntikan (`rute_treaty_contract_out.go`) |
+| `repository/batasanpemakaian_test.go` | cacah pemanggil `skemauji.Buka()` 10→11 |
+| `repository/tco_migrasi_test.go` (milik modul) | penjaga baca-saja diperluas ke `masterDibacaSajaTCO` |
+| `frontend/src/services/api.ts` | +1 bagian (2 interface, 1 fungsi) |
+
+### Ralat / OQ
+
+Ralat bertanggal di tiket 02: (1) harness `InboxTreatyContractReinsType` = editor kontrak, bukan layar master
+(RD non-Old = pemilih form kontrak); (2) operator saringan `NotStartsWith` b581, bukan `NOT IN` — SQL `NOT LIKE`;
+(3) nama RD menyebut `OLD_LJT_ID` yang tidak ada di saringannya. OQ dibuka: OQ-TCO-06 (pemilih kontrak memakai
+blacklist), OQ-TCO-07 (nama fisik `SOANote`/`Code`).
+
+### Angka uji
+
+| Perintah | Hasil |
+| --- | --- |
+| `go build` · `go vet ./...` · `go vet -tags=db ./internal/...` · `gofmt -l .` | bersih |
+| `go test ./...` | seluruh paket `ok`; 758 PASS, 0 FAIL |
+| `go test -tags=db` | 3 uji HTTP TCO + 3 uji pemindahan SKIP tanpa Oracle |
+| `npm run typecheck` · `vitest run` | bersih; 392 lulus di 37 berkas |
+
+### TELEMETRI EKSEKUSI — tiket 02
+
+| Ukuran | Nilai |
+| --- | --- |
+| Berkas dibaca | ±12 (dua RD ±1.000 baris terbelah, 3 SQL korpus lintas modul, katalog DEV, 4 pola kode Go/TS) |
+| Berkas XML korpus disensus | 2 RD + 3 RDBList lintas modul + 1 sensus `grep` seluruh korpus (`from reinsurancetype`: 18/4/4/3/2) |
+| Perintah dijalankan | ±14 |
+| Berkas ditulis / disunting | 12 baru (+±900 baris), 5 disunting (+±40) |
+| Putaran instrumen gagal lalu diulang | 2 — regex nama jujur tidak menangkap `TypeOld()` (uji instrumen sendiri yang menemukannya, diperbaiki); heredoc Bash mengubah backslash regex → dipindah ke Edit |
+| Token / biaya | tidak terlihat dari dalam sesi — tidak dikarang |

@@ -220,7 +220,9 @@ func TestTCOWarisanHanyaDibaca(t *testing.T) {
 				continue
 			}
 			diperiksa++
-			for _, warisan := range urutanWarisanTCO {
+			// Tabel warisan modul ini DAN master yang hanya dibaca (spec b107).
+			dijaga := append(append([]string{}, urutanWarisanTCO...), masterDibacaSajaTCO...)
+			for _, warisan := range dijaga {
 				if strings.Contains(potongan, `"`+warisan+`"`) || strings.Contains(potongan, "."+warisan) {
 					t.Errorf("%s: potongan yang menulis menyebut tabel warisan %s:\n%.120s",
 						nama, warisan, strings.TrimSpace(potongan))

@@ -147,6 +147,11 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 	mux.HandleFunc("GET /api/polis-life/{id}/summary", rekapPolis(svc, stubPelaku))
 	mux.HandleFunc("POST /api/polis-life/{id}/summary",
 		submitRekapPolis(svc, stubPelaku))
+	// --- modul Treaty Contract Out (tiket 02+) ---
+	//
+	// ⚠️ Penambahan ADITIF oleh sesi Treaty Contract Out: SATU baris. Rutenya
+	// sendiri hidup di `rute_treaty_contract_out.go`.
+	daftarkanRuteTreatyContractOut(mux, svc, stubPelaku)
 	return mux
 }
 

@@ -1,19 +1,22 @@
 package skemauji
 
-// Tiruan enam tabel WARISAN Treaty Contract Out untuk uji migrasi data
-// (tiket 01, tco2).
+// Tiruan tabel WARISAN dan MASTER Treaty Contract Out untuk uji bertag db
+// (tiket 01 tco2; tiket 02 master jenis reasuransi).
 //
-// ⛔ Tipe kolomnya mengikuti DEKLARASI `[data DBA]` (dba-procedures.md bab
-// DDL): yang disebut NUMBER, DATE, atau CHAR dibuat begitu; sisanya
+// ⛔ Tipe kolom warisan mengikuti DEKLARASI `[data DBA]` (dba-procedures.md
+// bab DDL): yang disebut NUMBER, DATE, atau CHAR dibuat begitu; sisanya
 // VARCHAR2(1000). Tiruan bertipe "lebih benar" akan membuat Oracle mengurai
 // angka lebih dulu, dan jalur "teks -> urai -> laporkan yang gagal" tidak
 // pernah teruji.
 //
-// Daftar kolomnya TIDAK ditulis ulang di sini: ia datang dari repository,
+// Daftar kolom warisan TIDAK ditulis ulang di sini: ia datang dari repository,
 // tempat pembaca migrasi mengambil daftar yang sama.
 //
 // PROPORTIONALARRG tiruan memuat pula dua kolom mati PROPORTIONALLIST dan
 // OBJECT (AC 70) supaya pencacahnya benar-benar berjalan.
+//
+// Master REINSURANCETYPE ditiru dengan kolom yang SQL korpus sebut (ID, NOTE,
+// TYPE, FLAG, NOURUT); tipe fisiknya tidak diketahui DBA - VARCHAR2 generik.
 
 import (
 	"context"
@@ -24,11 +27,15 @@ import (
 	"nusantarare/internal/repository"
 )
 
-// namaTabelTiruanTCO adalah enam tabel warisan yang ditiru.
+// namaTabelTiruanTCO adalah tabel yang ditiru dan dibongkar bersama skema uji.
 var namaTabelTiruanTCO = []string{
 	"TREATYYEAR", "TREATYCONTRACT", "TREATYREINSURER",
 	"MTREATYSECURITY", "TREATYBUSINESS", "PROPORTIONALARRG",
+	repository.MasterJenisReasuransiTCO,
 }
+
+// namaTabelWarisanTCO adalah enam tabel warisan yang dipindahkan migrasi data.
+var namaTabelWarisanTCO = namaTabelTiruanTCO[:6]
 
 // lebarCharTCO adalah lebar kolom CHAR `[data DBA]` MTREATYSECURITY.
 var lebarCharTCO = map[string]int{
@@ -50,10 +57,10 @@ func tipeTiruanTCO(tabel, kolom string) string {
 	return "VARCHAR2(1000)"
 }
 
-// ddlTiruanTCO membuat DDL keenam tabel warisan.
+// ddlTiruanTCO membuat DDL keenam tabel warisan dan master jenis reasuransi.
 func ddlTiruanTCO(skema string) []string {
 	var out []string
-	for _, tabel := range namaTabelTiruanTCO {
+	for _, tabel := range namaTabelWarisanTCO {
 		var kolom []string
 		for _, k := range repository.KolomWarisanTCO(tabel) {
 			kolom = append(kolom, k+" "+tipeTiruanTCO(tabel, k))
@@ -63,6 +70,9 @@ func ddlTiruanTCO(skema string) []string {
 		}
 		out = append(out, fmt.Sprintf("CREATE TABLE %s.%s (%s)", skema, tabel, strings.Join(kolom, ", ")))
 	}
+	out = append(out, fmt.Sprintf(
+		"CREATE TABLE %s.%s (ID VARCHAR2(1000), NOTE VARCHAR2(1000), TYPE VARCHAR2(1000), FLAG VARCHAR2(1000), NOURUT VARCHAR2(1000))",
+		skema, repository.MasterJenisReasuransiTCO))
 	return out
 }
 
@@ -119,6 +129,26 @@ func IsiWarisanTCO(ctx context.Context, db *sql.DB, skema, tabel string, baris [
 			strings.Join(kolom, ", "), strings.Join(penampung, ", "))
 		if _, err := db.ExecContext(ctx, q, arg...); err != nil {
 			return fmt.Errorf("skemauji: mengisi tiruan %s: %w", tabel, err)
+		}
+	}
+	return nil
+}
+
+// JenisReasuransiUji adalah satu baris fixture master jenis reasuransi.
+type JenisReasuransiUji struct {
+	ID, Note, Tipe, Flag string
+}
+
+// IsiJenisReasuransiTCO mengisi tiruan REINSURANCETYPE.
+//
+// ⚠️ Fixture yang berguna memuat yang HARUS tersaring keluar: ID blacklist,
+// ID yang hanya BERAWALAN blacklist, Flag bukan active, Type di luar 1-3.
+func IsiJenisReasuransiTCO(ctx context.Context, db *sql.DB, skema string, baris []JenisReasuransiUji) error {
+	q := fmt.Sprintf("INSERT INTO %s.%s (ID, NOTE, TYPE, FLAG) VALUES (:1, :2, :3, :4)",
+		skema, repository.MasterJenisReasuransiTCO)
+	for _, b := range baris {
+		if _, err := db.ExecContext(ctx, q, b.ID, b.Note, b.Tipe, b.Flag); err != nil {
+			return fmt.Errorf("skemauji: mengisi tiruan master jenis reasuransi: %w", err)
 		}
 	}
 	return nil

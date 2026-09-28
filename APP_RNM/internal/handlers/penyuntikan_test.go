@@ -62,6 +62,12 @@ var petaSuntikan = map[string][]suntikan{
 		penyusun: "svc.Status()",
 		wajib:    []string{"DenganJejak(services.PerekamJejakOracle(svc))"},
 	}},
+	// Treaty Contract Out tiket 02 (aditif 28-09-2026): pembaca master jenis
+	// reasuransi bawaannya gagal terang; handler memasang Oracle-nya.
+	"rute_treaty_contract_out.go": {{
+		penyusun: "svc.JenisReasuransiTreaty()",
+		wajib:    []string{"DenganPembaca(services.PembacaJenisReasuransiOracle(svc))"},
+	}},
 }
 
 func TestHandlerMenyuntikkanImplementasiNyata(t *testing.T) {

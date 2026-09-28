@@ -2035,3 +2035,38 @@ export async function eskalasiKomite(
 export async function ambilKasusKomite(kasusID: string): Promise<KasusKomite> {
   return minta<KasusKomite>(`/api/komite/${encodeURIComponent(kasusID)}`)
 }
+
+// ---------------------------------------------------------------------------
+// TREATY CONTRACT OUT — tiket 02: master jenis reasuransi non-life.
+//
+// ⚠️ Bagian ini ditambahkan ADITIF oleh sesi Treaty Contract Out. Bentuknya
+// dari `internal/services/tco_jenisreasuransi.go` (`JenisReasuransi`).
+// ---------------------------------------------------------------------------
+
+/**
+ * Satu jenis reasuransi dari master `REINSURANCETYPE`, SUDAH tersaring
+ * server (12 awalan blacklist, Flag active, Type 1/2/3 — RD dominan yang
+ * dipakai 11 grid klausul). Nama kunci mengikuti properti Pega `.ID`,
+ * `.Note`, `.Type`.
+ */
+export interface JenisReasuransiTreaty {
+  /** ⛔ TEKS: kode, bukan bilangan. `00007` harus tetap `00007`. */
+  id: string
+  note: string
+  tipe: string
+}
+
+/** Jawaban `GET /api/treaty-contract-out/jenis-reasuransi`. */
+export interface DaftarJenisReasuransiTreaty {
+  daftar: JenisReasuransiTreaty[]
+  total: number
+}
+
+/**
+ * Daftar jenis reasuransi non-life — SATU tempat untuk layar kontrak maupun
+ * seluruh grid klausul (tiket 02 AC). Master kosong menjawab **503** dengan
+ * pesan yang menyebut masternya (ADR-0015); pesannya tampil apa adanya.
+ */
+export async function ambilJenisReasuransiTreaty(): Promise<DaftarJenisReasuransiTreaty> {
+  return minta<DaftarJenisReasuransiTreaty>('/api/treaty-contract-out/jenis-reasuransi')
+}

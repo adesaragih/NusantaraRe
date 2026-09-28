@@ -31,3 +31,14 @@ korpus 20 — ralat §8 `PROMPT-EKSEKUSI-HULU-HILIR.md`). Ditambahkan ADITIF ber
 | `M_PROPORTIONALARRG`, `M_TREATYCONTRACT`, `M_TREATYYEAR`, `M_TREATYBUSINESS` + seluruh kueri `FROM m_*` | — | ➖ MATI (penyimpangan sadar 1); penjaga `TestTCONolTabelDokumenWarisan` |
 | `POOLDATA.PROSESCOPY`, `RDBList/SaveMasterCopyData_SQL.xml`, `Activity/BrowseCopyData.xml`, `SaveTreatyYearMultiple_Act.xml`, `NewInputTreatyYearMultiple_Act.xml`, bagian salin `BrowseDeleteRowTreatyInContract.xml`; form From/To `InputTreatyContract.xml` b2374/b3818, tombol `Proces` b5104 → `BrowseCopyData` b5128 | — | ➖ fitur salin DIBUANG (penyimpangan sadar 3, AC 72) |
 | kolom warisan `PROPORTIONALLIST`, `OBJECT` | dicacah laporan migrasi (`KolomMatiBerisi`), tidak dibawa | ➖ AC 70 |
+
+## Tiket 02 — jenis reasuransi: master dibaca + saringan non-life
+
+| Unsur korpus | Sistem baru | Keadaan |
+| --- | --- | --- |
+| `ReportDefinition/BrowseReinsuranceType_RD_Old_Ljt_id_isnotnull.xml` — `.ID NotStartsWith` 12 nilai b573/b581, `.Flag="active"` b586, `.Type` 1/2/3 b603, sort `.Note` b667; dipakai 11 grid klausul | `GET /api/treaty-contract-out/jenis-reasuransi` → `repository.MasterJenisReasuransi.DaftarNonLife` (`FLAG=`, `TYPE IN`, `ID NOT LIKE` ×12, `ORDER BY NOTE`) | ✅ nama jujur (nol "Old") |
+| master `POOLDATA.REINSURANCETYPE` (`ID`, `NOTE`, `TYPE`, `FLAG`) | dibaca saja; penjaga `TestTCOWarisanHanyaDibaca` (`masterDibacaSajaTCO`) | ✅ AC 12 |
+| master kosong / tersaring habis | 503 `ErrMasterJenisReasuransiKosong` menyebut `REINSURANCETYPE` | ✅ ADR-0015 |
+| pemilih `ReinsType` (`InputTreatyContractReinsType.xml` b2652) / `Reinsurance Type` (`InputTreatyContract.xml` b7925) | `components/treaty-contract-out/PilihJenisReasuransi.tsx` (`Pilih` ui/dasar; nilai `.ID` teks, label `.Note`) | ✅ komponen; dipasang di layar 🔜 tiket 03/04/08 |
+| RD non-Old `BrowseReinsuranceType_RD.xml` (param `Flag="active"` b2768, pemilih form kontrak) | daftar tersaring yang sama (AC 5 tiket 02) | ⚠️ OQ-TCO-06 |
+| `RDBList/GetMasterReinsTypeContract.xml` (`a.JSONDATA`) | — | ➖ MATI |
