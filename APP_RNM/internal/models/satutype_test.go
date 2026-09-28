@@ -48,6 +48,19 @@ var medanTypeYangSah = map[string]string{
 	// Ia hidup sepanjang satu transaksi lalu hilang; yang tersimpan tetap
 	// satu kolom per baris, bukan dua kolom untuk satu baris.
 	"services/komite.go": "MuatanKomite - Type work object ANAK, satu transaksi",
+	// ⛔ MODUL LAIN, TABEL LAIN. `PenawaranPolis.Type` adalah `Type`
+	// sebuah POLIS (`pyWorkPage.Type` di `InputPolicyHolder`), bukan `Type`
+	// sebuah KLAIM. Rumah tersimpannya `T_PREMIUM_LIST.TYPE` (migrasi 051),
+	// tabel yang berbeda dari `T_WORK_CLAIM`.
+	//
+	// Yang di berkas ini muatan gerbang `ProtectAccept`: ia hidup sepanjang
+	// satu pemeriksaan lalu hilang, dan dibaca untuk memilih cabang `TP`
+	// b4121 atau `TR` b4353. Bukan salinan kedua dari apa pun.
+	//
+	// ⚠️ Penjaga ini menagihnya dan itu BENAR: dua modul yang keduanya
+	// punya medan bernama `Type` adalah persis keadaan yang membuat orang
+	// membaca yang satu sebagai yang lain.
+	"models/polis_validasi.go": "PenawaranPolis - Type POLIS (T_PREMIUM_LIST), muatan gerbang ProtectAccept",
 }
 
 func TestTypeKlaimHanyaSatuRumahTersimpan(t *testing.T) {
