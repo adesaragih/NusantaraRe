@@ -281,16 +281,18 @@ func rekapPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 // ada satu pun angka rekap yang boleh datang dari klien. Rekap yang dikirim
 // layar adalah rekap yang dapat diketik ulang orang.
 //
-// ⚠️ `InsertJsonPolisLife_Act` + `finishAssignment` (b26414/b26442) BUKAN di
-// sini - itu tiket 05b.
+// ⚠️ Tiket 05b: sesudah tersimpan, kasus DITUTUP Resolved-Completed -
+// `finishAssignment` b26442 → `Transition2` → `END52`. Hanya dari tahap
+// Input Premium Summary; tahap lain dijawab 409.
 func submitRekapPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
 			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
-		hasil, err := svc.SummaryPremiumList().Submit(r.Context(),
-			pelakuDari(r, stubPelaku), r.PathValue("id"))
+		hasil, err := svc.SummaryPremiumList().
+			DenganJejak(services.PerekamJejakOracle(svc)).
+			Submit(r.Context(), pelakuDari(r, stubPelaku), r.PathValue("id"), time.Now())
 		if jawabGalatPolis(w, err) {
 			return
 		}
@@ -351,7 +353,8 @@ func jawabGalatPolis(w http.ResponseWriter, err error) bool {
 		// transaksinya batal - jadi yang perlu dikerjakan pemanggil hanya
 		// membaca ulang nomornya.
 		galat(w, http.StatusConflict, err.Error())
-	case errors.Is(err, services.ErrRekapKosong):
+	case errors.Is(err, services.ErrRekapKosong),
+		errors.Is(err, services.ErrSubmitBukanTahapSummary):
 		// 409: keadaan DATA polis yang belum siap, bukan permintaan yang salah.
 		galat(w, http.StatusConflict, err.Error())
 	case errors.Is(err, services.ErrNomorPLBerbedaAntarPeserta):

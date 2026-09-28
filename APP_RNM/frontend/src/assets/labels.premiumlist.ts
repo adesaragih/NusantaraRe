@@ -184,6 +184,8 @@ export const SUMMARY_POLIS = {
   judul: 'Summary Premium Life',
   submit: 'Submit',
   tanpaRekap: 'Belum ada rekap: polis ini belum punya baris peserta.',
+  /** Tiket 05b — `finishAssignment` → `END52`, `pyWorkStatus` b947. */
+  ditutup: 'Kasus ditutup: Resolved-Completed.',
   /** ⛔ `.COB` baris rekap tidak ditetapkan rule mana pun di korpus. */
   cobTanpaSumber:
     'Kolom COB tidak terisi: tidak satu pun rule PremiumList Life menetapkan ' +

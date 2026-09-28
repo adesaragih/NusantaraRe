@@ -1,6 +1,6 @@
 # 05b: ~~Simpan JSON polis dan rekam produksi~~ — ⛔ **DIBATALKAN 2026-09-16**
 
-**Status:** wontfix — **digantikan tiket 00 + 05a**
+**Status:** wontfix — **digantikan tiket 00 + 05a** · ⚠️ **diralat 28-09-2026: sisa non-JSON dibangun — lihat bab RALAT di bawah**
 
 **Blocked by:** —
 
@@ -143,3 +143,77 @@ cd frontend && npm test
 ```
 
 </details>
+
+---
+
+## ⚠️ RALAT 28-09-2026 (giliran 10) — tiket ini TIDAK seluruhnya kosong: `Utility1` dan `finishAssignment`
+
+Pembatalan 2026-09-16 benar untuk **JSON**: `JSON_POLIS`/`JSON_OFFER_LIFE` tetap dibuang (pl1, spec §6,
+§12). Tetapi kalimat *"seluruh alasan keberadaan tiket ini hilang"* **dibantah korpus** di dua titik,
+dan keduanya perilaku yang **tidak dikerjakan tiket mana pun** sampai giliran ini:
+
+1. **`Utility1`.** `InputPolicyHolder.xml`: `Decision2 --Transition7 [Confirm b2090]--> Utility1
+   (InsertJsonPolisLife b765) --Transition8--> END52`. Tiket 01 menutup kasus Resolved-Completed pada
+   `Confirm` di tahap detail **tanpa** menjalankan apa pun di antaranya — padahal activity itu yang
+   memanggil `InsertPLSummary` (langkah 8). Akibatnya: kasus selesai tanpa rekap tersimpan.
+2. **`finishAssignment`.** `Section/ShowLifePremiumSummary.xml`: tombol `Submit` b27471 →
+   `InsertJsonPolisLife_Act` b26414 → `finishAssignment` b26442; `Assignment1 --Transition2
+   [ShowLifePremiumSummary b1881]--> END52` (Resolved-Completed b947).
+
+**Status:** `wontfix` → **selesai sebagian 28-09-2026** — sisa non-JSON dibangun, JSON tetap dibuang.
+
+### Tujuh belas langkah `InsertJsonPolisLife_Act`, diputuskan satu per satu
+
+Perintah audit (nomor baris = `sed -e 's/></>\n</g'`):
+
+```
+grep -n "<pyStepsActivityName>\|<pyStepsDescription>[^<]\|<RequestType>\|<pyStepsBlockName>[^<]" \
+  Activity/InsertJsonPolisLife_Act.xml
+```
+
+| # | Metode · deskripsi | Putusan |
+| ---: | --- | --- |
+| 1 | `Obj-Refresh-And-Lock` | ⚙️ padanan: transaksi Go + `FOR UPDATE` penghitung nomor |
+| 2 | `Property-Set` | ➖ penetapan halaman kerja; tanpa kolom |
+| 3 | `set prodatetime` | ➖ milik `JSON_POLIS.TGL_PROD` — dibuang bersama JSON |
+| 4 | `set prodatetime > 25` | ⛔ tidak ditiru — `>25` tertanam (pl5, tiket 02) |
+| 5 | `Pega to jsondata` | ⛔ dibuang (JSON) |
+| 6 | `RDB-List GetJsonProductLife` (b1444) | ⛔ bahan payload JSON — dibuang |
+| 7 | QS / 2nd QS / SURPLUS / 2nd SURPLUS (`@contains(.ID,"100003x")`) | ⛔ tidak dimigrasikan `[keputusan work owner]` (catatan asli di bawah) |
+| 8 | `Insert to table summary` → `InsertPLSummary` (b3112) | ✅ **dibangun** — `T_PREMIUM_LIST_SUMMARY` (tiket 05a); `M_LIFE_PREMIUM_SUMMARY` ⛔ OQ-PL-09 |
+| 9 | `Pega to json_offer & lifeinproduction` | ⛔ dibuang (JSON) |
+| 10 | `InsertJsonPolis` (b4094) | ⛔ dibuang (JSON) |
+| 11 | `SaveLifeinProduction_SQL` (b4271) | ⛔ `LIFEINPRODUCTION` tidak ditulis (AC 33 spec) |
+| 12 | `Cek sudah masuk atau blm datanya` → `GetNopolisByIDPega` | ➖ digantikan atomisitas: satu commit, tidak ada keadaan separuh untuk dibaca balik |
+| 13 | penanda bila `PL_NUMBER==""` | ➖ idem |
+| 14 | `SendEmailNotification` — *"Kalau blm, email errornya"* | → tiket **06** (outbox) |
+| 15 | `serviceInsertArasapasLife_act` | → tiket **06** (outbox + stub) |
+| 16 | `Commit` | ➖ `//` mati (b5294); Go memegang transaksi |
+| 17 | `Connect-REST ConvertJsonNusareToProduction` | ➖ `//` mati (b5383) |
+
+Salinan peserta ke `M_LIFE_PREMIUM_DETAIL` (`InsertLifePremiumDetail_act` → `SaveMasterLPDet`, pl2)
+ikut di jalur yang sama.
+
+### Yang dibangun
+
+- `models.AkibatKeputusan.SimpanPolis` — **hanya** `Transition7` (detail + Confirm → `Utility1`) dan
+  `models.PenyelesaianSummary()` (`Transition2`). ⛔ `Offer` (`Transition11`) juga berakhir di `END52`
+  tetapi **tanpa** `Utility1` — ia tidak menyimpan (`TestHanyaUtility1YangMenyimpanPolis`).
+- `Penawaran.terapkan`: bila `SimpanPolis`, `SummaryPremiumList.simpanDalam` (nomor → rekap → ganti
+  rekap → sumber → ganti warisan) berjalan **di transaksi yang sama, sebelum** `TutupKasus` dan jejak
+  (`TestSimpanSebelumTutupDalamSatuTransaksi`). Kasus tertutup tanpa rekap tidak mungkin lagi.
+- `POST /api/polis-life/{id}/summary` kini = `Submit` + `finishAssignment`: **hanya** dari tahap
+  `Input Premium Summary` (409 selain itu, `ErrSubmitBukanTahapSummary`), menutup Resolved-Completed
+  dengan jejak `(Submit)`. Layar mematikan tombolnya sesudah berhasil dan mengatakan kasusnya tertutup.
+
+### ⚠️ Akibat yang harus diketahui work owner
+
+`Confirm` di tahap detail kini **menuntut** polis siap disimpan: punya peserta, `Type` QR/QP/TP/TR,
+bahan nomor lengkap. Polis tanpa peserta yang dulu dapat ditutup dengan `Confirm` kini dijawab **409**
+dengan pesan "unggah rincian peserta lebih dahulu". Itu perilaku Pega yang sebenarnya (activity itu
+berjalan di antara keputusan dan penutupan), tetapi **berbeda** dari perilaku tiket 01 yang sudah
+ter-commit.
+
+### Angka
+
+Go **534 PASS · 0 FAIL** tingkat atas; vet (+`-tags db`), gofmt bersih · vitest **347** · tsc bersih.

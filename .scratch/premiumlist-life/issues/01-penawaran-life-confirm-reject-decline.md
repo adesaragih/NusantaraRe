@@ -278,3 +278,11 @@ Dua, dan keduanya diam:
 ⭐ Yang menemukannya **membaca rule berikutnya**, bukan membaca ulang yang sudah dibaca. Peta
 konektor bagian 1 benar; yang keliru adalah **kolom tempat menaruh hasilnya** — dan itu hanya
 terlihat dari rule yang MEMAKAI kolom itu.
+
+### ⚠️ Ralat 28-09-2026 (tiket 05b) — `Confirm` di tahap detail kini MENYIMPAN sebelum menutup
+
+`Transition7` [Confirm b2090] menuju `Utility1` (`InsertJsonPolisLife` b765) **sebelum** `END52`. Sampai
+`d7610fb` kode menutup kasus Resolved-Completed tanpa menjalankan apa pun di antaranya. Kini
+`AkibatKeputusan.SimpanPolis` menandai jalur itu, dan `Penawaran.terapkan` menjalankan penomoran +
+rekap + salinan peserta warisan di transaksi yang sama, sebelum penutupan. Akibatnya `Confirm` atas
+polis yang belum punya peserta dijawab **409**. `Offer` (`Transition11`) tidak berubah. Rincian: tiket 05b.

@@ -14,6 +14,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"nusantarare/internal/repository"
 )
@@ -41,15 +42,13 @@ func badanFungsi(t *testing.T, teks, kepala string) string {
 	return teks[i : i+j]
 }
 
-// TestSubmitSummaryUrutanTerkunci - AC 24 spec.
+// TestSimpanDalamUrutanTerkunci - AC 24 spec.
 //
 // ⛔ Urutannya bagian dari kebenaran: nomor lebih dahulu (salinan warisan
 // berkunci `PL_NUMBER`), rekap sesudah nomor, warisan paling akhir.
-func TestSubmitSummaryUrutanTerkunci(t *testing.T) {
-	badan := badanFungsi(t, sumberSummary(t), "func (s *SummaryPremiumList) Submit(")
+func TestSimpanDalamUrutanTerkunci(t *testing.T) {
+	badan := badanFungsi(t, sumberSummary(t), "func (s *SummaryPremiumList) simpanDalam(")
 	urut := []string{
-		"s.siapkan(",
-		"DalamTransaksi(ctx",
 		"s.nomor.terbitkanDalam(",
 		"s.rekapDalam(",
 		"ringkas.GantiRekap(",
@@ -60,17 +59,56 @@ func TestSubmitSummaryUrutanTerkunci(t *testing.T) {
 	for _, jejak := range urut {
 		i := strings.Index(badan, jejak)
 		if i < 0 {
-			t.Fatalf("Submit tidak memanggil %s", jejak)
+			t.Fatalf("simpanDalam tidak memanggil %s", jejak)
 		}
 		if i < lalu {
 			t.Errorf("%s dipanggil sebelum langkah sebelumnya; urutan terkunci: %v", jejak, urut)
 		}
 		lalu = i
 	}
-	// ⛔ SATU transaksi - bukan dua. Transaksi kedua menghidupkan kembali
-	// titik potong Pega.
+	// ⛔ Ia TIDAK membuka transaksi sendiri - transaksinya milik pemanggil,
+	// supaya simpan dan penutupan kasus satu commit.
+	if strings.Contains(badan, "DalamTransaksi(") {
+		t.Error("simpanDalam membuka transaksi sendiri; simpan dan penutupan akan terpisah")
+	}
+}
+
+// TestSimpanSebelumTutupDalamSatuTransaksi - tiket 05b.
+//
+// ⛔ `Utility1` berdiri di ANTARA `Confirm` dan `END52`. Menutup lebih dahulu
+// lalu menyimpan di transaksi lain meninggalkan kasus Resolved-Completed
+// tanpa rekap bila simpannya gagal.
+func TestSimpanSebelumTutupDalamSatuTransaksi(t *testing.T) {
+	isi, err := os.ReadFile("polis_penawaran.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	badan := badanFungsi(t, string(isi), "func (p *Penawaran) terapkan(")
+	iTx := strings.Index(badan, "DalamTransaksi(ctx")
+	iGerbang := strings.Index(badan, "if akibat.SimpanPolis")
+	iSimpan := strings.Index(badan, ".simpanDalam(ctx, tx,")
+	iTutup := strings.Index(badan, "kerja.TutupKasus(")
+	if iTx < 0 || iGerbang < 0 || iSimpan < 0 || iTutup < 0 {
+		t.Fatalf("terapkan kehilangan salah satu dari: transaksi, gerbang SimpanPolis, simpanDalam, TutupKasus")
+	}
+	if !(iTx < iGerbang && iGerbang < iSimpan && iSimpan < iTutup) {
+		t.Error("urutan terapkan harus: transaksi → gerbang SimpanPolis → simpanDalam → TutupKasus")
+	}
 	if n := strings.Count(badan, "DalamTransaksi("); n != 1 {
-		t.Errorf("Submit membuka %d transaksi, mau 1", n)
+		t.Errorf("terapkan membuka %d transaksi, mau 1", n)
+	}
+}
+
+// TestSubmitSummaryHanyaDariTahapSummary - `finishAssignment` milik Assignment1.
+func TestSubmitSummaryHanyaDariTahapSummary(t *testing.T) {
+	badan := badanFungsi(t, sumberSummary(t), "func (s *SummaryPremiumList) Submit(")
+	iGerbang := strings.Index(badan, "models.TahapPolisSummary")
+	iTerap := strings.Index(badan, ".terapkan(")
+	if iGerbang < 0 || iTerap < 0 || iGerbang > iTerap {
+		t.Error("Submit tidak menolak tahap selain Input Premium Summary sebelum menutup kasus")
+	}
+	if !strings.Contains(badan, "models.PenyelesaianSummary()") {
+		t.Error("Submit tidak memakai models.PenyelesaianSummary (Transition2 -> END52)")
 	}
 }
 
@@ -116,13 +154,13 @@ func TestLangkah15TidakDitiru(t *testing.T) {
 func TestSummaryTanpaOracleDitolakTerang(t *testing.T) {
 	s := New(nil).SummaryPremiumList()
 	pelaku := Pelaku{AkunID: "UJI-OPR"}
-	if _, err := s.Submit(context.Background(), pelaku, "P1"); !errors.Is(err, repository.ErrTanpaOracle) {
+	if _, err := s.Submit(context.Background(), pelaku, "P1", time.Now()); !errors.Is(err, repository.ErrTanpaOracle) {
 		t.Errorf("Submit tanpa Oracle: %v", err)
 	}
 	if _, err := s.Lihat(context.Background(), pelaku, "P1"); !errors.Is(err, repository.ErrTanpaOracle) {
 		t.Errorf("Lihat tanpa Oracle: %v", err)
 	}
-	if _, err := s.Submit(context.Background(), Pelaku{}, "P1"); err == nil {
+	if _, err := s.Submit(context.Background(), Pelaku{}, "P1", time.Now()); err == nil {
 		t.Error("Submit tanpa identitas diterima")
 	}
 }

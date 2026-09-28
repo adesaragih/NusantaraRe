@@ -237,3 +237,47 @@ func TestPosisiLayarVERBATIMDariKorpus(t *testing.T) {
 		}
 	}
 }
+
+// TestHanyaUtility1YangMenyimpanPolis - tiket 05b.
+//
+// ⛔ Dua jalan menuju `END52` Resolved-Completed, dan hanya SATU melewati
+// `Utility1` (`InsertJsonPolisLife` b765): `Transition7` [Confirm] dari
+// `Decision2`. `Transition11` [Offer] langsung ke `END52` - penawaran yang
+// selesai sebagai penawaran tidak punya premium list untuk disimpan.
+func TestHanyaUtility1YangMenyimpanPolis(t *testing.T) {
+	detail, err := models.TransisiPenawaran(models.TahapPolisDetail, models.KeputusanConfirm)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !detail.SimpanPolis {
+		t.Error("detail + Confirm (Transition7 -> Utility1) tidak menyimpan polis")
+	}
+	offer, err := models.LanjutanPenggolong(models.LanjutOffer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if offer.SimpanPolis {
+		t.Error("Offer (Transition11 -> END52) menyimpan polis; jalurnya tidak lewat Utility1")
+	}
+	for _, k := range []string{models.KeputusanDecline, models.KeputusanReject} {
+		a, err := models.TransisiPenawaran(models.TahapPolisDetail, k)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if a.SimpanPolis {
+			t.Errorf("detail + %s menyimpan polis", k)
+		}
+	}
+}
+
+// TestPenyelesaianSummaryMenutupSelesaiDanMenyimpan - `finishAssignment`.
+//
+// `[terverifikasi]` `ShowLifePremiumSummary` b26414 `InsertJsonPolisLife_Act`
+// lalu b26442 `finishAssignment`; `Assignment1` --`Transition2`
+// [ShowLifePremiumSummary b1881]--> `END52` (Resolved-Completed b947).
+func TestPenyelesaianSummaryMenutupSelesaiDanMenyimpan(t *testing.T) {
+	a := models.PenyelesaianSummary()
+	if a.StatusWork != models.StatusPolisSelesai || !a.SimpanPolis || a.TahapTujuan != "" {
+		t.Errorf("penyelesaian summary = %+v", a)
+	}
+}

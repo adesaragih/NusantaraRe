@@ -9,8 +9,9 @@
 //
 // ⛔ UANG TETAP TEKS. Tidak satu pun sel melewati `Number(...)`.
 //
-// ⚠️ `Submit` di sini menyimpan nomor + rekap + salinan peserta warisan.
-// `InsertJsonPolisLife_Act` + `finishAssignment` (tiket 05b) belum di sini.
+// ⚠️ `Submit` menyimpan nomor + rekap + salinan peserta warisan LALU menutup
+// kasus Resolved-Completed (tiket 05b: `finishAssignment` b26442 →
+// `Transition2` → `END52`). Sesudahnya tombolnya mati, dan layar mengatakannya.
 
 import { useCallback, useEffect, useState } from 'react'
 
@@ -70,6 +71,7 @@ export default function PremiumListSummary({ polisID }: { polisID: string }) {
   const [sibuk, setSibuk] = useState(true)
   const [kirim, setKirim] = useState(false)
   const [kabar, setKabar] = useState('')
+  const [selesai, setSelesai] = useState(false)
 
   const muat = useCallback(async () => {
     setSibuk(true)
@@ -92,7 +94,7 @@ export default function PremiumListSummary({ polisID }: { polisID: string }) {
   }, [muat])
 
   async function submit(): Promise<void> {
-    if (kirim) return
+    if (kirim || selesai) return
     setKirim(true)
     setGalat(null)
     setKabar('')
@@ -100,9 +102,10 @@ export default function PremiumListSummary({ polisID }: { polisID: string }) {
       const hasil = await submitRekapPolis(polisID)
       setRekap(hasil.rekap)
       setKepala((lama) => (lama === null ? lama : { ...lama, plNumber: hasil.nomor.nomor }))
+      setSelesai(true)
       setKabar(
         `PL_NUMBER ${hasil.nomor.nomor}: ${String(hasil.rekap.length)} rekap mata uang ` +
-          `tersimpan, ${String(hasil.pesertaWarisan)} peserta tersalin.`,
+          `tersimpan, ${String(hasil.pesertaWarisan)} peserta tersalin. ${SUMMARY_POLIS.ditutup}`,
       )
     } catch (e) {
       setGalat(e)
@@ -150,7 +153,7 @@ export default function PremiumListSummary({ polisID }: { polisID: string }) {
       <button
         type="button"
         className="pl-summary__submit"
-        disabled={sibuk || kirim || rekap === null || rekap.length === 0}
+        disabled={sibuk || kirim || selesai || rekap === null || rekap.length === 0}
         onClick={() => {
           void submit()
         }}

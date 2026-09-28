@@ -156,6 +156,16 @@ type AkibatKeputusan struct {
 	// MenungguPenggolong true bila yang berikutnya adalah `Decision3`,
 	// yaitu `IsFlagOnGoingPolicy` - Offer atau Premium.
 	MenungguPenggolong bool
+	// SimpanPolis true bila jalurnya melewati `InsertJsonPolisLife_Act` -
+	// `Utility1` b765 sesudah `Transition7`, atau tombol `Submit` layar
+	// summary (b26414). Tiket 05b: yang tersisa dari activity itu sesudah
+	// JSON dibuang adalah penomoran, rekap, dan salinan peserta warisan.
+	//
+	// ⛔ BUKAN turunan `StatusWork`. `Offer` juga berakhir di `END52`
+	// Resolved-Completed, tetapi lewat `Transition11` LANGSUNG - tanpa
+	// `Utility1`. Menyimpulkan "tutup selesai = simpan" akan menyimpan
+	// premium list untuk penawaran yang tidak pernah punya rincian.
+	SimpanPolis bool
 }
 
 // Ditutup menyatakan keputusan ini mengakhiri kasus.
@@ -201,10 +211,10 @@ func TransisiPenawaran(tahap, keputusan string) (AkibatKeputusan, error) {
 			//   --Transition8 b2016--> END52 b934.
 			//
 			// ⚠️ Lewat `Utility1`, yang menjalankan `InsertJsonPolisLife`
-			// (b261/b782). Efek itu milik tiket 05b; yang di sini hanya
-			// akibat TAHAPnya, dan urutannya dicatat supaya 05b tahu ia
-			// duduk di antara keputusan dan penutupan.
-			return AkibatKeputusan{StatusWork: StatusPolisSelesai}, nil
+			// (b261/b782) - tiket 05b: `SimpanPolis` menandainya, dan
+			// layanan menjalankannya di transaksi yang sama dengan
+			// penutupan, SEBELUM kasus ditutup.
+			return AkibatKeputusan{StatusWork: StatusPolisSelesai, SimpanPolis: true}, nil
 		case KeputusanDecline:
 			// Transition6 b2147 [Decline b2162] -> End1 b832.
 			return AkibatKeputusan{StatusWork: StatusPolisDitolak}, nil
@@ -263,4 +273,18 @@ func TahapPolisDikenal(tahap string) bool {
 func KasusPolisTertutup(statusWork string) bool {
 	s := strings.TrimSpace(statusWork)
 	return s == StatusPolisDitolak || s == StatusPolisSelesai
+}
+
+// PenyelesaianSummary adalah akibat tombol `Submit` di layar summary.
+//
+// `[terverifikasi]` `Section/ShowLifePremiumSummary.xml`: `Submit` (b27471)
+// menjalankan `InsertJsonPolisLife_Act` (b26414) lalu `finishAssignment`
+// (b26442). Assignment yang diselesaikan adalah `Assignment1`, dan satu-
+// satunya konektor keluarnya `Transition2` [ShowLifePremiumSummary b1881] ->
+// `END52` - `pyWorkStatus` Resolved-Completed b947.
+//
+// ⚠️ Tahap itu tetap nol konektor MASUK (lihat `TahapPolisSummary`): fungsi
+// ini hanya menjawab apa yang terjadi SESUDAH kasus berada di sana.
+func PenyelesaianSummary() AkibatKeputusan {
+	return AkibatKeputusan{StatusWork: StatusPolisSelesai, SimpanPolis: true}
 }

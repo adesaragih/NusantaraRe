@@ -124,7 +124,7 @@ func (p *Penawaran) Putuskan(ctx context.Context, pelaku Pelaku,
 		// Nol tulisan - lihat komentar di atas.
 		return akibat, nil
 	}
-	if err := p.terapkan(ctx, pelaku, keadaan, akibat, keputusan, saat); err != nil {
+	if _, err := p.terapkan(ctx, pelaku, keadaan, akibat, keputusan, saat); err != nil {
 		return models.AkibatKeputusan{}, err
 	}
 	return akibat, nil
@@ -151,7 +151,7 @@ func (p *Penawaran) Golongkan(ctx context.Context, pelaku Pelaku,
 	if err != nil {
 		return models.AkibatKeputusan{}, err
 	}
-	if err := p.terapkan(ctx, pelaku, keadaan, akibat, hasil, saat); err != nil {
+	if _, err := p.terapkan(ctx, pelaku, keadaan, akibat, hasil, saat); err != nil {
 		return models.AkibatKeputusan{}, err
 	}
 	return akibat, nil
@@ -162,12 +162,27 @@ func (p *Penawaran) Golongkan(ctx context.Context, pelaku Pelaku,
 // ⛔ Satu transaksi: perpindahan atau penutupan BERSAMA jejaknya. Jejak yang
 // ditulis terpisah dapat hilang sendirian, dan transisi tanpa jejak persis
 // yang ADR-0007 larang.
+//
+// ⛔ TIKET 05b - `SimpanPolis`. Bila jalurnya melewati
+// `InsertJsonPolisLife_Act` (`Utility1`, atau `Submit` layar summary), sisa
+// activity itu sesudah JSON dibuang - nomor, rekap, salinan peserta warisan -
+// berjalan DI DALAM transaksi ini, SEBELUM kasus ditutup. Kasus yang tertutup
+// tanpa rekapnya, atau rekap yang tersimpan untuk kasus yang gagal ditutup,
+// keduanya tidak mungkin: satu commit untuk semuanya.
 func (p *Penawaran) terapkan(ctx context.Context, pelaku Pelaku,
 	keadaan repository.KeadaanPolis, akibat models.AkibatKeputusan,
-	sebab string, saat time.Time) error {
+	sebab string, saat time.Time) (HasilSubmitSummary, error) {
 
 	kerja := repository.NewWorkPolis(p.svc.db)
-	return p.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	var simpan HasilSubmitSummary
+	err := p.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+		if akibat.SimpanPolis {
+			var err error
+			simpan, err = p.svc.SummaryPremiumList().simpanDalam(ctx, tx, keadaan.ID, saat)
+			if err != nil {
+				return err
+			}
+		}
 		switch {
 		case akibat.Ditutup():
 			if err := kerja.TutupKasus(ctx, tx, keadaan.ID, akibat.StatusWork); err != nil {
@@ -197,4 +212,8 @@ func (p *Penawaran) terapkan(ctx context.Context, pelaku Pelaku,
 			Waktu:   saat,
 		})
 	})
+	if err != nil {
+		return HasilSubmitSummary{}, err
+	}
+	return simpan, nil
 }

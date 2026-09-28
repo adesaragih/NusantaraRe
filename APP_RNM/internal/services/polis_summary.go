@@ -9,8 +9,12 @@ package services
 //	         `AppendCurrencySummary_DT` untuk ditampilkan).
 //	Submit - SATU transaksi: penomoran (`SubmitPremiumList_Act` langkah
 //	         10-14) → rekap `T_PREMIUM_LIST_SUMMARY` hapus-lalu-sisip →
-//	         pl2 salinan peserta ke `M_LIFE_PREMIUM_DETAIL` → commit
-//	         (langkah 17 `Obj-Save`).
+//	         pl2 salinan peserta ke `M_LIFE_PREMIUM_DETAIL` → tiket 05b
+//	         `finishAssignment`: kasus ditutup Resolved-Completed + jejak →
+//	         commit.
+//
+// Bagian simpannya (`simpanDalam`) juga dijalankan `Utility1` sesudah
+// `Confirm` di tahap detail (`Transition7`) - lewat `Penawaran.terapkan`.
 //
 // ⛔ SATU TRANSAKSI, dan urutannya bagian dari kebenaran (AC 24 spec).
 // Nomor lebih dahulu, karena salinan warisan berkunci `PL_NUMBER`; rekap
@@ -40,7 +44,10 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
+	"time"
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
@@ -81,11 +88,21 @@ type HasilSubmitSummary struct {
 type SummaryPremiumList struct {
 	svc   *Service
 	nomor *NomorPremiumList
+	jejak Jejak
 }
 
-// SummaryPremiumList menyusun layanannya.
+// ErrSubmitBukanTahapSummary - `Submit` summary di luar tahapnya.
+var ErrSubmitBukanTahapSummary = errors.New(
+	"services: Submit summary hanya dari tahap Input Premium Summary")
+
+// SummaryPremiumList menyusun layanannya dengan jejak bawaan yang gagal terang.
 func (s *Service) SummaryPremiumList() *SummaryPremiumList {
-	return &SummaryPremiumList{svc: s, nomor: s.NomorPremiumList()}
+	return &SummaryPremiumList{svc: s, nomor: s.NomorPremiumList(), jejak: JejakBelumDiputuskan{}}
+}
+
+// DenganJejak mengganti perekamnya.
+func (s *SummaryPremiumList) DenganJejak(j Jejak) *SummaryPremiumList {
+	return &SummaryPremiumList{svc: s.svc, nomor: s.nomor, jejak: j}
 }
 
 // keTampil mengubah rekap desimal menjadi teks layar.
@@ -123,20 +140,24 @@ func (s *SummaryPremiumList) periksaDasar(pelaku Pelaku, polisID string) error {
 }
 
 // siapkan = periksaDasar + gerbang kasus tertutup, untuk layanan yang MENULIS.
-func (s *SummaryPremiumList) siapkan(ctx context.Context, pelaku Pelaku, polisID string) error {
+//
+// Mengembalikan keadaan kerja - tahapnya dibutuhkan `Submit`.
+func (s *SummaryPremiumList) siapkan(ctx context.Context, pelaku Pelaku, polisID string) (
+	repository.KeadaanPolis, error) {
+
 	if err := s.periksaDasar(pelaku, polisID); err != nil {
-		return err
+		return repository.KeadaanPolis{}, err
 	}
 	// ⛔ GERBANG KASUS TERTUTUP - butir bb, lewat `T_WORK_POLIS`.
 	keadaan, err := repository.NewWorkPolis(s.svc.db).Keadaan(ctx, polisID)
 	if err != nil {
-		return err
+		return repository.KeadaanPolis{}, err
 	}
 	if models.KasusPolisTertutup(keadaan.Status) {
-		return fmt.Errorf("%w: polis %q berstatus %q",
+		return repository.KeadaanPolis{}, fmt.Errorf("%w: polis %q berstatus %q",
 			ErrKasusPolisTertutup, polisID, keadaan.Status)
 	}
-	return nil
+	return keadaan, nil
 }
 
 // rekapDalam membaca peserta dan menghitung rekap di dalam transaksi.
@@ -192,59 +213,72 @@ func (s *SummaryPremiumList) Lihat(ctx context.Context, pelaku Pelaku, polisID s
 	return hasil, nil
 }
 
-// Submit menomori polis, mengganti rekapnya, dan menyalin peserta warisan -
-// SATU transaksi.
+// Submit adalah tombol `Submit` layar summary - tiket 05a + 05b.
 //
-// ⛔ URUTANNYA DIKUNCI `TestSubmitSummaryUrutanTerkunci`: nomor → rekap →
-// ganti rekap → sumber warisan → ganti warisan. Mengubah urutannya membuat
-// uji itu merah.
-func (s *SummaryPremiumList) Submit(ctx context.Context, pelaku Pelaku, polisID string) (
-	HasilSubmitSummary, error) {
+// `[terverifikasi]` b27471 `Submit` → b26414 `InsertJsonPolisLife_Act` →
+// b26442 `finishAssignment` → `Transition2` → `END52` Resolved-Completed.
+// Yang tersisa dari activity itu sesudah JSON dibuang (`simpanDalam`)
+// berjalan di transaksi yang SAMA dengan penutupan kasus dan jejaknya -
+// lewat `Penawaran.terapkan`, satu tempat untuk menutup kasus polis.
+//
+// ⛔ HANYA dari tahap `Input Premium Summary`. `finishAssignment` menyelesaikan
+// assignment yang sedang dibuka; memanggilnya dari tahap lain berarti
+// menutup kasus lewat konektor yang tahap itu tidak punya.
+func (s *SummaryPremiumList) Submit(ctx context.Context, pelaku Pelaku,
+	polisID string, saat time.Time) (HasilSubmitSummary, error) {
 
-	if err := s.siapkan(ctx, pelaku, polisID); err != nil {
-		return HasilSubmitSummary{}, err
-	}
-	saat := s.nomor.jam()
-	ringkas := repository.NewSummaryPolis(s.svc.db)
-	warisan := repository.NewPesertaWarisan(s.svc.db)
-
-	var hasil HasilSubmitSummary
-	err := s.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
-		// 1. Penomoran - langkah 10-14. Lahir sekali: submit ulang memakai
-		//    nomor yang sama dan tidak menggerakkan penghitung.
-		nomor, err := s.nomor.terbitkanDalam(ctx, tx, polisID, saat)
-		if err != nil {
-			return err
-		}
-		// 2. Rekap - rumus murni atas peserta yang baru saja dinomori.
-		_, rekap, err := s.rekapDalam(ctx, tx, polisID)
-		if err != nil {
-			return err
-		}
-		// 3. Hapus lalu sisip rekap.
-		dihapus, _, err := ringkas.GantiRekap(ctx, tx, polisID, rekap)
-		if err != nil {
-			return err
-		}
-		// 4-5. pl2 - salinan peserta ke tabel warisan, berkunci nomor.
-		sumber, err := ringkas.SumberWarisan(ctx, tx, polisID)
-		if err != nil {
-			return err
-		}
-		_, disalin, err := warisan.Ganti(ctx, tx, nomor.Nomor, polisID, sumber)
-		if err != nil {
-			return err
-		}
-		hasil = HasilSubmitSummary{
-			Nomor:          nomor,
-			Rekap:          keTampil(rekap),
-			RekapDihapus:   dihapus,
-			PesertaWarisan: disalin,
-		}
-		return nil
-	})
+	keadaan, err := s.siapkan(ctx, pelaku, polisID)
 	if err != nil {
 		return HasilSubmitSummary{}, err
 	}
-	return hasil, nil
+	if strings.TrimSpace(keadaan.Status) != models.TahapPolisSummary {
+		return HasilSubmitSummary{}, fmt.Errorf("%w: polis %q berada di %q, bukan %q",
+			ErrSubmitBukanTahapSummary, polisID, keadaan.Status, models.TahapPolisSummary)
+	}
+	return s.svc.Penawaran().DenganJejak(s.jejak).terapkan(ctx, pelaku, keadaan,
+		models.PenyelesaianSummary(), "Submit", saat)
+}
+
+// simpanDalam menomori polis, mengganti rekapnya, dan menyalin peserta
+// warisan - di dalam transaksi MILIK PEMANGGIL.
+//
+// ⛔ URUTANNYA DIKUNCI `TestSimpanDalamUrutanTerkunci`: nomor → rekap →
+// ganti rekap → sumber warisan → ganti warisan.
+func (s *SummaryPremiumList) simpanDalam(ctx context.Context, tx *repository.Tx,
+	polisID string, saat time.Time) (HasilSubmitSummary, error) {
+
+	ringkas := repository.NewSummaryPolis(s.svc.db)
+	warisan := repository.NewPesertaWarisan(s.svc.db)
+
+	// 1. Penomoran - langkah 10-14. Lahir sekali: simpan ulang memakai nomor
+	//    yang sama dan tidak menggerakkan penghitung.
+	nomor, err := s.nomor.terbitkanDalam(ctx, tx, polisID, saat)
+	if err != nil {
+		return HasilSubmitSummary{}, err
+	}
+	// 2. Rekap - rumus murni atas peserta yang baru saja dinomori.
+	_, rekap, err := s.rekapDalam(ctx, tx, polisID)
+	if err != nil {
+		return HasilSubmitSummary{}, err
+	}
+	// 3. Hapus lalu sisip rekap.
+	dihapus, _, err := ringkas.GantiRekap(ctx, tx, polisID, rekap)
+	if err != nil {
+		return HasilSubmitSummary{}, err
+	}
+	// 4-5. pl2 - salinan peserta ke tabel warisan, berkunci nomor + work.
+	sumber, err := ringkas.SumberWarisan(ctx, tx, polisID)
+	if err != nil {
+		return HasilSubmitSummary{}, err
+	}
+	_, disalin, err := warisan.Ganti(ctx, tx, nomor.Nomor, polisID, sumber)
+	if err != nil {
+		return HasilSubmitSummary{}, err
+	}
+	return HasilSubmitSummary{
+		Nomor:          nomor,
+		Rekap:          keTampil(rekap),
+		RekapDihapus:   dihapus,
+		PesertaWarisan: disalin,
+	}, nil
 }

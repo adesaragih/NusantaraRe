@@ -72,6 +72,11 @@ describe('penjaga statik', () => {
     expect(SUMBER).not.toMatch(/Number\(|parseFloat|parseInt/)
   })
 
+  it('sesudah Submit kasus tertutup dan tombolnya mati (05b)', () => {
+    expect(SUMBER).toContain('setSelesai(true)')
+    expect(SUMBER).toMatch(/disabled=\{[^}]*selesai/)
+  })
+
   it('rekap tidak dihitung di layar', () => {
     expect(SUMBER).not.toContain('GROSS_PREMIUM_RETRO +')
     expect(SUMBER).toContain('ambilRekapPolis')
