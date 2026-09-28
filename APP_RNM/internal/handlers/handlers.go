@@ -50,6 +50,9 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 	// bukan angka: jalur berisi /tahap/2 tidak terbaca siapa pun, dan
 	// angka yang bergeser memindahkan kasus ke tempat yang salah.
 	mux.HandleFunc("POST /api/klaim-life/{id}/tahap/{tujuan}", pindahTahap(svc, stubPelaku))
+	// `Save to RNM` - tombol layar Outstanding (`InputOSClaimLife.xml`
+	// b21102 -> `SaveOutStandingLife_Act`). POST, sebab ia MENULIS.
+	mux.HandleFunc("POST /api/klaim-life/{id}/outstanding", simpanRNM(svc, stubPelaku))
 	// Gerbang Close Claim: memeriksa, belum menyelesaikan penugasan.
 	mux.HandleFunc("GET /api/klaim-life/{id}/boleh-tutup", bolehTutup(svc))
 	// Penutupan kasus - butir bb. POST, sebab ia MENGUBAH: STATUS_WORK

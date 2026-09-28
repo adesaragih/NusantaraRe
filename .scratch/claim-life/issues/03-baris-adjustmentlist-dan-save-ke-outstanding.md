@@ -1,6 +1,6 @@
 # 03: Baris `AdjustmentList` + Save ke Outstanding
 
-**Status:** sebagian — rute Save to RNM (`SaveOutStandingLife_Act`) belum ada; spreading dan gerbang dokumen tanpa pemanggil produksi
+**Status:** sebagian — Save to RNM ADA sejak GILIRAN-11 paket 1 (`services/simpanrnm.go`); spreading tanpa pemanggil produksi; bendera `Save` tanpa kolom (OQ-N1)
 
 **Blocked by:** 02 (register klaim + penomoran), **14 (skema relasional klaim — PREFACTOR)**
 
@@ -38,8 +38,8 @@ persen; nama kolom tidak dapat dipakai menebak sifatnya).
 
 ## Acceptance criteria
 
-- [ ] Baris `AdjustmentList` yang baru disimpan ke Outstanding berstatus **Outstanding** (`0`).
-      *(AC 1 spec)* — belum: rute Save to RNM (`SaveOutStandingLife_Act`) belum ada — `TandaiOutstanding` nol pemanggil produksi
+- [x] Baris `AdjustmentList` yang baru disimpan ke Outstanding berstatus **Outstanding** (`0`).
+      *(AC 1 spec)* — bukti: `APP_RNM/internal/services/simpanrnm.go:SimpanRNM.Simpan` (langkah 22.1.3.2: `STS_REJECT=0` pada baris tanpa status, lewat `PerbaruiStatusBaris` + jejak); uji `TestStatusBarisKodeLamaKosongMenjadiISNULL` (penulisnya kini dapat menulis baris NULL)
 - [x] Sebuah klaim dapat memuat **beberapa** baris adjustment sekaligus, masing-masing dengan
       statusnya sendiri. *(AC 25 spec)* — bukti: `APP_RNM/internal/repository/klaimlife.go:KlaimLife.AmbilBaris` (daftar baris per peserta, `KodeStatus` per baris); uji `TestBarisMelekatPadaPesertanya`, `TestStatusKlaimTurunan`
 - [x] Baris yang ditambahkan setelah baris pertama **mewarisi delapan kolom** di atas dari baris
@@ -71,8 +71,8 @@ persen; nama kolom tidak dapat dipakai menebak sifatnya).
 - [ ] Baris adjustment menyimpan **nama bank**, **id bank**, dan **nomor rekening**, dan ketiganya
       dapat diisi dari layar rincian adjustment. *(AC 56 spec; `[terverifikasi]` class
       `ASM-FW-GISFW-Data-AdjustmentLife`, tampil di `Claim Life/Section/AdjustmentDetail_Section.xml`)* — belum: kolom ada dan ditulis `sisipBarisAdjustment`, tetapi nol layar maupun rute yang mengisinya — tidak ada isian bank di `frontend/src`
-- [ ] Ketiga field bank **boleh kosong saat Save ke Outstanding** — ia baru menjadi gerbang pada
-      **penyerahan ke Komite** (tiket 10). *(AC 57 spec)* — belum: rute Save to RNM belum ada, jadi belum ada simpan Outstanding untuk diuji
+- [x] Ketiga field bank **boleh kosong saat Save ke Outstanding** — ia baru menjadi gerbang pada
+      **penyerahan ke Komite** (tiket 10). *(AC 57 spec)* — bukti: `APP_RNM/internal/services/simpanrnm.go:PeriksaSimpanRNM` (nol gerbang bank di 29 langkah); uji `TestSimpanRNMLolosSeluruhGerbang` (peserta tanpa field bank lolos)
 
 ### Dokumen per peserta — **gerbang simpan** ⚠️ BARU 2026-09-16
 
@@ -85,7 +85,7 @@ persen; nama kolom tidak dapat dipakai menebak sifatnya).
 - [x] ⚠️ Dokumen tersimpan **per peserta** di `DOCUMENT_CLAIM` dan dapat dibaca dengan `SELECT`
       biasa — **bukan** lewat mekanisme lampiran bawaan. *(AC 44 spec; penyimpangan sadar 5)* — bukti: `APP_RNM/internal/repository/klaimlife.go:KlaimLife.AmbilDokumen` (`SELECT` biasa atas `T_CLAIMLF_DOCUMENT`), `APP_RNM/internal/services/unggahan.go:Unggahan.Unggah`; uji `TestAC05DokumenMenunjukPeserta`
 - [ ] ⚠️ Menyimpan ke Outstanding **ditolak** bila ada peserta yang dokumennya belum lengkap, dengan
-      pesan yang **menyebut peserta mana**. *(AC 45 spec; penyimpangan sadar 5)* — belum: `PeriksaDokumenAda`/`PeriksaDokumenLengkap` ada dan teruji (`TestPesertaTanpaDokumenDitolakDenganNomorUrut`), tetapi nol pemanggil — rute Save to RNM belum ada
+      pesan yang **menyebut peserta mana**. *(AC 45 spec; penyimpangan sadar 5)* — belum: SEBAGIAN — gerbang dokumen ADA menyebut nomor peserta (`TestSimpanRNMDokumenBelumDiunggahMenyebutSetiapNomor`), tetapi gerbang dokumen LENGKAP langkah 12 VERBATIM tanpa nomor (`TestSimpanRNMDokumenTidakLengkap`); AC ini dibantah XML untuk gerbang kedua
 - [x] Kolom isian `DOCUMENT_CLAIM` **diturunkan dari sensus `.DocumentList`** pada activity di atas,
       dan **keputusannya dicatat** — **jangan tebak dari nama tabel**. *(tiket 14 §Catatan)* — bukti: `APP_RNM/internal/repository/migrations/010_kolom_t_claimlf_document.sql` (tujuh kolom dari sensus `InsertDocument_Act`); uji `TestKolomDDLCocokDenganStruktur`
 - [x] Halaman React menampilkan daftar baris adjustment dengan status masing-masing sebagai kata,
@@ -634,3 +634,66 @@ laporan yang justru mengandalkan angka tersimpan.
 
 **AC:** tidak ada AC tiket ini yang berubah centangnya. Yang bertambah adalah **perilaku langkah 23**
 yang sebelumnya tidak tercatat di tiket mana pun.
+
+## Implementasi — 28 September 2026 (GILIRAN-11 paket 1: `Save to RNM`)
+
+`Activity/SaveOutStandingLife_Act.xml` dibaca **utuh sebagai pohon**: 29 langkah teratas, 58 langkah
+berikut anaknya, ±14.800 baris pecahan. Pohonnya dirakit dengan pengurai XML yang menyimpan nomor
+baris (bukan grep), supaya medan milik langkah INDUK yang tertulis SESUDAH anak-anaknya tidak
+terbaca sebagai milik anak terakhir. Petanya — langkah → padanan — ada di kepala
+`APP_RNM/internal/services/simpanrnm.go`.
+
+Yang dibangun: `POST /api/klaim-life/{id}/outstanding` (`handlers/simpanrnm.go` →
+`SimpanRNM.Simpan` → `PeriksaSimpanRNM`, murni), bergerbang tahap **Outstanding Claim** +
+pemegangnya; seluruh gerbang XML diperiksa SEBELUM satu tulisan pun; satu transaksi (nomor bila
+`CLAIM_NO` kosong, `STS_REJECT=0` bagi baris tanpa status, jejak); tabel warisan **hanya dibaca**
+(klaim ganda); Arasapas sesudah commit. Tombol `Save to RNM` (b21102) di `OutstandingClaimLife.tsx`.
+
+### ⛔ Cara membaca yang menentukan — dari korpus
+
+Baris `WHEN` hanya berlaku bila langkahnya ber-`pyStepsPreCondition=true`, baris `TRANS` hanya bila
+`pyStepsTransition=true`. Langkah 11.1 (`BusinessCode` L1–L11), 22.1.1 (`.IsCheck=="'true'"`), dan
+22.1.3 (`.PrintFaceClaim==1`) ber-WHEN **tanpa** bendera — WHEN-nya mati, dan langkahnya selalu
+berjalan. Langkah 15 ber-TRANS tanpa bendera pula. Kode aksi `6` = keluar activity
+(`claim-prop/grilling-ronde-2.md`).
+
+### ⛔ Ralat bertanggal atas bab-bab di atas — 28-09-2026
+
+1. **"`STS_REJECT = 0` ditulis per baris adjustment dan bergerbang `PrintFaceClaim`"** (pembacaan
+   26-09 butir 4) — **keliru separuh.** 22.1.3.1 (insert warisan) memang bergerbang
+   `.PrintFaceClaim==""`, tetapi **22.1.3.2 tidak punya precondition sama sekali**: ia menyetel
+   `.PrintFaceClaim=1`, `.STS_REJECT=0`, dan `.ADJUSTMENT_DATE` pada **setiap** baris, setiap kali.
+   Di Pega itu aman hanya karena bendera `pyWorkPage.Save=1` mematikan tombolnya sesudah simpan
+   pertama (b21095). Aplikasi ini tanpa kolom bendera (**OQ-N1**), jadi hurufnya **tidak** ditiru:
+   hanya baris **tanpa status** yang ditulis `0` — menulis semuanya berarti membatalkan penolakan
+   Admin diam-diam bila tombolnya ditekan lagi.
+2. **"Peran yang boleh Save to Outstanding adalah `ReasLifeSPV`"** — **benar untuk satu dari dua
+   pemanggil.** `SaveOutStandingLife_Act` dipanggil DUA tombol: dua di `AdjustmentDetail_Section`
+   (b16249/b16396, gerbang `pyPosition=='ReasLifeSPV'` b16468 — jalur SPV menambah putaran, tiket
+   11) **dan** `Save to RNM` di layar Outstanding `InputOSClaimLife` b21102 → b21126, yang dipegang
+   **Admin**. Rute ini meniru yang kedua (brief GILIRAN-11 §2 butir 1): gerbangnya pemegang tahap
+   Outstanding, `WajibPemegangTahap`. Bab "Hasil & nilai pengguna" karena itu hanya separuh.
+3. **Gerbang dokumen LENGKAP (langkah 12) menyaring SELURUH peserta**, bukan hanya yang dipilih:
+   langkah 12.2 tanpa precondition. `PeriksaDokumenLengkap` (tiket ini, 26-09) melewati peserta
+   tak dipilih — `PeriksaSimpanRNM` tidak memakainya dan memeriksa semuanya. Gerbang dokumen ADA
+   (langkah 3) memang menyaring `.IsAccept=="true"` (b1181; `IS_CHECK` padanan terdekat).
+4. **DOL di Save BERBEDA dengan `ValidasiDOL_Act`**: langkah 11.8 memakai jendela retro **tanpa**
+   pergeseran satu hari (b4464 `@addCalendar(.DATE_OF_LOSS,0,0,0,0,0,0,0)`), sedangkan
+   `ValidasiDOL_Act` menggeser (b698). Keduanya ditiru apa adanya; uji
+   `TestSimpanRNMDOLJendelaTanpaGeserRetro` menjaga bedanya.
+5. **Langkah 5 residu**: `@contains(.Protect,"1")` → pesan "Claim gross tidak boleh lebih besar dari
+   Share Nusantara Re" — `.Protect` **nol penulis** di seluruh korpus Claim Life, jadi pesan itu tidak
+   pernah muncul (OQ-N4).
+6. **Klaim ganda (11.2–11.6) membaca `OS_AKSEPTASI_KLAIM_LIFE`** dengan nama dan tanggal lahir
+   tertanggung — keduanya tidak disalin ke tabel klaim, jadi dicocokkan di SQL dengan baris sumber
+   (`repository/gandawarisan.go`); baris warisan milik aplikasi ini tidak pernah cocok (OQ-N2).
+7. **Langkah 13–20 (nomor)** bergerbang `CLAIM_NO==""` di setiap langkahnya; aplikasi menomori saat
+   pendaftaran, jadi cabang ini hanya berjalan bagi klaim tanpa nomor, memakai penomor yang sama.
+8. **Layar Outstanding** menyalin tombol perpindahannya sendiri tanpa konfirmasi
+   `Send Back to Admin?`; kini memakai `PanelPindahTahap` (satu daftar, satu dialog).
+
+### Pertanyaan terbuka yang lahir
+
+OQ-N1 (bendera `Save`), OQ-N2 (klaim ganda antarklaim baru, cacat SQL health), OQ-N3 (gerbang retro
+langkah 27 lawan OQ-064 Komite), OQ-N4 (residu `.Protect`, `ADJUSTMENT_DATE`/`PrintFaceClaim`,
+`.IsAccept`) — `OQ-untuk-tim.md`.

@@ -91,6 +91,25 @@ func TestKolomRingkasAdaDiMigrasi051(t *testing.T) {
 	}
 }
 
+// TestRingkasMembawaEmpatKunciSaveRNM - langkah 10, 11.1, 13-20, dan 27.
+func TestRingkasMembawaEmpatKunciSaveRNM(t *testing.T) {
+	q := sqlPolisRingkas("SKEMAUJI.T_PREMIUM_LIST")
+	for _, kolom := range []string{"p.BUSINESS_CODE", "p.CEDING_CO,", "p.RETRO_ID", "p.SECURITY_REINSURER_ID"} {
+		if !strings.Contains(q, kolom) {
+			t.Errorf("kolom %q tidak dibaca:\n%s", kolom, q)
+		}
+	}
+	isi, err := berkasMigrasi.ReadFile("migrations/051_t_premium_list.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, k := range []string{"BUSINESS_CODE", "CEDING_CO ", "RETRO_ID", "SECURITY_REINSURER_ID"} {
+		if !strings.Contains(string(isi), "  "+k) {
+			t.Errorf("kolom %q tidak ada di migrasi 051", k)
+		}
+	}
+}
+
 // TestTanggalRingkasBerpolaDinyatakan - bukan dari NLS sesi.
 func TestTanggalRingkasBerpolaDinyatakan(t *testing.T) {
 	q := sqlPolisRingkas("SKEMAUJI.T_PREMIUM_LIST")

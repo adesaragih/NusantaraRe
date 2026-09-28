@@ -39,6 +39,7 @@ describe.skipIf(!adaKorpus)('label Outstanding VERBATIM korpus', () => {
   })
 
   it.each([
+    [TOMBOL_OS.simpanRNM, 21102],
     [TOMBOL_OS.kembaliKeRegister, 21404],
     [TOMBOL_OS.kirimKeMedis, 21839],
   ])('tombol %s ada di baris %i', (label, nomor) => {
@@ -51,25 +52,18 @@ describe.skipIf(!adaKorpus)('label Outstanding VERBATIM korpus', () => {
 })
 
 describe('butir aw — dua tombol perpindahan', () => {
-  it('Send Back to Register menuju tahap input-register', () => {
-    // `pyLocalAction SendtoAdmin` (21433) → Decision3 → Assignment2.
-    const blok = SUMBER.slice(SUMBER.indexOf('const PERPINDAHAN'))
-    const baris = blok.slice(0, blok.indexOf(']'))
-    expect(baris).toContain(`TAHAP_JALUR.inputRegister`)
-    expect(baris).toContain('kembaliKeRegister')
+  it('perpindahan memakai PanelPindahTahap tahap Outstanding, bukan salinan', () => {
+    // ⛔ GILIRAN-11: salinan lokal melewatkan konfirmasi `Send Back to Admin?`.
+    // Isi daftarnya (dua tombol, tujuan, konfirmasi) dikunci
+    // `PanelPindahTahap.test.ts` — satu sumber.
+    expect(SUMBER).toContain('<PanelPindahTahap')
+    expect(SUMBER).toContain('tahap="Outstanding Claim"')
+    expect(SUMBER).not.toContain('const PERPINDAHAN')
   })
 
-  it('Send to Medical Check menuju tahap medical-check', () => {
-    const blok = SUMBER.slice(SUMBER.indexOf('const PERPINDAHAN'))
-    const baris = blok.slice(0, blok.indexOf(']'))
-    expect(baris).toContain(`TAHAP_JALUR.medicalCheck`)
-    expect(baris).toContain('kirimKeMedis')
-  })
-
-  it('cacah tombol perpindahan TEPAT dua', () => {
-    const blok = SUMBER.slice(SUMBER.indexOf('const PERPINDAHAN'))
-    const baris = blok.slice(0, blok.indexOf(']'))
-    expect(baris.match(/tujuan: TAHAP_JALUR\./g) ?? []).toHaveLength(2)
+  it('Save to RNM memanggil simpanKeRNM', () => {
+    expect(SUMBER).toContain('simpanKeRNM(klaimID)')
+    expect(SUMBER).toContain('TOMBOL_OS.simpanRNM')
   })
 
   it('cacatnya DICATAT di berkasnya, bukan disembunyikan', () => {

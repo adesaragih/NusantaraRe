@@ -45,6 +45,8 @@ var layananPengubah = map[string][]string{
 	"unggahan.go":    {"pagari"},
 	"komite.go":      {"Serahkan"},
 	"tahap.go":       {"Pindah"},
+	// GILIRAN-11 paket 1 - Save to RNM (SaveOutStandingLife_Act).
+	"simpanrnm.go":   {"Simpan"},
 	"statusbaris.go": {"ubah"},
 }
 
@@ -195,6 +197,7 @@ var rutePengubah = map[string]string{
 	"POST /api/klaim-life/{id}/peserta/{pesertaId}/putaran":                   "hasilkomite.go",
 	"POST /api/klaim-life/{id}/peserta/{pesertaId}/adjustment/{adjId}/komite": "komite.go",
 	"POST /api/klaim-life/{id}/tahap/{tujuan}":                                "tahap.go",
+	"POST /api/klaim-life/{id}/outstanding":                                   "simpanrnm.go",
 	"POST /api/klaim-life/{id}/tutup":                                         "tutup.go",
 	"POST /api/klaim-life/{id}/adjustment/{adjId}/tolak":                      "statusbaris.go",
 	"PUT /api/klaim-life/{id}/peserta/{pesertaId}/tanggal-kejadian":           "dol.go",

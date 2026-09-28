@@ -51,6 +51,10 @@ var berkasYangBolehMenulisStatus = map[string]string{
 	// Gerbangnya PEMEGANG TAHAP, bukan daftar peran datar - pohon XML
 	// membuktikan tombolnya tidak bergerbang peran.
 	"akseptasi.go": "WajibPemegangTahap(pelaku, tahap)",
+	// GILIRAN-11 paket 1: Save to RNM menulis Outstanding (`0`) HANYA pada
+	// baris yang belum berstatus (langkah 22.1.3.2). Gerbangnya pemegang tahap
+	// Outstanding - tombolnya di layar itu, dan layar itu dipegang Admin.
+	"simpanrnm.go": "WajibPemegangTahap(pelaku, tahap)",
 	// Komite Claim Life tiket 04a: akseptasi tingkat akhir komite. Gerbangnya
 	// ANGGOTA BERJALAN tangga (ADR-0014), diulang di penulis statusnya.
 	"komite_akseptasi.go": "periksaGiliran(kasus, pelaku.AkunID)",

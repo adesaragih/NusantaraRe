@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 
 	"time"
 
@@ -327,6 +328,63 @@ func (r *KlaimLife) PerbaruiTanggalKlaim(ctx context.Context, tx *Tx,
 	return nil
 }
 
+// IsiNomorKlaimKosong menulis CLAIM_NO header klaim yang MASIH kosong.
+//
+// `Save to RNM` langkah 13-20 bergerbang `CLAIM_NO==""` di setiap langkahnya:
+// nomor ditulis hanya sekali. ⛔ `CLAIM_NO IS NULL` ikut di WHERE, dan nol
+// baris tersentuh adalah GALAT - klaim yang dinomori pihak lain di antara baca
+// dan tulis tidak boleh ditimpa nomor kedua.
+func (r *KlaimLife) IsiNomorKlaimKosong(ctx context.Context, tx *Tx, klaimID, nomor string) error {
+	tabel, err := r.db.Qualify("T_GENERAL_CLAIM")
+	if err != nil {
+		return err
+	}
+	q := fmt.Sprintf(`UPDATE %s SET CLAIM_NO = :1 WHERE ID = :2 AND CLAIM_NO IS NULL`, tabel)
+	if err := PeriksaSQL(q); err != nil {
+		return err
+	}
+	hasil, err := tx.tx.ExecContext(ctx, q, nomor, klaimID)
+	if err != nil {
+		return fmt.Errorf("repository: menulis CLAIM_NO: %w", err)
+	}
+	n, err := hasil.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("repository: mencacah baris tersentuh: %w", err)
+	}
+	if n != 1 {
+		return fmt.Errorf("repository: CLAIM_NO klaim %q menyentuh %d baris, mau 1 (sudah bernomor?)",
+			klaimID, n)
+	}
+	return nil
+}
+
+// sqlStatusBarisAdjustment merakit UPDATE baris adjustment bersyarat kode lama.
+//
+// ⛔ Kode lama KOSONG menjadi `STS_REJECT IS NULL`, bukan `= NULL`. Ronde
+// sebelumnya selalu menulis `STS_REJECT = :5`, dan `= NULL` tidak pernah benar
+// di SQL - baris yang belum berstatus karena itu TIDAK PERNAH dapat ditulis,
+// dan setiap percobaan berakhir "menyentuh 0 baris". `Save to RNM` langkah
+// 22.1.3.2 (`.STS_REJECT = 0` untuk baris yang belum pernah tersimpan) adalah
+// penulis pertama yang benar-benar membutuhkannya (GILIRAN-11 paket 1).
+func sqlStatusBarisAdjustment(adj string, lamaKosong bool) string {
+	syarat := "STS_REJECT = :5"
+	if lamaKosong {
+		syarat = "STS_REJECT IS NULL"
+	}
+	return fmt.Sprintf(`UPDATE %s SET STS_REJECT = :1, ACCEPTED_NO = :2, ACCEPTATION_DATE = :3
+			  WHERE ID = :4 AND %s`, adj, syarat)
+}
+
+func argStatusBarisAdjustment(kode, nomorAksep string, tglAksep time.Time, adjID, kodeLama string) []any {
+	arg := []any{kosongJadiNil(kode), kosongJadiNil(nomorAksep), waktuJadiNil(tglAksep), adjID}
+	if !kosong(kodeLama) {
+		arg = append(arg, kodeLama)
+	}
+	return arg
+}
+
+func kosong(s string) bool { return strings.TrimSpace(s) == "" }
+
 // PerbaruiStatusBaris menulis status ke baris adjustment DAN ke pesertanya.
 //
 // Header klaim TIDAK ditulis di sini - sumbernya baris yang berbeda; lihat
@@ -377,11 +435,8 @@ func (r *KlaimLife) PerbaruiStatusBaris(ctx context.Context, tx *Tx,
 	}{
 		// ACCEPTATION_DATE ditulis bersama status, seperti `SaveAdjustment_Act`
 		// yang menyetel ketiganya dalam satu Property-Set.
-		{"baris adjustment", fmt.Sprintf(
-			`UPDATE %s SET STS_REJECT = :1, ACCEPTED_NO = :2, ACCEPTATION_DATE = :3
-			  WHERE ID = :4 AND STS_REJECT = :5`, adj),
-			[]any{kosongJadiNil(kode), kosongJadiNil(nomorAksep),
-				waktuJadiNil(tglAksep), adjID, kosongJadiNil(kodeLama)}},
+		{"baris adjustment", sqlStatusBarisAdjustment(adj, kosong(kodeLama)),
+			argStatusBarisAdjustment(kode, nomorAksep, tglAksep, adjID, kodeLama)},
 		{"peserta", fmt.Sprintf(
 			`UPDATE %s SET STS_REJECT = :1 WHERE ID = :2`, pes),
 			[]any{kosongJadiNil(kode), pesertaID}},

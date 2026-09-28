@@ -615,3 +615,45 @@ hari ini boleh mengubah DOL.
 (2) `Hitung` menghitung KEDUA penanda sekaligus dan gagal bila STNC tidak dapat dihitung, padahal
 dialog ini hanya menyentuh yang pertama. Di Pega penandanya tidak memblokir (OQ-G).
 > Penanda Claim Received: kolom baru, atau tampil-saja sesudah simpan?
+
+## 28 September 2026 — OQ-N (Save to RNM, GILIRAN-11 paket 1)
+
+`Activity/SaveOutStandingLife_Act.xml` dibaca UTUH sebagai pohon (29 langkah teratas, pecahan
+`sed 's/></>\n</g'`) dan dibangun sebagai `POST /api/klaim-life/{id}/outstanding`
+(`services/simpanrnm.go`). Empat hal di bawah tidak dapat diputuskan executor.
+
+**OQ-N1** *(untuk work owner — skema)* — bendera `pyWorkPage.Save`. Langkah 21 menyetelnya `""`,
+langkah 24 `1` bila seluruh `TempError.CARIx==0` dan `Attachment.pxResults(1).CountAttach!=0` (b11448);
+ia **mematikan** tombol `Save to RNM` (`pyDisabledWhen` b21095) dan **membuka** kontainer
+*Participant Details* (b15490; di Register kebalikannya, b16855/b23236). Tidak ada kolom untuknya di
+migrasi 001–020. Akibatnya tombol tetap hidup dan dapat ditekan ulang — **aman**, sebab tulisannya
+idempoten: nomor hanya bila `CLAIM_NO` kosong, `STS_REJECT=0` hanya pada baris tanpa status.
+⛔ Karena itu pula langkah 22.1.3.2 **tidak** ditiru hurufnya: ia menulis `.STS_REJECT=0` pada
+**setiap** baris tanpa precondition; di Pega itu aman hanya karena bendera mematikan tombolnya
+sesudah simpan pertama. Tanpa bendera, menirunya berarti membatalkan penolakan Admin diam-diam.
+> Kolom bendera simpan di `T_WORK_CLAIM` (migrasi baru), atau cukup keadaan turunan?
+
+**OQ-N2** *(untuk work owner / DBA)* — klaim ganda (langkah 11.2–11.6) membaca
+`OS_AKSEPTASI_KLAIM_LIFE` dengan kunci `CEDINGCO`, `NAME_OF_INSURED`, `DOB`, `CERTIFICATE_NO`,
+`PL_NUMBER`. Dua hal: (1) baris warisan yang **aplikasi ini** tulis saat pendaftaran membiarkan
+`NAME_OF_INSURED`, `DOB`, `CEDINGCO` NULL, sehingga klaim ganda antarklaim **baru** tidak pernah
+tertangkap — hanya baris era Pega; (2) SQL health membandingkan `LAPSE_DATE = TO_DATE({CARI6},
+'DD/MM/YYYY')` padahal `CARI6 = .DATE_OF_LOSS` mentah (b3189) — ditiru maksudnya (DOL sama).
+Nama dan tanggal lahir tidak pernah meninggalkan basis data: pencocokannya menggabung baris sumber
+`M_LIFE_PREMIUM_DETAIL` di dalam SQL (`repository/gandawarisan.go`).
+> Bolehkah cermin warisan mengisi ketiga kolom itu, supaya klaim ganda antarklaim baru tertangkap?
+
+**OQ-N3** *(untuk work owner)* — gerbang langkah 27: `RetroID=="L0000141" ||
+SecurityReinsurerID=="L0000134"` (b11794) dan `RetroID=="1000013"` (b11817) KELUAR sebelum Arasapas.
+Modul Komite **membuang** gerbang yang sama *(OQ-064, `KomitePostAdjustment` langkah 9)*; keputusan
+itu tidak menyebut Claim Life, jadi di sini **XML yang menang** (`ArasapasDilewatiRetro`).
+> Berlakukah OQ-064 juga untuk Save to RNM?
+
+**OQ-N4** *(untuk pemilik ekspor — temuan)* — tiga residu yang tidak ditiru, dengan buktinya:
+(a) langkah 5 `@contains(.Protect,"1")` → pesan *"Claim gross tidak boleh lebih besar dari Share
+Nusantara Re"*: properti `.Protect` **nol penulis** di seluruh korpus Claim Life, jadi pesannya tidak
+pernah muncul; (b) `ADJUSTMENT_DATE` dan `PrintFaceClaim` (langkah 22.1.3.2) tanpa kolom — penanda
+"sudah tersimpan" per baris digantikan status baris itu sendiri; (c) gerbang dokumen pertama menyaring
+`.IsAccept=="true"` (b1181), yang tidak punya kolom; `IS_CHECK` dipakai sebagai padanan terdekat
+(`[terbuka]` sejak tiket 03).
+

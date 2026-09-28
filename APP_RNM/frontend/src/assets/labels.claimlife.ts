@@ -223,6 +223,11 @@ export const OUTSTANDING = {
  * ADR-U-0002 ketiganya menyebut jalur balik ini sebagai fitur.
  */
 export const TOMBOL_OS = {
+  /**
+   * b21102 `pyLabel` → `refresh` b21112 → `SaveOutStandingLife_Act` b21126.
+   * Mati bila `pyWorkPage.Save = 1` (b21095) — bendera tanpa kolom (OQ-N1).
+   */
+  simpanRNM: 'Save to RNM',
   /** b21404 → `pyLocalAction SendtoAdmin` 21433 → tahap `input-register`. */
   kembaliKeRegister: 'Send Back to Register',
   /** b21349 / b21839 → `SendtoAdmin_Act1` 21863 → tahap `medical-check`. */

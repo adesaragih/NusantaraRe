@@ -904,6 +904,37 @@ export async function pindahTahap(klaimID: string, tujuan: TahapJalur): Promise<
   )
 }
 
+/** Hasil `Save to RNM` yang berhasil — `services.HasilSimpanRNM`. */
+export interface HasilSimpanRNM {
+  nomorKlaim: string
+  /** Nomor diterbitkan saat simpan ini (langkah 13-20), bukan saat pendaftaran. */
+  nomorBaru: boolean
+  /** Baris tanpa status yang kini Outstanding (langkah 22.1.3.2). */
+  barisDitandai: number
+  /** Keadaan efek Arasapas langkah 28, sebagai kata. */
+  arasapas: string
+}
+
+/**
+ * `Save to RNM` — tombol layar Outstanding (`InputOSClaimLife.xml` b21102 →
+ * `SaveOutStandingLife_Act`). Seluruh gerbang XML diperiksa di server.
+ *
+ * Kode jawaban yang mungkin:
+ *   200 tersimpan
+ *   400 permintaan tidak sah (mis. peserta tanpa SOURCE_ID)
+ *   401 tanpa identitas · 403 bukan pemegang tahap Outstanding
+ *   409 bukan tahap Outstanding Claim, atau kasusnya sudah ditutup
+ *   422 gerbang XML menolak — `galat` membawa kalimat XML apa adanya,
+ *       `langkah` langkah asalnya; atau data untuk memeriksanya belum lengkap
+ *   503 basis data belum dikonfigurasi
+ */
+export async function simpanKeRNM(klaimID: string): Promise<HasilSimpanRNM> {
+  return await minta<HasilSimpanRNM>(
+    `/api/klaim-life/${encodeURIComponent(klaimID)}/outstanding`,
+    { metode: 'POST' },
+  )
+}
+
 // ---------------------------------------------------------------------------
 // TIKET 06 — tanggal kejadian (DOL), dari layar Detail.
 // ---------------------------------------------------------------------------

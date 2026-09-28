@@ -55,6 +55,18 @@ type PolisRingkas struct {
 	ProductName   string
 	// ProdKe adalah versi yang terbaca, supaya pemanggil dapat menyatakannya.
 	ProdKe int
+
+	// Empat KUNCI yang `Save to RNM` pakai - bukan medan layar, sehingga
+	// TIDAK menyeberang ke JSON `PolicyDataLife` (kontraknya dikunci dua sisi).
+	//
+	//	BusinessCode        `PolicyDataLife.BusinessCode`  langkah 10 (ContentNote), 13-20
+	//	CedingCo            `PolicyDataLife.CedingCo`      langkah 11.1 `CARI1` (klaim ganda)
+	//	RetroID             `PolicyDataLife.RetroID`       langkah 27
+	//	SecurityReinsurerID `PolicyDataLife.SecurityReinsurerID` langkah 27
+	BusinessCode        string
+	CedingCo            string
+	RetroID             string
+	SecurityReinsurerID string
 }
 
 // RingkasPolisLife membaca ringkasan polis.
@@ -77,7 +89,8 @@ func sqlPolisRingkas(polis string) string {
 	        p.CEDING_CO_NAME, p.POLICY_HOLDER_NAME, p.BUSINESS_NAME,
 	        TO_CHAR(p.DATE_RECEIVED, 'YYYY-MM-DD'),
 	        p.STATUSS, p.STATUS_UPDATE, p.PRODUCT_NAME_ID, p.PRODUCT_NAME,
-	        NVL(p.PROD_KE, 0)
+	        NVL(p.PROD_KE, 0),
+	        p.BUSINESS_CODE, p.CEDING_CO, p.RETRO_ID, p.SECURITY_REINSURER_ID
 	   FROM %s p
 	  WHERE p.NO_POLIS = :1
 	  ORDER BY NVL(p.PROD_KE, 0) DESC
@@ -103,11 +116,13 @@ func (r *RingkasPolisLife) Ringkas(ctx context.Context, nomorPolis string) (
 	var (
 		no, tipe, marketing, ceding, pemegang, bisnis sql.NullString
 		diterima, status, statusUbah, prodID, prodNm  sql.NullString
+		kodeBisnis, cedingKode, retroID, secID        sql.NullString
 		prodKe                                        int
 	)
 	if err := r.db.sql.QueryRowContext(ctx, q, nomorPolis).Scan(
 		&no, &tipe, &marketing, &ceding, &pemegang, &bisnis,
-		&diterima, &status, &statusUbah, &prodID, &prodNm, &prodKe); err != nil {
+		&diterima, &status, &statusUbah, &prodID, &prodNm, &prodKe,
+		&kodeBisnis, &cedingKode, &retroID, &secID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return PolisRingkas{}, fmt.Errorf("%w: %q", ErrPolisNomorTakDitemukan, nomorPolis)
 		}
@@ -125,6 +140,11 @@ func (r *RingkasPolisLife) Ringkas(ctx context.Context, nomorPolis string) (
 		ProductNameID:    prodID.String,
 		ProductName:      prodNm.String,
 		ProdKe:           prodKe,
+
+		BusinessCode:        strings.TrimSpace(kodeBisnis.String),
+		CedingCo:            strings.TrimSpace(cedingKode.String),
+		RetroID:             strings.TrimSpace(retroID.String),
+		SecurityReinsurerID: strings.TrimSpace(secID.String),
 	}
 	// ⛔ NULL tetap nil, bukan tanggal kosong berbentuk teks: kolom yang belum
 	// diisi dan kolom bertanggal adalah dua keadaan berbeda.

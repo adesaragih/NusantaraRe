@@ -18,8 +18,9 @@ import { useState } from 'react'
 
 import { OUTSTANDING, TOMBOL_OS } from '../../assets/labels.claimlife'
 import { PanelDataPolis } from '../../components/claimlife/PanelDataPolis'
+import { PanelPindahTahap } from '../../components/claimlife/PanelPindahTahap'
 import { Gagal } from '../../components/ui/dasar'
-import { pesanGalat, pindahTahap, TAHAP_JALUR, type TahapJalur } from '../../services/api'
+import { pesanGalat, simpanKeRNM, type HasilSimpanRNM } from '../../services/api'
 
 export interface OutstandingProps {
   /** Pengenal work kasus yang sedang dibuka. */
@@ -30,14 +31,6 @@ export interface OutstandingProps {
   onDetail: () => void
 }
 
-/** Kedua tombol perpindahan, dengan tahap tujuannya. */
-const PERPINDAHAN: ReadonlyArray<{ label: string; tujuan: TahapJalur }> = [
-  // b21404 → `pyLocalAction SendtoAdmin` 21433.
-  { label: TOMBOL_OS.kembaliKeRegister, tujuan: TAHAP_JALUR.inputRegister },
-  // b21839 → `SendtoAdmin_Act1` 21863.
-  { label: TOMBOL_OS.kirimKeMedis, tujuan: TAHAP_JALUR.medicalCheck },
-]
-
 export default function OutstandingClaimLife({
   klaimID,
   onPindah,
@@ -45,14 +38,16 @@ export default function OutstandingClaimLife({
 }: OutstandingProps) {
   const [galat, setGalat] = useState<unknown>(null)
   const [sibuk, setSibuk] = useState(false)
+  const [tersimpan, setTersimpan] = useState<HasilSimpanRNM | null>(null)
 
-  async function pindah(tujuan: TahapJalur): Promise<void> {
+  /** `Save to RNM` b21102 — gerbangnya seluruhnya di server. */
+  async function simpan(): Promise<void> {
     setSibuk(true)
     setGalat(null)
     try {
-      await pindahTahap(klaimID, tujuan)
-      onPindah()
+      setTersimpan(await simpanKeRNM(klaimID))
     } catch (e) {
+      setTersimpan(null)
       setGalat(e)
     } finally {
       setSibuk(false)
@@ -75,20 +70,30 @@ export default function OutstandingClaimLife({
       <PanelDataPolis />
 
       <div className="os__aksi">
-        {PERPINDAHAN.map((p) => (
-          <button
-            key={p.tujuan}
-            type="button"
-            className="os__tombol"
-            disabled={sibuk}
-            onClick={() => {
-              void pindah(p.tujuan)
-            }}
-          >
-            {p.label}
-          </button>
-        ))}
+        <button
+          type="button"
+          className="os__tombol"
+          disabled={sibuk}
+          onClick={() => {
+            void simpan()
+          }}
+        >
+          {sibuk ? 'Menyimpan…' : TOMBOL_OS.simpanRNM}
+        </button>
       </div>
+      {tersimpan !== null && (
+        <p role="status">
+          Tersimpan ke RNM — nomor klaim {tersimpan.nomorKlaim}
+          {tersimpan.nomorBaru ? ' (baru diterbitkan)' : ''}; {tersimpan.barisDitandai} baris
+          ditandai Outstanding; Arasapas: {tersimpan.arasapas}.
+        </p>
+      )}
+
+      {/* ⛔ Perpindahan TIDAK disalin di sini lagi (GILIRAN-11): salinan lokal
+          melewatkan konfirmasi `Send Back to Admin?` (SendtoAdmin_Section
+          b566) yang dibuka local action `SendtoAdmin` b21433. Satu daftar,
+          satu dialog — `PanelPindahTahap`. */}
+      <PanelPindahTahap klaimID={klaimID} tahap="Outstanding Claim" sesudahPindah={onPindah} />
 
       {galat !== null && (
         <>
