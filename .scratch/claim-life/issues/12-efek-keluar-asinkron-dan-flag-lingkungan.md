@@ -298,3 +298,9 @@ pernah lulus walau pekerja outbox dijalankan. Kini: `services/api.ts:ambilIsiDok
 nama header yang sama dengan klien; TS selalu mengirimnya. Penjaga statik di seluruh `frontend/src`:
 nol `href`/`src` dinamis, nol `window.open`/`location`, `rakitURL` hanya di dalam `fetch`. Layar
 PremiumList dan Komite: nol pola serupa (lampiran Komite belum tersambung).
+
+Temuan /code-review GILIRAN-12: handler `isiDokumen` kini memeriksa identitas SEBELUM basis data,
+sehingga uji kontraknya memanggil handler sungguhan (401 tanpa header, 503 dengan header tanpa
+Oracle). Uji asap DEV dengan pengenal fiktif menjumpai **500** untuk dokumen yang tidak ada —
+`repository.ErrDokumenTidakAda` tidak dipetakan; kini **404** `dokumen tidak ada`
+(`services.ErrDokumenTidakAda`, uji `TestGalatDokumenDipetakanKeKodeYangBenar`).

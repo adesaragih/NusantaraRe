@@ -24,6 +24,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -379,6 +380,11 @@ func jawabGalatPolis(w http.ResponseWriter, err error) bool {
 		// ⚠️ Kalimatnya NETRAL sejak tiket 03. Sebelumnya ia berbunyi "gagal
 		// memproses keputusan polis" - benar saat hanya dua rute keputusan
 		// memakainya, menyesatkan sejak rute detail dan penomoran ikut.
+		//
+		// ⚠️ Sebabnya DICATAT di log server (GILIRAN-12 paket 3): ORA-01008 di
+		// kotak masuk polis hanya dapat ditemukan lewat program diagnosis,
+		// sebab jawaban 500 ini tidak meninggalkan jejak apa pun.
+		log.Printf("permintaan polis: %v", err)
 		galat(w, http.StatusInternalServerError, "gagal memproses permintaan polis")
 	}
 	return true

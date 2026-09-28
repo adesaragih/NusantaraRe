@@ -11,6 +11,11 @@ package repository
 // Penampung unik (nilai dikirim dua kali) terikat benar di keduanya.
 //
 // Nol uji lain yang menangkapnya: semua uji repository berjalan tanpa Oracle.
+//
+// ⚠️ CAKUPANNYA DINYATAKAN: literal backtick yang memuat kata kunci SQL, bind
+// angka (`:1`) maupun bernama (`:offset`). SQL yang dirakit dari potongan
+// string terpisah (klausa pembatas baris di potongan lain dari WHERE-nya)
+// tidak terlihat oleh penjaga ini.
 
 import (
 	"os"
@@ -25,7 +30,9 @@ func TestNolPenampungBerulangDiSQLBerpembatasBaris(t *testing.T) {
 		t.Fatal(err)
 	}
 	literal := regexp.MustCompile("(?s)`([^`]*)`")
-	penampung := regexp.MustCompile(`(?:^|[^A-Za-z0-9_]):(\d+)\b`)
+	// Bind angka atau bernama; `HH24:MI:SS` tidak ikut (didahului huruf/angka).
+	penampung := regexp.MustCompile(`(?:^|[^A-Za-z0-9_':]):(\d+|[A-Za-z_]\w*)\b`)
+	sql := regexp.MustCompile(`(?i)\b(SELECT|UPDATE|INSERT|DELETE|MERGE)\b`)
 	pembatas := regexp.MustCompile(`(?i)\bFETCH\s+(NEXT|FIRST)\b|\bOFFSET\b`)
 	diperiksa := 0
 	for _, b := range berkas {
@@ -39,7 +46,8 @@ func TestNolPenampungBerulangDiSQLBerpembatasBaris(t *testing.T) {
 		}
 		for _, m := range literal.FindAllStringSubmatch(string(isi), -1) {
 			q := m[1]
-			if !pembatas.MatchString(q) {
+			// Literal di komentar (`OFFSET … FETCH` sebagai teks) bukan SQL.
+			if !pembatas.MatchString(q) || !sql.MatchString(q) {
 				continue
 			}
 			diperiksa++

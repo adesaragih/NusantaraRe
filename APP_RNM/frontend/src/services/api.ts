@@ -300,45 +300,66 @@ async function minta<T>(jalur: string, opsi: OpsiMinta = {}): Promise<T> {
 
   // 204 dan badan kosong: tidak ada yang perlu diurai.
   const teks = await jawab.text()
+  if (!jawab.ok) throw kegagalanDari(jawab.status, teks)
+  return uraiJSON(jawab.status, teks) as T
+}
+
+/** Badan sukses sebagai JSON; kosong menjadi `undefined`, bukan JSON menjadi galat. */
+function uraiJSON(status: number, teks: string): unknown {
+  if (teks.trim() === '') return undefined
+  try {
+    return JSON.parse(teks)
+  } catch {
+    throw bukanJSON(status)
+  }
+}
+
+/** `BACKEND_TIDAK_TERJANGKAU` — jawaban yang tidak sampai dari backend. */
+function bukanJSON(status: number): ApiFailure {
+  return new ApiFailure(status, {
+    code: 'BACKEND_TIDAK_TERJANGKAU',
+    message:
+      'Jawaban dari server bukan JSON; permintaan tampaknya tidak ' +
+      'sampai ke backend.',
+  })
+}
+
+/**
+ * Kegagalan dari jawaban yang TIDAK ok — SATU pembaca amplop `{galat}` untuk
+ * `minta`, `mintaFormulir`, dan `ambilIsiDokumen` (temuan /code-review
+ * GILIRAN-12: tiga salinan dalam satu berkas lolos dari penjaga per berkas).
+ */
+function kegagalanDari(status: number, teks: string): ApiFailure {
   let isi: unknown
   if (teks.trim() !== '') {
     try {
       isi = JSON.parse(teks)
     } catch {
-      throw new ApiFailure(jawab.status, {
-        code: 'BACKEND_TIDAK_TERJANGKAU',
-        message:
-          'Jawaban dari server bukan JSON; permintaan tampaknya tidak ' +
-          'sampai ke backend.',
-      })
+      return bukanJSON(status)
     }
   }
-
-  if (!jawab.ok) {
-    const o = (isi ?? {}) as { galat?: unknown; penghalang?: unknown }
-    throw new ApiFailure(jawab.status, {
-      code: 'DITOLAK_BACKEND',
-      // ⛔ Kuncinya `galat`, bukan `error`. `handlers.galat` di Go menulis
-      // `{"galat": "<kalimat>"}` sejak tiket 01; baris ini sempat membaca
-      // `error`, sehingga SETIAP pesan backend - 401, 403, 409, 503 - jatuh
-      // ke teks bawaan dan pemakai melihat pita merah yang tidak
-      // menyebutkan apa pun.
-      //
-      // ⛔ `error` sengaja TIDAK ikut diterima. Menerima kedua kunci akan
-      // menambal gejalanya dan menyembunyikan sebabnya: sejak itu kedua sisi
-      // tidak pernah dipaksa bertemu lagi. Kontraknya dikunci dua sisi -
-      // `envelopegalat.test.ts` di sini, `envelopegalat_test.go` di Go.
-      message: typeof o.galat === 'string' && o.galat !== '' ? o.galat : undefined,
-      // ⛔ SELURUH penghalang dibawa, bukan yang pertama. Pega memasang
-      // pesannya di dalam loop, sekali per peserta yang tertandai; melaporkan
-      // satu saja memaksa pemakai menutup berulang kali dan menemukan satu
-      // penghalang baru setiap kali.
-      penghalang: Array.isArray(o.penghalang)
-        ? (o.penghalang as PenghalangTutup[])
-        : undefined,
-    })
-  }
-  return isi as T
+  const o = (isi ?? {}) as { galat?: unknown; penghalang?: unknown }
+  return new ApiFailure(status, {
+    code: 'DITOLAK_BACKEND',
+    // ⛔ Kuncinya `galat`, bukan `error`. `handlers.galat` di Go menulis
+    // `{"galat": "<kalimat>"}` sejak tiket 01; baris ini sempat membaca
+    // `error`, sehingga SETIAP pesan backend - 401, 403, 409, 503 - jatuh
+    // ke teks bawaan dan pemakai melihat pita merah yang tidak
+    // menyebutkan apa pun.
+    //
+    // ⛔ `error` sengaja TIDAK ikut diterima. Menerima kedua kunci akan
+    // menambal gejalanya dan menyembunyikan sebabnya: sejak itu kedua sisi
+    // tidak pernah dipaksa bertemu lagi. Kontraknya dikunci dua sisi -
+    // `envelopegalat.test.ts` di sini, `envelopegalat_test.go` di Go.
+    message: typeof o.galat === 'string' && o.galat !== '' ? o.galat : undefined,
+    // ⛔ SELURUH penghalang dibawa, bukan yang pertama. Pega memasang
+    // pesannya di dalam loop, sekali per peserta yang tertandai; melaporkan
+    // satu saja memaksa pemakai menutup berulang kali dan menemukan satu
+    // penghalang baru setiap kali.
+    penghalang: Array.isArray(o.penghalang)
+      ? (o.penghalang as PenghalangTutup[])
+      : undefined,
+  })
 }
 
 // ---------------------------------------------------------------------------
@@ -1349,31 +1370,6 @@ export async function hapusDokumen(klaimID: string, dokID: string): Promise<void
 }
 
 /**
- * Kegagalan dari jawaban yang TIDAK ok - amplop `{galat}` yang sama dengan
- * `minta` dan `mintaFormulir`, untuk jalur yang badan suksesnya BUKAN JSON.
- */
-function kegagalanDari(status: number, teks: string): ApiFailure {
-  let isi: unknown
-  if (teks.trim() !== '') {
-    try {
-      isi = JSON.parse(teks)
-    } catch {
-      return new ApiFailure(status, {
-        code: 'BACKEND_TIDAK_TERJANGKAU',
-        message:
-          'Jawaban dari server bukan JSON; permintaan tampaknya tidak ' +
-          'sampai ke backend.',
-      })
-    }
-  }
-  const o = (isi ?? {}) as { galat?: unknown }
-  return new ApiFailure(status, {
-    code: 'DITOLAK_BACKEND',
-    message: typeof o.galat === 'string' && o.galat !== '' ? o.galat : undefined,
-  })
-}
-
-/**
  * Isi satu dokumen sebagai Blob — `View Office Online` b3502
  * (runActivity `DownloadDocumentClaim` b3519).
  *
@@ -1446,31 +1442,8 @@ async function mintaFormulir<T>(jalur: string, isi: FormData): Promise<T> {
     clearTimeout(jam)
   }
   const teks = await jawab.text()
-  let hasil: unknown
-  if (teks.trim() !== '') {
-    try {
-      hasil = JSON.parse(teks)
-    } catch {
-      throw new ApiFailure(jawab.status, {
-        code: 'BACKEND_TIDAK_TERJANGKAU',
-        message:
-          'Jawaban dari server bukan JSON; permintaan tampaknya tidak ' +
-          'sampai ke backend.',
-      })
-    }
-  }
-  if (!jawab.ok) {
-    // ⛔ Kuncinya `galat`, DIBACA DENGAN CARA YANG SAMA seperti `minta`.
-    // Ronde pertama fungsi ini meneruskan badan mentahnya sebagai
-    // `IsiGalatApi` - dan setiap pesan backend pada jalur unggah akan jatuh
-    // ke teks bawaan, persis cacat `galat` vs `error` yang pertama.
-    const o = (hasil ?? {}) as { galat?: unknown }
-    throw new ApiFailure(jawab.status, {
-      code: 'DITOLAK_BACKEND',
-      message: typeof o.galat === 'string' && o.galat !== '' ? o.galat : undefined,
-    })
-  }
-  return hasil as T
+  if (!jawab.ok) throw kegagalanDari(jawab.status, teks)
+  return uraiJSON(jawab.status, teks) as T
 }
 // ---------------------------------------------------------------------------
 // MODUL PREMIUMLIST LIFE — kotak masuk dan keputusan penawaran (tiket 01).

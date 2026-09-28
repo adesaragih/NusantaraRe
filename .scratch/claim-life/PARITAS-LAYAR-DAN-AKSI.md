@@ -99,7 +99,7 @@ Kolom **keadaan**: `ada` · `A3` *(dikerjakan paket ini)* · `tidak ditiru + buk
 | 4 | `SaveAdjustment_Act` | `Property-Set`, `RDB-List` | tidak¹ | `Akseptasi.SimpanAdjustment` | `POST …/peserta/{pid}/akseptasi` | tombol **Save Adjustment** di `KlaimLife.tsx` | **ada** |
 | 5 | `RejectOSClaimLife_Act` | `Property-Set`, `RDB-List`, `Obj-Save` | **ya** | `Status.Tolak` | `POST …/adjustment/{aid}/tolak` | tombol Tolak | **ada** |
 | 6 | `CreateKMTLife_Act` | `Property-Set`, ~~`Call pxRetrieveReportData`~~ *(langkah 1–3 ter-remark, sensus 28-09-2026)*, `Call pxAddChildWork`, `Obj-Refresh-And-Lock`, `Obj-Save`, `Call SendEmailKlaimLF` | **ya** | `Penyerahan.Serahkan` + `BuatKasusKomite` | `POST …/adjustment/{aid}/komite` | tombol Serahkan | **ada** *(sisi induk belum — lihat §4)* |
-| 7 | `GetListKomiteLife` | `Property-Remove`, `Property-Set`, `Property-Set-Messages`, `Call pxRetrieveReportData`, `Obj-Save` | **ya** | `RosterKomiteOracle` | *(di dalam Serahkan)* | — | **ada** |
+| 7 | `GetListKomiteLife` | `Property-Remove`, `Property-Set`, `Property-Set-Messages`, `Call pxRetrieveReportData`, ~~`Obj-Save`~~ | **tidak** *(ralat sensus 28-09-2026: satu-satunya `Obj-Save`, langkah 8 b1508, ter-remark)* | `RosterKomiteOracle` | *(di dalam Serahkan)* | — | **ada** |
 | 8 | `UpdateDateClaimLife_Act` | `Property-Set`, `RDB-List` | **ya²** | `Tanggal.Ubah` | `PUT …/peserta/{pid}/tanggal-kejadian` | — | **ada** *(kontrol React belum)* |
 | 9 | `ValidasiDOL_Act` | `Page-Clear-Messages`, `Property-Set`, `Property-Set-Messages` | tidak | `PeriksaDOL` | *(di dalam `Tanggal.Ubah`)* | — | **ada** |
 | 10 | `DeletePesertaClaimLife` | `Property-Set` ×2 *(dua loop `EMBEDDED`)*, `Obj-Save` | **ya** | — | — | — | ⛔ **RALAT** — ia **tidak menghapus**; ia mengindeks ulang `.AdjustmentList(*).IndexPremiumList` lalu menyimpan *(b225, b314, b337, b417, b583, b443)*. Yang menghapus barisnya **klien**: `pyAction = deleteRow` b18017, tanpa konfirmasi b18021. Tombolnya di layar **Outstanding** *(b17909, b18039)*, dan hanya tampil saat `CLAIM_NO` kosong *(b18082)*. Rute `DELETE` bergerbang tahap **tidak dibangun** |
@@ -524,7 +524,7 @@ seluruh label panel.
 | `BrowseDiseaseLife_RD` | ReportDefinition | `Section/Diagnose_Section.xml:1751`, `Harness/Diagnose_Harness.xml:2734` | `frontend/src/components/CariDiagnosa.tsx:12`, `internal/handlers/penyakit.go:7` | ✅ **ada** |
 | `BrowseFilterBusiness_RD` | ReportDefinition | `Activity/PreCaimLife_Act.xml:339` | — | ✅ **tidak perlu** — satu-satunya pemakainya `PreCaimLife_Act` b339, yang keluarannya tanpa pembaca |
 | `BrowseMarketingOfficer_RD` | ReportDefinition | `Section/InputAkseptasiClaimLife.xml:7545`, `Section/InputOSClaimLife.xml:7731` | — | ✅ **tidak perlu** (sel read-only) — b7641 `pyEditOptions Read-only`, nilainya `PolicyDataLife.MarketingName` b7692, di `PanelDataPolis` |
-| `FilterEmailKomiteWithLimit` | ReportDefinition | `Activity/CreateKMTLife_Act.xml:437`, `Activity/GetListKomiteLife.xml:722` | `internal/repository/roster.go:14`, `internal/repository/roster_test.go:14` | ✅ **ada** |
+| `FilterEmailKomiteWithLimit` | ReportDefinition | ~~`Activity/CreateKMTLife_Act.xml:437`~~ *(langkah 1, ter-remark b422)*, `Activity/GetListKomiteLife.xml:722` *(langkah 4, hidup)* | `internal/repository/roster.go:14`, `internal/repository/roster_test.go:14` | ✅ **ada** |
 | `InboxPremiumList` | ReportDefinition | `Section/SearchPolicy_Section.xml:1641`, `Harness/SearchPolicy_Harness.xml:2630` | `frontend/src/assets/labels.ts:155`, `frontend/src/pages/InboxClaimLife.test.ts:92` | ✅ **ada** |
 | `InboxPremiumList_Claim` | ReportDefinition | `Section/SearchPolicy_Section.xml:2362`, `Harness/SearchPolicy_Harness.xml:3346` | — | ⛔ **MILIK MODUL PREMIUMLIST** — Report definition pencarian polis, dipakai `SearchPolicy_Section.xml` b2362 dan `SearchPolicy_Harness.xml` b3346 |
 | `AdjustmentDetail_Section` | Section | `FlowAction/Adjustment_Detail.xml:135` | `frontend/src/assets/labels.test.ts:46`, `frontend/src/assets/labels.ts:53` | ✅ **ada** |
@@ -556,7 +556,23 @@ seluruh label panel.
 
 Setiap activity Claim Life dicetak beserta `pyStepsBlockName`; `//` = langkah ter-remark (beserta
 anaknya). 51 activity, **8** ber-remark, **31** langkah `//`. Label lain (`EXIT`, `send`) adalah
-label lompatan, bukan remark. Nol langkah mati yang **ditiru** di kode; yang salah adalah **bukti**
+label lompatan, bukan remark.
+
+**Cara hitung** `[terverifikasi]` — dua cara, jendela = seluruh `Claim Life/Activity/*.xml`:
+
+| Cara | Perintah | activity | ber-remark | langkah `//` |
+| --- | --- | ---: | ---: | ---: |
+| A — pengurai XML (expat), per `rowdata` ber-`pyStepPageReference` yang `pyStepsBlockName` tepat `//` | skrip sensus sesi (cetak activity, nomor langkah, bNNN) | 51 | 8 | 31 |
+| B — grep mentah per berkas | `grep -o "<pyStepsBlockName>//</pyStepsBlockName>" "<berkas>" \| wc -l`, dijumlah | 51 | 8 | 31 |
+
+Alat diuji lebih dulu pada item yang sudah diketahui: `Claim Life/Activity/SaveOutStandingLife_Act.xml`
+— 8 langkah `//` (dibaca ulang pemeriksa independen GILIRAN-11) — kedua cara menjawab 8. Label
+lompatan lain (`EXIT`, `send`, `AA`, …) bukan remark dan tidak terhitung.
+
+⚠️ **Cakupan celah langkah hidup DINYATAKAN:** sensus ini mendaftar langkah hidup yang tidak ditiru
+untuk activity **ber-remark** saja. Activity tanpa remark tidak diaudit ulang langkah demi langkah di
+giliran ini; statusnya tetap seperti baris paritasnya (bila ada) — **belum** audit penuh.
+ Nol langkah mati yang **ditiru** di kode; yang salah adalah **bukti**
 yang mengutip baris mati — diralat di tempat.
 
 | Activity | Langkah `//` (b) | Ditiru? | Keputusan |

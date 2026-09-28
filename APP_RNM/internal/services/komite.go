@@ -217,7 +217,8 @@ type SumberRoster interface {
 // ⛔ RALAT RANCANGAN A2. Antarmuka ini semula mengembalikan CACAH saja - dan
 // cacah tidak dapat membangun tangga: `GetListKomiteLife` langkah 6.1 mengisi
 // `KomiteList(<APPEND>)` dengan `KomiteID`, `IDKomite`, dan `KomiteEmail` per
-// anggota, dan `CreateKMTLife_Act` langkah 4 (b1188) menyalinnya. Yang kurang baru terlihat ketika penulis kasusnya ditulis.
+// anggota, dan `CreateKMTLife_Act` langkah 4 (b1188) menyalinnya. Yang kurang
+// baru terlihat ketika penulis kasusnya ditulis.
 //
 // ⚠️ `Email` DATA ORANG: ia menyeberang ke pengirim email dan ke
 // `T_KOMITE_KOMITELIST`, dan tidak ke mana pun lagi.

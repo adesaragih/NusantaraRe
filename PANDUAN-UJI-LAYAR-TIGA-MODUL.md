@@ -1132,19 +1132,24 @@ pengubah Claim Life, pesan hapus 405 memakai kalimat server, layar Outstanding s
 | `GET /api/klaim-life?tahap=2` | 200 | total 0 |
 | `GET /api/klaim-life?tahap=3` | 200 | total 0 |
 | `GET /api/klaim-life?tahap=4` | 200 | total 0 |
-| `GET /api/klaim-life/{id}`, `…/dampak-hapus`, `…/boleh-tutup` | — | tidak diuji: nol kasus di keempat tab untuk pelaku stub (tab Admin menyaring `CREATE_OP = X-Pelaku`) |
-| `GET /api/peserta-life?pl=…` | — | tidak diuji: nomor PL tidak terbaca (nol klaim contoh) |
+| `GET /api/klaim-life/{id}` *(pengenal fiktif `UJI-TIDAK-ADA`)* | 404 | `klaim tidak ada` |
+| `GET /api/klaim-life/{id}/dampak-hapus` *(fiktif)* | 404 | `klaim tidak ada` |
+| `GET /api/klaim-life/{id}/boleh-tutup` *(fiktif)* | 404 | `klaim tidak ditemukan` |
+| `GET /api/peserta-life?pl=…` *(fiktif)* | 200 | badan `null` (Go menulis slice kosong sebagai null; `FE/services/api.ts:cariPesertaLife` menjadikannya `[]` — disengaja) |
 | `GET /api/peserta-life` (tanpa `pl`) | 400 | `parameter pl (nomor premium list) wajib diisi` — sesuai rancangan |
 | `GET /api/penyakit-life?nama=A&batas=5` | 200 | 5 baris |
-| `GET /api/dokumen/{dokId}/isi` | — | tidak diuji: nol dokumen terunggah |
+| `GET /api/dokumen/{dokId}/isi` *(fiktif `1`)* | 404 | `dokumen tidak ada` *(sebelum perbaikan: **500** `gagal memproses dokumen`)* |
 | `GET /api/polis-life?posisi=Offer` | 200 | total 0 *(sebelum perbaikan: **500**)* |
 | `GET /api/polis-life?posisi=Premium` | 200 | total 0 *(sebelum perbaikan: **500**)* |
 | `GET /api/polis-life/periode` | 200 | 1 objek |
-| `GET /api/polis-life/ringkas?nomorPolis=…` | — | tidak diuji: nomor polis tidak terbaca |
-| `GET /api/polis-life/{id}`, `…/peserta`, `…/summary` | — | tidak diuji: kotak masuk polis kosong |
+| `GET /api/polis-life/ringkas?nomorPolis=…` *(fiktif)* | 404 | `repository: nomor polis tidak ditemukan di PremiumList Life: "…"` |
+| `GET /api/polis-life/{id}` *(fiktif)* | 404 | `polis tidak ditemukan` |
+| `GET /api/polis-life/{id}/peserta` *(fiktif)* | 200 | total 0, 38 kolom, 0 baris |
+| `GET /api/polis-life/{id}/summary` *(fiktif)* | 404 | `polis tidak ditemukan` |
 | `GET /api/komite` | 200 | total 0 |
 | `GET /api/komite/laporan-harian` | 200 | 0 baris |
-| `GET /api/komite/{id}`, `…/riwayat` | — | tidak diuji: nol kasus Komite untuk pelaku stub |
+| `GET /api/komite/{id}` *(fiktif)* | 404 | `kasus komite tidak ditemukan` |
+| `GET /api/komite/{id}/riwayat` *(fiktif)* | 404 | `kasus komite tidak ditemukan` |
 
 **Diperbaiki di giliran ini — kotak masuk polis 500.** Sebabnya `ORA-01008: not all variables
 bound`: kueri halaman memakai `:1` dua kali (`:1 IS NULL OR w.POSITION = :1`) bersama `OFFSET …
@@ -1154,15 +1159,26 @@ terikat benar; **dengan** klausa itu, patah. Perbaikan: penampung unik, nilai po
 memeriksa setiap SQL berpembatas baris di repository. Nol uji lain yang menangkapnya — semua uji
 repository berjalan tanpa Oracle.
 
-**Tidak dapat direproduksi — `GET /api/klaim-life?tahap=1` 500 sekali.** Muncul satu kali dari empat
-putaran, pada permintaan data pertama sesudah server menyala. Delapan proses baru × tiga panggilan
-langsung ke layanan yang sama: bersih. Dugaan: gangguan sesaat pada koneksi pertama. ⚠️ Handler
-menjawab 500 **tanpa mencatat sebabnya** di log server, jadi kejadiannya tidak dapat ditelusuri —
-celah pengamatan yang dilaporkan ke work owner, belum diubah.
+**Diperbaiki di giliran ini — dokumen yang tidak ada 500.** Rute detail diuji dengan pengenal
+**fiktif** (temuan /code-review: tanpa data pun rutenya menjalankan SQL-nya). `GET
+/api/dokumen/1/isi` menjawab 500 — `repository.ErrDokumenTidakAda` tidak dipetakan. Kini 404
+(`BE/handlers/dokumen.go`, `services.ErrDokumenTidakAda`). Sesudahnya: **nol 5xx** di seluruh 23
+panggilan, dua putaran identik.
 
-**Yang belum teruji dan sebabnya:** seluruh rute detail — DEV tidak punya kasus yang terlihat oleh
-pelaku stub. Untuk menguji rute detail, jalankan dengan `X-Pelaku` akun yang membuat kasus di DEV,
-atau berikan pengenal kasus contoh; keduanya keputusan work owner.
+**Tidak dapat direproduksi — `GET /api/klaim-life?tahap=1` 500 sekali.** Muncul satu kali dari empat
+putaran, pada permintaan data pertama sesudah server menyala; enam putaran berikutnya bersih. Sebabnya
+tidak tercatat karena handler tidak menulis log — **kini ditulis** (`log.Printf` di jalur 500
+kotak masuk Claim Life dan permintaan polis), supaya kejadian berikutnya dapat ditelusuri.
+
+⚠️ **Penyimpangan dari "hanya `GET`", dinyatakan:** untuk mendiagnosis kedua 500 di atas, executor
+menjalankan program diagnosis sementara ke DEV — `SELECT` langsung (lima varian kueri penampung
+terhadap `T_WORK_POLIS`) dan panggilan layanan baca (`InboxPolis().Ambil`, `KotakMasuk().Ambil`, 8
+proses × 3 panggilan). Seluruhnya baca saja, nol tulisan, hanya kode galat yang dicetak, dan
+programnya dihapus sesudah dipakai — tetapi ia di luar huruf izin "hanya `GET` ke rute baca".
+
+**Yang belum teruji dengan data nyata:** isi jawaban rute detail — DEV tidak punya kasus yang terlihat
+oleh pelaku stub. Untuk itu jalankan dengan `X-Pelaku` akun pembuat kasus di DEV, atau berikan
+pengenal kasus contoh; keduanya keputusan work owner.
 
 **Cara mengulang (PowerShell, dari `APP_RNM`):** `. .\muat-env.ps1`, lalu `go run ./cmd/api`, lalu
 `GET` ke rute di atas dengan header `X-Pelaku` dan `X-Peran`. Jangan menyalin isi jawaban ke dokumen.

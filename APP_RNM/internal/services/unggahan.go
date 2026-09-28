@@ -59,6 +59,9 @@ var (
 	// ErrDokumenBelumTerunggah - efek unggahnya belum selesai.
 	ErrDokumenBelumTerunggah = errors.New(
 		"services: berkas belum selesai diunggah")
+	// ErrDokumenTidakAda dirujuk ulang supaya handler tidak mengimpor
+	// repository: pengenal dokumen yang tidak ada dijawab 404, bukan 500.
+	ErrDokumenTidakAda = repository.ErrDokumenTidakAda
 )
 
 // Jenis efek outbox untuk berkas - butir be.

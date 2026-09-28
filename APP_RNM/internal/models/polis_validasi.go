@@ -6,6 +6,13 @@ package models
 // `Activity/ProtectAccept.xml` jalankan sebelum sebuah penawaran boleh maju.
 // Seluruhnya MURNI.
 //
+// `[terverifikasi]` 13, dihitung dua cara atas berkas pecahan:
+//
+//	B  grep -c "<PropertiesValue>Local.Err + "   -> 19, dikurangi 6 milik
+//	   langkah ter-remark (4.1, 6.1-6.5)          -> 13
+//	A  pengurai XML: langkah daun ber-`Local.Err +` yang dirinya maupun
+//	   induknya tidak ber-`//`                    -> 13 hidup, 6 mati
+//
 // ⛔ PESANNYA VERBATIM, termasuk yang janggal. `System Reinsurance can't null`
 // adalah kalimat yang pemakai sistem lama hafal. Memperbaiki ejaannya berarti
 // layar baru berbicara dengan kalimat yang tidak pernah ada, dan orang yang

@@ -54,6 +54,22 @@ Setiap activity Komite Claim Life dicetak beserta `pyStepsBlockName`; `//` = ter
 anaknya). 18 activity, **7** ber-remark, **23** langkah `//` (label `EXIT` bukan remark). Nol langkah
 mati yang ditiru di kode.
 
+**Cara hitung** `[terverifikasi]` — dua cara, jendela = seluruh `Komite Claim Life/Activity/*.xml`:
+
+| Cara | Perintah | activity | ber-remark | langkah `//` |
+| --- | --- | ---: | ---: | ---: |
+| A — pengurai XML (expat), per `rowdata` ber-`pyStepPageReference` yang `pyStepsBlockName` tepat `//` | skrip sensus sesi (cetak activity, nomor langkah, bNNN) | 18 | 7 | 23 |
+| B — grep mentah per berkas | `grep -o "<pyStepsBlockName>//</pyStepsBlockName>" "<berkas>" \| wc -l`, dijumlah | 18 | 7 | 23 |
+
+Alat diuji lebih dulu pada item yang sudah diketahui: `Claim Life/Activity/SaveOutStandingLife_Act.xml`
+— 8 langkah `//` (dibaca ulang pemeriksa independen GILIRAN-11) — kedua cara menjawab 8. Label
+lompatan lain (`EXIT`, `send`, `AA`, …) bukan remark dan tidak terhitung.
+
+⚠️ **Cakupan celah langkah hidup DINYATAKAN:** sensus ini mendaftar langkah hidup yang tidak ditiru
+untuk activity **ber-remark** saja. Activity tanpa remark tidak diaudit ulang langkah demi langkah di
+giliran ini; statusnya tetap seperti baris paritasnya (bila ada) — **belum** audit penuh.
+
+
 | Activity | Langkah `//` (b) | Ditiru? | Keputusan |
 | --- | --- | --- | --- |
 | `HitServiceToKasirKMTLife_Act` | 11 b3033 (`Connect-REST`, satu-satunya panggilan keluar) | tidak — pengirim Kasir stub `ErrKasirBelumDisetujui` | ⛔ **Sistem lama tidak pernah memanggil Kasir** dari jalur ini. ADR-0015, spec, CONTEXT, tiket 07/08 diralat buktinya; premis ADR-0015 → **OQ-K-06** |

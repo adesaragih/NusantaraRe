@@ -105,8 +105,12 @@ describe('nol pranala ke /api/ — setiap permintaan lewat fetch yang membawa id
       .filter(({ baris }) => !baris.trim().startsWith('//') && !baris.trim().startsWith('*'))
       .filter(({ b, baris }) => {
         if (terlarang.some((p) => p.test(baris))) return true
-        // `a.href = ...` hanya untuk objek URL lokal (Blob) - pola unduhXlsx.
-        return /\.href\s*=/.test(baris) && !b.isi.includes('URL.createObjectURL(')
+        // `a.href = X` hanya bila X sendiri objek URL lokal:
+        // `const X = URL.createObjectURL(...)` di berkas yang sama. Diperiksa
+        // PER PENUGASAN (ronde pertama per berkas), dan `===` bukan penugasan.
+        const m = /\.href\s*=(?!=)\s*([A-Za-z_$][\w$]*)/.exec(baris)
+        if (m === null) return /\.href\s*=(?!=)/.test(baris)
+        return !new RegExp(`\\b${m[1]}\\s*=\\s*URL\\.createObjectURL\\(`).test(b.isi)
       })
       .map(({ b, baris, i }) => `${b.jalur}:${i + 1}: ${baris.trim()}`)
     expect(pelanggar).toEqual([])
@@ -115,6 +119,9 @@ describe('nol pranala ke /api/ — setiap permintaan lewat fetch yang membawa id
   it('alamat backend hanya dirakit DI DALAM panggilan fetch', () => {
     // ⛔ Fungsi yang mengembalikan URL backend untuk dipasang di pranala
     // adalah jalan pintas melewati header identitas - persis `tautanDokumen`.
+    // ⚠️ Diperiksa per BARIS: `fetch(` dan `rakitURL(` wajib satu baris. Itu
+    // aturan bentuk yang disengaja - pembungkus baris yang memisahkannya
+    // membuat uji ini merah, bukan lolos.
     const api = readFileSync(join(__dirname, 'api.ts'), 'utf8')
     const pemakaian = api.split('\n').filter((b) => b.includes('rakitURL(') && !b.includes('function rakitURL'))
     expect(pemakaian.length).toBeGreaterThan(0)

@@ -76,8 +76,17 @@ func unggahDokumen(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 }
 
 // isiDokumen melayani GET /api/dokumen/{dokId}/isi.
+//
+// ⛔ Identitas diperiksa SEBELUM basis data (GILIRAN-12, temuan /code-review):
+// pranala tanpa header adalah cacat yang pernah membuat setiap unduhan 401,
+// dan urutan ini membuat penolakannya dapat diuji pada handler yang
+// sebenarnya, tanpa Oracle (`dokumen_identitas_test.go`).
 func isiDokumen(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		pelaku := pelakuDari(r, stubPelaku)
+		if jawabGalatDokumen(w, services.WajibIdentitas(pelaku)) {
+			return
+		}
 		if !svc.PunyaDatabase() {
 			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
@@ -86,8 +95,7 @@ func isiDokumen(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 		if !ok {
 			return
 		}
-		dok, jalur, err := svc.Dokumen().UnduhLewatPengenal(r.Context(),
-			pelakuDari(r, stubPelaku), id)
+		dok, jalur, err := svc.Dokumen().UnduhLewatPengenal(r.Context(), pelaku, id)
 		if jawabGalatDokumen(w, err) {
 			return
 		}
@@ -176,6 +184,9 @@ func jawabGalatDokumen(w http.ResponseWriter, err error) bool {
 		// 409: barisnya ada, berkasnya belum tertaut. Layar dapat berkata
 		// "sedang diproses" alih-alih "tidak ditemukan".
 		galat(w, http.StatusConflict, "berkas belum selesai diunggah")
+	case errors.Is(err, services.ErrDokumenTidakAda):
+		// 404 - uji asap baca-saja DEV (GILIRAN-12) menjumpai 500 di sini.
+		galat(w, http.StatusNotFound, "dokumen tidak ada")
 	case errors.Is(err, services.ErrPermintaanTidakSah):
 		galat(w, http.StatusBadRequest, err.Error())
 	default:

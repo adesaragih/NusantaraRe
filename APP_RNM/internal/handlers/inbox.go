@@ -12,6 +12,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -116,6 +117,10 @@ func kotakMasuk(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			galat(w, http.StatusForbidden, "peran tidak memegang tahap ini")
 			return
 		case err != nil:
+			// ⚠️ Sebabnya DICATAT di log server (GILIRAN-12 paket 3): uji asap
+			// DEV menjumpai satu 500 sesaat di sini yang tidak dapat
+			// direproduksi, dan tanpa baris log ia tidak dapat ditelusuri.
+			log.Printf("kotak masuk Claim Life: %v", err)
 			galat(w, http.StatusInternalServerError, "gagal membaca kotak masuk")
 			return
 		}

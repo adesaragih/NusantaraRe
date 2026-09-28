@@ -79,6 +79,10 @@ func TestGalatDokumenDipetakanKeKodeYangBenar(t *testing.T) {
 		// ⛔ 409, bukan 404: barisnya ADA, berkasnya belum tertaut. Layar
 		// dapat berkata "sedang diproses" alih-alih "tidak ditemukan".
 		{"belum terunggah", services.ErrDokumenBelumTerunggah, http.StatusConflict},
+		// ⛔ 404, bukan 500 - uji asap DEV (GILIRAN-12): pengenal yang tidak
+		// ada dijawab 500 "gagal memproses dokumen", dan itu terbaca sebagai
+		// kerusakan server padahal pengenalnya yang salah.
+		{"dokumen tidak ada", services.ErrDokumenTidakAda, http.StatusNotFound},
 		{"permintaan tidak sah", services.ErrPermintaanTidakSah, http.StatusBadRequest},
 	} {
 		w := httptest.NewRecorder()

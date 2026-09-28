@@ -3,7 +3,9 @@
 // ⛔ Satu-satunya tempat `a.href` dipasang untuk unduhan berkas dari backend,
 // dan nilainya SELALU objek URL lokal (`URL.createObjectURL`), tidak pernah
 // alamat backend: pranala ke backend tidak membawa header identitas
-// (`services/unduhdokumen.test.ts`). Pola yang sama dengan `unduhXlsx`.
+// (`services/unduhdokumen.test.ts`). Pola yang sama dengan `unduhXlsx` -
+// yang SENGAJA menyimpan salinannya sendiri: `exportXlsx.ts` di-port apa
+// adanya dan bertekad nol impor (kepala berkasnya).
 
 /** simpanBlob memicu unduhan `blob` dengan nama berkas aslinya. */
 export function simpanBlob(blob: Blob, namaBerkas: string): void {

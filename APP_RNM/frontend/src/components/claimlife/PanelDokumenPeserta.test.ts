@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest'
-
-import { DOKUMEN } from '../../assets/labels.claimlife'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
+import { describe, expect, it } from 'vitest'
+
+import { DOKUMEN } from '../../assets/labels.claimlife'
 import { dokumenTerunggah, type Dokumen } from '../../services/api'
 import { barisDokumen, PRANALA_MENUNGGU } from './PanelDokumenPeserta'
 
@@ -109,7 +109,7 @@ describe('dokumen lewat outbox', () => {
     // identitas, dan setiap unduhan dijawab 401. Jalur, teks pengenal 17
     // angka, dan headernya diuji perilakunya di `services/unduhdokumen.test.ts`.
     const sumber = readFileSync(join(__dirname, 'PanelDokumenPeserta.tsx'), 'utf8')
-    expect(sumber).toContain('simpanBlob(await ambilIsiDokumen(b.id), b.namaFile)')
+    expect(sumber).toMatch(/simpanBlob\(\s*await ambilIsiDokumen\(/)
     expect(sumber).not.toMatch(/<a\s[^>]*href/)
   })
 

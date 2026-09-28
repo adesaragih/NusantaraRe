@@ -9,6 +9,22 @@ Setiap activity PremiumList Life dicetak beserta `pyStepsBlockName`; `//` = ter-
 anaknya). 38 activity, **9** ber-remark, **36** langkah `//` (label `SHOWFAILURE`, `AA`, `Err`, `REM`,
 `COMMITSTEP` dll. bukan remark).
 
+**Cara hitung** `[terverifikasi]` — dua cara, jendela = seluruh `PremiumList Life/Activity/*.xml`:
+
+| Cara | Perintah | activity | ber-remark | langkah `//` |
+| --- | --- | ---: | ---: | ---: |
+| A — pengurai XML (expat), per `rowdata` ber-`pyStepPageReference` yang `pyStepsBlockName` tepat `//` | skrip sensus sesi (cetak activity, nomor langkah, bNNN) | 38 | 9 | 36 |
+| B — grep mentah per berkas | `grep -o "<pyStepsBlockName>//</pyStepsBlockName>" "<berkas>" \| wc -l`, dijumlah | 38 | 9 | 36 |
+
+Alat diuji lebih dulu pada item yang sudah diketahui: `Claim Life/Activity/SaveOutStandingLife_Act.xml`
+— 8 langkah `//` (dibaca ulang pemeriksa independen GILIRAN-11) — kedua cara menjawab 8. Label
+lompatan lain (`EXIT`, `send`, `AA`, …) bukan remark dan tidak terhitung.
+
+⚠️ **Cakupan celah langkah hidup DINYATAKAN:** sensus ini mendaftar langkah hidup yang tidak ditiru
+untuk activity **ber-remark** saja. Activity tanpa remark tidak diaudit ulang langkah demi langkah di
+giliran ini; statusnya tetap seperti baris paritasnya (bila ada) — **belum** audit penuh.
+
+
 | Activity | Langkah `//` (b) | Ditiru? | Keputusan |
 | --- | --- | --- | --- |
 | `ProtectAccept` | 4.1 b720 (NoOffer) · 6 b2340 (+6.1–6.5; 6.3 b2756) | **ya — dibuang** (`models/polis_validasi.go`) | tiket 01 ralat; gerbang posisi dibetulkan |

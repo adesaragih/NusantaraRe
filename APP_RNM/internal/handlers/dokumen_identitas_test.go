@@ -4,14 +4,12 @@ package handlers
 //
 // ⛔ Cacat yang ditutup: `View Office Online` dulu pranala biasa, dan browser
 // yang mengikuti pranala tidak membawa `X-Pelaku`/`X-Peran`; rute isi dokumen
-// menjawab 401 untuk setiap unduhan. Sisi ini mengunci bahwa rute itu MEMANG
+// menjawab 401 untuk setiap unduhan. Sisi ini mengunci bahwa HANDLER rute itu
 // menolak tanpa header (jadi klien wajib mengirimnya) dan bahwa nama header
 // yang dibaca di sini sama dengan yang dikirim klien. Sisi TypeScript:
 // `frontend/src/services/unduhdokumen.test.ts`.
 
 import (
-	"context"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -23,26 +21,27 @@ import (
 )
 
 func TestUnduhDokumenTanpaHeaderIdentitasDitolak401(t *testing.T) {
+	// Handler SUNGGUHAN, stub menyala, tanpa Oracle.
+	h := isiDokumen(services.New(nil), true)
+
 	r := httptest.NewRequest(http.MethodGet, "/api/dokumen/20250101120000123/isi", nil)
-	// Stub MENYALA, tetapi permintaan tanpa header - seperti pranala biasa.
-	p := pelakuDari(r, true)
-	if p.AkunID != "" {
-		t.Fatalf("pelaku tanpa header = %q, mau kosong", p.AkunID)
-	}
-	// Layanan menolak pelaku kosong SEBELUM menyentuh basis data.
-	_, _, err := services.New(nil).Dokumen().UnduhLewatPengenal(context.Background(), p, 1)
-	if !errors.Is(err, services.ErrTanpaIdentitas) {
-		t.Fatalf("galat = %v, mau ErrTanpaIdentitas", err)
-	}
+	r.SetPathValue("dokId", "20250101120000123")
 	w := httptest.NewRecorder()
-	if !jawabGalatDokumen(w, err) || w.Code != http.StatusUnauthorized {
-		t.Fatalf("kode = %d, mau 401", w.Code)
+	h(w, r)
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("tanpa header: kode = %d, mau 401", w.Code)
 	}
 
+	// Dengan header, identitasnya lolos dan permintaan sampai ke gerbang
+	// berikutnya - basis data, yang di uji ini memang tidak ada.
+	r = httptest.NewRequest(http.MethodGet, "/api/dokumen/20250101120000123/isi", nil)
+	r.SetPathValue("dokId", "20250101120000123")
 	r.Header.Set("X-Pelaku", "UJI-ADMIN")
-	r.Header.Set("X-Peran", "ReasLifeAdmin")
-	if p := pelakuDari(r, true); p.AkunID != "UJI-ADMIN" || len(p.Peran) != 1 {
-		t.Errorf("pelaku dengan header = %+v", p)
+	r.Header.Set("X-Peran", services.PeranAdmin)
+	w = httptest.NewRecorder()
+	h(w, r)
+	if w.Code != http.StatusServiceUnavailable {
+		t.Errorf("dengan header: kode = %d, mau 503 (identitas lolos, basis data tidak ada)", w.Code)
 	}
 }
 
