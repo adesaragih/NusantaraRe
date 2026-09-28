@@ -1,4 +1,5 @@
 import { MENU, MENU_MODUL, MODUL } from '../assets/labels'
+import { MENU_TCO } from '../assets/labels.treaty-contract-out'
 
 /**
  * Daftar menu yang dapat dicari palet Ctrl+K — butir **bg**.
@@ -30,7 +31,7 @@ import { MENU, MENU_MODUL, MODUL } from '../assets/labels'
  * memeriksa bentuk. Union memindahkan penjagaannya ke kompiler — lebih
  * awal, dan tanpa pagar tambahan.
  */
-export type ModulTetap = 'beranda' | 'inbox' | 'register' | 'premiumlist' | 'komite'
+export type ModulTetap = 'beranda' | 'inbox' | 'register' | 'premiumlist' | 'komite' | 'tco-tahun'
 
 /** Satu entri menu yang dapat dicari. */
 export interface EntriMenu {
@@ -60,6 +61,8 @@ export const ENTRI_MENU: readonly EntriMenu[] = [
   { modul: 'register', label: MENU.register, kelompok: MODUL.claimLife },
   { modul: 'premiumlist', label: MENU_MODUL.premiumList, kelompok: MODUL.premiumListLife },
   { modul: 'komite', label: MENU_MODUL.inboxKomite, kelompok: MODUL.komiteClaimLife },
+  // Treaty Contract Out tiket 03 — VERBATIM pyLabel harness (b151).
+  { modul: 'tco-tahun', label: MENU_TCO.inboxTreatyContract, kelompok: MODUL.treatyContractOut },
 ]
 
 /** Satu baris hasil palet. */

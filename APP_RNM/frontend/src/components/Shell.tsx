@@ -84,6 +84,8 @@ const KELOMPOK: readonly KelompokSidebar[] = [
   MODUL.nbTreatyIn,
   MODUL.premiumListLife,
   MODUL.rnwFacIn,
+  // Kelompok ke-18 (ralat: folder korpus 20) — sesi Treaty Contract Out, aditif.
+  MODUL.treatyContractOut,
 ].map((nama) => ({ nama, butir: butirKelompok(nama) }))
 
 export interface ShellProps {

@@ -42,3 +42,23 @@ korpus 20 — ralat §8 `PROMPT-EKSEKUSI-HULU-HILIR.md`). Ditambahkan ADITIF ber
 | pemilih `ReinsType` (`InputTreatyContractReinsType.xml` b2652) / `Reinsurance Type` (`InputTreatyContract.xml` b7925) | `components/treaty-contract-out/PilihJenisReasuransi.tsx` (`Pilih` ui/dasar; nilai `.ID` teks, label `.Note`) | ✅ komponen; dipasang di layar 🔜 tiket 03/04/08 |
 | RD non-Old `BrowseReinsuranceType_RD.xml` (param `Flag="active"` b2768, pemilih form kontrak) | daftar tersaring yang sama (AC 5 tiket 02) | ⚠️ OQ-TCO-06 |
 | `RDBList/GetMasterReinsTypeContract.xml` (`a.JSONDATA`) | — | ➖ MATI |
+
+## Tiket 03 — layar tahun treaty (`InboxTreatyContract` → `GridTreatyContract` → `InputTreatyContract` + `InputDtlTreatyContact`)
+
+| Unsur korpus | Sistem baru | Keadaan |
+| --- | --- | --- |
+| menu `Harness/InboxTreatyContract.xml` b151 | sidebar **Treaty Contract Out → InboxTreatyContract** (`labels.ts` `MODUL.treatyContractOut` +1, `Shell.tsx` kelompok ke-18, `daftarMenu.ts` `tco-tahun`) | ✅ keterangan "belum dimigrasi" dicabut untuk kelompok ini |
+| judul `TREATY CONTRACT OUT` (`GridTreatyContract.xml` b1057) | `TAHUN_TCO.judul` | ✅ |
+| grid `BrowseTreatyYear_RD` b17355: `Underwriting Year` b17378 / `Transaction Year` b17531 / `StartDate` b17684 / `EndDate` b17837 / `Treaty Group` b17990 / `Reinsurance Type` b18136 (sel b18964/b19125/b19286/b19446/b19605/b19724); sort `.ID DESC` b672 | `GET /api/treaty-contract-out/tahun` → tabel enam kolom, `Halaman` 20/halaman | ✅ (OQ-TCO-05 label bersilang, dibawa apa adanya) |
+| `Add` b16387 → `NewInputTreatyYear_Act` | tombol `Add` → `formKosong()` | ✅ |
+| `Edit` b19939 → `SetTreatyYear_Act` b20030 | tombol `Edit` → `formDari(baris)` | ✅ |
+| `ReinsType` b20778 → harness 2 | tombol berdiri `disabled` "menunggu tiket 04" | 🔜 tiket 04 |
+| `List Description` b22196 → harness 3 | tombol berdiri `disabled` "menunggu tiket 08" | 🔜 tiket 08 |
+| `Copy` b20459 + `From`/`To` b2374/b3818 + `Proces` b5104 → `BrowseCopyData` | — | ➖ AC 72 |
+| form `Input New Data` (`InputDtlTreatyContact.xml` b5437): `ID` b6379 · `Treaty Group` b6560 (`BrowseTreatyGroup_RD` b6624) · `Reinsurance Type` b6800 → `.Proportion` b6829 · `Start Date` b7532 · `End Date` b7816 · `Underwriting Year` b8004 → `.TreatyYear` · `Transaction Year` b8284 → `.UnderwritingYear` · `Modified Date` b9097 · `Username` b9282 | `Field`/`FieldTanggal`/`Pilih` (grup dari `GET /grup-treaty`) / `PilihJenisReasuransi`; ID, Modified Date, Username hanya dibaca | ✅ |
+| `Save` b10332 → `SaveTreatyYear_Act` (b280 UserID, b327 TglUpdate, prasyarat b388/b411/b434, RDB `SaveMasterTreatyYear_SQL` → `PEGA_TREATYYEAR`) | `POST /tahun` (baru, ID dari `SEQ_T_TREATYYEAR`) / `PUT /tahun/{id}` (seluruh medan) → `T_TREATYYEAR` + jejak `T_TREATYCO_JEJAK`, satu transaksi | ✅ logika ditiru, procedure tidak dipanggil |
+| `Cancel` b10622 → `CancelActivityTreatyContract` | tombol `Cancel` menutup form | ✅ |
+| `CheckYear` b335 `isNumber(TreatyYear)` (`pyMessageLabel CheckYearly` — teks tidak diekspor) | `ErrTahunTreatyBukanAngka` → 422 | ✅ (teks pesan kosakata kami) |
+| — (tidak ada di Pega) | gerbang periode terbalik (AC 9) → 422; anti-dobel (AC 73) → 409 menyebut ID baris lain | ✅ tambahan sadar |
+| form kedua `Input New Data` `InputTreatyContract.xml` b6351 (tanpa Start/End/UW Year; `ReinsuranceType` b7954 bukan parameter procedure) | — | ⚠️ `[terbuka]` mana yang tampil di Pega; form lengkap yang dibangun |
+| `GridTreatyArrangementAttachment` (`Attachment for` b11721) | — | 🔜 tiket 12 |

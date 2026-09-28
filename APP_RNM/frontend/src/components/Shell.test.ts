@@ -11,6 +11,7 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import { MENU, MENU_MODUL, MODUL, MODUL_LAIN_TERLARANG } from '../assets/labels'
+import { MENU_TCO } from '../assets/labels.treaty-contract-out'
 import { ENTRI_MENU } from '../lib/daftarMenu'
 
 const SUMBER = readFileSync(join(__dirname, 'Shell.tsx'), 'utf8')
@@ -36,12 +37,14 @@ const kode = tanpaKomentar(SUMBER)
 const KELOMPOK_SIDEBAR = Object.values(MODUL)
 
 describe('menu hanya yang berbukti korpus', () => {
-  it('kelompok sidebar TEPAT tujuh belas', () => {
+  it('kelompok sidebar TEPAT delapan belas', () => {
     // ⛔ DIRALAT 28-09-2026 (butir bg). Uji ini dulu berbunyi "butir
     // sidebar TEPAT dua" dan membaca literal ${b}const BUTIR${b} di Shell.tsx.
     // Sejak bg, butirnya diturunkan dari ${b}ENTRI_MENU${b} dan kelompoknya
     // tujuh belas - nama folder korpus. Yang dijaga BERPINDAH, bukan hilang.
-    expect(KELOMPOK_SIDEBAR).toHaveLength(17)
+    // ⛔ DELAPAN BELAS sejak 28-09-2026: kelompok `Treaty Contract Out`
+    // ditambahkan sesi modul itu (folder korpus 20; ralat §8 PROMPT-EKSEKUSI).
+    expect(KELOMPOK_SIDEBAR).toHaveLength(18)
     // Dan seluruhnya disebut di Shell, supaya tidak ada kelompok yang
     // terdaftar di label tetapi tidak dirender.
     for (const nama of KELOMPOK_SIDEBAR) {
@@ -49,16 +52,19 @@ describe('menu hanya yang berbukti korpus', () => {
     }
   })
 
-  it('butir menu TEPAT empat, dan seluruhnya berbukti', () => {
+  it('butir menu TEPAT lima, dan seluruhnya berbukti', () => {
     // ⛔ Empat: dua Claim Life, satu PremiumList, satu Komite. Beranda
     // TIDAK dihitung - ia kerangka aplikasi, bukan menu modul.
     const modul = ENTRI_MENU.filter((e) => e.modul !== 'beranda')
-    expect(modul).toHaveLength(4)
+    // Lima sejak tiket 03 Treaty Contract Out: butir InboxTreatyContract
+    // (VERBATIM pyLabel harness b151).
+    expect(modul).toHaveLength(5)
     const label = modul.map((e) => e.label)
     expect(label).toContain(MENU.inbox)
     expect(label).toContain(MENU.register)
     expect(label).toContain(MENU_MODUL.premiumList)
     expect(label).toContain(MENU_MODUL.inboxKomite)
+    expect(label).toContain(MENU_TCO.inboxTreatyContract)
   })
 
   it('empat belas kelompok berdiri TANPA butir', () => {

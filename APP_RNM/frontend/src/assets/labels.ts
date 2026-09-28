@@ -100,6 +100,14 @@ export const MODUL = {
   nbTreatyIn: 'NB Treaty In',
   premiumListLife: 'PremiumList Life',
   rnwFacIn: 'RNW Fac In',
+  /**
+   * ⚠️ RALAT 28-09-2026 (sesi Treaty Contract Out): korpus memuat DUA PULUH
+   * folder, bukan tujuh belas — `Treaty Contract Out`, `Treaty In`, dan
+   * `Treaty In Adjustment` terlewat (`PROMPT-EKSEKUSI-HULU-HILIR.md` §8).
+   * Yang ditambahkan di sini HANYA kelompok modul yang sesi itu bangun;
+   * dua lainnya menunggu keputusan asisten/work owner.
+   */
+  treatyContractOut: 'Treaty Contract Out',
 } as const
 
 /**

@@ -87,7 +87,16 @@ describe('nol menu dikarang', () => {
     const tanpaButir = Object.values(MODUL).filter((n) => !berbutir.has(n))
     expect(tanpaButir).toHaveLength(14)
     for (const nama of tanpaButir) {
-      expect(saringPalet(daftarPalet(), nama)).toHaveLength(0)
+      // ⛔ DIPERSEMPIT KE MAKSUDNYA 28-09-2026 (sesi Treaty Contract Out).
+      // Dulu: hasil pencarian nama kelompok harus KOSONG. Pencocokan palet
+      // memakai POTONGAN kata, sehingga kueri `NB Treaty In` menemukan
+      // butir `InboxTreatyContract` (`nb` dan `in` ada di dalam "inbox",
+      // `treaty` di kelompoknya) - butir yang SAH, milik kelompok yang
+      // sudah dimigrasi. Yang dijaga tetap sama: tidak satu pun hasil
+      // BERKELOMPOK modul yang belum dimigrasi.
+      for (const hasil of saringPalet(daftarPalet(), nama)) {
+        expect(hasil.kelompok).not.toBe(nama)
+      }
     }
   })
 })

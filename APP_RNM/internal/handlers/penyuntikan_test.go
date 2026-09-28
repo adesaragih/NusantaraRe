@@ -64,10 +64,21 @@ var petaSuntikan = map[string][]suntikan{
 	}},
 	// Treaty Contract Out tiket 02 (aditif 28-09-2026): pembaca master jenis
 	// reasuransi bawaannya gagal terang; handler memasang Oracle-nya.
-	"rute_treaty_contract_out.go": {{
-		penyusun: "svc.JenisReasuransiTreaty()",
-		wajib:    []string{"DenganPembaca(services.PembacaJenisReasuransiOracle(svc))"},
-	}},
+	"rute_treaty_contract_out.go": {
+		{
+			penyusun: "svc.JenisReasuransiTreaty()",
+			wajib:    []string{"DenganPembaca(services.PembacaJenisReasuransiOracle(svc))"},
+		},
+		// Tiket 03: master grup treaty dan gudang tahun treaty.
+		{
+			penyusun: "svc.GrupTreaty()",
+			wajib:    []string{"DenganPembaca(services.PembacaGrupTreatyOracle(svc))"},
+		},
+		{
+			penyusun: "svc.TahunTreatyTCO()",
+			wajib:    []string{"DenganGudang(services.GudangTahunTreatyOracle(svc))"},
+		},
+	},
 }
 
 func TestHandlerMenyuntikkanImplementasiNyata(t *testing.T) {

@@ -112,3 +112,55 @@ blacklist), OQ-TCO-07 (nama fisik `SOANote`/`Code`).
 | Berkas ditulis / disunting | 12 baru (+±900 baris), 5 disunting (+±40) |
 | Putaran instrumen gagal lalu diulang | 2 — regex nama jujur tidak menangkap `TypeOld()` (uji instrumen sendiri yang menemukannya, diperbaiki); heredoc Bash mengubah backslash regex → dipindah ke Edit |
 | Token / biaya | tidak terlihat dari dalam sesi — tidak dikarang |
+
+## Tiket 03 — tahun treaty: CRUD, gerbang periode, anti-dobel
+
+**Commit tiket 02:** `1f2aab5`. **Commit tiket 03:** lihat `git log --oneline` baris `treaty-contract-out: tiket 03`.
+
+### Yang dibangun
+
+| Lapisan | Berkas | Isi |
+| --- | --- | --- |
+| models | `tco_tahun.go` (+`_test`) | `PeriksaTahunTreaty` (grup wajib b388, tahun wajib b411, tahun angka b434/CheckYear) + `PeriksaPeriodeTCO` (AC 9, pesan menyebut kedua medan) |
+| repository | `tco_tahun.go`, `tco_jejak.go`, `tco_gruptreaty.go` (+`tco_tahun_test`, `tco_pindai_uji_test`) | daftar `ID DESC` berhalaman; ambil; sisip (ID `SEQ_T_TREATYYEAR`); perbarui SELURUH kolom; `CariDobel` (TRUNC, `(:4 IS NULL OR ID <> :4)`); jejak `T_TREATYCO_JEJAK`; master `TREATYGROUP` dibaca saja |
+| services | `tco_tahun.go` (`TahunTreatyTCO`), `tco_gruptreaty.go` (+`_test`) | gudang + pelaksana transaksi + jam DISUNTIK; `Simpan`: validasi → tx {dobel → 409, sisip/perbarui, jejak}; `GalatTahunTreatyDobel` menyebut ID lain |
+| handlers | `rute_treaty_contract_out.go` (+`_test`), `tco_db_test.go` | `GET /tahun`, `POST /tahun`, `GET/PUT /tahun/{id}`, `GET /grup-treaty`; 401/404/409/422/503; POST menolak `id` dari klien, PUT menolak `id` badan ≠ jalur |
+| frontend | `pages/treaty-contract-out/InboxTreatyContract.tsx` (+`_test`), `labels.treaty-contract-out.ts` `TAHUN_TCO` (+29 baris korpus diuji), `api.ts` (+`ambilTahunTreaty`, `ambilSatuTahunTreaty`, `simpanTahunTreaty`, `ambilGrupTreaty`) | grid enam kolom VERBATIM, tombol `Add`/`Edit`/`ReinsType`(🔜04)/`List Description`(🔜08), form `Input New Data` lengkap, catatan OQ-TCO-05 |
+
+### Kode bersama yang disentuh (aditif / dipersempit, dilaporkan)
+
+| Berkas | Perubahan |
+| --- | --- |
+| `frontend/src/assets/labels.ts` | `MODUL.treatyContractOut` +1 (komentar ralat: folder korpus 20) |
+| `frontend/src/components/Shell.tsx` | kelompok ke-18 |
+| `frontend/src/lib/daftarMenu.ts` | `ModulTetap` +`'tco-tahun'`; `ENTRI_MENU` +1 |
+| `frontend/src/App.tsx` | +1 rute halaman |
+| `frontend/src/components/Shell.test.ts` · `pages/Beranda.test.ts` | cacah 17→18 kelompok/kartu, 4→5 butir, aktif +1; 14 tanpa butir tetap |
+| `frontend/src/lib/daftarMenu.sinkron.test.ts` | penjaga palet dipersempit ke maksudnya (hasil tidak boleh BERKELOMPOK modul belum dimigrasi) — pencocokan potongan kata membuat `NB Treaty In` menemukan `InboxTreatyContract` yang sah |
+| `handlers/penyuntikan_test.go` | +2 entri (`svc.GrupTreaty()`, `svc.TahunTreatyTCO()`) |
+| `repository/skemauji/tco_tiruan.go` (milik modul) | +tiruan `TREATYGROUP` |
+
+### Ralat / OQ
+
+Lima ralat bertanggal di tiket 03 (kelompok sidebar belum ada; pemilih grup treaty dari `BrowseTreatyGroup_RD`;
+`PROPORTION` menyimpan pilihan "Reinsurance Type"; label tahun bersilang OQ-TCO-05; penjaga palet dipersempit).
+Nama layanan `TahunTreatyTCO` (bukan `TahunTreaty`) sebab nama itu sudah dipakai Claim Life (`spreading.go`).
+
+### Angka uji
+
+| Perintah | Hasil |
+| --- | --- |
+| `go build` · `go vet ./...` · `go vet -tags=db ./internal/...` · `gofmt -l .` | bersih |
+| `go test ./...` | seluruh paket `ok`; 776 PASS, 0 FAIL |
+| `npm run typecheck` · `vitest run` | bersih; 431 lulus di 38 berkas |
+
+### TELEMETRI EKSEKUSI — tiket 03
+
+| Ukuran | Nilai |
+| --- | --- |
+| Berkas dibaca | ±14 (7 section/activity/RD korpus, 7 pola kode Go/TS) |
+| Berkas XML korpus disensus | `InputTreatyContract.xml` (23k baris, dipindai b1–b22800), `InputDtlTreatyContact.xml`, `GridTreatyContract.xml`, `SaveTreatyYear_Act.xml`, `SetTreatyYear_Act.xml`, `NewInputTreatyYear_Act.xml`, `CheckYear.xml`, `BrowseTreatyYear_RD.xml`, `BrowseTreatyGroup_RD.xml`; 29 baris label diverifikasi satu per satu |
+| Perintah dijalankan | ±16 |
+| Berkas ditulis / disunting | 16 baru (+±1.9k baris), 11 disunting (+±120) |
+| Putaran instrumen gagal lalu diulang | 3 — heredoc panjang gagal diurai (0 baris jalan) → skrip lewat Write + `py`; `angkaSaja` sudah ada di models (dipakai ulang); `services.TahunTreaty` bertabrakan dengan Claim Life (diberi akhiran TCO) |
+| Token / biaya | tidak terlihat dari dalam sesi — tidak dikarang |

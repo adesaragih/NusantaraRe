@@ -31,7 +31,7 @@ import (
 var namaTabelTiruanTCO = []string{
 	"TREATYYEAR", "TREATYCONTRACT", "TREATYREINSURER",
 	"MTREATYSECURITY", "TREATYBUSINESS", "PROPORTIONALARRG",
-	repository.MasterJenisReasuransiTCO,
+	repository.MasterJenisReasuransiTCO, repository.MasterGrupTreatyTCO,
 }
 
 // namaTabelWarisanTCO adalah enam tabel warisan yang dipindahkan migrasi data.
@@ -73,6 +73,10 @@ func ddlTiruanTCO(skema string) []string {
 	out = append(out, fmt.Sprintf(
 		"CREATE TABLE %s.%s (ID VARCHAR2(1000), NOTE VARCHAR2(1000), TYPE VARCHAR2(1000), FLAG VARCHAR2(1000), NOURUT VARCHAR2(1000))",
 		skema, repository.MasterJenisReasuransiTCO))
+	// Master grup treaty: kolom yang SQL korpus sebut (FetchTreatyGroupOLDID).
+	out = append(out, fmt.Sprintf(
+		"CREATE TABLE %s.%s (ID VARCHAR2(1000), TREATYGROUPNAME VARCHAR2(1000), OLDID VARCHAR2(1000))",
+		skema, repository.MasterGrupTreatyTCO))
 	return out
 }
 
@@ -149,6 +153,23 @@ func IsiJenisReasuransiTCO(ctx context.Context, db *sql.DB, skema string, baris 
 	for _, b := range baris {
 		if _, err := db.ExecContext(ctx, q, b.ID, b.Note, b.Tipe, b.Flag); err != nil {
 			return fmt.Errorf("skemauji: mengisi tiruan master jenis reasuransi: %w", err)
+		}
+	}
+	return nil
+}
+
+// GrupTreatyUji adalah satu baris fixture master grup treaty.
+type GrupTreatyUji struct {
+	ID, TreatyGroupName string
+}
+
+// IsiGrupTreatyTCO mengisi tiruan TREATYGROUP.
+func IsiGrupTreatyTCO(ctx context.Context, db *sql.DB, skema string, baris []GrupTreatyUji) error {
+	q := fmt.Sprintf("INSERT INTO %s.%s (ID, TREATYGROUPNAME) VALUES (:1, :2)",
+		skema, repository.MasterGrupTreatyTCO)
+	for _, b := range baris {
+		if _, err := db.ExecContext(ctx, q, b.ID, b.TreatyGroupName); err != nil {
+			return fmt.Errorf("skemauji: mengisi tiruan master grup treaty: %w", err)
 		}
 	}
 	return nil

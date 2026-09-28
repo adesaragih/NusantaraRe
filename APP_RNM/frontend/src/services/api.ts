@@ -2070,3 +2070,85 @@ export interface DaftarJenisReasuransiTreaty {
 export async function ambilJenisReasuransiTreaty(): Promise<DaftarJenisReasuransiTreaty> {
   return minta<DaftarJenisReasuransiTreaty>('/api/treaty-contract-out/jenis-reasuransi')
 }
+
+// ---------------------------------------------------------------------------
+// TREATY CONTRACT OUT — tiket 03: tahun treaty dan master grup treaty.
+// Bentuknya dari `internal/services/tco_tahun.go` dan `tco_gruptreaty.go`.
+// ---------------------------------------------------------------------------
+
+/** Satu grup treaty dari master `TREATYGROUP` (`.ID`, `.TreatyGroupName`), urutan ID DESC. */
+export interface GrupTreaty {
+  id: string
+  treatyGroupName: string
+}
+
+/** `GET /api/treaty-contract-out/grup-treaty`; master kosong menjawab 503 (ADR-0015). */
+export async function ambilGrupTreaty(): Promise<{ daftar: GrupTreaty[]; total: number }> {
+  return minta<{ daftar: GrupTreaty[]; total: number }>('/api/treaty-contract-out/grup-treaty')
+}
+
+/**
+ * Satu tahun treaty (`T_TREATYYEAR`). Nama kunci mengikuti `InputTreatyYear.*`.
+ * Tanggal TEKS `YYYY-MM-DD` (kosong = kosong); `tglUpdate` `YYYY-MM-DD HH:MM:SS`.
+ * `proportion` menyimpan pilihan "Reinsurance Type" (`.ID` master) — OQ-TCO-04.
+ */
+export interface TahunTreaty {
+  id: string
+  treatyYear: string
+  underwritingYear: string
+  treatyGroupId: string
+  treatyGroupName: string
+  proportion: string
+  startDate: string
+  endDate: string
+  userId: string
+  tglUpdate: string
+}
+
+/** Satu halaman daftar tahun treaty, terbaru dahulu (`.ID DESC`). */
+export interface HalamanTahunTreaty {
+  baris: TahunTreaty[]
+  total: number
+  halaman: number
+  ukuran: number
+}
+
+/** Badan simpan. `id` kosong = baru (POST); terisi = perbarui (PUT /{id}). */
+export interface TahunTreatyMasuk {
+  id: string
+  treatyYear: string
+  underwritingYear: string
+  treatyGroupId: string
+  treatyGroupName: string
+  proportion: string
+  startDate: string
+  endDate: string
+}
+
+/** `GET /api/treaty-contract-out/tahun?halaman=&ukuran=`. */
+export async function ambilTahunTreaty(halaman = 1, ukuran = 20): Promise<HalamanTahunTreaty> {
+  return minta<HalamanTahunTreaty>('/api/treaty-contract-out/tahun', { kueri: { halaman, ukuran } })
+}
+
+/** `GET /api/treaty-contract-out/tahun/{id}`; 404 bila tidak ada. */
+export async function ambilSatuTahunTreaty(id: string): Promise<TahunTreaty> {
+  return minta<TahunTreaty>(`/api/treaty-contract-out/tahun/${encodeURIComponent(id)}`)
+}
+
+/**
+ * Simpan tahun treaty — tombol `Save` (`InputDtlTreatyContact.xml` b10332).
+ *
+ * ⛔ Identitas baris baru TIDAK dikirim (AC 5): `id` kosong → POST, server
+ * menerbitkannya dari sequence. `id` terisi → PUT /{id}, SELURUH medan
+ * tertimpa (AC 8). 409 = periode + grup sudah dipakai baris lain (AC 73);
+ * 422 = gerbang wajib isi / periode terbalik (AC 9); pesannya tampil apa adanya.
+ */
+export async function simpanTahunTreaty(masuk: TahunTreatyMasuk): Promise<TahunTreaty> {
+  if (masuk.id === '') {
+    return minta<TahunTreaty>('/api/treaty-contract-out/tahun', { metode: 'POST', badan: masuk })
+  }
+  return minta<TahunTreaty>(`/api/treaty-contract-out/tahun/${encodeURIComponent(masuk.id)}`, {
+    metode: 'PUT',
+    badan: masuk,
+  })
+}

@@ -11,7 +11,7 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { JENIS_REASURANSI_TCO, MENU_TCO } from './labels.treaty-contract-out'
+import { JENIS_REASURANSI_TCO, MENU_TCO, TAHUN_TCO } from './labels.treaty-contract-out'
 
 const KORPUS = 'D:\\XML\\RNM_BRD\\Treaty Contract Out'
 const adaKorpus = existsSync(KORPUS)
@@ -22,18 +22,64 @@ function baris(relatif: string, nomor: number): string {
   return isi.split('\n')[nomor - 1] ?? ''
 }
 
+const GRID = 'Section\\InputTreatyContract.xml'
+const FORM = 'Section\\InputDtlTreatyContact.xml'
+
 describe.skipIf(!adaKorpus)('label Treaty Contract Out berbukti barisnya', () => {
   const kasus: Array<[string, string, number, string]> = [
     ['Harness\\InboxTreatyContract.xml', 'pyLabel', 151, MENU_TCO.inboxTreatyContract],
     ['Harness\\InboxTreatyContractReinsType.xml', 'pyLabel', 151, MENU_TCO.inboxTreatyContractReinsType],
     ['Harness\\InboxTreatyContractDescription.xml', 'pyLabel', 359, MENU_TCO.inboxTreatyContractDescription],
     ['Section\\InputTreatyContractReinsType.xml', 'pyLabelFieldValue', 2652, JENIS_REASURANSI_TCO.reinsType],
-    ['Section\\InputTreatyContract.xml', 'pyLabelFieldValue', 7925, JENIS_REASURANSI_TCO.reinsuranceType],
-    ['Section\\InputTreatyContract.xml', 'pyLabelPreview', 7948, JENIS_REASURANSI_TCO.reinsuranceType],
+    [GRID, 'pyLabelFieldValue', 7925, JENIS_REASURANSI_TCO.reinsuranceType],
+    [GRID, 'pyLabelPreview', 7948, JENIS_REASURANSI_TCO.reinsuranceType],
+    // tiket 03 - layar tahun treaty
+    ['Section\\GridTreatyContract.xml', 'pyValue', 1057, TAHUN_TCO.judul],
+    [FORM, 'pyValue', 5437, TAHUN_TCO.inputNewData],
+    [GRID, 'pyValue', 17378, TAHUN_TCO.kolomUnderwritingYear],
+    [GRID, 'pyValue', 17531, TAHUN_TCO.kolomTransactionYear],
+    [GRID, 'pyValue', 17684, TAHUN_TCO.kolomStartDate],
+    [GRID, 'pyValue', 17837, TAHUN_TCO.kolomEndDate],
+    [GRID, 'pyValue', 17990, TAHUN_TCO.kolomTreatyGroup],
+    [GRID, 'pyValue', 18136, TAHUN_TCO.kolomReinsuranceType],
+    [GRID, 'pyLabel', 16387, TAHUN_TCO.add],
+    [GRID, 'pyLabel', 19939, TAHUN_TCO.edit],
+    [GRID, 'pyLabel', 20778, TAHUN_TCO.reinsType],
+    [GRID, 'pyLabel', 22196, TAHUN_TCO.listDescription],
+    [FORM, 'pyLabelFieldValue', 6379, TAHUN_TCO.formId],
+    [FORM, 'pyLabelFieldValue', 6560, TAHUN_TCO.formTreatyGroup],
+    [FORM, 'pyLabelFieldValue', 6800, TAHUN_TCO.formReinsuranceType],
+    [FORM, 'pyLabelFieldValue', 7532, TAHUN_TCO.formStartDate],
+    [FORM, 'pyLabelFieldValue', 7816, TAHUN_TCO.formEndDate],
+    [FORM, 'pyLabelFieldValue', 8004, TAHUN_TCO.formUnderwritingYear],
+    [FORM, 'pyLabelFieldValue', 8284, TAHUN_TCO.formTransactionYear],
+    [FORM, 'pyLabelFieldValue', 9097, TAHUN_TCO.formModifiedDate],
+    [FORM, 'pyLabelFieldValue', 9282, TAHUN_TCO.formUsername],
+    [FORM, 'pyLabel', 10332, TAHUN_TCO.save],
+    [FORM, 'pyLabel', 10622, TAHUN_TCO.cancel],
   ]
 
   it.each(kasus)('%s baris %i memuat <%s>', (jalur, tag, nomor, teks) => {
     expect(baris(jalur, nomor).trim()).toBe(`<${tag}>${teks}</${tag}>`)
+  })
+
+  it('OQ-TCO-05: label tahun memang bersilang antara grid dan form', () => {
+    // Grid: sel .UnderwritingYear (b18964) lalu .TreatyYear (b19125) - urutan
+    // judul Underwriting Year (b17378) lalu Transaction Year (b17531).
+    expect(baris(GRID, 18964).trim()).toBe('<pyValue>.UnderwritingYear</pyValue>')
+    expect(baris(GRID, 19125).trim()).toBe('<pyValue>.TreatyYear</pyValue>')
+    // Form: label Underwriting Year terikat TreatyYear, Transaction Year
+    // terikat UnderwritingYear.
+    expect(baris(FORM, 8035).trim()).toBe('<pyValue>InputTreatyYear.TreatyYear</pyValue>')
+    expect(baris(FORM, 8315).trim()).toBe('<pyValue>InputTreatyYear.UnderwritingYear</pyValue>')
+    // Dan kolom Reinsurance Type grid menampilkan .Proportion.
+    expect(baris(GRID, 19724).trim()).toBe('<pyValue>.Proportion</pyValue>')
+    expect(baris(FORM, 6829).trim()).toBe('<pyValue>InputTreatyYear.Proportion</pyValue>')
+  })
+
+  it('tombol Copy b20459 ada di korpus dan SENGAJA tidak dibawa (AC 72)', () => {
+    expect(baris(GRID, 20459).trim()).toBe('<pyLabel>Copy</pyLabel>')
+    expect(Object.values(TAHUN_TCO)).not.toContain('Copy')
   })
 
   it('nama kelompok adalah nama folder korpus', () => {
@@ -50,14 +96,16 @@ describe.skipIf(!adaKorpus)('label Treaty Contract Out berbukti barisnya', () =>
 
 describe('label yang tidak bergantung korpus', () => {
   it('nol kata Old / testing di label (penyimpangan sadar 8)', () => {
-    for (const nilai of [...Object.values(MENU_TCO), ...Object.values(JENIS_REASURANSI_TCO)]) {
+    for (const nilai of [...Object.values(MENU_TCO), ...Object.values(JENIS_REASURANSI_TCO), ...Object.values(TAHUN_TCO)]) {
       expect(nilai).not.toMatch(/\bOld\b|testing/i)
     }
   })
   it('yang tidak ada di korpus ditandai begitu', () => {
     const sumber = readFileSync(join(__dirname, 'labels.treaty-contract-out.ts'), 'utf8')
-    const blok = sumber.slice(sumber.indexOf('masterKosong'))
-    expect(sumber.slice(0, sumber.indexOf('masterKosong'))).toContain('[tidak ada di korpus]')
-    expect(blok).toContain('[tidak ada di korpus]')
+    for (const kunci of ['masterKosong', 'belumDipilih', 'kosong:', 'menungguTiket', 'catatanLabelBersilang']) {
+      const i = sumber.indexOf(kunci)
+      expect(i, kunci).toBeGreaterThan(0)
+      expect(sumber.slice(sumber.lastIndexOf('/**', i), i)).toContain('[tidak ada di korpus]')
+    }
   })
 })
