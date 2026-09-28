@@ -132,3 +132,9 @@ memungut baris Komite, dan pekerja Claim Life tidak menyentuhnya. Aditif pada be
 ### Angka
 
 Go **588 PASS · 0 FAIL** tingkat atas; vet (+`-tags db`), gofmt bersih · vitest **357** · tsc bersih.
+
+### Temuan `/code-review` 28-09-2026 (Standards) — diperbaiki
+
+- ⛔ **Anti-dobel menelan email tingkat 2..n**: email diantre setiap keputusan dengan `RUJUKAN = kasus`, jadi email tingkat 1 yang `selesai` membuat sisanya dilewati. Kini `RUJUKAN` email = `kasus#T<tingkat>` (`RujukanEfekKomite`); pembaca efek kasus mencocokkan keduanya; laporan harian memotong akhiran.
+- ⛔ **Stub non-produksi tampak seperti kiriman nyata**: stub dulu menuntaskan baris `selesai`, dan anti-dobel menganggap Kasir sudah dibayar bila basis data non-produksi dipromosikan. Kini stub gagal **permanen** dengan `ErrPengirimStubNonProduksi` — barisnya tidak pernah `selesai` tanpa kiriman. ⚠️ Harganya: di DEV setiap efek Komite tampil "perlu intervensi" dengan sebab yang menyebut dirinya stub.
+- Dicatat, tidak diubah: pekerja belum punya penjadwal (sama dengan Claim Life); `periksaGiliran` di penyelesai akhir membaca snapshot yang sama (gerbang nyata = UPDATE bersyarat); `PastikanKasusTerbuka` dibaca di luar transaksi (pola Claim Life); setter/`RowsAffected` berulang; dua definisi tingkat berjalan (`MIN(KOMITE_URUT)` lawan `KOMITE_COUNT`) yang dijaga sama oleh penulis bersyarat.

@@ -33,6 +33,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	"nusantarare/internal/models"
@@ -92,6 +93,20 @@ func EfekKeputusanKomite(a models.AkibatKeputusanKomite) []efekKomite {
 	return e
 }
 
+// RujukanEfekKomite menyusun kolom `RUJUKAN` - kunci anti-dobel tiket 07.
+//
+// ⛔ Email diantre pada SETIAP keputusan (langkah 11), jadi rujukannya membawa
+// TINGKAT: `KMTLF-…#T2`. Tanpa itu email tingkat 1 yang sudah `selesai`
+// membuat email tingkat 2..n dianggap "sudah terkirim" dan tidak pernah
+// dikirim (temuan /code-review giliran 10). Arasapas dan Kasir hanya sekali
+// per kasus - rujukannya kasus itu sendiri.
+func RujukanEfekKomite(kasusID, jenis string, tingkat int) string {
+	if jenis == JenisEfekKomiteEmail {
+		return kasusID + "#T" + strconv.Itoa(tingkat)
+	}
+	return kasusID
+}
+
 // antreEfekKomite menulis efek keputusan ke outbox, DI DALAM transaksinya.
 //
 // Mengembalikan jenis efek yang diantre - "tersimpan, belum tuntas" (ADR-0015).
@@ -114,7 +129,8 @@ func antreEfekKomite(ctx context.Context, svc *Service, tx *repository.Tx,
 		// ⛔ ID baris outbox = `SEQ_LOG_SERVICE_RNM` - pengenal idempoten unik
 		// sejak lahir (AC 21 spec); tiket 07 memakainya sebagai kunci anti-dobel.
 		if _, err := pohon.AntreEfek(ctx, tx, LiniLife, ModulKomiteLife, e.Jenis,
-			kasus.Baris.KasusID, string(muatan), saat); err != nil {
+			RujukanEfekKomite(kasus.Baris.KasusID, e.Jenis, a.TingkatDiputus),
+			string(muatan), saat); err != nil {
 			return nil, err
 		}
 		diantre = append(diantre, e.Jenis)

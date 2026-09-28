@@ -7,13 +7,12 @@ package services
 // anggota BERJALAN memutuskan Setuju/Tolak; tangganya naik satu tingkat atau
 // berhenti. Aturannya murni di `models/komite_tangga.go`.
 //
-// ⛔ TINGKAT AKHIR DIGERBANG, dengan sengaja. `KomitePostAdjustment` langkah 4
-// (akseptasi: nomor + rekam, tiket 04a/04b) dan langkah 5 (tolak ke baris
-// klaim, tiket 05) berjalan DI DALAM activity yang sama dengan pencatatan
-// tingkatnya. Keduanya belum dibangun; `PenyelesaiAkhirBelumAda` karena itu
-// MENOLAK keputusan tingkat akhir, dan transaksinya batal utuh - supaya tidak
-// ada kasus yang "selesai disetujui" tanpa nomor akseptasi, atau "ditolak"
-// tanpa baris klaimnya tahu.
+// ⛔ TINGKAT AKHIR: `KomitePostAdjustment` langkah 4 (akseptasi, tiket
+// 04a/04b) dan 5 (tolak ke baris klaim, tiket 05) berjalan DI DALAM
+// transaksi keputusan lewat `PenyelesaiAkhirKomite` - kini
+// `PenyelesaiAkhirKomiteOracle` (komite_akseptasi.go). Bawaan
+// `PenyelesaiAkhirBelumAda` tetap MENOLAK, supaya layanan yang disusun tanpa
+// penyelesai tidak pernah menutup tangga setengah jalan.
 //
 // Dibaca sesudah: models/komite_tangga.go, repository/komite_keputusan.go.
 

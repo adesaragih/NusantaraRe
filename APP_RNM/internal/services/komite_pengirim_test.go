@@ -77,8 +77,10 @@ func TestNonProduksiStubTanpaPanggilan(t *testing.T) {
 	res := &resolverUjiKomite{alamat: "UJI-ALAMAT"}
 	p := PelaksanaKomite{Lingkungan: BukanProduksi, Resolver: res, Riwayat: &riwayatUji{}}
 	for _, j := range []string{JenisEfekKomiteArasapas, JenisEfekKomiteEmail, JenisEfekKomiteKasir} {
-		if err := p.Laksanakan(context.Background(), nil, barisKomite(t, j, KunciKasirKomite)); err != nil {
-			t.Errorf("%s di non-produksi: %v", j, err)
+		err := p.Laksanakan(context.Background(), nil, barisKomite(t, j, KunciKasirKomite))
+		// ⛔ Stub TIDAK BOLEH mengaku terkirim (temuan /code-review).
+		if !errors.Is(err, ErrPengirimStubNonProduksi) || LayakDicobaUlang(err) {
+			t.Errorf("%s di non-produksi: %v, mau stub permanen", j, err)
 		}
 	}
 	if len(res.diminta) != 0 {

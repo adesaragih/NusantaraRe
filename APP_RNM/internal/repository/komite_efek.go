@@ -33,7 +33,8 @@ type EfekKasusKomite struct {
 
 func sqlEfekKasusKomite(tabel string) string {
 	return fmt.Sprintf(`SELECT RUJUKAN, JENIS_EFEK, STATUS, PERCOBAAN, DIBUAT, DIPERBARUI
-	  FROM %s WHERE MODUL = :1 AND RUJUKAN = :2 ORDER BY DIBUAT, ID`, tabel)
+	  FROM %s WHERE MODUL = :1 AND (RUJUKAN = :2 OR RUJUKAN LIKE :3)
+	 ORDER BY DIBUAT, ID`, tabel)
 }
 
 func sqlEfekPerluIntervensi(tabel string) string {
@@ -69,7 +70,8 @@ func (r *InboxKomite) EfekKasus(ctx context.Context, kasusID string) ([]EfekKasu
 	if err != nil {
 		return nil, err
 	}
-	return r.bacaEfek(ctx, sqlEfekKasusKomite(tabel), ModulOutboxKomite, kasusID)
+	// Email berujukan `kasus#Tn` (services.RujukanEfekKomite).
+	return r.bacaEfek(ctx, sqlEfekKasusKomite(tabel), ModulOutboxKomite, kasusID, kasusID+"#%")
 }
 
 // EfekPerluIntervensi membaca seluruh efek Komite yang gagal permanen.

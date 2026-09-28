@@ -15,8 +15,9 @@ package services
 // `selesai`. Penerima tetap menerima ID baris sebagai kunci idempoten.
 //
 // ⛔ KODE LINGKUNGAN SATU TEMPAT (ADR-0005): di non-produksi pelaksana ini
-// adalah PENGIRIM STUB yang mencatat (km4) - barisnya tuntas tanpa satu pun
-// panggilan keluar. Di produksi, alamat di-resolve sungguhan lalu berhenti
+// adalah PENGIRIM STUB yang mencatat (km4) - nol panggilan keluar, dan
+// barisnya berhenti `gagal-permanen` dengan `ErrPengirimStubNonProduksi`,
+// TIDAK PERNAH `selesai`. Di produksi, alamat di-resolve sungguhan lalu berhenti
 // terang (`…BelumDisetujui`) sampai manusia menyetujui panggilan nyata.
 //
 // ⛔ Gerbang `EXIT JIKA RETROID "L0000141"` (langkah 9) DIBUANG `[keputusan
@@ -33,6 +34,17 @@ import (
 
 	"nusantarare/internal/repository"
 )
+
+// ErrPengirimStubNonProduksi - non-produksi TIDAK mengirim, dan TIDAK mengaku terkirim.
+//
+// ⛔ Temuan /code-review giliran 10: stub yang menuntaskan baris `selesai`
+// tidak terbedakan dari kiriman nyata - anti-dobel lalu menganggap Kasir
+// SUDAH dibayar bila basis data non-produksi kelak dipromosikan atau flag
+// lingkungannya berubah. Galat permanen ini membuat barisnya berhenti di
+// `gagal-permanen` dengan sebab yang menyebut dirinya, bukan `selesai`.
+var ErrPengirimStubNonProduksi = errors.New(
+	"services: lingkungan bukan produksi - efek Komite TIDAK dikirim (pengirim stub); " +
+		"baris ini bukan kiriman yang berhasil")
 
 // ErrKasirBelumDisetujui - pemanggilan Kasir nyata menuntut persetujuan.
 var ErrKasirBelumDisetujui = errors.New(
@@ -86,8 +98,9 @@ func (p PelaksanaKomite) Laksanakan(ctx context.Context, tx *repository.Tx,
 		}
 	}
 	if !p.Lingkungan.AdalahProduksi() {
-		// km4: pengirim stub mencatat - nol panggilan keluar di non-produksi.
-		return nil
+		// km4: pengirim stub MENCATAT - nol panggilan keluar, dan catatannya
+		// jujur: gagal-permanen bersebab, bukan `selesai`.
+		return ErrPengirimStubNonProduksi
 	}
 	kunci := KunciLayanan{Kategori1: m.Kategori1, Kategori2: m.Kategori2}
 	switch b.Jenis {

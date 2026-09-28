@@ -73,3 +73,18 @@ func TestMuatanOutboxKomiteTanpaURL(t *testing.T) {
 		t.Errorf("muatan outbox tanpa kunci kategori: %s", b)
 	}
 }
+
+// TestRujukanEmailPerTingkat - temuan /code-review: email tingkat 2 tidak
+// boleh dianggap dobel email tingkat 1.
+func TestRujukanEmailPerTingkat(t *testing.T) {
+	if RujukanEfekKomite("KMTLF-000001", JenisEfekKomiteEmail, 1) ==
+		RujukanEfekKomite("KMTLF-000001", JenisEfekKomiteEmail, 2) {
+		t.Error("email dua tingkat berujukan sama; anti-dobel akan menelan yang kedua")
+	}
+	if RujukanEfekKomite("KMTLF-000001", JenisEfekKomiteKasir, 3) != "KMTLF-000001" {
+		t.Error("kasir berujukan kasus berubah bentuk")
+	}
+	if n := len(RujukanEfekKomite("KMTLF-1234567890", JenisEfekKomiteEmail, 99)); n > 40 {
+		t.Errorf("rujukan %d karakter melebihi RUJUKAN VARCHAR2(40)", n)
+	}
+}

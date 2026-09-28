@@ -12,6 +12,7 @@ package services
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"nusantarare/internal/models"
@@ -74,7 +75,11 @@ type LaporanHarianIntervensi struct {
 func susunLaporan(saat time.Time, daftar []repository.EfekKasusKomite) LaporanHarianIntervensi {
 	l := LaporanHarianIntervensi{Tanggal: saat.Format("2006-01-02"), Baris: []BarisLaporanIntervensi{}}
 	for _, e := range daftar {
-		l.Baris = append(l.Baris, BarisLaporanIntervensi{KasusID: e.KasusID, EfekTampil: keEfekTampil(e)})
+		kasus := e.KasusID
+		if i := strings.Index(kasus, "#"); i >= 0 {
+			kasus = kasus[:i] // rujukan email `kasus#Tn`
+		}
+		l.Baris = append(l.Baris, BarisLaporanIntervensi{KasusID: kasus, EfekTampil: keEfekTampil(e)})
 	}
 	l.Kosong = len(l.Baris) == 0
 	return l
