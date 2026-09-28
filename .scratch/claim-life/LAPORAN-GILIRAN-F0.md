@@ -1287,3 +1287,57 @@ sebenarnya. Literal tetapnya dihitung ulang bebas dengan Python — cocok.
 | `gofmt` · `go vet` · `go vet -tags db` · `tsc` · build | bersih |
 | Migrasi | `001`–`020`, `030`, `050`–`056` |
 | Kebocoran | nol |
+
+## Giliran 3 paket 2 — sensus paritas akhir, dan celah yang ditutup
+
+135 rule di dua belas folder korpus dicacah **dengan skrip**, bukan dengan ingatan: nama tiap rule
+dicari di seluruh korpus *(di luar berkasnya sendiri)* untuk menemukan pemanggilnya, lalu dicari
+di `APP_RNM/` untuk menemukan padanannya. Hasilnya bab *"Sensus akhir 28-09-2026"* di PARITAS —
+**satu baris per rule**, nol baris "nanti".
+
+| Keadaan | Cacah |
+| --- | ---: |
+| ✅ ada padanan kode | 85 |
+| ⚠️ tercatat di dokumen, belum berkode | 41 |
+| dihakimi tangan sesudah rule-nya dibaca | 9 |
+| ⛔ residu *(nol pemanggil, nol padanan)* | **0** |
+
+### Delapan celah, dibaca satu per satu
+
+**Dua dibangun.** `SetCurrencyID_Act` + `GetCurrencyID` — dan yang ditemukannya bukan sekadar
+rule yang belum ditiru, melainkan **cacat yang sudah hidup**: `CURRENCYID` selama ini hanya
+**dibawa** *(`WarisiKolom` menyalinnya dari baris sebelumnya)* dan tidak pernah **diterbitkan**.
+Baris **pertama** seorang peserta karena itu lahir tanpa pengenal mata uang, dan
+`HitungTotalPeserta` menolaknya dengan *"mata uang beragam"* — kalimat yang benar tentang hal yang
+salah, dan yang membacanya akan mencari kesalahan di tempat yang bukan sebabnya.
+
+⚠️ Ditiru di jalur **baca**, meniru **letaknya** bukan hanya hasilnya: rule itu
+`pyPreDataTransform` `AdjustmentDetail_Section.xml` b1206 — ia berjalan setiap kali layar
+adjustment dimuat.
+
+**Satu ditolak dengan sebab.** `SetDisableAddButton` melakukan **satu** hal: `.IsCheck = false`
+*(b139–141)*, sebagai pra-muat section `ClaimLifeDetail` *(b19169)*. Artinya **membuka layar
+mencabut penanda "dipilih"**. Invariannya sudah kami punya lewat jalur yang benar —
+`RejectOSClaimLife_Act` mencabut `IsCheck` saat baris **ditolak** *(tiket 05)*. Meniru
+mekanismenya berarti setiap orang yang **melihat** layar meng-unselect pesertanya.
+
+**Tiga milik modul PremiumList** *(`getMaxPagination_Act`/`_sql`, `InboxPremiumList_Claim`)*, dan
+satu lagi — `DetailPolisLife` — adalah butir **av** yang menunggu PremiumList tiket 04.
+
+**Dua bagian cabang `ContentNote != DEATH`.** `CountPesertaAkseptasiLife_SQL` dan kembarannya:
+namanya "Count" tetapi ia **SELECT** — pencari baris akseptasi yang sudah ada untuk orang yang
+sama. Prasyarat pemanggilnya `SavePesertaClaim.xml` **b1997**
+`.IsCheck=="true" && ContentNote="DEATH"`, jadi ia bagian cabang yang PARITAS baris 1 sudah tandai
+belum dibangun — **bukan celah baru**. ⛔ `NAME_OF_INSURED` dan `DOB` di query itu data orang:
+dibaca saat jalan, tidak pernah disalin ke fixture.
+
+### TELEMETRI EKSEKUSI — giliran 3 paket 1 dan 2
+
+| Hal | A4 | Sensus |
+| --- | --- | --- |
+| Commit | `7cd7889` | *(berikutnya)* |
+| Go | 387 PASS · 0 FAIL · 38 SKIP | **389 PASS · 0 FAIL · 38 SKIP** |
+| JS | 254 | 254 |
+| `gofmt` · `vet` · `vet -tags db` · `tsc` · build | bersih | bersih |
+| Migrasi | tidak bertambah | tidak bertambah |
+| Kebocoran | nol | nol |

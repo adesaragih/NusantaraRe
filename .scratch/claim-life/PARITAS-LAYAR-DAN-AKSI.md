@@ -327,3 +327,168 @@ Dua aksi dibaca tetapi **sengaja belum dibangun**, sebab pemiliknya kelompok lai
 `SetIndexAdjustmentList` *(b542—b743: putaran baru **mewarisi** delapan angka dari
 `.AdjustmentList(1)`)* milik **Akseptasi**; `SetSTS_Reject` *(b233: halaman langkahnya
 **`.DiagnoseList`**, bukan AdjustmentList)* milik **Medis**, yang daftar diagnosisnya belum ada.
+
+
+---
+
+## Sensus akhir 28-09-2026 — satu baris per rule korpus
+
+**135 rule** di dua belas folder `D:\XML\RNM_BRD\Claim Life\`, dicacah dengan skrip, bukan
+dengan ingatan. Kolom **dipanggil dari** diisi dari pencarian nama rule di seluruh korpus *(di
+luar berkasnya sendiri)*; kolom **padanan** dari pencarian yang sama di `APP_RNM/`.
+
+| Keadaan | Cacah |
+| --- | ---: |
+| ✅ ada padanan kode | 85 |
+| ⚠️ tercatat di dokumen, belum berkode | 41 |
+| dihakimi tangan sesudah rule-nya dibaca *(delapan celah sensus)* | 9 |
+| ⛔ residu *(nol pemanggil, nol padanan)* | 0 |
+
+⛔ **Nol baris "nanti".** Kedelapan celah dibaca satu per satu dan dihakimi: **dua dibangun**
+*(`SetCurrencyID_Act` + `GetCurrencyID`)*, **satu ditolak dengan sebab** *(`SetDisableAddButton`)*,
+**tiga milik modul PremiumList**, **dua bagian cabang `ContentNote != DEATH`** yang PARITAS baris 1
+sudah tandai.
+
+⚠️ **Yang "tercatat, belum berkode" bukan celah tersembunyi.** Seluruhnya sudah punya bab
+penjelasnya sendiri di `.scratch/` — sebagian penyimpangan sadar *(`UploadCSVClaimLife_Act` =
+mesin bawaan platform)*, sebagian menunggu persetujuan *(`ServiceGoogle`, `SendEmailWithAttachments`)*,
+sebagian milik modul lain *(`SearchPolicy_*`, `PL_DetailViewPolis_Sec`)*. Kolom catatan menunjuk
+dokumennya.
+
+| Rule | Folder | Dipanggil dari | Padanan | Keadaan |
+| --- | --- | --- | --- | --- |
+| `CountClaimAmountLife_Act` | Activity | `Section/AdjustmentDetail_Section.xml:1709` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/PARITAS-LAYAR-DAN-AKSI.md` |
+| `CreateKMTLife_Act` | Activity | `Section/ClaimComite.xml:7051`, `Harness/Committe_Life.xml:8013` | `internal/repository/kasuskomite.go:8`, `internal/repository/roster.go:35` | ✅ **ada** |
+| `DeleteDocument_Act` | Activity | `FlowAction/ConfirmDeleteAttachment.xml:145` | `frontend/src/services/api.ts:1216`, `internal/models/dokumenbaru.go:61` | ✅ **ada** |
+| `DeleteGoogleStorage_Act` | Activity | `Activity/DeleteDocument_Act.xml:384` | `internal/models/dokumenbaru.go:19`, `internal/models/mimedokumen.go:8` | ✅ **ada** |
+| `DeletePesertaClaimLife` | Activity | `Section/InputOSClaimLife.xml:17909` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/AUDIT-XML-ULANG.md` |
+| `DownloadDocumentClaim` | Activity | `Section/DocumentLife.xml:3006` | `frontend/src/assets/labels.ts:369`, `frontend/src/components/PanelDokumenPeserta.tsx:18` | ✅ **ada** |
+| `GetLinkService` | Activity | `Activity/DeleteGoogleStorage_Act.xml:1304`, `Activity/GetUrlGoogleStorage_Act.xml:1668` | `internal/repository/linkservice.go:8`, `internal/services/efekkeluar.go:65` | ✅ **ada** |
+| `GetListKomiteLife` | Activity | `Section/AdjustmentDetail_Section.xml:15564` | `internal/services/komite.go:33`, `internal/services/komite_test.go:28` | ✅ **ada** |
+| `getMaxPagination_Act` | Activity | `Section/DetailPolisLife.xml:2174`, `Section/InputRegisterClaimLife.xml:21958` | — | ⛔ **MILIK MODUL PREMIUMLIST** — Dipanggil `DetailPolisLife.xml` b2174 dan `InputRegisterClaimLife.xml` b21958 — paginasi grid **polis**, bukan grid klaim. Layarnya milik PremiumList Life; membangunnya di sini berarti dua modul memegang satu layar |
+| `GetUrlGoogleStorage_Act` | Activity | `Activity/DownloadDocumentClaim.xml:369`, `Activity/LoadDocumentLife_ACT.xml:1010` | `frontend/src/components/PanelDokumenPeserta.test.ts:42`, `frontend/src/services/api.ts:70` | ✅ **ada** |
+| `InsertDocument_Act` | Activity | `Activity/SaveAttachLife.xml:1466` | `internal/models/dokumenbaru.go:44`, `internal/models/imageid.go:7` | ✅ **ada** |
+| `InsertGoogleStorage_Act` | Activity | `Activity/InsertDocument_Act.xml:1022` | `internal/models/dokumenbaru.go:19`, `internal/models/imageid.go:17` | ✅ **ada** |
+| `InsertJsonClaimLife_Act` | Activity | `Activity/SaveOutStandingLife_Act.xml:11496` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/PARITAS-LAYAR-DAN-AKSI.md` |
+| `InsertLogServiceClaim` | Activity | `Activity/serviceInsertArasapasClaimLife_act.xml:1020`, `RDBList/InsertLogServiceClaim.xml:5` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-facin/grilling-ronde-2.md` |
+| `LoadDataPeserta_Act` | Activity | `Activity/NextPrev.xml:74`, `Section/DetailPolisLife.xml:650` | `internal/models/satutype_test.go:9`, `internal/services/dol.go:52` | ✅ **ada** |
+| `LoadDataPesertaSpesifik_Act` | Activity | `Section/InputRegisterClaimLife.xml:16576` | `frontend/src/assets/labels.ts:202`, `frontend/src/pages/RegisterKlaim.tsx:155` | ✅ **ada** |
+| `LoadDocumentLife_ACT` | Activity | `Section/DocumentLife.xml:249` | `frontend/src/components/PanelDokumenPeserta.tsx:4`, `frontend/src/pages/KlaimLife.tsx:522` | ✅ **ada** |
+| `NewAttachLife` | Activity | `FlowAction/AttachDocumentLife.xml:31` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/PARITAS-LAYAR-DAN-AKSI.md` |
+| `NextPrev` | Activity | `Section/DetailPolisLife.xml:1234` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/PARITAS-LAYAR-DAN-AKSI.md` |
+| `ObjSave_Act` | Activity | `FlowAction/ViewClaimDetailLifeGCNM.xml:143` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/PARITAS-LAYAR-DAN-AKSI.md` |
+| `PreCaimLife_Act` | Activity | `FlowAction/AkseptasiClaimLife.xml:24`, `FlowAction/MedicalCheck.xml:27` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/PARITAS-LAYAR-DAN-AKSI.md` |
+| `ProtectCloseClaim_act` | Activity | `Section/CloseClaim_Section.xml:1101` | `frontend/src/assets/labels.test.ts:208`, `frontend/src/assets/labels.ts:326` | ✅ **ada** |
+| `RejectOSClaimLife_Act` | Activity | `Section/RejectOSClaimLife_Sec.xml:3117` | `internal/repository/klaimlife.go:290`, `internal/services/statusbaris.go:91` | ✅ **ada** |
+| `SaveAdjustment_Act` | Activity | `Section/ClaimLifeDetailGCNM.xml:22665` | `frontend/src/assets/labels.ts:319`, `frontend/src/pages/KlaimLife.tsx:560` | ✅ **ada** |
+| `SaveAttachLife` | Activity | `FlowAction/AttachDocumentLife.xml:179` | `internal/models/dokumenbaru.go:38`, `internal/models/mimedokumen.go:32` | ✅ **ada** |
+| `SaveInsuredClaim_Act` | Activity | `Section/InputRegisterClaimLife.xml:20084` | `internal/models/klaimlife.go:222`, `internal/models/validasitanggal.go:20` | ✅ **ada** |
+| `SaveOutStandingLife_Act` | Activity | `Section/InputOSClaimLife.xml:21126` | `frontend/src/assets/labels.test.ts:255`, `frontend/src/assets/labels.ts:305` | ✅ **ada** |
+| `SavePesertaClaim` | Activity | `Section/InputRegisterClaimLife.xml:27393` | `frontend/src/assets/labels.test.ts:255`, `frontend/src/assets/labels.ts:304` | ✅ **ada** |
+| `SearchDiagnose_act` | Activity | `Section/Diagnose_Section.xml:568`, `Harness/Diagnose_Harness.xml:1557` | `frontend/src/components/CariDiagnosa.tsx:17`, `internal/models/penyakit.go:20` | ✅ **ada** |
+| `SearchPolicyHolder_act` | Activity | `Section/SearchPolicy_Section.xml:886`, `Harness/SearchPolicy_Harness.xml:1877` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/PARITAS-LAYAR-DAN-AKSI.md` |
+| `SelectAllClaimLife_act` | Activity | `Section/InputOSClaimLife.xml:16633` | `frontend/src/lib/pilihSemua.test.ts:5`, `frontend/src/lib/pilihSemua.ts:1` | ✅ **ada** |
+| `SendEmailKlaimLF` | Activity | `Activity/CreateKMTLife_Act.xml:12` | `internal/services/efekkeluar.go:351`, `internal/services/komite.go:469` | ✅ **ada** |
+| `SendEmailWithAttachments` | Activity | `Activity/SendEmailKlaimLF.xml:2505` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/LAPORAN-GILIRAN-F0.md` |
+| `SendtoAdmin_Act` | Activity | `Activity/SendtoAdmin_Act1.xml:5`, `Section/InputOSClaimLife.xml:21863` | `frontend/src/assets/labels.ts:280`, `frontend/src/pages/OutstandingClaimLife.tsx:12` | ✅ **ada** |
+| `SendtoAdmin_Act1` | Activity | `Section/InputOSClaimLife.xml:21863`, `Section/MedicalCheckClaimLife.xml:21174` | `frontend/src/assets/labels.ts:280`, `frontend/src/pages/OutstandingClaimLife.tsx:12` | ✅ **ada** |
+| `SendtoMedical_Act` | Activity | `Section/SendtoMedical_Section.xml:1290` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/AUDIT-XML-ULANG.md` |
+| `serviceInsertArasapasClaimLife_act` | Activity | `Activity/SaveOutStandingLife_Act.xml:11857` | `internal/repository/klaimlife.go:296`, `internal/services/efekkeluar.go:36` | ✅ **ada** |
+| `SetClaimXOL_Act` | Activity | `Section/InputRegisterClaimLife.xml:6763` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/PARITAS-LAYAR-DAN-AKSI.md` |
+| `SetCurrencyID_Act` | Activity | `Section/AdjustmentDetail_Section.xml:1214` | — | ✅ **ADA sejak 28-09-2026** — `pyPreDataTransform` `AdjustmentDetail_Section.xml` b1206. Ia menerjemahkan `.CURRENCY` → `.CURRENCYID` lewat `GetCurrencyID` b419 **saat layar dimuat**. Ditiru di jalur **baca** (`services/klaimlife.go`), meniru letaknya bukan hanya hasilnya. ⚠️ Sebelumnya `CURRENCYID` hanya DIBAWA `WarisiKolom` dan tidak pernah DITERBITKAN — baris **pertama** peserta lahir tanpa pengenal, dan `HitungTotalPeserta` menolaknya dengan *"mata uang beragam"*: kalimat yang benar tentang hal yang salah |
+| `setDetailClaim_act` | Activity | `Section/SearchPolicy_Section.xml:3356`, `Harness/SearchPolicy_Harness.xml:4334` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/LAPORAN-GILIRAN-F0.md` |
+| `SetDisease` | Activity | `Section/Diagnose_Section.xml:2528`, `Harness/Diagnose_Harness.xml:3506` | `frontend/src/assets/labels.ts:471`, `frontend/src/components/CariDiagnosa.tsx:24` | ✅ **ada** |
+| `SetIndexAdjustmentList` | Activity | `Section/ClaimLifeDetailGCNM.xml:17991` | `internal/models/klaimlife.go:97`, `internal/models/totalpeserta.go:51` | ✅ **ada** |
+| `SetMOClaim_Act` | Activity | `Activity/PreCaimLife_Act.xml:889` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-facin/grilling-ronde-3.md` |
+| `SetSTS_Reject` | Activity | `Section/ClaimLifeDetailGCNM.xml:3224` | `frontend/src/components/GridDiagnosa.tsx:4`, `internal/models/diagnosa.go:48` | ✅ **ada** |
+| `setVisibility_Act` | Activity | `Section/InputRegisterClaimLife.xml:7134` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/PARITAS-LAYAR-DAN-AKSI.md` |
+| `SpreadingClaimLife_Act` | Activity | `Activity/CountClaimAmountLife_Act.xml:1012` | `internal/models/pohonklaim.go:92`, `internal/repository/migrations/005_t_claimlf_adjustment_spreading.sql:33` | ✅ **ada** |
+| `UpdateDateClaimLife_Act` | Activity | `Section/EditDateClaimLife_Section.xml:1929` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/AUDIT-XML-ULANG.md` |
+| `UploadCSVClaimLife_Act` | Activity | `FlowAction/UploadCSV_ClaimLife.xml:144` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/LAPORAN-GILIRAN-F0.md` |
+| `ValidasiClaimReceived_Act` | Activity | `Section/ClaimLifeDetailGCNM.xml:11457`, `Section/EditDateClaimLife_Section.xml:1120` | `internal/models/validasitanggal.go:9`, `internal/models/validasitanggal_test.go:5` | ✅ **ada** |
+| `ValidasiDOL_Act` | Activity | `Section/ClaimLifeDetailGCNM.xml:11177`, `Section/EditDateClaimLife_Section.xml:837` | `frontend/src/pages/KlaimLife.tsx:61`, `frontend/src/services/api.ts:906` | ✅ **ada** |
+| `ValidasiSTNC_Act` | Activity | `Section/ClaimLifeDetailGCNM.xml:845` | `internal/models/validasitanggal.go:11`, `internal/models/validasitanggal_test.go:6` | ✅ **ada** |
+| `convertJsonNusareToProductionClaimLife` | ConnectREST | `Activity/serviceInsertArasapasClaimLife_act.xml:660` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/grilling-ronde-2.md` |
+| `ServiceGoogle` | ConnectREST | `Activity/DeleteGoogleStorage_Act.xml:1478`, `Activity/GetUrlGoogleStorage_Act.xml:1839` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-facin/grilling-ronde-1-ulang-docs.md` |
+| `SetDisableAddButton` | DataTransform | `Section/ClaimLifeDetailGCNM.xml:19169` | — | ⛔ **TIDAK DITIRU — sebab dinyatakan** — DataTransform kelas `Int-LIFE_PREMIUM_DETAIL` yang melakukan **satu** hal: `.IsCheck = false` (b139–141). Ia `pyPreDataTransform` section `ClaimLifeDetail` (`ClaimLifeDetailGCNM.xml` b19169, section b19208). Artinya **membuka layar mencabut penanda "dipilih"**. Invariannya sudah kami punya lewat jalur yang benar — `RejectOSClaimLife_Act` mencabut `IsCheck` saat baris **ditolak** (`cabutPenanda`, tiket 05). Meniru mekanismenya berarti setiap orang yang MELIHAT layar meng-unselect pesertanya, dan itu perubahan keadaan tanpa ada yang memintanya |
+| `GetMimeType` | DecisionTable | `Activity/InsertGoogleStorage_Act.xml:761` | `internal/models/mimedokumen.go:19` | ✅ **ada** |
+| `Adjustment_Detail` | FlowAction | `Section/ClaimLifeDetailGCNM.xml:19583` | `frontend/src/assets/labels.test.ts:63`, `frontend/src/assets/labels.ts:76` | ✅ **ada** |
+| `AkseptasiClaimLife` | FlowAction | `Activity/RejectOSClaimLife_Act.xml:2028`, `Activity/SaveAdjustment_Act.xml:2429` | `frontend/src/assets/labels.test.ts:48`, `frontend/src/assets/labels.ts:57` | ✅ **ada** |
+| `AttachDocumentLife` | FlowAction | `Section/DocumentLife.xml:1273` | `frontend/src/assets/labels.test.ts:65`, `frontend/src/assets/labels.ts:80` | ✅ **ada** |
+| `CloseClaim` | FlowAction | `Activity/ProtectCloseClaim_act.xml:6`, `Section/CloseClaim_Section.xml:6` | `frontend/src/assets/labels.test.ts:50`, `frontend/src/assets/labels.ts:61` | ✅ **ada** |
+| `ConfirmDeleteAttachment` | FlowAction | `Section/ConfirmDeleteAttachment.xml:7`, `Section/DocumentLife.xml:4317` | `frontend/src/assets/labels.test.ts:67`, `frontend/src/assets/labels.ts:84` | ✅ **ada** |
+| `InputRegisterClaimLife` | FlowAction | `Section/InputRegisterClaimLife.xml:8` | `frontend/src/assets/labels.test.ts:61`, `frontend/src/assets/labels.ts:72` | ✅ **ada** |
+| `MedicalCheck` | FlowAction | `Section/MedicalCheckClaimLife.xml:8` | `frontend/src/assets/labels.test.ts:68`, `frontend/src/assets/labels.ts:86` | ✅ **ada** |
+| `OSClaimLife` | FlowAction | `Activity/RejectOSClaimLife_Act.xml:6`, `FlowAction/RejectOSClaimLife.xml:24` | `frontend/src/App.tsx:48`, `frontend/src/assets/labels.test.ts:62` | ✅ **ada** |
+| `PL_DetailAction_ViewPolis` | FlowAction | `Section/DetailPolisLife.xml:8193` | `frontend/src/assets/labels.test.ts:76`, `frontend/src/assets/labels.ts:102` | ✅ **ada** |
+| `RejectOSClaimLife` | FlowAction | `Activity/RejectOSClaimLife_Act.xml:6`, `Section/AdjustmentDetail_Section.xml:15183` | `frontend/src/assets/labels.test.ts:72`, `frontend/src/assets/labels.ts:94` | ✅ **ada** |
+| `RetroClaimLife` | FlowAction | `Section/AdjustmentDetail_Section.xml:10389` | `frontend/src/assets/labels.test.ts:64`, `frontend/src/assets/labels.ts:78` | ✅ **ada** |
+| `SendtoAdmin` | FlowAction | `Activity/SendtoAdmin_Act.xml:5`, `Activity/SendtoAdmin_Act1.xml:5` | `frontend/src/assets/labels.test.ts:70`, `frontend/src/assets/labels.ts:90` | ✅ **ada** |
+| `SendtoMedical` | FlowAction | `Activity/SendtoMedical_Act.xml:5`, `Section/InputAkseptasiClaimLife.xml:20496` | `frontend/src/assets/labels.test.ts:69`, `frontend/src/assets/labels.ts:88` | ✅ **ada** |
+| `ShowEditClaimLife` | FlowAction | `Section/ClaimLifeDetailGCNM.xml:14144` | `frontend/src/assets/labels.test.ts:74`, `frontend/src/assets/labels.ts:98` | ✅ **ada** |
+| `UploadCSV_ClaimLife` | FlowAction | `Section/InputRegisterClaimLife.xml:6692` | `frontend/src/assets/labels.test.ts:66`, `frontend/src/assets/labels.ts:82` | ✅ **ada** |
+| `ViewClaimDetailLifeGCNM` | FlowAction | `Section/InputAkseptasiClaimLife.xml:17387`, `Section/InputOSClaimLife.xml:18252` | `frontend/src/assets/labels.test.ts:75`, `frontend/src/assets/labels.ts:100` | ✅ **ada** |
+| `Committe_Life` | Harness | `Section/AdjustmentDetail_Section.xml:15558` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/grilling-ronde-1.md` |
+| `Diagnose_Harness` | Harness | `Section/ClaimLifeDetailGCNM.xml:5081` | `frontend/src/assets/labels.ts:315`, `frontend/src/components/CariDiagnosa.tsx:3` | ✅ **ada** |
+| `SearchPolicy_Harness` | Harness | `Section/InputRegisterClaimLife.xml:3847` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/PARITAS-LAYAR-DAN-AKSI.md` |
+| `CountPesertaAkseptasiLife_SQL` | RDBList | `Activity/SaveOutStandingLife_Act.xml:3355`, `Activity/SavePesertaClaim.xml:1907` | — | ⚠️ **CELAH — cabang `ContentNote != DEATH`** — Namanya "Count" tetapi ia **SELECT**: mencari baris akseptasi yang sudah ada untuk orang yang sama (`CEDINGCO`+`NAME_OF_INSURED`+`DOB`+`CERTIFICATE_NO`+`PL_NUMBER`). Prasyarat pemanggilnya `SavePesertaClaim.xml` **b1997**: `.IsCheck=="true" && Business.pxResults(1).ContentNote="DEATH"`. Jadi ia bagian dari cabang `ContentNote` yang PARITAS baris 1 sudah tandai belum dibangun — bukan celah baru. ⛔ Kolom `NAME_OF_INSURED` dan `DOB` adalah data orang: dibaca saat jalan, **tidak pernah** disalin ke fixture |
+| `CountPesertaAkseptasiLifeHealth_SQL` | RDBList | `Activity/SaveOutStandingLife_Act.xml:3964`, `Activity/SavePesertaClaim.xml:2323` | — | ⚠️ **CELAH — cabang `ContentNote != DEATH`** — Kembaran di atas, ditambah `LAPSE_DATE`. Sama sebabnya, sama batasnya |
+| `DeleteStorage_SQL` | RDBList | `Activity/DeleteGoogleStorage_Act.xml:1635` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/treaty-contract-out/grilling-ronde-1.md` |
+| `Generate_NoAccept_Life` | RDBList | `Activity/SaveAdjustment_Act.xml:747`, `RDBList/Generate_NoAccept_LifeRetro.xml:4` | `internal/models/klaimlife.go:436`, `internal/repository/migrations/014_kolom_business_code.sql:6` | ✅ **ada** |
+| `Generate_NoAccept_LifeRetro` | RDBList | `Activity/SaveAdjustment_Act.xml:940` | `internal/services/akseptasi.go:64`, `internal/services/akseptasi_test.go:21` | ✅ **ada** |
+| `GenerateImageID_SQL` | RDBList | `Activity/InsertGoogleStorage_Act.xml:2226` | `internal/models/imageid.go:11`, `internal/models/imageid_test.go:37` | ✅ **ada** |
+| `GetAcceptedNoCL` | RDBList | `Activity/SaveAdjustment_Act.xml:2244` | `internal/repository/nomorakseptasi.go:44`, `internal/services/akseptasi.go:190` | ✅ **ada** |
+| `GetAppName_SQL` | RDBList | `Activity/InsertGoogleStorage_Act.xml:1025` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-prop/grilling-ronde-2.md` |
+| `GetCurrencyID` | RDBList | `Activity/SetCurrencyID_Act.xml:419` | — | ✅ **ADA sejak 28-09-2026** — `repository.MataUang.Pengenal` — `SELECT ID FROM CURRENCY WHERE CURRENCY = :1`, berbatas satu baris (rule aslinya membaca `pxResults(1)`). Tabel warisan, **dibaca saja** |
+| `GetJsonProductLife` | RDBList | `Activity/SpreadingClaimLife_Act.xml:496` | `internal/services/spreading.go:73`, `internal/services/spreading_test.go:54` | ✅ **ada** |
+| `GetKodeProdLife_SQL` | RDBList | `Activity/SaveOutStandingLife_Act.xml:7710` | `internal/repository/penomor.go:206`, `internal/services/pendaftaran.go:270` | ✅ **ada** |
+| `GetLinkStorage_SQL` | RDBList | `Activity/DeleteGoogleStorage_Act.xml:692`, `Activity/GetUrlGoogleStorage_Act.xml:736` | `frontend/src/services/api.ts:1232`, `internal/handlers/dokumen.go:13` | ✅ **ada** |
+| `getMaxPagination_sql` | RDBList | `Activity/getMaxPagination_Act.xml:283` | — | ⛔ **MILIK MODUL PREMIUMLIST** — Dipanggil `getMaxPagination_Act` b283 saja |
+| `GetPesertaClaim_sql` | RDBList | `Activity/LoadDataPesertaSpesifik_Act.xml:545`, `Activity/LoadDataPeserta_Act.xml:892` | `frontend/src/services/api.ts:447`, `internal/repository/caripeserta_test.go:15` | ✅ **ada** |
+| `GetPesertaClaim_sql1` | RDBList | `Activity/LoadDataPesertaSpesifik_Act.xml:545` | `frontend/src/services/api.ts:447`, `internal/repository/caripeserta_test.go:15` | ✅ **ada** |
+| `GetProductLife` | RDBList | `Activity/SpreadingClaimLife_Act.xml:673` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/KATALOG-TABEL-PESERTA-DAN-TREATY.md` |
+| `GetProductName` | RDBList | `Activity/ValidasiClaimReceived_Act.xml:306`, `Activity/ValidasiSTNC_Act.xml:333` | `internal/models/validasitanggal.go:29`, `internal/models/validasitanggal_test.go:9` | ✅ **ada** |
+| `GetRateRetro` | RDBList | `Activity/SpreadingClaimLife_Act.xml:1750` | `internal/services/spreading.go:107`, `internal/services/spreading_test.go:222` | ✅ **ada** |
+| `GetRetroLife_SQL` | RDBList | `Activity/SpreadingClaimLife_Act.xml:2778` | `internal/services/spreading.go:89` | ✅ **ada** |
+| `GetSequenceNumber_SQL` | RDBList | `Activity/SaveOutStandingLife_Act.xml:8057` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-facin/grilling-ronde-1-ulang-docs.md` |
+| `GETTanggalClosing_SQL` | RDBList | `Activity/SaveOutStandingLife_Act.xml:1910` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-prop/grilling-ronde-1.md` |
+| `GetTokenStorage_SQL` | RDBList | `Activity/DeleteGoogleStorage_Act.xml:875`, `Activity/GetUrlGoogleStorage_Act.xml:1119` | `internal/services/efekkeluar.go:331` | ✅ **ada** |
+| `Insert_T_Storage_SQL` | RDBList | `Activity/InsertGoogleStorage_Act.xml:2645` | `internal/models/imageid.go:18`, `internal/repository/dokumenunggah.go:154` | ✅ **ada** |
+| `InsertJsonClaimLifeGCNM` | RDBList | `Activity/InsertJsonClaimLife_Act.xml:1608` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/spec-penyimpanan-relasional.md` |
+| `InsertJsonKlaimLife_sql` | RDBList | `Activity/SaveOutStandingLife_Act.xml:10182` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/STRUKTUR-TABEL-CLAIM-LIFE.md` |
+| `InsertLogServiceClaim` | RDBList | `Activity/InsertLogServiceClaim.xml:5`, `Activity/serviceInsertArasapasClaimLife_act.xml:1020` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-facin/grilling-ronde-2.md` |
+| `Update_T_Storage_SQL` | RDBList | `Activity/GetUrlGoogleStorage_Act.xml:2427` | `internal/repository/dokumenunggah.go:172`, `internal/repository/migrations/019_t_claimlf_storage.sql:5` | ✅ **ada** |
+| `UpdateDateClaimLife_SQL` | RDBList | `Activity/UpdateDateClaimLife_Act.xml:522` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/PARITAS-LAYAR-DAN-AKSI.md` |
+| `UpdateOsAkseptasiClaimLife_sql` | RDBList | `Activity/RejectOSClaimLife_Act.xml:2028`, `Activity/SaveAdjustment_Act.xml:2429` | `internal/repository/migrasidokumen.go:81`, `internal/services/tolak.go:72` | ✅ **ada** |
+| `BrowseBusinessLife_RD` | ReportDefinition | `Section/InputAkseptasiClaimLife.xml:9901`, `Section/InputOSClaimLife.xml:10082` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/LAPORAN-GILIRAN-F0.md` |
+| `BrowseCedingCoLife_RD` | ReportDefinition | `Section/InputAkseptasiClaimLife.xml:8013`, `Section/InputOSClaimLife.xml:8197` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/LAPORAN-GILIRAN-F0.md` |
+| `BrowseDiseaseLife_RD` | ReportDefinition | `Section/Diagnose_Section.xml:1751`, `Harness/Diagnose_Harness.xml:2734` | `frontend/src/components/CariDiagnosa.tsx:12`, `internal/handlers/penyakit.go:7` | ✅ **ada** |
+| `BrowseFilterBusiness_RD` | ReportDefinition | `Activity/PreCaimLife_Act.xml:339` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/treaty-contract-out/issues/07-business-dan-nonaktif.md` |
+| `BrowseMarketingOfficer_RD` | ReportDefinition | `Section/InputAkseptasiClaimLife.xml:7545`, `Section/InputOSClaimLife.xml:7731` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/LAPORAN-GILIRAN-F0.md` |
+| `FilterEmailKomiteWithLimit` | ReportDefinition | `Activity/CreateKMTLife_Act.xml:437`, `Activity/GetListKomiteLife.xml:722` | `internal/repository/roster.go:14`, `internal/repository/roster_test.go:14` | ✅ **ada** |
+| `InboxPremiumList` | ReportDefinition | `Section/SearchPolicy_Section.xml:1641`, `Harness/SearchPolicy_Harness.xml:2630` | `frontend/src/assets/labels.ts:155`, `frontend/src/pages/InboxClaimLife.test.ts:92` | ✅ **ada** |
+| `InboxPremiumList_Claim` | ReportDefinition | `Section/SearchPolicy_Section.xml:2362`, `Harness/SearchPolicy_Harness.xml:3346` | — | ⛔ **MILIK MODUL PREMIUMLIST** — Report definition pencarian polis, dipakai `SearchPolicy_Section.xml` b2362 dan `SearchPolicy_Harness.xml` b3346 |
+| `AdjustmentDetail_Section` | Section | `FlowAction/Adjustment_Detail.xml:135` | `frontend/src/assets/labels.test.ts:46`, `frontend/src/assets/labels.ts:53` | ✅ **ada** |
+| `AttachDocScreenLife` | Section | `FlowAction/AttachDocumentLife.xml:112` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/PARITAS-LAYAR-DAN-AKSI.md` |
+| `ClaimComite` | Section | `Harness/Committe_Life.xml:235` | `frontend/src/assets/labels.test.ts:212`, `frontend/src/assets/labels.ts:419` | ✅ **ada** |
+| `ClaimLifeDetailGCNM` | Section | `FlowAction/ViewClaimDetailLifeGCNM.xml:90`, `Section/EditDateClaimLife_Section.xml:1983` | `frontend/src/assets/labels.test.ts:45`, `frontend/src/assets/labels.ts:51` | ✅ **ada** |
+| `CloseClaim_Section` | Section | `FlowAction/CloseClaim.xml:135` | `frontend/src/assets/labels.test.ts:50`, `frontend/src/assets/labels.ts:61` | ✅ **ada** |
+| `ConfirmDeleteAttachment` | Section | `FlowAction/ConfirmDeleteAttachment.xml:26`, `Section/DocumentLife.xml:4317` | `frontend/src/assets/labels.test.ts:67`, `frontend/src/assets/labels.ts:84` | ✅ **ada** |
+| `DetailPolisLife` | Section | `Section/InputAkseptasiClaimLife.xml:13083`, `Section/InputOSClaimLife.xml:13267` | — | ⚠️ **butir av — menunggu PremiumList tiket 04** — Section detail polis, dibuka `InputAkseptasiClaimLife.xml` b13083 dan `InputOSClaimLife.xml` b13267. Ia yang `PanelDataPolis` tiru; sepuluh medannya menunggu `repository.PolisRingkas` (pl4) menyatu ke `main` — §4 brief giliran ini |
+| `Diagnose_Section` | Section | `Harness/Diagnose_Harness.xml:235` | `frontend/src/assets/labels.ts:471`, `frontend/src/components/CariDiagnosa.tsx:3` | ✅ **ada** |
+| `DocumentLife` | Section | `Activity/LoadDocumentLife_ACT.xml:5`, `FlowAction/AttachDocumentLife.xml:58` | `frontend/src/assets/labels.test.ts:65`, `frontend/src/assets/labels.ts:80` | ✅ **ada** |
+| `EditDateClaimLife_Section` | Section | `FlowAction/ShowEditClaimLife.xml:91` | `frontend/src/pages/KlaimLife.tsx:468`, `frontend/src/services/api.ts:905` | ✅ **ada** |
+| `InputAkseptasiClaimLife` | Section | `FlowAction/AkseptasiClaimLife.xml:86` | `frontend/src/assets/labels.test.ts:48`, `frontend/src/assets/labels.ts:57` | ✅ **ada** |
+| `InputOSClaimLife` | Section | `FlowAction/OSClaimLife.xml:86` | `frontend/src/assets/labels.ts:63`, `frontend/src/components/PanelPindahTahap.test.ts:16` | ✅ **ada** |
+| `InputRegisterClaimLife` | Section | `FlowAction/InputRegisterClaimLife.xml:45` | `frontend/src/assets/labels.test.ts:61`, `frontend/src/assets/labels.ts:72` | ✅ **ada** |
+| `MedicalCheckClaimLife` | Section | `FlowAction/MedicalCheck.xml:91` | `frontend/src/assets/labels.ts:381`, `frontend/src/components/PanelPindahTahap.test.ts:24` | ✅ **ada** |
+| `PL_DetailViewPolis_Sec` | Section | `FlowAction/PL_DetailAction_ViewPolis.xml:90` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/PARITAS-LAYAR-DAN-AKSI.md` |
+| `RejectOSClaimLife_Sec` | Section | `FlowAction/RejectOSClaimLife.xml:88` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/PARITAS-LAYAR-DAN-AKSI.md` |
+| `RetroDetailClaimLife` | Section | `FlowAction/RetroClaimLife.xml:94` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/PARITAS-LAYAR-DAN-AKSI.md` |
+| `SearchPolicy_Section` | Section | `Section/SendtoAdmin_Section.xml:212`, `Section/SendtoMedical_Section.xml:215` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/OQ-untuk-tim.md` |
+| `SendtoAdmin_Section` | Section | `FlowAction/SendtoAdmin.xml:90`, `Section/SendtoMedical_Section.xml:227` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/PARITAS-LAYAR-DAN-AKSI.md` |
+| `SendtoMedical_Section` | Section | `FlowAction/SendtoMedical.xml:93` | — | ⚠️ **tercatat, belum berkode** — dijelaskan di `.scratch/claim-life/PARITAS-LAYAR-DAN-AKSI.md` |
+| `LinkService` | SystemSettings | `Activity/DeleteGoogleStorage_Act.xml:1304`, `Activity/GetLinkService.xml:6` | `internal/repository/linkservice.go:8`, `internal/services/antrean.go:318` | ✅ **ada** |
+| `IsPEGAPROD` | When | `Activity/InsertGoogleStorage_Act.xml:1115`, `Activity/SaveOutStandingLife_Act.xml:11919` | `internal/services/efekkeluar.go:108`, `internal/services/efekkeluar_statik_test.go:222` | ✅ **ada** |
+| `IsSendtoAdmin` | When | — *(nol pemanggil)* | `internal/services/tahap.go:38`, `internal/services/tahap_test.go:153` | ✅ **ada** |
+| `IsSendtoMedical` | When | — *(nol pemanggil)* | `internal/services/tahap.go:39`, `internal/services/tahap_test.go:155` | ✅ **ada** |
