@@ -47,6 +47,15 @@ Kasir adalah **integrasi keuangan**: ia memicu jalur pembayaran atas klaim yang 
 komite tingkat tertinggi. Kegagalan diam di sini berarti **klaim disetujui tetapi tidak pernah
 sampai ke pembayaran** — dan tidak ada yang tahu.
 
+⛔ **Ralat bukti — 28-09-2026 (sensus remark GILIRAN-12).** Di ruleset korpus, satu-satunya
+panggilan keluar `HitServiceToKasirKMTLife_Act` — `Connect-REST` langkah 11 (b3021) — **ter-remark**
+(`//` b3033, deskripsi *"kalau diserver dev jangan dijalanin"*). Yang hidup: langkah 9 (b2774)
+merakit JSON pembayaran, langkah 10 membaca alamat dari `M_LINK_SERVICE` (Obj-Browse, tanpa REST),
+langkah 13 (b3395) `INSERT POOLDATA.DIRECTTOKASIR_LOG` berisi JSON itu. Dari jalur ini sistem lama
+**tidak pernah memanggil Kasir**. Premis "Kasir memicu/memindahkan pembayaran" karena itu tidak
+didukung ekspor ini. Keputusannya tetap (`[keputusan work owner]`); alasannya dikembalikan ke
+work owner — **OQ-K-06**. ⚠️ Ekspor berasal dari satu ruleset/host; ruleset produksi perlu dikonfirmasi.
+
 Bandingkan Claim — Life (**ADR-0008**): di sana efek keluar adalah unggah berkas, email, Arasapas,
 dan konversi — tidak satu pun memindahkan uang, dan `[terverifikasi]` Pega sendiri hanya
 **mencatat** kegagalannya (`InsertLogServiceClaim` → `monitoring_klaim_log`) tanpa gerbang
@@ -143,4 +152,5 @@ yang menyentuh uang**, dan layak dikonfirmasi Product+UW sebelum rilis — lihat
 | **OQ-064** | **TERTUTUP** 2026-09-15 — gerbang EXIT retro dibuang; semua klaim menjalankan keempat efek. Arti ketiga identitas tetap tidak diketahui dan tidak dicari lagi |
 | **OQ-065** (baru) | Langkah "Tukar SecurityReinsurer dengan RetroName" (step 4.14 & 5.5) **ter-remark** — apa yang kini masuk ke kolom retro pada rekam akseptasi |
 | **OQ-035** | `serviceInsertArasapasClaimLife_act` satu salinan dipakai dua konteks |
-| **OQ-002** | Kontrak layanan **Kasir** tidak ada di korpus — bentuk permintaan, makna jawaban, dan apakah ia menghormati ID idempoten belum diketahui |
+| **OQ-002** | Kontrak layanan **Kasir** tidak ada di korpus — bentuk permintaan, makna jawaban, dan apakah ia menghormati ID idempoten belum diketahui. *(Dipersempit 28-09-2026: bentuk permintaan ADA — JSON langkah 9 b2774 — dan medan jawaban `ReponseCode`/`ResponseMsg` dibaca langkah 12 b3214; yang belum diketahui: apakah panggilan nyata ada di produksi, dan siapa pembaca `DIRECTTOKASIR_LOG`.)* |
+| **OQ-K-06** (baru 28-09-2026) | Panggilan REST Kasir ter-remark di korpus (b3033) — apakah alasan ADR ini ("Kasir memindahkan uang") tetap berlaku, dan apakah menyambungkan Kasir nyata adalah perilaku BARU yang diminta |

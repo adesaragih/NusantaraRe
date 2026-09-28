@@ -55,6 +55,17 @@ menulis ke Oracle `POOLDATA` yang sama, dengan:
   manual naik satu tingkat.
 - **Efek keluar wajib berhasil** lewat transactional outbox (**ADR-0015**) — menyimpang dari
   **ADR-0008** karena Kasir memindahkan uang.
+
+> ⛔ **Ralat bukti — 28-09-2026 (sensus remark GILIRAN-12).** Di ruleset korpus, satu-satunya
+> panggilan keluar `HitServiceToKasirKMTLife_Act` — `Connect-REST` langkah 11 (b3021) — **ter-remark**
+> (`//` b3033, deskripsi *"kalau diserver dev jangan dijalanin"*). Yang hidup: langkah 9 (b2774)
+> merakit JSON pembayaran, langkah 10 membaca alamat dari `M_LINK_SERVICE` (Obj-Browse, tanpa REST),
+> langkah 13 (b3395) `INSERT POOLDATA.DIRECTTOKASIR_LOG` berisi JSON itu. Dari jalur ini sistem lama
+> **tidak pernah memanggil Kasir**. Premis "Kasir memicu/memindahkan pembayaran" karena itu tidak
+> didukung ekspor ini. Keputusannya tetap (`[keputusan work owner]`); alasannya dikembalikan ke
+> work owner — **OQ-K-06**. ⚠️ Ekspor berasal dari satu ruleset/host; ruleset produksi perlu dikonfirmasi.
+> Butir 3 "Masalah" dan cerita 23 di bawah bersandar pada premis yang sama.
+
 - **Satu jalur simpan berparameter status**, menggantikan dua blok kembar.
 - **Kode mati tidak ikut pindah** — `TransferType`, gerbang EXIT retro, dan lima langkah ter-remark
   dibuang.
@@ -375,7 +386,7 @@ selama ini dikecualikan kini menjalankan **seluruh** efek keluar, **termasuk Kas
 | `POOLDATA.GENERATE_SEQUENCE_NUMBER` | sequence | `[data DBA]` PK komposit `(CLASS, JENIS, TAHUN)` |
 | `POOLDATA.M_LINK_SERVICE` | alamat endpoint | **ADR-0013** — lookup runtime, dilarang hardcode |
 | `POOLDATA.GCP_IMAGE` | cache token | `[data DBA]` |
-| `POOLDATA.DIRECTTOKASIR_LOG` | jejak Kasir di sisi database | `[terverifikasi]` |
+| `POOLDATA.DIRECTTOKASIR_LOG` | log JSON pembayaran yang dirakit (`InsertLOGDirectKasir_SQL`, langkah 13 b3395; `KET` kosong) — **bukan** jejak panggilan Kasir *(diralat 28-09-2026)*. ⚠️ Celah: aplikasi tidak menulisnya | `[terverifikasi]` |
 
 **Batas transaksi dipegang Go** (OQ-013 tertutup untuk jalur Life). Outbox ditulis dalam transaksi
 yang sama dengan keputusan.
@@ -707,7 +718,9 @@ nol rule otorisasi. Ia dibangun dari nol.
 - **Scaffolding kode.** `cmd/`, `internal/`, `frontend/`, `Makefile` belum ada — pekerjaan terpisah
   yang mendahului tiket mana pun.
 - **Kontrak layanan Kasir.** `[terbuka]` OQ-002 — bentuk permintaan dan makna jawabannya tidak ada di
-  korpus. Spec menetapkan **jaminan pengirimannya**, bukan bentuk pesannya.
+  korpus. Spec menetapkan **jaminan pengirimannya**, bukan bentuk pesannya. *(Dipersempit
+  28-09-2026: bentuk permintaan ADA — JSON langkah 9 b2774 — dan medan jawabannya dibaca b3214; yang
+  terbuka: apakah panggilan nyata ada di produksi — REST-nya ter-remark, OQ-K-06.)*
 
 ---
 

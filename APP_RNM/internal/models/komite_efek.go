@@ -3,8 +3,9 @@ package models
 // Keadaan efek keluar kasus Komite - tiket 08 Komite Claim Life. MURNI.
 //
 // ⛔ PERILAKU BARU SEPENUHNYA: korpus tidak punya permukaan pemantauan apa
-// pun untuk kegagalan efek keluar (hanya log `DIRECTTOKASIR_LOG`,
-// `MONITORING_KLAIM_LOG`). Ini syarat pengaman ADR-0015: "wajib berhasil"
+// pun untuk kegagalan efek keluar (hanya log `DIRECTTOKASIR_LOG` - JSON
+// pembayaran yang dirakit, bukan jejak panggilan, sebab REST Kasir-nya
+// ter-remark b3033 - dan `MONITORING_KLAIM_LOG`). Ini syarat pengaman ADR-0015: "wajib berhasil"
 // tanpa permukaan manusia hanya memindahkan kegagalan diam ke antrean.
 //
 // km5: KODE tinggal di sini (status outbox `antre`/`jalan`/`selesai`/

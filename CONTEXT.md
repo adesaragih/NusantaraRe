@@ -375,7 +375,7 @@ OQ-037 (pita hardcode di Komite Claim FacIn), OQ-060 (cakupan mata uang konteks 
 | 4 | **Cutover 7 Feb 2025 tidak dipakai lagi.** Blok `ProdDateTime < "20250207T000000.000 GMT"` sudah di-remark; jangan direplikasi. Identitas retro cukup dua precondition aktif (`Type TP/TR`, `SecurityReinsurer` terisi) | `[keputusan work owner]` |
 | 5 | **Dua blok tulis kembar disatukan** menjadi satu jalur simpan berparameter status. Isi identik, beda hanya nilai status. Penyimpangan sadar dari paritas struktural | `[terverifikasi + keputusan work owner]` |
 | 6 | **Nomor & rekam akseptasi dibuat sekali, di tingkat final.** Tingkat bukan-terakhir hanya mencatat `KomiteAproval = AcceptStatus` lalu `KomiteCount + 1` — naik tingkat tanpa nomor | `[terverifikasi]` |
-| 7 | **Semua efek keluar wajib berhasil** (at-least-once, transactional outbox + retry). **Menyimpang dari ADR-0008**; pemicunya **Kasir** (integrasi keuangan) | `[keputusan work owner]` → **ADR-0015** |
+| 7 | **Semua efek keluar wajib berhasil** (at-least-once, transactional outbox + retry). **Menyimpang dari ADR-0008**; pemicunya **Kasir** (integrasi keuangan). ⚠️ *Ralat bukti 28-09-2026: REST Kasir ter-remark di korpus (b3033) — premisnya dikembalikan ke work owner, OQ-K-06* | `[keputusan work owner]` → **ADR-0015** |
 | 8 | **Tiga identitas retro ter-hardcode dibuang** (`1000013`, `L0000141`, `L0000134`) — tidak direplikasi sebagai konstanta | `[keputusan work owner]` |
 
 ## Kosakata baru dari ronde ini
@@ -399,10 +399,13 @@ Enum tertutup `{1, 2}`.
 _Bukti_ `[terverifikasi]`: nol `<PropertiesName>…AcceptStatus</PropertiesName>` di 47 berkas modul; kontrol di `Komite Claim Life/Section/ShowTransfer.xml` baris 32607 — `pyValue = .AcceptStatus`, `pyFormat = pxDropdown`, `pyRequired = true`, `pyRequiredNew = always`
 
 **Kasir**:
-Integrasi pembayaran yang dipanggil setelah keputusan komite final. **Tidak ada di Claim Life** —
-khas Komite. Ia yang membuat efek keluar Komite menuntut jaminan lebih kuat daripada Claim Life.
+Integrasi pembayaran yang *dimaksudkan* dipanggil setelah keputusan komite final. **Tidak ada di
+Claim Life** — khas Komite. Ia yang membuat efek keluar Komite menuntut jaminan lebih kuat daripada
+Claim Life. ⛔ *Ralat 28-09-2026 (sensus remark):* di korpus `Connect-REST`-nya (langkah 11 b3021)
+**ter-remark** (`//` b3033); efek hidupnya satu baris `POOLDATA.DIRECTTOKASIR_LOG` (langkah 13 b3395)
+berisi JSON pembayaran (b2774) — OQ-K-06.
 _Avoid_: Cashier, Payment Service
-_Bukti_ `[terverifikasi]`: `Komite Claim Life/Activity/HitServiceToKasirKMTLife_Act.xml` (`ASM-FW-GISFW-DATA-ADJUSTMENTLIFE` / `HITSERVICETOKASIRKMTLIFE_ACT` / `RULE-OBJ-ACTIVITY`), dipanggil `KomitePostAdjustment` step 11, digerbangi `AcceptStatus = 1 && KomiteCount == KomiteLoop` (baris ~8878)
+_Bukti_ `[terverifikasi]`: `Komite Claim Life/Activity/HitServiceToKasirKMTLife_Act.xml` (`ASM-FW-GISFW-DATA-ADJUSTMENTLIFE` / `HITSERVICETOKASIRKMTLIFE_ACT` / `RULE-OBJ-ACTIVITY`), dipanggil `KomitePostAdjustment` step 12 (b8819), digerbangi `AcceptStatus = 1 && KomiteCount == KomiteLoop` (b8887), `Type` bukan TP/TR (b8910), `IsKPR=="KPR"` (b8939), `IsPEGAPROD` (b8962) *(diralat 28-09-2026: dulu "step 11 (~8878)")*
 
 ---
 

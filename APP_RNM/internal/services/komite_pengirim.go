@@ -47,6 +47,10 @@ var ErrPengirimStubNonProduksi = errors.New(
 		"baris ini bukan kiriman yang berhasil")
 
 // ErrKasirBelumDisetujui - pemanggilan Kasir nyata menuntut persetujuan.
+//
+// ⛔ Dan ia perilaku BARU: di korpus REST Kasir ter-remark
+// (`HitServiceToKasirKMTLife_Act` b3033), jadi sistem lama tidak pernah
+// memanggilnya dari jalur ini (sensus remark 28-09-2026, OQ-K-06).
 var ErrKasirBelumDisetujui = errors.New(
 	"services: pemanggilan Kasir belum disetujui; menghubungkan layanan pembayaran " +
 		"menuntut persetujuan manusia (OQ-002: kontrak Kasir tidak ada di korpus)")

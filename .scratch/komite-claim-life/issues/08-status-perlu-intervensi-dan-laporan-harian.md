@@ -27,7 +27,7 @@ apa pun untuk kegagalan efek keluar. Yang ada hanya pencatatan di sisi database:
 
 | Objek | Peran |
 | --- | --- |
-| `POOLDATA.DIRECTTOKASIR_LOG` | `[terverifikasi]` jejak panggilan Kasir |
+| `POOLDATA.DIRECTTOKASIR_LOG` | `[terverifikasi]` log JSON pembayaran yang dirakit `HitServiceToKasirKMTLife_Act` langkah 13 (b3395) — **bukan** jejak panggilan: REST-nya ter-remark (b3033). *Ralat 28-09-2026* |
 | `POOLDATA.MONITORING_KLAIM_LOG` | `[terverifikasi]` log layanan — dipakai jalur Claim Life |
 
 Keduanya **log**, bukan antrean kerja: tidak ada yang menampilkannya kepada manusia, dan tidak ada

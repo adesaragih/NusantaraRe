@@ -354,6 +354,11 @@ func (EfekBerkas) Jalankan(context.Context, MuatanEfek) error {
 // `[terverifikasi]` `Claim Life/Activity/SendEmailKlaimLF.xml` pecahan baris
 // 2505 `Call SendEmailWithAttachment`, dengan `smtpPort "587"` (2556) dan
 // `smtpHost` berupa LITERAL di korpus (2574) - SMTP langsung, bukan REST.
+// Komite memakai ulang efek ini (komite_pengirim.go); sumbernya
+// `Komite Claim Life/Activity/SendEmailKlaimLife.xml` langkah 15 b3479
+// (`IsPEGAPROD` b3799). ⚠️ Sensus remark 28-09-2026: CC di langkah 1-2
+// ter-remark; CC HIDUP ada di langkah 3 (b704-705) dan BCC tetap (b3540) -
+// keduanya belum ditiru, dicatat di PARITAS Komite.
 //
 // Brief menduga kuncinya `("SendEmail", …)` dari katalog; membaca
 // activity-nya membantah dugaan itu. Inilah sebabnya kunci dibaca dari

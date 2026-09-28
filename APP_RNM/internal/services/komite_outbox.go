@@ -60,8 +60,13 @@ const (
 //
 // `[terverifikasi]` `Activity/HitServiceToKasirKMTLife_Act.xml` `GetLinkService`
 // `Kategori_1 = "Kasir"`, `Kategori_2 = "insertAllPaymentKasir"`. ⚠️ Langkah
-// `Connect-REST`-nya sendiri ber-`//` dengan deskripsi "kalau diserver dev
-// jangan dijalanin" - panggilan nyatanya menunggu persetujuan manusia.
+// `Connect-REST`-nya sendiri ber-`//` (b3033) dengan deskripsi "kalau diserver
+// dev jangan dijalanin" - panggilan nyatanya menunggu persetujuan manusia.
+//
+// ⛔ Sensus remark 28-09-2026: karena itu sistem lama TIDAK PERNAH memanggil
+// Kasir dari jalur ini; efek hidupnya hanya satu baris
+// `DIRECTTOKASIR_LOG` (langkah 13 b3395). Menyetujui panggilan nyata adalah
+// perilaku BARU, bukan paritas (OQ-K-06).
 var KunciKasirKomite = KunciLayanan{Kategori1: "Kasir", Kategori2: "insertAllPaymentKasir"}
 
 // muatanOutboxKomite adalah JSON kolom `MUATAN` baris Komite.

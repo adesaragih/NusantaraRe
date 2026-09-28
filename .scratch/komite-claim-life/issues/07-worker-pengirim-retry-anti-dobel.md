@@ -26,8 +26,8 @@ Tidak menyentuh `frontend/` — permukaan manusia ada di tiket 08.
 | 2 · step 10 | `Claim Life/Activity/serviceInsertArasapasClaimLife_act.xml` | `[terverifikasi]` **satu-satunya salinan di korpus** — OQ-035 |
 | 3 · step 11 | `Komite Claim Life/Activity/SendEmailKlaimLife.xml` | `RULE-OBJ-ACTIVITY` |
 | 4 · step 12 | `Komite Claim Life/Activity/HitServiceToKasirKMTLife_Act.xml` | `ASM-FW-GISFW-DATA-ADJUSTMENTLIFE` / `HITSERVICETOKASIRKMTLIFE_ACT` / `RULE-OBJ-ACTIVITY` — **Kasir/pembayaran** |
-| resolusi alamat | `Komite Claim Life/Activity/GetLinkService.xml` | `ASM-FW-GISFW-INT-M_LINK_SERVICE` / `GETLINKSERVICE` / `RULE-OBJ-ACTIVITY` — `Obj-Browse` `M_LINK_SERVICE` pada `(KATEGORI_1, KATEGORI_2)`, ambil `.URL`, lalu `Connect-REST` |
-| jejak Kasir | `POOLDATA.DIRECTTOKASIR_LOG` | `[terverifikasi]` jejak di sisi database |
+| resolusi alamat | `Komite Claim Life/Activity/GetLinkService.xml` | `ASM-FW-GISFW-INT-M_LINK_SERVICE` / `GETLINKSERVICE` / `RULE-OBJ-ACTIVITY` — `Obj-Browse` `M_LINK_SERVICE` pada `(KATEGORI_1, KATEGORI_2)`, ambil `.URL` *(empat langkah b245/b371/b684/b813, TANPA `Connect-REST` — ralat 28-09-2026)* |
+| log Kasir | `POOLDATA.DIRECTTOKASIR_LOG` | `[terverifikasi]` log JSON pembayaran yang dirakit (langkah 13 b3395), bukan jejak panggilan *(ralat 28-09-2026)* |
 
 `[terverifikasi]` Kunci kategori Arasapas: `Kategori_1 = "Klaim"`, `Kategori_2 = "insertClaimLife"`
 (`Claim Life/Activity/serviceInsertArasapasClaimLife_act.xml`).
@@ -138,3 +138,20 @@ Go **588 PASS · 0 FAIL** tingkat atas; vet (+`-tags db`), gofmt bersih · vites
 - ⛔ **Anti-dobel menelan email tingkat 2..n**: email diantre setiap keputusan dengan `RUJUKAN = kasus`, jadi email tingkat 1 yang `selesai` membuat sisanya dilewati. Kini `RUJUKAN` email = `kasus#T<tingkat>` (`RujukanEfekKomite`); pembaca efek kasus mencocokkan keduanya; laporan harian memotong akhiran.
 - ⛔ **Stub non-produksi tampak seperti kiriman nyata**: stub dulu menuntaskan baris `selesai`, dan anti-dobel menganggap Kasir sudah dibayar bila basis data non-produksi dipromosikan. Kini stub gagal **permanen** dengan `ErrPengirimStubNonProduksi` — barisnya tidak pernah `selesai` tanpa kiriman. ⚠️ Harganya: di DEV setiap efek Komite tampil "perlu intervensi" dengan sebab yang menyebut dirinya stub.
 - Dicatat, tidak diubah: pekerja belum punya penjadwal (sama dengan Claim Life); `periksaGiliran` di penyelesai akhir membaca snapshot yang sama (gerbang nyata = UPDATE bersyarat); `PastikanKasusTerbuka` dibaca di luar transaksi (pola Claim Life); setter/`RowsAffected` berulang; dua definisi tingkat berjalan (`MIN(KOMITE_URUT)` lawan `KOMITE_COUNT`) yang dijaga sama oleh penulis bersyarat.
+
+## ⛔ Ralat bertanggal — 28 September 2026 (GILIRAN-12 paket 2: sensus remark)
+
+⛔ **Ralat bukti — 28-09-2026 (sensus remark GILIRAN-12).** Di ruleset korpus, satu-satunya
+panggilan keluar `HitServiceToKasirKMTLife_Act` — `Connect-REST` langkah 11 (b3021) — **ter-remark**
+(`//` b3033, deskripsi *"kalau diserver dev jangan dijalanin"*). Yang hidup: langkah 9 (b2774)
+merakit JSON pembayaran, langkah 10 membaca alamat dari `M_LINK_SERVICE` (Obj-Browse, tanpa REST),
+langkah 13 (b3395) `INSERT POOLDATA.DIRECTTOKASIR_LOG` berisi JSON itu. Dari jalur ini sistem lama
+**tidak pernah memanggil Kasir**. Premis "Kasir memicu/memindahkan pembayaran" karena itu tidak
+didukung ekspor ini. Keputusannya tetap (`[keputusan work owner]`); alasannya dikembalikan ke
+work owner — **OQ-K-06**. ⚠️ Ekspor berasal dari satu ruleset/host; ruleset produksi perlu dikonfirmasi.
+
+Akibatnya bagi tiket ini: pengirim Kasir (`services/komite_pengirim.go`) tetap stub yang gagal terang
+(`ErrKasirBelumDisetujui`), dan itu **bukan** celah paritas — sistem lama pun tidak memanggilnya.
+Menyambungkannya adalah perilaku **baru** (OQ-K-06). Yang hidup dan tidak ditiru: `INSERT
+DIRECTTOKASIR_LOG` langkah 13 — dicatat sebagai celah di PARITAS bab "Sensus remark 28-09-2026".
+
