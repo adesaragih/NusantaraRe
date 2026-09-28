@@ -67,6 +67,15 @@ kedua cabang modul disatukan *(brief `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-1.m
 worktree tetap ada dan di-fast-forward pada akhir tiap giliran, supaya sesi paralel *(§3)* dapat dibuka
 kapan saja dari SHA yang sama. Pembagian berkas §2 dan rentang migrasi berlaku di kedua mode.
 
+## 0.4 GILIRAN 3 *(28-09-2026)* — tiga sesi BERSAMAAN, satu brief per sesi; asisten yang menyatukan
+
+Sesi tunggal menghasilkan kira-kira tiga paket per giliran; tiga modul "sekaligus" hanya tercapai dengan **tiga sesi
+paralel**. Mulai giliran 3: sesi A `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-3-CLAIM-LIFE.md` di `OUTPUT_HASIL_RNM`
+*(`main`)*; sesi B `…-GILIRAN-3-PREMIUMLIST.md` di `.worktrees\premiumlist-life`; sesi C `…-GILIRAN-3-KOMITE.md` di
+`.worktrees\komite-claim-life`. Kedua worktree sudah di-fast-forward asisten ke `4f40272`. Sesi B dan C **tidak** merge
+ke `main`; **asisten** menyatukan cabangnya ke `main` sesudah memverifikasi lognya, lalu fast-forward worktree lain.
+Bila work owner tetap memakai satu sesi: tempel A, lalu B, lalu C, semuanya di `main` *(§0.3)*.
+
 ## 1. TATA LETAK — worktree, cabang, port
 
 | Modul | Tempat kerja | Cabang | Backend | Vite |
@@ -114,10 +123,10 @@ Korpus `D:\XML\RNM_BRD\` tetap READ-ONLY dari semua worktree.
 
 | Sesi | Tempel utuh | Titik mulai |
 | --- | --- | --- |
-| **Sesi tunggal** *(mode §0.3)* | `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-2.md` *(GILIRAN-1 tetap berlaku; penyatuan sudah `c1d3b8c`)* | `main` @ `94ee1a6` atau lebih baru |
-| Claim Life | `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-1.md` §2 *(lanjutan 12 sudah dijalankan sampai `639b85e`)* | `main` @ `639b85e` atau lebih baru |
-| PremiumList Life | `PROMPT-IMPLEMENTASI-MODUL-PREMIUMLIST-LIFE.md` | `modul/premiumlist-life` @ `83658a8` *(tiket 00 selesai)* — buka sesi di `.worktrees\premiumlist-life` |
-| Komite Claim Life | `PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-LIFE.md` | `modul/komite-claim-life` @ `7709c0c` *(tiket 00 selesai)* — buka sesi di `.worktrees\komite-claim-life` |
+| **Sesi tunggal** *(mode §0.3)* | `…-GILIRAN-3-CLAIM-LIFE.md`, lalu `…-GILIRAN-3-PREMIUMLIST.md`, lalu `…-GILIRAN-3-KOMITE.md` | `main` @ `4f40272` atau lebih baru |
+| Claim Life *(sesi A)* | `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-3-CLAIM-LIFE.md` | `main` @ `4f40272` atau lebih baru — folder `OUTPUT_HASIL_RNM` |
+| PremiumList Life *(sesi B)* | `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-3-PREMIUMLIST.md` | `modul/premiumlist-life` @ `4f40272` — buka sesi di `.worktrees/premiumlist-life` |
+| Komite Claim Life *(sesi C)* | `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-3-KOMITE.md` | `modul/komite-claim-life` @ `4f40272` — buka sesi di `.worktrees/komite-claim-life` |
 
 Aturan yang sama di ketiganya: XML menang dan tiket diralat dengan bukti; penyarangan dibaca sebagai
 **pohon**; mekanisme giliran lanjutan 8 §1 *(nol pesan di antara paket, catatan ke berkas laporan
