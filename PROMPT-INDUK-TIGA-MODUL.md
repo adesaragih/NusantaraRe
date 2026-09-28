@@ -76,6 +76,13 @@ paralel**. Mulai giliran 3: sesi A `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-3-CLA
 ke `main`; **asisten** menyatukan cabangnya ke `main` sesudah memverifikasi lognya, lalu fast-forward worktree lain.
 Bila work owner tetap memakai satu sesi: tempel A, lalu B, lalu C, semuanya di `main` *(§0.3)*.
 
+## 0.5 SATU GILIRAN = SATU SESI BARU *(28-09-2026 malam)*
+
+Laporan giliran 8–10 berhenti pada "konteks menipis 15% → 8% → 5%" sesudah satu sampai tiga commit: sesi executor yang
+sama dipakai lintas giliran sehingga konteksnya habis sebelum pekerjaan. Mulai giliran 10: **tiap brief giliran ditempel
+ke sesi Claude Code yang BARU** *(tutup sesi lama)*. Brief giliran selalu berdiri sendiri: keadaan awal, keputusan, urutan,
+dan rujukan ke berkas di disk. Hasilnya: konteks penuh untuk kira-kira empat sampai enam tiket per giliran.
+
 ## 1. TATA LETAK — worktree, cabang, port
 
 | Modul | Tempat kerja | Cabang | Backend | Vite |
@@ -123,7 +130,7 @@ Korpus `D:\XML\RNM_BRD\` tetap READ-ONLY dari semua worktree.
 
 | Sesi | Tempel utuh | Titik mulai |
 | --- | --- | --- |
-| **Sesi tunggal** *(mode §0.3)* | `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-9.md` *(GILIRAN-3 A/B/C, 4–8 tetap rujukan)* | `main` @ `0e469cd` atau lebih baru |
+| **Sesi tunggal** *(mode §0.3, sesi baru tiap giliran §0.5)* | `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-10.md` *(GILIRAN-3 A/B/C, 4–9 tetap rujukan)* | `main` @ `021d0f3` atau lebih baru |
 | Claim Life *(sesi A)* | `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-3-CLAIM-LIFE.md` | `main` @ `4f40272` atau lebih baru — folder `OUTPUT_HASIL_RNM` |
 | PremiumList Life *(sesi B)* | `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-3-PREMIUMLIST.md` | `modul/premiumlist-life` @ `4f40272` — buka sesi di `.worktrees/premiumlist-life` |
 | Komite Claim Life *(sesi C)* | `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-3-KOMITE.md` | `modul/komite-claim-life` @ `4f40272` — buka sesi di `.worktrees/komite-claim-life` |
