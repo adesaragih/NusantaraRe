@@ -1760,6 +1760,8 @@ export interface HasilKeputusanKomite {
   tingkatBerikut: number
   akseptasiAkhir: boolean
   tolakAkhir: boolean
+  /** Tiket 04a — terisi hanya pada Setuju di tingkat akhir. */
+  nomorAkseptasi: string
 }
 
 /**

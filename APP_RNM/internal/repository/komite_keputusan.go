@@ -151,3 +151,35 @@ func (r *InboxKomite) Eskalasi(ctx context.Context, tx *Tx, kasusID string, urut
 	}
 	return nil
 }
+
+// sqlNomorAksepDiAdjustment mencacah baris adjustment yang memakai nomor itu.
+//
+// ⛔ Tiket 04a: nomor akseptasi Komite dan Claim Life berbagi BENTUK tetapi
+// tidak berbagi PENGHITUNG. `NomorAkseptasiDipakai` (Claim Life) memeriksa
+// tabel datar warisan; jalur kedua yang kini menulis ke `T_CLAIMLF_ADJUSTMENT`
+// juga harus diperiksa di sana.
+func sqlNomorAksepDiAdjustment(adj string) string {
+	return fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE ACCEPTED_NO = :1`, adj)
+}
+
+// NomorAkseptasiDipakaiDiAdjustment menjawab apakah nomor sudah dipakai baris lain.
+func (r *InboxKomite) NomorAkseptasiDipakaiDiAdjustment(ctx context.Context, tx *Tx,
+	nomor string) (bool, error) {
+
+	if tx == nil {
+		return false, errors.New("repository: pemeriksaan nomor akseptasi menuntut transaksi")
+	}
+	adj, err := r.db.Qualify("T_CLAIMLF_ADJUSTMENT")
+	if err != nil {
+		return false, err
+	}
+	q := sqlNomorAksepDiAdjustment(adj)
+	if err := PeriksaSQL(q); err != nil {
+		return false, err
+	}
+	var n int
+	if err := tx.tx.QueryRowContext(ctx, q, nomor).Scan(&n); err != nil {
+		return false, fmt.Errorf("repository: memeriksa nomor akseptasi: %w", err)
+	}
+	return n > 0, nil
+}

@@ -87,3 +87,75 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+## Implementasi — 28-09-2026 (giliran 10)
+
+### ⚠️ RALAT — ADR-0006 "jangan replikasi logikanya" dilampaui keputusan **o**
+
+Tiket ini (dan ADR-0006) menuntut prosedur `PROC_GENERATE_SEQUENCE_NUMBER` dipanggil apa adanya.
+Keputusan **o** (o2/o3, brief GILIRAN-3-KOMITE §0 dan brief modul) membaliknya: prosedur **tidak
+dipanggil**, penghitungnya **ditiru** lewat `repository.Penomor` — penghitung yang sama yang sudah
+dipakai penomoran PremiumList. AC "tidak memuat logika pembentukan format nomor" karena itu diganti:
+bentuk nomor tinggal di **satu** fungsi murni (`models.NomorAkseptasiKomite`), diuji literal.
+
+### Pembacaan ulang XML — langkah 4 sub-langkah 4.7–4.12
+
+| Sub | Isi (`sed -e 's/></>\n</g'`) |
+| --- | --- |
+| 4.7 b2392 | `GetKodeProdLife_SQL` → `ParamSeq.HASIL3` |
+| 4.8 b2576 | `CARI1 = pyWorkPage.pxObjClass`, `CARI2 = HASIL3 + "A"` |
+| 4.9 b2737 | `GetSequenceNumber_SQL` → `HASIL1` (`MM.YYYY`), `HASIL2` (urut) |
+| 4.10 b2919 | `HASIL1 = substring(0,2) + "." + substring(5,7)` (`MM.YY`) |
+| 4.11 b3120 | **QR,QP**: `ACCEPTEDNO = HASIL3+"A"+BusinessCode+"."+HASIL1+"."+HASIL2`; `STS_REJECT = 1`; `ACCEPTATION_DATE = @CurrentDateTime()`; peserta `STS_REJECT = 1`, `IsCheck = "true"` |
+| 4.12 b3398 | **TR,TP**: sama, dengan `"AR"` |
+
+Semua sub-langkah bergerbang `ACCEPTEDNO == ""`. ⛔ **Satu penghitung** untuk kedua cabang (`JENIS`
+disusun di 4.8, sebelum cabang) — `(ASM-FW-GCNMFW-Work-KomiteLife, RNML-A)`, pasangan yang memang ada
+di `GENERATE_SEQUENCE_NUMBER` (SUMBER-PENOMORAN-DBA).
+
+### ⛔ OQ-K-04a `[terbuka — work owner]` — tabrakan lintas jalur MUNGKIN
+
+`GetAcceptedNoCL` yang brief sebut **tidak ada** di jalur Komite: `KomitePostAdjustment` punya nol
+`RequestType` itu (grep `RequestType>`: `GETTanggalClosing_SQL`, `Generate_NoAccept_KMT_*` (mati),
+`GetKodeProdLife_SQL`, `GetSequenceNumber_SQL`, `UpdateOsAkseptasiClaimLife_sql`). Ia milik jalur Claim
+Life (`SaveAdjustment_Act` 1.6.1). Padahal kedua jalur menerbitkan nomor berbentuk **sama**
+(`RNML-A…`/`RNML-AR…` + kode bisnis + `.MM.YY.` + 5 digit) dari **penghitung berbeda** (Komite:
+`GENERATE_SEQUENCE_NUMBER` per tahun; Claim Life: `ACCEPTATIONNOLIFE_SEQ` global). Tabrakan karena itu
+mungkin, dan korpus tidak menjawab kebijakannya.
+
+Yang dibangun: tabrakan **gagal terang** — nomor diperiksa di tabel datar warisan (cara Claim Life) **dan**
+di `T_CLAIMLF_ADJUSTMENT.ACCEPTED_NO` (tempat kedua jalur kini menulis); bila dipakai, `409`,
+transaksinya — termasuk kenaikan penghitung — batal. ⚠️ Akibatnya: bila tabrakan terjadi, keputusan
+akhir itu tertahan sampai work owner memutuskan (lewati nomor, atau pisahkan seri).
+
+### Yang dibangun
+
+- `models/komite_nomor.go` — `NomorAkseptasiKomite` (memakai ulang `RakitNomorPL`/`PeriodeNomorPL`),
+  `KodeCabangAkseptasiKomite` (A / AR), `JenisPenghitungKomite`, `ClassPenghitungKomiteLife`.
+- `services/komite_akseptasi.go` — `PenyelesaiAkhirKomiteOracle.Akseptasi`: gerbang anggota berjalan
+  diulang (penjaga penulis status), `Type`/`BusinessCode` dari klaim induk, penghitung, pemeriksa
+  keunikan dua tempat, lalu stempel lewat fungsi Claim Life yang **ada** (`PerbaruiStatusBaris` —
+  penjaganya `STS_REJECT = 0` sekaligus gerbang "lahir sekali" —, `CerminkanHeader`), dan jejak
+  Outstanding → Aksep di fungsi yang sama. `Tolak` tetap gagal terang (tiket 05).
+- Nomor tampil di jawaban keputusan (`nomorAkseptasi`) dan di layar.
+- Penjaga Claim Life yang menagih: jejak per penulis transisi (`TestSetiapPenulisTransisiMerekamJejak`)
+  dan pendaftaran penulis status dengan gerbangnya (`komite_akseptasi.go` →
+  `periksaGiliran(kasus, pelaku.AkunID)`).
+
+### AC — keadaan
+
+| AC | Keadaan |
+| --- | --- |
+| nomor hanya pada Setuju di tingkat akhir | ✅ `AkseptasiAkhir` (model) → satu-satunya pemanggil |
+| tingkat bukan-akhir tidak menyentuh penomoran | ✅ |
+| Tolak tanpa nomor | ✅ |
+| rantai kode prod → penghitung; tanpa logika format tersebar | ⚠️ diralat (keputusan o) — satu fungsi murni |
+| awalan lewat lookup `KODE_PRODUKSI` | ✅ `AwalanProduksi` |
+| cabang per `Type` | ✅ A / AR |
+| commit segera sesudah nomor | ⚠️ nomor dan stempel satu transaksi dengan keputusan; transaksinya pendek (nol panggilan luar) |
+| dua keputusan akhir → dua nomor berbeda | ✅ penghitung `FOR UPDATE` + pemeriksa keunikan |
+| nol `Generate_NoAccept_KMT_*` | ✅ (`TestPenghitungKomiteBukanSequenceClaimLife`) |
+
+### Angka
+
+Go **577 PASS · 0 FAIL** tingkat atas; vet (+`-tags db`), gofmt bersih · vitest **357** · tsc bersih.

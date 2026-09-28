@@ -46,9 +46,10 @@ var (
 // PenyelesaiAkhirKomite menjalankan langkah 4 dan 5 `KomitePostAdjustment`,
 // di dalam transaksi keputusannya.
 type PenyelesaiAkhirKomite interface {
-	// Akseptasi - langkah 4 "Approve Last Komite" (tiket 04a/04b).
+	// Akseptasi - langkah 4 "Approve Last Komite" (tiket 04a/04b). Mengembalikan
+	// nomor akseptasi yang lahir.
 	Akseptasi(ctx context.Context, tx *repository.Tx, kasus repository.KasusKomite,
-		pelaku Pelaku, saat time.Time) error
+		pelaku Pelaku, saat time.Time) (string, error)
 	// Tolak - langkah 5 "Reject" (tiket 05).
 	Tolak(ctx context.Context, tx *repository.Tx, kasus repository.KasusKomite,
 		pelaku Pelaku, saat time.Time) error
@@ -59,8 +60,8 @@ type PenyelesaiAkhirBelumAda struct{}
 
 // Akseptasi selalu gagal.
 func (PenyelesaiAkhirBelumAda) Akseptasi(context.Context, *repository.Tx,
-	repository.KasusKomite, Pelaku, time.Time) error {
-	return ErrPenyelesaianAkhirBelumAda
+	repository.KasusKomite, Pelaku, time.Time) (string, error) {
+	return "", ErrPenyelesaianAkhirBelumAda
 }
 
 // Tolak selalu gagal.
@@ -78,6 +79,8 @@ type HasilKeputusanKomite struct {
 	TingkatBerikut int    `json:"tingkatBerikut"`
 	AkseptasiAkhir bool   `json:"akseptasiAkhir"`
 	TolakAkhir     bool   `json:"tolakAkhir"`
+	// NomorAkseptasi terisi hanya pada Setuju di tingkat akhir (tiket 04a).
+	NomorAkseptasi string `json:"nomorAkseptasi"`
 }
 
 // KeputusanKomite melayani keputusan satu tingkat.
@@ -181,6 +184,7 @@ func (k *KeputusanKomite) Putuskan(ctx context.Context, pelaku Pelaku,
 		return HasilKeputusanKomite{}, err
 	}
 
+	var nomorAksep string
 	err = k.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
 		// Langkah 3 + 13 - satu tulisan bersyarat untuk dua baris.
 		if err := baca.CatatKeputusan(ctx, tx, kasusID, akibat.TingkatDiputus,
@@ -190,9 +194,11 @@ func (k *KeputusanKomite) Putuskan(ctx context.Context, pelaku Pelaku,
 		// Langkah 4 / 5 - tingkat akhir.
 		switch {
 		case akibat.AkseptasiAkhir:
-			if err := k.akhir.Akseptasi(ctx, tx, kasus, pelaku, saat); err != nil {
+			n, err := k.akhir.Akseptasi(ctx, tx, kasus, pelaku, saat)
+			if err != nil {
 				return err
 			}
+			nomorAksep = n
 		case akibat.TolakAkhir:
 			if err := k.akhir.Tolak(ctx, tx, kasus, pelaku, saat); err != nil {
 				return err
@@ -218,6 +224,7 @@ func (k *KeputusanKomite) Putuskan(ctx context.Context, pelaku Pelaku,
 		Berlanjut:      akibat.Berlanjut,
 		AkseptasiAkhir: akibat.AkseptasiAkhir,
 		TolakAkhir:     akibat.TolakAkhir,
+		NomorAkseptasi: nomorAksep,
 	}
 	if akibat.Berlanjut {
 		hasil.TingkatBerikut = akibat.CountBaru

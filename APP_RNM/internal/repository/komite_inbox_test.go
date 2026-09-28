@@ -112,3 +112,13 @@ func TestEskalasiMengosongkanBukanMemutuskan(t *testing.T) {
 		t.Errorf("eskalasi menyentuh ACCEPT_STATUS atau tanpa kunci count:\n%s", g)
 	}
 }
+
+// TestKasusKomiteMembacaPesertaDanNomorDiperiksa - tiket 04a.
+func TestKasusKomiteMembacaPesertaDanNomorDiperiksa(t *testing.T) {
+	if !strings.Contains(sqlKasusKomite("G", "W", "L", "C", "A"), "a.PREMIUM_LIST_DETAIL_ID") {
+		t.Error("kasus komite tidak membaca peserta pemilik baris")
+	}
+	if !strings.Contains(sqlNomorAksepDiAdjustment("A"), "WHERE ACCEPTED_NO = :1") {
+		t.Error("pemeriksa keunikan nomor akseptasi tidak menyaring ACCEPTED_NO")
+	}
+}

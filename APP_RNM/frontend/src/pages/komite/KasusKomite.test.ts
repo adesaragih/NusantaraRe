@@ -30,6 +30,12 @@ describe('keputusan komite', () => {
     expect(
       kalimatHasilKeputusan({ kataKeputusan: 'Tolak', tingkatDiputus: 2, berlanjut: false, tingkatBerikut: 0 }),
     ).toBe('Tolak tercatat di tingkat 2. Tangga berhenti.')
+    expect(
+      kalimatHasilKeputusan({
+        kataKeputusan: 'Setuju', tingkatDiputus: 3, berlanjut: false, tingkatBerikut: 0,
+        nomorAkseptasi: 'RNML-AL01.09.26.00007',
+      }),
+    ).toBe('Setuju tercatat di tingkat 3. Nomor akseptasi RNML-AL01.09.26.00007.')
   })
 
   it('eskalasi hanya untuk admin dan hanya bila ada tingkat di atas (tiket 03)', () => {

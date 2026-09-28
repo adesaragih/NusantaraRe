@@ -64,7 +64,7 @@ func TestKeputusanAsingDitolakSebelumBasisData(t *testing.T) {
 // TestTingkatAkhirBawaanGagalTerang - langkah 4/5 belum dibangun.
 func TestTingkatAkhirBawaanGagalTerang(t *testing.T) {
 	var p PenyelesaiAkhirKomite = PenyelesaiAkhirBelumAda{}
-	if err := p.Akseptasi(context.Background(), nil, repository.KasusKomite{}, Pelaku{}, time.Now()); !errors.Is(err, ErrPenyelesaianAkhirBelumAda) {
+	if _, err := p.Akseptasi(context.Background(), nil, repository.KasusKomite{}, Pelaku{}, time.Now()); !errors.Is(err, ErrPenyelesaianAkhirBelumAda) {
 		t.Errorf("akseptasi bawaan: %v", err)
 	}
 	if err := p.Tolak(context.Background(), nil, repository.KasusKomite{}, Pelaku{}, time.Now()); !errors.Is(err, ErrPenyelesaianAkhirBelumAda) {

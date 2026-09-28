@@ -51,6 +51,9 @@ var berkasYangBolehMenulisStatus = map[string]string{
 	// Gerbangnya PEMEGANG TAHAP, bukan daftar peran datar - pohon XML
 	// membuktikan tombolnya tidak bergerbang peran.
 	"akseptasi.go": "WajibPemegangTahap(pelaku, tahap)",
+	// Komite Claim Life tiket 04a: akseptasi tingkat akhir komite. Gerbangnya
+	// ANGGOTA BERJALAN tangga (ADR-0014), diulang di penulis statusnya.
+	"komite_akseptasi.go": "periksaGiliran(kasus, pelaku.AkunID)",
 
 	// Lapisan repository - ia MENJALANKAN SQL-nya, dan memang tidak memegang
 	// pelaku. Gerbangnya ada di layanan yang memanggilnya; yang dijaga di

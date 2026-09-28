@@ -76,6 +76,7 @@ func putuskanKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 		}
 		hasil, err := svc.KeputusanKomite().
 			DenganJejak(services.PerekamJejakOracle(svc)).
+			DenganPenyelesaiAkhir(services.PenyelesaiAkhirKomiteOracle(svc)).
 			Putuskan(r.Context(), pelakuDari(r, stubPelaku), r.PathValue("id"),
 				isi.Keputusan, isi.Komentar, time.Now())
 		if jawabGalatKomite(w, err) {
@@ -126,6 +127,10 @@ func jawabGalatKomite(w http.ResponseWriter, err error) bool {
 		errors.Is(err, services.ErrEskalasiTanpaTingkatAtas),
 		errors.Is(err, services.ErrKeputusanKomiteBersamaan),
 		errors.Is(err, services.ErrKasusSudahTertutup):
+		galat(w, http.StatusConflict, err.Error())
+	case errors.Is(err, services.ErrNomorAkseptasiBerganda),
+		errors.Is(err, services.ErrKodeBisnisBelumTersimpan):
+		// 409: keadaan DATA (nomor bertabrakan / kode bisnis kosong).
 		galat(w, http.StatusConflict, err.Error())
 	case errors.Is(err, services.ErrPenyelesaianAkhirBelumAda):
 		// 501: permintaannya sah, bagian sistemnya yang belum dibangun.

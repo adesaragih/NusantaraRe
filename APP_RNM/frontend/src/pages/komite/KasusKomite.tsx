@@ -51,11 +51,12 @@ export function kalimatHasilKeputusan(h: {
   tingkatDiputus: number
   berlanjut: boolean
   tingkatBerikut: number
+  nomorAkseptasi?: string
 }): string {
   const dasar = `${h.kataKeputusan} tercatat di tingkat ${String(h.tingkatDiputus)}.`
-  return h.berlanjut
-    ? `${dasar} Kasus naik ke tingkat ${String(h.tingkatBerikut)}.`
-    : `${dasar} Tangga berhenti.`
+  if (h.berlanjut) return `${dasar} Kasus naik ke tingkat ${String(h.tingkatBerikut)}.`
+  const nomor = h.nomorAkseptasi ?? ''
+  return nomor === '' ? `${dasar} Tangga berhenti.` : `${dasar} Nomor akseptasi ${nomor}.`
 }
 
 export default function KasusKomite({
