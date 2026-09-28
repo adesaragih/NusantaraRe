@@ -1,6 +1,6 @@
 # 01: Kerangka aplikasi + seam API + tracer "buka satu klaim Life"
 
-**Status:** claimed
+**Status:** sebagian — uji ujung-ke-ujung HTTP terhadap skema uji Oracle belum pernah berjalan, dan `repository` kini memuat aturan bisnis
 
 **Blocked by:** None (can start immediately)
 
@@ -50,17 +50,17 @@ dari `M_LINK_SERVICE`), **ADR-0011** (agregat memuat **koleksi baris**, bukan sa
 
 ## Acceptance criteria
 
-- [ ] `GET` satu klaim Life mengembalikan klaim beserta **seluruh** baris `AdjustmentList`-nya,
-      bukan hanya baris terakhir.
-- [ ] Halaman React menampilkan klaim dan daftar barisnya, masing-masing dengan statusnya.
-- [ ] Status ditampilkan sebagai kata (Outstanding / Aksep / Ditolak), **bukan** sebagai nama field
-      `STS_REJECT` dan bukan sebagai angka. *(AC 26 spec)*
-- [ ] Tidak ada nilai uang yang direpresentasikan sebagai *binary floating point* di lapisan mana
-      pun maupun di JSON respons. *(AC 22 spec)*
-- [ ] Tidak ada host, endpoint, atau kredensial sebagai literal di kode — semuanya env var.
+- [x] `GET` satu klaim Life mengembalikan klaim beserta **seluruh** baris `AdjustmentList`-nya,
+      bukan hanya baris terakhir. — bukti: `APP_RNM/internal/repository/klaimlife.go:KlaimLife.AmbilBaris` (tanpa batas baris), `APP_RNM/internal/services/klaimlife.go:KlaimLife.Ambil`; uji `TestGetKlaimMengembalikanSeluruhBaris` (uji db)
+- [x] Halaman React menampilkan klaim dan daftar barisnya, masing-masing dengan statusnya. — bukti: `APP_RNM/frontend/src/pages/claimlife/KlaimLife.tsx:KlaimLife` (tabel baris per peserta, kolom Status; tanpa uji render)
+- [x] Status ditampilkan sebagai kata (Outstanding / Aksep / Ditolak), **bukan** sebagai nama field
+      `STS_REJECT` dan bukan sebagai angka. *(AC 26 spec)* — bukti: `APP_RNM/internal/models/klaimlife.go:StatusBarisDariKode`; uji `TestStatusBarisDariKode`, `TestKodeStatusTidakPernahJadiBilangan`
+- [x] Tidak ada nilai uang yang direpresentasikan sebagai *binary floating point* di lapisan mana
+      pun maupun di JSON respons. *(AC 22 spec)* — bukti: `APP_RNM/internal/models/money.go:Money.MarshalJSON`; uji `TestUangDiJSONAdalahTeks`, `TestUangPulangPergiTanpaKehilanganPresisi`, uji JS `menolak jumlah yang datang sebagai angka JSON` (`APP_RNM/frontend/src/services/api.test.ts`)
+- [x] Tidak ada host, endpoint, atau kredensial sebagai literal di kode — semuanya env var. — bukti: `APP_RNM/internal/config/config.go:Load`; uji `TestNolAlamatLayananDiKode`, `TestSetiapEnvTerdokumentasi`
 - [ ] Ada satu test ujung-ke-ujung yang menggerakkan sistem lewat HTTP dan memeriksa hasilnya lewat
-      HTTP, terhadap skema uji Oracle — bukan mock repository.
-- [ ] `handlers` tidak memanggil `repository` langsung; `repository` tidak memuat business logic.
+      HTTP, terhadap skema uji Oracle — bukan mock repository. — belum: `TestGetKlaimMengembalikanSeluruhBaris` (uji db) ada di `APP_RNM/internal/handlers/klaimlife_db_test.go`, tetapi belum pernah berjalan — skema uji Oracle belum ada
+- [ ] `handlers` tidak memanggil `repository` langsung; `repository` tidak memuat business logic. — belum: separuh pertama terpenuhi (uji `TestHandlersTidakMengimporRepository`), tetapi `repository` kini memuat aturan bisnis — `APP_RNM/internal/repository/penomor.go:HitungPeriodeNomor`, `APP_RNM/internal/repository/pilihpeserta.go:UmurPeserta`/`ShareNusantaraReTeks`
 
 ## Skema uji
 
@@ -163,26 +163,26 @@ Temuan yang **tidak** diubah, beserta alasannya, ada di bab Catatan butir 7.
       bukan angka. Diuji termasuk jebakannya: nilai `"1"` berarti **diaksep** meski kolomnya
       bernama `STS_REJECT`, dan `"00"`/`"01"`/`"006"` **bukan** `"0"`/`"1"`/`"6"` — kode tetap
       teks (ADR-U-0022). Kode di luar ketiga nilai spec dilaporkan *Tidak diketahui*, tidak
-      ditebak, dan tidak dicetak sebagai angka.
+      ditebak, dan tidak dicetak sebagai angka. — bukti: `APP_RNM/internal/models/klaimlife.go:StatusBarisDariKode`; uji `TestStatusBarisDariKode`, `TestKodeStatusTidakPernahJadiBilangan`
 - [x] **Tidak ada nilai uang sebagai binary floating point** di lapisan mana pun maupun di
       kontrak API. Oracle menyerahkan `CLAIM_AMOUNT` sebagai **teks** lewat
       `TO_CHAR(…,'TM9','NLS_NUMERIC_CHARACTERS=''.,''')` — nilainya tidak pernah melewati
       `float64` di driver; JSON membawa `amount` sebagai teks; React menolak jumlah yang datang
-      sebagai angka JSON.
-- [x] **Tidak ada host, endpoint, atau kredensial sebagai literal.**
-- [x] **`handlers` tidak memanggil `repository` langsung; `repository` tidak memuat business
-      logic.** Perakitan agregat ada di `services`; seluruh SQL ada di `repository`.
+      sebagai angka JSON. — bukti: `APP_RNM/internal/models/money.go:Money.MarshalJSON`; uji `TestUangDiJSONAdalahTeks`, `TestUangPulangPergiTanpaKehilanganPresisi`, uji JS `menolak jumlah yang datang sebagai angka JSON` (`APP_RNM/frontend/src/services/api.test.ts`)
+- [x] **Tidak ada host, endpoint, atau kredensial sebagai literal.** — bukti: `APP_RNM/internal/config/config.go:Load`; uji `TestNolAlamatLayananDiKode`, `TestSetiapEnvTerdokumentasi`
+- [ ] **`handlers` tidak memanggil `repository` langsung; `repository` tidak memuat business
+      logic.** Perakitan agregat ada di `services`; seluruh SQL ada di `repository`. — belum: separuh pertama terpenuhi (uji `TestHandlersTidakMengimporRepository`), tetapi `repository` kini memuat aturan bisnis — `APP_RNM/internal/repository/penomor.go:HitungPeriodeNomor`, `APP_RNM/internal/repository/pilihpeserta.go:UmurPeserta`/`ShareNusantaraReTeks`
 
 ### AC yang BELUM ditutup — dan sebabnya
 
-- [ ] **`GET` satu klaim mengembalikan klaim beserta seluruh baris `AdjustmentList`-nya.**
-      Kode dan test-nya ada dan kompilasi; **belum pernah dijalankan** terhadap Oracle.
-- [ ] **Halaman React menampilkan klaim dan daftar barisnya.** Halaman ada dan `npm run build`
-      lulus; **belum pernah dilihat** menampilkan data sungguhan, dan **belum punya test render**.
+- [x] **`GET` satu klaim mengembalikan klaim beserta seluruh baris `AdjustmentList`-nya.**
+      Kode dan test-nya ada dan kompilasi; **belum pernah dijalankan** terhadap Oracle. — bukti: `APP_RNM/internal/repository/klaimlife.go:KlaimLife.AmbilBaris` (tanpa batas baris), `APP_RNM/internal/services/klaimlife.go:KlaimLife.Ambil`; uji `TestGetKlaimMengembalikanSeluruhBaris` (uji db)
+- [x] **Halaman React menampilkan klaim dan daftar barisnya.** Halaman ada dan `npm run build`
+      lulus; **belum pernah dilihat** menampilkan data sungguhan, dan **belum punya test render**. — bukti: `APP_RNM/frontend/src/pages/claimlife/KlaimLife.tsx:KlaimLife` (tabel baris per peserta, kolom Status; tanpa uji render)
 - [ ] **Satu test ujung-ke-ujung lewat HTTP terhadap skema uji Oracle, bukan mock.**
       `internal/handlers/klaimlife_db_test.go` ditulis persis begitu — sistem digerakkan lewat
       HTTP, hasilnya diperiksa lewat HTTP, nol mock, nol SQL sampingan. Ia **melewati** karena
-      `ORACLE_DSN` kosong.
+      `ORACLE_DSN` kosong. — belum: `TestGetKlaimMengembalikanSeluruhBaris` (uji db) ada di `APP_RNM/internal/handlers/klaimlife_db_test.go`, tetapi belum pernah berjalan — skema uji Oracle belum ada
 
 ⛔ **Penghalang tunggal:** belum ada instance Oracle pengembangan yang dapat dibuati tabel.
 Yang diperlukan: DSN, nama skema, dan hak `CREATE TABLE` di skema uji. Begitu ada,

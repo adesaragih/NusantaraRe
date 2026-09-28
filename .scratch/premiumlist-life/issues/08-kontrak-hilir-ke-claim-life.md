@@ -1,6 +1,6 @@
 # 08: Kontrak hilir — rekam premium yang dikonsumsi Claim Life
 
-**Status:** ready-for-agent
+**Status:** sebagian — uji kontrak HTTP terhadap Oracle, `M_LIFE_PREMIUM_SUMMARY` (OQ-PL-09), dan index `PL_NUMBER` di `T_PREMIUM_LIST_DETAIL` belum ada
 
 **Blocked by:** **00 (skema tujuh tabel — PREFACTOR)**, 05a (rekam summary), 05b (alur simpan polis — penulisan detail NB menumpang di sana)
 
@@ -129,52 +129,52 @@ seragam dengan EDM.
       `InsertLifePremiumDetail_act` (`ASM-FW-GISFW-WORK-LIFE` / `INSERTLIFEPREMIUMDETAIL_ACT`),
       dipanggil **INLINE sebagai bagian alur simpan polis** — **bukan** oleh job, cron, worker
       terjadwal, atau antrean tunda. Test yang menemukan penjadwal di jalur ini **gagal**.
-      `[keputusan work owner]`
+      `[keputusan work owner]` — belum: inline di `services/polis_summary.go:simpanDalam`, tetapi uji yang gagal bila ada penjadwal belum ada
 - [ ] **Setelah simpan polis NB berhasil**, baris `M_LIFE_PREMIUM_DETAIL` untuk `PL_NUMBER` itu
       **sudah ada** — dibuktikan dengan membacanya **segera** sesudah respons simpan, tanpa menunggu
-      apa pun.
-- [ ] Baris itu **dapat dibaca jalur baca klaim**: kueri bergaya `GetPesertaClaim_sql1` — berkunci
+      apa pun. — belum: struktural (satu commit), belum dibuktikan dengan membaca terhadap Oracle
+- [x] Baris itu **dapat dibaca jalur baca klaim**: kueri bergaya `GetPesertaClaim_sql1` — berkunci
       `PL_NUMBER`, dengan pencocokan sebagian pada `CERTIFICATE_NO` dan `NAME_OF_INSURED` **tanpa
-      peduli huruf besar/kecil** — mengembalikannya.
-- [ ] `SaveMasterLPDet` dipakai **apa adanya** sebagai penulis bersama — tidak dibuatkan salinan,
+      peduli huruf besar/kecil** — mengembalikannya. — bukti: `repository/pesertapolis.go:sqlCariPeserta`; uji `TestKolomBacaClaimLifeDiisiPenulisPremiumList`, `TestPenulisWarisanMengisiKunciBacaKlaim`
+- [x] `SaveMasterLPDet` dipakai **apa adanya** sebagai penulis bersama — tidak dibuatkan salinan,
       tidak divariasikan per jalur. Kolom `PL_NUMBER_EDM` tetap ada di skema dan **dibiarkan kosong**
-      oleh jalur new business. *(pengisiannya milik konteks Endorsement Life)*
+      oleh jalur new business. *(pengisiannya milik konteks Endorsement Life)* — bukti: `repository/polis_warisan.go:kolomPesertaWarisan`; uji `TestKolomWarisanVERBATIMDariSaveMasterLPDet`
 - [ ] Penjaga idempotensi dipertahankan: penulisan hanya terjadi bila baris untuk `PL_NUMBER` itu
       belum ada (setara precondition `PL_NUMBER==""` pada step 3.3.4). Menyimpan ulang polis yang
-      sama **tidak** menggandakan baris — dibuktikan dengan menyimpan dua kali lalu menghitung baris.
+      sama **tidak** menggandakan baris — dibuktikan dengan menyimpan dua kali lalu menghitung baris. — belum: menyimpang sadar — salinan milik work yang sama diganti, bukan dilewati (`[terbuka — work owner]`); nol uji simpan-dua-kali terhadap Oracle
 - [ ] `SaveMasterLPDet` diperlakukan sebagai **titik potong transaksi** (ia `COMMIT;` sendiri, baris
       252): dipanggil **setelah** transaksi penomoran + summary commit, konsisten dengan aturan
-      urutan transaksi campuran. *(AC 20–21, 24 spec)*
+      urutan transaksi campuran. *(AC 20–21, 24 spec)* — belum: pl2 — salinan berada di dalam satu transaksi simpan; titik potong ditiadakan
 - [ ] Kegagalan penulisan detail **tidak** membatalkan premium list yang sudah tersimpan; keadaannya
-      **terdeteksi** dan pemanggilan ulang aman berkat penjaga idempotensi. *(AC 23 spec)*
+      **terdeteksi** dan pemanggilan ulang aman berkat penjaga idempotensi. *(AC 23 spec)* — belum: pl2 — kegagalan salinan membatalkan seluruh simpan (satu transaksi), bukan dibiarkan
 - [ ] Rekam `M_LIFE_PREMIUM_SUMMARY` dan `M_LIFE_PREMIUM_DETAIL` jalur new business dapat ditemukan
-      lewat `PL_NUMBER`. *(AC 28 spec)* *(pencarian lewat `PL_NUMBER_EDM` diuji di konteks Endorsement Life)*
+      lewat `PL_NUMBER`. *(AC 28 spec)* *(pencarian lewat `PL_NUMBER_EDM` diuji di konteks Endorsement Life)* — belum: `M_LIFE_PREMIUM_SUMMARY` tidak ditulis — OQ-PL-09
 - [ ] Nilai uang ditulis dan dibaca sebagai **desimal presisi arbitrer**; nilai yang ditulis hulu
-      dibaca hilir **identik**, tanpa pembulatan di perbatasan. *(AC 16 spec; **ADR-0003**)*
-- [ ] Bentuk kedua rekam ditandai di kode sebagai **kontrak lintas konteks**; mengubahnya memaksa
-      pembaruan sadar di sisi Claim Life. *(AC 29 spec; **ADR-0001**)*
-- [ ] ⚠️ **Jalur baca klaim menyaring peserta batal/delete.** Pembacaan peserta bergaya
+      dibaca hilir **identik**, tanpa pembulatan di perbatasan. *(AC 16 spec; **ADR-0003**)* — belum: angka warisan dikirim sebagai teks yang bergantung NLS sesi; nol uji pulang-pergi
+- [x] Bentuk kedua rekam ditandai di kode sebagai **kontrak lintas konteks**; mengubahnya memaksa
+      pembaruan sadar di sisi Claim Life. *(AC 29 spec; **ADR-0001**)* — bukti: uji `TestKolomBacaClaimLifeDiisiPenulisPremiumList`, `TestPolicyDataLifeSamaDiKeduaSisi`
+- [x] ⚠️ **Jalur baca klaim menyaring peserta batal/delete.** Pembacaan peserta bergaya
       `GetPesertaClaim_sql1` **tidak menampilkan** baris ber-`EDMSTATUS` `'Batal'` atau `'Delete'`
       — hanya **peserta hidup**. `[keputusan work owner]` *(verdict V14 grilling Endorsement Life;
-      AC 25 spec Claim Life)*
-- [ ] Peserta **new business** tetap muncul di jalur baca klaim meski jalur NB **tidak mengisi**
+      AC 25 spec Claim Life)* — bukti: `repository/pesertapolis.go:sqlCariPeserta` (`penyaringHidup`); uji `TestPesertaHidupMenyaringBatalDanDelete`
+- [x] Peserta **new business** tetap muncul di jalur baca klaim meski jalur NB **tidak mengisi**
       `EDMSTATUS` (kosong/NULL). ⚠️ Penyaring naif `NOT IN ('Delete','Batal')` membuang seluruh
-      peserta NB di Oracle — test wajib memuat kasus ini. *(AC 26 spec Claim Life)*
-- [ ] **Jalur baca akuntansi/ringkasan premium TIDAK menyaring** — ia melihat **seluruh** baris,
+      peserta NB di Oracle — test wajib memuat kasus ini. *(AC 26 spec Claim Life)* — bukti: uji `TestPesertaNBTetapHidupDiJalurBacaKlaim`
+- [x] **Jalur baca akuntansi/ringkasan premium TIDAK menyaring** — ia melihat **seluruh** baris,
       positif maupun negatif, karena nettonya diperoleh dari penjumlahan. **Satu tabel, dua sudut
-      pandang**, dan itu disengaja. *(AC 49 spec Endorsement Life)*
-- [ ] Ada test kontrak yang menembus dari simpan polis sampai pencarian bergaya Claim Life — **satu
+      pandang**, dan itu disengaja. *(AC 49 spec Endorsement Life)* — bukti: `repository/polis_summary.go:sqlBarisUangPolis` (tanpa penyaring `EDMSTATUS`); uji `TestPenyaringPesertaHanyaSatuTempat`
+- [ ] Ada test kontrak yang menembus dari simpan polis sampai pencarian bergaya Claim Life — **satu — belum: skema uji belum memasang 050–056; uji kontrak lewat HTTP belum ada
 
 ### Penyimpanan relasional ⚠️ BARU 2026-09-16 — spec §12
 
 - [ ] ⚠️ Claim Life membaca peserta dari **`T_PREMIUM_LIST_DETAIL`**, bukan dari
       `M_LIFE_PREMIUM_DETAIL` maupun dari CLOB JSON. Kontrak bacanya tetap sama bentuknya.
-      *(AC 33 spec; penyimpangan sadar 1)*
+      *(AC 33 spec; penyimpangan sadar 1)* — belum: dilampaui pl2 — Claim Life tetap membaca `M_LIFE_PREMIUM_DETAIL`
 - [ ] ⚠️ Aturan **peserta hidup** (`EDMSTATUS` bukan `Delete`/`Batal`, NULL tetap muncul) berlaku
-      **apa adanya** pada tabel baru — pindah tabel **tidak** mengubah aturannya.
+      **apa adanya** pada tabel baru — pindah tabel **tidak** mengubah aturannya. — belum: jalur baca klaim belum membaca tabel baru (pl2)
 - [ ] ⚠️ Kolom `PL_NUMBER` pada tabel peserta **ber-index** sejak hari pertama — ia kunci baca Claim
       Life pada tabel berjutaan baris. *(AC 49 spec)*
-      seam**, API HTTP, terhadap skema uji Oracle.
+      seam**, API HTTP, terhadap skema uji Oracle. — belum: migrasi `052` hanya meng-index `PREMIUM_LIST_ID` dan `PARENT_ID`; `PL_NUMBER` tanpa index
 
 ## Blocker
 

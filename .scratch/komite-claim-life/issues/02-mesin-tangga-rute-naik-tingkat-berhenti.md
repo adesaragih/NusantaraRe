@@ -1,6 +1,6 @@
 # 02: Mesin tangga — rute, naik tingkat, berhenti saat Tolak
 
-**Status:** ready-for-agent
+**Status:** selesai — 28-09-2026, `ae77877` (tingkat akhir tersambung di `fe50a13`/`0ab7622`)
 
 **Blocked by:** **00 (skema penyimpanan komite — PREFACTOR)**, 01 (terima kasus + inbox per posisi)
 
@@ -35,25 +35,25 @@ Ini **inti konteks Komite**: tangga yang di Pega tidak terlihat di graf, dinyata
 
 ## Acceptance criteria
 
-- [ ] Kasus baru dirutekan ke baris roster **pertama** yang ber-`KomiteAproval == 0`. *(AC 1 spec)*
-- [ ] Keputusan **Setuju** pada tingkat bukan-terakhir menaikkan `KomiteCount` satu dan **tidak**
-      menyentuh tabel akseptasi. *(AC 5 spec)*
-- [ ] Keputusan **Tolak** menghentikan tangga pada tingkat mana pun ia terjadi. *(AC 6 spec)*
-- [ ] Tangga berlanjut **hanya** bila keputusan Setuju **dan** `KomiteCount <= KomiteLoop`.
-- [ ] Tiap tingkat menghasilkan satu entri berisi **keputusan, komentar, dan waktu**. *(AC 7 spec)*
-- [ ] Nilai keputusan adalah **enum tertutup `{1 = Setuju, 2 = Tolak}`**; nilai lain **ditolak
-      terang-terangan**, bukan menghentikan tangga diam-diam. *(AC 35 spec; `[keputusan work owner]`)*
-- [ ] Tidak ada padanan `TransferType` di kode — lihat catatan. *(AC 26 spec)*
+- [x] Kasus baru dirutekan ke baris roster **pertama** yang ber-`KomiteAproval == 0`. *(AC 1 spec)* — bukti: `repository/komite_inbox.go:sqlSaringInboxKomite` (`MIN(KOMITE_URUT)` ber-approval `0`), uji `TestInboxKomiteHanyaAnggotaBerjalan`; arti kode transisi `6` `[dugaan kuat]`
+- [x] Keputusan **Setuju** pada tingkat bukan-terakhir menaikkan `KomiteCount` satu dan **tidak**
+      menyentuh tabel akseptasi. *(AC 5 spec)* — bukti: `models/komite_tangga.go:TerapkanKeputusanKomite`, uji `TestTanggaTigaTingkatSetujuSeluruhnya`
+- [x] Keputusan **Tolak** menghentikan tangga pada tingkat mana pun ia terjadi. *(AC 6 spec)* — bukti: uji `TestTolakMenghentikanDiTingkatManaPun`, uji `TestTanggaBerhentiTidakMenerimaKeputusan`, uji `TestInboxKomiteMengikutiIsKomiteLoop`
+- [x] Tangga berlanjut **hanya** bila keputusan Setuju **dan** `KomiteCount <= KomiteLoop`. — bukti: `models/komite_tangga.go:TanggaBerlanjut`, uji `TestIsKomiteLoopVERBATIM`
+- [x] Tiap tingkat menghasilkan satu entri berisi **keputusan, komentar, dan waktu**. *(AC 7 spec)* — bukti: `repository/komite_keputusan.go:InboxKomite.CatatKeputusan` (approval, komentar, `DATE_APPROVE`) + jejak per tingkat di `KeputusanKomite.Putuskan`
+- [x] Nilai keputusan adalah **enum tertutup `{1 = Setuju, 2 = Tolak}`**; nilai lain **ditolak
+      terang-terangan**, bukan menghentikan tangga diam-diam. *(AC 35 spec; `[keputusan work owner]`)* — bukti: uji `TestKeputusanDiLuarEnumDitolakTerang`, uji `TestKeputusanAsingDitolakSebelumBasisData`
+- [x] Tidak ada padanan `TransferType` di kode — lihat catatan. *(AC 26 spec)* — bukti: nol kemunculan `TransferType` di `internal/` dan `frontend/src/` (grep 28-09-2026)
 
 ### Penyimpanan tangga ⚠️ BARU 2026-09-16 — spec §9
 
-- [ ] ⚠️ **`KOMITE_COUNT` dan `KOMITE_LOOP` di-persist di `T_GENERAL_KOMITE`** — bukan hanya hidup di
+- [x] ⚠️ **`KOMITE_COUNT` dan `KOMITE_LOOP` di-persist di `T_GENERAL_KOMITE`** — bukan hanya hidup di
       halaman kerja. Tingkat berjalan terbaca kembali setelah proses dimulai ulang. *(AC 30 spec;
-      penyimpangan sadar 1)*
-- [ ] ⚠️ Keputusan di setiap tingkat **menulis baris `T_KOMITE_KOMITELIST`** yang bersesuaian —
-      `KOMITE_APROVAL`, `KOMITE_COMMENT`, `DATE_APPROVE`. *(AC 31 spec)*
-- [ ] ⚠️ Baris yang ditulis dipilih lewat **`KOMITE_URUT` + `DATA_KOMITE_ID`**, bukan lewat indeks
-      posisi. *(AC 34 spec; penyimpangan sadar 2)*
+      penyimpangan sadar 1)* — bukti: `repository/komite_keputusan.go:sqlMajukanTangga` + `repository/komite_inbox.go:InboxKomite.Kasus` (dibaca ulang dari `T_GENERAL_KOMITE`)
+- [x] ⚠️ Keputusan di setiap tingkat **menulis baris `T_KOMITE_KOMITELIST`** yang bersesuaian —
+      `KOMITE_APROVAL`, `KOMITE_COMMENT`, `DATE_APPROVE`. *(AC 31 spec)* — bukti: `repository/komite_keputusan.go:sqlCatatAnakTangga`, uji `TestKeputusanKomiteBersyaratDuaBaris`
+- [x] ⚠️ Baris yang ditulis dipilih lewat **`KOMITE_URUT` + `DATA_KOMITE_ID`**, bukan lewat indeks
+      posisi. *(AC 34 spec; penyimpangan sadar 2)* — bukti: uji `TestKeputusanKomiteBersyaratDuaBaris` (`DATA_KOMITE_ID` + `KOMITE_URUT`); ⚠️ mengandaikan `KOMITE_URUT` (= `DEGREE` roster) berturutan 1..n
 
 ## Catatan — `TransferType` tidak direplikasi
 

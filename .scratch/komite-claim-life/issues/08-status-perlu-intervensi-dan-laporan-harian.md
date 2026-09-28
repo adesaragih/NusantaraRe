@@ -1,6 +1,6 @@
 # 08: Status "perlu intervensi" di UI Komite + laporan harian
 
-**Status:** ready-for-agent
+**Status:** sebagian — laporan harian tidak dikirim terjadwal; kasus berefek gagal tak terjangkau di layar sesudah tangganya selesai
 
 **Blocked by:** 07 (worker pengirim — retry + anti-dobel)
 
@@ -44,18 +44,18 @@ wajib**, bukan tambahan), **ADR-0007** (kegagalan masuk jalur audit, bukan hanya
 
 ## Acceptance criteria
 
-- [ ] Entri outbox yang **tidak pulih** setelah retry masuk keadaan **"perlu intervensi"** yang
-      eksplisit — bukan diam di antrean. *(AC 23 spec)*
+- [x] Entri outbox yang **tidak pulih** setelah retry masuk keadaan **"perlu intervensi"** yang
+      eksplisit — bukan diam di antrean. *(AC 23 spec)* — bukti: `services/antrean.go:PekerjaEfek.SatuPutaran` (`gagal-permanen` sesudah galat permanen atau `percobaanMaksimum`), uji `TestJatahPercobaanTerbatas`; hanya bila pekerja berjalan — penjadwal belum ada
 - [ ] Kasus ber-status itu **terlihat di UI Komite**, menempel pada kasusnya, bukan di halaman
-      terpisah yang harus dicari.
-- [ ] Tampilan menyebut **efek mana** yang gagal (InsertJson / Arasapas / Email / Kasir) dan
-      **sejak kapan**.
-- [ ] Ada **laporan harian** berisi seluruh kasus ber-status itu.
+      terpisah yang harus dicari. — belum: `efek` menempel di `GET /api/komite/{id}` dan `KasusKomite.tsx`, tetapi kasus yang tangganya selesai tak muncul di inbox siapa pun dan admin non-anggota tangga mendapat 403
+- [x] Tampilan menyebut **efek mana** yang gagal (InsertJson / Arasapas / Email / Kasir) dan
+      **sejak kapan**. — bukti: `services/komite_intervensi.go:keEfekTampil` (jenis + sejak), uji `TestLaporanHarianKosongDinyatakan`, uji `TestEfekMenempelPadaKasus`
+- [x] Ada **laporan harian** berisi seluruh kasus ber-status itu. — bukti: `services/komite_intervensi.go:InboxKomite.LaporanHarian` + `repository/komite_efek.go:InboxKomite.EfekPerluIntervensi` (seluruh `gagal-permanen` Komite)
 - [ ] Laporan harian tetap terkirim **meskipun kosong** — ketiadaan laporan tidak boleh ambigu
-      dengan ketiadaan masalah.
-- [ ] Keputusan yang efeknya belum tuntas dilaporkan **tersimpan**, bukan **tuntas**.
-      *(AC 25 spec; **ADR-0015**)*
-- [ ] Kegagalan juga tercatat di **jalur audit**, bukan hanya di log layanan. *(**ADR-0007**)*
+      dengan ketiadaan masalah. — belum: `kosong` dinyatakan (`susunLaporan`, uji `TestLaporanHarianKosongDinyatakan`), tetapi laporan hanya ditarik admin lewat `GET /api/komite/laporan-harian` — tidak ada pengiriman harian
+- [x] Keputusan yang efeknya belum tuntas dilaporkan **tersimpan**, bukan **tuntas**.
+      *(AC 25 spec; **ADR-0015**)* — bukti: `models/komite_efek.go:KeadaanEfekKasus` (`tersimpan, belum tuntas`), uji `TestKeadaanEfekKasus`
+- [x] Kegagalan juga tercatat di **jalur audit**, bukan hanya di log layanan. *(**ADR-0007**)* — bukti: `services/antrean.go:PekerjaEfek.SatuPutaran` → `rekamMenyerah` (jejak), uji `TestHanyaKegagalanPermanenMasukJejak`; hanya bila pekerja berjalan
 
 ## Catatan
 

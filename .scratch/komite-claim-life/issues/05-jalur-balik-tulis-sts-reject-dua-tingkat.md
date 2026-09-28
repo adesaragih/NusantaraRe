@@ -1,6 +1,6 @@
 # 05: Jalur balik — tulis `STS_REJECT` ke dua tingkat baris
 
-**Status:** ready-for-agent
+**Status:** sebagian — syarat "dipilih"/"belum bernomor" tidak diperiksa saat keputusan; OQ-K-05 dan OQ-K-05b terbuka
 
 **Blocked by:** 04b (rekam akseptasi — satu jalur simpan)
 
@@ -42,18 +42,18 @@ konteks ini dan **dipetakan di batas**, tidak disimpan sebagai status kedua di C
 
 ## Acceptance criteria
 
-- [ ] Hasil **Setuju** di tingkat terakhir membuat baris yang diserahkan berstatus **Aksep**.
-- [ ] Hasil **Tolak** di tingkat terakhir membuat baris berstatus **Ditolak**, dan klaim **tetap**
-      dapat menerima baris baru di sisi Claim — Life.
-- [ ] `STS_REJECT` tertulis pada **dua tingkat baris** — `PremiumListDetail` dan `AdjustmentList` —
-      dengan nilai **yang sama**, dalam satu operasi. *(AC 15 spec)*
-- [ ] Perubahan status **hanya** terjadi ketika putaran mencapai **tingkat terakhir**
-      (`KomiteCount == KomiteLoop`). *(AC 13 spec)*
+- [x] Hasil **Setuju** di tingkat terakhir membuat baris yang diserahkan berstatus **Aksep**. — bukti: `services/komite_akseptasi.go:penyelesaiAkhirOracle.Akseptasi` (`PerbaruiStatusBaris` Outstanding → Aksep)
+- [x] Hasil **Tolak** di tingkat terakhir membuat baris berstatus **Ditolak**, dan klaim **tetap**
+      dapat menerima baris baru di sisi Claim — Life. — bukti: `services/komite_akseptasi.go:penyelesaiAkhirOracle.Tolak` (→ Ditolak, `CabutPenandaDipilih`), uji `TestTolakAkhirDuaTingkatBarisSatuJalur`, uji `TestKlaimTidakTerminalSetelahPenolakan`
+- [x] `STS_REJECT` tertulis pada **dua tingkat baris** — `PremiumListDetail` dan `AdjustmentList` —
+      dengan nilai **yang sama**, dalam satu operasi. *(AC 15 spec)* — bukti: `repository/klaimlife.go:KlaimLife.PerbaruiStatusBaris` (adjustment + peserta, kode sama, satu panggilan di transaksi keputusan)
+- [x] Perubahan status **hanya** terjadi ketika putaran mencapai **tingkat terakhir**
+      (`KomiteCount == KomiteLoop`). *(AC 13 spec)* — bukti: `services/komite_keputusan.go:KeputusanKomite.Putuskan` (`Akseptasi`/`Tolak` hanya pada `AkseptasiAkhir`/`TolakAkhir`), uji `TestTolakMenghentikanDiTingkatManaPun`
 - [ ] Hanya baris yang **masih Outstanding**, sudah dipilih, dan **belum bernomor akseptasi** yang
-      dapat diubah oleh hasil keputusan.
-- [ ] Setiap penerapan hasil merekam **pelaku dan waktu**. *(**ADR-0007**)*
-- [ ] `AcceptStatus` **tidak** diteruskan ke Claim — Life sebagai status kedua; ia dipetakan ke
-      `STS_REJECT` **di batas ini**. *(**ADR-0001**)*
+      dapat diubah oleh hasil keputusan. — belum: penjaga hanya `STS_REJECT = 0` di `KlaimLife.PerbaruiStatusBaris`; syarat "dipilih" (`IS_CHECK`) dan "belum bernomor" (`ACCEPTED_NO` kosong) tidak diperiksa, di penyerahan maupun keputusan
+- [x] Setiap penerapan hasil merekam **pelaku dan waktu**. *(**ADR-0007**)* — bukti: `services/komite_akseptasi.go:penyelesaiAkhirOracle.Akseptasi`/`Tolak` (`jejak.Rekam` akun + waktu)
+- [x] `AcceptStatus` **tidak** diteruskan ke Claim — Life sebagai status kedua; ia dipetakan ke
+      `STS_REJECT` **di batas ini**. *(**ADR-0001**)* — bukti: `services/komite_akseptasi.go:penyelesaiAkhirOracle.Tolak` (dipetakan ke `KodeDitolak`), uji `TestNolKolomStatusKeduaDiSkema`
 
 ## Catatan — kepemilikan lintas konteks
 

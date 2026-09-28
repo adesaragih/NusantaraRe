@@ -1,6 +1,6 @@
 # 09: Jejak audit — siapa + kapan untuk setiap transisi dan setiap jalur balik
 
-**Status:** claimed
+**Status:** sebagian — riwayat per klaim tak terbaca, perubahan `Type` tanpa jalur maupun jejak, baris datar tidak ditulis jalur tolak/aksep Claim Life
 
 **Blocked by:** 08 (tahap + jalur balik) — seluruh transisi harus ada dulu untuk dapat direkam
 
@@ -41,16 +41,16 @@ Jejak direkam **per baris `AdjustmentList`**, bukan per klaim — karena unit st
 
 ## Acceptance criteria
 
-- [x] Setiap transisi status baris menghasilkan catatan berisi **pelaku dan waktu**. *(AC 16 spec)*
+- [x] Setiap transisi status baris menghasilkan catatan berisi **pelaku dan waktu**. *(AC 16 spec)* — bukti: `APP_RNM/internal/services/statusbaris.go:Status.ubah` → `perekamOracle.Rekam` (`AKUN_ID`, `WAKTU` ke `T_CLAIMLF_JEJAK`); uji `TestSetiapPenulisTransisiMerekamJejak`
 - [x] Setiap pengembalian (`SendtoAdmin`, `SendtoMedical`) menghasilkan catatan berisi **pelaku dan
-      waktu**. *(AC 17 spec)*
+      waktu**. *(AC 17 spec)* — bukti: `APP_RNM/internal/services/tahap.go:TahapLayanan.Pindah` (jejak di transaksi yang sama); uji `TestSetiapPenulisTransisiMerekamJejak`
 - [ ] Perubahan nilai `Type` menghasilkan catatan berisi pelaku dan waktu. *(AC 18 spec)* — `Type`
-      menyentuh keamanan, bukan sekadar data (**ADR-0012**).
-- [x] Jejak melekat pada **baris** yang bersangkutan, dan riwayat satu klaim dapat dibaca utuh
-      lintas seluruh barisnya.
+      menyentuh keamanan, bukan sekadar data (**ADR-0012**). — belum: nol jalur pengubah `Type` di kode, jadi jejaknya pun belum ada
+- [ ] Jejak melekat pada **baris** yang bersangkutan, dan riwayat satu klaim dapat dibaca utuh
+      lintas seluruh barisnya. — belum: jejak ditulis ber-`ADJUSTMENT_ID`/`KLAIM_ID` (`KlaimLife.SisipJejak`), tetapi nol pembaca riwayat per klaim — satu-satunya pembaca `InboxKomite.JejakEskalasi` per baris Komite
 - [ ] Rekam akseptasi lama tetap ditulis sebagaimana adanya — kontrak dengan Komite tidak berubah
-      karena tiket ini.
-- [x] Pelaku dicatat sebagai identitas akun; **tidak ada nama orang ter-hardcode**.
+      karena tiket ini. — belum: `Status.Tolak` dan `Akseptasi.SimpanAdjustment` tidak menyentuh baris datar `OS_AKSEPTASI_KLAIM_LIFE`; hanya jalur Komite (`InboxKomite.RekamAkhirWarisan`) yang memperbaruinya
+- [x] Pelaku dicatat sebagai identitas akun; **tidak ada nama orang ter-hardcode**. — bukti: `APP_RNM/internal/services/statusbaris.go:perekamOracle.Rekam` (`AkunID` dari `Pelaku`); uji `TestNolNamaOrangDiKode`
 
 ## Catatan
 

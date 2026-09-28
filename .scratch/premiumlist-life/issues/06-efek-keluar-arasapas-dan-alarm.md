@@ -1,6 +1,6 @@
 # 06: Efek keluar — kiriman Arasapas, log panggilan, dan alarm kegagalan simpan
 
-**Status:** ready-for-agent
+**Status:** sebagian — log per panggilan (berhasil + isi respons), pekerja pengulang modul, dan panggilan nyata Arasapas/email (OQ-PL-11) belum ada
 
 **Blocked by:** **00 (skema tujuh tabel — PREFACTOR)**, 05a (efek keluar berjalan setelah penyimpanan satu-transaksi selesai dan keadaannya diketahui)
 
@@ -80,29 +80,29 @@ lingkungan), **ADR-0008** (efek keluar asinkron), **ADR-0007** (jejak audit).
 
 ## Acceptance criteria
 
-- [ ] Alamat Arasapas di-resolve **runtime** dari `M_LINK_SERVICE` pada setiap panggilan. Test yang
+- [x] Alamat Arasapas di-resolve **runtime** dari `M_LINK_SERVICE` pada setiap panggilan. Test yang
       memindai kode untuk URL sebagai literal, konstanta, **atau pembacaan env var** **gagal** bila
-      menemukannya. *(AC 26 spec; **ADR-0013**)*
-- [ ] Di lingkungan non-production, **kedua** efek keluar tidak berjalan — sementara penyimpanan
-      premium list **tetap berjalan penuh**. *(AC 25 spec; **ADR-0005**)*
-- [ ] Gerbang lingkungan adalah **satu** flag yang dibaca di satu tempat, bukan pemeriksaan tersebar.
+      menemukannya. *(AC 26 spec; **ADR-0013**)* — bukti: `services/polis_efekkeluar.go:EfekArasapasPolis.Jalankan` (lewat `AlamatLayanan`); uji `TestNolAlamatLayananDiKode`
+- [x] Di lingkungan non-production, **kedua** efek keluar tidak berjalan — sementara penyimpanan
+      premium list **tetap berjalan penuh**. *(AC 25 spec; **ADR-0005**)* — bukti: uji `TestBukanProduksiNolPanggilan`; `services/polis_penawaran.go:terapkan` (simpan tidak bergerbang)
+- [x] Gerbang lingkungan adalah **satu** flag yang dibaca di satu tempat, bukan pemeriksaan tersebar. — bukti: `services/polis_efekkeluar.go:NewPenyalurPolis` (gerbang milik `Penyalur`); uji `TestGerbangLingkunganBenarBenarMenggerbangi`
 - [ ] Setiap panggilan keluar menulis satu baris log berisi identitas kasus, nomor polis, parameter,
-      jenis layanan, status, dan **isi respons** — baik saat berhasil maupun gagal.
+      jenis layanan, status, dan **isi respons** — baik saat berhasil maupun gagal. — belum: hanya kegagalan yang tercatat (outbox); log keberhasilan dan isi respons belum ada — kedua efek masih stub
 - [ ] Email terkirim **hanya** bila pembacaan balik menunjukkan penyimpanan **gagal** (`PL_NUMBER`
-      kosong). Penyimpanan yang berhasil **tidak** mengirim email. *(AC 27 spec)*
+      kosong). Penyimpanan yang berhasil **tidak** mengirim email. *(AC 27 spec)* — belum: digantikan AC relasional (pemicu kini kegagalan Arasapas); pengirim email masih stub (`ErrEmailBelumDisetujui`)
 - [ ] Kegagalan efek keluar **tidak** membatalkan premium list yang sudah tersimpan; ia tercatat dan
-      terlihat, dan dapat diulang. (**ADR-0008**)
-- [ ] Arasapas dan pengirim email berada **di balik interface** dan difake di test; yang diperiksa
+      terlihat, dan dapat diulang. (**ADR-0008**) — belum: tidak membatalkan simpan dan tercatat di outbox (uji `TestEfekBerjalanSesudahCommitBukanDiDalamnya`), tetapi baris `PREMIUMLISTLIFE` belum punya pekerja pengulang
+- [x] Arasapas dan pengirim email berada **di balik interface** dan difake di test; yang diperiksa — bukti: interface `EfekKeluar`/`Antrean`; uji `TestAlarmHanyaBilaArasapasGagal`, `TestAlarmYangGagalIkutTerantre`
 
 ### Penyimpanan relasional ⚠️ BARU 2026-09-16 — spec §12
 
 - [ ] ⚠️ Efek keluar membaca data polis **dari tabel relasional**, bukan dari payload JSON. Test yang
       menemukan perakitan CLOB JSON untuk dikirim keluar **gagal**. *(AC 32, 34 spec; penyimpangan
-      sadar 1)*
-- [ ] ⚠️ Pemicu alarm **tidak lagi** berupa "deteksi keadaan separuh" antar-procedure — keadaan itu
+      sadar 1)* — belum: kiriman masih stub dengan muatan pengenal saja (OQ-PL-11), dan uji penolak perakitan CLOB JSON belum ada
+- [x] ⚠️ Pemicu alarm **tidak lagi** berupa "deteksi keadaan separuh" antar-procedure — keadaan itu
       mustahil karena polis ditulis **atomik**. Alarm kini menyala pada **kegagalan efek keluar**
       saja. *(AC 35 spec; spec §6)*
-      test adalah **efeknya** (panggilan terjadi/tidak, log tertulis, email terpicu/tidak).
+      test adalah **efeknya** (panggilan terjadi/tidak, log tertulis, email terpicu/tidak). — bukti: `services/polis_efekkeluar.go:PenyalurPolis.Salurkan`; uji `TestAlarmHanyaBilaArasapasGagal`
 
 ## Blocker
 

@@ -1,6 +1,6 @@
 # 14: Skema relasional klaim (6 tabel, berakar di `T_WORK_CLAIM`) + migrasi — **PREFACTOR**
 
-**Status:** claimed
+**Status:** sebagian — migrasi data (sequence, spreading lama, jalan ulang + jalur mundur) belum teruji berjalan; isi penunjuk polis dan dua kolom tanpa rumah masih `[terbuka]`
 
 **Blocked by:** 01 (kerangka aplikasi + seam API)
 
@@ -333,26 +333,26 @@ penuh; koeksistensi ditolak), **ADR-0011** (seluruh **baris** adjustment ikut pi
 ## Acceptance criteria
 
 - [x] ⚠️ Skema klaim **relasional penuh**: setiap atribut menjadi **kolom bernama**. Test yang
-      menemukan kolom JSON menyimpan atribut klaim **gagal**. *(AC 31 spec; penyimpangan sadar 1)*
+      menemukan kolom JSON menyimpan atribut klaim **gagal**. *(AC 31 spec; penyimpangan sadar 1)* — bukti: uji `TestKolomUangDesimalDanNolJSON`
 - [x] ⚠️ **Enam tabel klaim** ada dengan PK dan FK sesuai diagram — `T_GENERAL_CLAIM`,
       `T_CLAIMLF_PREMIUMLIST_DETAIL`, `T_CLAIMLF_ADJUSTMENT`, `T_CLAIMLF_ADJUSTMENT_SPREADING`,
       `T_CLAIMLF_ADJUSTMENT_SPREADING_RETRO`, `DOCUMENT_CLAIM`. **REVISI 2026-09-18:** ⛔ **tidak
       ada** `T_CLAIMLF_POLICY` maupun `T_CLAIMLF_MARKETING` — keduanya **dihapus**, bukan diganti
-      nama. Test yang menemukan salah satunya **gagal**. *(AC 48 spec; penyimpangan sadar 8)*
+      nama. Test yang menemukan salah satunya **gagal**. *(AC 48 spec; penyimpangan sadar 8)* — bukti: uji `TestTujuhTabelDibuat` (ejaan STRUKTUR: `T_CLAIMLF_DOCUMENT`, `T_CLAIMLF_ADJ_SPREADING_RETRO`), `TestNamaYangDibuangTidakAda`
 - [x] ⚠️ **REVISI 2026-09-18** — **tidak** seluruh FK `ON DELETE CASCADE`. Yang **CASCADE**: relasi
       **3 · 4 · 5 · 6** (klaim → peserta → adjustment → spreading → spreading retro). Yang **di Go**:
       relasi **1** (`COVER_KEY`) dan **11** (`KOMITE_ID`, penunjuk). Yang ⚠️ `[terbuka]`: relasi
       **7** (`DOCUMENT_CLAIM`, kini lintas-lini — induk beda tabel per lini) dan relasi **2**
-      (belum punya kolom). Lihat tabel sebelas relasi di atas. **Jangan menyeragamkan sendiri.**
+      (belum punya kolom). Lihat tabel sebelas relasi di atas. **Jangan menyeragamkan sendiri.** — bukti: uji `TestKaskadeHanyaPadaRelasiTerdaftar`, `TestAC50PenunjukKeAtasBerReferences`
 - [x] ⚠️ FK `T_CLAIMLF_ADJUSTMENT` menunjuk **`T_CLAIMLF_PREMIUMLIST_DETAIL.ID`**, **bukan**
       `T_GENERAL_CLAIM.ID`. Test yang menemukan adjustment menggantung pada header **gagal**.
-      *(AC 33 spec; penyimpangan sadar 2)*
+      *(AC 33 spec; penyimpangan sadar 2)* — bukti: uji `TestAdjustmentMenggantungPadaPeserta`
 - [x] ⚠️ FK `DOCUMENT_CLAIM` menunjuk **`T_CLAIMLF_PREMIUMLIST_DETAIL.ID`**. *(AC 44 spec;
-      penyimpangan sadar 5)*
+      penyimpangan sadar 5)* — bukti: uji `TestAC05DokumenMenunjukPeserta`
 - [x] ⚠️ **`T_WORK_CLAIM` ada sebagai tabel mandiri** — bukan anak `T_GENERAL_CLAIM`, dan keadaan tangga
-      **tidak** menjadi kolom header klaim. *(AC 46 spec; penyimpangan sadar 6)*
+      **tidak** menjadi kolom header klaim. *(AC 46 spec; penyimpangan sadar 6)* — bukti: uji `TestSharedPrimaryKey`, `TestHeaderKlaimTidakMemuatKolomYangPindah`
 - [x] Header memuat keempat field `PremiumListSummary` (`CLAIM_NO`, `PL_NUMBER`, `RISLIPRNM`,
-      `BUSINESS_NAME`) beserta `CASEID` dan `CLAIM_RETRO`. *(AC 36 spec)*
+      `BUSINESS_NAME`) beserta `CASEID` dan `CLAIM_RETRO`. *(AC 36 spec)* — bukti: uji `TestAC07HeaderMemuatFieldSummary` (ejaan STRUKTUR: `POLICY_NO`, `RI_SLIP_RNM`, `CASEID_POLICY`)
 - [ ] ⚠️ `[terbuka]` **AC INI KOSONG ARTINYA sejak 2026-09-18 — TIDAK DIHAPUS, MENUNGGU JAWABAN.**
       `T_CLAIM_POLICY` **dihapus**, jadi tidak ada tabel yang memuat kesembilan kolom itu. **27 dari
       32** kolomnya dibaca dari `T_PREMIUM_LIST`; **lima** ⚠️ `[terbuka]` **kehilangan rumah** —
@@ -379,14 +379,14 @@ penuh; koeksistensi ditolak), **ADR-0011** (seluruh **baris** adjustment ikut pi
       > Membuat kolomnya di skema klaim akan menyalin data milik modul lain.
       >
       > ⚠️ **Dua kolom sisanya — `TEAM_GROUP` dan `BUSINESS_ID` — tetap `[terbuka]` penuh.**
-      > Keputusan ini tidak menyentuh keduanya, dan AC 8 karena itu **tetap tidak dicentang**.
+      > Keputusan ini tidak menyentuh keduanya, dan AC 8 karena itu **tetap tidak dicentang**. — belum: `[terbuka]` — `TEAM_GROUP` dan `BUSINESS_ID` masih tanpa rumah
 - [x] `T_CLAIMLF_PREMIUMLIST_DETAIL` memuat **kesembilan kolom tambahan** hasil audit — termasuk
-      `IS_CHECK` dan ketiga tanggal per peserta. *(AC 39, 40, 41 spec)*
+      `IS_CHECK` dan ketiga tanggal per peserta. *(AC 39, 40, 41 spec)* — bukti: uji `TestAC09PesertaMemuatSembilanKolomAudit`
 - [x] `T_CLAIMLF_ADJUSTMENT` memuat `CLAIM_AMOUNT`, `STS_REJECT`, `ACCEPTEDNO`, `ACCEPTATION_DATE`.
-      *(AC 42, 43 spec)*
+      *(AC 42, 43 spec)* — bukti: uji `TestAC10AdjustmentMemuatKolomInti` (ejaan `ACCEPTED_NO`)
 - [x] `T_CLAIMLF_ADJUSTMENT` memuat **ketiga kolom bank** — `NAME_OF_BANK`, `ID_BANK`, `ACCOUNT_NO` —
       dan migrasi mengisinya dari kolom warisan `NAME_OF_BANK`, `IDBANK`, `ACCOUNTNO`.
-      *(AC 56 spec; `[terverifikasi]`)*
+      *(AC 56 spec; `[terverifikasi]`)* — bukti: `APP_RNM/internal/repository/migrasidata.go:BongkarBarisLama`; uji `TestKolomBankIkutPindah`, `TestKolomBankPulangPergi`
 - [x] ⚠️ Seluruh uang dan share bertipe **desimal presisi arbitrer**; seluruh tanggal **`DATE`**;
       seluruh kolom **nullable**; identitas dari **sequence**. Test yang menemukan kolom uang
       bertipe teks atau melewati `float` **gagal**. *(AC 50 spec; **ADR-0003**, **ADR-0006**;
@@ -397,107 +397,107 @@ penuh; koeksistensi ditolak), **ADR-0011** (seluruh **baris** adjustment ikut pi
       > `apd.Decimal` memenuhinya. Klausa **sequence** tercakup penyimpangan sadar AC 34 (nomor
       > bisnis berformat untuk `T_WORK_CLAIM` dan kedua tabel ber-shared-PK; ADR-U-0006 tetap
       > berlaku untuk `T_CLAIMLF_*` dan `DOCUMENT_CLAIM`). Ronde 3 membacanya sebagai "`NUMBER`
-      > tanpa presisi" lalu menahannya — bacaan itu diralat di sini.
+      > tanpa presisi" lalu menahannya — bacaan itu diralat di sini. — bukti: uji `TestKolomUangDesimalDanNolJSON`, `TestNolNumberTanpaPresisi`, `TestGolonganTipeDDLCocokDenganStruktur`, `TestSequenceUntukTabelYangMemakainya`
 - [x] Seluruh klaim Life terbawa **beserta seluruh baris adjustment**-nya — bukan hanya keadaan
-      terakhir. Jumlah baris per klaim setelah migrasi **sama** dengan sebelumnya. *(**ADR-0011**)*
-- [x] Setiap baris adjustment hasil migrasi **menunjuk peserta yang benar**. *(AC 34 spec)*
+      terakhir. Jumlah baris per klaim setelah migrasi **sama** dengan sebelumnya. *(**ADR-0011**)* — bukti: `APP_RNM/internal/repository/migrasidata.go:BongkarBarisLama`; uji `TestSeluruhBarisAdjustmentIkutPindah`
+- [x] Setiap baris adjustment hasil migrasi **menunjuk peserta yang benar**. *(AC 34 spec)* — bukti: uji `TestBarisMenunjukPesertaYangBenar`
 - [ ] ⚠️ `[terbuka]` **AC INI KOSONG ARTINYA sejak 2026-09-18 — TIDAK DIHAPUS.** Tidak ada
       `T_CLAIM_POLICY` untuk dinormalkan ke dalamnya; atribut polis **tidak dipindahkan ke mana
       pun** — ia **dibaca hidup** dari tabel polis ⚠️ **penyimpangan sadar**. Yang **tetap
       mengikat**: bila atribut polis **berbeda antar baris peserta** dalam satu klaim, migrasi
-      **melaporkannya** dan **tidak** diam-diam memilih salah satu. *(AC 51 spec)*
+      **melaporkannya** dan **tidak** diam-diam memilih salah satu. *(AC 51 spec)* — belum: `[terbuka]` sejak 2026-09-18 — kosong artinya; bagian yang mengikat baru sebagian: `TestAtributKlaimBerbedaDilaporkan` melaporkan atribut klaim yang berbeda antar baris
 - [x] ⚠️ Migrasi **melaporkan** bahwa data lama ber-`ACCEPTATION_DATE` = waktu insert dan
       `STS_REJECT` = `0` karena **di-hardcode** di sumbernya, bukan karena nilainya sebenarnya.
-      Migrasi **tidak mengarang** tanggal akseptasi. *(AC 52 spec; penyimpangan sadar 4)*
+      Migrasi **tidak mengarang** tanggal akseptasi. *(AC 52 spec; penyimpangan sadar 4)* — bukti: uji `TestNilaiHardcodeDilaporkan`
 - [x] Nilai uang pindah **tanpa berubah satu digit pun**; rekonsiliasi membandingkan **secara
-      tepat**, bukan dengan toleransi. *(AC 53 spec; **ADR-0003**)*
+      tepat**, bukan dengan toleransi. *(AC 53 spec; **ADR-0003**)* — bukti: uji `TestUangPindahTanpaBerubahSatuDigit`, `TestUangTakTeruraiDilaporkanBukanDitebak`
 - [x] Tanggal yang berupa teks menjadi `DATE` **tanpa pergeseran zona waktu**; yang **tidak dapat
-      diurai dilaporkan**, bukan didiamkan. *(AC 54 spec)*
+      diurai dilaporkan**, bukan didiamkan. *(AC 54 spec)* — bukti: uji `TestTanggalDiuraiTanpaGeserZona`
 - [ ] ⚠️ Migrasi **tidak mengambil apa pun** dari `m_product_life.JSONDATA`; `PRODUCT_NAME` dan
-      `PRODUCT_NAME_ID` berasal dari **`product_life` relasional**. *(AC 38 spec)*
+      `PRODUCT_NAME_ID` berasal dari **`product_life` relasional**. *(AC 38 spec)* — belum: migrasi nol membaca `JSONDATA`, tetapi `PRODUCT_NAME`/`PRODUCT_NAME_ID` tidak dibawa dari `product_life` relasional — skema klaim tak punya kolomnya (dibaca hidup dari `T_PREMIUM_LIST`)
 - [ ] Penomoran klaim **tidak melompat dan tidak mengulang** setelah migrasi; sequence pindah dengan
-      **nilai berjalan yang benar**. *(**ADR-0006**)*
-- [ ] Migrasi dapat **dijalankan ulang dengan aman** dan punya **jalur mundur yang diuji**.
+      **nilai berjalan yang benar**. *(**ADR-0006**)* — belum: `PeriksaTandaAir` hanya menjaga "tidak mundur" dan nol pemanggil; migrasi data belum pernah dijalankan
+- [ ] Migrasi dapat **dijalankan ulang dengan aman** dan punya **jalur mundur yang diuji**. — belum: `TestMigrasiIdempoten` dan `TestJalurMundurDiuji` (uji db) belum pernah berjalan; migrasi data belum punya pelari
 
 ### Kolom yang bertambah dan yang pindah ⚠️ BARU 2026-09-18
 
 - [x] ⚠️ `T_GENERAL_CLAIM` **tidak lagi memuat** `CREATE_OP`, `CREATE_OP_NAME`, `TGL_UPDATE` —
-      ketiganya **pindah ke `T_WORK_CLAIM`**. Test yang menemukannya di header klaim **gagal**.
+      ketiganya **pindah ke `T_WORK_CLAIM`**. Test yang menemukannya di header klaim **gagal**. — bukti: uji `TestHeaderKlaimTidakMemuatKolomYangPindah`
 - [x] ⚠️ `T_WORK_CLAIM` memuat `CREATE_OP`, `CREATE_OP_NAME`, `TGL_UPDATE`, **`CASEID`**
-      (seluruhnya pindahan) dan `LINI`.
+      (seluruhnya pindahan) dan `LINI`. — bukti: uji `TestAC23WorkClaimMemuatKolomPindahan` (ejaan `CASE_ID`)
 - [x] ⚠️ `T_GENERAL_CLAIM` **tidak lagi memuat** `CASEID` — pindah ke `T_WORK_CLAIM`. Test yang
-      menemukannya di header klaim **gagal**. *(DIPUTUSKAN 2026-09-18; `[keputusan work owner]`)*
+      menemukannya di header klaim **gagal**. *(DIPUTUSKAN 2026-09-18; `[keputusan work owner]`)* — bukti: uji `TestHeaderKlaimTidakMemuatKolomYangPindah`
 - [x] ⚠️ `T_GENERAL_CLAIM` **tidak lagi memuat** `PL_NUMBER`; kolom itu **diganti nama** menjadi
-      **`POLICY_NO`**. Test yang menemukan `PL_NUMBER` di header klaim **gagal**.
+      **`POLICY_NO`**. Test yang menemukan `PL_NUMBER` di header klaim **gagal**. — bukti: uji `TestHeaderKlaimTidakMemuatKolomYangPindah`
 - [x] ⚠️ `T_GENERAL_CLAIM` memuat ketiga **penunjuk polis** — `CASEID_POLICY`, `POLICY_NO`,
       `ENDORSMENT_NO` — dan atribut polis **tidak** disalin ke klaim. Test yang menemukan salinan
-      atribut polis di tabel klaim **gagal**.
+      atribut polis di tabel klaim **gagal**. — bukti: uji `TestHeaderKlaimTidakMemuatKolomYangPindah`, `TestNamaYangDibuangTidakAda`, `TestCacahKolomWarisanYangDitulisSimpan`
 - [ ] ⚠️ `[terbuka]` **Isi ketiga penunjuk polis belum dapat ditulis** — tidak satu pun menunjuk
       kolom yang ada di sisi polis (§Blocker). Kolomnya dibuat; **pengisiannya** menunggu keputusan
-      work owner. **Jangan tebak.**
+      work owner. **Jangan tebak.** — belum: hanya `POLICY_NO` diisi `Pendaftaran.Daftar`; `CASEID_POLICY` dan `ENDORSMENT_NO` tak pernah ditulis
 - [x] ⚠️ Kolom `LINI` **ADA** pada `T_WORK_CLAIM`, dan untuk Life isinya **konstanta lini Life**.
       `[terbuka — Non-Life]` hanya **daftar nilai enum lintas-lini**, yang ditetapkan saat konteks
-      Non-Life digarap — **bukan** keberadaan kolomnya. *(DIPUTUSKAN 2026-09-18)*
+      Non-Life digarap — **bukan** keberadaan kolomnya. *(DIPUTUSKAN 2026-09-18)* — bukti: uji `TestAC28KolomLiniAdaDanKonstantanyaTunggal`
 
 ### Identitas: shared PK dan nomor bisnis berformat ⚠️ BARU 2026-09-18
 
 - [x] ⚠️ **`T_GENERAL_CLAIM.ID` sama persis dengan `T_WORK_CLAIM.ID` baris klaim** — **shared
       primary key**, 1:1, **tanpa kolom penyambung**. `T_GENERAL_CLAIM.ID` sekaligus PK **dan** FK
-      ke `T_WORK_CLAIM.ID`. *(relasi 2; `[keputusan work owner]`)*
+      ke `T_WORK_CLAIM.ID`. *(relasi 2; `[keputusan work owner]`)* — bukti: `APP_RNM/internal/repository/pohonklaim.go:PohonKlaim.isiIdentitas`; uji `TestSharedPrimaryKey`
 - [x] ⚠️ ⛔ **Tidak ada kolom `WORK_CLAIM_ID`** di mana pun — pada `T_GENERAL_KOMITE` maupun
       tabel lain. Hubungan ke kasus komite juga **shared PK**: `T_GENERAL_KOMITE.ID` =
       `T_WORK_CLAIM.ID` baris komite. Test yang menemukan kolom `WORK_CLAIM_ID` **gagal**.
-      *(relasi 8; `[keputusan work owner]`)*
-- [ ] ⚠️ **`T_GENERAL_KOMITE.ADJUSTMENT_ID` TETAP ADA** — penutup lingkar ke baris adjustment; ia
-      **bukan** bagian shared PK dan **tidak** ikut dibuang. *(relasi 10)*
+      *(relasi 8; `[keputusan work owner]`)* — bukti: uji `TestNamaYangDibuangTidakAda`
+- [x] ⚠️ **`T_GENERAL_KOMITE.ADJUSTMENT_ID` TETAP ADA** — penutup lingkar ke baris adjustment; ia
+      **bukan** bagian shared PK dan **tidak** ikut dibuang. *(relasi 10)* — bukti: `APP_RNM/internal/repository/kasuskomite.go:PohonKlaim.BuatKasusKomite` (menulis `ADJUSTMENT_ID`; kolomnya di migrasi 013)
 - [x] ⚠️ **`T_WORK_CLAIM.ID` bertipe teks berformat** — baris klaim `CLM-xxxxxx`, baris komite
       `KMT-xxxxxx`. **Bukan angka sequence.** Test yang menemukan tipe numerik **gagal**.
-      *(`[keputusan work owner]`)*
-- [ ] ⚠️ `T_WORK_CLAIM.COVER_KEY`, `T_GENERAL_CLAIM.ID`, `T_GENERAL_KOMITE.ID`, dan
-      `T_CLAIMLF_ADJUSTMENT.KOMITE_ID` **bertipe sama** dengan `T_WORK_CLAIM.ID` — teks berformat.
+      *(`[keputusan work owner]`)* — bukti: `APP_RNM/internal/repository/pengenalwork.go:RakitPengenalWork`; uji `TestIdentitasWorkClaimBerupaTeks`, `TestRakitPengenalWork` (awalan komite kini `KMTLF-`, ralat A2 tiket 10)
+- [x] ⚠️ `T_WORK_CLAIM.COVER_KEY`, `T_GENERAL_CLAIM.ID`, `T_GENERAL_KOMITE.ID`, dan
+      `T_CLAIMLF_ADJUSTMENT.KOMITE_ID` **bertipe sama** dengan `T_WORK_CLAIM.ID` — teks berformat. — bukti: uji `TestAC33IdentitasBertipeSama`, `TestLebarKolomPenunjukSamaDenganIndukNya` (`T_GENERAL_KOMITE.ID` `VARCHAR2(32)` lewat migrasi 030)
 - [x] ⚠️ **Penyimpangan sadar dari ADR-0006 dicatat di artefak**, tidak dilanggar diam-diam:
       identitas `T_WORK_CLAIM` dan kedua tabel ber-shared-PK adalah **nomor bisnis berformat**,
-      bukan sequence. ADR-0006 **tetap berlaku** untuk `T_CLAIMLF_*` dan `DOCUMENT_CLAIM`.
-- [ ] ⚠️ `[terbuka]` **Generator nomor `CLM-`/`KMT-` belum ditetapkan** — siapa yang membuatnya,
+      bukan sequence. ADR-0006 **tetap berlaku** untuk `T_CLAIMLF_*` dan `DOCUMENT_CLAIM`. — bukti: `APP_RNM/internal/repository/pengenalwork.go:PohonKlaim.PengenalWorkBerikut` (penyimpangan dicatat di kepala berkas); uji `TestSequenceUntukTabelYangMemakainya`
+- [x] ⚠️ `[terbuka]` **Generator nomor `CLM-`/`KMT-` belum ditetapkan** — siapa yang membuatnya,
       apakah ada sequence di belakang prefiks, apakah di-reset per tahun. Pemilik **DBA / work
-      owner**. Kolomnya dibuat; **pembangkitannya** menunggu jawaban. **Jangan tebak.**
+      owner**. Kolomnya dibuat; **pembangkitannya** menunggu jawaban. **Jangan tebak.** — bukti: `APP_RNM/internal/repository/pengenalwork.go:PohonKlaim.PengenalWorkBerikut` (butir aa: `SEQ_WORK_CLAIM` migrasi 009, awalan dirakit Go, tanpa reset tahunan); uji `TestRakitPengenalWork`
 
 ### Spreading adjustment + rujukan Komite ⚠️ BARU 2026-09-16
 
-- [x] ⚠️ **`T_CLAIMLF_ADJUSTMENT_SPREADING` ada**, dengan FK **`ADJUSTMENT_ID`** → `T_CLAIMLF_ADJUSTMENT.ID`
+- [ ] ⚠️ **`T_CLAIMLF_ADJUSTMENT_SPREADING` ada**, dengan FK **`ADJUSTMENT_ID`** → `T_CLAIMLF_ADJUSTMENT.ID`
       dan **`ON DELETE CASCADE`**. Test yang menemukannya menggantung pada peserta atau pada header
       klaim **gagal**. *(`[terverifikasi]` `SpreadingClaimLife_Act` mengisi `.SpreadingList` pada
-      baris adjustment; **AC 58 spec**)*
+      baris adjustment; **AC 58 spec**)* — belum: DDL `005` benar (`FK_SPR_ADJ` → `T_CLAIMLF_ADJUSTMENT(ID) ON DELETE CASCADE`), tetapi nol uji yang gagal bila FK itu menunjuk peserta/header — `TestKaskadeHanyaPadaRelasiTerdaftar` hanya memeriksa ada-tidaknya `ON DELETE CASCADE` per berkas
 - [x] ⚠️ **`T_CLAIMLF_ADJUSTMENT_SPREADING_RETRO` ada**, dengan FK **`SPREADING_ID`** →
-      `T_CLAIMLF_ADJUSTMENT_SPREADING.ID` dan **`ON DELETE CASCADE`**. *(AC 58 spec)*
+      `T_CLAIMLF_ADJUSTMENT_SPREADING.ID` dan **`ON DELETE CASCADE`**. *(AC 58 spec)* — bukti: `APP_RNM/internal/repository/migrations/006_t_claimlf_adj_spreading_retro.sql` (`FK_SPR_RETRO_SPR … ON DELETE CASCADE`); uji `TestKaskadeHanyaPadaRelasiTerdaftar`, `TestKunciTamuBerIndex`
 - [ ] Pohon klaim berkedalaman **lima tingkat** — klaim → peserta → adjustment → spreading →
       spreading retro — dan menghapus klaim **mengkaskade sampai tingkat terdalam**. Test wajib
-      memeriksa **cicit** (`_SPREADING_RETRO`) ikut hilang. *(AC 60 spec)*
+      memeriksa **cicit** (`_SPREADING_RETRO`) ikut hilang. *(AC 60 spec)* — belum: kaskade DDL relasi 3–6 terkunci statik (`TestKaskadeHanyaPadaRelasiTerdaftar`), tetapi uji cicit `TestHapusMengkaskadeSampaiCicit` (uji db) belum pernah berjalan
 - [x] `T_CLAIMLF_ADJUSTMENT_SPREADING` memuat `TREATY_TYPE_ID`, `TREATY_TYPE_NAME`,
-      `TREATY_YEAR_LIFE`, `RETROCADED_SHARE`, `RATE`, `IDR`, `USD`, `CURRENCY`.
+      `TREATY_YEAR_LIFE`, `RETROCADED_SHARE`, `RATE`, `IDR`, `USD`, `CURRENCY`. — bukti: uji `TestAC39SpreadingMemuatKolomnya`
 - [x] `T_CLAIMLF_ADJUSTMENT_SPREADING_RETRO` memuat `REINSURER_NAME`, `PERCENT_SHARE`, `AMOUNT`,
       `RATE`, `PREMIUM_SPREADED_GROSS`, `PREMIUM_SPREADED_NET`, `COMMISION`, `OVR_COMM`,
       `TREATY_TYPE_ID`, `TREATY_TYPE_NAME`. *(`[terverifikasi]`
-      `Claim Life/Section/RetroDetailClaimLife.xml` + `SpreadingClaimLife_Act`)*
+      `Claim Life/Section/RetroDetailClaimLife.xml` + `SpreadingClaimLife_Act`)* — bukti: uji `TestAC40SpreadingRetroMemuatKolomnya`
 - [x] ⚠️ Seluruh kolom uang dan persen pada kedua tabel bertipe **desimal presisi arbitrer**;
-      **tidak** melewati `float`. *(**ADR-0003**)*
+      **tidak** melewati `float`. *(**ADR-0003**)* — bukti: uji `TestAC41UangDanPersenBertipeDesimal`
 - [x] ⚠️ Nilai spreading **dibekukan**: perubahan master treaty setelah adjustment tersimpan
-      **tidak mengubah** angka yang sudah ada. *(penyimpangan sadar — spreading disimpan)*
+      **tidak mengubah** angka yang sudah ada. *(penyimpangan sadar — spreading disimpan)* — bukti: uji `TestAC42SpreadingDibekukanBukanTurunan` (bentuk skema; belum ada spreading yang tersimpan)
 - [x] ⚠️ **`T_CLAIMLF_ADJUSTMENT` memuat kolom `KOMITE_ID`**, **nullable** dan **ber-index** — `NULL`
-      bila baris belum pernah dikirim ke Komite. *(AC 61 spec; penyimpangan sadar — rujukan, bukan salinan)*
+      bila baris belum pernah dikirim ke Komite. *(AC 61 spec; penyimpangan sadar — rujukan, bukan salinan)* — bukti: uji `TestKunciTamuBerIndex` (index unik `KOMITE_ID`), `TestAC50PenunjukKeAtasBerReferences` (nullable)
 - [x] ⚠️ **Tidak ada tabel `T_CLAIMLF_ADJUSTMENT_KOMITE`.** Roster dan keputusan per anggota **tidak**
-      disimpan di Claim Life. Test yang menemukan tabel itu **gagal**. *(AC 61 spec; penyimpangan sadar)*
+      disimpan di Claim Life. Test yang menemukan tabel itu **gagal**. *(AC 61 spec; penyimpangan sadar)* — bukti: uji `TestNamaYangDibuangTidakAda`
 - [x] ⚠️ Rujukan ke Komite memakai **`KOMITE_ID`**, bukan **indeks posisi**. Test yang menemukan
       padanan `IndexPremiumList`/`IndexAdjustment` sebagai kunci rujukan **gagal**.
-      *(AC 62 spec; `[terverifikasi]` `CreateKMTLife_Act` memakai `.pxListSubscript`; penyimpangan sadar)*
+      *(AC 62 spec; `[terverifikasi]` `CreateKMTLife_Act` memakai `.pxListSubscript`; penyimpangan sadar)* — bukti: uji `TestAC45Dan48RujukanKomiteBukanIndeksPosisi`
 - [ ] Migrasi **membongkar** `SpreadingList` dan `RetroLifeList` dari data lama ke kedua tabel,
-      dan setiap baris dapat ditelusuri ke **baris adjustment yang benar**.
-- [x] Setiap FK baru (`ADJUSTMENT_ID`, `SPREADING_ID`) **ber-index**.
+      dan setiap baris dapat ditelusuri ke **baris adjustment yang benar**. — belum: `BongkarBarisLama` (`migrasidata.go`) tidak membongkar `SpreadingList`/`RetroLifeList` — nol kemunculan spreading di berkas itu
+- [x] Setiap FK baru (`ADJUSTMENT_ID`, `SPREADING_ID`) **ber-index**. — bukti: uji `TestKunciTamuBerIndex`
 - [x] ⚠️ `KOMITE_ID` **ber-index** juga, dan berisi **identitas kasus komite** = `T_WORK_CLAIM.ID`
       baris komite. Test yang menemukannya menunjuk `T_GENERAL_KOMITE.ID` **gagal**.
-      *(§`KOMITE_ID` pada `T_CLAIMLF_ADJUSTMENT`; `[keputusan work owner]` REVISI 2026-09-17)*
+      *(§`KOMITE_ID` pada `T_CLAIMLF_ADJUSTMENT`; `[keputusan work owner]` REVISI 2026-09-17)* — bukti: uji `TestAC45Dan48RujukanKomiteBukanIndeksPosisi`, `TestAC50PenunjukKeAtasBerReferences` (`FK_ADJ_KOMITE` → `T_WORK_CLAIM(ID)`)
 - [x] ✅ Tipe `KOMITE_ID` **SUDAH DITETAPKAN 2026-09-18** — teks berformat `KMT-xxxxxx`, mengikuti
-      `T_WORK_CLAIM.ID`. *(`[keputusan work owner]`)*
+      `T_WORK_CLAIM.ID`. *(`[keputusan work owner]`)* — bukti: uji `TestAC33IdentitasBertipeSama` (awalan kini `KMTLF-`, ralat A2 tiket 10)
 - [x] ✅ `[DIJAWAB 26-09-2026]` **Apakah `KOMITE_ID` dan `COVER_KEY` dipasangi
       `REFERENCES T_WORK_CLAIM(ID)`** atau dibiarkan tanpa constraint. Pemilik **DBA / work owner**.
       ~~`[terbuka]` — belum diputuskan; tiket ini tidak dinyatakan selesai sebelum jawabannya ada.
@@ -516,7 +516,7 @@ penuh; koeksistensi ditolak), **ADR-0011** (seluruh **baris** adjustment ikut pi
       > sendiri selamat, tetapi baris komite tidak ikut dibereskannya. Yang harus diputuskan: jalur
       > hapus melepas penunjuknya lebih dulu, atau penghapusan memang ditolak selama komite ada.
       > ⛔ **Belum teruji**: migrasi belum pernah berjalan di Oracle mana pun, jadi ini penalaran
-      > atas semantik Oracle, bukan hasil pengamatan.
+      > atas semantik Oracle, bukan hasil pengamatan. — bukti: uji `TestAC50PenunjukKeAtasBerReferences`
 
 ### Koreksi: `OS_AKSEPTASI_KLAIM_LIFE` TETAP ditulis ⚠️ 2026-09-16
 
@@ -525,13 +525,13 @@ tabel relasional baru **dan** `INSERT` flat ke `OS_AKSEPTASI_KLAIM_LIFE`, karena
 produksi) masih membaca dari sana. **Yang dibuang hanya JSON** (`JSON_KLAIM` / serialisasi
 `ClaimData`).
 
-- [ ] ⚠️ Menyimpan klaim menulis **tabel relasional baru** *dan* `INSERT` flat ke
+- [x] ⚠️ Menyimpan klaim menulis **tabel relasional baru** *dan* `INSERT` flat ke
       `OS_AKSEPTASI_KLAIM_LIFE`. Test yang menuntut `OS_AKSEPTASI_KLAIM_LIFE` **tidak** ditulis
-      adalah **keliru** dan harus dibalik.
+      adalah **keliru** dan harus dibalik. — bukti: `APP_RNM/internal/repository/pohonklaim.go:PohonKlaim.Simpan` (pohon relasional + INSERT datar per baris adjustment); uji `TestJalurTulisDatarWarisanWAJIBADA`
 - [x] ⚠️ Yang **tetap dibuang** hanya **blob JSON** — `JSON_KLAIM` dan serialisasi `ClaimData`.
-      *(AC 31, 34 spec tetap berlaku untuk JSON saja)*
-- [ ] Kedua penulisan berada dalam **satu transaksi**; kegagalan pada salah satunya **membatalkan
-      keduanya**. *(AC 49 spec)*
+      *(AC 31, 34 spec tetap berlaku untuk JSON saja)* — bukti: uji `TestKolomUangDesimalDanNolJSON`
+- [x] Kedua penulisan berada dalam **satu transaksi**; kegagalan pada salah satunya **membatalkan
+      keduanya**. *(AC 49 spec)* — bukti: `APP_RNM/internal/repository/pohonklaim.go:PohonKlaim.Simpan` (satu `tx`), `APP_RNM/internal/services/services.go:Service.DalamTransaksi` (rollback bila galat); uji `TestSimpanPohonMenulisDuaTempatDalamSatuTransaksi` (uji db)
 
 ## Blocker
 

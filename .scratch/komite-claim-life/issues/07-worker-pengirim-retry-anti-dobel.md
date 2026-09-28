@@ -1,6 +1,6 @@
 # 07: Worker pengirim — retry + anti-dobel Email & Kasir
 
-**Status:** ready-for-agent
+**Status:** sebagian — tidak ada penjadwal pekerja di `cmd/`; pengirim nyata Email/Arasapas/Kasir belum disetujui, jadi tak satu efek pun pernah terkirim
 
 **Blocked by:** 06 (transactional outbox)
 
@@ -40,19 +40,19 @@ sebagai literal, konstanta, maupun env var), **ADR-0005** (flag lingkungan mengg
 
 ## Acceptance criteria
 
-- [ ] Keempat efek dikirim sampai **berhasil**, atau ditandai **perlu intervensi**. *(AC 20 spec)*
+- [ ] Keempat efek dikirim sampai **berhasil**, atau ditandai **perlu intervensi**. *(AC 20 spec)* — belum: `PekerjaKomiteOracle` tanpa pemanggil (tidak ada penjadwal); ketiga pengirim selalu gagal permanen (`…BelumDisetujui` / stub non-produksi) — tak ada yang berhasil; InsertJson dibuang
 - [ ] Tiap kiriman membawa **ID idempoten unik**, sehingga penerima dapat menolak duplikat.
-      *(AC 21 spec)*
-- [ ] Sebelum mengirim ulang **Email** atau **Kasir**, sistem memeriksa status "sudah terkirim
-      sukses"; bila sudah, **tidak dikirim lagi**. *(AC 22 spec)*
-- [ ] Alamat endpoint di-resolve **runtime** dari `M_LINK_SERVICE` lewat `(KATEGORI_1, KATEGORI_2)`;
-      **tidak ada URL** sebagai literal, konstanta, maupun env var. *(AC 24 spec; **ADR-0013**)*
-- [ ] **Kunci kategori tidak ditemukan** dibedakan dari **jaringan gagal**: yang pertama tidak
-      diulang berkali-kali, yang kedua diulang.
-- [ ] Keputusan dilaporkan **tuntas** hanya setelah keempat efek berhasil. *(AC 25 spec)*
-- [ ] **Semua** klaim menjalankan keempat efek — tidak ada pengecualian berdasarkan identitas retro.
-      *(AC 26 spec; **OQ-064**)*
-- [ ] Kegagalan pengiriman **tidak** membatalkan keputusan yang sudah tersimpan. *(AC 18 spec)*
+      *(AC 21 spec)* — belum: ID baris outbox ada, tetapi `PelaksanaKomite.Laksanakan` tidak meneruskannya ke pengirim mana pun — belum ada kiriman nyata
+- [x] Sebelum mengirim ulang **Email** atau **Kasir**, sistem memeriksa status "sudah terkirim
+      sukses"; bila sudah, **tidak dikirim lagi**. *(AC 22 spec)* — bukti: `services/komite_pengirim.go:PelaksanaKomite.Laksanakan` (`perluCekDobel` + `EfekSudahSelesai`), uji `TestKasirTidakDikirimDuaKali`
+- [x] Alamat endpoint di-resolve **runtime** dari `M_LINK_SERVICE` lewat `(KATEGORI_1, KATEGORI_2)`;
+      **tidak ada URL** sebagai literal, konstanta, maupun env var. *(AC 24 spec; **ADR-0013**)* — bukti: `services/komite_pengirim.go:PelaksanaKomite.Laksanakan` (`AlamatLayanan` lewat `ResolverLinkServiceOracle`), uji `TestNolAlamatLayananDiKode`; host SMTP email di luar `M_LINK_SERVICE` (`[terbuka]`)
+- [x] **Kunci kategori tidak ditemukan** dibedakan dari **jaringan gagal**: yang pertama tidak
+      diulang berkali-kali, yang kedua diulang. — bukti: uji `TestKunciHilangPermanenJaringanBukan`
+- [x] Keputusan dilaporkan **tuntas** hanya setelah keempat efek berhasil. *(AC 25 spec)* — bukti: `models/komite_efek.go:KeadaanEfekKasus` ("tuntas" hanya bila semua `selesai`), uji `TestKeadaanEfekKasus`; tiga efek, InsertJson dibuang
+- [x] **Semua** klaim menjalankan keempat efek — tidak ada pengecualian berdasarkan identitas retro.
+      *(AC 26 spec; **OQ-064**)* — bukti: nol cabang retro di `services/komite_pengirim.go:PelaksanaKomite.Laksanakan` dan `services/komite_outbox.go:EfekKeputusanKomite` (gerbang langkah 9 dibuang, OQ-064)
+- [x] Kegagalan pengiriman **tidak** membatalkan keputusan yang sudah tersimpan. *(AC 18 spec)* — bukti: `services/antrean.go:PekerjaEfek.SatuPutaran` (transaksi sendiri, sesudah keputusan ter-commit)
 
 ## Catatan — gerbang EXIT retro dibuang
 

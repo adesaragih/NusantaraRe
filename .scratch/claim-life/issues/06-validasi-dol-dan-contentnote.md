@@ -1,6 +1,6 @@
 # 06: Validasi Date of Loss per `Type` + `ContentNote` dari `BusinessCode`
 
-**Status:** claimed
+**Status:** sebagian — `ContentNote` belum terisi atau tampil di mana pun; cabang `ContentNote != DEATH` belum ditiru
 
 **Blocked by:** 03 (baris `AdjustmentList` + Save ke Outstanding)
 
@@ -40,14 +40,14 @@ Gagal → `local.errmsg = "Invalid DOL"`, dengan `local.Begin==false || local.Ex
 ## Acceptance criteria
 
 - [x] Klaim ber-`Type` `QP`/`QR` dengan *Date of Loss* di luar `GROSS_VALUATION_BEGIN_DATE` …
-      `_EXPIRED_DATE` ditolak dengan pesan yang setara `"Invalid DOL"`. *(AC 13 spec)*
+      `_EXPIRED_DATE` ditolak dengan pesan yang setara `"Invalid DOL"`. *(AC 13 spec)* — bukti: `APP_RNM/internal/services/dol.go:ValidasiDOL`; uji `TestBatasJendelaTiapType`, `TestPesanDOLPersisSepertiXML`
 - [x] Klaim ber-`Type` `TP`/`TR` diuji terhadap `RETROCESSION_VALUATION_*`, dengan pergeseran
-      tanggal yang sama seperti Pega. *(AC 14 spec)*
-- [ ] `ContentNote` terisi sesuai tabel `BusinessCode` `L1`–`L21` di `CONTEXT.md`. *(AC 15 spec)*
+      tanggal yang sama seperti Pega. *(AC 14 spec)* — bukti: `APP_RNM/internal/services/dol.go:ValidasiDOL`, `PergeseranDOLRetro`; uji `TestBatasJendelaTiapType`, `TestPergeseranDOLSatuHariBukanSatuJam`
+- [ ] `ContentNote` terisi sesuai tabel `BusinessCode` `L1`–`L21` di `CONTEXT.md`. *(AC 15 spec)* — belum: `ContentNoteDari` benar untuk 21 kode (`TestContentNoteSeluruhDuaPuluhSatuKode`), tetapi nol pemanggil produksi yang mengisi atau menampilkannya, dan cabang `ContentNote != DEATH` belum ditiru
 - [x] Pemetaan `BusinessCode` → `ContentNote` diwujudkan sebagai **data acuan**, bukan rangkaian
-      `if` bercabang.
+      `if` bercabang. — bukti: `APP_RNM/internal/models/businesscode.go:ContentNoteUntuk` (peta data acuan); uji `TestContentNoteSeluruhDuaPuluhSatuKode`, `TestDaftarContentNoteSalinanBukanAslinya`
 - [x] Validasi dan penurunan jenis klaim membaca **satu** field `Type` yang sama — bukan dua salinan
-      seperti di Pega.
+      seperti di Pega. — bukti: `APP_RNM/internal/repository/klaimlife.go:KlaimLife.TypeKlaim` (dibaca `TanggalKejadian.Set`); uji `TestTypeKlaimHanyaSatuRumahTersimpan`
 
 ## Catatan penutupan (2026-09-14)
 

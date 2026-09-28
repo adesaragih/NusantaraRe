@@ -1,6 +1,6 @@
 # 09: Riwayat tangga persetujuan di UI
 
-**Status:** ready-for-agent
+**Status:** sebagian — layar riwayat hanya terjangkau pada giliran sendiri (API-nya terbuka bagi siapa pun yang teridentifikasi)
 
 **Blocked by:** **00 (skema penyimpanan komite — PREFACTOR)**, 03 (penegakan wewenang + eskalasi) — riwayat harus memuat eskalasi juga
 
@@ -46,30 +46,30 @@ melekat pada **baris `AdjustmentList`**, bukan pada klaim).
 
 ## Acceptance criteria
 
-- [ ] Riwayat menampilkan **tiap tingkat** tangga secara berurutan, dengan keputusan, komentar, dan
-      waktu. *(AC 7 spec)*
-- [ ] Keputusan ditampilkan sebagai **kata** (Setuju / Tolak), bukan angka dan bukan nama field.
-      *(AC 29 spec)*
-- [ ] **Eskalasi ikut terbaca** di riwayat yang sama: siapa memindahkan, kapan, dari tingkat mana ke
-      tingkat mana. *(AC 12 spec)*
-- [ ] Tingkat yang **dilewati** karena eskalasi terlihat sebagai dilewati — bukan hilang tanpa jejak.
-- [ ] Riwayat melekat pada **baris `AdjustmentList`** yang diputuskan; satu klaim dengan beberapa
-      baris menampilkan riwayat per baris.
-- [ ] Riwayat dapat dibaca **tanpa** wewenang memutuskan — melihat bukan memutuskan.
+- [x] Riwayat menampilkan **tiap tingkat** tangga secara berurutan, dengan keputusan, komentar, dan
+      waktu. *(AC 7 spec)* — bukti: `services/komite_riwayat.go:susunRiwayat` + tabel tangga `KasusKomite.tsx`, uji `TestRiwayatMembedakanDilewatiDariMenunggu`
+- [x] Keputusan ditampilkan sebagai **kata** (Setuju / Tolak), bukan angka dan bukan nama field.
+      *(AC 29 spec)* — bukti: `services/komite_riwayat.go:KataStatusTangga`, uji `TestRiwayatMembedakanDilewatiDariMenunggu`
+- [x] **Eskalasi ikut terbaca** di riwayat yang sama: siapa memindahkan, kapan, dari tingkat mana ke
+      tingkat mana. *(AC 12 spec)* — bukti: `services/komite_riwayat.go:susunRiwayat` (eskalasi dari jejak: dari → ke, oleh, waktu), uji `TestRiwayatMembedakanDilewatiDariMenunggu`
+- [x] Tingkat yang **dilewati** karena eskalasi terlihat sebagai dilewati — bukan hilang tanpa jejak. — bukti: `KataTingkatDilewati` ≠ `KataTingkatMenunggu` di `services/komite_riwayat.go:KataStatusTangga`, uji `TestRiwayatMembedakanDilewatiDariMenunggu`
+- [x] Riwayat melekat pada **baris `AdjustmentList`** yang diputuskan; satu klaim dengan beberapa
+      baris menampilkan riwayat per baris. — bukti: `repository/komite_riwayat.go:sqlJejakEskalasi` (kunci `ADJUSTMENT_ID` + kasus); satu kasus per baris (`UX_GENERAL_KOMITE_ADJ`)
+- [ ] Riwayat dapat dibaca **tanpa** wewenang memutuskan — melihat bukan memutuskan. — belum: API terbuka (`InboxKomite.Riwayat`, uji `TestRiwayatUntukSiapaPun`), tetapi layar hanya dibuka dari Inbox (giliran sendiri) dan `KasusKomite.tsx` gagal 403 bagi non-anggota karena memuat `ambilKasusKomite` bersama riwayat
 
 ### Sumber riwayat ⚠️ BARU 2026-09-16 — spec §9
 
 ⚠️ **Koreksi premis.** Catatan lama menyebut *"riwayatnya sudah ada di data"* — yang dimaksud adalah
 **page runtime Pega**. Di sistem baru page itu **dibuang**; riwayat punya tabelnya sendiri.
 
-- [ ] ⚠️ Riwayat tangga dibaca dari **`T_KOMITE_KOMITELIST` diurut `KOMITE_URUT`** — **bukan** dari page
+- [x] ⚠️ Riwayat tangga dibaca dari **`T_KOMITE_KOMITELIST` diurut `KOMITE_URUT`** — **bukan** dari page
       runtime maupun JSON. Test yang menemukan pembacaan dari page **gagal**. *(AC 33 spec;
-      penyimpangan sadar 1)*
-- [ ] Tiap baris riwayat menampilkan **anggota pemutus**, **keputusannya**, **komentarnya**, dan
+      penyimpangan sadar 1)* — bukti: `repository/komite_inbox.go:sqlTanggaKasus` (`T_KOMITE_KOMITELIST` `ORDER BY KOMITE_URUT`); sistem ini tak punya page runtime/JSON untuk dibaca, jadi tak ada uji khusus
+- [x] Tiap baris riwayat menampilkan **anggota pemutus**, **keputusannya**, **komentarnya**, dan
       **tanggal putus** — langsung dari kolom `KOMITE_ID`, `KOMITE_APROVAL`, `KOMITE_COMMENT`,
-      `DATE_APPROVE`. *(AC 31 spec)*
-- [ ] Tingkat yang **belum memutus** terbaca sebagai `KOMITE_APROVAL = 0`, dan ditampilkan sebagai
-      kata — bukan angka. *(AC 29, 31 spec)*
+      `DATE_APPROVE`. *(AC 31 spec)* — bukti: `services/komite_riwayat.go:susunRiwayat` (`KOMITE_OPERATORID`, `KOMITE_APPROVAL`, `KOMITE_COMMENT`, `DATE_APPROVE` — nama kolom sesudah ganti-nama 2026-09-18)
+- [x] Tingkat yang **belum memutus** terbaca sebagai `KOMITE_APROVAL = 0`, dan ditampilkan sebagai
+      kata — bukan angka. *(AC 29, 31 spec)* — bukti: `services/komite_riwayat.go:KataStatusTangga` (`0` = `Menunggu`), uji `TestStatusDanUangSebagaiTeks`
 
 ## Catatan
 

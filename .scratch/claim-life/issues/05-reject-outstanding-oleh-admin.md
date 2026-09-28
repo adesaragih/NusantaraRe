@@ -1,6 +1,6 @@
 # 05: Reject Outstanding oleh Admin — tanpa Komite
 
-**Status:** claimed
+**Status:** selesai — 28-09-2026, diverifikasi atas `5ac6571`
 
 **Blocked by:** 04 (mesin status per baris)
 
@@ -36,23 +36,23 @@ Gerbang itu menguji **`.STS_REJECT` tingkat baris** — bukti bahwa wewenang pun
 ## Acceptance criteria
 
 - [x] Penolakan oleh `ReasLifeAdmin` membuat **hanya baris itu** berstatus Ditolak; baris lain pada
-      klaim yang sama tidak berubah. *(AC 3 spec)*
+      klaim yang sama tidak berubah. *(AC 3 spec)* — bukti: `APP_RNM/internal/services/tolak.go:Status.Tolak`, `APP_RNM/internal/repository/klaimlife.go:KlaimLife.PerbaruiStatusBaris` (`WHERE ID`, wajib tepat satu baris); uji `TestUbahStatusMencerminkanTigaTingkat` (uji db)
 - [x] Klaim **tidak** tertutup oleh penolakan itu, dan baris adjustment baru dapat diinput
-      sesudahnya.
+      sesudahnya. — bukti: `APP_RNM/internal/services/hasilkomite.go:Putaran.Tambah`; uji `TestMenolakSatuBarisTidakMenutupKlaim`, `TestKlaimTidakTerminalSetelahPenolakan`
 - [x] Penolakan hanya mungkin pada baris yang **masih Outstanding** — baris yang sudah Aksep atau
-      Ditolak menolak upaya itu.
-- [x] Penolakan hanya mungkin bila klaim sudah punya nomor (padanan `CLAIM_NO !=''`).
+      Ditolak menolak upaya itu. — bukti: uji `TestTolakBarisFinalDitolak`, `TestTransisiHanyaDariOutstanding`
+- [x] Penolakan hanya mungkin bila klaim sudah punya nomor (padanan `CLAIM_NO !=''`). — bukti: `APP_RNM/internal/services/tolak.go:PeriksaKlaimBernomor`; uji `TestKlaimBelumBernomorTidakDapatDitolak`
 - [x] Nilai status hasil penolakan Admin **sama** dengan hasil penolakan Komite; tidak ada nilai
-      khusus yang membedakan keduanya.
-- [x] Pencerminan ke tingkat `PremiumListDetail` terjadi bersamaan, bukan menyusul. *(AC 7 spec)*
+      khusus yang membedakan keduanya. — bukti: uji `TestNilaiTolakSamaDenganKomite`
+- [x] Pencerminan ke tingkat `PremiumListDetail` terjadi bersamaan, bukan menyusul. *(AC 7 spec)* — bukti: `APP_RNM/internal/services/statusbaris.go:Status.ubah` (baris dan peserta dalam satu `DalamTransaksi`); uji `TestUbahStatusMencerminkanTigaTingkat` (uji db)
 - [x] ⭐ **BARU menurut XML 26-09-2026** — penolakan juga **mencabut penanda dipilih** peserta:
       `PremiumListDetail(idx).IsCheck = "false"` ditulis dalam `Property-Set` yang **sama** dengan
       kedua `STS_REJECT`-nya, jadi ketiganya terjadi bersamaan. Peserta yang barisnya dibatalkan
       berhenti terhitung "dipilih untuk diklaim" dan dapat dipilih ulang dengan baris pengganti.
-      *(`[terverifikasi]` `RejectOSClaimLife_Act.xml` pecahan 517–518)*
+      *(`[terverifikasi]` `RejectOSClaimLife_Act.xml` pecahan 517–518)* — bukti: `APP_RNM/internal/services/tolak.go:Status.Tolak` → `Status.ubah` (`cabutPenanda`) → `KlaimLife.CabutPenandaDipilih` di transaksi yang sama; uji `TestTolakMencabutPenandaDipilihDiTransaksiYangSama` (uji db)
 - [x] ⚠️ **Diselaraskan 2026-09-16:** penolakan langsung oleh `ReasLifeAdmin` menulis `STS_REJECT`
       = **`2`** sebagai **nilai sebenarnya menurut aksi** — bukan nilai yang di-hardcode seperti di
-      Pega. Test yang menemukan nilai di-hardcode **gagal**. *(AC 42 spec; penyimpangan sadar 4)*
+      Pega. Test yang menemukan nilai di-hardcode **gagal**. *(AC 42 spec; penyimpangan sadar 4)* — bukti: `APP_RNM/internal/services/statusbaris.go:Transisi` (`models.KodeDitolak`); uji `TestKodeStatusLiteralHanyaDiModels`, `TestNilaiTolakSamaDenganKomite`
 
 ## Catatan
 

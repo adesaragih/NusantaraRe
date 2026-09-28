@@ -1,6 +1,6 @@
 # 04b: Rekam akseptasi — satu jalur simpan berparameter status
 
-**Status:** ready-for-agent
+**Status:** sebagian — dokumen akseptasi (`PrintAkseptasiPDF`) belum; `KOMITE_ID` ditulis saat penyerahan, bukan satu transaksi dengan rekam akhir
 
 **Blocked by:** **00 (skema penyimpanan komite — PREFACTOR)**, 04a (nomor akseptasi)
 
@@ -43,25 +43,25 @@ bertipe `NUMBER` **tanpa presisi**; `CURRENCY VARCHAR2(100)`; `TYPE VARCHAR2(10)
 
 ## Acceptance criteria
 
-- [ ] Rekam akseptasi ditulis **hanya** pada tingkat terakhir — baik untuk keputusan Setuju maupun
-      Tolak. *(AC 13 spec)*
-- [ ] Penyimpanan memakai **satu jalur berparameter status**; **tidak ada dua jalur kembar** di kode.
-      *(AC 16 spec)*
-- [ ] Tidak ada nilai uang sebagai *binary floating point* di lapisan mana pun maupun di JSON.
-      *(AC 17 spec)*
-- [ ] Nilai retro yang ditulis adalah nilai **apa adanya dari data policy** — tidak ada logika
-      penukaran. *(AC 27 spec; **OQ-065**)*
-- [ ] Dokumen akseptasi dapat dihasilkan dan diunduh setelah keputusan Setuju final.
-- [ ] Perubahan bentuk rekam akseptasi diperlakukan sebagai **perubahan kontrak lintas konteks**,
+- [x] Rekam akseptasi ditulis **hanya** pada tingkat terakhir — baik untuk keputusan Setuju maupun
+      Tolak. *(AC 13 spec)* — bukti: `services/komite_akseptasi.go:penyelesaiAkhirOracle.rekamAkhir` dipanggil hanya dari `Akseptasi`/`Tolak` (tingkat akhir), uji `TestRekamAkhirSatuJalurDalamAkseptasi`, uji `TestTolakAkhirDuaTingkatBarisSatuJalur`
+- [x] Penyimpanan memakai **satu jalur berparameter status**; **tidak ada dua jalur kembar** di kode.
+      *(AC 16 spec)* — bukti: `repository/komite_keputusan.go:InboxKomite.RekamAkhirWarisan`, uji `TestRekamAkhirSatuJalurDalamAkseptasi` (satu pemanggil), uji `TestRekamAkhirSatuJalurDanDipagari`
+- [x] Tidak ada nilai uang sebagai *binary floating point* di lapisan mana pun maupun di JSON.
+      *(AC 17 spec)* — bukti: uji `TestUangKomiteLewatTeks` (`TO_CHAR` ber-NLS), uji `TestStatusDanUangSebagaiTeks`; rekam akhir tidak menulis kolom uang
+- [x] Nilai retro yang ditulis adalah nilai **apa adanya dari data policy** — tidak ada logika
+      penukaran. *(AC 27 spec; **OQ-065**)* — bukti: `repository/komite_keputusan.go:sqlRekamAkhirWarisan` hanya `STS_REJECT`, `NO_ACCEPTATION`, `ACCEPTATION_DATE` — nol kolom retro, nol logika tukar di berkas `komite_*`
+- [ ] Dokumen akseptasi dapat dihasilkan dan diunduh setelah keputusan Setuju final. — belum: `PrintAkseptasiPDF`/`LoadDocumentLife_ACT` (4.17/4.18) belum dibangun; tidak ada mesin PDF maupun templatnya
+- [ ] Perubahan bentuk rekam akseptasi diperlakukan sebagai **perubahan kontrak lintas konteks**, — belum: bentuknya berubah sadar (INSERT 55 kolom → UPDATE 3 kolom) dan dikunci `TestRekamAkhirSatuJalurDanDipagari`, tetapi tidak ditandai sebagai kontrak lintas konteks di kode
 
 ### Penyimpanan keputusan final ⚠️ BARU 2026-09-16 — spec §9
 
-- [ ] ⚠️ Keputusan final **juga menetapkan `T_GENERAL_KOMITE.ACCEPT_STATUS`** (`1` aksep / `2` tolak).
-      *(AC 30 spec; penyimpangan sadar 1)*
-- [ ] ⚠️ Keputusan final **mengisi `T_CLAIMLF_ADJUSTMENT.KOMITE_ID`** sehingga baris adjustment
-      menunjuk kasus komite yang memutuskannya. *(AC 32 spec; User story 42)*
+- [x] ⚠️ Keputusan final **juga menetapkan `T_GENERAL_KOMITE.ACCEPT_STATUS`** (`1` aksep / `2` tolak).
+      *(AC 30 spec; penyimpangan sadar 1)* — bukti: `repository/komite_keputusan.go:sqlMajukanTangga` (`ACCEPT_STATUS` = keputusan, termasuk tingkat akhir)
+- [x] ⚠️ Keputusan final **mengisi `T_CLAIMLF_ADJUSTMENT.KOMITE_ID`** sehingga baris adjustment
+      menunjuk kasus komite yang memutuskannya. *(AC 32 spec; User story 42)* — bukti: `services/komite.go:Penyerahan.Serahkan` (`PerbaruiKomiteID`) — diisi saat penyerahan, bukan saat keputusan final, dan tidak ditulis ulang
 - [ ] ⚠️ Ketiganya — rekam akseptasi, `ACCEPT_STATUS`, dan `KOMITE_ID` — ditulis dalam **satu
-      transaksi**; kegagalan pada salah satunya **membatalkan seluruhnya**. *(AC 32 spec)*
+      transaksi**; kegagalan pada salah satunya **membatalkan seluruhnya**. *(AC 32 spec)* — belum: rekam akhir + `ACCEPT_STATUS` + stempel satu transaksi (`KeputusanKomite.Putuskan`), tetapi `KOMITE_ID` ditulis di transaksi penyerahan, jadi tidak ikut batal
       dan ditandai demikian di kode.
 
 ## Catatan — mengapa dua blok disatukan

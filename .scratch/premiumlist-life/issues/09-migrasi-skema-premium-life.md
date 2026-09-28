@@ -1,6 +1,6 @@
 # 09: Migrasi skema — `M_LIFE_PREMIUM_SUMMARY`, `M_LIFE_PREMIUM_DETAIL`, `JSON_POLIS`, `JSON_OFFER_LIFE`
 
-**Status:** wontfix — **digantikan tiket 00**
+**Status:** wontfix — **digantikan tiket 00** (premis salinan tabel lama dibatalkan); verifikasi 050–056 lawan STRUKTUR dikerjakan di `4559ff3`
 
 **Blocked by:** —
 
@@ -69,18 +69,18 @@ seluruh kelompok uang gross / `*_REFUND` / `*_RETRO` / `*_REFUND_RETRO`.
 *(belum dapat difinalkan — menunggu OQ-001; disusun agar siap dijalankan begitu DDL turun)*
 
 - [ ] DDL tabel target menyalin **tipe, presisi, PK, index, dan nullability** dari tabel sumber
-      apa adanya; tidak ada kolom uang yang menjadi `FLOAT`/`BINARY_DOUBLE`. (**ADR-0003**)
+      apa adanya; tidak ada kolom uang yang menjadi `FLOAT`/`BINARY_DOUBLE`. (**ADR-0003**) — belum: wontfix — premis salinan dibatalkan; tipe dirancang sendiri di tiket 00
 - [ ] Nilai uang lama dibaca dan ditulis ulang **tanpa perubahan digit mana pun**; rekonsiliasi
-      membandingkan nilai lama dan baru secara tepat, bukan dengan toleransi.
-- [ ] Kolom `CLOB` (`DATA_JSON`, `JSONDATA`) pindah utuh, termasuk isi yang panjang.
+      membandingkan nilai lama dan baru secara tepat, bukan dengan toleransi. — belum: wontfix — rekonsiliasi pindah ke tiket 00 dan belum dibangun
+- [ ] Kolom `CLOB` (`DATA_JSON`, `JSONDATA`) pindah utuh, termasuk isi yang panjang. — belum: wontfix — CLOB JSON tidak dibawa (spec §12)
 - [ ] Sequence (`M_LIFE_PREMIUM_SUMMARY_SEQ`, `M_LIFE_PREMIUM_DETAIL_SEQ`, `JSON_OFFER_SEQ`,
       `GENERATE_SEQUENCE_NUMBER`) dipindahkan dengan **nilai berjalan yang benar**, sehingga nomor
-      pasca-migrasi tidak pernah bertabrakan dengan nomor lama.
+      pasca-migrasi tidak pernah bertabrakan dengan nomor lama. — belum: wontfix — tiket 00 memutuskan nol sequence; migrasi nilai penghitung belum ada
 - [ ] Index yang menopang kueri hilir ada sejak hari pertama — khususnya
-      `M_LIFE_PREMIUM_DETAIL(PL_NUMBER)`, yang dipakai Claim Life (tiket **08**).
-- [ ] Migrasi dapat dijalankan ulang dengan aman dan punya jalur mundur yang diuji.
+      `M_LIFE_PREMIUM_DETAIL(PL_NUMBER)`, yang dipakai Claim Life (tiket **08**). — belum: wontfix — tabel warisan milik DBA, di luar migrasi repo ini
+- [ ] Migrasi dapat dijalankan ulang dengan aman dan punya jalur mundur yang diuji. — belum: wontfix — pindah ke tiket 00; jalur mundur belum diuji terhadap Oracle
 - [ ] Skema uji yang dipakai seluruh tiket lain dibangun **dari DDL yang sama** — bukan dari tiruan
-      yang ditulis terpisah.
+      yang ditulis terpisah. — belum: wontfix — skema uji belum memasang 050–056
 
 ## Blocker
 

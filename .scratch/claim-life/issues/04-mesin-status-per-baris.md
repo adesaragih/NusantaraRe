@@ -1,6 +1,6 @@
 # 04: Mesin status per baris + aturan turunan "klaim selesai"
 
-**Status:** claimed
+**Status:** sebagian — header tidak selalu mencerminkan baris terakhir (jalur aksep Claim Life dan Komite); `ACCEPTED_NO` tidak dicerminkan ke peserta
 
 **Blocked by:** 03 (baris `AdjustmentList` + Save ke Outstanding)
 
@@ -41,23 +41,23 @@ bekerja pada tingkat baris).
 ## Acceptance criteria
 
 - [x] Baris yang sudah bernilai Aksep atau Ditolak **tidak dapat berubah lagi** melalui jalur mana
-      pun. *(AC 2 spec)*
+      pun. *(AC 2 spec)* — bukti: `APP_RNM/internal/services/statusbaris.go:Transisi`, `APP_RNM/internal/repository/klaimlife.go:KlaimLife.PerbaruiStatusBaris` (`WHERE … AND STS_REJECT = :kodeLama`); uji `TestBarisFinalTidakDapatBerubah`, `TestTransisiHanyaDariOutstanding`
 - [x] Menolak sebuah baris **tidak** menutup klaim; klaim tetap dapat menerima baris baru.
-      *(AC 4 spec)*
+      *(AC 4 spec)* — bukti: uji `TestMenolakSatuBarisTidakMenutupKlaim`, `TestKlaimTidakTerminalSetelahPenolakan`
 - [x] Status "Ditolak" pada sebuah baris **selalu** berarti baris itu ditolak — **tidak pernah**
-      berarti klaim selesai, apa pun sumber penolakannya.
-- [x] ⚠️ **Diselaraskan 2026-09-16:** pencerminan terjadi pada kolom `STS_REJECT` /
+      berarti klaim selesai, apa pun sumber penolakannya. — bukti: `APP_RNM/internal/models/statusklaim.go:Klaim.StatusTurunan`; uji `TestStatusKlaimTurunan`
+- [ ] ⚠️ **Diselaraskan 2026-09-16:** pencerminan terjadi pada kolom `STS_REJECT` /
       `ACCEPTED_NO` di **`T_CLAIMLF_PREMIUMLIST_DETAIL`** dan **`T_GENERAL_CLAIM`** (spec §2b) — unit
       keputusannya tetap baris `T_CLAIMLF_ADJUSTMENT` (**ADR-0011**), yang kini menggantung pada
-      **peserta**. *(AC 33 spec; penyimpangan sadar 2)*
-- [x] `PremiumListDetail` dan header klaim **selalu mencerminkan** baris adjustment terakhir, dan
-      **tidak** ditulis sebagai status mandiri. *(AC 7 spec)*
+      **peserta**. *(AC 33 spec; penyimpangan sadar 2)* — belum: `STS_REJECT` dicerminkan ke peserta dan header (`PerbaruiStatusBaris`, `CerminkanHeader`), tetapi `ACCEPTED_NO` hanya ke header — kolomnya tidak ada di `T_CLAIMLF_PREMIUMLIST_DETAIL`
+- [ ] `PremiumListDetail` dan header klaim **selalu mencerminkan** baris adjustment terakhir, dan
+      **tidak** ditulis sebagai status mandiri. *(AC 7 spec)* — belum: `Status.ubah` memakai `BarisTerakhir`, tetapi `Akseptasi.SimpanAdjustment` (`akseptasi.go`) dan jalur Komite (`komite_akseptasi.go`) mencerminkan header dengan status baris yang diputus, bukan baris terakhir klaim
 - [x] Klaim dilaporkan "selesai" **hanya** bila tidak ada baris berstatus Outstanding **dan** ada
-      sekurangnya satu baris berstatus Aksep. *(AC 8 spec)*
+      sekurangnya satu baris berstatus Aksep. *(AC 8 spec)* — bukti: `APP_RNM/internal/models/statusklaim.go:Klaim.StatusTurunan`; uji `TestStatusKlaimTurunan`
 - [x] Bila tidak ada baris Outstanding dan tidak ada pula yang Aksep, klaim berada dalam keadaan
-      **ditolak seluruhnya** — dan tetap dapat dilanjutkan dengan baris baru.
+      **ditolak seluruhnya** — dan tetap dapat dilanjutkan dengan baris baru. — bukti: `APP_RNM/internal/models/statusklaim.go:Klaim.StatusTurunan` (`KlaimDitolakSeluruhnya`); uji `TestStatusKlaimTurunan`, `TestKlaimTidakTerminalSetelahPenolakan`
 - [x] Riwayat lengkap seluruh baris pada satu klaim dapat dilihat, sehingga putaran Komite terbaca.
-      *(User story 27 spec)*
+      *(User story 27 spec)* — bukti: `APP_RNM/internal/repository/klaimlife.go:KlaimLife.AmbilBaris` (seluruh baris, urut `ID`), `APP_RNM/frontend/src/pages/claimlife/KlaimLife.tsx:KlaimLife`
 
 ## Catatan penutupan (2026-09-14)
 

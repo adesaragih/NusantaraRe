@@ -1,6 +1,6 @@
 # 01: Terima kasus dari Claim Life + inbox komite per posisi
 
-**Status:** ready-for-agent
+**Status:** sebagian — uji ujung-ke-ujung lewat HTTP terhadap skema uji Oracle belum ada
 
 **Blocked by:** **00 (skema penyimpanan komite — PREFACTOR)** · **CL-01** (kerangka aplikasi + seam API) · **kontrak muatan penyerahan CL-10**
 — bukan penyelesaian CL-10. Lihat §"Kontrak muatan penyerahan".
@@ -42,41 +42,41 @@ diputuskan adalah **baris `AdjustmentList`**, bukan klaim).
 
 ## Acceptance criteria
 
-- [ ] Kasus yang diserahkan Claim — Life dapat dibuka lewat API dan menampilkan klaim beserta
-      **baris `AdjustmentList`** yang diputuskan.
-- [ ] Inbox seorang anggota komite **hanya** memuat kasus pada tingkat yang ia miliki — bukan
-      seluruh antrean komite. *(AC 10 spec)*
-- [ ] Muatan penyerahan yang diterima memuat nilai klaim dan `CURRENCY`; nilai uang ditampilkan
-      tanpa melewati *binary floating point*. *(AC 17 spec)*
-- [ ] `KomiteLoop` yang diterima dari muatan dipakai apa adanya sebagai batas tangga — **tidak**
-      dihitung ulang di konteks ini.
-- [ ] ⚠️ Muatan ber-`KomiteLoop < 1` atau ber-`KomiteList` kosong **ditolak di lapisan layanan**;
+- [x] Kasus yang diserahkan Claim — Life dapat dibuka lewat API dan menampilkan klaim beserta
+      **baris `AdjustmentList`** yang diputuskan. — bukti: `handlers/rute_komite.go:kasusKomite` → `services/komite_inbox.go:InboxKomite.Kasus` (klaim, nilai, status baris, `adjustmentId`), uji `TestKasusKomiteHanyaUntukAnggotaTangga`; blok rincian `ShowTransfer` belum
+- [x] Inbox seorang anggota komite **hanya** memuat kasus pada tingkat yang ia miliki — bukan
+      seluruh antrean komite. *(AC 10 spec)* — bukti: `repository/komite_inbox.go:sqlSaringInboxKomite`, uji `TestInboxKomiteHanyaAnggotaBerjalan`
+- [x] Muatan penyerahan yang diterima memuat nilai klaim dan `CURRENCY`; nilai uang ditampilkan
+      tanpa melewati *binary floating point*. *(AC 17 spec)* — bukti: uji `TestUangKomiteLewatTeks`, uji `TestStatusDanUangSebagaiTeks`; muatan membawa nilai + mata uang — uji `TestPenyerahanMenautkanBarisDanMembawaMuatannya` (uji db)
+- [x] `KomiteLoop` yang diterima dari muatan dipakai apa adanya sebagai batas tangga — **tidak**
+      dihitung ulang di konteks ini. — bukti: `services/komite_keputusan.go:KeputusanKomite.Putuskan` (`KOMITE_LOOP` terbaca dipakai `TerapkanKeputusanKomite`; nol hitung ulang di berkas `komite_*`)
+- [x] ⚠️ Muatan ber-`KomiteLoop < 1` atau ber-`KomiteList` kosong **ditolak di lapisan layanan**;
       `T_GENERAL_KOMITE` dan `T_KOMITE_KOMITELIST` **tidak dibuat**, dan `T_CLAIMLF_ADJUSTMENT.KOMITE_ID`
       tidak terisi. **Menolak bukan menghitung ulang** — checkbox di atas tetap berlaku.
       *(AC 4 spec; `[keputusan work owner]` — penjaga berlapis; `[terverifikasi]` Pega tidak
-      memuat gerbang ini di sisi mana pun)*
-- [ ] Status ditampilkan sebagai kata (Outstanding / Aksep / Ditolak), **bukan** nama field
-      `STS_REJECT` dan bukan angka. *(AC 29 spec)*
-- [ ] Ada satu test ujung-ke-ujung yang menggerakkan sistem lewat HTTP dan memeriksa hasilnya lewat
+      memuat gerbang ini di sisi mana pun)* — bukti: `services/komite.go:PeriksaTingkatKomite` (sebelum `DalamTransaksi` di `Serahkan`), uji `TestRosterKosongGagalTerangBukanTanggaNolTingkat`
+- [x] Status ditampilkan sebagai kata (Outstanding / Aksep / Ditolak), **bukan** nama field
+      `STS_REJECT` dan bukan angka. *(AC 29 spec)* — bukti: `services/komite_inbox.go:keBarisTampil` (`StatusBarisDariKode(…).String()`), uji `TestStatusDanUangSebagaiTeks`
+- [ ] Ada satu test ujung-ke-ujung yang menggerakkan sistem lewat HTTP dan memeriksa hasilnya lewat — belum: tidak ada uji HTTP untuk `/api/komite*`; uji db yang ada memanggil layanan langsung, dan skema uji Oracle belum tersedia
 
 ### Penyimpanan kasus komite ⚠️ BARU 2026-09-16 — spec §9
 
-- [ ] ⚠️ Menerima penyerahan **membuat `T_GENERAL_KOMITE`** (header) **beserta satu baris
+- [x] ⚠️ Menerima penyerahan **membuat `T_GENERAL_KOMITE`** (header) **beserta satu baris
       `T_KOMITE_KOMITELIST` per anggota roster**, masing-masing ber-`KOMITE_APROVAL = 0` dan
-      ber-`KOMITE_URUT` sesuai jenjangnya. *(AC 30 spec; penyimpangan sadar 1)*
-- [ ] ⚠️ Menerima penyerahan **melahirkan baris baru di `T_WORK_CLAIM`** — `ID` = identitas kasus
+      ber-`KOMITE_URUT` sesuai jenjangnya. *(AC 30 spec; penyimpangan sadar 1)* — bukti: `repository/kasuskomite.go:PohonKlaim.BuatKasusKomite` (satu baris per anggota, `approvalAwal` = `"0"`, `KOMITE_URUT` = jenjang)
+- [x] ⚠️ Menerima penyerahan **melahirkan baris baru di `T_WORK_CLAIM`** — `ID` = identitas kasus
       komite (**teks berformat `KMT-xxxxxx`**), `COVER_KEY` = `ID` baris klaim — dan header
       `T_GENERAL_KOMITE` **memakai `ID` yang sama persis** (**shared primary key**).
       **REVISI 2026-09-18:** ⛔ **tidak ada kolom `WORK_CLAIM_ID`** — dibuang; hubungannya dijamin
       oleh ID identik, bukan kolom penyambung. Test yang menemukan kolom `WORK_CLAIM_ID` **gagal**.
       *(§9 spec; REVISI 2026-09-17 — menggantikan `T_WORK_CLAIM.KMT_NO` yang dibuang;
-      REVISI 2026-09-18 — shared PK, `[keputusan work owner]`)*
-- [ ] ⚠️ **Penunjuk dua arah konsisten dalam SATU transaksi**: `T_GENERAL_KOMITE.ADJUSTMENT_ID` dan
+      REVISI 2026-09-18 — shared PK, `[keputusan work owner]`)* — bukti: `repository/kasuskomite.go:PohonKlaim.BuatKasusKomite` (awalan `KMTLF-`, shared PK), uji `TestNamaYangDibuangTidakAda`
+- [x] ⚠️ **Penunjuk dua arah konsisten dalam SATU transaksi**: `T_GENERAL_KOMITE.ADJUSTMENT_ID` dan
       `T_CLAIMLF_ADJUSTMENT.KOMITE_ID` terisi bersama. Test yang menemukan salah satunya kosong
-      sementara yang lain terisi **gagal**. *(AC 32 spec)*
-- [ ] `KOMITE_LOOP` diisi **jumlah tingkat** hasil hitung roster aktif; `KOMITE_COUNT` dimulai pada
-      tingkat pertama. *(AC 30 spec; tiket 02)*
-- [ ] ⚠️ Roster dibaca dari master `EMAILKOMITE`; master itu **tidak ditulis**. *(`[data DBA]`)*
+      sementara yang lain terisi **gagal**. *(AC 32 spec)* — bukti: `services/komite.go:Penyerahan.Serahkan` (satu `DalamTransaksi`: `Buat` + `PerbaruiKomiteID`), uji `TestPenyerahanGagalTidakMeninggalkanPenautanSeparuh` (uji db, pembuat kasus tiruan); `ADJUSTMENT_ID NOT NULL`
+- [x] `KOMITE_LOOP` diisi **jumlah tingkat** hasil hitung roster aktif; `KOMITE_COUNT` dimulai pada
+      tingkat pertama. *(AC 30 spec; tiket 02)* — bukti: `repository/kasuskomite.go:PohonKlaim.BuatKasusKomite` (`KOMITE_LOOP` = `len(anggota)`, `KOMITE_COUNT` = 1)
+- [x] ⚠️ Roster dibaca dari master `EMAILKOMITE`; master itu **tidak ditulis**. *(`[data DBA]`)* — bukti: `repository/roster.go:PohonKlaim.AmbilRosterKomite` (hanya `SELECT`; satu-satunya rujukan `EMAILKOMITE` di kode)
       HTTP, terhadap skema uji Oracle.
 
 ## Kontrak muatan penyerahan — disepakati di muka

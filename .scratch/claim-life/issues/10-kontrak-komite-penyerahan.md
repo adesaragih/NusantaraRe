@@ -1,6 +1,6 @@
 # 10: Kontrak Komite — penyerahan kasus
 
-**Status:** claimed
+**Status:** sebagian — nilai, mata uang, dan status saat penyerahan tidak tersimpan; keputusan Komite tidak dibaca lewat join; `ADJUSTMENT_ID` tanpa FK
 
 **Blocked by:** 07 (penegakan peran + wewenang per `Type`)
 
@@ -45,37 +45,37 @@ sisi induk: .IsKomite  .KomiteNo  .TotalKomite
 
 ## Acceptance criteria
 
-- [x] Penyerahan membuat kasus anak berkelas Komite Life, membawa penunjuk **baris** yang diserahkan.
+- [x] Penyerahan membuat kasus anak berkelas Komite Life, membawa penunjuk **baris** yang diserahkan. — bukti: `APP_RNM/internal/services/komite.go:kasusOracle.Buat` → `APP_RNM/internal/repository/kasuskomite.go:PohonKlaim.BuatKasusKomite` (`T_WORK_CLAIM` anak + `T_GENERAL_KOMITE.ADJUSTMENT_ID`)
 - [ ] Muatan penyerahan memuat **nilai klaim**, **`CURRENCY`**, dan **status baris saat penyerahan**
-      — tiga hal yang **tidak** ada di sistem lama. *(AC 24 spec; `[keputusan work owner]`)*
+      — tiga hal yang **tidak** ada di sistem lama. *(AC 24 spec; `[keputusan work owner]`)* — belum: `MuatanKomite` membawa `JumlahKlaim`/`KodeStatus`, tetapi `BuatKasusKomite` hanya menyimpan klaim, baris, lini, `Type`, anggota — Komite membaca nilai hidup dari `T_CLAIMLF_ADJUSTMENT`, bukan nilai saat penyerahan
 - [x] Nilai uang yang menyeberang memakai representasi yang sama dengan di dalam sistem — tidak
-      dikonversi menjadi *floating point* di batas. *(AC 22 spec)*
-- [x] Penyerahan hanya mungkin pada baris yang **masih Outstanding**.
+      dikonversi menjadi *floating point* di batas. *(AC 22 spec)* — bukti: `APP_RNM/internal/services/komite.go:Penyerahan.Serahkan` (`MuatanKomite.JumlahKlaim` bertipe `models.Money`), `APP_RNM/internal/repository/komite_inbox.go:InboxKomite.Kasus` (`CLAIM_AMOUNT` lewat `TO_CHAR … TM9`)
+- [x] Penyerahan hanya mungkin pada baris yang **masih Outstanding**. — bukti: `APP_RNM/internal/services/komite.go:PeriksaBolehDiserahkan`; uji `TestSerahkanHanyaDariOutstanding`
 - [x] **Gerbang rekening pembayaran** `[terverifikasi]`: penyerahan **ditolak** bila salah satu dari
       **nama bank**, **id bank**, atau **nomor rekening** pada baris yang diserahkan **kosong**,
       dengan pesan yang setara `"Name of bank cannot be empty"`. Ini **paritas perilaku existing**,
       bukan penyimpangan — sumbernya `Claim Life/Activity/GetListKomiteLife.xml`
       (`ASM-FW-GISFW-DATA-ADJUSTMENTLIFE` / `GETLISTKOMITELIFE` / `RULE-OBJ-ACTIVITY`), prasyarat
-      `.NameOfBank=="" || .NoAccount=="" || .IDOfBank==""`. *(AC 57 spec)*
+      `.NameOfBank=="" || .NoAccount=="" || .IDOfBank==""`. *(AC 57 spec)* — bukti: `APP_RNM/internal/services/komite.go:PeriksaRekening`; uji `TestGerbangRekeningMenolakTiapMedanKosong`, `TestPesanRekeningPersisSepertiXML`
 - [x] Penolakan gerbang rekening terjadi di **lapisan layanan**, dan tetap terjadi meskipun kontrol
-      UI-nya ditampilkan. *(sejalan AC 12 spec)*
+      UI-nya ditampilkan. *(sejalan AC 12 spec)* — bukti: `APP_RNM/internal/services/komite.go:Penyerahan.Serahkan` → `PeriksaRekening`; uji `TestGerbangRekeningMenolakTiapMedanKosong`, uji JS `menampilkan Send ke Komite untuk baris yang rekeningnya kosong`
 - [x] Penyerahan berlaku untuk **semua** adjustment, bukan hanya yang di atas ambang nilai tertentu.
-      *(`[keputusan work owner]`, langkah 4 mesin status)*
-- [x] Wewenang penyerahan mengikuti aturan tiket 07: `QP`/`QR` hanya SPV; `TP`/`TR` bebas peran.
-- [x] Perubahan pada bentuk muatan diperlakukan sebagai **perubahan kontrak lintas konteks**, dan
-      ditandai demikian di kode.
+      *(`[keputusan work owner]`, langkah 4 mesin status)* — bukti: `APP_RNM/internal/services/komite.go:Penyerahan.Serahkan` (nol gerbang ambang; ambang hanya memilih roster)
+- [x] Wewenang penyerahan mengikuti aturan tiket 07: `QP`/`QR` hanya SPV; `TP`/`TR` bebas peran. — bukti: `APP_RNM/internal/services/wewenang.go:WajibWewenangKomite` di `Penyerahan.Serahkan`; uji `TestWewenangKirimKomitePerType`
+- [ ] Perubahan pada bentuk muatan diperlakukan sebagai **perubahan kontrak lintas konteks**, dan
+      ditandai demikian di kode. — belum: hanya komentar `KONTRAK LINTAS KONTEKS` pada `MuatanKomite` (`komite.go`); nol uji yang mengunci bentuk muatannya
 - [x] **Jumlah tingkat komite = COUNT baris roster `EMAILKOMITE` yang aktif (`STS_AKTIF = "1"`) dan
       ber-`LIMIT_BOTTOM <= CLAIM_AMOUNT`** — dihitung saat penyerahan, **tidak** dibaca dari
-      konstanta mana pun.
+      konstanta mana pun. — bukti: `APP_RNM/internal/repository/roster.go:sqlRosterKomite` (`STS_AKTIF`, `LIMIT_BOTTOM <= TO_NUMBER(:1)`), `Penyerahan.Serahkan` (`tingkat := len(anggota)`); uji `TestSQLRosterMeniruFilterReportDefinition`
 - [x] Ambang yang dipakai mencari roster adalah **nilai mutlak** klaim: klaim bernilai negatif
-      dicari dengan tandanya dihilangkan — `@if(IsADj<0, IsADj*-1, IsADj)`.
+      dicari dengan tandanya dihilangkan — `@if(IsADj<0, IsADj*-1, IsADj)`. — bukti: `APP_RNM/internal/services/komite.go:AmbangRoster`; uji `TestAmbangRosterMemakaiNilaiMutlak`
 - [x] ⚠️ `[keputusan work owner]` Bila tidak ada baris roster yang cocok, penyerahan **gagal
       terang-terangan** — bukan diam-diam membuat tangga nol tingkat. **Penjaga defensif**, bukan
       alur normal: roster dijamin **≥ 1** secara bisnis (limit berjenjang selalu menutup nilai
       klaim). `[terverifikasi]` Pega **tidak** punya gerbang ini — `CreateKMTLife_Act` men-set
-      `KomiteCount = 1` meski `KomiteLoop = 0`.
+      `KomiteCount = 1` meski `KomiteLoop = 0`. — bukti: `APP_RNM/internal/services/komite.go:PeriksaTingkatKomite`; uji `TestRosterKosongGagalTerangBukanTanggaNolTingkat`
 - [x] Semua baris adjustment pada satu klaim bermata uang sama sebelum penyerahan (invariant
-      **OQ-060**).
+      **OQ-060**). — bukti: `APP_RNM/internal/services/komite.go:PeriksaSatuMataUang`; uji `TestMataUangSatuKlaimWajibSeragam`
 
 ### Rujukan Komite ⚠️ BARU 2026-09-16
 
@@ -84,10 +84,10 @@ sisi induk: .IsKomite  .KomiteNo  .TotalKomite
       **`NULL`**. *(AC 61 spec; tiket 14; penyimpangan sadar — rujukan, bukan salinan)* — ⚠️
       `[keputusan work owner]` REVISI 2026-09-17; bentuk penautan ini **tidak ada di korpus Pega**,
       lihat catatan korpus di tiket 14 §`KOMITE_ID`. `[terbuka]` tipenya mengikuti tipe
-      `T_WORK_CLAIM.ID` yang belum ditetapkan.
+      `T_WORK_CLAIM.ID` yang belum ditetapkan. — bukti: `APP_RNM/internal/services/komite.go:Penyerahan.Serahkan` → `KlaimLife.PerbaruiKomiteID` dengan pengenal dari `PohonKlaim.BuatKasusKomite` (awalan `KMTLF-`)
 - [x] ⚠️ **Roster dan keputusan komite per anggota TIDAK disimpan di konteks ini.** Test yang
       menemukan tabel/kolom penyimpan `KomiteAproval`, `KomiteComment`, atau `DateApprove` di Claim
-      Life **gagal**. Keduanya milik **Komite Claim Life**. *(AC 61 spec; tiket 14; penyimpangan sadar)*
+      Life **gagal**. Keduanya milik **Komite Claim Life**. *(AC 61 spec; tiket 14; penyimpangan sadar)* — bukti: uji `TestNolPenyimpanKeputusanKomiteDiKonteksIni` (membaca kode Go; roster ditulis ke tabel Komite `T_KOMITE_KOMITELIST`)
 - [ ] ⚠️ Keputusan komite **dibaca lewat join**, bukan disalin ke adjustment. Rantainya **tiga
       lompatan**, bukan satu: `T_CLAIMLF_ADJUSTMENT.KOMITE_ID` → `T_WORK_CLAIM` (`ID` = `KOMITE_ID`,
       `COVER_KEY` = `ID` baris klaim) → `T_GENERAL_KOMITE` (**`ID` = `T_WORK_CLAIM.ID`, shared
@@ -95,15 +95,15 @@ sisi induk: .IsKomite  .KomiteNo  .TotalKomite
       `T_KOMITE_KOMITELIST` (keputusan per anggota, diurut `KOMITE_URUT`). *(tiket 14 §`KOMITE_ID`;
       tiket 00 Komite Claim Life)* — ⚠️ `[keputusan work owner]` REVISI 2026-09-17; rantai ini
       **bentuk baru, tidak ada di korpus Pega**. Di Pega penautannya lewat `pxAddChildWork` +
-      `CLMNO` + indeks posisi; lihat catatan korpus di tiket 14 §`KOMITE_ID`.
+      `CLMNO` + indeks posisi; lihat catatan korpus di tiket 14 §`KOMITE_ID`. — belum: Claim Life tidak membaca keputusan Komite lewat `KOMITE_ID`; hasil akhir ditulis ke `T_CLAIMLF_ADJUSTMENT.STS_REJECT` (`komite_akseptasi.go`), dan join-nya hanya ada di sisi Komite (`sqlDariKomite`)
 - [x] ⚠️ Rujukan memakai **ID stabil**, bukan indeks posisi. Test yang menemukan padanan
       `IndexPremiumList` / `IndexAdjustment` sebagai kunci rujukan **gagal**. *(`[terverifikasi]`
-      `Claim Life/Activity/CreateKMTLife_Act.xml` memakai `.pxListSubscript`; penyimpangan sadar; **AC 62 spec**)*
+      `Claim Life/Activity/CreateKMTLife_Act.xml` memakai `.pxListSubscript`; penyimpangan sadar; **AC 62 spec**)* — bukti: uji `TestAC45Dan48RujukanKomiteBukanIndeksPosisi`, `TestNolPenyimpanKeputusanKomiteDiKonteksIni`
 - [ ] ✅ **TERTUTUP 2026-09-17** — tabel komite **sudah** menampung keputusan per baris adjustment
       lewat **`T_GENERAL_KOMITE.ADJUSTMENT_ID`** (FK → `T_CLAIMLF_ADJUSTMENT.ID`), ditetapkan di
       **tiket 00 Komite Claim Life** (§Tabel, plus AC "`ADJUSTMENT_ID` berada di `T_GENERAL_KOMITE`,
       **BUKAN** di `T_WORK_CLAIM`"). Penunjuk dua arah — `T_CLAIMLF_ADJUSTMENT.KOMITE_ID` dan
-      `T_GENERAL_KOMITE.ADJUSTMENT_ID` — diisi dalam **satu transaksi** saat kirim komite.
+      `T_GENERAL_KOMITE.ADJUSTMENT_ID` — diisi dalam **satu transaksi** saat kirim komite. — belum: `ADJUSTMENT_ID` ada dan kedua penunjuk diisi dalam satu transaksi (`Penyerahan.Serahkan`), tetapi tanpa FK ke `T_CLAIMLF_ADJUSTMENT.ID` (migrasi 013/030)
 
 ## Catatan penutupan (2026-09-14)
 

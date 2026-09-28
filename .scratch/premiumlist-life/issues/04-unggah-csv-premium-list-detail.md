@@ -1,6 +1,6 @@
 # 04: Unggah CSV premium list detail — staging, validasi, tinjau, simpan
 
-**Status:** selesai — 28-09-2026
+**Status:** sebagian — verifikasi `NAME_OF_INSURED`/`POLICY_HOLDER` ke master agen belum ada; tabel staging sengaja ditiadakan (ralat 28-09)
 
 **Blocked by:** **00 (skema tujuh tabel — PREFACTOR)**, 03 (premium list detail — unggahan mengisi struktur yang dibentuk di sana)
 
@@ -87,28 +87,28 @@ berkas tetap Google Storage untuk lampiran), **ADR-0007** (jejak audit unggahan)
 ## Acceptance criteria
 
 - [ ] Berkas yang diunggah masuk **staging** lebih dulu; kegagalan validasi **tidak** menyentuh tabel
-      permanen mana pun. *(AC 18 spec)*
-- [ ] Pengguna dapat **meninjau** hasil unggahan — baris lolos dan baris ditolak — sebelum menyimpan
-      permanen. *(AC 19 spec)*
-- [ ] Setiap penolakan menyebut **nama kolom** yang salah dan **nomor baris** CSV-nya. *(AC 17 spec)*
-- [ ] Nilai uang di-parse dengan **format yang dinyatakan eksplisit** (pemisah desimal dan pemisah
+      permanen mana pun. *(AC 18 spec)* — belum: sengaja tanpa tabel staging (ralat 28-09); kegagalan validasi memang tidak menyentuh tabel permanen (uji `TestTinjauTidakMenyentuhApaPun`, `TestSimpanMemvalidasiUlang`)
+- [x] Pengguna dapat **meninjau** hasil unggahan — baris lolos dan baris ditolak — sebelum menyimpan
+      permanen. *(AC 19 spec)* — bukti: `services/polis_unggah.go:Tinjau`; uji `TestTinjauTidakMenyentuhApaPun`
+- [x] Setiap penolakan menyebut **nama kolom** yang salah dan **nomor baris** CSV-nya. *(AC 17 spec)* — bukti: uji `TestSetiapPenolakanMenyebutKolomDanBaris`
+- [x] Nilai uang di-parse dengan **format yang dinyatakan eksplisit** (pemisah desimal dan pemisah
       ribuan ditentukan, bukan ditebak). `1,234,567.89` dan `1.234.567,89` **tidak** boleh keduanya
-      diterima diam-diam sebagai angka yang sama. Test wajib memuat kasus pemisah ribuan.
-- [ ] Nilai uang **tidak** melewati `float` pada tahap mana pun — parse langsung ke desimal presisi
-      arbitrer. *(AC 14–15 spec; **ADR-0003**)*
+      diterima diam-diam sebagai angka yang sama. Test wajib memuat kasus pemisah ribuan. — bukti: `models/polis_unggah.go:UangCSV`; uji `TestUangCSVMenolakPemisahRibuan`
+- [x] Nilai uang **tidak** melewati `float` pada tahap mana pun — parse langsung ke desimal presisi
+      arbitrer. *(AC 14–15 spec; **ADR-0003**)* — bukti: `models/polis_unggah.go:UangCSV` (desimal apd); uji `TestUangCSVTidakMembulatkan`, `TestUangDikirimSebagaiTeks`
 - [ ] Nilai uang yang lolos validasi, dibaca kembali dari staging, **identik** dengan yang diunggah —
-      tidak ada pembulatan diam. *(AC 16 spec)*
-- [ ] Duplikat peserta terdeteksi dengan pembandingan nama **tanpa peduli huruf besar/kecil** +
-      tanggal lahir, dan pesannya menunjuk baris pertama yang bentrok.
-- [ ] `CERTIFICATE_NO` ganda di dalam satu berkas ditolak.
+      tidak ada pembulatan diam. *(AC 16 spec)* — belum: tidak ada staging, dan nol uji baca-kembali terhadap Oracle
+- [x] Duplikat peserta terdeteksi dengan pembandingan nama **tanpa peduli huruf besar/kecil** +
+      tanggal lahir, dan pesannya menunjuk baris pertama yang bentrok. — bukti: uji `TestPesertaGandaTanpaPeduliHurufBesar`
+- [x] `CERTIFICATE_NO` ganda di dalam satu berkas ditolak. — bukti: uji `TestSertifikatGandaDitolakDanMenunjukBarisPertama`
 - [ ] `NAME_OF_INSURED` dan `POLICY_HOLDER` diverifikasi terhadap master agen; baris yang tidak
-      ditemukan ditolak dengan pesan yang menyebut nilainya.
-- [ ] Tanggal diverifikasi berformat `dd/mm/yyyy`; `MEDICAL_STATUS` hanya menerima `FCL`, `M`, `NM`;
-      `CURRENCY` wajib ada.
-- [ ] Unggahan tanpa lampiran ditolak.
+      ditemukan ditolak dengan pesan yang menyebut nilainya. — belum: pembaca master agen belum ada (tabel `M AGENT` di luar migrasi 050–056)
+- [x] Tanggal diverifikasi berformat `dd/mm/yyyy`; `MEDICAL_STATUS` hanya menerima `FCL`, `M`, `NM`;
+      `CURRENCY` wajib ada. — bukti: `models/polis_unggah.go:ValidasiUnggah` (`CURRENCY` di `kolomTeksWajib`); uji `TestTanggalCSVKetatDDMMYYYY`, `TestStatusMedisTigaNilai`
+- [x] Unggahan tanpa lampiran ditolak. — bukti: uji `TestLampiranWajib`
 - [ ] Staging dibersihkan per case setelah simpan permanen **maupun** setelah pembatalan — tidak ada
-      sisa baris menggantung milik case lain.
-- [ ] Mengunggah berkas kedua atas case yang sama **mengganti** isi staging, tidak menumpuk.
+      sisa baris menggantung milik case lain. — belum: tidak ada tabel staging (ralat 28-09), jadi pembersihan staging tidak dibangun
+- [x] Mengunggah berkas kedua atas case yang sama **mengganti** isi staging, tidak menumpuk. — bukti: `services/polis_unggah.go:Simpan` (`HapusPesertaPolis` lalu `SisipPeserta` dalam satu transaksi; atas tabel peserta, tanpa staging)
 
 ## Blocker
 

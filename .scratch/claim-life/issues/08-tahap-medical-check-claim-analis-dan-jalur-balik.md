@@ -1,6 +1,6 @@
 # 08: Tahap Medical Check & Claim Analis + jalur balik
 
-**Status:** claimed
+**Status:** selesai — 28-09-2026, diverifikasi atas `5ac6571`
 
 **Blocked by:** 07 (penegakan peran) — tiap tahap milik peran tertentu
 
@@ -35,15 +35,15 @@ baris tetap Outstanding sepanjang Medical Check dan sampai keputusan Komite).
 
 ## Acceptance criteria
 
-- [ ] Klaim dapat berpindah Register → Outstanding → Medical Check → Claim Analis, masing-masing
-      hanya oleh peran yang berhak.
+- [x] Klaim dapat berpindah Register → Outstanding → Medical Check → Claim Analis, masing-masing
+      hanya oleh peran yang berhak. — bukti: `APP_RNM/internal/services/tahap.go:TahapLayanan.Pindah` (peran tahap asal + `SerahTerimaSah`), rute `POST /api/klaim-life/{id}/tahap/{tujuan}`; uji `TestSerahTerimaDanJalurBalik`, `TestPeranPemegangTahap`, `TestPindahTahapMenjagaPagarnya`
 - [x] Status baris adjustment **tetap Outstanding** sepanjang perpindahan tahap — perpindahan tahap
-      bukan keputusan akseptasi.
-- [x] `ReasLifeMedicalAdvisor` dapat mengembalikan kasus ke `ReasLifeAdmin`.
-- [ ] `ReasLifeSPV` dapat mengembalikan kasus ke `ReasLifeAdmin`.
-- [ ] `ReasLifeSPV` dapat mengembalikan kasus ke `ReasLifeMedicalAdvisor`.
-- [ ] Kasus yang dikembalikan muncul kembali di antrean peran tujuan.
-- [x] Pengembalian **tidak** mengubah status baris adjustment mana pun.
+      bukan keputusan akseptasi. — bukti: `APP_RNM/internal/services/tahap.go:TahapLayanan.Pindah` (nol tulisan status); uji `TestSetiapPenulisStatusBergerbangPeran`
+- [x] `ReasLifeMedicalAdvisor` dapat mengembalikan kasus ke `ReasLifeAdmin`. — bukti: `APP_RNM/internal/models/tahap.go:SerahTerimaSah` (Medical Check → Outstanding); uji `TestSerahTerimaDanJalurBalik`
+- [x] `ReasLifeSPV` dapat mengembalikan kasus ke `ReasLifeAdmin`. — bukti: `APP_RNM/internal/models/tahap.go:SerahTerimaSah` (Claim Analis → Outstanding), `APP_RNM/frontend/src/components/claimlife/PanelPindahTahap.tsx:PanelPindahTahap`; uji `TestSerahTerimaDanJalurBalik`
+- [x] `ReasLifeSPV` dapat mengembalikan kasus ke `ReasLifeMedicalAdvisor`. — bukti: `APP_RNM/internal/models/tahap.go:SerahTerimaSah` (Claim Analis → Medical Check), `APP_RNM/frontend/src/components/claimlife/PanelPindahTahap.tsx:PanelPindahTahap`; uji `TestSerahTerimaDanJalurBalik`
+- [x] Kasus yang dikembalikan muncul kembali di antrean peran tujuan. — bukti: `APP_RNM/internal/services/inbox.go:Inbox.Ambil` + `APP_RNM/internal/repository/inbox.go:KlaimLife.AmbilInbox` (saring `TAHAP` yang ditulis `Pindah`); uji `TestTahapTerlihatPerPeran`
+- [x] Pengembalian **tidak** mengubah status baris adjustment mana pun. — bukti: `APP_RNM/internal/services/tahap.go:TahapLayanan.Pindah` (hanya `PerbaruiTahap` + jejak); uji `TestSetiapPenulisStatusBergerbangPeran`
 
 ## Catatan
 

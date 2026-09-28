@@ -1,6 +1,6 @@
 # 05b: ~~Simpan JSON polis dan rekam produksi~~ — ⛔ **DIBATALKAN 2026-09-16**
 
-**Status:** wontfix — **digantikan tiket 00 + 05a** · ⚠️ **diralat 28-09-2026: sisa non-JSON dibangun — lihat bab RALAT di bawah**
+**Status:** wontfix — `JSON_POLIS`/`JSON_OFFER_LIFE` dibuang (spec §12); sisa non-JSON (`Utility1`, `finishAssignment`) dibangun di `2b8cadc`
 
 **Blocked by:** —
 
@@ -91,23 +91,23 @@ berlaku pada efek keluar di tiket 06), **ADR-0011**.
 ## Acceptance criteria
 
 - [ ] `INSERTJSONPOLISLIFE` dipanggil **setelah** transaksi summary commit, tidak pernah di dalamnya.
-      *(AC 21 spec)*
+      *(AC 21 spec)* — belum: wontfix — `INSERTJSONPOLISLIFE` dibuang (spec §12)
 - [ ] Kegagalan pada `INSERTJSONPOLISLIFE` meninggalkan nomor + rekam summary **utuh**; API tetap
-      melaporkan premium list tersimpan, dengan penanda bahwa polis **tertunda**. *(AC 23 spec)*
+      melaporkan premium list tersimpan, dengan penanda bahwa polis **tertunda**. *(AC 23 spec)* — belum: wontfix — tidak ada procedure JSON; simpan satu transaksi
 - [ ] Pemanggilan ulang `INSERTJSONPOLISLIFE` untuk `IDPEGA` yang sama **tidak** menggandakan baris —
-      dibuktikan dengan memanggilnya dua kali dan menghitung baris `JSON_POLIS`.
+      dibuktikan dengan memanggilnya dua kali dan menghitung baris `JSON_POLIS`. — belum: wontfix — `JSON_POLIS` tidak ditulis
 - [ ] Keadaan separuh **terdeteksi**: setelah penulisan, sistem membaca balik dan menandai kasus yang
-      belum lengkap. Penanda itu terbaca lewat API dan menjadi masukan tiket 06.
+      belum lengkap. Penanda itu terbaca lewat API dan menjadi masukan tiket 06. — belum: wontfix — digantikan atomisitas (langkah 12–13 tidak ditiru)
 - [ ] `SaveLifeinProduction_SQL` diperlakukan sebagai **titik potong** tersendiri; kegagalan
-      sesudahnya tidak merusak apa yang sudah ter-commit dan dapat diulang dengan aman.
+      sesudahnya tidak merusak apa yang sudah ter-commit dan dapat diulang dengan aman. — belum: wontfix — `LIFEINPRODUCTION` tidak ditulis
 - [ ] Uang di dalam payload JSON ditulis sebagai desimal presisi arbitrer — **tidak** lewat `float`
-      dan tidak lewat pembulatan diam. *(AC 14 spec; **ADR-0003**)*
-- [ ] Ada test yang **gagal** bila urutan 05a → 05b dibalik. *(AC 24 spec)*
-- [ ] Kegagalan yang jatuh ke `JSON_POLIS_ERROR` **terlihat**: sistem tidak menganggapnya sukses.
-- [ ] Penulisan detail peserta NB ke `M_LIFE_PREMIUM_DETAIL` terjadi **di dalam alur simpan ini**,
+      dan tidak lewat pembulatan diam. *(AC 14 spec; **ADR-0003**)* — belum: wontfix — tidak ada payload JSON
+- [ ] Ada test yang **gagal** bila urutan 05a → 05b dibalik. *(AC 24 spec)* — belum: wontfix — urutan 05a → 05b lenyap; urutan simpan-lalu-tutup dikunci `TestSimpanSebelumTutupDalamSatuTransaksi`
+- [ ] Kegagalan yang jatuh ke `JSON_POLIS_ERROR` **terlihat**: sistem tidak menganggapnya sukses. — belum: wontfix — `JSON_POLIS_ERROR` tidak dipakai
+- [x] Penulisan detail peserta NB ke `M_LIFE_PREMIUM_DETAIL` terjadi **di dalam alur simpan ini**,
       bukan dijadwalkan. Setelah respons simpan berhasil, baris untuk `PL_NUMBER` itu **sudah ada**.
       Tidak ada job/cron/worker terjadwal di jalur ini. *(AC lengkap di tiket 08;
-      `[keputusan work owner]`)*
+      `[keputusan work owner]`)* — bukti: `services/polis_summary.go:simpanDalam` (`warisan.Ganti` di transaksi simpan, nol penjadwal); uji `TestSimpanDalamUrutanTerkunci`
 
 ## Blocker
 

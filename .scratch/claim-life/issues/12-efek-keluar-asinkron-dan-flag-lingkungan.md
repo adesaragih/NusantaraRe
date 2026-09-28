@@ -1,6 +1,6 @@
 # 12: Efek keluar asinkron + antre-ulang + flag lingkungan
 
-**Status:** claimed
+**Status:** sebagian — unduh dokumen belum berjalan: pekerja outbox tidak pernah dijalankan `cmd/api`
 
 **Blocked by:** 09 (jejak audit) — kegagalan efek keluar harus masuk jalur audit, bukan hanya log
 
@@ -44,24 +44,24 @@ alamat layanan keluar), **ADR-0005** (flag lingkungan), **ADR-0007** (kegagalan 
 - [x] ⚠️ **Diselaraskan 2026-09-16:** efek keluar tinggal **tiga** — berkas, email, Arasapas.
       Konversi ke produksi **tidak lagi mengirim payload JSON**; hilir membaca **langsung dari
       tabel klaim**. Test yang menemukan payload JSON dikirim keluar **gagal**. *(AC 55 spec;
-      penyimpangan sadar 1)*
-- [x] Seluruh efek keluar berada **di balik interface**, sehingga dapat diganti dalam test.
-- [x] Kegagalan efek keluar mana pun **tidak menahan** transisi status klaim. *(AC 19 spec)*
+      penyimpangan sadar 1)* — bukti: `APP_RNM/internal/services/efekkeluar.go:EfekKeluarClaimLife` (berkas, email, Arasapas); uji `TestTigaEfekKeluarBukanEmpat`, `TestNolAlamatLayananDiKode` (nol klien HTTP keluar), `TestMuatanOutboxHanyaPengenalDanWaktu`
+- [x] Seluruh efek keluar berada **di balik interface**, sehingga dapat diganti dalam test. — bukti: `APP_RNM/internal/services/efekkeluar.go:NewPenyalur` (antarmuka `EfekKeluar`); uji `TestKegagalanEfekKeluarTidakMenahanApaPun`
+- [x] Kegagalan efek keluar mana pun **tidak menahan** transisi status klaim. *(AC 19 spec)* — bukti: `APP_RNM/internal/services/efekkeluar.go:Penyalur.Salurkan` (sesudah transaksi, hasil bukan galat); uji `TestKegagalanEfekKeluarTidakMenahanApaPun`, `TestSatuEfekGagalTidakMenghentikanSisanya`
 - [x] Kegagalan tercatat di **jalur audit**, bukan hanya di log layanan, dan **dapat diantre ulang**.
-      *(AC 20 spec)*
+      *(AC 20 spec)* — bukti: `APP_RNM/internal/services/antrean.go:antreanOracle.Antre`, `rekamMenyerah`; uji `TestHanyaKegagalanPermanenMasukJejak`, `TestJatahPercobaanTerbatas`
 - [x] Di lingkungan non-production, klaim **tetap tersimpan**; ketiga efek keluar tidak berjalan.
-      *(AC 21 spec)*
-- [x] Tidak ada host, endpoint, atau kredensial sebagai literal di kode.
+      *(AC 21 spec)* — bukti: uji `TestNonProduksiTidakMenjalankanEfekKeluar`, `TestFlagLingkunganTidakMenggerbangiPenyimpanan`, `TestGerbangLingkunganBenarBenarMenggerbangi`
+- [x] Tidak ada host, endpoint, atau kredensial sebagai literal di kode. — bukti: uji `TestNolAlamatLayananDiKode`
 - [x] Kegagalan konfigurasi dapat dibedakan dari kegagalan jaringan, agar antre-ulang tidak berputar
-      sia-sia.
-- [ ] Dokumen yang sudah diunggah dapat diunduh kembali.
+      sia-sia. — bukti: `APP_RNM/internal/services/efekkeluar.go:LayakDicobaUlang`; uji `TestKegagalanKonfigurasiDibedakanDariJaringan`
+- [ ] Dokumen yang sudah diunggah dapat diunduh kembali. — belum: rute `GET /api/dokumen/{dokId}/isi` (`Unggahan.Unduh`) ada, tetapi pekerja outbox tak pernah dijalankan `cmd/api/main.go` (`NewPelaksanaBerkasLokal` nol pemanggil produksi) — `T_STORAGE_ID` tak terisi dan unduhan dijawab belum terunggah
 - [x] Alamat endpoint keluar di-resolve lewat **runtime lookup** ke `M_LINK_SERVICE` dengan kunci
-      `(KATEGORI_1, KATEGORI_2)` — untuk Arasapas: `("Klaim", "insertClaimLife")`.
+      `(KATEGORI_1, KATEGORI_2)` — untuk Arasapas: `("Klaim", "insertClaimLife")`. — bukti: `APP_RNM/internal/repository/linkservice.go:PohonKlaim.AmbilAlamatLayanan`, `APP_RNM/internal/services/efekkeluar.go:resolverOracle.Resolve` (kunci `KategoriInsertClaimLife`)
 - [x] **Tidak ada URL** sebagai literal, konstanta, **maupun env var** di kode. Yang boleh menjadi
-      konstanta hanyalah **kunci kategori**. *(**ADR-0013**)*
-- [x] Pemisahan dev–prod terjadi lewat **isi tabel per-database**, bukan lewat percabangan di kode.
+      konstanta hanyalah **kunci kategori**. *(**ADR-0013**)* — bukti: uji `TestNolAlamatLayananDiKode` (`://` dan pembacaan env di luar `internal/config` ditolak)
+- [x] Pemisahan dev–prod terjadi lewat **isi tabel per-database**, bukan lewat percabangan di kode. — bukti: `APP_RNM/internal/services/efekkeluar.go:resolverOracle.Resolve` (alamat dari `M_LINK_SERVICE` per basis data); uji `TestNolAlamatLayananDiKode`
 - [x] Bila kunci kategori tidak ditemukan di `M_LINK_SERVICE`, kegagalan **terang-terangan** dan
-      masuk jalur audit — bukan diam-diam melewati efek keluar.
+      masuk jalur audit — bukan diam-diam melewati efek keluar. — bukti: uji `TestKunciKategoriTidakDitemukanGagalTerang`, `TestArasapasMelaporkanKegagalanKonfigurasiApaAdanya`
 
 ## Catatan penutupan (2026-09-14)
 

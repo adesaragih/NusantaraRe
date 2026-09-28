@@ -7,7 +7,7 @@
 > dua tingkat baris. Implementasinya ada di **tiket Komite 05**.
 > Tiket ini kini **membaca dan menampilkan** hasil itu, lalu melanjutkan siklus klaim.
 
-**Status:** claimed
+**Status:** sebagian — peserta dan header tidak selalu mencerminkan baris terakhir sesudah hasil Komite atau putaran baru
 
 **Blocked by:** 10 (kontrak Komite — penyerahan) · **Komite 05** (jalur balik — penulisan
 `STS_REJECT`)
@@ -46,21 +46,21 @@ baris baru), **ADR-0007** (jejak audit).
 ## Acceptance criteria
 
 - [x] Hasil keputusan Komite **terbaca** pada baris `AdjustmentList` yang diserahkan — Aksep atau
-      Ditolak. *(AC 4 spec Claim Life)*
-- [x] Klaim **tetap** dapat menerima baris adjustment baru setelah penolakan Komite.
+      Ditolak. *(AC 4 spec Claim Life)* — bukti: `APP_RNM/internal/services/komite_akseptasi.go:penyelesaiAkhirOracle.Akseptasi`/`Tolak` (`PerbaruiStatusBaris` pada baris yang diserahkan), dibaca `KlaimLife.AmbilBaris`; uji `TestRekamAkhirSatuJalurDalamAkseptasi`, `TestTolakAkhirDuaTingkatBarisSatuJalur`
+- [x] Klaim **tetap** dapat menerima baris adjustment baru setelah penolakan Komite. — bukti: `APP_RNM/internal/services/hasilkomite.go:Putaran.Tambah`; uji `TestKlaimTidakTerminalSetelahPenolakan`
 - [x] Baris baru yang ditambahkan setelah penolakan berstatus Outstanding dan **mewarisi delapan
-      kolom** dari baris pertama **tanpa** mewarisi status. *(AC 5 spec Claim Life)*
+      kolom** dari baris pertama **tanpa** mewarisi status. *(AC 5 spec Claim Life)* — bukti: `APP_RNM/internal/services/hasilkomite.go:BarisLanjutan`; uji `TestBarisLanjutanMewarisiDelapanKolomTanpaStatus`, `TestBarisLanjutanSelaluMemulaiPutaranBaru`
 - [ ] `PremiumListDetail` dan header klaim **mencerminkan** baris terakhir setelah hasil diterapkan.
-      *(AC 7 spec Claim Life)*
+      *(AC 7 spec Claim Life)* — belum: jalur Komite (`komite_akseptasi.go`) mencerminkan header dengan status baris yang diputus, bukan `BarisTerakhir`; `Putaran.Tambah` mencerminkan header saja, peserta tidak
 - [x] Status klaim "selesai" dihitung sebagai keadaan **turunan** dari kumpulan baris — bukan kolom
-      tersimpan.
-- [x] `AcceptStatus` **tidak** disimpan sebagai status kedua di konteks ini. *(**ADR-0001**)*
+      tersimpan. — bukti: `APP_RNM/internal/models/statusklaim.go:Klaim.StatusTurunan`; uji `TestStatusKlaimTurunan`
+- [x] `AcceptStatus` **tidak** disimpan sebagai status kedua di konteks ini. *(**ADR-0001**)* — bukti: uji `TestNolKolomStatusKeduaDiSkema`
 - [x] Hasil keputusan **hanya diterapkan** ketika putaran Komite sudah mencapai **tingkat terakhir**;
       hasil dari tingkat antara **tidak** mengubah status baris mana pun di konteks ini.
       *(AC 6 spec)* ⚠️ **Penegakannya milik Komite Claim Life tiket 05** — tiket ini hanya wajib
-      **tidak menerapkan lebih awal**. Dicatat agar AC 6 punya jejak pemilik, bukan tampak terlewat.
+      **tidak menerapkan lebih awal**. Dicatat agar AC 6 punya jejak pemilik, bukan tampak terlewat. — bukti: `APP_RNM/internal/models/komite_tangga.go:TerapkanKeputusanKomite` (`AkseptasiAkhir`/`TolakAkhir` hanya bila `komiteCount == komiteLoop`); uji `TestTanggaTigaTingkatSetujuSeluruhnya`, `TestTolakMenghentikanDiTingkatManaPun`
 - [x] Tiket ini **tidak** menulis `STS_REJECT` — diverifikasi dengan tidak adanya jalur tulis status
-      baris di konteks Claim — Life.
+      baris di konteks Claim — Life. — bukti: uji `TestKonteksIniTidakPernahMenulisKeputusan`
 
 ## Catatan — mengapa cakupan diubah
 

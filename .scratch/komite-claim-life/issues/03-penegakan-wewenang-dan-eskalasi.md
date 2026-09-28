@@ -1,6 +1,6 @@
 # 03: Penegakan wewenang per `KomiteID` + eskalasi naik satu tingkat
 
-**Status:** ready-for-agent
+**Status:** selesai — 28-09-2026, `3163689`
 
 **Blocked by:** 02 (mesin tangga) — gerbang perlu tindakan nyata untuk dijaga
 
@@ -45,18 +45,18 @@ audit).
 
 ## Acceptance criteria
 
-- [ ] Pengguna yang **bukan** pemilik `KomiteList(KomiteCount).KomiteID` **ditolak** saat menyimpan
-      keputusan, meskipun ia dapat membuka kasusnya. *(AC 8 spec)*
-- [ ] Penolakan terjadi **di lapisan layanan**, dan tetap terjadi meskipun kontrol UI ditampilkan.
-      *(AC 9 spec)*
-- [ ] Admin dapat memindahkan kasus **naik satu tingkat**; eskalasi **turun** ditolak.
-      *(AC 11 spec)*
-- [ ] Eskalasi tercatat: **siapa** memindahkan, **kapan**, dari tingkat mana ke tingkat mana.
-      *(AC 12 spec)*
-- [ ] Pemutus di tingkat **yang sama** yang bukan pemilik `KomiteID` tetap ditolak — eskalasi bukan
-      pintu belakang.
-- [ ] Perubahan roster tercatat, karena ia mengubah **siapa yang berwenang**.
-- [ ] Tidak ada nama orang ter-hardcode di lapisan mana pun.
+- [x] Pengguna yang **bukan** pemilik `KomiteList(KomiteCount).KomiteID` **ditolak** saat menyimpan
+      keputusan, meskipun ia dapat membuka kasusnya. *(AC 8 spec)* — bukti: `services/komite_keputusan.go:periksaGiliran`, uji `TestGiliranHanyaAnggotaBerjalan`
+- [x] Penolakan terjadi **di lapisan layanan**, dan tetap terjadi meskipun kontrol UI ditampilkan.
+      *(AC 9 spec)* — bukti: `services/komite_keputusan.go:KeputusanKomite.Putuskan` (`periksaGiliran` di layanan, apa pun layarnya), uji `TestGiliranHanyaAnggotaBerjalan`
+- [x] Admin dapat memindahkan kasus **naik satu tingkat**; eskalasi **turun** ditolak.
+      *(AC 11 spec)* — bukti: `models/komite_tangga.go:EskalasiNaik` (rute tanpa tingkat tujuan), uji `TestEskalasiHanyaNaikSatu`, uji `TestEskalasiHanyaAdmin`
+- [x] Eskalasi tercatat: **siapa** memindahkan, **kapan**, dari tingkat mana ke tingkat mana.
+      *(AC 12 spec)* — bukti: `services/komite_keputusan.go:KeputusanKomite.Eskalasi` (jejak akun, waktu, dari → ke, di transaksi yang sama)
+- [x] Pemutus di tingkat **yang sama** yang bukan pemilik `KomiteID` tetap ditolak — eskalasi bukan
+      pintu belakang. — bukti: uji `TestEskalasiBukanPintuBelakangKeputusan`
+- [x] Perubahan roster tercatat, karena ia mengubah **siapa yang berwenang**. — bukti: setiap penulis tangga kasus berjejak — `Penyerahan.Serahkan`, `KeputusanKomite.Putuskan`, `KeputusanKomite.Eskalasi`; sistem tidak punya operasi ubah roster dan tidak menulis master `EMAILKOMITE`
+- [x] Tidak ada nama orang ter-hardcode di lapisan mana pun. — bukti: uji `TestNolNamaOrangDiKode` (heuristik, Go); wewenang dari data `KOMITE_OPERATORID` (`periksaGiliran`)
 
 ## Catatan
 

@@ -1,6 +1,6 @@
 # 04a: Nomor akseptasi — lahir sekali, di keputusan final
 
-**Status:** ready-for-agent
+**Status:** sebagian — penghitung ditiru (keputusan o), bukan prosedur; lock penghitung bertahan sampai commit keputusan; OQ-K-04a terbuka
 
 **Blocked by:** 02 (mesin tangga) — tingkat final harus dapat dikenali lebih dulu
 
@@ -47,24 +47,24 @@ terbentuk agar lock `FOR UPDATE` lekas lepas).
 
 ## Acceptance criteria
 
-- [ ] Nomor akseptasi dibuat **hanya** pada keputusan **Setuju** di tingkat terakhir
-      (`KomiteCount == KomiteLoop`). *(AC 13 spec)*
-- [ ] Tingkat bukan-terakhir **tidak** memanggil jalur penomoran sama sekali — sequence tidak
-      bergerak. *(AC 5 spec)*
-- [ ] Keputusan **Tolak** tidak menghasilkan nomor akseptasi.
+- [x] Nomor akseptasi dibuat **hanya** pada keputusan **Setuju** di tingkat terakhir
+      (`KomiteCount == KomiteLoop`). *(AC 13 spec)* — bukti: `models/komite_tangga.go:TerapkanKeputusanKomite` (`AkseptasiAkhir`) → satu-satunya pemanggil `Akseptasi` di `KeputusanKomite.Putuskan`, uji `TestTanggaTigaTingkatSetujuSeluruhnya`
+- [x] Tingkat bukan-terakhir **tidak** memanggil jalur penomoran sama sekali — sequence tidak
+      bergerak. *(AC 5 spec)* — bukti: `services/komite_keputusan.go:KeputusanKomite.Putuskan` (penomoran hanya di cabang `AkseptasiAkhir`), uji `TestTanggaTigaTingkatSetujuSeluruhnya`
+- [x] Keputusan **Tolak** tidak menghasilkan nomor akseptasi. — bukti: `services/komite_akseptasi.go:penyelesaiAkhirOracle.Tolak` (nomor kosong), uji `TestTolakMenghentikanDiTingkatManaPun`
 - [ ] Nomor diperoleh lewat rantai `GetKodeProdLife_SQL` → `GetSequenceNumber_SQL`; aplikasi
-      **tidak** memuat logika pembentukan format nomor. *(AC 14 spec; **ADR-0006**)*
-- [ ] Prefix diperoleh lewat **lookup** ke `POOLDATA.KODE_PRODUKSI`, **tidak** ditanam sebagai
-      konstanta.
-- [ ] Percabangan per `Type` (`QR`/`QP` versus `TR`/`TP`) menentukan skema nomor yang dipakai.
+      **tidak** memuat logika pembentukan format nomor. *(AC 14 spec; **ADR-0006**)* — belum: diralat keputusan o — prosedur tidak dipanggil; penghitung ditiru `repository/penomor.go:Penomor.UrutNomorBerikut`, format dirakit `models/komite_nomor.go:NomorAkseptasiKomite`
+- [x] Prefix diperoleh lewat **lookup** ke `POOLDATA.KODE_PRODUKSI`, **tidak** ditanam sebagai
+      konstanta. — bukti: `repository/penomor.go:Penomor.AwalanProduksi` (`SELECT KODE` dari `KODE_PRODUKSI`), uji `TestPenghitungKomiteBukanSequenceClaimLife` (melarang literal awalan)
+- [x] Percabangan per `Type` (`QR`/`QP` versus `TR`/`TP`) menentukan skema nomor yang dipakai. — bukti: `models/komite_nomor.go:KodeCabangAkseptasiKomite`, uji `TestNomorAkseptasiKomiteDariLiteral`
 - [ ] Commit terjadi **segera setelah nomor terbentuk**, sehingga lock `SELECT … FOR UPDATE` tidak
-      menahan pemutus lain.
-- [ ] Dua keputusan final berurutan menghasilkan dua nomor berbeda.
-- [ ] Tidak ada padanan `Generate_NoAccept_KMT_Life` / `Generate_NoAccept_KMT_LifeRetro` di kode —
+      menahan pemutus lain. — belum: nomor, stempel, rekam akhir, antrean efek, dan jejak satu transaksi dengan keputusan — lock `FOR UPDATE` lepas saat commit keputusan (tanpa panggilan luar), bukan segera sesudah nomor
+- [x] Dua keputusan final berurutan menghasilkan dua nomor berbeda. — bukti: `repository/penomor.go:Penomor.UrutNomorBerikut` (`FOR UPDATE` + naik satu), `services/komite_akseptasi.go:penyelesaiAkhirOracle.terbitkanNomor` (cek keunikan dua tempat); tanpa uji Oracle
+- [x] Tidak ada padanan `Generate_NoAccept_KMT_Life` / `Generate_NoAccept_KMT_LifeRetro` di kode —
       `[terverifikasi]` keduanya `RequestType` di step ter-remark (`//`)
       `Komite Claim Life/Activity/KomitePostAdjustment.xml`
       (`ASM-FW-GCNMFW-WORK-KOMITELIFE` / `KOMITEPOSTADJUSTMENT` / `RULE-OBJ-ACTIVITY`),
-      baris 1769 dan 1986 (blok remark di 1725 dan 1943). *(AC 28 spec)*
+      baris 1769 dan 1986 (blok remark di 1725 dan 1943). *(AC 28 spec)* — bukti: uji `TestPenghitungKomiteBukanSequenceClaimLife` (melarang `Generate_NoAccept_KMT`); di luar komentar nol kemunculan
 
 ## Catatan — dua rule penomoran lama tidak dimigrasikan
 

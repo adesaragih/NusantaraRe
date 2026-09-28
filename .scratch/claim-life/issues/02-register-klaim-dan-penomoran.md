@@ -1,6 +1,6 @@
 # 02: Register klaim Life + penomoran
 
-**Status:** claimed
+**Status:** sebagian — INSERT datar `OS_AKSEPTASI_KLAIM_LIFE` tidak terjadi saat daftar, penomoran serentak belum teruji, AC procedure menunggu teks baru work owner
 
 **Blocked by:** 01 (kerangka aplikasi + seam API), **14 (skema relasional klaim — PREFACTOR)**
 
@@ -51,24 +51,24 @@ END;
 
 ## Acceptance criteria
 
-- [ ] Klaim Life baru dapat didaftarkan lewat API dan muncul sebagai klaim berstatus awal.
+- [x] Klaim Life baru dapat didaftarkan lewat API dan muncul sebagai klaim berstatus awal. — bukti: `APP_RNM/internal/handlers/register.go:daftarKlaim`, `APP_RNM/internal/services/pendaftaran.go:Pendaftaran.Daftar` (tahap awal `Outstanding Claim`); uji `TestPendaftaranMengisiTahapDanWaktuBuat`
 - [ ] Nomor klaim **diperoleh dari `POOLDATA.PROC_GENERATE_SEQUENCE_NUMBER`**, bukan dihitung di
-      aplikasi.
-- [ ] Aplikasi **tidak** memuat logika pembentukan format nomor apa pun. *(ADR-0006)*
-- [ ] Dua pendaftaran berurutan menghasilkan dua nomor berbeda.
+      aplikasi. — belum: `[keputusan work owner o1]` ADR-U-0043 menggantikannya — procedure tidak dipanggil, `penomorCounter.NomorBerikut` menulis ulangnya di Go; teks AC menunggu work owner
+- [ ] Aplikasi **tidak** memuat logika pembentukan format nomor apa pun. *(ADR-0006)* — belum: bertentangan dengan ADR-U-0043 — format dirakit di `APP_RNM/internal/services/pendaftaran.go:RakitNomorKlaim`; teks AC menunggu work owner
+- [x] Dua pendaftaran berurutan menghasilkan dua nomor berbeda. — bukti: `APP_RNM/internal/repository/penomor.go:Penomor.UrutNomorBerikut` (`SELECT … FOR UPDATE`, `NO_SEQ + 1`, lalu `UPDATE`)
 - [x] Rule penomoran lama **tidak** dimigrasikan: tidak ada padanan `Generate_NoKlaim_Life` maupun
       `Generate_NoKlaim_LifeRetro` di kode. `[terverifikasi]` keduanya tidak terindeks sebagai
-      rujukan aktif di `SaveOutStandingLife_Act`.
-- [ ] Halaman React Register dapat mengirim pendaftaran dan menampilkan nomor yang diterima.
+      rujukan aktif di `SaveOutStandingLife_Act`. — bukti: `APP_RNM/internal/services/pendaftaran.go:penomorCounter.NomorBerikut` satu-satunya penomor; `Generate_NoKlaim` nol kemunculan di `APP_RNM/`
+- [x] Halaman React Register dapat mengirim pendaftaran dan menampilkan nomor yang diterima. — bukti: `APP_RNM/frontend/src/pages/claimlife/RegisterKlaim.tsx:RegisterKlaim` (`kirim` → `daftarKlaimLife`, lalu menampilkan `nomorKlaim`)
 - [x] Nomor yang dihasilkan berbentuk `<prefix>K<kode bisnis>.MM.YYYY.<5 digit>` — contoh
-      `RNML-KL1.08.2026.00936`.
+      `RNML-KL1.08.2026.00936`. — bukti: `APP_RNM/internal/services/pendaftaran.go:RakitNomorKlaim`; uji `TestBentukNomorKlaim`
 - [x] Prefix diperoleh lewat **lookup** ke `POOLDATA.KODE_PRODUKSI` (`TYPE='LIFE'`), **tidak**
-      ditanam sebagai konstanta di kode.
+      ditanam sebagai konstanta di kode. — bukti: `APP_RNM/internal/repository/penomor.go:Penomor.AwalanProduksi`; uji `TestNolAwalanNomorKlaimSebagaiLiteral`
 - [x] Periode nomor mengikuti `POOLDATA.TANGGAL_CLOSING`, termasuk aturan cutover
-      `TRUNC(now) <= 02/01/2026` → `12.2025`.
+      `TRUNC(now) <= 02/01/2026` → `12.2025`. — bukti: `APP_RNM/internal/repository/penomor.go:HitungPeriodeNomor`; uji `TestPeriodeNomorMengikutiHariTutupBuku`, `TestPeriodeCutoverDipertahankan`
 - [x] Batas transaksi dipegang **Go**: commit terjadi segera setelah nomor terbentuk, sehingga lock
-      `SELECT … FOR UPDATE` pada `GENERATE_SEQUENCE_NUMBER` tidak menahan pendaftar lain.
-- [ ] Dua pendaftaran serentak tidak pernah memperoleh nomor yang sama.
+      `SELECT … FOR UPDATE` pada `GENERATE_SEQUENCE_NUMBER` tidak menahan pendaftar lain. — bukti: `APP_RNM/internal/services/pendaftaran.go:Pendaftaran.Daftar` (nomor di transaksi pertama); uji `TestPenomoranDiTransaksiSendiri`
+- [ ] Dua pendaftaran serentak tidak pernah memperoleh nomor yang sama. — belum: hanya bentuk dua-transaksi yang dijaga statik (`TestPenomoranDiTransaksiSendiri`); nol uji dua sambungan serentak, dan cabang baris-kunci-pertama (`INSERT` tanpa kunci di `UrutNomorBerikut`) dapat berlomba
 
 ### Penyimpanan relasional ⚠️ BARU 2026-09-16 — spec §2b
 
@@ -77,31 +77,31 @@ END;
       `OS_AKSEPTASI_KLAIM_LIFE` justru **gagal**. Keduanya dalam **satu transaksi**.
       **REVISI 2026-09-18:** ⛔ pendaftaran **tidak** menulis tabel polis maupun marketing — keduanya
       **dihapus**. Test yang menemukan penulisan ke tabel polis atau marketing milik klaim
-      **gagal**. *(AC 32 spec — koreksi 2026-09-16; `[keputusan work owner]`)*
-- [x] ⚠️ **Tidak ada blob JSON** sebagai penyimpan isi klaim. *(AC 31 spec; penyimpangan sadar 1)*
+      **gagal**. *(AC 32 spec — koreksi 2026-09-16; `[keputusan work owner]`)* — belum: `Pendaftaran.Daftar` menulis `T_WORK_CLAIM` + `T_GENERAL_CLAIM` + peserta, tetapi peserta lahir tanpa baris adjustment sehingga `BarisLamaDari` menghasilkan nol baris datar — `OS_AKSEPTASI_KLAIM_LIFE` tidak ditulis saat daftar
+- [x] ⚠️ **Tidak ada blob JSON** sebagai penyimpan isi klaim. *(AC 31 spec; penyimpangan sadar 1)* — bukti: uji `TestKolomUangDesimalDanNolJSON` (nol `JSON`/`CLOB`/`BLOB` di DDL klaim)
 - [ ] Header memuat keempat field `PremiumListSummary` — `CLAIM_NO`, `PL_NUMBER`, `RISLIPRNM`,
-      `BUSINESS_NAME` — beserta `CASEID` dan `CLAIM_RETRO`. *(AC 36 spec)*
+      `BUSINESS_NAME` — beserta `CASEID` dan `CLAIM_RETRO`. *(AC 36 spec)* — belum: `PohonKlaim.Simpan` hanya mengisi `CLAIM_NO`, `POLICY_NO`, `BUSINESS_NAME` (dan `Daftar` tidak mengisi `NamaBisnis`); `RI_SLIP_RNM` dan jumlah `CLAIM_RETRO` tidak ditulis; `CASEID` pindah ke `T_WORK_CLAIM`
 - [ ] ⚠️ `[terbuka]` **AC INI KOSONG ARTINYA sejak 2026-09-18 — TIDAK DIHAPUS, MENUNGGU JAWABAN.**
       `T_CLAIM_POLICY` **dihapus**, dan kata **snapshot** **DICABUT**: data polis kini **dibaca
       hidup** ⚠️ **penyimpangan sadar** — polis yang berubah sesudah klaim dibuat **akan** mengubah
       tampilan klaim lama. Empat dari tujuh hal yang didaftar AC ini — ketiga **tanggal** dan
       **team group** — ⚠️ `[terbuka]` **kehilangan rumah**: bukan pindah, tetapi belum punya tempat
-      (tiket 14 §Blocker). **Jangan tebak.** *(AC 37 spec)*
+      (tiket 14 §Blocker). **Jangan tebak.** *(AC 37 spec)* — belum: `[terbuka]` sejak 2026-09-18 — kosong artinya; rumah ketiga tanggal dan team group menunggu work owner
 - [ ] ⚠️ `[terbuka]` **AC INI KOSONG ARTINYA sejak 2026-09-18 — TIDAK DIHAPUS.** Atribut polis
       **tidak lagi disimpan di klaim sama sekali**, jadi "sekali per klaim" tidak punya yang
       dihitung. Yang menggantikan: ia **dibaca hidup** dari tabel polis lewat penunjuk di
-      `T_GENERAL_CLAIM` ⚠️ **penyimpangan sadar**. *(AC 35 spec)*
-- [ ] ⚠️ **REVISI 2026-09-18 — berpindah pemilik, tidak batal.** `PRODUCT_NAME` /
+      `T_GENERAL_CLAIM` ⚠️ **penyimpangan sadar**. *(AC 35 spec)* — belum: `[terbuka]` sejak 2026-09-18 — kosong artinya; atribut polis dibaca hidup, tidak ada yang dihitung
+- [x] ⚠️ **REVISI 2026-09-18 — berpindah pemilik, tidak batal.** `PRODUCT_NAME` /
       `PRODUCT_NAME_ID` **bukan lagi kolom klaim**; keduanya termasuk 27 kolom yang dibaca dari
       `T_PREMIUM_LIST`. Larangan membaca `m_product_life.JSONDATA` kini mengikat **modul PremiumList
       Life**. Yang mengikat di sini: pendaftaran klaim **tidak** menyimpan nama/id produk.
-      *(AC 38 spec)*
+      *(AC 38 spec)* — bukti: `APP_RNM/internal/repository/pohonklaim.go:PohonKlaim.Simpan` — nol kolom `PRODUCT_NAME`/`PRODUCTNAME` di INSERT header, peserta (`kolompeserta.go:insertPeserta`), maupun baris datar
 - [ ] ⚠️ Keadaan tangga klaim (posisi, status akseptasi, `Type`) ditulis ke **`T_WORK_CLAIM`**,
-      **bukan** sebagai kolom `T_GENERAL_CLAIM`. *(AC 46 spec; penyimpangan sadar 6)*
+      **bukan** sebagai kolom `T_GENERAL_CLAIM`. *(AC 46 spec; penyimpangan sadar 6)* — belum: posisi dan `Type` ditulis ke `T_WORK_CLAIM` (`PohonKlaim.Simpan`), tetapi `T_WORK_CLAIM` tak punya kolom status akseptasi — cermin `STS_REJECT`/`ACCEPTED_NO` tinggal di `T_GENERAL_CLAIM`
 - [ ] Pendaftaran klaim berjalan dalam **satu transaksi** — penulisan `T_GENERAL_CLAIM`, baris
       `T_WORK_CLAIM`-nya, dan `INSERT` flat ke `OS_AKSEPTASI_KLAIM_LIFE` **utuh atau tidak sama
       sekali**. **REVISI 2026-09-18:** frasa "ketiga tabelnya" **dicabut** — tabel polis dan
-      marketing dihapus. *(AC 49 spec)*
+      marketing dihapus. *(AC 49 spec)* — belum: transaksi kedua `Pendaftaran.Daftar` memuat work + header + peserta, tetapi INSERT datar bernol baris saat daftar (lihat AC penyimpanan di atas)
 
 ### Pencarian peserta — **hanya peserta hidup** `[keputusan work owner]`
 
@@ -137,18 +137,18 @@ kolom berakhiran status (daftar `INSERT` di `SaveMasterLPDet`, `ASM-FW-GISFW-INT
 kemunculan. Baris NB masuk dengan `EDMSTATUS` kosong/NULL.
 
 - [x] Pencarian peserta **tidak menampilkan** peserta ber-`EDMSTATUS` `'Batal'` maupun `'Delete'`.
-      *(AC 25 spec)*
+      *(AC 25 spec)* — bukti: `APP_RNM/internal/repository/pesertapolis.go:PesertaHidup`; uji `TestPesertaHidupMenyaringBatalDanDelete`
 - [x] Peserta **new business** (`EDMSTATUS` kosong/NULL) **tetap muncul**. ⚠️ Penyaring naif
       `EDMSTATUS NOT IN ('Delete','Batal')` membuang seluruh peserta NB di Oracle — test wajib
-      memuat kasus ini dan **harus gagal** bila penyaringnya naif. *(AC 26 spec)*
-- [x] Peserta ber-`EDMSTATUS` `'Old'` dan `'New'` **tetap muncul**. *(AC 27 spec)*
+      memuat kasus ini dan **harus gagal** bila penyaringnya naif. *(AC 26 spec)* — bukti: `APP_RNM/internal/repository/pesertapolis.go:PesertaHidup`; uji `TestPesertaHidupMenyaringBatalDanDelete`, `TestPesertaNBTetapHidupDiJalurBacaKlaim`
+- [x] Peserta ber-`EDMSTATUS` `'Old'` dan `'New'` **tetap muncul**. *(AC 27 spec)* — bukti: uji `TestPesertaHidupMenyaringBatalDanDelete` (kasus `Old`/`New`)
 - [ ] Baris bernilai **negatif** hasil jurnal balik endorsement **tidak pernah** sampai ke layar
-      Register maupun ke perhitungan klaim. *(AC 28 spec)*
+      Register maupun ke perhitungan klaim. *(AC 28 spec)* — belum: tidak ada penyaring baris bernilai negatif — hanya penyaring `EDMSTATUS` (`PesertaHidup`)
 - [x] Penyaringan terjadi di **satu tempat** — repository pembaca peserta. Test yang menemukan jalur
-      baca peserta tanpa penyaring **gagal**. *(AC 29 spec)*
-- [x] `STATUS` dan `STATUSOLD` **tidak** dipakai sebagai penanda hidup/mati. *(AC 30 spec)*
+      baca peserta tanpa penyaring **gagal**. *(AC 29 spec)* — bukti: uji `TestPenyaringPesertaHanyaSatuTempat`, `TestSQLCariPesertaSelaluBerpagar`
+- [x] `STATUS` dan `STATUSOLD` **tidak** dipakai sebagai penanda hidup/mati. *(AC 30 spec)* — bukti: uji `TestStatusDanStatusOldBukanPenandaHidup`
 - [ ] Jalur baca **akuntansi/ringkasan premium** — bila ada di konteks ini — **tidak** menyaring:
-      ia melihat seluruh baris positif dan negatif. **Satu tabel, dua sudut pandang.**
+      ia melihat seluruh baris positif dan negatif. **Satu tabel, dua sudut pandang.** — belum: tidak ada jalur baca akuntansi/ringkasan premium di Claim Life untuk diperiksa
 
 **Blocker parsial:** `[terbuka]` tipe dan nullability `EDMSTATUS` belum terbaca — apakah `NULL` atau
 string kosong untuk baris NB. Masuk **OQ-001 (sisa)**, pemilik **DBA**. **Tidak memblokir tiket** —

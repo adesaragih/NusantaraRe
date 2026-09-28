@@ -1,6 +1,6 @@
 # 07: Penegakan peran di lapisan layanan + wewenang kirim-Komite per `Type`
 
-**Status:** claimed
+**Status:** selesai — 28-09-2026, diverifikasi atas `5ac6571`
 
 **Blocked by:** 05 (reject Outstanding oleh Admin) — gerbang perlu tindakan nyata untuk dijaga
 
@@ -45,16 +45,16 @@ konteks Komite/IAM digarap).
 
 ## Acceptance criteria
 
-- [x] `ReasLifeMedicalAdvisor` **tidak dapat** mengubah status akseptasi baris mana pun. *(AC 9 spec)*
-- [ ] Untuk klaim ber-`Type` `QP` atau `QR`, **hanya `ReasLifeSPV`** yang dapat mengirim ke Komite;
-      upaya oleh peran lain ditolak. *(AC 10 spec)*
-- [ ] Untuk klaim ber-`Type` `TP` atau `TR`, `ReasLifeAdmin` **dapat** mengirim ke Komite.
-      *(AC 11 spec)*
+- [x] `ReasLifeMedicalAdvisor` **tidak dapat** mengubah status akseptasi baris mana pun. *(AC 9 spec)* — bukti: `APP_RNM/internal/services/wewenang.go:WajibPeranPengubahStatus`; uji `TestMedicalAdvisorTidakDapatMengubahStatus`
+- [x] Untuk klaim ber-`Type` `QP` atau `QR`, **hanya `ReasLifeSPV`** yang dapat mengirim ke Komite;
+      upaya oleh peran lain ditolak. *(AC 10 spec)* — bukti: `APP_RNM/internal/services/wewenang.go:WajibWewenangKomite`, dipanggil `APP_RNM/internal/services/komite.go:Penyerahan.Serahkan`; uji `TestWewenangKirimKomitePerType`
+- [x] Untuk klaim ber-`Type` `TP` atau `TR`, `ReasLifeAdmin` **dapat** mengirim ke Komite.
+      *(AC 11 spec)* — bukti: `APP_RNM/internal/services/wewenang.go:WajibWewenangKomite`, dipanggil `APP_RNM/internal/services/komite.go:Penyerahan.Serahkan`; uji `TestWewenangKirimKomitePerType`
 - [x] Penolakan wewenang terjadi **di lapisan layanan**, dan tetap terjadi meskipun kontrol UI-nya
-      ditampilkan. *(AC 12 spec)*
+      ditampilkan. *(AC 12 spec)* — bukti: uji `TestWewenangDitegakkanDiLayanan`, `TestSetiapPenulisStatusBergerbangPeran`
 - [x] Wewenang dan validasi membaca **satu** field `Type` yang sama — tidak ada dua salinan yang
-      dapat berbeda.
-- [x] Tidak ada nama orang ter-hardcode di lapisan mana pun; wewenang diukur dari peran akun.
+      dapat berbeda. — bukti: `APP_RNM/internal/repository/klaimlife.go:KlaimLife.TypeKlaim` (dibaca `Penyerahan.Serahkan` dan `TanggalKejadian.Set`); uji `TestTypeKlaimHanyaSatuRumahTersimpan`
+- [x] Tidak ada nama orang ter-hardcode di lapisan mana pun; wewenang diukur dari peran akun. — bukti: uji `TestNolNamaOrangDiKode`
 
 ## Catatan
 

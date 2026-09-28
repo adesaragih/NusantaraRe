@@ -1,6 +1,6 @@
 # 00: Skema tujuh tabel + `T_WORK_POLIS` + migrasi — **PREFACTOR**
 
-**Status:** sebagian terkerjakan — DDL + penjaga ada; `-migrate` dan rekonsiliasi menunggu skema uji dan persetujuan
+**Status:** sebagian — migrasi data, rekonsiliasi, dan jalur mundur teruji terhadap Oracle belum ada; DDL `050`–`056` + penjaga bentuk sudah
 
 **Blocked by:** CL-01 (kerangka aplikasi + seam API — scaffolding lintas konteks)
 
@@ -65,54 +65,54 @@ temuannya **dilaporkan**, tidak ditebak.
 
 ## Acceptance criteria
 
-- [ ] ⚠️ Skema polis **relasional penuh**: setiap atribut menjadi **kolom bernama**. Test yang
-      menemukan kolom JSON menyimpan atribut polis **gagal**. *(AC 32 spec; penyimpangan sadar 1)*
+- [x] ⚠️ Skema polis **relasional penuh**: setiap atribut menjadi **kolom bernama**. Test yang
+      menemukan kolom JSON menyimpan atribut polis **gagal**. *(AC 32 spec; penyimpangan sadar 1)* — bukti: uji `TestKolomUangDesimalDanNolJSON`, `TestKolomDDLCocokDenganStruktur`
 - [ ] ⚠️ **Tujuh tabel** ada dengan PK sequence dan FK sesuai diagram; seluruh FK **`ON DELETE
-      CASCADE`**. *(AC 46 spec)*
+      CASCADE`**. *(AC 46 spec)* — belum: FK + `ON DELETE CASCADE` terpenuhi (uji `TestSeluruhFKPohonPolisBerkaskade`), tetapi PK tidak dari sequence — pengenal dirakit di repository (keputusan nol sequence)
 - [ ] ⚠️ FK spreading menunjuk **peserta**, dan FK spreading retro menunjuk **baris spreading** —
-      bukan header. Test yang menemukan keduanya menggantung pada header **gagal**. *(AC 40 spec)*
+      bukan header. Test yang menemukan keduanya menggantung pada header **gagal**. *(AC 40 spec)* — belum: DDL `053`/`054` benar, tetapi tidak ada uji yang memeriksa tabel rujukan FK (penjaga hanya memeriksa kolom FK)
 - [ ] ⚠️ **`T_WORK_POLIS` ada sebagai tabel mandiri** — bukan anak `T_PREMIUM_LIST`; keadaan tangga
       **tidak** menjadi kolom header polis. Kolom minimum: identitas polis + lini, posisi/status
-      tangga, audit. *(AC 45 spec; penyimpangan sadar 4)*
-- [ ] ⚠️ **Setiap FK punya index.** Migrasi yang meninggalkan FK tanpa index **gagal**.
-      *(AC 49 spec)*
-- [ ] ⚠️ **`T_PREMIUM_LIST_DETAIL` memuat `PARENT_ID`** — FK self-reference ke `ID` peserta versi
+      tangga, audit. *(AC 45 spec; penyimpangan sadar 4)* — belum: tabel mandiri tanpa FK (`050_t_work_polis.sql`, uji `TestSeluruhFKPohonPolisBerkaskade`), tetapi kolom audit sengaja tidak ada
+- [x] ⚠️ **Setiap FK punya index.** Migrasi yang meninggalkan FK tanpa index **gagal**.
+      *(AC 49 spec)* — bukti: uji `TestSetiapFKPohonPolisBerindex`, `TestMigrasi050Sampai056TipeNullFKIndexSesuaiStruktur`
+- [x] ⚠️ **`T_PREMIUM_LIST_DETAIL` memuat `PARENT_ID`** — FK self-reference ke `ID` peserta versi
       sebelumnya, **nullable**, ber-index. Ia dipakai konteks **Endorsement Life** untuk mencocokkan
       peserta lama↔baru. Ketiga tabel lain **tidak** memilikinya.
-      *(`.scratch/endorsement-life/spec.md` §16, AC 60; `[keputusan work owner]`)*
-- [ ] ⚠️ **`T_PREMIUM_LIST` memuat kolom EDM**, seluruhnya **nullable** dan kosong pada baris new
+      *(`.scratch/endorsement-life/spec.md` §16, AC 60; `[keputusan work owner]`)* — bukti: `repository/migrations/052_t_premium_list_detail.sql` (`FK_PLD_PARENT`, `IDX_PLD_PARENT`); uji `TestMigrasi050Sampai056TipeNullFKIndexSesuaiStruktur`
+- [x] ⚠️ **`T_PREMIUM_LIST` memuat kolom EDM**, seluruhnya **nullable** dan kosong pada baris new
       business: `EDM_TYPE`, `OLD_POLICY_NO`, `EDM_DATE`, `EDM_NOTE`, `TYPE_CEDING`,
       `PREMI_PROPOSED`, `UANG_PERTANGGUNGAN`, `SUM_INSURED`, `JENIS_PRODUK`, `SISTEM_REASURANSI`,
       `STATUSS`, `STATUS_UPDATE`, `STATUS_SERVICE`, `START_DATE`, `END_DATE`, `NOENDORS`,
       `PL_NUMBER_EDM`, `PRODKE`, `EDMSTATUS`, `STATUSOLD`.
-      *(`.scratch/endorsement-life/spec.md` §16, AC 57; `[keputusan work owner]`)*
-- [ ] Versi berjalan sebuah polis dapat ditemukan sebagai baris ber-**`PRODKE` terbesar**; seluruh
-      versi **hidup berdampingan**. *(Endorsement §16, AC 56)*
-- [ ] ⚠️ **Properti bawaan Pega tidak menjadi kolom** — tidak ada `px*`, `py*`, `pz*`; single-page
-      kosong (`Policy`, `Quotation`, `TempError`) juga tidak. *(AC 47 spec)*
-- [ ] `T_PREMIUM_LIST_SUMMARY` memuat **rekap uang penuh per mata uang**, bukan hanya kode mata
-      uang. *(AC 37 spec; penyimpangan sadar 2)*
-- [ ] `T_PREMIUM_LIST_DETAIL` memuat **kedua jendela valuasi** — `GROSS_VALUATION_*` **dan**
+      *(`.scratch/endorsement-life/spec.md` §16, AC 57; `[keputusan work owner]`)* — bukti: `repository/migrations/051_t_premium_list.sql` (nama mengikuti STRUKTUR: `NO_ENDORS`, `PROD_KE`, `EDM_STATUS`, `STATUS_OLD`); uji `TestKolomDDLCocokDenganStruktur`
+- [x] Versi berjalan sebuah polis dapat ditemukan sebagai baris ber-**`PRODKE` terbesar**; seluruh
+      versi **hidup berdampingan**. *(Endorsement §16, AC 56)* — bukti: `repository/polis_ringkas.go:sqlPolisRingkas`; uji `TestRingkasMembacaVersiBerjalan`
+- [x] ⚠️ **Properti bawaan Pega tidak menjadi kolom** — tidak ada `px*`, `py*`, `pz*`; single-page
+      kosong (`Policy`, `Quotation`, `TempError`) juga tidak. *(AC 47 spec)* — bukti: uji `TestKolomDDLCocokDenganStruktur` (DDL = STRUKTUR; nol kolom `px*`/`py*`/`pz*`)
+- [x] `T_PREMIUM_LIST_SUMMARY` memuat **rekap uang penuh per mata uang**, bukan hanya kode mata
+      uang. *(AC 37 spec; penyimpangan sadar 2)* — bukti: `repository/migrations/055_t_premium_list_summary.sql`; uji `TestKolomRekapSamaDenganMigrasi055`
+- [x] `T_PREMIUM_LIST_DETAIL` memuat **kedua jendela valuasi** — `GROSS_VALUATION_*` **dan**
       `RETROCESSION_VALUATION_*` — beserta `EFFECTIVE_DATE`, `LAPSE_DATE`, `PERIOD_MM`.
-      *(AC 38 spec)*
+      *(AC 38 spec)* — bukti: `repository/migrations/052_t_premium_list_detail.sql` (`RETRO_VALUATION_*` = `RETROCESSION_VALUATION_*`); uji `TestKolomDDLCocokDenganStruktur`
 - [ ] `FACTOR` bertipe **desimal**; nilai berdesimal tujuh angka pindah **tanpa berubah**.
-      *(AC 39 spec; **ADR-0003**)*
+      *(AC 39 spec; **ADR-0003**)* — belum: tipe `NUMBER(38,8)` ada di `052`, tetapi migrasi data belum dibangun
 - [ ] ⚠️ Seluruh uang dan share bertipe **desimal presisi arbitrer**; seluruh tanggal **`DATE`**;
       seluruh kolom **nullable**; identitas dari **sequence**. Test yang menemukan kolom uang
-      bertipe teks atau melewati `float` **gagal**. *(AC 48 spec; penyimpangan sadar 5)*
+      bertipe teks atau melewati `float` **gagal**. *(AC 48 spec; penyimpangan sadar 5)* — belum: uang `NUMBER(38,8)`, nullable, nol float (uji `TestMigrasi050Sampai056TipeNullFKIndexSesuaiStruktur`, `TestKolomUangDesimalDanNolJSON`), tetapi identitas bukan dari sequence dan `STNC`/`WPC` peserta disimpan `VARCHAR2`
 - [ ] Seluruh polis lama pindah **tanpa kehilangan satu nilai pun**; jumlah baris per polis —
-      peserta, rekap, spreading, riwayat — **sama** sebelum dan sesudah. *(AC 50 spec; **ADR-0009**)*
+      peserta, rekap, spreading, riwayat — **sama** sebelum dan sesudah. *(AC 50 spec; **ADR-0009**)* — belum: migrasi data polis lama belum dibangun
 - [ ] Nilai uang pindah **tanpa berubah satu digit pun**; rekonsiliasi membandingkan **secara
-      tepat**, bukan dengan toleransi. *(AC 50 spec; **ADR-0003**)*
+      tepat**, bukan dengan toleransi. *(AC 50 spec; **ADR-0003**)* — belum: skrip rekonsiliasi belum ada
 - [ ] Tanggal yang berupa teks menjadi `DATE` **tanpa pergeseran zona waktu**; yang **tidak dapat
-      diurai dilaporkan**, bukan didiamkan.
+      diurai dilaporkan**, bukan didiamkan. — belum: konversi tanggal migrasi data belum dibangun
 - [ ] Polis tanpa retrosesi pindah dengan **nol baris** spreading dan spreading retro — **bukan**
-      kegagalan. *(AC 42 spec)*
+      kegagalan. *(AC 42 spec)* — belum: migrasi data belum dibangun
 - [ ] ⚠️ Migrasi **tidak mereplikasi** `@ASM.GetPageJSONString()` dan tidak menulis satu pun CLOB
-      JSON. *(AC 34 spec; penyimpangan sadar 1)*
+      JSON. *(AC 34 spec; penyimpangan sadar 1)* — belum: migrasi data belum dibangun; skemanya memang tanpa CLOB (uji `TestKolomUangDesimalDanNolJSON`)
 - [ ] Sequence polis pindah dengan **nilai berjalan yang benar**; penomoran **tidak melompat dan
-      tidak mengulang** setelah migrasi. *(**ADR-0006**)*
-- [ ] Migrasi dapat **dijalankan ulang dengan aman** dan punya **jalur mundur yang diuji**.
+      tidak mengulang** setelah migrasi. *(**ADR-0006**)* — belum: tiket ini memutuskan nol sequence; migrasi nilai penghitung belum ada
+- [ ] Migrasi dapat **dijalankan ulang dengan aman** dan punya **jalur mundur yang diuji**. — belum: berkas `_down` ada (uji `TestSetiapLangkahPunyaJalurMundur`), tetapi jalur mundur belum dijalankan terhadap Oracle dan migrasi data belum ada
 
 ## Blocker
 

@@ -1,6 +1,6 @@
 # 01: Penawaran Life — Confirm / Reject / Decline, dan percabangan Offer / Premium
 
-**Status:** ready-for-agent
+**Status:** sebagian — input + simpan data penawaran (relasional) dan riwayat `T_VIEW_SUGGEST` belum dibangun
 
 **Blocked by:** **00 (skema tujuh tabel — PREFACTOR)**
 
@@ -56,35 +56,35 @@ keputusan, bukan formula yang memilihnya.
 
 ## Acceptance criteria
 
-- [ ] `Confirm` pada tahap penawaran melanjutkan case ke penentuan Offer/Premium. *(AC 1 spec)*
+- [x] `Confirm` pada tahap penawaran melanjutkan case ke penentuan Offer/Premium. *(AC 1 spec)* — bukti: `models/polis_penawaran.go:TransisiPenawaran`, `services/polis_penawaran.go:Golongkan`; uji `TestTabelTransisiSamaDenganPetaKonektor`
 - [ ] `Reject` pada tahap mana pun **mengembalikan** case ke layar Input Offer — bukan menutupnya,
-      bukan memajukannya. *(AC 2 spec)*
-- [ ] `Decline` pada tahap mana pun **menutup** case; case tertutup tidak dapat dilanjutkan maupun
-      diputuskan ulang. *(AC 3 spec)*
+      bukan memajukannya. *(AC 2 spec)* — belum: sengaja — `Reject` hanya ada di tahap detail (`Decision2`), di tahap penawaran ditolak (uji `TestRejectDiTahapPenawaranTidakPunyaJalur`; lihat ralat AC 2)
+- [x] `Decline` pada tahap mana pun **menutup** case; case tertutup tidak dapat dilanjutkan maupun
+      diputuskan ulang. *(AC 3 spec)* — bukti: `services/polis_penawaran.go:pagari`; uji `TestTabelTransisiSamaDenganPetaKonektor`, `TestKasusPolisTertutupTepatBukanAwalan`, `TestTutupPolisMenolakPenutupanKedua`
 - [ ] Keluaran **Offer** menghentikan siklus di tahap penawaran, dan penawaran **tetap tersimpan**
-      serta dapat dibaca kembali. *(AC 4 spec)*
-- [ ] Keluaran **Premium** membuka tahap Input Premium List Detail. *(AC 5 spec)*
-- [ ] Tidak ada aturan otomatis yang menetapkan keputusan; keputusan selalu datang dari tindakan
-      pengguna. *(AC 6 spec)*
-- [ ] Setiap transisi tahap menulis jejak audit: siapa, kapan, dari tahap apa ke tahap apa.
-      (**ADR-0007**)
+      serta dapat dibaca kembali. *(AC 4 spec)* — belum: `Offer` menutup kasus (uji `TestPenggolongOfferMenutupPremiumMelanjutkan`), tetapi data penawaran tidak pernah disimpan — belum ada penulis penawaran
+- [x] Keluaran **Premium** membuka tahap Input Premium List Detail. *(AC 5 spec)* — bukti: `models/polis_penawaran.go:LanjutanPenggolong`; uji `TestPenggolongOfferMenutupPremiumMelanjutkan`
+- [x] Tidak ada aturan otomatis yang menetapkan keputusan; keputusan selalu datang dari tindakan
+      pengguna. *(AC 6 spec)* — bukti: uji `TestNolAturanOtomatisMenetapkanKeputusan`
+- [x] Setiap transisi tahap menulis jejak audit: siapa, kapan, dari tahap apa ke tahap apa.
+      (**ADR-0007**) — bukti: `services/polis_penawaran.go:terapkan` (jejak di transaksi yang sama, lewat `PerekamJejakOracle`)
 - [ ] Rekam penawaran ditulis lewat `INSERTJSONOFFERLIFE` (upsert berkunci `IDPEGA` + `STATUS`),
-      lalu id offer dibaca kembali — keputusan berikutnya memakai id itu.
+      lalu id offer dibaca kembali — keputusan berikutnya memakai id itu. — belum: dibatalkan §12 — `INSERTJSONOFFERLIFE` sengaja tidak dipanggil, dan penulis penggantinya belum ada
 - [ ] ⚠️ Pemanggilan `INSERTJSONOFFERLIFE` **commit sendiri**. Kegagalan sesudahnya tidak boleh
-      menghapus rekam offer; pemanggilan ulang **aman** karena upsert. *(lihat catatan di bawah)*
-- [ ] Tidak ada nilai uang pada penawaran yang melewati `float`, termasuk di JSON API.
+      menghapus rekam offer; pemanggilan ulang **aman** karena upsert. *(lihat catatan di bawah)* — belum: tidak berlaku (§12); procedure itu tidak dipanggil
+- [ ] Tidak ada nilai uang pada penawaran yang melewati `float`, termasuk di JSON API. — belum: belum ada nilai uang penawaran yang diterima atau disimpan, jadi tidak dapat diverifikasi
 
 ### Penyimpanan relasional ⚠️ BARU 2026-09-16 — spec §12
 
 - [ ] ⚠️ Penawaran tersimpan **relasional**; `JSON_OFFER_LIFE` **tidak ditulis** dan
       `INSERTJSONOFFERLIFE` **tidak dipanggil**. AC di atas tentang "commit sendiri" karena itu
-      **tidak berlaku**. *(AC 32, 33, 34 spec; penyimpangan sadar 1)*
+      **tidak berlaku**. *(AC 32, 33, 34 spec; penyimpangan sadar 1)* — belum: `INSERTJSONOFFERLIFE`/`JSON_OFFER_LIFE` memang nol pemanggil, tetapi penawaran belum tersimpan relasional (nol penulis `T_PREMIUM_LIST`)
 - [ ] ⚠️ Riwayat penawaran/konfirmasi ceding tersimpan di **`T_VIEW_SUGGEST`**, anak **langsung**
       header polis — tidak ada simpul `OfferFacIn` di skema baru. Kolomnya: nomor urut, tanggal, PIC,
       hasil (`Accept`/`Reject`/`Decline`), komentar, dan tahap (`Offer`/`Bind`).
       *(AC 44 spec; `[terverifikasi]` `PremiumList Life/Activity/AddHistorySuggest.xml`,
       `ASM-FW-GISFW-WORK-LIFE!ADDHISTORYSUGGEST`)*
-      *(AC 14 spec; **ADR-0003**)*
+      *(AC 14 spec; **ADR-0003**)* — belum: tabel `T_VIEW_SUGGEST` ada (`056`), tetapi nol penulis riwayat penawaran
 
 ## Blocker
 

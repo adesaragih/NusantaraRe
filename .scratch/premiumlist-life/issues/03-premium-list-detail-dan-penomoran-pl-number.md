@@ -1,6 +1,6 @@
 # 03: Premium List Detail dan penomoran `PL_NUMBER`
 
-**Status:** selesai — 28-09-2026
+**Status:** sebagian — uji penomoran paralel, spreading beku, `FACTOR` + kolom uang penuh, dan uji dua jalur valuasi belum ada
 
 **Blocked by:** **00 (skema tujuh tabel — PREFACTOR)**, 01 (penawaran — tahap Premium hanya terbuka setelah `Confirm` → `Premium`), 02
 (periode tutup buku — periode produksi adalah **masukan** procedure penomoran)
@@ -86,9 +86,9 @@ transaksi dipegang Go; commit segera setelah nomor terbentuk agar lock `FOR UPDA
       **Bunyi yang benar:** urut dan periode diperoleh dari penghitung
       `GENERATE_SEQUENCE_NUMBER`; bentuk nomornya dirakit di lapisan **`models`** (murni, dapat diuji
       tanpa Oracle) — **tidak** di `services`, **tidak** di handler, dan **tidak** di layar.
-      *(**ADR-0006** tetap: penomoran tidak boleh dikarang di tempat yang tersebar.)*
+      *(**ADR-0006** tetap: penomoran tidak boleh dikarang di tempat yang tersebar.)* — bukti: `models/polis_nomor.go:NomorPL`; uji `TestRakitNomorPLBerbentukSepertiB3126`, `TestNolPembentukBentukNomorDiLapisanLayanan`
 - [x] Prefix diperoleh lewat **lookup** ke `POOLDATA.KODE_PRODUKSI` (`TYPE='LIFE'`), tidak ditanam
-      sebagai konstanta. *(AC 11 spec)*
+      sebagai konstanta. *(AC 11 spec)* — bukti: `repository/penomor.go:AwalanProduksi`
 - [x] ⚠️ **RALAT 28-09-2026 — periode TIDAK dikirim ke procedure.** `pyMemo` check-in terakhir
       `SubmitPremiumList_Act` (20260122) berbunyi harfiah **"buang ParamSeq.CARI3"**, dan memang
       `ParamSeq.CARI3` tidak diset di satu langkah pun; `TO_DATE({ParamSeq.CARI3},'DD/MM/YYYY')` di
@@ -97,11 +97,11 @@ transaksi dipegang Go; commit segera setelah nomor terbentuk agar lock `FOR UPDA
 
       **Bunyi yang benar:** karena procedure tidak dipanggil, periodenya dihitung di Go — dengan
       aturan tiket **02** (`models.PeriodeProduksi`), bukan `time.Now()` mentah. Aturannya **satu**,
-      dipakai penomoran klaim maupun premium list.
+      dipakai penomoran klaim maupun premium list. — bukti: `repository/penomor.go:HitungPeriodeNomor`; uji `TestPeriodeNomorMengikutiHariTutupBuku`, `TestPeriodeNomorTidakMelompatiBulanPendek`
 - [x] Nomor lahir **sekali** per premium list: submit kedua atas premium list yang sudah bernomor
       **tidak** menggerakkan sequence dan **tidak** mengubah nomor. Gerbangnya berdiri di **dua**
       tempat — di layanan (dibaca sebelum penghitung disentuh) dan di kalimat `WHERE … PL_NUMBER IS
-      NULL` query penulisnya.
+      NULL` query penulisnya. — bukti: `services/polis_nomor.go:terbitkanDalam`, `repository/polis_nomor.go:sqlTulisNomorPL`; uji `TestPenghitungTidakTersentuhBilaSudahBernomor`, `TestTulisNomorPLTidakDapatMenimpaNomorYangSudahAda`
 - [x] Empat cabang per `Type` (`QR`, `QP`, `TP`, `TR`) menentukan skema nomor yang dipakai; cabang
       dipilih dari data, bukan dari urutan langkah.
 
@@ -111,31 +111,31 @@ transaksi dipegang Go; commit segera setelah nomor terbentuk agar lock `FOR UPDA
       bagian kunci `JENIS` (`ParamSeq.CARI2 = ParamSeq.HASIL3+"QR/QP/TP/TR"`); tipe yang sedang
       berjalan hanya masuk ke **nomornya**, tidak ke kuncinya. Memecahnya menjadi empat penghitung
       menerbitkan empat deret yang masing-masing mulai dari 1 — dan setiap nomor baru bertabrakan
-      dengan nomor lama.
-- [x] Commit terjadi **segera setelah** nomor terbentuk, sehingga lock `SELECT … FOR UPDATE` tidak
+      dengan nomor lama. — bukti: `models/polis_nomor.go:KodeTipePL`, `models/polis_nomor.go:JenisPenghitungPL`; uji `TestKodeTipePLEmpatCabangDariData`, `TestSatuPenghitungUntukEmpatTipe`
+- [ ] Commit terjadi **segera setelah** nomor terbentuk, sehingga lock `SELECT … FOR UPDATE` tidak
       menahan pengguna lain. (**ADR-0015**) Transaksinya memuat **hanya** pengambilan nomor dan
       penyimpanannya — sengaja berbeda dari pendaftaran klaim, yang memegang kunci sampai seluruh
       pendaftaran selesai. ⚠️ Nol `COMMIT` di teks SQL (**ADR-U-0029**): batasnya dipegang Go,
-      meski `GetSequenceNumber_SQL` baris 88 punya satu.
-- [ ] Dua submit berurutan menghasilkan dua nomor **berbeda dan berurutan** di bawah beban paralel.
+      meski `GetSequenceNumber_SQL` baris 88 punya satu. — belum: benar untuk `Terbitkan` (uji `TestNolCommitDiQueryNomor`), tetapi jalur Confirm/Submit memanggil `terbitkanDalam` di transaksi `simpanDalam` yang juga memuat rekap + salinan warisan + penutupan, jadi kunci penghitung ditahan lebih lama
+- [ ] Dua submit berurutan menghasilkan dua nomor **berbeda dan berurutan** di bawah beban paralel. — belum: nol uji beban paralel terhadap Oracle
 - [ ] Baris `PremiumListDetail` tersimpan utuh dengan seluruh kolom uang, dan **tidak satu pun**
-      melewati `float`. *(AC 14 spec; **ADR-0003**)*
-- [x] `PL_NUMBER` yang sudah terbit **terlihat** pengguna dan dapat dibaca kembali lewat API
-      (`GET /api/polis-life/{id}` dan `GET /api/polis-life/{id}/nomor`).
+      melewati `float`. *(AC 14 spec; **ADR-0003**)* — belum: unggahan mengisi 32 dari 44 kolom uang `052` (`FACTOR`, `RATE`, `SUM_AT_RISK_*`, `DEDUCTION`, `RI_ADMIN_FEE*` dll. tidak diisi); uang memang dikirim sebagai teks (uji `TestUangDikirimSebagaiTeks`)
+- [ ] `PL_NUMBER` yang sudah terbit **terlihat** pengguna dan dapat dibaca kembali lewat API
+      (`GET /api/polis-life/{id}` dan `GET /api/polis-life/{id}/nomor`). — belum: `GET /api/polis-life/{id}/nomor` dibuang (nol pemanggil); nomor terbaca lewat `GET /api/polis-life/{id}` dan tampil di `PremiumListDetail.tsx`
 
 ### Penyimpanan relasional ⚠️ BARU 2026-09-16 — spec §12
 
 - [ ] ⚠️ Peserta tersimpan di **`T_PREMIUM_LIST_DETAIL`**; `M_LIFE_PREMIUM_DETAIL` **tidak ditulis**.
-      *(AC 33 spec; penyimpangan sadar 1)*
+      *(AC 33 spec; penyimpangan sadar 1)* — belum: peserta memang di `T_PREMIUM_LIST_DETAIL` (`repository/polis_unggah.go:SisipPeserta`), tetapi pl2 membalik larangannya — `M_LIFE_PREMIUM_DETAIL` ditulis (`repository/polis_warisan.go:Ganti`)
 - [ ] Peserta menyimpan **kedua jendela valuasi** — `GROSS_VALUATION_*` (jalur `Q*`) **dan**
       `RETROCESSION_VALUATION_*` (jalur `T*`) — beserta `EFFECTIVE_DATE`, `LAPSE_DATE`, `PERIOD_MM`.
-      Test wajib memuat **kedua jalur**. *(AC 38 spec)*
-- [ ] `FACTOR` diperlakukan sebagai **desimal** tujuh angka, bukan bilangan bulat. *(AC 39 spec)*
+      Test wajib memuat **kedua jalur**. *(AC 38 spec)* — belum: kedua jendela ditulis unggahan (`repository/polis_unggah.go:kolomTanggalPeserta`), tetapi nol uji yang memuat jalur `Q*` dan `T*` terpisah
+- [ ] `FACTOR` diperlakukan sebagai **desimal** tujuh angka, bukan bilangan bulat. *(AC 39 spec)* — belum: dibaca sebagai desimal (`models/polis_detail.go:KolomGridPeserta`, kolom `NUMBER(38,8)`), tetapi tidak ada jalur yang mengisi `FACTOR` dan nol uji nilai tujuh desimal
 - [ ] ⚠️ Hasil spreading per peserta **dibekukan dan disimpan** di `T_PREMIUM_LIST_SPREADING`, dan
       rincian per reinsurer di `T_PREMIUM_LIST_SPREADING_RETRO`. Perubahan master treaty sesudahnya
-      **tidak mengubah** angka yang sudah tersimpan. *(AC 41 spec; penyimpangan sadar 3)*
+      **tidak mengubah** angka yang sudah tersimpan. *(AC 41 spec; penyimpangan sadar 3)* — belum: nol penulis `T_PREMIUM_LIST_SPREADING` / `T_PREMIUM_LIST_SPREADING_RETRO`
 - [ ] Polis tanpa retrosesi tersimpan dengan **nol baris** spreading dan spreading retro — **bukan**
-      kegagalan. *(AC 42 spec)*
+      kegagalan. *(AC 42 spec)* — belum: penulis spreading belum ada, jadi nol baris belum dibedakan dari belum ditulis
 
 ## Blocker
 

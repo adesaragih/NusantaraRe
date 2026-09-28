@@ -1,6 +1,6 @@
 # 15: Hapus klaim — popup konfirmasi, kaskade tiga tingkat, dan baris work
 
-**Status:** claimed
+**Status:** sebagian — penghapusan belum dilaksanakan: ADR-U-0031 menetapkan penanda, dan kolomnya menunggu keputusan migrasi
 
 **Blocked by:** 14 (skema relasional klaim — PREFACTOR), 03 (peserta, adjustment, dan dokumen harus
 ada agar dapat dihitung dan dihapus)
@@ -64,33 +64,33 @@ cucu. Pohon yang berlaku: `spec.md` §2b RALAT D.
 - [ ] ⚠️ Menghapus klaim **mengkaskade** ke peserta, **seluruh baris adjustment**, **seluruh
       spreading**, **seluruh spreading retro**, dan **seluruh dokumen**. **REVISI 2026-09-18:** kata
       **"polis, marketing"** **DICABUT** — kedua tabelnya dihapus. Test wajib memeriksa **setiap
-      tingkat** secara terpisah, **sampai cicit-cucu**. *(AC 48 spec; penyimpangan sadar 8)*
+      tingkat** secara terpisah, **sampai cicit-cucu**. *(AC 48 spec; penyimpangan sadar 8)* — belum: `Penghapusan.Hapus` sengaja gagal terang (`ErrHapusFisikDilarang`; ADR-U-0031: hapus = penanda, kolomnya belum diputuskan); kaskade fisik hanya ada di `PohonKlaim.HapusFisik` untuk uji
 - [ ] ⚠️ Menghapus klaim **tidak menyentuh tabel polis maupun marketing** — data itu **dibaca
       hidup** dari `T_PREMIUM_LIST` dkk dan **bukan milik klaim**. Test yang menemukan penghapusan
-      menyentuh tabel polis **gagal**. *(REVISI 2026-09-18; `[keputusan work owner]`)*
+      menyentuh tabel polis **gagal**. *(REVISI 2026-09-18; `[keputusan work owner]`)* — belum: jalur hapus pengguna belum menghapus apa pun; penjaga `TestJalurHapusTidakMenyentuhTabelSumber` hanya memeriksa `M_LIFE_PREMIUM_DETAIL`, bukan `T_PREMIUM_LIST` dkk
 - [x] ⚠️ Penghapusan **didahului popup konfirmasi Ya/Batal** yang menyebut **jumlah baris tiap
-      jenis** yang akan ikut terhapus. *(AC 48 spec)*
+      jenis** yang akan ikut terhapus. *(AC 48 spec)* — bukti: `APP_RNM/internal/services/hapus.go:Penghapusan.Dampak`, `APP_RNM/frontend/src/pages/claimlife/KlaimLife.tsx:KlaimLife` (dialog Ya/Batal per jenis); uji `TestDampakMenghitungTiapJenisTerpisah`
 - [x] ⚠️ Memilih **Batal** **tidak mengubah apa pun** — tidak ada baris terhapus, tidak ada status
-      berubah, tidak ada jejak audit penghapusan. *(AC 48 spec)*
-- [x] Jumlah yang ditampilkan popup **sama persis** dengan jumlah yang benar-benar terhapus —
-      dihitung dari data, bukan dari perkiraan.
+      berubah, tidak ada jejak audit penghapusan. *(AC 48 spec)* — bukti: `APP_RNM/internal/services/hapus.go:Penghapusan.Dampak` (hanya membaca); uji `TestDampakTidakMenulis`
+- [ ] Jumlah yang ditampilkan popup **sama persis** dengan jumlah yang benar-benar terhapus —
+      dihitung dari data, bukan dari perkiraan. — belum: angka dihitung dari data (`PohonKlaim.Dampak`), tetapi `Penghapusan.Hapus` belum menghapus apa pun — kesamaannya dengan yang terhapus belum dapat dibuktikan
 - [ ] ⚠️ Menghapus klaim life **menghapus juga baris `T_WORK_CLAIM`**-nya; tidak ada keadaan tangga
-      yang tertinggal tanpa klaim. *(AC 47 spec; penyimpangan sadar 6)*
+      yang tertinggal tanpa klaim. *(AC 47 spec; penyimpangan sadar 6)* — belum: penghapusan belum dilaksanakan — `Penghapusan.Hapus` sengaja gagal terang (`ErrHapusFisikDilarang`, ADR-U-0031)
 - [ ] Seluruh penghapusan berjalan dalam **satu transaksi**: kegagalan di tingkat mana pun
-      **membatalkan seluruhnya**, dan klaim tetap utuh. *(AC 49 spec)*
+      **membatalkan seluruhnya**, dan klaim tetap utuh. *(AC 49 spec)* — belum: penghapusan belum dilaksanakan — `Penghapusan.Hapus` sengaja gagal terang (`ErrHapusFisikDilarang`, ADR-U-0031)
 - [ ] Penghapusan mencatat **jejak audit** — siapa, kapan, dan berapa baris tiap jenis.
-      *(**ADR-0007**)*
+      *(**ADR-0007**)* — belum: penghapusan belum dilaksanakan, dan `Penghapusan` tidak punya perekam jejak
 - [ ] Penghapusan yang gagal menghasilkan kegagalan **terang-terangan**, bukan sebagian terhapus
-      diam-diam. *(**ADR-0015**)*
+      diam-diam. *(**ADR-0015**)* — belum: penghapusan belum dilaksanakan; yang ada hanya penolakan terang `ErrHapusFisikDilarang` (HTTP 405, uji `TestHapusFisikDijawab405DenganAllow`)
 - [x] Menghapus klaim **tidak menyentuh** `M_LIFE_PREMIUM_DETAIL` — ia hanya dibaca sebagai sumber
-      snapshot peserta.
+      snapshot peserta. — bukti: uji `TestJalurHapusTidakMenyentuhTabelSumber`
 - [ ] ⚠️ **Perlakuan `OS_AKSEPTASI_KLAIM_LIFE` saat klaim dihapus** ditetapkan eksplisit. Ia **tetap
       ditulis** saat klaim disimpan (koreksi 2026-09-16, AC 32 spec), sehingga menghapus klaim
       menimbulkan pertanyaan: barisnya ikut dihapus, atau ditinggal karena hilir sudah membacanya?
       `[terbuka]` — **keputusan work owner**, **jangan tebak**. Tiket ini **tidak dinyatakan selesai**
-      sebelum jawabannya ada.
+      sebelum jawabannya ada. — belum: `[terbuka]` — keputusan work owner; layar hanya menyebut baris datar warisan terpisah dari total
 - [x] Menghapus klaim **tidak menghapus** peserta di premium list sumbernya — yang terhapus hanya
-      **snapshot** milik klaim itu.
+      **snapshot** milik klaim itu. — bukti: uji `TestJalurHapusTidakMenyentuhTabelSumber`
 
 ## Blocker
 

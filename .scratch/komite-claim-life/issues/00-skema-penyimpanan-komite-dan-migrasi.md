@@ -1,6 +1,6 @@
 # 00: Skema penyimpanan komite (`T_GENERAL_KOMITE` + `T_KOMITE_KOMITELIST`) + `COVER_KEY` — **PREFACTOR**
 
-**Status:** sebagian terkerjakan — verifikasi `013` selesai, dua celah ditambal `030`, penjaga dipasang; `-migrate` menunggu skema uji dan persetujuan
+**Status:** sebagian — DDL `013`/`030` + penjaga statik ada; belum: kolom audit `T_GENERAL_KOMITE`, `CHECK` approval, FK `ADJUSTMENT_ID`, migrasi data lama, dan `-migrate` naik/turun terhadap Oracle
 
 **Blocked by:** **Claim Life tiket `14`** (skema klaim — `T_CLAIMLF_ADJUSTMENT` dan `T_WORK_CLAIM`
 harus ada lebih dulu; tabel di sini merujuk keduanya)
@@ -142,60 +142,60 @@ arbitrer (**ADR-0003**).
 - [ ] ⚠️ **`T_GENERAL_KOMITE` ada** dengan **`ID` = `T_WORK_CLAIM.ID` baris komite (shared primary
       key, teks berformat `KMT-xxxxxx`)** beserta `ADJUSTMENT_ID`, `KOMITE_LOOP`, `KOMITE_COUNT`,
       `ACCEPT_STATUS`, dan audit. **REVISI 2026-09-18:** PK-nya **bukan** sequence.
-      *(AC 30 spec; penyimpangan sadar 1)*
-- [ ] ⚠️ ⛔ **Tidak ada kolom `WORK_CLAIM_ID` di mana pun.** Hubungan `T_WORK_CLAIM` ↔
+      *(AC 30 spec; penyimpangan sadar 1)* — belum: kolom audit (operator, tanggal) tidak ada di `013_tabel_komite.sql` — namanya masih `[terbuka]` di STRUKTUR; sisanya ada (shared PK berawalan `KMTLF-`, `ADJUSTMENT_ID`, `KOMITE_LOOP`, `KOMITE_COUNT`, `ACCEPT_STATUS`)
+- [x] ⚠️ ⛔ **Tidak ada kolom `WORK_CLAIM_ID` di mana pun.** Hubungan `T_WORK_CLAIM` ↔
       `T_GENERAL_KOMITE` dijamin oleh **`ID` yang identik** (shared PK), bukan oleh kolom
       penyambung. Test yang menemukan kolom `WORK_CLAIM_ID` **gagal**.
-      *(REVISI 2026-09-18; `[keputusan work owner]`)*
-- [ ] ⚠️ **`T_GENERAL_KOMITE.ADJUSTMENT_ID` TETAP ADA** — penutup lingkar ke baris adjustment; ia
-      **bukan** bagian shared PK dan **tidak** ikut dibuang. *(REVISI 2026-09-18)*
-- [ ] ⚠️ **`T_KOMITE_KOMITELIST` ada** dengan FK **`DATA_KOMITE_ID`** → `T_GENERAL_KOMITE.ID` dan
-      **`ON DELETE CASCADE`**; satu baris **per anggota per jenjang**. *(AC 30 spec)*
-- [ ] ⚠️ **`T_WORK_CLAIM` memuat `COVER_KEY`**, nullable dan ber-index — `ID` baris induk; `NULL`
-      bila baris itu tidak punya induk. *(§9 spec; REVISI 2026-09-17)*
-- [ ] ⚠️ **Kirim komite melahirkan BARIS BARU di `T_WORK_CLAIM`** — `ID` = identitas kasus komite,
+      *(REVISI 2026-09-18; `[keputusan work owner]`)* — bukti: uji `TestNamaYangDibuangTidakAda` (seluruh migrasi); di luar komentar nol kemunculan di kode Go/TS
+- [x] ⚠️ **`T_GENERAL_KOMITE.ADJUSTMENT_ID` TETAP ADA** — penutup lingkar ke baris adjustment; ia
+      **bukan** bagian shared PK dan **tidak** ikut dibuang. *(REVISI 2026-09-18)* — bukti: `repository/migrations/013_tabel_komite.sql:T_GENERAL_KOMITE` (`ADJUSTMENT_ID NOT NULL` + `UX_GENERAL_KOMITE_ADJ`)
+- [x] ⚠️ **`T_KOMITE_KOMITELIST` ada** dengan FK **`DATA_KOMITE_ID`** → `T_GENERAL_KOMITE.ID` dan
+      **`ON DELETE CASCADE`**; satu baris **per anggota per jenjang**. *(AC 30 spec)* — bukti: `repository/migrations/030_komite_kaskade_dan_lebar_id.sql:FK_KOMITELIST_KOMITE` (`ON DELETE CASCADE`), uji `TestKaskadeHanyaPadaRelasiTerdaftar`; `-migrate` belum pernah dijalankan
+- [x] ⚠️ **`T_WORK_CLAIM` memuat `COVER_KEY`**, nullable dan ber-index — `ID` baris induk; `NULL`
+      bila baris itu tidak punya induk. *(§9 spec; REVISI 2026-09-17)* — bukti: `repository/migrations/001_t_work_claim.sql:IX_WORK_CLAIM_COVER_KEY` (kolom nullable), uji `TestKunciTamuBerIndex`
+- [x] ⚠️ **Kirim komite melahirkan BARIS BARU di `T_WORK_CLAIM`** — `ID` = identitas kasus komite,
       `COVER_KEY` = `ID` baris klaim. Kasus komite **bukan** kolom pada baris klaim.
-      *(REVISI 2026-09-17; `[keputusan work owner]`)*
-- [ ] ⚠️ **Tidak ada kolom `KMT_NO` di mana pun.** Identitas kasus komite hidup di
+      *(REVISI 2026-09-17; `[keputusan work owner]`)* — bukti: `repository/kasuskomite.go:PohonKlaim.BuatKasusKomite` (INSERT `T_WORK_CLAIM`: `ID` = `KMTLF-…`, `COVER_KEY` = klaim)
+- [x] ⚠️ **Tidak ada kolom `KMT_NO` di mana pun.** Identitas kasus komite hidup di
       `T_WORK_CLAIM.ID`; menyimpannya lagi sebagai kolom terpisah berarti duplikasi. Test yang
-      menemukan `KMT_NO` **gagal**. *(REVISI 2026-09-17)*
-- [ ] ⚠️ **`ADJUSTMENT_ID` berada di `T_GENERAL_KOMITE`, BUKAN di `T_WORK_CLAIM`.** Test yang
-      menemukannya di tabel work **gagal**. *(§9 spec)*
+      menemukan `KMT_NO` **gagal**. *(REVISI 2026-09-17)* — bukti: uji `TestNamaYangDibuangTidakAda`
+- [x] ⚠️ **`ADJUSTMENT_ID` berada di `T_GENERAL_KOMITE`, BUKAN di `T_WORK_CLAIM`.** Test yang
+      menemukannya di tabel work **gagal**. *(§9 spec)* — bukti: uji `TestKolomDDLCocokDenganStruktur` (kolom DDL di luar STRUKTUR gagal); `001_t_work_claim.sql` tanpa `ADJUSTMENT_ID`
 - [ ] `DATE_APPROVE` bertipe **`DATE`**; `KOMITE_APROVAL` hanya menerima `0`, `1`, `2`.
-      *(AC 31 spec; penyimpangan sadar 4)*
-- [ ] `KOMITE_URUT` menyimpan jenjang tangga, sehingga riwayat dapat diurut **tanpa** bergantung
-      urutan penyisipan baris. *(AC 33 spec)*
-- [ ] ⚠️ Rujukan antar tabel memakai **`ID` / `COVER_KEY`**; **tidak ada** kolom yang menyimpan indeks
+      *(AC 31 spec; penyimpangan sadar 4)* — belum: `DATE_APPROVE DATE` ada, tetapi `KOMITE_APPROVAL VARCHAR2(8)` tanpa `CHECK`, dan eskalasi menulis `NULL` (`repository/komite_keputusan.go:sqlLewatiAnakTangga`)
+- [x] `KOMITE_URUT` menyimpan jenjang tangga, sehingga riwayat dapat diurut **tanpa** bergantung
+      urutan penyisipan baris. *(AC 33 spec)* — bukti: `repository/komite_inbox.go:sqlTanggaKasus` (`ORDER BY KOMITE_URUT, ID`)
+- [x] ⚠️ Rujukan antar tabel memakai **`ID` / `COVER_KEY`**; **tidak ada** kolom yang menyimpan indeks
       posisi. Test yang menemukan padanan `IndexAdjustment` / `IndexPremiumList` **gagal**.
-      *(AC 34 spec; penyimpangan sadar 2)*
-- [ ] Setiap FK (`DATA_KOMITE_ID`, `ADJUSTMENT_ID`) dan `COVER_KEY` **ber-index**. **REVISI
+      *(AC 34 spec; penyimpangan sadar 2)* — bukti: uji `TestAC45Dan48RujukanKomiteBukanIndeksPosisi`, uji `TestNolPenyimpanKeputusanKomiteDiKonteksIni` (pola indeks posisi di seluruh kode Go)
+- [x] Setiap FK (`DATA_KOMITE_ID`, `ADJUSTMENT_ID`) dan `COVER_KEY` **ber-index**. **REVISI
       2026-09-18:** `WORK_CLAIM_ID` dihapus dari daftar — kolomnya tidak ada; `T_GENERAL_KOMITE.ID`
-      adalah PK sehingga sudah ber-index dengan sendirinya.
+      adalah PK sehingga sudah ber-index dengan sendirinya. — bukti: `013_tabel_komite.sql:IX_KOMITELIST_KOMITE` + `UX_GENERAL_KOMITE_ADJ`, `001_t_work_claim.sql:IX_WORK_CLAIM_COVER_KEY`
 - [ ] Integritas rujukan ditegakkan basis data: `ADJUSTMENT_ID` yang menunjuk baris adjustment
-      **tidak ada** **ditolak**; `DATA_KOMITE_ID` yatim **ditolak**.
-- [ ] ⚠️ **Tidak ada hapus fisik** baris keputusan; menghapus header komite mengkaskade ke anaknya.
-      *(penyimpangan sadar 3)*
-- [ ] ⚠️ **REVISI 2026-09-18 — identitas kedua tabel TIDAK seragam lagi.**
+      **tidak ada** **ditolak**; `DATA_KOMITE_ID` yatim **ditolak**. — belum: `DATA_KOMITE_ID` ber-FK, tetapi `ADJUSTMENT_ID` sengaja tanpa `REFERENCES` (dua tabel tujuan menurut `LINI`); keutuhannya hanya dijaga kode Go
+- [x] ⚠️ **Tidak ada hapus fisik** baris keputusan; menghapus header komite mengkaskade ke anaknya.
+      *(penyimpangan sadar 3)* — bukti: `030_komite_kaskade_dan_lebar_id.sql:FK_KOMITELIST_KOMITE` (kaskade); nol `DELETE` atas `T_GENERAL_KOMITE`/`T_KOMITE_KOMITELIST` di kode — eskalasi mengosongkan, bukan menghapus
+- [x] ⚠️ **REVISI 2026-09-18 — identitas kedua tabel TIDAK seragam lagi.**
       `T_KOMITE_KOMITELIST.ID` berasal dari **sequence** (**ADR-0006**), tetapi
       `T_GENERAL_KOMITE.ID` adalah **shared PK** — ia **mengambil** `T_WORK_CLAIM.ID` baris komite
       (teks berformat `KMT-xxxxxx`), **bukan** sequence. Test yang menuntut sequence untuk
-      `T_GENERAL_KOMITE.ID` **keliru** dan harus dibalik. *(penyimpangan sadar dari ADR-0006)*
-- [ ] ✅ Tipe `T_WORK_CLAIM.ID` **SUDAH DITETAPKAN 2026-09-18** — **teks berformat**, baris klaim
+      `T_GENERAL_KOMITE.ID` **keliru** dan harus dibalik. *(penyimpangan sadar dari ADR-0006)* — bukti: `repository/kasuskomite.go:PohonKlaim.BuatKasusKomite` (anak dari `SEQ_KOMITE_KOMITELIST`; kepala = `PengenalWorkBerikut`, bukan sequence tabelnya)
+- [x] ✅ Tipe `T_WORK_CLAIM.ID` **SUDAH DITETAPKAN 2026-09-18** — **teks berformat**, baris klaim
       `CLM-xxxxxx` dan baris komite `KMT-xxxxxx`; **bukan** angka sequence. `COVER_KEY`,
       `T_GENERAL_CLAIM.ID`, `T_GENERAL_KOMITE.ID`, dan `T_CLAIMLF_ADJUSTMENT.KOMITE_ID`
-      **mengikuti** tipe itu. *(`[keputusan work owner]`; ⚠️ penyimpangan sadar dari **ADR-0006**)*
+      **mengikuti** tipe itu. *(`[keputusan work owner]`; ⚠️ penyimpangan sadar dari **ADR-0006**)* — bukti: uji `TestAC33IdentitasBertipeSama`, uji `TestLebarKolomPenunjukSamaDenganIndukNya`, uji `TestIdentitasWorkClaimBerupaTeks` (awalan baris komite `KMTLF-` menurut STRUKTUR)
 - [ ] ⚠️ `[terbuka]` **Generator nomor `CLM-`/`KMT-` belum ditetapkan** — siapa yang membuatnya,
       apakah ada sequence di belakang prefiks, apakah di-reset per tahun. Pemilik **DBA / work
-      owner**. **Jangan tebak.**
-- [ ] ⚠️ `[terbuka]` **Apakah `COVER_KEY` dan `T_CLAIMLF_ADJUSTMENT.KOMITE_ID` dipasangi
+      owner**. **Jangan tebak.** — belum: sebagian diputuskan (butir aa 26-09-2026: `SEQ_WORK_CLAIM` + awalan, `repository/pengenalwork.go:PohonKlaim.PengenalWorkBerikut`); reset per tahun tidak diputuskan dan STRUKTUR masih `[terbuka]`
+- [x] ⚠️ `[terbuka]` **Apakah `COVER_KEY` dan `T_CLAIMLF_ADJUSTMENT.KOMITE_ID` dipasangi
       `REFERENCES T_WORK_CLAIM(ID)`** atau dibiarkan tanpa constraint — **belum diputuskan**.
-      Pemilik **DBA / work owner**. Tiket ini **tidak dinyatakan selesai** sebelum jawabannya ada.
+      Pemilik **DBA / work owner**. Tiket ini **tidak dinyatakan selesai** sebelum jawabannya ada. — bukti: diputuskan butir d 26-09-2026 — `FK_WORK_COVER_KEY` (001) dan `FK_ADJ_KOMITE` (004), uji `TestAC50PenunjukKeAtasBerReferences`
 - [ ] `POOLDATA.EMAILKOMITE` **tidak ditulis** — ia master yang dibaca. Test yang menemukan tulisan
-      ke sana **gagal**. *(`[data DBA]`)*
+      ke sana **gagal**. *(`[data DBA]`)* — belum: kode hanya membaca (`repository/roster.go:PohonKlaim.AmbilRosterKomite`, satu-satunya rujukan), tetapi tidak ada uji yang gagal bila ada tulisan ke `EMAILKOMITE`
 - [ ] Bila ada roster/keputusan lama yang hidup, migrasi memindahkannya ke kedua tabel **tanpa
       kehilangan satu nilai pun**, dan rekonsiliasi membandingkan jumlah baris per kasus.
-      *(**ADR-0009**)*
-- [ ] Migrasi dapat **dijalankan ulang dengan aman** dan punya **jalur mundur yang diuji**.
+      *(**ADR-0009**)* — belum: tidak ada skrip migrasi roster/keputusan lama maupun rekonsiliasi jumlah barisnya
+- [ ] Migrasi dapat **dijalankan ulang dengan aman** dan punya **jalur mundur yang diuji**. — belum: `TestMigrasiIdempoten` dan `TestJalurMundurDiuji` (uji db) ada, tetapi belum pernah dijalankan — `-migrate` belum pernah jalan terhadap Oracle
 
 ## Blocker
 

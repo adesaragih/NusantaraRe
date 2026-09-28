@@ -1,6 +1,6 @@
 # 03: Baris `AdjustmentList` + Save ke Outstanding
 
-**Status:** claimed
+**Status:** sebagian — rute Save to RNM (`SaveOutStandingLife_Act`) belum ada; spreading dan gerbang dokumen tanpa pemanggil produksi
 
 **Blocked by:** 02 (register klaim + penomoran), **14 (skema relasional klaim — PREFACTOR)**
 
@@ -39,40 +39,40 @@ persen; nama kolom tidak dapat dipakai menebak sifatnya).
 ## Acceptance criteria
 
 - [ ] Baris `AdjustmentList` yang baru disimpan ke Outstanding berstatus **Outstanding** (`0`).
-      *(AC 1 spec)*
+      *(AC 1 spec)* — belum: rute Save to RNM (`SaveOutStandingLife_Act`) belum ada — `TandaiOutstanding` nol pemanggil produksi
 - [x] Sebuah klaim dapat memuat **beberapa** baris adjustment sekaligus, masing-masing dengan
-      statusnya sendiri. *(AC 25 spec)*
+      statusnya sendiri. *(AC 25 spec)* — bukti: `APP_RNM/internal/repository/klaimlife.go:KlaimLife.AmbilBaris` (daftar baris per peserta, `KodeStatus` per baris); uji `TestBarisMelekatPadaPesertanya`, `TestStatusKlaimTurunan`
 - [x] Baris yang ditambahkan setelah baris pertama **mewarisi delapan kolom** di atas dari baris
-      pertama, dan **tidak** mewarisi status. *(AC 5 spec)*
+      pertama, dan **tidak** mewarisi status. *(AC 5 spec)* — bukti: `APP_RNM/internal/services/adjustment.go:WarisiKolom` (dipakai `BarisLanjutan`); uji `TestBarisKeduaMewarisiDelapanKolomTanpaStatus`, `TestBarisBaruTidakMewarisiStatus`
 - [x] Kedelapan kolom uang diperlakukan sebagai uang; `EM_PERCENT` **tidak** diperlakukan sebagai
-      uang. *(AC 23 spec)*
+      uang. *(AC 23 spec)* — bukti: `APP_RNM/internal/repository/kolompeserta.go:rakitPeserta` (delapan kolom `Money`, `EM_PERCENT` sebagai `Ratio`); uji `TestUraiRasioMengembalikanGalatDanBukanUang`
 - [x] Tidak ada nilai uang sebagai *binary floating point* di lapisan mana pun maupun di kontrak API.
-      *(AC 22 spec)*
+      *(AC 22 spec)* — bukti: `APP_RNM/internal/models/money.go:Money.MarshalJSON`; uji `TestUangDiJSONAdalahTeks`, `TestUraiUangTanpaBerubahSatuDigit`
 
 ### Penyimpanan relasional ⚠️ BARU 2026-09-16 — spec §2b
 
-- [ ] ⚠️ Setiap baris adjustment menunjuk **satu peserta** lewat `PREMIUM_LIST_DETAIL_ID`. Test yang
+- [x] ⚠️ Setiap baris adjustment menunjuk **satu peserta** lewat `PREMIUM_LIST_DETAIL_ID`. Test yang
       menemukan FK adjustment menunjuk **header klaim** **gagal**. *(AC 33 spec; penyimpangan
-      sadar 2 — perbaikan relasi, bukan peniruan)*
+      sadar 2 — perbaikan relasi, bukan peniruan)* — bukti: `APP_RNM/internal/repository/pohonklaim.go:PohonKlaim.sisipBarisAdjustment` (`PREMIUM_LIST_DETAIL_ID`); uji `TestAdjustmentMenggantungPadaPeserta`
 - [ ] ⚠️ Dua peserta dengan masing-masing dua putaran adjustment menghasilkan **empat baris yang
-      seluruhnya dapat ditelusuri ke peserta yang benar**. *(AC 34 spec)*
+      seluruhnya dapat ditelusuri ke peserta yang benar**. *(AC 34 spec)* — belum: belum ada uji skenario dua peserta × dua putaran (yang terdekat, `TestBarisMenunjukPesertaYangBenar`, memakai tiga baris migrasi), dan belum ada jalur yang melahirkan baris pertama
 - [x] ⚠️ Peserta menyimpan **penanda dipilih-untuk-diklaim** (`IS_CHECK`) — inilah penyimpan aturan
-      "hanya peserta yang diklaim". *(AC 39 spec; penyimpangan sadar 3)*
-- [ ] ⚠️ Tanggal **diterima**, **konfirmasi**, dan **penyelesaian** tersimpan **per peserta**, bukan
-      di header. *(AC 40 spec)*
+      "hanya peserta yang diklaim". *(AC 39 spec; penyimpangan sadar 3)* — bukti: `APP_RNM/internal/repository/kolompeserta.go:insertPeserta` (kolom `IS_CHECK`), `APP_RNM/internal/repository/klaimlife.go:KlaimLife.PasangPenandaDipilih`; uji `TestTambahBarisMenandaiPesertaDipilih`, `TestPenandaDipilihSatuNilaiSaja`
+- [x] ⚠️ Tanggal **diterima**, **konfirmasi**, dan **penyelesaian** tersimpan **per peserta**, bukan
+      di header. *(AC 40 spec)* — bukti: `APP_RNM/internal/repository/klaimlife.go:KlaimLife.PerbaruiTanggalKlaim` (kolom peserta `CLAIM_RECEIVED_DATE`, `CONFIRMATION_DATE`, `COMPLETE_DATE`; nol kolom itu di header); uji `TestKolomTanggalKlaimAdaDiMigrasi003`, `TestSQLTanggalKlaimBerurutPosisi`
 - [ ] Peserta menyimpan `STATUS`, `RECOMMENDATION`, `SOURCE_ID`, dan `CEDING_RETENTION`.
-      *(AC 41 spec)*
-- [x] ⚠️ `STS_REJECT` baris adjustment diisi **nilai sebenarnya menurut aksi** — Admin insert
+      *(AC 41 spec)* — belum: `SOURCE_ID` dan `CEDING_RETENTION` ditulis (`kolompeserta.go:insertPeserta`), tetapi `STATUS` dan `RECOMMENDATION` hanya ada di DDL 003 — nol penulis maupun pembaca
+- [ ] ⚠️ `STS_REJECT` baris adjustment diisi **nilai sebenarnya menurut aksi** — Admin insert
       Outstanding → `0`; SPV tambah Outstanding → `0`. Test yang menemukan nilai di-hardcode
-      **gagal**. *(AC 42 spec; penyimpangan sadar 4)*
+      **gagal**. *(AC 42 spec; penyimpangan sadar 4)* — belum: jalur SPV (`BarisLanjutan` di `Putaran.Tambah`) menulis `0` menurut aksi, tetapi jalur insert Outstanding (Save to RNM) belum ada — `TandaiOutstanding` nol pemanggil produksi
 - [x] ⚠️ `ACCEPTATION_DATE` **tidak** distempel saat insert; ia diisi **tanggal akseptasi
-      sebenarnya** saat baris benar-benar diaksep. *(AC 43 spec; penyimpangan sadar 4)*
-- [ ] Peserta beserta seluruh baris adjustment-nya tersimpan dalam **satu transaksi**. *(AC 49 spec)*
-- [x] Baris adjustment menyimpan **nama bank**, **id bank**, dan **nomor rekening**, dan ketiganya
+      sebenarnya** saat baris benar-benar diaksep. *(AC 43 spec; penyimpangan sadar 4)* — bukti: `APP_RNM/internal/services/statusbaris.go:Transisi` (stempel hanya pada Aksep); uji `TestSimpanKeOutstandingTidakMenstempelTanggalAkseptasi`, `TestAksepMenstempelTanggalAkseptasi`
+- [x] Peserta beserta seluruh baris adjustment-nya tersimpan dalam **satu transaksi**. *(AC 49 spec)* — bukti: `APP_RNM/internal/repository/pohonklaim.go:PohonKlaim.Simpan` (satu `tx` dari `Service.DalamTransaksi`); uji `TestSimpanPohonMenulisDuaTempatDalamSatuTransaksi` (uji db)
+- [ ] Baris adjustment menyimpan **nama bank**, **id bank**, dan **nomor rekening**, dan ketiganya
       dapat diisi dari layar rincian adjustment. *(AC 56 spec; `[terverifikasi]` class
-      `ASM-FW-GISFW-Data-AdjustmentLife`, tampil di `Claim Life/Section/AdjustmentDetail_Section.xml`)*
+      `ASM-FW-GISFW-Data-AdjustmentLife`, tampil di `Claim Life/Section/AdjustmentDetail_Section.xml`)* — belum: kolom ada dan ditulis `sisipBarisAdjustment`, tetapi nol layar maupun rute yang mengisinya — tidak ada isian bank di `frontend/src`
 - [ ] Ketiga field bank **boleh kosong saat Save ke Outstanding** — ia baru menjadi gerbang pada
-      **penyerahan ke Komite** (tiket 10). *(AC 57 spec)*
+      **penyerahan ke Komite** (tiket 10). *(AC 57 spec)* — belum: rute Save to RNM belum ada, jadi belum ada simpan Outstanding untuk diuji
 
 ### Dokumen per peserta — **gerbang simpan** ⚠️ BARU 2026-09-16
 
@@ -82,14 +82,14 @@ persen; nama kolom tidak dapat dipakai menebak sifatnya).
 `"The document hasn't been uploaded person number "+<nomor>` serta
 `"Documents are incomplete, please complete the documents"`.
 
-- [ ] ⚠️ Dokumen tersimpan **per peserta** di `DOCUMENT_CLAIM` dan dapat dibaca dengan `SELECT`
-      biasa — **bukan** lewat mekanisme lampiran bawaan. *(AC 44 spec; penyimpangan sadar 5)*
+- [x] ⚠️ Dokumen tersimpan **per peserta** di `DOCUMENT_CLAIM` dan dapat dibaca dengan `SELECT`
+      biasa — **bukan** lewat mekanisme lampiran bawaan. *(AC 44 spec; penyimpangan sadar 5)* — bukti: `APP_RNM/internal/repository/klaimlife.go:KlaimLife.AmbilDokumen` (`SELECT` biasa atas `T_CLAIMLF_DOCUMENT`), `APP_RNM/internal/services/unggahan.go:Unggahan.Unggah`; uji `TestAC05DokumenMenunjukPeserta`
 - [ ] ⚠️ Menyimpan ke Outstanding **ditolak** bila ada peserta yang dokumennya belum lengkap, dengan
-      pesan yang **menyebut peserta mana**. *(AC 45 spec; penyimpangan sadar 5)*
+      pesan yang **menyebut peserta mana**. *(AC 45 spec; penyimpangan sadar 5)* — belum: `PeriksaDokumenAda`/`PeriksaDokumenLengkap` ada dan teruji (`TestPesertaTanpaDokumenDitolakDenganNomorUrut`), tetapi nol pemanggil — rute Save to RNM belum ada
 - [x] Kolom isian `DOCUMENT_CLAIM` **diturunkan dari sensus `.DocumentList`** pada activity di atas,
-      dan **keputusannya dicatat** — **jangan tebak dari nama tabel**. *(tiket 14 §Catatan)*
-- [ ] Halaman React menampilkan daftar baris adjustment dengan status masing-masing sebagai kata,
-      bukan angka. *(AC 26 spec)*
+      dan **keputusannya dicatat** — **jangan tebak dari nama tabel**. *(tiket 14 §Catatan)* — bukti: `APP_RNM/internal/repository/migrations/010_kolom_t_claimlf_document.sql` (tujuh kolom dari sensus `InsertDocument_Act`); uji `TestKolomDDLCocokDenganStruktur`
+- [x] Halaman React menampilkan daftar baris adjustment dengan status masing-masing sebagai kata,
+      bukan angka. *(AC 26 spec)* — bukti: `APP_RNM/frontend/src/pages/claimlife/KlaimLife.tsx:KlaimLife` (`b.status`, kata dari `BarisAdjustment.MarshalJSON`); uji `TestStatusBarisDariKode`
 
 ### Spreading adjustment ⚠️ BARU 2026-09-16
 
@@ -101,16 +101,16 @@ adjustment**.
 
 - [ ] ⚠️ Menyimpan baris adjustment **menghitung dan menyimpan** spreading-nya: satu baris per
       treaty-year, dan di bawahnya satu baris per reinsurer. *(AC 59 spec; tiket 14; penyimpangan sadar —
-      spreading dibekukan)*
+      spreading dibekukan)* — belum: `HitungSpreading` nol pemanggil produksi dan masukan rate-nya tanpa pembaca (OQ-M7) — tidak ada spreading yang tersimpan
 - [ ] ⚠️ Setiap baris spreading menunjuk **satu baris adjustment**; setiap baris spreading retro
       menunjuk **satu baris spreading**. Test yang menemukan keduanya menggantung pada peserta atau
-      pada header klaim **gagal**. *(AC 58 spec; tiket 14)*
+      pada header klaim **gagal**. *(AC 58 spec; tiket 14)* — belum: DDL benar (`FK_SPR_ADJ`, `FK_SPR_RETRO_SPR` di migrasi 005/006), tetapi nol uji yang gagal bila FK itu menunjuk peserta/header — `TestKaskadeHanyaPadaRelasiTerdaftar` hanya memeriksa ada-tidaknya `ON DELETE CASCADE`
 - [ ] Nilai turunan tersimpan sesuai perhitungan yang terbukti, **dengan pembulatan dan pembagian
       seribu**: `RATE_tersimpan = bulat(rate_mentah, 4)`; `rate_pakai = bulat(rate_mentah ÷ 1000, 10)`;
       `AMOUNT = RetrocadedShare × bulat(PERCENT_SHARE ÷ 100, 4)`;
       `PREMIUM_SPREADED_GROSS = rate_pakai × (1 + EM_PERCENT) × AMOUNT`, dengan `EM_PERCENT`
       dipakai sebagai **pecahan langsung** (tanpa ÷ 100).
-      *(`[terverifikasi]` `SpreadingClaimLife_Act` langkah 8.2.1.9.2 baris 4396-4509)*
+      *(`[terverifikasi]` `SpreadingClaimLife_Act` langkah 8.2.1.9.2 baris 4396-4509)* — belum: rumus teruji (`TestRateDibagiSeribuSekaliSaja`, `TestUangDibulatkanDelapanDesimal`), tetapi `HitungSpreading` nol pemanggil — nilainya tidak pernah tersimpan
 - [x] ⭐ `[ditutup oleh XML — 26-09-2026]` **`PREMIUM_SPREADED_NET` dipilih oleh tahun polis.**
       Kedua cabang memang ada, dan **aksi precondition-nya** yang memutuskan: langkah 8.2.1.9.3
       (`pyStepsDescription` = *"Tahun pertama"*, `local.Year==1` **WhenFalse=3 lewati**) memakai
@@ -119,20 +119,20 @@ adjustment**.
       (*"Bukan tahun pertama"*, `local.Year==1` **WhenTrue=3 lewati**) memakai `NET = GROSS − Comm`
       dengan `Comm = GROSS × bulat(OVR_COMM ÷ 100, 5)`.
       `local.Year = tahun(GROSS_VALUATION_BEGIN_DATE) − tahun(BEGIN_DATE) + 1`.
-      *(baris 4372-4599 dan 4640-4907; meralat `[terbuka]` tiket 14 §Blocker)*
+      *(baris 4372-4599 dan 4640-4907; meralat `[terbuka]` tiket 14 §Blocker)* — bukti: `APP_RNM/internal/services/spreading.go:HitungSpreading`, `TahunPolis`; uji `TestTahunPertamaMemakaiDiscount`, `TestBukanTahunPertamaTanpaDiscount`, `TestTahunPolisDihitungDariTahunSaja`
 - [ ] ⚠️ Nilai spreading **dibekukan**: perubahan master treaty sesudahnya **tidak mengubah** angka
-      yang sudah tersimpan pada adjustment itu. *(AC 59 spec)*
+      yang sudah tersimpan pada adjustment itu. *(AC 59 spec)* — belum: tidak ada spreading yang tersimpan (`HitungSpreading` nol pemanggil); skemanya memang tabel, bukan view (`TestAC42SpreadingDibekukanBukanTurunan`)
 - [x] ⭐ **BARU menurut XML 26-09-2026 — kaskade kapasitas per treaty-year.** Sisa klaim mengalir
       dari treaty-year satu ke berikutnya: bila `CURRENCY=="IDR"` dan sisa `≤ IDR` treaty-year itu,
       `RetrocadedShare = sisa` dan sisa menjadi `0`; bila sisa `> IDR`, `RetrocadedShare = IDR` dan
       sisa berkurang `IDR`. Sama persis untuk `"USD"` dengan kolom `USD`. Mata uang selain keduanya
-      tidak punya cabang di XML. *(`[terverifikasi]` langkah 8.2.1.4-7, baris 3030-3729)*
+      tidak punya cabang di XML. *(`[terverifikasi]` langkah 8.2.1.4-7, baris 3030-3729)* — bukti: `APP_RNM/internal/services/spreading.go:HitungSpreading`; uji `TestKaskadeKapasitasMengalirKeTreatyBerikut`, `TestMataUangTanpaCabangDitolak`
 - [x] ⭐ **BARU — pemilihan rate.** Baris `RATE_LIFE` dipilih per baris retro: bila `GENDER`
       **memuat `U`** cocokkan `AGE` saja; bila tidak, cocokkan `AGE` **dan** `SEX`. `CONTRACT` **tidak**
-      ikut dalam precondition yang aktif. *(`[terverifikasi]` langkah 8.2.1.9.1, baris 4084-4284)*
-- [ ] Adjustment tanpa retrosesi tersimpan dengan **nol baris** spreading — **bukan** kegagalan.
-- [ ] Baris adjustment beserta seluruh spreading dan spreading retro-nya tersimpan dalam **satu
-      transaksi**. *(AC 49 spec)*
+      ikut dalam precondition yang aktif. *(`[terverifikasi]` langkah 8.2.1.9.1, baris 4084-4284)* — bukti: `APP_RNM/internal/services/spreading.go:PilihRate`; uji `TestRateUnisexMengabaikanJenisKelamin`, `TestRateBerjenisKelaminMenuntutKecocokan`
+- [ ] Adjustment tanpa retrosesi tersimpan dengan **nol baris** spreading — **bukan** kegagalan. — belum: aturan murni menghasilkan nol baris tanpa galat (`TestTanpaTreatyNolBaris`), tetapi jalur simpan adjustment + spreading belum ada
+- [x] Baris adjustment beserta seluruh spreading dan spreading retro-nya tersimpan dalam **satu
+      transaksi**. *(AC 49 spec)* — bukti: `APP_RNM/internal/repository/pohonklaim.go:PohonKlaim.Simpan` (adjustment, spreading, dan retro dalam satu `tx`)
 
 ## Catatan
 

@@ -1,6 +1,6 @@
 # 02: Periode tutup buku dibaca dari `POOLDATA.TANGGAL_CLOSING` — dan gagal terang-terangan bila kosong
 
-**Status:** ready-for-agent
+**Status:** sebagian — periode produksi belum ditampilkan di layar Summary dan Detail sebelum menyimpan
 
 **Blocked by:** **00 (skema tujuh tabel — PREFACTOR)**
 
@@ -52,22 +52,22 @@ lingkungan), **ADR-0007** (jejak audit).
 
 ## Acceptance criteria
 
-- [ ] Tanggal tutup buku dibaca dari `POOLDATA.TANGGAL_CLOSING` **setiap kali dibutuhkan**, bukan
-      dari konstanta, bukan dari cache yang tidak pernah kedaluwarsa. *(AC 7 spec)*
-- [ ] Bila `POOLDATA.TANGGAL_CLOSING` **kosong atau tidak terbaca**, transaksi **ditolak** dengan
+- [x] Tanggal tutup buku dibaca dari `POOLDATA.TANGGAL_CLOSING` **setiap kali dibutuhkan**, bukan
+      dari konstanta, bukan dari cache yang tidak pernah kedaluwarsa. *(AC 7 spec)* — bukti: `repository/polis_periode.go:Tanggal`, `repository/penomor.go:HariClosing` (dibaca tiap pemanggilan, nol cache)
+- [x] Bila `POOLDATA.TANGGAL_CLOSING` **kosong atau tidak terbaca**, transaksi **ditolak** dengan
       pesan yang **menyebut tabel sumbernya**. Sistem **tidak** memakai nilai pengganti apa pun.
-      *(AC 8 spec; `[keputusan work owner]`)*
-- [ ] Tidak ada konstanta `25` — maupun angka ambang lain — di kode produksi. Test yang mencari
-      literal ambang di lapisan services/repository **gagal** bila ada.
-- [ ] Transaksi pada tanggal **setelah** tanggal tutup buku memperoleh periode **tanggal 1 bulan
-      berikutnya**, pukul `05:00 GMT` (12:00 WIB). *(AC 9 spec)*
-- [ ] Transaksi pada tanggal **sama dengan** tanggal tutup buku **tetap** di periode berjalan —
-      perbandingannya `>`, bukan `>=`. *(baris 1211 dan 3491 keduanya memakai `>`)*
-- [ ] Pergantian tahun tertangani: tutup buku Desember menggeser ke Januari tahun berikutnya, bukan
-      ke "bulan 13".
-- [ ] Jam dapat dikendalikan dari test — aturan periode diuji tanpa menunggu tanggal nyata.
+      *(AC 8 spec; `[keputusan work owner]`)* — bukti: `models/polis_periode.go:PeriodeProduksi`; uji `TestTabelKosongDITOLAK_BukanDiamDiamPakai25`
+- [x] Tidak ada konstanta `25` — maupun angka ambang lain — di kode produksi. Test yang mencari
+      literal ambang di lapisan services/repository **gagal** bila ada. — bukti: uji `TestNolAmbangTutupBukuTertanam`, `TestPenjagaAmbangMasihMenggigit`
+- [x] Transaksi pada tanggal **setelah** tanggal tutup buku memperoleh periode **tanggal 1 bulan
+      berikutnya**, pukul `05:00 GMT` (12:00 WIB). *(AC 9 spec)* — bukti: uji `TestPeriodeSelaluTanggalSatuJamLimaGMT`
+- [x] Transaksi pada tanggal **sama dengan** tanggal tutup buku **tetap** di periode berjalan —
+      perbandingannya `>`, bukan `>=`. *(baris 1211 dan 3491 keduanya memakai `>`)* — bukti: uji `TestPerbandinganLebihBesarBukanLebihBesarSama`
+- [x] Pergantian tahun tertangani: tutup buku Desember menggeser ke Januari tahun berikutnya, bukan
+      ke "bulan 13". — bukti: uji `TestPergantianTahunBukanBulanTigaBelas`
+- [x] Jam dapat dikendalikan dari test — aturan periode diuji tanpa menunggu tanggal nyata. — bukti: `services/polis_periode.go:DenganJam`; `models/polis_periode.go:PeriodeProduksi` menerima jam dari pemanggil
 - [ ] Periode produksi yang terpilih **terlihat pengguna** sebelum ia menyimpan, bukan hanya
-      tersimpan diam-diam.
+      tersimpan diam-diam. — belum: periode tampil hanya di layar keputusan (`InputOffer.tsx`); layar Summary (`Submit`) dan tombol terbitkan nomor di Detail tidak menampilkannya sebelum menyimpan
 
 ## Blocker
 

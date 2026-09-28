@@ -1,6 +1,6 @@
 # 05a: Simpan premium summary — konversi uang di satu batas, dan urutan procedure yang mengikat
 
-**Status:** ready-for-agent
+**Status:** sebagian — satu transaksi polis penuh + injeksi kegagalan, `M_LIFE_PREMIUM_SUMMARY` (OQ-PL-09), dan uji pulang-pergi Oracle belum ada
 
 **Blocked by:** **00 (skema tujuh tabel — PREFACTOR)**, 03 (penomoran — `PL_NUMBER` adalah masukan
 rekam polis)
@@ -103,9 +103,9 @@ oleh temuan bahwa parameter procedure seluruhnya `VARCHAR2`), **ADR-0006** (peno
 ## Acceptance criteria
 
 - [ ] `PROC_GENERATE_SEQUENCE_NUMBER` dan `PEGA_M_LIFE_PREMIUM_SUMMARY` dipanggil di dalam **satu
-      transaksi Go**, dan transaksi itu **commit sebelum** procedure lain dipanggil. *(AC 20 spec)*
+      transaksi Go**, dan transaksi itu **commit sebelum** procedure lain dipanggil. *(AC 20 spec)* — belum: kedua procedure tidak dipanggil (penomoran lewat tabel penghitung; `M_LIFE_PREMIUM_SUMMARY` menunggu OQ-PL-09)
 - [ ] ~~`INSERTJSONPOLISLIFE` dan `INSERTJSONOFFERLIFE` **tidak** dipanggil dari dalam transaksi
-      itu.~~ ⚠️ **TIDAK BERLAKU 2026-09-16** — keduanya **dibuang**; lihat AC pengganti di bawah.
+      itu.~~ ⚠️ **TIDAK BERLAKU 2026-09-16** — keduanya **dibuang**; lihat AC pengganti di bawah. — belum: dicoret, tidak berlaku (2026-09-16)
 
 ### Penyimpanan relasional ⚠️ BARU 2026-09-16 — spec §6, §12
 
@@ -113,39 +113,39 @@ oleh temuan bahwa parameter procedure seluruhnya `VARCHAR2`), **ADR-0006** (peno
       peserta, seluruh spreading, seluruh spreading retro, dan seluruh riwayat penawaran — lalu
       **commit sekali**. Kegagalan di tingkat mana pun **membatalkan seluruhnya**. Dibuktikan dengan
       menyuntikkan kegagalan pada baris peserta ke-N dan memastikan **tidak ada** polis tersimpan.
-      *(AC 35 spec; penyimpangan sadar 1)*
+      *(AC 35 spec; penyimpangan sadar 1)* — belum: `simpanDalam` memuat nomor + rekap + salinan warisan saja; header, peserta, spreading, dan riwayat penawaran tidak ikut, dan uji injeksi kegagalan belum ada
 - [ ] Penomoran (`PROC_GENERATE_SEQUENCE_NUMBER`) berada **di dalam** transaksi itu: tidak pernah ada
-      nomor tanpa polis, tidak pernah ada polis tanpa nomor. *(AC 36 spec)*
+      nomor tanpa polis, tidak pernah ada polis tanpa nomor. *(AC 36 spec)* — belum: di dalam transaksi `simpanDalam` (uji `TestSimpanDalamUrutanTerkunci`), tetapi `POST …/nomor` (`Terbitkan`) tetap menerbitkan nomor tanpa rekap
 - [ ] ⚠️ **Tidak ada procedure JSON yang dipanggil.** Test yang menemukan pemanggilan
       `INSERTJSONPOLISLIFE`, `INSERTJSONOFFERLIFE`, atau padanan `@ASM.GetPageJSONString()`
-      **gagal**. *(AC 32, 34 spec; penyimpangan sadar 1)*
-- [ ] ⚠️ **Rekap uang per mata uang tersimpan** di tabel rekap — bukan dihitung lalu dibuang. Polis
+      **gagal**. *(AC 32, 34 spec; penyimpangan sadar 1)* — belum: nol pemanggilan procedure JSON di kode, tetapi uji penjaga yang gagal bila pemanggilan muncul belum ada
+- [x] ⚠️ **Rekap uang per mata uang tersimpan** di tabel rekap — bukan dihitung lalu dibuang. Polis
       bermata uang ganda menghasilkan **satu baris rekap per mata uang**, masing-masing dengan nilai
-      uangnya. *(AC 37 spec; penyimpangan sadar 2)*
+      uangnya. *(AC 37 spec; penyimpangan sadar 2)* — bukti: `repository/polis_summary.go:GantiRekap`; uji `TestSatuBarisRekapPerMataUang`, `TestNilaiSisipRekapSejajarDanTepat`
 - [ ] ⚠️ `M_LIFE_PREMIUM_SUMMARY`, `M_LIFE_PREMIUM_DETAIL`, dan `LIFEINPRODUCTION` **tidak ditulis**.
-      Test yang menemukan tulisan ke ketiganya **gagal**. *(AC 33 spec)*
+      Test yang menemukan tulisan ke ketiganya **gagal**. *(AC 33 spec)* — belum: pl2 membalik — `M_LIFE_PREMIUM_DETAIL` ditulis (`repository/polis_warisan.go:Ganti`); `M_LIFE_PREMIUM_SUMMARY`/`LIFEINPRODUCTION` tidak ditulis, tetapi uji penjaganya belum ada
 - [ ] ⚠️ Bila jalur warisan `SaveMasterLPDet` masih dipakai selama transisi, ia berada **di luar**
       transaksi polis dan **dapat diulang** — ia satu-satunya titik potong yang tersisa.
       *(spec §6; `[data DBA]` `COMMIT` di dalam procedure)*
-      *(AC 21 spec)*
+      *(AC 21 spec)* — belum: pl2 menaruh salinan warisan DI DALAM transaksi `simpanDalam`; dapat diulang (hapus lalu sisip, uji `TestHapusWarisanDikurungNomorDanWork`)
 - [ ] Kegagalan **sebelum** commit summary tidak meninggalkan nomor maupun rekam separuh: test
       menyuntikkan kegagalan di `PEGA_M_LIFE_PREMIUM_SUMMARY` dan memastikan **tidak ada** baris
-      `M_LIFE_PREMIUM_SUMMARY` **dan** sequence tidak bergerak. *(AC 22 spec)*
+      `M_LIFE_PREMIUM_SUMMARY` **dan** sequence tidak bergerak. *(AC 22 spec)* — belum: procedure tidak dipanggil, dan nol uji injeksi kegagalan
 - [ ] Kegagalan **setelah** commit summary meninggalkan nomor + rekam summary **utuh** dan keadaan itu
-      **terdeteksi** — bukan senyap. *(AC 23 spec)*
-- [ ] **Ada test yang gagal bila urutan pemanggilan diubah** — urutannya bagian dari kebenaran, bukan
-      kebetulan. *(AC 24 spec)*
+      **terdeteksi** — bukan senyap. *(AC 23 spec)* — belum: efek keluar sesudah commit tercatat di outbox (uji `TestEfekBerjalanSesudahCommitBukanDiDalamnya`), tetapi `Putuskan` (jalur Confirm) membuang ringkasan `EfekKeluar`
+- [x] **Ada test yang gagal bila urutan pemanggilan diubah** — urutannya bagian dari kebenaran, bukan
+      kebetulan. *(AC 24 spec)* — bukti: uji `TestSimpanDalamUrutanTerkunci`, `TestSimpanSebelumTutupDalamSatuTransaksi`
 - [ ] Konversi teks ↔ desimal terjadi **hanya di lapisan repository**, di satu tempat; lapisan
-      services dan handlers hanya mengenal desimal. *(AC 15 spec; **ADR-0003**)*
+      services dan handlers hanya mengenal desimal. *(AC 15 spec; **ADR-0003**)* — belum: `services/polis_summary.go:keTampil` memformat desimal ke teks di lapisan services
 - [ ] Ke-37 kolom terisi dari sumber yang benar, dan pemetaannya diuji kolom demi kolom — **bukan**
-      lewat posisi `CARI2`…`CARI34` yang tidak bernama.
+      lewat posisi `CARI2`…`CARI34` yang tidak bernama. — belum: `M_LIFE_PREMIUM_SUMMARY` tidak ditulis — OQ-PL-09
 - [ ] Nilai uang yang dikirim dan dibaca kembali **identik**, termasuk nilai berpecahan panjang dan
-      nilai negatif. Tidak ada pembulatan diam. *(AC 16 spec)*
+      nilai negatif. Tidak ada pembulatan diam. *(AC 16 spec)* — belum: nol uji pulang-pergi terhadap Oracle; rekap sengaja dibulatkan empat angka (DT)
 - [ ] Baik `PL_NUMBER` maupun `PL_NUMBER_EDM` tersimpan pada rekam summary yang sama sebagai **dua
       nilai terpisah**; jalur new business mengisi yang pertama, endorsement yang kedua.
-      *(AC 13 spec)*
+      *(AC 13 spec)* — belum: rekam summary warisan tidak ditulis (OQ-PL-09); `T_PREMIUM_LIST_SUMMARY` tanpa kolom `PL_NUMBER`
 - [ ] Keluaran galat procedure (`ERRMSG`, `STSSAVE`) **diperiksa**; galat yang dilaporkan procedure
-      tidak boleh diabaikan sehingga transaksi tampak berhasil.
+      tidak boleh diabaikan sehingga transaksi tampak berhasil. — belum: tidak berlaku — procedure tidak dipanggil (pl1)
 
 ## Blocker
 

@@ -1,6 +1,6 @@
 # 13: Migrasi data penuh Claim — Life
 
-**Status:** claimed
+**Status:** sebagian — migrasi data belum punya pelari dan belum pernah dijalankan; posisi tahap dan `LAYER_*` tidak dibawa
 
 **Blocked by:** 11 (kontrak Komite — jalur balik), **14 (skema relasional klaim — PREFACTOR)**
 
@@ -46,22 +46,22 @@ dijalankan ulang; normalisasi atribut polis. Rujukan silang: AC 51–54 spec.
 
 - [ ] Klaim yang sedang berada di tengah siklus terbawa **beserta statusnya** dan posisi tahapnya.
       ⚠️ **Diselaraskan:** posisi tahap mendarat di **`T_WORK_CLAIM`** (spec §2b), bukan di header
-      klaim. *(AC 46 spec; penyimpangan sadar 6)*
-- [ ] Setelah migrasi, penomoran klaim **tidak melompat dan tidak mengulang**. *(AC 42 spec)*
-- [x] Tidak ada periode dua penulis ke rekam akseptasi Life dari sisi Claim — Life. *(ADR-0009)*
+      klaim. *(AC 46 spec; penyimpangan sadar 6)* — belum: posisi tahap tidak ada di sumber warisan — migrasi melaporkannya, tidak membawanya (`TestTahapSelaluDilaporkanTidakAdaDiSumber`); migrasi data belum pernah dijalankan
+- [ ] Setelah migrasi, penomoran klaim **tidak melompat dan tidak mengulang**. *(AC 42 spec)* — belum: `PeriksaTandaAir` hanya menjaga "tidak mundur" (`TestPenomoranTidakMundurSesudahMigrasi`) dan nol pemanggil; migrasi data belum pernah dijalankan
+- [ ] Tidak ada periode dua penulis ke rekam akseptasi Life dari sisi Claim — Life. *(ADR-0009)*
       ⚠️ **Diselaraskan:** setelah cutover, penulis satu-satunya adalah keenam tabel klaim baru;
       `OS_AKSEPTASI_KLAIM_LIFE` **tetap ditulis** — ⚠️ **koreksi 2026-09-16**
       `[keputusan work owner]`: setelah cutover, penulis klaim adalah **kedelapan tabel relasional
       baru** *dan* `INSERT` flat ke `OS_AKSEPTASI_KLAIM_LIFE`, karena hilir masih membaca dari sana.
       Yang **dibuang hanya JSON**. Test yang **menolak** penulisan `OS_AKSEPTASI_KLAIM_LIFE` justru
-      **gagal**. *(AC 32 spec)*
+      **gagal**. *(AC 32 spec)* — belum: "nol periode dua penulis" adalah sifat cutover, tidak terbukti dari kode; yang terverifikasi hanya jalur tulis datar (`TestJalurTulisDatarWarisanWAJIBADA`)
 - [ ] ⚠️ Master `RATE_LIFE`, `PRODUCTINWARD_LIFE`, `CURRENCY` diperlakukan sebagai **view atas
       `JSONDATA`**, bukan sebagai tabel relasional biasa. **Pengecualian 2026-09-16:** **produk**
       dibaca dari **`product_life` relasional** (hasil migrasi Master Product Name Life), bukan dari
-      `m_product_life.JSONDATA`. *(AC 38 spec)*
-- [ ] `NO_SEQ` terjaga **per kombinasi `(CLASS, JENIS, TAHUN)`**, bukan sebagai penghitung global.
-- [x] Kolom `LAYER_1`…`LAYER_4` dipindahkan apa adanya **tanpa ditafsirkan** — perannya belum
-      terverifikasi.
+      `m_product_life.JSONDATA`. *(AC 38 spec)* — belum: master tidak disentuh migrasi (`TestMasterViewTidakDisentuh`), tetapi pembaca `RATE_LIFE`/`PRODUCTINWARD_LIFE` belum ada dan produk tidak dibaca dari `product_life` relasional di mana pun (OQ-M7)
+- [x] `NO_SEQ` terjaga **per kombinasi `(CLASS, JENIS, TAHUN)`**, bukan sebagai penghitung global. — bukti: `APP_RNM/internal/repository/penomor.go:Penomor.UrutNomorBerikut` (kunci `CLASS`, `JENIS`, `TAHUN`), `APP_RNM/internal/repository/migrasinomor.go:TandaAirSequence`; uji `TestTandaAirDihitungPerKombinasiKunci`
+- [ ] Kolom `LAYER_1`…`LAYER_4` dipindahkan apa adanya **tanpa ditafsirkan** — perannya belum
+      terverifikasi. — belum: migrasi Claim Life sengaja TIDAK membawa `LAYER_1`..`LAYER_4` (`kolomTidakDibawa`, uji `TestKolomTakDibawaHanyaAdaDiKatalog`) — nilainya tinggal di tabel datar, tidak dipindahkan
 
 ## Catatan penutupan (2026-09-14)
 

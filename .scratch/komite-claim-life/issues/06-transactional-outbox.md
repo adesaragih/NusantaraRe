@@ -1,6 +1,6 @@
 # 06: Transactional outbox — keputusan + daftar efek dalam satu transaksi
 
-**Status:** ready-for-agent
+**Status:** sebagian — AC 6 dibantah korpus (email langkah 11 diantre di setiap tingkat); menunggu work owner mencabut AC itu
 
 **Blocked by:** 04b (rekam akseptasi — satu jalur simpan)
 
@@ -47,18 +47,18 @@ ADR-0008**), **ADR-0013** (alamat endpoint di-lookup runtime, bukan disimpan di 
 
 ## Acceptance criteria
 
-- [ ] Keputusan dan **daftar keempat efeknya** tersimpan dalam **satu transaksi database**.
-      *(AC 19 spec)*
-- [ ] Bila transaksi gagal, **tidak ada** keputusan tersimpan **dan tidak ada** entri outbox — tidak
-      ada keadaan separuh.
-- [ ] Bila proses mati tepat setelah commit, antrean efek **tetap ada** dan dapat diambil worker.
-- [ ] Tiap entri outbox membawa **ID idempoten unik** sejak dibuat. *(AC 21 spec)*
-- [ ] Entri outbox menyimpan **kunci kategori** endpoint, **bukan URL** — alamat di-resolve saat
-      kirim (**ADR-0013**).
+- [x] Keputusan dan **daftar keempat efeknya** tersimpan dalam **satu transaksi database**.
+      *(AC 19 spec)* — bukti: `services/komite_keputusan.go:KeputusanKomite.Putuskan` (`antreEfekKomite` di dalam `DalamTransaksi`), uji `TestUrutanKeputusanDalamSatuTransaksi`; tiga efek — InsertJson dibuang (2026-09-16)
+- [x] Bila transaksi gagal, **tidak ada** keputusan tersimpan **dan tidak ada** entri outbox — tidak
+      ada keadaan separuh. — bukti: uji `TestUrutanKeputusanDalamSatuTransaksi` (satu `DalamTransaksi`); `repository/efekkeluar.go:PohonKlaim.AntreEfek` menuntut `*Tx`
+- [x] Bila proses mati tepat setelah commit, antrean efek **tetap ada** dan dapat diambil worker. — bukti: `repository/efekkeluar.go:PohonKlaim.AntreEfek` (baris `antre`, `JADWAL_BERIKUT` = saat) + `PungutEfek` bersaring `MODUL`; penjadwal pekerja belum ada (tiket 07)
+- [x] Tiap entri outbox membawa **ID idempoten unik** sejak dibuat. *(AC 21 spec)* — bukti: `repository/efekkeluar.go:PohonKlaim.AntreEfek` (`ID` dari `SEQ_LOG_SERVICE_RNM`)
+- [x] Entri outbox menyimpan **kunci kategori** endpoint, **bukan URL** — alamat di-resolve saat
+      kirim (**ADR-0013**). — bukti: uji `TestMuatanOutboxKomiteTanpaURL`
 - [ ] Efek hanya diantrekan pada keputusan yang benar-benar final; keputusan di tingkat bukan-
-      terakhir tidak menghasilkan entri outbox.
-- [ ] Keputusan dilaporkan **tersimpan**, belum **tuntas** — kedua keadaan itu dibedakan.
-      *(**ADR-0015**)*
+      terakhir tidak menghasilkan entri outbox. — belum: diralat — email (langkah 11) diantre pada setiap keputusan tingkat; hanya Arasapas/Kasir yang terbatas Setuju akhir (uji `TestEfekMenurutLangkah10Sampai12`)
+- [x] Keputusan dilaporkan **tersimpan**, belum **tuntas** — kedua keadaan itu dibedakan.
+      *(**ADR-0015**)* — bukti: `services/komite_keputusan.go:HasilKeputusanKomite` (`efekTertunda`) + kalimat layar `KasusKomite.tsx`, uji `TestKeadaanEfekKasus`
 
 ## Catatan — mengapa Komite berbeda dari Claim Life
 
