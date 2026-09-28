@@ -26,7 +26,7 @@ identitas tunggal yang dapat dirujuk seluruh perusahaan — termasuk oleh Claim 
 | `SavePremiumList_Act` | `ASM-FW-GISFW-WORK-LIFE` / `SAVEPREMIUMLIST_ACT` / `RULE-OBJ-ACTIVITY` | `PremiumList Life/Activity/SavePremiumList_Act.xml` | perakitan detail (451.849 byte, **15 langkah**) |
 | `GetKodeProdLife_SQL` | `ASM-FW-GISFW-INT-POLICYJSON` / `RNM!GETKODEPRODLIFE_SQL` / `RULE-CONNECT-SQL` | `PremiumList Life/RDBList/GetKodeProdLife_SQL.xml` | `SELECT KODE … FROM POOLDATA.KODE_PRODUKSI WHERE TYPE='LIFE'` |
 | `GetSequenceNumber_SQL` | `ASM-FW-GISFW-INT-POLICYJSON` / `RNM!GETSEQUENCENUMBER_SQL` / `RULE-CONNECT-SQL` | `PremiumList Life/RDBList/GetSequenceNumber_SQL.xml` | `POOLDATA.PROC_GENERATE_SEQUENCE_NUMBER(…)` + `COMMIT;` (baris 88) |
-| `GetPLNumber_Act` | `ASM-FW-GISFW-WORK-LIFE` / `GETPLNUMBER_ACT` / `RULE-OBJ-ACTIVITY` | `PremiumList Life/Activity/GetPLNumber_Act.xml` | baca balik nomor via `GetPLandNopolis_sql` |
+| `GetPLNumber_Act` | `ASM-FW-GISFW-WORK-LIFE` / `GETPLNUMBER_ACT` / `RULE-OBJ-ACTIVITY` | `PremiumList Life/Activity/GetPLNumber_Act.xml` | ⚠️ **RALAT 28-09-2026** — BUKAN "baca balik nomor". Ia mengisi **autocomplete nomor polis yang sudah ada** (`JSON_POLIS.NOPOLIS AS CARI1`), bergerbang `.Type = "TR" \|\| .Type = "TP"` (b450), satu langkah `RDB-List` ber-`REPEAT` sekali. Nol kaitan dengan penerbitan `PL_NUMBER`; rantai penomoran seluruhnya di `SubmitPremiumList_Act.xml` |
 | `GetProductDtlPL`, `GetRateProductLife`, `GetRateLifePM` | `ASM-FW-GISFW-…` / `RULE-CONNECT-SQL` | `PremiumList Life/RDBList/` | data produk & rate |
 
 `[terverifikasi]` **Rantai penomoran** di `SubmitPremiumList_Act` (baris `<pyStepPageReference>`):
@@ -106,7 +106,8 @@ transaksi dipegang Go; commit segera setelah nomor terbentuk agar lock `FOR UPDA
       dipilih dari data, bukan dari urutan langkah.
 
       ⚠️ **TAMBAHAN 28-09-2026, dan ini yang paling mudah dirusak "perbaikan".** Keempat tipe itu
-      berbagi **SATU** penghitung. Baris **2717** memakai teks **harfiah** `"QR/QP/TP/TR"` sebagai
+      berbagi **SATU** penghitung. `SubmitPremiumList_Act.xml` baris **2717** memakai teks
+      **harfiah** `"QR/QP/TP/TR"` sebagai
       bagian kunci `JENIS` (`ParamSeq.CARI2 = ParamSeq.HASIL3+"QR/QP/TP/TR"`); tipe yang sedang
       berjalan hanya masuk ke **nomornya**, tidak ke kuncinya. Memecahnya menjadi empat penghitung
       menerbitkan empat deret yang masing-masing mulai dari 1 — dan setiap nomor baru bertabrakan
@@ -230,7 +231,11 @@ Dikunci `TestDuaSebabNolBarisDibedakan`.
 
 ### Butir `[terbuka]` yang LAHIR di tiket ini
 
-- **OQ-PL-01 `CLASS` penghitung.** `ParamSeq.CARI1 = pyWorkPage.pxObjClass` (b2670) adalah kelas
+- ~~**OQ-PL-01 `CLASS` penghitung.**~~ ✅ **DITUTUP 28-09-2026 — lihat blok di bawah.**
+
+  Bunyi aslinya dipertahankan utuh, tidak dihapus:
+
+  > **OQ-PL-01 `CLASS` penghitung.** `ParamSeq.CARI1 = pyWorkPage.pxObjClass` (b2670) adalah kelas
   **konkret saat berjalan**. Korpus memuat dua: `ASM-FW-GISFW-Work-LIFE` (tempat seluruh rule
   didefinisikan; 107 rujukan `pyActivityClass` di `ShowLifePremiumDetail`) dan
   `RNM-FW-LIFEFW-Work-LIFE` (8 rujukan di section yang sama, 394 di korpus). Yang dipakai
@@ -238,6 +243,32 @@ Dikunci `TestDuaSebabNolBarisDibedakan`.
   penomoran mulai dari satu dan setiap nomor baru bertabrakan dengan nomor lama.** Dikunci uji
   (`TestClassPenghitungPLTidakBergeserDiam`). **Minta konfirmasi DBA sebelum dipakai di lingkungan
   mana pun yang datanya nyata.**
+  **Penutupan 28-09-2026 — `[data DEV, agregat]`.** Katalog instance **pengembangan** dibaca
+  (agregat per kelas dan jenis, nol baris disalin ke artefak mana pun):
+
+  | Modul | `CLASS` | `JENIS` | Catatan |
+  | --- | --- | --- | --- |
+  | **PremiumList Life** | `ASM-FW-GISFW-Work-LIFE` | `RNML-QR/QP/TP/TR` | dua baris — tahun 2025 dan 2026; `NO_SEQ` tertinggi 39 |
+  | Claim Life | — | `RNML-K` | `NO_SEQ` 31 |
+  | Komite | — | `RNML-A` | `NO_SEQ` 3 |
+  | NB | — | `RNM-QR/QP/TP` | pembanding |
+
+  ⛔ **`RNM-FW-LIFEFW-Work-LIFE` TIDAK ADA di tabel itu sama sekali.** Kelas konkret saat berjalan
+  karena itu `ASM-FW-GISFW-Work-LIFE` — persis yang sudah dipakai kode, dan kekhawatiran "penomoran
+  mulai dari satu" tidak terwujud.
+
+  ⛔ **`JENIS` ikut TERBUKTI, dan bukan hanya kelasnya.** Nilai nyatanya `RNML-QR/QP/TP/TR` —
+  yaitu `HASIL3` (awalan `RNML-` dari `KODE_PRODUKSI`) ditempel di depan teks harfiah
+  `"QR/QP/TP/TR"`, persis susunan `SubmitPremiumList_Act.xml` b2717. **Satu baris penghitung untuk
+  keempat tipe**, dan `NO_SEQ` 39 membuktikannya: empat deret terpisah akan menampakkan empat baris,
+  bukan dua (satu per tahun).
+
+  ⚠️ Yang TIDAK berubah: konstanta `models.ClassPenghitungPL` tetap `ASM-FW-GISFW-Work-LIFE`, dan
+  ujinya (`TestClassPenghitungPLTidakBergeserDiam`) tetap menguncinya. Yang berubah hanya
+  **dasarnya** — dari dugaan berbasis cacah rujukan korpus menjadi bacaan dari tabelnya sendiri.
+
+  ⚠️ `[data DEV]`, bukan produksi. Nol baris, nol nama, nol nomor polis disalin ke repositori ini.
+
 - **OQ-PL-02 `RetrocadedShare` vs `RETROCEDED_SHARE`.** Keduanya tampil di grid `PL_Detail_Sec` yang
   sama, jadi keduanya medan berbeda; hanya yang kedua punya kolom. Mana yang mana — belum terjawab.
 - **OQ-PL-03 `REINSTYPENAME`.** Tampil di `PL_Detail_Sec`, nol kolom di migrasi 050–056, dan nol

@@ -1399,3 +1399,37 @@ layar itu diurutkan sebagai teks: Desember mendahului Februari.
 | `tsc` · build | bersih · 190,60 kB |
 | Migrasi | tidak bertambah |
 | Kebocoran | nol |
+
+---
+
+## Ralat 28-09-2026 — pergeseran bulan penomoran menjepit ke akhir bulan
+
+⛔ **Keluaran penomoran Claim Life berubah**, dan perubahannya ke arah yang benar.
+
+`repository.HitungPeriodeNomor` menggeser periode dengan `saat.AddDate(0, 1, 0)`. Go **melimpahkan**
+tanggal yang tidak ada — 31 Januari + 1 bulan menjadi **3 Maret** — sedangkan Oracle `ADD_MONTHS`,
+yang `[data DBA]` sebut sebagai sumbernya, **menjepit** ke akhir bulan (29 Februari). Periodenya
+karena itu menjadi `03.2026` alih-alih `02.2026`: **Februari terlewat**.
+
+Menyala pada tanggal **29–31** bulan yang penggantinya lebih pendek — dengan hari tutup buku 25,
+seluruh tanggal itu bergeser, dan seluruhnya ke bulan yang salah. **Tanpa satu pun galat.**
+
+| Saat | Sebelum | Sesudah |
+| --- | --- | --- |
+| 29 / 30 / 31 Januari 2026 | `03.2026` | **`02.2026`** |
+| 31 Maret 2026 | `05.2026` | **`04.2026`** |
+| 31 Mei 2026 | `07.2026` | **`06.2026`** |
+| 31 Agustus 2026 | `10.2026` | **`09.2026`** |
+| 31 Oktober 2026 | `12.2026` | **`11.2026`** |
+
+Ditemukan **sebelum dipakai**, bukan oleh uji yang merah: tiket 03 PremiumList hendak memakai ulang
+fungsi ini, dan membacanya lebih dahulu. Penjaganya (`TestPeriodeNomorTidakMelompatiBulanPendek`,
+tujuh kasus) dibuktikan **merah** atas implementasi lama sebelum perbaikannya ditulis.
+
+Pergeserannya kini didelegasikan ke `models.PeriodeProduksi`, sehingga aturan periode **satu** untuk
+penomoran klaim maupun premium list. Harinya juga kini dibaca di zona Asia/Jakarta — sama dengan
+`SYSDATE` server yang dibaca `TRUNC(v_now)` — sebab cutover dan pergeseran yang membaca zona berbeda
+dapat berselisih sehari, dan sehari di sini berarti satu bulan buku.
+
+Rinciannya di tiket `02-register-klaim-dan-penomoran.md`, bab *"Ralat 28-09-2026"*. Commit
+`8f69682`. **Nol migrasi baru.**

@@ -572,3 +572,75 @@ memberi titik desimal kanonik langsung dari kolom `NUMBER`.
 
 **AC:** tidak ada AC tiket ini yang berubah centangnya. Kolom `AGE` sudah disediakan migrasi 003
 sejak awal — ia hanya tidak pernah terisi; **nol migrasi baru**.
+
+## Ralat 28-09-2026 — pergeseran bulan `HitungPeriodeNomor` menjepit ke akhir bulan seperti `ADD_MONTHS`
+
+⛔ **Ini mengubah keluaran penomoran Claim Life yang sudah jalan.** Dicatat di sini, bukan hanya di
+tiket PremiumList tempat ia ketahuan, sebab fungsi yang diperbaiki adalah **milik penomoran klaim**.
+
+**Ditemukan** saat tiket 03 PremiumList hendak memakai ulang `repository.HitungPeriodeNomor` —
+bukan lewat uji yang merah, melainkan lewat pembacaan sebelum memakai.
+
+### Cacatnya
+
+`HitungPeriodeNomor` menggeser periode satu bulan dengan `saat.AddDate(0, 1, 0)` ketika hari
+transaksi melewati hari tutup buku. **Go melimpahkan tanggal yang tidak ada**:
+
+```
+31 Januari 2026 + 1 bulan  ->  3 Maret 2026     (Go AddDate)
+31 Januari 2026 + 1 bulan  ->  29 Februari 2026 (Oracle ADD_MONTHS, menjepit)
+```
+
+`[data DBA]` `SUMBER-PENOMORAN-DBA.md` menyebut `ADD_MONTHS(+1)`, dan Oracle `ADD_MONTHS`
+**menjepit** ke akhir bulan tujuan — ia tidak pernah melimpah. Akibatnya periode nomor klaim
+menjadi `03.2026` padahal seharusnya `02.2026`: **Februari terlewat sama sekali**.
+
+### Kapan ia menyala
+
+Setiap penerbitan nomor pada tanggal **29, 30, atau 31** dari bulan yang penggantinya lebih pendek.
+Dengan hari tutup buku yang lazim (25), seluruh tanggal itu melewati ambang, jadi seluruhnya
+bergeser — dan seluruhnya bergeser **ke bulan yang salah**. Tidak ada galat, tidak ada peringatan:
+nomornya terbentuk, tersimpan, dan baru terlihat keliru saat rekonsiliasi tutup buku.
+
+### Tujuh kasus yang mengunci perbaikannya
+
+`TestPeriodeNomorTidakMelompatiBulanPendek`, hari tutup buku 25:
+
+| Saat | Sebelum ralat | Sesudah ralat | Sebab |
+| --- | --- | --- | --- |
+| 2026-01-29 | `03.2026` | **`02.2026`** | Februari 2026 hanya 28 hari |
+| 2026-01-30 | `03.2026` | **`02.2026`** | idem |
+| 2026-01-31 | `03.2026` | **`02.2026`** | kasus yang paling jauh melimpah |
+| 2026-03-31 | `05.2026` | **`04.2026`** | April 30 hari |
+| 2026-05-31 | `07.2026` | **`06.2026`** | Juni 30 hari |
+| 2026-08-31 | `10.2026` | **`09.2026`** | September 30 hari |
+| 2026-10-31 | `12.2026` | **`11.2026`** | November 30 hari |
+
+⚠️ Penjaganya **dibuktikan merah lebih dahulu** atas implementasi lama (ketujuh kasus gagal), lalu
+hijau sesudah perbaikan.
+
+### Bagaimana diperbaiki
+
+Pergeserannya **didelegasikan** ke `models.PeriodeProduksi` — aturan periode tiket 02 PremiumList,
+yang menaikkan **nomor bulan** dengan pergantian tahun, bukan menambah tiga puluh hari. Karena yang
+dibutuhkan hanya bulan dan tahun, menaikkan nomor bulan setara persis dengan penjepitan
+`ADD_MONTHS`.
+
+Akibat sampingan yang disengaja: aturan periode kini **satu**, dipakai penomoran klaim maupun
+premium list. Dua salinan aturan periode adalah dua periode yang suatu hari berselisih diam-diam.
+
+### Perubahan kedua: zona pembacaan hari
+
+Hari transaksi kini dibaca di zona **Asia/Jakarta**, sama dengan `SYSDATE` server yang dibaca
+`TRUNC(v_now)` di procedure. Sebelumnya ia dibaca di zona `saat` sendiri — sehingga cabang cutover
+dan pergeseran bulan dapat berselisih sehari di sekitar tengah malam, dan sehari di sini berarti
+satu bulan buku. Dikunci `TestBatasCutoverDibacaDiJakarta`.
+
+### AC
+
+Tidak ada AC tiket ini yang berubah centangnya. Yang berubah adalah **keluaran** penomoran pada
+tujuh tanggal di atas — ke arah yang benar. **Nol migrasi baru.**
+
+Kodenya: `APP_RNM/internal/repository/penomor.go`, `HitungPeriodeNomor` (kini mengembalikan galat,
+sebab `models.PeriodeProduksi` **menolak** hari tutup buku kosong atau di luar 1..31 alih-alih
+menebaknya). Commit `8f69682`.

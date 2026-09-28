@@ -124,8 +124,14 @@ const jenisPenghitungPLHarfiah = "QR/QP/TP/TR"
 
 // JenisPenghitungPL menyusun kunci `JENIS` penghitung.
 //
-// `[terverifikasi]` b2717 `ParamSeq.CARI2 = ParamSeq.HASIL3+"QR/QP/TP/TR"` -
-// awalan produksi DITEMPEL di depan teks harfiahnya.
+// `[terverifikasi]` `SubmitPremiumList_Act.xml` b2717
+// `ParamSeq.CARI2 = ParamSeq.HASIL3+"QR/QP/TP/TR"` - awalan produksi DITEMPEL
+// di depan teks harfiahnya.
+//
+// ✅ `[data DEV, agregat - 28-09-2026]` Nilai NYATA di
+// `GENERATE_SEQUENCE_NUMBER.JENIS` adalah `RNML-QR/QP/TP/TR`, yaitu awalan
+// `RNML-` dari `KODE_PRODUKSI` ditempel di depan teks harfiah ini. Susunannya
+// terbukti, bukan hanya dibaca dari rule.
 func JenisPenghitungPL(awalan string) string {
 	return awalan + jenisPenghitungPLHarfiah
 }
@@ -134,8 +140,23 @@ func JenisPenghitungPL(awalan string) string {
 //
 // `[terverifikasi]` b2670 `ParamSeq.CARI1 = pyWorkPage.pxObjClass`.
 //
-// ⚠️ `[terbuka - pemilik kerja / DBA]` NILAINYA BELUM PASTI, dan sebabnya
-// dinyatakan alih-alih disembunyikan di balik konstanta yang kelihatan yakin.
+// ✅ `[data DEV, agregat - 28-09-2026]` NILAINYA TERBUKTI. Katalog instance
+// PENGEMBANGAN dibaca sebagai agregat per kelas dan jenis - nol baris, nol
+// nama, nol nomor polis disalin ke mana pun:
+//
+//	CLASS = ASM-FW-GISFW-Work-LIFE, JENIS = RNML-QR/QP/TP/TR
+//	dua baris - tahun 2025 dan 2026 - dengan NO_SEQ tertinggi 39
+//
+// ⛔ `RNM-FW-LIFEFW-Work-LIFE` TIDAK ADA di tabel itu sama sekali.
+//
+// ⛔ DUA BARIS, BUKAN DELAPAN - dan itu bukti KEDUA, yang menjawab pertanyaan
+// yang lain: empat tipe dengan penghitung masing-masing akan menampakkan
+// EMPAT baris per tahun. Dua baris untuk dua tahun berarti keempat tipe
+// memang berbagi satu deret, persis yang b2717 susun.
+//
+// Keraguan yang mendahuluinya DISIMPAN, tidak dihapus - ia yang menjelaskan
+// kenapa konstanta ini dikunci uji sejak awal:
+//
 // `pxObjClass` adalah kelas KONKRET saat berjalan, sedangkan korpus ini
 // lapisan kerangkanya. Dua kelas hidup berdampingan di sana:
 //
@@ -162,11 +183,16 @@ func JenisPenghitungPL(awalan string) string {
 // hanya ini: kedua kelas hidup, dan korpus tidak memberi tahu mana yang
 // konkret saat berjalan.
 //
-// Yang dipakai di bawah adalah yang pertama, sebab itulah kelas yang rule-nya
-// sendiri sebut. Bila baris `GENERATE_SEQUENCE_NUMBER` di basis data nyata
-// ternyata bertuliskan yang kedua, penomoran akan MULAI DARI SATU dan setiap
-// nomor baru bertabrakan dengan nomor lama. Karena itu nilainya dikunci uji,
-// bukan hanya ditulis: menggantinya menuntut alasan.
+// Yang dipakai di bawah adalah yang pertama - dahulu sebab itulah kelas yang
+// rule-nya sendiri sebut, kini sebab tabelnya sendiri berkata begitu.
+// Kekhawatiran lamanya dikutip utuh, tidak dihapus: *"bila baris
+// `GENERATE_SEQUENCE_NUMBER` di basis data nyata ternyata bertuliskan yang
+// kedua, penomoran akan MULAI DARI SATU dan setiap nomor baru bertabrakan
+// dengan nomor lama."* Ia TIDAK terwujud. Nilainya tetap dikunci uji:
+// menggantinya menuntut alasan.
+//
+// ⚠️ `[data DEV]`, bukan produksi. Sebelum dipakai di lingkungan berdata
+// nyata, tabel di lingkungan ITU yang berlaku - bukan catatan ini.
 const ClassPenghitungPL = "ASM-FW-GISFW-Work-LIFE"
 
 // PeriodeNomorPL memotong `MM.YYYY` dari penghitung menjadi `MM.YY`.
