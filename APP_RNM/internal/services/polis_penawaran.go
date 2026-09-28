@@ -196,7 +196,7 @@ func (p *Penawaran) terapkan(ctx context.Context, pelaku Pelaku,
 		}
 		switch {
 		case akibat.Ditutup():
-			if err := kerja.TutupKasus(ctx, tx, keadaan.ID, akibat.StatusWork); err != nil {
+			if err := kerja.TutupKasus(ctx, tx, keadaan.ID, keadaan.Status, akibat.StatusWork); err != nil {
 				return err
 			}
 		case akibat.TahapTujuan != "":

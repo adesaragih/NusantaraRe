@@ -217,3 +217,21 @@ ter-commit.
 ### Angka
 
 Go **534 PASS · 0 FAIL** tingkat atas; vet (+`-tags db`), gofmt bersih · vitest **347** · tsc bersih.
+
+### Temuan `/code-review` 28-09-2026 atas `d7610fb..4559ff3` (tiket 05b–09) — diperbaiki atau dicatat
+
+Dua sumbu (Standards, Spec) paralel. Spec memverifikasi ulang dari korpus: `Transition7 → Utility1 →
+END52` dan `Transition11 → END52` tanpa `Utility1` (✅; `Transition11` keluar dari `Decision3`, bukan
+`Decision2`), kunci Arasapas b844–845 dan tiga pengenal permintaan REST (✅), 17 langkah
+`InsertJsonPolisLife_Act` (✅), gerbang tahap summary (✅ dengan catatan di bawah).
+
+| Sumbu | Temuan | Tindakan |
+| --- | --- | --- |
+| Standards 1 | ⛔ `sqlPungutEfek` tanpa penyaring `MODUL`: worker Claim Life akan memungut baris `PREMIUMLISTLIFE`, pelaksananya tidak mengenal `arasapas-polis`, lalu menandainya **gagal permanen** — dan komentar `AntreanEfekOracleModul` mengklaim "worker yang sama memungut keduanya" tanpa bukti | **diperbaiki**: `AND MODUL = :3`, `PekerjaEfek.modul = CLAIMLIFE`; klaim komentar diganti yang benar (baris polis menunggu pekerja PremiumList yang belum ada). Dikunci `TestPungutEfekHanyaModulnyaSendiri` |
+| Standards 4 | ⛔ TOCTOU: tahap dibaca di luar transaksi, `TutupKasus` hanya menolak kasus tertutup — kasus yang berpindah tahap tetap ditutup lewat konektor tahap lamanya | **diperbaiki**: `sqlTutupPolis` kini menuntut `STATUS = tahap yang dibaca` (pola `sqlPindahTahapPolis`). Dikunci `TestTutupPolisDikunciTahapYangDibaca`. Berlaku juga untuk `Confirm`/`Decline` |
+| Standards 2 | jejak kegagalan polis masuk `T_CLAIMLF_JEJAK` dengan `KLAIM_ID` = id polis, tak terbedakan dari jejak klaim | **dicatat** — pola sudah ada sejak tiket 01 PremiumList (`PerekamJejakOracle` untuk keputusan polis); tabel jejak polis adalah keputusan skema `[terbuka — work owner]` |
+| Standards 3 | `Putuskan` membuang `EfekKeluar` pada jalur `Confirm`/`Utility1` | **dicatat** — layar penawaran menerima `jawabanAkibat` saja; ringkasan efek tampil di jalur summary |
+| Standards (smell) | `Penawaran.terapkan` ↔ `SummaryPremiumList` saling memanggil metode privat; setter `DenganJejak`/`DenganPenyalur` kembar | **dicatat** — satu tempat penutupan kasus sengaja dipilih; disatukan bila keduanya disentuh lagi |
+| Spec (c) | ⚠️ `POST /summary` kini hanya menerima tahap `Input Premium Summary`, dan **tidak satu pun konektor menuju `Assignment1`** — jadi di keadaan sekarang **tombol Submit summary selalu 409** untuk kasus baru; simpan berjalan lewat `Confirm` di tahap detail (`Utility1`) | **dinyatakan terang di sini**: itu bentuk korpus (tiket 01: `Assignment1` nol konektor masuk, `[terbuka — work owner]`). Layar summary dan rutenya menunggu jawaban itu |
+| Spec (c) | muatan outbox membawa `Waktu` = saat keputusan, sedangkan kontrak REST memetakan `.pxCreateDateTime` (saat kasus lahir) | **dicatat di OQ-PL-11** — muatan panggilan nyata ditetapkan bersama jawabannya |
+| Spec (a) | log per panggilan tanpa nomor polis; log keberhasilan belum ada | **dicatat** (tiket 06, AC "sebagian") |

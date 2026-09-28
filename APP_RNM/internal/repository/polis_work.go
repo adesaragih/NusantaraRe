@@ -135,14 +135,21 @@ func (r *WorkPolis) PindahTahap(ctx context.Context, tx *Tx,
 // berjalan, jadi `IS NULL` hanya benar untuk kasus yang belum pernah
 // bertahap. Yang dijaga: kasus yang SUDAH tertutup tidak ditutup lagi dengan
 // alasan yang berbeda - dan alasan penutupan itu jejak.
+//
+// ⛔ DAN tahapnya harus tahap yang DIBACA (`:5`) - pola `sqlPindahTahapPolis`.
+// Keadaan dibaca di luar transaksi; tanpa syarat ini kasus yang berpindah
+// tahap di antara baca dan tulis tetap ditutup lewat konektor tahap lamanya
+// (temuan /code-review giliran 10: `Submit` summary).
 func sqlTutupPolis(tabel string) string {
 	return fmt.Sprintf(
 		`UPDATE %s SET STATUS = :1, POSITION = NULL
-		  WHERE ID = :2 AND (STATUS IS NULL OR STATUS NOT IN (:3, :4))`, tabel)
+		  WHERE ID = :2 AND (STATUS IS NULL OR STATUS NOT IN (:3, :4))
+		    AND (STATUS = :5 OR (STATUS IS NULL AND :5 IS NULL))`, tabel)
 }
 
-// TutupKasus menutup kasus polis dengan status kerja akhirnya.
-func (r *WorkPolis) TutupKasus(ctx context.Context, tx *Tx, id, status string) error {
+// TutupKasus menutup kasus polis dengan status kerja akhirnya - hanya bila
+// ia masih di `tahapLama`.
+func (r *WorkPolis) TutupKasus(ctx context.Context, tx *Tx, id, tahapLama, status string) error {
 	tabel, err := r.db.Qualify("T_WORK_POLIS")
 	if err != nil {
 		return err
@@ -152,7 +159,7 @@ func (r *WorkPolis) TutupKasus(ctx context.Context, tx *Tx, id, status string) e
 		return err
 	}
 	hasil, err := tx.tx.ExecContext(ctx, q, status, id,
-		models.StatusPolisDitolak, models.StatusPolisSelesai)
+		models.StatusPolisDitolak, models.StatusPolisSelesai, kosongJadiNil(tahapLama))
 	if err != nil {
 		return fmt.Errorf("repository: menutup kasus polis: %w", err)
 	}

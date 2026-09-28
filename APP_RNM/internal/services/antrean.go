@@ -118,7 +118,9 @@ func AntreanEfekOracle(svc *Service) Antrean {
 // AntreanEfekOracleModul sama dengan `AntreanEfekOracle`, untuk modul lain.
 //
 // ⚠️ Tiket 06 PremiumList Life. Satu tabel outbox untuk dua modul, dipisah
-// kolom `MODUL`; worker yang sama memungut keduanya.
+// kolom `MODUL`. `PekerjaEfek` memungut HANYA modulnya sendiri
+// (`sqlPungutEfek`); baris PREMIUMLISTLIFE menunggu pekerja PremiumList, yang
+// belum ada - ia tetap terlihat berstatus `antre`, tidak dipungut orang lain.
 func AntreanEfekOracleModul(svc *Service, modul string) Antrean {
 	return antreanOracle{svc: svc, pohon: repository.NewPohonKlaim(svc.db),
 		jejak: PerekamJejakOracle(svc), modul: modul}
@@ -220,6 +222,8 @@ type PekerjaEfek struct {
 	// jatah percobaannya habis di sini. Keduanya wajib meninggalkan
 	// jejak yang sama bentuknya, jadi keduanya memanggil kode yang sama.
 	penjejak antreanOracle
+	// modul menyaring baris yang dipungut - hanya milik modul pekerja ini.
+	modul string
 }
 
 // NewPekerjaEfek menyusun pekerjanya.
@@ -229,6 +233,10 @@ func NewPekerjaEfek(svc *Service, p PelaksanaEfek) *PekerjaEfek {
 		pohon:     repository.NewPohonKlaim(svc.db),
 		pelaksana: p,
 		penjejak:  antreanOracle{svc: svc, jejak: PerekamJejakOracle(svc)},
+		// ⚠️ Pelaksana satu-satunya hari ini (`PelaksanaBerkasLokal`) milik
+		// Claim Life, jadi pekerjanya pun Claim Life. Baris PREMIUMLISTLIFE
+		// menunggu pekerja modulnya sendiri - yang belum ada (tiket 06).
+		modul: ModulClaimLife,
 	}
 }
 
@@ -251,7 +259,7 @@ func (w *PekerjaEfek) SatuPutaran(ctx context.Context, saat time.Time) error {
 		return errors.New("services: pekerja efek tanpa pelaksana")
 	}
 	return w.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
-		baris, err := w.pohon.PungutEfek(ctx, tx, saat)
+		baris, err := w.pohon.PungutEfek(ctx, tx, w.modul, saat)
 		if err != nil {
 			return err
 		}

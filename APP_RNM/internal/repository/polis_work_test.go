@@ -78,3 +78,17 @@ func TestQueryKerjaPolisMemakaiBind(t *testing.T) {
 		}
 	}
 }
+
+// TestTutupPolisDikunciTahapYangDibaca - temuan /code-review giliran 10.
+//
+// ⛔ Keadaan dibaca di luar transaksi; penutupan yang tidak menyebut tahap
+// asalnya menutup kasus yang sudah berpindah tahap di antara baca dan tulis.
+func TestTutupPolisDikunciTahapYangDibaca(t *testing.T) {
+	q := sqlTutupPolis("S.W")
+	if !strings.Contains(q, "(STATUS = :5 OR (STATUS IS NULL AND :5 IS NULL))") {
+		t.Errorf("penutupan polis tidak dikunci tahap asalnya:\n%s", q)
+	}
+	if !strings.Contains(q, "STATUS NOT IN (:3, :4)") {
+		t.Errorf("penjaga kasus tertutup hilang:\n%s", q)
+	}
+}

@@ -111,12 +111,18 @@ func (r *PohonKlaim) AntreEfek(ctx context.Context, tx *Tx,
 // Tanpa `SKIP LOCKED` worker kedua menunggu yang pertama selesai dan
 // paralelismenya hilang; tanpa `FOR UPDATE` keduanya memungut baris yang sama
 // dan efeknya berjalan dua kali.
+//
+// ⛔ `AND MODUL = :3` - sejak tiket 06 PremiumList Life outbox ini dipakai
+// DUA modul. Tanpa penyaring itu worker Claim Life memungut baris polis,
+// pelaksananya tidak mengenal jenisnya, dan baris itu ditandai GAGAL PERMANEN
+// oleh worker yang bukan pemiliknya - kegagalan palsu yang menutupi yang asli.
 func sqlPungutEfek(tabel string) string {
 	return fmt.Sprintf(`SELECT ID, LINI, MODUL, JENIS_EFEK, RUJUKAN, MUATAN,
 			   PERCOBAAN
 		  FROM %s
 		 WHERE STATUS = :1
 		   AND JADWAL_BERIKUT <= :2
+		   AND MODUL = :3
 		 ORDER BY JADWAL_BERIKUT ASC
 		 FETCH FIRST 1 ROWS ONLY
 		 FOR UPDATE SKIP LOCKED`, tabel)
@@ -139,7 +145,7 @@ func sqlTandaiJalan(tabel string) string {
 // worker-nya mati di tengah jalan tetap menghabiskan jatahnya; bila tidak, ia
 // akan membunuh worker berikutnya, dan berikutnya lagi, selamanya.
 func (r *PohonKlaim) PungutEfek(ctx context.Context, tx *Tx,
-	saat time.Time) (BarisEfekKeluar, error) {
+	modulPekerja string, saat time.Time) (BarisEfekKeluar, error) {
 
 	if tx == nil {
 		return BarisEfekKeluar{}, fmt.Errorf("repository: PungutEfek menuntut " +
@@ -158,7 +164,7 @@ func (r *PohonKlaim) PungutEfek(ctx context.Context, tx *Tx,
 		lini, modul, jenis, rujukan, muatan sql.NullString
 		percobaan                           sql.NullInt64
 	)
-	err = tx.tx.QueryRowContext(ctx, q, StatusEfekAntre, saat).Scan(
+	err = tx.tx.QueryRowContext(ctx, q, StatusEfekAntre, saat, modulPekerja).Scan(
 		&b.ID, &lini, &modul, &jenis, &rujukan, &muatan, &percobaan)
 	if err == sql.ErrNoRows {
 		return BarisEfekKeluar{}, ErrEfekTidakAda
