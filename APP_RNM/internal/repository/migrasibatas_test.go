@@ -205,6 +205,69 @@ var masterYangTidakDisentuh = []string{
 // ⛔ Menggantikan pola `INSERT INTO … RATE_LIFE` yang tidak pernah mungkin
 // menggigit di basis kode ini: `Qualify` wajib dipakai (ADR-U-0033), sehingga
 // nama tabel selalu terpisah dari kata kerjanya.
+// berkasIzinViewProduk adalah SATU-SATUNYA berkas yang boleh menyebut
+// `PRODUCTINWARD_LIFE`, beserta batas izinnya.
+//
+// ⛔ DIPERSEMPIT 28-09-2026 - `[DIPUTUSKAN, butir bh, veto work owner]`.
+// Sebelumnya view ini terlarang mutlak, dan pembaca ambang butir `ba` sempat
+// ditulis lalu DIBUANG ketika penjaga ini berbunyi. Penjaga itu benar saat
+// itu, dan ia tetap benar untuk segala hal SELAIN yang dinamai di sini.
+//
+// Dasar pembukaannya: AC 38 melarang MENGURAI `JSONDATA` di aplikasi - bukan
+// membaca kolom BERTIPE dari view milik basis data, yang Pega sendiri baca
+// (`Claim Life/RDBList/GetProductName.xml`).
+//
+// ⛔ IZINNYA SEMPIT, DAN KESEMPITANNYA YANG MEMBUATNYA AMAN. Yang dikunci:
+//
+//	berkas   TEPAT satu
+//	fungsi   TEPAT satu pembaca
+//	kolom    TEPAT dua, bernama
+//	tulisan  NOL - tidak ada INSERT/UPDATE/DELETE/MERGE
+//
+// Pembaca kedua, kolom ketiga, atau satu tulisan akan tetap berbunyi.
+//
+// ⚠️ Ronde pertama pembukaan ini MENGELABUI penjaga alih-alih
+// mempersempitnya: namanya dirakit dari potongan (`"PRODUCTINWARD" +
+// "_LIFE"`) sehingga pemindaian tidak menemukannya. Itu dibatalkan. Penjaga
+// yang dikelabui sekali menjadi penjaga yang buta selamanya, sebab pembaca
+// berikutnya akan menyalin caranya.
+const berkasIzinViewProduk = "ambangproduk.go"
+
+// izinViewProduk memeriksa bahwa berkas berizin itu tetap di dalam batasnya.
+func izinViewProduk(t *testing.T, isi string) {
+	t.Helper()
+	if !strings.Contains(isi, "func (r *ProdukLife) Ambang(") {
+		t.Errorf("%s tidak lagi memuat pembaca `ProdukLife.Ambang` - "+
+			"izin butir bh terikat pada fungsi itu, bukan pada berkasnya",
+			berkasIzinViewProduk)
+	}
+	// TEPAT dua kolom, dan keduanya bernama.
+	for _, k := range KolomAmbangProduk {
+		if !strings.Contains(isi, k) {
+			t.Errorf("%s tidak membaca kolom %q", berkasIzinViewProduk, k)
+		}
+	}
+	if len(KolomAmbangProduk) != 2 {
+		t.Errorf("izin butir bh mencakup TEPAT dua kolom; daftarnya kini %d",
+			len(KolomAmbangProduk))
+	}
+	if strings.Contains(isi, "SELECT *") {
+		t.Errorf("%s memakai SELECT * atas view 40 kolom; izinnya hanya dua",
+			berkasIzinViewProduk)
+	}
+	// ⛔ NOL TULISAN. Izinnya membaca, titik.
+	for _, tulis := range []string{"INSERT", "UPDATE ", "DELETE", "MERGE"} {
+		if strings.Contains(strings.ToUpper(isi), tulis) {
+			t.Errorf("%s memuat %q - izin butir bh READ-ONLY",
+				berkasIzinViewProduk, tulis)
+		}
+	}
+	// ⛔ NOL JSONDATA. Itu batas yang AC 38 tarik, dan ia tidak bergeser.
+	if strings.Contains(strings.ToUpper(isi), "JSONDATA") {
+		t.Errorf("%s menyebut JSONDATA - AC 38 melarangnya", berkasIzinViewProduk)
+	}
+}
+
 func TestMasterViewTidakDisentuh(t *testing.T) {
 	diperiksa := 0
 	for nama, isi := range berkasSumberProduksi(t) {
@@ -214,6 +277,12 @@ func TestMasterViewTidakDisentuh(t *testing.T) {
 		// menuduh justru penjelasan itu, di `spreading.go` dan `skemauji.go`.
 		// Penjaga yang menuduh dokumentasinya sendiri akan dimatikan orang.
 		kode := buangKomentarSumber(nama, isi)
+		// Berkas berizin butir bh diperiksa dengan aturannya sendiri, yang
+		// LEBIH ketat daripada sekadar "tidak menyebut namanya".
+		if strings.HasSuffix(filepath.ToSlash(nama), "/"+berkasIzinViewProduk) {
+			izinViewProduk(t, kode)
+			continue
+		}
 		for _, master := range masterYangTidakDisentuh {
 			if strings.Contains(kode, master) {
 				t.Errorf("%s menyebut %q. Kedua master pertama VIEW atas JSONDATA "+

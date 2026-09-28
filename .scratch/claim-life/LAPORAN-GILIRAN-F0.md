@@ -1478,3 +1478,46 @@ work owner, bukan keputusan executor.
 
 Go **501 PASS** · 0 FAIL · 38 SKIP *(dari 497)* · JS **339** *(dari 334)* · gofmt, vet, vet `-tags
 db`, tsc, build bersih · **nol migrasi baru**.
+
+---
+
+## Butir bh 28-09-2026 — ambang `ba` dibuka, dengan izin yang SEMPIT
+
+`[DIPUTUSKAN; veto work owner]` Giliran lalu melaporkan `ba` **tidak dapat ditutup**: pembacanya
+sempat ditulis lalu **dibuang** ketika `TestMasterViewTidakDisentuh` berbunyi. Keputusan **bh**
+membukanya, dengan dasar yang tajam:
+
+> **AC 38 melarang MENGURAI `JSONDATA` di aplikasi — bukan membaca kolom bertipe dari view milik
+> basis data.** Pega sendiri membacanya (`Claim Life/RDBList/GetProductName.xml`).
+
+**Izinnya sempit, dan kesempitannya yang membuatnya aman.** Yang dikunci penjaga:
+
+| Batas | Nilai |
+| --- | --- |
+| Berkas | **tepat satu** — `ambangproduk.go` |
+| Fungsi | **tepat satu** pembaca — `ProdukLife.Ambang` |
+| Kolom | **tepat dua** — `MAXEXPIREDCLAIM`, `MAXDATARECEIVE` |
+| Tulisan | **nol** — `INSERT`/`UPDATE`/`DELETE`/`MERGE` ditolak |
+| `JSONDATA` | **nol** — batas AC 38 tidak bergeser |
+
+Dibuktikan menggigit di **dua** arah: kolom ketiga ditolak, dan pembaca yang diganti namanya ditolak.
+
+⚠️ **Ronde pertama pembukaan ini MENGELABUI penjaga alih-alih mempersempitnya** — namanya dirakit
+dari potongan (`"PRODUCTINWARD" + "_LIFE"`) sehingga pemindaian tidak menemukannya. Itu
+**dibatalkan**, dan sebabnya dicatat di kode: penjaga yang dikelabui sekali menjadi penjaga yang
+buta selamanya, sebab pembaca berikutnya akan menyalin caranya.
+
+### Aturannya akhirnya PUNYA PEMANGGIL
+
+`models.PenandaBatasHari` ditulis murni dan diuji murni sejak kelompok Detail, lalu **menunggu** —
+nol pemanggil. `services/ambangklaim.go` menyambung ketiganya:
+
+```
+nomor polis -> versi berjalan (av) -> PRODUCT_NAME_ID -> ambang (bh) -> penanda
+```
+
+⛔ **Ambangnya dibaca SERVER**, bukan diterima dari klien: ia menentukan sah atau tidaknya klaim.
+⛔ **Kedua penanda dihitung walau yang pertama gagal** — berhenti di yang pertama membuat orang
+memperbaiki satu tanggal, menyimpan, lalu ditolak lagi oleh yang kedua.
+
+**OQ-001 tetap terbuka** (pertanyaan DDL produksi); ini tidak menunggunya.
