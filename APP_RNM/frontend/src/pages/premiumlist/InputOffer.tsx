@@ -28,6 +28,7 @@ import {
   bolehRejectDiTahap,
   golongkanPenawaran,
   putuskanPenawaran,
+  TAHAP_POLIS,
   type AkibatKeputusanPolis,
 } from '../../services/api'
 
@@ -39,6 +40,19 @@ export function ringkasanAkibat(a: AkibatKeputusanPolis): string {
   if (a.statusWork !== '') return `Kasus ditutup — ${a.statusWork}.`
   if (a.tahapTujuan !== '') return `Kasus berpindah ke ${a.tahapTujuan}.`
   return 'Keputusan tersimpan.'
+}
+
+/**
+ * Judul layar keputusan, menurut tahapnya.
+ *
+ * ⛔ SATU LAYAR, DUA TAHAP. Ketiga tombol keputusan hidup di tahap penawaran
+ * DAN di tahap Input Premium Detail (`Reject` bahkan HANYA di sana), jadi
+ * layar ini muncul di keduanya. Judul "Input Offer" yang tetap saat orang
+ * berada di Input Premium Detail memberi tahu mereka hal yang keliru tentang
+ * di mana mereka berada.
+ */
+export function judulKeputusan(tahap: string): string {
+  return tahap === TAHAP_POLIS.detail ? 'Input Premium Detail' : 'Input Offer'
 }
 
 export default function InputOffer({
@@ -95,7 +109,7 @@ export default function InputOffer({
 
   return (
     <section className="polis-offer">
-      <h2 className="polis-offer__judul">Input Offer</h2>
+      <h2 className="polis-offer__judul">{judulKeputusan(tahap)}</h2>
       <p className="polis-offer__tahap">
         {polisID} — {tahap}
       </p>

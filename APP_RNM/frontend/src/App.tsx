@@ -3,12 +3,14 @@ import { useState } from 'react'
 import Beranda from './pages/Beranda'
 import InboxPremiumList from './pages/premiumlist/InboxPremiumList'
 import InputOffer from './pages/premiumlist/InputOffer'
+import PremiumListDetail from './pages/premiumlist/PremiumListDetail'
 import InboxClaimLife from './pages/InboxClaimLife'
 import KlaimLife from './pages/KlaimLife'
 import OutstandingClaimLife from './pages/OutstandingClaimLife'
 import RegisterKlaim from './pages/RegisterKlaim'
 import { Shell, type Halaman } from './components/Shell'
 import { BelumTersedia } from './components/ui/dasar'
+import { TAHAP_POLIS } from './services/api'
 import { pelakuStub } from './store/sesi'
 
 // App = identitas + Shell.
@@ -56,6 +58,18 @@ export default function App() {
           }}
         />
       )}
+      {/*
+        ⛔ DUA LAYAR DI TAHAP YANG SAMA, dan itu bentuk aslinya:
+        `ShowLifePremiumDetail` memuat grid peserta DAN tombol keputusannya.
+        `Reject` bahkan HANYA punya konektor di tahap ini (`Transition9`
+        b2306), jadi memisahkan gridnya dari tombolnya berarti menyembunyikan
+        satu-satunya tempat `Reject` dapat ditekan.
+      */}
+      {halaman === 'premiumlist' &&
+        polis.id !== '' &&
+        polis.tahap === TAHAP_POLIS.detail && (
+          <PremiumListDetail polisID={polis.id} />
+        )}
       {halaman === 'premiumlist' && polis.id !== '' && (
         <InputOffer
           polisID={polis.id}

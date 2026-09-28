@@ -80,6 +80,11 @@ func TestDaftarLayananPengubahMencakupSeluruhRutePengubah(t *testing.T) {
 		// yang membaca `T_WORK_CLAIM`. Dua modul, dua tabel kerja: layanan
 		// polis yang menanyai tabel klaim akan selalu menjawab "tidak ada".
 		"polis_penawaran.go": "modul PremiumList - memeriksa T_WORK_POLIS lewat KasusPolisTertutup",
+		// PremiumList Life tiket 03. Sebab yang SAMA dengan di atas: ia
+		// memeriksa T_WORK_POLIS, bukan T_WORK_CLAIM. Penjaganya disebut
+		// namanya di `penjagaTutup` di bawah, jadi ini bukan kelonggaran -
+		// ia tetap dituntut penjaga, hanya penjaga yang lain.
+		"polis_nomor.go": "modul PremiumList - memeriksa T_WORK_POLIS lewat KasusPolisTertutup",
 		// Outbox dan pelaksana efek bekerja atas baris antrean, bukan atas
 		// kasus - dan efek yang sudah terlanjur diantre tetap harus selesai
 		// walau kasusnya kemudian ditutup.
@@ -168,6 +173,10 @@ var rutePengubah = map[string]string{
 	// di TestDaftarLayananPengubahMencakupSeluruhRutePengubah.
 	"POST /api/polis-life/{id}/keputusan":  "polis_penawaran.go",
 	"POST /api/polis-life/{id}/penggolong": "polis_penawaran.go",
+	// Tiket 03. Penerbitan nomor MENULIS - ia menaikkan baris penghitung dan
+	// menuliskan nomornya ke baris peserta - jadi ia pengubah, dan kasus yang
+	// sudah ditutup tidak boleh memperoleh nomor baru.
+	"POST /api/polis-life/{id}/nomor": "polis_nomor.go",
 }
 
 var polaRute = regexp.MustCompile(`mux\.HandleFunc\(\s*\n?\s*"([A-Z]+) ([^"]+)"`)
@@ -192,6 +201,7 @@ const penjagaTutupBawaan = "PastikanKasusTerbuka(ctx, klaimID)"
 // DISEBUT namanya. Yang nol penjaga tetap gagal.
 var penjagaTutup = map[string]string{
 	"polis_penawaran.go": "models.KasusPolisTertutup(k.Status)",
+	"polis_nomor.go":     "models.KasusPolisTertutup(keadaanKerja.Status)",
 }
 
 func TestSetiapRuteNonGETPunyaPenjagaKasusTertutup(t *testing.T) {

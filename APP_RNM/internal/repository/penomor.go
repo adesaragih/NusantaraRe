@@ -30,7 +30,29 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"nusantarare/internal/models"
 )
+
+// Penomor membaca dan menaikkan penghitung nomor bisnis.
+//
+// ⚠️ DIPINDAH DARI `PohonKlaim` 28-09-2026, saat tiket 03 PremiumList
+// membutuhkan rantai yang sama. Ketiga methodnya - `AwalanProduksi`,
+// `HariClosing`, `UrutNomorBerikut` - tidak pernah menyentuh satu pun tabel
+// klaim; ketiganya membaca `KODE_PRODUKSI`, `TANGGAL_CLOSING`, dan
+// `GENERATE_SEQUENCE_NUMBER`. Menggantungkannya pada pohon klaim memaksa
+// modul kedua memilih antara meminjam tipe yang bukan miliknya atau menyalin
+// ketiganya - dan salinan penghitung nomor adalah dua penghitung.
+//
+// ⛔ Yang TIDAK ikut pindah: bentuk nomornya. `RakitNomorKlaim` dan
+// `models.RakitNomorPL` tetap terpisah, sebab keduanya memang berbeda -
+// tahun empat angka di klaim, dua angka di premium list.
+type Penomor struct {
+	db *DB
+}
+
+// NewPenomor menyusun penomor atas satu basis data.
+func NewPenomor(db *DB) *Penomor { return &Penomor{db: db} }
 
 var (
 	// ErrTanggalClosingKosong - `TANGGAL_CLOSING` tidak memberi hari tutup buku.
@@ -75,19 +97,42 @@ type PeriodeNomor struct {
 // tahun berikutnya. Ini BERBEDA dari `SaveAdjustment_Act`, yang tahunnya tidak
 // ikut bergeser karena kedua cabang `@if`-nya identik (lihat akseptasi.go).
 // Dua penomoran, dua perilaku, dan keduanya ditiru apa adanya masing-masing.
-func HitungPeriodeNomor(saat time.Time, hariClosing int) PeriodeNomor {
-	hari := time.Date(saat.Year(), saat.Month(), saat.Day(), 0, 0, 0, 0, time.UTC)
+//
+// ⛔ CACAT YANG DIPERBAIKI 28-09-2026, DITEMUKAN SAAT TIKET 03 HENDAK MEMAKAI
+// FUNGSI INI. Ronde sebelumnya menggeser bulan dengan `saat.AddDate(0,1,0)`.
+// Go MELIMPAHKAN tanggal yang tidak ada: 31 Januari + 1 bulan menjadi 3 MARET,
+// sehingga periodenya `03.2026` - FEBRUARI TERLEWAT SAMA SEKALI. Oracle
+// `ADD_MONTHS` justru MENJEPIT ke akhir bulan (29 Februari), yaitu `02.2026`.
+//
+// Cacat itu menyala setiap kali seseorang menerbitkan nomor pada tanggal 29-31
+// bulan yang penggantinya lebih pendek, dan hasilnya nomor yang terbukukan ke
+// bulan yang salah tanpa satu pun galat. Karena yang dibutuhkan hanya BULAN
+// dan TAHUN, penjepitan itu setara dengan menaikkan nomor bulannya - dan
+// itulah yang `models.PeriodeProduksi` kerjakan sejak tiket 02.
+//
+// ⛔ ATURAN PERGESERANNYA SEKARANG SATU, DIPAKAI BERDUA. Menyalinnya untuk
+// premium list berarti dua aturan periode yang dapat berselisih; yang
+// berselisih diam-diam adalah yang membukukan ke bulan yang salah.
+// Perbedaan yang tersisa - cabang cutover - tinggal di sini, sebab hanya
+// penomoran yang punya.
+func HitungPeriodeNomor(saat time.Time, hariClosing int) (PeriodeNomor, error) {
+	// ⛔ Hari dibaca di zona Jakarta, sama dengan pergeserannya. `TRUNC(v_now)`
+	// di procedure membaca `SYSDATE`, yaitu jam server - Jakarta. Membaca
+	// cutover di satu zona dan pergeseran di zona lain membuat keduanya
+	// berselisih sehari di sekitar tengah malam.
+	lokal := models.DiJakarta(saat)
+	hari := time.Date(lokal.Year(), lokal.Month(), lokal.Day(), 0, 0, 0, 0, time.UTC)
 	if !hari.After(batasCutover) {
-		return PeriodeNomor{MMYYYY: periodeCutover, Tahun: tahunCutover}
+		return PeriodeNomor{MMYYYY: periodeCutover, Tahun: tahunCutover}, nil
 	}
-	periode := saat
-	if saat.Day() > hariClosing {
-		periode = saat.AddDate(0, 1, 0)
+	periode, err := models.PeriodeProduksi(hariClosing, saat)
+	if err != nil {
+		return PeriodeNomor{}, err
 	}
 	return PeriodeNomor{
 		MMYYYY: fmt.Sprintf("%02d.%04d", int(periode.Month()), periode.Year()),
 		Tahun:  strconv.Itoa(periode.Year()),
-	}
+	}, nil
 }
 
 // HariClosing membaca hari tutup buku.
@@ -97,7 +142,7 @@ func HitungPeriodeNomor(saat time.Time, hariClosing int) PeriodeNomor {
 //
 // ⛔ Kosong atau tak terurai GAGAL TERANG. Menebak hari tutup buku menggeser
 // periode seluruh nomor yang terbit hari itu.
-func (r *PohonKlaim) HariClosing(ctx context.Context, tx *Tx) (int, error) {
+func (r *Penomor) HariClosing(ctx context.Context, tx *Tx) (int, error) {
 	tabel, err := r.db.Qualify("TANGGAL_CLOSING")
 	if err != nil {
 		return 0, err
@@ -140,7 +185,7 @@ func (r *PohonKlaim) HariClosing(ctx context.Context, tx *Tx) (int, error) {
 // ⛔ Nol `COMMIT`. `[data DBA]` procedure-nya pun tidak punya - yang terlihat
 // di rule Pega berada di blok pemanggil (OQ-013). Transaksinya milik
 // pendaftaran.
-func (r *PohonKlaim) UrutNomorBerikut(ctx context.Context, tx *Tx,
+func (r *Penomor) UrutNomorBerikut(ctx context.Context, tx *Tx,
 	class, jenis string, p PeriodeNomor, saat time.Time) (int, error) {
 
 	tabel, err := r.db.Qualify("GENERATE_SEQUENCE_NUMBER")
@@ -222,7 +267,7 @@ const TipeKodeProduksiLife = "LIFE"
 //
 // ⚠️ `TYPE` diterima sebagai parameter, bukan ditanam: `KODE_PRODUKSI`
 // melayani lebih dari satu lini, dan Claim Prop kelak membaca tabel yang sama.
-func (r *PohonKlaim) AwalanProduksi(ctx context.Context, tx *Tx,
+func (r *Penomor) AwalanProduksi(ctx context.Context, tx *Tx,
 	tipe string) (string, error) {
 
 	tabel, err := r.db.Qualify("KODE_PRODUKSI")

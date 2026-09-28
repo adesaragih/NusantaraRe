@@ -1,6 +1,6 @@
 # 03: Premium List Detail dan penomoran `PL_NUMBER`
 
-**Status:** ready-for-agent
+**Status:** selesai — 28-09-2026
 
 **Blocked by:** **00 (skema tujuh tabel — PREFACTOR)**, 01 (penawaran — tahap Premium hanya terbuka setelah `Confirm` → `Premium`), 02
 (periode tutup buku — periode produksi adalah **masukan** procedure penomoran)
@@ -69,21 +69,58 @@ transaksi dipegang Go; commit segera setelah nomor terbentuk agar lock `FOR UPDA
 
 ## Acceptance criteria
 
-- [ ] `PL_NUMBER` diperoleh dari `PROC_GENERATE_SEQUENCE_NUMBER`; aplikasi **tidak** menyusun format
-      nomor sendiri, dan tidak ada pembentuk format di lapisan services. *(AC 10 spec; **ADR-0006**)*
-- [ ] Prefix diperoleh lewat **lookup** ke `POOLDATA.KODE_PRODUKSI` (`TYPE='LIFE'`), tidak ditanam
+- [x] ⚠️ **RALAT 28-09-2026 — AC ini keliru terhadap XML, dan diperbaiki di sini.** Bunyi lamanya:
+      *"`PL_NUMBER` diperoleh dari `PROC_GENERATE_SEQUENCE_NUMBER`; aplikasi **tidak** menyusun format
+      nomor sendiri."* `SubmitPremiumList_Act` baris **3126** membuktikan sebaliknya — yang menyusun
+      bentuk nomor adalah **activity**-nya, bukan procedure-nya:
+
+      ```
+      .PremiumListSummary.PL_NUMBER =
+          ParamSeq.HASIL3 + InputData.CARI20 + pyWorkPage.BusinessCode
+          + "." + ParamSeq.HASIL1 + "." + ParamSeq.HASIL2
+      ```
+
+      Procedure hanya mengembalikan **dua** nilai: `HASIL1` (periode `MM.YYYY`) dan `HASIL2` (urut).
+      Awalan datang dari `KODE_PRODUKSI` (langkah 10) dan huruf tipe dari langkah 6–9.
+
+      **Bunyi yang benar:** urut dan periode diperoleh dari penghitung
+      `GENERATE_SEQUENCE_NUMBER`; bentuk nomornya dirakit di lapisan **`models`** (murni, dapat diuji
+      tanpa Oracle) — **tidak** di `services`, **tidak** di handler, dan **tidak** di layar.
+      *(**ADR-0006** tetap: penomoran tidak boleh dikarang di tempat yang tersebar.)*
+- [x] Prefix diperoleh lewat **lookup** ke `POOLDATA.KODE_PRODUKSI` (`TYPE='LIFE'`), tidak ditanam
       sebagai konstanta. *(AC 11 spec)*
-- [ ] Periode yang dikirim ke procedure berasal dari tiket **02**, bukan dari `time.Now()` mentah.
-- [ ] Nomor lahir **sekali** per premium list: submit kedua atas premium list yang sudah bernomor
-      **tidak** menggerakkan sequence dan **tidak** mengubah nomor.
-- [ ] Empat cabang per `Type` (`QR`, `QP`, `TP`, `TR`) menentukan skema nomor yang dipakai; cabang
+- [x] ⚠️ **RALAT 28-09-2026 — periode TIDAK dikirim ke procedure.** `pyMemo` check-in terakhir
+      `SubmitPremiumList_Act` (20260122) berbunyi harfiah **"buang ParamSeq.CARI3"**, dan memang
+      `ParamSeq.CARI3` tidak diset di satu langkah pun; `TO_DATE({ParamSeq.CARI3},'DD/MM/YYYY')` di
+      `GetSequenceNumber_SQL` karena itu menerima **NULL**, dan procedure menentukan periodenya
+      sendiri dari `SYSDATE`.
+
+      **Bunyi yang benar:** karena procedure tidak dipanggil, periodenya dihitung di Go — dengan
+      aturan tiket **02** (`models.PeriodeProduksi`), bukan `time.Now()` mentah. Aturannya **satu**,
+      dipakai penomoran klaim maupun premium list.
+- [x] Nomor lahir **sekali** per premium list: submit kedua atas premium list yang sudah bernomor
+      **tidak** menggerakkan sequence dan **tidak** mengubah nomor. Gerbangnya berdiri di **dua**
+      tempat — di layanan (dibaca sebelum penghitung disentuh) dan di kalimat `WHERE … PL_NUMBER IS
+      NULL` query penulisnya.
+- [x] Empat cabang per `Type` (`QR`, `QP`, `TP`, `TR`) menentukan skema nomor yang dipakai; cabang
       dipilih dari data, bukan dari urutan langkah.
-- [ ] Commit terjadi **segera setelah** nomor terbentuk, sehingga lock `SELECT … FOR UPDATE` tidak
-      menahan pengguna lain. (**ADR-0015**)
+
+      ⚠️ **TAMBAHAN 28-09-2026, dan ini yang paling mudah dirusak "perbaikan".** Keempat tipe itu
+      berbagi **SATU** penghitung. Baris **2717** memakai teks **harfiah** `"QR/QP/TP/TR"` sebagai
+      bagian kunci `JENIS` (`ParamSeq.CARI2 = ParamSeq.HASIL3+"QR/QP/TP/TR"`); tipe yang sedang
+      berjalan hanya masuk ke **nomornya**, tidak ke kuncinya. Memecahnya menjadi empat penghitung
+      menerbitkan empat deret yang masing-masing mulai dari 1 — dan setiap nomor baru bertabrakan
+      dengan nomor lama.
+- [x] Commit terjadi **segera setelah** nomor terbentuk, sehingga lock `SELECT … FOR UPDATE` tidak
+      menahan pengguna lain. (**ADR-0015**) Transaksinya memuat **hanya** pengambilan nomor dan
+      penyimpanannya — sengaja berbeda dari pendaftaran klaim, yang memegang kunci sampai seluruh
+      pendaftaran selesai. ⚠️ Nol `COMMIT` di teks SQL (**ADR-U-0029**): batasnya dipegang Go,
+      meski `GetSequenceNumber_SQL` baris 88 punya satu.
 - [ ] Dua submit berurutan menghasilkan dua nomor **berbeda dan berurutan** di bawah beban paralel.
 - [ ] Baris `PremiumListDetail` tersimpan utuh dengan seluruh kolom uang, dan **tidak satu pun**
       melewati `float`. *(AC 14 spec; **ADR-0003**)*
-- [ ] `PL_NUMBER` yang sudah terbit **terlihat** pengguna dan dapat dibaca kembali lewat API.
+- [x] `PL_NUMBER` yang sudah terbit **terlihat** pengguna dan dapat dibaca kembali lewat API
+      (`GET /api/polis-life/{id}` dan `GET /api/polis-life/{id}/nomor`).
 
 ### Penyimpanan relasional ⚠️ BARU 2026-09-16 — spec §12
 
@@ -123,3 +160,138 @@ Konfirmasikan ke work owner sebelum menyimpulkan langkah lain hidup atau mati.
 go test ./internal/...
 cd frontend && npm test
 ```
+
+## Implementasi
+
+**Dikerjakan 28-09-2026.** `main`, sesudah `8f4df09` (tiket 02).
+
+### Yang dikirim
+
+| Lapisan | Berkas | Isi |
+| --- | --- | --- |
+| models | `polis_nomor.go` | bentuk `PL_NUMBER` — murni, nol Oracle: `KodeTipePL` (empat cabang dari data), `JenisPenghitungPL` (teks harfiah `QR/QP/TP/TR`), `ClassPenghitungPL`, `PeriodeNomorPL` (`MM.YYYY` → `MM.YY`), `RakitNomorPL`, `NomorPL` |
+| models | `polis_detail.go` | `KolomGridPeserta` — 38 kolom urut `PL_Detail_Sec`, beserta `MedanGridTanpaKolom` |
+| models | `polis_periode.go` | `DiJakarta` — satu sumber zona untuk seluruh repo |
+| repository | `penomor.go` | `Penomor` (tipe baru); `HitungPeriodeNomor` kini mendelegasikan pergeseran bulan ke `models.PeriodeProduksi` |
+| repository | `polis_nomor.go` | `Ringkas` (satu query, `LEFT JOIN`), `Keadaan`, `Identitas`, `TulisNomor` |
+| repository | `polis_detail.go` | grid peserta, SQL dirakit dari daftar kolom, seluruh angka lewat `TM9` |
+| services | `polis_nomor.go` | `NomorPremiumList.Terbitkan` / `.Baca` — gerbang lahir-sekali, gerbang kasus tertutup, transaksi pendek |
+| services | `polis_detail.go` | `DetailPolis.Kepala` / `.Peserta` — bentuk JSON milik lapisan ini |
+| handlers | `rute_premiumlist.go` | `GET {id}`, `GET {id}/peserta`, `GET {id}/nomor`, `POST {id}/nomor` |
+| frontend | `PremiumListDetail.tsx` | grid + nomor; daftar kolom datang dari server |
+| frontend | `InputOffer.tsx` | `judulKeputusan` — judul mengikuti tahapnya |
+
+### Rantai penomoran, sebagaimana ditiru
+
+```
+gerbang kasus tertutup (T_WORK_POLIS)      <- di LUAR transaksi
+gerbang lahir-sekali   (MIN/MAX PL_NUMBER) <- sebelum penghitung disentuh
+KODE_PRODUKSI TYPE='LIFE'      -> awalan            (langkah 10)
+TANGGAL_CLOSING                -> hari tutup buku
+aturan tiket 02                -> periode MM.YYYY   (langkah 12, keluaran proc)
+GENERATE_SEQUENCE_NUMBER       -> urut              (langkah 12, FOR UPDATE)
+  kunci (CLASS, JENIS, TAHUN) = (pxObjClass, awalan+"QR/QP/TP/TR", tahun)
+models.NomorPL                 -> awalan+tipe+COB+"."+MM.YY+"."+urut5  (b3126)
+UPDATE ... WHERE PL_NUMBER IS NULL
+```
+
+### Cacat yang ditemukan dan diperbaiki dalam kode yang SUDAH ada
+
+`repository.HitungPeriodeNomor` (penomoran klaim, butir o1) menggeser bulan dengan
+`saat.AddDate(0,1,0)`. Go **melimpahkan** tanggal yang tidak ada: **31 Januari + 1 bulan = 3 Maret**,
+sehingga periodenya `03.2026` dan **Februari terlewat sama sekali**. Oracle `ADD_MONTHS` justru
+**menjepit** ke akhir bulan (29 Februari) — `02.2026`. Ia menyala pada tanggal **29–31** bulan yang
+penggantinya lebih pendek, dan hasilnya nomor yang terbukukan ke bulan yang salah **tanpa satu pun
+galat**. Terbukti merah lebih dahulu atas implementasi lama
+(`TestPeriodeNomorTidakMelompatiBulanPendek`, tujuh kasus), lalu hijau.
+
+Sekaligus: harinya kini dibaca di zona **Jakarta** (sama dengan `SYSDATE` server) — sebelumnya di
+zona `saat` sendiri, sehingga cutover dan pergeseran dapat berselisih sehari.
+
+### Yang TIDAK dikerjakan di tiket ini, dan sebabnya
+
+| Butir | Sebab |
+| --- | --- |
+| Perakitan baris `PremiumListDetail` (`SavePremiumList_Act` step 8) | jalur **tulis** peserta adalah unggahan CSV — **tiket 04** |
+| Kedua jendela valuasi, `FACTOR` desimal, spreading dibekukan | ditulis saat peserta **disimpan** — **tiket 04/05a**; tiket ini hanya membacanya |
+| `ProtectProductName_Act`, `ChooseProdName`, `SOB_Harness`, `Retro_Section`, `SecurityReinsurer_Section` | lima pemilih pada kepala polis, bukan pada penomoran maupun grid — menyusul bersama layar kepala polis |
+
+### Dua permintaan bersamaan atas polis yang SAMA
+
+Gerbang lahir-sekali dibaca tanpa kunci baris, jadi dua permintaan dapat sama-sama melewatinya.
+Yang kedua lalu menulis **nol** baris (`WHERE … PL_NUMBER IS NULL` sudah tidak cocok), transaksinya
+**dibatalkan**, dan kenaikan penghitung ikut batal — **nol nomor terbakar**.
+
+⛔ Sebab nol barisnya **dibedakan**, tidak ditebak: nol baris peserta menjawab
+`ErrPolisTanpaPeserta` (*"unggah rincian peserta lebih dahulu"*), sedangkan baris yang ada tetapi
+sudah bernomor menjawab `ErrNomorPLTerbitBersamaan` (*"baca ulang nomornya"*), keduanya **409**.
+Menjawab keduanya dengan kalimat yang sama mengirim orang mencari peserta yang sebenarnya ada.
+Dikunci `TestDuaSebabNolBarisDibedakan`.
+
+### Butir `[terbuka]` yang LAHIR di tiket ini
+
+- **OQ-PL-01 `CLASS` penghitung.** `ParamSeq.CARI1 = pyWorkPage.pxObjClass` (b2670) adalah kelas
+  **konkret saat berjalan**. Korpus memuat dua: `ASM-FW-GISFW-Work-LIFE` (tempat seluruh rule
+  didefinisikan; 107 rujukan `pyActivityClass` di `ShowLifePremiumDetail`) dan
+  `RNM-FW-LIFEFW-Work-LIFE` (8 rujukan di section yang sama, 394 di korpus). Yang dipakai
+  `ASM-FW-GISFW-Work-LIFE`. **Bila baris `GENERATE_SEQUENCE_NUMBER` nyata bertuliskan yang lain,
+  penomoran mulai dari satu dan setiap nomor baru bertabrakan dengan nomor lama.** Dikunci uji
+  (`TestClassPenghitungPLTidakBergeserDiam`). **Minta konfirmasi DBA sebelum dipakai di lingkungan
+  mana pun yang datanya nyata.**
+- **OQ-PL-02 `RetrocadedShare` vs `RETROCEDED_SHARE`.** Keduanya tampil di grid `PL_Detail_Sec` yang
+  sama, jadi keduanya medan berbeda; hanya yang kedua punya kolom. Mana yang mana — belum terjawab.
+- **OQ-PL-03 `REINSTYPENAME`.** Tampil di `PL_Detail_Sec`, nol kolom di migrasi 050–056, dan nol
+  rule lain di korpus PremiumList Life yang menyebutnya.
+- **OQ-PL-04 tempat tinggal `PL_NUMBER`.** Kolomnya hanya ada di `T_PREMIUM_LIST_DETAIL` (052);
+  `_SUMMARY` (055) dan header (051) tidak punya. Akibatnya polis **tanpa peserta** belum dapat
+  dinomori. Itu sejalan dengan urutan aslinya (submit sesudah rincian terisi), tetapi bila polis
+  kelak perlu bernomor lebih dahulu, kolom `PL_NUMBER` di header-lah jawabannya — **keputusan
+  skema**, dan migrasi baru hanya dari keputusan yang tercatat.
+
+### Langkah 15 `SubmitPremiumList_Act` — `[terbuka]`, tidak ditiru
+
+b3413 `@replaceAll(.PremiumListSummary.PL_NUMBER, Local.CurrentMMYY, Local.NextMMYY)`.
+`Local.CurrentMMYY` berbentuk `.MM.YYYY.` (b1142, tahun **empat** angka), sedangkan `PL_NUMBER`
+memuat `.MM.YY.` (tahun **dua** angka, b3021/b3075) — teks yang dicari **tidak pernah ada** di
+dalam nomornya, sehingga langkah itu tidak mengubah apa pun. `Local.NextMMYY` (b1163) memperkuatnya:
+ia memformat `\"dd\"`, yaitu **hari**, bukan bulan. Tidak ditiru; dilaporkan.
+
+### Temuan `/code-review` yang diperbaiki sebelum commit
+
+Tinjauan dua sumbu dijalankan atas titik tetap `8f4df09`. Yang diperbaiki:
+
+| Sumbu | Temuan | Tindakan |
+| --- | --- | --- |
+| Spec (c) | ⛔ **Lubang nyata.** `MIN`/`MAX` **melewati NULL**, jadi polis yang separuh barisnya bernomor terbaca *"sudah bernomor"*, gerbang lahir-sekali kembali lebih awal, dan baris yang kosong **tidak pernah terisi**. Komentar `sqlKeadaanNomorPL` sudah menyebut selisih `COUNT(*)` vs `COUNT(PL_NUMBER)` sebagai penunjuknya — tetapi nol kode pernah **membandingkannya**. Terjangkau begitu tiket 04 menambah peserta sesudah penomoran. | `KeadaanNomorPL.Utuh()` lahir; gerbangnya kini **menyembuhkan** — baris yang tertinggal diberi nomor yang **sudah ada**, penghitung tetap tidak tersentuh. Dikunci dua uji, dan penjaganya **dibuktikan merah** lebih dahulu. |
+| Standards 1 | Sensus tanpa label `[terverifikasi]`, tanpa perintah audit, tanpa cara kedua (CLAUDE.md §4 butir 9, §4a). | Ketiga sensus (40 medan · 17 langkah · rujukan kelas) kini berlabel, dengan **jendela disebut**, **perintah audit**, dan **dua cara** yang keduanya sepakat. Jebakannya ikut disebut: kemunculan **mentah** medan grid **109**, bukan 40. |
+| Standards 2 | ADR-U-0027 **salah dirujuk** untuk pemetaan NULL → teks kosong; ADR itu tentang kolom nullable dan wajib-isi di kode. | Rujukan **dicabut** di kedua tempat, dan pencabutannya ditulis. Aturannya berdiri sendiri. |
+| Standards 3 | `App.tsx` dan `InputOffer.tsx` tertulis ulang **LF→CRLF** — 210 dan 360 baris berubah untuk 14 dan 15 baris nyata. | Dikembalikan ke LF; seluruh berkas diperiksa ulang. Diff kini sebesar perubahannya. |
+| Standards (smell) | `fmtDesimalPeserta` / `fmtTanggalPeserta` menyalin `fmtDesimal` / `fmtTanggalOracle` di paket yang **sama**. | Dibuang; yang sudah ada dipinjam. |
+| Standards (smell) | `cacahPesertaDalamTx` menyalin `sqlCacahPeserta` utuh. | Dibuang; query yang sudah ada dipinjam. |
+| Standards (smell) | `KolomPesertaBulat` menempuh cabang yang **persis sama** dengan `KolomPesertaUang`. | Disatukan menjadi `KolomPesertaAngka` — sejajar dengan `golonganKolom` yang sudah ada. |
+| Standards + Spec | `GET /api/polis-life/{id}/nomor` → `Baca` → `bacaNomorPL` **nol pemanggil**; `DenganJam` juga. | **Dibuang seluruhnya.** Nomornya dibaca lewat `GET /api/polis-life/{id}` yang sudah membawanya. *(Rute tanpa pemanggil adalah pola cacat yang sudah berulang di repo ini.)* |
+| Spec (a) | `MedanTanpaKolom()` mengaku *"DIKIRIM KE LAYAR"* padahal nol rute menyajikannya. | Kini benar-benar ikut di `KepalaPolis`, dan **tampil** di layar sebagai daftar terlipat. |
+
+**Yang TIDAK diambil:** pemindahan `PohonKlaim`→`Penomor` dan perbaikan `HitungPeriodeNomor`
+disebut *scope creep* karena mengubah keluaran modul klaim yang sudah jalan. Dipertahankan:
+membangun penomoran PL di atas fungsi yang **diketahui** melompati Februari berarti mengirim cacat
+yang sama ke modul kedua. Perubahan keluarannya dinyatakan di atas, bukan disembunyikan.
+
+**Yang MASIH terbuka:** AC *"dua submit berurutan menghasilkan dua nomor berbeda dan berurutan di
+bawah beban paralel"* belum punya uji — ia menuntut Oracle sungguhan. Rancangannya
+(`SELECT … FOR UPDATE` + transaksi pendek) masuk akal, tetapi **belum dibuktikan**; dicatat di sini
+alih-alih dicentang.
+
+### Verifikasi
+
+```
+gofmt -l .              bersih
+go vet ./...            bersih
+go vet -tags db ./...   bersih
+go test ./... -tags db  463 PASS · 0 FAIL · 38 SKIP
+npx tsc --noEmit        bersih
+npx vitest run          322 PASS (27 berkas)
+npm run build           bersih
+```
+
+Nol migrasi baru. Nol procedure dipanggil. Nol `COMMIT` di teks SQL.

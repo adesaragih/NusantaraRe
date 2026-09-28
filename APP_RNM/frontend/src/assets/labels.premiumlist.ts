@@ -76,3 +76,72 @@ export const PENGGOLONG_POLIS = {
   premium: 'Premium',
   offer: 'Offer',
 } as const
+
+/**
+ * Judul kolom grid Premium List Detail — `Section/PL_Detail_Sec.xml`.
+ *
+ * ⛔ NOL judul yang dikarang. Section itu tidak memuat satu pun `pyCaption`
+ * untuk medannya: Pega menampilkan label properti masing-masing, yang tidak
+ * ikut ter-ekspor ke korpus. Karena itu yang di bawah adalah NAMA KOLOM apa
+ * adanya, dirapikan hanya dengan mengganti garis bawah menjadi spasi —
+ * bukan terjemahan yang kami karang sendiri.
+ *
+ * ⚠️ Nama kolomnya sendiri DATANG DARI SERVER; peta ini hanya memperindah
+ * yang datang. Kolom yang tidak ada di sini tetap tampil, dengan namanya.
+ */
+export const JUDUL_KOLOM_PESERTA: Record<string, string> = {
+  BEGIN_DATE: 'Begin Date',
+  ENTRY_AGE: 'Entry Age',
+  PLAN: 'Plan',
+  STNC: 'STNC',
+  EXPIRED_DATE: 'Expired Date',
+  CURRENT_AGE: 'Current Age',
+  PERIOD_MM: 'Period MM',
+  POLICY_HOLDER: 'Policy Holder',
+  EFFECTIVE_DATE: 'Effective Date',
+  WPC: 'WPC',
+  CERTIFICATE_NO: 'Certificate No',
+  CURRENCY: 'Currency',
+  SUM_REASURED: 'Sum Reasured',
+  DEDUCTION: 'Deduction',
+  BROKERAGE_FEE: 'Brokerage Fee',
+  SUM_AT_RISK_RETRO: 'Sum At Risk Retro',
+  RETROCEDED_SHARE: 'Retroceded Share',
+  SUM_INSURED: 'Sum Insured',
+  SHARE_NUSANTARA_RE_GROSS: 'Share Nusantara Re Gross',
+  EM_PERCENT: 'EM Percent',
+  SUM_AT_RISK_GROSS: 'Sum At Risk Gross',
+  GROSS_PREMIUM: 'Gross Premium',
+  CEDING_RETENTION: 'Ceding Retention',
+  RATE: 'Rate',
+  FACTOR: 'Factor',
+  RISK: 'Risk',
+  NET_PREMIUM: 'Net Premium',
+  DEDUCTION_REFUND: 'Deduction Refund',
+  BROKERAGE_FEE_REFUND: 'Brokerage Fee Refund',
+  GROSS_PREMIUM_REFUND: 'Gross Premium Refund',
+  NET_PREMIUM_REFUND: 'Net Premium Refund',
+  RI_ADMIN_FEE_REFUND_RETRO: 'RI Admin Fee Refund Retro',
+  SHARE_RETRO: 'Share Retro',
+  GROSS_PREMIUM_REFUND_RETRO: 'Gross Premium Refund Retro',
+  NET_PREMIUM_REFUND_RETRO: 'Net Premium Refund Retro',
+  RI_ADMIN_FEE_RETRO: 'RI Admin Fee Retro',
+  GROSS_PREMIUM_RETRO: 'Gross Premium Retro',
+  NET_PREMIUM_RETRO: 'Net Premium Retro',
+}
+
+/** Label layar Premium List Detail — tiket 03. */
+export const DETAIL_POLIS = {
+  judul: 'Premium List Detail',
+  nomor: 'PL_NUMBER',
+  belumBernomor: 'Belum bernomor',
+  terbitkan: 'Generate PL Number',
+  /**
+   * ⛔ Kalimatnya MENYEBUT apa yang harus dikerjakan lebih dahulu. "Tidak
+   * dapat dinomori" membuat orang mencari kerusakan yang tidak ada.
+   */
+  perluPeserta:
+    'Polis ini belum punya baris peserta, sehingga nomornya belum punya ' +
+    'tempat tersimpan. Unggah rincian peserta lebih dahulu.',
+  sudahBernomor: 'Polis ini sudah bernomor; tombolnya tidak perlu ditekan lagi.',
+} as const

@@ -299,11 +299,11 @@ func RakitNomorKlaim(awalan, kodeBisnis, mmYYYY string, urut int) string {
 // ⛔ `[keputusan work owner]` butir **o1**: procedure tidak dipanggil. Yang
 // tetap di Oracle hanya `SELECT … FOR UPDATE`, sebab kunci baris memang milik
 // basis data.
-type penomorCounter struct{ pohon *repository.PohonKlaim }
+type penomorCounter struct{ penghitung *repository.Penomor }
 
 // PenomorCounterOracle menyusun penomor yang memakai penghitung Oracle.
 func PenomorCounterOracle(svc *Service) Penomor {
-	return penomorCounter{pohon: repository.NewPohonKlaim(svc.db)}
+	return penomorCounter{penghitung: repository.NewPenomor(svc.db)}
 }
 
 // NomorBerikut menerbitkan satu nomor klaim baru.
@@ -319,16 +319,19 @@ func (p penomorCounter) NomorBerikut(ctx context.Context, tx *repository.Tx,
 			ErrPermintaanTidakSah)
 	}
 	// ⛔ Awalannya di-LOOKUP, bukan konstanta - lihat catatan di atas.
-	awalan, err := p.pohon.AwalanProduksi(ctx, tx, repository.TipeKodeProduksiLife)
+	awalan, err := p.penghitung.AwalanProduksi(ctx, tx, repository.TipeKodeProduksiLife)
 	if err != nil {
 		return "", err
 	}
-	hariClosing, err := p.pohon.HariClosing(ctx, tx)
+	hariClosing, err := p.penghitung.HariClosing(ctx, tx)
 	if err != nil {
 		return "", err
 	}
-	periode := repository.HitungPeriodeNomor(saat, hariClosing)
-	urut, err := p.pohon.UrutNomorBerikut(ctx, tx,
+	periode, err := repository.HitungPeriodeNomor(saat, hariClosing)
+	if err != nil {
+		return "", err
+	}
+	urut, err := p.penghitung.UrutNomorBerikut(ctx, tx,
 		ClassNomorKlaimLife, JenisNomorKlaimLife, periode, saat)
 	if err != nil {
 		return "", err

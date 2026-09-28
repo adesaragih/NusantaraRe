@@ -1429,3 +1429,101 @@ export async function ambilPeriodeProduksi(): Promise<string> {
   const hasil = await minta<{ periode: string }>('/api/polis-life/periode')
   return hasil.periode
 }
+
+// ——— Tiket 03: Premium List Detail dan penomoran PL ———
+
+/** Kepala polis di atas grid — `GET /api/polis-life/{id}`. */
+export interface KepalaPolis {
+  polisId: string
+  /** `T_PREMIUM_LIST.TYPE` — QR / QP / TP / TR. */
+  type: string
+  businessCode: string
+  /** `PL_NUMBER`; kosong berarti polis belum bernomor. */
+  plNumber: string
+  /**
+   * Medan layar lama yang TIDAK kami punya kolomnya, beserta alasannya.
+   *
+   * ⛔ Datang dari server, bukan dikarang layar. Orang yang membandingkan
+   * layar baru dengan layar lama akan menghitung kolomnya; yang menemukan
+   * selisih tanpa penjelasan akan menyimpulkan datanya hilang.
+   */
+  medanTanpaKolom: { medan: string; alasan: string }[]
+}
+
+/** Satu baris grid peserta. */
+export interface BarisPesertaPolis {
+  id: string
+  /**
+   * Nilai berkunci NAMA KOLOM, seluruhnya teks.
+   *
+   * ⛔ Uang tiba sebagai TEKS dan tetap teks (ADR-U-0003). `Number(...)`
+   * atas premi delapan angka desimal membulatkannya diam-diam, dan
+   * pembulatan di jalan pulang tidak kalah salah dari pembulatan saat
+   * menyimpan.
+   */
+  nilai: Record<string, string>
+}
+
+/** Satu halaman grid peserta — `GET /api/polis-life/{id}/peserta`. */
+export interface HalamanPesertaPolis {
+  /**
+   * Nama kolom, URUT seperti `PL_Detail_Sec` menampilkannya.
+   *
+   * ⛔ DATANG DARI SERVER, tidak diketik ulang di sini. Dua daftar kolom —
+   * satu di Go, satu di TypeScript — akan berselisih, dan selisihnya muncul
+   * sebagai angka di bawah judul kolom yang salah.
+   */
+  kolom: string[]
+  baris: BarisPesertaPolis[]
+  total: number
+  halaman: number
+  ukuran: number
+}
+
+/** Jawaban penerbitan atau pembacaan `PL_NUMBER`. */
+export interface HasilNomorPL {
+  nomor: string
+  /** Membedakan nomor yang baru lahir dari nomor yang sudah ada. */
+  baruTerbit: boolean
+  periode: string
+  barisPeserta: number
+}
+
+/** Membaca kepala polis — `GET /api/polis-life/{id}`. */
+export async function ambilKepalaPolis(polisID: string): Promise<KepalaPolis> {
+  return minta<KepalaPolis>(`/api/polis-life/${encodeURIComponent(polisID)}`)
+}
+
+/** Membaca satu halaman peserta — `GET /api/polis-life/{id}/peserta`. */
+export async function ambilPesertaPolis(
+  polisID: string,
+  halaman = 1,
+  ukuran = 50,
+): Promise<HalamanPesertaPolis> {
+  const q = `?halaman=${String(halaman)}&ukuran=${String(ukuran)}`
+  return minta<HalamanPesertaPolis>(
+    `/api/polis-life/${encodeURIComponent(polisID)}/peserta${q}`,
+  )
+}
+
+/**
+ * Menerbitkan `PL_NUMBER` — `POST /api/polis-life/{id}/nomor`.
+ *
+ * ⛔ TANPA BADAN PERMINTAAN, dan itu disengaja. Tidak satu pun bahan nomor
+ * boleh datang dari klien: awalan, tipe, kode bisnis, periode, dan urut
+ * seluruhnya dibaca server dari sumbernya. Nomor yang bahannya dapat disebut
+ * pemanggil adalah nomor yang dapat dipilih pemanggil.
+ *
+ * ⛔ NOMOR LAHIR SEKALI. Permintaan kedua atas polis yang sudah bernomor
+ * menjawab nomor yang SAMA dengan `baruTerbit: false`, dan penghitungnya
+ * tidak bergerak.
+ *
+ * ⚠️ Menjawab **409** bila polis belum punya satu pun baris peserta —
+ * nomornya belum punya tempat tersimpan. Unggah rincian peserta lebih dahulu.
+ */
+export async function terbitkanNomorPL(polisID: string): Promise<HasilNomorPL> {
+  return minta<HasilNomorPL>(
+    `/api/polis-life/${encodeURIComponent(polisID)}/nomor`,
+    { metode: 'POST' },
+  )
+}

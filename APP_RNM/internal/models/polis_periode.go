@@ -94,6 +94,16 @@ func PeriodeProduksi(tglTutupBuku int, saat time.Time) (time.Time, error) {
 	return time.Date(tahun, bulan, 1, JamPeriodeGMT, 0, 0, 0, time.UTC), nil
 }
 
+// DiJakarta memindahkan satu saat ke zona Asia/Jakarta.
+//
+// ⛔ SATU SUMBER ZONA untuk seluruh repo. Setiap aturan yang membandingkan
+// TANGGAL - hari tutup buku, cutover penomoran - harus memakai hari yang sama
+// dengan yang dilihat Oracle, sebab `SYSDATE` di sana adalah waktu server
+// Jakarta. Dua tempat yang masing-masing memutuskan zonanya sendiri akan
+// berselisih tepat di sekitar tengah malam, yaitu satu hari, yaitu satu bulan
+// buku.
+func DiJakarta(t time.Time) time.Time { return t.In(zonaJakarta()) }
+
 // zonaJakarta mengembalikan zona Asia/Jakarta, dengan cadangan tetap.
 //
 // ⚠️ Basis data zona waktu tidak selalu ada di Windows. UTC+7 tetap zona yang

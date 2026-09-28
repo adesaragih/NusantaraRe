@@ -95,6 +95,19 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 		putuskanPenawaran(svc, stubPelaku))
 	mux.HandleFunc("POST /api/polis-life/{id}/penggolong",
 		golongkanPenawaran(svc, stubPelaku))
+	// Tiket 03 - layar detail dan penomoran PL.
+	//
+	// ⛔ MEMBACA DAN MENERBITKAN TIDAK SATU RUTE. Rute yang "membaca, dan
+	// menerbitkan bila belum ada" membuat setiap penyegaran halaman
+	// berpotensi menggerakkan penghitung. Nomornya dibaca lewat
+	// `GET /api/polis-life/{id}` - yang sudah membawanya - dan rute GET
+	// khusus nomor DIBUANG 28-09-2026 karena nol pemanggil: rute tanpa
+	// pemanggil adalah permukaan yang tidak seorang pun uji.
+	mux.HandleFunc("GET /api/polis-life/{id}", kepalaPolis(svc, stubPelaku))
+	mux.HandleFunc("GET /api/polis-life/{id}/peserta",
+		pesertaPolis(svc, stubPelaku))
+	mux.HandleFunc("POST /api/polis-life/{id}/nomor",
+		terbitkanNomorPolis(svc, stubPelaku))
 	return mux
 }
 
