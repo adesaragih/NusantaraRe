@@ -8,12 +8,15 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { INBOX_KOMITE, KOLOM_INBOX_KOMITE } from '../../assets/labels.komite'
+import { PERAN, type KodePeran } from '../../assets/labels.claimlife'
+import { EFEK_KOMITE, INBOX_KOMITE, KOLOM_INBOX_KOMITE } from '../../assets/labels.komite'
 import { Gagal, Kosong, Memuat } from '../../components/ui/dasar'
 import {
   ambilInboxKomite,
+  ambilLaporanHarianKomite,
   type BarisInboxKomite,
   type HalamanInboxKomite,
+  type LaporanHarianKomite,
 } from '../../services/api'
 
 /** Sel kosong ditandai (ADR-U-0027). */
@@ -26,8 +29,17 @@ export function tingkatKomite(b: BarisInboxKomite): string {
   return `${String(b.tingkatBerjalan)} / ${String(b.komiteLoop)}`
 }
 
-export default function InboxKomite({ onBuka }: { onBuka: (kasusID: string) => void }) {
+export default function InboxKomite({
+  onBuka,
+  peran = [],
+}: {
+  onBuka: (kasusID: string) => void
+  /** Peran pelaku — laporan "perlu intervensi" hanya untuk admin (tiket 08). */
+  peran?: readonly KodePeran[]
+}) {
   const [hal, setHal] = useState<HalamanInboxKomite | null>(null)
+  const [laporan, setLaporan] = useState<LaporanHarianKomite | null>(null)
+  const admin = peran.includes(PERAN.admin)
   const [galat, setGalat] = useState<unknown>(null)
   const [sibuk, setSibuk] = useState(true)
 
@@ -36,6 +48,8 @@ export default function InboxKomite({ onBuka }: { onBuka: (kasusID: string) => v
     setGalat(null)
     try {
       setHal(await ambilInboxKomite())
+      // ⛔ Laporan kosong DINYATAKAN — ketiadaan laporan ≠ ketiadaan masalah.
+      if (admin) setLaporan(await ambilLaporanHarianKomite())
     } catch (e) {
       // ⛔ Galat DINYATAKAN, bukan menjadi daftar kosong.
       setGalat(e)
@@ -43,7 +57,7 @@ export default function InboxKomite({ onBuka }: { onBuka: (kasusID: string) => v
     } finally {
       setSibuk(false)
     }
-  }, [])
+  }, [admin])
 
   useEffect(() => {
     void muat()
@@ -98,6 +112,32 @@ export default function InboxKomite({ onBuka }: { onBuka: (kasusID: string) => v
         <p className="inbox__cacah" role="status">
           {hal.baris.length} dari {hal.total}
         </p>
+      )}
+      {laporan !== null && (
+        <section className="inbox__intervensi">
+          <h3>
+            {EFEK_KOMITE.laporan} ({laporan.tanggal})
+          </h3>
+          {laporan.kosong ? (
+            <p role="status">{EFEK_KOMITE.laporanKosong}</p>
+          ) : (
+            <ul>
+              {laporan.baris.map((b, i) => (
+                <li key={`${b.kasusId}-${b.jenis}-${String(i)}`}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onBuka(b.kasusId)
+                    }}
+                  >
+                    {b.kasusId}
+                  </button>{' '}
+                  {b.jenis} — {b.keadaan} sejak {b.sejak}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       )}
     </section>
   )

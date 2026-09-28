@@ -115,7 +115,7 @@ export default function App() {
         />
       )}
       {/* Komite Claim Life tiket 01 — Inbox Komite, lalu satu kasus dari baris. */}
-      {halaman === 'komite' && kasusKomite === '' && <InboxKomite onBuka={setKasusKomite} />}
+      {halaman === 'komite' && kasusKomite === '' && <InboxKomite onBuka={setKasusKomite} peran={masuk.peran} />}
       {halaman === 'komite' && kasusKomite !== '' && (
         <KasusKomite
           kasusID={kasusKomite}

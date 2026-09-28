@@ -66,6 +66,20 @@ export const KEPUTUSAN_KOMITE = {
 } as const
 
 /**
+ * Efek keluar dan laporan "perlu intervensi" — tiket 08. ⚠️ Tidak ada di
+ * korpus (perilaku baru, ADR-0015); kosakata kami.
+ */
+export const EFEK_KOMITE = {
+  judul: 'Efek keluar',
+  jenis: 'Efek',
+  keadaan: 'Keadaan',
+  percobaan: 'Percobaan',
+  sejak: 'Sejak',
+  laporan: 'Perlu intervensi hari ini',
+  laporanKosong: 'Laporan hari ini: tidak ada efek keluar yang perlu intervensi.',
+} as const
+
+/**
  * Eskalasi — tiket 03. ⚠️ Tidak ada di korpus (penyimpangan sadar, ADR-0014);
  * kosakata kami.
  */

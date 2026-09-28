@@ -74,3 +74,42 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+## Implementasi — 28-09-2026 (giliran 10)
+
+`[terverifikasi]` Tidak ada padanan korpus (catatan tiket tetap benar) — perilaku baru, konsekuensi
+ADR-0015.
+
+### Yang dibangun
+
+- `models/komite_efek.go` — km5: **kode** status outbox (`antre`/`jalan`/`selesai`/`gagal-permanen`)
+  di `models`, **kata** di layar (`tertunda`/`tuntas`/`perlu intervensi`). `KeadaanEfekKasus`:
+  "tuntas" **hanya** bila setiap efek selesai; satu gagal permanen → "perlu intervensi"; ada yang
+  tertunda → "tersimpan, belum tuntas" (AC 25); kode asing **tidak** dianggap tuntas. Kode di tiga lapis
+  dikunci sama (`TestKodeEfekSamaDiTigaLapis`).
+- "Perlu intervensi" = baris outbox `gagal-permanen` — keadaan **eksplisit** yang dicapai pekerja tiket
+  07 sesudah 8 percobaan atau galat permanen (AC 23), dengan jejak menyerah di jalur audit (ADR-0007;
+  `rekamMenyerah` Claim Life yang dipakai ulang).
+- **Menempel pada kasusnya**: `GET /api/komite/{id}` kini membawa `efek` (keadaan ringkas + tiap efek:
+  jenis, keadaan, percobaan, **sejak** kapan); layar Kasus Komite menampilkannya. `GALAT_TERAKHIR`
+  sengaja tidak dibaca (dapat menyebut objek basis data/kunci kategori).
+- **Laporan harian**: `GET /api/komite/laporan-harian` — seluruh efek Komite `gagal-permanen`; bidang
+  `kosong` **dinyatakan**, bukan disimpulkan (AC "tetap terkirim meskipun kosong"). Layar Inbox Komite
+  menampilkannya bagi admin, termasuk kalimat "tidak ada" saat kosong. `[asumsi — OQ-007/021]` penerima
+  = `ReasLifeAdmin`.
+
+### AC — keadaan
+
+| AC | Keadaan |
+| --- | --- |
+| tidak pulih → "perlu intervensi" eksplisit | ✅ `gagal-permanen` (tiket 07) |
+| terlihat menempel pada kasusnya | ✅ layar kasus |
+| menyebut efek mana dan sejak kapan | ✅ |
+| laporan harian seluruh kasus ber-status itu | ✅ endpoint + layar · ⚠️ **pengiriman** harian (email/penjadwal) belum ada — keputusan operasi |
+| laporan tetap ada meski kosong | ✅ `kosong: true` + kalimatnya |
+| tersimpan ≠ tuntas | ✅ |
+| kegagalan di jalur audit | ✅ jejak menyerah |
+
+### Angka
+
+Go **593 PASS · 0 FAIL** tingkat atas; vet (+`-tags db`), gofmt bersih · vitest **357** · tsc bersih.

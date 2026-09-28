@@ -1739,11 +1739,32 @@ export interface AnggotaKasusKomite {
   saya: boolean
 }
 
+/** Satu efek keluar kasus komite — KATA, bukan kode (tiket 08). */
+export interface EfekKomite {
+  jenis: string
+  keadaan: string
+  percobaan: number
+  sejak: string
+}
+
 export interface KasusKomite {
   kasus: BarisInboxKomite
   adjustmentId: string
   tangga: AnggotaKasusKomite[]
   giliranSaya: boolean
+  /** Tiket 08 — keadaan ringkas ('' bila belum ada keputusan) dan tiap efek. */
+  efek: { keadaan: string; efek: EfekKomite[] }
+}
+
+/** Laporan harian "perlu intervensi" — `GET /api/komite/laporan-harian` (admin). */
+export interface LaporanHarianKomite {
+  tanggal: string
+  kosong: boolean
+  baris: (EfekKomite & { kasusId: string })[]
+}
+
+export async function ambilLaporanHarianKomite(): Promise<LaporanHarianKomite> {
+  return minta<LaporanHarianKomite>('/api/komite/laporan-harian')
 }
 
 /** Inbox Komite milik pelaku — `GET /api/komite`. */

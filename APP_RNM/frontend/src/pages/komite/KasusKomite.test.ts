@@ -47,6 +47,7 @@ describe('keputusan komite', () => {
       adjustmentId: '',
       tangga: [],
       giliranSaya: false,
+      efek: { keadaan: '', efek: [] },
     })
     expect(bolehEskalasi([PERAN.admin], k(1))).toBe(true)
     expect(bolehEskalasi([PERAN.admin], k(3))).toBe(false)

@@ -127,6 +127,8 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 	// Komite Claim Life tiket 01 - Inbox Komite dan satu kasus. Keduanya GET:
 	// membaca saja; keputusan komite menyusul di tiket 02.
 	mux.HandleFunc("GET /api/komite", inboxKomite(svc, stubPelaku))
+	// Tiket 08 - literal mendahului `{id}` (pola paling spesifik menang).
+	mux.HandleFunc("GET /api/komite/laporan-harian", laporanHarianKomite(svc, stubPelaku))
 	mux.HandleFunc("GET /api/komite/{id}", kasusKomite(svc, stubPelaku))
 	// Tiket 02 - keputusan satu tingkat (`ShowTransfer` Submit).
 	mux.HandleFunc("POST /api/komite/{id}/keputusan", putuskanKomite(svc, stubPelaku))

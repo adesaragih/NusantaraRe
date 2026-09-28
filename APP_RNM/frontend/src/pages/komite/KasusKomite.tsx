@@ -13,6 +13,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { PERAN, type KodePeran } from '../../assets/labels.claimlife'
 import {
+  EFEK_KOMITE,
   ESKALASI_KOMITE,
   KASUS_KOMITE,
   KEPUTUSAN_KOMITE,
@@ -189,6 +190,33 @@ export default function KasusKomite({
               ))}
             </tbody>
           </table>
+          {k.efek.efek.length > 0 && (
+            <>
+              <h3>
+                {EFEK_KOMITE.judul} — {k.efek.keadaan}
+              </h3>
+              <table className="komite-kasus__efek">
+                <thead>
+                  <tr>
+                    <th>{EFEK_KOMITE.jenis}</th>
+                    <th>{EFEK_KOMITE.keadaan}</th>
+                    <th>{EFEK_KOMITE.percobaan}</th>
+                    <th>{EFEK_KOMITE.sejak}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {k.efek.efek.map((e, i) => (
+                    <tr key={`${e.jenis}-${String(i)}`}>
+                      <td>{e.jenis}</td>
+                      <td>{e.keadaan}</td>
+                      <td>{e.percobaan}</td>
+                      <td>{e.sejak}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
           {bolehEskalasi(peran, k) && (
             <p className="komite-kasus__eskalasi">
               <button

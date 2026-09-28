@@ -74,6 +74,9 @@ type KasusKomiteTampil struct {
 	Tangga []AnggotaKasusTampil   `json:"tangga"`
 	// GiliranSaya - pelaku adalah anggota BERJALAN kasus ini.
 	GiliranSaya bool `json:"giliranSaya"`
+	// Efek - efek keluar kasus ini dan keadaannya (tiket 08): "perlu
+	// intervensi" menempel pada kasusnya, bukan di halaman terpisah.
+	Efek RingkasEfekKasus `json:"efek"`
 }
 
 // InboxKomite melayani Inbox Komite.
@@ -168,17 +171,27 @@ func (i *InboxKomite) Kasus(ctx context.Context, pelaku Pelaku, kasusID string) 
 	if strings.TrimSpace(kasusID) == "" {
 		return KasusKomiteTampil{}, fmt.Errorf("%w: id kasus komite kosong", ErrPermintaanTidakSah)
 	}
-	k, err := repository.NewInboxKomite(i.svc.db).Kasus(ctx, kasusID)
+	baca := repository.NewInboxKomite(i.svc.db)
+	k, err := baca.Kasus(ctx, kasusID)
 	if err != nil {
 		return KasusKomiteTampil{}, err
 	}
-	return susunKasusTampil(k, pelaku.AkunID)
+	out, err := susunKasusTampil(k, pelaku.AkunID)
+	if err != nil {
+		return KasusKomiteTampil{}, err
+	}
+	efek, err := baca.EfekKasus(ctx, kasusID)
+	if err != nil {
+		return KasusKomiteTampil{}, err
+	}
+	out.Efek = ringkasEfekKasus(efek)
+	return out, nil
 }
 
 // susunKasusTampil murni - dapat diuji tanpa Oracle.
 func susunKasusTampil(k repository.KasusKomite, akunID string) (KasusKomiteTampil, error) {
 	out := KasusKomiteTampil{Kasus: keBarisTampil(k.Baris), AdjID: k.AdjID,
-		Tangga: []AnggotaKasusTampil{}}
+		Tangga: []AnggotaKasusTampil{}, Efek: RingkasEfekKasus{Efek: []EfekTampil{}}}
 	anggota := false
 	for _, a := range k.Tangga {
 		saya := strings.TrimSpace(a.OperatorID) != "" && a.OperatorID == akunID
