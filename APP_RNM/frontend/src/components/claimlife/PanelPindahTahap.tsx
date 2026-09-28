@@ -25,6 +25,7 @@ import { useState } from 'react'
 
 import {
   KONFIRMASI_BALIK,
+  TAHAP,
   TOMBOL_AKSEPTASI,
   TOMBOL_MEDIS,
   TOMBOL_OS,
@@ -59,7 +60,7 @@ export interface TombolPindah {
  */
 export function tombolPindahTahap(tahap: string): TombolPindah[] {
   switch (tahap) {
-    case 'Outstanding Claim':
+    case TAHAP.outstandingClaim:
       return [
         {
           label: TOMBOL_OS.kembaliKeRegister,
@@ -68,7 +69,7 @@ export function tombolPindahTahap(tahap: string): TombolPindah[] {
         },
         { label: TOMBOL_OS.kirimKeMedis, tujuan: TAHAP_JALUR.medicalCheck },
       ]
-    case 'Medical Check':
+    case TAHAP.medicalCheck:
       return [
         {
           label: TOMBOL_MEDIS.kembaliKeAdmin,
@@ -77,7 +78,7 @@ export function tombolPindahTahap(tahap: string): TombolPindah[] {
         },
         { label: TOMBOL_MEDIS.kirimKeAnalis, tujuan: TAHAP_JALUR.claimAnalis },
       ]
-    case 'Claim Analis':
+    case TAHAP.claimAnalis:
       return [
         {
           label: TOMBOL_AKSEPTASI.kembaliKeAdmin,
@@ -157,7 +158,7 @@ export function PanelPindahTahap({
             {KONFIRMASI_BALIK.kirim}
           </button>{' '}
           <button type="button" onClick={() => setMenunggu(null)}>
-            Batal
+            {KONFIRMASI_BALIK.batal}
           </button>
         </div>
       )}

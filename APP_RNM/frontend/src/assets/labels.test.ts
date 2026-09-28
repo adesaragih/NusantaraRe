@@ -265,6 +265,13 @@ describe.skipIf(!adaKorpus)('label layar Detail berbukti barisnya', () => {
     expect(baris('Section/SendtoMedical_Section.xml', 1267)).toBe(
       `<pyLabel>${KONFIRMASI_BALIK.kirim}</pyLabel>`,
     )
+    // Tombol batal modal: `pyCancelLabel` flow action-nya, bukan karangan.
+    expect(baris('FlowAction/SendtoAdmin.xml', 19)).toBe(
+      `<pyCancelLabel>${KONFIRMASI_BALIK.batal}</pyCancelLabel>`,
+    )
+    expect(baris('FlowAction/SendtoMedical.xml', 21)).toBe(
+      `<pyCancelLabel>${KONFIRMASI_BALIK.batal}</pyCancelLabel>`,
+    )
   })
 
   it('tombol jalur balik membuka local action, tombol maju tidak', () => {

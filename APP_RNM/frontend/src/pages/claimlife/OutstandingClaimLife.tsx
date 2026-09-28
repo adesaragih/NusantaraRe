@@ -16,7 +16,7 @@
 
 import { useEffect, useState } from 'react'
 
-import { OUTSTANDING, TOMBOL_OS } from '../../assets/labels.claimlife'
+import { OUTSTANDING, TAHAP, TOMBOL_OS } from '../../assets/labels.claimlife'
 import { PanelDataPolis } from '../../components/claimlife/PanelDataPolis'
 import { PanelPindahTahap } from '../../components/claimlife/PanelPindahTahap'
 import { Gagal } from '../../components/ui/dasar'
@@ -122,7 +122,7 @@ export default function OutstandingClaimLife({
           melewatkan konfirmasi `Send Back to Admin?` (SendtoAdmin_Section
           b566) yang dibuka local action `SendtoAdmin` b21433. Satu daftar,
           satu dialog — `PanelPindahTahap`. */}
-      <PanelPindahTahap klaimID={klaimID} tahap="Outstanding Claim" sesudahPindah={onPindah} />
+      <PanelPindahTahap klaimID={klaimID} tahap={TAHAP.outstandingClaim} sesudahPindah={onPindah} />
 
       {galat !== null && (
         <>

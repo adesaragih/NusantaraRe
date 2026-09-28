@@ -182,6 +182,20 @@ func JalurBalikTahap(dari, ke Tahap) (keAdmin, keMedical bool) {
 	}
 }
 
+// TahapBerlaku adalah tahap BERLAKU sebuah kasus - SATU sumber aturan
+// cadangannya (GILIRAN-11 paket 4; sebelumnya tersalin di lima layanan).
+//
+// Kolom `TAHAP` menang; `PY_POSITION` hanya CADANGAN untuk baris lama yang
+// kolomnya masih kosong (butir at) - dengan batas yang TahapDariPeran
+// nyatakan. Hasil tak dikenal dikembalikan apa adanya: pemanggil yang memutus
+// apakah itu galat.
+func TahapBerlaku(kolomTahap, peranPemegang string) Tahap {
+	if t := TahapDariNama(kolomTahap); t.Diketahui() {
+		return t
+	}
+	return TahapDariPeran(peranPemegang)
+}
+
 // TahapDariNama menerjemahkan isi kolom `TAHAP` menjadi tahap - butir at.
 //
 // ⛔ Ia kebalikan `String()`, dan keduanya memakai peta yang SAMA

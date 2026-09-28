@@ -18,6 +18,7 @@
 import { useEffect, useState } from 'react'
 
 import { BERANDA, KETERANGAN_BELUM_DIMIGRASI, MENU, MODUL } from '../assets/labels'
+import { TAHAP } from '../assets/labels.claimlife'
 import { ENTRI_MENU, type ModulTetap } from '../lib/daftarMenu'
 import {
   ambilKotakMasuk,
@@ -86,10 +87,10 @@ export default function Beranda({
         const hasil = await Promise.all(
           (
             [
-              [TAHAP_NOMOR.inputRegister, 'Input Register'],
-              [TAHAP_NOMOR.outstanding, 'Outstanding Claim'],
-              [TAHAP_NOMOR.medicalCheck, 'Medical Check'],
-              [TAHAP_NOMOR.claimAnalis, 'Claim Analis'],
+              [TAHAP_NOMOR.inputRegister, TAHAP.inputRegister],
+              [TAHAP_NOMOR.outstanding, TAHAP.outstandingClaim],
+              [TAHAP_NOMOR.medicalCheck, TAHAP.medicalCheck],
+              [TAHAP_NOMOR.claimAnalis, TAHAP.claimAnalis],
             ] as const
           ).map(async ([nomor, nama]) => {
             const h = await ambilKotakMasuk(nomor, 1, 1)

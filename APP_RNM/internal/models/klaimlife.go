@@ -241,9 +241,11 @@ type Peserta struct {
 	//	TanggalTerimaKlaim    CLAIM_RECEIVED_DATE  b1076
 	//	TanggalDokumenLengkap COMPLETE_DATE        b1387 "DOCUMENT COMPLETE DATE"
 	//	TanggalKonfirmasi     CONFIRMATION_DATE    b1626
-	TanggalTerimaKlaim    string
-	TanggalDokumenLengkap string
-	TanggalKonfirmasi     string
+	//
+	// ⛔ Satu tipe, bukan tiga medan lepas (GILIRAN-11 paket 4, data clump):
+	// ketiganya selalu berjalan bersama - dibaca, ditampilkan, dan disimpan
+	// satu tombol. Medannya tetap diakses langsung (`p.TanggalTerimaKlaim`).
+	TanggalKlaimTeks
 
 	// PenandaTerimaKlaim adalah `.MAXCLAIM_RECEIVED` (butir bk), DIHITUNG saat
 	// baca - kosong berarti sah. PenandaTerimaKlaimAlasan terisi bila ia TIDAK

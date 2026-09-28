@@ -101,17 +101,9 @@ func (d *DiagnosaPeserta) pagari(ctx context.Context, pelaku Pelaku,
 
 	// Gerbang 1 dan 2 - tahap, lalu pemegangnya. Kolom TAHAP menang;
 	// PY_POSITION cadangan untuk baris lama (butir at).
-	kolomTahap, peranAsal, err := k.baca.TahapDanPeran(ctx, klaimID)
+	tahap, err := tahapKasus(ctx, k.baca, klaimID)
 	if err != nil {
 		return k, err
-	}
-	tahap := models.TahapDariNama(kolomTahap)
-	if !tahap.Diketahui() {
-		tahap = models.TahapDariPeran(peranAsal)
-	}
-	if !tahap.Diketahui() {
-		return k, fmt.Errorf("%w: tahap %q, peran pemegang %q",
-			ErrTahapTidakDikenal, kolomTahap, peranAsal)
 	}
 	if !models.TahapBergridPeserta(tahap) {
 		return k, fmt.Errorf("%w: %s (yang membukanya %v)",

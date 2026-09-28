@@ -57,7 +57,7 @@ describe('butir aw — dua tombol perpindahan', () => {
     // Isi daftarnya (dua tombol, tujuan, konfirmasi) dikunci
     // `PanelPindahTahap.test.ts` — satu sumber.
     expect(SUMBER).toContain('<PanelPindahTahap')
-    expect(SUMBER).toContain('tahap="Outstanding Claim"')
+    expect(SUMBER).toContain('tahap={TAHAP.outstandingClaim}')
     expect(SUMBER).not.toContain('const PERPINDAHAN')
   })
 

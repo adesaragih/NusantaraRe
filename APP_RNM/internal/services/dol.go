@@ -344,18 +344,9 @@ func (t *TanggalKejadian) SetTanggalKlaim(ctx context.Context, pelaku Pelaku,
 // gerbangTahapDialogTanggal adalah gerbang tahap SELURUH isian dialog Edit Date
 // - DOL dan tiga tanggal lainnya (b1000, b1313, b1550, b1788), satu tempat.
 func gerbangTahapDialogTanggal(ctx context.Context, baca *repository.KlaimLife, klaimID string) error {
-	kolomTahap, peranPemegang, err := baca.TahapDanPeran(ctx, klaimID)
+	tahap, err := tahapKasus(ctx, baca, klaimID)
 	if err != nil {
 		return err
-	}
-	// Kolom TAHAP menang; PY_POSITION cadangan untuk baris lama (butir at).
-	tahap := models.TahapDariNama(kolomTahap)
-	if !tahap.Diketahui() {
-		tahap = models.TahapDariPeran(peranPemegang)
-	}
-	if !tahap.Diketahui() {
-		return fmt.Errorf("%w: tahap %q, peran pemegang %q",
-			ErrTahapTidakDikenal, kolomTahap, peranPemegang)
 	}
 	if !models.TahapBolehUbahTanggalKlaim(tahap) {
 		return fmt.Errorf("%w: tahap %s", ErrTahapTidakBolehUbahTanggal, tahap)

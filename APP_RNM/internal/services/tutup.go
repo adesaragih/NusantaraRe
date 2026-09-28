@@ -173,17 +173,9 @@ func (t *TutupKlaim) Tutup(ctx context.Context, pelaku Pelaku, klaimID string,
 
 	// ⛔ Tahap ASAL, sama seperti perpindahan: orang menutup kasus yang
 	// SEDANG IA PEGANG. Kolom TAHAP menang; PY_POSITION cadangan baris lama.
-	kolomTahap, peranAsal, err := baca.TahapDanPeran(ctx, klaimID)
+	asal, err := tahapKasus(ctx, baca, klaimID)
 	if err != nil {
 		return err
-	}
-	asal := models.TahapDariNama(kolomTahap)
-	if !asal.Diketahui() {
-		asal = models.TahapDariPeran(peranAsal)
-	}
-	if !asal.Diketahui() {
-		return fmt.Errorf("%w: tahap %q, peran pemegang %q",
-			ErrTahapTidakDikenal, kolomTahap, peranAsal)
 	}
 	if !models.TahapMenawarkanTutup(asal) {
 		return fmt.Errorf("%w: %s (yang menawarkannya %v)",

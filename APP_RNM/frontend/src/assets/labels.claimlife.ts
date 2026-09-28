@@ -430,6 +430,11 @@ export const KONFIRMASI_BALIK = {
   keMedis: 'Send Back to Medical?',
   /** b1229 (Admin) / b1267 (Medical) `pyLabel` → activity lalu `finishAssignment`. */
   kirim: 'Submit',
+  /**
+   * `FlowAction/SendtoAdmin.xml` b19 / `SendtoMedical.xml` b21 `pyCancelLabel`
+   * — VERBATIM, menggantikan teks karangan "Batal" (GILIRAN-11 paket 4).
+   */
+  batal: 'Cancel',
 } as const
 
 /**

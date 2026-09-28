@@ -95,6 +95,23 @@ func (tl *TahapLayanan) DenganJejak(j Jejak) *TahapLayanan {
 // bebas, sehingga `SENDTO_ADMIN=1` dapat ditulis pada perpindahan menuju
 // Medical Check, dan keduanya dapat menyala sekaligus - padahal keduanya
 // menunjuk tujuan yang berbeda. Kini ia DITURUNKAN dari pasangan tahapnya.
+// tahapKasus membaca tahap BERLAKU sebuah kasus; tak dikenal adalah GALAT.
+//
+// ⛔ Satu pintu (GILIRAN-11 paket 4): diagnosa, dialog Edit Date, perpindahan,
+// dan penutupan dahulu masing-masing menyalin empat belas baris yang sama.
+func tahapKasus(ctx context.Context, baca *repository.KlaimLife, klaimID string) (models.Tahap, error) {
+	kolomTahap, peranPemegang, err := baca.TahapDanPeran(ctx, klaimID)
+	if err != nil {
+		return models.TahapTidakDikenal, err
+	}
+	t := models.TahapBerlaku(kolomTahap, peranPemegang)
+	if !t.Diketahui() {
+		return t, fmt.Errorf("%w: tahap %q, peran pemegang %q",
+			ErrTahapTidakDikenal, kolomTahap, peranPemegang)
+	}
+	return t, nil
+}
+
 func (tl *TahapLayanan) Pindah(ctx context.Context, pelaku Pelaku,
 	klaimID string, ke models.Tahap, saat time.Time) error {
 
@@ -130,20 +147,12 @@ func (tl *TahapLayanan) Pindah(ctx context.Context, pelaku Pelaku,
 	// di PY_POSITION adalah NAMA PERAN, bukan pengenal shape - ronde
 	// pertama menganggapnya `"Assignment<n>"` dan setiap pembacaan baris
 	// nyata berakhir "tidak dikenal".
-	kolomTahap, peranAsal, err := baca.TahapDanPeran(ctx, klaimID)
-	if err != nil {
-		return err
-	}
 	// ⚠️ Kolom TAHAP menang; PY_POSITION hanya CADANGAN untuk baris lama.
 	// Baris lama yang sebenarnya di Input Register akan tampak Outstanding
 	// sampai kolomnya terisi - diterima, dan dicatat di models.TahapDariPeran.
-	asal := models.TahapDariNama(kolomTahap)
-	if !asal.Diketahui() {
-		asal = models.TahapDariPeran(peranAsal)
-	}
-	if !asal.Diketahui() {
-		return fmt.Errorf("%w: tahap %q, peran pemegang %q",
-			ErrTahapTidakDikenal, kolomTahap, peranAsal)
+	asal, err := tahapKasus(ctx, baca, klaimID)
+	if err != nil {
+		return err
 	}
 	peranAsalTahap, ada := models.PeranPemegangTahap(asal)
 	if !ada {

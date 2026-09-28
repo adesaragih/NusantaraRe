@@ -401,10 +401,10 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku Pelaku, klaimID string,
 	if err != nil {
 		return hasil, err
 	}
-	tahap := models.TahapDariNama(kolomTahap)
-	if !tahap.Diketahui() {
-		tahap = models.TahapDariPeran(peranPemegang)
-	}
+	// ⚠️ Aturan cadangannya dari models.TahapBerlaku (satu sumber), tetapi
+	// tahap tak dikenal di sini BUKAN galat tersendiri: ia bukan Outstanding,
+	// dan itulah yang dijawab (409) - perilaku yang sudah diuji tetap.
+	tahap := models.TahapBerlaku(kolomTahap, peranPemegang)
 	if tahap != models.TahapOutstanding {
 		return hasil, fmt.Errorf("%w: tahap %s", ErrSimpanRNMBukanOutstanding, tahap)
 	}

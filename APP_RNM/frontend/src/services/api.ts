@@ -11,6 +11,19 @@
 // ============================================================================
 
 import { headerIdentitas } from '../store/sesi'
+import { TAHAP } from '../assets/labels.claimlife'
+
+/**
+ * Nama tahap sebagai TIPE, bukan string mentah (GILIRAN-11 paket 4) — nilainya
+ * VERBATIM `pyTaskName` `Register_Flow`, satu sumber di `TAHAP`.
+ */
+export type NamaTahap = (typeof TAHAP)[keyof typeof TAHAP]
+
+/** Penjaga tipe: teks tahap dari backend (boleh kosong atau asing) -> NamaTahap. */
+export function apakahNamaTahap(t: string): t is NamaTahap {
+  return (Object.values(TAHAP) as string[]).includes(t)
+}
+
 
 // ---------------------------------------------------------------------------
 // 1. BENTUK DATA yang dikirim backend.
@@ -117,8 +130,15 @@ export interface Dokumen {
   paymentDate: string | null
 }
 
-/** Satu peserta yang diklaim, beserta baris-barisnya sendiri. */
-export interface Peserta {
+/**
+ * Satu peserta yang diklaim, beserta baris-barisnya sendiri.
+ *
+ * ⛔ Tiga tanggal klaim dialog Edit Date datang dari `TanggalKlaim` — satu
+ * tipe, bukan tiga medan lepas (GILIRAN-11 paket 4). Saat DIBACA isinya
+ * `YYYY-MM-DD HH24:MI:SS` (`fmtTanggalOracle`); kotak tanggal memakai
+ * `keIsianTanggal`.
+ */
+export interface Peserta extends TanggalKlaim {
   id: string
   nomorPremiList: string
   nomorPolis: string
@@ -133,15 +153,6 @@ export interface Peserta {
    * Kosong berarti belum diisi.
    */
   tanggalKejadian: string
-  /**
-   * Tiga tanggal klaim lain dialog Edit Date — `CLAIM_RECEIVED_DATE` b1076,
-   * `COMPLETE_DATE` b1387, `CONFIRMATION_DATE` b1626. Teks
-   * `YYYY-MM-DD HH24:MI:SS` apa adanya dari backend (`fmtTanggalOracle`) —
-   * kotak tanggal memakai `keIsianTanggal`. Kosong berarti belum diisi.
-   */
-  tanggalTerimaKlaim: string
-  tanggalDokumenLengkap: string
-  tanggalKonfirmasi: string
   /**
    * Butir bk — `.MAXCLAIM_RECEIVED` (`MAX CLAIM RECEIVED` b12131), dihitung
    * backend saat baca. Kosong berarti sah — KECUALI `penandaTerimaKlaimAlasan`
@@ -981,7 +992,11 @@ export async function ubahTanggalKejadian(
   )
 }
 
-/** Isi tombol `Save` dialog Edit Date, selain DOL. Kosong berarti dikosongkan. */
+/**
+ * Tiga tanggal klaim dialog Edit Date selain DOL — `CLAIM_RECEIVED_DATE`
+ * b1076, `COMPLETE_DATE` b1387, `CONFIRMATION_DATE` b1626. Dikirim `Save`
+ * sebagai `YYYY-MM-DD` (kosong = dikosongkan); dibaca lewat `Peserta`.
+ */
 export interface TanggalKlaim {
   tanggalTerimaKlaim: string
   tanggalDokumenLengkap: string
@@ -1059,7 +1074,7 @@ export async function periksaBolehTutup(klaimID: string): Promise<HasilPeriksaTu
 export const STATUS_WORK_SELESAI = 'Resolved-Completed'
 
 /** Kedua tahap yang layarnya menawarkan `Close Claim` — cacah berkas. */
-export const TAHAP_PENAWAR_TUTUP = ['Outstanding Claim', 'Claim Analis']
+export const TAHAP_PENAWAR_TUTUP: readonly NamaTahap[] = [TAHAP.outstandingClaim, TAHAP.claimAnalis]
 
 /**
  * Apakah tombol `Close Claim` pantas ditawarkan untuk klaim ini.
@@ -1078,7 +1093,8 @@ export const TAHAP_PENAWAR_TUTUP = ['Outstanding Claim', 'Claim Analis']
 export function bolehTutupDiLayar(klaim: Klaim | null): boolean {
   if (klaim === null) return false
   if (klaim.statusWork === STATUS_WORK_SELESAI) return false
-  return TAHAP_PENAWAR_TUTUP.includes(klaim.tahap)
+  const t = klaim.tahap
+  return apakahNamaTahap(t) && TAHAP_PENAWAR_TUTUP.includes(t)
 }
 
 /** Apakah kasus ini sudah ditutup dan karena itu tidak dapat diubah lagi. */
@@ -1097,7 +1113,7 @@ export function kasusTertutup(klaim: Klaim | null): boolean {
  * (termasuk peran Admin) ada di backend dan diperiksa lagi di sana.
  */
 export function bolehUbahTanggalKlaim(klaim: Klaim | null): boolean {
-  return klaim !== null && !kasusTertutup(klaim) && klaim.tahap === 'Outstanding Claim'
+  return klaim !== null && !kasusTertutup(klaim) && klaim.tahap === TAHAP.outstandingClaim
 }
 
 /**

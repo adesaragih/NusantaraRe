@@ -53,6 +53,14 @@ func PenandaTerimaKlaim(p Peserta, maxExpiredClaim string) (string, error) {
 	return PenandaBatasHari(p.TanggalKejadian, p.TanggalTerimaKlaim, maxExpiredClaim)
 }
 
+// TanggalKlaimTeks adalah tiga tanggal dialog Edit Date selain DOL, sebagai
+// TEKS yang tersimpan (`YYYY-MM-DD HH24:MI:SS`) - yang dibaca peserta.
+type TanggalKlaimTeks struct {
+	TanggalTerimaKlaim    string // CLAIM_RECEIVED_DATE b1076
+	TanggalDokumenLengkap string // COMPLETE_DATE b1387
+	TanggalKonfirmasi     string // CONFIRMATION_DATE b1626
+}
+
 // TanggalKlaim adalah tiga tanggal dialog Edit Date selain DOL.
 //
 // nil berarti KOSONG - kolomnya ditulis NULL, sama seperti Pega menulis

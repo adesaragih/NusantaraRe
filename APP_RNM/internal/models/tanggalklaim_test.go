@@ -32,8 +32,9 @@ func TestTanggalKlaimHanyaDiOutstanding(t *testing.T) {
 // TestTigaTanggalKlaimMenyeberang - dialog Edit Date menampilkan tanggal yang
 // SEDANG berlaku (`UpdateDateClaimLife_Act` b252-b384 membacanya dari peserta).
 func TestTigaTanggalKlaimMenyeberang(t *testing.T) {
-	b, err := json.Marshal(Peserta{ID: "P-1", TanggalTerimaKlaim: "2026-03-02",
-		TanggalDokumenLengkap: "2026-03-03", TanggalKonfirmasi: "2026-03-04"})
+	b, err := json.Marshal(Peserta{ID: "P-1", TanggalKlaimTeks: TanggalKlaimTeks{
+		TanggalTerimaKlaim: "2026-03-02", TanggalDokumenLengkap: "2026-03-03",
+		TanggalKonfirmasi: "2026-03-04"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +55,8 @@ func TestTigaTanggalKlaimMenyeberang(t *testing.T) {
 // TestPenandaTerimaKlaim - butir bk: `ValidasiClaimReceived_Act` b562/b583,
 // dihitung SAAT BACA (nol penulis tabel di korpus).
 func TestPenandaTerimaKlaim(t *testing.T) {
-	p := Peserta{TanggalKejadian: "2026-01-01 00:00:00", TanggalTerimaKlaim: "2026-01-31 00:00:00"}
+	p := Peserta{TanggalKejadian: "2026-01-01 00:00:00",
+		TanggalKlaimTeks: TanggalKlaimTeks{TanggalTerimaKlaim: "2026-01-31 00:00:00"}}
 	for _, u := range []struct {
 		ambang, mau string
 	}{
@@ -70,7 +72,8 @@ func TestPenandaTerimaKlaim(t *testing.T) {
 		t.Error("ambang kosong harus galat, bukan nol (ADR-U-0027)")
 	}
 	// Tanpa salah satu tanggal: tidak ada yang diperiksa, bukan galat.
-	for _, q := range []Peserta{{TanggalKejadian: p.TanggalKejadian}, {TanggalTerimaKlaim: p.TanggalTerimaKlaim}} {
+	for _, q := range []Peserta{{TanggalKejadian: p.TanggalKejadian},
+		{TanggalKlaimTeks: TanggalKlaimTeks{TanggalTerimaKlaim: p.TanggalTerimaKlaim}}} {
 		if got, err := PenandaTerimaKlaim(q, "30"); err != nil || got != "" {
 			t.Errorf("tanggal tak lengkap: %q %v", got, err)
 		}
