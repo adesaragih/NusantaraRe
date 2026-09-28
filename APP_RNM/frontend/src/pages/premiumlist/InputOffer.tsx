@@ -19,11 +19,12 @@
 // menampilkan kalimatnya — VERBATIM, termasuk `Please choose no offer !`
 // dengan spasi sebelum tanda serunya.
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { KEPUTUSAN_POLIS, PENGGOLONG_POLIS } from '../../assets/labels.premiumlist'
 import { Gagal } from '../../components/ui/dasar'
 import {
+  ambilPeriodeProduksi,
   bolehRejectDiTahap,
   golongkanPenawaran,
   putuskanPenawaran,
@@ -53,6 +54,26 @@ export default function InputOffer({
   const [akibat, setAkibat] = useState<AkibatKeputusanPolis | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
   const [sibuk, setSibuk] = useState(false)
+  // ⛔ Periode produksi DITAMPILKAN sebelum menyimpan - AC tiket 02.
+  // Kosong berarti belum terbaca; galatnya dinyatakan, bukan disembunyikan,
+  // sebab 503 di sini berarti POOLDATA.TANGGAL_CLOSING kosong.
+  const [periode, setPeriode] = useState('')
+  const [galatPeriode, setGalatPeriode] = useState<unknown>(null)
+
+  useEffect(() => {
+    let hidup = true
+    void (async () => {
+      try {
+        const p = await ambilPeriodeProduksi()
+        if (hidup) setPeriode(p)
+      } catch (e) {
+        if (hidup) setGalatPeriode(e)
+      }
+    })()
+    return () => {
+      hidup = false
+    }
+  }, [])
 
   async function jalankan(kerja: () => Promise<AkibatKeputusanPolis>): Promise<void> {
     if (sibuk) return
@@ -79,6 +100,12 @@ export default function InputOffer({
         {polisID} — {tahap}
       </p>
 
+      {periode !== '' && (
+        <p className="polis-offer__periode" role="status">
+          Periode produksi: {periode}
+        </p>
+      )}
+      {galatPeriode !== null && <Gagal galat={galatPeriode} />}
       {galat !== null && <Gagal galat={galat} />}
       {akibat !== null && <p role="status">{ringkasanAkibat(akibat)}</p>}
 

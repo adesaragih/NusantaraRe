@@ -56,6 +56,45 @@ func kotakMasukPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	}
 }
 
+// jawabanPeriode adalah periode produksi yang berlaku saat ini.
+//
+// ⛔ Ia DITAMPILKAN sebelum pemakai menyimpan (AC tiket 02), bukan
+// tersimpan diam-diam. Transaksi yang mendarat di bulan yang salah karena
+// seseorang menyimpannya lewat tengah malam adalah kekeliruan yang hanya
+// dapat dicegah dengan menunjukkannya lebih dulu.
+type jawabanPeriode struct {
+	Periode string `json:"periode"`
+}
+
+// periodeProduksi melayani GET /api/polis-life/periode.
+func periodeProduksi(svc *services.Service, stubPelaku bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !svc.PunyaDatabase() {
+			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			return
+		}
+		p, err := svc.Periode().Sekarang(r.Context(), pelakuDari(r, stubPelaku))
+		switch {
+		case err == nil:
+		case errors.Is(err, models.ErrTanggalTutupBukuKosong),
+			errors.Is(err, models.ErrTanggalTutupBukuTidakMasukAkal):
+			// ⛔ 503, dan pesannya MENYEBUT TABEL SUMBERNYA. Ia keadaan
+			// server yang belum siap - tabel rujukan yang kosong - bukan
+			// permintaan yang salah.
+			galat(w, http.StatusServiceUnavailable, err.Error())
+			return
+		default:
+			if jawabGalatPolis(w, err) {
+				return
+			}
+			return
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(jawabanPeriode{Periode: models.PeriodeTeks(p)})
+	}
+}
+
 // isiKeputusanPolis adalah badan permintaan keputusan.
 type isiKeputusanPolis struct {
 	Keputusan string `json:"keputusan"`

@@ -1412,3 +1412,20 @@ export const TAHAP_POLIS = {
 export function bolehRejectDiTahap(tahap: string): boolean {
   return tahap === TAHAP_POLIS.detail
 }
+
+/**
+ * Periode produksi yang berlaku — `GET /api/polis-life/periode`.
+ *
+ * ⛔ Ditampilkan SEBELUM pemakai menyimpan (AC tiket 02), bukan tersimpan
+ * diam-diam. Transaksi yang mendarat di bulan yang salah karena seseorang
+ * menyimpannya lewat tengah malam adalah kekeliruan yang hanya dapat
+ * dicegah dengan menunjukkannya lebih dulu.
+ *
+ * ⚠️ Menjawab **503** bila `POOLDATA.TANGGAL_CLOSING` kosong, dan pesannya
+ * menyebut tabel itu. Pega diam-diam memakai `25`; kami menolak — fallback
+ * diam membukukan ke periode yang salah tanpa meninggalkan jejak.
+ */
+export async function ambilPeriodeProduksi(): Promise<string> {
+  const hasil = await minta<{ periode: string }>('/api/polis-life/periode')
+  return hasil.periode
+}
