@@ -22,14 +22,25 @@
 // grep dengan langkah tambahan, bukan pembacaan pohon. Kodenya dibuang
 // di ketiga lapis.
 //
-// ⛔ MEDAN YANG MENUNGGU DINYATAKAN, BUKAN DIHILANGKAN. `[DIPUTUSKAN
-// work owner, butir av]` sumbernya modul **PremiumList Life**: di Pega
-// `PolicyDataLife` diisi dari kasus modul itu, dan Claim Life TIDAK
-// membaca cermin JSON-nya. Menghilangkan medannya dari layar membuat
-// paritas tampak lengkap padahal tidak - dan tidak ada yang akan
-// mencarinya lagi.
+// ⛔ BUTIR av DIJALANKAN 28-09-2026. `PolicyDataLife` kini DIBACA dari modul
+// PremiumList Life lewat `GET /api/polis-life/ringkas` - tabel relasional
+// `T_PREMIUM_LIST`, bukan cermin JSON-nya `[keputusan work owner]`.
+//
+// Delapan dari sebelas medan kini bersumber. TIGA tidak, dan ketiadaannya
+// tetap DINYATAKAN alih-alih diisi teks kosong:
+//
+//	TanggalRespon · TanggalKonfirmasi · TanggalRealisasi
+//
+// Ketiganya properti halaman kerja Pega dan tidak punya kolom di migrasi
+// 050-056 mana pun. Menghilangkan medannya dari layar membuat paritas tampak
+// lengkap padahal tidak - dan tidak ada yang akan mencarinya lagi.
+//
+// ⚠️ VERSI POLIS IKUT DITAMPILKAN. Satu nomor polis punya banyak versi, dan
+// yang dibaca adalah `PROD_KE` terbesar. Layar yang tidak dapat menyebut
+// versi mana yang ditampilkannya membuat selisih angka mustahil ditelusuri.
 
 import { REGISTER } from '../assets/labels'
+import type { PolicyDataLife } from '../services/api'
 
 /** Satu medan panel: label VERBATIM, nilainya, dan keadaan sumbernya. */
 export interface MedanPolis {
@@ -51,24 +62,44 @@ export function medanPolis(sumber: {
   namaTertanggung?: string
   mataUang?: string
   type?: string
+  /** Data polis dari PremiumList Life; null berarti belum terbaca. */
+  polis?: PolicyDataLife | null
 }): MedanPolis[] {
   const ada = (v: string | undefined): string => (v === undefined || v === '' ? '—' : v)
+  const p = sumber.polis ?? null
+  // ⛔ Nilai dari polis dipakai HANYA bila polisnya terbaca. Jatuh kembali ke
+  // `sumber.type` saat polis belum ada menjaga layar tetap berguna untuk
+  // klaim atas polis yang belum ada di modul PremiumList Life.
+  const dariPolis = (v: string | undefined): MedanPolis =>
+    p === null ? { nilai: '—', label: '', belumBersumber: true } : { nilai: ada(v), label: '' }
+  const medan = (label: string, v: string | undefined): MedanPolis => ({
+    ...dariPolis(v),
+    label,
+  })
   return [
     // Punya sumber hari ini - dari `GET /api/peserta-life`.
     { label: REGISTER.namaTertanggung, nilai: ada(sumber.namaTertanggung) },
     // ⛔ `Type` IKUT MENUNGGU: ia `pyReadOnly` true di Pega (b9058,
     // `pyLabelFor` `Type` b9093) dan terikat `.PolicyDataLife.Type`.
     // Ronde pertama menjadikannya isian bebas - itu ralat yang sama.
-    { label: REGISTER.type, nilai: ada(sumber.type), belumBersumber: true },
-    { label: REGISTER.marketing, nilai: '—', belumBersumber: true },
-    { label: REGISTER.ceding, nilai: '—', belumBersumber: true },
-    { label: REGISTER.pemegangPolis, nilai: '—', belumBersumber: true },
-    { label: REGISTER.kelasBisnis, nilai: '—', belumBersumber: true },
-    { label: REGISTER.tanggalEmail, nilai: '—', belumBersumber: true },
+    // Delapan medan yang KINI bersumber - `T_PREMIUM_LIST` lewat butir av.
+    //
+    // ⚠️ `Type` jatuh kembali ke `sumber.type` bila polisnya belum terbaca:
+    // klaim dapat didaftarkan atas polis yang belum ada di PremiumList Life.
+    p === null
+      ? { label: REGISTER.type, nilai: ada(sumber.type), belumBersumber: true }
+      : { label: REGISTER.type, nilai: ada(p.type) },
+    medan(REGISTER.marketing, p?.marketingName),
+    medan(REGISTER.ceding, p?.cedingCoName),
+    medan(REGISTER.pemegangPolis, p?.policyHolderName),
+    medan(REGISTER.kelasBisnis, p?.businessName),
+    medan(REGISTER.tanggalEmail, p?.dateReceived),
+    // ⛔ KETIGA INI TETAP TANPA SUMBER, dan bukan karena av belum jalan:
+    // ketiganya TIDAK PUNYA KOLOM di migrasi 050-056 mana pun.
     { label: REGISTER.tanggalRespon, nilai: '—', belumBersumber: true },
     { label: REGISTER.tanggalKonfirmasi, nilai: '—', belumBersumber: true },
-    { label: REGISTER.status, nilai: '—', belumBersumber: true },
-    { label: REGISTER.statusDiperbarui, nilai: '—', belumBersumber: true },
+    medan(REGISTER.status, p?.status),
+    medan(REGISTER.statusDiperbarui, p?.statusUpdate),
     { label: REGISTER.tanggalRealisasi, nilai: '—', belumBersumber: true },
   ]
 }
@@ -78,6 +109,8 @@ export interface PanelProps {
   namaTertanggung?: string
   mataUang?: string
   type?: string
+  /** Data polis dari PremiumList Life; null berarti belum terbaca. */
+  polis?: PolicyDataLife | null
 }
 
 export function PanelDataPolis(p: PanelProps) {
@@ -98,15 +131,35 @@ export function PanelDataPolis(p: PanelProps) {
           </div>
         ))}
       </dl>
+      {p.polis !== null && p.polis !== undefined && (
+        <p className="polis__versi" role="status">
+          Polis {p.polis.nomorPolis} — versi {p.polis.prodKe}
+          {p.polis.productName !== '' && <> · produk {p.polis.productName}</>}
+        </p>
+      )}
       {belum > 0 && (
         <p className="polis__catatan" role="note">
-          <strong>{belum} medan menunggu modul PremiumList Life.</strong>{' '}
-          Di Pega medan ini <em>read-only</em> dan terisi dari kasus
-          PremiumList Life lewat <code>.PolicyDataLife.*</code> saat nomor
-          polis dipilih. Claim Life tidak membaca cermin JSON-nya
-          (keputusan work owner <strong>av</strong>), jadi medannya
-          ditampilkan apa adanya supaya himpunannya tetap sama dengan{' '}
-          <code>InputRegisterClaimLife.xml</code>.
+          {p.polis === null || p.polis === undefined ? (
+            <>
+              <strong>Data polis belum terbaca.</strong> Kesebelas medan ini{' '}
+              <em>read-only</em> dan terisi dari modul PremiumList Life lewat{' '}
+              <code>.PolicyDataLife.*</code> saat nomor polis dipilih. Pilih
+              nomor polis, atau polis itu memang belum ada di modul tersebut.
+            </>
+          ) : (
+            <>
+              {/* ⛔ KALIMAT BERBEDA untuk sebab yang berbeda. "Menunggu modul
+                  PremiumList Life" sesudah modulnya ADA adalah kalimat yang
+                  salah - dan kalimat yang salah membuat orang berhenti
+                  membacanya. */}
+              <strong>{belum} medan belum punya kolom di mana pun.</strong>{' '}
+              <code>{p.polis.medanTanpaSumber.join(', ')}</code> adalah properti
+              halaman kerja Pega dan tidak punya kolom di migrasi 050–056 mana
+              pun. Medannya tetap ditampilkan supaya himpunannya sama dengan{' '}
+              <code>InputRegisterClaimLife.xml</code>, dengan ketiadaannya
+              dinyatakan alih-alih diisi teks kosong.
+            </>
+          )}
         </p>
       )}
     </section>

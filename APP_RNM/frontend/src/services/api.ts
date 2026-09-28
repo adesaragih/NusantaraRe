@@ -1601,3 +1601,52 @@ export async function simpanUnggahPolis(
     isi,
   )
 }
+
+// ——— Butir pl4/av: PolicyDataLife dari PremiumList Life ———
+
+/**
+ * Data polis yang mengisi `.PolicyDataLife.*` di layar Claim Life.
+ *
+ * ⛔ SUMBERNYA TABEL RELASIONAL modul PremiumList Life, bukan cermin JSON-nya
+ * — `[keputusan work owner, butir av]`.
+ *
+ * ⚠️ Nama kuncinya sengaja sama dengan nama properti Pega, supaya siapa pun
+ * yang membandingkan layar dengan rule tidak perlu menerjemahkan.
+ */
+export interface PolicyDataLife {
+  nomorPolis: string
+  type: string
+  marketingName: string
+  cedingCoName: string
+  policyHolderName: string
+  businessName: string
+  /** `YYYY-MM-DD`; kosong berarti kolomnya belum diisi. */
+  dateReceived: string
+  status: string
+  statusUpdate: string
+  /** Kunci ambang batas hari (butir ba). */
+  productNameId: string
+  productName: string
+  /**
+   * Versi polis yang terbaca — `PROD_KE` TERBESAR.
+   *
+   * ⛔ Satu nomor polis punya banyak versi. Layar yang tidak dapat menyebut
+   * versi mana yang ditampilkannya membuat selisih angka mustahil ditelusuri.
+   */
+  prodKe: number
+  /** Medan layar lama yang belum punya kolom di mana pun. */
+  medanTanpaSumber: string[]
+}
+
+/**
+ * Membaca data polis versi berjalan — `GET /api/polis-life/ringkas`.
+ *
+ * ⚠️ Menjawab **404** bila nomornya tidak ada di PremiumList Life. Itu bukan
+ * kerusakan: klaim dapat didaftarkan atas polis yang belum ada di modul itu,
+ * dan layar menyatakannya alih-alih pecah.
+ */
+export async function ambilDataPolis(nomorPolis: string): Promise<PolicyDataLife> {
+  return minta<PolicyDataLife>(
+    `/api/polis-life/ringkas?nomorPolis=${encodeURIComponent(nomorPolis)}`,
+  )
+}

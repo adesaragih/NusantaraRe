@@ -103,6 +103,8 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 	// `GET /api/polis-life/{id}` - yang sudah membawanya - dan rute GET
 	// khusus nomor DIBUANG 28-09-2026 karena nol pemanggil: rute tanpa
 	// pemanggil adalah permukaan yang tidak seorang pun uji.
+	// Butir pl4/av - kontrak hilir ke Claim Life.
+	mux.HandleFunc("GET /api/polis-life/ringkas", ringkasPolis(svc, stubPelaku))
 	mux.HandleFunc("GET /api/polis-life/{id}", kepalaPolis(svc, stubPelaku))
 	mux.HandleFunc("GET /api/polis-life/{id}/peserta",
 		pesertaPolis(svc, stubPelaku))

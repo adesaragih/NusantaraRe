@@ -5,7 +5,7 @@
 // ⚠️ Uang tidak muncul di halaman ini sama sekali. Pendaftaran hanya memilih
 // peserta; angka klaim lahir di tiket 03. Bila kelak ada, ia tetap TEKS
 // (ADR-U-0003) — tidak pernah number JavaScript, yang membulatkan diam-diam.
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { REGISTER } from '../assets/labels'
 import { PanelDataPolis } from '../components/PanelDataPolis'
@@ -13,8 +13,10 @@ import {
   cariPesertaLife,
   daftarKlaimLife,
   pesanGalat,
+  ambilDataPolis,
   type CalonPeserta,
   type HasilDaftar,
+  type PolicyDataLife,
 } from '../services/api'
 
 /**
@@ -62,6 +64,36 @@ export default function RegisterKlaim() {
   // dicentang: di Pega satu klaim menunjuk satu polis, dan peserta
   // yang dipilih berasal dari premium list yang sama.
   const pertamaDipilih = peserta.find((p) => dipilih.includes(kunci(p)))
+
+  // ⛔ BUTIR av. Data polis DIBACA dari modul PremiumList Life begitu nomor
+  // polisnya diketahui - di Pega ia terisi sendiri saat `Choose Policy No`,
+  // dan medannya `pyReadOnly`. Membiarkan pemakai mengetiknya ulang membuat
+  // dua salinan data polis yang akan berbeda pada hari pertama.
+  //
+  // ⚠️ 404 BUKAN KERUSAKAN: klaim dapat didaftarkan atas polis yang belum ada
+  // di modul itu. Panelnya menyatakan keadaan itu alih-alih pecah.
+  const [polis, setPolis] = useState<PolicyDataLife | null>(null)
+  const nomorPolisTerpilih = pertamaDipilih?.nomorPolis ?? ''
+  useEffect(() => {
+    if (nomorPolisTerpilih === '') {
+      setPolis(null)
+      return
+    }
+    let hidup = true
+    void (async () => {
+      try {
+        const d = await ambilDataPolis(nomorPolisTerpilih)
+        if (hidup) setPolis(d)
+      } catch {
+        // Polis yang tidak ada di PremiumList Life tetap null - panelnya
+        // yang mengatakannya, bukan galat merah di seluruh layar.
+        if (hidup) setPolis(null)
+      }
+    })()
+    return () => {
+      hidup = false
+    }
+  }, [nomorPolisTerpilih])
 
   async function cari() {
     setGalat('')
@@ -200,6 +232,7 @@ export default function RegisterKlaim() {
         namaTertanggung={pertamaDipilih?.namaTertanggung}
         mataUang={pertamaDipilih?.mataUang}
         type={type}
+        polis={polis}
       />
 
       {/* Label VERBATIM `InputRegisterClaimLife.xml:9104`

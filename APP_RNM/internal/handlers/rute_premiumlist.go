@@ -163,6 +163,32 @@ func golongkanPenawaran(svc *services.Service, stubPelaku bool) http.HandlerFunc
 	}
 }
 
+// ringkasPolis melayani GET /api/polis-life/ringkas?nomorPolis=...
+//
+// ⛔ BERKUNCI NOMOR POLIS, bukan id kasus. Claim Life mengenal polis lewat
+// NOMORNYA - itu yang diketik pemakai di `Choose Policy No` - dan ia tidak
+// pernah tahu id kasus PremiumList.
+//
+// ⚠️ Rute ini BERDIRI SEBELUM `GET /api/polis-life/{id}` di tabel rute, dan
+// urutan itu tidak menentukan apa pun di `ServeMux` Go 1.22: pola yang lebih
+// SPESIFIK menang, dan `ringkas` harfiah lebih spesifik daripada `{id}`.
+// Dicatat supaya tidak ada yang "memperbaikinya" dengan menambah pemeriksaan
+// `id == "ringkas"`.
+func ringkasPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !svc.PunyaDatabase() {
+			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			return
+		}
+		hasil, err := svc.RingkasPolis().Ambil(r.Context(),
+			pelakuDari(r, stubPelaku), r.URL.Query().Get("nomorPolis"))
+		if jawabGalatPolis(w, err) {
+			return
+		}
+		tulisJSONPolis(w, hasil)
+	}
+}
+
 // kepalaPolis melayani GET /api/polis-life/{id}.
 //
 // ⛔ GET: ia MEMBACA. Nomor PL TIDAK terbit di sini - membuka layar detail
@@ -262,6 +288,9 @@ func jawabGalatPolis(w http.ResponseWriter, err error) bool {
 		galat(w, http.StatusConflict, err.Error())
 	case errors.Is(err, services.ErrPenggolongBelumSaatnya):
 		galat(w, http.StatusConflict, err.Error())
+	case errors.Is(err, services.ErrPolisNomorTakDitemukan):
+		// 404: nomor polisnya memang tidak ada di PremiumList Life.
+		galat(w, http.StatusNotFound, err.Error())
 	case errors.Is(err, services.ErrPolisTakDitemukan):
 		// 404: polisnya memang tidak ada. 500 akan membuat orang mencari
 		// kerusakan di server padahal id-nya yang salah.

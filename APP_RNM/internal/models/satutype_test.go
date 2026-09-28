@@ -67,6 +67,18 @@ var medanTypeYangSah = map[string]string{
 	// layar. Nol baris disimpan dari sini; keduanya jalur BACA.
 	"repository/polis_inbox.go": "BarisInboxPolis - kolom baca InboxPremiumList b836",
 	"services/polis_inbox.go":   "BarisInboxPolis - bentuk layar, jalur baca",
+	// ⛔ Butir pl4/av. `PolisRingkas.Type` adalah `Type` POLIS yang DIBACA
+	// dari rumah tersimpannya - `T_PREMIUM_LIST.TYPE`, migrasi 051 - lalu
+	// diserahkan ke Claim Life sebagai `PolicyDataLife.Type`.
+	//
+	// ⛔ INI YANG MEMBUAT PENJAGA INI BERHARGA DI SINI: di Pega, layar
+	// Register Claim Life menampilkan `.PolicyDataLife.Type` sebagai medan
+	// `pyReadOnly` - DIBACA dari polis, tidak pernah diketik dan tidak
+	// pernah disimpan ke tabel klaim. Menyalinnya ke `T_WORK_CLAIM.TYPE`
+	// akan membuat dua `Type` untuk satu klaim, dan yang satu akan basi
+	// begitu polisnya di-endorse.
+	"repository/polis_ringkas.go": "PolisRingkas - Type POLIS dibaca dari T_PREMIUM_LIST untuk PolicyDataLife",
+	"services/polis_ringkas.go":   "bentuk layar PolicyDataLife, jalur baca",
 }
 
 func TestTypeKlaimHanyaSatuRumahTersimpan(t *testing.T) {

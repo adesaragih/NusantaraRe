@@ -59,3 +59,69 @@ describe('himpunan medan PERSIS section', () => {
     expect(isi.find((m) => m.label === REGISTER.namaTertanggung)?.nilai).toBe('—')
   })
 })
+
+// ——— Butir av: PolicyDataLife dari PremiumList Life, 28-09-2026 ———
+
+const POLIS_UJI = {
+  nomorPolis: 'UJI-POL-1',
+  type: 'QR',
+  marketingName: 'UJI MARKETING',
+  cedingCoName: 'UJI CEDING',
+  policyHolderName: 'UJI HOLDER',
+  businessName: 'UJI COB',
+  dateReceived: '2026-01-15',
+  status: 'UJI-STATUS',
+  statusUpdate: 'UJI-STATUS-BARU',
+  productNameId: 'UJI-PROD-1',
+  productName: 'UJI PRODUK',
+  prodKe: 3,
+  medanTanpaSumber: ['TanggalRespon', 'TanggalKonfirmasi', 'TanggalRealisasi'],
+}
+
+describe('butir av — delapan medan bersumber, tiga tidak', () => {
+  it('delapan medan terisi dari polis', () => {
+    const medan = medanPolis({ polis: POLIS_UJI, namaTertanggung: 'UJI PESERTA' })
+    const isi = new Map(medan.map((m) => [m.label, m.nilai]))
+    expect(isi.get(REGISTER.type)).toBe('QR')
+    expect(isi.get(REGISTER.marketing)).toBe('UJI MARKETING')
+    expect(isi.get(REGISTER.ceding)).toBe('UJI CEDING')
+    expect(isi.get(REGISTER.pemegangPolis)).toBe('UJI HOLDER')
+    expect(isi.get(REGISTER.kelasBisnis)).toBe('UJI COB')
+    expect(isi.get(REGISTER.tanggalEmail)).toBe('2026-01-15')
+    expect(isi.get(REGISTER.status)).toBe('UJI-STATUS')
+    expect(isi.get(REGISTER.statusDiperbarui)).toBe('UJI-STATUS-BARU')
+  })
+
+  it('TEPAT tiga medan tetap tanpa sumber, dan mereka bernama', () => {
+    // ⛔ Ketiganya TIDAK PUNYA KOLOM di migrasi 050–056 mana pun — bukan
+    // "menunggu modul", sebab modulnya sudah ada.
+    const medan = medanPolis({ polis: POLIS_UJI })
+    const belum = medan.filter((m) => m.belumBersumber === true).map((m) => m.label)
+    expect(belum).toEqual([
+      REGISTER.tanggalRespon,
+      REGISTER.tanggalKonfirmasi,
+      REGISTER.tanggalRealisasi,
+    ])
+  })
+
+  it('himpunan medannya TIDAK berubah — tetap sebelas', () => {
+    // ⛔ Paritas dengan `InputRegisterClaimLife.xml` diukur dari HIMPUNAN
+    // medannya, bukan dari berapa yang terisi.
+    expect(medanPolis({ polis: POLIS_UJI })).toHaveLength(12)
+    expect(medanPolis({})).toHaveLength(12)
+  })
+
+  it('tanpa polis, Type jatuh kembali ke pilihan pemakai', () => {
+    // ⚠️ Klaim dapat didaftarkan atas polis yang belum ada di PremiumList
+    // Life; layar tetap berguna.
+    const medan = medanPolis({ type: 'TP' })
+    const isi = new Map(medan.map((m) => [m.label, m.nilai]))
+    expect(isi.get(REGISTER.type)).toBe('TP')
+  })
+
+  it('kolom polis yang KOSONG ditandai, bukan dibiarkan kosong', () => {
+    const medan = medanPolis({ polis: { ...POLIS_UJI, cedingCoName: '' } })
+    const isi = new Map(medan.map((m) => [m.label, m.nilai]))
+    expect(isi.get(REGISTER.ceding)).toBe('—')
+  })
+})

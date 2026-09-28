@@ -1433,3 +1433,48 @@ dapat berselisih sehari, dan sehari di sini berarti satu bulan buku.
 
 Rinciannya di tiket `02-register-klaim-dan-penomoran.md`, bab *"Ralat 28-09-2026"*. Commit
 `8f69682`. **Nol migrasi baru.**
+
+---
+
+## Butir av dijalankan 28-09-2026 — `PolicyDataLife` dari PremiumList Life
+
+`repository.PolisRingkas` (**pl4**) ada di `main`, jadi `PanelDataPolis` kini **dibaca**, bukan
+menunggu. Sumbernya `T_PREMIUM_LIST` — tabel relasional modul PremiumList Life, **bukan** cermin
+JSON-nya `[keputusan work owner]`.
+
+**Delapan dari sebelas medan kini bersumber:** `Type`, `MarketingName`, `CedingCoName`,
+`PolicyHolderName`, `BusinessName`, `DateReceived`, `Status`, `StatusUpdate`.
+
+⛔ **TIGA medan TIDAK bersumber, dan sebabnya berubah.** `TanggalRespon`, `TanggalKonfirmasi`, dan
+`TanggalRealisasi` **tidak punya kolom** di migrasi 050–056 mana pun — ketiganya properti halaman
+kerja Pega. Kalimat di layar karena itu **diganti**: *"menunggu modul PremiumList Life"* sesudah
+modulnya ada adalah kalimat yang salah, dan kalimat yang salah membuat orang berhenti membacanya.
+Penjaga `TestKolomRingkasAdaDiMigrasi051` berbunyi bila salah satunya kelak ditambahkan, supaya
+catatannya ikut berubah alih-alih diam-diam menjadi bohong.
+
+⛔ **VERSI POLIS IKUT DIBACA DAN DITAMPILKAN.** Satu nomor polis punya banyak versi (migrasi 051:
+satu baris = satu versi); yang dibaca adalah `PROD_KE` **terbesar**, dengan `ORDER BY` yang
+dinyatakan. Tanpa itu Oracle bebas memberi versi mana pun yang paling murah dibacanya — dan klaim
+yang dinilai dengan data polis versi lama dinilai **salah, tanpa satu pun galat**.
+
+### ⛔ Butir `ba` TIDAK dapat diselesaikan — terhalang aturan tetap
+
+Kuncinya **sudah ada**: `PolicyDataLife.ProductNameID` kini terbaca dari
+`T_PREMIUM_LIST.PRODUCT_NAME_ID`. Yang menghalangi bukan kunci itu, melainkan **sumber ambangnya**.
+
+`RDBList/GetProductName.xml` membaca `POOLDATA.PRODUCTINWARD_LIFE`, dan view itu ada di daftar
+`masterYangTidakDisentuh`: `[data DBA]` **OQ-001** menyatakannya **VIEW atas `JSONDATA`**, dan
+membacanya langsung **menuntut persetujuan manusia** `[keputusan work owner 2026-09-16]`.
+
+Pembacanya sempat ditulis, lalu **dibuang** ketika `TestMasterViewTidakDisentuh` berbunyi — penjaga
+itu bekerja persis sebagaimana mestinya. `models.PenandaBatasHari` tetap seperti semula: fungsi
+**murni** yang **menerima** ambang, dan pembacanya menunggu satu keputusan.
+
+**Yang dibutuhkan untuk menutup `ba`:** izin membaca `PRODUCTINWARD_LIFE`, **atau** keputusan bahwa
+ambang `MAXEXPIREDCLAIM`/`MAXDATARECEIVE` dibaca dari `product_life` relasional. Keduanya keputusan
+work owner, bukan keputusan executor.
+
+### Angka
+
+Go **501 PASS** · 0 FAIL · 38 SKIP *(dari 497)* · JS **339** *(dari 334)* · gofmt, vet, vet `-tags
+db`, tsc, build bersih · **nol migrasi baru**.
