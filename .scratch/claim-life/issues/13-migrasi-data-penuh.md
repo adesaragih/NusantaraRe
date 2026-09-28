@@ -256,3 +256,72 @@ juga nama kolom dan muncul puluhan kali secara sah. Yang menjaganya hanya kenyat
 menyentuh master mana pun hari ini; bila itu berubah, ia harus ditinjau dengan tangan. Dan
 `buangKomentarSumber` hanya membuang komentar sebaris penuh — komentar blok tetap tinggal.
 
+
+## Implementasi — A4, kode saja (28 September 2026)
+
+⛔ **Tidak dijalankan terhadap DEV.** Brief melarangnya, dan `T_MIGRASI` DEV masih di `016`.
+Yang dibangun kodenya; uji bertag `db` **melewati** selama `ORACLE_DSN` belum dikonfigurasi.
+
+### Apa yang tabel datar TIDAK punya — dan karena itu tidak dikarang
+
+Daftar 55 kolom `OS_AKSEPTASI_KLAIM_LIFE` dibaca VERBATIM dari
+`UpdateOsAkseptasiClaimLife_sql.xml`. Ia **tidak memuat** satu pun kolom tahap, waktu lahir kasus,
+maupun status kerja. Maka:
+
+| Kolom baru | Diisi dari | Keadaan |
+| --- | --- | --- |
+| `TAHAP` *(butir at)* | — | **KOSONG**, dan dilaporkan tiap kasus. Tahap kosong tidak menawarkan tombol apa pun — gagal **tertutup**, yang benar untuk kasus yang tahapnya memang tidak diketahui |
+| `TGL_CREATE` *(butir au)* | `CLAIM_RECEIVED_DATE` | **Penggantian**, dilaporkan. Ia **bukan** `pxCreateDateTime`: tanggal klaim *diterima* tidak sama dengan waktu kasusnya lahir di Pega |
+| `STATUS_WORK` *(butir bb)* | `COMPLETE_DATE` terisi → `Resolved-Completed` | **KESIMPULAN**, bukan bacaan; ditandai `[terbuka — work owner]` pada setiap baris laporan |
+
+⚠️ Alternatif untuk `STATUS_WORK` — mengosongkan seluruhnya — membuat setiap kasus warisan yang
+sudah selesai tampak **masih berjalan** di kotak masuk. Itu selisih yang lebih besar, jadi
+kesimpulannya diambil **dan dinyatakan**, bukan didiamkan ke salah satu arah.
+
+### Dokumen warisan — dan kenapa OQ-J membatasi apa yang mungkin
+
+`POOLDATA.DOCUMENT_CLAIM` `[katalog DEV]` punya `IDPEGA`, `NOAKSEP`, `NAMAFILE`, `MIME`,
+`KATEGORI_1/2`, `T_STORAGE_ID`. Tautannya:
+
+- `IDPEGA` = `pyWorkPage.pzInsKey` *(`InsertDocument_Act.xml` b185)* → menunjuk **klaim**, bukan peserta;
+- `KATEGORI_1` = kunci kelompok `DL-`+angka *(`SaveAttachLife.xml` b595)* → pembukuan unggahan, **bukan** identitas;
+- **`NOAKSEP`** ↔ `OS_AKSEPTASI_KLAIM_LIFE.NO_ACCEPTATION` → **satu-satunya** tautan ke peserta yang sumbernya punya.
+
+⛔ Saringan Pega yang sebenarnya `.KATEGORI_1 = .DOCUMENT` pada halaman **peserta**
+*(`LoadDocumentLife_ACT.xml` b495)*, dan kolom `DOCUMENT` **tidak ada** di mana pun yang kami
+terima — **OQ-J**. Pemetaan ini karena itu **tidak dapat** meniru saringan aslinya.
+
+Yang dilakukan: gantung lewat `NOAKSEP`; setiap yang tidak cocok **dilaporkan dan tidak
+dipindahkan**. ⚠️ Arahnya disengaja: dokumen milik orang lain yang menempel pada peserta yang
+salah jauh lebih buruk daripada dokumen yang dilaporkan hilang. `IDPEGA` yang bertentangan dengan
+`NOAKSEP` dilaporkan pula; `KATEGORI_1` berbentuk asing **dibawa apa adanya** dan dilaporkan —
+kunci yang bentuknya aneh tetap menunjuk kelompok unggahan yang nyata.
+
+⛔ `BASE64` **tidak** dibawa ke struktur mana pun: isi berkas tidak pernah masuk artefak. Migrasi
+memindahkan **catatannya**; berkasnya sudah ada di penyimpanan dan dirujuk `T_STORAGE_ID`.
+
+### Diagnosa warisan — tidak ada sumbernya, dan itu dinyatakan
+
+Tabel datar punya `DISEASE` dan `ICD_CODE` **tunggal** — satu pasang per baris peserta —
+sedangkan `.DiagnoseList` *(butir bd)* adalah **daftar**. Daftar itu hidup di halaman kerja Pega,
+tersimpan sebagai **BLOB** milik mesin Pega, dan **tidak diekspor sebagai tabel**.
+
+Akibatnya migrasi membawa paling banyak **satu** diagnosa per peserta; daftar yang lebih panjang
+**tidak dapat dipulihkan**. Dilaporkan setiap jalan, `[terbuka — work owner]`, dan **nol** baris
+`T_CLAIMLF_DIAGNOSE` dibuat dari tebakan.
+
+### ⚠️ Satu hal yang A4 harus tahu dari paket sebelumnya
+
+`Update_T_Storage_SQL.xml` menulis `EXPDATE` dengan `'DD/MM/YYYY'` dan `TANGGAL_UPLOAD` dengan
+`'MM/DD/YYYY'` — **dua bentuk berbeda di satu pernyataan**. Nilai warisan pada kedua kolom itu
+tidak dapat dibedakan untuk tanggal 1–12 tiap bulan.
+
+### Penjaga
+
+`TestA4TidakMenyentuhBasisData` membaca berkasnya sendiri dan menolak `db.sql`, `QueryContext`,
+`ExecContext`, `tx.tx`, `Qualify(`, dan `time.Now()`. Sebabnya keras: fungsi migrasi yang diam-diam
+membuka koneksi akan **menjalankan dirinya sendiri terhadap DEV** saat seseorang menjalankan uji,
+dan brief melarang eksekusi A4 sampai work owner menyetujuinya. Dibuktikan merah dengan menanam
+`time.Now()`.
+
+**AC:** tidak ada AC tiket ini yang berubah centangnya — **kodenya** yang ada, bukan eksekusinya.
