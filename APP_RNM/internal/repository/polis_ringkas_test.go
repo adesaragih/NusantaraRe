@@ -43,6 +43,9 @@ func TestRingkasHanyaKolomYangDipakai(t *testing.T) {
 		"p.NO_POLIS", "p.TYPE", "p.MARKETING_NAME", "p.CEDING_CO_NAME",
 		"p.POLICY_HOLDER_NAME", "p.BUSINESS_NAME", "p.DATE_RECEIVED",
 		"p.STATUSS", "p.STATUS_UPDATE", "p.PRODUCT_NAME_ID", "p.PRODUCT_NAME",
+		// av-2 (GILIRAN-11 paket 2).
+		"p.TYPE_CEDING,", "p.TYPE_CEDING_NAME", "p.PRO_RATE_TYPE", "p.WPC",
+		"p.RETRO_NAME", "p.SECURITY_REINSURER,", "p.SOB_NAME",
 	} {
 		if !strings.Contains(q, kolom) {
 			t.Errorf("kolom %q tidak dibaca:\n%s", kolom, q)
@@ -73,6 +76,8 @@ func TestKolomRingkasAdaDiMigrasi051(t *testing.T) {
 		"NO_POLIS", "TYPE", "MARKETING_NAME", "CEDING_CO_NAME",
 		"POLICY_HOLDER_NAME", "BUSINESS_NAME", "DATE_RECEIVED", "STATUSS",
 		"STATUS_UPDATE", "PRODUCT_NAME_ID", "PRODUCT_NAME", "PROD_KE",
+		"TYPE_CEDING", "TYPE_CEDING_NAME", "PRO_RATE_TYPE", "WPC", "RETRO_NAME",
+		"SECURITY_REINSURER", "SOB_NAME",
 	} {
 		if !ada[k] {
 			t.Errorf("kolom %q tidak ada di migrasi 051", k)
@@ -83,6 +88,8 @@ func TestKolomRingkasAdaDiMigrasi051(t *testing.T) {
 	// layar harus ikut berubah, bukan diam-diam menjadi bohong.
 	for _, k := range []string{
 		"TANGGAL_RESPON", "TANGGAL_KONFIRMASI", "TANGGAL_REALISASI",
+		// av-2: `Confirmation Reserved` dan `Underwriter Note`.
+		"TANGGAL_KONFIRMASI_BALIK", "KETENTUAN_UNDERWRITING",
 	} {
 		if ada[k] {
 			t.Errorf("kolom %q ternyata ADA di migrasi 051 - catatan "+

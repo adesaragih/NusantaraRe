@@ -1725,6 +1725,18 @@ export interface PolicyDataLife {
   prodKe: number
   /** Medan layar lama yang belum punya kolom di mana pun. */
   medanTanpaSumber: string[]
+  /** av-2 — `.TypeCeding` kode; `typeCedingName` katanya (yang ditampilkan). */
+  typeCeding: string
+  typeCedingName: string
+  /** av-2 — `.ProRateType` "Premium Method". */
+  proRateType: string
+  /** av-2 — `.WPC`, `YYYY-MM-DD`; kosong berarti belum diisi. */
+  wpc: string
+  /** av-2 — tampil HANYA bagi Type TP/TR (`pyCondition` b10541/b10824). */
+  retroName: string
+  securityReinsurer: string
+  /** av-2 — `.SobName` "SOB". */
+  sobName: string
 }
 
 /**

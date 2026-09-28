@@ -378,13 +378,41 @@ Keadaannya kini ditulis apa adanya di barisnya. `SaveOutStandingLife_Act` adalah
 yang tersisa** — rute simpan Outstanding — dan tidak dibangun giliran ini: ia bukan salah satu
 dari 41 baris, dan separuh isinya menunggu OQ-M1/M3.
 
-⚠️ **Temuan paritas av-2.** Layar Register dan Outstanding mengikat **21** medan `.PolicyDataLife.*`
-(`InputRegisterClaimLife` b9110-b14813, `InputOSClaimLife` b6905-b12679); `PanelDataPolis`
-menampilkan sebelas. Sepuluh sisanya — `TypeCeding`, `ProRateType`, `WPC`, `RetroName` *(Retro
-Name / Billing Name)*, `SecurityReinsurer`, `SobName`, `ProductNameID`, `ProductName`,
-`TanggalKonfirmasiBalik`, `KetentuanUnderwriting` — belum dibaca kondisi tampilnya. `RETRO_NAME`
-ADA di `T_PREMIUM_LIST` (migrasi 051). Butir av di brief menyebut sepuluh medan dan sudah
-dipenuhi; kesepuluh ini di luar cakupannya, dicatat supaya tidak hilang.
+✅ **Paritas av-2 — DIBANGUN GILIRAN-11 paket 2.** Seluruh ikatan `.PolicyDataLife.*` di layar
+Register dan Outstanding kini tampil di `PanelDataPolis`, urut section; `ClaimLifeDetailGCNM.xml`
+mengikat **nol**. Label `pyLabelPreview` VERBATIM (uji korpus `labels.test.ts`); sumbernya
+`T_PREMIUM_LIST` lewat `PolisRingkas` (dilebarkan aditif), kontrak JSON dikunci dua sisi.
+
+| # | Properti | Label | Register | Outstanding | Sumber / keadaan |
+| ---: | --- | --- | ---: | ---: | --- |
+| — | `PremiumListSummary.PL_NUMBER` | PL Number | b3604 | b3085 | nomor PL klaim (sudah tampil) |
+| 1 | `Type` | Type | b9110 | b6905 | `TYPE` |
+| 2 | `TypeCeding` | System Reinsurance | b9307 | b7102 | `TYPE_CEDING_NAME` (kode `TYPE_CEDING` bila kosong) |
+| 3 | `ProRateType` | Premium Method | b9700 | b7495 | `PRO_RATE_TYPE` |
+| 4 | `MarketingName` | Marketing Officer | b9897 | b7692 | `MARKETING_NAME` |
+| 5 | `WPC` | WPC | b10156 | b7953 | `WPC` |
+| 6 | `RetroName` | Retro Name | b10342 | b8159 | `RETRO_NAME` — tampil bila Type TP/TR (`pyCondition` b10541 / b8363) |
+| 7 | `SecurityReinsurer` | Security Reinsurer | b10623 | b8465 | `SECURITY_REINSURER` — tampil bila Type TP/TR (b10824 / b8671) |
+| 8 | `CedingCoName` | Ceding | b11548 | b9414 | `CEDING_CO_NAME` |
+| 9 | `PolicyHolderName` | Policy Holder | b11743 | b9609 | `POLICY_HOLDER_NAME` |
+| 10 | `SobName` | SOB | b11936 | b9802 | `SOB_NAME` |
+| 11 | `BusinessName` | Class of Business | b12177 | b10043 | `BUSINESS_NAME` |
+| 12 | `ProductNameID` | Product Name ID | b12458 | b10324 | `PRODUCT_NAME_ID` |
+| 13 | `ProductName` | Product Name | b12656 | b10522 | `PRODUCT_NAME` |
+| 14 | `DateReceived` | Date Received Email | b13390 | b11256 | `DATE_RECEIVED` |
+| 15 | `TanggalRespon` | Response Date | b13596 | b11462 | ⛔ tanpa kolom — penanda bernama |
+| 16 | `TanggalKonfirmasi` | Confirmation Date | b13802 | b11668 | ⛔ tanpa kolom — penanda bernama |
+| 17 | `Status` | Status | b14010 | b11876 | `STATUSS` |
+| 18 | `TanggalKonfirmasiBalik` | Confirmation Reserved | b14205 | b12071 | ⛔ tanpa kolom — penanda bernama |
+| 19 | `StatusUpdate` | Updated Status | b14413 | b12279 | `STATUS_UPDATE` |
+| 20 | `TanggalRealisasi` | Realization Date | b14608 | b12474 | ⛔ tanpa kolom — penanda bernama |
+| 21 | `KetentuanUnderwriting` | Underwriter Note | b14813 | b12679 | ⛔ tanpa kolom — penanda bernama |
+
+⚠️ Dua hal yang ikut terbaca: layar Outstanding sebelumnya memanggil `<PanelDataPolis />` **tanpa
+polis** — seluruh medannya tampil kosong di sana; kini ia membaca klaimnya lalu polisnya. Dan label
+`pyLabelFieldValue` sel `RetroName` di Outstanding adalah *"Billing Name"* (b8130) sedangkan
+`pyLabelPreview`-nya *"Retro Name"* (b8153) — yang tampil adalah `pyLabelPreview`, sama dengan
+seluruh label panel.
 
 | Rule | Folder | Dipanggil dari | Padanan | Keadaan |
 | --- | --- | --- | --- | --- |

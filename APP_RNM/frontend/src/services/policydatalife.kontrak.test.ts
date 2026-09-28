@@ -27,6 +27,13 @@ const KUNCI: Record<keyof PolicyDataLife, true> = {
   productName: true,
   prodKe: true,
   medanTanpaSumber: true,
+  typeCeding: true,
+  typeCedingName: true,
+  proRateType: true,
+  wpc: true,
+  retroName: true,
+  securityReinsurer: true,
+  sobName: true,
 }
 
 describe('kontrak PolicyDataLife dua sisi', () => {

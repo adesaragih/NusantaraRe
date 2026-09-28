@@ -14,13 +14,20 @@
 // padahal layar ini dipegang `ReasLifeAdmin`. Itu cacat rule warisan, dan
 // yang ditiru MAKSUDnya - lihat `OQ-untuk-tim.md` OQ-C.
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { OUTSTANDING, TOMBOL_OS } from '../../assets/labels.claimlife'
 import { PanelDataPolis } from '../../components/claimlife/PanelDataPolis'
 import { PanelPindahTahap } from '../../components/claimlife/PanelPindahTahap'
 import { Gagal } from '../../components/ui/dasar'
-import { pesanGalat, simpanKeRNM, type HasilSimpanRNM } from '../../services/api'
+import {
+  ambilDataPolis,
+  ambilKlaimLife,
+  pesanGalat,
+  simpanKeRNM,
+  type HasilSimpanRNM,
+  type PolicyDataLife,
+} from '../../services/api'
 
 export interface OutstandingProps {
   /** Pengenal work kasus yang sedang dibuka. */
@@ -39,6 +46,28 @@ export default function OutstandingClaimLife({
   const [galat, setGalat] = useState<unknown>(null)
   const [sibuk, setSibuk] = useState(false)
   const [tersimpan, setTersimpan] = useState<HasilSimpanRNM | null>(null)
+  // av-2: panelnya kini BERISI - sebelumnya `<PanelDataPolis />` tanpa polis,
+  // sehingga seluruh medan tampil kosong di layar ini.
+  const [polis, setPolis] = useState<PolicyDataLife | null>(null)
+
+  useEffect(() => {
+    let batal = false
+    void (async () => {
+      try {
+        const k = await ambilKlaimLife(klaimID)
+        if (batal) return
+        const p = await ambilDataPolis(k.nomorPolis)
+        if (!batal) setPolis(p)
+      } catch {
+        // Polis yang belum ada di PremiumList Life BUKAN kerusakan layar ini:
+        // panelnya menyatakan "belum terbaca", Save to RNM menolaknya terang.
+        if (!batal) setPolis(null)
+      }
+    })()
+    return () => {
+      batal = true
+    }
+  }, [klaimID])
 
   /** `Save to RNM` b21102 — gerbangnya seluruhnya di server. */
   async function simpan(): Promise<void> {
@@ -67,7 +96,7 @@ export default function OutstandingClaimLife({
 
       {/* Panel yang SAMA dengan layar Register - polis yang sama, tahap
           berbeda. */}
-      <PanelDataPolis />
+      <PanelDataPolis polis={polis} />
 
       <div className="os__aksi">
         <button

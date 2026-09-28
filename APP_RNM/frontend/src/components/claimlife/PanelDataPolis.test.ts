@@ -8,11 +8,11 @@ import { medanPolis } from './PanelDataPolis'
 describe('himpunan medan PERSIS section', () => {
   const medan = medanPolis({})
 
-  it('sebelas medan data, tidak kurang', () => {
+  it('dua puluh medan bagi non-treaty (21 ikatan tanpa dua medan retro, + nama tertanggung)', () => {
     // ⛔ Medan yang DIHILANGKAN dari layar sama merusaknya dengan medan yang
     // dikarang - dan yang pertama tidak berbunyi sama sekali. Cacahnya
     // dikunci supaya menghilangkan satu menjadi kegagalan uji.
-    expect(medan).toHaveLength(12)
+    expect(medan).toHaveLength(20)
   })
 
   it('setiap label datang dari REGISTER, bukan diketik ulang', () => {
@@ -32,7 +32,7 @@ describe('himpunan medan PERSIS section', () => {
     // ⛔ SEBELAS, bukan sepuluh: `Type` ikut menunggu sejak ralat
     // pembacaan 27-09-2026 - ia `pyReadOnly` true di Pega dan terikat
     // `.PolicyDataLife.Type`, bukan isian bebas.
-    expect(belum).toHaveLength(11)
+    expect(belum).toHaveLength(19)
     for (const m of belum) {
       expect(m.nilai).toBe('—')
     }
@@ -75,7 +75,20 @@ const POLIS_UJI = {
   productNameId: 'UJI-PROD-1',
   productName: 'UJI PRODUK',
   prodKe: 3,
-  medanTanpaSumber: ['TanggalRespon', 'TanggalKonfirmasi', 'TanggalRealisasi'],
+  medanTanpaSumber: [
+    'TanggalRespon',
+    'TanggalKonfirmasi',
+    'TanggalRealisasi',
+    'TanggalKonfirmasiBalik',
+    'KetentuanUnderwriting',
+  ],
+  typeCeding: '1',
+  typeCedingName: 'UJI QS',
+  proRateType: 'UJI-PRORATA',
+  wpc: '2026-02-01',
+  retroName: 'UJI RETRO',
+  securityReinsurer: 'UJI SECURITY',
+  sobName: 'UJI SOB',
 }
 
 describe('butir av — delapan medan bersumber, tiga tidak', () => {
@@ -92,23 +105,53 @@ describe('butir av — delapan medan bersumber, tiga tidak', () => {
     expect(isi.get(REGISTER.statusDiperbarui)).toBe('UJI-STATUS-BARU')
   })
 
-  it('TEPAT tiga medan tetap tanpa sumber, dan mereka bernama', () => {
-    // ⛔ Ketiganya TIDAK PUNYA KOLOM di migrasi 050–056 mana pun — bukan
+  it('TEPAT lima medan tetap tanpa sumber, dan mereka bernama', () => {
+    // ⛔ Kelimanya TIDAK PUNYA KOLOM di migrasi 050–056 mana pun — bukan
     // "menunggu modul", sebab modulnya sudah ada.
     const medan = medanPolis({ polis: POLIS_UJI })
     const belum = medan.filter((m) => m.belumBersumber === true).map((m) => m.label)
     expect(belum).toEqual([
       REGISTER.tanggalRespon,
       REGISTER.tanggalKonfirmasi,
+      REGISTER.konfirmasiBalik,
       REGISTER.tanggalRealisasi,
+      REGISTER.catatanUnderwriter,
     ])
   })
 
-  it('himpunan medannya TIDAK berubah — tetap sebelas', () => {
+  it('himpunan medannya TIDAK bergantung isi — dua puluh bagi non-treaty', () => {
     // ⛔ Paritas dengan `InputRegisterClaimLife.xml` diukur dari HIMPUNAN
     // medannya, bukan dari berapa yang terisi.
-    expect(medanPolis({ polis: POLIS_UJI })).toHaveLength(12)
-    expect(medanPolis({})).toHaveLength(12)
+    expect(medanPolis({ polis: POLIS_UJI })).toHaveLength(20)
+    expect(medanPolis({})).toHaveLength(20)
+  })
+
+  it('av-2 — tujuh medan baru terisi dari polis', () => {
+    const isi = new Map(medanPolis({ polis: POLIS_UJI }).map((m) => [m.label, m.nilai]))
+    expect(isi.get(REGISTER.sistemReasuransi)).toBe('UJI QS')
+    expect(isi.get(REGISTER.metodePremi)).toBe('UJI-PRORATA')
+    expect(isi.get(REGISTER.wpc)).toBe('2026-02-01')
+    expect(isi.get(REGISTER.sob)).toBe('UJI SOB')
+    expect(isi.get(REGISTER.idProduk)).toBe('UJI-PROD-1')
+    expect(isi.get(REGISTER.namaProduk)).toBe('UJI PRODUK')
+  })
+
+  it('av-2 — medan retro HANYA bagi TP/TR (pyCondition b10541/b10824)', () => {
+    const treaty = medanPolis({ polis: { ...POLIS_UJI, type: 'TP' } })
+    const isi = new Map(treaty.map((m) => [m.label, m.nilai]))
+    expect(treaty).toHaveLength(22)
+    expect(isi.get(REGISTER.retroName)).toBe('UJI RETRO')
+    expect(isi.get(REGISTER.securityReinsurer)).toBe('UJI SECURITY')
+    const labelQR = medanPolis({ polis: POLIS_UJI }).map((m) => m.label)
+    expect(labelQR).not.toContain(REGISTER.retroName)
+    expect(labelQR).not.toContain(REGISTER.securityReinsurer)
+  })
+
+  it('av-2 — kode System Reinsurance dipakai bila katanya kosong', () => {
+    const isi = new Map(
+      medanPolis({ polis: { ...POLIS_UJI, typeCedingName: '' } }).map((m) => [m.label, m.nilai]),
+    )
+    expect(isi.get(REGISTER.sistemReasuransi)).toBe('1')
   })
 
   it('tanpa polis, Type jatuh kembali ke pilihan pemakai', () => {

@@ -153,14 +153,30 @@ export const REGISTER = {
   pilihTertanggung: 'Select Insured',
   /** b9104 `.PolicyDataLife.Type` `pxDropdown`. */
   type: 'Type',
+  /** b9301 `.PolicyDataLife.TypeCeding` (av-2). */
+  sistemReasuransi: 'System Reinsurance',
+  /** b9694 `.PolicyDataLife.ProRateType` (av-2). */
+  metodePremi: 'Premium Method',
   /** b9890 `.PolicyDataLife.MarketingName` `pxAutoComplete`. */
   marketing: 'Marketing Officer',
+  /** b10149 `.PolicyDataLife.WPC` (av-2). */
+  wpc: 'WPC',
+  /** b10335 `.PolicyDataLife.RetroName` (av-2) — tampil bila Type TP/TR (b10541). */
+  retroName: 'Retro Name',
+  /** b10617 `.PolicyDataLife.SecurityReinsurer` (av-2) — tampil bila Type TP/TR (b10824). */
+  securityReinsurer: 'Security Reinsurer',
   /** b11541 `.PolicyDataLife.CedingCoName` `pxTextInput`. */
   ceding: 'Ceding',
   /** b11736 `.PolicyDataLife.PolicyHolderName` `pxTextInput`. */
   pemegangPolis: 'Policy Holder',
+  /** b11930 `.PolicyDataLife.SobName` (av-2). */
+  sob: 'SOB',
   /** b12171 `.PolicyDataLife.BusinessName` `pxAutoComplete`. */
   kelasBisnis: 'Class of Business',
+  /** b12450 `.PolicyDataLife.ProductNameID` (av-2). */
+  idProduk: 'Product Name ID',
+  /** b12648 `.PolicyDataLife.ProductName` (av-2). */
+  namaProduk: 'Product Name',
   /** b13384 `.PolicyDataLife.DateReceived` `pxDateTime`. */
   tanggalEmail: 'Date Received Email',
   /** b13590 `.PolicyDataLife.TanggalRespon` `pxDateTime`. */
@@ -169,10 +185,14 @@ export const REGISTER = {
   tanggalKonfirmasi: 'Confirmation Date',
   /** b14002 `.PolicyDataLife.Status` `pxTextInput`. */
   status: 'Status',
+  /** b14198 `.PolicyDataLife.TanggalKonfirmasiBalik` (av-2) — tanpa kolom. */
+  konfirmasiBalik: 'Confirmation Reserved',
   /** b14406 `.PolicyDataLife.StatusUpdate` `pxTextInput`. */
   statusDiperbarui: 'Updated Status',
   /** b14601 `.PolicyDataLife.TanggalRealisasi` `pxDateTime`. */
   tanggalRealisasi: 'Realization Date',
+  /** b14806 `.PolicyDataLife.KetentuanUnderwriting` (av-2) — tanpa kolom. */
+  catatanUnderwriter: 'Underwriter Note',
   /** b16064 `pxTextInput`. */
   namaTertanggung: 'Name of Insured',
 } as const

@@ -35,6 +35,9 @@ var ErrPolisNomorTakDitemukan = repository.ErrPolisNomorTakDitemukan
 // layar baru dengan layar lama akan menghitung medannya.
 var MedanTanpaSumberPolicyData = []string{
 	"TanggalRespon", "TanggalKonfirmasi", "TanggalRealisasi",
+	// av-2 (GILIRAN-11 paket 2): `Confirmation Reserved` b14198 dan
+	// `Underwriter Note` b14806 - nol kolom di migrasi 050-056.
+	"TanggalKonfirmasiBalik", "KetentuanUnderwriting",
 }
 
 // PolicyDataLife adalah bentuk yang layar Claim Life pakai.
@@ -64,6 +67,19 @@ type PolicyDataLife struct {
 	ProdKe int `json:"prodKe"`
 	// MedanTanpaSumber menyebut medan layar yang belum punya kolom.
 	MedanTanpaSumber []string `json:"medanTanpaSumber"`
+
+	// ⭐ av-2 (GILIRAN-11 paket 2) - tujuh medan lagi dari `T_PREMIUM_LIST`.
+	// `TypeCeding` kode, `TypeCedingName` katanya; layar menampilkan kata.
+	TypeCeding     string `json:"typeCeding"`
+	TypeCedingName string `json:"typeCedingName"`
+	ProRateType    string `json:"proRateType"`
+	// WPC `YYYY-MM-DD`; kosong berarti kolomnya belum diisi.
+	WPC string `json:"wpc"`
+	// RetroName dan SecurityReinsurer hanya TAMPIL bagi Type TP/TR
+	// (`pyCondition` b10541/b10824); keputusan tampilnya milik layar.
+	RetroName         string `json:"retroName"`
+	SecurityReinsurer string `json:"securityReinsurer"`
+	SobName           string `json:"sobName"`
 }
 
 // RingkasPolis melayani pembacaan `PolicyDataLife`.
@@ -102,9 +118,19 @@ func (r *RingkasPolis) Ambil(ctx context.Context, pelaku Pelaku, nomorPolis stri
 		ProductName:      p.ProductName,
 		ProdKe:           p.ProdKe,
 		MedanTanpaSumber: MedanTanpaSumberPolicyData,
+
+		TypeCeding:        p.TypeCeding,
+		TypeCedingName:    p.TypeCedingName,
+		ProRateType:       p.ProRateType,
+		RetroName:         p.RetroName,
+		SecurityReinsurer: p.SecurityReinsurer,
+		SobName:           p.SobName,
 	}
 	if p.DateReceived != nil {
 		hasil.DateReceived = *p.DateReceived
+	}
+	if p.WPC != nil {
+		hasil.WPC = *p.WPC
 	}
 	return hasil, nil
 }

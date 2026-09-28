@@ -56,6 +56,22 @@ type PolisRingkas struct {
 	// ProdKe adalah versi yang terbaca, supaya pemanggil dapat menyatakannya.
 	ProdKe int
 
+	// Tujuh medan layar lagi - butir av-2 (GILIRAN-11 paket 2), urut section.
+	//
+	//	TypeCeding/TypeCedingName `.TypeCeding`        "System Reinsurance" b9301
+	//	ProRateType               `.ProRateType`       "Premium Method"     b9694
+	//	WPC                       `.WPC`               "WPC"                b10149
+	//	RetroName                 `.RetroName`         "Retro Name"         b10335 (TP/TR)
+	//	SecurityReinsurer         `.SecurityReinsurer` "Security Reinsurer" b10617 (TP/TR)
+	//	SobName                   `.SobName`           "SOB"                b11930
+	TypeCeding        string
+	TypeCedingName    string
+	ProRateType       string
+	WPC               *string
+	RetroName         string
+	SecurityReinsurer string
+	SobName           string
+
 	// Empat KUNCI yang `Save to RNM` pakai - bukan medan layar, sehingga
 	// TIDAK menyeberang ke JSON `PolicyDataLife` (kontraknya dikunci dua sisi).
 	//
@@ -90,7 +106,9 @@ func sqlPolisRingkas(polis string) string {
 	        TO_CHAR(p.DATE_RECEIVED, 'YYYY-MM-DD'),
 	        p.STATUSS, p.STATUS_UPDATE, p.PRODUCT_NAME_ID, p.PRODUCT_NAME,
 	        NVL(p.PROD_KE, 0),
-	        p.BUSINESS_CODE, p.CEDING_CO, p.RETRO_ID, p.SECURITY_REINSURER_ID
+	        p.BUSINESS_CODE, p.CEDING_CO, p.RETRO_ID, p.SECURITY_REINSURER_ID,
+	        p.TYPE_CEDING, p.TYPE_CEDING_NAME, p.PRO_RATE_TYPE,
+	        TO_CHAR(p.WPC, 'YYYY-MM-DD'), p.RETRO_NAME, p.SECURITY_REINSURER, p.SOB_NAME
 	   FROM %s p
 	  WHERE p.NO_POLIS = :1
 	  ORDER BY NVL(p.PROD_KE, 0) DESC
@@ -117,12 +135,15 @@ func (r *RingkasPolisLife) Ringkas(ctx context.Context, nomorPolis string) (
 		no, tipe, marketing, ceding, pemegang, bisnis sql.NullString
 		diterima, status, statusUbah, prodID, prodNm  sql.NullString
 		kodeBisnis, cedingKode, retroID, secID        sql.NullString
+		tipeCeding, tipeCedingNm, prorata, wpc        sql.NullString
+		retroNm, secNm, sobNm                         sql.NullString
 		prodKe                                        int
 	)
 	if err := r.db.sql.QueryRowContext(ctx, q, nomorPolis).Scan(
 		&no, &tipe, &marketing, &ceding, &pemegang, &bisnis,
 		&diterima, &status, &statusUbah, &prodID, &prodNm, &prodKe,
-		&kodeBisnis, &cedingKode, &retroID, &secID); err != nil {
+		&kodeBisnis, &cedingKode, &retroID, &secID,
+		&tipeCeding, &tipeCedingNm, &prorata, &wpc, &retroNm, &secNm, &sobNm); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return PolisRingkas{}, fmt.Errorf("%w: %q", ErrPolisNomorTakDitemukan, nomorPolis)
 		}
@@ -145,6 +166,17 @@ func (r *RingkasPolisLife) Ringkas(ctx context.Context, nomorPolis string) (
 		CedingCo:            strings.TrimSpace(cedingKode.String),
 		RetroID:             strings.TrimSpace(retroID.String),
 		SecurityReinsurerID: strings.TrimSpace(secID.String),
+
+		TypeCeding:        tipeCeding.String,
+		TypeCedingName:    tipeCedingNm.String,
+		ProRateType:       prorata.String,
+		RetroName:         retroNm.String,
+		SecurityReinsurer: secNm.String,
+		SobName:           sobNm.String,
+	}
+	if wpc.Valid {
+		t := wpc.String
+		hasil.WPC = &t
 	}
 	// ⛔ NULL tetap nil, bukan tanggal kosong berbentuk teks: kolom yang belum
 	// diisi dan kolom bertanggal adalah dua keadaan berbeda.

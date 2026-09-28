@@ -1,7 +1,7 @@
 // Panel data polis layar Register — A3 kelompok Register.
 //
-// Meniru himpunan medan `Section/InputRegisterClaimLife.xml` PERSIS: sebelas
-// medan data ditambah tiga tombol, seluruhnya dengan nomor barisnya di
+// Meniru himpunan medan `Section/InputRegisterClaimLife.xml` PERSIS: DUA PULUH
+// SATU medan `.PolicyDataLife.*` (av-2, GILIRAN-11) ditambah tiga tombol, seluruhnya dengan nomor barisnya di
 // `assets/labels.ts`.
 //
 // ⛔ KESEBELAS MEDAN TERIKAT KE `.PolicyDataLife.*`, bukan isian bebas. Di
@@ -76,6 +76,12 @@ export function medanPolis(sumber: {
     ...dariPolis(v),
     label,
   })
+  // ⛔ `pyCondition` b10541/b10824 `.PolicyDataLife.Type=='TP'||'TR'`: dua
+  // medan retro TAMPIL hanya bagi treaty. Type diambil dari polis, atau dari
+  // pilihan pemakai bila polisnya belum terbaca.
+  const tipe = p?.type ?? sumber.type ?? ''
+  const treaty = tipe === 'TP' || tipe === 'TR'
+  const tanpaKolom = (label: string): MedanPolis => ({ label, nilai: '—', belumBersumber: true })
   return [
     // Punya sumber hari ini - dari `GET /api/peserta-life`.
     { label: REGISTER.namaTertanggung, nilai: ada(sumber.namaTertanggung) },
@@ -89,18 +95,31 @@ export function medanPolis(sumber: {
     p === null
       ? { label: REGISTER.type, nilai: ada(sumber.type), belumBersumber: true }
       : { label: REGISTER.type, nilai: ada(p.type) },
+    // Urut section, b9301 sampai b14806.
+    // `TYPE_CEDING_NAME` yang ditampilkan; kodenya bila katanya kosong.
+    medan(REGISTER.sistemReasuransi, p === null ? undefined : p.typeCedingName || p.typeCeding),
+    medan(REGISTER.metodePremi, p?.proRateType),
     medan(REGISTER.marketing, p?.marketingName),
+    medan(REGISTER.wpc, p?.wpc),
+    ...(treaty
+      ? [medan(REGISTER.retroName, p?.retroName), medan(REGISTER.securityReinsurer, p?.securityReinsurer)]
+      : []),
     medan(REGISTER.ceding, p?.cedingCoName),
     medan(REGISTER.pemegangPolis, p?.policyHolderName),
+    medan(REGISTER.sob, p?.sobName),
     medan(REGISTER.kelasBisnis, p?.businessName),
+    medan(REGISTER.idProduk, p?.productNameId),
+    medan(REGISTER.namaProduk, p?.productName),
     medan(REGISTER.tanggalEmail, p?.dateReceived),
-    // ⛔ KETIGA INI TETAP TANPA SUMBER, dan bukan karena av belum jalan:
-    // ketiganya TIDAK PUNYA KOLOM di migrasi 050-056 mana pun.
-    { label: REGISTER.tanggalRespon, nilai: '—', belumBersumber: true },
-    { label: REGISTER.tanggalKonfirmasi, nilai: '—', belumBersumber: true },
+    // ⛔ KELIMA INI TETAP TANPA SUMBER: nol kolom di migrasi 050-056 mana pun
+    // (`MedanTanpaSumberPolicyData` di backend menyebut kelimanya).
+    tanpaKolom(REGISTER.tanggalRespon),
+    tanpaKolom(REGISTER.tanggalKonfirmasi),
     medan(REGISTER.status, p?.status),
+    tanpaKolom(REGISTER.konfirmasiBalik),
     medan(REGISTER.statusDiperbarui, p?.statusUpdate),
-    { label: REGISTER.tanggalRealisasi, nilai: '—', belumBersumber: true },
+    tanpaKolom(REGISTER.tanggalRealisasi),
+    tanpaKolom(REGISTER.catatanUnderwriter),
   ]
 }
 
@@ -141,7 +160,7 @@ export function PanelDataPolis(p: PanelProps) {
         <p className="polis__catatan" role="note">
           {p.polis === null || p.polis === undefined ? (
             <>
-              <strong>Data polis belum terbaca.</strong> Kesebelas medan ini{' '}
+              <strong>Data polis belum terbaca.</strong> Medan ini{' '}
               <em>read-only</em> dan terisi dari modul PremiumList Life lewat{' '}
               <code>.PolicyDataLife.*</code> saat nomor polis dipilih. Pilih
               nomor polis, atau polis itu memang belum ada di modul tersebut.
