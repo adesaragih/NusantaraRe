@@ -12,3 +12,8 @@ dist/
 *.exe
 *.test
 *.out
+
+# folder unggahan lokal (UNGGAHAN_DIR) - tidak pernah masuk git
+APP_RNM/unggahan/
+.worktrees/*/APP_RNM/unggahan/
+.scratch/backend-*.log*
