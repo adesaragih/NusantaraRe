@@ -28,8 +28,8 @@ RUMPUN TREATY IN   NB Treaty In ─► EDM Treaty In ─► Claim Prop ─► Ko
 RUMPUN FAC IN      NB FacIn ─► RNW Fac In ─► Endorsment Fac In ─► Claim Fac In ─► Komite Claim FacIn
                    (tiga modul hulu belum ada bahan)
 
-TERPISAH           Treaty Contract Out   (spec + 12 tiket ada; folder korpusnya BUKAN salah satu dari 17 — keanggotaan
-                                          dipastikan dulu, lihat §5)
+HULU TREATY/FAC   Treaty Contract Out ─► dibaca Claim Prop, Komite Claim Prop, Claim Fac In   (ralat 28-09: folder korpus ADA;
+                                          ia penulis tunggal enam tabel master arrangement)
 ```
 
 ⚠️ **Ketergantungan adalah kontrak DATA, bukan kode.** Oracle tetap dipakai dan tabel warisan `POOLDATA` sudah berisi data
@@ -157,3 +157,17 @@ dari `main`. Konflik di kode bersama diselesaikan dengan mengambil kedua sisi da
 
 *Disusun 28 September 2026 dari spec tiga belas modul di `.scratch/` (baris hilir/keluar/konsumen), hitungan rujukan silang antar
 spec, cacah grilling dan tiket di disk, dan tata letak worktree yang sudah dipakai tiga modul pertama.*
+
+## 8. RALAT 28-09-2026 — tiga folder korpus terlewat
+
+Peta di atas disusun dari daftar folder yang terpotong. Korpus memuat **20** folder modul, bukan 17: **Treaty Contract Out**,
+**Treaty In**, dan **Treaty In Adjustment** terlewat. Akibatnya:
+
+- **Treaty Contract Out adalah HULU**, bukan terpisah: `spec.md` b106 menyatakannya satu-satunya penulis enam tabel master
+  arrangement yang dibaca Claim Prop, Komite Claim Prop, dan Claim Fac In. Ia boleh dieksekusi **sekarang**, paralel dengan G0
+  *(brief `PROMPT-IMPLEMENTASI-MODUL-TREATY-CONTRACT-OUT.md`, worktree `modul/treaty-contract-out`, port 8093, migrasi 300–319)*.
+- **Treaty In** *(51 tiket)* dan **Treaty In Adjustment** *(13 tiket, addendum atas Treaty In)* serta **Claim Non Prop** *(37)* dan
+  **Komite Claim Non Prop** *(12)* punya bahan lengkap di `dastin/_migration-docs/` *(hanya-baca)*, disusun dari korpus
+  `D:\XML_NURE\` dengan konvensi nama tabel berbeda. Syarat sebelum dieksekusi: **paket rekonsiliasi** — cocokkan dengan korpus
+  `D:\XML\RNM_BRD\`, tetapkan hubungan Treaty In dengan NB Treaty In dan EDM, selaraskan konvensi, salin ke `.scratch/`.
+- Modul yang benar-benar tanpa bahan tinggal **tiga**: NB FacIn, RNW Fac In, Endorsment Fac In.
