@@ -286,3 +286,15 @@ terlihat dari rule yang MEMAKAI kolom itu.
 `AkibatKeputusan.SimpanPolis` menandai jalur itu, dan `Penawaran.terapkan` menjalankan penomoran +
 rekap + salinan peserta warisan di transaksi yang sama, sebelum penutupan. Akibatnya `Confirm` atas
 polis yang belum punya peserta dijawab **409**. `Offer` (`Transition11`) tidak berubah. Rincian: tiket 05b.
+
+## ⛔ Ralat bertanggal — 28 September 2026 (GILIRAN-12 paket 2: sensus remark)
+
+`ProtectAccept` dicetak beserta `pyStepsBlockName`: 4.1 (`Please choose no offer !`, `//` b720) dan
+langkah 6 beserta 6.1–6.5 (per baris detail: sum insured, sum reasured, rate, gross, net; `//` b2340,
+6.3 b2756) **ter-remark**. Keduanya ditiru di `models/polis_validasi.go` — kini **dibuang**; `Detail`
+menjadi `CacahDetail` (5.5 hanya butuh panjangnya). Gerbang posisi dibetulkan: b1207 `Offer`
+menggerbangi SELURUH langkah 4 (TypeCeding, COB), b2288 `Premium` SELURUH langkah 5 (Type sampai SOB)
+— ronde pertama hanya COB dan SOB. **Celah tercatat:** langkah 3 keluar tanpa pemeriksaan bila
+`EmailTypePL != 1` (b624; properti tanpa sumber), langkah 8 menyalakan penanda galat tanpa kalimat bila
+daftar mata uang kosong di Premium (b3792); dan `ValidasiPenawaran` **belum tersambung** ke rute mana
+pun (komentar `InputOffer.tsx` yang mengklaim sebaliknya diralat).

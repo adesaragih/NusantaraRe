@@ -16,9 +16,25 @@ package models
 //	  Activity/ValidasiUploadPL_act.xml
 //	grep -o "...\(sama\)..." | grep -o "[0-9]*" | sort -n | tail -1
 //
-// Peta langkahnya: 1 menyiapkan pesan · 2 memeriksa KEBERADAAN 32 kolom uang ·
-// 3-8 memeriksa rujukan master · 9 memeriksa SETIAP baris (38 precondition) ·
-// 10 duplikat sertifikat · 11-43 menempelkan pesannya.
+// Peta langkahnya: 1 menyiapkan pesan · 2 MENGISI 0 bagi 32 kolom uang yang
+// kosong (tiap sub-langkah `.X = 0` bila `!@PropertyHasValue(.X)`, mis. 2.1
+// b2146-2223) · 3-8 memeriksa rujukan master · 9 memeriksa SETIAP baris ·
+// 14-43 menempelkan pesannya.
+//
+// ⛔ RALAT 28-09-2026 (sensus remark GILIRAN-12): langkah 9.2-9.5, 9.11, 10,
+// 11, 12, 13, 19, dan 33 ter-remark (`//` b8025, b8198, b8368, b8517, b9667,
+// b13018, b13171, b13322, b13475, b14393, b16535). Ronde pertama menegakkan
+// empat penolakan dari langkah itu - sertifikat sudah dipakai, sertifikat
+// ganda dalam berkas, `MEDICAL_STATUS` harus FCL/M/NM, dan lampiran wajib -
+// ditambah duplikat peserta nama+DOB yang meminjam kalimat `local.err1`.
+// Kelimanya DIBUANG: sistem lama tidak pernah menolak karenanya.
+// (`CekDoubleInsured` memang hidup, tetapi di `Calculate1_Act` 7.5 untuk
+// akumulasi retensi ceding - bukan penolakan unggah.)
+//
+// ⚠️ CELAH TERCATAT - OQ-PL-12: karena langkah 2, kolom uang wajib yang
+// KOSONG di sistem lama menjadi 0 dan lolos "HARUS ADA" langkah 9.12-9.17;
+// di sini ia ditolak (ADR-U-0027: kosong bukan nol). Keputusannya milik work
+// owner.
 //
 // ⛔ PESAN DISALIN VERBATIM, termasuk yang menjanjikan hal yang tidak
 // diperiksa. Lihat `PesanNetPremium` dan OQ-069.
@@ -50,31 +66,27 @@ import (
 // bertahun-tahun memakai layar lama mengenali kalimat ini; menerjemahkannya
 // membuat mereka mengira ada galat jenis baru.
 const (
-	PesanSertifikatTerpakai = "CERTIFICATE NOMOR SUDAH DIGUNAKAN"
-	PesanSertifikatGanda    = "CERTIFICATE NOMOR TIDAK BOLEH DOUBLE"
-	PesanNamaTertanggung    = "NAME OF INSURED HARUS ADA"
-	PesanDOB                = "DOB HARUS ADA. FORMAT:dd/mm/yyyy"
-	PesanPlan               = "PLAN HARUS ADA"
-	PesanBeginDate          = "BEGIN DATE HARUS ADA. FORMAT:dd/mm/yyyy"
-	PesanExpiredDate        = "EXPIRED DATE HARUS ADA. FORMAT:dd/mm/yyyy"
-	PesanStatusMedis        = "MEDICAL STATUS HARUS FCL/M/NM"
-	PesanSumInsured         = "SUM INSURED HARUS ADA"
-	PesanCedingRetention    = "CEDING RETENTION HARUS ADA"
-	PesanSumReasured        = "SUM REASURED HARUS ADA"
-	PesanShareNusantaraRe   = "SHARE NUSANTARA RE HARUS ADA"
-	PesanGrossPremium       = "GROSS PREMIUM HARUS ADA"
-	PesanCurrency           = "CURRENCY HARUS ADA"
-	PesanStartDate          = "START_DATE HARUS ADA. FORMAT:dd/mm/yyyy"
-	PesanEffectiveDate      = "EFFECTIVE_DATE HARUS ADA. FORMAT:dd/mm/yyyy"
-	PesanSTNC               = "STNC HARUS ADA. FORMAT:dd/mm/yyyy"
-	PesanWPC                = "WPC HARUS ADA. FORMAT:dd/mm/yyyy"
-	PesanGrossValMulai      = "GROSS_VALUATION_BEGIN_DATE HARUS ADA. FORMAT:dd/mm/yyyy"
-	PesanGrossValSelesai    = "GROSS_VALUATION_EXPIRED_DATE HARUS ADA. FORMAT:dd/mm/yyyy"
-	PesanRetroValMulai      = "RETROCESSION_VALUATION_BEGIN_DATE HARUS ADA. FORMAT:dd/mm/yyyy"
-	PesanRetroValSelesai    = "RETROCESSION_VALUATION_EXPIRED_DATE HARUS ADA. FORMAT:dd/mm/yyyy"
-	PesanPolicyNo           = "POLICY_NO HARUS ADA"
-	PesanCertificateNo      = "CERTIFICATE_NO HARUS ADA"
-	PesanLampiran           = "Please Upload CSV File into attachment"
+	PesanNamaTertanggung  = "NAME OF INSURED HARUS ADA"
+	PesanDOB              = "DOB HARUS ADA. FORMAT:dd/mm/yyyy"
+	PesanPlan             = "PLAN HARUS ADA"
+	PesanBeginDate        = "BEGIN DATE HARUS ADA. FORMAT:dd/mm/yyyy"
+	PesanExpiredDate      = "EXPIRED DATE HARUS ADA. FORMAT:dd/mm/yyyy"
+	PesanSumInsured       = "SUM INSURED HARUS ADA"
+	PesanCedingRetention  = "CEDING RETENTION HARUS ADA"
+	PesanSumReasured      = "SUM REASURED HARUS ADA"
+	PesanShareNusantaraRe = "SHARE NUSANTARA RE HARUS ADA"
+	PesanGrossPremium     = "GROSS PREMIUM HARUS ADA"
+	PesanCurrency         = "CURRENCY HARUS ADA"
+	PesanStartDate        = "START_DATE HARUS ADA. FORMAT:dd/mm/yyyy"
+	PesanEffectiveDate    = "EFFECTIVE_DATE HARUS ADA. FORMAT:dd/mm/yyyy"
+	PesanSTNC             = "STNC HARUS ADA. FORMAT:dd/mm/yyyy"
+	PesanWPC              = "WPC HARUS ADA. FORMAT:dd/mm/yyyy"
+	PesanGrossValMulai    = "GROSS_VALUATION_BEGIN_DATE HARUS ADA. FORMAT:dd/mm/yyyy"
+	PesanGrossValSelesai  = "GROSS_VALUATION_EXPIRED_DATE HARUS ADA. FORMAT:dd/mm/yyyy"
+	PesanRetroValMulai    = "RETROCESSION_VALUATION_BEGIN_DATE HARUS ADA. FORMAT:dd/mm/yyyy"
+	PesanRetroValSelesai  = "RETROCESSION_VALUATION_EXPIRED_DATE HARUS ADA. FORMAT:dd/mm/yyyy"
+	PesanPolicyNo         = "POLICY_NO HARUS ADA"
+	PesanCertificateNo    = "CERTIFICATE_NO HARUS ADA"
 )
 
 // PesanNetPremium disalin VERBATIM, dan ia MENJANJIKAN ATURAN YANG TIDAK ADA.
@@ -189,26 +201,6 @@ func TanggalCSV(teks string) (time.Time, error) {
 		return time.Time{}, fmt.Errorf("%w: %q", ErrTanggalTakBerbentuk, teks)
 	}
 	return t, nil
-}
-
-// StatusMedisSah adalah ketiga nilai `MEDICAL_STATUS` yang diterima.
-//
-// `[terverifikasi]` langkah 9:
-// `.MEDICAL_STATUS=="FCL"||.MEDICAL_STATUS=="M"||.MEDICAL_STATUS=="NM"`.
-var StatusMedisSah = []string{"FCL", "M", "NM"}
-
-// StatusMedisDiterima menjawab apakah nilainya salah satu dari ketiganya.
-//
-// ⚠️ Pembandingannya PEKA huruf besar, sama dengan Pega. `fcl` ditolak, dan
-// itu bukan kekakuan: ketiganya kode, dan kode tetap teks apa adanya
-// (ADR-U-0022).
-func StatusMedisDiterima(nilai string) bool {
-	for _, s := range StatusMedisSah {
-		if nilai == s {
-			return true
-		}
-	}
-	return false
 }
 
 // KolomUangUnggah adalah kolom uang yang divalidasi, urut dokumen.
@@ -339,46 +331,16 @@ func (h HasilUnggah) BarisDitolak() []int {
 	return keluar
 }
 
-// pemisahKunciPeserta memisahkan nama dari tanggal lahir di dalam kunci.
-//
-// ⚠️ Karakter yang TIDAK mungkin muncul di nama maupun tanggal. Memakai
-// tanda hubung atau spasi membuat "AB" + "C" dan "A" + "BC" berkunci sama -
-// dan dua peserta berbeda akan dilaporkan sebagai duplikat.
-const pemisahKunciPeserta = "\x00"
-
-// kunciPeserta menyusun kunci duplikat peserta.
-//
-// `[terverifikasi]` `CekDoubleInsured`: `upper(INSURED)` dan `DOB`.
-//
-// ⛔ HURUF BESAR DI KEDUA SISI. Prosedur aslinya membandingkan
-// `upper(INSURED)` dengan parameternya APA ADANYA - jadi kecocokannya
-// bergantung pemanggil yang mengirim nama dalam huruf besar. Satu sisi yang
-// lupa membuat duplikat lolos tanpa jejak. Kami menaikkan KEDUANYA.
-func kunciPeserta(nama, dob string) string {
-	return strings.ToUpper(strings.TrimSpace(nama)) + pemisahKunciPeserta +
-		strings.TrimSpace(dob)
-}
-
 // ValidasiUnggah memeriksa seluruh baris dan mengumpulkan setiap penolakan.
-//
-// `punyaLampiran` memenuhi langkah 11 ("BELUM ADA LAMPIRAN").
 //
 // ⛔ SELURUH BARIS DIPERIKSA, bahkan sesudah satu ditolak - lihat
 // `HasilUnggah.Ditolak`.
-func ValidasiUnggah(baris []BarisUnggah, punyaLampiran bool) HasilUnggah {
+func ValidasiUnggah(baris []BarisUnggah) HasilUnggah {
 	hasil := HasilUnggah{CacahBaris: len(baris), Ditolak: []Penolakan{}}
 	tolak := func(b int, kolom, pesan, sebab string) {
 		hasil.Ditolak = append(hasil.Ditolak, Penolakan{
 			Baris: b, Kolom: kolom, Pesan: pesan, Sebab: sebab})
 	}
-
-	if !punyaLampiran {
-		tolak(0, "", PesanLampiran, "berkas CSV tidak disertakan dalam permintaan")
-	}
-
-	// Baris PERTAMA yang memakai sebuah nomor sertifikat / kunci peserta.
-	sertifikatPertama := map[string]int{}
-	pesertaPertama := map[string]int{}
 
 	for _, b := range baris {
 		ambil := func(k string) string { return strings.TrimSpace(b.Nilai[k]) }
@@ -399,11 +361,6 @@ func ValidasiUnggah(baris []BarisUnggah, punyaLampiran bool) HasilUnggah {
 				tolak(b.Nomor, w.Kolom, w.Pesan,
 					fmt.Sprintf("%q bukan dd/mm/yyyy", v))
 			}
-		}
-
-		if ms := ambil("MEDICAL_STATUS"); !StatusMedisDiterima(ms) {
-			tolak(b.Nomor, "MEDICAL_STATUS", PesanStatusMedis,
-				fmt.Sprintf("%q di luar FCL/M/NM", ms))
 		}
 
 		// ⛔ SETIAP kolom uang diperiksa BENTUKNYA bila terisi; keenam yang
@@ -430,30 +387,6 @@ func ValidasiUnggah(baris []BarisUnggah, punyaLampiran bool) HasilUnggah {
 				tolak(b.Nomor, k, pesan, sebab)
 			}
 		}
-
-		if no := ambil("CERTIFICATE_NO"); no != "" {
-			if awal, ada := sertifikatPertama[no]; ada {
-				tolak(b.Nomor, "CERTIFICATE_NO", PesanSertifikatGanda,
-					fmt.Sprintf("nomor sertifikat %q sudah dipakai baris %d", no, awal))
-			} else {
-				sertifikatPertama[no] = b.Nomor
-			}
-		}
-
-		nama, dob := ambil("NAME_OF_INSURED"), ambil("DOB")
-		if nama != "" && dob != "" {
-			k := kunciPeserta(nama, dob)
-			if awal, ada := pesertaPertama[k]; ada {
-				// ⛔ Pesannya MENUNJUK baris pertama yang bentrok, sejajar
-				// dengan `min(NO)` di `CekDoubleInsured`. "Ada duplikat"
-				// tanpa menyebut lawannya menyuruh orang mencarinya sendiri.
-				tolak(b.Nomor, "NAME_OF_INSURED", PesanSertifikatTerpakai,
-					fmt.Sprintf("peserta ini sudah ada di baris %d "+
-						"(nama tanpa peduli huruf besar/kecil + DOB)", awal))
-			} else {
-				pesertaPertama[k] = b.Nomor
-			}
-		}
 	}
 	return hasil
 }
@@ -467,7 +400,7 @@ func ValidasiUnggah(baris []BarisUnggah, punyaLampiran bool) HasilUnggah {
 // berkasmu.
 func KolomWajibUnggah() []string {
 	nama := make([]string, 0,
-		len(kolomTeksWajib)+len(kolomTanggalWajib)+len(kolomUangWajib)+1)
+		len(kolomTeksWajib)+len(kolomTanggalWajib)+len(kolomUangWajib))
 	for _, w := range kolomTeksWajib {
 		nama = append(nama, w.Kolom)
 	}
@@ -477,7 +410,6 @@ func KolomWajibUnggah() []string {
 	for k := range kolomUangWajib {
 		nama = append(nama, k)
 	}
-	nama = append(nama, "MEDICAL_STATUS")
 	sort.Strings(nama)
 	return nama
 }

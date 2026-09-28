@@ -198,6 +198,13 @@ Konsisten dengan graf: `Decision1` dan `Decision3` memakai `IsLifeAccepted`.
 | `SubmitPremiumList_Act` | dari `TANGGAL_CLOSING` | `20260122T072213` |
 | `InsertJsonPolisLife_Act` | **hardcode `>25`** (baris ~1170) | `20260728T024422` |
 
+⛔ *Ralat 28-09-2026 (sensus remark GILIRAN-12):* `SubmitPremiumList_Act` langkah 2–4 membaca
+`TANGGAL_CLOSING`, tetapi hasilnya hanya mengalir ke `TempGenerate.CARI1/2` (tak dibaca rule mana
+pun) dan ke langkah 15 yang **ter-remark** (`//` b3398; b3491 miliknya). Dua aturan yang **hidup**:
+nomor PL digulir `PROC_GENERATE_SEQUENCE_NUMBER` (membaca tabel itu sendiri), dan `ProdDateTime`
+digeser `InsertJsonPolisLife_Act` langkah 4 (`>25` tertanam, b1170). Keputusan "ikuti yang dari DB"
+tetap; penerapannya pada `ProdDateTime` (yang di Pega memakai 25) dikonfirmasi ulang — **OQ-PL-13**.
+
 `[keputusan work owner]` **Ikuti yang dari DB.** Sistem baru membaca `TANGGAL_CLOSING`/konfigurasi;
 **jangan tanam `25`**.
 

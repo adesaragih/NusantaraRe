@@ -21,7 +21,7 @@ func wib(tahun int, bulan time.Month, hari, jam int) time.Time {
 }
 
 func TestPerbandinganLebihBesarBukanLebihBesarSama(t *testing.T) {
-	// ⛔ b1211 dan b3491 keduanya memakai `>`. Satu tanda sama dengan
+	// ⛔ b1211 dan b1170 keduanya memakai `>` (b3491 ter-remark, sensus 28-09-2026). Satu tanda sama dengan
 	// menggeser SEHARI PENUH transaksi ke bulan yang salah.
 	const tutupBuku = 25
 

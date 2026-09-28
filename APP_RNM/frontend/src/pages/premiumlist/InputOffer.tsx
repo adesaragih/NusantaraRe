@@ -15,9 +15,10 @@
 // `Offer` atau `Premium`. Menyembunyikan langkah itu berarti layar
 // memutuskan sendiri hal yang di sistem lama ditanyakan.
 //
-// ⚠️ Gerbang `ProtectAccept` dijalankan BACKEND. Yang di sini hanya
-// menampilkan kalimatnya — VERBATIM, termasuk `Please choose no offer !`
-// dengan spasi sebelum tanda serunya.
+// ⚠️ Gerbang `ProtectAccept` (`models.ValidasiPenawaran`) BELUM TERSAMBUNG
+// ke rute mana pun — pemanggilnya hanya uji (sensus remark 28-09-2026). Bila
+// kelak tersambung, layar ini hanya menampilkan kalimatnya VERBATIM.
+// (`Please choose no offer !` ter-remark di XML dan dibuang.)
 
 import { useEffect, useState } from 'react'
 

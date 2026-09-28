@@ -221,13 +221,17 @@ func (u *UnggahPremiumList) Tinjau(ctx context.Context, pelaku Pelaku,
 // lebih buruk, sebaliknya.
 func periksaBerkas(berkas io.Reader) ([]models.BarisUnggah, models.HasilUnggah, error) {
 	if berkas == nil {
-		return nil, models.ValidasiUnggah(nil, false), nil
+		// ⛔ Galat permintaan, bukan penolakan korpus: "Please Upload CSV File
+		// into attachment" milik langkah 11/33 yang ter-remark (sensus
+		// 28-09-2026). Handler sudah menjawab 400 lebih dulu.
+		return nil, models.HasilUnggah{}, fmt.Errorf("%w: berkas CSV tidak disertakan",
+			ErrPermintaanTidakSah)
 	}
 	baris, err := BacaCSVUnggah(berkas)
 	if err != nil {
 		return nil, models.HasilUnggah{}, err
 	}
-	return baris, models.ValidasiUnggah(baris, true), nil
+	return baris, models.ValidasiUnggah(baris), nil
 }
 
 // HasilSimpanUnggah adalah jawaban penyimpanan.

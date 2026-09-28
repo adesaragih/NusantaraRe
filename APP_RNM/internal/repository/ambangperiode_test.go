@@ -2,10 +2,13 @@ package repository
 
 // Nol konstanta ambang tutup buku di kode produksi - AC tiket 02.
 //
-// ⛔ SEBAB PENJAGA INI ADA. Pega punya DUA versi hidup berdampingan:
-// `SubmitPremiumList_Act` (20260122) membaca ambang dari tabel, sedangkan
-// `InsertJsonPolisLife_Act` (20260728 - LEBIH BARU) masih menanam `25` di
-// preconditionnya b1170. `[keputusan work owner]` ikuti yang dari DB.
+// ⛔ SEBAB PENJAGA INI ADA. Pega punya DUA aturan hidup berdampingan:
+// `PROC_GENERATE_SEQUENCE_NUMBER` menggulir periode nomor PL dari tabel
+// `TANGGAL_CLOSING`, sedangkan `InsertJsonPolisLife_Act` (20260728) masih
+// menanam `25` di precondition langkah 4 b1170. `[keputusan work owner]`
+// ikuti yang dari DB. (Ralat sensus 28-09-2026: yang dulu disebut pembaca
+// tabel, `SubmitPremiumList_Act`, hanya mengalirkan nilainya ke langkah 15
+// yang ter-remark - OQ-PL-13.)
 //
 // Artinya menanam angkanya kembali adalah kekeliruan yang sudah pernah
 // terjadi di sistem yang ditiru, dan yang paling mungkin terulang: ia

@@ -121,7 +121,7 @@ berlaku pada efek keluar di tiket 06), **ADR-0011**.
 | Bagian | Baris | Nasib |
 | --- | ---: | --- |
 | step 16 `Commit` eksplisit | 5294 | **mati** — Go memegang transaksi (**ADR-0015**) |
-| step 17 `Connect-REST` `ConvertJsonNusareToProduction` | 5383 | **mati** — tidak dipakai |
+| step 17 `Connect-REST` `InsertLifePremiumDetail` *(dulu tertulis `ConvertJsonNusareToProduction` — diralat 28-09-2026, b5422)* | 5383 | **mati** — tidak dipakai |
 
 `[keputusan work owner]` **Juga tidak dimigrasikan** meski di korpus **AKTIF**: empat gerbang treaty
 ID pada step 6–7 — `@contains(.ID,"1000032")` **QS** (1714), `"1000033"` **2nd QS** (1856),
@@ -189,7 +189,7 @@ grep -n "<pyStepsActivityName>\|<pyStepsDescription>[^<]\|<RequestType>\|<pyStep
 | 14 | `SendEmailNotification` — *"Kalau blm, email errornya"* | → tiket **06** (outbox) |
 | 15 | `serviceInsertArasapasLife_act` | → tiket **06** (outbox + stub) |
 | 16 | `Commit` | ➖ `//` mati (b5294); Go memegang transaksi |
-| 17 | `Connect-REST ConvertJsonNusareToProduction` | ➖ `//` mati (b5383) |
+| 17 | `Connect-REST InsertLifePremiumDetail` *(diralat 28-09-2026)* | ➖ `//` mati (b5383) |
 
 Salinan peserta ke `M_LIFE_PREMIUM_DETAIL` (`InsertLifePremiumDetail_act` → `SaveMasterLPDet`, pl2)
 ikut di jalur yang sama.

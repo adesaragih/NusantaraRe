@@ -16,7 +16,10 @@ package repository
 //	SELECT * FROM POOLDATA.TANGGAL_CLOSING
 //
 // ⚠️ `SELECT *` ditiru sebagai `SELECT TANGGAL` - kolom yang DIPAKAI
-// `SubmitPremiumList_Act` b918 (`TglProd.pxResults(1).TANGGAL`). Membawa
+// `SubmitPremiumList_Act` b918 (`TglProd.pxResults(1).TANGGAL`). (Sensus remark
+// 28-09-2026: di Pega nilai b918 hanya mengalir ke langkah 15 yang ter-remark;
+// pembaca hidup `TANGGAL_CLOSING` adalah `PROC_GENERATE_SEQUENCE_NUMBER`.
+// Pembaca ini ada karena `[keputusan work owner]` "ikuti yang dari DB".) Membawa
 // seluruh kolom berarti perubahan tabel di hulu mengubah bentuk baris kami
 // tanpa ada yang memintanya.
 //

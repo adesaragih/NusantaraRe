@@ -2,23 +2,43 @@ package models
 
 // Gerbang simpan penawaran polis - `ProtectAccept`, tiket 01 bagian 2.
 //
-// Untuk apa berkas ini: dua puluh pemeriksaan yang `Activity/ProtectAccept.xml`
-// jalankan sebelum sebuah penawaran boleh maju. Seluruhnya MURNI.
+// Untuk apa berkas ini: tiga belas pemeriksaan HIDUP yang
+// `Activity/ProtectAccept.xml` jalankan sebelum sebuah penawaran boleh maju.
+// Seluruhnya MURNI.
 //
 // ⛔ PESANNYA VERBATIM, termasuk yang janggal. `System Reinsurance can't null`
-// dan `Please choose no offer !` - beserta spasi sebelum tanda serunya - adalah
-// kalimat yang pemakai sistem lama hafal. Memperbaiki ejaannya berarti layar
-// baru berbicara dengan kalimat yang tidak pernah ada, dan orang yang mencari
-// kalimat lamanya tidak akan menemukannya.
+// adalah kalimat yang pemakai sistem lama hafal. Memperbaiki ejaannya berarti
+// layar baru berbicara dengan kalimat yang tidak pernah ada, dan orang yang
+// mencari kalimat lamanya tidak akan menemukannya.
 //
-// Cara rule itu bekerja, dibaca sebagai pohon 28-09-2026:
+// Cara rule itu bekerja, dibaca sebagai pohon 28-09-2026 (beserta
+// `pyStepsBlockName`, sensus remark GILIRAN-12):
 //
 //	b333  `Page-Clear-Messages`
 //	b430  `ProtectLife.CARI1 = 0`          <- penanda "belum ada galat"
-//	...   tiap pemeriksaan: prasyaratnya MUNCUL SESUDAH parameternya di DOM,
-//	      `WhenTrue=2` LANJUT (galat dicatat), `WhenFalse=3` LEWATI
-//	      `ProtectLife.CARI1 = 1` dan `Local.Err = Local.Err + "\n" + <pesan>`
+//	3     b624 `EmailTypePL==1` WhenFalse=6 -> KELUAR (lihat celah di bawah)
+//	4     b1207 `Position=="Offer"`   - 4.2 TypeCeding, 4.3 COB
+//	      4.1 NoOffer - ⛔ TER-REMARK (`//` b720)
+//	5     b2288 `Position=="Premium"` - 5.1 Type ... 5.6 SOB
+//	6     per baris detail (sum insured, sum reasured, rate, gross, net) -
+//	      ⛔ TER-REMARK (`//` b2340; 6.3 pun b2756)
+//	7     per mata uang: `PREMIUM<=0`, `BALANCE<=0`
+//	8     b3792 `Premium && CurrencyList kosong` - lihat celah di bawah
+//	9-11  `CurrencyList(1)` saat Premium (umum, TP, TR)
 //	b4462 `Page-Set-Messages` berprasyarat b4563 `ProtectLife.CARI1==1`
+//
+// ⛔ RALAT 28-09-2026 (sensus remark GILIRAN-12): ronde pertama meniru 4.1
+// (`Please choose no offer !`) dan kelima pemeriksaan per baris langkah 6 -
+// keduanya ter-remark, jadi sistem lama tidak pernah menolak karenanya.
+// Keduanya DIBUANG. Ronde itu juga memasang gerbang posisi hanya pada COB dan
+// SOB; di rule, b1207 dan b2288 menggerbangi SELURUH langkah 4 dan 5 - kini
+// ditiru begitu.
+//
+// ⚠️ CELAH TERCATAT (bukan ditiru): langkah 3 keluar tanpa satu pemeriksaan
+// pun bila `pyWorkPage.EmailTypePL != 1`, dan langkah 8 menyalakan penanda
+// galat tanpa kalimat bila daftar mata uang kosong di posisi Premium.
+// `EmailTypePL` tidak punya sumber di aplikasi ini. Dan gerbang ini BELUM
+// TERSAMBUNG ke rute mana pun - pemanggilnya hanya uji.
 //
 // ⚠️ Jadi rule itu MENGUMPULKAN seluruh galat lalu menampilkannya sekali -
 // bukan berhenti pada yang pertama. Ditiru apa adanya: pemakai yang harus
@@ -28,7 +48,6 @@ package models
 // Dibaca sesudah: polis_penawaran.go (tahap dan posisinya).
 
 import (
-	"strconv"
 	"strings"
 
 	"github.com/cockroachdb/apd/v3"
@@ -36,7 +55,6 @@ import (
 
 // Pesan galat penawaran - VERBATIM `Local.Err` di `ProtectAccept.xml`.
 const (
-	PesanNoOfferKosong      = "Please choose no offer !"      // b781
 	PesanTypeCedingKosong   = "System Reinsurance can't null" // b943
 	PesanBusinessCodeKosong = "COB can't null"                // b1105
 	PesanTypeKosong         = "Type can't null"               // b1368
@@ -49,19 +67,6 @@ const (
 	PesanBalanceNol         = "Balance is 0"                  // b3556, b3906, b4068, b4300
 )
 
-// Pesan per baris detail - `" +local.idx+ "` di tengahnya.
-//
-// ⚠️ `local.idx` NOMOR URUT baris, 1-based, sebagaimana `.pxListSubscript` -
-// bukan pengenal barisnya. Nomor urut dipertahankan supaya pesannya dapat
-// dibandingkan dengan sistem lama.
-const (
-	pesanSumInsuredNol   = "Sum insured number %s is 0"   // b2493
-	pesanSumReasuredNol  = "Sum reasured number %s is 0"  // b2655
-	pesanRateNol         = "Rate number %s is 0"          // b2817
-	pesanGrossPremiumNol = "Gross premium number %s is 0" // b2979
-	pesanNetPremiumNol   = "Net premium number %s is 0"   // b3141
-)
-
 // PenawaranPolis adalah medan header yang `ProtectAccept` periksa.
 //
 // ⚠️ Seluruhnya TEKS, dan itu disengaja: yang diperiksa rule aslinya adalah
@@ -70,7 +75,6 @@ const (
 type PenawaranPolis struct {
 	// Posisi - `Offer` atau `Premium`; lihat PosisiOffer/PosisiPremium.
 	Posisi           string
-	NoOffer          string
 	TypeCeding       string
 	BusinessCode     string
 	Type             string
@@ -78,23 +82,11 @@ type PenawaranPolis struct {
 	ProRateType      string
 	MarketingName    string
 	SourceOfBusiness string
-	// Detail adalah baris `PremiumListSummary.PremiumListDetail`.
-	Detail []BarisDetailPenawaran
+	// CacahDetail - `@LengthOfPageList(PremiumListSummary.PremiumListDetail)`
+	// (5.5). Isi barisnya tidak diperiksa: langkah 6 ter-remark.
+	CacahDetail int
 	// MataUang adalah `PremiumListSummary.CurrencyList`.
 	MataUang []BarisMataUangPenawaran
-}
-
-// BarisDetailPenawaran adalah satu baris detail yang diperiksa.
-//
-// ⛔ Kelima nilainya `Money`/`Ratio`, bukan float. Yang diperiksa rule aslinya
-// `== 0` dan `< 0`; membandingkan float dengan nol adalah cara termudah
-// meloloskan angka yang sebenarnya 0,000001 (ADR-U-0003).
-type BarisDetailPenawaran struct {
-	SumInsured   Money
-	SumReasured  Money
-	Rate         Ratio
-	GrossPremium Money
-	NetPremium   Money
 }
 
 // BarisMataUangPenawaran adalah satu baris `CurrencyList`.
@@ -107,7 +99,7 @@ type BarisMataUangPenawaran struct {
 	DiscountPremiumRefundRetro Money
 }
 
-// ValidasiPenawaran menjalankan seluruh pemeriksaan `ProtectAccept`.
+// ValidasiPenawaran menjalankan seluruh pemeriksaan `ProtectAccept` yang hidup.
 //
 // Mengembalikan SELURUH pesan, berurutan seperti rule aslinya. Daftar kosong
 // berarti penawaran boleh maju.
@@ -117,82 +109,48 @@ func ValidasiPenawaran(p PenawaranPolis) []string {
 	var galat []string
 	tambah := func(pesan string) { galat = append(galat, pesan) }
 
-	// Pemeriksaan header. Urutannya urutan langkah di rule.
-	if kosong(p.NoOffer) {
-		tambah(PesanNoOfferKosong) // b831 -> b781
-	}
-	if kosong(p.TypeCeding) {
-		tambah(PesanTypeCedingKosong) // b993 -> b943
-	}
-	// ⛔ DUA syarat, dan keduanya harus benar: b1155 `BusinessCode==""` DAN
-	// b1207 `Position=="Offer"`. COB hanya wajib di layar penawaran.
-	if kosong(p.BusinessCode) && p.Posisi == PosisiOffer {
-		tambah(PesanBusinessCodeKosong) // b1105
-	}
-	if kosong(p.Type) {
-		tambah(PesanTypeKosong) // b1418 -> b1368
-	}
-	if kosong(p.ProductName) {
-		tambah(PesanProductNameKosong) // b1580 -> b1530
-	}
-	if kosong(p.ProRateType) {
-		tambah(PesanProRateTypeKosong) // b1742 -> b1692
-	}
-	if kosong(p.MarketingName) {
-		tambah(PesanMarketingKosong) // b1904 -> b1854
-	}
-	// b2066 `@LengthOfPageList(...PremiumListDetail) = 0`.
-	if len(p.Detail) == 0 {
-		tambah(PesanBelumUnggahCSV) // b2016
-	}
-	// b2236 `SourceOfBusiness==""` DAN b2288 `Position=="Premium"`.
-	if kosong(p.SourceOfBusiness) && p.Posisi == PosisiPremium {
-		tambah(PesanSOBKosong) // b2186
-	}
-
-	// Pemeriksaan per baris detail. `local.idx` 1-based.
-	for i, b := range p.Detail {
-		idx := strconv.Itoa(i + 1)
-		// b2543 `SUM_INSURED==0 || SUM_INSURED<0`
-		if nolAtauKurang(b.SumInsured.Amount) {
-			tambah(sisipkanIndeks(pesanSumInsuredNol, idx))
+	// Langkah 4 - HANYA di posisi Offer (b1207 menggerbangi seluruh langkah).
+	if p.Posisi == PosisiOffer {
+		if kosong(p.TypeCeding) {
+			tambah(PesanTypeCedingKosong) // 4.2 b993 -> b943
 		}
-		// b2705 `SUM_REASURED==0` - HANYA nol, tanpa "atau kurang".
-		//
-		// ⚠️ Dipertahankan apa adanya. Rule aslinya memang tidak menguji
-		// negatif di sini sedangkan di empat pemeriksaan lain ia menguji;
-		// "memperbaikinya" berarti menolak baris yang sistem lama terima.
-		if nolSaja(b.SumReasured.Amount) {
-			tambah(sisipkanIndeks(pesanSumReasuredNol, idx))
+		if kosong(p.BusinessCode) {
+			tambah(PesanBusinessCodeKosong) // 4.3 b1155 -> b1105
 		}
-		// b2867 `RATE==0` - juga hanya nol.
-		if nolSaja(b.Rate.Value) {
-			tambah(sisipkanIndeks(pesanRateNol, idx))
+	}
+	// Langkah 5 - HANYA di posisi Premium (b2288 menggerbangi seluruh langkah).
+	if p.Posisi == PosisiPremium {
+		if kosong(p.Type) {
+			tambah(PesanTypeKosong) // 5.1 b1418 -> b1368
 		}
-		// b3029 `GROSS_PREMIUM==0 || GROSS_PREMIUM<0`
-		if nolAtauKurang(b.GrossPremium.Amount) {
-			tambah(sisipkanIndeks(pesanGrossPremiumNol, idx))
+		if kosong(p.ProductName) {
+			tambah(PesanProductNameKosong) // 5.2 b1580 -> b1530
 		}
-		// b3191 `NET_PREMIUM==0 || NET_PREMIUM<0`
-		if nolAtauKurang(b.NetPremium.Amount) {
-			tambah(sisipkanIndeks(pesanNetPremiumNol, idx))
+		if kosong(p.ProRateType) {
+			tambah(PesanProRateTypeKosong) // 5.3 b1742 -> b1692
+		}
+		if kosong(p.MarketingName) {
+			tambah(PesanMarketingKosong) // 5.4 b1904 -> b1854
+		}
+		// 5.5 b2066 `@LengthOfPageList(...PremiumListDetail) = 0`.
+		if p.CacahDetail == 0 {
+			tambah(PesanBelumUnggahCSV) // b2016
+		}
+		if kosong(p.SourceOfBusiness) {
+			tambah(PesanSOBKosong) // 5.6 b2236 -> b2186
 		}
 	}
 
-	// Pemeriksaan tingkat mata uang - seluruhnya hanya saat `Premium`.
-	//
-	// ⚠️ b3444 `PREMIUM<=0` dan b3606 `BALANCE<=0` TIDAK bersyarat posisi di
-	// rule aslinya; yang bersyarat `Position=="Premium"` adalah pemeriksaan
-	// atas `CurrencyList(1)` (b3958, b4144, b4376). Perbedaan itu ditiru apa
-	// adanya, dan ia terbaca dari dua kelompok di bawah.
+	// Langkah 7 - per mata uang, TANPA gerbang posisi.
 	for _, m := range p.MataUang {
 		if nolAtauKurang(m.Premium.Amount) {
-			tambah(PesanPremiumNol) // b3444 -> b3394
+			tambah(PesanPremiumNol) // 7.1 b3444 -> b3394
 		}
 		if nolAtauKurang(m.Balance.Amount) {
-			tambah(PesanBalanceNol) // b3606 -> b3556
+			tambah(PesanBalanceNol) // 7.2 b3606 -> b3556
 		}
 	}
+	// Langkah 9-11 - `CurrencyList(1)`, hanya saat Premium.
 	if p.Posisi == PosisiPremium && len(p.MataUang) > 0 {
 		pertama := p.MataUang[0]
 		// b3958 `CurrencyList(1).BALANCE<=0`
@@ -230,28 +188,18 @@ func GabungPesanPenawaran(pesan []string) string {
 // kosong membaca medan teks apa adanya - padanan `== ""` di rule.
 func kosong(s string) bool { return strings.TrimSpace(s) == "" }
 
-// sisipkanIndeks menaruh nomor urut ke tengah pesan.
-func sisipkanIndeks(pola, idx string) string {
-	return strings.Replace(pola, "%s", idx, 1)
-}
-
 // Pembanding desimal untuk gerbang `ProtectAccept`.
 //
 // ⛔ KOSONG DIPERLAKUKAN SEBAGAI NOL DI SINI, dan HANYA di sini.
 // ADR-U-0027 menyatakan kosong bukan nol, dan itu tetap berlaku di seluruh
 // model ini - `Money.Kosong()` ada justru untuk membedakannya. Tetapi rule
-// yang ditiru menulis `.SUM_INSURED==0`, dan di Pega perbandingan itu bernilai
+// yang ditiru menulis `.PREMIUM<=0`, dan di Pega perbandingan itu bernilai
 // BENAR untuk properti yang belum diisi.
 //
 // Menolak menyamakannya di sini berarti isian yang dikosongkan pemakai lolos
 // gerbang yang di sistem lama menahannya - selisih yang justru merugikan.
 // Penyimpangan karena itu dinyatakan, disempitkan ke berkas ini, dan tidak
 // merembet ke `Money` sendiri.
-
-// nolSaja meniru `x == 0` - tanpa "atau kurang".
-func nolSaja(d *apd.Decimal) bool {
-	return d == nil || d.IsZero()
-}
 
 // nolAtauKurang meniru `x == 0 || x < 0`.
 func nolAtauKurang(d *apd.Decimal) bool {
@@ -260,7 +208,7 @@ func nolAtauKurang(d *apd.Decimal) bool {
 
 // kurangDariNol meniru `x < 0` - nol dan kosong LOLOS.
 //
-// ⚠️ Berbeda dengan kedua di atas: `DISCOUNT_PREMIUM_RETRO<0` b4190
+// ⚠️ Berbeda dengan yang di atas: `DISCOUNT_PREMIUM_RETRO<0` b4190
 // hanya menolak yang negatif. Diskon nol adalah diskon yang sah.
 func kurangDariNol(d *apd.Decimal) bool {
 	return d != nil && d.Negative && !d.IsZero()

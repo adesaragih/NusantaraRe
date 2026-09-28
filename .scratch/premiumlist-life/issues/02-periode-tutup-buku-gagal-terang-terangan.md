@@ -42,6 +42,13 @@ ambang dari tabel; `InsertJsonPolisLife_Act` (`ASM-FW-GISFW-WORK-LIFE` / `INSERT
 `20260728` — **lebih baru**) masih menanam konstanta: step 4 dengan precondition
 `@toDecimal(Local.currentdate)>25` (baris 1170). `[keputusan work owner]` **ikuti yang dari DB.**
 
+⛔ *Ralat 28-09-2026 (sensus remark GILIRAN-12):* `SubmitPremiumList_Act` langkah 2–4 membaca
+`TANGGAL_CLOSING`, tetapi hasilnya hanya mengalir ke `TempGenerate.CARI1/2` (tak dibaca rule mana
+pun) dan ke langkah 15 yang **ter-remark** (`//` b3398; b3491 miliknya). Dua aturan yang **hidup**:
+nomor PL digulir `PROC_GENERATE_SEQUENCE_NUMBER` (membaca tabel itu sendiri), dan `ProdDateTime`
+digeser `InsertJsonPolisLife_Act` langkah 4 (`>25` tertanam, b1170). Keputusan "ikuti yang dari DB"
+tetap; penerapannya pada `ProdDateTime` (yang di Pega memakai 25) dikonfirmasi ulang — **OQ-PL-13**.
+
 `[data DBA]` `POOLDATA.PROC_GENERATE_SEQUENCE_NUMBER` juga menggulir periode lewat
 `POOLDATA.TANGGAL_CLOSING` — jadi tabel ini adalah sumber tunggal aturan periode di kedua sisi.
 

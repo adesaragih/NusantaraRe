@@ -70,7 +70,10 @@ aktif hanyalah step **16** `serviceInsertArasapasLife_act`, dijaga `IsPEGAPROD` 
 itu**, bukan di sini. Tiket ini hanya mengikat jalur **new business**.
 
 `[terverifikasi]` `ConvertJsonNusareToProduction` (`Connect-REST`, step 17) **REMARK** — tidak
-dimigrasikan. *(AC 30 spec)*
+dimigrasikan. *(AC 30 spec)* ⛔ *Ralat 28-09-2026 (sensus remark):* step 17 `InsertJsonPolisLife_Act`
+yang ter-remark memanggil `InsertLifePremiumDetail` (b5422). `convertJsonNusareToProduction` **hidup**
+di `serviceInsertArasapasLife_act` langkah 5 (b963) — bagian efek Arasapas tiket ini, yang masih stub.
+Premis AC 30 → **OQ-PL-14**.
 
 ## ADR terkait
 

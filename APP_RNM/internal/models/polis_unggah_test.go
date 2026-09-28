@@ -129,19 +129,6 @@ func TestTanggalEpochDiterima(t *testing.T) {
 	}
 }
 
-func TestStatusMedisTigaNilai(t *testing.T) {
-	for _, s := range []string{"FCL", "M", "NM"} {
-		if !StatusMedisDiterima(s) {
-			t.Errorf("%q ditolak", s)
-		}
-	}
-	for _, s := range []string{"", "fcl", "m", "X", "FCL ", "NMM"} {
-		if StatusMedisDiterima(s) {
-			t.Errorf("%q diterima", s)
-		}
-	}
-}
-
 // TestKolomUangUnggahTigaPuluhDua - sensus, dan ralat tiket.
 func TestKolomUangUnggahTigaPuluhDua(t *testing.T) {
 	const mau = 32
@@ -211,7 +198,7 @@ func itoa(n int) string {
 }
 
 func TestValidasiUnggahMelewatkanBerkasYangBenar(t *testing.T) {
-	h := ValidasiUnggah([]BarisUnggah{barisSah(1), barisSah(2)}, true)
+	h := ValidasiUnggah([]BarisUnggah{barisSah(1), barisSah(2)})
 	if !h.Lolos() {
 		for _, p := range h.Ditolak {
 			t.Errorf("baris %d kolom %s: %s (%s)", p.Baris, p.Kolom, p.Pesan, p.Sebab)
@@ -228,7 +215,7 @@ func TestSetiapPenolakanMenyebutKolomDanBaris(t *testing.T) {
 	b.Nilai["PLAN"] = ""
 	b.Nilai["SUM_INSURED"] = "1,000"
 	b.Nilai["DOB"] = "1970-01-02"
-	h := ValidasiUnggah([]BarisUnggah{b}, true)
+	h := ValidasiUnggah([]BarisUnggah{b})
 	if h.Lolos() {
 		t.Fatal("berkas rusak diterima")
 	}
@@ -260,88 +247,6 @@ func TestSetiapPenolakanMenyebutKolomDanBaris(t *testing.T) {
 	}
 }
 
-func TestSertifikatGandaDitolakDanMenunjukBarisPertama(t *testing.T) {
-	a, b := barisSah(1), barisSah(2)
-	b.Nilai["CERTIFICATE_NO"] = a.Nilai["CERTIFICATE_NO"]
-	h := ValidasiUnggah([]BarisUnggah{a, b}, true)
-	var kena *Penolakan
-	for i := range h.Ditolak {
-		if h.Ditolak[i].Kolom == "CERTIFICATE_NO" {
-			kena = &h.Ditolak[i]
-		}
-	}
-	if kena == nil {
-		t.Fatal("sertifikat ganda tidak ditolak")
-	}
-	if kena.Baris != 2 {
-		t.Errorf("ditolak di baris %d, mau 2 - yang PERTAMA tidak bersalah", kena.Baris)
-	}
-	if !strings.Contains(kena.Sebab, "baris 1") {
-		t.Errorf("sebab %q tidak menunjuk baris pertama", kena.Sebab)
-	}
-	if kena.Pesan != PesanSertifikatGanda {
-		t.Errorf("pesan %q, mau VERBATIM %q", kena.Pesan, PesanSertifikatGanda)
-	}
-}
-
-// TestPesertaGandaTanpaPeduliHurufBesar - `upper(INSURED)` + `DOB`.
-func TestPesertaGandaTanpaPeduliHurufBesar(t *testing.T) {
-	a, b := barisSah(1), barisSah(2)
-	b.Nilai["NAME_OF_INSURED"] = strings.ToLower(a.Nilai["NAME_OF_INSURED"])
-	b.Nilai["DOB"] = a.Nilai["DOB"]
-	h := ValidasiUnggah([]BarisUnggah{a, b}, true)
-	var kena *Penolakan
-	for i := range h.Ditolak {
-		if h.Ditolak[i].Kolom == "NAME_OF_INSURED" {
-			kena = &h.Ditolak[i]
-		}
-	}
-	if kena == nil {
-		t.Fatal("peserta ganda beda huruf besar TIDAK terdeteksi - " +
-			"upper() hanya di satu sisi adalah cacat yang ditiru")
-	}
-	if !strings.Contains(kena.Sebab, "baris 1") {
-		t.Errorf("sebab %q tidak menunjuk baris pertama yang bentrok", kena.Sebab)
-	}
-	// DOB yang BERBEDA bukan duplikat, walau namanya sama.
-	c := barisSah(3)
-	c.Nilai["NAME_OF_INSURED"] = a.Nilai["NAME_OF_INSURED"]
-	c.Nilai["DOB"] = "02/02/2026"
-	h2 := ValidasiUnggah([]BarisUnggah{a, c}, true)
-	for _, p := range h2.Ditolak {
-		if p.Kolom == "NAME_OF_INSURED" {
-			t.Errorf("nama sama dengan DOB berbeda dituduh duplikat: %+v", p)
-		}
-	}
-}
-
-// TestKunciPesertaTidakBertabrakanKarenaPenyambungan.
-//
-// ⛔ "AB"+"C" dan "A"+"BC" harus BERBEDA. Penyambung yang dapat muncul di
-// salah satu bagian membuat dua peserta berbeda berkunci sama.
-func TestKunciPesertaTidakBertabrakanKarenaPenyambungan(t *testing.T) {
-	if kunciPeserta("AB", "C") == kunciPeserta("A", "BC") {
-		t.Error("dua pasangan berbeda menghasilkan kunci yang sama")
-	}
-}
-
-// TestLampiranWajib - langkah 11 "BELUM ADA LAMPIRAN".
-func TestLampiranWajib(t *testing.T) {
-	h := ValidasiUnggah([]BarisUnggah{barisSah(1)}, false)
-	if h.Lolos() {
-		t.Fatal("unggahan tanpa lampiran diterima")
-	}
-	found := false
-	for _, p := range h.Ditolak {
-		if p.Pesan == PesanLampiran {
-			found = true
-		}
-	}
-	if !found {
-		t.Errorf("pesan lampiran VERBATIM %q tidak muncul", PesanLampiran)
-	}
-}
-
 // TestNetPremiumHanyaDiperiksaKeberadaannya - OQ-069 TERBUKA.
 //
 // ⛔ Pesannya menjanjikan "LEBIH BESAR DARI GROSS PREMIUM", tetapi korpus
@@ -352,7 +257,7 @@ func TestNetPremiumHanyaDiperiksaKeberadaannya(t *testing.T) {
 	b := barisSah(1)
 	b.Nilai["NET_PREMIUM"] = "1.00"
 	b.Nilai["GROSS_PREMIUM"] = "999999.00"
-	h := ValidasiUnggah([]BarisUnggah{b}, true)
+	h := ValidasiUnggah([]BarisUnggah{b})
 	if !h.Lolos() {
 		for _, p := range h.Ditolak {
 			t.Errorf("net < gross ditolak di %s: %s (%s)", p.Kolom, p.Pesan, p.Sebab)
@@ -373,7 +278,7 @@ func TestNetPremiumHanyaDiperiksaKeberadaannya(t *testing.T) {
 func TestKolomUangTakWajibTetapDiperiksaBentuknya(t *testing.T) {
 	b := barisSah(1)
 	b.Nilai["TAX"] = "1,5"
-	h := ValidasiUnggah([]BarisUnggah{b}, true)
+	h := ValidasiUnggah([]BarisUnggah{b})
 	found := false
 	for _, p := range h.Ditolak {
 		if p.Kolom == "TAX" {
@@ -389,7 +294,7 @@ func TestKolomUangTakWajibTetapDiperiksaBentuknya(t *testing.T) {
 	// Tetapi KOSONG pada kolom tak wajib bukan galat.
 	c := barisSah(2)
 	c.Nilai["TAX"] = ""
-	if h2 := ValidasiUnggah([]BarisUnggah{c}, true); !h2.Lolos() {
+	if h2 := ValidasiUnggah([]BarisUnggah{c}); !h2.Lolos() {
 		for _, p := range h2.Ditolak {
 			t.Errorf("kolom tak wajib kosong ditolak: %+v", p)
 		}
@@ -400,9 +305,32 @@ func TestSeluruhBarisDiperiksaBukanHanyaYangPertama(t *testing.T) {
 	a, b := barisSah(1), barisSah(2)
 	a.Nilai["PLAN"] = ""
 	b.Nilai["CURRENCY"] = ""
-	h := ValidasiUnggah([]BarisUnggah{a, b}, true)
+	h := ValidasiUnggah([]BarisUnggah{a, b})
 	if n := len(h.BarisDitolak()); n != 2 {
 		t.Errorf("%d baris dilaporkan, mau 2 - berhenti di baris pertama "+
 			"memaksa orang mengunggah ulang sebanyak jumlah kesalahannya", n)
+	}
+}
+
+// TestPenolakanLangkahTerRemarkTidakDitegakkan - sensus remark 28-09-2026.
+//
+// ⛔ Sertifikat ganda (9.5/10/13), sertifikat terpakai (9.2-9.4/12),
+// `MEDICAL_STATUS` (9.11/19), dan lampiran (11/33) ter-remark di
+// `ValidasiUploadPL_act`; duplikat nama+DOB tidak pernah menjadi penolakan
+// unggah. Berkas yang hanya "melanggar" kelimanya LOLOS - seperti di Pega.
+func TestPenolakanLangkahTerRemarkTidakDitegakkan(t *testing.T) {
+	a, b := barisSah(1), barisSah(2)
+	b.Nilai["CERTIFICATE_NO"] = a.Nilai["CERTIFICATE_NO"]
+	b.Nilai["NAME_OF_INSURED"] = strings.ToLower(a.Nilai["NAME_OF_INSURED"])
+	b.Nilai["DOB"] = a.Nilai["DOB"]
+	a.Nilai["MEDICAL_STATUS"] = "X"
+	delete(b.Nilai, "MEDICAL_STATUS")
+	if h := ValidasiUnggah([]BarisUnggah{a, b}); !h.Lolos() {
+		t.Errorf("penolakan langkah ter-remark muncul: %+v", h.Ditolak)
+	}
+	for _, k := range KolomWajibUnggah() {
+		if k == "MEDICAL_STATUS" {
+			t.Error("MEDICAL_STATUS masih kolom judul wajib; pemeriksanya ter-remark")
+		}
 	}
 }

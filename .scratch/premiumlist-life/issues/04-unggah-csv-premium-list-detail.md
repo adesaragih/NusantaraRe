@@ -74,6 +74,14 @@ kelompok `*_REFUND`, seluruh kelompok `*_RETRO`, `*_REFUND_RETRO`, dan `CLAIM_AM
 `PLAN`, `CURRENCY` wajib; `MEDICAL_STATUS` salah satu dari `FCL` / `M` / `NM`; lampiran wajib
 ("BELUM ADA LAMPIRAN").
 
+> ⛔ **Ralat 28-09-2026 (sensus remark GILIRAN-12).** Sertifikat sudah dipakai (9.2–9.4, 12),
+> sertifikat ganda (9.5, 10, 13), `MEDICAL_STATUS` (9.11, 19), dan lampiran (11, 33) **ter-remark**
+> (`//` b8025…b16535) — sistem lama tidak menolak karenanya. "`POLICY_HOLDER` harus di M AGENT"
+> adalah deskripsi langkah 12 yang ter-remark (pesannya err1). Yang hidup: langkah 3–8 (b6874–b7767,
+> keberadaan medan header: ceding, policy holder, MO, COB, retro, SOB — pesannya ada di kode, belum
+> dipakai) dan langkah 2, yang **mengisi 0** kolom uang yang kosong (OQ-PL-12). `CekDoubleInsured`
+> hidup, tetapi di `Calculate1_Act` 7.5 untuk akumulasi retensi, bukan penolakan unggah.
+
 ⚠️ `[terverifikasi]` **Normalisasi desimal Pega berbahaya.** Langkah "Rubah decimal dari koma jadi
 titik" (baris 12480) memakai `@replaceAll(.KOLOM, ",", ".")` atas tiap kolom uang — **mengganti
 setiap koma**, tanpa membedakan pemisah desimal dari pemisah ribuan. Nilai `1,234,567.89` menjadi
@@ -98,14 +106,19 @@ berkas tetap Google Storage untuk lampiran), **ADR-0007** (jejak audit unggahan)
       arbitrer. *(AC 14–15 spec; **ADR-0003**)* — bukti: `models/polis_unggah.go:UangCSV` (desimal apd); uji `TestUangCSVTidakMembulatkan`, `TestUangDikirimSebagaiTeks`
 - [ ] Nilai uang yang lolos validasi, dibaca kembali dari staging, **identik** dengan yang diunggah —
       tidak ada pembulatan diam. *(AC 16 spec)* — belum: tidak ada staging, dan nol uji baca-kembali terhadap Oracle
-- [x] Duplikat peserta terdeteksi dengan pembandingan nama **tanpa peduli huruf besar/kecil** +
-      tanggal lahir, dan pesannya menunjuk baris pertama yang bentrok. — bukti: uji `TestPesertaGandaTanpaPeduliHurufBesar`
-- [x] `CERTIFICATE_NO` ganda di dalam satu berkas ditolak. — bukti: uji `TestSertifikatGandaDitolakDanMenunjukBarisPertama`
+- [x] ~~Duplikat peserta terdeteksi dengan pembandingan nama tanpa peduli huruf besar/kecil +
+      tanggal lahir~~ — *disunting di tempat 28-09-2026 (sensus remark):* **tidak ada penolakan
+      duplikat peserta saat unggah** — `CekDoubleInsured` menghitung retensi di `Calculate1_Act` 7.5,
+      bukan menolak; kalimat err1 yang dipinjam milik langkah ter-remark. Penolakannya dibuang — bukti: uji `TestPenolakanLangkahTerRemarkTidakDitegakkan`
+- [x] ~~`CERTIFICATE_NO` ganda di dalam satu berkas ditolak~~ — *disunting di tempat 28-09-2026:*
+      **tidak** ditolak — langkah 9.5, 10, 13 ter-remark — bukti: uji `TestPenolakanLangkahTerRemarkTidakDitegakkan`
 - [ ] `NAME_OF_INSURED` dan `POLICY_HOLDER` diverifikasi terhadap master agen; baris yang tidak
       ditemukan ditolak dengan pesan yang menyebut nilainya. — belum: pembaca master agen belum ada (tabel `M AGENT` di luar migrasi 050–056)
-- [x] Tanggal diverifikasi berformat `dd/mm/yyyy`; `MEDICAL_STATUS` hanya menerima `FCL`, `M`, `NM`;
-      `CURRENCY` wajib ada. — bukti: `models/polis_unggah.go:ValidasiUnggah` (`CURRENCY` di `kolomTeksWajib`); uji `TestTanggalCSVKetatDDMMYYYY`, `TestStatusMedisTigaNilai`
-- [x] Unggahan tanpa lampiran ditolak. — bukti: uji `TestLampiranWajib`
+- [x] Tanggal diverifikasi berformat `dd/mm/yyyy`; ~~`MEDICAL_STATUS` hanya menerima `FCL`, `M`, `NM`~~
+      *(ter-remark 9.11/19 — dibuang, sensus 28-09-2026)*; `CURRENCY` wajib ada. — bukti: `models/polis_unggah.go:ValidasiUnggah` (`CURRENCY` di `kolomTeksWajib`); uji `TestTanggalCSVKetatDDMMYYYY`, `TestPenolakanLangkahTerRemarkTidakDitegakkan`
+- [x] ~~Unggahan tanpa lampiran ditolak~~ — *disunting di tempat 28-09-2026:* langkah 11/33 ter-remark;
+      permintaan tanpa berkas kini galat permintaan biasa (400 di handler, `ErrPermintaanTidakSah` di
+      layanan), bukan penolakan korpus — bukti: `services/polis_unggah.go:periksaBerkas`
 - [ ] Staging dibersihkan per case setelah simpan permanen **maupun** setelah pembatalan — tidak ada
       sisa baris menggantung milik case lain. — belum: tidak ada tabel staging (ralat 28-09), jadi pembersihan staging tidak dibangun
 - [x] Mengunggah berkas kedua atas case yang sama **mengganti** isi staging, tidak menumpuk. — bukti: `services/polis_unggah.go:Simpan` (`HapusPesertaPolis` lalu `SisipPeserta` dalam satu transaksi; atas tabel peserta, tanpa staging)
@@ -198,7 +211,9 @@ teks pada baris itu juga cocok dengan polanya. Dibuktikan masih menggigit dengan
   menyaring. Artinya pemeriksaan duplikat di sistem lama berlaku **lintas case** sementara jumlah
   retensinya per case. Asimetri dalam satu procedure adalah tell bahwa salah satunya kelalaian —
   tetapi korpus tidak memberi tahu yang mana. **Kami menyaring per polis** *(sesuai AC: duplikat di
-  dalam satu berkas)*, dan lintas-case dicatat di sini.
+  dalam satu berkas)*, dan lintas-case dicatat di sini. ⚠️ *Sensus 28-09-2026:* pemanggil
+  `CekDoubleInsured` adalah `Calculate1_Act` 7.5 (akumulasi retensi); penolakan duplikat unggah
+  dibuang — OQ ini kini soal hitungan retensi, bukan validasi.
 - **OQ-PL-06 — `upper(INSURED)` hanya di SATU sisi.** Procedure membandingkan `upper(INSURED)`
   dengan parameternya **apa adanya**; kecocokannya karena itu bergantung pemanggil yang mengirim
   nama dalam huruf besar. Kami menaikkan **kedua** sisi, dan ujinya mengunci itu — satu sisi yang
@@ -238,3 +253,12 @@ npm run build           bersih
 
 Nol migrasi baru. Nol procedure dipanggil. Nol `COMMIT` di teks SQL. Nol nama orang di fixture —
 seluruh nilai uji berawalan `UJI-`.
+
+## ⛔ Ralat bertanggal — 28 September 2026 (GILIRAN-12 paket 2: sensus remark)
+
+`ValidasiUploadPL_act` dicetak beserta `pyStepsBlockName`: langkah 9.2–9.5, 9.11, 10, 11, 12, 13, 19,
+33 ber-`//`. Lima penolakan yang ditiru dari sana — sertifikat terpakai, sertifikat ganda,
+`MEDICAL_STATUS`, lampiran, dan duplikat nama+DOB (kalimat err1 dipinjam) — **dibuang** dari
+`models.ValidasiUnggah` beserta ujinya; `MEDICAL_STATUS` tidak lagi kolom judul wajib. Teks AC yang
+menuntutnya disunting di tempat. Celah hidup yang dicatat: langkah 2 mengisi 0 kolom uang kosong
+(**OQ-PL-12**), langkah 3–8 memeriksa keberadaan medan header (pesannya ada, belum dipakai).

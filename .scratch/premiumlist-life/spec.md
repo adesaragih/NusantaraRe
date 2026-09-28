@@ -229,7 +229,10 @@ lintas konteks**, bukan perubahan internal.
 33. Sebagai **tim migrasi**, saya ingin empat gerbang treaty ID polis lama **tidak** ikut pindah.
     `[keputusan work owner]` (**OQ-031**, **OQ-066**).
 34. Sebagai **tim migrasi**, saya ingin `ConvertJsonNusareToProduction` **tidak** dihidupkan kembali.
-    `[terverifikasi]` step 17 ter-remark; `[keputusan work owner]` dibuang.
+    `[terverifikasi]` step 17 ter-remark; `[keputusan work owner]` dibuang. ⛔ *Ralat 28-09-2026:*
+    step 17 (`//` b5383) memanggil `InsertLifePremiumDetail` (b5422), **bukan** layanan ini;
+    `convertJsonNusareToProduction` **hidup** di `serviceInsertArasapasLife_act` langkah 5 (b963) —
+    premis keputusannya dikonfirmasi ulang, **OQ-PL-14**.
 35. Sebagai **tim migrasi**, saya ingin commit implisit Pega **tidak** ditiru. `[terverifikasi]`
     step 16 `Commit` ter-remark.
 36. Sebagai **tim migrasi**, saya ingin ambang `25` **tidak** ditanam di kode. `[keputusan work
@@ -322,6 +325,13 @@ tanpa meninggalkan jejak, dan kesalahan periode baru terlihat saat tutup buku. L
 dari tabel; `InsertJsonPolisLife_Act` (`20260728`, **lebih baru**) masih menanam `>25`.
 `[keputusan work owner]` **ikuti yang dari DB.**
 
+> ⛔ *Ralat 28-09-2026 (sensus remark GILIRAN-12):* `SubmitPremiumList_Act` langkah 2–4 membaca
+> `TANGGAL_CLOSING`, tetapi hasilnya hanya mengalir ke `TempGenerate.CARI1/2` (tak dibaca rule mana
+> pun) dan ke langkah 15 yang **ter-remark** (`//` b3398; b3491 miliknya). Dua aturan yang **hidup**:
+> nomor PL digulir `PROC_GENERATE_SEQUENCE_NUMBER` (membaca tabel itu sendiri), dan `ProdDateTime`
+> digeser `InsertJsonPolisLife_Act` langkah 4 (`>25` tertanam, b1170). Keputusan "ikuti yang dari DB"
+> tetap; penerapannya pada `ProdDateTime` (yang di Pega memakai 25) dikonfirmasi ulang — **OQ-PL-13**.
+
 ### 5. Uang — teks di batas, desimal di dalam
 
 `[data DBA]` Seluruh parameter `PEGA_M_LIFE_PREMIUM_SUMMARY` bertipe **`VARCHAR2`, termasuk kolom
@@ -407,7 +417,7 @@ bisnis. Ia tidak boleh muncul di UI sebagai "pemberitahuan ke pengguna".
 | --- | --- |
 | Empat gerbang `@contains(.ID,"1000032")`…`"1000035"` (class `ASM-FW-GISFW-Int-TREATYYEAR_LIFE`) | `[keputusan work owner]` logika polis lama. ⚠️ di korpus **masih aktif** — **OQ-066** |
 | Step 16 `Commit` | `[terverifikasi]` `blockname //` |
-| Step 17 `Connect-REST` `ConvertJsonNusareToProduction` | `[terverifikasi]` `blockname //` |
+| Step 17 `Connect-REST` ~~`ConvertJsonNusareToProduction`~~ `InsertLifePremiumDetail` *(diralat 28-09-2026, b5422)* | `[terverifikasi]` `blockname //` |
 | Ambang `25` ter-hardcode | `[keputusan work owner]` |
 | Shape "Input Premium List Summary" | `[terverifikasi]` nol connector masuk, nol rujukan harness — **OQ-023** |
 
