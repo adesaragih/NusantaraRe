@@ -215,9 +215,9 @@ type SumberRoster interface {
 // AnggotaKomite adalah satu anggota tangga yang berhak memutuskan.
 //
 // ⛔ RALAT RANCANGAN A2. Antarmuka ini semula mengembalikan CACAH saja - dan
-// cacah tidak dapat membangun tangga: `CreateKMTLife_Act` mengisi
+// cacah tidak dapat membangun tangga: `GetListKomiteLife` langkah 6.1 mengisi
 // `KomiteList(<APPEND>)` dengan `KomiteID`, `IDKomite`, dan `KomiteEmail` per
-// anggota. Yang kurang baru terlihat ketika penulis kasusnya ditulis.
+// anggota, dan `CreateKMTLife_Act` langkah 4 (b1188) menyalinnya. Yang kurang baru terlihat ketika penulis kasusnya ditulis.
 //
 // ⚠️ `Email` DATA ORANG: ia menyeberang ke pengirim email dan ke
 // `T_KOMITE_KOMITELIST`, dan tidak ke mana pun lagi.
@@ -225,8 +225,8 @@ type AnggotaKomite struct {
 	// KomiteID diisi dari `OPERATOR_ID` roster.
 	//
 	// ⛔ NAMA KOLOM KORPUS MENIPU KE DUA ARAH, dan ini bacaan bukan tebakan:
-	// `[terverifikasi]` `CreateKMTLife_Act.xml` pecahan 866/972
-	// `.KomiteID = .OPERATOR_ID`, dan 952/1041 `.IDKomite = .JABATAN`.
+	// `[terverifikasi]` `GetListKomiteLife.xml` pecahan 1151
+	// `.KomiteID = .OPERATOR_ID`, dan 1237 `.IDKomite = .JABATAN`.
 	// Medan di bawah karena itu dinamai menurut ISInya, dan pemetaan ke nama
 	// kolom terjadi di satu tempat - penulis kasus komite.
 	KomiteID string

@@ -22,7 +22,7 @@ Komite adalah **sistem luar**; tiket ini membangun **batasnya**, bukan isinya.
 
 | Rule | Identitas | Perilaku yang ditiru |
 | --- | --- | --- |
-| `Claim Life/Activity/CreateKMTLife_Act.xml` | `ASM-FW-GISFW-DATA-ADJUSTMENTLIFE` / `CREATEKMTLIFE_ACT` / `RULE-OBJ-ACTIVITY`, 121.652 byte | `[terverifikasi]` sepuluh langkah: `Property-Set` → `Call pxRetrieveReportData` → `Property-Set` ×3 → `Call pxAddChildWork` → `Obj-Refresh-And-Lock` → `Property-Set` → `Obj-Save` → `Call SendEmailKlaimLF` |
+| `Claim Life/Activity/CreateKMTLife_Act.xml` | `ASM-FW-GISFW-DATA-ADJUSTMENTLIFE` / `CREATEKMTLIFE_ACT` / `RULE-OBJ-ACTIVITY`, 121.652 byte | `[terverifikasi]` sepuluh langkah: `Property-Set` → `Call pxRetrieveReportData` → `Property-Set` ×3 → `Call pxAddChildWork` → `Obj-Refresh-And-Lock` → `Property-Set` → `Obj-Save` → `Call SendEmailKlaimLF`. ⛔ *Ralat sensus 28-09-2026:* langkah 1–3 (`Property-Set`, `pxRetrieveReportData`, isi tangga) **ter-remark** (`//` b422, b619, b804); tangga disusun `GetListKomiteLife` 6.1 dan disalin langkah 4 b1188 |
 | `Claim Life/ReportDefinition/FilterEmailKomiteWithLimit.xml` | `ASM-FW-GCNMFW-INT-EMAILKOMITE` / `FILTEREMAILKOMITEWITHLIMIT` / `RULE-OBJ-REPORT-DEFINITION`, 67.827 byte | `[terverifikasi]` pemilihan roster; menerima `Param.LIMIT_BOTTOM` dan `Param.STS_KLAIM` |
 | `Claim Life/Section/ClaimComite.xml`, `Claim Life/Harness/Committe_Life.xml` | — | `[terverifikasi]` pemicu dari UI (`<pyActivity>CreateKMTLife_Act</pyActivity>`, 2× masing-masing) — **bukan** shape flow |
 
@@ -270,8 +270,8 @@ Berikutnya tiket 12.
 
 | Properti korpus | Diisi dari | Kolom kita |
 | --- | --- | --- |
-| `KomiteList(…).KomiteID` | **`.OPERATOR_ID`** *(866, 972)* | `KOMITE_OPERATORID` |
-| `KomiteList(…).IDKomite` | **`.JABATAN`** *(952, 1041)* | `KOMITE_JABATAN` |
+| `KomiteList(…).KomiteID` | **`.OPERATOR_ID`** *(`GetListKomiteLife` b1151)* | `KOMITE_OPERATORID` |
+| `KomiteList(…).IDKomite` | **`.JABATAN`** *(`GetListKomiteLife` b1237)* | `KOMITE_JABATAN` |
 
 `[terverifikasi]` sensus 555 berkas *(dokumen tiket 00 Komite)*: `.KomiteID := .OPERATOR_ID`
 **8 penulisan di 5 berkas**; `.IDKomite := .JABATAN` **12 penulisan di 7 berkas**. Dua properti
@@ -316,8 +316,9 @@ ada dengan filter persis ReportDefinition *(A `.LIMIT_BOTTOM <=`, C `.STS_KLAIM 
 | `KomiteID` | akun **OPERATOR** | `KOMITE_OPERATORID` |
 | `IDKomite` | **JABATAN** | `KOMITE_JABATAN` |
 
-`[terverifikasi]` `CreateKMTLife_Act.xml` 866·972 (`.KomiteID = .OPERATOR_ID`) dan 952·1041
-(`.IDKomite = .JABATAN`). Dua properti bernama nyaris sama, isinya berbeda — dan menyesatkan ke
+`[terverifikasi]` `GetListKomiteLife.xml` b1151 (`.KomiteID = .OPERATOR_ID`) dan b1237
+(`.IDKomite = .JABATAN`), langkah 6.1 — disalin `CreateKMTLife_Act` langkah 4 b1188. *(Ralat sensus
+28-09-2026: kutipan lama 866·972 / 952·1041 milik `CreateKMTLife_Act` 3.1, yang ter-remark.)* Dua properti bernama nyaris sama, isinya berbeda — dan menyesatkan ke
 **dua arah sekaligus**.
 
 **Penyimpangan dari teks brief, dinyatakan:** brief §2 menyebut awalan `KMT-` dan kolom
@@ -329,3 +330,15 @@ benar-benar dibaca alih-alih dikira sudah diketahui.
 `[terbuka]` sisi induk `.IsKomite`, `.KomiteNo`, `.TotalKomite` dan `T_CLAIMLF_ADJUSTMENT.KOMITE_ID`
 belum ditulis — brief menyebut "sepuluh langkah utuh" `CreateKMTLife_Act`, dan A2 menutup tiga
 penulisan tabel. Sisanya masuk Bagian B.
+
+## ⛔ Ralat bertanggal — 28 September 2026 (GILIRAN-12 paket 2: sensus remark)
+
+`CreateKMTLife_Act` langkah 1–3 ber-`pyStepsBlockName = //` (b422, b619, b804) — tidak pernah jalan.
+Tangga Komite yang hidup disusun `GetListKomiteLife` langkah 6.1 (b1151 `KomiteID = .OPERATOR_ID`,
+b1197 `KomiteAproval = 0`, b1217 `KomiteEmail = .EMAIL`, b1237 `IDKomite = .JABATAN`) dan disalin
+`CreateKMTLife_Act` langkah 4 (b1188 `childPageKomite.KomiteList = .KomiteList`). Pemetaan medannya
+**sama** dengan yang dulu dikutip dari 3.1, jadi **perilaku tidak berubah**; yang diralat hanya
+buktinya — di tiket ini dan di `repository/{kasuskomite,komite_inbox,roster}.go`,
+`services/komite.go`, `services/komite_statik_test.go`. `GetListKomiteLife` langkah 8 (`Obj-Save`,
+b1508) ter-remark pula; tidak ditiru.
+

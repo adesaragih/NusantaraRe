@@ -5,12 +5,21 @@ package repository
 // Untuk apa berkas ini: melahirkan satu kasus komite beserta tangganya, dalam
 // SATU transaksi bersama penautan baris adjustment.
 //
-// Meniru `Claim Life/Activity/CreateKMTLife_Act.xml`:
+// Meniru `Claim Life/Activity/GetListKomiteLife.xml` langkah 6.1 (tangga
+// disusun) dan `CreateKMTLife_Act.xml` (langkah 4 b1188 menyalinnya:
+// `childPageKomite.KomiteList = .KomiteList`):
 //
-//	 866 · 972  `KomiteList(<APPEND>).KomiteID = .OPERATOR_ID`
-//	 912 · 993  `KomiteList(<LAST>).KomiteAproval = 0`
-//	 932 · 1014 `KomiteList(<LAST>).KomiteEmail = .EMAIL`
-//	 952 · 1041 `KomiteList(<LAST>).IDKomite = .JABATAN`
+//	1151 `KomiteList(<APPEND>).KomiteID = .OPERATOR_ID`   GetListKomiteLife
+//	1197 `KomiteList(<LAST>).KomiteAproval = 0`           GetListKomiteLife
+//	1217 `KomiteList(<LAST>).KomiteEmail = .EMAIL`        GetListKomiteLife
+//	1237 `KomiteList(<LAST>).IDKomite = .JABATAN`         GetListKomiteLife
+//
+// ⛔ RALAT 28-09-2026 (sensus remark GILIRAN-12): kutipan lama 866/912/932/952
+// dan 972/993/1014/1041 milik `CreateKMTLife_Act` langkah 3.1 - langkah 1-3
+// activity itu ter-remark (`//` b422, b619, b804). Isinya sama; buktinya kini
+// baris yang berjalan.
+//
+//	CreateKMTLife_Act:
 //	1322        `childPageKomite.KomiteLoop = SizeOfPropertyList(KomiteList)`
 //	1398        `childPageKomite.KomiteCount = 1`
 //	1461        `childPageKomite.CLMNO = pyWorkPage.pyID`
@@ -40,8 +49,8 @@ type AnggotaTangga struct {
 
 // approvalAwal adalah nilai `KOMITE_APPROVAL` saat tangga dibentuk.
 //
-// `[terverifikasi]` `CreateKMTLife_Act.xml` 912 dan 993: `= 0`. TEKS, bukan
-// bilangan (ADR-U-0022).
+// `[terverifikasi]` `GetListKomiteLife.xml` b1197: `= 0` (disalin
+// `CreateKMTLife_Act` b1188). TEKS, bukan bilangan (ADR-U-0022).
 const approvalAwal = "0"
 
 // BuatKasusKomite melahirkan kasus komite beserta tangganya.

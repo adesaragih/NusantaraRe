@@ -262,8 +262,12 @@ func (u *Unggahan) Unggah(ctx context.Context, pelaku Pelaku,
 		// LANJUT, artinya turunan dari nama berkas hanya dipakai bila
 		// pemanggil diam. `@toLowerCase` b781 ada di dalam MimeDokumen.
 		Mime: models.MimeDokumen(berkas.Mime, nama),
-		// `KATEGORI_1` = kunci kelompok `DL-` b595; satu unggahan satu
-		// kelompok, dan kelompok yang sudah ada tidak pernah ditimpa.
+		// `KATEGORI_1` = kunci kelompok `DL-` b595-596.
+		// ⚠️ CELAH TERCATAT (sensus remark 28-09-2026, OQ-J): b596 memakai
+		// ULANG `Primary.DOCUMENT` peserta bila sudah ada; di sini kolom
+		// `DOCUMENT` peserta tidak ada, jadi setiap unggahan membuat kunci
+		// baru. Daftar layar tidak terpengaruh (disaring FK peserta), tetapi
+		// pengelompokan `KATEGORI_1` berbeda dengan baris warisan.
 		Kategori1:  models.KunciKelompokDokumen("", saat),
 		Kategori2:  strings.TrimSpace(berkas.Kategori),
 		TStorageID: "",

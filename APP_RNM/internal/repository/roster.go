@@ -32,13 +32,14 @@ type BarisRoster struct {
 	// OperatorID mengisi `KomiteList(...).KomiteID`.
 	//
 	// ⛔ NAMA KOLOMNYA MENIPU, dan ini terbukti dari XML - bukan tebakan:
-	// `[terverifikasi]` `CreateKMTLife_Act.xml` pecahan baris 866 dan 972
-	// menyetel `.KomiteID = .OPERATOR_ID`. Yang mengisi "KomiteID" adalah
+	// `[terverifikasi]` `GetListKomiteLife.xml` pecahan baris 1151 (langkah
+	// 6.1) menyetel `.KomiteID = .OPERATOR_ID`. (Salinannya di
+	// `CreateKMTLife_Act` 3.1 ter-remark - ralat sensus 28-09-2026.) Yang mengisi "KomiteID" adalah
 	// pengenal OPERATOR, bukan kolom `ID` roster.
 	OperatorID string
 	// Jabatan mengisi `KomiteList(...).IDKomite`.
 	//
-	// ⛔ Menipu pula, dan ke arah sebaliknya: baris 952 dan 1041 menyetel
+	// ⛔ Menipu pula, dan ke arah sebaliknya: baris 1237 menyetel
 	// `.IDKomite = .JABATAN`. Yang mengisi "IDKomite" adalah JABATAN.
 	Jabatan     string
 	Email       string

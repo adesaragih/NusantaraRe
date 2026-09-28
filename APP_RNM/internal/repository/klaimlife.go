@@ -848,8 +848,9 @@ func pastikanSatuBaris(hasil sql.Result, nama string) error {
 //	            `PageName` `DOCUMENT_CLAIM` (nama halaman warisan), `RowKey` `ID`,
 //	            saring `Field .KATEGORI_1` `Condition =` `Value .DOCUMENT`
 //	  1.3 b778  `.DocumentClaimList` = `DOCUMENT_CLAIM.pxResults` (warisan) b797
-//	  1.4 b904  halaman langkah warisan `DOCUMENT_CLAIM.pxResults` b908, MENGULANG
-//	            (b1423), prasyarat b1404 `.DOCUMENT==""` WhenTrue=3 -> LEWATI
+//	  (langkah 1 sendiri: prasyarat b1404 `.DOCUMENT==""` WhenTrue=3 -> LEWATI,
+//	  MENGULANG b1423)
+//	  1.4 b904  ⛔ TER-REMARK (`//` b913), beserta 1.4.1 dan 1.4.2 di bawah
 //	    `Local.ImageID` = `.T_STORAGE_ID` b924-925; `DataImage.URLImage` = "" b970
 //	    1.4.1 b1011 `Call GetUrlGoogleStorage_Act`
 //	    1.4.2 b1129 prasyarat b1310 `DataImage.URLImage==""` WhenTrue=3 -> LEWATI
@@ -863,19 +864,19 @@ func pastikanSatuBaris(hasil sql.Result, nama string) error {
 // dan selisihnya DICATAT - aturannya "bila bacaan Anda berbeda, yang menang
 // adalah bacaan Anda".
 //
-// ⛔ DUA PENYIMPANGAN SADAR, dan keduanya dinyatakan.
+// ⛔ RALAT 28-09-2026 (sensus remark GILIRAN-12): yang berjalan adalah 1.3
+// b797 - `.DocumentClaimList` = SELURUH baris browse, tanpa URL. Bab ini dulu
+// menyebut DUA penyimpangan sadar; yang kedua (baris ber-URL kosong dibuang,
+// b1310) milik 1.4.2, langkah mati. Mengembalikan seluruh baris adalah
+// PARITAS, bukan penyimpangan.
+//
+// ⛔ SATU PENYIMPANGAN SADAR, dan ia dinyatakan.
 //
 //  1. Saringan Pega adalah `KATEGORI_1 = <.DOCUMENT peserta>` pada halaman
 //     peserta - BUKAN pengenal kasus. Kolom `DOCUMENT` itu tidak ada di
 //     `T_CLAIMLF_PREMIUMLIST_DETAIL`, sehingga saringan itu tidak dapat
 //     ditiru apa adanya. Yang dipakai: FK `PREMIUM_LIST_DETAIL_ID` - relasi
 //     yang di model baru MEMANG memiliki dokumen itu. Dilaporkan OQ-J.
-//  2. Pega MEMBUANG baris yang URL penyimpanannya kosong (prasyarat b1310).
-//     Di DEV panggilan ke Google Storage tidak dilakukan, sehingga URL-nya
-//     SELALU kosong - meniru gerbang itu akan membuat daftar SELALU kosong,
-//     dan layar akan berkata "tidak ada dokumen" untuk peserta yang
-//     dokumennya lengkap. Barisnya karena itu tetap dikembalikan; yang
-//     menandai "URL menunggu pengirim" adalah layar.
 func (r *KlaimLife) AmbilDokumen(ctx context.Context, klaimID string) (
 	map[string][]models.Dokumen, error) {
 

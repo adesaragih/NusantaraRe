@@ -23,7 +23,7 @@ package repository
 // dijawab pemilik ekspor Pega.
 //
 // ⛔ `KomiteID` = `KOMITE_OPERATORID` (roster.go: `.KomiteID = .OPERATOR_ID`,
-// `CreateKMTLife_Act` b866/b972). Pelaku dicocokkan dengan kolom itu - km2:
+// `GetListKomiteLife` b1151). Pelaku dicocokkan dengan kolom itu - km2:
 // peran komite = roster, bukan `X-Peran` Claim Life.
 //
 // Dibaca sesudah: kasuskomite.go, roster.go.
@@ -40,7 +40,7 @@ import (
 
 // ApprovalKomiteMenunggu adalah `KomiteAproval` anggota yang belum memutuskan.
 //
-// `[terverifikasi]` `CreateKMTLife_Act.xml` b912/b993 `= 0`; `KomiteRouter`
+// `[terverifikasi]` `GetListKomiteLife.xml` b1197 `= 0`; `KomiteRouter`
 // b382 `.KomiteAproval==0`. Sama dengan `approvalAwal` (kasuskomite.go).
 const ApprovalKomiteMenunggu = approvalAwal
 

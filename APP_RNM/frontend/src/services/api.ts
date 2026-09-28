@@ -80,7 +80,9 @@ export interface TotalPeserta {
  * `Activity/LoadDocumentLife_ACT.xml`.
  *
  * ⛔ `urlPublic` TIDAK ADA di sini dan itu disengaja. Di Pega URL-nya
- * datang dari `GetUrlGoogleStorage_Act` (langkah 1.4.1 b1011); penyambungan
+ * diminta saat UNDUH - `DownloadDocumentClaim.xml` langkah 2 b369
+ * `Call GetUrlGoogleStorage_Act` (langkah pemuat 1.4.1 b1011 ter-remark,
+ * sensus 28-09-2026); penyambungan
  * ke penyimpanan luar belum dilakukan, dan URL yang dikarang adalah pranala
  * yang membawa orang ke tempat yang salah. Yang ada hanya penunjuknya,
  * `tStorageId` — ADR-U-0010: isi berkas tidak pernah masuk basis data.

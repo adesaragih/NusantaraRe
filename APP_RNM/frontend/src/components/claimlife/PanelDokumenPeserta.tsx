@@ -24,15 +24,13 @@
 // Tombolnya DINYATAKAN di sini, bukan dihilangkan: layar yang tampak lengkap
 // padahal tidak adalah layar yang tidak akan dicari lagi (butir av).
 //
-// ⛔ PENYIMPANGAN SADAR pada URL. `LoadDocumentLife_ACT` langkah 1.4.2
-// berprasyarat `DataImage.URLImage==""` dengan `WhenTrue=3` — artinya baris
-// yang URL penyimpanannya kosong TIDAK ikut ditambahkan ke daftar. Di sini
-// panggilan ke Google Storage belum dilakukan, sehingga URL-nya SELALU
-// kosong; meniru gerbang itu akan membuat daftar SELALU kosong dan layar
-// berkata "tidak ada dokumen" untuk peserta yang dokumennya lengkap.
-// Barisnya karena itu tetap tampil, dengan penanda bahwa pranalanya menunggu
-// penyambungan. Arah selisihnya disengaja: daftar yang menyebut apa yang
-// belum tersambung lebih jujur daripada daftar yang diam-diam kosong.
+// ⛔ RALAT 28-09-2026 (sensus remark GILIRAN-12): bab ini dulu menyebut
+// "penyimpangan sadar pada URL" - baris ber-URL kosong dibuang Pega
+// (`LoadDocumentLife_ACT` 1.4.2, b1310). Langkah 1.4 beserta anaknya
+// TER-REMARK (`//` b913); yang berjalan 1.3 b797, SELURUH baris tanpa URL.
+// Daftar yang menampilkan semua baris karena itu PARITAS, bukan penyimpangan.
+// Penanda "menunggu" tetap membedakan baris yang efek outbox-nya belum
+// selesai (`tStorageId` kosong).
 
 import { useState } from 'react'
 

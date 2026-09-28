@@ -46,7 +46,8 @@ package models
 //	              `MIME=.pyFileType` · `KATEGORI_1=Local.IDDoc`
 //	              `KATEGORI_2=.pyCategory` · `BASE64=.pyFileSource`
 //	              `NOAKSEP=""` · `NOPREKAS=""` · `PAYMENTDATE=""`
-//	  langkah 3 b1830 `Commit`
+//	  langkah 3 b1830 `Commit` - ⛔ TER-REMARK (`//` b1841), begitu pula
+//	            1.1, 1.3-1.6 dan 2 (Obj-Save): yang berjalan hanya 1.2 dan 1.7
 //
 //	`Activity/InsertDocument_Act.xml`
 //	  2 b520  `Java` prasyarat b586 `Param.MIME==""` WhenTrue=2 LANJUT

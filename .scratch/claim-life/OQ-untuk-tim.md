@@ -125,8 +125,9 @@ Claim Life adalah **minimum berbukti**: `Inbox Claim Life` *(label `[tidak ada d
 `Register` *(`Register_Flow.xml:155`)*.
 
 **OQ-B.** `Activity\setDetailClaim_act.xml` tampak **residu uji pengembang**: `Obj-Open-By-Handle`
-pada satu handle literal *(b284)*, `Property-Set` tanggal literal Januari–Februari 2026 *(b478,
-b711)*, prasyarat yang membandingkan `.NAME_OF_INSURED` dengan satu nama literal *(b872)*, lalu
+pada satu handle literal *(b284)*, `Property-Set` tanggal literal Januari–Februari 2026 *(b711;
+ralat sensus 28-09-2026: b478 milik langkah 2.1 di bawah langkah 2 yang ter-remark `//` b444, dan
+ia menyalin BEGIN/EXPIRED, bukan tanggal literal)*, prasyarat yang membandingkan `.NAME_OF_INSURED` dengan satu nama literal *(b872)*, lalu
 `Obj-Save` *(b960)*. Ia terpasang pada tombol `Choose` popup pencarian polis
 *(`SearchPolicy_Section.xml` 3337–3356, 3468)*. **Mohon konfirmasi** apakah ia memang tidak
 dipakai di produksi; kami **tidak menirunya**.

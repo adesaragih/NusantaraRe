@@ -22,9 +22,11 @@ import (
 
 // polaMilikKomite mencocokkan penyimpan keputusan komite per anggota.
 //
-// `[terverifikasi]` `Claim Life/Activity/CreateKMTLife_Act.xml` menulis
-// `childPageKomite.KomiteList(<LAST>).KomiteAproval` dan `.KomiteEmail` -
-// nilainya menyeberang, tetapi TEMPATNYA di konteks Komite Claim Life.
+// `[terverifikasi]` `Claim Life/Activity/CreateKMTLife_Act.xml` langkah 4
+// b1188 menyalin `childPageKomite.KomiteList = .KomiteList` - tangga yang
+// `GetListKomiteLife` 6.1 susun, lengkap dengan `KomiteAproval` (b1197) dan
+// `KomiteEmail` (b1217). Nilainya menyeberang, tetapi TEMPATNYA di konteks
+// Komite Claim Life.
 var polaMilikKomite = regexp.MustCompile(
 	`KomiteAproval|KomiteComment|DateApprove|T_KOMITE_KOMITELIST`)
 
@@ -56,7 +58,8 @@ var berkasKomiteBolehMenyebut = map[string]string{
 	//
 	//   1. Brief lanjutan 4 §1 menempatkan tabelnya di rangkaian migrasi INI.
 	//   2. `[terverifikasi]` `CreateKMTLife_Act.xml` - activity milik **Claim
-	//      Life** - yang menulis tangganya (866, 912, 932, 952). Penulisnya
+	//      Life** - yang menulis tangganya (langkah 4 b1188, dari
+	//      `GetListKomiteLife` 6.1 b1151-b1237). Penulisnya
 	//      memang konteks ini; yang MEMUTUSKAN barulah Komite.
 	//
 	// Yang tetap dijaga: nol berkas LAIN menyentuhnya, dan nol indeks posisi

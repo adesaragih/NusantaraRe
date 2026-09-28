@@ -57,8 +57,8 @@ func TestRosterHanyaMengambilKolomYangDipakai(t *testing.T) {
 	q := sqlRosterKomite("UJI.EMAILKOMITE")
 	// ⛔ RALAT: ronde pertama menuntut `ID` diambil dan melarang `OPERATOR_ID`
 	// serta `JABATAN` - dugaan saya, bukan bacaan. XML menang:
-	// `[terverifikasi]` `CreateKMTLife_Act.xml` 866/972 `.KomiteID =
-	// .OPERATOR_ID` dan 952/1041 `.IDKomite = .JABATAN`. Nama kolomnya
+	// `[terverifikasi]` `GetListKomiteLife.xml` b1151 `.KomiteID =
+	// .OPERATOR_ID` dan b1237 `.IDKomite = .JABATAN` (langkah 6.1, hidup). Nama kolomnya
 	// menipu ke DUA arah sekaligus.
 	for _, wajib := range []string{"OPERATOR_ID", "JABATAN", "EMAIL", "DEGREE", "LIMIT_BOTTOM"} {
 		if !strings.Contains(q, wajib) {
