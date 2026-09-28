@@ -183,3 +183,61 @@ func (r *InboxKomite) NomorAkseptasiDipakaiDiAdjustment(ctx context.Context, tx 
 	}
 	return n > 0, nil
 }
+
+// sqlRekamAkhirWarisan memperbarui baris datar warisan baris yang diputuskan.
+//
+// ⚠️ PENYIMPANGAN SADAR dari `UpdateOsAkseptasiClaimLife_sql` (Komite Claim
+// Life `RDBList/`, rule yang SAMA di Claim Life): rule itu meng-`INSERT` baris
+// BARU (55 kolom, `COMMIT;` b117) di tingkat akhir. Di sistem ini baris datar
+// untuk adjustment itu SUDAH ada sejak pendaftaran (`PohonKlaim.Simpan`,
+// `ID = adjustment ID`) - `INSERT` kedua menggandakannya. Yang berubah di
+// tingkat akhir karena itu DIPERBARUI: status, nomor, tanggal.
+func sqlRekamAkhirWarisan(datar string) string {
+	return fmt.Sprintf(`UPDATE %s
+	   SET STS_REJECT = :1, NO_ACCEPTATION = :2, ACCEPTATION_DATE = :3
+	 WHERE ID = :4`, datar)
+}
+
+// ErrStatusAkhirKomiteTidakSah - status rekam akhir di luar {1, 2}.
+var ErrStatusAkhirKomiteTidakSah = errors.New(
+	"repository: status rekam akhir komite hanya 1 (aksep) atau 2 (tolak)")
+
+// RekamAkhirWarisan - SATU jalur berparameter status (tiket 04b, AC 16 spec):
+// aksep (`1`, dengan nomor) dan tolak (`2`, tanpa nomor) lewat fungsi ini.
+//
+// ⛔ Status dipagari SEBELUM bind: `STS_REJECT` di tabel warisan `NUMBER(38)`
+// (`[data DBA]`), jadi teks selain `1`/`2` akan menjadi ORA-01722 - pola
+// `PeriksaNilaiWarisan` (butir s1).
+func (r *InboxKomite) RekamAkhirWarisan(ctx context.Context, tx *Tx, adjID, status,
+	nomor string, saat time.Time) error {
+
+	if tx == nil {
+		return errors.New("repository: rekam akhir komite menuntut transaksi")
+	}
+	if status != "1" && status != "2" {
+		return fmt.Errorf("%w: %q", ErrStatusAkhirKomiteTidakSah, status)
+	}
+	datar, err := r.db.Qualify(namaTabelLama)
+	if err != nil {
+		return err
+	}
+	q := sqlRekamAkhirWarisan(datar)
+	if err := PeriksaSQL(q); err != nil {
+		return err
+	}
+	h, err := tx.tx.ExecContext(ctx, q, status, kosongJadiNil(nomor), saat, adjID)
+	if err != nil {
+		return fmt.Errorf("repository: merekam akhir komite ke baris datar: %w", err)
+	}
+	n, err := h.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("repository: membaca cacah baris datar: %w", err)
+	}
+	// ⛔ Nol baris = baris datar adjustment itu tidak ada; hilir (Arasapas)
+	// membaca tabel ini, jadi keputusan yang tidak tercermin di sana GAGAL.
+	if n != 1 {
+		return fmt.Errorf("repository: rekam akhir komite menyentuh %d baris datar untuk %q, mau 1",
+			n, adjID)
+	}
+	return nil
+}

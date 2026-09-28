@@ -55,3 +55,17 @@ func TestKeunikanDiperiksaSebelumStempel(t *testing.T) {
 		t.Error("nomor tidak diterbitkan (dan diperiksa) sebelum baris distempel")
 	}
 }
+
+// TestRekamAkhirSatuJalurDalamAkseptasi - tiket 04b, AC 16 spec.
+func TestRekamAkhirSatuJalurDalamAkseptasi(t *testing.T) {
+	kode := sumberKomiteAkseptasi(t)
+	iHeader := strings.Index(kode, "baca.CerminkanHeader(")
+	iRekam := strings.Index(kode, "p.rekamAkhir(ctx, tx, kasus, models.KodeAksep, nomor, saat)")
+	iJejak := strings.Index(kode, "p.jejak.Rekam(")
+	if iHeader < 0 || iRekam < 0 || iJejak < 0 || !(iHeader < iRekam && iRekam < iJejak) {
+		t.Error("urutan akseptasi harus: stempel → rekam akhir → jejak")
+	}
+	if n := strings.Count(kode, "RekamAkhirWarisan("); n != 1 {
+		t.Errorf("rekam akhir dipanggil di %d tempat, mau 1 (satu jalur berparameter status)", n)
+	}
+}

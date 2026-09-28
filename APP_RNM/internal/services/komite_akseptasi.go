@@ -83,6 +83,10 @@ func (p penyelesaiAkhirOracle) Akseptasi(ctx context.Context, tx *repository.Tx,
 	if err := baca.CerminkanHeader(ctx, tx, klaimID, models.KodeAksep, nomor); err != nil {
 		return "", err
 	}
+	// 4.15 "Insert ke OS" - tiket 04b, jalur tunggal berparameter status.
+	if err := p.rekamAkhir(ctx, tx, kasus, models.KodeAksep, nomor, saat); err != nil {
+		return "", err
+	}
 	// ADR-U-0007: transisi status baris Outstanding → Aksep punya jejaknya
 	// sendiri, bentuknya sama dengan jalur akseptasi Claim Life.
 	if err := p.jejak.Rekam(ctx, tx, CatatanJejak{
@@ -148,6 +152,19 @@ func (p penyelesaiAkhirOracle) terbitkanNomor(ctx context.Context, tx *repositor
 			repository.ErrNomorAkseptasiBerganda, nomor)
 	}
 	return nomor, nil
+}
+
+// rekamAkhir adalah SATU jalur simpan rekam akseptasi - tiket 04b.
+//
+// `[terverifikasi]` `KomitePostAdjustment` langkah 4.15 (aksep) dan 5.6 (tolak)
+// sama-sama "Insert ke OS" lewat `UpdateOsAkseptasiClaimLife_sql`, didahului
+// precondition yang SAMA dan mengisi properti yang SAMA - salin-tempel yang
+// `[keputusan work owner]` disatukan. Di sini keduanya memanggil fungsi ini;
+// yang berbeda hanya `status` (dan nomor, yang hanya ada pada aksep).
+func (p penyelesaiAkhirOracle) rekamAkhir(ctx context.Context, tx *repository.Tx,
+	kasus repository.KasusKomite, status, nomor string, saat time.Time) error {
+	return repository.NewInboxKomite(p.svc.db).RekamAkhirWarisan(ctx, tx, kasus.AdjID,
+		status, nomor, saat)
 }
 
 // Tolak - langkah 5, tiket 05. Sampai itu gagal terang.

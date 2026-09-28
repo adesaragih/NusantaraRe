@@ -93,3 +93,53 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+## Implementasi — 28-09-2026 (giliran 10)
+
+### Pembacaan ulang XML
+
+- `RDBList/UpdateOsAkseptasiClaimLife_sql.xml` — `BEGIN INSERT INTO POOLDATA.OS_AKSEPTASI_KLAIM_LIFE
+  (CASEID, NO_CLAIM, POLICY_NO, …) VALUES (…); COMMIT; END;` (`COMMIT` b117 pecahan baris).
+- `KomitePostAdjustment` 4.15 (aksep, gerbang b5695) dan 5.6 (tolak, gerbang b8119) — "Insert ke OS",
+  precondition dan properti identik; beda hanya status.
+- 4.14 / 5.5 "Tukar SecurityReinsurer dengan RetroName" ber-`//` — tidak ditiru (catatan tiket tetap benar).
+- Langkah 8 `InsertJsonClaimLife_Act` — JSON; dibuang (keputusan work owner 2026-09-16, sama dengan
+  Claim Life). Langkah 4.17/4.18 `PrintAkseptasiPDF`/`LoadDocumentLife_ACT` dan 14 `SetInformationData`
+  — **belum** (lihat di bawah).
+
+### ⚠️ RALAT — `INSERT` warisan menjadi `UPDATE` di sistem ini
+
+Rule warisan meng-`INSERT` baris baru di tingkat akhir. Di sistem ini baris datar adjustment itu
+**sudah ada** sejak pendaftaran (Claim Life `PohonKlaim.Simpan`, `ID = adjustment ID`, 18 dari 55 kolom).
+`INSERT` kedua menggandakannya (dan bertabrakan PK). Yang berubah di tingkat akhir karena itu
+**diperbarui**: `STS_REJECT`, `NO_ACCEPTATION`, `ACCEPTATION_DATE`. Nol baris tersentuh = gagal terang
+(hilir Arasapas membaca tabel ini). Kolom lain yang rule warisan isi di titik ini (atribut polis) tetap
+milik catatan `[terbuka — tiket 02/03 Claim Life]` di `pohonklaim.go`.
+
+### Yang dibangun
+
+- `repository.RekamAkhirWarisan(adjID, status, nomor, saat)` — **satu** jalur berparameter status
+  (AC 16): aksep `1` + nomor, tolak `2` (tiket 05). Status dipagari `{1, 2}` sebelum bind
+  (`STS_REJECT NUMBER(38)`, `[data DBA]`) — pola `PeriksaNilaiWarisan`.
+- Dipanggil dari `Akseptasi` sesudah stempel relasional, sebelum jejak — satu transaksi dengan
+  keputusan tingkat akhir, `ACCEPT_STATUS` (`CatatKeputusan`), dan nomor.
+- `KOMITE_ID` di baris adjustment: sudah terisi saat penyerahan (A2, satu transaksi dengan kelahiran
+  kasus) — tidak ditulis ulang.
+
+### AC — keadaan
+
+| AC | Keadaan |
+| --- | --- |
+| rekam hanya di tingkat akhir, Setuju maupun Tolak | ✅ aksep · Tolak menyusul tiket 05 lewat fungsi yang sama |
+| satu jalur berparameter status | ✅ `TestRekamAkhirSatuJalurDalamAkseptasi` (satu pemanggil) |
+| nol float | ✅ |
+| retro apa adanya, tanpa tukar | ✅ tidak ada logika penukaran |
+| dokumen akseptasi dapat dihasilkan dan diunduh | ⚠️ **belum** — `PrintAkseptasiPDF` merakit HTML → PDF; mesin PDF dan templatenya belum ada di repo. Jalur dokumen Claim Life (`T_CLAIMLF_DOCUMENT` + storage stub) siap menampung berkasnya |
+| `ACCEPT_STATUS` final | ✅ (tiket 02) |
+| `KOMITE_ID` terisi | ✅ (A2) |
+| ketiganya satu transaksi | ✅ |
+| bentuk rekam = kontrak lintas konteks | ✅ kolom yang ditulis sama dengan penulis Claim Life; `RekamAkhirWarisan` tidak menambah kolom |
+
+### Angka
+
+Go **579 PASS · 0 FAIL** tingkat atas; vet (+`-tags db`), gofmt bersih · vitest **357** · tsc bersih.

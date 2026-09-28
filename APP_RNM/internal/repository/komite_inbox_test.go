@@ -3,10 +3,13 @@ package repository
 // Inbox Komite - tiket 01 Komite Claim Life. TANPA Oracle.
 
 import (
+	"context"
+	"errors"
 	"reflect"
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 )
 
 func penandaBerurut(q string) []string {
@@ -120,5 +123,20 @@ func TestKasusKomiteMembacaPesertaDanNomorDiperiksa(t *testing.T) {
 	}
 	if !strings.Contains(sqlNomorAksepDiAdjustment("A"), "WHERE ACCEPTED_NO = :1") {
 		t.Error("pemeriksa keunikan nomor akseptasi tidak menyaring ACCEPTED_NO")
+	}
+}
+
+// TestRekamAkhirSatuJalurDanDipagari - tiket 04b.
+func TestRekamAkhirSatuJalurDanDipagari(t *testing.T) {
+	q := sqlRekamAkhirWarisan("D")
+	if !strings.Contains(q, "SET STS_REJECT = :1, NO_ACCEPTATION = :2, ACCEPTATION_DATE = :3") ||
+		!strings.Contains(q, "WHERE ID = :4") || strings.Contains(strings.ToUpper(q), "INSERT") {
+		t.Errorf("rekam akhir bukan UPDATE baris datar yang ada:\n%s", q)
+	}
+	r := &InboxKomite{}
+	for _, s := range []string{"", "0", "3", "Aksep"} {
+		if err := r.RekamAkhirWarisan(context.Background(), &Tx{}, "A", s, "", time.Now()); !errors.Is(err, ErrStatusAkhirKomiteTidakSah) {
+			t.Errorf("status %q: %v", s, err)
+		}
 	}
 }
