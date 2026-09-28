@@ -155,3 +155,50 @@ kode galat Oracle, dan nama penggantinya.
 
 **Sesudah cabang ini menyatu ke `main`**, work owner menjalankan `-migrate` lagi; hanya
 `056` yang tersisa dijalankan.
+
+## Verifikasi 050–056 lawan STRUKTUR — 28-09-2026 (giliran 10)
+
+Tiket ini tetap `wontfix` (premisnya — salinan tabel existing — dibatalkan). Yang diminta brief
+GILIRAN-10 §1 baris 3 adalah **verifikasi** migrasi 050–056 lawan
+`STRUKTUR-TABEL-PREMIUMLIST-LIFE.md`. Penjaga lama `TestKolomDDLCocokDenganStruktur` mencocokkan
+**nama** kolom saja; tipe, nullability, FK, dan index belum dijaga siapa pun.
+
+### Sensus — dua cara, jendelanya disebut
+
+Jendela: tabel kolom di bawah judul `## T_*` STRUKTUR (tujuh tabel; `DOCUMENT_POLIS` dan
+`M_TEMPUPLOADLIFE` bukan milik migrasi ini) lawan `CREATE TABLE` / `FOREIGN KEY` / `CREATE INDEX`
+di `migrations/05[0-6]_*.sql` tanpa berkas `_down`.
+
+| Cara | Alat | Hasil |
+| --- | --- | --- |
+| A | skrip Python sekali-jalan | 7 tabel · **219** kolom · tipe (`teks` 92, `angka desimal` 99, `DATE` 20, `bilangan bulat` 8) · 6 FK · **0 selisih** |
+| B | `TestMigrasi050Sampai056TipeNullFKIndexSesuaiStruktur` (pengurai Go, jalan berbeda) | sama — **0 selisih** |
+
+⚠️ **Instrumen cara A gagal dulu, dan disebut.** Versi pertama mencocokkan sel kosong `| |` dengan
+pola dua-spasi, sehingga hanya **13** dari 219 kolom terbaca — dan melaporkan "0 masalah" yang
+**palsu**. Ditemukan karena cacah kolomnya dicetak; pengurai dibetulkan (`\s*`) sebelum hasilnya
+dipercaya. Versi kedua melaporkan 20 "selisih tipe" yang ternyata **kosakata**: STRUKTUR menulis
+`DATE` apa adanya, bukan `tanggal`. Sesudah itu nol. Uji Go karena itu **menagih 7 / 219** sebagai
+jawaban yang diketahui, supaya pengurai yang rusak tidak lulus hampa.
+
+⚠️ **Dibuktikan menggigit**: `053` dimutasi sementara (`IDR NUMBER(38,8)` → `VARCHAR2(40)`) — uji
+merah pada `T_PREMIUM_LIST_SPREADING.IDR`; berkas dipulihkan (`git checkout`, status bersih).
+
+### Yang dijaga kini
+
+- tipe: `teks` ↔ `VARCHAR2(n)`, `angka desimal` ↔ **tepat** `NUMBER(38,8)` (ADR-U-0003),
+  `bilangan bulat` ↔ `NUMBER(n)`, `DATE` ↔ `DATE`;
+- `nullable = tidak` ↔ `NOT NULL`;
+- `FK` di STRUKTUR ↔ `FOREIGN KEY` di DDL, **dua arah**;
+- setiap FK ber-index (kolom pertama index).
+
+### Catatan
+
+- `T_PREMIUM_LIST.ID` *"shared PK = `T_WORK_POLIS.ID`"* — tanpa `FOREIGN KEY`, dan STRUKTUR pun tidak
+  menandainya FK. Sepakat; bukan selisih.
+- Kolom tabel warisan (`M_LIFE_PREMIUM_DETAIL`) di luar cakupan: DDL-nya milik DBA; kolom yang ditulis
+  dijaga pemetaan `SaveMasterLPDet` (tiket 05a) dan kontrak pembaca (tiket 08).
+
+### Angka
+
+Go **545 PASS · 0 FAIL** tingkat atas; vet (+`-tags db`), gofmt bersih · vitest **349** · tsc bersih.
