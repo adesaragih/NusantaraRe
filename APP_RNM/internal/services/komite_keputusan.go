@@ -81,6 +81,8 @@ type HasilKeputusanKomite struct {
 	TolakAkhir     bool   `json:"tolakAkhir"`
 	// NomorAkseptasi terisi hanya pada Setuju di tingkat akhir (tiket 04a).
 	NomorAkseptasi string `json:"nomorAkseptasi"`
+	// EfekTertunda - efek yang DIANTRE, belum tuntas (tiket 06, ADR-0015).
+	EfekTertunda []string `json:"efekTertunda"`
 }
 
 // KeputusanKomite melayani keputusan satu tingkat.
@@ -185,6 +187,7 @@ func (k *KeputusanKomite) Putuskan(ctx context.Context, pelaku Pelaku,
 	}
 
 	var nomorAksep string
+	var tertunda []string
 	err = k.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
 		// Langkah 3 + 13 - satu tulisan bersyarat untuk dua baris.
 		if err := baca.CatatKeputusan(ctx, tx, kasusID, akibat.TingkatDiputus,
@@ -204,6 +207,14 @@ func (k *KeputusanKomite) Putuskan(ctx context.Context, pelaku Pelaku,
 				return err
 			}
 		}
+		// Tiket 06 - efek keluar DIANTRE di transaksi yang sama (ADR-0015):
+		// keputusan tanpa antreannya, atau antrean tanpa keputusannya, tidak
+		// mungkin.
+		t, err := antreEfekKomite(ctx, k.svc, tx, kasus, akibat, pelaku, saat)
+		if err != nil {
+			return err
+		}
+		tertunda = t
 		// ADR-0007: satu jejak per tingkat, di transaksi yang sama.
 		return k.jejak.Rekam(ctx, tx, CatatanJejak{
 			AdjustmentID: kasus.AdjID,
@@ -225,6 +236,7 @@ func (k *KeputusanKomite) Putuskan(ctx context.Context, pelaku Pelaku,
 		AkseptasiAkhir: akibat.AkseptasiAkhir,
 		TolakAkhir:     akibat.TolakAkhir,
 		NomorAkseptasi: nomorAksep,
+		EfekTertunda:   tertunda,
 	}
 	if akibat.Berlanjut {
 		hasil.TingkatBerikut = akibat.CountBaru

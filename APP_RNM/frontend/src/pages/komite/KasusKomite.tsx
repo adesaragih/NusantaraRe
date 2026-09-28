@@ -122,7 +122,12 @@ export default function KasusKomite({
     setKabar('')
     try {
       const h = await putuskanKomite(kasusID, keputusan, komentar)
-      setKabar(kalimatHasilKeputusan(h))
+      setKabar(
+        kalimatHasilKeputusan(h) +
+          (h.efekTertunda.length > 0
+            ? ` Efek keluar diantre, belum tuntas: ${h.efekTertunda.join(', ')}.`
+            : ''),
+      )
       setKeputusan('')
       setKomentar('')
       await muat()

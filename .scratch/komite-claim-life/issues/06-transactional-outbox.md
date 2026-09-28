@@ -78,3 +78,57 @@ penampung hasil submit. **Tidak** masuk outbox.
 go test ./internal/...
 make check
 ```
+
+## Implementasi — 28-09-2026 (giliran 10)
+
+### Pembacaan ulang XML — langkah 8–12 `KomitePostAdjustment` (sesudah 7 `Obj-Save`)
+
+| # | Activity | Precondition (`pyStepsPreCondition true`) | Nasib |
+| ---: | --- | --- | --- |
+| 8 | `InsertJsonClaimLife_Act` | — | ⛔ JSON — dibuang (2026-09-16) |
+| 10 | `serviceInsertArasapasClaimLife_act` | `AcceptStatus = 1 && KomiteCount == KomiteLoop` (b8648), `IsPEGAPROD` | ✅ diantre pada Setuju akhir |
+| 11 | `SendEmailKlaimLife` | **`IsPEGAPROD` saja** | ✅ diantre pada **setiap** keputusan |
+| 12 | `HitServiceToKasirKMTLife_Act` | b8887 tingkat akhir, `Type=="TP"‖"TR"`, `IsKPR=="KPR"` | ✅ diantre pada Setuju akhir — lihat OQ |
+
+Kunci Kasir `[terverifikasi]` `HitServiceToKasirKMTLife_Act`: `Kategori_1 "Kasir"`, `Kategori_2
+"insertAllPaymentKasir"`; `Connect-REST`-nya sendiri `//` "kalau diserver dev jangan dijalanin".
+
+### ⚠️ RALAT AC 6 tiket ini
+
+*"Keputusan di tingkat bukan-terakhir tidak menghasilkan entri outbox"* — dibantah langkah 11: email
+hanya bergerbang `IsPEGAPROD`, jadi ia berjalan pada **setiap** keputusan tingkat. Yang dibangun
+mengikuti korpus; Arasapas dan Kasir tetap hanya pada Setuju akhir.
+
+### ⚠️ `[terbuka — pemilik ekspor]` tiga `When` langkah 12
+
+Transisi `When`-nya (lanjut/lewati) tidak terbaca dari ekspor. "Ketiganya AND" = Kasir hanya untuk
+polis treaty ber-KPR — terlalu sempit untuk ditebak untuk integrasi pembayaran. Dibangun: gerbang Setuju
+akhir; dua syarat lain dicatat di `komite_outbox.go`.
+
+### Yang dibangun
+
+- `services/komite_outbox.go` — `EfekKeputusanKomite` (murni, urutan 10 → 11 → 12), `antreEfekKomite`
+  menulis ke outbox `T_LOG_SERVICE_RNM` (`MODUL = KOMITELIFE`) lewat `AntreEfek` yang **ada** (menuntut
+  `*Tx` bukan nil), **di dalam transaksi `Putuskan`** — sesudah keputusan dan penyelesai akhir, sebelum
+  jejak. Gagal di mana pun → tidak ada keputusan **dan** tidak ada entri.
+- ID baris = `SEQ_LOG_SERVICE_RNM` — pengenal unik sejak lahir (AC 21), kunci anti-dobel tiket 07.
+- Muatan: pengenal kasus/klaim/baris/akun, waktu, **kunci kategori** — nol URL, nol email
+  (`TestMuatanOutboxKomiteTanpaURL` menagih himpunan medannya tepat).
+- `IsPEGAPROD` tidak menggerbangi **pengantrean**, hanya pengiriman (tiket 07).
+- Jawaban keputusan membawa `efekTertunda` — "tersimpan, belum tuntas" (ADR-0015); layar mengatakannya.
+
+### AC — keadaan
+
+| AC | Keadaan |
+| --- | --- |
+| keputusan + efeknya satu transaksi | ✅ |
+| gagal → tidak ada keduanya | ✅ satu `DalamTransaksi` |
+| proses mati sesudah commit → antrean tetap ada | ✅ baris outbox `antre` |
+| ID idempoten unik | ✅ |
+| kunci kategori, bukan URL | ✅ |
+| efek hanya pada keputusan final | ⚠️ diralat — email setiap keputusan (langkah 11) |
+| dilaporkan tersimpan, belum tuntas | ✅ `efekTertunda` |
+
+### Angka
+
+Go **583 PASS · 0 FAIL** tingkat atas; vet (+`-tags db`), gofmt bersih · vitest **357** · tsc bersih.

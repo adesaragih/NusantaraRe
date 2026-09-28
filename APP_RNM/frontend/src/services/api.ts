@@ -1762,6 +1762,8 @@ export interface HasilKeputusanKomite {
   tolakAkhir: boolean
   /** Tiket 04a — terisi hanya pada Setuju di tingkat akhir. */
   nomorAkseptasi: string
+  /** Tiket 06 — efek keluar yang DIANTRE: tersimpan, belum tuntas. */
+  efekTertunda: string[]
 }
 
 /**

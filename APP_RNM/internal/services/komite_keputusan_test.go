@@ -80,7 +80,7 @@ func TestUrutanKeputusanDalamSatuTransaksi(t *testing.T) {
 	}
 	badan := badanFungsi(t, string(isi), "func (k *KeputusanKomite) Putuskan(")
 	urut := []string{"PastikanKasusTerbuka(ctx, klaimID)", "periksaGiliran(", "DalamTransaksi(ctx",
-		"baca.CatatKeputusan(", "k.akhir.Akseptasi(", "k.akhir.Tolak(", "k.jejak.Rekam("}
+		"baca.CatatKeputusan(", "k.akhir.Akseptasi(", "k.akhir.Tolak(", "antreEfekKomite(", "k.jejak.Rekam("}
 	lalu := -1
 	for _, s := range urut {
 		i := strings.Index(badan, s)
