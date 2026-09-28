@@ -14,7 +14,7 @@ import (
 
 func jenisEfek(a models.AkibatKeputusanKomite) []string {
 	var j []string
-	for _, e := range EfekKeputusanKomite(a) {
+	for _, e := range EfekKeputusanKomite(a, "QR", "KPR") {
 		j = append(j, e.Jenis)
 	}
 	return j
@@ -86,5 +86,53 @@ func TestRujukanEmailPerTingkat(t *testing.T) {
 	}
 	if n := len(RujukanEfekKomite("KMTLF-1234567890", JenisEfekKomiteEmail, 99)); n > 40 {
 		t.Errorf("rujukan %d karakter melebihi RUJUKAN VARCHAR2(40)", n)
+	}
+}
+
+// TestKasirHanyaNonTreatyBerKPR - ralat langkah 12 (WhenTrue 3 pada Type TP/TR).
+func TestKasirHanyaNonTreatyBerKPR(t *testing.T) {
+	akhir := models.AkibatKeputusanKomite{AkseptasiAkhir: true}
+	for _, u := range []struct {
+		tipe, kpr string
+		mau       bool
+	}{
+		{"QR", "KPR", true}, {"QP", "KPR", true},
+		{"TP", "KPR", false}, {"TR", "KPR", false},
+		{"QR", "", false}, {"QR", "NON", false},
+	} {
+		if got := KasirBerlaku(akhir, u.tipe, u.kpr); got != u.mau {
+			t.Errorf("%s/%q: %v, mau %v", u.tipe, u.kpr, got, u.mau)
+		}
+	}
+	if KasirBerlaku(models.AkibatKeputusanKomite{TolakAkhir: true}, "QR", "KPR") {
+		t.Error("Kasir berlaku pada Tolak")
+	}
+}
+
+// TestGerbangKasirVERBATIMDariKorpus - transisi When langkah 12 dibaca langsung.
+func TestGerbangKasirVERBATIMDariKorpus(t *testing.T) {
+	const letak = `D:\XML\RNM_BRD\Komite Claim Life\Activity\KomitePostAdjustment.xml`
+	isi, err := os.ReadFile(letak)
+	if err != nil {
+		t.Skipf("korpus tidak terjangkau di mesin ini (%v)", err)
+	}
+	teks := string(isi)
+	i := strings.Index(teks, "RH_1.pySteps(12)")
+	j := strings.Index(teks, "RH_1.pySteps(13)")
+	if i < 0 || j < i {
+		t.Fatal("langkah 12 tidak terbaca")
+	}
+	blok := teks[i:j]
+	k := strings.Index(blok, `TempOpenPage.PolicyDataLife.Type=="TP"`)
+	if k < 0 {
+		t.Fatal("syarat Type TP/TR langkah 12 hilang")
+	}
+	sebelum := blok[:k]
+	iTrue := strings.LastIndex(sebelum, "<pyStepsPreCondParamsWhenTrue>")
+	if iTrue < 0 || !strings.HasPrefix(sebelum[iTrue:], "<pyStepsPreCondParamsWhenTrue>3") {
+		t.Error("baris Type TP/TR langkah 12 tidak lagi WhenTrue 3 (lewati); gerbang Kasir harus dibaca ulang")
+	}
+	if !strings.Contains(blok, `TempOpenPage.ClaimData.IsKPR=="KPR"`) {
+		t.Error("syarat IsKPR langkah 12 hilang")
 	}
 }

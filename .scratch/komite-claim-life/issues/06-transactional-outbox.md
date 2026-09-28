@@ -132,3 +132,9 @@ akhir; dua syarat lain dicatat di `komite_outbox.go`.
 ### Angka
 
 Go **583 PASS · 0 FAIL** tingkat atas; vet (+`-tags db`), gofmt bersih · vitest **357** · tsc bersih.
+
+### ⛔ RALAT 28-09-2026 (temuan `/code-review` Spec) — gerbang Kasir langkah 12 TERBACA
+
+Bagian "tiga `When` langkah 12" di atas keliru menyebutnya tak terjawab. Transisi tiap `When` terbaca: pola normal file ini `WhenTrue 2` (lanjut) / `WhenFalse 3` (lewati) — 48 lawan 32 kemunculan; baris `Type=="TP"||"TR"` langkah 12 **terbalik** (`WhenTrue 3`, `WhenFalse 2`). Kasir karena itu berjalan **hanya** bila Setuju di tingkat akhir **dan** `Type` bukan TP/TR **dan** `IsKPR == "KPR"` (dan `IsPEGAPROD`). Dibangun `KasirBerlaku`; `IS_KPR` klaim induk (`T_GENERAL_CLAIM`, 002) kini ikut dibaca kasus komite. Dikunci `TestKasirHanyaNonTreatyBerKPR` dan `TestGerbangKasirVERBATIMDariKorpus` (membaca korpus). Bacaan sebelumnya mengantre Kasir untuk polis treaty dan klaim non-KPR.
+
+⚠️ Dicatat dari tinjauan Spec, belum dibangun (terang di PARITAS): lampiran (`AttachDocumentLife`/`SaveAttachLife`), unduh dokumen, `SetRemarkKomiteLife`/`Remarks`, syarat tampil `ShowTransfer`, `PrintAkseptasiPDF`. Suntingan aditif pada berkas Claim Life (`antrean.go`, `efekkeluar.go` ×2, penjaga uji) dilaporkan.

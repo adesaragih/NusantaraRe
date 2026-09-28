@@ -227,7 +227,10 @@ type KasusKomite struct {
 	// PesertaID = `T_CLAIMLF_ADJUSTMENT.PREMIUM_LIST_DETAIL_ID` - peserta
 	// pemilik baris yang diputuskan (tiket 04a menulis statusnya).
 	PesertaID string
-	Ditemui   bool
+	// IsKPR = `T_GENERAL_CLAIM.IS_KPR` klaim induk - gerbang Kasir langkah 12
+	// (`TempOpenPage.ClaimData.IsKPR=="KPR"`).
+	IsKPR   string
+	Ditemui bool
 }
 
 // ErrKasusKomiteTakDitemukan - tidak ada kasus komite dengan id itu.
@@ -242,7 +245,7 @@ func sqlKasusKomite(gen, work, list, klaim, adj string) string {
 	       g.KOMITE_COUNT, g.KOMITE_LOOP,
 	       TO_CHAR(a.CLAIM_AMOUNT, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''),
 	       a.CURRENCY, a.STS_REJECT, w.STATUS_WORK, w.TGL_UPDATE, g.ADJUSTMENT_ID,
-	       g.ACCEPT_STATUS, a.PREMIUM_LIST_DETAIL_ID
+	       g.ACCEPT_STATUS, a.PREMIUM_LIST_DETAIL_ID, c.IS_KPR
 	  FROM %s g
 	  JOIN %s w ON w.ID = g.ID
 	  LEFT JOIN %s c ON c.ID = w.COVER_KEY
@@ -268,11 +271,11 @@ func (r *InboxKomite) Kasus(ctx context.Context, kasusID string) (KasusKomite, e
 		return KasusKomite{}, err
 	}
 	var k KasusKomite
-	var klaimID, nomor, nilai, mu, sts, status, adjID, accept, peserta sql.NullString
+	var klaimID, nomor, nilai, mu, sts, status, adjID, accept, peserta, kpr sql.NullString
 	var urut, count, loop sql.NullInt64
 	err = r.db.sql.QueryRowContext(ctx, q, ApprovalKomiteMenunggu, kasusID).Scan(
 		&k.Baris.KasusID, &klaimID, &nomor, &urut, &count, &loop, &nilai, &mu, &sts,
-		&status, &k.Baris.TglUpdate, &adjID, &accept, &peserta)
+		&status, &k.Baris.TglUpdate, &adjID, &accept, &peserta, &kpr)
 	if errors.Is(err, sql.ErrNoRows) {
 		return KasusKomite{}, fmt.Errorf("%w: %q", ErrKasusKomiteTakDitemukan, kasusID)
 	}
@@ -288,6 +291,7 @@ func (r *InboxKomite) Kasus(ctx context.Context, kasusID string) (KasusKomite, e
 	k.AdjID = adjID.String
 	k.Baris.AcceptStatus = strings.TrimSpace(accept.String)
 	k.PesertaID = peserta.String
+	k.IsKPR = strings.TrimSpace(kpr.String)
 
 	qt := sqlTanggaKasus(list)
 	if err := PeriksaSQL(qt); err != nil {

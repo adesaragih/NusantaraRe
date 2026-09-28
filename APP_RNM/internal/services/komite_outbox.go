@@ -19,11 +19,16 @@ package services
 // outbox" dibantah langkah 11 - email tidak bergerbang tingkat, jadi ia
 // diantre pada SETIAP keputusan.
 //
-// ⚠️ `[terbuka — pemilik ekspor]` langkah 12 punya TIGA `When` (tingkat akhir,
-// `Type TP||TR`, `IsKPR=="KPR"`) dengan transisi yang ekspornya tidak
-// jelaskan (lanjut/lewati). Membacanya "ketiganya AND" berarti Kasir hanya
-// untuk polis treaty ber-KPR - tafsiran yang terlalu sempit untuk ditebak.
-// Yang dibangun: gerbang tingkat akhir Setuju saja; kedua syarat lain dicatat.
+// ⛔ RALAT (temuan /code-review Spec, 28-09-2026) - langkah 12 TERBACA dari
+// transisi tiap `When`-nya. Di seluruh `KomitePostAdjustment` pola normal
+// adalah `WhenTrue 2` (lanjut) / `WhenFalse 3` (lewati langkah) - 48 lawan 32
+// kemunculan. Baris `Type=="TP"||"TR"` langkah 12 TERBALIK: `WhenTrue 3`,
+// `WhenFalse 2`. Jadi Kasir berjalan HANYA bila:
+//
+//	Setuju di tingkat akhir  DAN  Type BUKAN TP/TR  DAN  IsKPR == "KPR"  (DAN IsPEGAPROD)
+//
+// Bacaan sebelumnya ("gerbang tingkat akhir saja") mengantre Kasir untuk
+// polis treaty dan klaim non-KPR - terlalu luas untuk efek yang memindahkan uang.
 //
 // ⛔ `IsPEGAPROD` TIDAK menggerbangi pengantrean - ia menggerbangi PENGIRIMAN
 // (tiket 07). Niat efek yang tidak tercatat di non-produksi tidak dapat diuji
@@ -34,6 +39,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"nusantarare/internal/models"
@@ -78,8 +84,15 @@ type efekKomite struct {
 	Kunci KunciLayanan
 }
 
+// KasirBerlaku adalah gerbang langkah 12, VERBATIM - MURNI.
+func KasirBerlaku(a models.AkibatKeputusanKomite, tipe, isKPR string) bool {
+	t := strings.TrimSpace(tipe)
+	return a.AkseptasiAkhir && t != models.TipePLTreatyProposal && t != models.TipePLTreatyRealisasi &&
+		strings.TrimSpace(isKPR) == "KPR"
+}
+
 // EfekKeputusanKomite menyusun daftar efek satu keputusan - MURNI.
-func EfekKeputusanKomite(a models.AkibatKeputusanKomite) []efekKomite {
+func EfekKeputusanKomite(a models.AkibatKeputusanKomite, tipe, isKPR string) []efekKomite {
 	var e []efekKomite
 	if a.AkseptasiAkhir {
 		e = append(e, efekKomite{JenisEfekKomiteArasapas, KunciArasapasLife})
@@ -87,7 +100,7 @@ func EfekKeputusanKomite(a models.AkibatKeputusanKomite) []efekKomite {
 	// Langkah 11 - setiap keputusan. SMTP langsung, bukan M_LINK_SERVICE
 	// (lihat `EfekEmail` Claim Life), jadi tanpa kunci kategori.
 	e = append(e, efekKomite{Jenis: JenisEfekKomiteEmail})
-	if a.AkseptasiAkhir {
+	if KasirBerlaku(a, tipe, isKPR) {
 		e = append(e, efekKomite{JenisEfekKomiteKasir, KunciKasirKomite})
 	}
 	return e
@@ -116,7 +129,12 @@ func antreEfekKomite(ctx context.Context, svc *Service, tx *repository.Tx,
 
 	pohon := repository.NewPohonKlaim(svc.db)
 	diantre := []string{}
-	for _, e := range EfekKeputusanKomite(a) {
+	// `TempOpenPage.PolicyDataLife.Type` - klaim induk.
+	tipe, err := repository.NewKlaimLife(svc.db).TypeKlaim(ctx, kasus.Baris.KlaimID)
+	if err != nil {
+		return nil, err
+	}
+	for _, e := range EfekKeputusanKomite(a, tipe, kasus.IsKPR) {
 		muatan, err := json.Marshal(muatanOutboxKomite{
 			KasusID: kasus.Baris.KasusID, KlaimID: kasus.Baris.KlaimID,
 			AdjustmentID: kasus.AdjID, AkunID: pelaku.AkunID,
