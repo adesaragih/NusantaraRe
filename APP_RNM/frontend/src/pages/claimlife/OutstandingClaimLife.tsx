@@ -4,8 +4,8 @@
 //
 // ⚠️ Kesebelas medan polisnya SAMA dengan layar Register dan terikat
 // `.PolicyDataLife.*` pula - keduanya menampilkan polis yang sama pada tahap
-// yang berbeda. Karena itu keduanya memakai `PanelDataPolis` yang sama, dan
-// keduanya menunggu modul PremiumList Life (butir av). Menyalin panelnya
+// yang berbeda. Karena itu keduanya memakai `PanelDataPolis` yang sama, yang
+// sejak butir av membacanya dari modul PremiumList Life. Menyalin panelnya
 // berarti dua bentuk yang harus berubah bersama.
 //
 // ⛔ BUTIR aw - dua tombol perpindahan. Di Pega keduanya TIDAK menulis apa

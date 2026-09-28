@@ -528,3 +528,79 @@ kata yang sah untuknya.
 
 ⚠️ Ketika OQ-L dijawab, pemeriksaan daftar **menggantikan** pemeriksaan panjang — dan
 panjangnya tetap berlaku.
+
+## 28 September 2026 — OQ-M (sensus akhir: keputusan yang bukan milik executor)
+
+Sensus §3.1 memutuskan keempat puluh satu baris *"tercatat, belum berkode"* (bab *Sensus akhir*
+di `PARITAS-LAYAR-DAN-AKSI.md`). Sembilan butir di bawah **tidak dapat dibangun tanpa keputusan**:
+masing-masing menyentuh skema *(migrasi `020`+ hanya dari keputusan tercatat)*, desain data, atau
+wewenang. Baris XML dari pecahan `sed 's/></>\n</g'`.
+
+**OQ-M1** *(untuk work owner)* — separuh gerbang dialog Edit Date. Keempat isian
+`EditDateClaimLife_Section` berprasyarat baca-saja
+`pyPosition!='ReasLifeAdmin' || PremiumListSummary.CLAIM_NO!=''` *(b1000, b1313, b1550, b1788)*.
+Separuh pertama ditiru *(tahap Outstanding + peran Admin, `models.TahapBolehUbahTanggalKlaim`)*.
+Separuh kedua **tidak**: Pega menomori klaim di Save Outstanding *(`GetSequenceNumber_SQL` dari
+`SaveOutStandingLife_Act` b8057)*, aplikasi di **pendaftaran**. Meniru hurufnya mengunci keempat
+isian pada SETIAP klaim. Maksudnya — *"sesudah Save Outstanding, tanggal tidak diubah lagi"* —
+menunggu padanan Save Outstanding, yang belum punya rute.
+> Apakah tanggal klaim boleh diubah Admin selama kasus di Outstanding, atau harus terkunci sejak
+> suatu peristiwa (yang mana)?
+
+**OQ-M2** *(untuk DBA / pemilik hilir)* — cermin warisan `UpdateDateClaimLife_SQL` b85-90:
+`UPDATE OS_AKSEPTASI_KLAIM_LIFE SET LAPSE_DATE = <DOL>, CLAIM_RECEIVED_DATE, COMPLETE_DATE,
+CONFIRMATION_DATE WHERE CASEID AND NAME_OF_INSURED AND CERTIFICATE_NO`. Dua hal: (1) baris warisan
+yang kita tulis membiarkan `NAME_OF_INSURED` NULL *(nol nama orang)*, sehingga WHERE itu mengenai
+**nol** baris; (2) kolom `LAPSE_DATE` di tabel warisan diisi **DOL**, bukan tanggal lapse.
+> Apakah hilir membaca keempat tanggal ini dari `OS_AKSEPTASI_KLAIM_LIFE`? Bila ya, dengan kunci
+> apa baris cermin dicari tanpa nama tertanggung, dan apakah `LAPSE_DATE = DOL` disengaja?
+
+**OQ-M3** *(untuk work owner + DBA)* — `CountClaimAmountLife_Act`. Rumusnya kini aturan murni yang
+teruji (`models/klaimbayar.go`): `CLAIM_PAID = CLAIM_GROSS × @divide(PCTClaim,100,5)` *(b702/b723)*,
+galat b526 bila gross > share *(b949)* kecuali L12/L13/L14/L18 *(b972)*, lalu keluar activity
+*(kode 6, b865)* sebelum Spreading. **Tidak tersambung**: `T_CLAIMLF_ADJUSTMENT` (migrasi 004) tidak
+punya kolom `PCT_CLAIM` / `CLAIM_PAID`, dan tidak ada rute yang menyunting baris adjustment.
+> Mohon keputusan migrasi dua kolom itu (tipe, presisi) dan rute sunting adjustment-nya.
+
+**OQ-M4** *(untuk work owner — desain)* — Upload CSV peserta di Register (`UploadCSVClaimLife_Act`
++ `SetClaimXOL_Act`). ⛔ **Ralat OQ-F**: pemetaannya ADA — 26 kolom *(b453-b1065)*. Tetapi CSV itu
+membawa uang *(`SUM_INSURED`, `CLAIM_AMOUNT`, share)*, **jendela valuasi**, dan `NAME_OF_INSURED`
+dari berkas klien, lalu bendera XOL *(b1169)* mencegah pembacaan dari polis menimpanya *(b327)*.
+Aplikasi ini sengaja membaca peserta ULANG dari sumbernya saat pendaftaran, dan `ValidasiDOL`
+memvalidasi terhadap jendela yang TERSIMPAN.
+> Apakah klaim XOL boleh membawa peserta di luar PremiumList dari berkas? Bila ya: kolom mana yang
+> dipercaya dari berkas, dan siapa yang berwenang mengunggahnya?
+
+**OQ-M5** *(untuk work owner)* — dialog Reject Outstanding (`RejectOSClaimLife_Sec`): Date b790, PIC
+b975, Remarks b1687, Submit b3117. `RejectOSClaimLife_Act` menambah baris `KomiteList`
+*(`IDKomite="Claim Admin"`, `KomiteAproval=2`, `KomiteComment` = Remarks — b2173-b2263)*. Aplikasi
+menolak baris tanpa dialog dan tanpa alasan; `T_CLAIMLF_JEJAK` tidak punya kolom komentar.
+> Di mana alasan penolakan disimpan: kolom komentar di jejak, atau baris riwayat Komite?
+
+**OQ-M6** *(untuk work owner)* — `DeletePesertaClaimLife`. Activity-nya nol hapus *(b249, b337,
+Obj-Save b443)*, tetapi tombol `DELETE` `InputOSClaimLife` b17865 lebih dulu menjalankan `deleteRow`
+b17874 atas grid `PremiumListDetail`: di Pega peserta **dicabut** dari kasus. ADR-U-0031 menyatakan
+hapus = penanda.
+> Mencabut peserta: penanda (dan layar menyembunyikannya), atau baris benar-benar dilepas?
+
+**OQ-M7** *(untuk work owner)* — `RetroDetailClaimLife`, panel rincian grid treaty-year
+(`AdjustmentDetail` b10388-b10389): Reinsurer, Currency, Percent Share, Claim Retro *(b1325-b2498)*.
+Grid induknya belum tampil dan `HitungSpreading` / `AmbilSpreading` nol pemanggil produksi;
+sumber `OUTWARDRATEID` tanpa JSON produk juga belum diputuskan (`GetProductLife`).
+> Menunggu keputusan penyambungan Spreading; panel ini mengikutinya.
+
+**OQ-M8** *(untuk work owner — wewenang, temuan)* — rute DOL yang sudah ada
+(`PUT …/tanggal-kejadian`, tiket 06) **tidak** menegakkan gerbang b1000 yang sama: siapa pun yang
+beridentitas dapat mengubah DOL pada kasus terbuka di tahap apa pun. Rute tiga tanggal yang baru
+menegakkannya. Menambahkannya ke rute DOL adalah **perubahan authz** — menunggu persetujuan, tidak
+dilakukan sendiri.
+> Samakan gerbang DOL dengan tiga tanggal lainnya (Admin, tahap Outstanding)?
+
+**OQ-M9** *(untuk work owner)* — `ValidasiClaimReceived_Act` b1120, dipicu perubahan
+`CLAIM_RECEIVED_DATE` di dialog Edit Date. Aturannya (`models.PenandaBatasHari`) dan ambangnya
+(`services.AmbangKlaim.Hitung`, butir ba/bh — `MAXEXPIREDCLAIM` dari view produk) sudah ada, tetapi
+**nol pemanggil**. Menyambungkannya ke simpan tiga tanggal menuntut dua hal yang belum diputuskan:
+(1) penandanya `.MAXCLAIM_RECEIVED` tidak punya kolom — disimpan, atau hanya ditampilkan?;
+(2) `Hitung` menghitung KEDUA penanda sekaligus dan gagal bila STNC tidak dapat dihitung, padahal
+dialog ini hanya menyentuh yang pertama. Di Pega penandanya tidak memblokir (OQ-G).
+> Penanda Claim Received: kolom baru, atau tampil-saja sesudah simpan?

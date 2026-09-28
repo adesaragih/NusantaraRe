@@ -182,8 +182,8 @@ export const REGISTER = {
  *
  * ⚠️ Kesebelas medan datanya SAMA dengan layar Register dan terikat
  * `.PolicyDataLife.*` pula: keduanya menampilkan polis yang sama pada tahap
- * yang berbeda. Karena itu keduanya memakai `PanelDataPolis` yang sama, dan
- * keduanya menunggu modul PremiumList Life (butir av).
+ * yang berbeda. Karena itu keduanya memakai `PanelDataPolis` yang sama, yang
+ * sejak butir av membacanya dari modul PremiumList Life (`/api/polis-life/ringkas`).
  */
 export const OUTSTANDING = {
   /** b951 */

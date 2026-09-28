@@ -31,6 +31,10 @@ package models
 //	SELECT * FROM POOLDATA.PRODUCTINWARD_LIFE
 //	 WHERE ID = {pyWorkPage.PolicyDataLife.ProductNameID}
 //
+// ⚠️ RALAT 28-09-2026: kedua sumber itu kini ADA - `PolicyDataLife` dari
+// modul PremiumList Life (butir av) dan pembaca view produk dua kolom (butir
+// bh, `repository/ambangproduk.go`), disambung `services.AmbangKlaim.Hitung`.
+// Yang belum: pemanggilnya (OQ-M9). Kalimat sebelumnya, untuk jejak:
 // `PolicyDataLife` menunggu modul PremiumList Life (keputusan av), dan
 // `PRODUCTINWARD_LIFE` berstatus `[data DBA]` OQ-001 - tabel warisan yang
 // tidak boleh dimigrasi. Karena itu aturannya ditulis di sini sebagai fungsi
