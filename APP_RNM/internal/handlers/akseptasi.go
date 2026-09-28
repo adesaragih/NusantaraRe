@@ -65,6 +65,9 @@ func simpanAdjustment(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			galat(w, http.StatusConflict,
 				"nomor akseptasi yang terbit sudah dipakai; coba lagi")
 			return
+		case errors.Is(err, services.ErrKasusSudahTertutup):
+			galat(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
+			return
 		case errors.Is(err, services.ErrPermintaanTidakSah):
 			galat(w, http.StatusBadRequest, err.Error())
 			return

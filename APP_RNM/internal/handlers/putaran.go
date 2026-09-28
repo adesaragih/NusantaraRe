@@ -39,6 +39,9 @@ func tambahPutaran(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			galat(w, http.StatusConflict,
 				"putaran berikutnya hanya lahir sesudah baris terakhir ditolak")
 			return
+		case errors.Is(err, services.ErrKasusSudahTertutup):
+			galat(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
+			return
 		case errors.Is(err, services.ErrPermintaanTidakSah):
 			galat(w, http.StatusBadRequest, err.Error())
 			return

@@ -66,6 +66,9 @@ func serahkanKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			galat(w, http.StatusUnprocessableEntity,
 				"tidak ada tingkat komite yang menutup nilai klaim ini")
 			return
+		case errors.Is(err, services.ErrKasusSudahTertutup):
+			galat(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
+			return
 		case errors.Is(err, services.ErrPermintaanTidakSah):
 			galat(w, http.StatusBadRequest, err.Error())
 			return

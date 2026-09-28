@@ -88,6 +88,8 @@ func pindahTahap(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			// dapat dilompati bukan tangga.
 			galat(w, http.StatusConflict,
 				"perpindahan itu tidak ada di tangga kerja klaim")
+		case errors.Is(err, services.ErrKasusSudahTertutup):
+			galat(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
 		case errors.Is(err, services.ErrTahapTidakDikenal):
 			galat(w, http.StatusConflict, "tahap kasus ini tidak dikenal")
 		default:

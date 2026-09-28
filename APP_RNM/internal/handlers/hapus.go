@@ -85,6 +85,8 @@ func jawabGalatHapus(w http.ResponseWriter, err error) bool {
 			"penghapusan klaim selalu berupa penanda dan nilai pembalik, "+
 				"tidak pernah hapus fisik (ADR-U-0031); DELETE tidak berlaku "+
 				"atas sumber daya ini")
+	case errors.Is(err, services.ErrKasusSudahTertutup):
+		galat(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
 	case errors.Is(err, services.ErrPermintaanTidakSah):
 		galat(w, http.StatusBadRequest, err.Error())
 	default:
