@@ -89,3 +89,46 @@ pengirimannya**, bukan bentuk pesannya.
 go test ./internal/...
 make check
 ```
+
+## Implementasi — 28-09-2026 (giliran 10)
+
+### Yang dipakai ulang, bukan disalin
+
+`PekerjaEfek` Claim Life (`antrean.go`): pungut `FOR UPDATE SKIP LOCKED` → jalankan → tuntaskan, satu
+transaksi; `Backoff`; `percobaanMaksimum = 8`; jejak menyerah. Sejak temuan `/code-review` giliran ini
+pemungutannya **disaring `MODUL`** — pekerja Komite (`NewPekerjaEfekModul(…, "KOMITELIFE")`) hanya
+memungut baris Komite, dan pekerja Claim Life tidak menyentuhnya. Aditif pada berkas Claim Life:
+`NewPekerjaEfekModul`, dan `ErrKasirBelumDisetujui` di daftar galat permanen `LayakDicobaUlang`.
+
+### Yang dibangun — `services/komite_pengirim.go`
+
+- `PelaksanaKomite.Laksanakan` untuk `arasapas-komite`, `email-komite`, `kasir-komite`:
+  - **Anti-dobel Email & Kasir** (AC 22): sebelum mengirim, `EfekSudahSelesai` memeriksa baris **lain**
+    kasus yang sama berjenis sama yang sudah `selesai` → bila ada, baris ini tuntas **tanpa** kirim.
+    Baris yang sudah `selesai` sendiri tidak pernah dipungut lagi (pemungutan hanya `antre`). Kiriman
+    membawa ID baris (`SEQ_LOG_SERVICE_RNM`) sebagai kunci idempoten.
+  - **Kunci hilang ≠ jaringan gagal**: `ErrEndpointTidakDitemukan` dan `…BelumDisetujui` permanen
+    (gagal-permanen → tiket 08), galat lain dicoba ulang.
+  - **Non-produksi = pengirim stub yang mencatat** (km4, ADR-0005): baris tuntas, nol resolusi alamat,
+    nol panggilan keluar. Produksi: alamat di-resolve sungguhan (`M_LINK_SERVICE`, ADR-0013) lalu
+    berhenti terang sampai panggilan nyata disetujui manusia.
+- `PekerjaKomiteOracle(svc)` — pekerja siap pakai.
+- Gerbang retro langkah 9 **dibuang** (`[keputusan work owner]`, OQ-064): nol cabang retro di pelaksana.
+
+### AC — keadaan
+
+| AC | Keadaan |
+| --- | --- |
+| dikirim sampai berhasil, atau perlu intervensi | ✅ ulang sampai 8, lalu gagal-permanen + jejak |
+| ID idempoten unik | ✅ ID baris outbox |
+| cek sudah-sukses sebelum kirim ulang Email/Kasir | ✅ `TestKasirTidakDikirimDuaKali` |
+| alamat runtime dari `M_LINK_SERVICE`, nol URL | ✅ |
+| kunci hilang tidak diulang, jaringan diulang | ✅ `TestKunciHilangPermanenJaringanBukan` |
+| tuntas hanya sesudah keempat efek berhasil | ⚠️ keadaan per efek ada di outbox; ringkasan "tuntas/perlu intervensi" per kasus = tiket 08 |
+| semua klaim menjalankan keempat efek | ✅ gerbang retro dibuang · ⚠️ efek 1 (`InsertJsonClaimLife_Act`) JSON — dibuang, jadi **tiga** efek |
+| kegagalan kirim tidak membatalkan keputusan | ✅ pekerja berjalan di transaksinya sendiri |
+| ⚠️ pekerja berjalan terjadwal | **belum ada penjadwal** di `cmd/` — `SatuPutaran` siap dipanggil; menjalankannya terus-menerus (proses terpisah) adalah keputusan operasi |
+
+### Angka
+
+Go **588 PASS · 0 FAIL** tingkat atas; vet (+`-tags db`), gofmt bersih · vitest **357** · tsc bersih.

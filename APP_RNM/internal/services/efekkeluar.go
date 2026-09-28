@@ -167,6 +167,8 @@ func LayakDicobaUlang(err error) bool {
 		ErrPenyimpananBelumDisetujui,
 		ErrEmailBelumDisetujui,
 		ErrArasapasBelumDisetujui,
+		// Tiket 07 Komite - aditif: keadaan permanen sampai manusia menyetujui.
+		ErrKasirBelumDisetujui,
 	} {
 		if errors.Is(err, permanen) {
 			return false

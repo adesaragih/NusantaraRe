@@ -226,6 +226,17 @@ type PekerjaEfek struct {
 	modul string
 }
 
+// NewPekerjaEfekModul menyusun pekerja untuk modul lain - tiket 07 Komite.
+//
+// ⚠️ Aditif pada berkas Claim Life: penyaring `MODUL` pemungutan sudah ada
+// (`sqlPungutEfek`), dan antrean pencatat menyerahnya membawa modul yang sama.
+func NewPekerjaEfekModul(svc *Service, p PelaksanaEfek, modul string) *PekerjaEfek {
+	w := NewPekerjaEfek(svc, p)
+	w.modul = modul
+	w.penjejak.modul = modul
+	return w
+}
+
 // NewPekerjaEfek menyusun pekerjanya.
 func NewPekerjaEfek(svc *Service, p PelaksanaEfek) *PekerjaEfek {
 	return &PekerjaEfek{

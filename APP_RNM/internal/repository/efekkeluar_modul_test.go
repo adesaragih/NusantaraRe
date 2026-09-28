@@ -19,3 +19,13 @@ func TestPungutEfekHanyaModulnyaSendiri(t *testing.T) {
 		t.Errorf("SKIP LOCKED hilang:\n%s", q)
 	}
 }
+
+// TestEfekSudahSelesaiMengecualikanDirinya - tiket 07 Komite.
+func TestEfekSudahSelesaiMengecualikanDirinya(t *testing.T) {
+	q := sqlEfekSudahSelesai("S.L")
+	for _, s := range []string{"MODUL = :1", "JENIS_EFEK = :2", "RUJUKAN = :3", "STATUS = :4", "ID <> :5"} {
+		if !strings.Contains(q, s) {
+			t.Errorf("anti-dobel tanpa %q:\n%s", s, q)
+		}
+	}
+}

@@ -243,3 +243,34 @@ func (r *PohonKlaim) TuntaskanEfek(ctx context.Context, tx *Tx, id, status strin
 	}
 	return pastikanSatuBaris(hasil, "penuntasan efek keluar")
 }
+
+// sqlEfekSudahSelesai mencacah baris LAIN berjenis sama yang sudah selesai.
+func sqlEfekSudahSelesai(tabel string) string {
+	return fmt.Sprintf(`SELECT COUNT(*) FROM %s
+		 WHERE MODUL = :1 AND JENIS_EFEK = :2 AND RUJUKAN = :3
+		   AND STATUS = :4 AND ID <> :5`, tabel)
+}
+
+// EfekSudahSelesai - anti-dobel tiket 07 Komite (AC 22 spec): apakah efek
+// berjenis sama untuk rujukan yang sama sudah pernah TUNTAS lewat baris lain.
+func (r *PohonKlaim) EfekSudahSelesai(ctx context.Context, tx *Tx,
+	modul, jenis, rujukan, kecualiID string) (bool, error) {
+
+	if tx == nil {
+		return false, fmt.Errorf("repository: EfekSudahSelesai menuntut transaksi")
+	}
+	tabel, err := r.db.Qualify("T_LOG_SERVICE_RNM")
+	if err != nil {
+		return false, err
+	}
+	q := sqlEfekSudahSelesai(tabel)
+	if err := PeriksaSQL(q); err != nil {
+		return false, err
+	}
+	var n int
+	if err := tx.tx.QueryRowContext(ctx, q, modul, jenis, rujukan, StatusEfekSelesai,
+		kecualiID).Scan(&n); err != nil {
+		return false, fmt.Errorf("repository: memeriksa efek selesai: %w", err)
+	}
+	return n > 0, nil
+}
