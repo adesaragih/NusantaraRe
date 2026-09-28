@@ -729,7 +729,9 @@ medan itu. Delapan langkah activity ini ber-remark: 11.3 b3495, 11.9 b4632, 11.1
    bertentangan dengan sensus penulis `STS_REJECT` di `repository/klaimlife.go`. Kini
    `KlaimLife.TandaiBarisOutstanding` (`… SET STS_REJECT = :1 WHERE ID = :2 AND STS_REJECT IS NULL`,
    nol baris = galat); namanya ditambahkan ke keempat penjaga statik (wewenang, jejak, dua penjaga
-   Komite), dan kedua penjaga pertama terbukti merah terhadap penulis liar.
+   Komite), dan kedua penjaga pertama terbukti merah terhadap penulis liar. ⚠️ Cermin header
+   (`CerminkanHeader`) tetap di transaksi simpan — selisih sadar dengan XML, yang menulis header
+   hanya lewat Arasapas langkah 28 (`serviceInsertArasapasClaimLife_act` b371, b417); tambahan OQ-N3.
 5. **Klaim yang tidak ada** dijawab 404 `klaim tidak ada`, bukan 500.
 6. **Bukti `IsCheck == "true"` (AC 8)** dipindah dari b1812/b1997/b2413 — WHEN langkah 7.1
    (precondition false) serta 7.2/7.4 (`//`) `SavePesertaClaim` — ke b3631 dan b3919 (7.7, 7.8,

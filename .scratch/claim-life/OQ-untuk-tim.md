@@ -676,8 +676,13 @@ gerbang — **STNC** (11.9/11.11) dan **dokumen lengkap** (12) — dan kini dibu
 diisi langkah 25 `InsertJsonClaimLife_Act` — dan langkah 2 activity itu (TIDAK ter-remark) **menukar**
 `RetroID` dengan `SecurityReinsurerID` (b1152–1153, b1194–1195). Gerbangnya kini membaca nilai
 sesudah tukar (`PolisRetro`); lihat OQ-N5. (2) Keluar di langkah 27 (kode 6) di sistem lama juga
-**melewati Obj-Save langkah 29**; di sini tulisan langkah 13–22 sudah di-commit sebelum gerbang itu
+**melewati Obj-Save langkah 29**; di sini tulisan langkah 16–22 sudah di-commit sebelum gerbang itu
 dinilai. Selisihnya waktu simpan halaman kerja, bukan isi tabel — dicatat, tidak ditiru.
+(3) Header klaim (`T_GENERAL_CLAIM.STS_REJECT`/`ACCEPTED_NO`) di sistem lama hanya ditulis
+`serviceInsertArasapasClaimLife_act` langkah 1.1.1 (b371, b417) — lewat langkah 28, produksi saja,
+tidak bila langkah 27 keluar. Aplikasi ini mencerminkannya di transaksi simpan (pola setiap penulis
+status, tiket 04), jadi header ikut berubah juga di non-produksi dan saat Arasapas dilewati/ditahan.
+> Tambahan untuk OQ-N3: pertahankan cermin header di transaksi simpan, atau ikatkan pada Arasapas?
 
 **OQ-N5** *(untuk work owner / pemilik data polis)* — penukaran retro `InsertJsonClaimLife_Act`
 langkah 2 bergerbang tiga WHEN: `Type` TP/TR (b1268), `SecurityReinsurerID` dan `SecurityReinsurer`

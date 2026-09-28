@@ -498,6 +498,15 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku Pelaku, klaimID string,
 				hasil.BarisDitandai++
 			}
 		}
+		// ⚠️ SELISIH SADAR dengan XML, dicatat: activity ini tidak menulis
+		// header. `ClaimData.STS_REJECT/ACCEPTEDNO` hanya ditulis
+		// `serviceInsertArasapasClaimLife_act` langkah 1.1.1 (b371, b417),
+		// yang dicapai lewat langkah 28 - produksi saja, dan tidak bila
+		// langkah 27 keluar. Di aplikasi ini SETIAP penulis status baris
+		// mencerminkan header dalam transaksinya sendiri (PerbaruiStatusBaris,
+		// tiket 04), karena Arasapas di sini efek keluar yang dapat gagal
+		// atau dilewati; di sini pun sama, termasuk saat Arasapas dilewati
+		// atau ditahan (OQ-N3).
 		if hasil.BarisDitandai > 0 {
 			akhir := BarisTerakhir(klaim)
 			if err := baca.CerminkanHeader(ctx, tx, klaimID, akhir.KodeStatus,
@@ -515,7 +524,7 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku Pelaku, klaimID string,
 	// (ADR-U-0008).
 	//
 	// ⚠️ Di sistem lama keluar di langkah 27 (kode 6) melewati Obj-Save
-	// langkah 29 juga; di sini tulisan langkah 13-22 sudah di-commit lebih
+	// langkah 29 juga; di sini tulisan langkah 16-22 sudah di-commit lebih
 	// dulu. Lihat OQ-N3.
 	lewat, err := ArasapasDilewatiRetro(PolisRetro{Tipe: tipe, RetroID: polis.RetroID,
 		SecurityReinsurerID: polis.SecurityReinsurerID, SecurityReinsurer: polis.SecurityReinsurer})
