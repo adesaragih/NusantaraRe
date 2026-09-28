@@ -80,6 +80,18 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 	mux.HandleFunc("GET /api/dokumen/{dokId}/isi", isiDokumen(svc, stubPelaku))
 	mux.HandleFunc("DELETE /api/klaim-life/{id}/dokumen/{dokId}",
 		hapusDokumen(svc, stubPelaku))
+	// --- modul PremiumList Life (tiket 01) ---
+	//
+	// ⚠️ Penambahan ADITIF oleh sesi PremiumList; nol baris Claim Life
+	// yang disunting. Rutenya sendiri hidup di `rute_premiumlist.go`.
+	//
+	// ⛔ DUA rute, bukan satu. `Offer`/`Premium` BUKAN keputusan pengguna
+	// atas penawaran melainkan hasil penggolong `Decision3`, yang hanya sah
+	// sesudah `Confirm` di tahap penawaran.
+	mux.HandleFunc("POST /api/polis-life/{id}/keputusan",
+		putuskanPenawaran(svc, stubPelaku))
+	mux.HandleFunc("POST /api/polis-life/{id}/penggolong",
+		golongkanPenawaran(svc, stubPelaku))
 	return mux
 }
 

@@ -74,6 +74,12 @@ func TestDaftarLayananPengubahMencakupSeluruhRutePengubah(t *testing.T) {
 	dikecualikan := map[string]string{
 		// Pendaftaran MELAHIRKAN kasus; belum ada kasus untuk ditutup.
 		"pendaftaran.go": "melahirkan kasus, bukan mengubah kasus yang ada",
+		// PremiumList Life tiket 01. Ia MEMERIKSA kasus tertutup - lihat
+		// `Penawaran.pagari` - tetapi lewat `T_WORK_POLIS` dan
+		// `models.KasusPolisTertutup`, BUKAN lewat `PastikanKasusTerbuka`
+		// yang membaca `T_WORK_CLAIM`. Dua modul, dua tabel kerja: layanan
+		// polis yang menanyai tabel klaim akan selalu menjawab "tidak ada".
+		"polis_penawaran.go": "modul PremiumList - memeriksa T_WORK_POLIS lewat KasusPolisTertutup",
 		// Outbox dan pelaksana efek bekerja atas baris antrean, bukan atas
 		// kasus - dan efek yang sudah terlanjur diantre tetap harus selesai
 		// walau kasusnya kemudian ditutup.
@@ -157,9 +163,36 @@ var rutePengubah = map[string]string{
 	"DELETE /api/klaim-life/{id}/peserta/{pesertaId}/diagnosa/{diagId}":       "diagnosa.go",
 	"POST /api/klaim-life/{id}/peserta/{pesertaId}/dokumen":                   "unggahan.go",
 	"DELETE /api/klaim-life/{id}/dokumen/{dokId}":                             "unggahan.go",
+	// Modul PremiumList Life (tiket 01). Keduanya memeriksa kasus tertutup
+	// lewat T_WORK_POLIS - lihat pengecualian bernama "polis_penawaran.go"
+	// di TestDaftarLayananPengubahMencakupSeluruhRutePengubah.
+	"POST /api/polis-life/{id}/keputusan":  "polis_penawaran.go",
+	"POST /api/polis-life/{id}/penggolong": "polis_penawaran.go",
 }
 
 var polaRute = regexp.MustCompile(`mux\.HandleFunc\(\s*\n?\s*"([A-Z]+) ([^"]+)"`)
+
+// penjagaTutupBawaan adalah panggilan yang membuktikan sebuah layanan
+// menolak kasus yang sudah ditutup.
+const penjagaTutupBawaan = "PastikanKasusTerbuka(ctx, klaimID)"
+
+// penjagaTutup menyebut penjaga LAIN bagi layanan yang tabel kerjanya
+// bukan `T_WORK_CLAIM`.
+//
+// ⛔ DIPERSEMPIT 28-09-2026, dan sebabnya prinsip yang sama dengan
+// penjaga nama tabel telanjang: penjaga yang menuduh hal yang BENAR akan
+// dilonggarkan orang, bukan dipatuhi. Ronde pertama menuntut
+// `PastikanKasusTerbuka` dari SETIAP layanan pengubah - kalimat yang benar
+// selama hanya ada satu modul. `polis_penawaran.go` memang memeriksa kasus
+// tertutup, tetapi lewat `T_WORK_POLIS`: layanan polis yang menanyai tabel
+// klaim akan selalu menjawab "tidak ada".
+//
+// ⚠️ Ini BUKAN pengecualian. Berkas yang tidak ada di peta ini tetap
+// dituntut penjaga bawaan, dan yang ada di sini tetap dituntut penjaga yang
+// DISEBUT namanya. Yang nol penjaga tetap gagal.
+var penjagaTutup = map[string]string{
+	"polis_penawaran.go": "models.KasusPolisTertutup(k.Status)",
+}
 
 func TestSetiapRuteNonGETPunyaPenjagaKasusTertutup(t *testing.T) {
 	isi, err := os.ReadFile(filepath.Join("..", "handlers", "handlers.go"))
@@ -205,9 +238,13 @@ func TestSetiapRuteNonGETPunyaPenjagaKasusTertutup(t *testing.T) {
 			t.Errorf("rute %q menunjuk %s yang tidak terbaca: %v", kunci, berkas, err)
 			continue
 		}
-		if !strings.Contains(string(b), "PastikanKasusTerbuka(ctx, klaimID)") {
-			t.Errorf("rute pengubah %q dilayani %s, dan %s tidak memanggil "+
-				"PastikanKasusTerbuka.", kunci, berkas, berkas)
+		penjaga, punya := penjagaTutup[berkas]
+		if !punya {
+			penjaga = penjagaTutupBawaan
+		}
+		if !strings.Contains(string(b), penjaga) {
+			t.Errorf("rute pengubah %q dilayani %s, dan %s tidak memanggil %s.",
+				kunci, berkas, berkas, penjaga)
 		}
 	}
 	if cacahPengubah == 0 {

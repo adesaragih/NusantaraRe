@@ -117,3 +117,98 @@ konfirmasikan ke work owner; jangan menyimpulkan hidup/mati dari penanda saja.
 go test ./internal/...
 cd frontend && npm test
 ```
+
+
+## Pembacaan ulang XML — 28 September 2026 (peta konektor utuh)
+
+`InputPolicyHolder.xml` dibaca sebagai **pohon**: tiap blok disusuri dari `<pyMOId>` ke
+`<pyMOId>` berikutnya, lalu `pyTo` dan `pyFrom` di dalamnya.
+
+⚠️ **`pyTo` MENDAHULUI `pyFrom` di DOM.** Membaca berpasangan dari atas tanpa menyadari itu
+menghasilkan graf yang **seluruh panahnya terbalik** — dan graf terbalik tetap terlihat masuk akal.
+
+### Dua belas konektor, seluruh `pyExpression` VERBATIM
+
+```
+Start1        --Transition1 -------------------> Assignment2   (Input Offer Life b1340)
+Assignment2   --Transition3  [InputDataOfferLife b1735] -> Decision1
+Decision1     --Transition4  [Confirm b1574] ---> Decision3
+Decision1     --Transition5  [Decline b2235] ---> End1         (Resolved-Rejected b848)
+Decision3     --Transition10 [Premium b1658] ---> ASSIGNMENT63 (Input Premium Detail b1069)
+Decision3     --Transition11 [Offer   b1807] ---> END52        (Resolved-Completed b947)
+ASSIGNMENT63  --TRANSITION54 [ShowLifePremiumDetail b1505] -> Decision2
+Decision2     --Transition7  [Confirm b2090] ---> Utility1     (InsertJsonPolisLife b765)
+Decision2     --Transition6  [Decline b2162] ---> End1         (Resolved-Rejected)
+Decision2     --Transition9  [Reject  b2306] ---> Assignment2  (kembali ke Input Offer Life)
+Utility1      --Transition8 -------------------> END52         (Resolved-Completed)
+Assignment1   --Transition2  [ShowLifePremiumSummary b1881] -> END52
+```
+
+### ⛔ RALAT ATAS AC 2 TIKET INI — 28 September 2026
+
+AC 2 berbunyi: *"`Reject` pada tahap **mana pun** mengembalikan case ke layar Input Offer"*.
+
+**Konektornya membantah.** `Reject` muncul **tepat sekali** di seluruh flow — `Transition9`
+b2306, pada `Decision2`, yaitu penggolong **sesudah Input Premium Detail**. `Decision1` —
+penggolong sesudah tahap penawaran — hanya punya `Confirm` b1574 dan `Decline` b2235.
+
+Jadi **menolak di tahap penawaran tidak punya jalur di sistem lama**. Orang yang berada di layar
+Input Offer dan tidak ingin melanjutkan memakai **`Decline`**. Menyediakan `Reject` di sana
+berarti membuat jalur yang tidak pernah ada, dan kasus yang menempuhnya akan mendarat di tempat yang
+tidak dikenal sistem hilir.
+
+Dikunci `TestRejectDiTahapPenawaranTidakPunyaJalur`, dan cacahnya dikunci
+`TestNamaTahapDanStatusVERBATIMDariKorpus` yang **membaca berkas korpus langsung** dan menagih
+`pyExpression Reject` muncul tepat satu kali.
+
+### ⚠️ `[terbuka — work owner]` `Assignment1` nol konektor masuk
+
+Kedua belas konektor disusuri satu per satu; **nol** di antaranya ber-`pyTo` `Assignment1`
+*(Input Premium Summary b1215/b1232)*. Yang **keluar** ada — `Transition2` b1866. Artinya tahap
+itu dicapai lewat **ticket** *(`Ticket1` b958/b1456)* atau lewat jalur yang tidak ikut diekspor.
+
+Bentuk yang sama pernah ditemukan di Claim Life: `Assignment4`, yang nol `pyPosition`-nya.
+Perpindahan **ke** tahap ini karena itu **tidak disediakan** — ia akan menjadi jalur karangan.
+
+### ⭐ Dua hal yang tiket ini sebut benar, dan kini VERBATIM
+
+- **AC 3** — `Decline` menutup kasus. Statusnya **`Resolved-Rejected`** b848, bukan status
+  tersendiri. ⚠️ Nama statusnya menyebut *"Rejected"* sedangkan keputusan yang menuju ke sana
+  bernama *"Decline"* — kosakata sistem lama, ditiru apa adanya.
+- **AC 4** — keluaran `Offer` **menutup** kasus dengan `Resolved-Completed` b947
+  *(`Transition11` b1807)*, bukan menunggu. Penawarannya tetap tersimpan; yang selesai
+  **pekerjaannya**.
+
+## Implementasi — tiket 01 bagian 1 (28 September 2026)
+
+| Sisi | Isi |
+| --- | --- |
+| Model | `models/polis_penawaran.go` — peta konektor sebagai komentar, `TransisiPenawaran`, `LanjutanPenggolong`, `KasusPolisTertutup`; nama tahap dan status **VERBATIM** |
+| Repository | `repository/polis_work.go` — `Keadaan`, `PindahTahap` *(syarat `POSITION` lama)*, `TutupKasus` *(syarat `STATUS IS NULL`)* |
+| Services | `services/polis_penawaran.go` — `Putuskan`, `Golongkan`, satu `pagari`, satu transaksi bersama jejak |
+| Handlers | `POST /api/polis-life/{{id}}/keputusan` dan `…/penggolong` |
+
+⛔ **`Confirm` di tahap penawaran TIDAK menulis apa pun.** Di flow ia hanya memindahkan kendali
+ke `Decision3`; yang memindahkan kasus adalah hasil penggolong itu. Menuliskan tahap lebih awal
+berarti kasus berpindah **sebelum ada yang memutuskan ke mana**.
+
+⛔ **AC 6 dijaga uji statik.** `TestNolAturanOtomatisMenetapkanKeputusan` membaca berkas
+layanannya dan menolak literal `"Confirm"`/`"Reject"`/`"Decline"` di dalamnya: keputusan
+selalu **datang dari pengguna**, tidak pernah dihitung.
+
+### Kode bersama yang disentuh — aditif, dan satu penyempitan
+
+- `handlers/handlers.go` — **dua baris rute ditambahkan**; nol baris Claim Life disunting.
+- `services/tutupkontrak_test.go` — **dipersempit**, bukan dilonggarkan. Ronde pertamanya
+  menuntut `PastikanKasusTerbuka` dari **setiap** layanan pengubah; kalimat itu benar selama
+  hanya ada satu modul. `polis_penawaran.go` **memang** memeriksa kasus tertutup — lewat
+  `T_WORK_POLIS` dan `models.KasusPolisTertutup`, sebab layanan polis yang menanyai
+  `T_WORK_CLAIM` akan selalu menjawab *"tidak ada"*. Penjaga kini menerima penjaga **yang
+  disebut namanya per berkas**; yang tidak terdaftar tetap dituntut penjaga bawaan, dan **yang nol
+  penjaga tetap gagal** — dibuktikan merah dengan mencabut pemeriksaannya.
+
+### Yang BELUM ada di tiket ini
+
+Layar **Input Offer** beserta ketiga tombolnya, dan kotak masuk `PremiumList` beserta
+`Input Premium` b16472 / `Input Offer` b16964. Backend-nya siap dan berute; layarnya
+bagian 2.
