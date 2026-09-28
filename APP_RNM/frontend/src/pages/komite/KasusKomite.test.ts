@@ -4,7 +4,9 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import { KEPUTUSAN_KOMITE } from '../../assets/labels.komite'
-import { kalimatHasilKeputusan, PILIHAN_KEPUTUSAN } from './KasusKomite'
+import { PERAN } from '../../assets/labels.claimlife'
+import type { KasusKomite } from '../../services/api'
+import { bolehEskalasi, kalimatHasilKeputusan, PILIHAN_KEPUTUSAN } from './KasusKomite'
 
 // Uji layar keputusan Komite — tiket 02.
 
@@ -28,6 +30,22 @@ describe('keputusan komite', () => {
     expect(
       kalimatHasilKeputusan({ kataKeputusan: 'Tolak', tingkatDiputus: 2, berlanjut: false, tingkatBerikut: 0 }),
     ).toBe('Tolak tercatat di tingkat 2. Tangga berhenti.')
+  })
+
+  it('eskalasi hanya untuk admin dan hanya bila ada tingkat di atas (tiket 03)', () => {
+    const k = (tingkat: number): KasusKomite => ({
+      kasus: {
+        kasusId: 'KMTLF-UJI', tglUpdate: '', statusWork: '', klaimId: '', nomorKlaim: '',
+        tingkatBerjalan: tingkat, komiteLoop: 3, nilaiKlaim: '', mataUang: '', statusBaris: '',
+      },
+      adjustmentId: '',
+      tangga: [],
+      giliranSaya: false,
+    })
+    expect(bolehEskalasi([PERAN.admin], k(1))).toBe(true)
+    expect(bolehEskalasi([PERAN.admin], k(3))).toBe(false)
+    expect(bolehEskalasi([PERAN.spv], k(1))).toBe(false)
+    expect(bolehEskalasi([PERAN.admin], null)).toBe(false)
   })
 
   it('formulir hanya pada giliran pelaku; dropdown wajib', () => {

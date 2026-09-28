@@ -5,6 +5,7 @@ package handlers
 //	GET /api/komite         Inbox Komite milik pelaku (worklist `KomiteRouter`)
 //	GET /api/komite/{id}    satu kasus beserta tangganya
 //	POST /api/komite/{id}/keputusan  {"keputusan":"1|2","komentar":"…"} (tiket 02)
+//	POST /api/komite/{id}/eskalasi   naik SATU tingkat, admin saja (tiket 03)
 //
 // Nol aturan dagang di sini; siapa melihat apa diputuskan
 // `services/komite_inbox.go`.
@@ -84,6 +85,26 @@ func putuskanKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	}
 }
 
+// eskalasiKomite melayani POST /api/komite/{id}/eskalasi.
+//
+// ⛔ TANPA badan: tingkat tujuan tidak dapat disebut pemanggil - selalu
+// tingkat berjalan + 1. "Turun" atau "lompat" karena itu tidak dapat diminta.
+func eskalasiKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !svc.PunyaDatabase() {
+			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			return
+		}
+		hasil, err := svc.KeputusanKomite().
+			DenganJejak(services.PerekamJejakOracle(svc)).
+			Eskalasi(r.Context(), pelakuDari(r, stubPelaku), r.PathValue("id"), time.Now())
+		if jawabGalatKomite(w, err) {
+			return
+		}
+		tulisJSONPolis(w, hasil)
+	}
+}
+
 // jawabGalatKomite menerjemahkan galat services menjadi kode HTTP.
 //
 // Mengembalikan true bila permintaan SUDAH dijawab.
@@ -102,6 +123,7 @@ func jawabGalatKomite(w http.ResponseWriter, err error) bool {
 		errors.Is(err, services.ErrPermintaanTidakSah):
 		galat(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, services.ErrTanggaKomiteBerhenti),
+		errors.Is(err, services.ErrEskalasiTanpaTingkatAtas),
 		errors.Is(err, services.ErrKeputusanKomiteBersamaan),
 		errors.Is(err, services.ErrKasusSudahTertutup):
 		galat(w, http.StatusConflict, err.Error())

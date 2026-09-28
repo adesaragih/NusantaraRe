@@ -93,3 +93,61 @@ func (r *InboxKomite) CatatKeputusan(ctx context.Context, tx *Tx, kasusID string
 	}
 	return nil
 }
+
+// sqlLewatiAnakTangga mengosongkan anak tangga yang dilewati eskalasi.
+//
+// ⛔ Approval menjadi NULL - "tidak pernah memberi keputusan", persis kalimat
+// keputusan work owner - BUKAN `1`/`2`. Nilai keputusan untuk tingkat yang
+// tidak memutuskan adalah keputusan karangan.
+func sqlLewatiAnakTangga(list string) string {
+	return fmt.Sprintf(`UPDATE %s
+	   SET KOMITE_APPROVAL = NULL, DATE_APPROVE = NULL
+	 WHERE DATA_KOMITE_ID = :1 AND KOMITE_URUT = :2 AND KOMITE_APPROVAL = :3`, list)
+}
+
+// sqlNaikkanTingkat menaikkan `KOMITE_COUNT` TANPA menyentuh `ACCEPT_STATUS`.
+func sqlNaikkanTingkat(gen string) string {
+	return fmt.Sprintf(`UPDATE %s SET KOMITE_COUNT = :1 WHERE ID = :2 AND KOMITE_COUNT = :3`, gen)
+}
+
+// Eskalasi melewati anak tangga `urut` dan menaikkan tingkat ke `urut+1`.
+func (r *InboxKomite) Eskalasi(ctx context.Context, tx *Tx, kasusID string, urut int) error {
+	if tx == nil {
+		return errors.New("repository: eskalasi komite menuntut transaksi")
+	}
+	gen, err := r.db.Qualify("T_GENERAL_KOMITE")
+	if err != nil {
+		return err
+	}
+	list, err := r.db.Qualify("T_KOMITE_KOMITELIST")
+	if err != nil {
+		return err
+	}
+	q1 := sqlLewatiAnakTangga(list)
+	if err := PeriksaSQL(q1); err != nil {
+		return err
+	}
+	h, err := tx.tx.ExecContext(ctx, q1, kasusID, urut, ApprovalKomiteMenunggu)
+	if err != nil {
+		return fmt.Errorf("repository: melewati anak tangga: %w", err)
+	}
+	if n, err := h.RowsAffected(); err != nil {
+		return fmt.Errorf("repository: membaca cacah anak tangga: %w", err)
+	} else if n != 1 {
+		return fmt.Errorf("%w: anak tangga %d kasus %q", ErrKeputusanKomiteBersamaan, urut, kasusID)
+	}
+	q2 := sqlNaikkanTingkat(gen)
+	if err := PeriksaSQL(q2); err != nil {
+		return err
+	}
+	h, err = tx.tx.ExecContext(ctx, q2, urut+1, kasusID, urut)
+	if err != nil {
+		return fmt.Errorf("repository: menaikkan tingkat komite: %w", err)
+	}
+	if n, err := h.RowsAffected(); err != nil {
+		return fmt.Errorf("repository: membaca cacah kepala komite: %w", err)
+	} else if n != 1 {
+		return fmt.Errorf("%w: kepala kasus %q", ErrKeputusanKomiteBersamaan, kasusID)
+	}
+	return nil
+}

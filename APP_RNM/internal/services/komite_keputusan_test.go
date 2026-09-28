@@ -93,3 +93,25 @@ func TestUrutanKeputusanDalamSatuTransaksi(t *testing.T) {
 		t.Errorf("Putuskan membuka %d transaksi, mau 1", n)
 	}
 }
+
+// TestEskalasiHanyaAdmin - AC 11 spec Komite.
+func TestEskalasiHanyaAdmin(t *testing.T) {
+	kk := New(nil).KeputusanKomite()
+	_, err := kk.Eskalasi(context.Background(), Pelaku{AkunID: "UJI-B"}, "K", time.Now())
+	if !errors.Is(err, ErrTanpaWewenang) {
+		t.Errorf("eskalasi bukan admin: %v", err)
+	}
+	_, err = kk.Eskalasi(context.Background(), Pelaku{AkunID: "UJI-ADM", Peran: []string{PeranAdmin}}, "K", time.Now())
+	if !errors.Is(err, repository.ErrTanpaOracle) {
+		t.Errorf("eskalasi admin tanpa Oracle: %v", err)
+	}
+}
+
+// TestEskalasiBukanPintuBelakangKeputusan - admin tetap bukan anggota berjalan.
+func TestEskalasiBukanPintuBelakangKeputusan(t *testing.T) {
+	k := kasusUji()
+	k.Baris.KomiteCount, k.Baris.KomiteLoop = 2, 3
+	if err := periksaGiliran(k, "UJI-ADM"); !errors.Is(err, ErrTanpaWewenang) {
+		t.Errorf("admin dapat memutuskan atas nama tingkat berjalan: %v", err)
+	}
+}

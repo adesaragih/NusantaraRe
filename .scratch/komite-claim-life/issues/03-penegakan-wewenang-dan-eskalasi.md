@@ -78,3 +78,46 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+## Implementasi — 28-09-2026 (giliran 10)
+
+### Pembacaan ulang XML
+
+`[terverifikasi]` Sistem lama tidak menegakkan apa pun (catatan tiket di atas tetap benar):
+`KomiteRouter` hanya **menempatkan** (`param.AssignTo = .KomiteID`, b294), dan `ShowTransfer` hanya
+mewajibkan dropdown `.AcceptStatus` (b32607). Tidak ada eskalasi di korpus — ia penyimpangan sadar
+ADR-0014.
+
+### Yang dibangun
+
+- **Penegakan per `KomiteID`** (AC 8, 9) — sudah lahir di tiket 02: `periksaGiliran` di lapisan
+  layanan menolak siapa pun yang bukan pemilik anak tangga `KOMITE_URUT = KomiteCount` (403), apa pun
+  yang ditampilkan layar. Tiket ini menambah uji bahwa **admin pun** ditolak memutuskan atas nama
+  tingkat berjalan (`TestEskalasiBukanPintuBelakangKeputusan`).
+- **Eskalasi naik satu tingkat** — `POST /api/komite/{id}/eskalasi`, **tanpa badan**: tingkat tujuan
+  selalu berjalan + 1, jadi "turun" atau "lompat dua" tidak dapat diminta (AC 11 terpenuhi karena
+  bentuknya, bukan karena sebuah `if`). `models.EskalasiNaik` menolak eskalasi dari tingkat akhir.
+  Anak tangga yang dilewati: approval **NULL** — "tidak pernah memberi keputusan", `[keputusan work
+  owner]` — bukan `1`/`2`; `KOMITE_COUNT` naik, `ACCEPT_STATUS` **tidak** disentuh. Dua tulisan
+  bersyarat satu transaksi, jejak (siapa, kapan, dari → ke) di transaksi yang sama (AC 12).
+- ⚠️ `[asumsi — OQ-007/OQ-021]` "admin komite" = `ReasLifeAdmin` (`PeranAdmin`): korpus nol rule
+  otorisasi, tidak ada peran admin komite terekspor; peran itu yang menyerahkan kasus ke Komite. Satu
+  konstanta bila RBAC memutuskan lain.
+- Layar: tombol eskalasi di `KasusKomite.tsx` hanya bagi `ReasLifeAdmin` dan hanya bila ada tingkat di
+  atas (`bolehEskalasi`); server tetap yang menegakkan.
+
+### AC — keadaan
+
+| AC | Keadaan |
+| --- | --- |
+| bukan pemilik `KomiteList(KomiteCount).KomiteID` ditolak | ✅ (tiket 02) |
+| penolakan di lapisan layanan | ✅ |
+| admin naik satu; turun ditolak | ✅ bentuk rute tanpa tujuan; dari tingkat akhir 409 |
+| eskalasi tercatat siapa/kapan/dari/ke | ✅ jejak |
+| pemutus tingkat sama bukan pemilik tetap ditolak | ✅ |
+| perubahan roster tercatat | ➖ tidak berlaku — sistem ini **tidak mengubah roster**; master `EMAILKOMITE` tidak ditulis (`[data DBA]`), dan tangga kasus hanya berubah lewat keputusan/eskalasi yang keduanya berjejak |
+| nol nama orang ter-hardcode | ✅ |
+
+### Angka
+
+Go **571 PASS · 0 FAIL** tingkat atas; vet (+`-tags db`), gofmt bersih · vitest **357** · tsc bersih.

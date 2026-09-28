@@ -224,3 +224,77 @@ func (k *KeputusanKomite) Putuskan(ctx context.Context, pelaku Pelaku,
 	}
 	return hasil, nil
 }
+
+// HasilEskalasiKomite adalah jawaban `Eskalasi`.
+type HasilEskalasiKomite struct {
+	DariTingkat int `json:"dariTingkat"`
+	KeTingkat   int `json:"keTingkat"`
+}
+
+// Eskalasi memindahkan kasus NAIK SATU tingkat - tiket 03, ADR-0014.
+//
+// ⚠️ `[asumsi — OQ-007/OQ-021]` "admin komite" = peran `ReasLifeAdmin`
+// (`PeranAdmin`). Korpus tidak memuat satu pun rule otorisasi (Identity &
+// Access ABSENT, `discovery/context-map.md`), dan tidak ada peran admin
+// komite yang terekspor. Peran itu dipilih karena ia yang MENYERAHKAN kasus
+// ke Komite (`Penyerahan.Serahkan`); bila model RBAC memutuskan lain, hanya
+// konstanta ini yang berubah.
+//
+// ⛔ Eskalasi BUKAN pintu belakang keputusan: ia tidak mencatat `1`/`2`
+// untuk siapa pun, dan admin yang sama tetap tidak dapat memutuskan atas nama
+// tingkat mana pun (`periksaGiliran`).
+func (k *KeputusanKomite) Eskalasi(ctx context.Context, pelaku Pelaku,
+	kasusID string, saat time.Time) (HasilEskalasiKomite, error) {
+
+	if err := WajibIdentitas(pelaku); err != nil {
+		return HasilEskalasiKomite{}, err
+	}
+	if !pelaku.PunyaPeran(PeranAdmin) {
+		return HasilEskalasiKomite{}, fmt.Errorf("%w: eskalasi komite menuntut peran %s",
+			ErrTanpaWewenang, PeranAdmin)
+	}
+	if k == nil || k.svc == nil || !k.svc.PunyaDatabase() {
+		return HasilEskalasiKomite{}, repository.ErrTanpaOracle
+	}
+	if strings.TrimSpace(kasusID) == "" {
+		return HasilEskalasiKomite{}, fmt.Errorf("%w: id kasus komite kosong", ErrPermintaanTidakSah)
+	}
+	baca := repository.NewInboxKomite(k.svc.db)
+	kasus, err := baca.Kasus(ctx, kasusID)
+	if err != nil {
+		return HasilEskalasiKomite{}, err
+	}
+	klaimID := kasus.Baris.KlaimID
+	if err := k.svc.PastikanKasusTerbuka(ctx, klaimID); err != nil {
+		return HasilEskalasiKomite{}, err
+	}
+	b := kasus.Baris
+	if models.KasusTertutup(b.StatusWork) || !models.KasusDiTangga(b.AcceptStatus, b.KomiteCount, b.KomiteLoop) {
+		return HasilEskalasiKomite{}, fmt.Errorf("%w: kasus %q", ErrTanggaKomiteBerhenti, kasusID)
+	}
+	ke, err := models.EskalasiNaik(b.KomiteCount, b.KomiteLoop)
+	if err != nil {
+		return HasilEskalasiKomite{}, err
+	}
+	err = k.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+		if err := baca.Eskalasi(ctx, tx, kasusID, b.KomiteCount); err != nil {
+			return err
+		}
+		// AC 12: siapa, kapan, dari tingkat mana ke mana.
+		return k.jejak.Rekam(ctx, tx, CatatanJejak{
+			AdjustmentID: kasus.AdjID,
+			KlaimID:      klaimID,
+			Dari:         "Komite tingkat " + strconv.Itoa(b.KomiteCount),
+			Ke:           "Eskalasi ke tingkat " + strconv.Itoa(ke) + " (" + kasusID + ")",
+			AkunID:       pelaku.AkunID,
+			Waktu:        saat,
+		})
+	})
+	if err != nil {
+		return HasilEskalasiKomite{}, err
+	}
+	return HasilEskalasiKomite{DariTingkat: b.KomiteCount, KeTingkat: ke}, nil
+}
+
+// ErrEskalasiTanpaTingkatAtas - eskalasi dari tingkat akhir.
+var ErrEskalasiTanpaTingkatAtas = models.ErrEskalasiTanpaTingkatAtas

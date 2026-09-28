@@ -100,3 +100,15 @@ func TestInboxKomiteMengikutiIsKomiteLoop(t *testing.T) {
 		t.Errorf("inbox komite tidak menegakkan IsKomiteLoop:\n%s", q)
 	}
 }
+
+// TestEskalasiMengosongkanBukanMemutuskan - tiket 03.
+func TestEskalasiMengosongkanBukanMemutuskan(t *testing.T) {
+	q := sqlLewatiAnakTangga("L")
+	if !strings.Contains(q, "SET KOMITE_APPROVAL = NULL") || !strings.Contains(q, "KOMITE_APPROVAL = :3") {
+		t.Errorf("eskalasi tidak mengosongkan anak tangga yang menunggu:\n%s", q)
+	}
+	g := sqlNaikkanTingkat("G")
+	if strings.Contains(g, "ACCEPT_STATUS") || !strings.Contains(g, "KOMITE_COUNT = :3") {
+		t.Errorf("eskalasi menyentuh ACCEPT_STATUS atau tanpa kunci count:\n%s", g)
+	}
+}

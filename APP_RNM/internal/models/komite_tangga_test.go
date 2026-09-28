@@ -75,3 +75,16 @@ func TestIsKomiteLoopVERBATIM(t *testing.T) {
 		t.Error("kata keputusan")
 	}
 }
+
+// TestEskalasiHanyaNaikSatu - AC 11 spec Komite.
+func TestEskalasiHanyaNaikSatu(t *testing.T) {
+	if n, err := EskalasiNaik(1, 3); err != nil || n != 2 {
+		t.Errorf("eskalasi 1/3 = %d, %v", n, err)
+	}
+	if _, err := EskalasiNaik(3, 3); !errors.Is(err, ErrEskalasiTanpaTingkatAtas) {
+		t.Errorf("eskalasi dari tingkat akhir: %v", err)
+	}
+	if _, err := EskalasiNaik(4, 3); err == nil {
+		t.Error("tangga tidak sah diterima")
+	}
+}

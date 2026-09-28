@@ -1779,6 +1779,16 @@ export async function putuskanKomite(
   })
 }
 
+/** Eskalasi naik satu tingkat — `POST /api/komite/{id}/eskalasi` (admin). */
+export async function eskalasiKomite(
+  kasusID: string,
+): Promise<{ dariTingkat: number; keTingkat: number }> {
+  return minta<{ dariTingkat: number; keTingkat: number }>(
+    `/api/komite/${encodeURIComponent(kasusID)}/eskalasi`,
+    { metode: 'POST' },
+  )
+}
+
 /** Satu kasus komite — `GET /api/komite/{id}`. 403 bila bukan anggota tangga. */
 export async function ambilKasusKomite(kasusID: string): Promise<KasusKomite> {
   return minta<KasusKomite>(`/api/komite/${encodeURIComponent(kasusID)}`)

@@ -119,6 +119,7 @@ export default function App() {
       {halaman === 'komite' && kasusKomite !== '' && (
         <KasusKomite
           kasusID={kasusKomite}
+          peran={masuk.peran}
           onKembali={() => {
             setKasusKomite('')
           }}

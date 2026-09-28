@@ -114,3 +114,25 @@ func TerapkanKeputusanKomite(keputusan string, komiteCount, komiteLoop int) (
 		Keputusan:      k,
 	}, nil
 }
+
+// ErrEskalasiTanpaTingkatAtas - tingkat berjalan sudah tingkat akhir.
+var ErrEskalasiTanpaTingkatAtas = errors.New(
+	"models: eskalasi naik tidak mungkin dari tingkat akhir; tidak ada tingkat di atasnya")
+
+// EskalasiNaik adalah tiket 03 - pengecualian satu-satunya ADR-0014.
+//
+// ⚠️ PENYIMPANGAN SADAR: sistem lama tidak punya eskalasi sama sekali.
+// `[keputusan work owner]` eskalasi MEMPERPENDEK tangga: tingkat yang
+// dilewati tidak pernah memberi keputusan, dan `KomiteCount` ikut naik.
+// Hanya NAIK SATU - tidak ada parameter tingkat tujuan, jadi "turun" atau
+// "lompat dua" tidak dapat diminta sama sekali.
+func EskalasiNaik(komiteCount, komiteLoop int) (int, error) {
+	if komiteCount < 1 || komiteLoop < 1 || komiteCount > komiteLoop {
+		return 0, fmt.Errorf("models: tangga komite tidak sah (count %d, loop %d)",
+			komiteCount, komiteLoop)
+	}
+	if komiteCount == komiteLoop {
+		return 0, ErrEskalasiTanpaTingkatAtas
+	}
+	return komiteCount + 1, nil
+}

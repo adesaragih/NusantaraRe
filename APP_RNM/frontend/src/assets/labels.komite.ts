@@ -64,3 +64,14 @@ export const KEPUTUSAN_KOMITE = {
   cancel: 'Cancel',
   wajibPilih: 'Keputusan wajib dipilih.',
 } as const
+
+/**
+ * Eskalasi — tiket 03. ⚠️ Tidak ada di korpus (penyimpangan sadar, ADR-0014);
+ * kosakata kami.
+ */
+export const ESKALASI_KOMITE = {
+  tombol: 'Eskalasi naik satu tingkat',
+  keterangan:
+    'Melewati anggota tingkat berjalan yang berhalangan. Tingkat yang dilewati ' +
+    'tidak mencatat keputusan apa pun.',
+} as const

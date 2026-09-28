@@ -11,10 +11,17 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { KASUS_KOMITE, KEPUTUSAN_KOMITE, KOLOM_INBOX_KOMITE } from '../../assets/labels.komite'
+import { PERAN, type KodePeran } from '../../assets/labels.claimlife'
+import {
+  ESKALASI_KOMITE,
+  KASUS_KOMITE,
+  KEPUTUSAN_KOMITE,
+  KOLOM_INBOX_KOMITE,
+} from '../../assets/labels.komite'
 import { Gagal, Memuat } from '../../components/ui/dasar'
 import {
   ambilKasusKomite,
+  eskalasiKomite,
   putuskanKomite,
   type KasusKomite as Kasus,
 } from '../../services/api'
@@ -25,6 +32,18 @@ export const PILIHAN_KEPUTUSAN = [
   { kode: '1', label: KEPUTUSAN_KOMITE.setuju },
   { kode: '2', label: KEPUTUSAN_KOMITE.tolak },
 ] as const
+
+/**
+ * Kontrol eskalasi hanya untuk admin, dan hanya bila masih ada tingkat di atas.
+ *
+ * ⚠️ `[asumsi — OQ-007/OQ-021]` admin komite = `ReasLifeAdmin`. Server tetap
+ * yang menegakkan; ini hanya menyembunyikan tombol yang pasti ditolak.
+ */
+export function bolehEskalasi(peran: readonly KodePeran[], k: Kasus | null): boolean {
+  if (k === null) return false
+  return peran.includes(PERAN.admin) && k.kasus.tingkatBerjalan > 0 &&
+    k.kasus.tingkatBerjalan < k.kasus.komiteLoop
+}
 
 /** Kalimat hasil — satu tempat. */
 export function kalimatHasilKeputusan(h: {
@@ -41,9 +60,12 @@ export function kalimatHasilKeputusan(h: {
 
 export default function KasusKomite({
   kasusID,
+  peran,
   onKembali,
 }: {
   kasusID: string
+  /** Peran pelaku — hanya untuk menampilkan kontrol eskalasi. */
+  peran: readonly KodePeran[]
   onKembali: () => void
 }) {
   const [k, setK] = useState<Kasus | null>(null)
@@ -71,6 +93,22 @@ export default function KasusKomite({
   useEffect(() => {
     void muat()
   }, [muat])
+
+  async function eskalasi(): Promise<void> {
+    if (kirim) return
+    setKirim(true)
+    setGalat(null)
+    setKabar('')
+    try {
+      const h = await eskalasiKomite(kasusID)
+      setKabar(`Eskalasi dari tingkat ${String(h.dariTingkat)} ke tingkat ${String(h.keTingkat)}.`)
+      await muat()
+    } catch (e) {
+      setGalat(e)
+    } finally {
+      setKirim(false)
+    }
+  }
 
   async function submit(): Promise<void> {
     if (kirim) return
@@ -145,6 +183,20 @@ export default function KasusKomite({
               ))}
             </tbody>
           </table>
+          {bolehEskalasi(peran, k) && (
+            <p className="komite-kasus__eskalasi">
+              <button
+                type="button"
+                disabled={kirim}
+                onClick={() => {
+                  void eskalasi()
+                }}
+              >
+                {ESKALASI_KOMITE.tombol}
+              </button>{' '}
+              {ESKALASI_KOMITE.keterangan}
+            </p>
+          )}
           {k.giliranSaya && (
             <form
               className="komite-kasus__keputusan"

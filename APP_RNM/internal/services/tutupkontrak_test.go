@@ -197,6 +197,8 @@ var rutePengubah = map[string]string{
 	// Komite Claim Life tiket 02 - keputusan satu tingkat MENULIS anak tangga
 	// dan kepala kasus.
 	"POST /api/komite/{id}/keputusan": "komite_keputusan.go",
+	// Tiket 03 - eskalasi MENULIS anak tangga dan kepala kasus.
+	"POST /api/komite/{id}/eskalasi": "komite_keputusan.go",
 }
 
 var polaRute = regexp.MustCompile(`mux\.HandleFunc\(\s*\n?\s*"([A-Z]+) ([^"]+)"`)
