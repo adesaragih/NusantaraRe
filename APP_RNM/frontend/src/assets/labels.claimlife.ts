@@ -298,6 +298,24 @@ export const DETAIL = {
 } as const
 
 /**
+ * Dialog `Edit Date` — `Section/EditDateClaimLife_Section.xml`, dibuka tombol
+ * `DETAIL.ubahTanggal` b14115. Label VERBATIM `pyLabelPreview`, kecuali Save.
+ *
+ * ⚠️ DOL tidak ada di sini: kotaknya sudah berdiri sendiri sejak tiket 06
+ * dengan label `DETAIL.ubahTanggal`, dan menyimpannya lewat rute sendiri.
+ */
+export const EDIT_DATE = {
+  /** b1069 → `.CLAIM_RECEIVED_DATE` b1076. */
+  terimaKlaim: 'CLAIM RECEIVED DATE',
+  /** b1381 → `.COMPLETE_DATE` b1387. */
+  dokumenLengkap: 'DOCUMENT COMPLETE DATE',
+  /** b1619 → `.CONFIRMATION_DATE` b1626. */
+  konfirmasi: 'CONFIRMATION DATE',
+  /** b1910 `pyLabel` → `UpdateDateClaimLife_Act` b1929. */
+  simpan: 'Save',
+} as const
+
+/**
  * Layar dokumen pendukung — `Section/DocumentLife.xml`.
  *
  * Nomor baris dibaca 27-09-2026 dari korpus apa adanya.

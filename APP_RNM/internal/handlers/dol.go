@@ -12,6 +12,8 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
+	"time"
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/services"
@@ -77,20 +79,94 @@ func setTanggalKejadian(svc *services.Service, stubPelaku bool) http.HandlerFunc
 			galat(w, http.StatusUnprocessableEntity,
 				"tanggal valuasi peserta kosong; DOL tidak dapat divalidasi")
 			return
-		case errors.Is(err, services.ErrPermintaanTidakSah):
-			galat(w, http.StatusBadRequest, err.Error())
-			return
-		case errors.Is(err, services.ErrTanpaIdentitas):
-			galat(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
-			return
-		case errors.Is(err, services.ErrTanpaWewenang):
-			galat(w, http.StatusForbidden, "peran tidak mencukupi")
-			return
 		case err != nil:
-			galat(w, http.StatusInternalServerError, "gagal menyimpan tanggal kejadian")
+			jawabGalatTanggal(w, err, "gagal menyimpan tanggal kejadian")
 			return
 		}
 
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+// jawabGalatTanggal menerjemahkan galat bersama KEDUA rute dialog Edit Date.
+//
+// ⛔ Satu terjemahan, sebab satu dialog. Sebelum 28-09-2026 rute DOL
+// menjawab 500 atas kasus yang sudah ditutup - `ErrKasusSudahTertutup` tidak
+// ada di daftarnya, dan 500 membuat orang menelepon, bukan membaca.
+func jawabGalatTanggal(w http.ResponseWriter, err error, gagal string) {
+	switch {
+	case errors.Is(err, services.ErrPermintaanTidakSah):
+		galat(w, http.StatusBadRequest, err.Error())
+	case errors.Is(err, services.ErrTanpaIdentitas):
+		galat(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+	case errors.Is(err, services.ErrTanpaWewenang):
+		galat(w, http.StatusForbidden, "peran tidak mencukupi")
+	case errors.Is(err, services.ErrKasusSudahTertutup):
+		galat(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
+	case errors.Is(err, services.ErrTahapTidakBolehUbahTanggal):
+		galat(w, http.StatusConflict, "tanggal klaim hanya dapat diubah di tahap Outstanding Claim")
+	default:
+		galat(w, http.StatusInternalServerError, gagal)
+	}
+}
+
+// permintaanTanggalKlaimJSON - ketiga isian dialog selain DOL. Kosong SAH:
+// isian yang dikosongkan menjadi NULL, sama seperti di Pega.
+type permintaanTanggalKlaimJSON struct {
+	TanggalTerimaKlaim    string `json:"tanggalTerimaKlaim"`
+	TanggalDokumenLengkap string `json:"tanggalDokumenLengkap"`
+	TanggalKonfirmasi     string `json:"tanggalKonfirmasi"`
+}
+
+// uraiTanggalOpsional mengurai satu isian; kosong menjadi nil.
+func uraiTanggalOpsional(teks string) (*time.Time, error) {
+	if strings.TrimSpace(teks) == "" {
+		return nil, nil
+	}
+	t, err := utils.ParseTanggal(strings.TrimSpace(teks))
+	if err != nil {
+		return nil, err
+	}
+	return &t, nil
+}
+
+// setTanggalKlaim melayani
+// PUT /api/klaim-life/{id}/peserta/{pesertaId}/tanggal-klaim.
+//
+// Tombol `Save` `EditDateClaimLife_Section.xml` b1910 -> `UpdateDateClaimLife_Act`.
+func setTanggalKlaim(svc *services.Service, stubPelaku bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !svc.PunyaDatabase() {
+			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			return
+		}
+		var masuk permintaanTanggalKlaimJSON
+		if err := json.NewDecoder(r.Body).Decode(&masuk); err != nil {
+			galat(w, http.StatusBadRequest, "badan permintaan bukan JSON yang sah")
+			return
+		}
+		var tgl models.TanggalKlaim
+		for _, isian := range []struct {
+			nama string
+			teks string
+			ke   **time.Time
+		}{
+			{"tanggalTerimaKlaim", masuk.TanggalTerimaKlaim, &tgl.TerimaKlaim},
+			{"tanggalDokumenLengkap", masuk.TanggalDokumenLengkap, &tgl.DokumenLengkap},
+			{"tanggalKonfirmasi", masuk.TanggalKonfirmasi, &tgl.Konfirmasi},
+		} {
+			t, err := uraiTanggalOpsional(isian.teks)
+			if err != nil {
+				galat(w, http.StatusBadRequest, isian.nama+" bukan tanggal yang dikenal")
+				return
+			}
+			*isian.ke = t
+		}
+		if err := svc.TanggalKejadian().SetTanggalKlaim(r.Context(), pelakuDari(r, stubPelaku),
+			r.PathValue("id"), r.PathValue("pesertaId"), tgl); err != nil {
+			jawabGalatTanggal(w, err, "gagal menyimpan tanggal klaim")
+			return
+		}
 		w.WriteHeader(http.StatusNoContent)
 	}
 }

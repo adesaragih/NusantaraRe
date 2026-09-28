@@ -319,3 +319,42 @@ func TestPergeseranDOLSatuHariBukanSatuJam(t *testing.T) {
 			services.PergeseranDOLRetro(), seharusnya)
 	}
 }
+
+// --- Tiga tanggal klaim dialog Edit Date (sensus §3.1, 28-09-2026) ---
+
+func tanggalKlaimUji(t *testing.T) models.TanggalKlaim {
+	t.Helper()
+	w := saat(t, "2026-03-02 00:00:00")
+	return models.TanggalKlaim{TerimaKlaim: &w}
+}
+
+// TestSetTanggalKlaimMenjagaPagarnya - identitas, pengenal, lalu peran, SEBELUM
+// basis data. `pyPosition=='ReasLifeAdmin'` (b1000/b1313/b1550/b1788) berarti
+// hanya Admin yang dapat membuka isiannya.
+func TestSetTanggalKlaimMenjagaPagarnya(t *testing.T) {
+	svc := services.New(nil)
+	ctx := context.Background()
+	tgl := tanggalKlaimUji(t)
+	admin := pelakuBerperan(services.PeranAdmin)
+
+	if err := svc.TanggalKejadian().SetTanggalKlaim(ctx, services.Pelaku{},
+		"CLM-1", "P-1", tgl); !errors.Is(err, services.ErrTanpaIdentitas) {
+		t.Errorf("anonim: %v, mau ErrTanpaIdentitas", err)
+	}
+	for _, k := range []struct{ klaim, peserta string }{{"", "P-1"}, {"CLM-1", " "}} {
+		if err := svc.TanggalKejadian().SetTanggalKlaim(ctx, admin,
+			k.klaim, k.peserta, tgl); !errors.Is(err, services.ErrPermintaanTidakSah) {
+			t.Errorf("%q/%q: %v, mau ErrPermintaanTidakSah", k.klaim, k.peserta, err)
+		}
+	}
+	for _, peran := range []string{services.PeranMedicalAdvisor, services.PeranSPV} {
+		if err := svc.TanggalKejadian().SetTanggalKlaim(ctx, pelakuBerperan(peran),
+			"CLM-1", "P-1", tgl); !errors.Is(err, services.ErrTanpaWewenang) {
+			t.Errorf("%s: %v, mau ErrTanpaWewenang", peran, err)
+		}
+	}
+	if err := svc.TanggalKejadian().SetTanggalKlaim(ctx, admin,
+		"CLM-1", "P-1", tgl); !errors.Is(err, repository.ErrTanpaOracle) {
+		t.Errorf("admin tanpa Oracle: %v, mau ErrTanpaOracle", err)
+	}
+}

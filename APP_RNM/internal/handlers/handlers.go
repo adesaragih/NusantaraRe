@@ -59,6 +59,10 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 		tolakBaris(svc, stubPelaku))
 	mux.HandleFunc("PUT /api/klaim-life/{id}/peserta/{pesertaId}/tanggal-kejadian",
 		setTanggalKejadian(svc, stubPelaku))
+	// Tiga tanggal klaim lain dialog Edit Date - `Save` b1910
+	// (`EditDateClaimLife_Section.xml`). Satu rute, sebab satu tombol.
+	mux.HandleFunc("PUT /api/klaim-life/{id}/peserta/{pesertaId}/tanggal-klaim",
+		setTanggalKlaim(svc, stubPelaku))
 	// Grid diagnosa - butir bd. Tiga tombol, tiga rute, dan jalurnya
 	// BERSARANG di bawah pesertanya: `SetDisease.xml` b389 menutup dengan
 	// `Obj-Save pyWorkPage`, jadi diagnosa tidak punya hidup di luar peserta

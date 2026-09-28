@@ -18,6 +18,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   DETAIL,
+  EDIT_DATE,
   LAYAR,
   PERAN,
   REGISTER,
@@ -229,6 +230,21 @@ describe.skipIf(!adaKorpus)('label layar Detail berbukti barisnya', () => {
       `<pyLabel>${TOMBOL_KOMITE.batal}</pyLabel>`,
     )
   })
+
+  // Dialog Edit Date - label di berkas section-nya sendiri.
+  const medanEditDate: Array<[string, number, string]> = [
+    [EDIT_DATE.terimaKlaim, 1069, 'pyLabelPreview'],
+    [EDIT_DATE.dokumenLengkap, 1381, 'pyLabelPreview'],
+    [EDIT_DATE.konfirmasi, 1619, 'pyLabelPreview'],
+    [EDIT_DATE.simpan, 1910, 'pyLabel'],
+  ]
+
+  it.each(medanEditDate)('%s ada di EditDateClaimLife_Section baris %i sebagai <%s>',
+    (label, nomor, tag) => {
+      expect(baris('Section/EditDateClaimLife_Section.xml', nomor)).toBe(
+        `<${tag}>${label}</${tag}>`,
+      )
+    })
 
   it('DETAIL memuat kesebelas label itu, tidak kurang', () => {
     const nilai = Object.values(DETAIL)

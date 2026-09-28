@@ -58,6 +58,12 @@ var kolomPeserta = []struct {
 	{"RETRO_VALUATION_EXPIRED_DATE", kolomTanggal, func(p models.Peserta) string { return p.ValuasiRetroSelesai }},
 	{"WPC", kolomTanggal, func(p models.Peserta) string { return p.WPC }},
 	{"DATE_OF_LOSS", kolomTanggal, func(p models.Peserta) string { return p.TanggalKejadian }},
+	// Tiga tanggal klaim dialog Edit Date (28-09-2026). Pendaftaran
+	// menulisnya NULL - tanggal itu lahir sesudah klaim ada; yang
+	// mengisinya `PerbaruiTanggalKlaim`.
+	{"CLAIM_RECEIVED_DATE", kolomTanggal, func(p models.Peserta) string { return p.TanggalTerimaKlaim }},
+	{"COMPLETE_DATE", kolomTanggal, func(p models.Peserta) string { return p.TanggalDokumenLengkap }},
+	{"CONFIRMATION_DATE", kolomTanggal, func(p models.Peserta) string { return p.TanggalKonfirmasi }},
 	{"BEGIN_DATE", kolomTanggal, func(p models.Peserta) string { return p.TanggalMulai }},
 	{"EFFECTIVE_DATE", kolomTanggal, func(p models.Peserta) string { return p.TanggalEfektif }},
 	{"LAPSE_DATE", kolomTanggal, func(p models.Peserta) string { return p.TanggalLapse }},
@@ -189,6 +195,9 @@ func rakitPeserta(id string, sel []sql.NullString) (models.Peserta, error) {
 	p.ValuasiRetroSelesai = teks("RETRO_VALUATION_EXPIRED_DATE")
 	p.WPC = teks("WPC")
 	p.TanggalKejadian = teks("DATE_OF_LOSS")
+	p.TanggalTerimaKlaim = teks("CLAIM_RECEIVED_DATE")
+	p.TanggalDokumenLengkap = teks("COMPLETE_DATE")
+	p.TanggalKonfirmasi = teks("CONFIRMATION_DATE")
 	p.TanggalMulai = teks("BEGIN_DATE")
 	p.TanggalEfektif = teks("EFFECTIVE_DATE")
 	p.TanggalLapse = teks("LAPSE_DATE")

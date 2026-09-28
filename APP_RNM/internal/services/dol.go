@@ -259,6 +259,79 @@ func (t *TanggalKejadian) Set(ctx context.Context, pelaku Pelaku,
 	})
 }
 
+// ErrTahapTidakBolehUbahTanggal - dialog Edit Date hanya terbuka di tahap
+// yang dipegang Admin DAN membuka grid peserta (models.TahapBolehUbahTanggalKlaim).
+var ErrTahapTidakBolehUbahTanggal = errors.New(
+	"services: tanggal klaim hanya dapat diubah di tahap Outstanding Claim")
+
+// SetTanggalKlaim menyimpan tiga tanggal klaim lain seorang peserta -
+// `UpdateDateClaimLife_Act`, tombol `Save` `EditDateClaimLife_Section` b1910.
+//
+// Urutan gerbangnya: identitas, pengenal, peran, kasus terbuka, tahap, lalu
+// kepemilikan peserta - pola `DiagnosaPeserta.pagari`.
+//
+// ⛔ Peran DAN tahap, bukan salah satunya. `pyPosition=='ReasLifeAdmin'`
+// adalah posisi KASUS (Register_Flow b582-b731 menyetelnya per tahap); orang
+// mengubah pekerjaan yang sedang ia pegang (pola `TahapLayanan.Pindah`).
+//
+// ⚠️ Yang TIDAK dilakukan, dan sebabnya ada di kepala `models/tanggalklaim.go`:
+// separuh "CLAIM_NO tidak kosong" gerbangnya (OQ-M1), `ValidasiClaimReceived_Act`
+// (penandanya tanpa kolom - OQ-M9), dan cermin warisan
+// `UpdateDateClaimLife_SQL` (OQ-M2).
+func (t *TanggalKejadian) SetTanggalKlaim(ctx context.Context, pelaku Pelaku,
+	klaimID, pesertaID string, tgl models.TanggalKlaim) error {
+
+	if err := WajibIdentitas(pelaku); err != nil {
+		return err
+	}
+	if strings.TrimSpace(klaimID) == "" || strings.TrimSpace(pesertaID) == "" {
+		return fmt.Errorf("%w: pengenal klaim dan peserta wajib diisi", ErrPermintaanTidakSah)
+	}
+	if err := WajibPeran(pelaku, PeranAdmin); err != nil {
+		return err
+	}
+	if !t.svc.PunyaDatabase() {
+		return repository.ErrTanpaOracle
+	}
+	// ⛔ BUTIR bb - kasus tertutup tidak dapat diubah lagi.
+	if err := t.svc.PastikanKasusTerbuka(ctx, klaimID); err != nil {
+		return err
+	}
+
+	baca := repository.NewKlaimLife(t.svc.db)
+	kolomTahap, peranPemegang, err := baca.TahapDanPeran(ctx, klaimID)
+	if err != nil {
+		return err
+	}
+	// Kolom TAHAP menang; PY_POSITION cadangan untuk baris lama (butir at).
+	tahap := models.TahapDariNama(kolomTahap)
+	if !tahap.Diketahui() {
+		tahap = models.TahapDariPeran(peranPemegang)
+	}
+	if !models.TahapBolehUbahTanggalKlaim(tahap) {
+		return fmt.Errorf("%w: tahap %s", ErrTahapTidakBolehUbahTanggal, tahap)
+	}
+
+	peserta, err := baca.AmbilPeserta(ctx, klaimID)
+	if err != nil {
+		return err
+	}
+	milik := false
+	for _, p := range peserta {
+		if p.ID == pesertaID {
+			milik = true
+			break
+		}
+	}
+	if !milik {
+		return fmt.Errorf("%w: peserta %q bukan milik klaim %q",
+			ErrPermintaanTidakSah, pesertaID, klaimID)
+	}
+	return t.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+		return baca.PerbaruiTanggalKlaim(ctx, tx, klaimID, pesertaID, tgl)
+	})
+}
+
 // PergeseranDOLRetro membuka pergeseran itu untuk diuji.
 //
 // ⚠️ Fungsi, bukan konstanta yang diekspor: nilainya hasil pembacaan korpus

@@ -172,6 +172,7 @@ var rutePengubah = map[string]string{
 	"POST /api/klaim-life/{id}/tutup":                                         "tutup.go",
 	"POST /api/klaim-life/{id}/adjustment/{adjId}/tolak":                      "statusbaris.go",
 	"PUT /api/klaim-life/{id}/peserta/{pesertaId}/tanggal-kejadian":           "dol.go",
+	"PUT /api/klaim-life/{id}/peserta/{pesertaId}/tanggal-klaim":              "dol.go",
 	"POST /api/klaim-life/{id}/peserta/{pesertaId}/diagnosa":                  "diagnosa.go",
 	"PUT /api/klaim-life/{id}/peserta/{pesertaId}/diagnosa/{diagId}":          "diagnosa.go",
 	"DELETE /api/klaim-life/{id}/peserta/{pesertaId}/diagnosa/{diagId}":       "diagnosa.go",

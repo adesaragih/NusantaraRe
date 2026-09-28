@@ -278,6 +278,55 @@ func (r *KlaimLife) PerbaruiTanggalKejadian(ctx context.Context, tx *Tx,
 	return nil
 }
 
+func sqlTanggalKlaim(tabel string) string {
+	return fmt.Sprintf(`UPDATE %s
+	   SET CLAIM_RECEIVED_DATE = TO_DATE(:1, 'YYYY-MM-DD HH24:MI:SS'),
+	       COMPLETE_DATE       = TO_DATE(:2, 'YYYY-MM-DD HH24:MI:SS'),
+	       CONFIRMATION_DATE   = TO_DATE(:3, 'YYYY-MM-DD HH24:MI:SS')
+	 WHERE ID = :4 AND CLAIM_ID = :5`, tabel)
+}
+
+// argTanggal menulis satu tanggal untuk TO_DATE; nil menjadi NULL.
+func argTanggal(t *time.Time) any {
+	if t == nil {
+		return nil
+	}
+	return utils.FormatTanggalWaktu(*t)
+}
+
+// PerbaruiTanggalKlaim menulis ketiga tanggal klaim seorang peserta SEKALIGUS.
+//
+// Satu pernyataan, sebab satu tombol: `Save` b1910 menyimpan seluruh isian
+// dialog bersama-sama (`UpdateDateClaimLife_Act` b252-b384).
+//
+// ⛔ `CLAIM_ID` ikut di WHERE: peserta klaim lain tidak dapat tersentuh
+// walau pengenal pesertanya tertukar.
+func (r *KlaimLife) PerbaruiTanggalKlaim(ctx context.Context, tx *Tx,
+	klaimID, pesertaID string, t models.TanggalKlaim) error {
+	tabel, err := r.db.Qualify("T_CLAIMLF_PREMIUMLIST_DETAIL")
+	if err != nil {
+		return err
+	}
+	q := sqlTanggalKlaim(tabel)
+	if err := PeriksaSQL(q); err != nil {
+		return err
+	}
+	hasil, err := tx.tx.ExecContext(ctx, q, argTanggal(t.TerimaKlaim),
+		argTanggal(t.DokumenLengkap), argTanggal(t.Konfirmasi), pesertaID, klaimID)
+	if err != nil {
+		return fmt.Errorf("repository: menulis tanggal klaim: %w", err)
+	}
+	n, err := hasil.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("repository: mencacah baris tersentuh: %w", err)
+	}
+	if n != 1 {
+		return fmt.Errorf("repository: tanggal klaim peserta %q menyentuh %d baris, mau 1",
+			pesertaID, n)
+	}
+	return nil
+}
+
 // PerbaruiStatusBaris menulis status ke baris adjustment DAN ke pesertanya.
 //
 // Header klaim TIDAK ditulis di sini - sumbernya baris yang berbeda; lihat

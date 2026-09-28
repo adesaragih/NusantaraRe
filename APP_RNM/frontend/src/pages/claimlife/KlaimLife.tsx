@@ -5,6 +5,10 @@ import { PanelTotalPeserta } from '../../components/claimlife/PanelTotalPeserta'
 import { PanelDokumenPeserta } from '../../components/claimlife/PanelDokumenPeserta'
 import { GridDiagnosa } from '../../components/claimlife/GridDiagnosa'
 import { PanelPindahTahap } from '../../components/claimlife/PanelPindahTahap'
+import {
+  keIsianTanggal,
+  PanelTanggalKlaim,
+} from '../../components/claimlife/PanelTanggalKlaim'
 
 import {
   ambilKlaimLife,
@@ -13,6 +17,7 @@ import {
   periksaBolehTutup,
   tutupKlaim,
   bolehTutupDiLayar,
+  bolehUbahTanggalKlaim,
   kasusTertutup,
   penghalangDariGalat,
   ubahTanggalKejadian,
@@ -485,7 +490,9 @@ export default function KlaimLife() {
                     // kotaknya tetap memperlihatkan ketikan lama - dan
                     // pemakai tidak punya cara tahu mana yang tersimpan.
                     key={`${p.id}:${p.tanggalKejadian}`}
-                    defaultValue={p.tanggalKejadian}
+                    // ⛔ Backend memulangkan tanggal BERJAM; kotak tanggal
+                    // menolaknya diam-diam dan tampak kosong (28-09-2026).
+                    defaultValue={keIsianTanggal(p.tanggalKejadian)}
                     disabled={tanggalSibuk[p.id] === true}
                     onChange={(e) => {
                       void ubahTanggal(p.id, e.target.value)
@@ -496,6 +503,18 @@ export default function KlaimLife() {
                   <span role="alert"> {galatTanggal[p.id]}</span>
                 )}
               </p>
+              {/* Tiga tanggal lain dialog yang sama — `Save` b1910. `key`
+                  memaksanya lahir ulang sesudah pembacaan ulang, supaya
+                  isinya selalu yang TERSIMPAN. */}
+              <PanelTanggalKlaim
+                key={`${p.id}:${p.tanggalTerimaKlaim}:${p.tanggalDokumenLengkap}:${p.tanggalKonfirmasi}`}
+                klaimID={klaim.id}
+                peserta={p}
+                boleh={bolehUbahTanggalKlaim(klaim)}
+                sesudahSimpan={() => {
+                  void muatUlang()
+                }}
+              />
 
               {/* ⛔ KEENAM total ini milik PESERTA, bukan klaim.
                   `ClaimLifeDetailGCNM.xml` berkelas

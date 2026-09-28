@@ -132,6 +132,14 @@ export interface Peserta {
    * Teks apa adanya, bentuk `YYYY-MM-DD`. Kosong berarti belum diisi.
    */
   tanggalKejadian: string
+  /**
+   * Tiga tanggal klaim lain dialog Edit Date — `CLAIM_RECEIVED_DATE` b1076,
+   * `COMPLETE_DATE` b1387, `CONFIRMATION_DATE` b1626. Teks `YYYY-MM-DD`,
+   * kosong berarti belum diisi.
+   */
+  tanggalTerimaKlaim: string
+  tanggalDokumenLengkap: string
+  tanggalKonfirmasi: string
   baris: BarisAdjustment[]
   /** Keenam total uang peserta ini, dihitung backend. Lihat TotalPeserta. */
   total: TotalPeserta
@@ -930,6 +938,37 @@ export async function ubahTanggalKejadian(
   )
 }
 
+/** Isi tombol `Save` dialog Edit Date, selain DOL. Kosong berarti dikosongkan. */
+export interface TanggalKlaim {
+  tanggalTerimaKlaim: string
+  tanggalDokumenLengkap: string
+  tanggalKonfirmasi: string
+}
+
+/**
+ * Menyimpan tiga tanggal klaim satu peserta SEKALIGUS.
+ *
+ * Tombol `Save` `EditDateClaimLife_Section.xml` b1910 →
+ * `UpdateDateClaimLife_Act` b1929. Satu permintaan, sebab satu tombol.
+ *
+ * Kode jawaban yang mungkin:
+ *   204 berhasil
+ *   400 salah satu tanggal bukan tanggal yang dikenal
+ *   403 bukan Admin
+ *   409 bukan tahap Outstanding Claim, atau kasusnya sudah ditutup
+ */
+export async function ubahTanggalKlaim(
+  klaimID: string,
+  pesertaID: string,
+  tanggal: TanggalKlaim,
+): Promise<void> {
+  await minta<void>(
+    `/api/klaim-life/${encodeURIComponent(klaimID)}` +
+      `/peserta/${encodeURIComponent(pesertaID)}/tanggal-klaim`,
+    { metode: 'PUT', badan: tanggal },
+  )
+}
+
 // ---------------------------------------------------------------------------
 // Gerbang Close Claim — `CloseClaim_Section.xml` b1081 -> b1101.
 // ---------------------------------------------------------------------------
@@ -999,6 +1038,20 @@ export function bolehTutupDiLayar(klaim: Klaim | null): boolean {
 /** Apakah kasus ini sudah ditutup dan karena itu tidak dapat diubah lagi. */
 export function kasusTertutup(klaim: Klaim | null): boolean {
   return klaim !== null && klaim.statusWork === STATUS_WORK_SELESAI
+}
+
+/**
+ * Apakah tiga tanggal klaim dialog Edit Date terbuka untuk diubah.
+ *
+ * Padanan `models.TahapBolehUbahTanggalKlaim`: isiannya baca-saja bila
+ * `pyPosition!='ReasLifeAdmin'` (b1000, b1313, b1550, b1788), dan tombol
+ * `Edit Date` berdiri di grid peserta — irisannya hanya Outstanding Claim.
+ *
+ * ⚠️ Ini HANYA menentukan terbuka atau tidaknya kotak. Gerbang sebenarnya
+ * (termasuk peran Admin) ada di backend dan diperiksa lagi di sana.
+ */
+export function bolehUbahTanggalKlaim(klaim: Klaim | null): boolean {
+  return klaim !== null && !kasusTertutup(klaim) && klaim.tahap === 'Outstanding Claim'
 }
 
 /**

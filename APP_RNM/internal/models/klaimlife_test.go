@@ -219,9 +219,12 @@ func TestPesertaJSONMembawaTanggalKejadian(t *testing.T) {
 	// RepeatGrid dengan `Add` b4690 dan `Delete` b6160.
 	// "kodeStatus" masuk 27-09-2026 bersama grid diagnosa: layar meniru
 	// gerbang `pyDisabledWhen` b4682, yang menguji `STS_REJECT` PESERTA.
+	// Tiga tanggal klaim masuk 28-09-2026 bersama dialog Edit Date
+	// (`EditDateClaimLife_Section` b1076, b1387, b1626) - tanggal, bukan nama.
 	mau := []string{"baris", "diagnosa", "dokumen", "id", "isCheck", "kodeStatus",
 		"mataUang", "nomorPolis", "nomorPremiList", "nomorSertifikat",
-		"tanggalKejadian", "total"}
+		"tanggalDokumenLengkap", "tanggalKejadian", "tanggalKonfirmasi",
+		"tanggalTerimaKlaim", "total"}
 	if !reflect.DeepEqual(kunci, mau) {
 		t.Errorf("kunci JSON peserta = %v, mau %v; medan baru harus disengaja",
 			kunci, mau)
