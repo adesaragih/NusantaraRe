@@ -440,7 +440,7 @@ Tiap penjaga dirusak sengaja, kegagalannya dilihat, lalu dipulihkan:
 | cabang tahun polis ditukar | 3 test rumus |
 | sisa klaim tidak mengalir ke treaty berikutnya | `TestKaskade…`, `TestTreatyKedua…` |
 | pesan gerbang tidak menyebut peserta mana | `TestPesertaTanpaDokumenDitolakDenganNomorUrut` |
-| dedup kategori dimatikan | `TestKelengkapanMembandingkanCacahKategoriBerbeda` |
+| dedup kategori dimatikan | `TestKelengkapanMembandingkanCacahKategoriBerbeda` *(uji dan fungsinya dibuang 28-09-2026 — butir bl)* |
 | status ikut diwarisi | `TestBarisBaru…`, `TestBarisKedua…` |
 | gerbang `PrintFaceClaim` dilepas | `TestTandaiOutstandingHanyaMenyentuhBarisTanpaStatus` |
 

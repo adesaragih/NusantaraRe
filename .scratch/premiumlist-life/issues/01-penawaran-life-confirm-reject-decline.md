@@ -1,6 +1,6 @@
 # 01: Penawaran Life — Confirm / Reject / Decline, dan percabangan Offer / Premium
 
-**Status:** sebagian — input + simpan data penawaran (relasional) dan riwayat `T_VIEW_SUGGEST` belum dibangun
+**Status:** sebagian — input + simpan data penawaran (relasional) dan riwayat `T_VIEW_SUGGEST` belum dibangun; gerbang `ProtectAccept` belum tersambung ke rute (sensus remark 28-09-2026)
 
 **Blocked by:** **00 (skema tujuh tabel — PREFACTOR)**
 
@@ -298,3 +298,12 @@ menggerbangi SELURUH langkah 4 (TypeCeding, COB), b2288 `Premium` SELURUH langka
 `EmailTypePL != 1` (b624; properti tanpa sumber), langkah 8 menyalakan penanda galat tanpa kalimat bila
 daftar mata uang kosong di Premium (b3792); dan `ValidasiPenawaran` **belum tersambung** ke rute mana
 pun (komentar `InputOffer.tsx` yang mengklaim sebaliknya diralat).
+
+## ⛔ Ralat bertanggal — 28 September 2026 (GILIRAN-12 paket 3: uji asap baca-saja)
+
+`GET /api/polis-life?posisi=Offer|Premium` menjawab **500** di DEV — `ORA-01008: not all variables
+bound`. Kueri halaman kotak masuk memakai `:1` dua kali bersama `OFFSET … FETCH`; diuji langsung
+(`SELECT` saja), penampung berulang tanpa pembatas baris terikat benar, dengan pembatas baris patah.
+Diperbaiki (`repository/polis_inbox.go`: penampung unik, nilai dikirim dua kali) dan dijaga
+`TestNolPenampungBerulangDiSQLBerpembatasBaris`. Sesudahnya kedua posisi menjawab 200 (DEV: total 0
+untuk pelaku stub). Hasil lengkap: `PANDUAN-UJI-LAYAR-TIGA-MODUL.md` §5.

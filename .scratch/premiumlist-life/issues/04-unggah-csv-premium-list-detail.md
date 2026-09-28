@@ -1,6 +1,6 @@
 # 04: Unggah CSV premium list detail — staging, validasi, tinjau, simpan
 
-**Status:** sebagian — verifikasi `NAME_OF_INSURED`/`POLICY_HOLDER` ke master agen belum ada; tabel staging sengaja ditiadakan (ralat 28-09)
+**Status:** sebagian — pemeriksaan keberadaan medan header langkah 3–8 belum ada (verifikasi "master agen" dibantah XML, sensus 28-09-2026); kolom uang kosong → 0 menunggu OQ-PL-12; tabel staging sengaja ditiadakan (ralat 28-09)
 
 **Blocked by:** **00 (skema tujuh tabel — PREFACTOR)**, 03 (premium list detail — unggahan mengisi struktur yang dibentuk di sana)
 
@@ -112,8 +112,13 @@ berkas tetap Google Storage untuk lampiran), **ADR-0007** (jejak audit unggahan)
       bukan menolak; kalimat err1 yang dipinjam milik langkah ter-remark. Penolakannya dibuang — bukti: uji `TestPenolakanLangkahTerRemarkTidakDitegakkan`
 - [x] ~~`CERTIFICATE_NO` ganda di dalam satu berkas ditolak~~ — *disunting di tempat 28-09-2026:*
       **tidak** ditolak — langkah 9.5, 10, 13 ter-remark — bukti: uji `TestPenolakanLangkahTerRemarkTidakDitegakkan`
-- [ ] `NAME_OF_INSURED` dan `POLICY_HOLDER` diverifikasi terhadap master agen; baris yang tidak
-      ditemukan ditolak dengan pesan yang menyebut nilainya. — belum: pembaca master agen belum ada (tabel `M AGENT` di luar migrasi 050–056)
+- [ ] ~~`NAME_OF_INSURED` dan `POLICY_HOLDER` diverifikasi terhadap master agen~~ — *disunting di tempat
+      28-09-2026 (sensus remark):* tidak ada verifikasi master agen di sistem lama — 9.6 hanya menguji
+      keberadaan (`@PropertyHasValue(.NAME_OF_INSURED)` b8915; sudah: `kolomTeksWajib`), dan langkah 12
+      ("HARUS ADA DI M AGENT") ter-remark. Yang HIDUP: langkah 3–8 menguji **keberadaan** medan header
+      polis — ceding (b6979), policy holder (b7132), MO (b7283), COB (b7434), retro bila bukan QR/QP
+      (b7585/b7616), SOB (b7767) — dengan pesan `… TIDAK TERDAFTAR` (langkah 27–32). — belum: pesannya
+      ada (`models/polis_unggah.go` `PesanCedingCo`…`PesanSOB`), pemeriksanya belum
 - [x] Tanggal diverifikasi berformat `dd/mm/yyyy`; ~~`MEDICAL_STATUS` hanya menerima `FCL`, `M`, `NM`~~
       *(ter-remark 9.11/19 — dibuang, sensus 28-09-2026)*; `CURRENCY` wajib ada. — bukti: `models/polis_unggah.go:ValidasiUnggah` (`CURRENCY` di `kolomTeksWajib`); uji `TestTanggalCSVKetatDDMMYYYY`, `TestPenolakanLangkahTerRemarkTidakDitegakkan`
 - [x] ~~Unggahan tanpa lampiran ditolak~~ — *disunting di tempat 28-09-2026:* langkah 11/33 ter-remark;
@@ -236,7 +241,7 @@ menolak setiap berkas yang benar.
 
 | Butir | Sebab |
 | --- | --- |
-| `NAME_OF_INSURED` / `POLICY_HOLDER` diverifikasi terhadap **master agen** | tabel `M AGENT` tidak ada di migrasi 050–056 mana pun, dan membuatnya keputusan skema. Pesannya (`local.err17`) sudah ada; pembacanya menunggu keputusan tercatat |
+| ~~`NAME_OF_INSURED` / `POLICY_HOLDER` diverifikasi terhadap **master agen**~~ | *dibantah XML (sensus 28-09-2026):* langkah 12 "M AGENT" ter-remark; yang hidup langkah 3–8, pemeriksaan **keberadaan** medan header — belum dibangun, lihat AC-nya |
 | Spreading dan summary uang | tiket **05a** |
 | Duplikat **lintas case** | OQ-PL-05 di atas |
 

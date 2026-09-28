@@ -1,6 +1,6 @@
 # 12: Efek keluar asinkron + antre-ulang + flag lingkungan
 
-**Status:** sebagian — unduh dokumen belum berjalan: pekerja outbox tidak pernah dijalankan `cmd/api`
+**Status:** sebagian — unduh dokumen belum berjalan: pekerja outbox tidak pernah dijalankan `cmd/api` (pranala unduh yang selalu 401 diperbaiki GILIRAN-12 paket 0)
 
 **Blocked by:** 09 (jejak audit) — kegagalan efek keluar harus masuk jalur audit, bukan hanya log
 
@@ -54,7 +54,7 @@ alamat layanan keluar), **ADR-0005** (flag lingkungan), **ADR-0007** (kegagalan 
 - [x] Tidak ada host, endpoint, atau kredensial sebagai literal di kode. — bukti: uji `TestNolAlamatLayananDiKode`
 - [x] Kegagalan konfigurasi dapat dibedakan dari kegagalan jaringan, agar antre-ulang tidak berputar
       sia-sia. — bukti: `APP_RNM/internal/services/efekkeluar.go:LayakDicobaUlang`; uji `TestKegagalanKonfigurasiDibedakanDariJaringan`
-- [ ] Dokumen yang sudah diunggah dapat diunduh kembali. — belum: rute `GET /api/dokumen/{dokId}/isi` (`Unggahan.Unduh`) ada, tetapi pekerja outbox tak pernah dijalankan `cmd/api/main.go` (`NewPelaksanaBerkasLokal` nol pemanggil produksi) — `T_STORAGE_ID` tak terisi dan unduhan dijawab belum terunggah
+- [ ] Dokumen yang sudah diunggah dapat diunduh kembali. — belum: rute `GET /api/dokumen/{dokId}/isi` (`Unggahan.Unduh`) ada, tetapi pekerja outbox tak pernah dijalankan `cmd/api/main.go` (`NewPelaksanaBerkasLokal` nol pemanggil produksi) — `T_STORAGE_ID` tak terisi dan unduhan dijawab belum terunggah. *(Separuh yang lain DITUTUP 28-09-2026: tombol `View Office Online` dulu pranala biasa tanpa header identitas — setiap unduhan 401; kini `ambilIsiDokumen` lewat `fetch` + `simpanBlob`; uji `frontend/src/services/unduhdokumen.test.ts`, `internal/handlers/dokumen_identitas_test.go`.)*
 - [x] Alamat endpoint keluar di-resolve lewat **runtime lookup** ke `M_LINK_SERVICE` dengan kunci
       `(KATEGORI_1, KATEGORI_2)` — untuk Arasapas: `("Klaim", "insertClaimLife")`. — bukti: `APP_RNM/internal/repository/linkservice.go:PohonKlaim.AmbilAlamatLayanan`, `APP_RNM/internal/services/efekkeluar.go:resolverOracle.Resolve` (kunci `KategoriInsertClaimLife`)
 - [x] **Tidak ada URL** sebagai literal, konstanta, **maupun env var** di kode. Yang boleh menjadi
@@ -286,3 +286,15 @@ Kolom, makna, dan pola outbox **tetap** (tabel ini log **dan** antrean percobaan
 `monitoring_klaim_log` dari `InsertLogServiceClaim` tetap tidak dipakai karena hanya log). Kode yang
 mengikuti: `repository/efekkeluar.go`, `services/antrean.go`, `repository/migrasi_test.go`. Nama tipe Go
 `EfekKeluar` tidak berubah — yang diputuskan adalah nama tabel.
+
+## ⛔ Ralat bertanggal — 28 September 2026 (GILIRAN-12 paket 0: unduh membawa identitas)
+
+`components/claimlife/PanelDokumenPeserta.tsx` memakai `<a href={tautanDokumen(id)} download>`.
+Browser yang mengikuti pranala tidak membawa `X-Pelaku`/`X-Peran`, sedangkan backend membaca identitas
+HANYA dari header itu (`handlers/pelaku.go`) — setiap unduhan dijawab 401, dan AC unduh tidak akan
+pernah lulus walau pekerja outbox dijalankan. Kini: `services/api.ts:ambilIsiDokumen` (fetch dengan
+`headerIdentitas()`, badan sukses sebagai Blob, amplop `{galat}` yang sama), `lib/simpanBlob.ts`
+(nama berkas asli), `tautanDokumen` dibuang. Kontrak dua sisi: Go menolak tanpa header dan membaca
+nama header yang sama dengan klien; TS selalu mengirimnya. Penjaga statik di seluruh `frontend/src`:
+nol `href`/`src` dinamis, nol `window.open`/`location`, `rakitURL` hanya di dalam `fetch`. Layar
+PremiumList dan Komite: nol pola serupa (lampiran Komite belum tersambung).
