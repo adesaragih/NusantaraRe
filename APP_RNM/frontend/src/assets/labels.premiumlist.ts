@@ -145,3 +145,34 @@ export const DETAIL_POLIS = {
     'tempat tersimpan. Unggah rincian peserta lebih dahulu.',
   sudahBernomor: 'Polis ini sudah bernomor; tombolnya tidak perlu ditekan lagi.',
 } as const
+
+/**
+ * Label layar unggah CSV peserta — tiket 04.
+ *
+ * ⚠️ Pesan penolakan TIDAK ada di sini: ia datang dari server, VERBATIM dari
+ * `ValidasiUploadPL_act.xml`. Menyalinnya ke layar membuat dua sumber untuk
+ * satu kalimat, dan yang satu akan tertinggal.
+ */
+export const UNGGAH_CSV = {
+  judul: 'Upload CSV Premium List Detail',
+  pilihBerkas: 'Berkas CSV',
+  tinjau: 'Tinjau',
+  simpan: 'Simpan permanen',
+  /**
+   * ⛔ Aturan pemisah DINYATAKAN DI MUKA, bukan hanya saat menolak. Korpus
+   * menyebutnya enam kali di nama langkahnya ("SEPARATOR MENGGUNAKAN TITIK")
+   * dan tidak pernah di pesan yang dilihat pemakai — sehingga orang baru tahu
+   * aturannya setelah berkasnya ditolak.
+   */
+  aturanPemisah:
+    'Angka memakai TITIK sebagai pemisah desimal, dan tanpa pemisah ribuan. ' +
+    'Contoh: 1234567.89 — bukan 1,234,567.89 dan bukan 1.234.567,89. ' +
+    'Tanggal berformat dd/mm/yyyy.',
+  perbaikiDulu:
+    'Perbaiki dulu baris yang ditolak, lalu tinjau ulang. Selama masih ada ' +
+    'penolakan, tidak ada satu baris pun yang disimpan.',
+  kolomBaris: 'Baris',
+  kolomKolom: 'Kolom',
+  kolomPesan: 'Pesan',
+  kolomSebab: 'Sebab',
+} as const

@@ -85,6 +85,9 @@ func TestDaftarLayananPengubahMencakupSeluruhRutePengubah(t *testing.T) {
 		// namanya di `penjagaTutup` di bawah, jadi ini bukan kelonggaran -
 		// ia tetap dituntut penjaga, hanya penjaga yang lain.
 		"polis_nomor.go": "modul PremiumList - memeriksa T_WORK_POLIS lewat KasusPolisTertutup",
+		// PremiumList Life tiket 04. Sebab yang SAMA: T_WORK_POLIS, bukan
+		// T_WORK_CLAIM. Penjaganya disebut namanya di `penjagaTutup`.
+		"polis_unggah.go": "modul PremiumList - memeriksa T_WORK_POLIS lewat KasusPolisTertutup",
 		// Outbox dan pelaksana efek bekerja atas baris antrean, bukan atas
 		// kasus - dan efek yang sudah terlanjur diantre tetap harus selesai
 		// walau kasusnya kemudian ditutup.
@@ -177,6 +180,11 @@ var rutePengubah = map[string]string{
 	// menuliskan nomornya ke baris peserta - jadi ia pengubah, dan kasus yang
 	// sudah ditutup tidak boleh memperoleh nomor baru.
 	"POST /api/polis-life/{id}/nomor": "polis_nomor.go",
+	// Tiket 04. `simpan` MENGGANTI isi tabel peserta - pengubah sepenuhnya.
+	// `tinjau` POST hanya karena ia MENGIRIM berkas; ia tidak menyentuh apa
+	// pun, dan itu dinyatakan di daftar pengecualian di bawah.
+	"POST /api/polis-life/{id}/unggah/simpan": "polis_unggah.go",
+	"POST /api/polis-life/{id}/unggah/tinjau": "polis_unggah_tinjau.go",
 }
 
 var polaRute = regexp.MustCompile(`mux\.HandleFunc\(\s*\n?\s*"([A-Z]+) ([^"]+)"`)
@@ -202,6 +210,7 @@ const penjagaTutupBawaan = "PastikanKasusTerbuka(ctx, klaimID)"
 var penjagaTutup = map[string]string{
 	"polis_penawaran.go": "models.KasusPolisTertutup(k.Status)",
 	"polis_nomor.go":     "models.KasusPolisTertutup(keadaanKerja.Status)",
+	"polis_unggah.go":    "models.KasusPolisTertutup(keadaanKerja.Status)",
 }
 
 func TestSetiapRuteNonGETPunyaPenjagaKasusTertutup(t *testing.T) {
@@ -220,6 +229,13 @@ func TestSetiapRuteNonGETPunyaPenjagaKasusTertutup(t *testing.T) {
 		// ErrKasusSudahTertutup. Memanggil PastikanKasusTerbuka di sini
 		// berarti membaca baris yang sama dua kali untuk satu jawaban.
 		"tutup.go": "layanan penutupnya sendiri; memeriksa dengan pembacaan status kerjanya sendiri",
+		// ⛔ Tinjauan unggahan MEMBACA SAJA: ia mengurai berkas, memvalidasi,
+		// dan mengembalikan hasilnya. Nol tulisan, nol transaksi. Ia POST
+		// semata karena GET tidak punya badan permintaan untuk membawa
+		// berkas. Menuntutnya menolak kasus tertutup berarti melarang orang
+		// MELIHAT apa yang salah dengan berkasnya pada kasus yang sudah
+		// selesai - larangan yang tidak melindungi apa pun.
+		"polis_unggah_tinjau.go": "tinjauan membaca saja; nol tulisan, nol transaksi",
 	}
 	cacahPengubah := 0
 	for _, m := range cocok {

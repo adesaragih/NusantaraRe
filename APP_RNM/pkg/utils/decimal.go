@@ -43,6 +43,20 @@ var ErrBukanDesimal = errors.New("teks bukan bilangan desimal")
 // ⛔ JANGAN memakainya untuk kode, penanda, atau enumerasi. Nilai seperti
 // "006" harus tetap teks: mengubahnya menjadi bilangan mengembalikannya
 // sebagai "6" dan memecahkan penggolong (ADR-U-0022).
+// ⛔ `NaN` DAN `Infinity` DITOLAK, ditambahkan 28-09-2026. `apd.NewFromString`
+// MENERIMA keduanya - ia mengikuti spesifikasi desimal, dan di sana keduanya
+// nilai yang sah. Di sini tidak: uang tidak pernah tak-hingga, dan pangsa
+// tidak pernah bukan-bilangan.
+//
+// Lubangnya nyata dan bukan teoretis. Fungsi ini satu-satunya jalan masuk
+// teks-ke-desimal (ADR-U-0034), dan salah satu pemanggilnya adalah pembaca
+// uang dari JSON - yaitu batas yang dilewati permintaan dari luar. Badan
+// permintaan berisi `{"amount":"NaN"}` akan lolos seluruh validasi, lalu
+// gagal di Oracle dengan galat yang tidak menyebut sebabnya - atau, lebih
+// buruk, tersimpan di jalur yang tidak memeriksanya.
+//
+// ⚠️ Menolaknya di SINI menutup kesepuluh pemanggilnya sekaligus. Menolaknya
+// di tiap pemanggil berarti sepuluh tempat untuk lupa.
 func ParseDecimal(s string) (*apd.Decimal, error) {
 	if s == "" {
 		return nil, fmt.Errorf("%w: teks kosong", ErrBukanDesimal)
@@ -50,6 +64,9 @@ func ParseDecimal(s string) (*apd.Decimal, error) {
 	d, _, err := apd.NewFromString(s)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %q", ErrBukanDesimal, s)
+	}
+	if d.Form != apd.Finite {
+		return nil, fmt.Errorf("%w: %q bukan bilangan berhingga", ErrBukanDesimal, s)
 	}
 	return d, nil
 }

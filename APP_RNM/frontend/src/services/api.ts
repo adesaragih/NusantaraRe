@@ -1527,3 +1527,77 @@ export async function terbitkanNomorPL(polisID: string): Promise<HasilNomorPL> {
     { metode: 'POST' },
   )
 }
+
+// ——— Tiket 04: unggahan CSV peserta ———
+
+/** Satu penolakan baris CSV. */
+export interface PenolakanUnggah {
+  /** Nomor BARIS DATA — 1 untuk baris pertama di bawah judul. */
+  baris: number
+  kolom: string
+  /** Pesan VERBATIM dari sistem lama. */
+  pesan: string
+  /** Keterangan tepat: apa yang sebenarnya salah. */
+  sebab: string
+}
+
+/** Jawaban tinjauan unggahan. */
+export interface HasilTinjauUnggah {
+  cacahBaris: number
+  cacahDitolak: number
+  ditolak: PenolakanUnggah[]
+  lolos: boolean
+}
+
+/** Jawaban penyimpanan unggahan. */
+export interface HasilSimpanUnggah {
+  cacahBaris: number
+  cacahDisimpan: number
+  cacahDihapus: number
+  ditolak: PenolakanUnggah[]
+}
+
+/**
+ * Meninjau berkas CSV — `POST /api/polis-life/{id}/unggah/tinjau`.
+ *
+ * ⛔ TIDAK MENYIMPAN APA PUN. Ia mengurai, memvalidasi, dan mengembalikan
+ * hasilnya — supaya pemakai dapat melihat apa yang lolos dan apa yang ditolak
+ * SEBELUM apa pun tersimpan permanen (AC tiket 04).
+ */
+export async function tinjauUnggahPolis(
+  polisID: string,
+  berkas: File,
+): Promise<HasilTinjauUnggah> {
+  const isi = new FormData()
+  isi.append('berkas', berkas)
+  return mintaFormulir<HasilTinjauUnggah>(
+    `/api/polis-life/${encodeURIComponent(polisID)}/unggah/tinjau`,
+    isi,
+  )
+}
+
+/**
+ * Menyimpan berkas CSV — `POST /api/polis-life/{id}/unggah/simpan`.
+ *
+ * ⛔ BERKASNYA DIKIRIM ULANG, bukan sekadar "setujui yang tadi". Server
+ * memvalidasi ulang: klien yang dapat melewatkan tinjauan adalah klien yang
+ * dapat menyimpan apa saja.
+ *
+ * ⛔ MENGGANTI, bukan menumpuk — baris peserta lama polis ini dihapus di
+ * dalam transaksi yang sama.
+ *
+ * ⚠️ Menjawab **409** bila masih ada penolakan, dan badan jawabannya MEMUAT
+ * daftar penolakannya — jadi tidak perlu meninjau ulang untuk tahu apa yang
+ * salah.
+ */
+export async function simpanUnggahPolis(
+  polisID: string,
+  berkas: File,
+): Promise<HasilSimpanUnggah> {
+  const isi = new FormData()
+  isi.append('berkas', berkas)
+  return mintaFormulir<HasilSimpanUnggah>(
+    `/api/polis-life/${encodeURIComponent(polisID)}/unggah/simpan`,
+    isi,
+  )
+}

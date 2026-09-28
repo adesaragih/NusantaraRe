@@ -1,6 +1,6 @@
 # 04: Unggah CSV premium list detail — staging, validasi, tinjau, simpan
 
-**Status:** ready-for-agent
+**Status:** selesai — 28-09-2026
 
 **Blocked by:** **00 (skema tujuh tabel — PREFACTOR)**, 03 (premium list detail — unggahan mengisi struktur yang dibentuk di sana)
 
@@ -34,15 +34,37 @@ menebak kolom mana yang salah. *(User story 17–24 di spec)*
 `ASM-FW-GISFW-WORK-ENDORSEMENTLIFE` / `SAVECSVEDMLIFE`). `[keputusan work owner]` **Endorsement Life
 adalah konteks terpisah** — lihat `.scratch/endorsement-life/`.
 
-`[terverifikasi]` **Staging nyata**: `POOLDATA.M_TEMPUPLOADLIFE`, berkunci `idpega`, dibersihkan per
-case. Validasi berjalan **atas staging**, bukan atas tabel permanen.
+⚠️ **RALAT 28-09-2026 — `M_TEMPUPLOADLIFE` BUKAN staging penuh.** `InsertDataUploadLife.xml`
+menyisipkan **TUJUH** kolom saja: `INSURED, DOB, BEGINDATE, ENDDATE, POLIVYHOLDER, NO,
+CEDING_RETENTION` *(ejaan `POLIVYHOLDER` apa adanya di korpus)*. Ia melayani **satu** keperluan —
+pemeriksaan duplikat `CekDoubleInsured`. Baris lengkapnya di Pega tinggal di **halaman kerja**, bukan
+di tabel itu; validasi berjalan atas halaman kerja.
+
+Karena itu implementasi kami **tidak membuat tabel staging**: tinjauan mengurai dan memvalidasi tanpa
+menulis apa pun, dan yang permanen baru tersentuh saat pemakai menekan simpan — saat mana berkasnya
+diurai dan divalidasi **ulang**. Substansi AC 18 terpenuhi *(kegagalan validasi tidak menyentuh tabel
+permanen mana pun)*; tabel staging penuh adalah **keputusan skema**, dan migrasi baru hanya dari
+keputusan yang tercatat.
 
 `[terverifikasi]` **`CekDoubleInsured`** mendeteksi duplikat dengan `upper(INSURED)` + `DOB`,
 mengembalikan `min(NO)` baris pertama, dan menjumlahkan `to_number(CEDING_RETENTION)` per peserta.
 ⚠️ Variabel `v_Count2` dan `v_PLRetensiCeding` **dideklarasikan tetapi tidak pernah diisi** — selalu
 `NULL`, dinetralkan `nvl(…,0)`. Sisa pemeriksaan kedua yang dicabut; **jangan** direplikasi.
 
-`[terverifikasi]` **33 kolom uang** divalidasi (`<pyStepsDescription>` per langkah): `NET_PREMIUM`,
+⚠️ **RALAT 28-09-2026 — 32, bukan 33.** Sensus dihitung DUA cara dan keduanya berbeda; selisihnya
+disebut, tidak didiamkan:
+
+| Cara | Jendela | Hasil |
+| --- | --- | ---: |
+| A | precondition `@PropertyHasValue(.X)` di langkah 2 (`RH_1.pySteps(2)`..`(3)`) | **32** |
+| B | `<pyStepsDescription>` sub-langkahnya yang berisi nama kolom huruf besar | 31 |
+
+Selisihnya **satu dan bernama**: `FLEET_DISCOUNT` punya precondition tetapi deskripsi sub-langkahnya
+**kosong**. Yang benar **32** — precondition-lah yang **berjalan**; deskripsi hanya nama yang dibaca
+manusia. Sensus yang memakai cara B akan menghilangkan satu kolom uang dari validasi, dan kolom uang
+yang tidak divalidasi adalah kolom uang yang menerima apa saja.
+
+`[terverifikasi]` **32 kolom uang** divalidasi (`<pyStepsDescription>` per langkah): `NET_PREMIUM`,
 `GROSS_PREMIUM`, `SHARE_NUSANTARA_RE`, `SUM_INSURED`, `CEDING_RETENTION`, `SUM_REASURED`, `CLAIM`,
 `TAX`, `BROKERAGE_FEE`, `OVR_COMM`, `PROF_COMM`, `EM_PERCENT`, `COMM`, `FLEET_DISCOUNT`, seluruh
 kelompok `*_REFUND`, seluruh kelompok `*_RETRO`, `*_REFUND_RETRO`, dan `CLAIM_AMOUNT`.
@@ -105,3 +127,114 @@ rujukan, dengan penunjuk ke OQ-069.
 go test ./internal/...
 cd frontend && npm test
 ```
+
+## Implementasi
+
+**Dikerjakan 28-09-2026.** `main`, sesudah `2cbdf2d`.
+
+### Yang dikirim
+
+| Lapisan | Berkas | Isi |
+| --- | --- | --- |
+| models | `polis_unggah.go` | 32 pesan VERBATIM · `UangCSV` · `TanggalCSV` · `StatusMedisDiterima` · `KolomUangUnggah` (32) · `KolomWajibUnggah` · `ValidasiUnggah` |
+| pkg/utils | `decimal.go` | `ParseDecimal` menolak `NaN`/`Infinity` — lihat di bawah |
+| services | `polis_unggah.go` | `BacaCSVUnggah` (judul, BOM, batas) · `Tinjau` (nol tulisan) · `Simpan` (validasi ulang, satu transaksi) |
+| repository | `polis_unggah.go` | `HapusPesertaPolis` · `SisipPeserta` · `PengenalPesertaUnggah` |
+| handlers | `rute_unggahpolis.go` | `POST …/unggah/tinjau` · `POST …/unggah/simpan` |
+| frontend | `UnggahCSVPeserta.tsx` | pilih → tinjau → simpan; tabel penolakan berkolom **Baris · Kolom · Pesan · Sebab** |
+
+### Aturan uang, dan kenapa berbeda dari Pega
+
+`[terverifikasi]` Korpus menyatakan aturannya **enam kali** di nama langkah
+(*"SEPARATOR MENGGUNAKAN TITIK"*) dan **menegakkannya sekali** — satu-satunya pemeriksaan koma di
+seluruh berkas adalah `@contains(.GROSS_PREMIUM,",")`. Pesan yang dilihat pemakai **tidak pernah**
+menyebut aturan itu; ia hanya berbunyi `SUM INSURED HARUS ADA`.
+
+⛔ **Normalisasi Pega tidak ditiru.** `@replaceAll(.KOLOM, ",", ".")` mengganti **setiap** koma:
+`1,234,567.89` menjadi `1.234.567.89`, yang bukan angka sama sekali — lalu tersimpan sebagai uang.
+
+**Yang kami kerjakan:** koma **ditolak**, untuk **seluruh** 32 kolom uang, dan sebabnya disebut di
+pesan kami sendiri *(pesan verbatim tetap dibawa berdampingan)*. Aturannya juga **dinyatakan di
+muka** di layar, bukan hanya saat menolak — orang yang baru tahu aturannya setelah berkasnya ditolak
+sudah terlanjur menyiapkan berkas yang salah.
+
+`1,234,567.89` dan `1.234.567,89` keduanya **ditolak**, tidak satu pun diterima diam-diam.
+
+### Cacat lintas modul yang ditemukan dan diperbaiki
+
+⛔ **`utils.ParseDecimal` menerima `NaN` dan `Infinity`.** `apd.NewFromString` mengikuti spesifikasi
+desimal, dan di sana keduanya nilai yang sah. Fungsi itu **satu-satunya** jalan masuk teks-ke-desimal
+(**ADR-U-0034**) dan punya **sepuluh** pemanggil — salah satunya pembaca uang dari **JSON**, yaitu
+batas yang dilewati permintaan dari luar. Badan permintaan berisi `{"amount":"NaN"}` akan lolos
+seluruh validasi.
+
+Ditemukan oleh satu uji yang sengaja mencoba nilai aneh, bukan oleh tinjauan. Ditolak sekarang di
+`ParseDecimal` — menutup kesepuluh pemanggil sekaligus. Penjaganya
+(`TestParseDecimalMenolakYangTidakBerhingga`) **dibuktikan merah** lebih dahulu, dan pasangannya
+(`…TetapMenerimaBilanganBiasa`) menjaga supaya penjepitan itu tidak menolak terlalu banyak.
+
+### Pengenal baris peserta — nol sequence
+
+Migrasi 050–056 tidak membuat satu pun sequence, dan tiket **00** sudah memutuskannya:
+*"Nol sequence. Pengenalnya dirakit di `repository` mengikuti pola `PengenalWorkBerikut`."*
+`PengenalPesertaUnggah(polisID, nomorBaris)` menghasilkan 32 heksa — **tepat** selebar kolom
+`VARCHAR2(32)` — dan **deterministik**, sehingga unggah ulang menghasilkan baris yang sama persis dan
+dapat dibandingkan. MD5 dipakai sebagai **pemadat**, bukan pengaman: ini pengenal baris, bukan kunci
+penyimpanan *(bandingkan `models.ImageIDBaru`, yang justru harus tidak dapat ditebak)*.
+
+### Penjaga yang menuduh hal yang BENAR, dan dipersempit
+
+`TestNolNamaOrangDiKode` menyalakan dua konstanta pesan VERBATIM
+(`PesanNamaTertanggung`, `PesanPolicyHolder`) — namanya memuat kata yang dijaga sebab itulah **kolom**
+yang divalidasi, dan nilainya kalimat galat, bukan nama siapa pun. Dipersempit dengan **daftar
+bernama** yang kuncinya diambil **dari `models`**, bukan diketik ulang: ronde pertama penyempitan
+membuat daftarnya **menuduh dirinya sendiri**. Alasannya di komentar, bukan di nilai — sebab nilai
+teks pada baris itu juga cocok dengan polanya. Dibuktikan masih menggigit dengan nama sungguhan.
+
+### Butir `[terbuka]` yang LAHIR di tiket ini
+
+- **OQ-PL-05 — `CekDoubleInsured` menyaring `idpega` di SATU dari TIGA pernyataan.**
+  `count(1)` dan `min(NO)` **tidak** menyaring `idpega`; hanya `sum(CEDING_RETENTION)` yang
+  menyaring. Artinya pemeriksaan duplikat di sistem lama berlaku **lintas case** sementara jumlah
+  retensinya per case. Asimetri dalam satu procedure adalah tell bahwa salah satunya kelalaian —
+  tetapi korpus tidak memberi tahu yang mana. **Kami menyaring per polis** *(sesuai AC: duplikat di
+  dalam satu berkas)*, dan lintas-case dicatat di sini.
+- **OQ-PL-06 — `upper(INSURED)` hanya di SATU sisi.** Procedure membandingkan `upper(INSURED)`
+  dengan parameternya **apa adanya**; kecocokannya karena itu bergantung pemanggil yang mengirim
+  nama dalam huruf besar. Kami menaikkan **kedua** sisi, dan ujinya mengunci itu — satu sisi yang
+  lupa membuat duplikat lolos tanpa jejak.
+- **OQ-PL-07 — pengecualian `02/01/1970`.** `@if(.DOB=="02/01/1970",true,@toDate(.DOB)!=0)`: Pega
+  mengecualikannya sebab `@toDate` di sana mengembalikan **nol** untuk tanggal itu dan pemeriksanya
+  membandingkan dengan nol. Pengurai kami tidak punya cacat itu, jadi tanggal lahir 2 Januari 1970
+  diterima **tanpa** pengecualian. Dicatat supaya tidak ada yang "merapikannya" menjadi aturan yang
+  menolak tanggal itu.
+
+### OQ-069 tetap TERBUKA, dan kodenya mematuhinya
+
+Pesan `NET PREMIUM HARUS ADA DAN LEBIH BESAR DARI GROSS PREMIUM` disalin **verbatim**, dan yang
+diperiksa **hanya keberadaannya** — persis korpus. `TestNetPremiumHanyaDiperiksaKeberadaannya`
+menegakkan itu dengan baris ber-`NET < GROSS` yang **harus lolos**. Mengarang perbandingannya akan
+menolak berkas yang di sistem lama diterima, dan arah yang salah *(net lazimnya lebih kecil)* akan
+menolak setiap berkas yang benar.
+
+### Yang TIDAK dikerjakan, dan sebabnya
+
+| Butir | Sebab |
+| --- | --- |
+| `NAME_OF_INSURED` / `POLICY_HOLDER` diverifikasi terhadap **master agen** | tabel `M AGENT` tidak ada di migrasi 050–056 mana pun, dan membuatnya keputusan skema. Pesannya (`local.err17`) sudah ada; pembacanya menunggu keputusan tercatat |
+| Spreading dan summary uang | tiket **05a** |
+| Duplikat **lintas case** | OQ-PL-05 di atas |
+
+### Verifikasi
+
+```
+gofmt -l .              bersih
+go vet ./... · -tags db bersih
+go test ./... -tags db  497 PASS · 0 FAIL · 38 SKIP   (dari 463)
+npx tsc --noEmit        bersih
+npx vitest run          334 PASS                       (dari 322)
+npm run build           bersih
+```
+
+Nol migrasi baru. Nol procedure dipanggil. Nol `COMMIT` di teks SQL. Nol nama orang di fixture —
+seluruh nilai uji berawalan `UJI-`.

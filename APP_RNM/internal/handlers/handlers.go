@@ -108,6 +108,15 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 		pesertaPolis(svc, stubPelaku))
 	mux.HandleFunc("POST /api/polis-life/{id}/nomor",
 		terbitkanNomorPolis(svc, stubPelaku))
+	// Tiket 04 - unggahan CSV peserta.
+	//
+	// ⛔ TINJAU DAN SIMPAN TERPISAH. Rute tunggal yang "menyimpan bila lolos"
+	// menghilangkan kesempatan melihat hasilnya lebih dahulu - yaitu tepat
+	// yang AC tiket ini minta.
+	mux.HandleFunc("POST /api/polis-life/{id}/unggah/tinjau",
+		tinjauUnggahPolis(svc, stubPelaku))
+	mux.HandleFunc("POST /api/polis-life/{id}/unggah/simpan",
+		simpanUnggahPolis(svc, stubPelaku))
 	return mux
 }
 

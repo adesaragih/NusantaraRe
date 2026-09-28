@@ -22,6 +22,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { DETAIL_POLIS, JUDUL_KOLOM_PESERTA } from '../../assets/labels.premiumlist'
 import { Gagal, Kosong, Memuat } from '../../components/ui/dasar'
+import UnggahCSVPeserta from './UnggahCSVPeserta'
 import {
   ambilKepalaPolis,
   ambilPesertaPolis,
@@ -138,6 +139,19 @@ export default function PremiumListDetail({ polisID }: { polisID: string }) {
         {bernomor && <p role="status">{DETAIL_POLIS.sudahBernomor}</p>}
         {!bernomor && tanpaPeserta && <p role="status">{DETAIL_POLIS.perluPeserta}</p>}
       </header>
+
+      {/*
+        ⛔ UNGGAHAN BERDIRI DI LAYAR YANG SAMA dengan gridnya, dan itu bentuk
+        aslinya: `ViewCSVResult_LifePremium*` menampilkan hasil unggahan di
+        konteks polis yang sedang dibuka. Layar terpisah memaksa orang
+        mengingat polis mana yang sedang diunggahi.
+      */}
+      <UnggahCSVPeserta
+        polisID={polisID}
+        onTersimpan={() => {
+          void muat()
+        }}
+      />
 
       {sibuk && <Memuat />}
       {galat !== null && <Gagal galat={galat} />}

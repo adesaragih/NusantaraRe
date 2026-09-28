@@ -15,6 +15,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"nusantarare/internal/models"
 )
 
 // polaPenulisStatus mencocokkan baris yang MENULIS status baris adjustment.
@@ -132,6 +134,48 @@ var polaNamaOrangTetap = regexp.MustCompile(
 	"(?i)(OpName|NamaOrang|PolicyHolder|NameOfInsured|Tertanggung)" +
 		"\\s*[:=]+\\s*[\"`][^\"`]+[\"`]")
 
+// pesanVerbatimYangSah adalah NILAI yang cocok dengan pola di atas tetapi
+// BUKAN nama orang - masing-masing beserta alasannya.
+//
+// ⛔ DIPERSEMPIT 28-09-2026 dengan daftar bernama, BUKAN dengan melonggarkan
+// polanya. Penjaga yang menuduh hal yang benar akan dilonggarkan orang, bukan
+// dipatuhi - pelajaran yang sudah dibayar dua kali di repo ini (nama tabel
+// telanjang, ambang tutup buku).
+//
+// Yang menuduh di sini: konstanta PESAN VALIDASI yang disalin VERBATIM dari
+// `ValidasiUploadPL_act.xml`. Namanya memuat "PolicyHolder"/"Tertanggung"
+// sebab itulah KOLOM yang divalidasi, dan nilainya kalimat galat huruf besar
+// - bukan nama siapa pun.
+//
+// ⛔ KUNCINYA DIAMBIL DARI `models`, TIDAK DIKETIK ULANG. Menuliskan
+// kalimatnya harfiah di sini akan membuat penjaga ini menuduh DIRINYA
+// SENDIRI - dan itu persis yang terjadi pada ronde pertama penyempitan ini.
+// Mengambilnya dari konstantanya juga berarti daftar ini ikut basi begitu
+// pesannya berubah, alih-alih diam-diam tetap mengecualikan teks lama.
+// ⛔ ALASANNYA DI KOMENTAR, BUKAN DI NILAI. Menuliskannya sebagai nilai teks
+// membuat BARIS DAFTAR INI SENDIRI cocok dengan polanya - `...Tertanggung:
+// "alasan"` - dan penjaga ini menuduh dirinya sendiri. Sudah terjadi, dua
+// kali, saat penyempitan ini ditulis.
+var pesanVerbatimYangSah = []string{
+	// ValidasiUploadPL_act `local.err3` - pesan kolom NAME_OF_INSURED.
+	models.PesanNamaTertanggung,
+	// ValidasiUploadPL_act `local.err17` - pesan rujukan master POLICY HOLDER.
+	models.PesanPolicyHolder,
+}
+
+// pesanVerbatimDiterima menjawab apakah sebuah nilai ada di daftar itu.
+func pesanVerbatimDiterima(nilai string) bool {
+	for _, p := range pesanVerbatimYangSah {
+		if p == nilai {
+			return true
+		}
+	}
+	return false
+}
+
+// polaNilaiTerkutip mengambil nilai di dalam tanda kutip sebuah baris cocok.
+var polaNilaiTerkutip = regexp.MustCompile("[\"`]([^\"`]+)[\"`]")
+
 func TestNolNamaOrangDiKode(t *testing.T) {
 	diperiksa := 0
 	err := filepath.Walk("..", func(jalur string, info os.FileInfo, err error) error {
@@ -158,6 +202,15 @@ func TestNolNamaOrangDiKode(t *testing.T) {
 			// brief tuntut untuk fixture. Diperiksa di AWAL teksnya, bukan di
 			// mana saja - "Budi UJI-1" bukan nilai sintetis.
 			if awalanUjiSintetis(cocok) {
+				continue
+			}
+			// Pesan validasi VERBATIM - didaftar satu per satu beserta
+			// alasannya, lihat `pesanVerbatimYangSah`. Yang dicocokkan
+			// NILAINYA, bukan seluruh barisnya: baris yang sama dapat ditulis
+			// dengan spasi berbeda, dan daftar yang mencocokkan spasi akan
+			// lolos begitu seseorang menjalankan gofmt.
+			if m := polaNilaiTerkutip.FindStringSubmatch(cocok); m != nil &&
+				pesanVerbatimDiterima(m[1]) {
 				continue
 			}
 			t.Errorf("%s memberi nilai tetap ke medan bernama-orang: %s",
