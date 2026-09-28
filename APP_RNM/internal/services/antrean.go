@@ -105,12 +105,23 @@ type antreanOracle struct {
 	svc   *Service
 	pohon *repository.PohonKlaim
 	jejak Jejak
+	// modul mengisi kolom `MODUL` - sejak tiket 06 PremiumList Life, outbox
+	// ini dipakai dua modul.
+	modul string
 }
 
 // AntreanEfekOracle menyusun antre-ulang yang menulis ke `T_LOG_SERVICE_RNM`.
 func AntreanEfekOracle(svc *Service) Antrean {
+	return AntreanEfekOracleModul(svc, ModulClaimLife)
+}
+
+// AntreanEfekOracleModul sama dengan `AntreanEfekOracle`, untuk modul lain.
+//
+// ⚠️ Tiket 06 PremiumList Life. Satu tabel outbox untuk dua modul, dipisah
+// kolom `MODUL`; worker yang sama memungut keduanya.
+func AntreanEfekOracleModul(svc *Service, modul string) Antrean {
 	return antreanOracle{svc: svc, pohon: repository.NewPohonKlaim(svc.db),
-		jejak: PerekamJejakOracle(svc)}
+		jejak: PerekamJejakOracle(svc), modul: modul}
 }
 
 // Antre menyimpan satu kegagalan untuk dicoba lagi - atau untuk ditunggu
@@ -135,7 +146,7 @@ func (a antreanOracle) Antre(ctx context.Context, c CatatanEfekGagal) error {
 		rujukan = c.KlaimID
 	}
 	return a.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
-		id, err := a.pohon.AntreEfek(ctx, tx, LiniLife, ModulClaimLife,
+		id, err := a.pohon.AntreEfek(ctx, tx, LiniLife, a.modul,
 			c.Nama, rujukan, string(muatan), c.Waktu)
 		if err != nil {
 			return err

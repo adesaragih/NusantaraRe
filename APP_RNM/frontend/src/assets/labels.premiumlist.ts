@@ -186,6 +186,11 @@ export const SUMMARY_POLIS = {
   tanpaRekap: 'Belum ada rekap: polis ini belum punya baris peserta.',
   /** Tiket 05b — `finishAssignment` → `END52`, `pyWorkStatus` b947. */
   ditutup: 'Kasus ditutup: Resolved-Completed.',
+  /** Tiket 06 — efek keluar sesudah simpan. */
+  efekDilewati: 'Kiriman ke Arasapas dilewati: lingkungan ini bukan produksi.',
+  efekGagal: 'Rekap tersimpan, tetapi efek keluar gagal:',
+  efekTerantre: 'Kegagalannya terantre untuk dicoba ulang.',
+  efekTidakTerantre: 'Sebagian kegagalan TIDAK dapat diantre — hubungi tim operasi.',
   /** ⛔ `.COB` baris rekap tidak ditetapkan rule mana pun di korpus. */
   cobTanpaSumber:
     'Kolom COB tidak terisi: tidak satu pun rule PremiumList Life menetapkan ' +

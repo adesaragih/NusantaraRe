@@ -1681,6 +1681,11 @@ export interface HasilSubmitRekapPolis {
   rekap: RekapMataUangPolis[]
   rekapDihapus: number
   pesertaWarisan: number
+  /**
+   * Tiket 06 — efek keluar SESUDAH commit. Ringkasan, bukan galat: premium
+   * list sudah tersimpan walau Arasapas gagal.
+   */
+  efekKeluar: { dilewati: boolean; gagal: string[]; tidakTerantre: number }
 }
 
 /** Menghitung rekap tanpa menyimpan — `GET /api/polis-life/{id}/summary`. */

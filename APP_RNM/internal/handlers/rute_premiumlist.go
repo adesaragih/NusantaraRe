@@ -133,6 +133,7 @@ func putuskanPenawaran(svc *services.Service, stubPelaku bool) http.HandlerFunc 
 		}
 		akibat, err := svc.Penawaran().
 			DenganJejak(services.PerekamJejakOracle(svc)).
+			DenganPenyalur(services.PenyalurPremiumListOracle(svc)).
 			Putuskan(r.Context(), pelakuDari(r, stubPelaku),
 				r.PathValue("id"), isi.Keputusan, time.Now())
 		if jawabGalatPolis(w, err) {
@@ -156,6 +157,7 @@ func golongkanPenawaran(svc *services.Service, stubPelaku bool) http.HandlerFunc
 		}
 		akibat, err := svc.Penawaran().
 			DenganJejak(services.PerekamJejakOracle(svc)).
+			DenganPenyalur(services.PenyalurPremiumListOracle(svc)).
 			Golongkan(r.Context(), pelakuDari(r, stubPelaku),
 				r.PathValue("id"), isi.Hasil, time.Now())
 		if jawabGalatPolis(w, err) {
@@ -292,6 +294,7 @@ func submitRekapPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 		}
 		hasil, err := svc.SummaryPremiumList().
 			DenganJejak(services.PerekamJejakOracle(svc)).
+			DenganPenyalur(services.PenyalurPremiumListOracle(svc)).
 			Submit(r.Context(), pelakuDari(r, stubPelaku), r.PathValue("id"), time.Now())
 		if jawabGalatPolis(w, err) {
 			return

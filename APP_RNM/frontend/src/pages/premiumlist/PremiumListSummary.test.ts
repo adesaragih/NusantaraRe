@@ -3,9 +3,9 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { GRID_REKAP } from '../../assets/labels.premiumlist'
+import { GRID_REKAP, SUMMARY_POLIS } from '../../assets/labels.premiumlist'
 import type { RekapMataUangPolis } from '../../services/api'
-import { kolomGridRekap, selRekap } from './PremiumListSummary'
+import { kalimatEfek, kolomGridRekap, selRekap } from './PremiumListSummary'
 
 // Uji layar rekap premium list — tiket 05a bagian 2.
 
@@ -81,5 +81,18 @@ describe('penjaga statik', () => {
     expect(SUMBER).not.toContain('GROSS_PREMIUM_RETRO +')
     expect(SUMBER).toContain('ambilRekapPolis')
     expect(SUMBER).toContain('submitRekapPolis')
+  })
+})
+
+describe('efek keluar (tiket 06)', () => {
+  it('dilewati bukan gagal; berhasil tanpa kalimat; gagal disebut namanya', () => {
+    expect(kalimatEfek({ dilewati: true, gagal: [], tidakTerantre: 0 })).toBe(SUMMARY_POLIS.efekDilewati)
+    expect(kalimatEfek({ dilewati: false, gagal: [], tidakTerantre: 0 })).toBe('')
+    const k = kalimatEfek({ dilewati: false, gagal: ['arasapas-polis'], tidakTerantre: 0 })
+    expect(k).toContain('arasapas-polis')
+    expect(k).toContain(SUMMARY_POLIS.efekTerantre)
+    expect(kalimatEfek({ dilewati: false, gagal: ['x'], tidakTerantre: 1 })).toContain(
+      SUMMARY_POLIS.efekTidakTerantre,
+    )
   })
 })

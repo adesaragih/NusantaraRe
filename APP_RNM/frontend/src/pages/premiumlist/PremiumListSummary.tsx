@@ -63,6 +63,19 @@ export function selRekap(r: RekapMataUangPolis, kolom: string, plNumber: string)
   return v === undefined || v.trim() === '' ? '—' : v
 }
 
+/**
+ * Kalimat efek keluar — tiket 06.
+ *
+ * ⛔ Kegagalan efek keluar DIKATAKAN, tetapi tidak dibuat tampak seperti
+ * simpan yang gagal: rekapnya sudah tersimpan, yang tertunda kirimannya.
+ */
+export function kalimatEfek(e: { dilewati: boolean; gagal: string[]; tidakTerantre: number }): string {
+  if (e.dilewati) return SUMMARY_POLIS.efekDilewati
+  if (e.gagal.length === 0) return ''
+  const antre = e.tidakTerantre > 0 ? SUMMARY_POLIS.efekTidakTerantre : SUMMARY_POLIS.efekTerantre
+  return `${SUMMARY_POLIS.efekGagal} ${e.gagal.join(', ')}. ${antre}`
+}
+
 export default function PremiumListSummary({ polisID }: { polisID: string }) {
   const [kepala, setKepala] = useState<KepalaPolis | null>(null)
   const [tipe, setTipe] = useState('')
@@ -105,7 +118,8 @@ export default function PremiumListSummary({ polisID }: { polisID: string }) {
       setSelesai(true)
       setKabar(
         `PL_NUMBER ${hasil.nomor.nomor}: ${String(hasil.rekap.length)} rekap mata uang ` +
-          `tersimpan, ${String(hasil.pesertaWarisan)} peserta tersalin. ${SUMMARY_POLIS.ditutup}`,
+          `tersimpan, ${String(hasil.pesertaWarisan)} peserta tersalin. ${SUMMARY_POLIS.ditutup} ` +
+          kalimatEfek(hasil.efekKeluar),
       )
     } catch (e) {
       setGalat(e)

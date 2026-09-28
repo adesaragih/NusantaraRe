@@ -82,13 +82,37 @@ type HasilSubmitSummary struct {
 	RekapDihapus int `json:"rekapDihapus"`
 	// PesertaWarisan adalah cacah baris yang tersalin ke tabel warisan.
 	PesertaWarisan int `json:"pesertaWarisan"`
+	// EfekKeluar - tiket 06. Ringkasan, bukan galat: simpannya sudah commit.
+	EfekKeluar RingkasEfek `json:"efekKeluar"`
+}
+
+// RingkasEfek adalah hasil efek keluar yang dapat dibaca layar.
+//
+// ⛔ Nama efek dan sebabnya saja - tanpa alamat. Sebab galat resolver dapat
+// menyebut kunci kategori, tidak pernah URL-nya (`AlamatLayanan`).
+type RingkasEfek struct {
+	// Dilewati - lingkungan bukan produksi; BUKAN gagal.
+	Dilewati bool     `json:"dilewati"`
+	Gagal    []string `json:"gagal"`
+	// TidakTerantre - kegagalan yang bahkan tidak dapat diantre.
+	TidakTerantre int `json:"tidakTerantre"`
+}
+
+// ringkasEfek menerjemahkan hasil penyalur menjadi ringkasan layar.
+func ringkasEfek(h HasilSalur) RingkasEfek {
+	r := RingkasEfek{Dilewati: h.Dilewati, Gagal: []string{}, TidakTerantre: len(h.GagalDiantre)}
+	for _, g := range h.Gagal {
+		r.Gagal = append(r.Gagal, g.Nama)
+	}
+	return r
 }
 
 // SummaryPremiumList melayani layar `ShowLifePremiumSummary`.
 type SummaryPremiumList struct {
-	svc   *Service
-	nomor *NomorPremiumList
-	jejak Jejak
+	svc      *Service
+	nomor    *NomorPremiumList
+	jejak    Jejak
+	penyalur *PenyalurPolis
 }
 
 // ErrSubmitBukanTahapSummary - `Submit` summary di luar tahapnya.
@@ -97,12 +121,22 @@ var ErrSubmitBukanTahapSummary = errors.New(
 
 // SummaryPremiumList menyusun layanannya dengan jejak bawaan yang gagal terang.
 func (s *Service) SummaryPremiumList() *SummaryPremiumList {
-	return &SummaryPremiumList{svc: s, nomor: s.NomorPremiumList(), jejak: JejakBelumDiputuskan{}}
+	return &SummaryPremiumList{svc: s, nomor: s.NomorPremiumList(),
+		jejak: JejakBelumDiputuskan{}, penyalur: penyalurPolisBawaan(s)}
 }
 
 // DenganJejak mengganti perekamnya.
 func (s *SummaryPremiumList) DenganJejak(j Jejak) *SummaryPremiumList {
-	return &SummaryPremiumList{svc: s.svc, nomor: s.nomor, jejak: j}
+	salin := *s
+	salin.jejak = j
+	return &salin
+}
+
+// DenganPenyalur mengganti penyalur efek keluarnya - tiket 06.
+func (s *SummaryPremiumList) DenganPenyalur(p *PenyalurPolis) *SummaryPremiumList {
+	salin := *s
+	salin.penyalur = p
+	return &salin
 }
 
 // keTampil mengubah rekap desimal menjadi teks layar.
@@ -235,7 +269,7 @@ func (s *SummaryPremiumList) Submit(ctx context.Context, pelaku Pelaku,
 		return HasilSubmitSummary{}, fmt.Errorf("%w: polis %q berada di %q, bukan %q",
 			ErrSubmitBukanTahapSummary, polisID, keadaan.Status, models.TahapPolisSummary)
 	}
-	return s.svc.Penawaran().DenganJejak(s.jejak).terapkan(ctx, pelaku, keadaan,
+	return s.svc.Penawaran().DenganJejak(s.jejak).DenganPenyalur(s.penyalur).terapkan(ctx, pelaku, keadaan,
 		models.PenyelesaianSummary(), "Submit", saat)
 }
 

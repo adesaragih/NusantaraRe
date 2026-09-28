@@ -41,18 +41,29 @@ var (
 
 // Penawaran melayani keputusan atas penawaran polis.
 type Penawaran struct {
-	svc   *Service
-	jejak Jejak
+	svc      *Service
+	jejak    Jejak
+	penyalur *PenyalurPolis
 }
 
-// Penawaran menyusun layanannya dengan jejak bawaan yang gagal terang.
+// Penawaran menyusun layanannya dengan jejak dan penyalur bawaan yang gagal
+// terang.
 func (s *Service) Penawaran() *Penawaran {
-	return &Penawaran{svc: s, jejak: JejakBelumDiputuskan{}}
+	return &Penawaran{svc: s, jejak: JejakBelumDiputuskan{}, penyalur: penyalurPolisBawaan(s)}
 }
 
 // DenganJejak mengganti perekamnya.
 func (p *Penawaran) DenganJejak(j Jejak) *Penawaran {
-	return &Penawaran{svc: p.svc, jejak: j}
+	salin := *p
+	salin.jejak = j
+	return &salin
+}
+
+// DenganPenyalur mengganti penyalur efek keluarnya - tiket 06.
+func (p *Penawaran) DenganPenyalur(s *PenyalurPolis) *Penawaran {
+	salin := *p
+	salin.penyalur = s
+	return &salin
 }
 
 // pagari menjalankan gerbang bersama ketiga keputusan.
@@ -214,6 +225,17 @@ func (p *Penawaran) terapkan(ctx context.Context, pelaku Pelaku,
 	})
 	if err != nil {
 		return HasilSubmitSummary{}, err
+	}
+	// ⛔ TIKET 06 - efek keluar SESUDAH commit, dan hanya untuk jalur yang
+	// menyimpan (`InsertJsonPolisLife_Act` langkah 14-15). Hasilnya TIDAK
+	// menjadi galat: premium list sudah tersimpan, dan layanan luar yang
+	// gagal tidak boleh membuatnya tampak gagal (ADR-U-0008).
+	if akibat.SimpanPolis {
+		simpan.EfekKeluar = ringkasEfek(p.penyalur.Salurkan(ctx, MuatanEfek{
+			KlaimID: keadaan.ID,
+			AkunID:  pelaku.AkunID,
+			Waktu:   saat,
+		}))
 	}
 	return simpan, nil
 }

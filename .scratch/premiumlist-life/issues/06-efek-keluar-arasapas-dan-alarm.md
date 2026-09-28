@@ -114,3 +114,56 @@ lingkungan), **ADR-0008** (efek keluar asinkron), **ADR-0007** (jejak audit).
 go test ./internal/...
 cd frontend && npm test
 ```
+
+## Implementasi — 28-09-2026 (giliran 10): outbox + stub, alarm hanya pada kegagalan
+
+### XML yang dibaca sebelum kode
+
+| Rule | Yang diambil |
+| --- | --- |
+| `Activity/InsertJsonPolisLife_Act.xml` | langkah 14 `SendEmailNotification` (b4723, *"Kalau blm, email errornya"*), 15 `serviceInsertArasapasLife_act` (b5168) |
+| `Activity/serviceInsertArasapasLife_act.xml` | langkah 4 `GetLinkService` — `Kategori_1 = "Production"`, `Kategori_2 = "convertJsonNusareToProduction"` (pecahan b844–845); langkah 5 `Connect-REST` `ServiceName convertJsonNusareToProduction`, `POST` |
+| `ConnectREST/ConvertJsonNusareToProduction.xml` | pemetaan permintaan: `.pzInsKey`, `.OfferFacIn.PolicyData.PolicyNo`, `.pxCreateDateTime` — **tiga pengenal**, respons ke `.StatusService` |
+
+### Yang dibangun — memakai ulang mesin Claim Life, tidak menyalinnya
+
+- `services/polis_efekkeluar.go`: `KunciArasapasPremiumList` VERBATIM (≠ kunci Claim Life, dikunci
+  `TestKunciArasapasPolisVERBATIM` yang membaca activity-nya); `EfekArasapasPolis` me-resolve alamat
+  **sungguhan** lewat `M_LINK_SERVICE` lalu berhenti terang (`ErrArasapasBelumDisetujui`);
+  `EfekAlarmEmailPolis` stub (`ErrEmailBelumDisetujui`).
+- `PenyalurPolis`: dua `Penyalur` bersarang — kiriman, lalu alarm **hanya bila** kiriman gagal
+  (`TestAlarmHanyaBilaArasapasGagal`). Satu `Penyalur` berisi dua efek akan mengirim alarm pada setiap
+  simpan yang berhasil. Gerbang lingkungan tetap **satu tempat** — milik `Penyalur`
+  (`TestBukanProduksiNolPanggilan`).
+- Outbox `T_LOG_SERVICE_RNM` dipakai bersama; `antreanOracle` kini membawa `modul` —
+  `AntreanEfekOracleModul(svc, "PREMIUMLISTLIFE")`. Claim Life tetap `CLAIMLIFE` (perubahan aditif pada
+  berkas milik Claim Life, dilaporkan).
+- `Penawaran.terapkan`: efek keluar dipanggil **sesudah** transaksi commit, **hanya** bila
+  `SimpanPolis` (`TestEfekBerjalanSesudahCommitBukanDiDalamnya`). Hasilnya ringkasan
+  (`HasilSubmitSummary.EfekKeluar`), bukan galat. Handler menyuntikkan
+  `PenyalurPremiumListOracle` di ketiga rute (keputusan, penggolong, summary).
+- Layar summary mengatakan hasilnya: dilewati (bukan produksi) / gagal + terantre / gagal tak terantre.
+
+### ⛔ OQ-PL-11 `[terbuka — work owner / pemilik Arasapas]` — layanan hilir membaca JSON yang tidak lagi ada
+
+Nama layanannya `convertJsonNusareToProduction`, dan permintaannya hanya **tiga pengenal** — bukan isi
+polis. Layanan itu tampaknya membaca `JSON_POLIS` di sisinya sendiri; tabel itu **tidak lagi ditulis**
+(pl1). Mengaktifkan kiriman ini tanpa jawaban berarti memanggil layanan yang akan mencari JSON yang
+tidak ada. Stub tetap gagal terang sampai pemilik layanan menyatakan dari mana ia membaca polis.
+
+### AC — keadaan
+
+| AC | Keadaan |
+| --- | --- |
+| alamat di-resolve runtime; nol URL literal/konstanta/env | ✅ `KunciLayanan` + `AlamatLayanan`; penjaga `TestNolAlamatLayananDiKode` (milik Claim Life) ikut memindai berkas baru |
+| non-produksi: kedua efek tidak berjalan, simpan tetap penuh | ✅ `Penyalur` bergerbang; simpan tidak bergerbang |
+| gerbang satu flag satu tempat | ✅ `Service.lingkungan` → `Penyalur` |
+| satu baris log per panggilan, berhasil maupun gagal | ⚠️ **sebagian** — yang tertulis kegagalan (outbox). Panggilan berhasil belum mungkin: kedua efek stub. Padanan `MONITORING_PROD_LOG` untuk keberhasilan dibangun bersama panggilan nyata |
+| email hanya bila gagal | ✅ pemicunya bergeser ke kegagalan efek keluar (AC relasional) |
+| kegagalan efek tidak membatalkan simpan; tercatat; dapat diulang | ✅ sesudah commit; outbox + `Backoff` Claim Life |
+| di balik interface, difake di uji | ✅ `EfekKeluar`, `Antrean` |
+| nol perakitan CLOB JSON | ✅ muatan outbox = pengenal + waktu |
+
+### Angka
+
+Go **540 PASS · 0 FAIL** tingkat atas; vet (+`-tags db`), gofmt bersih · vitest **348** · tsc bersih.
