@@ -397,6 +397,7 @@ Kartu berkas unggahan. Satu baris mewakili **satu berkas di penyimpanan**, dan
 | `FILENAME` | teks | ya | | korpus b90 |
 | `APPNAME` | teks | ya | | korpus b91 — padanan `GCP_IMAGE.APPNAME VARCHAR2(20)` `[data DBA]` |
 | `STORAGE` | teks | ya | | korpus b92 — `Insert_T_Storage_SQL` b100 menulis literal `'standard'` |
+| `TANGGAL_UPLOAD` | DATE | ya | | korpus `Update_T_Storage_SQL.xml` b89 — `To_date({UpdateDoc.DateTime}, 'MM/DD/YYYY HH24:MI:SS')`; sumbernya `UploadDoc.Response.DateTime` *(`GetUrlGoogleStorage_Act.xml` b2274)* |
 
 **Index:** hanya PK.
 
@@ -411,6 +412,33 @@ penulisnya, `Insert_T_Storage_SQL.xml` b102, ber-`commit;`, yang **ADR-U-0029** 
 ⚠️ **Nol FK ke `T_CLAIMLF_DOCUMENT`**, dan itu meniru aslinya: `T_STORAGE_ID` menunjuk
 `IMAGEID` tanpa constraint, sebab di sistem lama barisnya lahir di layanan luar dan boleh
 mendahului maupun menyusul baris dokumennya. FK di sini akan menolak urutan yang sah.
+
+⛔ **RALAT 28-09-2026 — `TANGGAL_UPLOAD` terlewat di migrasi 019.** Bab ini semula disusun dari
+`Insert_T_Storage_SQL.xml` saja, yang memang tidak menyebut kolom itu: ia ditulis oleh **UPDATE**,
+bukan oleh INSERT *(`Update_T_Storage_SQL.xml` b89)*. Membaca satu dari dua rule penulis lalu
+menyimpulkan tentang tabelnya — bentuk kekeliruan yang sama untuk kelima kalinya. Migrasi **020**
+menambahkannya.
+
+⚠️ **Dua bentuk tanggal berbeda di satu pernyataan, dan itu ada di rule aslinya:**
+`EXPDATE` memakai `'DD/MM/YYYY HH24:MI:SS'` sedangkan `TANGGAL_UPLOAD` memakai
+`'MM/DD/YYYY HH24:MI:SS'`. Nilai warisan pada kedua kolom itu karena itu **tidak dapat dibedakan**
+untuk tanggal 1–12 tiap bulan. Kami tidak mewarisi masalahnya — Go mengikat `time.Time`, bukan
+teks — tetapi migrasi data **A4** harus tahu.
+
+⛔ **`IMAGEID` punya rule pembangkitnya sendiri**, dan ia BUKAN pengenal dokumen:
+
+```
+RDBList/GenerateImageID_SQL.xml  b85-b88
+  SELECT STANDARD_HASH(
+           'ASMPP' || TO_CHAR(SYSTIMESTAMP,'YYYYMMDDHH24MISSFF9') || SYS_GUID(),
+           'MD5') AS "InsertDoc.ImageID"
+  FROM DUAL
+```
+
+dipanggil `InsertGoogleStorage_Act.xml` b2226, mengalir ke `Param.ImageID` b2784–2785, lalu ke
+`Insert_T_Storage_SQL.xml` b94. Ditiru `models.ImageIDBaru` — MD5, **heksa huruf besar**, 32
+karakter. Ronde pertama memakai pengenal dokumen *(cap waktu)*; kunci penyimpanan yang dapat
+ditebak dari waktu unggah bukan kunci.
 
 ## T_CLAIMLF_DOCUMENT
 

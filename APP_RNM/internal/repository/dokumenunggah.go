@@ -155,8 +155,9 @@ func (r *KlaimLife) HapusDokumen(ctx context.Context, tx *Tx, id int64) error {
 // yang ada di sana - transaksi milik pemanggil (ADR-U-0029).
 func sqlSisipKartuBerkas(tabel string) string {
 	return fmt.Sprintf(`INSERT INTO %s
-		(IMAGEID, URLPUBLIC, APPFOLDER, EXPDATE, FILENAME, APPNAME, STORAGE)
-		VALUES (:1,:2,:3,:4,:5,:6,:7)`, tabel)
+		(IMAGEID, URLPUBLIC, APPFOLDER, EXPDATE, FILENAME, APPNAME, STORAGE,
+		 TANGGAL_UPLOAD)
+		VALUES (:1,:2,:3,:4,:5,:6,:7,:8)`, tabel)
 }
 
 // KartuBerkas adalah satu baris `T_CLAIMLF_STORAGE`.
@@ -168,6 +169,13 @@ type KartuBerkas struct {
 	FileName  string
 	AppName   string
 	Storage   string
+	// TanggalUpload - `Update_T_Storage_SQL.xml` b89.
+	//
+	// ⚠️ Sumbernya BUKAN jam kita: `GetUrlGoogleStorage_Act.xml`
+	// b2273-2274 menyetelnya dari `UploadDoc.Response.DateTime`, yaitu cap
+	// waktu yang DIKEMBALIKAN layanan penyimpanan. Selama pelaksananya stub,
+	// layanan itu proses kita sendiri - penyimpangan yang dinyatakan.
+	TanggalUpload time.Time
 }
 
 // SisipKartuBerkas menulis kartu penyimpanan satu berkas.
@@ -183,7 +191,7 @@ func (r *KlaimLife) SisipKartuBerkas(ctx context.Context, tx *Tx, k KartuBerkas)
 	hasil, err := tx.tx.ExecContext(ctx, q, k.ImageID, kosongJadiNil(k.URLPublic),
 		kosongJadiNil(k.AppFolder), waktuJadiNil(k.ExpDate),
 		kosongJadiNil(k.FileName), kosongJadiNil(k.AppName),
-		kosongJadiNil(k.Storage))
+		kosongJadiNil(k.Storage), waktuJadiNil(k.TanggalUpload))
 	if err != nil {
 		return fmt.Errorf("repository: menyisip kartu berkas: %w", err)
 	}

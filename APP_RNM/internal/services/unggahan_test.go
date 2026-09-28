@@ -50,11 +50,16 @@ func TestUnggahTanpaFolderGagalTerang(t *testing.T) {
 func TestBatasUkuranDitegakkanSaatMenyalin(t *testing.T) {
 	// ⛔ Saat MENYALIN, bukan dari `Content-Length`. Header itu datang dari
 	// pengirim dan dapat berbohong; `io.LimitReader` tidak dapat.
+	// ⚠️ Batasnya DIKECILKAN untuk uji. Ronde pertama menulis 25 MiB dua
+	// kali ke disk sungguhan, dan sekali gagal lalu lulus tiga kali berikutnya
+	// - uji yang gagal secara acak akan diabaikan orang. Yang diuji di sini
+	// PERILAKUNYA; angka 25 MiB dijaga TestBatasUkuranAdalahAngkaYangDinyatakan.
+	const batasUji = 1024
 	dir := t.TempDir()
-	u := New(nil).Dokumen().DenganFolder(dir)
+	u := New(nil).Dokumen().DenganFolder(dir).DenganBatas(batasUji)
 
 	jalur := filepath.Join(dir, "besar.bin")
-	isi := bytes.NewReader(make([]byte, BatasUkuranUnggahan+1))
+	isi := bytes.NewReader(make([]byte, batasUji+1))
 	err := u.tulisBerkas(jalur, isi)
 	if !errors.Is(err, ErrBerkasTerlaluBesar) {
 		t.Fatalf("galat = %v, mau ErrBerkasTerlaluBesar", err)
@@ -69,10 +74,11 @@ func TestBatasUkuranDitegakkanSaatMenyalin(t *testing.T) {
 func TestBatasUkuranTepatMasihDiterima(t *testing.T) {
 	// Uji yang hanya mencoba "jauh kelebihan" tidak dapat membedakan `>`
 	// dari `>=`, dan yang kedua menolak berkas terbesar yang sah.
+	const batasUji = 1024
 	dir := t.TempDir()
 	jalur := filepath.Join(dir, "pas.bin")
-	err := New(nil).Dokumen().DenganFolder(dir).tulisBerkas(jalur,
-		bytes.NewReader(make([]byte, BatasUkuranUnggahan)))
+	err := New(nil).Dokumen().DenganFolder(dir).DenganBatas(batasUji).tulisBerkas(jalur,
+		bytes.NewReader(make([]byte, batasUji)))
 	if err != nil {
 		t.Fatalf("berkas sebesar batasnya ditolak: %v", err)
 	}
@@ -193,4 +199,23 @@ func TestPelaksanaBerkasMenolakJenisAsing(t *testing.T) {
 // repositoryBarisUji menyusun satu baris outbox seadanya.
 func repositoryBarisUji(jenis string) repository.BarisEfekKeluar {
 	return repository.BarisEfekKeluar{ID: "1", Jenis: jenis, Rujukan: "1"}
+}
+
+func TestBatasUkuranAdalahAngkaYangDinyatakan(t *testing.T) {
+	// ⛔ Uji batas di atas memakai angka kecil supaya cepat dan tidak
+	// bergantung pada disk. Yang menjaga ANGKA SUNGGUHANNYA adalah uji ini -
+	// tanpa itu, batas 25 MiB dapat berubah menjadi apa pun tanpa satu pun
+	// uji berbunyi.
+	if BatasUkuranUnggahan != 25<<20 {
+		t.Errorf("BatasUkuranUnggahan = %d, mau %d (25 MiB)",
+			BatasUkuranUnggahan, 25<<20)
+	}
+	// ⛔ Dan ia TIDAK dapat dimatikan lewat DenganBatas.
+	u := New(nil).Dokumen()
+	if got := u.DenganBatas(0).batas; got != BatasUkuranUnggahan {
+		t.Errorf("DenganBatas(0) = %d, mau tetap %d", got, BatasUkuranUnggahan)
+	}
+	if got := u.DenganBatas(-1).batas; got != BatasUkuranUnggahan {
+		t.Errorf("DenganBatas(-1) = %d, mau tetap %d", got, BatasUkuranUnggahan)
+	}
 }

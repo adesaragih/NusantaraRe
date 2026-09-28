@@ -1237,3 +1237,53 @@ dan itu ditulis di kedua tempat supaya tidak ada yang "menyeragamkan" keduanya n
 | `gofmt` · `go vet` · `go vet -tags db` · `tsc` · build | bersih · 186,49 kB |
 | Migrasi | `001`–`019`, `030`, `050`–`056` |
 | Kebocoran | nol — fixture memakai `UJI-berkas.pdf`, nol nama orang |
+
+## Giliran tiga modul 3 — paket 0: penyimpanan diadu dengan RDB-nya
+
+Brief §1 menyuruh membaca **dua** rule yang belum dibaca. Keduanya membantah kode yang baru saja
+ditulis, dan keduanya dengan kekeliruan yang **sama bentuknya**: membaca satu dari dua rule penulis
+lalu menyimpulkan tentang tabelnya — kelima kalinya di modul ini.
+
+**1. `TANGGAL_UPLOAD`** ditulis `Update_T_Storage_SQL.xml` b89, bukan oleh INSERT yang jadi sumber
+019. Migrasi **020** menambahkannya. ⚠️ Dan rule itu memuat **dua bentuk tanggal berbeda** dalam
+satu pernyataan — `EXPDATE` `DD/MM`, `TANGGAL_UPLOAD` `MM/DD` — sehingga nilai warisan keduanya
+tidak dapat dibedakan untuk tanggal 1–12. Dicatat untuk A4.
+
+**2. `IMAGEID` salah rumus.** Saya memakai pengenal dokumen *(cap waktu)*. Rumusnya ada di korpus
+sejak awal: `GenerateImageID_SQL.xml` b85 `STANDARD_HASH('ASMPP'||FF9||SYS_GUID(),'MD5')`, dipanggil
+`InsertGoogleStorage_Act.xml` b2226. Bedanya **bukan kosmetik**: cap waktu dapat **ditebak**, jadi
+siapa pun yang tahu kapan sebuah berkas diunggah dapat menyusun kunci penyimpanannya.
+
+⚠️ `'ASMPP'` **lima** huruf — bukan `ASMAPP`, awalan **token** penyimpanan (butir an). Keduanya
+berdampingan di modul ini, berbeda satu huruf.
+
+**Akibat yang ikut diperbaiki**: nama berkas lokal semula dirakit dari `T_STORAGE_ID`; sejak
+`IMAGEID` benar keduanya berbeda, dan setiap unduhan akan gagal seketika rumusnya dipasang. Kini
+berkunci pengenal dokumen lewat **satu** fungsi yang dipakai penulis dan pembacanya.
+
+### ⛔ Satu uji yang gagal SEKALI lalu lulus tiga kali
+
+`TestBatasUkuranTepatMasihDiterima` menulis 25 MiB ke disk sungguhan, dua kali. Ia gagal sekali di
+tengah jalannya seluruh suite lalu lulus tiga kali berturut-turut.
+
+Uji yang gagal secara acak akan **diabaikan** orang, bukan dipatuhi — persis prinsip yang sama
+dengan penjaga yang menuduh hal yang benar. Batasnya kini dapat dikecilkan uji *(`DenganBatas`,
+pola yang sama dengan `DenganFolder` yang sudah ada)*, dan **angka 25 MiB dijaga uji tersendiri**
+yang juga membuktikan batas itu tidak dapat dimatikan lewat nol atau negatif.
+
+### Dikunci dua sisi
+
+`ImageIDDari` diadu dengan Oracle sendiri: `TestImageIDGoSamaDenganStandardHashOracle` menghitung
+`STANDARD_HASH(:1,'MD5')` di Oracle atas **empat** masukan tetap dan membandingkannya. Uji murni
+hanya dapat membuktikan Go konsisten dengan dirinya sendiri; ini yang mengadunya dengan pihak yang
+sebenarnya. Literal tetapnya dihitung ulang bebas dengan Python — cocok.
+
+### TELEMETRI EKSEKUSI — giliran 3 paket 0
+
+| Hal | Isi |
+| --- | --- |
+| Go | **378 PASS · 0 FAIL · 38 SKIP** *(dari 373/37)* |
+| JS | 254 *(tidak berubah)* |
+| `gofmt` · `go vet` · `go vet -tags db` · `tsc` · build | bersih |
+| Migrasi | `001`–`020`, `030`, `050`–`056` |
+| Kebocoran | nol |

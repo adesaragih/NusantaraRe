@@ -1,0 +1,5 @@
+-- Jalur mundur 020.
+ALTER TABLE {skema}.T_CLAIMLF_STORAGE DROP (
+  TANGGAL_UPLOAD
+)
+/

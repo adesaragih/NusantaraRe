@@ -1770,3 +1770,73 @@ menyusul baris dokumennya. FK di sini akan menolak urutan yang sah.
 
 **AC:** tidak ada AC tiket ini yang berubah centangnya. Yang bertambah **satu tabel** dengan jalur
 mundurnya.
+
+## Migrasi 020 — `TANGGAL_UPLOAD`, dan `IMAGEID` yang salah rumus (butir be, 28 September 2026)
+
+⛔ **RALAT BERTANGGAL atas bab 019 di atas.** Dua hal yang salah di sana, dan keduanya berasal dari
+kekeliruan yang sama: **membaca satu dari dua rule penulis lalu menyimpulkan tentang tabelnya.**
+
+### 1. `TANGGAL_UPLOAD` terlewat
+
+Bab 019 disusun dari `Insert_T_Storage_SQL.xml` saja. Kolom itu ditulis oleh rule **yang lain**:
+
+```
+RDBList/Update_T_Storage_SQL.xml  b86-b90
+  update T_STORAGE_IMAGE set
+    URLPUBLIC      = {UpdateDoc.URLImage},
+    APPFOLDER      = {UpdateDoc.appfolder},
+    EXPDATE        = To_date({UpdateDoc.exp},      'DD/MM/YYYY HH24:MI:SS'),
+    TANGGAL_UPLOAD = To_date({UpdateDoc.DateTime}, 'MM/DD/YYYY HH24:MI:SS')
+  where imageid = {UpdateDoc.ImageID}
+```
+
+Migrasi **020** menambahkannya *(`ALTER ... ADD (TANGGAL_UPLOAD DATE)`, + down)*.
+
+⚠️ **Dua bentuk tanggal berbeda di satu pernyataan**, dan itu ada di rule aslinya: `EXPDATE`
+`DD/MM`, `TANGGAL_UPLOAD` `MM/DD`. Nilai warisan pada kedua kolom itu **tidak dapat dibedakan**
+untuk tanggal 1–12 tiap bulan. Kami tidak mewarisi masalahnya — Go mengikat `time.Time` — tetapi
+**A4 harus tahu**.
+
+⚠️ Sumbernya **bukan jam kita**: `GetUrlGoogleStorage_Act.xml` b2273–2274 menyetel
+`UpdateDoc.DateTime = UploadDoc.Response.DateTime`, cap waktu yang **dikembalikan layanan
+penyimpanan**. Selama pelaksananya stub, layanan itu proses kita sendiri — penyimpangan yang
+dinyatakan.
+
+### 2. `IMAGEID` bukan pengenal dokumen
+
+Ronde pertama memakai pengenal dokumen *(cap waktu b648)* sebagai `IMAGEID`. `IMAGEID` punya rule
+pembangkitnya **sendiri**, dan rule itu ada di korpus sejak awal:
+
+```
+RDBList/GenerateImageID_SQL.xml  b85-b88
+  SELECT STANDARD_HASH(
+           'ASMPP' || TO_CHAR(SYSTIMESTAMP,'YYYYMMDDHH24MISSFF9') || SYS_GUID(),
+           'MD5') AS "InsertDoc.ImageID"
+  FROM DUAL
+```
+
+dipanggil `InsertGoogleStorage_Act.xml` **b2226**, mengalir ke `Param.ImageID` b2784–2785, lalu ke
+`Insert_T_Storage_SQL.xml` b94.
+
+⚠️ Bedanya **bukan kosmetik**: pengenal dokumen dapat **ditebak** — ia cap waktu — sedangkan
+`IMAGEID` memuat `SYS_GUID()`. Memakai yang pertama sebagai kunci penyimpanan berarti siapa pun
+yang tahu **kapan** sebuah berkas diunggah dapat menyusun kunci penyimpanannya.
+
+⚠️ `'ASMPP'` **lima huruf**, dan ia bukan `ASMAPP` — awalan **token** penyimpanan *(butir an,
+`services.awalanToken`)*. Keduanya berdampingan di modul ini dan berbeda satu huruf; konstanta
+bernama berkutipan barisnya adalah satu-satunya cara itu tidak tertukar.
+
+Ditiru `models.ImageIDBaru`: MD5, **heksa huruf besar**, 32 karakter. Dikunci **dua** sisi — literal
+tetap `[murni]` *(dihitung ulang bebas dengan Python, cocok)* dan
+`TestImageIDGoSamaDenganStandardHashOracle` yang mengadu rumusnya dengan `STANDARD_HASH` Oracle atas
+masukan tetap `[db]`.
+
+### 3. Akibat yang ikut diperbaiki
+
+Nama berkas di `UNGGAHAN_DIR` semula dirakit dari `T_STORAGE_ID`. Sejak `IMAGEID` benar, keduanya
+**berbeda** — dan setiap unduhan akan gagal seketika rumusnya dipasang. Nama berkas lokal kini
+berkunci **pengenal dokumen**, lewat satu fungsi yang dipakai penulis dan pembacanya
+*(`namaBerkasLokal`)*.
+
+**AC:** tidak ada AC tiket ini yang berubah centangnya. Yang bertambah **satu kolom** dengan jalur
+mundurnya, dan **satu rumus** yang sebelumnya salah.

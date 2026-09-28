@@ -118,6 +118,16 @@ type Unggahan struct {
 	folder  string
 	tautan  func(id int64) string
 	jakarta *time.Location
+	// batas adalah batas byte satu berkas, bawaannya BatasUkuranUnggahan.
+	//
+	// ⚠️ Medan, bukan konstanta yang dibaca langsung - dan sebabnya satu
+	// kegagalan NYATA. Uji batas menulis 25 MiB dua kali ke disk; sekali ia
+	// gagal lalu lulus tiga kali berturut-turut sesudahnya. Uji yang gagal
+	// secara acak akan diabaikan orang, bukan dipatuhi - pelajaran yang sama
+	// dengan penjaga yang menuduh hal yang benar. Batasnya kini dapat
+	// dikecilkan oleh uji; yang menjaga ANGKANYA adalah uji tersendiri atas
+	// konstantanya.
+	batas int64
 }
 
 // Dokumen menyusun layanan unggahan.
@@ -138,6 +148,7 @@ func (s *Service) Dokumen() *Unggahan {
 		folder:  s.unggahanDir,
 		tautan:  TautanUnduhBawaan,
 		jakarta: jakarta,
+		batas:   BatasUkuranUnggahan,
 	}
 }
 
@@ -152,6 +163,19 @@ func (u *Unggahan) DenganKategori(s SumberKategoriWajib) *Unggahan {
 func (u *Unggahan) DenganFolder(f string) *Unggahan {
 	salin := *u
 	salin.folder = f
+	return &salin
+}
+
+// DenganBatas mengganti batas ukuran - dipakai test saja.
+//
+// ⛔ Nol dan negatif DIABAIKAN: batas yang dapat dimatikan adalah batas
+// yang suatu hari akan dimatikan di jalur nyata.
+func (u *Unggahan) DenganBatas(n int64) *Unggahan {
+	if n <= 0 {
+		return u
+	}
+	salin := *u
+	salin.batas = n
 	return &salin
 }
 
@@ -226,7 +250,7 @@ func (u *Unggahan) Unggah(ctx context.Context, pelaku Pelaku,
 		return models.Dokumen{}, fmt.Errorf(
 			"services: pengenal dokumen %q bukan angka: %w", idTeks, err)
 	}
-	jalur := filepath.Join(u.folder, idTeks+ekstensi(nama))
+	jalur := filepath.Join(u.folder, namaBerkasLokal(idTeks, nama))
 	if err := u.tulisBerkas(jalur, berkas.Isi); err != nil {
 		return models.Dokumen{}, err
 	}
@@ -306,7 +330,11 @@ func (u *Unggahan) tulisBerkas(jalur string, isi io.Reader) error {
 	}
 	// Satu byte LEBIH daripada batas, supaya kelebihan dapat dibedakan dari
 	// berkas yang panjangnya tepat sebesar batas.
-	n, salinErr := io.Copy(f, io.LimitReader(isi, BatasUkuranUnggahan+1))
+	batas := u.batas
+	if batas <= 0 {
+		batas = BatasUkuranUnggahan
+	}
+	n, salinErr := io.Copy(f, io.LimitReader(isi, batas+1))
 	tutupErr := f.Close()
 	switch {
 	case salinErr != nil:
@@ -318,10 +346,9 @@ func (u *Unggahan) tulisBerkas(jalur string, isi io.Reader) error {
 	case n == 0:
 		_ = os.Remove(jalur)
 		return ErrBerkasKosong
-	case n > BatasUkuranUnggahan:
+	case n > batas:
 		_ = os.Remove(jalur)
-		return fmt.Errorf("%w: %d byte, batas %d", ErrBerkasTerlaluBesar,
-			n, BatasUkuranUnggahan)
+		return fmt.Errorf("%w: %d byte, batas %d", ErrBerkasTerlaluBesar, n, batas)
 	}
 	return nil
 }
@@ -329,6 +356,19 @@ func (u *Unggahan) tulisBerkas(jalur string, isi io.Reader) error {
 // ekstensi mengambil akhiran nama berkas, huruf kecil.
 func ekstensi(nama string) string {
 	return strings.ToLower(filepath.Ext(nama))
+}
+
+// namaBerkasLokal menyusun nama berkas di `UNGGAHAN_DIR`.
+//
+// ⛔ SATU tempat, dipakai penulis dan pembacanya. Dua tempat berarti
+// unggah dan unduh dapat bergeser sendiri-sendiri, dan yang bergeser tidak
+// akan berbunyi: berkasnya ada, pencarinya menengok ke nama lain.
+//
+// ⚠️ Kuncinya pengenal DOKUMEN, bukan `IMAGEID`. Nama berkas di disk
+// kita bukan kunci penyimpanan luar; menyatukannya membuat penggantian
+// pelaksana - yang memang direncanakan - mengubah letak berkas lama pula.
+func namaBerkasLokal(idDokumen, namaAsli string) string {
+	return idDokumen + ekstensi(namaAsli)
 }
 
 // muatanBerkas menyusun muatan JSON outbox.
@@ -384,7 +424,14 @@ func (u *Unggahan) Unduh(ctx context.Context, pelaku Pelaku,
 	if strings.TrimSpace(u.folder) == "" {
 		return models.Dokumen{}, "", ErrUnggahanDirBelumDisetel
 	}
-	return dok, filepath.Join(u.folder, dok.TStorageID+ekstensi(dok.NamaFile)), nil
+	// ⛔ Dari pengenal DOKUMEN, bukan dari `T_STORAGE_ID`. Sejak 28-09-2026
+	// keduanya BERBEDA: `IMAGEID` lahir dari `GenerateImageID_SQL` (MD5 atas
+	// cap waktu + `SYS_GUID()`), sedangkan nama berkas lokal adalah urusan
+	// kita sendiri. Ronde pertama memakai `T_STORAGE_ID` karena saat itu
+	// keduanya kebetulan sama nilainya - dan setiap unduhan akan gagal
+	// seketika rumus `IMAGEID` yang benar dipasang.
+	return dok, filepath.Join(u.folder,
+		namaBerkasLokal(strconv.FormatInt(dok.ID, 10), dok.NamaFile)), nil
 }
 
 // Hapus membuang satu dokumen - `Delete` b4288 -> `ConfirmDeleteAttachment`
@@ -423,7 +470,8 @@ func (u *Unggahan) Hapus(ctx context.Context, pelaku Pelaku,
 		_, err := repository.NewPohonKlaim(u.svc.db).AntreEfek(ctx, tx,
 			LiniLife, ModulClaimLife, JenisEfekStorageHapus, dok.TStorageID,
 			muatanBerkas(klaimID, filepath.Join(u.folder,
-				dok.TStorageID+ekstensi(dok.NamaFile)), dok.NamaFile), saat)
+				namaBerkasLokal(strconv.FormatInt(dok.ID, 10), dok.NamaFile)),
+				dok.NamaFile), saat)
 		return err
 	})
 }
@@ -443,6 +491,12 @@ func (u *Unggahan) Hapus(ctx context.Context, pelaku Pelaku,
 type PelaksanaBerkasLokal struct {
 	baca   *repository.KlaimLife
 	tautan func(id int64) string
+	// jam menyuplai cap waktu `TANGGAL_UPLOAD` dan masukan `IMAGEID`.
+	//
+	// ⚠️ Medan, bukan `time.Now()` di dalam badan. Fungsi yang membaca
+	// jamnya sendiri tidak dapat diuji tanpa menunggu waktu berlalu, dan
+	// `IMAGEID` adalah hash ATAS jam itu.
+	jam func() time.Time
 }
 
 // NewPelaksanaBerkasLokal menyusun pelaksana stub-nya.
@@ -450,7 +504,15 @@ func NewPelaksanaBerkasLokal(svc *Service) *PelaksanaBerkasLokal {
 	return &PelaksanaBerkasLokal{
 		baca:   repository.NewKlaimLife(svc.db),
 		tautan: TautanUnduhBawaan,
+		jam:    time.Now,
 	}
+}
+
+// DenganJam mengganti sumber waktunya - dipakai uji.
+func (p *PelaksanaBerkasLokal) DenganJam(j func() time.Time) *PelaksanaBerkasLokal {
+	salin := *p
+	salin.jam = j
+	return &salin
 }
 
 // Laksanakan menjalankan satu baris outbox jenis berkas.
@@ -484,17 +546,33 @@ func (p *PelaksanaBerkasLokal) unggah(ctx context.Context, tx *repository.Tx,
 		return fmt.Errorf("%w: rujukan %q bukan pengenal dokumen",
 			ErrPermintaanTidakSah, b.Rujukan)
 	}
+	saat := p.jam()
+	// ⛔ `IMAGEID` DITERBITKAN DI SINI, dan bukan pengenal dokumennya.
+	// `GenerateImageID_SQL.xml` b85-b88 adalah rule pembangkitnya sendiri, dan
+	// `InsertGoogleStorage_Act.xml` b2226 memanggilnya tepat di titik ini -
+	// saat berkas masuk penyimpanan, bukan saat barisnya lahir.
+	//
+	// ⚠️ RALAT 28-09-2026: ronde pertama memakai `b.Rujukan` (pengenal
+	// dokumen, yaitu cap waktu) sebagai `IMAGEID`. Kunci penyimpanan yang
+	// dapat ditebak dari waktu unggah bukan kunci.
+	imageID, err := models.ImageIDBaru(saat)
+	if err != nil {
+		return err
+	}
 	if err := p.baca.SisipKartuBerkas(ctx, tx, repository.KartuBerkas{
-		ImageID: b.Rujukan,
+		ImageID: imageID,
 		// ⛔ URL-nya jalur KITA, berbatas identitas - butir be.
 		URLPublic: p.tautan(id),
 		FileName:  namaDariMuatan(b.Muatan),
 		AppName:   NamaAplikasiBerkas,
 		Storage:   PenyimpananStandar,
+		// `Update_T_Storage_SQL.xml` b89. Di sistem lama nilainya datang dari
+		// jawaban layanan penyimpanan; di sini layanan itu kita sendiri.
+		TanggalUpload: saat,
 	}); err != nil {
 		return err
 	}
-	return p.baca.TandaiDokumenTerunggah(ctx, tx, id, b.Rujukan)
+	return p.baca.TandaiDokumenTerunggah(ctx, tx, id, imageID)
 }
 
 // hapus membuang kartu berkas dan berkas lokalnya.
