@@ -15,18 +15,17 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { TAHAP, TAHAP_ID, MENU } from '../assets/labels'
-import type { KodePeran } from '../assets/labels'
-import { PERAN } from '../assets/labels'
-import { Gagal, Kosong, Memuat } from '../components/ui/dasar'
-import { unduhXlsx, type KolomEksporXlsx } from '../lib/exportXlsx'
+import { MENU } from '../../assets/labels'
+import { PERAN, TAHAP, TAHAP_ID, type KodePeran } from '../../assets/labels.claimlife'
+import { Gagal, Kosong, Memuat } from '../../components/ui/dasar'
+import { unduhXlsx, type KolomEksporXlsx } from '../../lib/exportXlsx'
 import {
   ambilKotakMasuk,
   TAHAP_NOMOR,
   type BarisInbox,
   type HalamanInbox,
   type NomorTahap,
-} from '../services/api'
+} from '../../services/api'
 
 /** Satu tab: nomor tahap, judul VERBATIM, dan peran yang memegangnya. */
 interface Tab {

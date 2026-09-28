@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { DOKUMEN } from '../assets/labels'
-import { dokumenTerunggah, tautanDokumen, type Dokumen } from '../services/api'
+import { DOKUMEN } from '../../assets/labels.claimlife'
+import { dokumenTerunggah, tautanDokumen, type Dokumen } from '../../services/api'
 import { barisDokumen, PRANALA_MENUNGGU } from './PanelDokumenPeserta'
 
 // Uji daftar dokumen pendukung — A3 kelompok 1.

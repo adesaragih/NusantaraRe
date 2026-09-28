@@ -24,14 +24,8 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 
-import {
-  BERANDA,
-  KETERANGAN_BELUM_DIMIGRASI,
-  MENU,
-  MODUL,
-  PERAN_ID,
-  PRODUK,
-} from '../assets/labels'
+import { BERANDA, KETERANGAN_BELUM_DIMIGRASI, MENU, MODUL } from '../assets/labels'
+import { PERAN_ID, PRODUK } from '../assets/labels.claimlife'
 import { ENTRI_MENU, type ModulTetap } from '../lib/daftarMenu'
 import { PagarGalat } from '../PagarGalat'
 import { type Sesi } from '../store/sesi'

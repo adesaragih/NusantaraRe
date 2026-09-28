@@ -39,8 +39,8 @@
 // yang dibaca adalah `PROD_KE` terbesar. Layar yang tidak dapat menyebut
 // versi mana yang ditampilkannya membuat selisih angka mustahil ditelusuri.
 
-import { REGISTER } from '../assets/labels'
-import type { PolicyDataLife } from '../services/api'
+import { REGISTER } from '../../assets/labels.claimlife'
+import type { PolicyDataLife } from '../../services/api'
 
 /** Satu medan panel: label VERBATIM, nilainya, dan keadaan sumbernya. */
 export interface MedanPolis {

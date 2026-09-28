@@ -23,13 +23,13 @@
 
 import { useState } from 'react'
 
-import { TOMBOL_AKSEPTASI, TOMBOL_MEDIS, TOMBOL_OS } from '../assets/labels'
+import { TOMBOL_AKSEPTASI, TOMBOL_MEDIS, TOMBOL_OS } from '../../assets/labels.claimlife'
 import {
   pesanGalat,
   pindahTahap,
   TAHAP_JALUR,
   type TahapJalur,
-} from '../services/api'
+} from '../../services/api'
 
 /** Satu tombol perpindahan: label VERBATIM dan tahap tujuannya. */
 export interface TombolPindah {

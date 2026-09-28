@@ -35,7 +35,7 @@
 
 import { useState } from 'react'
 
-import { DIAGNOSA } from '../assets/labels'
+import { DIAGNOSA } from '../../assets/labels.claimlife'
 import {
   bolehUbahDiagnosa,
   hapusDiagnosa,
@@ -45,9 +45,9 @@ import {
   type Diagnosa,
   type Penyakit,
   type Peserta,
-} from '../services/api'
+} from '../../services/api'
 import { CariDiagnosa } from './CariDiagnosa'
-import { BelumTersedia } from './ui/dasar'
+import { BelumTersedia } from '../ui/dasar'
 
 /**
  * Menyusun kalimat untuk sel yang belum diisi.

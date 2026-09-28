@@ -16,10 +16,10 @@
 
 import { useState } from 'react'
 
-import { OUTSTANDING, TOMBOL_OS } from '../assets/labels'
-import { PanelDataPolis } from '../components/PanelDataPolis'
-import { Gagal } from '../components/ui/dasar'
-import { pesanGalat, pindahTahap, TAHAP_JALUR, type TahapJalur } from '../services/api'
+import { OUTSTANDING, TOMBOL_OS } from '../../assets/labels.claimlife'
+import { PanelDataPolis } from '../../components/claimlife/PanelDataPolis'
+import { Gagal } from '../../components/ui/dasar'
+import { pesanGalat, pindahTahap, TAHAP_JALUR, type TahapJalur } from '../../services/api'
 
 export interface OutstandingProps {
   /** Pengenal work kasus yang sedang dibuka. */

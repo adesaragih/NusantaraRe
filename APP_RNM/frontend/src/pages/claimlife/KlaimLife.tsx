@@ -1,10 +1,10 @@
 import { useState, type FormEvent } from 'react'
 
-import { DETAIL, TOMBOL_KOMITE } from '../assets/labels'
-import { PanelTotalPeserta } from '../components/PanelTotalPeserta'
-import { PanelDokumenPeserta } from '../components/PanelDokumenPeserta'
-import { GridDiagnosa } from '../components/GridDiagnosa'
-import { PanelPindahTahap } from '../components/PanelPindahTahap'
+import { DETAIL, TOMBOL_KOMITE } from '../../assets/labels.claimlife'
+import { PanelTotalPeserta } from '../../components/claimlife/PanelTotalPeserta'
+import { PanelDokumenPeserta } from '../../components/claimlife/PanelDokumenPeserta'
+import { GridDiagnosa } from '../../components/claimlife/GridDiagnosa'
+import { PanelPindahTahap } from '../../components/claimlife/PanelPindahTahap'
 
 import {
   ambilKlaimLife,
@@ -30,7 +30,7 @@ import {
   STATUS_OUTSTANDING,
   type DampakHapus,
   type Klaim,
-} from '../services/api'
+} from '../../services/api'
 
 // ============================================================================
 // pages/KlaimLife.tsx — halaman "buka satu klaim Life" (tiket 01 AC-2).

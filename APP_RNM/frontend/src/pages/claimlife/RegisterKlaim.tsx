@@ -7,8 +7,8 @@
 // (ADR-U-0003) — tidak pernah number JavaScript, yang membulatkan diam-diam.
 import { useEffect, useState } from 'react'
 
-import { REGISTER } from '../assets/labels'
-import { PanelDataPolis } from '../components/PanelDataPolis'
+import { REGISTER } from '../../assets/labels.claimlife'
+import { PanelDataPolis } from '../../components/claimlife/PanelDataPolis'
 import {
   cariPesertaLife,
   daftarKlaimLife,
@@ -17,7 +17,7 @@ import {
   type CalonPeserta,
   type HasilDaftar,
   type PolicyDataLife,
-} from '../services/api'
+} from '../../services/api'
 
 /**
  * kalimatGalat memilih kalimat yang ditampilkan pita merah.

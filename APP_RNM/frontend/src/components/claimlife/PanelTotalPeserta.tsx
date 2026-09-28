@@ -40,8 +40,8 @@
 // di sini: uang dijumlah sekali, di tempat yang punya apd.Decimal, dan layar
 // hanya menampilkan teks yang sudah jadi (ADR-U-0003, ADR-U-0016).
 
-import { DETAIL } from '../assets/labels'
-import { jumlahUang, type TotalPeserta } from '../services/api'
+import { DETAIL } from '../../assets/labels.claimlife'
+import { jumlahUang, type TotalPeserta } from '../../services/api'
 
 /** Satu total: label VERBATIM dan nilainya sebagai TEKS. */
 export interface MedanTotal {

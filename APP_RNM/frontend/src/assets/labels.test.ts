@@ -16,7 +16,15 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { DETAIL, LAYAR, PERAN, REGISTER, TAHAP, TOMBOL, TOMBOL_KOMITE } from './labels'
+import {
+  DETAIL,
+  LAYAR,
+  PERAN,
+  REGISTER,
+  TAHAP,
+  TOMBOL,
+  TOMBOL_KOMITE,
+} from './labels.claimlife'
 
 const KORPUS = 'D:\\XML\\RNM_BRD\\Claim Life'
 const adaKorpus = existsSync(KORPUS)

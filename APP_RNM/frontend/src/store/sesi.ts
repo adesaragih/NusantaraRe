@@ -20,7 +20,8 @@
  * SUMBERnya, bukan bentuk yang dibaca seluruh layar.
  */
 
-import { PERAN, type KodePeran } from '../assets/labels'
+import { type KodePeran } from '../assets/labels.claimlife'
+import { PERAN } from '../assets/labels.claimlife'
 
 /** Identitas yang sedang dipakai. */
 export interface Sesi {

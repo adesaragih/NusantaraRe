@@ -40,13 +40,13 @@
 
 import { useState } from 'react'
 
-import { DETAIL } from '../assets/labels'
+import { DETAIL } from '../../assets/labels.claimlife'
 import {
   cariPenyakit,
   pesanGalat,
   UKURAN_HALAMAN_PENYAKIT,
   type Penyakit,
-} from '../services/api'
+} from '../../services/api'
 
 /**
  * Label VERBATIM dari korpus.

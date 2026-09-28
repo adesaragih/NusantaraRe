@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { REGISTER } from '../assets/labels'
+import { REGISTER } from '../../assets/labels.claimlife'
 import { medanPolis } from './PanelDataPolis'
 
 describe('himpunan medan PERSIS section', () => {

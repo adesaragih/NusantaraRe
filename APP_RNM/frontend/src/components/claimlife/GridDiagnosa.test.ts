@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { DIAGNOSA } from '../assets/labels'
-import { bolehUbahDiagnosa, type Diagnosa, type Peserta } from '../services/api'
+import { DIAGNOSA } from '../../assets/labels.claimlife'
+import { bolehUbahDiagnosa, type Diagnosa, type Peserta } from '../../services/api'
 import { ringkasanDiagnosa, selDiagnosa } from './GridDiagnosa'
 
 // Uji grid diagnosa — butir bd.

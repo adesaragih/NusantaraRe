@@ -6,7 +6,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { PERAN } from '../assets/labels'
+import { PERAN } from '../assets/labels.claimlife'
 import { headerIdentitas, pelakuStub, PERAN_TERSEDIA } from './sesi'
 
 /** Menyetel env Vite untuk satu kasus uji. */

@@ -8,8 +8,8 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { PERAN, TAHAP } from '../assets/labels'
-import { TAHAP_NOMOR } from '../services/api'
+import { PERAN, TAHAP } from '../../assets/labels.claimlife'
+import { TAHAP_NOMOR } from '../../services/api'
 import { KOLOM_EKSPOR, tabUntuk } from './InboxClaimLife'
 
 const KORPUS = 'D:\\XML\\RNM_BRD\\Claim Life'

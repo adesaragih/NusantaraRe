@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { TOMBOL_AKSEPTASI, TOMBOL_MEDIS, TOMBOL_OS } from '../assets/labels'
-import { TAHAP_JALUR } from '../services/api'
+import { TOMBOL_AKSEPTASI, TOMBOL_MEDIS, TOMBOL_OS } from '../../assets/labels.claimlife'
+import { TAHAP_JALUR } from '../../services/api'
 import { tombolPindahTahap } from './PanelPindahTahap'
 
 // Uji tombol perpindahan per layar — kelompok Medis dan Akseptasi.

@@ -36,14 +36,14 @@
 
 import { useState } from 'react'
 
-import { DOKUMEN } from '../assets/labels'
+import { DOKUMEN } from '../../assets/labels.claimlife'
 import {
   hapusDokumen,
   pesanGalat,
   tautanDokumen,
   unggahDokumen,
   type Dokumen,
-} from '../services/api'
+} from '../../services/api'
 
 /** Satu baris daftar, sesudah diputuskan apa yang tampil. */
 export interface BarisDokumen {

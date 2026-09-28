@@ -5,8 +5,8 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { OUTSTANDING, TOMBOL_OS } from '../assets/labels'
-import { TAHAP_JALUR } from '../services/api'
+import { OUTSTANDING, TOMBOL_OS } from '../../assets/labels.claimlife'
+import { TAHAP_JALUR } from '../../services/api'
 
 const KORPUS = 'D:/XML/RNM_BRD/Claim Life'
 const adaKorpus = existsSync(KORPUS)

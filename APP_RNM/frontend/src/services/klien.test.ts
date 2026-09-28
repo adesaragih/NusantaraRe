@@ -10,7 +10,7 @@ import { join } from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { PERAN } from '../assets/labels'
+import { PERAN } from '../assets/labels.claimlife'
 import { klasifikasiGalat } from '../lib/keadaanGalat'
 
 import { ambilKlaimLife, hapusKlaim, pesanGalat, tolakBarisAdjustment } from './api'
