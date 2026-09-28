@@ -239,3 +239,53 @@ peserta dan FK retro menunjuk spreading; `T_WORK_POLIS` mandiri; setiap FK ber-i
 nullable ber-index hanya di `_DETAIL`; kolom EDM nullable; nol kolom JSON; nol properti Pega; rekap
 uang penuh; kedua jendela valuasi; seluruh uang desimal, tanggal `DATE`, kolom nullable.
 **Belum:** yang menuntut basis data sungguhan — rekonsiliasi, migrasi data, jalur mundur teruji.
+
+
+## ⛔ RALAT 28 September 2026 — migrasi `056` GAGAL di DEV (pl6)
+
+Work owner menjalankan `-migrate` 28-09-2026 pukul **09.33**. Hasilnya: `017`–`020`,
+`030`, `050`–`055` **terpasang**; **`056_t_view_suggest` GAGAL**, dan
+`T_VIEW_SUGGEST` tidak ada di DEV.
+
+**Sebabnya bukan penanda `{{skema}}`** — sebelas langkah lain di jalan yang sama lolos dengan
+penanda itu. Sebabnya kolom **`INITIAL`**, yang merupakan **kata cadangan Oracle**. Bukti yang
+dijalankan work owner:
+
+```
+SELECT 1 AS INITIAL   FROM DUAL  -> ORA-00923
+SELECT 1 AS "INITIAL" FROM DUAL  -> lolos (berkutip)
+SELECT 1 AS NO        FROM DUAL  -> lolos
+```
+
+Nol tabel warisan memakai nama itu *(katalog DEV: nol kolom `INITIAL`, nol tabel
+`%SUGGEST%`)*; sumbernya properti `.Initial` *(`Activity/AddHistorySuggest.xml`)*.
+
+### pl6 — kolomnya diganti nama
+
+`INITIAL` → **`INITIAL_SUGGEST`**, mengikuti pola saudaranya `DATE_SUGGEST`,
+`PIC_SUGGEST`, `COMMENT_SUGGEST`.
+
+⚠️ Berkas `056` **disunting di tempat**, bukan ditambah `057 ALTER RENAME`. Ia belum
+pernah terpasang di mana pun — `T_MIGRASI` DEV tanpa `056`, skema uji belum dibuat — dan
+`RENAME` untuk kolom yang belum pernah ada berarti **mewariskan riwayat yang tidak terjadi**.
+
+### ⭐ Penjaga yang lahir dari kegagalan ini
+
+`TestNolKataCadanganOracleSebagaiKolom`. Yang membuat `INITIAL` lolos **bukan
+kecerobohan melainkan ketiadaan pemeriksa**: nol uji di repositori ini pernah menanyakan apakah
+sebuah nama kolom boleh berdiri telanjang di Oracle. Kini **373 definisi kolom** diperiksa
+terhadap **47 kata cadangan** setiap kali uji berjalan.
+
+⛔ Ia memakai pengurai **produksi** `KolomCreateTable`, bukan regex kedua: pengurai kedua
+adalah definisi kedua tentang *"apa itu kolom"*, dan yang kedua akan diam-diam berbeda.
+
+⚠️ Daftarnya **sengaja tidak lengkap**, dan itu dinyatakan di berkasnya. Oracle punya ratusan kata
+cadangan; yang dijaga hanya yang masuk akal muncul sebagai nama kolom di domain reasuransi. Daftar
+yang berpura-pura lengkap lebih berbahaya daripada yang mengaku parsial — yang pertama membuat
+orang berhenti berpikir.
+
+Dibuktikan merah dengan menanam kembali `INITIAL` yang asli: penjaga menyebut berkas, kolom,
+kode galat Oracle, dan nama penggantinya.
+
+**Sesudah cabang ini menyatu ke `main`**, work owner menjalankan `-migrate` lagi; hanya
+`056` yang tersisa dijalankan.

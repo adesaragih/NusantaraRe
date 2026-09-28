@@ -390,7 +390,7 @@ versi polis.
 | `PIC_SUGGEST` | teks | ya | | NB + EDM | keputusan `spec.md` §12; `AddHistorySuggest.xml` |
 | `IS_CEDING_CONFIRM` | teks | ya | | NB + EDM | keputusan `spec.md` §12 — `Accept`/`Reject`/`Decline` |
 | `COMMENT_SUGGEST` | teks | ya | | NB + EDM | keputusan `spec.md` §12; `AddHistorySuggest.xml` |
-| `INITIAL` | teks | ya | | NB + EDM | keputusan `spec.md` §12 — `Offer`/`Bind` |
+| `INITIAL_SUGGEST` | teks | ya | | NB + EDM | keputusan `spec.md` §12 — `Offer`/`Bind`. ⛔ **Diralat 28-09-2026 (pl6)**: namanya semula `INITIAL`, **kata cadangan Oracle** — migrasi `056` gagal di DEV. Nama baru mengikuti pola saudaranya `DATE_SUGGEST`/`PIC_SUGGEST`/`COMMENT_SUGGEST` |
 
 **Index:** `PREMIUM_LIST_ID`.
 

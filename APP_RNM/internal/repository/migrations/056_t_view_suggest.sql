@@ -1,5 +1,27 @@
 -- T_VIEW_SUGGEST - riwayat penawaran (tiket 00 PremiumList Life).
 --
+-- RALAT 28-09-2026 (pl6) - KOLOM INITIAL DIGANTI NAMA.
+--
+-- Migrasi ini GAGAL di DEV saat work owner menjalankan -migrate 09.33:
+-- INITIAL adalah KATA CADANGAN Oracle. Bukti yang dijalankan work owner:
+--
+--   SELECT 1 AS INITIAL   FROM DUAL  -> ORA-00923
+--   SELECT 1 AS "INITIAL" FROM DUAL  -> lolos (berkutip)
+--   SELECT 1 AS NO        FROM DUAL  -> lolos
+--
+-- Sebabnya BUKAN penanda {skema}: sebelas langkah lain di jalannya yang
+-- sama lolos dengan penanda itu. Nama baru INITIAL_SUGGEST mengikuti pola
+-- saudaranya DATE_SUGGEST, PIC_SUGGEST, COMMENT_SUGGEST.
+--
+-- Berkas ini disunting DI TEMPAT, bukan ditambah migrasi 057: ia belum
+-- pernah terpasang di mana pun - T_MIGRASI DEV tidak memuat 056, dan skema
+-- uji belum pernah dibuat. Menambah ALTER RENAME untuk kolom yang belum
+-- pernah ada berarti mewariskan riwayat yang tidak terjadi.
+--
+-- Penjaga TestNolKataCadanganOracleSebagaiKolom lahir bersama ralat ini:
+-- yang membuat INITIAL lolos bukan kecerobohan, melainkan ketiadaan
+-- pemeriksa.
+--
 -- Satu baris = satu langkah riwayat penawaran polis.
 --
 -- ⚠️ Sumber warisannya `JSON_OFFER_LIFE` (CLOB + 24 kolom flat), ditulis
@@ -42,7 +64,7 @@ CREATE TABLE {skema}.T_VIEW_SUGGEST (
   PIC_SUGGEST       VARCHAR2(255),
   IS_CEDING_CONFIRM VARCHAR2(255),
   COMMENT_SUGGEST   VARCHAR2(255),
-  INITIAL           VARCHAR2(255),
+  INITIAL_SUGGEST   VARCHAR2(255),
   CONSTRAINT PK_T_VIEW_SUGGEST PRIMARY KEY (ID),
   CONSTRAINT FK_VS_PL FOREIGN KEY (PREMIUM_LIST_ID)
     REFERENCES {skema}.T_PREMIUM_LIST (ID) ON DELETE CASCADE

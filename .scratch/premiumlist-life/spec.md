@@ -529,7 +529,23 @@ penyimpangan sadar **demi jejak historis** — angka spreading pada saat polis d
 ketika master treaty berubah kemudian.
 
 **`T_VIEW_SUGGEST`** — riwayat penawaran/konfirmasi ceding: `NO`, `DATE_SUGGEST`, `PIC_SUGGEST`,
-`IS_CEDING_CONFIRM` (`Accept`/`Reject`/`Decline`), `COMMENT_SUGGEST`, `INITIAL` (`Offer`/`Bind`).
+`IS_CEDING_CONFIRM` (`Accept`/`Reject`/`Decline`), `COMMENT_SUGGEST`, `INITIAL_SUGGEST` (`Offer`/`Bind`).
+
+⛔ **RALAT 28 September 2026 (pl6).** Kolom terakhir semula bernama `INITIAL` — **kata
+cadangan Oracle**. Migrasi `056` karena itu **gagal** saat work owner menjalankan
+`-migrate` pukul 09.33, dan `T_VIEW_SUGGEST` tidak terbentuk di DEV sementara sebelas
+langkah lain di jalan yang sama lolos. Bukti yang dijalankan work owner:
+
+```
+SELECT 1 AS INITIAL   FROM DUAL  -> ORA-00923
+SELECT 1 AS "INITIAL" FROM DUAL  -> lolos (berkutip)
+SELECT 1 AS NO        FROM DUAL  -> lolos
+```
+
+Berkas `056` **disunting di tempat**, bukan ditambah migrasi `057`: ia belum pernah
+terpasang di mana pun *(`T_MIGRASI` DEV tanpa `056`, skema uji belum dibuat)*, dan
+`ALTER RENAME` untuk kolom yang belum pernah ada berarti mewariskan riwayat yang tidak
+terjadi.
 
 ⚠️ `[keputusan work owner]` `OfferFacIn` **dibuang sebagai simpul**; `ViewSuggest` **naik** menjadi
 anak langsung header.
