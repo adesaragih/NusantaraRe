@@ -4679,3 +4679,136 @@ textarea.field__input {
   outline: none;
   box-shadow: var(--ring);
 }
+
+/* ---------------------------------------------------------------------------
+ * Beranda, kelompok kosong, dan palet — butir bg.
+ *
+ * ⚠️ Nilai warna dan jarak MEMAKAI token yang sudah ada di berkas ini; nol
+ * warna baru diperkenalkan. Token kedua untuk warna yang sama adalah token
+ * yang akan bergeser sendiri saat temanya diubah.
+ * ------------------------------------------------------------------------- */
+
+/* Kelompok sidebar yang modulnya belum dipindahkan. Ia BERDIRI, dan
+   menyebut sebabnya — lihat Shell.tsx. */
+.shell__belum {
+  margin: 0;
+  padding: 0.35rem 0.75rem 0.5rem 1.5rem;
+  font-size: 0.78rem;
+  font-style: italic;
+  opacity: 0.6;
+}
+
+.shell__butir--beranda {
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.beranda__judul {
+  margin: 0 0 0.2rem;
+}
+
+.beranda__peran {
+  margin: 0 0 1.25rem;
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.beranda__antrean {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  list-style: none;
+  margin: 0 0 1.5rem;
+  padding: 0;
+}
+
+.beranda__antrean-butir {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 9rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--garis, #d9dee5);
+  border-radius: 0.5rem;
+}
+
+.beranda__antrean-nama {
+  font-size: 0.78rem;
+  opacity: 0.75;
+}
+
+.beranda__antrean-angka {
+  font-size: 1.4rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.beranda__kartu {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.75rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.beranda__kartu-butir {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--garis, #d9dee5);
+  border-radius: 0.5rem;
+}
+
+/* ⛔ Kartu modul yang belum ada TETAP terlihat, hanya diredupkan. Aplikasi
+   yang menampilkan tiga modul dari tujuh belas tampak lengkap padahal
+   tidak — dan layar yang tampak lengkap padahal tidak adalah layar yang
+   tidak akan dicari lagi. */
+.beranda__kartu-butir--pasif {
+  opacity: 0.55;
+}
+
+.beranda__kartu-nama {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.beranda__kartu-keadaan {
+  margin: 0;
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+
+.beranda__kartu-tautan {
+  align-self: flex-start;
+  margin-top: 0.25rem;
+}
+
+/* Tirai palet: klik di luar menutup. */
+.palet__tirai {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 12vh;
+  background: rgb(0 0 0 / 35%);
+  z-index: 40;
+}
+
+.palet__label {
+  flex: 1;
+}
+
+.palet__kelompok {
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
+.palet__kosong {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  opacity: 0.75;
+}

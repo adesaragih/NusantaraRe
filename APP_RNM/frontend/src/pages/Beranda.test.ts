@@ -1,0 +1,60 @@
+import { describe, expect, it } from 'vitest'
+
+import { BERANDA, KETERANGAN_BELUM_DIMIGRASI, MODUL } from '../assets/labels'
+import { kartuModul, ringkasanAntrean, type AntreanTahap } from './Beranda'
+
+// Uji Beranda — butir bg.
+
+describe('kartuModul', () => {
+  it('tujuh belas kartu, satu per folder korpus', () => {
+    expect(kartuModul()).toHaveLength(17)
+  })
+
+  it('tiga modul bertujuan, empat belas tanpa', () => {
+    // ⛔ Kartu yang belum dimigrasi tetap BERDIRI. Menyembunyikannya
+    // membuat aplikasi tampak lengkap padahal empat belas modul belum ada.
+    const kartu = kartuModul()
+    const aktif = kartu.filter((k) => k.tujuan !== null)
+    expect(aktif.map((k) => k.nama).sort()).toEqual(
+      [MODUL.claimLife, MODUL.komiteClaimLife, MODUL.premiumListLife].sort(),
+    )
+    expect(kartu.filter((k) => k.tujuan === null)).toHaveLength(14)
+  })
+
+  it('kartu Claim Life menunjuk butir PERTAMAnya', () => {
+    const cl = kartuModul().find((k) => k.nama === MODUL.claimLife)
+    expect(cl?.tujuan).toBe('inbox')
+  })
+})
+
+describe('ringkasanAntrean', () => {
+  it('menjumlahkan keempat tahap', () => {
+    const antrean: AntreanTahap[] = [
+      { nomor: 1, nama: 'Input Register', total: 3 },
+      { nomor: 2, nama: 'Outstanding Claim', total: 5 },
+      { nomor: 3, nama: 'Medical Check', total: 0 },
+      { nomor: 4, nama: 'Claim Analis', total: 2 },
+    ]
+    expect(ringkasanAntrean(antrean)).toBe(`10 ${BERANDA.antrean}`)
+  })
+
+  it('nol antrean tetap ANGKA, bukan keadaan', () => {
+    // ⚠️ Nol adalah angka; "belum ada kotak masuk" adalah keadaan.
+    // Keduanya tidak boleh tertukar.
+    const antrean: AntreanTahap[] = [{ nomor: 1, nama: 'x', total: 0 }]
+    expect(ringkasanAntrean(antrean)).toBe(`0 ${BERANDA.antrean}`)
+    expect(ringkasanAntrean(antrean)).not.toBe(BERANDA.tanpaAntrean)
+  })
+
+  it('endpoint yang belum ada berkata begitu, bukan nol', () => {
+    // ⛔ Menampilkan nol untuk modul yang endpointnya belum ada berarti
+    // berbohong dengan angka yang terlihat benar.
+    expect(ringkasanAntrean(null)).toBe(BERANDA.tanpaAntrean)
+  })
+})
+
+describe('label Beranda', () => {
+  it('kata "belum dimigrasi" satu tempat', () => {
+    expect(KETERANGAN_BELUM_DIMIGRASI).toBe('belum dimigrasi')
+  })
+})

@@ -1341,3 +1341,61 @@ dibaca saat jalan, tidak pernah disalin ke fixture.
 | `gofmt` · `vet` · `vet -tags db` · `tsc` · build | bersih | bersih |
 | Migrasi | tidak bertambah | tidak bertambah |
 | Kebocoran | nol | nol |
+
+## Giliran 6 paket 0 — bg: Beranda, 17 kelompok, PaletMenu, pola grid
+
+**Sumbernya REFERENSI_UI, bukan korpus XML** — dan itu ditandai di setiap berkas. Beranda adalah
+pengganti layar awal portal: PremiumList punya `PremiumLife_harness` *(kelas `Data-Portal`)*,
+sedangkan **Claim Life tidak punya harness portal yang terekspor**. Bentuk Beranda karena itu
+keputusan kami, `[kerangka aplikasi, bukan menu Pega]`.
+
+| Unsur | Isi |
+| --- | --- |
+| Sidebar | **17 kelompok** = nama folder korpus apa adanya, termasuk ejaan janggalnya *(`Endorsment Fac In` tanpa `e`, `Komite Claim FacIn` tanpa spasi)* |
+| Butir | **empat**, seluruhnya berbukti: Claim Life *(dua)*, PremiumList Life, Komite Claim Life |
+| Kelompok tanpa butir | **empat belas**, berdiri terlipat, berketerangan `belum dimigrasi` |
+| `PaletMenu` Ctrl+K | komponen tersendiri, membaca `lib/daftarMenu.ts` |
+| Beranda | kartu per modul + cacah antrean Claim Life dari endpoint yang **sudah ada** |
+| Pola grid | `exportXlsx` di-port dan **dipakai** Inbox Claim Life |
+
+### ⛔ Logo: diperiksa, lalu TIDAK disalin
+
+Brief mengizinkan menyalin `assets/logo-topbar.png` *"hanya bila itu logo perusahaan (bukan tulisan
+Treaty)"*. Berkasnya dibuka dan dilihat: ia **wordmark "e-treaty"** — nama produk aplikasi Treaty,
+bukan logo perusahaan. Tidak disalin; topbar tetap tanpa gambar.
+
+### ⛔ Lima dari enam berkas pola grid TIDAK di-port
+
+Brief melarang kode mati, dan lima di antaranya akan menjadi itu:
+
+| Berkas | Sebab |
+| --- | --- |
+| `RecordForm`, `BilahSaringRegistry`, `saringRegistry` | bergantung tipe `MasterEntity`/`MasterField` — registry master yang aplikasi ini **tidak punya** |
+| `CariSebaris`, `PilihCari` | bergantung `@tanstack/react-query` **dan** endpoint lookup `?q=` yang belum ada |
+| **`exportXlsx`** | **nol impor** — mandiri, dan langsung berguna. **Di-port**, dengan dua penyesuaian karena `noUncheckedIndexedAccess` menyala di tsconfig kami dan tidak di sana; nol perubahan perilaku |
+
+### ⚠️ Satu penyimpangan ekspor yang disengaja, arahnya berlawanan dengan kolomnya
+
+Kolomnya **tepat yang tampil**, berurutan sama. Tetapi **tanggalnya keluar apa adanya (RFC 3339)**,
+bukan dalam bentuk layar `28-09-2026 14:03` — sebab berkas lembar-sebar **diurutkan**, dan bentuk
+layar itu diurutkan sebagai teks: Desember mendahului Februari.
+
+### Dua penjaga lama yang menagih dengan benar, dan berpindah bersama kodenya
+
+- *"butir sidebar TEPAT dua"* membaca literal `const BUTIR` yang kini tidak ada. Diganti tiga uji
+  yang menjaga kebenaran barunya: **17** kelompok, **4** butir, **14** tanpa butir.
+- *"fokus kembali sesudah palet ditutup"* mencari `fokusSebelum` di `Shell.tsx`; palet pindah ke
+  berkasnya sendiri. Penjaganya ikut pindah — **dan bertambah tiga**: panah ber-`preventDefault`,
+  sorotan melingkar, daftar kosong yang menyebut kuerinya. Ditambah satu yang baru: **palet
+  membaca `daftarMenu`, bukan DOM** — sejak bg empat belas kelompok terlipat, dan `KelompokMenu`
+  melepas anak kelompok terlipat dari DOM.
+
+### TELEMETRI EKSEKUSI — giliran 6 paket 0
+
+| Hal | Isi |
+| --- | --- |
+| Go | 415 PASS · 0 FAIL · 38 SKIP *(tidak berubah — nol kode Go)* |
+| JS | **292** *(dari 254)* |
+| `tsc` · build | bersih · 190,60 kB |
+| Migrasi | tidak bertambah |
+| Kebocoran | nol |

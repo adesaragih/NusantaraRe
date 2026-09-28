@@ -3,11 +3,20 @@
 // Sidebar (terlipat / laci di ponsel) + topbar + menu profil + palet Ctrl+K,
 // dengan `PagarGalat` membungkus isinya.
 //
-// ⛔ MENUNYA HANYA YANG BERBUKTI KORPUS — dua butir, satu kelompok. Lihat
-// `assets/labels.ts` `MENU`. Sebelas modul lain, butir `BelumTersedia`, dan
-// layar-layar yang di Pega dibuka DARI DALAM kasus (16 flow action + 3 popup)
-// TIDAK berdiri di sini. Menu yang tidak ada di sistem lama adalah menu yang
+// ⛔ TUJUH BELAS KELOMPOK, EMPAT BUTIR — butir **bg**, 28-09-2026.
+//
+// Kelompoknya nama FOLDER korpus `D:/XML/RNM_BRD/` apa adanya. Butirnya
+// hanya untuk tiga modul yang punya bukti XML: Claim Life (dua), PremiumList
+// Life (satu), Komite Claim Life (satu). **Empat belas kelompok lain berdiri
+// terlipat, TANPA butir**, berketerangan `belum dimigrasi`.
+//
+// ⛔ Nol butir dikarang. Menu yang tidak ada di sistem lama adalah menu yang
 // dikarang, dan penjaganya ada di `Shell.test.ts`.
+//
+// ⚠️ Kelompok kosong tetap BERDIRI, tidak disembunyikan. Aplikasi yang
+// menampilkan tiga modul dari tujuh belas tampak lengkap padahal tidak — dan
+// layar yang tampak lengkap padahal tidak adalah layar yang tidak akan dicari
+// lagi (pelajaran butir av).
 //
 // ⚠️ Perilaku yang ditiru persis referensi: menu profil tertutup oleh klik di
 // luar DAN oleh Esc; lebar tablet melipat panel; laci ponsel menutup sesudah
@@ -15,16 +24,25 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 
-import { MENU, PERAN_ID, PRODUK } from '../assets/labels'
+import {
+  BERANDA,
+  KETERANGAN_BELUM_DIMIGRASI,
+  MENU,
+  MODUL,
+  PERAN_ID,
+  PRODUK,
+} from '../assets/labels'
+import { ENTRI_MENU, type ModulTetap } from '../lib/daftarMenu'
 import { PagarGalat } from '../PagarGalat'
 import { type Sesi } from '../store/sesi'
 import { KelompokMenu } from './KelompokMenu'
-import { IkonCari, IkonPanel, IkonPengguna, IkonTutup } from './ui/dasar'
+import { PaletMenu } from './PaletMenu'
+import { IkonCari, IkonPanel, IkonPengguna } from './ui/dasar'
 
 /** Halaman yang Shell dapat tampilkan. */
 // ⚠️ `outstanding` dan `detail` BUKAN butir menu: di Pega keduanya
 // dibuka DARI DALAM kasus (flow action), bukan dari navigasi.
-export type Halaman = 'inbox' | 'register' | 'outstanding' | 'detail'
+export type Halaman = ModulTetap | 'outstanding' | 'detail'
 
 /** Satu butir menu. */
 interface ButirMenu {
@@ -32,16 +50,47 @@ interface ButirMenu {
   label: string
 }
 
+/** Satu kelompok sidebar beserta butirnya. */
+interface KelompokSidebar {
+  nama: string
+  butir: readonly ButirMenu[]
+}
+
 /**
- * Butir sidebar — DUA, dan keduanya berbukti.
+ * Ketujuh belas kelompok, berurutan seperti folder korpus.
  *
- * `detail` sengaja TIDAK di sini: di Pega ia flow action
- * (`ViewClaimDetailLifeGCNM`) yang dibuka dari dalam kasus, bukan menu.
+ * ⛔ Butirnya DITURUNKAN dari `ENTRI_MENU`, bukan diketik ulang. Dua daftar
+ * yang masing-masing menyebut menu yang sama adalah dua daftar yang akan
+ * menyimpang — dan yang menyimpang tidak akan berbunyi: palet membuka menu
+ * yang sidebar tidak punya, atau sebaliknya. `daftarMenu.sinkron.test.ts`
+ * menjaganya dua arah; penurunan ini membuat penjagaan itu hampir tak perlu.
  */
-const BUTIR: readonly ButirMenu[] = [
-  { halaman: 'inbox', label: MENU.inbox },
-  { halaman: 'register', label: MENU.register },
-]
+function butirKelompok(nama: string): readonly ButirMenu[] {
+  return ENTRI_MENU.filter((e) => e.kelompok === nama).map((e) => ({
+    halaman: e.modul,
+    label: e.label,
+  }))
+}
+
+const KELOMPOK: readonly KelompokSidebar[] = [
+  MODUL.claimFacIn,
+  MODUL.claimLife,
+  MODUL.claimNonProp,
+  MODUL.claimProp,
+  MODUL.edmTreatyIn,
+  MODUL.endorsementLife,
+  MODUL.endorsmentFacIn,
+  MODUL.komiteClaimFacIn,
+  MODUL.komiteClaimLife,
+  MODUL.komiteClaimNonProp,
+  MODUL.komiteClaimProp,
+  MODUL.masterContractRetroLife,
+  MODUL.masterProductNameLife,
+  MODUL.nbFacIn,
+  MODUL.nbTreatyIn,
+  MODUL.premiumListLife,
+  MODUL.rnwFacIn,
+].map((nama) => ({ nama, butir: butirKelompok(nama) }))
 
 export interface ShellProps {
   masuk: Sesi
@@ -103,7 +152,8 @@ export function Shell({ masuk, halaman, onPindah, children }: ShellProps) {
     [onPindah],
   )
 
-  const judulAktif = BUTIR.find((b) => b.halaman === halaman)?.label ?? MENU.inbox
+  const judulAktif =
+    ENTRI_MENU.find((e) => e.modul === halaman)?.label ?? MENU.inbox
 
   return (
     <div className={`shell${terlipat ? ' shell--terlipat' : ''}${laciBuka ? ' shell--laci' : ''}`}>
@@ -114,21 +164,50 @@ export function Shell({ masuk, halaman, onPindah, children }: ShellProps) {
         </div>
 
         <nav className="shell__nav">
-          <KelompokMenu nama={MENU.kelompokClaimLife} memuatAktif>
-            {BUTIR.map((b) => (
-              <button
-                key={b.halaman}
-                type="button"
-                className={`shell__butir${halaman === b.halaman ? ' shell__butir--aktif' : ''}`}
-                aria-current={halaman === b.halaman ? 'page' : undefined}
-                onClick={() => {
-                  pilih(b.halaman)
-                }}
-              >
-                {b.label}
-              </button>
-            ))}
-          </KelompokMenu>
+          {/* Beranda berdiri SENDIRI di atas kelompok - ia bukan modul.  */}
+          <button
+            type="button"
+            className={`shell__butir shell__butir--beranda${
+              halaman === 'beranda' ? ' shell__butir--aktif' : ''
+            }`}
+            aria-current={halaman === 'beranda' ? 'page' : undefined}
+            onClick={() => {
+              pilih('beranda')
+            }}
+          >
+            {BERANDA.judul}
+          </button>
+
+          {KELOMPOK.map((k) => (
+            <KelompokMenu
+              key={k.nama}
+              nama={k.nama}
+              memuatAktif={k.butir.some((b) => b.halaman === halaman)}
+            >
+              {k.butir.length === 0 ? (
+                /* Kelompok tanpa butir tetap BERDIRI dan menyebut sebabnya.
+                   Menyembunyikannya membuat aplikasi tampak lengkap padahal
+                   empat belas modul belum ada. */
+                <p className="shell__belum">{KETERANGAN_BELUM_DIMIGRASI}</p>
+              ) : (
+                k.butir.map((b) => (
+                  <button
+                    key={b.halaman}
+                    type="button"
+                    className={`shell__butir${
+                      halaman === b.halaman ? ' shell__butir--aktif' : ''
+                    }`}
+                    aria-current={halaman === b.halaman ? 'page' : undefined}
+                    onClick={() => {
+                      pilih(b.halaman)
+                    }}
+                  >
+                    {b.label}
+                  </button>
+                ))
+              )}
+            </KelompokMenu>
+          ))}
         </nav>
       </aside>
 
@@ -215,100 +294,13 @@ export function Shell({ masuk, halaman, onPindah, children }: ShellProps) {
       </div>
 
       {paletBuka && (
-        <PaletMenuSederhana
-          butir={BUTIR}
+        <PaletMenu
           onTutup={() => {
             setPaletBuka(false)
           }}
           onPilih={pilih}
         />
       )}
-    </div>
-  )
-}
-
-/**
- * Palet menu Ctrl+K.
- *
- * ⚠️ Versi SEDERHANA dari `components/PaletMenu.tsx` referensi: yang di sana
- * mencari entitas master dinamis, sedangkan menu kita dua butir tetap.
- * Menyalin pencari entitas berarti menyalin kode untuk daftar yang tidak ada.
- * Perilaku yang ditiru: fokus masuk ke kotak, panah naik/turun, Enter memilih,
- * Esc menutup, dan fokus KEMBALI ke elemen sebelumnya.
- */
-function PaletMenuSederhana({
-  butir,
-  onTutup,
-  onPilih,
-}: {
-  butir: readonly ButirMenu[]
-  onTutup: () => void
-  onPilih: (h: Halaman) => void
-}) {
-  const [kueri, setKueri] = useState('')
-  const [sorot, setSorot] = useState(0)
-  const kotak = useRef<HTMLInputElement>(null)
-  const fokusSebelum = useRef<Element | null>(null)
-
-  useEffect(() => {
-    fokusSebelum.current = document.activeElement
-    kotak.current?.focus()
-    return () => {
-      // Tanpa ini fokus tertinggal di <body>: Tab berikutnya melompat ke awal
-      // halaman, dan pemakai papan ketik kehilangan tempatnya.
-      if (fokusSebelum.current instanceof HTMLElement) fokusSebelum.current.focus()
-    }
-  }, [])
-
-  const cocok = butir.filter((b) => b.label.toLowerCase().includes(kueri.trim().toLowerCase()))
-
-  return (
-    <div className="palet" role="dialog" aria-modal="true" aria-label="Cari menu">
-      <div className="palet__kotak">
-        <input
-          ref={kotak}
-          className="palet__isian"
-          value={kueri}
-          placeholder="Cari menu…"
-          onChange={(e) => {
-            setKueri(e.target.value)
-            setSorot(0)
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'ArrowDown') {
-              e.preventDefault()
-              setSorot((s) => Math.min(s + 1, cocok.length - 1))
-            } else if (e.key === 'ArrowUp') {
-              e.preventDefault()
-              setSorot((s) => Math.max(s - 1, 0))
-            } else if (e.key === 'Enter') {
-              const p = cocok[sorot]
-              if (p !== undefined) onPilih(p.halaman)
-            } else if (e.key === 'Escape') {
-              onTutup()
-            }
-          }}
-        />
-        <ul className="palet__hasil">
-          {cocok.map((b, i) => (
-            <li key={b.halaman}>
-              <button
-                type="button"
-                className={`palet__hasil-butir${i === sorot ? ' palet__hasil-butir--sorot' : ''}`}
-                onClick={() => {
-                  onPilih(b.halaman)
-                }}
-              >
-                {b.label}
-              </button>
-            </li>
-          ))}
-          {cocok.length === 0 && <li className="palet__kosong">Tidak ada menu yang cocok.</li>}
-        </ul>
-        <button type="button" className="palet__tutup" aria-label="Tutup" onClick={onTutup}>
-          <IkonTutup />
-        </button>
-      </div>
     </div>
   )
 }

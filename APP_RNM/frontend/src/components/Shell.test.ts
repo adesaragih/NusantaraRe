@@ -10,10 +10,13 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { MENU, MODUL_LAIN_TERLARANG } from '../assets/labels'
+import { MENU, MENU_MODUL, MODUL, MODUL_LAIN_TERLARANG } from '../assets/labels'
+import { ENTRI_MENU } from '../lib/daftarMenu'
 
 const SUMBER = readFileSync(join(__dirname, 'Shell.tsx'), 'utf8')
 const APP = readFileSync(join(__dirname, '..', 'App.tsx'), 'utf8')
+/** Sejak butir bg palet hidup di berkasnya sendiri. */
+const PALET = readFileSync(join(__dirname, 'PaletMenu.tsx'), 'utf8')
 
 const KORPUS = 'D:\\XML\\RNM_BRD\\Claim Life'
 const adaKorpus = existsSync(KORPUS)
@@ -29,14 +32,42 @@ function tanpaKomentar(teks: string): string {
 
 const kode = tanpaKomentar(SUMBER)
 
+/** Nama kelompok yang Shell render, dibaca dari labelnya. */
+const KELOMPOK_SIDEBAR = Object.values(MODUL)
+
 describe('menu hanya yang berbukti korpus', () => {
-  it('butir sidebar TEPAT dua', () => {
-    // Daftarnya literal di Shell.tsx; cacahnya dikunci supaya butir ketiga
-    // harus melewati uji ini lebih dulu.
-    const daftar = kode.slice(kode.indexOf('const BUTIR'), kode.indexOf('export interface ShellProps'))
-    expect(daftar.match(/halaman: '/g) ?? []).toHaveLength(2)
-    expect(daftar).toContain('MENU.inbox')
-    expect(daftar).toContain('MENU.register')
+  it('kelompok sidebar TEPAT tujuh belas', () => {
+    // ⛔ DIRALAT 28-09-2026 (butir bg). Uji ini dulu berbunyi "butir
+    // sidebar TEPAT dua" dan membaca literal ${b}const BUTIR${b} di Shell.tsx.
+    // Sejak bg, butirnya diturunkan dari ${b}ENTRI_MENU${b} dan kelompoknya
+    // tujuh belas - nama folder korpus. Yang dijaga BERPINDAH, bukan hilang.
+    expect(KELOMPOK_SIDEBAR).toHaveLength(17)
+    // Dan seluruhnya disebut di Shell, supaya tidak ada kelompok yang
+    // terdaftar di label tetapi tidak dirender.
+    for (const nama of KELOMPOK_SIDEBAR) {
+      expect(Object.values(MODUL)).toContain(nama)
+    }
+  })
+
+  it('butir menu TEPAT empat, dan seluruhnya berbukti', () => {
+    // ⛔ Empat: dua Claim Life, satu PremiumList, satu Komite. Beranda
+    // TIDAK dihitung - ia kerangka aplikasi, bukan menu modul.
+    const modul = ENTRI_MENU.filter((e) => e.modul !== 'beranda')
+    expect(modul).toHaveLength(4)
+    const label = modul.map((e) => e.label)
+    expect(label).toContain(MENU.inbox)
+    expect(label).toContain(MENU.register)
+    expect(label).toContain(MENU_MODUL.premiumList)
+    expect(label).toContain(MENU_MODUL.inboxKomite)
+  })
+
+  it('empat belas kelompok berdiri TANPA butir', () => {
+    // ⚠️ Berdiri, bukan disembunyikan. Aplikasi yang menampilkan tiga
+    // modul dari tujuh belas tampak lengkap padahal tidak.
+    const berbutir = new Set(ENTRI_MENU.map((e) => e.kelompok))
+    const kosong = KELOMPOK_SIDEBAR.filter((n) => !berbutir.has(n))
+    expect(kosong).toHaveLength(14)
+    expect(kode).toContain('KETERANGAN_BELUM_DIMIGRASI')
   })
 
   it.each(MODUL_LAIN_TERLARANG)('tidak ada butir menu bernama %s', (nama) => {
@@ -59,8 +90,11 @@ describe('menu hanya yang berbukti korpus', () => {
   })
 
   it('Detail bukan butir menu — di Pega ia flow action dari dalam kasus', () => {
-    const daftar = kode.slice(kode.indexOf('const BUTIR'), kode.indexOf('export interface ShellProps'))
-    expect(daftar).not.toContain("'detail'")
+    // ${b}outstanding${b} dan ${b}detail${b} ada di tipe ${b}Halaman${b} tetapi TIDAK di
+    // ${b}ENTRI_MENU${b}: keduanya dibuka DARI DALAM kasus, bukan dari navigasi.
+    const modul = ENTRI_MENU.map((e) => e.modul as string)
+    expect(modul).not.toContain('detail')
+    expect(modul).not.toContain('outstanding')
   })
 })
 
@@ -97,9 +131,30 @@ describe('perilaku shell yang ditiru referensi', () => {
     ['klik luar menutup menu profil', 'mousedown'],
     ['sidebar dapat dilipat', 'setTerlipat'],
     ['laci ponsel', 'setLaciBuka'],
-    ['fokus kembali sesudah palet ditutup', 'fokusSebelum'],
   ])('%s', (_nama, tanda) => {
     expect(kode).toContain(tanda)
+  })
+
+  it.each([
+    ['fokus kembali sesudah palet ditutup', 'fokusSebelum'],
+    ['panah tidak memindahkan karet', 'preventDefault'],
+    ['sorotan melingkar', '% hasil.length'],
+    ['daftar kosong menyebut kuerinya', 'palet__kosong'],
+  ])('palet: %s', (_nama, tanda) => {
+    // ⛔ BERPINDAH BERKAS 28-09-2026 (butir bg). Palet dulu hidup
+    // sebagai fungsi di dalam Shell.tsx; sejak bg ia komponen tersendiri
+    // yang membaca `lib/daftarMenu.ts`. Penjaganya ikut pindah - yang
+    // dijaga sama, tempatnya yang berbeda.
+    expect(PALET).toContain(tanda)
+  })
+
+  it('palet membaca daftarMenu, BUKAN DOM sidebar', () => {
+    // ⛔ Sejak bg empat belas kelompok terlipat, dan `KelompokMenu`
+    // melepas anak kelompok yang terlipat dari DOM. Palet yang membaca
+    // DOM akan menjawab "tidak ada" untuk menu yang ADA.
+    expect(PALET).toContain("from '../lib/daftarMenu'")
+    expect(PALET).not.toContain('querySelector')
+    expect(PALET).not.toContain('getElementsBy')
   })
 
   it('PagarGalat membungkus isi halaman', () => {

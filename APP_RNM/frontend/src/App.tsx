@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import Beranda from './pages/Beranda'
 import InboxClaimLife from './pages/InboxClaimLife'
 import KlaimLife from './pages/KlaimLife'
 import OutstandingClaimLife from './pages/OutstandingClaimLife'
@@ -17,7 +18,10 @@ import { pelakuStub } from './store/sesi'
 // diam-diam menampilkan daftar kosong yang terbaca "tidak ada pekerjaan".
 export default function App() {
   const masuk = pelakuStub()
-  const [halaman, setHalaman] = useState<Halaman>('inbox')
+  // ⛔ Beranda layar AWAL sejak butir bg: ia yang menyebut modul mana
+  // yang sudah ada dan mana yang belum. Membuka langsung ke Inbox membuat
+  // aplikasi tampak hanya punya satu modul.
+  const [halaman, setHalaman] = useState<Halaman>('beranda')
   // Kasus yang sedang dibuka. Kosong berarti belum ada yang dipilih.
   const [kasus, setKasus] = useState('')
 
@@ -40,6 +44,7 @@ export default function App() {
 
   return (
     <Shell masuk={masuk} halaman={halaman} onPindah={setHalaman}>
+      {halaman === 'beranda' && <Beranda masuk={masuk} onBuka={setHalaman} />}
       {halaman === 'inbox' && (
         <InboxClaimLife
           peran={masuk.peran}

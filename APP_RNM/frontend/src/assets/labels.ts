@@ -471,3 +471,77 @@ export const DIAGNOSA = {
   /** `Diagnose_Section.xml` b2509 `pyLabel` -> `SetDisease` b2528. */
   pilih: 'Choose',
 } as const
+
+/**
+ * Nama ketujuh belas kelompok sidebar — butir **bg**.
+ *
+ * ⛔ `[nama folder korpus]`, bukan kosakata kami. Setiap nama di bawah
+ * adalah nama folder di `D:\XML\RNM_BRD\` apa adanya, termasuk ejaannya
+ * yang janggal: `Endorsment Fac In` *(tanpa `e`)* dan `Komite Claim FacIn`
+ * *(tanpa spasi)*. Merapikannya berarti sidebar menyebut modul dengan nama
+ * yang tidak cocok dengan korpusnya, dan orang yang mencari foldernya tidak
+ * akan menemukannya.
+ *
+ * ⛔ Kelompok yang BELUM dimigrasi tetap berdiri, terlipat dan tanpa butir.
+ * Menyembunyikannya membuat aplikasi tampak lengkap padahal empat belas
+ * modul belum ada — dan layar yang tampak lengkap padahal tidak adalah
+ * layar yang tidak akan dicari lagi (pelajaran butir av).
+ *
+ * ⚠️ Kelompok `Master`, `Offer`, `Realization`, `Citrix`, dan `Borderaux`
+ * milik REFERENSI_UI TIDAK dibawa: itu aplikasi Treaty, bukan korpus ini.
+ */
+export const MODUL = {
+  claimFacIn: 'Claim Fac In',
+  claimLife: 'Claim Life',
+  claimNonProp: 'Claim Non Prop',
+  claimProp: 'Claim Prop',
+  edmTreatyIn: 'EDM Treaty In',
+  endorsementLife: 'Endorsement Life',
+  /** ⚠️ Ejaan folder apa adanya — `Endorsment`, tanpa huruf `e`. */
+  endorsmentFacIn: 'Endorsment Fac In',
+  /** ⚠️ Ejaan folder apa adanya — `FacIn`, tanpa spasi. */
+  komiteClaimFacIn: 'Komite Claim FacIn',
+  komiteClaimLife: 'Komite Claim Life',
+  komiteClaimNonProp: 'Komite Claim Non Prop',
+  komiteClaimProp: 'Komite Claim Prop',
+  masterContractRetroLife: 'Master Contract Retro Life',
+  masterProductNameLife: 'Master Product Name Life',
+  nbFacIn: 'NB FacIn',
+  nbTreatyIn: 'NB Treaty In',
+  premiumListLife: 'PremiumList Life',
+  rnwFacIn: 'RNW Fac In',
+} as const
+
+/**
+ * Butir menu modul yang SUDAH berbukti XML — butir **bg**.
+ *
+ * ⛔ Empat butir, dan tidak lebih. Tiga modul punya bukti korpusnya:
+ * Claim Life *(dua butir)*, PremiumList Life, Komite Claim Life. Empat
+ * belas kelompok lain berdiri TANPA butir.
+ */
+export const MENU_MODUL = {
+  /** Harness portal `PremiumLife_harness` → section `PremiumList`. */
+  premiumList: 'PremiumList',
+  /** `[tidak ada di korpus]` — worklist `KomiteRouter`, kosakata kami. */
+  inboxKomite: 'Inbox Komite',
+} as const
+
+/** Kata untuk kelompok yang modulnya belum dipindahkan. */
+export const KETERANGAN_BELUM_DIMIGRASI = 'belum dimigrasi'
+
+/**
+ * Label Beranda — butir **bg**.
+ *
+ * ⚠️ `[kerangka aplikasi, bukan menu Pega]`. Beranda pengganti layar awal
+ * portal, sebagaimana `PremiumLife_harness` *(kelas `Data-Portal`)* menjadi
+ * layar awal PremiumList. Claim Life **tidak punya** harness portal yang
+ * terekspor — OQ ke pemilik ekspor tetap terbuka — jadi bentuk Beranda ini
+ * keputusan kami, dan ditandai begitu.
+ */
+export const BERANDA = {
+  judul: 'Beranda',
+  salam: 'Selamat datang',
+  aktif: 'aktif',
+  antrean: 'antrean',
+  tanpaAntrean: 'belum ada kotak masuk',
+} as const

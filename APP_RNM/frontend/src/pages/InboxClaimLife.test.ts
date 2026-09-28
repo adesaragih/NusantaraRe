@@ -10,7 +10,7 @@ import { describe, expect, it } from 'vitest'
 
 import { PERAN, TAHAP } from '../assets/labels'
 import { TAHAP_NOMOR } from '../services/api'
-import { tabUntuk } from './InboxClaimLife'
+import { KOLOM_EKSPOR, tabUntuk } from './InboxClaimLife'
 
 const KORPUS = 'D:\\XML\\RNM_BRD\\Claim Life'
 const adaKorpus = existsSync(KORPUS)
@@ -114,5 +114,36 @@ describe('halaman dan urutan dari XML', () => {
     expect(b[591] ?? '').toContain('<pyPageSize>50</pyPageSize>')
     expect(b[941] ?? '').toContain('<pyMaxRecords>500</pyMaxRecords>')
     expect(b[732] ?? '').toContain('<pySortType>DESC</pySortType>')
+  })
+})
+
+// Ekspor xlsx — butir bg, 28-09-2026.
+describe('ekspor xlsx hanya kolom yang tampil', () => {
+  it('kolom ekspor SAMA dan seurutan dengan kolom tabel', () => {
+    // ⛔ Ekspor yang memuat kolom yang layarnya tidak tampilkan membuat
+    // berkas dan layar menjawab pertanyaan yang berbeda — dan yang
+    // memegang berkasnya tidak akan tahu mana yang benar.
+    const urutTabel = [
+      'caseId',
+      'nomorKlaim',
+      'nomorPolis',
+      'status',
+      'createOpName',
+      'tglCreate',
+    ]
+    expect(KOLOM_EKSPOR.map((k) => k.kunci)).toEqual(urutTabel)
+  })
+
+  it('label ekspor dari KOLOM, tidak diketik ulang', () => {
+    // Label yang sama di dua tempat adalah dua tempat untuk bergeser.
+    const sumber = readFileSync(join(__dirname, 'InboxClaimLife.tsx'), 'utf8')
+    expect(sumber).toContain('label: KOLOM.caseId')
+    expect(sumber).not.toContain("label: 'Case ID'")
+  })
+
+  it('tombol ekspor mati saat nol baris', () => {
+    // Tombol yang menghasilkan berkas kosong mengajari orang mengabaikannya.
+    const sumber = readFileSync(join(__dirname, 'InboxClaimLife.tsx'), 'utf8')
+    expect(sumber).toContain('disabled={hal === null || hal.baris.length === 0}')
   })
 })

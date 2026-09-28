@@ -19,6 +19,7 @@ import { TAHAP, TAHAP_ID, MENU } from '../assets/labels'
 import type { KodePeran } from '../assets/labels'
 import { PERAN } from '../assets/labels'
 import { Gagal, Kosong, Memuat } from '../components/ui/dasar'
+import { unduhXlsx, type KolomEksporXlsx } from '../lib/exportXlsx'
 import {
   ambilKotakMasuk,
   TAHAP_NOMOR,
@@ -92,6 +93,28 @@ const KOLOM = {
   nomorPolis: 'Policy No',
 } as const
 
+/**
+ * Kolom ekspor xlsx — butir **bg**.
+ *
+ * ⛔ TEPAT kolom yang TAMPIL, dan berurutan sama. Ekspor yang memuat kolom
+ * yang layarnya tidak tampilkan membuat berkas dan layar menjawab pertanyaan
+ * yang berbeda - dan yang memegang berkasnya tidak akan tahu mana yang benar.
+ *
+ * ⚠️ Tanggal keluar APA ADANYA (RFC 3339), bukan dalam bentuk layar. Itu
+ * penyimpangan yang disengaja dan berlawanan arah dengan kolomnya: berkas
+ * lembar-sebar diurutkan dan disaring, dan `28-09-2026 14:03` diurutkan
+ * sebagai TEKS - Desember mendahului Februari. Bentuk ISO diurutkan benar
+ * oleh alat mana pun yang membukanya.
+ */
+export const KOLOM_EKSPOR: KolomEksporXlsx<BarisInbox>[] = [
+  { kunci: 'caseId', label: KOLOM.caseId },
+  { kunci: 'nomorKlaim', label: KOLOM.nomorKlaim },
+  { kunci: 'nomorPolis', label: KOLOM.nomorPolis },
+  { kunci: 'status', label: KOLOM.status },
+  { kunci: 'createOpName', label: KOLOM.createOpName },
+  { kunci: 'tglCreate', label: KOLOM.tglCreate },
+]
+
 function tanggalTampil(rfc3339: string): string {
   if (rfc3339 === '') return '—'
   const d = new Date(rfc3339)
@@ -152,6 +175,26 @@ export default function InboxClaimLife({ peran, onBuka, onRegister }: InboxProps
         {/* Tombol kepala — VERBATIM `Register_Flow.xml:155`. */}
         <button type="button" className="inbox__register" onClick={onRegister}>
           {MENU.register}
+        </button>
+        {/* ⛔ EKSPOR HANYA YANG TAMPIL — butir bg. Enam kolom yang sama
+            dengan tabel di bawah, berurutan sama, dan HANYA halaman yang
+            sedang terbuka. Mengekspor seluruh tahap dari tombol yang
+            berdiri di atas satu tab berarti berkasnya menjawab pertanyaan
+            yang berbeda dari yang layar tanyakan.
+
+            ⚠️ Dimatikan saat belum ada baris: tombol yang menghasilkan
+            berkas kosong mengajari orang mengabaikannya. */}
+        <button
+          type="button"
+          className="inbox__ekspor"
+          disabled={hal === null || hal.baris.length === 0}
+          onClick={() => {
+            if (hal === null) return
+            unduhXlsx(`inbox-${hal.namaTahap || String(aktif)}.xlsx`,
+              KOLOM_EKSPOR, hal.baris)
+          }}
+        >
+          Export xlsx
         </button>
       </header>
 
