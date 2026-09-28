@@ -24,13 +24,13 @@ func penandaBerurut(q string) []string {
 // `:tutup` - dan inbox diam-diam kosong.
 func TestInboxKomitePenandaBerurutSesuaiArgumen(t *testing.T) {
 	baris := penandaBerurut(sqlInboxKomite("G", "W", "L", "C", "A"))
-	mau := []string{"akun", "menunggu", "menunggu", "tutup", "offset", "ukuran"}
+	mau := []string{"akun", "menunggu", "menunggu", "tutup", "setuju", "offset", "ukuran"}
 	if !reflect.DeepEqual(baris, mau) {
 		t.Errorf("penanda inbox %v, mau %v", baris, mau)
 	}
 	cacah := penandaBerurut(sqlCacahInboxKomite("G", "W", "L", "C", "A"))
-	if !reflect.DeepEqual(cacah, mau[:4]) {
-		t.Errorf("penanda cacah %v, mau %v", cacah, mau[:4])
+	if !reflect.DeepEqual(cacah, mau[:5]) {
+		t.Errorf("penanda cacah %v, mau %v", cacah, mau[:5])
 	}
 }
 
@@ -72,5 +72,31 @@ func TestUangKomiteLewatTeks(t *testing.T) {
 		if !strings.Contains(q, "TO_CHAR(a.CLAIM_AMOUNT, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,''')") {
 			t.Errorf("CLAIM_AMOUNT tidak dibaca lewat TO_CHAR ber-NLS:\n%s", q)
 		}
+	}
+}
+
+// TestKeputusanKomiteBersyaratDuaBaris - tiket 02.
+//
+// ⛔ Anak tangga hanya ditulis bila MASIH menunggu dan milik pelaku; kepala
+// hanya dimajukan dari count yang dibaca. Dua keputusan serentak: satu kalah.
+func TestKeputusanKomiteBersyaratDuaBaris(t *testing.T) {
+	q := sqlCatatAnakTangga("L")
+	for _, s := range []string{"DATA_KOMITE_ID = :4", "KOMITE_URUT = :5",
+		"KOMITE_OPERATORID = :6", "KOMITE_APPROVAL = :7"} {
+		if !strings.Contains(q, s) {
+			t.Errorf("penulisan anak tangga tanpa %q:\n%s", s, q)
+		}
+	}
+	if !strings.Contains(sqlMajukanTangga("G"), "WHERE ID = :3 AND KOMITE_COUNT = :4") {
+		t.Errorf("kepala komite dimajukan tanpa kunci count:\n%s", sqlMajukanTangga("G"))
+	}
+}
+
+// TestInboxKomiteMengikutiIsKomiteLoop - Tolak di tengah tidak jatuh ke tingkat berikut.
+func TestInboxKomiteMengikutiIsKomiteLoop(t *testing.T) {
+	q := sqlInboxKomite("G", "W", "L", "C", "A")
+	if !strings.Contains(q, "g.ACCEPT_STATUS IS NULL") ||
+		!strings.Contains(q, "g.ACCEPT_STATUS = :setuju AND g.KOMITE_COUNT <= g.KOMITE_LOOP") {
+		t.Errorf("inbox komite tidak menegakkan IsKomiteLoop:\n%s", q)
 	}
 }

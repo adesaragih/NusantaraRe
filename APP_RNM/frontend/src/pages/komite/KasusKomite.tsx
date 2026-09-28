@@ -1,14 +1,43 @@
-// Kasus Komite — tiket 01 Komite Claim Life (baca saja).
+// Kasus Komite — tiket 01 (baca) + tiket 02 (keputusan).
 //
-// Tangga persetujuan kasus dan baris yang diputuskan. Layar keputusan
-// `ShowTransfer` (`FlowAction/ViewTransferDtl.xml`) dibangun di tiket 02.
+// Tangga persetujuan kasus dan baris yang diputuskan. Formulir keputusan
+// meniru bagian keputusan `Section/ShowTransfer.xml` (lewat
+// `FlowAction/ViewTransferDtl.xml` b91): dropdown `.AcceptStatus` WAJIB
+// (b32607), `.KomiteComment` (b31001), tombol `Submit` b34722 / `Cancel`
+// b33880. Formulir hanya tampil pada GILIRAN pelaku.
+//
+// ⚠️ Syarat tampil lain `ShowTransfer` (`IsTreatyIn==0` ×12, `Type TP/TR` ×3,
+// `SwiftCode`, `RetrocadedShare`) menggerbangi blok RINCIAN, belum dibawa.
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { KASUS_KOMITE, KOLOM_INBOX_KOMITE } from '../../assets/labels.komite'
+import { KASUS_KOMITE, KEPUTUSAN_KOMITE, KOLOM_INBOX_KOMITE } from '../../assets/labels.komite'
 import { Gagal, Memuat } from '../../components/ui/dasar'
-import { ambilKasusKomite, type KasusKomite as Kasus } from '../../services/api'
+import {
+  ambilKasusKomite,
+  putuskanKomite,
+  type KasusKomite as Kasus,
+} from '../../services/api'
 import { selKomite, tingkatKomite } from './InboxKomite'
+
+/** Enum tertutup `{1 Setuju, 2 Tolak}` — urut dropdown. */
+export const PILIHAN_KEPUTUSAN = [
+  { kode: '1', label: KEPUTUSAN_KOMITE.setuju },
+  { kode: '2', label: KEPUTUSAN_KOMITE.tolak },
+] as const
+
+/** Kalimat hasil — satu tempat. */
+export function kalimatHasilKeputusan(h: {
+  kataKeputusan: string
+  tingkatDiputus: number
+  berlanjut: boolean
+  tingkatBerikut: number
+}): string {
+  const dasar = `${h.kataKeputusan} tercatat di tingkat ${String(h.tingkatDiputus)}.`
+  return h.berlanjut
+    ? `${dasar} Kasus naik ke tingkat ${String(h.tingkatBerikut)}.`
+    : `${dasar} Tangga berhenti.`
+}
 
 export default function KasusKomite({
   kasusID,
@@ -20,6 +49,10 @@ export default function KasusKomite({
   const [k, setK] = useState<Kasus | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
   const [sibuk, setSibuk] = useState(true)
+  const [keputusan, setKeputusan] = useState('')
+  const [komentar, setKomentar] = useState('')
+  const [kirim, setKirim] = useState(false)
+  const [kabar, setKabar] = useState('')
 
   const muat = useCallback(async () => {
     setSibuk(true)
@@ -39,6 +72,28 @@ export default function KasusKomite({
     void muat()
   }, [muat])
 
+  async function submit(): Promise<void> {
+    if (kirim) return
+    if (keputusan === '') {
+      setKabar(KEPUTUSAN_KOMITE.wajibPilih)
+      return
+    }
+    setKirim(true)
+    setGalat(null)
+    setKabar('')
+    try {
+      const h = await putuskanKomite(kasusID, keputusan, komentar)
+      setKabar(kalimatHasilKeputusan(h))
+      setKeputusan('')
+      setKomentar('')
+      await muat()
+    } catch (e) {
+      setGalat(e)
+    } finally {
+      setKirim(false)
+    }
+  }
+
   return (
     <section className="komite-kasus">
       <button type="button" onClick={onKembali}>
@@ -49,6 +104,7 @@ export default function KasusKomite({
       </h2>
       {sibuk && <Memuat />}
       {galat !== null && <Gagal galat={galat} />}
+      {kabar !== '' && <p role="status">{kabar}</p>}
       {k !== null && (
         <>
           <dl className="komite-kasus__kepala">
@@ -89,7 +145,48 @@ export default function KasusKomite({
               ))}
             </tbody>
           </table>
-          <p>{KASUS_KOMITE.keputusanMenyusul}</p>
+          {k.giliranSaya && (
+            <form
+              className="komite-kasus__keputusan"
+              onSubmit={(e) => {
+                e.preventDefault()
+                void submit()
+              }}
+            >
+              <label>
+                {KEPUTUSAN_KOMITE.konfirmasi}
+                <select
+                  required
+                  value={keputusan}
+                  onChange={(e) => {
+                    setKeputusan(e.target.value)
+                  }}
+                >
+                  <option value="">{KEPUTUSAN_KOMITE.pilih}</option>
+                  {PILIHAN_KEPUTUSAN.map((p) => (
+                    <option key={p.kode} value={p.kode}>
+                      {p.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                {KEPUTUSAN_KOMITE.komentar}
+                <textarea
+                  value={komentar}
+                  onChange={(e) => {
+                    setKomentar(e.target.value)
+                  }}
+                />
+              </label>
+              <button type="submit" disabled={kirim}>
+                {KEPUTUSAN_KOMITE.submit}
+              </button>
+              <button type="button" onClick={onKembali}>
+                {KEPUTUSAN_KOMITE.cancel}
+              </button>
+            </form>
+          )}
         </>
       )}
     </section>

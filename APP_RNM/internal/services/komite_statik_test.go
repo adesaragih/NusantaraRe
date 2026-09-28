@@ -78,7 +78,8 @@ var berkasKomiteBolehMenyebut = map[string]string{
 	// GILIRAN-3-KOMITE §0 memberi modul Komite berkas `komite_*`. Disebut
 	// satu per satu, JALUR PENUH; bukan awalan `komite_`, sebab awalan itu
 	// ikut membungkam `komite_test.go`/`komite_db_test.go` milik Claim Life.
-	"internal/repository/komite_inbox.go": "modul Komite Claim Life - pembaca inbox + tangga (tiket 01 Komite)",
+	"internal/repository/komite_inbox.go":     "modul Komite Claim Life - pembaca inbox + tangga (tiket 01 Komite)",
+	"internal/repository/komite_keputusan.go": "modul Komite Claim Life - PENULIS keputusan tingkat (tiket 02 Komite); inilah yang penjaga ini maksud dengan 'milik konteks Komite'",
 }
 
 // TestNolPenyimpanKeputusanKomiteDiKonteksIni menegakkan batas konteks.

@@ -95,3 +95,73 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+## Implementasi — 28-09-2026 (giliran 10)
+
+### Pembacaan ulang XML — `KomitePostAdjustment` sebagai pohon (14 langkah tingkat atas)
+
+Perintah: `sed -e 's/></>\n</g' Activity/KomitePostAdjustment.xml` (11.730 baris), lalu
+`<pyStepPageReference>RH_1.pySteps(n)` + metode + deskripsi.
+
+| # | Metode · deskripsi | Yang ditiru di tiket ini |
+| ---: | --- | --- |
+| 1 | `Obj-Open-By-Handle` "Open Claim" → `TempOpenPage` | klaim induk dibaca lewat `COVER_KEY` |
+| 2 | "Set Index": `Local.IndexAdjustment`, `Local.IndexPremium`, **`Local.Komite = pyWorkPage.KomiteCount`** | anak tangga yang ditulis = `KOMITE_URUT = KOMITE_COUNT` |
+| 3 | "set acc / reject adjustment in PNC and komite": `KomiteList(Local.Komite).KomiteAproval = .AcceptStatus`, `.KomiteComment = .Comment`, `.DateApprove = @CurrentDateTime()` | ✅ `CatatKeputusan` |
+| 4 | "Approve Last Komite" — `AcceptStatus = 1 && KomiteCount == KomiteLoop` (b5695) | ⛔ **digerbang** → tiket 04a/04b |
+| 5 | "Reject" — `AcceptStatus==2 && KomiteCount == KomiteLoop` (b8119) | ⛔ **digerbang** → tiket 05 |
+| 6–12 | `UpdateWorkObject`, `Obj-Save`, `InsertJsonClaimLife_Act`, "EXIT JIKA RETROID", Arasapas, email, kasir | tiket 04b/06/07 |
+| 13 | `KomiteCount = KomiteCount + 1` (b9028–9029), **tanpa syarat** | ✅ `CatatKeputusan` (satu tulisan dengan langkah 3) |
+| 14 | `SetInformationData` | tiket 04b |
+
+`When/IsKomiteLoop.xml`: `.AcceptStatus = "1"` **dan** `.KomiteCount <= .KomiteLoop` →
+`models.TanggaBerlanjut`. `Flow/KomiteLife_Flow.xml`: `End1` **tanpa `pyWorkStatus`** — "tangga
+berhenti" karena itu diturunkan dari `IsKomiteLoop` atas `T_GENERAL_KOMITE.ACCEPT_STATUS` +
+`KOMITE_COUNT`, bukan dari status kerja karangan (`models.KasusDiTangga`).
+
+⚠️ **Urutan menentukan**: langkah 4/5 membaca `KomiteCount` **sebelum** langkah 13 menaikkannya;
+`IsKomiteLoop` membacanya **sesudah**. Tingkat akhir = `count == loop`; berlanjut bila `count+1 ≤ loop`
+(`TestTanggaTigaTingkatSetujuSeluruhnya`).
+
+⚠️ `AcceptStatus` (dropdown `ShowTransfer` b32607, `pyRequired true`) ber-`pyListSource associated`:
+pilihannya milik aturan properti yang **tidak diekspor**. Enum `{1 Setuju, 2 Tolak}` = `[keputusan work
+owner]` (AC 35); nilai lain **ditolak terang** sebelum basis data. `.KomiteComment` b31001
+`pyRequired false`.
+
+### Yang dibangun
+
+- `models/komite_tangga.go` — enum, `TanggaBerlanjut` (= `IsKomiteLoop`), `KasusDiTangga`,
+  `TerapkanKeputusanKomite` (tingkat diputus, count baru, berlanjut, akseptasi-akhir, tolak-akhir).
+- `repository/komite_keputusan.go` — dua tulisan **bersyarat** dalam satu transaksi: anak tangga
+  (`DATA_KOMITE_ID` + `KOMITE_URUT` + `KOMITE_OPERATORID` + approval masih `0`) dan kepala
+  (`KOMITE_COUNT` = count yang dibaca). Dua keputusan serentak: satu kalah, `409`.
+- Inbox tiket 01 kini juga menegakkan `IsKomiteLoop`: **Tolak di tingkat tengah** meninggalkan anggota
+  berikutnya ber-approval `0`; tanpa syarat ini kasusnya jatuh ke inbox mereka.
+- `services/komite_keputusan.go` — hanya **anggota berjalan** (403 selain itu), gerbang klaim induk
+  tertutup (`PastikanKasusTerbuka`, butir bb), jejak per tingkat dalam transaksi yang sama.
+  ⛔ **Tingkat akhir digerbang**: `PenyelesaiAkhirBelumAda` menolak langkah 4/5 (`501`) dan
+  transaksinya batal utuh, sampai tiket 04a/04b/05 menggantinya — tidak ada kasus "disetujui" tanpa
+  nomor akseptasi, atau "ditolak" tanpa baris klaimnya tahu.
+- `POST /api/komite/{id}/keputusan`; terdaftar di penjaga butir bb (`rutePengubah`,
+  `layananPengubah`). Penjaga batas konteks Claim Life: pengecualian jalur penuh kedua untuk
+  `repository/komite_keputusan.go` — ia persis "milik konteks Komite" yang penjaga itu maksud.
+- Layar: formulir keputusan di `KasusKomite.tsx`, **hanya pada giliran pelaku** — dropdown wajib,
+  `Comment`, `Submit`/`Cancel` VERBATIM, kalimat konfirmasi VERBATIM.
+
+### AC — keadaan
+
+| AC | Keadaan |
+| --- | --- |
+| rute ke anggota pertama ber-approval 0 | ✅ (tiket 01, `[dugaan kuat]` kode transisi 6) |
+| Setuju bukan-akhir naik satu, tak menyentuh akseptasi | ✅ |
+| Tolak menghentikan di tingkat mana pun | ✅ — di tengah tanpa langkah 5 (tiket 05) |
+| berlanjut hanya Setuju ∧ count ≤ loop | ✅ `IsKomiteLoop` VERBATIM |
+| satu entri per tingkat: keputusan, komentar, waktu | ✅ anak tangga + jejak |
+| enum tertutup; nilai lain ditolak terang | ✅ |
+| nol `TransferType` | ✅ nol di kode |
+| `KOMITE_COUNT`/`LOOP` di-persist; baris dipilih lewat `KOMITE_URUT` + `DATA_KOMITE_ID` | ✅ |
+| syarat tampil blok rincian `ShowTransfer` (`IsTreatyIn`, `Type TP/TR`, `SwiftCode`, `RetrocadedShare`) | ⚠️ belum — layar kini hanya kepala + tangga + keputusan |
+
+### Angka
+
+Go **567 PASS · 0 FAIL** tingkat atas; vet (+`-tags db`), gofmt bersih · vitest **356** · tsc bersih.

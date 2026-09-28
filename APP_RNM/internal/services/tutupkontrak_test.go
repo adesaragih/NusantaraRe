@@ -25,15 +25,18 @@ import (
 // apa pun yang kebetulan ada, bukan apa yang kita putuskan harus dijaga -
 // dan daftar yang menyesuaikan diri tidak pernah gagal.
 var layananPengubah = map[string]string{
-	"akseptasi.go":   "SimpanAdjustment",
-	"dol.go":         "Set",
-	"hapus.go":       "Hapus",
-	"hasilkomite.go": "Tambah",
-	"diagnosa.go":    "pagari",
-	"unggahan.go":    "pagari",
-	"komite.go":      "Serahkan",
-	"tahap.go":       "Pindah",
-	"statusbaris.go": "ubah",
+	// Komite Claim Life tiket 02 - keputusan tingkat; klaim induk yang
+	// tertutup tidak menerima keputusan komite lagi.
+	"komite_keputusan.go": "Putuskan",
+	"akseptasi.go":        "SimpanAdjustment",
+	"dol.go":              "Set",
+	"hapus.go":            "Hapus",
+	"hasilkomite.go":      "Tambah",
+	"diagnosa.go":         "pagari",
+	"unggahan.go":         "pagari",
+	"komite.go":           "Serahkan",
+	"tahap.go":            "Pindah",
+	"statusbaris.go":      "ubah",
 }
 
 func TestSetiapLayananPengubahMemeriksaKasusTerbuka(t *testing.T) {
@@ -191,6 +194,9 @@ var rutePengubah = map[string]string{
 	// Tiket 05a bagian 2. Submit summary MENULIS - nomor, rekap, dan salinan
 	// peserta warisan dalam satu transaksi - jadi ia pengubah.
 	"POST /api/polis-life/{id}/summary": "polis_summary.go",
+	// Komite Claim Life tiket 02 - keputusan satu tingkat MENULIS anak tangga
+	// dan kepala kasus.
+	"POST /api/komite/{id}/keputusan": "komite_keputusan.go",
 }
 
 var polaRute = regexp.MustCompile(`mux\.HandleFunc\(\s*\n?\s*"([A-Z]+) ([^"]+)"`)

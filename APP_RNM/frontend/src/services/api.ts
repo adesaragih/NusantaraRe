@@ -1751,6 +1751,34 @@ export async function ambilInboxKomite(halaman = 1): Promise<HalamanInboxKomite>
   return minta<HalamanInboxKomite>(`/api/komite?halaman=${String(halaman)}`)
 }
 
+/** Jawaban `POST /api/komite/{id}/keputusan`. */
+export interface HasilKeputusanKomite {
+  tingkatDiputus: number
+  keputusan: string
+  kataKeputusan: string
+  berlanjut: boolean
+  tingkatBerikut: number
+  akseptasiAkhir: boolean
+  tolakAkhir: boolean
+}
+
+/**
+ * Keputusan satu tingkat — `POST /api/komite/{id}/keputusan`.
+ *
+ * ⚠️ Menjawab **501** di tingkat akhir sampai akseptasi (tiket 04a/04b) dan
+ * penolakan ke baris klaim (tiket 05) dibangun — pesan server tampil apa adanya.
+ */
+export async function putuskanKomite(
+  kasusID: string,
+  keputusan: string,
+  komentar: string,
+): Promise<HasilKeputusanKomite> {
+  return minta<HasilKeputusanKomite>(`/api/komite/${encodeURIComponent(kasusID)}/keputusan`, {
+    metode: 'POST',
+    badan: { keputusan, komentar },
+  })
+}
+
 /** Satu kasus komite — `GET /api/komite/{id}`. 403 bila bukan anggota tangga. */
 export async function ambilKasusKomite(kasusID: string): Promise<KasusKomite> {
   return minta<KasusKomite>(`/api/komite/${encodeURIComponent(kasusID)}`)

@@ -128,6 +128,8 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 	// membaca saja; keputusan komite menyusul di tiket 02.
 	mux.HandleFunc("GET /api/komite", inboxKomite(svc, stubPelaku))
 	mux.HandleFunc("GET /api/komite/{id}", kasusKomite(svc, stubPelaku))
+	// Tiket 02 - keputusan satu tingkat (`ShowTransfer` Submit).
+	mux.HandleFunc("POST /api/komite/{id}/keputusan", putuskanKomite(svc, stubPelaku))
 	mux.HandleFunc("GET /api/polis-life/{id}/summary", rekapPolis(svc, stubPelaku))
 	mux.HandleFunc("POST /api/polis-life/{id}/summary",
 		submitRekapPolis(svc, stubPelaku))

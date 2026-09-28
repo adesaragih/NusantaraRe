@@ -40,6 +40,27 @@ export const KASUS_KOMITE = {
   tanggal: 'Tanggal',
   giliranAnda: 'Giliran Anda memutuskan.',
   bukanGiliran: 'Bukan giliran Anda — kasus ini menunggu tingkat lain atau sudah selesai.',
-  /** Layar keputusan `ShowTransfer` menyusul (tiket 02). */
-  keputusanMenyusul: 'Layar keputusan (ShowTransfer) dibangun di tiket 02.',
+} as const
+
+/**
+ * Layar keputusan — tiket 02, `Section/ShowTransfer.xml`.
+ *
+ * ⚠️ Pilihan `.AcceptStatus` (b32607, `pyListSource associated`) milik aturan
+ * properti yang TIDAK diekspor; `1 = Setuju`, `2 = Tolak` adalah
+ * `[keputusan work owner]`, bukan teks korpus. Kalimat konfirmasi dan tombol
+ * VERBATIM.
+ */
+export const KEPUTUSAN_KOMITE = {
+  /** VERBATIM — label di atas dropdown `.AcceptStatus`. */
+  konfirmasi: 'Are you sure to accept this document?',
+  pilih: 'Pilih keputusan',
+  setuju: 'Setuju',
+  tolak: 'Tolak',
+  /** `.KomiteComment` b31001 — `pyRequired false`. */
+  komentar: 'Comment',
+  /** VERBATIM b34722. */
+  submit: 'Submit',
+  /** VERBATIM b33880. */
+  cancel: 'Cancel',
+  wajibPilih: 'Keputusan wajib dipilih.',
 } as const

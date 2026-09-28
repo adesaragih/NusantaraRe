@@ -34,6 +34,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"nusantarare/internal/models"
 )
 
 // ApprovalKomiteMenunggu adalah `KomiteAproval` anggota yang belum memutuskan.
@@ -57,6 +59,8 @@ type BarisInboxKomite struct {
 	StsReject  string
 	StatusWork string
 	TglUpdate  sql.NullTime
+	// AcceptStatus = `T_GENERAL_KOMITE.ACCEPT_STATUS` - keputusan terakhir.
+	AcceptStatus string
 }
 
 // kolomBarisKomite dipakai bersama inbox dan pembacaan satu kasus.
@@ -85,13 +89,20 @@ func sqlDariKomite(gen, work, list, klaim, adj string) string {
 //
 // ⛔ Kasus tertutup (`STATUS_WORK` Resolved-Completed) tidak berdiri di
 // worklist siapa pun, walau barisnya masih menyimpan approval menunggu.
+//
+// ⛔ TIKET 02 - dan kasus yang tangganya BERHENTI pun tidak. Tolak di tingkat
+// tengah meninggalkan anggota berikutnya ber-approval menunggu; tanpa syarat
+// `IsKomiteLoop` (`models.KasusDiTangga`) kasus itu jatuh ke inbox mereka.
+// `End1` tidak punya `pyWorkStatus`, jadi syaratnya dibaca dari kepala kasus.
 const sqlSaringInboxKomite = `
 	 WHERE l.KOMITE_OPERATORID = :akun
 	   AND l.KOMITE_APPROVAL = :menunggu
 	   AND l.KOMITE_URUT = (SELECT MIN(l2.KOMITE_URUT) FROM %s l2
 	                         WHERE l2.DATA_KOMITE_ID = g.ID
 	                           AND l2.KOMITE_APPROVAL = :menunggu)
-	   AND (w.STATUS_WORK IS NULL OR w.STATUS_WORK <> :tutup)`
+	   AND (w.STATUS_WORK IS NULL OR w.STATUS_WORK <> :tutup)
+	   AND (g.ACCEPT_STATUS IS NULL
+	        OR (g.ACCEPT_STATUS = :setuju AND g.KOMITE_COUNT <= g.KOMITE_LOOP))`
 
 // InboxKomite membaca kasus komite.
 type InboxKomite struct{ db *DB }
@@ -164,7 +175,8 @@ func (r *InboxKomite) Ambil(ctx context.Context, akunID, statusTutup string,
 	// ⛔ Urutan argumen = urutan MUNCULNYA penanda di teks - driver Oracle di
 	// jalur ini mengikat penanda bernama secara berurutan (pola `AmbilInbox`
 	// Claim Life). `:menunggu` muncul DUA kali, jadi ia dikirim dua kali.
-	saring := []any{akunID, ApprovalKomiteMenunggu, ApprovalKomiteMenunggu, statusTutup}
+	saring := []any{akunID, ApprovalKomiteMenunggu, ApprovalKomiteMenunggu, statusTutup,
+		models.KeputusanKomiteSetuju}
 	rows, err := r.db.sql.QueryContext(ctx, q, append(saring, offset, ukuran)...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("repository: membaca inbox komite: %w", err)
@@ -226,7 +238,8 @@ func sqlKasusKomite(gen, work, list, klaim, adj string) string {
 	         WHERE l2.DATA_KOMITE_ID = g.ID AND l2.KOMITE_APPROVAL = :1),
 	       g.KOMITE_COUNT, g.KOMITE_LOOP,
 	       TO_CHAR(a.CLAIM_AMOUNT, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''),
-	       a.CURRENCY, a.STS_REJECT, w.STATUS_WORK, w.TGL_UPDATE, g.ADJUSTMENT_ID
+	       a.CURRENCY, a.STS_REJECT, w.STATUS_WORK, w.TGL_UPDATE, g.ADJUSTMENT_ID,
+	       g.ACCEPT_STATUS
 	  FROM %s g
 	  JOIN %s w ON w.ID = g.ID
 	  LEFT JOIN %s c ON c.ID = w.COVER_KEY
@@ -252,11 +265,11 @@ func (r *InboxKomite) Kasus(ctx context.Context, kasusID string) (KasusKomite, e
 		return KasusKomite{}, err
 	}
 	var k KasusKomite
-	var klaimID, nomor, nilai, mu, sts, status, adjID sql.NullString
+	var klaimID, nomor, nilai, mu, sts, status, adjID, accept sql.NullString
 	var urut, count, loop sql.NullInt64
 	err = r.db.sql.QueryRowContext(ctx, q, ApprovalKomiteMenunggu, kasusID).Scan(
 		&k.Baris.KasusID, &klaimID, &nomor, &urut, &count, &loop, &nilai, &mu, &sts,
-		&status, &k.Baris.TglUpdate, &adjID)
+		&status, &k.Baris.TglUpdate, &adjID, &accept)
 	if errors.Is(err, sql.ErrNoRows) {
 		return KasusKomite{}, fmt.Errorf("%w: %q", ErrKasusKomiteTakDitemukan, kasusID)
 	}
@@ -270,6 +283,7 @@ func (r *InboxKomite) Kasus(ctx context.Context, kasusID string) (KasusKomite, e
 	k.Baris.NilaiKlaim, k.Baris.MataUang = strings.TrimSpace(nilai.String), strings.TrimSpace(mu.String)
 	k.Baris.StsReject, k.Baris.StatusWork = strings.TrimSpace(sts.String), status.String
 	k.AdjID = adjID.String
+	k.Baris.AcceptStatus = strings.TrimSpace(accept.String)
 
 	qt := sqlTanggaKasus(list)
 	if err := PeriksaSQL(qt); err != nil {
