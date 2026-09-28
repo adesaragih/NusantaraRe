@@ -49,6 +49,10 @@ export default function OutstandingClaimLife({
   // av-2: panelnya kini BERISI - sebelumnya `<PanelDataPolis />` tanpa polis,
   // sehingga seluruh medan tampil kosong di layar ini.
   const [polis, setPolis] = useState<PolicyDataLife | null>(null)
+  // ⛔ Tahap kasus yang SEBENARNYA (GILIRAN-11). Kotak masuk membuka layar ini
+  // untuk kasus tahap mana pun; tanpa ini layar menawarkan tombol Outstanding
+  // kepada kasus Medical Check - dan setiap kliknya ditolak 409.
+  const [tahapKasus, setTahapKasus] = useState<string | null>(null)
 
   useEffect(() => {
     let batal = false
@@ -56,6 +60,7 @@ export default function OutstandingClaimLife({
       try {
         const k = await ambilKlaimLife(klaimID)
         if (batal) return
+        setTahapKasus(k.tahap)
         const p = await ambilDataPolis(k.nomorPolis)
         if (!batal) setPolis(p)
       } catch {
@@ -98,6 +103,15 @@ export default function OutstandingClaimLife({
           berbeda. */}
       <PanelDataPolis polis={polis} />
 
+      {tahapKasus !== null && tahapKasus !== TAHAP.outstandingClaim && (
+        <p role="note">
+          Kasus ini berada di tahap {tahapKasus === '' ? 'yang tidak diketahui' : tahapKasus}, bukan{' '}
+          {TAHAP.outstandingClaim}: tombol layar ini tidak berlaku untuknya. Buka
+          dari layar Detail klaim.
+        </p>
+      )}
+
+      {tahapKasus === TAHAP.outstandingClaim && (
       <div className="os__aksi">
         <button
           type="button"
@@ -110,6 +124,7 @@ export default function OutstandingClaimLife({
           {sibuk ? 'Menyimpan…' : TOMBOL_OS.simpanRNM}
         </button>
       </div>
+      )}
       {tersimpan !== null && (
         <p role="status">
           Tersimpan ke RNM — nomor klaim {tersimpan.nomorKlaim}
@@ -122,7 +137,9 @@ export default function OutstandingClaimLife({
           melewatkan konfirmasi `Send Back to Admin?` (SendtoAdmin_Section
           b566) yang dibuka local action `SendtoAdmin` b21433. Satu daftar,
           satu dialog — `PanelPindahTahap`. */}
-      <PanelPindahTahap klaimID={klaimID} tahap={TAHAP.outstandingClaim} sesudahPindah={onPindah} />
+      {tahapKasus === TAHAP.outstandingClaim && (
+        <PanelPindahTahap klaimID={klaimID} tahap={TAHAP.outstandingClaim} sesudahPindah={onPindah} />
+      )}
 
       {galat !== null && (
         <>

@@ -721,8 +721,10 @@ export async function dampakHapusKlaim(klaimID: string): Promise<DampakHapus> {
 /**
  * Menghapus klaim.
  *
- * ⛔ Saat ini SELALU menjawab 501: ADR-U-0031 menetapkan penghapusan berupa
- * PENANDA, bukan hapus fisik, dan kolom penandanya belum diputuskan.
+ * ⛔ Saat ini SELALU menjawab 405 (+ header `Allow`): ADR-U-0031 menetapkan
+ * penghapusan berupa PENANDA, bukan hapus fisik, dan kolom penandanya belum
+ * diputuskan. (Komentar lama menyebut 501 - layar pun menunggu 501, dan
+ * menampilkan "Gagal menghapus klaim."; diralat GILIRAN-11.)
  */
 export async function hapusKlaim(klaimID: string): Promise<DampakHapus> {
   // ⛔ DELETE, bukan GET. Rutenya sama persis dengan `ambilKlaimLife`;

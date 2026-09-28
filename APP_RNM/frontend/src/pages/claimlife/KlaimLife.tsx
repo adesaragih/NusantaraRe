@@ -215,10 +215,15 @@ export default function KlaimLife() {
     } catch (err: unknown) {
       const kode = kodeStatusGalat(err)
       setGalat(
-        kode === 501
-          ? 'Penghapusan klaim adalah penanda, bukan hapus fisik (ADR-U-0031). Kolom penandanya belum diputuskan work owner.'
+        // ⛔ 405, bukan 501 (GILIRAN-11): backend menjawab 405 + `Allow`
+        // sejak ADR-U-0031 ditegakkan; layar dulu menunggu 501 dan jatuh ke
+        // "Gagal menghapus klaim." - kalimat yang menyembunyikan sebabnya.
+        kode === 405 || kode === 501
+          ? (pesanGalat(err) ??
+            'Penghapusan klaim adalah penanda, bukan hapus fisik (ADR-U-0031). Kolom penandanya belum diputuskan work owner.')
           : kode === 409
-            ? 'Klaim sudah diserahkan ke Komite dan tidak dapat dihapus.'
+            ? // Kalimat server lebih dulu: 409 kini juga berarti kasus tertutup.
+              (pesanGalat(err) ?? 'Klaim sudah diserahkan ke Komite dan tidak dapat dihapus.')
             : kode === 403
               ? 'Hanya ReasLifeAdmin yang dapat menghapus klaim.'
               : 'Gagal menghapus klaim.',
@@ -271,7 +276,7 @@ export default function KlaimLife() {
         kode === 403
           ? 'Hanya ReasLifeSPV yang dapat membuka putaran berikutnya.'
           : kode === 409
-            ? 'Putaran berikutnya hanya lahir sesudah baris terakhir ditolak.'
+            ? (pesanGalat(err) ?? 'Putaran berikutnya hanya lahir sesudah baris terakhir ditolak.')
             : kode === 501
               ? 'Jejak audit belum dapat direkam; tempatnya belum diputuskan.'
               : 'Gagal membuka putaran berikutnya.',
@@ -294,7 +299,7 @@ export default function KlaimLife() {
         kode === 403
           ? 'Peran Anda tidak berwenang menyerahkan baris bertipe ini ke Komite.'
           : kode === 409
-            ? 'Baris sudah diserahkan, atau bukan lagi Outstanding.'
+            ? (pesanGalat(err) ?? 'Baris sudah diserahkan, atau bukan lagi Outstanding.')
             : kode === 422
               ? // ⛔ Pesan 422 dicetak APA ADANYA. Salah satunya berbunyi
                 // "Name of bank cannot be empty" - kalimat sistem lama, yang
@@ -323,7 +328,7 @@ export default function KlaimLife() {
         kode === 403
           ? 'Hanya ReasLifeAdmin yang dapat menolak baris.'
           : kode === 409
-            ? 'Baris sudah diputus dan tidak dapat ditolak lagi.'
+            ? (pesanGalat(err) ?? 'Baris sudah diputus dan tidak dapat ditolak lagi.')
             : kode === 422
               ? 'Klaim belum bernomor.'
               : kode === 501

@@ -61,6 +61,12 @@ describe('butir aw — dua tombol perpindahan', () => {
     expect(SUMBER).not.toContain('const PERPINDAHAN')
   })
 
+  it('tombol hanya bagi kasus yang SEBENARNYA di Outstanding Claim', () => {
+    // ⛔ Kotak masuk membuka layar ini untuk tahap mana pun (App.tsx).
+    expect(SUMBER).toContain('setTahapKasus(k.tahap)')
+    expect(SUMBER.match(/tahapKasus === TAHAP\.outstandingClaim &&/g) ?? []).toHaveLength(2)
+  })
+
   it('Save to RNM memanggil simpanKeRNM', () => {
     expect(SUMBER).toContain('simpanKeRNM(klaimID)')
     expect(SUMBER).toContain('TOMBOL_OS.simpanRNM')
