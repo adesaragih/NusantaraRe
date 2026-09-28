@@ -88,6 +88,18 @@ func (p *Penawaran) pagari(ctx context.Context, pelaku Pelaku, polisID string) (
 	return k, nil
 }
 
+// ⛔ RALAT 28-09-2026 - TAHAP DIBACA DARI `STATUS`, BUKAN `POSITION`.
+//
+// Ronde pertama membaca tahap dari kolom `POSITION`. `ProtectAccept.xml`
+// membantahnya: ia membandingkan `pyWorkPage.Position` dengan `"Offer"`
+// b1207 dan `"Premium"` b2288 - posisi LAYAR, bukan tahap. Tahap adalah
+// `pyWorkStatus`, dan itulah kolom `STATUS`.
+//
+// ⚠️ Bila tidak diralat: setiap keputusan akan dibandingkan dengan
+// "Offer"/"Premium", nol di antaranya cocok dengan ketiga nama tahap, dan
+// SELURUH permintaan dijawab "tahap polis tidak dikenal" - fitur yang
+// hijau di setiap uji murni dan mati pada baris nyata pertama.
+
 // Putuskan menerapkan satu keputusan penawaran.
 //
 // Mengembalikan akibatnya supaya pemanggil - dan layar - tahu apakah kasus
@@ -104,7 +116,7 @@ func (p *Penawaran) Putuskan(ctx context.Context, pelaku Pelaku,
 	if err != nil {
 		return models.AkibatKeputusan{}, err
 	}
-	akibat, err := models.TransisiPenawaran(keadaan.Position, keputusan)
+	akibat, err := models.TransisiPenawaran(keadaan.Status, keputusan)
 	if err != nil {
 		return models.AkibatKeputusan{}, err
 	}
@@ -131,9 +143,9 @@ func (p *Penawaran) Golongkan(ctx context.Context, pelaku Pelaku,
 	if err != nil {
 		return models.AkibatKeputusan{}, err
 	}
-	if strings.TrimSpace(keadaan.Position) != models.TahapPolisPenawaran {
+	if strings.TrimSpace(keadaan.Status) != models.TahapPolisPenawaran {
 		return models.AkibatKeputusan{}, fmt.Errorf("%w: polis %q berada di %q",
-			ErrPenggolongBelumSaatnya, polisID, keadaan.Position)
+			ErrPenggolongBelumSaatnya, polisID, keadaan.Status)
 	}
 	akibat, err := models.LanjutanPenggolong(hasil)
 	if err != nil {
@@ -163,7 +175,7 @@ func (p *Penawaran) terapkan(ctx context.Context, pelaku Pelaku,
 			}
 		case akibat.TahapTujuan != "":
 			if err := kerja.PindahTahap(ctx, tx, keadaan.ID,
-				keadaan.Position, akibat.TahapTujuan); err != nil {
+				keadaan.Status, akibat.TahapTujuan); err != nil {
 				return err
 			}
 		default:
@@ -179,7 +191,7 @@ func (p *Penawaran) terapkan(ctx context.Context, pelaku Pelaku,
 		}
 		return p.jejak.Rekam(ctx, tx, CatatanJejak{
 			KlaimID: keadaan.ID,
-			Dari:    keadaan.Position,
+			Dari:    keadaan.Status,
 			Ke:      ke + " (" + sebab + ")",
 			AkunID:  pelaku.AkunID,
 			Waktu:   saat,

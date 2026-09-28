@@ -173,3 +173,67 @@ func TestNamaTahapDanStatusVERBATIMDariKorpus(t *testing.T) {
 			"bila bertambah, ralat tiket 01 harus dibaca ulang", n)
 	}
 }
+
+// TestPosisiLayarBukanNamaTahap mengunci ralat 28-09-2026.
+//
+// ⛔ CACAT YANG NYATA, dan uji ini yang menahannya tetap mati. Ronde pertama
+// menulis bahwa `T_WORK_POLIS.POSITION` menyimpan nama assignment. Yang
+// membantahnya `Activity/ProtectAccept.xml`: ia membandingkan
+// `pyWorkPage.Position` dengan `"Offer"` b1207 dan `"Premium"` b2288 —
+// dua nilai yang di seluruh korpus adalah satu-satunya yang pernah disetel
+// ke properti itu.
+//
+// Bila tidak diralat: setiap keputusan dibandingkan dengan "Offer"/"Premium",
+// nol di antaranya cocok dengan ketiga nama tahap, dan SELURUH permintaan
+// dijawab "tahap polis tidak dikenal" — hijau di setiap uji murni, mati pada
+// baris nyata pertama.
+func TestPosisiLayarBukanNamaTahap(t *testing.T) {
+	if models.PosisiOffer != "Offer" || models.PosisiPremium != "Premium" {
+		t.Fatalf("posisi = %q/%q, mau Offer/Premium",
+			models.PosisiOffer, models.PosisiPremium)
+	}
+	// ⛔ Dan keduanya BUKAN nama tahap. Kalau suatu hari seseorang
+	// menyamakannya, uji ini yang berbunyi lebih dulu.
+	for _, p := range []string{models.PosisiOffer, models.PosisiPremium} {
+		if models.TahapPolisDikenal(p) {
+			t.Errorf("posisi layar %q terbaca sebagai nama tahap; keduanya "+
+				"hal yang BERBEDA walau kata-katanya mirip", p)
+		}
+	}
+	// Dan sebaliknya: nama tahap bukan posisi layar.
+	for _, tahap := range []string{
+		models.TahapPolisPenawaran, models.TahapPolisDetail, models.TahapPolisSummary,
+	} {
+		if tahap == models.PosisiOffer || tahap == models.PosisiPremium {
+			t.Errorf("nama tahap %q sama dengan posisi layar", tahap)
+		}
+	}
+}
+
+func TestPosisiLayarVERBATIMDariKorpus(t *testing.T) {
+	const letak = `D:\XML\RNM_BRD\PremiumList Life\Activity\ProtectAccept.xml`
+	isi, err := os.ReadFile(letak)
+	if err != nil {
+		t.Skipf("korpus tidak terjangkau di mesin ini (%v); nilai tidak terperiksa", err)
+	}
+	teks := string(isi)
+	// `ProtectAccept` memakai keduanya untuk memilih pemeriksaan mana yang
+	// berlaku - itulah bukti bahwa `Position` posisi LAYAR, bukan tahap.
+	for _, syarat := range []string{
+		`pyWorkPage.Position=="` + models.PosisiOffer + `"`,
+		`pyWorkPage.Position=="` + models.PosisiPremium + `"`,
+	} {
+		if !strings.Contains(teks, syarat) {
+			t.Errorf("ProtectAccept tidak lagi memuat syarat %s", syarat)
+		}
+	}
+	// ⛔ Dan ia TIDAK pernah membandingkan Position dengan nama tahap.
+	for _, tahap := range []string{
+		models.TahapPolisPenawaran, models.TahapPolisDetail, models.TahapPolisSummary,
+	} {
+		if strings.Contains(teks, `pyWorkPage.Position=="`+tahap+`"`) {
+			t.Errorf("ProtectAccept membandingkan Position dengan nama tahap %q; "+
+				"ralat 28-09-2026 harus dibaca ulang", tahap)
+		}
+	}
+}

@@ -73,7 +73,10 @@ func TestNolAturanOtomatisMenetapkanKeputusan(t *testing.T) {
 		}
 	}
 	// Dan ia memang MENERIMA keputusannya, bukan menurunkannya.
-	if !strings.Contains(teks, "models.TransisiPenawaran(keadaan.Position, keputusan)") {
+	//
+	// ⚠️ Tahapnya dibaca dari Status, bukan Position -
+	// ralat 28-09-2026; lihat KeadaanPolis di repository.
+	if !strings.Contains(teks, "models.TransisiPenawaran(keadaan.Status, keputusan)") {
 		t.Error("Putuskan tidak meneruskan keputusan pengguna ke tabel transisi")
 	}
 }

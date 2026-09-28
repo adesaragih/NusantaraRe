@@ -17,6 +17,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
+	"nusantarare/internal/models"
 )
 
 // ErrWorkPolisTidakAda - baris kerja polis yang diminta tidak ada.
@@ -28,13 +30,30 @@ type WorkPolis struct{ db *DB }
 // NewWorkPolis menyusunnya.
 func NewWorkPolis(db *DB) *WorkPolis { return &WorkPolis{db: db} }
 
-// KeadaanPolis adalah tahap dan status kerja sebuah polis.
+// KeadaanPolis adalah posisi layar dan status kerja sebuah polis.
+//
+// ⛔ RALAT 28-09-2026. Ronde pertama menulis bahwa `POSITION` menyimpan
+// nama assignment. KELIRU, dan `Activity/ProtectAccept.xml` yang
+// membantahnya: ia membandingkan `pyWorkPage.Position` dengan `"Offer"`
+// b1207 dan `"Premium"` b2288 - bukan dengan nama assignment mana pun.
+// Kedua nilai itu satu-satunya yang korpus pernah setel ke properti itu.
+//
+// Pembagian yang benar:
+//
+//	POSITION  `pyWorkPage.Position`  -> Offer | Premium   (posisi LAYAR)
+//	STATUS    `pyWorkStatus`         -> Input Offer Life | Input Premium
+//	                                    Detail | Input Premium Summary |
+//	                                    Resolved-Rejected | Resolved-Completed
+//
+// ⚠️ Akibat kekeliruannya nyata: baris warisan menyimpan `Offer` di
+// `POSITION`, dan pencarian dengan `"Input Offer Life"` menemukan NOL baris -
+// kotak masuk kosong untuk pekerjaan yang benar-benar ada.
 type KeadaanPolis struct {
 	ID string
-	// Position VERBATIM nama assignment flow - lihat models.TahapPolis*.
+	// Position - `Offer` atau `Premium`; lihat models.Posisi*.
 	Position string
-	// Status kosong berarti kasus BELUM ditutup (ADR-U-0027). Flow hanya
-	// mengenal dua status akhir, dan nol status untuk kasus berjalan.
+	// Status - `pyWorkStatus`: nama assignment selama berjalan, `Resolved-*`
+	// saat tertutup. Kosong berarti belum pernah disetel (ADR-U-0027).
 	Status string
 	Lini   string
 }
@@ -71,24 +90,24 @@ func (r *WorkPolis) Keadaan(ctx context.Context, id string) (KeadaanPolis, error
 
 // sqlPindahTahapPolis merakit perpindahan tahap.
 //
-// ⛔ Syarat WHERE menyertakan POSITION LAMA, dan itu bukan kehati-hatian
+// ⛔ Yang ditulis `STATUS`, bukan `POSITION` - lihat ralat di
+// `KeadaanPolis`. Tahap adalah `pyWorkStatus`; `POSITION` menyimpan posisi
+// layar (`Offer`/`Premium`) dan tidak berubah karena perpindahan tahap.
+//
+// ⛔ Syarat WHERE menyertakan STATUS LAMA, dan itu bukan kehati-hatian
 // berlebih: baris dibaca di luar transaksi, jadi ia dapat berpindah di
 // antara baca dan tulis. Tanpa syarat itu dua permintaan serentak sama-sama
 // menang, dan yang kedua memindahkan kasus dari tahap yang sudah bukan
 // tahapnya lagi. Pola yang sama dengan `PerbaruiStatusBaris` di Claim Life.
-//
-// ⚠️ `STATUS` ikut DIKOSONGKAN: perpindahan tahap berarti kasus berjalan
-// lagi. Kasus yang pindah tetapi statusnya masih `Resolved-*` akan tampak
-// tertutup dari satu sisi dan berjalan dari sisi lain.
 func sqlPindahTahapPolis(tabel string) string {
 	return fmt.Sprintf(
-		`UPDATE %s SET POSITION = :1, STATUS = NULL
-		  WHERE ID = :2 AND (POSITION = :3 OR (POSITION IS NULL AND :3 IS NULL))`, tabel)
+		`UPDATE %s SET STATUS = :1
+		  WHERE ID = :2 AND (STATUS = :3 OR (STATUS IS NULL AND :3 IS NULL))`, tabel)
 }
 
 // PindahTahap memindahkan polis ke tahap lain.
 func (r *WorkPolis) PindahTahap(ctx context.Context, tx *Tx,
-	id, posisiLama, posisiBaru string) error {
+	id, tahapLama, tahapBaru string) error {
 
 	tabel, err := r.db.Qualify("T_WORK_POLIS")
 	if err != nil {
@@ -98,7 +117,7 @@ func (r *WorkPolis) PindahTahap(ctx context.Context, tx *Tx,
 	if err := PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, posisiBaru, id, kosongJadiNil(posisiLama))
+	hasil, err := tx.tx.ExecContext(ctx, q, tahapBaru, id, kosongJadiNil(tahapLama))
 	if err != nil {
 		return fmt.Errorf("repository: memindahkan tahap polis: %w", err)
 	}
@@ -111,13 +130,15 @@ func (r *WorkPolis) PindahTahap(ctx context.Context, tx *Tx,
 // `TutupKasus` Claim Life (butir bb): kotak masuk adalah worklist, dan kasus
 // yang tertutup tidak boleh berdiri di antrean mana pun.
 //
-// ⛔ Dan `STATUS IS NULL` menjadi syarat: kasus yang SUDAH tertutup tidak
-// ditutup lagi dengan status yang berbeda. Dua penutupan berturut-turut akan
-// menimpa alasan penutupan yang pertama, dan alasan itu jejak.
+// ⛔ Syaratnya `STATUS` BUKAN salah satu status akhir - bukan `IS NULL`.
+// Sejak ralat 28-09-2026, `STATUS` juga menyimpan nama tahap selama kasus
+// berjalan, jadi `IS NULL` hanya benar untuk kasus yang belum pernah
+// bertahap. Yang dijaga: kasus yang SUDAH tertutup tidak ditutup lagi dengan
+// alasan yang berbeda - dan alasan penutupan itu jejak.
 func sqlTutupPolis(tabel string) string {
 	return fmt.Sprintf(
 		`UPDATE %s SET STATUS = :1, POSITION = NULL
-		  WHERE ID = :2 AND STATUS IS NULL`, tabel)
+		  WHERE ID = :2 AND (STATUS IS NULL OR STATUS NOT IN (:3, :4))`, tabel)
 }
 
 // TutupKasus menutup kasus polis dengan status kerja akhirnya.
@@ -130,7 +151,8 @@ func (r *WorkPolis) TutupKasus(ctx context.Context, tx *Tx, id, status string) e
 	if err := PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, status, id)
+	hasil, err := tx.tx.ExecContext(ctx, q, status, id,
+		models.StatusPolisDitolak, models.StatusPolisSelesai)
 	if err != nil {
 		return fmt.Errorf("repository: menutup kasus polis: %w", err)
 	}

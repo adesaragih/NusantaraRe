@@ -212,3 +212,69 @@ selalu **datang dari pengguna**, tidak pernah dihitung.
 Layar **Input Offer** beserta ketiga tombolnya, dan kotak masuk `PremiumList` beserta
 `Input Premium` b16472 / `Input Offer` b16964. Backend-nya siap dan berute; layarnya
 bagian 2.
+
+
+## ⛔ RALAT ATAS IMPLEMENTASI BAGIAN 1 — 28 September 2026
+
+Saat membaca `Activity/ProtectAccept.xml` untuk bagian 2, rule itu **membantah** kolom yang
+bagian 1 tulis.
+
+### Apa yang keliru
+
+Bagian 1 menulis — di `models/polis_penawaran.go` dan `repository/polis_work.go` — bahwa
+`T_WORK_POLIS.POSITION` menyimpan **nama assignment** *(`Input Offer Life`, …)*.
+
+`ProtectAccept` membandingkan `pyWorkPage.Position` dengan:
+
+| Baris | Syarat |
+| ---: | --- |
+| b1207 | `pyWorkPage.Position=="Offer"` → pemeriksaan `COB can't null` |
+| b2288 | `pyWorkPage.Position=="Premium"` → `SOB can't null` |
+| b3792, b3958, b4144, b4376 | `Position=="Premium"` → seluruh pemeriksaan saldo |
+
+Dan `Offer`/`Premium` adalah **satu-satunya** nilai yang korpus pernah setel ke properti itu:
+
+```
+InputPolicyHolder.xml            b712   pyWorkPage.Position = "Offer"   (property-set Assignment2)
+InputPolicyHolder.xml            b2352  pyWorkPage.Position = "Offer"   (assign konektor)
+Activity/InputOfferLife_preAct   b271   pyWorkPage.Position = "Offer"
+Activity/countCategoryAttachment b272   pyWorkPage.Position = "Premium"
+```
+
+### Pembagian yang benar
+
+```
+POSITION   pyWorkPage.Position  -> Offer | Premium                    (posisi LAYAR)
+STATUS     pyWorkStatus         -> Input Offer Life | Input Premium Detail |
+                                   Input Premium Summary |
+                                   Resolved-Rejected | Resolved-Completed
+```
+
+### ⚠️ Akibatnya bila tidak diralat
+
+Dua, dan keduanya diam:
+
+1. **Kotak masuk kosong.** Baris warisan menyimpan `Offer` di `POSITION`; pencarian dengan
+   `"Input Offer Life"` menemukan **nol** baris — untuk pekerjaan yang benar-benar ada.
+2. **Setiap keputusan ditolak.** Layanan membaca tahap dari `POSITION`, membandingkannya dengan
+   ketiga nama tahap, nol cocok → **seluruh** permintaan dijawab *"tahap polis tidak dikenal"*.
+   Hijau di setiap uji murni, mati pada baris nyata pertama.
+
+### Yang diperbaiki
+
+| Berkas | Perubahan |
+| --- | --- |
+| `models/polis_penawaran.go` | `PosisiOffer`/`PosisiPremium` lahir dengan buktinya; komentar `TahapPolis*` diralat |
+| `repository/polis_work.go` | `PindahTahap` menulis `STATUS` *(bukan `POSITION`)*, syarat optimistik atas status lama; `TutupKasus` bersyarat `STATUS NOT IN (akhir)` — bukan `IS NULL`, yang sejak ralat ini hanya benar untuk kasus yang belum pernah bertahap |
+| `services/polis_penawaran.go` | tahap dibaca dari `keadaan.Status` |
+
+**Penjaga baru**, keduanya dibuktikan merah:
+
+- `TestPosisiLayarBukanNamaTahap` + `TestPosisiLayarVERBATIMDariKorpus` — membaca
+  `ProtectAccept.xml` **langsung** dan menuntut kedua syarat itu masih ada, **dan** menuntut
+  `Position` tidak pernah dibandingkan dengan nama tahap.
+- `TestPindahTahapMenulisStatusBukanPosition` + `TestTutupPolisMenolakPenutupanKedua`.
+
+⭐ Yang menemukannya **membaca rule berikutnya**, bukan membaca ulang yang sudah dibaca. Peta
+konektor bagian 1 benar; yang keliru adalah **kolom tempat menaruh hasilnya** — dan itu hanya
+terlihat dari rule yang MEMAKAI kolom itu.

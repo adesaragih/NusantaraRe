@@ -57,9 +57,19 @@ const (
 
 // Nama tahap polis - VERBATIM `pyWorkStatus` tiap assignment.
 //
-// ⛔ Nilai inilah yang masuk `T_WORK_POLIS.POSITION` (migrasi 050). Ia nama
-// KONEKTOR/assignment apa adanya, bukan kata kita sendiri: baris warisan
-// menyimpan teks ini, dan kata yang diperindah membuat kotak masuk kosong.
+// ⛔ RALAT 28-09-2026. Komentar ronde pertama berbunyi *"nilai inilah yang
+// masuk `T_WORK_POLIS.POSITION`"*. KELIRU. Nilai ini `pyWorkStatus`, dan yang
+// masuk kolom `STATUS`. Kolom `POSITION` menyimpan hal yang BERBEDA - lihat
+// `PosisiOffer`/`PosisiPremium` di bawah.
+//
+// Yang membantahnya `Activity/ProtectAccept.xml`, yang membandingkan
+// `pyWorkPage.Position` dengan `"Offer"` (b1207) dan `"Premium"` (b2288,
+// b3792, b3958, b4144, b4376) - bukan dengan nama assignment mana pun.
+//
+// ⚠️ Akibat kekeliruannya nyata: baris warisan menyimpan `Offer` atau
+// `Premium` di `POSITION`, sedangkan kode yang mencarinya dengan
+// `"Input Offer Life"` akan menemukan NOL baris - kotak masuk kosong untuk
+// pekerjaan yang benar-benar ada.
 const (
 	// TahapPolisPenawaran - `Assignment2` b1316, status b1340.
 	TahapPolisPenawaran = "Input Offer Life"
@@ -78,6 +88,28 @@ const (
 	// Perpindahan KE tahap ini karena itu TIDAK disediakan di sini - ia akan
 	// menjadi jalur yang kami karang sendiri.
 	TahapPolisSummary = "Input Premium Summary"
+)
+
+// Posisi layar polis - VERBATIM nilai `pyWorkPage.Position`.
+//
+// ⛔ DUA nilai, dan hanya dua di seluruh korpus:
+//
+//	"Offer"    `InputPolicyHolder.xml` b712 (property-set `Assignment2`),
+//	           b2352 (assign konektor), `InputOfferLife_preAct.xml` b271
+//	"Premium"  `countCategoryAttachment_act.xml` b272
+//
+// ⚠️ Ia BUKAN tahap, dan bukan pula hasil penggolong - walau kata-katanya
+// sama dengan `LanjutOffer`/`LanjutPremium`. Yang ini keadaan tersimpan pada
+// halaman kerja; yang itu `pyExpression` sebuah konektor. Keduanya sengaja
+// dibedakan namanya di sini supaya tidak ada yang menyamakan keduanya tanpa
+// memeriksa - walau nilainya kebetulan sama.
+//
+// Gunanya: `Activity/ProtectAccept.xml` memakainya untuk memilih pemeriksaan
+// mana yang berlaku. `COB can't null` hanya saat `Offer` (b1207); `SOB can't
+// null` dan seluruh pemeriksaan saldo hanya saat `Premium` (b2288, b3958).
+const (
+	PosisiOffer   = "Offer"
+	PosisiPremium = "Premium"
 )
 
 // Keputusan penawaran - VERBATIM `pyExpression` konektor keputusan.
