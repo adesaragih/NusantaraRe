@@ -23,11 +23,38 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 	"time"
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/services"
 )
+
+// kotakMasukPolis melayani GET /api/polis-life.
+//
+// ⛔ GET: ia MEMBACA. Kotak masuk yang mengubah sesuatu adalah kotak masuk
+// yang berubah karena seseorang menyegarkan halamannya.
+func kotakMasukPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !svc.PunyaDatabase() {
+			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			return
+		}
+		ukuran, _ := strconv.Atoi(r.URL.Query().Get("ukuran"))
+		// ⚠️ Halaman yang tidak terbaca menjadi 0, dan services menjepitnya
+		// ke 1 - bukan menjadi galat. Daftar yang ditolak karena satu
+		// parameter salah ketik lebih menjengkelkan daripada berguna.
+		halaman, _ := strconv.Atoi(r.URL.Query().Get("halaman"))
+		hal, err := svc.InboxPolis().Ambil(r.Context(), pelakuDari(r, stubPelaku),
+			r.URL.Query().Get("posisi"), halaman, ukuran)
+		if jawabGalatPolis(w, err) {
+			return
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(hal)
+	}
+}
 
 // isiKeputusanPolis adalah badan permintaan keputusan.
 type isiKeputusanPolis struct {

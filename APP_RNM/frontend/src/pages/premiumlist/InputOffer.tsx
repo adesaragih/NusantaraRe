@@ -1,0 +1,146 @@
+// Layar keputusan penawaran — tiket 01 bagian 2.
+//
+// Meniru `Section/InputOfferLife.xml` + `Section/ConfirmSection.xml`, yang
+// keduanya memanggil `Activity/ProtectAccept.xml` (b639/b868, b11420/b11652)
+// sebelum meneruskan.
+//
+// ⛔ KETIGA TOMBOL TIDAK SAMA TERSEDIANYA. `Reject` muncul TEPAT SEKALI di
+// seluruh flow — `Transition9` b2306 pada `Decision2`, yaitu sesudah Input
+// Premium Detail. Di tahap penawaran ia tidak punya konektor, jadi layar
+// TIDAK menawarkannya di sana: tombol yang pasti dijawab 409 adalah tombol
+// yang mengajari orang mengabaikan galat.
+//
+// ⛔ `Confirm` di tahap penawaran TIDAK menutup dan TIDAK memindahkan — ia
+// menyerahkan kasus ke penggolong `Decision3`, dan layar lalu MENANYAKAN
+// `Offer` atau `Premium`. Menyembunyikan langkah itu berarti layar
+// memutuskan sendiri hal yang di sistem lama ditanyakan.
+//
+// ⚠️ Gerbang `ProtectAccept` dijalankan BACKEND. Yang di sini hanya
+// menampilkan kalimatnya — VERBATIM, termasuk `Please choose no offer !`
+// dengan spasi sebelum tanda serunya.
+
+import { useState } from 'react'
+
+import { KEPUTUSAN_POLIS, PENGGOLONG_POLIS } from '../../assets/labels.premiumlist'
+import { Gagal } from '../../components/ui/dasar'
+import {
+  bolehRejectDiTahap,
+  golongkanPenawaran,
+  putuskanPenawaran,
+  type AkibatKeputusanPolis,
+} from '../../services/api'
+
+/** Menyusun kalimat tentang akibat sebuah keputusan. */
+export function ringkasanAkibat(a: AkibatKeputusanPolis): string {
+  if (a.menungguPenggolong) {
+    return 'Penawaran dikonfirmasi. Pilih kelanjutannya.'
+  }
+  if (a.statusWork !== '') return `Kasus ditutup — ${a.statusWork}.`
+  if (a.tahapTujuan !== '') return `Kasus berpindah ke ${a.tahapTujuan}.`
+  return 'Keputusan tersimpan.'
+}
+
+export default function InputOffer({
+  polisID,
+  tahap,
+  onSelesai,
+}: {
+  polisID: string
+  /** Tahap berjalan — `pyWorkStatus`, bukan posisi layar. */
+  tahap: string
+  onSelesai: () => void
+}) {
+  const [akibat, setAkibat] = useState<AkibatKeputusanPolis | null>(null)
+  const [galat, setGalat] = useState<unknown>(null)
+  const [sibuk, setSibuk] = useState(false)
+
+  async function jalankan(kerja: () => Promise<AkibatKeputusanPolis>): Promise<void> {
+    if (sibuk) return
+    setSibuk(true)
+    setGalat(null)
+    try {
+      const hasil = await kerja()
+      setAkibat(hasil)
+      // Kasus yang tertutup atau berpindah tidak lagi milik layar ini.
+      if (!hasil.menungguPenggolong) onSelesai()
+    } catch (e) {
+      setGalat(e)
+    } finally {
+      setSibuk(false)
+    }
+  }
+
+  const menunggu = akibat?.menungguPenggolong === true
+
+  return (
+    <section className="polis-offer">
+      <h2 className="polis-offer__judul">Input Offer</h2>
+      <p className="polis-offer__tahap">
+        {polisID} — {tahap}
+      </p>
+
+      {galat !== null && <Gagal galat={galat} />}
+      {akibat !== null && <p role="status">{ringkasanAkibat(akibat)}</p>}
+
+      {!menunggu && (
+        <p className="polis-offer__aksi">
+          <button
+            type="button"
+            disabled={sibuk}
+            onClick={() => {
+              void jalankan(() => putuskanPenawaran(polisID, KEPUTUSAN_POLIS.confirm))
+            }}
+          >
+            {KEPUTUSAN_POLIS.confirm}
+          </button>{' '}
+          {/* ⛔ Hanya bila tahapnya punya konektornya — lihat kepala berkas. */}
+          {bolehRejectDiTahap(tahap) && (
+            <>
+              <button
+                type="button"
+                disabled={sibuk}
+                onClick={() => {
+                  void jalankan(() => putuskanPenawaran(polisID, KEPUTUSAN_POLIS.reject))
+                }}
+              >
+                {KEPUTUSAN_POLIS.reject}
+              </button>{' '}
+            </>
+          )}
+          <button
+            type="button"
+            disabled={sibuk}
+            onClick={() => {
+              void jalankan(() => putuskanPenawaran(polisID, KEPUTUSAN_POLIS.decline))
+            }}
+          >
+            {KEPUTUSAN_POLIS.decline}
+          </button>
+        </p>
+      )}
+
+      {menunggu && (
+        <p className="polis-offer__penggolong">
+          <button
+            type="button"
+            disabled={sibuk}
+            onClick={() => {
+              void jalankan(() => golongkanPenawaran(polisID, PENGGOLONG_POLIS.premium))
+            }}
+          >
+            {PENGGOLONG_POLIS.premium}
+          </button>{' '}
+          <button
+            type="button"
+            disabled={sibuk}
+            onClick={() => {
+              void jalankan(() => golongkanPenawaran(polisID, PENGGOLONG_POLIS.offer))
+            }}
+          >
+            {PENGGOLONG_POLIS.offer}
+          </button>
+        </p>
+      )}
+    </section>
+  )
+}

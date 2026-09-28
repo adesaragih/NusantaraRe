@@ -1304,3 +1304,111 @@ async function mintaFormulir<T>(jalur: string, isi: FormData): Promise<T> {
   }
   return hasil as T
 }
+// ---------------------------------------------------------------------------
+// MODUL PREMIUMLIST LIFE — kotak masuk dan keputusan penawaran (tiket 01).
+// ---------------------------------------------------------------------------
+
+/** Satu baris kotak masuk PremiumList — `InboxPremiumList.xml`. */
+export interface BarisInboxPolis {
+  caseId: string
+  /** `YYYY-MM-DD`; kosong berarti belum ada. */
+  tglCreate: string
+  createOpName: string
+  statusWork: string
+  /** `Offer` atau `Premium` — posisi LAYAR, bukan tahap. */
+  position: string
+  cedingCoName: string
+  policyHolderName: string
+  plNumber: string
+  riSlipRnm: string
+  type: string
+  marketingName: string
+  sobName: string
+  dateReceived: string
+}
+
+/** Satu halaman kotak masuk PremiumList. */
+export interface HalamanInboxPolis {
+  baris: BarisInboxPolis[]
+  /** Cacah SELURUH baris yang cocok, bukan yang di halaman ini. */
+  total: number
+  halaman: number
+  ukuran: number
+}
+
+/**
+ * Membaca kotak masuk PremiumList — `GET /api/polis-life`.
+ *
+ * `posisi` kosong berarti seluruh posisi.
+ */
+export async function ambilKotakMasukPolis(
+  posisi = '',
+  halaman = 1,
+  ukuran = 20,
+): Promise<HalamanInboxPolis> {
+  return minta<HalamanInboxPolis>('/api/polis-life', {
+    kueri: { posisi, halaman, ukuran },
+  })
+}
+
+/** Apa yang terjadi sesudah sebuah keputusan penawaran. */
+export interface AkibatKeputusanPolis {
+  /** Terisi bila kasus BERPINDAH tahap. */
+  tahapTujuan: string
+  /** Terisi bila kasus DITUTUP. */
+  statusWork: string
+  /**
+   * `true` bila yang berikutnya penggolong `Offer`/`Premium`.
+   *
+   * ⛔ Tiga hasil yang BERBEDA — berpindah, tertutup, menunggu penggolong —
+   * dan layar harus dapat membedakannya. Jawaban yang hanya berkata
+   * "berhasil" memaksa layar membaca ulang seluruh polis untuk menebak.
+   */
+  menungguPenggolong: boolean
+}
+
+/**
+ * Menerapkan satu keputusan penawaran — `POST …/keputusan`.
+ *
+ * ⛔ `Reject` hanya sah dari tahap Input Premium Detail; di tahap penawaran
+ * ia TIDAK punya konektor, dan backend menjawab **409**. Layar karena itu
+ * tidak menawarkannya di sana — lihat `bolehRejectDiTahap`.
+ */
+export async function putuskanPenawaran(
+  polisID: string,
+  keputusan: string,
+): Promise<AkibatKeputusanPolis> {
+  return minta<AkibatKeputusanPolis>(
+    `/api/polis-life/${encodeURIComponent(polisID)}/keputusan`,
+    { metode: 'POST', badan: { keputusan } },
+  )
+}
+
+/** Menerapkan hasil penggolong sesudah `Confirm` — `POST …/penggolong`. */
+export async function golongkanPenawaran(
+  polisID: string,
+  hasil: string,
+): Promise<AkibatKeputusanPolis> {
+  return minta<AkibatKeputusanPolis>(
+    `/api/polis-life/${encodeURIComponent(polisID)}/penggolong`,
+    { metode: 'POST', badan: { hasil } },
+  )
+}
+
+/** Nama tahap polis — VERBATIM `pyWorkStatus` tiap assignment. */
+export const TAHAP_POLIS = {
+  penawaran: 'Input Offer Life',
+  detail: 'Input Premium Detail',
+  summary: 'Input Premium Summary',
+} as const
+
+/**
+ * Apakah `Reject` punya jalur dari tahap ini.
+ *
+ * ⛔ `Reject` muncul TEPAT SEKALI di seluruh flow — `Transition9` b2306 pada
+ * `Decision2`, yaitu sesudah Input Premium Detail. Menawarkannya di tahap
+ * penawaran berarti menjanjikan jalur yang tidak pernah ada.
+ */
+export function bolehRejectDiTahap(tahap: string): boolean {
+  return tahap === TAHAP_POLIS.detail
+}

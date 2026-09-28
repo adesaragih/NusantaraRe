@@ -61,6 +61,12 @@ var medanTypeYangSah = map[string]string{
 	// punya medan bernama `Type` adalah persis keadaan yang membuat orang
 	// membaca yang satu sebagai yang lain.
 	"models/polis_validasi.go": "PenawaranPolis - Type POLIS (T_PREMIUM_LIST), muatan gerbang ProtectAccept",
+	// ⛔ Kotak masuk PremiumList: `Type` salah satu dari tiga belas
+	// kolom `InboxPremiumList.xml` (b836 `A.Type`). Ia DIBACA dari
+	// `T_PREMIUM_LIST.TYPE` - rumah tersimpannya - lalu menyeberang ke
+	// layar. Nol baris disimpan dari sini; keduanya jalur BACA.
+	"repository/polis_inbox.go": "BarisInboxPolis - kolom baca InboxPremiumList b836",
+	"services/polis_inbox.go":   "BarisInboxPolis - bentuk layar, jalur baca",
 }
 
 func TestTypeKlaimHanyaSatuRumahTersimpan(t *testing.T) {

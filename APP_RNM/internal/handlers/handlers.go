@@ -88,6 +88,7 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 	// ⛔ DUA rute, bukan satu. `Offer`/`Premium` BUKAN keputusan pengguna
 	// atas penawaran melainkan hasil penggolong `Decision3`, yang hanya sah
 	// sesudah `Confirm` di tahap penawaran.
+	mux.HandleFunc("GET /api/polis-life", kotakMasukPolis(svc, stubPelaku))
 	mux.HandleFunc("POST /api/polis-life/{id}/keputusan",
 		putuskanPenawaran(svc, stubPelaku))
 	mux.HandleFunc("POST /api/polis-life/{id}/penggolong",

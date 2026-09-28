@@ -1,6 +1,8 @@
 import { useState } from 'react'
 
 import Beranda from './pages/Beranda'
+import InboxPremiumList from './pages/premiumlist/InboxPremiumList'
+import InputOffer from './pages/premiumlist/InputOffer'
 import InboxClaimLife from './pages/InboxClaimLife'
 import KlaimLife from './pages/KlaimLife'
 import OutstandingClaimLife from './pages/OutstandingClaimLife'
@@ -24,6 +26,8 @@ export default function App() {
   const [halaman, setHalaman] = useState<Halaman>('beranda')
   // Kasus yang sedang dibuka. Kosong berarti belum ada yang dipilih.
   const [kasus, setKasus] = useState('')
+  // Polis yang sedang dibuka, beserta tahapnya - tiket 01 PremiumList.
+  const [polis, setPolis] = useState({ id: '', tahap: '' })
 
   if (masuk === null) {
     return (
@@ -45,6 +49,22 @@ export default function App() {
   return (
     <Shell masuk={masuk} halaman={halaman} onPindah={setHalaman}>
       {halaman === 'beranda' && <Beranda masuk={masuk} onBuka={setHalaman} />}
+      {halaman === 'premiumlist' && polis.id === '' && (
+        <InboxPremiumList
+          onBuka={(caseID, tahap) => {
+            setPolis({ id: caseID, tahap })
+          }}
+        />
+      )}
+      {halaman === 'premiumlist' && polis.id !== '' && (
+        <InputOffer
+          polisID={polis.id}
+          tahap={polis.tahap}
+          onSelesai={() => {
+            setPolis({ id: '', tahap: '' })
+          }}
+        />
+      )}
       {halaman === 'inbox' && (
         <InboxClaimLife
           peran={masuk.peran}
