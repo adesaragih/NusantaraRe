@@ -1347,14 +1347,59 @@ export async function hapusDokumen(klaimID: string, dokID: string): Promise<void
 }
 
 /**
- * Tautan unduh satu dokumen — `View Office Online` b3502 dan tautan baris.
+ * Kegagalan dari jawaban yang TIDAK ok - amplop `{galat}` yang sama dengan
+ * `minta` dan `mintaFormulir`, untuk jalur yang badan suksesnya BUKAN JSON.
+ */
+function kegagalanDari(status: number, teks: string): ApiFailure {
+  let isi: unknown
+  if (teks.trim() !== '') {
+    try {
+      isi = JSON.parse(teks)
+    } catch {
+      return new ApiFailure(status, {
+        code: 'BACKEND_TIDAK_TERJANGKAU',
+        message:
+          'Jawaban dari server bukan JSON; permintaan tampaknya tidak ' +
+          'sampai ke backend.',
+      })
+    }
+  }
+  const o = (isi ?? {}) as { galat?: unknown }
+  return new ApiFailure(status, {
+    code: 'DITOLAK_BACKEND',
+    message: typeof o.galat === 'string' && o.galat !== '' ? o.galat : undefined,
+  })
+}
+
+/**
+ * Isi satu dokumen sebagai Blob — `View Office Online` b3502
+ * (runActivity `DownloadDocumentClaim` b3519).
+ *
+ * ⛔ LEWAT `fetch`, bukan pranala (GILIRAN-12 paket 0). Ronde sebelumnya
+ * mengembalikan URL untuk `<a href download>`; browser yang mengikuti pranala
+ * tidak membawa `X-Pelaku`/`X-Peran`, dan backend membaca identitas HANYA
+ * dari header itu - setiap unduhan dijawab 401.
  *
  * ⛔ Jalurnya TIDAK menyebut klaim, dan itu meniru aslinya: `URLPUBLIC`
  * dicari dengan `imageid` saja (`GetLinkStorage_SQL.xml` b91). Batas klaimnya
  * tetap ditegakkan backend.
  */
-export function tautanDokumen(dokID: string): string {
-  return rakitURL(`/api/dokumen/${encodeURIComponent(dokID)}/isi`)
+export async function ambilIsiDokumen(dokID: string): Promise<Blob> {
+  const kendali = new AbortController()
+  const jam = setTimeout(() => {
+    kendali.abort()
+  }, BATAS_WAKTU_MS)
+  try {
+    const jawab = await fetch(rakitURL(`/api/dokumen/${encodeURIComponent(dokID)}/isi`), {
+      method: 'GET',
+      headers: { ...headerIdentitas() },
+      signal: kendali.signal,
+    })
+    if (!jawab.ok) throw kegagalanDari(jawab.status, await jawab.text())
+    return await jawab.blob()
+  } finally {
+    clearTimeout(jam)
+  }
 }
 
 /**

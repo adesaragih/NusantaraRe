@@ -37,10 +37,11 @@
 import { useState } from 'react'
 
 import { DOKUMEN } from '../../assets/labels.claimlife'
+import { simpanBlob } from '../../lib/simpanBlob'
 import {
+  ambilIsiDokumen,
   hapusDokumen,
   pesanGalat,
-  tautanDokumen,
   unggahDokumen,
   type Dokumen,
 } from '../../services/api'
@@ -124,6 +125,22 @@ export function PanelDokumenPeserta({
       setSibuk(false)
     }
   }
+
+  /**
+   * `View Office Online` b3502 - unduhan LEWAT klien, supaya identitas ikut.
+   *
+   * ⚠️ Tidak memanggil `onBerubah`: mengunduh tidak mengubah apa pun, dan
+   * membaca ulang daftar sesudahnya hanya menambah satu permintaan.
+   */
+  async function unduh(b: BarisDokumen): Promise<void> {
+    setGalat(null)
+    try {
+      simpanBlob(await ambilIsiDokumen(b.id), b.namaFile)
+    } catch (e) {
+      setGalat(pesanGalat(e) ?? 'Gagal mengunduh dokumen.')
+    }
+  }
+
   return (
     <section className="dokumen">
       <h4 className="dokumen__judul">Dokumen pendukung</h4>
@@ -154,9 +171,14 @@ export function PanelDokumenPeserta({
                       kosong berarti SEDANG diproses, bukan hilang. */}
                   {b.terunggah ? (
                     <>
-                      <a href={tautanDokumen(b.id)} download={b.namaFile}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void unduh(b)
+                        }}
+                      >
                         {DOKUMEN.lihatOfficeOnline}
-                      </a>{' '}
+                      </button>{' '}
                       <button
                         type="button"
                         disabled={sibuk}

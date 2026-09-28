@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
 import { DOKUMEN } from '../../assets/labels.claimlife'
-import { dokumenTerunggah, tautanDokumen, type Dokumen } from '../../services/api'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
+import { dokumenTerunggah, type Dokumen } from '../../services/api'
 import { barisDokumen, PRANALA_MENUNGGU } from './PanelDokumenPeserta'
 
 // Uji daftar dokumen pendukung — A3 kelompok 1.
@@ -101,16 +104,13 @@ describe('label DocumentLife', () => {
 
 // Butir be — unggah/unduh/hapus lewat outbox, 27-09-2026.
 describe('dokumen lewat outbox', () => {
-  it('tautan unduh memakai rute kita, bukan URL layanan luar', () => {
-    // ⛔ Butir be: selama penyambungan nyata belum disetujui, tautannya
-    // rute KITA — dan rute itu berbatas identitas.
-    // ⛔ TEKS, dan uji inilah yang menemukan sebabnya. Ditulis sebagai
-    // angka, `20260927103000123` menjadi `...124` di JavaScript — 17 angka
-    // berada di luar `Number.MAX_SAFE_INTEGER`. Pengenal dokumen karena itu
-    // menyeberang sebagai teks di kedua sisi.
-    const t = tautanDokumen('20260927103000123')
-    expect(t).toContain('/api/dokumen/20260927103000123/isi')
-    expect(t).not.toContain('googleapis')
+  it('View Office Online mengunduh LEWAT klien, bukan pranala', () => {
+    // ⛔ GILIRAN-12 paket 0: `<a href download>` tidak membawa header
+    // identitas, dan setiap unduhan dijawab 401. Jalur, teks pengenal 17
+    // angka, dan headernya diuji perilakunya di `services/unduhdokumen.test.ts`.
+    const sumber = readFileSync(join(__dirname, 'PanelDokumenPeserta.tsx'), 'utf8')
+    expect(sumber).toContain('simpanBlob(await ambilIsiDokumen(b.id), b.namaFile)')
+    expect(sumber).not.toMatch(/<a\s[^>]*href/)
   })
 
   it('tStorageId kosong berarti SEDANG diproses, bukan hilang', () => {
