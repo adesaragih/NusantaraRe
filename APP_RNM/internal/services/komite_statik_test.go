@@ -72,6 +72,13 @@ var berkasKomiteBolehMenyebut = map[string]string{
 	// ⚠️ Pengecualian ini TIDAK melonggarkan aturannya: berkas itu berkas
 	// UJI, ia tidak menulis satu baris pun ke basis data.
 	"internal/repository/strukturkolom_test.go": "penjaga bentuk skema lintas dokumen; berkas uji, nol jalur simpan",
+	// ⛔ MODUL KOMITE CLAIM LIFE sendiri - giliran 10, tiket 01 Komite.
+	// Premis penjaga ini adalah batas KONTEKS: Claim Life tidak memutuskan
+	// atas nama Komite. Berkas di bawah BUKAN Claim Life - brief
+	// GILIRAN-3-KOMITE §0 memberi modul Komite berkas `komite_*`. Disebut
+	// satu per satu, JALUR PENUH; bukan awalan `komite_`, sebab awalan itu
+	// ikut membungkam `komite_test.go`/`komite_db_test.go` milik Claim Life.
+	"internal/repository/komite_inbox.go": "modul Komite Claim Life - pembaca inbox + tangga (tiket 01 Komite)",
 }
 
 // TestNolPenyimpanKeputusanKomiteDiKonteksIni menegakkan batas konteks.

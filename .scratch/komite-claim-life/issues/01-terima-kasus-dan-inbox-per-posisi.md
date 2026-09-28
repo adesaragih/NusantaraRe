@@ -125,3 +125,63 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+## Implementasi — 28-09-2026 (giliran 10, sesi tunggal di `main`)
+
+### Pembacaan ulang XML
+
+| Rule | Yang diambil |
+| --- | --- |
+| `Flow/KomiteLife_Flow.xml` | `Assignment1` `pyImplementation WorkList` b594, `pyRouteTo Custom` b619, router `KomiteRouter` b662 |
+| `Activity/KomiteRouter.xml` | langkah 1 perulangan `.KomiteList` (b227); 1.1 `param.AssignTo = .KomiteID` (b294–295), precondition `.KomiteAproval==0` (b382/b396); transisi sesudah langkah kode `6` |
+| `Claim Life/Activity/CreateKMTLife_Act.xml` (lewat `kasuskomite.go`) | `KomiteID = .OPERATOR_ID` b866/b972, `KomiteAproval = 0` b912/b993, `KomiteCount = 1` b1398 |
+
+⚠️ `[dugaan kuat]` kode transisi `6` = keluar perulangan → yang ditugasi anggota **pertama**
+ber-`KomiteAproval` 0. Ekspor tidak menyebut arti kodenya; `KomiteCount` yang mulai dari 1 dan naik
+per putaran menguatkannya. Bila `6` berarti "lanjut", worklist jatuh ke anggota **terakhir** —
+`[terbuka — pemilik ekspor Pega]`.
+
+### Sudah ada di `main` sebelum tiket ini — tidak disalin
+
+Menerima penyerahan (baris `T_WORK_CLAIM` `KMTLF-`, `T_GENERAL_KOMITE` shared PK, satu baris
+`T_KOMITE_KOMITELIST` per anggota ber-approval `0`, `KOMITE_ID` di baris adjustment dalam satu
+transaksi, penolakan roster kosong) — Claim Life A2 (`services/komite.go` `Serahkan`,
+`repository/kasuskomite.go`). AC "diterima", "roster kosong ditolak", "penunjuk dua arah satu
+transaksi", "`KOMITE_LOOP` = cacah roster" karena itu **sudah terpenuhi di sana**; tiket ini tidak
+menyentuh berkas itu.
+
+### Yang dibangun
+
+- `repository/komite_inbox.go` — `GET` inbox: anggota **berjalan** (`KOMITE_URUT` terkecil yang
+  masih `0`) yang adalah pelaku (`KOMITE_OPERATORID` = akun, km2), kasus tidak `Resolved-Completed`;
+  pembacaan satu kasus + tangga. Nilai klaim lewat `TO_CHAR` ber-NLS; email **tidak** dibaca.
+  Penanda bernama diikat **berurutan** (idiom `AmbilInbox` Claim Life) — dikunci
+  `TestInboxKomitePenandaBerurutSesuaiArgumen`.
+- `services/komite_inbox.go` — inbox per pelaku; satu kasus hanya untuk **anggota tangga** kasus itu
+  (403, ADR-0014); `GiliranSaya` hanya untuk anggota berjalan pada kasus terbuka; status baris
+  **kata** (`Outstanding`/`Aksep`/`Ditolak`); approval `0` = "Menunggu", kode lain **disebut**
+  ("Kode n") sampai dropdown `ShowTransfer` dibaca di tiket 02.
+- `handlers/rute_komite.go` — `GET /api/komite`, `GET /api/komite/{id}`.
+- Layar `pages/komite/InboxKomite.tsx` (butir menu `Inbox Komite` yang sudah ada di sidebar kini
+  membuka sesuatu) dan `KasusKomite.tsx` (baca saja). Tiga kolom Pega-standar **dipinjam**
+  `InboxPremiumList`, ditandai di `labels.komite.ts`.
+- ⚠️ Penjaga batas konteks Claim Life (`TestNolPenyimpanKeputusanKomiteDiKonteksIni`) menolak berkas
+  yang menyebut `T_KOMITE_KOMITELIST`. Ditambah **satu** pengecualian jalur penuh beralasan untuk
+  `repository/komite_inbox.go` (modul Komite) — bukan awalan `komite_`, yang ikut membungkam
+  `komite_test.go` milik Claim Life.
+
+### AC — keadaan
+
+| AC | Keadaan |
+| --- | --- |
+| kasus dapat dibuka lewat API beserta baris yang diputuskan | ✅ `GET /api/komite/{id}` (kepala + tangga + `adjustmentId`) |
+| inbox hanya tingkat milik pelaku | ✅ anggota berjalan = pelaku |
+| nilai + `CURRENCY` tanpa float | ✅ teks ujung ke ujung |
+| `KomiteLoop` dipakai apa adanya | ✅ dibaca, tidak dihitung ulang |
+| status sebagai kata | ✅ |
+| muatan `KomiteLoop < 1`/`KomiteList` kosong ditolak | ✅ sudah di A2 (`BuatKasusKomite`, `ErrRosterKomiteKosong`) |
+| uji ujung-ke-ujung lewat HTTP terhadap Oracle | ⚠️ belum — mesin ini tanpa Oracle |
+
+### Angka
+
+Go **555 PASS · 0 FAIL** tingkat atas; vet (+`-tags db`), gofmt bersih · vitest **352** · tsc bersih.

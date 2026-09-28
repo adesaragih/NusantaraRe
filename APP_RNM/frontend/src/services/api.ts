@@ -1705,3 +1705,53 @@ export async function submitRekapPolis(polisID: string): Promise<HasilSubmitReka
     { metode: 'POST' },
   )
 }
+
+// ——— Komite Claim Life tiket 01: Inbox Komite ———
+
+/** Satu baris Inbox Komite. Uang TEKS; status baris KATA. */
+export interface BarisInboxKomite {
+  kasusId: string
+  tglUpdate: string
+  statusWork: string
+  klaimId: string
+  nomorKlaim: string
+  tingkatBerjalan: number
+  komiteLoop: number
+  nilaiKlaim: string
+  mataUang: string
+  statusBaris: string
+}
+
+export interface HalamanInboxKomite {
+  baris: BarisInboxKomite[]
+  total: number
+  halaman: number
+  ukuran: number
+}
+
+export interface AnggotaKasusKomite {
+  urut: number
+  jabatan: string
+  approval: string
+  kataApproval: string
+  komentar: string
+  tglApprove: string
+  saya: boolean
+}
+
+export interface KasusKomite {
+  kasus: BarisInboxKomite
+  adjustmentId: string
+  tangga: AnggotaKasusKomite[]
+  giliranSaya: boolean
+}
+
+/** Inbox Komite milik pelaku — `GET /api/komite`. */
+export async function ambilInboxKomite(halaman = 1): Promise<HalamanInboxKomite> {
+  return minta<HalamanInboxKomite>(`/api/komite?halaman=${String(halaman)}`)
+}
+
+/** Satu kasus komite — `GET /api/komite/{id}`. 403 bila bukan anggota tangga. */
+export async function ambilKasusKomite(kasusID: string): Promise<KasusKomite> {
+  return minta<KasusKomite>(`/api/komite/${encodeURIComponent(kasusID)}`)
+}

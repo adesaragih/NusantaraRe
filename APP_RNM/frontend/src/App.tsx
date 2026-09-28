@@ -5,6 +5,8 @@ import InboxPremiumList from './pages/premiumlist/InboxPremiumList'
 import InputOffer from './pages/premiumlist/InputOffer'
 import PremiumListDetail from './pages/premiumlist/PremiumListDetail'
 import PremiumListSummary from './pages/premiumlist/PremiumListSummary'
+import InboxKomite from './pages/komite/InboxKomite'
+import KasusKomite from './pages/komite/KasusKomite'
 import InboxClaimLife from './pages/claimlife/InboxClaimLife'
 import KlaimLife from './pages/claimlife/KlaimLife'
 import OutstandingClaimLife from './pages/claimlife/OutstandingClaimLife'
@@ -31,6 +33,8 @@ export default function App() {
   const [kasus, setKasus] = useState('')
   // Polis yang sedang dibuka, beserta tahapnya - tiket 01 PremiumList.
   const [polis, setPolis] = useState({ id: '', tahap: '' })
+  // Kasus komite yang sedang dibuka dari Inbox Komite; kosong = daftar.
+  const [kasusKomite, setKasusKomite] = useState('')
 
   if (masuk === null) {
     return (
@@ -107,6 +111,16 @@ export default function App() {
           }}
           onDetail={() => {
             setHalaman('detail')
+          }}
+        />
+      )}
+      {/* Komite Claim Life tiket 01 — Inbox Komite, lalu satu kasus dari baris. */}
+      {halaman === 'komite' && kasusKomite === '' && <InboxKomite onBuka={setKasusKomite} />}
+      {halaman === 'komite' && kasusKomite !== '' && (
+        <KasusKomite
+          kasusID={kasusKomite}
+          onKembali={() => {
+            setKasusKomite('')
           }}
         />
       )}

@@ -124,6 +124,10 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 	// ⛔ GET menghitung tanpa menyimpan; POST menyimpan dalam SATU transaksi
 	// (nomor, rekap, salinan peserta warisan). Dua rute supaya melihat rekap
 	// tidak pernah menerbitkan nomor.
+	// Komite Claim Life tiket 01 - Inbox Komite dan satu kasus. Keduanya GET:
+	// membaca saja; keputusan komite menyusul di tiket 02.
+	mux.HandleFunc("GET /api/komite", inboxKomite(svc, stubPelaku))
+	mux.HandleFunc("GET /api/komite/{id}", kasusKomite(svc, stubPelaku))
 	mux.HandleFunc("GET /api/polis-life/{id}/summary", rekapPolis(svc, stubPelaku))
 	mux.HandleFunc("POST /api/polis-life/{id}/summary",
 		submitRekapPolis(svc, stubPelaku))
