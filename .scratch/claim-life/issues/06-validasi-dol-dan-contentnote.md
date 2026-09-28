@@ -284,3 +284,26 @@ dibuktikan merah bila konstanta dikembalikan.
 tiga yang `= "DEATH"` (3446, 3679, 3823) — dan sensus kode kita menunjukkan **10 dari 21** kode bisnis
 bukan DEATH (5 HEALTH, 2 CI, 2 TPD, 1 TI). Cabang itu **terjangkau** dan belum ditiru.
 
+## Penanda Claim Received — 28 September 2026 (GILIRAN-11 paket 3, butir **bk**)
+
+`[DIPUTUSKAN; veto work owner]` — OQ-M9 **ditutup**. Aturannya: *bila ada rule yang menulis penanda
+ke tabel, ia disimpan di kolom baru (migrasi `021`); bila hanya `Property-Set` di halaman lalu
+ditampilkan, ia dihitung saat baca, tanpa kolom*.
+
+**Bukti — penulis dan pembaca `.MAXCLAIM_RECEIVED` di SELURUH korpus** (`grep -rl` atas
+`D:\XML\RNM_BRD\`): tepat **dua** berkas.
+
+- `Claim Life/Activity/ValidasiClaimReceived_Act.xml` — dua langkah saja: `RDB-List GetProductName`
+  (b248, ambang `MAXEXPIREDCLAIM`) lalu `Property-Set` (b425) yang menulis `.MAXCLAIM_RECEIVED`
+  (b582, rumus b583). **Nol** `Obj-Save`, **nol** `RDB-Save`, **nol** SQL.
+- `Claim Life/Section/ClaimLifeDetailGCNM.xml` — sel read-only `MAX CLAIM RECEIVED`
+  (`pyLabelPreview` b12124, `pyValue` b12131). Pembaca satu-satunya.
+
+**Pilihan: DIHITUNG SAAT BACA, tanpa kolom, tanpa migrasi `021`.** `models.PenandaTerimaKlaim`
+(murni, = `PenandaBatasHari` DOL → `CLAIM_RECEIVED_DATE`), diisi `services.KlaimLife.Ambil` di
+jalur yang sama dengan total peserta; ambangnya `MAXEXPIREDCLAIM` produk polis (butir bh). Bila
+polis, produk, atau ambangnya tak terbaca, penandanya **tidak** dihitung dan alasannya dikirim
+(`penandaTerimaKlaimAlasan`) — kosong tanpa alasan akan terbaca "sah". Layar Detail menampilkannya
+di bawah label VERBATIM `MAX CLAIM RECEIVED`. Penandanya tetap **tidak memblokir** apa pun (OQ-G).
+
+Uji: `TestPenandaTerimaKlaim`, `TestIsiPenandaTerimaKlaim`; kunci JSON peserta diperbarui.

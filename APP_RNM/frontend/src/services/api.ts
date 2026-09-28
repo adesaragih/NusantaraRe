@@ -142,6 +142,13 @@ export interface Peserta {
   tanggalTerimaKlaim: string
   tanggalDokumenLengkap: string
   tanggalKonfirmasi: string
+  /**
+   * Butir bk — `.MAXCLAIM_RECEIVED` (`MAX CLAIM RECEIVED` b12131), dihitung
+   * backend saat baca. Kosong berarti sah — KECUALI `penandaTerimaKlaimAlasan`
+   * terisi: di situ penandanya tidak dapat dihitung, dan alasannya itulah.
+   */
+  penandaTerimaKlaim: string
+  penandaTerimaKlaimAlasan: string
   baris: BarisAdjustment[]
   /** Keenam total uang peserta ini, dihitung backend. Lihat TotalPeserta. */
   total: TotalPeserta
@@ -956,8 +963,11 @@ export async function simpanKeRNM(klaimID: string): Promise<HasilSimpanRNM> {
  * Kode jawaban yang mungkin:
  *   204 berhasil
  *   400 tanggalnya bukan tanggal yang dikenal, atau belum diisi
- *   403 peran tidak mencukupi
- *   422 DOL di luar jendela valuasi — badannya membawa `pesertaId`
+ *   401 tanpa identitas
+ *   403 bukan Admin (butir bj, 28-09-2026)
+ *   409 bukan tahap Outstanding Claim, atau kasusnya sudah ditutup
+ *   422 DOL di luar jendela valuasi — badannya membawa `pesertaId`; atau
+ *       tahap kasus tidak dikenal
  */
 export async function ubahTanggalKejadian(
   klaimID: string,

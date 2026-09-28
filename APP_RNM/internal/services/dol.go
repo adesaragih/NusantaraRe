@@ -218,6 +218,14 @@ func (t *TanggalKejadian) Set(ctx context.Context, pelaku Pelaku,
 	if strings.TrimSpace(klaimID) == "" || strings.TrimSpace(pesertaID) == "" {
 		return fmt.Errorf("%w: pengenal klaim dan peserta wajib diisi", ErrPermintaanTidakSah)
 	}
+	// ⛔ BUTIR bj `[DIPUTUSKAN 28-09-2026, veto work owner]` - PERUBAHAN AUTHZ,
+	// dicatat bertanggal di tiket 07. Gerbang DOL kini SAMA dengan tiga tanggal
+	// lainnya menurut XML: isian DOL `EditDateClaimLife_Section` baca-saja bila
+	// `pyPosition!='ReasLifeAdmin'` (b1000). Sebelum ini siapa pun yang
+	// beridentitas dapat mengubah DOL pada kasus terbuka di tahap mana pun.
+	if err := WajibPeran(pelaku, PeranAdmin); err != nil {
+		return err
+	}
 	if !t.svc.PunyaDatabase() {
 		return repository.ErrTanpaOracle
 	}
@@ -232,6 +240,9 @@ func (t *TanggalKejadian) Set(ctx context.Context, pelaku Pelaku,
 	}
 
 	baca := repository.NewKlaimLife(t.svc.db)
+	if err := gerbangTahapDialogTanggal(ctx, baca, klaimID); err != nil {
+		return err
+	}
 	tipe, err := baca.TypeKlaim(ctx, klaimID)
 	if err != nil {
 		return err
@@ -306,21 +317,8 @@ func (t *TanggalKejadian) SetTanggalKlaim(ctx context.Context, pelaku Pelaku,
 	}
 
 	baca := repository.NewKlaimLife(t.svc.db)
-	kolomTahap, peranPemegang, err := baca.TahapDanPeran(ctx, klaimID)
-	if err != nil {
+	if err := gerbangTahapDialogTanggal(ctx, baca, klaimID); err != nil {
 		return err
-	}
-	// Kolom TAHAP menang; PY_POSITION cadangan untuk baris lama (butir at).
-	tahap := models.TahapDariNama(kolomTahap)
-	if !tahap.Diketahui() {
-		tahap = models.TahapDariPeran(peranPemegang)
-	}
-	if !tahap.Diketahui() {
-		return fmt.Errorf("%w: tahap %q, peran pemegang %q",
-			ErrTahapTidakDikenal, kolomTahap, peranPemegang)
-	}
-	if !models.TahapBolehUbahTanggalKlaim(tahap) {
-		return fmt.Errorf("%w: tahap %s", ErrTahapTidakBolehUbahTanggal, tahap)
 	}
 
 	peserta, err := baca.AmbilPeserta(ctx, klaimID)
@@ -341,6 +339,28 @@ func (t *TanggalKejadian) SetTanggalKlaim(ctx context.Context, pelaku Pelaku,
 	return t.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
 		return baca.PerbaruiTanggalKlaim(ctx, tx, klaimID, pesertaID, tgl)
 	})
+}
+
+// gerbangTahapDialogTanggal adalah gerbang tahap SELURUH isian dialog Edit Date
+// - DOL dan tiga tanggal lainnya (b1000, b1313, b1550, b1788), satu tempat.
+func gerbangTahapDialogTanggal(ctx context.Context, baca *repository.KlaimLife, klaimID string) error {
+	kolomTahap, peranPemegang, err := baca.TahapDanPeran(ctx, klaimID)
+	if err != nil {
+		return err
+	}
+	// Kolom TAHAP menang; PY_POSITION cadangan untuk baris lama (butir at).
+	tahap := models.TahapDariNama(kolomTahap)
+	if !tahap.Diketahui() {
+		tahap = models.TahapDariPeran(peranPemegang)
+	}
+	if !tahap.Diketahui() {
+		return fmt.Errorf("%w: tahap %q, peran pemegang %q",
+			ErrTahapTidakDikenal, kolomTahap, peranPemegang)
+	}
+	if !models.TahapBolehUbahTanggalKlaim(tahap) {
+		return fmt.Errorf("%w: tahap %s", ErrTahapTidakBolehUbahTanggal, tahap)
+	}
+	return nil
 }
 
 // PergeseranDOLRetro membuka pergeseran itu untuk diuji.

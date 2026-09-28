@@ -187,6 +187,8 @@ describe.skipIf(!adaKorpus)('label layar Detail berbukti barisnya', () => {
     ['Find Disease', 5061, 'pyLabel'],
     ['Edit Date', 14115, 'pyLabel'],
     ['Save Adjustment', 22641, 'pyLabel'],
+    // Butir bk: sel read-only `.MAXCLAIM_RECEIVED` b12131.
+    ['MAX CLAIM RECEIVED', 12124, 'pyLabelPreview'],
     // ⛔ ENAM total, bukan lima. Yang ini sempat luput karena
     // pencacahannya memakai rujukan `CheckTotalAdjustmentClaim`, dan ia
     // satu-satunya total yang TIDAK punya aksi refresh.

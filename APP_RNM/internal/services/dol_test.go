@@ -286,10 +286,27 @@ func TestSetTanggalKejadianTanpaPengenalDitolak(t *testing.T) {
 func TestSetTanggalKejadianTanpaOracleGagal(t *testing.T) {
 	svc := services.New(nil)
 	err := svc.TanggalKejadian().Set(context.Background(),
-		services.Pelaku{AkunID: "UJI-AKUN"}, "CLM-000001", "UJI-P-1",
+		pelakuBerperan(services.PeranAdmin), "CLM-000001", "UJI-P-1",
 		saat(t, "2025-06-01 00:00:00"))
 	if !errors.Is(err, repository.ErrTanpaOracle) {
 		t.Fatalf("galat = %v, mau ErrTanpaOracle", err)
+	}
+}
+
+// TestSetTanggalKejadianHanyaAdmin - butir bj (28-09-2026): gerbang DOL SAMA
+// dengan tiga tanggal lainnya (b1000 `pyPosition!='ReasLifeAdmin'` baca-saja).
+func TestSetTanggalKejadianHanyaAdmin(t *testing.T) {
+	svc := services.New(nil)
+	for _, pelaku := range []services.Pelaku{
+		{AkunID: "UJI-AKUN"},
+		pelakuBerperan(services.PeranMedicalAdvisor),
+		pelakuBerperan(services.PeranSPV),
+	} {
+		err := svc.TanggalKejadian().Set(context.Background(), pelaku, "CLM-000001", "UJI-P-1",
+			saat(t, "2025-06-01 00:00:00"))
+		if !errors.Is(err, services.ErrTanpaWewenang) {
+			t.Errorf("%v: galat = %v, mau ErrTanpaWewenang", pelaku.Peran, err)
+		}
 	}
 }
 

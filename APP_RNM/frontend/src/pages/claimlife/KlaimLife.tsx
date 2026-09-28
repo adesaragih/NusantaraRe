@@ -493,7 +493,9 @@ export default function KlaimLife() {
                     // ⛔ Backend memulangkan tanggal BERJAM; kotak tanggal
                     // menolaknya diam-diam dan tampak kosong (28-09-2026).
                     defaultValue={keIsianTanggal(p.tanggalKejadian)}
-                    disabled={tanggalSibuk[p.id] === true}
+                    // ⛔ Butir bj: DOL bergerbang SAMA dengan tiga tanggal
+                    // lainnya (b1000) - Admin, tahap Outstanding.
+                    disabled={tanggalSibuk[p.id] === true || !bolehUbahTanggalKlaim(klaim)}
                     onChange={(e) => {
                       void ubahTanggal(p.id, e.target.value)
                     }}
@@ -501,6 +503,15 @@ export default function KlaimLife() {
                 </label>
                 {galatTanggal[p.id] !== undefined && (
                   <span role="alert"> {galatTanggal[p.id]}</span>
+                )}
+              </p>
+              {/* Butir bk — `MAX CLAIM RECEIVED` b12124/b12131, read-only, DIHITUNG
+                  backend saat baca (`ValidasiClaimReceived_Act`). Kosong = sah;
+                  tanggal = tanggal terima yang melampaui ambang produk. */}
+              <p>
+                {DETAIL.maxClaimReceived}: {p.penandaTerimaKlaim === '' ? '—' : p.penandaTerimaKlaim}
+                {p.penandaTerimaKlaimAlasan !== '' && (
+                  <small role="note"> (tidak dihitung: {p.penandaTerimaKlaimAlasan})</small>
                 )}
               </p>
               {/* Tiga tanggal lain dialog yang sama — `Save` b1910. `key`

@@ -180,3 +180,22 @@ mengabelnya, ia wajib membacanya lewat `KlaimLife.TypeKlaim`, bukan menerima tek
 warisan yang `Simpan` tulis. Jalurnya **gagal terang** dengan `ErrKodeBisnisBelumTersimpan` (HTTP 501)
 sampai kolomnya lahir di **A1**. Tidak dikarang.
 
+## ⛔ PERUBAHAN AUTHZ — 28 September 2026 (GILIRAN-11 paket 3, butir **bj**)
+
+`[DIPUTUSKAN; veto work owner]` — OQ-M8 **ditutup**. Rute DOL lama
+`PUT /api/klaim-life/{id}/peserta/{pesertaId}/tanggal-kejadian` kini bergerbang **sama** dengan tiga
+tanggal lain dialog Edit Date, menurut XML (*prinsip proyek: XML menang*):
+
+| | Sebelum 28-09-2026 | Sesudah |
+| --- | --- | --- |
+| Peran | siapa pun yang beridentitas | `ReasLifeAdmin` (`WajibPeran(pelaku, PeranAdmin)`) |
+| Tahap | tahap mana pun (kasus terbuka) | Outstanding Claim saja (`gerbangTahapDialogTanggal`) |
+
+Buktinya: isian DOL `EditDateClaimLife_Section` berprasyarat baca-saja
+`pyWorkPage.pyPosition!='ReasLifeAdmin' || …CLAIM_NO!=''` (b1000) — prasyarat yang **sama** dengan
+ketiga isian lainnya (b1313, b1550, b1788). Separuh `CLAIM_NO` tetap tidak ditiru (OQ-M1). Satu
+gerbang untuk keempat isian: `services/dol.go` `gerbangTahapDialogTanggal`, dipakai `Set` dan
+`SetTanggalKlaim`; layar mematikan kotak DOL di luar tahap Outstanding (`bolehUbahTanggalKlaim`).
+
+Akibat yang diterima: Medical Advisor dan SPV tidak lagi dapat mengubah DOL — jawabannya 403; di
+tahap Medical Check dan Claim Analis — 409. Uji: `TestSetTanggalKejadianHanyaAdmin`.

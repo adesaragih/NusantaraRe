@@ -607,6 +607,9 @@ yang XML-nya tuntut (posisi kasus → tahap; perutean penugasan ke Admin → per
 hari ini boleh mengubah DOL.
 > Samakan gerbang DOL dengan tiga tanggal lainnya (Admin, tahap Outstanding)?
 
+✅ **DITUTUP 28-09-2026 — butir bj `[DIPUTUSKAN; veto work owner]`**: disamakan menurut XML;
+perubahan authz dicatat bertanggal di tiket 07.
+
 **OQ-M9** *(untuk work owner)* — `ValidasiClaimReceived_Act` b1120, dipicu perubahan
 `CLAIM_RECEIVED_DATE` di dialog Edit Date. Aturannya (`models.PenandaBatasHari`) dan ambangnya
 (`services.AmbangKlaim.Hitung`, butir ba/bh — `MAXEXPIREDCLAIM` dari view produk) sudah ada, tetapi
@@ -615,6 +618,10 @@ hari ini boleh mengubah DOL.
 (2) `Hitung` menghitung KEDUA penanda sekaligus dan gagal bila STNC tidak dapat dihitung, padahal
 dialog ini hanya menyentuh yang pertama. Di Pega penandanya tidak memblokir (OQ-G).
 > Penanda Claim Received: kolom baru, atau tampil-saja sesudah simpan?
+
+✅ **DITUTUP 28-09-2026 — butir bk `[DIPUTUSKAN; veto work owner]`**: nol penulis tabel di korpus
+(hanya `Property-Set` b582, dibaca sel b12131) → **dihitung saat baca**, tanpa kolom. Bukti di
+tiket 06.
 
 ## 28 September 2026 — OQ-N (Save to RNM, GILIRAN-11 paket 1)
 

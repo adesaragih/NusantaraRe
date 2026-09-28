@@ -289,6 +289,8 @@ export const DETAIL = {
   cariPenyakit: 'Find Disease',
   /** b14115 `pyLabel` -> `pyLocalAction ShowEditClaimLife` b14144. */
   ubahTanggal: 'Edit Date',
+  /** b12124 `pyLabelPreview` -> `.MAXCLAIM_RECEIVED` b12131 (butir bk), read-only. */
+  maxClaimReceived: 'MAX CLAIM RECEIVED',
   /** b22641 `pyLabel` -> `pyActivity SaveAdjustment_Act` b22665. */
   simpanAdjustment: 'Save Adjustment',
 

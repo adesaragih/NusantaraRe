@@ -20,6 +20,9 @@ type KlaimLife struct {
 	repo *repository.KlaimLife
 	diag *repository.Diagnosa
 	kurs *repository.MataUang
+	// Butir bk: ambang `MAXEXPIREDCLAIM` penanda `MAX CLAIM RECEIVED`.
+	polis  *repository.RingkasPolisLife
+	produk *repository.ProdukLife
 }
 
 // KlaimLife mengembalikan layanan klaim Life, atau nil bila tanpa database.
@@ -28,9 +31,11 @@ func (s *Service) KlaimLife() *KlaimLife {
 		return nil
 	}
 	return &KlaimLife{
-		repo: repository.NewKlaimLife(s.db),
-		diag: repository.NewDiagnosa(s.db),
-		kurs: repository.NewMataUang(s.db),
+		repo:   repository.NewKlaimLife(s.db),
+		diag:   repository.NewDiagnosa(s.db),
+		kurs:   repository.NewMataUang(s.db),
+		polis:  repository.NewRingkasPolisLife(s.db),
+		produk: repository.NewProdukLife(s.db),
 	}
 }
 
@@ -119,6 +124,14 @@ func (k *KlaimLife) Ambil(ctx context.Context, id string) (*models.Klaim, error)
 		}
 		peserta[i].Total = total
 	}
+	// ⭐ BUTIR bk - `.MAXCLAIM_RECEIVED` DIHITUNG saat baca, di jalur yang
+	// sama dengan total dan pengenal mata uang: di Pega ia hanya Property-Set
+	// halaman (ValidasiClaimReceived_Act b582), nol penulis tabel.
+	ambang, alasan, err := k.ambangTerimaKlaim(ctx, klaim.NomorPolis)
+	if err != nil {
+		return nil, err
+	}
+	isiPenandaTerimaKlaim(peserta, ambang, alasan)
 	klaim.Peserta = peserta
 
 	// ⭐ BUTIR bb: tahap dan status kerja ikut menyeberang, sebab layar Detail
@@ -217,4 +230,54 @@ func (k *KlaimLife) lengkapiPengenalMataUang(ctx context.Context,
 		b.CurrencyID = id
 	}
 	return nil
+}
+
+// ambangTerimaKlaim membaca `MAXEXPIREDCLAIM` produk polis sebuah klaim.
+//
+// Polis atau produk yang TIDAK DITEMUKAN bukan kerusakan layar Detail: ia
+// menjadi ALASAN (penanda tidak dihitung, dan itu dinyatakan). Galat basis
+// data lain tetap menggagalkan pembacaan.
+func (k *KlaimLife) ambangTerimaKlaim(ctx context.Context, nomorPolis string) (
+	ambang, alasan string, err error) {
+
+	if strings.TrimSpace(nomorPolis) == "" {
+		return "", "klaim tanpa nomor polis; ambang MAXEXPIREDCLAIM tidak dapat dibaca", nil
+	}
+	polis, err := k.polis.Ringkas(ctx, nomorPolis)
+	if errors.Is(err, repository.ErrPolisNomorTakDitemukan) {
+		return "", "polis belum ada di PremiumList Life; ambang MAXEXPIREDCLAIM tidak dapat dibaca", nil
+	}
+	if err != nil {
+		return "", "", err
+	}
+	if strings.TrimSpace(polis.ProductNameID) == "" {
+		return "", "polis tidak menyebut produk; ambang MAXEXPIREDCLAIM tidak dapat dibaca", nil
+	}
+	a, err := k.produk.Ambang(ctx, polis.ProductNameID)
+	if errors.Is(err, repository.ErrAmbangProdukTakDitemukan) {
+		return "", "produk polis tidak ada di view produk; ambang MAXEXPIREDCLAIM tidak dapat dibaca", nil
+	}
+	if err != nil {
+		return "", "", err
+	}
+	return a.MaxExpiredClaim, "", nil
+}
+
+// isiPenandaTerimaKlaim menulis `.MAXCLAIM_RECEIVED` tiap peserta - MURNI.
+//
+// `alasan` tak kosong berarti ambangnya tak terbaca: penanda TIDAK dihitung,
+// dan alasannya ditulis - kosong tanpa alasan akan terbaca "sah".
+func isiPenandaTerimaKlaim(peserta []models.Peserta, maxExpiredClaim, alasan string) {
+	for i := range peserta {
+		if alasan != "" {
+			peserta[i].PenandaTerimaKlaimAlasan = alasan
+			continue
+		}
+		penanda, err := models.PenandaTerimaKlaim(peserta[i], maxExpiredClaim)
+		if err != nil {
+			peserta[i].PenandaTerimaKlaimAlasan = err.Error()
+			continue
+		}
+		peserta[i].PenandaTerimaKlaim = penanda
+	}
 }

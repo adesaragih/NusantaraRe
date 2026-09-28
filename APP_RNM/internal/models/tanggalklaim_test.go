@@ -50,3 +50,29 @@ func TestTigaTanggalKlaimMenyeberang(t *testing.T) {
 		}
 	}
 }
+
+// TestPenandaTerimaKlaim - butir bk: `ValidasiClaimReceived_Act` b562/b583,
+// dihitung SAAT BACA (nol penulis tabel di korpus).
+func TestPenandaTerimaKlaim(t *testing.T) {
+	p := Peserta{TanggalKejadian: "2026-01-01 00:00:00", TanggalTerimaKlaim: "2026-01-31 00:00:00"}
+	for _, u := range []struct {
+		ambang, mau string
+	}{
+		{"30", ""},           // 30 hari <= 30: sah
+		{"29", "31/01/2026"}, // 30 > 29: tanggal terima yang melanggar, dd/MM/yyyy
+	} {
+		got, err := PenandaTerimaKlaim(p, u.ambang)
+		if err != nil || got != u.mau {
+			t.Errorf("ambang %s: %q %v, mau %q", u.ambang, got, err, u.mau)
+		}
+	}
+	if _, err := PenandaTerimaKlaim(p, ""); err == nil {
+		t.Error("ambang kosong harus galat, bukan nol (ADR-U-0027)")
+	}
+	// Tanpa salah satu tanggal: tidak ada yang diperiksa, bukan galat.
+	for _, q := range []Peserta{{TanggalKejadian: p.TanggalKejadian}, {TanggalTerimaKlaim: p.TanggalTerimaKlaim}} {
+		if got, err := PenandaTerimaKlaim(q, "30"); err != nil || got != "" {
+			t.Errorf("tanggal tak lengkap: %q %v", got, err)
+		}
+	}
+}

@@ -19,6 +19,8 @@ function peserta(kodeStatus: string, diagnosa: Diagnosa[] = []): Peserta {
     tanggalTerimaKlaim: '',
     tanggalDokumenLengkap: '',
     tanggalKonfirmasi: '',
+    penandaTerimaKlaim: '',
+    penandaTerimaKlaimAlasan: '',
     baris: [],
     total: {} as Peserta['total'],
     dokumen: [],

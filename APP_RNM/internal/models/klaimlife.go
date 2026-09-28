@@ -245,6 +245,13 @@ type Peserta struct {
 	TanggalDokumenLengkap string
 	TanggalKonfirmasi     string
 
+	// PenandaTerimaKlaim adalah `.MAXCLAIM_RECEIVED` (butir bk), DIHITUNG saat
+	// baca - kosong berarti sah. PenandaTerimaKlaimAlasan terisi bila ia TIDAK
+	// dapat dihitung (polis, produk, atau ambangnya belum terbaca): kosong di
+	// sana bukan "sah".
+	PenandaTerimaKlaim       string
+	PenandaTerimaKlaimAlasan string
+
 	// Diagnosa adalah daftar `.DiagnoseList` peserta ini - butir bd.
 	//
 	// ⛔ Daftar, bukan sepasang kolom. `ClaimLifeDetailGCNM.xml` b3923
@@ -373,10 +380,13 @@ func (p Peserta) MarshalJSON() ([]byte, error) {
 		TanggalKejadian string `json:"tanggalKejadian"`
 		// ⭐ Tiga tanggal klaim menyeberang sejak 28-09-2026 dengan sebab
 		// yang sama: dialog Edit Date membuka nilai yang SEDANG berlaku.
-		TanggalTerimaKlaim    string            `json:"tanggalTerimaKlaim"`
-		TanggalDokumenLengkap string            `json:"tanggalDokumenLengkap"`
-		TanggalKonfirmasi     string            `json:"tanggalKonfirmasi"`
-		Baris                 []BarisAdjustment `json:"baris"`
+		TanggalTerimaKlaim    string `json:"tanggalTerimaKlaim"`
+		TanggalDokumenLengkap string `json:"tanggalDokumenLengkap"`
+		TanggalKonfirmasi     string `json:"tanggalKonfirmasi"`
+		// ⭐ Butir bk - sel `MAX CLAIM RECEIVED` b12131, dihitung saat baca.
+		PenandaTerimaKlaim       string            `json:"penandaTerimaKlaim"`
+		PenandaTerimaKlaimAlasan string            `json:"penandaTerimaKlaimAlasan"`
+		Baris                    []BarisAdjustment `json:"baris"`
 		// ⭐ Total menyeberang sejak ralat 27-09-2026: enam total, bukan
 		// lima, dan bukan penanda "belum tersedia". Ia turunan, bukan kolom.
 		Total TotalPeserta `json:"total"`
@@ -408,21 +418,23 @@ func (p Peserta) MarshalJSON() ([]byte, error) {
 		// enam di antaranya bertipe string: dua yang tertukar tetap
 		// dikompilasi, tetap lolos uji bentuk, dan baru terlihat ketika
 		// nomor sertifikat muncul di kolom tanggal.
-		ID:                    p.ID,
-		NomorPremiList:        p.NomorPremiList,
-		NomorPolis:            p.NomorPolis,
-		NomorSertifikat:       p.NomorSertifikat,
-		MataUang:              p.MataUang,
-		IsCheck:               p.IsCheck,
-		TanggalKejadian:       p.TanggalKejadian,
-		TanggalTerimaKlaim:    p.TanggalTerimaKlaim,
-		TanggalDokumenLengkap: p.TanggalDokumenLengkap,
-		TanggalKonfirmasi:     p.TanggalKonfirmasi,
-		Baris:                 baris,
-		Total:                 p.Total,
-		Dokumen:               dokumen,
-		Diagnosa:              diagnosa,
-		KodeStatus:            p.KodeStatus,
+		ID:                       p.ID,
+		NomorPremiList:           p.NomorPremiList,
+		NomorPolis:               p.NomorPolis,
+		NomorSertifikat:          p.NomorSertifikat,
+		MataUang:                 p.MataUang,
+		IsCheck:                  p.IsCheck,
+		TanggalKejadian:          p.TanggalKejadian,
+		TanggalTerimaKlaim:       p.TanggalTerimaKlaim,
+		TanggalDokumenLengkap:    p.TanggalDokumenLengkap,
+		TanggalKonfirmasi:        p.TanggalKonfirmasi,
+		PenandaTerimaKlaim:       p.PenandaTerimaKlaim,
+		PenandaTerimaKlaimAlasan: p.PenandaTerimaKlaimAlasan,
+		Baris:                    baris,
+		Total:                    p.Total,
+		Dokumen:                  dokumen,
+		Diagnosa:                 diagnosa,
+		KodeStatus:               p.KodeStatus,
 	})
 }
 

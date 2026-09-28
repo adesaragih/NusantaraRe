@@ -26,15 +26,32 @@ package models
 // Maksudnya ("sesudah Save Outstanding, tanggal tidak diubah lagi") menunggu
 // padanan Save Outstanding, yang belum punya rute.
 //
-// ⚠️ `[terbuka - OQ-M9]` `ValidasiClaimReceived_Act` b1120 TIDAK dijalankan
-// saat simpan. Aturan DAN ambangnya sudah ada (`services.AmbangKlaim.Hitung`,
-// butir ba/bh) tetapi nol pemanggil; penandanya (`.MAXCLAIM_RECEIVED`) tidak
-// punya kolom, dan `Hitung` menuntut kedua penanda sekaligus (STNC ikut).
-// Di Pega penandanya pun tidak memblokir (OQ-G).
+// ⛔ BUTIR bk `[DIPUTUSKAN 28-09-2026, veto work owner]` - OQ-M9 ditutup.
+// `ValidasiClaimReceived_Act` (dua langkah: RDB-List produk b248, Property-Set
+// b425) menulis `.MAXCLAIM_RECEIVED` HANYA ke halaman (b582); nol `Obj-Save`,
+// nol `RDB-Save`, nol SQL menyebutnya di seluruh korpus, dan satu-satunya
+// pembacanya sel read-only `MAX CLAIM RECEIVED` `ClaimLifeDetailGCNM` b12131.
+// Maka ia DIHITUNG SAAT BACA (PenandaTerimaKlaim), tanpa kolom dan tanpa
+// migrasi. Di Pega penandanya pun tidak memblokir (OQ-G).
 //
 // Dibaca sesudah: tahap.go, diagnosa.go.
 
 import "time"
+
+// PenandaTerimaKlaim adalah `.MAXCLAIM_RECEIVED` seorang peserta - MURNI.
+//
+// `[terverifikasi]` b562 `@DateTimeDifference(DOL, CLAIM_RECEIVED_DATE, "D")`,
+// b583 `@if(selisih <= MAXEXPIREDCLAIM, "", dd/MM/yyyy CLAIM_RECEIVED_DATE)`
+// - persis `PenandaBatasHari`. Kosong berarti sah.
+//
+// Salah satu tanggal kosong: tidak ada yang diperiksa (activity-nya dipicu
+// PERUBAHAN `CLAIM_RECEIVED_DATE`, b1120). Ambang kosong: galat, bukan nol.
+func PenandaTerimaKlaim(p Peserta, maxExpiredClaim string) (string, error) {
+	if p.TanggalKejadian == "" || p.TanggalTerimaKlaim == "" {
+		return "", nil
+	}
+	return PenandaBatasHari(p.TanggalKejadian, p.TanggalTerimaKlaim, maxExpiredClaim)
+}
 
 // TanggalKlaim adalah tiga tanggal dialog Edit Date selain DOL.
 //

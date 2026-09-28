@@ -223,6 +223,8 @@ func TestPesertaJSONMembawaTanggalKejadian(t *testing.T) {
 	// (`EditDateClaimLife_Section` b1076, b1387, b1626) - tanggal, bukan nama.
 	mau := []string{"baris", "diagnosa", "dokumen", "id", "isCheck", "kodeStatus",
 		"mataUang", "nomorPolis", "nomorPremiList", "nomorSertifikat",
+		// Butir bk (28-09-2026): penanda `MAX CLAIM RECEIVED`, dihitung saat baca.
+		"penandaTerimaKlaim", "penandaTerimaKlaimAlasan",
 		"tanggalDokumenLengkap", "tanggalKejadian", "tanggalKonfirmasi",
 		"tanggalTerimaKlaim", "total"}
 	if !reflect.DeepEqual(kunci, mau) {
