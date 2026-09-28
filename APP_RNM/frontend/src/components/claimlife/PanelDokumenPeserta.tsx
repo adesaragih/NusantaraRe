@@ -201,10 +201,9 @@ export function PanelDokumenPeserta({
 
       {galat !== null && <p role="alert">{galat}</p>}
 
-      {/* `Add attachment` b1245 — kategori WAJIB, sebab gerbang Save ke
-          Outstanding (butir ar1) mencacah kategori yang berbeda. Berkas
-          tanpa kategori akan lolos unggah lalu menahan penyimpanan, dan
-          pemakai baru tahu berbulan-bulan kemudian. */}
+      {/* `Add attachment` b1245 — kategori WAJIB: unggahan menolak kategori
+          di luar daftar butir ar1. (Gerbang kelengkapan per kategori di Save
+          ke Outstanding ter-remark di XML dan dibuang — butir bl.) */}
       <p className="dokumen__aksi">
         <label>
           Kategori{' '}

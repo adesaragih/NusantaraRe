@@ -702,3 +702,7 @@ penyebutnya langkah 12.1 itu sendiri). Sistem lama karena itu **tidak pernah** m
 yang hidup hanya gerbang "dokumen belum diunggah" (langkah 3–4, menyebut nomor peserta).
 `services.PeriksaDokumenLengkap` tetap ada tanpa pemanggil produksi.
 > Pasang kelengkapan per kategori sebagai **penyimpangan sadar baru**, atau buang `PeriksaDokumenLengkap`?
+
+✅ **OQ-N6 DITUTUP — 28-09-2026, butir bl** `[DIPUTUSKAN; veto work owner]`: mengikuti XML —
+ter-remark berarti tidak pernah berlaku. `PeriksaDokumenLengkap` dan pendukungnya dibuang
+(GILIRAN-12 paket 1); bila bisnis menghendaki gerbang itu, ia keputusan baru.

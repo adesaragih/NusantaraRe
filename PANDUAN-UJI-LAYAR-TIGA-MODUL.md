@@ -341,7 +341,7 @@ dari `DateReceived` **tidak** menolak `Save to RNM`. Versi pertama panduan ini m
 #### 5.4 Pesan bertumpuk dan urutan (`simpanrnm_test.go:71-195`)
 - Peserta 1 dan 3 tanpa dokumen → dua baris: `The document hasn’t been uploaded person number 1` / `… number 3`.
 - Type `TP` / `TR` tanpa dokumen → **lolos**: gerbang 1 dilewati, dan langkah 12 ter-remark.
-- Dua dokumen berkategori sama → **lolos** (kelengkapan per kategori tidak ditegakkan — OQ-N6).
+- Dua dokumen berkategori sama → **lolos** (kelengkapan per kategori tidak ditegakkan — butir bl, OQ-N6 ditutup).
 - DOB dan BEGIN sama-sama kosong → yang dilaporkan `DOB cannnot be blank No 1`.
 
 #### 5.5 Close Claim (`FE/services/tutupklaim.test.ts:23-25, 90-161`)
@@ -384,7 +384,7 @@ kotak berisi spasi saja tidak dikirim.
 | `Save to RNM` terkunci sesudah simpan | Bendera `pyWorkPage.Save` tanpa kolom; tombol tetap hidup (tulisan idempoten) — OQ-N1 |
 | Klaim ganda antarklaim baru | Cermin warisan tidak mengisi nama/DOB/CEDINGCO; hanya baris era Pega yang tertangkap — OQ-N2 |
 | Lewati Arasapas untuk tiga kode retro | Mengikuti XML; berlaku-tidaknya OQ-064 belum diputuskan — OQ-N3. Kodenya dibaca SESUDAH penukaran `InsertJsonClaimLife_Act` langkah 2; bila hasilnya bergantung pada `ProdDateTime` (tanpa sumber), Arasapas **ditahan** — OQ-N5 |
-| Dokumen lengkap per kategori | Tidak ditegakkan: langkah 12 ter-remark di XML; memasangnya adalah keputusan baru — OQ-N6 |
+| Dokumen lengkap per kategori | Tidak ditegakkan, dan bukan cacat: langkah 12 ter-remark di XML; OQ-N6 ditutup (butir bl, GILIRAN-12) — bila bisnis menghendakinya, ia keputusan baru |
 | Residu `Save to RNM` | Pesan `.Protect` tak pernah muncul; `ADJUSTMENT_DATE`/`PrintFaceClaim` tanpa kolom; `IsAccept` diganti `IS_CHECK` — OQ-N4 |
 | Pilihan `GROUP DIAGNOSE` | Daftar pilihannya tidak ada di ekspor; sel menampilkan `GROUP DIAGNOSE tidak dapat dimuat saat ini.` — OQ-L |
 | Tanggal Respon/Konfirmasi/Realisasi, Confirmation Reserved, Underwriter Note | Tanpa kolom; selalu `—` di panel `Data Polis` |
@@ -1100,7 +1100,7 @@ format `YYYY-MM-DD HH:MM:SS` (`services/komite_inbox.go:91-96`).
 | Efek keluar di non-produksi **dilewati** / pengirim stub; tidak ada penjadwal pekerja outbox di `cmd/api` | Email, Arasapas, Kasir, Google Storage tidak pernah terkirim; outbox Komite tetap "tertunda"; laporan "perlu intervensi" hanya terlihat kosong; tautan berkas Claim Life tetap `URL menunggu penyambungan penyimpanan` | ketiganya |
 | Tidak ada pembuat baris adjustment pertama | Tombol baris Claim Life hanya teruji pada data lama | Claim Life |
 | Tidak ada pembuat kasus PremiumList; tahap `Input Premium Summary` nol konektor masuk | Kasus disiapkan di luar aplikasi; `Summary Premium Life` hanya lewat data yang disiapkan | PremiumList |
-| Keputusan work owner terbuka | OQ-M1…M7, OQ-N1…N6 (Claim Life); OQ-PL-09/10/11; OQ-K-04a/05/05b — rinciannya di tabel "Belum dapat diuji" tiap bab | ketiganya |
+| Keputusan work owner terbuka | OQ-M1…M7, OQ-N1…N5 (Claim Life; OQ-N6 ditutup butir bl); OQ-PL-09/10/11; OQ-K-04a/05/05b — rinciannya di tabel "Belum dapat diuji" tiap bab | ketiganya |
 | Identitas stub, bukan IAM | Uji peran = ganti `VITE_STUB_PERAN`; tidak ada layar masuk | ketiganya |
 | `App.tsx` (suntingan work owner yang belum di-commit, tidak disentuh) | Layar Detail Claim Life tidak menerima pengenal klaim (ketik manual); tiap baris Inbox membuka layar Outstanding | Claim Life |
 

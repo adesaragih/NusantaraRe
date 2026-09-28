@@ -2,25 +2,27 @@ package services
 
 // Gerbang dokumen sebelum Save ke Outstanding - tiket 03.
 //
-// Untuk apa berkas ini: `SaveOutStandingLife_Act` menolak menyimpan bila
-// dokumen peserta belum memenuhi syarat. Rule itu MEMUAT dua gerbang, memakai
-// dua daftar yang berbeda, dan berkas ini memisahkan keduanya seperti aslinya.
+// Untuk apa berkas ini: `SaveOutStandingLife_Act` menolak menyimpan bila ada
+// peserta yang belum mengunggah dokumen (langkah 3-4), dan berkas ini meniru
+// gerbang itu; ia juga memegang daftar kategori dokumen (butir ar1) yang
+// dipakai validasi unggahan.
 //
-// ⛔ RALAT 28-09-2026 (GILIRAN-11, temuan /code-review): hanya gerbang PERTAMA
-// yang hidup. Langkah 12 - gerbang kedua - ber-`pyStepsBlockName = //`
-// (b6178): ter-remark, tidak pernah jalan. Save to RNM (simpanrnm.go) karena
-// itu tidak memanggil PeriksaDokumenLengkap; lihat komentarnya.
+// ⛔ BUTIR bl (GILIRAN-12, OQ-N6 ditutup `[DIPUTUSKAN; veto work owner]`):
+// gerbang KEDUA rule itu - dokumen lengkap per kategori, langkah 12 - ter-remark
+// (`pyStepsBlockName = //`, b6178) dan TIDAK PERNAH berlaku di sistem lama.
+// `PeriksaDokumenLengkap`, `PesertaDokumenTidakLengkap`, `KategoriBerbeda`,
+// dan `ErrDokumenTidakLengkap` karena itu DIBUANG beserta ujinya. Bila bisnis
+// menghendaki gerbang itu, ia keputusan BARU, bukan replikasi.
 //
 // Dibaca sesudah: adjustment.go.
 //
-// ⛔ Kedua gerbangnya MURNI. Yang tidak murni hanya SumberKategoriWajib, dan
-// ia sengaja antarmuka: isinya belum ada di korpus mana pun.
+// ⛔ Gerbangnya MURNI. Yang tidak murni hanya SumberKategoriWajib, dan ia
+// sengaja antarmuka: isinya belum ada di korpus mana pun.
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	"sort"
 	"strings"
 
 	"nusantarare/internal/models"
@@ -29,17 +31,8 @@ import (
 )
 
 var (
-	// ErrDokumenBelumDiunggah - gerbang pertama, langkah 3 + 3.1 + 4.
+	// ErrDokumenBelumDiunggah - langkah 3 + 3.1 + 4.
 	ErrDokumenBelumDiunggah = errors.New("services: ada peserta yang belum mengunggah dokumen")
-	// ErrDokumenTidakLengkap - gerbang kedua, langkah 12.
-	//
-	// ⚠️ Teksnya PERSIS pesan `Local.Err4` di XML, dan sengaja TIDAK menyebut
-	// peserta mana: rule aslinya memang tidak menyebutnya. Peserta yang
-	// bermasalah dikembalikan terpisah lewat PesertaDokumenTidakLengkap,
-	// supaya pemanggil tetap dapat menunjukkannya tanpa kami mengarang teks
-	// pesan yang tidak ada di sistem lama.
-	ErrDokumenTidakLengkap = errors.New(
-		"Documents are incomplete, please complete the documents")
 	// ErrKategoriWajibBelumDiketahui - daftar kategori wajibnya belum ada.
 	ErrKategoriWajibBelumDiketahui = errors.New(
 		"services: daftar kategori dokumen wajib belum diketahui")
@@ -52,14 +45,16 @@ var (
 // Jadi klaim treaty tidak dituntut berdokumen.
 var tipeTanpaGerbangDokumen = map[string]bool{"TP": true, "TR": true}
 
-// SumberKategoriWajib memberi daftar kategori dokumen yang wajib ada.
+// SumberKategoriWajib memberi daftar kategori dokumen (butir ar1).
 //
-// ⛔ Kenapa ini antarmuka dan bukan daftar tetap: MEKANISMEnya terbaca dari
-// XML - cacah kategori berbeda yang terunggah harus sama dengan cacah baris
-// yang `GetCategoryLife_SQL` kembalikan - tetapi rule itu **tidak ada di
-// korpus**; seluruh 29 berkas `Claim Life/RDBList/` sudah dicacah. Menuliskan
-// daftarnya sendiri berarti mengarang kebijakan dokumen sebuah perusahaan
-// reasuransi.
+// Kini dipakai validasi unggahan saja: gerbang kelengkapan yang dulu
+// membandingkan cacahnya (`GetCategoryLife_SQL`, langkah 12) ter-remark dan
+// dibuang (butir bl).
+//
+// ⛔ Kenapa ini antarmuka dan bukan daftar tetap: rule `GetCategoryLife_SQL`
+// **tidak ada di korpus**; seluruh 29 berkas `Claim Life/RDBList/` sudah
+// dicacah. Menuliskan daftarnya sendiri berarti mengarang kebijakan dokumen
+// sebuah perusahaan reasuransi.
 //
 // Sama dengan Penomor pada tiket 02: tempatnya dipisah, dan yang belum
 // diketahui terlihat sebagai satu galat terang.
@@ -107,46 +102,8 @@ func PeriksaDokumenAda(tipe string, peserta []models.Peserta) error {
 		ErrDokumenBelumDiunggah, gabungNomor(kurang))
 }
 
-// PeriksaDokumenLengkap adalah gerbang KEDUA - langkah 12 sampai 12.4.
-//
-// Aturannya `[terverifikasi]`: kategori dokumen peserta dikumpulkan,
-// DI-DEDUP (langkah Java atas `.CARI1`), lalu cacahnya dibandingkan dengan
-// cacah kategori wajib. Pega membandingkan CACAHnya, bukan himpunannya - dan
-// peniruan yang jujur mengikuti itu, termasuk kelemahannya: dua dokumen
-// berkategori salah dengan cacah yang kebetulan pas akan lolos.
-//
-// ⛔ Perbandingan cacah dipertahankan APA ADANYA, bukan "diperbaiki" menjadi
-// perbandingan himpunan. Memperbaiki diam-diam berarti sistem baru menolak
-// klaim yang sistem lama terima, tanpa seorang pun memutuskannya.
-//
-// ⛔ TANPA PEMANGGIL PRODUKSI, dan itu disengaja: langkah 12 ter-remark
-// (b6178), jadi sistem lama TIDAK PERNAH menolak simpan karena dokumen tidak
-// lengkap. Memasangnya adalah penyimpangan baru yang harus diputuskan work
-// owner (OQ-N6), bukan paritas - ia dipertahankan hanya sebagai aturan siap
-// pakai bila keputusan itu jatuh; bila tidak, ia dibuang.
-func PeriksaDokumenLengkap(peserta []models.Peserta, wajib []string) error {
-	if len(wajib) == 0 {
-		return fmt.Errorf("%w: daftar kategori wajib kosong", ErrKategoriWajibBelumDiketahui)
-	}
-	if len(PesertaDokumenTidakLengkap(peserta, wajib)) == 0 {
-		return nil
-	}
-	// ⛔ Pesannya berhenti di sini, tanpa nomor peserta. XML tidak menyebutnya,
-	// dan pesan galat adalah logika bisnis: menambahinya berarti sistem baru
-	// berbicara dengan kalimat yang tidak pernah ada.
-	return ErrDokumenTidakLengkap
-}
-
-// PesertaDokumenTidakLengkap mengembalikan NOMOR URUT peserta yang gagal
-// gerbang kedua - 1-based, seperti `.pxListSubscript`.
-func PesertaDokumenTidakLengkap(peserta []models.Peserta, wajib []string) []int {
-	return nomorPesertaYangGagal(peserta, func(p models.Peserta) bool {
-		return len(KategoriBerbeda(p)) != len(wajib)
-	})
-}
-
-// nomorPesertaYangGagal memakai satu kerangka untuk kedua gerbang: lewati
-// peserta yang tidak dipilih, kumpulkan NOMOR URUT yang gagal syaratnya.
+// nomorPesertaYangGagal - lewati peserta yang tidak dipilih, kumpulkan NOMOR
+// URUT yang gagal syaratnya (dipakai pula gerbang 1 Save to RNM).
 func nomorPesertaYangGagal(peserta []models.Peserta, gagal func(models.Peserta) bool) []int {
 	var out []int
 	for i, p := range peserta {
@@ -167,29 +124,6 @@ func gabungNomor(nomor []int) string {
 		teks = append(teks, fmt.Sprintf("%d", n))
 	}
 	return strings.Join(teks, ", ")
-}
-
-// KategoriBerbeda mengumpulkan kategori dokumen seorang peserta, tanpa kembar.
-//
-// ⚠️ `[terbuka - work owner]` Kolom mana yang memegang kategori pembanding
-// belum diputuskan. Gerbang Pega membacanya dari daftar LAMPIRAN bawaan
-// (`.pyCategory`), yang di skema relasional tidak punya padanan langsung.
-// `KATEGORI_2` dipakai di sini karena itulah kategori yang `Section/
-// DocumentLife.xml` tampilkan kepada manusia - alasan yang dinyatakan, bukan
-// tebakan yang didiamkan.
-func KategoriBerbeda(p models.Peserta) []string {
-	lihat := map[string]bool{}
-	var out []string
-	for _, d := range p.Dokumen {
-		k := strings.TrimSpace(d.Kategori2)
-		if k == "" || lihat[k] {
-			continue
-		}
-		lihat[k] = true
-		out = append(out, k)
-	}
-	sort.Strings(out)
-	return out
 }
 
 // dipilihUntukDiklaim membaca penanda IS_CHECK apa adanya.

@@ -101,9 +101,8 @@ func TestBerkasKosongDitolak(t *testing.T) {
 }
 
 func TestKategoriDiperiksaTerhadapDaftarYangSama(t *testing.T) {
-	// ⛔ Daftar yang SAMA dengan gerbang Save ke Outstanding (butir ar1).
-	// Dua daftar berarti dokumen dapat diunggah dengan kategori yang gerbang
-	// penyimpanan tolak, dan pemakai baru tahu berbulan-bulan kemudian.
+	// ⛔ Daftar butir ar1 - satu-satunya pemakainya kini validasi unggah
+	// (gerbang kelengkapan Save ke Outstanding ter-remark, butir bl).
 	u := New(nil).Dokumen().DenganKategori(kategoriUji{"KTP", "Surat Kematian"})
 	ctx := context.Background()
 	if err := u.periksaKategori(ctx, "KTP"); err != nil {

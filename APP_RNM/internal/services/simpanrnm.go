@@ -176,7 +176,7 @@ func PeriksaSimpanRNM(m MasukanRNM) error {
 	// Save to RNM TIDAK menuntut dokumen lengkap - dan `GetCategoryLife_SQL`
 	// tidak disebut rule lain mana pun di seluruh korpus, jadi sistem lama
 	// tidak menegakkannya di tempat lain pula.
-	// PeriksaDokumenLengkap menunggu keputusan OQ-N6.
+	// Butir bl (OQ-N6 ditutup): gerbang itu dibuang, bukan ditunda.
 	return nil
 }
 

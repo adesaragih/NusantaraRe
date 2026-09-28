@@ -694,6 +694,9 @@ bukan pelengkap — karena itu ia tabel, dan pembacaannya `SELECT` biasa.
 > ⛔ **Ralat 28-09-2026** (temuan /code-review GILIRAN-11): pesan kedua milik langkah 12, yang
 > **ter-remark** (`pyStepsBlockName = //`, b6178) — sistem lama hanya menolak dokumen yang **belum
 > diunggah**. Keputusan tabelnya tidak berubah; kelengkapan per kategori menunggu **OQ-N6**.
+> ⛔ **Butir bl — 28-09-2026** `[DIPUTUSKAN; veto work owner]`: OQ-N6 ditutup. Kelengkapan per
+> kategori **tidak** ditiru (ter-remark = tidak pernah berlaku); `PeriksaDokumenLengkap` dibuang.
+> Bila bisnis menghendakinya, ia keputusan baru. AC 45 kini dibaca "belum **diunggah**".
 
 **`T_WORK_CLAIM`** — tabel work mandiri.
 

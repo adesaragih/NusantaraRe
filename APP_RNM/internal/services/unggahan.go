@@ -236,10 +236,9 @@ func (u *Unggahan) Unggah(ctx context.Context, pelaku Pelaku,
 		return models.Dokumen{}, fmt.Errorf("%w: nama berkas wajib diisi",
 			ErrPermintaanTidakSah)
 	}
-	// ⛔ Kategori diperiksa terhadap daftar yang SAMA dengan yang menggerbangi
-	// Save ke Outstanding (butir ar1). Dua daftar kategori berarti dokumen
-	// dapat diunggah dengan kategori yang gerbang penyimpanan tolak, dan
-	// pemakai baru tahu berbulan-bulan kemudian.
+	// ⛔ Kategori diperiksa terhadap daftar butir ar1. (Gerbang kelengkapan
+	// Save ke Outstanding yang dulu memakai daftar yang sama ter-remark di XML
+	// dan dibuang - butir bl; pemeriksaan unggah ini keputusan ar1 sendiri.)
 	if err := u.periksaKategori(ctx, berkas.Kategori); err != nil {
 		return models.Dokumen{}, err
 	}

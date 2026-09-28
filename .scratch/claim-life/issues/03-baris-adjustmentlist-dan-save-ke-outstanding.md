@@ -84,8 +84,8 @@ persen; nama kolom tidak dapat dipakai menebak sifatnya).
 
 - [x] ⚠️ Dokumen tersimpan **per peserta** di `DOCUMENT_CLAIM` dan dapat dibaca dengan `SELECT`
       biasa — **bukan** lewat mekanisme lampiran bawaan. *(AC 44 spec; penyimpangan sadar 5)* — bukti: `APP_RNM/internal/repository/klaimlife.go:KlaimLife.AmbilDokumen` (`SELECT` biasa atas `T_CLAIMLF_DOCUMENT`), `APP_RNM/internal/services/unggahan.go:Unggahan.Unggah`; uji `TestAC05DokumenMenunjukPeserta`
-- [ ] ⚠️ Menyimpan ke Outstanding **ditolak** bila ada peserta yang dokumennya belum lengkap, dengan
-      pesan yang **menyebut peserta mana**. *(AC 45 spec; penyimpangan sadar 5)* — belum: DIBANTAH XML (ralat 28-09-2026) — satu-satunya gerbang dokumen yang HIDUP adalah "belum diunggah" (langkah 3–4), dan ia menyebut nomor peserta (`TestSimpanRNMDokumenBelumDiunggahMenyebutSetiapNomor`); gerbang "dokumen lengkap" langkah 12 TER-REMARK (b6178), jadi sistem lama tidak pernah menolak karena kelengkapan (`TestSimpanRNMDokumenTidakLengkapLolos`). Memasangnya keputusan baru — OQ-N6
+- [x] ⚠️ Menyimpan ke Outstanding **ditolak** bila ada peserta yang dokumennya belum **diunggah**, dengan
+      pesan yang **menyebut peserta mana**. *(AC 45 spec; penyimpangan sadar 5)* — bukti: gerbang 1 `APP_RNM/internal/services/simpanrnm.go:PeriksaSimpanRNM` (langkah 3–4, "The document hasn’t been uploaded person number N"); uji `TestSimpanRNMDokumenBelumDiunggahMenyebutSetiapNomor`, `TestSimpanRNMDokumenTidakLengkapLolos`. ⛔ *Teks AC disunting di tempat 28-09-2026 (butir **bl**, OQ-N6 ditutup):* aslinya "belum **lengkap**"; kelengkapan per kategori adalah langkah 12 yang ter-remark (b6178) dan tidak pernah berlaku — `PeriksaDokumenLengkap` dibuang
 - [x] Kolom isian `DOCUMENT_CLAIM` **diturunkan dari sensus `.DocumentList`** pada activity di atas,
       dan **keputusannya dicatat** — **jangan tebak dari nama tabel**. *(tiket 14 §Catatan)* — bukti: `APP_RNM/internal/repository/migrations/010_kolom_t_claimlf_document.sql` (tujuh kolom dari sensus `InsertDocument_Act`); uji `TestKolomDDLCocokDenganStruktur`
 - [x] Halaman React menampilkan daftar baris adjustment dengan status masing-masing sebagai kata,
@@ -715,7 +715,8 @@ medan itu. Delapan langkah activity ini ber-remark: 11.3 b3495, 11.9 b4632, 11.1
    `DateReceived`, atau daftar kategori; `Simpan` tidak lagi membaca ambang produk dan daftar
    kategori. Gerbangnya kini empat: dokumen ada, klaim ganda, DOL, medan kosong. Uji
    `TestSimpanRNMTreatyTanpaDokumenLolos` dan `TestSimpanRNMDokumenTidakLengkapLolos` menggantikan
-   uji yang menuntut pesan langkah 12; uji STNC dibuang. Kelengkapan per kategori: **OQ-N6**.
+   uji yang menuntut pesan langkah 12; uji STNC dibuang. Kelengkapan per kategori: **OQ-N6** —
+   ditutup GILIRAN-12 (butir **bl**, di bawah).
 2. **Langkah 23 (enam total) ter-remark** — tidak ada perubahan perilaku: totalnya dihitung saat
    baca dari `SavePesertaClaim` langkah 8, yang hidup (`models.HitungTotalPeserta`).
 3. **Langkah 27 membaca salinan yang MUNGKIN DITUKAR.** `pyWorkPage.ClaimData.PolicyDataLife` diisi
@@ -736,3 +737,15 @@ medan itu. Delapan langkah activity ini ber-remark: 11.3 b3495, 11.9 b4632, 11.1
 6. **Bukti `IsCheck == "true"` (AC 8)** dipindah dari b1812/b1997/b2413 — WHEN langkah 7.1
    (precondition false) serta 7.2/7.4 (`//`) `SavePesertaClaim` — ke b3631 dan b3919 (7.7, 7.8,
    hidup). Nilainya tidak berubah.
+
+### ⛔ Butir bl — 28-09-2026 (GILIRAN-12 paket 1): gerbang dokumen lengkap DIBUANG
+
+`[DIPUTUSKAN; veto work owner]` — OQ-N6 **ditutup**. Kelengkapan dokumen per kategori ter-remark di
+XML (langkah 12, b6178), jadi di sistem lama ia tidak pernah berlaku. Mengikuti XML dan aturan "kode
+mati dibuang": `services.PeriksaDokumenLengkap`, `PesertaDokumenTidakLengkap`, `KategoriBerbeda`, dan
+`ErrDokumenTidakLengkap` dibuang beserta empat ujinya (`services/dokumen_test.go`). Bila bisnis
+menghendaki gerbang itu, ia keputusan **baru**, bukan replikasi.
+
+Yang tetap: gerbang "belum diunggah" (langkah 3–4) dan daftar kategori butir **ar1**, yang kini
+hanya dipakai validasi unggahan. Bab 26-09 butir 3 (tabel dua gerbang) dan ralat #3 GILIRAN-11
+tetap sebagai catatan pembacaan. Teks AC 45 disunting di tempat (lihat AC-nya).
