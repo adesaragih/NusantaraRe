@@ -22,9 +22,11 @@ import {
 import { Gagal, Memuat } from '../../components/ui/dasar'
 import {
   ambilKasusKomite,
+  ambilRiwayatKomite,
   eskalasiKomite,
   putuskanKomite,
   type KasusKomite as Kasus,
+  type RiwayatKomite,
 } from '../../services/api'
 import { selKomite, tingkatKomite } from './InboxKomite'
 
@@ -71,6 +73,7 @@ export default function KasusKomite({
   onKembali: () => void
 }) {
   const [k, setK] = useState<Kasus | null>(null)
+  const [riwayat, setRiwayat] = useState<RiwayatKomite | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
   const [sibuk, setSibuk] = useState(true)
   const [keputusan, setKeputusan] = useState('')
@@ -82,7 +85,9 @@ export default function KasusKomite({
     setSibuk(true)
     setGalat(null)
     try {
-      setK(await ambilKasusKomite(kasusID))
+      const [kasus, rw] = await Promise.all([ambilKasusKomite(kasusID), ambilRiwayatKomite(kasusID)])
+      setK(kasus)
+      setRiwayat(rw)
     } catch (e) {
       // ⚠️ 403 bila pelaku bukan anggota tangga — pesan server tampil apa adanya.
       setGalat(e)
@@ -168,28 +173,44 @@ export default function KasusKomite({
             {k.giliranSaya ? KASUS_KOMITE.giliranAnda : KASUS_KOMITE.bukanGiliran}
           </p>
           <h3>{KASUS_KOMITE.tangga}</h3>
-          <table className="komite-kasus__tangga">
-            <thead>
-              <tr>
-                <th>{KASUS_KOMITE.urut}</th>
-                <th>{KASUS_KOMITE.jabatan}</th>
-                <th>{KASUS_KOMITE.approval}</th>
-                <th>{KASUS_KOMITE.komentar}</th>
-                <th>{KASUS_KOMITE.tanggal}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {k.tangga.map((a) => (
-                <tr key={a.urut} className={a.saya ? 'komite-kasus__saya' : undefined}>
-                  <td>{a.urut}</td>
-                  <td>{selKomite(a.jabatan)}</td>
-                  <td>{a.kataApproval}</td>
-                  <td>{selKomite(a.komentar)}</td>
-                  <td>{selKomite(a.tglApprove)}</td>
+          {riwayat !== null && (
+            <table className="komite-kasus__tangga">
+              <thead>
+                <tr>
+                  <th>{KASUS_KOMITE.urut}</th>
+                  <th>{KASUS_KOMITE.committee}</th>
+                  <th>{KASUS_KOMITE.anggota}</th>
+                  <th>{KASUS_KOMITE.status}</th>
+                  <th>{KASUS_KOMITE.dateApprove}</th>
+                  <th>{KASUS_KOMITE.comment}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {riwayat.tangga.map((a) => (
+                  <tr key={a.urut}>
+                    <td>{a.urut}</td>
+                    <td>{selKomite(a.committee)}</td>
+                    <td>{selKomite(a.anggota)}</td>
+                    <td>{a.status}</td>
+                    <td>{selKomite(a.dateApprove)}</td>
+                    <td>{selKomite(a.comment)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          {riwayat !== null && riwayat.eskalasi.length > 0 && (
+            <>
+              <h3>{KASUS_KOMITE.eskalasi}</h3>
+              <ul className="komite-kasus__eskalasi-riwayat">
+                {riwayat.eskalasi.map((e, i) => (
+                  <li key={`${e.waktu}-${String(i)}`}>
+                    Tingkat {e.dariTingkat} → {e.keTingkat} oleh {e.oleh} pada {e.waktu}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
           {k.efek.efek.length > 0 && (
             <>
               <h3>

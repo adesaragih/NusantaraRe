@@ -34,10 +34,18 @@ export const KASUS_KOMITE = {
   kembali: 'Kembali ke Inbox Komite',
   tangga: 'Tangga persetujuan',
   urut: 'Tingkat',
-  jabatan: 'Jabatan',
-  approval: 'Keputusan',
-  komentar: 'Komentar',
-  tanggal: 'Tanggal',
+  /**
+   * Tiket 09 — judul VERBATIM grid `.KomiteList` `Section/ShowTransfer.xml`
+   * b29727: `Committee` (`.IDKomite` = jabatan), `Status` (`.KomiteAproval`),
+   * `Date Approve`, `Comment`.
+   */
+  committee: 'Committee',
+  status: 'Status',
+  dateApprove: 'Date Approve',
+  comment: 'Comment',
+  /** `KOMITE_OPERATORID` — pengenal akun; kosakata kami. */
+  anggota: 'Anggota',
+  eskalasi: 'Eskalasi',
   giliranAnda: 'Giliran Anda memutuskan.',
   bukanGiliran: 'Bukan giliran Anda — kasus ini menunggu tingkat lain atau sudah selesai.',
 } as const

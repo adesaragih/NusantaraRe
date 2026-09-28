@@ -85,3 +85,44 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+## Implementasi — 28-09-2026 (giliran 10)
+
+### Pembacaan ulang XML
+
+`Section/ShowTransfer.xml` grid `.KomiteList` (b29727): judul `Committee` → `.IDKomite` (= jabatan,
+`CreateKMTLife_Act` b952/b1041), `Status` → `.KomiteAproval` (dropdown), `Date Approve` →
+`.DateApprove`, `Comment` → `.KomiteComment`. Dipakai VERBATIM sebagai judul kolom riwayat.
+
+### Yang dibangun
+
+- `GET /api/komite/{id}/riwayat` — siapa pun yang teridentifikasi (melihat ≠ memutuskan): tangga dari
+  `T_KOMITE_KOMITELIST` urut `KOMITE_URUT` (bukan page runtime/JSON), status **kata**
+  (`Setuju`/`Tolak`/`Menunggu`/`Dilewati (eskalasi)`), anggota (`KOMITE_OPERATORID`, pengenal akun),
+  tanggal putus, komentar; **eskalasi** dari jejak `T_CLAIMLF_JEJAK` (dari → ke, oleh, kapan),
+  berkunci `ADJUSTMENT_ID` + kasus (ADR-0011).
+- Teks jejak tingkat/eskalasi kini **satu tempat** (`awalanJejakTingkat`, `awalanJejakEskalasi`),
+  dipakai penulis (tiket 02/03) dan pembaca — dikunci `TestPenulisDanPembacaJejakSatuBentuk`.
+- `KataApprovalKomite` (tiket 01) kini menerjemahkan `1`/`2` dan membedakan dilewati dari menunggu.
+- Layar Kasus Komite menampilkan tangga dari riwayat dengan judul VERBATIM, dan daftar eskalasi.
+- `PARITAS-LAYAR-DAN-AKSI.md` milik modul ini lahir (tiket 01–09).
+- ⚠️ Penjaga batas konteks Claim Life (`DateApprove` peka huruf) — medan Go dinamai `TanggalPutus`,
+  kunci JSON tetap `dateApprove`; tanpa pengecualian baru.
+
+### AC — keadaan
+
+| AC | Keadaan |
+| --- | --- |
+| tiap tingkat berurutan: keputusan, komentar, waktu | ✅ |
+| keputusan sebagai kata | ✅ |
+| eskalasi terbaca di riwayat yang sama | ✅ |
+| tingkat dilewati terlihat dilewati | ✅ `Dilewati (eskalasi)` ≠ `Menunggu` |
+| melekat pada baris adjustment | ✅ satu kasus per `ADJUSTMENT_ID` (unik, 013) |
+| dapat dibaca tanpa wewenang memutuskan | ✅ `TestRiwayatUntukSiapaPun` |
+| dari `T_KOMITE_KOMITELIST` urut `KOMITE_URUT` | ✅ |
+| anggota, keputusan, komentar, tanggal langsung dari kolomnya | ✅ |
+| belum memutus = `0` sebagai kata | ✅ `Menunggu` |
+
+### Angka
+
+Go **596 PASS · 0 FAIL** tingkat atas; vet (+`-tags db`), gofmt bersih · vitest **358** · tsc bersih.

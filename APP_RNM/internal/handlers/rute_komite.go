@@ -7,6 +7,7 @@ package handlers
 //	POST /api/komite/{id}/keputusan  {"keputusan":"1|2","komentar":"…"} (tiket 02)
 //	POST /api/komite/{id}/eskalasi   naik SATU tingkat, admin saja (tiket 03)
 //	GET  /api/komite/laporan-harian  efek "perlu intervensi" hari ini (tiket 08)
+//	GET  /api/komite/{id}/riwayat    riwayat tangga + eskalasi, siapa pun (tiket 09)
 //
 // Nol aturan dagang di sini; siapa melihat apa diputuskan
 // `services/komite_inbox.go`.
@@ -119,6 +120,21 @@ func laporanHarianKomite(svc *services.Service, stubPelaku bool) http.HandlerFun
 			return
 		}
 		tulisJSONPolis(w, l)
+	}
+}
+
+// riwayatKomite melayani GET /api/komite/{id}/riwayat.
+func riwayatKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !svc.PunyaDatabase() {
+			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			return
+		}
+		rw, err := svc.InboxKomite().Riwayat(r.Context(), pelakuDari(r, stubPelaku), r.PathValue("id"))
+		if jawabGalatKomite(w, err) {
+			return
+		}
+		tulisJSONPolis(w, rw)
 	}
 }
 

@@ -57,7 +57,8 @@ func TestStatusDanUangSebagaiTeks(t *testing.T) {
 	if k.Kasus.StatusBaris != "Outstanding" || k.Kasus.NilaiKlaim != "1500000.25" {
 		t.Errorf("status %q nilai %q", k.Kasus.StatusBaris, k.Kasus.NilaiKlaim)
 	}
-	if KataApprovalKomite("0") != "Menunggu" || KataApprovalKomite("9") != "Kode 9" {
+	if KataApprovalKomite("0") != "Menunggu" || KataApprovalKomite("9") != "Kode 9" ||
+		KataApprovalKomite("1") != "Setuju" || KataApprovalKomite("") != KataTingkatDilewati {
 		t.Errorf("kata approval %q / %q", KataApprovalKomite("0"), KataApprovalKomite("9"))
 	}
 }

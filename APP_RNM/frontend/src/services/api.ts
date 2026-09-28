@@ -1756,6 +1756,26 @@ export interface KasusKomite {
   efek: { keadaan: string; efek: EfekKomite[] }
 }
 
+/** Riwayat tangga — `GET /api/komite/{id}/riwayat` (tiket 09; siapa pun). */
+export interface RiwayatKomite {
+  kasusId: string
+  adjustmentId: string
+  tangga: {
+    urut: number
+    committee: string
+    anggota: string
+    /** KATA — Setuju / Tolak / Menunggu / Dilewati (eskalasi). */
+    status: string
+    dateApprove: string
+    comment: string
+  }[]
+  eskalasi: { dariTingkat: number; keTingkat: number; oleh: string; waktu: string }[]
+}
+
+export async function ambilRiwayatKomite(kasusID: string): Promise<RiwayatKomite> {
+  return minta<RiwayatKomite>(`/api/komite/${encodeURIComponent(kasusID)}/riwayat`)
+}
+
 /** Laporan harian "perlu intervensi" — `GET /api/komite/laporan-harian` (admin). */
 export interface LaporanHarianKomite {
   tanggal: string

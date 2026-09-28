@@ -145,15 +145,10 @@ func (i *InboxKomite) Ambil(ctx context.Context, pelaku Pelaku, halaman, ukuran 
 // lain datang dari dropdown `.KomiteAproval` layar `ShowTransfer` (b30623) -
 // artinya dibaca di tiket 02; sampai itu kodenya DISEBUT, tidak diterjemahkan
 // dengan tebakan.
-func KataApprovalKomite(kode string) string {
-	switch strings.TrimSpace(kode) {
-	case repository.ApprovalKomiteMenunggu:
-		return "Menunggu"
-	case "":
-		return "Kosong"
-	}
-	return "Kode " + strings.TrimSpace(kode)
-}
+//
+// ⚠️ Sejak tiket 02/03/09 kodenya sudah terbaca: `1`/`2` = Setuju/Tolak,
+// kosong = dilewati eskalasi. Satu penerjemah - `KataStatusTangga`.
+func KataApprovalKomite(kode string) string { return KataStatusTangga(kode) }
 
 // Kasus membaca satu kasus. Hanya anggota tangga kasus itu yang boleh.
 //

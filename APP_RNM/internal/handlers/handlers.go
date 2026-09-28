@@ -130,6 +130,8 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 	// Tiket 08 - literal mendahului `{id}` (pola paling spesifik menang).
 	mux.HandleFunc("GET /api/komite/laporan-harian", laporanHarianKomite(svc, stubPelaku))
 	mux.HandleFunc("GET /api/komite/{id}", kasusKomite(svc, stubPelaku))
+	// Tiket 09 - riwayat tangga; membaca, bukan memutuskan.
+	mux.HandleFunc("GET /api/komite/{id}/riwayat", riwayatKomite(svc, stubPelaku))
 	// Tiket 02 - keputusan satu tingkat (`ShowTransfer` Submit).
 	mux.HandleFunc("POST /api/komite/{id}/keputusan", putuskanKomite(svc, stubPelaku))
 	// Tiket 03 - eskalasi naik satu tingkat (admin).

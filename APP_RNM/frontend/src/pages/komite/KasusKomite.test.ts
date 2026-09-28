@@ -55,6 +55,11 @@ describe('keputusan komite', () => {
     expect(bolehEskalasi([PERAN.admin], null)).toBe(false)
   })
 
+  it('riwayat tangga memakai judul VERBATIM ShowTransfer (tiket 09)', () => {
+    expect(SUMBER).toContain('KASUS_KOMITE.committee')
+    expect(SUMBER).toContain('ambilRiwayatKomite(kasusID)')
+  })
+
   it('formulir hanya pada giliran pelaku; dropdown wajib', () => {
     expect(SUMBER).toContain('k.giliranSaya && (')
     expect(SUMBER).toMatch(/<select\s+required/)
