@@ -18,7 +18,8 @@ package services
 // Penjaga `STS_REJECT = 0` di sana sekaligus menjadi gerbang "lahir sekali"
 // (`ACCEPTEDNO == ""` di XML): baris yang sudah diaksep tidak diaksep lagi.
 //
-// ⚠️ Tolak di tingkat akhir (langkah 5) = tiket 05; sampai itu tetap gagal terang.
+// Tolak di tingkat akhir (langkah 5) - tiket 05, di berkas yang sama supaya
+// rekam akhirnya SATU jalur (tiket 04b).
 //
 // Dibaca sesudah: komite_keputusan.go, models/komite_nomor.go.
 
@@ -167,8 +168,62 @@ func (p penyelesaiAkhirOracle) rekamAkhir(ctx context.Context, tx *repository.Tx
 		status, nomor, saat)
 }
 
-// Tolak - langkah 5, tiket 05. Sampai itu gagal terang.
+// Tolak - langkah 5 "Reject" (gerbang b8119), tiket 05 Komite.
+//
+// `[terverifikasi]` `KomitePostAdjustment` langkah 5:
+//
+//	5.1 "Set Reject Komite berjenjang"  SELURUH KomiteList: Aproval = 2,
+//	                                    Comment = "", DateApprove = now  - TANPA syarat
+//	5.3 "Set Nilai Akseptasi"           AdjustmentList.STS_REJECT = 2,
+//	                                    PremiumListDetail.STS_REJECT = 2, .IsCheck = "false"
+//	5.6 "Insert ke OS"                  UpdateOsAkseptasiClaimLife_sql
+//
+// ⚠️ 5.1 TIDAK DITIRU - OQ-K-05 `[terbuka — work owner]`. Ia menimpa keputusan
+// `1` dan komentar SETIAP tingkat sebelumnya dengan `2` dan teks kosong:
+// riwayat tangga (tiket 09) dan jejak per tingkat (ADR-0007) kehilangan
+// siapa yang menyetujui sebelum tingkat akhir menolak. Yang ditulis di sini
+// hanya keputusan tingkat akhir itu sendiri (`CatatKeputusan`, tiket 02).
+//
+// ⛔ `AcceptStatus` TIDAK diteruskan ke Claim Life (ADR-0001): ia dipetakan di
+// batas ini menjadi `STS_REJECT = 2` - kode Claim Life `KodeDitolak`.
 func (p penyelesaiAkhirOracle) Tolak(ctx context.Context, tx *repository.Tx,
 	kasus repository.KasusKomite, pelaku Pelaku, saat time.Time) error {
-	return ErrPenyelesaianAkhirBelumAda
+
+	// Gerbang penulis status - lihat Akseptasi.
+	if err := periksaGiliran(kasus, pelaku.AkunID); err != nil {
+		return err
+	}
+	klaimID := kasus.Baris.KlaimID
+	if strings.TrimSpace(kasus.AdjID) == "" || strings.TrimSpace(kasus.PesertaID) == "" {
+		return fmt.Errorf("%w: kasus %q tanpa baris adjustment/peserta", ErrPermintaanTidakSah,
+			kasus.Baris.KasusID)
+	}
+	baca := repository.NewKlaimLife(p.svc.db)
+	// 5.3 - dua tingkat baris, nilai yang sama, satu operasi (AC 15 spec).
+	// Penjaga `STS_REJECT = 0` di `PerbaruiStatusBaris` = gerbang "masih
+	// Outstanding"; nomor dan tanggal akseptasi dikosongkan (nol pada Tolak).
+	if err := baca.PerbaruiStatusBaris(ctx, tx, kasus.PesertaID, kasus.AdjID,
+		models.KodeOutstanding, models.KodeDitolak, "", time.Time{}); err != nil {
+		return err
+	}
+	// 5.3 `.IsCheck = "false"` - peserta dapat dipilih ulang dengan baris
+	// pengganti di Claim Life (AC 2 tiket ini). Fungsi Claim Life yang ada.
+	if err := baca.CabutPenandaDipilih(ctx, tx, kasus.PesertaID); err != nil {
+		return err
+	}
+	if err := baca.CerminkanHeader(ctx, tx, klaimID, models.KodeDitolak, ""); err != nil {
+		return err
+	}
+	// 5.6 - jalur tunggal rekam akhir, status 2, tanpa nomor.
+	if err := p.rekamAkhir(ctx, tx, kasus, models.KodeDitolak, "", saat); err != nil {
+		return err
+	}
+	return p.jejak.Rekam(ctx, tx, CatatanJejak{
+		AdjustmentID: kasus.AdjID,
+		KlaimID:      klaimID,
+		Dari:         models.KodeOutstanding,
+		Ke:           models.KodeDitolak,
+		AkunID:       pelaku.AkunID,
+		Waktu:        saat,
+	})
 }

@@ -70,3 +70,63 @@ Konsekuensinya untuk **CL-11**: tiket itu **membaca dan menampilkan** hasil yang
 go test ./internal/...
 make check
 ```
+
+## Implementasi — 28-09-2026 (giliran 10)
+
+### Pembacaan ulang XML — langkah 5 "Reject" (gerbang b8119 `AcceptStatus==2 && KomiteCount == KomiteLoop`)
+
+| Sub | Isi | Nasib |
+| --- | --- | --- |
+| 5.1 b5785 | "Set Reject Komite berjenjang": perulangan **seluruh** `…AdjustmentList(…).KomiteList` — `KomiteAproval = 2`, `KomiteComment = ""`, `DateApprove = @CurrentDateTime()`, dan salinannya di `pyWorkPage.KomiteList`; **tanpa syarat** | ⛔ **tidak ditiru** — OQ-K-05 |
+| 5.3 b6279 | "Set Nilai Akseptasi": `AdjustmentList.STS_REJECT = 2`, `PremiumListDetail.STS_REJECT = 2`, `PremiumListDetail.IsCheck = "false"` | ✅ |
+| 5.4 b6450 | "Set Param" — bahan `UpdateOsAkseptasiClaimLife_sql` | ✅ lewat jalur tunggal 04b |
+| 5.5 | "Tukar SecurityReinsurer dengan RetroName" `//` | ➖ mati |
+| 5.6 b7911 | "Insert ke OS" | ✅ `RekamAkhirWarisan(…, "2", "")` |
+
+⚠️ Penajaman: precondition `.ACCEPTEDNO=="" && .IsCheck = true && .STS_REJECT == "0"` pada 4.15 dan
+5.6 **tertulis tetapi mati** — `pyStepsPreCondition false` (pecahan baris 20/21 di jendela langkahnya).
+Tanpa itu keduanya akan membatalkan dirinya sendiri, sebab 4.11/5.3 baru saja mengubah `STS_REJECT`.
+
+### ⛔ OQ-K-05 `[terbuka — work owner]` — 5.1 menghapus riwayat tangga
+
+Bila tingkat akhir menolak, 5.1 menimpa keputusan `1` dan komentar **setiap** tingkat sebelumnya dengan
+`2` dan teks kosong. Menirunya menghapus satu-satunya catatan siapa yang menyetujui sebelum penolakan —
+bertentangan dengan ADR-0007 dan dengan riwayat tangga tiket 09. Yang ditulis sistem ini: keputusan
+tingkat akhir itu saja (tiket 02); tingkat lain tetap apa yang mereka putuskan. Bila paritas persis
+dikehendaki, itu satu `UPDATE` bersyarat — keputusannya milik work owner.
+
+### ⚠️ OQ-K-05b `[terbuka — work owner]` — Tolak di tingkat TENGAH
+
+Langkah 5 bergerbang tingkat akhir, dan `IsKomiteLoop` palsu sesudah Tolak — jadi Tolak di tingkat
+tengah **menghentikan tangga tanpa menyentuh baris klaim**: baris tetap `Outstanding`, dan
+`KOMITE_ID`-nya tetap menunjuk kasus komite yang sudah berhenti. Di sistem ini akibatnya konkret: jalur
+penyerahan Claim Life menolak baris yang sudah ber-`KOMITE_ID` (`ErrBarisSudahDiserahkan`), sehingga
+baris itu tidak dapat diserahkan ulang **dan** tidak pernah ditolak. Perilaku korpusnya ditiru apa
+adanya; jalan keluarnya (tolak tengah = tolak baris? lepaskan `KOMITE_ID`?) keputusan work owner.
+
+### Yang dibangun
+
+- `penyelesaiAkhirOracle.Tolak` (menggantikan penolak bawaan yang gagal terang): gerbang anggota
+  berjalan; **dua tingkat baris** bernilai sama dalam satu operasi lewat `PerbaruiStatusBaris`
+  (`Outstanding → Ditolak`, penjaga `STS_REJECT = 0` = hanya baris yang masih Outstanding); nomor dan
+  tanggal akseptasi **kosong**; `CabutPenandaDipilih` (`IS_CHECK = "false"`, peserta dapat dipilih ulang
+  — AC 2); `CerminkanHeader`; rekam akhir jalur tunggal status `2`; jejak — seluruhnya di transaksi
+  keputusan akhir.
+- `AcceptStatus` dipetakan di batas ini ke `KodeDitolak`; ia tidak disimpan sebagai status kedua di
+  Claim Life (ADR-0001).
+
+### AC — keadaan
+
+| AC | Keadaan |
+| --- | --- |
+| Setuju akhir → Aksep | ✅ (04a) |
+| Tolak akhir → Ditolak; klaim tetap dapat menerima baris baru | ✅ `IS_CHECK = "false"`, baris baru lewat jalur Claim Life |
+| dua tingkat baris, nilai sama, satu operasi | ✅ |
+| hanya di tingkat akhir | ✅ — dan OQ-K-05b untuk tingkat tengah |
+| hanya baris Outstanding, dipilih, belum bernomor | ✅ penjaga `STS_REJECT = 0` + gerbang A2 saat penyerahan |
+| pelaku dan waktu terekam | ✅ jejak |
+| `AcceptStatus` tidak diteruskan | ✅ |
+
+### Angka
+
+Go **580 PASS · 0 FAIL** tingkat atas; vet (+`-tags db`), gofmt bersih · vitest **357** · tsc bersih.

@@ -69,3 +69,28 @@ func TestRekamAkhirSatuJalurDalamAkseptasi(t *testing.T) {
 		t.Errorf("rekam akhir dipanggil di %d tempat, mau 1 (satu jalur berparameter status)", n)
 	}
 }
+
+// TestTolakAkhirDuaTingkatBarisSatuJalur - tiket 05 Komite, AC 15 spec.
+func TestTolakAkhirDuaTingkatBarisSatuJalur(t *testing.T) {
+	kode := sumberKomiteAkseptasi(t)
+	i := strings.Index(kode, "func (p penyelesaiAkhirOracle) Tolak(")
+	if i < 0 {
+		t.Fatal("Tolak tidak ditemukan")
+	}
+	badan := kode[i:]
+	for _, wajib := range []string{"periksaGiliran(kasus, pelaku.AkunID)",
+		"models.KodeOutstanding, models.KodeDitolak", "baca.CabutPenandaDipilih(",
+		"baca.CerminkanHeader(ctx, tx, klaimID, models.KodeDitolak", "p.rekamAkhir(ctx, tx, kasus, models.KodeDitolak",
+		"p.jejak.Rekam("} {
+		if !strings.Contains(badan, wajib) {
+			t.Errorf("Tolak tidak memuat %q", wajib)
+		}
+	}
+	if strings.Contains(badan, "ErrPenyelesaianAkhirBelumAda") {
+		t.Error("Tolak masih gagal terang - tiket 05 belum tersambung")
+	}
+	// ⛔ 5.1 tidak ditiru: tidak ada penimpaan tangga seluruhnya.
+	if strings.Contains(kode, "KOMITE_APPROVAL = '2'") || strings.Contains(kode, "TimpaTangga") {
+		t.Error("penimpaan seluruh tangga (5.1) ditiru, padahal OQ-K-05 menahannya")
+	}
+}
