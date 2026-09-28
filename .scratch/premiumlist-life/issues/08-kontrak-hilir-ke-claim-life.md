@@ -192,3 +192,41 @@ Jalur NB kini terbukti dan seragam dengan EDM.
 go test ./internal/...
 cd frontend && npm test
 ```
+
+## Implementasi — 28-09-2026 (giliran 10): kontrak dua sisi, dikunci dan dibuktikan menggigit
+
+### Dua kontrak, masing-masing diuji di kedua sisi
+
+| Kontrak | Sisi penulis | Sisi pembaca | Uji |
+| --- | --- | --- | --- |
+| **pl4** `GET /api/polis-life/ringkas` | `services.PolicyDataLife` (tag JSON, dibaca lewat `json.Marshal`) | `frontend/src/services/api.ts` `interface PolicyDataLife` | Go membaca antarmuka TS (`TestPolicyDataLifeSamaDiKeduaSisi`); TS membaca tag Go (`policydatalife.kontrak.test.ts`), dengan daftar kunci bertipe `Record<keyof PolicyDataLife, true>` sehingga `tsc` menolak daftar yang menyimpang dari antarmukanya |
+| **pl2** `M_LIFE_PREMIUM_DETAIL` | `repository/polis_warisan.go` (PremiumList) | `repository/pesertapolis.go` `kolomSalin` + `sqlCariPeserta` (Claim Life) | `TestKolomBacaClaimLifeDiisiPenulisPremiumList`: setiap kolom yang dibaca Claim Life harus diisi penulis |
+
+⚠️ **Instrumen dibuktikan menggigit** — mutasi sementara, lalu dipulihkan (`git checkout`, diff kosong):
+
+- tag `prodKe` → `prodke` di Go: uji Go **merah** ("kunci PolicyDataLife berselisih"), uji TS **merah**;
+- baris `CURRENCY` dicabut dari `kolomPesertaWarisan`: uji kontrak **merah** — *"membaca [CURRENCY] … penulis
+  PremiumList tidak mengisinya"*.
+
+Pembaca daftar pilih diuji atas jawaban yang sudah diketahui (ujung `ID…CURRENT_AGE` dan
+`PL_NUMBER…EDMSTATUS`), supaya kontrak tidak lulus hampa karena pembacanya rusak.
+
+### AC — keadaan
+
+| AC | Keadaan |
+| --- | --- |
+| penulisan detail NB INLINE, bukan job | ✅ `simpanDalam` di transaksi simpan/tutup (tiket 05b); nol penjadwal |
+| sesudah simpan berhasil, baris untuk `PL_NUMBER` itu sudah ada | ✅ struktural — satu commit · ⚠️ belum dibuktikan terhadap Oracle |
+| dapat dibaca jalur baca klaim | ✅ kontrak kolom + kunci (`PL_NUMBER`, `CERTIFICATE_NO`) |
+| `SaveMasterLPDet` apa adanya; `PL_NUMBER_EDM` kosong di NB | ✅ pemetaan 80 kolom VERBATIM; `PL_NUMBER_EDM ← p.PL_NUMBER_EDM` (kosong di NB) |
+| penjaga idempotensi | ⚠️ **menyimpang, sadar**: Pega *melewati* bila baris untuk `PL_NUMBER` sudah ada (`PL_NUMBER==""` b3820); kami *mengganti* salinan milik work yang sama (`DELETE … PL_NUMBER AND IDPEGA`). Keduanya tidak menggandakan; yang kami pilih membuat unggah ulang sesudah simpan ikut tercermin. `[terbuka — work owner]` bila "lewati" yang dikehendaki |
+| titik potong `SaveMasterLPDet` | ➖ lenyap — satu transaksi (pl2) |
+| peserta NB (EDMSTATUS NULL) tetap hidup di jalur baca klaim | ✅ `TestPesertaNBTetapHidupDiJalurBacaKlaim` |
+| bentuk rekam ditandai kontrak lintas konteks | ✅ kedua uji di atas; mengubah salah satu sisi memerahkan uji |
+| `M_LIFE_PREMIUM_SUMMARY` dapat ditemukan lewat `PL_NUMBER` | ⛔ tidak ditulis — OQ-PL-09 (tiket 05a) |
+| ⚠️ AC relasional "Claim Life membaca dari `T_PREMIUM_LIST_DETAIL`" (2026-09-16) | ⚠️ **dilampaui pl2** (28-09-2026): Claim Life tetap membaca `M_LIFE_PREMIUM_DETAIL`, maka tabel itu ditulis |
+| test kontrak menembus satu seam lewat HTTP terhadap Oracle | ⚠️ belum — skema uji belum memasang 050–056 |
+
+### Angka
+
+Go **544 PASS · 0 FAIL** tingkat atas; vet (+`-tags db`), gofmt bersih · vitest **349** · tsc bersih.
