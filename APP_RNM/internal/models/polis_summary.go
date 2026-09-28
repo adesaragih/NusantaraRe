@@ -39,15 +39,75 @@ import (
 	"nusantarare/pkg/utils"
 )
 
-// AngkaDesimalBalance adalah angka desimal pembulatan akhir `BALANCE`.
+// AngkaDesimalRekap adalah angka desimal pembulatan akhir SELURUH rekap.
 //
-// `[terverifikasi]` `@divide(Param.Balance,1,4)` - pembagian dengan SATU,
-// yaitu pembulatan ke empat angka yang ditulis sebagai pembagian.
+// `[terverifikasi]` `@divide(Param.X,1,4)` - pembagian dengan SATU, yaitu
+// pembulatan ke empat angka yang ditulis sebagai pembagian.
+//
+// ⚠️ RALAT 28-09-2026 (giliran 10): bagian 1 menamainya `AngkaDesimalBalance`
+// karena membacanya hanya pada `.BALANCE`. DT langkah 2.39-2.74 menulis
+// `@divide(…,1,4)` pada KETIGA PULUH ENAM keluaran - `.PREMIUM` (2.39),
+// `.COMMISSION` (2.40), tiga puluh tiga kolom `KolomJumlahSummary`, lalu
+// `.BALANCE` (2.74). Namanya diganti supaya tidak berbohong.
 //
 // ⛔ KEANEHAN WARISAN, disalin apa adanya. Menuliskannya sebagai pembulatan
 // yang jujur akan menghilangkan jejak bahwa rule aslinya menulis begini - dan
 // jejak itu yang menjelaskan kenapa angkanya berhenti di empat.
-const AngkaDesimalBalance = 4
+const AngkaDesimalRekap = 4
+
+// KolomJumlahSummary adalah kolom yang dijumlah APA ADANYA per mata uang.
+//
+// `[terverifikasi]` DT langkah 2.38.1.5-2.38.1.38 (penjumlahan `param.X +
+// .X`) dan 2.41-2.73 (keluaran `@divide`), urut dokumen. Tiga puluh tiga
+// kolom; `COMM` tidak di sini karena ia menyusun `COMMISSION`.
+//
+// ⛔ BUKAN `KolomUangUnggah`. Bagian 1 menjumlah ke-32 kolom unggahan - daftar
+// yang memuat `NET_PREMIUM`, `GROSS_PREMIUM`, `SUM_INSURED`, `EM_PERCENT`,
+// `FLEET_DISCOUNT`, `COMM`, `SHARE_NUSANTARA_RE` yang TIDAK pernah dijumlah
+// DT, dan MELEWATKAN `DEDUCTION`, `RI_ADMIN_FEE*`, `DEDUCTION_REFUND`,
+// `SUM_AT_RISK_GROSS`, `SHARE_NUSANTARA_RE_GROSS` yang dijumlah DT. Rekap
+// dengan daftar itu menyimpan nol di kolom yang seharusnya berisi.
+var KolomJumlahSummary = []string{
+	"BROKERAGE_FEE", "OVR_COMM", "TAX", "PROF_COMM", "CLAIM",
+	"NET_PREMIUM_REFUND", "GROSS_PREMIUM_REFUND", "COMM_REFUND",
+	"BROKERAGE_FEE_REFUND", "OVR_COMM_REFUND", "TAX_REFUND",
+	"SHARE_RETRO", "GROSS_PREMIUM_RETRO", "DISCOUNT_PREMIUM_RETRO",
+	"OVR_COMM_RETRO", "BROKERAGE_FEE_RETRO", "NET_PREMIUM_RETRO",
+	"GROSS_PREMIUM_REFUND_RETRO", "DISCOUNT_PREMIUM_REFUND_RETRO",
+	"OVR_COMM_REFUND_RETRO", "BROKERAGE_FEE_REFUND_RETRO",
+	"NET_PREMIUM_REFUND_RETRO", "CLAIM_AMOUNT", "RI_ADMIN_FEE_RETRO",
+	"RI_ADMIN_FEE_REFUND_RETRO", "RI_ADMIN_FEE_REFUND", "DEDUCTION_REFUND",
+	"RI_ADMIN_FEE", "DEDUCTION", "SUM_REASURED", "SHARE_NUSANTARA_RE_GROSS",
+	"SUM_AT_RISK_GROSS", "CEDING_RETENTION",
+}
+
+// KolomBacaSummary adalah kolom baris peserta yang dibutuhkan rekap.
+//
+// Gabungan `KolomJumlahSummary`, `COMM`, kolom `PREMIUM` keempat cabang, dan
+// seluruh suku `BALANCE` - tanpa kembar, urut kemunculan. Pembaca repository
+// memakainya supaya tidak ada kolom yang dirumuskan di sini tetapi tidak
+// pernah dibaca dari basis data (dan diam-diam bernilai nol).
+func KolomBacaSummary() []string {
+	lihat := map[string]bool{}
+	var keluar []string
+	tambah := func(k ...string) {
+		for _, x := range k {
+			if !lihat[x] {
+				lihat[x] = true
+				keluar = append(keluar, x)
+			}
+		}
+	}
+	tambah(KolomJumlahSummary...)
+	tambah("COMM")
+	for _, tipe := range []string{TipePLQuotationRealisasi, TipePLQuotationProposal,
+		TipePLTreatyProposal, TipePLTreatyRealisasi} {
+		tambah(premiumMenurutTipe[tipe])
+		tambah(balanceMenurutTipe[tipe].Tambah...)
+		tambah(balanceMenurutTipe[tipe].Kurang...)
+	}
+	return keluar
+}
 
 // premiumMenurutTipe memetakan `Type` polis ke kolom yang menyusun `PREMIUM`.
 //
@@ -145,7 +205,7 @@ type RekapMataUang struct {
 	Premium    *apd.Decimal
 	Commission *apd.Decimal
 	Balance    *apd.Decimal
-	// Jumlah memuat ke-32 kolom uang yang dijumlah apa adanya.
+	// Jumlah memuat ke-33 kolom `KolomJumlahSummary`, dijumlah apa adanya.
 	Jumlah map[string]*apd.Decimal
 	// CacahBaris adalah cacah peserta yang masuk rekap ini.
 	CacahBaris int
@@ -156,9 +216,9 @@ type RekapMataUang struct {
 // `tipe` adalah `T_PREMIUM_LIST.TYPE` - ia yang memilih cabang `PREMIUM` dan
 // `BALANCE`, dan ia milik POLIS, bukan milik baris.
 //
-// ⛔ PEMBULATAN HANYA DI AKHIR. `BALANCE` dibulatkan ke empat angka SESUDAH
-// seluruh baris dijumlah, persis `@divide(Param.Balance,1,4)` yang berdiri di
-// luar perulangan. Membulatkan per baris lalu menjumlah menghasilkan angka
+// ⛔ PEMBULATAN HANYA DI AKHIR. SELURUH keluaran dibulatkan ke empat angka
+// SESUDAH seluruh baris dijumlah, persis `@divide(Param.X,1,4)` langkah
+// 2.39-2.74 yang berdiri di luar perulangan. Membulatkan per baris lalu menjumlah menghasilkan angka
 // yang BERBEDA, dan selisihnya tumbuh bersama cacah peserta.
 //
 // ⛔ NOL FLOAT (ADR-U-0003, ADR-U-0016).
@@ -195,7 +255,7 @@ func RekapPerMataUang(tipe string, baris []BarisUang, mataUang []string) (
 				Balance:    apd.New(0, 0),
 				Jumlah:     map[string]*apd.Decimal{},
 			}
-			for _, k := range KolomUangUnggah {
+			for _, k := range KolomJumlahSummary {
 				r.Jumlah[k] = apd.New(0, 0)
 			}
 			rekap[cur] = r
@@ -203,7 +263,7 @@ func RekapPerMataUang(tipe string, baris []BarisUang, mataUang []string) (
 		}
 		r.CacahBaris++
 
-		for _, k := range KolomUangUnggah {
+		for _, k := range KolomJumlahSummary {
 			if _, err := ctx.Add(r.Jumlah[k], r.Jumlah[k], b.ambil(k)); err != nil {
 				return nil, fmt.Errorf("models: menjumlah %s: %w", k, err)
 			}
@@ -232,12 +292,29 @@ func RekapPerMataUang(tipe string, baris []BarisUang, mataUang []string) (
 	keluar := make([]RekapMataUang, 0, len(urut))
 	for _, cur := range urut {
 		r := rekap[cur]
-		// Pembulatan akhir, dan HANYA di sini.
-		bulat := apd.New(0, 0)
-		if _, err := ctx.Quantize(bulat, r.Balance, -AngkaDesimalBalance); err != nil {
-			return nil, fmt.Errorf("models: membulatkan BALANCE %s: %w", cur, err)
+		// Pembulatan akhir, dan HANYA di sini - untuk SETIAP keluaran.
+		bulatkan := func(nama string, v *apd.Decimal) (*apd.Decimal, error) {
+			bulat := apd.New(0, 0)
+			if _, err := ctx.Quantize(bulat, v, -AngkaDesimalRekap); err != nil {
+				return nil, fmt.Errorf("models: membulatkan %s %s: %w", nama, cur, err)
+			}
+			return bulat, nil
 		}
-		r.Balance = bulat
+		var err error
+		if r.Premium, err = bulatkan("PREMIUM", r.Premium); err != nil {
+			return nil, err
+		}
+		if r.Commission, err = bulatkan("COMMISSION", r.Commission); err != nil {
+			return nil, err
+		}
+		for _, k := range KolomJumlahSummary {
+			if r.Jumlah[k], err = bulatkan(k, r.Jumlah[k]); err != nil {
+				return nil, err
+			}
+		}
+		if r.Balance, err = bulatkan("BALANCE", r.Balance); err != nil {
+			return nil, err
+		}
 		keluar = append(keluar, *r)
 	}
 	return keluar, nil

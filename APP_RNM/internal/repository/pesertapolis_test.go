@@ -272,8 +272,11 @@ func TestPenyaringPesertaHanyaSatuTempat(t *testing.T) {
 			}
 		}
 	}
-	// Dua berkas menyebutnya: pembacanya, dan skema uji yang membuat tiruannya.
-	const mau = 2
+	// Tiga berkas menyebutnya: pembacanya, skema uji yang membuat tiruannya,
+	// dan - sejak tiket 05a bagian 2 (pl2) - penulis salinan warisan
+	// polis_warisan.go, yang menyebutnya di DAFTAR KOLOM `INSERT`, bukan
+	// sebagai penyaring. Pola penyaring di atas tetap berlaku bagi ketiganya.
+	const mau = 3
 	if ketemu != mau {
 		t.Errorf("berkas yang menyebut EDMSTATUS = %d, mau %d", ketemu, mau)
 	}

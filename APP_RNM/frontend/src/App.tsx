@@ -4,6 +4,7 @@ import Beranda from './pages/Beranda'
 import InboxPremiumList from './pages/premiumlist/InboxPremiumList'
 import InputOffer from './pages/premiumlist/InputOffer'
 import PremiumListDetail from './pages/premiumlist/PremiumListDetail'
+import PremiumListSummary from './pages/premiumlist/PremiumListSummary'
 import InboxClaimLife from './pages/claimlife/InboxClaimLife'
 import KlaimLife from './pages/claimlife/KlaimLife'
 import OutstandingClaimLife from './pages/claimlife/OutstandingClaimLife'
@@ -70,6 +71,10 @@ export default function App() {
         polis.tahap === TAHAP_POLIS.detail && (
           <PremiumListDetail polisID={polis.id} />
         )}
+      {/* Tiket 05a bagian 2 — `ShowLifePremiumSummary`, tahap Input Premium Summary. */}
+      {halaman === 'premiumlist' &&
+        polis.id !== '' &&
+        polis.tahap === TAHAP_POLIS.summary && <PremiumListSummary polisID={polis.id} />}
       {halaman === 'premiumlist' && polis.id !== '' && (
         <InputOffer
           polisID={polis.id}

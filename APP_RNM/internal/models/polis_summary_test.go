@@ -4,6 +4,9 @@ package models
 
 import (
 	"errors"
+	"os"
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/cockroachdb/apd/v3"
@@ -37,10 +40,10 @@ func TestPremiumSatuCabangBukanEmpat(t *testing.T) {
 		"GROSS_PREMIUM_REFUND_RETRO": d(t, "400"),
 	}}
 	for _, k := range []struct{ tipe, mau string }{
-		{"QR", "100"},
-		{"QP", "200"},
-		{"TP", "300"},
-		{"TR", "400"},
+		{"QR", "100.0000"},
+		{"QP", "200.0000"},
+		{"TP", "300.0000"},
+		{"TR", "400.0000"},
 	} {
 		r, err := RekapPerMataUang(k.tipe, baris, []string{"IDR"})
 		if err != nil {
@@ -174,8 +177,8 @@ func TestCommissionHanyaCOMM(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got := utils.FormatDecimal(r[0].Commission); got != "11" {
-			t.Errorf("tipe %s: COMMISSION %q, mau 11", tipe, got)
+		if got := utils.FormatDecimal(r[0].Commission); got != "11.0000" {
+			t.Errorf("tipe %s: COMMISSION %q, mau 11.0000", tipe, got)
 		}
 	}
 }
@@ -198,8 +201,8 @@ func TestSatuBarisRekapPerMataUang(t *testing.T) {
 	if r[0].Currency != "IDR" || r[1].Currency != "USD" {
 		t.Errorf("urutan mata uang %q lalu %q", r[0].Currency, r[1].Currency)
 	}
-	if got := utils.FormatDecimal(r[0].Premium); got != "150" {
-		t.Errorf("PREMIUM IDR %q, mau 150", got)
+	if got := utils.FormatDecimal(r[0].Premium); got != "150.0000" {
+		t.Errorf("PREMIUM IDR %q, mau 150.0000", got)
 	}
 	if r[0].CacahBaris != 2 || r[1].CacahBaris != 1 {
 		t.Errorf("cacah baris %d dan %d, mau 2 dan 1", r[0].CacahBaris, r[1].CacahBaris)
@@ -225,9 +228,105 @@ func TestPembulatanHanyaDiAkhir(t *testing.T) {
 	if got := utils.FormatDecimal(r[0].Balance); got != "0.0002" {
 		t.Errorf("BALANCE %q, mau 0.0002 - pembulatan per baris memberi 0.0003", got)
 	}
-	// PREMIUM tidak dibulatkan sama sekali: hanya BALANCE yang `@divide`-nya.
-	if got := utils.FormatDecimal(r[0].Premium); got != "0.00015" {
-		t.Errorf("PREMIUM %q, mau 0.00015 - ia tidak dibulatkan", got)
+	// ⚠️ RALAT 28-09-2026 (giliran 10): PREMIUM JUGA dibulatkan. Uji ini dulu
+	// menagih `0.00015` - bacaan bahwa hanya BALANCE yang ber-`@divide`.
+	// Langkah 2.39 DT membantahnya: `.PREMIUM = @divide(Param.Premium,1,4)`.
+	if got := utils.FormatDecimal(r[0].Premium); got != "0.0002" {
+		t.Errorf("PREMIUM %q, mau 0.0002 - ia dibulatkan di akhir juga", got)
+	}
+}
+
+// TestSeluruhKeluaranDibulatkanEmpatAngka - ralat giliran 10.
+//
+// ⛔ `[terverifikasi]` DT langkah 2.39-2.74: KETIGA PULUH ENAM keluaran
+// rekap ditulis `@divide(Param.X,1,4)` - bukan hanya `.BALANCE`. Rekap yang
+// membulatkan satu kolom dan membiarkan tiga puluh lima lainnya berekor
+// panjang menyimpan angka yang tidak pernah dihasilkan Pega.
+func TestSeluruhKeluaranDibulatkanEmpatAngka(t *testing.T) {
+	b := BarisUang{"COMM": d(t, "0.00005")}
+	for _, k := range KolomJumlahSummary {
+		b[k] = d(t, "0.00005")
+	}
+	r, err := RekapPerMataUang("QR", []BarisUang{b}, []string{"IDR"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := utils.FormatDecimal(r[0].Commission); got != "0.0001" {
+		t.Errorf("COMMISSION %q, mau 0.0001", got)
+	}
+	for _, k := range KolomJumlahSummary {
+		if got := utils.FormatDecimal(r[0].Jumlah[k]); got != "0.0001" {
+			t.Errorf("%s %q, mau 0.0001", k, got)
+		}
+	}
+}
+
+// TestKolomJumlahSummaryVERBATIMDariDT - daftar kolomnya dibaca dari korpus.
+//
+// ⛔ DUA CARA (CLAUDE.md §4a): cara A mencacah `SET .X = @divide(...)` di
+// keluaran DT; cara B mencacah penjumlahan `param.X + .X` di perulangan
+// baris. Keduanya harus menghasilkan himpunan yang SAMA dengan
+// `KolomJumlahSummary` - selisih di arah mana pun dilaporkan dengan namanya.
+func TestKolomJumlahSummaryVERBATIMDariDT(t *testing.T) {
+	const letak = `D:\XML\RNM_BRD\PremiumList Life\DataTransform\AppendCurrencySummary_DT.xml`
+	isi, err := os.ReadFile(letak)
+	if err != nil {
+		t.Skipf("korpus tidak terjangkau di mesin ini (%v); daftar tidak terperiksa", err)
+	}
+	teks := string(isi)
+	turunan := map[string]bool{"PREMIUM": true, "COMMISSION": true, "BALANCE": true}
+
+	// Cara A: target keluaran - `<pyPropertiesName>.X</pyPropertiesName>`
+	// berawalan titik dan seluruhnya huruf besar. Di DT ini hanya ke-36
+	// keluaran yang berbentuk begitu (sisanya `Param.`/`pyWorkPage.`).
+	caraA := map[string]bool{}
+	for _, m := range regexp.MustCompile(
+		`<pyPropertiesName>\.([A-Z_]+)</pyPropertiesName>`).
+		FindAllStringSubmatch(teks, -1) {
+		if !turunan[m[1]] {
+			caraA[m[1]] = true
+		}
+	}
+	// ⚠️ Instrumennya diuji atas jawaban yang sudah diketahui: 36 keluaran,
+	// dan seluruhnya ber-`@divide(…,1,4)` - dicacah terpisah.
+	if n := len(regexp.MustCompile(`<pyPropertiesValue>@divide\([^,<]+,1,4\)`).
+		FindAllString(teks, -1)); n != 36 {
+		t.Errorf("%d keluaran ber-@divide(…,1,4), mau 36", n)
+	}
+	// Cara B: penjumlahan di perulangan baris - `param.X + .X`. Penjumlah
+	// `Param.Premium`/`Param.Commission` dibuang: keduanya menyusun turunan,
+	// dan `Param.Balance` berbentuk `+(` sehingga tidak tertangkap.
+	caraB := map[string]bool{}
+	for _, m := range regexp.MustCompile(
+		`(?i)<pyPropertiesValue>param\.([A-Za-z_]+) \+ \.([A-Z_]+)</pyPropertiesValue>`).
+		FindAllStringSubmatch(teks, -1) {
+		switch strings.ToUpper(m[1]) {
+		case "PREMIUM", "COMMISSION":
+			continue
+		}
+		caraB[m[2]] = true
+	}
+	punya := map[string]bool{}
+	for _, k := range KolomJumlahSummary {
+		punya[k] = true
+	}
+	for nama, himpunan := range map[string]map[string]bool{"A": caraA, "B": caraB} {
+		for k := range himpunan {
+			if !punya[k] {
+				t.Errorf("cara %s: DT menjumlah %s, KolomJumlahSummary tidak", nama, k)
+			}
+		}
+		for k := range punya {
+			if !himpunan[k] {
+				t.Errorf("cara %s: KolomJumlahSummary memuat %s, DT tidak", nama, k)
+			}
+		}
+	}
+	// Tiga turunan juga dibulatkan - PREMIUM dan COMMISSION tidak luput.
+	for k := range turunan {
+		if !strings.Contains(teks, `<pyPropertiesName>.`+k+`</pyPropertiesName>`) {
+			t.Errorf("DT tidak lagi menulis .%s", k)
+		}
 	}
 }
 
@@ -260,8 +359,8 @@ func TestKolomAbsenDibacaNolBukanGalat(t *testing.T) {
 	if got := utils.FormatDecimal(r[0].Balance); got != "0.0000" {
 		t.Errorf("BALANCE %q, mau 0.0000", got)
 	}
-	// Ke-32 kolom tetap ada di rekap, bernilai nol - bukan hilang.
-	if len(r[0].Jumlah) != len(KolomUangUnggah) {
-		t.Errorf("%d kolom di rekap, mau %d", len(r[0].Jumlah), len(KolomUangUnggah))
+	// Ke-33 kolom tetap ada di rekap, bernilai nol - bukan hilang.
+	if len(r[0].Jumlah) != len(KolomJumlahSummary) {
+		t.Errorf("%d kolom di rekap, mau %d", len(r[0].Jumlah), len(KolomJumlahSummary))
 	}
 }

@@ -1650,3 +1650,53 @@ export async function ambilDataPolis(nomorPolis: string): Promise<PolicyDataLife
     `/api/polis-life/ringkas?nomorPolis=${encodeURIComponent(nomorPolis)}`,
   )
 }
+
+// ——— Tiket 05a bagian 2: rekap premium list (ShowLifePremiumSummary) ———
+
+/**
+ * Satu baris rekap per mata uang.
+ *
+ * ⛔ UANG TETAP TEKS — `975.0000`, bukan `975`. Ekor nol itu bukti bahwa
+ * pembulatan empat angka `@divide(…,1,4)` sudah terjadi di server.
+ */
+export interface RekapMataUangPolis {
+  currency: string
+  premium: string
+  commission: string
+  balance: string
+  /** Ke-33 kolom yang dijumlah apa adanya, berkunci nama kolom. */
+  jumlah: Record<string, string>
+  cacahBaris: number
+}
+
+/** Jawaban `GET /api/polis-life/{id}/summary`. */
+export interface HasilRekapPolis {
+  tipe: string
+  rekap: RekapMataUangPolis[]
+}
+
+/** Jawaban `POST /api/polis-life/{id}/summary`. */
+export interface HasilSubmitRekapPolis {
+  nomor: HasilNomorPL
+  rekap: RekapMataUangPolis[]
+  rekapDihapus: number
+  pesertaWarisan: number
+}
+
+/** Menghitung rekap tanpa menyimpan — `GET /api/polis-life/{id}/summary`. */
+export async function ambilRekapPolis(polisID: string): Promise<HasilRekapPolis> {
+  return minta<HasilRekapPolis>(`/api/polis-life/${encodeURIComponent(polisID)}/summary`)
+}
+
+/**
+ * Submit rekap — `POST /api/polis-life/{id}/summary`.
+ *
+ * ⛔ TANPA badan: tidak satu pun angka rekap boleh datang dari layar. Server
+ * menomori, merekap, dan menyalin peserta warisan dalam SATU transaksi.
+ */
+export async function submitRekapPolis(polisID: string): Promise<HasilSubmitRekapPolis> {
+  return minta<HasilSubmitRekapPolis>(
+    `/api/polis-life/${encodeURIComponent(polisID)}/summary`,
+    { metode: 'POST' },
+  )
+}

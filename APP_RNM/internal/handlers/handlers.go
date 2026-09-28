@@ -119,6 +119,14 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 		tinjauUnggahPolis(svc, stubPelaku))
 	mux.HandleFunc("POST /api/polis-life/{id}/unggah/simpan",
 		simpanUnggahPolis(svc, stubPelaku))
+	// Tiket 05a bagian 2 - layar `ShowLifePremiumSummary`.
+	//
+	// ⛔ GET menghitung tanpa menyimpan; POST menyimpan dalam SATU transaksi
+	// (nomor, rekap, salinan peserta warisan). Dua rute supaya melihat rekap
+	// tidak pernah menerbitkan nomor.
+	mux.HandleFunc("GET /api/polis-life/{id}/summary", rekapPolis(svc, stubPelaku))
+	mux.HandleFunc("POST /api/polis-life/{id}/summary",
+		submitRekapPolis(svc, stubPelaku))
 	return mux
 }
 

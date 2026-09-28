@@ -35,6 +35,8 @@ var (
 	ErrNomorPLBerbedaAntarPeserta = repository.ErrNomorPLBerbedaAntarPeserta
 	// ErrNomorPLTerbitBersamaan - permintaan lain mendahului.
 	ErrNomorPLTerbitBersamaan = repository.ErrNomorPLTerbitBersamaan
+	// ErrRekapKosong - tidak ada peserta yang direkap (tiket 05a).
+	ErrRekapKosong = repository.ErrRekapKosong
 )
 
 // HalamanPesertaPolis adalah satu halaman grid peserta.

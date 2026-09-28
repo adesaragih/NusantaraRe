@@ -291,3 +291,161 @@ per mata uang itu sendiri VERBATIM dari `WHEN Param.Currency == .CURRENCY`.
 ⛔ Pembulatan empat angka **hanya di akhir**, sesudah penjumlahan — bukan per baris. Membulatkan per
 baris lalu menjumlah menghasilkan angka yang berbeda dari menjumlah lalu membulatkan, dan selisihnya
 tumbuh bersama cacah peserta.
+
+## Implementasi bagian 2 — 28-09-2026 (giliran 10): pembaca, penyimpan, rute, layar
+
+### Pohon XML yang dibaca sebelum kode
+
+| Rule | Yang diambil |
+| --- | --- |
+| `DataTransform/AppendCurrencySummary_DT.xml` | langkah **2.38** perulangan baris; **2.39–2.74** ke-36 keluaran (`pyPropertyStepId` dibaca bersama `pyActionName`) |
+| `Activity/SavePremiumList_Act.xml` | langkah **12** `Apply-DataTransform AppendCurrencySummary_DT` — rekap dihitung untuk layar |
+| `Activity/SubmitPremiumList_Act.xml` | 17 langkah: 1 `Page-Remove` · 2–3 tanggal closing · 4–5 reset · 6–9 PL Number per `Type` · 10–13 kode produksi + urut · **14** `Set COB & PL Number` · **15** pl7 · **16** `pyMemo=1`, `IsJsonPolis=0` · **17** `Obj-Save` |
+| `RDBList/SaveMasterLPDet.xml` | `INSERT INTO POOLDATA.M_LIFE_PREMIUM_DETAIL` — 80 kolom (b87–b167), `COMMIT;` b252 |
+| `Activity/InsertLifePremiumDetail_act.xml` | 50 penetapan `TempInputDetail.CARIn` — sumber tiap nilai `SaveMasterLPDet` |
+| `Section/ShowLifePremiumSummary.xml` | empat layout `pyContainerVisibleWhen` `.Type = 'QR'/'QP'/'TP'/'TR'`, judul + properti kolom; tombol `Submit` |
+
+### ⚠️ RALAT bagian 1 — SELURUH keluaran dibulatkan, bukan hanya `BALANCE`
+
+Bagian 1 (`021d0f3`) membulatkan `.BALANCE` saja, dan `TestPembulatanHanyaDiAkhir` **menagih**
+`PREMIUM` tak dibulatkan (`0.00015`). `[terverifikasi]` DT langkah **2.39**
+`.PREMIUM = @divide(Param.Premium,1,4)`, **2.40** `.COMMISSION = @divide(Param.Commission,1,4)`,
+**2.41–2.73** tiga puluh tiga kolom, **2.74** `.BALANCE`. Perintah audit:
+
+```
+grep -o "<pyPropertyStepId>[^<]*\|<pyActionName>[^<]*\|<pyPropertiesName>[^<]*\|<pyPropertiesValue>[^<]*" \
+  DataTransform/AppendCurrencySummary_DT.xml
+```
+
+Cacah `<pyPropertiesValue>@divide(…,1,4)` = **36**; cacah target `<pyPropertiesName>.X</pyPropertiesName>`
+berhuruf besar = **36** — dua cara, sepakat. Uji lama diralat; `TestSeluruhKeluaranDibulatkanEmpatAngka` lahir.
+
+### ⚠️ RALAT bagian 1 — daftar kolom yang dijumlah BUKAN `KolomUangUnggah`
+
+Bagian 1 menjumlah ke-32 kolom unggahan. DT menjumlah **33 kolom lain** (`models.KolomJumlahSummary`):
+tanpa `NET_PREMIUM`, `GROSS_PREMIUM`, `SUM_INSURED`, `EM_PERCENT`, `FLEET_DISCOUNT`, `COMM`,
+`SHARE_NUSANTARA_RE`; dengan `DEDUCTION`, `DEDUCTION_REFUND`, `RI_ADMIN_FEE*` (4), `SUM_AT_RISK_GROSS`,
+`SHARE_NUSANTARA_RE_GROSS`. `TestKolomJumlahSummaryVERBATIMDariDT` membaca DT langsung dua cara —
+**cara A** target keluaran, **cara B** penjumlahan `param.X + .X` — dan menagih kesamaan dua arah.
+⚠️ Instrumennya **diuji dulu**: versi pertama cara A memakai jendela `name…value` yang tidak pernah
+cocok (tag lain menyela di XML mentah), dan cara B memungut cabang `Param.Premium + .GROSS_PREMIUM`;
+keduanya diperbaiki sebelum dipercaya. Himpunan 33 kolom = seluruh kolom uang migrasi 055 di luar
+`BALANCE`/`PREMIUM`/`COMMISSION` (`TestKolomRekapSamaDenganMigrasi055`, dua arah).
+
+### Pilihan pembaca — baca lalu hitung dengan rumus murni
+
+Brief memberi dua jalan (SUM/GROUP BY di SQL, atau baca lalu hitung). Dipilih **baca lalu hitung**:
+cabang `Type` dan tiga keanehan tanda `BALANCE` hidup satu kali di `models`, dikunci literal
+**975 / 978 / 897 / 1789** (`TestBalanceKeempatCabangDariLiteral`, kini `975.0000` dst.). SQL `CASE`
+akan menjadi salinan kedua rumus uang yang tidak diuji literal itu. Kesetaraan pembaca ↔ rumus:
+`sqlBarisUangPolis` memilih **tepat** `models.KolomBacaSummary()` (33 + `COMM` + kolom `PREMIUM`/`BALANCE`
+keempat cabang), seluruhnya ada di 052 (`TestKolomBacaSummaryAdaDiMigrasi052`), seluruhnya lewat
+`TO_CHAR` ber-NLS; `TestNilaiSisipRekapSejajarDanTepat` membawa literal 975 dari rumus sampai ke
+argumen SQL (`"975.0000"`).
+
+### Satu transaksi — `SummaryPremiumList.Submit`
+
+`POST /api/polis-life/{id}/summary`: gerbang kasus tertutup (`T_WORK_POLIS`) → **satu**
+`DalamTransaksi`: `terbitkanDalam` (langkah 10–14; diekstrak dari `Terbitkan` tiket 03 supaya gerbang
+lahir-sekali satu fungsi untuk dua jalur) → rekap murni → `GantiRekap` (hapus lalu sisip
+`T_PREMIUM_LIST_SUMMARY`) → `SumberWarisan` → `PesertaWarisan.Ganti` (pl2) → commit. Urutan dikunci
+`TestSubmitSummaryUrutanTerkunci` (dan tepat **satu** `DalamTransaksi`). Nol `COMMIT` di teks SQL
+(`TestNolCommitDiQueryRekapDanWarisan`). `GET` yang sama menghitung **tanpa** menyimpan.
+
+### ⚠️ RALAT AC 33 — `M_LIFE_PREMIUM_DETAIL` DITULIS (pl2), `M_LIFE_PREMIUM_SUMMARY` TIDAK (OQ-PL-09)
+
+AC 33 (2026-09-16) melarang penulisan `M_LIFE_PREMIUM_SUMMARY`/`M_LIFE_PREMIUM_DETAIL`.
+**pl2** (brief 3-PREMIUMLIST, 28-09-2026, lebih baru) membaliknya: keduanya ditulis dalam transaksi
+yang sama, sebab Claim Life membaca `M_LIFE_PREMIUM_DETAIL` (`GET /api/peserta-life`). Yang dikerjakan:
+
+- **`M_LIFE_PREMIUM_DETAIL` — DITULIS.** Pemetaan 80 kolom `[terverifikasi]` dari `SaveMasterLPDet` +
+  50 `CARIn` `InsertLifePremiumDetail_act` (`repository/polis_warisan.go`, `kolomPesertaWarisan`);
+  `TestKolomWarisanVERBATIMDariSaveMasterLPDet` membaca korpus dua cara (daftar kolom = 80, butir
+  `VALUES` = 80, `To_date` = 11) dan menagih urutannya posisi demi posisi. Idempoten: `DELETE … WHERE
+  PL_NUMBER = :1 AND IDPEGA = :2` — dikurung **work**, supaya baris endorsemen yang memuat `PL_NUMBER`
+  sama tidak ikut terhapus. `STATUSOLD = '0'` dan `STATUS = CARI48` VERBATIM. `IDPEGA` (`pzInsKey`)
+  diisi **pengenal work** (`polisID` = `T_WORK_POLIS.ID`), **bukan** `T_PREMIUM_LIST.ID_PEGA`: kolom
+  header itu belum punya satu pun penulis di repo ini, sehingga membacanya membuat setiap submit gagal.
+  ⚠️ Berkas penulisnya **tanpa satu pun kueri baca** — penjaga 66,8 juta baris tetap tajam; bahan
+  salinan dibaca dari tabel kami di `polis_summary.go` (`TestPenulisWarisanTanpaKueriBaca`).
+  `TestPenyaringPesertaHanyaSatuTempat` kini menghitung **3** berkas yang menyebut `EDMSTATUS`
+  (penulis ini menyebutnya di daftar kolom `INSERT`, bukan sebagai penyaring).
+- **`M_LIFE_PREMIUM_SUMMARY` — TIDAK DITULIS. ⛔ OQ-PL-09 `[terbuka — DBA]`.** Isi procedure
+  `PEGA_M_LIFE_PREMIUM_SUMMARY` dan daftar kolom tabelnya **tidak ada di korpus** (`[data DBA]`,
+  STRUKTUR-ENDORSEMENT baris 131). `InsertPLSummary` memanggilnya **posisional** — 37 argumen masuk +
+  2 keluar (STRUKTUR-PREMIUMLIST §`T_PREMIUM_LIST_SUMMARY`) — jadi nama kolomnya hanya ada di dalam
+  procedure. Tiket ini sendiri (baris 56–57) mencatat PK dari `M_LIFE_PREMIUM_SUMMARY_SEQ` **dan**
+  "37 kolom" dengan `ID` di antaranya: 1 `ID` + 37 argumen = 38, sehingga satu argumen tidak
+  berkolom atau tidak bernama sama — dan yang mana tidak dapat dibaca. Memetakan dengan tebakan nama
+  menyimpan uang di kolom yang mungkin salah. ⚠️ Tiket 09 (baris 51) dan tiket EDM 12 (baris 62)
+  menyebut body procedure **diserahkan DBA 2026-09-15** — tetapi pemetaan argumen → kolomnya **tidak
+  tercatat** di repo mana pun. **Yang dibutuhkan:** salinan body yang diserahkan itu dicatat (atau
+  `ALL_SOURCE`/`ALL_TAB_COLUMNS`); sesudahnya penulisnya satu fungsi di `polis_warisan.go`.
+  Dua AC ikut **terbuka** karenanya: *"Ke-37 kolom terisi…"* dan *"`PL_NUMBER` maupun `PL_NUMBER_EDM`
+  tersimpan pada rekam summary"*.
+
+### AC — keadaan
+
+| AC | Keadaan |
+| --- | --- |
+| satu polis satu transaksi; kegagalan membatalkan seluruhnya | ✅ struktural (satu `DalamTransaksi`, dikunci statik) · ⚠️ **injeksi kegagalan peserta ke-N terhadap Oracle BELUM dibuktikan** — skema uji belum memasang 050–056 dan mesin ini tanpa Oracle |
+| penomoran di dalam transaksi | ✅ |
+| nol procedure JSON | ✅ (tidak ada yang dipanggil) |
+| rekap per mata uang tersimpan, satu baris per mata uang | ✅ `GantiRekap`; `PengenalRekap` deterministik |
+| urutan dikunci uji | ✅ `TestSubmitSummaryUrutanTerkunci` |
+| konversi teks ↔ desimal hanya di repository | ✅ |
+| uang identik, tanpa pembulatan diam | ✅ teks `FormatDecimal`; pembulatan empat angka hanya yang ditulis DT |
+| `ERRMSG`/`STSSAVE` diperiksa | ➖ tidak berlaku — procedure tidak dipanggil (pl1); galat Oracle dikembalikan apa adanya |
+| AC 33 | ⚠️ diralat di atas (pl2) |
+
+### Layar
+
+`pages/premiumlist/PremiumListSummary.tsx` — tahap `Input Premium Summary`. Grid per `Type` VERBATIM
+(`GRID_REKAP`, `labels.premiumlist.ts`), termasuk keanehan judul **`PREMIUM DEDUCTION` di atas
+`.COMMISSION`** pada QP/TP/TR. ⚠️ `.COB` baris rekap **tidak ditetapkan rule mana pun** di korpus
+PremiumList Life (grep `COB` di `Activity/`, `DataTransform/` = nol penetapan pada baris mata uang) —
+sel ditandai `—` dan layar mengatakannya. Tombol `Submit` memanggil `POST …/summary`;
+`InsertJsonPolisLife_Act` + `finishAssignment` = tiket **05b**.
+
+### Langkah 15 — pl7
+
+`[DIPUTUSKAN; veto work owner]` no-op di produksi, **tidak ditiru** (b1142/b3413/b3126). Dicatat
+juga di tiket 03. Langkah 16 (`pyMemo`, `IsJsonPolis`) tidak ditiru: properti halaman kerja tanpa
+kolom, dan `IsJsonPolis` milik jalur JSON yang dibuang.
+
+### Angka
+
+Go **530 PASS · 0 FAIL** tingkat atas (+16 dari 514; +101 sub-uji), `go vet ./...` dan
+`go vet -tags db ./...` bersih, `gofmt` bersih · vitest **346** (+7) · `tsc --noEmit` bersih.
+Perintah hitung: `go test -json -count=1 ./...` → cacah `Action=pass` tanpa `/` di nama uji.
+
+### Temuan `/code-review` — diperbaiki sebelum commit, atau dicatat
+
+Dua sumbu (Standards, Spec) dijalankan paralel atas pohon kerja lawan `0cddee0`. Spec memverifikasi
+ulang dari korpus: 36 `@divide`, pemetaan 80 kolom baris demi baris, dan keempat grid — ketiganya ✅.
+
+| Sumbu | Temuan | Tindakan |
+| --- | --- | --- |
+| Spec (c) | ⛔ `IDPEGA` dibaca dari `T_PREMIUM_LIST.ID_PEGA`, yang **nol penulisnya** di repo — setiap submit akan gagal | diganti pengenal work (`polisID`); `ErrSalinanTanpaIDPega` dibuang |
+| Spec (a) | argumen "38 vs 37" OQ-PL-09 kurang rujukan; body DBA disebut sudah diserahkan 2026-09-15 | OQ ditulis ulang dengan rujukan baris, dan yang diminta kini salinan body itu |
+| Standards 7 | cabang uji mati (`GROSS_PREMIUM` tidak ada di `KolomJumlahSummary`) | dibuang |
+| Standards 2 | `Lihat` mengetik ulang pemeriksaan `siapkan`, dan tanpa gerbang tertutup tanpa alasan tertulis | `periksaDasar` bersama; alasan tanpa gerbang ditulis |
+| Standards 6 | `AngkaDesimalBalance` berbohong sesudah ralat | → `AngkaDesimalRekap` |
+| Standards 10 | `GRID_REKAP` tanpa nomor baris | b4018/b8761/b15196/b20690 dicatat |
+| Spec | komentar `terbitkanDalam` "10-13" lawan "10-14" | diselaraskan 10–14 |
+
+**Dicatat, tidak diubah:**
+
+- ⛔ **OQ-PL-10 `[terbuka — pemilik kerja]` kosong = NULL atau 0 di tabel warisan.** Pega mengisi
+  `CARIn = @toDecimal(.X)`, yang untuk properti kosong menghasilkan nol, jadi `M_LIFE_PREMIUM_DETAIL`
+  warisan memuat `0` di tempat kami menulis `NULL` (ADR-U-0027). Claim Life membaca tabel itu —
+  pilihan ini kontrak hilir, dan diputuskan dengan sadar, bukan oleh executor.
+- ⚠️ **Urutan mata uang.** DT menyusun `CurrencyList` menurut kemunculan pertama di baris detail;
+  pembaca kami `ORDER BY d.ID` (pengenal md5), jadi urutan baris rekap **di layar** dapat berbeda dari
+  Pega. Nilai tidak terpengaruh; tabel 052 tidak punya kolom urutan unggah.
+- ⚠️ **Layar sebagian.** Blok kepala `ShowLifePremiumSummary` (`.Type`, `.DateReceived`, `.SobName`,
+  `.CedingCoName`, `.PolicyHolderName`, `.MarketingName`, `.BusinessName`, `.RetroName`, `.WPC`) belum
+  dirender — hanya grid rekap dan `Submit`. `KepalaPolis` belum membawa medan itu.
+- ⚠️ Angka ke kolom `NUMBER` warisan dikirim sebagai teks dan bergantung pada NLS sesi — pola yang
+  sudah ada (`nilaiSisipPeserta`), tidak diubah di tiket ini. `jenisNilai` menyerupai enum di
+  `kolompeserta.go`; disatukan bila keduanya disentuh lagi.

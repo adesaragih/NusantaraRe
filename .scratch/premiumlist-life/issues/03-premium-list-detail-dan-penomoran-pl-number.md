@@ -287,6 +287,12 @@ memuat `.MM.YY.` (tahun **dua** angka, b3021/b3075) — teks yang dicari **tidak
 dalam nomornya, sehingga langkah itu tidak mengubah apa pun. `Local.NextMMYY` (b1163) memperkuatnya:
 ia memformat `\"dd\"`, yaitu **hari**, bukan bulan. Tidak ditiru; dilaporkan.
 
+> ✅ **DIPUTUSKAN 28-09-2026 — pl7** `[veto work owner]` *(brief GILIRAN-10 §0)*: langkah 15 adalah
+> **no-op di produksi** — pola `.MM.YYYY.` (b1142) tidak pernah ada di dalam `PL_NUMBER` berformat
+> `.MM.YY.` (b3021/b3075/b3126). **Tidak ditiru**; residu warisan, dengan bukti b1142/b3413/b3126.
+> Bila kelak pemilik Pega menyatakan maksudnya *(menggeser periode nomor saat tutup buku)*, itu
+> **keputusan baru**, bukan replikasi. Dikunci `TestLangkah15TidakDitiru` (`services/polis_summary_test.go`).
+
 ### Temuan `/code-review` yang diperbaiki sebelum commit
 
 Tinjauan dua sumbu dijalankan atas titik tetap `8f4df09`. Yang diperbaiki:

@@ -176,3 +176,99 @@ export const UNGGAH_CSV = {
   kolomPesan: 'Pesan',
   kolomSebab: 'Sebab',
 } as const
+
+/**
+ * Label layar rekap — tiket 05a bagian 2, `Section/ShowLifePremiumSummary.xml`.
+ */
+export const SUMMARY_POLIS = {
+  judul: 'Summary Premium Life',
+  submit: 'Submit',
+  tanpaRekap: 'Belum ada rekap: polis ini belum punya baris peserta.',
+  /** ⛔ `.COB` baris rekap tidak ditetapkan rule mana pun di korpus. */
+  cobTanpaSumber:
+    'Kolom COB tidak terisi: tidak satu pun rule PremiumList Life menetapkan ' +
+    '.COB pada baris rekap mata uang.',
+} as const
+
+/** Satu kolom grid rekap: judul VERBATIM dan properti sumbernya. */
+export interface KolomRekap {
+  judul: string
+  kolom: string
+}
+
+/**
+ * Grid rekap per `Type`, VERBATIM.
+ *
+ * `[terverifikasi]` Empat layout ber-`pyContainerVisibleWhen` `.Type = 'QR'`
+ * / `'QP'` / `'TP'` / `'TR'` di `ShowLifePremiumSummary.xml` - judul grid
+ * `Summary` di b4018 / b8761 / b15196 / b20690 (nomor baris =
+ * `sed -e 's/></>
+</g'`); judul dan properti kolom disalin urut dokumen.
+ *
+ * ⚠️ KEANEHAN WARISAN, disalin apa adanya: pada QP, TP, dan TR judul
+ * `PREMIUM DEDUCTION` berdiri di atas properti `.COMMISSION`. Pada QR judul
+ * `DEDUCTION` berdiri di atas `.DEDUCTION` dan kolom `.COMMISSION` tidak ada.
+ */
+export const GRID_REKAP: Record<string, readonly KolomRekap[]> = {
+  QR: [
+    { judul: 'COB', kolom: 'COB' },
+    { judul: 'PL NUMBER', kolom: 'PL_NUMBER' },
+    { judul: 'CURRENCY', kolom: 'CURRENCY' },
+    { judul: 'PREMIUM', kolom: 'PREMIUM' },
+    { judul: 'DEDUCTION', kolom: 'DEDUCTION' },
+    { judul: 'BROKERAGE FEE', kolom: 'BROKERAGE_FEE' },
+    { judul: 'RI ADMIN FEE', kolom: 'RI_ADMIN_FEE' },
+    { judul: 'TAX', kolom: 'TAX' },
+    { judul: 'PROF COMM', kolom: 'PROF_COMM' },
+    { judul: 'CLAIM', kolom: 'CLAIM' },
+    { judul: 'BALANCE', kolom: 'BALANCE' },
+  ],
+  QP: [
+    { judul: 'COB', kolom: 'COB' },
+    { judul: 'PL NUMBER', kolom: 'PL_NUMBER' },
+    { judul: 'CURRENCY', kolom: 'CURRENCY' },
+    { judul: 'PREMIUM', kolom: 'PREMIUM' },
+    { judul: 'PREMIUM DEDUCTION', kolom: 'COMMISSION' },
+    { judul: 'BROKERAGE FEE', kolom: 'BROKERAGE_FEE' },
+    { judul: 'OVR COMM', kolom: 'OVR_COMM' },
+    { judul: 'TAX', kolom: 'TAX' },
+    { judul: 'GROSS_PREMIUM_REFUND', kolom: 'GROSS_PREMIUM_REFUND' },
+    { judul: 'DEDUCTION REFUND', kolom: 'DEDUCTION_REFUND' },
+    { judul: 'RI ADMIN FEE REFUND', kolom: 'RI_ADMIN_FEE_REFUND' },
+    { judul: 'BROKERAGE FEE REFUND', kolom: 'BROKERAGE_FEE_REFUND' },
+    { judul: 'TAX REFUND', kolom: 'TAX_REFUND' },
+    { judul: 'CLAIM_AMOUNT', kolom: 'CLAIM_AMOUNT' },
+    { judul: 'NET_PREMIUM_REFUND', kolom: 'NET_PREMIUM_REFUND' },
+    { judul: 'BALANCE', kolom: 'BALANCE' },
+  ],
+  TP: [
+    { judul: 'COB', kolom: 'COB' },
+    { judul: 'PL NUMBER', kolom: 'PL_NUMBER' },
+    { judul: 'CURRENCY', kolom: 'CURRENCY' },
+    { judul: 'SHARE RETRO', kolom: 'SHARE_RETRO' },
+    { judul: 'GROSS PREMIUM RETRO', kolom: 'GROSS_PREMIUM_RETRO' },
+    { judul: 'PREMIUM DEDUCTION', kolom: 'COMMISSION' },
+    { judul: 'BROKERAGE FEE RETRO', kolom: 'BROKERAGE_FEE_RETRO' },
+    { judul: 'DISCOUNT PREMIUM RETRO', kolom: 'DISCOUNT_PREMIUM_RETRO' },
+    { judul: 'RI ADMIN FEE RETRO', kolom: 'RI_ADMIN_FEE_RETRO' },
+    { judul: 'TAX', kolom: 'TAX' },
+    { judul: 'PROF COMM', kolom: 'PROF_COMM' },
+    { judul: 'CLAIM', kolom: 'CLAIM' },
+    { judul: 'BALANCE', kolom: 'BALANCE' },
+  ],
+  TR: [
+    { judul: 'COB', kolom: 'COB' },
+    { judul: 'PL NUMBER', kolom: 'PL_NUMBER' },
+    { judul: 'CURRENCY', kolom: 'CURRENCY' },
+    { judul: 'SHARE RETRO', kolom: 'SHARE_RETRO' },
+    { judul: 'GROSS PREMIUM REFUND RETRO', kolom: 'GROSS_PREMIUM_REFUND_RETRO' },
+    { judul: 'PREMIUM DEDUCTION', kolom: 'COMMISSION' },
+    { judul: 'BROKERAGE FEE REFUND RETRO', kolom: 'BROKERAGE_FEE_REFUND_RETRO' },
+    { judul: 'DISCOUNT PREMIUM REFUND RETRO', kolom: 'DISCOUNT_PREMIUM_REFUND_RETRO' },
+    { judul: 'RI ADMIN FEE REFUND RETRO', kolom: 'RI_ADMIN_FEE_REFUND_RETRO' },
+    { judul: 'TAX', kolom: 'TAX' },
+    { judul: 'PROF COMM', kolom: 'PROF_COMM' },
+    { judul: 'CLAIM', kolom: 'CLAIM' },
+    { judul: 'BALANCE', kolom: 'BALANCE' },
+  ],
+}

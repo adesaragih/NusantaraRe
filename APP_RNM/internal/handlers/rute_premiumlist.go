@@ -4,6 +4,8 @@ package handlers
 //
 //	POST /api/polis-life/{id}/keputusan   body {"keputusan":"Confirm|Reject|Decline"}
 //	POST /api/polis-life/{id}/penggolong  body {"hasil":"Offer|Premium"}
+//	GET  /api/polis-life/{id}/summary     rekap per mata uang (tiket 05a)
+//	POST /api/polis-life/{id}/summary     nomor + rekap + warisan (tiket 05a)
 //
 // Padanan ketiga konektor keputusan `InputPolicyHolder.xml` dan penggolong
 // `Decision3`-nya.
@@ -251,6 +253,51 @@ func terbitkanNomorPolis(svc *services.Service, stubPelaku bool) http.HandlerFun
 	}
 }
 
+// rekapPolis melayani GET /api/polis-life/{id}/summary - tiket 05a.
+//
+// Layar `ShowLifePremiumSummary`: rekap per mata uang dihitung dari peserta,
+// TANPA menyimpan apa pun.
+func rekapPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !svc.PunyaDatabase() {
+			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			return
+		}
+		hasil, err := svc.SummaryPremiumList().Lihat(r.Context(),
+			pelakuDari(r, stubPelaku), r.PathValue("id"))
+		if jawabGalatPolis(w, err) {
+			return
+		}
+		tulisJSONPolis(w, hasil)
+	}
+}
+
+// submitRekapPolis melayani POST /api/polis-life/{id}/summary - tiket 05a.
+//
+// Padanan tombol `Submit` (`ShowLifePremiumSummary` b27471) sisi penyimpanan:
+// nomor + rekap + salinan peserta warisan dalam SATU transaksi.
+//
+// ⛔ TANPA badan permintaan, dengan alasan yang sama dengan penomoran: tidak
+// ada satu pun angka rekap yang boleh datang dari klien. Rekap yang dikirim
+// layar adalah rekap yang dapat diketik ulang orang.
+//
+// ⚠️ `InsertJsonPolisLife_Act` + `finishAssignment` (b26414/b26442) BUKAN di
+// sini - itu tiket 05b.
+func submitRekapPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !svc.PunyaDatabase() {
+			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			return
+		}
+		hasil, err := svc.SummaryPremiumList().Submit(r.Context(),
+			pelakuDari(r, stubPelaku), r.PathValue("id"))
+		if jawabGalatPolis(w, err) {
+			return
+		}
+		tulisJSONPolis(w, hasil)
+	}
+}
+
 // tulisJSONPolis menulis satu jawaban JSON 200.
 func tulisJSONPolis(w http.ResponseWriter, isi any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -303,6 +350,9 @@ func jawabGalatPolis(w http.ResponseWriter, err error) bool {
 		// 409: permintaan lain mendahului. Penghitungnya TIDAK bergerak -
 		// transaksinya batal - jadi yang perlu dikerjakan pemanggil hanya
 		// membaca ulang nomornya.
+		galat(w, http.StatusConflict, err.Error())
+	case errors.Is(err, services.ErrRekapKosong):
+		// 409: keadaan DATA polis yang belum siap, bukan permintaan yang salah.
 		galat(w, http.StatusConflict, err.Error())
 	case errors.Is(err, services.ErrNomorPLBerbedaAntarPeserta):
 		// 409: data yang tidak sepakat dengan dirinya sendiri. 500 akan
