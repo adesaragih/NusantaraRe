@@ -105,6 +105,9 @@ func TestDaftarLayananPengubahMencakupSeluruhRutePengubah(t *testing.T) {
 	dikecualikan := map[string]string{
 		// Pendaftaran MELAHIRKAN kasus; belum ada kasus untuk ditutup.
 		"pendaftaran.go": "melahirkan kasus, bukan mengubah kasus yang ada",
+		// GILIRAN-13 butir bn: tombol portal Input Offer/Input Premium juga
+		// MELAHIRKAN kasus - kali ini kasus polis (T_WORK_POLIS).
+		"polis_kasus.go": "melahirkan kasus polis, bukan mengubah kasus yang ada",
 		// PremiumList Life tiket 01. Ia MEMERIKSA kasus tertutup - lihat
 		// `Penawaran.pagari` - tetapi lewat `T_WORK_POLIS` dan
 		// `models.KasusPolisTertutup`, BUKAN lewat `PastikanKasusTerbuka`
@@ -210,6 +213,8 @@ var rutePengubah = map[string]string{
 	// Modul PremiumList Life (tiket 01). Keduanya memeriksa kasus tertutup
 	// lewat T_WORK_POLIS - lihat pengecualian bernama "polis_penawaran.go"
 	// di TestDaftarLayananPengubahMencakupSeluruhRutePengubah.
+	// GILIRAN-13 butir bn - tombol portal membuat kasus polis.
+	"POST /api/polis-life":                 "polis_kasus.go",
 	"POST /api/polis-life/{id}/keputusan":  "polis_penawaran.go",
 	"POST /api/polis-life/{id}/penggolong": "polis_penawaran.go",
 	// Tiket 03. Penerbitan nomor MENULIS - ia menaikkan baris penghitung dan
@@ -270,6 +275,7 @@ func TestSetiapRuteNonGETPunyaPenjagaKasusTertutup(t *testing.T) {
 	// Layanan yang sengaja TIDAK memeriksa, beserta alasan tertulis.
 	dikecualikan := map[string]string{
 		"pendaftaran.go": "melahirkan kasus; belum ada kasus untuk ditutup",
+		"polis_kasus.go": "melahirkan kasus polis; belum ada kasus untuk ditutup",
 		// Tutup MENUTUP; ia membaca STATUS_WORK sendiri lalu menolak lewat
 		// ErrKasusSudahTertutup. Memanggil PastikanKasusTerbuka di sini
 		// berarti membaca baris yang sama dua kali untuk satu jawaban.

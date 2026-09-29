@@ -289,3 +289,18 @@ kode galat Oracle, dan nama penggantinya.
 
 **Sesudah cabang ini menyatu ke `main`**, work owner menjalankan `-migrate` lagi; hanya
 `056` yang tersisa dijalankan.
+
+## ⛔ Ralat bertanggal — 29 September 2026 (GILIRAN-13 paket 1: `SEQ_WORK_POLIS` terlewat)
+
+Tiket ini dan uji `TestSeluruhCreateDapatDibacaNamanya` mencatat "**nol sequence** — pengenalnya dirakit
+di repository, pola `PengenalWorkBerikut` (butir pl3)". Separuhnya keliru: pl3 (brief modul PremiumList
+baris 43) memutuskan pengenal dirakit dari **`SEQ_WORK_POLIS`**, dan sequence itu tidak pernah dibuat —
+akibatnya tombol portal `Input Offer` / `Input Premium` tidak dapat membuat kasus. Migrasi **`057`**
+(butir **bn**, `[DIPUTUSKAN; veto work owner]`) kini membuat `SEQ_WORK_POLIS` dan kolom
+`T_WORK_POLIS.FLAG_ONGOING_POLICY VARCHAR2(1)` (nilai VERBATIM `"0"`/`"1"`). STRUKTUR diperbarui; cacah
+kolom STRUKTUR 219 → 220 dan cacah `CREATE` 50 → 51, keduanya dengan alasannya.
+
+Awalan pengenal `NBLF-` dan bentuknya (tanpa nol di depan) **dibaca dari data**, bukan dikarang: sampel
+baca-saja DEV `ROWNUM <= 200` atas `JSON_OFFER_LIFE` dan `M_LIFE_PREMIUM_SUMMARY` — 400/400 berbentuk
+`ASM-FW-GISFW-WORK NBLF-<1..5 digit>`, nol berawalan nol. ⚠️ `START WITH 1` aman hanya selama
+`T_WORK_POLIS` belum berisi baris warisan — **OQ-PL-15**.

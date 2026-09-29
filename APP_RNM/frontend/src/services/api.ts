@@ -1492,6 +1492,37 @@ export async function ambilKotakMasukPolis(
   })
 }
 
+/**
+ * `FlagPolicy` tombol portal — VERBATIM `Section/PremiumList.xml`:
+ * `Input Offer` b3310/b3597, `Input Premium` b3958/b4233 (butir bn).
+ */
+export const FLAG_POLIS = {
+  inputOffer: '0',
+  inputPremium: '1',
+} as const
+
+export type FlagPolis = (typeof FLAG_POLIS)[keyof typeof FLAG_POLIS]
+
+/** Kasus polis yang baru lahir — cukup untuk membukanya. */
+export interface KasusPolisBaru {
+  caseId: string
+  /** Tahap pertamanya: `Input Offer Life` untuk KEDUA bendera. */
+  statusWork: string
+  position: string
+  flag: FlagPolis
+}
+
+/**
+ * Tombol portal `Input Offer` / `Input Premium` — `CreateInputLife`.
+ *
+ * ⛔ Kedua bendera mulai di tahap yang SAMA (`Input Offer Life`); benderanya
+ * baru bekerja di `Decision3` sesudah `Confirm` (decision table
+ * `IsFlagOnGoingPolicy`: "0" → Offer, "1" → Premium).
+ */
+export async function buatKasusPolis(flag: FlagPolis): Promise<KasusPolisBaru> {
+  return minta<KasusPolisBaru>('/api/polis-life', { metode: 'POST', badan: { flag } })
+}
+
 /** Apa yang terjadi sesudah sebuah keputusan penawaran. */
 export interface AkibatKeputusanPolis {
   /** Terisi bila kasus BERPINDAH tahap. */

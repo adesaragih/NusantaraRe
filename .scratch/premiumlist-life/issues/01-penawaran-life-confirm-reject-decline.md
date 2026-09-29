@@ -307,3 +307,27 @@ bound`. Kueri halaman kotak masuk memakai `:1` dua kali bersama `OFFSET … FETC
 Diperbaiki (`repository/polis_inbox.go`: penampung unik, nilai dikirim dua kali) dan dijaga
 `TestNolPenampungBerulangDiSQLBerpembatasBaris`. Sesudahnya kedua posisi menjawab 200 (DEV: total 0
 untuk pelaku stub). Hasil lengkap: `PANDUAN-UJI-LAYAR-TIGA-MODUL.md` §5.
+
+## ⛔ Ralat bertanggal — 29 September 2026 (GILIRAN-13 paket 1: tombol portal membuat kasus)
+
+`POST /api/polis-life` (badan `{"flag":"0"|"1"}`) meniru `CreateInputLife` dalam satu transaksi: pengenal
+`NBLF-<n>` dari `SEQ_WORK_POLIS`, baris `T_WORK_POLIS` (`LINI` LIFE, `POSITION` Offer, `STATUS` Input
+Offer Life, `FLAG_ONGOING_POLICY`), baris `T_PREMIUM_LIST` kosong (`ID` = `ID_PEGA`, `TGL_INPUT`), dan
+jejaknya. Tombol `Input Offer` / `Input Premium` di kotak masuk kini aktif dan langsung membuka kasusnya
+(`CreateInputLife` b982 menyerahkan assignment tahap pertama).
+
+⛔ **Kedua tombol mulai di tahap yang SAMA.** Brief GILIRAN-13 menduga bendera memilih tahap awal; flow
+`InputPolicyHolder.xml` membantahnya — Start1 → `[Always]` → Assignment2 "Input Offer" (b1968 → b1938,
+`pyWorkStatus` b1340). Benderanya bekerja di `Decision3` sesudah `Confirm`.
+
+⛔ **Ralat "decision table NOL baris".** `IsLifeAccepted` (1 → Confirm, 2 → Reject) dan
+`IsFlagOnGoingPolicy` ("0" → Offer, "1" → Premium) **punya** baris. Keputusan "manual" untuk Decision1/2
+tetap selaras (inputor mengisi `ProposalAcceptStatus`); untuk Decision3 Pega merutekan **otomatis** dari
+bendera yang kini tersimpan, sedangkan layar kita bertanya — perilaku tidak diubah, **OQ-PL-16**.
+
+**OQ baru:**
+- **OQ-PL-15** — `SEQ_WORK_POLIS START WITH 1`: nomor warisan `NBLF-` sudah lima digit. Sebelum data
+  warisan masuk `T_WORK_POLIS`, sequence wajib dimajukan melewati nomor warisan terbesar (kueri agregat
+  `MAX` atas angka `IDPEGA` berbentuk `NBLF-` — dijalankan DBA, bukan executor).
+- **OQ-PL-16** — dengan `FLAG_ONGOING_POLICY` tersimpan, apakah `Decision3` dirutekan otomatis seperti
+  Pega (bendera "0" → Offer/selesai, "1" → Premium/detail), atau tetap ditanyakan ke inputor?

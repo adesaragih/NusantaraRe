@@ -118,6 +118,16 @@ const (
 // decision table (`IsLifeAccepted`, `IsFlagOnGoingPolicy`) mengekspor NOL
 // baris keputusan, jadi yang ditiru AKIBAT keputusan - bukan formula yang
 // memilihnya.
+//
+// ⛔ RALAT 29-09-2026 (GILIRAN-13): "NOL baris keputusan" KELIRU untuk
+// kedua decision table. `IsLifeAccepted` memetakan `ProposalAcceptStatus`
+// 1 -> Confirm, 2 -> Reject (b286/b287 -> b321/b322); `IsFlagOnGoingPolicy`
+// memetakan `FlagOnGoingPolicy` "0" -> Offer, "1" -> Premium (b293/b294 ->
+// b328/b329). Untuk Decision1/2 keputusan manual tetap selaras - inputor yang
+// mengisi `ProposalAcceptStatus`. Untuk Decision3 TIDAK: benderanya lahir
+// bersama kasus (`CreateInputLife` b618, kini kolom `FLAG_ONGOING_POLICY`,
+// 057), jadi Pega merutekannya otomatis. Perilaku di sini TIDAK diubah -
+// OQ-PL-16.
 const (
 	KeputusanConfirm = "Confirm"
 	KeputusanReject  = "Reject"
@@ -127,6 +137,9 @@ const (
 // Hasil penggolong lanjutan - VERBATIM `pyExpression` `Decision3`.
 //
 // `[keputusan work owner]` `IsFlagOnGoingPolicy`: `1` = Offer, `2` = Premium.
+// ⛔ RALAT 29-09-2026: nilai benderanya "0" = Offer, "1" = Premium - VERBATIM
+// decision table (b293/b294) dan tombol portal (b3310, b3958); butir bn
+// menetapkannya untuk kolom `FLAG_ONGOING_POLICY`.
 const (
 	LanjutOffer   = "Offer"
 	LanjutPremium = "Premium"

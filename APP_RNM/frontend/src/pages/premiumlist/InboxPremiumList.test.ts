@@ -68,14 +68,20 @@ describe('sel', () => {
 })
 
 describe('dua tombol portal', () => {
-  it('DINYATAKAN, bukan dihilangkan', () => {
-    // ⛔ Keduanya memanggil CreateInputLife, yang menuntut SEQ_WORK_POLIS
-    // dan kolom FlagOnGoingPolicy — keduanya belum ada, dan migrasi baru
-    // hanya dari keputusan yang tercatat. Tombol yang hilang membuat layar
-    // tampak lengkap padahal alurnya belum dapat dimulai.
-    expect(SUMBER).toContain('BelumTersedia apa={TOMBOL_POLIS.inputOffer}')
-    expect(SUMBER).toContain('BelumTersedia apa={TOMBOL_POLIS.inputPremium}')
+  it('membuat kasus lewat CreateInputLife, bukan berdiri sebagai BelumTersedia', () => {
+    // ⛔ GILIRAN-13 butir bn: SEQ_WORK_POLIS dan FLAG_ONGOING_POLICY (057)
+    // kini ada, jadi kedua tombol MEMBUAT kasus (POST /api/polis-life).
+    expect(SUMBER).not.toContain('BelumTersedia')
+    expect(SUMBER).toContain('await buatKasusPolis(flag)')
+    expect(SUMBER).toContain('buat(FLAG_POLIS.inputOffer)')
+    expect(SUMBER).toContain('buat(FLAG_POLIS.inputPremium)')
     expect(TOMBOL_POLIS.inputOffer).toBe('Input Offer')
     expect(TOMBOL_POLIS.inputPremium).toBe('Input Premium')
+  })
+
+  it('kasus yang lahir langsung DIBUKA di tahapnya', () => {
+    // CreateInputLife b982 "ASSIGN-WORKLIST <pzInsKey>!InputPolicyHolder":
+    // Pega langsung menyerahkan assignment tahap pertamanya.
+    expect(SUMBER).toContain('onBuka(hasil.caseId, hasil.statusWork)')
   })
 })

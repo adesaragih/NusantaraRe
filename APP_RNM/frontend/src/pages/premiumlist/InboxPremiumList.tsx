@@ -8,30 +8,31 @@
 // kolom di migrasi mana pun, dan sel kosong di layar terbaca "memang kosong"
 // alih-alih "kami tidak punya datanya".
 //
-// ⛔ DUA TOMBOL PORTAL BELUM DAPAT MEMBUAT KASUS, dan sebabnya dinyatakan,
-// bukan disembunyikan. `Input Offer` b3273 dan `Input Premium` b3921
-// memanggil `CreateInputLife` b3291/b3939, yang:
+// ⛔ DUA TOMBOL PORTAL MEMBUAT KASUS (GILIRAN-13 butir bn). `Input Offer`
+// b3273 dan `Input Premium` b3921 memanggil `CreateInputLife` b3291/b3939
+// dengan `FlagPolicy` "0"/"1", yang:
 //
 //   b444 `Call svcAddWorkObject`           -> membuat work object baru
 //   b618 `curWorkPage.FlagOnGoingPolicy = Param.FlagPolicy`
 //   b726 `Obj-Save`
+//   b982 "ASSIGN-WORKLIST <pzInsKey>!InputPolicyHolder" -> assignment
+//        tahap pertamanya langsung dibuka
 //
-// Dua hal yang belum ada di skema kami: `SEQ_WORK_POLIS` (tidak dibuat
-// migrasi 050-056 mana pun) dan kolom untuk `FlagOnGoingPolicy`. Keduanya
-// keputusan skema, dan migrasi baru hanya dari keputusan yang TERCATAT —
-// jadi tombolnya berdiri dan MENYEBUT apa yang ditunggunya.
-//
-// ⚠️ Berdiri, bukan disembunyikan: tombol yang hilang membuat layar tampak
-// lengkap padahal alurnya belum dapat dimulai.
+// ⚠️ RALAT 29-09-2026: komentar lama berkata `SEQ_WORK_POLIS` menunggu
+// keputusan skema. Ia SUDAH diputuskan di pl3 (brief modul PremiumList) dan
+// terlewat; migrasi 057 kini membuatnya bersama kolom bendera.
 
 import { useCallback, useEffect, useState } from 'react'
 
 import { KOLOM_INBOX_POLIS, TOMBOL_POLIS } from '../../assets/labels.premiumlist'
-import { BelumTersedia, Gagal, Kosong, Memuat } from '../../components/ui/dasar'
+import { Gagal, Kosong, Memuat } from '../../components/ui/dasar'
 import { unduhXlsx, type KolomEksporXlsx } from '../../lib/exportXlsx'
 import {
   ambilKotakMasukPolis,
+  buatKasusPolis,
+  FLAG_POLIS,
   type BarisInboxPolis,
+  type FlagPolis,
   type HalamanInboxPolis,
 } from '../../services/api'
 
@@ -71,6 +72,23 @@ export default function InboxPremiumList({
   const [hal, setHal] = useState<HalamanInboxPolis | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
   const [sibuk, setSibuk] = useState(true)
+  const [membuat, setMembuat] = useState(false)
+  const [galatBuat, setGalatBuat] = useState<unknown>(null)
+
+  /** `CreateInputLife` — lalu kasusnya langsung dibuka di tahap pertamanya. */
+  async function buat(flag: FlagPolis): Promise<void> {
+    if (membuat) return
+    setMembuat(true)
+    setGalatBuat(null)
+    try {
+      const hasil = await buatKasusPolis(flag)
+      onBuka(hasil.caseId, hasil.statusWork)
+    } catch (e) {
+      setGalatBuat(e)
+    } finally {
+      setMembuat(false)
+    }
+  }
 
   const muat = useCallback(async () => {
     setSibuk(true)
@@ -95,9 +113,24 @@ export default function InboxPremiumList({
     <section className="inbox">
       <header className="inbox__kepala">
         <h2 className="inbox__judul">PremiumList</h2>
-        {/* ⛔ Keduanya DINYATAKAN, bukan dihilangkan — lihat kepala berkas. */}
-        <BelumTersedia apa={TOMBOL_POLIS.inputOffer} />{' '}
-        <BelumTersedia apa={TOMBOL_POLIS.inputPremium} />{' '}
+        <button
+          type="button"
+          disabled={membuat}
+          onClick={() => {
+            void buat(FLAG_POLIS.inputOffer)
+          }}
+        >
+          {TOMBOL_POLIS.inputOffer}
+        </button>{' '}
+        <button
+          type="button"
+          disabled={membuat}
+          onClick={() => {
+            void buat(FLAG_POLIS.inputPremium)
+          }}
+        >
+          {TOMBOL_POLIS.inputPremium}
+        </button>{' '}
         <button
           type="button"
           className="inbox__ekspor"
@@ -111,6 +144,9 @@ export default function InboxPremiumList({
         </button>
       </header>
 
+      {/* Kasus yang GAGAL lahir dinyatakan — tombol yang diam tanpa sebab
+          terbaca "tidak terjadi apa-apa". */}
+      {galatBuat !== null && <Gagal galat={galatBuat} />}
       {sibuk && <Memuat />}
       {galat !== null && <Gagal galat={galat} />}
 

@@ -15,6 +15,16 @@ package services
 // formula yang memilihnya. Karena itu keputusan SELALU datang sebagai
 // parameter dari tindakan pengguna, tidak pernah dihitung di sini.
 //
+// ⛔ RALAT 29-09-2026 (GILIRAN-13): "NOL baris keputusan" KELIRU untuk
+// kedua decision table. `IsLifeAccepted` memetakan `ProposalAcceptStatus`
+// 1 -> Confirm, 2 -> Reject (b286/b287 -> b321/b322); `IsFlagOnGoingPolicy`
+// memetakan `FlagOnGoingPolicy` "0" -> Offer, "1" -> Premium (b293/b294 ->
+// b328/b329). Untuk Decision1/2 keputusan manual tetap selaras - inputor yang
+// mengisi `ProposalAcceptStatus`. Untuk Decision3 TIDAK: benderanya lahir
+// bersama kasus (`CreateInputLife` b618, kini kolom `FLAG_ONGOING_POLICY`,
+// 057), jadi Pega merutekannya otomatis. Perilaku di sini TIDAK diubah -
+// OQ-PL-16.
+//
 // Dibaca sesudah: models/polis_penawaran.go (peta konektornya).
 
 import (

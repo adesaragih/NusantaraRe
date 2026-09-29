@@ -74,12 +74,16 @@ func bacaDDLPolis(t *testing.T) (map[string]map[string]kolomDDL, map[string]map[
 		t.Fatal(err)
 	}
 	tabelPola := regexp.MustCompile(`(?s)CREATE TABLE \{skema\}\.(\w+) \((.*?)\n\)`)
+	// ⛔ Kolom yang lahir di ALTER ... ADD ikut dibaca (GILIRAN-13, 057 butir
+	// bn): tanpa itu kolom lanjutan tidak pernah diperiksa tipenya.
+	tambahPola := regexp.MustCompile(`(?s)ALTER TABLE \{skema\}\.(\w+) ADD \((.*?)\n\)`)
 	kolomPola := regexp.MustCompile(`^([A-Z0-9_]+)\s+([A-Z0-9_]+(?:\(\d+(?:,\d+)?\))?)(.*)$`)
 	fkPola := regexp.MustCompile(`FOREIGN KEY \((\w+)\)`)
 	idxPola := regexp.MustCompile(`CREATE (?:UNIQUE )?INDEX \{skema\}\.\w+ ON \{skema\}\.(\w+) \(\s*(\w+)`)
 	for _, e := range entri {
 		n := e.Name()
-		if !regexp.MustCompile(`^05[0-6]_`).MatchString(n) || strings.HasSuffix(n, "_down.sql") {
+		// Seluruh rentang migrasi polis 05x - bukan hanya 050-056 pembuat tabel.
+		if !regexp.MustCompile(`^05[0-9]_`).MatchString(n) || strings.HasSuffix(n, "_down.sql") {
 			continue
 		}
 		b, err := berkasMigrasi.ReadFile("migrations/" + n)
@@ -103,6 +107,18 @@ func bacaDDLPolis(t *testing.T) (map[string]map[string]kolomDDL, map[string]map[
 					fk[tab][f[1]] = true
 				}
 				if c := kolomPola.FindStringSubmatch(l); c != nil && c[1] != "CONSTRAINT" {
+					kolom[tab][c[1]] = kolomDDL{Tipe: c[2], WajibIsi: strings.Contains(c[3], "NOT NULL")}
+				}
+			}
+		}
+		for _, m := range tambahPola.FindAllStringSubmatch(teks, -1) {
+			tab := m[1]
+			if kolom[tab] == nil {
+				kolom[tab] = map[string]kolomDDL{}
+			}
+			for _, l := range strings.Split(m[2], "\n") {
+				l = strings.TrimSuffix(strings.TrimSpace(l), ",")
+				if c := kolomPola.FindStringSubmatch(l); c != nil {
 					kolom[tab][c[1]] = kolomDDL{Tipe: c[2], WajibIsi: strings.Contains(c[3], "NOT NULL")}
 				}
 			}
@@ -138,12 +154,14 @@ func TestMigrasi050Sampai056TipeNullFKIndexSesuaiStruktur(t *testing.T) {
 	ddl, fk, idx := bacaDDLPolis(t)
 	// ⚠️ Instrumen diuji atas jawaban yang diketahui: tujuh tabel, 219 kolom
 	// (sensus Python 28-09-2026). Pengurai yang rusak akan meluluskan apa pun.
+	// ⛔ 220 sejak GILIRAN-13: butir bn menambah T_WORK_POLIS.FLAG_ONGOING_POLICY
+	// (057, ALTER) - diperbarui dengan sadar, bukan dilonggarkan.
 	total := 0
 	for _, k := range struktur {
 		total += len(k)
 	}
-	if len(struktur) != 7 || total != 219 {
-		t.Fatalf("STRUKTUR terbaca %d tabel / %d kolom, mau 7 / 219; pengurainya rusak, "+
+	if len(struktur) != 7 || total != 220 {
+		t.Fatalf("STRUKTUR terbaca %d tabel / %d kolom, mau 7 / 220; pengurainya rusak, "+
 			"atau STRUKTUR berubah - perbarui angka ini dengan sadar", len(struktur), total)
 	}
 	for tab, kol := range struktur {

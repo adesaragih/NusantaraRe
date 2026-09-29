@@ -314,8 +314,14 @@ func TestSeluruhFKPohonPolisBerkaskade(t *testing.T) {
 		if milikClaimLife(nama) || strings.Contains(nama, "_down") {
 			continue
 		}
-		diperiksa++
 		isi := strings.ToUpper(teks)
+		// Penjaga ini tentang TABEL anak. Migrasi yang tidak membuat tabel -
+		// 057 hanya menambah sequence dan satu kolom (butir bn) - tidak punya
+		// induk untuk ditunjuk.
+		if !strings.Contains(isi, "CREATE TABLE") {
+			continue
+		}
+		diperiksa++
 		punyaFK := strings.Contains(isi, "FOREIGN KEY")
 		berkaskade := strings.Contains(isi, "ON DELETE CASCADE")
 
@@ -701,7 +707,12 @@ func TestSeluruhCreateDapatDibacaNamanya(t *testing.T) {
 	//
 	// 11+7+1 = 19 tabel + 10 sequence + 13+6+1 = 20 index = 49.
 	// +1 tabel dari 019 (butir be, kartu berkas unggahan) = 50.
-	const mau = 50
+	//
+	// ⛔ Diperbarui LAGI - butir bn (GILIRAN-13): +1 sequence SEQ_WORK_POLIS
+	// (057). RALAT atas catatan tiket 00 di atas: "nol sequence" untuk polis
+	// keliru - pl3 memutuskan SEQ_WORK_POLIS, dan ia terlewat. ALTER kolom
+	// FLAG_ONGOING_POLICY tidak dihitung.
+	const mau = 51
 	if diperiksa != mau {
 		t.Errorf("pernyataan CREATE diperiksa %d, mau %d", diperiksa, mau)
 	}

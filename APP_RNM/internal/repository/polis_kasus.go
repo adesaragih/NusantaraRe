@@ -1,0 +1,105 @@
+package repository
+
+// Kasus polis baru - GILIRAN-13 paket 1 (pl3, bn).
+//
+// Untuk apa berkas ini: melahirkan satu work object polis - baris
+// `T_WORK_POLIS` beserta baris `T_PREMIUM_LIST` kosong yang layar berikutnya
+// butuhkan - di dalam transaksi MILIK PEMANGGIL.
+//
+// ⛔ PENGENAL `NBLF-<n>`, tanpa nol di depan - dari DATA, bukan dikarang.
+// Korpus tidak memuat awalan kelas `ASM-FW-GISFW-Work-LIFE` (nol
+// `pyWorkIDPrefix` untuk kelas itu); sampel baca-saja DEV 29-09-2026
+// (`ROWNUM <= 200`, bentuk saja, nol baris disalin) atas `JSON_OFFER_LIFE` dan
+// `M_LIFE_PREMIUM_SUMMARY` menjawab 400/400 `ASM-FW-GISFW-WORK NBLF-<1..5
+// digit>`, nol berawalan nol. Pengenal disimpan berbentuk `pyID` - tanpa
+// awalan kelas - sama dengan `T_WORK_CLAIM` (`CLM-…`).
+//
+// Dibaca sesudah: polis_work.go, pengenalwork.go.
+
+import (
+	"context"
+	"fmt"
+	"strings"
+	"time"
+
+	"nusantarare/internal/models"
+)
+
+// AwalanWorkPolis adalah awalan pengenal work object polis Life.
+const AwalanWorkPolis = "NBLF-"
+
+// RakitPengenalWorkPolis menyusun pengenal dari angka urutannya.
+//
+// ⛔ TANPA padding - berbeda dengan `RakitPengenalWork` klaim (enam digit,
+// butir aa). Pengenal warisan polis tidak berawalan nol, dan pengenal baru
+// yang dipad akan terbaca sebagai jenis nomor yang lain.
+func RakitPengenalWorkPolis(urut string) string {
+	return AwalanWorkPolis + strings.TrimSpace(urut)
+}
+
+// sqlSisipKasusPolis - baris kerja polis baru, kelima kolomnya.
+func sqlSisipKasusPolis(tabel string) string {
+	return fmt.Sprintf(`INSERT INTO %s (ID, LINI, POSITION, STATUS, FLAG_ONGOING_POLICY)
+		  VALUES (:1, :2, :3, :4, :5)`, tabel)
+}
+
+func argSisipKasusPolis(id string, k models.KasusPolisBaru) []any {
+	return []any{id, k.Lini, k.Posisi, k.Status, k.Flag}
+}
+
+// sqlSisipPremiumListKosong - header polis kosong, berbagi pengenal.
+//
+// ⛔ `ID` = `ID_PEGA` = pengenal work. `ID` karena shared PK (050/051);
+// `ID_PEGA` karena kotak masuk menggabung `p.ID_PEGA = w.ID`. Penampung
+// unik, pengenal dikirim dua kali.
+func sqlSisipPremiumListKosong(tabel string) string {
+	return fmt.Sprintf(`INSERT INTO %s (ID, ID_PEGA, TGL_INPUT) VALUES (:1, :2, :3)`, tabel)
+}
+
+// PengenalBerikut menerbitkan satu pengenal work polis dari SEQ_WORK_POLIS.
+func (r *WorkPolis) PengenalBerikut(ctx context.Context, tx *Tx) (string, error) {
+	// Pembaca sequence yang SAMA dengan pengenal klaim - satu tempat untuk
+	// `NEXTVAL`, bukan salinan kedua.
+	urut, err := NewPohonKlaim(r.db).nomorBerikut(ctx, tx, "SEQ_WORK_POLIS")
+	if err != nil {
+		return "", err
+	}
+	return RakitPengenalWorkPolis(urut), nil
+}
+
+// SisipKasusBaru menulis baris kerja dan header polis kosong.
+//
+// ⛔ Keduanya di transaksi PEMANGGIL: kasus tanpa header tidak tampil lengkap
+// di kotak masuk, dan header tanpa kasus adalah baris yatim.
+func (r *WorkPolis) SisipKasusBaru(ctx context.Context, tx *Tx, id string,
+	k models.KasusPolisBaru, saat time.Time) error {
+
+	kerja, err := r.db.Qualify("T_WORK_POLIS")
+	if err != nil {
+		return err
+	}
+	polis, err := r.db.Qualify("T_PREMIUM_LIST")
+	if err != nil {
+		return err
+	}
+	for _, l := range []struct {
+		nama string
+		q    string
+		args []any
+	}{
+		{"kasus polis", sqlSisipKasusPolis(kerja), argSisipKasusPolis(id, k)},
+		{"header polis", sqlSisipPremiumListKosong(polis), []any{id, id, saat}},
+	} {
+		if err := PeriksaSQL(l.q); err != nil {
+			return err
+		}
+		hasil, err := tx.tx.ExecContext(ctx, l.q, l.args...)
+		if err != nil {
+			return fmt.Errorf("repository: menyisipkan %s: %w", l.nama, err)
+		}
+		if err := pastikanSatuBaris(hasil, l.nama); err != nil {
+			return err
+		}
+	}
+	return nil
+}

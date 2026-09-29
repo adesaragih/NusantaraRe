@@ -96,6 +96,9 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 	// atas penawaran melainkan hasil penggolong `Decision3`, yang hanya sah
 	// sesudah `Confirm` di tahap penawaran.
 	mux.HandleFunc("GET /api/polis-life", kotakMasukPolis(svc, stubPelaku))
+	// GILIRAN-13 butir bn - tombol portal `Input Offer` / `Input Premium`
+	// (`CreateInputLife`) melahirkan kasus polis.
+	mux.HandleFunc("POST /api/polis-life", buatKasusPolis(svc, stubPelaku))
 	mux.HandleFunc("GET /api/polis-life/periode",
 		periodeProduksi(svc, stubPelaku))
 	mux.HandleFunc("POST /api/polis-life/{id}/keputusan",

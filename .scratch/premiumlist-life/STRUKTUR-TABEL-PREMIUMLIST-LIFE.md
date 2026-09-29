@@ -44,6 +44,7 @@ polis**. Bukan anak `T_PREMIUM_LIST`.
 | `LINI` | teks | ya | | NB + EDM | keputusan tiket 00 PremiumList — "identitas polis + lini" |
 | `POSITION` | teks | ya | | NB + EDM | keputusan tiket 00 PremiumList, `spec.md` §12 — nilai connector `Confirm`/`Decline`/`Reject`/`Offer`/`Premium` |
 | `STATUS` | teks | ya | | NB + EDM | keputusan tiket 00 PremiumList, `spec.md` §12 |
+| `FLAG_ONGOING_POLICY` | teks | ya | | NB | korpus `FlagOnGoingPolicy` — `CreateInputLife` b618, VERBATIM `"0"` (Input Offer) / `"1"` (Input Premium); migrasi `057`, butir **bn** (GILIRAN-13) |
 
 ⛔ Kolom **audit** disebut tiket 00 sebagai "audit" **tanpa dinamai**, sehingga tidak ditulis di sini
 — menuliskannya berarti mengarang. Masuk lampiran.
