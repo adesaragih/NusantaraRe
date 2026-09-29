@@ -21,6 +21,7 @@ type gudangKontrakUji struct {
 	disisip   int
 	diperbaru int
 	jejak     []string
+	anak      int64
 }
 
 func (g *gudangKontrakUji) Daftar(_ context.Context, tahunID string) ([]models.KontrakTreaty, error) {
@@ -57,6 +58,9 @@ func (g *gudangKontrakUji) Perbarui(_ context.Context, _ *repository.Tx, k model
 }
 func (g *gudangKontrakUji) CariDobel(_ context.Context, _ *repository.Tx, _, _, _ string) (string, error) {
 	return g.dobel, nil
+}
+func (g *gudangKontrakUji) JumlahAnakKombinasi(context.Context, *repository.Tx, models.KombinasiTCO, string) (int64, error) {
+	return g.anak, nil
 }
 func (g *gudangKontrakUji) Jejak(_ context.Context, _ *repository.Tx, akun, baris, aksi, ket string, _ time.Time) error {
 	g.jejak = append(g.jejak, akun+"|"+baris+"|"+aksi+"|"+ket)
@@ -207,5 +211,24 @@ func TestKontrakAkhirBawaan(t *testing.T) {
 	}
 	if _, err := l.AkhirBawaan(context.Background(), pelakuUjiTCO, "9999999", "2026-03-01"); !errors.Is(err, services.ErrTahunTreatyTidakAda) {
 		t.Errorf("tahun tidak ada: %v", err)
+	}
+}
+
+// Temuan /code-review: jenis reasuransi kontrak = kunci kombinasi anak-anaknya.
+func TestKontrakGantiJenisBeranakDitolak(t *testing.T) {
+	g := gudangKontrakKosong()
+	g.baris["1000003"] = models.KontrakTreaty{ID: "1000003", IDTreatyYear: "1000001", ReinsTypeID: "10003"}
+	g.anak = 2
+	l := services.New(nil).KontrakTreatyTCO().DenganGudang(g).DenganTahun(tahunKontrakUji{}).
+		DenganJenis(jenisKontrakUji{{ID: "10003", Note: "UJI QS", Tipe: "1"}, {ID: "10005", Note: "UJI SURPLUS", Tipe: "2"}}).
+		DenganTransaksi(transaksiUji).DenganJam(jamUji)
+	m := kontrakMasuk()
+	m.ID, m.ReinsTypeID = "1000003", "10005"
+	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", m); !errors.Is(err, services.ErrKontrakBeranak) || g.diperbaru != 0 {
+		t.Errorf("ganti jenis beranak: %v (diperbarui %d)", err, g.diperbaru)
+	}
+	g.anak = 0
+	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", m); err != nil || g.diperbaru != 1 {
+		t.Errorf("ganti jenis tanpa anak: %v", err)
 	}
 }

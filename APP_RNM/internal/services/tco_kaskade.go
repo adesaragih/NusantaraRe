@@ -44,7 +44,7 @@ var (
 
 // PelaksanaKaskadeTCO menghitung dan menjalankan kaskade.
 type PelaksanaKaskadeTCO interface {
-	DampakKontrak(ctx context.Context, kom models.KombinasiTCO, tahunID string) (repository.DampakHapusTCO, error)
+	DampakKontrak(ctx context.Context, kom models.KombinasiTCO, tahunID, kontrakID string) (repository.DampakHapusTCO, error)
 	HapusKontrak(ctx context.Context, tx *repository.Tx, kom models.KombinasiTCO, tahunID, kontrakID string) (repository.DampakHapusTCO, error)
 	DampakReinsurer(ctx context.Context, reinsurerID string) (repository.DampakHapusTCO, error)
 	HapusReinsurer(ctx context.Context, tx *repository.Tx, kom models.KombinasiTCO, reinsurerID string) (repository.DampakHapusTCO, error)
@@ -52,7 +52,7 @@ type PelaksanaKaskadeTCO interface {
 
 type kaskadeBelumDisuntik struct{}
 
-func (kaskadeBelumDisuntik) DampakKontrak(context.Context, models.KombinasiTCO, string) (repository.DampakHapusTCO, error) {
+func (kaskadeBelumDisuntik) DampakKontrak(context.Context, models.KombinasiTCO, string, string) (repository.DampakHapusTCO, error) {
 	return repository.DampakHapusTCO{}, ErrGudangKaskadeBelumDisuntik
 }
 func (kaskadeBelumDisuntik) HapusKontrak(context.Context, *repository.Tx, models.KombinasiTCO, string, string) (repository.DampakHapusTCO, error) {
@@ -81,6 +81,8 @@ type DampakTampil struct {
 	Security     int64 `json:"security"`
 	Business     int64 `json:"business"`
 	KlausulTetap int64 `json:"klausulTetap"`
+	// Bersama - kontrak lain yang memakai kombinasi yang sama (reinsurer/security tidak ikut).
+	Bersama int64 `json:"bersama"`
 }
 
 // KonfirmasiHapus adalah jumlah yang pemakai lihat di popup lalu setujui.
@@ -90,7 +92,7 @@ type KonfirmasiHapus struct {
 
 func tampilDampak(d repository.DampakHapusTCO) DampakTampil {
 	return DampakTampil{Kontrak: d.Kontrak, Reinsurer: d.Reinsurer, Security: d.Security, Business: d.Business,
-		KlausulTetap: d.KlausulTetap}
+		KlausulTetap: d.KlausulTetap, Bersama: d.Bersama}
 }
 
 // KaskadeTCO melayani popup + kaskade hapus.
@@ -183,7 +185,7 @@ func (l *KaskadeTCO) DampakHapusKontrak(ctx context.Context, pelaku Pelaku, tahu
 	if err != nil {
 		return DampakTampil{}, err
 	}
-	d, err := l.kaskade.DampakKontrak(ctx, kom, tahunID)
+	d, err := l.kaskade.DampakKontrak(ctx, kom, tahunID, kontrakID)
 	if err != nil {
 		return DampakTampil{}, err
 	}
@@ -204,16 +206,19 @@ func (l *KaskadeTCO) HapusKontrak(ctx context.Context, pelaku Pelaku, tahunID, k
 	if err := WajibIdentitas(pelaku); err != nil {
 		return "", err
 	}
-	kom, err := l.kombinasi(ctx, tahunID, kontrakID)
-	if err != nil {
-		return "", err
-	}
-	err = l.transaksi(ctx, func(tx *repository.Tx) error {
+	var kom models.KombinasiTCO
+	err := l.transaksi(ctx, func(tx *repository.Tx) error {
 		c := repository.DenganBacaTxTCO(ctx, tx)
 		if err := l.kontrak.Kunci(c, tx, tahunID, kontrakID); err != nil {
 			return err
 		}
-		sekarang, err := l.kaskade.DampakKontrak(c, kom, tahunID)
+		// Temuan /code-review: kombinasi dibaca SESUDAH kunci, lewat transaksi -
+		// bukan salinan basi dari sebelum penulis lain mengubah kontraknya.
+		var err error
+		if kom, err = l.kombinasi(c, tahunID, kontrakID); err != nil {
+			return err
+		}
+		sekarang, err := l.kaskade.DampakKontrak(c, kom, tahunID, kontrakID)
 		if err != nil {
 			return err
 		}
@@ -267,13 +272,13 @@ func (l *KaskadeTCO) HapusReinsurer(ctx context.Context, pelaku Pelaku, tahunID,
 	if err := WajibIdentitas(pelaku); err != nil {
 		return "", err
 	}
-	kom, err := l.kombinasi(ctx, tahunID, kontrakID)
-	if err != nil {
-		return "", err
-	}
-	err = l.transaksi(ctx, func(tx *repository.Tx) error {
+	err := l.transaksi(ctx, func(tx *repository.Tx) error {
 		c := repository.DenganBacaTxTCO(ctx, tx)
 		if err := l.kontrak.Kunci(c, tx, tahunID, kontrakID); err != nil {
+			return err
+		}
+		kom, err := l.kombinasi(c, tahunID, kontrakID)
+		if err != nil {
 			return err
 		}
 		if _, err := l.reinsurer.Ambil(c, kom, reinsurerID); err != nil {

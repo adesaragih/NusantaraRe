@@ -200,6 +200,23 @@ func (m *MasterKontrakTCO) CariDobel(ctx context.Context, tx *Tx, tahunID, reins
 	if tx == nil {
 		return "", errors.New("repository: pencarian dobel kontrak menuntut transaksi")
 	}
+	// Temuan /code-review: tahun induk DIKUNCI dulu - dua penulis kontrak
+	// serentak pada tahun yang sama tidak boleh sama-sama lolos pemeriksaan.
+	tahun, err := m.db.Qualify(TabelTahunTCO)
+	if err != nil {
+		return "", err
+	}
+	kunci := sqlKunciTahunTCO(tahun)
+	if err := PeriksaSQL(kunci); err != nil {
+		return "", err
+	}
+	var terkunci string
+	if err := tx.tx.QueryRowContext(ctx, kunci, tahunID).Scan(&terkunci); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", ErrTahunTreatyTidakAda
+		}
+		return "", fmt.Errorf("repository: mengunci tahun treaty %s: %w", tahunID, err)
+	}
 	tabel, err := m.db.Qualify(TabelKontrakTCO)
 	if err != nil {
 		return "", err
@@ -252,4 +269,38 @@ func (m *MasterKontrakTCO) Kunci(ctx context.Context, tx *Tx, tahunID, id string
 		return fmt.Errorf("repository: mengunci kontrak %s: %w", id, err)
 	}
 	return nil
+}
+
+// JumlahAnakKombinasi menghitung reinsurer + business yang menggantung pada
+// kombinasi kontrak itu - saringan SAMA dengan kaskade hapus.
+func (m *MasterKontrakTCO) JumlahAnakKombinasi(ctx context.Context, tx *Tx, kom models.KombinasiTCO, tahunID string) (int64, error) {
+	if tx == nil {
+		return 0, errors.New("repository: menghitung anak kombinasi menuntut transaksi")
+	}
+	reas, err := m.db.Qualify(TabelReinsurerTCO)
+	if err != nil {
+		return 0, err
+	}
+	biz, err := m.db.Qualify(TabelBusinessTCO)
+	if err != nil {
+		return 0, err
+	}
+	var jumlah int64
+	for _, h := range []struct {
+		q    string
+		args []any
+	}{
+		{sqlHitungTCO(reas, saringReinsurerKaskadeTCO), argKombinasi(kom)},
+		{sqlHitungTCO(biz, saringBusinessKaskadeTCO), []any{kom.TreatyYear, tahunID, kom.TreatyGroupID, kom.ReinsTypeID}},
+	} {
+		if err := PeriksaSQL(h.q); err != nil {
+			return 0, err
+		}
+		var n int64
+		if err := tx.tx.QueryRowContext(ctx, h.q, h.args...).Scan(&n); err != nil {
+			return 0, fmt.Errorf("repository: menghitung anak kombinasi: %w", err)
+		}
+		jumlah += n
+	}
+	return jumlah, nil
 }

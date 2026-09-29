@@ -278,6 +278,13 @@ func (m *MasterTahunTreaty) CariDobel(ctx context.Context, tx *Tx, grupID string
 	if tx == nil {
 		return "", errors.New("repository: pemeriksaan dobel tahun treaty menuntut transaksi")
 	}
+	// Temuan /code-review: periksa-lalu-sisip tanpa kunci membiarkan dua penulis
+	// serentak sama-sama lolos. Tahun treaty tidak punya baris induk untuk
+	// dikunci - tabelnya dikunci EXCLUSIVE sampai transaksi selesai (penulis
+	// tahun jarang; pembaca tidak terhalang).
+	if err := m.kunciTabelTahunTCO(ctx, tx); err != nil {
+		return "", err
+	}
 	if mulai.IsZero() || akhir.IsZero() {
 		return "", nil
 	}
@@ -299,4 +306,53 @@ func (m *MasterTahunTreaty) CariDobel(ctx context.Context, tx *Tx, grupID string
 		return "", fmt.Errorf("repository: memeriksa dobel tahun treaty: %w", err)
 	}
 	return id.String, nil
+}
+
+func sqlKunciTabelTahunTCO(tabel string) string {
+	return fmt.Sprintf(`LOCK TABLE %s IN EXCLUSIVE MODE`, tabel)
+}
+
+func (m *MasterTahunTreaty) kunciTabelTahunTCO(ctx context.Context, tx *Tx) error {
+	tabel, err := m.db.Qualify(TabelTahunTCO)
+	if err != nil {
+		return err
+	}
+	q := sqlKunciTabelTahunTCO(tabel)
+	if err := PeriksaSQL(q); err != nil {
+		return err
+	}
+	if _, err := tx.tx.ExecContext(ctx, q); err != nil {
+		return fmt.Errorf("repository: mengunci tabel tahun treaty: %w", err)
+	}
+	return nil
+}
+
+func sqlJumlahAnakTahunTCO(kontrak, klausul string) string {
+	return fmt.Sprintf(`SELECT (SELECT COUNT(*) FROM %s WHERE IDTREATYYEAR = :1) + (SELECT COUNT(*) FROM %s WHERE TREATYYEARID = :2) FROM DUAL`,
+		kontrak, klausul)
+}
+
+// JumlahAnak menghitung kontrak + klausul tahun itu - baris yang kombinasinya
+// (TREATYYEAR teks, TREATYGROUPID) ikut ditulis dari tahun.
+func (m *MasterTahunTreaty) JumlahAnak(ctx context.Context, tx *Tx, tahunID string) (int64, error) {
+	if tx == nil {
+		return 0, errors.New("repository: menghitung anak tahun treaty menuntut transaksi")
+	}
+	kontrak, err := m.db.Qualify(TabelKontrakTCO)
+	if err != nil {
+		return 0, err
+	}
+	klausul, err := m.db.Qualify(TabelKlausulTCO)
+	if err != nil {
+		return 0, err
+	}
+	q := sqlJumlahAnakTahunTCO(kontrak, klausul)
+	if err := PeriksaSQL(q); err != nil {
+		return 0, err
+	}
+	var n int64
+	if err := tx.tx.QueryRowContext(ctx, q, tahunID, tahunID).Scan(&n); err != nil {
+		return 0, fmt.Errorf("repository: menghitung anak tahun treaty %s: %w", tahunID, err)
+	}
+	return n, nil
 }

@@ -31,6 +31,10 @@ import (
 // jumlah klausul yang TIDAK terhapus.
 type DampakHapusTCO struct {
 	Kontrak, Reinsurer, Security, Business, KlausulTetap int64
+	// Bersama - kontrak LAIN (tahun lain, teks tahun + grup sama) yang memakai
+	// kombinasi yang sama. Bila > 0 reinsurer/security dan bisnis tanpa
+	// TREATYYEARID milik bersama - TIDAK ikut terhapus (temuan /code-review).
+	Bersama int64
 }
 
 // saringan WHERE bersama hitung & hapus.
@@ -40,7 +44,15 @@ const (
 	saringSecurityKaskadeTCO  = `REAS_ID IN (SELECT ID FROM %s WHERE TREATYYEAR = :1 AND TREATYGROUPID = :2 AND REINSTYPEID = :3)`
 	// Klausul jenis reasuransi itu di tahun itu - induk maupun anak.
 	saringKlausulTetapTCO = `TREATYYEARID = :1 AND (REINSTYPEID = :2 OR PARENTREINSTYPEID = :3)`
+	// Bisnis milik tahun ini saja (bila kombinasi dipakai bersama).
+	saringBusinessTahunKaskadeTCO = `TREATYYEAR = :1 AND TREATYYEARID = :2 AND TREATYGROUPID = :3 AND REINSTYPEID = :4`
 )
+
+// sqlKontrakBersamaTCO - kontrak lain yang kombinasinya sama.
+func sqlKontrakBersamaTCO(kontrak, tahun string) string {
+	return fmt.Sprintf(`SELECT COUNT(*) FROM %s c, %s y WHERE y.ID = c.IDTREATYYEAR
+	   AND y.TREATYYEAR = :1 AND y.TREATYGROUPID = :2 AND c.REINSTYPEID = :3 AND c.ID <> :4`, kontrak, tahun)
+}
 
 func sqlHitungTCO(tabel, saring string) string {
 	return fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE %s`, tabel, saring)
@@ -76,7 +88,7 @@ type KaskadeTCO struct{ db *DB }
 // NewKaskadeTCO menyusunnya.
 func NewKaskadeTCO(db *DB) *KaskadeTCO { return &KaskadeTCO{db: db} }
 
-type tabelKaskadeTCO struct{ kontrak, reinsurer, security, business, klausul string }
+type tabelKaskadeTCO struct{ kontrak, reinsurer, security, business, klausul, tahun string }
 
 func (k *KaskadeTCO) tabel() (tabelKaskadeTCO, error) {
 	var t tabelKaskadeTCO
@@ -84,7 +96,7 @@ func (k *KaskadeTCO) tabel() (tabelKaskadeTCO, error) {
 		logis string
 		isi   *string
 	}{{TabelKontrakTCO, &t.kontrak}, {TabelReinsurerTCO, &t.reinsurer}, {TabelSecurityTCO, &t.security},
-		{TabelBusinessTCO, &t.business}, {TabelKlausulTCO, &t.klausul}} {
+		{TabelBusinessTCO, &t.business}, {TabelKlausulTCO, &t.klausul}, {TabelTahunTCO, &t.tahun}} {
 		q, err := k.db.Qualify(p.logis)
 		if err != nil {
 			return t, err
@@ -106,22 +118,23 @@ func (k *KaskadeTCO) hitung(ctx context.Context, q string, args ...any) (int64, 
 }
 
 // DampakKontrak menghitung baris yang ikut terhapus bersama kontrak itu.
-func (k *KaskadeTCO) DampakKontrak(ctx context.Context, kom models.KombinasiTCO, tahunID string) (DampakHapusTCO, error) {
+func (k *KaskadeTCO) DampakKontrak(ctx context.Context, kom models.KombinasiTCO, tahunID, kontrakID string) (DampakHapusTCO, error) {
 	t, err := k.tabel()
 	if err != nil {
 		return DampakHapusTCO{}, err
 	}
 	d := DampakHapusTCO{Kontrak: 1}
-	if d.Business, err = k.hitung(ctx, sqlHitungTCO(t.business, saringBusinessKaskadeTCO),
-		kom.TreatyYear, tahunID, kom.TreatyGroupID, kom.ReinsTypeID); err != nil {
+	if d.Bersama, err = k.hitung(ctx, sqlKontrakBersamaTCO(t.kontrak, t.tahun),
+		kom.TreatyYear, kom.TreatyGroupID, kom.ReinsTypeID, kontrakID); err != nil {
 		return DampakHapusTCO{}, err
 	}
-	if d.Security, err = k.hitung(ctx, sqlHitungTCO(t.security, fmt.Sprintf(saringSecurityKaskadeTCO, t.reinsurer)),
-		argKombinasi(kom)...); err != nil {
-		return DampakHapusTCO{}, err
-	}
-	if d.Reinsurer, err = k.hitung(ctx, sqlHitungTCO(t.reinsurer, saringReinsurerKaskadeTCO), argKombinasi(kom)...); err != nil {
-		return DampakHapusTCO{}, err
+	for _, l := range langkahHapusKontrakTCO(t, kom, tahunID, kontrakID, &d) {
+		if l.hitung == "" {
+			continue
+		}
+		if *l.isi, err = k.hitung(ctx, l.hitung, l.args...); err != nil {
+			return DampakHapusTCO{}, err
+		}
 	}
 	if d.KlausulTetap, err = k.hitung(ctx, sqlHitungTCO(t.klausul, saringKlausulTetapTCO),
 		tahunID, kom.ReinsTypeID, kom.ReinsTypeID); err != nil {
@@ -144,6 +157,10 @@ func (k *KaskadeTCO) HapusKontrak(ctx context.Context, tx *Tx, kom models.Kombin
 		return DampakHapusTCO{}, err
 	}
 	var d DampakHapusTCO
+	if d.Bersama, err = k.hitung(ctx, sqlKontrakBersamaTCO(t.kontrak, t.tahun),
+		kom.TreatyYear, kom.TreatyGroupID, kom.ReinsTypeID, kontrakID); err != nil {
+		return DampakHapusTCO{}, err
+	}
 	for _, l := range langkahHapusKontrakTCO(t, kom, tahunID, kontrakID, &d) {
 		if err := PeriksaSQL(l.q); err != nil {
 			return DampakHapusTCO{}, err
@@ -164,21 +181,38 @@ func (k *KaskadeTCO) HapusKontrak(ctx context.Context, tx *Tx, kom models.Kombin
 
 // langkahKaskadeTCO adalah satu DELETE kaskade dan tempat jumlahnya.
 type langkahKaskadeTCO struct {
-	tabel string
-	q     string
-	args  []any
-	isi   *int64
+	tabel  string
+	q      string
+	hitung string
+	args   []any
+	isi    *int64
 }
 
 // langkahHapusKontrakTCO - urutan `DeleteFromTREATYCONTRACT_SQL` b80-b93:
 // kontrak, business, security, reinsurer. ⛔ Tidak ada langkah klausul.
+//
+// ⚠️ Temuan /code-review: bila kontrak lain (`d.Bersama` > 0) memakai kombinasi
+// yang sama, reinsurer/security dan bisnis tanpa TREATYYEARID adalah MILIK
+// BERSAMA - hanya kontrak dan bisnis ber-TREATYYEARID tahun ini yang terhapus.
+// Pega menghapus seluruhnya; itu merusak kontrak lain.
 func langkahHapusKontrakTCO(t tabelKaskadeTCO, kom models.KombinasiTCO, tahunID, kontrakID string, d *DampakHapusTCO) []langkahKaskadeTCO {
-	return []langkahKaskadeTCO{
-		{t.kontrak, sqlHapusKontrakKaskadeTCO(t.kontrak), []any{kontrakID, tahunID}, &d.Kontrak},
-		{t.business, sqlHapusKaskadeTCO(t.business, saringBusinessKaskadeTCO), []any{kom.TreatyYear, tahunID, kom.TreatyGroupID, kom.ReinsTypeID}, &d.Business},
-		{t.security, sqlHapusKaskadeTCO(t.security, fmt.Sprintf(saringSecurityKaskadeTCO, t.reinsurer)), argKombinasi(kom), &d.Security},
-		{t.reinsurer, sqlHapusKaskadeTCO(t.reinsurer, saringReinsurerKaskadeTCO), argKombinasi(kom), &d.Reinsurer},
+	argBiz := []any{kom.TreatyYear, tahunID, kom.TreatyGroupID, kom.ReinsTypeID}
+	saringBiz := saringBusinessKaskadeTCO
+	if d.Bersama > 0 {
+		saringBiz = saringBusinessTahunKaskadeTCO
 	}
+	langkah := []langkahKaskadeTCO{
+		{t.kontrak, sqlHapusKontrakKaskadeTCO(t.kontrak), "", []any{kontrakID, tahunID}, &d.Kontrak},
+		{t.business, sqlHapusKaskadeTCO(t.business, saringBiz), sqlHitungTCO(t.business, saringBiz), argBiz, &d.Business},
+	}
+	if d.Bersama > 0 {
+		return langkah
+	}
+	saringSec := fmt.Sprintf(saringSecurityKaskadeTCO, t.reinsurer)
+	return append(langkah,
+		langkahKaskadeTCO{t.security, sqlHapusKaskadeTCO(t.security, saringSec), sqlHitungTCO(t.security, saringSec), argKombinasi(kom), &d.Security},
+		langkahKaskadeTCO{t.reinsurer, sqlHapusKaskadeTCO(t.reinsurer, saringReinsurerKaskadeTCO),
+			sqlHitungTCO(t.reinsurer, saringReinsurerKaskadeTCO), argKombinasi(kom), &d.Reinsurer})
 }
 
 // DampakReinsurer menghitung security yang ikut terhapus bersama reinsurer itu.

@@ -54,7 +54,7 @@ func TestKonfirmasiDariKueri(t *testing.T) {
 }
 
 func TestJawabGalatKaskadeTCO(t *testing.T) {
-	for _, err := range []error{services.ErrDampakBerubah, services.ErrKaskadeTidakUtuh} {
+	for _, err := range []error{services.ErrDampakBerubah, services.ErrKaskadeTidakUtuh, services.ErrKontrakBeranak, services.ErrTahunBeranak} {
 		w := httptest.NewRecorder()
 		jawabGalatTreatyContractOut(w, err)
 		if w.Code != http.StatusConflict {

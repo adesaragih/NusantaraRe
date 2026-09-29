@@ -20,7 +20,7 @@ type kaskadeUji struct {
 	kombinasi        models.KombinasiTCO
 }
 
-func (k *kaskadeUji) DampakKontrak(_ context.Context, kom models.KombinasiTCO, _ string) (repository.DampakHapusTCO, error) {
+func (k *kaskadeUji) DampakKontrak(_ context.Context, kom models.KombinasiTCO, _, _ string) (repository.DampakHapusTCO, error) {
 	k.kombinasi = kom
 	return k.dampak, nil
 }

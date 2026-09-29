@@ -22,6 +22,7 @@ type gudangTahunUji struct {
 	diperbaru   []models.TahunTreaty
 	jejak       []string
 	perbaruiErr error
+	anak        int64
 }
 
 func (g *gudangTahunUji) Daftar(context.Context, int, int) (repository.HalamanTahunTreaty, error) {
@@ -47,6 +48,9 @@ func (g *gudangTahunUji) Perbarui(_ context.Context, _ *repository.Tx, t models.
 }
 func (g *gudangTahunUji) CariDobel(context.Context, *repository.Tx, string, time.Time, time.Time, string) (string, error) {
 	return g.dobel, nil
+}
+func (g *gudangTahunUji) JumlahAnak(context.Context, *repository.Tx, string) (int64, error) {
+	return g.anak, nil
 }
 func (g *gudangTahunUji) Jejak(_ context.Context, _ *repository.Tx, akun, baris, aksi, ket string, _ time.Time) error {
 	g.jejak = append(g.jejak, akun+"|"+baris+"|"+aksi+"|"+ket)
@@ -200,5 +204,19 @@ func TestGrupTreatyMasterKosongAdalahKegagalan(t *testing.T) {
 	d, err := l.Daftar(context.Background(), pelakuUjiTCO)
 	if err != nil || len(d) != 1 || d[0].TreatyGroupName != "UJI GRUP" {
 		t.Errorf("daftar: %+v %v", d, err)
+	}
+}
+
+// Temuan /code-review: TREATYYEAR/TREATYGROUPID tahun beranak tidak dapat diganti.
+func TestTahunGantiTahunBeranakDitolak(t *testing.T) {
+	g := &gudangTahunUji{anak: 1}
+	m := masukWajar()
+	m.ID, m.TreatyYear = "1000001", "2027"
+	if _, err := layananTahun(g).Simpan(context.Background(), pelakuUjiTCO, m); !errors.Is(err, services.ErrTahunBeranak) || len(g.diperbaru) != 0 {
+		t.Errorf("ganti tahun beranak: %v", err)
+	}
+	g.anak = 0
+	if _, err := layananTahun(g).Simpan(context.Background(), pelakuUjiTCO, m); err != nil || len(g.diperbaru) != 1 {
+		t.Errorf("ganti tahun tanpa anak: %v", err)
 	}
 }

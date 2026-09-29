@@ -225,6 +225,10 @@ func jawabGalatTreatyContractOut(w http.ResponseWriter, err error) bool {
 		errors.Is(err, models.ErrTotalShareMelebihi100),
 		errors.Is(err, services.ErrReinsurerDiLuarMaster):
 		galat(w, http.StatusUnprocessableEntity, err.Error())
+	case errors.Is(err, services.ErrKontrakBeranak),
+		errors.Is(err, services.ErrTahunBeranak):
+		// 409: kombinasi beranak tidak boleh diganti kuncinya (temuan /code-review).
+		galat(w, http.StatusConflict, err.Error())
 	case errors.Is(err, services.ErrDampakBerubah),
 		errors.Is(err, services.ErrKaskadeTidakUtuh):
 		// 409: keadaan DATA berubah sejak popup - tinjau ulang, tidak ada yang terhapus.

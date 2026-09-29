@@ -27,6 +27,8 @@ import (
 )
 
 var (
+	// ErrKontrakBeranak - jenis reasuransi tidak dapat diganti selama kombinasinya beranak (409).
+	ErrKontrakBeranak = errors.New("services: jenis reasuransi kontrak tidak dapat diganti selama reinsurer/business masih ada")
 	// ErrGudangKontrakBelumDisuntik - gudang kontrak belum dipasang.
 	ErrGudangKontrakBelumDisuntik = errors.New("services: gudang kontrak treaty belum disuntik")
 	// ErrKontrakTidakAda - kontrak bukan milik tahun treaty itu (404).
@@ -63,10 +65,15 @@ type GudangKontrakTCO interface {
 	Sisip(ctx context.Context, tx *repository.Tx, k models.KontrakTreaty) (string, error)
 	Perbarui(ctx context.Context, tx *repository.Tx, k models.KontrakTreaty) error
 	CariDobel(ctx context.Context, tx *repository.Tx, tahunID, reinsTypeID, kecualiID string) (string, error)
+	JumlahAnakKombinasi(ctx context.Context, tx *repository.Tx, kom models.KombinasiTCO, tahunID string) (int64, error)
 	Jejak(ctx context.Context, tx *repository.Tx, akunID, barisID, aksi, keterangan string, waktu time.Time) error
 }
 
 type gudangKontrakBelumDisuntik struct{}
+
+func (gudangKontrakBelumDisuntik) JumlahAnakKombinasi(context.Context, *repository.Tx, models.KombinasiTCO, string) (int64, error) {
+	return 0, ErrGudangKontrakBelumDisuntik
+}
 
 func (gudangKontrakBelumDisuntik) Daftar(context.Context, string) ([]models.KontrakTreaty, error) {
 	return nil, ErrGudangKontrakBelumDisuntik
@@ -106,6 +113,10 @@ func (g gudangKontrakOracle) Perbarui(ctx context.Context, tx *repository.Tx, k 
 }
 func (g gudangKontrakOracle) CariDobel(ctx context.Context, tx *repository.Tx, tahunID, reinsTypeID, kecualiID string) (string, error) {
 	return g.m.CariDobel(ctx, tx, tahunID, reinsTypeID, kecualiID)
+}
+func (g gudangKontrakOracle) JumlahAnakKombinasi(ctx context.Context, tx *repository.Tx, kom models.KombinasiTCO,
+	tahunID string) (int64, error) {
+	return g.m.JumlahAnakKombinasi(ctx, tx, kom, tahunID)
 }
 func (g gudangKontrakOracle) Jejak(ctx context.Context, tx *repository.Tx, akunID, barisID, aksi,
 	keterangan string, waktu time.Time) error {
@@ -289,6 +300,25 @@ func (k *KontrakTreatyTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID st
 		}
 		if lain != "" {
 			return GalatKontrakDobel{IDLain: lain, ReinsTypeID: kontrak.ReinsTypeID}
+		}
+		// Temuan /code-review: mengganti jenis reasuransi mengganti KOMBINASI
+		// tempat reinsurer, security, dan business menggantung - ditolak selama
+		// anak-anaknya masih ada (seperti induk klausul beranak).
+		if kontrak.ID != "" {
+			lama, err := k.gudang.Ambil(repository.DenganBacaTxTCO(ctx, tx), tahunID, kontrak.ID)
+			if err != nil {
+				return err
+			}
+			if lama.ReinsTypeID != kontrak.ReinsTypeID {
+				n, err := k.gudang.JumlahAnakKombinasi(ctx, tx, models.KombinasiDari(tahun, lama), tahunID)
+				if err != nil {
+					return err
+				}
+				if n > 0 {
+					return fmt.Errorf("%w: kontrak %s masih memiliki %d reinsurer/business pada jenis %s", ErrKontrakBeranak,
+						kontrak.ID, n, lama.ReinsTypeID)
+				}
+			}
 		}
 		ket := "kontrak diperbarui"
 		if kontrak.ID == "" {

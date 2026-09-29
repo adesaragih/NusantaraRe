@@ -24,7 +24,7 @@ func TestKaskadeTidakMenghapusKlausul(t *testing.T) {
 		}
 	}
 	// Tabel yang dihapus kaskade: tepat empat keluarga T_, tanpa klausul.
-	tb := tabelKaskadeTCO{kontrak: "S.K", reinsurer: "S.R", security: "S.S", business: "S.B", klausul: "S.P"}
+	tb := tabelKaskadeTCO{kontrak: "S.K", reinsurer: "S.R", security: "S.S", business: "S.B", klausul: "S.P", tahun: "S.Y"}
 	hapus := []string{sqlHapusKontrakKaskadeTCO(tb.kontrak), sqlHapusKaskadeTCO(tb.business, saringBusinessKaskadeTCO),
 		sqlHapusKaskadeTCO(tb.security, fmt.Sprintf(saringSecurityKaskadeTCO, tb.reinsurer)),
 		sqlHapusKaskadeTCO(tb.reinsurer, saringReinsurerKaskadeTCO), sqlHapusSecurityReinsurerTCO(tb.security),
@@ -66,7 +66,7 @@ func TestKaskadeSaringanSamaDanTahanNull(t *testing.T) {
 // AC 44 pada langkah yang BENAR-BENAR dijalankan HapusKontrak: tidak satu pun
 // menyasar tabel klausul, dan urutannya urutan Pega.
 func TestLangkahHapusKontrakTanpaKlausul(t *testing.T) {
-	tb := tabelKaskadeTCO{kontrak: "S.K", reinsurer: "S.R", security: "S.S", business: "S.B", klausul: "S.P"}
+	tb := tabelKaskadeTCO{kontrak: "S.K", reinsurer: "S.R", security: "S.S", business: "S.B", klausul: "S.P", tahun: "S.Y"}
 	var d DampakHapusTCO
 	var urut []string
 	for _, l := range langkahHapusKontrakTCO(tb, models.KombinasiTCO{TreatyYear: "2026", TreatyGroupID: "10001", ReinsTypeID: "10003"}, "1000001", "1000003", &d) {
@@ -80,5 +80,39 @@ func TestLangkahHapusKontrakTanpaKlausul(t *testing.T) {
 	}
 	if strings.Join(urut, ",") != "S.K,S.B,S.S,S.R" {
 		t.Errorf("urutan kaskade: %v", urut)
+	}
+}
+
+// Temuan /code-review: kombinasi dipakai bersama kontrak lain -> reinsurer,
+// security, dan bisnis tanpa TREATYYEARID TIDAK ikut terhapus.
+func TestLangkahHapusKontrakBersama(t *testing.T) {
+	tb := tabelKaskadeTCO{kontrak: "S.K", reinsurer: "S.R", security: "S.S", business: "S.B", klausul: "S.P", tahun: "S.Y"}
+	d := DampakHapusTCO{Bersama: 1}
+	var tabel []string
+	for _, l := range langkahHapusKontrakTCO(tb, models.KombinasiTCO{TreatyYear: "2026", TreatyGroupID: "10001", ReinsTypeID: "10003"}, "1000001", "1000003", &d) {
+		tabel = append(tabel, l.tabel)
+		if l.tabel == tb.business && strings.Contains(l.q, "IS NULL") {
+			t.Errorf("bisnis milik bersama ikut terhapus: %s", l.q)
+		}
+	}
+	if strings.Join(tabel, ",") != "S.K,S.B" {
+		t.Errorf("langkah bersama: %v", tabel)
+	}
+	if err := PeriksaSQL(sqlKontrakBersamaTCO("S.K", "S.Y")); err != nil {
+		t.Error(err)
+	}
+}
+
+// Temuan /code-review: anti-dobel tahun dan kontrak dikunci.
+func TestAntiDobelTahunDanKontrakDikunci(t *testing.T) {
+	if q := sqlKunciTabelTahunTCO("S.Y"); q != "LOCK TABLE S.Y IN EXCLUSIVE MODE" || PeriksaSQL(q) != nil {
+		t.Errorf("kunci tabel tahun: %s", q)
+	}
+	isi, _ := os.ReadFile("tco_kontrak.go")
+	if !strings.Contains(string(isi), "kunci := sqlKunciTahunTCO(tahun)") {
+		t.Error("CariDobel kontrak tidak mengunci tahun induk")
+	}
+	if err := PeriksaSQL(sqlJumlahAnakTahunTCO("S.K", "S.P")); err != nil {
+		t.Error(err)
 	}
 }

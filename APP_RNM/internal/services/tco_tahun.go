@@ -33,6 +33,8 @@ import (
 )
 
 var (
+	// ErrTahunBeranak - tahun/grup tidak dapat diganti selama tahun treaty beranak (409).
+	ErrTahunBeranak = errors.New("services: tahun treaty dan grupnya tidak dapat diganti selama kontrak/klausul masih ada")
 	// ErrGudangTahunTreatyBelumDisuntik - handler lupa memasang gudang.
 	ErrGudangTahunTreatyBelumDisuntik = errors.New("services: gudang tahun treaty belum disuntik")
 	// ErrTahunTreatyDobel - AC 73.
@@ -65,6 +67,7 @@ type GudangTahunTreatyTCO interface {
 	Perbarui(ctx context.Context, tx *repository.Tx, t models.TahunTreaty) error
 	CariDobel(ctx context.Context, tx *repository.Tx, grupID string, mulai, akhir time.Time,
 		kecualiID string) (string, error)
+	JumlahAnak(ctx context.Context, tx *repository.Tx, tahunID string) (int64, error)
 	Jejak(ctx context.Context, tx *repository.Tx, akunID, barisID, aksi, keterangan string,
 		waktu time.Time) error
 }
@@ -85,6 +88,9 @@ func (gudangTahunTreatyBelumDisuntik) Perbarui(context.Context, *repository.Tx, 
 }
 func (gudangTahunTreatyBelumDisuntik) CariDobel(context.Context, *repository.Tx, string, time.Time, time.Time, string) (string, error) {
 	return "", ErrGudangTahunTreatyBelumDisuntik
+}
+func (gudangTahunTreatyBelumDisuntik) JumlahAnak(context.Context, *repository.Tx, string) (int64, error) {
+	return 0, ErrGudangTahunTreatyBelumDisuntik
 }
 func (gudangTahunTreatyBelumDisuntik) Jejak(context.Context, *repository.Tx, string, string, string, string, time.Time) error {
 	return ErrGudangTahunTreatyBelumDisuntik
@@ -110,6 +116,9 @@ func (g gudangTahunTreatyOracle) Perbarui(ctx context.Context, tx *repository.Tx
 func (g gudangTahunTreatyOracle) CariDobel(ctx context.Context, tx *repository.Tx, grupID string,
 	mulai, akhir time.Time, kecualiID string) (string, error) {
 	return g.baca.CariDobel(ctx, tx, grupID, mulai, akhir, kecualiID)
+}
+func (g gudangTahunTreatyOracle) JumlahAnak(ctx context.Context, tx *repository.Tx, tahunID string) (int64, error) {
+	return g.baca.JumlahAnak(ctx, tx, tahunID)
 }
 func (g gudangTahunTreatyOracle) Jejak(ctx context.Context, tx *repository.Tx, akunID, barisID, aksi,
 	keterangan string, waktu time.Time) error {
@@ -299,6 +308,24 @@ func (t *TahunTreatyTCO) Simpan(ctx context.Context, pelaku Pelaku, masuk TahunT
 		if idLain != "" {
 			return GalatTahunTreatyDobel{IDLain: idLain, TreatyGroupID: model.TreatyGroupID,
 				StartDate: model.StartDate, EndDate: model.EndDate}
+		}
+		// Temuan /code-review: TREATYYEAR teks dan TREATYGROUPID ikut ditulis ke
+		// kontrak (kombinasi) dan klausul - tidak dapat diganti selama tahun ini
+		// sudah beranak.
+		if model.ID != "" {
+			lama, err := t.gudang.Ambil(repository.DenganBacaTxTCO(ctx, tx), model.ID)
+			if err != nil {
+				return err
+			}
+			if lama.TreatyYear != model.TreatyYear || lama.TreatyGroupID != model.TreatyGroupID {
+				n, err := t.gudang.JumlahAnak(ctx, tx, model.ID)
+				if err != nil {
+					return err
+				}
+				if n > 0 {
+					return fmt.Errorf("%w: tahun treaty %s memiliki %d kontrak/klausul", ErrTahunBeranak, model.ID, n)
+				}
+			}
 		}
 		keterangan := "tahun treaty diperbarui"
 		if model.ID == "" {
