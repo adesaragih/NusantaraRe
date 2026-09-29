@@ -71,6 +71,64 @@ export const ENTRI_MENU: readonly EntriMenu[] = [
   { modul: 'tco-tahun', label: MENU_TCO.treatyContractOut, kelompok: MODUL.treatyContractOut },
 ]
 
+/**
+ * Modul backend pemilik tiap halaman - nama yang sama dengan `MODUL_AKTIF` dan
+ * `GET /api/modul-aktif` (refactor bentuk B). `null` = milik aplikasi, selalu
+ * tampil (Beranda).
+ */
+export const MODUL_BACKEND: Readonly<Record<ModulTetap, string | null>> = {
+  beranda: null,
+  inbox: 'claimlife',
+  register: 'claimlife',
+  premiumlist: 'premiumlist',
+  komite: 'komite',
+  'tco-tahun': 'treaty',
+  'tco-kontrak': 'treaty',
+  'tco-klausul': 'treaty',
+}
+
+/**
+ * Apakah halaman ini tampil, menurut daftar modul aktif dari backend.
+ *
+ * ⛔ `null` - daftar belum terbaca atau backend tak terjangkau - berarti SEMUA
+ * tampil: persis perilaku sebelum `MODUL_AKTIF` ada. Menyembunyikan menu
+ * karena permintaannya gagal akan membuat aplikasi tampak kosong padahal yang
+ * rusak hanya satu pembacaan.
+ */
+export function halamanAktif(halaman: ModulTetap, aktif: readonly string[] | null): boolean {
+  const pemilik = MODUL_BACKEND[halaman]
+  return aktif === null || pemilik === null || aktif.includes(pemilik)
+}
+
+/** Satu butir sidebar - bentuk yang Shell turunkan dari `ENTRI_MENU`. */
+export interface ButirSidebar {
+  halaman: ModulTetap
+  label: string
+}
+
+/** Satu kelompok sidebar beserta butirnya. */
+export interface KelompokSidebar {
+  nama: string
+  butir: readonly ButirSidebar[]
+}
+
+/**
+ * Kelompok sidebar yang tampil, masing-masing dengan butir modul aktifnya saja.
+ *
+ * ⛔ Kelompok yang memang TANPA butir (belum dimigrasi) tetap berdiri dan
+ * menyebut sebabnya. Kelompok yang butirnya HABIS tersaring - modulnya
+ * NONAKTIF lewat `MODUL_AKTIF` - hilang sama sekali: modulnya ada, hanya
+ * tidak dipasang di proses ini, jadi "belum dimigrasi" akan berbohong.
+ */
+export function kelompokTampil(
+  kelompok: readonly KelompokSidebar[],
+  aktif: readonly string[] | null,
+): { k: KelompokSidebar; butir: readonly ButirSidebar[] }[] {
+  return kelompok
+    .map((k) => ({ k, butir: k.butir.filter((b) => halamanAktif(b.halaman, aktif)) }))
+    .filter(({ k, butir }) => k.butir.length === 0 || butir.length > 0)
+}
+
 /** Satu baris hasil palet. */
 export interface HasilPalet {
   kunci: string
@@ -79,9 +137,9 @@ export interface HasilPalet {
   modul: ModulTetap
 }
 
-/** Daftar yang dapat dicari palet. */
-export function daftarPalet(): HasilPalet[] {
-  return ENTRI_MENU.map((e) => ({
+/** Daftar yang dapat dicari palet - hanya menu modul yang aktif. */
+export function daftarPalet(aktif: readonly string[] | null = null): HasilPalet[] {
+  return ENTRI_MENU.filter((e) => halamanAktif(e.modul, aktif)).map((e) => ({
     kunci: 'modul:' + e.modul,
     label: e.label,
     kelompok: e.kelompok,

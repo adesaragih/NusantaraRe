@@ -38,7 +38,7 @@ import {
   MODUL,
 } from '../assets/labels'
 import { PERAN_ID, PRODUK } from '../assets/labels.claimlife'
-import { ENTRI_MENU, type ModulTetap } from '../lib/daftarMenu'
+import { ENTRI_MENU, kelompokTampil, type ModulTetap } from '../lib/daftarMenu'
 import { singkatanUnik } from '../lib/singkatan'
 import { PagarGalat } from '../PagarGalat'
 import { type Sesi } from '../store/sesi'
@@ -62,7 +62,7 @@ export type Halaman = ModulTetap | 'outstanding' | 'detail'
 
 /** Satu butir menu. */
 interface ButirMenu {
-  halaman: Halaman
+  halaman: ModulTetap
   label: string
 }
 
@@ -164,9 +164,14 @@ export interface ShellProps {
   halaman: Halaman
   onPindah: (h: Halaman) => void
   children: ReactNode
+  /**
+   * Modul aktif dari `GET /api/modul-aktif` (refactor bentuk B). Menu modul
+   * nonaktif tidak tampil; `null` = semua tampil (lihat `halamanAktif`).
+   */
+  modulAktif?: readonly string[] | null
 }
 
-export function Shell({ masuk, halaman, onPindah, children }: ShellProps) {
+export function Shell({ masuk, halaman, onPindah, children, modulAktif = null }: ShellProps) {
   const lebar = useLayarLebar()
   const { tema, balik: balikTema } = useTema()
   // Tablet (768–1023px) mulai dengan panel terciut, seperti template:
@@ -331,9 +336,10 @@ export function Shell({ masuk, halaman, onPindah, children }: ShellProps) {
               </button>
             </li>
 
-            {KELOMPOK.map((k) => (
+            {/* Modul NONAKTIF (MODUL_AKTIF): kelompoknya tidak tampil. */}
+            {kelompokTampil(KELOMPOK, modulAktif).map(({ k, butir }) => (
               <li key={k.nama}>
-                {k.butir.length === 0 ? (
+                {butir.length === 0 ? (
                   /* Kelompok tanpa butir tetap BERDIRI dan menyebut sebabnya.
                      Menyembunyikannya membuat aplikasi tampak lengkap padahal
                      empat belas modul belum ada. Ia bukan tombol: tidak ada
@@ -354,13 +360,13 @@ export function Shell({ masuk, halaman, onPindah, children }: ShellProps) {
                   <KelompokMenu
                     nama={k.nama}
                     lencana={LENCANA.get(k.nama) ?? ''}
-                    memuatAktif={k.butir.some((b) => b.halaman === halaman)}
+                    memuatAktif={butir.some((b) => b.halaman === halaman)}
                     terciut={terciut}
                     onBentang={() => {
                       setTerlipat(false)
                     }}
                   >
-                    {k.butir.map((b) => (
+                    {butir.map((b) => (
                       <button
                         key={b.halaman}
                         type="button"
@@ -512,6 +518,7 @@ export function Shell({ masuk, halaman, onPindah, children }: ShellProps) {
             setPaletBuka(false)
           }}
           onPilih={pilih}
+          modulAktif={modulAktif}
         />
       )}
     </div>

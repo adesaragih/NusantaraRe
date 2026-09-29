@@ -2,12 +2,18 @@
 //
 // Refactor bentuk B (30-09-2026): setiap modul punya satu berkas perakitan
 // (`modul.go`) yang menyerahkan miliknya kepada `cmd/api`. Di paket ini
-// dimulai dari migrasinya; rute dan pekerja latar menyusul (paket 6).
+// memuat migrasinya, rute HTTP-nya, dan pekerja latarnya (bila ada).
 package premiumlist
 
 import (
+	"context"
 	"embed"
 	"io/fs"
+	"net/http"
+
+	"nusantarare/inti"
+	"nusantarare/modul/premiumlist/handlers"
+	"nusantarare/modul/premiumlist/services"
 )
 
 // berkasMigrasi adalah folder `migrations/` modul ini (rentang 050-079),
@@ -20,3 +26,26 @@ var berkasMigrasi embed.FS
 // SumberMigrasi menyerahkan folder `migrations/` modul ini kepada pelari
 // migrasi (`inti/migrasi`).
 func SumberMigrasi() fs.FS { return berkasMigrasi }
+
+// Nama pengenal modul ini di MODUL_AKTIF dan di GET /api/modul-aktif.
+const Nama = "premiumlist"
+
+// Modul adalah perakitan modul PremiumList Life untuk `cmd/api` - `inti.Modul`.
+type Modul struct {
+	svc        *services.Service
+	stubPelaku bool
+}
+
+// Baru merakit modul di atas Service yang sudah disambung `modul.Rakit`.
+func Baru(svc *services.Service, stubPelaku bool) Modul {
+	return Modul{svc: svc, stubPelaku: stubPelaku}
+}
+
+// Nama menyebut modul ini.
+func (Modul) Nama() string { return Nama }
+
+// DaftarkanRute mendaftarkan seluruh rute modul ini ke mux bersama.
+func (m Modul) DaftarkanRute(mux *http.ServeMux) { handlers.DaftarkanRute(mux, m.svc, m.stubPelaku) }
+
+// JalankanPekerja - modul ini tidak punya pekerja latar.
+func (Modul) JalankanPekerja(context.Context) inti.Pekerja { return inti.TanpaPekerja() }

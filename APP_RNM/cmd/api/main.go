@@ -3,8 +3,11 @@
 // Fase 0 - scaffold. Berkas ini hanya: baca config -> buka koneksi ->
 // daftarkan handler -> dengarkan. ⛔ Nol aturan dagang di sini.
 //
-// main adalah composition root: ia satu-satunya tempat yang merakit
-// repository dan services. Sesudah dirakit, seluruh pertanyaan lewat services.
+// main adalah composition root. Refactor bentuk B (30-09-2026): ia membangun
+// akar bersama (`inti.Dasar`), meminta daftar modul dari `modul.Rakit`,
+// menyaringnya menurut MODUL_AKTIF (`rakit.go`), lalu memasang rute dan
+// pekerja latar modul yang aktif saja. Migrasi selalu dari SEMUA modul
+// terdaftar (`modul.SumberMigrasi`), tidak ikut MODUL_AKTIF.
 package main
 
 import (
@@ -22,14 +25,6 @@ import (
 	intidb "nusantarare/inti/db"
 	"nusantarare/inti/migrasi"
 	"nusantarare/modul"
-	"nusantarare/modul/claimlife/handlers"
-	"nusantarare/modul/claimlife/services"
-	komitehandlers "nusantarare/modul/komite/handlers"
-	komiteservices "nusantarare/modul/komite/services"
-	premiumlisthandlers "nusantarare/modul/premiumlist/handlers"
-	premiumlistservices "nusantarare/modul/premiumlist/services"
-	treatyhandlers "nusantarare/modul/treaty/handlers"
-	treatyservices "nusantarare/modul/treaty/services"
 )
 
 func main() {
@@ -60,20 +55,19 @@ func main() {
 	// tetap tersimpan di lingkungan non-produksi.
 	//
 	// Refactor bentuk B (30-09-2026): SATU akar untuk semua modul; setiap
-	// modul membangun `Service`-nya sendiri di atasnya.
+	// modul membangun `Service`-nya sendiri di atasnya (`modul.Rakit`).
 	dasar := inti.NewDasar(db).
 		DenganLingkungan(inti.LingkunganDariFlag(cfg.IsPegaProd)).
 		DenganUnggahanDir(cfg.UnggahanDir)
-	svcPL := premiumlistservices.DariDasar(dasar)
-	// Butir pl4/av: Claim Life membaca polis PremiumList lewat inti/kontrak.
-	svc := services.DariDasar(dasar).DenganPembacaPolis(premiumlistservices.PembacaPolis(svcPL))
-	// Butir km3: Komite membaca dan menuntaskan baris klaim lewat inti/kontrak.
-	svcKM := komiteservices.DariDasar(dasar).DenganKlaim(services.KlaimUntukKomite(svc))
-	svcTCO := treatyservices.DariDasar(dasar).
-		// OQ-TCO-08: bawaan stub; ⛔ garam tidak pernah dicetak.
-		DenganPenyimpananLampiranTCO(cfg.PelaksanaStorage == config.PelaksanaStorageNyata, cfg.StorageTokenSalt)
-	if svc.PunyaDatabase() {
-		log.Printf("oracle: skema %s", svc.SkemaAktif())
+	catat := func(s string) { log.Print(s) }
+	// Refactor bentuk B: modul yang dipasang dipilih MODUL_AKTIF (kosong =
+	// semua). Nama yang tidak dikenal menolak menyala.
+	aktif, err := pilihModulAktif(modul.Rakit(dasar, cfg, catat), cfg.ModulAktif)
+	if err != nil {
+		log.Fatalf("konfigurasi: %v", err)
+	}
+	if dasar.PunyaDatabase() {
+		log.Printf("oracle: skema %s", dasar.SkemaAktif())
 	} else {
 		log.Print("oracle: ORACLE_DSN kosong - berjalan tanpa database")
 	}
@@ -85,29 +79,24 @@ func main() {
 		log.Fatal("pilih salah satu: -migrate atau -migrate-down")
 	}
 	if *bongkar {
-		bongkarMigrasi(svc, cfg)
+		bongkarMigrasi(dasar, cfg)
 		return
 	}
 	if *migrasi {
-		jalankanMigrasi(svc)
+		jalankanMigrasi(dasar)
 		return
 	}
 
 	srv := &http.Server{
-		Addr: cfg.HTTPAddr,
-		Handler: handlers.Router(svc, cfg.AuthStub, func(mux *http.ServeMux) {
-			premiumlisthandlers.DaftarkanRute(mux, svcPL, cfg.AuthStub)
-			komitehandlers.DaftarkanRute(mux, svcKM, cfg.AuthStub)
-			treatyhandlers.DaftarkanRute(mux, svcTCO, cfg.AuthStub)
-		}),
+		Addr:              cfg.HTTPAddr,
+		Handler:           rakitMux(dasar, aktif),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
 	ctx, berhenti := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer berhenti()
 
-	log.Printf("lampiran treaty contract out: pelaksana penyimpanan %s", cfg.PelaksanaStorage)
-	pekerjaSelesai := jalankanPekerjaLampiranTCO(ctx, svcTCO, cfg)
+	pekerja := jalankanPekerja(ctx, aktif)
 
 	go func() {
 		log.Printf("http: mendengarkan di %s", srv.Addr)
@@ -126,38 +115,7 @@ func main() {
 	}
 	// ⛔ Ditunggu SEBELUM db ditutup (defer di atas): putaran yang sedang
 	// berjalan menuntaskan atau membatalkan transaksinya sendiri.
-	select {
-	case <-pekerjaSelesai:
-	case <-tutup.Done():
-		log.Print("lampiran treaty contract out: pekerja latar belum berhenti saat batas penutupan")
-	}
-}
-
-// jalankanPekerjaLampiranTCO menyalakan pekerja latar antrean lampiran Treaty
-// Contract Out (OQ-TCO-09, keputusan work owner 29-09-2026).
-//
-// Mati bila TCO_PEKERJA_LAMPIRAN_INTERVAL kosong/0 atau tanpa Oracle. Ia
-// berhenti bersama ctx proses; kanal yang dikembalikan tertutup saat ia
-// benar-benar berhenti (langsung tertutup bila tidak dinyalakan).
-func jalankanPekerjaLampiranTCO(ctx context.Context, svc *treatyservices.Service, cfg config.Config) <-chan struct{} {
-	selesai := make(chan struct{})
-	if cfg.IntervalPekerjaLampiranTCO <= 0 {
-		log.Print("lampiran treaty contract out: pekerja latar mati (interval kosong)")
-		close(selesai)
-		return selesai
-	}
-	if !svc.PunyaDatabase() {
-		log.Print("lampiran treaty contract out: pekerja latar mati (tanpa oracle)")
-		close(selesai)
-		return selesai
-	}
-	log.Printf("lampiran treaty contract out: pekerja latar tiap %s", cfg.IntervalPekerjaLampiranTCO)
-	go func() {
-		defer close(selesai)
-		treatyhandlers.LayananLampiranTCO(svc).JalankanPekerja(ctx, cfg.IntervalPekerjaLampiranTCO,
-			func(s string) { log.Print(s) })
-	}()
-	return selesai
+	tungguPekerja(tutup, pekerja, catat)
 }
 
 // bongkarMigrasi adalah titik masuk `-migrate-down`.
@@ -171,7 +129,7 @@ func jalankanPekerjaLampiranTCO(ctx context.Context, svc *treatyservices.Service
 // test. Orang yang ingin membongkar skema uji terpaksa menyalin isi berkas
 // *_down.sql ke sqlplus - dan itu MELEWATI pengaman T_MIGRASI, yang membongkar
 // hanya langkah yang benar-benar tercatat selesai.
-func bongkarMigrasi(svc *services.Service, cfg config.Config) {
+func bongkarMigrasi(svc *inti.Dasar, cfg config.Config) {
 	if !svc.PunyaDatabase() {
 		log.Fatal("bongkar: ORACLE_DSN wajib terisi")
 	}
@@ -203,7 +161,7 @@ func bongkarMigrasi(svc *services.Service, cfg config.Config) {
 // Fase 0 tidak punya migrasi: nol DDL, nol aturan dagang. Berkas migrasi lahir
 // bersama tiket yang memilikinya, dan ⛔ tidak pernah dijalankan terhadap
 // instance produksi.
-func jalankanMigrasi(svc *services.Service) {
+func jalankanMigrasi(svc *inti.Dasar) {
 	if !svc.PunyaDatabase() {
 		log.Fatal("migrasi: ORACLE_DSN wajib terisi")
 	}

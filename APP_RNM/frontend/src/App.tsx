@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import Beranda from './pages/Beranda'
 import InboxPremiumList from './pages/premiumlist/InboxPremiumList'
@@ -16,7 +16,7 @@ import InboxTreatyContractDescription from './pages/treaty-contract-out/InboxTre
 import InboxTreatyContractReinsType from './pages/treaty-contract-out/InboxTreatyContractReinsType'
 import { Shell, type Halaman } from './components/Shell'
 import { BelumTersedia } from './components/ui/dasar'
-import { TAHAP_POLIS } from './services/api'
+import { TAHAP_POLIS, ambilModulAktif } from './services/api'
 import { pelakuStub } from './store/sesi'
 
 // App = identitas + Shell.
@@ -38,6 +38,25 @@ export default function App() {
   const [polis, setPolis] = useState({ id: '', tahap: '' })
   // Kasus komite yang sedang dibuka dari Inbox Komite; kosong = daftar.
   const [kasusKomite, setKasusKomite] = useState('')
+  // Modul yang dipasang backend (MODUL_AKTIF, refactor bentuk B). `null` =
+  // belum terbaca atau gagal dibaca: SEMUA menu tampil, persis seperti
+  // sebelum MODUL_AKTIF ada - satu pembacaan yang gagal tidak mengosongkan
+  // aplikasi.
+  const [modulAktif, setModulAktif] = useState<readonly string[] | null>(null)
+  useEffect(() => {
+    let batal = false
+    ambilModulAktif().then(
+      (m) => {
+        if (!batal) setModulAktif(m)
+      },
+      () => {
+        // Tetap `null`: layar modul menampilkan galat backend-nya sendiri.
+      },
+    )
+    return () => {
+      batal = true
+    }
+  }, [])
 
   if (masuk === null) {
     return (
@@ -57,7 +76,7 @@ export default function App() {
   }
 
   return (
-    <Shell masuk={masuk} halaman={halaman} onPindah={setHalaman}>
+    <Shell masuk={masuk} halaman={halaman} onPindah={setHalaman} modulAktif={modulAktif}>
       {halaman === 'beranda' && <Beranda masuk={masuk} onBuka={setHalaman} />}
       {halaman === 'premiumlist' && polis.id === '' && (
         <InboxPremiumList

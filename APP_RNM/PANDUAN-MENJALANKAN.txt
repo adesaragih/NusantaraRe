@@ -9,6 +9,7 @@ Diperbarui 27 September 2026: AUTH_STUB dua sisi bab 4 (sebab Inbox
 tampak kosong padahal backend sehat).
 Diperbarui 26 September 2026 (sore): pemuat .env bab 3, .env frontend bab 4,
 proxy Vite bab 5 (celahnya sudah tertutup), PATH permanen bab 1.
+Diperbarui 30 September 2026 (refactor bentuk B): MODUL_AKTIF bab 2.
 Untuk siapa: siapa pun yang ingin menjalankan aplikasi ini di mesin Windows,
 termasuk yang baru mengenal Go dan React.
 
@@ -129,6 +130,34 @@ Mengubah port (bila 8080 sudah dipakai proses lain):
 
   $env:HTTP_ADDR = ':8081'
   go run ./cmd/api
+
+Memilih modul yang dipasang (MODUL_AKTIF, sejak refactor bentuk B):
+
+  $env:MODUL_AKTIF = 'claimlife,komite'
+  go run ./cmd/api
+
+  Nama yang dikenal: claimlife, premiumlist, komite, treaty. Dipisah koma;
+  spasi dan huruf besar diabaikan. KOSONG (bawaan) berarti SEMUA modul.
+
+  Modul yang tidak disebut:
+    - rutenya tidak didaftarkan (jawabannya 404),
+    - pekerja latarnya tidak jalan,
+    - menunya tidak tampil di frontend. Frontend membaca daftar modul aktif
+      dari GET /api/modul-aktif; TIDAK ada env Vite untuk ini.
+
+  Nama yang salah ketik DITOLAK saat menyala: backend berhenti dengan pesan
+  yang menyebut nama itu dan nama-nama yang dikenal - bukan diam-diam
+  mematikan satu modul.
+
+  Migrasi (-migrate) TIDAK ikut MODUL_AKTIF: skema selalu dibangun dari
+  SEMUA modul terdaftar, supaya tabel yang dirujuk modul lain tetap ada.
+
+  Cek dari jendela lain:
+
+    Invoke-WebRequest -UseBasicParsing http://localhost:8080/api/modul-aktif |
+      Select-Object -Expand Content
+
+    Jawaban:  {"modul":["claimlife","komite"]}
 
 ================================================================================
 3. BACKEND DENGAN ORACLE (SETELAH DBA MEMBERI SKEMA UJI)

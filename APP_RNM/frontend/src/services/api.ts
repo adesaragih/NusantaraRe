@@ -412,6 +412,21 @@ export async function cekKesehatan(): Promise<Kesehatan> {
 }
 
 /**
+ * Modul yang dipasang backend - GET /api/modul-aktif, cmd/api/rakit.go
+ * (refactor bentuk B, `MODUL_AKTIF`). Menu modul yang tidak disebut tidak
+ * tampil (`lib/daftarMenu.ts` `halamanAktif`).
+ *
+ * ⛔ Bentuk yang tidak dikenal menjadi `null` (= semua menu tampil), BUKAN
+ * daftar kosong: badan yang tak terbaca bukan pernyataan "tidak ada modul".
+ */
+export async function ambilModulAktif(): Promise<readonly string[] | null> {
+  const data = await minta<{ modul?: unknown }>('/api/modul-aktif')
+  const modul = data?.modul
+  if (!Array.isArray(modul) || !modul.every((m): m is string => typeof m === 'string')) return null
+  return modul
+}
+
+/**
  * Ambil satu klaim Life beserta SELURUH baris adjustment-nya — tiket 01 AC-1,
  * bukan hanya baris terakhir. Di backend: GET /api/klaim-life/{id},
  * internal/handlers/klaimlife.go.

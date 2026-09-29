@@ -5,6 +5,7 @@ package config
 
 import (
 	"errors"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -67,6 +68,27 @@ func TestIntervalPekerjaLampiranTCO(t *testing.T) {
 		t.Setenv(EnvIntervalPekerjaLampiranTCO, raw)
 		if _, err := Load(); !errors.Is(err, ErrKonfigurasi) || !strings.Contains(err.Error(), EnvIntervalPekerjaLampiranTCO) {
 			t.Errorf("%q diterima: %v", raw, err)
+		}
+	}
+}
+
+// TestModulAktifDiurai - MODUL_AKTIF (refactor bentuk B paket 6): dipisah koma,
+// spasi dan huruf besar dibuang, ganda dan kosong dilewati; kosong = nil (semua).
+func TestModulAktifDiurai(t *testing.T) {
+	kosongkanEnvDasar(t)
+	for raw, mau := range map[string][]string{
+		"":                           nil,
+		" , ":                        nil,
+		"claimlife":                  {"claimlife"},
+		"Komite, claimlife,,KOMITE ": {"komite", "claimlife"},
+	} {
+		t.Setenv("MODUL_AKTIF", raw)
+		c, err := Load()
+		if err != nil {
+			t.Fatalf("%q: %v", raw, err)
+		}
+		if !reflect.DeepEqual(c.ModulAktif, mau) {
+			t.Errorf("MODUL_AKTIF=%q -> %v, mau %v", raw, c.ModulAktif, mau)
 		}
 	}
 }

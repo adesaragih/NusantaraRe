@@ -10,27 +10,29 @@
 package handlers
 
 import (
-	"context"
-	"encoding/json"
 	"net/http"
-	"time"
 
 	"nusantarare/modul/claimlife/services"
 )
 
-// Router menyusun seluruh rute.
+// Router menyusun rute modul ini SAJA, di mux sendiri - dipakai uji HTTP.
+//
+// Refactor bentuk B (30-09-2026): dulu `Router` menyusun SELURUH rute
+// aplikasi. Kini `cmd/api` menyusun mux bersama dari modul yang AKTIF
+// (MODUL_AKTIF), dan `GET /healthz` - milik aplikasi, bukan modul - tinggal
+// di sana.
+func Router(svc *services.Service, stubPelaku bool) http.Handler {
+	mux := http.NewServeMux()
+	DaftarkanRute(mux, svc, stubPelaku)
+	return mux
+}
+
+// DaftarkanRute mendaftarkan seluruh rute modul Claim Life.
 //
 // stubPelaku datang dari konfigurasi dan disetel SEKALI di sini. Ia bukan
 // autentikasi - lihat pelaku.go - dan konfigurasi sudah menolaknya bila
 // lingkungan menunjuk produksi.
-//
-// Refactor bentuk B (30-09-2026): rute modul yang sudah pindah ke
-// `modul/<nama>/` TIDAK didaftarkan di sini - paket ini tidak boleh mengimpor
-// modul lain. `cmd/api` menyerahkannya lewat `tambahan`, dan urutannya sama
-// dengan sebelumnya: sesudah seluruh rute di bawah.
-func Router(svc *services.Service, stubPelaku bool, tambahan ...func(*http.ServeMux)) http.Handler {
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /healthz", healthz(svc))
+func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	mux.HandleFunc("GET /api/klaim-life/{id}", klaimLife(svc))
 	// Kotak masuk per tahap - F0.4. Rutenya GET pada koleksi yang sama
 	// dengan POST pendaftaran: satu sumber daya, dua metode.
@@ -96,42 +98,4 @@ func Router(svc *services.Service, stubPelaku bool, tambahan ...func(*http.Serve
 	mux.HandleFunc("GET /api/dokumen/{dokId}/isi", isiDokumen(svc, stubPelaku))
 	mux.HandleFunc("DELETE /api/klaim-life/{id}/dokumen/{dokId}",
 		hapusDokumen(svc, stubPelaku))
-	// --- modul yang sudah pindah ke modul/<nama>/ (Treaty Contract Out,
-	// PremiumList Life, Komite Claim Life) ---
-	//
-	// Rutenya hidup di modulnya masing-masing; `cmd/api` yang menyerahkannya.
-	for _, daftarkan := range tambahan {
-		daftarkan(mux)
-	}
-	return mux
-}
-
-type jawabanSehat struct {
-	Status   string `json:"status"`
-	Database string `json:"database"`
-}
-
-// healthz menjawab tanpa menyentuh aturan dagang mana pun.
-//
-// Ia tetap menjawab 200 ketika Oracle belum dikonfigurasi: Fase 0 harus dapat
-// dijalankan tanpa instance, dan keadaan database dilaporkan apa adanya di
-// dalam badan jawaban, bukan disembunyikan.
-func healthz(svc *services.Service) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		jawab := jawabanSehat{Status: "sehat", Database: "tidak dikonfigurasi"}
-
-		if svc.PunyaDatabase() {
-			ctx, batal := context.WithTimeout(r.Context(), 3*time.Second)
-			defer batal()
-			if err := svc.CekKesehatan(ctx); err != nil {
-				jawab.Database = "tidak terjangkau"
-			} else {
-				jawab.Database = "terjangkau"
-			}
-		}
-
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(jawab)
-	}
 }

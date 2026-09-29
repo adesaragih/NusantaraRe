@@ -89,6 +89,16 @@ type Config struct {
 	// Treaty Contract Out (OQ-TCO-09). Nol = pekerja MATI (bawaan).
 	IntervalPekerjaLampiranTCO time.Duration
 
+	// ModulAktif - modul yang dipasang proses ini (refactor bentuk B), dari
+	// MODUL_AKTIF: nama dipisah koma, huruf kecil, tanpa ganda. KOSONG
+	// berarti SEMUA modul terdaftar aktif - bawaan yang sama dengan sebelum
+	// variabel ini ada. Namanya diperiksa `cmd/api` terhadap daftar modul;
+	// paket ini tidak mengenal nama modul mana pun.
+	//
+	// ⛔ Migrasi TIDAK membaca ini: `-migrate` selalu menjalankan migrasi
+	// SEMUA modul terdaftar, sehingga skema selalu utuh.
+	ModulAktif []string
+
 	// Layanan memetakan nama layanan luar ke alamatnya, seluruhnya dari env.
 	Layanan map[string]string
 }
@@ -174,6 +184,22 @@ const intervalMinimum = time.Second
 
 // bacaInterval - kosong/0 = 0 (mati); format time.ParseDuration ("30s", "1m"),
 // minimal 1s.
+// bacaDaftarModul mengurai MODUL_AKTIF: dipisah koma, spasi dibuang, huruf
+// kecil, butir kosong dan ganda dilewati. Kosong seluruhnya = nil (semua).
+func bacaDaftarModul(raw string) []string {
+	var hasil []string
+	sudah := map[string]bool{}
+	for _, n := range strings.Split(raw, ",") {
+		n = strings.ToLower(strings.TrimSpace(n))
+		if n == "" || sudah[n] {
+			continue
+		}
+		sudah[n] = true
+		hasil = append(hasil, n)
+	}
+	return hasil
+}
+
 func bacaInterval(nama, raw string) (time.Duration, error) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
@@ -203,6 +229,7 @@ func Load() (Config, error) {
 	// dari yang sistem lama terbitkan.
 	c.StorageTokenSalt = os.Getenv("STORAGE_TOKEN_SALT")
 	c.UnggahanDir = strings.TrimSpace(os.Getenv("UNGGAHAN_DIR"))
+	c.ModulAktif = bacaDaftarModul(os.Getenv("MODUL_AKTIF"))
 
 	pelaksana, err := bacaPelaksanaStorage(os.Getenv("PELAKSANA_STORAGE"))
 	if err != nil {

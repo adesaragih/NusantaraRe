@@ -35,10 +35,13 @@ import {
 export function PaletMenu({
   onTutup,
   onPilih,
+  modulAktif = null,
 }: {
   onTutup: () => void
   /** Membuka satu hasil. Shell meneruskannya ke pemindah halamannya. */
   onPilih: (modul: ModulTetap) => void
+  /** Modul aktif dari backend; `null` = semua (lihat `halamanAktif`). */
+  modulAktif?: readonly string[] | null
 }) {
   const [kueri, setKueri] = useState('')
   const [sorot, setSorot] = useState(0)
@@ -53,7 +56,7 @@ export function PaletMenu({
    */
   const fokusSebelum = useRef<Element | null>(null)
 
-  const semua = useMemo(() => daftarPalet(), [])
+  const semua = useMemo(() => daftarPalet(modulAktif), [modulAktif])
   const hasil = useMemo(() => saringPalet(semua, kueri), [semua, kueri])
 
   // Sorotan kembali ke atas setiap kali kuerinya berubah. Tanpa ini sorotan
