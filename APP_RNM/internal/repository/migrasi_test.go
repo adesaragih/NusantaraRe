@@ -752,8 +752,14 @@ func TestSeluruhCreateDapatDibacaNamanya(t *testing.T) {
 	// Penyatuan 29-09-2026: 50 (dasar) + 1 (057, butir bn) + 24 (300-307 Treaty Contract Out) = 75.
 	// ⛔ tco4 (keputusan work owner 29-09-2026): Treaty Contract Out NOL tabel
 	// baru - 300-307 dibuang, kembali ke 50 + 1 = 51.
+<<<<<<< HEAD
 	const mau = 51
 >>>>>>> e6905ed (treaty-contract-out: tco4 — nol tabel baru, migrasi 300-307 dibuang)
+=======
+	// ⛔ OQ-PL-15 (GILIRAN-15): 058 membuat ULANG SEQ_WORK_POLIS - DROP (tidak
+	// dihitung) lalu CREATE SEQUENCE ... START WITH 22374 (+1) = 52.
+	const mau = 52
+>>>>>>> c31eb12 (premiumlist-life: PL-15 — SEQ_WORK_POLIS mulai 22374)
 	if diperiksa != mau {
 		t.Errorf("pernyataan CREATE diperiksa %d, mau %d", diperiksa, mau)
 	}

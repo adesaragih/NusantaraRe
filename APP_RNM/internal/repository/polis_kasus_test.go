@@ -114,3 +114,43 @@ func TestMigrasi057SequenceDanBendera(t *testing.T) {
 		}
 	}
 }
+
+// Migrasi 058 - OQ-PL-15 (GILIRAN-15): SEQ_WORK_POLIS dimulai di atas nomor
+// lama `NBLF-` (tertinggi terlihat 22373, brief GILIRAN-15 §0).
+func TestMigrasi058SequenceMulaiDiAtasNomorLama(t *testing.T) {
+	var maju, mundur string
+	for nama, teks := range seluruhSQL(t, false) {
+		if strings.Contains(nama, "058_") {
+			maju = teks
+		}
+	}
+	for nama, teks := range seluruhSQL(t, true) {
+		if strings.Contains(nama, "058_") {
+			mundur = teks
+		}
+	}
+	for _, mau := range []string{
+		"DROP SEQUENCE {skema}.SEQ_WORK_POLIS",
+		"CREATE SEQUENCE {skema}.SEQ_WORK_POLIS START WITH 22374 ",
+	} {
+		if !strings.Contains(maju, mau) {
+			t.Errorf("058 tidak memuat %q", mau)
+		}
+	}
+	// Labelnya hidup di komentar - dibaca dari berkas mentah, sebab
+	// `seluruhSQL` hanya membawa pernyataan.
+	mentah, err := berkasMigrasi.ReadFile("migrations/058_seq_work_polis_mulai_ulang.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(mentah), "[sementara — DBA memastikan pyLastReservedID awalan NBLF- di") {
+		t.Error("058 tanpa label [sementara — DBA memastikan pyLastReservedID ...]")
+	}
+	// DROP lebih dulu, baru CREATE - urutan sebaliknya gagal ORA-00955.
+	if strings.Index(maju, "DROP SEQUENCE") > strings.Index(maju, "CREATE SEQUENCE") {
+		t.Error("058: CREATE mendahului DROP")
+	}
+	if !strings.Contains(mundur, "CREATE SEQUENCE {skema}.SEQ_WORK_POLIS START WITH 1 ") {
+		t.Error("058 mundur tidak memulihkan bentuk 057 (START WITH 1)")
+	}
+}
