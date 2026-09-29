@@ -1,12 +1,12 @@
-# PROMPT — LANJUTAN 2 MODUL **Treaty Contract Out** *(sesi yang sama atau sesi baru, folder `OUTPUT_HASIL_RNM\.worktrees\treaty-contract-out`, cabang `modul/treaty-contract-out` @ `8c27b9e` atau lebih baru)*: **menerapkan 14 jawaban work owner atas OQ-TCO-08 … 21**
+# PROMPT — LANJUTAN 2 MODUL **Treaty Contract Out** *(sesi yang sama atau sesi baru, folder `OUTPUT_HASIL_RNM`, cabang `main` @ `8bc983c` atau lebih baru — worktree sudah digabung dan dihapus 29-09-2026)*: **menerapkan 14 jawaban work owner atas OQ-TCO-08 … 21**
 
 > Brief modul `PROMPT-IMPLEMENTASI-MODUL-TREATY-CONTRACT-OUT.md` dan lanjutan 1 **tetap berlaku**. Hanya konteks Treaty Contract Out;
-> berkas modul lain tidak disentuh; **tidak** merge ke `main` *(asisten menyatukan sesudah verifikasi)*. Setiap pembacaan activity
+> berkas modul lain tidak disentuh; bekerja **langsung di `main`** *(commit per kelompok; `App.tsx` berisi suntingan work owner yang belum di-commit — jangan di-commit atau dibuang)*. Setiap pembacaan activity
 > mencetak `pyStepsBlockName`.
 
 ## 0. KEADAAN AWAL — DIVERIFIKASI ASISTEN 29-09-2026
 
-`8c27b9e`: 17 commit sesudah jeda, pohon bersih; Go **840 PASS · 0 FAIL** *(uji tingkat atas)*, dengan tag `db` **55 SKIP**; vitest
+`8c27b9e` digabung ke `main` sebagai `8bc983c` *(uji pohon terpadu: Go **900 PASS · 0 FAIL**, dengan tag `db` **57 SKIP**; vitest **612**; build **81** modul)*. Sebelum digabung — `8c27b9e`: 17 commit sesudah jeda, pohon bersih; Go **840 PASS · 0 FAIL** *(uji tingkat atas)*, dengan tag `db` **55 SKIP**; vitest
 **574**; build **80** modul; vet, gofmt, tsc bersih. Migrasi `300`–`307`. Nol SQL modul ini pernah dijalankan ke Oracle.
 
 ## 1. JAWABAN WORK OWNER *(29-09-2026, kutipan)* → yang harus dikerjakan
