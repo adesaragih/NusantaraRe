@@ -239,8 +239,10 @@ func (l *SimpanUtuhTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID strin
 			}
 			h.Business = append(h.Business, hb)
 		}
+		// Master klausul dibaca SEKALI per permintaan, bukan per baris (temuan /code-review).
+		klausul := l.klausul.denganMasterSekali().DenganTransaksi(dalam)
 		for i, kl := range m.Klausul {
-			hk, err := l.klausul.DenganTransaksi(dalam).Simpan(c, pelaku, tahunID, kl)
+			hk, err := klausul.Simpan(c, pelaku, tahunID, kl)
 			if err != nil {
 				return GalatSimpanUtuhTCO{Bagian: fmt.Sprintf("klausul ke-%d", i+1), Galat: err}
 			}

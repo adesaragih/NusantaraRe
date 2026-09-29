@@ -47,6 +47,8 @@ func TestJawabGalatUtuhTCO(t *testing.T) {
 		{services.GalatSimpanUtuhTCO{Bagian: "jejak", Galat: errors.New("ORA-00001 rincian internal")},
 			http.StatusInternalServerError, "gagal pada jejak (galat server)", "ORA-00001"},
 		{services.ErrSimpanUtuhTidakSah, http.StatusBadRequest, "tidak sah", ""},
+		{services.GalatSimpanUtuhTCO{Bagian: "klausul ke-2", Galat: services.ErrMasterKursRusak},
+			http.StatusServiceUnavailable, "klausul ke-2", "(galat server)"},
 	} {
 		w := httptest.NewRecorder()
 		if !jawabGalatUtuhTCO(w, k.err) {

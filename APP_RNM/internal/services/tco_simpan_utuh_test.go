@@ -181,3 +181,27 @@ func TestSimpanUtuhGerbang(t *testing.T) {
 		t.Error("bawaan tanpa penulis harus gagal terang")
 	}
 }
+
+// Temuan /code-review: master klausul (kurs, jenis reasuransi, TREATYDESC)
+// dibaca SEKALI per permintaan simpan utuh, bukan per baris.
+type kursHitungUji struct{ panggil int }
+
+func (k *kursHitungUji) Berlaku(ctx context.Context, tahun models.TahunTreaty) (models.KursTCO, error) {
+	k.panggil++
+	return kursKlausulUji{}.Berlaku(ctx, tahun)
+}
+
+func TestSimpanUtuhMembacaKursSekali(t *testing.T) {
+	r := rakitUtuh()
+	kurs := &kursHitungUji{}
+	n := 0
+	r.layanan = r.layanan.DenganKlausul(layananKlausul(r.klausul, &n).DenganKurs(kurs))
+	m := bundelUtuh()
+	m.Klausul = append(m.Klausul, services.KlausulMasuk{DescID: "10001", Medan: map[string]string{"ReinsTypeID": "10003", "Rp": "5"}})
+	if _, err := r.layanan.Simpan(context.Background(), pelakuUjiTCO, "1000001", m); err != nil {
+		t.Fatal(err)
+	}
+	if kurs.panggil != 1 {
+		t.Errorf("kurs dibaca %d kali untuk 3 klausul berkurs, mau 1", kurs.panggil)
+	}
+}

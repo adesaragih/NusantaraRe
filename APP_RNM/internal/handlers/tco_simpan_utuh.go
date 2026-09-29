@@ -89,7 +89,9 @@ func jawabGalatUtuhTCO(w http.ResponseWriter, err error) bool {
 	}
 	p := &penangkapKodeTCO{ResponseWriter: w}
 	jawabGalatTreatyContractOut(p, g.Galat)
-	if p.kode >= http.StatusInternalServerError {
+	// 500 tidak membocorkan isi galat; 503 SENGAJA menyebut master yang belum
+	// siap (ADR-0015) - pesannya dipertahankan (temuan /code-review).
+	if p.kode == http.StatusInternalServerError {
 		galat(w, p.kode, "simpan utuh dibatalkan seluruhnya - gagal pada "+g.Bagian+" (galat server)")
 		return true
 	}
