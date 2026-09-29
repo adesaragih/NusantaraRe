@@ -818,3 +818,105 @@ terhadap Oracle: uji `db` dilewati karena skema uji tidak dikonfigurasi di sesi 
 | Berkas ditulis / disunting | 9 baru (1.155 baris), 10 disunting (+218 −6) |
 | Putaran instrumen gagal lalu diulang | 4: nama `PerekamJejakOracle` bertabrakan dengan kode Claim Life (diganti); `DampakHapus` bergabung dengan tipe Claim Life (diganti `DampakHapusTCO`); penjaga arsitektur menolak impor repository di handler (alias services); regex uji `tahunID?` salah |
 | Token / biaya | tidak terlihat dari dalam sesi, jadi tidak dikarang |
+
+## Uji penuh + /code-review dua sumbu atas `251cb3b..HEAD` — 29-09-2026
+
+Tinjauan dua sumbu (kebenaran/bug; kesesuaian spec, tiket, konvensi repo) atas 14 commit tiket + 2 commit dokumen.
+Lima belas temuan; seluruhnya diperbaiki dalam tujuh commit `fix: temuan /code-review — …`.
+
+| # | Berkas (saat ditinjau) | Temuan | Perbaikan |
+| ---: | --- | --- | --- |
+| 1 | `repository/tco_transaksi_utuh.go` | identitas sementara per transaksi berawal dari 1 → dua simpan utuh serentak menyisipkan PK sama dan saling menunggu | `081870f` — awalan 10 digit acak per transaksi |
+| 2 | `services/tco_kontrak.go`, `tco_tahun.go` | anti-dobel kontrak/tahun periksa-lalu-sisip tanpa kunci | `0883587` — kunci baris tahun (kontrak); `LOCK TABLE … EXCLUSIVE` (tahun) |
+| 3 | `services/tco_security.go` | teks jejak security menyimpan identitas reinsurer sementara | `081870f` — kode agen reinsurer; uji db memeriksa KETERANGAN |
+| 4 | `services/tco_kaskade.go` | kombinasi dibaca sebelum kunci → kaskade memakai kombinasi basi | `0883587` — dibaca ulang sesudah kunci, lewat transaksi |
+| 5 | `services/tco_kontrak.go`, `tco_tahun.go` | ganti jenis reasuransi / tahun / grup memutus anak kombinasi | `0883587` — 409 selama beranak |
+| 6 | `services/tco_lampiran.go` | aksi seorang pemakai menjalankan antrean seluruh modul, jejak menyerah atas nama yang salah | `4104878` — hanya efek milik lampiran aksi itu (`PungutEfekRujukanTCO`) |
+| 7 | `repository/tco_kurs.go` | satu TOIDR rusak di periode lain menggagalkan semua periode | `6a013c9` — TOIDR diurai hanya untuk baris berlaku |
+| 8 | `services/tco_klausul.go` | Rp/Usd anak tidak dihitung ulang saat induk berubah | `6a013c9` — dihitung ulang di transaksi yang sama (merah dulu) |
+| 9 | `models/tco_klausul.go`, `tco_kurs.go`, `tco_reinsurer.go` | konteks apd bersama ditulis (data race); konteks buatan sendiri | `6a013c9` — `utils.DecimalContext()` + penjaga statis |
+| 10 | `repository/tco_kaskade.go` | kombinasi dipakai bersama kontrak tahun lain → kaskade menghapus milik kontrak lain | `0883587` + `9fe4e96` — milik bersama tidak ikut; popup menyebutnya |
+| 11 | `handlers/tco_simpan_utuh.go` | 503 bermakna disamarkan jadi "(galat server)" | `34933d1` — hanya 500 yang disamarkan |
+| 12 | `services/tco_tahun.go` | nama grup dari klien, ID tidak diperiksa master | `17fc31c` — diperiksa ke TREATYGROUP, nama dari master |
+| 13 | `services/tco_klausul.go` | master klausul dibaca ulang per baris dalam simpan utuh | `34933d1` — kurs, jenis reasuransi, TREATYDESC sekali per permintaan |
+| 14 | `PanelKontrakTahun.tsx`, `PanelReinsurerKombinasi.tsx` | sesudah 409 popup memegang angka basi | `9fe4e96` — angka dimuat ulang |
+| 15 | `services/api.ts` | URL blob unduhan dicabut di tik yang sama dengan klik | `4104878` — dicabut sesudah 1 detik |
+
+### Yang dibiarkan, dan sebabnya
+
+- **#2 tahun**: kunci TABEL, bukan baris - tahun treaty tidak punya baris induk untuk dikunci dan indeks unik tidak dapat
+  ditambahkan tanpa risiko gagal atas data migrasi yang mungkin dobel. Penulis tahun jarang; pembaca tidak terhalang.
+- **#10** menyimpang dari Pega (Pega menghapus seluruh anak kombinasi) - sengaja, supaya kontrak lain tidak rusak
+  (**OQ-TCO-21**, baru).
+- **#13 sebagian**: pencarian master SATU baris (agen, bisnis, occupation/clause) tetap per baris - berindeks dan tidak
+  mengurai riwayat; yang di-cache hanya pembacaan master UTUH.
+- **#6**: `JalankanAntrean` (seluruh modul) tetap ada untuk pekerja kelak; nol pemanggil produksi sekarang.
+- Tidak satu pun perbaikan terbukti terhadap Oracle: uji `db` dilewati (skema uji tidak dikonfigurasi di sesi ini).
+
+### Angka uji per commit
+
+`go test ./...` · `go test -tags=db ./...` (lulus + dilewati) · `npx vitest run` (lulus / berkas). Commit perbaikan dihitung
+dari salinan `git archive` berisi `APP_RNM/{internal,pkg,cmd}` saja: di salinan itu 9 uji yang membaca berkas di luar
+subpohon (dokumen STRUKTUR, katalog, `.env`) gagal karena lingkungan — angka di bawah adalah jumlah uji (lulus + gagal
+lingkungan); di worktree nyata seluruhnya lulus.
+
+| Commit | Isi | Go | Go `db` | vitest |
+| --- | --- | ---: | --- | --- |
+| `1872d26` · `1f2aab5` · `678fd25` | tiket 01 · 02 · 03 | lihat bab tiket 01–03 | | |
+| `0022865` · `918eeed` | dokumen | 776 | 776 + 46 | 431 / 38 |
+| `7b1db9b` | tiket 12 | 808 | 808 + 47 | 452 / 39 |
+| `6737fb9` | tiket 04 | 823 | 823 + 48 | 484 / 41 |
+| `5523b76` | tiket 05 | 840 | 840 + 49 | 514 / 42 |
+| `19f9c79` | tiket 07 | 854 | 854 + 50 | 536 / 43 |
+| `75db1f8` | tiket 08 | 878 | 878 + 51 | 556 / 46 |
+| `eb314b4` | tiket 06 | 894 | 894 + 52 | 563 / 47 |
+| `7dca378` | tiket 11 | 908 | 908 + 53 | 568 / 47 |
+| `7989fa4` | tiket 09 | 920 | 920 + 54 | 569 / 48 |
+| `57d2af6` | tiket 10 | 931 | 931 + 55 | 573 / 49 |
+| `081870f` | fix #1 #3 | 931 | 931 + 55 | 573 / 49 |
+| `0883587` | fix #2 #4 #5 #10 | 935 | 935 + 55 | 573 / 49 |
+| `6a013c9` | fix #7 #8 #9 | 938 | 938 + 55 | 573 / 49 |
+| `34933d1` | fix #11 #13 | 939 | 939 + 55 | 573 / 49 |
+| `4104878` | fix #6 #15 | 940 | 940 + 55 | 573 / 49 |
+| `17fc31c` | fix #12 | 941 | 941 + 55 | 573 / 49 |
+| `9fe4e96` | fix #14 #10 (popup) | **941 lulus, 0 gagal** | **941 + 55 dilewati** | **574 / 49** |
+
+Akhir (worktree nyata, `9fe4e96`): `gofmt -l` bersih · `go vet ./...` dan `-tags=db` bersih · `npx tsc --noEmit` bersih ·
+`npx vite build` bersih.
+
+### OQ
+
+**Dibuka sesi lanjutan ini** (seluruhnya masih terbuka): OQ-TCO-08, 09 (tiket 12), 10, 11 (04), 12 (05), 13 (07), 14, 15,
+16 (08), 17 (06), 18 (11), 19 (09), 20 (10), **21** (tinjauan: kombinasi bersama). **Ditutup**: tidak ada di sesi ini.
+OQ spec yang tetap terbuka: aturan LimitMB & Portfolio (AC 36), arti `QUARTER = '0'`, arti bisnis istilah klausul.
+
+### Kontrak hilir (Claim Prop, Komite Claim Prop, Claim Fac In)
+
+- **Klausul** (`KolomKlausulHilir` + `PARENTREINSTYPEID`): ditulis seluruhnya (`TestKlausulMenulisKolomHilir`); Rp/Usd anak
+  turunan tersimpan dan kini ikut dihitung ulang saat induk berubah; `USD` tujuh induk = `Rp ÷ Kurs`.
+- **Reinsurer / business** (`ReinsurerUntukHilir`, `BusinessUntukHilir`): kolom VERBATIM (tiket 05/07); hapus kontrak
+  tidak lagi menghapus milik kontrak lain yang berbagi kombinasi.
+- **Security**: tidak dibaca modul hilir (pencarian penuh, nol temuan).
+- **Tahun/grup**: `TREATYGROUPNAME` kini selalu dari master sebelum disalin ke kombinasi.
+
+### Kode bersama yang disentuh (sesi lanjutan 1, seluruhnya aditif)
+
+| Berkas | Perubahan |
+| --- | --- |
+| `handlers/penyuntikan_test.go` | entri modul: lampiran, kontrak, reinsurer, business, klausul (+kurs), security, kurs, simpan utuh, kaskade; tahun +`DenganGrup` |
+| `frontend/src/lib/daftarMenu.ts`, `App.tsx`, `components/Shell.test.ts` | butir menu `tco-kontrak`, `tco-klausul` |
+| `frontend/src/services/api.ts` | fungsi & tipe modul ditambahkan di ekor berkas; `DampakHapusTCO` sengaja tidak memakai nama `DampakHapus` milik Claim Life |
+| `repository/matauangid.go`, `components/ui/dasar.tsx` (`Modal`), `repository/efekkeluar.go`, `repository/repository.go` (`Tx`) | **dipakai, tidak diubah** (`PungutEfekRujukanTCO` ditulis di berkas modul) |
+| penjaga global (`TestNolAlamatLayananDiKode`, `TestHandlersTidakMengimporRepository`, `TestTCOWarisanHanyaDibaca`, nama jujur) | **tidak diubah**; kode modul disesuaikan agar lolos |
+
+### TELEMETRI EKSEKUSI — uji penuh + /code-review + perbaikan
+
+| Ukuran | Nilai |
+| --- | --- |
+| Tinjauan | satu putaran `/code-review` bercabang (forked) dua sumbu atas `251cb3b..HEAD`; 15 temuan, 15 diperbaiki |
+| Berkas dibaca | ±25 pola kode (layanan, repository, fake uji, penjaga), 0 berkas korpus baru |
+| Perintah dijalankan | ±45 (termasuk 7 penghitungan per commit lewat `git archive`) |
+| Commit | 7 perbaikan; +10 uji Go, +1 uji vitest; 1 migrasi tidak ditambah |
+| Putaran instrumen gagal lalu diulang | 3: `git worktree add` di scratchpad gagal (jalur berkas repositori lain terlalu panjang; tidak meninggalkan sisa, `git worktree prune` bersih) → diganti `git archive`; impor `time` salah kelompok; tipe `DampakHapus` Claim Life (tahap sebelumnya) |
+| Token / biaya | tidak terlihat dari dalam sesi, jadi tidak dikarang |
+
