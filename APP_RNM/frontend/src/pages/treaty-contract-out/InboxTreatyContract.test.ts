@@ -71,10 +71,13 @@ describe('paritas layar', () => {
   it('nol tombol Copy dan nol form salin (AC 72)', () => {
     expect(KODE).not.toMatch(/Copy|salin|BrowseCopyData/)
   })
-  it('ReinsType dan List Description berdiri menunggu tiketnya, bukan disembunyikan', () => {
+  it('ReinsType membuka editor kontrak tahun itu (tiket 04); List Description menunggu tiket 08', () => {
     expect(KODE).toContain('TAHUN_TCO.reinsType')
+    expect(KODE).toContain('setTahunKontrak(b)')
+    expect(KODE).toContain('<PanelKontrakTahun')
     expect(KODE).toContain('TAHUN_TCO.listDescription')
-    expect(KODE).toContain('menungguTiket')
+    expect(KODE).toContain('`${TAHUN_TCO.menungguTiket} 08`')
+    expect(KODE).not.toContain('`${TAHUN_TCO.menungguTiket} 04`')
   })
   it('ID, Modified Date, Username hanya dibaca', () => {
     expect((KODE.match(/readOnly/g) ?? []).length).toBe(3)

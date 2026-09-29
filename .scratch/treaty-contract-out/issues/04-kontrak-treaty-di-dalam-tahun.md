@@ -1,6 +1,6 @@
 # 04: Kontrak treaty di dalam tahun treaty
 
-**Status:** ready-for-agent
+**Status:** selesai (29-09-2026)
 
 **Blocked by:** 02 (pemilih jenis reasuransi), 03 (tahun treaty sebagai induk)
 
@@ -93,3 +93,59 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+---
+
+## Pembacaan ulang XML — 29-09-2026 (sesi modul, lanjutan 1)
+
+Nomor baris = baris mentah berkas korpus (satu tag per baris), diverifikasi dengan `awk 'NR==n'`. Langkah aktivitas
+dibaca lengkap dengan prasyarat dan penandanya; langkah ber-`pyStepsBlockName = //` adalah langkah YANG DIKOMENTARI.
+
+| Unsur | Bukti | Dibawa sebagai |
+| --- | --- | --- |
+| jalan masuk | `Section/InputTreatyContract.xml` b20778 `ReinsType` → `BrowseReinsTypeYear` (b20903, `IDTreatyYear = .ID`) → `showHarness` popup `InboxTreatyContractReinsType` (b20947) → `KirimTahunGroupID` (b20953: TreatyGroupName, ID, TreatyGroupID, TreatyYear, StartDate, EndDate, UnderwritingYear) | tombol `ReinsType` membuka `PanelKontrakTahun` untuk baris itu |
+| harness menu | `Harness/InboxTreatyContractReinsType.xml` b151, judul `ReinsType` b1670, `PanggilReinsType` b1799 → `InputTreatyContractReinsType` (`PanggilReinsType.xml` b1247) | butir menu kedua; pemilih tahun lebih dulu (harness tanpa konteks) |
+| kepala | `InputTreatyContractReinsType.xml` b1145 `Underwriting Year` (`.UnderwritingYear` b1176); b1358 `ReinsType` pada `.TreatyGroupName` b1386 | dua medan baca-saja; label bersilang dibawa VERBATIM + catatan |
+| form | b2478 ID (`Formatted Text`), b2652 `ReinsType` (RD non-Old, `Flag "active"` b2768, tampil `.Note` b2724), b2905 `Start Date` → `SetTanggalTreatyContract` b3007, b3244 `End Date`, b3618 `Save` → `SaveTreatyContract_Act` b3642, b4363 `Modified Date`, b4547 `Username`, b5343 `Undo` → `UndoOperation` b5366, b6400 `Information` | form panel; pemilih tiket 02 |
+| grid | `BrowseTreatyContract_RD` (b9145; rule-nya TIDAK diekspor korpus) disaring `InputData.HASIL13 = Param.IDTreatyYear` (`BrowseReinsTypeYear.xml` b273); `Add` b8528 → `NewInputTreatyContract_Act` b8552; kolom `Reins Type` b9164 / `Treaty Start` b9304 / `Treaty End` b9444 | `GET /tahun/{id}/kontrak`, `ORDER BY ID DESC` `[keputusan kami]` |
+| tombol baris | `Edit` b10519 → `SetUbahTreatyContract` b10543 (ID, ReinsTypeID, ReinsTypeName, TreatyStartDate, TreatyEndDate); `Business List` b10842 (tiket 07); `Reinsurer List` b11308 (tiket 05); `Delete` b11809 → `BrowseDeleteRowTreatyInContract` (tiket 10) | `Edit` hidup; tiga lainnya berdiri menyebut tiketnya |
+| `SaveTreatyContract_Act` | langkah 7 (HIDUP, tanpa prasyarat): `UserID ← OperatorID.pyUserName`, `TglUpdate ← @getCurrentTimeStamp()`, tanggal `dd/MM/yyyy`; langkah 8 (HIDUP): RDB `SaveMasterTreatyContract_SQL`, prasyarat `ID != ""` → jalankan, lalu `ReinsTypeID=="" && ReinsTypeName=="" && TreatyStartDate==""` → lewati; langkah 2–6 dan 12 DIKOMENTARI | `services.KontrakTreatyTCO.Simpan` |
+| `SetTanggalTreatyContract` | langkah 2 `IsEndDate==1` → hanya akhir, keluar; langkah 3 `StartDate = CARIDATETIME + 8 jam`, `JumlahHari = 365`; langkah 4 (HIDUP) `ASMMessageStartDate` bila `@substring(StartDate,0,4) <> TreatyYear` (b847); langkah 5 `JumlahHari = 366` bila enam prasyarat lolos (b1039–b1191); langkah 6 `EndDate = StartDate + JumlahHari`; langkah 7–9 dikomentari | `models.AkhirKontrakBawaanTCO` + `GET /tahun/{id}/kontrak/akhir-bawaan`; gerbang tahun mulai |
+| `PEGA_TREATYCONTRACT` `[data DBA]` | upsert dikunci ID; `'1'‖lpad(seq,6)`; tidak COMMIT | `repository.MasterKontrakTCO` (ID dari `SEQ_T_TREATYCONTRACT`), prosedur tidak dipanggil |
+
+### Ralat bertanggal 29-09-2026
+
+1. **Gerbang simpan di Pega sebagian besar mati.** `SaveTreatyContract_Act` langkah 2 (`ASMMessageReinstype`), 3
+   (`ASMMessageStartDateKosong`), 5–6 (`"Data Reins Masih Kosong!!!"`), dan 12 (`"Data sudah pernah di Input"` bila
+   `STSSAVE == 3`) DIKOMENTARI. Yang berjalan di Pega: kontrak baru disimpan kecuali ketiga medannya kosong sekaligus.
+   Sistem baru menegakkan AC tiket: jenis reasuransi wajib dan harus ada di daftar tersaring tiket 02 (nama diambil dari
+   master, bukan dari klien); kedua tanggal wajib; periode terbalik ditolak (AC 9).
+2. **Satu jenis reasuransi satu kontrak per tahun** `[keputusan kami, berdasarkan fakta bisnis kombinasi]` — pesan
+   VERBATIM langkah 12 yang dikomentari (`Data sudah pernah di Input`), 409 menyebut kontrak lain. Sebabnya: anak-anak
+   menggantung pada kombinasi (tahun, grup, jenis); dua kontrak berjenis sama di satu tahun berbagi anak yang sama, dan
+   kaskade hapus tiket 10 akan menghapus anak keduanya. **OQ-TCO-11** meminta konfirmasi work owner.
+3. **Tahun tanggal mulai = tahun treaty** adalah gerbang yang HIDUP di Pega (`SetTanggalTreatyContract` langkah 4
+   b847, pesan `ASMMessageStartDate` tidak diekspor) dan dibawa sebagai 422 saat simpan.
+4. **Tanggal akhir bawaan ditiru APA ADANYA, termasuk anomalinya (OQ-TCO-10).** Prasyarat langkah 5 memotong cap waktu
+   `yyyyMMdd…` seolah `dd/MM/yyyy` (contoh uji penulisnya `01/02/2018`). Akibatnya 366 hari hanya untuk mulai
+   Oktober–Desember tahun kabisat; maksud penulisnya tampak Januari–Februari. Tanggal akhir tetap dapat diubah pemakai.
+5. **`BrowseTreatyContract_RD` tidak ada di korpus** — urutan grid `ID DESC` adalah keputusan kami.
+6. **Harness menu tanpa konteks** — Pega membukanya sebagai popup berkonteks; butir menu mendapat pemilih tahun.
+7. **`Username` b4547** menampilkan operator yang sedang masuk (`OperatorID.pyUserName`); layar baru menampilkan
+   `USERID` rekam (penulis terakhir), sejalan dengan layar tahun treaty.
+8. **Placeholder berulang** di kueri anti-dobel tahun treaty (tiket 03) diganti placeholder berbeda (`:4`, `:5`) dengan
+   nilai yang diikat dua kali — benar untuk pengikatan per nama maupun per kemunculan; penjaga
+   `TestTCOPlaceholderTidakBerulang` menguncinya.
+
+### Yang dibangun
+
+| Lapisan | Berkas | Isi |
+| --- | --- | --- |
+| models | `tco_kontrak.go` (+uji) | `PeriksaKontrakTreaty`, `AkhirKontrakBawaanTCO` (anomali ditiru, 8 kasus uji) |
+| repository | `tco_kontrak.go` (+uji) | daftar/ambil berbatas tahun, sisip (sequence), perbarui seluruh medan berbatas tahun, `CariDobel` |
+| services | `tco_kontrak.go` (+uji) | `KontrakTreatyTCO`: tahun induk wajib ada, jenis dari master, satu transaksi {dobel, tulis, jejak} |
+| handlers | `tco_kontrak.go` (+uji, +uji `db`) | 4 rute; POST menolak `id`, PUT menolak `id` berbeda |
+| frontend | `PanelKontrakTahun.tsx` (+uji), `InboxTreatyContractReinsType.tsx` (+uji), `KONTRAK_TCO` (19 baris diuji ke korpus), `api.ts` (+3), tombol `ReinsType` hidup, butir menu kedua | |
+
+**Status:** selesai 29-09-2026 — commit `treaty-contract-out: tiket 04 — kontrak treaty di dalam tahun`.
+

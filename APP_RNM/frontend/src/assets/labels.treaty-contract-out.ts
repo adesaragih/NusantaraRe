@@ -165,3 +165,69 @@ export const LAMPIRAN_TCO = {
   simpanDulu: 'Simpan tahun treaty lebih dulu; lampiran melekat pada tahun treaty yang sudah ber-ID.',
   pilihKategori: '— pilih —',
 } as const
+
+/**
+ * Tiket 04 — editor kontrak treaty di dalam tahun treaty.
+ *
+ * Nomor baris = `Section/InputTreatyContractReinsType.xml` (disertakan
+ * `PanggilReinsType.xml` b1247, disertakan harness
+ * `InboxTreatyContractReinsType.xml` b1799) kecuali disebut lain.
+ */
+export const KONTRAK_TCO = {
+  /** `Harness/InboxTreatyContractReinsType.xml` b1670 `<pyValue>` — judul. */
+  judul: 'ReinsType',
+  /** b1145 — `InputTreatyContractReinsType.UnderwritingYear` b1176, hanya dibaca. */
+  headerUnderwritingYear: 'Underwriting Year',
+  /**
+   * b1358 — label `ReinsType` pada medan `InputTreatyContractReinsType.TreatyGroupName`
+   * b1386. ⚠️ Label dan nilainya bersilang di korpus (nama GRUP berlabel ReinsType);
+   * dibawa apa adanya, catatannya tampil di layar.
+   */
+  headerReinsType: 'ReinsType',
+  /** b2905 — `InputData.CARIDATETIME`; perubahan → `SetTanggalTreatyContract` b3007. */
+  formStartDate: 'Start Date',
+  /** b3244 — `InputData.CARIENDDATE`. */
+  formEndDate: 'End Date',
+  /** b3618 `<pyLabel>` → `SaveTreatyContract_Act` b3642. */
+  save: 'Save',
+  /** b4363 — `InputTreatyContract.TglUpdate`, hanya dibaca. */
+  formModifiedDate: 'Modified Date',
+  /** b4547 — hanya dibaca. */
+  formUsername: 'Username',
+  /** b5343 `<pyLabel>` → `UndoOperation` b5366. */
+  undo: 'Undo',
+  /** b6400 — `OutputData.HASIL1`. */
+  information: 'Information',
+  /** b8528 `<pyLabel>` → `NewInputTreatyContract_Act` b8552. */
+  add: 'Add',
+  /** b9164 `<pyValue>` — sel `.ReinsTypeName` b9992. */
+  kolomReinsType: 'Reins Type',
+  /** b9304 `<pyValue>` — sel `.TreatyStartDate` b10100. */
+  kolomTreatyStart: 'Treaty Start',
+  /** b9444 `<pyValue>` — sel `.TreatyEndDate` b10285. */
+  kolomTreatyEnd: 'Treaty End',
+  /** b10519 `<pyLabel>` → `SetUbahTreatyContract` b10543. */
+  edit: 'Edit',
+  /** b10842 `<pyLabel>` → `BrowseTreatyBusinessList_Act` — tiket 07. */
+  businessList: 'Business List',
+  /** b11308 `<pyLabel>` → `BrowseTreatyReinsurerList_Act` — tiket 05. */
+  reinsurerList: 'Reinsurer List',
+  /** b11809 `<pyLabel>` → `BrowseDeleteRowTreatyInContract` — tiket 10. */
+  delete: 'Delete',
+
+  /** `[tidak ada di korpus]` — label medan ID; korpus hanya punya label bawaan kontrol `Formatted Text` b2478. */
+  formId: 'ID',
+  /** `[tidak ada di korpus]` — pemilih tahun saat layar dibuka dari menu (Pega membukanya sebagai popup berkonteks). */
+  pilihTahun: 'Tahun treaty',
+  /** `[tidak ada di korpus]` */
+  pilihTahunDulu: 'Pilih tahun treaty lebih dulu, atau buka lewat tombol ReinsType di layar InboxTreatyContract.',
+  /** `[tidak ada di korpus]` */
+  kosong: 'Belum ada kontrak pada tahun treaty ini.',
+  /** `[tidak ada di korpus]` */
+  tutup: 'Tutup',
+  /** `[tidak ada di korpus]` */
+  tersimpan: 'Kontrak tersimpan.',
+  /** `[tidak ada di korpus]` — catatan label bersilang b1358/b1386. */
+  catatanLabelBersilang: 'Label ReinsType di kepala layar memuat nama grup treaty di sistem lama; dibawa apa adanya.',
+} as const
+

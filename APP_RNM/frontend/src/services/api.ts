@@ -2294,3 +2294,57 @@ export async function unduhBerkasBeridentitas(jalur: string, namaBerkas: string)
   URL.revokeObjectURL(url)
 }
 
+// ---------------------------------------------------------------------------
+// Treaty Contract Out tiket 04 — kontrak treaty di dalam tahun treaty.
+// ---------------------------------------------------------------------------
+
+/** Satu kontrak — kolom `T_TREATYCONTRACT`. Tanggal YYYY-MM-DD. */
+export interface KontrakTreaty {
+  id: string
+  idTreatyYear: string
+  reinsTypeId: string
+  /** Nama dari master `REINSURANCETYPE` — server yang mengisinya, bukan klien. */
+  reinsTypeName: string
+  treatyStartDate: string
+  treatyEndDate: string
+  userId: string
+  tglUpdate: string
+}
+
+/** Badan simpan kontrak; `id` kosong = kontrak baru (POST). */
+export interface KontrakMasuk {
+  id: string
+  reinsTypeId: string
+  treatyStartDate: string
+  treatyEndDate: string
+}
+
+function jalurKontrakTahun(tahunID: string): string {
+  return `/api/treaty-contract-out/tahun/${encodeURIComponent(tahunID)}/kontrak`
+}
+
+/** Grid kontrak satu tahun treaty (`BrowseTreatyContract_RD`). */
+export async function ambilKontrakTahun(tahunID: string): Promise<KontrakTreaty[]> {
+  const j = await minta<{ daftar: KontrakTreaty[] | null }>(jalurKontrakTahun(tahunID))
+  return j.daftar ?? []
+}
+
+/** `Save` b3618 — POST bila baru, PUT /{id} bila ubah. */
+export async function simpanKontrakTahun(tahunID: string, masuk: KontrakMasuk): Promise<KontrakTreaty> {
+  if (masuk.id === '') {
+    return minta<KontrakTreaty>(jalurKontrakTahun(tahunID), { metode: 'POST', badan: masuk })
+  }
+  return minta<KontrakTreaty>(`${jalurKontrakTahun(tahunID)}/${encodeURIComponent(masuk.id)}`, {
+    metode: 'PUT',
+    badan: masuk,
+  })
+}
+
+/** `SetTanggalTreatyContract` — tanggal akhir bawaan dari tanggal mulai (dihitung server). */
+export async function ambilAkhirBawaanKontrak(tahunID: string, mulai: string): Promise<string> {
+  const j = await minta<{ treatyEndDate: string }>(`${jalurKontrakTahun(tahunID)}/akhir-bawaan`, {
+    kueri: { mulai },
+  })
+  return j.treatyEndDate
+}
+

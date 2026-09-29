@@ -12,6 +12,7 @@ import KlaimLife from './pages/claimlife/KlaimLife'
 import OutstandingClaimLife from './pages/claimlife/OutstandingClaimLife'
 import RegisterKlaim from './pages/claimlife/RegisterKlaim'
 import InboxTreatyContract from './pages/treaty-contract-out/InboxTreatyContract'
+import InboxTreatyContractReinsType from './pages/treaty-contract-out/InboxTreatyContractReinsType'
 import { Shell, type Halaman } from './components/Shell'
 import { BelumTersedia } from './components/ui/dasar'
 import { TAHAP_POLIS } from './services/api'
@@ -128,6 +129,8 @@ export default function App() {
       )}
       {/* Treaty Contract Out tiket 03 — layar tahun treaty (harness InboxTreatyContract). */}
       {halaman === 'tco-tahun' && <InboxTreatyContract />}
+      {/* Tiket 04 — editor kontrak dari menu (harness InboxTreatyContractReinsType). */}
+      {halaman === 'tco-kontrak' && <InboxTreatyContractReinsType />}
       {halaman === 'register' && <RegisterKlaim />}
       {halaman === 'detail' && <KlaimLife />}
     </Shell>

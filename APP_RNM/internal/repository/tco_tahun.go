@@ -88,9 +88,14 @@ func sqlPerbaruiTahunTreaty(tabel string) string {
 // sqlCariDobelTahunTreaty - AC 73: (STARTDATE, ENDDATE, TREATYGROUPID) yang
 // sudah dipakai baris LAIN.
 //
-// ⛔ `(:4 IS NULL OR ID <> :4)`, bukan `ID <> :4` telanjang: teks kosong
+// ⛔ `(:4 IS NULL OR ID <> :5)`, bukan `ID <> :4` telanjang: teks kosong
 // adalah NULL di Oracle, dan `ID <> NULL` tidak pernah benar - baris baru
 // tidak akan pernah menemukan dobelnya.
+//
+// ⚠️ 29-09-2026 (tiket 04): DUA placeholder berbeda, nilai yang sama diikat
+// dua kali. Semula `:4` dipakai dua kali dengan satu argumen; benar tidaknya
+// bergantung pada driver mengikat per nama atau per kemunculan, dan belum
+// pernah dijalankan terhadap Oracle. Placeholder berbeda benar di keduanya.
 //
 // TRUNC di kedua sisi: baris warisan boleh membawa jam pada kolom DATE.
 func sqlCariDobelTahunTreaty(tabel string) string {
@@ -98,7 +103,7 @@ func sqlCariDobelTahunTreaty(tabel string) string {
 	 WHERE TREATYGROUPID = :1
 	   AND TRUNC(STARTDATE) = TRUNC(:2)
 	   AND TRUNC(ENDDATE) = TRUNC(:3)
-	   AND (:4 IS NULL OR ID <> :4)
+	   AND (:4 IS NULL OR ID <> :5)
 	 ORDER BY ID
 	 FETCH FIRST 1 ROWS ONLY`, tabel)
 }
@@ -285,7 +290,8 @@ func (m *MasterTahunTreaty) CariDobel(ctx context.Context, tx *Tx, grupID string
 		return "", err
 	}
 	var id sql.NullString
-	err = tx.tx.QueryRowContext(ctx, q, grupID, mulai, akhir, kosongJadiNil(kecualiID)).Scan(&id)
+	err = tx.tx.QueryRowContext(ctx, q, grupID, mulai, akhir, kosongJadiNil(kecualiID),
+		kosongJadiNil(kecualiID)).Scan(&id)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", nil
 	}

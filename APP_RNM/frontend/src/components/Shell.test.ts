@@ -52,19 +52,21 @@ describe('menu hanya yang berbukti korpus', () => {
     }
   })
 
-  it('butir menu TEPAT lima, dan seluruhnya berbukti', () => {
+  it('butir menu TEPAT enam, dan seluruhnya berbukti', () => {
     // ⛔ Empat: dua Claim Life, satu PremiumList, satu Komite. Beranda
     // TIDAK dihitung - ia kerangka aplikasi, bukan menu modul.
     const modul = ENTRI_MENU.filter((e) => e.modul !== 'beranda')
     // Lima sejak tiket 03 Treaty Contract Out: butir InboxTreatyContract
-    // (VERBATIM pyLabel harness b151).
-    expect(modul).toHaveLength(5)
+    // (VERBATIM pyLabel harness b151). Enam sejak tiket 04: butir
+    // InboxTreatyContractReinsType (pyLabel harness b151).
+    expect(modul).toHaveLength(6)
     const label = modul.map((e) => e.label)
     expect(label).toContain(MENU.inbox)
     expect(label).toContain(MENU.register)
     expect(label).toContain(MENU_MODUL.premiumList)
     expect(label).toContain(MENU_MODUL.inboxKomite)
     expect(label).toContain(MENU_TCO.inboxTreatyContract)
+    expect(label).toContain(MENU_TCO.inboxTreatyContractReinsType)
   })
 
   it('empat belas kelompok berdiri TANPA butir', () => {

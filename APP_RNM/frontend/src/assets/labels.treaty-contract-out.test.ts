@@ -11,7 +11,7 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { JENIS_REASURANSI_TCO, LAMPIRAN_TCO, MENU_TCO, TAHUN_TCO } from './labels.treaty-contract-out'
+import { JENIS_REASURANSI_TCO, KONTRAK_TCO, LAMPIRAN_TCO, MENU_TCO, TAHUN_TCO } from './labels.treaty-contract-out'
 
 const KORPUS = 'D:\\XML\\RNM_BRD\\Treaty Contract Out'
 const adaKorpus = existsSync(KORPUS)
@@ -25,6 +25,7 @@ function baris(relatif: string, nomor: number): string {
 const GRID = 'Section\\InputTreatyContract.xml'
 const FORM = 'Section\\InputDtlTreatyContact.xml'
 const LAMPIRAN = 'Section\\GridTreatyArrangementAttachment.xml'
+const KONTRAK = 'Section\\InputTreatyContractReinsType.xml'
 
 describe.skipIf(!adaKorpus)('label Treaty Contract Out berbukti barisnya', () => {
   const kasus: Array<[string, string, number, string]> = [
@@ -68,6 +69,25 @@ describe.skipIf(!adaKorpus)('label Treaty Contract Out berbukti barisnya', () =>
     [LAMPIRAN, 'pyValue', 3170, LAMPIRAN_TCO.kolomType],
     [LAMPIRAN, 'pyLabel', 3897, LAMPIRAN_TCO.delete],
     ['Activity\\TreatyOutSaveAttachment.xml', 'PropertiesValue', 376, `"${LAMPIRAN_TCO.tanpaBerkas}"`],
+    // tiket 04 - editor kontrak
+    ['Harness\\InboxTreatyContractReinsType.xml', 'pyValue', 1670, KONTRAK_TCO.judul],
+    [KONTRAK, 'pyLabelFieldValue', 1145, KONTRAK_TCO.headerUnderwritingYear],
+    [KONTRAK, 'pyLabelFieldValue', 1358, KONTRAK_TCO.headerReinsType],
+    [KONTRAK, 'pyLabelFieldValue', 2905, KONTRAK_TCO.formStartDate],
+    [KONTRAK, 'pyLabelFieldValue', 3244, KONTRAK_TCO.formEndDate],
+    [KONTRAK, 'pyLabel', 3618, KONTRAK_TCO.save],
+    [KONTRAK, 'pyLabelFieldValue', 4363, KONTRAK_TCO.formModifiedDate],
+    [KONTRAK, 'pyLabelFieldValue', 4547, KONTRAK_TCO.formUsername],
+    [KONTRAK, 'pyLabel', 5343, KONTRAK_TCO.undo],
+    [KONTRAK, 'pyLabelFieldValue', 6400, KONTRAK_TCO.information],
+    [KONTRAK, 'pyLabel', 8528, KONTRAK_TCO.add],
+    [KONTRAK, 'pyValue', 9164, KONTRAK_TCO.kolomReinsType],
+    [KONTRAK, 'pyValue', 9304, KONTRAK_TCO.kolomTreatyStart],
+    [KONTRAK, 'pyValue', 9444, KONTRAK_TCO.kolomTreatyEnd],
+    [KONTRAK, 'pyLabel', 10519, KONTRAK_TCO.edit],
+    [KONTRAK, 'pyLabel', 10842, KONTRAK_TCO.businessList],
+    [KONTRAK, 'pyLabel', 11308, KONTRAK_TCO.reinsurerList],
+    [KONTRAK, 'pyLabel', 11809, KONTRAK_TCO.delete],
   ]
 
   it.each(kasus)('%s baris %i memuat <%s>', (jalur, tag, nomor, teks) => {
@@ -102,6 +122,17 @@ describe.skipIf(!adaKorpus)('label Treaty Contract Out berbukti barisnya', () =>
     // `Download` b2391 ada di korpus dan sengaja tidak dibawa sebagai tombol kedua.
     expect(baris(LAMPIRAN, 2391).trim()).toBe('<pyLabel>Download</pyLabel>')
     expect(Object.values(LAMPIRAN_TCO)).not.toContain('Download')
+  })
+
+  it('tiket 04: label kepala ReinsType memang memuat nama grup, dan aksi tombolnya terbukti', () => {
+    expect(baris(KONTRAK, 1386).trim()).toBe('<pyValue>InputTreatyContractReinsType.TreatyGroupName</pyValue>')
+    expect(baris(KONTRAK, 3642).trim()).toBe('<pyActivity>SaveTreatyContract_Act</pyActivity>')
+    expect(baris(KONTRAK, 5366).trim()).toBe('<pyActivity>UndoOperation</pyActivity>')
+    expect(baris(KONTRAK, 8552).trim()).toBe('<pyActivity>NewInputTreatyContract_Act</pyActivity>')
+    expect(baris(KONTRAK, 10543).trim()).toBe('<pyActivity>SetUbahTreatyContract</pyActivity>')
+    expect(baris(KONTRAK, 9992).trim()).toBe('<pyValue>.ReinsTypeName</pyValue>')
+    // Medan ID hanya berlabel bawaan kontrol - label "ID" kita tandai bukan dari korpus.
+    expect(baris(KONTRAK, 2478).trim()).toBe('<pyLabelFieldValue>Formatted Text</pyLabelFieldValue>')
   })
 
   it('nama kelompok adalah nama folder korpus', () => {

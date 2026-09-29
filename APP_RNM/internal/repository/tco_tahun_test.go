@@ -55,7 +55,7 @@ func TestSQLTahunTreatySisipDanPerbaruiSeluruhKolom(t *testing.T) {
 func TestSQLCariDobelTahunTreaty(t *testing.T) {
 	q := sqlCariDobelTahunTreaty("S.T")
 	for _, mau := range []string{"TREATYGROUPID = :1", "TRUNC(STARTDATE) = TRUNC(:2)",
-		"TRUNC(ENDDATE) = TRUNC(:3)", "(:4 IS NULL OR ID <> :4)", "FETCH FIRST 1 ROWS ONLY"} {
+		"TRUNC(ENDDATE) = TRUNC(:3)", "(:4 IS NULL OR ID <> :5)", "FETCH FIRST 1 ROWS ONLY"} {
 		if !strings.Contains(q, mau) {
 			t.Errorf("SQL dobel tanpa %q:\n%s", mau, q)
 		}

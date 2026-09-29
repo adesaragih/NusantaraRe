@@ -318,3 +318,61 @@ yang gagal sementara dicoba lagi saat aksi berikutnya atau lewat `Ulangi`.
 | Putaran instrumen gagal lalu diulang | 5: heredoc panjang gagal diurai (repository ditulis ulang lewat Write); dua kali heredoc memakan garis miring terbalik (uji label dan uji halaman, diperbaiki lewat skrip Write dan Edit); tiga nama pemalsuan bertabrakan dengan uji lain (`efekUji`, `resolverUji`, dll., diberi akhiran); penjaga alamat bersama menangkap pola `://` di uji statik modul sendiri (pola dirakit dari potongan) |
 | Token / biaya | tidak terlihat dari dalam sesi, jadi tidak dikarang |
 
+## Tiket 04 — kontrak treaty di dalam tahun
+
+### Yang dibangun
+
+| Lapisan | Berkas | Isi |
+| --- | --- | --- |
+| models | `tco_kontrak.go` (+uji) | gerbang simpan; tanggal akhir bawaan ditiru apa adanya |
+| repository | `tco_kontrak.go` (+uji) | `MasterKontrakTCO`; perbarui dan ambil berbatas tahun |
+| services | `tco_kontrak.go` (+uji) | `KontrakTreatyTCO` |
+| handlers | `tco_kontrak.go` (+uji, +uji `db`), `rute_treaty_contract_out.go` (+1 panggilan, +pemetaan galat) | 4 rute |
+| frontend | `PanelKontrakTahun.tsx`, `InboxTreatyContractReinsType.tsx` (+uji masing-masing), `KONTRAK_TCO`, `api.ts` (+3) | editor dari baris tahun dan dari menu |
+
+### Kode bersama yang disentuh (aditif, dilaporkan)
+
+| Berkas | Perubahan |
+| --- | --- |
+| `frontend/src/lib/daftarMenu.ts` | `ModulTetap` +`'tco-kontrak'`; `ENTRI_MENU` +1 (label VERBATIM harness b151) |
+| `frontend/src/App.tsx` | +1 rute halaman |
+| `frontend/src/components/Shell.test.ts` | butir menu 5 → 6 |
+| `handlers/penyuntikan_test.go` | +1 entri `tco_kontrak.go` (tiga penyuntikan wajib) |
+| `repository/tco_tahun.go` (milik modul, tiket 03) | placeholder anti-dobel `:4`,`:4` → `:4`,`:5` (ralat 8) |
+
+### Ralat / OQ
+
+Delapan ralat bertanggal di tiket 04 (gerbang simpan Pega yang dikomentari; anti-dobel kontrak; gerbang tahun mulai;
+tanggal akhir bawaan beranomali; RD grid tidak diekspor; harness menu tanpa konteks; Username; placeholder berulang).
+**OQ-TCO-10 (baru):** anomali 366 hari `SetTanggalTreatyContract` langkah 5 — ditiru apa adanya; usul: `mulai + 1 tahun
+kalender`. **OQ-TCO-11 (baru):** satu jenis reasuransi satu kontrak per tahun — konfirmasi work owner.
+
+### Kontrak hilir
+
+Tidak berubah. Pembaca hilir tco3 (`KontrakHilirTCO`) tidak membaca `T_TREATYCONTRACT`; kontrak hanya membuka kombinasi
+yang dibaca hilir dari reinsurer, business, dan klausul.
+
+### Angka uji
+
+| Perintah | Hasil |
+| --- | --- |
+| `go vet ./...` · `go vet -tags=db ./...` · `gofmt -l .` | bersih |
+| `go test ./...` | 823 lulus, 0 gagal (+15) |
+| `go test -tags=db ./...` | 823 lulus, 48 dilewati (+1: `TestKontrakTreatyLingkaranPenuh`, tanpa skema uji), 0 gagal |
+| `npx tsc --noEmit` · `npx vite build` | bersih |
+| `npx vitest run` | 484 lulus di 41 berkas (+32) |
+
+⚠️ SQL tiket 04 belum pernah dijalankan terhadap Oracle: uji `db` dilewati karena skema uji tidak dikonfigurasi di sesi ini.
+
+### TELEMETRI EKSEKUSI — tiket 04
+
+| Ukuran | Nilai |
+| --- | --- |
+| Berkas dibaca | ±18 (8 korpus: 2 section besar, harness, `PanggilReinsType`, 5 aktivitas; ±10 pola kode Go/TS) |
+| Berkas XML korpus disensus | `InputTreatyContractReinsType.xml` (24.261 baris, b1–b12030 untuk tiket ini), `InputTreatyContract.xml` b20760–b21420, `SaveTreatyContract_Act.xml` (12 langkah), `SetTanggalTreatyContract.xml` (9 langkah), `SetUbahTreatyContract.xml`, `NewInputTreatyContract_Act.xml`, `BrowseReinsTypeYear.xml`, `D_TreatyContract_Act.xml`; 28 baris label/aksi diverifikasi satu per satu |
+| Perintah dijalankan | ±35 |
+| Berkas ditulis / disunting | 12 baru (+±1.500 baris), 11 disunting (+±200) |
+| Instrumen baru | `langkah.py` di scratchpad: pembuang langkah aktivitas (prasyarat, penanda `//`, transisi) — dipakai ulang tiket berikut |
+| Putaran instrumen gagal lalu diulang | 3: nama pembantu uji `tgl` bertabrakan di models (diganti `tglTeks`); pemalsuan pemindai `pemindaiUji` tidak ada (dipakai `barisPalsu` yang sudah ada); grep langkah aktivitas tak terbaca karena tag bersarang (diganti pembuang XML) |
+| Token / biaya | tidak terlihat dari dalam sesi, jadi tidak dikarang |
+
