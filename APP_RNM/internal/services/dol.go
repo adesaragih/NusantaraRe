@@ -275,6 +275,11 @@ func (t *TanggalKejadian) Set(ctx context.Context, pelaku Pelaku,
 var ErrTahapTidakBolehUbahTanggal = errors.New(
 	"services: tanggal klaim hanya dapat diubah di tahap Outstanding Claim")
 
+// ErrTanggalTerkunciSesudahSaveRNM - OQ-M1 (GILIRAN-17): tanggal klaim
+// terkunci sesudah Save to RNM pertama berhasil (b1000 `CLAIM_NO!=”`).
+var ErrTanggalTerkunciSesudahSaveRNM = errors.New(
+	"services: tanggal klaim terkunci sesudah Save to RNM pertama berhasil")
+
 // SetTanggalKlaim menyimpan tiga tanggal klaim lain seorang peserta -
 // `UpdateDateClaimLife_Act`, tombol `Save` `EditDateClaimLife_Section` b1910.
 //
@@ -293,9 +298,9 @@ var ErrTahapTidakBolehUbahTanggal = errors.New(
 // gerbangnya; rute DOL lama tidak diubah (OQ-M8).
 //
 // ⚠️ Yang TIDAK dilakukan, dan sebabnya ada di kepala `models/tanggalklaim.go`:
-// separuh "CLAIM_NO tidak kosong" gerbangnya (OQ-M1), `ValidasiClaimReceived_Act`
-// (penandanya tanpa kolom - OQ-M9), dan cermin warisan
-// `UpdateDateClaimLife_SQL` (OQ-M2).
+// `ValidasiClaimReceived_Act` (penandanya tanpa kolom - OQ-M9) dan cermin
+// warisan `UpdateDateClaimLife_SQL` (OQ-M2). Separuh "CLAIM_NO tidak kosong"
+// ditiru maknanya sejak GILIRAN-17 (OQ-M1) di `gerbangTahapDialogTanggal`.
 func (t *TanggalKejadian) SetTanggalKlaim(ctx context.Context, pelaku Pelaku,
 	klaimID, pesertaID string, tgl models.TanggalKlaim) error {
 
@@ -341,8 +346,9 @@ func (t *TanggalKejadian) SetTanggalKlaim(ctx context.Context, pelaku Pelaku,
 	})
 }
 
-// gerbangTahapDialogTanggal adalah gerbang tahap SELURUH isian dialog Edit Date
-// - DOL dan tiga tanggal lainnya (b1000, b1313, b1550, b1788), satu tempat.
+// gerbangTahapDialogTanggal adalah gerbang SELURUH isian dialog Edit Date -
+// DOL dan tiga tanggal lainnya (b1000, b1313, b1550, b1788), satu tempat:
+// tahapnya, lalu penanda "sudah Save to RNM" (OQ-M1, GILIRAN-17).
 func gerbangTahapDialogTanggal(ctx context.Context, baca *repository.KlaimLife, klaimID string) error {
 	tahap, err := tahapKasus(ctx, baca, klaimID)
 	if err != nil {
@@ -350,6 +356,13 @@ func gerbangTahapDialogTanggal(ctx context.Context, baca *repository.KlaimLife, 
 	}
 	if !models.TahapBolehUbahTanggalKlaim(tahap) {
 		return fmt.Errorf("%w: tahap %s", ErrTahapTidakBolehUbahTanggal, tahap)
+	}
+	sudah, err := baca.SudahSaveRNM(ctx, klaimID)
+	if err != nil {
+		return err
+	}
+	if !models.BolehUbahTanggalKlaim(tahap, sudah) {
+		return ErrTanggalTerkunciSesudahSaveRNM
 	}
 	return nil
 }

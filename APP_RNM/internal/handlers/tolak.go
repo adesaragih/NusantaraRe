@@ -11,12 +11,30 @@ package handlers
 // Dibaca sesudah: handlers.go dan services/tolak.go.
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"time"
 
 	"nusantarare/internal/services"
 )
+
+// permintaanTolakJSON - isian dialog Reject Outstanding (OQ-M5, GILIRAN-17).
+// Hanya `Remarks` (b1687) yang disimpan; `Date` (b790) tidak pernah ditulis
+// `RejectOSClaimLife_Act`, dan `PIC` (b975) adalah pelaku itu sendiri.
+type permintaanTolakJSON struct {
+	Komentar string `json:"komentar"`
+}
+
+// uraiAlasanTolak membaca `Remarks` dari badan JSON; wajib-isinya diperiksa
+// services (satu tempat).
+func uraiAlasanTolak(r *http.Request) (string, error) {
+	var masuk permintaanTolakJSON
+	if err := json.NewDecoder(r.Body).Decode(&masuk); err != nil {
+		return "", err
+	}
+	return masuk.Komentar, nil
+}
 
 // tolakBaris melayani
 // POST /api/klaim-life/{id}/adjustment/{adjId}/tolak.
@@ -26,8 +44,13 @@ func tolakBaris(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
-		err := svc.Status().DenganJejak(services.PerekamJejakOracle(svc)).Tolak(r.Context(), pelakuDari(r, stubPelaku),
-			r.PathValue("id"), r.PathValue("adjId"), time.Now())
+		alasan, err := uraiAlasanTolak(r)
+		if err != nil {
+			galat(w, http.StatusBadRequest, "badan permintaan bukan JSON yang sah")
+			return
+		}
+		err = svc.Status().DenganJejak(services.PerekamJejakOracle(svc)).Tolak(r.Context(), pelakuDari(r, stubPelaku),
+			r.PathValue("id"), r.PathValue("adjId"), alasan, time.Now())
 
 		switch {
 		case errors.Is(err, services.ErrTanpaIdentitas):

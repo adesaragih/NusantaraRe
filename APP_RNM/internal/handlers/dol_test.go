@@ -37,6 +37,7 @@ func TestGalatTanggalDipetakanKeKodeYangBenar(t *testing.T) {
 		{"tanpa wewenang", services.ErrTanpaWewenang, http.StatusForbidden},
 		{"kasus tertutup", services.ErrKasusSudahTertutup, http.StatusConflict},
 		{"tahap salah", services.ErrTahapTidakBolehUbahTanggal, http.StatusConflict},
+		{"terkunci sesudah Save to RNM", services.ErrTanggalTerkunciSesudahSaveRNM, http.StatusConflict},
 		{"tahap tak dikenal", services.ErrTahapTidakDikenal, http.StatusUnprocessableEntity},
 		{"permintaan tidak sah", services.ErrPermintaanTidakSah, http.StatusBadRequest},
 	} {
@@ -74,5 +75,47 @@ func TestRuteTanggalKlaimTanpaDatabaseMenjawab503(t *testing.T) {
 	setTanggalKlaim(services.New(nil), true)(w, r)
 	if w.Code != http.StatusServiceUnavailable {
 		t.Errorf("kode = %d, mau 503", w.Code)
+	}
+}
+
+// OQ-M5 (GILIRAN-17): rute tolak membaca `Remarks` dari badan JSON; badan
+// yang bukan JSON ditolak di pintu.
+func TestUraiAlasanTolak(t *testing.T) {
+	r := httptest.NewRequest(http.MethodPost, "/x", strings.NewReader(`{"komentar":" UJI alasan "}`))
+	if a, err := uraiAlasanTolak(r); err != nil || a != " UJI alasan " {
+		t.Errorf("badan sah: %q %v", a, err)
+	}
+	r = httptest.NewRequest(http.MethodPost, "/x", strings.NewReader(`bukan json`))
+	if _, err := uraiAlasanTolak(r); err == nil {
+		t.Error("badan bukan JSON diterima")
+	}
+}
+
+// OQ-M6 (GILIRAN-17): rute cabut peserta terdaftar di sarang peserta, dan
+// galatnya diterjemahkan sekali.
+func TestRuteCabutPesertaDanGalatnya(t *testing.T) {
+	isi, err := os.ReadFile("handlers.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(isi), `"POST /api/klaim-life/{id}/peserta/{pesertaId}/cabut"`) {
+		t.Error("rute cabut peserta tidak terdaftar di Router")
+	}
+	for _, u := range []struct {
+		err error
+		mau int
+	}{
+		{services.ErrTanpaIdentitas, http.StatusUnauthorized},
+		{services.ErrTanpaWewenang, http.StatusForbidden},
+		{services.ErrKasusSudahTertutup, http.StatusConflict},
+		{services.ErrPesertaTidakDapatDicabut, http.StatusConflict},
+		{services.ErrPermintaanTidakSah, http.StatusBadRequest},
+		{services.ErrTahapTidakDikenal, http.StatusUnprocessableEntity},
+	} {
+		w := httptest.NewRecorder()
+		jawabGalatCabut(w, u.err)
+		if w.Code != u.mau {
+			t.Errorf("%v: kode = %d, mau %d", u.err, w.Code, u.mau)
+		}
 	}
 }

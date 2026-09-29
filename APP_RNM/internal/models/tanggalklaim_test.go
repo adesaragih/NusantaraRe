@@ -79,3 +79,35 @@ func TestPenandaTerimaKlaim(t *testing.T) {
 		}
 	}
 }
+
+// OQ-M1 DITUTUP (GILIRAN-17): separuh kedua gerbang b1000/b1313/b1550/b1788
+// `CLAIM_NO!=”` ditiru MAKNANYA - tanggal terkunci sesudah Save to RNM
+// pertama berhasil, di tahap mana pun.
+func TestBolehUbahTanggalKlaimTerkunciSesudahSaveRNM(t *testing.T) {
+	if !BolehUbahTanggalKlaim(TahapOutstanding, false) {
+		t.Error("Outstanding, belum Save to RNM: harus terbuka")
+	}
+	if BolehUbahTanggalKlaim(TahapOutstanding, true) {
+		t.Error("Outstanding, sudah Save to RNM: harus terkunci")
+	}
+	if BolehUbahTanggalKlaim(TahapInputRegister, false) {
+		t.Error("tahap selain Outstanding tetap tertutup")
+	}
+}
+
+// OQ-M6 DITUTUP (GILIRAN-17): tombol `DELETE` `InputOSClaimLife` b17865 berdiri
+// di layar Outstanding dan tampil bila `CLAIM_NO == ”` (b18082) - padanannya
+// belum pernah Save to RNM.
+func TestBolehCabutPesertaSebelumSaveRNM(t *testing.T) {
+	if !BolehCabutPeserta(TahapOutstanding, false) {
+		t.Error("Outstanding, belum Save to RNM: harus boleh")
+	}
+	if BolehCabutPeserta(TahapOutstanding, true) {
+		t.Error("sesudah Save to RNM: tidak boleh")
+	}
+	for _, tahap := range []Tahap{TahapInputRegister, TahapMedicalCheck, TahapClaimAnalis, TahapTidakDikenal} {
+		if BolehCabutPeserta(tahap, false) {
+			t.Errorf("%s: tidak boleh", tahap)
+		}
+	}
+}

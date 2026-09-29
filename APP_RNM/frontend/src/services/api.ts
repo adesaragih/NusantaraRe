@@ -582,10 +582,16 @@ export const STATUS_OUTSTANDING = 'Outstanding'
  *   422 klaim belum bernomor (butir o belum diputuskan)
  *   501 tempat jejak audit belum diputuskan (butir am)
  */
-export async function tolakBarisAdjustment(klaimID: string, adjID: string): Promise<void> {
+export async function tolakBarisAdjustment(
+  klaimID: string,
+  adjID: string,
+  komentar: string,
+): Promise<void> {
+  // OQ-M5 (GILIRAN-17): `Remarks` dialog Reject Outstanding (b1687, wajib)
+  // disimpan backend di `T_CLAIMLF_JEJAK.KOMENTAR`; kosong dijawab 400.
   await minta<void>(
     `/api/klaim-life/${encodeURIComponent(klaimID)}/adjustment/${encodeURIComponent(adjID)}/tolak`,
-    { metode: 'POST' },
+    { metode: 'POST', badan: { komentar } },
   )
 }
 
@@ -1159,17 +1165,59 @@ export function kasusTertutup(klaim: Klaim | null): boolean {
 }
 
 /**
+ * Apakah klaim ini sudah pernah di-Save to RNM — padanan `repository.SudahSaveRNM`
+ * (OQ-M1, GILIRAN-17): ada baris adjustment yang `STS_REJECT`-nya terisi.
+ * Baris lahir kosong; hanya Save to RNM (atau jalur yang menuntut '0') mengisinya.
+ */
+export function sudahSaveRNM(klaim: Klaim): boolean {
+  return klaim.peserta.some((p) => p.baris.some((b) => b.kodeStatus !== ''))
+}
+
+/**
+ * Apakah tombol `DELETE` peserta (`InputOSClaimLife` b17865) ditawarkan —
+ * padanan `models.BolehCabutPeserta` (OQ-M6, GILIRAN-17): layar Outstanding,
+ * dan `CLAIM_NO == ''` (b18082) = belum pernah Save to RNM.
+ *
+ * ⚠️ Kenyamanan tampilan saja; peran Admin dan gerbangnya ditegakkan backend.
+ */
+export function bolehCabutPeserta(klaim: Klaim | null): boolean {
+  return (
+    klaim !== null &&
+    !kasusTertutup(klaim) &&
+    klaim.tahap === TAHAP.outstandingClaim &&
+    !sudahSaveRNM(klaim)
+  )
+}
+
+/**
+ * Mencabut seorang peserta dari klaimnya — PENANDA `STS_HAPUS` (migrasi 022),
+ * bukan hapus baris (ADR-U-0031). Tanpa konfirmasi, seperti b18021.
+ */
+export async function cabutPeserta(klaimID: string, pesertaID: string): Promise<void> {
+  await minta<void>(
+    `/api/klaim-life/${encodeURIComponent(klaimID)}/peserta/${encodeURIComponent(pesertaID)}/cabut`,
+    { metode: 'POST' },
+  )
+}
+
+/**
  * Apakah tiga tanggal klaim dialog Edit Date terbuka untuk diubah.
  *
- * Padanan `models.TahapBolehUbahTanggalKlaim`: isiannya baca-saja bila
- * `pyPosition!='ReasLifeAdmin'` (b1000, b1313, b1550, b1788), dan tombol
- * `Edit Date` berdiri di grid peserta — irisannya hanya Outstanding Claim.
+ * Padanan `models.BolehUbahTanggalKlaim`: isiannya baca-saja bila
+ * `pyPosition!='ReasLifeAdmin' || CLAIM_NO!=''` (b1000, b1313, b1550, b1788).
+ * Tombol `Edit Date` berdiri di grid peserta — irisannya hanya Outstanding
+ * Claim — dan sesudah Save to RNM pertama tanggalnya terkunci (OQ-M1).
  *
  * ⚠️ Ini HANYA menentukan terbuka atau tidaknya kotak. Gerbang sebenarnya
  * (termasuk peran Admin) ada di backend dan diperiksa lagi di sana.
  */
 export function bolehUbahTanggalKlaim(klaim: Klaim | null): boolean {
-  return klaim !== null && !kasusTertutup(klaim) && klaim.tahap === TAHAP.outstandingClaim
+  return (
+    klaim !== null &&
+    !kasusTertutup(klaim) &&
+    klaim.tahap === TAHAP.outstandingClaim &&
+    !sudahSaveRNM(klaim)
+  )
 }
 
 /**

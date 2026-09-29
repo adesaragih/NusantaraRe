@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 
-import { DETAIL, TOMBOL_KOMITE } from '../../assets/labels.claimlife'
+import { DETAIL, TOMBOL, TOMBOL_KOMITE } from '../../assets/labels.claimlife'
+import { DialogTolakOutstanding } from '../../components/claimlife/DialogTolakOutstanding'
 import { PanelTotalPeserta } from '../../components/claimlife/PanelTotalPeserta'
 import { PanelDokumenPeserta } from '../../components/claimlife/PanelDokumenPeserta'
 import { GridDiagnosa } from '../../components/claimlife/GridDiagnosa'
@@ -17,7 +18,9 @@ import {
   periksaBolehTutup,
   tutupKlaim,
   bolehTutupDiLayar,
+  bolehCabutPeserta,
   bolehUbahTanggalKlaim,
+  cabutPeserta,
   kasusTertutup,
   penghalangDariGalat,
   ubahTanggalKejadian,
@@ -59,6 +62,9 @@ export default function KlaimLife() {
   const [galat, setGalat] = useState<string | null>(null) // pesan bila gagal
   const [memuat, setMemuat] = useState<boolean>(false) // sedang menunggu server?
   const [menolak, setMenolak] = useState<string | null>(null) // baris yang sedang ditolak
+  const [dialogTolak, setDialogTolak] = useState<string | null>(null) // baris yang dialog Reject-nya terbuka
+  const [mencabut, setMencabut] = useState<string | null>(null) // peserta yang sedang dicabut
+  const [galatTolak, setGalatTolak] = useState<string | null>(null)
   const [menyerahkan, setMenyerahkan] = useState<string | null>(null) // baris ke Komite
   const [memutar, setMemutar] = useState<string | null>(null) // peserta yang dibuka putarannya
   const [mengaksep, setMengaksep] = useState<string | null>(null) // peserta yang diaksep
@@ -315,25 +321,45 @@ export default function KlaimLife() {
     }
   }
 
-  async function tolak(adjID: string) {
+  // OQ-M6 (GILIRAN-17): tombol `DELETE` b17865 - tanpa konfirmasi (b18021).
+  async function cabut(pesertaID: string) {
     if (!klaim) return
     setGalat(null)
+    setMencabut(pesertaID)
+    try {
+      await cabutPeserta(klaim.id, pesertaID)
+      setKlaim(await ambilKlaimLife(klaim.id))
+    } catch (err: unknown) {
+      setGalat(pesanGalat(err) ?? 'Gagal mencabut peserta.')
+    } finally {
+      setMencabut(null)
+    }
+  }
+
+  // OQ-M5 (GILIRAN-17): tombol `Reject Outstanding` membuka dialog
+  // `RejectOSClaimLife_Sec`; penolakan dikirim bersama `Remarks`-nya.
+  async function tolak(adjID: string, remarks: string) {
+    if (!klaim) return
+    setGalatTolak(null)
     setMenolak(adjID)
     try {
-      await tolakBarisAdjustment(klaim.id, adjID)
+      await tolakBarisAdjustment(klaim.id, adjID, remarks)
+      setDialogTolak(null)
       setKlaim(await ambilKlaimLife(klaim.id))
     } catch (err: unknown) {
       const kode = kodeStatusGalat(err)
-      setGalat(
-        kode === 403
-          ? 'Hanya ReasLifeAdmin yang dapat menolak baris.'
-          : kode === 409
-            ? (pesanGalat(err) ?? 'Baris sudah diputus dan tidak dapat ditolak lagi.')
-            : kode === 422
-              ? 'Klaim belum bernomor.'
-              : kode === 501
-                ? 'Jejak audit belum dapat direkam; tempatnya belum diputuskan.'
-                : 'Gagal menolak baris.',
+      setGalatTolak(
+        kode === 400
+          ? (pesanGalat(err) ?? 'Remarks wajib diisi.')
+          : kode === 403
+            ? 'Hanya ReasLifeAdmin yang dapat menolak baris.'
+            : kode === 409
+              ? (pesanGalat(err) ?? 'Baris sudah diputus dan tidak dapat ditolak lagi.')
+              : kode === 422
+                ? 'Klaim belum bernomor.'
+                : kode === 501
+                  ? 'Jejak audit belum dapat direkam; tempatnya belum diputuskan.'
+                  : 'Gagal menolak baris.',
       )
     } finally {
       setMenolak(null)
@@ -376,6 +402,17 @@ export default function KlaimLife() {
   return (
     <section>
       <h2>Klaim Life</h2>
+
+      {dialogTolak !== null && (
+        <DialogTolakOutstanding
+          sibuk={menolak === dialogTolak}
+          galat={galatTolak}
+          onKirim={(remarks) => void tolak(dialogTolak, remarks)}
+          onBatal={() => {
+            setDialogTolak(null)
+          }}
+        />
+      )}
 
       <form onSubmit={cari}>
         <label htmlFor="idKlaim">Pengenal klaim</label>{' '}
@@ -472,6 +509,18 @@ export default function KlaimLife() {
               <h4>
                 Peserta {p.nomorSertifikat || p.id}{' '}
                 <small>({p.baris.length} baris)</small>
+                {bolehCabutPeserta(klaim) && (
+                  <>
+                    {' '}
+                    <button
+                      type="button"
+                      disabled={mencabut === p.id}
+                      onClick={() => void cabut(p.id)}
+                    >
+                      {mencabut === p.id ? 'Mencabut…' : TOMBOL.cabutPeserta}
+                    </button>
+                  </>
+                )}
               </h4>
 
               {/* Tombol `Edit Date` b14115 -> `pyLocalAction
@@ -676,9 +725,12 @@ export default function KlaimLife() {
                             <button
                               type="button"
                               disabled={menolak === b.id}
-                              onClick={() => void tolak(b.id)}
+                              onClick={() => {
+                                setGalatTolak(null)
+                                setDialogTolak(b.id)
+                              }}
                             >
-                              {menolak === b.id ? 'Menolak…' : 'Reject Outstanding'}
+                              {menolak === b.id ? 'Menolak…' : TOMBOL.tolakOutstanding}
                             </button>
                           ) : (
                             '—'

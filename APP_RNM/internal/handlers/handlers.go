@@ -66,6 +66,10 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 	// (`EditDateClaimLife_Section.xml`). Satu rute, sebab satu tombol.
 	mux.HandleFunc("PUT /api/klaim-life/{id}/peserta/{pesertaId}/tanggal-klaim",
 		setTanggalKlaim(svc, stubPelaku))
+	// Cabut peserta - OQ-M6 (GILIRAN-17), tombol `DELETE` `InputOSClaimLife`
+	// b17865. POST, bukan DELETE: yang terjadi penandaan (ADR-U-0031).
+	mux.HandleFunc("POST /api/klaim-life/{id}/peserta/{pesertaId}/cabut",
+		cabutPeserta(svc, stubPelaku))
 	// Grid diagnosa - butir bd. Tiga tombol, tiga rute, dan jalurnya
 	// BERSARANG di bawah pesertanya: `SetDisease.xml` b389 menutup dengan
 	// `Obj-Save pyWorkPage`, jadi diagnosa tidak punya hidup di luar peserta

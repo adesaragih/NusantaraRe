@@ -108,10 +108,11 @@ describe('metode HTTP yang benar dikirim', () => {
     expect(tertangkap[0]!.init.method).toBe('GET')
   })
 
-  it('tolakBarisAdjustment memakai POST', async () => {
+  it('tolakBarisAdjustment memakai POST dan membawa Remarks (OQ-M5)', async () => {
     pasangFetch(204, '')
-    await tolakBarisAdjustment('RNML-000001', 'ADJ-1')
+    await tolakBarisAdjustment('RNML-000001', 'ADJ-1', 'UJI alasan')
     expect(tertangkap[0]!.init.method).toBe('POST')
+    expect(JSON.parse(String(tertangkap[0]!.init.body))).toEqual({ komentar: 'UJI alasan' })
   })
 })
 
@@ -167,7 +168,7 @@ describe('kegagalan dikenali menurut jenisnya', () => {
 
   it('badan KOSONG pada 204 bukan kegagalan', async () => {
     pasangFetch(204, '')
-    await expect(tolakBarisAdjustment('K', 'A')).resolves.toBeUndefined()
+    await expect(tolakBarisAdjustment('K', 'A', 'UJI alasan')).resolves.toBeUndefined()
   })
 })
 

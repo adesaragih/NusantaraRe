@@ -56,6 +56,9 @@ type CatatanJejak struct {
 	Ke      string
 	AkunID  string
 	Waktu   time.Time
+	// Komentar - `T_CLAIMLF_JEJAK.KOMENTAR` (migrasi 021, OQ-M5): alasan
+	// penolakan Admin. Kosong pada transisi lain.
+	Komentar string
 }
 
 // Jejak merekam SIAPA dan KAPAN untuk setiap transisi status.
@@ -220,7 +223,7 @@ func (st *Status) DenganJejak(j Jejak) *Status {
 // klaim sesudah perubahan itu - lihat BarisTerakhir.
 func (st *Status) Ubah(ctx context.Context, pelaku Pelaku,
 	klaimID, pesertaID, adjID string, ke models.StatusBaris, saat time.Time) error {
-	return st.ubah(ctx, pelaku, klaimID, pesertaID, adjID, ke, saat, false)
+	return st.ubah(ctx, pelaku, klaimID, pesertaID, adjID, ke, saat, false, "")
 }
 
 // ubah adalah badan Ubah, dengan satu tulisan tambahan yang dapat dinyalakan.
@@ -237,7 +240,7 @@ func (st *Status) Ubah(ctx context.Context, pelaku Pelaku,
 // yang dilakukannya terbaca, dan urutannya kini bersama tulisan yang lain.
 func (st *Status) ubah(ctx context.Context, pelaku Pelaku,
 	klaimID, pesertaID, adjID string, ke models.StatusBaris, saat time.Time,
-	cabutPenanda bool) error {
+	cabutPenanda bool, komentar string) error {
 
 	if err := WajibIdentitas(pelaku); err != nil {
 		return err
@@ -361,6 +364,7 @@ func (st *Status) ubah(ctx context.Context, pelaku Pelaku,
 			Ke:           baru.KodeStatus,
 			AkunID:       pelaku.AkunID,
 			Waktu:        saat,
+			Komentar:     komentar,
 		})
 	})
 }
@@ -398,5 +402,5 @@ func (p perekamOracle) Rekam(ctx context.Context, tx *repository.Tx,
 	c CatatanJejak) error {
 
 	return p.baca.SisipJejak(ctx, tx, c.AdjustmentID, c.KlaimID,
-		c.Dari, c.Ke, c.AkunID, c.Waktu)
+		c.Dari, c.Ke, c.AkunID, c.Waktu, c.Komentar)
 }

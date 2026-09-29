@@ -7,6 +7,7 @@ package services_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"nusantarare/internal/models"
@@ -33,25 +34,25 @@ func TestTolakMenuntutPeranAdmin(t *testing.T) {
 	// "bukan ReasLifeAdmin" kepada pemanggil yang sebenarnya belum menyebut
 	// dirinya; kedua pertanyaan itu berbeda.
 	err := svc.Status().Tolak(ctx, services.Pelaku{
-		Peran: []string{services.PeranRejectOutstanding}}, "CLM-1", "A-1", saatUji)
+		Peran: []string{services.PeranRejectOutstanding}}, "CLM-1", "A-1", alasanUji, saatUji)
 	if !errors.Is(err, services.ErrTanpaIdentitas) {
 		t.Errorf("tanpa identitas: galat = %v, mau ErrTanpaIdentitas", err)
 	}
 	// Beridentitas, tanpa peran sama sekali.
 	err = svc.Status().Tolak(ctx, services.Pelaku{AkunID: "UJI-AKUN"},
-		"CLM-1", "A-1", saatUji)
+		"CLM-1", "A-1", alasanUji, saatUji)
 	if !errors.Is(err, services.ErrTanpaWewenang) {
 		t.Errorf("tanpa peran: galat = %v, mau ErrTanpaWewenang", err)
 	}
 	// Peran lain - SPV boleh menyimpan ke Outstanding, tetapi tidak menolak.
 	err = svc.Status().Tolak(ctx, services.Pelaku{
 		AkunID: "UJI-AKUN", Peran: []string{services.PeranSimpanOutstanding}},
-		"CLM-1", "A-1", saatUji)
+		"CLM-1", "A-1", alasanUji, saatUji)
 	if !errors.Is(err, services.ErrTanpaWewenang) {
 		t.Errorf("peran SPV: galat = %v, mau ErrTanpaWewenang", err)
 	}
 	// Dengan peran yang benar, ia lolos gerbang peran dan berhenti di Oracle.
-	err = svc.Status().Tolak(ctx, pelakuAdmin(), "CLM-1", "A-1", saatUji)
+	err = svc.Status().Tolak(ctx, pelakuAdmin(), "CLM-1", "A-1", alasanUji, saatUji)
 	if !errors.Is(err, repository.ErrTanpaOracle) {
 		t.Errorf("peran Admin: galat = %v, mau ErrTanpaOracle", err)
 	}
@@ -63,7 +64,7 @@ func TestTolakMenuntutPengenal(t *testing.T) {
 	for _, k := range []struct{ klaim, adj string }{
 		{"", "A-1"}, {"CLM-1", ""}, {"  ", "  "},
 	} {
-		err := svc.Status().Tolak(context.Background(), pelakuAdmin(), k.klaim, k.adj, saatUji)
+		err := svc.Status().Tolak(context.Background(), pelakuAdmin(), k.klaim, k.adj, alasanUji, saatUji)
 		if !errors.Is(err, services.ErrPermintaanTidakSah) {
 			t.Errorf("klaim %q adj %q: galat = %v, mau ErrPermintaanTidakSah",
 				k.klaim, k.adj, err)
@@ -111,5 +112,26 @@ func TestTolakBarisFinalDitolak(t *testing.T) {
 		if !errors.Is(err, services.ErrBarisSudahFinal) {
 			t.Errorf("dari %q: galat = %v, mau ErrBarisSudahFinal", kode, err)
 		}
+	}
+}
+
+// alasanUji - isian `Remarks` dialog Reject Outstanding (b1687).
+const alasanUji = "UJI alasan penolakan"
+
+// OQ-M5 DITUTUP (GILIRAN-17): `Remarks` WAJIB (b1653, b1695 `always`, b1699),
+// dan disimpan di `T_CLAIMLF_JEJAK.KOMENTAR` VARCHAR2(4000) - kosong atau
+// melampaui lebar ditolak di pintu, sebelum basis data.
+func TestTolakMenuntutAlasan(t *testing.T) {
+	svc := services.New(nil)
+	for _, alasan := range []string{"", "   ", strings.Repeat("x", services.BatasKomentarJejak+1)} {
+		err := svc.Status().Tolak(context.Background(), pelakuAdmin(), "CLM-1", "A-1", alasan, saatUji)
+		if !errors.Is(err, services.ErrPermintaanTidakSah) {
+			t.Errorf("alasan %d karakter: galat = %v, mau ErrPermintaanTidakSah", len(alasan), err)
+		}
+	}
+	err := svc.Status().Tolak(context.Background(), pelakuAdmin(), "CLM-1", "A-1",
+		strings.Repeat("x", services.BatasKomentarJejak), saatUji)
+	if !errors.Is(err, repository.ErrTanpaOracle) {
+		t.Errorf("alasan tepat di batas: galat = %v, mau ErrTanpaOracle", err)
 	}
 }

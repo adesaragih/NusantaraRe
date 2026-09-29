@@ -48,6 +48,8 @@ var layananPengubah = map[string][]string{
 	// GILIRAN-11 paket 1 - Save to RNM (SaveOutStandingLife_Act).
 	"simpanrnm.go":   {"Simpan"},
 	"statusbaris.go": {"ubah"},
+	// GILIRAN-17 (OQ-M6) - tombol `DELETE` `InputOSClaimLife` b17865.
+	"cabutpeserta.go": {"CabutPeserta"},
 }
 
 // tubuhFungsi mengembalikan teks satu fungsi (atau metode) bernama, dari
@@ -205,6 +207,7 @@ var rutePengubah = map[string]string{
 	"POST /api/klaim-life/{id}/adjustment/{adjId}/tolak":                      "statusbaris.go",
 	"PUT /api/klaim-life/{id}/peserta/{pesertaId}/tanggal-kejadian":           "dol.go",
 	"PUT /api/klaim-life/{id}/peserta/{pesertaId}/tanggal-klaim":              "dol.go",
+	"POST /api/klaim-life/{id}/peserta/{pesertaId}/cabut":                     "cabutpeserta.go",
 	"POST /api/klaim-life/{id}/peserta/{pesertaId}/diagnosa":                  "diagnosa.go",
 	"PUT /api/klaim-life/{id}/peserta/{pesertaId}/diagnosa/{diagId}":          "diagnosa.go",
 	"DELETE /api/klaim-life/{id}/peserta/{pesertaId}/diagnosa/{diagId}":       "diagnosa.go",

@@ -23,6 +23,7 @@ import {
   LAYAR,
   PERAN,
   REGISTER,
+  REJECT_OS,
   TAHAP,
   TOMBOL,
   TOMBOL_KOMITE,
@@ -58,6 +59,7 @@ describe.skipIf(!adaKorpus)('label membawa bukti XML yang benar', () => {
     ['kirimBalikKeMedis', 'Section\\InputAkseptasiClaimLife.xml', 20467, TOMBOL.kirimBalikKeMedis],
     ['kirimBalikKeAdmin', 'Section\\InputAkseptasiClaimLife.xml', 20221, TOMBOL.kirimBalikKeAdmin],
     ['tutupKlaim', 'Section\\CloseClaim_Section.xml', 1028, TOMBOL.tutupKlaim],
+    ['cabutPeserta', 'Section\\InputOSClaimLife.xml', 17865, TOMBOL.cabutPeserta],
   ]
 
   it.each(tombol)('tombol %s ada di %s baris %i', (_nama, jalur, nomor, teks) => {
@@ -288,6 +290,19 @@ describe.skipIf(!adaKorpus)('label layar Detail berbukti barisnya', () => {
     const act = '<pyActivity>SendtoAdmin_Act1</pyActivity>'
     expect(baris('Section/InputOSClaimLife.xml', 21863)).toBe(act)
     expect(baris('Section/MedicalCheckClaimLife.xml', 21174)).toBe(act)
+  })
+
+  // Dialog Reject Outstanding (OQ-M5, GILIRAN-17) - label di section-nya
+  // sendiri; batalnya `pyCancelLabel` flow action-nya.
+  it('dialog Reject Outstanding VERBATIM dari RejectOSClaimLife_Sec', () => {
+    const s = 'Section/RejectOSClaimLife_Sec.xml'
+    expect(baris(s, 783)).toBe(`<pyLabelPreview>${REJECT_OS.tanggal}</pyLabelPreview>`)
+    expect(baris(s, 969)).toBe(`<pyLabelPreview>${REJECT_OS.pic}</pyLabelPreview>`)
+    expect(baris(s, 1680)).toBe(`<pyLabelPreview>${REJECT_OS.alasan}</pyLabelPreview>`)
+    expect(baris(s, 3098)).toBe(`<pyLabel>${REJECT_OS.kirim}</pyLabel>`)
+    expect(baris('FlowAction/RejectOSClaimLife.xml', 19)).toBe(
+      `<pyCancelLabel>${REJECT_OS.batal}</pyCancelLabel>`,
+    )
   })
 
   it.each(medanEditDate)('%s ada di EditDateClaimLife_Section baris %i sebagai <%s>',

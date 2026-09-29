@@ -23,17 +23,17 @@ import (
 // tidak terlihat dari daftar nama mana pun.
 func sqlSisipJejak(tabel string) string {
 	return fmt.Sprintf(`INSERT INTO %s
-		(ID, ADJUSTMENT_ID, KLAIM_ID, DARI, KE, AKUN_ID, WAKTU)
-		VALUES (:1,:2,:3,:4,:5,:6,:7)`, tabel)
+		(ID, ADJUSTMENT_ID, KLAIM_ID, DARI, KE, AKUN_ID, WAKTU, KOMENTAR)
+		VALUES (:1,:2,:3,:4,:5,:6,:7,:8)`, tabel)
 }
 
 // SisipJejak menulis satu catatan jejak.
 //
 // ⚠️ `dari` dan `ke` memuat DUA kosakata: kode status pada transisi baris, dan
 // nama peran pada jalur balik tahap. Disengaja - keduanya "keadaan sebelum"
-// dan "keadaan sesudah".
+// dan "keadaan sesudah". `komentar` (migrasi 021, OQ-M5) kosong = NULL.
 func (r *KlaimLife) SisipJejak(ctx context.Context, tx *Tx,
-	adjustmentID, klaimID, dari, ke, akunID string, waktu time.Time) error {
+	adjustmentID, klaimID, dari, ke, akunID string, waktu time.Time, komentar string) error {
 
 	tabel, err := r.db.Qualify("T_CLAIMLF_JEJAK")
 	if err != nil {
@@ -49,7 +49,7 @@ func (r *KlaimLife) SisipJejak(ctx context.Context, tx *Tx,
 	}
 	hasil, err := tx.tx.ExecContext(ctx, q, id,
 		kosongJadiNil(adjustmentID), kosongJadiNil(klaimID),
-		kosongJadiNil(dari), kosongJadiNil(ke), akunID, waktu)
+		kosongJadiNil(dari), kosongJadiNil(ke), akunID, waktu, kosongJadiNil(komentar))
 	if err != nil {
 		return fmt.Errorf("repository: merekam jejak: %w", err)
 	}

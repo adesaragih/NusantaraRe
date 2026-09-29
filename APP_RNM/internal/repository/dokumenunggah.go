@@ -104,7 +104,7 @@ func (r *KlaimLife) SatuDokumen(ctx context.Context, klaimID string, id int64) (
 		`SELECT d.PREMIUM_LIST_DETAIL_ID, d.ID, d.NAMA_FILE, d.MIME,
 		        d.KATEGORI_1, d.KATEGORI_2, d.T_STORAGE_ID
 		   FROM %s d JOIN %s p ON p.ID = d.PREMIUM_LIST_DETAIL_ID
-		  WHERE p.CLAIM_ID = :1 AND d.ID = :2`, dok, pes)
+		  WHERE p.CLAIM_ID = :1 AND d.ID = :2 AND p.STS_HAPUS IS NULL`, dok, pes)
 	if err := PeriksaSQL(q); err != nil {
 		return models.Dokumen{}, err
 	}
@@ -290,7 +290,7 @@ func (r *KlaimLife) KlaimDokumen(ctx context.Context, id int64) (string, error) 
 	}
 	q := fmt.Sprintf(
 		`SELECT p.CLAIM_ID FROM %s d JOIN %s p ON p.ID = d.PREMIUM_LIST_DETAIL_ID
-		  WHERE d.ID = :1`, dok, pes)
+		  WHERE d.ID = :1 AND p.STS_HAPUS IS NULL`, dok, pes)
 	if err := PeriksaSQL(q); err != nil {
 		return "", err
 	}

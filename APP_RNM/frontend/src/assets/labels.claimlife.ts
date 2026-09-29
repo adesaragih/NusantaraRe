@@ -56,6 +56,8 @@ export const TOMBOL = {
   tutupKlaim: 'Close Claim',
   /** `Section/InputOSClaimLife.xml:24489` `pyButtonLabel Select All` */
   pilihSemua: 'Select All',
+  /** `Section/InputOSClaimLife.xml:17865` `<pyLabel>` — cabut peserta (OQ-M6). */
+  cabutPeserta: 'DELETE',
 } as const
 
 /**
@@ -346,6 +348,24 @@ export const EDIT_DATE = {
   konfirmasi: 'CONFIRMATION DATE',
   /** b1910 `pyLabel` → `UpdateDateClaimLife_Act` b1929. */
   simpan: 'Save',
+} as const
+
+/**
+ * Dialog Reject Outstanding — `Section/RejectOSClaimLife_Sec.xml`, dibuka flow
+ * action `FlowAction/RejectOSClaimLife.xml`. OQ-M5 ditutup 29-09-2026 (GILIRAN-17):
+ * alasannya disimpan di `T_CLAIMLF_JEJAK.KOMENTAR` (migrasi 021).
+ */
+export const REJECT_OS = {
+  /** b783 → `.DataCommitteeTreaty.TanggalComitee` b790; tidak pernah ditulis activity. */
+  tanggal: 'Date',
+  /** b969 → `OperatorID.pyUserName` b975, baca-saja b933. */
+  pic: 'PIC',
+  /** b1680 (`pyUseLabelDesc` b1674) → `.DataCommitteeTreaty.Remarks` b1687, wajib b1695. */
+  alasan: 'Remarks',
+  /** b3098 `pyLabel` → `RejectOSClaimLife_Act` b3117. */
+  kirim: 'Submit',
+  /** `FlowAction/RejectOSClaimLife.xml` b19 `pyCancelLabel`. */
+  batal: 'Cancel',
 } as const
 
 /**

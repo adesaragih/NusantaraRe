@@ -59,7 +59,7 @@ func sqlAmbilDiagnosa(diag, pes string) string {
 		`SELECT d.PREMIUM_LIST_DETAIL_ID, d.ID, d.URUTAN,
 		        d.ICD_CODE, d.DISEASE, d.GROUP_DIAGNOSE, d.STS_REJECT
 		   FROM %s d JOIN %s p ON p.ID = d.PREMIUM_LIST_DETAIL_ID
-		  WHERE p.CLAIM_ID = :1
+		  WHERE p.CLAIM_ID = :1 AND p.STS_HAPUS IS NULL
 		  ORDER BY d.PREMIUM_LIST_DETAIL_ID, d.URUTAN, d.ID`, diag, pes)
 }
 

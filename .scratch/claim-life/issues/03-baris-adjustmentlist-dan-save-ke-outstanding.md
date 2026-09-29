@@ -986,3 +986,17 @@ dicabut, `CLAIM_GROSS` mendapat kolom sendiri (migrasi) beserta penulis yang men
 | **N1** | bendera simpan `pyWorkPage.Save` = **keadaan turunan**, tanpa kolom | langkah 21/24 (b11448), `pyDisabledWhen` b21095, kontainer *Participant Details* b15490 | tidak berubah — tombol tetap hidup, tulisan idempoten; 22.1.3.2 tetap tidak ditiru hurufnya |
 | **N3** | gerbang retro langkah 27 **dipertahankan** | `RetroID=="L0000141" \|\| SecurityReinsurerID=="L0000134"` b11794, `RetroID=="1000013"` b11817 — XML Claim Life hidup; OQ-064 milik Komite | tidak berubah (`ArasapasDilewatiRetro`, dibaca sesudah tukar — lihat OQ-N5) |
 | **N3 tambahan** | cermin header `T_GENERAL_CLAIM.STS_REJECT`/`ACCEPTED_NO` **tetap di transaksi simpan** | sistem lama: `serviceInsertArasapasClaimLife_act` 1.1.1 b371/b417, lewat langkah 28 | tidak berubah |
+
+## Keputusan bertanggal — 29 September 2026 (GILIRAN-17 paket 2: OQ-M6 ditutup) `[keputusan work owner 29-09-2026 — lembar keputusan, "rekomendasi"]`
+
+Mencabut peserta = **penanda**; layar menyembunyikannya.
+
+| Hal | Isi |
+| --- | --- |
+| XML | tombol `DELETE` `InputOSClaimLife` b17865 (judul kolom b16839) → `deleteRow` b17874 tanpa konfirmasi (b18021) → `DeletePesertaClaimLife` b17909 (langkah 1 b227, 1.1, 1.2 `Obj-Save` b443; `pyStepsBlockName` kosong b238/b326/b453; nol SQL); tampil bila `CLAIM_NO == ''` b18082 |
+| kolom | `T_CLAIMLF_PREMIUMLIST_DETAIL.STS_HAPUS` VARCHAR2(1) — migrasi `022_kolom_sts_hapus_peserta.sql` (+ `_down`); NULL aktif, `'1'` dicabut (ADR-U-0031, pola `STS_*`); **dijalankan work owner** |
+| rute | `POST /api/klaim-life/{id}/peserta/{pesertaId}/cabut` — Admin, kasus terbuka, `models.BolehCabutPeserta` (Outstanding **dan** belum Save to RNM — padanan b18082, OQ-M1), peserta milik klaim; penanda + jejak (`peserta <id>` → `dicabut`) satu transaksi |
+| pembaca | setiap pembaca dan penulis tabel peserta menyaring `STS_HAPUS IS NULL`: peserta, baris adjustment, dokumen (daftar, satu, pemilik), diagnosa, spreading, penanda Save to RNM, tanggal, status, `IS_CHECK`. Pengecualian beralasan: `Simpan` (sisip), `HapusFisik` (uji), `Dampak` (hapus klaim utuh) |
+| penjaga | `TestSetiapPenyentuhTabelPesertaMenyaringPenandaCabut` — fungsi baru yang menyentuh tabel peserta gagal sampai menyaring atau dikecualikan; dibuktikan merah lewat mutasi |
+| yang tidak disentuh | baris cermin warisan `OS_AKSEPTASI_KLAIM_LIFE` peserta itu (status NULL; pemeriksaan klaim ganda hanya bereaksi pada `'0'`/`'1'`) |
+| uji | `TestBolehCabutPesertaSebelumSaveRNM`, `TestSQLCabutPesertaMenandaiBukanMenghapus`, `TestMigrasi022PenandaCabutPeserta`, `TestCabutPesertaMenjagaPagarnya`, `TestRuteCabutPesertaDanGalatnya`, `cabutpeserta.test.ts`, `labels.test.ts`, `db` `TestCabutPesertaMenandaiDanMenyembunyikan` |

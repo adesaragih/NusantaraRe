@@ -90,7 +90,8 @@ func (r *KlaimLife) AmbilPeserta(ctx context.Context, klaimID string) ([]models.
 	}
 	// Daftar kolomnya datang dari kolompeserta.go, sama dengan yang dipakai
 	// saat menulis. Angka dan tanggal dibungkus TO_CHAR di sana.
-	q := fmt.Sprintf(`SELECT ID, %s FROM %s WHERE CLAIM_ID = :1 ORDER BY ID`,
+	// OQ-M6: peserta tercabut (`STS_HAPUS`) tidak dibaca lagi.
+	q := fmt.Sprintf(`SELECT ID, %s FROM %s WHERE CLAIM_ID = :1 AND STS_HAPUS IS NULL ORDER BY ID`,
 		selectPeserta(), tabel)
 	if err := PeriksaSQL(q); err != nil {
 		return nil, err
@@ -146,7 +147,7 @@ func (r *KlaimLife) AmbilBaris(ctx context.Context, klaimID string) (map[string]
 		        `+fmtDesimal+`, `+fmtDesimal+`, `+fmtDesimal+`, `+fmtDesimal+`,
 		        `+fmtDesimal+`, `+fmtDesimal+`, a.CURRENCY_ID
 		   FROM %s a JOIN %s p ON p.ID = a.PREMIUM_LIST_DETAIL_ID
-		  WHERE p.CLAIM_ID = :1
+		  WHERE p.CLAIM_ID = :1 AND p.STS_HAPUS IS NULL
 		  ORDER BY a.PREMIUM_LIST_DETAIL_ID, a.ID`,
 		"a.CLAIM_AMOUNT",
 		"a.SHARE_NUSANTARA_RE", "a.CEDING_RETENTION", "a.SUM_REASURED",
@@ -259,7 +260,7 @@ func (r *KlaimLife) PerbaruiTanggalKejadian(ctx context.Context, tx *Tx,
 		return err
 	}
 	q := fmt.Sprintf(
-		`UPDATE %s SET DATE_OF_LOSS = TO_DATE(:1, 'YYYY-MM-DD HH24:MI:SS') WHERE ID = :2`,
+		`UPDATE %s SET DATE_OF_LOSS = TO_DATE(:1, 'YYYY-MM-DD HH24:MI:SS') WHERE ID = :2 AND STS_HAPUS IS NULL`,
 		tabel)
 	if err := PeriksaSQL(q); err != nil {
 		return err
@@ -284,7 +285,7 @@ func sqlTanggalKlaim(tabel string) string {
 	   SET CLAIM_RECEIVED_DATE = TO_DATE(:1, 'YYYY-MM-DD HH24:MI:SS'),
 	       COMPLETE_DATE       = TO_DATE(:2, 'YYYY-MM-DD HH24:MI:SS'),
 	       CONFIRMATION_DATE   = TO_DATE(:3, 'YYYY-MM-DD HH24:MI:SS')
-	 WHERE ID = :4 AND CLAIM_ID = :5`, tabel)
+	 WHERE ID = :4 AND CLAIM_ID = :5 AND STS_HAPUS IS NULL`, tabel)
 }
 
 // argTanggal menulis satu tanggal untuk TO_DATE; nil menjadi NULL.
@@ -359,6 +360,67 @@ func (r *KlaimLife) IsiNomorKlaimKosong(ctx context.Context, tx *Tx, klaimID, no
 }
 
 // sqlTandaiBarisOutstanding - `Save to RNM` langkah 22.1.3.2.
+// sqlSudahSaveRNM - penanda turunan "klaim ini sudah pernah di-Save to RNM"
+// (OQ-M1, GILIRAN-17): ada baris adjustment klaim itu yang `STS_REJECT`-nya
+// tidak NULL. Hasilnya 0 atau 1 (`ROWNUM = 1` sebelum COUNT).
+//
+// ⚠️ Klaim tanpa satu pun baris adjustment tidak pernah terkunci - Save to
+// RNM tidak menulis apa pun untuknya, dan di Pega pun ia tidak bernomor lewat
+// jalur baris. Dicatat, bukan ditebak.
+func sqlSudahSaveRNM(adj, pes string) string {
+	return fmt.Sprintf(`SELECT COUNT(*)
+	   FROM %s a JOIN %s p ON p.ID = a.PREMIUM_LIST_DETAIL_ID
+	  WHERE p.CLAIM_ID = :1 AND p.STS_HAPUS IS NULL AND a.STS_REJECT IS NOT NULL AND ROWNUM = 1`, adj, pes)
+}
+
+// SudahSaveRNM menjawab apakah klaim ini sudah pernah di-Save to RNM - lihat
+// `sqlSudahSaveRNM` dan `models.BolehUbahTanggalKlaim`.
+func (r *KlaimLife) SudahSaveRNM(ctx context.Context, klaimID string) (bool, error) {
+	adj, err := r.db.Qualify("T_CLAIMLF_ADJUSTMENT")
+	if err != nil {
+		return false, err
+	}
+	pes, err := r.db.Qualify("T_CLAIMLF_PREMIUMLIST_DETAIL")
+	if err != nil {
+		return false, err
+	}
+	q := sqlSudahSaveRNM(adj, pes)
+	if err := PeriksaSQL(q); err != nil {
+		return false, err
+	}
+	var n int
+	if err := r.db.sql.QueryRowContext(ctx, q, klaimID).Scan(&n); err != nil {
+		return false, fmt.Errorf("repository: membaca penanda Save to RNM: %w", err)
+	}
+	return n > 0, nil
+}
+
+// sqlCabutPeserta - OQ-M6 (GILIRAN-17): menandai, tidak menghapus
+// (ADR-U-0031); hanya peserta milik klaim itu, hanya sekali.
+func sqlCabutPeserta(tabel string) string {
+	return fmt.Sprintf(`UPDATE %s SET STS_HAPUS = '1'
+	 WHERE ID = :1 AND CLAIM_ID = :2 AND STS_HAPUS IS NULL`, tabel)
+}
+
+// CabutPeserta menandai seorang peserta dicabut dari klaimnya - tombol
+// `DELETE` `InputOSClaimLife` b17865. Nol baris = galat (peserta bukan milik
+// klaim, atau sudah tercabut).
+func (r *KlaimLife) CabutPeserta(ctx context.Context, tx *Tx, klaimID, pesertaID string) error {
+	tabel, err := r.db.Qualify("T_CLAIMLF_PREMIUMLIST_DETAIL")
+	if err != nil {
+		return err
+	}
+	q := sqlCabutPeserta(tabel)
+	if err := PeriksaSQL(q); err != nil {
+		return err
+	}
+	hasil, err := tx.tx.ExecContext(ctx, q, pesertaID, klaimID)
+	if err != nil {
+		return fmt.Errorf("repository: mencabut peserta: %w", err)
+	}
+	return pastikanSatuBaris(hasil, "pencabutan peserta (STS_HAPUS)")
+}
+
 const sqlTandaiBarisOutstanding = `UPDATE %s SET STS_REJECT = :1 WHERE ID = :2 AND STS_REJECT IS NULL`
 
 // TandaiBarisOutstanding menulis `STS_REJECT = 0` ke SATU baris adjustment
@@ -475,7 +537,7 @@ func (r *KlaimLife) PerbaruiStatusBaris(ctx context.Context, tx *Tx,
 		{"baris adjustment", sqlStatusBarisAdjustment(adj, kosong(kodeLama)),
 			argStatusBarisAdjustment(kode, nomorAksep, tglAksep, adjID, kodeLama)},
 		{"peserta", fmt.Sprintf(
-			`UPDATE %s SET STS_REJECT = :1 WHERE ID = :2`, pes),
+			`UPDATE %s SET STS_REJECT = :1 WHERE ID = :2 AND STS_HAPUS IS NULL`, pes),
 			[]any{kosongJadiNil(kode), pesertaID}},
 	}
 	for _, l := range langkah {
@@ -584,7 +646,7 @@ func (r *KlaimLife) setelPenandaDipilih(ctx context.Context, tx *Tx,
 	if err != nil {
 		return err
 	}
-	q := fmt.Sprintf(`UPDATE %s SET IS_CHECK = :1 WHERE ID = :2`, tabel)
+	q := fmt.Sprintf(`UPDATE %s SET IS_CHECK = :1 WHERE ID = :2 AND STS_HAPUS IS NULL`, tabel)
 	if err := PeriksaSQL(q); err != nil {
 		return err
 	}
@@ -893,7 +955,7 @@ func (r *KlaimLife) AmbilDokumen(ctx context.Context, klaimID string) (
 		        d.KATEGORI_1, d.KATEGORI_2, d.T_STORAGE_ID, d.TANGGAL,
 		        d.PAYMENT_DATE
 		   FROM %s d JOIN %s p ON p.ID = d.PREMIUM_LIST_DETAIL_ID
-		  WHERE p.CLAIM_ID = :1
+		  WHERE p.CLAIM_ID = :1 AND p.STS_HAPUS IS NULL
 		  ORDER BY d.PREMIUM_LIST_DETAIL_ID, d.ID`, dok, pes)
 	if err := PeriksaSQL(q); err != nil {
 		return nil, err

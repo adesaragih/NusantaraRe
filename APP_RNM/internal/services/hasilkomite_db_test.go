@@ -32,7 +32,7 @@ func TestPutaranMelahirkanBarisOutstandingBaru(t *testing.T) {
 	jejak := &jejakUji{}
 	if err := svc.Status().DenganJejak(jejak).Tolak(ctx,
 		services.Pelaku{AkunID: "UJI-AKUN", Peran: []string{services.PeranAdmin}},
-		pohon.Work.ID, baris.ID, saatUjiKomite); err != nil {
+		pohon.Work.ID, baris.ID, "UJI alasan", saatUjiKomite); err != nil {
 		t.Fatalf("menolak baris pertama: %v", err)
 	}
 

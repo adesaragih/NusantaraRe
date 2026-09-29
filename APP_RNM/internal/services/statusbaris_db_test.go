@@ -219,7 +219,7 @@ func TestTolakMencabutPenandaDipilihDiTransaksiYangSama(t *testing.T) {
 	pelaku := services.Pelaku{
 		AkunID: "UJI-AKUN", Peran: []string{services.PeranRejectOutstanding}}
 	err := svc.Status().DenganJejak(&jejakUji{}).Tolak(ctx, pelaku,
-		pohon.Work.ID, adj[0].ID, saat)
+		pohon.Work.ID, adj[0].ID, "UJI alasan", saat)
 	if err != nil {
 		t.Fatalf("Tolak: %v", err)
 	}
@@ -257,7 +257,7 @@ func TestTolakYangGagalTidakMencabutPenanda(t *testing.T) {
 	pelaku := services.Pelaku{
 		AkunID: "UJI-AKUN", Peran: []string{services.PeranRejectOutstanding}}
 	err := svc.Status().DenganJejak(jejakGagal{}).Tolak(ctx, pelaku,
-		pohon.Work.ID, adj[0].ID, time.Now())
+		pohon.Work.ID, adj[0].ID, "UJI alasan", time.Now())
 	if !errors.Is(err, errJejakSengaja) {
 		t.Fatalf("galat = %v, mau errJejakSengaja", err)
 	}

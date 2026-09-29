@@ -114,7 +114,7 @@ func TestWewenangDitegakkanDiLayanan(t *testing.T) {
 	ctx := context.Background()
 	// Medical Advisor menolak baris: ditolak di layanan, bukan di layar.
 	err := svc.Status().Tolak(ctx, pelakuBerperan(services.PeranMedicalAdvisor),
-		"CLM-1", "A-1", saatUji)
+		"CLM-1", "A-1", alasanUji, saatUji)
 	if !errors.Is(err, services.ErrTanpaWewenang) {
 		t.Errorf("Medical menolak baris: galat = %v, mau ErrTanpaWewenang", err)
 	}

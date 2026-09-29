@@ -18,13 +18,16 @@ package models
 //
 //	pyWorkPage.pyPosition!='ReasLifeAdmin' || pyWorkPage.ClaimData.PremiumListSummary.CLAIM_NO!=''
 //
-// ⚠️ `[terbuka - OQ-M1]` separuh kedua, `CLAIM_NO != ''`, TIDAK ditiru. Pega
-// menomori klaim saat Save Outstanding (`GetSequenceNumber_SQL` dari
-// `SaveOutStandingLife_Act` b8057); aplikasi ini menomorinya saat PENDAFTARAN
-// (`services/pendaftaran.go`). Menirunya huruf demi huruf membuat keempat
-// isian terkunci pada SETIAP klaim - fitur yang tidak pernah dapat dipakai.
-// Maksudnya ("sesudah Save Outstanding, tanggal tidak diubah lagi") menunggu
-// padanan Save Outstanding, yang belum punya rute.
+// ⛔ OQ-M1 DITUTUP 29-09-2026 (GILIRAN-17) `[keputusan work owner]`: tanggal
+// klaim TERKUNCI sesudah Save to RNM pertama berhasil. Separuh kedua,
+// `CLAIM_NO != ''`, ditiru MAKNANYA, bukan hurufnya: Pega menomori klaim saat
+// Save Outstanding (`GetSequenceNumber_SQL` dari `SaveOutStandingLife_Act`
+// b8057), sedangkan aplikasi ini menomorinya saat PENDAFTARAN. Hurufnya akan
+// mengunci setiap klaim sejak lahir. Padanannya diturunkan dari kolom yang ada
+// (`repository.SudahSaveRNM`): ada baris adjustment klaim itu yang
+// `STS_REJECT`-nya tidak NULL. Baris lahir NULL; hanya Save to RNM
+// (`TandaiBarisOutstanding`) atau jalur yang menuntut '0' lebih dulu yang
+// mengisinya, dan tidak ada yang mengembalikannya ke NULL.
 //
 // ⛔ BUTIR bk `[DIPUTUSKAN 28-09-2026, veto work owner]` - OQ-M9 ditutup.
 // `ValidasiClaimReceived_Act` (dua langkah: RDB-List produk b248, Property-Set
@@ -80,4 +83,19 @@ type TanggalKlaim struct {
 func TahapBolehUbahTanggalKlaim(t Tahap) bool {
 	peran, ada := PeranPemegangTahap(t)
 	return ada && peran == PeranAdminLife && TahapBergridPeserta(t)
+}
+
+// BolehUbahTanggalKlaim adalah gerbang LENGKAP keempat isian dialog Edit Date
+// (b1000, b1313, b1550, b1788) - MURNI: tahapnya membuka isian
+// (`TahapBolehUbahTanggalKlaim`) DAN klaim belum pernah di-Save to RNM
+// (OQ-M1). `sudahSaveRNM` diturunkan pemanggil dari status baris.
+func BolehUbahTanggalKlaim(t Tahap, sudahSaveRNM bool) bool {
+	return TahapBolehUbahTanggalKlaim(t) && !sudahSaveRNM
+}
+
+// BolehCabutPeserta - OQ-M6 (GILIRAN-17), MURNI: tombol `DELETE`
+// `InputOSClaimLife` b17865 berdiri di layar Outstanding dan tampil bila
+// `CLAIM_NO == ”` (b18082) - padanannya belum pernah Save to RNM (OQ-M1).
+func BolehCabutPeserta(t Tahap, sudahSaveRNM bool) bool {
+	return t == TahapOutstanding && !sudahSaveRNM
 }

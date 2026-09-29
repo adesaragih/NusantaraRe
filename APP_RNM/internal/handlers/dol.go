@@ -107,6 +107,9 @@ func jawabGalatTanggal(w http.ResponseWriter, err error, gagal string) {
 		galat(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
 	case errors.Is(err, services.ErrTahapTidakBolehUbahTanggal):
 		galat(w, http.StatusConflict, "tanggal klaim hanya dapat diubah di tahap Outstanding Claim")
+	case errors.Is(err, services.ErrTanggalTerkunciSesudahSaveRNM):
+		// OQ-M1 (GILIRAN-17): b1000 `CLAIM_NO!=''` - sesudah Save to RNM.
+		galat(w, http.StatusConflict, "tanggal klaim terkunci sesudah Save to RNM pertama berhasil")
 	case errors.Is(err, services.ErrTahapTidakDikenal):
 		// 422: datanya yang tidak lengkap - tahap kasus tidak dapat dibaca.
 		galat(w, http.StatusUnprocessableEntity, "tahap kasus tidak dikenal")

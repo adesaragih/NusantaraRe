@@ -548,6 +548,18 @@ menunggu padanan Save Outstanding, yang belum punya rute.
 > Apakah tanggal klaim boleh diubah Admin selama kasus di Outstanding, atau harus terkunci sejak
 > suatu peristiwa (yang mana)?
 
+✅ **OQ-M1 DITUTUP 29-09-2026 (GILIRAN-17)** `[keputusan work owner 29-09-2026 — lembar keputusan, "rekomendasi"]`: tanggal klaim **terkunci sesudah Save to RNM
+pertama berhasil**. Separuh kedua gerbang b1000/b1313/b1550/b1788 (`CLAIM_NO!=''`) ditiru maknanya. Penanda "sudah Save to
+RNM" diturunkan dari kolom yang ada: ada baris adjustment klaim itu yang `STS_REJECT`-nya tidak NULL
+(`repository.SudahSaveRNM`). Dasarnya:
+- baris lahir NULL (pendaftaran, `TambahBaris`);
+- hanya Save to RNM (`TandaiBarisOutstanding`), atau jalur yang menuntut `'0'` lebih dulu, yang mengisinya;
+- tidak ada yang mengembalikannya ke NULL.
+
+`CLAIM_NO` sendiri tidak dapat dipakai, sebab aplikasi menomori klaim saat pendaftaran. Gerbangnya satu,
+`gerbangTahapDialogTanggal`, untuk rute DOL dan tiga tanggal, dengan jawaban 409. Klaim tanpa baris adjustment tidak pernah
+terkunci (dicatat). Rinciannya di tiket 07.
+
 **OQ-M2** *(untuk DBA / pemilik hilir)* — cermin warisan `UpdateDateClaimLife_SQL` b85-90:
 `UPDATE OS_AKSEPTASI_KLAIM_LIFE SET LAPSE_DATE = <DOL>, CLAIM_RECEIVED_DATE, COMPLETE_DATE,
 CONFIRMATION_DATE WHERE CASEID AND NAME_OF_INSURED AND CERTIFICATE_NO`. Dua hal: (1) baris warisan
@@ -586,11 +598,23 @@ menolak baris tanpa dialog dan tanpa alasan; `T_CLAIMLF_JEJAK` tidak punya kolom
 membuangnya menipu pemakai — ia mengira alasannya tercatat.
 > Di mana alasan penolakan disimpan: kolom komentar di jejak, atau baris riwayat Komite?
 
+✅ **OQ-M5 DITUTUP 29-09-2026 (GILIRAN-17)** `[keputusan work owner 29-09-2026 — lembar keputusan, "rekomendasi"]`: alasan penolakan disimpan di **kolom komentar baru
+jejak klaim**, `T_CLAIMLF_JEJAK.KOMENTAR` VARCHAR2(4000) (migrasi `021`, dengan jalur turun). Lebarnya diambil dari preseden
+`T_KOMITE_KOMITELIST` (013), karena rule Property `Remarks` tidak diekspor. Dialog Reject Outstanding dibangun dengan label
+VERBATIM: Date b783, PIC b969, Remarks b1680/b1687 (wajib), Submit b3098, Cancel `RejectOSClaimLife.xml` b19. Rute tolak menerima
+`{"komentar"}` dan menolak isian kosong atau yang melebihi 4000 byte (400). Rinciannya di tiket 05.
+
 **OQ-M6** *(untuk work owner)* — `DeletePesertaClaimLife`. Activity-nya nol hapus *(b249, b337,
 Obj-Save b443)*, tetapi tombol `DELETE` `InputOSClaimLife` b17865 lebih dulu menjalankan `deleteRow`
 b17874 atas grid `PremiumListDetail`: di Pega peserta **dicabut** dari kasus. ADR-U-0031 menyatakan
 hapus = penanda.
 > Mencabut peserta: penanda (dan layar menyembunyikannya), atau baris benar-benar dilepas?
+
+✅ **OQ-M6 DITUTUP 29-09-2026 (GILIRAN-17)** `[keputusan work owner 29-09-2026 — lembar keputusan, "rekomendasi"]`: mencabut peserta = **penanda**, dan layar
+menyembunyikannya. Penandanya kolom baru `T_CLAIMLF_PREMIUMLIST_DETAIL.STS_HAPUS` VARCHAR2(1) (migrasi `022`): NULL berarti
+aktif, `'1'` berarti dicabut. Rutenya `POST …/peserta/{pesertaId}/cabut`, dengan tombol `DELETE` b17865: Admin, tahap
+Outstanding, belum Save to RNM (b18082), tanpa konfirmasi (b18021). Setiap pembaca dan penulis tabel peserta menyaring
+penandanya, ditagih penjaga `TestSetiapPenyentuhTabelPesertaMenyaringPenandaCabut`. Rinciannya di tiket 03.
 
 **OQ-M7** *(untuk work owner)* — `RetroDetailClaimLife`, panel rincian grid treaty-year
 (`AdjustmentDetail` b10388-b10389): Reinsurer, Currency, Percent Share, Claim Retro *(b1325-b2498)*.

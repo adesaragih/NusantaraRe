@@ -212,6 +212,7 @@ Peserta yang diklaim. Satu baris mewakili **satu peserta di dalam satu klaim**.
 | `CONFIRMATION_DATE` | DATE | ya | | korpus `CONFIRMATION_DATE` — UpdOS, InsOS |
 | `COMPLETE_DATE` | DATE | ya | | korpus `COMPLETE_DATE` — UpdOS, InsOS |
 | `CLAIM_RECEIVED_DATE` | DATE | ya | | korpus `CLAIM_RECEIVED_DATE` — UpdOS, InsOS |
+| `STS_HAPUS` | teks | ya | | migrasi 022 (OQ-M6, GILIRAN-17): penanda cabut peserta — NULL aktif, `'1'` dicabut; tombol `DELETE` `InputOSClaimLife` b17865; setiap pembaca menyaringnya (ADR-U-0031) |
 
 **Index:** `CLAIM_ID`.
 
@@ -752,6 +753,7 @@ adalah "keadaan sebelum" dan "keadaan sesudah".
 | `KE` | teks | ya | | keadaan sesudah |
 | `AKUN_ID` | teks | tidak | | identitas AKUN, bukan nama orang (ADR-U-0002) |
 | `WAKTU` | TIMESTAMP | tidak | | KAPAN-nya |
+| `KOMENTAR` | teks | ya | | migrasi 021 (OQ-M5, GILIRAN-17): alasan penolakan Admin — `Remarks` `RejectOSClaimLife_Sec` b1687; lebar 4000 dari preseden `KOMITE_COMMENT` |
 
 ---
 

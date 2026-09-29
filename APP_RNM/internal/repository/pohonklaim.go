@@ -572,7 +572,7 @@ func (r *PohonKlaim) AmbilSpreading(ctx context.Context, klaimID string) (
 		  FROM %s s
 		  JOIN %s a ON a.ID = s.ADJUSTMENT_ID
 		  JOIN %s p ON p.ID = a.PREMIUM_LIST_DETAIL_ID
-		 WHERE p.CLAIM_ID = :1
+		 WHERE p.CLAIM_ID = :1 AND p.STS_HAPUS IS NULL
 		 ORDER BY s.ADJUSTMENT_ID, s.ID`,
 		"s.IDR", "s.USD", "s.RETROCADED_SHARE", "s.RATE", sprT, adjT, pesT)
 	if err := PeriksaSQL(q); err != nil {

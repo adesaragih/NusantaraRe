@@ -168,3 +168,18 @@ membaca klaim yang sama dua kali; `PeriksaKlaimBernomor` diperiksa di luar trans
 
 **Verifikasi sesudah perbaikan:** vet · vet db · gofmt nol · build · **172 PASS · 0 FAIL** ·
 **28 SKIP** · `tsc` · 5 JS · 88 modul.
+
+## Keputusan bertanggal — 29 September 2026 (GILIRAN-17 paket 2: OQ-M5 ditutup) `[keputusan work owner 29-09-2026 — lembar keputusan, "rekomendasi"]`
+
+Alasan penolakan disimpan di **kolom komentar baru jejak klaim**, dan dialog Reject Outstanding dibangun.
+
+| Hal | Isi |
+| --- | --- |
+| kolom | `T_CLAIMLF_JEJAK.KOMENTAR` VARCHAR2(4000), nullable — migrasi `021_kolom_komentar_jejak.sql` (+ `_down`); **dijalankan work owner** sesudah giliran |
+| lebar | korpus tidak mengekspor rule Property `Remarks`/komentar Komite; preseden kolom komentar anggota `T_KOMITE_KOMITELIST` (013) |
+| penulis | `Status.Tolak(…, komentar, …)` → `ubah` → `CatatanJejak.Komentar` → `SisipJejak` (8 kolom), satu transaksi dengan transisinya |
+| gerbang | `Remarks` wajib (b1653, b1695 `always`, b1699): kosong/spasi atau > 4000 byte → `ErrPermintaanTidakSah` (400), sebelum basis data |
+| rute | `POST …/adjustment/{adjId}/tolak` kini berbadan `{"komentar": "…"}`; badan bukan JSON → 400 |
+| dialog | `DialogTolakOutstanding` — Date b783 (**baca-saja**: Pega membiarkannya dapat diubah tetapi `RejectOSClaimLife_Act` tidak pernah menulisnya), PIC b969 (akun pelaku, padanan `OperatorID.pyUserName` b975), Remarks b1680 (textarea wajib), Submit b3098, Cancel `RejectOSClaimLife.xml` b19 — label `REJECT_OS` diuji terhadap korpus |
+| yang tetap tidak ditiru | baris `KomiteList` "Claim Admin" (`RejectOSClaimLife_Act` b2173–b2263): bukan tingkat komite, dan `T_KOMITE_KOMITELIST` ber-FK ke `T_GENERAL_KOMITE` |
+| uji | `TestTolakMenuntutAlasan`, `TestSQLJejakBerskemaDanBerkolomLengkap` (8 kolom), `TestMigrasi021KolomKomentarJejak`, `TestUraiAlasanTolak`, `DialogTolakOutstanding.test.ts`, `labels.test.ts`, `klien.test.ts`, `db` `TestTolakMenyimpanRemarksDiJejak` |

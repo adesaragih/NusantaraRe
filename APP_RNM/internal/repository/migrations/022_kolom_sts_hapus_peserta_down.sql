@@ -1,0 +1,5 @@
+-- Jalur mundur 022.
+ALTER TABLE {skema}.T_CLAIMLF_PREMIUMLIST_DETAIL DROP (
+  STS_HAPUS
+)
+/

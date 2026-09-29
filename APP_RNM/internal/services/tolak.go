@@ -73,8 +73,14 @@ func PeriksaKlaimBernomor(k models.Klaim) error {
 // termasuk `POLICY_HOLDER` dan `NAME_OF_INSURED` - nama orang, yang sengaja
 // TIDAK dibawa model ini. Memetakan baris adjustment ke baris datar juga belum
 // ada; itu pekerjaan tiket 13. `[terbuka - tiket 13]`
+//
+// ⛔ OQ-M5 DITUTUP (GILIRAN-17): `komentar` = isian `Remarks` dialog Reject
+// Outstanding (`RejectOSClaimLife_Sec` b1687, WAJIB b1695), disimpan di
+// `T_CLAIMLF_JEJAK.KOMENTAR` pada baris jejak transisi penolakan ini - di
+// transaksi yang sama. Pega menyalinnya ke `KomiteList.KomiteComment`
+// (`RejectOSClaimLife_Act` b2262-b2263).
 func (st *Status) Tolak(ctx context.Context, pelaku Pelaku,
-	klaimID, adjID string, saat time.Time) error {
+	klaimID, adjID, komentar string, saat time.Time) error {
 
 	// ⛔ Identitas DULU, lalu peran, lalu barulah apa pun dibaca. Urutan ini
 	// bukan gaya: permintaan yang tidak berwenang tidak berhak tahu apakah
@@ -88,6 +94,13 @@ func (st *Status) Tolak(ctx context.Context, pelaku Pelaku,
 	}
 	if strings.TrimSpace(klaimID) == "" || strings.TrimSpace(adjID) == "" {
 		return fmt.Errorf("%w: pengenal klaim dan baris wajib diisi", ErrPermintaanTidakSah)
+	}
+	komentar = strings.TrimSpace(komentar)
+	if komentar == "" {
+		return fmt.Errorf("%w: Remarks wajib diisi", ErrPermintaanTidakSah)
+	}
+	if len(komentar) > BatasKomentarJejak {
+		return fmt.Errorf("%w: Remarks melebihi %d byte", ErrPermintaanTidakSah, BatasKomentarJejak)
 	}
 	if !st.svc.PunyaDatabase() {
 		return repository.ErrTanpaOracle
@@ -120,8 +133,13 @@ func (st *Status) Tolak(ctx context.Context, pelaku Pelaku,
 	// Property-Set, dan dua transaksi berarti peserta dapat tertinggal masih
 	// "dipilih" padahal barisnya sudah batal.
 	return st.ubah(ctx, pelaku, klaimID, pesertaID, adjID,
-		models.StatusDitolak, saat, true)
+		models.StatusDitolak, saat, true, komentar)
 }
+
+// BatasKomentarJejak - lebar `T_CLAIMLF_JEJAK.KOMENTAR` VARCHAR2(4000) dalam
+// BYTE (migrasi 021). Diperiksa di pintu supaya kelebihan menjadi 400, bukan
+// ORA-12899 di tengah transaksi.
+const BatasKomentarJejak = 4000
 
 // pemilikBaris mencari peserta yang memiliki sebuah baris adjustment.
 func (st *Status) pemilikBaris(ctx context.Context, baca *repository.KlaimLife,

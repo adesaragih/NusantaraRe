@@ -41,8 +41,12 @@ describe('ubahTanggalKlaim', () => {
   })
 })
 
-function klaim(tahap: string, statusWork = ''): Klaim {
-  return { tahap, statusWork } as Klaim
+function klaim(tahap: string, statusWork = '', kodeBaris: string[] = []): Klaim {
+  return {
+    tahap,
+    statusWork,
+    peserta: [{ baris: kodeBaris.map((kodeStatus) => ({ kodeStatus })) }],
+  } as unknown as Klaim
 }
 
 describe('bolehUbahTanggalKlaim', () => {
@@ -57,5 +61,12 @@ describe('bolehUbahTanggalKlaim', () => {
   it('kasus tertutup tidak dapat diubah', () => {
     expect(bolehUbahTanggalKlaim(klaim('Outstanding Claim', 'Resolved-Completed'))).toBe(false)
     expect(bolehUbahTanggalKlaim(null)).toBe(false)
+  })
+
+  it('terkunci sesudah Save to RNM pertama — ada baris berstatus (OQ-M1)', () => {
+    // b1000 `CLAIM_NO!=''`: padanannya baris adjustment yang STS_REJECT-nya terisi.
+    expect(bolehUbahTanggalKlaim(klaim('Outstanding Claim', '', ['', '']))).toBe(true)
+    expect(bolehUbahTanggalKlaim(klaim('Outstanding Claim', '', ['', '0']))).toBe(false)
+    expect(bolehUbahTanggalKlaim(klaim('Outstanding Claim', '', ['2']))).toBe(false)
   })
 })

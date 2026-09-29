@@ -199,3 +199,18 @@ gerbang untuk keempat isian: `services/dol.go` `gerbangTahapDialogTanggal`, dipa
 
 Akibat yang diterima: Medical Advisor dan SPV tidak lagi dapat mengubah DOL — jawabannya 403; di
 tahap Medical Check dan Claim Analis — 409. Uji: `TestSetTanggalKejadianHanyaAdmin`.
+
+## Keputusan bertanggal — 29 September 2026 (GILIRAN-17 paket 2: OQ-M1 ditutup) `[keputusan work owner 29-09-2026 — lembar keputusan, "rekomendasi"]`
+
+Separuh `CLAIM_NO!=''` gerbang dialog Edit Date (b1000, b1313, b1550, b1788), yang di atas disebut "tetap tidak ditiru",
+**kini ditiru maknanya**: tanggal klaim terkunci sesudah Save to RNM pertama berhasil.
+
+| Hal | Isi |
+| --- | --- |
+| penanda | `repository.SudahSaveRNM`: ada baris adjustment klaim yang `STS_REJECT IS NOT NULL` (baris peserta tercabut tidak dihitung) |
+| mengapa pasti | baris lahir NULL (`LahirkanBarisPendaftaran`, `TambahBaris`); yang mengisinya hanya Save to RNM (`TandaiBarisOutstanding`, `WHERE STS_REJECT IS NULL`) atau jalur yang menuntut `'0'` lebih dulu (tolak, aksep, serah Komite, putaran baru `hasilkomite.go`); nol penulis yang mengembalikannya ke NULL |
+| mengapa bukan `CLAIM_NO` | aplikasi menomori saat pendaftaran — hurufnya akan mengunci setiap klaim sejak lahir |
+| gerbang | `models.BolehUbahTanggalKlaim(tahap, sudah)` di `services.gerbangTahapDialogTanggal` — SATU gerbang untuk rute DOL dan tiga tanggal; `ErrTanggalTerkunciSesudahSaveRNM` → 409 |
+| layar | `bolehUbahTanggalKlaim` menurunkan penanda yang sama dari `peserta[].baris[].kodeStatus` |
+| sisa yang dicatat | klaim tanpa satu pun baris adjustment tidak pernah terkunci — Save to RNM tidak menulis apa pun untuknya |
+| uji | `TestBolehUbahTanggalKlaimTerkunciSesudahSaveRNM`, `TestSQLSudahSaveRNMTurunanStatusBaris`, `TestGerbangDialogTanggalMemakaiPenandaSaveRNM`, `TestGalatTanggalDipetakanKeKodeYangBenar`, `tanggalklaim.test.ts`, `db` `TestSudahSaveRNMDariStatusBaris` |

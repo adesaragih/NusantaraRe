@@ -7,6 +7,7 @@ package services_test
 import (
 	"context"
 	"errors"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -373,5 +374,31 @@ func TestSetTanggalKlaimMenjagaPagarnya(t *testing.T) {
 	if err := svc.TanggalKejadian().SetTanggalKlaim(ctx, admin,
 		"CLM-1", "P-1", tgl); !errors.Is(err, repository.ErrTanpaOracle) {
 		t.Errorf("admin tanpa Oracle: %v, mau ErrTanpaOracle", err)
+	}
+}
+
+// OQ-M1 DITUTUP (GILIRAN-17): gerbang bersama kedua rute dialog Edit Date
+// memakai penanda turunan "sudah Save to RNM" - satu tempat, bukan dua.
+func TestGerbangDialogTanggalMemakaiPenandaSaveRNM(t *testing.T) {
+	isi, err := os.ReadFile("dol.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(isi)
+	i := strings.Index(s, "func gerbangTahapDialogTanggal(")
+	if i < 0 {
+		t.Fatal("gerbangTahapDialogTanggal tidak ada")
+	}
+	badan := s[i:]
+	if j := strings.Index(badan[1:], "\nfunc "); j >= 0 {
+		badan = badan[:j+1]
+	}
+	for _, mau := range []string{".SudahSaveRNM(ctx, klaimID)", "models.BolehUbahTanggalKlaim(", "ErrTanggalTerkunciSesudahSaveRNM"} {
+		if !strings.Contains(badan, mau) {
+			t.Errorf("gerbang tanpa %q", mau)
+		}
+	}
+	if strings.Count(s, "gerbangTahapDialogTanggal(ctx, baca, klaimID)") != 2 {
+		t.Error("kedua rute (DOL dan tiga tanggal) harus melewati gerbang yang sama")
 	}
 }

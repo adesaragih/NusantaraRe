@@ -57,3 +57,21 @@ func TestArgTanggalKosongMenjadiNULL(t *testing.T) {
 		t.Errorf("argTanggal = %v", got)
 	}
 }
+
+// OQ-M1 DITUTUP (GILIRAN-17): penanda "sudah Save to RNM" DITURUNKAN dari
+// kolom yang ada - ada baris adjustment klaim itu yang STS_REJECT-nya tidak
+// NULL. Baris lahir NULL (pendaftaran, TambahBaris); hanya Save to RNM
+// (`TandaiBarisOutstanding`) atau jalur yang menuntut '0' lebih dulu yang
+// mengisinya, dan tidak ada yang mengembalikannya ke NULL.
+func TestSQLSudahSaveRNMTurunanStatusBaris(t *testing.T) {
+	q := sqlSudahSaveRNM("S.A", "S.P")
+	for _, mau := range []string{"FROM S.A a JOIN S.P p ON p.ID = a.PREMIUM_LIST_DETAIL_ID",
+		"p.CLAIM_ID = :1", "a.STS_REJECT IS NOT NULL", "ROWNUM = 1"} {
+		if !strings.Contains(q, mau) {
+			t.Errorf("tanpa %q:\n%s", mau, q)
+		}
+	}
+	if err := PeriksaSQL(q); err != nil {
+		t.Error(err)
+	}
+}
