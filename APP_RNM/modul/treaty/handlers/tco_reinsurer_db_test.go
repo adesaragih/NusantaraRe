@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/internal/repository/skemauji"
+	"nusantarare/uji/skemauji"
 )
 
 func TestReinsurerKombinasiLingkaranPenuh(t *testing.T) {

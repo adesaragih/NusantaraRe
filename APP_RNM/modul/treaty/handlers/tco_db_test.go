@@ -22,12 +22,12 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/internal/repository/skemauji"
 	"nusantarare/inti/config"
 	"nusantarare/inti/db"
 	"nusantarare/modul/treaty/handlers"
 	"nusantarare/modul/treaty/repository"
 	"nusantarare/modul/treaty/services"
+	"nusantarare/uji/skemauji"
 )
 
 type ujiTCO struct {

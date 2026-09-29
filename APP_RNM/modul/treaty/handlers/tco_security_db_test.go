@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/internal/repository/skemauji"
+	"nusantarare/uji/skemauji"
 )
 
 func TestSecurityLingkaranPenuh(t *testing.T) {

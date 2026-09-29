@@ -62,11 +62,11 @@ describe('nomor tahap sejalan dengan models.Tahap di Go', () => {
     })
   })
 
-  it.runIf(existsSync('D:\\XML\\RNM_BRD\\OUTPUT_HASIL_RNM\\APP_RNM\\internal\\models\\tahap.go'))(
+  it.runIf(existsSync('D:\\XML\\RNM_BRD\\OUTPUT_HASIL_RNM\\APP_RNM\\modul\\claimlife\\models\\tahap.go'))(
     'urutannya sama dengan konstanta Go',
     () => {
       const go = readFileSync(
-        'D:\\XML\\RNM_BRD\\OUTPUT_HASIL_RNM\\APP_RNM\\internal\\models\\tahap.go',
+        'D:\\XML\\RNM_BRD\\OUTPUT_HASIL_RNM\\APP_RNM\\modul\\claimlife\\models\\tahap.go',
         'utf8',
       )
       // `TahapTidakDikenal = iota` (0), lalu keempatnya berurut.

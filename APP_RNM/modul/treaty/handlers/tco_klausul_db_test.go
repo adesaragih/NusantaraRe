@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/internal/repository/skemauji"
 	"nusantarare/modul/treaty/repository"
+	"nusantarare/uji/skemauji"
 )
 
 func TestKlausulLingkaranPenuh(t *testing.T) {

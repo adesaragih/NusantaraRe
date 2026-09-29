@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/internal/repository/skemauji"
+	"nusantarare/uji/skemauji"
 )
 
 // AC 21-23, 63/64: kode + nama dari master, nonaktif tetap terbaca, pembaruan

@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"nusantarare/internal/repository"
 	"nusantarare/inti"
+	"nusantarare/modul/claimlife/repository"
 	"nusantarare/modul/komite/models"
 	komiterepository "nusantarare/modul/komite/repository"
 )

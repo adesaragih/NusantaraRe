@@ -75,7 +75,7 @@ check:
 # ⛔ MENGHAPUS tabel di skema yang ditunjuk ORACLE_SCHEMA. Menuntut pengakuan
 # sadar lewat ORACLE_SKEMA_UJI=true, dan menolak POOLDATA.
 test-db:
-	$(GO) test -tags=db ./internal/repository/...
+	$(GO) test -tags=db ./modul/claimlife/repository/...
 
 # [usulan] gvenzl/oracle-free. Kata sandi datang dari env, tidak pernah
 # ditanam di berkas ini. Tidak pernah menunjuk instance produksi.

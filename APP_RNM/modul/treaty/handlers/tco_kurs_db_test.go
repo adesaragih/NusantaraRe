@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/internal/repository/skemauji"
+	"nusantarare/uji/skemauji"
 )
 
 // isiKursUji - satu pengenal USD dan tiga baris kurs: yang berlaku 2026,

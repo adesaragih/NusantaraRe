@@ -29,7 +29,7 @@ func TestRuteTreatyContractOutTerdaftarSatuBaris(t *testing.T) {
 	if strings.Count(string(rakit), "treatyhandlers.DaftarkanRute(mux, svcTCO, cfg.AuthStub)") != 1 {
 		t.Error("cmd/api harus memanggil DaftarkanRute modul ini tepat sekali")
 	}
-	for _, lain := range []string{"../../../cmd/api/main.go", "../../../internal/handlers/handlers.go"} {
+	for _, lain := range []string{"../../../cmd/api/main.go", "../../../modul/claimlife/handlers/handlers.go"} {
 		isi, err := os.ReadFile(lain)
 		if err != nil {
 			t.Fatal(err)

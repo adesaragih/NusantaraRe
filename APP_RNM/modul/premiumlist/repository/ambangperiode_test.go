@@ -61,7 +61,9 @@ func TestNolAmbangTutupBukuTertanam(t *testing.T) {
 		if !strings.Contains(nama, "/repository/") &&
 			!strings.Contains(nama, "/services/") &&
 			!strings.Contains(nama, "/models/") &&
-			!strings.Contains(nama, "/inti/") {
+			!strings.Contains(nama, "/inti/") &&
+			// Paket 5: skema uji pindah dari internal/repository/skemauji.
+			!strings.Contains(nama, "/uji/skemauji/") {
 			continue
 		}
 		diperiksa++

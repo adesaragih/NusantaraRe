@@ -217,7 +217,7 @@ func TestTCONolNamaTabelBaruDiKode(t *testing.T) {
 	ekor := regexp.MustCompile(`(^|\s)//.*$`)
 	blok := regexp.MustCompile(`(?s)/\*.*?\*/`)
 	berkas := 0
-	for _, akar := range []string{akarModul + "/internal", akarModul + "/inti", akarModul + "/modul", akarModul + "/cmd", akarModul + "/frontend/src"} {
+	for _, akar := range []string{akarModul + "/inti", akarModul + "/modul", akarModul + "/cmd", akarModul + "/frontend/src"} {
 		err := filepath.Walk(filepath.FromSlash(akar), func(jalur string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err

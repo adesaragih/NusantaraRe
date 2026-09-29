@@ -13,12 +13,12 @@ import (
 	"context"
 	"testing"
 
-	"nusantarare/internal/models"
-	"nusantarare/internal/repository"
-	"nusantarare/internal/repository/skemauji"
 	"nusantarare/inti"
 	"nusantarare/inti/db"
 	intiuang "nusantarare/inti/uang"
+	"nusantarare/modul/claimlife/models"
+	"nusantarare/modul/claimlife/repository"
+	"nusantarare/uji/skemauji"
 )
 
 func siapkanPohon(t *testing.T) (*db.DB, *repository.PohonKlaim, func()) {
