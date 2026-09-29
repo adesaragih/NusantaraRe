@@ -1,6 +1,6 @@
 # 09: Simpan atomik lintas enam tabel
 
-**Status:** ready-for-agent
+**Status:** selesai (29-09-2026)
 
 **Blocked by:** 05, 06, 07, 08 (seluruh penulis harus ada sebelum dapat dibungkus jadi satu)
 
@@ -98,3 +98,42 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+## Pembacaan ulang XML — 29-09-2026 (sesi modul, lanjutan 1)
+
+Nomor baris = baris mentah berkas korpus `Treaty Contract Out/`.
+
+| Unsur | Bukti | Dibawa sebagai |
+| --- | --- | --- |
+| COMMIT Pega | `RDBList/SaveMasterTreatyContract_SQL.xml` b95, `SaveMasterTreatyYear_SQL.xml` b86, `SaveMasterTreatyReinsurer_SQL.xml` b102, `SaveMasterTreatyBusiness_SQL.xml` b100, `SaveMasterProportionalArrg.xml` b123, `SaveMasterProportionalArrgChild.xml` b114 — `COMMIT;` di teks SQL rule, SESUDAH panggilan prosedur; `InsertToMTreatySecurity.xml` tanpa COMMIT | nol COMMIT di teks SQL (`PeriksaSQL`); commit SEKALI oleh `DalamTransaksi` |
+| satu tombol simpan | tidak ada di korpus: setiap panel punya `Save`-nya sendiri (kontrak b3642, reinsurer `ViewDetailTreatyReinsurerGrid1.xml` b11405, security b20246, business b6966, 25 form klausul) dan setiap `Save` meng-COMMIT sendiri | `Save` per panel dipertahankan (paritas); **simpan utuh** = pintu API baru satu transaksi |
+| status prosedur | `SaveMasterProportionalArrg.xml` b120–b121 keluaran `HASIL1`, `HASIL2`; `[data DBA]` `StsSimpan` 1 = sukses / 0 = gagal | prosedur tidak dipanggil (keputusan o); aturan "hanya 1 sukses" berlaku pada `status` jawaban simpan utuh |
+| `JSON_KLAIM` | nol kemunculan di korpus modul ini; `[data DBA]` teks `ErrMsg` sebagian prosedur (salin-tempel) | penjaga teks pesan di seluruh sumber produksi modul |
+| galat tampil | `Activity/RefreshErrorProportionalarrg.xml`, `Activity/SetErrorMessage.xml` | galat menyebut baris yang gagal (`GalatSimpanUtuhTCO`) |
+
+### Ralat bertanggal 29-09-2026
+
+1. **Tidak ada "simpan kontrak utuh" di Pega** — setiap panel menyimpan dan meng-COMMIT sendiri, sehingga kontrak separuh
+   tersimpan memang mungkin di Pega. Sistem baru menambah `POST /tahun/{id}/kontrak-utuh` dan
+   `PUT /tahun/{id}/kontrak/{kid}/utuh`; `Save` per panel tetap ada dan masing-masing atomik untuk barisnya + jejaknya.
+2. **Tombol simpan tunggal di layar BELUM dibangun**: panel-panel memegang isiannya sendiri (AC 29 tiket 08) dan layar
+   Pega tidak punya tombol itu. Klien API `simpanKontrakUtuh` tersedia; letak dan bentuk tombolnya menunggu keputusan
+   (**OQ-TCO-19**).
+3. **Identitas tidak terpakai saat gagal** dicapai dengan identitas SEMENTARA selama transaksi (`S#########T`) dan
+   pengambilan nomor sequence SESUDAH seluruh baris lolos (`TetapkanIdentitasTCO`) — bukan dengan memundurkan sequence.
+   Reinsurer baru yang punya security diganti identitasnya dengan salin → alihkan security → buang (FK tanpa ON UPDATE).
+4. **Pembaca modul melihat tulisan permintaan yang sama** (`bacaTCO`): security membaca reinsurer barunya, anak klausul
+   membaca induk barunya — tanpa itu penulis per baris tidak dapat dipakai ulang di satu transaksi.
+5. **Urutan permintaan dipakai apa adanya**: kontrak → reinsurer (+ security-nya) → business → klausul (induk sebelum anak).
+
+### Yang dibangun
+
+| Lapisan | Berkas | Isi |
+| --- | --- | --- |
+| models | `tco_status_simpan.go` (+uji) | `StatusSimpanSuksesTCO` — hanya "1"; penjaga teks `JSON_KLAIM` di sumber produksi |
+| repository | `tco_transaksi_utuh.go` (+uji), `tco_identitas.go`, 11 berkas `tco_*.go` | mode transaksi utuh, identitas sementara, penetapan identitas + jejak; 29 pembaca dialihkan ke `bacaTCO` |
+| services | `tco_simpan_utuh.go` (+uji) | `SimpanUtuhTCO` — kelima penulis per baris di SATU transaksi, `GalatSimpanUtuhTCO` menyebut baris |
+| handlers | `tco_simpan_utuh.go` (+uji, +uji `db`) | 2 rute; kode HTTP dari galat baris, pesan menyebut baris, galat server tidak bocor |
+| frontend | `api.ts` (+`simpanKontrakUtuh`, `statusSimpanSukses`), `simpanUtuh.test.ts` | tanpa tombol (OQ-TCO-19) |
+
+**Status:** selesai 29-09-2026 — commit `treaty-contract-out: tiket 09 — simpan atomik lintas enam tabel`.

@@ -105,7 +105,7 @@ func (m *MasterKontrakTCO) Daftar(ctx context.Context, tahunID string) ([]models
 	if err := PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := m.db.sql.QueryContext(ctx, q, tahunID)
+	rows, err := m.db.bacaTCO(ctx).QueryContext(ctx, q, tahunID)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca kontrak tahun treaty %s: %w", tahunID, err)
 	}
@@ -131,7 +131,7 @@ func (m *MasterKontrakTCO) Ambil(ctx context.Context, tahunID, id string) (model
 	if err := PeriksaSQL(q); err != nil {
 		return models.KontrakTreaty{}, err
 	}
-	k, err := pindaiKontrakTCO(m.db.sql.QueryRowContext(ctx, q, tahunID, id))
+	k, err := pindaiKontrakTCO(m.db.bacaTCO(ctx).QueryRowContext(ctx, q, tahunID, id))
 	if errors.Is(err, sql.ErrNoRows) {
 		return models.KontrakTreaty{}, ErrKontrakTidakAda
 	}

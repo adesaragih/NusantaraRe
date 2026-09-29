@@ -169,14 +169,14 @@ func (m *MasterTahunTreaty) Daftar(ctx context.Context, halaman, ukuran int) (Ha
 	if err := PeriksaSQL(qCacah); err != nil {
 		return hasil, err
 	}
-	if err := m.db.sql.QueryRowContext(ctx, qCacah).Scan(&hasil.Total); err != nil {
+	if err := m.db.bacaTCO(ctx).QueryRowContext(ctx, qCacah).Scan(&hasil.Total); err != nil {
 		return hasil, fmt.Errorf("repository: mencacah tahun treaty: %w", err)
 	}
 	q := sqlDaftarTahunTreaty(tabel)
 	if err := PeriksaSQL(q); err != nil {
 		return hasil, err
 	}
-	rows, err := m.db.sql.QueryContext(ctx, q, (halaman-1)*ukuran, ukuran)
+	rows, err := m.db.bacaTCO(ctx).QueryContext(ctx, q, (halaman-1)*ukuran, ukuran)
 	if err != nil {
 		return hasil, fmt.Errorf("repository: membaca daftar tahun treaty: %w", err)
 	}
@@ -201,7 +201,7 @@ func (m *MasterTahunTreaty) Ambil(ctx context.Context, id string) (models.TahunT
 	if err := PeriksaSQL(q); err != nil {
 		return models.TahunTreaty{}, err
 	}
-	t, err := pindaiTahunTreaty(m.db.sql.QueryRowContext(ctx, q, id))
+	t, err := pindaiTahunTreaty(m.db.bacaTCO(ctx).QueryRowContext(ctx, q, id))
 	if errors.Is(err, sql.ErrNoRows) {
 		return models.TahunTreaty{}, ErrTahunTreatyTidakAda
 	}

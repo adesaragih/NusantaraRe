@@ -689,3 +689,67 @@ OQ spec yang tetap terbuka: arti `QUARTER = '0'`.
 | Berkas ditulis / disunting | 9 baru (1.038 baris), 14 disunting (+368 −41) |
 | Putaran instrumen gagal lalu diulang | 4: literal harapan besar salah hitung (dihitung ulang dengan `decimal`); penjaga tulis-warisan menangkap `.CURRENCY` di tiruan (diganti konstanta); pola sunting penjaga penyuntikan tidak unik (konteks diperluas); regex skrip uji mendahului pola penggantian |
 | Token / biaya | tidak terlihat dari dalam sesi, jadi tidak dikarang |
+
+## Tiket 09 — simpan atomik lintas enam tabel
+
+### Yang dibangun
+
+| Lapisan | Berkas | Isi |
+| --- | --- | --- |
+| models | `tco_status_simpan.go` (+uji) | status "1" satu-satunya sukses (AC 39); penjaga teks `JSON_KLAIM` (AC 40) |
+| repository | `tco_transaksi_utuh.go` (+uji); `tco_identitas.go`; 11 berkas `tco_*.go` | transaksi utuh: pembaca sadar-transaksi, identitas sementara, penetapan identitas (+ jejak, + FK security) |
+| services | `tco_simpan_utuh.go` (+uji) | `SimpanUtuhTCO` memakai ULANG kelima penulis per baris di satu transaksi (AC 37); galat menyebut baris (AC 38) |
+| handlers | `tco_simpan_utuh.go` (+uji, +uji `db`) | `POST .../kontrak-utuh`, `PUT .../kontrak/{kid}/utuh` |
+| frontend | `api.ts`, `simpanUtuh.test.ts` | klien + aturan status; tombol menunggu OQ-TCO-19 |
+
+### Bukti merah lebih dulu
+
+- Urutan identitas: mutasi yang menetapkan identitas SEBELUM baris ditulis → `TestSimpanUtuhGagalPadaKlausulKeN` **merah**
+  (`tetapkan 1` pada kegagalan); dipulihkan → hijau.
+- Mode sementara: mutasi yang mematikan identitas sementara → `TestIdentitasSementaraTCO` **merah**; dipulihkan → hijau.
+- Penjaga `JSON_KLAIM`: teks itu disisipkan sementara ke pesan layanan → `TestTCOTanpaJSONKLAIM` **merah**; dipulihkan.
+
+### Kode bersama yang disentuh (aditif, dilaporkan)
+
+| Berkas | Perubahan |
+| --- | --- |
+| `handlers/penyuntikan_test.go` | +1 entri `tco_simpan_utuh.go` (enam penyuntikan wajib) |
+| `repository/repository.go` (`Tx`), `services.DalamTransaksi` | **tidak diubah** — transaksi utuh dibawa lewat `context` di berkas modul |
+| penjaga global `TestNolAlamatLayananDiKode` | tidak diubah; penangkap kode HTTP ditulis dengan menyematkan `http.ResponseWriter` supaya tidak memicu pola `http.Head` |
+
+### Ralat / OQ
+
+Lima ralat bertanggal di tiket 09 (tidak ada simpan utuh di Pega; tombol tunggal belum dibangun; identitas sementara;
+pembaca sadar-transaksi; urutan permintaan). **OQ baru:**
+
+- **OQ-TCO-19** — letak dan bentuk tombol simpan tunggal (layar Pega hanya punya `Save` per panel); work owner + UW.
+
+### Kontrak hilir
+
+Tidak berubah: simpan utuh menulis lewat penulis per baris yang sama, sehingga kolom yang dibaca hilir terisi persis
+seperti simpan per panel. Identitas yang terlihat hilir selalu identitas tetap (nol `S#########T` tersisa — diuji `db`).
+
+### Angka uji
+
+| Perintah | Hasil |
+| --- | --- |
+| `go vet ./...` · `go vet -tags=db ./...` · `gofmt -l .` | bersih |
+| `go test ./...` | 920 lulus, 0 gagal (+12) |
+| `go test -tags=db ./...` | 920 lulus, 54 dilewati (+1: `TestSimpanUtuhAtomikLintasEnamTabel`, tanpa skema uji), 0 gagal |
+| `npx tsc --noEmit` · `npx vite build` | bersih |
+| `npx vitest run` | 569 lulus di 48 berkas (+1, +1 berkas) |
+
+⚠️ Atomisitas lintas enam tabel — satu-satunya hal yang diuji tiket ini — BELUM terbukti terhadap Oracle: uji `db`
+(gagal di klausul ke-3 → nol baris dan nol nomor sequence berubah; sukses → identitas tetap, nol identitas sementara
+tersisa) dilewati karena skema uji tidak dikonfigurasi di sesi ini. Uji tanpa Oracle hanya membuktikan orkestrasinya.
+
+### TELEMETRI EKSEKUSI — tiket 09
+
+| Ukuran | Nilai |
+| --- | --- |
+| Berkas dibaca | ±25 (±9 korpus: enam rule Connect-SQL, `SaveTreatyContract_Act`, dua aktivitas galat; ±16 pola kode: lima layanan, repository identitas/jejak/Tx, penjaga) |
+| Berkas XML korpus disensus | 7 rule simpan (baris COMMIT), 1 aktivitas simpan kontrak |
+| Perintah dijalankan | ±30 |
+| Berkas ditulis / disunting | 10 baru (1.185 baris), 16 disunting (+95 −24) |
+| Putaran instrumen gagal lalu diulang | 3: penjaga `JSON_KLAIM` pertama ikut membaca berkas uji dan direktori (dibatasi ke produksi); konstanta aksi jejak huruf kecil; penjaga alamat-layanan global menangkap `http.Header` (diganti penyematan) |
+| Token / biaya | tidak terlihat dari dalam sesi, jadi tidak dikarang |

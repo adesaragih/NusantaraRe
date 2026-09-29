@@ -83,7 +83,7 @@ func (m *MasterKlausulPilihan) JenisKlausul(ctx context.Context, isXOL string) (
 	if err := PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := m.db.sql.QueryContext(ctx, q, kosongJadiNil(isXOL), kosongJadiNil(isXOL))
+	rows, err := m.db.bacaTCO(ctx).QueryContext(ctx, q, kosongJadiNil(isXOL), kosongJadiNil(isXOL))
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca master %s: %w", MasterJenisKlausulTCO, err)
 	}
@@ -126,7 +126,7 @@ func (m *MasterKlausulPilihan) CariPilihan(ctx context.Context, master, teks str
 	if err := PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := m.db.sql.QueryContext(ctx, q, TipeFireTCO, polaLikeTCO(teks))
+	rows, err := m.db.bacaTCO(ctx).QueryContext(ctx, q, TipeFireTCO, polaLikeTCO(teks))
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca master %s: %w", master, err)
 	}
@@ -157,7 +157,7 @@ func (m *MasterKlausulPilihan) AmbilPilihan(ctx context.Context, master, id stri
 		return PilihanMasterTCO{}, err
 	}
 	var gotID, nama sql.NullString
-	err = m.db.sql.QueryRowContext(ctx, q, id, TipeFireTCO).Scan(&gotID, &nama)
+	err = m.db.bacaTCO(ctx).QueryRowContext(ctx, q, id, TipeFireTCO).Scan(&gotID, &nama)
 	if errors.Is(err, sql.ErrNoRows) {
 		return PilihanMasterTCO{}, fmt.Errorf("%w %s: %q", ErrPilihanMasterTidakAda, master, id)
 	}
@@ -352,7 +352,7 @@ func (m *MasterKlausulTCO) bacaBanyak(ctx context.Context, q string, arg ...any)
 	if err := PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := m.db.sql.QueryContext(ctx, q, arg...)
+	rows, err := m.db.bacaTCO(ctx).QueryContext(ctx, q, arg...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca klausul: %w", err)
 	}

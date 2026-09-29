@@ -132,7 +132,7 @@ func (m *MasterSecurityTCO) Daftar(ctx context.Context, reasID, thnTreaty string
 	if err := PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := m.db.sql.QueryContext(ctx, q, reasID, thnTreaty)
+	rows, err := m.db.bacaTCO(ctx).QueryContext(ctx, q, reasID, thnTreaty)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca security reinsurer %s: %w", reasID, err)
 	}
@@ -158,7 +158,7 @@ func (m *MasterSecurityTCO) Ambil(ctx context.Context, reasID, id string) (Secur
 	if err := PeriksaSQL(q); err != nil {
 		return SecurityTCO{}, err
 	}
-	s, err := pindaiSecurityTCO(m.db.sql.QueryRowContext(ctx, q, id, reasID))
+	s, err := pindaiSecurityTCO(m.db.bacaTCO(ctx).QueryRowContext(ctx, q, id, reasID))
 	if errors.Is(err, sql.ErrNoRows) {
 		return SecurityTCO{}, ErrSecurityTidakAda
 	}

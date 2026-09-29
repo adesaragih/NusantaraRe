@@ -55,6 +55,11 @@ func (d *DB) IdentitasBerikutTCO(ctx context.Context, tx *Tx, sequence string) (
 	if !dikenal {
 		return "", fmt.Errorf("%w: %q", ErrSequenceTakDikenal, sequence)
 	}
+	// Tiket 09: dalam transaksi utuh identitas sementara dulu; nomor sequence
+	// diambil TetapkanIdentitasTCO sesudah seluruh baris lolos.
+	if s, ok := identitasSementaraTCO(ctx, sequence); ok {
+		return s, nil
+	}
 	nama, err := d.Qualify(sequence)
 	if err != nil {
 		return "", err

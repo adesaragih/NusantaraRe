@@ -193,3 +193,13 @@ Nomor baris = `Section/InputTreatyContractReinsType.xml`.
 | 14 `NewTreatyArr*`: "Tidak ada Nilai Kurs di Tahun : " + TreatyYear, form tidak tampil | 422 VERBATIM saat simpan; `Add` nonaktif + pesan di panel | ✅ ADR-0015 |
 | `RefreshKurs` (mengosongkan `Kurs`) | tidak dibawa: kurs dibaca ulang tiap panel dibuka | ✅ |
 | `SetTreatyArrangementDesc_Act` (5/6 langkah di-remark) | tidak dibawa | ✅ AC 50 |
+
+## Tiket 09 — simpan atomik lintas enam tabel
+
+| Unsur korpus | Sistem baru | Keadaan |
+| --- | --- | --- |
+| `COMMIT;` di enam rule Connect-SQL (mis. `SaveMasterProportionalArrg.xml` b123) | nol COMMIT di teks SQL; commit sekali per permintaan | ✅ |
+| `Save` per panel (kontrak, reinsurer, security, business, 25 klausul), masing-masing COMMIT | tetap per panel, masing-masing satu transaksi + jejak | ✅ paritas |
+| — (tidak ada di Pega) | `POST /tahun/{id}/kontrak-utuh`, `PUT /tahun/{id}/kontrak/{kid}/utuh` — enam tabel, satu transaksi | ✅ AC 37–41 |
+| — | tombol simpan tunggal di layar | ⏸ OQ-TCO-19 |
+| `StsSimpan` 1/0 `[data DBA]` | `status` "1" jawaban simpan utuh; selain "1" = gagal (server & klien) | ✅ AC 39 |

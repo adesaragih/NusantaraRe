@@ -53,7 +53,7 @@ func (m *MasterGrupTreaty) Daftar(ctx context.Context) ([]GrupTreatyTCO, error) 
 	if err := PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := m.db.sql.QueryContext(ctx, q)
+	rows, err := m.db.bacaTCO(ctx).QueryContext(ctx, q)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca master grup treaty: %w", err)
 	}

@@ -88,7 +88,7 @@ func (m *MasterReinsurerAgent) Cari(ctx context.Context, teks string) ([]Reinsur
 	if err := PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := m.db.sql.QueryContext(ctx, q, NilaiAgentAktifTCO, polaLikeTCO(teks))
+	rows, err := m.db.bacaTCO(ctx).QueryContext(ctx, q, NilaiAgentAktifTCO, polaLikeTCO(teks))
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca master %s: %w", MasterReinsurerAgentTCO, err)
 	}
@@ -115,7 +115,7 @@ func (m *MasterReinsurerAgent) Ambil(ctx context.Context, id string) (ReinsurerM
 		return ReinsurerMasterTCO{}, err
 	}
 	var n [3]sql.NullString
-	err = m.db.sql.QueryRowContext(ctx, q, id, NilaiAgentAktifTCO).Scan(&n[0], &n[1], &n[2])
+	err = m.db.bacaTCO(ctx).QueryRowContext(ctx, q, id, NilaiAgentAktifTCO).Scan(&n[0], &n[1], &n[2])
 	if errors.Is(err, sql.ErrNoRows) {
 		return ReinsurerMasterTCO{}, ErrReinsurerMasterTidakAda
 	}
@@ -232,7 +232,7 @@ func (m *MasterReinsurerTCO) Daftar(ctx context.Context, k models.KombinasiTCO) 
 	if err := PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := m.db.sql.QueryContext(ctx, q, argKombinasi(k)...)
+	rows, err := m.db.bacaTCO(ctx).QueryContext(ctx, q, argKombinasi(k)...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca reinsurer kombinasi: %w", err)
 	}
@@ -258,7 +258,7 @@ func (m *MasterReinsurerTCO) Ambil(ctx context.Context, k models.KombinasiTCO, i
 	if err := PeriksaSQL(q); err != nil {
 		return models.ReinsurerTreaty{}, err
 	}
-	r, err := pindaiReinsurerTCO(m.db.sql.QueryRowContext(ctx, q, append(argKombinasi(k), id)...))
+	r, err := pindaiReinsurerTCO(m.db.bacaTCO(ctx).QueryRowContext(ctx, q, append(argKombinasi(k), id)...))
 	if errors.Is(err, sql.ErrNoRows) {
 		return models.ReinsurerTreaty{}, ErrReinsurerTidakAda
 	}

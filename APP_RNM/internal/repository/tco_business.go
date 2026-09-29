@@ -79,7 +79,7 @@ func (m *MasterBusiness) Daftar(ctx context.Context) ([]BusinessMasterTCO, error
 	if err := PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := m.db.sql.QueryContext(ctx, q)
+	rows, err := m.db.bacaTCO(ctx).QueryContext(ctx, q)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca master %s: %w", MasterBusinessTCO, err)
 	}
@@ -106,7 +106,7 @@ func (m *MasterBusiness) Ambil(ctx context.Context, id string) (BusinessMasterTC
 		return BusinessMasterTCO{}, err
 	}
 	var gotID, note sql.NullString
-	err = m.db.sql.QueryRowContext(ctx, q, id).Scan(&gotID, &note)
+	err = m.db.bacaTCO(ctx).QueryRowContext(ctx, q, id).Scan(&gotID, &note)
 	if errors.Is(err, sql.ErrNoRows) {
 		return BusinessMasterTCO{}, ErrBusinessMasterTidakAda
 	}
@@ -194,7 +194,7 @@ func (m *MasterBusinessKombinasiTCO) Daftar(ctx context.Context, k models.Kombin
 	if err := PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := m.db.sql.QueryContext(ctx, q, argKombinasi(k)...)
+	rows, err := m.db.bacaTCO(ctx).QueryContext(ctx, q, argKombinasi(k)...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca bisnis kombinasi: %w", err)
 	}
@@ -220,7 +220,7 @@ func (m *MasterBusinessKombinasiTCO) Ambil(ctx context.Context, k models.Kombina
 	if err := PeriksaSQL(q); err != nil {
 		return models.BusinessTreaty{}, err
 	}
-	b, err := pindaiBusinessTCO(m.db.sql.QueryRowContext(ctx, q, append(argKombinasi(k), id)...))
+	b, err := pindaiBusinessTCO(m.db.bacaTCO(ctx).QueryRowContext(ctx, q, append(argKombinasi(k), id)...))
 	if errors.Is(err, sql.ErrNoRows) {
 		return models.BusinessTreaty{}, ErrBusinessTidakAda
 	}

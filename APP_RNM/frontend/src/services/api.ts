@@ -2729,3 +2729,52 @@ export async function konversiKurs(tahunID: string, dari: 'Rp' | 'Usd', nilai: s
     kueri: { dari, nilai, skala },
   })
 }
+
+// ---------------------------------------------------------------------------
+// Treaty Contract Out tiket 09 — simpan utuh satu kontrak (satu transaksi).
+// ---------------------------------------------------------------------------
+
+/** Satu reinsurer beserta security-nya dalam simpan utuh. */
+export interface ReinsurerUtuhMasuk extends ReinsurerMasuk {
+  security: SecurityMasuk[]
+}
+
+/** Seluruh perubahan satu kontrak — tersimpan bersama atau tidak sama sekali. */
+export interface KontrakUtuhMasuk {
+  kontrak: KontrakMasuk
+  reinsurer: ReinsurerUtuhMasuk[]
+  business: BusinessMasuk[]
+  klausul: KlausulMasuk[]
+}
+
+/** Jawaban simpan utuh; `status` "1" = sukses (AC 39). */
+export interface HasilSimpanUtuh {
+  status: string
+  kontrak: KontrakTreaty
+  reinsurer: { reinsurer: ReinsurerTreaty; security: SecurityReinsurer[] }[]
+  business: BusinessTreaty[]
+  klausul: Klausul[]
+  peringatan: string[]
+}
+
+/** AC 39: HANYA "1" sukses — kosong, null, undefined, "0", " 1" seluruhnya gagal. */
+export function statusSimpanSukses(status: string | null | undefined): boolean {
+  return status === '1'
+}
+
+/** POST kontrak baru utuh / PUT kontrak yang ada utuh — satu transaksi di server. */
+export async function simpanKontrakUtuh(tahunID: string, masuk: KontrakUtuhMasuk): Promise<HasilSimpanUtuh> {
+  const t = encodeURIComponent(tahunID)
+  const h: HasilSimpanUtuh =
+    masuk.kontrak.id === ''
+      ? await minta(`/api/treaty-contract-out/tahun/${t}/kontrak-utuh`, { metode: 'POST', badan: masuk })
+      : await minta(`/api/treaty-contract-out/tahun/${t}/kontrak/${encodeURIComponent(masuk.kontrak.id)}/utuh`, {
+          metode: 'PUT',
+          badan: masuk,
+        })
+  if (!statusSimpanSukses(h.status)) {
+    // ⛔ ADR-0015: status selain "1" TIDAK pernah dianggap tersimpan.
+    throw new Error(`simpan utuh tidak berstatus sukses (status ${JSON.stringify(h.status)})`)
+  }
+  return h
+}

@@ -55,7 +55,7 @@ func (m *MasterKursTCO) Daftar(ctx context.Context, idCurrency, quarter string) 
 	if err := PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := m.db.sql.QueryContext(ctx, q, quarter, idCurrency)
+	rows, err := m.db.bacaTCO(ctx).QueryContext(ctx, q, quarter, idCurrency)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca master %s: %w", MasterKursTahunanTCO, err)
 	}

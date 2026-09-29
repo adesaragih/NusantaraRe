@@ -119,6 +119,18 @@ var petaSuntikan = map[string][]suntikan{
 			"DenganKurs(services.PembacaKursOracle(svc))",
 		},
 	}},
+	// Tiket 09 (aditif 29-09-2026): lima penulis per baris + penetap identitas.
+	"tco_simpan_utuh.go": {{
+		penyusun: "svc.SimpanUtuhTCO()",
+		wajib: []string{
+			"DenganKontrak(layananKontrakTCO(svc))",
+			"DenganReinsurer(layananReinsurerTCO(svc))",
+			"DenganSecurity(layananSecurityTCO(svc))",
+			"DenganBusiness(layananBusinessTCO(svc))",
+			"DenganKlausul(layananKlausulTCO(svc))",
+			"DenganPenetapIdentitas(services.PenetapIdentitasOracle(svc))",
+		},
+	}},
 	// Tiket 11 (aditif 29-09-2026): tahun, master kurs, master mata uang.
 	"tco_kurs.go": {{
 		penyusun: "svc.KursTCO()",

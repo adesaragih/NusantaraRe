@@ -160,7 +160,7 @@ func (m *MasterJenisReasuransi) DaftarNonLife(ctx context.Context) ([]JenisReasu
 	if err := PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := m.db.sql.QueryContext(ctx, q, argJenisReasuransiNonLifeTCO()...)
+	rows, err := m.db.bacaTCO(ctx).QueryContext(ctx, q, argJenisReasuransiNonLifeTCO()...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca master jenis reasuransi: %w", err)
 	}

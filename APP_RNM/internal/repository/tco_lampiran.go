@@ -203,7 +203,7 @@ func (m *MasterLampiranTCO) baca(ctx context.Context, modul, jenisUnggah, tahunI
 	if id != "" {
 		arg = append(arg, id)
 	}
-	rows, err := m.db.sql.QueryContext(ctx, q, arg...)
+	rows, err := m.db.bacaTCO(ctx).QueryContext(ctx, q, arg...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca lampiran tahun treaty %s: %w", tahunID, err)
 	}

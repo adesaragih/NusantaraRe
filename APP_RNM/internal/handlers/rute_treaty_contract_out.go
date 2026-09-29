@@ -59,6 +59,8 @@ func daftarkanRuteTreatyContractOut(mux *http.ServeMux, svc *services.Service, s
 	daftarkanRuteSecurityTCO(mux, svc, stubPelaku)
 	// Tiket 11: kurs USD -> IDR (tco_kurs.go).
 	daftarkanRuteKursTCO(mux, svc, stubPelaku)
+	// Tiket 09: simpan utuh satu kontrak - satu transaksi (tco_simpan_utuh.go).
+	daftarkanRuteSimpanUtuhTCO(mux, svc, stubPelaku)
 }
 
 // jawabanDaftarJenisReasuransi adalah badan jawaban daftar jenis reasuransi.

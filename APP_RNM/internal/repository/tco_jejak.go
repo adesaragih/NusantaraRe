@@ -87,7 +87,7 @@ func (d *DB) JejakTCO(ctx context.Context, tabelDisentuh, barisID string) ([]Cat
 	if err := PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := d.sql.QueryContext(ctx, q, tabelDisentuh, barisID)
+	rows, err := d.bacaTCO(ctx).QueryContext(ctx, q, tabelDisentuh, barisID)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca jejak Treaty Contract Out: %w", err)
 	}
