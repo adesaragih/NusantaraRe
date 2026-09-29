@@ -24,6 +24,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -303,6 +304,9 @@ func jawabGalatTreatyContractOut(w http.ResponseWriter, err error) bool {
 	case errors.Is(err, services.ErrPermintaanTidakSah):
 		galat(w, http.StatusBadRequest, err.Error())
 	default:
+		// ⛔ Sebab aslinya DICATAT: tanpa baris ini galat tak terduga hilang
+		// di layar DAN di konsol backend (tco_galat500_test.go).
+		log.Printf("treaty contract out: %v", err)
 		galat(w, http.StatusInternalServerError, "gagal memproses permintaan treaty contract out")
 	}
 	return true

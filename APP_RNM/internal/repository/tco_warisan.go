@@ -203,6 +203,9 @@ func UraiTanggalWarisanTCO(teks string) (time.Time, bool) {
 	return time.Time{}, false
 }
 
+// polaRibuanTitikTCO - `1.000.000`: titik pemisah ribuan, lihat UraiDesimalWarisanTCO.
+var polaRibuanTitikTCO = regexp.MustCompile(`^-?\d{1,3}(\.\d{3}){2,}$`)
+
 // UraiDesimalWarisanTCO membaca teks uang/persen warisan.
 //
 // Koma sebagai pemisah desimal DITERIMA - `[terverifikasi]` existing
@@ -215,11 +218,22 @@ func UraiTanggalWarisanTCO(teks string) (time.Time, bool) {
 // `33.3333333333` yang diketik di Pega - menolaknya membuat seluruh layar
 // selingkup gagal terbuka (temuan /code-review lanjutan 3).
 //
+// Titik pemisah RIBUAN (`1.000.000`) DITERIMA hanya dalam bentuk yang tidak
+// mungkin desimal: dua titik atau lebih, kelompok pertama 1-3 angka, setiap
+// kelompok sesudahnya tepat tiga angka - desimal hanya punya satu titik, jadi
+// ini bukan tebakan. `[data DEV 29-09-2026]` `PROPORTIONALARRG` Limit MB:
+// `RP`/`USD` "1.000.000" sedangkan `PCTME`/`MORERP` baris yang sama 1000000;
+// tanpanya satu baris mematikan seluruh grid (500). `1.000` (SATU titik) tetap
+// desimal.
+//
 // Teks kosong adalah KOSONG (nil, ok=true).
 func UraiDesimalWarisanTCO(teks string) (*apd.Decimal, string, bool) {
 	t := strings.TrimSpace(teks)
 	if t == "" {
 		return nil, "", true
+	}
+	if polaRibuanTitikTCO.MatchString(t) {
+		t = strings.ReplaceAll(t, ".", "")
 	}
 	if strings.Contains(t, ",") {
 		if strings.Contains(t, ".") {

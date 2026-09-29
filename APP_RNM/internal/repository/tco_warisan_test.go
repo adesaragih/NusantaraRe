@@ -79,6 +79,30 @@ func TestUraiDesimalWarisanTCO(t *testing.T) {
 	}
 }
 
+// Titik pemisah RIBUAN - data DEV `PROPORTIONALARRG` (Limit MB, tahun 1000680
+// dan 1000672): `RP` dan `USD` = "1.000.000", sedangkan `PCTME`/`MORERP` baris
+// yang sama 1000000. Dua titik atau lebih dengan kelompok tepat tiga angka
+// TIDAK mungkin desimal (desimal hanya punya satu titik) - bukan tebakan.
+// Tanpa ini satu baris mematikan seluruh grid jenis itu (500).
+func TestUraiDesimalWarisanTCORibuanTitik(t *testing.T) {
+	for masuk, mau := range map[string]string{
+		"1.000.000": "1000000", "12.345.678": "12345678", "-1.000.000": "-1000000", " 250.000.000 ": "250000000",
+		"1.000": "1.000", // SATU titik tetap desimal
+	} {
+		d, catatan, ok := UraiDesimalWarisanTCO(masuk)
+		if !ok || utils.FormatDecimal(d) != mau {
+			t.Errorf("%q -> %v (%s), mau %q", masuk, d, catatan, mau)
+		}
+	}
+	// Kelompok yang bukan tiga angka, atau kelompok pertama lebih dari tiga,
+	// bukan bentuk ribuan - tetap ditolak, tidak ditebak.
+	for _, b := range []string{"1.00.000", "1.000.00", "1000.000.000", "1.000.000.", ".000.000", "1.000.000,5"} {
+		if _, _, ok := UraiDesimalWarisanTCO(b); ok {
+			t.Errorf("%q seharusnya ditolak", b)
+		}
+	}
+}
+
 // ⛔ Oracle membulatkan NUMBER(38,8) DIAM-DIAM. Yang melampaui delapan angka
 // di belakang koma harus ditolak di sini, sebelum satu digit pun hilang.
 // tco4 (temuan /code-review): teks warisan VARCHAR2 tanpa batas skala - nilai

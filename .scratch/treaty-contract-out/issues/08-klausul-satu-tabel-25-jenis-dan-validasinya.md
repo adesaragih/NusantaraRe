@@ -251,3 +251,20 @@ klausul (`PanelKlausulTahun`) tetap, dibuka tombol `List Description` baris tahu
   bertitik (**OQ-TCO-23**); `TREATYLIMIT`/`COINS_*`/`MORE*` NUMBER.
 - Anti-dobel AC 30 dibandingkan di Go: `12.5` dan `12,50` sama nilainya walau teksnya beda.
 - **Jejak gugur**.
+
+## ⛔ Ralat bertanggal — 29-09-2026 (penyisiran layar: `Limit MB` 500 karena titik ribuan)
+
+*Temuan.* Penyisiran `GET` seluruh grid klausul (182 tahun × 13 jenis, induk dan anak — 4.188 panggilan) mendapati
+tepat **dua** 500 *"gagal memproses permintaan treaty contract out"*: jenis `10017` `Limit MB` tahun `1000680` dan
+`1000672`. `[data DEV 29-09-2026 — dibaca executor, SELECT baca-saja atas izin work owner]`: baris induk `PROPORTIONALARRG` tahun `1000680` menyimpan `RP` dan `USD` = `"1.000.000"`,
+sedangkan `PCTME` dan `MORERP` baris yang sama `1000000`. `repository.UraiDesimalWarisanTCO` tidak mengenal titik
+pemisah ribuan, dan satu baris mematikan seluruh grid jenis itu.
+
+*Perbaikan.* (1) Titik pemisah ribuan DITERIMA hanya dalam bentuk yang tidak mungkin desimal — dua titik atau lebih,
+kelompok pertama 1–3 angka, setiap kelompok sesudahnya tepat tiga angka (`^-?\d{1,3}(\.\d{3}){2,}$`); `1.000` (satu
+titik) tetap desimal, dan `1.00.000`, `1000.000.000`, `1.000.000,5` tetap ditolak — bukan tebakan. Berlaku untuk
+setiap kolom desimal teks warisan modul ini. Bentuk TULIS tidak berubah (OQ-TCO-23): menyimpan ulang baris itu
+menulis `1000000`. Uji `TestUraiDesimalWarisanTCORibuanTitik`. (2) Cabang 500 `jawabGalatTreatyContractOut` kini
+**mencatat sebab aslinya** di log backend (`log.Printf`) — sebelumnya galat tak terduga hilang di layar DAN di konsol,
+sehingga diagnosanya menuntut membaca DEV langsung. Pemakai tetap mendapat kalimat umum. Uji
+`TestGalat500TreatyContractOutMencatatSebabnya`.
