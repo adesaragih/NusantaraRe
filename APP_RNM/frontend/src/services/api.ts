@@ -2440,3 +2440,81 @@ export async function cariReinsurerMaster(teks: string): Promise<ReinsurerMaster
   })
   return j.daftar ?? []
 }
+
+// ---------------------------------------------------------------------------
+// Treaty Contract Out tiket 07 — business pada kombinasi kontrak.
+// ---------------------------------------------------------------------------
+
+/** Satu baris bisnis; `isActive` '1' aktif / '0' nonaktif, `aktif` turunan server. */
+export interface BusinessTreaty {
+  id: string
+  isActive: string
+  aktif: boolean
+  treatyYear: string
+  treatyYearId: string
+  treatyGroupId: string
+  treatyGroupName: string
+  reinsTypeId: string
+  reinsTypeName: string
+  bizCode: string
+  bizName: string
+  userId: string
+  tglUpdate: string
+}
+
+/** Grid bisnis satu kombinasi — aktif maupun nonaktif. */
+export interface DaftarBusiness {
+  daftar: BusinessTreaty[]
+  total: number
+  kombinasi: KombinasiTreaty
+}
+
+/** Badan simpan — `Business Name` (kode) dan `Active`. */
+export interface BusinessMasuk {
+  id: string
+  bizCode: string
+  isActive: string
+}
+
+/** Satu pilihan master bisnis. */
+export interface BusinessMaster {
+  id: string
+  note: string
+}
+
+function jalurBusiness(tahunID: string, kontrakID: string): string {
+  return `/api/treaty-contract-out/tahun/${encodeURIComponent(tahunID)}/kontrak/${encodeURIComponent(kontrakID)}/business`
+}
+
+/** `Business List` b10842. */
+export async function ambilBusinessKombinasi(tahunID: string, kontrakID: string): Promise<DaftarBusiness> {
+  const j = await minta<DaftarBusiness>(jalurBusiness(tahunID, kontrakID))
+  return { ...j, daftar: j.daftar ?? [] }
+}
+
+/** `Save` b6966 — POST bila baru, PUT /{id} bila ubah. */
+export async function simpanBusinessKombinasi(
+  tahunID: string,
+  kontrakID: string,
+  masuk: BusinessMasuk,
+): Promise<BusinessTreaty> {
+  const jalur = jalurBusiness(tahunID, kontrakID)
+  if (masuk.id === '') {
+    return minta(jalur, { metode: 'POST', badan: masuk })
+  }
+  return minta(`${jalur}/${encodeURIComponent(masuk.id)}`, { metode: 'PUT', badan: masuk })
+}
+
+/** `Delete` b4826 — pesan "Data Dengan ID … Berhasil di Hapus". */
+export async function hapusBusinessKombinasi(tahunID: string, kontrakID: string, id: string): Promise<string> {
+  const j = await minta<{ pesan: string }>(`${jalurBusiness(tahunID, kontrakID)}/${encodeURIComponent(id)}`, {
+    metode: 'DELETE',
+  })
+  return j.pesan
+}
+
+/** Pemilih `Business Name` b6241. */
+export async function ambilBusinessMaster(): Promise<BusinessMaster[]> {
+  const j = await minta<{ daftar: BusinessMaster[] | null }>('/api/treaty-contract-out/business-master')
+  return j.daftar ?? []
+}

@@ -29,6 +29,7 @@ import {
   type TahunTreaty,
 } from '../../services/api'
 import { Field, FieldTanggal, Gagal, Kosong, Memuat } from '../ui/dasar'
+import PanelBusinessKombinasi from './PanelBusinessKombinasi'
 import PanelReinsurerKombinasi from './PanelReinsurerKombinasi'
 import PilihJenisReasuransi from './PilihJenisReasuransi'
 
@@ -86,6 +87,8 @@ export default function PanelKontrakTahun({ tahun, onTutup }: { tahun: TahunTrea
   const [info, setInfo] = useState<string | null>(null)
   // Tiket 05: `Reinsurer List` b11308 membuka panel reinsurer kombinasi kontrak itu.
   const [kontrakReinsurer, setKontrakReinsurer] = useState<string | null>(null)
+  // Tiket 07: `Business List` b10842 membuka panel bisnis kombinasi kontrak itu.
+  const [kontrakBusiness, setKontrakBusiness] = useState<string | null>(null)
 
   const muat = useCallback(async () => {
     try {
@@ -227,7 +230,13 @@ export default function PanelKontrakTahun({ tahun, onTutup }: { tahun: TahunTrea
                   <button type="button" className="btn btn--ghost btn--sm" onClick={() => buka(formKontrakDari(k))}>
                     {KONTRAK_TCO.edit}
                   </button>{' '}
-                  <button type="button" className="btn btn--ghost btn--sm" disabled title={`${TAHUN_TCO.menungguTiket} 07`}>
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--sm"
+                    onClick={() => {
+                      setKontrakBusiness(k.id)
+                    }}
+                  >
                     {KONTRAK_TCO.businessList}
                   </button>{' '}
                   <button
@@ -249,6 +258,16 @@ export default function PanelKontrakTahun({ tahun, onTutup }: { tahun: TahunTrea
         </table>
       )}
 
+      {kontrakBusiness !== null && (
+        <PanelBusinessKombinasi
+          key={kontrakBusiness}
+          tahunID={tahun.id}
+          kontrakID={kontrakBusiness}
+          onTutup={() => {
+            setKontrakBusiness(null)
+          }}
+        />
+      )}
       {kontrakReinsurer !== null && (
         <PanelReinsurerKombinasi
           key={kontrakReinsurer}

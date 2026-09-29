@@ -435,3 +435,56 @@ master, sehingga pembaca hilir mendapat nama perusahaan yang sama dengan master.
 | Berkas ditulis / disunting | 11 baru (+±1.700 baris), 11 disunting (+±250) |
 | Putaran instrumen gagal lalu diulang | 2: harapan total `100` di uji `db` salah (Oracle memberi skala 8 → `100.00000000`, diperbaiki sebelum dijalankan); dua metode bawaan tak terpakai dibuang |
 | Token / biaya | tidak terlihat dari dalam sesi, jadi tidak dikarang |
+
+## Tiket 07 — business + nonaktif
+
+### Yang dibangun
+
+| Lapisan | Berkas | Isi |
+| --- | --- | --- |
+| models | `tco_business.go` (+uji) | gerbang simpan; status aktif sebagaimana hilir membacanya |
+| repository | `tco_business.go` (+uji) | `MasterBusinessKombinasiTCO`, master `BUSINESS` |
+| services | `tco_business.go` (+uji) | `BusinessTCO` |
+| handlers | `tco_business.go` (+uji, +uji `db`) | 5 rute |
+| frontend | `PanelBusinessKombinasi.tsx` (+uji), `BUSINESS_TCO`, `api.ts` (+4) | panel dari tombol `Business List` |
+
+### Kode bersama yang disentuh (aditif, dilaporkan)
+
+| Berkas | Perubahan |
+| --- | --- |
+| `handlers/penyuntikan_test.go` | +1 entri `tco_business.go` (empat penyuntikan wajib) |
+| `repository/tco_jenisreasuransi.go`, `skemauji/tco_tiruan.go` (milik modul) | `masterDibacaSajaTCO` +`BUSINESS`; tiruan `BUSINESS` + `IsiBusinessTCO` |
+
+### Ralat / OQ
+
+Enam ralat bertanggal di tiket 07 (grid Pega menyembunyikan baris nonaktif; nilai `IsActive`; pemilih tidak tersaring
+grup; anti-dobel kode; hapus Pega berkelas `_LIFE`; `BIZNAME` dari master). **OQ-TCO-13 (baru):** nilai nonaktif `0` dan
+tabel `BUSINESSGROUP`.
+
+### Kontrak hilir
+
+`KolomBusinessHilir` (ID, TREATYYEAR, TREATYGROUPID, REINSTYPEID) dan `ISACTIVE` yang disaring hilir (`isactive='1'`)
+ditulis VERBATIM. Baris nonaktif berisi `0`, sehingga hilir tetap tidak membacanya.
+
+### Angka uji
+
+| Perintah | Hasil |
+| --- | --- |
+| `go vet ./...` · `go vet -tags=db ./...` · `gofmt -l .` | bersih |
+| `go test ./...` | 854 lulus, 0 gagal (+14) |
+| `go test -tags=db ./...` | 854 lulus, 50 dilewati (+1: `TestBusinessKombinasiLingkaranPenuh`, tanpa skema uji), 0 gagal |
+| `npx tsc --noEmit` · `npx vite build` | bersih |
+| `npx vitest run` | 536 lulus di 43 berkas (+22) |
+
+⚠️ SQL tiket 07 belum pernah dijalankan terhadap Oracle: uji `db` dilewati karena skema uji tidak dikonfigurasi di sesi ini.
+
+### TELEMETRI EKSEKUSI — tiket 07
+
+| Ukuran | Nilai |
+| --- | --- |
+| Berkas dibaca | ±14 (9 korpus: 6 aktivitas, section 12.263 baris, 2 RD, 2 RDBList; SQL `BUSINESS` modul lain; ±5 pola kode) |
+| Berkas XML korpus disensus | `SaveTreatyBusinessDetail_Act`, `NewTreatyBusinessDetail_Act`, `SetUbahTreatyBusinessList_Act`, `DeleteRowBusiness`, `BrowseTreatyBusinessList_Act`, `SetTreatyBusinessList_Act`, `ViewDetailTreatyBusinessGrid`, `BrowseTreatyBusiness_RD`, `BrowseFilterBusiness_RD`, `GetMasterBusinessList`, `DeleteRowBusinessList`; 24 baris label/aksi diverifikasi |
+| Perintah dijalankan | ±22 |
+| Berkas ditulis / disunting | 11 baru (+±1.300 baris), 10 disunting (+±200) |
+| Putaran instrumen gagal lalu diulang | 1: salinan cadangan mutasi sempat ditaruh di `/tmp` alih-alih scratchpad — dipulihkan dan dibuang |
+| Token / biaya | tidak terlihat dari dalam sesi, jadi tidak dikarang |

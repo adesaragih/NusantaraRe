@@ -36,6 +36,8 @@ var namaTabelTiruanTCO = []string{
 	repository.MasterKategoriLampiranTCO,
 	// Tiket 05: master reinsurer.
 	repository.MasterReinsurerAgentTCO,
+	// Tiket 07: master bisnis.
+	repository.MasterBusinessTCO,
 }
 
 // namaTabelWarisanTCO adalah enam tabel warisan yang dipindahkan migrasi data.
@@ -91,6 +93,10 @@ func ddlTiruanTCO(skema string) []string {
 	out = append(out, fmt.Sprintf(
 		"CREATE TABLE %s.%s (ID VARCHAR2(1000), CLIENTNAME VARCHAR2(1000), CLIENTID VARCHAR2(1000), STATUSACTIVE VARCHAR2(10))",
 		skema, repository.MasterReinsurerAgentTCO))
+	// Tiket 07: master bisnis - kolom yang SQL korpus sebut.
+	out = append(out, fmt.Sprintf(
+		"CREATE TABLE %s.%s (ID VARCHAR2(1000), OLDID VARCHAR2(1000), NOTE VARCHAR2(1000), BUSINESSGROUPID VARCHAR2(1000))",
+		skema, repository.MasterBusinessTCO))
 	return out
 }
 
@@ -216,4 +222,26 @@ func IsiAgentTCO(ctx context.Context, db *sql.DB, skema string, baris []AgentUji
 		}
 	}
 	return nil
+}
+
+// BusinessUji adalah satu baris fixture master bisnis.
+type BusinessUji struct{ ID, Note, BusinessGroupID string }
+
+// IsiBusinessTCO mengisi tiruan BUSINESS (tiket 07).
+func IsiBusinessTCO(ctx context.Context, db *sql.DB, skema string, baris []BusinessUji) error {
+	q := fmt.Sprintf("INSERT INTO %s.%s (ID, NOTE, BUSINESSGROUPID) VALUES (:1, :2, :3)",
+		skema, repository.MasterBusinessTCO)
+	for _, b := range baris {
+		if _, err := db.ExecContext(ctx, q, b.ID, b.Note, kosongJadiNilUji(b.BusinessGroupID)); err != nil {
+			return fmt.Errorf("skemauji: mengisi tiruan master bisnis: %w", err)
+		}
+	}
+	return nil
+}
+
+func kosongJadiNilUji(s string) any {
+	if s == "" {
+		return nil
+	}
+	return s
 }

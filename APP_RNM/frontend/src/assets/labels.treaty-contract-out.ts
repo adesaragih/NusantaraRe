@@ -296,3 +296,47 @@ export const REINSURER_TCO = {
   /** `[tidak ada di korpus]` — kepala kombinasi (`OutputData.HASIL1/3/2` b2284–b2296). */
   kombinasi: 'Kombinasi',
 } as const
+
+/**
+ * Tiket 07 — panel business pada kombinasi (tahun, grup, jenis).
+ *
+ * Nomor baris = `Section/ViewDetailTreatyBusinessGrid.xml` (disertakan
+ * `InputTreatyContractReinsType.xml` b14064, dibuka tombol baris kontrak
+ * `Business List` b10842 → `BrowseTreatyBusinessList_Act` b10859).
+ */
+export const BUSINESS_TCO = {
+  /** b1988 — kepala panel; nilai `InputTreatyBusiness.ReinsTypeName` b2019. */
+  judul: 'Business List',
+  /** b2785 `<pyLabel>` → `NewTreatyBusinessDetail_Act` b2809. */
+  add: 'Add',
+  /** b3422 `<pyValue>` — sel `.TreatyGroupName` b4070. */
+  kolomTreatyGroup: 'Treaty Group',
+  /** b3566 `<pyValue>` — sel `.ID` b4228 (ID BARIS, bukan kode bisnis). */
+  kolomBusinessId: 'Business ID',
+  /** b3710 `<pyValue>` — sel `.BIZNAME` b4380. */
+  kolomBusinessName: 'Business Name',
+  /** b4547 `<pyLabel>` → `SetUbahTreatyBusinessList_Act` b4571. */
+  edit: 'Edit',
+  /** b4826 `<pyLabel>` → `DeleteRowBusiness` b4850. */
+  delete: 'Delete',
+  /** b6241 — pemilih `BrowseFilterBusiness_RD`, tampil `.Note`. */
+  formBusinessName: 'Business Name',
+  /** b6499 — radio `InputTreatyBusiness.IsActive`, wajib. Juga kolom status grid (AC 22). */
+  formActive: 'Active',
+  /** b6680 — `InputTreatyBusiness.BizCode` (tersembunyi di Pega; tampil baca-saja di sini). */
+  formBusinessCode: 'Business Code',
+  /** b6966 `<pyLabel>` → `SaveTreatyBusinessDetail_Act` b6993. */
+  save: 'Save',
+  /** b9319 / b10064 — `OutputData.HASIL5` / `OutputParam.ERRMSG4` b10095. */
+  information: 'Information',
+  /** b10889 `<pyLabel>` → `CancelActivity` b10914. */
+  closeList: 'Close List',
+
+  /** `[tidak ada di korpus]` — nilai radio Active (OQ-TCO-13). */
+  aktif: 'Aktif',
+  nonaktif: 'Nonaktif',
+  /** `[tidak ada di korpus]` */
+  kosong: 'Belum ada bisnis pada kombinasi ini.',
+  /** `[tidak ada di korpus]` */
+  tersimpan: 'Bisnis tersimpan.',
+} as const

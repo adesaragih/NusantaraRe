@@ -17,6 +17,7 @@ import {
   LAMPIRAN_TCO,
   MENU_TCO,
   REINSURER_TCO,
+  BUSINESS_TCO,
   TAHUN_TCO,
 } from './labels.treaty-contract-out'
 
@@ -34,6 +35,7 @@ const FORM = 'Section\\InputDtlTreatyContact.xml'
 const LAMPIRAN = 'Section\\GridTreatyArrangementAttachment.xml'
 const KONTRAK = 'Section\\InputTreatyContractReinsType.xml'
 const REAS = 'Section\\ViewDetailTreatyReinsurerGrid1.xml'
+const BIZ = 'Section\\ViewDetailTreatyBusinessGrid.xml'
 
 describe.skipIf(!adaKorpus)('label Treaty Contract Out berbukti barisnya', () => {
   const kasus: Array<[string, string, number, string]> = [
@@ -117,6 +119,20 @@ describe.skipIf(!adaKorpus)('label Treaty Contract Out berbukti barisnya', () =>
     [REAS, 'pyLabel', 11405, REINSURER_TCO.save],
     [REAS, 'pyLabelFieldValue', 12131, REINSURER_TCO.error],
     [REAS, 'pyLabelFieldValue', 12868, REINSURER_TCO.informasi],
+    // tiket 07 - panel business
+    [BIZ, 'pyLabelFieldValue', 1988, BUSINESS_TCO.judul],
+    [BIZ, 'pyLabel', 2785, BUSINESS_TCO.add],
+    [BIZ, 'pyValue', 3422, BUSINESS_TCO.kolomTreatyGroup],
+    [BIZ, 'pyValue', 3566, BUSINESS_TCO.kolomBusinessId],
+    [BIZ, 'pyValue', 3710, BUSINESS_TCO.kolomBusinessName],
+    [BIZ, 'pyLabel', 4547, BUSINESS_TCO.edit],
+    [BIZ, 'pyLabel', 4826, BUSINESS_TCO.delete],
+    [BIZ, 'pyLabelFieldValue', 6241, BUSINESS_TCO.formBusinessName],
+    [BIZ, 'pyLabelFieldValue', 6499, BUSINESS_TCO.formActive],
+    [BIZ, 'pyLabelFieldValue', 6680, BUSINESS_TCO.formBusinessCode],
+    [BIZ, 'pyLabel', 6966, BUSINESS_TCO.save],
+    [BIZ, 'pyLabelFieldValue', 9319, BUSINESS_TCO.information],
+    [BIZ, 'pyLabel', 10889, BUSINESS_TCO.closeList],
   ]
 
   it.each(kasus)('%s baris %i memuat <%s>', (jalur, tag, nomor, teks) => {
@@ -172,6 +188,16 @@ describe.skipIf(!adaKorpus)('label Treaty Contract Out berbukti barisnya', () =>
     expect(baris(KONTRAK, 11325).trim()).toBe('<pyActivity>BrowseTreatyReinsurerList_Act</pyActivity>')
     expect(baris(REAS, 1996).trim()).toBe('<pyLabel>Tambah</pyLabel>')
     expect(Object.values(REINSURER_TCO)).not.toContain('Tambah')
+  })
+
+  it('tiket 07: aksi tombol business terbukti; kolom Business ID = ID baris', () => {
+    expect(baris(BIZ, 2809).trim()).toBe('<pyActivity>NewTreatyBusinessDetail_Act</pyActivity>')
+    expect(baris(BIZ, 4571).trim()).toBe('<pyActivity>SetUbahTreatyBusinessList_Act</pyActivity>')
+    expect(baris(BIZ, 4850).trim()).toBe('<pyActivity>DeleteRowBusiness</pyActivity>')
+    expect(baris(BIZ, 6993).trim()).toBe('<pyActivity>SaveTreatyBusinessDetail_Act</pyActivity>')
+    expect(baris(BIZ, 10914).trim()).toBe('<pyActivity>CancelActivity</pyActivity>')
+    expect(baris(BIZ, 4228).trim()).toBe('<pyValue>.ID</pyValue>')
+    expect(baris(KONTRAK, 10859).trim()).toBe('<pyActivity>BrowseTreatyBusinessList_Act</pyActivity>')
   })
 
   it('nama kelompok adalah nama folder korpus', () => {

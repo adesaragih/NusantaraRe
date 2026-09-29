@@ -56,11 +56,13 @@ describe('paritas layar kontrak', () => {
   it('Undo mengembalikan isian terakhir yang dimuat', () => {
     expect(KODE).toMatch(/setForm\(asal\)/)
   })
-  it('Reinsurer List membuka panel reinsurer (tiket 05); Business List dan Delete menunggu 07/10', () => {
+  it('Reinsurer List (05) dan Business List (07) membuka panelnya; Delete menunggu 10', () => {
     expect(KODE).toContain('setKontrakReinsurer(k.id)')
     expect(KODE).toContain('<PanelReinsurerKombinasi')
+    expect(KODE).toContain('setKontrakBusiness(k.id)')
+    expect(KODE).toContain('<PanelBusinessKombinasi')
     expect(KODE).not.toContain('`${TAHUN_TCO.menungguTiket} 05`')
-    expect(KODE).toContain('`${TAHUN_TCO.menungguTiket} 07`')
+    expect(KODE).not.toContain('`${TAHUN_TCO.menungguTiket} 07`')
     expect(KODE).toContain('`${TAHUN_TCO.menungguTiket} 10`')
   })
   it('ID, Modified Date, Username hanya dibaca', () => {

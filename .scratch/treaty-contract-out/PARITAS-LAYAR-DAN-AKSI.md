@@ -102,11 +102,12 @@ Nomor baris = `Section/InputTreatyContractReinsType.xml` kecuali disebut lain.
 | `Add` b8528 → `NewInputTreatyContract_Act` | form kosong | ✅ |
 | grid `BrowseTreatyContract_RD` (tidak diekspor): `Reins Type` b9164 · `Treaty Start` b9304 · `Treaty End` b9444 | `GET /tahun/{id}/kontrak`, `ID DESC` | ✅ |
 | `Edit` b10519 → `SetUbahTreatyContract` | form dari baris | ✅ |
-| `Business List` b10842 | tombol berdiri `disabled` | 🔜 tiket 07 |
+| `Business List` b10842 | membuka `PanelBusinessKombinasi` | ✅ tiket 07 |
 | `Reinsurer List` b11308 | membuka `PanelReinsurerKombinasi` | ✅ tiket 05 |
 | `Delete` b11809 → `BrowseDeleteRowTreatyInContract` | tombol berdiri `disabled` | 🔜 tiket 10 |
 | `ViewDetailTreatyReinsurerGrid1` b13311 | `PanelReinsurerKombinasi` | ✅ tiket 05 |
-| `ViewDetailTreatyBusinessGrid` b14064, grid security `SelectSecurityReinsurer` b16069 | — | 🔜 tiket 07, 06 |
+| `ViewDetailTreatyBusinessGrid` b14064 | `PanelBusinessKombinasi` | ✅ tiket 07 |
+| grid security `SelectSecurityReinsurer` b16069 | — | 🔜 tiket 06 |
 | gerbang `SaveTreatyContract_Act` langkah 2–6, 12 (DIKOMENTARI) | jenis wajib dari daftar, tanggal wajib, periode (AC 9), dobel 409 `Data sudah pernah di Input` | ✅ ralat 1–2, OQ-TCO-11 |
 | gerbang `SetTanggalTreatyContract` langkah 4 (HIDUP) | tahun mulai = tahun treaty → 422 | ✅ |
 
@@ -128,3 +129,21 @@ Nomor baris = `Section/ViewDetailTreatyReinsurerGrid1.xml`.
 | `%Share`/`%Comm` → `SetErrorMessageReinsurer` (koma → titik, 0..100) | `models.UraiPersenMasukTCO` di batas masukan | ✅ |
 | `Save` b11405 → `SaveTreatyReinsurerDetail1_Act` → `SaveMasterTreatyReinsurer_SQL` → `PEGA_TREATYREINSURER` | `POST`/`PUT .../reinsurer` → `T_TREATYREINSURER` + jejak; total > 100 → 422 VERBATIM | ✅ prosedur tidak dipanggil |
 | `Error` b12131 · `Informasi` b12868 | pita galat + baris status | ✅ |
+
+## Tiket 07 — business pada kombinasi (`ViewDetailTreatyBusinessGrid`)
+
+Nomor baris = `Section/ViewDetailTreatyBusinessGrid.xml`.
+
+| Unsur korpus | Sistem baru | Keadaan |
+| --- | --- | --- |
+| kepala `Business List` b1988 (`.ReinsTypeName` b2019) | judul panel | ✅ |
+| `Add` b2785 → `NewTreatyBusinessDetail_Act` | form kosong | ✅ |
+| grid `BrowseTreatyBusiness_RD` (saringan `.IsActive = 1`): `Treaty Group` b3422 · `Business ID` b3566 (ID baris) · `Business Name` b3710 | `GET .../business` — SELURUH baris + kolom `Active` | ✅ ralat 1 (AC 22) |
+| `Edit` b4547 → `SetUbahTreatyBusinessList_Act` | form dari baris | ✅ |
+| `Delete` b4826 → `DeleteRowBusiness` → `DeleteRowBusinessList` (dua SQL) | `DELETE .../business/{bid}` satu tabel; pesan `Data Dengan ID … Berhasil di Hapus` | ✅ AC 63/64 |
+| `Business Name` b6241 (pemilih `BrowseFilterBusiness_RD`) | `Pilih` dari `GET /business-master` | ✅ OQ-TCO-13 |
+| `Active` b6499 (radio wajib) | `Pilih` Aktif/Nonaktif (`1`/`0`) | ✅ OQ-TCO-13 |
+| `Business Code` b6680 (tersembunyi) | baca-saja | ✅ |
+| `Save` b6966 → `SaveTreatyBusinessDetail_Act` → `SaveMasterTreatyBusiness_SQL` → `PEGA_TREATYBUSINESS` | `POST`/`PUT .../business` → `T_TREATYBUSINESS` SELURUH medan + jejak | ✅ AC 23, prosedur tidak dipanggil |
+| `Information` b9319/b10064 (`ERRMSG4` "Data sudah pernah di Input") | baris status; 409 dobel | ✅ ralat 4 |
+| `Close List` b10889 → `CancelActivity` | tombol tutup panel | ✅ |

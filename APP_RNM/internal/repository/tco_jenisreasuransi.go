@@ -51,6 +51,8 @@ var masterDibacaSajaTCO = []string{
 	"CATEGORY_ATTACH_REAS",
 	// Tiket 05: master reinsurer (pemilih `BrowseAgentReinsSOA_RD`).
 	"AGENT",
+	// Tiket 07: master bisnis (pemilih `BrowseFilterBusiness_RD`).
+	"BUSINESS",
 }
 
 // BlacklistJenisReasuransiNonLife adalah dua belas awalan ID yang disingkirkan
