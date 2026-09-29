@@ -1,6 +1,6 @@
 # 02: Register klaim Life + penomoran
 
-**Status:** sebagian — INSERT datar `OS_AKSEPTASI_KLAIM_LIFE` tidak terjadi saat daftar, penomoran serentak belum teruji, AC procedure menunggu teks baru work owner
+**Status:** sebagian — baris adjustment pertama dan INSERT datar `OS_AKSEPTASI_KLAIM_LIFE` kini terjadi saat daftar (GILIRAN-14 butir bp; bukti Oracle menunggu uji `db`), penomoran serentak belum teruji, AC procedure menunggu teks baru work owner, pembulatan nilai peserta 7.7 belum ditiru (OQ-N10)
 
 **Blocked by:** 01 (kerangka aplikasi + seam API), **14 (skema relasional klaim — PREFACTOR)**
 

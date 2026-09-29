@@ -295,10 +295,14 @@ func TestDataUjiBerpagarSepertiMigrateDown(t *testing.T) {
 func TestDataUjiMenutupSetiapTahap(t *testing.T) {
 	sisip := sisipanDataUji(t, bacaDataUji(t))
 	polis, klaim := map[string]string{}, map[string]string{}
+	benderaPenawaran := map[string]bool{}
 	for _, s := range sisip {
 		switch s.tabel {
 		case "T_WORK_POLIS":
 			polis[s.teks("STATUS")] = s.teks("ID")
+			if s.teks("STATUS") == models.TahapPolisPenawaran {
+				benderaPenawaran[s.teks("FLAG_ONGOING_POLICY")] = true
+			}
 		case "T_WORK_CLAIM":
 			klaim[s.teks("TAHAP")] = s.teks("ID")
 		}
@@ -307,6 +311,13 @@ func TestDataUjiMenutupSetiapTahap(t *testing.T) {
 		models.TahapPolisSummary, models.StatusPolisSelesai} {
 		if polis[tahap] == "" {
 			t.Errorf("tidak ada polis di tahap %q", tahap)
+		}
+	}
+	// Butir bq: `Confirm` di tahap penawaran dirutekan dari bendera - kedua
+	// jalurnya, dan bendera kosong (409), harus dapat diuji.
+	for _, flag := range []string{models.FlagPolisPenawaran, models.FlagPolisPremium, ""} {
+		if !benderaPenawaran[flag] {
+			t.Errorf("tidak ada polis Input Offer Life berbendera %q (butir bq)", flag)
 		}
 	}
 	for _, tahap := range []models.Tahap{models.TahapInputRegister, models.TahapOutstanding,
