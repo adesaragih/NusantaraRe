@@ -825,3 +825,16 @@ menulisnya, atau medan itu memang diisi pengguna di versi yang berjalan? *Sement
 catatan 7 tiket 03 (`CLAIM_GROSS` = `CLAIM_AMOUNT`, tiket 14) tetap berlaku sampai dijawab (OQ-N12 (a)).
 **Permintaan (GILIRAN-16):** mohon ekspor Declare Expression atau rule lain yang mengisi `CLAIM_GROSS` pada kelas
 `Int-LIFE_PREMIUM_DETAIL`/`AdjustmentList`.
+
+## 29 September 2026 — GILIRAN-17: lembar keputusan diterapkan
+
+Keputusan work owner ("rekomendasi"). Ringkasan status; rinciannya di blok ✅ tiap OQ di atas dan di tiket.
+
+| Modul | Ditutup (kode) | Ditutup (dokumen) | Ke daftar serah terima |
+| --- | --- | --- | --- |
+| Claim Life | M1, M5 (021), M6 (022), N2, N5, M7 | M4, N1, N3 | M2, M3 (sesudah N11), M7 `OUTWARDRATEID`, N4, N11 |
+| PremiumList Life | PL-10, PL-12, PL-13 (konstanta), PL-14 | — | PL-09 (DBA — terhalang), PL-11, PL-17 |
+| Komite Claim Life | K-05 | K-05b, K-06 | K-04a |
+
+**Baru:** OQ-N13 (status cermin saat Save to RNM), untuk work owner. **Daftar serah terima:**
+`DAFTAR-SERAH-TERIMA-TIGA-MODUL.md` di akar `OUTPUT_HASIL_RNM`.

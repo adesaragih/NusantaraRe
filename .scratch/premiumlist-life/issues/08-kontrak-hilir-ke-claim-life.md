@@ -1,6 +1,6 @@
 # 08: Kontrak hilir — rekam premium yang dikonsumsi Claim Life
 
-**Status:** sebagian — uji kontrak HTTP terhadap Oracle, `M_LIFE_PREMIUM_SUMMARY` (OQ-PL-09), dan index `PL_NUMBER` di `T_PREMIUM_LIST_DETAIL` belum ada
+**Status:** sebagian — uji kontrak HTTP terhadap Oracle, `M_LIFE_PREMIUM_SUMMARY` (OQ-PL-09 — terhalang DBA), dan index `PL_NUMBER` di `T_PREMIUM_LIST_DETAIL` belum ada
 
 **Blocked by:** **00 (skema tujuh tabel — PREFACTOR)**, 05a (rekam summary), 05b (alur simpan polis — penulisan detail NB menumpang di sana)
 

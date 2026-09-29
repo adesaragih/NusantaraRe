@@ -453,15 +453,15 @@ kotak berisi spasi saja tidak dikirim.
 | `Delete` baris adjustment | **Tidak berlaku, tidak dirender** — keputusan work owner 29-09-2026 (OQ-N7 ditutup): ADR-U-0031, tabel tanpa kolom penanda |
 | Jalan maju dari `Input Register` | Tidak ada tombol di tahap itu (Pega: `Submit` pendaftaran); layar Outstanding kini menyatakan tahapnya dan tidak menawarkan tombol |
 | Claim Paid / `Percent Claim (%)` | Kolom `PCT_CLAIM`/`CLAIM_PAID` dan rute sunting adjustment belum ada — OQ-M3 |
-| Spreading / panel `RetroDetailClaimLife` | `HitungSpreading` nol pemanggil; sumber rate belum diputuskan — OQ-M7 |
-| `Claim Life - Upload CSV` di Register | Belum dibangun; menunggu keputusan desain XOL — OQ-M4 |
-| Dialog Reject (Date, PIC, Remarks, Submit) | Sengaja belum dibangun; tempat menyimpan alasan belum diputuskan — OQ-M5 |
-| Cabut peserta (`DELETE` di layar OS) | Penanda atau lepas baris belum diputuskan — OQ-M6 |
-| Kunci tanggal sesudah Save Outstanding | Separuh gerbang `CLAIM_NO!=''` tidak ditiru; tanggal tetap dapat diubah selama Outstanding — OQ-M1 |
+| Spreading / panel `RetroDetailClaimLife` | `HitungSpreading` nol pemanggil; `RATE_LIFE` kini terbaca sempit (OQ-M7 ditutup GILIRAN-17), tetapi `OUTWARDRATEID` menunggu DBA — daftar serah terima |
+| `Claim Life - Upload CSV` di Register | **Tidak dibangun — keputusan work owner** (OQ-M4 ditutup GILIRAN-17): klaim XOL tidak membawa peserta dari berkas |
+| Dialog Reject (Date, PIC, Remarks, Submit) | ✅ Dibangun GILIRAN-17 (OQ-M5): Remarks wajib, tersimpan di `T_CLAIMLF_JEJAK.KOMENTAR` — **butuh migrasi 021** (work owner); Date tampil baca-saja |
+| Cabut peserta (`DELETE` di layar OS) | ✅ Dibangun GILIRAN-17 (OQ-M6): penanda `STS_HAPUS` — **butuh migrasi 022**; tampil hanya di Outstanding sebelum Save to RNM, tanpa konfirmasi (b18021) |
+| Kunci tanggal sesudah Save Outstanding | ✅ GILIRAN-17 (OQ-M1): tanggal terkunci (409) sesudah Save to RNM pertama — ada baris berstatus; klaim tanpa baris adjustment tidak pernah terkunci |
 | Cermin tanggal ke tabel warisan | `UpdateDateClaimLife_SQL` tidak ditiru; kunci nama tertanggung tidak ada — OQ-M2 |
-| `Save to RNM` terkunci sesudah simpan | Bendera `pyWorkPage.Save` tanpa kolom; tombol tetap hidup (tulisan idempoten) — OQ-N1 |
-| Klaim ganda antarklaim baru | Cermin warisan tidak mengisi nama/DOB/CEDINGCO; hanya baris era Pega yang tertangkap — OQ-N2 |
-| Lewati Arasapas untuk tiga kode retro | Mengikuti XML; berlaku-tidaknya OQ-064 belum diputuskan — OQ-N3. Kodenya dibaca SESUDAH penukaran `InsertJsonClaimLife_Act` langkah 2; bila hasilnya bergantung pada `ProdDateTime` (tanpa sumber), Arasapas **ditahan** — OQ-N5 |
+| `Save to RNM` terkunci sesudah simpan | Bendera = keadaan turunan, tanpa kolom (OQ-N1 ditutup GILIRAN-17); tombol tetap hidup, tulisan idempoten |
+| Klaim ganda antarklaim baru | Cermin kini mengisi nama/DOB/CEDINGCO di dalam SQL (OQ-N2 ditutup GILIRAN-17); tertangkap **sesudah** klaim lawannya diputus Komite — klaim yang menunggu Komite: OQ-N13 (work owner) |
+| Lewati Arasapas untuk tiga kode retro | Gerbang dipertahankan (OQ-N3 ditutup GILIRAN-17); kodenya dibaca SESUDAH tukar dua syarat (OQ-N5 ditutup) — jawaban `ditahan` tidak ada lagi |
 | Dokumen lengkap per kategori | Tidak ditegakkan, dan bukan cacat: langkah 12 ter-remark di XML; OQ-N6 ditutup (butir bl, GILIRAN-12) — bila bisnis menghendakinya, ia keputusan baru |
 | Residu `Save to RNM` | Pesan `.Protect` tak pernah muncul; `ADJUSTMENT_DATE`/`PrintFaceClaim` tanpa kolom; `IsAccept` diganti `IS_CHECK` — OQ-N4 |
 | Pilihan `GROUP DIAGNOSE` | Daftar pilihannya tidak ada di ekspor; sel menampilkan `GROUP DIAGNOSE tidak dapat dimuat saat ini.` — OQ-L |
@@ -1184,7 +1184,7 @@ format `YYYY-MM-DD HH:MM:SS` (`services/komite_inbox.go:91-96`).
 | Efek keluar di non-produksi **dilewati** / pengirim stub; tidak ada penjadwal pekerja outbox di `cmd/api` | Email, Arasapas, Kasir, Google Storage tidak pernah terkirim; outbox Komite tetap "tertunda"; laporan "perlu intervensi" hanya terlihat kosong; tautan berkas Claim Life tetap `URL menunggu penyambungan penyimpanan` | ketiganya |
 | ~~Tidak ada pembuat baris adjustment pertama~~ — baris pertama lahir saat `Submit` Register sejak GILIRAN-14 (butir bp) | Tombol baris Claim Life dapat diuji pada klaim yang baru didaftarkan | Claim Life |
 | ~~Tidak ada pembuat kasus PremiumList~~ — ada sejak GILIRAN-13; tahap `Input Premium Summary` tetap nol konektor masuk | `Summary Premium Life` hanya lewat data sintetis `UJI-PL-C` | PremiumList |
-| Keputusan work owner terbuka | OQ-M1…M7, OQ-N1…N5 (Claim Life; N6 ditutup bl, N9 ditutup bp, **N7/N8/N10 ditutup GILIRAN-15**, **N11 untuk pemilik ekspor**, **N12 ditutup (a) GILIRAN-16**); OQ-PL-09/10/11 dan **17** (PL-16 ditutup bq, **PL-15 ditutup 058**); OQ-K-04a/05/05b — rinciannya di tabel "Belum dapat diuji" tiap bab dan di tiket | ketiganya |
+| Keputusan work owner terbuka | Sesudah GILIRAN-17 (lembar keputusan 29-09-2026) hanya **OQ-N13** (status cermin saat Save to RNM). Yang lain ditutup atau diserahkan ke penerimanya — `DAFTAR-SERAH-TERIMA-TIGA-MODUL.md` (DBA: M2, M7 `OUTWARDRATEID`, K-04a, PL-09, PL-17, OQ-001/002/013/018/047, G1; pemilik ekspor: N4, N11; Arasapas: PL-11; Product+UW/Finance: OQ-032/037/060; menunggu: M3). **Migrasi 021/022 dijalankan work owner** sebelum dialog Reject dan cabut peserta dapat diuji | ketiganya |
 | Identitas stub, bukan IAM | Uji peran = ganti `VITE_STUB_PERAN`; tidak ada layar masuk | ketiganya |
 | `App.tsx` (suntingan work owner yang belum di-commit, tidak disentuh) | Layar Detail Claim Life tidak menerima pengenal klaim (ketik manual); tiap baris Inbox membuka layar Outstanding | Claim Life |
 

@@ -1,6 +1,6 @@
 # 03: Baris `AdjustmentList` + Save ke Outstanding
 
-**Status:** sebagian — Save to RNM ADA sejak GILIRAN-11 paket 1 (`services/simpanrnm.go`); spreading tanpa pemanggil produksi; bendera `Save` tanpa kolom (OQ-N1); baris pertama **lahir saat Submit Register** sejak GILIRAN-14 (butir bp; `Add` = putaran saja — bo diralat); `Delete` **tidak berlaku, tidak dirender** (OQ-N7 ditutup 29-09-2026); sunting sel: **tidak ada — ikut XML** (butir br dan OQ-N8 ditutup work owner 29-09-2026); `CLAIM_GROSS` = `CLAIM_AMOUNT` **sementara** (OQ-N12 (a) ditutup 29-09-2026) sampai pemilik ekspor menjawab (OQ-N11)
+**Status:** sebagian — Save to RNM ADA sejak GILIRAN-11 paket 1 (`services/simpanrnm.go`); spreading tanpa pemanggil produksi; bendera `Save` = keadaan turunan, tanpa kolom (**OQ-N1 ditutup** GILIRAN-17); cermin mengisi nama/DOB/CEDINGCO (**OQ-N2 ditutup**, sisa OQ-N13); tukar retro dua syarat (**OQ-N5 ditutup**); cabut peserta = penanda (**OQ-M6 ditutup**, migrasi 022); baris pertama **lahir saat Submit Register** sejak GILIRAN-14 (butir bp; `Add` = putaran saja — bo diralat); `Delete` **tidak berlaku, tidak dirender** (OQ-N7 ditutup 29-09-2026); sunting sel: **tidak ada — ikut XML** (butir br dan OQ-N8 ditutup work owner 29-09-2026); `CLAIM_GROSS` = `CLAIM_AMOUNT` **sementara** (OQ-N12 (a) ditutup 29-09-2026) sampai pemilik ekspor menjawab (OQ-N11)
 
 **Blocked by:** 02 (register klaim + penomoran), **14 (skema relasional klaim — PREFACTOR)**
 

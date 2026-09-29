@@ -1,6 +1,6 @@
 # 04: Unggah CSV premium list detail — staging, validasi, tinjau, simpan
 
-**Status:** sebagian — pemeriksaan keberadaan medan header langkah 3–8 belum ada (verifikasi "master agen" dibantah XML, sensus 28-09-2026); kolom uang kosong → 0 menunggu OQ-PL-12; tabel staging sengaja ditiadakan (ralat 28-09)
+**Status:** sebagian — pemeriksaan keberadaan medan header langkah 3–8 belum ada (verifikasi "master agen" dibantah XML, sensus 28-09-2026); kolom uang kosong → 0 seperti langkah 2 (**OQ-PL-12 ditutup** GILIRAN-17); tabel staging sengaja ditiadakan (ralat 28-09)
 
 **Blocked by:** **00 (skema tujuh tabel — PREFACTOR)**, 03 (premium list detail — unggahan mengisi struktur yang dibentuk di sana)
 

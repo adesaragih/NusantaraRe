@@ -1,6 +1,6 @@
 # 07: Worker pengirim — retry + anti-dobel Email & Kasir
 
-**Status:** sebagian — tidak ada penjadwal pekerja di `cmd/`; pengirim nyata Email/Arasapas/Kasir belum disetujui, jadi tak satu efek pun pernah terkirim (REST Kasir ter-remark di korpus — menyambungkannya perilaku baru, OQ-K-06)
+**Status:** sebagian — tidak ada penjadwal pekerja di `cmd/`; pengirim nyata Email/Arasapas/Kasir belum disetujui, jadi tak satu efek pun pernah terkirim (REST Kasir ter-remark di korpus — Kasir tetap stub, sambungan nyata = fitur baru, **OQ-K-06 ditutup** GILIRAN-17)
 
 **Blocked by:** 06 (transactional outbox)
 

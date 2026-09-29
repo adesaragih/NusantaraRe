@@ -1,6 +1,6 @@
 # 05: Jalur balik — tulis `STS_REJECT` ke dua tingkat baris
 
-**Status:** sebagian — syarat "dipilih"/"belum bernomor" tidak diperiksa saat keputusan; OQ-K-05 dan OQ-K-05b terbuka
+**Status:** sebagian — syarat "dipilih"/"belum bernomor" tidak diperiksa saat keputusan; langkah 5.1 ditiru (**OQ-K-05 ditutup** GILIRAN-17); tolak tengah ikut XML (**OQ-K-05b ditutup**)
 
 **Blocked by:** 04b (rekam akseptasi — satu jalur simpan)
 

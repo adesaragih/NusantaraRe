@@ -1,6 +1,6 @@
 # 06: Efek keluar — kiriman Arasapas, log panggilan, dan alarm kegagalan simpan
 
-**Status:** sebagian — log per panggilan (berhasil + isi respons), pekerja pengulang modul, dan panggilan nyata Arasapas/email (OQ-PL-11) belum ada
+**Status:** sebagian — log per panggilan (berhasil + isi respons), penjadwal pekerja, dan panggilan nyata Arasapas/email (OQ-PL-11) belum ada; `convertJsonNusareToProduction` ditiru lewat outbox dengan pelaksana stub (**OQ-PL-14 ditutup** GILIRAN-17)
 
 **Blocked by:** **00 (skema tujuh tabel — PREFACTOR)**, 05a (efek keluar berjalan setelah penyimpanan satu-transaksi selesai dan keadaannya diketahui)
 
