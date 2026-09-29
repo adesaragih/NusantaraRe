@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"nusantarare/internal/models"
 )
@@ -326,4 +327,63 @@ func (m *MasterLampiranTCO) TandaiTerkirim(ctx context.Context, tx *Tx, id, stor
 		return ErrLampiranTidakAda
 	}
 	return pastikanSatuBaris(hasil, "penandaan lampiran")
+}
+
+// sqlPungutEfekRujukanTCO - `sqlPungutEfek` + `AND RUJUKAN = :4`: pemungutan
+// SATU efek jatuh tempo milik satu rujukan (temuan /code-review, tiket 12).
+func sqlPungutEfekRujukanTCO(tabel string) string {
+	return fmt.Sprintf(`SELECT ID, LINI, MODUL, JENIS_EFEK, RUJUKAN, MUATAN,
+			   PERCOBAAN
+		  FROM %s
+		 WHERE STATUS = :1
+		   AND JADWAL_BERIKUT <= :2
+		   AND MODUL = :3
+		   AND RUJUKAN = :4
+		 ORDER BY JADWAL_BERIKUT ASC
+		 FETCH FIRST 1 ROWS ONLY
+		 FOR UPDATE SKIP LOCKED`, tabel)
+}
+
+// PungutEfekRujukanTCO - seperti `PungutEfek`, dibatasi satu rujukan: aksi
+// seorang pemakai menjalankan efek MILIKNYA, bukan antrean pemakai lain.
+func (r *PohonKlaim) PungutEfekRujukanTCO(ctx context.Context, tx *Tx, modul, rujukan string, saat time.Time) (BarisEfekKeluar, error) {
+	if tx == nil {
+		return BarisEfekKeluar{}, errors.New("repository: PungutEfekRujukanTCO menuntut transaksi")
+	}
+	tabel, err := r.db.Qualify("T_LOG_SERVICE_RNM")
+	if err != nil {
+		return BarisEfekKeluar{}, err
+	}
+	q := sqlPungutEfekRujukanTCO(tabel)
+	if err := PeriksaSQL(q); err != nil {
+		return BarisEfekKeluar{}, err
+	}
+	var (
+		b                                   BarisEfekKeluar
+		lini, modulB, jenis, rujukanB, muat sql.NullString
+		percobaan                           sql.NullInt64
+	)
+	err = tx.tx.QueryRowContext(ctx, q, StatusEfekAntre, saat, modul, rujukan).Scan(
+		&b.ID, &lini, &modulB, &jenis, &rujukanB, &muat, &percobaan)
+	if errors.Is(err, sql.ErrNoRows) {
+		return BarisEfekKeluar{}, ErrEfekTidakAda
+	}
+	if err != nil {
+		return BarisEfekKeluar{}, fmt.Errorf("repository: memungut efek keluar %s: %w", rujukan, err)
+	}
+	b.Lini, b.Modul, b.Jenis = lini.String, modulB.String, jenis.String
+	b.Rujukan, b.Muatan = rujukanB.String, muat.String
+	b.Percobaan = int(percobaan.Int64)
+	tandai := sqlTandaiJalan(tabel)
+	if err := PeriksaSQL(tandai); err != nil {
+		return BarisEfekKeluar{}, err
+	}
+	hasil, err := tx.tx.ExecContext(ctx, tandai, StatusEfekJalan, saat, b.ID, StatusEfekAntre)
+	if err != nil {
+		return BarisEfekKeluar{}, fmt.Errorf("repository: menandai efek jalan: %w", err)
+	}
+	if err := pastikanSatuBaris(hasil, "penandaan efek jalan"); err != nil {
+		return BarisEfekKeluar{}, err
+	}
+	return b, nil
 }

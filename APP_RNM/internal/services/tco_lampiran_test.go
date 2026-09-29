@@ -69,6 +69,25 @@ func (a *antreanLampiranUji) Pungut(_ context.Context, _ *repository.Tx, saat ti
 		Muatan: pilih.muatan, Percobaan: sebelum}, nil
 }
 
+func (a *antreanLampiranUji) PungutRujukan(_ context.Context, _ *repository.Tx, rujukan string, saat time.Time) (repository.BarisEfekKeluar, error) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	var pilih *efekLampiranUji
+	for _, e := range a.efek {
+		if e.rujukan == rujukan && e.status == repository.StatusEfekAntre && !e.jadwal.After(saat) &&
+			(pilih == nil || e.jadwal.Before(pilih.jadwal)) {
+			pilih = e
+		}
+	}
+	if pilih == nil {
+		return repository.BarisEfekKeluar{}, repository.ErrEfekTidakAda
+	}
+	sebelum := pilih.percobaan
+	pilih.percobaan++
+	pilih.status = repository.StatusEfekJalan
+	return repository.BarisEfekKeluar{ID: pilih.id, Jenis: pilih.jenis, Rujukan: pilih.rujukan,
+		Muatan: pilih.muatan, Percobaan: sebelum}, nil
+}
 func (a *antreanLampiranUji) Tuntaskan(_ context.Context, _ *repository.Tx, id, status string, jadwal time.Time,
 	galat string, _ time.Time) error {
 	a.mu.Lock()
@@ -693,5 +712,24 @@ func TestLampiranUnduh(t *testing.T) {
 	c := r.unggah(t, "1000001", "c.pdf", "ISI-C")
 	if _, _, err := r.l.Unduh(ctx, pelakuUjiTCO, "1000001", c.Lampiran.ID); !errors.Is(err, services.ErrLampiranBelumTerkirim) {
 		t.Errorf("unduh tertunda: %v", err)
+	}
+}
+
+// Temuan /code-review: aksi seorang pemakai hanya menjalankan efek MILIK
+// lampirannya - efek lampiran lain (pemakai lain) tetap di antrean, dan tidak
+// ada jejak yang tercatat atas nama pemakai yang salah.
+func TestLampiranAksiHanyaMenjalankanEfekMiliknya(t *testing.T) {
+	r := rakitanLampiran(t)
+	if err := r.antrean.Antre(context.Background(), nil, services.JenisEfekStorageUnggah, "UJI-LAIN", "{}", *r.jam); err != nil {
+		t.Fatal(err)
+	}
+	r.unggah(t, "1000001", "kontrak.pdf", "ISI-UJI")
+	for _, e := range r.antrean.efek {
+		if e.rujukan == "UJI-LAIN" && (e.status != repository.StatusEfekAntre || e.percobaan != 0) {
+			t.Errorf("efek lampiran lain ikut dijalankan: %+v", e)
+		}
+	}
+	if r.antrean.cacahStatus(services.JenisEfekStorageUnggah, repository.StatusEfekSelesai) != 1 {
+		t.Error("efek lampiran sendiri tidak selesai")
 	}
 }

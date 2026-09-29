@@ -110,6 +110,8 @@ type GudangLampiranTCO interface {
 type AntreanLampiranTCO interface {
 	Antre(ctx context.Context, tx *repository.Tx, jenis, rujukan, muatan string, saat time.Time) error
 	Pungut(ctx context.Context, tx *repository.Tx, saat time.Time) (repository.BarisEfekKeluar, error)
+	// PungutRujukan - satu efek jatuh tempo milik SATU rujukan (lampiran).
+	PungutRujukan(ctx context.Context, tx *repository.Tx, rujukan string, saat time.Time) (repository.BarisEfekKeluar, error)
 	Tuntaskan(ctx context.Context, tx *repository.Tx, id, status string, jadwal time.Time,
 		galat string, saat time.Time) error
 }
@@ -168,6 +170,9 @@ func (antreanLampiranBelumDisuntik) Antre(context.Context, *repository.Tx, strin
 	return ErrAntreanLampiranBelumDisuntik
 }
 func (antreanLampiranBelumDisuntik) Pungut(context.Context, *repository.Tx, time.Time) (repository.BarisEfekKeluar, error) {
+	return repository.BarisEfekKeluar{}, ErrAntreanLampiranBelumDisuntik
+}
+func (antreanLampiranBelumDisuntik) PungutRujukan(context.Context, *repository.Tx, string, time.Time) (repository.BarisEfekKeluar, error) {
 	return repository.BarisEfekKeluar{}, ErrAntreanLampiranBelumDisuntik
 }
 func (antreanLampiranBelumDisuntik) Tuntaskan(context.Context, *repository.Tx, string, string, time.Time, string, time.Time) error {
@@ -240,6 +245,10 @@ func (a antreanLampiranOracle) Antre(ctx context.Context, tx *repository.Tx, jen
 func (a antreanLampiranOracle) Pungut(ctx context.Context, tx *repository.Tx, saat time.Time) (
 	repository.BarisEfekKeluar, error) {
 	return a.pohon.PungutEfek(ctx, tx, ModulTreatyContractOut, saat)
+}
+func (a antreanLampiranOracle) PungutRujukan(ctx context.Context, tx *repository.Tx, rujukan string, saat time.Time) (
+	repository.BarisEfekKeluar, error) {
+	return a.pohon.PungutEfekRujukanTCO(ctx, tx, ModulTreatyContractOut, rujukan, saat)
 }
 func (a antreanLampiranOracle) Tuntaskan(ctx context.Context, tx *repository.Tx, id, status string,
 	jadwal time.Time, galat string, saat time.Time) error {
@@ -583,7 +592,7 @@ func (l *LampiranTahunTCO) Unggah(ctx context.Context, pelaku Pelaku, tahunID st
 func (l *LampiranTahunTCO) sesudahAksi(ctx context.Context, akunID, tahunID string,
 	rekam models.LampiranTCO) HasilLampiranTCO {
 
-	peringatan := l.kirimSekarang(ctx, akunID)
+	peringatan := l.kirimSekarang(ctx, akunID, rekam.ID)
 	b, err := l.gudang.Ambil(ctx, tahunID, rekam.ID)
 	if err != nil {
 		if peringatan == "" {
@@ -601,9 +610,21 @@ func (l *LampiranTahunTCO) sesudahAksi(ctx context.Context, akunID, tahunID stri
 // (nol pemanggil `SatuPutaran` di kode produksi), jadi antrean dijalankan di
 // sini. Kegagalan EFEK tercatat di outbox dan tampil sebagai status; yang
 // dilaporkan di sini hanya kegagalan menjalankan antreannya sendiri.
-func (l *LampiranTahunTCO) kirimSekarang(ctx context.Context, akunID string) string {
-	if _, err := l.JalankanAntrean(ctx, akunID, putaranSeusaiAksiTCO); err != nil {
-		return "antrean pengiriman lampiran belum dapat dijalankan; lampiran tetap tertunda dan dapat diulang"
+//
+// ⛔ Temuan /code-review: yang dijalankan HANYA efek milik lampiran aksi ini
+// (`rujukan`) - bukan antrean pemakai lain, yang dulu ikut terkirim di dalam
+// permintaan ini dan jejak menyerahnya tercatat atas nama pemakai yang salah.
+func (l *LampiranTahunTCO) kirimSekarang(ctx context.Context, akunID, rujukan string) string {
+	for n := 0; n < putaranSeusaiAksiTCO; n++ {
+		err := l.satuPutaran(ctx, akunID, l.jam(), func(tx *repository.Tx, saat time.Time) (repository.BarisEfekKeluar, error) {
+			return l.antrean.PungutRujukan(ctx, tx, rujukan, saat)
+		})
+		if errors.Is(err, repository.ErrEfekTidakAda) {
+			return ""
+		}
+		if err != nil {
+			return "antrean pengiriman lampiran belum dapat dijalankan; lampiran tetap tertunda dan dapat diulang"
+		}
 	}
 	return ""
 }
@@ -629,8 +650,16 @@ func (l *LampiranTahunTCO) JalankanAntrean(ctx context.Context, akunID string, m
 // ⛔ Satu transaksi: pungut, jalankan, tuntaskan - pola `PekerjaEfek`. Yang
 // berbeda hanya jalur menyerahnya: jejaknya ke `T_TREATYCO_JEJAK`.
 func (l *LampiranTahunTCO) SatuPutaran(ctx context.Context, akunID string, saat time.Time) error {
+	return l.satuPutaran(ctx, akunID, saat, func(tx *repository.Tx, saat time.Time) (repository.BarisEfekKeluar, error) {
+		return l.antrean.Pungut(ctx, tx, saat)
+	})
+}
+
+// satuPutaran - pungut (lewat `pungut`), jalankan, tuntaskan: satu transaksi.
+func (l *LampiranTahunTCO) satuPutaran(ctx context.Context, akunID string, saat time.Time,
+	pungut func(tx *repository.Tx, saat time.Time) (repository.BarisEfekKeluar, error)) error {
 	return l.transaksi(ctx, func(tx *repository.Tx) error {
-		b, err := l.antrean.Pungut(ctx, tx, saat)
+		b, err := pungut(tx, saat)
 		if err != nil {
 			return err
 		}
@@ -874,7 +903,7 @@ func (l *LampiranTahunTCO) Hapus(ctx context.Context, pelaku Pelaku, tahunID, id
 	if err != nil {
 		return "", err
 	}
-	return l.kirimSekarang(ctx, pelaku.AkunID), nil
+	return l.kirimSekarang(ctx, pelaku.AkunID, id), nil
 }
 
 // Ulangi mengantre ulang unggahan satu lampiran (AC 58, AC 61).

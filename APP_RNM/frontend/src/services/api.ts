@@ -2291,7 +2291,9 @@ export async function unduhBerkasBeridentitas(jalur: string, namaBerkas: string)
   document.body.appendChild(a)
   a.click()
   a.remove()
-  URL.revokeObjectURL(url)
+  // Temuan /code-review: mencabut URL di tik yang sama dengan klik dapat membatalkan
+  // unduhan (Firefox, Safari) - dicabut sesudah peramban mulai mengunduh.
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 // ---------------------------------------------------------------------------
