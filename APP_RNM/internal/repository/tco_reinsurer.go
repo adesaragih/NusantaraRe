@@ -22,7 +22,8 @@ import (
 	"github.com/cockroachdb/apd/v3"
 
 	"nusantarare/internal/models"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti/db"
+	"nusantarare/inti/utils"
 )
 
 // MasterReinsurerAgentTCO - master reinsurer, dibaca saja.
@@ -54,10 +55,10 @@ type ReinsurerMasterTCO struct {
 }
 
 // MasterReinsurerAgent membaca master `AGENT`.
-type MasterReinsurerAgent struct{ db *DB }
+type MasterReinsurerAgent struct{ db *db.DB }
 
 // NewMasterReinsurerAgent menyusun pembacanya.
-func NewMasterReinsurerAgent(db *DB) *MasterReinsurerAgent { return &MasterReinsurerAgent{db: db} }
+func NewMasterReinsurerAgent(db *db.DB) *MasterReinsurerAgent { return &MasterReinsurerAgent{db: db} }
 
 // sqlCariReinsurerMasterTCO - `Contains` tanpa beda huruf (`pyCaseInsensitive`
 // b569) dengan ESCAPE supaya `%` dan `_` ketikan pemakai tidak menjadi wildcard.
@@ -85,10 +86,10 @@ func (m *MasterReinsurerAgent) Cari(ctx context.Context, teks string) ([]Reinsur
 		return nil, err
 	}
 	q := sqlCariReinsurerMasterTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := m.db.bacaTCO(ctx).QueryContext(ctx, q, NilaiAgentAktifTCO, polaLikeTCO(teks))
+	rows, err := bacaTCO(ctx, m.db).QueryContext(ctx, q, NilaiAgentAktifTCO, polaLikeTCO(teks))
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca master %s: %w", MasterReinsurerAgentTCO, err)
 	}
@@ -111,11 +112,11 @@ func (m *MasterReinsurerAgent) Ambil(ctx context.Context, id string) (ReinsurerM
 		return ReinsurerMasterTCO{}, err
 	}
 	q := sqlAmbilReinsurerMasterTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return ReinsurerMasterTCO{}, err
 	}
 	var n [3]sql.NullString
-	err = m.db.bacaTCO(ctx).QueryRowContext(ctx, q, id, NilaiAgentAktifTCO).Scan(&n[0], &n[1], &n[2])
+	err = bacaTCO(ctx, m.db).QueryRowContext(ctx, q, id, NilaiAgentAktifTCO).Scan(&n[0], &n[1], &n[2])
 	if errors.Is(err, sql.ErrNoRows) {
 		return ReinsurerMasterTCO{}, ErrReinsurerMasterTidakAda
 	}
@@ -129,14 +130,14 @@ func (m *MasterReinsurerAgent) Ambil(ctx context.Context, id string) (ReinsurerM
 //
 // ⚠️ `RICOMM`/`PCTSHARE` NUMBER; `STARTDATE`/`ENDDATE`/`TGLUPDATE` VARCHAR2
 // `[data DBA]`, dibaca lewat pengurai warisan (toleran).
-type MasterReinsurerTCO struct{ db *DB }
+type MasterReinsurerTCO struct{ db *db.DB }
 
 // NewMasterReinsurerTCO menyusun gudangnya.
-func NewMasterReinsurerTCO(db *DB) *MasterReinsurerTCO { return &MasterReinsurerTCO{db: db} }
+func NewMasterReinsurerTCO(db *db.DB) *MasterReinsurerTCO { return &MasterReinsurerTCO{db: db} }
 
 var pilihReinsurerTCO = `ID, TREATYYEAR, TREATYGROUPID, TREATYGROUPNAME, REINSTYPEID, REINSTYPENAME,
-	       REINSURERID, CLIENTID, NAME, ` + fmt.Sprintf(fmtDesimal, "RICOMM") + `, ` +
-	fmt.Sprintf(fmtDesimal, "PCTSHARE") + `, IUDATE, USERID,
+	       REINSURERID, CLIENTID, NAME, ` + fmt.Sprintf(db.FmtDesimal, "RICOMM") + `, ` +
+	fmt.Sprintf(db.FmtDesimal, "PCTSHARE") + `, IUDATE, USERID,
 	       STARTDATE, ENDDATE, STATUSON, STDRATING, OPERATORNAME, TGLUPDATE`
 
 const saringKombinasiTCO = `TREATYYEAR = :1 AND TREATYGROUPID = :2 AND REINSTYPEID = :3`
@@ -152,7 +153,7 @@ func sqlAmbilReinsurerTCO(tabel string) string {
 // sqlShareLainTCO membaca share reinsurer LAIN, dikunci selama transaksi.
 func sqlShareLainTCO(tabel string) string {
 	return fmt.Sprintf(`SELECT ID, %s FROM %s WHERE %s AND (:4 IS NULL OR ID <> :5) FOR UPDATE`,
-		fmt.Sprintf(fmtDesimal, "PCTSHARE"), tabel, saringKombinasiTCO)
+		fmt.Sprintf(db.FmtDesimal, "PCTSHARE"), tabel, saringKombinasiTCO)
 }
 
 func sqlSisipReinsurerTCO(tabel string) string {
@@ -220,23 +221,23 @@ func pindaiReinsurerTCO(baca interface{ Scan(...any) error }) (models.ReinsurerT
 // b10311/b10516 bersyarat tampil `1=2` (b10431/b10636), `NewTreatyReinsurerDetail_Act`
 // b938/b959 mengosongkannya; data DEV 430/430 kosong.
 func medanReinsurerTCO(r models.ReinsurerTreaty) []any {
-	return []any{kosongJadiNil(r.ReinsurerID), kosongJadiNil(r.ClientID), kosongJadiNil(r.Name),
-		desimalJadiNil(r.Ricomm), desimalJadiNil(r.PctShare), kosongJadiNil(r.IUDate), kosongJadiNil(r.UserID),
+	return []any{db.KosongJadiNil(r.ReinsurerID), db.KosongJadiNil(r.ClientID), db.KosongJadiNil(r.Name),
+		desimalJadiNil(r.Ricomm), desimalJadiNil(r.PctShare), db.KosongJadiNil(r.IUDate), db.KosongJadiNil(r.UserID),
 		nil, nil, // STARTDATE, ENDDATE
-		kosongJadiNil(r.StatusOn), kosongJadiNil(r.StdRating), kosongJadiNil(r.OperatorName),
-		kosongJadiNil(StempelPegaTCO(r.TglUpdate))}
+		db.KosongJadiNil(r.StatusOn), db.KosongJadiNil(r.StdRating), db.KosongJadiNil(r.OperatorName),
+		db.KosongJadiNil(StempelPegaTCO(r.TglUpdate))}
 }
 
 // argSisipReinsurerTCO - :1..:19 `sqlSisipReinsurerTCO`.
 func argSisipReinsurerTCO(id string, r models.ReinsurerTreaty) []any {
-	return append([]any{id, kosongJadiNil(r.TreatyYear), kosongJadiNil(r.TreatyGroupID),
-		kosongJadiNil(r.TreatyGroupName), kosongJadiNil(r.ReinsTypeID), kosongJadiNil(r.ReinsTypeName)},
+	return append([]any{id, db.KosongJadiNil(r.TreatyYear), db.KosongJadiNil(r.TreatyGroupID),
+		db.KosongJadiNil(r.TreatyGroupName), db.KosongJadiNil(r.ReinsTypeID), db.KosongJadiNil(r.ReinsTypeName)},
 		medanReinsurerTCO(r)...)
 }
 
 // argPerbaruiReinsurerTCO - :1..:19 `sqlPerbaruiReinsurerTCO`.
 func argPerbaruiReinsurerTCO(r models.ReinsurerTreaty) []any {
-	arg := append([]any{kosongJadiNil(r.TreatyGroupName), kosongJadiNil(r.ReinsTypeName)}, medanReinsurerTCO(r)...)
+	arg := append([]any{db.KosongJadiNil(r.TreatyGroupName), db.KosongJadiNil(r.ReinsTypeName)}, medanReinsurerTCO(r)...)
 	return append(arg, r.ID, r.TreatyYear, r.TreatyGroupID, r.ReinsTypeID)
 }
 
@@ -258,10 +259,10 @@ func (m *MasterReinsurerTCO) Daftar(ctx context.Context, k models.KombinasiTCO) 
 		return nil, err
 	}
 	q := sqlDaftarReinsurerTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := m.db.bacaTCO(ctx).QueryContext(ctx, q, argKombinasi(k)...)
+	rows, err := bacaTCO(ctx, m.db).QueryContext(ctx, q, argKombinasi(k)...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca reinsurer kombinasi: %w", err)
 	}
@@ -284,10 +285,10 @@ func (m *MasterReinsurerTCO) Ambil(ctx context.Context, k models.KombinasiTCO, i
 		return models.ReinsurerTreaty{}, err
 	}
 	q := sqlAmbilReinsurerTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return models.ReinsurerTreaty{}, err
 	}
-	r, err := pindaiReinsurerTCO(m.db.bacaTCO(ctx).QueryRowContext(ctx, q, append(argKombinasi(k), id)...))
+	r, err := pindaiReinsurerTCO(bacaTCO(ctx, m.db).QueryRowContext(ctx, q, append(argKombinasi(k), id)...))
 	if errors.Is(err, sql.ErrNoRows) {
 		return models.ReinsurerTreaty{}, ErrReinsurerTidakAda
 	}
@@ -298,7 +299,7 @@ func (m *MasterReinsurerTCO) Ambil(ctx context.Context, k models.KombinasiTCO, i
 }
 
 // ShareLain membaca share reinsurer LAIN pada kombinasi, di dalam transaksi.
-func (m *MasterReinsurerTCO) ShareLain(ctx context.Context, tx *Tx, k models.KombinasiTCO, kecualiID string) (
+func (m *MasterReinsurerTCO) ShareLain(ctx context.Context, tx *db.Tx, k models.KombinasiTCO, kecualiID string) (
 	[]*apd.Decimal, error) {
 	if tx == nil {
 		return nil, errors.New("repository: membaca share lain menuntut transaksi")
@@ -308,10 +309,10 @@ func (m *MasterReinsurerTCO) ShareLain(ctx context.Context, tx *Tx, k models.Kom
 		return nil, err
 	}
 	q := sqlShareLainTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := tx.tx.QueryContext(ctx, q, append(argKombinasi(k), kosongJadiNil(kecualiID), kosongJadiNil(kecualiID))...)
+	rows, err := tx.QueryContext(ctx, q, append(argKombinasi(k), db.KosongJadiNil(kecualiID), db.KosongJadiNil(kecualiID))...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca share reinsurer lain: %w", err)
 	}
@@ -332,7 +333,7 @@ func (m *MasterReinsurerTCO) ShareLain(ctx context.Context, tx *Tx, k models.Kom
 }
 
 // Sisip menulis reinsurer baru; ID dari `M_TREATYREINSURER_SEQ` warisan (ADR-0006).
-func (m *MasterReinsurerTCO) Sisip(ctx context.Context, tx *Tx, r models.ReinsurerTreaty) (string, error) {
+func (m *MasterReinsurerTCO) Sisip(ctx context.Context, tx *db.Tx, r models.ReinsurerTreaty) (string, error) {
 	if tx == nil {
 		return "", errors.New("repository: menyisipkan reinsurer menuntut transaksi")
 	}
@@ -340,23 +341,23 @@ func (m *MasterReinsurerTCO) Sisip(ctx context.Context, tx *Tx, r models.Reinsur
 	if err != nil {
 		return "", err
 	}
-	id, err := m.db.IdentitasBerikutTCO(ctx, tx, SeqReinsurerTCO)
+	id, err := IdentitasBerikutTCO(ctx, m.db, tx, SeqReinsurerTCO)
 	if err != nil {
 		return "", err
 	}
 	q := sqlSisipReinsurerTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return "", err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, argSisipReinsurerTCO(id, r)...)
+	hasil, err := tx.ExecContext(ctx, q, argSisipReinsurerTCO(id, r)...)
 	if err != nil {
 		return "", fmt.Errorf("repository: menyisipkan reinsurer: %w", err)
 	}
-	return id, pastikanSatuBaris(hasil, "penyisipan reinsurer")
+	return id, db.PastikanSatuBaris(hasil, "penyisipan reinsurer")
 }
 
 // Perbarui menimpa reinsurer yang ada, dibatasi kombinasinya.
-func (m *MasterReinsurerTCO) Perbarui(ctx context.Context, tx *Tx, r models.ReinsurerTreaty) error {
+func (m *MasterReinsurerTCO) Perbarui(ctx context.Context, tx *db.Tx, r models.ReinsurerTreaty) error {
 	if tx == nil {
 		return errors.New("repository: memperbarui reinsurer menuntut transaksi")
 	}
@@ -365,15 +366,15 @@ func (m *MasterReinsurerTCO) Perbarui(ctx context.Context, tx *Tx, r models.Rein
 		return err
 	}
 	q := sqlPerbaruiReinsurerTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, argPerbaruiReinsurerTCO(r)...)
+	hasil, err := tx.ExecContext(ctx, q, argPerbaruiReinsurerTCO(r)...)
 	if err != nil {
 		return fmt.Errorf("repository: memperbarui reinsurer %s: %w", r.ID, err)
 	}
 	if n, err := hasil.RowsAffected(); err == nil && n == 0 {
 		return ErrReinsurerTidakAda
 	}
-	return pastikanSatuBaris(hasil, "pembaruan reinsurer")
+	return db.PastikanSatuBaris(hasil, "pembaruan reinsurer")
 }

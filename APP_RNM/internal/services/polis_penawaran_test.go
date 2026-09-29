@@ -14,15 +14,17 @@ import (
 	"time"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
 )
 
-var pelakuUjiPolis = Pelaku{AkunID: "UJI-POLIS"}
+var pelakuUjiPolis = inti.Pelaku{AkunID: "UJI-POLIS"}
 
 func TestPenawaranMenolakTanpaIdentitasLebihDulu(t *testing.T) {
 	p := New(nil).Penawaran()
 	ctx := context.Background()
-	if _, err := p.Putuskan(ctx, Pelaku{}, "POL-1", models.KeputusanConfirm,
-		time.Now()); !errors.Is(err, ErrTanpaIdentitas) {
+	if _, err := p.Putuskan(ctx, inti.Pelaku{}, "POL-1", models.KeputusanConfirm,
+		time.Now()); !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("Putuskan: %v, mau ErrTanpaIdentitas", err)
 	}
 }
@@ -57,7 +59,7 @@ func TestPenawaranMenjagaUrutanPagarnya(t *testing.T) {
 	for _, id := range []string{"", "   "} {
 		_, err := p.Putuskan(context.Background(), pelakuUjiPolis, id,
 			models.KeputusanConfirm, time.Now())
-		if !errors.Is(err, ErrPermintaanTidakSah) {
+		if !errors.Is(err, galat.ErrPermintaanTidakSah) {
 			t.Errorf("pengenal %q: %v, mau ErrPermintaanTidakSah", id, err)
 		}
 	}

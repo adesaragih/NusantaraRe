@@ -21,7 +21,11 @@ package models
 //
 // ⛔ Nol aturan dagang di berkas ini. Ia hanya bentuk data.
 
-import "time"
+import (
+	"time"
+
+	"nusantarare/inti/uang"
+)
 
 // Lini adalah penanda lini usaha pada work object. Untuk Claim Life isinya
 // tetap LiniLife.
@@ -93,14 +97,14 @@ type Spreading struct {
 	// CLAIM_GROSS atau dengan kapasitas IDR/USD treaty-year. Keduanya nilai
 	// uang. Nama berakhiran _SHARE di korpus ini memang menipu - lihat
 	// ADR-0003 dan bab Catatan tiket 03.
-	RetrocadedShare Money
+	RetrocadedShare uang.Money
 	// Rate tetap RASIO, dan karena itu tidak pernah terjumlahkan dengan Money
 	// (ADR-F-0004). Yang disimpan adalah rate MENTAH per mil, bukan hasil
 	// baginya seribu.
-	Rate Ratio
+	Rate uang.Ratio
 	// IDR dan USD adalah nilai uang; nama kolomnya sekaligus mata uangnya.
-	IDR      Money
-	USD      Money
+	IDR      uang.Money
+	USD      uang.Money
 	Currency string
 	Retro    []SpreadingRetro
 }
@@ -113,21 +117,21 @@ type SpreadingRetro struct {
 	ID            string
 	SpreadingID   string
 	ReinsurerName string
-	PercentShare  Ratio
-	Amount        Money
-	Rate          Ratio
+	PercentShare  uang.Ratio
+	Amount        uang.Money
+	Rate          uang.Ratio
 	// Kedua cabang PremiumSpreadedNet ternyata dipilih oleh TAHUN POLIS -
 	// lihat bab "Pembacaan ulang XML" tiket 03. Di sini ia hanya disimpan apa
 	// adanya, tidak dihitung ulang.
-	PremiumSpreadedGross Money
-	PremiumSpreadedNet   Money
+	PremiumSpreadedGross uang.Money
+	PremiumSpreadedNet   uang.Money
 	// Commision dan OvrComm adalah PERSEN, bukan uang - diralat 26-09-2026:
 	// SpreadingClaimLife_Act membagi keduanya seratus sebelum memakainya
 	// (@divide(.COMMISION,100,5) dan @divide(.OVR_COMM,100,5)). Menyimpannya
 	// sebagai Money membuat persen dapat dijumlahkan dengan uang, yang justru
 	// dilarang ADR-F-0004.
-	Commision      Ratio
-	OvrComm        Ratio
+	Commision      uang.Ratio
+	OvrComm        uang.Ratio
 	TreatyTypeID   string
 	TreatyTypeName string
 }

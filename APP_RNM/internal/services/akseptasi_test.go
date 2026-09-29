@@ -11,6 +11,7 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
 )
 
 // TestAwalanNomorAkseptasiPerType mengunci kedua RDB.
@@ -167,7 +168,7 @@ func TestWajibPemegangTahap(t *testing.T) {
 	// ⛔ Peran lain di tahap yang bukan miliknya ditolak.
 	if err := services.WajibPemegangTahap(
 		pelakuBerperan(models.PeranMedicalLife), models.TahapClaimAnalis); !errors.Is(
-		err, services.ErrTanpaWewenang) {
+		err, inti.ErrTanpaWewenang) {
 		t.Errorf("Medical di Claim Analis: galat = %v, mau ErrTanpaWewenang", err)
 	}
 	// Tahap tak dikenal tidak punya pemegang, dan tidak ditebak.
@@ -183,7 +184,7 @@ func TestAksepBukanLagiTerlarangDiModulIni(t *testing.T) {
 	// ErrAksepBukanDariModulIni. Kini Aksep adalah tujuan yang sah, dan yang
 	// menggerbanginya pemegang tahap - diperiksa `SimpanAdjustment`.
 	err := services.WajibPeranPengubahStatus(
-		pelakuBerperan(services.PeranAdmin), models.StatusAksep)
+		pelakuBerperan(inti.PeranAdmin), models.StatusAksep)
 	if err != nil {
 		t.Errorf("Aksep ditolak di lapisan peran: %v; ia kini jalur sah modul "+
 			"ini (SaveAdjustment_Act)", err)

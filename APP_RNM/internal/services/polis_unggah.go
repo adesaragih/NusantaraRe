@@ -35,6 +35,9 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
 )
 
 // BatasBarisUnggah membatasi cacah baris satu berkas.
@@ -192,14 +195,14 @@ type HasilTinjauUnggah struct {
 }
 
 // Tinjau mengurai dan memvalidasi berkas TANPA menyentuh apa pun.
-func (u *UnggahPremiumList) Tinjau(ctx context.Context, pelaku Pelaku,
+func (u *UnggahPremiumList) Tinjau(ctx context.Context, pelaku inti.Pelaku,
 	polisID string, berkas io.Reader) (HasilTinjauUnggah, error) {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return HasilTinjauUnggah{}, err
 	}
 	if polisID == "" {
-		return HasilTinjauUnggah{}, fmt.Errorf("%w: id polis kosong", ErrPermintaanTidakSah)
+		return HasilTinjauUnggah{}, fmt.Errorf("%w: id polis kosong", galat.ErrPermintaanTidakSah)
 	}
 	_, hasil, err := periksaBerkas(berkas)
 	if err != nil {
@@ -225,7 +228,7 @@ func periksaBerkas(berkas io.Reader) ([]models.BarisUnggah, models.HasilUnggah, 
 		// into attachment" milik langkah 11/33 yang ter-remark (sensus
 		// 28-09-2026). Handler sudah menjawab 400 lebih dulu.
 		return nil, models.HasilUnggah{}, fmt.Errorf("%w: berkas CSV tidak disertakan",
-			ErrPermintaanTidakSah)
+			galat.ErrPermintaanTidakSah)
 	}
 	baris, err := BacaCSVUnggah(berkas)
 	if err != nil {
@@ -254,21 +257,21 @@ type HasilSimpanUnggah struct {
 // ⛔ SATU TRANSAKSI. Hapus dan sisip yang terpisah meninggalkan polis TANPA
 // peserta sama sekali bila yang kedua gagal - keadaan yang lebih buruk
 // daripada keduanya tidak pernah berjalan.
-func (u *UnggahPremiumList) Simpan(ctx context.Context, pelaku Pelaku,
+func (u *UnggahPremiumList) Simpan(ctx context.Context, pelaku inti.Pelaku,
 	polisID string, berkas io.Reader) (HasilSimpanUnggah, error) {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return HasilSimpanUnggah{}, err
 	}
 	if u == nil || u.svc == nil || !u.svc.PunyaDatabase() {
-		return HasilSimpanUnggah{}, repository.ErrTanpaOracle
+		return HasilSimpanUnggah{}, db.ErrTanpaOracle
 	}
 	if polisID == "" {
-		return HasilSimpanUnggah{}, fmt.Errorf("%w: id polis kosong", ErrPermintaanTidakSah)
+		return HasilSimpanUnggah{}, fmt.Errorf("%w: id polis kosong", galat.ErrPermintaanTidakSah)
 	}
 
 	// ⛔ GERBANG KASUS TERTUTUP - butir bb, lewat `T_WORK_POLIS`.
-	keadaanKerja, err := repository.NewWorkPolis(u.svc.db).Keadaan(ctx, polisID)
+	keadaanKerja, err := repository.NewWorkPolis(u.svc.DB()).Keadaan(ctx, polisID)
 	if err != nil {
 		return HasilSimpanUnggah{}, err
 	}
@@ -294,8 +297,8 @@ func (u *UnggahPremiumList) Simpan(ctx context.Context, pelaku Pelaku,
 	}
 
 	var keluar HasilSimpanUnggah
-	peserta := repository.NewPesertaUnggah(u.svc.db)
-	err = u.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	peserta := repository.NewPesertaUnggah(u.svc.DB())
+	err = u.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		dihapus, err := peserta.HapusPesertaPolis(ctx, tx, polisID)
 		if err != nil {
 			return err

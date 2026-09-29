@@ -21,16 +21,17 @@ import (
 	"fmt"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/db"
 )
 
 // ErrDiagnosaTidakAda - baris diagnosa yang diminta bukan milik klaim itu.
 var ErrDiagnosaTidakAda = errors.New("repository: diagnosa tidak ada pada klaim ini")
 
 // Diagnosa membaca dan menulis daftar diagnosa peserta.
-type Diagnosa struct{ db *DB }
+type Diagnosa struct{ db *db.DB }
 
 // NewDiagnosa menyusunnya.
-func NewDiagnosa(db *DB) *Diagnosa { return &Diagnosa{db: db} }
+func NewDiagnosa(db *db.DB) *Diagnosa { return &Diagnosa{db: db} }
 
 // tabelDiagnosa dan tabelPesertaDiagnosa - dua nama yang selalu dipakai
 // berpasangan, sebab setiap pertanyaan tentang diagnosa dibatasi KLAIM-nya
@@ -77,10 +78,10 @@ func (r *Diagnosa) AmbilDiagnosa(ctx context.Context, klaimID string) (
 		return nil, err
 	}
 	q := sqlAmbilDiagnosa(diag, pes)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	baris, err := r.db.sql.QueryContext(ctx, q, klaimID)
+	baris, err := r.db.QueryContext(ctx, q, klaimID)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca diagnosa klaim: %w", err)
 	}
@@ -138,14 +139,14 @@ func sqlSisipDiagnosa(tabel string) string {
 //
 // Mengembalikan baris yang baru lahir, lengkap dengan pengenal dan urutannya
 // - supaya layar dapat menampilkannya tanpa membaca ulang seluruh klaim.
-func (r *Diagnosa) SisipDiagnosa(ctx context.Context, tx *Tx,
+func (r *Diagnosa) SisipDiagnosa(ctx context.Context, tx *db.Tx,
 	pesertaID string, urutan int, stsPeserta string) (models.Diagnosa, error) {
 
 	tabel, _, err := r.tabel()
 	if err != nil {
 		return models.Diagnosa{}, err
 	}
-	nomor, err := NewPohonKlaim(r.db).nomorBerikut(ctx, tx, "SEQ_CLAIMLF_DIAGNOSE")
+	nomor, err := r.db.NomorBerikut(ctx, tx, "SEQ_CLAIMLF_DIAGNOSE")
 	if err != nil {
 		return models.Diagnosa{}, err
 	}
@@ -155,15 +156,15 @@ func (r *Diagnosa) SisipDiagnosa(ctx context.Context, tx *Tx,
 			"repository: nomor diagnosa %q bukan angka: %w", nomor, err)
 	}
 	q := sqlSisipDiagnosa(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return models.Diagnosa{}, err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, id, pesertaID, urutan,
-		kosongJadiNil(stsPeserta))
+	hasil, err := tx.ExecContext(ctx, q, id, pesertaID, urutan,
+		db.KosongJadiNil(stsPeserta))
 	if err != nil {
 		return models.Diagnosa{}, fmt.Errorf("repository: menyisip diagnosa: %w", err)
 	}
-	if err := pastikanSatuBaris(hasil, "penyisipan diagnosa"); err != nil {
+	if err := db.PastikanSatuBaris(hasil, "penyisipan diagnosa"); err != nil {
 		return models.Diagnosa{}, err
 	}
 	return models.Diagnosa{
@@ -190,7 +191,7 @@ func sqlPerbaruiDiagnosa(tabel string) string {
 // (`GROUP_DIAGNOSE`) BUKAN dari rule itu - ia datang dari dropdown b5860
 // yang mem-`postValue` b5886 sendiri. Satu rute menulis ketiganya sebab di
 // layar keduanya menyunting baris yang sama.
-func (r *Diagnosa) PerbaruiDiagnosa(ctx context.Context, tx *Tx,
+func (r *Diagnosa) PerbaruiDiagnosa(ctx context.Context, tx *db.Tx,
 	id int64, kodeICD, nama, grup string) error {
 
 	tabel, _, err := r.tabel()
@@ -198,32 +199,32 @@ func (r *Diagnosa) PerbaruiDiagnosa(ctx context.Context, tx *Tx,
 		return err
 	}
 	q := sqlPerbaruiDiagnosa(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, kosongJadiNil(kodeICD),
-		kosongJadiNil(nama), kosongJadiNil(grup), id)
+	hasil, err := tx.ExecContext(ctx, q, db.KosongJadiNil(kodeICD),
+		db.KosongJadiNil(nama), db.KosongJadiNil(grup), id)
 	if err != nil {
 		return fmt.Errorf("repository: memperbarui diagnosa: %w", err)
 	}
-	return pastikanSatuBaris(hasil, "pembaruan diagnosa")
+	return db.PastikanSatuBaris(hasil, "pembaruan diagnosa")
 }
 
 // HapusDiagnosa menghapus satu baris.
-func (r *Diagnosa) HapusDiagnosa(ctx context.Context, tx *Tx, id int64) error {
+func (r *Diagnosa) HapusDiagnosa(ctx context.Context, tx *db.Tx, id int64) error {
 	tabel, _, err := r.tabel()
 	if err != nil {
 		return err
 	}
 	q := fmt.Sprintf(`DELETE FROM %s WHERE ID = :1`, tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, id)
+	hasil, err := tx.ExecContext(ctx, q, id)
 	if err != nil {
 		return fmt.Errorf("repository: menghapus diagnosa: %w", err)
 	}
-	return pastikanSatuBaris(hasil, "penghapusan diagnosa")
+	return db.PastikanSatuBaris(hasil, "penghapusan diagnosa")
 }
 
 // sqlRapatkanUrutan merakit perapatan nomor urut sesudah penghapusan.
@@ -238,7 +239,7 @@ func sqlRapatkanUrutan(tabel string) string {
 }
 
 // RapatkanUrutan menutup lubang yang ditinggalkan satu penghapusan.
-func (r *Diagnosa) RapatkanUrutan(ctx context.Context, tx *Tx,
+func (r *Diagnosa) RapatkanUrutan(ctx context.Context, tx *db.Tx,
 	pesertaID string, urutanTerhapus int) error {
 
 	tabel, _, err := r.tabel()
@@ -246,12 +247,12 @@ func (r *Diagnosa) RapatkanUrutan(ctx context.Context, tx *Tx,
 		return err
 	}
 	q := sqlRapatkanUrutan(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
 	// ⚠️ Nol baris terpengaruh adalah keadaan yang SAH: yang dihapus baris
 	// terakhir. Karena itu `pastikanSatuBaris` sengaja tidak dipakai di sini.
-	if _, err := tx.tx.ExecContext(ctx, q, pesertaID, urutanTerhapus); err != nil {
+	if _, err := tx.ExecContext(ctx, q, pesertaID, urutanTerhapus); err != nil {
 		return fmt.Errorf("repository: merapatkan urutan diagnosa: %w", err)
 	}
 	return nil
@@ -278,7 +279,7 @@ func sqlCerminkanStsReject(tabel string) string {
 // ⚠️ Nol baris terpengaruh SAH - peserta boleh tidak punya diagnosa sama
 // sekali. Di Pega pun putaran atas PageList kosong berjalan nol kali tanpa
 // mengeluh.
-func (r *Diagnosa) CerminkanStsReject(ctx context.Context, tx *Tx,
+func (r *Diagnosa) CerminkanStsReject(ctx context.Context, tx *db.Tx,
 	pesertaID, sts string) error {
 
 	tabel, _, err := r.tabel()
@@ -286,10 +287,10 @@ func (r *Diagnosa) CerminkanStsReject(ctx context.Context, tx *Tx,
 		return err
 	}
 	q := sqlCerminkanStsReject(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	if _, err := tx.tx.ExecContext(ctx, q, kosongJadiNil(sts), pesertaID); err != nil {
+	if _, err := tx.ExecContext(ctx, q, db.KosongJadiNil(sts), pesertaID); err != nil {
 		return fmt.Errorf("repository: mencerminkan STS_REJECT ke diagnosa: %w", err)
 	}
 	return nil

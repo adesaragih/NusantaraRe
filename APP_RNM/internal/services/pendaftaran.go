@@ -23,14 +23,16 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/penomor"
+	"nusantarare/inti/uang"
 )
 
 // ErrPenomorBelumDiputuskan menandai penomoran yang belum boleh ditulis.
 var ErrPenomorBelumDiputuskan = errors.New(
 	"services: cara membentuk nomor klaim belum diputuskan work owner")
-
-// ErrPermintaanTidakSah menandai permintaan pendaftaran yang tidak lengkap.
-var ErrPermintaanTidakSah = errors.New("services: permintaan pendaftaran tidak sah")
 
 // Penomor membentuk NOMOR BISNIS klaim - bukan pengenal barisnya.
 //
@@ -43,14 +45,14 @@ var ErrPermintaanTidakSah = errors.New("services: permintaan pendaftaran tidak s
 // dapat dibangun dan diuji, dan supaya yang belum diputuskan terlihat sebagai
 // satu galat terang - bukan sebagai nomor karangan yang tampak benar.
 type Penomor interface {
-	NomorBerikut(ctx context.Context, tx *repository.Tx, kodeBisnis string, saat time.Time) (string, error)
+	NomorBerikut(ctx context.Context, tx *db.Tx, kodeBisnis string, saat time.Time) (string, error)
 }
 
 // PenomorBelumDiputuskan adalah implementasi bawaan sampai butir o dijawab.
 type PenomorBelumDiputuskan struct{}
 
 // NomorBerikut selalu gagal, dengan pesan yang menyebut apa yang ditunggu.
-func (PenomorBelumDiputuskan) NomorBerikut(context.Context, *repository.Tx, string, time.Time) (string, error) {
+func (PenomorBelumDiputuskan) NomorBerikut(context.Context, *db.Tx, string, time.Time) (string, error) {
 	return "", fmt.Errorf("%w: butir o melarang memanggil "+
 		"POOLDATA.PROC_GENERATE_SEQUENCE_NUMBER, sedangkan AC 2, 3, dan 7-11 tiket 02 "+
 		"masih menuntutnya. Teks AC itu perlu ditulis ulang work owner lebih dulu",
@@ -81,14 +83,14 @@ func (p PermintaanDaftar) Periksa() error {
 	kosong := func(s string) bool { return strings.TrimSpace(s) == "" }
 	switch {
 	case kosong(p.NomorPremiList):
-		return fmt.Errorf("%w: nomor premium list wajib terisi", ErrPermintaanTidakSah)
+		return fmt.Errorf("%w: nomor premium list wajib terisi", galat.ErrPermintaanTidakSah)
 	case kosong(p.Type):
-		return fmt.Errorf("%w: Type wajib terisi; ia yang menentukan jendela DOL", ErrPermintaanTidakSah)
+		return fmt.Errorf("%w: Type wajib terisi; ia yang menentukan jendela DOL", galat.ErrPermintaanTidakSah)
 	case kosong(p.KodeBisnis):
-		return fmt.Errorf("%w: kode bisnis wajib terisi; ia yang menentukan prefix nomor", ErrPermintaanTidakSah)
+		return fmt.Errorf("%w: kode bisnis wajib terisi; ia yang menentukan prefix nomor", galat.ErrPermintaanTidakSah)
 	case len(p.Sertifikat) == 0:
 		return fmt.Errorf("%w: nol peserta dipilih; klaim tanpa peserta tidak berarti apa-apa",
-			ErrPermintaanTidakSah)
+			galat.ErrPermintaanTidakSah)
 	}
 	return nil
 }
@@ -135,7 +137,7 @@ func (p *Pendaftaran) DenganPenomor(n Penomor) *Pendaftaran {
 // ⛔ Urutan di dalam transaksi KEDUA tetap penting: `SEQ_WORK_CLAIM`
 // non-transaksional, jadi pengenal yang sudah diambil tidak kembali saat
 // transaksinya dibatalkan.
-func (p *Pendaftaran) Daftar(ctx context.Context, pelaku Pelaku, minta PermintaanDaftar) (
+func (p *Pendaftaran) Daftar(ctx context.Context, pelaku inti.Pelaku, minta PermintaanDaftar) (
 	models.PohonKlaim, error) {
 	var hasil models.PohonKlaim
 
@@ -153,17 +155,17 @@ func (p *Pendaftaran) Daftar(ctx context.Context, pelaku Pelaku, minta Permintaa
 	// ⚠️ Pendaftaran MENULIS status Outstanding lewat TandaiOutstanding, jadi
 	// ia salah satu jalur pengubah status - dan jalur pengubah status yang
 	// tidak bergerbang adalah lubang, bukan kelonggaran.
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return hasil, fmt.Errorf("%w: klaim mencatat siapa yang membuatnya", err)
 	}
-	if err := WajibPeran(pelaku, PeranInputRegister); err != nil {
+	if err := inti.WajibPeran(pelaku, PeranInputRegister); err != nil {
 		return hasil, err
 	}
 	if err := minta.Periksa(); err != nil {
 		return hasil, err
 	}
 	if !p.svc.PunyaDatabase() {
-		return hasil, repository.ErrTanpaOracle
+		return hasil, db.ErrTanpaOracle
 	}
 
 	// ⛔ SATU jam untuk seluruh pendaftaran. Dua `time.Now()` terpisah
@@ -174,7 +176,7 @@ func (p *Pendaftaran) Daftar(ctx context.Context, pelaku Pelaku, minta Permintaa
 
 	// TRANSAKSI PERTAMA - hanya nomornya, sependek mungkin.
 	var nomor string
-	if err := p.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	if err := p.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		var err error
 		nomor, err = p.penomor.NomorBerikut(ctx, tx, minta.KodeBisnis, saat)
 		return err
@@ -183,8 +185,8 @@ func (p *Pendaftaran) Daftar(ctx context.Context, pelaku Pelaku, minta Permintaa
 	}
 
 	// TRANSAKSI KEDUA - seluruh pohon klaimnya.
-	err := p.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
-		pohon := repository.NewPohonKlaim(p.svc.db)
+	err := p.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
+		pohon := repository.NewPohonKlaim(p.svc.DB())
 
 		pengenal, err := pohon.PengenalWorkBerikut(ctx, tx, repository.AwalanKlaim)
 		if err != nil {
@@ -192,7 +194,7 @@ func (p *Pendaftaran) Daftar(ctx context.Context, pelaku Pelaku, minta Permintaa
 		}
 
 		// ⛔ Peserta dibaca ULANG dari sumbernya, bukan diterima dari klien.
-		peserta, err := repository.NewPesertaPolis(p.svc.db).
+		peserta, err := repository.NewPesertaPolis(p.svc.DB()).
 			AmbilUntukKlaim(ctx, minta.NomorPremiList, minta.Sertifikat)
 		if err != nil {
 			return err
@@ -252,7 +254,7 @@ func (p *Pendaftaran) Daftar(ctx context.Context, pelaku Pelaku, minta Permintaa
 				ID:         pengenal,
 				NomorKlaim: nomor,
 				NomorPolis: minta.NomorPolis,
-				ClaimRetro: models.Money{Currency: minta.MataUang},
+				ClaimRetro: uang.Money{Currency: minta.MataUang},
 				Peserta:    peserta,
 			},
 		}
@@ -313,11 +315,11 @@ func RakitNomorKlaim(awalan, kodeBisnis, mmYYYY string, urut int) string {
 // ⛔ `[keputusan work owner]` butir **o1**: procedure tidak dipanggil. Yang
 // tetap di Oracle hanya `SELECT … FOR UPDATE`, sebab kunci baris memang milik
 // basis data.
-type penomorCounter struct{ penghitung *repository.Penomor }
+type penomorCounter struct{ penghitung *penomor.Penomor }
 
 // PenomorCounterOracle menyusun penomor yang memakai penghitung Oracle.
 func PenomorCounterOracle(svc *Service) Penomor {
-	return penomorCounter{penghitung: repository.NewPenomor(svc.db)}
+	return penomorCounter{penghitung: penomor.NewPenomor(svc.DB())}
 }
 
 // NomorBerikut menerbitkan satu nomor klaim baru.
@@ -325,15 +327,15 @@ func PenomorCounterOracle(svc *Service) Penomor {
 // Urutannya: awalan → hari tutup buku → periode → kunci baris → naikkan →
 // rakit. Empat langkah tengahnya persis procedure-nya; awalan di depan
 // sebab nomor tanpa awalan bukan nomor.
-func (p penomorCounter) NomorBerikut(ctx context.Context, tx *repository.Tx,
+func (p penomorCounter) NomorBerikut(ctx context.Context, tx *db.Tx,
 	kodeBisnis string, saat time.Time) (string, error) {
 
 	if strings.TrimSpace(kodeBisnis) == "" {
 		return "", fmt.Errorf("%w: kode bisnis kosong; nomor klaim memuatnya",
-			ErrPermintaanTidakSah)
+			galat.ErrPermintaanTidakSah)
 	}
 	// ⛔ Awalannya di-LOOKUP, bukan konstanta - lihat catatan di atas.
-	awalan, err := p.penghitung.AwalanProduksi(ctx, tx, repository.TipeKodeProduksiLife)
+	awalan, err := p.penghitung.AwalanProduksi(ctx, tx, penomor.TipeKodeProduksiLife)
 	if err != nil {
 		return "", err
 	}
@@ -341,7 +343,7 @@ func (p penomorCounter) NomorBerikut(ctx context.Context, tx *repository.Tx,
 	if err != nil {
 		return "", err
 	}
-	periode, err := repository.HitungPeriodeNomor(saat, hariClosing)
+	periode, err := penomor.HitungPeriodeNomor(saat, hariClosing)
 	if err != nil {
 		return "", err
 	}

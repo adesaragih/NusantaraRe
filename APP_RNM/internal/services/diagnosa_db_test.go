@@ -19,10 +19,12 @@ import (
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
 )
 
 // pelakuAdminUji memegang tahap Outstanding, yaitu tahap awal pohon uji.
-var pelakuAdminUji = services.Pelaku{
+var pelakuAdminUji = inti.Pelaku{
 	AkunID: "UJI-DIAG", Peran: []string{models.PeranAdminLife},
 }
 
@@ -212,7 +214,7 @@ func TestDiagnosaBukanMilikPesertaDitolak(t *testing.T) {
 			return diag.Hapus(ctx, pelakuAdminUji, pohon.Work.ID, peserta[0].ID, 999999999)
 		}},
 	} {
-		if err := uji.jalan(); !errors.Is(err, services.ErrPermintaanTidakSah) {
+		if err := uji.jalan(); !errors.Is(err, galat.ErrPermintaanTidakSah) {
 			t.Errorf("%s baris asing: %v, mau ErrPermintaanTidakSah", uji.nama, err)
 		}
 	}

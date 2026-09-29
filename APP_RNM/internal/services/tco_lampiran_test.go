@@ -24,6 +24,10 @@ import (
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/outbox"
+	"nusantarare/inti/unggah"
 )
 
 // --- pemalsuan -------------------------------------------------------------
@@ -39,56 +43,56 @@ type antreanLampiranUji struct {
 	efek []*efekLampiranUji
 }
 
-func (a *antreanLampiranUji) Antre(_ context.Context, _ *repository.Tx, jenis, rujukan, muatan string, saat time.Time) error {
+func (a *antreanLampiranUji) Antre(_ context.Context, _ *db.Tx, jenis, rujukan, muatan string, saat time.Time) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.efek = append(a.efek, &efekLampiranUji{id: fmt.Sprintf("E%03d", len(a.efek)+1), jenis: jenis,
-		rujukan: rujukan, muatan: muatan, status: repository.StatusEfekAntre, jadwal: saat})
+		rujukan: rujukan, muatan: muatan, status: outbox.StatusEfekAntre, jadwal: saat})
 	return nil
 }
 
-func (a *antreanLampiranUji) Pungut(_ context.Context, _ *repository.Tx, saat time.Time) (repository.BarisEfekKeluar, error) {
+func (a *antreanLampiranUji) Pungut(_ context.Context, _ *db.Tx, saat time.Time) (outbox.BarisEfekKeluar, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	var pilih *efekLampiranUji
 	for _, e := range a.efek {
-		if e.status == repository.StatusEfekAntre && !e.jadwal.After(saat) &&
+		if e.status == outbox.StatusEfekAntre && !e.jadwal.After(saat) &&
 			(pilih == nil || e.jadwal.Before(pilih.jadwal)) {
 			pilih = e
 		}
 	}
 	if pilih == nil {
-		return repository.BarisEfekKeluar{}, repository.ErrEfekTidakAda
+		return outbox.BarisEfekKeluar{}, outbox.ErrEfekTidakAda
 	}
 	// Meniru `PungutEfek`: PERCOBAAN yang dikembalikan adalah nilai SEBELUM
 	// dinaikkan.
 	sebelum := pilih.percobaan
 	pilih.percobaan++
-	pilih.status = repository.StatusEfekJalan
-	return repository.BarisEfekKeluar{ID: pilih.id, Jenis: pilih.jenis, Rujukan: pilih.rujukan,
+	pilih.status = outbox.StatusEfekJalan
+	return outbox.BarisEfekKeluar{ID: pilih.id, Jenis: pilih.jenis, Rujukan: pilih.rujukan,
 		Muatan: pilih.muatan, Percobaan: sebelum}, nil
 }
 
-func (a *antreanLampiranUji) PungutRujukan(_ context.Context, _ *repository.Tx, rujukan string, saat time.Time) (repository.BarisEfekKeluar, error) {
+func (a *antreanLampiranUji) PungutRujukan(_ context.Context, _ *db.Tx, rujukan string, saat time.Time) (outbox.BarisEfekKeluar, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	var pilih *efekLampiranUji
 	for _, e := range a.efek {
-		if e.rujukan == rujukan && e.status == repository.StatusEfekAntre && !e.jadwal.After(saat) &&
+		if e.rujukan == rujukan && e.status == outbox.StatusEfekAntre && !e.jadwal.After(saat) &&
 			(pilih == nil || e.jadwal.Before(pilih.jadwal)) {
 			pilih = e
 		}
 	}
 	if pilih == nil {
-		return repository.BarisEfekKeluar{}, repository.ErrEfekTidakAda
+		return outbox.BarisEfekKeluar{}, outbox.ErrEfekTidakAda
 	}
 	sebelum := pilih.percobaan
 	pilih.percobaan++
-	pilih.status = repository.StatusEfekJalan
-	return repository.BarisEfekKeluar{ID: pilih.id, Jenis: pilih.jenis, Rujukan: pilih.rujukan,
+	pilih.status = outbox.StatusEfekJalan
+	return outbox.BarisEfekKeluar{ID: pilih.id, Jenis: pilih.jenis, Rujukan: pilih.rujukan,
 		Muatan: pilih.muatan, Percobaan: sebelum}, nil
 }
-func (a *antreanLampiranUji) Tuntaskan(_ context.Context, _ *repository.Tx, id, status string, jadwal time.Time,
+func (a *antreanLampiranUji) Tuntaskan(_ context.Context, _ *db.Tx, id, status string, jadwal time.Time,
 	galat string, _ time.Time) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -107,7 +111,7 @@ func (a *antreanLampiranUji) terakhir(rujukan string) *efekLampiranUji {
 	defer a.mu.Unlock()
 	var hasil *efekLampiranUji
 	for _, e := range a.efek {
-		if e.rujukan == rujukan && e.jenis == services.JenisEfekStorageUnggah {
+		if e.rujukan == rujukan && e.jenis == unggah.JenisEfekStorageUnggah {
 			hasil = e
 		}
 	}
@@ -172,7 +176,7 @@ func (g *gudangLampiranUji) Ambil(_ context.Context, tahunID, id string) (reposi
 	return g.barisDengan(l), nil
 }
 
-func (g *gudangLampiranUji) AmbilUntukKirim(_ context.Context, _ *repository.Tx, id string) (models.LampiranTCO, error) {
+func (g *gudangLampiranUji) AmbilUntukKirim(_ context.Context, _ *db.Tx, id string) (models.LampiranTCO, error) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	l, ada := g.baris[id]
@@ -182,7 +186,7 @@ func (g *gudangLampiranUji) AmbilUntukKirim(_ context.Context, _ *repository.Tx,
 	return l, nil
 }
 
-func (g *gudangLampiranUji) Sisip(_ context.Context, _ *repository.Tx, l models.LampiranTCO) (string, error) {
+func (g *gudangLampiranUji) Sisip(_ context.Context, _ *db.Tx, l models.LampiranTCO) (string, error) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	if g.gagalSisip != nil {
@@ -194,7 +198,7 @@ func (g *gudangLampiranUji) Sisip(_ context.Context, _ *repository.Tx, l models.
 	return l.ID, nil
 }
 
-func (g *gudangLampiranUji) Hapus(_ context.Context, _ *repository.Tx, tahunID, id string) error {
+func (g *gudangLampiranUji) Hapus(_ context.Context, _ *db.Tx, tahunID, id string) error {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	l, ada := g.baris[id]
@@ -207,7 +211,7 @@ func (g *gudangLampiranUji) Hapus(_ context.Context, _ *repository.Tx, tahunID, 
 
 // SimpanObjek meniru `Insert_T_Storage_SQL`: objek tercatat = lampiran
 // ber-T_STORAGE_ID itu terkirim.
-func (g *gudangLampiranUji) SimpanObjek(_ context.Context, _ *repository.Tx, o models.ObjekPenyimpananTCO) error {
+func (g *gudangLampiranUji) SimpanObjek(_ context.Context, _ *db.Tx, o models.ObjekPenyimpananTCO) error {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	g.objek = append(g.objek, o)
@@ -221,7 +225,7 @@ func (g *gudangLampiranUji) SimpanObjek(_ context.Context, _ *repository.Tx, o m
 }
 
 // HapusObjek meniru `DeleteStorage_SQL`.
-func (g *gudangLampiranUji) HapusObjek(_ context.Context, _ *repository.Tx, imageID string) error {
+func (g *gudangLampiranUji) HapusObjek(_ context.Context, _ *db.Tx, imageID string) error {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	g.objekDihapus = append(g.objekDihapus, imageID)
@@ -344,7 +348,7 @@ func (r *rakitLampiran) maju(d time.Duration) { *r.jam = r.jam.Add(d) }
 
 func (r *rakitLampiran) unggah(t *testing.T, tahun, nama, isi string) services.HasilLampiranTCO {
 	t.Helper()
-	h, err := r.l.Unggah(context.Background(), pelakuUjiTCO, tahun, services.BerkasMasuk{
+	h, err := r.l.Unggah(context.Background(), pelakuUjiTCO, tahun, unggah.BerkasMasuk{
 		NamaFile: nama, Kategori: "r/i slip", Isi: strings.NewReader(isi)})
 	if err != nil {
 		t.Fatalf("unggah %s: %v", nama, err)
@@ -370,17 +374,17 @@ func (r *rakitLampiran) berkasAntre(t *testing.T) []string {
 func TestLampiranTanpaIdentitasDitolak(t *testing.T) {
 	r := rakitanLampiran(t)
 	ctx := context.Background()
-	if _, err := r.l.Daftar(ctx, services.Pelaku{}, "1000001"); !errors.Is(err, services.ErrTanpaIdentitas) {
+	if _, err := r.l.Daftar(ctx, inti.Pelaku{}, "1000001"); !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("daftar: %v", err)
 	}
-	if _, err := r.l.Unggah(ctx, services.Pelaku{}, "1000001", services.BerkasMasuk{NamaFile: "a.pdf",
-		Kategori: "CLAUSES", Isi: strings.NewReader("x")}); !errors.Is(err, services.ErrTanpaIdentitas) {
+	if _, err := r.l.Unggah(ctx, inti.Pelaku{}, "1000001", unggah.BerkasMasuk{NamaFile: "a.pdf",
+		Kategori: "CLAUSES", Isi: strings.NewReader("x")}); !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("unggah: %v", err)
 	}
-	if _, err := r.l.Hapus(ctx, services.Pelaku{}, "1000001", "1000000001"); !errors.Is(err, services.ErrTanpaIdentitas) {
+	if _, err := r.l.Hapus(ctx, inti.Pelaku{}, "1000001", "1000000001"); !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("hapus: %v", err)
 	}
-	if _, _, err := r.l.Unduh(ctx, services.Pelaku{}, "1000001", "1000000001"); !errors.Is(err, services.ErrTanpaIdentitas) {
+	if _, _, err := r.l.Unduh(ctx, inti.Pelaku{}, "1000001", "1000000001"); !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("unduh: %v", err)
 	}
 	if len(r.berkasAntre(t)) != 0 {
@@ -420,7 +424,7 @@ func TestLampiranUnggahSampaiTerkirim(t *testing.T) {
 	if sisa := r.berkasAntre(t); len(sisa) != 0 {
 		t.Errorf("berkas antrean tertinggal sesudah terkirim: %v", sisa)
 	}
-	if r.antrean.cacahStatus(services.JenisEfekStorageUnggah, repository.StatusEfekSelesai) != 1 {
+	if r.antrean.cacahStatus(unggah.JenisEfekStorageUnggah, outbox.StatusEfekSelesai) != 1 {
 		t.Error("efek unggah tidak selesai")
 	}
 }
@@ -480,27 +484,27 @@ func TestLampiranPengulanganTidakMenggandakan(t *testing.T) {
 // menyerah sesudah jatahnya habis - tidak berputar selamanya.
 func TestLampiranMenyerahTerlihat(t *testing.T) {
 	r := rakitanLampiran(t)
-	r.simpan.setelGagal(services.ErrPenyimpananBelumDisetujui, false)
+	r.simpan.setelGagal(outbox.ErrPenyimpananBelumDisetujui, false)
 	h := r.unggah(t, "1000001", "a.pdf", "ISI")
 	// tco4: nol jejak modul - "menyerah" terlihat dari status outbox.
-	if h.Lampiran.Status != models.StatusLampiranGagal || r.antrean.cacahStatus(services.JenisEfekStorageUnggah, repository.StatusEfekGagalPermanen) != 1 {
+	if h.Lampiran.Status != models.StatusLampiranGagal || r.antrean.cacahStatus(unggah.JenisEfekStorageUnggah, outbox.StatusEfekGagalPermanen) != 1 {
 		t.Errorf("permanen: status %q", h.Lampiran.Status)
 	}
 
 	r2 := rakitanLampiran(t)
 	r2.simpan.setelGagal(errors.New("sementara"), false)
 	h2 := r2.unggah(t, "1000001", "b.pdf", "ISI")
-	for i := 0; i < 30 && r2.antrean.terakhir(h2.Lampiran.ID).status == repository.StatusEfekAntre; i++ {
+	for i := 0; i < 30 && r2.antrean.terakhir(h2.Lampiran.ID).status == outbox.StatusEfekAntre; i++ {
 		r2.maju(48 * time.Hour)
 		if _, err := r2.l.JalankanAntrean(context.Background(), "UJI-PEKERJA", 1); err != nil {
 			t.Fatal(err)
 		}
 	}
 	e := r2.antrean.terakhir(h2.Lampiran.ID)
-	if e.status != repository.StatusEfekGagalPermanen || e.percobaan > 20 {
+	if e.status != outbox.StatusEfekGagalPermanen || e.percobaan > 20 {
 		t.Errorf("sementara: status %q sesudah %d percobaan", e.status, e.percobaan)
 	}
-	if r2.antrean.cacahStatus(services.JenisEfekStorageUnggah, repository.StatusEfekGagalPermanen) != 1 {
+	if r2.antrean.cacahStatus(unggah.JenisEfekStorageUnggah, outbox.StatusEfekGagalPermanen) != 1 {
 		t.Error("outbox tidak berstatus gagal permanen")
 	}
 }
@@ -508,7 +512,7 @@ func TestLampiranMenyerahTerlihat(t *testing.T) {
 // AC 58: yang gagal dapat diulang oleh manusia, dan hasilnya satu berkas.
 func TestLampiranUlangiSesudahGagal(t *testing.T) {
 	r := rakitanLampiran(t)
-	r.simpan.setelGagal(services.ErrPenyimpananBelumDisetujui, false)
+	r.simpan.setelGagal(outbox.ErrPenyimpananBelumDisetujui, false)
 	h := r.unggah(t, "1000001", "a.pdf", "ISI")
 	r.simpan.setelGagal(nil, false)
 	u, err := r.l.Ulangi(context.Background(), pelakuUjiTCO, "1000001", h.Lampiran.ID)
@@ -523,7 +527,7 @@ func TestLampiranUlangiSesudahGagal(t *testing.T) {
 // AC 56: kategori wajib dari master; master kosong adalah keadaan server.
 func TestLampiranKategoriDariMaster(t *testing.T) {
 	r := rakitanLampiran(t)
-	_, err := r.l.Unggah(context.Background(), pelakuUjiTCO, "1000001", services.BerkasMasuk{
+	_, err := r.l.Unggah(context.Background(), pelakuUjiTCO, "1000001", unggah.BerkasMasuk{
 		NamaFile: "a.pdf", Kategori: "KARANGAN", Isi: strings.NewReader("x")})
 	if !errors.Is(err, services.ErrKategoriLampiranTidakDikenal) {
 		t.Errorf("kategori asing: %v", err)
@@ -545,22 +549,22 @@ func TestLampiranKategoriDariMaster(t *testing.T) {
 func TestLampiranGerbangBerkas(t *testing.T) {
 	r := rakitanLampiran(t)
 	ctx := context.Background()
-	_, err := r.l.Unggah(ctx, pelakuUjiTCO, "1000001", services.BerkasMasuk{NamaFile: "a.pdf",
+	_, err := r.l.Unggah(ctx, pelakuUjiTCO, "1000001", unggah.BerkasMasuk{NamaFile: "a.pdf",
 		Kategori: "CLAUSES", Isi: strings.NewReader("")})
-	if !errors.Is(err, services.ErrBerkasKosong) || !strings.Contains(err.Error(), "Tidak ada file yg diattach") {
+	if !errors.Is(err, unggah.ErrBerkasKosong) || !strings.Contains(err.Error(), "Tidak ada file yg diattach") {
 		t.Errorf("berkas kosong: %v", err)
 	}
-	_, err = r.l.DenganBatas(4).Unggah(ctx, pelakuUjiTCO, "1000001", services.BerkasMasuk{NamaFile: "a.pdf",
+	_, err = r.l.DenganBatas(4).Unggah(ctx, pelakuUjiTCO, "1000001", unggah.BerkasMasuk{NamaFile: "a.pdf",
 		Kategori: "CLAUSES", Isi: strings.NewReader("12345")})
-	if !errors.Is(err, services.ErrBerkasTerlaluBesar) {
+	if !errors.Is(err, unggah.ErrBerkasTerlaluBesar) {
 		t.Errorf("batas: %v", err)
 	}
-	_, err = r.l.DenganFolder("").Unggah(ctx, pelakuUjiTCO, "1000001", services.BerkasMasuk{NamaFile: "a.pdf",
+	_, err = r.l.DenganFolder("").Unggah(ctx, pelakuUjiTCO, "1000001", unggah.BerkasMasuk{NamaFile: "a.pdf",
 		Kategori: "CLAUSES", Isi: strings.NewReader("1")})
-	if !errors.Is(err, services.ErrUnggahanDirBelumDisetel) {
+	if !errors.Is(err, unggah.ErrUnggahanDirBelumDisetel) {
 		t.Errorf("folder: %v", err)
 	}
-	_, err = r.l.Unggah(ctx, pelakuUjiTCO, "9999999", services.BerkasMasuk{NamaFile: "a.pdf",
+	_, err = r.l.Unggah(ctx, pelakuUjiTCO, "9999999", unggah.BerkasMasuk{NamaFile: "a.pdf",
 		Kategori: "CLAUSES", Isi: strings.NewReader("1")})
 	if !errors.Is(err, services.ErrTahunTreatyTidakAda) {
 		t.Errorf("tahun tidak ada: %v", err)
@@ -574,7 +578,7 @@ func TestLampiranGerbangBerkas(t *testing.T) {
 func TestLampiranTransaksiGagalMembuangBerkasAntre(t *testing.T) {
 	r := rakitanLampiran(t)
 	r.gudang.gagalSisip = errors.New("sisip gagal")
-	_, err := r.l.Unggah(context.Background(), pelakuUjiTCO, "1000001", services.BerkasMasuk{
+	_, err := r.l.Unggah(context.Background(), pelakuUjiTCO, "1000001", unggah.BerkasMasuk{
 		NamaFile: "a.pdf", Kategori: "CLAUSES", Isi: strings.NewReader("ISI")})
 	if err == nil {
 		t.Fatal("galat sisip ditelan")
@@ -611,7 +615,7 @@ func TestLampiranHapusBerkasSudahTidakAda(t *testing.T) {
 	if len(r.gudang.baris) != 0 {
 		t.Errorf("rekam %d", len(r.gudang.baris))
 	}
-	if r.antrean.cacahStatus(services.JenisEfekStorageHapus, repository.StatusEfekSelesai) != 1 {
+	if r.antrean.cacahStatus(unggah.JenisEfekStorageHapus, outbox.StatusEfekSelesai) != 1 {
 		t.Error("efek hapus tidak selesai - berkas yang sudah tidak ada dianggap kegagalan")
 	}
 }
@@ -636,7 +640,7 @@ func TestLampiranHapusSebelumTerkirim(t *testing.T) {
 	if r.simpan.cacah() != 0 {
 		t.Error("lampiran yang sudah dihapus tetap diunggah")
 	}
-	if r.antrean.cacahStatus(services.JenisEfekStorageUnggah, repository.StatusEfekSelesai) != 1 {
+	if r.antrean.cacahStatus(unggah.JenisEfekStorageUnggah, outbox.StatusEfekSelesai) != 1 {
 		t.Error("efek unggah lampiran terhapus tidak tuntas")
 	}
 }
@@ -721,16 +725,16 @@ func TestLampiranUnduh(t *testing.T) {
 // ada jejak yang tercatat atas nama pemakai yang salah.
 func TestLampiranAksiHanyaMenjalankanEfekMiliknya(t *testing.T) {
 	r := rakitanLampiran(t)
-	if err := r.antrean.Antre(context.Background(), nil, services.JenisEfekStorageUnggah, "UJI-LAIN", "{}", *r.jam); err != nil {
+	if err := r.antrean.Antre(context.Background(), nil, unggah.JenisEfekStorageUnggah, "UJI-LAIN", "{}", *r.jam); err != nil {
 		t.Fatal(err)
 	}
 	r.unggah(t, "1000001", "kontrak.pdf", "ISI-UJI")
 	for _, e := range r.antrean.efek {
-		if e.rujukan == "UJI-LAIN" && (e.status != repository.StatusEfekAntre || e.percobaan != 0) {
+		if e.rujukan == "UJI-LAIN" && (e.status != outbox.StatusEfekAntre || e.percobaan != 0) {
 			t.Errorf("efek lampiran lain ikut dijalankan: %+v", e)
 		}
 	}
-	if r.antrean.cacahStatus(services.JenisEfekStorageUnggah, repository.StatusEfekSelesai) != 1 {
+	if r.antrean.cacahStatus(unggah.JenisEfekStorageUnggah, outbox.StatusEfekSelesai) != 1 {
 		t.Error("efek lampiran sendiri tidak selesai")
 	}
 }

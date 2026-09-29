@@ -6,6 +6,8 @@ import (
 	"context"
 	"strings"
 	"testing"
+
+	"nusantarare/inti/db"
 )
 
 func TestRateLifeKolomTetapBerkunciIDUSEDBY(t *testing.T) {
@@ -14,7 +16,7 @@ func TestRateLifeKolomTetapBerkunciIDUSEDBY(t *testing.T) {
 	if strings.Join(strings.Fields(q), " ") != mau {
 		t.Errorf("SQL:\n%s\nmau:\n%s", q, mau)
 	}
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		t.Error(err)
 	}
 	if len(KolomRateLife) != 5 {

@@ -44,6 +44,11 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/layanan"
+	"nusantarare/inti/outbox"
+	"nusantarare/inti/penomor"
 )
 
 // ModulKomiteLife mengisi kolom `MODUL` outbox untuk baris Komite.
@@ -67,7 +72,7 @@ const (
 // Kasir dari jalur ini; efek hidupnya hanya satu baris
 // `DIRECTTOKASIR_LOG` (langkah 13 b3395). Menyetujui panggilan nyata adalah
 // perilaku BARU, bukan paritas (OQ-K-06).
-var KunciKasirKomite = KunciLayanan{Kategori1: "Kasir", Kategori2: "insertAllPaymentKasir"}
+var KunciKasirKomite = layanan.KunciLayanan{Kategori1: "Kasir", Kategori2: "insertAllPaymentKasir"}
 
 // muatanOutboxKomite adalah JSON kolom `MUATAN` baris Komite.
 //
@@ -86,13 +91,13 @@ type muatanOutboxKomite struct {
 // efekKomite adalah satu efek yang diantre.
 type efekKomite struct {
 	Jenis string
-	Kunci KunciLayanan
+	Kunci layanan.KunciLayanan
 }
 
 // KasirBerlaku adalah gerbang langkah 12, VERBATIM - MURNI.
 func KasirBerlaku(a models.AkibatKeputusanKomite, tipe, isKPR string) bool {
 	t := strings.TrimSpace(tipe)
-	return a.AkseptasiAkhir && t != models.TipePLTreatyProposal && t != models.TipePLTreatyRealisasi &&
+	return a.AkseptasiAkhir && t != penomor.TipePLTreatyProposal && t != penomor.TipePLTreatyRealisasi &&
 		strings.TrimSpace(isKPR) == "KPR"
 }
 
@@ -100,7 +105,7 @@ func KasirBerlaku(a models.AkibatKeputusanKomite, tipe, isKPR string) bool {
 func EfekKeputusanKomite(a models.AkibatKeputusanKomite, tipe, isKPR string) []efekKomite {
 	var e []efekKomite
 	if a.AkseptasiAkhir {
-		e = append(e, efekKomite{JenisEfekKomiteArasapas, KunciArasapasLife})
+		e = append(e, efekKomite{JenisEfekKomiteArasapas, layanan.KunciArasapasLife})
 	}
 	// Langkah 11 - setiap keputusan. SMTP langsung, bukan M_LINK_SERVICE
 	// (lihat `EfekEmail` Claim Life), jadi tanpa kunci kategori.
@@ -128,14 +133,14 @@ func RujukanEfekKomite(kasusID, jenis string, tingkat int) string {
 // antreEfekKomite menulis efek keputusan ke outbox, DI DALAM transaksinya.
 //
 // Mengembalikan jenis efek yang diantre - "tersimpan, belum tuntas" (ADR-0015).
-func antreEfekKomite(ctx context.Context, svc *Service, tx *repository.Tx,
+func antreEfekKomite(ctx context.Context, svc *Service, tx *db.Tx,
 	kasus repository.KasusKomite, a models.AkibatKeputusanKomite,
-	pelaku Pelaku, saat time.Time) ([]string, error) {
+	pelaku inti.Pelaku, saat time.Time) ([]string, error) {
 
-	pohon := repository.NewPohonKlaim(svc.db)
+	pohon := outbox.NewPenyimpan(svc.DB())
 	diantre := []string{}
 	// `TempOpenPage.PolicyDataLife.Type` - klaim induk.
-	tipe, err := repository.NewKlaimLife(svc.db).TypeKlaim(ctx, kasus.Baris.KlaimID)
+	tipe, err := repository.NewKlaimLife(svc.DB()).TypeKlaim(ctx, kasus.Baris.KlaimID)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +156,7 @@ func antreEfekKomite(ctx context.Context, svc *Service, tx *repository.Tx,
 		}
 		// ⛔ ID baris outbox = `SEQ_LOG_SERVICE_RNM` - pengenal idempoten unik
 		// sejak lahir (AC 21 spec); tiket 07 memakainya sebagai kunci anti-dobel.
-		if _, err := pohon.AntreEfek(ctx, tx, LiniLife, ModulKomiteLife, e.Jenis,
+		if _, err := pohon.AntreEfek(ctx, tx, outbox.LiniLife, ModulKomiteLife, e.Jenis,
 			RujukanEfekKomite(kasus.Baris.KasusID, e.Jenis, a.TingkatDiputus),
 			string(muatan), saat); err != nil {
 			return nil, err

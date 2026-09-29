@@ -32,7 +32,9 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/utils"
 )
 
 var (
@@ -58,10 +60,10 @@ func (GalatSecurityDobel) Is(target error) bool { return target == ErrSecurityDo
 type GudangSecurityTCO interface {
 	Daftar(ctx context.Context, reasID, thnTreaty string) ([]repository.SecurityTCO, error)
 	Ambil(ctx context.Context, reasID, id string) (repository.SecurityTCO, error)
-	CariDobel(ctx context.Context, tx *repository.Tx, reasID, reasSecurity, kecualiID string) (string, error)
-	Sisip(ctx context.Context, tx *repository.Tx, s models.SecurityReinsurer) (string, error)
-	Perbarui(ctx context.Context, tx *repository.Tx, s models.SecurityReinsurer) error
-	Hapus(ctx context.Context, tx *repository.Tx, reasID, id string) error
+	CariDobel(ctx context.Context, tx *db.Tx, reasID, reasSecurity, kecualiID string) (string, error)
+	Sisip(ctx context.Context, tx *db.Tx, s models.SecurityReinsurer) (string, error)
+	Perbarui(ctx context.Context, tx *db.Tx, s models.SecurityReinsurer) error
+	Hapus(ctx context.Context, tx *db.Tx, reasID, id string) error
 }
 
 // PembacaReinsurerTCO membaca satu reinsurer milik kombinasi - induk security.
@@ -77,27 +79,27 @@ func (securityBelumDisuntik) Daftar(context.Context, string, string) ([]reposito
 func (securityBelumDisuntik) Ambil(context.Context, string, string) (repository.SecurityTCO, error) {
 	return repository.SecurityTCO{}, ErrGudangSecurityBelumDisuntik
 }
-func (securityBelumDisuntik) CariDobel(context.Context, *repository.Tx, string, string, string) (string, error) {
+func (securityBelumDisuntik) CariDobel(context.Context, *db.Tx, string, string, string) (string, error) {
 	return "", ErrGudangSecurityBelumDisuntik
 }
-func (securityBelumDisuntik) Sisip(context.Context, *repository.Tx, models.SecurityReinsurer) (string, error) {
+func (securityBelumDisuntik) Sisip(context.Context, *db.Tx, models.SecurityReinsurer) (string, error) {
 	return "", ErrGudangSecurityBelumDisuntik
 }
-func (securityBelumDisuntik) Perbarui(context.Context, *repository.Tx, models.SecurityReinsurer) error {
+func (securityBelumDisuntik) Perbarui(context.Context, *db.Tx, models.SecurityReinsurer) error {
 	return ErrGudangSecurityBelumDisuntik
 }
-func (securityBelumDisuntik) Hapus(context.Context, *repository.Tx, string, string) error {
+func (securityBelumDisuntik) Hapus(context.Context, *db.Tx, string, string) error {
 	return ErrGudangSecurityBelumDisuntik
 }
 
 type gudangSecurityOracle struct {
 	*repository.MasterSecurityTCO
-	db *repository.DB
+	db *db.DB
 }
 
 // GudangSecurityOracle menyusun gudang security di atas Oracle.
 func GudangSecurityOracle(svc *Service) GudangSecurityTCO {
-	return gudangSecurityOracle{MasterSecurityTCO: repository.NewMasterSecurityTCO(svc.db), db: svc.db}
+	return gudangSecurityOracle{MasterSecurityTCO: repository.NewMasterSecurityTCO(svc.DB()), db: svc.DB()}
 }
 
 // SecurityMasuk adalah badan simpan - medan form `Security Name` b19648
@@ -145,7 +147,7 @@ type SecurityTCO struct {
 	kontrak   PemegangKontrakTCO
 	tahun     PemeriksaTahunTCO
 	master    PembacaReinsurerMasterTCO
-	transaksi func(ctx context.Context, fn func(tx *repository.Tx) error) error
+	transaksi func(ctx context.Context, fn func(tx *db.Tx) error) error
 }
 
 // SecurityTCO menyusun layanannya; bawaannya gagal terang.
@@ -193,7 +195,7 @@ func (l *SecurityTCO) DenganMaster(m PembacaReinsurerMasterTCO) *SecurityTCO {
 }
 
 // DenganTransaksi mengganti pelaksana transaksi - dipakai uji.
-func (l *SecurityTCO) DenganTransaksi(f func(ctx context.Context, fn func(tx *repository.Tx) error) error) *SecurityTCO {
+func (l *SecurityTCO) DenganTransaksi(f func(ctx context.Context, fn func(tx *db.Tx) error) error) *SecurityTCO {
 	s := l.salin()
 	s.transaksi = f
 	return s
@@ -213,10 +215,10 @@ func (l *SecurityTCO) induk(ctx context.Context, tahunID, kontrakID, reinsurerID
 }
 
 // Daftar membaca security seorang reinsurer - `SelectSecurityReinsurer`.
-func (l *SecurityTCO) Daftar(ctx context.Context, pelaku Pelaku, tahunID, kontrakID, reinsurerID string) (
+func (l *SecurityTCO) Daftar(ctx context.Context, pelaku inti.Pelaku, tahunID, kontrakID, reinsurerID string) (
 	DaftarSecurityTampil, error) {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return DaftarSecurityTampil{}, err
 	}
 	r, err := l.induk(ctx, tahunID, kontrakID, reinsurerID)
@@ -236,10 +238,10 @@ func (l *SecurityTCO) Daftar(ctx context.Context, pelaku Pelaku, tahunID, kontra
 
 // Simpan menulis security baru atau memperbarui yang ada - `Save` b20246
 // (`SaveSecurityReinsurer_Act`).
-func (l *SecurityTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID, kontrakID, reinsurerID string,
+func (l *SecurityTCO) Simpan(ctx context.Context, pelaku inti.Pelaku, tahunID, kontrakID, reinsurerID string,
 	m SecurityMasuk) (SecurityTampil, error) {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return SecurityTampil{}, err
 	}
 	r, err := l.induk(ctx, tahunID, kontrakID, reinsurerID)
@@ -262,7 +264,7 @@ func (l *SecurityTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID, kontra
 		return SecurityTampil{}, err
 	}
 	tampil := repository.SecurityTCO{SecurityReinsurer: s, ClientName: master.ClientName}
-	err = l.transaksi(ctx, func(tx *repository.Tx) error {
+	err = l.transaksi(ctx, func(tx *db.Tx) error {
 		if err := l.kontrak.Kunci(ctx, tx, tahunID, kontrakID); err != nil {
 			return err
 		}
@@ -302,15 +304,15 @@ func (l *SecurityTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID, kontra
 
 // Hapus membuang SATU security - `Delete` b17559 (`DeleteSecurityReinsurer`).
 // Reinsurer induknya tidak disentuh.
-func (l *SecurityTCO) Hapus(ctx context.Context, pelaku Pelaku, tahunID, kontrakID, reinsurerID, id string) (string, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (l *SecurityTCO) Hapus(ctx context.Context, pelaku inti.Pelaku, tahunID, kontrakID, reinsurerID, id string) (string, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return "", err
 	}
 	r, err := l.induk(ctx, tahunID, kontrakID, reinsurerID)
 	if err != nil {
 		return "", err
 	}
-	err = l.transaksi(ctx, func(tx *repository.Tx) error {
+	err = l.transaksi(ctx, func(tx *db.Tx) error {
 		if err := l.kontrak.Kunci(ctx, tx, tahunID, kontrakID); err != nil {
 			return err
 		}

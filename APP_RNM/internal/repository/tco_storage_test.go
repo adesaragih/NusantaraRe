@@ -7,13 +7,15 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"nusantarare/inti/db"
 )
 
 func TestSQLStorageTCO(t *testing.T) {
 	app := sqlAppStorageTCO("SKEMA_UJI." + MasterFolderImageTCO)
 	tok := sqlTokenStorageBerlakuTCO("SKEMA_UJI.GCP_IMAGE")
 	for nama, q := range map[string]string{"app": app, "token": tok} {
-		if err := PeriksaSQL(q); err != nil {
+		if err := db.PeriksaSQL(q); err != nil {
 			t.Errorf("%s: %v", nama, err)
 		}
 		if !strings.HasPrefix(strings.TrimSpace(q), "SELECT") {
@@ -31,8 +33,8 @@ func TestSQLStorageTCO(t *testing.T) {
 }
 
 func TestTokenStorageBerlakuTCOMenuntutTransaksi(t *testing.T) {
-	var d *DB
-	if _, _, err := d.TokenStorageBerlakuTCO(context.Background(), nil, "UJI-APP", time.Now(), time.Second); err == nil {
+	var d *db.DB
+	if _, _, err := TokenStorageBerlakuTCO(context.Background(), d, nil, "UJI-APP", time.Now(), time.Second); err == nil {
 		t.Error("tanpa transaksi diterima")
 	}
 }

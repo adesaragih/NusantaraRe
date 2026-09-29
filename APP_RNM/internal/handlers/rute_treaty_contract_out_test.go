@@ -13,6 +13,8 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
 )
 
 func TestRuteTreatyContractOutTerdaftarSatuBaris(t *testing.T) {
@@ -97,8 +99,8 @@ func TestJawabGalatTreatyContractOut(t *testing.T) {
 		err  error
 		kode int
 	}{
-		{services.ErrTanpaIdentitas, http.StatusUnauthorized},
-		{services.ErrTanpaWewenang, http.StatusForbidden},
+		{inti.ErrTanpaIdentitas, http.StatusUnauthorized},
+		{inti.ErrTanpaWewenang, http.StatusForbidden},
 		{services.ErrMasterJenisReasuransiKosong, http.StatusServiceUnavailable},
 		{services.ErrMasterGrupTreatyKosong, http.StatusServiceUnavailable},
 		{services.ErrTahunTreatyTidakAda, http.StatusNotFound},
@@ -107,7 +109,7 @@ func TestJawabGalatTreatyContractOut(t *testing.T) {
 		{models.ErrTahunTreatyGrupKosong, http.StatusUnprocessableEntity},
 		{models.ErrTahunTreatyTahunKosong, http.StatusUnprocessableEntity},
 		{models.ErrTahunTreatyBukanAngka, http.StatusUnprocessableEntity},
-		{services.ErrPermintaanTidakSah, http.StatusBadRequest},
+		{galat.ErrPermintaanTidakSah, http.StatusBadRequest},
 		{errors.New("UJI: galat lain"), http.StatusInternalServerError},
 	}
 	for _, k := range kasus {

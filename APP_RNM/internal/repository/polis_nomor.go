@@ -33,6 +33,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"nusantarare/inti/db"
 )
 
 var (
@@ -107,10 +109,10 @@ func (k KeadaanNomorPL) Bernomor() bool { return k.Nomor != "" }
 func (k KeadaanNomorPL) Utuh() bool { return k.CacahBernomor == k.CacahPeserta }
 
 // NomorPolis membaca dan menuliskan `PL_NUMBER`.
-type NomorPolis struct{ db *DB }
+type NomorPolis struct{ db *db.DB }
 
 // NewNomorPolis menyusunnya.
-func NewNomorPolis(db *DB) *NomorPolis { return &NomorPolis{db: db} }
+func NewNomorPolis(db *db.DB) *NomorPolis { return &NomorPolis{db: db} }
 
 // sqlIdentitasPolis merakit pembacaan bahan nomor dari header.
 func sqlIdentitasPolis(polis string) string {
@@ -119,7 +121,7 @@ func sqlIdentitasPolis(polis string) string {
 }
 
 // Identitas membaca tipe dan kode bisnis satu polis.
-func (r *NomorPolis) Identitas(ctx context.Context, tx *Tx, polisID string) (
+func (r *NomorPolis) Identitas(ctx context.Context, tx *db.Tx, polisID string) (
 	IdentitasPolis, error) {
 
 	polis, err := r.db.Qualify("T_PREMIUM_LIST")
@@ -127,11 +129,11 @@ func (r *NomorPolis) Identitas(ctx context.Context, tx *Tx, polisID string) (
 		return IdentitasPolis{}, err
 	}
 	q := sqlIdentitasPolis(polis)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return IdentitasPolis{}, err
 	}
 	var tipe, kode sql.NullString
-	if err := tx.tx.QueryRowContext(ctx, q, polisID).Scan(&tipe, &kode); err != nil {
+	if err := tx.QueryRowContext(ctx, q, polisID).Scan(&tipe, &kode); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return IdentitasPolis{}, fmt.Errorf("%w: %q", ErrPolisTakDitemukan, polisID)
 		}
@@ -160,7 +162,7 @@ func sqlKeadaanNomorPL(detail string) string {
 }
 
 // Keadaan membaca apakah polis sudah bernomor, dan seberapa utuh.
-func (r *NomorPolis) Keadaan(ctx context.Context, tx *Tx, polisID string) (
+func (r *NomorPolis) Keadaan(ctx context.Context, tx *db.Tx, polisID string) (
 	KeadaanNomorPL, error) {
 
 	detail, err := r.db.Qualify("T_PREMIUM_LIST_DETAIL")
@@ -168,12 +170,12 @@ func (r *NomorPolis) Keadaan(ctx context.Context, tx *Tx, polisID string) (
 		return KeadaanNomorPL{}, err
 	}
 	q := sqlKeadaanNomorPL(detail)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return KeadaanNomorPL{}, err
 	}
 	var terkecil, terbesar sql.NullString
 	var cacah, bernomor int
-	if err := tx.tx.QueryRowContext(ctx, q, polisID).Scan(
+	if err := tx.QueryRowContext(ctx, q, polisID).Scan(
 		&terkecil, &terbesar, &cacah, &bernomor); err != nil {
 		return KeadaanNomorPL{}, fmt.Errorf(
 			"repository: membaca keadaan nomor polis: %w", err)
@@ -233,12 +235,12 @@ func (r *NomorPolis) Ringkas(ctx context.Context, polisID string) (RingkasPolis,
 		return RingkasPolis{}, err
 	}
 	q := sqlRingkasPolis(polis, detail)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return RingkasPolis{}, err
 	}
 	var tipe, kode, terkecil, terbesar sql.NullString
 	var cacah, bernomor int
-	if err := r.db.sql.QueryRowContext(ctx, q, polisID).Scan(
+	if err := r.db.QueryRowContext(ctx, q, polisID).Scan(
 		&tipe, &kode, &terkecil, &terbesar, &cacah, &bernomor); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return RingkasPolis{}, fmt.Errorf("%w: %q", ErrPolisTakDitemukan, polisID)
@@ -278,7 +280,7 @@ func sqlTulisNomorPL(detail string) string {
 // TulisNomor menuliskan nomor ke seluruh baris peserta yang belum bernomor.
 //
 // Mengembalikan cacah baris yang tersentuh.
-func (r *NomorPolis) TulisNomor(ctx context.Context, tx *Tx,
+func (r *NomorPolis) TulisNomor(ctx context.Context, tx *db.Tx,
 	polisID, nomor string) (int, error) {
 
 	if strings.TrimSpace(nomor) == "" {
@@ -289,10 +291,10 @@ func (r *NomorPolis) TulisNomor(ctx context.Context, tx *Tx,
 		return 0, err
 	}
 	q := sqlTulisNomorPL(detail)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return 0, err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, nomor, polisID)
+	hasil, err := tx.ExecContext(ctx, q, nomor, polisID)
 	if err != nil {
 		return 0, fmt.Errorf("repository: menulis PL_NUMBER: %w", err)
 	}
@@ -333,15 +335,15 @@ func (r *NomorPolis) TulisNomor(ctx context.Context, tx *Tx,
 // sama), tidak diketik ulang. Ronde pertama menyalinnya utuh - dan dua
 // salinan satu query berarti penyaring yang suatu hari hanya diperbaiki di
 // satu tempat, yaitu dua jawaban berbeda untuk pertanyaan yang sama.
-func (r *NomorPolis) cacahPeserta(ctx context.Context, tx *Tx,
+func (r *NomorPolis) cacahPeserta(ctx context.Context, tx *db.Tx,
 	detail, polisID string) (int, error) {
 
 	q := sqlCacahPeserta(detail)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return 0, err
 	}
 	var cacah int
-	if err := tx.tx.QueryRowContext(ctx, q, polisID).Scan(&cacah); err != nil {
+	if err := tx.QueryRowContext(ctx, q, polisID).Scan(&cacah); err != nil {
 		return 0, fmt.Errorf("repository: mencacah peserta polis: %w", err)
 	}
 	return cacah, nil

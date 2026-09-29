@@ -28,6 +28,10 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/jejak"
+	"nusantarare/inti/penomor"
 )
 
 // kotakMasukPolis melayani GET /api/polis-life.
@@ -37,7 +41,7 @@ import (
 func kotakMasukPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		ukuran, _ := strconv.Atoi(r.URL.Query().Get("ukuran"))
@@ -45,7 +49,7 @@ func kotakMasukPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 		// ke 1 - bukan menjadi galat. Daftar yang ditolak karena satu
 		// parameter salah ketik lebih menjengkelkan daripada berguna.
 		halaman, _ := strconv.Atoi(r.URL.Query().Get("halaman"))
-		hal, err := svc.InboxPolis().Ambil(r.Context(), pelakuDari(r, stubPelaku),
+		hal, err := svc.InboxPolis().Ambil(r.Context(), inti.PelakuDari(r, stubPelaku),
 			r.URL.Query().Get("posisi"), halaman, ukuran)
 		if jawabGalatPolis(w, err) {
 			return
@@ -70,18 +74,18 @@ type jawabanPeriode struct {
 func periodeProduksi(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
-		p, err := svc.Periode().Sekarang(r.Context(), pelakuDari(r, stubPelaku))
+		p, err := svc.Periode().Sekarang(r.Context(), inti.PelakuDari(r, stubPelaku))
 		switch {
 		case err == nil:
-		case errors.Is(err, models.ErrTanggalTutupBukuKosong),
-			errors.Is(err, models.ErrTanggalTutupBukuTidakMasukAkal):
+		case errors.Is(err, penomor.ErrTanggalTutupBukuKosong),
+			errors.Is(err, penomor.ErrTanggalTutupBukuTidakMasukAkal):
 			// ⛔ 503, dan pesannya MENYEBUT TABEL SUMBERNYA. Ia keadaan
 			// server yang belum siap - tabel rujukan yang kosong - bukan
 			// permintaan yang salah.
-			galat(w, http.StatusServiceUnavailable, err.Error())
+			galat.Tulis(w, http.StatusServiceUnavailable, err.Error())
 			return
 		default:
 			if jawabGalatPolis(w, err) {
@@ -119,18 +123,18 @@ type jawabanAkibat struct {
 func putuskanPenawaran(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		var isi isiKeputusanPolis
 		if err := json.NewDecoder(r.Body).Decode(&isi); err != nil {
-			galat(w, http.StatusBadRequest, "badan permintaan bukan JSON yang sah")
+			galat.Tulis(w, http.StatusBadRequest, "badan permintaan bukan JSON yang sah")
 			return
 		}
 		akibat, err := svc.Penawaran().
-			DenganJejak(services.PerekamJejakOracle(svc)).
+			DenganJejak(jejak.PerekamJejakOracle(svc)).
 			DenganPenyalur(services.PenyalurPremiumListOracle(svc)).
-			Putuskan(r.Context(), pelakuDari(r, stubPelaku),
+			Putuskan(r.Context(), inti.PelakuDari(r, stubPelaku),
 				r.PathValue("id"), isi.Keputusan, time.Now())
 		if jawabGalatPolis(w, err) {
 			return
@@ -153,15 +157,15 @@ func putuskanPenawaran(svc *services.Service, stubPelaku bool) http.HandlerFunc 
 func ringkasPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		hasil, err := svc.RingkasPolis().Ambil(r.Context(),
-			pelakuDari(r, stubPelaku), r.URL.Query().Get("nomorPolis"))
+			inti.PelakuDari(r, stubPelaku), r.URL.Query().Get("nomorPolis"))
 		if jawabGalatPolis(w, err) {
 			return
 		}
-		tulisJSONPolis(w, hasil)
+		galat.TulisJSON(w, hasil)
 	}
 }
 
@@ -173,15 +177,15 @@ func ringkasPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 func kepalaPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		kepala, err := svc.DetailPolis().Kepala(r.Context(),
-			pelakuDari(r, stubPelaku), r.PathValue("id"))
+			inti.PelakuDari(r, stubPelaku), r.PathValue("id"))
 		if jawabGalatPolis(w, err) {
 			return
 		}
-		tulisJSONPolis(w, kepala)
+		galat.TulisJSON(w, kepala)
 	}
 }
 
@@ -189,17 +193,17 @@ func kepalaPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 func pesertaPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		halaman, _ := strconv.Atoi(r.URL.Query().Get("halaman"))
 		ukuran, _ := strconv.Atoi(r.URL.Query().Get("ukuran"))
 		hal, err := svc.DetailPolis().Peserta(r.Context(),
-			pelakuDari(r, stubPelaku), r.PathValue("id"), halaman, ukuran)
+			inti.PelakuDari(r, stubPelaku), r.PathValue("id"), halaman, ukuran)
 		if jawabGalatPolis(w, err) {
 			return
 		}
-		tulisJSONPolis(w, hal)
+		galat.TulisJSON(w, hal)
 	}
 }
 
@@ -212,18 +216,18 @@ func pesertaPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 func terbitkanNomorPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		hasil, err := svc.NomorPremiumList().Terbitkan(r.Context(),
-			pelakuDari(r, stubPelaku), r.PathValue("id"))
+			inti.PelakuDari(r, stubPelaku), r.PathValue("id"))
 		if jawabGalatPolis(w, err) {
 			return
 		}
 		// ⚠️ 200, bukan 201, bahkan saat nomornya baru lahir. Yang dibuat
 		// bukan sumber daya baru di alamat baru - ia medan pada polis yang
 		// sudah ada, dan alamatnya tetap sama sesudahnya.
-		tulisJSONPolis(w, hasil)
+		galat.TulisJSON(w, hasil)
 	}
 }
 
@@ -234,15 +238,15 @@ func terbitkanNomorPolis(svc *services.Service, stubPelaku bool) http.HandlerFun
 func rekapPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		hasil, err := svc.SummaryPremiumList().Lihat(r.Context(),
-			pelakuDari(r, stubPelaku), r.PathValue("id"))
+			inti.PelakuDari(r, stubPelaku), r.PathValue("id"))
 		if jawabGalatPolis(w, err) {
 			return
 		}
-		tulisJSONPolis(w, hasil)
+		galat.TulisJSON(w, hasil)
 	}
 }
 
@@ -261,25 +265,18 @@ func rekapPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 func submitRekapPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		hasil, err := svc.SummaryPremiumList().
-			DenganJejak(services.PerekamJejakOracle(svc)).
+			DenganJejak(jejak.PerekamJejakOracle(svc)).
 			DenganPenyalur(services.PenyalurPremiumListOracle(svc)).
-			Submit(r.Context(), pelakuDari(r, stubPelaku), r.PathValue("id"), time.Now())
+			Submit(r.Context(), inti.PelakuDari(r, stubPelaku), r.PathValue("id"), time.Now())
 		if jawabGalatPolis(w, err) {
 			return
 		}
-		tulisJSONPolis(w, hasil)
+		galat.TulisJSON(w, hasil)
 	}
-}
-
-// tulisJSONPolis menulis satu jawaban JSON 200.
-func tulisJSONPolis(w http.ResponseWriter, isi any) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(isi)
 }
 
 func tulisAkibat(w http.ResponseWriter, a models.AkibatKeputusan) {
@@ -298,57 +295,57 @@ func jawabGalatPolis(w http.ResponseWriter, err error) bool {
 	switch {
 	case err == nil:
 		return false
-	case errors.Is(err, services.ErrTanpaIdentitas):
-		galat(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
-	case errors.Is(err, services.ErrTanpaWewenang):
-		galat(w, http.StatusForbidden, "wewenang tidak mencukupi")
+	case errors.Is(err, inti.ErrTanpaIdentitas):
+		galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+	case errors.Is(err, inti.ErrTanpaWewenang):
+		galat.Tulis(w, http.StatusForbidden, "wewenang tidak mencukupi")
 	case errors.Is(err, services.ErrKasusPolisTertutup):
 		// 409: kasus tertutup tidak dapat diputus ulang (AC 3).
-		galat(w, http.StatusConflict, "kasus polis sudah ditutup")
+		galat.Tulis(w, http.StatusConflict, "kasus polis sudah ditutup")
 	case errors.Is(err, models.ErrKeputusanTidakAdaDiTahapIni):
 		// 409, bukan 400: keputusannya SAH, tahapnya yang tidak punya
 		// jalurnya. 400 akan membuat orang mengira ia salah ketik.
-		galat(w, http.StatusConflict, err.Error())
+		galat.Tulis(w, http.StatusConflict, err.Error())
 	case errors.Is(err, models.ErrBenderaTanpaKonektor):
 		// 409: `Confirm` sah, tetapi bendera kasus di luar decision table
 		// `IsFlagOnGoingPolicy` - hasilnya `Decline`, dan Decision3 tidak
 		// punya konektor untuknya (butir bq).
-		galat(w, http.StatusConflict, err.Error())
+		galat.Tulis(w, http.StatusConflict, err.Error())
 	case errors.Is(err, services.ErrPolisNomorTakDitemukan):
 		// 404: nomor polisnya memang tidak ada di PremiumList Life.
-		galat(w, http.StatusNotFound, err.Error())
+		galat.Tulis(w, http.StatusNotFound, err.Error())
 	case errors.Is(err, services.ErrPolisTakDitemukan):
 		// 404: polisnya memang tidak ada. 500 akan membuat orang mencari
 		// kerusakan di server padahal id-nya yang salah.
-		galat(w, http.StatusNotFound, "polis tidak ditemukan")
+		galat.Tulis(w, http.StatusNotFound, "polis tidak ditemukan")
 	case errors.Is(err, services.ErrPolisTanpaPeserta):
 		// 409: permintaannya sah, keadaan polisnya yang belum siap - dan
 		// pesannya menyebut apa yang harus dikerjakan lebih dahulu.
-		galat(w, http.StatusConflict, err.Error())
+		galat.Tulis(w, http.StatusConflict, err.Error())
 	case errors.Is(err, services.ErrNomorPLTerbitBersamaan):
 		// 409: permintaan lain mendahului. Penghitungnya TIDAK bergerak -
 		// transaksinya batal - jadi yang perlu dikerjakan pemanggil hanya
 		// membaca ulang nomornya.
-		galat(w, http.StatusConflict, err.Error())
+		galat.Tulis(w, http.StatusConflict, err.Error())
 	case errors.Is(err, services.ErrRekapKosong),
 		errors.Is(err, services.ErrSubmitBukanTahapSummary):
 		// 409: keadaan DATA polis yang belum siap, bukan permintaan yang salah.
-		galat(w, http.StatusConflict, err.Error())
+		galat.Tulis(w, http.StatusConflict, err.Error())
 	case errors.Is(err, services.ErrNomorPLBerbedaAntarPeserta):
 		// 409: data yang tidak sepakat dengan dirinya sendiri. 500 akan
 		// menyembunyikan bahwa yang rusak adalah barisnya, bukan kodenya.
-		galat(w, http.StatusConflict, err.Error())
-	case errors.Is(err, models.ErrTipePLTanpaCabang),
-		errors.Is(err, models.ErrKodeBisnisKosong),
-		errors.Is(err, models.ErrAwalanProduksiKosong),
-		errors.Is(err, models.ErrPeriodeNomorPLTakBerbentuk):
+		galat.Tulis(w, http.StatusConflict, err.Error())
+	case errors.Is(err, penomor.ErrTipePLTanpaCabang),
+		errors.Is(err, penomor.ErrKodeBisnisKosong),
+		errors.Is(err, penomor.ErrAwalanProduksiKosong),
+		errors.Is(err, penomor.ErrPeriodeNomorPLTakBerbentuk):
 		// 409: seluruhnya bahan nomor yang belum lengkap di DATA, bukan di
 		// permintaan. 400 akan menyalahkan pemanggil atas kolom yang kosong.
-		galat(w, http.StatusConflict, err.Error())
+		galat.Tulis(w, http.StatusConflict, err.Error())
 	case errors.Is(err, models.ErrKeputusanTidakDikenal),
 		errors.Is(err, models.ErrTahapPolisTidakDikenal),
-		errors.Is(err, services.ErrPermintaanTidakSah):
-		galat(w, http.StatusBadRequest, err.Error())
+		errors.Is(err, galat.ErrPermintaanTidakSah):
+		galat.Tulis(w, http.StatusBadRequest, err.Error())
 	default:
 		// ⚠️ Kalimatnya NETRAL sejak tiket 03. Sebelumnya ia berbunyi "gagal
 		// memproses keputusan polis" - benar saat hanya dua rute keputusan
@@ -358,7 +355,7 @@ func jawabGalatPolis(w http.ResponseWriter, err error) bool {
 		// kotak masuk polis hanya dapat ditemukan lewat program diagnosis,
 		// sebab jawaban 500 ini tidak meninggalkan jejak apa pun.
 		log.Printf("permintaan polis: %v", err)
-		galat(w, http.StatusInternalServerError, "gagal memproses permintaan polis")
+		galat.Tulis(w, http.StatusInternalServerError, "gagal memproses permintaan polis")
 	}
 	return true
 }

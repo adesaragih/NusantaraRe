@@ -15,6 +15,9 @@ import (
 	"time"
 
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/jejak"
 )
 
 // tambahPutaran melayani
@@ -22,10 +25,10 @@ import (
 func tambahPutaran(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
-		err := svc.Putaran().DenganJejak(services.PerekamJejakOracle(svc)).Tambah(r.Context(), pelakuDari(r, stubPelaku),
+		err := svc.Putaran().DenganJejak(jejak.PerekamJejakOracle(svc)).Tambah(r.Context(), inti.PelakuDari(r, stubPelaku),
 			r.PathValue("id"), r.PathValue("pesertaId"), time.Now())
 		if jawabGalatPutaran(w, err) {
 			return
@@ -40,28 +43,28 @@ func jawabGalatPutaran(w http.ResponseWriter, err error) bool {
 	switch {
 	case err == nil:
 		return false
-	case errors.Is(err, services.ErrTanpaIdentitas):
-		galat(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
-	case errors.Is(err, services.ErrTanpaWewenang):
-		galat(w, http.StatusForbidden,
+	case errors.Is(err, inti.ErrTanpaIdentitas):
+		galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+	case errors.Is(err, inti.ErrTanpaWewenang):
+		galat.Tulis(w, http.StatusForbidden,
 			"hanya ReasLifeSPV yang dapat menambah baris adjustment")
 	case errors.Is(err, services.ErrBukanPenolakan):
 		// 409: bukan permintaan yang salah, melainkan bentrokan dengan
 		// keadaan yang ada - baris terakhirnya belum ditolak.
-		galat(w, http.StatusConflict,
+		galat.Tulis(w, http.StatusConflict,
 			"putaran berikutnya hanya lahir sesudah baris terakhir ditolak")
 	case errors.Is(err, services.ErrTahapTanpaAddAdjustment):
 		// Padanan syarat tampil b18160 - di Pega tombolnya tidak ada.
-		galat(w, http.StatusConflict,
+		galat.Tulis(w, http.StatusConflict,
 			"Add baris adjustment hanya tersedia di tahap Claim Analis")
 	case errors.Is(err, services.ErrTahapTidakDikenal):
-		galat(w, http.StatusConflict, "tahap kasus ini tidak dikenal")
+		galat.Tulis(w, http.StatusConflict, "tahap kasus ini tidak dikenal")
 	case errors.Is(err, services.ErrKasusSudahTertutup):
-		galat(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
-	case errors.Is(err, services.ErrPermintaanTidakSah):
-		galat(w, http.StatusBadRequest, err.Error())
+		galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
+	case errors.Is(err, galat.ErrPermintaanTidakSah):
+		galat.Tulis(w, http.StatusBadRequest, err.Error())
 	default:
-		galat(w, http.StatusInternalServerError, "gagal menambah baris adjustment")
+		galat.Tulis(w, http.StatusInternalServerError, "gagal menambah baris adjustment")
 	}
 	return true
 }

@@ -41,6 +41,8 @@ import (
 	"fmt"
 	"strconv"
 	"time"
+
+	"nusantarare/inti/db"
 )
 
 // BarisInboxPolis adalah satu baris kotak masuk PremiumList.
@@ -74,10 +76,10 @@ type HalamanInboxPolis struct {
 }
 
 // InboxPolis membaca kotak masuk PremiumList.
-type InboxPolis struct{ db *DB }
+type InboxPolis struct{ db *db.DB }
 
 // NewInboxPolis menyusunnya.
-func NewInboxPolis(db *DB) *InboxPolis { return &InboxPolis{db: db} }
+func NewInboxPolis(db *db.DB) *InboxPolis { return &InboxPolis{db: db} }
 
 // sqlInboxPolis merakit pembacaan satu halaman.
 //
@@ -146,19 +148,19 @@ func (r *InboxPolis) Ambil(ctx context.Context, posisi string, halaman, ukuran i
 
 	var hasil HalamanInboxPolis
 	qCacah := sqlCacahInboxPolis(work)
-	if err := PeriksaSQL(qCacah); err != nil {
+	if err := db.PeriksaSQL(qCacah); err != nil {
 		return HalamanInboxPolis{}, err
 	}
-	if err := r.db.sql.QueryRowContext(ctx, qCacah,
-		kosongJadiNil(posisi)).Scan(&hasil.Total); err != nil {
+	if err := r.db.QueryRowContext(ctx, qCacah,
+		db.KosongJadiNil(posisi)).Scan(&hasil.Total); err != nil {
 		return HalamanInboxPolis{}, fmt.Errorf("repository: mencacah kotak masuk polis: %w", err)
 	}
 
 	q := sqlInboxPolis(work, polis, detail)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return HalamanInboxPolis{}, err
 	}
-	baris, err := r.db.sql.QueryContext(ctx, q, kosongJadiNil(posisi), kosongJadiNil(posisi),
+	baris, err := r.db.QueryContext(ctx, q, db.KosongJadiNil(posisi), db.KosongJadiNil(posisi),
 		(halaman-1)*ukuran, ukuran)
 	if err != nil {
 		return HalamanInboxPolis{}, fmt.Errorf("repository: membaca kotak masuk polis: %w", err)

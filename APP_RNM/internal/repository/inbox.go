@@ -25,6 +25,8 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
+
+	"nusantarare/inti/db"
 )
 
 // Batas halaman - dari `InboxPremiumList.xml`.
@@ -146,20 +148,20 @@ func (r *KlaimLife) AmbilInbox(ctx context.Context, s SaringInbox) (
 	}
 
 	qCacah := sqlCacahInbox(work, header, pakaiAkun)
-	if err := PeriksaSQL(qCacah); err != nil {
+	if err := db.PeriksaSQL(qCacah); err != nil {
 		return nil, 0, err
 	}
 	var total int
-	if err := r.db.sql.QueryRowContext(ctx, qCacah, argCacah...).Scan(&total); err != nil {
+	if err := r.db.QueryRowContext(ctx, qCacah, argCacah...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("repository: mencacah kotak masuk: %w", err)
 	}
 
 	q := sqlInbox(work, header, pakaiAkun)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, 0, err
 	}
 	argBaris = append(argBaris, s.Offset, s.Ukuran)
-	baris, err := r.db.sql.QueryContext(ctx, q, argBaris...)
+	baris, err := r.db.QueryContext(ctx, q, argBaris...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("repository: membaca kotak masuk: %w", err)
 	}

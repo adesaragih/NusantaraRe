@@ -11,6 +11,9 @@ import (
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
 )
 
 type gudangKontrakUji struct {
@@ -38,14 +41,14 @@ func (g *gudangKontrakUji) Ambil(_ context.Context, tahunID, id string) (models.
 	}
 	return k, nil
 }
-func (g *gudangKontrakUji) Sisip(_ context.Context, _ *repository.Tx, k models.KontrakTreaty) (string, error) {
+func (g *gudangKontrakUji) Sisip(_ context.Context, _ *db.Tx, k models.KontrakTreaty) (string, error) {
 	g.urut++
 	g.disisip++
 	k.ID = "100000" + string(rune('0'+g.urut))
 	g.baris[k.ID] = k
 	return k.ID, nil
 }
-func (g *gudangKontrakUji) Perbarui(_ context.Context, _ *repository.Tx, k models.KontrakTreaty) error {
+func (g *gudangKontrakUji) Perbarui(_ context.Context, _ *db.Tx, k models.KontrakTreaty) error {
 	lama, ada := g.baris[k.ID]
 	if !ada || lama.IDTreatyYear != k.IDTreatyYear {
 		return repository.ErrKontrakTidakAda
@@ -54,10 +57,10 @@ func (g *gudangKontrakUji) Perbarui(_ context.Context, _ *repository.Tx, k model
 	g.baris[k.ID] = k
 	return nil
 }
-func (g *gudangKontrakUji) CariDobel(_ context.Context, _ *repository.Tx, _, _, _ string) (string, error) {
+func (g *gudangKontrakUji) CariDobel(_ context.Context, _ *db.Tx, _, _, _ string) (string, error) {
 	return g.dobel, nil
 }
-func (g *gudangKontrakUji) JumlahAnakKombinasi(context.Context, *repository.Tx, models.KombinasiTCO, string) (int64, error) {
+func (g *gudangKontrakUji) JumlahAnakKombinasi(context.Context, *db.Tx, models.KombinasiTCO, string) (int64, error) {
 	return g.anak, nil
 }
 
@@ -93,10 +96,10 @@ func gudangKontrakKosong() *gudangKontrakUji {
 
 func TestKontrakTanpaIdentitasDitolak(t *testing.T) {
 	l := layananKontrak(gudangKontrakKosong())
-	if _, err := l.Daftar(context.Background(), services.Pelaku{}, "1000001"); !errors.Is(err, services.ErrTanpaIdentitas) {
+	if _, err := l.Daftar(context.Background(), inti.Pelaku{}, "1000001"); !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("daftar: %v", err)
 	}
-	if _, err := l.Simpan(context.Background(), services.Pelaku{}, "1000001", kontrakMasuk()); !errors.Is(err, services.ErrTanpaIdentitas) {
+	if _, err := l.Simpan(context.Background(), inti.Pelaku{}, "1000001", kontrakMasuk()); !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("simpan: %v", err)
 	}
 }
@@ -158,7 +161,7 @@ func TestKontrakGerbang(t *testing.T) {
 		{"1000001", func(m *services.KontrakMasuk) {
 			m.TreatyStartDate, m.TreatyEndDate = "2027-01-01", "2028-01-01"
 		}, models.ErrKontrakTahunMulaiBeda},
-		{"1000001", func(m *services.KontrakMasuk) { m.TreatyStartDate = "01/01/2026" }, services.ErrPermintaanTidakSah},
+		{"1000001", func(m *services.KontrakMasuk) { m.TreatyStartDate = "01/01/2026" }, galat.ErrPermintaanTidakSah},
 		{"1000001", func(m *services.KontrakMasuk) { m.TreatyEndDate = "" }, models.ErrKontrakAkhirKosong},
 	}
 	for _, k := range kasus {
@@ -204,7 +207,7 @@ func TestKontrakAkhirBawaan(t *testing.T) {
 	if akhir, err := l.AkhirBawaan(context.Background(), pelakuUjiTCO, "1000001", "2028-02-29"); err != nil || akhir != "2029-02-28" {
 		t.Errorf("akhir bawaan 29 Februari %q %v", akhir, err)
 	}
-	if _, err := l.AkhirBawaan(context.Background(), pelakuUjiTCO, "1000001", "kemarin"); !errors.Is(err, services.ErrPermintaanTidakSah) {
+	if _, err := l.AkhirBawaan(context.Background(), pelakuUjiTCO, "1000001", "kemarin"); !errors.Is(err, galat.ErrPermintaanTidakSah) {
 		t.Errorf("mulai bukan tanggal: %v", err)
 	}
 	if _, err := l.AkhirBawaan(context.Background(), pelakuUjiTCO, "9999999", "2026-03-01"); !errors.Is(err, services.ErrTahunTreatyTidakAda) {

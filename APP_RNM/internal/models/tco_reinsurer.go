@@ -26,7 +26,7 @@ import (
 
 	"github.com/cockroachdb/apd/v3"
 
-	"nusantarare/pkg/utils"
+	"nusantarare/inti/utils"
 )
 
 var (

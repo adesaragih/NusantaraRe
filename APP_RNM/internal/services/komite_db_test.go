@@ -21,16 +21,20 @@ import (
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
 	"nusantarare/internal/services"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti"
+	intidb "nusantarare/inti/db"
+	"nusantarare/inti/outbox"
+	intiuang "nusantarare/inti/uang"
+	"nusantarare/inti/utils"
 )
 
 // rosterUji menggantikan `POOLDATA.EMAILKOMITE` yang belum disahkan (butir af).
 type rosterUji struct {
 	tingkat int
-	ambang  []models.Money
+	ambang  []intiuang.Money
 }
 
-func (r *rosterUji) AmbilAnggota(_ context.Context, ambang models.Money,
+func (r *rosterUji) AmbilAnggota(_ context.Context, ambang intiuang.Money,
 	_ string) ([]services.AnggotaKomite, error) {
 	r.ambang = append(r.ambang, ambang)
 	out := make([]services.AnggotaKomite, 0, r.tingkat)
@@ -50,7 +54,7 @@ type kasusUji struct {
 	id     string
 }
 
-func (k *kasusUji) Buat(_ context.Context, _ *repository.Tx,
+func (k *kasusUji) Buat(_ context.Context, _ *intidb.Tx,
 	m services.MuatanKomite) (string, error) {
 	k.muatan = append(k.muatan, m)
 	return k.id, nil
@@ -58,7 +62,7 @@ func (k *kasusUji) Buat(_ context.Context, _ *repository.Tx,
 
 // pohonUjiKomite membuat satu klaim Type TP - bebas peran menurut tiket 07 -
 // dengan satu baris Outstanding yang rekeningnya LENGKAP.
-func pohonUjiKomite(t *testing.T, svc *services.Service, db *repository.DB,
+func pohonUjiKomite(t *testing.T, svc *services.Service, db *intidb.DB,
 	workID string, bank, idBank, rekening string) models.PohonKlaim {
 
 	t.Helper()
@@ -78,7 +82,7 @@ func pohonUjiKomite(t *testing.T, svc *services.Service, db *repository.DB,
 					// titik buta yang persis meloloskan cacat di
 					// PeriksaSatuMataUang: yang menyeberang justru CURRENCY.
 					CurrencyID:    "IDR",
-					JumlahKlaim:   models.Money{Amount: apd.New(1500000, 0), Currency: "IDR"},
+					JumlahKlaim:   intiuang.Money{Amount: apd.New(1500000, 0), Currency: "IDR"},
 					NamaBank:      bank,
 					IDBank:        idBank,
 					NomorRekening: rekening,
@@ -87,7 +91,7 @@ func pohonUjiKomite(t *testing.T, svc *services.Service, db *repository.DB,
 		},
 	}
 	ctx := context.Background()
-	err := svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	err := svc.DalamTransaksi(ctx, func(tx *intidb.Tx) error {
 		return repository.NewPohonKlaim(db).Simpan(ctx, tx, pohon)
 	})
 	if err != nil {
@@ -97,7 +101,7 @@ func pohonUjiKomite(t *testing.T, svc *services.Service, db *repository.DB,
 }
 
 // barisPertama membaca peserta dan baris pertama sebuah klaim.
-func barisPertama(t *testing.T, db *repository.DB, workID string) (string, models.BarisAdjustment) {
+func barisPertama(t *testing.T, db *intidb.DB, workID string) (string, models.BarisAdjustment) {
 	t.Helper()
 	ctx := context.Background()
 	baca := repository.NewKlaimLife(db)
@@ -137,7 +141,7 @@ func TestGerbangRekeningDitegakkanDiLayananBukanDiLayar(t *testing.T) {
 	kasus := &kasusUji{id: "KMT-UJI-1"}
 	err := svc.Komite().DenganRoster(roster).DenganKasus(kasus).
 		DenganJejak(&jejakUji{}).Serahkan(context.Background(),
-		services.Pelaku{AkunID: "UJI-AKUN", Peran: []string{services.PeranAdmin}},
+		inti.Pelaku{AkunID: "UJI-AKUN", Peran: []string{inti.PeranAdmin}},
 		pohon.Work.ID, pesertaID, baris.ID, saatUjiKomite)
 
 	if !errors.Is(err, services.ErrRekeningBelumLengkap) {
@@ -171,8 +175,8 @@ func TestPenyerahanMenautkanBarisDanMembawaMuatannya(t *testing.T) {
 	jejak := &jejakUji{}
 	ctx := context.Background()
 	err := svc.Komite().DenganRoster(roster).DenganKasus(kasus).DenganJejak(jejak).
-		Serahkan(ctx, services.Pelaku{AkunID: "UJI-AKUN",
-			Peran: []string{services.PeranAdmin}},
+		Serahkan(ctx, inti.Pelaku{AkunID: "UJI-AKUN",
+			Peran: []string{inti.PeranAdmin}},
 			pohon.Work.ID, pesertaID, baris.ID, saatUjiKomite)
 	if err != nil {
 		t.Fatalf("menyerahkan: %v", err)
@@ -220,8 +224,8 @@ func TestPenyerahanMenautkanBarisDanMembawaMuatannya(t *testing.T) {
 	// ⛔ Penyerahan kedua atas baris yang sama DITOLAK - dan ditolak oleh
 	// keadaan yang tersimpan, bukan oleh ingatan proses ini.
 	err = svc.Komite().DenganRoster(roster).DenganKasus(kasus).DenganJejak(jejak).
-		Serahkan(ctx, services.Pelaku{AkunID: "UJI-AKUN",
-			Peran: []string{services.PeranAdmin}},
+		Serahkan(ctx, inti.Pelaku{AkunID: "UJI-AKUN",
+			Peran: []string{inti.PeranAdmin}},
 			pohon.Work.ID, pesertaID, baris.ID, saatUjiKomite)
 	if !errors.Is(err, services.ErrBarisSudahDiserahkan) {
 		t.Errorf("penyerahan kedua: galat = %v, mau ErrBarisSudahDiserahkan", err)
@@ -242,8 +246,8 @@ func TestPenyerahanGagalTidakMeninggalkanPenautanSeparuh(t *testing.T) {
 	// transaksinya tidak utuh, KOMITE_ID akan tertinggal terisi.
 	err := svc.Komite().DenganRoster(&rosterUji{tingkat: 1}).
 		DenganKasus(&kasusUji{id: "KMT-UJI-712"}).DenganJejak(jejakGagal{}).
-		Serahkan(context.Background(), services.Pelaku{AkunID: "UJI-AKUN",
-			Peran: []string{services.PeranAdmin}},
+		Serahkan(context.Background(), inti.Pelaku{AkunID: "UJI-AKUN",
+			Peran: []string{inti.PeranAdmin}},
 			pohon.Work.ID, pesertaID, baris.ID, saatUjiKomite)
 	if !errors.Is(err, errJejakSengaja) {
 		t.Fatalf("galat = %v, mau errJejakSengaja", err)
@@ -260,7 +264,7 @@ func TestPenyerahanGagalTidakMeninggalkanPenautanSeparuh(t *testing.T) {
 type efekGagalUji struct{ dipanggil int }
 
 func (e *efekGagalUji) Nama() string { return "UJI-EFEK-MATI" }
-func (e *efekGagalUji) Jalankan(context.Context, services.MuatanEfek) error {
+func (e *efekGagalUji) Jalankan(context.Context, outbox.MuatanEfek) error {
 	e.dipanggil++
 	return errors.New("uji: layanan luar sedang mati")
 }
@@ -282,13 +286,13 @@ func TestEfekKeluarGagalTidakMenGagalkanPenyerahan(t *testing.T) {
 	efek := &efekGagalUji{}
 	antre := &antreanUji{}
 	// Lingkungan PRODUKSI: efeknya benar-benar dijalankan, dan gagal.
-	penyalur := services.NewPenyalur(services.Produksi, antre, efek)
+	penyalur := outbox.NewPenyalur(inti.Produksi, antre, efek)
 
 	err := svc.Komite().DenganRoster(&rosterUji{tingkat: 1}).
 		DenganKasus(&kasusUji{id: "KMT-UJI-713"}).DenganJejak(&jejakUji{}).
 		DenganPenyalur(penyalur).
-		Serahkan(context.Background(), services.Pelaku{AkunID: "UJI-AKUN",
-			Peran: []string{services.PeranAdmin}},
+		Serahkan(context.Background(), inti.Pelaku{AkunID: "UJI-AKUN",
+			Peran: []string{inti.PeranAdmin}},
 			pohon.Work.ID, pesertaID, baris.ID, saatUjiKomite)
 
 	// ⛔ Penyerahannya BERHASIL meski efek keluarnya gagal.

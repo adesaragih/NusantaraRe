@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
 )
 
 // TestGiliranHanyaAnggotaBerjalan - ADR-0014, AC 1 spec.
@@ -21,7 +23,7 @@ func TestGiliranHanyaAnggotaBerjalan(t *testing.T) {
 		t.Errorf("anggota berjalan ditolak: %v", err)
 	}
 	for _, akun := range []string{"UJI-A", "UJI-C", "UJI-LUAR", ""} {
-		if err := periksaGiliran(k, akun); !errors.Is(err, ErrTanpaWewenang) {
+		if err := periksaGiliran(k, akun); !errors.Is(err, inti.ErrTanpaWewenang) {
 			t.Errorf("%q: %v, mau ErrTanpaWewenang", akun, err)
 		}
 	}
@@ -52,11 +54,11 @@ func TestTingkatSudahDiputuskanTidakDiulang(t *testing.T) {
 // TestKeputusanAsingDitolakSebelumBasisData - AC 35 spec.
 func TestKeputusanAsingDitolakSebelumBasisData(t *testing.T) {
 	kk := New(nil).KeputusanKomite()
-	p := Pelaku{AkunID: "UJI"}
+	p := inti.Pelaku{AkunID: "UJI"}
 	if _, err := kk.Putuskan(context.Background(), p, "K", "3", "", time.Now()); !errors.Is(err, ErrKeputusanKomiteTidakDikenal) {
 		t.Errorf("keputusan 3: %v", err)
 	}
-	if _, err := kk.Putuskan(context.Background(), p, "K", "1", "", time.Now()); !errors.Is(err, repository.ErrTanpaOracle) {
+	if _, err := kk.Putuskan(context.Background(), p, "K", "1", "", time.Now()); !errors.Is(err, db.ErrTanpaOracle) {
 		t.Errorf("keputusan sah tanpa Oracle: %v", err)
 	}
 }
@@ -64,10 +66,10 @@ func TestKeputusanAsingDitolakSebelumBasisData(t *testing.T) {
 // TestTingkatAkhirBawaanGagalTerang - langkah 4/5 belum dibangun.
 func TestTingkatAkhirBawaanGagalTerang(t *testing.T) {
 	var p PenyelesaiAkhirKomite = PenyelesaiAkhirBelumAda{}
-	if _, err := p.Akseptasi(context.Background(), nil, repository.KasusKomite{}, Pelaku{}, time.Now()); !errors.Is(err, ErrPenyelesaianAkhirBelumAda) {
+	if _, err := p.Akseptasi(context.Background(), nil, repository.KasusKomite{}, inti.Pelaku{}, time.Now()); !errors.Is(err, ErrPenyelesaianAkhirBelumAda) {
 		t.Errorf("akseptasi bawaan: %v", err)
 	}
-	if err := p.Tolak(context.Background(), nil, repository.KasusKomite{}, Pelaku{}, time.Now()); !errors.Is(err, ErrPenyelesaianAkhirBelumAda) {
+	if err := p.Tolak(context.Background(), nil, repository.KasusKomite{}, inti.Pelaku{}, time.Now()); !errors.Is(err, ErrPenyelesaianAkhirBelumAda) {
 		t.Errorf("tolak bawaan: %v", err)
 	}
 }
@@ -97,12 +99,12 @@ func TestUrutanKeputusanDalamSatuTransaksi(t *testing.T) {
 // TestEskalasiHanyaAdmin - AC 11 spec Komite.
 func TestEskalasiHanyaAdmin(t *testing.T) {
 	kk := New(nil).KeputusanKomite()
-	_, err := kk.Eskalasi(context.Background(), Pelaku{AkunID: "UJI-B"}, "K", time.Now())
-	if !errors.Is(err, ErrTanpaWewenang) {
+	_, err := kk.Eskalasi(context.Background(), inti.Pelaku{AkunID: "UJI-B"}, "K", time.Now())
+	if !errors.Is(err, inti.ErrTanpaWewenang) {
 		t.Errorf("eskalasi bukan admin: %v", err)
 	}
-	_, err = kk.Eskalasi(context.Background(), Pelaku{AkunID: "UJI-ADM", Peran: []string{PeranAdmin}}, "K", time.Now())
-	if !errors.Is(err, repository.ErrTanpaOracle) {
+	_, err = kk.Eskalasi(context.Background(), inti.Pelaku{AkunID: "UJI-ADM", Peran: []string{inti.PeranAdmin}}, "K", time.Now())
+	if !errors.Is(err, db.ErrTanpaOracle) {
 		t.Errorf("eskalasi admin tanpa Oracle: %v", err)
 	}
 }
@@ -111,7 +113,7 @@ func TestEskalasiHanyaAdmin(t *testing.T) {
 func TestEskalasiBukanPintuBelakangKeputusan(t *testing.T) {
 	k := kasusUji()
 	k.Baris.KomiteCount, k.Baris.KomiteLoop = 2, 3
-	if err := periksaGiliran(k, "UJI-ADM"); !errors.Is(err, ErrTanpaWewenang) {
+	if err := periksaGiliran(k, "UJI-ADM"); !errors.Is(err, inti.ErrTanpaWewenang) {
 		t.Errorf("admin dapat memutuskan atas nama tingkat berjalan: %v", err)
 	}
 }

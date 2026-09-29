@@ -11,6 +11,8 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
 )
 
 // TestBarisLanjutanMewarisiDelapanKolomTanpaStatus - AC 5 spec.
@@ -126,20 +128,20 @@ func TestKlaimTidakTerminalSetelahPenolakan(t *testing.T) {
 func TestPutaranMenjagaPagarnya(t *testing.T) {
 	svc := services.New(nil)
 	ctx := context.Background()
-	if err := svc.Putaran().Tambah(ctx, services.Pelaku{}, "CLM-1", "P-1",
-		saatUji); !errors.Is(err, services.ErrTanpaIdentitas) {
+	if err := svc.Putaran().Tambah(ctx, inti.Pelaku{}, "CLM-1", "P-1",
+		saatUji); !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("tanpa identitas: galat = %v, mau ErrTanpaIdentitas", err)
 	}
 	// ⛔ Menambah baris lanjutan adalah menyimpan ke Outstanding - perannya
 	// sama dengan penyimpanan Outstanding, bukan peran penolak.
 	if err := svc.Putaran().Tambah(ctx,
-		pelakuBerperan(services.PeranMedicalAdvisor), "CLM-1", "P-1",
-		saatUji); !errors.Is(err, services.ErrTanpaWewenang) {
+		pelakuBerperan(inti.PeranMedicalAdvisor), "CLM-1", "P-1",
+		saatUji); !errors.Is(err, inti.ErrTanpaWewenang) {
 		t.Errorf("Medical menambah baris: galat = %v, mau ErrTanpaWewenang", err)
 	}
 	if err := svc.Putaran().Tambah(ctx,
 		pelakuBerperan(services.PeranSimpanOutstanding), " ", "P-1",
-		saatUji); !errors.Is(err, services.ErrPermintaanTidakSah) {
+		saatUji); !errors.Is(err, galat.ErrPermintaanTidakSah) {
 		t.Errorf("pengenal kosong: galat = %v, mau ErrPermintaanTidakSah", err)
 	}
 }

@@ -18,6 +18,9 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
 )
 
 // Galat polis yang perlu dikenali handler.
@@ -89,24 +92,24 @@ type DetailPolis struct{ svc *Service }
 func (s *Service) DetailPolis() *DetailPolis { return &DetailPolis{svc: s} }
 
 // Kepala membaca keterangan polis beserta nomornya.
-func (d *DetailPolis) Kepala(ctx context.Context, pelaku Pelaku, polisID string) (
+func (d *DetailPolis) Kepala(ctx context.Context, pelaku inti.Pelaku, polisID string) (
 	KepalaPolis, error) {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return KepalaPolis{}, err
 	}
 	if d == nil || d.svc == nil || !d.svc.PunyaDatabase() {
-		return KepalaPolis{}, repository.ErrTanpaOracle
+		return KepalaPolis{}, db.ErrTanpaOracle
 	}
 	if polisID == "" {
-		return KepalaPolis{}, fmt.Errorf("%w: id polis kosong", ErrPermintaanTidakSah)
+		return KepalaPolis{}, fmt.Errorf("%w: id polis kosong", galat.ErrPermintaanTidakSah)
 	}
 	// ⛔ TANPA TRANSAKSI, dan itu bukan kelalaian. `Ringkas` membaca kepala
 	// polis beserta nomornya dalam SATU query, jadi tidak ada dua pembacaan
 	// yang dapat berselisih - dan layanan pembaca yang membuka transaksi
 	// membuat penjaga butir bb menghitungnya sebagai pengubah, yaitu
 	// mengaburkan mana yang benar-benar menulis.
-	ringkas, err := repository.NewNomorPolis(d.svc.db).Ringkas(ctx, polisID)
+	ringkas, err := repository.NewNomorPolis(d.svc.DB()).Ringkas(ctx, polisID)
 	if err != nil {
 		return KepalaPolis{}, err
 	}
@@ -120,24 +123,24 @@ func (d *DetailPolis) Kepala(ctx context.Context, pelaku Pelaku, polisID string)
 }
 
 // Peserta membaca satu halaman grid peserta.
-func (d *DetailPolis) Peserta(ctx context.Context, pelaku Pelaku, polisID string,
+func (d *DetailPolis) Peserta(ctx context.Context, pelaku inti.Pelaku, polisID string,
 	halaman, ukuran int) (HalamanPesertaPolis, error) {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return HalamanPesertaPolis{}, err
 	}
 	if d == nil || d.svc == nil || !d.svc.PunyaDatabase() {
-		return HalamanPesertaPolis{}, repository.ErrTanpaOracle
+		return HalamanPesertaPolis{}, db.ErrTanpaOracle
 	}
 	if polisID == "" {
-		return HalamanPesertaPolis{}, fmt.Errorf("%w: id polis kosong", ErrPermintaanTidakSah)
+		return HalamanPesertaPolis{}, fmt.Errorf("%w: id polis kosong", galat.ErrPermintaanTidakSah)
 	}
 	if halaman < 1 {
 		halaman = 1
 	}
 	ukuran = repository.BatasUkuranHalamanPeserta(ukuran)
 
-	hal, err := repository.NewGridPeserta(d.svc.db).Ambil(ctx, polisID, halaman, ukuran)
+	hal, err := repository.NewGridPeserta(d.svc.DB()).Ambil(ctx, polisID, halaman, ukuran)
 	if err != nil {
 		return HalamanPesertaPolis{}, err
 	}

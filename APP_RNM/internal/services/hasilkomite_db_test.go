@@ -15,6 +15,9 @@ import (
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	intidb "nusantarare/inti/db"
+	"nusantarare/inti/galat"
 )
 
 // TestPutaranMelahirkanBarisOutstandingBaru - AC 5 spec, jalur penuh.
@@ -31,21 +34,21 @@ func TestPutaranMelahirkanBarisOutstandingBaru(t *testing.T) {
 	// Baris pertama ditolak dulu - putaran berikutnya lahir dari penolakan.
 	jejak := &jejakUji{}
 	if err := svc.Status().DenganJejak(jejak).Tolak(ctx,
-		services.Pelaku{AkunID: "UJI-AKUN", Peran: []string{services.PeranAdmin}},
+		inti.Pelaku{AkunID: "UJI-AKUN", Peran: []string{inti.PeranAdmin}},
 		pohon.Work.ID, baris.ID, "UJI alasan", saatUjiKomite); err != nil {
 		t.Fatalf("menolak baris pertama: %v", err)
 	}
 
 	// ⛔ Putaran berikutnya TIDAK boleh dibuka oleh peran penolak.
 	if err := svc.Putaran().DenganJejak(jejak).Tambah(ctx,
-		services.Pelaku{AkunID: "UJI-AKUN", Peran: []string{services.PeranAdmin}},
+		inti.Pelaku{AkunID: "UJI-AKUN", Peran: []string{inti.PeranAdmin}},
 		pohon.Work.ID, pesertaID, saatUjiKomite); !errors.Is(
-		err, services.ErrTanpaWewenang) {
+		err, inti.ErrTanpaWewenang) {
 		t.Errorf("Admin membuka putaran: galat = %v, mau ErrTanpaWewenang", err)
 	}
 
 	if err := svc.Putaran().DenganJejak(jejak).Tambah(ctx,
-		services.Pelaku{AkunID: "UJI-AKUN", Peran: []string{services.PeranSPV}},
+		inti.Pelaku{AkunID: "UJI-AKUN", Peran: []string{inti.PeranSPV}},
 		pohon.Work.ID, pesertaID, saatUjiKomite); err != nil {
 		t.Fatalf("membuka putaran: %v", err)
 	}
@@ -124,7 +127,7 @@ func TestPutaranKeduaDitolakSelamaBarisTerakhirBelumDiputus(t *testing.T) {
 	pohon := pohonUjiKomite(t, svc, db, "CLM-UJI721", "UJI-BANK", "UJI-006", "0012345")
 	pesertaID, baris := barisPertama(t, db, pohon.Work.ID)
 	ctx := context.Background()
-	spv := services.Pelaku{AkunID: "UJI-AKUN", Peran: []string{services.PeranSPV}}
+	spv := inti.Pelaku{AkunID: "UJI-AKUN", Peran: []string{inti.PeranSPV}}
 
 	// Baris masih Outstanding: belum ada penolakan, jadi belum ada putaran baru.
 	if err := svc.Putaran().DenganJejak(&jejakUji{}).Tambah(ctx, spv,
@@ -154,7 +157,7 @@ func TestPutaranPesertaTanpaBarisDijawabJujur(t *testing.T) {
 		Klaim: models.Klaim{NomorKlaim: "UJI-CLM-740",
 			Peserta: []models.Peserta{{NomorSertifikat: "006", MataUang: "IDR"}}},
 	}
-	if err := svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	if err := svc.DalamTransaksi(ctx, func(tx *intidb.Tx) error {
 		return repository.NewPohonKlaim(db).Simpan(ctx, tx, pohon)
 	}); err != nil {
 		t.Fatalf("menyiapkan pohon: %v", err)
@@ -163,13 +166,13 @@ func TestPutaranPesertaTanpaBarisDijawabJujur(t *testing.T) {
 	if err != nil || len(peserta) != 1 {
 		t.Fatalf("membaca peserta: %v (%d)", err, len(peserta))
 	}
-	spv := services.Pelaku{AkunID: "UJI-SPV", Peran: []string{services.PeranSPV}}
+	spv := inti.Pelaku{AkunID: "UJI-SPV", Peran: []string{inti.PeranSPV}}
 	if err := svc.Putaran().DenganJejak(&jejakUji{}).Tambah(ctx, spv,
 		"CLM-UJI740", peserta[0].ID, saatUjiKomite); !errors.Is(err, services.ErrBukanPenolakan) {
 		t.Errorf("peserta tanpa baris: galat = %v, mau ErrBukanPenolakan", err)
 	}
 	if err := svc.Putaran().DenganJejak(&jejakUji{}).Tambah(ctx, spv,
-		"CLM-UJI740", "PESERTA-LAIN", saatUjiKomite); !errors.Is(err, services.ErrPermintaanTidakSah) {
+		"CLM-UJI740", "PESERTA-LAIN", saatUjiKomite); !errors.Is(err, galat.ErrPermintaanTidakSah) {
 		t.Errorf("peserta klaim lain: galat = %v, mau ErrPermintaanTidakSah", err)
 	}
 	perBaris, err := repository.NewKlaimLife(db).AmbilBaris(ctx, "CLM-UJI740")
@@ -196,13 +199,13 @@ func TestPutaranHanyaDiClaimAnalis(t *testing.T) {
 			Peserta: []models.Peserta{{NomorSertifikat: "006", MataUang: "IDR",
 				Baris: []models.BarisAdjustment{{KodeStatus: models.KodeDitolak}}}}},
 	}
-	if err := svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	if err := svc.DalamTransaksi(ctx, func(tx *intidb.Tx) error {
 		return repository.NewPohonKlaim(db).Simpan(ctx, tx, pohon)
 	}); err != nil {
 		t.Fatalf("menyiapkan pohon: %v", err)
 	}
 	pesertaID, _ := barisPertama(t, db, "CLM-UJI741")
-	spv := services.Pelaku{AkunID: "UJI-SPV", Peran: []string{services.PeranSPV}}
+	spv := inti.Pelaku{AkunID: "UJI-SPV", Peran: []string{inti.PeranSPV}}
 	if err := svc.Putaran().DenganJejak(&jejakUji{}).Tambah(ctx, spv,
 		"CLM-UJI741", pesertaID, saatUjiKomite); !errors.Is(err, services.ErrTahapTanpaAddAdjustment) {
 		t.Errorf("Add di Outstanding: galat = %v, mau ErrTahapTanpaAddAdjustment", err)

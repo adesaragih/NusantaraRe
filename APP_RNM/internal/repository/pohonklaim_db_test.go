@@ -22,10 +22,13 @@ import (
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
 	"nusantarare/internal/repository/skemauji"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti/db"
+	"nusantarare/inti/migrasi"
+	intiuang "nusantarare/inti/uang"
+	"nusantarare/inti/utils"
 )
 
-func siapkanPohon(t *testing.T) (*repository.DB, *repository.PohonKlaim, func()) {
+func siapkanPohon(t *testing.T) (*db.DB, *repository.PohonKlaim, func()) {
 	t.Helper()
 	sqlDB, skema, err := skemauji.Buka()
 	if err != nil {
@@ -59,15 +62,15 @@ func siapkanPohon(t *testing.T) (*repository.DB, *repository.PohonKlaim, func())
 // ⛔ Nol nama orang, nol nomor polis nyata.
 func contohPohon(t *testing.T) models.PohonKlaim {
 	t.Helper()
-	uang := func(s string) models.Money {
-		m, err := models.NewMoney(s, "IDR")
+	uang := func(s string) intiuang.Money {
+		m, err := intiuang.NewMoney(s, "IDR")
 		if err != nil {
 			t.Fatal(err)
 		}
 		return m
 	}
-	rasio := func(s string) models.Ratio {
-		r, err := models.NewRatio(s, 8)
+	rasio := func(s string) intiuang.Ratio {
+		r, err := intiuang.NewRatio(s, 8)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -114,7 +117,7 @@ func TestMigrasiIdempoten(t *testing.T) {
 	db, _, bersihkan := siapkanPohon(t)
 	defer bersihkan()
 
-	lap, err := db.JalankanMigrasi(context.Background())
+	lap, err := migrasi.Jalankan(context.Background(), db, repository.SumberMigrasi())
 	if err != nil {
 		t.Fatalf("migrasi kedua gagal: %v", err)
 	}
@@ -151,7 +154,7 @@ func TestLangkahGagalSeparuhJalanTetapSelesai(t *testing.T) {
 	}
 	defer func() { _ = sqlDB.Close() }()
 
-	if _, err := db.BongkarMigrasi(ctx); err != nil {
+	if _, err := migrasi.Bongkar(ctx, db, repository.SumberMigrasi()); err != nil {
 		t.Fatalf("membongkar: %v", err)
 	}
 	// ⛔ Pernyataan yang dijalankan adalah pernyataan PERTAMA langkah 001 yang
@@ -159,7 +162,7 @@ func TestLangkahGagalSeparuhJalanTetapSelesai(t *testing.T) {
 	// Menirukan kegagalan separuh jalan dengan objek berbentuk lain akan
 	// menguji hal lain, dan lebih buruk: ia akan membuat skema cacat tercatat
 	// sebagai migrasi yang sukses.
-	pernyataan, err := repository.PernyataanLangkah("001_t_work_claim.sql")
+	pernyataan, err := migrasi.PernyataanLangkah(repository.SumberMigrasi(), "001_t_work_claim.sql")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -171,7 +174,7 @@ func TestLangkahGagalSeparuhJalanTetapSelesai(t *testing.T) {
 		t.Fatalf("membuat sisa objek: %v", err)
 	}
 
-	lap, err := db.JalankanMigrasi(ctx)
+	lap, err := migrasi.Jalankan(ctx, db, repository.SumberMigrasi())
 	if err != nil {
 		t.Fatalf("migrasi menolak meneruskan langkah yang separuh jadi: %v", err)
 	}
@@ -190,10 +193,10 @@ func TestJalurMundurDiuji(t *testing.T) {
 	defer bersihkan()
 	ctx := context.Background()
 
-	if _, err := db.BongkarMigrasi(ctx); err != nil {
+	if _, err := migrasi.Bongkar(ctx, db, repository.SumberMigrasi()); err != nil {
 		t.Fatalf("jalur mundur gagal: %v", err)
 	}
-	lap, err := db.JalankanMigrasi(ctx)
+	lap, err := migrasi.Jalankan(ctx, db, repository.SumberMigrasi())
 	if err != nil {
 		t.Fatalf("migrasi ulang sesudah mundur gagal: %v", err)
 	}
@@ -474,7 +477,7 @@ func TestNamaConstraintBertabrakanMenggagalkanMigrasi(t *testing.T) {
 	}
 	defer func() { _ = sqlDB.Close() }()
 
-	if _, err := db.BongkarMigrasi(ctx); err != nil {
+	if _, err := migrasi.Bongkar(ctx, db, repository.SumberMigrasi()); err != nil {
 		t.Fatalf("membongkar: %v", err)
 	}
 	// Tabel lain yang sudah memakai nama constraint milik langkah 001.
@@ -487,7 +490,7 @@ func TestNamaConstraintBertabrakanMenggagalkanMigrasi(t *testing.T) {
 		_, _ = sqlDB.ExecContext(ctx, "DROP TABLE "+skema+".UJI_TABRAKAN CASCADE CONSTRAINTS")
 	}()
 
-	_, err = db.JalankanMigrasi(ctx)
+	_, err = migrasi.Jalankan(ctx, db, repository.SumberMigrasi())
 	if err == nil {
 		t.Fatal("migrasi LULUS padahal nama constraint bertabrakan - tabel 001 tidak terbuat")
 	}
@@ -533,7 +536,7 @@ func TestBentukTabelBerbedaMenggagalkanMigrasi(t *testing.T) {
 	}
 	defer func() { _ = sqlDB.Close() }()
 
-	if _, err := db.BongkarMigrasi(ctx); err != nil {
+	if _, err := migrasi.Bongkar(ctx, db, repository.SumberMigrasi()); err != nil {
 		t.Fatalf("membongkar: %v", err)
 	}
 	// Tabel bernama sama dengan yang dibuat 007, tetapi kolomnya sengaja
@@ -553,7 +556,7 @@ func TestBentukTabelBerbedaMenggagalkanMigrasi(t *testing.T) {
 		_, _ = sqlDB.ExecContext(ctx, "DROP TABLE "+skema+".T_CLAIMLF_DOCUMENT CASCADE CONSTRAINTS")
 	}()
 
-	_, err = db.JalankanMigrasi(ctx)
+	_, err = migrasi.Jalankan(ctx, db, repository.SumberMigrasi())
 	if err == nil {
 		t.Fatal("migrasi LULUS padahal T_CLAIMLF_DOCUMENT berbentuk lain - " +
 			"aplikasi akan berjalan di atas tabel yang kolomnya bukan miliknya")

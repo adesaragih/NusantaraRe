@@ -22,6 +22,9 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
 )
 
 // PeranRejectOutstanding adalah peran yang boleh menolak baris Outstanding.
@@ -32,7 +35,7 @@ import (
 //
 // ⚠️ Gerbang itu menguji `.STS_REJECT` TINGKAT BARIS - bukti bahwa wewenang
 // pun diukur per baris, bukan per klaim.
-const PeranRejectOutstanding = PeranAdmin
+const PeranRejectOutstanding = inti.PeranAdmin
 
 var (
 	// ErrKlaimBelumBernomor - padanan `CLAIM_NO != ''` pada gerbang XML.
@@ -79,40 +82,40 @@ func PeriksaKlaimBernomor(k models.Klaim) error {
 // `T_CLAIMLF_JEJAK.KOMENTAR` pada baris jejak transisi penolakan ini - di
 // transaksi yang sama. Pega menyalinnya ke `KomiteList.KomiteComment`
 // (`RejectOSClaimLife_Act` b2262-b2263).
-func (st *Status) Tolak(ctx context.Context, pelaku Pelaku,
+func (st *Status) Tolak(ctx context.Context, pelaku inti.Pelaku,
 	klaimID, adjID, komentar string, saat time.Time) error {
 
 	// ⛔ Identitas DULU, lalu peran, lalu barulah apa pun dibaca. Urutan ini
 	// bukan gaya: permintaan yang tidak berwenang tidak berhak tahu apakah
 	// klaimnya ada, dan permintaan tanpa identitas tidak berhak diberi tahu
 	// bahwa yang kurang adalah perannya.
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return err
 	}
-	if err := WajibPeran(pelaku, PeranRejectOutstanding); err != nil {
+	if err := inti.WajibPeran(pelaku, PeranRejectOutstanding); err != nil {
 		return err
 	}
 	if strings.TrimSpace(klaimID) == "" || strings.TrimSpace(adjID) == "" {
-		return fmt.Errorf("%w: pengenal klaim dan baris wajib diisi", ErrPermintaanTidakSah)
+		return fmt.Errorf("%w: pengenal klaim dan baris wajib diisi", galat.ErrPermintaanTidakSah)
 	}
 	komentar = strings.TrimSpace(komentar)
 	if komentar == "" {
-		return fmt.Errorf("%w: Remarks wajib diisi", ErrPermintaanTidakSah)
+		return fmt.Errorf("%w: Remarks wajib diisi", galat.ErrPermintaanTidakSah)
 	}
 	if len(komentar) > BatasKomentarJejak {
-		return fmt.Errorf("%w: Remarks melebihi %d byte", ErrPermintaanTidakSah, BatasKomentarJejak)
+		return fmt.Errorf("%w: Remarks melebihi %d byte", galat.ErrPermintaanTidakSah, BatasKomentarJejak)
 	}
 	if !st.svc.PunyaDatabase() {
-		return repository.ErrTanpaOracle
+		return db.ErrTanpaOracle
 	}
 
-	baca := repository.NewKlaimLife(st.svc.db)
+	baca := repository.NewKlaimLife(st.svc.DB())
 	hdr, err := baca.AmbilHeader(ctx, klaimID)
 	if err != nil {
 		return err
 	}
 	if hdr == nil {
-		return fmt.Errorf("%w: klaim %q tidak ada", ErrPermintaanTidakSah, klaimID)
+		return fmt.Errorf("%w: klaim %q tidak ada", galat.ErrPermintaanTidakSah, klaimID)
 	}
 	if err := PeriksaKlaimBernomor(*hdr); err != nil {
 		return err
@@ -156,5 +159,5 @@ func (st *Status) pemilikBaris(ctx context.Context, baca *repository.KlaimLife,
 		}
 	}
 	return "", fmt.Errorf("%w: baris %q bukan milik klaim %q",
-		ErrPermintaanTidakSah, adjID, klaimID)
+		galat.ErrPermintaanTidakSah, adjID, klaimID)
 }

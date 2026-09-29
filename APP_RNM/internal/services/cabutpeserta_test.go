@@ -8,27 +8,29 @@ import (
 	"errors"
 	"testing"
 
-	"nusantarare/internal/repository"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
 )
 
 func TestCabutPesertaMenjagaPagarnya(t *testing.T) {
 	svc := services.New(nil)
 	ctx := context.Background()
-	if err := svc.Status().CabutPeserta(ctx, services.Pelaku{}, "CLM-1", "P-1", saatUji); !errors.Is(err, services.ErrTanpaIdentitas) {
+	if err := svc.Status().CabutPeserta(ctx, inti.Pelaku{}, "CLM-1", "P-1", saatUji); !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("anonim: %v, mau ErrTanpaIdentitas", err)
 	}
-	for _, peran := range []string{services.PeranMedicalAdvisor, services.PeranSPV} {
-		if err := svc.Status().CabutPeserta(ctx, pelakuBerperan(peran), "CLM-1", "P-1", saatUji); !errors.Is(err, services.ErrTanpaWewenang) {
+	for _, peran := range []string{inti.PeranMedicalAdvisor, inti.PeranSPV} {
+		if err := svc.Status().CabutPeserta(ctx, pelakuBerperan(peran), "CLM-1", "P-1", saatUji); !errors.Is(err, inti.ErrTanpaWewenang) {
 			t.Errorf("%s: %v, mau ErrTanpaWewenang", peran, err)
 		}
 	}
 	for _, k := range []struct{ klaim, peserta string }{{"", "P-1"}, {"CLM-1", " "}} {
-		if err := svc.Status().CabutPeserta(ctx, pelakuAdmin(), k.klaim, k.peserta, saatUji); !errors.Is(err, services.ErrPermintaanTidakSah) {
+		if err := svc.Status().CabutPeserta(ctx, pelakuAdmin(), k.klaim, k.peserta, saatUji); !errors.Is(err, galat.ErrPermintaanTidakSah) {
 			t.Errorf("%q/%q: %v, mau ErrPermintaanTidakSah", k.klaim, k.peserta, err)
 		}
 	}
-	if err := svc.Status().CabutPeserta(ctx, pelakuAdmin(), "CLM-1", "P-1", saatUji); !errors.Is(err, repository.ErrTanpaOracle) {
+	if err := svc.Status().CabutPeserta(ctx, pelakuAdmin(), "CLM-1", "P-1", saatUji); !errors.Is(err, db.ErrTanpaOracle) {
 		t.Errorf("admin: %v, mau ErrTanpaOracle", err)
 	}
 }

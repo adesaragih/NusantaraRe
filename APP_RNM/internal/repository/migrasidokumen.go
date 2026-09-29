@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"nusantarare/internal/models"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti/utils"
 )
 
 // Jenis temuan tambahan A4.

@@ -16,7 +16,10 @@ import (
 	"testing"
 	"time"
 
-	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/outbox"
+	"nusantarare/inti/unggah"
 )
 
 // kategoriUji menggantikan daftar kategori yang belum ada di korpus.
@@ -27,9 +30,9 @@ func (k kategoriUji) KategoriWajib(context.Context) ([]string, error) {
 }
 
 func TestUnggahMenolakTanpaIdentitas(t *testing.T) {
-	_, err := New(nil).Dokumen().Unggah(context.Background(), Pelaku{},
-		"K-1", "P-1", BerkasMasuk{}, time.Now())
-	if !errors.Is(err, ErrTanpaIdentitas) {
+	_, err := New(nil).Dokumen().Unggah(context.Background(), inti.Pelaku{},
+		"K-1", "P-1", unggah.BerkasMasuk{}, time.Now())
+	if !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("galat = %v, mau ErrTanpaIdentitas", err)
 	}
 }
@@ -42,8 +45,8 @@ func TestUnggahTanpaFolderGagalTerang(t *testing.T) {
 	//
 	// ⚠️ Diuji lewat `tulisBerkas`, sebab jalur penuhnya menuntut Oracle.
 	// Yang dijaga: pesannya menyebut `UNGGAHAN_DIR`.
-	if !strings.Contains(ErrUnggahanDirBelumDisetel.Error(), "UNGGAHAN_DIR") {
-		t.Errorf("galat tidak menyebut nama kuncinya: %v", ErrUnggahanDirBelumDisetel)
+	if !strings.Contains(unggah.ErrUnggahanDirBelumDisetel.Error(), "UNGGAHAN_DIR") {
+		t.Errorf("galat tidak menyebut nama kuncinya: %v", unggah.ErrUnggahanDirBelumDisetel)
 	}
 }
 
@@ -61,7 +64,7 @@ func TestBatasUkuranDitegakkanSaatMenyalin(t *testing.T) {
 	jalur := filepath.Join(dir, "besar.bin")
 	isi := bytes.NewReader(make([]byte, batasUji+1))
 	err := u.tulisBerkas(jalur, isi)
-	if !errors.Is(err, ErrBerkasTerlaluBesar) {
+	if !errors.Is(err, unggah.ErrBerkasTerlaluBesar) {
 		t.Fatalf("galat = %v, mau ErrBerkasTerlaluBesar", err)
 	}
 	// ⛔ Dan berkasnya DIBUANG. Berkas yang ditolak tetapi tertinggal adalah
@@ -92,7 +95,7 @@ func TestBerkasKosongDitolak(t *testing.T) {
 	jalur := filepath.Join(dir, "kosong.bin")
 	err := New(nil).Dokumen().DenganFolder(dir).tulisBerkas(jalur,
 		bytes.NewReader(nil))
-	if !errors.Is(err, ErrBerkasKosong) {
+	if !errors.Is(err, unggah.ErrBerkasKosong) {
 		t.Fatalf("galat = %v, mau ErrBerkasKosong", err)
 	}
 	if _, err := os.Stat(jalur); !os.IsNotExist(err) {
@@ -116,7 +119,7 @@ func TestKategoriDiperiksaTerhadapDaftarYangSama(t *testing.T) {
 		ErrKategoriDokumenTidakDikenal) {
 		t.Errorf("kategori karangan: %v, mau ErrKategoriDokumenTidakDikenal", err)
 	}
-	if err := u.periksaKategori(ctx, "  "); !errors.Is(err, ErrPermintaanTidakSah) {
+	if err := u.periksaKategori(ctx, "  "); !errors.Is(err, galat.ErrPermintaanTidakSah) {
 		t.Errorf("kategori kosong: %v, mau ErrPermintaanTidakSah", err)
 	}
 }
@@ -158,11 +161,11 @@ func TestJenisEfekBerkasAdalahTeksYangTetap(t *testing.T) {
 	// ⛔ Nilainya tersimpan di kolom dan dibaca kembali oleh proses lain,
 	// mungkin berhari-hari kemudian. Mengganti nama konstanta Go tidak boleh
 	// membuat baris yang sudah terantre tak terkenali.
-	if JenisEfekStorageUnggah != "storage-unggah" {
-		t.Errorf("jenis unggah = %q", JenisEfekStorageUnggah)
+	if unggah.JenisEfekStorageUnggah != "storage-unggah" {
+		t.Errorf("jenis unggah = %q", unggah.JenisEfekStorageUnggah)
 	}
-	if JenisEfekStorageHapus != "storage-hapus" {
-		t.Errorf("jenis hapus = %q", JenisEfekStorageHapus)
+	if unggah.JenisEfekStorageHapus != "storage-hapus" {
+		t.Errorf("jenis hapus = %q", unggah.JenisEfekStorageHapus)
 	}
 	if PenyimpananStandar != "standard" {
 		t.Errorf("STORAGE = %q; `Insert_T_Storage_SQL.xml` b100 menulis 'standard'",
@@ -190,14 +193,14 @@ func TestPelaksanaBerkasMenolakJenisAsing(t *testing.T) {
 	p := &PelaksanaBerkasLokal{}
 	err := p.Laksanakan(context.Background(), nil,
 		repositoryBarisUji("email"))
-	if !errors.Is(err, ErrPermintaanTidakSah) {
+	if !errors.Is(err, galat.ErrPermintaanTidakSah) {
 		t.Errorf("galat = %v, mau ErrPermintaanTidakSah", err)
 	}
 }
 
 // repositoryBarisUji menyusun satu baris outbox seadanya.
-func repositoryBarisUji(jenis string) repository.BarisEfekKeluar {
-	return repository.BarisEfekKeluar{ID: "1", Jenis: jenis, Rujukan: "1"}
+func repositoryBarisUji(jenis string) outbox.BarisEfekKeluar {
+	return outbox.BarisEfekKeluar{ID: "1", Jenis: jenis, Rujukan: "1"}
 }
 
 func TestBatasUkuranAdalahAngkaYangDinyatakan(t *testing.T) {
@@ -205,16 +208,16 @@ func TestBatasUkuranAdalahAngkaYangDinyatakan(t *testing.T) {
 	// bergantung pada disk. Yang menjaga ANGKA SUNGGUHANNYA adalah uji ini -
 	// tanpa itu, batas 25 MiB dapat berubah menjadi apa pun tanpa satu pun
 	// uji berbunyi.
-	if BatasUkuranUnggahan != 25<<20 {
+	if unggah.BatasUkuranUnggahan != 25<<20 {
 		t.Errorf("BatasUkuranUnggahan = %d, mau %d (25 MiB)",
-			BatasUkuranUnggahan, 25<<20)
+			unggah.BatasUkuranUnggahan, 25<<20)
 	}
 	// ⛔ Dan ia TIDAK dapat dimatikan lewat DenganBatas.
 	u := New(nil).Dokumen()
-	if got := u.DenganBatas(0).batas; got != BatasUkuranUnggahan {
-		t.Errorf("DenganBatas(0) = %d, mau tetap %d", got, BatasUkuranUnggahan)
+	if got := u.DenganBatas(0).batas; got != unggah.BatasUkuranUnggahan {
+		t.Errorf("DenganBatas(0) = %d, mau tetap %d", got, unggah.BatasUkuranUnggahan)
 	}
-	if got := u.DenganBatas(-1).batas; got != BatasUkuranUnggahan {
-		t.Errorf("DenganBatas(-1) = %d, mau tetap %d", got, BatasUkuranUnggahan)
+	if got := u.DenganBatas(-1).batas; got != unggah.BatasUkuranUnggahan {
+		t.Errorf("DenganBatas(-1) = %d, mau tetap %d", got, unggah.BatasUkuranUnggahan)
 	}
 }

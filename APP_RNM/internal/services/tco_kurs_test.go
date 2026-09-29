@@ -15,7 +15,9 @@ import (
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
 	"nusantarare/internal/services"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/utils"
 )
 
 var mulaiTahunKurs = time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -55,7 +57,7 @@ func (m mataUangUji) Pengenal(_ context.Context, kode string) (string, error) {
 	if id, ada := m[kode]; ada {
 		return id, nil
 	}
-	return "", fmt.Errorf("%w: %q", repository.ErrMataUangTidakDikenal, kode)
+	return "", fmt.Errorf("%w: %q", db.ErrMataUangTidakDikenal, kode)
 }
 
 func barisKurs2026() []models.KursTCO {
@@ -135,7 +137,7 @@ func TestKursGagalTerang(t *testing.T) {
 		pelakuUjiTCO, "1000001"); !errors.Is(err, services.ErrGudangKursBelumDisuntik) {
 		t.Errorf("bawaan: %v", err)
 	}
-	if _, err := layananKurs(&masterKursUji{}).KursTahun(context.Background(), services.Pelaku{}, "1000001"); !errors.Is(err, services.ErrTanpaIdentitas) {
+	if _, err := layananKurs(&masterKursUji{}).KursTahun(context.Background(), inti.Pelaku{}, "1000001"); !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("identitas: %v", err)
 	}
 }

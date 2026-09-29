@@ -17,10 +17,11 @@ import (
 	"syscall"
 	"time"
 
-	"nusantarare/internal/config"
 	"nusantarare/internal/handlers"
-	"nusantarare/internal/repository"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/config"
+	intidb "nusantarare/inti/db"
 )
 
 func main() {
@@ -34,9 +35,9 @@ func main() {
 		log.Fatalf("konfigurasi: %v", err)
 	}
 
-	var db *repository.DB
+	var db *intidb.DB
 	if cfg.PunyaOracle() {
-		db, err = repository.Open(cfg)
+		db, err = intidb.Open(cfg)
 		if err != nil {
 			log.Fatalf("oracle: %v", err)
 		}
@@ -50,7 +51,7 @@ func main() {
 	// ⚠️ Ia menggerbangi EFEK KELUAR saja, tidak pernah penyimpanan: klaim
 	// tetap tersimpan di lingkungan non-produksi.
 	svc := services.New(db).
-		DenganLingkungan(services.LingkunganDariFlag(cfg.IsPegaProd)).
+		DenganLingkungan(inti.LingkunganDariFlag(cfg.IsPegaProd)).
 		DenganUnggahanDir(cfg.UnggahanDir).
 		// OQ-TCO-08: bawaan stub; ⛔ garam tidak pernah dicetak.
 		DenganPenyimpananLampiranTCO(cfg.PelaksanaStorage == config.PelaksanaStorageNyata, cfg.StorageTokenSalt)
@@ -143,7 +144,7 @@ func jalankanPekerjaLampiranTCO(ctx context.Context, svc *services.Service, cfg 
 // ⛔ Ia MENGHAPUS tabel, dan karena itu dipagari sama persis dengan test bertag
 // db: menolak IS_PEGA_PROD=true, menolak tanpa ORACLE_SKEMA_UJI=true, dan
 // menolak skema yang memuat POOLDATA. Pagarnya satu-satunya, tinggal di
-// internal/config, supaya jalur ini dan jalur test tidak mungkin berselisih.
+// inti/config, supaya jalur ini dan jalur test tidak mungkin berselisih.
 //
 // Kenapa flag ini ada: sampai 26-09-2026 jalur mundur hanya punya pemanggil
 // test. Orang yang ingin membongkar skema uji terpaksa menyalin isi berkas

@@ -67,7 +67,7 @@ func TestPagarSkemaUjiMenuntutDuaSyarat(t *testing.T) {
 // ORACLE_SKEMA_UJI=true supaya lewat - persis yang tidak boleh terjadi.
 func TestPesanPagarMenyebutSebabnya(t *testing.T) {
 	tanpaEnv := pagarSkemaUji("SKEMA_UJI_DBA", "").Error()
-	// namaTabelLama tidak lagi disebut: pagarnya kini tinggal di internal/config,
+	// namaTabelLama tidak lagi disebut: pagarnya kini tinggal di inti/config,
 	// yang dipakai juga oleh flag -migrate-down dan tidak tahu-menahu soal tabel
 	// warisan. Yang wajib tetap ada adalah nama env-nya dan kata MENGHAPUS.
 	for _, mau := range []string{envSkemaUji, "MENGHAPUS"} {

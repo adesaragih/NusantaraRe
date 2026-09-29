@@ -22,6 +22,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+
+	"nusantarare/inti/db"
 )
 
 // sqlKategoriWajib merakit pernyataannya.
@@ -43,10 +45,10 @@ func (r *PohonKlaim) AmbilKategoriWajib(ctx context.Context,
 		return nil, err
 	}
 	q := sqlKategoriWajib(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	baris, err := r.db.sql.QueryContext(ctx, q, kodeBisnis)
+	baris, err := r.db.QueryContext(ctx, q, kodeBisnis)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca kategori dokumen wajib: %w", err)
 	}

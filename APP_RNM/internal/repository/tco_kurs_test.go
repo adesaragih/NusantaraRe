@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/db"
 )
 
 // AC 47: tidak ada identitas mata uang di teks SQL; saringan di-bind.
@@ -33,7 +34,7 @@ func TestSQLKursTCO(t *testing.T) {
 	if regexp.MustCompile(`'[^']*'`).MatchString(sisa) {
 		t.Errorf("literal di SQL kurs: %s", q)
 	}
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		t.Error(err)
 	}
 	// Tabel: nama DBA, dibaca 12 RDB korpus di enam modul lain;

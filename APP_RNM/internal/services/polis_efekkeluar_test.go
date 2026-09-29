@@ -12,30 +12,34 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"nusantarare/inti"
+	"nusantarare/inti/layanan"
+	"nusantarare/inti/outbox"
 )
 
 type efekPolisUji struct {
 	nama      string
 	galat     error
 	dipanggil int
-	muatan    MuatanEfek
+	muatan    outbox.MuatanEfek
 }
 
 func (e *efekPolisUji) Nama() string { return e.nama }
-func (e *efekPolisUji) Jalankan(_ context.Context, m MuatanEfek) error {
+func (e *efekPolisUji) Jalankan(_ context.Context, m outbox.MuatanEfek) error {
 	e.dipanggil++
 	e.muatan = m
 	return e.galat
 }
 
-type antreanPolisUji struct{ isi []CatatanEfekGagal }
+type antreanPolisUji struct{ isi []outbox.CatatanEfekGagal }
 
-func (a *antreanPolisUji) Antre(_ context.Context, c CatatanEfekGagal) error {
+func (a *antreanPolisUji) Antre(_ context.Context, c outbox.CatatanEfekGagal) error {
 	a.isi = append(a.isi, c)
 	return nil
 }
 
-var muatanPolisUji = MuatanEfek{KlaimID: "UJI-POLIS-1", AkunID: "UJI-AKUN",
+var muatanPolisUji = outbox.MuatanEfek{KlaimID: "UJI-POLIS-1", AkunID: "UJI-AKUN",
 	Waktu: time.Date(2026, 9, 28, 10, 0, 0, 0, time.UTC)}
 
 // TestAlarmHanyaBilaArasapasGagal - AC 27 spec, dan AC relasional tiket 06.
@@ -43,7 +47,7 @@ func TestAlarmHanyaBilaArasapasGagal(t *testing.T) {
 	ara := &efekPolisUji{nama: "arasapas"}
 	alarm := &efekPolisUji{nama: "alarm"}
 	antre := &antreanPolisUji{}
-	h := NewPenyalurPolis(Produksi, antre, ara, alarm).Salurkan(context.Background(), muatanPolisUji)
+	h := NewPenyalurPolis(inti.Produksi, antre, ara, alarm).Salurkan(context.Background(), muatanPolisUji)
 	if ara.dipanggil != 1 || alarm.dipanggil != 0 || len(h.Gagal) != 0 || len(antre.isi) != 0 {
 		t.Errorf("berhasil: arasapas %d, alarm %d, gagal %d, antre %d; mau 1/0/0/0",
 			ara.dipanggil, alarm.dipanggil, len(h.Gagal), len(antre.isi))
@@ -52,7 +56,7 @@ func TestAlarmHanyaBilaArasapasGagal(t *testing.T) {
 	ara = &efekPolisUji{nama: "arasapas", galat: errors.New("UJI gagal")}
 	alarm = &efekPolisUji{nama: "alarm"}
 	antre = &antreanPolisUji{}
-	h = NewPenyalurPolis(Produksi, antre, ara, alarm).Salurkan(context.Background(), muatanPolisUji)
+	h = NewPenyalurPolis(inti.Produksi, antre, ara, alarm).Salurkan(context.Background(), muatanPolisUji)
 	if alarm.dipanggil != 1 {
 		t.Errorf("Arasapas gagal tetapi alarm dipanggil %d kali, mau 1", alarm.dipanggil)
 	}
@@ -69,7 +73,7 @@ func TestAlarmYangGagalIkutTerantre(t *testing.T) {
 	ara := &efekPolisUji{nama: "arasapas", galat: errors.New("UJI gagal")}
 	alarm := &efekPolisUji{nama: "alarm", galat: errors.New("UJI email gagal")}
 	antre := &antreanPolisUji{}
-	h := NewPenyalurPolis(Produksi, antre, ara, alarm).Salurkan(context.Background(), muatanPolisUji)
+	h := NewPenyalurPolis(inti.Produksi, antre, ara, alarm).Salurkan(context.Background(), muatanPolisUji)
 	if len(h.Gagal) != 2 || len(antre.isi) != 2 {
 		t.Errorf("gagal %d, antre %d; mau keduanya 2", len(h.Gagal), len(antre.isi))
 	}
@@ -80,7 +84,7 @@ func TestBukanProduksiNolPanggilan(t *testing.T) {
 	ara := &efekPolisUji{nama: "arasapas", galat: errors.New("UJI")}
 	alarm := &efekPolisUji{nama: "alarm"}
 	antre := &antreanPolisUji{}
-	h := NewPenyalurPolis(BukanProduksi, antre, ara, alarm).Salurkan(context.Background(), muatanPolisUji)
+	h := NewPenyalurPolis(inti.BukanProduksi, antre, ara, alarm).Salurkan(context.Background(), muatanPolisUji)
 	if !h.Dilewati || ara.dipanggil+alarm.dipanggil != 0 || len(antre.isi) != 0 {
 		t.Errorf("bukan produksi: dilewati %v, panggilan %d, antre %d",
 			h.Dilewati, ara.dipanggil+alarm.dipanggil, len(antre.isi))
@@ -103,29 +107,29 @@ func TestKunciArasapasPolisVERBATIM(t *testing.T) {
 			t.Errorf("serviceInsertArasapasLife_act tidak memuat %s", s)
 		}
 	}
-	if KunciArasapasPremiumList == KunciArasapasLife {
+	if KunciArasapasPremiumList == layanan.KunciArasapasLife {
 		t.Error("kunci PremiumList sama dengan kunci Claim Life; keduanya activity berbeda")
 	}
 }
 
 // TestEfekPolisBawaanGagalTerang - stub, bukan panggilan nyata.
 func TestEfekPolisBawaanGagalTerang(t *testing.T) {
-	ara := EfekArasapasPolis{Resolver: ResolverBelumDiputuskan{}}
-	if err := ara.Jalankan(context.Background(), muatanPolisUji); !errors.Is(err, ErrResolverBelumDiputuskan) {
+	ara := EfekArasapasPolis{Resolver: layanan.ResolverBelumDiputuskan{}}
+	if err := ara.Jalankan(context.Background(), muatanPolisUji); !errors.Is(err, layanan.ErrResolverBelumDiputuskan) {
 		t.Errorf("Arasapas tanpa resolver: %v", err)
 	}
 	ara = EfekArasapasPolis{Resolver: resolverUjiPolis{}}
-	if err := ara.Jalankan(context.Background(), muatanPolisUji); !errors.Is(err, ErrArasapasBelumDisetujui) {
+	if err := ara.Jalankan(context.Background(), muatanPolisUji); !errors.Is(err, outbox.ErrArasapasBelumDisetujui) {
 		t.Errorf("Arasapas ber-resolver: %v, mau ErrArasapasBelumDisetujui", err)
 	}
-	if err := (EfekAlarmEmailPolis{}).Jalankan(context.Background(), muatanPolisUji); !errors.Is(err, ErrEmailBelumDisetujui) {
+	if err := (EfekAlarmEmailPolis{}).Jalankan(context.Background(), muatanPolisUji); !errors.Is(err, outbox.ErrEmailBelumDisetujui) {
 		t.Errorf("alarm email: %v", err)
 	}
 }
 
 type resolverUjiPolis struct{}
 
-func (resolverUjiPolis) Resolve(context.Context, KunciLayanan) (string, error) {
+func (resolverUjiPolis) Resolve(context.Context, layanan.KunciLayanan) (string, error) {
 	return "UJI-ALAMAT", nil
 }
 

@@ -39,14 +39,15 @@ import (
 	"github.com/cockroachdb/apd/v3"
 
 	"nusantarare/internal/models"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti/db"
+	"nusantarare/inti/utils"
 )
 
 // SummaryPolis membaca peserta dan menyimpan rekap satu polis.
-type SummaryPolis struct{ db *DB }
+type SummaryPolis struct{ db *db.DB }
 
 // NewSummaryPolis menyusunnya.
-func NewSummaryPolis(db *DB) *SummaryPolis { return &SummaryPolis{db: db} }
+func NewSummaryPolis(db *db.DB) *SummaryPolis { return &SummaryPolis{db: db} }
 
 // sqlBarisUangPolis merakit pembacaan baris uang peserta.
 //
@@ -58,7 +59,7 @@ func sqlBarisUangPolis(detail string) string {
 	kolom := models.KolomBacaSummary()
 	pilih := make([]string, 0, len(kolom))
 	for _, k := range kolom {
-		pilih = append(pilih, fmt.Sprintf(fmtDesimal, "d."+k))
+		pilih = append(pilih, fmt.Sprintf(db.FmtDesimal, "d."+k))
 	}
 	return fmt.Sprintf(`SELECT d.ID, d.CURRENCY, %s
 	   FROM %s d WHERE d.PREMIUM_LIST_ID = :1 ORDER BY d.ID`,
@@ -69,7 +70,7 @@ func sqlBarisUangPolis(detail string) string {
 //
 // Mengembalikan baris uang dan mata uangnya, sejajar - bentuk yang diminta
 // `models.RekapPerMataUang`.
-func (r *SummaryPolis) BarisUang(ctx context.Context, tx *Tx, polisID string) (
+func (r *SummaryPolis) BarisUang(ctx context.Context, tx *db.Tx, polisID string) (
 	[]models.BarisUang, []string, error) {
 
 	detail, err := r.db.Qualify("T_PREMIUM_LIST_DETAIL")
@@ -77,10 +78,10 @@ func (r *SummaryPolis) BarisUang(ctx context.Context, tx *Tx, polisID string) (
 		return nil, nil, err
 	}
 	q := sqlBarisUangPolis(detail)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, nil, err
 	}
-	rows, err := tx.tx.QueryContext(ctx, q, polisID)
+	rows, err := tx.QueryContext(ctx, q, polisID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("repository: membaca uang peserta: %w", err)
 	}
@@ -102,7 +103,7 @@ func (r *SummaryPolis) BarisUang(ctx context.Context, tx *Tx, polisID string) (
 		}
 		b := models.BarisUang{}
 		for i, k := range kolom {
-			v, err := uraiDesimal("peserta "+id, k, sel[i])
+			v, err := db.UraiDesimal("peserta "+id, k, sel[i])
 			if err != nil {
 				return nil, nil, err
 			}
@@ -188,7 +189,7 @@ var ErrRekapKosong = errors.New(
 // GantiRekap menghapus rekap lama polis lalu menyisipkan yang baru.
 //
 // Mengembalikan cacah baris terhapus dan tersisip.
-func (r *SummaryPolis) GantiRekap(ctx context.Context, tx *Tx, polisID string,
+func (r *SummaryPolis) GantiRekap(ctx context.Context, tx *db.Tx, polisID string,
 	rekap []models.RekapMataUang) (dihapus, disisip int, err error) {
 
 	if len(rekap) == 0 {
@@ -199,10 +200,10 @@ func (r *SummaryPolis) GantiRekap(ctx context.Context, tx *Tx, polisID string,
 		return 0, 0, err
 	}
 	hapus := sqlHapusRekap(summary)
-	if err := PeriksaSQL(hapus); err != nil {
+	if err := db.PeriksaSQL(hapus); err != nil {
 		return 0, 0, err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, hapus, polisID)
+	hasil, err := tx.ExecContext(ctx, hapus, polisID)
 	if err != nil {
 		return 0, 0, fmt.Errorf("repository: menghapus rekap lama: %w", err)
 	}
@@ -211,11 +212,11 @@ func (r *SummaryPolis) GantiRekap(ctx context.Context, tx *Tx, polisID string,
 		return 0, 0, fmt.Errorf("repository: membaca cacah rekap terhapus: %w", err)
 	}
 	sisip := sqlSisipRekap(summary)
-	if err := PeriksaSQL(sisip); err != nil {
+	if err := db.PeriksaSQL(sisip); err != nil {
 		return 0, 0, err
 	}
 	for _, rm := range rekap {
-		if _, err := tx.tx.ExecContext(ctx, sisip, nilaiSisipRekap(polisID, rm)...); err != nil {
+		if _, err := tx.ExecContext(ctx, sisip, nilaiSisipRekap(polisID, rm)...); err != nil {
 			// ⛔ Mata uangnya IKUT di galat - dua rekap satu polis hanya
 			// dibedakan olehnya.
 			return 0, 0, fmt.Errorf("repository: menyisipkan rekap %q: %w", rm.Currency, err)
@@ -240,7 +241,7 @@ func sqlSumberWarisan(detail, polis string) string {
 		case k.Sumber == "":
 			continue
 		case k.Jenis == nilaiAngka:
-			pilih = append(pilih, fmt.Sprintf(fmtDesimal, k.Sumber))
+			pilih = append(pilih, fmt.Sprintf(db.FmtDesimal, k.Sumber))
 		case k.Jenis == nilaiTanggal:
 			pilih = append(pilih, "TO_CHAR("+k.Sumber+", '"+BentukTanggalOracle+"')")
 		default:
@@ -264,7 +265,7 @@ type BarisWarisan struct {
 }
 
 // SumberWarisan membaca baris peserta polis sebagai bahan salinan warisan.
-func (r *SummaryPolis) SumberWarisan(ctx context.Context, tx *Tx, polisID string) (
+func (r *SummaryPolis) SumberWarisan(ctx context.Context, tx *db.Tx, polisID string) (
 	[]BarisWarisan, error) {
 
 	detail, err := r.db.Qualify("T_PREMIUM_LIST_DETAIL")
@@ -276,10 +277,10 @@ func (r *SummaryPolis) SumberWarisan(ctx context.Context, tx *Tx, polisID string
 		return nil, err
 	}
 	q := sqlSumberWarisan(detail, polis)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := tx.tx.QueryContext(ctx, q, polisID)
+	rows, err := tx.QueryContext(ctx, q, polisID)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca sumber salinan warisan: %w", err)
 	}

@@ -22,6 +22,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+
+	"nusantarare/inti/db"
 )
 
 // BarisRoster adalah satu anggota komite yang berhak.
@@ -83,10 +85,10 @@ func (r *PohonKlaim) AmbilRosterKomite(ctx context.Context,
 		return nil, err
 	}
 	q := sqlRosterKomite(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	baris, err := r.db.sql.QueryContext(ctx, q, ambang, stsKlaim, stsAktifRoster)
+	baris, err := r.db.QueryContext(ctx, q, ambang, stsKlaim, stsAktifRoster)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca roster komite: %w", err)
 	}

@@ -22,6 +22,10 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/jejak"
 )
 
 // Bentuk teks jejak tangga - SATU tempat, dipakai penulis (komite_keputusan.go)
@@ -139,15 +143,15 @@ func susunRiwayat(k repository.KasusKomite, jejak []repository.JejakKomite) Riwa
 // SEBELUM langkah 5.1 menimpanya. Tingkat dilewati (NULL) dan menunggu (`0`)
 // tidak dicatat - keduanya tidak ditimpa.
 func jejakTimpaTangga(k repository.KasusKomite, tangga []repository.AnggotaKasus,
-	pelaku Pelaku, saat time.Time) []CatatanJejak {
+	pelaku inti.Pelaku, saat time.Time) []jejak.CatatanJejak {
 
-	var out []CatatanJejak
+	var out []jejak.CatatanJejak
 	for _, a := range tangga {
 		kata := models.KataKeputusanKomite(a.Approval)
 		if kata == "" {
 			continue
 		}
-		out = append(out, CatatanJejak{
+		out = append(out, jejak.CatatanJejak{
 			AdjustmentID: k.AdjID,
 			KlaimID:      k.Baris.KlaimID,
 			Dari:         awalanJejakTingkat + strconv.Itoa(a.Urut),
@@ -161,17 +165,17 @@ func jejakTimpaTangga(k repository.KasusKomite, tangga []repository.AnggotaKasus
 }
 
 // Riwayat membaca riwayat satu kasus - untuk siapa pun yang teridentifikasi.
-func (i *InboxKomite) Riwayat(ctx context.Context, pelaku Pelaku, kasusID string) (RiwayatKomite, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (i *InboxKomite) Riwayat(ctx context.Context, pelaku inti.Pelaku, kasusID string) (RiwayatKomite, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return RiwayatKomite{}, err
 	}
 	if i == nil || i.svc == nil || !i.svc.PunyaDatabase() {
-		return RiwayatKomite{}, repository.ErrTanpaOracle
+		return RiwayatKomite{}, db.ErrTanpaOracle
 	}
 	if strings.TrimSpace(kasusID) == "" {
-		return RiwayatKomite{}, fmt.Errorf("%w: id kasus komite kosong", ErrPermintaanTidakSah)
+		return RiwayatKomite{}, fmt.Errorf("%w: id kasus komite kosong", galat.ErrPermintaanTidakSah)
 	}
-	baca := repository.NewInboxKomite(i.svc.db)
+	baca := repository.NewInboxKomite(i.svc.DB())
 	k, err := baca.Kasus(ctx, kasusID)
 	if err != nil {
 		return RiwayatKomite{}, err

@@ -18,6 +18,8 @@ import (
 	"time"
 
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
 )
 
 // BarisInboxPolis adalah satu baris kotak masuk, sebagaimana LAYAR
@@ -65,20 +67,20 @@ func (s *Service) InboxPolis() *InboxPolis { return &InboxPolis{svc: s} }
 // Ambil membaca satu halaman kotak masuk.
 //
 // `posisi` kosong berarti seluruh posisi.
-func (i *InboxPolis) Ambil(ctx context.Context, pelaku Pelaku,
+func (i *InboxPolis) Ambil(ctx context.Context, pelaku inti.Pelaku,
 	posisi string, halaman, ukuran int) (HalamanInboxPolis, error) {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return HalamanInboxPolis{}, err
 	}
 	if i == nil || i.svc == nil || !i.svc.PunyaDatabase() {
-		return HalamanInboxPolis{}, repository.ErrTanpaOracle
+		return HalamanInboxPolis{}, db.ErrTanpaOracle
 	}
 	if halaman < 1 {
 		halaman = 1
 	}
 	ukuran = repository.BatasUkuranHalamanPolis(ukuran)
-	hasil, err := repository.NewInboxPolis(i.svc.db).Ambil(ctx, posisi, halaman, ukuran)
+	hasil, err := repository.NewInboxPolis(i.svc.DB()).Ambil(ctx, posisi, halaman, ukuran)
 	if err != nil {
 		return HalamanInboxPolis{}, err
 	}

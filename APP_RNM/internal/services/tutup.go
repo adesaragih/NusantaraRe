@@ -22,12 +22,15 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/jejak"
 )
 
 // TutupKlaim membungkus pemeriksaan gerbang tutup dan penutupannya.
 type TutupKlaim struct {
 	svc   *Service
-	jejak Jejak
+	jejak jejak.Jejak
 }
 
 // Tutup menyusun layanannya dengan jejak bawaan yang gagal terang.
@@ -36,11 +39,11 @@ type TutupKlaim struct {
 // transisi yang paling tidak dapat dibatalkan dari semuanya, jadi ia tidak
 // boleh terjadi tanpa jejak - dan jejak bawaannya sengaja GAGAL, bukan diam.
 func (s *Service) Tutup() *TutupKlaim {
-	return &TutupKlaim{svc: s, jejak: JejakBelumDiputuskan{}}
+	return &TutupKlaim{svc: s, jejak: jejak.JejakBelumDiputuskan{}}
 }
 
 // DenganJejak mengganti perekamnya - dipakai test, dan kelak oleh tiket 09.
-func (t *TutupKlaim) DenganJejak(j Jejak) *TutupKlaim {
+func (t *TutupKlaim) DenganJejak(j jejak.Jejak) *TutupKlaim {
 	return &TutupKlaim{svc: t.svc, jejak: j}
 }
 
@@ -88,7 +91,7 @@ func BarisTutupDari(klaim *models.Klaim) []models.BarisTutup {
 // yang menahannya.
 func (t *TutupKlaim) Periksa(ctx context.Context, id string) (HasilPeriksaTutup, error) {
 	if t == nil || t.svc == nil || !t.svc.PunyaDatabase() {
-		return HasilPeriksaTutup{}, repository.ErrTanpaOracle
+		return HasilPeriksaTutup{}, db.ErrTanpaOracle
 	}
 	klaim, err := t.svc.KlaimLife().Ambil(ctx, id)
 	if err != nil {
@@ -149,20 +152,20 @@ func (g *GalatPenghalang) Unwrap() error { return ErrMasihAdaPenghalang }
 // menawarkan -> peran pemegang tahap -> gerbang peserta. Gerbang peserta
 // PALING AKHIR karena ia yang paling mahal (membaca seluruh klaim) dan
 // paling tidak berguna bila pemanggilnya memang tidak berhak.
-func (t *TutupKlaim) Tutup(ctx context.Context, pelaku Pelaku, klaimID string,
+func (t *TutupKlaim) Tutup(ctx context.Context, pelaku inti.Pelaku, klaimID string,
 	saat time.Time) error {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return err
 	}
 	if strings.TrimSpace(klaimID) == "" {
 		return fmt.Errorf("%w: pengenal klaim wajib diisi", ErrWajibIsi)
 	}
 	if t == nil || t.svc == nil || !t.svc.PunyaDatabase() {
-		return repository.ErrTanpaOracle
+		return db.ErrTanpaOracle
 	}
 
-	baca := repository.NewKlaimLife(t.svc.db)
+	baca := repository.NewKlaimLife(t.svc.DB())
 	status, err := baca.StatusWorkKlaim(ctx, klaimID)
 	if err != nil {
 		return err
@@ -185,7 +188,7 @@ func (t *TutupKlaim) Tutup(ctx context.Context, pelaku Pelaku, klaimID string,
 	if !ada {
 		return fmt.Errorf("%w: tahap %q", ErrPeranTahapBelumDiputuskan, asal)
 	}
-	if err := WajibPeran(pelaku, peranTahap); err != nil {
+	if err := inti.WajibPeran(pelaku, peranTahap); err != nil {
 		return err
 	}
 
@@ -197,12 +200,12 @@ func (t *TutupKlaim) Tutup(ctx context.Context, pelaku Pelaku, klaimID string,
 		return &GalatPenghalang{Penghalang: hasil.Penghalang}
 	}
 
-	return t.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	return t.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		if err := baca.TutupKasus(ctx, tx, klaimID, asal.String(),
 			models.StatusWorkSelesai, saat); err != nil {
 			return err
 		}
-		return t.jejak.Rekam(ctx, tx, CatatanJejak{
+		return t.jejak.Rekam(ctx, tx, jejak.CatatanJejak{
 			// ⛔ KlaimID, bukan AdjustmentID: yang tertutup KASUSNYA.
 			KlaimID: klaimID,
 			Dari:    asal.String(),
@@ -229,12 +232,12 @@ func (t *TutupKlaim) Tutup(ctx context.Context, pelaku Pelaku, klaimID string,
 // layanan pengubah menyusun gerbang tutup hanya untuk bertanya.
 func (s *Service) PastikanKasusTerbuka(ctx context.Context, klaimID string) error {
 	if s == nil || !s.PunyaDatabase() {
-		return repository.ErrTanpaOracle
+		return db.ErrTanpaOracle
 	}
 	if strings.TrimSpace(klaimID) == "" {
 		return fmt.Errorf("%w: pengenal klaim wajib diisi", ErrWajibIsi)
 	}
-	status, err := repository.NewKlaimLife(s.db).StatusWorkKlaim(ctx, klaimID)
+	status, err := repository.NewKlaimLife(s.DB()).StatusWorkKlaim(ctx, klaimID)
 	if err != nil {
 		return err
 	}

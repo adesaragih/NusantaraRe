@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/db"
 )
 
 // MasterKursTahunanTCO - nama tabel master kurs `[data DBA]`.
@@ -39,10 +40,10 @@ const MasterKursTahunanTCO = "TREATYEXCHANGEYEARLY"
 const MasterMataUangTCO = "CURRENCY"
 
 // MasterKursTCO membaca master kurs.
-type MasterKursTCO struct{ db *DB }
+type MasterKursTCO struct{ db *db.DB }
 
 // NewMasterKursTCO menyusun pembacanya.
-func NewMasterKursTCO(db *DB) *MasterKursTCO { return &MasterKursTCO{db: db} }
+func NewMasterKursTCO(db *db.DB) *MasterKursTCO { return &MasterKursTCO{db: db} }
 
 // sqlBerlakuKursTCO - kueri `GetMasterKursList` (b85-b86), ekspresi tanggal
 // VERBATIM, dengan dua beda yang disengaja (lanjutan 6):
@@ -72,11 +73,11 @@ func (m *MasterKursTCO) BacaBerlaku(ctx context.Context, idCurrency, quarter str
 		return h, err
 	}
 	q := sqlBerlakuKursTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return h, err
 	}
 	// `to_date({InputData.CARI1},'YYYYMMDD')` - CARI1 = `Param.StartDate`.
-	rows, err := m.db.bacaTCO(ctx).QueryContext(ctx, q, tanggal.Format("20060102"), quarter, idCurrency)
+	rows, err := bacaTCO(ctx, m.db).QueryContext(ctx, q, tanggal.Format("20060102"), quarter, idCurrency)
 	if err != nil {
 		return h, fmt.Errorf("repository: membaca master %s: %w", MasterKursTahunanTCO, err)
 	}

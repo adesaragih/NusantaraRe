@@ -30,6 +30,9 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/unggah"
 )
 
 // daftarkanRuteTreatyContractOut mendaftarkan seluruh rute modul ini.
@@ -74,16 +77,16 @@ type jawabanDaftarJenisReasuransi struct {
 func jenisReasuransiTreaty(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		daftar, err := svc.JenisReasuransiTreaty().
 			DenganPembaca(services.PembacaJenisReasuransiOracle(svc)).
-			Daftar(r.Context(), pelakuDari(r, stubPelaku))
+			Daftar(r.Context(), inti.PelakuDari(r, stubPelaku))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, jawabanDaftarJenisReasuransi{Daftar: daftar, Total: len(daftar)})
+		galat.TulisJSON(w, jawabanDaftarJenisReasuransi{Daftar: daftar, Total: len(daftar)})
 	}
 }
 
@@ -97,16 +100,16 @@ type jawabanDaftarGrupTreaty struct {
 func grupTreaty(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		daftar, err := svc.GrupTreaty().
 			DenganPembaca(services.PembacaGrupTreatyOracle(svc)).
-			Daftar(r.Context(), pelakuDari(r, stubPelaku))
+			Daftar(r.Context(), inti.PelakuDari(r, stubPelaku))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, jawabanDaftarGrupTreaty{Daftar: daftar, Total: len(daftar)})
+		galat.TulisJSON(w, jawabanDaftarGrupTreaty{Daftar: daftar, Total: len(daftar)})
 	}
 }
 
@@ -114,7 +117,7 @@ func grupTreaty(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 func daftarTahunTreaty(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		halaman, _ := strconv.Atoi(r.URL.Query().Get("halaman"))
@@ -122,11 +125,11 @@ func daftarTahunTreaty(svc *services.Service, stubPelaku bool) http.HandlerFunc 
 		hal, err := svc.TahunTreatyTCO().
 			DenganGudang(services.GudangTahunTreatyOracle(svc)).
 			DenganGrup(services.PembacaGrupTreatyOracle(svc)).
-			Daftar(r.Context(), pelakuDari(r, stubPelaku), halaman, ukuran)
+			Daftar(r.Context(), inti.PelakuDari(r, stubPelaku), halaman, ukuran)
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, hal)
+		galat.TulisJSON(w, hal)
 	}
 }
 
@@ -134,17 +137,17 @@ func daftarTahunTreaty(svc *services.Service, stubPelaku bool) http.HandlerFunc 
 func satuTahunTreaty(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		t, err := svc.TahunTreatyTCO().
 			DenganGudang(services.GudangTahunTreatyOracle(svc)).
 			DenganGrup(services.PembacaGrupTreatyOracle(svc)).
-			Ambil(r.Context(), pelakuDari(r, stubPelaku), r.PathValue("id"))
+			Ambil(r.Context(), inti.PelakuDari(r, stubPelaku), r.PathValue("id"))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, t)
+		galat.TulisJSON(w, t)
 	}
 }
 
@@ -152,34 +155,34 @@ func satuTahunTreaty(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 func simpanTahunTreaty(svc *services.Service, stubPelaku bool, perbarui bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		var masuk services.TahunTreatyMasuk
 		if err := json.NewDecoder(r.Body).Decode(&masuk); err != nil {
-			galat(w, http.StatusBadRequest, "badan permintaan bukan JSON yang sah")
+			galat.Tulis(w, http.StatusBadRequest, "badan permintaan bukan JSON yang sah")
 			return
 		}
 		if perbarui {
 			id := r.PathValue("id")
 			if masuk.ID != "" && masuk.ID != id {
-				galat(w, http.StatusBadRequest, "id di badan berbeda dari id di jalur")
+				galat.Tulis(w, http.StatusBadRequest, "id di badan berbeda dari id di jalur")
 				return
 			}
 			masuk.ID = id
 		} else if masuk.ID != "" {
 			// AC 5: identitas baris baru tidak pernah diketik pengguna.
-			galat(w, http.StatusBadRequest, "tahun treaty baru tidak membawa id; identitas dibuat server")
+			galat.Tulis(w, http.StatusBadRequest, "tahun treaty baru tidak membawa id; identitas dibuat server")
 			return
 		}
 		hasil, err := svc.TahunTreatyTCO().
 			DenganGudang(services.GudangTahunTreatyOracle(svc)).
 			DenganGrup(services.PembacaGrupTreatyOracle(svc)).
-			Simpan(r.Context(), pelakuDari(r, stubPelaku), masuk)
+			Simpan(r.Context(), inti.PelakuDari(r, stubPelaku), masuk)
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, hasil)
+		galat.TulisJSON(w, hasil)
 	}
 }
 
@@ -190,84 +193,84 @@ func jawabGalatTreatyContractOut(w http.ResponseWriter, err error) bool {
 	switch {
 	case err == nil:
 		return false
-	case errors.Is(err, services.ErrTanpaIdentitas):
-		galat(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
-	case errors.Is(err, services.ErrTanpaWewenang):
-		galat(w, http.StatusForbidden, "wewenang tidak mencukupi")
+	case errors.Is(err, inti.ErrTanpaIdentitas):
+		galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+	case errors.Is(err, inti.ErrTanpaWewenang):
+		galat.Tulis(w, http.StatusForbidden, "wewenang tidak mencukupi")
 	case errors.Is(err, services.ErrMasterJenisReasuransiKosong),
 		errors.Is(err, services.ErrMasterGrupTreatyKosong):
 		// ⛔ 503, dan pesannya MENYEBUT MASTERNYA: keadaan server yang belum
 		// siap - master rujukan kosong atau tersaring habis - bukan
 		// permintaan yang salah, dan bukan daftar kosong yang diam (ADR-0015).
-		galat(w, http.StatusServiceUnavailable, err.Error())
+		galat.Tulis(w, http.StatusServiceUnavailable, err.Error())
 	case errors.Is(err, services.ErrKategoriLampiranKosong),
-		errors.Is(err, services.ErrUnggahanDirBelumDisetel):
+		errors.Is(err, unggah.ErrUnggahanDirBelumDisetel):
 		// Tiket 12: keadaan server - master kategori kosong atau folder
 		// unggahan belum disetel - bukan salah pemanggil.
-		galat(w, http.StatusServiceUnavailable, err.Error())
+		galat.Tulis(w, http.StatusServiceUnavailable, err.Error())
 	case errors.Is(err, services.ErrTahunTreatyTidakAda):
-		galat(w, http.StatusNotFound, "tahun treaty tidak ditemukan")
+		galat.Tulis(w, http.StatusNotFound, "tahun treaty tidak ditemukan")
 	case errors.Is(err, services.ErrKontrakTidakAda):
-		galat(w, http.StatusNotFound, "kontrak treaty tidak ditemukan pada tahun treaty ini")
+		galat.Tulis(w, http.StatusNotFound, "kontrak treaty tidak ditemukan pada tahun treaty ini")
 	case errors.Is(err, services.ErrKontrakDobel):
 		// 409: "Data sudah pernah di Input" + kontrak mana yang memegang jenisnya.
-		galat(w, http.StatusConflict, err.Error())
+		galat.Tulis(w, http.StatusConflict, err.Error())
 	case errors.Is(err, models.ErrKontrakJenisReasuransiKosong),
 		errors.Is(err, models.ErrKontrakMulaiKosong),
 		errors.Is(err, models.ErrKontrakAkhirKosong),
 		errors.Is(err, models.ErrKontrakTahunMulaiBeda),
 		errors.Is(err, services.ErrJenisReasuransiDiLuarDaftar):
-		galat(w, http.StatusUnprocessableEntity, err.Error())
+		galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
 	case errors.Is(err, services.ErrReinsurerTidakAda):
-		galat(w, http.StatusNotFound, "reinsurer tidak ditemukan pada kombinasi kontrak ini")
+		galat.Tulis(w, http.StatusNotFound, "reinsurer tidak ditemukan pada kombinasi kontrak ini")
 	case errors.Is(err, models.ErrReinsurerKosong),
 		errors.Is(err, models.ErrPersenKosong),
 		errors.Is(err, models.ErrPersenBukanDesimal),
 		errors.Is(err, models.ErrPersenDiLuarRentang),
 		errors.Is(err, models.ErrTotalShareMelebihi100),
 		errors.Is(err, services.ErrReinsurerDiLuarMaster):
-		galat(w, http.StatusUnprocessableEntity, err.Error())
+		galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
 	case errors.Is(err, services.ErrGrupTreatyDiLuarMaster):
-		galat(w, http.StatusUnprocessableEntity, err.Error())
+		galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
 	case errors.Is(err, services.ErrKontrakBeranak),
 		errors.Is(err, services.ErrTahunBeranak):
 		// 409: kombinasi beranak tidak boleh diganti kuncinya (temuan /code-review).
-		galat(w, http.StatusConflict, err.Error())
+		galat.Tulis(w, http.StatusConflict, err.Error())
 	case errors.Is(err, services.ErrDampakBerubah),
 		errors.Is(err, services.ErrKaskadeTidakUtuh):
 		// 409: keadaan DATA berubah sejak popup - tinjau ulang, tidak ada yang terhapus.
-		galat(w, http.StatusConflict, err.Error())
+		galat.Tulis(w, http.StatusConflict, err.Error())
 	case errors.Is(err, services.ErrKursTidakAda):
 		// 422 + pesan VERBATIM `NewTreatyArrEpi.xml` b870 (ADR-0015).
-		galat(w, http.StatusUnprocessableEntity, err.Error())
+		galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
 	case errors.Is(err, services.ErrMasterKursRusak):
 		// 503: master kurs / mata uang tidak dapat dipakai - keadaan server.
-		galat(w, http.StatusServiceUnavailable, err.Error())
+		galat.Tulis(w, http.StatusServiceUnavailable, err.Error())
 	case errors.Is(err, services.ErrKonversiKursTidakSah):
-		galat(w, http.StatusBadRequest, err.Error())
+		galat.Tulis(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, services.ErrSecurityTidakAda):
-		galat(w, http.StatusNotFound, "security tidak ditemukan pada reinsurer ini")
+		galat.Tulis(w, http.StatusNotFound, "security tidak ditemukan pada reinsurer ini")
 	case errors.Is(err, services.ErrSecurityDobel):
-		galat(w, http.StatusConflict, err.Error())
+		galat.Tulis(w, http.StatusConflict, err.Error())
 	case errors.Is(err, models.ErrSecurityKosong),
 		errors.Is(err, models.ErrSecurityTanpaReinsurer),
 		errors.Is(err, models.ErrSecurityMelampauiLebar):
-		galat(w, http.StatusUnprocessableEntity, err.Error())
+		galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
 	case errors.Is(err, services.ErrBusinessTidakAda):
-		galat(w, http.StatusNotFound, "baris bisnis tidak ditemukan pada kombinasi kontrak ini")
+		galat.Tulis(w, http.StatusNotFound, "baris bisnis tidak ditemukan pada kombinasi kontrak ini")
 	case errors.Is(err, services.ErrBusinessDobel):
-		galat(w, http.StatusConflict, err.Error())
+		galat.Tulis(w, http.StatusConflict, err.Error())
 	case errors.Is(err, models.ErrBusinessKodeKosong),
 		errors.Is(err, models.ErrBusinessAktifTakSah),
 		errors.Is(err, services.ErrBusinessDiLuarMaster):
-		galat(w, http.StatusUnprocessableEntity, err.Error())
+		galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
 	case errors.Is(err, services.ErrKlausulTidakAda):
-		galat(w, http.StatusNotFound, err.Error())
+		galat.Tulis(w, http.StatusNotFound, err.Error())
 	case errors.Is(err, services.ErrKlausulDobel),
 		errors.Is(err, services.ErrKlausulIndukBeranak):
-		galat(w, http.StatusConflict, err.Error())
+		galat.Tulis(w, http.StatusConflict, err.Error())
 	case errors.Is(err, services.ErrKlausulJenisBerubah):
-		galat(w, http.StatusBadRequest, err.Error())
+		galat.Tulis(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, models.ErrKlausulJenisTakDikenal),
 		errors.Is(err, models.ErrKlausulDitahan),
 		errors.Is(err, models.ErrKlausulMedanWajib),
@@ -275,39 +278,39 @@ func jawabGalatTreatyContractOut(w http.ResponseWriter, err error) bool {
 		errors.Is(err, models.ErrTotalPctAnakMelebihi100),
 		errors.Is(err, services.ErrJenisKlausulDiLuarMaster),
 		errors.Is(err, services.ErrPilihanDiLuarMaster):
-		galat(w, http.StatusUnprocessableEntity, err.Error())
+		galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
 	case errors.Is(err, services.ErrLampiranTidakAda):
-		galat(w, http.StatusNotFound, "lampiran tidak ditemukan pada tahun treaty ini")
+		galat.Tulis(w, http.StatusNotFound, "lampiran tidak ditemukan pada tahun treaty ini")
 	case errors.Is(err, services.ErrLampiranBelumTerkirim),
 		errors.Is(err, services.ErrLampiranSudahTerkirim),
 		errors.Is(err, services.ErrLampiranTanpaBerkas),
 		errors.Is(err, services.ErrBerkasSumberLampiranHilang):
 		// 409: keadaan DATA lampiran; pesannya menyebut lampiran mana dan
 		// perbaikannya.
-		galat(w, http.StatusConflict, err.Error())
-	case errors.Is(err, services.ErrBerkasTerlaluBesar):
-		galat(w, http.StatusRequestEntityTooLarge, err.Error())
-	case errors.Is(err, services.ErrBerkasKosong):
-		galat(w, http.StatusBadRequest, services.PesanTanpaBerkasTCO)
+		galat.Tulis(w, http.StatusConflict, err.Error())
+	case errors.Is(err, unggah.ErrBerkasTerlaluBesar):
+		galat.Tulis(w, http.StatusRequestEntityTooLarge, err.Error())
+	case errors.Is(err, unggah.ErrBerkasKosong):
+		galat.Tulis(w, http.StatusBadRequest, services.PesanTanpaBerkasTCO)
 	case errors.Is(err, services.ErrKategoriLampiranTidakDikenal):
-		galat(w, http.StatusUnprocessableEntity, err.Error())
+		galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
 	case errors.Is(err, services.ErrTahunTreatyDobel):
 		// 409: keadaan DATA - kombinasi periode + grup sudah dipakai baris
 		// lain - dan pesannya menyebut baris mana (AC 73).
-		galat(w, http.StatusConflict, err.Error())
+		galat.Tulis(w, http.StatusConflict, err.Error())
 	case errors.Is(err, models.ErrPeriodeTerbalik),
 		errors.Is(err, models.ErrTahunTreatyGrupKosong),
 		errors.Is(err, models.ErrTahunTreatyTahunKosong),
 		errors.Is(err, models.ErrTahunTreatyBukanAngka):
 		// 422: JSON-nya sah, isinya yang ditolak gerbang - pesan menyebut medannya.
-		galat(w, http.StatusUnprocessableEntity, err.Error())
-	case errors.Is(err, services.ErrPermintaanTidakSah):
-		galat(w, http.StatusBadRequest, err.Error())
+		galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
+	case errors.Is(err, galat.ErrPermintaanTidakSah):
+		galat.Tulis(w, http.StatusBadRequest, err.Error())
 	default:
 		// ⛔ Sebab aslinya DICATAT: tanpa baris ini galat tak terduga hilang
 		// di layar DAN di konsol backend (tco_galat500_test.go).
 		log.Printf("treaty contract out: %v", err)
-		galat(w, http.StatusInternalServerError, "gagal memproses permintaan treaty contract out")
+		galat.Tulis(w, http.StatusInternalServerError, "gagal memproses permintaan treaty contract out")
 	}
 	return true
 }

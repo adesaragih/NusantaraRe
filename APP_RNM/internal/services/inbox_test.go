@@ -13,10 +13,12 @@ import (
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
 )
 
-func pelakuUji(peran ...string) services.Pelaku {
-	return services.Pelaku{AkunID: "UJI-AKUN", Peran: peran}
+func pelakuUji(peran ...string) inti.Pelaku {
+	return inti.Pelaku{AkunID: "UJI-AKUN", Peran: peran}
 }
 
 // `[terverifikasi]` `Register_Flow.xml`: Input Register `WorkList` 1511 +
@@ -43,7 +45,7 @@ func TestAntrianPribadiHanyaKeduaTahapAdmin(t *testing.T) {
 func TestTahapTerlihatPerPeran(t *testing.T) {
 	kasus := []struct {
 		apa    string
-		pelaku services.Pelaku
+		pelaku inti.Pelaku
 		mau    []models.Tahap
 	}{
 		{
@@ -118,8 +120,8 @@ func TestInboxMenolakSebelumMenyentuhOracle(t *testing.T) {
 	// ⛔ Pelaku KOSONG ditolak, bukan dijawab daftar kosong. Daftar kosong
 	// terbaca "tidak ada pekerjaan" - kalimat yang berbeda artinya dari
 	// "saya tidak tahu siapa Anda".
-	if _, err := in.Ambil(ctx, services.Pelaku{}, models.TahapOutstanding, 0, 50); !errors.Is(
-		err, services.ErrTanpaIdentitas) {
+	if _, err := in.Ambil(ctx, inti.Pelaku{}, models.TahapOutstanding, 0, 50); !errors.Is(
+		err, inti.ErrTanpaIdentitas) {
 		t.Errorf("pelaku kosong: galat = %v, mau ErrTanpaIdentitas", err)
 	}
 
@@ -132,13 +134,13 @@ func TestInboxMenolakSebelumMenyentuhOracle(t *testing.T) {
 	// ⛔ Peran yang tidak memegang tahap itu DITOLAK - bukan diberi daftar
 	// kosong. Admin tidak boleh mengintip antrian Medical Check.
 	if _, err := in.Ambil(ctx, pelakuUji(models.PeranAdminLife),
-		models.TahapMedicalCheck, 0, 50); !errors.Is(err, services.ErrTanpaWewenang) {
+		models.TahapMedicalCheck, 0, 50); !errors.Is(err, inti.ErrTanpaWewenang) {
 		t.Errorf("peran salah: galat = %v, mau ErrTanpaWewenang", err)
 	}
 
 	// Baru sesudah semua gerbang lolos, ketiadaan Oracle yang terasa.
 	if _, err := in.Ambil(ctx, pelakuUji(models.PeranAdminLife),
-		models.TahapOutstanding, 0, 50); !errors.Is(err, repository.ErrTanpaOracle) {
+		models.TahapOutstanding, 0, 50); !errors.Is(err, db.ErrTanpaOracle) {
 		t.Errorf("tanpa Oracle: galat = %v, mau ErrTanpaOracle", err)
 	}
 }

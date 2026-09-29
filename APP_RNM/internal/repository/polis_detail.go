@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/db"
 )
 
 // ⛔ PEMBUNGKUSNYA DIPINJAM, tidak diketik ulang: `fmtDesimal`
@@ -41,9 +42,9 @@ func ekspresiKolomPeserta(kolom []models.KolomPeserta) string {
 		medan := "d." + k.Nama
 		switch k.Jenis {
 		case models.KolomPesertaAngka:
-			bagian = append(bagian, fmt.Sprintf(fmtDesimal, medan))
+			bagian = append(bagian, fmt.Sprintf(db.FmtDesimal, medan))
 		case models.KolomPesertaTanggal:
-			bagian = append(bagian, fmt.Sprintf(fmtTanggalOracle, medan))
+			bagian = append(bagian, fmt.Sprintf(db.FmtTanggalOracle, medan))
 		default:
 			bagian = append(bagian, medan)
 		}
@@ -77,10 +78,10 @@ type HalamanPeserta struct {
 }
 
 // GridPeserta membaca baris peserta satu polis.
-type GridPeserta struct{ db *DB }
+type GridPeserta struct{ db *db.DB }
 
 // NewGridPeserta menyusunnya.
-func NewGridPeserta(db *DB) *GridPeserta { return &GridPeserta{db: db} }
+func NewGridPeserta(db *db.DB) *GridPeserta { return &GridPeserta{db: db} }
 
 // BatasUkuranHalamanPeserta menjepit ukuran yang diminta klien.
 //
@@ -115,19 +116,19 @@ func (r *GridPeserta) Ambil(ctx context.Context, polisID string, halaman, ukuran
 
 	var hasil HalamanPeserta
 	qCacah := sqlCacahPeserta(detail)
-	if err := PeriksaSQL(qCacah); err != nil {
+	if err := db.PeriksaSQL(qCacah); err != nil {
 		return HalamanPeserta{}, err
 	}
-	if err := r.db.sql.QueryRowContext(ctx, qCacah, polisID).Scan(&hasil.Total); err != nil {
+	if err := r.db.QueryRowContext(ctx, qCacah, polisID).Scan(&hasil.Total); err != nil {
 		return HalamanPeserta{}, fmt.Errorf("repository: mencacah peserta polis: %w", err)
 	}
 
 	kolom := models.KolomGridPeserta
 	q := sqlGridPeserta(detail, kolom)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return HalamanPeserta{}, err
 	}
-	baris, err := r.db.sql.QueryContext(ctx, q, polisID, (halaman-1)*ukuran, ukuran)
+	baris, err := r.db.QueryContext(ctx, q, polisID, (halaman-1)*ukuran, ukuran)
 	if err != nil {
 		return HalamanPeserta{}, fmt.Errorf("repository: membaca peserta polis: %w", err)
 	}

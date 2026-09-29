@@ -27,6 +27,10 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/jejak"
 )
 
 var (
@@ -174,13 +178,13 @@ func PeriksaBolehAksep(p models.Peserta, b models.BarisAdjustment) error {
 // `[terverifikasi]` `Flow/Register_Flow.xml`: Outstanding Claim →
 // `ReasLifeAdmin`; Medical Check → workbasket `ReasLifeMedicalAdvisor`;
 // Claim Analis → workbasket `ReasLifeSPV`.
-func WajibPemegangTahap(pelaku Pelaku, tahap models.Tahap) error {
+func WajibPemegangTahap(pelaku inti.Pelaku, tahap models.Tahap) error {
 	peran, ada := models.PeranPemegangTahap(tahap)
 	if !ada {
 		return fmt.Errorf("%w: tahap %v tidak punya pemegang",
 			ErrTahapTidakDikenal, tahap)
 	}
-	return WajibPeran(pelaku, peran)
+	return inti.WajibPeran(pelaku, peran)
 }
 
 // PenerbitNomorAkseptasi menerbitkan satu nomor akseptasi baru.
@@ -189,7 +193,7 @@ func WajibPemegangTahap(pelaku Pelaku, tahap models.Tahap) error {
 // keunikannya terhadap `OS_AKSEPTASI_KLAIM_LIFE.NO_ACCEPTATION` seperti
 // `GetAcceptedNoCL` - keduanya menuntut Oracle.
 type PenerbitNomorAkseptasi interface {
-	Terbitkan(ctx context.Context, tx *repository.Tx, awalan, kodeBisnis string,
+	Terbitkan(ctx context.Context, tx *db.Tx, awalan, kodeBisnis string,
 		saat time.Time) (string, error)
 }
 
@@ -197,12 +201,12 @@ type PenerbitNomorAkseptasi interface {
 type Akseptasi struct {
 	svc      *Service
 	penerbit PenerbitNomorAkseptasi
-	jejak    Jejak
+	jejak    jejak.Jejak
 }
 
 // Akseptasi menyusun layanan itu.
 func (s *Service) Akseptasi() *Akseptasi {
-	return &Akseptasi{svc: s, jejak: JejakBelumDiputuskan{}}
+	return &Akseptasi{svc: s, jejak: jejak.JejakBelumDiputuskan{}}
 }
 
 // DenganPenerbit mengganti penerbit nomornya.
@@ -213,7 +217,7 @@ func (a *Akseptasi) DenganPenerbit(p PenerbitNomorAkseptasi) *Akseptasi {
 }
 
 // DenganJejak mengganti perekam jejaknya.
-func (a *Akseptasi) DenganJejak(j Jejak) *Akseptasi {
+func (a *Akseptasi) DenganJejak(j jejak.Jejak) *Akseptasi {
 	salin := *a
 	salin.jejak = j
 	return &salin
@@ -232,18 +236,18 @@ func (a *Akseptasi) DenganJejak(j Jejak) *Akseptasi {
 //
 // Peran diperiksa SESUDAH tahap dibaca, sebab pemegangnya bergantung tahap -
 // itulah yang pohon XML tetapkan, bukan daftar peran datar.
-func (a *Akseptasi) SimpanAdjustment(ctx context.Context, pelaku Pelaku,
+func (a *Akseptasi) SimpanAdjustment(ctx context.Context, pelaku inti.Pelaku,
 	klaimID, pesertaID string, saat time.Time) (string, error) {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return "", err
 	}
 	if strings.TrimSpace(klaimID) == "" || strings.TrimSpace(pesertaID) == "" {
 		return "", fmt.Errorf("%w: pengenal klaim dan peserta wajib diisi",
-			ErrPermintaanTidakSah)
+			galat.ErrPermintaanTidakSah)
 	}
 	if !a.svc.PunyaDatabase() {
-		return "", repository.ErrTanpaOracle
+		return "", db.ErrTanpaOracle
 	}
 
 	// ⛔ BUTIR bb: kasus yang sudah ditutup tidak dapat diubah lagi.
@@ -258,7 +262,7 @@ func (a *Akseptasi) SimpanAdjustment(ctx context.Context, pelaku Pelaku,
 		return "", ErrPenomorBelumDiputuskan
 	}
 
-	baca := repository.NewKlaimLife(a.svc.db)
+	baca := repository.NewKlaimLife(a.svc.DB())
 	tipe, err := baca.TypeKlaim(ctx, klaimID)
 	if err != nil {
 		return "", err
@@ -288,7 +292,7 @@ func (a *Akseptasi) SimpanAdjustment(ctx context.Context, pelaku Pelaku,
 		return "", err
 	}
 	if hdr == nil {
-		return "", fmt.Errorf("%w: klaim %q tidak ada", ErrPermintaanTidakSah, klaimID)
+		return "", fmt.Errorf("%w: klaim %q tidak ada", galat.ErrPermintaanTidakSah, klaimID)
 	}
 	hdrKodeBisnis := hdr.KodeBisnis
 
@@ -299,7 +303,7 @@ func (a *Akseptasi) SimpanAdjustment(ctx context.Context, pelaku Pelaku,
 	ps, ada := cariPeserta(peserta, pesertaID)
 	if !ada {
 		return "", fmt.Errorf("%w: peserta %q bukan milik klaim %q",
-			ErrPermintaanTidakSah, pesertaID, klaimID)
+			galat.ErrPermintaanTidakSah, pesertaID, klaimID)
 	}
 	perBaris, err := baca.AmbilBaris(ctx, klaimID)
 	if err != nil {
@@ -308,7 +312,7 @@ func (a *Akseptasi) SimpanAdjustment(ctx context.Context, pelaku Pelaku,
 	daftar := perBaris[pesertaID]
 	if len(daftar) == 0 {
 		return "", fmt.Errorf("%w: peserta %q belum punya baris adjustment",
-			ErrPermintaanTidakSah, pesertaID)
+			galat.ErrPermintaanTidakSah, pesertaID)
 	}
 	// `.AdjustmentList(<LAST>)` - baris TERAKHIR peserta, seperti XML.
 	baris := daftar[len(daftar)-1]
@@ -323,7 +327,7 @@ func (a *Akseptasi) SimpanAdjustment(ctx context.Context, pelaku Pelaku,
 	}
 
 	var nomor string
-	err = a.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	err = a.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		n, err := a.penerbit.Terbitkan(ctx, tx, awalan, kodeBisnis, saat)
 		if err != nil {
 			return err
@@ -338,7 +342,7 @@ func (a *Akseptasi) SimpanAdjustment(ctx context.Context, pelaku Pelaku,
 		if err := baca.CerminkanHeader(ctx, tx, klaimID, models.KodeAksep, nomor); err != nil {
 			return err
 		}
-		return a.jejak.Rekam(ctx, tx, CatatanJejak{
+		return a.jejak.Rekam(ctx, tx, jejak.CatatanJejak{
 			AdjustmentID: baris.ID,
 			KlaimID:      klaimID,
 			Dari:         baris.KodeStatus,
@@ -373,11 +377,11 @@ type penerbitOracle struct{ pohon *repository.PohonKlaim }
 
 // PenerbitAkseptasiOracle menyusun penerbit yang memakai sequence Oracle.
 func PenerbitAkseptasiOracle(svc *Service) PenerbitNomorAkseptasi {
-	return penerbitOracle{pohon: repository.NewPohonKlaim(svc.db)}
+	return penerbitOracle{pohon: repository.NewPohonKlaim(svc.DB())}
 }
 
 // Terbitkan menerbitkan satu nomor akseptasi yang belum pernah dipakai.
-func (p penerbitOracle) Terbitkan(ctx context.Context, tx *repository.Tx,
+func (p penerbitOracle) Terbitkan(ctx context.Context, tx *db.Tx,
 	awalan, kodeBisnis string, saat time.Time) (string, error) {
 
 	urut, err := p.pohon.UrutAkseptasiBerikut(ctx, tx)

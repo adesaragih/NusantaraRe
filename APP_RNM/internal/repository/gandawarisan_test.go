@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"nusantarare/inti/db"
 )
 
 func urutanPenampung(q string) string {
@@ -25,7 +27,7 @@ func TestSQLGandaBerurutPosisi(t *testing.T) {
 		"cermin": {sqlIsiTertanggungCermin("L", "S"), "12345678"},
 		"ceding": {sqlIsiCedingCermin("L", "P"), "123"},
 	} {
-		if err := PeriksaSQL(u.q); err != nil {
+		if err := db.PeriksaSQL(u.q); err != nil {
 			t.Errorf("%s: %v", nama, err)
 		}
 		if got := urutanPenampung(u.q); got != u.mau {
@@ -98,13 +100,13 @@ func TestSQLIsiTertanggungCerminDariSumber(t *testing.T) {
 			t.Errorf("ceding tanpa %q:\n%s", mau, c)
 		}
 	}
-	if err := PeriksaSQL(c); err != nil {
+	if err := db.PeriksaSQL(c); err != nil {
 		t.Error(err)
 	}
 	if strings.Contains(strings.ToUpper(q), "RETURNING") {
 		t.Error("nama/DOB dikembalikan ke Go")
 	}
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		t.Error(err)
 	}
 }
@@ -126,7 +128,7 @@ func TestStatusBarisKodeLamaKosongMenjadiISNULL(t *testing.T) {
 		t.Errorf("argumen kode lama terisi = %d, mau 5", n)
 	}
 	for _, lamaKosong := range []bool{true, false} {
-		if err := PeriksaSQL(sqlStatusBarisAdjustment("A", lamaKosong)); err != nil {
+		if err := db.PeriksaSQL(sqlStatusBarisAdjustment("A", lamaKosong)); err != nil {
 			t.Error(err)
 		}
 	}
@@ -137,7 +139,7 @@ func TestStatusBarisKodeLamaKosongMenjadiISNULL(t *testing.T) {
 // tanggal akseptasi (sensus di PerbaruiStatusBaris).
 func TestTandaiBarisOutstandingHanyaBarisAdjustment(t *testing.T) {
 	q := fmt.Sprintf(sqlTandaiBarisOutstanding, "A")
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(q, "STS_REJECT IS NULL") {

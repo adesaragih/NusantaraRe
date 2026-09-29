@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/db"
 )
 
 // Kolom dan saringan VERBATIM RDB warisan.
@@ -43,7 +44,7 @@ func TestSQLLampiranWarisanTCO(t *testing.T) {
 	for _, q := range []string{d, sqlSisipLampiranTCO("S.A"), sqlHapusLampiranTCO("S.A"), sqlSimpanObjekTCO("S.I"),
 		sqlHapusObjekTCO("S.I"), sqlKunciLampiranTCO("S.A"), sqlAmbilUntukKirimLampiranTCO("S.A", "S.I"),
 		sqlAdaIDLampiranTCO("S.A"), sqlTreatyYearLampiranTCO("S.Y")} {
-		if err := PeriksaSQL(q); err != nil {
+		if err := db.PeriksaSQL(q); err != nil {
 			t.Errorf("PeriksaSQL: %v", err)
 		}
 	}
@@ -91,7 +92,7 @@ func TestSQLPerbaruiObjekTCOSepertiUpdateTStorage(t *testing.T) {
 			t.Errorf("tanpa %q:\n%s", mau, q)
 		}
 	}
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		t.Error(err)
 	}
 	err := NewMasterLampiranTCO(nil).PerbaruiObjek(context.Background(), nil, models.ObjekPenyimpananTCO{ImageID: "UJI"})

@@ -30,13 +30,15 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
+	"nusantarare/inti/db"
 )
 
 // TutupBuku membaca tanggal tutup buku yang berlaku.
-type TutupBuku struct{ db *DB }
+type TutupBuku struct{ db *db.DB }
 
 // NewTutupBuku menyusun pembacanya.
-func NewTutupBuku(db *DB) *TutupBuku { return &TutupBuku{db: db} }
+func NewTutupBuku(db *db.DB) *TutupBuku { return &TutupBuku{db: db} }
 
 // sqlTanggalTutupBuku merakit query-nya.
 //
@@ -60,11 +62,11 @@ func (r *TutupBuku) Tanggal(ctx context.Context) (int, error) {
 		return 0, err
 	}
 	q := sqlTanggalTutupBuku(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return 0, err
 	}
 	var tgl sql.NullInt64
-	err = r.db.sql.QueryRowContext(ctx, q).Scan(&tgl)
+	err = r.db.QueryRowContext(ctx, q).Scan(&tgl)
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, nil
 	}

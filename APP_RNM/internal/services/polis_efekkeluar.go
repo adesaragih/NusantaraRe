@@ -26,6 +26,10 @@ package services
 
 import (
 	"context"
+
+	"nusantarare/inti"
+	"nusantarare/inti/layanan"
+	"nusantarare/inti/outbox"
 )
 
 // ModulPremiumListLife mengisi kolom `MODUL` outbox `T_LOG_SERVICE_RNM`.
@@ -50,7 +54,7 @@ const ModulPremiumListLife = "PREMIUMLISTLIFE"
 // `JSON_POLIS` sendiri, dan tabel itu TIDAK LAGI ditulis (pl1). Sebelum stub
 // ini diganti panggilan nyata, pemilik layanan harus menyatakan dari mana ia
 // membaca polis sesudah JSON dibuang.
-var KunciArasapasPremiumList = KunciLayanan{
+var KunciArasapasPremiumList = layanan.KunciLayanan{
 	Kategori1: "Production",
 	Kategori2: "convertJsonNusareToProduction",
 }
@@ -67,21 +71,21 @@ const (
 // disetujui - sebab yang sama dengan `EfekArasapas` Claim Life: kunci yang
 // tidak ada di `M_LINK_SERVICE` harus terlihat sebagai kegagalan konfigurasi.
 type EfekArasapasPolis struct {
-	Resolver ResolverEndpoint
+	Resolver layanan.ResolverEndpoint
 }
 
 // Nama menyebut efek ini di catatan kegagalan.
 func (EfekArasapasPolis) Nama() string { return NamaEfekArasapasPolis }
 
 // Jalankan me-resolve alamatnya lebih dulu, lalu berhenti terang.
-func (e EfekArasapasPolis) Jalankan(ctx context.Context, _ MuatanEfek) error {
+func (e EfekArasapasPolis) Jalankan(ctx context.Context, _ outbox.MuatanEfek) error {
 	if e.Resolver == nil {
-		return ErrResolverBelumDiputuskan
+		return layanan.ErrResolverBelumDiputuskan
 	}
-	if _, err := AlamatLayanan(ctx, e.Resolver, KunciArasapasPremiumList); err != nil {
+	if _, err := layanan.AlamatLayanan(ctx, e.Resolver, KunciArasapasPremiumList); err != nil {
 		return err
 	}
-	return ErrArasapasBelumDisetujui
+	return outbox.ErrArasapasBelumDisetujui
 }
 
 // EfekAlarmEmailPolis memberi tahu tim operasi bahwa efek keluar gagal.
@@ -95,8 +99,8 @@ type EfekAlarmEmailPolis struct{}
 func (EfekAlarmEmailPolis) Nama() string { return NamaEfekAlarmPolis }
 
 // Jalankan selalu gagal, dan menyebut apa yang ditunggu.
-func (EfekAlarmEmailPolis) Jalankan(context.Context, MuatanEfek) error {
-	return ErrEmailBelumDisetujui
+func (EfekAlarmEmailPolis) Jalankan(context.Context, outbox.MuatanEfek) error {
+	return outbox.ErrEmailBelumDisetujui
 }
 
 // PenyalurPolis menjalankan Arasapas, lalu alarm HANYA bila Arasapas gagal.
@@ -105,22 +109,22 @@ func (EfekAlarmEmailPolis) Jalankan(context.Context, MuatanEfek) error {
 // menjalankan SETIAP efeknya; alarm yang ikut di dalamnya akan terkirim pada
 // setiap simpan yang berhasil - persis yang AC 27 spec larang.
 type PenyalurPolis struct {
-	kirim *Penyalur
-	alarm *Penyalur
+	kirim *outbox.Penyalur
+	alarm *outbox.Penyalur
 }
 
 // NewPenyalurPolis menyusunnya. Gerbang lingkungan milik `Penyalur` - SATU
 // tempat (AC tiket 06), dipakai kedua modul.
-func NewPenyalurPolis(l Lingkungan, a Antrean, kirim, alarm EfekKeluar) *PenyalurPolis {
+func NewPenyalurPolis(l inti.Lingkungan, a outbox.Antrean, kirim, alarm outbox.EfekKeluar) *PenyalurPolis {
 	return &PenyalurPolis{
-		kirim: NewPenyalur(l, a, kirim),
-		alarm: NewPenyalur(l, a, alarm),
+		kirim: outbox.NewPenyalur(l, a, kirim),
+		alarm: outbox.NewPenyalur(l, a, alarm),
 	}
 }
 
 // Salurkan menjalankan kiriman, lalu alarm bila kiriman gagal. Nol galat -
 // alasannya sama dengan `Penyalur.Salurkan`.
-func (p *PenyalurPolis) Salurkan(ctx context.Context, m MuatanEfek) HasilSalur {
+func (p *PenyalurPolis) Salurkan(ctx context.Context, m outbox.MuatanEfek) outbox.HasilSalur {
 	h := p.kirim.Salurkan(ctx, m)
 	if h.Dilewati || len(h.Gagal) == 0 {
 		return h
@@ -133,8 +137,8 @@ func (p *PenyalurPolis) Salurkan(ctx context.Context, m MuatanEfek) HasilSalur {
 
 // penyalurPolisBawaan gagal terang di produksi, dan dilewati di selainnya.
 func penyalurPolisBawaan(s *Service) *PenyalurPolis {
-	return NewPenyalurPolis(s.lingkungan, AntreanBelumDiputuskan{},
-		EfekArasapasPolis{Resolver: ResolverBelumDiputuskan{}}, EfekAlarmEmailPolis{})
+	return NewPenyalurPolis(s.Lingkungan(), outbox.AntreanBelumDiputuskan{},
+		EfekArasapasPolis{Resolver: layanan.ResolverBelumDiputuskan{}}, EfekAlarmEmailPolis{})
 }
 
 // PenyalurPremiumListOracle menyusun penyalur dengan outbox dan resolver Oracle.
@@ -143,6 +147,6 @@ func penyalurPolisBawaan(s *Service) *PenyalurPolis {
 // adalah TEMPAT kegagalannya mendarat (`T_LOG_SERVICE_RNM`, `MODUL =
 // PREMIUMLISTLIFE`) dan pembacaan `M_LINK_SERVICE`.
 func PenyalurPremiumListOracle(svc *Service) *PenyalurPolis {
-	return NewPenyalurPolis(svc.lingkungan, AntreanEfekOracleModul(svc, ModulPremiumListLife),
-		EfekArasapasPolis{Resolver: ResolverLinkServiceOracle(svc)}, EfekAlarmEmailPolis{})
+	return NewPenyalurPolis(svc.Lingkungan(), outbox.AntreanEfekOracleModul(svc, ModulPremiumListLife),
+		EfekArasapasPolis{Resolver: layanan.ResolverLinkServiceOracle(svc)}, EfekAlarmEmailPolis{})
 }

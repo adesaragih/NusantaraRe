@@ -14,6 +14,9 @@ import (
 	"time"
 
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/jejak"
 )
 
 // simpanAdjustment melayani
@@ -21,58 +24,58 @@ import (
 func simpanAdjustment(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
-		nomor, err := svc.Akseptasi().DenganJejak(services.PerekamJejakOracle(svc)).
+		nomor, err := svc.Akseptasi().DenganJejak(jejak.PerekamJejakOracle(svc)).
 			DenganPenerbit(services.PenerbitAkseptasiOracle(svc)).
-			SimpanAdjustment(r.Context(), pelakuDari(r, stubPelaku),
+			SimpanAdjustment(r.Context(), inti.PelakuDari(r, stubPelaku),
 				r.PathValue("id"), r.PathValue("pesertaId"), time.Now())
 
 		switch {
-		case errors.Is(err, services.ErrTanpaIdentitas):
-			galat(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+		case errors.Is(err, inti.ErrTanpaIdentitas):
+			galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
 			return
-		case errors.Is(err, services.ErrTanpaWewenang):
+		case errors.Is(err, inti.ErrTanpaWewenang):
 			// 403: yang boleh mengaksep adalah PEMEGANG TAHAP klaim ini -
 			// Outstanding oleh ReasLifeAdmin, Medical Check oleh
 			// ReasLifeMedicalAdvisor, Claim Analis oleh ReasLifeSPV.
-			galat(w, http.StatusForbidden,
+			galat.Tulis(w, http.StatusForbidden,
 				"hanya pemegang tahap klaim ini yang dapat mengaksep barisnya")
 			return
 		case errors.Is(err, services.ErrPesertaTidakDipilih):
-			galat(w, http.StatusConflict,
+			galat.Tulis(w, http.StatusConflict,
 				"peserta belum dipilih untuk diklaim")
 			return
 		case errors.Is(err, services.ErrBarisSudahBernomorAkseptasi):
-			galat(w, http.StatusConflict, "baris sudah punya nomor akseptasi")
+			galat.Tulis(w, http.StatusConflict, "baris sudah punya nomor akseptasi")
 			return
 		case errors.Is(err, services.ErrBarisBukanOutstanding):
-			galat(w, http.StatusConflict,
+			galat.Tulis(w, http.StatusConflict,
 				"hanya baris Outstanding yang dapat diaksep")
 			return
 		case errors.Is(err, services.ErrTypeTidakDikenal):
-			galat(w, http.StatusUnprocessableEntity,
+			galat.Tulis(w, http.StatusUnprocessableEntity,
 				"Type klaim tidak dikenal; nomor akseptasi tidak dapat diterbitkan")
 			return
 		case errors.Is(err, services.ErrKodeBisnisBelumTersimpan):
 			// 501: temuan audit A0 - kolomnya belum ada, dan nomor akseptasi
 			// memuatnya. Bukan kerusakan, melainkan yang belum dibangun.
-			galat(w, http.StatusNotImplemented,
+			galat.Tulis(w, http.StatusNotImplemented,
 				"kode bisnis klaim belum tersimpan; nomor akseptasi belum dapat dirakit")
 			return
 		case errors.Is(err, services.ErrNomorAkseptasiBerganda):
-			galat(w, http.StatusConflict,
+			galat.Tulis(w, http.StatusConflict,
 				"nomor akseptasi yang terbit sudah dipakai; coba lagi")
 			return
 		case errors.Is(err, services.ErrKasusSudahTertutup):
-			galat(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
+			galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
 			return
-		case errors.Is(err, services.ErrPermintaanTidakSah):
-			galat(w, http.StatusBadRequest, err.Error())
+		case errors.Is(err, galat.ErrPermintaanTidakSah):
+			galat.Tulis(w, http.StatusBadRequest, err.Error())
 			return
 		case err != nil:
-			galat(w, http.StatusInternalServerError, "gagal mengaksep baris")
+			galat.Tulis(w, http.StatusInternalServerError, "gagal mengaksep baris")
 			return
 		}
 

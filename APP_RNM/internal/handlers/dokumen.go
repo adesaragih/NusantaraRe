@@ -26,41 +26,37 @@ import (
 	"time"
 
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/unggah"
 )
-
-// batasFormulir membatasi bagian NON-berkas sebuah multipart.
-//
-// ⚠️ Ini BUKAN batas ukuran berkas - itu `services.BatasUkuranUnggahan`, dan
-// ia ditegakkan saat menyalin. Yang di sini membatasi berapa banyak formulir
-// yang ditahan di MEMORI sebelum bagian berkasnya dialirkan ke disk.
-const batasFormulir = 1 << 20
 
 // unggahDokumen melayani POST multipart - `Add attachment` b1245.
 func unggahDokumen(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		// ⛔ `ReadForm` DIHINDARI: ia menulis seluruh berkas ke berkas
 		// sementara lebih dulu. `MultipartReader` mengalirkannya, sehingga
 		// batas ukuran berlaku SEBELUM 25 MiB mendarat dua kali.
-		if err := r.ParseMultipartForm(batasFormulir); err != nil {
-			galat(w, http.StatusBadRequest, "permintaan bukan multipart yang sah")
+		if err := r.ParseMultipartForm(galat.BatasFormulir); err != nil {
+			galat.Tulis(w, http.StatusBadRequest, "permintaan bukan multipart yang sah")
 			return
 		}
 		berkas, kepala, err := r.FormFile("berkas")
 		if err != nil {
-			galat(w, http.StatusBadRequest, "bagian `berkas` tidak ada di permintaan")
+			galat.Tulis(w, http.StatusBadRequest, "bagian `berkas` tidak ada di permintaan")
 			return
 		}
 		defer func() { _ = berkas.Close() }()
 
 		dok, err := svc.Dokumen().
 			DenganKategori(services.KategoriWajibOracle(svc)).
-			Unggah(r.Context(), pelakuDari(r, stubPelaku),
+			Unggah(r.Context(), inti.PelakuDari(r, stubPelaku),
 				r.PathValue("id"), r.PathValue("pesertaId"),
-				services.BerkasMasuk{
+				unggah.BerkasMasuk{
 					NamaFile: kepala.Filename,
 					Mime:     kepala.Header.Get("Content-Type"),
 					Kategori: r.FormValue("kategori"),
@@ -83,12 +79,12 @@ func unggahDokumen(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 // sebenarnya, tanpa Oracle (`dokumen_identitas_test.go`).
 func isiDokumen(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		pelaku := pelakuDari(r, stubPelaku)
-		if jawabGalatDokumen(w, services.WajibIdentitas(pelaku)) {
+		pelaku := inti.PelakuDari(r, stubPelaku)
+		if jawabGalatDokumen(w, inti.WajibIdentitas(pelaku)) {
 			return
 		}
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		id, ok := pengenalDokumen(w, r)
@@ -104,7 +100,7 @@ func isiDokumen(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			// ⛔ 404, bukan 500. Baris ada tetapi berkasnya tidak: itu
 			// keadaan yang pemakai dapat laporkan dengan jelas, dan 500
 			// membuatnya terbaca sebagai kerusakan server.
-			galat(w, http.StatusNotFound, "berkas dokumen tidak ditemukan di penyimpanan")
+			galat.Tulis(w, http.StatusNotFound, "berkas dokumen tidak ditemukan di penyimpanan")
 			return
 		}
 		defer func() { _ = f.Close() }()
@@ -124,14 +120,14 @@ func isiDokumen(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 func hapusDokumen(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		id, ok := pengenalDokumen(w, r)
 		if !ok {
 			return
 		}
-		err := svc.Dokumen().Hapus(r.Context(), pelakuDari(r, stubPelaku),
+		err := svc.Dokumen().Hapus(r.Context(), inti.PelakuDari(r, stubPelaku),
 			r.PathValue("id"), id, time.Now())
 		if jawabGalatDokumen(w, err) {
 			return
@@ -149,7 +145,7 @@ func hapusDokumen(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 func pengenalDokumen(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	n, err := strconv.ParseInt(r.PathValue("dokId"), 10, 64)
 	if err != nil || n <= 0 {
-		galat(w, http.StatusBadRequest, "pengenal dokumen bukan angka yang sah")
+		galat.Tulis(w, http.StatusBadRequest, "pengenal dokumen bukan angka yang sah")
 		return 0, false
 	}
 	return n, true
@@ -160,37 +156,37 @@ func jawabGalatDokumen(w http.ResponseWriter, err error) bool {
 	switch {
 	case err == nil:
 		return false
-	case errors.Is(err, services.ErrTanpaIdentitas):
-		galat(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
-	case errors.Is(err, services.ErrTanpaWewenang):
-		galat(w, http.StatusForbidden, "wewenang tidak mencukupi")
+	case errors.Is(err, inti.ErrTanpaIdentitas):
+		galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+	case errors.Is(err, inti.ErrTanpaWewenang):
+		galat.Tulis(w, http.StatusForbidden, "wewenang tidak mencukupi")
 	case errors.Is(err, services.ErrKasusSudahTertutup):
-		galat(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
-	case errors.Is(err, services.ErrUnggahanDirBelumDisetel):
+		galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
+	case errors.Is(err, unggah.ErrUnggahanDirBelumDisetel):
 		// 503: bukan salah pemanggil. Ia keadaan server yang belum siap, dan
 		// pesannya menyebut apa yang kurang - bukan "gagal mengunggah".
-		galat(w, http.StatusServiceUnavailable,
+		galat.Tulis(w, http.StatusServiceUnavailable,
 			"UNGGAHAN_DIR belum disetel; unggahan dokumen belum dapat dilayani")
 	case errors.Is(err, services.ErrKategoriWajibBelumDiketahui):
-		galat(w, http.StatusServiceUnavailable,
+		galat.Tulis(w, http.StatusServiceUnavailable,
 			"daftar kategori dokumen belum tersedia")
-	case errors.Is(err, services.ErrBerkasTerlaluBesar):
-		galat(w, http.StatusRequestEntityTooLarge, err.Error())
-	case errors.Is(err, services.ErrBerkasKosong):
-		galat(w, http.StatusBadRequest, "berkas kosong")
+	case errors.Is(err, unggah.ErrBerkasTerlaluBesar):
+		galat.Tulis(w, http.StatusRequestEntityTooLarge, err.Error())
+	case errors.Is(err, unggah.ErrBerkasKosong):
+		galat.Tulis(w, http.StatusBadRequest, "berkas kosong")
 	case errors.Is(err, services.ErrKategoriDokumenTidakDikenal):
-		galat(w, http.StatusUnprocessableEntity, err.Error())
+		galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
 	case errors.Is(err, services.ErrDokumenBelumTerunggah):
 		// 409: barisnya ada, berkasnya belum tertaut. Layar dapat berkata
 		// "sedang diproses" alih-alih "tidak ditemukan".
-		galat(w, http.StatusConflict, "berkas belum selesai diunggah")
+		galat.Tulis(w, http.StatusConflict, "berkas belum selesai diunggah")
 	case errors.Is(err, services.ErrDokumenTidakAda):
 		// 404 - uji asap baca-saja DEV (GILIRAN-12) menjumpai 500 di sini.
-		galat(w, http.StatusNotFound, "dokumen tidak ada")
-	case errors.Is(err, services.ErrPermintaanTidakSah):
-		galat(w, http.StatusBadRequest, err.Error())
+		galat.Tulis(w, http.StatusNotFound, "dokumen tidak ada")
+	case errors.Is(err, galat.ErrPermintaanTidakSah):
+		galat.Tulis(w, http.StatusBadRequest, err.Error())
 	default:
-		galat(w, http.StatusInternalServerError, "gagal memproses dokumen")
+		galat.Tulis(w, http.StatusInternalServerError, "gagal memproses dokumen")
 	}
 	return true
 }

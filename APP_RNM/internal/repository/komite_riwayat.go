@@ -12,6 +12,8 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
+
+	"nusantarare/inti/db"
 )
 
 // JejakKomite adalah satu catatan jejak.
@@ -42,10 +44,10 @@ func (r *InboxKomite) JejakEskalasi(ctx context.Context, adjID, polaKe string) (
 		return nil, err
 	}
 	q := sqlJejakEskalasi(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := r.db.sql.QueryContext(ctx, q, adjID, polaKe)
+	rows, err := r.db.QueryContext(ctx, q, adjID, polaKe)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca jejak eskalasi: %w", err)
 	}

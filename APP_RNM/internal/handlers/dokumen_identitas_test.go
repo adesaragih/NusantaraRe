@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"nusantarare/internal/services"
+	"nusantarare/inti"
 )
 
 func TestUnduhDokumenTanpaHeaderIdentitasDitolak401(t *testing.T) {
@@ -37,7 +38,7 @@ func TestUnduhDokumenTanpaHeaderIdentitasDitolak401(t *testing.T) {
 	r = httptest.NewRequest(http.MethodGet, "/api/dokumen/20250101120000123/isi", nil)
 	r.SetPathValue("dokId", "20250101120000123")
 	r.Header.Set("X-Pelaku", "UJI-ADMIN")
-	r.Header.Set("X-Peran", services.PeranAdmin)
+	r.Header.Set("X-Peran", inti.PeranAdmin)
 	w = httptest.NewRecorder()
 	h(w, r)
 	if w.Code != http.StatusServiceUnavailable {

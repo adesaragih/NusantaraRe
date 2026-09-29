@@ -29,13 +29,16 @@ import (
 	"net/http"
 
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/unggah"
 )
 
 // batasPermintaanLampiran membatasi SELURUH badan multipart: berkas + formulir.
 //
 // ⚠️ Batas berkasnya sendiri tetap `services.BatasUkuranUnggahan`, ditegakkan
 // saat menyalin; yang di sini supaya permintaan raksasa berhenti di pintu.
-const batasPermintaanLampiran = services.BatasUkuranUnggahan + batasFormulir
+const batasPermintaanLampiran = unggah.BatasUkuranUnggahan + galat.BatasFormulir
 
 // LayananLampiranTCO memasang seluruh implementasi nyata - dipakai rute di
 // berkas ini DAN pekerja latar di `cmd/api` (OQ-TCO-09).
@@ -66,7 +69,7 @@ func daftarkanRuteLampiranTCO(mux *http.ServeMux, svc *services.Service, stub bo
 // punyaDBTCO menjawab 503 bila Oracle belum dikonfigurasi.
 func punyaDBTCO(w http.ResponseWriter, svc *services.Service) bool {
 	if !svc.PunyaDatabase() {
-		galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+		galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 		return false
 	}
 	return true
@@ -82,11 +85,11 @@ func kategoriLampiranTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		if !punyaDBTCO(w, svc) {
 			return
 		}
-		d, err := LayananLampiranTCO(svc).Kategori(r.Context(), pelakuDari(r, stub))
+		d, err := LayananLampiranTCO(svc).Kategori(r.Context(), inti.PelakuDari(r, stub))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, jawabanKategoriLampiran{Daftar: d, Total: len(d)})
+		galat.TulisJSON(w, jawabanKategoriLampiran{Daftar: d, Total: len(d)})
 	}
 }
 
@@ -100,11 +103,11 @@ func daftarLampiranTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		if !punyaDBTCO(w, svc) {
 			return
 		}
-		d, err := LayananLampiranTCO(svc).Daftar(r.Context(), pelakuDari(r, stub), r.PathValue("id"))
+		d, err := LayananLampiranTCO(svc).Daftar(r.Context(), inti.PelakuDari(r, stub), r.PathValue("id"))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, jawabanDaftarLampiran{Daftar: d, Total: len(d)})
+		galat.TulisJSON(w, jawabanDaftarLampiran{Daftar: d, Total: len(d)})
 	}
 }
 
@@ -114,24 +117,24 @@ func unggahLampiranTCO(svc *services.Service, stub bool) http.HandlerFunc {
 			return
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, batasPermintaanLampiran)
-		if err := r.ParseMultipartForm(batasFormulir); err != nil {
+		if err := r.ParseMultipartForm(galat.BatasFormulir); err != nil {
 			var besar *http.MaxBytesError
 			if errors.As(err, &besar) {
-				galat(w, http.StatusRequestEntityTooLarge, "berkas melebihi batas ukuran")
+				galat.Tulis(w, http.StatusRequestEntityTooLarge, "berkas melebihi batas ukuran")
 				return
 			}
-			galat(w, http.StatusBadRequest, "permintaan bukan multipart yang sah")
+			galat.Tulis(w, http.StatusBadRequest, "permintaan bukan multipart yang sah")
 			return
 		}
 		berkas, kepala, err := r.FormFile("berkas")
 		if err != nil {
 			// VERBATIM `TreatyOutSaveAttachment.xml` b376.
-			galat(w, http.StatusBadRequest, services.PesanTanpaBerkasTCO)
+			galat.Tulis(w, http.StatusBadRequest, services.PesanTanpaBerkasTCO)
 			return
 		}
 		defer func() { _ = berkas.Close() }()
-		hasil, err := LayananLampiranTCO(svc).Unggah(r.Context(), pelakuDari(r, stub), r.PathValue("id"),
-			services.BerkasMasuk{NamaFile: kepala.Filename, Mime: kepala.Header.Get("Content-Type"),
+		hasil, err := LayananLampiranTCO(svc).Unggah(r.Context(), inti.PelakuDari(r, stub), r.PathValue("id"),
+			unggah.BerkasMasuk{NamaFile: kepala.Filename, Mime: kepala.Header.Get("Content-Type"),
 				Kategori: r.FormValue("kategori"), Isi: berkas})
 		if jawabGalatTreatyContractOut(w, err) {
 			return
@@ -166,7 +169,7 @@ func unduhLampiranTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		if !punyaDBTCO(w, svc) {
 			return
 		}
-		meta, isi, err := LayananLampiranTCO(svc).Unduh(r.Context(), pelakuDari(r, stub),
+		meta, isi, err := LayananLampiranTCO(svc).Unduh(r.Context(), inti.PelakuDari(r, stub),
 			r.PathValue("id"), r.PathValue("lid"))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
@@ -187,7 +190,7 @@ func unduhSemuaLampiranTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		// tahun tidak ada, rekam tanpa berkas - masih dapat dijawab sebagai
 		// galat JSON biasa.
 		var arsip *zip.Writer
-		err := LayananLampiranTCO(svc).UnduhSemua(r.Context(), pelakuDari(r, stub), tahunID,
+		err := LayananLampiranTCO(svc).UnduhSemua(r.Context(), inti.PelakuDari(r, stub), tahunID,
 			func(nama string, isi io.Reader) error {
 				if arsip == nil {
 					kepalaUnduhan(w, "application/zip", "lampiran-tahun-treaty-"+tahunID+".zip")
@@ -223,11 +226,11 @@ func selarasLampiranTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		if !punyaDBTCO(w, svc) {
 			return
 		}
-		t, err := LayananLampiranTCO(svc).PeriksaSelaras(r.Context(), pelakuDari(r, stub), r.PathValue("id"))
+		t, err := LayananLampiranTCO(svc).PeriksaSelaras(r.Context(), inti.PelakuDari(r, stub), r.PathValue("id"))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, jawabanSelaras{Temuan: t, Total: len(t)})
+		galat.TulisJSON(w, jawabanSelaras{Temuan: t, Total: len(t)})
 	}
 }
 
@@ -236,12 +239,12 @@ func ulangiLampiranTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		if !punyaDBTCO(w, svc) {
 			return
 		}
-		hasil, err := LayananLampiranTCO(svc).Ulangi(r.Context(), pelakuDari(r, stub),
+		hasil, err := LayananLampiranTCO(svc).Ulangi(r.Context(), inti.PelakuDari(r, stub),
 			r.PathValue("id"), r.PathValue("lid"))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, hasil)
+		galat.TulisJSON(w, hasil)
 	}
 }
 
@@ -254,11 +257,11 @@ func hapusLampiranTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		if !punyaDBTCO(w, svc) {
 			return
 		}
-		p, err := LayananLampiranTCO(svc).Hapus(r.Context(), pelakuDari(r, stub),
+		p, err := LayananLampiranTCO(svc).Hapus(r.Context(), inti.PelakuDari(r, stub),
 			r.PathValue("id"), r.PathValue("lid"))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, jawabanHapusLampiran{Peringatan: p})
+		galat.TulisJSON(w, jawabanHapusLampiran{Peringatan: p})
 	}
 }

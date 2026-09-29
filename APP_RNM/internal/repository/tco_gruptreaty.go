@@ -21,6 +21,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+
+	"nusantarare/inti/db"
 )
 
 // MasterGrupTreatyTCO adalah nama tabel master grup treaty.
@@ -38,10 +40,10 @@ func sqlGrupTreatyTCO(tabel string) string {
 }
 
 // MasterGrupTreaty membaca master grup treaty.
-type MasterGrupTreaty struct{ db *DB }
+type MasterGrupTreaty struct{ db *db.DB }
 
 // NewMasterGrupTreaty menyusunnya.
-func NewMasterGrupTreaty(db *DB) *MasterGrupTreaty { return &MasterGrupTreaty{db: db} }
+func NewMasterGrupTreaty(db *db.DB) *MasterGrupTreaty { return &MasterGrupTreaty{db: db} }
 
 // Daftar membaca seluruh grup treaty.
 func (m *MasterGrupTreaty) Daftar(ctx context.Context) ([]GrupTreatyTCO, error) {
@@ -50,10 +52,10 @@ func (m *MasterGrupTreaty) Daftar(ctx context.Context) ([]GrupTreatyTCO, error) 
 		return nil, err
 	}
 	q := sqlGrupTreatyTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := m.db.bacaTCO(ctx).QueryContext(ctx, q)
+	rows, err := bacaTCO(ctx, m.db).QueryContext(ctx, q)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca master grup treaty: %w", err)
 	}

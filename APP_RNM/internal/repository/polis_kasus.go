@@ -33,6 +33,7 @@ import (
 	"time"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/db"
 )
 
 // AwalanWorkPolis adalah awalan pengenal work object polis Life.
@@ -67,10 +68,10 @@ func sqlSisipPremiumListKosong(tabel string) string {
 }
 
 // PengenalBerikut menerbitkan satu pengenal work polis dari SEQ_WORK_POLIS.
-func (r *WorkPolis) PengenalBerikut(ctx context.Context, tx *Tx) (string, error) {
+func (r *WorkPolis) PengenalBerikut(ctx context.Context, tx *db.Tx) (string, error) {
 	// Pembaca sequence yang SAMA dengan pengenal klaim - satu tempat untuk
 	// `NEXTVAL`, bukan salinan kedua.
-	urut, err := NewPohonKlaim(r.db).nomorBerikut(ctx, tx, "SEQ_WORK_POLIS")
+	urut, err := r.db.NomorBerikut(ctx, tx, "SEQ_WORK_POLIS")
 	if err != nil {
 		return "", err
 	}
@@ -81,7 +82,7 @@ func (r *WorkPolis) PengenalBerikut(ctx context.Context, tx *Tx) (string, error)
 //
 // ⛔ Keduanya di transaksi PEMANGGIL: kasus tanpa header tidak tampil lengkap
 // di kotak masuk, dan header tanpa kasus adalah baris yatim.
-func (r *WorkPolis) SisipKasusBaru(ctx context.Context, tx *Tx, id string,
+func (r *WorkPolis) SisipKasusBaru(ctx context.Context, tx *db.Tx, id string,
 	k models.KasusPolisBaru, saat time.Time) error {
 
 	kerja, err := r.db.Qualify("T_WORK_POLIS")
@@ -100,14 +101,14 @@ func (r *WorkPolis) SisipKasusBaru(ctx context.Context, tx *Tx, id string,
 		{"kasus polis", sqlSisipKasusPolis(kerja), argSisipKasusPolis(id, k)},
 		{"header polis", sqlSisipPremiumListKosong(polis), []any{id, id, saat}},
 	} {
-		if err := PeriksaSQL(l.q); err != nil {
+		if err := db.PeriksaSQL(l.q); err != nil {
 			return err
 		}
-		hasil, err := tx.tx.ExecContext(ctx, l.q, l.args...)
+		hasil, err := tx.ExecContext(ctx, l.q, l.args...)
 		if err != nil {
 			return fmt.Errorf("repository: menyisipkan %s: %w", l.nama, err)
 		}
-		if err := pastikanSatuBaris(hasil, l.nama); err != nil {
+		if err := db.PastikanSatuBaris(hasil, l.nama); err != nil {
 			return err
 		}
 	}

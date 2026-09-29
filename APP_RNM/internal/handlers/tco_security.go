@@ -19,6 +19,8 @@ import (
 	"strings"
 
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
 )
 
 func layananSecurityTCO(svc *services.Service) *services.SecurityTCO {
@@ -44,12 +46,12 @@ func daftarSecurityTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		if !punyaDBTCO(w, svc) {
 			return
 		}
-		d, err := layananSecurityTCO(svc).Daftar(r.Context(), pelakuDari(r, stub), r.PathValue("id"),
+		d, err := layananSecurityTCO(svc).Daftar(r.Context(), inti.PelakuDari(r, stub), r.PathValue("id"),
 			r.PathValue("kid"), r.PathValue("rid"))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, d)
+		galat.TulisJSON(w, d)
 	}
 }
 
@@ -60,26 +62,26 @@ func simpanSecurityTCO(svc *services.Service, stub, perbarui bool) http.HandlerF
 		}
 		var masuk services.SecurityMasuk
 		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&masuk); err != nil {
-			galat(w, http.StatusBadRequest, "badan permintaan bukan JSON security yang sah")
+			galat.Tulis(w, http.StatusBadRequest, "badan permintaan bukan JSON security yang sah")
 			return
 		}
 		id := strings.TrimSpace(masuk.ID)
 		switch {
 		case !perbarui && id != "":
-			galat(w, http.StatusBadRequest, "identitas security dibuat server; POST tidak boleh membawa id")
+			galat.Tulis(w, http.StatusBadRequest, "identitas security dibuat server; POST tidak boleh membawa id")
 			return
 		case perbarui && id != "" && id != r.PathValue("sid"):
-			galat(w, http.StatusBadRequest, "id di badan berbeda dari id di jalur")
+			galat.Tulis(w, http.StatusBadRequest, "id di badan berbeda dari id di jalur")
 			return
 		case perbarui:
 			masuk.ID = r.PathValue("sid")
 		}
-		s, err := layananSecurityTCO(svc).Simpan(r.Context(), pelakuDari(r, stub), r.PathValue("id"),
+		s, err := layananSecurityTCO(svc).Simpan(r.Context(), inti.PelakuDari(r, stub), r.PathValue("id"),
 			r.PathValue("kid"), r.PathValue("rid"), masuk)
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, s)
+		galat.TulisJSON(w, s)
 	}
 }
 
@@ -92,11 +94,11 @@ func hapusSecurityTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		if !punyaDBTCO(w, svc) {
 			return
 		}
-		pesan, err := layananSecurityTCO(svc).Hapus(r.Context(), pelakuDari(r, stub), r.PathValue("id"),
+		pesan, err := layananSecurityTCO(svc).Hapus(r.Context(), inti.PelakuDari(r, stub), r.PathValue("id"),
 			r.PathValue("kid"), r.PathValue("rid"), r.PathValue("sid"))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, jawabanHapusSecurity{Pesan: pesan})
+		galat.TulisJSON(w, jawabanHapusSecurity{Pesan: pesan})
 	}
 }

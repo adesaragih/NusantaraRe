@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
 )
 
 func kasusUji() repository.KasusKomite {
@@ -24,7 +26,7 @@ func kasusUji() repository.KasusKomite {
 
 // TestKasusKomiteHanyaUntukAnggotaTangga - ADR-0014.
 func TestKasusKomiteHanyaUntukAnggotaTangga(t *testing.T) {
-	if _, err := susunKasusTampil(kasusUji(), "UJI-LUAR"); !errors.Is(err, ErrTanpaWewenang) {
+	if _, err := susunKasusTampil(kasusUji(), "UJI-LUAR"); !errors.Is(err, inti.ErrTanpaWewenang) {
 		t.Errorf("bukan anggota: %v, mau ErrTanpaWewenang", err)
 	}
 	for akun, giliran := range map[string]bool{"UJI-A": false, "UJI-B": true, "UJI-C": false} {
@@ -66,10 +68,10 @@ func TestStatusDanUangSebagaiTeks(t *testing.T) {
 // TestInboxKomiteMenuntutIdentitas.
 func TestInboxKomiteMenuntutIdentitas(t *testing.T) {
 	i := New(nil).InboxKomite()
-	if _, err := i.Ambil(context.Background(), Pelaku{}, 1, 10); err == nil {
+	if _, err := i.Ambil(context.Background(), inti.Pelaku{}, 1, 10); err == nil {
 		t.Error("inbox tanpa identitas diterima")
 	}
-	if _, err := i.Ambil(context.Background(), Pelaku{AkunID: "UJI"}, 1, 10); !errors.Is(err, repository.ErrTanpaOracle) {
+	if _, err := i.Ambil(context.Background(), inti.Pelaku{AkunID: "UJI"}, 1, 10); !errors.Is(err, db.ErrTanpaOracle) {
 		t.Errorf("inbox tanpa Oracle: %v", err)
 	}
 }

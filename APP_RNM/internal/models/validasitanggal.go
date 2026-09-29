@@ -49,7 +49,7 @@ import (
 	"strings"
 	"time"
 
-	"nusantarare/pkg/utils"
+	"nusantarare/inti/utils"
 )
 
 // Pesan kedua validasi, VERBATIM dari rule-nya.

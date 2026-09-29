@@ -26,7 +26,6 @@ import (
 	"strings"
 
 	"nusantarare/internal/models"
-
 	"nusantarare/internal/repository"
 )
 
@@ -145,7 +144,7 @@ type kategoriOracle struct{ pohon *repository.PohonKlaim }
 // baca tidak dapat dipastikan. Kandidat kedua dicatat di repository dan tidak
 // dipakai.
 func KategoriWajibOracle(svc *Service) SumberKategoriWajib {
-	return kategoriOracle{pohon: repository.NewPohonKlaim(svc.db)}
+	return kategoriOracle{pohon: repository.NewPohonKlaim(svc.DB())}
 }
 
 // KategoriWajib membaca daftar kategori untuk sebuah kode bisnis.

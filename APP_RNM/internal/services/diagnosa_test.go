@@ -14,24 +14,26 @@ import (
 	"testing"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
 )
 
 // pelakuUjiDiagnosa - identitas ada, peran apa pun tidak relevan sebelum
 // gerbang bentuk permintaan lewat.
-var pelakuUjiDiagnosa = Pelaku{AkunID: "UJI-1", Peran: []string{models.PeranAdminLife}}
+var pelakuUjiDiagnosa = inti.Pelaku{AkunID: "UJI-1", Peran: []string{models.PeranAdminLife}}
 
 func TestDiagnosaMenolakTanpaIdentitasLebihDulu(t *testing.T) {
 	d := New(nil).Diagnosa()
 	ctx := context.Background()
 	// ⛔ Ketiga rute, bukan satu. Gerbang yang disalin ke tiga pintu adalah
 	// tiga kesempatan untuk berbeda - dan uji satu pintu tidak akan tahu.
-	if _, err := d.Tambah(ctx, Pelaku{}, "K-1", "P-1"); !errors.Is(err, ErrTanpaIdentitas) {
+	if _, err := d.Tambah(ctx, inti.Pelaku{}, "K-1", "P-1"); !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("Tambah: %v, mau ErrTanpaIdentitas", err)
 	}
-	if err := d.Ubah(ctx, Pelaku{}, "K-1", "P-1", 1, "", "", ""); !errors.Is(err, ErrTanpaIdentitas) {
+	if err := d.Ubah(ctx, inti.Pelaku{}, "K-1", "P-1", 1, "", "", ""); !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("Ubah: %v, mau ErrTanpaIdentitas", err)
 	}
-	if err := d.Hapus(ctx, Pelaku{}, "K-1", "P-1", 1); !errors.Is(err, ErrTanpaIdentitas) {
+	if err := d.Hapus(ctx, inti.Pelaku{}, "K-1", "P-1", 1); !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("Hapus: %v, mau ErrTanpaIdentitas", err)
 	}
 }
@@ -48,7 +50,7 @@ func TestDiagnosaMenjagaUrutanPagarnya(t *testing.T) {
 		{"", "P-1"}, {"K-1", ""}, {"", ""}, {"   ", "P-1"},
 	} {
 		_, err := d.Tambah(ctx, pelakuUjiDiagnosa, u.klaim, u.peserta)
-		if !errors.Is(err, ErrPermintaanTidakSah) {
+		if !errors.Is(err, galat.ErrPermintaanTidakSah) {
 			t.Errorf("klaim=%q peserta=%q: %v, mau ErrPermintaanTidakSah",
 				u.klaim, u.peserta, err)
 		}

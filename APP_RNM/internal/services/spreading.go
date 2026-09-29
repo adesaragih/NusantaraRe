@@ -26,7 +26,8 @@ import (
 	"github.com/cockroachdb/apd/v3"
 
 	"nusantarare/internal/models"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti/uang"
+	"nusantarare/inti/utils"
 )
 
 // Pembulatan yang XML tuliskan, masing-masing dengan langkah asalnya.
@@ -83,8 +84,8 @@ type TahunTreaty struct {
 	// ⛔ nil BUKAN nol. POOLDATA.TREATYYEAR_LIFE tidak punya kedua kolom ini
 	// `[data DBA]`; memperlakukan yang kosong sebagai nol akan membuat seluruh
 	// share nol tanpa seorang pun tahu sebabnya.
-	IDR *models.Money
-	USD *models.Money
+	IDR *uang.Money
+	USD *uang.Money
 	// Retro adalah baris RETROCESSIONLIFE milik treaty-year ini, urut ID -
 	// `GetRetroLife_SQL`: `order by id asc`.
 	Retro []BarisRetro
@@ -99,9 +100,9 @@ type BarisRetro struct {
 	ReinsurerName  string
 	TreatyTypeID   string
 	TreatyTypeName string
-	PercentShare   models.Ratio
-	Commision      models.Ratio
-	OvrComm        models.Ratio
+	PercentShare   uang.Ratio
+	Commision      uang.Ratio
+	OvrComm        uang.Ratio
 }
 
 // BarisRate adalah satu baris hasil `GetRateRetro` atas POOLDATA.RATE_LIFE.
@@ -114,7 +115,7 @@ type BarisRate struct {
 	Umur     string // CARI1 = AGE
 	Kontrak  string // CARI2 = CONTRACT
 	JenisKel string // CARI3 = GENDER
-	Rate     models.Ratio
+	Rate     uang.Ratio
 }
 
 // MasukanSpreading adalah seluruh nilai yang perhitungan ini perlukan.
@@ -128,12 +129,12 @@ type MasukanSpreading struct {
 	// Currency dan ClaimGross - baris adjustment. Kolom kita untuk CLAIM_GROSS
 	// bernama CLAIM_AMOUNT: satu nilai, dua nama.
 	Currency   string
-	ClaimGross models.Money
+	ClaimGross uang.Money
 	// EmPercent dipakai sebagai PECAHAN LANGSUNG. Langkah 8.1 menyalin
 	// .EM_PERCENT tanpa membaginya seratus - berbeda dari OVR_COMM dan
 	// COMMISION, yang dibagi. Nama "percent" di korpus ini tidak dapat dipakai
 	// menebak sifatnya.
-	EmPercent models.Ratio
+	EmPercent uang.Ratio
 	Umur      string
 	JenisKel  string
 	// TahunPolis adalah local.Year, dan ia yang MEMILIH cabang rumus NET.
@@ -171,7 +172,7 @@ func TahunPolis(mulai, valuasiKotor time.Time) int {
 //	    adalah yang TERAKHIR, sedangkan GetRateRetro tidak memakai ORDER BY.
 //	    Dengan 2.693 kombinasi ganda di RATE_LIFE `[data DBA]`, hasilnya tidak
 //	    tertentu. Di sini ambiguitas DILAPORKAN beserta ID barisnya.
-func PilihRate(baris []BarisRate, umur, jenisKel string) (models.Ratio, error) {
+func PilihRate(baris []BarisRate, umur, jenisKel string) (uang.Ratio, error) {
 	var cocok []BarisRate
 	for _, b := range baris {
 		if cocokRate(b, umur, jenisKel) {
@@ -179,7 +180,7 @@ func PilihRate(baris []BarisRate, umur, jenisKel string) (models.Ratio, error) {
 		}
 	}
 	if len(cocok) == 0 {
-		return models.Ratio{}, fmt.Errorf("%w: umur %q jenis kelamin %q dari %d baris rate",
+		return uang.Ratio{}, fmt.Errorf("%w: umur %q jenis kelamin %q dari %d baris rate",
 			ErrRateTidakDitemukan, umur, jenisKel, len(baris))
 	}
 	pertama := cocok[0]
@@ -191,7 +192,7 @@ func PilihRate(baris []BarisRate, umur, jenisKel string) (models.Ratio, error) {
 		for _, c := range cocok {
 			id = append(id, c.ID)
 		}
-		return models.Ratio{}, fmt.Errorf(
+		return uang.Ratio{}, fmt.Errorf(
 			"%w: umur %q jenis kelamin %q cocok pada baris %s dengan nilai berbeda",
 			ErrRateBerganda, umur, jenisKel, strings.Join(id, ", "))
 	}
@@ -227,7 +228,7 @@ func samaNilaiTeks(a, b string) bool {
 
 // samaNilai membandingkan dua rasio menurut NILAINYA, sehingga 2.5 dan 2.50
 // tidak dianggap dua rate yang berbeda.
-func samaNilai(a, b models.Ratio) bool {
+func samaNilai(a, b uang.Ratio) bool {
 	if a.Value == nil || b.Value == nil {
 		return a.Value == nil && b.Value == nil
 	}
@@ -257,7 +258,7 @@ func HitungSpreading(m MasukanSpreading, tahun []TahunTreaty,
 	// dan pesan galat yang sama berulang sebanyak jumlah reinsurer. Malas dan
 	// bukan di muka: di XML pencarian rate ada DI DALAM putaran baris retro,
 	// jadi treaty-year tanpa retrosesi memang tidak pernah memerlukannya.
-	var rateTerpilih models.Ratio
+	var rateTerpilih uang.Ratio
 	var rateSudah bool
 	// Kapasitas treaty-year sebelumnya, untuk memeriksa urutan menaik.
 	var sebelumnya *apd.Decimal
@@ -300,7 +301,7 @@ func HitungSpreading(m MasukanSpreading, tahun []TahunTreaty,
 
 		spr := models.Spreading{
 			TreatyYearLife:  t.TreatyYearLife,
-			RetrocadedShare: models.Money{Amount: share, Currency: m.Currency},
+			RetrocadedShare: uang.Money{Amount: share, Currency: m.Currency},
 			Currency:        m.Currency,
 		}
 		if t.IDR != nil {
@@ -338,7 +339,7 @@ func HitungSpreading(m MasukanSpreading, tahun []TahunTreaty,
 
 // kapasitasUntuk memilih kolom kapasitas menurut mata uang - langkah 8.2.1.4-7.
 func kapasitasUntuk(t TahunTreaty, mataUang string) (*apd.Decimal, error) {
-	var kapasitas *models.Money
+	var kapasitas *uang.Money
 	switch strings.ToUpper(strings.TrimSpace(mataUang)) {
 	case "IDR":
 		kapasitas = t.IDR
@@ -366,7 +367,7 @@ func kapasitasUntuk(t TahunTreaty, mataUang string) (*apd.Decimal, error) {
 //	             sesudah Discount
 //	selain itu : NET = GROSS - Comm
 func hitungRetro(m MasukanSpreading, share *apd.Decimal, r BarisRetro,
-	rateMentah models.Ratio) (models.SpreadingRetro, error) {
+	rateMentah uang.Ratio) (models.SpreadingRetro, error) {
 
 	ctx := utils.DecimalContext()
 	nol := models.SpreadingRetro{}
@@ -464,10 +465,10 @@ func hitungRetro(m MasukanSpreading, share *apd.Decimal, r BarisRetro,
 	return models.SpreadingRetro{
 		ReinsurerName:        r.ReinsurerName,
 		PercentShare:         r.PercentShare,
-		Amount:               models.Money{Amount: jumlah, Currency: m.Currency},
-		Rate:                 models.Ratio{Value: rateTersimpan},
-		PremiumSpreadedGross: models.Money{Amount: bruto, Currency: m.Currency},
-		PremiumSpreadedNet:   models.Money{Amount: neto, Currency: m.Currency},
+		Amount:               uang.Money{Amount: jumlah, Currency: m.Currency},
+		Rate:                 uang.Ratio{Value: rateTersimpan},
+		PremiumSpreadedGross: uang.Money{Amount: bruto, Currency: m.Currency},
+		PremiumSpreadedNet:   uang.Money{Amount: neto, Currency: m.Currency},
 		Commision:            r.Commision,
 		OvrComm:              r.OvrComm,
 		TreatyTypeID:         r.TreatyTypeID,
@@ -476,7 +477,7 @@ func hitungRetro(m MasukanSpreading, share *apd.Decimal, r BarisRetro,
 }
 
 // persenJadiPecahan membagi seratus lalu membulatkan - @divide(x,100,n).
-func persenJadiPecahan(ctx *apd.Context, persen models.Ratio, desimal int32) (*apd.Decimal, error) {
+func persenJadiPecahan(ctx *apd.Context, persen uang.Ratio, desimal int32) (*apd.Decimal, error) {
 	hasil := new(apd.Decimal)
 	if _, err := ctx.Quo(hasil, nilaiAtauNol(persen.Value), apd.New(100, 0)); err != nil {
 		return nil, err

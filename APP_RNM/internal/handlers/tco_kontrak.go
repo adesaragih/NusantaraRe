@@ -17,6 +17,8 @@ import (
 	"strings"
 
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
 )
 
 // layananKontrakTCO memasang seluruh implementasi nyata.
@@ -44,11 +46,11 @@ func daftarKontrakTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		if !punyaDBTCO(w, svc) {
 			return
 		}
-		d, err := layananKontrakTCO(svc).Daftar(r.Context(), pelakuDari(r, stub), r.PathValue("id"))
+		d, err := layananKontrakTCO(svc).Daftar(r.Context(), inti.PelakuDari(r, stub), r.PathValue("id"))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, jawabanDaftarKontrak{Daftar: d, Total: len(d)})
+		galat.TulisJSON(w, jawabanDaftarKontrak{Daftar: d, Total: len(d)})
 	}
 }
 
@@ -61,25 +63,25 @@ func simpanKontrakTCO(svc *services.Service, stub, perbarui bool) http.HandlerFu
 		}
 		var masuk services.KontrakMasuk
 		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&masuk); err != nil {
-			galat(w, http.StatusBadRequest, "badan permintaan bukan JSON kontrak yang sah")
+			galat.Tulis(w, http.StatusBadRequest, "badan permintaan bukan JSON kontrak yang sah")
 			return
 		}
 		id := strings.TrimSpace(masuk.ID)
 		switch {
 		case !perbarui && id != "":
-			galat(w, http.StatusBadRequest, "identitas kontrak dibuat server; POST tidak boleh membawa id")
+			galat.Tulis(w, http.StatusBadRequest, "identitas kontrak dibuat server; POST tidak boleh membawa id")
 			return
 		case perbarui && id != "" && id != r.PathValue("kid"):
-			galat(w, http.StatusBadRequest, "id di badan berbeda dari id di jalur")
+			galat.Tulis(w, http.StatusBadRequest, "id di badan berbeda dari id di jalur")
 			return
 		case perbarui:
 			masuk.ID = r.PathValue("kid")
 		}
-		k, err := layananKontrakTCO(svc).Simpan(r.Context(), pelakuDari(r, stub), r.PathValue("id"), masuk)
+		k, err := layananKontrakTCO(svc).Simpan(r.Context(), inti.PelakuDari(r, stub), r.PathValue("id"), masuk)
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, k)
+		galat.TulisJSON(w, k)
 	}
 }
 
@@ -92,11 +94,11 @@ func akhirBawaanKontrakTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		if !punyaDBTCO(w, svc) {
 			return
 		}
-		akhir, err := layananKontrakTCO(svc).AkhirBawaan(r.Context(), pelakuDari(r, stub), r.PathValue("id"),
+		akhir, err := layananKontrakTCO(svc).AkhirBawaan(r.Context(), inti.PelakuDari(r, stub), r.PathValue("id"),
 			r.URL.Query().Get("mulai"))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, jawabanAkhirBawaan{TreatyEndDate: akhir})
+		galat.TulisJSON(w, jawabanAkhirBawaan{TreatyEndDate: akhir})
 	}
 }

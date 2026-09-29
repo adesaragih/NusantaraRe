@@ -16,6 +16,8 @@ import (
 	"strings"
 
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
 )
 
 func layananKlausulTCO(svc *services.Service) *services.KlausulTCO {
@@ -45,11 +47,11 @@ func jenisKlausulTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		if !punyaDBTCO(w, svc) {
 			return
 		}
-		d, err := layananKlausulTCO(svc).JenisKlausul(r.Context(), pelakuDari(r, stub), r.URL.Query().Get("isXol"))
+		d, err := layananKlausulTCO(svc).JenisKlausul(r.Context(), inti.PelakuDari(r, stub), r.URL.Query().Get("isXol"))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, jawabanJenisKlausul{Daftar: d, Total: len(d)})
+		galat.TulisJSON(w, jawabanJenisKlausul{Daftar: d, Total: len(d)})
 	}
 }
 
@@ -63,12 +65,12 @@ func pilihanKlausulTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		if !punyaDBTCO(w, svc) {
 			return
 		}
-		d, err := layananKlausulTCO(svc).Pilihan(r.Context(), pelakuDari(r, stub), r.PathValue("master"),
+		d, err := layananKlausulTCO(svc).Pilihan(r.Context(), inti.PelakuDari(r, stub), r.PathValue("master"),
 			r.URL.Query().Get("cari"))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, jawabanPilihanKlausul{Daftar: d, Total: len(d)})
+		galat.TulisJSON(w, jawabanPilihanKlausul{Daftar: d, Total: len(d)})
 	}
 }
 
@@ -79,14 +81,14 @@ func daftarKlausulTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		}
 		q := r.URL.Query()
 		if strings.TrimSpace(q.Get("descId")) == "" {
-			galat(w, http.StatusBadRequest, "parameter descId (TreatyDescID) wajib")
+			galat.Tulis(w, http.StatusBadRequest, "parameter descId (TreatyDescID) wajib")
 			return
 		}
-		d, err := layananKlausulTCO(svc).Daftar(r.Context(), pelakuDari(r, stub), r.PathValue("id"), q.Get("descId"), q.Get("induk"))
+		d, err := layananKlausulTCO(svc).Daftar(r.Context(), inti.PelakuDari(r, stub), r.PathValue("id"), q.Get("descId"), q.Get("induk"))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, d)
+		galat.TulisJSON(w, d)
 	}
 }
 
@@ -97,24 +99,24 @@ func simpanKlausulTCO(svc *services.Service, stub, perbarui bool) http.HandlerFu
 		}
 		var masuk services.KlausulMasuk
 		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&masuk); err != nil {
-			galat(w, http.StatusBadRequest, "badan permintaan bukan JSON klausul yang sah")
+			galat.Tulis(w, http.StatusBadRequest, "badan permintaan bukan JSON klausul yang sah")
 			return
 		}
 		id := strings.TrimSpace(masuk.ID)
 		switch {
 		case !perbarui && id != "":
-			galat(w, http.StatusBadRequest, "identitas klausul dibuat server; POST tidak boleh membawa id")
+			galat.Tulis(w, http.StatusBadRequest, "identitas klausul dibuat server; POST tidak boleh membawa id")
 			return
 		case perbarui && id != "" && id != r.PathValue("kid"):
-			galat(w, http.StatusBadRequest, "id di badan berbeda dari id di jalur")
+			galat.Tulis(w, http.StatusBadRequest, "id di badan berbeda dari id di jalur")
 			return
 		case perbarui:
 			masuk.ID = r.PathValue("kid")
 		}
-		h, err := layananKlausulTCO(svc).Simpan(r.Context(), pelakuDari(r, stub), r.PathValue("id"), masuk)
+		h, err := layananKlausulTCO(svc).Simpan(r.Context(), inti.PelakuDari(r, stub), r.PathValue("id"), masuk)
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, h)
+		galat.TulisJSON(w, h)
 	}
 }

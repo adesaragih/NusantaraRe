@@ -8,7 +8,11 @@ import (
 	"errors"
 	"testing"
 
-	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/layanan"
+	"nusantarare/inti/outbox"
 )
 
 type riwayatUji struct {
@@ -16,29 +20,29 @@ type riwayatUji struct {
 	ditanya int
 }
 
-func (r *riwayatUji) SudahSelesai(context.Context, *repository.Tx, string, string, string, string) (bool, error) {
+func (r *riwayatUji) SudahSelesai(context.Context, *db.Tx, string, string, string, string) (bool, error) {
 	r.ditanya++
 	return r.sudah, nil
 }
 
 type resolverUjiKomite struct {
 	alamat  string
-	diminta []KunciLayanan
+	diminta []layanan.KunciLayanan
 }
 
-func (r *resolverUjiKomite) Resolve(_ context.Context, k KunciLayanan) (string, error) {
+func (r *resolverUjiKomite) Resolve(_ context.Context, k layanan.KunciLayanan) (string, error) {
 	r.diminta = append(r.diminta, k)
 	return r.alamat, nil
 }
 
-func barisKomite(t *testing.T, jenis string, kunci KunciLayanan) repository.BarisEfekKeluar {
+func barisKomite(t *testing.T, jenis string, kunci layanan.KunciLayanan) outbox.BarisEfekKeluar {
 	t.Helper()
 	b, err := json.Marshal(muatanOutboxKomite{KasusID: "KMTLF-UJI", KlaimID: "UJI-K",
 		Kategori1: kunci.Kategori1, Kategori2: kunci.Kategori2})
 	if err != nil {
 		t.Fatal(err)
 	}
-	return repository.BarisEfekKeluar{ID: "9", Modul: ModulKomiteLife, Jenis: jenis,
+	return outbox.BarisEfekKeluar{ID: "9", Modul: ModulKomiteLife, Jenis: jenis,
 		Rujukan: "KMTLF-UJI", Muatan: string(b)}
 }
 
@@ -46,7 +50,7 @@ func barisKomite(t *testing.T, jenis string, kunci KunciLayanan) repository.Bari
 func TestKasirTidakDikirimDuaKali(t *testing.T) {
 	r := &riwayatUji{sudah: true}
 	res := &resolverUjiKomite{alamat: "UJI-ALAMAT"}
-	p := PelaksanaKomite{Lingkungan: Produksi, Resolver: res, Riwayat: r}
+	p := PelaksanaKomite{Lingkungan: inti.Produksi, Resolver: res, Riwayat: r}
 	if err := p.Laksanakan(context.Background(), nil, barisKomite(t, JenisEfekKomiteKasir, KunciKasirKomite)); err != nil {
 		t.Errorf("kasir yang sudah selesai: %v, mau nil (tuntas tanpa kirim)", err)
 	}
@@ -57,17 +61,17 @@ func TestKasirTidakDikirimDuaKali(t *testing.T) {
 
 // TestKunciHilangPermanenJaringanBukan - AC "kunci tidak ditemukan ≠ jaringan gagal".
 func TestKunciHilangPermanenJaringanBukan(t *testing.T) {
-	p := PelaksanaKomite{Lingkungan: Produksi, Resolver: &resolverUjiKomite{alamat: ""}, Riwayat: &riwayatUji{}}
+	p := PelaksanaKomite{Lingkungan: inti.Produksi, Resolver: &resolverUjiKomite{alamat: ""}, Riwayat: &riwayatUji{}}
 	err := p.Laksanakan(context.Background(), nil, barisKomite(t, JenisEfekKomiteKasir, KunciKasirKomite))
-	if !errors.Is(err, ErrEndpointTidakDitemukan) || LayakDicobaUlang(err) {
-		t.Errorf("kunci hilang: %v (layak ulang %v), mau permanen", err, LayakDicobaUlang(err))
+	if !errors.Is(err, layanan.ErrEndpointTidakDitemukan) || outbox.LayakDicobaUlang(err) {
+		t.Errorf("kunci hilang: %v (layak ulang %v), mau permanen", err, outbox.LayakDicobaUlang(err))
 	}
 	p.Resolver = &resolverUjiKomite{alamat: "UJI-ALAMAT"}
 	err = p.Laksanakan(context.Background(), nil, barisKomite(t, JenisEfekKomiteKasir, KunciKasirKomite))
-	if !errors.Is(err, ErrKasirBelumDisetujui) || LayakDicobaUlang(err) {
+	if !errors.Is(err, outbox.ErrKasirBelumDisetujui) || outbox.LayakDicobaUlang(err) {
 		t.Errorf("kasir belum disetujui: %v, mau permanen", err)
 	}
-	if !LayakDicobaUlang(errors.New("UJI jaringan putus")) {
+	if !outbox.LayakDicobaUlang(errors.New("UJI jaringan putus")) {
 		t.Error("galat jaringan tidak layak dicoba ulang")
 	}
 }
@@ -75,11 +79,11 @@ func TestKunciHilangPermanenJaringanBukan(t *testing.T) {
 // TestNonProduksiStubTanpaPanggilan - ADR-0005, km4.
 func TestNonProduksiStubTanpaPanggilan(t *testing.T) {
 	res := &resolverUjiKomite{alamat: "UJI-ALAMAT"}
-	p := PelaksanaKomite{Lingkungan: BukanProduksi, Resolver: res, Riwayat: &riwayatUji{}}
+	p := PelaksanaKomite{Lingkungan: inti.BukanProduksi, Resolver: res, Riwayat: &riwayatUji{}}
 	for _, j := range []string{JenisEfekKomiteArasapas, JenisEfekKomiteEmail, JenisEfekKomiteKasir} {
 		err := p.Laksanakan(context.Background(), nil, barisKomite(t, j, KunciKasirKomite))
 		// ⛔ Stub TIDAK BOLEH mengaku terkirim (temuan /code-review).
-		if !errors.Is(err, ErrPengirimStubNonProduksi) || LayakDicobaUlang(err) {
+		if !errors.Is(err, outbox.ErrPengirimStubNonProduksi) || outbox.LayakDicobaUlang(err) {
 			t.Errorf("%s di non-produksi: %v, mau stub permanen", j, err)
 		}
 	}
@@ -90,14 +94,14 @@ func TestNonProduksiStubTanpaPanggilan(t *testing.T) {
 
 // TestBarisAsingDitolak - pelaksana Komite hanya untuk modulnya.
 func TestBarisAsingDitolak(t *testing.T) {
-	p := PelaksanaKomite{Lingkungan: Produksi, Riwayat: &riwayatUji{}}
-	b := barisKomite(t, JenisEfekKomiteEmail, KunciLayanan{})
+	p := PelaksanaKomite{Lingkungan: inti.Produksi, Riwayat: &riwayatUji{}}
+	b := barisKomite(t, JenisEfekKomiteEmail, layanan.KunciLayanan{})
 	b.Modul = ModulClaimLife
-	if err := p.Laksanakan(context.Background(), nil, b); !errors.Is(err, ErrPermintaanTidakSah) {
+	if err := p.Laksanakan(context.Background(), nil, b); !errors.Is(err, galat.ErrPermintaanTidakSah) {
 		t.Errorf("baris modul lain: %v", err)
 	}
-	b = barisKomite(t, "asing", KunciLayanan{})
-	if err := p.Laksanakan(context.Background(), nil, b); !errors.Is(err, ErrPermintaanTidakSah) {
+	b = barisKomite(t, "asing", layanan.KunciLayanan{})
+	if err := p.Laksanakan(context.Background(), nil, b); !errors.Is(err, galat.ErrPermintaanTidakSah) {
 		t.Errorf("jenis asing: %v", err)
 	}
 }

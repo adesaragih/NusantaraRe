@@ -20,13 +20,15 @@ import (
 	"strconv"
 
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
 )
 
 // cariPenyakit melayani GET /api/penyakit-life.
 func cariPenyakit(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		// Batas yang tidak terbaca menjadi 0, dan 0 dijepit ke ukuran
@@ -34,18 +36,18 @@ func cariPenyakit(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 		// parameter salah ketik lebih menjengkelkan daripada berguna.
 		batas, _ := strconv.Atoi(r.URL.Query().Get("batas"))
 
-		hasil, err := svc.Penyakit().Cari(r.Context(), pelakuDari(r, stubPelaku),
+		hasil, err := svc.Penyakit().Cari(r.Context(), inti.PelakuDari(r, stubPelaku),
 			r.URL.Query().Get("icd"), r.URL.Query().Get("nama"), batas)
 		switch {
 		case err == nil:
-		case errors.Is(err, services.ErrTanpaIdentitas):
-			galat(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+		case errors.Is(err, inti.ErrTanpaIdentitas):
+			galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
 			return
-		case errors.Is(err, services.ErrTanpaWewenang):
-			galat(w, http.StatusForbidden, "wewenang tidak mencukupi")
+		case errors.Is(err, inti.ErrTanpaWewenang):
+			galat.Tulis(w, http.StatusForbidden, "wewenang tidak mencukupi")
 			return
 		default:
-			galat(w, http.StatusInternalServerError, "gagal mencari diagnosa")
+			galat.Tulis(w, http.StatusInternalServerError, "gagal mencari diagnosa")
 			return
 		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")

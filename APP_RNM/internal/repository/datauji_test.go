@@ -14,8 +14,9 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/internal/config"
 	"nusantarare/internal/models"
+	"nusantarare/inti/config"
+	"nusantarare/inti/migrasi"
 )
 
 const letakDataUji = "skemauji/data_uji_tiga_modul.sql"
@@ -278,7 +279,7 @@ func TestDataUjiBerpagarSepertiMigrateDown(t *testing.T) {
 		t.Errorf("INSERT tersebar di %d blok, mau 1", berisi)
 	}
 	// Migrasi 057 wajib sudah berjalan - kolom bendera dan sequence-nya.
-	if !strings.Contains(sql, "'"+kunciLangkah("057_seq_work_polis_dan_flag_ongoing.sql")+"'") {
+	if !strings.Contains(sql, "'"+migrasi.KunciLangkah("057_seq_work_polis_dan_flag_ongoing.sql")+"'") {
 		t.Error("berkas tidak memeriksa T_MIGRASI untuk 057")
 	}
 	// ⛔ Nol pernyataan perusak dan nol COMMIT (ADR-U-0029): work owner yang

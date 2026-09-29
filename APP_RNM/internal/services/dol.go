@@ -25,6 +25,9 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
 )
 
 // Nilai Type yang punya cabang di `ValidasiDOL_Act`. Tidak ada nilai lain.
@@ -207,27 +210,27 @@ func (s *Service) TanggalKejadian() *TanggalKejadian { return &TanggalKejadian{s
 // validasi berjalan atas nilai yang TERSIMPAN, dan penulisan hanya terjadi
 // bila validasinya lolos. Memvalidasi terhadap nilai yang dikirim klien berarti
 // mempercayai klien untuk menyatakan jendela valuasinya sendiri.
-func (t *TanggalKejadian) Set(ctx context.Context, pelaku Pelaku,
+func (t *TanggalKejadian) Set(ctx context.Context, pelaku inti.Pelaku,
 	klaimID, pesertaID string, dol time.Time) error {
 
 	// ⛔ FAIL-CLOSED atas pelaku anonim, alasan yang sama dengan pendaftaran:
 	// tanpa identitas, perubahan tanggal kejadian tidak dapat ditelusuri.
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return err
 	}
 	if strings.TrimSpace(klaimID) == "" || strings.TrimSpace(pesertaID) == "" {
-		return fmt.Errorf("%w: pengenal klaim dan peserta wajib diisi", ErrPermintaanTidakSah)
+		return fmt.Errorf("%w: pengenal klaim dan peserta wajib diisi", galat.ErrPermintaanTidakSah)
 	}
 	// ⛔ BUTIR bj `[DIPUTUSKAN 28-09-2026, veto work owner]` - PERUBAHAN AUTHZ,
 	// dicatat bertanggal di tiket 07. Gerbang DOL kini SAMA dengan tiga tanggal
 	// lainnya menurut XML: isian DOL `EditDateClaimLife_Section` baca-saja bila
 	// `pyPosition!='ReasLifeAdmin'` (b1000). Sebelum ini siapa pun yang
 	// beridentitas dapat mengubah DOL pada kasus terbuka di tahap mana pun.
-	if err := WajibPeran(pelaku, PeranAdmin); err != nil {
+	if err := inti.WajibPeran(pelaku, inti.PeranAdmin); err != nil {
 		return err
 	}
 	if !t.svc.PunyaDatabase() {
-		return repository.ErrTanpaOracle
+		return db.ErrTanpaOracle
 	}
 
 	// ⛔ BUTIR bb: kasus yang sudah ditutup tidak dapat diubah lagi.
@@ -239,7 +242,7 @@ func (t *TanggalKejadian) Set(ctx context.Context, pelaku Pelaku,
 		return err
 	}
 
-	baca := repository.NewKlaimLife(t.svc.db)
+	baca := repository.NewKlaimLife(t.svc.DB())
 	if err := gerbangTahapDialogTanggal(ctx, baca, klaimID); err != nil {
 		return err
 	}
@@ -260,12 +263,12 @@ func (t *TanggalKejadian) Set(ctx context.Context, pelaku Pelaku,
 	}
 	if target == nil {
 		return fmt.Errorf("%w: peserta %q bukan milik klaim %q",
-			ErrPermintaanTidakSah, pesertaID, klaimID)
+			galat.ErrPermintaanTidakSah, pesertaID, klaimID)
 	}
 	if err := ValidasiDOL(tipe, dol, *target); err != nil {
 		return err
 	}
-	return t.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	return t.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		return baca.PerbaruiTanggalKejadian(ctx, tx, pesertaID, dol)
 	})
 }
@@ -301,27 +304,27 @@ var ErrTanggalTerkunciSesudahSaveRNM = errors.New(
 // `ValidasiClaimReceived_Act` (penandanya tanpa kolom - OQ-M9) dan cermin
 // warisan `UpdateDateClaimLife_SQL` (OQ-M2). Separuh "CLAIM_NO tidak kosong"
 // ditiru maknanya sejak GILIRAN-17 (OQ-M1) di `gerbangTahapDialogTanggal`.
-func (t *TanggalKejadian) SetTanggalKlaim(ctx context.Context, pelaku Pelaku,
+func (t *TanggalKejadian) SetTanggalKlaim(ctx context.Context, pelaku inti.Pelaku,
 	klaimID, pesertaID string, tgl models.TanggalKlaim) error {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return err
 	}
 	if strings.TrimSpace(klaimID) == "" || strings.TrimSpace(pesertaID) == "" {
-		return fmt.Errorf("%w: pengenal klaim dan peserta wajib diisi", ErrPermintaanTidakSah)
+		return fmt.Errorf("%w: pengenal klaim dan peserta wajib diisi", galat.ErrPermintaanTidakSah)
 	}
-	if err := WajibPeran(pelaku, PeranAdmin); err != nil {
+	if err := inti.WajibPeran(pelaku, inti.PeranAdmin); err != nil {
 		return err
 	}
 	if !t.svc.PunyaDatabase() {
-		return repository.ErrTanpaOracle
+		return db.ErrTanpaOracle
 	}
 	// ⛔ BUTIR bb - kasus tertutup tidak dapat diubah lagi.
 	if err := t.svc.PastikanKasusTerbuka(ctx, klaimID); err != nil {
 		return err
 	}
 
-	baca := repository.NewKlaimLife(t.svc.db)
+	baca := repository.NewKlaimLife(t.svc.DB())
 	if err := gerbangTahapDialogTanggal(ctx, baca, klaimID); err != nil {
 		return err
 	}
@@ -339,9 +342,9 @@ func (t *TanggalKejadian) SetTanggalKlaim(ctx context.Context, pelaku Pelaku,
 	}
 	if !milik {
 		return fmt.Errorf("%w: peserta %q bukan milik klaim %q",
-			ErrPermintaanTidakSah, pesertaID, klaimID)
+			galat.ErrPermintaanTidakSah, pesertaID, klaimID)
 	}
-	return t.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	return t.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		return baca.PerbaruiTanggalKlaim(ctx, tx, klaimID, pesertaID, tgl)
 	})
 }

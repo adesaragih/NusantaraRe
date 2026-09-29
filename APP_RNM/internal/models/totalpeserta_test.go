@@ -7,12 +7,14 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"nusantarare/inti/uang"
 )
 
 // uang membangun nilai uang untuk uji; gagal keras bila teksnya salah.
-func uang(t *testing.T, jumlah string) Money {
+func uangPeserta(t *testing.T, jumlah string) uang.Money {
 	t.Helper()
-	m, err := NewMoney(jumlah, "IDR")
+	m, err := uang.NewMoney(jumlah, "IDR")
 	if err != nil {
 		t.Fatalf("NewMoney(%q): %v", jumlah, err)
 	}
@@ -27,7 +29,7 @@ func uang(t *testing.T, jumlah string) Money {
 // ini akan diam - padahal yang tertukar adalah dua ANGKA UANG.
 func barisUji(t *testing.T, kelipatan string, status string) BarisAdjustment {
 	t.Helper()
-	k := func(dasar string) Money { return uang(t, dasar+kelipatan) }
+	k := func(dasar string) uang.Money { return uangPeserta(t, dasar+kelipatan) }
 	return BarisAdjustment{
 		KodeStatus:       status,
 		CurrencyID:       "IDR",
@@ -130,7 +132,7 @@ func TestHitungTotalPeserta(t *testing.T) {
 		// putih karena satu sel yang memang boleh kosong.
 		penuh := barisUji(t, "", KodeAksep)
 		bolong := barisUji(t, "", KodeAksep)
-		bolong.SumInsured = Money{}
+		bolong.SumInsured = uang.Money{}
 		total, err := HitungTotalPeserta([]BarisAdjustment{penuh, bolong}, "IDR")
 		if err != nil {
 			t.Fatalf("HitungTotalPeserta: %v", err)
@@ -160,7 +162,7 @@ func TestHitungTotalPeserta(t *testing.T) {
 		// penampung, sehingga ia terjumlah diam-diam di bawah mata uang yang
 		// salah. Money.Add yang seharusnya menolaknya justru dilucuti.
 		b := barisUji(t, "", KodeAksep)
-		usd, err := NewMoney("5", "USD")
+		usd, err := uang.NewMoney("5", "USD")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -174,7 +176,7 @@ func TestHitungTotalPeserta(t *testing.T) {
 		// Ia bukan mata uang lain; ia hanya belum berlabel. Menolaknya akan
 		// menggagalkan seluruh pembacaan Detail untuk data yang sah.
 		b := barisUji(t, "", KodeAksep)
-		tanpaLabel, err := NewMoney("5", "")
+		tanpaLabel, err := uang.NewMoney("5", "")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -227,7 +229,7 @@ func TestTiapKolomTotalMembacaKolomnyaSendiri(t *testing.T) {
 	for i, kolom := range kolomTotal {
 		b := BarisAdjustment{CurrencyID: "IDR"}
 		// Isi HANYA kolom ke-i, lewat pemetaan yang ditulis TANGAN di bawah.
-		isiKolom(t, &b, kolom.nama, uang(t, "7"))
+		isiKolom(t, &b, kolom.nama, uangPeserta(t, "7"))
 		total, err := HitungTotalPeserta([]BarisAdjustment{b}, "IDR")
 		if err != nil {
 			t.Fatalf("%s: %v", kolom.nama, err)
@@ -251,7 +253,7 @@ func TestTiapKolomTotalMembacaKolomnyaSendiri(t *testing.T) {
 // untuk menyiapkan data lalu mengujinya dengan kolomTotal.ambil hanya
 // membuktikan daftar itu konsisten dengan dirinya sendiri; pemetaan di sini
 // ditulis tangan sehingga dua kolom yang tertukar di sana akan berbunyi.
-func isiKolom(t *testing.T, b *BarisAdjustment, nama string, nilai Money) {
+func isiKolom(t *testing.T, b *BarisAdjustment, nama string, nilai uang.Money) {
 	t.Helper()
 	switch nama {
 	case "CEDING_RETENTION":

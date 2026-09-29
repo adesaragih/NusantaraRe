@@ -11,13 +11,15 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/outbox"
 )
 
 // TestKodeEfekSamaDiTigaLapis - km5: kode di models, repository, dan outbox sama.
 func TestKodeEfekSamaDiTigaLapis(t *testing.T) {
 	for m, r := range map[string]string{
-		models.KodeEfekAntre: repository.StatusEfekAntre, models.KodeEfekJalan: repository.StatusEfekJalan,
-		models.KodeEfekSelesai: repository.StatusEfekSelesai, models.KodeEfekGagalPermanen: repository.StatusEfekGagalPermanen,
+		models.KodeEfekAntre: outbox.StatusEfekAntre, models.KodeEfekJalan: outbox.StatusEfekJalan,
+		models.KodeEfekSelesai: outbox.StatusEfekSelesai, models.KodeEfekGagalPermanen: outbox.StatusEfekGagalPermanen,
 	} {
 		if m != r {
 			t.Errorf("kode efek models %q ≠ repository %q", m, r)
@@ -47,7 +49,7 @@ func TestLaporanHarianKosongDinyatakan(t *testing.T) {
 // TestLaporanHarianHanyaAdmin - ADR-0014 [asumsi OQ-007/021].
 func TestLaporanHarianHanyaAdmin(t *testing.T) {
 	i := New(nil).InboxKomite()
-	if _, err := i.LaporanHarian(context.Background(), Pelaku{AkunID: "UJI"}, time.Now()); !errors.Is(err, ErrTanpaWewenang) {
+	if _, err := i.LaporanHarian(context.Background(), inti.Pelaku{AkunID: "UJI"}, time.Now()); !errors.Is(err, inti.ErrTanpaWewenang) {
 		t.Errorf("bukan admin: %v", err)
 	}
 }

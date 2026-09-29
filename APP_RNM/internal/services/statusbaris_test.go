@@ -11,8 +11,10 @@ import (
 	"time"
 
 	"nusantarare/internal/models"
-	"nusantarare/internal/repository"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
 )
 
 // saatUji adalah jam yang disuntikkan, bukan jam sungguhan: fungsi yang
@@ -167,21 +169,21 @@ func TestUbahStatusMenjagaPagarnya(t *testing.T) {
 	svc := services.New(nil)
 	// Berperan sah: yang diuji di sini pagar PENGENAL dan Oracle, bukan
 	// pagar peran - yang punya testnya sendiri di wewenang_test.go.
-	pelaku := services.Pelaku{AkunID: "UJI-AKUN",
+	pelaku := inti.Pelaku{AkunID: "UJI-AKUN",
 		Peran: []string{services.PeranRejectOutstanding}}
-	if err := svc.Status().Ubah(context.Background(), services.Pelaku{},
+	if err := svc.Status().Ubah(context.Background(), inti.Pelaku{},
 		"CLM-1", "P-1", "A-1", models.StatusDitolak, saatUji); !errors.Is(
-		err, services.ErrTanpaIdentitas) {
+		err, inti.ErrTanpaIdentitas) {
 		t.Errorf("pelaku anonim: galat = %v, mau ErrTanpaIdentitas", err)
 	}
 	if err := svc.Status().Ubah(context.Background(), pelaku,
 		"CLM-1", "", "A-1", models.StatusDitolak, saatUji); !errors.Is(
-		err, services.ErrPermintaanTidakSah) {
+		err, galat.ErrPermintaanTidakSah) {
 		t.Errorf("peserta kosong: galat = %v, mau ErrPermintaanTidakSah", err)
 	}
 	if err := svc.Status().Ubah(context.Background(), pelaku,
 		"CLM-1", "P-1", "A-1", models.StatusDitolak, saatUji); !errors.Is(
-		err, repository.ErrTanpaOracle) {
+		err, db.ErrTanpaOracle) {
 		t.Errorf("tanpa Oracle: galat = %v, mau ErrTanpaOracle", err)
 	}
 }

@@ -26,6 +26,8 @@ import (
 	"strings"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/db"
+	"nusantarare/inti/uang"
 )
 
 // namaTabelPeserta adalah tabel warisan peserta polis.
@@ -38,10 +40,10 @@ const batasHasilBawaan = 200
 const batasHasilTertinggi = 1000
 
 // PesertaPolis membaca calon peserta klaim dari tabel warisan.
-type PesertaPolis struct{ db *DB }
+type PesertaPolis struct{ db *db.DB }
 
 // NewPesertaPolis menyusun pembacanya.
-func NewPesertaPolis(db *DB) *PesertaPolis { return &PesertaPolis{db: db} }
+func NewPesertaPolis(db *db.DB) *PesertaPolis { return &PesertaPolis{db: db} }
 
 // CalonPeserta adalah satu baris hasil pencarian.
 //
@@ -145,10 +147,10 @@ func (r *PesertaPolis) Cari(ctx context.Context, nomorPremiList, sertifikat, nam
 		return nil, err
 	}
 	q, arg := sqlCariPeserta(tabel, nomorPremiList, sertifikat, nama, batas)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	baris, err := r.db.sql.QueryContext(ctx, q, arg...)
+	baris, err := r.db.QueryContext(ctx, q, arg...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: mencari peserta %s: %w", nomorPremiList, err)
 	}
@@ -330,10 +332,10 @@ func (r *PesertaPolis) AmbilUntukKlaim(ctx context.Context, nomorPremiList strin
 		q := fmt.Sprintf(`SELECT %s FROM %s
 		        WHERE PL_NUMBER = :1 AND CERTIFICATE_NO = :2 AND %s
 		        FETCH FIRST 1 ROWS ONLY`, kolomSalin, tabel, penyaringHidup)
-		if err := PeriksaSQL(q); err != nil {
+		if err := db.PeriksaSQL(q); err != nil {
 			return nil, err
 		}
-		baris := r.db.sql.QueryRowContext(ctx, q, nomorPremiList, no)
+		baris := r.db.QueryRowContext(ctx, q, nomorPremiList, no)
 		sel := make([]sql.NullString, cacahKolomSalin)
 		tujuan := make([]any, len(sel))
 		for i := range sel {
@@ -403,7 +405,7 @@ func salinKePeserta(sel []sql.NullString) (models.Peserta, error) {
 
 	uang := []struct {
 		v  sql.NullString
-		ke *models.Money
+		ke *uang.Money
 	}{
 		{sel[15], &p.SumInsured}, {sel[16], &p.SumReasured}, {sel[17], &p.GrossPremium},
 		{sel[18], &p.NetPremium}, {sel[19], &p.CedingRetention}, {share, &p.ShareNusantaraRe},

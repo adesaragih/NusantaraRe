@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"nusantarare/pkg/utils"
+	"nusantarare/inti/utils"
 )
 
 func TestUraiTanggalWarisanTCOMengenalBentukYangDikenal(t *testing.T) {

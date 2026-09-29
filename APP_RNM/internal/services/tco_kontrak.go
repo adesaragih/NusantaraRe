@@ -23,7 +23,10 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/utils"
 )
 
 var (
@@ -62,15 +65,15 @@ func (GalatKontrakDobel) Is(target error) bool { return target == ErrKontrakDobe
 type GudangKontrakTCO interface {
 	Daftar(ctx context.Context, tahunID string) ([]models.KontrakTreaty, error)
 	Ambil(ctx context.Context, tahunID, id string) (models.KontrakTreaty, error)
-	Sisip(ctx context.Context, tx *repository.Tx, k models.KontrakTreaty) (string, error)
-	Perbarui(ctx context.Context, tx *repository.Tx, k models.KontrakTreaty) error
-	CariDobel(ctx context.Context, tx *repository.Tx, tahunID, reinsTypeID, kecualiID string) (string, error)
-	JumlahAnakKombinasi(ctx context.Context, tx *repository.Tx, kom models.KombinasiTCO, tahunID string) (int64, error)
+	Sisip(ctx context.Context, tx *db.Tx, k models.KontrakTreaty) (string, error)
+	Perbarui(ctx context.Context, tx *db.Tx, k models.KontrakTreaty) error
+	CariDobel(ctx context.Context, tx *db.Tx, tahunID, reinsTypeID, kecualiID string) (string, error)
+	JumlahAnakKombinasi(ctx context.Context, tx *db.Tx, kom models.KombinasiTCO, tahunID string) (int64, error)
 }
 
 type gudangKontrakBelumDisuntik struct{}
 
-func (gudangKontrakBelumDisuntik) JumlahAnakKombinasi(context.Context, *repository.Tx, models.KombinasiTCO, string) (int64, error) {
+func (gudangKontrakBelumDisuntik) JumlahAnakKombinasi(context.Context, *db.Tx, models.KombinasiTCO, string) (int64, error) {
 	return 0, ErrGudangKontrakBelumDisuntik
 }
 
@@ -80,19 +83,19 @@ func (gudangKontrakBelumDisuntik) Daftar(context.Context, string) ([]models.Kont
 func (gudangKontrakBelumDisuntik) Ambil(context.Context, string, string) (models.KontrakTreaty, error) {
 	return models.KontrakTreaty{}, ErrGudangKontrakBelumDisuntik
 }
-func (gudangKontrakBelumDisuntik) Sisip(context.Context, *repository.Tx, models.KontrakTreaty) (string, error) {
+func (gudangKontrakBelumDisuntik) Sisip(context.Context, *db.Tx, models.KontrakTreaty) (string, error) {
 	return "", ErrGudangKontrakBelumDisuntik
 }
-func (gudangKontrakBelumDisuntik) Perbarui(context.Context, *repository.Tx, models.KontrakTreaty) error {
+func (gudangKontrakBelumDisuntik) Perbarui(context.Context, *db.Tx, models.KontrakTreaty) error {
 	return ErrGudangKontrakBelumDisuntik
 }
-func (gudangKontrakBelumDisuntik) CariDobel(context.Context, *repository.Tx, string, string, string) (string, error) {
+func (gudangKontrakBelumDisuntik) CariDobel(context.Context, *db.Tx, string, string, string) (string, error) {
 	return "", ErrGudangKontrakBelumDisuntik
 }
 
 type gudangKontrakOracle struct {
 	m  *repository.MasterKontrakTCO
-	db *repository.DB
+	db *db.DB
 }
 
 func (g gudangKontrakOracle) Daftar(ctx context.Context, tahunID string) ([]models.KontrakTreaty, error) {
@@ -101,23 +104,23 @@ func (g gudangKontrakOracle) Daftar(ctx context.Context, tahunID string) ([]mode
 func (g gudangKontrakOracle) Ambil(ctx context.Context, tahunID, id string) (models.KontrakTreaty, error) {
 	return g.m.Ambil(ctx, tahunID, id)
 }
-func (g gudangKontrakOracle) Sisip(ctx context.Context, tx *repository.Tx, k models.KontrakTreaty) (string, error) {
+func (g gudangKontrakOracle) Sisip(ctx context.Context, tx *db.Tx, k models.KontrakTreaty) (string, error) {
 	return g.m.Sisip(ctx, tx, k)
 }
-func (g gudangKontrakOracle) Perbarui(ctx context.Context, tx *repository.Tx, k models.KontrakTreaty) error {
+func (g gudangKontrakOracle) Perbarui(ctx context.Context, tx *db.Tx, k models.KontrakTreaty) error {
 	return g.m.Perbarui(ctx, tx, k)
 }
-func (g gudangKontrakOracle) CariDobel(ctx context.Context, tx *repository.Tx, tahunID, reinsTypeID, kecualiID string) (string, error) {
+func (g gudangKontrakOracle) CariDobel(ctx context.Context, tx *db.Tx, tahunID, reinsTypeID, kecualiID string) (string, error) {
 	return g.m.CariDobel(ctx, tx, tahunID, reinsTypeID, kecualiID)
 }
-func (g gudangKontrakOracle) JumlahAnakKombinasi(ctx context.Context, tx *repository.Tx, kom models.KombinasiTCO,
+func (g gudangKontrakOracle) JumlahAnakKombinasi(ctx context.Context, tx *db.Tx, kom models.KombinasiTCO,
 	tahunID string) (int64, error) {
 	return g.m.JumlahAnakKombinasi(ctx, tx, kom, tahunID)
 }
 
 // GudangKontrakOracle menyusun gudang kontrak di atas Oracle.
 func GudangKontrakOracle(svc *Service) GudangKontrakTCO {
-	return gudangKontrakOracle{m: repository.NewMasterKontrakTCO(svc.db), db: svc.db}
+	return gudangKontrakOracle{m: repository.NewMasterKontrakTCO(svc.DB()), db: svc.DB()}
 }
 
 // KontrakMasuk adalah badan simpan kontrak.
@@ -160,7 +163,7 @@ type KontrakTreatyTCO struct {
 	tahun     PemeriksaTahunTCO
 	jenis     PembacaJenisReasuransiTCO
 	jam       func() time.Time
-	transaksi func(ctx context.Context, fn func(tx *repository.Tx) error) error
+	transaksi func(ctx context.Context, fn func(tx *db.Tx) error) error
 }
 
 // KontrakTreatyTCO menyusun layanannya; bawaannya gagal terang.
@@ -201,15 +204,15 @@ func (k *KontrakTreatyTCO) DenganJam(j func() time.Time) *KontrakTreatyTCO {
 }
 
 // DenganTransaksi mengganti pelaksana transaksi - dipakai uji.
-func (k *KontrakTreatyTCO) DenganTransaksi(f func(ctx context.Context, fn func(tx *repository.Tx) error) error) *KontrakTreatyTCO {
+func (k *KontrakTreatyTCO) DenganTransaksi(f func(ctx context.Context, fn func(tx *db.Tx) error) error) *KontrakTreatyTCO {
 	s := k.salin()
 	s.transaksi = f
 	return s
 }
 
 // Daftar membaca kontrak satu tahun treaty - grid `BrowseTreatyContract_RD`.
-func (k *KontrakTreatyTCO) Daftar(ctx context.Context, pelaku Pelaku, tahunID string) ([]KontrakTampil, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (k *KontrakTreatyTCO) Daftar(ctx context.Context, pelaku inti.Pelaku, tahunID string) ([]KontrakTampil, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return nil, err
 	}
 	baris, err := k.gudang.Daftar(ctx, tahunID)
@@ -233,7 +236,7 @@ func uraiTanggalKontrak(nama, teks string) (time.Time, error) {
 	}
 	v, err := utils.ParseTanggal(t)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("%w: %s %q bukan tanggal YYYY-MM-DD", ErrPermintaanTidakSah, nama, t)
+		return time.Time{}, fmt.Errorf("%w: %s %q bukan tanggal YYYY-MM-DD", galat.ErrPermintaanTidakSah, nama, t)
 	}
 	return v, nil
 }
@@ -260,8 +263,8 @@ func (k *KontrakTreatyTCO) namaJenisDariMaster(ctx context.Context, id string) (
 //
 // Urutannya: identitas -> tahun induk ada -> tanggal terurai -> gerbang murni
 // -> jenis dari master -> satu transaksi {dobel, sisip/perbarui} (tco4: tanpa jejak).
-func (k *KontrakTreatyTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID string, m KontrakMasuk) (KontrakTampil, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (k *KontrakTreatyTCO) Simpan(ctx context.Context, pelaku inti.Pelaku, tahunID string, m KontrakMasuk) (KontrakTampil, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return KontrakTampil{}, err
 	}
 	tahun, err := k.tahun.Ambil(ctx, tahunID)
@@ -285,7 +288,7 @@ func (k *KontrakTreatyTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID st
 	if kontrak.ReinsTypeName, err = k.namaJenisDariMaster(ctx, kontrak.ReinsTypeID); err != nil {
 		return KontrakTampil{}, err
 	}
-	err = k.transaksi(ctx, func(tx *repository.Tx) error {
+	err = k.transaksi(ctx, func(tx *db.Tx) error {
 		lain, err := k.gudang.CariDobel(ctx, tx, tahunID, kontrak.ReinsTypeID, kontrak.ID)
 		if err != nil {
 			return err
@@ -331,8 +334,8 @@ func (k *KontrakTreatyTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID st
 
 // AkhirBawaan menghitung tanggal akhir yang layar isikan saat tanggal mulai
 // dipilih: mulai + 1 tahun kalender (models.AkhirKontrakBawaanTCO, OQ-TCO-10).
-func (k *KontrakTreatyTCO) AkhirBawaan(ctx context.Context, pelaku Pelaku, tahunID, mulai string) (string, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (k *KontrakTreatyTCO) AkhirBawaan(ctx context.Context, pelaku inti.Pelaku, tahunID, mulai string) (string, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return "", err
 	}
 	if _, err := k.tahun.Ambil(ctx, tahunID); err != nil {
@@ -343,7 +346,7 @@ func (k *KontrakTreatyTCO) AkhirBawaan(ctx context.Context, pelaku Pelaku, tahun
 		return "", err
 	}
 	if t.IsZero() {
-		return "", fmt.Errorf("%w: mulai wajib diisi", ErrPermintaanTidakSah)
+		return "", fmt.Errorf("%w: mulai wajib diisi", galat.ErrPermintaanTidakSah)
 	}
 	return utils.FormatTanggal(models.AkhirKontrakBawaanTCO(t)), nil
 }

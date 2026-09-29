@@ -32,6 +32,11 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/jejak"
+	"nusantarare/inti/outbox"
 )
 
 var (
@@ -45,18 +50,18 @@ var (
 // Penawaran melayani keputusan atas penawaran polis.
 type Penawaran struct {
 	svc      *Service
-	jejak    Jejak
+	jejak    jejak.Jejak
 	penyalur *PenyalurPolis
 }
 
 // Penawaran menyusun layanannya dengan jejak dan penyalur bawaan yang gagal
 // terang.
 func (s *Service) Penawaran() *Penawaran {
-	return &Penawaran{svc: s, jejak: JejakBelumDiputuskan{}, penyalur: penyalurPolisBawaan(s)}
+	return &Penawaran{svc: s, jejak: jejak.JejakBelumDiputuskan{}, penyalur: penyalurPolisBawaan(s)}
 }
 
 // DenganJejak mengganti perekamnya.
-func (p *Penawaran) DenganJejak(j Jejak) *Penawaran {
+func (p *Penawaran) DenganJejak(j jejak.Jejak) *Penawaran {
 	salin := *p
 	salin.jejak = j
 	return &salin
@@ -75,20 +80,20 @@ func (p *Penawaran) DenganPenyalur(s *PenyalurPolis) *Penawaran {
 // Permintaan tanpa pengenal harus dijawab "pengenal wajib diisi", bukan
 // "ORACLE_DSN belum dikonfigurasi" - cacat yang pernah nyata di Claim Life
 // dan ditangkap `TestUbahStatusMenjagaPagarnya`.
-func (p *Penawaran) pagari(ctx context.Context, pelaku Pelaku, polisID string) (
+func (p *Penawaran) pagari(ctx context.Context, pelaku inti.Pelaku, polisID string) (
 	repository.KeadaanPolis, error) {
 
 	var k repository.KeadaanPolis
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return k, err
 	}
 	if strings.TrimSpace(polisID) == "" {
-		return k, fmt.Errorf("%w: pengenal polis wajib diisi", ErrPermintaanTidakSah)
+		return k, fmt.Errorf("%w: pengenal polis wajib diisi", galat.ErrPermintaanTidakSah)
 	}
 	if p == nil || p.svc == nil || !p.svc.PunyaDatabase() {
-		return k, repository.ErrTanpaOracle
+		return k, db.ErrTanpaOracle
 	}
-	k, err := repository.NewWorkPolis(p.svc.db).Keadaan(ctx, polisID)
+	k, err := repository.NewWorkPolis(p.svc.DB()).Keadaan(ctx, polisID)
 	if err != nil {
 		return k, err
 	}
@@ -126,7 +131,7 @@ func (p *Penawaran) pagari(ctx context.Context, pelaku Pelaku, polisID string) (
 // diterapkan dalam SATU transaksi dengan keputusan itu, dan jejaknya
 // menyebut keduanya. Bendera di luar tabel (termasuk kosong) ditolak
 // `models.ErrBenderaTanpaKonektor`, sebelum satu tulisan pun.
-func (p *Penawaran) Putuskan(ctx context.Context, pelaku Pelaku,
+func (p *Penawaran) Putuskan(ctx context.Context, pelaku inti.Pelaku,
 	polisID, keputusan string, saat time.Time) (models.AkibatKeputusan, error) {
 
 	keadaan, err := p.pagari(ctx, pelaku, polisID)
@@ -139,7 +144,7 @@ func (p *Penawaran) Putuskan(ctx context.Context, pelaku Pelaku,
 	}
 	sebab := keputusan
 	if akibat.KeDecision3 {
-		flag, err := repository.NewWorkPolis(p.svc.db).Bendera(ctx, keadaan.ID)
+		flag, err := repository.NewWorkPolis(p.svc.DB()).Bendera(ctx, keadaan.ID)
 		if err != nil {
 			return models.AkibatKeputusan{}, err
 		}
@@ -168,13 +173,13 @@ func (p *Penawaran) Putuskan(ctx context.Context, pelaku Pelaku,
 // berjalan DI DALAM transaksi ini, SEBELUM kasus ditutup. Kasus yang tertutup
 // tanpa rekapnya, atau rekap yang tersimpan untuk kasus yang gagal ditutup,
 // keduanya tidak mungkin: satu commit untuk semuanya.
-func (p *Penawaran) terapkan(ctx context.Context, pelaku Pelaku,
+func (p *Penawaran) terapkan(ctx context.Context, pelaku inti.Pelaku,
 	keadaan repository.KeadaanPolis, akibat models.AkibatKeputusan,
 	sebab string, saat time.Time) (HasilSubmitSummary, error) {
 
-	kerja := repository.NewWorkPolis(p.svc.db)
+	kerja := repository.NewWorkPolis(p.svc.DB())
 	var simpan HasilSubmitSummary
-	err := p.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	err := p.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		if akibat.SimpanPolis {
 			var err error
 			simpan, err = p.svc.SummaryPremiumList().simpanDalam(ctx, tx, keadaan.ID, saat)
@@ -194,7 +199,7 @@ func (p *Penawaran) terapkan(ctx context.Context, pelaku Pelaku,
 			}
 		default:
 			return fmt.Errorf("%w: akibat tanpa perpindahan maupun penutupan",
-				ErrPermintaanTidakSah)
+				galat.ErrPermintaanTidakSah)
 		}
 		// ⚠️ `Dari` dan `Ke` memuat dua kosakata - tahap, dan status akhir -
 		// sebagaimana jejak Claim Life. Keduanya "keadaan sebelum" dan
@@ -203,7 +208,7 @@ func (p *Penawaran) terapkan(ctx context.Context, pelaku Pelaku,
 		if akibat.Ditutup() {
 			ke = akibat.StatusWork
 		}
-		return p.jejak.Rekam(ctx, tx, CatatanJejak{
+		return p.jejak.Rekam(ctx, tx, jejak.CatatanJejak{
 			KlaimID: keadaan.ID,
 			Dari:    keadaan.Status,
 			Ke:      ke + " (" + sebab + ")",
@@ -219,7 +224,7 @@ func (p *Penawaran) terapkan(ctx context.Context, pelaku Pelaku,
 	// menjadi galat: premium list sudah tersimpan, dan layanan luar yang
 	// gagal tidak boleh membuatnya tampak gagal (ADR-U-0008).
 	if akibat.SimpanPolis {
-		simpan.EfekKeluar = ringkasEfek(p.penyalur.Salurkan(ctx, MuatanEfek{
+		simpan.EfekKeluar = ringkasEfek(p.penyalur.Salurkan(ctx, outbox.MuatanEfek{
 			KlaimID: keadaan.ID,
 			AkunID:  pelaku.AkunID,
 			Waktu:   saat,

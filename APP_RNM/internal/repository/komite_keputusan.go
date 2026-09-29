@@ -25,6 +25,7 @@ import (
 	"errors"
 	"fmt"
 	"nusantarare/internal/models"
+	"nusantarare/inti/db"
 	"time"
 )
 
@@ -51,7 +52,7 @@ func sqlMajukanTangga(gen string) string {
 }
 
 // CatatKeputusan menulis keputusan tingkat `urut` lalu menaikkan tingkat.
-func (r *InboxKomite) CatatKeputusan(ctx context.Context, tx *Tx, kasusID string,
+func (r *InboxKomite) CatatKeputusan(ctx context.Context, tx *db.Tx, kasusID string,
 	urut int, operatorID, keputusan, komentar string, saat time.Time) error {
 
 	if tx == nil {
@@ -66,10 +67,10 @@ func (r *InboxKomite) CatatKeputusan(ctx context.Context, tx *Tx, kasusID string
 		return err
 	}
 	q1 := sqlCatatAnakTangga(list)
-	if err := PeriksaSQL(q1); err != nil {
+	if err := db.PeriksaSQL(q1); err != nil {
 		return err
 	}
-	h, err := tx.tx.ExecContext(ctx, q1, keputusan, kosongJadiNil(komentar), saat,
+	h, err := tx.ExecContext(ctx, q1, keputusan, db.KosongJadiNil(komentar), saat,
 		kasusID, urut, operatorID, ApprovalKomiteMenunggu)
 	if err != nil {
 		return fmt.Errorf("repository: menulis keputusan anak tangga: %w", err)
@@ -81,10 +82,10 @@ func (r *InboxKomite) CatatKeputusan(ctx context.Context, tx *Tx, kasusID string
 	}
 
 	q2 := sqlMajukanTangga(gen)
-	if err := PeriksaSQL(q2); err != nil {
+	if err := db.PeriksaSQL(q2); err != nil {
 		return err
 	}
-	h, err = tx.tx.ExecContext(ctx, q2, keputusan, urut+1, kasusID, urut)
+	h, err = tx.ExecContext(ctx, q2, keputusan, urut+1, kasusID, urut)
 	if err != nil {
 		return fmt.Errorf("repository: memajukan tangga komite: %w", err)
 	}
@@ -105,7 +106,7 @@ func sqlTanggaSebelumDitimpa(list string) string {
 }
 
 // TanggaSebelumDitimpa membaca tangga satu kasus di dalam `tx` (OQ-K-05).
-func (r *InboxKomite) TanggaSebelumDitimpa(ctx context.Context, tx *Tx, kasusID string) ([]AnggotaKasus, error) {
+func (r *InboxKomite) TanggaSebelumDitimpa(ctx context.Context, tx *db.Tx, kasusID string) ([]AnggotaKasus, error) {
 	if tx == nil {
 		return nil, errors.New("repository: membaca tangga sebelum penimpaan menuntut transaksi")
 	}
@@ -114,10 +115,10 @@ func (r *InboxKomite) TanggaSebelumDitimpa(ctx context.Context, tx *Tx, kasusID 
 		return nil, err
 	}
 	q := sqlTanggaSebelumDitimpa(list)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := tx.tx.QueryContext(ctx, q, kasusID)
+	rows, err := tx.QueryContext(ctx, q, kasusID)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca tangga komite: %w", err)
 	}
@@ -153,7 +154,7 @@ func sqlTimpaTanggaTolakAkhir(list string) string {
 
 // TimpaTanggaTolakAkhir menjalankan langkah 5.1 di dalam `tx`. Nol baris =
 // galat: tingkat akhir yang menolak pasti sudah menulis keputusannya.
-func (r *InboxKomite) TimpaTanggaTolakAkhir(ctx context.Context, tx *Tx, kasusID string, saat time.Time) error {
+func (r *InboxKomite) TimpaTanggaTolakAkhir(ctx context.Context, tx *db.Tx, kasusID string, saat time.Time) error {
 	if tx == nil {
 		return errors.New("repository: penimpaan tangga komite menuntut transaksi")
 	}
@@ -162,10 +163,10 @@ func (r *InboxKomite) TimpaTanggaTolakAkhir(ctx context.Context, tx *Tx, kasusID
 		return err
 	}
 	q := sqlTimpaTanggaTolakAkhir(list)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	h, err := tx.tx.ExecContext(ctx, q, models.KeputusanKomiteTolak, saat, kasusID)
+	h, err := tx.ExecContext(ctx, q, models.KeputusanKomiteTolak, saat, kasusID)
 	if err != nil {
 		return fmt.Errorf("repository: menimpa tangga komite: %w", err)
 	}
@@ -194,7 +195,7 @@ func sqlNaikkanTingkat(gen string) string {
 }
 
 // Eskalasi melewati anak tangga `urut` dan menaikkan tingkat ke `urut+1`.
-func (r *InboxKomite) Eskalasi(ctx context.Context, tx *Tx, kasusID string, urut int) error {
+func (r *InboxKomite) Eskalasi(ctx context.Context, tx *db.Tx, kasusID string, urut int) error {
 	if tx == nil {
 		return errors.New("repository: eskalasi komite menuntut transaksi")
 	}
@@ -207,10 +208,10 @@ func (r *InboxKomite) Eskalasi(ctx context.Context, tx *Tx, kasusID string, urut
 		return err
 	}
 	q1 := sqlLewatiAnakTangga(list)
-	if err := PeriksaSQL(q1); err != nil {
+	if err := db.PeriksaSQL(q1); err != nil {
 		return err
 	}
-	h, err := tx.tx.ExecContext(ctx, q1, kasusID, urut, ApprovalKomiteMenunggu)
+	h, err := tx.ExecContext(ctx, q1, kasusID, urut, ApprovalKomiteMenunggu)
 	if err != nil {
 		return fmt.Errorf("repository: melewati anak tangga: %w", err)
 	}
@@ -220,10 +221,10 @@ func (r *InboxKomite) Eskalasi(ctx context.Context, tx *Tx, kasusID string, urut
 		return fmt.Errorf("%w: anak tangga %d kasus %q", ErrKeputusanKomiteBersamaan, urut, kasusID)
 	}
 	q2 := sqlNaikkanTingkat(gen)
-	if err := PeriksaSQL(q2); err != nil {
+	if err := db.PeriksaSQL(q2); err != nil {
 		return err
 	}
-	h, err = tx.tx.ExecContext(ctx, q2, urut+1, kasusID, urut)
+	h, err = tx.ExecContext(ctx, q2, urut+1, kasusID, urut)
 	if err != nil {
 		return fmt.Errorf("repository: menaikkan tingkat komite: %w", err)
 	}
@@ -246,7 +247,7 @@ func sqlNomorAksepDiAdjustment(adj string) string {
 }
 
 // NomorAkseptasiDipakaiDiAdjustment menjawab apakah nomor sudah dipakai baris lain.
-func (r *InboxKomite) NomorAkseptasiDipakaiDiAdjustment(ctx context.Context, tx *Tx,
+func (r *InboxKomite) NomorAkseptasiDipakaiDiAdjustment(ctx context.Context, tx *db.Tx,
 	nomor string) (bool, error) {
 
 	if tx == nil {
@@ -257,11 +258,11 @@ func (r *InboxKomite) NomorAkseptasiDipakaiDiAdjustment(ctx context.Context, tx 
 		return false, err
 	}
 	q := sqlNomorAksepDiAdjustment(adj)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return false, err
 	}
 	var n int
-	if err := tx.tx.QueryRowContext(ctx, q, nomor).Scan(&n); err != nil {
+	if err := tx.QueryRowContext(ctx, q, nomor).Scan(&n); err != nil {
 		return false, fmt.Errorf("repository: memeriksa nomor akseptasi: %w", err)
 	}
 	return n > 0, nil
@@ -291,7 +292,7 @@ var ErrStatusAkhirKomiteTidakSah = errors.New(
 // ⛔ Status dipagari SEBELUM bind: `STS_REJECT` di tabel warisan `NUMBER(38)`
 // (`[data DBA]`), jadi teks selain `1`/`2` akan menjadi ORA-01722 - pola
 // `PeriksaNilaiWarisan` (butir s1).
-func (r *InboxKomite) RekamAkhirWarisan(ctx context.Context, tx *Tx, adjID, status,
+func (r *InboxKomite) RekamAkhirWarisan(ctx context.Context, tx *db.Tx, adjID, status,
 	nomor string, saat time.Time) error {
 
 	if tx == nil {
@@ -305,10 +306,10 @@ func (r *InboxKomite) RekamAkhirWarisan(ctx context.Context, tx *Tx, adjID, stat
 		return err
 	}
 	q := sqlRekamAkhirWarisan(datar)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	h, err := tx.tx.ExecContext(ctx, q, status, kosongJadiNil(nomor), saat, adjID)
+	h, err := tx.ExecContext(ctx, q, status, db.KosongJadiNil(nomor), saat, adjID)
 	if err != nil {
 		return fmt.Errorf("repository: merekam akhir komite ke baris datar: %w", err)
 	}

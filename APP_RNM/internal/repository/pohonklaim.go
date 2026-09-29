@@ -26,10 +26,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/apd/v3"
-
 	"nusantarare/internal/models"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti/db"
+	"nusantarare/inti/uang"
+	"nusantarare/inti/utils"
 )
 
 // namaTabelLama adalah tabel datar warisan yang tetap ditulis.
@@ -42,18 +42,18 @@ const namaTabelRetro = "T_CLAIMLF_ADJ_SPREADING_RETRO"
 
 // PohonKlaim menulis dan membaca satu klaim utuh.
 type PohonKlaim struct {
-	db *DB
+	db *db.DB
 }
 
 // NewPohonKlaim membuat penyimpan pohon klaim.
-func NewPohonKlaim(db *DB) *PohonKlaim { return &PohonKlaim{db: db} }
+func NewPohonKlaim(db *db.DB) *PohonKlaim { return &PohonKlaim{db: db} }
 
 // exec menjalankan satu pernyataan di dalam transaksi, sesudah memeriksanya.
-func (r *PohonKlaim) exec(ctx context.Context, tx *Tx, q string, args ...any) error {
-	if err := PeriksaSQL(q); err != nil {
+func (r *PohonKlaim) exec(ctx context.Context, tx *db.Tx, q string, args ...any) error {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	if _, err := tx.tx.ExecContext(ctx, q, args...); err != nil {
+	if _, err := tx.ExecContext(ctx, q, args...); err != nil {
 		return fmt.Errorf("repository: %w", err)
 	}
 	return nil
@@ -63,45 +63,24 @@ func (r *PohonKlaim) exec(ctx context.Context, tx *Tx, q string, args ...any) er
 //
 // ⛔ Uang tidak pernah melewati float (ADR-U-0003, ADR-U-0016). Nilai kosong
 // dikirim sebagai NULL, bukan sebagai nol (ADR-U-0027).
-func teksDesimal(m models.Money) any {
+func teksDesimal(m uang.Money) any {
 	if m.Kosong() {
 		return nil
 	}
 	return utils.FormatDecimal(m.Amount)
 }
 
-func teksRasio(r models.Ratio) any {
+func teksRasio(r uang.Ratio) any {
 	if r.Kosong() {
 		return nil
 	}
 	return utils.FormatDecimal(r.Value)
 }
 
-// uraiDesimal mengubah teks yang datang dari Oracle menjadi desimal.
-//
-// ⛔ Galat urai DIKEMBALIKAN, tidak ditelan. Menelannya - yang dikerjakan ronde
-// 1 lewat `if d, err := ...; err == nil` - membuat nilai yang tidak terbaca
-// pulang sebagai kosong, dan kosong tidak dapat dibedakan dari nol. Angka yang
-// rusak harus terdengar, bukan hilang diam-diam.
-//
-// NULL dan teks kosong BUKAN galat: keduanya berarti "tidak ada nilai"
-// (ADR-U-0027), dan menghasilkan desimal nil.
-func uraiDesimal(idBaris, kolom string, v sql.NullString) (*apd.Decimal, error) {
-	if !v.Valid || strings.TrimSpace(v.String) == "" {
-		return nil, nil
-	}
-	d, err := utils.ParseDecimal(v.String)
-	if err != nil {
-		return nil, fmt.Errorf("repository: %s kolom %s bernilai %q yang tidak terurai: %w",
-			idBaris, kolom, v.String, err)
-	}
-	return d, nil
-}
-
 // uraiUang membungkus uraiDesimal menjadi nilai uang beserta mata uangnya.
-func uraiUang(idBaris, kolom string, v sql.NullString, mataUang string) (models.Money, error) {
-	m := models.Money{Currency: mataUang}
-	d, err := uraiDesimal(idBaris, kolom, v)
+func uraiUang(idBaris, kolom string, v sql.NullString, mataUang string) (uang.Money, error) {
+	m := uang.Money{Currency: mataUang}
+	d, err := db.UraiDesimal(idBaris, kolom, v)
 	if err != nil {
 		return m, err
 	}
@@ -113,21 +92,14 @@ func uraiUang(idBaris, kolom string, v sql.NullString, mataUang string) (models.
 //
 // Rasio dan uang sengaja bertipe berbeda supaya keduanya tidak pernah
 // terjumlahkan (ADR-F-0004): 30 persen ditambah Rp30 tidak berarti apa-apa.
-func uraiRasio(idBaris, kolom string, v sql.NullString) (models.Ratio, error) {
-	var r models.Ratio
-	d, err := uraiDesimal(idBaris, kolom, v)
+func uraiRasio(idBaris, kolom string, v sql.NullString) (uang.Ratio, error) {
+	var r uang.Ratio
+	d, err := db.UraiDesimal(idBaris, kolom, v)
 	if err != nil {
 		return r, err
 	}
 	r.Value = d
 	return r, nil
-}
-
-func kosongJadiNil(s string) any {
-	if s == "" {
-		return nil
-	}
-	return s
 }
 
 func waktuJadiNil(t time.Time) any {
@@ -152,7 +124,7 @@ var ErrIdentitasBelumAda = errors.New(
 //
 // Dipakai `Simpan` (pohon utuh) dan `SisipkanBaris` (satu baris lanjutan).
 // Kolom dan urutannya hidup di sini saja.
-func (r *PohonKlaim) sisipBarisAdjustment(ctx context.Context, tx *Tx,
+func (r *PohonKlaim) sisipBarisAdjustment(ctx context.Context, tx *db.Tx,
 	tabel, pesertaID string, adj models.BarisAdjustment) error {
 
 	return r.exec(ctx, tx, fmt.Sprintf(`INSERT INTO %s
@@ -163,15 +135,15 @@ func (r *PohonKlaim) sisipBarisAdjustment(ctx context.Context, tx *Tx,
 		 SHARE_RETRO, RETROCEDED_SHARE, CURRENCY_ID)
 		VALUES (:1,:2,:3,:4,:5,:6,:7,:8,:9,:10,:11,:12,:13,:14,:15,:16,:17,:18)`, tabel),
 		adj.ID, pesertaID, teksDesimal(adj.JumlahKlaim),
-		kosongJadiNil(adj.JumlahKlaim.Currency), kosongJadiNil(adj.KodeStatus),
-		kosongJadiNil(adj.NomorAkseptasi), waktuJadiNil(adj.TanggalAkseptasi),
-		kosongJadiNil(adj.KomiteID),
-		kosongJadiNil(adj.NamaBank), kosongJadiNil(adj.IDBank),
-		kosongJadiNil(adj.NomorRekening),
+		db.KosongJadiNil(adj.JumlahKlaim.Currency), db.KosongJadiNil(adj.KodeStatus),
+		db.KosongJadiNil(adj.NomorAkseptasi), waktuJadiNil(adj.TanggalAkseptasi),
+		db.KosongJadiNil(adj.KomiteID),
+		db.KosongJadiNil(adj.NamaBank), db.KosongJadiNil(adj.IDBank),
+		db.KosongJadiNil(adj.NomorRekening),
 		teksDesimal(adj.ShareNusantaraRe), teksDesimal(adj.CedingRetention),
 		teksDesimal(adj.SumReasured), teksDesimal(adj.SumInsured),
 		teksDesimal(adj.ShareRetro), teksDesimal(adj.RetrocededShare),
-		kosongJadiNil(adj.CurrencyID))
+		db.KosongJadiNil(adj.CurrencyID))
 }
 
 // ErrBarisBaruBerkeputusan - baris baru tidak pernah lahir sudah diputus.
@@ -202,7 +174,7 @@ func PeriksaBarisBaru(kodeStatus string) error {
 //
 // ⛔ Ia menulis STS_REJECT baris BARU, bukan mengubah baris lama. Keputusan
 // atas baris lama milik Komite Claim Life.
-func (r *PohonKlaim) SisipkanBaris(ctx context.Context, tx *Tx,
+func (r *PohonKlaim) SisipkanBaris(ctx context.Context, tx *db.Tx,
 	pesertaID string, adj models.BarisAdjustment) (string, error) {
 
 	if strings.TrimSpace(pesertaID) == "" {
@@ -222,7 +194,7 @@ func (r *PohonKlaim) SisipkanBaris(ctx context.Context, tx *Tx,
 		return "", err
 	}
 	if adj.ID == "" {
-		id, err := r.nomorBerikut(ctx, tx, "SEQ_CLAIMLF_ADJ")
+		id, err := r.db.NomorBerikut(ctx, tx, "SEQ_CLAIMLF_ADJ")
 		if err != nil {
 			return "", err
 		}
@@ -234,32 +206,11 @@ func (r *PohonKlaim) SisipkanBaris(ctx context.Context, tx *Tx,
 	return adj.ID, nil
 }
 
-// nomorBerikut mengambil satu nomor dari sequence.
-//
-// "Sequence" adalah pembangkit angka berurut milik Oracle. ADR-U-0006
-// menetapkan identitas seluruh tabel T_CLAIMLF_* berasal dari sini -
-// bukan dari cap waktu, bukan dari teks yang disusun sendiri.
-func (r *PohonKlaim) nomorBerikut(ctx context.Context, tx *Tx, sequence string) (string, error) {
-	nama, err := r.db.Qualify(sequence)
-	if err != nil {
-		return "", err
-	}
-	q := fmt.Sprintf(`SELECT %s.NEXTVAL FROM DUAL`, nama)
-	if err := PeriksaSQL(q); err != nil {
-		return "", err
-	}
-	var n int64
-	if err := tx.tx.QueryRowContext(ctx, q).Scan(&n); err != nil {
-		return "", fmt.Errorf("repository: mengambil nomor dari %s: %w", sequence, err)
-	}
-	return fmt.Sprint(n), nil
-}
-
 // isiIdentitas melengkapi identitas yang masih kosong dari sequence-nya.
 //
 // Identitas yang SUDAH terisi tidak disentuh, supaya pemanggil yang membawa
 // nomornya sendiri - misalnya migrasi data lama - tetap dapat menentukannya.
-func (r *PohonKlaim) isiIdentitas(ctx context.Context, tx *Tx, p *models.PohonKlaim) error {
+func (r *PohonKlaim) isiIdentitas(ctx context.Context, tx *db.Tx, p *models.PohonKlaim) error {
 	if p.Work.ID == "" {
 		return ErrIdentitasBelumAda
 	}
@@ -270,7 +221,7 @@ func (r *PohonKlaim) isiIdentitas(ctx context.Context, tx *Tx, p *models.PohonKl
 	for i := range p.Klaim.Peserta {
 		ps := &p.Klaim.Peserta[i]
 		if ps.ID == "" {
-			id, err := r.nomorBerikut(ctx, tx, "SEQ_CLAIMLF_PLD")
+			id, err := r.db.NomorBerikut(ctx, tx, "SEQ_CLAIMLF_PLD")
 			if err != nil {
 				return err
 			}
@@ -279,7 +230,7 @@ func (r *PohonKlaim) isiIdentitas(ctx context.Context, tx *Tx, p *models.PohonKl
 		for j := range ps.Baris {
 			adj := &ps.Baris[j]
 			if adj.ID == "" {
-				id, err := r.nomorBerikut(ctx, tx, "SEQ_CLAIMLF_ADJ")
+				id, err := r.db.NomorBerikut(ctx, tx, "SEQ_CLAIMLF_ADJ")
 				if err != nil {
 					return err
 				}
@@ -288,7 +239,7 @@ func (r *PohonKlaim) isiIdentitas(ctx context.Context, tx *Tx, p *models.PohonKl
 			for k := range adj.Spreading {
 				spr := &adj.Spreading[k]
 				if spr.ID == "" {
-					id, err := r.nomorBerikut(ctx, tx, "SEQ_CLAIMLF_SPR")
+					id, err := r.db.NomorBerikut(ctx, tx, "SEQ_CLAIMLF_SPR")
 					if err != nil {
 						return err
 					}
@@ -296,7 +247,7 @@ func (r *PohonKlaim) isiIdentitas(ctx context.Context, tx *Tx, p *models.PohonKl
 				}
 				for l := range spr.Retro {
 					if spr.Retro[l].ID == "" {
-						id, err := r.nomorBerikut(ctx, tx, "SEQ_CLAIMLF_SPR_RETRO")
+						id, err := r.db.NomorBerikut(ctx, tx, "SEQ_CLAIMLF_SPR_RETRO")
 						if err != nil {
 							return err
 						}
@@ -317,7 +268,7 @@ func (r *PohonKlaim) isiIdentitas(ctx context.Context, tx *Tx, p *models.PohonKl
 //
 // Identitas yang masih kosong di tingkat T_CLAIMLF_* diisi dari sequence
 // (ADR-U-0006). Nomor akar tidak pernah dikarang - lihat ErrIdentitasBelumAda.
-func (r *PohonKlaim) Simpan(ctx context.Context, tx *Tx, p models.PohonKlaim) error {
+func (r *PohonKlaim) Simpan(ctx context.Context, tx *db.Tx, p models.PohonKlaim) error {
 	if err := r.isiIdentitas(ctx, tx, &p); err != nil {
 		return err
 	}
@@ -356,13 +307,13 @@ func (r *PohonKlaim) Simpan(ctx context.Context, tx *Tx, p models.PohonKlaim) er
 		 SENDTO_MEDICAL, TYPE, CASE_ID, CREATE_OP, CREATE_OP_NAME, TGL_UPDATE,
 		 TAHAP, TGL_CREATE)
 		VALUES (:1,:2,:3,:4,:5,:6,:7,:8,:9,:10,:11,:12,:13)`, work),
-		p.Work.ID, kosongJadiNil(p.Work.CoverKey), kosongJadiNil(p.Work.Lini),
-		kosongJadiNil(p.Work.PyPosition),
-		kosongJadiNil(p.Work.SendtoAdmin), kosongJadiNil(p.Work.SendtoMedical),
-		kosongJadiNil(p.Work.Type), kosongJadiNil(p.Work.CaseID),
-		kosongJadiNil(p.Work.CreateOp), kosongJadiNil(p.Work.CreateOpName),
+		p.Work.ID, db.KosongJadiNil(p.Work.CoverKey), db.KosongJadiNil(p.Work.Lini),
+		db.KosongJadiNil(p.Work.PyPosition),
+		db.KosongJadiNil(p.Work.SendtoAdmin), db.KosongJadiNil(p.Work.SendtoMedical),
+		db.KosongJadiNil(p.Work.Type), db.KosongJadiNil(p.Work.CaseID),
+		db.KosongJadiNil(p.Work.CreateOp), db.KosongJadiNil(p.Work.CreateOpName),
 		waktuJadiNil(p.Work.TglUpdate),
-		kosongJadiNil(p.Work.Tahap), waktuJadiNil(p.Work.TglCreate))
+		db.KosongJadiNil(p.Work.Tahap), waktuJadiNil(p.Work.TglCreate))
 	if err != nil {
 		return err
 	}
@@ -371,11 +322,11 @@ func (r *PohonKlaim) Simpan(ctx context.Context, tx *Tx, p models.PohonKlaim) er
 	err = r.exec(ctx, tx, fmt.Sprintf(`INSERT INTO %s
 		(ID, CLAIM_NO, POLICY_NO, BUSINESS_NAME, STS_REJECT, CURRENCY)
 		VALUES (:1,:2,:3,:4,:5,:6)`, header),
-		p.Work.ID, kosongJadiNil(p.Klaim.NomorKlaim), kosongJadiNil(p.Klaim.NomorPolis),
-		kosongJadiNil(p.Klaim.NamaBisnis), kosongJadiNil(p.Klaim.KodeStatus),
+		p.Work.ID, db.KosongJadiNil(p.Klaim.NomorKlaim), db.KosongJadiNil(p.Klaim.NomorPolis),
+		db.KosongJadiNil(p.Klaim.NamaBisnis), db.KosongJadiNil(p.Klaim.KodeStatus),
 		// Butir z1: mata uang header, supaya ClaimRetro yang dibaca kembali
 		// punya mata uang - uang tanpa mata uang tidak bermakna.
-		kosongJadiNil(p.Klaim.ClaimRetro.Currency))
+		db.KosongJadiNil(p.Klaim.ClaimRetro.Currency))
 	if err != nil {
 		return err
 	}
@@ -407,11 +358,11 @@ func (r *PohonKlaim) Simpan(ctx context.Context, tx *Tx, p models.PohonKlaim) er
 					(ID, ADJUSTMENT_ID, TREATY_TYPE_ID, TREATY_TYPE_NAME,
 					 TREATY_YEAR_LIFE, RETROCADED_SHARE, RATE, IDR, USD, CURRENCY)
 					VALUES (:1,:2,:3,:4,:5,:6,:7,:8,:9,:10)`, sprT),
-					spr.ID, adj.ID, kosongJadiNil(spr.TreatyTypeID),
-					kosongJadiNil(spr.TreatyTypeName), kosongJadiNil(spr.TreatyYearLife),
+					spr.ID, adj.ID, db.KosongJadiNil(spr.TreatyTypeID),
+					db.KosongJadiNil(spr.TreatyTypeName), db.KosongJadiNil(spr.TreatyYearLife),
 					teksDesimal(spr.RetrocadedShare), teksRasio(spr.Rate),
 					teksDesimal(spr.IDR), teksDesimal(spr.USD),
-					kosongJadiNil(spr.Currency))
+					db.KosongJadiNil(spr.Currency))
 				if err != nil {
 					return err
 				}
@@ -422,12 +373,12 @@ func (r *PohonKlaim) Simpan(ctx context.Context, tx *Tx, p models.PohonKlaim) er
 						 PREMIUM_SPREADED_GROSS, PREMIUM_SPREADED_NET, COMMISION,
 						 OVR_COMM, TREATY_TYPE_ID, TREATY_TYPE_NAME)
 						VALUES (:1,:2,:3,:4,:5,:6,:7,:8,:9,:10,:11,:12)`, retroT),
-						rt.ID, spr.ID, kosongJadiNil(rt.ReinsurerName),
+						rt.ID, spr.ID, db.KosongJadiNil(rt.ReinsurerName),
 						teksRasio(rt.PercentShare), teksDesimal(rt.Amount),
 						teksRasio(rt.Rate), teksDesimal(rt.PremiumSpreadedGross),
 						teksDesimal(rt.PremiumSpreadedNet), teksRasio(rt.Commision),
-						teksRasio(rt.OvrComm), kosongJadiNil(rt.TreatyTypeID),
-						kosongJadiNil(rt.TreatyTypeName))
+						teksRasio(rt.OvrComm), db.KosongJadiNil(rt.TreatyTypeID),
+						db.KosongJadiNil(rt.TreatyTypeName))
 					if err != nil {
 						return err
 					}
@@ -465,15 +416,15 @@ func (r *PohonKlaim) Simpan(ctx context.Context, tx *Tx, p models.PohonKlaim) er
 			 ACCEPTATION_DATE, TYPE, CREATEOPNAME,
 			 NAME_OF_BANK, IDBANK, ACCOUNTNO)
 			VALUES (:1,:2,:3,:4,:5,:6,:7,:8,:9,:10,:11,:12,:13,:14,:15,:16,:17,:18)`, datarT),
-			b.ID, kosongJadiNil(b.CASEID), kosongJadiNil(b.NO_CLAIM),
-			kosongJadiNil(b.POLICY_NO), kosongJadiNil(b.CERTIFICATE_NO),
-			kosongJadiNil(b.PL_NUMBER), kosongJadiNil(b.BUSINESSNAME),
-			kosongJadiNil(b.CLAIM_RETRO), kosongJadiNil(b.CURRENCY),
-			kosongJadiNil(b.CLAIM_AMOUNT), kosongJadiNil(b.STS_REJECT),
-			kosongJadiNil(b.NO_ACCEPTATION), kosongJadiNil(b.ACCEPTATION_DATE),
-			kosongJadiNil(b.TYPE), kosongJadiNil(b.CREATEOPNAME),
-			kosongJadiNil(b.NAME_OF_BANK), kosongJadiNil(b.IDBANK),
-			kosongJadiNil(b.ACCOUNTNO))
+			b.ID, db.KosongJadiNil(b.CASEID), db.KosongJadiNil(b.NO_CLAIM),
+			db.KosongJadiNil(b.POLICY_NO), db.KosongJadiNil(b.CERTIFICATE_NO),
+			db.KosongJadiNil(b.PL_NUMBER), db.KosongJadiNil(b.BUSINESSNAME),
+			db.KosongJadiNil(b.CLAIM_RETRO), db.KosongJadiNil(b.CURRENCY),
+			db.KosongJadiNil(b.CLAIM_AMOUNT), db.KosongJadiNil(b.STS_REJECT),
+			db.KosongJadiNil(b.NO_ACCEPTATION), db.KosongJadiNil(b.ACCEPTATION_DATE),
+			db.KosongJadiNil(b.TYPE), db.KosongJadiNil(b.CREATEOPNAME),
+			db.KosongJadiNil(b.NAME_OF_BANK), db.KosongJadiNil(b.IDBANK),
+			db.KosongJadiNil(b.ACCOUNTNO))
 		if err != nil {
 			return err
 		}
@@ -511,16 +462,16 @@ func sqlHapusCerminBelumDisimpan(lama string) string {
 
 // HapusCerminBelumDisimpan menjalankannya di transaksi pemanggil; nol baris
 // bukan galat (baris lahir sebelum cermin ditulis, atau sudah tidak ada).
-func (r *KlaimLife) HapusCerminBelumDisimpan(ctx context.Context, tx *Tx, adjID, caseID string) error {
+func (r *KlaimLife) HapusCerminBelumDisimpan(ctx context.Context, tx *db.Tx, adjID, caseID string) error {
 	lama, err := r.db.Qualify(namaTabelLama)
 	if err != nil {
 		return err
 	}
 	q := sqlHapusCerminBelumDisimpan(lama)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	if _, err := tx.tx.ExecContext(ctx, q, adjID, caseID); err != nil {
+	if _, err := tx.ExecContext(ctx, q, adjID, caseID); err != nil {
 		return fmt.Errorf("repository: membuang cermin peserta tercabut %s: %w", adjID, err)
 	}
 	return nil
@@ -540,16 +491,16 @@ func sqlIsiCedingCermin(lama, polis string) string {
 }
 
 // isiCedingCermin menjalankan `sqlIsiCedingCermin` di transaksi pemanggil.
-func (r *KlaimLife) isiCedingCermin(ctx context.Context, tx *Tx, lama, adjID, caseID, nomorPolis string) error {
+func (r *KlaimLife) isiCedingCermin(ctx context.Context, tx *db.Tx, lama, adjID, caseID, nomorPolis string) error {
 	polis, err := r.db.Qualify("T_PREMIUM_LIST")
 	if err != nil {
 		return err
 	}
 	q := sqlIsiCedingCermin(lama, polis)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	if _, err := tx.tx.ExecContext(ctx, q, kosongJadiNil(nomorPolis), adjID, caseID); err != nil {
+	if _, err := tx.ExecContext(ctx, q, db.KosongJadiNil(nomorPolis), adjID, caseID); err != nil {
 		return fmt.Errorf("repository: mengisi CEDINGCO cermin %s: %w", adjID, err)
 	}
 	return nil
@@ -571,7 +522,7 @@ func (r *KlaimLife) isiCedingCermin(ctx context.Context, tx *Tx, lama, adjID, ca
 // Urutannya penting: T_CLAIMLF_DOCUMENT dibuang LEBIH DULU. Kunci tamunya sengaja
 // tanpa ON DELETE, sehingga menghapus header selagi masih ada baris dokumen
 // akan ditolak Oracle dengan ORA-02292 (induk masih punya anak).
-func (r *PohonKlaim) HapusFisik(ctx context.Context, tx *Tx, id, caseID string) error {
+func (r *PohonKlaim) HapusFisik(ctx context.Context, tx *db.Tx, id, caseID string) error {
 	header, err := r.db.Qualify("T_GENERAL_CLAIM")
 	if err != nil {
 		return err
@@ -642,17 +593,17 @@ func (r *PohonKlaim) AmbilSpreading(ctx context.Context, klaimID string) (
 	// melewatkannya sehingga pecahan retro pulang tanpa dasar pembagiannya.
 	q := fmt.Sprintf(`SELECT s.ADJUSTMENT_ID, s.ID, s.TREATY_TYPE_ID,
 		       s.TREATY_TYPE_NAME, s.TREATY_YEAR_LIFE, s.CURRENCY,
-		       `+fmtDesimal+`, `+fmtDesimal+`, `+fmtDesimal+`, `+fmtDesimal+`
+		       `+db.FmtDesimal+`, `+db.FmtDesimal+`, `+db.FmtDesimal+`, `+db.FmtDesimal+`
 		  FROM %s s
 		  JOIN %s a ON a.ID = s.ADJUSTMENT_ID
 		  JOIN %s p ON p.ID = a.PREMIUM_LIST_DETAIL_ID
 		 WHERE p.CLAIM_ID = :1 AND p.STS_HAPUS IS NULL
 		 ORDER BY s.ADJUSTMENT_ID, s.ID`,
 		"s.IDR", "s.USD", "s.RETROCADED_SHARE", "s.RATE", sprT, adjT, pesT)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := r.db.sql.QueryContext(ctx, q, klaimID)
+	rows, err := r.db.QueryContext(ctx, q, klaimID)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca spreading: %w", err)
 	}
@@ -673,7 +624,7 @@ func (r *PohonKlaim) AmbilSpreading(ctx context.Context, klaimID string) (
 			ID: id, AdjustmentID: adjID,
 			TreatyTypeID: tipeID.String, TreatyTypeName: tipeNama.String,
 			TreatyYearLife: tahun.String, Currency: mataUang.String,
-			IDR: models.Money{Currency: "IDR"}, USD: models.Money{Currency: "USD"},
+			IDR: uang.Money{Currency: "IDR"}, USD: uang.Money{Currency: "USD"},
 		}
 		if s.IDR, err = uraiUang(id, "IDR", idr, "IDR"); err != nil {
 			return nil, err
@@ -719,15 +670,15 @@ func (r *PohonKlaim) ambilRetro(ctx context.Context, tabel, spreadingID string) 
 	// Tujuh kolom angka, bukan satu. Ronde 1 hanya membaca AMOUNT, sehingga
 	// pecahan retro pulang tanpa persentase, rate, premi, maupun komisinya.
 	q := fmt.Sprintf(`SELECT ID, REINSURER_NAME, TREATY_TYPE_ID, TREATY_TYPE_NAME,
-		       `+fmtDesimal+`, `+fmtDesimal+`, `+fmtDesimal+`,
-		       `+fmtDesimal+`, `+fmtDesimal+`, `+fmtDesimal+`, `+fmtDesimal+`
+		       `+db.FmtDesimal+`, `+db.FmtDesimal+`, `+db.FmtDesimal+`,
+		       `+db.FmtDesimal+`, `+db.FmtDesimal+`, `+db.FmtDesimal+`, `+db.FmtDesimal+`
 		  FROM %s WHERE SPREADING_ID = :1 ORDER BY ID`,
 		"AMOUNT", "PERCENT_SHARE", "RATE", "PREMIUM_SPREADED_GROSS",
 		"PREMIUM_SPREADED_NET", "COMMISION", "OVR_COMM", tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := r.db.sql.QueryContext(ctx, q, spreadingID)
+	rows, err := r.db.QueryContext(ctx, q, spreadingID)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca spreading retro: %w", err)
 	}
@@ -793,10 +744,10 @@ func (r *PohonKlaim) AmbilBarisLama(ctx context.Context, caseID string) ([]Baris
 	}
 	q := fmt.Sprintf(`SELECT %s FROM %s WHERE CASEID = :1 ORDER BY ID`,
 		ekspresiSelectLama(), tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := r.db.sql.QueryContext(ctx, q, caseID)
+	rows, err := r.db.QueryContext(ctx, q, caseID)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca baris lama: %w", err)
 	}
@@ -827,11 +778,11 @@ func (r *PohonKlaim) CacahBarisLama(ctx context.Context, caseID string) (int, er
 		return 0, err
 	}
 	q := fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE CASEID = :1`, tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return 0, err
 	}
 	var n int
-	if err := r.db.sql.QueryRowContext(ctx, q, caseID).Scan(&n); err != nil {
+	if err := r.db.QueryRowContext(ctx, q, caseID).Scan(&n); err != nil {
 		return 0, fmt.Errorf("repository: mencacah baris lama: %w", err)
 	}
 	return n, nil
@@ -896,10 +847,10 @@ func (r *PohonKlaim) Dampak(ctx context.Context, klaimID, caseID string) (
 			klaimID, &d.Header, "header klaim"},
 	}
 	for _, l := range langkah {
-		if err := PeriksaSQL(l.q); err != nil {
+		if err := db.PeriksaSQL(l.q); err != nil {
 			return d, err
 		}
-		if err := r.db.sql.QueryRowContext(ctx, l.q, l.arg).Scan(l.tuju); err != nil {
+		if err := r.db.QueryRowContext(ctx, l.q, l.arg).Scan(l.tuju); err != nil {
 			return d, fmt.Errorf("repository: mencacah %s: %w", l.jenis, err)
 		}
 	}

@@ -36,7 +36,8 @@ import (
 
 	"github.com/cockroachdb/apd/v3"
 
-	"nusantarare/pkg/utils"
+	"nusantarare/inti/penomor"
+	"nusantarare/inti/utils"
 )
 
 // AngkaDesimalRekap adalah angka desimal pembulatan akhir SELURUH rekap.
@@ -100,8 +101,8 @@ func KolomBacaSummary() []string {
 	}
 	tambah(KolomJumlahSummary...)
 	tambah("COMM")
-	for _, tipe := range []string{TipePLQuotationRealisasi, TipePLQuotationProposal,
-		TipePLTreatyProposal, TipePLTreatyRealisasi} {
+	for _, tipe := range []string{penomor.TipePLQuotationRealisasi, penomor.TipePLQuotationProposal,
+		penomor.TipePLTreatyProposal, penomor.TipePLTreatyRealisasi} {
 		tambah(premiumMenurutTipe[tipe])
 		tambah(balanceMenurutTipe[tipe].Tambah...)
 		tambah(balanceMenurutTipe[tipe].Kurang...)
@@ -113,17 +114,17 @@ func KolomBacaSummary() []string {
 //
 // ⛔ SATU KOLOM, BUKAN EMPAT. Lihat kepala berkas.
 var premiumMenurutTipe = map[string]string{
-	TipePLQuotationRealisasi: "GROSS_PREMIUM",
-	TipePLQuotationProposal:  "GROSS_PREMIUM_REFUND",
-	TipePLTreatyProposal:     "GROSS_PREMIUM_RETRO",
-	TipePLTreatyRealisasi:    "GROSS_PREMIUM_REFUND_RETRO",
+	penomor.TipePLQuotationRealisasi: "GROSS_PREMIUM",
+	penomor.TipePLQuotationProposal:  "GROSS_PREMIUM_REFUND",
+	penomor.TipePLTreatyProposal:     "GROSS_PREMIUM_RETRO",
+	penomor.TipePLTreatyRealisasi:    "GROSS_PREMIUM_REFUND_RETRO",
 }
 
 // KolomPremiumUntukTipe menjawab kolom mana yang menyusun `PREMIUM`.
 func KolomPremiumUntukTipe(tipe string) (string, error) {
 	k, ada := premiumMenurutTipe[strings.TrimSpace(tipe)]
 	if !ada {
-		return "", fmt.Errorf("%w: %q", ErrTipePLTanpaCabang, tipe)
+		return "", fmt.Errorf("%w: %q", penomor.ErrTipePLTanpaCabang, tipe)
 	}
 	return k, nil
 }
@@ -149,22 +150,22 @@ type sukuBalance struct {
 
 // balanceMenurutTipe adalah keempat cabang, VERBATIM.
 var balanceMenurutTipe = map[string]sukuBalance{
-	TipePLQuotationRealisasi: {
+	penomor.TipePLQuotationRealisasi: {
 		Tambah: []string{"GROSS_PREMIUM"},
 		Kurang: []string{"DEDUCTION", "RI_ADMIN_FEE", "BROKERAGE_FEE", "TAX",
 			"PROF_COMM", "CLAIM"},
 	},
-	TipePLQuotationProposal: {
+	penomor.TipePLQuotationProposal: {
 		Tambah: []string{"GROSS_PREMIUM_REFUND", "CLAIM_AMOUNT"},
 		Kurang: []string{"DEDUCTION_REFUND", "BROKERAGE_FEE_REFUND",
 			"RI_ADMIN_FEE_REFUND", "TAX", "PROF_COMM", "CLAIM"},
 	},
-	TipePLTreatyProposal: {
+	penomor.TipePLTreatyProposal: {
 		// ⚠️ BROKERAGE_FEE_RETRO di sisi TAMBAH - keanehan nomor 1.
 		Tambah: []string{"GROSS_PREMIUM_RETRO", "BROKERAGE_FEE_RETRO"},
 		Kurang: []string{"DISCOUNT_PREMIUM_RETRO", "RI_ADMIN_FEE_RETRO"},
 	},
-	TipePLTreatyRealisasi: {
+	penomor.TipePLTreatyRealisasi: {
 		Tambah: []string{"GROSS_PREMIUM_REFUND_RETRO", "BROKERAGE_FEE_REFUND_RETRO"},
 		Kurang: []string{"DISCOUNT_PREMIUM_REFUND_RETRO", "RI_ADMIN_FEE_REFUND_RETRO"},
 	},
@@ -178,7 +179,7 @@ var balanceMenurutTipe = map[string]sukuBalance{
 func SukuBalanceUntukTipe(tipe string) (tambah, kurang []string, err error) {
 	s, ada := balanceMenurutTipe[strings.TrimSpace(tipe)]
 	if !ada {
-		return nil, nil, fmt.Errorf("%w: %q", ErrTipePLTanpaCabang, tipe)
+		return nil, nil, fmt.Errorf("%w: %q", penomor.ErrTipePLTanpaCabang, tipe)
 	}
 	return s.Tambah, s.Kurang, nil
 }

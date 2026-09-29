@@ -19,6 +19,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"nusantarare/inti/db"
 )
 
 // polaAmbangTertanam mencocokkan HARI INI yang dibandingkan dengan angka.
@@ -109,7 +111,7 @@ func TestQueryTanggalTutupBukuBerbatasSatuBaris(t *testing.T) {
 	if !strings.Contains(q, "FETCH FIRST 1 ROWS ONLY") {
 		t.Errorf("query tidak berbatas satu baris:\n%s", q)
 	}
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		t.Errorf("%v\n%s", err, q)
 	}
 }

@@ -4,6 +4,7 @@ package services
 
 import (
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
 	"os"
 	"strings"
 	"testing"
@@ -121,7 +122,7 @@ func TestJejakTimpaTanggaHanyaTingkatBerkeputusan(t *testing.T) {
 		{Urut: 3, OperatorID: "UJI-C", Approval: "2", Komentar: "UJI tolak akhir"},
 	}
 	kasus := repository.KasusKomite{AdjID: "UJI-ADJ", Baris: repository.BarisInboxKomite{KasusID: "KMTLF-UJI", KlaimID: "UJI-K"}}
-	j := jejakTimpaTangga(kasus, tangga, Pelaku{AkunID: "UJI-C"}, saat)
+	j := jejakTimpaTangga(kasus, tangga, inti.Pelaku{AkunID: "UJI-C"}, saat)
 	if len(j) != 2 {
 		t.Fatalf("jejak %d, mau 2 (tingkat 1 dan 3): %+v", len(j), j)
 	}

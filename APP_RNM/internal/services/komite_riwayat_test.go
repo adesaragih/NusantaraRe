@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
 )
 
 // TestRiwayatMembedakanDilewatiDariMenunggu - AC tiket 09.
@@ -58,7 +59,7 @@ func TestRiwayatUntukSiapaPun(t *testing.T) {
 	if !strings.Contains(badan, "WajibIdentitas(pelaku)") {
 		t.Error("riwayat tanpa identitas pelaku")
 	}
-	if _, err := New(nil).InboxKomite().Riwayat(context.Background(), Pelaku{}, "K"); err == nil {
+	if _, err := New(nil).InboxKomite().Riwayat(context.Background(), inti.Pelaku{}, "K"); err == nil {
 		t.Error("riwayat tanpa identitas diterima")
 	}
 }

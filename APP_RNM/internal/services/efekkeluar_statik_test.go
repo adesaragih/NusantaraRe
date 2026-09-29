@@ -26,8 +26,10 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/internal/repository"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/outbox"
 )
 
 // polaURL mencocokkan alamat layanan yang ter-hardcode.
@@ -53,14 +55,14 @@ var kunciEnvBolehBeralamat = map[string]string{
 	"DEV_PROXY_TARGET": "sasaran proxy Vite ke backend sendiri saat pengembangan; tidak pernah ada di produksi",
 }
 
-// polaEnvApaPun mencocokkan SETIAP pembacaan env var di luar `internal/config`.
+// polaEnvApaPun mencocokkan SETIAP pembacaan env var di luar `inti/config`.
 //
 // ⛔ Ronde pertama hanya mencocokkan nama yang memuat URL/ENDPOINT/HOST - dan
 // dielakkan oleh `os.Getenv("ARASAPAS_TUJUAN")`, yang tidak memuat satu pun
 // kata itu. Menambah kata ke daftar tidak menolong: nama env var tak terbatas.
 //
 // Yang menggantikannya aturan ARSITEKTUR, bukan tebakan nama: env dibaca di
-// SATU tempat, `internal/config`, dan tidak di mana pun lagi. Aturan itu dapat
+// SATU tempat, `inti/config`, dan tidak di mana pun lagi. Aturan itu dapat
 // ditegakkan utuh, sedangkan daftar kata tidak pernah bisa.
 var polaEnvApaPun = regexp.MustCompile(`os\.(Getenv|LookupEnv)\(`)
 
@@ -98,11 +100,11 @@ var berkasKlienHTTPDisetujui = map[string]string{
 
 // bolehBacaEnv menyatakan sebuah berkas berhak membaca env var.
 //
-// ⚠️ Hanya `internal/config` dan berkas test. Daftar ini aturan arsitektur,
+// ⚠️ Hanya `inti/config` dan berkas test. Daftar ini aturan arsitektur,
 // bukan pengecualian per berkas: ia tidak tumbuh seiring berkas bertambah.
 func bolehBacaEnv(jalur string) bool {
 	rel := filepath.ToSlash(jalur)
-	if strings.Contains(rel, "internal/config/") || strings.HasSuffix(rel, "_test.go") {
+	if strings.Contains(rel, "inti/config/") || strings.HasSuffix(rel, "_test.go") {
 		return true
 	}
 	// ⚠️ SATU pengecualian bernama, dan ia mendahului tiket 12: pagar
@@ -132,9 +134,10 @@ func TestNolAlamatLayananDiKode(t *testing.T) {
 			return nil
 		}
 		diperiksa++
+		// Jalur relatif akar APP_RNM - `internal/...` maupun `inti/...`.
 		rel := filepath.ToSlash(jalur)
-		if i := strings.Index(rel, "internal/"); i >= 0 {
-			rel = rel[i:]
+		for strings.HasPrefix(rel, "../") {
+			rel = strings.TrimPrefix(rel, "../")
 		}
 		if alasan, boleh := berkasAlamatDikecualikan[rel]; boleh {
 			t.Logf("dikecualikan: %s (%s)", rel, alasan)
@@ -154,7 +157,7 @@ func TestNolAlamatLayananDiKode(t *testing.T) {
 				"`Sprintf(\"%%s://%%s\", …)`", filepath.ToSlash(jalur))
 		}
 		if m := polaEnvApaPun.FindString(kode); m != "" && !bolehBacaEnv(jalur) {
-			t.Errorf("%s: membaca env var (%q) di luar internal/config; env "+
+			t.Errorf("%s: membaca env var (%q) di luar inti/config; env "+
 				"dibaca di SATU tempat, dan alamat layanan tidak pernah datang "+
 				"dari env sama sekali (ADR-U-0013)", filepath.ToSlash(jalur), m)
 		}
@@ -276,14 +279,14 @@ func TestFlagLingkunganTidakMenggerbangiPenyimpanan(t *testing.T) {
 	// menolongnya: yang diperiksa akibatnya, bukan bentuknya.
 	svc := services.New(nil)
 	err := svc.Komite().Serahkan(context.Background(),
-		services.Pelaku{AkunID: "UJI-AKUN", Peran: []string{services.PeranAdmin}},
+		inti.Pelaku{AkunID: "UJI-AKUN", Peran: []string{inti.PeranAdmin}},
 		"CLM-1", "P-1", "A-1", saatUji)
 	if err == nil {
 		t.Fatal("penyimpanan pulang tanpa galat di lingkungan bukan produksi; " +
 			"flag lingkungan menggerbangi SIMPAN, bukan hanya efek keluar - " +
 			"tanpa Oracle jalur ini seharusnya berhenti di ErrTanpaOracle")
 	}
-	if !errors.Is(err, repository.ErrTanpaOracle) {
+	if !errors.Is(err, db.ErrTanpaOracle) {
 		t.Errorf("galat = %v, mau ErrTanpaOracle; jalur penyimpanan tidak "+
 			"sampai menyentuh basis data", err)
 	}
@@ -299,15 +302,15 @@ func TestGerbangLingkunganBenarBenarMenggerbangi(t *testing.T) {
 	efek := &efekUji{nama: "UJI-GERBANG"}
 	antre := &antreanUji{}
 
-	services.NewPenyalur(services.BukanProduksi, antre, efek).
-		Salurkan(context.Background(), services.MuatanEfek{KlaimID: "CLM-1"})
+	outbox.NewPenyalur(inti.BukanProduksi, antre, efek).
+		Salurkan(context.Background(), outbox.MuatanEfek{KlaimID: "CLM-1"})
 	if efek.dipanggil != 0 {
 		t.Fatalf("efek berjalan %d kali di BUKAN produksi; gerbangnya hilang - "+
 			"email nyata akan terkirim dari lingkungan uji", efek.dipanggil)
 	}
 
-	services.NewPenyalur(services.Produksi, antre, efek).
-		Salurkan(context.Background(), services.MuatanEfek{KlaimID: "CLM-1"})
+	outbox.NewPenyalur(inti.Produksi, antre, efek).
+		Salurkan(context.Background(), outbox.MuatanEfek{KlaimID: "CLM-1"})
 	if efek.dipanggil != 1 {
 		t.Errorf("efek berjalan %d kali di produksi, mau 1; gerbangnya menutup "+
 			"terlalu rapat dan efek keluar tidak pernah berjalan di mana pun",

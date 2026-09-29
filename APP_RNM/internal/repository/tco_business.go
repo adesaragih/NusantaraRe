@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/db"
 )
 
 // MasterBusinessTCO - master bisnis, dibaca saja.
@@ -47,10 +48,10 @@ var ErrBusinessMasterTidakAda = errors.New("repository: kode bisnis tidak ada di
 type BusinessMasterTCO struct{ ID, Note string }
 
 // MasterBusiness membaca master `BUSINESS`.
-type MasterBusiness struct{ db *DB }
+type MasterBusiness struct{ db *db.DB }
 
 // NewMasterBusiness menyusun pembacanya.
-func NewMasterBusiness(db *DB) *MasterBusiness { return &MasterBusiness{db: db} }
+func NewMasterBusiness(db *db.DB) *MasterBusiness { return &MasterBusiness{db: db} }
 
 // sqlDaftarBusinessMasterTCO - saringan `Note`/`ID`/`OLDID`/`GRUPBIS` RD tidak
 // berparameter dari layar (dilewati bila kosong), dan parameter `TREATYGROUP`
@@ -76,10 +77,10 @@ func (m *MasterBusiness) Daftar(ctx context.Context) ([]BusinessMasterTCO, error
 		return nil, err
 	}
 	q := sqlDaftarBusinessMasterTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := m.db.bacaTCO(ctx).QueryContext(ctx, q)
+	rows, err := bacaTCO(ctx, m.db).QueryContext(ctx, q)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca master %s: %w", MasterBusinessTCO, err)
 	}
@@ -102,11 +103,11 @@ func (m *MasterBusiness) Ambil(ctx context.Context, id string) (BusinessMasterTC
 		return BusinessMasterTCO{}, err
 	}
 	q := sqlAmbilBusinessMasterTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return BusinessMasterTCO{}, err
 	}
 	var gotID, note sql.NullString
-	err = m.db.bacaTCO(ctx).QueryRowContext(ctx, q, id).Scan(&gotID, &note)
+	err = bacaTCO(ctx, m.db).QueryRowContext(ctx, q, id).Scan(&gotID, &note)
 	if errors.Is(err, sql.ErrNoRows) {
 		return BusinessMasterTCO{}, ErrBusinessMasterTidakAda
 	}
@@ -117,10 +118,10 @@ func (m *MasterBusiness) Ambil(ctx context.Context, id string) (BusinessMasterTC
 }
 
 // MasterBusinessKombinasiTCO membaca dan menulis `TREATYBUSINESS`.
-type MasterBusinessKombinasiTCO struct{ db *DB }
+type MasterBusinessKombinasiTCO struct{ db *db.DB }
 
 // NewMasterBusinessKombinasiTCO menyusun gudangnya.
-func NewMasterBusinessKombinasiTCO(db *DB) *MasterBusinessKombinasiTCO {
+func NewMasterBusinessKombinasiTCO(db *db.DB) *MasterBusinessKombinasiTCO {
 	return &MasterBusinessKombinasiTCO{db: db}
 }
 
@@ -194,10 +195,10 @@ func (m *MasterBusinessKombinasiTCO) Daftar(ctx context.Context, k models.Kombin
 		return nil, err
 	}
 	q := sqlDaftarBusinessTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := m.db.bacaTCO(ctx).QueryContext(ctx, q, argKombinasi(k)...)
+	rows, err := bacaTCO(ctx, m.db).QueryContext(ctx, q, argKombinasi(k)...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca bisnis kombinasi: %w", err)
 	}
@@ -220,10 +221,10 @@ func (m *MasterBusinessKombinasiTCO) Ambil(ctx context.Context, k models.Kombina
 		return models.BusinessTreaty{}, err
 	}
 	q := sqlAmbilBusinessTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return models.BusinessTreaty{}, err
 	}
-	b, err := pindaiBusinessTCO(m.db.bacaTCO(ctx).QueryRowContext(ctx, q, append(argKombinasi(k), id)...))
+	b, err := pindaiBusinessTCO(bacaTCO(ctx, m.db).QueryRowContext(ctx, q, append(argKombinasi(k), id)...))
 	if errors.Is(err, sql.ErrNoRows) {
 		return models.BusinessTreaty{}, ErrBusinessTidakAda
 	}
@@ -234,7 +235,7 @@ func (m *MasterBusinessKombinasiTCO) Ambil(ctx context.Context, k models.Kombina
 }
 
 // CariDobel mencari baris LAIN berkode bisnis sama pada kombinasi.
-func (m *MasterBusinessKombinasiTCO) CariDobel(ctx context.Context, tx *Tx, k models.KombinasiTCO, bizCode, kecualiID string) (string, error) {
+func (m *MasterBusinessKombinasiTCO) CariDobel(ctx context.Context, tx *db.Tx, k models.KombinasiTCO, bizCode, kecualiID string) (string, error) {
 	if tx == nil {
 		return "", errors.New("repository: pencarian dobel bisnis menuntut transaksi")
 	}
@@ -243,12 +244,12 @@ func (m *MasterBusinessKombinasiTCO) CariDobel(ctx context.Context, tx *Tx, k mo
 		return "", err
 	}
 	q := sqlCariDobelBusinessTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return "", err
 	}
 	var id string
-	err = tx.tx.QueryRowContext(ctx, q, append(argKombinasi(k), bizCode, kosongJadiNil(kecualiID),
-		kosongJadiNil(kecualiID))...).Scan(&id)
+	err = tx.QueryRowContext(ctx, q, append(argKombinasi(k), bizCode, db.KosongJadiNil(kecualiID),
+		db.KosongJadiNil(kecualiID))...).Scan(&id)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", nil
 	}
@@ -259,7 +260,7 @@ func (m *MasterBusinessKombinasiTCO) CariDobel(ctx context.Context, tx *Tx, k mo
 }
 
 // Sisip menulis baris bisnis baru; ID dari `TREATY_BUSINESS_SEQ`.
-func (m *MasterBusinessKombinasiTCO) Sisip(ctx context.Context, tx *Tx, b models.BusinessTreaty) (string, error) {
+func (m *MasterBusinessKombinasiTCO) Sisip(ctx context.Context, tx *db.Tx, b models.BusinessTreaty) (string, error) {
 	if tx == nil {
 		return "", errors.New("repository: menyisipkan bisnis menuntut transaksi")
 	}
@@ -267,26 +268,26 @@ func (m *MasterBusinessKombinasiTCO) Sisip(ctx context.Context, tx *Tx, b models
 	if err != nil {
 		return "", err
 	}
-	id, err := m.db.IdentitasBerikutTCO(ctx, tx, SeqBusinessTCO)
+	id, err := IdentitasBerikutTCO(ctx, m.db, tx, SeqBusinessTCO)
 	if err != nil {
 		return "", err
 	}
 	q := sqlSisipBusinessTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return "", err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, id, kosongJadiNil(b.IsActive), kosongJadiNil(b.TreatyYear),
-		kosongJadiNil(b.TreatyYearID), kosongJadiNil(b.TreatyGroupID), kosongJadiNil(b.TreatyGroupName),
-		kosongJadiNil(b.ReinsTypeID), kosongJadiNil(b.ReinsTypeName), kosongJadiNil(b.BizCode),
-		kosongJadiNil(b.BizName), kosongJadiNil(b.UserID), kosongJadiNil(StempelPegaTCO(b.TglUpdate)))
+	hasil, err := tx.ExecContext(ctx, q, id, db.KosongJadiNil(b.IsActive), db.KosongJadiNil(b.TreatyYear),
+		db.KosongJadiNil(b.TreatyYearID), db.KosongJadiNil(b.TreatyGroupID), db.KosongJadiNil(b.TreatyGroupName),
+		db.KosongJadiNil(b.ReinsTypeID), db.KosongJadiNil(b.ReinsTypeName), db.KosongJadiNil(b.BizCode),
+		db.KosongJadiNil(b.BizName), db.KosongJadiNil(b.UserID), db.KosongJadiNil(StempelPegaTCO(b.TglUpdate)))
 	if err != nil {
 		return "", fmt.Errorf("repository: menyisipkan bisnis: %w", err)
 	}
-	return id, pastikanSatuBaris(hasil, "penyisipan bisnis")
+	return id, db.PastikanSatuBaris(hasil, "penyisipan bisnis")
 }
 
 // Perbarui menimpa SELURUH medan non-kunci baris bisnis (AC 23).
-func (m *MasterBusinessKombinasiTCO) Perbarui(ctx context.Context, tx *Tx, b models.BusinessTreaty) error {
+func (m *MasterBusinessKombinasiTCO) Perbarui(ctx context.Context, tx *db.Tx, b models.BusinessTreaty) error {
 	if tx == nil {
 		return errors.New("repository: memperbarui bisnis menuntut transaksi")
 	}
@@ -295,11 +296,11 @@ func (m *MasterBusinessKombinasiTCO) Perbarui(ctx context.Context, tx *Tx, b mod
 		return err
 	}
 	q := sqlPerbaruiBusinessTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, kosongJadiNil(b.IsActive), kosongJadiNil(b.BizCode),
-		kosongJadiNil(b.BizName), kosongJadiNil(b.UserID), kosongJadiNil(StempelPegaTCO(b.TglUpdate)),
+	hasil, err := tx.ExecContext(ctx, q, db.KosongJadiNil(b.IsActive), db.KosongJadiNil(b.BizCode),
+		db.KosongJadiNil(b.BizName), db.KosongJadiNil(b.UserID), db.KosongJadiNil(StempelPegaTCO(b.TglUpdate)),
 		b.ID, b.TreatyYear, b.TreatyGroupID, b.ReinsTypeID)
 	if err != nil {
 		return fmt.Errorf("repository: memperbarui bisnis %s: %w", b.ID, err)
@@ -307,11 +308,11 @@ func (m *MasterBusinessKombinasiTCO) Perbarui(ctx context.Context, tx *Tx, b mod
 	if n, err := hasil.RowsAffected(); err == nil && n == 0 {
 		return ErrBusinessTidakAda
 	}
-	return pastikanSatuBaris(hasil, "pembaruan bisnis")
+	return db.PastikanSatuBaris(hasil, "pembaruan bisnis")
 }
 
 // Hapus membuang SATU baris bisnis dari SATU tabel.
-func (m *MasterBusinessKombinasiTCO) Hapus(ctx context.Context, tx *Tx, k models.KombinasiTCO, id string) error {
+func (m *MasterBusinessKombinasiTCO) Hapus(ctx context.Context, tx *db.Tx, k models.KombinasiTCO, id string) error {
 	if tx == nil {
 		return errors.New("repository: menghapus bisnis menuntut transaksi")
 	}
@@ -320,15 +321,15 @@ func (m *MasterBusinessKombinasiTCO) Hapus(ctx context.Context, tx *Tx, k models
 		return err
 	}
 	q := sqlHapusBusinessTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, id, k.TreatyYear, k.TreatyGroupID, k.ReinsTypeID)
+	hasil, err := tx.ExecContext(ctx, q, id, k.TreatyYear, k.TreatyGroupID, k.ReinsTypeID)
 	if err != nil {
 		return fmt.Errorf("repository: menghapus bisnis %s: %w", id, err)
 	}
 	if n, err := hasil.RowsAffected(); err == nil && n == 0 {
 		return ErrBusinessTidakAda
 	}
-	return pastikanSatuBaris(hasil, "penghapusan bisnis")
+	return db.PastikanSatuBaris(hasil, "penghapusan bisnis")
 }

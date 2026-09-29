@@ -14,6 +14,10 @@ import (
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
 	"nusantarare/internal/services"
+	"nusantarare/inti/db"
+	"nusantarare/inti/layanan"
+	"nusantarare/inti/outbox"
+	"nusantarare/inti/unggah"
 )
 
 type tokenTersimpanUji struct {
@@ -39,7 +43,7 @@ func (p *penyimpanTokenUji) AppStorage(context.Context) (string, error) {
 }
 
 // TokenBerlaku meniru `INPUTDATE > saat + sisaMinimum` kueri Oracle-nya.
-func (p *penyimpanTokenUji) TokenBerlaku(_ context.Context, _ *repository.Tx, _ string, _ time.Time,
+func (p *penyimpanTokenUji) TokenBerlaku(_ context.Context, _ *db.Tx, _ string, _ time.Time,
 	sisaMinimum time.Duration) (string, time.Duration, error) {
 	p.dibaca++
 	p.minimum = append(p.minimum, sisaMinimum)
@@ -48,7 +52,7 @@ func (p *penyimpanTokenUji) TokenBerlaku(_ context.Context, _ *repository.Tx, _ 
 	}
 	return p.lama, p.sisa, nil
 }
-func (p *penyimpanTokenUji) SimpanToken(_ context.Context, _ *repository.Tx, app, token, pengguna string, sampai time.Time) error {
+func (p *penyimpanTokenUji) SimpanToken(_ context.Context, _ *db.Tx, app, token, pengguna string, sampai time.Time) error {
 	if p.simpanErr != nil {
 		return p.simpanErr
 	}
@@ -82,7 +86,7 @@ func TestSumberTokenStoragePakaiUlangAtauTerbitkan(t *testing.T) {
 
 	baru := &penyimpanTokenUji{app: appUjiStorage}
 	tok, exp, err = services.NewSumberTokenStorageTCO(transaksiUji, baru, garamUjiStorage, jam).TokenBaru(ctx)
-	mau, _ := services.RakitToken(garamUjiStorage, saat)
+	mau, _ := layanan.RakitToken(garamUjiStorage, saat)
 	if err != nil || tok != mau || !exp.Equal(saat.Add(time.Minute)) {
 		t.Fatalf("terbitkan: %v %v", exp, err)
 	}
@@ -96,14 +100,14 @@ func TestSumberTokenStorageGagalTerangTanpaMembocorkan(t *testing.T) {
 	ctx := context.Background()
 	for _, garam := range []string{"", "   "} {
 		p := &penyimpanTokenUji{app: appUjiStorage}
-		if _, _, err := services.NewSumberTokenStorageTCO(transaksiUji, p, garam, jam).TokenBaru(ctx); !errors.Is(err, services.ErrGaramTokenKosong) || p.dibaca != 0 {
+		if _, _, err := services.NewSumberTokenStorageTCO(transaksiUji, p, garam, jam).TokenBaru(ctx); !errors.Is(err, layanan.ErrGaramTokenKosong) || p.dibaca != 0 {
 			t.Errorf("garam %q: %v, dibaca %d", garam, err, p.dibaca)
 		}
 	}
-	if _, _, err := services.NewSumberTokenStorageTCO(transaksiUji, nil, garamUjiStorage, jam).TokenBaru(ctx); !errors.Is(err, repository.ErrTanpaOracle) {
+	if _, _, err := services.NewSumberTokenStorageTCO(transaksiUji, nil, garamUjiStorage, jam).TokenBaru(ctx); !errors.Is(err, db.ErrTanpaOracle) {
 		t.Errorf("tanpa penyimpan: %v", err)
 	}
-	if _, _, err := services.NewSumberTokenStorageTCO(transaksiUji, &penyimpanTokenUji{}, garamUjiStorage, jam).TokenBaru(ctx); !errors.Is(err, services.ErrAppNameKosong) {
+	if _, _, err := services.NewSumberTokenStorageTCO(transaksiUji, &penyimpanTokenUji{}, garamUjiStorage, jam).TokenBaru(ctx); !errors.Is(err, layanan.ErrAppNameKosong) {
 		t.Errorf("App kosong: %v", err)
 	}
 	p := &penyimpanTokenUji{app: appUjiStorage, simpanErr: errors.New("repository: menyimpan token penyimpanan untuk \"UJI-APP\"")}
@@ -111,7 +115,7 @@ func TestSumberTokenStorageGagalTerangTanpaMembocorkan(t *testing.T) {
 	if err == nil {
 		t.Fatal("galat simpan ditelan")
 	}
-	mau, _ := services.RakitToken(garamUjiStorage, jam())
+	mau, _ := layanan.RakitToken(garamUjiStorage, jam())
 	if strings.Contains(err.Error(), garamUjiStorage) || strings.Contains(err.Error(), mau) {
 		t.Errorf("galat memuat garam/token: %v", err)
 	}
@@ -135,7 +139,7 @@ func TestPenyimpananLampiranPilihanPelaksana(t *testing.T) {
 		t.Fatal("pelaksana nyata tidak terpasang")
 	}
 	// Tanpa Oracle tidak ada alamat yang dapat di-resolve: gagal terang, tanpa panggilan keluar.
-	if _, err := k.Simpan(context.Background(), kunciUjiStorage, strings.NewReader("x"), "", ""); !errors.Is(err, repository.ErrTanpaOracle) {
+	if _, err := k.Simpan(context.Background(), kunciUjiStorage, strings.NewReader("x"), "", ""); !errors.Is(err, db.ErrTanpaOracle) {
 		t.Errorf("tanpa Oracle: %v", err)
 	}
 	if svc.PenyimpananLampiranNyataTCO() {
@@ -147,13 +151,13 @@ func TestPenyimpananLampiranPilihanPelaksana(t *testing.T) {
 func TestLampiranGalatStorageNyataPermanen(t *testing.T) {
 	for _, gagal := range []error{
 		fmt.Errorf("%w: status 400", services.ErrStorageMenolakPermintaanTCO),
-		fmt.Errorf("%w: %w", services.ErrTokenPenyimpananGagal, services.ErrGaramTokenKosong),
+		fmt.Errorf("%w: %w", services.ErrTokenPenyimpananGagal, layanan.ErrGaramTokenKosong),
 		fmt.Errorf("%w: %w", services.ErrTokenPenyimpananGagal, repository.ErrAppStorageKosongTCO),
 	} {
 		r := rakitanLampiran(t)
 		r.simpan.setelGagal(gagal, false)
 		h := r.unggah(t, "1000001", "a.pdf", "ISI")
-		if h.Lampiran.Status != models.StatusLampiranGagal || r.antrean.cacahStatus(services.JenisEfekStorageUnggah, repository.StatusEfekGagalPermanen) != 1 {
+		if h.Lampiran.Status != models.StatusLampiranGagal || r.antrean.cacahStatus(unggah.JenisEfekStorageUnggah, outbox.StatusEfekGagalPermanen) != 1 {
 			t.Errorf("%v: status %q", gagal, h.Lampiran.Status)
 		}
 	}

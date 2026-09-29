@@ -9,6 +9,7 @@ import (
 
 	"nusantarare/internal/repository"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
 )
 
 type pembacaUji struct {
@@ -20,14 +21,14 @@ func (p pembacaUji) DaftarNonLife(context.Context) ([]repository.JenisReasuransi
 	return p.baris, p.err
 }
 
-var pelakuUjiTCO = services.Pelaku{AkunID: "UJI-ADMIN"}
+var pelakuUjiTCO = inti.Pelaku{AkunID: "UJI-ADMIN"}
 
 func TestJenisReasuransiTanpaIdentitasDitolak(t *testing.T) {
 	svc := services.New(nil).JenisReasuransiTreaty().DenganPembaca(pembacaUji{
 		baris: []repository.JenisReasuransiTCO{{ID: "10003", Note: "UJI QS", Tipe: "1"}},
 	})
-	_, err := svc.Daftar(context.Background(), services.Pelaku{})
-	if !errors.Is(err, services.ErrTanpaIdentitas) {
+	_, err := svc.Daftar(context.Background(), inti.Pelaku{})
+	if !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("tanpa identitas: %v", err)
 	}
 }

@@ -34,6 +34,8 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"nusantarare/inti/db"
 )
 
 // AnggotaTangga adalah satu anggota komite yang akan ditulis ke tangganya.
@@ -57,7 +59,7 @@ const approvalAwal = "0"
 //
 // Mengembalikan pengenal kasus (`KMTLF-xxxxxx`), yang sekaligus menjadi
 // `T_GENERAL_KOMITE.ID` - shared primary key.
-func (r *PohonKlaim) BuatKasusKomite(ctx context.Context, tx *Tx,
+func (r *PohonKlaim) BuatKasusKomite(ctx context.Context, tx *db.Tx,
 	klaimID, adjustmentID, lini, tipe string, anggota []AnggotaTangga,
 	saat time.Time) (string, error) {
 
@@ -78,15 +80,15 @@ func (r *PohonKlaim) BuatKasusKomite(ctx context.Context, tx *Tx,
 	qWork := fmt.Sprintf(`INSERT INTO %s
 		(ID, COVER_KEY, LINI, TYPE, TGL_UPDATE)
 		VALUES (:1,:2,:3,:4,:5)`, work)
-	if err := PeriksaSQL(qWork); err != nil {
+	if err := db.PeriksaSQL(qWork); err != nil {
 		return "", err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, qWork, kasusID,
-		kosongJadiNil(klaimID), kosongJadiNil(lini), kosongJadiNil(tipe), saat)
+	hasil, err := tx.ExecContext(ctx, qWork, kasusID,
+		db.KosongJadiNil(klaimID), db.KosongJadiNil(lini), db.KosongJadiNil(tipe), saat)
 	if err != nil {
 		return "", fmt.Errorf("repository: melahirkan work object komite: %w", err)
 	}
-	if err := pastikanSatuBaris(hasil, "kelahiran work object komite"); err != nil {
+	if err := db.PastikanSatuBaris(hasil, "kelahiran work object komite"); err != nil {
 		return "", err
 	}
 
@@ -98,17 +100,17 @@ func (r *PohonKlaim) BuatKasusKomite(ctx context.Context, tx *Tx,
 	qGen := fmt.Sprintf(`INSERT INTO %s
 		(ID, ADJUSTMENT_ID, KOMITE_LOOP, KOMITE_COUNT)
 		VALUES (:1,:2,:3,:4)`, gen)
-	if err := PeriksaSQL(qGen); err != nil {
+	if err := db.PeriksaSQL(qGen); err != nil {
 		return "", err
 	}
 	// ⛔ `KOMITE_COUNT = 1` seperti XML (1398), dan `KOMITE_LOOP` dari cacah
 	// anggota (1322). `ACCEPT_STATUS` sengaja dibiarkan KOSONG: belum ada
 	// keputusan, dan kosong berbeda dari nol (ADR-U-0027).
-	hasil, err = tx.tx.ExecContext(ctx, qGen, kasusID, adjustmentID, len(anggota), 1)
+	hasil, err = tx.ExecContext(ctx, qGen, kasusID, adjustmentID, len(anggota), 1)
 	if err != nil {
 		return "", fmt.Errorf("repository: melahirkan kasus komite: %w", err)
 	}
-	if err := pastikanSatuBaris(hasil, "kelahiran kasus komite"); err != nil {
+	if err := db.PastikanSatuBaris(hasil, "kelahiran kasus komite"); err != nil {
 		return "", err
 	}
 
@@ -121,21 +123,21 @@ func (r *PohonKlaim) BuatKasusKomite(ctx context.Context, tx *Tx,
 		(ID, DATA_KOMITE_ID, KOMITE_URUT, KOMITE_OPERATORID, KOMITE_JABATAN,
 		 KOMITE_EMAIL, KOMITE_APPROVAL)
 		VALUES (:1,:2,:3,:4,:5,:6,:7)`, list)
-	if err := PeriksaSQL(qList); err != nil {
+	if err := db.PeriksaSQL(qList); err != nil {
 		return "", err
 	}
 	for _, a := range anggota {
-		id, err := r.nomorBerikut(ctx, tx, "SEQ_KOMITE_KOMITELIST")
+		id, err := r.db.NomorBerikut(ctx, tx, "SEQ_KOMITE_KOMITELIST")
 		if err != nil {
 			return "", err
 		}
-		hasil, err := tx.tx.ExecContext(ctx, qList, id, kasusID, a.Urut,
-			kosongJadiNil(a.OperatorID), kosongJadiNil(a.Jabatan),
-			kosongJadiNil(a.Email), approvalAwal)
+		hasil, err := tx.ExecContext(ctx, qList, id, kasusID, a.Urut,
+			db.KosongJadiNil(a.OperatorID), db.KosongJadiNil(a.Jabatan),
+			db.KosongJadiNil(a.Email), approvalAwal)
 		if err != nil {
 			return "", fmt.Errorf("repository: menulis anggota tangga komite: %w", err)
 		}
-		if err := pastikanSatuBaris(hasil, "penulisan anggota tangga komite"); err != nil {
+		if err := db.PastikanSatuBaris(hasil, "penulisan anggota tangga komite"); err != nil {
 			return "", err
 		}
 	}

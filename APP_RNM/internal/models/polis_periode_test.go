@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/penomor"
 )
 
 // wib menyusun waktu dalam zona Jakarta.
@@ -27,7 +28,7 @@ func TestPerbandinganLebihBesarBukanLebihBesarSama(t *testing.T) {
 	const tutupBuku = 25
 
 	// Tepat pada tanggal tutup buku -> TETAP di periode berjalan.
-	sama, err := models.PeriodeProduksi(tutupBuku, wib(2026, time.September, 25, 23))
+	sama, err := penomor.PeriodeProduksi(tutupBuku, wib(2026, time.September, 25, 23))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,7 +37,7 @@ func TestPerbandinganLebihBesarBukanLebihBesarSama(t *testing.T) {
 	}
 
 	// Sehari sesudahnya -> bulan berikutnya.
-	sesudah, err := models.PeriodeProduksi(tutupBuku, wib(2026, time.September, 26, 0))
+	sesudah, err := penomor.PeriodeProduksi(tutupBuku, wib(2026, time.September, 26, 0))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,15 +48,15 @@ func TestPerbandinganLebihBesarBukanLebihBesarSama(t *testing.T) {
 
 func TestPeriodeSelaluTanggalSatuJamLimaGMT(t *testing.T) {
 	// VERBATIM `+"01T050000.000 GMT"`.
-	p, err := models.PeriodeProduksi(25, wib(2026, time.September, 26, 10))
+	p, err := penomor.PeriodeProduksi(25, wib(2026, time.September, 26, 10))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if p.Day() != 1 {
 		t.Errorf("hari = %d, mau 1", p.Day())
 	}
-	if p.UTC().Hour() != models.JamPeriodeGMT {
-		t.Errorf("jam UTC = %d, mau %d", p.UTC().Hour(), models.JamPeriodeGMT)
+	if p.UTC().Hour() != penomor.JamPeriodeGMT {
+		t.Errorf("jam UTC = %d, mau %d", p.UTC().Hour(), penomor.JamPeriodeGMT)
 	}
 	if p.Minute() != 0 || p.Second() != 0 {
 		t.Errorf("periode bukan pada jam bulat: %s", p)
@@ -64,7 +65,7 @@ func TestPeriodeSelaluTanggalSatuJamLimaGMT(t *testing.T) {
 
 func TestPergantianTahunBukanBulanTigaBelas(t *testing.T) {
 	// ⛔ `CurrentMonth+1` di Pega menghasilkan "13" untuk Desember.
-	p, err := models.PeriodeProduksi(25, wib(2026, time.December, 31, 9))
+	p, err := penomor.PeriodeProduksi(25, wib(2026, time.December, 31, 9))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,14 +80,14 @@ func TestTabelKosongDITOLAK_BukanDiamDiamPakai25(t *testing.T) {
 	// kami menolak. Fallback diam membukukan transaksi ke periode yang SALAH
 	// tanpa meninggalkan jejak.
 	for _, kosong := range []int{0, -1} {
-		_, err := models.PeriodeProduksi(kosong, wib(2026, time.September, 26, 10))
-		if !errors.Is(err, models.ErrTanggalTutupBukuKosong) {
+		_, err := penomor.PeriodeProduksi(kosong, wib(2026, time.September, 26, 10))
+		if !errors.Is(err, penomor.ErrTanggalTutupBukuKosong) {
 			t.Errorf("tutup buku %d: %v, mau ErrTanggalTutupBukuKosong", kosong, err)
 		}
 	}
 	// ⛔ Dan pesannya MENYEBUT TABEL SUMBERNYA. Galat yang hanya berkata
 	// "periode tidak dapat ditentukan" membuat orang mencari di kode.
-	pesan := models.ErrTanggalTutupBukuKosong.Error()
+	pesan := penomor.ErrTanggalTutupBukuKosong.Error()
 	if !strings.Contains(pesan, "POOLDATA.TANGGAL_CLOSING") {
 		t.Errorf("pesan tidak menyebut tabel sumbernya: %s", pesan)
 	}
@@ -97,8 +98,8 @@ func TestTabelKosongDITOLAK_BukanDiamDiamPakai25(t *testing.T) {
 }
 
 func TestTanggalTutupBukuTidakMasukAkalDitolak(t *testing.T) {
-	_, err := models.PeriodeProduksi(32, wib(2026, time.September, 10, 10))
-	if !errors.Is(err, models.ErrTanggalTutupBukuTidakMasukAkal) {
+	_, err := penomor.PeriodeProduksi(32, wib(2026, time.September, 10, 10))
+	if !errors.Is(err, penomor.ErrTanggalTutupBukuTidakMasukAkal) {
 		t.Errorf("tutup buku 32: %v", err)
 	}
 }
@@ -110,7 +111,7 @@ func TestZonaJakartaMenentukanHarinya(t *testing.T) {
 	//
 	// 2026-09-25 20:00 UTC = 2026-09-26 03:00 WIB -> sudah lewat tutup buku.
 	utcMalam := time.Date(2026, time.September, 25, 20, 0, 0, 0, time.UTC)
-	p, err := models.PeriodeProduksi(25, utcMalam)
+	p, err := penomor.PeriodeProduksi(25, utcMalam)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -122,7 +123,7 @@ func TestZonaJakartaMenentukanHarinya(t *testing.T) {
 
 func TestPeriodeTeksUntukLayar(t *testing.T) {
 	// Periode HARUS terlihat pemakai sebelum ia menyimpan.
-	p, err := models.PeriodeProduksi(25, wib(2026, time.September, 10, 10))
+	p, err := penomor.PeriodeProduksi(25, wib(2026, time.September, 10, 10))
 	if err != nil {
 		t.Fatal(err)
 	}

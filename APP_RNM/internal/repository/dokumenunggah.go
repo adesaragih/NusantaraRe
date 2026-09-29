@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/db"
 )
 
 // ErrDokumenTidakAda - baris dokumen yang diminta bukan milik klaim itu.
@@ -63,7 +64,7 @@ func sqlSisipDokumen(tabel string) string {
 // di jalur ini. Yang didapat: berkas yang sudah mendarat tidak pernah tanpa
 // catatan. Layar sudah lebih dulu menandai baris ber-`T_STORAGE_ID` kosong
 // sebagai "belum terunggah" - penyimpangan yang dicatat sejak `AmbilDokumen`.
-func (r *KlaimLife) SisipDokumen(ctx context.Context, tx *Tx,
+func (r *KlaimLife) SisipDokumen(ctx context.Context, tx *db.Tx,
 	d models.Dokumen, saat time.Time) error {
 
 	tabel, err := r.db.Qualify("T_CLAIMLF_DOCUMENT")
@@ -71,17 +72,17 @@ func (r *KlaimLife) SisipDokumen(ctx context.Context, tx *Tx,
 		return err
 	}
 	q := sqlSisipDokumen(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, d.ID, d.PesertaID,
-		kosongJadiNil(d.NamaFile), kosongJadiNil(d.Mime),
-		kosongJadiNil(d.Kategori1), kosongJadiNil(d.Kategori2),
-		saat, kosongJadiNil(d.TStorageID))
+	hasil, err := tx.ExecContext(ctx, q, d.ID, d.PesertaID,
+		db.KosongJadiNil(d.NamaFile), db.KosongJadiNil(d.Mime),
+		db.KosongJadiNil(d.Kategori1), db.KosongJadiNil(d.Kategori2),
+		saat, db.KosongJadiNil(d.TStorageID))
 	if err != nil {
 		return fmt.Errorf("repository: menyisip dokumen: %w", err)
 	}
-	return pastikanSatuBaris(hasil, "penyisipan dokumen")
+	return db.PastikanSatuBaris(hasil, "penyisipan dokumen")
 }
 
 // SatuDokumen membaca satu baris dokumen milik sebuah klaim.
@@ -105,14 +106,14 @@ func (r *KlaimLife) SatuDokumen(ctx context.Context, klaimID string, id int64) (
 		        d.KATEGORI_1, d.KATEGORI_2, d.T_STORAGE_ID
 		   FROM %s d JOIN %s p ON p.ID = d.PREMIUM_LIST_DETAIL_ID
 		  WHERE p.CLAIM_ID = :1 AND d.ID = :2 AND p.STS_HAPUS IS NULL`, dok, pes)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return models.Dokumen{}, err
 	}
 	var (
 		pesertaID, nama, mime, kat1, kat2, storage sql.NullString
 		baca                                       sql.NullInt64
 	)
-	err = r.db.sql.QueryRowContext(ctx, q, klaimID, id).Scan(&pesertaID, &baca,
+	err = r.db.QueryRowContext(ctx, q, klaimID, id).Scan(&pesertaID, &baca,
 		&nama, &mime, &kat1, &kat2, &storage)
 	if errors.Is(err, sql.ErrNoRows) {
 		return models.Dokumen{}, ErrDokumenTidakAda
@@ -133,20 +134,20 @@ func (r *KlaimLife) SatuDokumen(ctx context.Context, klaimID string, id int64) (
 // TANPA prasyarat - barisnya dihapus apa pun keadaan penyimpanannya. Yang
 // berprasyarat hanya panggilan ke penyimpanan (b472, `WhenTrue=3` LEWATI
 // bila `T_STORAGE_ID` kosong), dan itu tinggal di `models.PerluHapusDiPenyimpanan`.
-func (r *KlaimLife) HapusDokumen(ctx context.Context, tx *Tx, id int64) error {
+func (r *KlaimLife) HapusDokumen(ctx context.Context, tx *db.Tx, id int64) error {
 	tabel, err := r.db.Qualify("T_CLAIMLF_DOCUMENT")
 	if err != nil {
 		return err
 	}
 	q := fmt.Sprintf(`DELETE FROM %s WHERE ID = :1`, tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, id)
+	hasil, err := tx.ExecContext(ctx, q, id)
 	if err != nil {
 		return fmt.Errorf("repository: menghapus dokumen: %w", err)
 	}
-	return pastikanSatuBaris(hasil, "penghapusan dokumen")
+	return db.PastikanSatuBaris(hasil, "penghapusan dokumen")
 }
 
 // sqlSisipKartuBerkas merakit penulisan kartu penyimpanan.
@@ -179,39 +180,39 @@ type KartuBerkas struct {
 }
 
 // SisipKartuBerkas menulis kartu penyimpanan satu berkas.
-func (r *KlaimLife) SisipKartuBerkas(ctx context.Context, tx *Tx, k KartuBerkas) error {
+func (r *KlaimLife) SisipKartuBerkas(ctx context.Context, tx *db.Tx, k KartuBerkas) error {
 	tabel, err := r.db.Qualify("T_CLAIMLF_STORAGE")
 	if err != nil {
 		return err
 	}
 	q := sqlSisipKartuBerkas(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, k.ImageID, kosongJadiNil(k.URLPublic),
-		kosongJadiNil(k.AppFolder), waktuJadiNil(k.ExpDate),
-		kosongJadiNil(k.FileName), kosongJadiNil(k.AppName),
-		kosongJadiNil(k.Storage), waktuJadiNil(k.TanggalUpload))
+	hasil, err := tx.ExecContext(ctx, q, k.ImageID, db.KosongJadiNil(k.URLPublic),
+		db.KosongJadiNil(k.AppFolder), waktuJadiNil(k.ExpDate),
+		db.KosongJadiNil(k.FileName), db.KosongJadiNil(k.AppName),
+		db.KosongJadiNil(k.Storage), waktuJadiNil(k.TanggalUpload))
 	if err != nil {
 		return fmt.Errorf("repository: menyisip kartu berkas: %w", err)
 	}
-	return pastikanSatuBaris(hasil, "penyisipan kartu berkas")
+	return db.PastikanSatuBaris(hasil, "penyisipan kartu berkas")
 }
 
 // HapusKartuBerkas membuang kartu penyimpanan satu berkas.
 //
 // ⚠️ Nol baris terpengaruh SAH: dokumen yang efek unggahnya belum selesai
 // belum punya kartu. `pastikanSatuBaris` karena itu tidak dipakai.
-func (r *KlaimLife) HapusKartuBerkas(ctx context.Context, tx *Tx, imageID string) error {
+func (r *KlaimLife) HapusKartuBerkas(ctx context.Context, tx *db.Tx, imageID string) error {
 	tabel, err := r.db.Qualify("T_CLAIMLF_STORAGE")
 	if err != nil {
 		return err
 	}
 	q := fmt.Sprintf(`DELETE FROM %s WHERE IMAGEID = :1`, tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	if _, err := tx.tx.ExecContext(ctx, q, imageID); err != nil {
+	if _, err := tx.ExecContext(ctx, q, imageID); err != nil {
 		return fmt.Errorf("repository: menghapus kartu berkas: %w", err)
 	}
 	return nil
@@ -235,11 +236,11 @@ func (r *KlaimLife) TautanBerkas(ctx context.Context, imageID string) (string, e
 		return "", err
 	}
 	q := sqlTautanBerkas(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return "", err
 	}
 	var url sql.NullString
-	err = r.db.sql.QueryRowContext(ctx, q, imageID).Scan(&url)
+	err = r.db.QueryRowContext(ctx, q, imageID).Scan(&url)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", nil
 	}
@@ -254,7 +255,7 @@ func (r *KlaimLife) TautanBerkas(ctx context.Context, imageID string) (string, e
 // ⛔ Syarat WHERE menyertakan `T_STORAGE_ID IS NULL`: efek yang terlanjur
 // dijalankan dua kali tidak menimpa kartu yang sudah tertaut. Outbox menjamin
 // SETIDAKNYA sekali, bukan tepat sekali.
-func (r *KlaimLife) TandaiDokumenTerunggah(ctx context.Context, tx *Tx,
+func (r *KlaimLife) TandaiDokumenTerunggah(ctx context.Context, tx *db.Tx,
 	id int64, imageID string) error {
 
 	tabel, err := r.db.Qualify("T_CLAIMLF_DOCUMENT")
@@ -263,10 +264,10 @@ func (r *KlaimLife) TandaiDokumenTerunggah(ctx context.Context, tx *Tx,
 	}
 	q := fmt.Sprintf(`UPDATE %s SET T_STORAGE_ID = :1
 		 WHERE ID = :2 AND T_STORAGE_ID IS NULL`, tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	if _, err := tx.tx.ExecContext(ctx, q, imageID, id); err != nil {
+	if _, err := tx.ExecContext(ctx, q, imageID, id); err != nil {
 		return fmt.Errorf("repository: menandai dokumen terunggah: %w", err)
 	}
 	return nil
@@ -291,11 +292,11 @@ func (r *KlaimLife) KlaimDokumen(ctx context.Context, id int64) (string, error) 
 	q := fmt.Sprintf(
 		`SELECT p.CLAIM_ID FROM %s d JOIN %s p ON p.ID = d.PREMIUM_LIST_DETAIL_ID
 		  WHERE d.ID = :1 AND p.STS_HAPUS IS NULL`, dok, pes)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return "", err
 	}
 	var klaim sql.NullString
-	err = r.db.sql.QueryRowContext(ctx, q, id).Scan(&klaim)
+	err = r.db.QueryRowContext(ctx, q, id).Scan(&klaim)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", ErrDokumenTidakAda
 	}

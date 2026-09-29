@@ -42,7 +42,13 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/layanan"
+	"nusantarare/inti/outbox"
+	"nusantarare/inti/unggah"
+	"nusantarare/inti/utils"
 )
 
 const (
@@ -100,22 +106,22 @@ var (
 type GudangLampiranTCO interface {
 	Daftar(ctx context.Context, tahunID string) ([]repository.BarisLampiranTCO, error)
 	Ambil(ctx context.Context, tahunID, id string) (repository.BarisLampiranTCO, error)
-	AmbilUntukKirim(ctx context.Context, tx *repository.Tx, id string) (models.LampiranTCO, error)
-	Sisip(ctx context.Context, tx *repository.Tx, l models.LampiranTCO) (string, error)
-	Hapus(ctx context.Context, tx *repository.Tx, tahunID, id string) error
+	AmbilUntukKirim(ctx context.Context, tx *db.Tx, id string) (models.LampiranTCO, error)
+	Sisip(ctx context.Context, tx *db.Tx, l models.LampiranTCO) (string, error)
+	Hapus(ctx context.Context, tx *db.Tx, tahunID, id string) error
 	// SimpanObjek - `Insert_T_Storage_SQL`: objek berkas tercatat = terkirim (tco4).
-	SimpanObjek(ctx context.Context, tx *repository.Tx, o models.ObjekPenyimpananTCO) error
+	SimpanObjek(ctx context.Context, tx *db.Tx, o models.ObjekPenyimpananTCO) error
 	// HapusObjek - `DeleteStorage_SQL`: catatan objek dibuang.
-	HapusObjek(ctx context.Context, tx *repository.Tx, imageID string) error
+	HapusObjek(ctx context.Context, tx *db.Tx, imageID string) error
 }
 
 // AntreanLampiranTCO adalah outbox yang dipakai lampiran, sudah bermodul.
 type AntreanLampiranTCO interface {
-	Antre(ctx context.Context, tx *repository.Tx, jenis, rujukan, muatan string, saat time.Time) error
-	Pungut(ctx context.Context, tx *repository.Tx, saat time.Time) (repository.BarisEfekKeluar, error)
+	Antre(ctx context.Context, tx *db.Tx, jenis, rujukan, muatan string, saat time.Time) error
+	Pungut(ctx context.Context, tx *db.Tx, saat time.Time) (outbox.BarisEfekKeluar, error)
 	// PungutRujukan - satu efek jatuh tempo milik SATU rujukan (lampiran).
-	PungutRujukan(ctx context.Context, tx *repository.Tx, rujukan string, saat time.Time) (repository.BarisEfekKeluar, error)
-	Tuntaskan(ctx context.Context, tx *repository.Tx, id, status string, jadwal time.Time,
+	PungutRujukan(ctx context.Context, tx *db.Tx, rujukan string, saat time.Time) (outbox.BarisEfekKeluar, error)
+	Tuntaskan(ctx context.Context, tx *db.Tx, id, status string, jadwal time.Time,
 		galat string, saat time.Time) error
 }
 
@@ -153,34 +159,34 @@ func (gudangLampiranBelumDisuntik) Daftar(context.Context, string) ([]repository
 func (gudangLampiranBelumDisuntik) Ambil(context.Context, string, string) (repository.BarisLampiranTCO, error) {
 	return repository.BarisLampiranTCO{}, ErrGudangLampiranBelumDisuntik
 }
-func (gudangLampiranBelumDisuntik) AmbilUntukKirim(context.Context, *repository.Tx, string) (models.LampiranTCO, error) {
+func (gudangLampiranBelumDisuntik) AmbilUntukKirim(context.Context, *db.Tx, string) (models.LampiranTCO, error) {
 	return models.LampiranTCO{}, ErrGudangLampiranBelumDisuntik
 }
-func (gudangLampiranBelumDisuntik) Sisip(context.Context, *repository.Tx, models.LampiranTCO) (string, error) {
+func (gudangLampiranBelumDisuntik) Sisip(context.Context, *db.Tx, models.LampiranTCO) (string, error) {
 	return "", ErrGudangLampiranBelumDisuntik
 }
-func (gudangLampiranBelumDisuntik) Hapus(context.Context, *repository.Tx, string, string) error {
+func (gudangLampiranBelumDisuntik) Hapus(context.Context, *db.Tx, string, string) error {
 	return ErrGudangLampiranBelumDisuntik
 }
-func (gudangLampiranBelumDisuntik) SimpanObjek(context.Context, *repository.Tx, models.ObjekPenyimpananTCO) error {
+func (gudangLampiranBelumDisuntik) SimpanObjek(context.Context, *db.Tx, models.ObjekPenyimpananTCO) error {
 	return ErrGudangLampiranBelumDisuntik
 }
-func (gudangLampiranBelumDisuntik) HapusObjek(context.Context, *repository.Tx, string) error {
+func (gudangLampiranBelumDisuntik) HapusObjek(context.Context, *db.Tx, string) error {
 	return ErrGudangLampiranBelumDisuntik
 }
 
 type antreanLampiranBelumDisuntik struct{}
 
-func (antreanLampiranBelumDisuntik) Antre(context.Context, *repository.Tx, string, string, string, time.Time) error {
+func (antreanLampiranBelumDisuntik) Antre(context.Context, *db.Tx, string, string, string, time.Time) error {
 	return ErrAntreanLampiranBelumDisuntik
 }
-func (antreanLampiranBelumDisuntik) Pungut(context.Context, *repository.Tx, time.Time) (repository.BarisEfekKeluar, error) {
-	return repository.BarisEfekKeluar{}, ErrAntreanLampiranBelumDisuntik
+func (antreanLampiranBelumDisuntik) Pungut(context.Context, *db.Tx, time.Time) (outbox.BarisEfekKeluar, error) {
+	return outbox.BarisEfekKeluar{}, ErrAntreanLampiranBelumDisuntik
 }
-func (antreanLampiranBelumDisuntik) PungutRujukan(context.Context, *repository.Tx, string, time.Time) (repository.BarisEfekKeluar, error) {
-	return repository.BarisEfekKeluar{}, ErrAntreanLampiranBelumDisuntik
+func (antreanLampiranBelumDisuntik) PungutRujukan(context.Context, *db.Tx, string, time.Time) (outbox.BarisEfekKeluar, error) {
+	return outbox.BarisEfekKeluar{}, ErrAntreanLampiranBelumDisuntik
 }
-func (antreanLampiranBelumDisuntik) Tuntaskan(context.Context, *repository.Tx, string, string, time.Time, string, time.Time) error {
+func (antreanLampiranBelumDisuntik) Tuntaskan(context.Context, *db.Tx, string, string, time.Time, string, time.Time) error {
 	return ErrAntreanLampiranBelumDisuntik
 }
 
@@ -209,54 +215,57 @@ func (kategoriLampiranBelumDisuntik) Daftar(context.Context) ([]string, error) {
 
 type gudangLampiranOracle struct {
 	m  *repository.MasterLampiranTCO
-	db *repository.DB
+	db *db.DB
 }
 
 func (g gudangLampiranOracle) Daftar(ctx context.Context, tahunID string) ([]repository.BarisLampiranTCO, error) {
-	return g.m.Daftar(ctx, ModulTreatyContractOut, JenisEfekStorageUnggah, tahunID)
+	return g.m.Daftar(ctx, ModulTreatyContractOut, unggah.JenisEfekStorageUnggah, tahunID)
 }
 func (g gudangLampiranOracle) Ambil(ctx context.Context, tahunID, id string) (repository.BarisLampiranTCO, error) {
-	return g.m.Ambil(ctx, ModulTreatyContractOut, JenisEfekStorageUnggah, tahunID, id)
+	return g.m.Ambil(ctx, ModulTreatyContractOut, unggah.JenisEfekStorageUnggah, tahunID, id)
 }
-func (g gudangLampiranOracle) AmbilUntukKirim(ctx context.Context, tx *repository.Tx, id string) (models.LampiranTCO, error) {
+func (g gudangLampiranOracle) AmbilUntukKirim(ctx context.Context, tx *db.Tx, id string) (models.LampiranTCO, error) {
 	return g.m.AmbilUntukKirim(ctx, tx, id)
 }
-func (g gudangLampiranOracle) Sisip(ctx context.Context, tx *repository.Tx, l models.LampiranTCO) (string, error) {
+func (g gudangLampiranOracle) Sisip(ctx context.Context, tx *db.Tx, l models.LampiranTCO) (string, error) {
 	return g.m.Sisip(ctx, tx, l)
 }
-func (g gudangLampiranOracle) Hapus(ctx context.Context, tx *repository.Tx, tahunID, id string) error {
+func (g gudangLampiranOracle) Hapus(ctx context.Context, tx *db.Tx, tahunID, id string) error {
 	return g.m.Hapus(ctx, tx, tahunID, id)
 }
-func (g gudangLampiranOracle) SimpanObjek(ctx context.Context, tx *repository.Tx, o models.ObjekPenyimpananTCO) error {
+func (g gudangLampiranOracle) SimpanObjek(ctx context.Context, tx *db.Tx, o models.ObjekPenyimpananTCO) error {
 	return g.m.SimpanObjek(ctx, tx, o)
 }
-func (g gudangLampiranOracle) HapusObjek(ctx context.Context, tx *repository.Tx, imageID string) error {
+func (g gudangLampiranOracle) HapusObjek(ctx context.Context, tx *db.Tx, imageID string) error {
 	return g.m.HapusObjek(ctx, tx, imageID)
 }
 
 // GudangLampiranOracle menyusun gudang lampiran di atas Oracle.
 func GudangLampiranOracle(svc *Service) GudangLampiranTCO {
-	return gudangLampiranOracle{m: repository.NewMasterLampiranTCO(svc.db), db: svc.db}
+	return gudangLampiranOracle{m: repository.NewMasterLampiranTCO(svc.DB()), db: svc.DB()}
 }
 
-type antreanLampiranOracle struct{ pohon *repository.PohonKlaim }
+type antreanLampiranOracle struct {
+	outbox *outbox.Penyimpan
+	pohon  *repository.PohonKlaim
+}
 
-func (a antreanLampiranOracle) Antre(ctx context.Context, tx *repository.Tx, jenis, rujukan, muatan string,
+func (a antreanLampiranOracle) Antre(ctx context.Context, tx *db.Tx, jenis, rujukan, muatan string,
 	saat time.Time) error {
-	_, err := a.pohon.AntreEfek(ctx, tx, LiniNonLife, ModulTreatyContractOut, jenis, rujukan, muatan, saat)
+	_, err := a.outbox.AntreEfek(ctx, tx, LiniNonLife, ModulTreatyContractOut, jenis, rujukan, muatan, saat)
 	return err
 }
-func (a antreanLampiranOracle) Pungut(ctx context.Context, tx *repository.Tx, saat time.Time) (
-	repository.BarisEfekKeluar, error) {
-	return a.pohon.PungutEfek(ctx, tx, ModulTreatyContractOut, saat)
+func (a antreanLampiranOracle) Pungut(ctx context.Context, tx *db.Tx, saat time.Time) (
+	outbox.BarisEfekKeluar, error) {
+	return a.outbox.PungutEfek(ctx, tx, ModulTreatyContractOut, saat)
 }
-func (a antreanLampiranOracle) PungutRujukan(ctx context.Context, tx *repository.Tx, rujukan string, saat time.Time) (
-	repository.BarisEfekKeluar, error) {
+func (a antreanLampiranOracle) PungutRujukan(ctx context.Context, tx *db.Tx, rujukan string, saat time.Time) (
+	outbox.BarisEfekKeluar, error) {
 	return a.pohon.PungutEfekRujukanTCO(ctx, tx, ModulTreatyContractOut, rujukan, saat)
 }
-func (a antreanLampiranOracle) Tuntaskan(ctx context.Context, tx *repository.Tx, id, status string,
+func (a antreanLampiranOracle) Tuntaskan(ctx context.Context, tx *db.Tx, id, status string,
 	jadwal time.Time, galat string, saat time.Time) error {
-	return a.pohon.TuntaskanEfek(ctx, tx, id, status, jadwal, galat, saat)
+	return a.outbox.TuntaskanEfek(ctx, tx, id, status, jadwal, galat, saat)
 }
 
 // AntreanLampiranOracle menyusun outbox lampiran di atas `T_LOG_SERVICE_RNM`.
@@ -264,7 +273,7 @@ func (a antreanLampiranOracle) Tuntaskan(ctx context.Context, tx *repository.Tx,
 // ⚠️ Memakai fungsi outbox yang sudah ada di `PohonKlaim` - tabelnya bersama
 // lintas modul, dipisah kolom `MODUL`. Tidak ada SQL outbox baru.
 func AntreanLampiranOracle(svc *Service) AntreanLampiranTCO {
-	return antreanLampiranOracle{pohon: repository.NewPohonKlaim(svc.db)}
+	return antreanLampiranOracle{outbox: outbox.NewPenyimpan(svc.DB()), pohon: repository.NewPohonKlaim(svc.DB())}
 }
 
 type kategoriLampiranOracle struct{ k *repository.KategoriLampiran }
@@ -273,7 +282,7 @@ func (k kategoriLampiranOracle) Daftar(ctx context.Context) ([]string, error) { 
 
 // KategoriLampiranOracle menyusun pembaca master `CATEGORY_ATTACH_REAS`.
 func KategoriLampiranOracle(svc *Service) PembacaKategoriLampiranTCO {
-	return kategoriLampiranOracle{k: repository.NewKategoriLampiran(svc.db)}
+	return kategoriLampiranOracle{k: repository.NewKategoriLampiran(svc.DB())}
 }
 
 // --- bentuk jawaban --------------------------------------------------------
@@ -299,7 +308,7 @@ type LampiranTampil struct {
 
 // TampilLampiran menerjemahkan satu baris gudang.
 func TampilLampiran(b repository.BarisLampiranTCO) LampiranTampil {
-	status := models.StatusLampiranTCO(b.TStorageID, b.StatusEfek == repository.StatusEfekGagalPermanen)
+	status := models.StatusLampiranTCO(b.TStorageID, b.StatusEfek == outbox.StatusEfekGagalPermanen)
 	galat := ""
 	if status != models.StatusLampiranTerkirim {
 		galat = b.GalatEfek
@@ -361,7 +370,7 @@ type LampiranTahunTCO struct {
 	tahun       PemeriksaTahunTCO
 	folder      string
 	jam         func() time.Time
-	transaksi   func(ctx context.Context, fn func(tx *repository.Tx) error) error
+	transaksi   func(ctx context.Context, fn func(tx *db.Tx) error) error
 	batas       int64
 }
 
@@ -370,7 +379,7 @@ func (s *Service) LampiranTahunTCO() *LampiranTahunTCO {
 	return &LampiranTahunTCO{svc: s, gudang: gudangLampiranBelumDisuntik{},
 		antrean: antreanLampiranBelumDisuntik{}, penyimpanan: penyimpananBelumDisuntik{},
 		kategori: kategoriLampiranBelumDisuntik{}, tahun: gudangTahunTreatyBelumDisuntik{},
-		folder: s.unggahanDir, jam: time.Now, transaksi: s.DalamTransaksi, batas: BatasUkuranUnggahan}
+		folder: s.UnggahanDir(), jam: time.Now, transaksi: s.DalamTransaksi, batas: unggah.BatasUkuranUnggahan}
 }
 
 func (l *LampiranTahunTCO) salin() *LampiranTahunTCO { s := *l; return &s }
@@ -425,7 +434,7 @@ func (l *LampiranTahunTCO) DenganJam(j func() time.Time) *LampiranTahunTCO {
 }
 
 // DenganTransaksi mengganti pelaksana transaksi - dipakai uji.
-func (l *LampiranTahunTCO) DenganTransaksi(f func(ctx context.Context, fn func(tx *repository.Tx) error) error) *LampiranTahunTCO {
+func (l *LampiranTahunTCO) DenganTransaksi(f func(ctx context.Context, fn func(tx *db.Tx) error) error) *LampiranTahunTCO {
 	s := l.salin()
 	s.transaksi = f
 	return s
@@ -451,15 +460,15 @@ func (l *LampiranTahunTCO) jalurAntre(imageID, nama string) string {
 
 func (l *LampiranTahunTCO) periksaTahun(ctx context.Context, tahunID string) error {
 	if strings.TrimSpace(tahunID) == "" {
-		return fmt.Errorf("%w: pengenal tahun treaty wajib diisi", ErrPermintaanTidakSah)
+		return fmt.Errorf("%w: pengenal tahun treaty wajib diisi", galat.ErrPermintaanTidakSah)
 	}
 	_, err := l.tahun.Ambil(ctx, tahunID)
 	return err
 }
 
 // Kategori membaca master kategori; kosong adalah kegagalan (503).
-func (l *LampiranTahunTCO) Kategori(ctx context.Context, pelaku Pelaku) ([]string, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (l *LampiranTahunTCO) Kategori(ctx context.Context, pelaku inti.Pelaku) ([]string, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return nil, err
 	}
 	daftar, err := l.kategori.Daftar(ctx)
@@ -473,8 +482,8 @@ func (l *LampiranTahunTCO) Kategori(ctx context.Context, pelaku Pelaku) ([]strin
 }
 
 // Daftar membaca lampiran satu tahun treaty - tombol `Refresh` b1023.
-func (l *LampiranTahunTCO) Daftar(ctx context.Context, pelaku Pelaku, tahunID string) ([]LampiranTampil, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (l *LampiranTahunTCO) Daftar(ctx context.Context, pelaku inti.Pelaku, tahunID string) ([]LampiranTampil, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return nil, err
 	}
 	baris, err := l.gudang.Daftar(ctx, tahunID)
@@ -511,21 +520,21 @@ func namaDasarBerkas(nama string) string {
 //  3. satu transaksi: rekam `M_ATTACHMENTTREATY_2` + efek outbox (tco4: nol jejak modul);
 //  4. sesudah commit, antrean dijalankan. Kegagalannya TIDAK membatalkan
 //     langkah 3 (AC 55) - ia tampil sebagai status.
-func (l *LampiranTahunTCO) Unggah(ctx context.Context, pelaku Pelaku, tahunID string,
-	berkas BerkasMasuk) (HasilLampiranTCO, error) {
+func (l *LampiranTahunTCO) Unggah(ctx context.Context, pelaku inti.Pelaku, tahunID string,
+	berkas unggah.BerkasMasuk) (HasilLampiranTCO, error) {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return HasilLampiranTCO{}, err
 	}
 	if strings.TrimSpace(tahunID) == "" {
-		return HasilLampiranTCO{}, fmt.Errorf("%w: pengenal tahun treaty wajib diisi", ErrPermintaanTidakSah)
+		return HasilLampiranTCO{}, fmt.Errorf("%w: pengenal tahun treaty wajib diisi", galat.ErrPermintaanTidakSah)
 	}
 	if strings.TrimSpace(l.folder) == "" {
-		return HasilLampiranTCO{}, ErrUnggahanDirBelumDisetel
+		return HasilLampiranTCO{}, unggah.ErrUnggahanDirBelumDisetel
 	}
 	nama := namaDasarBerkas(berkas.NamaFile)
 	if nama == "" || berkas.Isi == nil {
-		return HasilLampiranTCO{}, fmt.Errorf("%w: %s", ErrBerkasKosong, PesanTanpaBerkasTCO)
+		return HasilLampiranTCO{}, fmt.Errorf("%w: %s", unggah.ErrBerkasKosong, PesanTanpaBerkasTCO)
 	}
 	master, err := l.Kategori(ctx, pelaku)
 	if err != nil {
@@ -540,25 +549,25 @@ func (l *LampiranTahunTCO) Unggah(ctx context.Context, pelaku Pelaku, tahunID st
 	}
 
 	saat := l.jam()
-	imageID, err := models.ImageIDBaru(saat)
+	imageID, err := unggah.ImageIDBaru(saat)
 	if err != nil {
 		return HasilLampiranTCO{}, err
 	}
 	jalur := l.jalurAntre(imageID, nama)
 	// ⚠️ Gerbang ukuran DIPAKAI ULANG dari `Unggahan.tulisBerkas`: batasnya
 	// ditegakkan saat menyalin, berkas kosong dan berlebih dibuang lagi.
-	if err := (&Unggahan{batas: l.batas}).tulisBerkas(jalur, berkas.Isi); err != nil {
-		if errors.Is(err, ErrBerkasKosong) {
-			return HasilLampiranTCO{}, fmt.Errorf("%w: %s", ErrBerkasKosong, PesanTanpaBerkasTCO)
+	if err := unggah.TulisBerkas(jalur, berkas.Isi, l.batas); err != nil {
+		if errors.Is(err, unggah.ErrBerkasKosong) {
+			return HasilLampiranTCO{}, fmt.Errorf("%w: %s", unggah.ErrBerkasKosong, PesanTanpaBerkasTCO)
 		}
 		return HasilLampiranTCO{}, err
 	}
 	// tco4: ukuran tidak disimpan - `M_ATTACHMENTTREATY_2` tidak punya kolomnya.
 	rekam := models.LampiranTCO{IDTreatyYear: tahunID, FileName: nama,
-		FileMimeType: models.MimeDokumen(berkas.Mime, nama), Category: kategori, ImageID: imageID,
+		FileMimeType: unggah.MimeDokumen(berkas.Mime, nama), Category: kategori, ImageID: imageID,
 		UserID: pelaku.AkunID, TglUpload: saat}
 
-	err = l.transaksi(ctx, func(tx *repository.Tx) error {
+	err = l.transaksi(ctx, func(tx *db.Tx) error {
 		id, err := l.gudang.Sisip(ctx, tx, rekam)
 		if err != nil {
 			return err
@@ -571,7 +580,7 @@ func (l *LampiranTahunTCO) Unggah(ctx context.Context, pelaku Pelaku, tahunID st
 		}
 		// ⛔ Outbox DI DALAM transaksi rekamnya: efek yang diantre terpisah
 		// dapat hilang sendirian, dan berkas antrean tidak akan pernah terkirim.
-		if err := l.antrean.Antre(ctx, tx, JenisEfekStorageUnggah, id, muatan, saat); err != nil {
+		if err := l.antrean.Antre(ctx, tx, unggah.JenisEfekStorageUnggah, id, muatan, saat); err != nil {
 			return err
 		}
 		return nil
@@ -617,10 +626,10 @@ func (l *LampiranTahunTCO) sesudahAksi(ctx context.Context, akunID, tahunID stri
 // permintaan ini dan jejak menyerahnya tercatat atas nama pemakai yang salah.
 func (l *LampiranTahunTCO) kirimSekarang(ctx context.Context, akunID, rujukan string) string {
 	for n := 0; n < putaranSeusaiAksiTCO; n++ {
-		err := l.satuPutaran(ctx, akunID, l.jam(), func(tx *repository.Tx, saat time.Time) (repository.BarisEfekKeluar, error) {
+		err := l.satuPutaran(ctx, akunID, l.jam(), func(tx *db.Tx, saat time.Time) (outbox.BarisEfekKeluar, error) {
 			return l.antrean.PungutRujukan(ctx, tx, rujukan, saat)
 		})
-		if errors.Is(err, repository.ErrEfekTidakAda) {
+		if errors.Is(err, outbox.ErrEfekTidakAda) {
 			return ""
 		}
 		if err != nil {
@@ -635,7 +644,7 @@ func (l *LampiranTahunTCO) JalankanAntrean(ctx context.Context, akunID string, m
 	n := 0
 	for n < maks {
 		err := l.SatuPutaran(ctx, akunID, l.jam())
-		if errors.Is(err, repository.ErrEfekTidakAda) {
+		if errors.Is(err, outbox.ErrEfekTidakAda) {
 			return n, nil
 		}
 		if err != nil {
@@ -652,27 +661,27 @@ func (l *LampiranTahunTCO) JalankanAntrean(ctx context.Context, akunID string, m
 // berbeda hanya jalur menyerahnya: tco4 tanpa jejak modul - status outbox
 // gagal-permanen itulah catatannya.
 func (l *LampiranTahunTCO) SatuPutaran(ctx context.Context, akunID string, saat time.Time) error {
-	return l.satuPutaran(ctx, akunID, saat, func(tx *repository.Tx, saat time.Time) (repository.BarisEfekKeluar, error) {
+	return l.satuPutaran(ctx, akunID, saat, func(tx *db.Tx, saat time.Time) (outbox.BarisEfekKeluar, error) {
 		return l.antrean.Pungut(ctx, tx, saat)
 	})
 }
 
 // satuPutaran - pungut (lewat `pungut`), jalankan, tuntaskan: satu transaksi.
 func (l *LampiranTahunTCO) satuPutaran(ctx context.Context, akunID string, saat time.Time,
-	pungut func(tx *repository.Tx, saat time.Time) (repository.BarisEfekKeluar, error)) error {
-	return l.transaksi(ctx, func(tx *repository.Tx) error {
+	pungut func(tx *db.Tx, saat time.Time) (outbox.BarisEfekKeluar, error)) error {
+	return l.transaksi(ctx, func(tx *db.Tx) error {
 		b, err := pungut(tx, saat)
 		if err != nil {
 			return err
 		}
 		jalanErr := l.laksanakan(ctx, tx, b)
 		if jalanErr == nil {
-			return l.antrean.Tuntaskan(ctx, tx, b.ID, repository.StatusEfekSelesai, time.Time{}, "", saat)
+			return l.antrean.Tuntaskan(ctx, tx, b.ID, outbox.StatusEfekSelesai, time.Time{}, "", saat)
 		}
-		menyerah := !layakUlangLampiranTCO(jalanErr) || b.Percobaan >= percobaanMaksimum
-		status, jadwal := repository.StatusEfekAntre, saat.Add(Backoff(b.Percobaan+1))
+		menyerah := !layakUlangLampiranTCO(jalanErr) || b.Percobaan >= outbox.PercobaanMaksimum
+		status, jadwal := outbox.StatusEfekAntre, saat.Add(outbox.Backoff(b.Percobaan+1))
 		if menyerah {
-			status, jadwal = repository.StatusEfekGagalPermanen, time.Time{}
+			status, jadwal = outbox.StatusEfekGagalPermanen, time.Time{}
 		}
 		if err := l.antrean.Tuntaskan(ctx, tx, b.ID, status, jadwal, ringkasGalatTCO(jalanErr), saat); err != nil {
 			return err
@@ -686,15 +695,15 @@ func (l *LampiranTahunTCO) satuPutaran(ctx context.Context, akunID string, saat 
 // layakUlangLampiranTCO - `LayakDicobaUlang` + keadaan permanen milik lampiran.
 func layakUlangLampiranTCO(err error) bool {
 	for _, permanen := range []error{ErrBerkasSumberLampiranHilang, errMuatanLampiranRusak,
-		errJenisEfekAsingTCO, ErrUnggahanDirBelumDisetel, ErrPenyimpananLampiranBelumDisuntik,
+		errJenisEfekAsingTCO, unggah.ErrUnggahanDirBelumDisetel, ErrPenyimpananLampiranBelumDisuntik,
 		// OQ-TCO-08 pelaksana nyata: keadaan yang tidak berubah karena dicoba lagi.
-		ErrStorageMenolakPermintaanTCO, ErrGaramTokenKosong, ErrAppNameKosong,
+		ErrStorageMenolakPermintaanTCO, layanan.ErrGaramTokenKosong, layanan.ErrAppNameKosong,
 		repository.ErrAppStorageKosongTCO} {
 		if errors.Is(err, permanen) {
 			return false
 		}
 	}
-	return LayakDicobaUlang(err)
+	return outbox.LayakDicobaUlang(err)
 }
 
 func ringkasGalatTCO(err error) string {
@@ -706,11 +715,11 @@ func ringkasGalatTCO(err error) string {
 }
 
 // laksanakan menjalankan satu baris outbox lampiran.
-func (l *LampiranTahunTCO) laksanakan(ctx context.Context, tx *repository.Tx, b repository.BarisEfekKeluar) error {
+func (l *LampiranTahunTCO) laksanakan(ctx context.Context, tx *db.Tx, b outbox.BarisEfekKeluar) error {
 	switch b.Jenis {
-	case JenisEfekStorageUnggah:
+	case unggah.JenisEfekStorageUnggah:
 		return l.kirimUnggah(ctx, tx, b)
-	case JenisEfekStorageHapus:
+	case unggah.JenisEfekStorageHapus:
 		return l.kirimHapus(ctx, tx, b)
 	default:
 		return fmt.Errorf("%w: %q", errJenisEfekAsingTCO, b.Jenis)
@@ -727,7 +736,7 @@ func (l *LampiranTahunTCO) laksanakan(ctx context.Context, tx *repository.Tx, b 
 //
 // Kuncinya `IMAGEID` rekam itu sendiri, jadi pengulangan menulis ke tempat
 // yang SAMA - tidak menggandakan berkas (AC 58).
-func (l *LampiranTahunTCO) kirimUnggah(ctx context.Context, tx *repository.Tx, b repository.BarisEfekKeluar) error {
+func (l *LampiranTahunTCO) kirimUnggah(ctx context.Context, tx *db.Tx, b outbox.BarisEfekKeluar) error {
 	rekam, err := l.gudang.AmbilUntukKirim(ctx, tx, b.Rujukan)
 	if errors.Is(err, repository.ErrLampiranTidakAda) {
 		return nil
@@ -780,7 +789,7 @@ func (l *LampiranTahunTCO) kirimUnggah(ctx context.Context, tx *repository.Tx, b
 //
 // ⛔ Berkas yang SUDAH tidak ada bukan kegagalan: penghapusan rekam tidak
 // boleh gagal karena penyimpanan lebih dulu kehilangan berkasnya.
-func (l *LampiranTahunTCO) kirimHapus(ctx context.Context, tx *repository.Tx, b repository.BarisEfekKeluar) error {
+func (l *LampiranTahunTCO) kirimHapus(ctx context.Context, tx *db.Tx, b outbox.BarisEfekKeluar) error {
 	var m muatanLampiranTCO
 	if err := json.Unmarshal([]byte(b.Muatan), &m); err != nil || strings.TrimSpace(m.ImageID) == "" {
 		return fmt.Errorf("%w: efek %s", errMuatanLampiranRusak, b.ID)
@@ -808,10 +817,10 @@ func (l *LampiranTahunTCO) kirimHapus(ctx context.Context, tx *repository.Tx, b 
 //
 // ⛔ Mengembalikan PEMBACA, bukan isi: berkas 25 MiB tidak dibaca ke memori.
 // Pemanggil wajib menutupnya.
-func (l *LampiranTahunTCO) Unduh(ctx context.Context, pelaku Pelaku, tahunID, id string) (
+func (l *LampiranTahunTCO) Unduh(ctx context.Context, pelaku inti.Pelaku, tahunID, id string) (
 	LampiranTampil, io.ReadCloser, error) {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return LampiranTampil{}, nil, err
 	}
 	b, err := l.gudang.Ambil(ctx, tahunID, id)
@@ -838,7 +847,7 @@ func (l *LampiranTahunTCO) Unduh(ctx context.Context, pelaku Pelaku, tahunID, id
 // ⛔ Keselarasan diperiksa LEBIH DULU: arsip yang dialirkan tidak dapat
 // ditarik kembali, jadi rekam tanpa berkas menggagalkan permintaannya sebelum
 // satu byte pun terkirim, dengan pesan yang menyebut lampiran mana.
-func (l *LampiranTahunTCO) UnduhSemua(ctx context.Context, pelaku Pelaku, tahunID string,
+func (l *LampiranTahunTCO) UnduhSemua(ctx context.Context, pelaku inti.Pelaku, tahunID string,
 	tulis func(namaEntri string, isi io.Reader) error) error {
 
 	daftar, err := l.Daftar(ctx, pelaku, tahunID)
@@ -892,8 +901,8 @@ func (l *LampiranTahunTCO) UnduhSemua(ctx context.Context, pelaku Pelaku, tahunI
 // ⛔ Rekam dulu, penyimpanan menyusul lewat outbox - SELALU, termasuk bila
 // belum terkirim: percobaan unggah yang menulis berkasnya lalu gagal dicatat
 // meninggalkan berkas yang rekamnya tidak tahu.
-func (l *LampiranTahunTCO) Hapus(ctx context.Context, pelaku Pelaku, tahunID, id string) (string, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (l *LampiranTahunTCO) Hapus(ctx context.Context, pelaku inti.Pelaku, tahunID, id string) (string, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return "", err
 	}
 	b, err := l.gudang.Ambil(ctx, tahunID, id)
@@ -901,7 +910,7 @@ func (l *LampiranTahunTCO) Hapus(ctx context.Context, pelaku Pelaku, tahunID, id
 		return "", err
 	}
 	saat := l.jam()
-	err = l.transaksi(ctx, func(tx *repository.Tx) error {
+	err = l.transaksi(ctx, func(tx *db.Tx) error {
 		if err := l.gudang.Hapus(ctx, tx, tahunID, id); err != nil {
 			return err
 		}
@@ -910,7 +919,7 @@ func (l *LampiranTahunTCO) Hapus(ctx context.Context, pelaku Pelaku, tahunID, id
 		if err != nil {
 			return err
 		}
-		if err := l.antrean.Antre(ctx, tx, JenisEfekStorageHapus, id, muatan, saat); err != nil {
+		if err := l.antrean.Antre(ctx, tx, unggah.JenisEfekStorageHapus, id, muatan, saat); err != nil {
 			return err
 		}
 		return nil
@@ -926,8 +935,8 @@ func (l *LampiranTahunTCO) Hapus(ctx context.Context, pelaku Pelaku, tahunID, id
 // ⛔ Ditolak bila tidak ada yang perlu diperbaiki (berkas ada di penyimpanan)
 // dan bila tidak ada yang dapat diunggah (berkas antrean hilang dan
 // penyimpanan tidak memilikinya) - yang kedua diperbaiki dengan menghapus.
-func (l *LampiranTahunTCO) Ulangi(ctx context.Context, pelaku Pelaku, tahunID, id string) (HasilLampiranTCO, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (l *LampiranTahunTCO) Ulangi(ctx context.Context, pelaku inti.Pelaku, tahunID, id string) (HasilLampiranTCO, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return HasilLampiranTCO{}, err
 	}
 	b, err := l.gudang.Ambil(ctx, tahunID, id)
@@ -946,7 +955,7 @@ func (l *LampiranTahunTCO) Ulangi(ctx context.Context, pelaku Pelaku, tahunID, i
 		return HasilLampiranTCO{}, fmt.Errorf("%w: lampiran %s", ErrBerkasSumberLampiranHilang, id)
 	}
 	saat := l.jam()
-	err = l.transaksi(ctx, func(tx *repository.Tx) error {
+	err = l.transaksi(ctx, func(tx *db.Tx) error {
 		if terkirim {
 			// Catatan objek tanpa berkas dibuang dulu; unggah ulang mencatatnya lagi.
 			if err := l.gudang.HapusObjek(ctx, tx, b.ImageID); err != nil {
@@ -958,7 +967,7 @@ func (l *LampiranTahunTCO) Ulangi(ctx context.Context, pelaku Pelaku, tahunID, i
 		if err != nil {
 			return err
 		}
-		if err := l.antrean.Antre(ctx, tx, JenisEfekStorageUnggah, id, muatan, saat); err != nil {
+		if err := l.antrean.Antre(ctx, tx, unggah.JenisEfekStorageUnggah, id, muatan, saat); err != nil {
 			return err
 		}
 		return nil
@@ -975,10 +984,10 @@ func (l *LampiranTahunTCO) Ulangi(ctx context.Context, pelaku Pelaku, tahunID, i
 //   - terkirim, tetapi penyimpanan tidak memiliki berkasnya;
 //   - belum terkirim, berkas antreannya hilang, dan penyimpanan pun tidak
 //     memilikinya - unggahannya tidak akan pernah selesai.
-func (l *LampiranTahunTCO) PeriksaSelaras(ctx context.Context, pelaku Pelaku, tahunID string) (
+func (l *LampiranTahunTCO) PeriksaSelaras(ctx context.Context, pelaku inti.Pelaku, tahunID string) (
 	[]TemuanSelarasTCO, error) {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return nil, err
 	}
 	baris, err := l.gudang.Daftar(ctx, tahunID)

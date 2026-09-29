@@ -22,6 +22,7 @@ import (
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
 	"nusantarare/internal/services"
+	"nusantarare/inti/db"
 )
 
 // mintaMultipart mengirim satu berkas + kategori.
@@ -143,7 +144,7 @@ func TestLampiranTahunTreatyLingkaranPenuh(t *testing.T) {
 	// OQ-TCO-26 (lanjutan 4): `Update_T_Storage_SQL` terhadap Oracle - kedua
 	// bentuk To_date (`DD/MM/YYYY` exp, `MM/DD/YYYY` DateTime) diterima.
 	mo := repository.NewMasterLampiranTCO(u.db)
-	if err := services.New(u.db).DalamTransaksi(u.ctx, func(tx *repository.Tx) error {
+	if err := services.New(u.db).DalamTransaksi(u.ctx, func(tx *db.Tx) error {
 		return mo.PerbaruiObjek(u.ctx, tx, models.ObjekPenyimpananTCO{ImageID: storageID, URLPublic: "UJI-URL-SEGAR",
 			AppFolder: "UJI-FOLDER", Exp: "29/09/2026 10:00:00", TanggalUpload: "09/29/2026 09:00:00"})
 	}); err != nil {

@@ -11,6 +11,8 @@ import (
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
 )
 
 type kaskadeUji struct {
@@ -23,14 +25,14 @@ func (k *kaskadeUji) DampakKontrak(_ context.Context, kom models.KombinasiTCO, _
 	k.kombinasi = kom
 	return k.dampak, nil
 }
-func (k *kaskadeUji) HapusKontrak(context.Context, *repository.Tx, models.KombinasiTCO, string, string) (repository.DampakHapusTCO, error) {
+func (k *kaskadeUji) HapusKontrak(context.Context, *db.Tx, models.KombinasiTCO, string, string) (repository.DampakHapusTCO, error) {
 	k.dihapus++
 	return k.terhapus, nil
 }
 func (k *kaskadeUji) DampakReinsurer(context.Context, string) (repository.DampakHapusTCO, error) {
 	return k.dampak, nil
 }
-func (k *kaskadeUji) HapusReinsurer(context.Context, *repository.Tx, models.KombinasiTCO, string) (repository.DampakHapusTCO, error) {
+func (k *kaskadeUji) HapusReinsurer(context.Context, *db.Tx, models.KombinasiTCO, string) (repository.DampakHapusTCO, error) {
 	k.dihapus++
 	return k.terhapus, nil
 }
@@ -87,8 +89,8 @@ func TestHapusKontrakAngkaHarusSamaDenganPopup(t *testing.T) {
 		services.KonfirmasiHapus{Reinsurer: 2, Security: 3, Business: 1}); !errors.Is(err, services.ErrDampakBerubah) {
 		t.Errorf("terhapus berbeda dari hitungan: %v", err)
 	}
-	if _, err := layananKaskade(k, new(int)).HapusKontrak(context.Background(), services.Pelaku{}, "1000001", "1000003",
-		services.KonfirmasiHapus{}); !errors.Is(err, services.ErrTanpaIdentitas) {
+	if _, err := layananKaskade(k, new(int)).HapusKontrak(context.Background(), inti.Pelaku{}, "1000001", "1000003",
+		services.KonfirmasiHapus{}); !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("identitas: %v", err)
 	}
 }

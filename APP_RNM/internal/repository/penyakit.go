@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/db"
 )
 
 // Ketiga nama kolom `DISEASE_LIFE`.
@@ -106,10 +107,10 @@ func sqlCariPenyakit(tabel string, k models.KriteriaPenyakit, batas int) (string
 }
 
 // Penyakit membaca daftar diagnosa dari tabel warisan.
-type Penyakit struct{ db *DB }
+type Penyakit struct{ db *db.DB }
 
 // NewPenyakit menyusun pembacanya.
-func NewPenyakit(db *DB) *Penyakit { return &Penyakit{db: db} }
+func NewPenyakit(db *db.DB) *Penyakit { return &Penyakit{db: db} }
 
 // Cari mengembalikan diagnosa yang cocok, SELALU berbatas.
 func (r *Penyakit) Cari(ctx context.Context, k models.KriteriaPenyakit, batas int) (
@@ -120,10 +121,10 @@ func (r *Penyakit) Cari(ctx context.Context, k models.KriteriaPenyakit, batas in
 		return nil, err
 	}
 	q, arg := sqlCariPenyakit(tabel, k, models.BatasPenyakit(batas))
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	baris, err := r.db.sql.QueryContext(ctx, q, arg...)
+	baris, err := r.db.QueryContext(ctx, q, arg...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: mencari diagnosa: %w", err)
 	}

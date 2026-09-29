@@ -38,13 +38,15 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
+
+	"nusantarare/inti/db"
 )
 
 // KontrakHilirTCO adalah pembaca read-only untuk konteks hilir.
-type KontrakHilirTCO struct{ db *DB }
+type KontrakHilirTCO struct{ db *db.DB }
 
 // NewKontrakHilirTCO menyusunnya.
-func NewKontrakHilirTCO(db *DB) *KontrakHilirTCO { return &KontrakHilirTCO{db: db} }
+func NewKontrakHilirTCO(db *db.DB) *KontrakHilirTCO { return &KontrakHilirTCO{db: db} }
 
 // KlausulHilir adalah satu baris PROPORTIONALARRG seperti dibaca hilir.
 type KlausulHilir struct {
@@ -151,10 +153,10 @@ func sqlLimitTreatyHilir(business, klausul, kontrak string) string {
 }
 
 func (r *KontrakHilirTCO) bacaKlausul(ctx context.Context, q string, arg ...any) ([]KlausulHilir, error) {
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := r.db.sql.QueryContext(ctx, q, arg...)
+	rows, err := r.db.QueryContext(ctx, q, arg...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca klausul untuk hilir: %w", err)
 	}
@@ -236,10 +238,10 @@ func (r *KontrakHilirTCO) ReinsurerUntukHilir(ctx context.Context,
 		return nil, err
 	}
 	q := sqlReinsurerHilir(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := r.db.sql.QueryContext(ctx, q, reinsTypeID, treatyYear, treatyGroupID)
+	rows, err := r.db.QueryContext(ctx, q, reinsTypeID, treatyYear, treatyGroupID)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca reinsurer untuk hilir: %w", err)
 	}
@@ -265,10 +267,10 @@ func (r *KontrakHilirTCO) BusinessUntukHilir(ctx context.Context,
 		return nil, err
 	}
 	q := sqlBusinessHilir(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := r.db.sql.QueryContext(ctx, q, bizCode, treatyYear, reinsTypeID)
+	rows, err := r.db.QueryContext(ctx, q, bizCode, treatyYear, reinsTypeID)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca business untuk hilir: %w", err)
 	}
@@ -294,10 +296,10 @@ func (r *KontrakHilirTCO) GrupTreatyAktifUntukHilir(ctx context.Context,
 		return nil, err
 	}
 	q := sqlGrupTreatyAktifHilir(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := r.db.sql.QueryContext(ctx, q, bizCode, treatyYear)
+	rows, err := r.db.QueryContext(ctx, q, bizCode, treatyYear)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca grup treaty untuk hilir: %w", err)
 	}

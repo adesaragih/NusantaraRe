@@ -27,7 +27,9 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/utils"
 )
 
 var (
@@ -43,15 +45,15 @@ var (
 type GudangReinsurerTCO interface {
 	Daftar(ctx context.Context, k models.KombinasiTCO) ([]models.ReinsurerTreaty, error)
 	Ambil(ctx context.Context, k models.KombinasiTCO, id string) (models.ReinsurerTreaty, error)
-	ShareLain(ctx context.Context, tx *repository.Tx, k models.KombinasiTCO, kecualiID string) ([]*apd.Decimal, error)
-	Sisip(ctx context.Context, tx *repository.Tx, r models.ReinsurerTreaty) (string, error)
-	Perbarui(ctx context.Context, tx *repository.Tx, r models.ReinsurerTreaty) error
+	ShareLain(ctx context.Context, tx *db.Tx, k models.KombinasiTCO, kecualiID string) ([]*apd.Decimal, error)
+	Sisip(ctx context.Context, tx *db.Tx, r models.ReinsurerTreaty) (string, error)
+	Perbarui(ctx context.Context, tx *db.Tx, r models.ReinsurerTreaty) error
 }
 
 // PemegangKontrakTCO membaca dan mengunci kontrak pembuka kombinasi.
 type PemegangKontrakTCO interface {
 	Ambil(ctx context.Context, tahunID, id string) (models.KontrakTreaty, error)
-	Kunci(ctx context.Context, tx *repository.Tx, tahunID, id string) error
+	Kunci(ctx context.Context, tx *db.Tx, tahunID, id string) error
 }
 
 // PembacaReinsurerMasterTCO membaca master `AGENT` (dibaca saja).
@@ -68,13 +70,13 @@ func (reinsurerBelumDisuntik) Daftar(context.Context, models.KombinasiTCO) ([]mo
 func (reinsurerBelumDisuntik) Ambil(context.Context, models.KombinasiTCO, string) (models.ReinsurerTreaty, error) {
 	return models.ReinsurerTreaty{}, ErrGudangReinsurerBelumDisuntik
 }
-func (reinsurerBelumDisuntik) ShareLain(context.Context, *repository.Tx, models.KombinasiTCO, string) ([]*apd.Decimal, error) {
+func (reinsurerBelumDisuntik) ShareLain(context.Context, *db.Tx, models.KombinasiTCO, string) ([]*apd.Decimal, error) {
 	return nil, ErrGudangReinsurerBelumDisuntik
 }
-func (reinsurerBelumDisuntik) Sisip(context.Context, *repository.Tx, models.ReinsurerTreaty) (string, error) {
+func (reinsurerBelumDisuntik) Sisip(context.Context, *db.Tx, models.ReinsurerTreaty) (string, error) {
 	return "", ErrGudangReinsurerBelumDisuntik
 }
-func (reinsurerBelumDisuntik) Perbarui(context.Context, *repository.Tx, models.ReinsurerTreaty) error {
+func (reinsurerBelumDisuntik) Perbarui(context.Context, *db.Tx, models.ReinsurerTreaty) error {
 	return ErrGudangReinsurerBelumDisuntik
 }
 
@@ -83,7 +85,7 @@ type pemegangKontrakBelumDisuntik struct{}
 func (pemegangKontrakBelumDisuntik) Ambil(context.Context, string, string) (models.KontrakTreaty, error) {
 	return models.KontrakTreaty{}, ErrGudangReinsurerBelumDisuntik
 }
-func (pemegangKontrakBelumDisuntik) Kunci(context.Context, *repository.Tx, string, string) error {
+func (pemegangKontrakBelumDisuntik) Kunci(context.Context, *db.Tx, string, string) error {
 	return ErrGudangReinsurerBelumDisuntik
 }
 
@@ -98,7 +100,7 @@ func (masterReinsurerBelumDisuntik) Ambil(context.Context, string) (repository.R
 
 type gudangReinsurerOracle struct {
 	m  *repository.MasterReinsurerTCO
-	db *repository.DB
+	db *db.DB
 }
 
 func (g gudangReinsurerOracle) Daftar(ctx context.Context, k models.KombinasiTCO) ([]models.ReinsurerTreaty, error) {
@@ -107,29 +109,29 @@ func (g gudangReinsurerOracle) Daftar(ctx context.Context, k models.KombinasiTCO
 func (g gudangReinsurerOracle) Ambil(ctx context.Context, k models.KombinasiTCO, id string) (models.ReinsurerTreaty, error) {
 	return g.m.Ambil(ctx, k, id)
 }
-func (g gudangReinsurerOracle) ShareLain(ctx context.Context, tx *repository.Tx, k models.KombinasiTCO, kecualiID string) ([]*apd.Decimal, error) {
+func (g gudangReinsurerOracle) ShareLain(ctx context.Context, tx *db.Tx, k models.KombinasiTCO, kecualiID string) ([]*apd.Decimal, error) {
 	return g.m.ShareLain(ctx, tx, k, kecualiID)
 }
-func (g gudangReinsurerOracle) Sisip(ctx context.Context, tx *repository.Tx, r models.ReinsurerTreaty) (string, error) {
+func (g gudangReinsurerOracle) Sisip(ctx context.Context, tx *db.Tx, r models.ReinsurerTreaty) (string, error) {
 	return g.m.Sisip(ctx, tx, r)
 }
-func (g gudangReinsurerOracle) Perbarui(ctx context.Context, tx *repository.Tx, r models.ReinsurerTreaty) error {
+func (g gudangReinsurerOracle) Perbarui(ctx context.Context, tx *db.Tx, r models.ReinsurerTreaty) error {
 	return g.m.Perbarui(ctx, tx, r)
 }
 
 // GudangReinsurerOracle menyusun gudang reinsurer di atas Oracle.
 func GudangReinsurerOracle(svc *Service) GudangReinsurerTCO {
-	return gudangReinsurerOracle{m: repository.NewMasterReinsurerTCO(svc.db), db: svc.db}
+	return gudangReinsurerOracle{m: repository.NewMasterReinsurerTCO(svc.DB()), db: svc.DB()}
 }
 
 // PemegangKontrakOracle menyusun pembaca + pengunci kontrak.
 func PemegangKontrakOracle(svc *Service) PemegangKontrakTCO {
-	return repository.NewMasterKontrakTCO(svc.db)
+	return repository.NewMasterKontrakTCO(svc.DB())
 }
 
 // MasterReinsurerOracle menyusun pembaca master `AGENT`.
 func MasterReinsurerOracle(svc *Service) PembacaReinsurerMasterTCO {
-	return repository.NewMasterReinsurerAgent(svc.db)
+	return repository.NewMasterReinsurerAgent(svc.DB())
 }
 
 // ReinsurerMasuk adalah badan simpan - medan yang TAMPIL di form
@@ -227,7 +229,7 @@ type ReinsurerTCO struct {
 	tahun     PemeriksaTahunTCO
 	master    PembacaReinsurerMasterTCO
 	catat     func(string) // log aplikasi: pelaku yang tidak ditulis ke kolom warisan (OQ-TCO-25)
-	transaksi func(ctx context.Context, fn func(tx *repository.Tx) error) error
+	transaksi func(ctx context.Context, fn func(tx *db.Tx) error) error
 }
 
 // ReinsurerTCO menyusun layanannya; bawaannya gagal terang.
@@ -275,7 +277,7 @@ func (l *ReinsurerTCO) DenganMaster(m PembacaReinsurerMasterTCO) *ReinsurerTCO {
 }
 
 // DenganTransaksi mengganti pelaksana transaksi - dipakai uji.
-func (l *ReinsurerTCO) DenganTransaksi(f func(ctx context.Context, fn func(tx *repository.Tx) error) error) *ReinsurerTCO {
+func (l *ReinsurerTCO) DenganTransaksi(f func(ctx context.Context, fn func(tx *db.Tx) error) error) *ReinsurerTCO {
 	s := l.salin()
 	s.transaksi = f
 	return s
@@ -295,8 +297,8 @@ func (l *ReinsurerTCO) kombinasi(ctx context.Context, tahunID, kontrakID string)
 }
 
 // Daftar membaca reinsurer kombinasi + total share-nya.
-func (l *ReinsurerTCO) Daftar(ctx context.Context, pelaku Pelaku, tahunID, kontrakID string) (DaftarReinsurerTampil, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (l *ReinsurerTCO) Daftar(ctx context.Context, pelaku inti.Pelaku, tahunID, kontrakID string) (DaftarReinsurerTampil, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return DaftarReinsurerTampil{}, err
 	}
 	k, err := l.kombinasi(ctx, tahunID, kontrakID)
@@ -323,10 +325,10 @@ func (l *ReinsurerTCO) Daftar(ctx context.Context, pelaku Pelaku, tahunID, kontr
 
 // Simpan menulis reinsurer baru atau memperbarui yang ada - `Save` b11405
 // (`SaveTreatyReinsurerDetail1_Act`).
-func (l *ReinsurerTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID, kontrakID string, m ReinsurerMasuk) (
+func (l *ReinsurerTCO) Simpan(ctx context.Context, pelaku inti.Pelaku, tahunID, kontrakID string, m ReinsurerMasuk) (
 	HasilReinsurerTampil, error) {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return HasilReinsurerTampil{}, err
 	}
 	k, err := l.kombinasi(ctx, tahunID, kontrakID)
@@ -358,7 +360,7 @@ func (l *ReinsurerTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID, kontr
 	r.Name, r.ClientID = master.ClientName, master.ClientID
 
 	var total *apd.Decimal
-	err = l.transaksi(ctx, func(tx *repository.Tx) error {
+	err = l.transaksi(ctx, func(tx *db.Tx) error {
 		if err := l.kontrak.Kunci(ctx, tx, tahunID, kontrakID); err != nil {
 			return err
 		}
@@ -401,8 +403,8 @@ func (l *ReinsurerTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID, kontr
 }
 
 // CariMaster membaca pilihan reinsurer - `BrowseAgentReinsSOA_RD`.
-func (l *ReinsurerTCO) CariMaster(ctx context.Context, pelaku Pelaku, teks string) ([]ReinsurerMasterTampil, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (l *ReinsurerTCO) CariMaster(ctx context.Context, pelaku inti.Pelaku, teks string) ([]ReinsurerMasterTampil, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return nil, err
 	}
 	d, err := l.master.Cari(ctx, teks)

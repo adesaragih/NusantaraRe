@@ -22,7 +22,9 @@ import (
 	"strings"
 
 	"nusantarare/internal/models"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti/db"
+	"nusantarare/inti/uang"
+	"nusantarare/inti/utils"
 )
 
 // golonganKolom menyebut cara satu kolom peserta ditulis dan dibaca.
@@ -108,7 +110,7 @@ func insertPeserta(tabel, id, klaimID string, p models.Peserta) (string, []any) 
 		} else {
 			penampung = append(penampung, fmt.Sprintf(":%d", n))
 		}
-		nilai = append(nilai, kosongJadiNil(normalTanggal(k)(p)))
+		nilai = append(nilai, db.KosongJadiNil(normalTanggal(k)(p)))
 	}
 	return fmt.Sprintf("INSERT INTO %s\n\t\t\t(%s)\n\t\t\tVALUES (%s)",
 		tabel, strings.Join(nama, ", "), strings.Join(penampung, ",")), nilai
@@ -151,9 +153,9 @@ func selectPeserta() string {
 	for _, k := range kolomPeserta {
 		switch k.Golongan {
 		case kolomTanggal:
-			ekspresi = append(ekspresi, fmt.Sprintf(fmtTanggalOracle, k.Nama))
+			ekspresi = append(ekspresi, fmt.Sprintf(db.FmtTanggalOracle, k.Nama))
 		case kolomAngka:
-			ekspresi = append(ekspresi, fmt.Sprintf(fmtDesimal, k.Nama))
+			ekspresi = append(ekspresi, fmt.Sprintf(db.FmtDesimal, k.Nama))
 		default:
 			ekspresi = append(ekspresi, k.Nama)
 		}
@@ -208,7 +210,7 @@ func rakitPeserta(id string, sel []sql.NullString) (models.Peserta, error) {
 
 	uang := []struct {
 		kolom string
-		ke    *models.Money
+		ke    *uang.Money
 	}{
 		{"SUM_INSURED", &p.SumInsured}, {"SUM_REASURED", &p.SumReasured},
 		{"GROSS_PREMIUM", &p.GrossPremium}, {"NET_PREMIUM", &p.NetPremium},

@@ -26,6 +26,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"nusantarare/inti/db"
 )
 
 // ErrPolisNomorTakDitemukan - tidak ada polis dengan nomor itu.
@@ -86,10 +88,10 @@ type PolisRingkas struct {
 }
 
 // RingkasPolisLife membaca ringkasan polis.
-type RingkasPolisLife struct{ db *DB }
+type RingkasPolisLife struct{ db *db.DB }
 
 // NewRingkasPolisLife menyusunnya.
-func NewRingkasPolisLife(db *DB) *RingkasPolisLife { return &RingkasPolisLife{db: db} }
+func NewRingkasPolisLife(db *db.DB) *RingkasPolisLife { return &RingkasPolisLife{db: db} }
 
 // sqlPolisRingkas merakit pembacaan versi BERJALAN sebuah nomor polis.
 //
@@ -124,11 +126,11 @@ func (r *RingkasPolisLife) NomorPolisDariID(ctx context.Context, polisID string)
 		return "", err
 	}
 	q := fmt.Sprintf(`SELECT p.NO_POLIS FROM %s p WHERE p.ID = :1`, polis)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return "", err
 	}
 	var no sql.NullString
-	if err := r.db.sql.QueryRowContext(ctx, q, polisID).Scan(&no); err != nil {
+	if err := r.db.QueryRowContext(ctx, q, polisID).Scan(&no); err != nil {
 		return "", fmt.Errorf("repository: membaca nomor polis %q: %w", polisID, err)
 	}
 	return strings.TrimSpace(no.String), nil
@@ -147,7 +149,7 @@ func (r *RingkasPolisLife) Ringkas(ctx context.Context, nomorPolis string) (
 		return PolisRingkas{}, err
 	}
 	q := sqlPolisRingkas(polis)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return PolisRingkas{}, err
 	}
 	var (
@@ -158,7 +160,7 @@ func (r *RingkasPolisLife) Ringkas(ctx context.Context, nomorPolis string) (
 		retroNm, secNm, sobNm                         sql.NullString
 		prodKe                                        int
 	)
-	if err := r.db.sql.QueryRowContext(ctx, q, nomorPolis).Scan(
+	if err := r.db.QueryRowContext(ctx, q, nomorPolis).Scan(
 		&no, &tipe, &marketing, &ceding, &pemegang, &bisnis,
 		&diterima, &status, &statusUbah, &prodID, &prodNm, &prodKe,
 		&kodeBisnis, &cedingKode, &retroID, &secID,

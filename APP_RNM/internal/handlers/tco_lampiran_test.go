@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"nusantarare/internal/services"
+	"nusantarare/inti/unggah"
 )
 
 var ruteLampiranTCO = []struct{ metode, jalur string }{
@@ -54,14 +55,14 @@ func TestJawabGalatLampiranTCO(t *testing.T) {
 		kode int
 	}{
 		{services.ErrKategoriLampiranKosong, http.StatusServiceUnavailable},
-		{services.ErrUnggahanDirBelumDisetel, http.StatusServiceUnavailable},
+		{unggah.ErrUnggahanDirBelumDisetel, http.StatusServiceUnavailable},
 		{services.ErrLampiranTidakAda, http.StatusNotFound},
 		{services.ErrLampiranBelumTerkirim, http.StatusConflict},
 		{services.ErrLampiranSudahTerkirim, http.StatusConflict},
 		{services.ErrLampiranTanpaBerkas, http.StatusConflict},
 		{services.ErrBerkasSumberLampiranHilang, http.StatusConflict},
-		{services.ErrBerkasTerlaluBesar, http.StatusRequestEntityTooLarge},
-		{services.ErrBerkasKosong, http.StatusBadRequest},
+		{unggah.ErrBerkasTerlaluBesar, http.StatusRequestEntityTooLarge},
+		{unggah.ErrBerkasKosong, http.StatusBadRequest},
 		{services.ErrKategoriLampiranTidakDikenal, http.StatusUnprocessableEntity},
 	}
 	for _, k := range kasus {
@@ -72,7 +73,7 @@ func TestJawabGalatLampiranTCO(t *testing.T) {
 		}
 	}
 	w := httptest.NewRecorder()
-	jawabGalatTreatyContractOut(w, errors.Join(services.ErrBerkasKosong))
+	jawabGalatTreatyContractOut(w, errors.Join(unggah.ErrBerkasKosong))
 	if !strings.Contains(w.Body.String(), services.PesanTanpaBerkasTCO) {
 		t.Errorf("berkas kosong tanpa pesan b376: %s", w.Body.String())
 	}

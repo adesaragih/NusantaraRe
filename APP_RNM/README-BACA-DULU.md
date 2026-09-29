@@ -9,15 +9,16 @@ Folder ini memuat **seluruh aplikasi** hasil migrasi Pega → Go + React + Oracl
 | Folder / berkas | Isinya, dalam bahasa sehari-hari |
 | --- | --- |
 | `cmd/api/main.go` | Pintu masuk backend. Membaca pengaturan, menyambung Oracle, mendaftarkan alamat-alamat HTTP, lalu menunggu permintaan |
-| `internal/config/` | Membaca **env var** (variabel lingkungan) seperti `ORACLE_DSN`. Tidak ada alamat atau kata sandi yang ditulis di kode |
+| `inti/` | **Kode bersama semua modul** (refactor bentuk B, 30-09-2026): koneksi dan transaksi (`inti/db`), outbox efek keluar, resolver layanan, jejak audit, penomor, pelari migrasi, jawaban galat HTTP, gerbang unggahan, uang. Tidak pernah mengimpor modul |
+| `inti/config/` | Membaca **env var** (variabel lingkungan) seperti `ORACLE_DSN`. Tidak ada alamat atau kata sandi yang ditulis di kode |
 | `internal/handlers/` | Penerima permintaan HTTP. Tugasnya sempit: baca permintaan, panggil *service*, tulis jawaban JSON |
 | `internal/services/` | Aturan dagang dan perakitan data. Di sinilah "klaim punya peserta, peserta punya baris" disusun |
 | `internal/repository/` | Satu-satunya lapisan yang berbicara ke Oracle. Seluruh SQL ada di sini, dan **hanya** di sini |
 | `internal/repository/migrations/` | Berkas `.sql` bernomor yang membentuk tabel. Satu berkas = satu langkah, dan tiap langkah punya pasangan `_down.sql` untuk membatalkannya. Ditanam ke biner, jadi tidak perlu dicari di disk saat program jalan |
 | `internal/repository/barislamakolom.go` | Daftar **62 kolom** tabel datar warisan beserta tipenya dari katalog Oracle, ditulis SEKALI; **55** di antaranya yang ditulis rule Pega. Pembaca, penulis fixture, dan tabel tiruan mengambil daftar yang sama, sehingga urutan `SELECT` dan urutan `Scan` tidak mungkin berselisih |
 | `internal/repository/skemauji/` | Menyiapkan skema uji Oracle untuk test bertag `db`: menjalankan migrasi yang sama dengan aplikasi, mengisi fixture buatan, lalu membongkarnya |
-| `internal/models/` | Bentuk data (struct): `Klaim`, `Peserta`, `BarisAdjustment`, `Money`, `Ratio` |
-| `pkg/utils/` | Alat bantu umum: konversi teks ↔ desimal, format tanggal |
+| `internal/models/` | Bentuk data (struct): `Klaim`, `Peserta`, `BarisAdjustment`. `Money` dan `Ratio` kini di `inti/uang/` |
+| `inti/utils/` | Alat bantu umum: konversi teks ↔ desimal, format tanggal |
 | `frontend/` | Tampilan React (TypeScript, berkas `.tsx`). Dijalankan Vite |
 | `Makefile` | Daftar perintah: jalankan, bangun, uji. Setiap target adalah satu-dua perintah biasa |
 | `bin/` | Hasil `go build` — tidak masuk git |
@@ -50,7 +51,7 @@ Nama medan JSON di langkah 6 (`nomorKlaim`, `jumlahKlaim`, …) **harus sama per
 
 ## 3. Urutan membaca yang disarankan
 
-**Go** — dari luar ke dalam: `cmd/api/main.go` → `internal/config/config.go` →
+**Go** — dari luar ke dalam: `cmd/api/main.go` → `inti/config/config.go` →
 `internal/handlers/handlers.go` → `internal/handlers/klaimlife.go` →
 `internal/services/klaimlife.go` → `internal/repository/klaimlife.go` →
 `internal/models/klaimlife.go` → `internal/models/money.go`.

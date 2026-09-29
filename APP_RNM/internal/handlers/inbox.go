@@ -19,6 +19,8 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
 )
 
 // barisInboxJSON adalah satu baris antrian di kabel.
@@ -75,22 +77,22 @@ func bilanganKueri(r *http.Request, nama string, bawaan int) (int, bool) {
 func kotakMasuk(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		nomorTahap, sah := bilanganKueri(r, "tahap", int(models.TahapOutstanding))
 		if !sah {
-			galat(w, http.StatusBadRequest, "parameter tahap harus bilangan 1..4")
+			galat.Tulis(w, http.StatusBadRequest, "parameter tahap harus bilangan 1..4")
 			return
 		}
 		halaman, sah := bilanganKueri(r, "halaman", 1)
 		if !sah {
-			galat(w, http.StatusBadRequest, "parameter halaman harus bilangan")
+			galat.Tulis(w, http.StatusBadRequest, "parameter halaman harus bilangan")
 			return
 		}
 		ukuran, sah := bilanganKueri(r, "ukuran", 0)
 		if !sah {
-			galat(w, http.StatusBadRequest, "parameter ukuran harus bilangan")
+			galat.Tulis(w, http.StatusBadRequest, "parameter ukuran harus bilangan")
 			return
 		}
 		if halaman < 1 {
@@ -102,26 +104,26 @@ func kotakMasuk(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 		// membuat lencana tidak cocok dengan isinya.
 		offset := (halaman - 1) * services.BatasUkuran(ukuran)
 
-		hal, err := svc.KotakMasuk().Ambil(r.Context(), pelakuDari(r, stubPelaku),
+		hal, err := svc.KotakMasuk().Ambil(r.Context(), inti.PelakuDari(r, stubPelaku),
 			tahap, offset, ukuran)
 		switch {
-		case errors.Is(err, services.ErrTanpaIdentitas):
-			galat(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+		case errors.Is(err, inti.ErrTanpaIdentitas):
+			galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
 			return
 		case errors.Is(err, services.ErrTahapTidakSah):
-			galat(w, http.StatusBadRequest, "tahap harus 1..4")
+			galat.Tulis(w, http.StatusBadRequest, "tahap harus 1..4")
 			return
-		case errors.Is(err, services.ErrTanpaWewenang):
+		case errors.Is(err, inti.ErrTanpaWewenang):
 			// ⛔ 403, BUKAN daftar kosong. Daftar kosong terbaca sebagai
 			// "tidak ada pekerjaan".
-			galat(w, http.StatusForbidden, "peran tidak memegang tahap ini")
+			galat.Tulis(w, http.StatusForbidden, "peran tidak memegang tahap ini")
 			return
 		case err != nil:
 			// ⚠️ Sebabnya DICATAT di log server (GILIRAN-12 paket 3): uji asap
 			// DEV menjumpai satu 500 sesaat di sini yang tidak dapat
 			// direproduksi, dan tanpa baris log ia tidak dapat ditelusuri.
 			log.Printf("kotak masuk Claim Life: %v", err)
-			galat(w, http.StatusInternalServerError, "gagal membaca kotak masuk")
+			galat.Tulis(w, http.StatusInternalServerError, "gagal membaca kotak masuk")
 			return
 		}
 

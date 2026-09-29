@@ -10,6 +10,9 @@ import (
 	"testing"
 
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/unggah"
 )
 
 func TestKetigaRuteDokumenTerdaftar(t *testing.T) {
@@ -63,17 +66,17 @@ func TestGalatDokumenDipetakanKeKodeYangBenar(t *testing.T) {
 		err  error
 		mau  int
 	}{
-		{"tanpa identitas", services.ErrTanpaIdentitas, http.StatusUnauthorized},
+		{"tanpa identitas", inti.ErrTanpaIdentitas, http.StatusUnauthorized},
 		{"kasus tertutup", services.ErrKasusSudahTertutup, http.StatusConflict},
 		// ⛔ 503, bukan 500 dan bukan 400: folder yang belum disetel adalah
 		// keadaan SERVER yang belum siap, bukan permintaan yang salah.
-		{"folder belum disetel", services.ErrUnggahanDirBelumDisetel,
+		{"folder belum disetel", unggah.ErrUnggahanDirBelumDisetel,
 			http.StatusServiceUnavailable},
 		{"kategori belum ada", services.ErrKategoriWajibBelumDiketahui,
 			http.StatusServiceUnavailable},
-		{"terlalu besar", services.ErrBerkasTerlaluBesar,
+		{"terlalu besar", unggah.ErrBerkasTerlaluBesar,
 			http.StatusRequestEntityTooLarge},
-		{"kosong", services.ErrBerkasKosong, http.StatusBadRequest},
+		{"kosong", unggah.ErrBerkasKosong, http.StatusBadRequest},
 		{"kategori asing", services.ErrKategoriDokumenTidakDikenal,
 			http.StatusUnprocessableEntity},
 		// ⛔ 409, bukan 404: barisnya ADA, berkasnya belum tertaut. Layar
@@ -83,7 +86,7 @@ func TestGalatDokumenDipetakanKeKodeYangBenar(t *testing.T) {
 		// ada dijawab 500 "gagal memproses dokumen", dan itu terbaca sebagai
 		// kerusakan server padahal pengenalnya yang salah.
 		{"dokumen tidak ada", services.ErrDokumenTidakAda, http.StatusNotFound},
-		{"permintaan tidak sah", services.ErrPermintaanTidakSah, http.StatusBadRequest},
+		{"permintaan tidak sah", galat.ErrPermintaanTidakSah, http.StatusBadRequest},
 	} {
 		w := httptest.NewRecorder()
 		if !jawabGalatDokumen(w, u.err) {

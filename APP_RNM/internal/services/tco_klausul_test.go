@@ -14,6 +14,8 @@ import (
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
 )
 
 type gudangKlausulUji struct {
@@ -47,7 +49,7 @@ func (g *gudangKlausulUji) Induk(_ context.Context, tahunID, descID, reins strin
 	}
 	return models.KlausulTreaty{}, repository.ErrKlausulTidakAda
 }
-func (g *gudangKlausulUji) PctAnakLain(_ context.Context, _ *repository.Tx, tahunID, descID, parent, kecuali string) ([]*apd.Decimal, error) {
+func (g *gudangKlausulUji) PctAnakLain(_ context.Context, _ *db.Tx, tahunID, descID, parent, kecuali string) ([]*apd.Decimal, error) {
 	var hasil []*apd.Decimal
 	for id, k := range g.baris {
 		if k.TreatyYearID == tahunID && k.TreatyDescID == descID && k.ParentReinsTypeID == parent && id != kecuali {
@@ -56,16 +58,16 @@ func (g *gudangKlausulUji) PctAnakLain(_ context.Context, _ *repository.Tx, tahu
 	}
 	return hasil, nil
 }
-func (g *gudangKlausulUji) CariDobel(context.Context, *repository.Tx, models.KlausulTreaty, []string) (string, error) {
+func (g *gudangKlausulUji) CariDobel(context.Context, *db.Tx, models.KlausulTreaty, []string) (string, error) {
 	return g.dobel, nil
 }
-func (g *gudangKlausulUji) Sisip(_ context.Context, _ *repository.Tx, k models.KlausulTreaty) (string, error) {
+func (g *gudangKlausulUji) Sisip(_ context.Context, _ *db.Tx, k models.KlausulTreaty) (string, error) {
 	g.urut++
 	k.ID = "1000000" + string(rune('0'+g.urut))
 	g.baris[k.ID] = k
 	return k.ID, nil
 }
-func (g *gudangKlausulUji) Perbarui(_ context.Context, _ *repository.Tx, k models.KlausulTreaty) error {
+func (g *gudangKlausulUji) Perbarui(_ context.Context, _ *db.Tx, k models.KlausulTreaty) error {
 	g.baris[k.ID] = k
 	return nil
 }
@@ -104,7 +106,7 @@ func (tahunKlausulUji) Ambil(_ context.Context, id string) (models.TahunTreaty, 
 	}
 	return models.TahunTreaty{ID: id, TreatyYear: "2026", TreatyGroupID: "10001", TreatyGroupName: "UJI GRUP"}, nil
 }
-func (t tahunKlausulUji) Kunci(context.Context, *repository.Tx, string) error {
+func (t tahunKlausulUji) Kunci(context.Context, *db.Tx, string) error {
 	*t.dikunci++
 	return nil
 }
@@ -139,7 +141,7 @@ func (k kursKlausulUji) Berlaku(_ context.Context, tahun models.TahunTreaty) (mo
 func TestKlausulTanpaIdentitasDanBawaan(t *testing.T) {
 	n := 0
 	l := layananKlausul(gudangKlausulKosong(), &n)
-	if _, err := l.Simpan(context.Background(), services.Pelaku{}, "1000001", epi("10003", "1")); !errors.Is(err, services.ErrTanpaIdentitas) {
+	if _, err := l.Simpan(context.Background(), inti.Pelaku{}, "1000001", epi("10003", "1")); !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("identitas: %v", err)
 	}
 	if _, err := services.New(nil).KlausulTCO().JenisKlausul(context.Background(), pelakuUjiTCO, ""); !errors.Is(err, services.ErrGudangKlausulBelumDisuntik) {

@@ -15,7 +15,9 @@ import (
 	"testing"
 	"time"
 
-	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
 )
 
 // permintaanUji adalah permintaan yang sah, untuk diubah satu-satu.
@@ -47,7 +49,7 @@ func TestPermintaanDaftarMenolakYangTidakLengkap(t *testing.T) {
 			if err == nil {
 				t.Fatal("permintaan tidak lengkap diterima")
 			}
-			if !errors.Is(err, ErrPermintaanTidakSah) {
+			if !errors.Is(err, galat.ErrPermintaanTidakSah) {
 				t.Errorf("galatnya bukan ErrPermintaanTidakSah: %v", err)
 			}
 		})
@@ -100,7 +102,7 @@ func TestNomorTidakDiambilBilaPermintaanDitolak(t *testing.T) {
 // penomorPencatat menghitung berapa kali nomor diminta.
 type penomorPencatat struct{ n *int }
 
-func (p penomorPencatat) NomorBerikut(context.Context, *repository.Tx, string, time.Time) (string, error) {
+func (p penomorPencatat) NomorBerikut(context.Context, *db.Tx, string, time.Time) (string, error) {
 	*p.n++
 	return "UJI-NOMOR", nil
 }
@@ -108,15 +110,15 @@ func (p penomorPencatat) NomorBerikut(context.Context, *repository.Tx, string, t
 // pelakuUji adalah pelaku yang membawa identitas, seperlunya saja.
 // pelakuUji berperan Input Register sejak tiket 07: pendaftaran menulis
 // status Outstanding, jadi ia salah satu jalur pengubah status.
-func pelakuUji() Pelaku {
-	return Pelaku{AkunID: "UJI-OPERATOR", Peran: []string{PeranInputRegister}}
+func pelakuUji() inti.Pelaku {
+	return inti.Pelaku{AkunID: "UJI-OPERATOR", Peran: []string{PeranInputRegister}}
 }
 
 // Pendaftaran tanpa Oracle gagal terang, bukan diam.
 func TestDaftarTanpaOracleGagal(t *testing.T) {
 	p := &Pendaftaran{svc: New(nil), penomor: PenomorBelumDiputuskan{}}
 	_, err := p.Daftar(context.Background(), pelakuUji(), permintaanUji())
-	if !errors.Is(err, repository.ErrTanpaOracle) {
+	if !errors.Is(err, db.ErrTanpaOracle) {
 		t.Errorf("galatnya bukan ErrTanpaOracle: %v", err)
 	}
 }
@@ -129,9 +131,9 @@ func TestDaftarTanpaOracleGagal(t *testing.T) {
 func TestDaftarTanpaPelakuDitolak(t *testing.T) {
 	dipanggil := 0
 	p := &Pendaftaran{svc: New(nil), penomor: penomorPencatat{n: &dipanggil}}
-	for _, pelaku := range []Pelaku{{}, {AkunID: "   "}} {
+	for _, pelaku := range []inti.Pelaku{{}, {AkunID: "   "}} {
 		_, err := p.Daftar(context.Background(), pelaku, permintaanUji())
-		if !errors.Is(err, ErrTanpaIdentitas) {
+		if !errors.Is(err, inti.ErrTanpaIdentitas) {
 			t.Errorf("pelaku %+v diterima; galatnya %v", pelaku, err)
 		}
 	}

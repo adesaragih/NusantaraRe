@@ -33,6 +33,7 @@ import (
 	"github.com/cockroachdb/apd/v3"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/db"
 )
 
 // ErrSecurityTidakAda - baris security bukan milik reinsurer itu.
@@ -50,10 +51,10 @@ type SecurityTCO struct {
 }
 
 // MasterSecurityTCO membaca dan menulis `MTREATYSECURITY`.
-type MasterSecurityTCO struct{ db *DB }
+type MasterSecurityTCO struct{ db *db.DB }
 
 // NewMasterSecurityTCO menyusun gudangnya.
-func NewMasterSecurityTCO(db *DB) *MasterSecurityTCO { return &MasterSecurityTCO{db: db} }
+func NewMasterSecurityTCO(db *db.DB) *MasterSecurityTCO { return &MasterSecurityTCO{db: db} }
 
 // pilihSecurityTCO - `PCT_SHARE` VARCHAR2(99) dibaca APA ADANYA (diurai di Go,
 // titik atau koma); kolom CHAR dipangkas di Go.
@@ -145,10 +146,10 @@ func (m *MasterSecurityTCO) Daftar(ctx context.Context, reasID, thnTreaty string
 		return nil, err
 	}
 	q := sqlDaftarSecurityTCO(tabel, agent)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := m.db.bacaTCO(ctx).QueryContext(ctx, q, reasID, thnTreaty)
+	rows, err := bacaTCO(ctx, m.db).QueryContext(ctx, q, reasID, thnTreaty)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca security reinsurer %s: %w", reasID, err)
 	}
@@ -171,10 +172,10 @@ func (m *MasterSecurityTCO) Ambil(ctx context.Context, reasID, id string) (Secur
 		return SecurityTCO{}, err
 	}
 	q := sqlAmbilSecurityTCO(tabel, agent)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return SecurityTCO{}, err
 	}
-	s, err := pindaiSecurityTCO(m.db.bacaTCO(ctx).QueryRowContext(ctx, q, reasID, id))
+	s, err := pindaiSecurityTCO(bacaTCO(ctx, m.db).QueryRowContext(ctx, q, reasID, id))
 	if errors.Is(err, sql.ErrNoRows) {
 		return SecurityTCO{}, ErrSecurityTidakAda
 	}
@@ -186,7 +187,7 @@ func (m *MasterSecurityTCO) Ambil(ctx context.Context, reasID, id string) (Secur
 
 // CariDobel mencari baris LAIN yang memegang security yang sama; `kecualiID`
 // = kunci lama baris yang sedang diubah.
-func (m *MasterSecurityTCO) CariDobel(ctx context.Context, tx *Tx, reasID, reasSecurity, kecualiID string) (string, error) {
+func (m *MasterSecurityTCO) CariDobel(ctx context.Context, tx *db.Tx, reasID, reasSecurity, kecualiID string) (string, error) {
 	if tx == nil {
 		return "", errors.New("repository: pencarian dobel security menuntut transaksi")
 	}
@@ -195,11 +196,11 @@ func (m *MasterSecurityTCO) CariDobel(ctx context.Context, tx *Tx, reasID, reasS
 		return "", err
 	}
 	q := sqlCariDobelSecurityTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return "", err
 	}
 	var id string
-	err = tx.tx.QueryRowContext(ctx, q, reasID, reasSecurity, kosongJadiNil(kecualiID), kosongJadiNil(kecualiID)).Scan(&id)
+	err = tx.QueryRowContext(ctx, q, reasID, reasSecurity, db.KosongJadiNil(kecualiID), db.KosongJadiNil(kecualiID)).Scan(&id)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", nil
 	}
@@ -210,7 +211,7 @@ func (m *MasterSecurityTCO) CariDobel(ctx context.Context, tx *Tx, reasID, reasS
 }
 
 // Sisip menulis security baru; "identitas"nya = `REAS_SECURITY` terpangkas.
-func (m *MasterSecurityTCO) Sisip(ctx context.Context, tx *Tx, s models.SecurityReinsurer) (string, error) {
+func (m *MasterSecurityTCO) Sisip(ctx context.Context, tx *db.Tx, s models.SecurityReinsurer) (string, error) {
 	if tx == nil {
 		return "", errors.New("repository: menyisipkan security menuntut transaksi")
 	}
@@ -219,20 +220,20 @@ func (m *MasterSecurityTCO) Sisip(ctx context.Context, tx *Tx, s models.Security
 		return "", err
 	}
 	q := sqlSisipSecurityTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return "", err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, kosongJadiNil(s.ThnTreaty), s.ReasID, TulisDesimalWarisanTCO(s.PctShare),
+	hasil, err := tx.ExecContext(ctx, q, db.KosongJadiNil(s.ThnTreaty), s.ReasID, TulisDesimalWarisanTCO(s.PctShare),
 		s.ReasSecurity)
 	if err != nil {
 		return "", fmt.Errorf("repository: menyisipkan security: %w", err)
 	}
-	return strings.TrimSpace(s.ReasSecurity), pastikanSatuBaris(hasil, "penyisipan security")
+	return strings.TrimSpace(s.ReasSecurity), db.PastikanSatuBaris(hasil, "penyisipan security")
 }
 
 // Perbarui menimpa tahun, share, dan security - berkunci `REAS_ID` +
 // `TRIM(REAS_SECURITY)` lama (`s.ID`).
-func (m *MasterSecurityTCO) Perbarui(ctx context.Context, tx *Tx, s models.SecurityReinsurer) error {
+func (m *MasterSecurityTCO) Perbarui(ctx context.Context, tx *db.Tx, s models.SecurityReinsurer) error {
 	if tx == nil {
 		return errors.New("repository: memperbarui security menuntut transaksi")
 	}
@@ -241,10 +242,10 @@ func (m *MasterSecurityTCO) Perbarui(ctx context.Context, tx *Tx, s models.Secur
 		return err
 	}
 	q := sqlPerbaruiSecurityTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, kosongJadiNil(s.ThnTreaty), TulisDesimalWarisanTCO(s.PctShare),
+	hasil, err := tx.ExecContext(ctx, q, db.KosongJadiNil(s.ThnTreaty), TulisDesimalWarisanTCO(s.PctShare),
 		s.ReasSecurity, s.ReasID, s.ID)
 	if err != nil {
 		return fmt.Errorf("repository: memperbarui security %s: %w", s.ID, err)
@@ -253,7 +254,7 @@ func (m *MasterSecurityTCO) Perbarui(ctx context.Context, tx *Tx, s models.Secur
 }
 
 // Hapus membuang SATU security - baris reinsurer induknya tidak disentuh.
-func (m *MasterSecurityTCO) Hapus(ctx context.Context, tx *Tx, reasID, id string) error {
+func (m *MasterSecurityTCO) Hapus(ctx context.Context, tx *db.Tx, reasID, id string) error {
 	if tx == nil {
 		return errors.New("repository: menghapus security menuntut transaksi")
 	}
@@ -262,10 +263,10 @@ func (m *MasterSecurityTCO) Hapus(ctx context.Context, tx *Tx, reasID, id string
 		return err
 	}
 	q := sqlHapusSecurityTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, reasID, id)
+	hasil, err := tx.ExecContext(ctx, q, reasID, id)
 	if err != nil {
 		return fmt.Errorf("repository: menghapus security %s: %w", id, err)
 	}

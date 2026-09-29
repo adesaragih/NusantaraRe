@@ -34,6 +34,9 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
 )
 
 var (
@@ -76,19 +79,19 @@ type konteksDiagnosa struct {
 // "pengenal wajib diisi", bukan "ORACLE_DSN belum dikonfigurasi" - cacat
 // yang pernah nyata di `statusbaris.go` dan ditangkap
 // `TestUbahStatusMenjagaPagarnya`.
-func (d *DiagnosaPeserta) pagari(ctx context.Context, pelaku Pelaku,
+func (d *DiagnosaPeserta) pagari(ctx context.Context, pelaku inti.Pelaku,
 	klaimID, pesertaID string) (konteksDiagnosa, error) {
 
 	var k konteksDiagnosa
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return k, err
 	}
 	if strings.TrimSpace(klaimID) == "" || strings.TrimSpace(pesertaID) == "" {
 		return k, fmt.Errorf("%w: pengenal klaim dan peserta wajib diisi",
-			ErrPermintaanTidakSah)
+			galat.ErrPermintaanTidakSah)
 	}
 	if d == nil || d.svc == nil || !d.svc.PunyaDatabase() {
-		return k, repository.ErrTanpaOracle
+		return k, db.ErrTanpaOracle
 	}
 	// ⛔ BUTIR bb - kasus tertutup tidak dapat diubah lagi. Penjaga statik
 	// `TestSetiapLayananPengubahMemeriksaKasusTerbuka` menagih baris ini.
@@ -96,8 +99,8 @@ func (d *DiagnosaPeserta) pagari(ctx context.Context, pelaku Pelaku,
 		return k, err
 	}
 
-	k.baca = repository.NewKlaimLife(d.svc.db)
-	k.diag = repository.NewDiagnosa(d.svc.db)
+	k.baca = repository.NewKlaimLife(d.svc.DB())
+	k.diag = repository.NewDiagnosa(d.svc.DB())
 
 	// Gerbang 1 dan 2 - tahap, lalu pemegangnya. Kolom TAHAP menang;
 	// PY_POSITION cadangan untuk baris lama (butir at).
@@ -113,7 +116,7 @@ func (d *DiagnosaPeserta) pagari(ctx context.Context, pelaku Pelaku,
 	if !ada {
 		return k, fmt.Errorf("%w: tahap %q", ErrPeranTahapBelumDiputuskan, tahap)
 	}
-	if err := WajibPeran(pelaku, peranTahap); err != nil {
+	if err := inti.WajibPeran(pelaku, peranTahap); err != nil {
 		return k, err
 	}
 
@@ -129,7 +132,7 @@ func (d *DiagnosaPeserta) pagari(ctx context.Context, pelaku Pelaku,
 	}
 	if k.peserta.ID == "" {
 		return k, fmt.Errorf("%w: peserta %q bukan milik klaim %q",
-			ErrPermintaanTidakSah, pesertaID, klaimID)
+			galat.ErrPermintaanTidakSah, pesertaID, klaimID)
 	}
 	if models.DiagnosaTerkunci(k.peserta.KodeStatus) {
 		return k, fmt.Errorf("%w: peserta %q berkode %q",
@@ -152,7 +155,7 @@ func (d *DiagnosaPeserta) pagari(ctx context.Context, pelaku Pelaku,
 // membuat dua pemakai pada peserta yang sama melihat urutan yang berbeda.
 // Yang hilang: baris kosong yang ditambahkan lalu ditinggalkan akan
 // tersimpan. Yang didapat: `URUTAN` yang sama untuk semua yang melihatnya.
-func (d *DiagnosaPeserta) Tambah(ctx context.Context, pelaku Pelaku,
+func (d *DiagnosaPeserta) Tambah(ctx context.Context, pelaku inti.Pelaku,
 	klaimID, pesertaID string) (models.Diagnosa, error) {
 
 	k, err := d.pagari(ctx, pelaku, klaimID, pesertaID)
@@ -174,7 +177,7 @@ func (d *DiagnosaPeserta) Tambah(ctx context.Context, pelaku Pelaku,
 	// urutan tampil.
 
 	var lahir models.Diagnosa
-	err = d.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	err = d.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		var e error
 		lahir, e = k.diag.SisipDiagnosa(ctx, tx, pesertaID, urutan,
 			k.peserta.KodeStatus)
@@ -197,7 +200,7 @@ func (d *DiagnosaPeserta) Tambah(ctx context.Context, pelaku Pelaku,
 // ⛔ `groupDiagnose` diterima apa adanya - `[terbuka - OQ-L]`. Daftar
 // pilihannya hidup pada rule properti yang tidak diekspor, jadi satu-satunya
 // pemeriksaan yang jujur adalah panjangnya.
-func (d *DiagnosaPeserta) Ubah(ctx context.Context, pelaku Pelaku,
+func (d *DiagnosaPeserta) Ubah(ctx context.Context, pelaku inti.Pelaku,
 	klaimID, pesertaID string, diagID int64, kodeICD, nama, grup string) error {
 
 	k, err := d.pagari(ctx, pelaku, klaimID, pesertaID)
@@ -213,7 +216,7 @@ func (d *DiagnosaPeserta) Ubah(ctx context.Context, pelaku Pelaku,
 	if _, err := d.milikPeserta(ctx, k, klaimID, pesertaID, diagID); err != nil {
 		return err
 	}
-	return d.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	return d.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		return k.diag.PerbaruiDiagnosa(ctx, tx, diagID, kodeICD, nama, grup)
 	})
 }
@@ -228,7 +231,7 @@ func (d *DiagnosaPeserta) Ubah(ctx context.Context, pelaku Pelaku,
 // menggeser subscript anggota sesudahnya sendiri; kolom tidak bergeser
 // sendiri, dan daftar yang berlubang akan menomori baris berikutnya dengan
 // angka yang sudah dipakai.
-func (d *DiagnosaPeserta) Hapus(ctx context.Context, pelaku Pelaku,
+func (d *DiagnosaPeserta) Hapus(ctx context.Context, pelaku inti.Pelaku,
 	klaimID, pesertaID string, diagID int64) error {
 
 	k, err := d.pagari(ctx, pelaku, klaimID, pesertaID)
@@ -239,7 +242,7 @@ func (d *DiagnosaPeserta) Hapus(ctx context.Context, pelaku Pelaku,
 	if err != nil {
 		return err
 	}
-	return d.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	return d.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		if err := k.diag.HapusDiagnosa(ctx, tx, diagID); err != nil {
 			return err
 		}
@@ -266,7 +269,7 @@ func (d *DiagnosaPeserta) milikPeserta(ctx context.Context, k konteksDiagnosa,
 		}
 	}
 	return models.Diagnosa{}, fmt.Errorf("%w: diagnosa %d bukan milik peserta %q",
-		ErrPermintaanTidakSah, diagID, pesertaID)
+		galat.ErrPermintaanTidakSah, diagID, pesertaID)
 }
 
 // cerminkanKeDiagnosa menyalin keputusan peserta ke seluruh diagnosanya.
@@ -283,8 +286,8 @@ func (d *DiagnosaPeserta) milikPeserta(ctx context.Context, k konteksDiagnosa,
 // ⚠️ Fungsi paket, bukan metode `DiagnosaPeserta` - pemanggilnya sudah berada
 // di dalam transaksi dan tidak boleh melewati gerbang `pagari` lagi: gerbang
 // itu MENOLAK peserta yang sudah diputus, sedangkan inilah yang memutuskannya.
-func cerminkanKeDiagnosa(ctx context.Context, svc *Service, tx *repository.Tx,
+func cerminkanKeDiagnosa(ctx context.Context, svc *Service, tx *db.Tx,
 	pesertaID, sts string) error {
 
-	return repository.NewDiagnosa(svc.db).CerminkanStsReject(ctx, tx, pesertaID, sts)
+	return repository.NewDiagnosa(svc.DB()).CerminkanStsReject(ctx, tx, pesertaID, sts)
 }

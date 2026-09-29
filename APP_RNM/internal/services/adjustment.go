@@ -20,7 +20,9 @@ import (
 	"github.com/cockroachdb/apd/v3"
 
 	"nusantarare/internal/models"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti"
+	"nusantarare/inti/uang"
+	"nusantarare/inti/utils"
 )
 
 // ErrBarisTidakSah menandai baris adjustment yang tidak dapat dibentuk.
@@ -93,7 +95,7 @@ func nilaiAtauNol(d *apd.Decimal) *apd.Decimal {
 // ⚠️ Tiket 03 semula menulis `ReasLifeAdmin`. XML menang atas tiket (aturan
 // work owner 26-09-2026), dan tiket sudah diralat. Yang bergerbang
 // `ReasLifeAdmin` adalah REJECT Outstanding - tiket 05, kondisi baris 15399.
-const PeranSimpanOutstanding = PeranSPV
+const PeranSimpanOutstanding = inti.PeranSPV
 
 // TambahBaris membentuk satu baris adjustment baru bagi seorang peserta.
 //
@@ -171,8 +173,8 @@ func BarisPendaftaran(p models.Peserta) (models.BarisAdjustment, bool, error) {
 	var b models.BarisAdjustment
 	for _, m := range []struct {
 		nama string
-		dari models.Money
-		ke   *models.Money
+		dari uang.Money
+		ke   *uang.Money
 	}{
 		{"CEDING_RETENTION", p.CedingRetention, &b.CedingRetention},
 		{"SHARE_NUSANTARA_RE", p.ShareNusantaraRe, &b.ShareNusantaraRe},
@@ -182,7 +184,7 @@ func BarisPendaftaran(p models.Peserta) (models.BarisAdjustment, bool, error) {
 		{"CLAIM_AMOUNT", p.JumlahKlaim, &b.JumlahKlaim},
 		{"RETROCEDED_SHARE", p.RetrocededShare, &b.RetrocededShare},
 	} {
-		*m.ke = models.Money{Currency: p.MataUang}
+		*m.ke = uang.Money{Currency: p.MataUang}
 		empat, err := bulatEmpatPendaftaran(kosongJadiNol78(m.dari), p.ID, m.nama)
 		if err != nil {
 			return models.BarisAdjustment{}, false, err
@@ -221,7 +223,7 @@ func bulatEmpatPendaftaran(d *apd.Decimal, pesertaID, medan string) (*apd.Decima
 // ⛔ Satu fungsi konversi, SATU pemanggil (`BarisPendaftaran`), dan namanya
 // terikat langkahnya supaya tidak tampak sebagai peniru `@toDecimal` umum.
 // Penjaga `TestKosongJadiNolHanyaSatuPemanggil` menagih satu pemanggil itu.
-func kosongJadiNol78(m models.Money) *apd.Decimal {
+func kosongJadiNol78(m uang.Money) *apd.Decimal {
 	if m.Kosong() {
 		return apd.New(0, 0)
 	}
@@ -246,7 +248,7 @@ func BulatkanPesertaPendaftaran(peserta []models.Peserta) error {
 		p := &peserta[i]
 		for _, m := range []struct {
 			nama string
-			ke   *models.Money
+			ke   *uang.Money
 		}{
 			{"GROSS_PREMIUM", &p.GrossPremium}, {"NET_PREMIUM", &p.NetPremium},
 			{"SHARE_NUSANTARA_RE", &p.ShareNusantaraRe}, {"SUM_INSURED", &p.SumInsured},

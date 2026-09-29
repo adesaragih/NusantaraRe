@@ -12,6 +12,8 @@ import (
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
 )
 
 type gudangBusinessUji struct {
@@ -40,23 +42,23 @@ func (g *gudangBusinessUji) Ambil(_ context.Context, k models.KombinasiTCO, id s
 	}
 	return b, nil
 }
-func (g *gudangBusinessUji) CariDobel(_ context.Context, _ *repository.Tx, _ models.KombinasiTCO, _, _ string) (string, error) {
+func (g *gudangBusinessUji) CariDobel(_ context.Context, _ *db.Tx, _ models.KombinasiTCO, _, _ string) (string, error) {
 	return g.dobel, nil
 }
-func (g *gudangBusinessUji) Sisip(_ context.Context, _ *repository.Tx, b models.BusinessTreaty) (string, error) {
+func (g *gudangBusinessUji) Sisip(_ context.Context, _ *db.Tx, b models.BusinessTreaty) (string, error) {
 	g.urut++
 	b.ID = "100000" + string(rune('0'+g.urut))
 	g.baris[b.ID] = b
 	return b.ID, nil
 }
-func (g *gudangBusinessUji) Perbarui(_ context.Context, _ *repository.Tx, b models.BusinessTreaty) error {
+func (g *gudangBusinessUji) Perbarui(_ context.Context, _ *db.Tx, b models.BusinessTreaty) error {
 	if _, ada := g.baris[b.ID]; !ada {
 		return repository.ErrBusinessTidakAda
 	}
 	g.baris[b.ID] = b
 	return nil
 }
-func (g *gudangBusinessUji) Hapus(_ context.Context, _ *repository.Tx, k models.KombinasiTCO, id string) error {
+func (g *gudangBusinessUji) Hapus(_ context.Context, _ *db.Tx, k models.KombinasiTCO, id string) error {
 	b, ada := g.baris[id]
 	if !ada || !g.cocok(k, b) {
 		return repository.ErrBusinessTidakAda
@@ -111,7 +113,7 @@ func TestBusinessNonaktifkanDanPerbaruiSeluruhMedan(t *testing.T) {
 	g := gudangBusinessKosong()
 	l := layananBusiness(g)
 	a, _ := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", "1000003", services.BusinessMasuk{BizCode: "UJI-B1", IsActive: "1"})
-	_, err := l.Simpan(context.Background(), services.Pelaku{AkunID: "UJI-PENGUBAH"}, "1000001", "1000003",
+	_, err := l.Simpan(context.Background(), inti.Pelaku{AkunID: "UJI-PENGUBAH"}, "1000001", "1000003",
 		services.BusinessMasuk{ID: a.ID, BizCode: "UJI-B2", IsActive: "0"})
 	if err != nil {
 		t.Fatal(err)

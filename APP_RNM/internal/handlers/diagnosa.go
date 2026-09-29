@@ -28,6 +28,8 @@ import (
 	"strconv"
 
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
 )
 
 // isiDiagnosa adalah badan permintaan `PUT`.
@@ -47,10 +49,10 @@ type isiDiagnosa struct {
 func tambahDiagnosa(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
-		lahir, err := svc.Diagnosa().Tambah(r.Context(), pelakuDari(r, stubPelaku),
+		lahir, err := svc.Diagnosa().Tambah(r.Context(), inti.PelakuDari(r, stubPelaku),
 			r.PathValue("id"), r.PathValue("pesertaId"))
 		if jawabGalatDiagnosa(w, err) {
 			return
@@ -65,7 +67,7 @@ func tambahDiagnosa(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 func ubahDiagnosa(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		diagID, ok := pengenalDiagnosa(w, r)
@@ -74,10 +76,10 @@ func ubahDiagnosa(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 		}
 		var isi isiDiagnosa
 		if err := json.NewDecoder(r.Body).Decode(&isi); err != nil {
-			galat(w, http.StatusBadRequest, "badan permintaan bukan JSON yang sah")
+			galat.Tulis(w, http.StatusBadRequest, "badan permintaan bukan JSON yang sah")
 			return
 		}
-		err := svc.Diagnosa().Ubah(r.Context(), pelakuDari(r, stubPelaku),
+		err := svc.Diagnosa().Ubah(r.Context(), inti.PelakuDari(r, stubPelaku),
 			r.PathValue("id"), r.PathValue("pesertaId"), diagID,
 			isi.KodeIcd, isi.Nama, isi.GroupDiagnose)
 		if jawabGalatDiagnosa(w, err) {
@@ -91,14 +93,14 @@ func ubahDiagnosa(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 func hapusDiagnosa(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		diagID, ok := pengenalDiagnosa(w, r)
 		if !ok {
 			return
 		}
-		err := svc.Diagnosa().Hapus(r.Context(), pelakuDari(r, stubPelaku),
+		err := svc.Diagnosa().Hapus(r.Context(), inti.PelakuDari(r, stubPelaku),
 			r.PathValue("id"), r.PathValue("pesertaId"), diagID)
 		if jawabGalatDiagnosa(w, err) {
 			return
@@ -119,7 +121,7 @@ func hapusDiagnosa(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 func pengenalDiagnosa(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	n, err := strconv.ParseInt(r.PathValue("diagId"), 10, 64)
 	if err != nil || n <= 0 {
-		galat(w, http.StatusBadRequest, "pengenal diagnosa bukan angka yang sah")
+		galat.Tulis(w, http.StatusBadRequest, "pengenal diagnosa bukan angka yang sah")
 		return 0, false
 	}
 	return n, true
@@ -136,29 +138,29 @@ func jawabGalatDiagnosa(w http.ResponseWriter, err error) bool {
 	switch {
 	case err == nil:
 		return false
-	case errors.Is(err, services.ErrTanpaIdentitas):
-		galat(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
-	case errors.Is(err, services.ErrTanpaWewenang):
-		galat(w, http.StatusForbidden,
+	case errors.Is(err, inti.ErrTanpaIdentitas):
+		galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+	case errors.Is(err, inti.ErrTanpaWewenang):
+		galat.Tulis(w, http.StatusForbidden,
 			"hanya pemegang tahap ini yang dapat mengubah diagnosanya")
 	case errors.Is(err, services.ErrDiagnosaTerkunci):
 		// 409: bukan permintaan yang salah, melainkan bentrokan dengan
 		// keadaan yang sudah ada. Padanan `pyDisabledWhen` b4682/b5059/
 		// b5870/b6152 - di Pega tombolnya mati, di sini permintaannya
 		// ditolak dengan kalimat yang menyebut sebabnya.
-		galat(w, http.StatusConflict,
+		galat.Tulis(w, http.StatusConflict,
 			"peserta sudah diputus; diagnosanya tidak dapat diubah lagi")
 	case errors.Is(err, services.ErrKasusSudahTertutup):
-		galat(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
+		galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
 	case errors.Is(err, services.ErrTahapTidakBergridPeserta):
-		galat(w, http.StatusConflict,
+		galat.Tulis(w, http.StatusConflict,
 			"tahap ini tidak membuka layar detail peserta")
 	case errors.Is(err, services.ErrNilaiDiagnosaKepanjangan):
-		galat(w, http.StatusUnprocessableEntity, err.Error())
-	case errors.Is(err, services.ErrPermintaanTidakSah):
-		galat(w, http.StatusBadRequest, err.Error())
+		galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
+	case errors.Is(err, galat.ErrPermintaanTidakSah):
+		galat.Tulis(w, http.StatusBadRequest, err.Error())
 	default:
-		galat(w, http.StatusInternalServerError, "gagal mengubah diagnosa")
+		galat.Tulis(w, http.StatusInternalServerError, "gagal mengubah diagnosa")
 	}
 	return true
 }

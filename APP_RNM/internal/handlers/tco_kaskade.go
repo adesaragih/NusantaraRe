@@ -18,6 +18,8 @@ import (
 	"strconv"
 
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
 )
 
 func layananKaskadeTCO(svc *services.Service) *services.KaskadeTCO {
@@ -60,11 +62,11 @@ func dampakKontrakTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		if !punyaDBTCO(w, svc) {
 			return
 		}
-		d, err := layananKaskadeTCO(svc).DampakHapusKontrak(r.Context(), pelakuDari(r, stub), r.PathValue("id"), r.PathValue("kid"))
+		d, err := layananKaskadeTCO(svc).DampakHapusKontrak(r.Context(), inti.PelakuDari(r, stub), r.PathValue("id"), r.PathValue("kid"))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, d)
+		galat.TulisJSON(w, d)
 	}
 }
 
@@ -75,14 +77,14 @@ func hapusKontrakTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		}
 		k, ok := konfirmasiDariKueri(r, "reinsurer", "security", "business", "bersama")
 		if !ok {
-			galat(w, http.StatusBadRequest, "jumlah reinsurer, security, business, dan kontrak lain yang dikonfirmasi wajib (lihat dampak-hapus)")
+			galat.Tulis(w, http.StatusBadRequest, "jumlah reinsurer, security, business, dan kontrak lain yang dikonfirmasi wajib (lihat dampak-hapus)")
 			return
 		}
-		pesan, err := layananKaskadeTCO(svc).HapusKontrak(r.Context(), pelakuDari(r, stub), r.PathValue("id"), r.PathValue("kid"), k)
+		pesan, err := layananKaskadeTCO(svc).HapusKontrak(r.Context(), inti.PelakuDari(r, stub), r.PathValue("id"), r.PathValue("kid"), k)
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, jawabanHapusKaskade{Pesan: pesan})
+		galat.TulisJSON(w, jawabanHapusKaskade{Pesan: pesan})
 	}
 }
 
@@ -91,12 +93,12 @@ func dampakReinsurerTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		if !punyaDBTCO(w, svc) {
 			return
 		}
-		d, err := layananKaskadeTCO(svc).DampakHapusReinsurer(r.Context(), pelakuDari(r, stub), r.PathValue("id"),
+		d, err := layananKaskadeTCO(svc).DampakHapusReinsurer(r.Context(), inti.PelakuDari(r, stub), r.PathValue("id"),
 			r.PathValue("kid"), r.PathValue("rid"))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, d)
+		galat.TulisJSON(w, d)
 	}
 }
 
@@ -107,15 +109,15 @@ func hapusReinsurerKaskadeTCO(svc *services.Service, stub bool) http.HandlerFunc
 		}
 		k, ok := konfirmasiDariKueri(r, "security")
 		if !ok {
-			galat(w, http.StatusBadRequest, "jumlah security yang dikonfirmasi wajib (lihat dampak-hapus)")
+			galat.Tulis(w, http.StatusBadRequest, "jumlah security yang dikonfirmasi wajib (lihat dampak-hapus)")
 			return
 		}
 		k.Reinsurer = 1
-		pesan, err := layananKaskadeTCO(svc).HapusReinsurer(r.Context(), pelakuDari(r, stub), r.PathValue("id"),
+		pesan, err := layananKaskadeTCO(svc).HapusReinsurer(r.Context(), inti.PelakuDari(r, stub), r.PathValue("id"),
 			r.PathValue("kid"), r.PathValue("rid"), k)
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, jawabanHapusKaskade{Pesan: pesan})
+		galat.TulisJSON(w, jawabanHapusKaskade{Pesan: pesan})
 	}
 }

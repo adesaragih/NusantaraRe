@@ -11,10 +11,11 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
 )
 
-func pelakuBerperan(peran ...string) services.Pelaku {
-	return services.Pelaku{AkunID: "UJI-AKUN", Peran: peran}
+func pelakuBerperan(peran ...string) inti.Pelaku {
+	return inti.Pelaku{AkunID: "UJI-AKUN", Peran: peran}
 }
 
 // TestMedicalAdvisorTidakDapatMengubahStatus - AC 9 spec.
@@ -25,8 +26,8 @@ func pelakuBerperan(peran ...string) services.Pelaku {
 // memutuskan akseptasi - ia menelaah.
 func TestMedicalAdvisorTidakDapatMengubahStatus(t *testing.T) {
 	err := services.WajibPeranPengubahStatus(
-		pelakuBerperan(services.PeranMedicalAdvisor), models.StatusDitolak)
-	if !errors.Is(err, services.ErrTanpaWewenang) {
+		pelakuBerperan(inti.PeranMedicalAdvisor), models.StatusDitolak)
+	if !errors.Is(err, inti.ErrTanpaWewenang) {
 		t.Fatalf("galat = %v, mau ErrTanpaWewenang", err)
 	}
 	// Hanya Admin yang boleh MENOLAK - gerbang XML baris 15399.
@@ -39,7 +40,7 @@ func TestMedicalAdvisorTidakDapatMengubahStatus(t *testing.T) {
 	// melewati gerbang Admin di Tolak beserta syarat klaim-bernomornya.
 	if err := services.WajibPeranPengubahStatus(
 		pelakuBerperan(services.PeranSimpanOutstanding),
-		models.StatusDitolak); !errors.Is(err, services.ErrTanpaWewenang) {
+		models.StatusDitolak); !errors.Is(err, inti.ErrTanpaWewenang) {
 		t.Errorf("SPV menolak baris: galat = %v, mau ErrTanpaWewenang", err)
 	}
 	// ⛔ RALAT audit A0. Kasus ini semula menuntut Aksep DITOLAK bagi siapa
@@ -79,7 +80,7 @@ func TestWewenangKirimKomitePerType(t *testing.T) {
 		{services.TypeQP, []string{services.PeranSimpanOutstanding}, true, "QP oleh SPV"},
 		{services.TypeQR, []string{services.PeranSimpanOutstanding}, true, "QR oleh SPV"},
 		{services.TypeQP, []string{services.PeranRejectOutstanding}, false, "QP oleh Admin"},
-		{services.TypeQR, []string{services.PeranMedicalAdvisor}, false, "QR oleh Medical"},
+		{services.TypeQR, []string{inti.PeranMedicalAdvisor}, false, "QR oleh Medical"},
 		{services.TypeTP, []string{services.PeranRejectOutstanding}, true, "TP oleh Admin"},
 		{services.TypeTR, []string{services.PeranRejectOutstanding}, true, "TR oleh Admin"},
 		{services.TypeTP, []string{services.PeranSimpanOutstanding}, true, "TP oleh SPV"},
@@ -89,7 +90,7 @@ func TestWewenangKirimKomitePerType(t *testing.T) {
 		if k.boleh && err != nil {
 			t.Errorf("%s ditolak: %v", k.apa, err)
 		}
-		if !k.boleh && !errors.Is(err, services.ErrTanpaWewenang) {
+		if !k.boleh && !errors.Is(err, inti.ErrTanpaWewenang) {
 			t.Errorf("%s: galat = %v, mau ErrTanpaWewenang", k.apa, err)
 		}
 	}
@@ -113,15 +114,15 @@ func TestWewenangDitegakkanDiLayanan(t *testing.T) {
 	svc := services.New(nil)
 	ctx := context.Background()
 	// Medical Advisor menolak baris: ditolak di layanan, bukan di layar.
-	err := svc.Status().Tolak(ctx, pelakuBerperan(services.PeranMedicalAdvisor),
+	err := svc.Status().Tolak(ctx, pelakuBerperan(inti.PeranMedicalAdvisor),
 		"CLM-1", "A-1", alasanUji, saatUji)
-	if !errors.Is(err, services.ErrTanpaWewenang) {
+	if !errors.Is(err, inti.ErrTanpaWewenang) {
 		t.Errorf("Medical menolak baris: galat = %v, mau ErrTanpaWewenang", err)
 	}
 	// Medical Advisor mengubah status: sama.
-	err = svc.Status().Ubah(ctx, pelakuBerperan(services.PeranMedicalAdvisor),
+	err = svc.Status().Ubah(ctx, pelakuBerperan(inti.PeranMedicalAdvisor),
 		"CLM-1", "P-1", "A-1", models.StatusDitolak, saatUji)
-	if !errors.Is(err, services.ErrTanpaWewenang) {
+	if !errors.Is(err, inti.ErrTanpaWewenang) {
 		t.Errorf("Medical mengubah status: galat = %v, mau ErrTanpaWewenang", err)
 	}
 }

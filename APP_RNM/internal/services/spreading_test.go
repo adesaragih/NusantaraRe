@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"nusantarare/internal/models"
 	"nusantarare/internal/services"
-	"nusantarare/pkg/utils"
+	intiuang "nusantarare/inti/uang"
+	"nusantarare/inti/utils"
 )
 
 // Angka di berkas ini DIHITUNG TANGAN dari rumus SpreadingClaimLife_Act, dan
@@ -16,22 +16,22 @@ import (
 // yang kode lakukan tidak membuktikan apa pun; yang membuktikan adalah angka
 // yang berasal dari luar kode.
 
-func uang(t *testing.T, s, mata string) models.Money {
+func uang(t *testing.T, s, mata string) intiuang.Money {
 	t.Helper()
 	d, err := utils.ParseDecimal(s)
 	if err != nil {
 		t.Fatalf("uang %q: %v", s, err)
 	}
-	return models.Money{Amount: d, Currency: mata}
+	return intiuang.Money{Amount: d, Currency: mata}
 }
 
-func rasio(t *testing.T, s string) models.Ratio {
+func rasio(t *testing.T, s string) intiuang.Ratio {
 	t.Helper()
 	d, err := utils.ParseDecimal(s)
 	if err != nil {
 		t.Fatalf("rasio %q: %v", s, err)
 	}
-	return models.Ratio{Value: d}
+	return intiuang.Ratio{Value: d}
 }
 
 // masukanUji memberi peserta dan baris yang dipakai hampir seluruh kasus.

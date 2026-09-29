@@ -13,7 +13,8 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/services"
-	"nusantarare/pkg/utils"
+	intiuang "nusantarare/inti/uang"
+	"nusantarare/inti/utils"
 )
 
 // pesertaTerpilih adalah peserta contoh bernilai LITERAL, sebagian lebih
@@ -50,7 +51,7 @@ func TestBarisPendaftaranMenyalinDelapanMedan7_8(t *testing.T) {
 	}
 	for _, k := range []struct {
 		medan string
-		got   models.Money
+		got   intiuang.Money
 		mau   string
 	}{
 		{"CEDING_RETENTION", baru.CedingRetention, "100000.1235"},
@@ -110,7 +111,7 @@ func TestBarisPendaftaranKosongDibacaNol(t *testing.T) {
 	}
 	for _, k := range []struct {
 		medan string
-		got   models.Money
+		got   intiuang.Money
 	}{
 		{"CEDING_RETENTION", baru.CedingRetention}, {"SHARE_NUSANTARA_RE", baru.ShareNusantaraRe},
 		{"SUM_INSURED", baru.SumInsured}, {"SUM_REASURED", baru.SumReasured},
@@ -146,14 +147,14 @@ func TestPesertaDibulatkanSeperti7_7(t *testing.T) {
 	p.GrossPremium = uang(t, "50000.12345", "IDR")
 	p.ShareNusantaraRe = uang(t, "800000.00006", "IDR")
 	p.SumReasured = uang(t, "900000.99995", "IDR")
-	em, err := models.NewRatio("0.123456", 6)
+	em, err := intiuang.NewRatio("0.123456", 6)
 	if err != nil {
 		t.Fatal(err)
 	}
 	p.EMPercent = em
 	// Peserta kedua: kosong TETAP kosong di 7.7.
 	kosong := pesertaTerpilih(t)
-	kosong.ID, kosong.SumReasured = "P-2", models.Money{Currency: "IDR"}
+	kosong.ID, kosong.SumReasured = "P-2", intiuang.Money{Currency: "IDR"}
 	daftar := []models.Peserta{p, kosong}
 	if err := services.BulatkanPesertaPendaftaran(daftar); err != nil {
 		t.Fatal(err)
@@ -161,7 +162,7 @@ func TestPesertaDibulatkanSeperti7_7(t *testing.T) {
 	q := daftar[0]
 	for _, k := range []struct {
 		medan string
-		got   models.Money
+		got   intiuang.Money
 		mau   string
 	}{
 		{"CEDING_RETENTION", q.CedingRetention, "100000.1235"},

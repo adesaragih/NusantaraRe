@@ -10,6 +10,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"nusantarare/inti/db"
 )
 
 func TestMigrasi022PenandaCabutPeserta(t *testing.T) {
@@ -48,7 +50,7 @@ func TestSQLCabutPesertaMenandaiBukanMenghapus(t *testing.T) {
 	if strings.Contains(strings.ToUpper(q), "DELETE") {
 		t.Error("cabut peserta menghapus baris")
 	}
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		t.Error(err)
 	}
 }

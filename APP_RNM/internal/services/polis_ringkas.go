@@ -22,6 +22,9 @@ import (
 	"fmt"
 
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
 )
 
 // ErrPolisNomorTakDitemukan dirujuk ulang supaya handler tidak perlu
@@ -89,19 +92,19 @@ type RingkasPolis struct{ svc *Service }
 func (s *Service) RingkasPolis() *RingkasPolis { return &RingkasPolis{svc: s} }
 
 // Ambil membaca data polis versi berjalan untuk sebuah nomor polis.
-func (r *RingkasPolis) Ambil(ctx context.Context, pelaku Pelaku, nomorPolis string) (
+func (r *RingkasPolis) Ambil(ctx context.Context, pelaku inti.Pelaku, nomorPolis string) (
 	PolicyDataLife, error) {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return PolicyDataLife{}, err
 	}
 	if r == nil || r.svc == nil || !r.svc.PunyaDatabase() {
-		return PolicyDataLife{}, repository.ErrTanpaOracle
+		return PolicyDataLife{}, db.ErrTanpaOracle
 	}
 	if nomorPolis == "" {
-		return PolicyDataLife{}, fmt.Errorf("%w: nomor polis kosong", ErrPermintaanTidakSah)
+		return PolicyDataLife{}, fmt.Errorf("%w: nomor polis kosong", galat.ErrPermintaanTidakSah)
 	}
-	p, err := repository.NewRingkasPolisLife(r.svc.db).Ringkas(ctx, nomorPolis)
+	p, err := repository.NewRingkasPolisLife(r.svc.DB()).Ringkas(ctx, nomorPolis)
 	if err != nil {
 		return PolicyDataLife{}, err
 	}

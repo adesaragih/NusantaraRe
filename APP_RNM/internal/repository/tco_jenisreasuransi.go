@@ -38,6 +38,8 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+
+	"nusantarare/inti/db"
 )
 
 // MasterJenisReasuransiTCO adalah nama tabel master jenis reasuransi.
@@ -142,10 +144,10 @@ func argJenisReasuransiNonLifeTCO() []any {
 }
 
 // MasterJenisReasuransi membaca master jenis reasuransi.
-type MasterJenisReasuransi struct{ db *DB }
+type MasterJenisReasuransi struct{ db *db.DB }
 
 // NewMasterJenisReasuransi menyusunnya.
-func NewMasterJenisReasuransi(db *DB) *MasterJenisReasuransi {
+func NewMasterJenisReasuransi(db *db.DB) *MasterJenisReasuransi {
 	return &MasterJenisReasuransi{db: db}
 }
 
@@ -159,10 +161,10 @@ func (m *MasterJenisReasuransi) DaftarNonLife(ctx context.Context) ([]JenisReasu
 		return nil, err
 	}
 	q := sqlJenisReasuransiNonLifeTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := m.db.bacaTCO(ctx).QueryContext(ctx, q, argJenisReasuransiNonLifeTCO()...)
+	rows, err := bacaTCO(ctx, m.db).QueryContext(ctx, q, argJenisReasuransiNonLifeTCO()...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca master jenis reasuransi: %w", err)
 	}

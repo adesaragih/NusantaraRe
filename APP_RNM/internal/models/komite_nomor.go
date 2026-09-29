@@ -25,6 +25,8 @@ package models
 import (
 	"fmt"
 	"strings"
+
+	"nusantarare/inti/penomor"
 )
 
 // ClassPenghitungKomiteLife adalah `CLASS` penghitung - `pyWorkPage.pxObjClass`.
@@ -39,12 +41,12 @@ func JenisPenghitungKomite(awalan string) string { return awalan + "A" }
 // KodeCabangAkseptasiKomite memilih "A" (QR/QP) atau "AR" (TR/TP).
 func KodeCabangAkseptasiKomite(tipe string) (string, error) {
 	switch strings.TrimSpace(tipe) {
-	case TipePLQuotationRealisasi, TipePLQuotationProposal:
+	case penomor.TipePLQuotationRealisasi, penomor.TipePLQuotationProposal:
 		return "A", nil
-	case TipePLTreatyProposal, TipePLTreatyRealisasi:
+	case penomor.TipePLTreatyProposal, penomor.TipePLTreatyRealisasi:
 		return "AR", nil
 	}
-	return "", fmt.Errorf("%w: %q", ErrTipePLTanpaCabang, tipe)
+	return "", fmt.Errorf("%w: %q", penomor.ErrTipePLTanpaCabang, tipe)
 }
 
 // NomorAkseptasiKomite merakit nomor akseptasi tingkat akhir komite.
@@ -58,21 +60,21 @@ func KodeCabangAkseptasiKomite(tipe string) (string, error) {
 // kebijakannya `[terbuka — work owner]` OQ-K-04a.
 func NomorAkseptasiKomite(awalan, tipe, kodeBisnis, periodeMMYYYY string, urut int) (string, error) {
 	if strings.TrimSpace(awalan) == "" {
-		return "", ErrAwalanProduksiKosong
+		return "", penomor.ErrAwalanProduksiKosong
 	}
 	cabang, err := KodeCabangAkseptasiKomite(tipe)
 	if err != nil {
 		return "", err
 	}
 	if strings.TrimSpace(kodeBisnis) == "" {
-		return "", ErrKodeBisnisKosong
+		return "", penomor.ErrKodeBisnisKosong
 	}
-	mmYY, err := PeriodeNomorPL(periodeMMYYYY)
+	mmYY, err := penomor.PeriodeNomorPL(periodeMMYYYY)
 	if err != nil {
 		return "", err
 	}
 	if urut < 1 {
 		return "", fmt.Errorf("models: urut penghitung %d tidak masuk akal", urut)
 	}
-	return RakitNomorPL(awalan, cabang, strings.TrimSpace(kodeBisnis), mmYY, urut), nil
+	return penomor.RakitNomorPL(awalan, cabang, strings.TrimSpace(kodeBisnis), mmYY, urut), nil
 }

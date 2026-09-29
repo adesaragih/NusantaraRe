@@ -17,6 +17,8 @@ package repository
 import (
 	"context"
 	"database/sql"
+
+	"nusantarare/inti/db"
 )
 
 // kuerierTCO - bagian `*sql.DB` / `*sql.Tx` yang dipakai pembaca modul.
@@ -29,7 +31,7 @@ type kunciBacaTxTCO struct{}
 
 // DenganBacaTxTCO menandai ctx: pembaca modul memakai tx. tx nil (uji tanpa
 // Oracle) mengembalikan ctx apa adanya.
-func DenganBacaTxTCO(ctx context.Context, tx *Tx) context.Context {
+func DenganBacaTxTCO(ctx context.Context, tx *db.Tx) context.Context {
 	if tx == nil {
 		return ctx
 	}
@@ -37,9 +39,13 @@ func DenganBacaTxTCO(ctx context.Context, tx *Tx) context.Context {
 }
 
 // bacaTCO memilih jalur baca: transaksi bila ctx menandainya, pool bila tidak.
-func (d *DB) bacaTCO(ctx context.Context) kuerierTCO {
-	if tx, _ := ctx.Value(kunciBacaTxTCO{}).(*Tx); tx != nil && tx.tx != nil {
-		return tx.tx
+//
+// Refactor bentuk B (30-09-2026): fungsi, bukan lagi metode `*DB` - `DB`
+// kini tinggal di paket bersama. Yang dikembalikan pembungkus `*Tx`/`*DB`,
+// yang meneruskan kueri apa adanya ke `*sql.Tx`/`*sql.DB` di dalamnya.
+func bacaTCO(ctx context.Context, d *db.DB) kuerierTCO {
+	if tx, _ := ctx.Value(kunciBacaTxTCO{}).(*db.Tx); tx.Terisi() {
+		return tx
 	}
-	return d.sql
+	return d
 }

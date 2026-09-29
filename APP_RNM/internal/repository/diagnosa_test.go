@@ -9,6 +9,8 @@ package repository
 import (
 	"strings"
 	"testing"
+
+	"nusantarare/inti/db"
 )
 
 const (
@@ -131,7 +133,7 @@ func TestQueryDiagnosaMemakaiBindBukanTempelan(t *testing.T) {
 		"rapatkan": sqlRapatkanUrutan(tabelUjiDiagnosa),
 		"cermin":   sqlCerminkanStsReject(tabelUjiDiagnosa),
 	} {
-		if err := PeriksaSQL(q); err != nil {
+		if err := db.PeriksaSQL(q); err != nil {
 			t.Errorf("%s: %v\n%s", nama, err, q)
 		}
 		if !strings.Contains(q, ":1") {

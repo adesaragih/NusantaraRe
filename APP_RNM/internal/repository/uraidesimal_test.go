@@ -14,6 +14,8 @@ import (
 	"database/sql"
 	"strings"
 	"testing"
+
+	"nusantarare/inti/db"
 )
 
 func teks(s string) sql.NullString { return sql.NullString{String: s, Valid: true} }
@@ -22,7 +24,7 @@ func nullTeks() sql.NullString     { return sql.NullString{} }
 // ⛔ Nilai yang tidak terurai menghasilkan GALAT, tidak diam-diam menjadi kosong.
 func TestUraiDesimalMengembalikanGalat(t *testing.T) {
 	for _, rusak := range []string{"bukan angka", "1.2.3", "12,34abc", "--5"} {
-		_, err := uraiDesimal("UJI-R1", "CLAIM_AMOUNT", teks(rusak))
+		_, err := db.UraiDesimal("UJI-R1", "CLAIM_AMOUNT", teks(rusak))
 		if err == nil {
 			t.Errorf("uraiDesimal(%q) tidak menghasilkan galat", rusak)
 			continue
@@ -43,7 +45,7 @@ func TestUraiDesimalKosongBukanGalat(t *testing.T) {
 		"teks kosong": teks(""),
 		"spasi":       teks("   "),
 	} {
-		d, err := uraiDesimal("UJI-R1", "CLAIM_AMOUNT", v)
+		d, err := db.UraiDesimal("UJI-R1", "CLAIM_AMOUNT", v)
 		if err != nil {
 			t.Errorf("%s menghasilkan galat: %v", nama, err)
 		}

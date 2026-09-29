@@ -32,6 +32,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"nusantarare/inti/db"
 )
 
 // KunciPesertaSumber menunjuk SATU baris sumber peserta.
@@ -140,7 +142,7 @@ func sqlIsiTertanggungCermin(lama, sumber string) string {
 // ⛔ Dikunci `ID` DAN `CASEID` (temuan /code-review): pengenal baris aplikasi
 // adalah angka sequence, dan baris era Pega berpengenal sama milik klaim lain
 // tidak boleh tersentuh.
-func (r *KlaimLife) IsiTertanggungCermin(ctx context.Context, tx *Tx, adjID, caseID string,
+func (r *KlaimLife) IsiTertanggungCermin(ctx context.Context, tx *db.Tx, adjID, caseID string,
 	k KunciPesertaSumber, nomorPolis string) error {
 
 	lama, sumber, err := r.duaTabelGanda()
@@ -148,15 +150,15 @@ func (r *KlaimLife) IsiTertanggungCermin(ctx context.Context, tx *Tx, adjID, cas
 		return err
 	}
 	q := sqlIsiTertanggungCermin(lama, sumber)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, k.PLNumber, k.Sertifikat, k.SumberID,
+	hasil, err := tx.ExecContext(ctx, q, k.PLNumber, k.Sertifikat, k.SumberID,
 		adjID, caseID, k.PLNumber, k.Sertifikat, k.SumberID)
 	if err != nil {
 		return fmt.Errorf("repository: mengisi tertanggung cermin %s: %w", adjID, err)
 	}
-	if err := pastikanSatuBaris(hasil, "pengisian tertanggung cermin"); err != nil {
+	if err := db.PastikanSatuBaris(hasil, "pengisian tertanggung cermin"); err != nil {
 		return fmt.Errorf("%w: baris sumber peserta %q atau baris cermin %q tidak ada", err, k.SumberID, adjID)
 	}
 	return r.isiCedingCermin(ctx, tx, lama, adjID, caseID, nomorPolis)
@@ -179,11 +181,11 @@ func (r *KlaimLife) DOBSumberKosong(ctx context.Context, k KunciPesertaSumber) (
 		return false, err
 	}
 	q := sqlDOBSumberKosong(sumber)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return false, err
 	}
 	var kosong int
-	if err := r.db.sql.QueryRowContext(ctx, q, k.PLNumber, k.Sertifikat, k.SumberID).Scan(&kosong); err != nil {
+	if err := r.db.QueryRowContext(ctx, q, k.PLNumber, k.Sertifikat, k.SumberID).Scan(&kosong); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return false, fmt.Errorf("repository: baris sumber peserta %q tidak ada", k.SumberID)
 		}
@@ -202,12 +204,12 @@ func (r *KlaimLife) StatusWarisanTerakhir(ctx context.Context, k KunciPesertaSum
 		return "", err
 	}
 	q := sqlStatusWarisanTerakhir(lama, sumber)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return "", err
 	}
 	var status sql.NullString
-	err = r.db.sql.QueryRowContext(ctx, q, k.PLNumber, k.Sertifikat, k.SumberID,
-		kosongJadiNil(cedingCo), caseID).Scan(&status)
+	err = r.db.QueryRowContext(ctx, q, k.PLNumber, k.Sertifikat, k.SumberID,
+		db.KosongJadiNil(cedingCo), caseID).Scan(&status)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", nil
 	}
@@ -225,12 +227,12 @@ func (r *KlaimLife) AdaWarisanSamaDOL(ctx context.Context, k KunciPesertaSumber,
 		return false, err
 	}
 	q := sqlAdaWarisanSamaDOL(lama, sumber)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return false, err
 	}
 	var satu int
-	err = r.db.sql.QueryRowContext(ctx, q, k.PLNumber, k.Sertifikat, k.SumberID,
-		kosongJadiNil(cedingCo), dol, caseID).Scan(&satu)
+	err = r.db.QueryRowContext(ctx, q, k.PLNumber, k.Sertifikat, k.SumberID,
+		db.KosongJadiNil(cedingCo), dol, caseID).Scan(&satu)
 	if errors.Is(err, sql.ErrNoRows) {
 		return false, nil
 	}

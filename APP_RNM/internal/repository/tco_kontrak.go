@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/db"
 )
 
 // ErrKontrakTidakAda - kontrak tidak ada, atau bukan milik tahun treaty itu.
@@ -32,10 +33,10 @@ var ErrKontrakTidakAda = errors.New("repository: kontrak treaty tidak ditemukan 
 //
 // ⚠️ tco4: `TREATYSTARTDATE`/`TREATYENDDATE` DATE (procedure `to_date(…,
 // 'DD/MM/YYYY')`); `TGLUPDATE` VARCHAR2(1000) berisi stempel Pega.
-type MasterKontrakTCO struct{ db *DB }
+type MasterKontrakTCO struct{ db *db.DB }
 
 // NewMasterKontrakTCO menyusun gudangnya.
-func NewMasterKontrakTCO(db *DB) *MasterKontrakTCO { return &MasterKontrakTCO{db: db} }
+func NewMasterKontrakTCO(db *db.DB) *MasterKontrakTCO { return &MasterKontrakTCO{db: db} }
 
 const pilihKontrakTCO = `ID, IDTREATYYEAR, REINSTYPEID, REINSTYPENAME,
 	       TO_CHAR(TREATYSTARTDATE, 'YYYY-MM-DD HH24:MI:SS'), TO_CHAR(TREATYENDDATE, 'YYYY-MM-DD HH24:MI:SS'),
@@ -105,10 +106,10 @@ func (m *MasterKontrakTCO) Daftar(ctx context.Context, tahunID string) ([]models
 		return nil, err
 	}
 	q := sqlDaftarKontrakTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := m.db.bacaTCO(ctx).QueryContext(ctx, q, tahunID)
+	rows, err := bacaTCO(ctx, m.db).QueryContext(ctx, q, tahunID)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca kontrak tahun treaty %s: %w", tahunID, err)
 	}
@@ -131,10 +132,10 @@ func (m *MasterKontrakTCO) Ambil(ctx context.Context, tahunID, id string) (model
 		return models.KontrakTreaty{}, err
 	}
 	q := sqlAmbilKontrakTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return models.KontrakTreaty{}, err
 	}
-	k, err := pindaiKontrakTCO(m.db.bacaTCO(ctx).QueryRowContext(ctx, q, tahunID, id))
+	k, err := pindaiKontrakTCO(bacaTCO(ctx, m.db).QueryRowContext(ctx, q, tahunID, id))
 	if errors.Is(err, sql.ErrNoRows) {
 		return models.KontrakTreaty{}, ErrKontrakTidakAda
 	}
@@ -145,7 +146,7 @@ func (m *MasterKontrakTCO) Ambil(ctx context.Context, tahunID, id string) (model
 }
 
 // Sisip menulis kontrak baru; ID dari `TREATYCONTRACT_SEQ` warisan (ADR-0006).
-func (m *MasterKontrakTCO) Sisip(ctx context.Context, tx *Tx, k models.KontrakTreaty) (string, error) {
+func (m *MasterKontrakTCO) Sisip(ctx context.Context, tx *db.Tx, k models.KontrakTreaty) (string, error) {
 	if tx == nil {
 		return "", errors.New("repository: menyisipkan kontrak menuntut transaksi")
 	}
@@ -153,25 +154,25 @@ func (m *MasterKontrakTCO) Sisip(ctx context.Context, tx *Tx, k models.KontrakTr
 	if err != nil {
 		return "", err
 	}
-	id, err := m.db.IdentitasBerikutTCO(ctx, tx, SeqKontrakTCO)
+	id, err := IdentitasBerikutTCO(ctx, m.db, tx, SeqKontrakTCO)
 	if err != nil {
 		return "", err
 	}
 	q := sqlSisipKontrakTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return "", err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, id, k.IDTreatyYear, kosongJadiNil(k.ReinsTypeID),
-		kosongJadiNil(k.ReinsTypeName), tanggalJadiNil(k.TreatyStartDate), tanggalJadiNil(k.TreatyEndDate),
-		kosongJadiNil(k.UserID), kosongJadiNil(StempelPegaTCO(k.TglUpdate)))
+	hasil, err := tx.ExecContext(ctx, q, id, k.IDTreatyYear, db.KosongJadiNil(k.ReinsTypeID),
+		db.KosongJadiNil(k.ReinsTypeName), tanggalJadiNil(k.TreatyStartDate), tanggalJadiNil(k.TreatyEndDate),
+		db.KosongJadiNil(k.UserID), db.KosongJadiNil(StempelPegaTCO(k.TglUpdate)))
 	if err != nil {
 		return "", fmt.Errorf("repository: menyisipkan kontrak: %w", err)
 	}
-	return id, pastikanSatuBaris(hasil, "penyisipan kontrak")
+	return id, db.PastikanSatuBaris(hasil, "penyisipan kontrak")
 }
 
 // Perbarui menimpa kontrak yang ada; nol baris = kontrak bukan milik tahun itu.
-func (m *MasterKontrakTCO) Perbarui(ctx context.Context, tx *Tx, k models.KontrakTreaty) error {
+func (m *MasterKontrakTCO) Perbarui(ctx context.Context, tx *db.Tx, k models.KontrakTreaty) error {
 	if tx == nil {
 		return errors.New("repository: memperbarui kontrak menuntut transaksi")
 	}
@@ -180,26 +181,26 @@ func (m *MasterKontrakTCO) Perbarui(ctx context.Context, tx *Tx, k models.Kontra
 		return err
 	}
 	q := sqlPerbaruiKontrakTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, kosongJadiNil(k.ReinsTypeID), kosongJadiNil(k.ReinsTypeName),
-		tanggalJadiNil(k.TreatyStartDate), tanggalJadiNil(k.TreatyEndDate), kosongJadiNil(k.UserID),
-		kosongJadiNil(StempelPegaTCO(k.TglUpdate)), k.ID, k.IDTreatyYear)
+	hasil, err := tx.ExecContext(ctx, q, db.KosongJadiNil(k.ReinsTypeID), db.KosongJadiNil(k.ReinsTypeName),
+		tanggalJadiNil(k.TreatyStartDate), tanggalJadiNil(k.TreatyEndDate), db.KosongJadiNil(k.UserID),
+		db.KosongJadiNil(StempelPegaTCO(k.TglUpdate)), k.ID, k.IDTreatyYear)
 	if err != nil {
 		return fmt.Errorf("repository: memperbarui kontrak %s: %w", k.ID, err)
 	}
 	if n, err := hasil.RowsAffected(); err == nil && n == 0 {
 		return ErrKontrakTidakAda
 	}
-	return pastikanSatuBaris(hasil, "pembaruan kontrak")
+	return db.PastikanSatuBaris(hasil, "pembaruan kontrak")
 }
 
 // CariDobel mencari kontrak LAIN di tahun yang sama berjenis reasuransi sama.
 //
 // ⚠️ Di DALAM transaksi penulisnya, seperti `MasterTahunTreaty.CariDobel`.
 // Bukan unique index: data warisan boleh sudah berduplikat.
-func (m *MasterKontrakTCO) CariDobel(ctx context.Context, tx *Tx, tahunID, reinsTypeID, kecualiID string) (string, error) {
+func (m *MasterKontrakTCO) CariDobel(ctx context.Context, tx *db.Tx, tahunID, reinsTypeID, kecualiID string) (string, error) {
 	if tx == nil {
 		return "", errors.New("repository: pencarian dobel kontrak menuntut transaksi")
 	}
@@ -210,11 +211,11 @@ func (m *MasterKontrakTCO) CariDobel(ctx context.Context, tx *Tx, tahunID, reins
 		return "", err
 	}
 	kunci := sqlKunciTahunTCO(tahun)
-	if err := PeriksaSQL(kunci); err != nil {
+	if err := db.PeriksaSQL(kunci); err != nil {
 		return "", err
 	}
 	var terkunci string
-	if err := tx.tx.QueryRowContext(ctx, kunci, tahunID).Scan(&terkunci); err != nil {
+	if err := tx.QueryRowContext(ctx, kunci, tahunID).Scan(&terkunci); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return "", ErrTahunTreatyTidakAda
 		}
@@ -225,12 +226,12 @@ func (m *MasterKontrakTCO) CariDobel(ctx context.Context, tx *Tx, tahunID, reins
 		return "", err
 	}
 	q := sqlCariDobelKontrakTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return "", err
 	}
 	var id string
-	err = tx.tx.QueryRowContext(ctx, q, tahunID, reinsTypeID, kosongJadiNil(kecualiID),
-		kosongJadiNil(kecualiID)).Scan(&id)
+	err = tx.QueryRowContext(ctx, q, tahunID, reinsTypeID, db.KosongJadiNil(kecualiID),
+		db.KosongJadiNil(kecualiID)).Scan(&id)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", nil
 	}
@@ -251,7 +252,7 @@ func sqlKunciKontrakTCO(tabel string) string {
 // menambah 40. Mengunci kontrak pembuka kombinasinya menjadikan keduanya
 // berurutan. `FOR UPDATE` atas baris reinsurer saja tidak cukup: baris BARU
 // milik penulis lain tidak terkunci olehnya.
-func (m *MasterKontrakTCO) Kunci(ctx context.Context, tx *Tx, tahunID, id string) error {
+func (m *MasterKontrakTCO) Kunci(ctx context.Context, tx *db.Tx, tahunID, id string) error {
 	if tx == nil {
 		return errors.New("repository: mengunci kontrak menuntut transaksi")
 	}
@@ -260,11 +261,11 @@ func (m *MasterKontrakTCO) Kunci(ctx context.Context, tx *Tx, tahunID, id string
 		return err
 	}
 	q := sqlKunciKontrakTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
 	var got string
-	err = tx.tx.QueryRowContext(ctx, q, tahunID, id).Scan(&got)
+	err = tx.QueryRowContext(ctx, q, tahunID, id).Scan(&got)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ErrKontrakTidakAda
 	}
@@ -276,7 +277,7 @@ func (m *MasterKontrakTCO) Kunci(ctx context.Context, tx *Tx, tahunID, id string
 
 // JumlahAnakKombinasi menghitung reinsurer + business yang menggantung pada
 // kombinasi kontrak itu - saringan SAMA dengan kaskade hapus.
-func (m *MasterKontrakTCO) JumlahAnakKombinasi(ctx context.Context, tx *Tx, kom models.KombinasiTCO, tahunID string) (int64, error) {
+func (m *MasterKontrakTCO) JumlahAnakKombinasi(ctx context.Context, tx *db.Tx, kom models.KombinasiTCO, tahunID string) (int64, error) {
 	if tx == nil {
 		return 0, errors.New("repository: menghitung anak kombinasi menuntut transaksi")
 	}
@@ -296,11 +297,11 @@ func (m *MasterKontrakTCO) JumlahAnakKombinasi(ctx context.Context, tx *Tx, kom 
 		{sqlHitungTCO(reas, saringReinsurerKaskadeTCO), argKombinasi(kom)},
 		{sqlHitungTCO(biz, saringBusinessKaskadeTCO), []any{kom.TreatyYear, tahunID, kom.TreatyGroupID, kom.ReinsTypeID}},
 	} {
-		if err := PeriksaSQL(h.q); err != nil {
+		if err := db.PeriksaSQL(h.q); err != nil {
 			return 0, err
 		}
 		var n int64
-		if err := tx.tx.QueryRowContext(ctx, h.q, h.args...).Scan(&n); err != nil {
+		if err := tx.QueryRowContext(ctx, h.q, h.args...).Scan(&n); err != nil {
 			return 0, fmt.Errorf("repository: menghitung anak kombinasi: %w", err)
 		}
 		jumlah += n

@@ -34,6 +34,8 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
 )
 
 // PencarianPenyakit melayani pencarian KATALOG penyakit.
@@ -53,15 +55,15 @@ func (s *Service) Penyakit() *PencarianPenyakit { return &PencarianPenyakit{svc:
 // `Contains ""` cocok dengan semua baris, dan yang menahannya adalah
 // `pyMaxRecords` 500. Melarang pencarian kosong menutup jalan yang di sistem
 // lama terbuka - menelusuri daftar tanpa tahu kata kuncinya.
-func (d *PencarianPenyakit) Cari(ctx context.Context, pelaku Pelaku, kodeICD, nama string,
+func (d *PencarianPenyakit) Cari(ctx context.Context, pelaku inti.Pelaku, kodeICD, nama string,
 	batas int) ([]models.Penyakit, error) {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return nil, err
 	}
 	if d == nil || d.svc == nil || !d.svc.PunyaDatabase() {
-		return nil, repository.ErrTanpaOracle
+		return nil, db.ErrTanpaOracle
 	}
 	k := models.NormalkanKriteriaPenyakit(kodeICD, nama)
-	return repository.NewPenyakit(d.svc.db).Cari(ctx, k, batas)
+	return repository.NewPenyakit(d.svc.DB()).Cari(ctx, k, batas)
 }

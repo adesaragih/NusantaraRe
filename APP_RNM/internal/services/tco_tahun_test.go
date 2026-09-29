@@ -14,6 +14,9 @@ import (
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
 )
 
 type gudangTahunUji struct {
@@ -34,26 +37,26 @@ func (g *gudangTahunUji) Ambil(_ context.Context, id string) (models.TahunTreaty
 	}
 	return models.TahunTreaty{ID: id, TreatyYear: "2026"}, nil
 }
-func (g *gudangTahunUji) Sisip(_ context.Context, _ *repository.Tx, t models.TahunTreaty) (string, error) {
+func (g *gudangTahunUji) Sisip(_ context.Context, _ *db.Tx, t models.TahunTreaty) (string, error) {
 	g.disisip = append(g.disisip, t)
 	return "1000009", nil
 }
-func (g *gudangTahunUji) Perbarui(_ context.Context, _ *repository.Tx, t models.TahunTreaty) error {
+func (g *gudangTahunUji) Perbarui(_ context.Context, _ *db.Tx, t models.TahunTreaty) error {
 	if g.perbaruiErr != nil {
 		return g.perbaruiErr
 	}
 	g.diperbaru = append(g.diperbaru, t)
 	return nil
 }
-func (g *gudangTahunUji) CariDobel(context.Context, *repository.Tx, string, time.Time, time.Time, string) (string, error) {
+func (g *gudangTahunUji) CariDobel(context.Context, *db.Tx, string, time.Time, time.Time, string) (string, error) {
 	return g.dobel, nil
 }
-func (g *gudangTahunUji) JumlahAnak(context.Context, *repository.Tx, string) (int64, error) {
+func (g *gudangTahunUji) JumlahAnak(context.Context, *db.Tx, string) (int64, error) {
 	return g.anak, nil
 }
 
 // transaksiUji menjalankan fn tanpa Oracle (tx nil); gudang palsu mengabaikannya.
-func transaksiUji(_ context.Context, fn func(tx *repository.Tx) error) error { return fn(nil) }
+func transaksiUji(_ context.Context, fn func(tx *db.Tx) error) error { return fn(nil) }
 
 var jamUji = func() time.Time { return time.Date(2026, 9, 28, 10, 0, 0, 0, time.UTC) }
 
@@ -68,10 +71,10 @@ func masukWajar() services.TahunTreatyMasuk {
 
 func TestTahunTreatyTanpaIdentitasDitolak(t *testing.T) {
 	l := layananTahun(&gudangTahunUji{})
-	if _, err := l.Daftar(context.Background(), services.Pelaku{}, 1, 20); !errors.Is(err, services.ErrTanpaIdentitas) {
+	if _, err := l.Daftar(context.Background(), inti.Pelaku{}, 1, 20); !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("daftar: %v", err)
 	}
-	if _, err := l.Simpan(context.Background(), services.Pelaku{}, masukWajar()); !errors.Is(err, services.ErrTanpaIdentitas) {
+	if _, err := l.Simpan(context.Background(), inti.Pelaku{}, masukWajar()); !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("simpan: %v", err)
 	}
 }
@@ -148,7 +151,7 @@ func TestTahunTreatyValidasiSebelumTransaksi(t *testing.T) {
 		{func(m *services.TahunTreatyMasuk) { m.EndDate = "2025-12-31" }, models.ErrPeriodeTerbalik},
 		{func(m *services.TahunTreatyMasuk) { m.TreatyGroupID = "" }, models.ErrTahunTreatyGrupKosong},
 		{func(m *services.TahunTreatyMasuk) { m.TreatyYear = "dua ribu" }, models.ErrTahunTreatyBukanAngka},
-		{func(m *services.TahunTreatyMasuk) { m.StartDate = "01/01/2026" }, services.ErrPermintaanTidakSah},
+		{func(m *services.TahunTreatyMasuk) { m.StartDate = "01/01/2026" }, galat.ErrPermintaanTidakSah},
 	}
 	for _, k := range kasus {
 		g := &gudangTahunUji{}

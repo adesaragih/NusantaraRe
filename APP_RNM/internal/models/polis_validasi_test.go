@@ -11,16 +11,17 @@ import (
 	"testing"
 
 	"nusantarare/internal/models"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti/uang"
+	"nusantarare/inti/utils"
 )
 
 // uang menyusun Money dari teks desimal.
-func uang(teks string) models.Money {
+func uangUji(teks string) uang.Money {
 	d, err := utils.ParseDecimal(teks)
 	if err != nil {
 		panic(err)
 	}
-	return models.Money{Amount: d, Currency: "IDR"}
+	return uang.Money{Amount: d, Currency: "IDR"}
 }
 
 // penawaranLengkap adalah penawaran yang lolos seluruh pemeriksaan.
@@ -36,7 +37,7 @@ func penawaranLengkap() models.PenawaranPolis {
 		SourceOfBusiness: "UJI-SOB",
 		CacahDetail:      1,
 		MataUang: []models.BarisMataUangPenawaran{{
-			Premium: uang("100"), Balance: uang("50"),
+			Premium: uangUji("100"), Balance: uangUji("50"),
 		}},
 	}
 }
@@ -125,11 +126,11 @@ func TestDiskonNolLolosHanyaNegatifDitolak(t *testing.T) {
 	p := penawaranLengkap()
 	p.Posisi = models.PosisiPremium
 	p.Type = "TP"
-	p.MataUang[0].DiscountPremiumRetro = uang("0")
+	p.MataUang[0].DiscountPremiumRetro = uangUji("0")
 	if berisi(models.ValidasiPenawaran(p), models.PesanBalanceNol) {
 		t.Error("diskon NOL menyalakan gerbang TP; rule hanya menolak negatif")
 	}
-	p.MataUang[0].DiscountPremiumRetro = uang("-1")
+	p.MataUang[0].DiscountPremiumRetro = uangUji("-1")
 	if !berisi(models.ValidasiPenawaran(p), models.PesanBalanceNol) {
 		t.Error("diskon negatif tidak menyalakan gerbang TP")
 	}

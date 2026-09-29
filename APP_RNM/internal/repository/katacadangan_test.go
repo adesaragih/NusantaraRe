@@ -25,6 +25,8 @@ package repository
 import (
 	"strings"
 	"testing"
+
+	"nusantarare/inti/migrasi"
 )
 
 // kataCadanganOracle adalah kata yang TIDAK boleh berdiri telanjang sebagai
@@ -92,7 +94,7 @@ func TestNolKataCadanganOracleSebagaiKolom(t *testing.T) {
 	diperiksa := 0
 	for nama, teks := range berkas {
 		for _, pernyataan := range strings.Split(teks, "\n/") {
-			_, kolomTabel := KolomCreateTable(pernyataan)
+			_, kolomTabel := migrasi.KolomCreateTable(pernyataan)
 			for _, kolom := range kolomTabel {
 				kolom = strings.ToUpper(strings.TrimSpace(kolom))
 				diperiksa++
@@ -128,7 +130,7 @@ func TestPenjagaKataCadanganMasihMenggigit(t *testing.T) {
   AMAN_    VARCHAR2(10)
 )`
 	var temuan []string
-	_, kolom := KolomCreateTable(buruk)
+	_, kolom := migrasi.KolomCreateTable(buruk)
 	if len(kolom) == 0 {
 		t.Fatal("pengurai tidak membaca satu pun kolom; polanya yang rusak")
 	}

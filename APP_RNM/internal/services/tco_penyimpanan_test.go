@@ -15,6 +15,10 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/services"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/layanan"
+	"nusantarare/inti/outbox"
+	"nusantarare/inti/unggah"
 )
 
 // --- stub lokal ------------------------------------------------------------
@@ -58,7 +62,7 @@ func TestPenyimpananLokalMenimpaKunciYangSama(t *testing.T) {
 func TestPenyimpananLokalMenolakKunciBerjalur(t *testing.T) {
 	p := services.PenyimpananLokalDi(t.TempDir())
 	for _, k := range []string{"../../keluar", `..\x`, "a/b", "", "PENDEK"} {
-		if _, err := p.Simpan(context.Background(), k, strings.NewReader("x"), "", ""); !errors.Is(err, services.ErrPermintaanTidakSah) {
+		if _, err := p.Simpan(context.Background(), k, strings.NewReader("x"), "", ""); !errors.Is(err, galat.ErrPermintaanTidakSah) {
 			t.Errorf("kunci %q: %v", k, err)
 		}
 	}
@@ -66,7 +70,7 @@ func TestPenyimpananLokalMenolakKunciBerjalur(t *testing.T) {
 
 func TestPenyimpananLokalTanpaFolderGagalTerang(t *testing.T) {
 	p := services.PenyimpananLokalTCO(services.New(nil))
-	if _, err := p.Simpan(context.Background(), "ABCDEF0123456789", strings.NewReader("x"), "", ""); !errors.Is(err, services.ErrUnggahanDirBelumDisetel) {
+	if _, err := p.Simpan(context.Background(), "ABCDEF0123456789", strings.NewReader("x"), "", ""); !errors.Is(err, unggah.ErrUnggahanDirBelumDisetel) {
 		t.Errorf("tanpa UNGGAHAN_DIR: %v", err)
 	}
 }
@@ -75,15 +79,15 @@ func TestPenyimpananLokalTanpaFolderGagalTerang(t *testing.T) {
 
 // resolverLampiranUji meniru `M_LINK_SERVICE`: isinya dapat diganti di tengah uji.
 type resolverLampiranUji struct {
-	alamat  map[services.KunciLayanan]string
-	diminta []services.KunciLayanan
+	alamat  map[layanan.KunciLayanan]string
+	diminta []layanan.KunciLayanan
 }
 
-func (r *resolverLampiranUji) Resolve(_ context.Context, k services.KunciLayanan) (string, error) {
+func (r *resolverLampiranUji) Resolve(_ context.Context, k layanan.KunciLayanan) (string, error) {
 	r.diminta = append(r.diminta, k)
 	a, ada := r.alamat[k]
 	if !ada {
-		return "", services.ErrEndpointTidakDitemukan
+		return "", layanan.ErrEndpointTidakDitemukan
 	}
 	return a, nil
 }
@@ -154,10 +158,10 @@ func (s *sumberTokenLampiranUji) TokenBaru(context.Context) (string, time.Time, 
 func TestPenyimpananJarakJauhAlamatDariResolverSaatJalan(t *testing.T) {
 	saat := time.Date(2026, 9, 29, 9, 0, 0, 0, time.UTC)
 	jam := func() time.Time { return saat }
-	r := &resolverLampiranUji{alamat: map[services.KunciLayanan]string{
-		services.KunciUnggahBerkas: "alamat-uji-unggah-1",
-		services.KunciURLBerkas:    "alamat-uji-url",
-		services.KunciHapusBerkas:  "alamat-uji-hapus",
+	r := &resolverLampiranUji{alamat: map[layanan.KunciLayanan]string{
+		layanan.KunciUnggahBerkas: "alamat-uji-unggah-1",
+		layanan.KunciURLBerkas:    "alamat-uji-url",
+		layanan.KunciHapusBerkas:  "alamat-uji-hapus",
 	}}
 	kirim := &pengirimLampiranUji{}
 	p := services.NewPenyimpananJarakJauhTCO(r,
@@ -166,7 +170,7 @@ func TestPenyimpananJarakJauhAlamatDariResolverSaatJalan(t *testing.T) {
 	if _, err := p.Simpan(ctx, "ABCDEF0123456789", strings.NewReader("x"), "", ""); err != nil {
 		t.Fatal(err)
 	}
-	r.alamat[services.KunciUnggahBerkas] = "alamat-uji-unggah-2"
+	r.alamat[layanan.KunciUnggahBerkas] = "alamat-uji-unggah-2"
 	if _, err := p.Simpan(ctx, "ABCDEF0123456789", strings.NewReader("x"), "", ""); err != nil {
 		t.Fatal(err)
 	}
@@ -182,9 +186,9 @@ func TestPenyimpananJarakJauhAlamatDariResolverSaatJalan(t *testing.T) {
 		t.Errorf("alamat terpakai %v, mau %v", kirim.alamat, mau)
 	}
 	// Kunci yang belum ada di tabel: gagal permanen, tidak berputar.
-	delete(r.alamat, services.KunciURLBerkas)
+	delete(r.alamat, layanan.KunciURLBerkas)
 	_, err := p.Buka(ctx, "ABCDEF0123456789")
-	if !errors.Is(err, services.ErrEndpointTidakDitemukan) || services.LayakDicobaUlang(err) {
+	if !errors.Is(err, layanan.ErrEndpointTidakDitemukan) || outbox.LayakDicobaUlang(err) {
 		t.Errorf("kunci tidak ada: %v", err)
 	}
 }
@@ -192,7 +196,7 @@ func TestPenyimpananJarakJauhAlamatDariResolverSaatJalan(t *testing.T) {
 func TestPenyimpananJarakJauhTanpaPengirimBelumDisetujui(t *testing.T) {
 	p := services.NewPenyimpananJarakJauhTCO(&resolverLampiranUji{}, nil, nil)
 	_, err := p.Simpan(context.Background(), "ABCDEF0123456789", strings.NewReader("x"), "", "")
-	if !errors.Is(err, services.ErrPenyimpananBelumDisetujui) || services.LayakDicobaUlang(err) {
+	if !errors.Is(err, outbox.ErrPenyimpananBelumDisetujui) || outbox.LayakDicobaUlang(err) {
 		t.Errorf("tanpa pengirim: %v", err)
 	}
 }
@@ -222,7 +226,7 @@ func TestTokenGagalTerlihatDanTransportTidakDipanggil(t *testing.T) {
 	jam := func() time.Time { return time.Date(2026, 9, 29, 9, 0, 0, 0, time.UTC) }
 	kirim := &pengirimLampiranUji{}
 	p := services.NewPenyimpananJarakJauhTCO(
-		&resolverLampiranUji{alamat: map[services.KunciLayanan]string{services.KunciUnggahBerkas: "alamat-uji"}},
+		&resolverLampiranUji{alamat: map[layanan.KunciLayanan]string{layanan.KunciUnggahBerkas: "alamat-uji"}},
 		services.NewCacheTokenTCO(&sumberTokenLampiranUji{gagal: errors.New("GET_TOKEN_STORAGE menolak"), jam: jam},
 			jam, services.MarginTokenTCO), kirim)
 	_, err := p.Simpan(context.Background(), "ABCDEF0123456789", strings.NewReader("x"), "", "")
@@ -338,7 +342,7 @@ func TestTCOLampiranBerkunciTahunTreaty(t *testing.T) {
 func TestPenyimpananMenyegarkanObjekSesudahGetURL(t *testing.T) {
 	saat := time.Date(2026, 9, 29, 9, 0, 0, 0, time.UTC)
 	jam := func() time.Time { return saat }
-	r := &resolverLampiranUji{alamat: map[services.KunciLayanan]string{services.KunciURLBerkas: "alamat-uji-url"}}
+	r := &resolverLampiranUji{alamat: map[layanan.KunciLayanan]string{layanan.KunciURLBerkas: "alamat-uji-url"}}
 	kirim := &pengirimLampiranUji{}
 	pc := &pencatatObjekUji{}
 	var log []string

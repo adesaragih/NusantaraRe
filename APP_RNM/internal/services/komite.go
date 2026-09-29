@@ -25,7 +25,14 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/jejak"
+	"nusantarare/inti/layanan"
+	"nusantarare/inti/outbox"
+	"nusantarare/inti/uang"
+	"nusantarare/inti/utils"
 )
 
 // StatusKlaimRoster menyaring roster ke lini Life.
@@ -112,15 +119,15 @@ func PeriksaBolehDiserahkan(b models.BarisAdjustment) error {
 // ⛔ Mata uangnya IKUT. Ambang tanpa mata uang adalah angka telanjang, dan
 // angka telanjang yang dibandingkan dengan pita roster adalah persis cara
 // pembandingan lintas mata uang terjadi tanpa ada yang sadar.
-func AmbangRoster(nilai models.Money) (models.Money, error) {
+func AmbangRoster(nilai uang.Money) (uang.Money, error) {
 	if nilai.Kosong() {
-		return models.Money{}, fmt.Errorf(
+		return uang.Money{}, fmt.Errorf(
 			"%w: nilai klaim kosong, ambang roster tidak dapat dihitung",
-			ErrPermintaanTidakSah)
+			galat.ErrPermintaanTidakSah)
 	}
 	mutlak := new(apd.Decimal).Set(nilai.Amount)
 	mutlak.Negative = false
-	return models.Money{Amount: mutlak, Currency: nilai.Currency}, nil
+	return uang.Money{Amount: mutlak, Currency: nilai.Currency}, nil
 }
 
 // PeriksaTingkatKomite menolak tangga komite tanpa tingkat.
@@ -209,7 +216,7 @@ func PeriksaSatuMataUang(peserta []models.Peserta) error {
 // ⛔ Antarmuka, bukan query. `POOLDATA.EMAILKOMITE` tabel PRODUKSI: membacanya
 // menuntut persetujuan manusia, dan butir af masih `[USULAN]`.
 type SumberRoster interface {
-	AmbilAnggota(ctx context.Context, ambang models.Money, lini string) ([]AnggotaKomite, error)
+	AmbilAnggota(ctx context.Context, ambang uang.Money, lini string) ([]AnggotaKomite, error)
 }
 
 // AnggotaKomite adalah satu anggota tangga yang berhak memutuskan.
@@ -242,7 +249,7 @@ type AnggotaKomite struct {
 type RosterBelumDiputuskan struct{}
 
 // AmbilAnggota selalu gagal, dan menyebut apa yang ditunggu.
-func (RosterBelumDiputuskan) AmbilAnggota(context.Context, models.Money, string) ([]AnggotaKomite, error) {
+func (RosterBelumDiputuskan) AmbilAnggota(context.Context, uang.Money, string) ([]AnggotaKomite, error) {
 	return nil, ErrRosterBelumDiputuskan
 }
 
@@ -268,7 +275,7 @@ type MuatanKomite struct {
 	// kasus harus membaca roster untuk kedua kalinya, dan dua bacaan dapat
 	// berbeda.
 	Anggota       []AnggotaKomite
-	JumlahKlaim   models.Money
+	JumlahKlaim   uang.Money
 	KodeStatus    string
 	TingkatKomite int
 	AkunID        string
@@ -281,14 +288,14 @@ type MuatanKomite struct {
 // `T_KOMITE_KOMITELIST` milik konteks Komite Claim Life, dan butir af yang
 // mengesahkannya masih `[USULAN]`.
 type PembuatKasusKomite interface {
-	Buat(ctx context.Context, tx *repository.Tx, m MuatanKomite) (string, error)
+	Buat(ctx context.Context, tx *db.Tx, m MuatanKomite) (string, error)
 }
 
 // KasusKomiteBelumDiputuskan gagal terang selama butir af belum disahkan.
 type KasusKomiteBelumDiputuskan struct{}
 
 // Buat selalu gagal, dan menyebut apa yang ditunggu.
-func (KasusKomiteBelumDiputuskan) Buat(context.Context, *repository.Tx,
+func (KasusKomiteBelumDiputuskan) Buat(context.Context, *db.Tx,
 	MuatanKomite) (string, error) {
 	return "", ErrKasusKomiteBelumDiputuskan
 }
@@ -298,9 +305,9 @@ type Penyerahan struct {
 	svc      *Service
 	roster   SumberRoster
 	kasus    PembuatKasusKomite
-	jejak    Jejak
-	penyalur *Penyalur
-	terakhir HasilSalur
+	jejak    jejak.Jejak
+	penyalur *outbox.Penyalur
+	terakhir outbox.HasilSalur
 }
 
 // Komite menyusun layanan itu dengan ketiga ketergantungan yang gagal terang.
@@ -309,11 +316,11 @@ func (s *Service) Komite() *Penyerahan {
 		svc:    s,
 		roster: RosterBelumDiputuskan{},
 		kasus:  KasusKomiteBelumDiputuskan{},
-		jejak:  JejakBelumDiputuskan{},
+		jejak:  jejak.JejakBelumDiputuskan{},
 		// Lingkungannya datang dari Service, yang menerimanya sekali dari
 		// `config.IsPegaProd`. Bawaan Service sendiri BUKAN produksi.
-		penyalur: NewPenyalur(s.lingkungan, AntreanBelumDiputuskan{},
-			EfekKeluarClaimLife(ResolverBelumDiputuskan{})...),
+		penyalur: outbox.NewPenyalur(s.Lingkungan(), outbox.AntreanBelumDiputuskan{},
+			EfekKeluarClaimLife(layanan.ResolverBelumDiputuskan{})...),
 	}
 }
 
@@ -332,14 +339,14 @@ func (p *Penyerahan) DenganKasus(k PembuatKasusKomite) *Penyerahan {
 }
 
 // DenganPenyalur mengganti penyalur efek keluarnya.
-func (p *Penyerahan) DenganPenyalur(s *Penyalur) *Penyerahan {
+func (p *Penyerahan) DenganPenyalur(s *outbox.Penyalur) *Penyerahan {
 	salin := *p
 	salin.penyalur = s
 	return &salin
 }
 
 // DenganJejak mengganti perekam jejaknya.
-func (p *Penyerahan) DenganJejak(j Jejak) *Penyerahan {
+func (p *Penyerahan) DenganJejak(j jejak.Jejak) *Penyerahan {
 	salin := *p
 	salin.jejak = j
 	return &salin
@@ -359,19 +366,19 @@ func (p *Penyerahan) DenganJejak(j Jejak) *Penyerahan {
 // Sesudahnya keadaan baris, lalu rekening, baru roster - sebab memanggil
 // roster untuk baris yang tidak boleh diserahkan adalah pekerjaan sia-sia yang
 // menyentuh tabel produksi.
-func (p *Penyerahan) Serahkan(ctx context.Context, pelaku Pelaku,
+func (p *Penyerahan) Serahkan(ctx context.Context, pelaku inti.Pelaku,
 	klaimID, pesertaID, adjID string, saat time.Time) error {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return err
 	}
 	if strings.TrimSpace(klaimID) == "" || strings.TrimSpace(pesertaID) == "" ||
 		strings.TrimSpace(adjID) == "" {
 		return fmt.Errorf("%w: pengenal klaim, peserta, dan baris wajib diisi",
-			ErrPermintaanTidakSah)
+			galat.ErrPermintaanTidakSah)
 	}
 	if !p.svc.PunyaDatabase() {
-		return repository.ErrTanpaOracle
+		return db.ErrTanpaOracle
 	}
 
 	// ⛔ BUTIR bb: kasus yang sudah ditutup tidak dapat diubah lagi.
@@ -383,7 +390,7 @@ func (p *Penyerahan) Serahkan(ctx context.Context, pelaku Pelaku,
 		return err
 	}
 
-	baca := repository.NewKlaimLife(p.svc.db)
+	baca := repository.NewKlaimLife(p.svc.DB())
 
 	// ⛔ Wewenangnya bergantung Type, dan Type hanya ada di baris klaim. Ini
 	// pemanggil PRODUKSI pertama WajibWewenangKomite - tiket 07 melahirkannya
@@ -403,7 +410,7 @@ func (p *Penyerahan) Serahkan(ctx context.Context, pelaku Pelaku,
 	baris, ada := cariBarisPeserta(perBaris, pesertaID, adjID)
 	if !ada {
 		return fmt.Errorf("%w: baris %q bukan milik peserta %q pada klaim %q",
-			ErrPermintaanTidakSah, adjID, pesertaID, klaimID)
+			galat.ErrPermintaanTidakSah, adjID, pesertaID, klaimID)
 	}
 	if err := PeriksaSatuMataUang(pesertaDariPeta(perBaris)); err != nil {
 		return err
@@ -433,7 +440,7 @@ func (p *Penyerahan) Serahkan(ctx context.Context, pelaku Pelaku,
 	// Kelahiran kasus komite, penautan baris, dan jejaknya berada dalam SATU
 	// transaksi. Penunjuk dua arah yang ditulis di dua transaksi dapat berakhir
 	// menunjuk sebelah pihak saja.
-	if err := p.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	if err := p.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		komiteID, err := p.kasus.Buat(ctx, tx, MuatanKomite{
 			KlaimID:       klaimID,
 			AdjustmentID:  adjID,
@@ -452,7 +459,7 @@ func (p *Penyerahan) Serahkan(ctx context.Context, pelaku Pelaku,
 		if err := baca.PerbaruiKomiteID(ctx, tx, adjID, komiteID); err != nil {
 			return err
 		}
-		return p.jejak.Rekam(ctx, tx, CatatanJejak{
+		return p.jejak.Rekam(ctx, tx, jejak.CatatanJejak{
 			AdjustmentID: adjID,
 			KlaimID:      klaimID,
 			Dari:         baris.KodeStatus,
@@ -472,7 +479,7 @@ func (p *Penyerahan) Serahkan(ctx context.Context, pelaku Pelaku,
 	//
 	// ⚠️ Konsekuensi yang diterima (ADR-U-0008): penyerahan dapat berhasil
 	// sementara email kepada Komite masih tertunda di antrean.
-	hasil := p.penyalur.Salurkan(ctx, MuatanEfek{
+	hasil := p.penyalur.Salurkan(ctx, outbox.MuatanEfek{
 		KlaimID:      klaimID,
 		AdjustmentID: adjID,
 		AkunID:       pelaku.AkunID,
@@ -493,7 +500,7 @@ func (p *Penyerahan) Serahkan(ctx context.Context, pelaku Pelaku,
 // terakhir yang dijalankan instance ini.
 //
 // ⚠️ Dibaca pemanggil yang ingin MELAPORKAN, bukan yang ingin menggagalkan.
-func (p *Penyerahan) HasilEfekTerakhir() HasilSalur { return p.terakhir }
+func (p *Penyerahan) HasilEfekTerakhir() outbox.HasilSalur { return p.terakhir }
 
 // cariBarisPeserta mencari satu baris milik peserta tertentu.
 func cariBarisPeserta(perBaris map[string][]models.BarisAdjustment,
@@ -522,18 +529,18 @@ type rosterOracle struct{ pohon *repository.PohonKlaim }
 
 // RosterKomiteOracle menyusun pembaca roster yang memakai Oracle.
 func RosterKomiteOracle(svc *Service) SumberRoster {
-	return rosterOracle{pohon: repository.NewPohonKlaim(svc.db)}
+	return rosterOracle{pohon: repository.NewPohonKlaim(svc.DB())}
 }
 
 // AmbilAnggota membaca anggota yang menutup ambang, urut menaik.
 //
 // ⚠️ Ambangnya diserahkan sebagai TEKS desimal - uang tidak pernah menjadi
 // float (ADR-U-0003), dan repository membandingkannya lewat `TO_NUMBER`.
-func (r rosterOracle) AmbilAnggota(ctx context.Context, ambang models.Money,
+func (r rosterOracle) AmbilAnggota(ctx context.Context, ambang uang.Money,
 	lini string) ([]AnggotaKomite, error) {
 
 	if ambang.Kosong() {
-		return nil, fmt.Errorf("%w: ambang roster kosong", ErrPermintaanTidakSah)
+		return nil, fmt.Errorf("%w: ambang roster kosong", galat.ErrPermintaanTidakSah)
 	}
 	baris, err := r.pohon.AmbilRosterKomite(ctx, utils.FormatDecimal(ambang.Amount), lini)
 	if err != nil {
@@ -556,11 +563,11 @@ type kasusOracle struct{ pohon *repository.PohonKlaim }
 
 // KasusKomiteOracle menyusun penulis kasus yang memakai Oracle.
 func KasusKomiteOracle(svc *Service) PembuatKasusKomite {
-	return kasusOracle{pohon: repository.NewPohonKlaim(svc.db)}
+	return kasusOracle{pohon: repository.NewPohonKlaim(svc.DB())}
 }
 
 // Buat melahirkan kasus komite dan mengembalikan pengenalnya.
-func (k kasusOracle) Buat(ctx context.Context, tx *repository.Tx,
+func (k kasusOracle) Buat(ctx context.Context, tx *db.Tx,
 	m MuatanKomite) (string, error) {
 
 	anggota := make([]repository.AnggotaTangga, 0, len(m.Anggota))

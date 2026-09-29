@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"nusantarare/inti/db"
 )
 
 func penandaBerurut(q string) []string {
@@ -135,7 +137,7 @@ func TestRekamAkhirSatuJalurDanDipagari(t *testing.T) {
 	}
 	r := &InboxKomite{}
 	for _, s := range []string{"", "0", "3", "Aksep"} {
-		if err := r.RekamAkhirWarisan(context.Background(), &Tx{}, "A", s, "", time.Now()); !errors.Is(err, ErrStatusAkhirKomiteTidakSah) {
+		if err := r.RekamAkhirWarisan(context.Background(), &db.Tx{}, "A", s, "", time.Now()); !errors.Is(err, ErrStatusAkhirKomiteTidakSah) {
 			t.Errorf("status %q: %v", s, err)
 		}
 	}
@@ -151,7 +153,7 @@ func TestSQLTimpaTanggaTolakAkhir(t *testing.T) {
 			t.Errorf("tanpa %q:\n%s", mau, q)
 		}
 	}
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		t.Error(err)
 	}
 	b := sqlTanggaSebelumDitimpa("S.L")

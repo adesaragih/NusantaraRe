@@ -6,6 +6,8 @@ import (
 	"errors"
 	"strings"
 	"testing"
+
+	"nusantarare/inti/db"
 )
 
 // TestTulisNomorPLTidakDapatMenimpaNomorYangSudahAda - gerbang kedua.
@@ -21,7 +23,7 @@ func TestTulisNomorPLTidakDapatMenimpaNomorYangSudahAda(t *testing.T) {
 	if !strings.Contains(q, "PREMIUM_LIST_ID = :2") {
 		t.Errorf("query tulis nomor tidak dibatasi satu polis:\n%s", q)
 	}
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		t.Errorf("%v\n%s", err, q)
 	}
 }
@@ -113,7 +115,7 @@ func TestRingkasPolisMembacaKeduaUjungNomor(t *testing.T) {
 			t.Errorf("query ringkas tidak memuat %q:\n%s", potong, q)
 		}
 	}
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		t.Errorf("%v\n%s", err, q)
 	}
 	// Satu baris, satu perjalanan: kepala polis dan nomornya tidak dibaca
@@ -137,7 +139,7 @@ func TestKeadaanNomorPLMembacaKeduaUjungJuga(t *testing.T) {
 			t.Errorf("query keadaan tidak memuat %q:\n%s", potong, q)
 		}
 	}
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		t.Errorf("%v\n%s", err, q)
 	}
 }
@@ -155,7 +157,7 @@ func TestIdentitasPolisHanyaDuaKolom(t *testing.T) {
 	if !strings.Contains(q, "p.TYPE") || !strings.Contains(q, "p.BUSINESS_CODE") {
 		t.Errorf("query identitas tidak membaca TYPE dan BUSINESS_CODE:\n%s", q)
 	}
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		t.Errorf("%v\n%s", err, q)
 	}
 }

@@ -18,6 +18,8 @@ import (
 	"strings"
 
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
 )
 
 func layananBusinessTCO(svc *services.Service) *services.BusinessTCO {
@@ -46,11 +48,11 @@ func masterBusinessTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		if !punyaDBTCO(w, svc) {
 			return
 		}
-		d, err := layananBusinessTCO(svc).Master(r.Context(), pelakuDari(r, stub))
+		d, err := layananBusinessTCO(svc).Master(r.Context(), inti.PelakuDari(r, stub))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, jawabanBusinessMaster{Daftar: d, Total: len(d)})
+		galat.TulisJSON(w, jawabanBusinessMaster{Daftar: d, Total: len(d)})
 	}
 }
 
@@ -59,11 +61,11 @@ func daftarBusinessTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		if !punyaDBTCO(w, svc) {
 			return
 		}
-		d, err := layananBusinessTCO(svc).Daftar(r.Context(), pelakuDari(r, stub), r.PathValue("id"), r.PathValue("kid"))
+		d, err := layananBusinessTCO(svc).Daftar(r.Context(), inti.PelakuDari(r, stub), r.PathValue("id"), r.PathValue("kid"))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, d)
+		galat.TulisJSON(w, d)
 	}
 }
 
@@ -74,25 +76,25 @@ func simpanBusinessTCO(svc *services.Service, stub, perbarui bool) http.HandlerF
 		}
 		var masuk services.BusinessMasuk
 		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&masuk); err != nil {
-			galat(w, http.StatusBadRequest, "badan permintaan bukan JSON bisnis yang sah")
+			galat.Tulis(w, http.StatusBadRequest, "badan permintaan bukan JSON bisnis yang sah")
 			return
 		}
 		id := strings.TrimSpace(masuk.ID)
 		switch {
 		case !perbarui && id != "":
-			galat(w, http.StatusBadRequest, "identitas bisnis dibuat server; POST tidak boleh membawa id")
+			galat.Tulis(w, http.StatusBadRequest, "identitas bisnis dibuat server; POST tidak boleh membawa id")
 			return
 		case perbarui && id != "" && id != r.PathValue("bid"):
-			galat(w, http.StatusBadRequest, "id di badan berbeda dari id di jalur")
+			galat.Tulis(w, http.StatusBadRequest, "id di badan berbeda dari id di jalur")
 			return
 		case perbarui:
 			masuk.ID = r.PathValue("bid")
 		}
-		b, err := layananBusinessTCO(svc).Simpan(r.Context(), pelakuDari(r, stub), r.PathValue("id"), r.PathValue("kid"), masuk)
+		b, err := layananBusinessTCO(svc).Simpan(r.Context(), inti.PelakuDari(r, stub), r.PathValue("id"), r.PathValue("kid"), masuk)
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, b)
+		galat.TulisJSON(w, b)
 	}
 }
 
@@ -105,11 +107,11 @@ func hapusBusinessTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		if !punyaDBTCO(w, svc) {
 			return
 		}
-		pesan, err := layananBusinessTCO(svc).Hapus(r.Context(), pelakuDari(r, stub), r.PathValue("id"),
+		pesan, err := layananBusinessTCO(svc).Hapus(r.Context(), inti.PelakuDari(r, stub), r.PathValue("id"),
 			r.PathValue("kid"), r.PathValue("bid"))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, jawabanHapusBusiness{Pesan: pesan})
+		galat.TulisJSON(w, jawabanHapusBusiness{Pesan: pesan})
 	}
 }

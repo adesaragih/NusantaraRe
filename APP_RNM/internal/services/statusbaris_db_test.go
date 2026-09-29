@@ -19,13 +19,16 @@ import (
 	"nusantarare/internal/repository"
 	"nusantarare/internal/repository/skemauji"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	intidb "nusantarare/inti/db"
+	"nusantarare/inti/jejak"
 )
 
 // jejakUji menggantikan tempat jejak audit yang belum disahkan (butir am).
-type jejakUji struct{ catatan []services.CatatanJejak }
+type jejakUji struct{ catatan []jejak.CatatanJejak }
 
-func (j *jejakUji) Rekam(_ context.Context, _ *repository.Tx,
-	c services.CatatanJejak) error {
+func (j *jejakUji) Rekam(_ context.Context, _ *intidb.Tx,
+	c jejak.CatatanJejak) error {
 	j.catatan = append(j.catatan, c)
 	return nil
 }
@@ -37,7 +40,7 @@ type jejakGagal struct{}
 
 var errJejakSengaja = errors.New("uji: jejak sengaja gagal")
 
-func (jejakGagal) Rekam(context.Context, *repository.Tx, services.CatatanJejak) error {
+func (jejakGagal) Rekam(context.Context, *intidb.Tx, jejak.CatatanJejak) error {
 	return errJejakSengaja
 }
 
@@ -45,7 +48,7 @@ func (jejakGagal) Rekam(context.Context, *repository.Tx, services.CatatanJejak) 
 //
 // Layanan tidak membuka isi dalamnya, dan memang tidak seharusnya: test yang
 // memerlukan repository membukanya sendiri dan menutupnya sendiri.
-func repoUji(t *testing.T) (*repository.DB, func()) {
+func repoUji(t *testing.T) (*intidb.DB, func()) {
 	t.Helper()
 	db, err := skemauji.BukaRepositori()
 	if err != nil {
@@ -56,7 +59,7 @@ func repoUji(t *testing.T) (*repository.DB, func()) {
 
 // pohonUjiStatus membuat satu klaim dengan satu peserta dan satu baris
 // Outstanding, langsung lewat repository.
-func pohonUjiStatus(t *testing.T, svc *services.Service, db *repository.DB) models.PohonKlaim {
+func pohonUjiStatus(t *testing.T, svc *services.Service, db *intidb.DB) models.PohonKlaim {
 	t.Helper()
 	pohon := models.PohonKlaim{
 		Work: models.WorkClaim{ID: "CLM-UJI400", Lini: models.LiniLife, Type: "QP"},
@@ -69,7 +72,7 @@ func pohonUjiStatus(t *testing.T, svc *services.Service, db *repository.DB) mode
 		},
 	}
 	ctx := context.Background()
-	err := svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	err := svc.DalamTransaksi(ctx, func(tx *intidb.Tx) error {
 		return repository.NewPohonKlaim(db).Simpan(ctx, tx, pohon)
 	})
 	if err != nil {
@@ -105,7 +108,7 @@ func TestUbahStatusMencerminkanTigaTingkat(t *testing.T) {
 	jejak := &jejakUji{}
 	saat := time.Date(2026, 9, 26, 22, 0, 0, 0, time.UTC)
 	err = svc.Status().DenganJejak(jejak).Ubah(ctx,
-		services.Pelaku{AkunID: "UJI-AKUN"},
+		inti.Pelaku{AkunID: "UJI-AKUN"},
 		pohon.Work.ID, peserta[0].ID, adj[0].ID, models.StatusAksep, saat)
 	if err != nil {
 		t.Fatalf("Ubah: %v", err)
@@ -149,7 +152,7 @@ func TestUbahStatusMencerminkanTigaTingkat(t *testing.T) {
 	// ⛔ Transisi KEDUA atas baris yang sama ditolak - kefinalan berlaku juga
 	// terhadap basis data, bukan hanya di dalam proses ini.
 	err = svc.Status().DenganJejak(jejak).Ubah(ctx,
-		services.Pelaku{AkunID: "UJI-AKUN"},
+		inti.Pelaku{AkunID: "UJI-AKUN"},
 		pohon.Work.ID, peserta[0].ID, adj[0].ID, models.StatusDitolak, saat)
 	if !errors.Is(err, services.ErrBarisSudahFinal) {
 		t.Errorf("transisi kedua: galat = %v, mau ErrBarisSudahFinal", err)
@@ -172,7 +175,7 @@ func TestKegagalanDiTengahTidakMeninggalkanSeparuhJadi(t *testing.T) {
 
 	saat := time.Date(2026, 9, 26, 22, 0, 0, 0, time.UTC)
 	err := svc.Status().DenganJejak(jejakGagal{}).Ubah(ctx,
-		services.Pelaku{AkunID: "UJI-AKUN"},
+		inti.Pelaku{AkunID: "UJI-AKUN"},
 		pohon.Work.ID, peserta[0].ID, adj[0].ID, models.StatusAksep, saat)
 	if !errors.Is(err, errJejakSengaja) {
 		t.Fatalf("galat = %v, mau errJejakSengaja", err)
@@ -216,7 +219,7 @@ func TestTolakMencabutPenandaDipilihDiTransaksiYangSama(t *testing.T) {
 	adj := perBaris[peserta[0].ID]
 
 	saat := time.Date(2026, 9, 26, 22, 0, 0, 0, time.UTC)
-	pelaku := services.Pelaku{
+	pelaku := inti.Pelaku{
 		AkunID: "UJI-AKUN", Peran: []string{services.PeranRejectOutstanding}}
 	err := svc.Status().DenganJejak(&jejakUji{}).Tolak(ctx, pelaku,
 		pohon.Work.ID, adj[0].ID, "UJI alasan", saat)
@@ -254,7 +257,7 @@ func TestTolakYangGagalTidakMencabutPenanda(t *testing.T) {
 	adj := perBaris[peserta[0].ID]
 	sebelum := peserta[0].IsCheck
 
-	pelaku := services.Pelaku{
+	pelaku := inti.Pelaku{
 		AkunID: "UJI-AKUN", Peran: []string{services.PeranRejectOutstanding}}
 	err := svc.Status().DenganJejak(jejakGagal{}).Tolak(ctx, pelaku,
 		pohon.Work.ID, adj[0].ID, "UJI alasan", time.Now())

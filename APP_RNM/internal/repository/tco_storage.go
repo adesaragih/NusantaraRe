@@ -22,6 +22,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"nusantarare/inti/db"
 )
 
 // MasterFolderImageTCO - tabel warisan asal `APPNAME` penyimpanan.
@@ -46,17 +48,17 @@ func sqlTokenStorageBerlakuTCO(tabel string) string {
 }
 
 // AppStorageTCO membaca `APPNAME` penyimpanan saat jalan.
-func (d *DB) AppStorageTCO(ctx context.Context) (string, error) {
+func AppStorageTCO(ctx context.Context, d *db.DB) (string, error) {
 	tabel, err := d.Qualify(MasterFolderImageTCO)
 	if err != nil {
 		return "", err
 	}
 	q := sqlAppStorageTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return "", err
 	}
 	var app sql.NullString
-	err = d.bacaTCO(ctx).QueryRowContext(ctx, q).Scan(&app)
+	err = bacaTCO(ctx, d).QueryRowContext(ctx, q).Scan(&app)
 	if errors.Is(err, sql.ErrNoRows) || (err == nil && app.String == "") {
 		return "", ErrAppStorageKosongTCO
 	}
@@ -68,7 +70,7 @@ func (d *DB) AppStorageTCO(ctx context.Context) (string, error) {
 
 // TokenStorageBerlakuTCO mencari token yang masih berlaku LEBIH DARI
 // `sisaMinimum` sesudah `saat`, beserta sisa umurnya. Token kosong = tidak ada.
-func (d *DB) TokenStorageBerlakuTCO(ctx context.Context, tx *Tx, appName string, saat time.Time,
+func TokenStorageBerlakuTCO(ctx context.Context, d *db.DB, tx *db.Tx, appName string, saat time.Time,
 	sisaMinimum time.Duration) (string, time.Duration, error) {
 	if tx == nil {
 		return "", 0, errors.New("repository: token penyimpanan menuntut transaksi")
@@ -78,14 +80,14 @@ func (d *DB) TokenStorageBerlakuTCO(ctx context.Context, tx *Tx, appName string,
 		return "", 0, err
 	}
 	q := sqlTokenStorageBerlakuTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return "", 0, err
 	}
 	var (
 		kode sql.NullString
 		sisa sql.NullFloat64
 	)
-	err = tx.tx.QueryRowContext(ctx, q, saat, appName, saat.Add(sisaMinimum)).Scan(&kode, &sisa)
+	err = tx.QueryRowContext(ctx, q, saat, appName, saat.Add(sisaMinimum)).Scan(&kode, &sisa)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", 0, nil
 	}

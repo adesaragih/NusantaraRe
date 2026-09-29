@@ -36,6 +36,7 @@ import (
 	"strings"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/db"
 )
 
 // ApprovalKomiteMenunggu adalah `KomiteAproval` anggota yang belum memutuskan.
@@ -105,10 +106,10 @@ const sqlSaringInboxKomite = `
 	        OR (g.ACCEPT_STATUS = :setuju AND g.KOMITE_COUNT <= g.KOMITE_LOOP))`
 
 // InboxKomite membaca kasus komite.
-type InboxKomite struct{ db *DB }
+type InboxKomite struct{ db *db.DB }
 
 // NewInboxKomite menyusunnya.
-func NewInboxKomite(db *DB) *InboxKomite { return &InboxKomite{db: db} }
+func NewInboxKomite(db *db.DB) *InboxKomite { return &InboxKomite{db: db} }
 
 // tabelKomite meng-qualify kelima tabel sekaligus.
 func (r *InboxKomite) tabelKomite() (gen, work, list, klaim, adj string, err error) {
@@ -169,7 +170,7 @@ func (r *InboxKomite) Ambil(ctx context.Context, akunID, statusTutup string,
 		return nil, 0, err
 	}
 	q := sqlInboxKomite(gen, work, list, klaim, adj)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, 0, err
 	}
 	// ⛔ Urutan argumen = urutan MUNCULNYA penanda di teks - driver Oracle di
@@ -177,7 +178,7 @@ func (r *InboxKomite) Ambil(ctx context.Context, akunID, statusTutup string,
 	// Claim Life). `:menunggu` muncul DUA kali, jadi ia dikirim dua kali.
 	saring := []any{akunID, ApprovalKomiteMenunggu, ApprovalKomiteMenunggu, statusTutup,
 		models.KeputusanKomiteSetuju}
-	rows, err := r.db.sql.QueryContext(ctx, q, append(saring, offset, ukuran)...)
+	rows, err := r.db.QueryContext(ctx, q, append(saring, offset, ukuran)...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("repository: membaca inbox komite: %w", err)
 	}
@@ -195,11 +196,11 @@ func (r *InboxKomite) Ambil(ctx context.Context, akunID, statusTutup string,
 	}
 
 	qc := sqlCacahInboxKomite(gen, work, list, klaim, adj)
-	if err := PeriksaSQL(qc); err != nil {
+	if err := db.PeriksaSQL(qc); err != nil {
 		return nil, 0, err
 	}
 	var total int
-	if err := r.db.sql.QueryRowContext(ctx, qc, saring...).Scan(&total); err != nil {
+	if err := r.db.QueryRowContext(ctx, qc, saring...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("repository: mencacah inbox komite: %w", err)
 	}
 	return keluar, total, nil
@@ -267,13 +268,13 @@ func (r *InboxKomite) Kasus(ctx context.Context, kasusID string) (KasusKomite, e
 		return KasusKomite{}, err
 	}
 	q := sqlKasusKomite(gen, work, list, klaim, adj)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return KasusKomite{}, err
 	}
 	var k KasusKomite
 	var klaimID, nomor, nilai, mu, sts, status, adjID, accept, peserta, kpr sql.NullString
 	var urut, count, loop sql.NullInt64
-	err = r.db.sql.QueryRowContext(ctx, q, ApprovalKomiteMenunggu, kasusID).Scan(
+	err = r.db.QueryRowContext(ctx, q, ApprovalKomiteMenunggu, kasusID).Scan(
 		&k.Baris.KasusID, &klaimID, &nomor, &urut, &count, &loop, &nilai, &mu, &sts,
 		&status, &k.Baris.TglUpdate, &adjID, &accept, &peserta, &kpr)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -294,10 +295,10 @@ func (r *InboxKomite) Kasus(ctx context.Context, kasusID string) (KasusKomite, e
 	k.IsKPR = strings.TrimSpace(kpr.String)
 
 	qt := sqlTanggaKasus(list)
-	if err := PeriksaSQL(qt); err != nil {
+	if err := db.PeriksaSQL(qt); err != nil {
 		return KasusKomite{}, err
 	}
-	rows, err := r.db.sql.QueryContext(ctx, qt, kasusID)
+	rows, err := r.db.QueryContext(ctx, qt, kasusID)
 	if err != nil {
 		return KasusKomite{}, fmt.Errorf("repository: membaca tangga komite: %w", err)
 	}

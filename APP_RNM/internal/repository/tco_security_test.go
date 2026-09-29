@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"nusantarare/inti/db"
 )
 
 // AC 19: kolom bernama. tco4 (RALAT AC 18/20 tiket 06): tabel warisan tanpa
@@ -32,7 +34,7 @@ func TestSQLSecurityTCO(t *testing.T) {
 		if strings.Contains(q, " ID,") || strings.Contains(q, "s.ID") {
 			t.Errorf("SQL security menyebut ID yang tidak ada di MTREATYSECURITY: %s", q)
 		}
-		if err := PeriksaSQL(q); err != nil {
+		if err := db.PeriksaSQL(q); err != nil {
 			t.Errorf("PeriksaSQL: %v", err)
 		}
 	}

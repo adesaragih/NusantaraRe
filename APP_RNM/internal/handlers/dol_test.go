@@ -11,6 +11,8 @@ import (
 	"testing"
 
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
 )
 
 func TestRuteTanggalKlaimTerdaftarDiSarangPeserta(t *testing.T) {
@@ -33,13 +35,13 @@ func TestGalatTanggalDipetakanKeKodeYangBenar(t *testing.T) {
 		err  error
 		mau  int
 	}{
-		{"tanpa identitas", services.ErrTanpaIdentitas, http.StatusUnauthorized},
-		{"tanpa wewenang", services.ErrTanpaWewenang, http.StatusForbidden},
+		{"tanpa identitas", inti.ErrTanpaIdentitas, http.StatusUnauthorized},
+		{"tanpa wewenang", inti.ErrTanpaWewenang, http.StatusForbidden},
 		{"kasus tertutup", services.ErrKasusSudahTertutup, http.StatusConflict},
 		{"tahap salah", services.ErrTahapTidakBolehUbahTanggal, http.StatusConflict},
 		{"terkunci sesudah Save to RNM", services.ErrTanggalTerkunciSesudahSaveRNM, http.StatusConflict},
 		{"tahap tak dikenal", services.ErrTahapTidakDikenal, http.StatusUnprocessableEntity},
-		{"permintaan tidak sah", services.ErrPermintaanTidakSah, http.StatusBadRequest},
+		{"permintaan tidak sah", galat.ErrPermintaanTidakSah, http.StatusBadRequest},
 	} {
 		w := httptest.NewRecorder()
 		jawabGalatTanggal(w, u.err, "gagal")
@@ -105,11 +107,11 @@ func TestRuteCabutPesertaDanGalatnya(t *testing.T) {
 		err error
 		mau int
 	}{
-		{services.ErrTanpaIdentitas, http.StatusUnauthorized},
-		{services.ErrTanpaWewenang, http.StatusForbidden},
+		{inti.ErrTanpaIdentitas, http.StatusUnauthorized},
+		{inti.ErrTanpaWewenang, http.StatusForbidden},
 		{services.ErrKasusSudahTertutup, http.StatusConflict},
 		{services.ErrPesertaTidakDapatDicabut, http.StatusConflict},
-		{services.ErrPermintaanTidakSah, http.StatusBadRequest},
+		{galat.ErrPermintaanTidakSah, http.StatusBadRequest},
 		{services.ErrTahapTidakDikenal, http.StatusUnprocessableEntity},
 	} {
 		w := httptest.NewRecorder()

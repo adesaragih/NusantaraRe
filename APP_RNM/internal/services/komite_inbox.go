@@ -20,6 +20,9 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
 )
 
 // ErrKasusKomiteTakDitemukan - tidak ada kasus komite dengan id itu.
@@ -111,14 +114,14 @@ func keBarisTampil(b repository.BarisInboxKomite) BarisInboxKomiteTampil {
 }
 
 // Ambil membaca satu halaman inbox milik pelaku.
-func (i *InboxKomite) Ambil(ctx context.Context, pelaku Pelaku, halaman, ukuran int) (
+func (i *InboxKomite) Ambil(ctx context.Context, pelaku inti.Pelaku, halaman, ukuran int) (
 	HalamanInboxKomite, error) {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return HalamanInboxKomite{}, err
 	}
 	if i == nil || i.svc == nil || !i.svc.PunyaDatabase() {
-		return HalamanInboxKomite{}, repository.ErrTanpaOracle
+		return HalamanInboxKomite{}, db.ErrTanpaOracle
 	}
 	if halaman < 1 {
 		halaman = 1
@@ -126,7 +129,7 @@ func (i *InboxKomite) Ambil(ctx context.Context, pelaku Pelaku, halaman, ukuran 
 	if ukuran < 1 || ukuran > ukuranInboxKomiteMaks {
 		ukuran = ukuranInboxKomiteMaks
 	}
-	baris, total, err := repository.NewInboxKomite(i.svc.db).Ambil(ctx, pelaku.AkunID,
+	baris, total, err := repository.NewInboxKomite(i.svc.DB()).Ambil(ctx, pelaku.AkunID,
 		models.StatusWorkSelesai, (halaman-1)*ukuran, ukuran)
 	if err != nil {
 		return HalamanInboxKomite{}, err
@@ -154,19 +157,19 @@ func KataApprovalKomite(kode string) string { return KataStatusTangga(kode) }
 //
 // ⛔ ADR-0014: melihat kasus di luar tangganya sendiri adalah melihat
 // pekerjaan orang lain - 403, bukan 404, sebab kasusnya memang ada.
-func (i *InboxKomite) Kasus(ctx context.Context, pelaku Pelaku, kasusID string) (
+func (i *InboxKomite) Kasus(ctx context.Context, pelaku inti.Pelaku, kasusID string) (
 	KasusKomiteTampil, error) {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return KasusKomiteTampil{}, err
 	}
 	if i == nil || i.svc == nil || !i.svc.PunyaDatabase() {
-		return KasusKomiteTampil{}, repository.ErrTanpaOracle
+		return KasusKomiteTampil{}, db.ErrTanpaOracle
 	}
 	if strings.TrimSpace(kasusID) == "" {
-		return KasusKomiteTampil{}, fmt.Errorf("%w: id kasus komite kosong", ErrPermintaanTidakSah)
+		return KasusKomiteTampil{}, fmt.Errorf("%w: id kasus komite kosong", galat.ErrPermintaanTidakSah)
 	}
-	baca := repository.NewInboxKomite(i.svc.db)
+	baca := repository.NewInboxKomite(i.svc.DB())
 	k, err := baca.Kasus(ctx, kasusID)
 	if err != nil {
 		return KasusKomiteTampil{}, err
@@ -204,7 +207,7 @@ func susunKasusTampil(k repository.KasusKomite, akunID string) (KasusKomiteTampi
 	}
 	if !anggota {
 		return KasusKomiteTampil{}, fmt.Errorf("%w: pelaku bukan anggota tangga kasus %q",
-			ErrTanpaWewenang, k.Baris.KasusID)
+			inti.ErrTanpaWewenang, k.Baris.KasusID)
 	}
 	return out, nil
 }

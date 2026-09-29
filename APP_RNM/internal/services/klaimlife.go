@@ -8,6 +8,8 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti/db"
+	"nusantarare/inti/migrasi"
 )
 
 // ErrKlaimTidakAda dikembalikan bila klaim yang diminta tidak ada.
@@ -19,7 +21,7 @@ var ErrKlaimTidakAda = errors.New("services: klaim tidak ada")
 type KlaimLife struct {
 	repo *repository.KlaimLife
 	diag *repository.Diagnosa
-	kurs *repository.MataUang
+	kurs *db.MataUang
 	// Butir bk: ambang `MAXEXPIREDCLAIM` penanda `MAX CLAIM RECEIVED`.
 	polis  *repository.RingkasPolisLife
 	produk *repository.ProdukLife
@@ -31,11 +33,11 @@ func (s *Service) KlaimLife() *KlaimLife {
 		return nil
 	}
 	return &KlaimLife{
-		repo:   repository.NewKlaimLife(s.db),
-		diag:   repository.NewDiagnosa(s.db),
-		kurs:   repository.NewMataUang(s.db),
-		polis:  repository.NewRingkasPolisLife(s.db),
-		produk: repository.NewProdukLife(s.db),
+		repo:   repository.NewKlaimLife(s.DB()),
+		diag:   repository.NewDiagnosa(s.DB()),
+		kurs:   db.NewMataUang(s.DB()),
+		polis:  repository.NewRingkasPolisLife(s.DB()),
+		produk: repository.NewProdukLife(s.DB()),
 	}
 }
 
@@ -47,7 +49,7 @@ func (s *Service) KlaimLife() *KlaimLife {
 // informasi peserta pemilik dan mematahkan mesin status (ADR-U-0011).
 func (k *KlaimLife) Ambil(ctx context.Context, id string) (*models.Klaim, error) {
 	if k == nil || k.repo == nil {
-		return nil, repository.ErrTanpaOracle
+		return nil, db.ErrTanpaOracle
 	}
 	if id == "" {
 		return nil, fmt.Errorf("%w: pengenal klaim kosong", ErrWajibIsi)
@@ -165,11 +167,11 @@ func (k *KlaimLife) Ambil(ctx context.Context, id string) (*models.Klaim, error)
 // Ia dipanggil oleh `go run ./cmd/api -migrate` (target `make migrate`).
 // Pelarinya menolak berjalan bila lingkungan menunjuk produksi Pega
 // (ADR-U-0005), dan aman dijalankan berulang kali.
-func (s *Service) JalankanMigrasi(ctx context.Context) (repository.LaporanMigrasi, error) {
+func (s *Service) JalankanMigrasi(ctx context.Context) (migrasi.Laporan, error) {
 	if !s.PunyaDatabase() {
-		return repository.LaporanMigrasi{}, repository.ErrTanpaOracle
+		return migrasi.Laporan{}, db.ErrTanpaOracle
 	}
-	return s.db.JalankanMigrasi(ctx)
+	return migrasi.Jalankan(ctx, s.DB(), repository.SumberMigrasi())
 }
 
 // BongkarMigrasi menjalankan jalur mundur tiap langkah yang TERCATAT selesai.
@@ -181,11 +183,11 @@ func (s *Service) JalankanMigrasi(ctx context.Context) (repository.LaporanMigras
 //
 // Pemanggilnya WAJIB memagari lebih dulu lewat Config.PastikanSkemaUji.
 // Lapisan ini tidak membaca environment sendiri.
-func (s *Service) BongkarMigrasi(ctx context.Context) (repository.LaporanMigrasi, error) {
+func (s *Service) BongkarMigrasi(ctx context.Context) (migrasi.Laporan, error) {
 	if !s.PunyaDatabase() {
-		return repository.LaporanMigrasi{}, repository.ErrTanpaOracle
+		return migrasi.Laporan{}, db.ErrTanpaOracle
 	}
-	return s.db.BongkarMigrasi(ctx)
+	return migrasi.Bongkar(ctx, s.DB(), repository.SumberMigrasi())
 }
 
 // lengkapiPengenalMataUang mengisi `CURRENCYID` baris yang belum punya.

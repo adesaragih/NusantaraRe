@@ -15,6 +15,8 @@ import (
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
 )
 
 type gudangReinsurerUji struct {
@@ -43,7 +45,7 @@ func (g *gudangReinsurerUji) Ambil(_ context.Context, k models.KombinasiTCO, id 
 	}
 	return r, nil
 }
-func (g *gudangReinsurerUji) ShareLain(_ context.Context, _ *repository.Tx, k models.KombinasiTCO, kecuali string) ([]*apd.Decimal, error) {
+func (g *gudangReinsurerUji) ShareLain(_ context.Context, _ *db.Tx, k models.KombinasiTCO, kecuali string) ([]*apd.Decimal, error) {
 	var hasil []*apd.Decimal
 	for id, r := range g.baris {
 		if g.cocok(k, r) && id != kecuali {
@@ -52,13 +54,13 @@ func (g *gudangReinsurerUji) ShareLain(_ context.Context, _ *repository.Tx, k mo
 	}
 	return hasil, nil
 }
-func (g *gudangReinsurerUji) Sisip(_ context.Context, _ *repository.Tx, r models.ReinsurerTreaty) (string, error) {
+func (g *gudangReinsurerUji) Sisip(_ context.Context, _ *db.Tx, r models.ReinsurerTreaty) (string, error) {
 	g.urut++
 	r.ID = "100000" + string(rune('0'+g.urut))
 	g.baris[r.ID] = r
 	return r.ID, nil
 }
-func (g *gudangReinsurerUji) Perbarui(_ context.Context, _ *repository.Tx, r models.ReinsurerTreaty) error {
+func (g *gudangReinsurerUji) Perbarui(_ context.Context, _ *db.Tx, r models.ReinsurerTreaty) error {
 	if _, ada := g.baris[r.ID]; !ada {
 		return repository.ErrReinsurerTidakAda
 	}
@@ -74,7 +76,7 @@ func (k kontrakPemegangUji) Ambil(_ context.Context, tahunID, id string) (models
 	}
 	return models.KontrakTreaty{ID: id, IDTreatyYear: tahunID, ReinsTypeID: "10003", ReinsTypeName: "UJI QS"}, nil
 }
-func (k kontrakPemegangUji) Kunci(_ context.Context, _ *repository.Tx, _, _ string) error {
+func (k kontrakPemegangUji) Kunci(_ context.Context, _ *db.Tx, _, _ string) error {
 	*k.dikunci++
 	return nil
 }
@@ -119,11 +121,11 @@ func reinsurerMasuk(reas, share, komisi string) services.ReinsurerMasuk {
 
 func TestReinsurerTanpaIdentitasDitolak(t *testing.T) {
 	l := layananReinsurer(gudangReinsurerKosong())
-	if _, err := l.Daftar(context.Background(), services.Pelaku{}, "1000001", "1000003"); !errors.Is(err, services.ErrTanpaIdentitas) {
+	if _, err := l.Daftar(context.Background(), inti.Pelaku{}, "1000001", "1000003"); !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("daftar: %v", err)
 	}
-	if _, err := l.Simpan(context.Background(), services.Pelaku{}, "1000001", "1000003",
-		reinsurerMasuk("UJI-R1", "10", "5")); !errors.Is(err, services.ErrTanpaIdentitas) {
+	if _, err := l.Simpan(context.Background(), inti.Pelaku{}, "1000001", "1000003",
+		reinsurerMasuk("UJI-R1", "10", "5")); !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("simpan: %v", err)
 	}
 }
@@ -233,7 +235,7 @@ func TestReinsurerPerbaruiMempertahankanMedanTersembunyi(t *testing.T) {
 		UserID: "UJI-PEMBUAT", PctShare: apd.New(10, 0)}
 	m := reinsurerMasuk("UJI-R2", "20", "2")
 	m.ID = "1000009"
-	h, err := layananReinsurer(g).Simpan(context.Background(), services.Pelaku{AkunID: "UJI-PENGUBAH"}, "1000001", "1000003", m)
+	h, err := layananReinsurer(g).Simpan(context.Background(), inti.Pelaku{AkunID: "UJI-PENGUBAH"}, "1000001", "1000003", m)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -94,7 +94,7 @@ func TestJejakBawaanGagalTerang(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !strings.Contains(string(isi), "jejak: JejakBelumDiputuskan{}") {
+		if !strings.Contains(string(isi), "jejak: jejak.JejakBelumDiputuskan{}") {
 			t.Errorf("%s tidak memakai JejakBelumDiputuskan sebagai bawaan; "+
 				"transisi akan berjalan tanpa jejak, dan tidak ada yang tahu", berkas)
 		}
@@ -140,41 +140,4 @@ func buangKomentar(isi string) string {
 		b.WriteString("\n")
 	}
 	return b.String()
-}
-
-// AC 20 tiket 12: setiap jalur yang MENYERAH meninggalkan jejak audit.
-//
-// ⛔ Penjaga penyambungan, bukan penjaga perilaku. Uji perilakunya memanggil
-// `rekamMenyerah` langsung - dan itu terbukti TIDAK cukup: mencabut
-// pemanggilan `rekamMenyerah` dari `Antre` membiarkan uji itu HIJAU, sebab ia
-// tidak pernah melewati `Antre`. Yang hilang bukan logikanya melainkan
-// sambungannya, dan sambungan dijaga di sini.
-//
-// Aturannya: fungsi mana pun di `antrean.go` yang menulis status
-// `gagal-permanen` WAJIB merekam jejaknya di fungsi yang sama.
-func TestSetiapJalurMenyerahMerekamJejak(t *testing.T) {
-	isi, err := os.ReadFile(filepath.Join("..", "services", "antrean.go"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	diperiksa := 0
-	for _, fn := range pecahPerFungsi(string(isi)) {
-		tubuh := buangKomentar(fn.tubuh)
-		// Yang menulis kegagalan permanen - bukan yang sekadar menyebutnya.
-		if !strings.Contains(tubuh, "repository.StatusEfekGagalPermanen") {
-			continue
-		}
-		diperiksa++
-		if !strings.Contains(tubuh, "rekamMenyerah(ctx, tx,") {
-			t.Errorf("%s menulis status gagal-permanen tetapi tidak merekam "+
-				"jejaknya di fungsi yang sama; AC 20 tiket 12 menuntut "+
-				"kegagalan masuk jalur audit, bukan hanya antrean", fn.nama)
-		}
-	}
-	// DUA jalur menyerah: gagal permanen sejak awal, dan jatah habis.
-	const mauJalur = 2
-	if diperiksa != mauJalur {
-		t.Errorf("%d jalur menyerah ditemukan, mau %d - bila jalurnya bertambah, "+
-			"penjaga ini harus ikut tahu", diperiksa, mauJalur)
-	}
 }

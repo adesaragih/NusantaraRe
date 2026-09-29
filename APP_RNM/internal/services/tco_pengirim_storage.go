@@ -45,6 +45,8 @@ import (
 	"time"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/outbox"
+	"nusantarare/inti/unggah"
 )
 
 // BatasWaktuStorageTCO - `ServiceGoogle.xml` b29 `pyResponseTimeout 300000`.
@@ -187,7 +189,7 @@ func (p *pengirimBerkasHTTPTCO) kirimJSON(ctx context.Context, alamat string, ba
 
 func (p *pengirimBerkasHTTPTCO) dasar(ctx context.Context, token, kunci string) (permintaanStorageTCO, error) {
 	if p.app == nil {
-		return permintaanStorageTCO{}, fmt.Errorf("%w: pembaca App belum dipasang", ErrPenyimpananBelumDisetujui)
+		return permintaanStorageTCO{}, fmt.Errorf("%w: pembaca App belum dipasang", outbox.ErrPenyimpananBelumDisetujui)
 	}
 	app, err := p.app(ctx)
 	if err != nil {
@@ -212,11 +214,11 @@ func (p *pengirimBerkasHTTPTCO) Kirim(ctx context.Context, alamat, token, kunci 
 	if err != nil {
 		return models.ObjekPenyimpananTCO{}, err
 	}
-	data, err := io.ReadAll(io.LimitReader(isi, BatasUkuranUnggahan+1))
+	data, err := io.ReadAll(io.LimitReader(isi, unggah.BatasUkuranUnggahan+1))
 	if err != nil {
 		return models.ObjekPenyimpananTCO{}, fmt.Errorf("services: membaca berkas antrean: %w", err)
 	}
-	if int64(len(data)) > BatasUkuranUnggahan {
+	if int64(len(data)) > unggah.BatasUkuranUnggahan {
 		return models.ObjekPenyimpananTCO{}, fmt.Errorf("%w: berkas melebihi batas", ErrStorageMenolakPermintaanTCO)
 	}
 	durasi := DurasiURLStorageTCO

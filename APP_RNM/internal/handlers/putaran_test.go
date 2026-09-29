@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
 )
 
 func TestGalatPutaranDipetakanKeKodeYangBenar(t *testing.T) {
@@ -17,13 +19,13 @@ func TestGalatPutaranDipetakanKeKodeYangBenar(t *testing.T) {
 		err  error
 		mau  int
 	}{
-		{"tanpa identitas", services.ErrTanpaIdentitas, http.StatusUnauthorized},
-		{"tanpa wewenang", services.ErrTanpaWewenang, http.StatusForbidden},
+		{"tanpa identitas", inti.ErrTanpaIdentitas, http.StatusUnauthorized},
+		{"tanpa wewenang", inti.ErrTanpaWewenang, http.StatusForbidden},
 		{"baris terakhir belum ditolak", services.ErrBukanPenolakan, http.StatusConflict},
 		{"kasus tertutup", services.ErrKasusSudahTertutup, http.StatusConflict},
 		{"bukan Claim Analis", services.ErrTahapTanpaAddAdjustment, http.StatusConflict},
 		{"tahap tidak dikenal", services.ErrTahapTidakDikenal, http.StatusConflict},
-		{"permintaan tidak sah", services.ErrPermintaanTidakSah, http.StatusBadRequest},
+		{"permintaan tidak sah", galat.ErrPermintaanTidakSah, http.StatusBadRequest},
 		// Dibungkus sebab-sebabnya - seperti layanan membungkusnya.
 		{"dibungkus", fmt.Errorf("%w: peserta \"P-1\" tidak ada baris",
 			services.ErrBukanPenolakan), http.StatusConflict},

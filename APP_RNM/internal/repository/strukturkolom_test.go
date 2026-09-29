@@ -25,6 +25,8 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"nusantarare/inti/migrasi"
 )
 
 // letakStruktur menunjuk dokumen STRUKTUR dari folder paket ini.
@@ -194,20 +196,20 @@ func kolomMenurutStruktur(t *testing.T) map[string][]string {
 func kolomMenurutDDL(t *testing.T) map[string][]string {
 	t.Helper()
 	hasil := map[string][]string{}
-	langkah, err := daftarMigrasi(false)
+	langkah, err := migrasi.Daftar(false, berkasMigrasi)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, m := range langkah {
 		for _, p := range m.Pernyataan {
-			if nama, kolom := KolomCreateTable(p); nama != "" {
+			if nama, kolom := migrasi.KolomCreateTable(p); nama != "" {
 				hasil[nama] = kolom
 				continue
 			}
 			// Kolom yang lahir di ALTER ikut dihitung: tanpa itu, langkah
 			// migrasi lanjutan menambah kolom yang tak terlihat penjaga
 			// mana pun.
-			if nama, kolom := KolomAlterTambah(p); nama != "" {
+			if nama, kolom := migrasi.KolomAlterTambah(p); nama != "" {
 				hasil[nama] = append(hasil[nama], kolom...)
 			}
 		}
@@ -497,7 +499,7 @@ func tipeMenurutDDL(t *testing.T) map[string]map[string]string {
 	polaKolomTipe := regexp.MustCompile(`^([A-Z][A-Z0-9_]*)\s+([A-Z0-9_]+(?:\([^)]*\))?)`)
 	hasil := map[string]map[string]string{}
 	for _, isi := range seluruhSQL(t, false) {
-		for _, m := range polaCreateTabel.FindAllStringSubmatch(isi, -1) {
+		for _, m := range migrasi.PolaCreateTabel.FindAllStringSubmatch(isi, -1) {
 			nama, badan := strings.ToUpper(m[1]), m[2]
 			kolom := map[string]string{}
 			for _, b := range strings.Split(badan, "\n") {

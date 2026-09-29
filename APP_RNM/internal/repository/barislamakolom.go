@@ -26,7 +26,8 @@ import (
 	"regexp"
 	"strings"
 
-	"nusantarare/pkg/utils"
+	"nusantarare/inti/db"
+	"nusantarare/inti/utils"
 )
 
 // medanLama memasangkan satu nama kolom dengan tempat nilainya ditampung.
@@ -173,10 +174,6 @@ func NamaKolomTabelWarisan() []string {
 	return out
 }
 
-// fmtTanggalOracle adalah bentuk tanggal yang diminta dari Oracle. Ia cocok
-// dengan utils.TanggalWaktu, dan ParseTanggal juga menerima bentuk pendeknya.
-const fmtTanggalOracle = `TO_CHAR(%s, 'YYYY-MM-DD HH24:MI:SS')`
-
 // ekspresiBacaLama menyusun potongan SELECT untuk satu kolom.
 //
 // Kolom teks dibaca apa adanya; kolom angka dan tanggal dibungkus TO_CHAR
@@ -184,9 +181,9 @@ const fmtTanggalOracle = `TO_CHAR(%s, 'YYYY-MM-DD HH24:MI:SS')`
 func ekspresiBacaLama(kolom string) string {
 	switch {
 	case kolomAngkaLama[kolom]:
-		return fmt.Sprintf(fmtDesimal, kolom)
+		return fmt.Sprintf(db.FmtDesimal, kolom)
 	case kolomTanggalLama[kolom]:
-		return fmt.Sprintf(fmtTanggalOracle, kolom)
+		return fmt.Sprintf(db.FmtTanggalOracle, kolom)
 	default:
 		return kolom
 	}

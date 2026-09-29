@@ -26,8 +26,10 @@ import (
 
 	_ "github.com/sijms/go-ora/v2"
 
-	"nusantarare/internal/config"
 	"nusantarare/internal/repository"
+	"nusantarare/inti/config"
+	"nusantarare/inti/db"
+	"nusantarare/inti/migrasi"
 )
 
 // ErrTanpaOracle dikembalikan bila ORACLE_DSN tidak dikonfigurasi.
@@ -115,7 +117,7 @@ func Buka() (*sql.DB, string, error) {
 }
 
 // BukaRepositori membuka koneksi lapisan repository dari env var yang sama.
-func BukaRepositori() (*repository.DB, error) {
+func BukaRepositori() (*db.DB, error) {
 	cfg, err := config.Load()
 	if err != nil {
 		return nil, err
@@ -123,7 +125,7 @@ func BukaRepositori() (*repository.DB, error) {
 	if err := pastikanAman(cfg); err != nil {
 		return nil, err
 	}
-	return repository.Open(cfg)
+	return db.Open(cfg)
 }
 
 // samakanNLS memaksa titik sebagai pemisah desimal untuk sesi ini.
@@ -183,7 +185,7 @@ func Pasang(ctx context.Context, db *sql.DB, skema string) error {
 		return err
 	}
 	defer func() { _ = repo.Close() }()
-	if _, err := repo.JalankanMigrasi(ctx); err != nil {
+	if _, err := migrasi.Jalankan(ctx, repo, repository.SumberMigrasi()); err != nil {
 		return fmt.Errorf("skemauji: menjalankan migrasi: %w", err)
 	}
 
@@ -253,7 +255,7 @@ func Bongkar(ctx context.Context, db *sql.DB, skema string) error {
 		return err
 	}
 	defer func() { _ = repo.Close() }()
-	if _, err := repo.BongkarMigrasi(ctx); err != nil {
+	if _, err := migrasi.Bongkar(ctx, repo, repository.SumberMigrasi()); err != nil {
 		return fmt.Errorf("skemauji: membongkar migrasi: %w", err)
 	}
 

@@ -10,6 +10,8 @@ import (
 	"errors"
 
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
 )
 
 var (
@@ -42,9 +44,9 @@ type pembacaGrupTreatyOracle struct{ svc *Service }
 
 func (p pembacaGrupTreatyOracle) Daftar(ctx context.Context) ([]repository.GrupTreatyTCO, error) {
 	if !p.svc.PunyaDatabase() {
-		return nil, repository.ErrTanpaOracle
+		return nil, db.ErrTanpaOracle
 	}
-	return repository.NewMasterGrupTreaty(p.svc.db).Daftar(ctx)
+	return repository.NewMasterGrupTreaty(p.svc.DB()).Daftar(ctx)
 }
 
 // PembacaGrupTreatyOracle adalah pembaca sungguhan, dipasang handler.
@@ -71,8 +73,8 @@ func (g *GrupTreatyTreaty) DenganPembaca(p PembacaGrupTreatyTCO) *GrupTreatyTrea
 }
 
 // Daftar mengembalikan seluruh grup treaty, urutan `.ID DESC` (RD b587).
-func (g *GrupTreatyTreaty) Daftar(ctx context.Context, pelaku Pelaku) ([]GrupTreaty, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (g *GrupTreatyTreaty) Daftar(ctx context.Context, pelaku inti.Pelaku) ([]GrupTreaty, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return nil, err
 	}
 	baris, err := g.pembaca.Daftar(ctx)

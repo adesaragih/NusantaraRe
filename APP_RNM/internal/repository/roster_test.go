@@ -7,6 +7,8 @@ package repository
 import (
 	"strings"
 	"testing"
+
+	"nusantarare/inti/db"
 )
 
 // TestSQLRosterMeniruFilterReportDefinition.
@@ -19,7 +21,7 @@ import (
 // dan pengurutan `.DEGREE` `ASC` (baris 824-831, `pySortOrder 1`).
 func TestSQLRosterMeniruFilterReportDefinition(t *testing.T) {
 	q := sqlRosterKomite("UJI.EMAILKOMITE")
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		t.Fatalf("pernyataan roster tidak lolos PeriksaSQL: %v", err)
 	}
 	for _, bagian := range []string{

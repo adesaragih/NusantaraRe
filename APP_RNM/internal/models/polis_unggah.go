@@ -58,7 +58,8 @@ import (
 
 	"github.com/cockroachdb/apd/v3"
 
-	"nusantarare/pkg/utils"
+	"nusantarare/inti/uang"
+	"nusantarare/inti/utils"
 )
 
 // Pesan penolakan - VERBATIM `local.err1`..`local.err32`.
@@ -172,7 +173,7 @@ const TanggalEpochCSV = "02/01/1970"
 func UangCSV(teks string) (*apd.Decimal, error) {
 	s := strings.TrimSpace(teks)
 	if s == "" {
-		return nil, ErrUangKosong
+		return nil, uang.ErrUangKosong
 	}
 	// ⛔ Koma diperiksa LEBIH DAHULU, sebelum penguraian. Pengurai desimal
 	// akan menolak `1,5` dengan pesannya sendiri - pesan yang tidak memberi

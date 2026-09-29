@@ -14,6 +14,8 @@ import (
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
 )
 
 // gudangSecurityUji meniru MTREATYSECURITY warisan (tco4): tanpa identitas,
@@ -39,7 +41,7 @@ func (g *gudangSecurityUji) Ambil(_ context.Context, reasID, id string) (reposit
 	}
 	return repository.SecurityTCO{SecurityReinsurer: s}, nil
 }
-func (g *gudangSecurityUji) CariDobel(_ context.Context, _ *repository.Tx, reasID, sec, kecuali string) (string, error) {
+func (g *gudangSecurityUji) CariDobel(_ context.Context, _ *db.Tx, reasID, sec, kecuali string) (string, error) {
 	for id, s := range g.baris {
 		if s.ReasID == reasID && s.ReasSecurity == sec && id != kecuali {
 			return id, nil
@@ -47,14 +49,14 @@ func (g *gudangSecurityUji) CariDobel(_ context.Context, _ *repository.Tx, reasI
 	}
 	return "", nil
 }
-func (g *gudangSecurityUji) Sisip(_ context.Context, _ *repository.Tx, s models.SecurityReinsurer) (string, error) {
+func (g *gudangSecurityUji) Sisip(_ context.Context, _ *db.Tx, s models.SecurityReinsurer) (string, error) {
 	s.ID = strings.TrimSpace(s.ReasSecurity)
 	g.baris[s.ID] = s
 	return s.ID, nil
 }
 
 // Perbarui - UpdateMTreatySecurity: berkunci nama LAMA (`s.ID`), nama baru ditulis.
-func (g *gudangSecurityUji) Perbarui(_ context.Context, _ *repository.Tx, s models.SecurityReinsurer) error {
+func (g *gudangSecurityUji) Perbarui(_ context.Context, _ *db.Tx, s models.SecurityReinsurer) error {
 	lama, ada := g.baris[s.ID]
 	if !ada || lama.ReasID != s.ReasID {
 		return repository.ErrSecurityTidakAda
@@ -64,7 +66,7 @@ func (g *gudangSecurityUji) Perbarui(_ context.Context, _ *repository.Tx, s mode
 	g.baris[s.ID] = s
 	return nil
 }
-func (g *gudangSecurityUji) Hapus(_ context.Context, _ *repository.Tx, reasID, id string) error {
+func (g *gudangSecurityUji) Hapus(_ context.Context, _ *db.Tx, reasID, id string) error {
 	s, ada := g.baris[id]
 	if !ada || s.ReasID != reasID {
 		return repository.ErrSecurityTidakAda
@@ -158,8 +160,8 @@ func TestSecurityGerbang(t *testing.T) {
 			t.Errorf("%s: gagal tetapi menulis", k.nama)
 		}
 	}
-	if _, err := layananSecurity(gudangSecurityKosong(), reinsurerIndukSec()).Simpan(context.Background(), services.Pelaku{},
-		"1000001", "1000003", "1000007", services.SecurityMasuk{ReasSecurity: "UJI-R1", PctShare: "1"}); !errors.Is(err, services.ErrTanpaIdentitas) {
+	if _, err := layananSecurity(gudangSecurityKosong(), reinsurerIndukSec()).Simpan(context.Background(), inti.Pelaku{},
+		"1000001", "1000003", "1000007", services.SecurityMasuk{ReasSecurity: "UJI-R1", PctShare: "1"}); !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("tanpa identitas: %v", err)
 	}
 }

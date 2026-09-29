@@ -17,6 +17,8 @@ import (
 	"strings"
 
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
 )
 
 func layananReinsurerTCO(svc *services.Service) *services.ReinsurerTCO {
@@ -44,11 +46,11 @@ func cariReinsurerMasterTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		if !punyaDBTCO(w, svc) {
 			return
 		}
-		d, err := layananReinsurerTCO(svc).CariMaster(r.Context(), pelakuDari(r, stub), r.URL.Query().Get("cari"))
+		d, err := layananReinsurerTCO(svc).CariMaster(r.Context(), inti.PelakuDari(r, stub), r.URL.Query().Get("cari"))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, jawabanReinsurerMaster{Daftar: d, Total: len(d)})
+		galat.TulisJSON(w, jawabanReinsurerMaster{Daftar: d, Total: len(d)})
 	}
 }
 
@@ -57,11 +59,11 @@ func daftarReinsurerTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		if !punyaDBTCO(w, svc) {
 			return
 		}
-		d, err := layananReinsurerTCO(svc).Daftar(r.Context(), pelakuDari(r, stub), r.PathValue("id"), r.PathValue("kid"))
+		d, err := layananReinsurerTCO(svc).Daftar(r.Context(), inti.PelakuDari(r, stub), r.PathValue("id"), r.PathValue("kid"))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, d)
+		galat.TulisJSON(w, d)
 	}
 }
 
@@ -74,25 +76,25 @@ func simpanReinsurerTCO(svc *services.Service, stub, perbarui bool) http.Handler
 		}
 		var masuk services.ReinsurerMasuk
 		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&masuk); err != nil {
-			galat(w, http.StatusBadRequest, "badan permintaan bukan JSON reinsurer yang sah")
+			galat.Tulis(w, http.StatusBadRequest, "badan permintaan bukan JSON reinsurer yang sah")
 			return
 		}
 		id := strings.TrimSpace(masuk.ID)
 		switch {
 		case !perbarui && id != "":
-			galat(w, http.StatusBadRequest, "identitas reinsurer dibuat server; POST tidak boleh membawa id")
+			galat.Tulis(w, http.StatusBadRequest, "identitas reinsurer dibuat server; POST tidak boleh membawa id")
 			return
 		case perbarui && id != "" && id != r.PathValue("rid"):
-			galat(w, http.StatusBadRequest, "id di badan berbeda dari id di jalur")
+			galat.Tulis(w, http.StatusBadRequest, "id di badan berbeda dari id di jalur")
 			return
 		case perbarui:
 			masuk.ID = r.PathValue("rid")
 		}
-		h, err := layananReinsurerTCO(svc).Simpan(r.Context(), pelakuDari(r, stub), r.PathValue("id"),
+		h, err := layananReinsurerTCO(svc).Simpan(r.Context(), inti.PelakuDari(r, stub), r.PathValue("id"),
 			r.PathValue("kid"), masuk)
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, h)
+		galat.TulisJSON(w, h)
 	}
 }

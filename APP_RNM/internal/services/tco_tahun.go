@@ -29,7 +29,10 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/utils"
 )
 
 var (
@@ -65,11 +68,11 @@ func (GalatTahunTreatyDobel) Is(target error) bool { return target == ErrTahunTr
 type GudangTahunTreatyTCO interface {
 	Daftar(ctx context.Context, halaman, ukuran int) (repository.HalamanTahunTreaty, error)
 	Ambil(ctx context.Context, id string) (models.TahunTreaty, error)
-	Sisip(ctx context.Context, tx *repository.Tx, t models.TahunTreaty) (string, error)
-	Perbarui(ctx context.Context, tx *repository.Tx, t models.TahunTreaty) error
-	CariDobel(ctx context.Context, tx *repository.Tx, grupID string, mulai, akhir time.Time,
+	Sisip(ctx context.Context, tx *db.Tx, t models.TahunTreaty) (string, error)
+	Perbarui(ctx context.Context, tx *db.Tx, t models.TahunTreaty) error
+	CariDobel(ctx context.Context, tx *db.Tx, grupID string, mulai, akhir time.Time,
 		kecualiID string) (string, error)
-	JumlahAnak(ctx context.Context, tx *repository.Tx, tahunID string) (int64, error)
+	JumlahAnak(ctx context.Context, tx *db.Tx, tahunID string) (int64, error)
 }
 
 type gudangTahunTreatyBelumDisuntik struct{}
@@ -80,16 +83,16 @@ func (gudangTahunTreatyBelumDisuntik) Daftar(context.Context, int, int) (reposit
 func (gudangTahunTreatyBelumDisuntik) Ambil(context.Context, string) (models.TahunTreaty, error) {
 	return models.TahunTreaty{}, ErrGudangTahunTreatyBelumDisuntik
 }
-func (gudangTahunTreatyBelumDisuntik) Sisip(context.Context, *repository.Tx, models.TahunTreaty) (string, error) {
+func (gudangTahunTreatyBelumDisuntik) Sisip(context.Context, *db.Tx, models.TahunTreaty) (string, error) {
 	return "", ErrGudangTahunTreatyBelumDisuntik
 }
-func (gudangTahunTreatyBelumDisuntik) Perbarui(context.Context, *repository.Tx, models.TahunTreaty) error {
+func (gudangTahunTreatyBelumDisuntik) Perbarui(context.Context, *db.Tx, models.TahunTreaty) error {
 	return ErrGudangTahunTreatyBelumDisuntik
 }
-func (gudangTahunTreatyBelumDisuntik) CariDobel(context.Context, *repository.Tx, string, time.Time, time.Time, string) (string, error) {
+func (gudangTahunTreatyBelumDisuntik) CariDobel(context.Context, *db.Tx, string, time.Time, time.Time, string) (string, error) {
 	return "", ErrGudangTahunTreatyBelumDisuntik
 }
-func (gudangTahunTreatyBelumDisuntik) JumlahAnak(context.Context, *repository.Tx, string) (int64, error) {
+func (gudangTahunTreatyBelumDisuntik) JumlahAnak(context.Context, *db.Tx, string) (int64, error) {
 	return 0, ErrGudangTahunTreatyBelumDisuntik
 }
 
@@ -104,23 +107,23 @@ func (g gudangTahunTreatyOracle) Daftar(ctx context.Context, halaman, ukuran int
 func (g gudangTahunTreatyOracle) Ambil(ctx context.Context, id string) (models.TahunTreaty, error) {
 	return g.baca.Ambil(ctx, id)
 }
-func (g gudangTahunTreatyOracle) Sisip(ctx context.Context, tx *repository.Tx, t models.TahunTreaty) (string, error) {
+func (g gudangTahunTreatyOracle) Sisip(ctx context.Context, tx *db.Tx, t models.TahunTreaty) (string, error) {
 	return g.baca.Sisip(ctx, tx, t)
 }
-func (g gudangTahunTreatyOracle) Perbarui(ctx context.Context, tx *repository.Tx, t models.TahunTreaty) error {
+func (g gudangTahunTreatyOracle) Perbarui(ctx context.Context, tx *db.Tx, t models.TahunTreaty) error {
 	return g.baca.Perbarui(ctx, tx, t)
 }
-func (g gudangTahunTreatyOracle) CariDobel(ctx context.Context, tx *repository.Tx, grupID string,
+func (g gudangTahunTreatyOracle) CariDobel(ctx context.Context, tx *db.Tx, grupID string,
 	mulai, akhir time.Time, kecualiID string) (string, error) {
 	return g.baca.CariDobel(ctx, tx, grupID, mulai, akhir, kecualiID)
 }
-func (g gudangTahunTreatyOracle) JumlahAnak(ctx context.Context, tx *repository.Tx, tahunID string) (int64, error) {
+func (g gudangTahunTreatyOracle) JumlahAnak(ctx context.Context, tx *db.Tx, tahunID string) (int64, error) {
 	return g.baca.JumlahAnak(ctx, tx, tahunID)
 }
 
 // GudangTahunTreatyOracle adalah gudang sungguhan, dipasang handler.
 func GudangTahunTreatyOracle(svc *Service) GudangTahunTreatyTCO {
-	return gudangTahunTreatyOracle{svc: svc, baca: repository.NewMasterTahunTreaty(svc.db)}
+	return gudangTahunTreatyOracle{svc: svc, baca: repository.NewMasterTahunTreaty(svc.DB())}
 }
 
 // TahunTreatyMasuk adalah badan permintaan simpan.
@@ -184,7 +187,7 @@ type TahunTreatyTCO struct {
 	// grup - master TREATYGROUP: ID diperiksa, nama DARI master (temuan /code-review).
 	grup      PembacaGrupTreatyTCO
 	jam       func() time.Time
-	transaksi func(ctx context.Context, fn func(tx *repository.Tx) error) error
+	transaksi func(ctx context.Context, fn func(tx *db.Tx) error) error
 }
 
 // TahunTreatyTCO menyusun layanannya dengan gudang yang GAGAL TERANG.
@@ -215,15 +218,15 @@ func (t *TahunTreatyTCO) DenganJam(j func() time.Time) *TahunTreatyTCO {
 }
 
 // DenganTransaksi mengganti pelaksana transaksi - dipakai uji tanpa Oracle.
-func (t *TahunTreatyTCO) DenganTransaksi(f func(ctx context.Context, fn func(tx *repository.Tx) error) error) *TahunTreatyTCO {
+func (t *TahunTreatyTCO) DenganTransaksi(f func(ctx context.Context, fn func(tx *db.Tx) error) error) *TahunTreatyTCO {
 	salin := *t
 	salin.transaksi = f
 	return &salin
 }
 
 // Daftar membaca satu halaman, terbaru dahulu.
-func (t *TahunTreatyTCO) Daftar(ctx context.Context, pelaku Pelaku, halaman, ukuran int) (HalamanTahunTreatyTampil, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (t *TahunTreatyTCO) Daftar(ctx context.Context, pelaku inti.Pelaku, halaman, ukuran int) (HalamanTahunTreatyTampil, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return HalamanTahunTreatyTampil{}, err
 	}
 	if halaman < 1 {
@@ -248,8 +251,8 @@ func (t *TahunTreatyTCO) Daftar(ctx context.Context, pelaku Pelaku, halaman, uku
 }
 
 // Ambil membaca satu tahun treaty.
-func (t *TahunTreatyTCO) Ambil(ctx context.Context, pelaku Pelaku, id string) (TahunTreatyTampil, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (t *TahunTreatyTCO) Ambil(ctx context.Context, pelaku inti.Pelaku, id string) (TahunTreatyTampil, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return TahunTreatyTampil{}, err
 	}
 	b, err := t.gudang.Ambil(ctx, id)
@@ -266,14 +269,14 @@ func uraiTanggalMasuk(nama, teks string) (time.Time, error) {
 	}
 	d, err := utils.ParseTanggal(strings.TrimSpace(teks))
 	if err != nil {
-		return time.Time{}, fmt.Errorf("%w: %s bukan tanggal yang dikenal (%q)", ErrPermintaanTidakSah, nama, teks)
+		return time.Time{}, fmt.Errorf("%w: %s bukan tanggal yang dikenal (%q)", galat.ErrPermintaanTidakSah, nama, teks)
 	}
 	return d, nil
 }
 
 // Simpan menyisipkan (ID kosong) atau memperbarui (ID terisi) tahun treaty.
-func (t *TahunTreatyTCO) Simpan(ctx context.Context, pelaku Pelaku, masuk TahunTreatyMasuk) (TahunTreatyTampil, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (t *TahunTreatyTCO) Simpan(ctx context.Context, pelaku inti.Pelaku, masuk TahunTreatyMasuk) (TahunTreatyTampil, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return TahunTreatyTampil{}, err
 	}
 	mulai, err := uraiTanggalMasuk("startDate", masuk.StartDate)
@@ -308,7 +311,7 @@ func (t *TahunTreatyTCO) Simpan(ctx context.Context, pelaku Pelaku, masuk TahunT
 		return TahunTreatyTampil{}, err
 	}
 
-	err = t.transaksi(ctx, func(tx *repository.Tx) error {
+	err = t.transaksi(ctx, func(tx *db.Tx) error {
 		idLain, err := t.gudang.CariDobel(ctx, tx, model.TreatyGroupID, model.StartDate, model.EndDate, model.ID)
 		if err != nil {
 			return err

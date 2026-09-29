@@ -1,3 +1,4 @@
+// Package models memuat struct domain.
 package models
 
 import (
@@ -7,7 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"nusantarare/pkg/utils"
+	"nusantarare/inti/uang"
+	"nusantarare/inti/utils"
 )
 
 // StatusBaris adalah keadaan satu baris AdjustmentList.
@@ -102,17 +104,17 @@ type BarisAdjustment struct {
 	// medan, dan di `services.KolomDiwarisi()` sebagai daftar nama kolom yang
 	// dikunci test. Keduanya sengaja - daftar nama itulah yang membuktikan
 	// STS_REJECT tidak ikut.
-	ShareNusantaraRe Money
-	CedingRetention  Money
-	SumReasured      Money
-	SumInsured       Money
-	ShareRetro       Money
-	RetrocededShare  Money
+	ShareNusantaraRe uang.Money
+	CedingRetention  uang.Money
+	SumReasured      uang.Money
+	SumInsured       uang.Money
+	ShareRetro       uang.Money
+	RetrocededShare  uang.Money
 	CurrencyID       string
 	// JumlahKlaim adalah `CLAIM_AMOUNT` beserta `CURRENCY`-nya. Uang tidak
 	// pernah float (ADR-U-0003, ADR-U-0016). Ia BUKAN kolom warisan: tiap
 	// baris punya jumlah klaimnya sendiri.
-	JumlahKlaim      Money
+	JumlahKlaim      uang.Money
 	NomorAkseptasi   string
 	TanggalAkseptasi time.Time
 	// KomiteID kosong bila baris belum pernah dikirim ke Komite. Roster dan
@@ -144,14 +146,14 @@ func (b BarisAdjustment) Status() StatusBaris { return StatusBarisDariKode(b.Kod
 // tetap dapat dilaporkan tanpa ditebak.
 func (b BarisAdjustment) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
-		ID               string `json:"id"`
-		Status           string `json:"status"`
-		KodeStatus       string `json:"kodeStatus"`
-		StatusDiketahui  bool   `json:"statusDiketahui"`
-		JumlahKlaim      Money  `json:"jumlahKlaim"`
-		NomorAkseptasi   string `json:"nomorAkseptasi"`
-		TanggalAkseptasi string `json:"tanggalAkseptasi"`
-		KomiteID         string `json:"komiteId"`
+		ID               string     `json:"id"`
+		Status           string     `json:"status"`
+		KodeStatus       string     `json:"kodeStatus"`
+		StatusDiketahui  bool       `json:"statusDiketahui"`
+		JumlahKlaim      uang.Money `json:"jumlahKlaim"`
+		NomorAkseptasi   string     `json:"nomorAkseptasi"`
+		TanggalAkseptasi string     `json:"tanggalAkseptasi"`
+		KomiteID         string     `json:"komiteId"`
 	}{
 		ID:               b.ID,
 		Status:           b.Status().String(),
@@ -265,15 +267,15 @@ type Peserta struct {
 	// Uang polis. Seluruhnya Money kecuali EMPercent, yang perbandingan -
 	// keduanya sengaja bertipe berbeda supaya tidak pernah terjumlahkan
 	// (ADR-F-0004).
-	SumInsured       Money
-	SumReasured      Money
-	GrossPremium     Money
-	NetPremium       Money
-	CedingRetention  Money
-	ShareNusantaraRe Money
-	ShareRetro       Money
-	RetrocededShare  Money
-	EMPercent        Ratio
+	SumInsured       uang.Money
+	SumReasured      uang.Money
+	GrossPremium     uang.Money
+	NetPremium       uang.Money
+	CedingRetention  uang.Money
+	ShareNusantaraRe uang.Money
+	ShareRetro       uang.Money
+	RetrocededShare  uang.Money
+	EMPercent        uang.Ratio
 	// JumlahKlaim adalah `CLAIM_AMOUNT` peserta - GILIRAN-14 butir bp.
 	//
 	// `[terverifikasi]` `SavePesertaClaim` 7.7 b3280 menyalinnya ke peserta,
@@ -281,7 +283,7 @@ type Peserta struct {
 	// sama di sumber (`M_LIFE_PREMIUM_DETAIL.CLAIM_AMOUNT`). Sebelum bp ia
 	// tidak dibaca sama sekali, sehingga baris pertama tidak dapat lahir
 	// bernilai.
-	JumlahKlaim Money
+	JumlahKlaim uang.Money
 
 	// ⛔ NAMA ORANG SENGAJA TIDAK ADA DI SINI. NAME_OF_INSURED dan
 	// POLICY_HOLDER punya kolomnya di DDL, tetapi tidak disalin: nama
@@ -509,7 +511,7 @@ type Klaim struct {
 	// warisan, dan KOSONG saat header dibaca sendirian. Menambah kolom mata
 	// uang ke header adalah keputusan tersendiri, dan executor tidak
 	// mengarangnya.
-	ClaimRetro Money
+	ClaimRetro uang.Money
 
 	Peserta []Peserta
 
@@ -556,15 +558,15 @@ func (k Klaim) MarshalJSON() ([]byte, error) {
 	// Keduanya sengaja berdampingan di kontrak: yang satu fakta mentah dari
 	// basis data, yang lain kesimpulan yang dapat dipertanggungjawabkan.
 	return json.Marshal(struct {
-		ID            string    `json:"id"`
-		NomorKlaim    string    `json:"nomorKlaim"`
-		NomorPolis    string    `json:"nomorPolis"`
-		NamaBisnis    string    `json:"namaBisnis"`
-		KodeStatus    string    `json:"kodeStatus"`
-		StatusTurunan string    `json:"statusTurunan"`
-		ClaimRetro    Money     `json:"claimRetro"`
-		Peserta       []Peserta `json:"peserta"`
-		CacahBaris    int       `json:"cacahBaris"`
+		ID            string     `json:"id"`
+		NomorKlaim    string     `json:"nomorKlaim"`
+		NomorPolis    string     `json:"nomorPolis"`
+		NamaBisnis    string     `json:"namaBisnis"`
+		KodeStatus    string     `json:"kodeStatus"`
+		StatusTurunan string     `json:"statusTurunan"`
+		ClaimRetro    uang.Money `json:"claimRetro"`
+		Peserta       []Peserta  `json:"peserta"`
+		CacahBaris    int        `json:"cacahBaris"`
 		// ⭐ Tahap dan StatusWork menyeberang sejak butir bb. Layar Detail
 		// memerlukan KEDUANYA untuk memutuskan apakah tombol `Close Claim`
 		// pantas ditawarkan: `pyLocalAction>CloseClaim` hanya ada di dua

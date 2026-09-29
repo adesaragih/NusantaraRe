@@ -10,8 +10,10 @@ import (
 	"testing"
 
 	"nusantarare/internal/models"
-	"nusantarare/internal/repository"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
 )
 
 // TestPeranPemegangTahap - AC: tiap tahap dipegang perannya.
@@ -172,26 +174,26 @@ func TestPenandaSendtoBerbentukTeks(t *testing.T) {
 func TestPindahTahapMenjagaPagarnya(t *testing.T) {
 	svc := services.New(nil)
 	ctx := context.Background()
-	if err := svc.Tahap().Pindah(ctx, services.Pelaku{}, "CLM-1",
+	if err := svc.Tahap().Pindah(ctx, inti.Pelaku{}, "CLM-1",
 		models.TahapOutstanding, saatUji); !errors.Is(
-		err, services.ErrTanpaIdentitas) {
+		err, inti.ErrTanpaIdentitas) {
 		t.Errorf("tanpa identitas: galat = %v, mau ErrTanpaIdentitas", err)
 	}
-	if err := svc.Tahap().Pindah(ctx, pelakuBerperan(services.PeranAdmin),
+	if err := svc.Tahap().Pindah(ctx, pelakuBerperan(inti.PeranAdmin),
 		"CLM-1", models.TahapTidakDikenal, saatUji); !errors.Is(
 		err, services.ErrTahapTidakDikenal) {
 		t.Errorf("tujuan asing: galat = %v, mau ErrTahapTidakDikenal", err)
 	}
-	if err := svc.Tahap().Pindah(ctx, pelakuBerperan(services.PeranAdmin),
+	if err := svc.Tahap().Pindah(ctx, pelakuBerperan(inti.PeranAdmin),
 		"  ", models.TahapOutstanding, saatUji); !errors.Is(
-		err, services.ErrPermintaanTidakSah) {
+		err, galat.ErrPermintaanTidakSah) {
 		t.Errorf("pengenal kosong: galat = %v, mau ErrPermintaanTidakSah", err)
 	}
 	// ⚠️ Gerbang perannya menuntut pembacaan PY_POSITION, jadi tanpa Oracle ia
 	// berhenti di sana. Peran per tahap sendiri diuji langsung di atas.
-	if err := svc.Tahap().Pindah(ctx, pelakuBerperan(services.PeranAdmin),
+	if err := svc.Tahap().Pindah(ctx, pelakuBerperan(inti.PeranAdmin),
 		"CLM-1", models.TahapMedicalCheck, saatUji); !errors.Is(
-		err, repository.ErrTanpaOracle) {
+		err, db.ErrTanpaOracle) {
 		t.Errorf("tanpa Oracle: galat = %v, mau ErrTanpaOracle", err)
 	}
 }

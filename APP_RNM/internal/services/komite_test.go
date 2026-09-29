@@ -11,7 +11,9 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/services"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/utils"
 )
 
 func barisLengkap(t *testing.T) models.BarisAdjustment {
@@ -166,15 +168,15 @@ func TestMataUangSatuKlaimWajibSeragam(t *testing.T) {
 func TestSerahkanMenjagaPagarnya(t *testing.T) {
 	svc := services.New(nil)
 	ctx := context.Background()
-	if err := svc.Komite().Serahkan(ctx, services.Pelaku{}, "CLM-1", "P-1", "A-1",
-		saatUji); !errors.Is(err, services.ErrTanpaIdentitas) {
+	if err := svc.Komite().Serahkan(ctx, inti.Pelaku{}, "CLM-1", "P-1", "A-1",
+		saatUji); !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("tanpa identitas: galat = %v, mau ErrTanpaIdentitas", err)
 	}
-	if err := svc.Komite().Serahkan(ctx, pelakuBerperan(services.PeranSPV),
-		"  ", "P-1", "A-1", saatUji); !errors.Is(err, services.ErrPermintaanTidakSah) {
+	if err := svc.Komite().Serahkan(ctx, pelakuBerperan(inti.PeranSPV),
+		"  ", "P-1", "A-1", saatUji); !errors.Is(err, galat.ErrPermintaanTidakSah) {
 		t.Errorf("pengenal kosong: galat = %v, mau ErrPermintaanTidakSah", err)
 	}
-	if err := svc.Komite().Serahkan(ctx, pelakuBerperan(services.PeranSPV),
+	if err := svc.Komite().Serahkan(ctx, pelakuBerperan(inti.PeranSPV),
 		"CLM-1", "P-1", "A-1", saatUji); err == nil {
 		t.Error("tanpa Oracle: lolos tanpa galat")
 	}

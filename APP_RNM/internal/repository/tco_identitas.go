@@ -17,6 +17,8 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+
+	"nusantarare/inti/db"
 )
 
 // ErrIdentitasMelampauiLebar - nomor urut tidak muat di lebar identitas.
@@ -47,7 +49,7 @@ var ErrSequenceTakDikenal = errors.New("repository: sequence bukan milik Treaty 
 
 // IdentitasBerikutTCO menerbitkan identitas baru dari sequence, di dalam
 // transaksi pemanggil.
-func (d *DB) IdentitasBerikutTCO(ctx context.Context, tx *Tx, sequence string) (string, error) {
+func IdentitasBerikutTCO(ctx context.Context, d *db.DB, tx *db.Tx, sequence string) (string, error) {
 	lebar, dikenal := sequenceDikenalTCO[sequence]
 	if !dikenal {
 		return "", fmt.Errorf("%w: %q", ErrSequenceTakDikenal, sequence)
@@ -57,11 +59,11 @@ func (d *DB) IdentitasBerikutTCO(ctx context.Context, tx *Tx, sequence string) (
 		return "", err
 	}
 	q := fmt.Sprintf(`SELECT %s.NEXTVAL FROM DUAL`, nama)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return "", err
 	}
 	var n int64
-	if err := tx.tx.QueryRowContext(ctx, q).Scan(&n); err != nil {
+	if err := tx.QueryRowContext(ctx, q).Scan(&n); err != nil {
 		return "", fmt.Errorf("repository: mengambil nomor dari %s: %w", sequence, err)
 	}
 	return FormatIdentitasTCO(n, lebar)

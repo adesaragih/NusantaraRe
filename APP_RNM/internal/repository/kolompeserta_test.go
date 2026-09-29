@@ -8,12 +8,13 @@ import (
 	"testing"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/uang"
 )
 
 // TestPesertaMenyimpanJumlahKlaim - 7.7 b3280 menyalin `.CLAIM_AMOUNT` ke
 // peserta; kolom 003-nya sudah ada, tetapi tidak pernah ditulis.
 func TestPesertaMenyimpanJumlahKlaim(t *testing.T) {
-	jumlah, err := models.NewMoney("25000.1234", "IDR")
+	jumlah, err := uang.NewMoney("25000.1234", "IDR")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -11,7 +11,8 @@ import (
 
 	"github.com/cockroachdb/apd/v3"
 
-	"nusantarare/pkg/utils"
+	"nusantarare/inti/penomor"
+	"nusantarare/inti/utils"
 )
 
 // d menyusun desimal dari teks - nol float di uji ini pun.
@@ -333,7 +334,7 @@ func TestKolomJumlahSummaryVERBATIMDariDT(t *testing.T) {
 // TestTipeDiLuarEmpatDitolak - brief GILIRAN-9 menuntutnya.
 func TestTipeDiLuarEmpatDitolak(t *testing.T) {
 	for _, tipe := range []string{"", "qr", "FAC", "QRQP", "X"} {
-		if _, err := RekapPerMataUang(tipe, nil, nil); !errors.Is(err, ErrTipePLTanpaCabang) {
+		if _, err := RekapPerMataUang(tipe, nil, nil); !errors.Is(err, penomor.ErrTipePLTanpaCabang) {
 			t.Errorf("tipe %q diterima; mau ditolak (%v)", tipe, err)
 		}
 	}

@@ -21,13 +21,16 @@ import (
 	"nusantarare/internal/repository"
 	"nusantarare/internal/repository/skemauji"
 	"nusantarare/internal/services"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	intiuang "nusantarare/inti/uang"
+	"nusantarare/inti/utils"
 )
 
 // penomorUji memberi nomor yang dapat diramalkan, menggantikan butir o.
 type penomorUji struct{ n int }
 
-func (p *penomorUji) NomorBerikut(context.Context, *repository.Tx, string, time.Time) (string, error) {
+func (p *penomorUji) NomorBerikut(context.Context, *db.Tx, string, time.Time) (string, error) {
 	p.n++
 	return "UJI-CLM-NOMOR", nil
 }
@@ -85,7 +88,7 @@ func TestDaftarMenulisTigaTempatDanBarisDatar(t *testing.T) {
 	ctx := context.Background()
 
 	pohon, err := svc.Pendaftaran().DenganPenomor(&penomorUji{}).
-		Daftar(ctx, services.Pelaku{AkunID: "UJI-OPERATOR"}, permintaan())
+		Daftar(ctx, inti.Pelaku{AkunID: "UJI-OPERATOR"}, permintaan())
 	if err != nil {
 		t.Fatalf("mendaftarkan klaim: %v", err)
 	}
@@ -149,7 +152,7 @@ func TestDaftarMenulisTigaTempatDanBarisDatar(t *testing.T) {
 	}
 	for _, k := range []struct {
 		medan string
-		got   models.Money
+		got   intiuang.Money
 		mau   string
 	}{
 		{"SUM_INSURED", baris[0].SumInsured, "1000000"},
@@ -194,7 +197,7 @@ func TestPesertaBatalTidakDapatDidaftarkan(t *testing.T) {
 	minta := permintaan()
 	minta.Sertifikat = []string{"010"} // fixture: EDMSTATUS = 'Batal'
 	_, err := svc.Pendaftaran().DenganPenomor(&penomorUji{}).
-		Daftar(context.Background(), services.Pelaku{AkunID: "UJI-OPERATOR"}, minta)
+		Daftar(context.Background(), inti.Pelaku{AkunID: "UJI-OPERATOR"}, minta)
 	if err == nil {
 		t.Fatal("peserta batal diterima; penyaring hidup tidak berlaku di jalur pendaftaran")
 	}
@@ -210,11 +213,11 @@ func TestDuaPendaftaranDuaPengenal(t *testing.T) {
 	ctx := context.Background()
 	daftar := svc.Pendaftaran().DenganPenomor(&penomorUji{})
 
-	satu, err := daftar.Daftar(ctx, services.Pelaku{AkunID: "UJI-OPERATOR"}, permintaan())
+	satu, err := daftar.Daftar(ctx, inti.Pelaku{AkunID: "UJI-OPERATOR"}, permintaan())
 	if err != nil {
 		t.Fatalf("pendaftaran pertama: %v", err)
 	}
-	dua, err := daftar.Daftar(ctx, services.Pelaku{AkunID: "UJI-OPERATOR"}, permintaan())
+	dua, err := daftar.Daftar(ctx, inti.Pelaku{AkunID: "UJI-OPERATOR"}, permintaan())
 	if err != nil {
 		t.Fatalf("pendaftaran kedua: %v", err)
 	}
@@ -233,7 +236,7 @@ func TestPenomorGagalMembatalkanSeluruhTransaksi(t *testing.T) {
 	ctx := context.Background()
 
 	// Penomor bawaan selalu gagal selama butir o belum diputuskan.
-	_, err := svc.Pendaftaran().Daftar(ctx, services.Pelaku{AkunID: "UJI-OPERATOR"}, permintaan())
+	_, err := svc.Pendaftaran().Daftar(ctx, inti.Pelaku{AkunID: "UJI-OPERATOR"}, permintaan())
 	if err == nil {
 		t.Fatal("pendaftaran berhasil padahal penomoran belum diputuskan")
 	}

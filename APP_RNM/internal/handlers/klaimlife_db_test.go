@@ -17,11 +17,11 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/internal/config"
 	"nusantarare/internal/handlers"
-	"nusantarare/internal/repository"
 	"nusantarare/internal/repository/skemauji"
 	"nusantarare/internal/services"
+	"nusantarare/inti/config"
+	"nusantarare/inti/db"
 )
 
 func server(t *testing.T) (*httptest.Server, func()) {
@@ -51,7 +51,7 @@ func server(t *testing.T) (*httptest.Server, func()) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	db, err := repository.Open(cfg)
+	db, err := db.Open(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}

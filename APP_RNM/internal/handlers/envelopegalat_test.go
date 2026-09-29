@@ -5,6 +5,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"nusantarare/inti/galat"
 )
 
 // Kontrak envelope galat, SISI BACKEND.
@@ -23,7 +25,7 @@ import (
 
 func TestEnvelopeGalatMemakaiKunciGalat(t *testing.T) {
 	w := httptest.NewRecorder()
-	galat(w, 409, "perpindahan itu tidak ada di tangga kerja klaim")
+	galat.Tulis(w, 409, "perpindahan itu tidak ada di tangga kerja klaim")
 
 	var isi map[string]any
 	if err := json.NewDecoder(w.Body).Decode(&isi); err != nil {
@@ -53,7 +55,7 @@ func TestEnvelopeGalatMemakaiKunciGalat(t *testing.T) {
 
 func TestEnvelopeGalatBertipeJSON(t *testing.T) {
 	w := httptest.NewRecorder()
-	galat(w, 503, "database belum dikonfigurasi")
+	galat.Tulis(w, 503, "database belum dikonfigurasi")
 	if ct := w.Header().Get("Content-Type"); !strings.HasPrefix(ct, "application/json") {
 		t.Errorf("Content-Type = %q, mau application/json", ct)
 	}

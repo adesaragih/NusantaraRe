@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/db"
 )
 
 // TestKolomSisipPesertaAdaDiMigrasi052 - nol kolom hantu.
@@ -121,11 +122,11 @@ func TestQueryUnggahDibatasiSatuPolis(t *testing.T) {
 	if !strings.Contains(h, "WHERE PREMIUM_LIST_ID = :1") {
 		t.Errorf("hapus tidak dibatasi satu polis:\n%s", h)
 	}
-	if err := PeriksaSQL(h); err != nil {
+	if err := db.PeriksaSQL(h); err != nil {
 		t.Errorf("%v\n%s", err, h)
 	}
 	s := sqlSisipPeserta("SKEMAUJI.T_PREMIUM_LIST_DETAIL")
-	if err := PeriksaSQL(s); err != nil {
+	if err := db.PeriksaSQL(s); err != nil {
 		t.Errorf("%v\n%s", err, s)
 	}
 	for _, q := range []string{h, s} {

@@ -5,6 +5,8 @@ package repository
 import (
 	"strings"
 	"testing"
+
+	"nusantarare/inti/db"
 )
 
 // TestAmbangProdukHanyaDuaKolom - batas izin butir bh.
@@ -25,7 +27,7 @@ func TestAmbangProdukHanyaDuaKolom(t *testing.T) {
 	if !strings.Contains(q, "WHERE v.ID = :1") {
 		t.Errorf("query tidak berkunci ID:\n%s", q)
 	}
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		t.Errorf("%v\n%s", err, q)
 	}
 }

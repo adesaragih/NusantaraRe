@@ -6,21 +6,22 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/pkg/utils"
+	"nusantarare/inti/uang"
+	"nusantarare/inti/utils"
 )
 
-func uangUji(t *testing.T, s string) Money {
+func uangUji(t *testing.T, s string) uang.Money {
 	t.Helper()
-	m, err := NewMoney(s, "IDR")
+	m, err := uang.NewMoney(s, "IDR")
 	if err != nil {
 		t.Fatal(err)
 	}
 	return m
 }
 
-func rasioUji(t *testing.T, s string) Ratio {
+func rasioUji(t *testing.T, s string) uang.Ratio {
 	t.Helper()
-	r, err := NewRatio(s, 5)
+	r, err := uang.NewRatio(s, 5)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +53,7 @@ func TestClaimPaidPersenDibagiSeratusLimaDesimal(t *testing.T) {
 
 // TestClaimPaidKosongBernilaiNol - `@toDecimal("")` Pega bernilai nol.
 func TestClaimPaidKosongBernilaiNol(t *testing.T) {
-	got, err := HitungClaimPaid(Money{Currency: "IDR"}, Ratio{})
+	got, err := HitungClaimPaid(uang.Money{Currency: "IDR"}, uang.Ratio{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,12 +85,12 @@ func TestGrossMelebihiShareDitolakKecualiEmpatKode(t *testing.T) {
 		t.Errorf("gross < share ditolak: %v", err)
 	}
 	// ⛔ Mata uang berbeda tidak pernah dibandingkan - bahkan untuk L12.
-	usd, err := NewMoney("50", "USD")
+	usd, err := uang.NewMoney("50", "USD")
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, kode := range []string{"L01", "L12"} {
-		if err := PeriksaClaimGrossTerhadapShare(usd, besar, kode); !errors.Is(err, ErrMataUangBerbeda) {
+		if err := PeriksaClaimGrossTerhadapShare(usd, besar, kode); !errors.Is(err, uang.ErrMataUangBerbeda) {
 			t.Errorf("%s: USD lawan IDR = %v, mau ErrMataUangBerbeda", kode, err)
 		}
 	}

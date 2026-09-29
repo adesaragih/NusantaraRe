@@ -5,6 +5,9 @@ package repository
 import (
 	"strings"
 	"testing"
+
+	"nusantarare/inti/db"
+	"nusantarare/inti/migrasi"
 )
 
 // TestRingkasMembacaVersiBerjalan - `PROD_KE` TERBESAR, bukan sembarang baris.
@@ -27,7 +30,7 @@ func TestRingkasMembacaVersiBerjalan(t *testing.T) {
 	if !strings.Contains(q, "NVL(p.PROD_KE, 0)") {
 		t.Errorf("PROD_KE kosong tidak dinetralkan:\n%s", q)
 	}
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		t.Errorf("%v\n%s", err, q)
 	}
 }
@@ -61,7 +64,7 @@ func TestKolomRingkasAdaDiMigrasi051(t *testing.T) {
 	}
 	ada := map[string]bool{}
 	for _, pernyataan := range strings.Split(string(isi), "\n/") {
-		nama, kolom := KolomCreateTable(pernyataan)
+		nama, kolom := migrasi.KolomCreateTable(pernyataan)
 		if !strings.HasSuffix(strings.ToUpper(nama), "T_PREMIUM_LIST") {
 			continue
 		}

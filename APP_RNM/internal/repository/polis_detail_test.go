@@ -15,6 +15,8 @@ import (
 	"testing"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/db"
+	"nusantarare/inti/migrasi"
 )
 
 // kolomTabelPeserta membaca nama kolom migrasi 052 dengan pengurai PRODUKSI.
@@ -29,7 +31,7 @@ func kolomTabelPeserta(t *testing.T) map[string]bool {
 	}
 	ada := map[string]bool{}
 	for _, pernyataan := range strings.Split(string(isi), "\n/") {
-		nama, kolom := KolomCreateTable(pernyataan)
+		nama, kolom := migrasi.KolomCreateTable(pernyataan)
 		if !strings.HasSuffix(strings.ToUpper(nama), "T_PREMIUM_LIST_DETAIL") {
 			continue
 		}
@@ -147,19 +149,19 @@ func TestKolomUangGridDibungkusTM9(t *testing.T) {
 	for _, k := range models.KolomGridPeserta {
 		switch k.Jenis {
 		case models.KolomPesertaAngka:
-			mau := fmt.Sprintf(fmtDesimal, "d."+k.Nama)
+			mau := fmt.Sprintf(db.FmtDesimal, "d."+k.Nama)
 			if !strings.Contains(ekspresi, mau) {
 				t.Errorf("kolom angka %q tidak dibungkus TM9", k.Nama)
 			}
 		case models.KolomPesertaTanggal:
-			mau := fmt.Sprintf(fmtTanggalOracle, "d."+k.Nama)
+			mau := fmt.Sprintf(db.FmtTanggalOracle, "d."+k.Nama)
 			if !strings.Contains(ekspresi, mau) {
 				t.Errorf("kolom tanggal %q tidak dibungkus TO_CHAR berpola", k.Nama)
 			}
 		}
 	}
 	// ⛔ FACTOR adalah DESIMAL tujuh angka (AC 39 spec), bukan bilangan bulat.
-	if !strings.Contains(ekspresi, fmt.Sprintf(fmtDesimal, "d.FACTOR")) {
+	if !strings.Contains(ekspresi, fmt.Sprintf(db.FmtDesimal, "d.FACTOR")) {
 		t.Error("FACTOR tidak dibaca sebagai desimal")
 	}
 }
@@ -176,10 +178,10 @@ func TestQueryGridPesertaBerbatasDanTerurut(t *testing.T) {
 			t.Errorf("query grid tidak memuat %q:\n%s", potong, q)
 		}
 	}
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		t.Errorf("%v\n%s", err, q)
 	}
-	if err := PeriksaSQL(sqlCacahPeserta("SKEMAUJI.T_PREMIUM_LIST_DETAIL")); err != nil {
+	if err := db.PeriksaSQL(sqlCacahPeserta("SKEMAUJI.T_PREMIUM_LIST_DETAIL")); err != nil {
 		t.Error(err)
 	}
 }

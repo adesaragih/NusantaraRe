@@ -27,6 +27,7 @@ import (
 	"github.com/cockroachdb/apd/v3"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/db"
 )
 
 // Master yang dibaca saja.
@@ -64,10 +65,10 @@ type JenisKlausulMasterTCO struct{ ID, DescName, IsXOL, StatusAktif string }
 type PilihanMasterTCO struct{ ID, Nama string }
 
 // MasterKlausulPilihan membaca ketiga master klausul.
-type MasterKlausulPilihan struct{ db *DB }
+type MasterKlausulPilihan struct{ db *db.DB }
 
 // NewMasterKlausulPilihan menyusun pembacanya.
-func NewMasterKlausulPilihan(db *DB) *MasterKlausulPilihan { return &MasterKlausulPilihan{db: db} }
+func NewMasterKlausulPilihan(db *db.DB) *MasterKlausulPilihan { return &MasterKlausulPilihan{db: db} }
 
 func sqlJenisKlausulTCO(tabel string) string {
 	return fmt.Sprintf(`SELECT ID, DESCNAME, ISXOL, STATUSAKTIF FROM %s
@@ -81,10 +82,10 @@ func (m *MasterKlausulPilihan) JenisKlausul(ctx context.Context, isXOL string) (
 		return nil, err
 	}
 	q := sqlJenisKlausulTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := m.db.bacaTCO(ctx).QueryContext(ctx, q, kosongJadiNil(isXOL), kosongJadiNil(isXOL))
+	rows, err := bacaTCO(ctx, m.db).QueryContext(ctx, q, db.KosongJadiNil(isXOL), db.KosongJadiNil(isXOL))
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca master %s: %w", MasterJenisKlausulTCO, err)
 	}
@@ -124,10 +125,10 @@ func (m *MasterKlausulPilihan) CariPilihan(ctx context.Context, master, teks str
 		return nil, err
 	}
 	q := sqlCariPilihanTCO(tabel, kolom)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := m.db.bacaTCO(ctx).QueryContext(ctx, q, TipeFireTCO, polaLikeTCO(teks))
+	rows, err := bacaTCO(ctx, m.db).QueryContext(ctx, q, TipeFireTCO, polaLikeTCO(teks))
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca master %s: %w", master, err)
 	}
@@ -154,11 +155,11 @@ func (m *MasterKlausulPilihan) AmbilPilihan(ctx context.Context, master, id stri
 		return PilihanMasterTCO{}, err
 	}
 	q := sqlAmbilPilihanTCO(tabel, kolom)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return PilihanMasterTCO{}, err
 	}
 	var gotID, nama sql.NullString
-	err = m.db.bacaTCO(ctx).QueryRowContext(ctx, q, id, TipeFireTCO).Scan(&gotID, &nama)
+	err = bacaTCO(ctx, m.db).QueryRowContext(ctx, q, id, TipeFireTCO).Scan(&gotID, &nama)
 	if errors.Is(err, sql.ErrNoRows) {
 		return PilihanMasterTCO{}, fmt.Errorf("%w %s: %q", ErrPilihanMasterTidakAda, master, id)
 	}
@@ -175,10 +176,10 @@ func (m *MasterKlausulPilihan) AmbilPilihan(ctx context.Context, master, id stri
 // DBA (diperlakukan teks); `TGLUPDATE` DATE. Kolom teks dibaca APA ADANYA dan
 // diurai di Go (titik atau koma), ditulis sebagai teks desimal
 // (`TulisDesimalWarisanTCO`) - `TO_CHAR` berformat angka atasnya akan gagal.
-type MasterKlausulTCO struct{ db *DB }
+type MasterKlausulTCO struct{ db *db.DB }
 
 // NewMasterKlausulTCO menyusun gudangnya.
-func NewMasterKlausulTCO(db *DB) *MasterKlausulTCO { return &MasterKlausulTCO{db: db} }
+func NewMasterKlausulTCO(db *db.DB) *MasterKlausulTCO { return &MasterKlausulTCO{db: db} }
 
 // kolomKlausulTCO - 35 kolom, urutan parameter `PEGA_PROPORTIONALARRG`; SATU
 // sumber dengan skema warisan (`KolomWarisanTCO`) - temuan /code-review.
@@ -210,7 +211,7 @@ func pilihKlausulTCO() string {
 		}
 		switch {
 		case kolomAngkaKlausul[k]:
-			b.WriteString(fmt.Sprintf(fmtDesimal, k))
+			b.WriteString(fmt.Sprintf(db.FmtDesimal, k))
 		case k == "TGLUPDATE":
 			b.WriteString("TO_CHAR(TGLUPDATE, 'YYYY-MM-DD HH24:MI:SS')")
 		default:
@@ -354,18 +355,18 @@ func pindaiKlausulTCO(baca interface{ Scan(...any) error }) (models.KlausulTreat
 func nilaiKolomKlausul(k models.KlausulTreaty) map[string]any {
 	d := TulisDesimalWarisanTCO // RP, USD, PCT, PCTME, KURS: teks warisan
 	n := desimalJadiNil         // TREATYLIMIT, COINS_*, MORE*: NUMBER
-	v := map[string]any{"ID": k.ID, "TREATYYEAR": kosongJadiNil(k.TreatyYear), "TREATYYEARID": kosongJadiNil(k.TreatyYearID),
-		"TREATYGROUPID": kosongJadiNil(k.TreatyGroupID), "TREATYGROUPNAME": kosongJadiNil(k.TreatyGroupName),
-		"TREATYDESCID": kosongJadiNil(k.TreatyDescID), "TREATYDESCNAME": kosongJadiNil(k.TreatyDescName),
-		"REINSTYPEID": kosongJadiNil(k.ReinsTypeID), "REINSTYPENAME": kosongJadiNil(k.ReinsTypeName),
-		"LAYER": kosongJadiNil(k.Layer), "LAYERPART": kosongJadiNil(k.LayerPart),
-		"LAYERPARTTYPE": kosongJadiNil(k.LayerPartType), "LAYERTYPE": kosongJadiNil(k.LayerType), "KURS": d(k.Kurs),
-		"TGLUPDATE": tanggalJadiNil(k.TglUpdate), "USERID": kosongJadiNil(k.UserID), "LINE": kosongJadiNil(k.Line),
-		"PCT": d(k.Pct), "PCTME": d(k.PctMe), "YDCF": kosongJadiNil(k.Ydcf), "METHOD": kosongJadiNil(k.Method),
-		"TERRITORIALLIMIT": kosongJadiNil(k.TerritorialLimit), "PARENTREINSTYPEID": kosongJadiNil(k.ParentReinsTypeID),
-		"SPREADINGORDER": kosongJadiNil(k.SpreadingOrder), "RP": d(k.Rp), "USD": d(k.Usd),
-		"ID_OCCUPATION": kosongJadiNil(k.IDOccupation), "OCCUPATION": kosongJadiNil(k.Occupation),
-		"ID_CLAUSE": kosongJadiNil(k.IDClause), "CLAUSE": kosongJadiNil(k.Clause), "TREATYLIMIT": n(k.TreatyLimit),
+	v := map[string]any{"ID": k.ID, "TREATYYEAR": db.KosongJadiNil(k.TreatyYear), "TREATYYEARID": db.KosongJadiNil(k.TreatyYearID),
+		"TREATYGROUPID": db.KosongJadiNil(k.TreatyGroupID), "TREATYGROUPNAME": db.KosongJadiNil(k.TreatyGroupName),
+		"TREATYDESCID": db.KosongJadiNil(k.TreatyDescID), "TREATYDESCNAME": db.KosongJadiNil(k.TreatyDescName),
+		"REINSTYPEID": db.KosongJadiNil(k.ReinsTypeID), "REINSTYPENAME": db.KosongJadiNil(k.ReinsTypeName),
+		"LAYER": db.KosongJadiNil(k.Layer), "LAYERPART": db.KosongJadiNil(k.LayerPart),
+		"LAYERPARTTYPE": db.KosongJadiNil(k.LayerPartType), "LAYERTYPE": db.KosongJadiNil(k.LayerType), "KURS": d(k.Kurs),
+		"TGLUPDATE": tanggalJadiNil(k.TglUpdate), "USERID": db.KosongJadiNil(k.UserID), "LINE": db.KosongJadiNil(k.Line),
+		"PCT": d(k.Pct), "PCTME": d(k.PctMe), "YDCF": db.KosongJadiNil(k.Ydcf), "METHOD": db.KosongJadiNil(k.Method),
+		"TERRITORIALLIMIT": db.KosongJadiNil(k.TerritorialLimit), "PARENTREINSTYPEID": db.KosongJadiNil(k.ParentReinsTypeID),
+		"SPREADINGORDER": db.KosongJadiNil(k.SpreadingOrder), "RP": d(k.Rp), "USD": d(k.Usd),
+		"ID_OCCUPATION": db.KosongJadiNil(k.IDOccupation), "OCCUPATION": db.KosongJadiNil(k.Occupation),
+		"ID_CLAUSE": db.KosongJadiNil(k.IDClause), "CLAUSE": db.KosongJadiNil(k.Clause), "TREATYLIMIT": n(k.TreatyLimit),
 		"COINS_MIN": n(k.CoinsMin), "COINS_MAX": n(k.CoinsMax), "MORERP": n(k.MoreRp), "MOREUSD": n(k.MoreUsd)}
 	if models.KlausulAnakTCO(k) {
 		for _, kolom := range KolomKhususIndukTCO {
@@ -376,10 +377,10 @@ func nilaiKolomKlausul(k models.KlausulTreaty) map[string]any {
 }
 
 func (m *MasterKlausulTCO) bacaBanyak(ctx context.Context, q string, arg ...any) ([]models.KlausulTreaty, error) {
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := m.db.bacaTCO(ctx).QueryContext(ctx, q, arg...)
+	rows, err := bacaTCO(ctx, m.db).QueryContext(ctx, q, arg...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca klausul: %w", err)
 	}
@@ -437,7 +438,7 @@ func (m *MasterKlausulTCO) Induk(ctx context.Context, tahunID, descID, reinsType
 }
 
 // PctAnakLain membaca Pct anak LAIN satu induk, dikunci selama transaksi.
-func (m *MasterKlausulTCO) PctAnakLain(ctx context.Context, tx *Tx, tahunID, descID, parentReinsTypeID, kecualiID string) (
+func (m *MasterKlausulTCO) PctAnakLain(ctx context.Context, tx *db.Tx, tahunID, descID, parentReinsTypeID, kecualiID string) (
 	[]*apd.Decimal, error) {
 	if tx == nil {
 		return nil, errors.New("repository: membaca Pct anak menuntut transaksi")
@@ -447,10 +448,10 @@ func (m *MasterKlausulTCO) PctAnakLain(ctx context.Context, tx *Tx, tahunID, des
 		return nil, err
 	}
 	q := sqlPctAnakLainTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := tx.tx.QueryContext(ctx, q, tahunID, descID, parentReinsTypeID, kosongJadiNil(kecualiID), kosongJadiNil(kecualiID))
+	rows, err := tx.QueryContext(ctx, q, tahunID, descID, parentReinsTypeID, db.KosongJadiNil(kecualiID), db.KosongJadiNil(kecualiID))
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca Pct anak: %w", err)
 	}
@@ -471,7 +472,7 @@ func (m *MasterKlausulTCO) PctAnakLain(ctx context.Context, tx *Tx, tahunID, des
 }
 
 // CariDobel mencari baris LAIN pada lingkup yang sama dengan kunci jenis sama.
-func (m *MasterKlausulTCO) CariDobel(ctx context.Context, tx *Tx, k models.KlausulTreaty, kunci []string) (string, error) {
+func (m *MasterKlausulTCO) CariDobel(ctx context.Context, tx *db.Tx, k models.KlausulTreaty, kunci []string) (string, error) {
 	if tx == nil {
 		return "", errors.New("repository: pencarian dobel klausul menuntut transaksi")
 	}
@@ -483,11 +484,11 @@ func (m *MasterKlausulTCO) CariDobel(ctx context.Context, tx *Tx, k models.Klaus
 		return "", err
 	}
 	q := sqlCariDobelKlausulTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return "", err
 	}
-	rows, err := tx.tx.QueryContext(ctx, q, k.TreatyYearID, k.TreatyDescID, k.ParentReinsTypeID,
-		kosongJadiNil(k.ID), kosongJadiNil(k.ID))
+	rows, err := tx.QueryContext(ctx, q, k.TreatyYearID, k.TreatyDescID, k.ParentReinsTypeID,
+		db.KosongJadiNil(k.ID), db.KosongJadiNil(k.ID))
 	if err != nil {
 		return "", fmt.Errorf("repository: mencari klausul dobel: %w", err)
 	}
@@ -513,7 +514,7 @@ func (m *MasterKlausulTCO) CariDobel(ctx context.Context, tx *Tx, k models.Klaus
 }
 
 // Sisip menulis klausul baru; ID '1' + 7 digit dari `PROPORTIONALARRG_SEQ` warisan.
-func (m *MasterKlausulTCO) Sisip(ctx context.Context, tx *Tx, k models.KlausulTreaty) (string, error) {
+func (m *MasterKlausulTCO) Sisip(ctx context.Context, tx *db.Tx, k models.KlausulTreaty) (string, error) {
 	if tx == nil {
 		return "", errors.New("repository: menyisipkan klausul menuntut transaksi")
 	}
@@ -521,11 +522,11 @@ func (m *MasterKlausulTCO) Sisip(ctx context.Context, tx *Tx, k models.KlausulTr
 	if err != nil {
 		return "", err
 	}
-	if k.ID, err = m.db.IdentitasBerikutTCO(ctx, tx, SeqKlausulTCO); err != nil {
+	if k.ID, err = IdentitasBerikutTCO(ctx, m.db, tx, SeqKlausulTCO); err != nil {
 		return "", err
 	}
 	q := sqlSisipKlausulTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return "", err
 	}
 	v := nilaiKolomKlausul(k)
@@ -533,15 +534,15 @@ func (m *MasterKlausulTCO) Sisip(ctx context.Context, tx *Tx, k models.KlausulTr
 	for _, kolom := range kolomKlausulTCO {
 		arg = append(arg, v[kolom])
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, arg...)
+	hasil, err := tx.ExecContext(ctx, q, arg...)
 	if err != nil {
 		return "", fmt.Errorf("repository: menyisipkan klausul: %w", err)
 	}
-	return k.ID, pastikanSatuBaris(hasil, "penyisipan klausul")
+	return k.ID, db.PastikanSatuBaris(hasil, "penyisipan klausul")
 }
 
 // Perbarui menimpa seluruh kolom non-kunci klausul milik tahun itu.
-func (m *MasterKlausulTCO) Perbarui(ctx context.Context, tx *Tx, k models.KlausulTreaty) error {
+func (m *MasterKlausulTCO) Perbarui(ctx context.Context, tx *db.Tx, k models.KlausulTreaty) error {
 	if tx == nil {
 		return errors.New("repository: memperbarui klausul menuntut transaksi")
 	}
@@ -550,7 +551,7 @@ func (m *MasterKlausulTCO) Perbarui(ctx context.Context, tx *Tx, k models.Klausu
 		return err
 	}
 	q := sqlPerbaruiKlausulTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
 	v := nilaiKolomKlausul(k)
@@ -561,14 +562,14 @@ func (m *MasterKlausulTCO) Perbarui(ctx context.Context, tx *Tx, k models.Klausu
 		}
 	}
 	arg = append(arg, k.ID, k.TreatyYearID)
-	hasil, err := tx.tx.ExecContext(ctx, q, arg...)
+	hasil, err := tx.ExecContext(ctx, q, arg...)
 	if err != nil {
 		return fmt.Errorf("repository: memperbarui klausul %s: %w", k.ID, err)
 	}
 	if n, err := hasil.RowsAffected(); err == nil && n == 0 {
 		return ErrKlausulTidakAda
 	}
-	return pastikanSatuBaris(hasil, "pembaruan klausul")
+	return db.PastikanSatuBaris(hasil, "pembaruan klausul")
 }
 
 func sqlKunciTahunTCO(tabel string) string {
@@ -577,7 +578,7 @@ func sqlKunciTahunTCO(tabel string) string {
 
 // Kunci mengunci baris tahun treaty selama penulis klausulnya bekerja - total
 // Pct anak dan pencarian dobel tidak boleh dilewati penulis serentak.
-func (m *MasterTahunTreaty) Kunci(ctx context.Context, tx *Tx, id string) error {
+func (m *MasterTahunTreaty) Kunci(ctx context.Context, tx *db.Tx, id string) error {
 	if tx == nil {
 		return errors.New("repository: mengunci tahun treaty menuntut transaksi")
 	}
@@ -586,11 +587,11 @@ func (m *MasterTahunTreaty) Kunci(ctx context.Context, tx *Tx, id string) error 
 		return err
 	}
 	q := sqlKunciTahunTCO(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
 	var got string
-	err = tx.tx.QueryRowContext(ctx, q, id).Scan(&got)
+	err = tx.QueryRowContext(ctx, q, id).Scan(&got)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ErrTahunTreatyTidakAda
 	}

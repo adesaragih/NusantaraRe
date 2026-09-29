@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/db"
 )
 
 // TestPengenalWorkPolisTanpaNolDepan - bentuk pengenal warisan, dari data.
@@ -30,7 +31,7 @@ func TestPengenalWorkPolisTanpaNolDepan(t *testing.T) {
 
 func TestSisipKasusPolisMenulisKelimaKolomKerja(t *testing.T) {
 	q := sqlSisipKasusPolis(tabelUjiWorkPolis)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		t.Fatal(err)
 	}
 	for _, k := range []string{"ID", "LINI", "POSITION", "STATUS", "FLAG_ONGOING_POLICY"} {
@@ -45,7 +46,7 @@ func TestSisipKasusPolisMenulisKelimaKolomKerja(t *testing.T) {
 
 func TestSisipPremiumListKosongBerbagiPengenal(t *testing.T) {
 	q := sqlSisipPremiumListKosong("SKEMAUJI.T_PREMIUM_LIST")
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		t.Fatal(err)
 	}
 	// ⛔ ID = ID_PEGA = pengenal work: shared PK (050/051), dan kotak masuk

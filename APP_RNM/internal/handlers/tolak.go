@@ -17,6 +17,9 @@ import (
 	"time"
 
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/jejak"
 )
 
 // permintaanTolakJSON - isian dialog Reject Outstanding (OQ-M5, GILIRAN-17).
@@ -41,34 +44,34 @@ func uraiAlasanTolak(r *http.Request) (string, error) {
 func tolakBaris(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		alasan, err := uraiAlasanTolak(r)
 		if err != nil {
-			galat(w, http.StatusBadRequest, "badan permintaan bukan JSON yang sah")
+			galat.Tulis(w, http.StatusBadRequest, "badan permintaan bukan JSON yang sah")
 			return
 		}
-		err = svc.Status().DenganJejak(services.PerekamJejakOracle(svc)).Tolak(r.Context(), pelakuDari(r, stubPelaku),
+		err = svc.Status().DenganJejak(jejak.PerekamJejakOracle(svc)).Tolak(r.Context(), inti.PelakuDari(r, stubPelaku),
 			r.PathValue("id"), r.PathValue("adjId"), alasan, time.Now())
 
 		switch {
-		case errors.Is(err, services.ErrTanpaIdentitas):
+		case errors.Is(err, inti.ErrTanpaIdentitas):
 			// 401: yang kurang identitasnya. Dipisah dari 403 karena keduanya
 			// menjawab pertanyaan yang berbeda - dan ronde pertama berkas ini
 			// menjawab "bukan ReasLifeAdmin" kepada pemanggil yang sebenarnya
 			// hanya belum menyebut dirinya.
-			galat(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+			galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
 			return
-		case errors.Is(err, services.ErrTanpaWewenang):
+		case errors.Is(err, inti.ErrTanpaWewenang):
 			// 403: identitasnya ada, perannya yang kurang.
-			galat(w, http.StatusForbidden,
+			galat.Tulis(w, http.StatusForbidden,
 				"hanya ReasLifeAdmin yang dapat menolak baris Outstanding")
 			return
 		case errors.Is(err, services.ErrBarisSudahFinal):
 			// 409: baris itu sudah punya keputusan. Bukan galat permintaan,
 			// melainkan bentrokan dengan keadaan yang sudah ada.
-			galat(w, http.StatusConflict,
+			galat.Tulis(w, http.StatusConflict,
 				"baris sudah diputus dan tidak dapat ditolak lagi")
 			return
 		case errors.Is(err, services.ErrKlaimBelumBernomor):
@@ -77,17 +80,17 @@ func tolakBaris(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			// ⚠️ Sampai butir o diputuskan, TIDAK ADA klaim yang bernomor,
 			// sehingga jalur nyata selalu berhenti di sini. Itu keadaan yang
 			// benar - bukan kerusakan - dan dinyatakan di tiket.
-			galat(w, http.StatusUnprocessableEntity,
+			galat.Tulis(w, http.StatusUnprocessableEntity,
 				"klaim belum bernomor; penolakan baris menunggu nomor klaim")
 			return
 		case errors.Is(err, services.ErrKasusSudahTertutup):
-			galat(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
+			galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
 			return
-		case errors.Is(err, services.ErrPermintaanTidakSah):
-			galat(w, http.StatusBadRequest, err.Error())
+		case errors.Is(err, galat.ErrPermintaanTidakSah):
+			galat.Tulis(w, http.StatusBadRequest, err.Error())
 			return
 		case err != nil:
-			galat(w, http.StatusInternalServerError, "gagal menolak baris")
+			galat.Tulis(w, http.StatusInternalServerError, "gagal menolak baris")
 			return
 		}
 

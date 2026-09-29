@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/db"
 )
 
 const tabelUjiWorkPolis = "SKEMAUJI.T_WORK_POLIS"
@@ -61,7 +62,7 @@ func TestQueryKerjaPolisMemakaiBind(t *testing.T) {
 		"pindah":  sqlPindahTahapPolis(tabelUjiWorkPolis),
 		"tutup":   sqlTutupPolis(tabelUjiWorkPolis),
 	} {
-		if err := PeriksaSQL(q); err != nil {
+		if err := db.PeriksaSQL(q); err != nil {
 			t.Errorf("%s: %v\n%s", nama, err, q)
 		}
 		if !strings.Contains(q, ":1") {
@@ -103,7 +104,7 @@ func TestBenderaPolisDibacaTerpisah(t *testing.T) {
 		t.Errorf("keadaan polis membaca kolom 057:\n%s", q)
 	}
 	q := sqlBenderaPolis(tabelUjiWorkPolis)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(q, "FLAG_ONGOING_POLICY") || !strings.Contains(q, ":1") {

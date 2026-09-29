@@ -22,6 +22,8 @@ import (
 	"errors"
 
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
 )
 
 var (
@@ -62,9 +64,9 @@ type pembacaJenisReasuransiOracle struct{ svc *Service }
 func (p pembacaJenisReasuransiOracle) DaftarNonLife(ctx context.Context) (
 	[]repository.JenisReasuransiTCO, error) {
 	if !p.svc.PunyaDatabase() {
-		return nil, repository.ErrTanpaOracle
+		return nil, db.ErrTanpaOracle
 	}
-	return repository.NewMasterJenisReasuransi(p.svc.db).DaftarNonLife(ctx)
+	return repository.NewMasterJenisReasuransi(p.svc.DB()).DaftarNonLife(ctx)
 }
 
 // PembacaJenisReasuransiOracle adalah pembaca sungguhan, dipasang handler.
@@ -91,8 +93,8 @@ func (j *JenisReasuransiTreaty) DenganPembaca(p PembacaJenisReasuransiTCO) *Jeni
 }
 
 // Daftar mengembalikan jenis reasuransi non-life yang aktif, urutan `.Note`.
-func (j *JenisReasuransiTreaty) Daftar(ctx context.Context, pelaku Pelaku) ([]JenisReasuransi, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (j *JenisReasuransiTreaty) Daftar(ctx context.Context, pelaku inti.Pelaku) ([]JenisReasuransi, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return nil, err
 	}
 	baris, err := j.pembaca.DaftarNonLife(ctx)

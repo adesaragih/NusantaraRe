@@ -39,6 +39,10 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/penomor"
 )
 
 // HasilNomorPL adalah jawaban penerbitan atau pembacaan nomor.
@@ -79,17 +83,17 @@ func (s *Service) NomorPremiumList() *NomorPremiumList {
 // Urutannya: gerbang lahir-sekali → identitas → awalan → hari tutup buku →
 // periode → kunci baris penghitung → naikkan → rakit → simpan. Gerbangnya di
 // paling depan, sebelum penghitung disentuh.
-func (n *NomorPremiumList) Terbitkan(ctx context.Context, pelaku Pelaku, polisID string) (
+func (n *NomorPremiumList) Terbitkan(ctx context.Context, pelaku inti.Pelaku, polisID string) (
 	HasilNomorPL, error) {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return HasilNomorPL{}, err
 	}
 	if n == nil || n.svc == nil || !n.svc.PunyaDatabase() {
-		return HasilNomorPL{}, repository.ErrTanpaOracle
+		return HasilNomorPL{}, db.ErrTanpaOracle
 	}
 	if polisID == "" {
-		return HasilNomorPL{}, fmt.Errorf("%w: id polis kosong", ErrPermintaanTidakSah)
+		return HasilNomorPL{}, fmt.Errorf("%w: id polis kosong", galat.ErrPermintaanTidakSah)
 	}
 
 	// ⛔ GERBANG KASUS TERTUTUP - butir bb. Ia membaca `T_WORK_POLIS` lewat
@@ -99,7 +103,7 @@ func (n *NomorPremiumList) Terbitkan(ctx context.Context, pelaku Pelaku, polisID
 	//
 	// ⚠️ Di LUAR transaksi penomoran, dan sengaja: menolak lebih dahulu
 	// berarti kasus tertutup tidak pernah sempat menyentuh baris penghitung.
-	keadaanKerja, err := repository.NewWorkPolis(n.svc.db).Keadaan(ctx, polisID)
+	keadaanKerja, err := repository.NewWorkPolis(n.svc.DB()).Keadaan(ctx, polisID)
 	if err != nil {
 		return HasilNomorPL{}, err
 	}
@@ -110,7 +114,7 @@ func (n *NomorPremiumList) Terbitkan(ctx context.Context, pelaku Pelaku, polisID
 
 	saat := n.jam()
 	var hasil HasilNomorPL
-	err = n.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	err = n.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		var err error
 		hasil, err = n.terbitkanDalam(ctx, tx, polisID, saat)
 		return err
@@ -130,11 +134,11 @@ func (n *NomorPremiumList) Terbitkan(ctx context.Context, pelaku Pelaku, polisID
 // serta salinan warisan (`SummaryPremiumList.Submit`). Satu fungsi untuk
 // keduanya, supaya gerbang lahir-sekali tidak pernah berlaku di satu jalur
 // dan terlupa di jalur lain.
-func (n *NomorPremiumList) terbitkanDalam(ctx context.Context, tx *repository.Tx,
+func (n *NomorPremiumList) terbitkanDalam(ctx context.Context, tx *db.Tx,
 	polisID string, saat time.Time) (HasilNomorPL, error) {
 
-	nomorPolis := repository.NewNomorPolis(n.svc.db)
-	penghitung := repository.NewPenomor(n.svc.db)
+	nomorPolis := repository.NewNomorPolis(n.svc.DB())
+	penghitung := penomor.NewPenomor(n.svc.DB())
 	keadaan, err := nomorPolis.Keadaan(ctx, tx, polisID)
 	if err != nil {
 		return HasilNomorPL{}, err
@@ -177,7 +181,7 @@ func (n *NomorPremiumList) terbitkanDalam(ctx context.Context, tx *repository.Tx
 	// ⛔ Awalannya DI-LOOKUP, bukan konstanta (AC tiket 03). Awalan itu
 	// milik basis data, dan lingkungan yang berbeda dapat memakai yang
 	// berbeda.
-	awalan, err := penghitung.AwalanProduksi(ctx, tx, repository.TipeKodeProduksiLife)
+	awalan, err := penghitung.AwalanProduksi(ctx, tx, penomor.TipeKodeProduksiLife)
 	if err != nil {
 		return HasilNomorPL{}, err
 	}
@@ -187,7 +191,7 @@ func (n *NomorPremiumList) terbitkanDalam(ctx context.Context, tx *repository.Tx
 	}
 	// ⛔ Periodenya aturan tiket 02, bukan `time.Now()` mentah - dan
 	// aturannya satu, dipakai penomoran klaim maupun premium list.
-	periode, err := repository.HitungPeriodeNomor(saat, hariClosing)
+	periode, err := penomor.HitungPeriodeNomor(saat, hariClosing)
 	if err != nil {
 		return HasilNomorPL{}, err
 	}

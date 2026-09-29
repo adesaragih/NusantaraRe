@@ -5,73 +5,24 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"nusantarare/inti/unggah"
 )
-
-// Uji aturan lahirnya satu baris dokumen — kelompok Dokumen.
-
-func TestMimeDariNamaFile(t *testing.T) {
-	t.Run("tabel keputusan disalin utuh", func(t *testing.T) {
-		// ⛔ Cacahnya dikunci. Baris yang HILANG tidak berbunyi sendiri:
-		// berkasnya diam-diam menjadi application/octet-stream, dan tidak
-		// ada yang tahu ia pernah punya jenis sendiri.
-		if len(petaMime) != JumlahBarisMime {
-			t.Fatalf("petaMime = %d baris, mau %d", len(petaMime), JumlahBarisMime)
-		}
-		// Beberapa baris diperiksa harfiah, termasuk yang tampak ganjil -
-		// justru yang ganjil itu yang paling mudah "dirapikan" orang.
-		for ext, mau := range map[string]string{
-			"pdf":  "application/pdf",
-			"jfif": "image/jpeg",
-			"xlsb": "application/vnd.ms-excel.sheet.binary.macroEnabled.12",
-			"et":   "application/et",
-			"lnk":  "application/x-ms-shortcut",
-			"mht":  "message/rfc822",
-			"avi":  "video/x-msvideo",
-		} {
-			if got := MimeDariNamaFile("UJI-berkas." + ext); got != mau {
-				t.Errorf("MimeDariNamaFile(.%s) = %q, mau %q", ext, got, mau)
-			}
-		}
-	})
-
-	t.Run("ekstensi diambil dari titik TERAKHIR", func(t *testing.T) {
-		// Nama berkas bertitik banyak lumrah pada lampiran klaim.
-		if got := MimeDariNamaFile("UJI-laporan.2026.pdf"); got != "application/pdf" {
-			t.Errorf("= %q, mau application/pdf", got)
-		}
-	})
-
-	t.Run("huruf besar tetap dikenali", func(t *testing.T) {
-		if got := MimeDariNamaFile("UJI-LAPORAN.PDF"); got != "application/pdf" {
-			t.Errorf("= %q, mau application/pdf", got)
-		}
-	})
-
-	t.Run("tak dikenal mendapat bawaan, bukan galat", func(t *testing.T) {
-		// ⛔ Tabelnya punya `otherwise` (b89). Menolak berkas yang sistem
-		// lama terima berarti menutup pintu yang terbuka.
-		for _, nama := range []string{"UJI-berkas.xyz", "UJI-tanpa-titik", "UJI-berkas."} {
-			if got := MimeDariNamaFile(nama); got != MimeBawaan {
-				t.Errorf("MimeDariNamaFile(%q) = %q, mau %q", nama, got, MimeBawaan)
-			}
-		}
-	})
-}
 
 func TestMimeDokumen(t *testing.T) {
 	// ⛔ Padanan prasyarat b586 `Param.MIME==""` WhenTrue=2 LANJUT: tabel
 	// hanya mengisi yang KOSONG. Yang disebut pemanggil menang.
 	t.Run("yang disebut pemanggil MENANG atas tabel", func(t *testing.T) {
-		got := MimeDokumen("image/png", "UJI-berkas.pdf")
+		got := unggah.MimeDokumen("image/png", "UJI-berkas.pdf")
 		if got != "image/png" {
 			t.Errorf("= %q, mau image/png - tabel tidak boleh menimpa", got)
 		}
 	})
 	t.Run("kosong diisi dari nama berkas", func(t *testing.T) {
-		if got := MimeDokumen("", "UJI-berkas.pdf"); got != "application/pdf" {
+		if got := unggah.MimeDokumen("", "UJI-berkas.pdf"); got != "application/pdf" {
 			t.Errorf("= %q, mau application/pdf", got)
 		}
-		if got := MimeDokumen("   ", "UJI-berkas.pdf"); got != "application/pdf" {
+		if got := unggah.MimeDokumen("   ", "UJI-berkas.pdf"); got != "application/pdf" {
 			t.Errorf("spasi = %q, mau application/pdf", got)
 		}
 	})
@@ -79,7 +30,7 @@ func TestMimeDokumen(t *testing.T) {
 		// Padanan `@toLowerCase(Param.MIME)` b782. Tanpa itu
 		// "APPLICATION/PDF" dan "application/pdf" menjadi dua jenis berbeda
 		// di kolom yang sama.
-		if got := MimeDokumen("APPLICATION/PDF", ""); got != "application/pdf" {
+		if got := unggah.MimeDokumen("APPLICATION/PDF", ""); got != "application/pdf" {
 			t.Errorf("= %q, mau application/pdf", got)
 		}
 	})

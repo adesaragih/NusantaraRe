@@ -22,6 +22,7 @@ import (
 
 	"nusantarare/internal/repository"
 	"nusantarare/internal/services"
+	"nusantarare/inti/layanan"
 )
 
 const (
@@ -365,10 +366,10 @@ func TestPengirimStorageGalatTanpaAlamatAtauToken(t *testing.T) {
 func rangkaianNyataUji(l *layananStorageUji, hapus string) (*services.PenyimpananJarakJauhTCO, *penyimpanTokenUji, time.Time) {
 	saat := time.Date(2026, 9, 29, 9, 0, 0, 0, time.UTC)
 	jam := func() time.Time { return saat }
-	r := &resolverLampiranUji{alamat: map[services.KunciLayanan]string{
-		services.KunciUnggahBerkas: l.alamat("/upload"),
-		services.KunciURLBerkas:    l.alamat("/geturl"),
-		services.KunciHapusBerkas:  l.alamat(hapus),
+	r := &resolverLampiranUji{alamat: map[layanan.KunciLayanan]string{
+		layanan.KunciUnggahBerkas: l.alamat("/upload"),
+		layanan.KunciURLBerkas:    l.alamat("/geturl"),
+		layanan.KunciHapusBerkas:  l.alamat(hapus),
 	}}
 	gudangToken := &penyimpanTokenUji{app: appUjiStorage}
 	sumber := services.NewSumberTokenStorageTCO(transaksiUji, gudangToken, garamUjiStorage, jam)
@@ -389,7 +390,7 @@ func TestPenyimpananNyataUjungKeUjung(t *testing.T) {
 	if err := p.Hapus(ctx, kunciUjiStorage); err != nil {
 		t.Fatal(err)
 	}
-	mau, _ := services.RakitToken(garamUjiStorage, saat)
+	mau, _ := layanan.RakitToken(garamUjiStorage, saat)
 	for _, d := range l.salinDiterima() {
 		if !strings.HasPrefix(d.jalur, "/objek/") && d.badan["Kodestring"] != mau {
 			t.Errorf("%s: Kodestring bukan token rakitan", d.jalur)

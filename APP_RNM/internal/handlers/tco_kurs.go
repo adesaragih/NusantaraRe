@@ -13,6 +13,8 @@ import (
 	"net/http"
 
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
 )
 
 func layananKursTCO(svc *services.Service) *services.KursTCO {
@@ -32,11 +34,11 @@ func kursTahunTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		if !punyaDBTCO(w, svc) {
 			return
 		}
-		k, err := layananKursTCO(svc).KursTahun(r.Context(), pelakuDari(r, stub), r.PathValue("id"))
+		k, err := layananKursTCO(svc).KursTahun(r.Context(), inti.PelakuDari(r, stub), r.PathValue("id"))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, k)
+		galat.TulisJSON(w, k)
 	}
 }
 
@@ -46,11 +48,11 @@ func konversiKursTCO(svc *services.Service, stub bool) http.HandlerFunc {
 			return
 		}
 		q := r.URL.Query()
-		h, err := layananKursTCO(svc).Konversi(r.Context(), pelakuDari(r, stub), r.PathValue("id"), q.Get("dari"),
+		h, err := layananKursTCO(svc).Konversi(r.Context(), inti.PelakuDari(r, stub), r.PathValue("id"), q.Get("dari"),
 			q.Get("nilai"), q.Get("skala"))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
-		tulisJSONPolis(w, h)
+		galat.TulisJSON(w, h)
 	}
 }

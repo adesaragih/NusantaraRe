@@ -20,6 +20,10 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/jejak"
 )
 
 var (
@@ -66,7 +70,7 @@ func (j JalurBalik) NilaiSendto() (admin, medical string) {
 // TahapLayanan memindahkan kasus di tangga kerja.
 type TahapLayanan struct {
 	svc   *Service
-	jejak Jejak
+	jejak jejak.Jejak
 }
 
 // Tahap menyusun layanan itu dengan jejak bawaan yang gagal terang.
@@ -76,11 +80,11 @@ type TahapLayanan struct {
 // SendtoMedical)". Perpindahan tahap karena itu tidak boleh terjadi tanpa
 // terekam, dan tabelnya belum ada (butir am).
 func (s *Service) Tahap() *TahapLayanan {
-	return &TahapLayanan{svc: s, jejak: JejakBelumDiputuskan{}}
+	return &TahapLayanan{svc: s, jejak: jejak.JejakBelumDiputuskan{}}
 }
 
 // DenganJejak mengganti perekamnya - dipakai test, dan kelak oleh tiket 09.
-func (tl *TahapLayanan) DenganJejak(j Jejak) *TahapLayanan {
+func (tl *TahapLayanan) DenganJejak(j jejak.Jejak) *TahapLayanan {
 	return &TahapLayanan{svc: tl.svc, jejak: j}
 }
 
@@ -112,20 +116,20 @@ func tahapKasus(ctx context.Context, baca *repository.KlaimLife, klaimID string)
 // bebas, sehingga `SENDTO_ADMIN=1` dapat ditulis pada perpindahan menuju
 // Medical Check, dan keduanya dapat menyala sekaligus - padahal keduanya
 // menunjuk tujuan yang berbeda. Kini ia DITURUNKAN dari pasangan tahapnya.
-func (tl *TahapLayanan) Pindah(ctx context.Context, pelaku Pelaku,
+func (tl *TahapLayanan) Pindah(ctx context.Context, pelaku inti.Pelaku,
 	klaimID string, ke models.Tahap, saat time.Time) error {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return err
 	}
 	if !ke.Diketahui() {
 		return fmt.Errorf("%w: tujuan %v", ErrTahapTidakDikenal, ke)
 	}
 	if strings.TrimSpace(klaimID) == "" {
-		return fmt.Errorf("%w: pengenal klaim wajib diisi", ErrPermintaanTidakSah)
+		return fmt.Errorf("%w: pengenal klaim wajib diisi", galat.ErrPermintaanTidakSah)
 	}
 	if !tl.svc.PunyaDatabase() {
-		return repository.ErrTanpaOracle
+		return db.ErrTanpaOracle
 	}
 
 	// ⛔ BUTIR bb: kasus yang sudah ditutup tidak dapat diubah lagi.
@@ -142,7 +146,7 @@ func (tl *TahapLayanan) Pindah(ctx context.Context, pelaku Pelaku,
 	// pengembalian ke Admin oleh Medical Advisor akan menuntut pelakunya
 	// berperan Admin, yang justru bukan dia. Orang memindahkan pekerjaan yang
 	// SEDANG IA PEGANG.
-	baca := repository.NewKlaimLife(tl.svc.db)
+	baca := repository.NewKlaimLife(tl.svc.DB())
 	// ⛔ BUTIR at: TAHAP dan PY_POSITION dibaca BERSAMA. Yang tersimpan
 	// di PY_POSITION adalah NAMA PERAN, bukan pengenal shape - ronde
 	// pertama menganggapnya `"Assignment<n>"` dan setiap pembacaan baris
@@ -159,7 +163,7 @@ func (tl *TahapLayanan) Pindah(ctx context.Context, pelaku Pelaku,
 		return fmt.Errorf("%w: tahap %q", ErrPeranTahapBelumDiputuskan, asal)
 	}
 	// Orang memindahkan pekerjaan yang SEDANG IA PEGANG.
-	if err := WajibPeran(pelaku, peranAsalTahap); err != nil {
+	if err := inti.WajibPeran(pelaku, peranAsalTahap); err != nil {
 		return err
 	}
 	peranTujuan, ada := models.PeranPemegangTahap(ke)
@@ -174,12 +178,12 @@ func (tl *TahapLayanan) Pindah(ctx context.Context, pelaku Pelaku,
 	}
 	keAdmin, keMedical := models.JalurBalikTahap(asal, ke)
 	admin, medical := JalurBalik{KeAdmin: keAdmin, KeMedical: keMedical}.NilaiSendto()
-	return tl.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	return tl.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		if err := baca.PerbaruiTahap(ctx, tx, klaimID, asal.String(), ke.String(),
 			peranTujuan, admin, medical, saat); err != nil {
 			return err
 		}
-		return tl.jejak.Rekam(ctx, tx, CatatanJejak{
+		return tl.jejak.Rekam(ctx, tx, jejak.CatatanJejak{
 			// ⛔ KlaimID, bukan AdjustmentID: yang berpindah KASUSNYA.
 			KlaimID: klaimID,
 			// ⚠️ Jejak mencatat TAHAP, bukan peran: perpindahan Admin→Admin

@@ -29,6 +29,8 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
 )
 
 var (
@@ -87,11 +89,11 @@ func BatasUkuran(n int) int {
 // ⛔ Pelaku KOSONG ditolak, bukan dijawab daftar kosong. Daftar kosong
 // terbaca sebagai "tidak ada pekerjaan" - dan itu kalimat yang berbeda
 // artinya dari "saya tidak tahu siapa Anda".
-func (in *Inbox) Ambil(ctx context.Context, pelaku Pelaku, tahap models.Tahap,
+func (in *Inbox) Ambil(ctx context.Context, pelaku inti.Pelaku, tahap models.Tahap,
 	offset, ukuran int) (HalamanInbox, error) {
 
 	var kosong HalamanInbox
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return kosong, err
 	}
 	if !tahap.Diketahui() {
@@ -103,11 +105,11 @@ func (in *Inbox) Ambil(ctx context.Context, pelaku Pelaku, tahap models.Tahap,
 	}
 	// ⛔ Gerbangnya SAMA untuk kedua bentuk: pemegang tahap itu. Yang berbeda
 	// hanya apa yang terlihat sesudah gerbangnya terbuka.
-	if err := WajibPeran(pelaku, peran); err != nil {
+	if err := inti.WajibPeran(pelaku, peran); err != nil {
 		return kosong, err
 	}
 	if !in.svc.PunyaDatabase() {
-		return kosong, repository.ErrTanpaOracle
+		return kosong, db.ErrTanpaOracle
 	}
 	if offset < 0 {
 		offset = 0
@@ -127,7 +129,7 @@ func (in *Inbox) Ambil(ctx context.Context, pelaku Pelaku, tahap models.Tahap,
 		saring.AkunID = pelaku.AkunID
 	}
 
-	baris, total, err := repository.NewKlaimLife(in.svc.db).AmbilInbox(ctx, saring)
+	baris, total, err := repository.NewKlaimLife(in.svc.DB()).AmbilInbox(ctx, saring)
 	if err != nil {
 		return kosong, err
 	}
@@ -142,7 +144,7 @@ func (in *Inbox) Ambil(ctx context.Context, pelaku Pelaku, tahap models.Tahap,
 // ⚠️ Pelaku BERPERAN GANDA melihat gabungan - bukan salah satu. `pelakuDari`
 // memecah `X-Peran` pada koma justru supaya itu mungkin, dan layar yang
 // memaksa memilih satu akan menyembunyikan separuh pekerjaan orang itu.
-func TahapTerlihat(pelaku Pelaku) []models.Tahap {
+func TahapTerlihat(pelaku inti.Pelaku) []models.Tahap {
 	urut := []models.Tahap{
 		models.TahapInputRegister,
 		models.TahapOutstanding,
@@ -155,7 +157,7 @@ func TahapTerlihat(pelaku Pelaku) []models.Tahap {
 		if !ada {
 			continue
 		}
-		if WajibPeran(pelaku, peran) == nil {
+		if inti.WajibPeran(pelaku, peran) == nil {
 			terlihat = append(terlihat, t)
 		}
 	}

@@ -58,6 +58,8 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/apd/v3"
+
+	"nusantarare/inti/uang"
 )
 
 // Pesan galat penawaran - VERBATIM `Local.Err` di `ProtectAccept.xml`.
@@ -98,12 +100,12 @@ type PenawaranPolis struct {
 
 // BarisMataUangPenawaran adalah satu baris `CurrencyList`.
 type BarisMataUangPenawaran struct {
-	Premium Money
-	Balance Money
+	Premium uang.Money
+	Balance uang.Money
 	// DiscountPremiumRetro dipakai cabang `Type=="TP"` b4190.
-	DiscountPremiumRetro Money
+	DiscountPremiumRetro uang.Money
 	// DiscountPremiumRefundRetro dipakai cabang `Type=="TR"` b4422.
-	DiscountPremiumRefundRetro Money
+	DiscountPremiumRefundRetro uang.Money
 }
 
 // ValidasiPenawaran menjalankan seluruh pemeriksaan `ProtectAccept` yang hidup.

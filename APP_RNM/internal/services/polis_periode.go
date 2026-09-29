@@ -13,8 +13,10 @@ import (
 	"context"
 	"time"
 
-	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/penomor"
 )
 
 // Periode melayani penentuan periode produksi.
@@ -41,16 +43,16 @@ func (p *Periode) DenganJam(j func() time.Time) *Periode {
 //
 // Mengembalikan `ErrTanggalTutupBukuKosong` bila tabelnya kosong - dan
 // pesannya menyebut tabel sumbernya.
-func (p *Periode) Sekarang(ctx context.Context, pelaku Pelaku) (time.Time, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (p *Periode) Sekarang(ctx context.Context, pelaku inti.Pelaku) (time.Time, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return time.Time{}, err
 	}
 	if p == nil || p.svc == nil || !p.svc.PunyaDatabase() {
-		return time.Time{}, repository.ErrTanpaOracle
+		return time.Time{}, db.ErrTanpaOracle
 	}
-	tgl, err := repository.NewTutupBuku(p.svc.db).Tanggal(ctx)
+	tgl, err := repository.NewTutupBuku(p.svc.DB()).Tanggal(ctx)
 	if err != nil {
 		return time.Time{}, err
 	}
-	return models.PeriodeProduksi(tgl, p.jam())
+	return penomor.PeriodeProduksi(tgl, p.jam())
 }

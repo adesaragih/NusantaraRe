@@ -42,6 +42,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"nusantarare/inti/db"
 )
 
 // ErrAmbangProdukTakDitemukan - produk itu tidak ada di view.
@@ -90,10 +92,10 @@ func (a AmbangProduk) Lengkap() bool {
 }
 
 // ProdukLife membaca ambang per produk. READ-ONLY, seluruhnya.
-type ProdukLife struct{ db *DB }
+type ProdukLife struct{ db *db.DB }
 
 // NewProdukLife menyusunnya.
-func NewProdukLife(db *DB) *ProdukLife { return &ProdukLife{db: db} }
+func NewProdukLife(db *db.DB) *ProdukLife { return &ProdukLife{db: db} }
 
 // sqlAmbangProduk merakit pembacaan kedua ambang.
 //
@@ -119,11 +121,11 @@ func (r *ProdukLife) Ambang(ctx context.Context, produkID string) (AmbangProduk,
 		return AmbangProduk{}, err
 	}
 	q := sqlAmbangProduk(produk)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return AmbangProduk{}, err
 	}
 	var maksKlaim, maksTerima sql.NullString
-	if err := r.db.sql.QueryRowContext(ctx, q, produkID).Scan(
+	if err := r.db.QueryRowContext(ctx, q, produkID).Scan(
 		&maksKlaim, &maksTerima); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return AmbangProduk{}, fmt.Errorf("%w: %q",

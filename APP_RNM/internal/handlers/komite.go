@@ -13,6 +13,9 @@ import (
 	"time"
 
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/jejak"
 )
 
 // serahkanKomite melayani
@@ -20,60 +23,60 @@ import (
 func serahkanKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
-		err := svc.Komite().DenganJejak(services.PerekamJejakOracle(svc)).
+		err := svc.Komite().DenganJejak(jejak.PerekamJejakOracle(svc)).
 			DenganRoster(services.RosterKomiteOracle(svc)).
 			DenganKasus(services.KasusKomiteOracle(svc)).
 			DenganPenyalur(services.PenyalurClaimLifeOracle(svc)).
-			Serahkan(r.Context(), pelakuDari(r, stubPelaku),
+			Serahkan(r.Context(), inti.PelakuDari(r, stubPelaku),
 				r.PathValue("id"), r.PathValue("pesertaId"), r.PathValue("adjId"),
 				time.Now())
 
 		switch {
-		case errors.Is(err, services.ErrTanpaIdentitas):
-			galat(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+		case errors.Is(err, inti.ErrTanpaIdentitas):
+			galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
 			return
-		case errors.Is(err, services.ErrTanpaWewenang):
+		case errors.Is(err, inti.ErrTanpaWewenang):
 			// 403: identitasnya ada, perannya yang kurang untuk Type ini.
-			galat(w, http.StatusForbidden,
+			galat.Tulis(w, http.StatusForbidden,
 				"peran Anda tidak berwenang menyerahkan baris bertipe ini ke Komite")
 			return
 		case errors.Is(err, services.ErrTypeTidakDikenal):
-			galat(w, http.StatusUnprocessableEntity,
+			galat.Tulis(w, http.StatusUnprocessableEntity,
 				"Type klaim tidak dikenal; penyerahan ke Komite menuntut Type yang sah")
 			return
 		case errors.Is(err, services.ErrRekeningBelumLengkap):
 			// 422: ⛔ Pesannya diteruskan APA ADANYA. Ia satu-satunya pesan di
 			// pintu ini yang BUKAN karangan kita: teksnya persis seperti sistem
 			// lama, dan pengguna lama mengenalinya.
-			galat(w, http.StatusUnprocessableEntity, err.Error())
+			galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
 			return
 		case errors.Is(err, services.ErrBarisSudahDiserahkan):
-			galat(w, http.StatusConflict,
+			galat.Tulis(w, http.StatusConflict,
 				"baris sudah pernah diserahkan ke Komite")
 			return
 		case errors.Is(err, services.ErrBarisBukanOutstanding):
-			galat(w, http.StatusConflict,
+			galat.Tulis(w, http.StatusConflict,
 				"hanya baris Outstanding yang dapat diserahkan ke Komite")
 			return
 		case errors.Is(err, services.ErrMataUangKlaimCampur):
-			galat(w, http.StatusUnprocessableEntity,
+			galat.Tulis(w, http.StatusUnprocessableEntity,
 				"baris pada klaim ini bermata uang campur; penyerahan menuntut mata uang tunggal")
 			return
 		case errors.Is(err, services.ErrRosterKomiteKosong):
-			galat(w, http.StatusUnprocessableEntity,
+			galat.Tulis(w, http.StatusUnprocessableEntity,
 				"tidak ada tingkat komite yang menutup nilai klaim ini")
 			return
 		case errors.Is(err, services.ErrKasusSudahTertutup):
-			galat(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
+			galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
 			return
-		case errors.Is(err, services.ErrPermintaanTidakSah):
-			galat(w, http.StatusBadRequest, err.Error())
+		case errors.Is(err, galat.ErrPermintaanTidakSah):
+			galat.Tulis(w, http.StatusBadRequest, err.Error())
 			return
 		case err != nil:
-			galat(w, http.StatusInternalServerError, "gagal menyerahkan baris ke Komite")
+			galat.Tulis(w, http.StatusInternalServerError, "gagal menyerahkan baris ke Komite")
 			return
 		}
 

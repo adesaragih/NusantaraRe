@@ -24,7 +24,7 @@ import (
 	"strings"
 	"time"
 
-	"nusantarare/pkg/utils"
+	"nusantarare/inti/utils"
 )
 
 var (
@@ -70,7 +70,7 @@ func PeriksaTahunTreaty(t TahunTreaty) error {
 	if tahun == "" {
 		return ErrTahunTreatyTahunKosong
 	}
-	if !angkaSaja(tahun) {
+	if !utils.AngkaSaja(tahun) {
 		return fmt.Errorf("%w: %q", ErrTahunTreatyBukanAngka, t.TreatyYear)
 	}
 	return PeriksaPeriodeTCO(t.StartDate, t.EndDate, "StartDate", "EndDate")

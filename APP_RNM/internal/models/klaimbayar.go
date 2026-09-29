@@ -37,7 +37,8 @@ import (
 
 	"github.com/cockroachdb/apd/v3"
 
-	"nusantarare/pkg/utils"
+	"nusantarare/inti/uang"
+	"nusantarare/inti/utils"
 )
 
 // ErrClaimGrossMelebihiShare - kalimat b526, VERBATIM.
@@ -63,21 +64,21 @@ func nolBila(d *apd.Decimal) *apd.Decimal {
 // ⛔ Yang dibulatkan PECAHAN persennya (lima desimal), bukan hasilnya:
 // `local.ClaimPaid = local.ClaimGross * local.PCTClaim` tanpa `@divide`
 // kedua. Membulatkan hasil mengubah angka yang Pega simpan.
-func HitungClaimPaid(claimGross Money, persenKlaim Ratio) (Money, error) {
+func HitungClaimPaid(claimGross uang.Money, persenKlaim uang.Ratio) (uang.Money, error) {
 	ctx := utils.DecimalContext()
 	pecahan := new(apd.Decimal)
 	if _, err := ctx.Quo(pecahan, nolBila(persenKlaim.Value), apd.New(100, 0)); err != nil {
-		return Money{}, fmt.Errorf("models: membagi persen klaim: %w", err)
+		return uang.Money{}, fmt.Errorf("models: membagi persen klaim: %w", err)
 	}
 	if _, err := ctx.Quantize(pecahan, pecahan, -desimalPersenKlaim); err != nil {
-		return Money{}, fmt.Errorf("models: membulatkan persen klaim: %w", err)
+		return uang.Money{}, fmt.Errorf("models: membulatkan persen klaim: %w", err)
 	}
 	hasil := new(apd.Decimal)
 	if _, err := ctx.Mul(hasil, nolBila(claimGross.Amount), pecahan); err != nil {
-		return Money{}, fmt.Errorf("models: mengalikan claim gross: %w", err)
+		return uang.Money{}, fmt.Errorf("models: mengalikan claim gross: %w", err)
 	}
 	hasil.Reduce(hasil)
-	return Money{Amount: hasil, Currency: claimGross.Currency}, nil
+	return uang.Money{Amount: hasil, Currency: claimGross.Currency}, nil
 }
 
 // PeriksaClaimGrossTerhadapShare adalah langkah 4 - MURNI.
@@ -87,9 +88,9 @@ func HitungClaimPaid(claimGross Money, persenKlaim Ratio) (Money, error) {
 //
 // ⛔ Dua uang bermata uang berbeda TIDAK dibandingkan (ADR-F-0004, sama
 // dengan `Money.Add`): IDR melawan USD bukan "lebih besar", melainkan salah.
-func PeriksaClaimGrossTerhadapShare(claimGross, shareNusantaraRe Money, kodeBisnis string) error {
+func PeriksaClaimGrossTerhadapShare(claimGross, shareNusantaraRe uang.Money, kodeBisnis string) error {
 	if claimGross.Currency != shareNusantaraRe.Currency {
-		return fmt.Errorf("%w: %q lawan %q", ErrMataUangBerbeda,
+		return fmt.Errorf("%w: %q lawan %q", uang.ErrMataUangBerbeda,
 			claimGross.Currency, shareNusantaraRe.Currency)
 	}
 	if nolBila(claimGross.Amount).Cmp(nolBila(shareNusantaraRe.Amount)) <= 0 {

@@ -10,6 +10,8 @@ import (
 	"testing"
 
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
 )
 
 func TestRuteBuatKasusPolisTerdaftar(t *testing.T) {
@@ -37,8 +39,8 @@ func TestGalatBuatKasusPolisDipetakan(t *testing.T) {
 		err  error
 		mau  int
 	}{
-		{"identitas", services.ErrTanpaIdentitas, http.StatusUnauthorized},
-		{"bendera", services.ErrPermintaanTidakSah, http.StatusBadRequest},
+		{"identitas", inti.ErrTanpaIdentitas, http.StatusUnauthorized},
+		{"bendera", galat.ErrPermintaanTidakSah, http.StatusBadRequest},
 	} {
 		w := httptest.NewRecorder()
 		if !jawabGalatPolis(w, u.err) || w.Code != u.mau {

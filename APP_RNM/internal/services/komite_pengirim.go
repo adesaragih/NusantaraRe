@@ -32,38 +32,22 @@ import (
 	"errors"
 	"fmt"
 
-	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/layanan"
+	"nusantarare/inti/outbox"
 )
-
-// ErrPengirimStubNonProduksi - non-produksi TIDAK mengirim, dan TIDAK mengaku terkirim.
-//
-// ⛔ Temuan /code-review giliran 10: stub yang menuntaskan baris `selesai`
-// tidak terbedakan dari kiriman nyata - anti-dobel lalu menganggap Kasir
-// SUDAH dibayar bila basis data non-produksi kelak dipromosikan atau flag
-// lingkungannya berubah. Galat permanen ini membuat barisnya berhenti di
-// `gagal-permanen` dengan sebab yang menyebut dirinya, bukan `selesai`.
-var ErrPengirimStubNonProduksi = errors.New(
-	"services: lingkungan bukan produksi - efek Komite TIDAK dikirim (pengirim stub); " +
-		"baris ini bukan kiriman yang berhasil")
-
-// ErrKasirBelumDisetujui - pemanggilan Kasir nyata menuntut persetujuan.
-//
-// ⛔ Dan ia perilaku BARU: di korpus REST Kasir ter-remark
-// (`HitServiceToKasirKMTLife_Act` b3033), jadi sistem lama tidak pernah
-// memanggilnya dari jalur ini (sensus remark 28-09-2026, OQ-K-06).
-var ErrKasirBelumDisetujui = errors.New(
-	"services: pemanggilan Kasir belum disetujui; menghubungkan layanan pembayaran " +
-		"menuntut persetujuan manusia (OQ-002: kontrak Kasir tidak ada di korpus)")
 
 // RiwayatEfek menjawab apakah efek yang sama sudah pernah tuntas.
 type RiwayatEfek interface {
-	SudahSelesai(ctx context.Context, tx *repository.Tx, modul, jenis, rujukan, kecualiID string) (bool, error)
+	SudahSelesai(ctx context.Context, tx *db.Tx, modul, jenis, rujukan, kecualiID string) (bool, error)
 }
 
 // PelaksanaKomite menjalankan baris outbox Komite.
 type PelaksanaKomite struct {
-	Lingkungan Lingkungan
-	Resolver   ResolverEndpoint
+	Lingkungan inti.Lingkungan
+	Resolver   layanan.ResolverEndpoint
 	Riwayat    RiwayatEfek
 }
 
@@ -73,20 +57,20 @@ func perluCekDobel(jenis string) bool {
 }
 
 // Laksanakan memenuhi `PelaksanaEfek`.
-func (p PelaksanaKomite) Laksanakan(ctx context.Context, tx *repository.Tx,
-	b repository.BarisEfekKeluar) error {
+func (p PelaksanaKomite) Laksanakan(ctx context.Context, tx *db.Tx,
+	b outbox.BarisEfekKeluar) error {
 
 	if b.Modul != ModulKomiteLife {
-		return fmt.Errorf("%w: pelaksana Komite menerima baris modul %q", ErrPermintaanTidakSah, b.Modul)
+		return fmt.Errorf("%w: pelaksana Komite menerima baris modul %q", galat.ErrPermintaanTidakSah, b.Modul)
 	}
 	var m muatanOutboxKomite
 	if err := json.Unmarshal([]byte(b.Muatan), &m); err != nil {
-		return fmt.Errorf("%w: muatan outbox komite tak terbaca: %v", ErrPermintaanTidakSah, err)
+		return fmt.Errorf("%w: muatan outbox komite tak terbaca: %v", galat.ErrPermintaanTidakSah, err)
 	}
 	switch b.Jenis {
 	case JenisEfekKomiteArasapas, JenisEfekKomiteEmail, JenisEfekKomiteKasir:
 	default:
-		return fmt.Errorf("%w: jenis efek komite %q", ErrPermintaanTidakSah, b.Jenis)
+		return fmt.Errorf("%w: jenis efek komite %q", galat.ErrPermintaanTidakSah, b.Jenis)
 	}
 	if perluCekDobel(b.Jenis) {
 		if p.Riwayat == nil {
@@ -104,38 +88,38 @@ func (p PelaksanaKomite) Laksanakan(ctx context.Context, tx *repository.Tx,
 	if !p.Lingkungan.AdalahProduksi() {
 		// km4: pengirim stub MENCATAT - nol panggilan keluar, dan catatannya
 		// jujur: gagal-permanen bersebab, bukan `selesai`.
-		return ErrPengirimStubNonProduksi
+		return outbox.ErrPengirimStubNonProduksi
 	}
-	kunci := KunciLayanan{Kategori1: m.Kategori1, Kategori2: m.Kategori2}
+	kunci := layanan.KunciLayanan{Kategori1: m.Kategori1, Kategori2: m.Kategori2}
 	switch b.Jenis {
 	case JenisEfekKomiteArasapas:
-		return EfekArasapas{Resolver: p.Resolver}.Jalankan(ctx, MuatanEfek{KlaimID: m.KlaimID})
+		return outbox.EfekArasapas{Resolver: p.Resolver}.Jalankan(ctx, outbox.MuatanEfek{KlaimID: m.KlaimID})
 	case JenisEfekKomiteEmail:
-		return EfekEmail{}.Jalankan(ctx, MuatanEfek{KlaimID: m.KlaimID})
+		return outbox.EfekEmail{}.Jalankan(ctx, outbox.MuatanEfek{KlaimID: m.KlaimID})
 	default: // kasir
 		if p.Resolver == nil {
-			return ErrResolverBelumDiputuskan
+			return layanan.ErrResolverBelumDiputuskan
 		}
-		if _, err := AlamatLayanan(ctx, p.Resolver, kunci); err != nil {
+		if _, err := layanan.AlamatLayanan(ctx, p.Resolver, kunci); err != nil {
 			return err
 		}
-		return ErrKasirBelumDisetujui
+		return outbox.ErrKasirBelumDisetujui
 	}
 }
 
 // riwayatOracle membaca outbox.
-type riwayatOracle struct{ pohon *repository.PohonKlaim }
+type riwayatOracle struct{ pohon *outbox.Penyimpan }
 
-func (r riwayatOracle) SudahSelesai(ctx context.Context, tx *repository.Tx,
+func (r riwayatOracle) SudahSelesai(ctx context.Context, tx *db.Tx,
 	modul, jenis, rujukan, kecualiID string) (bool, error) {
 	return r.pohon.EfekSudahSelesai(ctx, tx, modul, jenis, rujukan, kecualiID)
 }
 
 // PekerjaKomiteOracle menyusun pekerja outbox Komite.
-func PekerjaKomiteOracle(svc *Service) *PekerjaEfek {
-	return NewPekerjaEfekModul(svc, PelaksanaKomite{
-		Lingkungan: svc.lingkungan,
-		Resolver:   ResolverLinkServiceOracle(svc),
-		Riwayat:    riwayatOracle{pohon: repository.NewPohonKlaim(svc.db)},
+func PekerjaKomiteOracle(svc *Service) *outbox.PekerjaEfek {
+	return outbox.NewPekerjaEfekModul(svc, PelaksanaKomite{
+		Lingkungan: svc.Lingkungan(),
+		Resolver:   layanan.ResolverLinkServiceOracle(svc),
+		Riwayat:    riwayatOracle{pohon: outbox.NewPenyimpan(svc.DB())},
 	}, ModulKomiteLife)
 }

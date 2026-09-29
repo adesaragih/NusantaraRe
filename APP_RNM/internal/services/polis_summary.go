@@ -51,7 +51,12 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/jejak"
+	"nusantarare/inti/outbox"
+	"nusantarare/inti/utils"
 )
 
 // RekapTampil adalah satu baris rekap untuk layar - uang sebagai TEKS.
@@ -99,7 +104,7 @@ type RingkasEfek struct {
 }
 
 // ringkasEfek menerjemahkan hasil penyalur menjadi ringkasan layar.
-func ringkasEfek(h HasilSalur) RingkasEfek {
+func ringkasEfek(h outbox.HasilSalur) RingkasEfek {
 	r := RingkasEfek{Dilewati: h.Dilewati, Gagal: []string{}, TidakTerantre: len(h.GagalDiantre)}
 	for _, g := range h.Gagal {
 		r.Gagal = append(r.Gagal, g.Nama)
@@ -111,7 +116,7 @@ func ringkasEfek(h HasilSalur) RingkasEfek {
 type SummaryPremiumList struct {
 	svc      *Service
 	nomor    *NomorPremiumList
-	jejak    Jejak
+	jejak    jejak.Jejak
 	penyalur *PenyalurPolis
 }
 
@@ -122,11 +127,11 @@ var ErrSubmitBukanTahapSummary = errors.New(
 // SummaryPremiumList menyusun layanannya dengan jejak bawaan yang gagal terang.
 func (s *Service) SummaryPremiumList() *SummaryPremiumList {
 	return &SummaryPremiumList{svc: s, nomor: s.NomorPremiumList(),
-		jejak: JejakBelumDiputuskan{}, penyalur: penyalurPolisBawaan(s)}
+		jejak: jejak.JejakBelumDiputuskan{}, penyalur: penyalurPolisBawaan(s)}
 }
 
 // DenganJejak mengganti perekamnya.
-func (s *SummaryPremiumList) DenganJejak(j Jejak) *SummaryPremiumList {
+func (s *SummaryPremiumList) DenganJejak(j jejak.Jejak) *SummaryPremiumList {
 	salin := *s
 	salin.jejak = j
 	return &salin
@@ -160,15 +165,15 @@ func keTampil(rekap []models.RekapMataUang) []RekapTampil {
 }
 
 // periksaDasar memeriksa pelaku, basis data, dan id - dipakai kedua layanan.
-func (s *SummaryPremiumList) periksaDasar(pelaku Pelaku, polisID string) error {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (s *SummaryPremiumList) periksaDasar(pelaku inti.Pelaku, polisID string) error {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return err
 	}
 	if s == nil || s.svc == nil || !s.svc.PunyaDatabase() {
-		return repository.ErrTanpaOracle
+		return db.ErrTanpaOracle
 	}
 	if polisID == "" {
-		return fmt.Errorf("%w: id polis kosong", ErrPermintaanTidakSah)
+		return fmt.Errorf("%w: id polis kosong", galat.ErrPermintaanTidakSah)
 	}
 	return nil
 }
@@ -176,14 +181,14 @@ func (s *SummaryPremiumList) periksaDasar(pelaku Pelaku, polisID string) error {
 // siapkan = periksaDasar + gerbang kasus tertutup, untuk layanan yang MENULIS.
 //
 // Mengembalikan keadaan kerja - tahapnya dibutuhkan `Submit`.
-func (s *SummaryPremiumList) siapkan(ctx context.Context, pelaku Pelaku, polisID string) (
+func (s *SummaryPremiumList) siapkan(ctx context.Context, pelaku inti.Pelaku, polisID string) (
 	repository.KeadaanPolis, error) {
 
 	if err := s.periksaDasar(pelaku, polisID); err != nil {
 		return repository.KeadaanPolis{}, err
 	}
 	// ⛔ GERBANG KASUS TERTUTUP - butir bb, lewat `T_WORK_POLIS`.
-	keadaan, err := repository.NewWorkPolis(s.svc.db).Keadaan(ctx, polisID)
+	keadaan, err := repository.NewWorkPolis(s.svc.DB()).Keadaan(ctx, polisID)
 	if err != nil {
 		return repository.KeadaanPolis{}, err
 	}
@@ -195,14 +200,14 @@ func (s *SummaryPremiumList) siapkan(ctx context.Context, pelaku Pelaku, polisID
 }
 
 // rekapDalam membaca peserta dan menghitung rekap di dalam transaksi.
-func (s *SummaryPremiumList) rekapDalam(ctx context.Context, tx *repository.Tx,
+func (s *SummaryPremiumList) rekapDalam(ctx context.Context, tx *db.Tx,
 	polisID string) (string, []models.RekapMataUang, error) {
 
-	identitas, err := repository.NewNomorPolis(s.svc.db).Identitas(ctx, tx, polisID)
+	identitas, err := repository.NewNomorPolis(s.svc.DB()).Identitas(ctx, tx, polisID)
 	if err != nil {
 		return "", nil, err
 	}
-	baris, mataUang, err := repository.NewSummaryPolis(s.svc.db).BarisUang(ctx, tx, polisID)
+	baris, mataUang, err := repository.NewSummaryPolis(s.svc.DB()).BarisUang(ctx, tx, polisID)
 	if err != nil {
 		return "", nil, err
 	}
@@ -226,14 +231,14 @@ func (s *SummaryPremiumList) rekapDalam(ctx context.Context, tx *repository.Tx,
 // ⚠️ TANPA gerbang kasus tertutup, dengan sengaja: ia membaca saja. Melarang
 // orang MELIHAT rekap polis yang sudah selesai tidak melindungi apa pun -
 // alasan yang sama dengan tinjauan unggahan (tutupkontrak_test.go).
-func (s *SummaryPremiumList) Lihat(ctx context.Context, pelaku Pelaku, polisID string) (
+func (s *SummaryPremiumList) Lihat(ctx context.Context, pelaku inti.Pelaku, polisID string) (
 	HasilRekap, error) {
 
 	if err := s.periksaDasar(pelaku, polisID); err != nil {
 		return HasilRekap{}, err
 	}
 	var hasil HasilRekap
-	err := s.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	err := s.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		tipe, rekap, err := s.rekapDalam(ctx, tx, polisID)
 		if err != nil {
 			return err
@@ -258,7 +263,7 @@ func (s *SummaryPremiumList) Lihat(ctx context.Context, pelaku Pelaku, polisID s
 // ⛔ HANYA dari tahap `Input Premium Summary`. `finishAssignment` menyelesaikan
 // assignment yang sedang dibuka; memanggilnya dari tahap lain berarti
 // menutup kasus lewat konektor yang tahap itu tidak punya.
-func (s *SummaryPremiumList) Submit(ctx context.Context, pelaku Pelaku,
+func (s *SummaryPremiumList) Submit(ctx context.Context, pelaku inti.Pelaku,
 	polisID string, saat time.Time) (HasilSubmitSummary, error) {
 
 	keadaan, err := s.siapkan(ctx, pelaku, polisID)
@@ -278,11 +283,11 @@ func (s *SummaryPremiumList) Submit(ctx context.Context, pelaku Pelaku,
 //
 // ⛔ URUTANNYA DIKUNCI `TestSimpanDalamUrutanTerkunci`: nomor → rekap →
 // ganti rekap → sumber warisan → ganti warisan.
-func (s *SummaryPremiumList) simpanDalam(ctx context.Context, tx *repository.Tx,
+func (s *SummaryPremiumList) simpanDalam(ctx context.Context, tx *db.Tx,
 	polisID string, saat time.Time) (HasilSubmitSummary, error) {
 
-	ringkas := repository.NewSummaryPolis(s.svc.db)
-	warisan := repository.NewPesertaWarisan(s.svc.db)
+	ringkas := repository.NewSummaryPolis(s.svc.DB())
+	warisan := repository.NewPesertaWarisan(s.svc.DB())
 
 	// 1. Penomoran - langkah 10-14. Lahir sekali: simpan ulang memakai nomor
 	//    yang sama dan tidak menggerakkan penghitung.

@@ -27,7 +27,7 @@ import (
 
 	"github.com/cockroachdb/apd/v3"
 
-	"nusantarare/pkg/utils"
+	"nusantarare/inti/utils"
 )
 
 // Nama medan klausul - properti Pega VERBATIM (AC 32).

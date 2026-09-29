@@ -18,23 +18,7 @@ import (
 	"fmt"
 
 	"nusantarare/internal/models"
-)
-
-// Peran yang muncul di gerbang XML dan di Flow.
-//
-// `[terverifikasi]` `Flow/Register_Flow.xml`: `Assignment1` (Outstanding
-// Claim) dan `Assignment2` (Input Register) dipegang `ReasLifeAdmin`;
-// `Assignment3` (Medical Check) dan `Decision3` dipegang
-// `ReasLifeMedicalAdvisor`; `Decision1` dipegang `ReasLifeSPV`.
-//
-// ⛔ Teks perannya hidup HANYA di sini. Tiket 03 dan 05 menamai IZIN-nya
-// lebih dulu (`PeranSimpanOutstanding`, `PeranRejectOutstanding`), dan
-// keduanya kini bernilai dari konstanta di bawah - bukan menaruh teks
-// `"ReasLifeAdmin"` untuk kedua kalinya.
-const (
-	PeranAdmin          = "ReasLifeAdmin"
-	PeranSPV            = "ReasLifeSPV"
-	PeranMedicalAdvisor = "ReasLifeMedicalAdvisor"
+	"nusantarare/inti"
 )
 
 // Izin - apa yang boleh dilakukan - dinamai terpisah dari PERAN, dan
@@ -47,7 +31,7 @@ const (
 // dipegang peran yang sama hari ini.
 const (
 	// PeranInputRegister - `Assignment2` di Flow (tiket 02).
-	PeranInputRegister = PeranAdmin
+	PeranInputRegister = inti.PeranAdmin
 )
 
 // ⛔ `ErrAksepBukanDariModulIni` DIHAPUS — audit A0, 27-09-2026.
@@ -77,10 +61,10 @@ const (
 //
 // ⚠️ `ReasLifeMedicalAdvisor` tidak menulis satu pun - tahap telaah medis
 // MENELAAH, ia tidak memutuskan akseptasi (AC 9 spec).
-func WajibPeranPengubahStatus(p Pelaku, ke models.StatusBaris) error {
+func WajibPeranPengubahStatus(p inti.Pelaku, ke models.StatusBaris) error {
 	switch ke {
 	case models.StatusDitolak:
-		return WajibPeran(p, PeranRejectOutstanding)
+		return inti.WajibPeran(p, PeranRejectOutstanding)
 	case models.StatusAksep:
 		// ⛔ Aksep punya DUA jalur, dan keduanya sah:
 		//
@@ -115,8 +99,8 @@ func WajibPeranPengubahStatus(p Pelaku, ke models.StatusBaris) error {
 // TP/TR padahal XML menerimanya.
 //
 // Identitas tetap wajib: gerbang yang terbuka bukan gerbang yang hilang.
-func WajibWewenangKomite(p Pelaku, tipe string) error {
-	if err := WajibIdentitas(p); err != nil {
+func WajibWewenangKomite(p inti.Pelaku, tipe string) error {
+	if err := inti.WajibIdentitas(p); err != nil {
 		return err
 	}
 	if !TypeDikenal(tipe) {
@@ -137,7 +121,7 @@ func WajibWewenangKomite(p Pelaku, tipe string) error {
 			return nil
 		}
 		return fmt.Errorf("%w: klaim ber-Type %s hanya dapat dikirim ke Komite oleh %s",
-			ErrTanpaWewenang, tipe, PeranSimpanOutstanding)
+			inti.ErrTanpaWewenang, tipe, PeranSimpanOutstanding)
 	}
 	return nil
 }

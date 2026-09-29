@@ -5,6 +5,8 @@ package repository
 import (
 	"strings"
 	"testing"
+
+	"nusantarare/inti/db"
 )
 
 const (
@@ -93,7 +95,7 @@ func TestQueryInboxPolisBersih(t *testing.T) {
 		"halaman": sqlInboxPolis(tabelUjiWorkPolisInbox, tabelUjiPolis, tabelUjiPolisDetail),
 		"cacah":   sqlCacahInboxPolis(tabelUjiWorkPolisInbox),
 	} {
-		if err := PeriksaSQL(q); err != nil {
+		if err := db.PeriksaSQL(q); err != nil {
 			t.Errorf("%s: %v\n%s", nama, err, q)
 		}
 		if strings.Contains(q, ";") || strings.Contains(q, "--") {

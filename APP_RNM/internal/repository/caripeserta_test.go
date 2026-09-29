@@ -3,6 +3,8 @@ package repository
 import (
 	"strings"
 	"testing"
+
+	"nusantarare/inti/db"
 )
 
 // Uji penyusun SQL pencarian peserta - LoadDataPesertaSpesifik_Act.
@@ -43,7 +45,7 @@ func TestSQLCariPesertaSelaluBerpagar(t *testing.T) {
 			if arg[0] != "UJI-PL-1" {
 				t.Errorf("bind pertama %v, mau nomor premium list", arg[0])
 			}
-			if err := PeriksaSQL(q); err != nil {
+			if err := db.PeriksaSQL(q); err != nil {
 				t.Errorf("PeriksaSQL menolak: %v", err)
 			}
 		})

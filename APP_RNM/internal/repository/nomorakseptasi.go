@@ -21,6 +21,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
+	"nusantarare/inti/db"
 )
 
 // SequenceNomorAkseptasi adalah sequence penerbit urut nomor akseptasi.
@@ -37,8 +39,8 @@ var ErrNomorAkseptasiBerganda = errors.New(
 	"repository: nomor akseptasi sudah dipakai")
 
 // UrutAkseptasiBerikut mengambil satu urut dari sequence.
-func (r *PohonKlaim) UrutAkseptasiBerikut(ctx context.Context, tx *Tx) (string, error) {
-	return r.nomorBerikut(ctx, tx, SequenceNomorAkseptasi)
+func (r *PohonKlaim) UrutAkseptasiBerikut(ctx context.Context, tx *db.Tx) (string, error) {
+	return r.db.NomorBerikut(ctx, tx, SequenceNomorAkseptasi)
 }
 
 // NomorAkseptasiDipakai meniru `GetAcceptedNoCL`.
@@ -52,7 +54,7 @@ func (r *PohonKlaim) UrutAkseptasiBerikut(ctx context.Context, tx *Tx) (string, 
 // RAKITAN unik: nomor lama dari migrasi tidak lahir dari sequence ini sama
 // sekali, dan periode yang sama dapat bertemu urut yang sama bila sequence
 // pernah di-reset.
-func (r *PohonKlaim) NomorAkseptasiDipakai(ctx context.Context, tx *Tx,
+func (r *PohonKlaim) NomorAkseptasiDipakai(ctx context.Context, tx *db.Tx,
 	nomor string) (bool, error) {
 
 	tabel, err := r.db.Qualify(namaTabelLama)
@@ -60,11 +62,11 @@ func (r *PohonKlaim) NomorAkseptasiDipakai(ctx context.Context, tx *Tx,
 		return false, err
 	}
 	q := fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE NO_ACCEPTATION = :1`, tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return false, err
 	}
 	var n int
-	if err := tx.tx.QueryRowContext(ctx, q, nomor).Scan(&n); err != nil {
+	if err := tx.QueryRowContext(ctx, q, nomor).Scan(&n); err != nil {
 		return false, fmt.Errorf(
 			"repository: memeriksa keunikan nomor akseptasi: %w", err)
 	}

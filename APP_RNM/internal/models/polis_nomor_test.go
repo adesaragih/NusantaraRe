@@ -6,6 +6,8 @@ import (
 	"errors"
 	"strings"
 	"testing"
+
+	"nusantarare/inti/penomor"
 )
 
 func TestKodeTipePLEmpatCabangDariData(t *testing.T) {
@@ -33,7 +35,7 @@ func TestKodeTipePLEmpatCabangDariData(t *testing.T) {
 // terlihat sah, dan keduanya salah.
 func TestKodeTipePLMenolakTipeTanpaCabang(t *testing.T) {
 	for _, tipe := range []string{"", "  ", "Q", "qr", "TX", "QRQP", "FAC"} {
-		if _, err := KodeTipePL(tipe); !errors.Is(err, ErrTipePLTanpaCabang) {
+		if _, err := KodeTipePL(tipe); !errors.Is(err, penomor.ErrTipePLTanpaCabang) {
 			t.Errorf("tipe %q diterima; mau ditolak (%v)", tipe, err)
 		}
 	}
@@ -85,7 +87,7 @@ func TestPeriodeNomorPLMemotongTahunJadiDuaAngka(t *testing.T) {
 		{"12.1999", "12.99"},
 		{" 03.2026 ", "03.26"},
 	} {
-		got, err := PeriodeNomorPL(k.masuk)
+		got, err := penomor.PeriodeNomorPL(k.masuk)
 		if err != nil {
 			t.Errorf("%q ditolak: %v", k.masuk, err)
 			continue
@@ -101,14 +103,14 @@ func TestPeriodeNomorPLMenolakBentukLain(t *testing.T) {
 	for _, buruk := range []string{
 		"", "09.26", "9.2026", "092026", "09-2026", "09.20267", "ab.2026", "09.20a6",
 	} {
-		if _, err := PeriodeNomorPL(buruk); !errors.Is(err, ErrPeriodeNomorPLTakBerbentuk) {
+		if _, err := penomor.PeriodeNomorPL(buruk); !errors.Is(err, penomor.ErrPeriodeNomorPLTakBerbentuk) {
 			t.Errorf("periode %q diterima; mau ditolak", buruk)
 		}
 	}
 }
 
 func TestRakitNomorPLBerbentukSepertiB3126(t *testing.T) {
-	got := RakitNomorPL("RNML-", "QR", "LF", "09.26", 7)
+	got := penomor.RakitNomorPL("RNML-", "QR", "LF", "09.26", 7)
 	const mau = "RNML-QRLF.09.26.00007"
 	if got != mau {
 		t.Errorf("nomor = %q, mau %q", got, mau)
@@ -131,7 +133,7 @@ func TestUrutNomorPLLimaAngkaDanTidakDipotong(t *testing.T) {
 		{100000, "100000"},
 		{1234567, "1234567"},
 	} {
-		got := RakitNomorPL("P", "QR", "B", "09.26", k.urut)
+		got := penomor.RakitNomorPL("P", "QR", "B", "09.26", k.urut)
 		bagian := strings.Split(got, ".")
 		akhir := bagian[len(bagian)-1]
 		if akhir != k.mau {
@@ -186,19 +188,19 @@ func TestNomorPLMenolakBahanKosong(t *testing.T) {
 		{"awalan kosong", func(b BahanNomorPL) BahanNomorPL {
 			b.Awalan = "  "
 			return b
-		}, ErrAwalanProduksiKosong},
+		}, penomor.ErrAwalanProduksiKosong},
 		{"tipe kosong", func(b BahanNomorPL) BahanNomorPL {
 			b.Tipe = ""
 			return b
-		}, ErrTipePLTanpaCabang},
+		}, penomor.ErrTipePLTanpaCabang},
 		{"kode bisnis kosong", func(b BahanNomorPL) BahanNomorPL {
 			b.KodeBisnis = " "
 			return b
-		}, ErrKodeBisnisKosong},
+		}, penomor.ErrKodeBisnisKosong},
 		{"periode tak berbentuk", func(b BahanNomorPL) BahanNomorPL {
 			b.PeriodeMMYYYY = "09.26"
 			return b
-		}, ErrPeriodeNomorPLTakBerbentuk},
+		}, penomor.ErrPeriodeNomorPLTakBerbentuk},
 	} {
 		if _, err := NomorPL(k.ubah(utuh)); !errors.Is(err, k.mauIs) {
 			t.Errorf("%s: galat %v, mau %v", k.apa, err, k.mauIs)

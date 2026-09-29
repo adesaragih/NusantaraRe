@@ -19,6 +19,9 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
 )
 
 // PeranHapusKlaim adalah peran yang boleh menghapus klaim.
@@ -30,7 +33,7 @@ import (
 // 15 sendiri ("Sebagai ReasLifeAdmin, saya dapat menghapus"). Tiket 07 sudah
 // lewat dan tidak menemukan gerbang XML untuk penghapusan; nilainya tetap,
 // sumbernya kini dinyatakan terus terang.
-const PeranHapusKlaim = PeranAdmin
+const PeranHapusKlaim = inti.PeranAdmin
 
 var (
 	// ErrKlaimSudahDiKomite - klaim yang sudah diserahkan tidak dihapus.
@@ -58,20 +61,20 @@ func (s *Service) Penghapusan() *Penghapusan { return &Penghapusan{svc: s} }
 //
 // ⛔ Fungsi ini hanya MEMBACA. Itulah yang membuat "Batal" benar-benar
 // membatalkan: jalur pratinjau tidak punya satu pun tulisan untuk dibatalkan.
-func (h *Penghapusan) Dampak(ctx context.Context, pelaku Pelaku, klaimID string) (
+func (h *Penghapusan) Dampak(ctx context.Context, pelaku inti.Pelaku, klaimID string) (
 	models.DampakHapus, error) {
 	var d models.DampakHapus
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return d, err
 	}
-	if err := WajibPeran(pelaku, PeranHapusKlaim); err != nil {
+	if err := inti.WajibPeran(pelaku, PeranHapusKlaim); err != nil {
 		return d, err
 	}
 	if strings.TrimSpace(klaimID) == "" {
-		return d, fmt.Errorf("%w: pengenal klaim wajib diisi", ErrPermintaanTidakSah)
+		return d, fmt.Errorf("%w: pengenal klaim wajib diisi", galat.ErrPermintaanTidakSah)
 	}
 	if !h.svc.PunyaDatabase() {
-		return d, repository.ErrTanpaOracle
+		return d, db.ErrTanpaOracle
 	}
 	if _, err := h.pastikanAda(ctx, klaimID); err != nil {
 		return d, err
@@ -81,11 +84,11 @@ func (h *Penghapusan) Dampak(ctx context.Context, pelaku Pelaku, klaimID string)
 	// itu keputusan pengisian - bukan jaminan bentuk - dan klaim yang kelak
 	// dimigrasikan membawa CASE_ID warisannya sendiri. Mengandaikannya berarti
 	// mencacah baris milik klaim lain.
-	caseID, err := repository.NewKlaimLife(h.svc.db).CaseIDKlaim(ctx, klaimID)
+	caseID, err := repository.NewKlaimLife(h.svc.DB()).CaseIDKlaim(ctx, klaimID)
 	if err != nil {
 		return d, err
 	}
-	return repository.NewPohonKlaim(h.svc.db).Dampak(ctx, klaimID, caseID)
+	return repository.NewPohonKlaim(h.svc.DB()).Dampak(ctx, klaimID, caseID)
 }
 
 // Hapus TIDAK menghapus - dan itu keputusan yang sudah diambil, bukan celah.
@@ -111,7 +114,7 @@ func (h *Penghapusan) Dampak(ctx context.Context, pelaku Pelaku, klaimID string)
 //
 // ⚠️ TANPA argumen waktu. Ronde pertama menerimanya dan tidak pernah
 // membacanya - tanda tangan yang menjanjikan penstempelan yang tidak terjadi.
-func (h *Penghapusan) Hapus(ctx context.Context, pelaku Pelaku,
+func (h *Penghapusan) Hapus(ctx context.Context, pelaku inti.Pelaku,
 	klaimID string) (models.DampakHapus, error) {
 
 	// Gerbang dan pembacaan dampak tetap dijalankan lebih dulu: pemanggil yang
@@ -144,7 +147,7 @@ func (h *Penghapusan) Hapus(ctx context.Context, pelaku Pelaku,
 // ⛔ Menghapus - fisik maupun logis - induk dari kasus komite yang masih
 // berjalan meninggalkan kasus yang menunjuk klaim yang tidak ada lagi.
 func (h *Penghapusan) tolakBilaSudahDiKomite(ctx context.Context, klaimID string) error {
-	perBaris, err := repository.NewKlaimLife(h.svc.db).AmbilBaris(ctx, klaimID)
+	perBaris, err := repository.NewKlaimLife(h.svc.DB()).AmbilBaris(ctx, klaimID)
 	if err != nil {
 		return err
 	}
@@ -165,7 +168,7 @@ func (h *Penghapusan) tolakBilaSudahDiKomite(ctx context.Context, klaimID string
 // terhapus": keduanya menghasilkan angka nol, dan artinya berlawanan.
 func (h *Penghapusan) pastikanAda(ctx context.Context, klaimID string) (
 	*models.Klaim, error) {
-	hdr, err := repository.NewKlaimLife(h.svc.db).AmbilHeader(ctx, klaimID)
+	hdr, err := repository.NewKlaimLife(h.svc.DB()).AmbilHeader(ctx, klaimID)
 	if err != nil {
 		return nil, err
 	}

@@ -23,22 +23,25 @@ import (
 	"time"
 
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/jejak"
 )
 
 // inboxKomite melayani GET /api/komite.
 func inboxKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		halaman, _ := strconv.Atoi(r.URL.Query().Get("halaman"))
 		ukuran, _ := strconv.Atoi(r.URL.Query().Get("ukuran"))
-		hal, err := svc.InboxKomite().Ambil(r.Context(), pelakuDari(r, stubPelaku), halaman, ukuran)
+		hal, err := svc.InboxKomite().Ambil(r.Context(), inti.PelakuDari(r, stubPelaku), halaman, ukuran)
 		if jawabGalatKomite(w, err) {
 			return
 		}
-		tulisJSONPolis(w, hal)
+		galat.TulisJSON(w, hal)
 	}
 }
 
@@ -46,14 +49,14 @@ func inboxKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 func kasusKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
-		k, err := svc.InboxKomite().Kasus(r.Context(), pelakuDari(r, stubPelaku), r.PathValue("id"))
+		k, err := svc.InboxKomite().Kasus(r.Context(), inti.PelakuDari(r, stubPelaku), r.PathValue("id"))
 		if jawabGalatKomite(w, err) {
 			return
 		}
-		tulisJSONPolis(w, k)
+		galat.TulisJSON(w, k)
 	}
 }
 
@@ -68,23 +71,23 @@ type isiKeputusanKomite struct {
 func putuskanKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		var isi isiKeputusanKomite
 		if err := json.NewDecoder(r.Body).Decode(&isi); err != nil {
-			galat(w, http.StatusBadRequest, "badan permintaan bukan JSON yang sah")
+			galat.Tulis(w, http.StatusBadRequest, "badan permintaan bukan JSON yang sah")
 			return
 		}
 		hasil, err := svc.KeputusanKomite().
-			DenganJejak(services.PerekamJejakOracle(svc)).
+			DenganJejak(jejak.PerekamJejakOracle(svc)).
 			DenganPenyelesaiAkhir(services.PenyelesaiAkhirKomiteOracle(svc)).
-			Putuskan(r.Context(), pelakuDari(r, stubPelaku), r.PathValue("id"),
+			Putuskan(r.Context(), inti.PelakuDari(r, stubPelaku), r.PathValue("id"),
 				isi.Keputusan, isi.Komentar, time.Now())
 		if jawabGalatKomite(w, err) {
 			return
 		}
-		tulisJSONPolis(w, hasil)
+		galat.TulisJSON(w, hasil)
 	}
 }
 
@@ -95,16 +98,16 @@ func putuskanKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 func eskalasiKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		hasil, err := svc.KeputusanKomite().
-			DenganJejak(services.PerekamJejakOracle(svc)).
-			Eskalasi(r.Context(), pelakuDari(r, stubPelaku), r.PathValue("id"), time.Now())
+			DenganJejak(jejak.PerekamJejakOracle(svc)).
+			Eskalasi(r.Context(), inti.PelakuDari(r, stubPelaku), r.PathValue("id"), time.Now())
 		if jawabGalatKomite(w, err) {
 			return
 		}
-		tulisJSONPolis(w, hasil)
+		galat.TulisJSON(w, hasil)
 	}
 }
 
@@ -112,14 +115,14 @@ func eskalasiKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 func laporanHarianKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
-		l, err := svc.InboxKomite().LaporanHarian(r.Context(), pelakuDari(r, stubPelaku), time.Now())
+		l, err := svc.InboxKomite().LaporanHarian(r.Context(), inti.PelakuDari(r, stubPelaku), time.Now())
 		if jawabGalatKomite(w, err) {
 			return
 		}
-		tulisJSONPolis(w, l)
+		galat.TulisJSON(w, l)
 	}
 }
 
@@ -127,14 +130,14 @@ func laporanHarianKomite(svc *services.Service, stubPelaku bool) http.HandlerFun
 func riwayatKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
-		rw, err := svc.InboxKomite().Riwayat(r.Context(), pelakuDari(r, stubPelaku), r.PathValue("id"))
+		rw, err := svc.InboxKomite().Riwayat(r.Context(), inti.PelakuDari(r, stubPelaku), r.PathValue("id"))
 		if jawabGalatKomite(w, err) {
 			return
 		}
-		tulisJSONPolis(w, rw)
+		galat.TulisJSON(w, rw)
 	}
 }
 
@@ -145,30 +148,30 @@ func jawabGalatKomite(w http.ResponseWriter, err error) bool {
 	switch {
 	case err == nil:
 		return false
-	case errors.Is(err, services.ErrTanpaIdentitas):
-		galat(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
-	case errors.Is(err, services.ErrTanpaWewenang):
+	case errors.Is(err, inti.ErrTanpaIdentitas):
+		galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+	case errors.Is(err, inti.ErrTanpaWewenang):
 		// 403, bukan 404: kasusnya ada, pelakunya bukan anggota tangganya.
-		galat(w, http.StatusForbidden, "Anda bukan anggota tangga komite kasus ini")
+		galat.Tulis(w, http.StatusForbidden, "Anda bukan anggota tangga komite kasus ini")
 	case errors.Is(err, services.ErrKasusKomiteTakDitemukan):
-		galat(w, http.StatusNotFound, "kasus komite tidak ditemukan")
+		galat.Tulis(w, http.StatusNotFound, "kasus komite tidak ditemukan")
 	case errors.Is(err, services.ErrKeputusanKomiteTidakDikenal),
-		errors.Is(err, services.ErrPermintaanTidakSah):
-		galat(w, http.StatusBadRequest, err.Error())
+		errors.Is(err, galat.ErrPermintaanTidakSah):
+		galat.Tulis(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, services.ErrTanggaKomiteBerhenti),
 		errors.Is(err, services.ErrEskalasiTanpaTingkatAtas),
 		errors.Is(err, services.ErrKeputusanKomiteBersamaan),
 		errors.Is(err, services.ErrKasusSudahTertutup):
-		galat(w, http.StatusConflict, err.Error())
+		galat.Tulis(w, http.StatusConflict, err.Error())
 	case errors.Is(err, services.ErrNomorAkseptasiBerganda),
 		errors.Is(err, services.ErrKodeBisnisBelumTersimpan):
 		// 409: keadaan DATA (nomor bertabrakan / kode bisnis kosong).
-		galat(w, http.StatusConflict, err.Error())
+		galat.Tulis(w, http.StatusConflict, err.Error())
 	case errors.Is(err, services.ErrPenyelesaianAkhirBelumAda):
 		// 501: permintaannya sah, bagian sistemnya yang belum dibangun.
-		galat(w, http.StatusNotImplemented, err.Error())
+		galat.Tulis(w, http.StatusNotImplemented, err.Error())
 	default:
-		galat(w, http.StatusInternalServerError, "gagal memproses permintaan komite")
+		galat.Tulis(w, http.StatusInternalServerError, "gagal memproses permintaan komite")
 	}
 	return true
 }

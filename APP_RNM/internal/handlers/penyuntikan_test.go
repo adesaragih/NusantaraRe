@@ -37,14 +37,14 @@ var petaSuntikan = map[string][]suntikan{
 	"akseptasi.go": {{
 		penyusun: "svc.Akseptasi()",
 		wajib: []string{
-			"DenganJejak(services.PerekamJejakOracle(svc))",
+			"DenganJejak(jejak.PerekamJejakOracle(svc))",
 			"DenganPenerbit(services.PenerbitAkseptasiOracle(svc))",
 		},
 	}},
 	"komite.go": {{
 		penyusun: "svc.Komite()",
 		wajib: []string{
-			"DenganJejak(services.PerekamJejakOracle(svc))",
+			"DenganJejak(jejak.PerekamJejakOracle(svc))",
 			"DenganRoster(services.RosterKomiteOracle(svc))",
 			"DenganKasus(services.KasusKomiteOracle(svc))",
 			"DenganPenyalur(services.PenyalurClaimLifeOracle(svc))",
@@ -52,7 +52,7 @@ var petaSuntikan = map[string][]suntikan{
 	}},
 	"putaran.go": {{
 		penyusun: "svc.Putaran()",
-		wajib:    []string{"DenganJejak(services.PerekamJejakOracle(svc))"},
+		wajib:    []string{"DenganJejak(jejak.PerekamJejakOracle(svc))"},
 	}},
 	"register.go": {{
 		penyusun: "svc.Pendaftaran()",
@@ -60,7 +60,7 @@ var petaSuntikan = map[string][]suntikan{
 	}},
 	"tolak.go": {{
 		penyusun: "svc.Status()",
-		wajib:    []string{"DenganJejak(services.PerekamJejakOracle(svc))"},
+		wajib:    []string{"DenganJejak(jejak.PerekamJejakOracle(svc))"},
 	}},
 	// Treaty Contract Out tiket 02 (aditif 28-09-2026): pembaca master jenis
 	// reasuransi bawaannya gagal terang; handler memasang Oracle-nya.

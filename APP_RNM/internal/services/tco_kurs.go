@@ -22,7 +22,9 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/utils"
 )
 
 var (
@@ -123,10 +125,12 @@ func (l *KursTCO) DenganMataUang(m PembacaMataUangTCO) *KursTCO {
 }
 
 // MasterKursOracle menyusun pembaca master `TREATYEXCHANGEYEARLY`.
-func MasterKursOracle(svc *Service) PembacaMasterKursTCO { return repository.NewMasterKursTCO(svc.db) }
+func MasterKursOracle(svc *Service) PembacaMasterKursTCO {
+	return repository.NewMasterKursTCO(svc.DB())
+}
 
 // MataUangOracle menyusun penerjemah kode mata uang (`CURRENCY`, kode bersama).
-func MataUangOracle(svc *Service) PembacaMataUangTCO { return repository.NewMataUang(svc.db) }
+func MataUangOracle(svc *Service) PembacaMataUangTCO { return db.NewMataUang(svc.DB()) }
 
 // PembacaKursOracle menyusun pembaca kurs di atas Oracle - dipakai layanan klausul.
 func PembacaKursOracle(svc *Service) PembacaKursTCO {
@@ -141,7 +145,7 @@ func (l *KursTCO) Berlaku(ctx context.Context, tahun models.TahunTreaty) (models
 	}
 	id, err := l.mataUang.Pengenal(ctx, models.KodeMataUangAsalKursTCO)
 	if err != nil {
-		if errors.Is(err, repository.ErrMataUangTidakDikenal) {
+		if errors.Is(err, db.ErrMataUangTidakDikenal) {
 			return models.KursTCO{}, fmt.Errorf("%w: %v", ErrMasterKursRusak, err)
 		}
 		return models.KursTCO{}, err
@@ -176,8 +180,8 @@ func tampilKurs(tahun models.TahunTreaty, k models.KursTCO) KursTampil {
 }
 
 // KursTahun membaca kurs berlaku satu tahun treaty.
-func (l *KursTCO) KursTahun(ctx context.Context, pelaku Pelaku, tahunID string) (KursTampil, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (l *KursTCO) KursTahun(ctx context.Context, pelaku inti.Pelaku, tahunID string) (KursTampil, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return KursTampil{}, err
 	}
 	tahun, err := l.tahun.Ambil(ctx, tahunID)
@@ -194,8 +198,8 @@ func (l *KursTCO) KursTahun(ctx context.Context, pelaku Pelaku, tahunID string) 
 // Konversi menghitung padanan satu nilai dengan kurs berlaku tahun itu:
 // `dari = "Rp"` -> `Usd = Rp / Kurs` pada skala 8 (`HitungRpUsd_depan`) atau 4
 // (`CalculateTSIExcludeTreaty`); `dari = "Usd"` -> `Rp = Usd * Kurs`.
-func (l *KursTCO) Konversi(ctx context.Context, pelaku Pelaku, tahunID, dari, nilai, skala string) (KonversiTampil, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (l *KursTCO) Konversi(ctx context.Context, pelaku inti.Pelaku, tahunID, dari, nilai, skala string) (KonversiTampil, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return KonversiTampil{}, err
 	}
 	var sk int32

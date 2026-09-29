@@ -5,6 +5,8 @@ package repository
 import (
 	"strings"
 	"testing"
+
+	"nusantarare/inti/db"
 )
 
 func TestSQLTahunTreatyUrutIDDesc(t *testing.T) {
@@ -29,7 +31,7 @@ func TestSQLTahunTreatyUrutIDDesc(t *testing.T) {
 	for _, q := range []string{sqlDaftarTahunTreaty("S.T"), sqlAmbilTahunTreaty("S.T"),
 		sqlSisipTahunTreaty("S.T"), sqlPerbaruiTahunTreaty("S.T"), sqlCariDobelTahunTreaty("S.T"),
 		sqlGrupTreatyTCO("S.G")} {
-		if err := PeriksaSQL(q); err != nil {
+		if err := db.PeriksaSQL(q); err != nil {
 			t.Errorf("%v:\n%s", err, q)
 		}
 	}

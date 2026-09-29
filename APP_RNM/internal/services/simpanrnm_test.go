@@ -12,13 +12,16 @@ import (
 	"time"
 
 	"nusantarare/internal/models"
-	"nusantarare/internal/repository"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
+	intiuang "nusantarare/inti/uang"
 )
 
-func uangRNM(t *testing.T, s string) models.Money {
+func uangRNM(t *testing.T, s string) intiuang.Money {
 	t.Helper()
-	m, err := models.NewMoney(s, "IDR")
+	m, err := intiuang.NewMoney(s, "IDR")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -254,14 +257,14 @@ func TestSimpanRNMMenjagaPagarnya(t *testing.T) {
 	svc := services.New(nil)
 	ctx := context.Background()
 	w := time.Date(2026, 9, 28, 0, 0, 0, 0, time.UTC)
-	if _, err := svc.SimpanRNM().Simpan(ctx, services.Pelaku{}, "K-1", w); !errors.Is(err, services.ErrTanpaIdentitas) {
+	if _, err := svc.SimpanRNM().Simpan(ctx, inti.Pelaku{}, "K-1", w); !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("anonim: %v", err)
 	}
-	admin := pelakuBerperan(services.PeranAdmin)
-	if _, err := svc.SimpanRNM().Simpan(ctx, admin, " ", w); !errors.Is(err, services.ErrPermintaanTidakSah) {
+	admin := pelakuBerperan(inti.PeranAdmin)
+	if _, err := svc.SimpanRNM().Simpan(ctx, admin, " ", w); !errors.Is(err, galat.ErrPermintaanTidakSah) {
 		t.Errorf("tanpa pengenal: %v", err)
 	}
-	if _, err := svc.SimpanRNM().Simpan(ctx, admin, "K-1", w); !errors.Is(err, repository.ErrTanpaOracle) {
+	if _, err := svc.SimpanRNM().Simpan(ctx, admin, "K-1", w); !errors.Is(err, db.ErrTanpaOracle) {
 		t.Errorf("tanpa Oracle: %v", err)
 	}
 }

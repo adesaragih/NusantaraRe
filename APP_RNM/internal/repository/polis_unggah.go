@@ -31,6 +31,7 @@ import (
 	"strings"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/db"
 )
 
 // PengenalPesertaUnggah menyusun `ID` satu baris peserta.
@@ -62,10 +63,10 @@ func PengenalPesertaUnggah(polisID string, nomorBaris int) string {
 }
 
 // PesertaUnggah menyimpan peserta hasil unggahan.
-type PesertaUnggah struct{ db *DB }
+type PesertaUnggah struct{ db *db.DB }
 
 // NewPesertaUnggah menyusunnya.
-func NewPesertaUnggah(db *DB) *PesertaUnggah { return &PesertaUnggah{db: db} }
+func NewPesertaUnggah(db *db.DB) *PesertaUnggah { return &PesertaUnggah{db: db} }
 
 // kolomSisipPeserta adalah kolom yang diisi unggahan, urut.
 //
@@ -148,7 +149,7 @@ func sqlHapusPesertaPolis(detail string) string {
 //
 // Mengembalikan cacah baris terhapus. NOL bukan galat: polis yang belum
 // pernah diunggahi memang belum punya peserta.
-func (r *PesertaUnggah) HapusPesertaPolis(ctx context.Context, tx *Tx,
+func (r *PesertaUnggah) HapusPesertaPolis(ctx context.Context, tx *db.Tx,
 	polisID string) (int, error) {
 
 	detail, err := r.db.Qualify("T_PREMIUM_LIST_DETAIL")
@@ -156,10 +157,10 @@ func (r *PesertaUnggah) HapusPesertaPolis(ctx context.Context, tx *Tx,
 		return 0, err
 	}
 	q := sqlHapusPesertaPolis(detail)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return 0, err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, polisID)
+	hasil, err := tx.ExecContext(ctx, q, polisID)
 	if err != nil {
 		return 0, fmt.Errorf("repository: menghapus peserta polis: %w", err)
 	}
@@ -247,7 +248,7 @@ func nilaiSisipPeserta(id, polisID string, b models.BarisUnggah) []any {
 // SisipPeserta menyisipkan seluruh baris unggahan.
 //
 // Mengembalikan cacah baris tersimpan.
-func (r *PesertaUnggah) SisipPeserta(ctx context.Context, tx *Tx, polisID string,
+func (r *PesertaUnggah) SisipPeserta(ctx context.Context, tx *db.Tx, polisID string,
 	baris []models.BarisUnggah) (int, error) {
 
 	detail, err := r.db.Qualify("T_PREMIUM_LIST_DETAIL")
@@ -255,13 +256,13 @@ func (r *PesertaUnggah) SisipPeserta(ctx context.Context, tx *Tx, polisID string
 		return 0, err
 	}
 	q := sqlSisipPeserta(detail)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return 0, err
 	}
 	// ⚠️ Satu pernyataan disiapkan SEKALI lalu dipakai berulang. Merakit
 	// pernyataan baru per baris membuat Oracle menyusun rencana baru untuk
 	// tiap baris, dan berkas seribu peserta menjadi seribu parse.
-	stmt, err := tx.tx.PrepareContext(ctx, q)
+	stmt, err := tx.PrepareContext(ctx, q)
 	if err != nil {
 		return 0, fmt.Errorf("repository: menyiapkan penyisipan peserta: %w", err)
 	}

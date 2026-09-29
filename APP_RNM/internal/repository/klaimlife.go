@@ -1,3 +1,8 @@
+// Package repository adalah SATU-SATUNYA lapisan yang menyentuh Oracle.
+//
+// Arah ketergantungan: handlers -> services -> repository. Tidak terbalik,
+// tidak memotong. Paket ini tidak pernah mengimpor handlers atau services.
+// Pintu koneksi dan transaksinya tinggal di `inti/db` (refactor bentuk B).
 package repository
 
 import (
@@ -10,7 +15,9 @@ import (
 	"time"
 
 	"nusantarare/internal/models"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti/db"
+	"nusantarare/inti/uang"
+	"nusantarare/inti/utils"
 )
 
 // KlaimLife membaca klaim Life beserta peserta dan baris adjustment-nya.
@@ -18,23 +25,11 @@ import (
 // Satu antarmuka per agregat. Paket ini memuat SELURUH SQL dan tidak memuat
 // satu pun aturan dagang - perakitan agregat milik services.
 type KlaimLife struct {
-	db *DB
+	db *db.DB
 }
 
 // NewKlaimLife membuat pembaca klaim Life.
-func NewKlaimLife(db *DB) *KlaimLife { return &KlaimLife{db: db} }
-
-// fmtDesimal memaksa Oracle menyerahkan angka sebagai TEKS, bukan sebagai
-// bilangan pecahan biner.
-//
-// ⛔ Uang tidak pernah melewati float (ADR-U-0003, ADR-U-0016). Membiarkan
-// driver menyerahkan NUMBER sebagai float64 melanggar aturan itu di tempat yang
-// paling sulit terlihat - karena itu konversinya dilakukan di dalam SQL.
-//
-// 'TM9' memberi bentuk desimal terpendek tanpa notasi ilmiah. Argumen NLS
-// memaksa titik sebagai pemisah desimal: tanpa itu, sesi ber-NLS Indonesia
-// mengembalikan koma dan pembacaannya gagal senyap.
-const fmtDesimal = `TO_CHAR(%s, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,''')`
+func NewKlaimLife(db *db.DB) *KlaimLife { return &KlaimLife{db: db} }
 
 // AmbilHeader membaca satu baris header klaim. Mengembalikan nil bila tidak ada.
 func (r *KlaimLife) AmbilHeader(ctx context.Context, id string) (*models.Klaim, error) {
@@ -46,9 +41,9 @@ func (r *KlaimLife) AmbilHeader(ctx context.Context, id string) (*models.Klaim, 
 	// uang tidak pernah lewat float maupun bergantung setelan sesi
 	// (ADR-U-0003, ADR-U-0016). CURRENCY menyertainya sejak butir z1.
 	q := fmt.Sprintf(
-		`SELECT ID, CLAIM_NO, POLICY_NO, BUSINESS_NAME, STS_REJECT, CURRENCY, `+fmtDesimal+
+		`SELECT ID, CLAIM_NO, POLICY_NO, BUSINESS_NAME, STS_REJECT, CURRENCY, `+db.FmtDesimal+
 			` FROM %s WHERE ID = :1`, "CLAIM_RETRO", tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
 
@@ -57,7 +52,7 @@ func (r *KlaimLife) AmbilHeader(ctx context.Context, id string) (*models.Klaim, 
 		nomorKlaim, nomorPolis, bisnis   sql.NullString
 		kodeStatus, mataUang, claimRetro sql.NullString
 	)
-	err = r.db.sql.QueryRowContext(ctx, q, id).
+	err = r.db.QueryRowContext(ctx, q, id).
 		Scan(&kID, &nomorKlaim, &nomorPolis, &bisnis, &kodeStatus, &mataUang, &claimRetro)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -93,10 +88,10 @@ func (r *KlaimLife) AmbilPeserta(ctx context.Context, klaimID string) ([]models.
 	// OQ-M6: peserta tercabut (`STS_HAPUS`) tidak dibaca lagi.
 	q := fmt.Sprintf(`SELECT ID, %s FROM %s WHERE CLAIM_ID = :1 AND STS_HAPUS IS NULL ORDER BY ID`,
 		selectPeserta(), tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := r.db.sql.QueryContext(ctx, q, klaimID)
+	rows, err := r.db.QueryContext(ctx, q, klaimID)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca peserta: %w", err)
 	}
@@ -142,10 +137,10 @@ func (r *KlaimLife) AmbilBaris(ctx context.Context, klaimID string) (map[string]
 	// membacanya membuat separuh pewarisan mati tanpa satu pun test gagal -
 	// cacat yang persis sama sudah terjadi pada CLAIM_RETRO di tiket 14.
 	q := fmt.Sprintf(
-		`SELECT a.PREMIUM_LIST_DETAIL_ID, a.ID, `+fmtDesimal+`, a.CURRENCY,
+		`SELECT a.PREMIUM_LIST_DETAIL_ID, a.ID, `+db.FmtDesimal+`, a.CURRENCY,
 		        a.STS_REJECT, a.ACCEPTED_NO, a.ACCEPTATION_DATE, a.KOMITE_ID,
-		        `+fmtDesimal+`, `+fmtDesimal+`, `+fmtDesimal+`, `+fmtDesimal+`,
-		        `+fmtDesimal+`, `+fmtDesimal+`, a.CURRENCY_ID
+		        `+db.FmtDesimal+`, `+db.FmtDesimal+`, `+db.FmtDesimal+`, `+db.FmtDesimal+`,
+		        `+db.FmtDesimal+`, `+db.FmtDesimal+`, a.CURRENCY_ID
 		   FROM %s a JOIN %s p ON p.ID = a.PREMIUM_LIST_DETAIL_ID
 		  WHERE p.CLAIM_ID = :1 AND p.STS_HAPUS IS NULL
 		  ORDER BY a.PREMIUM_LIST_DETAIL_ID, a.ID`,
@@ -153,10 +148,10 @@ func (r *KlaimLife) AmbilBaris(ctx context.Context, klaimID string) (map[string]
 		"a.SHARE_NUSANTARA_RE", "a.CEDING_RETENTION", "a.SUM_REASURED",
 		"a.SUM_INSURED", "a.SHARE_RETRO", "a.RETROCEDED_SHARE",
 		adj, pes)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := r.db.sql.QueryContext(ctx, q, klaimID)
+	rows, err := r.db.QueryContext(ctx, q, klaimID)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca baris adjustment: %w", err)
 	}
@@ -184,11 +179,11 @@ func (r *KlaimLife) AmbilBaris(ctx context.Context, klaimID string) (map[string]
 			// Mata uang dibawa walau jumlahnya kosong: keduanya kolom
 			// terpisah, dan membuang mata uang hanya karena jumlahnya NULL
 			// menghilangkan fakta yang tersimpan.
-			JumlahKlaim: models.Money{Currency: mataUang.String},
+			JumlahKlaim: uang.Money{Currency: mataUang.String},
 			CurrencyID:  mataUangID.String,
 		}
 		// Urutan tujuan mengikuti urutan kolom di SELECT di atas, persis.
-		tujuanWarisan := []*models.Money{
+		tujuanWarisan := []*uang.Money{
 			&b.ShareNusantaraRe, &b.CedingRetention, &b.SumReasured,
 			&b.SumInsured, &b.ShareRetro, &b.RetrocededShare,
 		}
@@ -234,11 +229,11 @@ func (r *KlaimLife) TypeKlaim(ctx context.Context, klaimID string) (string, erro
 		return "", err
 	}
 	q := fmt.Sprintf(`SELECT TYPE FROM %s WHERE ID = :1`, tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return "", err
 	}
 	var tipe sql.NullString
-	err = r.db.sql.QueryRowContext(ctx, q, klaimID).Scan(&tipe)
+	err = r.db.QueryRowContext(ctx, q, klaimID).Scan(&tipe)
 	if err == sql.ErrNoRows {
 		return "", fmt.Errorf("repository: work object %q tidak ada", klaimID)
 	}
@@ -253,7 +248,7 @@ func (r *KlaimLife) TypeKlaim(ctx context.Context, klaimID string) (string, erro
 // ⛔ Tanggalnya ditulis lewat TO_DATE berformat tetap, sama dengan jalur tulis
 // kolom tanggal peserta yang lain - bentuknya tidak pernah bergantung
 // NLS_DATE_FORMAT sesi (ADR-U-0022).
-func (r *KlaimLife) PerbaruiTanggalKejadian(ctx context.Context, tx *Tx,
+func (r *KlaimLife) PerbaruiTanggalKejadian(ctx context.Context, tx *db.Tx,
 	pesertaID string, dol time.Time) error {
 	tabel, err := r.db.Qualify("T_CLAIMLF_PREMIUMLIST_DETAIL")
 	if err != nil {
@@ -262,10 +257,10 @@ func (r *KlaimLife) PerbaruiTanggalKejadian(ctx context.Context, tx *Tx,
 	q := fmt.Sprintf(
 		`UPDATE %s SET DATE_OF_LOSS = TO_DATE(:1, 'YYYY-MM-DD HH24:MI:SS') WHERE ID = :2 AND STS_HAPUS IS NULL`,
 		tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, utils.FormatTanggalWaktu(dol), pesertaID)
+	hasil, err := tx.ExecContext(ctx, q, utils.FormatTanggalWaktu(dol), pesertaID)
 	if err != nil {
 		return fmt.Errorf("repository: menulis DATE_OF_LOSS: %w", err)
 	}
@@ -303,17 +298,17 @@ func argTanggal(t *time.Time) any {
 //
 // ⛔ `CLAIM_ID` ikut di WHERE: peserta klaim lain tidak dapat tersentuh
 // walau pengenal pesertanya tertukar.
-func (r *KlaimLife) PerbaruiTanggalKlaim(ctx context.Context, tx *Tx,
+func (r *KlaimLife) PerbaruiTanggalKlaim(ctx context.Context, tx *db.Tx,
 	klaimID, pesertaID string, t models.TanggalKlaim) error {
 	tabel, err := r.db.Qualify("T_CLAIMLF_PREMIUMLIST_DETAIL")
 	if err != nil {
 		return err
 	}
 	q := sqlTanggalKlaim(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, argTanggal(t.TerimaKlaim),
+	hasil, err := tx.ExecContext(ctx, q, argTanggal(t.TerimaKlaim),
 		argTanggal(t.DokumenLengkap), argTanggal(t.Konfirmasi), pesertaID, klaimID)
 	if err != nil {
 		return fmt.Errorf("repository: menulis tanggal klaim: %w", err)
@@ -335,16 +330,16 @@ func (r *KlaimLife) PerbaruiTanggalKlaim(ctx context.Context, tx *Tx,
 // nomor ditulis hanya sekali. ⛔ `CLAIM_NO IS NULL` ikut di WHERE, dan nol
 // baris tersentuh adalah GALAT - klaim yang dinomori pihak lain di antara baca
 // dan tulis tidak boleh ditimpa nomor kedua.
-func (r *KlaimLife) IsiNomorKlaimKosong(ctx context.Context, tx *Tx, klaimID, nomor string) error {
+func (r *KlaimLife) IsiNomorKlaimKosong(ctx context.Context, tx *db.Tx, klaimID, nomor string) error {
 	tabel, err := r.db.Qualify("T_GENERAL_CLAIM")
 	if err != nil {
 		return err
 	}
 	q := fmt.Sprintf(`UPDATE %s SET CLAIM_NO = :1 WHERE ID = :2 AND CLAIM_NO IS NULL`, tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, nomor, klaimID)
+	hasil, err := tx.ExecContext(ctx, q, nomor, klaimID)
 	if err != nil {
 		return fmt.Errorf("repository: menulis CLAIM_NO: %w", err)
 	}
@@ -384,11 +379,11 @@ func (r *KlaimLife) SudahSaveRNM(ctx context.Context, klaimID string) (bool, err
 		return false, err
 	}
 	q := sqlSudahSaveRNM(adj, pes)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return false, err
 	}
 	var n int
-	if err := r.db.sql.QueryRowContext(ctx, q, klaimID).Scan(&n); err != nil {
+	if err := r.db.QueryRowContext(ctx, q, klaimID).Scan(&n); err != nil {
 		return false, fmt.Errorf("repository: membaca penanda Save to RNM: %w", err)
 	}
 	return n > 0, nil
@@ -412,7 +407,7 @@ func sqlCabutPeserta(tabel, adj string) string {
 // CabutPeserta menandai seorang peserta dicabut dari klaimnya - tombol
 // `DELETE` `InputOSClaimLife` b17865. Nol baris = galat (peserta bukan milik
 // klaim, atau sudah tercabut).
-func (r *KlaimLife) CabutPeserta(ctx context.Context, tx *Tx, klaimID, pesertaID string) error {
+func (r *KlaimLife) CabutPeserta(ctx context.Context, tx *db.Tx, klaimID, pesertaID string) error {
 	tabel, err := r.db.Qualify("T_CLAIMLF_PREMIUMLIST_DETAIL")
 	if err != nil {
 		return err
@@ -422,14 +417,14 @@ func (r *KlaimLife) CabutPeserta(ctx context.Context, tx *Tx, klaimID, pesertaID
 		return err
 	}
 	q := sqlCabutPeserta(tabel, adj)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, pesertaID, klaimID, klaimID)
+	hasil, err := tx.ExecContext(ctx, q, pesertaID, klaimID, klaimID)
 	if err != nil {
 		return fmt.Errorf("repository: mencabut peserta: %w", err)
 	}
-	return pastikanSatuBaris(hasil, "pencabutan peserta (STS_HAPUS)")
+	return db.PastikanSatuBaris(hasil, "pencabutan peserta (STS_HAPUS)")
 }
 
 // sqlTandaiBarisOutstanding - `Save to RNM` langkah 22.1.3.2.
@@ -445,16 +440,16 @@ const sqlTandaiBarisOutstanding = `UPDATE %s SET STS_REJECT = :1 WHERE ID = :2 A
 //
 // ⛔ `STS_REJECT IS NULL` di WHERE, dan nol baris tersentuh adalah GALAT -
 // baris yang diberi status pihak lain sejak dibaca tidak ditimpa.
-func (r *KlaimLife) TandaiBarisOutstanding(ctx context.Context, tx *Tx, adjID string) error {
+func (r *KlaimLife) TandaiBarisOutstanding(ctx context.Context, tx *db.Tx, adjID string) error {
 	adj, err := r.db.Qualify("T_CLAIMLF_ADJUSTMENT")
 	if err != nil {
 		return err
 	}
 	q := fmt.Sprintf(sqlTandaiBarisOutstanding, adj)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, models.KodeOutstanding, adjID)
+	hasil, err := tx.ExecContext(ctx, q, models.KodeOutstanding, adjID)
 	if err != nil {
 		return fmt.Errorf("repository: menandai baris Outstanding: %w", err)
 	}
@@ -487,7 +482,7 @@ func sqlStatusBarisAdjustment(adj string, lamaKosong bool) string {
 }
 
 func argStatusBarisAdjustment(kode, nomorAksep string, tglAksep time.Time, adjID, kodeLama string) []any {
-	arg := []any{kosongJadiNil(kode), kosongJadiNil(nomorAksep), waktuJadiNil(tglAksep), adjID}
+	arg := []any{db.KosongJadiNil(kode), db.KosongJadiNil(nomorAksep), waktuJadiNil(tglAksep), adjID}
 	if !kosong(kodeLama) {
 		arg = append(arg, kodeLama)
 	}
@@ -526,7 +521,7 @@ func kosong(s string) bool { return strings.TrimSpace(s) == "" }
 // baris itu), sedangkan header mengikuti baris TERAKHIR yang diulang
 // (`serviceInsertArasapasClaimLife_act`, putaran bersarang tanpa henti).
 // Karena itu header punya methodnya sendiri, `CerminkanHeader`.
-func (r *KlaimLife) PerbaruiStatusBaris(ctx context.Context, tx *Tx,
+func (r *KlaimLife) PerbaruiStatusBaris(ctx context.Context, tx *db.Tx,
 	pesertaID, adjID, kodeLama, kode, nomorAksep string, tglAksep time.Time) error {
 
 	adj, err := r.db.Qualify("T_CLAIMLF_ADJUSTMENT")
@@ -550,13 +545,13 @@ func (r *KlaimLife) PerbaruiStatusBaris(ctx context.Context, tx *Tx,
 			argStatusBarisAdjustment(kode, nomorAksep, tglAksep, adjID, kodeLama)},
 		{"peserta", fmt.Sprintf(
 			`UPDATE %s SET STS_REJECT = :1 WHERE ID = :2 AND STS_HAPUS IS NULL`, pes),
-			[]any{kosongJadiNil(kode), pesertaID}},
+			[]any{db.KosongJadiNil(kode), pesertaID}},
 	}
 	for _, l := range langkah {
-		if err := PeriksaSQL(l.q); err != nil {
+		if err := db.PeriksaSQL(l.q); err != nil {
 			return err
 		}
-		hasil, err := tx.tx.ExecContext(ctx, l.q, l.args...)
+		hasil, err := tx.ExecContext(ctx, l.q, l.args...)
 		if err != nil {
 			return fmt.Errorf("repository: mencerminkan status ke %s: %w", l.nama, err)
 		}
@@ -578,7 +573,7 @@ func (r *KlaimLife) PerbaruiStatusBaris(ctx context.Context, tx *Tx,
 // Dipisah dari PerbaruiStatusBaris karena sumbernya baris yang BERBEDA - lihat
 // komentar di atas. Pemanggilnya wajib menjalankan keduanya dalam satu
 // transaksi yang sama.
-func (r *KlaimLife) CerminkanHeader(ctx context.Context, tx *Tx,
+func (r *KlaimLife) CerminkanHeader(ctx context.Context, tx *db.Tx,
 	klaimID, kode, nomorAksep string) error {
 	hdr, err := r.db.Qualify("T_GENERAL_CLAIM")
 	if err != nil {
@@ -586,11 +581,11 @@ func (r *KlaimLife) CerminkanHeader(ctx context.Context, tx *Tx,
 	}
 	q := fmt.Sprintf(
 		`UPDATE %s SET STS_REJECT = :1, ACCEPTED_NO = :2 WHERE ID = :3`, hdr)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q,
-		kosongJadiNil(kode), kosongJadiNil(nomorAksep), klaimID)
+	hasil, err := tx.ExecContext(ctx, q,
+		db.KosongJadiNil(kode), db.KosongJadiNil(nomorAksep), klaimID)
 	if err != nil {
 		return fmt.Errorf("repository: mencerminkan status ke header klaim: %w", err)
 	}
@@ -627,7 +622,7 @@ func (r *KlaimLife) CerminkanHeader(ctx context.Context, tx *Tx,
 // juga ber-`pyStepsPreCondParamsWhen` (4) dan yang ber-`rowdata` (2).
 // penandanya masih tercabut sejak penolakan sebelumnya tidak akan pernah
 // diambil Komite - putarannya lahir, lalu mati diam-diam.
-func (r *KlaimLife) PasangPenandaDipilih(ctx context.Context, tx *Tx,
+func (r *KlaimLife) PasangPenandaDipilih(ctx context.Context, tx *db.Tx,
 	pesertaID string) error {
 	return r.setelPenandaDipilih(ctx, tx, pesertaID, "true")
 }
@@ -643,7 +638,7 @@ func (r *KlaimLife) PasangPenandaDipilih(ctx context.Context, tx *Tx,
 // Nilainya ditulis "false" persis seperti rule-nya - teks, bukan bilangan
 // (ADR-U-0022), dan bukan NULL: tidak-dipilih adalah pernyataan, sedangkan
 // NULL berarti belum pernah diputuskan.
-func (r *KlaimLife) CabutPenandaDipilih(ctx context.Context, tx *Tx, pesertaID string) error {
+func (r *KlaimLife) CabutPenandaDipilih(ctx context.Context, tx *db.Tx, pesertaID string) error {
 	return r.setelPenandaDipilih(ctx, tx, pesertaID, "false")
 }
 
@@ -651,7 +646,7 @@ func (r *KlaimLife) CabutPenandaDipilih(ctx context.Context, tx *Tx, pesertaID s
 //
 // ⛔ Nilainya TEKS - "true"/"false" apa adanya seperti kolomnya, bukan boolean
 // Go yang diformat (ADR-U-0022).
-func (r *KlaimLife) setelPenandaDipilih(ctx context.Context, tx *Tx,
+func (r *KlaimLife) setelPenandaDipilih(ctx context.Context, tx *db.Tx,
 	pesertaID, nilai string) error {
 
 	tabel, err := r.db.Qualify("T_CLAIMLF_PREMIUMLIST_DETAIL")
@@ -659,14 +654,14 @@ func (r *KlaimLife) setelPenandaDipilih(ctx context.Context, tx *Tx,
 		return err
 	}
 	q := fmt.Sprintf(`UPDATE %s SET IS_CHECK = :1 WHERE ID = :2 AND STS_HAPUS IS NULL`, tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, nilai, pesertaID)
+	hasil, err := tx.ExecContext(ctx, q, nilai, pesertaID)
 	if err != nil {
 		return fmt.Errorf("repository: menyetel IS_CHECK menjadi %q: %w", nilai, err)
 	}
-	return pastikanSatuBaris(hasil, "penyetelan IS_CHECK")
+	return db.PastikanSatuBaris(hasil, "penyetelan IS_CHECK")
 }
 
 // CaseIDKlaim membaca CASE_ID baris work object sebuah klaim.
@@ -682,11 +677,11 @@ func (r *KlaimLife) CaseIDKlaim(ctx context.Context, klaimID string) (string, er
 		return "", err
 	}
 	q := fmt.Sprintf(`SELECT CASE_ID FROM %s WHERE ID = :1`, tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return "", err
 	}
 	var caseID sql.NullString
-	err = r.db.sql.QueryRowContext(ctx, q, klaimID).Scan(&caseID)
+	err = r.db.QueryRowContext(ctx, q, klaimID).Scan(&caseID)
 	if err == sql.ErrNoRows {
 		return "", fmt.Errorf("repository: work object %q tidak ada", klaimID)
 	}
@@ -708,7 +703,7 @@ func (r *KlaimLife) CaseIDKlaim(ctx context.Context, klaimID string) (string, er
 // dapat berubah di antara baca dan tulis - dan dua pemindahan serentak dapat
 // sama-sama menang, yang kedua menimpa yang pertama tanpa jejak. Penjaga yang
 // sama sudah dipasang pada perubahan status (tiket 04).
-func (r *KlaimLife) PerbaruiTahap(ctx context.Context, tx *Tx,
+func (r *KlaimLife) PerbaruiTahap(ctx context.Context, tx *db.Tx,
 	klaimID, tahapAsal, tahapTujuan, peranTujuan, sendtoAdmin, sendtoMedical string,
 	saat time.Time) error {
 	tabel, err := r.db.Qualify("T_WORK_CLAIM")
@@ -728,13 +723,13 @@ func (r *KlaimLife) PerbaruiTahap(ctx context.Context, tx *Tx,
 	q := fmt.Sprintf(`UPDATE %s SET PY_POSITION = :1, SENDTO_ADMIN = :2,
 		 SENDTO_MEDICAL = :3, TGL_UPDATE = :4, TAHAP = :5
 		 WHERE ID = :6 AND NVL(TAHAP, :7) = :8`, tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, kosongJadiNil(peranTujuan),
-		kosongJadiNil(sendtoAdmin), kosongJadiNil(sendtoMedical),
-		waktuJadiNil(saat), kosongJadiNil(tahapTujuan),
-		klaimID, kosongJadiNil(tahapAsal), kosongJadiNil(tahapAsal))
+	hasil, err := tx.ExecContext(ctx, q, db.KosongJadiNil(peranTujuan),
+		db.KosongJadiNil(sendtoAdmin), db.KosongJadiNil(sendtoMedical),
+		waktuJadiNil(saat), db.KosongJadiNil(tahapTujuan),
+		klaimID, db.KosongJadiNil(tahapAsal), db.KosongJadiNil(tahapAsal))
 	if err != nil {
 		return fmt.Errorf("repository: memperbarui tahap: %w", err)
 	}
@@ -775,11 +770,11 @@ func (r *KlaimLife) TahapDanPeran(ctx context.Context, klaimID string) (
 		return "", "", err
 	}
 	q := fmt.Sprintf(`SELECT TAHAP, PY_POSITION FROM %s WHERE ID = :1`, tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return "", "", err
 	}
 	var kolomTahap, posisi sql.NullString
-	err = r.db.sql.QueryRowContext(ctx, q, klaimID).Scan(&kolomTahap, &posisi)
+	err = r.db.QueryRowContext(ctx, q, klaimID).Scan(&kolomTahap, &posisi)
 	if err == sql.ErrNoRows {
 		return "", "", fmt.Errorf("%w: %q", ErrWorkTidakAda, klaimID)
 	}
@@ -809,11 +804,11 @@ func (r *KlaimLife) StatusWorkKlaim(ctx context.Context, klaimID string) (string
 		return "", err
 	}
 	q := fmt.Sprintf(`SELECT STATUS_WORK FROM %s WHERE ID = :1`, tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return "", err
 	}
 	var status sql.NullString
-	err = r.db.sql.QueryRowContext(ctx, q, klaimID).Scan(&status)
+	err = r.db.QueryRowContext(ctx, q, klaimID).Scan(&status)
 	if err == sql.ErrNoRows {
 		return "", fmt.Errorf("%w: %q", ErrWorkTidakAda, klaimID)
 	}
@@ -841,7 +836,7 @@ func (r *KlaimLife) StatusWorkKlaim(ctx context.Context, klaimID string) (string
 //
 // ⚠️ `NVL(TAHAP, :n)` sama seperti PerbaruiTahap: baris LAMA yang TAHAP-nya
 // masih kosong tetap dapat ditutup dari tahap yang disimpulkan PY_POSITION.
-func (r *KlaimLife) TutupKasus(ctx context.Context, tx *Tx,
+func (r *KlaimLife) TutupKasus(ctx context.Context, tx *db.Tx,
 	klaimID, tahapAsal, statusWork string, saat time.Time) error {
 
 	tabel, err := r.db.Qualify("T_WORK_CLAIM")
@@ -850,12 +845,12 @@ func (r *KlaimLife) TutupKasus(ctx context.Context, tx *Tx,
 	}
 	q := fmt.Sprintf(`UPDATE %s SET STATUS_WORK = :1, TAHAP = NULL, TGL_UPDATE = :2
 		 WHERE ID = :3 AND NVL(TAHAP, :4) = :5 AND STATUS_WORK IS NULL`, tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, kosongJadiNil(statusWork),
+	hasil, err := tx.ExecContext(ctx, q, db.KosongJadiNil(statusWork),
 		waktuJadiNil(saat), klaimID,
-		kosongJadiNil(tahapAsal), kosongJadiNil(tahapAsal))
+		db.KosongJadiNil(tahapAsal), db.KosongJadiNil(tahapAsal))
 	if err != nil {
 		return fmt.Errorf("repository: menutup kasus: %w", err)
 	}
@@ -879,7 +874,7 @@ func (r *KlaimLife) TutupKasus(ctx context.Context, tx *Tx,
 // KOMITE_ID lama ikut di WHERE dan wajib NULL. Baris yang sudah tertaut sejak
 // dibaca tidak ditimpa - tanpa klausa itu dua penyerahan bersamaan menghasilkan
 // dua kasus komite dan hanya satu yang teringat.
-func (r *KlaimLife) PerbaruiKomiteID(ctx context.Context, tx *Tx,
+func (r *KlaimLife) PerbaruiKomiteID(ctx context.Context, tx *db.Tx,
 	adjID, komiteID string) error {
 
 	tabel, err := r.db.Qualify("T_CLAIMLF_ADJUSTMENT")
@@ -888,26 +883,14 @@ func (r *KlaimLife) PerbaruiKomiteID(ctx context.Context, tx *Tx,
 	}
 	q := fmt.Sprintf(
 		`UPDATE %s SET KOMITE_ID = :1 WHERE ID = :2 AND KOMITE_ID IS NULL`, tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, kosongJadiNil(komiteID), adjID)
+	hasil, err := tx.ExecContext(ctx, q, db.KosongJadiNil(komiteID), adjID)
 	if err != nil {
 		return fmt.Errorf("repository: menautkan baris ke Komite: %w", err)
 	}
-	return pastikanSatuBaris(hasil, "penautan baris ke Komite")
-}
-
-// pastikanSatuBaris menuntut sebuah pernyataan menyentuh tepat satu baris.
-func pastikanSatuBaris(hasil sql.Result, nama string) error {
-	n, err := hasil.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("repository: mencacah baris %s: %w", nama, err)
-	}
-	if n != 1 {
-		return fmt.Errorf("repository: %s menyentuh %d baris, mau 1", nama, n)
-	}
-	return nil
+	return db.PastikanSatuBaris(hasil, "penautan baris ke Komite")
 }
 
 // AmbilDokumen membaca seluruh dokumen pendukung satu klaim, per peserta.
@@ -969,10 +952,10 @@ func (r *KlaimLife) AmbilDokumen(ctx context.Context, klaimID string) (
 		   FROM %s d JOIN %s p ON p.ID = d.PREMIUM_LIST_DETAIL_ID
 		  WHERE p.CLAIM_ID = :1 AND p.STS_HAPUS IS NULL
 		  ORDER BY d.PREMIUM_LIST_DETAIL_ID, d.ID`, dok, pes)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	baris, err := r.db.sql.QueryContext(ctx, q, klaimID)
+	baris, err := r.db.QueryContext(ctx, q, klaimID)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca dokumen klaim: %w", err)
 	}

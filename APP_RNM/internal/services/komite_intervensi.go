@@ -17,6 +17,8 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
 )
 
 // EfekTampil adalah satu efek untuk layar - KATA, bukan kode (km5).
@@ -86,19 +88,19 @@ func susunLaporan(saat time.Time, daftar []repository.EfekKasusKomite) LaporanHa
 }
 
 // LaporanHarian menyusun laporan "perlu intervensi" hari ini.
-func (i *InboxKomite) LaporanHarian(ctx context.Context, pelaku Pelaku, saat time.Time) (
+func (i *InboxKomite) LaporanHarian(ctx context.Context, pelaku inti.Pelaku, saat time.Time) (
 	LaporanHarianIntervensi, error) {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return LaporanHarianIntervensi{}, err
 	}
-	if !pelaku.PunyaPeran(PeranAdmin) {
-		return LaporanHarianIntervensi{}, ErrTanpaWewenang
+	if !pelaku.PunyaPeran(inti.PeranAdmin) {
+		return LaporanHarianIntervensi{}, inti.ErrTanpaWewenang
 	}
 	if i == nil || i.svc == nil || !i.svc.PunyaDatabase() {
-		return LaporanHarianIntervensi{}, repository.ErrTanpaOracle
+		return LaporanHarianIntervensi{}, db.ErrTanpaOracle
 	}
-	daftar, err := repository.NewInboxKomite(i.svc.db).EfekPerluIntervensi(ctx)
+	daftar, err := repository.NewInboxKomite(i.svc.DB()).EfekPerluIntervensi(ctx)
 	if err != nil {
 		return LaporanHarianIntervensi{}, err
 	}

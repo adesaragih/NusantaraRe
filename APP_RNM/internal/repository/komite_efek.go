@@ -15,6 +15,9 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
+
+	"nusantarare/inti/db"
+	"nusantarare/inti/outbox"
 )
 
 // ModulOutboxKomite = `services.ModulKomiteLife` - diuji sama.
@@ -43,10 +46,10 @@ func sqlEfekPerluIntervensi(tabel string) string {
 }
 
 func (r *InboxKomite) bacaEfek(ctx context.Context, q string, args ...any) ([]EfekKasusKomite, error) {
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := r.db.sql.QueryContext(ctx, q, args...)
+	rows, err := r.db.QueryContext(ctx, q, args...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca efek komite: %w", err)
 	}
@@ -80,5 +83,5 @@ func (r *InboxKomite) EfekPerluIntervensi(ctx context.Context) ([]EfekKasusKomit
 	if err != nil {
 		return nil, err
 	}
-	return r.bacaEfek(ctx, sqlEfekPerluIntervensi(tabel), ModulOutboxKomite, StatusEfekGagalPermanen)
+	return r.bacaEfek(ctx, sqlEfekPerluIntervensi(tabel), ModulOutboxKomite, outbox.StatusEfekGagalPermanen)
 }

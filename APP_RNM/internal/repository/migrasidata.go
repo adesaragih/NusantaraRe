@@ -30,7 +30,8 @@ import (
 	"strings"
 
 	"nusantarare/internal/models"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti/uang"
+	"nusantarare/inti/utils"
 )
 
 // BarisLama adalah satu baris `POOLDATA.OS_AKSEPTASI_KLAIM_LIFE`.
@@ -166,7 +167,7 @@ func BongkarBarisLama(baris []BarisLama) ([]models.PohonKlaim, LaporanRekonsilia
 				NamaBisnis: rows[0].BUSINESSNAME,
 				// Mata uangnya datang dari baris adjustment: header warisan
 				// tidak punya kolom mata uang sendiri (butir w2).
-				ClaimRetro: models.Money{Currency: rows[0].CURRENCY},
+				ClaimRetro: uang.Money{Currency: rows[0].CURRENCY},
 			},
 		}
 
@@ -301,7 +302,7 @@ func barisAdjustmentDari(b BarisLama) (models.BarisAdjustment, []Temuan) {
 		NamaBank:      b.NAME_OF_BANK,
 		IDBank:        b.IDBANK,
 		NomorRekening: b.ACCOUNTNO,
-		JumlahKlaim:   models.Money{Currency: b.CURRENCY},
+		JumlahKlaim:   uang.Money{Currency: b.CURRENCY},
 	}
 
 	if teks := strings.TrimSpace(b.CLAIM_AMOUNT); teks != "" {

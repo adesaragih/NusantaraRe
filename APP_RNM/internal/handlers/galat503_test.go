@@ -85,6 +85,17 @@ func kode503(e ast.Expr) bool {
 	return false
 }
 
+// panggilGalatTulis mengenali `galat.Tulis(...)` - juga bila paketnya diimpor
+// dengan alias `intigalat` karena berkasnya memakai nama `galat` untuk hal lain.
+func panggilGalatTulis(fun ast.Expr) bool {
+	sel, ok := fun.(*ast.SelectorExpr)
+	if !ok || sel.Sel.Name != "Tulis" {
+		return false
+	}
+	x, ok := sel.X.(*ast.Ident)
+	return ok && (x.Name == "galat" || x.Name == "intigalat")
+}
+
 // Penjaga statik: SETIAP 503 di handler ditulis lewat `galat()` dengan pesan
 // tak kosong. 503 yang ditulis `http.Error` (teks biasa) atau `WriteHeader`
 // polos sampai di klien tanpa `galat` - dan klien benar menyebutnya "backend
@@ -116,7 +127,9 @@ func TestSetiap503HandlerLewatGalat(t *testing.T) {
 			if !ok || len(c.Args) != 3 || !kode503(c.Args[1]) {
 				return true
 			}
-			if id, ok := c.Fun.(*ast.Ident); !ok || id.Name != "galat" {
+			// Refactor bentuk B (30-09-2026): `galat()` kini `galat.Tulis()`
+			// dari paket bersama `inti/galat`.
+			if !panggilGalatTulis(c.Fun) {
 				return true
 			}
 			sah[c.Args[1]] = true

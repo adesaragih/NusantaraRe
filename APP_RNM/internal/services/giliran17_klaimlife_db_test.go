@@ -15,11 +15,14 @@ import (
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	intidb "nusantarare/inti/db"
+	intijejak "nusantarare/inti/jejak"
 )
 
 // pohonUjiG17 - satu klaim, satu peserta, satu baris berkode `kode`
 // ("" = baru lahir, belum Save to RNM).
-func pohonUjiG17(t *testing.T, svc *services.Service, db *repository.DB, id, kode string) models.PohonKlaim {
+func pohonUjiG17(t *testing.T, svc *services.Service, db *intidb.DB, id, kode string) models.PohonKlaim {
 	t.Helper()
 	pohon := models.PohonKlaim{
 		Work: models.WorkClaim{ID: id, Lini: models.LiniLife, Type: "QP"},
@@ -32,7 +35,7 @@ func pohonUjiG17(t *testing.T, svc *services.Service, db *repository.DB, id, kod
 		},
 	}
 	ctx := context.Background()
-	if err := svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	if err := svc.DalamTransaksi(ctx, func(tx *intidb.Tx) error {
 		return repository.NewPohonKlaim(db).Simpan(ctx, tx, pohon)
 	}); err != nil {
 		t.Fatalf("menyiapkan pohon: %v", err)
@@ -68,7 +71,7 @@ func TestTolakMenyimpanRemarksDiJejak(t *testing.T) {
 	defer tutupDB()
 	ctx := context.Background()
 	baca := repository.NewKlaimLife(db)
-	pelaku := services.Pelaku{AkunID: "UJI-AKUN", Peran: []string{services.PeranRejectOutstanding}}
+	pelaku := inti.Pelaku{AkunID: "UJI-AKUN", Peran: []string{services.PeranRejectOutstanding}}
 	saat := time.Date(2026, 9, 29, 10, 0, 0, 0, time.UTC)
 
 	pohon := pohonUjiG17(t, svc, db, "CLM-UJI1703", models.KodeOutstanding)
@@ -86,7 +89,7 @@ func TestTolakMenyimpanRemarksDiJejak(t *testing.T) {
 	kedua := pohonUjiG17(t, svc, db, "CLM-UJI1704", models.KodeOutstanding)
 	peserta, _ = baca.AmbilPeserta(ctx, kedua.Work.ID)
 	perBaris, _ = baca.AmbilBaris(ctx, kedua.Work.ID)
-	if err := svc.Status().DenganJejak(services.PerekamJejakOracle(svc)).Tolak(ctx, pelaku,
+	if err := svc.Status().DenganJejak(intijejak.PerekamJejakOracle(svc)).Tolak(ctx, pelaku,
 		kedua.Work.ID, perBaris[peserta[0].ID][0].ID, "UJI alasan Oracle", saat); err != nil {
 		t.Fatalf("Tolak lewat perekam Oracle (KOMENTAR, migrasi 021): %v", err)
 	}
@@ -106,7 +109,7 @@ func TestCabutPesertaMenandaiDanMenyembunyikan(t *testing.T) {
 	if err != nil || len(peserta) != 1 {
 		t.Fatalf("peserta: %v (%d)", err, len(peserta))
 	}
-	if err := svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	if err := svc.DalamTransaksi(ctx, func(tx *intidb.Tx) error {
 		return baca.CabutPeserta(ctx, tx, pohon.Work.ID, peserta[0].ID)
 	}); err != nil {
 		t.Fatalf("CabutPeserta: %v", err)
@@ -117,7 +120,7 @@ func TestCabutPesertaMenandaiDanMenyembunyikan(t *testing.T) {
 	if baris, err := baca.AmbilBaris(ctx, pohon.Work.ID); err != nil || len(baris) != 0 {
 		t.Errorf("sesudah cabut: baris peserta tercabut masih terbaca (%d), %v", len(baris), err)
 	}
-	if err := svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	if err := svc.DalamTransaksi(ctx, func(tx *intidb.Tx) error {
 		return baca.CabutPeserta(ctx, tx, pohon.Work.ID, peserta[0].ID)
 	}); err == nil {
 		t.Error("mencabut dua kali tidak gagal")

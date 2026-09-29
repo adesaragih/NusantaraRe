@@ -25,6 +25,7 @@ import (
 	"fmt"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/db"
 )
 
 // DampakHapusTCO adalah jumlah baris tiap jenis yang ikut terhapus - dan
@@ -87,10 +88,10 @@ func sqlHitungSecurityReinsurerTCO(tabel string) string {
 var ErrKaskadeTidakUtuh = errors.New("repository: kaskade hapus tidak mengenai tepat satu baris induk")
 
 // KaskadeTCO menghitung dan menjalankan kaskade hapus.
-type KaskadeTCO struct{ db *DB }
+type KaskadeTCO struct{ db *db.DB }
 
 // NewKaskadeTCO menyusunnya.
-func NewKaskadeTCO(db *DB) *KaskadeTCO { return &KaskadeTCO{db: db} }
+func NewKaskadeTCO(db *db.DB) *KaskadeTCO { return &KaskadeTCO{db: db} }
 
 type tabelKaskadeTCO struct{ kontrak, reinsurer, security, business, klausul, tahun string }
 
@@ -111,11 +112,11 @@ func (k *KaskadeTCO) tabel() (tabelKaskadeTCO, error) {
 }
 
 func (k *KaskadeTCO) hitung(ctx context.Context, q string, args ...any) (int64, error) {
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return 0, err
 	}
 	var n int64
-	if err := k.db.bacaTCO(ctx).QueryRowContext(ctx, q, args...).Scan(&n); err != nil {
+	if err := bacaTCO(ctx, k.db).QueryRowContext(ctx, q, args...).Scan(&n); err != nil {
 		return 0, fmt.Errorf("repository: menghitung dampak hapus: %w", err)
 	}
 	return n, nil
@@ -150,7 +151,7 @@ func (k *KaskadeTCO) DampakKontrak(ctx context.Context, kom models.KombinasiTCO,
 // HapusKontrak menjalankan kaskade dalam tx: kontrak, business, security,
 // reinsurer - urutan `DeleteFromTREATYCONTRACT_SQL`. Mengembalikan jumlah
 // yang BENAR-BENAR terhapus. Klausul tidak disentuh.
-func (k *KaskadeTCO) HapusKontrak(ctx context.Context, tx *Tx, kom models.KombinasiTCO, tahunID, kontrakID string) (
+func (k *KaskadeTCO) HapusKontrak(ctx context.Context, tx *db.Tx, kom models.KombinasiTCO, tahunID, kontrakID string) (
 	DampakHapusTCO, error) {
 
 	if tx == nil {
@@ -166,10 +167,10 @@ func (k *KaskadeTCO) HapusKontrak(ctx context.Context, tx *Tx, kom models.Kombin
 		return DampakHapusTCO{}, err
 	}
 	for _, l := range langkahHapusKontrakTCO(t, kom, tahunID, kontrakID, &d) {
-		if err := PeriksaSQL(l.q); err != nil {
+		if err := db.PeriksaSQL(l.q); err != nil {
 			return DampakHapusTCO{}, err
 		}
-		hasil, err := tx.tx.ExecContext(ctx, l.q, l.args...)
+		hasil, err := tx.ExecContext(ctx, l.q, l.args...)
 		if err != nil {
 			return DampakHapusTCO{}, fmt.Errorf("repository: kaskade hapus kontrak %s: %w", kontrakID, err)
 		}
@@ -223,7 +224,7 @@ func (k *KaskadeTCO) DampakReinsurer(ctx context.Context, reinsurerID string) (D
 
 // HapusReinsurer - `DeleteFromTreatyReinsurer_Act`: security lalu reinsurer,
 // reinsurer dibatasi kombinasinya.
-func (k *KaskadeTCO) HapusReinsurer(ctx context.Context, tx *Tx, kom models.KombinasiTCO, reinsurerID string) (DampakHapusTCO, error) {
+func (k *KaskadeTCO) HapusReinsurer(ctx context.Context, tx *db.Tx, kom models.KombinasiTCO, reinsurerID string) (DampakHapusTCO, error) {
 	if tx == nil {
 		return DampakHapusTCO{}, errors.New("repository: hapus reinsurer menuntut transaksi")
 	}
@@ -240,10 +241,10 @@ func (k *KaskadeTCO) HapusReinsurer(ctx context.Context, tx *Tx, kom models.Komb
 		{sqlHapusSecurityReinsurerTCO(t.security), []any{reinsurerID}, &d.Security},
 		{sqlHapusReinsurerSatuTCO(t.reinsurer), append([]any{reinsurerID}, argKombinasi(kom)...), &d.Reinsurer},
 	} {
-		if err := PeriksaSQL(l.q); err != nil {
+		if err := db.PeriksaSQL(l.q); err != nil {
 			return DampakHapusTCO{}, err
 		}
-		hasil, err := tx.tx.ExecContext(ctx, l.q, l.args...)
+		hasil, err := tx.ExecContext(ctx, l.q, l.args...)
 		if err != nil {
 			return DampakHapusTCO{}, fmt.Errorf("repository: hapus reinsurer %s: %w", reinsurerID, err)
 		}

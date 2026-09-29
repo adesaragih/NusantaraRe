@@ -11,11 +11,12 @@ import (
 	"testing"
 	"time"
 
-	"nusantarare/internal/config"
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
 	"nusantarare/internal/repository/skemauji"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti/config"
+	"nusantarare/inti/db"
+	"nusantarare/inti/utils"
 )
 
 func siapkan(t *testing.T) (*repository.KlaimLife, func()) {
@@ -45,7 +46,7 @@ func siapkan(t *testing.T) (*repository.KlaimLife, func()) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	db, err := repository.Open(cfg)
+	db, err := db.Open(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}

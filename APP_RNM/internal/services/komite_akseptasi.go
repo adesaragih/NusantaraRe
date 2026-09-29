@@ -31,22 +31,27 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/jejak"
+	"nusantarare/inti/penomor"
 )
 
 // penyelesaiAkhirOracle adalah penyelesai langkah 4/5 yang memakai Oracle.
 type penyelesaiAkhirOracle struct {
 	svc   *Service
-	jejak Jejak
+	jejak jejak.Jejak
 }
 
 // PenyelesaiAkhirKomiteOracle menyusunnya, dengan jejak Oracle.
 func PenyelesaiAkhirKomiteOracle(svc *Service) PenyelesaiAkhirKomite {
-	return penyelesaiAkhirOracle{svc: svc, jejak: PerekamJejakOracle(svc)}
+	return penyelesaiAkhirOracle{svc: svc, jejak: jejak.PerekamJejakOracle(svc)}
 }
 
 // Akseptasi - langkah 4.
-func (p penyelesaiAkhirOracle) Akseptasi(ctx context.Context, tx *repository.Tx,
-	kasus repository.KasusKomite, pelaku Pelaku, saat time.Time) (string, error) {
+func (p penyelesaiAkhirOracle) Akseptasi(ctx context.Context, tx *db.Tx,
+	kasus repository.KasusKomite, pelaku inti.Pelaku, saat time.Time) (string, error) {
 
 	// ⛔ Gerbang wewenang DIULANG di sini, bukan hanya di `Putuskan`: penulis
 	// status wajib memegang gerbangnya sendiri (penjaga
@@ -56,10 +61,10 @@ func (p penyelesaiAkhirOracle) Akseptasi(ctx context.Context, tx *repository.Tx,
 	}
 	klaimID := kasus.Baris.KlaimID
 	if strings.TrimSpace(kasus.AdjID) == "" || strings.TrimSpace(kasus.PesertaID) == "" {
-		return "", fmt.Errorf("%w: kasus %q tanpa baris adjustment/peserta", ErrPermintaanTidakSah,
+		return "", fmt.Errorf("%w: kasus %q tanpa baris adjustment/peserta", galat.ErrPermintaanTidakSah,
 			kasus.Baris.KasusID)
 	}
-	baca := repository.NewKlaimLife(p.svc.db)
+	baca := repository.NewKlaimLife(p.svc.DB())
 	// `TempOpenPage.PolicyDataLife.Type` / `.BusinessCode` - klaim induk.
 	tipe, err := baca.TypeKlaim(ctx, klaimID)
 	if err != nil {
@@ -90,7 +95,7 @@ func (p penyelesaiAkhirOracle) Akseptasi(ctx context.Context, tx *repository.Tx,
 	}
 	// ADR-U-0007: transisi status baris Outstanding → Aksep punya jejaknya
 	// sendiri, bentuknya sama dengan jalur akseptasi Claim Life.
-	if err := p.jejak.Rekam(ctx, tx, CatatanJejak{
+	if err := p.jejak.Rekam(ctx, tx, jejak.CatatanJejak{
 		AdjustmentID: kasus.AdjID,
 		KlaimID:      klaimID,
 		Dari:         models.KodeOutstanding,
@@ -113,11 +118,11 @@ func (p penyelesaiAkhirOracle) Akseptasi(ctx context.Context, tx *repository.Tx,
 // GAGAL TERANG: transaksinya batal, penghitungnya ikut batal.
 // `[terbuka — work owner]` OQ-K-04a: bila tabrakan terbukti terjadi, apakah
 // nomor dilewati, atau seri dipisah (mis. awalan berbeda).
-func (p penyelesaiAkhirOracle) terbitkanNomor(ctx context.Context, tx *repository.Tx,
+func (p penyelesaiAkhirOracle) terbitkanNomor(ctx context.Context, tx *db.Tx,
 	tipe, kodeBisnis string, saat time.Time) (string, error) {
 
-	penghitung := repository.NewPenomor(p.svc.db)
-	awalan, err := penghitung.AwalanProduksi(ctx, tx, repository.TipeKodeProduksiLife)
+	penghitung := penomor.NewPenomor(p.svc.DB())
+	awalan, err := penghitung.AwalanProduksi(ctx, tx, penomor.TipeKodeProduksiLife)
 	if err != nil {
 		return "", err
 	}
@@ -125,7 +130,7 @@ func (p penyelesaiAkhirOracle) terbitkanNomor(ctx context.Context, tx *repositor
 	if err != nil {
 		return "", err
 	}
-	periode, err := repository.HitungPeriodeNomor(saat, hari)
+	periode, err := penomor.HitungPeriodeNomor(saat, hari)
 	if err != nil {
 		return "", err
 	}
@@ -138,12 +143,12 @@ func (p penyelesaiAkhirOracle) terbitkanNomor(ctx context.Context, tx *repositor
 	if err != nil {
 		return "", err
 	}
-	dipakai, err := repository.NewPohonKlaim(p.svc.db).NomorAkseptasiDipakai(ctx, tx, nomor)
+	dipakai, err := repository.NewPohonKlaim(p.svc.DB()).NomorAkseptasiDipakai(ctx, tx, nomor)
 	if err != nil {
 		return "", err
 	}
 	if !dipakai {
-		dipakai, err = repository.NewInboxKomite(p.svc.db).NomorAkseptasiDipakaiDiAdjustment(ctx, tx, nomor)
+		dipakai, err = repository.NewInboxKomite(p.svc.DB()).NomorAkseptasiDipakaiDiAdjustment(ctx, tx, nomor)
 		if err != nil {
 			return "", err
 		}
@@ -162,9 +167,9 @@ func (p penyelesaiAkhirOracle) terbitkanNomor(ctx context.Context, tx *repositor
 // precondition yang SAMA dan mengisi properti yang SAMA - salin-tempel yang
 // `[keputusan work owner]` disatukan. Di sini keduanya memanggil fungsi ini;
 // yang berbeda hanya `status` (dan nomor, yang hanya ada pada aksep).
-func (p penyelesaiAkhirOracle) rekamAkhir(ctx context.Context, tx *repository.Tx,
+func (p penyelesaiAkhirOracle) rekamAkhir(ctx context.Context, tx *db.Tx,
 	kasus repository.KasusKomite, status, nomor string, saat time.Time) error {
-	return repository.NewInboxKomite(p.svc.db).RekamAkhirWarisan(ctx, tx, kasus.AdjID,
+	return repository.NewInboxKomite(p.svc.DB()).RekamAkhirWarisan(ctx, tx, kasus.AdjID,
 		status, nomor, saat)
 }
 
@@ -187,8 +192,8 @@ func (p penyelesaiAkhirOracle) rekamAkhir(ctx context.Context, tx *repository.Tx
 //
 // ⛔ `AcceptStatus` TIDAK diteruskan ke Claim Life (ADR-0001): ia dipetakan di
 // batas ini menjadi `STS_REJECT = 2` - kode Claim Life `KodeDitolak`.
-func (p penyelesaiAkhirOracle) Tolak(ctx context.Context, tx *repository.Tx,
-	kasus repository.KasusKomite, pelaku Pelaku, saat time.Time) error {
+func (p penyelesaiAkhirOracle) Tolak(ctx context.Context, tx *db.Tx,
+	kasus repository.KasusKomite, pelaku inti.Pelaku, saat time.Time) error {
 
 	// Gerbang penulis status - lihat Akseptasi.
 	if err := periksaGiliran(kasus, pelaku.AkunID); err != nil {
@@ -196,12 +201,12 @@ func (p penyelesaiAkhirOracle) Tolak(ctx context.Context, tx *repository.Tx,
 	}
 	klaimID := kasus.Baris.KlaimID
 	if strings.TrimSpace(kasus.AdjID) == "" || strings.TrimSpace(kasus.PesertaID) == "" {
-		return fmt.Errorf("%w: kasus %q tanpa baris adjustment/peserta", ErrPermintaanTidakSah,
+		return fmt.Errorf("%w: kasus %q tanpa baris adjustment/peserta", galat.ErrPermintaanTidakSah,
 			kasus.Baris.KasusID)
 	}
 	// 5.1 - tangga dibaca DI DALAM transaksi (keputusan tingkat akhir langkah
 	// 3 ikut terbaca), keputusan lamanya dijejaki, lalu ditimpa.
-	komite := repository.NewInboxKomite(p.svc.db)
+	komite := repository.NewInboxKomite(p.svc.DB())
 	tangga, err := komite.TanggaSebelumDitimpa(ctx, tx, kasus.Baris.KasusID)
 	if err != nil {
 		return err
@@ -214,7 +219,7 @@ func (p penyelesaiAkhirOracle) Tolak(ctx context.Context, tx *repository.Tx,
 	if err := komite.TimpaTanggaTolakAkhir(ctx, tx, kasus.Baris.KasusID, saat); err != nil {
 		return err
 	}
-	baca := repository.NewKlaimLife(p.svc.db)
+	baca := repository.NewKlaimLife(p.svc.DB())
 	// 5.3 - dua tingkat baris, nilai yang sama, satu operasi (AC 15 spec).
 	// Penjaga `STS_REJECT = 0` di `PerbaruiStatusBaris` = gerbang "masih
 	// Outstanding"; nomor dan tanggal akseptasi dikosongkan (nol pada Tolak).
@@ -234,7 +239,7 @@ func (p penyelesaiAkhirOracle) Tolak(ctx context.Context, tx *repository.Tx,
 	if err := p.rekamAkhir(ctx, tx, kasus, models.KodeDitolak, "", saat); err != nil {
 		return err
 	}
-	return p.jejak.Rekam(ctx, tx, CatatanJejak{
+	return p.jejak.Rekam(ctx, tx, jejak.CatatanJejak{
 		AdjustmentID: kasus.AdjID,
 		KlaimID:      klaimID,
 		Dari:         models.KodeOutstanding,

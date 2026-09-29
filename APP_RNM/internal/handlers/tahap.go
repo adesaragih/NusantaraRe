@@ -34,6 +34,9 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/jejak"
 )
 
 // tahapTujuan menerjemahkan potongan jalur menjadi tahap.
@@ -61,39 +64,39 @@ func tahapTujuan(potongan string) (models.Tahap, bool) {
 func pindahTahap(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		tujuan, sah := tahapTujuan(r.PathValue("tujuan"))
 		if !sah {
-			galat(w, http.StatusNotFound, "tahap tujuan tidak dikenal")
+			galat.Tulis(w, http.StatusNotFound, "tahap tujuan tidak dikenal")
 			return
 		}
-		err := svc.Tahap().DenganJejak(services.PerekamJejakOracle(svc)).
-			Pindah(r.Context(), pelakuDari(r, stubPelaku), r.PathValue("id"),
+		err := svc.Tahap().DenganJejak(jejak.PerekamJejakOracle(svc)).
+			Pindah(r.Context(), inti.PelakuDari(r, stubPelaku), r.PathValue("id"),
 				tujuan, time.Now())
 
 		switch {
 		case err == nil:
 			w.WriteHeader(http.StatusNoContent)
-		case errors.Is(err, services.ErrTanpaIdentitas):
-			galat(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
-		case errors.Is(err, services.ErrTanpaWewenang):
+		case errors.Is(err, inti.ErrTanpaIdentitas):
+			galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+		case errors.Is(err, inti.ErrTanpaWewenang):
 			// ⛔ Orang memindahkan pekerjaan yang SEDANG IA PEGANG.
-			galat(w, http.StatusForbidden,
+			galat.Tulis(w, http.StatusForbidden,
 				"hanya pemegang tahap asal yang dapat memindahkan kasus ini")
 		case errors.Is(err, services.ErrPerpindahanTidakSah):
 			// ⛔ 409, bukan 400: permintaannya berbentuk benar, keadaan
 			// kasusnya yang tidak mengizinkan. Tangga yang setiap anaknya
 			// dapat dilompati bukan tangga.
-			galat(w, http.StatusConflict,
+			galat.Tulis(w, http.StatusConflict,
 				"perpindahan itu tidak ada di tangga kerja klaim")
 		case errors.Is(err, services.ErrKasusSudahTertutup):
-			galat(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
+			galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
 		case errors.Is(err, services.ErrTahapTidakDikenal):
-			galat(w, http.StatusConflict, "tahap kasus ini tidak dikenal")
+			galat.Tulis(w, http.StatusConflict, "tahap kasus ini tidak dikenal")
 		default:
-			galat(w, http.StatusInternalServerError, "gagal memindahkan tahap klaim")
+			galat.Tulis(w, http.StatusInternalServerError, "gagal memindahkan tahap klaim")
 		}
 	}
 }

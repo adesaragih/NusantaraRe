@@ -23,7 +23,9 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/utils"
 )
 
 var (
@@ -55,10 +57,10 @@ func (GalatBusinessDobel) Is(target error) bool { return target == ErrBusinessDo
 type GudangBusinessTCO interface {
 	Daftar(ctx context.Context, k models.KombinasiTCO) ([]models.BusinessTreaty, error)
 	Ambil(ctx context.Context, k models.KombinasiTCO, id string) (models.BusinessTreaty, error)
-	CariDobel(ctx context.Context, tx *repository.Tx, k models.KombinasiTCO, bizCode, kecualiID string) (string, error)
-	Sisip(ctx context.Context, tx *repository.Tx, b models.BusinessTreaty) (string, error)
-	Perbarui(ctx context.Context, tx *repository.Tx, b models.BusinessTreaty) error
-	Hapus(ctx context.Context, tx *repository.Tx, k models.KombinasiTCO, id string) error
+	CariDobel(ctx context.Context, tx *db.Tx, k models.KombinasiTCO, bizCode, kecualiID string) (string, error)
+	Sisip(ctx context.Context, tx *db.Tx, b models.BusinessTreaty) (string, error)
+	Perbarui(ctx context.Context, tx *db.Tx, b models.BusinessTreaty) error
+	Hapus(ctx context.Context, tx *db.Tx, k models.KombinasiTCO, id string) error
 }
 
 // PembacaBusinessMasterTCO membaca master `BUSINESS` (dibaca saja).
@@ -75,16 +77,16 @@ func (businessBelumDisuntik) Daftar(context.Context, models.KombinasiTCO) ([]mod
 func (businessBelumDisuntik) Ambil(context.Context, models.KombinasiTCO, string) (models.BusinessTreaty, error) {
 	return models.BusinessTreaty{}, ErrGudangBusinessBelumDisuntik
 }
-func (businessBelumDisuntik) CariDobel(context.Context, *repository.Tx, models.KombinasiTCO, string, string) (string, error) {
+func (businessBelumDisuntik) CariDobel(context.Context, *db.Tx, models.KombinasiTCO, string, string) (string, error) {
 	return "", ErrGudangBusinessBelumDisuntik
 }
-func (businessBelumDisuntik) Sisip(context.Context, *repository.Tx, models.BusinessTreaty) (string, error) {
+func (businessBelumDisuntik) Sisip(context.Context, *db.Tx, models.BusinessTreaty) (string, error) {
 	return "", ErrGudangBusinessBelumDisuntik
 }
-func (businessBelumDisuntik) Perbarui(context.Context, *repository.Tx, models.BusinessTreaty) error {
+func (businessBelumDisuntik) Perbarui(context.Context, *db.Tx, models.BusinessTreaty) error {
 	return ErrGudangBusinessBelumDisuntik
 }
-func (businessBelumDisuntik) Hapus(context.Context, *repository.Tx, models.KombinasiTCO, string) error {
+func (businessBelumDisuntik) Hapus(context.Context, *db.Tx, models.KombinasiTCO, string) error {
 	return ErrGudangBusinessBelumDisuntik
 }
 
@@ -99,17 +101,17 @@ func (masterBusinessBelumDisuntik) Ambil(context.Context, string) (repository.Bu
 
 type gudangBusinessOracle struct {
 	*repository.MasterBusinessKombinasiTCO
-	db *repository.DB
+	db *db.DB
 }
 
 // GudangBusinessOracle menyusun gudang bisnis di atas Oracle.
 func GudangBusinessOracle(svc *Service) GudangBusinessTCO {
-	return gudangBusinessOracle{MasterBusinessKombinasiTCO: repository.NewMasterBusinessKombinasiTCO(svc.db), db: svc.db}
+	return gudangBusinessOracle{MasterBusinessKombinasiTCO: repository.NewMasterBusinessKombinasiTCO(svc.DB()), db: svc.DB()}
 }
 
 // MasterBusinessOracle menyusun pembaca master `BUSINESS`.
 func MasterBusinessOracle(svc *Service) PembacaBusinessMasterTCO {
-	return repository.NewMasterBusiness(svc.db)
+	return repository.NewMasterBusiness(svc.DB())
 }
 
 // BusinessMasuk adalah badan simpan - medan yang TAMPIL di form (`Business Name`
@@ -167,7 +169,7 @@ type BusinessTCO struct {
 	tahun     PemeriksaTahunTCO
 	master    PembacaBusinessMasterTCO
 	catat     func(string) // log aplikasi: pelaku yang tidak ditulis ke kolom warisan (OQ-TCO-25)
-	transaksi func(ctx context.Context, fn func(tx *repository.Tx) error) error
+	transaksi func(ctx context.Context, fn func(tx *db.Tx) error) error
 }
 
 // BusinessTCO menyusun layanannya; bawaannya gagal terang.
@@ -211,7 +213,7 @@ func (l *BusinessTCO) DenganMaster(m PembacaBusinessMasterTCO) *BusinessTCO {
 }
 
 // DenganTransaksi mengganti pelaksana transaksi - dipakai uji.
-func (l *BusinessTCO) DenganTransaksi(f func(ctx context.Context, fn func(tx *repository.Tx) error) error) *BusinessTCO {
+func (l *BusinessTCO) DenganTransaksi(f func(ctx context.Context, fn func(tx *db.Tx) error) error) *BusinessTCO {
 	s := l.salin()
 	s.transaksi = f
 	return s
@@ -230,8 +232,8 @@ func (l *BusinessTCO) kombinasi(ctx context.Context, tahunID, kontrakID string) 
 }
 
 // Master membaca pilihan `Business Name`.
-func (l *BusinessTCO) Master(ctx context.Context, pelaku Pelaku) ([]BusinessMasterTampil, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (l *BusinessTCO) Master(ctx context.Context, pelaku inti.Pelaku) ([]BusinessMasterTampil, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return nil, err
 	}
 	d, err := l.master.Daftar(ctx)
@@ -246,8 +248,8 @@ func (l *BusinessTCO) Master(ctx context.Context, pelaku Pelaku) ([]BusinessMast
 }
 
 // Daftar membaca seluruh baris bisnis kombinasi, aktif maupun nonaktif.
-func (l *BusinessTCO) Daftar(ctx context.Context, pelaku Pelaku, tahunID, kontrakID string) (DaftarBusinessTampil, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (l *BusinessTCO) Daftar(ctx context.Context, pelaku inti.Pelaku, tahunID, kontrakID string) (DaftarBusinessTampil, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return DaftarBusinessTampil{}, err
 	}
 	k, err := l.kombinasi(ctx, tahunID, kontrakID)
@@ -267,8 +269,8 @@ func (l *BusinessTCO) Daftar(ctx context.Context, pelaku Pelaku, tahunID, kontra
 
 // Simpan menulis baris bisnis baru atau memperbarui SELURUH medannya - `Save`
 // b6966 (`SaveTreatyBusinessDetail_Act`).
-func (l *BusinessTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID, kontrakID string, m BusinessMasuk) (BusinessTampil, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (l *BusinessTCO) Simpan(ctx context.Context, pelaku inti.Pelaku, tahunID, kontrakID string, m BusinessMasuk) (BusinessTampil, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return BusinessTampil{}, err
 	}
 	k, err := l.kombinasi(ctx, tahunID, kontrakID)
@@ -294,7 +296,7 @@ func (l *BusinessTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID, kontra
 		return BusinessTampil{}, err
 	}
 	b.BizName = master.Note
-	err = l.transaksi(ctx, func(tx *repository.Tx) error {
+	err = l.transaksi(ctx, func(tx *db.Tx) error {
 		if err := l.kontrak.Kunci(ctx, tx, tahunID, kontrakID); err != nil {
 			return err
 		}
@@ -331,15 +333,15 @@ func (l *BusinessTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID, kontra
 //
 // Mengembalikan pesan VERBATIM `DeleteRowBusiness.xml` langkah 3:
 // `"Data Dengan ID" + " " + ID + " " + "Berhasil di Hapus"`.
-func (l *BusinessTCO) Hapus(ctx context.Context, pelaku Pelaku, tahunID, kontrakID, id string) (string, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (l *BusinessTCO) Hapus(ctx context.Context, pelaku inti.Pelaku, tahunID, kontrakID, id string) (string, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return "", err
 	}
 	k, err := l.kombinasi(ctx, tahunID, kontrakID)
 	if err != nil {
 		return "", err
 	}
-	err = l.transaksi(ctx, func(tx *repository.Tx) error {
+	err = l.transaksi(ctx, func(tx *db.Tx) error {
 		if err := l.gudang.Hapus(ctx, tx, k, id); err != nil {
 			return err
 		}

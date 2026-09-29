@@ -16,7 +16,8 @@ import (
 	"testing"
 	"time"
 
-	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
 )
 
 func sumberSummary(t *testing.T) string {
@@ -153,14 +154,14 @@ func TestLangkah15TidakDitiru(t *testing.T) {
 // TestSummaryTanpaOracleDitolakTerang - bukan panik, bukan hijau palsu.
 func TestSummaryTanpaOracleDitolakTerang(t *testing.T) {
 	s := New(nil).SummaryPremiumList()
-	pelaku := Pelaku{AkunID: "UJI-OPR"}
-	if _, err := s.Submit(context.Background(), pelaku, "P1", time.Now()); !errors.Is(err, repository.ErrTanpaOracle) {
+	pelaku := inti.Pelaku{AkunID: "UJI-OPR"}
+	if _, err := s.Submit(context.Background(), pelaku, "P1", time.Now()); !errors.Is(err, db.ErrTanpaOracle) {
 		t.Errorf("Submit tanpa Oracle: %v", err)
 	}
-	if _, err := s.Lihat(context.Background(), pelaku, "P1"); !errors.Is(err, repository.ErrTanpaOracle) {
+	if _, err := s.Lihat(context.Background(), pelaku, "P1"); !errors.Is(err, db.ErrTanpaOracle) {
 		t.Errorf("Lihat tanpa Oracle: %v", err)
 	}
-	if _, err := s.Submit(context.Background(), Pelaku{}, "P1", time.Now()); err == nil {
+	if _, err := s.Submit(context.Background(), inti.Pelaku{}, "P1", time.Now()); err == nil {
 		t.Error("Submit tanpa identitas diterima")
 	}
 }

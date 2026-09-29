@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"nusantarare/inti/db"
 )
 
 func TestSaringanNonLifeTCOTabelKebenaran(t *testing.T) {
@@ -49,7 +51,7 @@ func TestBlacklistJenisReasuransiVerbatimDuaBelas(t *testing.T) {
 
 func TestSQLJenisReasuransiNonLifeTCO(t *testing.T) {
 	q := sqlJenisReasuransiNonLifeTCO("S.REINSURANCETYPE")
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		t.Fatal(err)
 	}
 	for _, mau := range []string{"SELECT ID, NOTE, TYPE FROM S.REINSURANCETYPE",

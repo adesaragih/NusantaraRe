@@ -11,6 +11,8 @@ import (
 	"testing"
 
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
 )
 
 func TestRuteSimpanRNMTerdaftar(t *testing.T) {
@@ -45,8 +47,8 @@ func TestGalatSimpanRNMDipetakanKeKodeYangBenar(t *testing.T) {
 		err  error
 		mau  int
 	}{
-		{"identitas", services.ErrTanpaIdentitas, http.StatusUnauthorized},
-		{"wewenang", services.ErrTanpaWewenang, http.StatusForbidden},
+		{"identitas", inti.ErrTanpaIdentitas, http.StatusUnauthorized},
+		{"wewenang", inti.ErrTanpaWewenang, http.StatusForbidden},
 		{"tertutup", services.ErrKasusSudahTertutup, http.StatusConflict},
 		{"tahap", services.ErrSimpanRNMBukanOutstanding, http.StatusConflict},
 		// Bentuk yang benar-benar dikembalikan Simpan: kedua galat terbungkus.
@@ -55,7 +57,7 @@ func TestGalatSimpanRNMDipetakanKeKodeYangBenar(t *testing.T) {
 		{"type", services.ErrTypeTidakDikenal, http.StatusUnprocessableEntity},
 		{"business", services.ErrBusinessCodeTidakDikenal, http.StatusUnprocessableEntity},
 		{"polis", services.ErrPolisNomorTakDitemukan, http.StatusUnprocessableEntity},
-		{"permintaan", services.ErrPermintaanTidakSah, http.StatusBadRequest},
+		{"permintaan", galat.ErrPermintaanTidakSah, http.StatusBadRequest},
 		{"lain", errors.New("x"), http.StatusInternalServerError},
 	} {
 		w := httptest.NewRecorder()

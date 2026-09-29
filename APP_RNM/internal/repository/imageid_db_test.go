@@ -21,8 +21,8 @@ import (
 	"context"
 	"testing"
 
-	"nusantarare/internal/models"
 	"nusantarare/internal/repository/skemauji"
+	"nusantarare/inti/unggah"
 )
 
 func TestImageIDGoSamaDenganStandardHashOracle(t *testing.T) {
@@ -57,7 +57,7 @@ func TestImageIDGoSamaDenganStandardHashOracle(t *testing.T) {
 		if err != nil {
 			t.Fatalf("masukan %q: %v", masukan, err)
 		}
-		if got := models.ImageIDDari(masukan); got != dariOracle {
+		if got := unggah.ImageIDDari(masukan); got != dariOracle {
 			t.Errorf("masukan %q:\n  Go     = %s\n  Oracle = %s",
 				masukan, got, dariOracle)
 		}

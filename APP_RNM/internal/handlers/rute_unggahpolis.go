@@ -23,21 +23,23 @@ import (
 	"net/http"
 
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
 )
 
 // ambilBerkasCSV mengambil bagian `berkas` dari sebuah multipart.
 //
 // Mengembalikan true bila permintaan SUDAH dijawab.
 func ambilBerkasCSV(w http.ResponseWriter, r *http.Request) (multipartBerkas, bool) {
-	if err := r.ParseMultipartForm(batasFormulir); err != nil {
-		galat(w, http.StatusBadRequest, "permintaan bukan multipart yang sah")
+	if err := r.ParseMultipartForm(galat.BatasFormulir); err != nil {
+		galat.Tulis(w, http.StatusBadRequest, "permintaan bukan multipart yang sah")
 		return multipartBerkas{}, true
 	}
 	berkas, kepala, err := r.FormFile("berkas")
 	if err != nil {
 		// ⛔ Pesannya MENYEBUT nama bagiannya. "Berkas tidak ada" membuat
 		// orang menebak apakah namanya `file`, `csv`, atau `berkas`.
-		galat(w, http.StatusBadRequest, "bagian `berkas` tidak ada di permintaan")
+		galat.Tulis(w, http.StatusBadRequest, "bagian `berkas` tidak ada di permintaan")
 		return multipartBerkas{}, true
 	}
 	return multipartBerkas{isi: berkas, nama: kepala.Filename}, false
@@ -56,11 +58,11 @@ func tinjauUnggahPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc 
 			return
 		}
 		hasil, err := svc.UnggahPremiumList().Tinjau(r.Context(),
-			pelakuDari(r, stubPelaku), r.PathValue("id"), b.isi)
+			inti.PelakuDari(r, stubPelaku), r.PathValue("id"), b.isi)
 		if jawabGalatUnggahPolis(w, err) {
 			return
 		}
-		tulisJSONPolis(w, hasil)
+		galat.TulisJSON(w, hasil)
 	}
 }
 
@@ -68,7 +70,7 @@ func tinjauUnggahPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc 
 func simpanUnggahPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		b, sudah := ambilBerkasCSV(w, r)
@@ -76,7 +78,7 @@ func simpanUnggahPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc 
 			return
 		}
 		hasil, err := svc.UnggahPremiumList().Simpan(r.Context(),
-			pelakuDari(r, stubPelaku), r.PathValue("id"), b.isi)
+			inti.PelakuDari(r, stubPelaku), r.PathValue("id"), b.isi)
 		// ⛔ PENOLAKAN IKUT DIKIRIM, bukan hanya kodenya. 409 dengan badan
 		// kosong menyuruh orang mengunggah ulang ke rute tinjau untuk
 		// mengetahui apa yang salah - dua putaran untuk satu jawaban.
@@ -89,7 +91,7 @@ func simpanUnggahPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc 
 		if jawabGalatUnggahPolis(w, err) {
 			return
 		}
-		tulisJSONPolis(w, hasil)
+		galat.TulisJSON(w, hasil)
 	}
 }
 
@@ -104,7 +106,7 @@ func jawabGalatUnggahPolis(w http.ResponseWriter, err error) bool {
 		errors.Is(err, services.ErrCSVKolomKurang):
 		// 400: berkasnya yang tidak dapat dibaca sama sekali - berbeda dari
 		// berkas yang terbaca tetapi isinya ditolak (409).
-		galat(w, http.StatusBadRequest, err.Error())
+		galat.Tulis(w, http.StatusBadRequest, err.Error())
 		return true
 	}
 	return jawabGalatPolis(w, err)

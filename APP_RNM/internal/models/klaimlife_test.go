@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"nusantarare/inti/uang"
 )
 
 // Tiket 01 AC-3: status ditampilkan sebagai kata (Outstanding / Aksep / Ditolak),
@@ -82,7 +84,7 @@ func TestBarisMembawaKodeMentah(t *testing.T) {
 // Tiket 01 AC-4: tidak ada nilai uang sebagai binary floating point di lapisan
 // mana pun maupun di JSON respons. (spec.md AC-22)
 func TestUangDiJSONAdalahTeks(t *testing.T) {
-	uang, err := NewMoney("1234567890.12345678", "IDR")
+	uang, err := uang.NewMoney("1234567890.12345678", "IDR")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,7 +112,7 @@ func TestUangDiJSONAdalahTeks(t *testing.T) {
 // belakang koma sejajar dengan kolom uang (ADR-U-0003, ADR-U-0016).
 func TestUangPulangPergiTanpaKehilanganPresisi(t *testing.T) {
 	asal := `{"amount":"0.00000001","currency":"IDR"}`
-	var m Money
+	var m uang.Money
 	if err := json.Unmarshal([]byte(asal), &m); err != nil {
 		t.Fatal(err)
 	}
@@ -152,7 +154,7 @@ func TestBarisMelekatPadaPesertanya(t *testing.T) {
 // serialisasi: MarshalJSON mendaftar medannya satu per satu, dan yang baru
 // terlewat. Separuh butir w2 mati tanpa satu test pun gagal.
 func TestKlaimMembawaClaimRetroKeJSON(t *testing.T) {
-	uang, err := NewMoney("7777.7777", "IDR")
+	uang, err := uang.NewMoney("7777.7777", "IDR")
 	if err != nil {
 		t.Fatal(err)
 	}

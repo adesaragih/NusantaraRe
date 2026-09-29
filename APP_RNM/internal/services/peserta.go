@@ -8,6 +8,7 @@ import (
 	"context"
 
 	"nusantarare/internal/repository"
+	"nusantarare/inti/db"
 )
 
 // PesertaLayanan membungkus pembaca peserta polis.
@@ -23,8 +24,8 @@ func (s *Service) Peserta() *PesertaLayanan { return &PesertaLayanan{svc: s} }
 func (p *PesertaLayanan) Cari(ctx context.Context, nomorPremiList, sertifikat, nama string,
 	batas int) ([]repository.CalonPeserta, error) {
 	if !p.svc.PunyaDatabase() {
-		return nil, repository.ErrTanpaOracle
+		return nil, db.ErrTanpaOracle
 	}
-	return repository.NewPesertaPolis(p.svc.db).
+	return repository.NewPesertaPolis(p.svc.DB()).
 		Cari(ctx, nomorPremiList, sertifikat, nama, batas)
 }

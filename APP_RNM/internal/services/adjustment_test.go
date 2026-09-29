@@ -12,7 +12,8 @@ import (
 	"testing"
 
 	"nusantarare/internal/models"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti/uang"
+	"nusantarare/inti/utils"
 )
 
 func TestKolomDiwarisiDikunci(t *testing.T) {
@@ -44,7 +45,7 @@ func TestKolomDiwarisiDikunci(t *testing.T) {
 
 // Baris baru TIDAK mewarisi status maupun tanggal akseptasi.
 func TestBarisBaruTidakMewarisiStatus(t *testing.T) {
-	pertama := models.BarisAdjustment{JumlahKlaim: models.Money{Currency: "IDR"}}
+	pertama := models.BarisAdjustment{JumlahKlaim: uang.Money{Currency: "IDR"}}
 	baru := models.BarisAdjustment{KodeStatus: "1"}
 	WarisiKolom(pertama, &baru)
 	if baru.KodeStatus != "" {
@@ -64,12 +65,12 @@ func TestBarisBaruTidakMewarisiStatus(t *testing.T) {
 func TestBarisKeduaMewarisiDelapanKolomTanpaStatus(t *testing.T) {
 	// Tiap kolom warisan diberi nilai BERBEDA, supaya satu kolom yang lupa
 	// disalin tidak tertutup nilai kolom tetangganya.
-	uangUji := func(s string) models.Money {
+	uangUji := func(s string) uang.Money {
 		d, err := utils.ParseDecimal(s)
 		if err != nil {
 			t.Fatalf("uang %q: %v", s, err)
 		}
-		return models.Money{Amount: d, Currency: "IDR"}
+		return uang.Money{Amount: d, Currency: "IDR"}
 	}
 	pertama := models.BarisAdjustment{
 		ShareNusantaraRe: uangUji("11"),

@@ -21,6 +21,8 @@ import (
 	"context"
 	"fmt"
 	"strings"
+
+	"nusantarare/inti/db"
 )
 
 // Awalan pengenal work object, satu per jenis baris.
@@ -51,14 +53,14 @@ const lebarUrutanWork = 6
 // Awalannya diperiksa: nilai di luar kedua awalan yang dikenal ditolak, sebab
 // pengenal berawalan karangan akan lolos ke basis data dan baru terlihat salah
 // berbulan-bulan kemudian, saat seseorang mencarinya dan tidak menemukannya.
-func (r *PohonKlaim) PengenalWorkBerikut(ctx context.Context, tx *Tx, awalan string) (string, error) {
+func (r *PohonKlaim) PengenalWorkBerikut(ctx context.Context, tx *db.Tx, awalan string) (string, error) {
 	switch awalan {
 	case AwalanKlaim, AwalanKomite:
 	default:
 		return "", fmt.Errorf("repository: awalan pengenal work %q tidak dikenal; "+
 			"yang sah hanya %q dan %q", awalan, AwalanKlaim, AwalanKomite)
 	}
-	urut, err := r.nomorBerikut(ctx, tx, "SEQ_WORK_CLAIM")
+	urut, err := r.db.NomorBerikut(ctx, tx, "SEQ_WORK_CLAIM")
 	if err != nil {
 		return "", err
 	}

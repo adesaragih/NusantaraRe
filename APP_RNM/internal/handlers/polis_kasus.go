@@ -14,6 +14,9 @@ import (
 	"time"
 
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/jejak"
 )
 
 // isiBuatKasusPolis - `FlagPolicy` tombolnya, VERBATIM.
@@ -25,17 +28,17 @@ type isiBuatKasusPolis struct {
 func buatKasusPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		var isi isiBuatKasusPolis
 		if err := json.NewDecoder(r.Body).Decode(&isi); err != nil {
-			galat(w, http.StatusBadRequest, "badan permintaan bukan JSON yang sah")
+			galat.Tulis(w, http.StatusBadRequest, "badan permintaan bukan JSON yang sah")
 			return
 		}
 		hasil, err := svc.KasusPolis().
-			DenganJejak(services.PerekamJejakOracle(svc)).
-			Buat(r.Context(), pelakuDari(r, stubPelaku), isi.Flag, time.Now())
+			DenganJejak(jejak.PerekamJejakOracle(svc)).
+			Buat(r.Context(), inti.PelakuDari(r, stubPelaku), isi.Flag, time.Now())
 		if jawabGalatPolis(w, err) {
 			return
 		}

@@ -28,6 +28,8 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
 )
 
 // PesanKontrakTerhapusTCO - VERBATIM `BrowseDeleteRowTreatyInContract.xml` b762.
@@ -45,9 +47,9 @@ var (
 // PelaksanaKaskadeTCO menghitung dan menjalankan kaskade.
 type PelaksanaKaskadeTCO interface {
 	DampakKontrak(ctx context.Context, kom models.KombinasiTCO, tahunID, kontrakID string) (repository.DampakHapusTCO, error)
-	HapusKontrak(ctx context.Context, tx *repository.Tx, kom models.KombinasiTCO, tahunID, kontrakID string) (repository.DampakHapusTCO, error)
+	HapusKontrak(ctx context.Context, tx *db.Tx, kom models.KombinasiTCO, tahunID, kontrakID string) (repository.DampakHapusTCO, error)
 	DampakReinsurer(ctx context.Context, reinsurerID string) (repository.DampakHapusTCO, error)
-	HapusReinsurer(ctx context.Context, tx *repository.Tx, kom models.KombinasiTCO, reinsurerID string) (repository.DampakHapusTCO, error)
+	HapusReinsurer(ctx context.Context, tx *db.Tx, kom models.KombinasiTCO, reinsurerID string) (repository.DampakHapusTCO, error)
 }
 
 type kaskadeBelumDisuntik struct{}
@@ -55,18 +57,18 @@ type kaskadeBelumDisuntik struct{}
 func (kaskadeBelumDisuntik) DampakKontrak(context.Context, models.KombinasiTCO, string, string) (repository.DampakHapusTCO, error) {
 	return repository.DampakHapusTCO{}, ErrGudangKaskadeBelumDisuntik
 }
-func (kaskadeBelumDisuntik) HapusKontrak(context.Context, *repository.Tx, models.KombinasiTCO, string, string) (repository.DampakHapusTCO, error) {
+func (kaskadeBelumDisuntik) HapusKontrak(context.Context, *db.Tx, models.KombinasiTCO, string, string) (repository.DampakHapusTCO, error) {
 	return repository.DampakHapusTCO{}, ErrGudangKaskadeBelumDisuntik
 }
 func (kaskadeBelumDisuntik) DampakReinsurer(context.Context, string) (repository.DampakHapusTCO, error) {
 	return repository.DampakHapusTCO{}, ErrGudangKaskadeBelumDisuntik
 }
-func (kaskadeBelumDisuntik) HapusReinsurer(context.Context, *repository.Tx, models.KombinasiTCO, string) (repository.DampakHapusTCO, error) {
+func (kaskadeBelumDisuntik) HapusReinsurer(context.Context, *db.Tx, models.KombinasiTCO, string) (repository.DampakHapusTCO, error) {
 	return repository.DampakHapusTCO{}, ErrGudangKaskadeBelumDisuntik
 }
 
 // KaskadeOracle menyusun pelaksana kaskade di atas Oracle.
-func KaskadeOracle(svc *Service) PelaksanaKaskadeTCO { return repository.NewKaskadeTCO(svc.db) }
+func KaskadeOracle(svc *Service) PelaksanaKaskadeTCO { return repository.NewKaskadeTCO(svc.DB()) }
 
 // DampakTampil adalah isi popup konfirmasi.
 type DampakTampil struct {
@@ -100,7 +102,7 @@ type KaskadeTCO struct {
 	tahun     PemeriksaTahunTCO
 	reinsurer PembacaReinsurerTCO
 	jam       func() time.Time
-	transaksi func(ctx context.Context, fn func(tx *repository.Tx) error) error
+	transaksi func(ctx context.Context, fn func(tx *db.Tx) error) error
 }
 
 // KaskadeTCO menyusun layanannya; bawaannya gagal terang.
@@ -144,7 +146,7 @@ func (l *KaskadeTCO) DenganReinsurer(r PembacaReinsurerTCO) *KaskadeTCO {
 func (l *KaskadeTCO) DenganJam(j func() time.Time) *KaskadeTCO { s := l.salin(); s.jam = j; return s }
 
 // DenganTransaksi mengganti pelaksana transaksi - dipakai uji.
-func (l *KaskadeTCO) DenganTransaksi(f func(ctx context.Context, fn func(tx *repository.Tx) error) error) *KaskadeTCO {
+func (l *KaskadeTCO) DenganTransaksi(f func(ctx context.Context, fn func(tx *db.Tx) error) error) *KaskadeTCO {
 	s := l.salin()
 	s.transaksi = f
 	return s
@@ -163,8 +165,8 @@ func (l *KaskadeTCO) kombinasi(ctx context.Context, tahunID, kontrakID string) (
 }
 
 // DampakHapusKontrak - isi popup: yang ikut terhapus, dan klausul yang tetap.
-func (l *KaskadeTCO) DampakHapusKontrak(ctx context.Context, pelaku Pelaku, tahunID, kontrakID string) (DampakTampil, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (l *KaskadeTCO) DampakHapusKontrak(ctx context.Context, pelaku inti.Pelaku, tahunID, kontrakID string) (DampakTampil, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return DampakTampil{}, err
 	}
 	kom, err := l.kombinasi(ctx, tahunID, kontrakID)
@@ -188,12 +190,12 @@ func periksaKonfirmasi(d repository.DampakHapusTCO, k KonfirmasiHapus) error {
 
 // HapusKontrak - kaskade kontrak -> business, security, reinsurer dalam SATU
 // transaksi (AC 42, 45); klausul tidak disentuh (AC 44).
-func (l *KaskadeTCO) HapusKontrak(ctx context.Context, pelaku Pelaku, tahunID, kontrakID string, k KonfirmasiHapus) (string, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (l *KaskadeTCO) HapusKontrak(ctx context.Context, pelaku inti.Pelaku, tahunID, kontrakID string, k KonfirmasiHapus) (string, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return "", err
 	}
 	var kom models.KombinasiTCO
-	err := l.transaksi(ctx, func(tx *repository.Tx) error {
+	err := l.transaksi(ctx, func(tx *db.Tx) error {
 		c := repository.DenganBacaTxTCO(ctx, tx)
 		if err := l.kontrak.Kunci(c, tx, tahunID, kontrakID); err != nil {
 			return err
@@ -233,10 +235,10 @@ func (l *KaskadeTCO) HapusKontrak(ctx context.Context, pelaku Pelaku, tahunID, k
 }
 
 // DampakHapusReinsurer - popup hapus reinsurer: security yang ikut terhapus.
-func (l *KaskadeTCO) DampakHapusReinsurer(ctx context.Context, pelaku Pelaku, tahunID, kontrakID, reinsurerID string) (
+func (l *KaskadeTCO) DampakHapusReinsurer(ctx context.Context, pelaku inti.Pelaku, tahunID, kontrakID, reinsurerID string) (
 	DampakTampil, error) {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return DampakTampil{}, err
 	}
 	kom, err := l.kombinasi(ctx, tahunID, kontrakID)
@@ -255,13 +257,13 @@ func (l *KaskadeTCO) DampakHapusReinsurer(ctx context.Context, pelaku Pelaku, ta
 
 // HapusReinsurer - `DeleteFromTreatyReinsurer_Act`: security lalu reinsurer,
 // satu transaksi, angka dikonfirmasi.
-func (l *KaskadeTCO) HapusReinsurer(ctx context.Context, pelaku Pelaku, tahunID, kontrakID, reinsurerID string,
+func (l *KaskadeTCO) HapusReinsurer(ctx context.Context, pelaku inti.Pelaku, tahunID, kontrakID, reinsurerID string,
 	k KonfirmasiHapus) (string, error) {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return "", err
 	}
-	err := l.transaksi(ctx, func(tx *repository.Tx) error {
+	err := l.transaksi(ctx, func(tx *db.Tx) error {
 		c := repository.DenganBacaTxTCO(ctx, tx)
 		if err := l.kontrak.Kunci(c, tx, tahunID, kontrakID); err != nil {
 			return err

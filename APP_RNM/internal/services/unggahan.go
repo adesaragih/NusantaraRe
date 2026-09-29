@@ -39,20 +39,14 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/outbox"
+	"nusantarare/inti/unggah"
 )
 
 var (
-	// ErrUnggahanDirBelumDisetel - folder unggahan belum dipilih.
-	//
-	// ⛔ Gagal TERANG, bukan bawaan diam-diam ke `./unggahan`. Berkas
-	// pelanggan tidak boleh mendarat di folder kerja siapa pun yang
-	// kebetulan menjalankan server.
-	ErrUnggahanDirBelumDisetel = errors.New(
-		"services: UNGGAHAN_DIR belum disetel; unggahan dokumen ditolak")
-	// ErrBerkasTerlaluBesar - melebihi BatasUkuranUnggahan.
-	ErrBerkasTerlaluBesar = errors.New("services: berkas melebihi batas ukuran")
-	// ErrBerkasKosong - nol byte.
-	ErrBerkasKosong = errors.New("services: berkas kosong")
 	// ErrKategoriDokumenTidakDikenal - kategori di luar daftar wajib.
 	ErrKategoriDokumenTidakDikenal = errors.New(
 		"services: kategori dokumen tidak ada di daftar kategori")
@@ -64,31 +58,6 @@ var (
 	ErrDokumenTidakAda = repository.ErrDokumenTidakAda
 )
 
-// Jenis efek outbox untuk berkas - butir be.
-//
-// ⛔ TEKS, dan tersimpan di kolom `JENIS_EFEK`. Ia dibaca kembali oleh
-// proses lain, mungkin berhari-hari kemudian: nilainya tidak boleh berubah
-// hanya karena sebuah konstanta Go diganti namanya.
-const (
-	// JenisEfekStorageUnggah - padanan `InsertGoogleStorage_Act` b1023.
-	JenisEfekStorageUnggah = "storage-unggah"
-	// JenisEfekStorageHapus - padanan `DeleteGoogleStorage_Act`.
-	JenisEfekStorageHapus = "storage-hapus"
-)
-
-// BatasUkuranUnggahan adalah batas byte satu berkas.
-//
-// ⚠️ `[keputusan kami - tidak ada di korpus]` Nol rule di `Claim Life`
-// menyebutkan batas ukuran: Pega menyerahkannya ke `dragDropFileUpload`
-// bawaan platform, yang batasnya hidup di konfigurasi sistem dan tidak ikut
-// diekspor. 25 MiB dipilih sebab ia lebih besar daripada seluruh jenis
-// dokumen di tabel MIME 48 baris yang masuk akal dilampirkan pada klaim, dan
-// cukup kecil supaya satu permintaan tidak menahan memori proses.
-//
-// Angkanya berdiri di SINI, bernama, supaya ia dapat dibantah - bukan
-// tersebar sebagai literal di handler.
-const BatasUkuranUnggahan = 25 << 20
-
 // NamaAplikasiBerkas mengisi kolom `APPNAME` kartu penyimpanan.
 //
 // `[data DBA]` `GCP_IMAGE.APPNAME VARCHAR2(20)`; korpus memakai kolom senama
@@ -99,20 +68,6 @@ const NamaAplikasiBerkas = "RNM-CLAIM-LIFE"
 //
 // VERBATIM `Insert_T_Storage_SQL.xml` b100: literal `'standard'`.
 const PenyimpananStandar = "standard"
-
-// BerkasMasuk adalah satu berkas yang sedang diunggah.
-//
-// ⚠️ `Isi` pembaca, bukan `[]byte`. Berkas 25 MiB yang dibaca seluruhnya ke
-// memori sebelum diperiksa adalah 25 MiB yang dapat diminta siapa saja,
-// berkali-kali, sebelum satu pun gerbang berjalan.
-type BerkasMasuk struct {
-	NamaFile string
-	// Mime dari pemanggil. Kosong berarti diturunkan dari nama berkas.
-	Mime string
-	// Kategori adalah `KATEGORI_2` - yang `DocumentLife.xml` tampilkan.
-	Kategori string
-	Isi      io.Reader
-}
 
 // Unggahan melayani ketiga tombol `Section/DocumentLife.xml`.
 type Unggahan struct {
@@ -148,10 +103,10 @@ func (s *Service) Dokumen() *Unggahan {
 	return &Unggahan{
 		svc:     s,
 		sumber:  KategoriWajibBelumDiketahui{},
-		folder:  s.unggahanDir,
+		folder:  s.UnggahanDir(),
 		tautan:  TautanUnduhBawaan,
 		jakarta: jakarta,
-		batas:   BatasUkuranUnggahan,
+		batas:   unggah.BatasUkuranUnggahan,
 	}
 }
 
@@ -194,7 +149,7 @@ func TautanUnduhBawaan(id int64) string {
 // pagariUnggahan menjalankan gerbang yang sama untuk ketiga jalurnya.
 // pesertaMilikKlaim - peserta aktif (tidak tercabut) milik klaim itu.
 func (u *Unggahan) pesertaMilikKlaim(ctx context.Context, klaimID, pesertaID string) error {
-	peserta, err := repository.NewKlaimLife(u.svc.db).AmbilPeserta(ctx, klaimID)
+	peserta, err := repository.NewKlaimLife(u.svc.DB()).AmbilPeserta(ctx, klaimID)
 	if err != nil {
 		return err
 	}
@@ -203,18 +158,18 @@ func (u *Unggahan) pesertaMilikKlaim(ctx context.Context, klaimID, pesertaID str
 			return nil
 		}
 	}
-	return fmt.Errorf("%w: peserta %q bukan peserta aktif klaim %q", ErrPermintaanTidakSah, pesertaID, klaimID)
+	return fmt.Errorf("%w: peserta %q bukan peserta aktif klaim %q", galat.ErrPermintaanTidakSah, pesertaID, klaimID)
 }
 
-func (u *Unggahan) pagari(ctx context.Context, pelaku Pelaku, klaimID string) error {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (u *Unggahan) pagari(ctx context.Context, pelaku inti.Pelaku, klaimID string) error {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return err
 	}
 	if strings.TrimSpace(klaimID) == "" {
-		return fmt.Errorf("%w: pengenal klaim wajib diisi", ErrPermintaanTidakSah)
+		return fmt.Errorf("%w: pengenal klaim wajib diisi", galat.ErrPermintaanTidakSah)
 	}
 	if u == nil || u.svc == nil || !u.svc.PunyaDatabase() {
-		return repository.ErrTanpaOracle
+		return db.ErrTanpaOracle
 	}
 	// ⛔ BUTIR bb - kasus tertutup tidak menerima dokumen baru maupun
 	// kehilangan dokumen lama.
@@ -234,8 +189,8 @@ func (u *Unggahan) pagari(ctx context.Context, pelaku Pelaku, klaimID string) er
 //
 // ⛔ `T_STORAGE_ID` KOSONG di langkah 3, dan penyimpangannya dijelaskan di
 // `repository.SisipDokumen`.
-func (u *Unggahan) Unggah(ctx context.Context, pelaku Pelaku,
-	klaimID, pesertaID string, berkas BerkasMasuk, saat time.Time) (
+func (u *Unggahan) Unggah(ctx context.Context, pelaku inti.Pelaku,
+	klaimID, pesertaID string, berkas unggah.BerkasMasuk, saat time.Time) (
 	models.Dokumen, error) {
 
 	if err := u.pagari(ctx, pelaku, klaimID); err != nil {
@@ -243,7 +198,7 @@ func (u *Unggahan) Unggah(ctx context.Context, pelaku Pelaku,
 	}
 	if strings.TrimSpace(pesertaID) == "" {
 		return models.Dokumen{}, fmt.Errorf("%w: pengenal peserta wajib diisi",
-			ErrPermintaanTidakSah)
+			galat.ErrPermintaanTidakSah)
 	}
 	// ⛔ Temuan /code-review GILIRAN-17: peserta harus milik klaim ini dan
 	// TIDAK tercabut (OQ-M6) - `AmbilPeserta` menyaring keduanya. Tanpanya
@@ -252,12 +207,12 @@ func (u *Unggahan) Unggah(ctx context.Context, pelaku Pelaku,
 		return models.Dokumen{}, err
 	}
 	if strings.TrimSpace(u.folder) == "" {
-		return models.Dokumen{}, ErrUnggahanDirBelumDisetel
+		return models.Dokumen{}, unggah.ErrUnggahanDirBelumDisetel
 	}
 	nama := strings.TrimSpace(berkas.NamaFile)
 	if nama == "" {
 		return models.Dokumen{}, fmt.Errorf("%w: nama berkas wajib diisi",
-			ErrPermintaanTidakSah)
+			galat.ErrPermintaanTidakSah)
 	}
 	// ⛔ Kategori diperiksa terhadap daftar butir ar1. (Gerbang kelengkapan
 	// Save ke Outstanding yang dulu memakai daftar yang sama ter-remark di XML
@@ -284,7 +239,7 @@ func (u *Unggahan) Unggah(ctx context.Context, pelaku Pelaku,
 		// ⛔ Pemanggil MENANG - prasyarat b586 `Param.MIME==""` `WhenTrue=2`
 		// LANJUT, artinya turunan dari nama berkas hanya dipakai bila
 		// pemanggil diam. `@toLowerCase` b781 ada di dalam MimeDokumen.
-		Mime: models.MimeDokumen(berkas.Mime, nama),
+		Mime: unggah.MimeDokumen(berkas.Mime, nama),
 		// `KATEGORI_1` = kunci kelompok `DL-` b595-596.
 		// ⚠️ CELAH TERCATAT (sensus remark 28-09-2026, OQ-J): b596 memakai
 		// ULANG `Primary.DOCUMENT` peserta bila sudah ada; di sini kolom
@@ -296,16 +251,16 @@ func (u *Unggahan) Unggah(ctx context.Context, pelaku Pelaku,
 		TStorageID: "",
 	}
 
-	baca := repository.NewKlaimLife(u.svc.db)
-	err = u.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	baca := repository.NewKlaimLife(u.svc.DB())
+	err = u.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		if err := baca.SisipDokumen(ctx, tx, dok, saat); err != nil {
 			return err
 		}
 		// ⛔ Outbox DI DALAM transaksi yang sama dengan barisnya. Efek yang
 		// diantre terpisah dapat hilang sendirian, dan berkas yang sudah
 		// mendarat tidak akan pernah bertaut.
-		_, err := repository.NewPohonKlaim(u.svc.db).AntreEfek(ctx, tx,
-			models.LiniLife, ModulClaimLife, JenisEfekStorageUnggah, idTeks,
+		_, err := outbox.NewPenyimpan(u.svc.DB()).AntreEfek(ctx, tx,
+			models.LiniLife, ModulClaimLife, unggah.JenisEfekStorageUnggah, idTeks,
 			muatanBerkas(klaimID, jalur, nama), saat)
 		return err
 	})
@@ -327,7 +282,7 @@ func (u *Unggahan) Unggah(ctx context.Context, pelaku Pelaku,
 func (u *Unggahan) periksaKategori(ctx context.Context, kategori string) error {
 	k := strings.TrimSpace(kategori)
 	if k == "" {
-		return fmt.Errorf("%w: kategori dokumen wajib diisi", ErrPermintaanTidakSah)
+		return fmt.Errorf("%w: kategori dokumen wajib diisi", galat.ErrPermintaanTidakSah)
 	}
 	wajib, err := u.sumber.KategoriWajib(ctx)
 	if err != nil {
@@ -347,36 +302,7 @@ func (u *Unggahan) periksaKategori(ctx context.Context, kategori string) error {
 // Header itu datang dari pengirim dan dapat berbohong; `io.LimitReader`
 // tidak dapat.
 func (u *Unggahan) tulisBerkas(jalur string, isi io.Reader) error {
-	if err := os.MkdirAll(filepath.Dir(jalur), 0o750); err != nil {
-		return fmt.Errorf("services: menyiapkan folder unggahan: %w", err)
-	}
-	f, err := os.OpenFile(jalur, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o640)
-	if err != nil {
-		return fmt.Errorf("services: membuat berkas unggahan: %w", err)
-	}
-	// Satu byte LEBIH daripada batas, supaya kelebihan dapat dibedakan dari
-	// berkas yang panjangnya tepat sebesar batas.
-	batas := u.batas
-	if batas <= 0 {
-		batas = BatasUkuranUnggahan
-	}
-	n, salinErr := io.Copy(f, io.LimitReader(isi, batas+1))
-	tutupErr := f.Close()
-	switch {
-	case salinErr != nil:
-		_ = os.Remove(jalur)
-		return fmt.Errorf("services: menulis berkas unggahan: %w", salinErr)
-	case tutupErr != nil:
-		_ = os.Remove(jalur)
-		return fmt.Errorf("services: menutup berkas unggahan: %w", tutupErr)
-	case n == 0:
-		_ = os.Remove(jalur)
-		return ErrBerkasKosong
-	case n > batas:
-		_ = os.Remove(jalur)
-		return fmt.Errorf("%w: %d byte, batas %d", ErrBerkasTerlaluBesar, n, batas)
-	}
-	return nil
+	return unggah.TulisBerkas(jalur, isi, u.batas)
 }
 
 // ekstensi mengambil akhiran nama berkas, huruf kecil.
@@ -419,24 +345,24 @@ func muatanBerkas(klaimID, jalur, nama string) string {
 // ⛔ Mengembalikan JALUR berkas, bukan isinya. Membaca 25 MiB ke memori
 // hanya untuk menyalinnya ke jaringan adalah 25 MiB yang dapat diminta
 // serentak oleh siapa pun yang punya identitas.
-func (u *Unggahan) Unduh(ctx context.Context, pelaku Pelaku,
+func (u *Unggahan) Unduh(ctx context.Context, pelaku inti.Pelaku,
 	klaimID string, dokID int64) (models.Dokumen, string, error) {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return models.Dokumen{}, "", err
 	}
 	if strings.TrimSpace(klaimID) == "" {
 		return models.Dokumen{}, "", fmt.Errorf("%w: pengenal klaim wajib diisi",
-			ErrPermintaanTidakSah)
+			galat.ErrPermintaanTidakSah)
 	}
 	if u == nil || u.svc == nil || !u.svc.PunyaDatabase() {
-		return models.Dokumen{}, "", repository.ErrTanpaOracle
+		return models.Dokumen{}, "", db.ErrTanpaOracle
 	}
 	// ⚠️ TANPA `PastikanKasusTerbuka`. Unduh MEMBACA; kasus yang sudah
 	// ditutup tetap boleh dibaca - butir bb menutup jalur pengubah, bukan
 	// jalur baca. Menutup unduhan berarti dokumen klaim selesai tidak dapat
 	// dilihat lagi oleh siapa pun.
-	dok, err := repository.NewKlaimLife(u.svc.db).SatuDokumen(ctx, klaimID, dokID)
+	dok, err := repository.NewKlaimLife(u.svc.DB()).SatuDokumen(ctx, klaimID, dokID)
 	if err != nil {
 		return models.Dokumen{}, "", err
 	}
@@ -448,7 +374,7 @@ func (u *Unggahan) Unduh(ctx context.Context, pelaku Pelaku,
 			ErrDokumenBelumTerunggah, dokID)
 	}
 	if strings.TrimSpace(u.folder) == "" {
-		return models.Dokumen{}, "", ErrUnggahanDirBelumDisetel
+		return models.Dokumen{}, "", unggah.ErrUnggahanDirBelumDisetel
 	}
 	// ⛔ Dari pengenal DOKUMEN, bukan dari `T_STORAGE_ID`. Sejak 28-09-2026
 	// keduanya BERBEDA: `IMAGEID` lahir dari `GenerateImageID_SQL` (MD5 atas
@@ -472,18 +398,18 @@ func (u *Unggahan) Unduh(ctx context.Context, pelaku Pelaku,
 // Jadi: baris dulu, penyimpanan menyusul lewat outbox. Berkas lokal dibuang
 // oleh pelaksana efek, bukan di sini - bila transaksinya batal, berkasnya
 // masih ada dan barisnya pun masih ada.
-func (u *Unggahan) Hapus(ctx context.Context, pelaku Pelaku,
+func (u *Unggahan) Hapus(ctx context.Context, pelaku inti.Pelaku,
 	klaimID string, dokID int64, saat time.Time) error {
 
 	if err := u.pagari(ctx, pelaku, klaimID); err != nil {
 		return err
 	}
-	baca := repository.NewKlaimLife(u.svc.db)
+	baca := repository.NewKlaimLife(u.svc.DB())
 	dok, err := baca.SatuDokumen(ctx, klaimID, dokID)
 	if err != nil {
 		return err
 	}
-	return u.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	return u.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		if err := baca.HapusDokumen(ctx, tx, dokID); err != nil {
 			return err
 		}
@@ -493,8 +419,8 @@ func (u *Unggahan) Hapus(ctx context.Context, pelaku Pelaku,
 			// diantre - mengantre pekerjaan kosong membanjiri outbox.
 			return nil
 		}
-		_, err := repository.NewPohonKlaim(u.svc.db).AntreEfek(ctx, tx,
-			LiniLife, ModulClaimLife, JenisEfekStorageHapus, dok.TStorageID,
+		_, err := outbox.NewPenyimpan(u.svc.DB()).AntreEfek(ctx, tx,
+			outbox.LiniLife, ModulClaimLife, unggah.JenisEfekStorageHapus, dok.TStorageID,
 			muatanBerkas(klaimID, filepath.Join(u.folder,
 				namaBerkasLokal(strconv.FormatInt(dok.ID, 10), dok.NamaFile)),
 				dok.NamaFile), saat)
@@ -528,7 +454,7 @@ type PelaksanaBerkasLokal struct {
 // NewPelaksanaBerkasLokal menyusun pelaksana stub-nya.
 func NewPelaksanaBerkasLokal(svc *Service) *PelaksanaBerkasLokal {
 	return &PelaksanaBerkasLokal{
-		baca:   repository.NewKlaimLife(svc.db),
+		baca:   repository.NewKlaimLife(svc.DB()),
 		tautan: TautanUnduhBawaan,
 		jam:    time.Now,
 	}
@@ -547,30 +473,30 @@ func (p *PelaksanaBerkasLokal) DenganJam(j func() time.Time) *PelaksanaBerkasLok
 // dianggap berhasil. Outbox lintas modul: baris milik jenis lain yang
 // terlanjur dipungut harus terlihat, bukan tertandai selesai tanpa pernah
 // dikerjakan.
-func (p *PelaksanaBerkasLokal) Laksanakan(ctx context.Context, tx *repository.Tx,
-	b repository.BarisEfekKeluar) error {
+func (p *PelaksanaBerkasLokal) Laksanakan(ctx context.Context, tx *db.Tx,
+	b outbox.BarisEfekKeluar) error {
 
 	switch b.Jenis {
-	case JenisEfekStorageUnggah:
+	case unggah.JenisEfekStorageUnggah:
 		return p.unggah(ctx, tx, b)
-	case JenisEfekStorageHapus:
+	case unggah.JenisEfekStorageHapus:
 		return p.hapus(ctx, tx, b)
 	default:
 		return fmt.Errorf("%w: jenis efek %q bukan milik pelaksana berkas",
-			ErrPermintaanTidakSah, b.Jenis)
+			galat.ErrPermintaanTidakSah, b.Jenis)
 	}
 }
 
 // unggah menulis kartu berkas lalu menautkannya ke barisnya.
-func (p *PelaksanaBerkasLokal) unggah(ctx context.Context, tx *repository.Tx,
-	b repository.BarisEfekKeluar) error {
+func (p *PelaksanaBerkasLokal) unggah(ctx context.Context, tx *db.Tx,
+	b outbox.BarisEfekKeluar) error {
 
 	id, err := strconv.ParseInt(b.Rujukan, 10, 64)
 	if err != nil {
 		// ⛔ Permanen, bukan layak dicoba ulang: rujukan yang bukan angka
 		// tidak akan menjadi angka pada percobaan kedelapan.
 		return fmt.Errorf("%w: rujukan %q bukan pengenal dokumen",
-			ErrPermintaanTidakSah, b.Rujukan)
+			galat.ErrPermintaanTidakSah, b.Rujukan)
 	}
 	saat := p.jam()
 	// ⛔ `IMAGEID` DITERBITKAN DI SINI, dan bukan pengenal dokumennya.
@@ -581,7 +507,7 @@ func (p *PelaksanaBerkasLokal) unggah(ctx context.Context, tx *repository.Tx,
 	// ⚠️ RALAT 28-09-2026: ronde pertama memakai `b.Rujukan` (pengenal
 	// dokumen, yaitu cap waktu) sebagai `IMAGEID`. Kunci penyimpanan yang
 	// dapat ditebak dari waktu unggah bukan kunci.
-	imageID, err := models.ImageIDBaru(saat)
+	imageID, err := unggah.ImageIDBaru(saat)
 	if err != nil {
 		return err
 	}
@@ -606,8 +532,8 @@ func (p *PelaksanaBerkasLokal) unggah(ctx context.Context, tx *repository.Tx,
 // ⚠️ Berkas yang SUDAH tidak ada bukan kegagalan. Efek dijamin berjalan
 // SETIDAKNYA sekali; percobaan kedua atas berkas yang sudah terhapus harus
 // berhasil, bukan berputar sampai jatah percobaannya habis.
-func (p *PelaksanaBerkasLokal) hapus(ctx context.Context, tx *repository.Tx,
-	b repository.BarisEfekKeluar) error {
+func (p *PelaksanaBerkasLokal) hapus(ctx context.Context, tx *db.Tx,
+	b outbox.BarisEfekKeluar) error {
 
 	if err := p.baca.HapusKartuBerkas(ctx, tx, b.Rujukan); err != nil {
 		return err
@@ -657,16 +583,16 @@ func jalurDariMuatan(teks string) string { return bacaMuatanBerkas(teks).Jalur }
 // pun tidak (`GetLinkStorage_SQL` b91 mencari dengan `imageid` saja). Klaimnya
 // dicari lebih dulu, lalu pembacaan yang SAMA dengan rute lain dipakai: satu
 // pembacaan berbatas klaim, bukan dua.
-func (u *Unggahan) UnduhLewatPengenal(ctx context.Context, pelaku Pelaku,
+func (u *Unggahan) UnduhLewatPengenal(ctx context.Context, pelaku inti.Pelaku,
 	dokID int64) (models.Dokumen, string, error) {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return models.Dokumen{}, "", err
 	}
 	if u == nil || u.svc == nil || !u.svc.PunyaDatabase() {
-		return models.Dokumen{}, "", repository.ErrTanpaOracle
+		return models.Dokumen{}, "", db.ErrTanpaOracle
 	}
-	klaimID, err := repository.NewKlaimLife(u.svc.db).KlaimDokumen(ctx, dokID)
+	klaimID, err := repository.NewKlaimLife(u.svc.DB()).KlaimDokumen(ctx, dokID)
 	if err != nil {
 		return models.Dokumen{}, "", err
 	}

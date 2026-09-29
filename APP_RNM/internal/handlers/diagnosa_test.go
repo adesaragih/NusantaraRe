@@ -11,6 +11,8 @@ import (
 	"testing"
 
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
 )
 
 func TestKetigaRuteDiagnosaTerdaftar(t *testing.T) {
@@ -108,14 +110,14 @@ func TestGalatDiagnosaDipetakanKeKodeYangBenar(t *testing.T) {
 		err  error
 		mau  int
 	}{
-		{"tanpa identitas", services.ErrTanpaIdentitas, http.StatusUnauthorized},
-		{"tanpa wewenang", services.ErrTanpaWewenang, http.StatusForbidden},
+		{"tanpa identitas", inti.ErrTanpaIdentitas, http.StatusUnauthorized},
+		{"tanpa wewenang", inti.ErrTanpaWewenang, http.StatusForbidden},
 		{"peserta terkunci", services.ErrDiagnosaTerkunci, http.StatusConflict},
 		{"kasus tertutup", services.ErrKasusSudahTertutup, http.StatusConflict},
 		{"tahap salah", services.ErrTahapTidakBergridPeserta, http.StatusConflict},
 		{"nilai kepanjangan", services.ErrNilaiDiagnosaKepanjangan,
 			http.StatusUnprocessableEntity},
-		{"permintaan tidak sah", services.ErrPermintaanTidakSah, http.StatusBadRequest},
+		{"permintaan tidak sah", galat.ErrPermintaanTidakSah, http.StatusBadRequest},
 	} {
 		w := httptest.NewRecorder()
 		if !jawabGalatDiagnosa(w, u.err) {

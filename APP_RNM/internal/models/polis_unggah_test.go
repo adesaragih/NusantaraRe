@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/pkg/utils"
+	"nusantarare/inti/utils"
 )
 
 // TestUangCSVMenolakPemisahRibuan - AC tiket 04 mewajibkan kasus ini.

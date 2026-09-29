@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"nusantarare/inti/db"
 )
 
 // TestSQLTanggalKlaimBerurutPosisi - driver Oracle mengikat penampung
@@ -12,7 +14,7 @@ import (
 // tanggal konfirmasi ke kolom tanggal terima, tanpa satu pun galat.
 func TestSQLTanggalKlaimBerurutPosisi(t *testing.T) {
 	q := sqlTanggalKlaim("T")
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		t.Fatal(err)
 	}
 	urut := regexp.MustCompile(`:(\d)`).FindAllStringSubmatch(q, -1)
@@ -71,7 +73,7 @@ func TestSQLSudahSaveRNMTurunanStatusBaris(t *testing.T) {
 			t.Errorf("tanpa %q:\n%s", mau, q)
 		}
 	}
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		t.Error(err)
 	}
 }

@@ -14,6 +14,8 @@ import (
 	"strconv"
 
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
 )
 
 // permintaanDaftarJSON adalah bentuk badan permintaan pendaftaran.
@@ -33,18 +35,18 @@ type permintaanDaftarJSON struct {
 func daftarKlaim(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		var masuk permintaanDaftarJSON
 		if err := json.NewDecoder(r.Body).Decode(&masuk); err != nil {
-			galat(w, http.StatusBadRequest, "badan permintaan bukan JSON yang sah")
+			galat.Tulis(w, http.StatusBadRequest, "badan permintaan bukan JSON yang sah")
 			return
 		}
 
 		// ⛔ Hanya NOMOR sertifikat yang diteruskan. Nilai polis dibaca server
 		// sendiri dari sumbernya - lihat repository.AmbilUntukKlaim.
-		pohon, err := svc.Pendaftaran().DenganPenomor(services.PenomorCounterOracle(svc)).Daftar(r.Context(), pelakuDari(r, stubPelaku), services.PermintaanDaftar{
+		pohon, err := svc.Pendaftaran().DenganPenomor(services.PenomorCounterOracle(svc)).Daftar(r.Context(), inti.PelakuDari(r, stubPelaku), services.PermintaanDaftar{
 			NomorPremiList: masuk.NomorPremiList,
 			NomorPolis:     masuk.NomorPolis,
 			Type:           masuk.Type,
@@ -53,17 +55,17 @@ func daftarKlaim(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			Sertifikat:     masuk.Sertifikat,
 		})
 		switch {
-		case errors.Is(err, services.ErrPermintaanTidakSah):
-			galat(w, http.StatusBadRequest, err.Error())
+		case errors.Is(err, galat.ErrPermintaanTidakSah):
+			galat.Tulis(w, http.StatusBadRequest, err.Error())
 			return
-		case errors.Is(err, services.ErrTanpaIdentitas):
-			galat(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+		case errors.Is(err, inti.ErrTanpaIdentitas):
+			galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
 			return
-		case errors.Is(err, services.ErrTanpaWewenang):
-			galat(w, http.StatusForbidden, "peran tidak mencukupi")
+		case errors.Is(err, inti.ErrTanpaWewenang):
+			galat.Tulis(w, http.StatusForbidden, "peran tidak mencukupi")
 			return
 		case err != nil:
-			galat(w, http.StatusInternalServerError, "gagal mendaftarkan klaim")
+			galat.Tulis(w, http.StatusInternalServerError, "gagal mendaftarkan klaim")
 			return
 		}
 
@@ -85,7 +87,7 @@ func daftarKlaim(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 func cariPeserta(svc *services.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
 		pl := r.URL.Query().Get("pl")
@@ -93,7 +95,7 @@ func cariPeserta(svc *services.Service) http.HandlerFunc {
 			// ⛔ 400, bukan hasil kosong: tabel peserta berisi 66,8 juta baris
 			// dan hanya ber-index pada PL_NUMBER. Pencarian tanpa itu bukan
 			// "pencarian luas", melainkan pemindaian penuh.
-			galat(w, http.StatusBadRequest, "parameter pl (nomor premium list) wajib diisi")
+			galat.Tulis(w, http.StatusBadRequest, "parameter pl (nomor premium list) wajib diisi")
 			return
 		}
 		batas, _ := strconv.Atoi(r.URL.Query().Get("n"))
@@ -101,7 +103,7 @@ func cariPeserta(svc *services.Service) http.HandlerFunc {
 		hasil, err := svc.Peserta().Cari(r.Context(), pl,
 			r.URL.Query().Get("sertifikat"), r.URL.Query().Get("nama"), batas)
 		if err != nil {
-			galat(w, http.StatusInternalServerError, "gagal mencari peserta")
+			galat.Tulis(w, http.StatusInternalServerError, "gagal mencari peserta")
 			return
 		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")

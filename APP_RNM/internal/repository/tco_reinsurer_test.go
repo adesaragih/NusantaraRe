@@ -2,6 +2,7 @@ package repository
 
 import (
 	"nusantarare/internal/models"
+	"nusantarare/inti/db"
 	"strings"
 	"testing"
 	"time"
@@ -36,7 +37,7 @@ func TestSQLReinsurerTCO(t *testing.T) {
 	}
 	for _, q := range []string{d, s, p, sqlShareLainTCO("S.T"), sqlAmbilReinsurerTCO("S.T"),
 		sqlCariReinsurerMasterTCO("S.A"), sqlAmbilReinsurerMasterTCO("S.A"), sqlKunciKontrakTCO("S.K")} {
-		if err := PeriksaSQL(q); err != nil {
+		if err := db.PeriksaSQL(q); err != nil {
 			t.Errorf("PeriksaSQL: %v", err)
 		}
 	}

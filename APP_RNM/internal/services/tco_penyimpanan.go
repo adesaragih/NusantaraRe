@@ -33,6 +33,10 @@ import (
 	"time"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/layanan"
+	"nusantarare/inti/outbox"
+	"nusantarare/inti/unggah"
 )
 
 // kunciBerkasSah - kunci penyimpanan adalah heksa `IMAGEID`; apa pun selain
@@ -41,7 +45,7 @@ var kunciBerkasSah = regexp.MustCompile(`^[A-Za-z0-9]{8,64}$`)
 
 func periksaKunciBerkas(kunci string) error {
 	if !kunciBerkasSah.MatchString(kunci) {
-		return fmt.Errorf("%w: kunci berkas %q tidak berbentuk", ErrPermintaanTidakSah, kunci)
+		return fmt.Errorf("%w: kunci berkas %q tidak berbentuk", galat.ErrPermintaanTidakSah, kunci)
 	}
 	return nil
 }
@@ -56,10 +60,10 @@ type penyimpananLokalTCO struct{ folder string }
 // operasi gagal terang (`ErrUnggahanDirBelumDisetel`), bukan jatuh ke folder
 // kerja siapa pun.
 func PenyimpananLokalTCO(svc *Service) KlienPenyimpananTCO {
-	if svc.unggahanDir == "" {
+	if svc.UnggahanDir() == "" {
 		return penyimpananLokalTCO{}
 	}
-	return PenyimpananLokalDi(filepath.Join(svc.unggahanDir, folderModulTCO, "penyimpanan"))
+	return PenyimpananLokalDi(filepath.Join(svc.UnggahanDir(), folderModulTCO, "penyimpanan"))
 }
 
 // PenyimpananLokalDi menyusun stub lokal di folder tertentu - dipakai uji.
@@ -69,7 +73,7 @@ func PenyimpananLokalDi(folder string) KlienPenyimpananTCO {
 
 func (p penyimpananLokalTCO) jalur(kunci string) (string, error) {
 	if p.folder == "" {
-		return "", ErrUnggahanDirBelumDisetel
+		return "", unggah.ErrUnggahanDirBelumDisetel
 	}
 	if err := periksaKunciBerkas(kunci); err != nil {
 		return "", err
@@ -240,7 +244,7 @@ type PencatatObjekTCO interface {
 
 // PenyimpananJarakJauhTCO merangkai resolver, cache token, dan transport.
 type PenyimpananJarakJauhTCO struct {
-	resolver ResolverEndpoint
+	resolver layanan.ResolverEndpoint
 	token    *CacheTokenTCO
 	pengirim PengirimBerkasTCO
 	pencatat PencatatObjekTCO // nil = tanpa penyegaran (tanpa Oracle)
@@ -249,7 +253,7 @@ type PenyimpananJarakJauhTCO struct {
 
 // NewPenyimpananJarakJauhTCO menyusun rangkaiannya; `pengirim` nil berarti
 // penyambungan belum disetujui.
-func NewPenyimpananJarakJauhTCO(resolver ResolverEndpoint, token *CacheTokenTCO,
+func NewPenyimpananJarakJauhTCO(resolver layanan.ResolverEndpoint, token *CacheTokenTCO,
 	pengirim PengirimBerkasTCO) *PenyimpananJarakJauhTCO {
 	return &PenyimpananJarakJauhTCO{resolver: resolver, token: token, pengirim: pengirim}
 }
@@ -286,12 +290,12 @@ func (p *PenyimpananJarakJauhTCO) segarkan(ctx context.Context, o models.ObjekPe
 // ⛔ Setiap panggilan meresolve ulang: isi `M_LINK_SERVICE` yang diganti DBA
 // berlaku tanpa proses dijalankan ulang, dan alamat tidak pernah tersimpan di
 // medan struct ini.
-func (p *PenyimpananJarakJauhTCO) siapkan(ctx context.Context, kunci KunciLayanan) (string, string, error) {
+func (p *PenyimpananJarakJauhTCO) siapkan(ctx context.Context, kunci layanan.KunciLayanan) (string, string, error) {
 	if p.pengirim == nil {
-		return "", "", ErrPenyimpananBelumDisetujui
+		return "", "", outbox.ErrPenyimpananBelumDisetujui
 	}
 	if p.resolver == nil {
-		return "", "", ErrResolverBelumDiputuskan
+		return "", "", layanan.ErrResolverBelumDiputuskan
 	}
 	alamat, err := p.resolver.Resolve(ctx, kunci)
 	if err != nil {
@@ -309,7 +313,7 @@ func (p *PenyimpananJarakJauhTCO) siapkan(ctx context.Context, kunci KunciLayana
 
 // galatJarakJauh membungkus galat transport; token yang DITOLAK layanan
 // dilupakan supaya percobaan berikutnya menerbitkan yang baru.
-func (p *PenyimpananJarakJauhTCO) galatJarakJauh(kunci KunciLayanan, err error) error {
+func (p *PenyimpananJarakJauhTCO) galatJarakJauh(kunci layanan.KunciLayanan, err error) error {
 	if errors.Is(err, ErrStorageTokenDitolakTCO) && p.token != nil {
 		p.token.Lupakan()
 	}
@@ -319,20 +323,20 @@ func (p *PenyimpananJarakJauhTCO) galatJarakJauh(kunci KunciLayanan, err error) 
 
 // Simpan - kunci `("Google", "upload")`.
 func (p *PenyimpananJarakJauhTCO) Simpan(ctx context.Context, kunci string, isi io.Reader, mime, ekstensi string) (models.ObjekPenyimpananTCO, error) {
-	alamat, tok, err := p.siapkan(ctx, KunciUnggahBerkas)
+	alamat, tok, err := p.siapkan(ctx, layanan.KunciUnggahBerkas)
 	if err != nil {
 		return models.ObjekPenyimpananTCO{}, err
 	}
 	o, err := p.pengirim.Kirim(ctx, alamat, tok, kunci, isi, mime, ekstensi)
 	if err != nil {
-		return models.ObjekPenyimpananTCO{}, p.galatJarakJauh(KunciUnggahBerkas, err)
+		return models.ObjekPenyimpananTCO{}, p.galatJarakJauh(layanan.KunciUnggahBerkas, err)
 	}
 	return o, nil
 }
 
 // Buka - kunci `("Google", "geturl")`.
 func (p *PenyimpananJarakJauhTCO) Buka(ctx context.Context, kunci string) (io.ReadCloser, error) {
-	alamat, tok, err := p.siapkan(ctx, KunciURLBerkas)
+	alamat, tok, err := p.siapkan(ctx, layanan.KunciURLBerkas)
 	if err != nil {
 		return nil, err
 	}
@@ -341,7 +345,7 @@ func (p *PenyimpananJarakJauhTCO) Buka(ctx context.Context, kunci string) (io.Re
 		if errors.Is(err, ErrBerkasTidakAdaDiPenyimpanan) {
 			return nil, err
 		}
-		return nil, p.galatJarakJauh(KunciURLBerkas, err)
+		return nil, p.galatJarakJauh(layanan.KunciURLBerkas, err)
 	}
 	p.segarkan(ctx, objek)
 	return rc, nil
@@ -360,25 +364,25 @@ func (p *PenyimpananJarakJauhTCO) Hapus(ctx context.Context, kunci string) error
 	if !ada {
 		return ErrBerkasTidakAdaDiPenyimpanan
 	}
-	alamat, tok, err := p.siapkan(ctx, KunciHapusBerkas)
+	alamat, tok, err := p.siapkan(ctx, layanan.KunciHapusBerkas)
 	if err != nil {
 		return err
 	}
 	if err := p.pengirim.Buang(ctx, alamat, tok, kunci); err != nil {
-		return p.galatJarakJauh(KunciHapusBerkas, err)
+		return p.galatJarakJauh(layanan.KunciHapusBerkas, err)
 	}
 	return nil
 }
 
 // Ada - kunci `("Google", "geturl")`.
 func (p *PenyimpananJarakJauhTCO) Ada(ctx context.Context, kunci string) (bool, error) {
-	alamat, tok, err := p.siapkan(ctx, KunciURLBerkas)
+	alamat, tok, err := p.siapkan(ctx, layanan.KunciURLBerkas)
 	if err != nil {
 		return false, err
 	}
 	ada, objek, err := p.pengirim.Periksa(ctx, alamat, tok, kunci)
 	if err != nil {
-		return false, p.galatJarakJauh(KunciURLBerkas, err)
+		return false, p.galatJarakJauh(layanan.KunciURLBerkas, err)
 	}
 	if ada {
 		p.segarkan(ctx, objek)

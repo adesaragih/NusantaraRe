@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/db"
 )
 
 // AC 44 + AC 63/64: kaskade tidak MENGHAPUS klausul, dan hanya menyentuh
@@ -33,7 +34,7 @@ func TestKaskadeTidakMenghapusKlausul(t *testing.T) {
 		if strings.Contains(q, "S.P") {
 			t.Errorf("kaskade menghapus klausul: %s", q)
 		}
-		if err := PeriksaSQL(q); err != nil {
+		if err := db.PeriksaSQL(q); err != nil {
 			t.Errorf("%v: %s", err, q)
 		}
 	}
@@ -58,7 +59,7 @@ func TestKaskadeSaringanSamaDanTahanNull(t *testing.T) {
 			t.Errorf("saringan berbeda:\n%s\n%s", h, d)
 		}
 	}
-	if err := PeriksaSQL(sqlHitungTCO("S.P", saringKlausulTetapTCO)); err != nil {
+	if err := db.PeriksaSQL(sqlHitungTCO("S.P", saringKlausulTetapTCO)); err != nil {
 		t.Error(err)
 	}
 }
@@ -99,14 +100,14 @@ func TestLangkahHapusKontrakSepertiPegaWalauBersama(t *testing.T) {
 	if strings.Join(tabel, ",") != "S.K,S.B,S.S,S.R" {
 		t.Errorf("langkah bersama: %v", tabel)
 	}
-	if err := PeriksaSQL(sqlKontrakBersamaTCO("S.K", "S.Y")); err != nil {
+	if err := db.PeriksaSQL(sqlKontrakBersamaTCO("S.K", "S.Y")); err != nil {
 		t.Error(err)
 	}
 }
 
 // Temuan /code-review: anti-dobel tahun dan kontrak dikunci.
 func TestAntiDobelTahunDanKontrakDikunci(t *testing.T) {
-	if q := sqlKunciTabelTahunTCO("S.Y"); q != "LOCK TABLE S.Y IN EXCLUSIVE MODE" || PeriksaSQL(q) != nil {
+	if q := sqlKunciTabelTahunTCO("S.Y"); q != "LOCK TABLE S.Y IN EXCLUSIVE MODE" || db.PeriksaSQL(q) != nil {
 		t.Errorf("kunci tabel tahun: %s", q)
 	}
 	isi, _ := os.ReadFile("tco_kontrak.go")
@@ -114,7 +115,7 @@ func TestAntiDobelTahunDanKontrakDikunci(t *testing.T) {
 		t.Error("CariDobel kontrak tidak mengunci tahun induk")
 	}
 	q := sqlJumlahAnakTahunTCO("S.K", "S.P", "S.A", "S.Y")
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		t.Error(err)
 	}
 	// tco4 (temuan /code-review): lampiran ikut dihitung - TREATYID = TREATYYEAR || ID.
@@ -132,7 +133,7 @@ func TestKlausulMilikKontrakDariInduknya(t *testing.T) {
 	if strings.Contains(saringKlausulTetapTCO, "'00'") {
 		t.Error("sentinel induk ditanam di SQL; harus di-bind")
 	}
-	if err := PeriksaSQL(sqlHitungTCO("S.P", saringKlausulTetapTCO)); err != nil {
+	if err := db.PeriksaSQL(sqlHitungTCO("S.P", saringKlausulTetapTCO)); err != nil {
 		t.Error(err)
 	}
 }

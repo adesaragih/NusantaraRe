@@ -21,21 +21,25 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/jejak"
 )
 
 // KasusPolis adalah layanan pembuat kasus polis.
 type KasusPolis struct {
 	svc   *Service
-	jejak Jejak
+	jejak jejak.Jejak
 }
 
 // KasusPolis menyusun layanannya dengan jejak bawaan yang gagal terang.
 func (s *Service) KasusPolis() *KasusPolis {
-	return &KasusPolis{svc: s, jejak: JejakBelumDiputuskan{}}
+	return &KasusPolis{svc: s, jejak: jejak.JejakBelumDiputuskan{}}
 }
 
 // DenganJejak mengganti perekamnya.
-func (k *KasusPolis) DenganJejak(j Jejak) *KasusPolis {
+func (k *KasusPolis) DenganJejak(j jejak.Jejak) *KasusPolis {
 	salin := *k
 	salin.jejak = j
 	return &salin
@@ -56,22 +60,22 @@ var namaTombolFlag = map[string]string{
 }
 
 // Buat melahirkan satu kasus polis.
-func (k *KasusPolis) Buat(ctx context.Context, pelaku Pelaku, flag string,
+func (k *KasusPolis) Buat(ctx context.Context, pelaku inti.Pelaku, flag string,
 	saat time.Time) (HasilKasusPolisBaru, error) {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return HasilKasusPolisBaru{}, err
 	}
 	awal, err := models.SusunKasusPolisBaru(flag)
 	if err != nil {
-		return HasilKasusPolisBaru{}, fmt.Errorf("%w: %w", ErrPermintaanTidakSah, err)
+		return HasilKasusPolisBaru{}, fmt.Errorf("%w: %w", galat.ErrPermintaanTidakSah, err)
 	}
 	if k == nil || k.svc == nil || !k.svc.PunyaDatabase() {
-		return HasilKasusPolisBaru{}, repository.ErrTanpaOracle
+		return HasilKasusPolisBaru{}, db.ErrTanpaOracle
 	}
-	kerja := repository.NewWorkPolis(k.svc.db)
+	kerja := repository.NewWorkPolis(k.svc.DB())
 	var id string
-	err = k.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	err = k.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		var err error
 		if id, err = kerja.PengenalBerikut(ctx, tx); err != nil {
 			return err
@@ -82,7 +86,7 @@ func (k *KasusPolis) Buat(ctx context.Context, pelaku Pelaku, flag string,
 		// ⛔ Kelahiran kasus ikut terekam (ADR-0007): tanpa baris ini jejak
 		// polis dimulai dari perpindahan pertamanya, dan siapa yang membuatnya
 		// tidak tercatat di mana pun.
-		return k.jejak.Rekam(ctx, tx, CatatanJejak{
+		return k.jejak.Rekam(ctx, tx, jejak.CatatanJejak{
 			KlaimID: id,
 			Dari:    "",
 			Ke:      awal.Status + " (" + namaTombolFlag[flag] + ")",

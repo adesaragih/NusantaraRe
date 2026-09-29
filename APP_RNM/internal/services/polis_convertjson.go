@@ -40,6 +40,11 @@ import (
 	"time"
 
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/layanan"
+	"nusantarare/inti/outbox"
 )
 
 // ParameterConvertJsonPolis - ketiga parameter REST, nama VERBATIM (b200,
@@ -55,7 +60,7 @@ type ParameterConvertJsonPolis struct {
 func RakitParameterConvertJson(caseID, noPolis string, saat time.Time) (ParameterConvertJsonPolis, error) {
 	if strings.TrimSpace(caseID) == "" || strings.TrimSpace(noPolis) == "" {
 		return ParameterConvertJsonPolis{}, fmt.Errorf(
-			"%w: caseId dan noPolis wajib ada untuk convertJsonNusareToProduction", ErrPermintaanTidakSah)
+			"%w: caseId dan noPolis wajib ada untuk convertJsonNusareToProduction", galat.ErrPermintaanTidakSah)
 	}
 	return ParameterConvertJsonPolis{
 		NoPolis:  strings.TrimSpace(noPolis),
@@ -72,33 +77,33 @@ type PembacaNomorPolis interface {
 
 // PelaksanaPremiumList menjalankan baris outbox PremiumList Life - STUB.
 type PelaksanaPremiumList struct {
-	Lingkungan Lingkungan
-	Resolver   ResolverEndpoint
+	Lingkungan inti.Lingkungan
+	Resolver   layanan.ResolverEndpoint
 	Pembaca    PembacaNomorPolis
 }
 
 // Laksanakan memenuhi `PelaksanaEfek`.
-func (p PelaksanaPremiumList) Laksanakan(ctx context.Context, _ *repository.Tx,
-	b repository.BarisEfekKeluar) error {
+func (p PelaksanaPremiumList) Laksanakan(ctx context.Context, _ *db.Tx,
+	b outbox.BarisEfekKeluar) error {
 
 	if b.Modul != ModulPremiumListLife {
-		return fmt.Errorf("%w: pelaksana PremiumList menerima baris modul %q", ErrPermintaanTidakSah, b.Modul)
+		return fmt.Errorf("%w: pelaksana PremiumList menerima baris modul %q", galat.ErrPermintaanTidakSah, b.Modul)
 	}
-	var m muatanOutbox
+	var m outbox.MuatanOutbox
 	if err := json.Unmarshal([]byte(b.Muatan), &m); err != nil {
-		return fmt.Errorf("%w: muatan outbox PremiumList tak terbaca: %v", ErrPermintaanTidakSah, err)
+		return fmt.Errorf("%w: muatan outbox PremiumList tak terbaca: %v", galat.ErrPermintaanTidakSah, err)
 	}
 	switch b.Jenis {
 	case NamaEfekArasapasPolis:
 	case NamaEfekAlarmPolis:
-		return EfekAlarmEmailPolis{}.Jalankan(ctx, MuatanEfek{KlaimID: m.KlaimID})
+		return EfekAlarmEmailPolis{}.Jalankan(ctx, outbox.MuatanEfek{KlaimID: m.KlaimID})
 	default:
-		return fmt.Errorf("%w: jenis efek PremiumList %q", ErrPermintaanTidakSah, b.Jenis)
+		return fmt.Errorf("%w: jenis efek PremiumList %q", galat.ErrPermintaanTidakSah, b.Jenis)
 	}
 	if !p.Lingkungan.AdalahProduksi() {
 		// Seperti pengirim Komite: nol panggilan keluar di luar produksi, dan
 		// catatannya jujur - gagal bersebab, bukan `selesai`.
-		return ErrPengirimStubNonProduksi
+		return outbox.ErrPengirimStubNonProduksi
 	}
 	if p.Pembaca == nil {
 		return errors.New("services: pelaksana PremiumList tanpa pembaca nomor polis")
@@ -109,24 +114,24 @@ func (p PelaksanaPremiumList) Laksanakan(ctx context.Context, _ *repository.Tx,
 	}
 	saat, err := time.Parse(time.RFC3339, m.Waktu)
 	if err != nil {
-		return fmt.Errorf("%w: waktu muatan outbox %q", ErrPermintaanTidakSah, m.Waktu)
+		return fmt.Errorf("%w: waktu muatan outbox %q", galat.ErrPermintaanTidakSah, m.Waktu)
 	}
 	if _, err := RakitParameterConvertJson(m.KlaimID, noPolis, saat); err != nil {
 		return err
 	}
 	if p.Resolver == nil {
-		return ErrResolverBelumDiputuskan
+		return layanan.ErrResolverBelumDiputuskan
 	}
-	if _, err := AlamatLayanan(ctx, p.Resolver, KunciArasapasPremiumList); err != nil {
+	if _, err := layanan.AlamatLayanan(ctx, p.Resolver, KunciArasapasPremiumList); err != nil {
 		return err
 	}
-	return ErrArasapasBelumDisetujui
+	return outbox.ErrArasapasBelumDisetujui
 }
 
 // PelaksanaPremiumListOracle menyusun pelaksana dengan resolver dan pembaca
 // Oracle. ⚠️ Belum ada pekerja yang memanggilnya (sama dengan modul lain:
 // tidak ada penjadwal outbox di `cmd/api`).
 func PelaksanaPremiumListOracle(svc *Service) PelaksanaPremiumList {
-	return PelaksanaPremiumList{Lingkungan: svc.lingkungan, Resolver: ResolverLinkServiceOracle(svc),
-		Pembaca: repository.NewRingkasPolisLife(svc.db)}
+	return PelaksanaPremiumList{Lingkungan: svc.Lingkungan(), Resolver: layanan.ResolverLinkServiceOracle(svc),
+		Pembaca: repository.NewRingkasPolisLife(svc.DB())}
 }

@@ -12,8 +12,11 @@ import (
 	"testing"
 	"time"
 
-	"nusantarare/internal/repository"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/layanan"
+	"nusantarare/inti/outbox"
 )
 
 func TestParameterConvertJsonVerbatim(t *testing.T) {
@@ -54,39 +57,39 @@ func (p *pembacaNoPolisUji) NomorPolisDariID(_ context.Context, id string) (stri
 
 type resolverUjiConvert struct{}
 
-func (resolverUjiConvert) Resolve(context.Context, services.KunciLayanan) (string, error) {
+func (resolverUjiConvert) Resolve(context.Context, layanan.KunciLayanan) (string, error) {
 	return "alamat-uji", nil
 }
 
-func barisPolis(jenis string) repository.BarisEfekKeluar {
-	return repository.BarisEfekKeluar{ID: "1", Modul: services.ModulPremiumListLife, Jenis: jenis,
+func barisPolis(jenis string) outbox.BarisEfekKeluar {
+	return outbox.BarisEfekKeluar{ID: "1", Modul: services.ModulPremiumListLife, Jenis: jenis,
 		Muatan: `{"klaim_id":"UJI-POLIS-1","adjustment_id":"","akun_id":"UJI-AKUN","waktu":"2026-09-29T10:00:00Z"}`}
 }
 
 func TestPelaksanaPremiumListStub(t *testing.T) {
 	ctx := context.Background()
 	baca := &pembacaNoPolisUji{}
-	p := services.PelaksanaPremiumList{Lingkungan: services.Produksi, Resolver: resolverUjiConvert{}, Pembaca: baca}
-	if err := p.Laksanakan(ctx, nil, barisPolis(services.NamaEfekArasapasPolis)); !errors.Is(err, services.ErrArasapasBelumDisetujui) {
+	p := services.PelaksanaPremiumList{Lingkungan: inti.Produksi, Resolver: resolverUjiConvert{}, Pembaca: baca}
+	if err := p.Laksanakan(ctx, nil, barisPolis(services.NamaEfekArasapasPolis)); !errors.Is(err, outbox.ErrArasapasBelumDisetujui) {
 		t.Errorf("produksi: %v, mau ErrArasapasBelumDisetujui (stub, OQ-PL-11)", err)
 	}
 	if len(baca.diminta) != 1 || baca.diminta[0] != "UJI-POLIS-1" {
 		t.Errorf("parameter noPolis tidak dirakit dari polis: %v", baca.diminta)
 	}
-	if err := p.Laksanakan(ctx, nil, barisPolis(services.NamaEfekAlarmPolis)); !errors.Is(err, services.ErrEmailBelumDisetujui) {
+	if err := p.Laksanakan(ctx, nil, barisPolis(services.NamaEfekAlarmPolis)); !errors.Is(err, outbox.ErrEmailBelumDisetujui) {
 		t.Errorf("alarm: %v, mau ErrEmailBelumDisetujui", err)
 	}
-	nonProd := services.PelaksanaPremiumList{Lingkungan: services.BukanProduksi, Resolver: resolverUjiConvert{}, Pembaca: baca}
-	if err := nonProd.Laksanakan(ctx, nil, barisPolis(services.NamaEfekArasapasPolis)); !errors.Is(err, services.ErrPengirimStubNonProduksi) {
+	nonProd := services.PelaksanaPremiumList{Lingkungan: inti.BukanProduksi, Resolver: resolverUjiConvert{}, Pembaca: baca}
+	if err := nonProd.Laksanakan(ctx, nil, barisPolis(services.NamaEfekArasapasPolis)); !errors.Is(err, outbox.ErrPengirimStubNonProduksi) {
 		t.Errorf("non-produksi: %v, mau ErrPengirimStubNonProduksi", err)
 	}
 	salah := barisPolis(services.NamaEfekArasapasPolis)
 	salah.Modul = services.ModulClaimLife
-	if err := p.Laksanakan(ctx, nil, salah); !errors.Is(err, services.ErrPermintaanTidakSah) {
+	if err := p.Laksanakan(ctx, nil, salah); !errors.Is(err, galat.ErrPermintaanTidakSah) {
 		t.Errorf("modul lain: %v, mau ErrPermintaanTidakSah", err)
 	}
 	asing := barisPolis("asing")
-	if err := p.Laksanakan(ctx, nil, asing); !errors.Is(err, services.ErrPermintaanTidakSah) {
+	if err := p.Laksanakan(ctx, nil, asing); !errors.Is(err, galat.ErrPermintaanTidakSah) {
 		t.Errorf("jenis asing: %v, mau ErrPermintaanTidakSah", err)
 	}
 }

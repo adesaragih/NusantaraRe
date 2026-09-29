@@ -26,7 +26,8 @@ import (
 	"fmt"
 	"strings"
 
-	"nusantarare/internal/models"
+	"nusantarare/inti/db"
+	"nusantarare/inti/penomor"
 )
 
 // jenisNilai membedakan cara sebuah nilai menyeberang ke tabel warisan.
@@ -199,7 +200,7 @@ var kolomNolBilaKosongWarisan = map[string]bool{
 // korpus (keluarga OQ-020); yang disalin hanya pemetaannya.
 func StatusSalinWarisan(tipe string) string {
 	switch tipe {
-	case models.TipePLQuotationRealisasi, models.TipePLQuotationProposal:
+	case penomor.TipePLQuotationRealisasi, penomor.TipePLQuotationProposal:
 		return "0"
 	}
 	return "1"
@@ -276,10 +277,10 @@ func nilaiSalinWarisan(nomorPL, idPega string, b BarisWarisan) []any {
 }
 
 // PesertaWarisan menulis salinan peserta ke tabel warisan.
-type PesertaWarisan struct{ db *DB }
+type PesertaWarisan struct{ db *db.DB }
 
 // NewPesertaWarisan menyusunnya.
-func NewPesertaWarisan(db *DB) *PesertaWarisan { return &PesertaWarisan{db: db} }
+func NewPesertaWarisan(db *db.DB) *PesertaWarisan { return &PesertaWarisan{db: db} }
 
 // Ganti menghapus salinan lama milik work yang sama lalu menyisipkan yang baru.
 //
@@ -293,7 +294,7 @@ func NewPesertaWarisan(db *DB) *PesertaWarisan { return &PesertaWarisan{db: db} 
 // `IDPEGA = NULL` tidak pernah benar dan salinan lama tidak pernah terhapus.
 //
 // Mengembalikan cacah baris terhapus dan tersisip.
-func (r *PesertaWarisan) Ganti(ctx context.Context, tx *Tx, nomorPL, idPega string,
+func (r *PesertaWarisan) Ganti(ctx context.Context, tx *db.Tx, nomorPL, idPega string,
 	baris []BarisWarisan) (dihapus, disisip int, err error) {
 
 	if strings.TrimSpace(nomorPL) == "" {
@@ -314,10 +315,10 @@ func (r *PesertaWarisan) Ganti(ctx context.Context, tx *Tx, nomorPL, idPega stri
 		return 0, 0, err
 	}
 	hapus := sqlHapusPesertaWarisan(tabel)
-	if err := PeriksaSQL(hapus); err != nil {
+	if err := db.PeriksaSQL(hapus); err != nil {
 		return 0, 0, err
 	}
-	h, err := tx.tx.ExecContext(ctx, hapus, nomorPL, idPega)
+	h, err := tx.ExecContext(ctx, hapus, nomorPL, idPega)
 	if err != nil {
 		return 0, 0, fmt.Errorf("repository: menghapus salinan peserta warisan: %w", err)
 	}
@@ -327,10 +328,10 @@ func (r *PesertaWarisan) Ganti(ctx context.Context, tx *Tx, nomorPL, idPega stri
 	}
 
 	sisip := sqlSisipPesertaWarisan(tabel, urutan)
-	if err := PeriksaSQL(sisip); err != nil {
+	if err := db.PeriksaSQL(sisip); err != nil {
 		return 0, 0, err
 	}
-	stmt, err := tx.tx.PrepareContext(ctx, sisip)
+	stmt, err := tx.PrepareContext(ctx, sisip)
 	if err != nil {
 		return 0, 0, fmt.Errorf("repository: menyiapkan salinan peserta warisan: %w", err)
 	}

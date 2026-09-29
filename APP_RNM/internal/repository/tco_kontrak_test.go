@@ -3,6 +3,8 @@ package repository
 import (
 	"strings"
 	"testing"
+
+	"nusantarare/inti/db"
 )
 
 // Kolom VERBATIM `PEGA_TREATYCONTRACT` (8 parameter), urut ID DESC, dibatasi tahun.
@@ -35,7 +37,7 @@ func TestSQLKontrakTCO(t *testing.T) {
 		}
 	}
 	for _, q := range []string{d, sqlAmbilKontrakTCO("S.T"), p, c} {
-		if err := PeriksaSQL(q); err != nil {
+		if err := db.PeriksaSQL(q); err != nil {
 			t.Errorf("PeriksaSQL: %v", err)
 		}
 	}

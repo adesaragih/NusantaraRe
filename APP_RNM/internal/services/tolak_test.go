@@ -11,12 +11,14 @@ import (
 	"testing"
 
 	"nusantarare/internal/models"
-	"nusantarare/internal/repository"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
 )
 
-func pelakuAdmin() services.Pelaku {
-	return services.Pelaku{AkunID: "UJI-AKUN", Peran: []string{services.PeranRejectOutstanding}}
+func pelakuAdmin() inti.Pelaku {
+	return inti.Pelaku{AkunID: "UJI-AKUN", Peran: []string{services.PeranRejectOutstanding}}
 }
 
 // TestTolakMenuntutPeranAdmin - `[terverifikasi]` gerbang XML
@@ -33,27 +35,27 @@ func TestTolakMenuntutPeranAdmin(t *testing.T) {
 	// Tanpa identitas sama sekali - 401, bukan 403. Ronde pertama menjawab
 	// "bukan ReasLifeAdmin" kepada pemanggil yang sebenarnya belum menyebut
 	// dirinya; kedua pertanyaan itu berbeda.
-	err := svc.Status().Tolak(ctx, services.Pelaku{
+	err := svc.Status().Tolak(ctx, inti.Pelaku{
 		Peran: []string{services.PeranRejectOutstanding}}, "CLM-1", "A-1", alasanUji, saatUji)
-	if !errors.Is(err, services.ErrTanpaIdentitas) {
+	if !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("tanpa identitas: galat = %v, mau ErrTanpaIdentitas", err)
 	}
 	// Beridentitas, tanpa peran sama sekali.
-	err = svc.Status().Tolak(ctx, services.Pelaku{AkunID: "UJI-AKUN"},
+	err = svc.Status().Tolak(ctx, inti.Pelaku{AkunID: "UJI-AKUN"},
 		"CLM-1", "A-1", alasanUji, saatUji)
-	if !errors.Is(err, services.ErrTanpaWewenang) {
+	if !errors.Is(err, inti.ErrTanpaWewenang) {
 		t.Errorf("tanpa peran: galat = %v, mau ErrTanpaWewenang", err)
 	}
 	// Peran lain - SPV boleh menyimpan ke Outstanding, tetapi tidak menolak.
-	err = svc.Status().Tolak(ctx, services.Pelaku{
+	err = svc.Status().Tolak(ctx, inti.Pelaku{
 		AkunID: "UJI-AKUN", Peran: []string{services.PeranSimpanOutstanding}},
 		"CLM-1", "A-1", alasanUji, saatUji)
-	if !errors.Is(err, services.ErrTanpaWewenang) {
+	if !errors.Is(err, inti.ErrTanpaWewenang) {
 		t.Errorf("peran SPV: galat = %v, mau ErrTanpaWewenang", err)
 	}
 	// Dengan peran yang benar, ia lolos gerbang peran dan berhenti di Oracle.
 	err = svc.Status().Tolak(ctx, pelakuAdmin(), "CLM-1", "A-1", alasanUji, saatUji)
-	if !errors.Is(err, repository.ErrTanpaOracle) {
+	if !errors.Is(err, db.ErrTanpaOracle) {
 		t.Errorf("peran Admin: galat = %v, mau ErrTanpaOracle", err)
 	}
 }
@@ -65,7 +67,7 @@ func TestTolakMenuntutPengenal(t *testing.T) {
 		{"", "A-1"}, {"CLM-1", ""}, {"  ", "  "},
 	} {
 		err := svc.Status().Tolak(context.Background(), pelakuAdmin(), k.klaim, k.adj, alasanUji, saatUji)
-		if !errors.Is(err, services.ErrPermintaanTidakSah) {
+		if !errors.Is(err, galat.ErrPermintaanTidakSah) {
 			t.Errorf("klaim %q adj %q: galat = %v, mau ErrPermintaanTidakSah",
 				k.klaim, k.adj, err)
 		}
@@ -125,13 +127,13 @@ func TestTolakMenuntutAlasan(t *testing.T) {
 	svc := services.New(nil)
 	for _, alasan := range []string{"", "   ", strings.Repeat("x", services.BatasKomentarJejak+1)} {
 		err := svc.Status().Tolak(context.Background(), pelakuAdmin(), "CLM-1", "A-1", alasan, saatUji)
-		if !errors.Is(err, services.ErrPermintaanTidakSah) {
+		if !errors.Is(err, galat.ErrPermintaanTidakSah) {
 			t.Errorf("alasan %d karakter: galat = %v, mau ErrPermintaanTidakSah", len(alasan), err)
 		}
 	}
 	err := svc.Status().Tolak(context.Background(), pelakuAdmin(), "CLM-1", "A-1",
 		strings.Repeat("x", services.BatasKomentarJejak), saatUji)
-	if !errors.Is(err, repository.ErrTanpaOracle) {
+	if !errors.Is(err, db.ErrTanpaOracle) {
 		t.Errorf("alasan tepat di batas: galat = %v, mau ErrTanpaOracle", err)
 	}
 }

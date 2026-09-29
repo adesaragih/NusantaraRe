@@ -11,12 +11,14 @@ import (
 	"testing"
 
 	"nusantarare/internal/models"
-	"nusantarare/internal/repository"
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
 )
 
-func pelakuHapus() services.Pelaku {
-	return services.Pelaku{AkunID: "UJI-AKUN", Peran: []string{services.PeranHapusKlaim}}
+func pelakuHapus() inti.Pelaku {
+	return inti.Pelaku{AkunID: "UJI-AKUN", Peran: []string{services.PeranHapusKlaim}}
 }
 
 // TestDampakMenghitungTiapJenisTerpisah - satu angka total menyembunyikan
@@ -57,17 +59,17 @@ func TestDampakMenghitungTiapJenisTerpisah(t *testing.T) {
 func TestHapusMenuntutPeranDanIdentitas(t *testing.T) {
 	svc := services.New(nil)
 	ctx := context.Background()
-	if _, err := svc.Penghapusan().Hapus(ctx, services.Pelaku{
+	if _, err := svc.Penghapusan().Hapus(ctx, inti.Pelaku{
 		Peran: []string{services.PeranHapusKlaim}}, "CLM-1"); !errors.Is(
-		err, services.ErrTanpaIdentitas) {
+		err, inti.ErrTanpaIdentitas) {
 		t.Errorf("tanpa identitas: galat = %v, mau ErrTanpaIdentitas", err)
 	}
 	if _, err := svc.Penghapusan().Hapus(ctx,
-		services.Pelaku{AkunID: "UJI-AKUN"}, "CLM-1"); !errors.Is(
-		err, services.ErrTanpaWewenang) {
+		inti.Pelaku{AkunID: "UJI-AKUN"}, "CLM-1"); !errors.Is(
+		err, inti.ErrTanpaWewenang) {
 		t.Errorf("tanpa peran: galat = %v, mau ErrTanpaWewenang", err)
 	}
-	if _, err := svc.Penghapusan().Hapus(ctx, pelakuHapus(), "CLM-1"); !errors.Is(err, repository.ErrTanpaOracle) {
+	if _, err := svc.Penghapusan().Hapus(ctx, pelakuHapus(), "CLM-1"); !errors.Is(err, db.ErrTanpaOracle) {
 		t.Errorf("tanpa Oracle: galat = %v, mau ErrTanpaOracle", err)
 	}
 }
@@ -77,13 +79,13 @@ func TestHapusMenuntutPeranDanIdentitas(t *testing.T) {
 func TestDampakTidakMenulis(t *testing.T) {
 	svc := services.New(nil)
 	_, err := svc.Penghapusan().Dampak(context.Background(), pelakuHapus(), "CLM-1")
-	if !errors.Is(err, repository.ErrTanpaOracle) {
+	if !errors.Is(err, db.ErrTanpaOracle) {
 		t.Fatalf("galat = %v, mau ErrTanpaOracle", err)
 	}
 	// Pengenal kosong ditolak sebelum menyentuh apa pun.
 	if _, err := svc.Penghapusan().Dampak(
 		context.Background(), pelakuHapus(), "  "); !errors.Is(
-		err, services.ErrPermintaanTidakSah) {
+		err, galat.ErrPermintaanTidakSah) {
 		t.Errorf("pengenal kosong: galat = %v, mau ErrPermintaanTidakSah", err)
 	}
 }

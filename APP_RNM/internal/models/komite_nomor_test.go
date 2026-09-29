@@ -5,6 +5,8 @@ package models
 import (
 	"errors"
 	"testing"
+
+	"nusantarare/inti/penomor"
 )
 
 // TestNomorAkseptasiKomiteDariLiteral - langkah 4.11 / 4.12.
@@ -37,13 +39,13 @@ func TestSatuPenghitungUntukKeduaCabang(t *testing.T) {
 
 // TestBahanKosongDitolak - nomor tanpa satu bagiannya tetap tampak sah.
 func TestBahanKosongDitolak(t *testing.T) {
-	if _, err := NomorAkseptasiKomite("", "QR", "L01", "09.2026", 1); !errors.Is(err, ErrAwalanProduksiKosong) {
+	if _, err := NomorAkseptasiKomite("", "QR", "L01", "09.2026", 1); !errors.Is(err, penomor.ErrAwalanProduksiKosong) {
 		t.Errorf("awalan kosong: %v", err)
 	}
-	if _, err := NomorAkseptasiKomite("RNML-", "FAC", "L01", "09.2026", 1); !errors.Is(err, ErrTipePLTanpaCabang) {
+	if _, err := NomorAkseptasiKomite("RNML-", "FAC", "L01", "09.2026", 1); !errors.Is(err, penomor.ErrTipePLTanpaCabang) {
 		t.Errorf("tipe asing: %v", err)
 	}
-	if _, err := NomorAkseptasiKomite("RNML-", "QR", " ", "09.2026", 1); !errors.Is(err, ErrKodeBisnisKosong) {
+	if _, err := NomorAkseptasiKomite("RNML-", "QR", " ", "09.2026", 1); !errors.Is(err, penomor.ErrKodeBisnisKosong) {
 		t.Errorf("kode bisnis kosong: %v", err)
 	}
 	if _, err := NomorAkseptasiKomite("RNML-", "QR", "L01", "9.26", 1); err == nil {

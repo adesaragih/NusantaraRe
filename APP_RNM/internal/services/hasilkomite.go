@@ -26,6 +26,10 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/jejak"
 )
 
 // ErrBukanPenolakan - putaran baru lahir dari penolakan, bukan dari apa pun.
@@ -127,7 +131,7 @@ func pesertaMilikKlaim(ctx context.Context, baca *repository.KlaimLife,
 		}
 	}
 	return fmt.Errorf("%w: peserta %q bukan milik klaim %q",
-		ErrPermintaanTidakSah, pesertaID, klaimID)
+		galat.ErrPermintaanTidakSah, pesertaID, klaimID)
 }
 
 // barisTerakhirPeserta mengembalikan SALINAN baris paling akhir.
@@ -148,16 +152,16 @@ func barisTerakhirPeserta(p models.Peserta) (models.BarisAdjustment, bool) {
 // Putaran membuka putaran adjustment berikutnya.
 type Putaran struct {
 	svc   *Service
-	jejak Jejak
+	jejak jejak.Jejak
 }
 
 // Putaran menyusun layanan itu dengan ketergantungan yang gagal terang.
 func (s *Service) Putaran() *Putaran {
-	return &Putaran{svc: s, jejak: JejakBelumDiputuskan{}}
+	return &Putaran{svc: s, jejak: jejak.JejakBelumDiputuskan{}}
 }
 
 // DenganJejak mengganti perekam jejaknya.
-func (pt *Putaran) DenganJejak(j Jejak) *Putaran {
+func (pt *Putaran) DenganJejak(j jejak.Jejak) *Putaran {
 	salin := *pt
 	salin.jejak = j
 	return &salin
@@ -178,23 +182,23 @@ func (pt *Putaran) DenganJejak(j Jejak) *Putaran {
 // Outstanding; keputusan atas baris lama tetap milik Komite dan tidak
 // disentuh. Penjaga statik tiket 11 memastikan berkas ini tidak pernah
 // memanggil penulis status.
-func (pt *Putaran) Tambah(ctx context.Context, pelaku Pelaku,
+func (pt *Putaran) Tambah(ctx context.Context, pelaku inti.Pelaku,
 	klaimID, pesertaID string, saat time.Time) error {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return err
 	}
 	// Menambah baris lanjutan adalah menyimpan ke Outstanding - perannya sama
 	// dengan penyimpanan Outstanding, bukan peran penolak.
-	if err := WajibPeran(pelaku, PeranSimpanOutstanding); err != nil {
+	if err := inti.WajibPeran(pelaku, PeranSimpanOutstanding); err != nil {
 		return err
 	}
 	if strings.TrimSpace(klaimID) == "" || strings.TrimSpace(pesertaID) == "" {
 		return fmt.Errorf("%w: pengenal klaim dan peserta wajib diisi",
-			ErrPermintaanTidakSah)
+			galat.ErrPermintaanTidakSah)
 	}
 	if !pt.svc.PunyaDatabase() {
-		return repository.ErrTanpaOracle
+		return db.ErrTanpaOracle
 	}
 
 	// ⛔ BUTIR bb: kasus yang sudah ditutup tidak dapat diubah lagi.
@@ -206,7 +210,7 @@ func (pt *Putaran) Tambah(ctx context.Context, pelaku Pelaku,
 		return err
 	}
 
-	baca := repository.NewKlaimLife(pt.svc.db)
+	baca := repository.NewKlaimLife(pt.svc.DB())
 	// ⛔ GERBANG TAHAP - GILIRAN-14 (tinjauan): "Add tetap = putaran
 	// bergerbang ReasLifeSPV b18160". `pyPosition=='ReasLifeSPV'` berarti kasus
 	// dipegang SPV - tahap Claim Analis. Sebelumnya gerbang ini hanya di layar;
@@ -239,8 +243,8 @@ func (pt *Putaran) Tambah(ctx context.Context, pelaku Pelaku,
 		return err
 	}
 
-	pohon := repository.NewPohonKlaim(pt.svc.db)
-	return pt.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	pohon := repository.NewPohonKlaim(pt.svc.DB())
+	return pt.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		id, err := pohon.SisipkanBaris(ctx, tx, pesertaID, baru)
 		if err != nil {
 			return err
@@ -284,7 +288,7 @@ func (pt *Putaran) Tambah(ctx context.Context, pelaku Pelaku,
 			models.KodeOutstanding, ""); err != nil {
 			return err
 		}
-		return pt.jejak.Rekam(ctx, tx, CatatanJejak{
+		return pt.jejak.Rekam(ctx, tx, jejak.CatatanJejak{
 			AdjustmentID: id,
 			KlaimID:      klaimID,
 			Dari:         "",

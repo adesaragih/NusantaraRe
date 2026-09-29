@@ -28,6 +28,9 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	intigalat "nusantarare/inti/galat"
 )
 
 // ErrAmbangProdukTakDitemukan dirujuk ulang supaya handler tidak perlu
@@ -76,20 +79,20 @@ func (s *Service) AmbangKlaim() *AmbangKlaim { return &AmbangKlaim{svc: s} }
 //
 // ⛔ PRODUKNYA DARI POLIS, bukan dari permintaan. Nomor polis -> versi
 // berjalan -> `PRODUCT_NAME_ID` -> ambang. Rantai itu utuh di server.
-func (a *AmbangKlaim) Hitung(ctx context.Context, pelaku Pelaku,
+func (a *AmbangKlaim) Hitung(ctx context.Context, pelaku inti.Pelaku,
 	nomorPolis string, t TanggalKlaimUntukAmbang) (PenandaBatasKlaim, error) {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return PenandaBatasKlaim{}, err
 	}
 	if a == nil || a.svc == nil || !a.svc.PunyaDatabase() {
-		return PenandaBatasKlaim{}, repository.ErrTanpaOracle
+		return PenandaBatasKlaim{}, db.ErrTanpaOracle
 	}
 	if nomorPolis == "" {
-		return PenandaBatasKlaim{}, fmt.Errorf("%w: nomor polis kosong", ErrPermintaanTidakSah)
+		return PenandaBatasKlaim{}, fmt.Errorf("%w: nomor polis kosong", intigalat.ErrPermintaanTidakSah)
 	}
 
-	polis, err := repository.NewRingkasPolisLife(a.svc.db).Ringkas(ctx, nomorPolis)
+	polis, err := repository.NewRingkasPolisLife(a.svc.DB()).Ringkas(ctx, nomorPolis)
 	if err != nil {
 		return PenandaBatasKlaim{}, err
 	}
@@ -100,7 +103,7 @@ func (a *AmbangKlaim) Hitung(ctx context.Context, pelaku Pelaku,
 			"%w: polis %q tidak menyebut produk", ErrAmbangProdukTakDitemukan, nomorPolis)
 	}
 
-	ambang, err := repository.NewProdukLife(a.svc.db).Ambang(ctx, polis.ProductNameID)
+	ambang, err := repository.NewProdukLife(a.svc.DB()).Ambang(ctx, polis.ProductNameID)
 	if err != nil {
 		return PenandaBatasKlaim{}, err
 	}
@@ -128,7 +131,7 @@ func (a *AmbangKlaim) Hitung(ctx context.Context, pelaku Pelaku,
 		hasil.PenandaSTNC = p2
 	}
 	if len(galat) > 0 {
-		return hasil, fmt.Errorf("%w: %w", ErrPermintaanTidakSah, errors.Join(galat...))
+		return hasil, fmt.Errorf("%w: %w", intigalat.ErrPermintaanTidakSah, errors.Join(galat...))
 	}
 	return hasil, nil
 }

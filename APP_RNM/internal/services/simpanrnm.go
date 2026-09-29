@@ -62,7 +62,13 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/jejak"
+	"nusantarare/inti/layanan"
+	"nusantarare/inti/outbox"
+	"nusantarare/inti/utils"
 )
 
 // ErrSimpanRNMDitolak - salah satu gerbang XML menolak; kalimatnya di
@@ -313,16 +319,16 @@ type HasilSimpanRNM struct {
 type SimpanRNM struct {
 	svc      *Service
 	penomor  Penomor
-	jejak    Jejak
-	penyalur *Penyalur
+	jejak    jejak.Jejak
+	penyalur *outbox.Penyalur
 }
 
 // SimpanRNM menyusun layanannya dengan ketergantungan yang GAGAL TERANG.
 func (s *Service) SimpanRNM() *SimpanRNM {
 	return &SimpanRNM{
-		svc: s, penomor: PenomorBelumDiputuskan{}, jejak: JejakBelumDiputuskan{},
-		penyalur: NewPenyalur(s.lingkungan, AntreanBelumDiputuskan{},
-			EfekArasapas{Resolver: ResolverBelumDiputuskan{}}),
+		svc: s, penomor: PenomorBelumDiputuskan{}, jejak: jejak.JejakBelumDiputuskan{},
+		penyalur: outbox.NewPenyalur(s.Lingkungan(), outbox.AntreanBelumDiputuskan{},
+			outbox.EfekArasapas{Resolver: layanan.ResolverBelumDiputuskan{}}),
 	}
 }
 
@@ -330,9 +336,9 @@ func (s *Service) SimpanRNM() *SimpanRNM {
 // tempat, supaya handler tidak merakit sendiri.
 func SimpanRNMOracle(s *Service) *SimpanRNM {
 	return &SimpanRNM{
-		svc: s, penomor: PenomorCounterOracle(s), jejak: PerekamJejakOracle(s),
-		penyalur: NewPenyalur(s.lingkungan, AntreanEfekOracle(s),
-			EfekArasapas{Resolver: ResolverLinkServiceOracle(s)}),
+		svc: s, penomor: PenomorCounterOracle(s), jejak: jejak.PerekamJejakOracle(s),
+		penyalur: outbox.NewPenyalur(s.Lingkungan(), AntreanEfekOracle(s),
+			outbox.EfekArasapas{Resolver: layanan.ResolverLinkServiceOracle(s)}),
 	}
 }
 
@@ -346,7 +352,7 @@ func tanggalSaja(teks string) string {
 }
 
 // kataHasilSalur menulis hasil efek langkah 28 sebagai kata (km5).
-func kataHasilSalur(h HasilSalur) string {
+func kataHasilSalur(h outbox.HasilSalur) string {
 	switch {
 	case h.Dilewati:
 		return "dilewati: lingkungan bukan produksi (IsPEGAPROD)"
@@ -364,18 +370,18 @@ func kataHasilSalur(h HasilSalur) string {
 // Urutan: identitas, pengenal, kasus terbuka, tahap Outstanding + pemegangnya,
 // lalu SELURUH gerbang XML (PeriksaSimpanRNM) SEBELUM satu tulisan pun, lalu
 // satu transaksi, lalu Arasapas sesudah commit.
-func (x *SimpanRNM) Simpan(ctx context.Context, pelaku Pelaku, klaimID string,
+func (x *SimpanRNM) Simpan(ctx context.Context, pelaku inti.Pelaku, klaimID string,
 	saat time.Time) (HasilSimpanRNM, error) {
 
 	var hasil HasilSimpanRNM
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return hasil, err
 	}
 	if strings.TrimSpace(klaimID) == "" {
-		return hasil, fmt.Errorf("%w: pengenal klaim wajib diisi", ErrPermintaanTidakSah)
+		return hasil, fmt.Errorf("%w: pengenal klaim wajib diisi", galat.ErrPermintaanTidakSah)
 	}
 	if x == nil || x.svc == nil || !x.svc.PunyaDatabase() {
-		return hasil, repository.ErrTanpaOracle
+		return hasil, db.ErrTanpaOracle
 	}
 	// ⛔ BUTIR bb - kasus tertutup tidak dapat diubah lagi.
 	if err := x.svc.PastikanKasusTerbuka(ctx, klaimID); err != nil {
@@ -387,7 +393,7 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku Pelaku, klaimID string,
 		return hasil, err
 	}
 
-	baca := repository.NewKlaimLife(x.svc.db)
+	baca := repository.NewKlaimLife(x.svc.DB())
 	kolomTahap, peranPemegang, err := baca.TahapDanPeran(ctx, klaimID)
 	if err != nil {
 		return hasil, err
@@ -412,7 +418,7 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku Pelaku, klaimID string,
 	if err != nil {
 		return hasil, err
 	}
-	polis, err := repository.NewRingkasPolisLife(x.svc.db).Ringkas(ctx, klaim.NomorPolis)
+	polis, err := repository.NewRingkasPolisLife(x.svc.DB()).Ringkas(ctx, klaim.NomorPolis)
 	if err != nil {
 		return hasil, err
 	}
@@ -435,7 +441,7 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku Pelaku, klaimID string,
 	for _, p := range klaim.Peserta {
 		if strings.TrimSpace(p.SumberID) == "" {
 			return hasil, fmt.Errorf("%w: peserta %q tanpa SOURCE_ID; DOB dan klaim ganda "+
-				"tidak dapat diperiksa", ErrPermintaanTidakSah, p.ID)
+				"tidak dapat diperiksa", galat.ErrPermintaanTidakSah, p.ID)
 		}
 		k := repository.KunciPesertaSumber{PLNumber: p.NomorPremiList,
 			Sertifikat: p.NomorSertifikat, SumberID: p.SumberID}
@@ -459,7 +465,7 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku Pelaku, klaimID string,
 	}
 
 	hasil.NomorKlaim = klaim.NomorKlaim
-	err = x.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	err = x.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		// Langkah 16-20 (13-15 ter-remark) - hanya bila CLAIM_NO masih kosong.
 		if strings.TrimSpace(klaim.NomorKlaim) == "" {
 			nomor, err := x.penomor.NomorBerikut(ctx, tx, polis.BusinessCode, saat)
@@ -490,7 +496,7 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku Pelaku, klaimID string,
 					return err
 				}
 				b.KodeStatus = models.KodeOutstanding
-				if err := x.jejak.Rekam(ctx, tx, CatatanJejak{
+				if err := x.jejak.Rekam(ctx, tx, jejak.CatatanJejak{
 					AdjustmentID: b.ID, KlaimID: klaimID, Dari: "", Ke: models.KodeOutstanding,
 					AkunID: pelaku.AkunID, Waktu: saat,
 				}); err != nil {
@@ -534,7 +540,7 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku Pelaku, klaimID string,
 		hasil.Arasapas = "dilewati: kode retro langkah 27"
 	default:
 		hasil.Arasapas = kataHasilSalur(x.penyalur.Salurkan(ctx,
-			MuatanEfek{KlaimID: klaimID, AkunID: pelaku.AkunID, Waktu: saat}))
+			outbox.MuatanEfek{KlaimID: klaimID, AkunID: pelaku.AkunID, Waktu: saat}))
 	}
 	return hasil, nil
 }

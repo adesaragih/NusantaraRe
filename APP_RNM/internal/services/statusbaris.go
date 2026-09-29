@@ -26,6 +26,10 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/jejak"
 )
 
 var (
@@ -36,53 +40,7 @@ var (
 	ErrBarisSudahFinal = errors.New("services: baris sudah final dan tidak dapat berubah")
 	// ErrTransisiTidakSah - asal atau tujuan transisi tidak diizinkan.
 	ErrTransisiTidakSah = errors.New("services: transisi status baris tidak sah")
-	// ErrJejakBelumDiputuskan - tempat jejak audit belum ada.
-	ErrJejakBelumDiputuskan = errors.New("services: tempat jejak audit belum diputuskan")
 )
-
-// CatatanJejak adalah satu baris jejak audit sebuah transisi.
-type CatatanJejak struct {
-	// AdjustmentID kosong pada jalur balik TAHAP: yang berpindah kasusnya,
-	// bukan satu baris.
-	AdjustmentID string
-	// KlaimID selalu terisi.
-	//
-	// ⛔ RALAT A2, 27-09-2026. Sebelum ini `tahap.go` mengisi `AdjustmentID`
-	// dengan pengenal KLAIM - dua hal berbeda dikonflasi, dan jejak jalur
-	// balik akan tampak menunjuk baris adjustment yang tidak pernah ada.
-	// Tabel `T_CLAIMLF_JEJAK` punya kedua kolom; kini modelnya pun.
-	KlaimID string
-	Dari    string
-	Ke      string
-	AkunID  string
-	Waktu   time.Time
-	// Komentar - `T_CLAIMLF_JEJAK.KOMENTAR` (migrasi 021, OQ-M5): alasan
-	// penolakan Admin. Kosong pada transisi lain.
-	Komentar string
-}
-
-// Jejak merekam SIAPA dan KAPAN untuk setiap transisi status.
-//
-// ⛔ Kenapa ini antarmuka dan bukan penulisan langsung: ADR-U-0007 menuntut
-// setiap transisi terekam, sedangkan TABELNYA belum ada - keputusan membuatnya
-// masih `[USULAN]` butir am, dan brief melarang menebaknya. Memisahkannya
-// membuat yang belum ada terlihat sebagai satu galat terang, bukan sebagai
-// transisi yang diam-diam tak tercatat.
-//
-// Pola yang sama dengan `Penomor` pada tiket 02.
-type Jejak interface {
-	Rekam(ctx context.Context, tx *repository.Tx, c CatatanJejak) error
-}
-
-// JejakBelumDiputuskan adalah implementasi bawaan; ia selalu gagal.
-type JejakBelumDiputuskan struct{}
-
-// Rekam selalu gagal, dengan pesan yang menyebut apa yang ditunggu.
-func (JejakBelumDiputuskan) Rekam(context.Context, *repository.Tx, CatatanJejak) error {
-	return fmt.Errorf("%w: tabel jejak audit (butir am) belum disahkan work owner, "+
-		"sedangkan ADR-U-0007 menuntut setiap transisi merekam siapa dan kapan",
-		ErrJejakBelumDiputuskan)
-}
 
 // Transisi memindahkan satu baris dari Outstanding ke keputusan akhirnya.
 //
@@ -200,16 +158,16 @@ func BarisTerakhir(k *models.Klaim) *models.BarisAdjustment {
 // Status adalah layanan transisi status baris adjustment.
 type Status struct {
 	svc   *Service
-	jejak Jejak
+	jejak jejak.Jejak
 }
 
 // Status menyusun layanan itu dengan jejak bawaan yang gagal terang.
 func (s *Service) Status() *Status {
-	return &Status{svc: s, jejak: JejakBelumDiputuskan{}}
+	return &Status{svc: s, jejak: jejak.JejakBelumDiputuskan{}}
 }
 
 // DenganJejak mengganti perekamnya - dipakai test, dan kelak oleh tiket 09.
-func (st *Status) DenganJejak(j Jejak) *Status {
+func (st *Status) DenganJejak(j jejak.Jejak) *Status {
 	return &Status{svc: st.svc, jejak: j}
 }
 
@@ -221,7 +179,7 @@ func (st *Status) DenganJejak(j Jejak) *Status {
 //
 // ⚠️ Sumber nilai header BUKAN baris yang berubah melainkan baris TERAKHIR
 // klaim sesudah perubahan itu - lihat BarisTerakhir.
-func (st *Status) Ubah(ctx context.Context, pelaku Pelaku,
+func (st *Status) Ubah(ctx context.Context, pelaku inti.Pelaku,
 	klaimID, pesertaID, adjID string, ke models.StatusBaris, saat time.Time) error {
 	return st.ubah(ctx, pelaku, klaimID, pesertaID, adjID, ke, saat, false, "")
 }
@@ -238,11 +196,11 @@ func (st *Status) Ubah(ctx context.Context, pelaku Pelaku,
 // dan letaknya SESUDAH perekaman jejak - sehingga di jalur nyata ia tidak
 // pernah tercapai, karena jejak bawaan selalu gagal. Bendera bernama membuat
 // yang dilakukannya terbaca, dan urutannya kini bersama tulisan yang lain.
-func (st *Status) ubah(ctx context.Context, pelaku Pelaku,
+func (st *Status) ubah(ctx context.Context, pelaku inti.Pelaku,
 	klaimID, pesertaID, adjID string, ke models.StatusBaris, saat time.Time,
 	cabutPenanda bool, komentar string) error {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return err
 	}
 	// ⛔ Gerbang peran tiket 07: setiap fungsi yang mengubah status memanggil
@@ -254,10 +212,10 @@ func (st *Status) ubah(ctx context.Context, pelaku Pelaku,
 	if strings.TrimSpace(klaimID) == "" || strings.TrimSpace(pesertaID) == "" ||
 		strings.TrimSpace(adjID) == "" {
 		return fmt.Errorf("%w: pengenal klaim, peserta, dan baris wajib diisi",
-			ErrPermintaanTidakSah)
+			galat.ErrPermintaanTidakSah)
 	}
 	if !st.svc.PunyaDatabase() {
-		return repository.ErrTanpaOracle
+		return db.ErrTanpaOracle
 	}
 
 	// ⛔ BUTIR bb: kasus yang sudah ditutup tidak dapat diubah lagi.
@@ -275,7 +233,7 @@ func (st *Status) ubah(ctx context.Context, pelaku Pelaku,
 		return err
 	}
 
-	baca := repository.NewKlaimLife(st.svc.db)
+	baca := repository.NewKlaimLife(st.svc.DB())
 	peserta, err := baca.AmbilPeserta(ctx, klaimID)
 	if err != nil {
 		return err
@@ -292,7 +250,7 @@ func (st *Status) ubah(ctx context.Context, pelaku Pelaku,
 	sasaran := cariBaris(klaim, pesertaID, adjID)
 	if sasaran == nil {
 		return fmt.Errorf("%w: baris %q bukan milik peserta %q pada klaim %q",
-			ErrPermintaanTidakSah, adjID, pesertaID, klaimID)
+			galat.ErrPermintaanTidakSah, adjID, pesertaID, klaimID)
 	}
 	sasaranKodeLama := sasaran.KodeStatus
 	baru, err := Transisi(*sasaran, ke, saat)
@@ -303,9 +261,9 @@ func (st *Status) ubah(ctx context.Context, pelaku Pelaku,
 
 	akhir := BarisTerakhir(&klaim)
 	if akhir == nil {
-		return fmt.Errorf("%w: klaim %q tanpa baris", ErrPermintaanTidakSah, klaimID)
+		return fmt.Errorf("%w: klaim %q tanpa baris", galat.ErrPermintaanTidakSah, klaimID)
 	}
-	return st.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	return st.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		// ⛔ Kode LAMA ikut dikirim sebagai syarat WHERE. Baris dibaca di luar
 		// transaksi, jadi ia dapat berubah di antara baca dan tulis; tanpa
 		// syarat itu, kefinalan hanya berlaku di dalam proses ini dan dua
@@ -357,7 +315,7 @@ func (st *Status) ubah(ctx context.Context, pelaku Pelaku,
 		// ⛔ Jejak direkam DI DALAM transaksi yang sama. Jejak yang ditulis
 		// terpisah dapat hilang sendirian, dan transisi tanpa jejak persis
 		// yang ADR-U-0007 larang.
-		return st.jejak.Rekam(ctx, tx, CatatanJejak{
+		return st.jejak.Rekam(ctx, tx, jejak.CatatanJejak{
 			AdjustmentID: adjID,
 			KlaimID:      klaimID,
 			Dari:         sasaranKodeLama,
@@ -382,25 +340,4 @@ func cariBaris(k models.Klaim, pesertaID, adjID string) *models.BarisAdjustment 
 		}
 	}
 	return nil
-}
-
-// perekamOracle menulis jejak ke `T_CLAIMLF_JEJAK` - butir am, A2.
-//
-// ⛔ Ia menggantikan `JejakBelumDiputuskan`, yang selama ini membuat KELIMA
-// jalur tulis modul ini menjawab HTTP 501: menolak baris (05), memindah tahap
-// (08), menyerahkan ke Komite (10), membuka putaran (11), dan mengaksep
-// (audit A0).
-type perekamOracle struct{ baca *repository.KlaimLife }
-
-// PerekamJejakOracle menyusun perekam yang menulis ke tabel jejak.
-func PerekamJejakOracle(svc *Service) Jejak {
-	return perekamOracle{baca: repository.NewKlaimLife(svc.db)}
-}
-
-// Rekam menulis satu catatan, DI DALAM transaksi pemanggilnya.
-func (p perekamOracle) Rekam(ctx context.Context, tx *repository.Tx,
-	c CatatanJejak) error {
-
-	return p.baca.SisipJejak(ctx, tx, c.AdjustmentID, c.KlaimID,
-		c.Dari, c.Ke, c.AkunID, c.Waktu, c.Komentar)
 }

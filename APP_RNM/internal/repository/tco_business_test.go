@@ -4,6 +4,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"nusantarare/inti/db"
 )
 
 // AC 22: daftar memuat baris NONAKTIF (tanpa saringan ISACTIVE); per kombinasi.
@@ -56,7 +58,7 @@ func TestSQLBusinessMasterTCO(t *testing.T) {
 	}
 	for _, s := range []string{q, sqlAmbilBusinessMasterTCO("S.B"), sqlDaftarBusinessTCO("S.T"), sqlAmbilBusinessTCO("S.T"),
 		sqlSisipBusinessTCO("S.T"), sqlPerbaruiBusinessTCO("S.T"), sqlHapusBusinessTCO("S.T"), sqlCariDobelBusinessTCO("S.T")} {
-		if err := PeriksaSQL(s); err != nil {
+		if err := db.PeriksaSQL(s); err != nil {
 			t.Errorf("PeriksaSQL: %v", err)
 		}
 	}

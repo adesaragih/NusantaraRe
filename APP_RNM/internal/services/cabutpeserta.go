@@ -26,6 +26,10 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/jejak"
 )
 
 // ErrPesertaTidakDapatDicabut - tombol `DELETE` hanya ada di layar Outstanding
@@ -37,26 +41,26 @@ var ErrPesertaTidakDapatDicabut = errors.New(
 //
 // Urutan gerbangnya sama dengan dialog Edit Date: identitas, peran Admin,
 // pengenal, kasus terbuka, tahap + penanda Save to RNM, lalu kepemilikan.
-func (st *Status) CabutPeserta(ctx context.Context, pelaku Pelaku,
+func (st *Status) CabutPeserta(ctx context.Context, pelaku inti.Pelaku,
 	klaimID, pesertaID string, saat time.Time) error {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return err
 	}
-	if err := WajibPeran(pelaku, PeranAdmin); err != nil {
+	if err := inti.WajibPeran(pelaku, inti.PeranAdmin); err != nil {
 		return err
 	}
 	if strings.TrimSpace(klaimID) == "" || strings.TrimSpace(pesertaID) == "" {
-		return fmt.Errorf("%w: pengenal klaim dan peserta wajib diisi", ErrPermintaanTidakSah)
+		return fmt.Errorf("%w: pengenal klaim dan peserta wajib diisi", galat.ErrPermintaanTidakSah)
 	}
 	if !st.svc.PunyaDatabase() {
-		return repository.ErrTanpaOracle
+		return db.ErrTanpaOracle
 	}
 	if err := st.svc.PastikanKasusTerbuka(ctx, klaimID); err != nil {
 		return err
 	}
 
-	baca := repository.NewKlaimLife(st.svc.db)
+	baca := repository.NewKlaimLife(st.svc.DB())
 	tahap, err := tahapKasus(ctx, baca, klaimID)
 	if err != nil {
 		return err
@@ -81,7 +85,7 @@ func (st *Status) CabutPeserta(ctx context.Context, pelaku Pelaku,
 	}
 	if !milik {
 		return fmt.Errorf("%w: peserta %q bukan milik klaim %q",
-			ErrPermintaanTidakSah, pesertaID, klaimID)
+			galat.ErrPermintaanTidakSah, pesertaID, klaimID)
 	}
 	perBaris, err := baca.AmbilBaris(ctx, klaimID)
 	if err != nil {
@@ -92,7 +96,7 @@ func (st *Status) CabutPeserta(ctx context.Context, pelaku Pelaku,
 		return err
 	}
 	// ⛔ Penanda, cermin, dan jejaknya dalam SATU transaksi (ADR-U-0007).
-	return st.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	return st.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		if err := baca.CabutPeserta(ctx, tx, klaimID, pesertaID); err != nil {
 			return err
 		}
@@ -101,7 +105,7 @@ func (st *Status) CabutPeserta(ctx context.Context, pelaku Pelaku,
 				return err
 			}
 		}
-		return st.jejak.Rekam(ctx, tx, CatatanJejak{
+		return st.jejak.Rekam(ctx, tx, jejak.CatatanJejak{
 			KlaimID: klaimID,
 			Dari:    "peserta " + pesertaID,
 			Ke:      "dicabut",

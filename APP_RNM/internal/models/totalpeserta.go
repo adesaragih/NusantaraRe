@@ -39,6 +39,8 @@ package models
 import (
 	"errors"
 	"fmt"
+
+	"nusantarare/inti/uang"
 )
 
 // ErrTotalMataUangBeragam menandai peserta yang baris adjustment-nya
@@ -70,12 +72,12 @@ type TotalPeserta struct {
 	// Nama JSON DITULIS, tidak diserahkan pada nama medan Go. Tanpa tag,
 	// Go mengirim `CedingRetention` berhuruf besar dan React membaca
 	// `undefined` tanpa satu pun galat - medan uang yang diam-diam kosong.
-	CedingRetention  Money `json:"cedingRetention"`
-	ShareNusantaraRe Money `json:"shareNusantaraRe"`
-	SumInsured       Money `json:"sumInsured"`
-	SumReasured      Money `json:"sumReasured"`
-	ShareRetro       Money `json:"shareRetro"`
-	JumlahKlaim      Money `json:"jumlahKlaim"`
+	CedingRetention  uang.Money `json:"cedingRetention"`
+	ShareNusantaraRe uang.Money `json:"shareNusantaraRe"`
+	SumInsured       uang.Money `json:"sumInsured"`
+	SumReasured      uang.Money `json:"sumReasured"`
+	ShareRetro       uang.Money `json:"shareRetro"`
+	JumlahKlaim      uang.Money `json:"jumlahKlaim"`
 }
 
 // kolomTotal memasangkan tiap total dengan pengambil nilainya dari satu baris.
@@ -87,21 +89,21 @@ var kolomTotal = []struct {
 	// nama adalah nama kolom Pega, dipakai di pesan galat supaya orang dapat
 	// mencari kolom yang sama di kedua sistem.
 	nama   string
-	ambil  func(BarisAdjustment) Money
-	simpan func(*TotalPeserta, Money)
+	ambil  func(BarisAdjustment) uang.Money
+	simpan func(*TotalPeserta, uang.Money)
 }{
-	{"CEDING_RETENTION", func(b BarisAdjustment) Money { return b.CedingRetention },
-		func(t *TotalPeserta, m Money) { t.CedingRetention = m }},
-	{"SHARE_NUSANTARA_RE", func(b BarisAdjustment) Money { return b.ShareNusantaraRe },
-		func(t *TotalPeserta, m Money) { t.ShareNusantaraRe = m }},
-	{"SUM_INSURED", func(b BarisAdjustment) Money { return b.SumInsured },
-		func(t *TotalPeserta, m Money) { t.SumInsured = m }},
-	{"SUM_REASURED", func(b BarisAdjustment) Money { return b.SumReasured },
-		func(t *TotalPeserta, m Money) { t.SumReasured = m }},
-	{"SHARE_RETRO", func(b BarisAdjustment) Money { return b.ShareRetro },
-		func(t *TotalPeserta, m Money) { t.ShareRetro = m }},
-	{"CLAIM_AMOUNT", func(b BarisAdjustment) Money { return b.JumlahKlaim },
-		func(t *TotalPeserta, m Money) { t.JumlahKlaim = m }},
+	{"CEDING_RETENTION", func(b BarisAdjustment) uang.Money { return b.CedingRetention },
+		func(t *TotalPeserta, m uang.Money) { t.CedingRetention = m }},
+	{"SHARE_NUSANTARA_RE", func(b BarisAdjustment) uang.Money { return b.ShareNusantaraRe },
+		func(t *TotalPeserta, m uang.Money) { t.ShareNusantaraRe = m }},
+	{"SUM_INSURED", func(b BarisAdjustment) uang.Money { return b.SumInsured },
+		func(t *TotalPeserta, m uang.Money) { t.SumInsured = m }},
+	{"SUM_REASURED", func(b BarisAdjustment) uang.Money { return b.SumReasured },
+		func(t *TotalPeserta, m uang.Money) { t.SumReasured = m }},
+	{"SHARE_RETRO", func(b BarisAdjustment) uang.Money { return b.ShareRetro },
+		func(t *TotalPeserta, m uang.Money) { t.ShareRetro = m }},
+	{"CLAIM_AMOUNT", func(b BarisAdjustment) uang.Money { return b.JumlahKlaim },
+		func(t *TotalPeserta, m uang.Money) { t.JumlahKlaim = m }},
 }
 
 // JumlahKolomTotal adalah cacah total yang layar harus tampilkan.
@@ -147,7 +149,7 @@ func HitungTotalPeserta(baris []BarisAdjustment, mataUang string) (TotalPeserta,
 
 	var total TotalPeserta
 	for _, kolom := range kolomTotal {
-		jumlah, err := NewMoney("0", kurs)
+		jumlah, err := uang.NewMoney("0", kurs)
 		if err != nil {
 			return TotalPeserta{}, fmt.Errorf("total %s: %w", kolom.nama, err)
 		}

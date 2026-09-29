@@ -19,16 +19,17 @@ import (
 	"fmt"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/db"
 )
 
 // ErrWorkPolisTidakAda - baris kerja polis yang diminta tidak ada.
 var ErrWorkPolisTidakAda = errors.New("repository: baris kerja polis tidak ada")
 
 // WorkPolis membaca dan menulis `T_WORK_POLIS`.
-type WorkPolis struct{ db *DB }
+type WorkPolis struct{ db *db.DB }
 
 // NewWorkPolis menyusunnya.
-func NewWorkPolis(db *DB) *WorkPolis { return &WorkPolis{db: db} }
+func NewWorkPolis(db *db.DB) *WorkPolis { return &WorkPolis{db: db} }
 
 // KeadaanPolis adalah posisi layar dan status kerja sebuah polis.
 //
@@ -81,11 +82,11 @@ func (r *WorkPolis) Bendera(ctx context.Context, id string) (string, error) {
 		return "", err
 	}
 	q := sqlBenderaPolis(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return "", err
 	}
 	var flag sql.NullString
-	err = r.db.sql.QueryRowContext(ctx, q, id).Scan(&flag)
+	err = r.db.QueryRowContext(ctx, q, id).Scan(&flag)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", ErrWorkPolisTidakAda
 	}
@@ -102,11 +103,11 @@ func (r *WorkPolis) Keadaan(ctx context.Context, id string) (KeadaanPolis, error
 		return KeadaanPolis{}, err
 	}
 	q := sqlKeadaanPolis(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return KeadaanPolis{}, err
 	}
 	var pengenal, lini, posisi, status sql.NullString
-	err = r.db.sql.QueryRowContext(ctx, q, id).Scan(&pengenal, &lini, &posisi, &status)
+	err = r.db.QueryRowContext(ctx, q, id).Scan(&pengenal, &lini, &posisi, &status)
 	if errors.Is(err, sql.ErrNoRows) {
 		return KeadaanPolis{}, ErrWorkPolisTidakAda
 	}
@@ -137,7 +138,7 @@ func sqlPindahTahapPolis(tabel string) string {
 }
 
 // PindahTahap memindahkan polis ke tahap lain.
-func (r *WorkPolis) PindahTahap(ctx context.Context, tx *Tx,
+func (r *WorkPolis) PindahTahap(ctx context.Context, tx *db.Tx,
 	id, tahapLama, tahapBaru string) error {
 
 	tabel, err := r.db.Qualify("T_WORK_POLIS")
@@ -145,14 +146,14 @@ func (r *WorkPolis) PindahTahap(ctx context.Context, tx *Tx,
 		return err
 	}
 	q := sqlPindahTahapPolis(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, tahapBaru, id, kosongJadiNil(tahapLama))
+	hasil, err := tx.ExecContext(ctx, q, tahapBaru, id, db.KosongJadiNil(tahapLama))
 	if err != nil {
 		return fmt.Errorf("repository: memindahkan tahap polis: %w", err)
 	}
-	return pastikanSatuBaris(hasil, "perpindahan tahap polis")
+	return db.PastikanSatuBaris(hasil, "perpindahan tahap polis")
 }
 
 // sqlTutupPolis merakit penutupan kasus.
@@ -180,19 +181,19 @@ func sqlTutupPolis(tabel string) string {
 
 // TutupKasus menutup kasus polis dengan status kerja akhirnya - hanya bila
 // ia masih di `tahapLama`.
-func (r *WorkPolis) TutupKasus(ctx context.Context, tx *Tx, id, tahapLama, status string) error {
+func (r *WorkPolis) TutupKasus(ctx context.Context, tx *db.Tx, id, tahapLama, status string) error {
 	tabel, err := r.db.Qualify("T_WORK_POLIS")
 	if err != nil {
 		return err
 	}
 	q := sqlTutupPolis(tabel)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, status, id,
-		models.StatusPolisDitolak, models.StatusPolisSelesai, kosongJadiNil(tahapLama))
+	hasil, err := tx.ExecContext(ctx, q, status, id,
+		models.StatusPolisDitolak, models.StatusPolisSelesai, db.KosongJadiNil(tahapLama))
 	if err != nil {
 		return fmt.Errorf("repository: menutup kasus polis: %w", err)
 	}
-	return pastikanSatuBaris(hasil, "penutupan kasus polis")
+	return db.PastikanSatuBaris(hasil, "penutupan kasus polis")
 }

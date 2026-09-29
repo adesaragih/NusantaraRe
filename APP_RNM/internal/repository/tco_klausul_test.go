@@ -10,6 +10,7 @@ import (
 	"github.com/cockroachdb/apd/v3"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/db"
 )
 
 // AC 24: SATU tabel untuk seluruh jenis - setiap SQL klausul memakai tabel yang
@@ -101,7 +102,7 @@ func TestSQLKlausulTCO(t *testing.T) {
 	}
 	for _, s := range []string{d, p, q, sqlSisipKlausulTCO("S.T"), sqlJenisKlausulTCO("S.D"),
 		sqlCariPilihanTCO("S.O", "NAME"), sqlAmbilPilihanTCO("S.C", "INFO"), sqlKunciTahunTCO("S.Y")} {
-		if err := PeriksaSQL(s); err != nil {
+		if err := db.PeriksaSQL(s); err != nil {
 			t.Errorf("PeriksaSQL: %v", err)
 		}
 	}

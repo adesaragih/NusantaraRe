@@ -10,7 +10,8 @@ import (
 	"testing"
 
 	"nusantarare/internal/models"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti/migrasi"
+	"nusantarare/inti/utils"
 )
 
 // kolomMigrasi membaca kolom satu tabel dari satu berkas migrasi.
@@ -22,7 +23,7 @@ func kolomMigrasi(t *testing.T, berkas, tabel string) []string {
 	}
 	var keluar []string
 	for _, pernyataan := range strings.Split(string(isi), "\n/") {
-		nama, kolom := KolomCreateTable(pernyataan)
+		nama, kolom := migrasi.KolomCreateTable(pernyataan)
 		nama = strings.ToUpper(nama)
 		if i := strings.LastIndex(nama, "."); i >= 0 {
 			nama = nama[i+1:]

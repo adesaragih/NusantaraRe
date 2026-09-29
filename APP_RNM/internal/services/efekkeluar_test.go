@@ -10,17 +10,20 @@ import (
 	"testing"
 
 	"nusantarare/internal/services"
+	"nusantarare/inti"
+	"nusantarare/inti/layanan"
+	"nusantarare/inti/outbox"
 )
 
 // resolverUji menggantikan pembacaan `M_LINK_SERVICE`.
 type resolverUji struct {
 	url   string
 	galat error
-	minta []services.KunciLayanan
+	minta []layanan.KunciLayanan
 }
 
 func (r *resolverUji) Resolve(_ context.Context,
-	k services.KunciLayanan) (string, error) {
+	k layanan.KunciLayanan) (string, error) {
 	r.minta = append(r.minta, k)
 	return r.url, r.galat
 }
@@ -33,15 +36,15 @@ type efekUji struct {
 }
 
 func (e *efekUji) Nama() string { return e.nama }
-func (e *efekUji) Jalankan(context.Context, services.MuatanEfek) error {
+func (e *efekUji) Jalankan(context.Context, outbox.MuatanEfek) error {
 	e.dipanggil++
 	return e.galat
 }
 
 // antreanUji menggantikan tempat antre-ulang yang belum disahkan.
-type antreanUji struct{ catatan []services.CatatanEfekGagal }
+type antreanUji struct{ catatan []outbox.CatatanEfekGagal }
 
-func (a *antreanUji) Antre(_ context.Context, c services.CatatanEfekGagal) error {
+func (a *antreanUji) Antre(_ context.Context, c outbox.CatatanEfekGagal) error {
 	a.catatan = append(a.catatan, c)
 	return nil
 }
@@ -54,9 +57,9 @@ func (a *antreanUji) Antre(_ context.Context, c services.CatatanEfekGagal) error
 func TestNonProduksiTidakMenjalankanEfekKeluar(t *testing.T) {
 	efek := &efekUji{nama: "UJI-EFEK"}
 	antre := &antreanUji{}
-	p := services.NewPenyalur(services.BukanProduksi, antre, efek)
+	p := outbox.NewPenyalur(inti.BukanProduksi, antre, efek)
 
-	hasil := p.Salurkan(context.Background(), services.MuatanEfek{KlaimID: "CLM-1"})
+	hasil := p.Salurkan(context.Background(), outbox.MuatanEfek{KlaimID: "CLM-1"})
 	if efek.dipanggil != 0 {
 		t.Errorf("efek keluar berjalan %d kali di non-produksi", efek.dipanggil)
 	}
@@ -74,12 +77,12 @@ func TestKegagalanEfekKeluarTidakMenahanApaPun(t *testing.T) {
 	rusak := errors.New("uji: layanan luar sedang gagal")
 	efek := &efekUji{nama: "UJI-EFEK", galat: rusak}
 	antre := &antreanUji{}
-	p := services.NewPenyalur(services.Produksi, antre, efek)
+	p := outbox.NewPenyalur(inti.Produksi, antre, efek)
 
 	// ⛔ Salurkan TIDAK mengembalikan galat. Bila ia mengembalikannya,
 	// pemanggil akan tergoda meneruskannya - dan transisi status klaim akan
 	// tertahan oleh layanan luar yang sedang gagal.
-	hasil := p.Salurkan(context.Background(), services.MuatanEfek{KlaimID: "CLM-1"})
+	hasil := p.Salurkan(context.Background(), outbox.MuatanEfek{KlaimID: "CLM-1"})
 	if hasil.Dilewati {
 		t.Error("efek di produksi dinyatakan dilewati")
 	}
@@ -104,9 +107,9 @@ func TestSatuEfekGagalTidakMenghentikanSisanya(t *testing.T) {
 	pertama := &efekUji{nama: "UJI-1", galat: errors.New("uji: gagal")}
 	kedua := &efekUji{nama: "UJI-2"}
 	antre := &antreanUji{}
-	p := services.NewPenyalur(services.Produksi, antre, pertama, kedua)
+	p := outbox.NewPenyalur(inti.Produksi, antre, pertama, kedua)
 
-	hasil := p.Salurkan(context.Background(), services.MuatanEfek{KlaimID: "CLM-1"})
+	hasil := p.Salurkan(context.Background(), outbox.MuatanEfek{KlaimID: "CLM-1"})
 	if kedua.dipanggil != 1 {
 		t.Errorf("efek kedua dijalankan %d kali; kegagalan efek pertama "+
 			"menghentikannya", kedua.dipanggil)
@@ -126,9 +129,9 @@ func TestSatuEfekGagalTidakMenghentikanSisanya(t *testing.T) {
 // `Connect-REST` berikutnya menembak alamat kosong.
 func TestKunciKategoriTidakDitemukanGagalTerang(t *testing.T) {
 	kosong := &resolverUji{url: ""}
-	_, err := services.AlamatLayanan(context.Background(), kosong,
-		services.KunciArasapasLife)
-	if !errors.Is(err, services.ErrEndpointTidakDitemukan) {
+	_, err := layanan.AlamatLayanan(context.Background(), kosong,
+		layanan.KunciArasapasLife)
+	if !errors.Is(err, layanan.ErrEndpointTidakDitemukan) {
 		t.Fatalf("galat = %v, mau ErrEndpointTidakDitemukan", err)
 	}
 	if len(kosong.minta) != 1 {
@@ -144,9 +147,9 @@ func TestKunciKategoriTidakDitemukanGagalTerang(t *testing.T) {
 
 // TestResolverBawaanGagalTerang - selama tabelnya belum boleh dibaca.
 func TestResolverBawaanGagalTerang(t *testing.T) {
-	_, err := services.ResolverBelumDiputuskan{}.Resolve(
-		context.Background(), services.KunciArasapasLife)
-	if !errors.Is(err, services.ErrResolverBelumDiputuskan) {
+	_, err := layanan.ResolverBelumDiputuskan{}.Resolve(
+		context.Background(), layanan.KunciArasapasLife)
+	if !errors.Is(err, layanan.ErrResolverBelumDiputuskan) {
 		t.Errorf("galat = %v, mau ErrResolverBelumDiputuskan", err)
 	}
 }
@@ -157,21 +160,21 @@ func TestResolverBawaanGagalTerang(t *testing.T) {
 // alamat yang tidak ada di tabel tidak akan muncul karena dicoba lagi.
 func TestKegagalanKonfigurasiDibedakanDariJaringan(t *testing.T) {
 	// Kegagalan jaringan SEMBARANG layak dicoba ulang.
-	if !services.LayakDicobaUlang(errors.New("uji: koneksi terputus di tengah")) {
+	if !outbox.LayakDicobaUlang(errors.New("uji: koneksi terputus di tengah")) {
 		t.Error("kegagalan jaringan dinyatakan tidak layak dicoba ulang")
 	}
 	// ⛔ Ketiga …BelumDisetujui IKUT di sini. Ronde pertama melewatkannya -
 	// dan justru ketiganyalah yang benar-benar diproduksi di produksi hari
 	// ini, sehingga antrean akan berputar selamanya.
 	for _, konfig := range []error{
-		services.ErrEndpointTidakDitemukan,
-		services.ErrResolverBelumDiputuskan,
-		services.ErrAntreanBelumDiputuskan,
-		services.ErrPenyimpananBelumDisetujui,
-		services.ErrEmailBelumDisetujui,
-		services.ErrArasapasBelumDisetujui,
+		layanan.ErrEndpointTidakDitemukan,
+		layanan.ErrResolverBelumDiputuskan,
+		outbox.ErrAntreanBelumDiputuskan,
+		outbox.ErrPenyimpananBelumDisetujui,
+		outbox.ErrEmailBelumDisetujui,
+		outbox.ErrArasapasBelumDisetujui,
 	} {
-		if services.LayakDicobaUlang(konfig) {
+		if outbox.LayakDicobaUlang(konfig) {
 			t.Errorf("kegagalan konfigurasi %v dinyatakan layak dicoba ulang; "+
 				"antre-ulang akan berputar sia-sia", konfig)
 		}
@@ -180,9 +183,9 @@ func TestKegagalanKonfigurasiDibedakanDariJaringan(t *testing.T) {
 
 // TestAntreanBawaanGagalTerang - tempat antre-ulang belum disahkan.
 func TestAntreanBawaanGagalTerang(t *testing.T) {
-	err := services.AntreanBelumDiputuskan{}.Antre(
-		context.Background(), services.CatatanEfekGagal{MuatanEfek: services.MuatanEfek{KlaimID: "CLM-1"}})
-	if !errors.Is(err, services.ErrAntreanBelumDiputuskan) {
+	err := outbox.AntreanBelumDiputuskan{}.Antre(
+		context.Background(), outbox.CatatanEfekGagal{MuatanEfek: outbox.MuatanEfek{KlaimID: "CLM-1"}})
+	if !errors.Is(err, outbox.ErrAntreanBelumDiputuskan) {
 		t.Errorf("galat = %v, mau ErrAntreanBelumDiputuskan", err)
 	}
 }
@@ -193,12 +196,12 @@ func TestAntreanBawaanGagalTerang(t *testing.T) {
 // langsung dari tabel klaim. Test yang menemukan efek keempat berupa
 // pengiriman payload GAGAL.
 func TestTigaEfekKeluarBukanEmpat(t *testing.T) {
-	efek := services.EfekKeluarClaimLife(services.ResolverBelumDiputuskan{})
+	efek := services.EfekKeluarClaimLife(layanan.ResolverBelumDiputuskan{})
 	if len(efek) != 3 {
 		t.Fatalf("%d efek keluar, mau 3", len(efek))
 	}
 	mau := []string{
-		services.NamaEfekBerkas, services.NamaEfekEmail, services.NamaEfekArasapas,
+		outbox.NamaEfekBerkas, outbox.NamaEfekEmail, outbox.NamaEfekArasapas,
 	}
 	for i, e := range efek {
 		if e.Nama() != mau[i] {
@@ -208,7 +211,7 @@ func TestTigaEfekKeluarBukanEmpat(t *testing.T) {
 	// ⛔ Ketiganya gagal TERANG, masing-masing menyebut apa yang ditunggu -
 	// bukan diam-diam berhasil tanpa menghubungi apa pun.
 	for _, e := range efek {
-		if err := e.Jalankan(context.Background(), services.MuatanEfek{}); err == nil {
+		if err := e.Jalankan(context.Background(), outbox.MuatanEfek{}); err == nil {
 			t.Errorf("efek %q berhasil padahal belum disetujui", e.Nama())
 		}
 	}
@@ -219,28 +222,28 @@ func TestTigaEfekKeluarBukanEmpat(t *testing.T) {
 func TestArasapasMelaporkanKegagalanKonfigurasiApaAdanya(t *testing.T) {
 	// Resolver menjawab, tetapi kuncinya tidak ada: itu kegagalan KONFIGURASI,
 	// dan antre-ulang tidak boleh memutarnya.
-	e := services.EfekArasapas{Resolver: &resolverUji{url: ""}}
-	err := e.Jalankan(context.Background(), services.MuatanEfek{})
-	if !errors.Is(err, services.ErrEndpointTidakDitemukan) {
+	e := outbox.EfekArasapas{Resolver: &resolverUji{url: ""}}
+	err := e.Jalankan(context.Background(), outbox.MuatanEfek{})
+	if !errors.Is(err, layanan.ErrEndpointTidakDitemukan) {
 		t.Fatalf("galat = %v, mau ErrEndpointTidakDitemukan", err)
 	}
-	if services.LayakDicobaUlang(err) {
+	if outbox.LayakDicobaUlang(err) {
 		t.Error("kegagalan konfigurasi dinyatakan layak dicoba ulang")
 	}
 	// Alamatnya ketemu: barulah ia berhenti pada "belum disetujui".
-	e = services.EfekArasapas{Resolver: &resolverUji{url: "alamat-uji-bukan-URL"}}
-	if err := e.Jalankan(context.Background(), services.MuatanEfek{}); !errors.Is(
-		err, services.ErrArasapasBelumDisetujui) {
+	e = outbox.EfekArasapas{Resolver: &resolverUji{url: "alamat-uji-bukan-URL"}}
+	if err := e.Jalankan(context.Background(), outbox.MuatanEfek{}); !errors.Is(
+		err, outbox.ErrArasapasBelumDisetujui) {
 		t.Errorf("galat = %v, mau ErrArasapasBelumDisetujui", err)
 	}
 }
 
 // TestLingkunganDariFlagKonfigurasi - ADR-U-0005.
 func TestLingkunganDariFlagKonfigurasi(t *testing.T) {
-	if !services.LingkunganDariFlag(true).AdalahProduksi() {
+	if !inti.LingkunganDariFlag(true).AdalahProduksi() {
 		t.Error("IS_PEGA_PROD=true bukan produksi")
 	}
-	if services.LingkunganDariFlag(false).AdalahProduksi() {
+	if inti.LingkunganDariFlag(false).AdalahProduksi() {
 		t.Error("IS_PEGA_PROD=false dianggap produksi")
 	}
 }
@@ -256,23 +259,23 @@ func TestLingkunganServiceSampaiKePenyalur(t *testing.T) {
 	if got := services.New(nil).Lingkungan(); got.AdalahProduksi() {
 		t.Error("Service bawaan berlingkungan produksi; ia harus gagal tertutup")
 	}
-	prod := services.New(nil).DenganLingkungan(services.Produksi)
+	prod := services.New(nil).DenganLingkungan(inti.Produksi)
 	if !prod.Lingkungan().AdalahProduksi() {
 		t.Fatal("DenganLingkungan(Produksi) tidak tersimpan")
 	}
 	// ⛔ Dan ia MENGALIR ke penyalur yang Komite() susun. Diperiksa lewat
 	// perilaku: efek yang dipasang harus benar-benar berjalan.
 	efek := &efekUji{nama: "UJI-ALIR"}
-	services.NewPenyalur(prod.Lingkungan(), &antreanUji{}, efek).
-		Salurkan(context.Background(), services.MuatanEfek{KlaimID: "CLM-1"})
+	outbox.NewPenyalur(prod.Lingkungan(), &antreanUji{}, efek).
+		Salurkan(context.Background(), outbox.MuatanEfek{KlaimID: "CLM-1"})
 	if efek.dipanggil != 1 {
 		t.Errorf("efek berjalan %d kali, mau 1; lingkungan tidak mengalir "+
 			"dari Service ke penyalur", efek.dipanggil)
 	}
 	// Sebaliknya: Service bawaan tidak menjalankan apa pun.
 	bawaan := &efekUji{nama: "UJI-BAWAAN"}
-	services.NewPenyalur(services.New(nil).Lingkungan(), &antreanUji{}, bawaan).
-		Salurkan(context.Background(), services.MuatanEfek{KlaimID: "CLM-1"})
+	outbox.NewPenyalur(services.New(nil).Lingkungan(), &antreanUji{}, bawaan).
+		Salurkan(context.Background(), outbox.MuatanEfek{KlaimID: "CLM-1"})
 	if bawaan.dipanggil != 0 {
 		t.Errorf("efek berjalan %d kali di Service bawaan", bawaan.dipanggil)
 	}

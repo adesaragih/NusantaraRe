@@ -26,6 +26,10 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/jejak"
 )
 
 var (
@@ -47,25 +51,25 @@ var (
 type PenyelesaiAkhirKomite interface {
 	// Akseptasi - langkah 4 "Approve Last Komite" (tiket 04a/04b). Mengembalikan
 	// nomor akseptasi yang lahir.
-	Akseptasi(ctx context.Context, tx *repository.Tx, kasus repository.KasusKomite,
-		pelaku Pelaku, saat time.Time) (string, error)
+	Akseptasi(ctx context.Context, tx *db.Tx, kasus repository.KasusKomite,
+		pelaku inti.Pelaku, saat time.Time) (string, error)
 	// Tolak - langkah 5 "Reject" (tiket 05).
-	Tolak(ctx context.Context, tx *repository.Tx, kasus repository.KasusKomite,
-		pelaku Pelaku, saat time.Time) error
+	Tolak(ctx context.Context, tx *db.Tx, kasus repository.KasusKomite,
+		pelaku inti.Pelaku, saat time.Time) error
 }
 
 // PenyelesaiAkhirBelumAda gagal terang untuk kedua langkah.
 type PenyelesaiAkhirBelumAda struct{}
 
 // Akseptasi selalu gagal.
-func (PenyelesaiAkhirBelumAda) Akseptasi(context.Context, *repository.Tx,
-	repository.KasusKomite, Pelaku, time.Time) (string, error) {
+func (PenyelesaiAkhirBelumAda) Akseptasi(context.Context, *db.Tx,
+	repository.KasusKomite, inti.Pelaku, time.Time) (string, error) {
 	return "", ErrPenyelesaianAkhirBelumAda
 }
 
 // Tolak selalu gagal.
-func (PenyelesaiAkhirBelumAda) Tolak(context.Context, *repository.Tx,
-	repository.KasusKomite, Pelaku, time.Time) error {
+func (PenyelesaiAkhirBelumAda) Tolak(context.Context, *db.Tx,
+	repository.KasusKomite, inti.Pelaku, time.Time) error {
 	return ErrPenyelesaianAkhirBelumAda
 }
 
@@ -87,17 +91,17 @@ type HasilKeputusanKomite struct {
 // KeputusanKomite melayani keputusan satu tingkat.
 type KeputusanKomite struct {
 	svc   *Service
-	jejak Jejak
+	jejak jejak.Jejak
 	akhir PenyelesaiAkhirKomite
 }
 
 // KeputusanKomite menyusunnya dengan jejak dan penyelesai akhir yang gagal terang.
 func (s *Service) KeputusanKomite() *KeputusanKomite {
-	return &KeputusanKomite{svc: s, jejak: JejakBelumDiputuskan{}, akhir: PenyelesaiAkhirBelumAda{}}
+	return &KeputusanKomite{svc: s, jejak: jejak.JejakBelumDiputuskan{}, akhir: PenyelesaiAkhirBelumAda{}}
 }
 
 // DenganJejak mengganti perekamnya.
-func (k *KeputusanKomite) DenganJejak(j Jejak) *KeputusanKomite {
+func (k *KeputusanKomite) DenganJejak(j jejak.Jejak) *KeputusanKomite {
 	salin := *k
 	salin.jejak = j
 	return &salin
@@ -139,7 +143,7 @@ func periksaGiliran(k repository.KasusKomite, akunID string) error {
 	}
 	if strings.TrimSpace(a.OperatorID) == "" || a.OperatorID != akunID {
 		return fmt.Errorf("%w: tingkat %d kasus %q bukan milik pelaku",
-			ErrTanpaWewenang, b.KomiteCount, b.KasusID)
+			inti.ErrTanpaWewenang, b.KomiteCount, b.KasusID)
 	}
 	if a.Approval != repository.ApprovalKomiteMenunggu {
 		return fmt.Errorf("%w: tingkat %d sudah diputuskan", ErrKeputusanKomiteBersamaan, b.KomiteCount)
@@ -148,10 +152,10 @@ func periksaGiliran(k repository.KasusKomite, akunID string) error {
 }
 
 // Putuskan mencatat keputusan anggota berjalan dan memajukan tangganya.
-func (k *KeputusanKomite) Putuskan(ctx context.Context, pelaku Pelaku,
+func (k *KeputusanKomite) Putuskan(ctx context.Context, pelaku inti.Pelaku,
 	kasusID, keputusan, komentar string, saat time.Time) (HasilKeputusanKomite, error) {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return HasilKeputusanKomite{}, err
 	}
 	// Bentuk keputusan diperiksa SEBELUM basis data - nilai asing ditolak
@@ -160,12 +164,12 @@ func (k *KeputusanKomite) Putuskan(ctx context.Context, pelaku Pelaku,
 		return HasilKeputusanKomite{}, err
 	}
 	if k == nil || k.svc == nil || !k.svc.PunyaDatabase() {
-		return HasilKeputusanKomite{}, repository.ErrTanpaOracle
+		return HasilKeputusanKomite{}, db.ErrTanpaOracle
 	}
 	if strings.TrimSpace(kasusID) == "" {
-		return HasilKeputusanKomite{}, fmt.Errorf("%w: id kasus komite kosong", ErrPermintaanTidakSah)
+		return HasilKeputusanKomite{}, fmt.Errorf("%w: id kasus komite kosong", galat.ErrPermintaanTidakSah)
 	}
-	baca := repository.NewInboxKomite(k.svc.db)
+	baca := repository.NewInboxKomite(k.svc.DB())
 	kasus, err := baca.Kasus(ctx, kasusID)
 	if err != nil {
 		return HasilKeputusanKomite{}, err
@@ -187,7 +191,7 @@ func (k *KeputusanKomite) Putuskan(ctx context.Context, pelaku Pelaku,
 
 	var nomorAksep string
 	var tertunda []string
-	err = k.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	err = k.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		// Langkah 3 + 13 - satu tulisan bersyarat untuk dua baris.
 		if err := baca.CatatKeputusan(ctx, tx, kasusID, akibat.TingkatDiputus,
 			pelaku.AkunID, akibat.Keputusan, komentar, saat); err != nil {
@@ -215,7 +219,7 @@ func (k *KeputusanKomite) Putuskan(ctx context.Context, pelaku Pelaku,
 		}
 		tertunda = t
 		// ADR-0007: satu jejak per tingkat, di transaksi yang sama.
-		return k.jejak.Rekam(ctx, tx, CatatanJejak{
+		return k.jejak.Rekam(ctx, tx, jejak.CatatanJejak{
 			AdjustmentID: kasus.AdjID,
 			KlaimID:      klaimID,
 			Dari:         awalanJejakTingkat + strconv.Itoa(akibat.TingkatDiputus),
@@ -263,23 +267,23 @@ type HasilEskalasiKomite struct {
 // ⛔ Eskalasi BUKAN pintu belakang keputusan: ia tidak mencatat `1`/`2`
 // untuk siapa pun, dan admin yang sama tetap tidak dapat memutuskan atas nama
 // tingkat mana pun (`periksaGiliran`).
-func (k *KeputusanKomite) Eskalasi(ctx context.Context, pelaku Pelaku,
+func (k *KeputusanKomite) Eskalasi(ctx context.Context, pelaku inti.Pelaku,
 	kasusID string, saat time.Time) (HasilEskalasiKomite, error) {
 
-	if err := WajibIdentitas(pelaku); err != nil {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return HasilEskalasiKomite{}, err
 	}
-	if !pelaku.PunyaPeran(PeranAdmin) {
+	if !pelaku.PunyaPeran(inti.PeranAdmin) {
 		return HasilEskalasiKomite{}, fmt.Errorf("%w: eskalasi komite menuntut peran %s",
-			ErrTanpaWewenang, PeranAdmin)
+			inti.ErrTanpaWewenang, inti.PeranAdmin)
 	}
 	if k == nil || k.svc == nil || !k.svc.PunyaDatabase() {
-		return HasilEskalasiKomite{}, repository.ErrTanpaOracle
+		return HasilEskalasiKomite{}, db.ErrTanpaOracle
 	}
 	if strings.TrimSpace(kasusID) == "" {
-		return HasilEskalasiKomite{}, fmt.Errorf("%w: id kasus komite kosong", ErrPermintaanTidakSah)
+		return HasilEskalasiKomite{}, fmt.Errorf("%w: id kasus komite kosong", galat.ErrPermintaanTidakSah)
 	}
-	baca := repository.NewInboxKomite(k.svc.db)
+	baca := repository.NewInboxKomite(k.svc.DB())
 	kasus, err := baca.Kasus(ctx, kasusID)
 	if err != nil {
 		return HasilEskalasiKomite{}, err
@@ -296,12 +300,12 @@ func (k *KeputusanKomite) Eskalasi(ctx context.Context, pelaku Pelaku,
 	if err != nil {
 		return HasilEskalasiKomite{}, err
 	}
-	err = k.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+	err = k.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		if err := baca.Eskalasi(ctx, tx, kasusID, b.KomiteCount); err != nil {
 			return err
 		}
 		// AC 12: siapa, kapan, dari tingkat mana ke mana.
-		return k.jejak.Rekam(ctx, tx, CatatanJejak{
+		return k.jejak.Rekam(ctx, tx, jejak.CatatanJejak{
 			AdjustmentID: kasus.AdjID,
 			KlaimID:      klaimID,
 			Dari:         awalanJejakTingkat + strconv.Itoa(b.KomiteCount),

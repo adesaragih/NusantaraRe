@@ -13,9 +13,11 @@ import (
 	"time"
 
 	"nusantarare/internal/models"
-	"nusantarare/internal/repository"
 	"nusantarare/internal/services"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/utils"
 )
 
 // Jendela valuasi uji. Gross dan retro sengaja BERBEDA, supaya cabang yang
@@ -258,9 +260,9 @@ func TestGalatDOLMembawaPesertaDiMedanSendiri(t *testing.T) {
 // hasil validasi klaim, dan perubahan tanpa identitas tidak dapat ditelusuri.
 func TestSetTanggalKejadianTanpaPelakuDitolak(t *testing.T) {
 	svc := services.New(nil)
-	err := svc.TanggalKejadian().Set(context.Background(), services.Pelaku{},
+	err := svc.TanggalKejadian().Set(context.Background(), inti.Pelaku{},
 		"CLM-000001", "UJI-P-1", saat(t, "2025-06-01 00:00:00"))
-	if !errors.Is(err, services.ErrTanpaIdentitas) {
+	if !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Fatalf("galat = %v, mau ErrTanpaIdentitas", err)
 	}
 }
@@ -269,13 +271,13 @@ func TestSetTanggalKejadianTanpaPelakuDitolak(t *testing.T) {
 // pernah diteruskan ke SQL sebagai teks kosong.
 func TestSetTanggalKejadianTanpaPengenalDitolak(t *testing.T) {
 	svc := services.New(nil)
-	pelaku := services.Pelaku{AkunID: "UJI-AKUN"}
+	pelaku := inti.Pelaku{AkunID: "UJI-AKUN"}
 	for _, k := range []struct{ klaim, peserta string }{
 		{"", "UJI-P-1"}, {"CLM-000001", ""}, {"   ", "   "},
 	} {
 		err := svc.TanggalKejadian().Set(context.Background(), pelaku,
 			k.klaim, k.peserta, saat(t, "2025-06-01 00:00:00"))
-		if !errors.Is(err, services.ErrPermintaanTidakSah) {
+		if !errors.Is(err, galat.ErrPermintaanTidakSah) {
 			t.Errorf("klaim %q peserta %q: galat = %v, mau ErrPermintaanTidakSah",
 				k.klaim, k.peserta, err)
 		}
@@ -287,9 +289,9 @@ func TestSetTanggalKejadianTanpaPengenalDitolak(t *testing.T) {
 func TestSetTanggalKejadianTanpaOracleGagal(t *testing.T) {
 	svc := services.New(nil)
 	err := svc.TanggalKejadian().Set(context.Background(),
-		pelakuBerperan(services.PeranAdmin), "CLM-000001", "UJI-P-1",
+		pelakuBerperan(inti.PeranAdmin), "CLM-000001", "UJI-P-1",
 		saat(t, "2025-06-01 00:00:00"))
-	if !errors.Is(err, repository.ErrTanpaOracle) {
+	if !errors.Is(err, db.ErrTanpaOracle) {
 		t.Fatalf("galat = %v, mau ErrTanpaOracle", err)
 	}
 }
@@ -298,14 +300,14 @@ func TestSetTanggalKejadianTanpaOracleGagal(t *testing.T) {
 // dengan tiga tanggal lainnya (b1000 `pyPosition!='ReasLifeAdmin'` baca-saja).
 func TestSetTanggalKejadianHanyaAdmin(t *testing.T) {
 	svc := services.New(nil)
-	for _, pelaku := range []services.Pelaku{
+	for _, pelaku := range []inti.Pelaku{
 		{AkunID: "UJI-AKUN"},
-		pelakuBerperan(services.PeranMedicalAdvisor),
-		pelakuBerperan(services.PeranSPV),
+		pelakuBerperan(inti.PeranMedicalAdvisor),
+		pelakuBerperan(inti.PeranSPV),
 	} {
 		err := svc.TanggalKejadian().Set(context.Background(), pelaku, "CLM-000001", "UJI-P-1",
 			saat(t, "2025-06-01 00:00:00"))
-		if !errors.Is(err, services.ErrTanpaWewenang) {
+		if !errors.Is(err, inti.ErrTanpaWewenang) {
 			t.Errorf("%v: galat = %v, mau ErrTanpaWewenang", pelaku.Peran, err)
 		}
 	}
@@ -353,26 +355,26 @@ func TestSetTanggalKlaimMenjagaPagarnya(t *testing.T) {
 	svc := services.New(nil)
 	ctx := context.Background()
 	tgl := tanggalKlaimUji(t)
-	admin := pelakuBerperan(services.PeranAdmin)
+	admin := pelakuBerperan(inti.PeranAdmin)
 
-	if err := svc.TanggalKejadian().SetTanggalKlaim(ctx, services.Pelaku{},
-		"CLM-1", "P-1", tgl); !errors.Is(err, services.ErrTanpaIdentitas) {
+	if err := svc.TanggalKejadian().SetTanggalKlaim(ctx, inti.Pelaku{},
+		"CLM-1", "P-1", tgl); !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("anonim: %v, mau ErrTanpaIdentitas", err)
 	}
 	for _, k := range []struct{ klaim, peserta string }{{"", "P-1"}, {"CLM-1", " "}} {
 		if err := svc.TanggalKejadian().SetTanggalKlaim(ctx, admin,
-			k.klaim, k.peserta, tgl); !errors.Is(err, services.ErrPermintaanTidakSah) {
+			k.klaim, k.peserta, tgl); !errors.Is(err, galat.ErrPermintaanTidakSah) {
 			t.Errorf("%q/%q: %v, mau ErrPermintaanTidakSah", k.klaim, k.peserta, err)
 		}
 	}
-	for _, peran := range []string{services.PeranMedicalAdvisor, services.PeranSPV} {
+	for _, peran := range []string{inti.PeranMedicalAdvisor, inti.PeranSPV} {
 		if err := svc.TanggalKejadian().SetTanggalKlaim(ctx, pelakuBerperan(peran),
-			"CLM-1", "P-1", tgl); !errors.Is(err, services.ErrTanpaWewenang) {
+			"CLM-1", "P-1", tgl); !errors.Is(err, inti.ErrTanpaWewenang) {
 			t.Errorf("%s: %v, mau ErrTanpaWewenang", peran, err)
 		}
 	}
 	if err := svc.TanggalKejadian().SetTanggalKlaim(ctx, admin,
-		"CLM-1", "P-1", tgl); !errors.Is(err, repository.ErrTanpaOracle) {
+		"CLM-1", "P-1", tgl); !errors.Is(err, db.ErrTanpaOracle) {
 		t.Errorf("admin tanpa Oracle: %v, mau ErrTanpaOracle", err)
 	}
 }

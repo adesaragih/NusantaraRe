@@ -22,17 +22,18 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/internal/config"
 	"nusantarare/internal/handlers"
 	"nusantarare/internal/repository"
 	"nusantarare/internal/repository/skemauji"
 	"nusantarare/internal/services"
+	"nusantarare/inti/config"
+	"nusantarare/inti/db"
 )
 
 type ujiTCO struct {
 	srv      *httptest.Server
 	sqlDB    interface{ Close() error }
-	db       *repository.DB
+	db       *db.DB
 	skema    string
 	ctx      context.Context
 	isiJenis func([]skemauji.JenisReasuransiUji)
@@ -81,7 +82,7 @@ func serverTCOAwal(t *testing.T) (*ujiTCO, func()) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	db, err := repository.Open(cfg)
+	db, err := db.Open(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}

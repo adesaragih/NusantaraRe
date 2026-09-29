@@ -28,7 +28,10 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
-	"nusantarare/pkg/utils"
+	"nusantarare/inti"
+	"nusantarare/inti/db"
+	"nusantarare/inti/galat"
+	"nusantarare/inti/utils"
 )
 
 var (
@@ -63,10 +66,10 @@ type GudangKlausulTCO interface {
 	Daftar(ctx context.Context, tahunID, descID, parentReinsTypeID string) ([]models.KlausulTreaty, error)
 	Ambil(ctx context.Context, tahunID, id string) (models.KlausulTreaty, error)
 	Induk(ctx context.Context, tahunID, descID, reinsTypeID string) (models.KlausulTreaty, error)
-	PctAnakLain(ctx context.Context, tx *repository.Tx, tahunID, descID, parentReinsTypeID, kecualiID string) ([]*apd.Decimal, error)
-	CariDobel(ctx context.Context, tx *repository.Tx, k models.KlausulTreaty, kunci []string) (string, error)
-	Sisip(ctx context.Context, tx *repository.Tx, k models.KlausulTreaty) (string, error)
-	Perbarui(ctx context.Context, tx *repository.Tx, k models.KlausulTreaty) error
+	PctAnakLain(ctx context.Context, tx *db.Tx, tahunID, descID, parentReinsTypeID, kecualiID string) ([]*apd.Decimal, error)
+	CariDobel(ctx context.Context, tx *db.Tx, k models.KlausulTreaty, kunci []string) (string, error)
+	Sisip(ctx context.Context, tx *db.Tx, k models.KlausulTreaty) (string, error)
+	Perbarui(ctx context.Context, tx *db.Tx, k models.KlausulTreaty) error
 }
 
 // PembacaMasterKlausulTCO membaca master TREATYDESC / OCCUPATION / CLAUSE.
@@ -79,7 +82,7 @@ type PembacaMasterKlausulTCO interface {
 // PengunciTahunTCO membaca dan mengunci tahun treaty induk klausul.
 type PengunciTahunTCO interface {
 	Ambil(ctx context.Context, id string) (models.TahunTreaty, error)
-	Kunci(ctx context.Context, tx *repository.Tx, id string) error
+	Kunci(ctx context.Context, tx *db.Tx, id string) error
 }
 
 type klausulBelumDisuntik struct{}
@@ -93,16 +96,16 @@ func (klausulBelumDisuntik) Ambil(context.Context, string, string) (models.Klaus
 func (klausulBelumDisuntik) Induk(context.Context, string, string, string) (models.KlausulTreaty, error) {
 	return models.KlausulTreaty{}, ErrGudangKlausulBelumDisuntik
 }
-func (klausulBelumDisuntik) PctAnakLain(context.Context, *repository.Tx, string, string, string, string) ([]*apd.Decimal, error) {
+func (klausulBelumDisuntik) PctAnakLain(context.Context, *db.Tx, string, string, string, string) ([]*apd.Decimal, error) {
 	return nil, ErrGudangKlausulBelumDisuntik
 }
-func (klausulBelumDisuntik) CariDobel(context.Context, *repository.Tx, models.KlausulTreaty, []string) (string, error) {
+func (klausulBelumDisuntik) CariDobel(context.Context, *db.Tx, models.KlausulTreaty, []string) (string, error) {
 	return "", ErrGudangKlausulBelumDisuntik
 }
-func (klausulBelumDisuntik) Sisip(context.Context, *repository.Tx, models.KlausulTreaty) (string, error) {
+func (klausulBelumDisuntik) Sisip(context.Context, *db.Tx, models.KlausulTreaty) (string, error) {
 	return "", ErrGudangKlausulBelumDisuntik
 }
-func (klausulBelumDisuntik) Perbarui(context.Context, *repository.Tx, models.KlausulTreaty) error {
+func (klausulBelumDisuntik) Perbarui(context.Context, *db.Tx, models.KlausulTreaty) error {
 	return ErrGudangKlausulBelumDisuntik
 }
 func (klausulBelumDisuntik) JenisKlausul(context.Context, string) ([]repository.JenisKlausulMasterTCO, error) {
@@ -114,7 +117,7 @@ func (klausulBelumDisuntik) CariPilihan(context.Context, string, string) ([]repo
 func (klausulBelumDisuntik) AmbilPilihan(context.Context, string, string) (repository.PilihanMasterTCO, error) {
 	return repository.PilihanMasterTCO{}, ErrGudangKlausulBelumDisuntik
 }
-func (klausulBelumDisuntik) Kunci(context.Context, *repository.Tx, string) error {
+func (klausulBelumDisuntik) Kunci(context.Context, *db.Tx, string) error {
 	return ErrGudangKlausulBelumDisuntik
 }
 
@@ -126,22 +129,22 @@ func (pengunciTahunBelumDisuntik) Ambil(context.Context, string) (models.TahunTr
 
 type gudangKlausulOracle struct {
 	*repository.MasterKlausulTCO
-	db *repository.DB
+	db *db.DB
 }
 
 // GudangKlausulOracle menyusun gudang klausul di atas Oracle.
 func GudangKlausulOracle(svc *Service) GudangKlausulTCO {
-	return gudangKlausulOracle{MasterKlausulTCO: repository.NewMasterKlausulTCO(svc.db), db: svc.db}
+	return gudangKlausulOracle{MasterKlausulTCO: repository.NewMasterKlausulTCO(svc.DB()), db: svc.DB()}
 }
 
 // MasterKlausulOracle menyusun pembaca master klausul.
 func MasterKlausulOracle(svc *Service) PembacaMasterKlausulTCO {
-	return repository.NewMasterKlausulPilihan(svc.db)
+	return repository.NewMasterKlausulPilihan(svc.DB())
 }
 
 // PengunciTahunOracle menyusun pembaca + pengunci tahun treaty.
 func PengunciTahunOracle(svc *Service) PengunciTahunTCO {
-	return repository.NewMasterTahunTreaty(svc.db)
+	return repository.NewMasterTahunTreaty(svc.DB())
 }
 
 // AturanTampil adalah satu aturan jenis seperti dikirim ke layar - supaya form
@@ -255,7 +258,7 @@ type KlausulTCO struct {
 	jenis     PembacaJenisReasuransiTCO
 	kurs      PembacaKursTCO
 	jam       func() time.Time
-	transaksi func(ctx context.Context, fn func(tx *repository.Tx) error) error
+	transaksi func(ctx context.Context, fn func(tx *db.Tx) error) error
 }
 
 // KlausulTCO menyusun layanannya; bawaannya gagal terang.
@@ -306,7 +309,7 @@ func (l *KlausulTCO) DenganKurs(k PembacaKursTCO) *KlausulTCO {
 func (l *KlausulTCO) DenganJam(j func() time.Time) *KlausulTCO { s := l.salin(); s.jam = j; return s }
 
 // DenganTransaksi mengganti pelaksana transaksi - dipakai uji.
-func (l *KlausulTCO) DenganTransaksi(f func(ctx context.Context, fn func(tx *repository.Tx) error) error) *KlausulTCO {
+func (l *KlausulTCO) DenganTransaksi(f func(ctx context.Context, fn func(tx *db.Tx) error) error) *KlausulTCO {
 	s := l.salin()
 	s.transaksi = f
 	return s
@@ -318,8 +321,8 @@ func tampilAturan(a models.AturanKlausul) AturanTampil {
 }
 
 // JenisKlausul membaca grid jenis (`BrowseTreatyDesc_RD`) + aturan tiap jenis.
-func (l *KlausulTCO) JenisKlausul(ctx context.Context, pelaku Pelaku, isXOL string) ([]JenisKlausulTampil, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (l *KlausulTCO) JenisKlausul(ctx context.Context, pelaku inti.Pelaku, isXOL string) ([]JenisKlausulTampil, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return nil, err
 	}
 	d, err := l.master.JenisKlausul(ctx, strings.TrimSpace(isXOL))
@@ -344,8 +347,8 @@ func (l *KlausulTCO) JenisKlausul(ctx context.Context, pelaku Pelaku, isXOL stri
 }
 
 // Daftar membaca klausul satu jenis: induk (`parent` kosong/"00") atau anak.
-func (l *KlausulTCO) Daftar(ctx context.Context, pelaku Pelaku, tahunID, descID, parent string) (DaftarKlausulTampil, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (l *KlausulTCO) Daftar(ctx context.Context, pelaku inti.Pelaku, tahunID, descID, parent string) (DaftarKlausulTampil, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return DaftarKlausulTampil{}, err
 	}
 	if strings.TrimSpace(parent) == "" {
@@ -410,8 +413,8 @@ func (l *KlausulTCO) namaDesc(ctx context.Context, descID string) (string, error
 }
 
 // Simpan menulis satu klausul - `Save` tiap form jenis (`SaveTreatyArr*`).
-func (l *KlausulTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID string, m KlausulMasuk) (HasilKlausulTampil, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (l *KlausulTCO) Simpan(ctx context.Context, pelaku inti.Pelaku, tahunID string, m KlausulMasuk) (HasilKlausulTampil, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return HasilKlausulTampil{}, err
 	}
 	tahun, err := l.tahun.Ambil(ctx, tahunID)
@@ -434,7 +437,7 @@ func (l *KlausulTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID string, 
 	if a.Anak {
 		parent = strings.TrimSpace(m.ParentReinsTypeID)
 		if parent == "" || parent == models.ParentReinsTypeTanpaInduk {
-			return HasilKlausulTampil{}, fmt.Errorf("%w: baris anak wajib menyebut ParentReinsTypeID induknya", ErrPermintaanTidakSah)
+			return HasilKlausulTampil{}, fmt.Errorf("%w: baris anak wajib menyebut ParentReinsTypeID induknya", galat.ErrPermintaanTidakSah)
 		}
 	}
 	k := models.KlausulTreaty{}
@@ -494,7 +497,7 @@ func (l *KlausulTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID string, 
 		return HasilKlausulTampil{}, err
 	}
 	var total *apd.Decimal
-	err = l.transaksi(ctx, func(tx *repository.Tx) error {
+	err = l.transaksi(ctx, func(tx *db.Tx) error {
 		if err := l.tahun.Kunci(ctx, tx, tahunID); err != nil {
 			return err
 		}
@@ -582,8 +585,8 @@ func (l *KlausulTCO) lengkapiDariMaster(ctx context.Context, a models.AturanKlau
 }
 
 // Pilihan membaca pemilih ExclutionTreaty - `occupation` atau `clause`.
-func (l *KlausulTCO) Pilihan(ctx context.Context, pelaku Pelaku, master, cari string) ([]PilihanTampil, error) {
-	if err := WajibIdentitas(pelaku); err != nil {
+func (l *KlausulTCO) Pilihan(ctx context.Context, pelaku inti.Pelaku, master, cari string) ([]PilihanTampil, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return nil, err
 	}
 	var tabel string
@@ -593,7 +596,7 @@ func (l *KlausulTCO) Pilihan(ctx context.Context, pelaku Pelaku, master, cari st
 	case "clause":
 		tabel = repository.MasterClauseTCO
 	default:
-		return nil, fmt.Errorf("%w: master pilihan %q", ErrPermintaanTidakSah, master)
+		return nil, fmt.Errorf("%w: master pilihan %q", galat.ErrPermintaanTidakSah, master)
 	}
 	d, err := l.master.CariPilihan(ctx, tabel, cari)
 	if err != nil {
@@ -610,7 +613,7 @@ func (l *KlausulTCO) Pilihan(ctx context.Context, pelaku Pelaku, master, cari st
 // (`HitungRpUsd`), yang tersimpan. Induk yang Rp/Usd-nya berubah menghitung
 // ulang seluruh anaknya di transaksi yang sama, supaya nilai tersimpan tetap
 // Pct x induk / 100 (Pega hanya menghitung saat anak disimpan).
-func (l *KlausulTCO) hitungUlangAnak(ctx context.Context, tx *repository.Tx, pelaku Pelaku, a models.AturanKlausul,
+func (l *KlausulTCO) hitungUlangAnak(ctx context.Context, tx *db.Tx, pelaku inti.Pelaku, a models.AturanKlausul,
 	lama, induk models.KlausulTreaty) error {
 
 	if a.Anak || induk.ReinsTypeID == "" {

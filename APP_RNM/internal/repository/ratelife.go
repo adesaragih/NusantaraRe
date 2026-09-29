@@ -38,6 +38,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"nusantarare/inti/db"
 )
 
 // KolomRateLife adalah LIMA kolom yang izin OQ-M7 cakup - dibaca penjaga
@@ -61,10 +63,10 @@ type BarisRateLife struct {
 }
 
 // RateLife membaca rate retro. READ-ONLY, seluruhnya.
-type RateLife struct{ db *DB }
+type RateLife struct{ db *db.DB }
 
 // NewRateLife menyusunnya.
-func NewRateLife(db *DB) *RateLife { return &RateLife{db: db} }
+func NewRateLife(db *db.DB) *RateLife { return &RateLife{db: db} }
 
 // sqlRateLife merakit pembacaan kelima kolom.
 func sqlRateLife(view string) string {
@@ -86,10 +88,10 @@ func (r *RateLife) Baca(ctx context.Context, idUsedBy string) ([]BarisRateLife, 
 		return nil, err
 	}
 	q := sqlRateLife(view)
-	if err := PeriksaSQL(q); err != nil {
+	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := r.db.sql.QueryContext(ctx, q, strings.TrimSpace(idUsedBy))
+	rows, err := r.db.QueryContext(ctx, q, strings.TrimSpace(idUsedBy))
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca view rate: %w", err)
 	}
