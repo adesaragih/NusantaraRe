@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { ambilKursTahun, konversiKurs } from '../services/api'
+import { ApiFailure, ambilKursTahun, konversiKurs, pesanGalat } from '../services/api'
 
 import { KODE_BACKEND_MATI, klasifikasiGalat } from './keadaanGalat'
 
@@ -41,7 +41,7 @@ describe('503 yang MEMBAWA galat backend', () => {
   it('kurs tahun: kalimat backend sampai ke pemakai, bukan "backend tidak terhubung"', async () => {
     jawab(503, JSON.stringify({ galat: KALIMAT }))
 
-    const k = klasifikasiGalat(await galatDari(ambilKursTahun('1000682')))
+    const k = klasifikasiGalat(await galatDari(ambilKursTahun('1000001')))
 
     expect(k?.jenis).toBe('galat-api')
     expect(k?.pesan).toBe(KALIMAT)
@@ -52,7 +52,7 @@ describe('503 yang MEMBAWA galat backend', () => {
   it('konversi kurs: rute kedua layar yang sama', async () => {
     jawab(503, JSON.stringify({ galat: KALIMAT }))
 
-    const k = klasifikasiGalat(await galatDari(konversiKurs('1000682', 'Rp', '1', '8')))
+    const k = klasifikasiGalat(await galatDari(konversiKurs('1000001', 'Rp', '1', '8')))
 
     expect(k?.jenis).toBe('galat-api')
     expect(k?.pesan).toBe(KALIMAT)
@@ -61,7 +61,7 @@ describe('503 yang MEMBAWA galat backend', () => {
   it.each([502, 504])('%i yang membawa galat backend pun bukan backend mati', async (status) => {
     jawab(status, JSON.stringify({ galat: KALIMAT }))
 
-    const k = klasifikasiGalat(await galatDari(ambilKursTahun('1000682')))
+    const k = klasifikasiGalat(await galatDari(ambilKursTahun('1000001')))
 
     expect(k?.jenis).toBe('galat-api')
     expect(k?.pesan).toBe(KALIMAT)
@@ -69,10 +69,10 @@ describe('503 yang MEMBAWA galat backend', () => {
 })
 
 describe('jawaban TANPA galat backend tetap backend mati', () => {
-  it.each([502, 503, 504])('%i berbadan kosong (proxy)', async (status) => {
+  it.each([502, 503, 504])('%i berbadan kosong (reverse-proxy)', async (status) => {
     jawab(status, '', 'text/plain')
 
-    const k = klasifikasiGalat(await galatDari(ambilKursTahun('1000682')))
+    const k = klasifikasiGalat(await galatDari(ambilKursTahun('1000001')))
 
     expect(k?.jenis).toBe('backend-mati')
     expect(k?.petunjuk).toContain('muat-env.ps1')
@@ -81,7 +81,7 @@ describe('jawaban TANPA galat backend tetap backend mati', () => {
   it('503 berbadan HTML (reverse-proxy) → BACKEND_TIDAK_TERJANGKAU', async () => {
     jawab(503, '<html><body>Service Unavailable</body></html>', 'text/html')
 
-    const k = klasifikasiGalat(await galatDari(ambilKursTahun('1000682')))
+    const k = klasifikasiGalat(await galatDari(ambilKursTahun('1000001')))
 
     expect(k?.jenis).toBe('backend-mati')
   })
@@ -89,13 +89,13 @@ describe('jawaban TANPA galat backend tetap backend mati', () => {
   it('503 dengan galat KOSONG bukan kalimat backend', async () => {
     jawab(503, JSON.stringify({ galat: '' }))
 
-    expect(klasifikasiGalat(await galatDari(ambilKursTahun('1000682')))?.jenis).toBe('backend-mati')
+    expect(klasifikasiGalat(await galatDari(ambilKursTahun('1000001')))?.jenis).toBe('backend-mati')
   })
 
   it('503 dengan kunci `error` bukan kalimat backend (amplopnya `galat`)', async () => {
     jawab(503, JSON.stringify({ error: KALIMAT }))
 
-    expect(klasifikasiGalat(await galatDari(ambilKursTahun('1000682')))?.jenis).toBe('backend-mati')
+    expect(klasifikasiGalat(await galatDari(ambilKursTahun('1000001')))?.jenis).toBe('backend-mati')
   })
 
   it('kode BACKEND_TIDAK_TERJANGKAU menang atas pesan buatan klien', () => {
@@ -108,5 +108,23 @@ describe('jawaban TANPA galat backend tetap backend mati', () => {
 
   it('galat JARINGAN tetap backend mati', () => {
     expect(klasifikasiGalat(new TypeError('Failed to fetch'))?.jenis).toBe('backend-mati')
+  })
+})
+
+describe('satu aturan "kalimat dari backend", dua tempat', () => {
+  // ⛔ `lib/keadaanGalat.ts` murni dan tidak mengimpor `services/api.ts`, jadi
+  // aturannya DISALIN dari `pesanGalat`. Uji ini mengunci keduanya sepakat:
+  // 503 menjadi galat-api TEPAT bila `pesanGalat` mengakui pesannya milik
+  // backend. Aturan yang menyimpang akan menampilkan kalimat klien sebagai
+  // kalimat server, atau menyuruh menyalakan backend yang menyala.
+  it.each([
+    ['DITOLAK_BACKEND + pesan', new ApiFailure(503, { code: 'DITOLAK_BACKEND', message: KALIMAT })],
+    ['DITOLAK_BACKEND + pesan kosong', new ApiFailure(503, { code: 'DITOLAK_BACKEND', message: '' })],
+    ['DITOLAK_BACKEND tanpa pesan', new ApiFailure(503, { code: 'DITOLAK_BACKEND' })],
+    ['BACKEND_TIDAK_TERJANGKAU + pesan klien', new ApiFailure(503, { code: 'BACKEND_TIDAK_TERJANGKAU', message: 'x' })],
+    ['tanpa kode + pesan', new ApiFailure(503, { message: KALIMAT })],
+  ])('%s', (_nama, e) => {
+    const dariBackend = pesanGalat(e) !== undefined
+    expect(klasifikasiGalat(e)?.jenis).toBe(dariBackend ? 'galat-api' : 'backend-mati')
   })
 })

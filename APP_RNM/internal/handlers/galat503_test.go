@@ -3,11 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"testing"
 
@@ -40,7 +41,7 @@ func badanGalat503(t *testing.T, nama string, w *httptest.ResponseRecorder) stri
 		t.Fatalf("%s: badan bukan JSON: %v", nama, err)
 	}
 	pesan, _ := isi["galat"].(string)
-	if len(isi) != 1 || strings.TrimSpace(pesan) == "" {
+	if len(isi) != 1 || pesan == "" {
 		t.Fatalf("%s: badan %v, mau tepat {\"galat\": \"<kalimat>\"}", nama, isi)
 	}
 	return pesan
@@ -59,8 +60,8 @@ func TestGalat503MasterKursMembawaKalimatnya(t *testing.T) {
 func TestGalat503RuteKursTanpaDatabaseMembawaKalimatnya(t *testing.T) {
 	router := Router(services.New(nil), true)
 	for _, jalur := range []string{
-		"/api/treaty-contract-out/tahun/1000682/kurs",
-		"/api/treaty-contract-out/tahun/1000682/kurs/konversi?dari=Rp&nilai=1&skala=8",
+		"/api/treaty-contract-out/tahun/1000001/kurs",
+		"/api/treaty-contract-out/tahun/1000001/kurs/konversi?dari=Rp&nilai=1&skala=8",
 	} {
 		w := httptest.NewRecorder()
 		q := httptest.NewRequest(http.MethodGet, jalur, nil)
@@ -72,45 +73,68 @@ func TestGalat503RuteKursTanpaDatabaseMembawaKalimatnya(t *testing.T) {
 	}
 }
 
-// Penjaga statik: SETIAP 503 di handler ditulis lewat `galat()`. 503 yang
-// ditulis `http.Error` (teks biasa) atau `WriteHeader` polos sampai di klien
-// tanpa `galat` - dan klien benar menyebutnya "backend tidak terhubung".
+// kode503 - `http.StatusServiceUnavailable` atau literal `503`.
+func kode503(e ast.Expr) bool {
+	switch v := e.(type) {
+	case *ast.SelectorExpr:
+		x, ok := v.X.(*ast.Ident)
+		return ok && x.Name == "http" && v.Sel.Name == "StatusServiceUnavailable"
+	case *ast.BasicLit:
+		return v.Kind == token.INT && v.Value == "503"
+	}
+	return false
+}
+
+// Penjaga statik: SETIAP 503 di handler ditulis lewat `galat()` dengan pesan
+// tak kosong. 503 yang ditulis `http.Error` (teks biasa) atau `WriteHeader`
+// polos sampai di klien tanpa `galat` - dan klien benar menyebutnya "backend
+// tidak terhubung".
+//
+// Dibaca sebagai pohon sintaks (seperti `fungsiPaket`, `tertutup409_test.go`),
+// bukan baris: argumen yang terpecah ke baris berikutnya, komentar, dan nama
+// fungsi yang kebetulan berakhiran `galat` tidak mengecohnya.
+// ⚠️ Batasnya: kode status di dalam VARIABEL (`galat(w, kode, …)`) tidak
+// terlihat - penjaga ini membaca konstanta dan literal saja.
 func TestSetiap503HandlerLewatGalat(t *testing.T) {
 	berkas, err := filepath.Glob("*.go")
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Pesannya boleh di baris berikutnya (`dokumen.go`); kosong dilarang.
-	lewatGalat := regexp.MustCompile(`galat\(w, http\.StatusServiceUnavailable,`)
-	pesanKosong := regexp.MustCompile(`galat\(w, http\.StatusServiceUnavailable,\s*""\)`)
+	fset := token.NewFileSet()
 	jumlah := 0
 	for _, b := range berkas {
 		if strings.HasSuffix(b, "_test.go") {
 			continue
 		}
-		isi, err := os.ReadFile(b)
+		f, err := parser.ParseFile(fset, b, nil, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
-		for i, baris := range strings.Split(string(isi), "\n") {
-			if !strings.Contains(baris, "StatusServiceUnavailable") && !strings.Contains(baris, "503") {
-				continue
+		sah := map[ast.Expr]bool{}
+		ast.Inspect(f, func(n ast.Node) bool {
+			c, ok := n.(*ast.CallExpr)
+			if !ok || len(c.Args) != 3 || !kode503(c.Args[1]) {
+				return true
 			}
-			if strings.HasPrefix(strings.TrimSpace(baris), "//") {
-				continue
+			if id, ok := c.Fun.(*ast.Ident); !ok || id.Name != "galat" {
+				return true
 			}
-			switch {
-			case pesanKosong.MatchString(baris):
-				t.Errorf("%s:%d: 503 dengan galat kosong - klien membacanya sebagai backend mati", b, i+1)
-			case lewatGalat.MatchString(baris):
-				jumlah++
-			default:
-				t.Errorf("%s:%d: 503 tidak lewat galat(): %s", b, i+1, strings.TrimSpace(baris))
+			sah[c.Args[1]] = true
+			jumlah++
+			if lit, ok := c.Args[2].(*ast.BasicLit); ok && lit.Kind == token.STRING && (lit.Value == `""` || lit.Value == "``") {
+				t.Errorf("%s: 503 dengan galat kosong - klien membacanya sebagai backend mati", fset.Position(c.Pos()))
 			}
-		}
+			return true
+		})
+		ast.Inspect(f, func(n ast.Node) bool {
+			if e, ok := n.(ast.Expr); ok && kode503(e) && !sah[e] {
+				t.Errorf("%s: 503 tidak lewat galat()", fset.Position(e.Pos()))
+			}
+			return true
+		})
 	}
-	if jumlah == 0 {
-		t.Error("nol 503 ditemukan - penjaga ini tidak lagi membaca berkas yang benar")
+	if jumlah < 10 {
+		t.Fatalf("hanya %d jawaban 503 lewat galat() terbaca; pembacanya yang rusak", jumlah)
 	}
 	t.Logf("%d jawaban 503 lewat galat()", jumlah)
 }

@@ -82,17 +82,23 @@ function backendMati(): KeadaanGalat {
   };
 }
 
+/** Kode yang `kegagalanDari` (`services/api.ts`) pasang pada jawaban JSON backend. */
+const KODE_DITOLAK_BACKEND = "DITOLAK_BACKEND";
+
 /**
- * Kalimat yang backend sendiri kirim di amplop `{"galat": …}`, atau
- * `undefined` bila jawabannya tidak membawanya.
+ * Apakah jawaban ini membawa kalimat backend sendiri di amplop `{"galat": …}`.
  *
- * Pesan kode BACKEND_TIDAK_TERJANGKAU ditulis KLIEN (`bukanJSON` di
- * `services/api.ts`), bukan backend — karena itu ia bukan galat backend.
+ * ⛔ Aturannya SAMA dengan `pesanGalat` di `services/api.ts` — hanya kode
+ * DITOLAK_BACKEND, pesan tak kosong — disalin, bukan diimpor, karena modul
+ * ini murni; `keadaanGalat.test.ts` mengunci keduanya tetap sepakat. Pesan
+ * BACKEND_TIDAK_TERJANGKAU ditulis KLIEN (`bukanJSON`), bukan backend.
  */
-function galatDariBackend(g: GalatApiSeperti): string | undefined {
-  if (g.detail.code === KODE_BACKEND_MATI) return undefined;
-  const p = g.detail.message;
-  return typeof p === "string" && p.trim() !== "" ? p : undefined;
+function membawaGalatBackend(g: GalatApiSeperti): boolean {
+  return (
+    g.detail.code === KODE_DITOLAK_BACKEND &&
+    typeof g.detail.message === "string" &&
+    g.detail.message !== ""
+  );
 }
 
 export function klasifikasiGalat(galat: unknown): KeadaanGalat | null {
@@ -113,10 +119,16 @@ export function klasifikasiGalat(galat: unknown): KeadaanGalat | null {
        sendiri — ia menyala dan menolak dengan alasan (mis. 503 master
        kurs rusak, lanjutan 6 Treaty Contract Out). Menyebutnya "backend
        tidak terhubung" menelan alasannya dan menyuruh pemakai menyalakan
-       backend yang sudah menyala. */
+       backend yang sudah menyala.
+
+       ⚠️ Proxy dev Vite 5.4 menjawab upstream mati dengan 500 BERBADAN
+       KOSONG — bukan 502/503/504, dan bukan badan bukan-JSON. `kegagalanDari`
+       menjadikannya DITOLAK_BACKEND tanpa pesan, sehingga ia jatuh ke
+       galat-api "Permintaan ditolak backend" — sebelum dan sesudah
+       lanjutan 6. Terbuka, dilaporkan. */
     if (
       galat.detail.code === KODE_BACKEND_MATI ||
-      (galatDariBackend(galat) === undefined &&
+      (!membawaGalatBackend(galat) &&
         (galat.status === 502 ||
           galat.status === 503 ||
           galat.status === 504))
