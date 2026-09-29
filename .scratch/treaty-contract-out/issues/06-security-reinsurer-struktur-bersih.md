@@ -1,6 +1,6 @@
 # 06: Security reinsurer — struktur bersih
 
-**Status:** ready-for-agent
+**Status:** selesai (29-09-2026)
 
 **Blocked by:** 05 (security menggantung pada reinsurer)
 
@@ -114,3 +114,47 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+## Pembacaan ulang XML — 29-09-2026 (sesi modul, lanjutan 1)
+
+Nomor baris = baris mentah berkas korpus `Treaty Contract Out/`; langkah aktivitas dibaca lengkap.
+
+| Unsur | Bukti | Dibawa sebagai |
+| --- | --- | --- |
+| jalan masuk | `Section/ViewDetailTreatyReinsurerGrid1.xml` b5277 `Security Reinsurer` → `DataTransform/SetSecurityReinsurer.xml` (b520 `CARI8 = Param.THN_TREATY` = `.TreatyYear`, b550 `CARI9 = Param.REAS_ID` = `.ID`, b278 `HASILD21 = 1`); bagian security `Section/InputTreatyContractReinsType.xml` b14885 `HASILD21 == 1` | tombol baris reinsurer membuka `PanelSecurityReinsurer` |
+| daftar | `ReportDefinition/SelectSecurityReinsurer.xml` saringan `A AND D` (b550): `.THN_TREATY = Param.THN_TREATY`, `.REAS_ID = Param.REAS_ID`; pyMaxRecords 500 (b758); tanpa urutan | `GET .../reinsurer/{rid}/security`, saringan sama, `ORDER BY ID ASC` |
+| grid | b16088 `Reas Security` (`.REAS_SECURITY` b16724), b16228 `Security Name` (`.CLIENTNAME` b16878), b16368 `Percent Share` (`.PCT_SHARE` b17013); `Edit` b17252 → `ShowEditSecurityReinsurer` (b360/b381 `HASILD2 = HASILD3 = 1`); `Delete` b17559 → `DeleteSecurityReinsurer` (aksi `refresh`, tanpa konfirmasi) | grid + tombol baris |
+| form | `Add` b15459 → `InputNewSecurityReinsurer` (b172 `HASILD3 = 0`); b19468 `Security ID` (`InputTreatySecurity.REAS_SECURITY` b19499, nonaktif b19515); b19648 `Security Name` wajib (b19642/b19693), pemilih `BrowseAgentReinsSOA_RD` b19711 (`.ID` → `REAS_SECURITY` b19739, `.ClientName` tampil); b19888 `%Share` (`PCT_SHARE` b19919, onchange `SetErrorMessageReinsurer` b19952); `Save` b20246 | `Security ID` baca-saja; `Security Name` = pemilih master AGENT tiket 05 |
+| simpan | `Activity/SaveSecurityReinsurer_Act.xml`: langkah 1 `CARI10 = InputTreatySecurity.REAS_SECURITY` (b420); langkah 3 `Local.IsUpdate = true` bila nama sama (b760/b837); langkah 4 `THN_TREATYID = IDTreatyYear` (b999); INSERT bila `HASILD3==0` (b1225), UPDATE bila `HASILD3==1` (b1409) | satu transaksi {kunci kontrak, dobel 409, sisip/perbarui berkunci ID, jejak} |
+| SQL warisan | `RDBList/InsertToMTreatySecurity.xml` b60 (7 nilai posisional, tiga `''`); `UpdateMTreatySecurity.xml` b85–b89 (`where REAS_ID = CARI9 and trim(REAS_SECURITY) = trim(CARI10)`); `DeleteSecurityReinsurer.xml` b85 (`... trim(REAS_SECURITY) = trim(CARI12)`) | kolom bernama, `ID` + `REAS_ID`, nol pemangkas spasi |
+| hapus reinsurer | `Activity/DeleteTreatyReins_Act.xml` b408 → `RDBList/DeleteFromTreatyReinsurer_Act.xml` b60–b64 (security lalu reinsurer) | FK `ON DELETE CASCADE` (migrasi 303) — tombol hapus reinsurer milik tiket 10 |
+
+### Ralat bertanggal 29-09-2026
+
+1. **Ganti nama security memutus rujukan di Pega — dan diam.** `CARI10` diisi nama BARU (b420, b953) lalu dipakai sebagai
+   kunci UPDATE (b89): baris lama tidak pernah cocok. Bila nama baru kebetulan dipegang baris lain reinsurer yang sama,
+   baris LAIN itulah yang tertimpa. Sistem baru mencocokkan `ID` (User story 14).
+2. **DELETE berkunci nama menghapus SEMUA baris bernama sama** di bawah reinsurer itu. Sistem baru menghapus satu `ID`.
+3. **`Local.IsUpdate` mati**: dihitung (langkah 3) tetapi sisip/perbarui diputus `HASILD3`, sehingga security yang sama
+   dapat tersisip berulang. Sistem baru menolak dobel per reinsurer dengan 409 `[keputusan kami]` (**OQ-TCO-17**).
+4. **`%Share` tidak diperiksa di Pega**: onchange `SetErrorMessageReinsurer` memeriksa `InputTreatyReinsurer.PctShare`
+   (`Activity/SetErrorMessageReinsurer.xml` b518) — halaman REINSURER, residu salin-tempel. AC 17 ("beserta porsinya")
+   menjadikannya wajib; rentang 0..100 dari maksud gerbang yang sama (`SetErrorMessageBetween`) (**OQ-TCO-17**).
+5. **`CLIENTNAME` bukan kolom DDL** (tujuh kolom `[data DBA]`): nama tampil dibaca dari master `AGENT` (LEFT JOIN, agen
+   nonaktif tetap bernama), tidak disimpan.
+6. **`THN_TREATYID` (langkah 4) tidak ditulis SQL mana pun** — residu; tidak dibawa. `THN_TREATY` = `TreatyYear`
+   reinsurer, diturunkan server.
+7. `TOP_ID`, `TP_TREATY`, `USER_ID` ditulis **NULL eksplisit** saat sisip dan tidak disentuh saat diperbarui — setara
+   warisan, sesuai blocker tiket ini.
+
+### Yang dibangun
+
+| Lapisan | Berkas | Isi |
+| --- | --- | --- |
+| models | `tco_security.go` (+uji) | `PeriksaSecurityTCO`, `UraiShareSecurityTCO`, penjaga nol float |
+| repository | `tco_security.go` (+uji) | `MasterSecurityTCO`: kolom bernama, kunci `ID` + `REAS_ID`, nol `TRIM`; penjaga lintas-modul `TestTCONolInsertPosisional` |
+| services | `tco_security.go` (+uji) | `SecurityTCO`: reinsurer induk diturunkan dari jalur, dobel 409, ganti nama = baris yang sama, hapus satu baris |
+| handlers | `tco_security.go` (+uji, +uji `db` termasuk kaskade FK) | 4 rute |
+| frontend | `PanelSecurityReinsurer.tsx` (+uji), `SECURITY_TCO` (19 baris diuji ke korpus), `api.ts` (+3), tombol `Security Reinsurer` hidup | |
+
+**Status:** selesai 29-09-2026 — commit `treaty-contract-out: tiket 06 — security reinsurer, struktur bersih`.

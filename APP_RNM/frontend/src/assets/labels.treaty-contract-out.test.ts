@@ -20,6 +20,7 @@ import {
   LAMPIRAN_TCO,
   MENU_TCO,
   REINSURER_TCO,
+  SECURITY_TCO,
   BUSINESS_TCO,
   TAHUN_TCO,
 } from './labels.treaty-contract-out'
@@ -253,6 +254,27 @@ describe.skipIf(!adaKorpus)('label Treaty Contract Out berbukti barisnya', () =>
     for (const [b, n, v] of medan) expect(baris(sec(b), n).trim(), `${b} ${n}`).toBe(lf(v))
     expect(baris(sec('ExclutionTreatyObject'), 566).trim().replace(/&gt;/g, '>')).toBe(lf(LABEL_MEDAN_KHUSUS['ExclutionTreaty/Object'].Pct))
     expect(baris(sec('ExclutionTreaty'), 955).trim()).toBe(nilai(KLAUSUL_TCO.exclusionTreaty))
+  })
+
+  it('tiket 06: grid dan form security VERBATIM, aksi tombolnya terbukti', () => {
+    const nilai = (v: string) => `<pyValue>${v}</pyValue>`
+    const lf = (v: string) => `<pyLabelFieldValue>${v}</pyLabelFieldValue>`
+    const tombol = (v: string) => `<pyLabel>${v}</pyLabel>`
+    const kasus: [number, string][] = [
+      [15459, tombol(SECURITY_TCO.add)], [16088, nilai(SECURITY_TCO.kolomReasSecurity)],
+      [16228, nilai(SECURITY_TCO.kolomSecurityName)], [16368, nilai(SECURITY_TCO.kolomPercentShare)],
+      [17252, tombol(SECURITY_TCO.edit)], [17559, tombol(SECURITY_TCO.delete)],
+      [19468, lf(SECURITY_TCO.formSecurityId)], [19648, lf(SECURITY_TCO.formSecurityName)],
+      [19888, lf(SECURITY_TCO.formShare)], [20246, tombol(SECURITY_TCO.save)],
+      [20980, lf(SECURITY_TCO.error)], [21717, lf(SECURITY_TCO.informasi)],
+      [16724, nilai('.REAS_SECURITY')], [16878, nilai('.CLIENTNAME')], [17013, nilai('.PCT_SHARE')],
+      [17276, '<pyActivity>ShowEditSecurityReinsurer</pyActivity>'],
+      [17583, '<pyActivity>DeleteSecurityReinsurer</pyActivity>'],
+      [20270, '<pyActivity>SaveSecurityReinsurer_Act</pyActivity>'],
+      [19711, '<pySourceName>BrowseAgentReinsSOA_RD</pySourceName>'],
+    ]
+    for (const [n, v] of kasus) expect(baris(KONTRAK, n).trim(), String(n)).toBe(v)
+    expect(baris(REAS, 5277).trim()).toBe(tombol(REINSURER_TCO.securityReinsurer))
   })
 
   it('nama kelompok adalah nama folder korpus', () => {

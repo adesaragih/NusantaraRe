@@ -55,6 +55,8 @@ func daftarkanRuteTreatyContractOut(mux *http.ServeMux, svc *services.Service, s
 	daftarkanRuteBusinessTCO(mux, svc, stubPelaku)
 	// Tiket 08: klausul - satu tabel, 25 jenis (tco_klausul.go).
 	daftarkanRuteKlausulTCO(mux, svc, stubPelaku)
+	// Tiket 06: security di bawah reinsurer (tco_security.go).
+	daftarkanRuteSecurityTCO(mux, svc, stubPelaku)
 }
 
 // jawabanDaftarJenisReasuransi adalah badan jawaban daftar jenis reasuransi.
@@ -216,6 +218,13 @@ func jawabGalatTreatyContractOut(w http.ResponseWriter, err error) bool {
 		errors.Is(err, models.ErrPersenDiLuarRentang),
 		errors.Is(err, models.ErrTotalShareMelebihi100),
 		errors.Is(err, services.ErrReinsurerDiLuarMaster):
+		galat(w, http.StatusUnprocessableEntity, err.Error())
+	case errors.Is(err, services.ErrSecurityTidakAda):
+		galat(w, http.StatusNotFound, "security tidak ditemukan pada reinsurer ini")
+	case errors.Is(err, services.ErrSecurityDobel):
+		galat(w, http.StatusConflict, err.Error())
+	case errors.Is(err, models.ErrSecurityKosong),
+		errors.Is(err, models.ErrSecurityTanpaReinsurer):
 		galat(w, http.StatusUnprocessableEntity, err.Error())
 	case errors.Is(err, services.ErrBusinessTidakAda):
 		galat(w, http.StatusNotFound, "baris bisnis tidak ditemukan pada kombinasi kontrak ini")

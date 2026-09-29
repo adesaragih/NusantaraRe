@@ -463,3 +463,50 @@ export const LABEL_MEDAN_KHUSUS = {
   /** `GridTreatyArrangementExclutionTreatyObject.xml` b566 (`TSI BI &gt;`). */
   'ExclutionTreaty/Object': { Pct: 'TSI BI >' },
 } as const satisfies Readonly<Record<string, Readonly<Record<string, string>>>>
+
+/**
+ * Tiket 06 — grid security di bawah reinsurer (`InputTreatyContractReinsType.xml`
+ * b14885, tampil bila `HASILD21 == 1`; dibuka tombol baris reinsurer
+ * `Security Reinsurer`, `ViewDetailTreatyReinsurerGrid1.xml` b5277).
+ *
+ * Nomor baris = `Section/InputTreatyContractReinsType.xml`.
+ */
+export const SECURITY_TCO = {
+  /** b15459 `<pyLabel>` → `InputNewSecurityReinsurer` (b15487). */
+  add: 'Add',
+  /** b16088 `<pyValue>` — sel `.REAS_SECURITY` b16724. */
+  kolomReasSecurity: 'Reas Security',
+  /** b16228 `<pyValue>` — sel `.CLIENTNAME` b16878. */
+  kolomSecurityName: 'Security Name',
+  /** b16368 `<pyValue>` — sel `.PCT_SHARE` b17013. */
+  kolomPercentShare: 'Percent Share',
+  /** b17252 `<pyLabel>` → `ShowEditSecurityReinsurer` b17276. */
+  edit: 'Edit',
+  /** b17559 `<pyLabel>` → `DeleteSecurityReinsurer` b17583 (tanpa konfirmasi, aksi `refresh`). */
+  delete: 'Delete',
+  /** b19468 — `InputTreatySecurity.REAS_SECURITY` b19499, selalu nonaktif b19515. */
+  formSecurityId: 'Security ID',
+  /** b19648 — wajib b19642; pemilih `BrowseAgentReinsSOA_RD` b19711. */
+  formSecurityName: 'Security Name',
+  /** b19888 — `InputTreatySecurity.PCT_SHARE` b19919. */
+  formShare: '%Share',
+  /** b20246 `<pyLabel>` → `SaveSecurityReinsurer_Act` b20270. */
+  save: 'Save',
+  /** b20980. */
+  error: 'Error',
+  /** b21717. */
+  informasi: 'Informasi',
+
+  /** `[tidak ada di korpus]` */
+  judul: 'Security',
+  /** `[tidak ada di korpus]` */
+  cariSecurity: 'Cari security',
+  /** `[tidak ada di korpus]` */
+  kosong: 'Belum ada security pada reinsurer ini.',
+  /** `[tidak ada di korpus]` */
+  tersimpan: 'Security tersimpan.',
+  /** `[tidak ada di korpus]` */
+  cancel: 'Cancel',
+  /** `[tidak ada di korpus]` */
+  tutup: 'Tutup',
+} as const

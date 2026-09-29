@@ -557,3 +557,70 @@ tersimpan, sama seperti Pega.
 | Berkas ditulis / disunting | 15 baru (3.222 baris), 14 disunting (+411 −17) |
 | Putaran instrumen gagal lalu diulang | 3: uji statis sempat memakai literal skema-alamat (ditangkap penjaga global); peta kolom sempat memicu positif palsu penjaga tulis-warisan (dipindah); `noUncheckedIndexedAccess` pada peta label (diubah ke `as const satisfies`) |
 | Token / biaya | tidak terlihat dari dalam sesi, jadi tidak dikarang |
+
+## Tiket 06 — security reinsurer, struktur bersih
+
+### Yang dibangun
+
+| Lapisan | Berkas | Isi |
+| --- | --- | --- |
+| models | `tco_security.go` (+uji) | gerbang security + `%Share`; penjaga nol float di tiga lapis |
+| repository | `tco_security.go` (+uji) | `T_MTREATYSECURITY` berkolom bernama, kunci `ID` + `REAS_ID`, nol `TRIM`; `TestTCONolInsertPosisional` menjaga SELURUH sumber modul |
+| services | `tco_security.go` (+uji) | `SecurityTCO` — satu transaksi berkunci kontrak, dobel 409, jejak |
+| handlers | `tco_security.go` (+uji, +uji `db`) | 4 rute |
+| frontend | `PanelSecurityReinsurer.tsx` (+uji), `SECURITY_TCO`, `api.ts` (+3) | tombol baris reinsurer `Security Reinsurer` hidup |
+
+### Bukti merah lebih dulu
+
+- Aturan persen (ADR-0003): nilai `%Share` 0..100 berskala 8 muat di `float64` tanpa kehilangan, jadi mutasi nilai tidak
+  akan pernah merah. Penjaganya statis (`TestSecurityTanpaFloat`): `float64` disisipkan sementara ke layanan → **merah**;
+  dipulihkan → hijau.
+- AC 18/20: kunci UPDATE dimutasi menjadi `... AND TRIM(REAS_SECURITY) = TRIM(:3)` (perilaku warisan) → `TestSQLSecurityTCO`
+  **merah** dua kali (kunci berbasis nama; `TRIM`); dipulihkan → hijau.
+
+### Kode bersama yang disentuh (aditif, dilaporkan)
+
+| Berkas | Perubahan |
+| --- | --- |
+| `handlers/penyuntikan_test.go` | +1 entri `tco_security.go` (lima penyuntikan wajib) |
+| `handlers/rute_treaty_contract_out.go` (milik modul) | +1 pendaftaran rute, +3 kasus galat |
+| `repository/tco_kontrak_test.go` (milik modul) | peta placeholder +4 SQL security |
+
+### Ralat / OQ
+
+Tujuh ralat bertanggal di tiket 06 (ganti nama memutus rujukan di Pega; DELETE berkunci nama; `Local.IsUpdate` mati;
+`%Share` tidak diperiksa; `CLIENTNAME` bukan kolom; `THN_TREATYID` residu; tiga kolom `[terbuka]` NULL). **OQ baru:**
+
+- **OQ-TCO-17** — security dobel per reinsurer ditolak dan `%Share` wajib 0..100 `[keputusan kami]` (Pega tidak menegakkan
+  keduanya); Product + UW.
+
+Blocker tiket (`TOP_ID`, `TP_TREATY`, `USER_ID`) tetap terbuka — kolom dibawa bernama, tidak dibuang.
+
+### Kontrak hilir
+
+Tidak ada: `MTREATYSECURITY` tidak dibaca `Claim Prop`, `Komite Claim Prop`, maupun `Claim Fac In` (pencarian penuh atas
+ketiga folder korpus, nol temuan).
+
+### Angka uji
+
+| Perintah | Hasil |
+| --- | --- |
+| `go vet ./...` · `go vet -tags=db ./...` · `gofmt -l .` | bersih |
+| `go test ./...` | 894 lulus, 0 gagal (+16) |
+| `go test -tags=db ./...` | 894 lulus, 52 dilewati (+1: `TestSecurityLingkaranPenuh`, tanpa skema uji), 0 gagal |
+| `npx tsc --noEmit` · `npx vite build` | bersih |
+| `npx vitest run` | 563 lulus di 47 berkas (+7, +1 berkas) |
+
+⚠️ SQL tiket 06 belum pernah dijalankan terhadap Oracle: uji `db` (termasuk kaskade FK) dilewati karena skema uji tidak
+dikonfigurasi di sesi ini.
+
+### TELEMETRI EKSEKUSI — tiket 06
+
+| Ukuran | Nilai |
+| --- | --- |
+| Berkas dibaca | ±22 (±12 korpus: 4 aktivitas, 2 data transform, 4 RDBList, 2 RD, 2 section; ±10 pola kode) |
+| Berkas XML korpus disensus | `SaveSecurityReinsurer_Act`, `ShowEditSecurityReinsurer`, `DeleteSecurityReinsurer`, `SetErrorMessageReinsurer`, `InputNewSecurityReinsurer`, `SetSecurityReinsurer`, `InsertToMTreatySecurity`, `UpdateMTreatySecurity`, `DeleteSecurityReinsurer` (SQL), `DeleteFromTreatyReinsurer_Act`, `SelectSecurityReinsurer`, `BrowseAgentReinsSOA_RD`; 20 baris label/aksi diverifikasi oleh uji |
+| Perintah dijalankan | ±35 |
+| Berkas ditulis / disunting | 11 baru (1.602 baris), 8 disunting (+183 −2) |
+| Putaran instrumen gagal lalu diulang | 3: heredoc panjang gagal diurai (berkas ditulis lewat Write); pola sunting panel reinsurer tanpa `try {` (diperbaiki); heredoc memakan backslash di skrip turunan (disunting lewat Edit) |
+| Token / biaya | tidak terlihat dari dalam sesi, jadi tidak dikarang |

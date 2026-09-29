@@ -8,6 +8,8 @@
 // `Reins.ID` b8042, `Reinsurer` b8226, `%Share` b8522, `%Comm` b8800, `Rating`
 // b9076, `Operator Name` b11100, `Save` b11405, `Error` b12131, `Informasi` b12868).
 //
+// Tiket 06 (29-09-2026): `Security Reinsurer` b5277 membuka `PanelSecurityReinsurer`.
+//
 // ⛔ Share dan komisi TEKS sepanjang jalan — tidak pernah angka JavaScript.
 // Total share datang dari server (desimal persis, ADR-0003).
 
@@ -25,6 +27,7 @@ import {
   type ReinsurerTreaty,
 } from '../../services/api'
 import { Field, Gagal, Kosong, Memuat, Pilih } from '../ui/dasar'
+import PanelSecurityReinsurer from './PanelSecurityReinsurer'
 
 /** Isian form — hanya medan yang tampil di form Pega. */
 export interface FormReinsurer {
@@ -85,6 +88,8 @@ export default function PanelReinsurerKombinasi({
   const [sibuk, setSibuk] = useState(false)
   const [galat, setGalat] = useState<unknown>(null)
   const [info, setInfo] = useState<string | null>(null)
+  // Tiket 06: `SetSecurityReinsurer` (THN_TREATY = .TreatyYear, REAS_ID = .ID).
+  const [security, setSecurity] = useState<ReinsurerTreaty | null>(null)
 
   const muat = useCallback(async () => {
     try {
@@ -240,7 +245,13 @@ export default function PanelReinsurerKombinasi({
                   <button type="button" className="btn btn--ghost btn--sm" disabled title={`${TAHUN_TCO.menungguTiket} 10`}>
                     {REINSURER_TCO.delete}
                   </button>{' '}
-                  <button type="button" className="btn btn--ghost btn--sm" disabled title={`${TAHUN_TCO.menungguTiket} 06`}>
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--sm"
+                    onClick={() => {
+                      setSecurity(r)
+                    }}
+                  >
                     {REINSURER_TCO.securityReinsurer}
                   </button>
                 </td>
@@ -255,6 +266,18 @@ export default function PanelReinsurerKombinasi({
             </tr>
           </tfoot>
         </table>
+      )}
+
+      {security !== null && (
+        <PanelSecurityReinsurer
+          key={security.id}
+          tahunID={tahunID}
+          kontrakID={kontrakID}
+          reinsurerID={security.id}
+          onTutup={() => {
+            setSecurity(null)
+          }}
+        />
       )}
     </section>
   )

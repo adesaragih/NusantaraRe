@@ -59,6 +59,8 @@ describe('paritas dan uang', () => {
   })
   it('Delete dan Security Reinsurer berdiri menunggu tiketnya', () => {
     expect(KODE).toContain('`${TAHUN_TCO.menungguTiket} 10`')
-    expect(KODE).toContain('`${TAHUN_TCO.menungguTiket} 06`')
+    expect(KODE).not.toContain('`${TAHUN_TCO.menungguTiket} 06`')
+    expect(KODE).toContain('setSecurity(r)')
+    expect(KODE).toContain('<PanelSecurityReinsurer')
   })
 })

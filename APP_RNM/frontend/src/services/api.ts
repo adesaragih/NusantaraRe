@@ -2627,3 +2627,66 @@ export async function cariPilihanKlausul(master: 'occupation' | 'clause', cari: 
   )
   return j.daftar ?? []
 }
+
+// ---------------------------------------------------------------------------
+// Treaty Contract Out tiket 06 — security di bawah reinsurer.
+// ---------------------------------------------------------------------------
+
+/** Satu security. ⛔ `pctShare` TEKS — tidak pernah `Number`. */
+export interface SecurityReinsurer {
+  id: string
+  thnTreaty: string
+  reasId: string
+  reasSecurity: string
+  clientName: string
+  pctShare: string
+  topId: string
+  tpTreaty: string
+  userId: string
+}
+
+/** Grid security seorang reinsurer. */
+export interface DaftarSecurity {
+  daftar: SecurityReinsurer[]
+  total: number
+  reinsurer: ReinsurerTreaty
+}
+
+/** Badan simpan — `Security Name` (ID dari pemilih) dan `%Share`. */
+export interface SecurityMasuk {
+  id: string
+  reasSecurity: string
+  pctShare: string
+}
+
+function jalurSecurity(tahunID: string, kontrakID: string, reinsurerID: string): string {
+  return `${jalurReinsurer(tahunID, kontrakID)}/${encodeURIComponent(reinsurerID)}/security`
+}
+
+/** Grid `SelectSecurityReinsurer` (THN_TREATY + REAS_ID). */
+export async function ambilSecurity(tahunID: string, kontrakID: string, reinsurerID: string): Promise<DaftarSecurity> {
+  const j = await minta<DaftarSecurity>(jalurSecurity(tahunID, kontrakID, reinsurerID))
+  return { ...j, daftar: j.daftar ?? [] }
+}
+
+/** `Save` b20246 — POST bila baru, PUT /{id} bila ubah. */
+export async function simpanSecurity(
+  tahunID: string,
+  kontrakID: string,
+  reinsurerID: string,
+  masuk: SecurityMasuk,
+): Promise<SecurityReinsurer> {
+  const j = jalurSecurity(tahunID, kontrakID, reinsurerID)
+  if (masuk.id === '') {
+    return minta(j, { metode: 'POST', badan: masuk })
+  }
+  return minta(`${j}/${encodeURIComponent(masuk.id)}`, { metode: 'PUT', badan: masuk })
+}
+
+/** `Delete` b17559 — satu baris menurut ID. */
+export async function hapusSecurity(tahunID: string, kontrakID: string, reinsurerID: string, id: string): Promise<string> {
+  const j = await minta<{ pesan: string }>(`${jalurSecurity(tahunID, kontrakID, reinsurerID)}/${encodeURIComponent(id)}`, {
+    metode: 'DELETE',
+  })
+  return j.pesan
+}
