@@ -161,3 +161,9 @@ Nomor baris = baris mentah berkas korpus `Treaty Contract Out/`.
 - **OQ-TCO-20 — ditutup.** Jawaban: *"dari induknya"*. Angka klausul popup = baris induk (`PARENTREINSTYPEID` = `"00"`,
   di-bind) berjenis reasuransi kontrak + baris anak yang `PARENTREINSTYPEID`-nya jenis kontrak; anak berjenis sama di
   bawah induk lain tidak lagi terhitung. Uji `TestKlausulMilikKontrakDariInduknya`.
+
+## Ralat bertanggal 29-09-2026 — tco4 (nol tabel baru) `[keputusan work owner]`
+
+- Empat DELETE `DeleteFromTREATYCONTRACT_SQL` b79 kini atas tabel warisan `TREATYCONTRACT`, `TREATYBUSINESS`,
+  `MTREATYSECURITY`, `TREATYREINSURER` — sama teksnya dengan RDB (tanpa `COMMIT`). OQ-TCO-20/21 tetap.
+- **Jejak hapus gugur** (nol tabel jejak modul).

@@ -150,3 +150,8 @@ Nomor baris = baris mentah berkas korpus `Treaty Contract Out/`.
   `models/tco_teks_galat_test.go`), dan pembaca-lewat-transaksi `DenganBacaTxTCO` (`repository/tco_baca_tx.go`).
 - **`wontfix`**: AC 37 (satu transaksi untuk seluruh isi satu kontrak), AC 39 (status `"1"` jawaban simpan utuh), dan
   "identitas tidak terpakai saat gagal lintas baris" — ketiganya hanya bermakna untuk simpan utuh.
+
+## Ralat bertanggal 29-09-2026 — tco4 (nol tabel baru) `[keputusan work owner]`
+
+- Satu transaksi per panel tetap, kini atas tabel warisan. **Jejak gugur** (bagian "jejak setiap simpan" di keputusan
+  OQ-TCO-19 tidak berlaku lagi).

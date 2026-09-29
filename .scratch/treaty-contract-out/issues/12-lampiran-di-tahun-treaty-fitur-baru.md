@@ -225,3 +225,15 @@ sumber RANTAI TEKNIS dan LABEL; perilakunya ditetapkan AC tiket ini (penyimpanga
   unggahan ~3× ukuran berkas (base64 + JSON) — batas 25 MiB, Pega pun menaruh base64 utuh di halaman. (c) Kueri token
   modul tidak memakai `PohonKlaim.TokenBerlaku` bersama — ia butuh sisa umur + margin, dan kode token bersama dipakai modul
   klaim. (d) `APPNAME` dibaca per operasi — seperti resolver `M_LINK_SERVICE`, perubahan DBA berlaku tanpa restart.
+
+## Ralat bertanggal 29-09-2026 — tco4 (nol tabel baru) `[keputusan work owner]`
+
+- **RALAT "kunci treaty inward"**: `TreatyIn.ID` di modul ini diisi `TreatyYear + TreatyYearID`
+  (`TreatyOutSaveAttachment` b1402, `DeleteAttachmentTreaty` b252). Lampiran kini di tabel warisan
+  `M_ATTACHMENTTREATY_2` (kolom = `Treaty In/RDBList/InsertAttachment2_Sql.xml` b84; ID `YYYYMMDDHH24MISSFF3`;
+  `CATEGORY` "File", kategori pilihan di `CATEGORY_ID`) dan objeknya di `T_STORAGE_IMAGE` (`Insert_T_Storage_SQL`
+  Claim Fac In b85, `DeleteStorage_SQL` b85). `T_TREATYYEAR_LAMPIRAN` dibuang.
+- Badan `PEGA_M_ATTACHMENT` (penulis Treaty Contract Out, `InsertAtatchment_Sql` b60) **[terbuka — DBA]** → OQ-TCO-24.
+- Terkirim = objek tercatat di `T_STORAGE_IMAGE`. Ukuran berkas tidak disimpan (kolom tidak ada; layar Pega tidak
+  menampilkannya) — dibuang dari API dan layar. **Jejak lampiran gugur**; menyerah terlihat dari status outbox.
+- OQ-TCO-22 (`Folder`/`Durasi`/`Namafile`) tetap untuk work owner; nilai sekarang berlabel `[terbuka — OQ-TCO-22]`.

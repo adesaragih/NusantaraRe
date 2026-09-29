@@ -4,6 +4,12 @@
 > baru. Nomor baris = `sed -e 's/></>\n</g'` atas berkas korpus `D:\XML\RNM_BRD\Treaty Contract Out\`.
 > Keadaan: ✅ dibangun · ⚠️ belum · ➖ sengaja tidak dibawa (kode mati / penyimpangan sadar) · 🔜 tiket berikut.
 
+> ⛔ **Ralat bertanggal 29-09-2026 — tco4/tco5** `[keputusan work owner]`: seluruh baris di bawah kini menulis/membaca
+> **tabel warisan** (nama `T_*` di baris lama dibaca sebagai nama warisannya; migrasi 300–307 dibuang), **nol jejak
+> modul** ("+ jejak" di baris lama gugur), security berkunci `(REAS_ID, TRIM(REAS_SECURITY))`, UPDATE business lima
+> kolom procedure, lampiran di `M_ATTACHMENTTREATY_2` + `T_STORAGE_IMAGE`, dan menu SATU butir `Treaty Contract Out`
+> (ReinsType/Description = popup tombol form, b20778/b22196).
+
 ## Menu — tiga harness portal (kelas `Data-Portal`)
 
 | Korpus | Sistem baru | Keadaan |
@@ -19,13 +25,13 @@ korpus 20 — ralat §8 `PROMPT-EKSEKUSI-HULU-HILIR.md`). Ditambahkan ADITIF ber
 
 | Unsur korpus | Sistem baru | Keadaan |
 | --- | --- | --- |
-| `RDBList/SaveMasterTreatyYear_SQL.xml` → `POOLDATA.PEGA_TREATYYEAR` (10 param) | tabel `T_TREATYYEAR` (migrasi 300), sequence `SEQ_T_TREATYYEAR` | ✅ skema; penulisnya 🔜 tiket 03 |
-| `RDBList/SaveMasterTreatyContract_SQL.xml` → `PEGA_TREATYCONTRACT` (8 param) | `T_TREATYCONTRACT` (301) | ✅ skema; 🔜 tiket 04 |
-| `RDBList/SaveMasterTreatyReinsurer_SQL.xml` → `PEGA_TREATYREINSURER` (19 param) | `T_TREATYREINSURER` (302) | ✅ skema; 🔜 tiket 05 |
-| `RDBList/InsertToMTreatySecurity.xml` INSERT posisional 7 nilai, `UpdateMTreatySecurity.xml` kunci `trim()` | `T_MTREATYSECURITY` (303) PK surrogate, kolom bernama, tanpa `trim()` | ✅ skema; ✅ tiket 06 |
-| `RDBList/SaveMasterTreatyBusiness_SQL.xml` → `PEGA_TREATYBUSINESS` (12 param) | `T_TREATYBUSINESS` (304) | ✅ skema; 🔜 tiket 07 |
-| `RDBList/SaveMasterProportionalArrg.xml` (35) + `SaveMasterProportionalArrgChild.xml` (26) → satu tabel | `T_PROPORTIONALARRG` (305) — 35 kolom, anak NULL di 9 kolom induk | ✅ skema; 🔜 tiket 08 |
-| — (tidak ada di korpus; ADR-0007) | `T_TREATYCO_JEJAK` (306) | ✅ skema; penulis 🔜 tiket 03+ |
+| `RDBList/SaveMasterTreatyYear_SQL.xml` → `POOLDATA.PEGA_TREATYYEAR` (10 param) | tabel `TREATYYEAR` (migrasi 300), sequence `TREATYYEAR_SEQ` | ✅ skema; penulisnya 🔜 tiket 03 |
+| `RDBList/SaveMasterTreatyContract_SQL.xml` → `PEGA_TREATYCONTRACT` (8 param) | `TREATYCONTRACT` (301) | ✅ skema; 🔜 tiket 04 |
+| `RDBList/SaveMasterTreatyReinsurer_SQL.xml` → `PEGA_TREATYREINSURER` (19 param) | `TREATYREINSURER` (302) | ✅ skema; 🔜 tiket 05 |
+| `RDBList/InsertToMTreatySecurity.xml` INSERT posisional 7 nilai, `UpdateMTreatySecurity.xml` kunci `trim()` | `MTREATYSECURITY` (303) PK surrogate, kolom bernama, tanpa `trim()` | ✅ skema; ✅ tiket 06 |
+| `RDBList/SaveMasterTreatyBusiness_SQL.xml` → `PEGA_TREATYBUSINESS` (12 param) | `TREATYBUSINESS` (304) | ✅ skema; 🔜 tiket 07 |
+| `RDBList/SaveMasterProportionalArrg.xml` (35) + `SaveMasterProportionalArrgChild.xml` (26) → satu tabel | `PROPORTIONALARRG` (305) — 35 kolom, anak NULL di 9 kolom induk | ✅ skema; 🔜 tiket 08 |
+| — (tidak ada di korpus; ADR-0007) | ~~`T_TREATYCO_JEJAK`~~ (dibuang tco4) | ✅ skema; penulis 🔜 tiket 03+ |
 | enam tabel warisan `POOLDATA.TREATYYEAR` … `PROPORTIONALARRG` | `-migrate-data-treaty-contract-out` → `repository.MigrasiTCO.Pindahkan` (baca teks → konversi → tulis → rekonsiliasi tepat → sequence) | ✅ kode + uji `db` (SKIP tanpa skema uji); ⛔ tidak dijalankan di DEV (tco2) |
 | kueri hilir `Claim Prop/RDBList/GetLimitPLATreatyin.xml`, `GetListRetro_Sql.xml`, `GetTreatyGroupID.xml`; `Claim Fac In/RDBList/GetLimitPLADLA_Sql.xml`, `GetQuotaShare.xml`, `GetTreatyGroup_Sql.xml`, `GetDataTreatyLimit_Sql.xml`; `Komite Claim Prop/RDBList/GetListRetro_Sql.xml` | `repository.KontrakHilirTCO` — 6 pembaca read-only berkolom VERBATIM; uji tiga sisi (DDL, korpus, nol tulis) | ✅ tco3 |
 | `M_PROPORTIONALARRG`, `M_TREATYCONTRACT`, `M_TREATYYEAR`, `M_TREATYBUSINESS` + seluruh kueri `FROM m_*` | — | ➖ MATI (penyimpangan sadar 1); penjaga `TestTCONolTabelDokumenWarisan` |
@@ -56,7 +62,7 @@ korpus 20 — ralat §8 `PROMPT-EKSEKUSI-HULU-HILIR.md`). Ditambahkan ADITIF ber
 | `List Description` b22196 → harness 3 | tombol membuka `PanelKlausulTahun` tahun itu | ✅ tiket 08 |
 | `Copy` b20459 + `From`/`To` b2374/b3818 + `Proces` b5104 → `BrowseCopyData` | — | ➖ AC 72 |
 | form `Input New Data` (`InputDtlTreatyContact.xml` b5437): `ID` b6379 · `Treaty Group` b6560 (`BrowseTreatyGroup_RD` b6624) · `Reinsurance Type` b6800 → `.Proportion` b6829 · `Start Date` b7532 · `End Date` b7816 · `Underwriting Year` b8004 → `.TreatyYear` · `Transaction Year` b8284 → `.UnderwritingYear` · `Modified Date` b9097 · `Username` b9282 | `Field`/`FieldTanggal`/`Pilih` (grup dari `GET /grup-treaty`) / `PilihJenisReasuransi`; ID, Modified Date, Username hanya dibaca | ✅ |
-| `Save` b10332 → `SaveTreatyYear_Act` (b280 UserID, b327 TglUpdate, prasyarat b388/b411/b434, RDB `SaveMasterTreatyYear_SQL` → `PEGA_TREATYYEAR`) | `POST /tahun` (baru, ID dari `SEQ_T_TREATYYEAR`) / `PUT /tahun/{id}` (seluruh medan) → `T_TREATYYEAR` + jejak `T_TREATYCO_JEJAK`, satu transaksi | ✅ logika ditiru, procedure tidak dipanggil |
+| `Save` b10332 → `SaveTreatyYear_Act` (b280 UserID, b327 TglUpdate, prasyarat b388/b411/b434, RDB `SaveMasterTreatyYear_SQL` → `PEGA_TREATYYEAR`) | `POST /tahun` (baru, ID dari `TREATYYEAR_SEQ`) / `PUT /tahun/{id}` (seluruh medan) → `TREATYYEAR` + jejak `T_TREATYCO_JEJAK`, satu transaksi | ✅ logika ditiru, procedure tidak dipanggil |
 | `Cancel` b10622 → `CancelActivityTreatyContract` | tombol `Cancel` menutup form | ✅ |
 | `CheckYear` b335 `isNumber(TreatyYear)` (`pyMessageLabel CheckYearly` — teks tidak diekspor) | `ErrTahunTreatyBukanAngka` → 422 | ✅ (teks pesan kosakata kami) |
 | — (tidak ada di Pega) | gerbang periode terbalik (AC 9) → 422; anti-dobel (AC 73) → 409 menyebut ID baris lain | ✅ tambahan sadar |
@@ -71,7 +77,7 @@ Nomor baris = `Section/GridTreatyArrangementAttachment.xml` kecuali disebut lain
 | --- | --- | --- |
 | `InputTreatyContract.xml` b11721 `Attachment for`, b13074 include panel | `PanelLampiranTahun` di form tahun treaty yang sudah ber-ID; tahun baru menampilkan catatan "simpan dulu" | ✅ |
 | b1785 `For Treaty Contract Out` | subjudul panel | ✅ |
-| `Add attachment` b578 → `SetCategory_act` b596 → `TreatyOutAttachContent` b642 (`pyAttachmentScreen`) → `TreatyOutSaveAttachment` → `InsertAtatchment_Sql` → `PEGA_M_ATTACHMENT` | pemilih `Type` (master `CATEGORY_ATTACH_REAS`) + kotak berkas → `POST /api/treaty-contract-out/tahun/{id}/lampiran` (multipart) → rekam `T_TREATYYEAR_LAMPIRAN` + efek outbox `storage-unggah` + jejak, satu transaksi | ✅ prosedur tidak dipanggil |
+| `Add attachment` b578 → `SetCategory_act` b596 → `TreatyOutAttachContent` b642 (`pyAttachmentScreen`) → `TreatyOutSaveAttachment` → `InsertAtatchment_Sql` → `PEGA_M_ATTACHMENT` | pemilih `Type` (master `CATEGORY_ATTACH_REAS`) + kotak berkas → `POST /api/treaty-contract-out/tahun/{id}/lampiran` (multipart) → rekam `M_ATTACHMENTTREATY_2` + efek outbox `storage-unggah` + jejak, satu transaksi | ✅ prosedur tidak dipanggil |
 | `Refresh` b1023 → `LoadAttachmentTreatyOut` | `GET /tahun/{id}/lampiran` | ✅ |
 | `Download All` b2659 → `TreatyOutDownloadAll_Act` | `GET /tahun/{id}/lampiran/semua` (zip) lewat `fetch` berheader identitas | ✅ |
 | `Download` b2391 → `DownloadAll_Act` | — | ➖ tombol kedua untuk aksi yang sama |
@@ -96,7 +102,7 @@ Nomor baris = `Section/InputTreatyContractReinsType.xml` kecuali disebut lain.
 | `ReinsType` b2652 (RD non-Old, `Flag "active"` b2768) | `PilihJenisReasuransi` (daftar tersaring tiket 02) | ✅ OQ-TCO-06 tetap terbuka |
 | `Start Date` b2905 → `SetTanggalTreatyContract` b3007 | isi tanggal mulai → `GET /tahun/{id}/kontrak/akhir-bawaan` mengisi tanggal akhir = mulai + 1 tahun kalender (`ADD_MONTHS(…,12)`) | ✅ OQ-TCO-10 — penyimpangan sadar (keputusan work owner 29-09-2026) |
 | `End Date` b3244 (`IsEndDate==1`) | ubah tanggal akhir saja | ✅ |
-| `Save` b3618 → `SaveTreatyContract_Act` → `SaveMasterTreatyContract_SQL` → `PEGA_TREATYCONTRACT` | `POST /tahun/{id}/kontrak` / `PUT /tahun/{id}/kontrak/{kid}` → `T_TREATYCONTRACT` + jejak, satu transaksi | ✅ prosedur tidak dipanggil |
+| `Save` b3618 → `SaveTreatyContract_Act` → `SaveMasterTreatyContract_SQL` → `PEGA_TREATYCONTRACT` | `POST /tahun/{id}/kontrak` / `PUT /tahun/{id}/kontrak/{kid}` → `TREATYCONTRACT` + jejak, satu transaksi | ✅ prosedur tidak dipanggil |
 | `Undo` b5343 → `UndoOperation` | kembalikan isian terakhir yang dimuat | ✅ |
 | `Information` b6400 (`OutputData.HASIL1`) | baris status sesudah simpan | ✅ |
 | `Modified Date` b4363 · `Username` b4547 · ID b2478 | baca-saja (Username = penulis terakhir rekam) | ✅ ralat 7 |
@@ -128,7 +134,7 @@ Nomor baris = `Section/ViewDetailTreatyReinsurerGrid1.xml`.
 | form `ID` b7842 · `Reins.ID` b8042 · `Reinsurer` b8226 (pemilih `BrowseAgentReinsSOA_RD`) · `%Share` b8522 · `%Comm` b8800 · `Rating` b9076 · `Operator Name` b11100 | ID/Reins.ID/Operator Name baca-saja; kotak cari + pemilih master aktif | ✅ OQ-TCO-12 |
 | delapan medan tersembunyi `pyCondition 1=2` | tidak diterima dari klien; dipertahankan server | ✅ |
 | `%Share`/`%Comm` → `SetErrorMessageReinsurer` (koma → titik, 0..100) | `models.UraiPersenMasukTCO` di batas masukan | ✅ |
-| `Save` b11405 → `SaveTreatyReinsurerDetail1_Act` → `SaveMasterTreatyReinsurer_SQL` → `PEGA_TREATYREINSURER` | `POST`/`PUT .../reinsurer` → `T_TREATYREINSURER` + jejak; total > 100 → 422 VERBATIM | ✅ prosedur tidak dipanggil |
+| `Save` b11405 → `SaveTreatyReinsurerDetail1_Act` → `SaveMasterTreatyReinsurer_SQL` → `PEGA_TREATYREINSURER` | `POST`/`PUT .../reinsurer` → `TREATYREINSURER` + jejak; total > 100 → 422 VERBATIM | ✅ prosedur tidak dipanggil |
 | `Error` b12131 · `Informasi` b12868 | pita galat + baris status | ✅ |
 
 ## Tiket 07 — business pada kombinasi (`ViewDetailTreatyBusinessGrid`)
@@ -145,7 +151,7 @@ Nomor baris = `Section/ViewDetailTreatyBusinessGrid.xml`.
 | `Business Name` b6241 (pemilih `BrowseFilterBusiness_RD`) | `Pilih` dari `GET /business-master` | ✅ OQ-TCO-13 |
 | `Active` b6499 (radio wajib) | `Pilih` Aktif/Nonaktif (`1`/`0`) | ✅ OQ-TCO-13 |
 | `Business Code` b6680 (tersembunyi) | baca-saja | ✅ |
-| `Save` b6966 → `SaveTreatyBusinessDetail_Act` → `SaveMasterTreatyBusiness_SQL` → `PEGA_TREATYBUSINESS` | `POST`/`PUT .../business` → `T_TREATYBUSINESS` SELURUH medan + jejak | ✅ AC 23, prosedur tidak dipanggil |
+| `Save` b6966 → `SaveTreatyBusinessDetail_Act` → `SaveMasterTreatyBusiness_SQL` → `PEGA_TREATYBUSINESS` | `POST`/`PUT .../business` → `TREATYBUSINESS` SELURUH medan + jejak | ✅ AC 23, prosedur tidak dipanggil |
 | `Information` b9319/b10064 (`ERRMSG4` "Data sudah pernah di Input") | baris status; 409 dobel | ✅ ralat 4 |
 | `Close List` b10889 → `CancelActivity` | tombol tutup panel | ✅ |
 
@@ -158,7 +164,7 @@ Nomor baris = `Harness/InboxTreatyContractDescription.xml` kecuali disebut lain.
 | kepala b2003–b3382 (tujuh medan) | tujuh `Field` baca-saja | ✅ OQ-TCO-05 |
 | `For Non XOL` b4880 / `For XOL` b7971 (`BrowseTreatyDesc_RD`, `IsXOL` 0/1) · `ID` b5440 · `Description Name` b5549 | `GET /jenis-klausul?isXol=` dari `TREATYDESC` (baca-saja) | ✅ AC 26/27 |
 | `Show` b6059 → `BrowseDescriptionLimit` + `testingKurs` + `SetKirimIDDesc` + `PanggilID` | membuka `PanelJenisKlausul`; beberapa jenis boleh terbuka bersamaan | ✅ AC 29; kurs ✅ tiket 11 |
-| 18 section induk: `Add` / `Edit` / `Save` (`GridTreatyArrangementEpi.xml` b8980/b10917/b5501) → `SaveTreatyArr*_Act` → `SaveMasterProportionalArrg` | `POST`/`PUT /tahun/{id}/klausul` → `T_PROPORTIONALARRG`, aturan per jenis dari server | ✅ AC 24/33/35, prosedur tidak dipanggil |
+| 18 section induk: `Add` / `Edit` / `Save` (`GridTreatyArrangementEpi.xml` b8980/b10917/b5501) → `SaveTreatyArr*_Act` → `SaveMasterProportionalArrg` | `POST`/`PUT /tahun/{id}/klausul` → `PROPORTIONALARRG`, aturan per jenis dari server | ✅ AC 24/33/35, prosedur tidak dipanggil |
 | 7 section anak: `Show Child` b11200 → `Browse*ParentList`; `Close Child` (`GridTreatyArrTreatyEpiList.xml` b8657) → `Save*List_Act` → `SaveMasterProportionalArrgChild` | grid anak per induk; Rp/Usd turunan; total Pct + peringatan | ✅ AC 25/28 |
 | `HitungRpUsd` | `RpUsdAnakTCO` di server | ✅ |
 | `TreatyTestChildTotal_Act` (TreatyLimitChild) | peringatan `Please make sure spreading is 100%` sesudah simpan | ✅ ralat 4 |
@@ -179,7 +185,7 @@ Nomor baris = `Section/InputTreatyContractReinsType.xml`.
 | `Edit` b17252 → `ShowEditSecurityReinsurer` | form dari baris (ID tetap) | ✅ |
 | `Delete` b17559 → `DeleteSecurityReinsurer` (kunci `trim(nama)`) | `DELETE .../security/{sid}` satu ID | ✅ ralat 2 |
 | form `Security ID` b19468 (nonaktif) · `Security Name` b19648 (pemilih `BrowseAgentReinsSOA_RD`) · `%Share` b19888 | baca-saja · `Pilih` dari `GET /reinsurer-master` · teks desimal wajib 0..100 | ✅ ralat 4, OQ-TCO-17 |
-| `Save` b20246 → `SaveSecurityReinsurer_Act` → `InsertToMTreatySecurity` / `UpdateMTreatySecurity` | `POST`/`PUT .../security` → `T_MTREATYSECURITY` kolom bernama + jejak | ✅ AC 18–20, ralat 1/3 |
+| `Save` b20246 → `SaveSecurityReinsurer_Act` → `InsertToMTreatySecurity` / `UpdateMTreatySecurity` | `POST`/`PUT .../security` → `MTREATYSECURITY` kolom bernama + jejak | ✅ AC 18–20, ralat 1/3 |
 | `Error` b20980 · `Informasi` b21717 | galat / baris status | ✅ |
 | `DeleteTreatyReins_Act` → `DeleteFromTreatyReinsurer_Act` | security lalu reinsurer, eksplisit + FK `ON DELETE CASCADE` | ✅ tiket 10 |
 

@@ -1057,3 +1057,55 @@ Menyalakan pelaksana nyata: isi `STORAGE_TOKEN_SALT`, setel `PELAKSANA_STORAGE=n
 | Uji penuh | satu per baris tabel angka (`angka.sh`: gofmt, vet, go test tanpa/dengan tag `db`, tsc, vitest, vite build) |
 | Oracle / layanan luar | 0 SQL dijalankan; 0 panggilan ke layanan sungguhan (uji memakai `httptest` lokal) |
 | Token / biaya | tidak terlihat dari dalam sesi — tidak dilaporkan |
+
+## Lanjutan 3 — tco4 nol tabel baru, tco5 menu satu butir (29-09-2026, langsung di `main`)
+
+Brief `PROMPT-LANJUTAN-TREATY-CONTRACT-OUT-3.md`. Titik awal `main` sesudah `5cc123f` + commit sesi lain (brief
+tco4/tco5, claim-life). Keputusan work owner: **tco4** *"khusus modul treaty contract out tidak ada tabel baru sama
+sekali"* dan **tco5** *"untuk menu hanya Treaty Contract Out"*.
+
+**Pembacaan XML.** 36 RDB `Treaty Contract Out\RDBList\` diekstrak (tag SQL saja, tanpa medan operator);
+`pyStepsBlockName` RDB: tidak ada (Rule-Connect-SQL tanpa langkah). Activity penulis dibaca dengan `pyStepsBlockName`
+dicetak (`SaveTreatyYear_Act`, `SaveTreatyContract_Act` — langkah b283–b1251 `//` ter-remark, yang hidup b1396–b1703 —,
+`SaveTreatyReinsurerDetail1_Act`, `SaveTreatyBusinessDetail_Act`, `SaveSecurityReinsurer_Act`,
+`TreatyOutSaveAttachment`, `Delete_act` — sisipan b888–b1079 `//` —, `DeleteGoogleStorage_Act`,
+`DeleteAttachmentTreaty`, `NewTreatyReinsurerDetail_Act`, `KirimTahunGroupID`, `SetTanggalTreatyContract`). Bukti
+penulis langsung tabel yang SAMA di modul saudara: `Treaty In/RDBList/InsertAttachment2_Sql.xml`,
+`Claim Fac In/RDBList/Insert_T_Storage_SQL.xml`, `GenerateImageID_SQL.xml`, `GetAppName_SQL.xml`.
+
+### Paket 1 — migrasi 300–307 dibuang
+
+16 berkas migrasi, `tco_pindah*.go`, `tco_migrasi_test.go`, `services/tco_migrasi.go`, flag
+`-migrate-data-treaty-contract-out`. ⚠️ **Insiden**: penghapusan yang sudah di-stage (`git rm`) TERSAPU ke commit
+dokumen sesi lain `5415aab` (13:46:44); sejak itu `cmd/api` di `main` tidak ter-build sampai `e6905ed` masuk (dipastikan
+dengan `git archive` HEAD). Sejak itu commit memakai `git commit --only` berjalur eksplisit. Penjaga: penghitung CREATE
+75 → 51, CREATE TABLE 28 → 20, `skemauji.Buka` 11 → 10; `TestTCONolTabelBaru` baru (dibuktikan merah terhadap migrasi
+300 palsu); delapan tabel warisan masuk `tabelBukanMilikKita`. STRUKTUR ditulis ulang sebagai peta tabel warisan.
+
+### Paket 2 — repository ke tabel warisan
+
+Nama tabel warisan, sequence warisan (`TREATYYEAR_SEQ`, `TREATYCONTRACT_SEQ`, `M_TREATYREINSURER_SEQ`,
+`TREATY_BUSINESS_SEQ`, `PROPORTIONALARRG_SEQ`). Tepi nilai `tco_warisan.go` diuji dua arah: stempel Pega, tanggal
+00:00 WIB (RALAT pengurai: stempel dibaca di zona Jakarta), desimal teks. Security berkunci `(REAS_ID,
+TRIM(REAS_SECURITY))` (RALAT AC 18/20); UPDATE business lima kolom (RALAT AC 23); anti-dobel tahun dan klausul di Go;
+pembaca hilir membaca teks warisan mentah. **Jejak modul dibuang** seluruhnya (gudang, kaskade, uji).
+
+### Paket 3 — lampiran ke `M_ATTACHMENTTREATY_2` + `T_STORAGE_IMAGE`
+
+`TREATYID = TreatyYear + TreatyYearID` (RALAT "kunci treaty inward"); ID stempel `YYYYMMDDHH24MISSFF3` WIB; objek dicatat
+seperti `Insert_T_Storage_SQL` dan dibuang seperti `DeleteStorage_SQL`; `Simpan`/`Kirim` mengembalikan objek dari
+jawaban unggah. Ukuran berkas dibuang dari API/layar (kolom tidak ada). Badan `PEGA_M_ATTACHMENT` → OQ-TCO-24.
+
+### Paket 3b — tco5 menu satu butir
+
+`ENTRI_MENU` kelompok Treaty Contract Out satu butir `Treaty Contract Out`; ReinsType/Description = popup tombol form
+(`InputTreatyContract.xml` b20778→b20947/b21627, b22196→b22323/b23088, diverifikasi ulang). Rute `tco-kontrak`/
+`tco-klausul` di `App.tsx` tidak disentuh (suntingan work owner) — dua halaman pembungkus kini yatim.
+
+### Paket 4 — tiket dan dokumen
+
+Ralat bertanggal tiket 01 (PREFACTOR dibatalkan), 03–10, 12; `spec.md`; PARITAS; register OQ (OQ-TCO-01 diperluas ke
+bentuk tulis; OQ-TCO-23 bentuk desimal teks; OQ-TCO-24 badan `PEGA_M_ATTACHMENT` + tipe tabel lampiran; OQ-TCO-25
+`USERID`/`TGLUPDATE` diisi layanan); label kode `[terbuka — OQ-TCO-22]`.
+
+⚠️ `.scratch/cadangan/` (untracked) hilang dari disk selama sesi — bukan oleh commit atau perintah sesi ini.

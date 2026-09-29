@@ -243,3 +243,11 @@ hidup** (bukan `pyStepsBlockName = //`) dengan prasyarat **aktif** (`pyStepsPreC
 form kontrak (`Section/InputTreatyContract.xml` tombol `List Description` b22196 → harness b22323/b23088). Layar
 klausul (`PanelKlausulTahun`) tetap, dibuka tombol `List Description` baris tahun treaty. Halaman pembungkus
 `InboxTreatyContractDescription.tsx` tidak lagi dirujuk menu; rutenya di `App.tsx` (suntingan work owner) menunggu.
+
+## Ralat bertanggal 29-09-2026 — tco4 (nol tabel baru) `[keputusan work owner]`
+
+- Tabel `PROPORTIONALARRG` warisan (tipe CAMPUR `[data DBA]`), sequence `PROPORTIONALARRG_SEQ` (lebar 7).
+  `RP`/`USD`/`PCT`/`PCTME`/`KURS` teks → dibaca apa adanya dan diurai di Go (titik atau koma), ditulis desimal teks
+  bertitik (**OQ-TCO-23**); `TREATYLIMIT`/`COINS_*`/`MORE*` NUMBER.
+- Anti-dobel AC 30 dibandingkan di Go: `12.5` dan `12,50` sama nilainya walau teksnya beda.
+- **Jejak gugur**.

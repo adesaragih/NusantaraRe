@@ -53,8 +53,9 @@ Rule korpus (folder `D:\XML\RNM_BRD\Treaty Contract Out\`), dibaca 29-09-2026; `
 | stempel Pega dari **00:00 Asia/Jakarta** | `TREATYYEAR.STARTDATE`, `TREATYYEAR.ENDDATE` | `[dugaan kuat]` properti DateTime: `KirimTahunGroupID` b508/b529 mengirimnya sebagai `CARIDATETIME`, kontrak memformatnya `@FormatDateTime(…,"dd/MM/yyyy","Asia/Jakarta")` (`SaveTreatyContract_Act` b1479/b1508), `SetTanggalTreatyContract` b567 `+8 jam`. Dibaca: stempel → zona Jakarta → tanggal. **OQ-TCO-01** |
 | DATE lewat `to_date(…,'DD/MM/YYYY')` | `TREATYCONTRACT.TREATYSTARTDATE/ENDDATE` | `dba-procedures.md`; `SaveTreatyContract_Act` b1479 `[terverifikasi]` |
 | desimal titik tanpa pemisah ribuan | `PROPORTIONALARRG.RP/USD/PCT/PCTME`, `MTREATYSECURITY.PCT_SHARE` | `[dugaan kuat]` hasil `@toDecimal` (`HitungRpUsd_depan` b293–b294, b382–b383). Dibaca: titik ATAU koma (`UraiDesimalWarisanTCO`). **OQ-TCO-23** |
-| `SYSDATE` | `PROPORTIONALARRG.TGLUPDATE` | procedure mengabaikan param dan memakai `SYSDATE` `[data DBA]` |
-| NULL (Pega tidak mengisinya) | `TREATYREINSURER.TGLUPDATE/USERID/IUDATE/STATUSON/STDRATING`, `TREATYBUSINESS.TGLUPDATE/USERID` | `NewTreatyReinsurerDetail_Act` b917–b1086 mengosongkan; simpan tidak mengisi `[terverifikasi]` |
+| waktu simpan (DATE) | `PROPORTIONALARRG.TGLUPDATE` | procedure memakai `SYSDATE` `[data DBA]`; layanan mengikat jam simpannya (setara) |
+| NULL (Pega tidak mengisinya) | `TREATYREINSURER.IUDATE/STATUSON/STDRATING/STARTDATE/ENDDATE` (dari baris lama bila diubah) | `NewTreatyReinsurerDetail_Act` b917–b1086 mengosongkan `[terverifikasi]` |
+| diisi layanan walau Pega kosong | `TREATYREINSURER.USERID/TGLUPDATE`, `TREATYBUSINESS.USERID/TGLUPDATE` | penyimpangan sadar kecil (jejak modul dibuang) — **OQ-TCO-25** |
 
 ---
 
@@ -110,13 +111,13 @@ Reinsurer pada kombinasi **(TREATYYEAR, TREATYGROUPID, REINSTYPEID)** — bukan 
 | `RICOMM` | NUMBER | param 10 — bind angka |
 | `PCTSHARE` | NUMBER | param 11 — bind angka |
 | `IUDATE` | VARCHAR2 | param 12 — NULL (Pega mengosongkan) |
-| `USERID` | VARCHAR2 | param 13 — NULL |
-| `STARTDATE` | VARCHAR2 | param 14 — NULL |
-| `ENDDATE` | VARCHAR2 | param 15 — NULL |
+| `USERID` | VARCHAR2 | param 13 — akun pembuat (OQ-TCO-25) |
+| `STARTDATE` | VARCHAR2 | param 14 — stempel Pega 00:00 WIB bila terisi |
+| `ENDDATE` | VARCHAR2 | param 15 — idem |
 | `STATUSON` | VARCHAR2 | param 16 — NULL |
 | `STDRATING` | VARCHAR2 | param 17 — NULL |
 | `OPERATORNAME` | VARCHAR2 | param 18 — `OperatorID.pyUserName` (`SaveTreatyReinsurerDetail1_Act` b378) |
-| `TGLUPDATE` | VARCHAR2 | param 19 — NULL |
+| `TGLUPDATE` | VARCHAR2 | param 19 — stempel Pega (OQ-TCO-25) |
 
 ## MTREATYSECURITY
 
@@ -152,8 +153,8 @@ TGLUPDATE` `[data DBA]`. Penghapus **DelBiz**, **DelContract** (langkah 2: `TREA
 | `REINSTYPENAME` | VARCHAR2 | param 8 |
 | `BIZCODE` | VARCHAR2 | param 9 |
 | `BIZNAME` | VARCHAR2 | param 10 |
-| `USERID` | VARCHAR2 | param 11 — NULL (Pega tidak mengisi) |
-| `TGLUPDATE` | VARCHAR2 | param 12 — NULL |
+| `USERID` | VARCHAR2 | param 11 — akun penyimpan (Pega tidak mengisi — OQ-TCO-25) |
+| `TGLUPDATE` | VARCHAR2 | param 12 — stempel Pega (OQ-TCO-25) |
 
 ## PROPORTIONALARRG
 
@@ -178,7 +179,7 @@ membaca JSON `m_PROPORTIONALARRG` — **mati** `[keputusan work owner]`, tidak d
 | `LAYERPARTTYPE` | VARCHAR2 `[tidak disebut DBA]` | param 12 |
 | `LAYERTYPE` | VARCHAR2 `[tidak disebut DBA]` | param 13 |
 | `KURS` | VARCHAR2 `[tidak disebut DBA]` | param 14 — teks `TREATYEXCHANGEYEARLY.TOIDR` apa adanya |
-| `TGLUPDATE` | DATE | param 15 diabaikan; `SYSDATE` |
+| `TGLUPDATE` | DATE | param 15 diabaikan procedure (`SYSDATE`); layanan mengikat jam simpan |
 | `USERID` | VARCHAR2 `[tidak disebut DBA]` | param 16 — `OperatorID.pyUserName` |
 | `LINE` | VARCHAR2 `[tidak disebut DBA]` | param 17 |
 | `PCT` | VARCHAR2(1000) | param 18 — desimal teks |

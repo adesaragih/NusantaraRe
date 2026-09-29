@@ -5,7 +5,7 @@ Satu tempat untuk seluruh pertanyaan terbuka modul ini. Rincian dan buktinya tet
 
 | OQ | Pokok | Dibuka | Status |
 | --- | --- | --- | --- |
-| OQ-TCO-01 | bentuk teks tanggal warisan (tujuh bentuk dikenal pengurai) | tiket 01 | terbuka |
+| OQ-TCO-01 | bentuk teks tanggal warisan (tujuh bentuk dikenal pengurai) **+ bentuk TULIS** `STARTDATE`/`ENDDATE` tahun & reinsurer (tco4: stempel Pega 00:00 WIB, `[dugaan kuat]`) | tiket 01, lanjutan 3 | terbuka — dipastikan DBA dari sampel baris hidup |
 | OQ-TCO-02 | arti/bentuk `IUDATE` | tiket 01 | terbuka |
 | OQ-TCO-03 | isi hidup `PROPORTIONALLIST`/`OBJECT` | tiket 01 | terbuka |
 | OQ-TCO-04 | arti `PROPORTION` | tiket 01 | terbuka |
@@ -26,7 +26,10 @@ Satu tempat untuk seluruh pertanyaan terbuka modul ini. Rincian dan buktinya tet
 | OQ-TCO-19 | tombol simpan tunggal | tiket 09 | **ditutup** — *"tidak perlu"*; rute simpan utuh dibuang (kelompok 3) |
 | OQ-TCO-20 | "klausul milik kontrak ini" di popup hapus | tiket 10 | **ditutup** — *"dari induknya"* (kelompok 2) |
 | OQ-TCO-21 | hapus kontrak yang kombinasinya dipakai bersama | tinjauan lanjutan 1 | **ditutup** — *"hapus saja, samain dengan pega"* (kelompok 2) |
-| OQ-TCO-22 | `Folder` / `Durasi` / `Namafile` unggahan penyimpanan nyata | tiket 12 (lanjutan 2, kelompok 5) | terbuka — `[keputusan kami]` `TreatyContractOut/` / `60` / `IMAGEID` |
+| OQ-TCO-22 | `Folder` / `Durasi` / `Namafile` unggahan penyimpanan nyata | tiket 12 (lanjutan 2, kelompok 5) | terbuka — untuk work owner; nilai `TreatyContractOut/` / `60` / `IMAGEID` dipertahankan berlabel `[terbuka — OQ-TCO-22]` |
+| OQ-TCO-23 | bentuk TULIS desimal teks `PROPORTIONALARRG.RP/USD/PCT/PCTME/KURS`, `MTREATYSECURITY.PCT_SHARE` (tco4: titik, tanpa ribuan, `[dugaan kuat]` hasil `@toDecimal`) | lanjutan 3 | terbuka — DBA: sampel baris hidup (titik atau koma?) |
+| OQ-TCO-24 | badan `PEGA_M_ATTACHMENT` (penulis lampiran Treaty Contract Out, `InsertAtatchment_Sql` b60) dan tipe kolom `M_ATTACHMENTTREATY_2` / `T_STORAGE_IMAGE` | lanjutan 3 | terbuka — DBA; kolom ditiru dari `Treaty In/InsertAttachment2_Sql` b84 |
+| OQ-TCO-25 | `USERID`/`TGLUPDATE` reinsurer dan business diisi layanan walau Pega mengosongkannya (jejak modul dibuang tco4) | lanjutan 3 | terbuka — work owner: pertahankan atau kosongkan seperti Pega |
 
 ## Keputusan work owner 29-09-2026
 

@@ -170,3 +170,9 @@ itu bukan menu portal, melainkan popup dari form kontrak — `Section/InputTreat
 harness b20947/b21627. Editor kontrak (`PanelKontrakTahun`) tetap, dibuka tombol `ReinsType` baris tahun treaty.
 Halaman pembungkus `InboxTreatyContractReinsType.tsx` (pemilih tahun, penyimpangan 6 di atas) tidak lagi dirujuk menu;
 rutenya masih ada di `App.tsx` yang memuat suntingan work owner belum di-commit — dibuang saat berkas itu di-commit.
+
+## Ralat bertanggal 29-09-2026 — tco4 (nol tabel baru) `[keputusan work owner]`
+
+- Tabel `TREATYCONTRACT` warisan, sequence `TREATYCONTRACT_SEQ`; `TREATYSTARTDATE`/`ENDDATE` DATE, `TGLUPDATE`
+  VARCHAR2(1000) berisi stempel Pega (`SaveTreatyContract_Act` b1458). OQ-TCO-10 (+1 tahun kalender) tetap.
+- **Jejak gugur** (nol tabel jejak modul).

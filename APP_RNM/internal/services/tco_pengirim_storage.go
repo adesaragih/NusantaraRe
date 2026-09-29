@@ -53,12 +53,12 @@ const BatasWaktuStorageTCO = 300 * time.Second
 // FolderStorageTCO - folder objek lampiran modul ini di layanan penyimpanan,
 // BERAKHIRAN `/` seperti Pega (Claim Life `InsertGoogleStorage_Act` b1407-b1408
 // `Param.Folder+"/Doc/"+YYYY+"/"+MM+"/"`). Jalur objek = folder + `IMAGEID`.
-// `[keputusan kami]` (OQ-TCO-22) untuk namanya: korpus Treaty Contract Out
+// `[terbuka — OQ-TCO-22]` untuk namanya: korpus Treaty Contract Out
 // tidak memuat unggahnya.
 const FolderStorageTCO = "TreatyContractOut/"
 
 // DurasiURLStorageTCO - `Durasi` URL bertanda tangan (satuan menurut layanan).
-// `[keputusan kami]` (OQ-TCO-22): nilainya dari pemanggil di Pega.
+// `[terbuka — OQ-TCO-22]`: nilainya dari pemanggil di Pega.
 const DurasiURLStorageTCO = 60
 
 // batasJawabanStorageTCO - jawaban JSON layanan tidak dibaca tanpa batas.

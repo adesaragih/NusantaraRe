@@ -306,3 +306,22 @@ tiga sisi (DDL, korpus, nol kata kerja tulis).
 | OQ-TCO-05 | `InputDtlTreatyContact.xml`: label `Underwriting Year` b8004 terikat `InputTreatyYear.TreatyYear`, label `Transaction Year` b8284 terikat `InputTreatyYear.UnderwritingYear` — bersilang dengan `InputTreatyContract.xml` b7455/b12020 | Product + UW (dipakai tiket 03) |
 
 **Status:** selesai 28-09-2026 — commit `treaty-contract-out: tiket 01 — skema relasional + migrasi + tipe dirapikan`.
+
+## Ralat bertanggal 29-09-2026 — tco4 (nol tabel baru) `[keputusan work owner]`
+
+**Tiket ini (PREFACTOR skema relasional baru) DIBATALKAN tco4** — kutipan: *"ini dihapus · untuk modul ini pakai
+table yang sudah ada · baca XML lagi aja · khusus modul treaty contract out tidak ada tabel baru sama sekali!!!"*.
+
+- Migrasi `300`–`307` (`T_TREATYYEAR` … `T_TREATYYEAR_LAMPIRAN`, delapan sequence `SEQ_T_*`) **dibuang**; DBA sudah
+  menghapus objeknya dari `POOLDATA` DEV. Penjaga baru `TestTCONolTabelBaru`: nol berkas di rentang 300–319, nol
+  `CREATE TABLE`/`SEQUENCE` bernama modul; delapan tabel warisan di `tabelBukanMilikKita`.
+- Migrasi data (`-migrate-data-treaty-contract-out`, `tco_pindah.go`, rekonsiliasi) **dibuang** — tidak ada tabel tujuan.
+- Yang tetap dari tiket ini: daftar kolom warisan VERBATIM (`KolomWarisanTCO`), tipe deklarasi `[data DBA]`, pengurai
+  teks warisan (`UraiTanggalWarisanTCO`, `UraiDesimalWarisanTCO`) — kini di `repository/tco_warisan.go`, dipakai tepi
+  repository untuk baca DAN tulis.
+- **Penyimpangan sadar yang gugur**: tipe dirapikan (uang/persen → NUMBER(38,8), tanggal → DATE), PK surrogate
+  `MTREATYSECURITY`, tabel jejak. Nilai kini ditulis dalam bentuk teks warisan (peta: `STRUKTUR-TABEL-TREATY-CONTRACT-OUT.md`).
+- **RALAT pengurai**: stempel Pega `YYYYMMDDTHHMMSS.SSS GMT` dibaca di zona **Asia/Jakarta** (`…T170000.000 GMT` =
+  00:00 WIB hari berikut) — `SaveTreatyContract_Act` b1479 `@FormatDateTime(…,"Asia/Jakarta")`,
+  `SetTanggalTreatyContract` b567 `+8 jam`. Dugaan lama "tanpa pergeseran zona" dibantah XML.
+- AC 51–53, 64–70 (migrasi dan tipe) **gugur**; AC 1–2 (hilir membaca tabel yang sama) kini berlaku langsung.

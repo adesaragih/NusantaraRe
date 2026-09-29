@@ -147,3 +147,10 @@ Nomor baris = baris mentah berkas korpus; langkah aktivitas dibaca lengkap.
 
 - **OQ-TCO-13 — ditutup.** Jawaban: *"0 berarti nonaktif"*. `models.BusinessNonaktif = "0"`,
   `models.BusinessAktif = "1"` dikunci `TestNilaiIsActiveKeputusanWorkOwner` `[keputusan work owner 29-09-2026]`.
+
+## Ralat bertanggal 29-09-2026 — tco4 (nol tabel baru) `[keputusan work owner]`
+
+- **RALAT AC 23**: UPDATE hanya lima kolom yang `PEGA_TREATYBUSINESS` set `[data DBA]` — `ISACTIVE, BIZCODE, BIZNAME,
+  USERID, TGLUPDATE`; `TREATYYEARID`/`TREATYGROUPNAME`/`REINSTYPENAME` tidak diperbarui. Tabel `TREATYBUSINESS`
+  warisan (VARCHAR2), sequence `TREATY_BUSINESS_SEQ`. `USERID`/`TGLUPDATE` diisi layanan — **OQ-TCO-25**.
+- **Jejak gugur**.

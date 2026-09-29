@@ -163,3 +163,14 @@ Nomor baris = baris mentah berkas korpus `Treaty Contract Out/`; langkah aktivit
 
 - **OQ-TCO-17 — ditutup.** Jawaban: *"setuju"*. Security dobel per reinsurer ditolak 409 dan `%Share` wajib 0..100 —
   keduanya **penyimpangan sadar dari Pega** (Pega tidak menegakkan keduanya) `[keputusan work owner 29-09-2026]`.
+
+## Ralat bertanggal 29-09-2026 — tco4 (nol tabel baru) `[keputusan work owner]`
+
+- **RALAT AC 18 dan AC 20** — `MTREATYSECURITY` warisan TANPA identitas `[data DBA]`: kunci baris
+  **(`REAS_ID`, `TRIM(REAS_SECURITY)`)**, PERSIS `UpdateMTreatySecurity` b89 dan `DeleteSecurityReinsurer` b85.
+  PK surrogate dan larangan `TRIM` gugur. `ID` security di API = `REAS_SECURITY` terpangkas; mengganti nama security
+  menimpa baris yang sama (UPDATE berkunci nama LAMA) dan kuncinya menjadi nama baru.
+- AC 19 (kolom bernama) tetap: sisipan menulis daftar kolom dengan nilai yang sama dengan sisipan posisional
+  `InsertToMTreatySecurity` b60 (`TOP_ID`, `TP_TREATY`, `USER_ID` = NULL). `PCT_SHARE` VARCHAR2(99): desimal teks.
+- Kaskade reinsurer → security: tanpa FK; dijalankan layanan (`DeleteFromTreatyReinsurer_Act`), bukan Oracle.
+- **Jejak gugur**.

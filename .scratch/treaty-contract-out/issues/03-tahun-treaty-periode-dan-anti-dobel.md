@@ -167,3 +167,10 @@ Description dihapus"*. Kelompok sidebar **Treaty Contract Out** memuat SATU buti
 (`MENU_TCO.treatyContractOut`; asalnya harness portal `InboxTreatyContract` b151). Layar tahun treaty ini pintu
 masuk tunggal modul; kontrak dan klausul dibuka dari tombol `ReinsType` b20778 dan `List Description` b22196 di
 barisnya, seperti Pega.
+
+## Ralat bertanggal 29-09-2026 — tco4 (nol tabel baru) `[keputusan work owner]`
+
+- Tabel `TREATYYEAR` warisan (seluruh kolom VARCHAR2 `[data DBA]`), sequence `TREATYYEAR_SEQ`. `STARTDATE`/`ENDDATE`
+  ditulis stempel Pega 00:00 WIB, `TGLUPDATE` `@getCurrentTimeStamp()` (`SaveTreatyYear_Act` b328).
+- Anti-dobel AC 73 dibandingkan di Go (tanggal teks berbentuk campur; `TRUNC` tidak berlaku atas VARCHAR2).
+- **AC 41 (jejak) gugur**: nol tabel jejak modul — Pega tidak mencatat jejak modul ini.

@@ -153,3 +153,10 @@ Nomor baris = baris mentah berkas korpus; langkah aktivitas dibaca lengkap (pras
 
 - **OQ-TCO-12 — ditutup.** Jawaban: *"benar"*. Kolom fisik `STATUSACTIVE` master `AGENT` (nama properti RD
   `BrowseAgentReinsSOA_RD`) dikonfirmasi `[keputusan work owner 29-09-2026]`.
+
+## Ralat bertanggal 29-09-2026 — tco4 (nol tabel baru) `[keputusan work owner]`
+
+- Tabel `TREATYREINSURER` warisan, sequence `M_TREATYREINSURER_SEQ`; `RICOMM`/`PCTSHARE` NUMBER, `STARTDATE`/
+  `ENDDATE`/`TGLUPDATE` VARCHAR2 (stempel Pega). `USERID`/`TGLUPDATE` diisi layanan walau Pega mengosongkannya
+  (`NewTreatyReinsurerDetail_Act` b917) — penyimpangan sadar kecil, **OQ-TCO-25**.
+- **Jejak gugur**.

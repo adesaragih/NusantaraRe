@@ -11,6 +11,16 @@ Sumber: `.scratch/treaty-contract-out/grilling-ronde-1-jawaban.md` (**12 verdict
 `docs/adr/ADR-0001`–`ADR-0015`
 Skill: `/mattpocock-skills:to-spec`
 
+> ⛔ **RALAT BERTANGGAL 29-09-2026 — tco4 dan tco5 `[DIPUTUSKAN work owner]`** (brief lanjutan 3).
+> **tco4** menggantikan tco1: modul ini **nol tabel baru** — menulis dan membaca tabel warisan `POOLDATA`
+> (`TREATYYEAR`, `TREATYCONTRACT`, `TREATYREINSURER`, `MTREATYSECURITY`, `TREATYBUSINESS`, `PROPORTIONALARRG`,
+> `M_ATTACHMENTTREATY_2`, `T_STORAGE_IMAGE`) dengan nama tabel/kolom VERBATIM, persis RDB XML; procedure tetap tidak
+> dipanggil (keputusan o), logikanya ditiru, sequence warisan dipakai. Penyimpangan sadar "tipe dirapikan", "PK
+> surrogate security", "tabel jejak", dan migrasi data gugur; peta tabel: `STRUKTUR-TABEL-TREATY-CONTRACT-OUT.md`.
+> **tco5**: menu kelompok Treaty Contract Out SATU butir `Treaty Contract Out`; `InboxTreatyContractReinsType` dan
+> `InboxTreatyContractDescription` adalah popup form kontrak (`InputTreatyContract.xml` b20778/b22196), bukan menu.
+> Bagian spec di bawah yang menyebut tabel `T_*`, skema relasional baru, atau migrasi data tunduk pada ralat ini.
+
 > **Konvensi penandaan.** `[terverifikasi]` = terbukti korpus dengan **class + nama + path**;
 > `[keputusan work owner]`; `[fakta bisnis — work owner]`; `[data DBA]`; `[terbuka]` = OQ.
 > **Identitas rule wajib menyertakan class** — nama sama di class berbeda = rule berbeda.
