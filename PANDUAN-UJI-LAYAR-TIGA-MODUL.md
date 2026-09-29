@@ -4,7 +4,9 @@
 > paket 5, dari kode `main` sesudah commit `fbf1c9b` — **bukan** dari dokumen desain, dan **tanpa**
 > menjalankan aplikasi atau menulis apa pun ke DEV. **Diperbarui GILIRAN-12** (28-09-2026): unduh
 > dokumen, gerbang yang ter-remark di XML dibuang, dan **§5 uji asap baca-saja** — aplikasi
-> dijalankan terhadap DEV dengan `GET` saja, nol tulisan.
+> dijalankan terhadap DEV dengan `GET` saja, nol tulisan. **Diperbarui GILIRAN-13** (29-09-2026): tiga
+> titik buta bab 0 ditutup — PremiumList membuat kasus, `Add` baris adjustment pertama, dan data uji
+> sintetis `UJI-*` (bab 0 §0.1–§0.2).
 >
 > - Setiap teks di dalam `kode` atau tanda kutip disalin **apa adanya** dari kode (label, tombol,
 >   pesan) — termasuk salah ejanya (`cannnot`). Bila layar berbeda dari yang tertulis di sini, itu
@@ -45,7 +47,7 @@ kosong dari DBA — tidak pernah `POOLDATA`, tidak pernah produksi. Executor **t
 | --- | --- | --- | --- |
 | 1 | **PremiumList** tidak dapat membuat kasus | tombol `Input Offer` / `Input Premium` di Inbox **membuat kasus** dan langsung membukanya di `Input Offer Life` — keduanya mulai di tahap yang sama; benderanya (`"0"`/`"1"`) baru bekerja sesudah `Confirm` | `a291a20` (butir **bn**, migrasi **057**) |
 | 2 | **Claim Life** tanpa rute pembuat baris adjustment pertama | tombol `Add` di layar Detail (tahap **Claim Analis**, grid peserta yang **kosong**) melahirkan baris pertama — kosong, peserta ditandai dipilih. `Delete` berdiri tetapi **mati** (ADR-U-0031, OQ-N7) | `0af1773` (butir **bo**) |
-| 3 | **Komite** tanpa roster dan baris siap serah | bukan celah kode — **data sintetis** di §0.2 | paket 3 |
+| 3 | **Komite** tanpa roster dan baris siap serah | bukan celah kode — **data sintetis** di §0.2 | `a4d9147` |
 
 ⚠️ **Dua yang tetap perlu diketahui.** Baris yang lahir lewat `Add` **kosong**, dan belum ada rute yang
 menyunting selnya (**OQ-N8**) — `Save to RNM` menolak baris tanpa jumlah klaim. Dan migrasi **057** harus
@@ -151,8 +153,13 @@ akun stub yang **sama** dengan yang mendaftarkan klaim, atau kasusnya tidak akan
    `DateReceived` **tidak** diperlukan `Save to RNM`: langkah STNC-nya ter-remark, lihat §3.4.)
 3. Daftar kategori dokumen wajib terisi (untuk `Add attachment`).
 4. Untuk menguji tombol baris adjustment (`Save Adjustment`, `Reject Outstanding`,
-   `Send Claim to Committee`): klaim yang **sudah punya** baris adjustment (data lama). Klaim yang
-   didaftarkan lewat layar ini lahir **tanpa** baris adjustment (`BE/repository/pesertapolis.go:334`).
+   `Send Claim to Committee`, `Putaran berikutnya`): muat **data uji sintetis** (bab 0 §0.2) —
+   `UJI-CLM-1`…`4`, satu klaim per tahap, berbaris adjustment. *(Diperbarui GILIRAN-13.)*
+5. Klaim yang didaftarkan lewat layar ini tetap lahir **tanpa** baris adjustment
+   (`BE/repository/pesertapolis.go:334`; Pega melahirkannya saat Register — **OQ-N9**). Baris
+   pertamanya kini dibuat tombol **`Add`** di layar Detail, tahap **Claim Analis** (§3.5.2 #12a). Baris
+   itu lahir **kosong**, dan belum ada rute yang menyunting selnya (**OQ-N8**): `Save to RNM` menolak
+   baris tanpa jumlah klaim, jadi jalur "daftar → Add → Save to RNM" belum dapat ditempuh utuh.
 
 ---
 
@@ -282,6 +289,8 @@ kasus tertutup → 409 `kasus sudah ditutup dan tidak dapat diubah` (sejak `e361
 | 10 | Per baris: `Delete` | `DELETE …/peserta/{p}/diagnosa/{d}` | seperti #7 | Baris hilang **seketika** (tanpa konfirmasi) |
 | 11 | `Save Adjustment` (tampil bila peserta dipilih DAN baris terakhir `Outstanding` tanpa nomor akseptasi) | `POST …/peserta/{p}/akseptasi` | **pemegang tahap saat ini** (`BE/services/akseptasi.go:177-184`) | `Baris diaksep dengan nomor <nomor>.` |
 | 12 | `Putaran berikutnya` (tampil bila baris terakhir ditolak) | `POST …/peserta/{p}/putaran` | **`ReasLifeSPV`** | Baris adjustment baru muncul |
+| 12a | **`Add`** (tampil di tahap `Claim Analis`, peserta **tanpa** baris, belum diputus, kasus terbuka — `FE/services/api.ts:bolehAddAdjustment`) | `POST …/peserta/{p}/putaran` — **rute yang sama** dengan #12 (butir bo) | **`ReasLifeSPV`** + tahap Claim Analis | Satu baris lahir **kosong**: status `Tidak diketahui`, `Jumlah klaim` `—`. 409 `baris adjustment pertama hanya dapat ditambahkan di tahap Claim Analis` · 409 `peserta sudah diputus; isian layar Detail-nya tidak dapat diubah lagi` (`BE/handlers/putaran.go`) |
+| 12b | **`Delete`** (tampil di tahap `Claim Analis`, peserta berbaris) | — | — | Tombol **mati** (keterangan `Baris adjustment tidak dapat dihapus.`): ADR-U-0031 melarang hapus fisik dan tabelnya tanpa kolom penanda — **OQ-N7** |
 | 13 | Tabel baris: `Baris`, `Status`, `Jumlah klaim`, `Nomor akseptasi`, `Tindakan`, `Komite`. Kosong: `Belum ada baris adjustment.` | | | Status berupa kata: `Outstanding` / `Aksep` / `Ditolak` / `Tidak diketahui` |
 | 14 | `Reject Outstanding` (per baris `Outstanding`, klaim bernomor) | `POST …/adjustment/{a}/tolak` — **tanpa dialog, tanpa alasan** | **`ReasLifeAdmin`** (tahap tidak diperiksa) | Status baris → `Ditolak`; `Save Adjustment` hilang, `Putaran berikutnya` muncul |
 | 15 | `Send Claim to Committee` (per baris `Outstanding` belum ke Komite) | `POST …/peserta/{p}/adjustment/{a}/komite` | Type `QP`/`QR`: **`ReasLifeSPV`**; Type `TP`/`TR`: siapa pun beridentitas (`BE/services/wewenang.go:118-143`) | Kolom Komite → `sudah diserahkan` |
@@ -303,7 +312,7 @@ Peserta berstatus diaksep/ditolak: tombol diganti `Terkunci` dan kalimat `Pesert
 | Tombol | 403 | 409 | 422 | lain |
 |---|---|---|---|---|
 | `Save Adjustment` | `Hanya pemegang tahap klaim ini yang dapat mengaksep barisnya.` | dari server: `peserta belum dipilih untuk diklaim` / `baris sudah punya nomor akseptasi` / `hanya baris Outstanding yang dapat diaksep` / `nomor akseptasi yang terbit sudah dipakai; coba lagi` | `Gagal mengaksep baris.` | 501 dari server `kode bisnis klaim belum tersimpan; nomor akseptasi belum dapat dirakit` |
-| `Putaran berikutnya` | `Hanya ReasLifeSPV yang dapat membuka putaran berikutnya.` | kalimat server (mis. `kasus sudah ditutup dan tidak dapat diubah`); cadangan `Putaran berikutnya hanya lahir sesudah baris terakhir ditolak.` | — | `Gagal membuka putaran berikutnya.` |
+| `Putaran berikutnya` / `Add` | `Hanya ReasLifeSPV yang dapat menambah baris adjustment.` | kalimat server (mis. `kasus sudah ditutup dan tidak dapat diubah`); cadangan `Baris adjustment tidak dapat ditambahkan pada keadaan ini.` | — | `Gagal menambah baris adjustment.` |
 | `Reject Outstanding` | `Hanya ReasLifeAdmin yang dapat menolak baris.` | kalimat server; cadangan `Baris sudah diputus dan tidak dapat ditolak lagi.` | `Klaim belum bernomor.` | `Gagal menolak baris.` |
 | `Send Claim to Committee` | `Peran Anda tidak berwenang menyerahkan baris bertipe ini ke Komite.` | kalimat server; cadangan `Baris sudah diserahkan, atau bukan lagi Outstanding.` | dari server: `Name of bank cannot be empty` / `baris pada klaim ini bermata uang campur; penyerahan menuntut mata uang tunggal` / `tidak ada tingkat komite yang menutup nilai klaim ini` / `Type klaim tidak dikenal; penyerahan ke Komite menuntut Type yang sah` | `Gagal menyerahkan baris ke Komite.` |
 
@@ -423,7 +432,8 @@ kotak berisi spasi saja tidak dikirim.
 | Kasir | Stub `ErrKasirBelumDisetujui`, milik modul Komite, bukan layar Claim Life (`BE/services/komite_pengirim.go:50`) |
 | Google Storage / unduh & hapus dokumen | Tidak ada pekerja outbox yang dijalankan (`cmd/api/main.go`), jadi `tStorageId` tak pernah terisi dan baris tetap `URL menunggu penyambungan penyimpanan`; `View Office Online` dan `Delete` tidak pernah tampil. (Sejak GILIRAN-12 paket 0, `View Office Online` mengunduh lewat klien ber-identitas dan menyimpan berkas dengan nama aslinya; sebelumnya pranala biasa yang selalu dijawab 401.) |
 | Hapus klaim | Backend selalu menolak (405, kolom penanda belum diputuskan, ADR-U-0031); layar menampilkan kalimat server itu |
-| Tombol baris adjustment pada klaim baru | Pendaftaran tidak membuat baris adjustment dan tidak ada rute pembuat/penyunting baris — `Save Adjustment`, `Reject Outstanding`, `Send Claim to Committee`, `Putaran berikutnya`, dan Close Claim yang sukses butuh data lama |
+| Tombol baris adjustment pada klaim baru | Pendaftaran tidak membuat baris adjustment (OQ-N9). **`Add`** (tahap Claim Analis) kini melahirkan baris pertama, tetapi **kosong**, dan rute penyunting sel belum ada (OQ-N8) — jalur penuhnya diuji dengan data sintetis `UJI-CLM-*` (bab 0 §0.2) |
+| `Delete` baris adjustment | Berdiri tetapi mati — ADR-U-0031, kolom penanda hapus belum diputuskan (OQ-N7) |
 | Jalan maju dari `Input Register` | Tidak ada tombol di tahap itu (Pega: `Submit` pendaftaran); layar Outstanding kini menyatakan tahapnya dan tidak menawarkan tombol |
 | Claim Paid / `Percent Claim (%)` | Kolom `PCT_CLAIM`/`CLAIM_PAID` dan rute sunting adjustment belum ada — OQ-M3 |
 | Spreading / panel `RetroDetailClaimLife` | `HitungSpreading` nol pemanggil; sumber rate belum diputuskan — OQ-M7 |
@@ -497,14 +507,17 @@ yang hanya memeriksa bahwa akun tidak kosong (`services/services.go:162-167`). `
 
 #### 1.2 Data kasus yang harus disiapkan di luar aplikasi
 
-Aplikasi **belum dapat membuat kasus** (§4 no. 1). Siapkan kasus sintetis, satu per tahap:
+*(Diperbarui GILIRAN-13.)* Tombol `Input Offer` / `Input Premium` di Inbox kini **membuat kasus** (§2.2) —
+tetapi keduanya lahir di `Input Offer Life`, dan `Input Premium Summary` tidak dapat dicapai lewat alur
+sama sekali. Karena itu kasus per tahap tetap disiapkan lewat **data uji sintetis** (bab 0 §0.2), yang
+memuat keempatnya:
 
 | Kasus contoh | `T_WORK_POLIS.STATUS` (= tahap) | Dipakai untuk |
 | --- | --- | --- |
 | `UJI-PL-A` | `Input Offer Life` | §2.3: `Confirm`, `Decline`, `Premium`, `Offer` |
 | `UJI-PL-B` | `Input Premium Detail` | §2.4: unggah CSV, `Generate PL Number`, `Confirm`, `Reject`, `Decline` |
 | `UJI-PL-C` | `Input Premium Summary` | §2.5: `Summary Premium Life` dan `Submit`. Tahap ini hanya dapat dicapai lewat data yang disiapkan |
-| `UJI-PL-D` | `Resolved-Completed` atau `Resolved-Rejected` | §2.6: uji negatif kasus tertutup |
+| `UJI-PL-D` | `Resolved-Completed` (polis `UJI-POL-0001`, tempat klaim `UJI-CLM-*` berpijak) | §2.6: uji negatif kasus tertutup |
 
 Syarat data yang dituntut query:
 
@@ -556,15 +569,15 @@ Syarat data yang dituntut query:
 Urutan di layar:
 
 1. Judul `PremiumList` (:97).
-2. Panel `Input Offer tidak dapat dimuat saat ini.` dan panel `Input Premium tidak dapat dimuat saat ini.`
-   (:99-100; teks dari `dasar.tsx:402`).
+2. Tombol `Input Offer` dan `Input Premium` (:116-133). *(GILIRAN-13 — sebelumnya dua panel
+   "tidak dapat dimuat".)*
 3. Tombol `Export xlsx` (:101-111).
 4. Tabel.
 5. Keterangan `<n> dari <total>` (:148-152).
 
 | # | Kontrol | Memanggil | Siapa | Hasil yang diharapkan |
 | --- | --- | --- | --- | --- |
-| 1 | Panel `Input Offer …` / `Input Premium …` | — | — | Hanya keterangan, bukan tombol (§4 no. 1) |
+| 1 | `Input Offer` / `Input Premium` | `POST /api/polis-life` `{"flag":"0"}` / `{"flag":"1"}` (`BE/handlers/polis_kasus.go`) | ber-identitas | Kasus `NBLF-<n>` lahir dan **langsung terbuka** di `Input Offer Life` — untuk **kedua** tombol; benderanya bekerja sesudah `Confirm`, tetapi layar tetap menanyakan `Premium`/`Offer` (OQ-PL-16). Kedua tombol mati selama permintaan berjalan; penolakan tampil lewat `Gagal` (:149) di bawah baris tombol — pita merah, atau panel untuk 502/503/504 (§1.3). ⚠️ Menuntut migrasi **057** di skema uji |
 | 2 | `Export xlsx` | tanpa HTTP. Mengunduh `premiumlist.xlsx` berisi baris yang tampil | ber-identitas | Mati bila tabel kosong. Kolom berkas sama dengan kolom tabel |
 | 3 | Klik baris | membuka kasus dengan tahap = nilai `Work Status` baris itu (:131-137) | ber-identitas | Layar yang terbuka mengikuti tahap (tabel di bawah) |
 
@@ -815,7 +828,7 @@ Tabel ini menjadi acuan bagi §2.3–2.6 (`models/polis_penawaran_test.go:19-56`
 
 | # | Perilaku | Sebab (satu baris) | Rujukan |
 | --- | --- | --- | --- |
-| 1 | Membuat kasus baru (`Input Offer` / `Input Premium`) | Keduanya panel "tidak dapat dimuat"; `SEQ_WORK_POLIS` dan kolom `FlagOnGoingPolicy` belum ada di skema | FE `InboxPremiumList.tsx:11-22` |
+| 1 | ~~Membuat kasus baru~~ — ✅ **ditutup GILIRAN-13** (`a291a20`, butir bn). Yang tersisa: urutan `SEQ_WORK_POLIS` mulai dari 1 (OQ-PL-15) dan `Decision3` yang Pega rutekan otomatis (OQ-PL-16) | — | Tiket `00-…md`, `01-…md` (ralat 29-09-2026) |
 | 2 | Isian dan simpan data penawaran, serta riwayat `T_VIEW_SUGGEST` | Layar hanya punya tombol keputusan; penulis penawaran relasional belum ada | Tiket `01-…md:3,65-87` |
 | 3 | Gerbang `ProtectAccept` (`Please choose no offer !`, `COB can't null`, `Premium is 0`, dst.) | Pesannya ada, tetapi `ValidasiPenawaran` tidak dipanggil di luar uji | BE `models/polis_validasi.go:37-49,116` |
 | 4 | Layar `Summary Premium Life` lewat alur aplikasi | Tahap `Input Premium Summary` nol konektor masuk `[terbuka — work owner]` | `models/polis_penawaran.go:78-90`; Tiket `05b-…md:235` |
@@ -912,16 +925,18 @@ Disiapkan pengembang/DBA **sebelum** uji; penguji tidak menjalankan migrasi.
    (tabel ini memuat data orang, `repository/roster.go:8-11`). Filter yang dipakai
    (`repository/roster.go:58-64`): `LIMIT_BOTTOM <= nilai klaim mutlak`, `STS_KLAIM = 'LIFE'`,
    `STS_AKTIF = '1'`, urut `DEGREE`. Setiap baris yang lolos = satu tingkat.
-   Usulan isi (nilai dari uji, lihat §3):
+   *(Diperbarui GILIRAN-13.)* **Data uji sintetis** (bab 0 §0.2) memuatnya:
 
-   | `DEGREE` | `OPERATOR_ID` (= `VITE_STUB_PELAKU`) | `JABATAN` | `EMAIL` |
-   | --- | --- | --- | --- |
-   | 1 | `UJI-A` | `UJI-J1` | `uji1@uji.invalid` |
-   | 2 | `UJI-B` | `UJI-J2` | `uji2@uji.invalid` |
-   | 3 | `UJI-C` | `UJI-J3` | `uji3@uji.invalid` |
+   | `DEGREE` | `OPERATOR_ID` (= `VITE_STUB_PELAKU`) | `LIMIT_BOTTOM` | `STS_AKTIF` | Untuk 150.000.000 |
+   | --- | --- | --- | --- | --- |
+   | 1 | `UJI-KOMITE-1` | 0 | `1` | terpilih |
+   | 2 | `UJI-KOMITE-2` | 100.000.000 | `1` | terpilih |
+   | 3 | `UJI-KOMITE-3` | 1.000.000.000 | `1` | di atas pitanya |
+   | 1 | `UJI-KOMITE-4` | 0 | `0` | tidak aktif |
 
-   `LIMIT_BOTTOM` ketiganya ≤ nilai klaim uji, supaya tangganya 3 tingkat.
-3. **Satu klaim Claim Life terbuka** (bukan `Resolved-Completed`) dengan satu peserta dan satu baris
+   Surelnya `uji-komite-<n>@contoh.invalid`. Tangga baris `UJI-ADJ-4-A1` karena itu **dua** tingkat.
+3. *(Data uji: klaim `UJI-CLM-4` peserta A, baris `UJI-ADJ-4-A1`, tahap Claim Analis — serahkan sebagai
+   `ReasLifeSPV`, sebab Type-nya `QP`.)* **Satu klaim Claim Life terbuka** (bukan `Resolved-Completed`) dengan satu peserta dan satu baris
    adjustment: status **Outstanding**, `KOMITE_ID` kosong, nama bank / ID bank / nomor rekening
    **terisi**, mata uang tunggal di seluruh baris (kolom `CURRENCY` dan `CURRENCY_ID`).
    Type klaim salah satu `QR`, `QP`, `TP`, `TR`.
@@ -1149,9 +1164,9 @@ format `YYYY-MM-DD HH:MM:SS` (`services/komite_inbox.go:91-96`).
 | Sebab | Akibat di layar | Modul |
 | --- | --- | --- |
 | Efek keluar di non-produksi **dilewati** / pengirim stub; tidak ada penjadwal pekerja outbox di `cmd/api` | Email, Arasapas, Kasir, Google Storage tidak pernah terkirim; outbox Komite tetap "tertunda"; laporan "perlu intervensi" hanya terlihat kosong; tautan berkas Claim Life tetap `URL menunggu penyambungan penyimpanan` | ketiganya |
-| Tidak ada pembuat baris adjustment pertama | Tombol baris Claim Life hanya teruji pada data lama | Claim Life |
-| Tidak ada pembuat kasus PremiumList; tahap `Input Premium Summary` nol konektor masuk | Kasus disiapkan di luar aplikasi; `Summary Premium Life` hanya lewat data yang disiapkan | PremiumList |
-| Keputusan work owner terbuka | OQ-M1…M7, OQ-N1…N5 (Claim Life; OQ-N6 ditutup butir bl); OQ-PL-09/10/11; OQ-K-04a/05/05b — rinciannya di tabel "Belum dapat diuji" tiap bab | ketiganya |
+| ~~Tidak ada pembuat baris adjustment pertama~~ — `Add` ada sejak GILIRAN-13, tetapi barisnya kosong dan belum dapat disunting (OQ-N8) | Jalur penuh tombol baris Claim Life diuji dengan data sintetis `UJI-CLM-*` | Claim Life |
+| ~~Tidak ada pembuat kasus PremiumList~~ — ada sejak GILIRAN-13; tahap `Input Premium Summary` tetap nol konektor masuk | `Summary Premium Life` hanya lewat data sintetis `UJI-PL-C` | PremiumList |
+| Keputusan work owner terbuka | OQ-M1…M7, OQ-N1…N5 dan **N7…N9** (Claim Life; OQ-N6 ditutup butir bl); OQ-PL-09/10/11 dan **15/16**; OQ-K-04a/05/05b — rinciannya di tabel "Belum dapat diuji" tiap bab dan di tiket | ketiganya |
 | Identitas stub, bukan IAM | Uji peran = ganti `VITE_STUB_PERAN`; tidak ada layar masuk | ketiganya |
 | `App.tsx` (suntingan work owner yang belum di-commit, tidak disentuh) | Layar Detail Claim Life tidak menerima pengenal klaim (ketik manual); tiap baris Inbox membuka layar Outstanding | Claim Life |
 

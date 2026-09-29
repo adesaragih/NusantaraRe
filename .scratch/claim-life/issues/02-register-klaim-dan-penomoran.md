@@ -644,3 +644,10 @@ tujuh tanggal di atas — ke arah yang benar. **Nol migrasi baru.**
 Kodenya: `APP_RNM/internal/repository/penomor.go`, `HitungPeriodeNomor` (kini mengembalikan galat,
 sebab `models.PeriodeProduksi` **menolak** hari tutup buku kosong atau di luar 1..31 alih-alih
 menebaknya). Commit `8f69682`.
+
+## ⛔ Catatan bertanggal — 29 September 2026 (GILIRAN-13 paket 2)
+
+Baris adjustment pertama kini dapat lahir lewat tombol `Add` di layar Detail (tahap Claim Analis; tiket 03,
+butir bo). **Pendaftaran tidak diubah** — peserta tetap lahir tanpa baris (AC 32 di atas tetap terbuka).
+Pega melahirkan baris pertama saat pendaftaran (`SavePesertaClaim` 7.8 b3671, hidup, WHEN b3919); selisih
+urutan kerjanya dicatat sebagai **OQ-N9** (tiket 03).

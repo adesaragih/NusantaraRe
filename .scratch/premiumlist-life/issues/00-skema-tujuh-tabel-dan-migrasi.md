@@ -1,6 +1,6 @@
 # 00: Skema tujuh tabel + `T_WORK_POLIS` + migrasi — **PREFACTOR**
 
-**Status:** sebagian — migrasi data, rekonsiliasi, dan jalur mundur teruji terhadap Oracle belum ada; DDL `050`–`056` + penjaga bentuk sudah
+**Status:** sebagian — migrasi data, rekonsiliasi, dan jalur mundur teruji terhadap Oracle belum ada; DDL `050`–`056` + penjaga bentuk sudah; **`057` (`SEQ_WORK_POLIS` + `FLAG_ONGOING_POLICY`) sejak GILIRAN-13** — belum dijalankan di skema mana pun oleh executor; OQ-PL-15 terbuka
 
 **Blocked by:** CL-01 (kerangka aplikasi + seam API — scaffolding lintas konteks)
 

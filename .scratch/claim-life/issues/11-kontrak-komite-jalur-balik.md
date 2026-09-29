@@ -7,7 +7,7 @@
 > dua tingkat baris. Implementasinya ada di **tiket Komite 05**.
 > Tiket ini kini **membaca dan menampilkan** hasil itu, lalu melanjutkan siklus klaim.
 
-**Status:** sebagian — peserta dan header tidak selalu mencerminkan baris terakhir sesudah hasil Komite atau putaran baru
+**Status:** sebagian — peserta dan header tidak selalu mencerminkan baris terakhir sesudah hasil Komite atau putaran baru; rute putaran kini juga melahirkan baris PERTAMA (GILIRAN-13 butir bo, lihat ralat di bawah)
 
 **Blocked by:** 10 (kontrak Komite — penyerahan) · **Komite 05** (jalur balik — penulisan
 `STS_REJECT`)
@@ -233,3 +233,13 @@ daripada gerbang yang memeriksa.
 ⛔ **Temuan A0 yang jatuh ke sini:** `IS_CHECK` peserta sempat hilang dari kontrak API. Setiap
 putaran lanjutan menuntut peserta tercentang; tanpanya seluruh jalur putaran akan diam-diam
 menolak. Dikembalikan beserta ujinya.
+
+## ⛔ Catatan bertanggal — 29 September 2026 (GILIRAN-13 butir **bo**)
+
+`POST /api/klaim-life/{id}/peserta/{pesertaId}/putaran` kini **satu rute untuk dua jalur**: peserta yang
+belum berbaris → baris adjustment PERTAMA (`Putaran.tambahPertama`, `Add` b17937 pada grid kosong);
+peserta berbaris → jalur putaran tiket ini, **tidak diubah** (`BarisLanjutan` tetap menuntut baris terakhir
+ditolak; `ErrBukanPenolakan` 409). Sebelumnya peserta tanpa baris dijawab 400 "bukan milik klaim", sebab
+`AmbilBaris` menggabung ke baris adjustment. Gerbang jalur baru (tahap Claim Analis, pemegangnya,
+`.STS_REJECT` peserta) dan alasannya tidak dipasang pada jalur putaran: tiket 03, ralat 29-09-2026.
+Pemetaan galat kini `handlers/putaran.go:jawabGalatPutaran` (403 berbunyi "menambah baris adjustment").

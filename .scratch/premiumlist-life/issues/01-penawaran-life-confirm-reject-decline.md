@@ -1,6 +1,6 @@
 # 01: Penawaran Life — Confirm / Reject / Decline, dan percabangan Offer / Premium
 
-**Status:** sebagian — input + simpan data penawaran (relasional) dan riwayat `T_VIEW_SUGGEST` belum dibangun; gerbang `ProtectAccept` belum tersambung ke rute (sensus remark 28-09-2026)
+**Status:** sebagian — input + simpan data penawaran (relasional) dan riwayat `T_VIEW_SUGGEST` belum dibangun; gerbang `ProtectAccept` belum tersambung ke rute (sensus remark 28-09-2026); tombol portal `Input Offer`/`Input Premium` **membuat kasus sejak GILIRAN-13** (`POST /api/polis-life`); OQ-PL-16 terbuka
 
 **Blocked by:** **00 (skema tujuh tabel — PREFACTOR)**
 
