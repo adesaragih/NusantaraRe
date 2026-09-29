@@ -56,12 +56,16 @@ type KeadaanPolis struct {
 	// saat tertutup. Kosong berarti belum pernah disetel (ADR-U-0027).
 	Status string
 	Lini   string
+	// Flag - `FLAG_ONGOING_POLICY` (057, butir bn): "0" Input Offer, "1" Input
+	// Premium. Butir bq merutekan `Decision3` darinya. Kosong pada baris yang
+	// lahir sebelum 057.
+	Flag string
 }
 
 // sqlKeadaanPolis merakit pembacaannya.
 func sqlKeadaanPolis(tabel string) string {
 	return fmt.Sprintf(
-		`SELECT ID, LINI, POSITION, STATUS FROM %s WHERE ID = :1`, tabel)
+		`SELECT ID, LINI, POSITION, STATUS, FLAG_ONGOING_POLICY FROM %s WHERE ID = :1`, tabel)
 }
 
 // Keadaan membaca tahap dan status kerja satu polis.
@@ -74,8 +78,8 @@ func (r *WorkPolis) Keadaan(ctx context.Context, id string) (KeadaanPolis, error
 	if err := PeriksaSQL(q); err != nil {
 		return KeadaanPolis{}, err
 	}
-	var pengenal, lini, posisi, status sql.NullString
-	err = r.db.sql.QueryRowContext(ctx, q, id).Scan(&pengenal, &lini, &posisi, &status)
+	var pengenal, lini, posisi, status, flag sql.NullString
+	err = r.db.sql.QueryRowContext(ctx, q, id).Scan(&pengenal, &lini, &posisi, &status, &flag)
 	if errors.Is(err, sql.ErrNoRows) {
 		return KeadaanPolis{}, ErrWorkPolisTidakAda
 	}
@@ -84,7 +88,7 @@ func (r *WorkPolis) Keadaan(ctx context.Context, id string) (KeadaanPolis, error
 	}
 	return KeadaanPolis{
 		ID: pengenal.String, Lini: lini.String,
-		Position: posisi.String, Status: status.String,
+		Position: posisi.String, Status: status.String, Flag: flag.String,
 	}, nil
 }
 

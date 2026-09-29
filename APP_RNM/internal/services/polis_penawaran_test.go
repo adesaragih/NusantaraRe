@@ -25,9 +25,25 @@ func TestPenawaranMenolakTanpaIdentitasLebihDulu(t *testing.T) {
 		time.Now()); !errors.Is(err, ErrTanpaIdentitas) {
 		t.Errorf("Putuskan: %v, mau ErrTanpaIdentitas", err)
 	}
-	if _, err := p.Golongkan(ctx, Pelaku{}, "POL-1", models.LanjutOffer,
-		time.Now()); !errors.Is(err, ErrTanpaIdentitas) {
-		t.Errorf("Golongkan: %v, mau ErrTanpaIdentitas", err)
+}
+
+// TestDecision3DirutekanDariBendera - GILIRAN-14 butir bq.
+//
+// ⛔ `Confirm` di tahap penawaran menerapkan hasil `IsFlagOnGoingPolicy` atas
+// bendera KASUS, di pintu yang sama - bukan menunggu pengguna memilih
+// `Offer`/`Premium` lewat rute kedua. Rute dan layanan penggolong manual
+// (`Golongkan`) dibuang: kode mati.
+func TestDecision3DirutekanDariBendera(t *testing.T) {
+	isi, err := os.ReadFile("polis_penawaran.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	teks := string(isi)
+	if !strings.Contains(teks, "models.PenggolongOtomatis(keadaan.Flag)") {
+		t.Error("Putuskan tidak merutekan Decision3 dari bendera kasus")
+	}
+	if strings.Contains(teks, "func (p *Penawaran) Golongkan") {
+		t.Error("penggolong manual masih ada; Decision3 tidak ditanyakan ke pengguna")
 	}
 }
 
@@ -54,11 +70,14 @@ func TestPenawaranMenjagaUrutanPagarnya(t *testing.T) {
 
 // TestNolAturanOtomatisMenetapkanKeputusan adalah penjaga AC 6.
 //
-// ⛔ Kedua decision table Pega mengekspor NOL baris keputusan; yang ditiru
-// AKIBAT keputusan, bukan formula yang memilihnya. Layanan ini karena itu
-// TIDAK boleh menghitung keputusannya sendiri - ia selalu menerimanya sebagai
-// parameter. Penjaga ini membaca berkasnya dan menolak literal keputusan di
-// luar daftar konstanta models.
+// ⛔ Keputusan `Confirm`/`Reject`/`Decline` datang dari PENGGUNA - layanan ini
+// tidak menghitungnya. Penjaga ini membaca berkasnya dan menolak literal
+// keputusan di luar daftar konstanta models.
+//
+// ⚠️ RALAT 29-09-2026: premis lama "kedua decision table mengekspor NOL
+// baris" keliru (GILIRAN-13). Untuk `IsLifeAccepted` (Decision1/2) keputusan
+// manual tetap selaras; `IsFlagOnGoingPolicy` (Decision3) kini dirutekan dari
+// bendera - lihat TestDecision3DirutekanDariBendera.
 func TestNolAturanOtomatisMenetapkanKeputusan(t *testing.T) {
 	isi, err := os.ReadFile("polis_penawaran.go")
 	if err != nil {

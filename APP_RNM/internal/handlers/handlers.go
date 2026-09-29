@@ -92,9 +92,9 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 	// ⚠️ Penambahan ADITIF oleh sesi PremiumList; nol baris Claim Life
 	// yang disunting. Rutenya sendiri hidup di `rute_premiumlist.go`.
 	//
-	// ⛔ DUA rute, bukan satu. `Offer`/`Premium` BUKAN keputusan pengguna
-	// atas penawaran melainkan hasil penggolong `Decision3`, yang hanya sah
-	// sesudah `Confirm` di tahap penawaran.
+	// ⛔ SATU rute keputusan. `Offer`/`Premium` BUKAN keputusan pengguna
+	// melainkan hasil `Decision3` atas bendera kasus - sejak GILIRAN-14
+	// butir bq diterapkan di dalam `Confirm`; rute penggolong manual dibuang.
 	mux.HandleFunc("GET /api/polis-life", kotakMasukPolis(svc, stubPelaku))
 	// GILIRAN-13 butir bn - tombol portal `Input Offer` / `Input Premium`
 	// (`CreateInputLife`) melahirkan kasus polis.
@@ -103,8 +103,6 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 		periodeProduksi(svc, stubPelaku))
 	mux.HandleFunc("POST /api/polis-life/{id}/keputusan",
 		putuskanPenawaran(svc, stubPelaku))
-	mux.HandleFunc("POST /api/polis-life/{id}/penggolong",
-		golongkanPenawaran(svc, stubPelaku))
 	// Tiket 03 - layar detail dan penomoran PL.
 	//
 	// ⛔ MEMBACA DAN MENERBITKAN TIDAK SATU RUTE. Rute yang "membaca, dan

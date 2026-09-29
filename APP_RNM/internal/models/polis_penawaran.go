@@ -126,8 +126,10 @@ const (
 // b328/b329). Untuk Decision1/2 keputusan manual tetap selaras - inputor yang
 // mengisi `ProposalAcceptStatus`. Untuk Decision3 TIDAK: benderanya lahir
 // bersama kasus (`CreateInputLife` b618, kini kolom `FLAG_ONGOING_POLICY`,
-// 057), jadi Pega merutekannya otomatis. Perilaku di sini TIDAK diubah -
-// OQ-PL-16.
+// 057), jadi Pega merutekannya otomatis.
+//
+// ⭐ GILIRAN-14 butir bq: Decision3 kini DIRUTEKAN dari bendera
+// (`PenggolongOtomatis`) - layar tidak menanyakannya lagi; OQ-PL-16 ditutup.
 const (
 	KeputusanConfirm = "Confirm"
 	KeputusanReject  = "Reject"
@@ -247,6 +249,43 @@ func TransisiPenawaran(tahap, keputusan string) (AkibatKeputusan, error) {
 	}
 	return AkibatKeputusan{}, fmt.Errorf("%w: %q pada %q",
 		ErrKeputusanTidakAdaDiTahapIni, k, tahap)
+}
+
+// ErrBenderaTanpaKonektor - bendera di luar decision table: hasilnya
+// `Decline`, dan `Decision3` tidak punya konektor untuk itu.
+var ErrBenderaTanpaKonektor = errors.New(
+	"models: FLAG_ONGOING_POLICY bukan \"0\" maupun \"1\"; Decision3 tidak punya jalur untuknya")
+
+// HasilIsFlagOnGoingPolicy menjalankan decision table `IsFlagOnGoingPolicy`
+// VERBATIM - butir bq.
+//
+// `[terverifikasi]` `DecisionTable/IsFlagOnGoingPolicy.xml`: satu kolom,
+// `pyWorkPage.FlagOnGoingPolicy`, operator `=` (TEKS, persis - ADR-U-0022);
+// baris "0" -> `Offer` (b293 -> b328), "1" -> `Premium` (b294 -> b329);
+// `pyEvaluateAllRows` no, dan selain itu `pyDefaultResult` `Decline` (b94).
+func HasilIsFlagOnGoingPolicy(flag string) string {
+	switch flag {
+	case FlagPolisPenawaran:
+		return LanjutOffer
+	case FlagPolisPremium:
+		return LanjutPremium
+	}
+	return KeputusanDecline
+}
+
+// PenggolongOtomatis menjawab akibat `Decision3` dari bendera kasus - butir bq
+// (`[DIPUTUSKAN - XML; veto work owner]`).
+//
+// ⛔ Hasil `Decline` (bendera di luar tabel - termasuk KOSONG, keadaan nyata
+// baris yang lahir sebelum 057) TIDAK dirutekan: `Decision3` hanya punya
+// konektor `Premium` dan `Offer` (`InputPolicyHolder.xml` b1643/b1793). Di
+// Pega itu masalah flow; di sini galat terang, bukan jalur yang dikarang.
+func PenggolongOtomatis(flag string) (AkibatKeputusan, error) {
+	hasil := HasilIsFlagOnGoingPolicy(flag)
+	if hasil == KeputusanDecline {
+		return AkibatKeputusan{}, fmt.Errorf("%w: bendera %q", ErrBenderaTanpaKonektor, flag)
+	}
+	return LanjutanPenggolong(hasil)
 }
 
 // LanjutanPenggolong menjawab akibat hasil `IsFlagOnGoingPolicy`.

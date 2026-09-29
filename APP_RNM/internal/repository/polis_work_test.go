@@ -92,3 +92,11 @@ func TestTutupPolisDikunciTahapYangDibaca(t *testing.T) {
 		t.Errorf("penjaga kasus tertutup hilang:\n%s", q)
 	}
 }
+
+// TestKeadaanPolisMembacaBendera - GILIRAN-14 butir bq: Decision3 dirutekan
+// dari `FLAG_ONGOING_POLICY`, jadi keadaan kasus membawanya.
+func TestKeadaanPolisMembacaBendera(t *testing.T) {
+	if q := sqlKeadaanPolis(tabelUjiWorkPolis); !strings.Contains(q, "FLAG_ONGOING_POLICY") {
+		t.Errorf("keadaan polis tidak membaca FLAG_ONGOING_POLICY:\n%s", q)
+	}
+}

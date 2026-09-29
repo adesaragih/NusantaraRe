@@ -3,18 +3,15 @@ package handlers
 // Pintu HTTP modul PremiumList Life - tiket 01.
 //
 //	POST /api/polis-life/{id}/keputusan   body {"keputusan":"Confirm|Reject|Decline"}
-//	POST /api/polis-life/{id}/penggolong  body {"hasil":"Offer|Premium"}
 //	GET  /api/polis-life/{id}/summary     rekap per mata uang (tiket 05a)
 //	POST /api/polis-life/{id}/summary     nomor + rekap + warisan (tiket 05a)
 //
-// Padanan ketiga konektor keputusan `InputPolicyHolder.xml` dan penggolong
-// `Decision3`-nya.
+// Padanan ketiga konektor keputusan `InputPolicyHolder.xml`.
 //
-// ⛔ DUA rute, bukan satu ber-`keputusan` lima nilai. `Offer`/`Premium`
-// BUKAN keputusan pengguna atas penawaran - ia hasil penggolong yang hanya
-// sah SESUDAH `Confirm` di tahap penawaran. Satu rute untuk keduanya membuat
-// gerbang "hanya sesudah Confirm" menjadi gerbang yang harus diingat, bukan
-// gerbang yang ada.
+// ⛔ `Offer`/`Premium` BUKAN keputusan pengguna - ia hasil `Decision3`
+// (decision table `IsFlagOnGoingPolicy`) atas bendera KASUS, dan sejak
+// GILIRAN-14 butir bq diterapkan di dalam `Confirm` tahap penawaran. Rute
+// penggolong manual yang dahulu berdiri di sini dibuang.
 //
 // Nol aturan dagang di sini; seluruh gerbangnya di `services/polis_penawaran.go`.
 //
@@ -103,21 +100,19 @@ type isiKeputusanPolis struct {
 	Keputusan string `json:"keputusan"`
 }
 
-// isiPenggolongPolis adalah badan permintaan penggolong.
-type isiPenggolongPolis struct {
-	Hasil string `json:"hasil"`
-}
-
 // jawabanAkibat adalah apa yang layar perlu tahu sesudah sebuah keputusan.
 //
-// ⚠️ Ketiga medannya menyeberang BERNAMA dan lengkap. Layar harus dapat
-// membedakan tiga hasil yang berbeda - berpindah, tertutup, menunggu
-// penggolong - dan jawaban yang hanya berkata "berhasil" memaksa layar
-// membaca ulang seluruh polis untuk menebak yang mana.
+// ⚠️ Kedua medannya menyeberang BERNAMA dan lengkap. Layar harus dapat
+// membedakan hasil yang berbeda - berpindah atau tertutup - dan jawaban yang
+// hanya berkata "berhasil" memaksa layar membaca ulang seluruh polis untuk
+// menebak yang mana.
+//
+// ⛔ `menungguPenggolong` DIBUANG (GILIRAN-14 butir bq): Decision3 kini
+// diterapkan di dalam `Confirm`, jadi tidak ada lagi keadaan "menunggu" yang
+// dapat dilihat layar.
 type jawabanAkibat struct {
-	TahapTujuan        string `json:"tahapTujuan"`
-	StatusWork         string `json:"statusWork"`
-	MenungguPenggolong bool   `json:"menungguPenggolong"`
+	TahapTujuan string `json:"tahapTujuan"`
+	StatusWork  string `json:"statusWork"`
 }
 
 // putuskanPenawaran melayani POST .../keputusan.
@@ -137,30 +132,6 @@ func putuskanPenawaran(svc *services.Service, stubPelaku bool) http.HandlerFunc 
 			DenganPenyalur(services.PenyalurPremiumListOracle(svc)).
 			Putuskan(r.Context(), pelakuDari(r, stubPelaku),
 				r.PathValue("id"), isi.Keputusan, time.Now())
-		if jawabGalatPolis(w, err) {
-			return
-		}
-		tulisAkibat(w, akibat)
-	}
-}
-
-// golongkanPenawaran melayani POST .../penggolong.
-func golongkanPenawaran(svc *services.Service, stubPelaku bool) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if !svc.PunyaDatabase() {
-			galat(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
-			return
-		}
-		var isi isiPenggolongPolis
-		if err := json.NewDecoder(r.Body).Decode(&isi); err != nil {
-			galat(w, http.StatusBadRequest, "badan permintaan bukan JSON yang sah")
-			return
-		}
-		akibat, err := svc.Penawaran().
-			DenganJejak(services.PerekamJejakOracle(svc)).
-			DenganPenyalur(services.PenyalurPremiumListOracle(svc)).
-			Golongkan(r.Context(), pelakuDari(r, stubPelaku),
-				r.PathValue("id"), isi.Hasil, time.Now())
 		if jawabGalatPolis(w, err) {
 			return
 		}
@@ -315,9 +286,8 @@ func tulisAkibat(w http.ResponseWriter, a models.AkibatKeputusan) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(jawabanAkibat{
-		TahapTujuan:        a.TahapTujuan,
-		StatusWork:         a.StatusWork,
-		MenungguPenggolong: a.MenungguPenggolong,
+		TahapTujuan: a.TahapTujuan,
+		StatusWork:  a.StatusWork,
 	})
 }
 
@@ -339,7 +309,10 @@ func jawabGalatPolis(w http.ResponseWriter, err error) bool {
 		// 409, bukan 400: keputusannya SAH, tahapnya yang tidak punya
 		// jalurnya. 400 akan membuat orang mengira ia salah ketik.
 		galat(w, http.StatusConflict, err.Error())
-	case errors.Is(err, services.ErrPenggolongBelumSaatnya):
+	case errors.Is(err, models.ErrBenderaTanpaKonektor):
+		// 409: `Confirm` sah, tetapi bendera kasus di luar decision table
+		// `IsFlagOnGoingPolicy` - hasilnya `Decline`, dan Decision3 tidak
+		// punya konektor untuknya (butir bq).
 		galat(w, http.StatusConflict, err.Error())
 	case errors.Is(err, services.ErrPolisNomorTakDitemukan):
 		// 404: nomor polisnya memang tidak ada di PremiumList Life.

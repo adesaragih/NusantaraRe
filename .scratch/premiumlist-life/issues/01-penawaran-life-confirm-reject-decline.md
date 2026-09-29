@@ -1,6 +1,6 @@
 # 01: Penawaran Life — Confirm / Reject / Decline, dan percabangan Offer / Premium
 
-**Status:** sebagian — input + simpan data penawaran (relasional) dan riwayat `T_VIEW_SUGGEST` belum dibangun; gerbang `ProtectAccept` belum tersambung ke rute (sensus remark 28-09-2026); tombol portal `Input Offer`/`Input Premium` **membuat kasus sejak GILIRAN-13** (`POST /api/polis-life`); OQ-PL-16 terbuka
+**Status:** sebagian — input + simpan data penawaran (relasional) dan riwayat `T_VIEW_SUGGEST` belum dibangun; gerbang `ProtectAccept` belum tersambung ke rute (sensus remark 28-09-2026); tombol portal `Input Offer`/`Input Premium` **membuat kasus sejak GILIRAN-13** (`POST /api/polis-life`); **Decision3 dirutekan dari bendera sejak GILIRAN-14** (butir bq, OQ-PL-16 ditutup)
 
 **Blocked by:** **00 (skema tujuh tabel — PREFACTOR)**
 
@@ -331,3 +331,37 @@ bendera yang kini tersimpan, sedangkan layar kita bertanya — perilaku tidak di
   `MAX` atas angka `IDPEGA` berbentuk `NBLF-` — dijalankan DBA, bukan executor).
 - **OQ-PL-16** — dengan `FLAG_ONGOING_POLICY` tersimpan, apakah `Decision3` dirutekan otomatis seperti
   Pega (bendera "0" → Offer/selesai, "1" → Premium/detail), atau tetap ditanyakan ke inputor?
+
+## ⛔ Ralat bertanggal — 29 September 2026 (GILIRAN-14 paket 2, butir **bq**: Decision3 dirutekan dari bendera)
+
+`[DIPUTUSKAN — XML; veto work owner]` butir **bq** — **OQ-PL-16 ditutup**. Decision table dibaca utuh
+(`DecisionTable/IsFlagOnGoingPolicy.xml`, berkas pecahan `><` → `>
+<`): satu kolom
+`pyWorkPage.FlagOnGoingPolicy` ber-operator `=`; baris `"0"` → `Offer` (b293 → b328) dan `"1"` → `Premium`
+(b294 → b329); `pyEvaluateAllRows` no; **otherwise `Decline`** (`pyDefaultResult` b94). Flow
+`InputPolicyHolder.xml` `Decision3` punya **dua** konektor keluar saja: `Premium` → `ASSIGNMENT63` (Input
+Premium Detail, Transition10 b1643/b1658) dan `Offer` → `END52` (Resolved-Completed, Transition11
+b1793/b1807). **Nol konektor `Decline`** — hasil otherwise tidak punya jalan keluar.
+
+**Yang dibangun:**
+- `models.HasilIsFlagOnGoingPolicy` (tabel VERBATIM, teks persis) dan `models.PenggolongOtomatis`. Bendera di
+  luar tabel — termasuk KOSONG, keadaan baris yang lahir sebelum 057 — dijawab `ErrBenderaTanpaKonektor`
+  (**409**), bukan jalur yang dikarang.
+- `Penawaran.Putuskan`: `Confirm` di tahap penawaran menerapkan hasil itu dalam **satu transaksi**, dan jejaknya
+  menyebut keduanya (`Confirm -> Offer|Premium`). `KeadaanPolis` membaca `FLAG_ONGOING_POLICY`.
+- **Dibuang (kode mati):** rute `POST /api/polis-life/{id}/penggolong`, `Penawaran.Golongkan`,
+  `ErrPenggolongBelumSaatnya`, medan jawaban `menungguPenggolong`; di layar tombol `Premium`/`Offer`,
+  `golongkanPenawaran`, dan `PENGGOLONG_POLIS`.
+
+**Akibat perilaku** — kini seperti Pega: `Input Offer` (bendera `"0"`) → `Confirm` → **tertutup**
+Resolved-Completed tanpa rincian premi (Transition11 tidak lewat `Utility1`); `Input Premium` (`"1"`) →
+`Confirm` → **Input Premium Detail**.
+
+**Uji:** `TestPenggolongOtomatisMenurutDecisionTable`, `TestBenderaDiLuarTabelTidakPunyaKonektor`,
+`TestDecisionTableDanDecision3VERBATIMDariKorpus` (b94, b293/b294, b328/b329; dua konektor `Decision3`),
+`TestKeadaanPolisMembacaBendera`, `TestDecision3DirutekanDariBendera`, `TestRutePenggolongManualTidakAdaLagi`,
+`TestBenderaTanpaKonektorDijawab409`, `TestJawabanAkibatTanpaPenandaMenunggu`; layar
+`src/pages/premiumlist/InputOffer.test.ts`.
+
+⚠️ Kasus yang lahir **sebelum** 057 (kolom bendera kosong) tidak dapat di-`Confirm` di tahap penawaran sampai
+benderanya terisi — keadaan yang sama dengan Pega, yang tidak punya konektor untuk hasil `Decline`.

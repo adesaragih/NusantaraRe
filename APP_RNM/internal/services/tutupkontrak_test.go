@@ -214,9 +214,8 @@ var rutePengubah = map[string]string{
 	// lewat T_WORK_POLIS - lihat pengecualian bernama "polis_penawaran.go"
 	// di TestDaftarLayananPengubahMencakupSeluruhRutePengubah.
 	// GILIRAN-13 butir bn - tombol portal membuat kasus polis.
-	"POST /api/polis-life":                 "polis_kasus.go",
-	"POST /api/polis-life/{id}/keputusan":  "polis_penawaran.go",
-	"POST /api/polis-life/{id}/penggolong": "polis_penawaran.go",
+	"POST /api/polis-life":                "polis_kasus.go",
+	"POST /api/polis-life/{id}/keputusan": "polis_penawaran.go",
 	// Tiket 03. Penerbitan nomor MENULIS - ia menaikkan baris penghitung dan
 	// menuliskan nomornya ke baris peserta - jadi ia pengubah, dan kasus yang
 	// sudah ditutup tidak boleh memperoleh nomor baru.

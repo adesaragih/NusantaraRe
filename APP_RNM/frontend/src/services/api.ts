@@ -1554,14 +1554,6 @@ export interface AkibatKeputusanPolis {
   tahapTujuan: string
   /** Terisi bila kasus DITUTUP. */
   statusWork: string
-  /**
-   * `true` bila yang berikutnya penggolong `Offer`/`Premium`.
-   *
-   * ⛔ Tiga hasil yang BERBEDA — berpindah, tertutup, menunggu penggolong —
-   * dan layar harus dapat membedakannya. Jawaban yang hanya berkata
-   * "berhasil" memaksa layar membaca ulang seluruh polis untuk menebak.
-   */
-  menungguPenggolong: boolean
 }
 
 /**
@@ -1570,6 +1562,11 @@ export interface AkibatKeputusanPolis {
  * ⛔ `Reject` hanya sah dari tahap Input Premium Detail; di tahap penawaran
  * ia TIDAK punya konektor, dan backend menjawab **409**. Layar karena itu
  * tidak menawarkannya di sana — lihat `bolehRejectDiTahap`.
+ *
+ * ⭐ GILIRAN-14 butir bq: `Confirm` di tahap penawaran langsung menutup
+ * (bendera `"0"`, Offer) atau memindahkan ke Input Premium Detail (`"1"`,
+ * Premium) — `Decision3` tidak ditanyakan. Bendera di luar decision table
+ * dijawab **409**.
  */
 export async function putuskanPenawaran(
   polisID: string,
@@ -1578,17 +1575,6 @@ export async function putuskanPenawaran(
   return minta<AkibatKeputusanPolis>(
     `/api/polis-life/${encodeURIComponent(polisID)}/keputusan`,
     { metode: 'POST', badan: { keputusan } },
-  )
-}
-
-/** Menerapkan hasil penggolong sesudah `Confirm` — `POST …/penggolong`. */
-export async function golongkanPenawaran(
-  polisID: string,
-  hasil: string,
-): Promise<AkibatKeputusanPolis> {
-  return minta<AkibatKeputusanPolis>(
-    `/api/polis-life/${encodeURIComponent(polisID)}/penggolong`,
-    { metode: 'POST', badan: { hasil } },
   )
 }
 

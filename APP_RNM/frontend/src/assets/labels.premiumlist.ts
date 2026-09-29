@@ -71,12 +71,6 @@ export const KEPUTUSAN_POLIS = {
   decline: 'Decline',
 } as const
 
-/** Hasil penggolong `Decision3` — b1658 dan b1807. */
-export const PENGGOLONG_POLIS = {
-  premium: 'Premium',
-  offer: 'Offer',
-} as const
-
 /**
  * Judul kolom grid Premium List Detail — `Section/PL_Detail_Sec.xml`.
  *

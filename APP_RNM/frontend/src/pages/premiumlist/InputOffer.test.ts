@@ -3,13 +3,21 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { KEPUTUSAN_POLIS, PENGGOLONG_POLIS } from '../../assets/labels.premiumlist'
+import { KEPUTUSAN_POLIS } from '../../assets/labels.premiumlist'
 import { bolehRejectDiTahap, TAHAP_POLIS } from '../../services/api'
 import { ringkasanAkibat } from './InputOffer'
 
-// Uji layar keputusan penawaran — tiket 01 bagian 2.
+// Uji layar keputusan penawaran — tiket 01 bagian 2; GILIRAN-14 butir bq.
 
-const SUMBER = readFileSync(join(__dirname, 'InputOffer.tsx'), 'utf8')
+const BERKAS = readFileSync(join(__dirname, 'InputOffer.tsx'), 'utf8')
+/** Sumber tanpa komentar — prosa yang menerangkan tidak dituduh kode. */
+const SUMBER = BERKAS.replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
+  .split('\n')
+  .filter((b) => {
+    const t = b.trimStart()
+    return !t.startsWith('//') && !t.startsWith('*')
+  })
+  .join('\n')
 
 describe('Reject hanya di tahap yang punya konektornya', () => {
   it('tahap penawaran TIDAK menawarkan Reject', () => {
@@ -32,45 +40,43 @@ describe('Reject hanya di tahap yang punya konektornya', () => {
   })
 })
 
-describe('ringkasanAkibat', () => {
-  it('menunggu penggolong TIDAK berkata tertutup maupun berpindah', () => {
-    // ⛔ `Confirm` di tahap penawaran hanya menyerahkan kendali ke
-    // Decision3. Layar yang berkata "tersimpan" menyembunyikan langkah yang
-    // di sistem lama ditanyakan.
-    const s = ringkasanAkibat({
-      tahapTujuan: '',
-      statusWork: '',
-      menungguPenggolong: true,
-    })
-    expect(s).toContain('kelanjutan')
-    expect(s).not.toContain('ditutup')
+describe('Decision3 tidak ditanyakan (butir bq)', () => {
+  it('nol tombol Offer/Premium dan nol rute penggolong di layar', () => {
+    // ⛔ `Offer`/`Premium` hasil decision table `IsFlagOnGoingPolicy` atas
+    // bendera kasus — backend menerapkannya di dalam `Confirm`.
+    expect(SUMBER).not.toContain('golongkanPenawaran')
+    expect(SUMBER).not.toContain('PENGGOLONG_POLIS')
+    expect(SUMBER).not.toContain('menungguPenggolong')
   })
 
-  it('tertutup menyebut status kerjanya', () => {
-    const s = ringkasanAkibat({
-      tahapTujuan: '',
-      statusWork: 'Resolved-Rejected',
-      menungguPenggolong: false,
-    })
-    expect(s).toContain('Resolved-Rejected')
+  it('setiap keputusan yang berhasil melepas kasus dari layar ini', () => {
+    // Sesudah bq, `Confirm` selalu menutup (Offer) atau memindahkan
+    // (Premium) — tidak ada keadaan "menunggu" yang menahan layar.
+    expect(SUMBER).toMatch(/setAkibat\(hasil\)\s*\n\s*onSelesai\(\)/)
+  })
+})
+
+describe('ringkasanAkibat', () => {
+  it('Confirm + bendera "0" (Offer) — tertutup Resolved-Completed', () => {
+    const s = ringkasanAkibat({ tahapTujuan: '', statusWork: 'Resolved-Completed' })
+    expect(s).toContain('Resolved-Completed')
+  })
+
+  it('Confirm + bendera "1" (Premium) — berpindah ke Input Premium Detail', () => {
+    const s = ringkasanAkibat({ tahapTujuan: TAHAP_POLIS.detail, statusWork: '' })
+    expect(s).toContain(TAHAP_POLIS.detail)
   })
 
   it('berpindah menyebut tahap tujuannya', () => {
-    const s = ringkasanAkibat({
-      tahapTujuan: TAHAP_POLIS.penawaran,
-      statusWork: '',
-      menungguPenggolong: false,
-    })
+    const s = ringkasanAkibat({ tahapTujuan: TAHAP_POLIS.penawaran, statusWork: '' })
     expect(s).toContain(TAHAP_POLIS.penawaran)
   })
 })
 
 describe('label VERBATIM', () => {
-  it('ketiga keputusan dan kedua penggolong', () => {
+  it('ketiga keputusan', () => {
     expect(KEPUTUSAN_POLIS.confirm).toBe('Confirm')
     expect(KEPUTUSAN_POLIS.reject).toBe('Reject')
     expect(KEPUTUSAN_POLIS.decline).toBe('Decline')
-    expect(PENGGOLONG_POLIS.offer).toBe('Offer')
-    expect(PENGGOLONG_POLIS.premium).toBe('Premium')
   })
 })

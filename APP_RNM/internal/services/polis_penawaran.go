@@ -3,8 +3,8 @@ package services
 // Keputusan penawaran polis - tiket 01 PremiumList Life.
 //
 // Untuk apa berkas ini: ketiga tombol keputusan `Confirm` / `Reject` /
-// `Decline`, dan penggolong `Offer` / `Premium` yang menyusul `Confirm` di
-// tahap penawaran.
+// `Decline`. Penggolong `Offer` / `Premium` yang menyusul `Confirm` di tahap
+// penawaran DIRUTEKAN dari bendera kasus sejak GILIRAN-14 butir bq.
 //
 // Aturannya MURNI dan hidup di `models.TransisiPenawaran`; yang di sini
 // gerbang, transaksi, dan jejak.
@@ -17,7 +17,9 @@ package services
 //
 // ⛔ RALAT 29-09-2026 (GILIRAN-13): "NOL baris keputusan" KELIRU untuk
 // kedua decision table - buktinya di models/polis_penawaran.go (ralat yang
-// sama, satu tempat). Perilaku di sini TIDAK diubah - OQ-PL-16.
+// sama, satu tempat). Untuk Decision1/2 keputusan tetap datang dari pengguna;
+// Decision3 dirutekan dari bendera (butir bq, `models.PenggolongOtomatis`) -
+// OQ-PL-16 ditutup.
 //
 // Dibaca sesudah: models/polis_penawaran.go (peta konektornya).
 
@@ -38,9 +40,6 @@ var (
 	// AC 3 tiket 01: "case tertutup tidak dapat dilanjutkan maupun diputuskan
 	// ulang".
 	ErrKasusPolisTertutup = errors.New("services: kasus polis sudah ditutup")
-	// ErrPenggolongBelumSaatnya - `Offer`/`Premium` di luar tempatnya.
-	ErrPenggolongBelumSaatnya = errors.New(
-		"services: penggolong Offer/Premium hanya sesudah Confirm di tahap penawaran")
 )
 
 // Penawaran melayani keputusan atas penawaran polis.
@@ -120,10 +119,13 @@ func (p *Penawaran) pagari(ctx context.Context, pelaku Pelaku, polisID string) (
 // Mengembalikan akibatnya supaya pemanggil - dan layar - tahu apakah kasus
 // berpindah, tertutup, atau menunggu penggolong.
 //
-// ⚠️ `MenungguPenggolong` TIDAK menulis apa pun. Di flow, `Confirm` di tahap
-// penawaran hanya memindahkan kendali ke `Decision3`; yang memindahkan kasus
-// adalah hasil penggolong itu. Menuliskan tahap di sini berarti kasus
-// berpindah sebelum ada yang memutuskan ke mana.
+// ⛔ BUTIR bq (GILIRAN-14). `Confirm` di tahap penawaran memindahkan kendali
+// ke `Decision3` (`Transition4` b1560), dan `Decision3` adalah decision table
+// `IsFlagOnGoingPolicy` atas bendera yang lahir BERSAMA kasus. Pega
+// merutekannya tanpa bertanya; di sini pun begitu - akibat penggolong
+// diterapkan dalam SATU transaksi dengan keputusan itu, dan jejaknya
+// menyebut keduanya. Bendera di luar tabel (termasuk kosong) ditolak
+// `models.ErrBenderaTanpaKonektor`, sebelum satu tulisan pun.
 func (p *Penawaran) Putuskan(ctx context.Context, pelaku Pelaku,
 	polisID, keputusan string, saat time.Time) (models.AkibatKeputusan, error) {
 
@@ -135,38 +137,16 @@ func (p *Penawaran) Putuskan(ctx context.Context, pelaku Pelaku,
 	if err != nil {
 		return models.AkibatKeputusan{}, err
 	}
+	sebab := keputusan
 	if akibat.MenungguPenggolong {
-		// Nol tulisan - lihat komentar di atas.
-		return akibat, nil
+		lanjut, err := models.PenggolongOtomatis(keadaan.Flag)
+		if err != nil {
+			return models.AkibatKeputusan{}, fmt.Errorf("polis %q: %w", polisID, err)
+		}
+		akibat = lanjut
+		sebab = keputusan + " -> " + models.HasilIsFlagOnGoingPolicy(keadaan.Flag)
 	}
-	if _, err := p.terapkan(ctx, pelaku, keadaan, akibat, keputusan, saat); err != nil {
-		return models.AkibatKeputusan{}, err
-	}
-	return akibat, nil
-}
-
-// Golongkan menerapkan hasil `IsFlagOnGoingPolicy` sesudah `Confirm`.
-//
-// ⛔ HANYA dari tahap penawaran. Penggolong itu `Decision3`, dan satu-satunya
-// jalan masuk ke sana `Transition4` `[Confirm]` dari `Decision1` - yaitu
-// sesudah tahap penawaran. Menerimanya dari tahap lain berarti membuka jalur
-// yang flow tidak punya.
-func (p *Penawaran) Golongkan(ctx context.Context, pelaku Pelaku,
-	polisID, hasil string, saat time.Time) (models.AkibatKeputusan, error) {
-
-	keadaan, err := p.pagari(ctx, pelaku, polisID)
-	if err != nil {
-		return models.AkibatKeputusan{}, err
-	}
-	if strings.TrimSpace(keadaan.Status) != models.TahapPolisPenawaran {
-		return models.AkibatKeputusan{}, fmt.Errorf("%w: polis %q berada di %q",
-			ErrPenggolongBelumSaatnya, polisID, keadaan.Status)
-	}
-	akibat, err := models.LanjutanPenggolong(hasil)
-	if err != nil {
-		return models.AkibatKeputusan{}, err
-	}
-	if _, err := p.terapkan(ctx, pelaku, keadaan, akibat, hasil, saat); err != nil {
+	if _, err := p.terapkan(ctx, pelaku, keadaan, akibat, sebab, saat); err != nil {
 		return models.AkibatKeputusan{}, err
 	}
 	return akibat, nil

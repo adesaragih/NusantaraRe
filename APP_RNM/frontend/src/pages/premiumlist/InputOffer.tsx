@@ -10,10 +10,12 @@
 // TIDAK menawarkannya di sana: tombol yang pasti dijawab 409 adalah tombol
 // yang mengajari orang mengabaikan galat.
 //
-// ⛔ `Confirm` di tahap penawaran TIDAK menutup dan TIDAK memindahkan — ia
-// menyerahkan kasus ke penggolong `Decision3`, dan layar lalu MENANYAKAN
-// `Offer` atau `Premium`. Menyembunyikan langkah itu berarti layar
-// memutuskan sendiri hal yang di sistem lama ditanyakan.
+// ⛔ `Confirm` di tahap penawaran menyerahkan kasus ke `Decision3` — decision
+// table `IsFlagOnGoingPolicy` atas bendera KASUS (`"0"` Input Offer → Offer,
+// tutup; `"1"` Input Premium → Premium, pindah ke Input Premium Detail).
+// ⭐ GILIRAN-14 butir bq: Pega tidak menanyakannya, dan layar ini pun tidak
+// lagi — backend menerapkannya di dalam `Confirm`. Kedua tombol portal kini
+// berbeda perilaku seperti di sistem lama.
 //
 // ⚠️ Gerbang `ProtectAccept` (`models.ValidasiPenawaran`) BELUM TERSAMBUNG
 // ke rute mana pun — pemanggilnya hanya uji (sensus remark 28-09-2026). Bila
@@ -22,12 +24,11 @@
 
 import { useEffect, useState } from 'react'
 
-import { KEPUTUSAN_POLIS, PENGGOLONG_POLIS } from '../../assets/labels.premiumlist'
+import { KEPUTUSAN_POLIS } from '../../assets/labels.premiumlist'
 import { Gagal } from '../../components/ui/dasar'
 import {
   ambilPeriodeProduksi,
   bolehRejectDiTahap,
-  golongkanPenawaran,
   putuskanPenawaran,
   TAHAP_POLIS,
   type AkibatKeputusanPolis,
@@ -35,9 +36,6 @@ import {
 
 /** Menyusun kalimat tentang akibat sebuah keputusan. */
 export function ringkasanAkibat(a: AkibatKeputusanPolis): string {
-  if (a.menungguPenggolong) {
-    return 'Penawaran dikonfirmasi. Pilih kelanjutannya.'
-  }
   if (a.statusWork !== '') return `Kasus ditutup — ${a.statusWork}.`
   if (a.tahapTujuan !== '') return `Kasus berpindah ke ${a.tahapTujuan}.`
   return 'Keputusan tersimpan.'
@@ -97,16 +95,15 @@ export default function InputOffer({
     try {
       const hasil = await kerja()
       setAkibat(hasil)
-      // Kasus yang tertutup atau berpindah tidak lagi milik layar ini.
-      if (!hasil.menungguPenggolong) onSelesai()
+      // Kasus yang tertutup atau berpindah tidak lagi milik layar ini — dan
+      // sejak butir bq setiap keputusan yang berhasil menutup atau memindahkan.
+      onSelesai()
     } catch (e) {
       setGalat(e)
     } finally {
       setSibuk(false)
     }
   }
-
-  const menunggu = akibat?.menungguPenggolong === true
 
   return (
     <section className="polis-offer">
@@ -124,65 +121,40 @@ export default function InputOffer({
       {galat !== null && <Gagal galat={galat} />}
       {akibat !== null && <p role="status">{ringkasanAkibat(akibat)}</p>}
 
-      {!menunggu && (
-        <p className="polis-offer__aksi">
-          <button
-            type="button"
-            disabled={sibuk}
-            onClick={() => {
-              void jalankan(() => putuskanPenawaran(polisID, KEPUTUSAN_POLIS.confirm))
-            }}
-          >
-            {KEPUTUSAN_POLIS.confirm}
-          </button>{' '}
-          {/* ⛔ Hanya bila tahapnya punya konektornya — lihat kepala berkas. */}
-          {bolehRejectDiTahap(tahap) && (
-            <>
-              <button
-                type="button"
-                disabled={sibuk}
-                onClick={() => {
-                  void jalankan(() => putuskanPenawaran(polisID, KEPUTUSAN_POLIS.reject))
-                }}
-              >
-                {KEPUTUSAN_POLIS.reject}
-              </button>{' '}
-            </>
-          )}
-          <button
-            type="button"
-            disabled={sibuk}
-            onClick={() => {
-              void jalankan(() => putuskanPenawaran(polisID, KEPUTUSAN_POLIS.decline))
-            }}
-          >
-            {KEPUTUSAN_POLIS.decline}
-          </button>
-        </p>
-      )}
-
-      {menunggu && (
-        <p className="polis-offer__penggolong">
-          <button
-            type="button"
-            disabled={sibuk}
-            onClick={() => {
-              void jalankan(() => golongkanPenawaran(polisID, PENGGOLONG_POLIS.premium))
-            }}
-          >
-            {PENGGOLONG_POLIS.premium}
-          </button>{' '}
-          <button
-            type="button"
-            disabled={sibuk}
-            onClick={() => {
-              void jalankan(() => golongkanPenawaran(polisID, PENGGOLONG_POLIS.offer))
-            }}
-          >
-            {PENGGOLONG_POLIS.offer}
-          </button>
-        </p>
-      )}
+      <p className="polis-offer__aksi">
+        <button
+          type="button"
+          disabled={sibuk}
+          onClick={() => {
+            void jalankan(() => putuskanPenawaran(polisID, KEPUTUSAN_POLIS.confirm))
+          }}
+        >
+          {KEPUTUSAN_POLIS.confirm}
+        </button>{' '}
+        {/* ⛔ Hanya bila tahapnya punya konektornya — lihat kepala berkas. */}
+        {bolehRejectDiTahap(tahap) && (
+          <>
+            <button
+              type="button"
+              disabled={sibuk}
+              onClick={() => {
+                void jalankan(() => putuskanPenawaran(polisID, KEPUTUSAN_POLIS.reject))
+              }}
+            >
+              {KEPUTUSAN_POLIS.reject}
+            </button>{' '}
+          </>
+        )}
+        <button
+          type="button"
+          disabled={sibuk}
+          onClick={() => {
+            void jalankan(() => putuskanPenawaran(polisID, KEPUTUSAN_POLIS.decline))
+          }}
+        >
+          {KEPUTUSAN_POLIS.decline}
+        </button>
+      </p>
     </section>
   )
 }
