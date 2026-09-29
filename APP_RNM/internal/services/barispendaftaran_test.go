@@ -6,6 +6,9 @@ package services_test
 // Dibaca sesudah: adjustment.go (BarisPendaftaran, LahirkanBarisPendaftaran).
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"nusantarare/internal/models"
@@ -95,11 +98,12 @@ func TestBarisPendaftaranHanyaBagiPesertaTerpilih(t *testing.T) {
 // TestBarisPendaftaranKosongDibacaNol - keputusan work owner 29-09-2026.
 //
 // ⛔ PENYIMPANGAN BERTANGGAL terhadap ADR-U-0027, HANYA di langkah 7.8: ketujuh
-// medan `@divide(@toDecimal(…),1,4)` membaca sumber KOSONG sebagai NOL - seperti
-// `@toDecimal("")` Pega. `CURRENCY` b3868 bukan `@toDecimal` dan tetap teks
+// medan `@divide(@toDecimal(…),1,4)` membaca sumber KOSONG sebagai NOL
+// (`[dugaan]` seperti `@toDecimal("")` Pega - perilakunya tidak ada di korpus;
+// yang pasti keputusannya). `CURRENCY` b3868 bukan `@toDecimal` dan tetap teks
 // apa adanya.
 func TestBarisPendaftaranKosongDibacaNol(t *testing.T) {
-	p := models.Peserta{ID: "P-1", IsCheck: models.PenandaDipilih, MataUang: ""}
+	p := models.Peserta{ID: "P-1", IsCheck: models.PenandaDipilih, MataUang: "USD"}
 	baru, lahir, err := services.BarisPendaftaran(p)
 	if err != nil || !lahir {
 		t.Fatalf("lahir %v, galat %v", lahir, err)
@@ -118,8 +122,9 @@ func TestBarisPendaftaranKosongDibacaNol(t *testing.T) {
 				k.medan, utils.FormatDecimal(k.got.Amount))
 		}
 	}
-	if baru.JumlahKlaim.Currency != "" {
-		t.Errorf("CURRENCY kosong menjadi %q; ia bukan @toDecimal", baru.JumlahKlaim.Currency)
+	// CURRENCY disalin sebagai TEKS dari sumbernya (b3868 `.CURRENCY`).
+	if baru.JumlahKlaim.Currency != "USD" {
+		t.Errorf("CURRENCY = %q, mau USD (disalin apa adanya)", baru.JumlahKlaim.Currency)
 	}
 }
 
@@ -135,14 +140,21 @@ func TestBarisPendaftaranKosongDibacaNol(t *testing.T) {
 // 7.8 (ADR-U-0027 tetap di tempat lain).
 func TestPesertaDibulatkanSeperti7_7(t *testing.T) {
 	p := pesertaTerpilih(t)
+	// SETIAP medan membawa lebih dari empat desimal, supaya pembulatannya
+	// benar-benar teruji - bukan lolos karena nilainya sudah bulat.
 	p.NetPremium = uang(t, "45000.00005", "IDR")
+	p.GrossPremium = uang(t, "50000.12345", "IDR")
+	p.ShareNusantaraRe = uang(t, "800000.00006", "IDR")
+	p.SumReasured = uang(t, "900000.99995", "IDR")
 	em, err := models.NewRatio("0.123456", 6)
 	if err != nil {
 		t.Fatal(err)
 	}
 	p.EMPercent = em
-	p.SumReasured = models.Money{Currency: "IDR"} // kosong - tetap kosong
-	daftar := []models.Peserta{p}
+	// Peserta kedua: kosong TETAP kosong di 7.7.
+	kosong := pesertaTerpilih(t)
+	kosong.ID, kosong.SumReasured = "P-2", models.Money{Currency: "IDR"}
+	daftar := []models.Peserta{p, kosong}
 	if err := services.BulatkanPesertaPendaftaran(daftar); err != nil {
 		t.Fatal(err)
 	}
@@ -158,19 +170,50 @@ func TestPesertaDibulatkanSeperti7_7(t *testing.T) {
 		{"RETROCEDED_SHARE", q.RetrocededShare, "150001"},
 		{"CLAIM_AMOUNT", q.JumlahKlaim, "25000.1234"},
 		{"NET_PREMIUM", q.NetPremium, "45000.0001"},
-		{"GROSS_PREMIUM", q.GrossPremium, "50000"},
-		{"SHARE_NUSANTARA_RE", q.ShareNusantaraRe, "800000"},
+		{"GROSS_PREMIUM", q.GrossPremium, "50000.1235"},
+		{"SHARE_NUSANTARA_RE", q.ShareNusantaraRe, "800000.0001"},
+		{"SUM_REASURED", q.SumReasured, "900001"},
 	} {
 		if k.got.Amount == nil || k.got.Amount.Cmp(uang(t, k.mau, "IDR").Amount) != 0 {
 			t.Errorf("%s = %s, mau %s", k.medan, utils.FormatDecimal(k.got.Amount), k.mau)
 		}
 	}
-	if q.EMPercent.Value == nil || q.EMPercent.Value.Cmp(uang(t, "0.1235", "").Amount) != 0 {
+	emMau, err := utils.ParseDecimal("0.1235")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if q.EMPercent.Value == nil || q.EMPercent.Value.Cmp(emMau) != 0 {
 		t.Errorf("EM_PERCENT = %s, mau 0.1235", utils.FormatDecimal(q.EMPercent.Value))
 	}
-	if !q.SumReasured.Kosong() {
+	if !daftar[1].SumReasured.Kosong() {
 		t.Errorf("SUM_REASURED kosong menjadi %s; di 7.7 kosong tetap kosong",
-			utils.FormatDecimal(q.SumReasured.Amount))
+			utils.FormatDecimal(daftar[1].SumReasured.Amount))
+	}
+}
+
+// TestKosongJadiNolHanyaSatuPemanggil - penyimpangan ADR-U-0027 tidak menyebar.
+//
+// ⛔ Keputusan work owner membatasi "kosong = nol" ke langkah 7.8. Pemanggil
+// kedua `kosongJadiNol78` berarti penyimpangan yang menyebar tanpa keputusan.
+func TestKosongJadiNolHanyaSatuPemanggil(t *testing.T) {
+	berkas, err := filepath.Glob("*.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cacah := 0
+	for _, b := range berkas {
+		if strings.HasSuffix(b, "_test.go") {
+			continue
+		}
+		isi, err := os.ReadFile(b)
+		if err != nil {
+			t.Fatal(err)
+		}
+		cacah += strings.Count(string(isi), "kosongJadiNol78(")
+	}
+	// Satu definisi + satu pemanggil.
+	if cacah != 2 {
+		t.Errorf("kosongJadiNol78( muncul %d kali di kode produksi, mau 2 (definisi + BarisPendaftaran)", cacah)
 	}
 }
 

@@ -50,7 +50,7 @@ describe('Add = putaran berikutnya', () => {
   })
 })
 
-describe('layar Detail memasang Add dan Delete', () => {
+describe('layar Detail memasang Add (Delete tidak dirender)', () => {
   const BERKAS = readFileSync(join(__dirname, '..', 'pages', 'claimlife', 'KlaimLife.tsx'), 'utf8')
   // Sumber TANPA komentar — prosa yang menerangkan tidak boleh dituduh kode.
   // Blok komentar JSX berbaris banyak dibuang UTUH lebih dulu: baris

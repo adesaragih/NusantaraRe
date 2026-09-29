@@ -161,8 +161,8 @@ const angkaDesimalPendaftaran = 4
 // ⛔ Status TIDAK ditulis: 7.8 tidak menyentuh `STS_REJECT`, dan `Save to RNM`
 // 22.1.3.2 yang kemudian menulis "0" bagi baris tanpa status.
 //
-// ⛔ Kolom sumber yang KOSONG dibaca NOL - `toDecimalPega`, keputusan work owner
-// 29-09-2026, HANYA di langkah ini (lihat komentar fungsi itu).
+// ⛔ Kolom sumber yang KOSONG dibaca NOL - `kosongJadiNol78`, keputusan work
+// owner 29-09-2026, HANYA di langkah ini (lihat komentar fungsi itu).
 func BarisPendaftaran(p models.Peserta) (models.BarisAdjustment, bool, error) {
 	// `.IsCheck=="true"` - teks, persis (b3919).
 	if p.IsCheck != models.PenandaDipilih {
@@ -183,31 +183,45 @@ func BarisPendaftaran(p models.Peserta) (models.BarisAdjustment, bool, error) {
 		{"RETROCEDED_SHARE", p.RetrocededShare, &b.RetrocededShare},
 	} {
 		*m.ke = models.Money{Currency: p.MataUang}
-		sumber := toDecimalPega(m.dari)
-		// Satu aturan pembulatan untuk seluruh paket - `bulat` (spreading.go).
-		empat, err := bulat(utils.DecimalContext(), sumber, angkaDesimalPendaftaran)
+		empat, err := bulatEmpatPendaftaran(kosongJadiNol78(m.dari), p.ID, m.nama)
 		if err != nil {
-			return models.BarisAdjustment{}, false, fmt.Errorf(
-				"%w: peserta %q %s: %w", ErrBarisTidakSah, p.ID, m.nama, err)
+			return models.BarisAdjustment{}, false, err
 		}
 		m.ke.Amount = empat
 	}
 	return b, true, nil
 }
 
-// toDecimalPega meniru `@toDecimal(x)` Pega atas satu medan uang: KOSONG -> 0.
+// ErrPembulatanPendaftaran - satu nilai pendaftaran tidak dapat dibulatkan
+// ke empat angka (7.7 peserta atau 7.8 baris).
+var ErrPembulatanPendaftaran = errors.New("services: nilai pendaftaran tidak dapat dibulatkan")
+
+// bulatEmpatPendaftaran membulatkan satu nilai `@divide(…,1,4)` dengan `bulat`
+// bersama (spreading.go), dan menamai medannya bila gagal.
+func bulatEmpatPendaftaran(d *apd.Decimal, pesertaID, medan string) (*apd.Decimal, error) {
+	empat, err := bulat(utils.DecimalContext(), d, angkaDesimalPendaftaran)
+	if err != nil {
+		return nil, fmt.Errorf("%w: peserta %q %s: %w", ErrPembulatanPendaftaran, pesertaID, medan, err)
+	}
+	return empat, nil
+}
+
+// kosongJadiNol78 membaca satu medan uang sumber langkah 7.8: KOSONG -> 0.
 //
 // ⛔ PENYIMPANGAN BERTANGGAL TERHADAP ADR-U-0027 - keputusan work owner
-// 29-09-2026 (GILIRAN-15, "ikuti rekomendasi"): ikut Pega HANYA di langkah 7.8
-// `SavePesertaClaim` (baris adjustment yang lahir saat Submit Register). Di
-// sana ketujuh medan `@divide(@toDecimal(…),1,4)` membaca sumber kosong
-// sebagai nol, dan baris pertama itulah yang diwarisi setiap putaran
+// 29-09-2026 (GILIRAN-15, "ikuti rekomendasi" - "ikut Pega hanya di langkah
+// 7.8"): ketujuh medan `@divide(@toDecimal(…),1,4)` langkah 7.8
+// `SavePesertaClaim` (baris adjustment yang lahir saat Submit Register)
+// membaca sumber kosong sebagai nol. `[dugaan]` itulah yang `@toDecimal("")`
+// Pega hasilkan - perilaku fungsi Pega itu tidak ada di korpus; yang pasti
+// adalah KEPUTUSANNYA. Baris pertama inilah yang diwarisi setiap putaran
 // berikutnya. ADR-U-0027 ("kosong bukan nol") tetap berlaku di SELURUH tempat
 // lain - termasuk pembulatan peserta 7.7 (`BulatkanPesertaPendaftaran`).
 //
-// ⛔ Satu fungsi konversi, dipakai satu pemanggil. Menyebarkan "kosong = nol"
-// ke pemanggil lain berarti menyebarkan penyimpangannya tanpa keputusan.
-func toDecimalPega(m models.Money) *apd.Decimal {
+// ⛔ Satu fungsi konversi, SATU pemanggil (`BarisPendaftaran`), dan namanya
+// terikat langkahnya supaya tidak tampak sebagai peniru `@toDecimal` umum.
+// Penjaga `TestKosongJadiNolHanyaSatuPemanggil` menagih satu pemanggil itu.
+func kosongJadiNol78(m models.Money) *apd.Decimal {
 	if m.Kosong() {
 		return apd.New(0, 0)
 	}
@@ -217,8 +231,9 @@ func toDecimalPega(m models.Money) *apd.Decimal {
 // BulatkanPesertaPendaftaran meniru pembulatan peserta langkah 7.7 - OQ-N10
 // ditutup (keputusan work owner 29-09-2026).
 //
-// `[terverifikasi]` `SavePesertaClaim.xml` 7.7 b2744 (hidup, WHEN `.IsCheck=="true"`
-// b3631): sepuluh medan `@divide(@toDecimal(@replaceAll(.X,",",".")),1,4)` -
+// `[terverifikasi]` `SavePesertaClaim.xml` 7.7 b2744-b3631 (hidup, WHEN
+// `.IsCheck=="true"` b3631; rentang "b3600-b3671" brief GILIRAN-15 keliru -
+// b3671 adalah awal 7.8): sepuluh medan `@divide(@toDecimal(@replaceAll(.X,",",".")),1,4)` -
 // GROSS_PREMIUM b2770, NET_PREMIUM b2824, SHARE_NUSANTARA_RE b2845 (`@if`
 // pemilih GROSS sudah diterapkan `repository.ShareNusantaraReTeks`),
 // SUM_INSURED b2872, CEDING_RETENTION b2893, SUM_REASURED b3107, EM_PERCENT
@@ -227,7 +242,6 @@ func toDecimalPega(m models.Money) *apd.Decimal {
 // ⛔ KOSONG TETAP KOSONG di sini (ADR-U-0027): penyimpangan "kosong = nol"
 // diputuskan hanya untuk 7.8.
 func BulatkanPesertaPendaftaran(peserta []models.Peserta) error {
-	ctx := utils.DecimalContext()
 	for i := range peserta {
 		p := &peserta[i]
 		for _, m := range []struct {
@@ -243,16 +257,16 @@ func BulatkanPesertaPendaftaran(peserta []models.Peserta) error {
 			if m.ke.Kosong() {
 				continue
 			}
-			empat, err := bulat(ctx, m.ke.Amount, angkaDesimalPendaftaran)
+			empat, err := bulatEmpatPendaftaran(m.ke.Amount, p.ID, m.nama)
 			if err != nil {
-				return fmt.Errorf("%w: peserta %q %s: %w", ErrBarisTidakSah, p.ID, m.nama, err)
+				return err
 			}
 			m.ke.Amount = empat
 		}
 		if p.EMPercent.Value != nil {
-			empat, err := bulat(ctx, p.EMPercent.Value, angkaDesimalPendaftaran)
+			empat, err := bulatEmpatPendaftaran(p.EMPercent.Value, p.ID, "EM_PERCENT")
 			if err != nil {
-				return fmt.Errorf("%w: peserta %q EM_PERCENT: %w", ErrBarisTidakSah, p.ID, err)
+				return err
 			}
 			p.EMPercent.Value = empat
 		}

@@ -6,14 +6,19 @@
 -- atasnya - kasus baru akan lahir dengan nomor yang SAMA dengan kasus lama di
 -- Pega.
 --
--- `[data DEV - brief GILIRAN-15 §0, agregat, dibaca asisten 29-09-2026]`
+-- `[data DEV - brief GILIRAN-15 §0, agregat, dibaca asisten 29-09-2026;
+-- perintah auditnya tidak disertakan brief dan BELUM diverifikasi executor]`
 -- nomor `NBLF-` tertinggi yang TERLIHAT adalah 22373 (`JSON_POLIS` /
 -- `POLICYJSONLIFE`, 33 baris ber-`NBLF-`); 22374 = tertinggi terlihat + 1.
 --
--- ⚠️ [sementara — DBA memastikan pyLastReservedID awalan NBLF- di
--- PC_DATA_UNIQUEID sebelum data nyata]. Penghitung Pega yang sebenarnya
--- (`PC_DATA_UNIQUEID`) TIDAK terlihat dari akun `POOLDATA`; "tertinggi yang
--- terlihat" belum tentu tertinggi yang pernah dicadangkan Pega.
+-- ⚠️ Label:
+-- [sementara — DBA memastikan pyLastReservedID awalan NBLF- di PC_DATA_UNIQUEID sebelum data nyata]
+-- Penghitung Pega yang sebenarnya (`PC_DATA_UNIQUEID`) TIDAK terlihat dari akun
+-- `POOLDATA`; "tertinggi yang terlihat" belum tentu tertinggi yang pernah
+-- dicadangkan Pega - OQ-PL-17.
+--
+-- Penjaga kata cadangan (`katacadangan_test.go`) TIDAK disesuaikan: ia
+-- memeriksa nama KOLOM, dan langkah ini tidak membuat kolom apa pun.
 --
 -- ⛔ DROP lalu CREATE, bukan ALTER: bentuk yang brief tetapkan, dan satu-satunya
 -- yang tidak bergantung versi Oracle (`ALTER SEQUENCE … RESTART` baru ada

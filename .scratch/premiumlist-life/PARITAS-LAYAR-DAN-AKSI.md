@@ -66,6 +66,9 @@ giliran ini; statusnya tetap seperti baris paritasnya (bila ada) — **belum** a
 - **OQ-PL-15** — ✅ **DITUTUP 29-09-2026** (work owner, "ikuti rekomendasi"): migrasi **058** memulai ulang
   `SEQ_WORK_POLIS` pada **22374** (nomor `NBLF-` tertinggi terlihat 22373 + 1). `[sementara — DBA memastikan
   pyLastReservedID awalan NBLF- di PC_DATA_UNIQUEID sebelum data nyata]`. *(Tiket 00, GILIRAN-15.)*
+- **OQ-PL-17** *(untuk DBA — lahir dari tinjauan GILIRAN-15)* — pastikan `pyLastReservedID` awalan `NBLF-` di
+  `PC_DATA_UNIQUEID` (penghitung Pega, tidak terlihat dari akun `POOLDATA`) tidak melampaui 22373 sebelum data nyata masuk
+  `T_WORK_POLIS`. Bila melampaui, `SEQ_WORK_POLIS` dimajukan lagi. Label `[sementara]` 058 bergantung padanya.
 - **OQ-PL-16** — ✅ **DITUTUP 29-09-2026, butir bq** `[DIPUTUSKAN — XML; veto work owner]`: `Decision3` dirutekan dari
   `FLAG_ONGOING_POLICY` (decision table `IsFlagOnGoingPolicy`: "0" → Offer, "1" → Premium, otherwise `Decline` tanpa
   konektor → 409). *(Tiket 01.)*

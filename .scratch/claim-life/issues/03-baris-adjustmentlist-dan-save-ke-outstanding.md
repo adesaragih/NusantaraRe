@@ -936,7 +936,7 @@ bukan bagian sistem lama.
 `T_CLAIMLF_ADJUSTMENT` tidak punya kolom penanda. Tombol `Delete` b19120 kini **tidak dirender** sama sekali — bukan
 tombol mati: tombol yang berdiri tetapi tidak dapat ditekan menjanjikan aksi yang tidak akan pernah ada.
 `DETAIL.hapusAdjustment` dibuang; uji `src/services/tomboladd.test.ts` menuntut ketiadaannya. Alasannya juga di
-`PARITAS-LAYAR-DAN-AKSI.md` bab 4.
+`PARITAS-LAYAR-DAN-AKSI.md`, bab "29-09-2026 (GILIRAN-15) — `Delete` baris adjustment TIDAK BERLAKU".
 
 **OQ-N11 — dipindah ke daftar pemilik ekspor** (`OQ-untuk-tim.md`). *Sementara kosong:* aplikasi TIDAK menulis
 `CLAIM_GROSS` dan tidak mengarang penulisnya — buktinya 4 pembaca, 0 penulis (dua metode, bab br di atas).
@@ -944,3 +944,16 @@ tombol mati: tombol yang berdiri tetapi tidak dapat ditekan menjanjikan aksi yan
 nama"): pemetaan itu keputusan lama dan TIDAK diubah; gerbang `Save to RNM` 11.17 tetap membaca `CLAIM_AMOUNT`. Bila
 pemilik ekspor menjawab bahwa `CLAIM_GROSS` nilai TERSENDIRI (bukan `CLAIM_AMOUNT`), catatan 7 dibuka ulang — dan
 gerbang 11.17 akan menolak setiap baris sampai penulisnya ada.
+
+### Tambahan tinjauan — 29 September 2026 (GILIRAN-15, `/code-review`)
+
+- Perintah audit metode kedua OQ-N11: `py pohon.py <activity>.split <keluaran>` (pemecah `><` → `>\n<`, `pyStepsBlockName`
+  dicetak) untuk keempat activity, lalu `grep -n "PropertiesName = .*CLAIM_GROSS"` atas keempat keluaran → nol baris.
+- **OQ-N12** *(untuk work owner — lahir dari tinjauan GILIRAN-15)* — dua jawaban 29-09-2026 bertemu dengan catatan 7
+tiket 03. (1) N11: "`CLAIM_GROSS` sementara **kosong**". (2) "Kosong = nol di 7.8": `CLAIM_AMOUNT` baris yang lahir saat
+Submit tidak pernah kosong (paling kecil `0`). (3) Catatan 7 (tiket 14): `CLAIM_GROSS` = `CLAIM_AMOUNT`, sehingga gerbang
+`Save to RNM` 11.17.1 (`simpanrnm.go`, b6043 `.CLAIM_GROSS==""`) membaca `CLAIM_AMOUNT`. Akibatnya gerbang 11.17.1 **tidak
+pernah menolak** baris yang lahir saat Register (dan putaran yang mewarisinya), sedangkan di Pega — `CLAIM_GROSS` tanpa
+penulis — gerbang itu menolak. Perilaku TIDAK diubah executor. Pilih: (a) pertahankan catatan 7 (gerbang praktis mati untuk
+baris 7.8); (b) pisahkan `CLAIM_GROSS` dari `CLAIM_AMOUNT` (kolom baru — migrasi — dan gerbang 11.17.1 akan menolak setiap
+baris sampai penulisnya ada); (c) tunggu jawaban OQ-N11 dari pemilik ekspor.

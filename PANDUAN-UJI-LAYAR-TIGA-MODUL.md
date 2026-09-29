@@ -8,9 +8,9 @@
 > titik buta bab 0 ditutup — PremiumList membuat kasus, `Add` baris adjustment pertama, dan data uji
 > sintetis `UJI-*` (bab 0 §0.1–§0.2). **Diperbarui GILIRAN-14** (29-09-2026): baris adjustment lahir saat
 > `Submit` Register (bp), `Decision3` PremiumList dirutekan dari bendera (bq), sunting sel adjustment: nol
-> sel menurut XML (br). **Diperbarui GILIRAN-15** (29-09-2026): enam jawaban work owner — sunting sel dan `Delete`
-> baris adjustment tidak berlaku, pembulatan 7.7 pada peserta, 7.8 membaca kosong sebagai nol, dan
-> `SEQ_WORK_POLIS` mulai 22374 (migrasi 058).
+> sel menurut XML (br). **Diperbarui GILIRAN-15** (29-09-2026): enam jawaban work owner — sunting sel (br) dan `Delete`
+> baris adjustment (N7) tidak berlaku, pembulatan 7.7 pada peserta (N10), `CLAIM_GROSS` menunggu pemilik ekspor (N11),
+> 7.8 membaca kosong sebagai nol, dan `SEQ_WORK_POLIS` mulai 22374 (migrasi 058, PL-15).
 >
 > - Setiap teks di dalam `kode` atau tanda kutip disalin **apa adanya** dari kode (label, tombol,
 >   pesan) — termasuk salah ejanya (`cannnot`). Bila layar berbeda dari yang tertulis di sini, itu
@@ -171,7 +171,9 @@ akun stub yang **sama** dengan yang mendaftarkan klaim, atau kasusnya tidak akan
    (dibulatkan empat angka) dan `CURRENCY` — tanpa status sampai `Save to RNM` menulis `Outstanding`. Tombol
    baris dapat diuji pada klaim yang baru didaftarkan; **tidak perlu** baris adjustment manual.
    *(GILIRAN-15.)* Nilai **peserta** pun dibulatkan empat angka (langkah 7.7, OQ-N10 ditutup), dan medan uang
-   sumber yang **kosong** menjadi **0** di baris pertama — hanya di baris itu, seperti `@toDecimal("")` Pega.
+   sumber yang **kosong** menjadi **0** di baris pertama — hanya di baris itu (keputusan work owner; `[dugaan]` seperti
+   `@toDecimal("")` Pega). ⚠️ Akibatnya gerbang `Save to RNM` 11.17.1 (`CLAIM_GROSS` kosong) tidak pernah menolak baris
+   itu — **OQ-N12**.
 5. ⚠️ Karena barisnya kini ada, `Submit` Register ikut **menulis** baris datar `OS_AKSEPTASI_KLAIM_LIFE`
    (AC 32 tiket 02). Tabel itu harus ada di skema uji — tanpa itu pendaftaran gagal.
 6. Data uji sintetis (bab 0 §0.2) tetap berguna untuk tahap yang tidak dicapai lewat layar: `UJI-CLM-1`…`4`,
@@ -842,7 +844,7 @@ Tabel ini menjadi acuan bagi §2.3–2.6 (`models/polis_penawaran_test.go:19-56`
 
 | # | Perilaku | Sebab (satu baris) | Rujukan |
 | --- | --- | --- | --- |
-| 1 | ~~Membuat kasus baru~~ — ✅ **ditutup GILIRAN-13** (`a291a20`, butir bn). Urutan `SEQ_WORK_POLIS` kini mulai **22374** (`c31eb12`, migrasi 058, OQ-PL-15 ditutup — `[sementara]` sampai DBA memastikan penghitung Pega `PC_DATA_UNIQUEID`). `Decision3` dirutekan dari bendera sejak GILIRAN-14 (`9f67d35`, butir bq; OQ-PL-16 ditutup) | — | Tiket `00-…md`, `01-…md` (ralat 29-09-2026) |
+| 1 | ~~Membuat kasus baru~~ — ✅ **ditutup GILIRAN-13** (`a291a20`, butir bn). Urutan `SEQ_WORK_POLIS` mulai **22374** **sesudah migrasi 058 dijalankan work owner** (`c31eb12`, OQ-PL-15 ditutup — `[sementara]` sampai DBA memastikan penghitung Pega `PC_DATA_UNIQUEID`, OQ-PL-17). `Decision3` dirutekan dari bendera sejak GILIRAN-14 (`9f67d35`, butir bq; OQ-PL-16 ditutup) | — | Tiket `00-…md`, `01-…md` (ralat 29-09-2026) |
 | 2 | Isian dan simpan data penawaran, serta riwayat `T_VIEW_SUGGEST` | Layar hanya punya tombol keputusan; penulis penawaran relasional belum ada | Tiket `01-…md:3,65-87` |
 | 3 | Gerbang `ProtectAccept` (`Please choose no offer !`, `COB can't null`, `Premium is 0`, dst.) | Pesannya ada, tetapi `ValidasiPenawaran` tidak dipanggil di luar uji | BE `models/polis_validasi.go:37-49,116` |
 | 4 | Layar `Summary Premium Life` lewat alur aplikasi | Tahap `Input Premium Summary` nol konektor masuk `[terbuka — work owner]` | `models/polis_penawaran.go:78-90`; Tiket `05b-…md:235` |
@@ -1180,7 +1182,7 @@ format `YYYY-MM-DD HH:MM:SS` (`services/komite_inbox.go:91-96`).
 | Efek keluar di non-produksi **dilewati** / pengirim stub; tidak ada penjadwal pekerja outbox di `cmd/api` | Email, Arasapas, Kasir, Google Storage tidak pernah terkirim; outbox Komite tetap "tertunda"; laporan "perlu intervensi" hanya terlihat kosong; tautan berkas Claim Life tetap `URL menunggu penyambungan penyimpanan` | ketiganya |
 | ~~Tidak ada pembuat baris adjustment pertama~~ — baris pertama lahir saat `Submit` Register sejak GILIRAN-14 (butir bp) | Tombol baris Claim Life dapat diuji pada klaim yang baru didaftarkan | Claim Life |
 | ~~Tidak ada pembuat kasus PremiumList~~ — ada sejak GILIRAN-13; tahap `Input Premium Summary` tetap nol konektor masuk | `Summary Premium Life` hanya lewat data sintetis `UJI-PL-C` | PremiumList |
-| Keputusan work owner terbuka | OQ-M1…M7, OQ-N1…N5 (Claim Life; N6 ditutup bl, N9 ditutup bp, **N7/N8/N10 ditutup GILIRAN-15**, **N11 untuk pemilik ekspor**); OQ-PL-09/10/11 (PL-16 ditutup bq, **PL-15 ditutup 058**); OQ-K-04a/05/05b — rinciannya di tabel "Belum dapat diuji" tiap bab dan di tiket | ketiganya |
+| Keputusan work owner terbuka | OQ-M1…M7, OQ-N1…N5 (Claim Life; N6 ditutup bl, N9 ditutup bp, **N7/N8/N10 ditutup GILIRAN-15**, **N11 untuk pemilik ekspor**, **N12 baru**); OQ-PL-09/10/11 dan **17** (PL-16 ditutup bq, **PL-15 ditutup 058**); OQ-K-04a/05/05b — rinciannya di tabel "Belum dapat diuji" tiap bab dan di tiket | ketiganya |
 | Identitas stub, bukan IAM | Uji peran = ganti `VITE_STUB_PERAN`; tidak ada layar masuk | ketiganya |
 | `App.tsx` (suntingan work owner yang belum di-commit, tidak disentuh) | Layar Detail Claim Life tidak menerima pengenal klaim (ketik manual); tiap baris Inbox membuka layar Outstanding | Claim Life |
 

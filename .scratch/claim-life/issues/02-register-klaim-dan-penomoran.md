@@ -707,6 +707,24 @@ literal).
 
 **⛔ Penyimpangan bertanggal terhadap ADR-U-0027 — HANYA di langkah 7.8.** Keputusan work owner: ikut Pega. Ketujuh
 medan uang baris adjustment yang lahir saat Submit (`@divide(@toDecimal(…),1,4)` b3697–b3849) membaca sumber KOSONG
-sebagai **0**, seperti `@toDecimal("")`. `CURRENCY` b3868 bukan `@toDecimal` dan tetap teks apa adanya. Satu fungsi
-konversi yang memuatnya: `services.toDecimalPega` (komentarnya menyatakan penyimpangan ini); ADR-U-0027 tetap berlaku di
+sebagai **0** — `[dugaan]` itulah yang `@toDecimal("")` Pega hasilkan; perilaku fungsi Pega itu tidak ada di korpus, yang
+pasti keputusannya. `CURRENCY` b3868 bukan `@toDecimal` dan tetap teks apa adanya. Satu fungsi
+konversi yang memuatnya: `services.kosongJadiNol78` (komentarnya menyatakan penyimpangan ini); ADR-U-0027 tetap berlaku di
 seluruh tempat lain. Uji: `TestBarisPendaftaranKosongDibacaNol`.
+
+### Tambahan tinjauan — 29 September 2026 (GILIRAN-15, `/code-review`)
+
+- **Ralat rentang brief.** Brief GILIRAN-15 menyebut langkah 7.7 "b3600–b3671". Yang benar **b2744–b3631** (WHEN b3631);
+  b3671 adalah awal 7.8. Kesepuluh medan 7.7 di atas dibaca dari rentang yang benar.
+- **"Delapan medan" 7.8 = tujuh `@toDecimal` + `CURRENCY`.** Kosong = nol hanya berlaku bagi ketujuh medan uang;
+  `CURRENCY` b3868 disalin sebagai teks (diuji dengan `USD`).
+- Fungsi konversi dinamai ulang `kosongJadiNol78` (terikat langkahnya) dan dijaga satu pemanggil
+  (`TestKosongJadiNolHanyaSatuPemanggil`); uji literal 7.7 kini membawa lebih dari empat desimal di SETIAP medan.
+- **OQ-N12** *(untuk work owner — lahir dari tinjauan GILIRAN-15)* — dua jawaban 29-09-2026 bertemu dengan catatan 7
+tiket 03. (1) N11: "`CLAIM_GROSS` sementara **kosong**". (2) "Kosong = nol di 7.8": `CLAIM_AMOUNT` baris yang lahir saat
+Submit tidak pernah kosong (paling kecil `0`). (3) Catatan 7 (tiket 14): `CLAIM_GROSS` = `CLAIM_AMOUNT`, sehingga gerbang
+`Save to RNM` 11.17.1 (`simpanrnm.go`, b6043 `.CLAIM_GROSS==""`) membaca `CLAIM_AMOUNT`. Akibatnya gerbang 11.17.1 **tidak
+pernah menolak** baris yang lahir saat Register (dan putaran yang mewarisinya), sedangkan di Pega — `CLAIM_GROSS` tanpa
+penulis — gerbang itu menolak. Perilaku TIDAK diubah executor. Pilih: (a) pertahankan catatan 7 (gerbang praktis mati untuk
+baris 7.8); (b) pisahkan `CLAIM_GROSS` dari `CLAIM_AMOUNT` (kolom baru — migrasi — dan gerbang 11.17.1 akan menolak setiap
+baris sampai penulisnya ada); (c) tunggu jawaban OQ-N11 dari pemilik ekspor.

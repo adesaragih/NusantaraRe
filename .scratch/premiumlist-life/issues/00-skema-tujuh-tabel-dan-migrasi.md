@@ -312,9 +312,10 @@ detik. ⚠️ `START WITH 1` aman hanya selama
 
 *Awal `SEQ_WORK_POLIS` dimajukan di atas nomor lama.* Migrasi **`058_seq_work_polis_mulai_ulang.sql`** (+ down): `DROP`
 lalu `CREATE SEQUENCE {skema}.SEQ_WORK_POLIS START WITH 22374 … NOCACHE NOCYCLE`. 22374 = nomor `NBLF-` tertinggi yang
-**terlihat** + 1 — `[data DEV — brief GILIRAN-15 §0, agregat]` 22373 di `JSON_POLIS`/`POLICYJSONLIFE` (33 baris
-ber-`NBLF-`). ⚠️ `[sementara — DBA memastikan pyLastReservedID awalan NBLF- di PC_DATA_UNIQUEID sebelum data nyata]`:
+**terlihat** + 1 — `[data DEV — brief GILIRAN-15 §0, agregat; perintah auditnya tidak disertakan brief dan BELUM
+diverifikasi executor]` 22373 di `JSON_POLIS`/`POLICYJSONLIFE` (33 baris ber-`NBLF-`). ⚠️ `[sementara — DBA memastikan pyLastReservedID awalan NBLF- di PC_DATA_UNIQUEID sebelum data nyata]`:
 penghitung Pega yang sebenarnya tidak terlihat dari akun `POOLDATA`. Bila langkah ini gagal di tengah (`DROP` sudah
 jalan), percobaan ulang berhenti di ORA-02289 — `CREATE`-nya dijalankan manual oleh DBA (kepala berkas 058). Jalur
-mundur memulihkan bentuk 057 (`START WITH 1`). Penghitung `CREATE` 51 → 52. Uji `TestMigrasi058SequenceMulaiDiAtasNomorLama`.
+mundur memulihkan bentuk 057 (`START WITH 1`). Penghitung `CREATE` 51 → 52. Penjaga kata cadangan tidak disesuaikan —
+ia memeriksa nama kolom, dan 058 tidak membuat kolom. Pemeriksaan DBA atas `PC_DATA_UNIQUEID`: **OQ-PL-17**. Uji `TestMigrasi058SequenceMulaiDiAtasNomorLama`.
 `-migrate` dijalankan work owner; dua kasus uji `NBLF-2`/`NBLF-3` di DEV tidak disentuh executor.

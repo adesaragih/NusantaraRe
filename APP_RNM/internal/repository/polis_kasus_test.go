@@ -83,19 +83,22 @@ func TestArgumenKasusPolisBerurutanSepertiPenampung(t *testing.T) {
 	}
 }
 
+// sqlLangkah mengembalikan pernyataan satu langkah migrasi, maju atau mundur,
+// dalam huruf besar - satu pemindai untuk kedua uji di bawah.
+func sqlLangkah(t *testing.T, awalan string, mundur bool) string {
+	t.Helper()
+	for nama, teks := range seluruhSQL(t, mundur) {
+		if strings.HasPrefix(nama, awalan) {
+			return strings.ToUpper(teks)
+		}
+	}
+	t.Fatalf("langkah %s (mundur=%v) tidak ditemukan", awalan, mundur)
+	return ""
+}
+
 // Migrasi 057 - butir bn.
 func TestMigrasi057SequenceDanBendera(t *testing.T) {
-	var maju, mundur string
-	for nama, teks := range seluruhSQL(t, false) {
-		if strings.Contains(nama, "057_") {
-			maju = strings.ToUpper(teks)
-		}
-	}
-	for nama, teks := range seluruhSQL(t, true) {
-		if strings.Contains(nama, "057_") {
-			mundur = strings.ToUpper(teks)
-		}
-	}
+	maju, mundur := sqlLangkah(t, "057_", false), sqlLangkah(t, "057_", true)
 	for _, mau := range []string{
 		"CREATE SEQUENCE {SKEMA}.SEQ_WORK_POLIS",
 		"ALTER TABLE {SKEMA}.T_WORK_POLIS ADD (",
@@ -118,20 +121,10 @@ func TestMigrasi057SequenceDanBendera(t *testing.T) {
 // Migrasi 058 - OQ-PL-15 (GILIRAN-15): SEQ_WORK_POLIS dimulai di atas nomor
 // lama `NBLF-` (tertinggi terlihat 22373, brief GILIRAN-15 §0).
 func TestMigrasi058SequenceMulaiDiAtasNomorLama(t *testing.T) {
-	var maju, mundur string
-	for nama, teks := range seluruhSQL(t, false) {
-		if strings.Contains(nama, "058_") {
-			maju = teks
-		}
-	}
-	for nama, teks := range seluruhSQL(t, true) {
-		if strings.Contains(nama, "058_") {
-			mundur = teks
-		}
-	}
+	maju, mundur := sqlLangkah(t, "058_", false), sqlLangkah(t, "058_", true)
 	for _, mau := range []string{
-		"DROP SEQUENCE {skema}.SEQ_WORK_POLIS",
-		"CREATE SEQUENCE {skema}.SEQ_WORK_POLIS START WITH 22374 ",
+		"DROP SEQUENCE {SKEMA}.SEQ_WORK_POLIS",
+		"CREATE SEQUENCE {SKEMA}.SEQ_WORK_POLIS START WITH 22374 ",
 	} {
 		if !strings.Contains(maju, mau) {
 			t.Errorf("058 tidak memuat %q", mau)
@@ -143,14 +136,15 @@ func TestMigrasi058SequenceMulaiDiAtasNomorLama(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(mentah), "[sementara — DBA memastikan pyLastReservedID awalan NBLF- di") {
+	if !strings.Contains(string(mentah),
+		"[sementara — DBA memastikan pyLastReservedID awalan NBLF- di PC_DATA_UNIQUEID sebelum data nyata]") {
 		t.Error("058 tanpa label [sementara — DBA memastikan pyLastReservedID ...]")
 	}
 	// DROP lebih dulu, baru CREATE - urutan sebaliknya gagal ORA-00955.
 	if strings.Index(maju, "DROP SEQUENCE") > strings.Index(maju, "CREATE SEQUENCE") {
 		t.Error("058: CREATE mendahului DROP")
 	}
-	if !strings.Contains(mundur, "CREATE SEQUENCE {skema}.SEQ_WORK_POLIS START WITH 1 ") {
+	if !strings.Contains(mundur, "CREATE SEQUENCE {SKEMA}.SEQ_WORK_POLIS START WITH 1 ") {
 		t.Error("058 mundur tidak memulihkan bentuk 057 (START WITH 1)")
 	}
 }

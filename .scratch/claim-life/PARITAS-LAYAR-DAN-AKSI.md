@@ -589,7 +589,7 @@ yang mengutip baris mati — diralat di tempat.
 Activity Claim Life lain: **nol** remark — sensus ini tidak mengubah statusnya; celah langkah
 hidupnya tetap seperti baris-baris di atas.
 
-### ⛔ 29-09-2026 (GILIRAN-15) — `Delete` baris adjustment TIDAK BERLAKU (OQ-N7 ditutup)
+## 29-09-2026 (GILIRAN-15) — `Delete` baris adjustment TIDAK BERLAKU (OQ-N7 ditutup)
 
 `Section/ClaimLifeDetailGCNM.xml` `Delete` b19120 → `deleteRow` b19130 (tampil bila `.PrintFaceClaim == '' &&
 pyPosition=='ReasLifeSPV'` b19399) **tidak ditiru dan tidak dirender** — keputusan work owner. Sebabnya: `deleteRow` adalah
