@@ -67,3 +67,41 @@ func TestKursLingkaranPenuh(t *testing.T) {
 		t.Errorf("master kurs berubah: %d %v", n, err)
 	}
 }
+
+// Lanjutan 6: tanggal master kurs diurai ORACLE seperti `GetMasterKursList` -
+// jam lima angka (`T00000.000`, 11 baris STARTDATE di DEV) diterima; bentuk
+// yang Oracle tolak (huruf, bulan 13, panjang salah, kosong) disaring per baris
+// dan dicacah, tidak mematikan kurs yang berlaku.
+func TestKursTanggalDiuraiOracle(t *testing.T) {
+	u, bersihkan := serverTCO(t)
+	defer bersihkan()
+	if err := skemauji.IsiMataUangTCO(u.ctx, u.sqlDBMentah(), u.skema, map[string]string{"USD": "UJI-USD"}); err != nil {
+		t.Fatal(err)
+	}
+	baris := []skemauji.KursUji{{ToIDR: "15500", StartDate: "20260101T00000.000 GMT", EndDate: "20261231T000000.000 GMT"}}
+	for _, buruk := range []string{"2019A801T000000.000 GMT", "20191301T000000.000 GMT", "2019T000000.000 GMT", ""} {
+		baris = append(baris, skemauji.KursUji{ToIDR: "1", StartDate: buruk, EndDate: "20191231T000000.000 GMT"})
+	}
+	for i := range baris {
+		baris[i].IDCurrency, baris[i].Currency, baris[i].Quarter = "UJI-USD", "USD", "0"
+	}
+	if err := skemauji.IsiKursTCO(u.ctx, u.sqlDBMentah(), u.skema, baris); err != nil {
+		t.Fatal(err)
+	}
+	_, badan := u.minta(t, http.MethodPost, "/api/treaty-contract-out/tahun", badanTahun("2026-01-01", "2026-12-31"), true)
+	var tahun tahunJSON
+	_ = json.Unmarshal([]byte(badan), &tahun)
+	kode, badan := u.minta(t, http.MethodGet, "/api/treaty-contract-out/tahun/"+tahun.ID+"/kurs", nil, true)
+	if kode != http.StatusOK || !strings.Contains(badan, `"kurs":"15500"`) || !strings.Contains(badan, `"mulai":"2026-01-01"`) ||
+		!strings.Contains(badan, `"barisMasterDitolak":4`) {
+		t.Errorf("jam lima angka + empat ditolak: %d %s", kode, badan)
+	}
+	// Tanpa baris berlaku, penolakan itu 503 berkata-kata - bukan "tidak ada kurs".
+	_, badan = u.minta(t, http.MethodPost, "/api/treaty-contract-out/tahun", badanTahun("2019-08-01", "2019-12-31"), true)
+	var tahun19 tahunJSON
+	_ = json.Unmarshal([]byte(badan), &tahun19)
+	kode, badan = u.minta(t, http.MethodGet, "/api/treaty-contract-out/tahun/"+tahun19.ID+"/kurs", nil, true)
+	if kode != http.StatusServiceUnavailable || !strings.Contains(badan, "ditolak Oracle") || !strings.Contains(badan, "2019A801T000000.000 GMT") {
+		t.Errorf("hanya ditolak: %d %s", kode, badan)
+	}
+}

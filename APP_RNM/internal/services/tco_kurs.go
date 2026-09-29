@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
@@ -40,9 +41,10 @@ type PembacaKursTCO interface {
 	Berlaku(ctx context.Context, tahun models.TahunTreaty) (models.KursTCO, error)
 }
 
-// PembacaMasterKursTCO membaca baris kurs kandidat (dibaca saja).
+// PembacaMasterKursTCO membaca baris kurs yang berlaku pada satu tanggal -
+// tanggalnya diurai dan dibandingkan Oracle (dibaca saja).
 type PembacaMasterKursTCO interface {
-	Daftar(ctx context.Context, idCurrency, quarter string) ([]models.KursTCO, error)
+	BacaBerlaku(ctx context.Context, idCurrency, quarter string, tanggal time.Time) (models.HasilMasterKursTCO, error)
 }
 
 // PembacaMataUangTCO menerjemahkan kode mata uang menjadi pengenalnya.
@@ -55,8 +57,8 @@ type kursBelumDisuntik struct{}
 func (kursBelumDisuntik) Berlaku(context.Context, models.TahunTreaty) (models.KursTCO, error) {
 	return models.KursTCO{}, ErrGudangKursBelumDisuntik
 }
-func (kursBelumDisuntik) Daftar(context.Context, string, string) ([]models.KursTCO, error) {
-	return nil, ErrGudangKursBelumDisuntik
+func (kursBelumDisuntik) BacaBerlaku(context.Context, string, string, time.Time) (models.HasilMasterKursTCO, error) {
+	return models.HasilMasterKursTCO{}, ErrGudangKursBelumDisuntik
 }
 func (kursBelumDisuntik) Pengenal(context.Context, string) (string, error) {
 	return "", ErrGudangKursBelumDisuntik
@@ -72,6 +74,9 @@ type KursTampil struct {
 	IDCurrency string `json:"idCurrency"`
 	Quarter    string `json:"quarter"`
 	TreatyYear string `json:"treatyYear"`
+	// BarisMasterDitolak - cacah baris master yang tanggalnya ditolak Oracle;
+	// dilaporkan, tidak dipakai (lanjutan 6).
+	BarisMasterDitolak int `json:"barisMasterDitolak"`
 }
 
 // KonversiTampil adalah hasil satu konversi Rp <-> Usd.
@@ -138,18 +143,15 @@ func (l *KursTCO) Berlaku(ctx context.Context, tahun models.TahunTreaty) (models
 		}
 		return models.KursTCO{}, err
 	}
-	baris, err := l.master.Daftar(ctx, id, models.QuarterKursTahunanTCO)
+	h, err := l.master.BacaBerlaku(ctx, id, models.QuarterKursTahunanTCO, tahun.StartDate)
 	if err != nil {
-		if errors.Is(err, models.ErrKursTakTerurai) {
-			return models.KursTCO{}, fmt.Errorf("%w: %v", ErrMasterKursRusak, err)
-		}
 		return models.KursTCO{}, err
 	}
-	k, err := models.PilihKursBerlakuTCO(baris, tahun.StartDate)
+	k, err := models.PilihKursBerlakuTCO(h, tahun.StartDate)
 	switch {
 	case errors.Is(err, models.ErrKursTidakAda):
 		return models.KursTCO{}, models.GalatKursTidakAda{TreatyYear: tahun.TreatyYear, Tanggal: tahun.StartDate}
-	case errors.Is(err, models.ErrKursGanda):
+	case errors.Is(err, models.ErrKursGanda), errors.Is(err, models.ErrKursTakTerurai):
 		return models.KursTCO{}, fmt.Errorf("%w: %v", ErrMasterKursRusak, err)
 	case err != nil:
 		return models.KursTCO{}, err
@@ -166,7 +168,7 @@ func (l *KursTCO) Berlaku(ctx context.Context, tahun models.TahunTreaty) (models
 func tampilKurs(tahun models.TahunTreaty, k models.KursTCO) KursTampil {
 	return KursTampil{Kurs: utils.FormatDecimal(k.ToIDR), Tanggal: utils.FormatTanggal(tahun.StartDate),
 		Mulai: utils.FormatTanggal(k.Mulai), Akhir: utils.FormatTanggal(k.Akhir), Currency: k.Currency,
-		IDCurrency: k.IDCurrency, Quarter: k.Quarter, TreatyYear: tahun.TreatyYear}
+		IDCurrency: k.IDCurrency, Quarter: k.Quarter, TreatyYear: tahun.TreatyYear, BarisMasterDitolak: k.BarisDitolak}
 }
 
 // KursTahun membaca kurs berlaku satu tahun treaty.

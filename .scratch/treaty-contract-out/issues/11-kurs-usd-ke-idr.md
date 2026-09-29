@@ -1,6 +1,6 @@
 # 11: Kurs USD → IDR
 
-**Status:** selesai (29-09-2026)
+**Status:** selesai (29-09-2026); **diralat lanjutan 6** (29-09-2026) — tanggal master kurs diurai Oracle seperti `GetMasterKursList`
 
 **Blocked by:** 08 (kurs melekat pada baris klausul)
 
@@ -71,7 +71,8 @@ aturan bisnis. Yang tidak boleh adalah identitas mata uangnya ditanam sebagai ko
       yang namanya lebih wajar tetapi **di-remark**. Nama komponen barunya **tidak mengandung kata
       "testing"**. *(AC 50 spec; penyimpangan sadar 8; **OQ-066**)*
 - [ ] Tanggal mulai/akhir baris kurs diperlakukan sebagai **tanggal**, bukan teks yang di-parse
-      setiap kueri. *(AC 53 spec; penyimpangan sadar 6)*
+      setiap kueri. *(AC 53 spec; penyimpangan sadar 6)* ⚠️ **Diralat lanjutan 6 (29-09-2026):** tanggal diurai
+      **Oracle** di setiap kueri, seperti Pega; Go menerima `DATE` — bab bertanggal di akhir tiket.
 - [ ] Nilai kurs diperlakukan sebagai **desimal presisi arbitrer**; **tidak** melewati `float`.
       *(AC 51 spec; **ADR-0003**)*
 - [ ] Master kurs **tidak ditulis** oleh konteks ini. Test yang menemukan tulisan ke
@@ -164,3 +165,37 @@ Nomor baris = baris mentah berkas korpus `Treaty Contract Out/` kecuali disebut 
 - **OQ-TCO-18 — ditutup.** Jawaban: *"setuju"*. `KURS` diisi kurs yang dipakai menghitung `Usd` tujuh induk berkurs,
   skala 8 untuk ketujuh pembagian (exclusion IDR → USD tetap 4 VERBATIM), dan dua baris kurs berlaku = master rusak (503)
   `[keputusan work owner 29-09-2026]`.
+
+## ⛔ Ralat bertanggal — 29-09-2026 (lanjutan 6: kurs dibaca seperti `GetMasterKursList`)
+
+Laporan work owner: `List Description` → `Show TreatyDesc` pada tahun `1000682` menampilkan *"Backend tidak terhubung"*
+padahal backend hidup. Diagnosis asisten (brief lanjutan 6 §0): `GET …/tahun/1000682/kurs` dan `…/kurs/konversi` menjawab
+**503** `models: nilai master kurs tidak dapat diurai: STARTDATE "20190801T00000.000 GMT" bukan bentuk …`.
+`[data DEV — brief lanjutan 6 §0, agregat bentuk]` `STARTDATE` 129 baris `99999999T999999.999 GMT` dan 11 baris
+`99999999T99999.999 GMT` (jam lima angka); `ENDDATE` 140/140 normal.
+
+1. **Pengurai teks Go lebih ketat dari Oracle — dibuang.** Pega tidak mengurai tanggal ini di Java: `GetMasterKursList`
+   b85–b86 menyerahkannya ke Oracle, dan Oracle menerima jam lima angka. `models.UraiTanggalKursTCO` menolaknya, sehingga
+   satu baris mematikan kurs seluruh tahun. Kini `repository.sqlBerlakuKursTCO` membaca
+   `trunc(TO_TIMESTAMP_TZ(STARTDATE|ENDDATE, 'YYYYMMDD"T"HH24MISS.FF3 TZR'))` dengan topeng VERBATIM dan membandingkan
+   `to_date(:1,'YYYYMMDD') BETWEEN …` di SQL; Go menerima `DATE` dan mengambil harinya apa adanya. AC 53 diralat:
+   penyimpangan sadar 6 dicabut untuk kolom ini.
+2. **Satu baris cacat tidak mematikan yang lain.** Dua beda yang disengaja dari RDB: `DEFAULT NULL ON CONVERSION ERROR`
+   (Oracle 12.2+; DEV 12.2.0.1 menurut `claim-life/SUMBER-PENOMORAN-DBA.md`) dan `BETWEEN` sebagai kolom `BERLAKU`, bukan
+   saringan. Baris yang tanggalnya Oracle tolak (atau kosong) disaring dan **dicacah** — `barisMasterDitolak` di jawaban
+   `GET …/kurs`. Tanpa baris berlaku tetapi ada yang ditolak → **503** berkata-kata (`… N baris master tanggalnya ditolak
+   Oracle (bentuk …), mis. STARTDATE "…"`), bukan "Tidak ada Nilai Kurs": salah satunya mungkin baris yang dicari. Di Pega
+   satu baris cacat menggagalkan seluruh kueri.
+3. **Tabel.** RDB menyebut `treatyexchange`; yang dipakai tetap `TREATYEXCHANGEYEARLY`: `[data DBA]` `TREATYEXCHANGE` tidak
+   ada (`dba-procedures.md` b83; bab "Rule Pega sumber" di atas); 12 RDB korpus di enam modul lain (Endorsment Fac In,
+   NB FacIn, NB Treaty In, RNW Fac In, Treaty In, Treaty In Adjustment) membaca `treatyexchangeyearly`, sedangkan
+   `treatyexchange` hanya disebut `GetMasterKursList`; agregat §0 dan galat 503 DEV pun berasal dari
+   `TREATYEXCHANGEYEARLY`. `[belum diverifikasi executor di katalog DEV]` — perintah pemeriksaan baca-saja:
+   `SELECT OWNER, OBJECT_NAME, OBJECT_TYPE FROM ALL_OBJECTS WHERE OBJECT_NAME IN ('TREATYEXCHANGE','TREATYEXCHANGEYEARLY')`.
+4. **Uji.** Tanpa Oracle: `TestSQLKursTCO` (ekspresi VERBATIM + klausa `DEFAULT`, bind urut kemunculan, satu-satunya
+   literal = topeng), `TestTambahBarisKursTCO` (hari dari `DATE` apa adanya — `.UTC()` menggeser 1 Januari WIB; NULL =
+   ditolak, dicacah), `TestPilihKursBerlakuTCO`, `TestKursBarisTanggalDitolakOracle`; tujuh mutasi merah. Uji `db`
+   `TestKursTanggalDiuraiOracle` (jam lima angka diterima; huruf, bulan 13, panjang salah, dan kosong ditolak lalu
+   dicacah; 503 tanpa baris berlaku) — **SKIP di mesin executor** (tanpa skema uji), belum pernah dijalankan.
+5. Klien yang menyebut 503 ini "Backend tidak terhubung" diperbaiki terpisah (perbaikan 2 lanjutan 6,
+   `lib/keadaanGalat.ts`).

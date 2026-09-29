@@ -29,27 +29,6 @@ func desKurs(t *testing.T, s string) *apd.Decimal {
 	return d
 }
 
-// AC 53: tanggal kurs diurai SEKALI ke tanggal - bentuk warisan
-// 'YYYYMMDD"T"HH24MISS.FF3 TZR', dipangkas ke tanggalnya (`trunc`).
-func TestUraiTanggalKursTCO(t *testing.T) {
-	for teks, mau := range map[string]string{
-		"20260101T000000.000 GMT":          "2026-01-01",
-		"20261231T235959.999 Asia/Jakarta": "2026-12-31",
-		"20260315T120000.000":              "2026-03-15",
-	} {
-		got, err := UraiTanggalKursTCO("STARTDATE", teks)
-		if err != nil || !got.Equal(tglKurs(mau)) {
-			t.Errorf("%q: %v %v, mau %s", teks, got, err, mau)
-		}
-	}
-	for _, buruk := range []string{"", "2026-01-01", "20261301T000000.000 GMT", "20260101", "20260101T0000"} {
-		if _, err := UraiTanggalKursTCO("ENDDATE", buruk); !errors.Is(err, ErrKursTakTerurai) ||
-			!strings.Contains(err.Error(), "ENDDATE") {
-			t.Errorf("%q: %v", buruk, err)
-		}
-	}
-}
-
 func TestUraiNilaiKursTCO(t *testing.T) {
 	for teks, mau := range map[string]string{"15500": "15500", "15500.25": "15500.25", "15500,25": "15500.25"} {
 		d, err := UraiNilaiKursTCO(teks)
@@ -64,25 +43,37 @@ func TestUraiNilaiKursTCO(t *testing.T) {
 	}
 }
 
-// AC 46: kurs yang BERLAKU - tanggal di antara mulai dan akhir, inklusif.
+// AC 46: kurs yang BERLAKU menurut Oracle (`BETWEEN` di SQL). Lanjutan 6:
+// baris yang tanggalnya ditolak Oracle dicacah dan TIDAK mematikan baris
+// berlaku; tanpa baris berlaku, penolakan itu galat berkata-kata.
 func TestPilihKursBerlakuTCO(t *testing.T) {
-	baris := []KursTCO{
-		{ToIDR: apd.New(15000, 0), Mulai: tglKurs("2025-01-01"), Akhir: tglKurs("2025-12-31")},
-		{ToIDR: apd.New(15500, 0), Mulai: tglKurs("2026-01-01"), Akhir: tglKurs("2026-12-31")},
-	}
-	for tgl, mau := range map[string]string{"2026-01-01": "15500", "2026-12-31": "15500", "2025-06-30": "15000"} {
-		k, err := PilihKursBerlakuTCO(baris, tglKurs(tgl))
-		if err != nil || k.ToIDR.Text('f') != mau {
-			t.Errorf("%s: %+v %v", tgl, k, err)
-		}
+	berlaku := KursTCO{ToIDR: apd.New(15500, 0), Mulai: tglKurs("2026-01-01"), Akhir: tglKurs("2026-12-31")}
+	ditolak := []BarisKursDitolakTCO{{Kolom: "STARTDATE", Teks: "2019A801T000000.000 GMT"}, {Kolom: "ENDDATE", Teks: ""}}
+	k, err := PilihKursBerlakuTCO(HasilMasterKursTCO{Berlaku: []KursTCO{berlaku}, Ditolak: ditolak}, tglKurs("2026-06-30"))
+	if err != nil || k.ToIDR.Text('f') != "15500" || k.BarisDitolak != 2 {
+		t.Errorf("berlaku + dua ditolak: %+v %v", k, err)
 	}
 	// ADR-0015: periode tanpa kurs = kegagalan terlihat, bukan nol.
-	if _, err := PilihKursBerlakuTCO(baris, tglKurs("2027-01-01")); !errors.Is(err, ErrKursTidakAda) {
+	if _, err := PilihKursBerlakuTCO(HasilMasterKursTCO{}, tglKurs("2027-01-01")); !errors.Is(err, ErrKursTidakAda) {
 		t.Errorf("tanpa kurs: %v", err)
 	}
-	ganda := append(baris, KursTCO{ToIDR: apd.New(1, 0), Mulai: tglKurs("2026-06-01"), Akhir: tglKurs("2026-06-30")})
-	if _, err := PilihKursBerlakuTCO(ganda, tglKurs("2026-06-15")); !errors.Is(err, ErrKursGanda) {
+	// Tanpa baris berlaku TETAPI ada penolakan: salah satunya mungkin baris
+	// yang dicari - master rusak, bukan "tidak ada kurs".
+	_, err = PilihKursBerlakuTCO(HasilMasterKursTCO{Ditolak: ditolak}, tglKurs("2019-08-01"))
+	if !errors.Is(err, ErrKursTakTerurai) || errors.Is(err, ErrKursTidakAda) ||
+		!strings.Contains(err.Error(), `STARTDATE "2019A801T000000.000 GMT"`) || !strings.Contains(err.Error(), "2 baris") ||
+		!strings.Contains(err.Error(), FormatTanggalKursTCO) {
+		t.Errorf("hanya ditolak: %v", err)
+	}
+	if _, err := PilihKursBerlakuTCO(HasilMasterKursTCO{Berlaku: []KursTCO{berlaku, berlaku}}, tglKurs("2026-06-15")); !errors.Is(err, ErrKursGanda) {
 		t.Errorf("dua baris berlaku: %v", err)
+	}
+}
+
+// Topeng VERBATIM `RDBList/GetMasterKursList.xml` b85-b86 - Oracle yang mengurai.
+func TestFormatTanggalKursTCO(t *testing.T) {
+	if FormatTanggalKursTCO != `YYYYMMDD"T"HH24MISS.FF3 TZR` {
+		t.Errorf("%s", FormatTanggalKursTCO)
 	}
 }
 

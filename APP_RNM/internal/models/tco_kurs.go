@@ -18,6 +18,11 @@ package models
 // ⛔ Nama komponen tanpa kata "testing" (penyimpangan sadar 8); identitas USD
 // dibaca dari master mata uang, tidak ditanam (penyimpangan sadar 7).
 //
+// ⛔ Lanjutan 6 (29-09-2026): tanggal master diurai ORACLE, seperti Pega - Go
+// hanya menerima `DATE` dan baris yang Oracle tolak. Pengurai teks Go dibuang:
+// ia menolak jam lima angka (`20190801T00000.000 GMT`) yang Oracle terima,
+// sehingga satu baris mematikan kurs seluruh tahun.
+//
 // Pemakai kurs di Pega:
 //   - `HitungRpUsd_depan` (onchange Rp tujuh form induk): `Usd = Rp / Kurs`
 //     (`@divide(..., 8)` b383 untuk TreatyLimit) - `Usd` form hanya dibaca;
@@ -31,7 +36,6 @@ package models
 import (
 	"errors"
 	"fmt"
-	"regexp"
 	"strings"
 	"time"
 
@@ -42,6 +46,10 @@ import (
 
 // QuarterKursTahunanTCO - `Quarter='0'` VERBATIM (AC 48); artinya `[terbuka]`.
 const QuarterKursTahunanTCO = "0"
+
+// FormatTanggalKursTCO - topeng `TO_TIMESTAMP_TZ` VERBATIM
+// `RDBList/GetMasterKursList.xml` b85-b86; dipakai Oracle, bukan Go.
+const FormatTanggalKursTCO = `YYYYMMDD"T"HH24MISS.FF3 TZR`
 
 // KodeMataUangAsalKursTCO - kode mata uang asal konversi (aturan bisnis USD ->
 // IDR). IDENTITASNYA dibaca dari master mata uang (`CURRENCY.CURRENCY` ->
@@ -84,30 +92,29 @@ type KursTCO struct {
 	// seperti Pega, `TOIDR` baris lain yang rusak tidak menggagalkan pencarian.
 	ToIDR *apd.Decimal
 	// TeksToIDR - `TOIDR` apa adanya dari master (VARCHAR2).
-	TeksToIDR  string
+	TeksToIDR string
+	// Mulai, Akhir - `trunc(TO_TIMESTAMP_TZ(..))` hasil Oracle (AC 53).
 	Mulai      time.Time
 	Akhir      time.Time
 	IDCurrency string
 	Currency   string
 	Quarter    string
+	// BarisDitolak - cacah baris master yang tanggalnya ditolak Oracle pada
+	// baca yang sama; diisi `PilihKursBerlakuTCO`, dilaporkan ke layar.
+	BarisDitolak int
 }
 
-// polaTanggalKursTCO - 'YYYYMMDD"T"HH24MISS.FF3 TZR'; TZR boleh kosong.
-var polaTanggalKursTCO = regexp.MustCompile(`^(\d{8})T\d{6}\.\d{1,9}( \S+)?$`)
+// BarisKursDitolakTCO - satu baris master yang tanggalnya ditolak Oracle
+// (`TO_TIMESTAMP_TZ` gagal, atau teksnya kosong): kolom pertama yang ditolak
+// dan teksnya apa adanya.
+type BarisKursDitolakTCO struct{ Kolom, Teks string }
 
-// UraiTanggalKursTCO mengurai tanggal teks master kurs SEKALI, di batas baca
-// (AC 53), lalu memangkasnya ke tanggal seperti `trunc(TO_TIMESTAMP_TZ(..))`:
-// tanggal yang tertulis, di zona yang tertulis.
-func UraiTanggalKursTCO(kolom, teks string) (time.Time, error) {
-	m := polaTanggalKursTCO.FindStringSubmatch(strings.TrimSpace(teks))
-	if m == nil {
-		return time.Time{}, fmt.Errorf("%w: %s %q bukan bentuk YYYYMMDD\"T\"HH24MISS.FF3 TZR", ErrKursTakTerurai, kolom, teks)
-	}
-	t, err := time.Parse("20060102", m[1])
-	if err != nil {
-		return time.Time{}, fmt.Errorf("%w: %s %q: %v", ErrKursTakTerurai, kolom, teks, err)
-	}
-	return t, nil
+// HasilMasterKursTCO - satu baca master kurs (satu mata uang, satu QUARTER):
+// baris yang BERLAKU pada tanggal itu menurut Oracle, dan baris yang tanggalnya
+// Oracle tolak - disaring per baris, tidak mematikan baris lain.
+type HasilMasterKursTCO struct {
+	Berlaku []KursTCO
+	Ditolak []BarisKursDitolakTCO
 }
 
 // UraiNilaiKursTCO mengurai `TOIDR` (VARCHAR2) menjadi desimal persis > 0.
@@ -129,26 +136,31 @@ func UraiNilaiKursTCO(teks string) (*apd.Decimal, error) {
 	return d, nil
 }
 
-// PilihKursBerlakuTCO memilih SATU baris dengan Mulai <= tanggal <= Akhir.
+// PilihKursBerlakuTCO memilih SATU baris dari yang Oracle nyatakan berlaku
+// (`to_date(CARI1,'YYYYMMDD') BETWEEN trunc(..STARTDATE..) AND trunc(..ENDDATE..)`).
 //
 // ⚠️ Pega memutar seluruh hasil dan menyimpan yang TERAKHIR (`testingKurs`
 // langkah 3) - urutan tak tentu. Dua baris berlaku dinyatakan sebagai galat
 // (master rusak) [keputusan work owner 29-09-2026] (OQ-TCO-18, ditutup).
-func PilihKursBerlakuTCO(baris []KursTCO, tanggal time.Time) (KursTCO, error) {
-	tgl := time.Date(tanggal.Year(), tanggal.Month(), tanggal.Day(), 0, 0, 0, 0, time.UTC)
-	var cocok []KursTCO
-	for _, k := range baris {
-		if !tgl.Before(k.Mulai) && !tgl.After(k.Akhir) {
-			cocok = append(cocok, k)
-		}
-	}
-	switch len(cocok) {
+//
+// Tanpa baris berlaku tetapi ada baris yang tanggalnya ditolak Oracle: salah
+// satunya mungkin baris yang dicari - master rusak, bukan "tidak ada kurs".
+func PilihKursBerlakuTCO(h HasilMasterKursTCO, tanggal time.Time) (KursTCO, error) {
+	tgl := utils.FormatTanggal(time.Date(tanggal.Year(), tanggal.Month(), tanggal.Day(), 0, 0, 0, 0, time.UTC))
+	switch len(h.Berlaku) {
 	case 0:
-		return KursTCO{}, fmt.Errorf("%w pada %s", ErrKursTidakAda, utils.FormatTanggal(tgl))
+		if len(h.Ditolak) > 0 {
+			d := h.Ditolak[0]
+			return KursTCO{}, fmt.Errorf("%w: tidak ada kurs berlaku pada %s, dan %d baris master tanggalnya ditolak Oracle "+
+				"(bentuk %s), mis. %s %q", ErrKursTakTerurai, tgl, len(h.Ditolak), FormatTanggalKursTCO, d.Kolom, d.Teks)
+		}
+		return KursTCO{}, fmt.Errorf("%w pada %s", ErrKursTidakAda, tgl)
 	case 1:
-		return cocok[0], nil
+		k := h.Berlaku[0]
+		k.BarisDitolak = len(h.Ditolak)
+		return k, nil
 	}
-	return KursTCO{}, fmt.Errorf("%w: %d baris pada %s", ErrKursGanda, len(cocok), utils.FormatTanggal(tgl))
+	return KursTCO{}, fmt.Errorf("%w: %d baris pada %s", ErrKursGanda, len(h.Berlaku), tgl)
 }
 
 func kuantisasiKurs(d *apd.Decimal, skala int32) (*apd.Decimal, error) {

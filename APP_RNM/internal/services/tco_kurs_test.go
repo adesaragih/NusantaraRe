@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -30,13 +31,22 @@ func (t tahunKursUji) Ambil(_ context.Context, id string) (models.TahunTreaty, e
 
 type masterKursUji struct {
 	baris       []models.KursTCO
+	ditolak     []models.BarisKursDitolakTCO
 	err         error
 	id, quarter string
+	tanggal     time.Time
 }
 
-func (m *masterKursUji) Daftar(_ context.Context, id, quarter string) ([]models.KursTCO, error) {
-	m.id, m.quarter = id, quarter
-	return m.baris, m.err
+// BacaBerlaku meniru saringan Oracle: baris yang rentangnya memuat tanggal.
+func (m *masterKursUji) BacaBerlaku(_ context.Context, id, quarter string, tanggal time.Time) (models.HasilMasterKursTCO, error) {
+	m.id, m.quarter, m.tanggal = id, quarter, tanggal
+	h := models.HasilMasterKursTCO{Ditolak: m.ditolak}
+	for _, k := range m.baris {
+		if !tanggal.Before(k.Mulai) && !tanggal.After(k.Akhir) {
+			h.Berlaku = append(h.Berlaku, k)
+		}
+	}
+	return h, m.err
 }
 
 type mataUangUji map[string]string
@@ -74,8 +84,25 @@ func TestKursTahunBerlaku(t *testing.T) {
 		k.Tanggal != utils.FormatTanggal(mulaiTahunKurs) {
 		t.Errorf("kurs: %+v", k)
 	}
-	if m.id != "UJI-USD" || m.quarter != "0" {
-		t.Errorf("saringan master: id %q quarter %q", m.id, m.quarter)
+	if m.id != "UJI-USD" || m.quarter != "0" || !m.tanggal.Equal(mulaiTahunKurs) || k.BarisMasterDitolak != 0 {
+		t.Errorf("saringan master: id %q quarter %q tanggal %v ditolak %d", m.id, m.quarter, m.tanggal, k.BarisMasterDitolak)
+	}
+}
+
+// Lanjutan 6: baris yang tanggalnya ditolak Oracle TIDAK mematikan kurs yang
+// berlaku - cacahnya dilaporkan ke layar; tanpa kurs berlaku, penolakan itu
+// master rusak (503) yang menyebut teksnya, bukan "Tidak ada Nilai Kurs".
+func TestKursBarisTanggalDitolakOracle(t *testing.T) {
+	ditolak := []models.BarisKursDitolakTCO{{Kolom: "STARTDATE", Teks: "2019A801T000000.000 GMT"},
+		{Kolom: "ENDDATE", Teks: "2019T000000.000 GMT"}}
+	k, err := layananKurs(&masterKursUji{baris: barisKurs2026(), ditolak: ditolak}).KursTahun(context.Background(), pelakuUjiTCO, "1000001")
+	if err != nil || k.Kurs != "15500.25" || k.BarisMasterDitolak != 2 {
+		t.Errorf("berlaku + dua ditolak: %+v %v", k, err)
+	}
+	_, err = layananKurs(&masterKursUji{baris: barisKurs2026()[1:], ditolak: ditolak}).KursTahun(context.Background(), pelakuUjiTCO, "1000001")
+	if !errors.Is(err, services.ErrMasterKursRusak) || errors.Is(err, services.ErrKursTidakAda) ||
+		!strings.Contains(err.Error(), `STARTDATE "2019A801T000000.000 GMT"`) {
+		t.Errorf("hanya ditolak: %v", err)
 	}
 }
 
@@ -89,9 +116,10 @@ func TestKursGagalTerang(t *testing.T) {
 	if _, err := layananKurs(&masterKursUji{baris: ganda}).KursTahun(context.Background(), pelakuUjiTCO, "1000001"); !errors.Is(err, services.ErrMasterKursRusak) {
 		t.Errorf("ganda: %v", err)
 	}
-	rusak := &masterKursUji{err: fmt.Errorf("%w: TOIDR %q", models.ErrKursTakTerurai, "x")}
-	if _, err := layananKurs(rusak).KursTahun(context.Background(), pelakuUjiTCO, "1000001"); !errors.Is(err, services.ErrMasterKursRusak) {
-		t.Errorf("tak terurai: %v", err)
+	// Galat Oracle diteruskan apa adanya - bukan disamarkan jadi "tidak ada kurs".
+	gagalBaca := errors.New("ORA-00942: table or view does not exist")
+	if _, err := layananKurs(&masterKursUji{err: gagalBaca}).KursTahun(context.Background(), pelakuUjiTCO, "1000001"); !errors.Is(err, gagalBaca) {
+		t.Errorf("galat baca: %v", err)
 	}
 	tanpaUSD := services.New(nil).KursTCO().DenganTahun(tahunKursUji{mulai: mulaiTahunKurs}).
 		DenganMaster(&masterKursUji{baris: barisKurs2026()}).DenganMataUang(mataUangUji{})
