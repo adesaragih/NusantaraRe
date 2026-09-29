@@ -65,8 +65,42 @@ func TestPilihKursBerlakuTCO(t *testing.T) {
 		!strings.Contains(err.Error(), FormatTanggalKursTCO) {
 		t.Errorf("hanya ditolak: %v", err)
 	}
-	if _, err := PilihKursBerlakuTCO(HasilMasterKursTCO{Berlaku: []KursTCO{berlaku, berlaku}}, tglKurs("2026-06-15")); !errors.Is(err, ErrKursGanda) {
-		t.Errorf("dua baris berlaku: %v", err)
+}
+
+// Dua baris atau lebih berlaku [keputusan work owner 29-09-2026, mempersempit
+// OQ-TCO-18]: KEMBAR (TOIDR sama menurut angka) = satu kurs - Pega "terakhir
+// menang" memberi nilai yang sama, tanpa menebak; TOIDR BERBEDA tetap master
+// rusak. Data DEV yang melahirkannya: dua pasang baris kembar persis
+// (14500.00 2019-08-01..2020-06-30, 16500.00 2025-07-01..2026-06-30).
+func TestPilihKursBerlakuTCOBarisKembar(t *testing.T) {
+	baris := func(teks, mulai, akhir string) KursTCO {
+		return KursTCO{TeksToIDR: teks, Mulai: tglKurs(mulai), Akhir: tglKurs(akhir)}
+	}
+	a := baris("16500.00", "2025-07-01", "2026-06-30")
+
+	k, err := PilihKursBerlakuTCO(HasilMasterKursTCO{Berlaku: []KursTCO{a, a}}, tglKurs("2026-06-01"))
+	if err != nil || k.ToIDR.Text('f') != "16500.00" || k.BarisKembar != 1 {
+		t.Errorf("kembar persis: %+v %v", k, err)
+	}
+
+	// Kembar menurut ANGKA, bukan teks; periode boleh berbeda - yang dipakai
+	// baris yang mulainya paling akhir (periode yang baru dimulai).
+	b := baris("16500", "2026-06-01", "2027-05-31")
+	k, err = PilihKursBerlakuTCO(HasilMasterKursTCO{Berlaku: []KursTCO{a, b, a}}, tglKurs("2026-06-15"))
+	if err != nil || k.BarisKembar != 2 || !k.Mulai.Equal(tglKurs("2026-06-01")) {
+		t.Errorf("kembar menurut angka: %+v %v", k, err)
+	}
+
+	_, err = PilihKursBerlakuTCO(HasilMasterKursTCO{Berlaku: []KursTCO{a, baris("16600", "2025-07-01", "2026-06-30")}},
+		tglKurs("2026-06-01"))
+	if !errors.Is(err, ErrKursGanda) || !strings.Contains(err.Error(), `"16500.00"`) || !strings.Contains(err.Error(), `"16600"`) {
+		t.Errorf("TOIDR berbeda harus tetap master rusak dan menyebut keduanya: %v", err)
+	}
+
+	// TOIDR rusak pada salah satu baris berlaku: tidak dapat dibandingkan - galat terang.
+	if _, err := PilihKursBerlakuTCO(HasilMasterKursTCO{Berlaku: []KursTCO{a, baris("abc", "2025-07-01", "2026-06-30")}},
+		tglKurs("2026-06-01")); !errors.Is(err, ErrKursTakTerurai) {
+		t.Errorf("TOIDR rusak: %v", err)
 	}
 }
 

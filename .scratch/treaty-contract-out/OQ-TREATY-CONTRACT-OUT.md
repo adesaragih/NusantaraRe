@@ -22,7 +22,7 @@ Satu tempat untuk seluruh pertanyaan terbuka modul ini. Rincian dan buktinya tet
 | OQ-TCO-15 | daftar `ReinsTypeID` form klausul | tiket 08 | **ditutup** — *"benar"* |
 | OQ-TCO-16 | kolom master `TREATYDESC`/`OCCUPATION`/`CLAUSE` | tiket 08 | **ditutup** — *"benar"* |
 | OQ-TCO-17 | security dobel ditolak, `%Share` 0..100 | tiket 06 | **ditutup** — *"setuju"* (penyimpangan sadar dari Pega) |
-| OQ-TCO-18 | `KURS` diisi, skala 8, dua kurs = master rusak | tiket 11 | **ditutup** — *"setuju"* |
+| OQ-TCO-18 | `KURS` diisi, skala 8, dua kurs = master rusak | tiket 11 | **ditutup** — *"setuju"*; **dipersempit 29-09-2026** — baris KEMBAR (TOIDR sama) = satu kurs, TOIDR berbeda tetap 503 (tiket 11) |
 | OQ-TCO-19 | tombol simpan tunggal | tiket 09 | **ditutup** — *"tidak perlu"*; rute simpan utuh dibuang (kelompok 3) |
 | OQ-TCO-20 | "klausul milik kontrak ini" di popup hapus | tiket 10 | **ditutup** — *"dari induknya"* (kelompok 2) |
 | OQ-TCO-21 | hapus kontrak yang kombinasinya dipakai bersama | tinjauan lanjutan 1 | **ditutup** — *"hapus saja, samain dengan pega"* (kelompok 2) |

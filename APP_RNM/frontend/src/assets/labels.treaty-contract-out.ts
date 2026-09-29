@@ -539,6 +539,10 @@ export const KURS_TCO = {
   catatanRpKeUsd: 'Usd dihitung server dari Rp ÷ Kurs.',
   /** `[tidak ada di korpus]` — `CalculateTSIExcludeTreaty`. */
   catatanDuaArah: 'Mengisi IDR menghitung USD (Rp ÷ Kurs), mengisi USD menghitung IDR (Usd × Kurs) — di server.',
+  /** `[tidak ada di korpus]` — keputusan work owner 29-09-2026: baris kembar = satu kurs. */
+  catatanKembar: 'baris kembar (TOIDR sama) di master kurs — dipakai sebagai satu kurs',
+  /** `[tidak ada di korpus]` — lanjutan 6: baris yang tanggalnya ditolak Oracle dilewati. */
+  catatanDitolak: 'baris master kurs dilewati karena tanggalnya ditolak Oracle',
 } as const
 
 /**

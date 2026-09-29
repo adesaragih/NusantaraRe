@@ -199,3 +199,20 @@ padahal backend hidup. Diagnosis asisten (brief lanjutan 6 §0): `GET …/tahun/
    dicacah; 503 tanpa baris berlaku) — **SKIP di mesin executor** (tanpa skema uji), belum pernah dijalankan.
 5. Klien yang menyebut 503 ini "Backend tidak terhubung" diperbaiki terpisah (perbaikan 2 lanjutan 6,
    `lib/keadaanGalat.ts`).
+
+## ⛔ Keputusan work owner bertanggal — 29-09-2026 (penyisiran layar: baris kurs KEMBAR)
+
+*Temuan.* Sesudah lanjutan 6, penyisiran `GET` seluruh rute Treaty Contract Out (182 tahun treaty) mendapati `…/kurs`
+menjawab 503 *"lebih dari satu kurs berlaku pada tanggal yang sama: 2 baris"* pada **23 tahun** (tanggal mulai 2019-08-01,
+2025-07-01, 2026-06-01). `[data DEV 29-09-2026 — dibaca executor, SELECT baca-saja atas izin work owner]`: master USD `QUARTER='0'` memuat 12 baris, di antaranya **dua pasang baris
+kembar persis** — `14500.00` `20190801T00000.000 GMT`–`20200630T000000.000 GMT` (dua kali) dan `16500.00`
+`20250701T140000.000 GMT`–`20260630T140000.000 GMT` (dua kali); nol tanggal ditolak Oracle.
+
+*Keputusan (jawaban: "Kembar identik = satu kurs").* **OQ-TCO-18 dipersempit**: dua baris berlaku atau lebih yang
+TOIDR-nya **sama menurut angka** adalah satu kurs — Pega "terakhir menang" memberi nilai yang sama, jadi tidak ada yang
+ditebak; yang dipakai baris yang mulainya paling akhir (periode `Mulai`/`Akhir` di layar tidak bergantung urutan baca).
+TOIDR **berbeda** tetap master rusak (503), kini dengan kedua nilainya disebut. Cacah baris kembar dilaporkan
+(`barisMasterKembar` di `GET …/kurs`) dan **disebut di layar** bersama `barisMasterDitolak`
+(`PanelJenisKlausul.catatanMasterKurs`). Uji: `TestPilihKursBerlakuTCOBarisKembar` (kembar persis, kembar menurut angka
+dengan periode berbeda, TOIDR berbeda, TOIDR rusak); uji lama yang menuntut galat atas `{berlaku, berlaku}` diganti.
+Data master TIDAK disentuh; menghapus baris kembar tetap urusan DBA.

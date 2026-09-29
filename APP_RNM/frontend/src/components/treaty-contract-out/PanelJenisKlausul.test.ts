@@ -12,6 +12,7 @@ import {
   barisSubjenis,
   formKlausulDari,
   formKlausulKosong,
+  catatanMasterKurs,
   jenisBerkurs,
   keMasukKlausul,
   labelMedan,
@@ -114,5 +115,30 @@ describe('kurs (tiket 11)', () => {
     expect(KODE).toContain('ambilKursTahun(tahunID)')
     expect(KODE).toContain('disabled={aturan.berkurs && !kursAda}')
     expect(KODE).toContain('konversiKurs(tahunID, r.dari, nilai, r.skala)')
+  })
+})
+
+describe('catatan master kurs (lanjutan 6 + keputusan baris kembar 29-09-2026)', () => {
+  const kurs = { kurs: '16500.00', tanggal: '2026-06-01', mulai: '2025-07-01', akhir: '2026-06-30',
+    currency: 'USD', idCurrency: '10001', quarter: '0', treatyYear: '2026' }
+
+  it('master bersih: tidak ada catatan', () => {
+    expect(catatanMasterKurs({ ...kurs, barisMasterKembar: 0, barisMasterDitolak: 0 })).toBeNull()
+    // Backend lama tanpa kedua medan pun tidak bercatatan.
+    expect(catatanMasterKurs(kurs)).toBeNull()
+  })
+
+  it('baris kembar disebut, bukan disembunyikan', () => {
+    expect(catatanMasterKurs({ ...kurs, barisMasterKembar: 1 })).toContain('1 baris kembar')
+  })
+
+  it('baris yang tanggalnya ditolak Oracle ikut disebut', () => {
+    const c = catatanMasterKurs({ ...kurs, barisMasterKembar: 1, barisMasterDitolak: 2 })
+    expect(c).toContain('1 baris kembar')
+    expect(c).toContain('2 baris')
+  })
+
+  it('catatannya dirender di bawah kurs', () => {
+    expect(KODE).toContain('catatanMasterKurs(kurs)')
   })
 })

@@ -79,6 +79,18 @@ export function aturanAnak(j: JenisKlausul): AturanKlausul | undefined {
   return j.aturan.find((a) => a.anak)
 }
 
+/**
+ * Catatan master kurs — baris kembar (keputusan work owner 29-09-2026: dipakai
+ * sebagai satu kurs) dan baris yang tanggalnya ditolak Oracle (lanjutan 6)
+ * DISEBUT, bukan disembunyikan. `null` bila master bersih.
+ */
+export function catatanMasterKurs(k: KursTahun): string | null {
+  const bagian: string[] = []
+  if ((k.barisMasterKembar ?? 0) > 0) bagian.push(`${k.barisMasterKembar} ${KURS_TCO.catatanKembar}`)
+  if ((k.barisMasterDitolak ?? 0) > 0) bagian.push(`${k.barisMasterDitolak} ${KURS_TCO.catatanDitolak}`)
+  return bagian.length === 0 ? null : bagian.join('; ')
+}
+
 /** Jenis menuntut kurs bila salah satu aturannya berkurs (tiket 11). */
 export function jenisBerkurs(j: JenisKlausul): boolean {
   return j.aturan.some((a) => a.berkurs)
@@ -378,6 +390,11 @@ export default function PanelJenisKlausul({
       {berkurs && kurs !== null && (
         <p role="status">
           {KURS_TCO.kurs}: {kurs.kurs} ({KURS_TCO.berlaku} {kurs.mulai} {KURS_TCO.sampai} {kurs.akhir})
+        </p>
+      )}
+      {berkurs && kurs !== null && catatanMasterKurs(kurs) !== null && (
+        <p className="polis__catatan" role="note">
+          {catatanMasterKurs(kurs)}
         </p>
       )}
       {berkurs && galatKurs !== null && <Gagal galat={galatKurs} />}

@@ -102,6 +102,10 @@ type KursTCO struct {
 	// BarisDitolak - cacah baris master yang tanggalnya ditolak Oracle pada
 	// baca yang sama; diisi `PilihKursBerlakuTCO`, dilaporkan ke layar.
 	BarisDitolak int
+	// BarisKembar - cacah baris berlaku LAIN yang TOIDR-nya sama dengan yang
+	// dipakai (master memuat baris kembar); diisi `PilihKursBerlakuTCO`,
+	// dilaporkan ke layar.
+	BarisKembar int
 }
 
 // BarisKursDitolakTCO - satu baris master yang tanggalnya ditolak Oracle
@@ -140,27 +144,50 @@ func UraiNilaiKursTCO(teks string) (*apd.Decimal, error) {
 // (`to_date(CARI1,'YYYYMMDD') BETWEEN trunc(..STARTDATE..) AND trunc(..ENDDATE..)`).
 //
 // ⚠️ Pega memutar seluruh hasil dan menyimpan yang TERAKHIR (`testingKurs`
-// langkah 3) - urutan tak tentu. Dua baris berlaku dinyatakan sebagai galat
-// (master rusak) [keputusan work owner 29-09-2026] (OQ-TCO-18, ditutup).
+// langkah 3) - urutan tak tentu. Dua baris berlaku yang TOIDR-nya BERBEDA
+// dinyatakan sebagai galat (master rusak) [keputusan work owner 29-09-2026]
+// (OQ-TCO-18, ditutup). Baris KEMBAR - TOIDR sama menurut angka - adalah satu
+// kurs: "terakhir menang" memberi nilai yang sama, jadi tidak ada yang
+// ditebak [keputusan work owner 29-09-2026, mempersempit OQ-TCO-18]; data DEV
+// memuat dua pasang baris kembar persis. Yang dipakai baris yang mulainya
+// paling akhir (periode yang baru dimulai), supaya `Mulai`/`Akhir` di layar
+// tidak bergantung urutan baca.
 //
 // Tanpa baris berlaku tetapi ada baris yang tanggalnya ditolak Oracle: salah
 // satunya mungkin baris yang dicari - master rusak, bukan "tidak ada kurs".
 func PilihKursBerlakuTCO(h HasilMasterKursTCO, tanggal time.Time) (KursTCO, error) {
 	tgl := utils.FormatTanggal(time.Date(tanggal.Year(), tanggal.Month(), tanggal.Day(), 0, 0, 0, 0, time.UTC))
-	switch len(h.Berlaku) {
-	case 0:
+	if len(h.Berlaku) == 0 {
 		if len(h.Ditolak) > 0 {
 			d := h.Ditolak[0]
 			return KursTCO{}, fmt.Errorf("%w: tidak ada kurs berlaku pada %s, dan %d baris master tanggalnya ditolak Oracle "+
 				"(bentuk %s), mis. %s %q", ErrKursTakTerurai, tgl, len(h.Ditolak), FormatTanggalKursTCO, d.Kolom, d.Teks)
 		}
 		return KursTCO{}, fmt.Errorf("%w pada %s", ErrKursTidakAda, tgl)
-	case 1:
-		k := h.Berlaku[0]
-		k.BarisDitolak = len(h.Ditolak)
-		return k, nil
 	}
-	return KursTCO{}, fmt.Errorf("%w: %d baris pada %s", ErrKursGanda, len(h.Berlaku), tgl)
+	k := h.Berlaku[0]
+	if len(h.Berlaku) > 1 {
+		var err error
+		if k, err = LengkapiKursTCO(k); err != nil {
+			return KursTCO{}, err
+		}
+		for _, b := range h.Berlaku[1:] {
+			lain, err := LengkapiKursTCO(b)
+			if err != nil {
+				return KursTCO{}, err
+			}
+			if lain.ToIDR.Cmp(k.ToIDR) != 0 {
+				return KursTCO{}, fmt.Errorf("%w: %d baris pada %s dengan TOIDR berbeda (%q dan %q)", ErrKursGanda,
+					len(h.Berlaku), tgl, k.TeksToIDR, lain.TeksToIDR)
+			}
+			if lain.Mulai.After(k.Mulai) {
+				k = lain
+			}
+		}
+		k.BarisKembar = len(h.Berlaku) - 1
+	}
+	k.BarisDitolak = len(h.Ditolak)
+	return k, nil
 }
 
 func kuantisasiKurs(d *apd.Decimal, skala int32) (*apd.Decimal, error) {

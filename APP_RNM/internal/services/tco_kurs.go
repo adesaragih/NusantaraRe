@@ -77,6 +77,9 @@ type KursTampil struct {
 	// BarisMasterDitolak - cacah baris master yang tanggalnya ditolak Oracle;
 	// dilaporkan, tidak dipakai (lanjutan 6).
 	BarisMasterDitolak int `json:"barisMasterDitolak"`
+	// BarisMasterKembar - cacah baris berlaku lain yang TOIDR-nya sama (master
+	// memuat baris kembar) [keputusan work owner 29-09-2026]; dilaporkan.
+	BarisMasterKembar int `json:"barisMasterKembar"`
 }
 
 // KonversiTampil adalah hasil satu konversi Rp <-> Usd.
@@ -168,7 +171,8 @@ func (l *KursTCO) Berlaku(ctx context.Context, tahun models.TahunTreaty) (models
 func tampilKurs(tahun models.TahunTreaty, k models.KursTCO) KursTampil {
 	return KursTampil{Kurs: utils.FormatDecimal(k.ToIDR), Tanggal: utils.FormatTanggal(tahun.StartDate),
 		Mulai: utils.FormatTanggal(k.Mulai), Akhir: utils.FormatTanggal(k.Akhir), Currency: k.Currency,
-		IDCurrency: k.IDCurrency, Quarter: k.Quarter, TreatyYear: tahun.TreatyYear, BarisMasterDitolak: k.BarisDitolak}
+		IDCurrency: k.IDCurrency, Quarter: k.Quarter, TreatyYear: tahun.TreatyYear, BarisMasterDitolak: k.BarisDitolak,
+		BarisMasterKembar: k.BarisKembar}
 }
 
 // KursTahun membaca kurs berlaku satu tahun treaty.
