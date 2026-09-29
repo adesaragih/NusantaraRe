@@ -63,9 +63,9 @@ giliran ini; statusnya tetap seperti baris paritasnya (bila ada) — **belum** a
 
 ## Pertanyaan terbuka GILIRAN-13/14 — 29-09-2026
 
-- **OQ-PL-15** *(untuk work owner / DBA)* — `SEQ_WORK_POLIS START WITH 1` (057), sedangkan nomor warisan `NBLF-` sudah
-  lima digit (sampel baca-saja DEV, 200 baris per tabel). Sebelum data warisan masuk `T_WORK_POLIS`, sequence wajib
-  dimajukan melewati nomor warisan terbesar. *(Tiket 00, 01.)*
+- **OQ-PL-15** — ✅ **DITUTUP 29-09-2026** (work owner, "ikuti rekomendasi"): migrasi **058** memulai ulang
+  `SEQ_WORK_POLIS` pada **22374** (nomor `NBLF-` tertinggi terlihat 22373 + 1). `[sementara — DBA memastikan
+  pyLastReservedID awalan NBLF- di PC_DATA_UNIQUEID sebelum data nyata]`. *(Tiket 00, GILIRAN-15.)*
 - **OQ-PL-16** — ✅ **DITUTUP 29-09-2026, butir bq** `[DIPUTUSKAN — XML; veto work owner]`: `Decision3` dirutekan dari
   `FLAG_ONGOING_POLICY` (decision table `IsFlagOnGoingPolicy`: "0" → Offer, "1" → Premium, otherwise `Decline` tanpa
   konektor → 409). *(Tiket 01.)*

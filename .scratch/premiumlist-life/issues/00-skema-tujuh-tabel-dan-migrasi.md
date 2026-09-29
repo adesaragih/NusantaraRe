@@ -1,6 +1,6 @@
 # 00: Skema tujuh tabel + `T_WORK_POLIS` + migrasi — **PREFACTOR**
 
-**Status:** sebagian — migrasi data, rekonsiliasi, dan jalur mundur teruji terhadap Oracle belum ada; DDL `050`–`056` + penjaga bentuk sudah; **`057` (`SEQ_WORK_POLIS` + `FLAG_ONGOING_POLICY`) sejak GILIRAN-13** — belum dijalankan di skema mana pun oleh executor; OQ-PL-15 terbuka
+**Status:** sebagian — migrasi data, rekonsiliasi, dan jalur mundur teruji terhadap Oracle belum ada; DDL `050`–`056` + penjaga bentuk sudah; **`057` (`SEQ_WORK_POLIS` + `FLAG_ONGOING_POLICY`) sejak GILIRAN-13** — terpasang di DEV oleh work owner; **`058` (`SEQ_WORK_POLIS` mulai 22374) sejak GILIRAN-15** — OQ-PL-15 ditutup, `[sementara]` sampai DBA memastikan `PC_DATA_UNIQUEID`; belum dijalankan executor
 
 **Blocked by:** CL-01 (kerangka aplikasi + seam API — scaffolding lintas konteks)
 
@@ -307,3 +307,14 @@ POOLDATA.<tabel> WHERE ROWNUM <= 200`, nilai diubah menjadi bentuk di mesin, nol
 **sampel**, bukan agregat seperti yang pl3 minta: kueri `GROUP BY` seluruh tabel dihentikan sesudah 300
 detik. ⚠️ `START WITH 1` aman hanya selama
 `T_WORK_POLIS` belum berisi baris warisan — **OQ-PL-15**.
+
+## ⛔ Keputusan work owner bertanggal — 29 September 2026 (GILIRAN-15 paket 3: OQ-PL-15 ditutup)
+
+*Awal `SEQ_WORK_POLIS` dimajukan di atas nomor lama.* Migrasi **`058_seq_work_polis_mulai_ulang.sql`** (+ down): `DROP`
+lalu `CREATE SEQUENCE {skema}.SEQ_WORK_POLIS START WITH 22374 … NOCACHE NOCYCLE`. 22374 = nomor `NBLF-` tertinggi yang
+**terlihat** + 1 — `[data DEV — brief GILIRAN-15 §0, agregat]` 22373 di `JSON_POLIS`/`POLICYJSONLIFE` (33 baris
+ber-`NBLF-`). ⚠️ `[sementara — DBA memastikan pyLastReservedID awalan NBLF- di PC_DATA_UNIQUEID sebelum data nyata]`:
+penghitung Pega yang sebenarnya tidak terlihat dari akun `POOLDATA`. Bila langkah ini gagal di tengah (`DROP` sudah
+jalan), percobaan ulang berhenti di ORA-02289 — `CREATE`-nya dijalankan manual oleh DBA (kepala berkas 058). Jalur
+mundur memulihkan bentuk 057 (`START WITH 1`). Penghitung `CREATE` 51 → 52. Uji `TestMigrasi058SequenceMulaiDiAtasNomorLama`.
+`-migrate` dijalankan work owner; dua kasus uji `NBLF-2`/`NBLF-3` di DEV tidak disentuh executor.
