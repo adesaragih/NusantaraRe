@@ -67,45 +67,27 @@ func PeriksaKontrakTreaty(k KontrakTreaty, tahunTreaty string) error {
 }
 
 // AkhirKontrakBawaanTCO menghitung tanggal akhir yang diisikan layar saat
-// tanggal mulai dipilih - `SetTanggalTreatyContract.xml` langkah 3-6.
+// tanggal mulai dipilih: MULAI + 1 TAHUN KALENDER [keputusan work owner
+// 29-09-2026, OQ-TCO-10 ditutup].
 //
-// Langkah 3: `JumlahHari = 365`. Langkah 5: `JumlahHari = 366` bila SELURUH
-// prasyaratnya lolos. Langkah 6: `TreatyEndDate = TreatyStartDate +
-// JumlahHari` hari.
+// ⛔ PENYIMPANGAN SADAR dari `SetTanggalTreatyContract.xml` (dipanggil
+// `InputTreatyContractReinsType.xml` b3007): langkah 3 `JumlahHari = 365`
+// (b620-b621), langkah 5 `JumlahHari = 366` bila prasyaratnya lolos
+// (b918-b1191), langkah 6 `TreatyEndDate = TreatyStartDate + JumlahHari`
+// hari (b1273-b1274). Prasyarat langkah 5 memotong cap waktu `yyyyMMdd...`
+// seolah `dd/MM/yyyy`, sehingga yang berjalan adalah "mulai Oktober-Desember
+// tahun kabisat = 366 hari" - anomali yang TIDAK lagi ditiru.
 //
-// ⛔ DITIRU APA ADANYA, TERMASUK ANOMALINYA (OQ-TCO-10). Prasyarat langkah 5
-// memotong cap waktu Pega `yyyyMMdd...` seolah berformat `dd/MM/yyyy`
-// (contoh uji penulisnya `01/02/2018`):
-//
-//	substring(0,2) di 1..31   -> yang terbaca dua digit ABAD, bukan tanggal
-//	substring(4,5) di 1..2    -> yang terbaca digit PULUHAN bulan, jadi hanya
-//	                             Oktober-Desember yang lolos, bukan Januari-Februari
-//
-// Maksud penulisnya tampak "mulai Januari-Februari tahun kabisat = 366 hari".
-// Yang BERJALAN adalah "mulai Oktober-Desember tahun kabisat = 366 hari".
-// Memperbaiki diam-diam berarti tanggal akhir bawaan berbeda dari sistem lama
-// tanpa seorang pun memutuskannya; tanggal akhir tetap dapat diubah pemakai.
-func AkhirKontrakBawaanTCO(mulai time.Time, tahunTreaty string) time.Time {
-	hari := 365
-	tahun := strings.TrimSpace(tahunTreaty)
-	abad := mulai.Year() / 100
-	puluhanBulan := int(mulai.Month()) / 10
-	if strconv.Itoa(mulai.Year()) == tahun && abad >= 1 && abad <= 31 &&
-		puluhanBulan >= 1 && puluhanBulan <= 2 && tahunKabisatTeks(tahun) {
-		hari = 366
+// Semantik `ADD_MONTHS(mulai, 12)`: hari terakhir bulan tetap hari terakhir
+// bulan (28 Februari tahun biasa -> 29 Februari tahun kabisat), dan tanggal
+// yang tidak ada di bulan tujuan dijepit ke akhir bulan (29 Februari -> 28
+// Februari). Tanggal akhir tetap dapat diubah pemakai.
+func AkhirKontrakBawaanTCO(mulai time.Time) time.Time {
+	y, m, d := mulai.Date()
+	akhirBulan := func(tahun int) int { return time.Date(tahun, m+1, 0, 0, 0, 0, 0, time.UTC).Day() }
+	hari := d
+	if d == akhirBulan(y) || d > akhirBulan(y+1) {
+		hari = akhirBulan(y + 1)
 	}
-	return mulai.AddDate(0, 0, hari)
-}
-
-// tahunKabisatTeks - `@if(Tahun%100==0, @if(Tahun%400==0,366,365),
-// @if(Tahun%4==0,366,365)) == 366`; teks bukan angka tidak kabisat.
-func tahunKabisatTeks(tahun string) bool {
-	n, err := strconv.Atoi(tahun)
-	if err != nil {
-		return false
-	}
-	if n%100 == 0 {
-		return n%400 == 0
-	}
-	return n%4 == 0
+	return time.Date(y+1, m, hari, mulai.Hour(), mulai.Minute(), mulai.Second(), mulai.Nanosecond(), mulai.Location())
 }

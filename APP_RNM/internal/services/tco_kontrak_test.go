@@ -206,6 +206,10 @@ func TestKontrakAkhirBawaan(t *testing.T) {
 	if err != nil || akhir != "2027-03-01" {
 		t.Errorf("akhir bawaan %q %v", akhir, err)
 	}
+	// OQ-TCO-10: 29 Februari dijepit ke 28 Februari tahun berikutnya.
+	if akhir, err := l.AkhirBawaan(context.Background(), pelakuUjiTCO, "1000001", "2028-02-29"); err != nil || akhir != "2029-02-28" {
+		t.Errorf("akhir bawaan 29 Februari %q %v", akhir, err)
+	}
 	if _, err := l.AkhirBawaan(context.Background(), pelakuUjiTCO, "1000001", "kemarin"); !errors.Is(err, services.ErrPermintaanTidakSah) {
 		t.Errorf("mulai bukan tanggal: %v", err)
 	}

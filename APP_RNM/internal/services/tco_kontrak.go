@@ -341,13 +341,12 @@ func (k *KontrakTreatyTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID st
 }
 
 // AkhirBawaan menghitung tanggal akhir yang layar isikan saat tanggal mulai
-// dipilih - `SetTanggalTreatyContract` (models.AkhirKontrakBawaanTCO).
+// dipilih: mulai + 1 tahun kalender (models.AkhirKontrakBawaanTCO, OQ-TCO-10).
 func (k *KontrakTreatyTCO) AkhirBawaan(ctx context.Context, pelaku Pelaku, tahunID, mulai string) (string, error) {
 	if err := WajibIdentitas(pelaku); err != nil {
 		return "", err
 	}
-	tahun, err := k.tahun.Ambil(ctx, tahunID)
-	if err != nil {
+	if _, err := k.tahun.Ambil(ctx, tahunID); err != nil {
 		return "", err
 	}
 	t, err := uraiTanggalKontrak("mulai", mulai)
@@ -357,5 +356,5 @@ func (k *KontrakTreatyTCO) AkhirBawaan(ctx context.Context, pelaku Pelaku, tahun
 	if t.IsZero() {
 		return "", fmt.Errorf("%w: mulai wajib diisi", ErrPermintaanTidakSah)
 	}
-	return utils.FormatTanggal(models.AkhirKontrakBawaanTCO(t, tahun.TreatyYear)), nil
+	return utils.FormatTanggal(models.AkhirKontrakBawaanTCO(t)), nil
 }

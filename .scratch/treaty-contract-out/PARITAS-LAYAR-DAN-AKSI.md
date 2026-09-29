@@ -93,7 +93,7 @@ Nomor baris = `Section/InputTreatyContractReinsType.xml` kecuali disebut lain.
 | popup dari `InputTreatyContract.xml` b20778 (`BrowseReinsTypeYear` + `showHarness` + `KirimTahunGroupID`) | tombol `ReinsType` baris tahun → `PanelKontrakTahun` tahun itu | ✅ |
 | kepala `Underwriting Year` b1145 · `ReinsType` b1358 (nilai `.TreatyGroupName` b1386) | dua medan baca-saja + catatan label bersilang | ✅ |
 | `ReinsType` b2652 (RD non-Old, `Flag "active"` b2768) | `PilihJenisReasuransi` (daftar tersaring tiket 02) | ✅ OQ-TCO-06 tetap terbuka |
-| `Start Date` b2905 → `SetTanggalTreatyContract` b3007 | isi tanggal mulai → `GET /tahun/{id}/kontrak/akhir-bawaan` mengisi tanggal akhir | ✅ OQ-TCO-10 |
+| `Start Date` b2905 → `SetTanggalTreatyContract` b3007 | isi tanggal mulai → `GET /tahun/{id}/kontrak/akhir-bawaan` mengisi tanggal akhir = mulai + 1 tahun kalender (`ADD_MONTHS(…,12)`) | ✅ OQ-TCO-10 — penyimpangan sadar (keputusan work owner 29-09-2026) |
 | `End Date` b3244 (`IsEndDate==1`) | ubah tanggal akhir saja | ✅ |
 | `Save` b3618 → `SaveTreatyContract_Act` → `SaveMasterTreatyContract_SQL` → `PEGA_TREATYCONTRACT` | `POST /tahun/{id}/kontrak` / `PUT /tahun/{id}/kontrak/{kid}` → `T_TREATYCONTRACT` + jejak, satu transaksi | ✅ prosedur tidak dipanggil |
 | `Undo` b5343 → `UndoOperation` | kembalikan isian terakhir yang dimuat | ✅ |

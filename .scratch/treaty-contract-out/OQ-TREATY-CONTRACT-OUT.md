@@ -14,7 +14,7 @@ Satu tempat untuk seluruh pertanyaan terbuka modul ini. Rincian dan buktinya tet
 | OQ-TCO-07 | nama fisik `SOANote`/`Code` | tiket 02 | terbuka |
 | OQ-TCO-08 | token penyimpanan (`GET_TOKEN_STORAGE` + garam) | tiket 12 | dijawab 29-09-2026 *"sekarang"* — diterapkan kelompok 5 |
 | OQ-TCO-09 | pekerja latar `SatuPutaran` | tiket 12 | dijawab 29-09-2026 *"perlu"* — diterapkan kelompok 5 |
-| OQ-TCO-10 | anomali 366 hari tanggal akhir kontrak | tiket 04 | dijawab 29-09-2026 *"mulai + 1 tahun kalender"* — diterapkan kelompok 4 |
+| OQ-TCO-10 | anomali 366 hari tanggal akhir kontrak | tiket 04 | **ditutup** — *"mulai + 1 tahun kalender"*, penyimpangan sadar (kelompok 4) |
 | OQ-TCO-11 | satu jenis satu kontrak per tahun | tiket 04 | **ditutup** — *"benar"* |
 | OQ-TCO-12 | kolom `STATUSACTIVE` master `AGENT` | tiket 05 | **ditutup** — *"benar"* |
 | OQ-TCO-13 | nilai nonaktif business | tiket 07 | **ditutup** — *"0 berarti nonaktif"* |

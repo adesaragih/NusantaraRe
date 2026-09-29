@@ -61,22 +61,25 @@ func TestPeriksaKontrakTreaty(t *testing.T) {
 // cap waktu Pega (abad) di 1..31, (c) digit puluhan bulan di 1..2 - yaitu
 // Oktober-Desember, sebab cap waktunya `yyyyMMdd...` - dan (d) tahun treaty
 // kabisat. Selain itu 365 hari.
+// OQ-TCO-10 [keputusan work owner 29-09-2026]: akhir = mulai + 1 TAHUN
+// KALENDER, semantik `ADD_MONTHS(mulai, 12)` - menggantikan anomali 366 hari.
 func TestAkhirKontrakBawaanTCO(t *testing.T) {
 	kasus := []struct {
-		mulai, tahun, mau string
+		mulai, mau, sebab string
 	}{
-		{"2026-01-01", "2026", "2027-01-01"}, // 365
-		{"2024-01-01", "2024", "2024-12-31"}, // kabisat, Januari: TETAP 365 (anomali OQ-TCO-10)
-		{"2024-10-01", "2024", "2025-10-02"}, // kabisat, Oktober: 366
-		{"2024-12-01", "2024", "2025-12-02"}, // kabisat, Desember: 366
-		{"2024-10-01", "2025", "2025-10-01"}, // tahun mulai beda: 365
-		{"2100-10-01", "2100", "2101-10-01"}, // 2100 bukan kabisat: 365
-		{"2000-11-01", "2000", "2001-11-02"}, // 2000 kabisat: 366
-		{"2024-10-01", "dua ribu", "2025-10-01"},
+		{"2026-01-01", "2027-01-01", "tahun biasa"},
+		{"2026-03-15", "2027-03-15", "tengah bulan"},
+		{"2024-01-01", "2025-01-01", "tahun kabisat, Januari (dulu 2024-12-31)"},
+		{"2024-10-01", "2025-10-01", "tahun kabisat, Oktober (dulu 366 hari)"},
+		{"2023-03-01", "2024-03-01", "melewati 29 Februari"},
+		{"2028-02-29", "2029-02-28", "29 Februari dijepit ke akhir bulan"},
+		{"2027-02-28", "2028-02-29", "akhir bulan tetap akhir bulan (ADD_MONTHS)"},
+		{"2026-06-30", "2027-06-30", "akhir bulan 30 hari"},
+		{"2099-12-31", "2100-12-31", "akhir tahun"},
 	}
 	for _, k := range kasus {
-		if dapat := AkhirKontrakBawaanTCO(tglTeks(k.mulai), k.tahun).Format("2006-01-02"); dapat != k.mau {
-			t.Errorf("AkhirKontrakBawaanTCO(%s, %q) = %s, mau %s", k.mulai, k.tahun, dapat, k.mau)
+		if dapat := AkhirKontrakBawaanTCO(tglTeks(k.mulai)).Format("2006-01-02"); dapat != k.mau {
+			t.Errorf("%s: AkhirKontrakBawaanTCO(%s) = %s, mau %s", k.sebab, k.mulai, dapat, k.mau)
 		}
 	}
 }

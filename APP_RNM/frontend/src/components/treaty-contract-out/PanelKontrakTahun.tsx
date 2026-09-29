@@ -13,7 +13,7 @@
 // yang dibuka dari baris itu, atau dari butir menu dengan pemilih tahun.
 //
 // ⛔ Tanggal akhir bawaan dihitung SERVER (`SetTanggalTreatyContract`,
-// termasuk anomali OQ-TCO-10) — satu tempat, tidak ditulis ulang di sini.
+// mulai + 1 tahun kalender, OQ-TCO-10) — satu tempat, tidak ditulis ulang di sini.
 
 import { useCallback, useEffect, useState } from 'react'
 

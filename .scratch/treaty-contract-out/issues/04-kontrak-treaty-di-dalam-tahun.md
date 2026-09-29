@@ -153,3 +153,12 @@ dibaca lengkap dengan prasyarat dan penandanya; langkah ber-`pyStepsBlockName = 
 
 - **OQ-TCO-11 — ditutup.** Jawaban: *"benar"*. Satu jenis reasuransi satu kontrak per tahun treaty (anti-dobel
   `CariDobel`, 409 `Data sudah pernah di Input`) dikonfirmasi; labelnya kini `[keputusan work owner 29-09-2026]`.
+- **OQ-TCO-10 — ditutup.** Jawaban: *"Ganti jadi mulai + 1 tahun kalender"*. **Penyimpangan sadar, ralat bertanggal
+  29-09-2026:** `SetTanggalTreatyContract` (dipanggil `Section/InputTreatyContractReinsType.xml` b3007/b3155) — langkah 3
+  `JumlahHari = 365` (b620–b621), langkah 5 `JumlahHari = 366` bila prasyaratnya lolos (b918–b1191; prasyaratnya membaca
+  cap waktu `yyyyMMdd…` seolah `dd/MM/yyyy`, sehingga yang berjalan "mulai Oktober–Desember tahun kabisat = 366 hari"),
+  langkah 6 `TreatyEndDate = TreatyStartDate + JumlahHari` (b1273–b1274); langkah 7–9 ter-remark (`//` b1444, b1603,
+  b1752). Kini `models.AkhirKontrakBawaanTCO(mulai)` = mulai + 1 tahun kalender dengan semantik `ADD_MONTHS(mulai, 12)`:
+  29 Februari → 28 Februari, hari terakhir bulan tetap hari terakhir bulan (28 Februari tahun biasa → 29 Februari tahun
+  kabisat). Uji: tahun biasa, kabisat Januari (dulu 2024-12-31), kabisat Oktober (dulu 366 hari), melewati 29 Februari,
+  29 Februari, akhir bulan — dibuktikan merah terhadap rumus lama (4 kasus).

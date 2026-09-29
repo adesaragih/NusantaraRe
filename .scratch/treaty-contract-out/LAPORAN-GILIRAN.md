@@ -954,3 +954,10 @@ sementara dan `TetapkanIdentitasTCO` (`repository/tco_transaksi_utuh.go` → `tc
 `bacaTCO` yang tersisa), kait identitas sementara di `IdentitasBerikutTCO`, entri penjaga penyuntikan, klien frontend
 `simpanKontrakUtuh` / `statusSimpanSukses` (+`simpanUtuh.test.ts`). Penjaga `JSON_KLAIM` dipindah ke
 `models/tco_teks_galat_test.go`. Uji baru `TestRuteSimpanUtuhDibuang` (kedua rute tidak lagi dilayani).
+
+### Kelompok 4 — OQ-TCO-10 tanggal akhir mulai + 1 tahun kalender
+
+`models.AkhirKontrakBawaanTCO(mulai)` (argumen tahun treaty dibuang) = mulai + 1 tahun kalender, semantik
+`ADD_MONTHS(mulai, 12)`; `tahunKabisatTeks` dibuang. Pembacaan ulang `SetTanggalTreatyContract` mencetak
+`pyStepsBlockName` (langkah 7–9 `//`). Uji tabel baru dibuktikan merah terhadap rumus lama (4 kasus berbeda), lalu hijau;
+kasus 29 Februari juga di seam layanan (`TestKontrakAkhirBawaan`). Penyimpangan sadar bertanggal di tiket 04.
