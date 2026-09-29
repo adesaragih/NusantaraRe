@@ -66,6 +66,7 @@ import (
 	"nusantarare/inti/db"
 	"nusantarare/inti/galat"
 	"nusantarare/inti/jejak"
+	"nusantarare/inti/kontrak"
 	"nusantarare/inti/layanan"
 	"nusantarare/inti/outbox"
 	"nusantarare/inti/utils"
@@ -495,9 +496,9 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku inti.Pelaku, klaimID stri
 				if err := baca.TandaiBarisOutstanding(ctx, tx, b.ID); err != nil {
 					return err
 				}
-				b.KodeStatus = models.KodeOutstanding
+				b.KodeStatus = kontrak.KodeOutstanding
 				if err := x.jejak.Rekam(ctx, tx, jejak.CatatanJejak{
-					AdjustmentID: b.ID, KlaimID: klaimID, Dari: "", Ke: models.KodeOutstanding,
+					AdjustmentID: b.ID, KlaimID: klaimID, Dari: "", Ke: kontrak.KodeOutstanding,
 					AkunID: pelaku.AkunID, Waktu: saat,
 				}); err != nil {
 					return err

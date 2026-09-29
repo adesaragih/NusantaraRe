@@ -9,9 +9,9 @@ import (
 	"errors"
 	"testing"
 
-	"nusantarare/internal/models"
 	"nusantarare/internal/services"
 	"nusantarare/inti"
+	"nusantarare/inti/kontrak"
 )
 
 func pelakuBerperan(peran ...string) inti.Pelaku {
@@ -26,13 +26,13 @@ func pelakuBerperan(peran ...string) inti.Pelaku {
 // memutuskan akseptasi - ia menelaah.
 func TestMedicalAdvisorTidakDapatMengubahStatus(t *testing.T) {
 	err := services.WajibPeranPengubahStatus(
-		pelakuBerperan(inti.PeranMedicalAdvisor), models.StatusDitolak)
+		pelakuBerperan(inti.PeranMedicalAdvisor), kontrak.StatusDitolak)
 	if !errors.Is(err, inti.ErrTanpaWewenang) {
 		t.Fatalf("galat = %v, mau ErrTanpaWewenang", err)
 	}
 	// Hanya Admin yang boleh MENOLAK - gerbang XML baris 15399.
 	if err := services.WajibPeranPengubahStatus(
-		pelakuBerperan(services.PeranRejectOutstanding), models.StatusDitolak); err != nil {
+		pelakuBerperan(services.PeranRejectOutstanding), kontrak.StatusDitolak); err != nil {
 		t.Errorf("Admin menolak baris ditolak: %v", err)
 	}
 	// ⛔ SPV TIDAK boleh menolak. Ronde pertama memakai satu daftar peran yang
@@ -40,7 +40,7 @@ func TestMedicalAdvisorTidakDapatMengubahStatus(t *testing.T) {
 	// melewati gerbang Admin di Tolak beserta syarat klaim-bernomornya.
 	if err := services.WajibPeranPengubahStatus(
 		pelakuBerperan(services.PeranSimpanOutstanding),
-		models.StatusDitolak); !errors.Is(err, inti.ErrTanpaWewenang) {
+		kontrak.StatusDitolak); !errors.Is(err, inti.ErrTanpaWewenang) {
 		t.Errorf("SPV menolak baris: galat = %v, mau ErrTanpaWewenang", err)
 	}
 	// ⛔ RALAT audit A0. Kasus ini semula menuntut Aksep DITOLAK bagi siapa
@@ -55,7 +55,7 @@ func TestMedicalAdvisorTidakDapatMengubahStatus(t *testing.T) {
 		services.PeranSimpanOutstanding, services.PeranRejectOutstanding,
 	} {
 		if err := services.WajibPeranPengubahStatus(
-			pelakuBerperan(peran), models.StatusAksep); err != nil {
+			pelakuBerperan(peran), kontrak.StatusAksep); err != nil {
 			t.Errorf("peran %q menuju Aksep ditolak di lapisan peran: %v; "+
 				"gerbangnya kini pemegang tahap, bukan daftar peran", peran, err)
 		}
@@ -121,7 +121,7 @@ func TestWewenangDitegakkanDiLayanan(t *testing.T) {
 	}
 	// Medical Advisor mengubah status: sama.
 	err = svc.Status().Ubah(ctx, pelakuBerperan(inti.PeranMedicalAdvisor),
-		"CLM-1", "P-1", "A-1", models.StatusDitolak, saatUji)
+		"CLM-1", "P-1", "A-1", kontrak.StatusDitolak, saatUji)
 	if !errors.Is(err, inti.ErrTanpaWewenang) {
 		t.Errorf("Medical mengubah status: galat = %v, mau ErrTanpaWewenang", err)
 	}

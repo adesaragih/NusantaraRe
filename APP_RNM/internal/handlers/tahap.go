@@ -37,6 +37,7 @@ import (
 	"nusantarare/inti"
 	"nusantarare/inti/galat"
 	"nusantarare/inti/jejak"
+	"nusantarare/inti/kontrak"
 )
 
 // tahapTujuan menerjemahkan potongan jalur menjadi tahap.
@@ -91,7 +92,7 @@ func pindahTahap(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			// dapat dilompati bukan tangga.
 			galat.Tulis(w, http.StatusConflict,
 				"perpindahan itu tidak ada di tangga kerja klaim")
-		case errors.Is(err, services.ErrKasusSudahTertutup):
+		case errors.Is(err, kontrak.ErrKasusSudahTertutup):
 			galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
 		case errors.Is(err, services.ErrTahapTidakDikenal):
 			galat.Tulis(w, http.StatusConflict, "tahap kasus ini tidak dikenal")

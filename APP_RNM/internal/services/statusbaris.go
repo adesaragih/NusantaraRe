@@ -30,6 +30,7 @@ import (
 	"nusantarare/inti/db"
 	"nusantarare/inti/galat"
 	"nusantarare/inti/jejak"
+	"nusantarare/inti/kontrak"
 )
 
 var (
@@ -66,12 +67,12 @@ var (
 //
 // Baris dikembalikan sebagai NILAI BARU, bukan diubah di tempat: baris yang
 // gagal transisi tidak boleh tertinggal setengah berubah.
-func Transisi(b models.BarisAdjustment, ke models.StatusBaris,
+func Transisi(b models.BarisAdjustment, ke kontrak.StatusBaris,
 	saat time.Time) (models.BarisAdjustment, error) {
 	switch b.Status() {
-	case models.StatusAksep, models.StatusDitolak:
+	case kontrak.StatusAksep, kontrak.StatusDitolak:
 		return b, fmt.Errorf("%w: baris %s berstatus %q", ErrBarisSudahFinal, b.ID, b.KodeStatus)
-	case models.StatusOutstanding:
+	case kontrak.StatusOutstanding:
 		// satu-satunya asal yang sah
 	default:
 		return b, fmt.Errorf("%w: baris %s belum disimpan ke Outstanding (kode %q)",
@@ -80,15 +81,15 @@ func Transisi(b models.BarisAdjustment, ke models.StatusBaris,
 
 	var kode string
 	switch ke {
-	case models.StatusAksep:
-		kode = models.KodeAksep
-	case models.StatusDitolak:
-		kode = models.KodeDitolak
+	case kontrak.StatusAksep:
+		kode = kontrak.KodeAksep
+	case kontrak.StatusDitolak:
+		kode = kontrak.KodeDitolak
 	default:
 		return b, fmt.Errorf("%w: tujuan %v bukan keputusan akhir", ErrTransisiTidakSah, ke)
 	}
 	b.KodeStatus = kode
-	if ke == models.StatusAksep {
+	if ke == kontrak.StatusAksep {
 		b.TanggalAkseptasi = saat
 	}
 	return b, nil
@@ -111,7 +112,7 @@ func TandaiOutstandingKlaim(k *models.Klaim) int {
 			if strings.TrimSpace(b.KodeStatus) != "" {
 				continue
 			}
-			b.KodeStatus = models.KodeOutstanding
+			b.KodeStatus = kontrak.KodeOutstanding
 			n++
 		}
 	}
@@ -180,7 +181,7 @@ func (st *Status) DenganJejak(j jejak.Jejak) *Status {
 // ⚠️ Sumber nilai header BUKAN baris yang berubah melainkan baris TERAKHIR
 // klaim sesudah perubahan itu - lihat BarisTerakhir.
 func (st *Status) Ubah(ctx context.Context, pelaku inti.Pelaku,
-	klaimID, pesertaID, adjID string, ke models.StatusBaris, saat time.Time) error {
+	klaimID, pesertaID, adjID string, ke kontrak.StatusBaris, saat time.Time) error {
 	return st.ubah(ctx, pelaku, klaimID, pesertaID, adjID, ke, saat, false, "")
 }
 
@@ -197,7 +198,7 @@ func (st *Status) Ubah(ctx context.Context, pelaku inti.Pelaku,
 // pernah tercapai, karena jejak bawaan selalu gagal. Bendera bernama membuat
 // yang dilakukannya terbaca, dan urutannya kini bersama tulisan yang lain.
 func (st *Status) ubah(ctx context.Context, pelaku inti.Pelaku,
-	klaimID, pesertaID, adjID string, ke models.StatusBaris, saat time.Time,
+	klaimID, pesertaID, adjID string, ke kontrak.StatusBaris, saat time.Time,
 	cabutPenanda bool, komentar string) error {
 
 	if err := inti.WajibIdentitas(pelaku); err != nil {

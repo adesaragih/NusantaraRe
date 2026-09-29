@@ -11,6 +11,7 @@ import (
 	"nusantarare/internal/services"
 	"nusantarare/inti"
 	"nusantarare/inti/galat"
+	"nusantarare/inti/kontrak"
 )
 
 func TestGalatPutaranDipetakanKeKodeYangBenar(t *testing.T) {
@@ -22,7 +23,7 @@ func TestGalatPutaranDipetakanKeKodeYangBenar(t *testing.T) {
 		{"tanpa identitas", inti.ErrTanpaIdentitas, http.StatusUnauthorized},
 		{"tanpa wewenang", inti.ErrTanpaWewenang, http.StatusForbidden},
 		{"baris terakhir belum ditolak", services.ErrBukanPenolakan, http.StatusConflict},
-		{"kasus tertutup", services.ErrKasusSudahTertutup, http.StatusConflict},
+		{"kasus tertutup", kontrak.ErrKasusSudahTertutup, http.StatusConflict},
 		{"bukan Claim Analis", services.ErrTahapTanpaAddAdjustment, http.StatusConflict},
 		{"tahap tidak dikenal", services.ErrTahapTidakDikenal, http.StatusConflict},
 		{"permintaan tidak sah", galat.ErrPermintaanTidakSah, http.StatusBadRequest},

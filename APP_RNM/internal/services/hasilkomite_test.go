@@ -13,12 +13,13 @@ import (
 	"nusantarare/internal/services"
 	"nusantarare/inti"
 	"nusantarare/inti/galat"
+	"nusantarare/inti/kontrak"
 )
 
 // TestBarisLanjutanMewarisiDelapanKolomTanpaStatus - AC 5 spec.
 func TestBarisLanjutanMewarisiDelapanKolomTanpaStatus(t *testing.T) {
 	pertama := models.BarisAdjustment{
-		ID: "A-1", KodeStatus: models.KodeDitolak,
+		ID: "A-1", KodeStatus: kontrak.KodeDitolak,
 		CurrencyID: "IDR", NamaBank: "UJI-BANK", IDBank: "UJI-006",
 		NomorRekening: "0012345", NomorAkseptasi: "UJI-AKS-1",
 		JumlahKlaim:      uang(t, "1500000", "IDR"),
@@ -34,7 +35,7 @@ func TestBarisLanjutanMewarisiDelapanKolomTanpaStatus(t *testing.T) {
 		t.Fatalf("BarisLanjutan: %v", err)
 	}
 	// Status Outstanding, BUKAN warisan.
-	if baru.KodeStatus != models.KodeOutstanding {
+	if baru.KodeStatus != kontrak.KodeOutstanding {
 		t.Errorf("kode status = %q, mau Outstanding", baru.KodeStatus)
 	}
 	// ⛔ Pengenal, nomor akseptasi, dan tautan Komite TIDAK ikut. Baris baru
@@ -91,9 +92,9 @@ func TestBarisLanjutanMenolakPesertaTanpaBarisDitolak(t *testing.T) {
 	}{
 		{"peserta tanpa baris", models.Peserta{ID: "P-1"}},
 		{"baris terakhir masih Outstanding", models.Peserta{ID: "P-1",
-			Baris: []models.BarisAdjustment{{ID: "A-1", KodeStatus: models.KodeOutstanding}}}},
+			Baris: []models.BarisAdjustment{{ID: "A-1", KodeStatus: kontrak.KodeOutstanding}}}},
 		{"baris terakhir sudah Aksep", models.Peserta{ID: "P-1",
-			Baris: []models.BarisAdjustment{{ID: "A-1", KodeStatus: models.KodeAksep}}}},
+			Baris: []models.BarisAdjustment{{ID: "A-1", KodeStatus: kontrak.KodeAksep}}}},
 	} {
 		if _, err := services.BarisLanjutan(k.p); !errors.Is(
 			err, services.ErrBukanPenolakan) {
@@ -109,7 +110,7 @@ func TestBarisLanjutanMenolakPesertaTanpaBarisDitolak(t *testing.T) {
 // menutup klaimnya.
 func TestKlaimTidakTerminalSetelahPenolakan(t *testing.T) {
 	k := models.Klaim{Peserta: []models.Peserta{{ID: "P-1",
-		Baris: []models.BarisAdjustment{{ID: "A-1", KodeStatus: models.KodeDitolak}}}}}
+		Baris: []models.BarisAdjustment{{ID: "A-1", KodeStatus: kontrak.KodeDitolak}}}}}
 	ditolak := k.StatusTurunan()
 
 	// Baris lanjutan lahir, dan klaimnya kembali berjalan.

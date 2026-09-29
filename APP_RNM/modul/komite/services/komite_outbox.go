@@ -42,13 +42,13 @@ import (
 	"strings"
 	"time"
 
-	"nusantarare/internal/models"
-	"nusantarare/internal/repository"
 	"nusantarare/inti"
 	"nusantarare/inti/db"
 	"nusantarare/inti/layanan"
 	"nusantarare/inti/outbox"
 	"nusantarare/inti/penomor"
+	"nusantarare/modul/komite/models"
+	"nusantarare/modul/komite/repository"
 )
 
 // ModulKomiteLife mengisi kolom `MODUL` outbox untuk baris Komite.
@@ -140,7 +140,7 @@ func antreEfekKomite(ctx context.Context, svc *Service, tx *db.Tx,
 	pohon := outbox.NewPenyimpan(svc.DB())
 	diantre := []string{}
 	// `TempOpenPage.PolicyDataLife.Type` - klaim induk.
-	tipe, err := repository.NewKlaimLife(svc.DB()).TypeKlaim(ctx, kasus.Baris.KlaimID)
+	tipe, err := svc.Klaim().TypeKlaim(ctx, kasus.Baris.KlaimID)
 	if err != nil {
 		return nil, err
 	}

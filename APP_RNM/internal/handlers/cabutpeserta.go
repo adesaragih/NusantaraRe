@@ -13,6 +13,7 @@ import (
 	"nusantarare/inti"
 	"nusantarare/inti/galat"
 	"nusantarare/inti/jejak"
+	"nusantarare/inti/kontrak"
 )
 
 // cabutPeserta melayani POST /api/klaim-life/{id}/peserta/{pesertaId}/cabut.
@@ -39,7 +40,7 @@ func jawabGalatCabut(w http.ResponseWriter, err error) {
 		galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
 	case errors.Is(err, inti.ErrTanpaWewenang):
 		galat.Tulis(w, http.StatusForbidden, "hanya ReasLifeAdmin yang dapat mencabut peserta")
-	case errors.Is(err, services.ErrKasusSudahTertutup):
+	case errors.Is(err, kontrak.ErrKasusSudahTertutup):
 		galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
 	case errors.Is(err, services.ErrPesertaTidakDapatDicabut):
 		galat.Tulis(w, http.StatusConflict,

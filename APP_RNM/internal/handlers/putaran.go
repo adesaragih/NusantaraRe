@@ -18,6 +18,7 @@ import (
 	"nusantarare/inti"
 	"nusantarare/inti/galat"
 	"nusantarare/inti/jejak"
+	"nusantarare/inti/kontrak"
 )
 
 // tambahPutaran melayani
@@ -59,7 +60,7 @@ func jawabGalatPutaran(w http.ResponseWriter, err error) bool {
 			"Add baris adjustment hanya tersedia di tahap Claim Analis")
 	case errors.Is(err, services.ErrTahapTidakDikenal):
 		galat.Tulis(w, http.StatusConflict, "tahap kasus ini tidak dikenal")
-	case errors.Is(err, services.ErrKasusSudahTertutup):
+	case errors.Is(err, kontrak.ErrKasusSudahTertutup):
 		galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
 	case errors.Is(err, galat.ErrPermintaanTidakSah):
 		galat.Tulis(w, http.StatusBadRequest, err.Error())

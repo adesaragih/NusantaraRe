@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/kontrak"
 )
 
 func TestDiagnosaTerkunciMengikutiKeempatGerbang(t *testing.T) {
@@ -27,9 +28,9 @@ func TestDiagnosaTerkunciMengikutiKeempatGerbang(t *testing.T) {
 		terkun bool
 	}{
 		{"kosong - belum diputus", "", false},
-		{"Outstanding", models.KodeOutstanding, false},
-		{"Aksep", models.KodeAksep, true},
-		{"Ditolak", models.KodeDitolak, true},
+		{"Outstanding", kontrak.KodeOutstanding, false},
+		{"Aksep", kontrak.KodeAksep, true},
+		{"Ditolak", kontrak.KodeDitolak, true},
 		{"berspasi - tetap terbaca", "  1  ", true},
 		{"kode warisan 4 - TIDAK mengunci", "4", false},
 	} {
@@ -44,10 +45,10 @@ func TestGerbangDiagnosaMemakaiKodeDariModels(t *testing.T) {
 	// ⛔ Gerbangnya harus bergeser BERSAMA mesin status, bukan sendiri.
 	// Kalau suatu hari KodeAksep bukan lagi "1", kalimat yang menulis '1'
 	// telanjang akan tetap hijau dan tetap salah.
-	if models.KodeAksep != "1" || models.KodeDitolak != "2" {
+	if kontrak.KodeAksep != "1" || kontrak.KodeDitolak != "2" {
 		t.Fatalf("kode bergeser: Aksep=%q Ditolak=%q; "+
 			"gerbang `pyDisabledWhen` b4682 menyebut '1' dan '2'",
-			models.KodeAksep, models.KodeDitolak)
+			kontrak.KodeAksep, kontrak.KodeDitolak)
 	}
 }
 

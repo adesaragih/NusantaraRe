@@ -20,12 +20,12 @@ import (
 	"strings"
 	"time"
 
-	"nusantarare/internal/models"
-	"nusantarare/internal/repository"
 	"nusantarare/inti"
 	"nusantarare/inti/db"
 	"nusantarare/inti/galat"
 	"nusantarare/inti/jejak"
+	"nusantarare/modul/komite/models"
+	"nusantarare/modul/komite/repository"
 )
 
 // Bentuk teks jejak tangga - SATU tempat, dipakai penulis (komite_keputusan.go)

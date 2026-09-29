@@ -15,6 +15,7 @@ import (
 	"nusantarare/inti"
 	"nusantarare/inti/db"
 	"nusantarare/inti/galat"
+	"nusantarare/inti/kontrak"
 )
 
 func pelakuAdmin() inti.Pelaku {
@@ -96,21 +97,21 @@ func TestKlaimBelumBernomorTidakDapatDitolak(t *testing.T) {
 // dalam bentuk yang sama persis di kedua jalur.
 func TestNilaiTolakSamaDenganKomite(t *testing.T) {
 	hasil, err := services.Transisi(
-		baris("A", models.KodeOutstanding), models.StatusDitolak, saatUji)
+		baris("A", kontrak.KodeOutstanding), kontrak.StatusDitolak, saatUji)
 	if err != nil {
 		t.Fatalf("Transisi: %v", err)
 	}
-	if hasil.KodeStatus != models.KodeDitolak {
+	if hasil.KodeStatus != kontrak.KodeDitolak {
 		t.Errorf("kode = %q, mau %q - satu nilai untuk kedua sumber penolakan",
-			hasil.KodeStatus, models.KodeDitolak)
+			hasil.KodeStatus, kontrak.KodeDitolak)
 	}
 }
 
 // TestTolakBarisFinalDitolak - penolakan hanya mungkin pada baris yang masih
 // Outstanding; aturannya dipakai ulang dari Transisi, bukan ditulis dua kali.
 func TestTolakBarisFinalDitolak(t *testing.T) {
-	for _, kode := range []string{models.KodeAksep, models.KodeDitolak} {
-		_, err := services.Transisi(baris("A", kode), models.StatusDitolak, saatUji)
+	for _, kode := range []string{kontrak.KodeAksep, kontrak.KodeDitolak} {
+		_, err := services.Transisi(baris("A", kode), kontrak.StatusDitolak, saatUji)
 		if !errors.Is(err, services.ErrBarisSudahFinal) {
 			t.Errorf("dari %q: galat = %v, mau ErrBarisSudahFinal", kode, err)
 		}

@@ -16,6 +16,7 @@ import (
 	"nusantarare/inti"
 	"nusantarare/inti/galat"
 	"nusantarare/inti/jejak"
+	"nusantarare/inti/kontrak"
 )
 
 // serahkanKomite melayani
@@ -69,7 +70,7 @@ func serahkanKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			galat.Tulis(w, http.StatusUnprocessableEntity,
 				"tidak ada tingkat komite yang menutup nilai klaim ini")
 			return
-		case errors.Is(err, services.ErrKasusSudahTertutup):
+		case errors.Is(err, kontrak.ErrKasusSudahTertutup):
 			galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
 			return
 		case errors.Is(err, galat.ErrPermintaanTidakSah):

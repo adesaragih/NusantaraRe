@@ -12,6 +12,7 @@ import (
 	"nusantarare/internal/models"
 	"nusantarare/internal/services"
 	"nusantarare/inti"
+	"nusantarare/inti/kontrak"
 )
 
 // TestAwalanNomorAkseptasiPerType mengunci kedua RDB.
@@ -112,7 +113,7 @@ func TestRakitNomorAkseptasi(t *testing.T) {
 // tidak dipilih ke akseptasi adalah cacat, bukan fitur.
 func TestGerbangAksepMengikutiPrasyaratXML(t *testing.T) {
 	baik := models.Peserta{ID: "P-1", IsCheck: "true"}
-	barisBaik := models.BarisAdjustment{ID: "A-1", KodeStatus: models.KodeOutstanding}
+	barisBaik := models.BarisAdjustment{ID: "A-1", KodeStatus: kontrak.KodeOutstanding}
 
 	if err := services.PeriksaBolehAksep(baik, barisBaik); err != nil {
 		t.Errorf("peserta dan baris yang sah ditolak: %v", err)
@@ -128,13 +129,13 @@ func TestGerbangAksepMengikutiPrasyaratXML(t *testing.T) {
 		{"IsCheck kosong", models.Peserta{ID: "P-1"},
 			barisBaik, services.ErrPesertaTidakDipilih},
 		{"baris sudah bernomor akseptasi", baik,
-			models.BarisAdjustment{ID: "A-1", KodeStatus: models.KodeOutstanding,
+			models.BarisAdjustment{ID: "A-1", KodeStatus: kontrak.KodeOutstanding,
 				NomorAkseptasi: "RNML-AL1.04.26.00001"}, services.ErrBarisSudahBernomorAkseptasi},
 		{"baris sudah Aksep", baik,
-			models.BarisAdjustment{ID: "A-1", KodeStatus: models.KodeAksep},
+			models.BarisAdjustment{ID: "A-1", KodeStatus: kontrak.KodeAksep},
 			services.ErrBarisBukanOutstanding},
 		{"baris sudah Ditolak", baik,
-			models.BarisAdjustment{ID: "A-1", KodeStatus: models.KodeDitolak},
+			models.BarisAdjustment{ID: "A-1", KodeStatus: kontrak.KodeDitolak},
 			services.ErrBarisBukanOutstanding},
 	} {
 		if err := services.PeriksaBolehAksep(k.p, k.b); !errors.Is(err, k.sentinel) {
@@ -184,7 +185,7 @@ func TestAksepBukanLagiTerlarangDiModulIni(t *testing.T) {
 	// ErrAksepBukanDariModulIni. Kini Aksep adalah tujuan yang sah, dan yang
 	// menggerbanginya pemegang tahap - diperiksa `SimpanAdjustment`.
 	err := services.WajibPeranPengubahStatus(
-		pelakuBerperan(inti.PeranAdmin), models.StatusAksep)
+		pelakuBerperan(inti.PeranAdmin), kontrak.StatusAksep)
 	if err != nil {
 		t.Errorf("Aksep ditolak di lapisan peran: %v; ia kini jalur sah modul "+
 			"ini (SaveAdjustment_Act)", err)

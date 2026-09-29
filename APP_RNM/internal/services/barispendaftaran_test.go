@@ -13,6 +13,7 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/services"
+	"nusantarare/inti/kontrak"
 	intiuang "nusantarare/inti/uang"
 	"nusantarare/inti/utils"
 )
@@ -236,7 +237,7 @@ func TestLahirkanBarisPendaftaranSatuPerPeserta(t *testing.T) {
 	// Putaran berikutnya mewarisi dari baris ini (SetIndexAdjustmentList
 	// langkah 3) - bukti bahwa ia benar-benar baris PERTAMA.
 	lanjut := daftar[0]
-	lanjut.Baris[0].KodeStatus = models.KodeDitolak
+	lanjut.Baris[0].KodeStatus = kontrak.KodeDitolak
 	baru, err := services.BarisLanjutan(lanjut)
 	if err != nil {
 		t.Fatal(err)

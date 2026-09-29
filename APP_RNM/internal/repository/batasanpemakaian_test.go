@@ -315,7 +315,11 @@ func TestSetiapPemanggilBukaMemeriksaBolehDilewati(t *testing.T) {
 	// SEBELAS sejak GILIRAN-17 (OQ-N2): cermintertanggung_db_test.go membuka
 	// koneksinya sendiri untuk mengisi baris sumber peserta tiruan dan
 	// menghitung kecocokan nama/DOB DI DALAM Oracle (nilai tidak dibaca ke Go).
-	const mau = 11
+	//
+	// DUA BELAS sejak refactor bentuk B (30-09-2026): uji integrasi Claim
+	// Life + Komite pindah ke uji/lintasmodul dengan salinan `siapkanPohon`
+	// sendiri (paket uji luar tidak dapat dipinjam lintas folder).
+	const mau = 12
 	if diperiksa != mau {
 		t.Errorf("pemanggil skemauji.Buka() ditemukan %d, mau %d; "+
 			"bila memang bertambah, perbarui angkanya di sini", diperiksa, mau)

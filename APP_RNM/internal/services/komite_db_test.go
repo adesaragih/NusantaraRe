@@ -23,6 +23,7 @@ import (
 	"nusantarare/internal/services"
 	"nusantarare/inti"
 	intidb "nusantarare/inti/db"
+	"nusantarare/inti/kontrak"
 	"nusantarare/inti/outbox"
 	intiuang "nusantarare/inti/uang"
 	"nusantarare/inti/utils"
@@ -76,7 +77,7 @@ func pohonUjiKomite(t *testing.T, svc *services.Service, db *intidb.DB,
 			Peserta: []models.Peserta{{
 				NomorSertifikat: "006", MataUang: "IDR",
 				Baris: []models.BarisAdjustment{{
-					KodeStatus: models.KodeOutstanding,
+					KodeStatus: kontrak.KodeOutstanding,
 					// ⛔ KEDUA kolom mata uang diisi. Ronde pertama hanya
 					// mengisi CURRENCY_ID dan membiarkan JumlahKlaim kosong -
 					// titik buta yang persis meloloskan cacat di
@@ -188,7 +189,7 @@ func TestPenyerahanMenautkanBarisDanMembawaMuatannya(t *testing.T) {
 		t.Fatalf("muatan = %d, mau 1", len(kasus.muatan))
 	}
 	m := kasus.muatan[0]
-	if m.KodeStatus != models.KodeOutstanding {
+	if m.KodeStatus != kontrak.KodeOutstanding {
 		t.Errorf("muatan membawa kode %q, mau Outstanding", m.KodeStatus)
 	}
 	if m.TingkatKomite != 3 {

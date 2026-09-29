@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"nusantarare/internal/repository"
 	"nusantarare/inti"
+	"nusantarare/modul/komite/repository"
 )
 
 // TestRiwayatMembedakanDilewatiDariMenunggu - AC tiket 09.

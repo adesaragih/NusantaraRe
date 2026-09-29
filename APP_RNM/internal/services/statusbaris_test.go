@@ -15,6 +15,7 @@ import (
 	"nusantarare/inti"
 	"nusantarare/inti/db"
 	"nusantarare/inti/galat"
+	"nusantarare/inti/kontrak"
 )
 
 // saatUji adalah jam yang disuntikkan, bukan jam sungguhan: fungsi yang
@@ -33,9 +34,9 @@ func klaimDengan(b ...models.BarisAdjustment) models.Klaim {
 // lewat jalur mana pun. `[terverifikasi]` sensus OQ-061: nol rule menulis "0"
 // sesudah "1" atau "2".
 func TestBarisFinalTidakDapatBerubah(t *testing.T) {
-	for _, dari := range []string{models.KodeAksep, models.KodeDitolak} {
-		for _, ke := range []models.StatusBaris{
-			models.StatusAksep, models.StatusDitolak, models.StatusOutstanding,
+	for _, dari := range []string{kontrak.KodeAksep, kontrak.KodeDitolak} {
+		for _, ke := range []kontrak.StatusBaris{
+			kontrak.StatusAksep, kontrak.StatusDitolak, kontrak.StatusOutstanding,
 		} {
 			_, err := services.Transisi(baris("UJI-A", dari), ke, saatUji)
 			if !errors.Is(err, services.ErrBarisSudahFinal) {
@@ -48,16 +49,16 @@ func TestBarisFinalTidakDapatBerubah(t *testing.T) {
 // TestTransisiHanyaDariOutstanding - baris tanpa status belum pernah disimpan
 // ke Outstanding, jadi ia belum punya apa pun untuk ditransisikan.
 func TestTransisiHanyaDariOutstanding(t *testing.T) {
-	_, err := services.Transisi(baris("UJI-A", ""), models.StatusAksep, saatUji)
+	_, err := services.Transisi(baris("UJI-A", ""), kontrak.StatusAksep, saatUji)
 	if !errors.Is(err, services.ErrTransisiTidakSah) {
 		t.Fatalf("galat = %v, mau ErrTransisiTidakSah", err)
 	}
-	hasil, err := services.Transisi(baris("UJI-A", models.KodeOutstanding), models.StatusAksep, saatUji)
+	hasil, err := services.Transisi(baris("UJI-A", kontrak.KodeOutstanding), kontrak.StatusAksep, saatUji)
 	if err != nil {
 		t.Fatalf("Outstanding -> Aksep: %v", err)
 	}
-	if hasil.KodeStatus != models.KodeAksep {
-		t.Errorf("kode = %q, mau %q", hasil.KodeStatus, models.KodeAksep)
+	if hasil.KodeStatus != kontrak.KodeAksep {
+		t.Errorf("kode = %q, mau %q", hasil.KodeStatus, kontrak.KodeAksep)
 	}
 }
 
@@ -66,10 +67,10 @@ func TestTransisiHanyaDariOutstanding(t *testing.T) {
 // warisan, artinya belum diputuskan work owner, dan sistem baru tidak
 // menulisnya.
 func TestTujuanTransisiHanyaAksepAtauDitolak(t *testing.T) {
-	for _, ke := range []models.StatusBaris{
-		models.StatusOutstanding, models.StatusTidakDiketahui,
+	for _, ke := range []kontrak.StatusBaris{
+		kontrak.StatusOutstanding, kontrak.StatusTidakDiketahui,
 	} {
-		_, err := services.Transisi(baris("UJI-A", models.KodeOutstanding), ke, saatUji)
+		_, err := services.Transisi(baris("UJI-A", kontrak.KodeOutstanding), ke, saatUji)
 		if !errors.Is(err, services.ErrTransisiTidakSah) {
 			t.Errorf("tujuan %v: galat = %v, mau ErrTransisiTidakSah", ke, err)
 		}
@@ -84,17 +85,17 @@ func TestStatusKlaimTurunan(t *testing.T) {
 		mau  models.StatusKlaim
 	}{
 		{"nol baris", klaimDengan(), models.KlaimBelumBerbaris},
-		{"satu Outstanding", klaimDengan(baris("A", models.KodeOutstanding)),
+		{"satu Outstanding", klaimDengan(baris("A", kontrak.KodeOutstanding)),
 			models.KlaimBerjalan},
 		{"Aksep dan Outstanding", klaimDengan(
-			baris("A", models.KodeAksep), baris("B", models.KodeOutstanding)),
+			baris("A", kontrak.KodeAksep), baris("B", kontrak.KodeOutstanding)),
 			models.KlaimBerjalan},
-		{"satu Aksep", klaimDengan(baris("A", models.KodeAksep)), models.KlaimSelesai},
+		{"satu Aksep", klaimDengan(baris("A", kontrak.KodeAksep)), models.KlaimSelesai},
 		{"Aksep dan Ditolak", klaimDengan(
-			baris("A", models.KodeDitolak), baris("B", models.KodeAksep)),
+			baris("A", kontrak.KodeDitolak), baris("B", kontrak.KodeAksep)),
 			models.KlaimSelesai},
 		{"seluruhnya Ditolak", klaimDengan(
-			baris("A", models.KodeDitolak), baris("B", models.KodeDitolak)),
+			baris("A", kontrak.KodeDitolak), baris("B", kontrak.KodeDitolak)),
 			models.KlaimDitolakSeluruhnya},
 		// ⛔ Kode yang tidak dikenal bukan Outstanding, bukan Aksep, dan bukan
 		// pula Ditolak. Melaporkannya "ditolak seluruhnya" membuat klaim
@@ -102,10 +103,10 @@ func TestStatusKlaimTurunan(t *testing.T) {
 		{"hanya kode tak dikenal", klaimDengan(baris("A", "4")),
 			models.KlaimTidakDapatDipastikan},
 		{"tak dikenal bersama Outstanding", klaimDengan(
-			baris("A", "4"), baris("B", models.KodeOutstanding)),
+			baris("A", "4"), baris("B", kontrak.KodeOutstanding)),
 			models.KlaimBerjalan},
 		{"tak dikenal bersama Aksep", klaimDengan(
-			baris("A", "4"), baris("B", models.KodeAksep)),
+			baris("A", "4"), baris("B", kontrak.KodeAksep)),
 			models.KlaimSelesai},
 	}
 	for _, k := range kasus {
@@ -119,7 +120,7 @@ func TestStatusKlaimTurunan(t *testing.T) {
 // baris itu ditolak". Sesudah satu baris ditolak, klaim masih menerima baris
 // baru dan kembali berjalan.
 func TestMenolakSatuBarisTidakMenutupKlaim(t *testing.T) {
-	k := klaimDengan(baris("A", models.KodeDitolak))
+	k := klaimDengan(baris("A", kontrak.KodeDitolak))
 	if got := k.StatusTurunan(); got == models.KlaimSelesai {
 		t.Fatal("klaim yang barisnya ditolak dilaporkan SELESAI; " +
 			"Ditolak berarti baris itu ditolak, tidak pernah berarti klaim selesai")
@@ -131,7 +132,7 @@ func TestMenolakSatuBarisTidakMenutupKlaim(t *testing.T) {
 		t.Errorf("baris tersentuh = %d, mau 1; hanya baris BARU yang menjadi "+
 			"Outstanding, yang sudah final tidak disentuh ulang", n)
 	}
-	if k.Peserta[0].Baris[0].KodeStatus != models.KodeDitolak {
+	if k.Peserta[0].Baris[0].KodeStatus != kontrak.KodeDitolak {
 		t.Errorf("baris yang sudah Ditolak dikembalikan ke Outstanding (%q); "+
 			"kefinalan berlaku pada jalur ini juga", k.Peserta[0].Baris[0].KodeStatus)
 	}
@@ -147,9 +148,9 @@ func TestMenolakSatuBarisTidakMenutupKlaim(t *testing.T) {
 func TestBarisTerakhirAdalahSumberPencerminan(t *testing.T) {
 	k := models.Klaim{Peserta: []models.Peserta{
 		{ID: "UJI-P-1", Baris: []models.BarisAdjustment{
-			baris("A", models.KodeAksep), baris("B", models.KodeDitolak)}},
+			baris("A", kontrak.KodeAksep), baris("B", kontrak.KodeDitolak)}},
 		{ID: "UJI-P-2", Baris: []models.BarisAdjustment{
-			baris("C", models.KodeOutstanding)}},
+			baris("C", kontrak.KodeOutstanding)}},
 	}}
 	akhir := services.BarisTerakhir(&k)
 	if akhir == nil {
@@ -172,17 +173,17 @@ func TestUbahStatusMenjagaPagarnya(t *testing.T) {
 	pelaku := inti.Pelaku{AkunID: "UJI-AKUN",
 		Peran: []string{services.PeranRejectOutstanding}}
 	if err := svc.Status().Ubah(context.Background(), inti.Pelaku{},
-		"CLM-1", "P-1", "A-1", models.StatusDitolak, saatUji); !errors.Is(
+		"CLM-1", "P-1", "A-1", kontrak.StatusDitolak, saatUji); !errors.Is(
 		err, inti.ErrTanpaIdentitas) {
 		t.Errorf("pelaku anonim: galat = %v, mau ErrTanpaIdentitas", err)
 	}
 	if err := svc.Status().Ubah(context.Background(), pelaku,
-		"CLM-1", "", "A-1", models.StatusDitolak, saatUji); !errors.Is(
+		"CLM-1", "", "A-1", kontrak.StatusDitolak, saatUji); !errors.Is(
 		err, galat.ErrPermintaanTidakSah) {
 		t.Errorf("peserta kosong: galat = %v, mau ErrPermintaanTidakSah", err)
 	}
 	if err := svc.Status().Ubah(context.Background(), pelaku,
-		"CLM-1", "P-1", "A-1", models.StatusDitolak, saatUji); !errors.Is(
+		"CLM-1", "P-1", "A-1", kontrak.StatusDitolak, saatUji); !errors.Is(
 		err, db.ErrTanpaOracle) {
 		t.Errorf("tanpa Oracle: galat = %v, mau ErrTanpaOracle", err)
 	}
@@ -194,7 +195,7 @@ func TestUbahStatusMenjagaPagarnya(t *testing.T) {
 // akseptasi, bukan milik setiap keputusan.
 func TestAksepMenstempelTanggalAkseptasi(t *testing.T) {
 	aksep, err := services.Transisi(
-		baris("A", models.KodeOutstanding), models.StatusAksep, saatUji)
+		baris("A", kontrak.KodeOutstanding), kontrak.StatusAksep, saatUji)
 	if err != nil {
 		t.Fatalf("Aksep: %v", err)
 	}
@@ -202,7 +203,7 @@ func TestAksepMenstempelTanggalAkseptasi(t *testing.T) {
 		t.Errorf("TanggalAkseptasi = %v, mau %v", aksep.TanggalAkseptasi, saatUji)
 	}
 	tolak, err := services.Transisi(
-		baris("B", models.KodeOutstanding), models.StatusDitolak, saatUji)
+		baris("B", kontrak.KodeOutstanding), kontrak.StatusDitolak, saatUji)
 	if err != nil {
 		t.Fatalf("Ditolak: %v", err)
 	}

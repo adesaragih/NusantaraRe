@@ -18,6 +18,7 @@ import (
 	"nusantarare/inti"
 	intidb "nusantarare/inti/db"
 	intijejak "nusantarare/inti/jejak"
+	"nusantarare/inti/kontrak"
 )
 
 // pohonUjiG17 - satu klaim, satu peserta, satu baris berkode `kode`
@@ -56,7 +57,7 @@ func TestSudahSaveRNMDariStatusBaris(t *testing.T) {
 	if sudah, err := baca.SudahSaveRNM(ctx, baru.Work.ID); err != nil || sudah {
 		t.Errorf("baris baru lahir: sudah = %v, %v; mau belum", sudah, err)
 	}
-	disimpan := pohonUjiG17(t, svc, db, "CLM-UJI1702", models.KodeOutstanding)
+	disimpan := pohonUjiG17(t, svc, db, "CLM-UJI1702", kontrak.KodeOutstanding)
 	if sudah, err := baca.SudahSaveRNM(ctx, disimpan.Work.ID); err != nil || !sudah {
 		t.Errorf("baris Outstanding: sudah = %v, %v; mau sudah", sudah, err)
 	}
@@ -74,7 +75,7 @@ func TestTolakMenyimpanRemarksDiJejak(t *testing.T) {
 	pelaku := inti.Pelaku{AkunID: "UJI-AKUN", Peran: []string{services.PeranRejectOutstanding}}
 	saat := time.Date(2026, 9, 29, 10, 0, 0, 0, time.UTC)
 
-	pohon := pohonUjiG17(t, svc, db, "CLM-UJI1703", models.KodeOutstanding)
+	pohon := pohonUjiG17(t, svc, db, "CLM-UJI1703", kontrak.KodeOutstanding)
 	peserta, _ := baca.AmbilPeserta(ctx, pohon.Work.ID)
 	perBaris, _ := baca.AmbilBaris(ctx, pohon.Work.ID)
 	jejak := &jejakUji{}
@@ -86,7 +87,7 @@ func TestTolakMenyimpanRemarksDiJejak(t *testing.T) {
 		t.Errorf("jejak: %+v, mau satu catatan berkomentar", jejak.catatan)
 	}
 
-	kedua := pohonUjiG17(t, svc, db, "CLM-UJI1704", models.KodeOutstanding)
+	kedua := pohonUjiG17(t, svc, db, "CLM-UJI1704", kontrak.KodeOutstanding)
 	peserta, _ = baca.AmbilPeserta(ctx, kedua.Work.ID)
 	perBaris, _ = baca.AmbilBaris(ctx, kedua.Work.ID)
 	if err := svc.Status().DenganJejak(intijejak.PerekamJejakOracle(svc)).Tolak(ctx, pelaku,

@@ -37,6 +37,7 @@ import (
 	"nusantarare/inti"
 	"nusantarare/inti/galat"
 	"nusantarare/inti/jejak"
+	"nusantarare/inti/kontrak"
 )
 
 // bolehTutup melayani GET /api/klaim-life/{id}/boleh-tutup.
@@ -115,7 +116,7 @@ func tutupKlaim(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			// InputOSClaimLife dan InputAkseptasiClaimLife.
 			galat.Tulis(w, http.StatusConflict,
 				"Close Claim hanya ada pada tahap Outstanding Claim dan Claim Analis")
-		case errors.Is(err, services.ErrKasusSudahTertutup):
+		case errors.Is(err, kontrak.ErrKasusSudahTertutup):
 			galat.Tulis(w, http.StatusConflict, "kasus ini sudah ditutup")
 		case errors.Is(err, services.ErrKlaimTidakAda):
 			galat.Tulis(w, http.StatusNotFound, "klaim tidak ditemukan")

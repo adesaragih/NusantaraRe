@@ -19,7 +19,6 @@ package repository
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"nusantarare/inti/db"
@@ -33,10 +32,6 @@ import (
 // ⚠️ BUKAN sequence nomor KLAIM. Menyatukan keduanya membuat dua seri nomor
 // saling memakan urut, dan nomor akseptasi tercetak di dokumen.
 const SequenceNomorAkseptasi = "ACCEPTATIONNOLIFE_SEQ"
-
-// ErrNomorAkseptasiBerganda - nomor rakitan sudah dipakai baris lain.
-var ErrNomorAkseptasiBerganda = errors.New(
-	"repository: nomor akseptasi sudah dipakai")
 
 // UrutAkseptasiBerikut mengambil satu urut dari sequence.
 func (r *PohonKlaim) UrutAkseptasiBerikut(ctx context.Context, tx *db.Tx) (string, error) {

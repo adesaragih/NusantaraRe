@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/kontrak"
 	"nusantarare/inti/utils"
 )
 
@@ -130,11 +131,11 @@ func LengkapiWork(rows []BarisLama) (PelengkapWork, []Temuan) {
 	}
 
 	if teks := strings.TrimSpace(rows[0].COMPLETE_DATE); teks != "" {
-		out.StatusWork = models.StatusWorkSelesai
+		out.StatusWork = kontrak.StatusWorkSelesai
 		temuan = append(temuan, Temuan{
 			Jenis: TemuanStatusKerjaDisimpulkan, Sumber: sumber, Medan: "STATUS_WORK",
 			Nilai: teks,
-			Catatan: "COMPLETE_DATE terisi -> STATUS_WORK = " + models.StatusWorkSelesai +
+			Catatan: "COMPLETE_DATE terisi -> STATUS_WORK = " + kontrak.StatusWorkSelesai +
 				". KESIMPULAN, bukan bacaan: nol kolom status kerja di sumber. " +
 				"[terbuka - work owner]",
 		})

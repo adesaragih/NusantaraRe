@@ -16,6 +16,7 @@ import (
 	"nusantarare/internal/repository/skemauji"
 	"nusantarare/inti/config"
 	"nusantarare/inti/db"
+	"nusantarare/inti/kontrak"
 	"nusantarare/inti/utils"
 )
 
@@ -210,7 +211,7 @@ func TestKodeTidakDikenalDibawaApaAdanya(t *testing.T) {
 		if b.KodeStatus != "9" {
 			t.Errorf("kode mentah = %q, mau %q", b.KodeStatus, "9")
 		}
-		if b.Status() != models.StatusTidakDiketahui {
+		if b.Status() != kontrak.StatusTidakDiketahui {
 			t.Errorf("kode 9 ditebak menjadi %v", b.Status())
 		}
 		return

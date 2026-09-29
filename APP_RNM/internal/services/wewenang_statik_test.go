@@ -66,6 +66,15 @@ var berkasYangBolehMenulisStatus = map[string]string{
 	"kolompeserta.go": "",
 	"pohonklaim.go":   "",
 	"migrasidata.go":  "",
+	// Refactor bentuk B (30-09-2026): penerus kontrak Claim Life untuk Komite
+	// (`inti/kontrak.KlaimKomite`). Seperti repository, ia tidak memegang
+	// pelaku; gerbangnya `periksaGiliran` di komite_akseptasi.go - pemanggil
+	// yang terdaftar di atas - dan deklarasi antarmukanya (klaim.go) nol
+	// pernyataan.
+	"klaimuntukkomite.go": "",
+	"klaim.go":            "",
+	// Penolak kontrak di sisi Komite: menjawab galat, nol tulisan.
+	"klaim_belum_disambung.go": "",
 }
 
 // TestSetiapPenulisStatusBergerbangPeran menelusuri SELURUH `internal/`.

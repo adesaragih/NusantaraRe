@@ -30,6 +30,7 @@ import (
 	"nusantarare/inti/db"
 	"nusantarare/inti/galat"
 	"nusantarare/inti/jejak"
+	"nusantarare/inti/kontrak"
 )
 
 // ErrBukanPenolakan - putaran baru lahir dari penolakan, bukan dari apa pun.
@@ -78,7 +79,7 @@ var ErrTahapTanpaAddAdjustment = errors.New(
 // `SetIndexAdjustmentList` - satu aturan, satu tempat.
 func BarisLanjutan(p models.Peserta) (models.BarisAdjustment, error) {
 	terakhir, ada := barisTerakhirPeserta(p)
-	if !ada || terakhir.KodeStatus != models.KodeDitolak {
+	if !ada || terakhir.KodeStatus != kontrak.KodeDitolak {
 		punya := "tidak ada baris"
 		if ada {
 			punya = fmt.Sprintf("baris terakhir berkode %q", terakhir.KodeStatus)
@@ -94,7 +95,7 @@ func BarisLanjutan(p models.Peserta) (models.BarisAdjustment, error) {
 	baru := salin.Baris[len(salin.Baris)-1]
 	// ⛔ Status Outstanding ditulis DI SINI, dan ia bukan warisan: baris baru
 	// memulai putaran, ia tidak mewarisi keputusan putaran sebelumnya.
-	baru.KodeStatus = models.KodeOutstanding
+	baru.KodeStatus = kontrak.KodeOutstanding
 	// ⛔ Ketiganya milik putaran LAMA. Baris baru yang membawa `KOMITE_ID`
 	// barisnya sendiri akan tampak sudah diserahkan, dan gerbang serah-ganda
 	// tiket 10 akan menolaknya.
@@ -285,14 +286,14 @@ func (pt *Putaran) Tambah(ctx context.Context, pelaku inti.Pelaku,
 		// dilakukan di sini mengikuti kontrak tiket 04 apa adanya; bila kelak
 		// artinya ditetapkan lain, tempat ini ikut berubah.
 		if err := baca.CerminkanHeader(ctx, tx, klaimID,
-			models.KodeOutstanding, ""); err != nil {
+			kontrak.KodeOutstanding, ""); err != nil {
 			return err
 		}
 		return pt.jejak.Rekam(ctx, tx, jejak.CatatanJejak{
 			AdjustmentID: id,
 			KlaimID:      klaimID,
 			Dari:         "",
-			Ke:           models.KodeOutstanding,
+			Ke:           kontrak.KodeOutstanding,
 			AkunID:       pelaku.AkunID,
 			Waktu:        saat,
 		})

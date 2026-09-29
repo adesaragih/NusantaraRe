@@ -21,6 +21,7 @@ import (
 	"nusantarare/internal/services"
 	"nusantarare/inti"
 	"nusantarare/inti/galat"
+	"nusantarare/inti/kontrak"
 )
 
 // barisInboxJSON adalah satu baris antrian di kabel.
@@ -144,7 +145,7 @@ func kotakMasuk(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 				CaseID: b.CaseID, ID: b.WorkID, Tahap: b.Tahap,
 				CreateOpName: b.CreateOpName, TglCreate: stempel,
 				// Status sebagai KATA - `models.StatusBaris.String()`.
-				Status:     models.StatusBarisDariKode(b.StatusKlaim).String(),
+				Status:     kontrak.StatusBarisDariKode(b.StatusKlaim).String(),
 				NomorKlaim: b.NomorKlaim, NomorPolis: b.NomorPolis,
 				NamaBisnis: b.NamaBisnis, MataUang: b.MataUang,
 			})

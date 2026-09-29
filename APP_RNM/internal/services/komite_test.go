@@ -13,13 +13,14 @@ import (
 	"nusantarare/internal/services"
 	"nusantarare/inti"
 	"nusantarare/inti/galat"
+	"nusantarare/inti/kontrak"
 	"nusantarare/inti/utils"
 )
 
 func barisLengkap(t *testing.T) models.BarisAdjustment {
 	t.Helper()
 	return models.BarisAdjustment{
-		ID: "UJI-ADJ-1", KodeStatus: models.KodeOutstanding,
+		ID: "UJI-ADJ-1", KodeStatus: kontrak.KodeOutstanding,
 		JumlahKlaim: uang(t, "1500000.00", "IDR"), CurrencyID: "IDR",
 		NamaBank: "UJI-BANK", IDBank: "UJI-006", NomorRekening: "0012345",
 	}
@@ -184,7 +185,7 @@ func TestSerahkanMenjagaPagarnya(t *testing.T) {
 
 // TestSerahkanHanyaDariOutstanding - baris final tidak diserahkan lagi.
 func TestSerahkanHanyaDariOutstanding(t *testing.T) {
-	for _, kode := range []string{models.KodeAksep, models.KodeDitolak} {
+	for _, kode := range []string{kontrak.KodeAksep, kontrak.KodeDitolak} {
 		b := barisLengkap(t)
 		b.KodeStatus = kode
 		if err := services.PeriksaBolehDiserahkan(b); !errors.Is(

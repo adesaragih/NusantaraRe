@@ -24,8 +24,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"nusantarare/internal/models"
 	"nusantarare/inti/db"
+	"nusantarare/modul/komite/models"
 	"time"
 )
 
@@ -276,6 +276,13 @@ func (r *InboxKomite) NomorAkseptasiDipakaiDiAdjustment(ctx context.Context, tx 
 // untuk adjustment itu SUDAH ada sejak pendaftaran (`PohonKlaim.Simpan`,
 // `ID = adjustment ID`) - `INSERT` kedua menggandakannya. Yang berubah di
 // tingkat akhir karena itu DIPERBARUI: status, nomor, tanggal.
+// namaTabelLamaKM adalah tabel datar warisan yang ikut ditulis keputusan akhir.
+//
+// Refactor bentuk B (30-09-2026): dulu dipinjam dari konstanta Claim Life
+// (`pohonklaim.go`). Tabelnya satu, penulisnya dua; tiap modul menyebutnya
+// sendiri.
+const namaTabelLama = "OS_AKSEPTASI_KLAIM_LIFE"
+
 func sqlRekamAkhirWarisan(datar string) string {
 	return fmt.Sprintf(`UPDATE %s
 	   SET STS_REJECT = :1, NO_ACCEPTATION = :2, ACCEPTATION_DATE = :3

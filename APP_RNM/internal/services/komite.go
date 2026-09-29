@@ -29,6 +29,7 @@ import (
 	"nusantarare/inti/db"
 	"nusantarare/inti/galat"
 	"nusantarare/inti/jejak"
+	"nusantarare/inti/kontrak"
 	"nusantarare/inti/layanan"
 	"nusantarare/inti/outbox"
 	"nusantarare/inti/uang"
@@ -102,7 +103,7 @@ func PeriksaBolehDiserahkan(b models.BarisAdjustment) error {
 		return fmt.Errorf("%w: baris %q sudah tertaut ke %q",
 			ErrBarisSudahDiserahkan, b.ID, b.KomiteID)
 	}
-	if b.KodeStatus != models.KodeOutstanding {
+	if b.KodeStatus != kontrak.KodeOutstanding {
 		return fmt.Errorf("%w: baris %q berkode %q",
 			ErrBarisBukanOutstanding, b.ID, b.KodeStatus)
 	}

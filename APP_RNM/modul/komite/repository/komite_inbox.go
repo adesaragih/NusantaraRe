@@ -35,15 +35,16 @@ import (
 	"fmt"
 	"strings"
 
-	"nusantarare/internal/models"
 	"nusantarare/inti/db"
+	"nusantarare/inti/kontrak"
+	"nusantarare/modul/komite/models"
 )
 
 // ApprovalKomiteMenunggu adalah `KomiteAproval` anggota yang belum memutuskan.
 //
 // `[terverifikasi]` `GetListKomiteLife.xml` b1197 `= 0`; `KomiteRouter`
 // b382 `.KomiteAproval==0`. Sama dengan `approvalAwal` (kasuskomite.go).
-const ApprovalKomiteMenunggu = approvalAwal
+const ApprovalKomiteMenunggu = kontrak.ApprovalKomiteAwal
 
 // BarisInboxKomite adalah satu kasus di Inbox Komite.
 type BarisInboxKomite struct {

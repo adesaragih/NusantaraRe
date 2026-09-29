@@ -50,7 +50,7 @@ func TestGalatSimpanRNMDipetakanKeKodeYangBenar(t *testing.T) {
 	}{
 		{"identitas", inti.ErrTanpaIdentitas, http.StatusUnauthorized},
 		{"wewenang", inti.ErrTanpaWewenang, http.StatusForbidden},
-		{"tertutup", services.ErrKasusSudahTertutup, http.StatusConflict},
+		{"tertutup", kontrak.ErrKasusSudahTertutup, http.StatusConflict},
 		{"tahap", services.ErrSimpanRNMBukanOutstanding, http.StatusConflict},
 		// Bentuk yang benar-benar dikembalikan Simpan: kedua galat terbungkus.
 		{"klaim tidak ada", fmt.Errorf("%w: %w", services.ErrKlaimTidakAda, errors.New("work")),

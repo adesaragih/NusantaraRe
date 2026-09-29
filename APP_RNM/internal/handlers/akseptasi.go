@@ -17,6 +17,7 @@ import (
 	"nusantarare/inti"
 	"nusantarare/inti/galat"
 	"nusantarare/inti/jejak"
+	"nusantarare/inti/kontrak"
 )
 
 // simpanAdjustment melayani
@@ -58,7 +59,7 @@ func simpanAdjustment(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			galat.Tulis(w, http.StatusUnprocessableEntity,
 				"Type klaim tidak dikenal; nomor akseptasi tidak dapat diterbitkan")
 			return
-		case errors.Is(err, services.ErrKodeBisnisBelumTersimpan):
+		case errors.Is(err, kontrak.ErrKodeBisnisBelumTersimpan):
 			// 501: temuan audit A0 - kolomnya belum ada, dan nomor akseptasi
 			// memuatnya. Bukan kerusakan, melainkan yang belum dibangun.
 			galat.Tulis(w, http.StatusNotImplemented,
@@ -68,7 +69,7 @@ func simpanAdjustment(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			galat.Tulis(w, http.StatusConflict,
 				"nomor akseptasi yang terbit sudah dipakai; coba lagi")
 			return
-		case errors.Is(err, services.ErrKasusSudahTertutup):
+		case errors.Is(err, kontrak.ErrKasusSudahTertutup):
 			galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
 			return
 		case errors.Is(err, galat.ErrPermintaanTidakSah):

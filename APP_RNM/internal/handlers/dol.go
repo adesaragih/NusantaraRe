@@ -21,6 +21,7 @@ import (
 	"nusantarare/internal/services"
 	"nusantarare/inti"
 	"nusantarare/inti/galat"
+	"nusantarare/inti/kontrak"
 	"nusantarare/inti/utils"
 )
 
@@ -105,7 +106,7 @@ func jawabGalatTanggal(w http.ResponseWriter, err error, gagal string) {
 		galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
 	case errors.Is(err, inti.ErrTanpaWewenang):
 		galat.Tulis(w, http.StatusForbidden, "peran tidak mencukupi")
-	case errors.Is(err, services.ErrKasusSudahTertutup):
+	case errors.Is(err, kontrak.ErrKasusSudahTertutup):
 		galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
 	case errors.Is(err, services.ErrTahapTidakBolehUbahTanggal):
 		galat.Tulis(w, http.StatusConflict, "tanggal klaim hanya dapat diubah di tahap Outstanding Claim")

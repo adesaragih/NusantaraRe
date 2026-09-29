@@ -96,20 +96,8 @@ func Router(svc *services.Service, stubPelaku bool, tambahan ...func(*http.Serve
 	mux.HandleFunc("GET /api/dokumen/{dokId}/isi", isiDokumen(svc, stubPelaku))
 	mux.HandleFunc("DELETE /api/klaim-life/{id}/dokumen/{dokId}",
 		hapusDokumen(svc, stubPelaku))
-	// Komite Claim Life tiket 01 - Inbox Komite dan satu kasus. Keduanya GET:
-	// membaca saja; keputusan komite menyusul di tiket 02.
-	mux.HandleFunc("GET /api/komite", inboxKomite(svc, stubPelaku))
-	// Tiket 08 - literal mendahului `{id}` (pola paling spesifik menang).
-	mux.HandleFunc("GET /api/komite/laporan-harian", laporanHarianKomite(svc, stubPelaku))
-	mux.HandleFunc("GET /api/komite/{id}", kasusKomite(svc, stubPelaku))
-	// Tiket 09 - riwayat tangga; membaca, bukan memutuskan.
-	mux.HandleFunc("GET /api/komite/{id}/riwayat", riwayatKomite(svc, stubPelaku))
-	// Tiket 02 - keputusan satu tingkat (`ShowTransfer` Submit).
-	mux.HandleFunc("POST /api/komite/{id}/keputusan", putuskanKomite(svc, stubPelaku))
-	// Tiket 03 - eskalasi naik satu tingkat (admin).
-	mux.HandleFunc("POST /api/komite/{id}/eskalasi", eskalasiKomite(svc, stubPelaku))
 	// --- modul yang sudah pindah ke modul/<nama>/ (Treaty Contract Out,
-	// PremiumList Life) ---
+	// PremiumList Life, Komite Claim Life) ---
 	//
 	// Rutenya hidup di modulnya masing-masing; `cmd/api` yang menyerahkannya.
 	for _, daftarkan := range tambahan {

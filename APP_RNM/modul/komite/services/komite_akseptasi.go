@@ -29,13 +29,14 @@ import (
 	"strings"
 	"time"
 
-	"nusantarare/internal/models"
-	"nusantarare/internal/repository"
 	"nusantarare/inti"
 	"nusantarare/inti/db"
 	"nusantarare/inti/galat"
 	"nusantarare/inti/jejak"
+	"nusantarare/inti/kontrak"
 	"nusantarare/inti/penomor"
+	"nusantarare/modul/komite/models"
+	"nusantarare/modul/komite/repository"
 )
 
 // penyelesaiAkhirOracle adalah penyelesai langkah 4/5 yang memakai Oracle.
@@ -64,33 +65,35 @@ func (p penyelesaiAkhirOracle) Akseptasi(ctx context.Context, tx *db.Tx,
 		return "", fmt.Errorf("%w: kasus %q tanpa baris adjustment/peserta", galat.ErrPermintaanTidakSah,
 			kasus.Baris.KasusID)
 	}
-	baca := repository.NewKlaimLife(p.svc.DB())
+	// Refactor bentuk B: baris dan header klaim milik Claim Life, dibaca dan
+	// ditulis lewat inti/kontrak.KlaimKomite di dalam transaksi ini.
+	baca := p.svc.Klaim()
 	// `TempOpenPage.PolicyDataLife.Type` / `.BusinessCode` - klaim induk.
 	tipe, err := baca.TypeKlaim(ctx, klaimID)
 	if err != nil {
 		return "", err
 	}
-	hdr, err := baca.AmbilHeader(ctx, klaimID)
+	kodeBisnis, err := baca.KodeBisnisKlaim(ctx, klaimID)
 	if err != nil {
 		return "", err
 	}
-	if hdr == nil || strings.TrimSpace(hdr.KodeBisnis) == "" {
-		return "", fmt.Errorf("%w: klaim %q", ErrKodeBisnisBelumTersimpan, klaimID)
+	if strings.TrimSpace(kodeBisnis) == "" {
+		return "", fmt.Errorf("%w: klaim %q", kontrak.ErrKodeBisnisBelumTersimpan, klaimID)
 	}
-	nomor, err := p.terbitkanNomor(ctx, tx, tipe, hdr.KodeBisnis, saat)
+	nomor, err := p.terbitkanNomor(ctx, tx, tipe, kodeBisnis, saat)
 	if err != nil {
 		return "", err
 	}
 	// 4.11/4.12 - stempel, lewat mesin status Claim Life yang ada.
 	if err := baca.PerbaruiStatusBaris(ctx, tx, kasus.PesertaID, kasus.AdjID,
-		models.KodeOutstanding, models.KodeAksep, nomor, saat); err != nil {
+		kontrak.KodeOutstanding, kontrak.KodeAksep, nomor, saat); err != nil {
 		return "", err
 	}
-	if err := baca.CerminkanHeader(ctx, tx, klaimID, models.KodeAksep, nomor); err != nil {
+	if err := baca.CerminkanHeader(ctx, tx, klaimID, kontrak.KodeAksep, nomor); err != nil {
 		return "", err
 	}
 	// 4.15 "Insert ke OS" - tiket 04b, jalur tunggal berparameter status.
-	if err := p.rekamAkhir(ctx, tx, kasus, models.KodeAksep, nomor, saat); err != nil {
+	if err := p.rekamAkhir(ctx, tx, kasus, kontrak.KodeAksep, nomor, saat); err != nil {
 		return "", err
 	}
 	// ADR-U-0007: transisi status baris Outstanding → Aksep punya jejaknya
@@ -98,8 +101,8 @@ func (p penyelesaiAkhirOracle) Akseptasi(ctx context.Context, tx *db.Tx,
 	if err := p.jejak.Rekam(ctx, tx, jejak.CatatanJejak{
 		AdjustmentID: kasus.AdjID,
 		KlaimID:      klaimID,
-		Dari:         models.KodeOutstanding,
-		Ke:           models.KodeAksep,
+		Dari:         kontrak.KodeOutstanding,
+		Ke:           kontrak.KodeAksep,
 		AkunID:       pelaku.AkunID,
 		Waktu:        saat,
 	}); err != nil {
@@ -143,7 +146,7 @@ func (p penyelesaiAkhirOracle) terbitkanNomor(ctx context.Context, tx *db.Tx,
 	if err != nil {
 		return "", err
 	}
-	dipakai, err := repository.NewPohonKlaim(p.svc.DB()).NomorAkseptasiDipakai(ctx, tx, nomor)
+	dipakai, err := p.svc.Klaim().NomorAkseptasiDipakai(ctx, tx, nomor)
 	if err != nil {
 		return "", err
 	}
@@ -155,7 +158,7 @@ func (p penyelesaiAkhirOracle) terbitkanNomor(ctx context.Context, tx *db.Tx,
 	}
 	if dipakai {
 		return "", fmt.Errorf("%w: %q (tabrakan jalur Komite dengan jalur Claim Life)",
-			repository.ErrNomorAkseptasiBerganda, nomor)
+			kontrak.ErrNomorAkseptasiBerganda, nomor)
 	}
 	return nomor, nil
 }
@@ -219,12 +222,12 @@ func (p penyelesaiAkhirOracle) Tolak(ctx context.Context, tx *db.Tx,
 	if err := komite.TimpaTanggaTolakAkhir(ctx, tx, kasus.Baris.KasusID, saat); err != nil {
 		return err
 	}
-	baca := repository.NewKlaimLife(p.svc.DB())
+	baca := p.svc.Klaim()
 	// 5.3 - dua tingkat baris, nilai yang sama, satu operasi (AC 15 spec).
 	// Penjaga `STS_REJECT = 0` di `PerbaruiStatusBaris` = gerbang "masih
 	// Outstanding"; nomor dan tanggal akseptasi dikosongkan (nol pada Tolak).
 	if err := baca.PerbaruiStatusBaris(ctx, tx, kasus.PesertaID, kasus.AdjID,
-		models.KodeOutstanding, models.KodeDitolak, "", time.Time{}); err != nil {
+		kontrak.KodeOutstanding, kontrak.KodeDitolak, "", time.Time{}); err != nil {
 		return err
 	}
 	// 5.3 `.IsCheck = "false"` - peserta dapat dipilih ulang dengan baris
@@ -232,18 +235,18 @@ func (p penyelesaiAkhirOracle) Tolak(ctx context.Context, tx *db.Tx,
 	if err := baca.CabutPenandaDipilih(ctx, tx, kasus.PesertaID); err != nil {
 		return err
 	}
-	if err := baca.CerminkanHeader(ctx, tx, klaimID, models.KodeDitolak, ""); err != nil {
+	if err := baca.CerminkanHeader(ctx, tx, klaimID, kontrak.KodeDitolak, ""); err != nil {
 		return err
 	}
 	// 5.6 - jalur tunggal rekam akhir, status 2, tanpa nomor.
-	if err := p.rekamAkhir(ctx, tx, kasus, models.KodeDitolak, "", saat); err != nil {
+	if err := p.rekamAkhir(ctx, tx, kasus, kontrak.KodeDitolak, "", saat); err != nil {
 		return err
 	}
 	return p.jejak.Rekam(ctx, tx, jejak.CatatanJejak{
 		AdjustmentID: kasus.AdjID,
 		KlaimID:      klaimID,
-		Dari:         models.KodeOutstanding,
-		Ke:           models.KodeDitolak,
+		Dari:         kontrak.KodeOutstanding,
+		Ke:           kontrak.KodeDitolak,
 		AkunID:       pelaku.AkunID,
 		Waktu:        saat,
 	})

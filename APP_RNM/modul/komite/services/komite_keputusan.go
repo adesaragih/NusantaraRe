@@ -24,12 +24,13 @@ import (
 	"strings"
 	"time"
 
-	"nusantarare/internal/models"
-	"nusantarare/internal/repository"
 	"nusantarare/inti"
 	"nusantarare/inti/db"
 	"nusantarare/inti/galat"
 	"nusantarare/inti/jejak"
+	"nusantarare/inti/kontrak"
+	"nusantarare/modul/komite/models"
+	"nusantarare/modul/komite/repository"
 )
 
 var (
@@ -132,7 +133,7 @@ func anggotaBerjalan(k repository.KasusKomite, urut int) (repository.AnggotaKasu
 // tingkat yang sedang berjalan (eskalasi manual = tiket 03).
 func periksaGiliran(k repository.KasusKomite, akunID string) error {
 	b := k.Baris
-	if models.KasusTertutup(b.StatusWork) ||
+	if kontrak.KasusTertutup(b.StatusWork) ||
 		!models.KasusDiTangga(b.AcceptStatus, b.KomiteCount, b.KomiteLoop) {
 		return fmt.Errorf("%w: kasus %q", ErrTanggaKomiteBerhenti, b.KasusID)
 	}
@@ -177,7 +178,7 @@ func (k *KeputusanKomite) Putuskan(ctx context.Context, pelaku inti.Pelaku,
 	// ⛔ Butir bb: klaim induk yang sudah ditutup tidak menerima keputusan
 	// komite lagi. Diperiksa lewat gerbang Claim Life yang sama.
 	klaimID := kasus.Baris.KlaimID
-	if err := k.svc.PastikanKasusTerbuka(ctx, klaimID); err != nil {
+	if err := k.svc.Klaim().PastikanKasusTerbuka(ctx, klaimID); err != nil {
 		return HasilKeputusanKomite{}, err
 	}
 	if err := periksaGiliran(kasus, pelaku.AkunID); err != nil {
@@ -289,11 +290,11 @@ func (k *KeputusanKomite) Eskalasi(ctx context.Context, pelaku inti.Pelaku,
 		return HasilEskalasiKomite{}, err
 	}
 	klaimID := kasus.Baris.KlaimID
-	if err := k.svc.PastikanKasusTerbuka(ctx, klaimID); err != nil {
+	if err := k.svc.Klaim().PastikanKasusTerbuka(ctx, klaimID); err != nil {
 		return HasilEskalasiKomite{}, err
 	}
 	b := kasus.Baris
-	if models.KasusTertutup(b.StatusWork) || !models.KasusDiTangga(b.AcceptStatus, b.KomiteCount, b.KomiteLoop) {
+	if kontrak.KasusTertutup(b.StatusWork) || !models.KasusDiTangga(b.AcceptStatus, b.KomiteCount, b.KomiteLoop) {
 		return HasilEskalasiKomite{}, fmt.Errorf("%w: kasus %q", ErrTanggaKomiteBerhenti, kasusID)
 	}
 	ke, err := models.EskalasiNaik(b.KomiteCount, b.KomiteLoop)

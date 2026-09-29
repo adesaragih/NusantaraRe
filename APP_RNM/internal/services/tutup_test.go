@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/kontrak"
 )
 
 // Uji penyusun masukan gerbang tutup.
@@ -14,8 +15,8 @@ import (
 
 func TestBarisTutupDariMemakaiPosisiLayar(t *testing.T) {
 	klaim := &models.Klaim{Peserta: []models.Peserta{
-		{ID: "P-ZZ", NomorSertifikat: "UJI-009", KodeStatus: models.KodeAksep},
-		{ID: "P-AA", NomorSertifikat: "UJI-001", KodeStatus: models.KodeOutstanding},
+		{ID: "P-ZZ", NomorSertifikat: "UJI-009", KodeStatus: kontrak.KodeAksep},
+		{ID: "P-AA", NomorSertifikat: "UJI-001", KodeStatus: kontrak.KodeOutstanding},
 	}}
 	got := BarisTutupDari(klaim)
 	if len(got) != 2 {
@@ -30,7 +31,7 @@ func TestBarisTutupDariMemakaiPosisiLayar(t *testing.T) {
 	if got[0].NomorSertifikat != "UJI-009" || got[1].NomorSertifikat != "UJI-001" {
 		t.Errorf("sertifikat tidak mengikuti urutan daftar: %v", got)
 	}
-	if got[1].KodeStatus != models.KodeOutstanding {
+	if got[1].KodeStatus != kontrak.KodeOutstanding {
 		t.Errorf("status = %q, mau dibawa apa adanya", got[1].KodeStatus)
 	}
 }

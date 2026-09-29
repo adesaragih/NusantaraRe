@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/internal/models"
+	"nusantarare/modul/komite/models"
 )
 
 func jenisEfek(a models.AkibatKeputusanKomite) []string {

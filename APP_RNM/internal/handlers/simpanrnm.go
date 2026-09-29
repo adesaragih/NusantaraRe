@@ -39,7 +39,7 @@ func jawabGalatSimpanRNM(w http.ResponseWriter, err error) bool {
 		galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
 	case errors.Is(err, inti.ErrTanpaWewenang):
 		galat.Tulis(w, http.StatusForbidden, "hanya pemegang tahap Outstanding Claim yang dapat menyimpan ke RNM")
-	case errors.Is(err, services.ErrKasusSudahTertutup):
+	case errors.Is(err, kontrak.ErrKasusSudahTertutup):
 		galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
 	case errors.Is(err, services.ErrSimpanRNMBukanOutstanding):
 		galat.Tulis(w, http.StatusConflict, "Save to RNM hanya tersedia pada tahap Outstanding Claim")

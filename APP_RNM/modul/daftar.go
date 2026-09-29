@@ -10,7 +10,8 @@ package modul
 import (
 	"io/fs"
 
-	claimliferepository "nusantarare/internal/repository"
+	"nusantarare/internal/repository"
+	"nusantarare/modul/komite"
 	"nusantarare/modul/premiumlist"
 )
 
@@ -21,7 +22,8 @@ import (
 // modul). Pelari mengurutkan langkah menurut NAMA berkas, lintas sumber.
 func SumberMigrasi() []fs.FS {
 	return []fs.FS{
-		claimliferepository.SumberMigrasi(), // 001-049 (Claim Life, Komite)
-		premiumlist.SumberMigrasi(),         // 050-079
+		repository.SumberMigrasi(),  // 001-029 (Claim Life)
+		komite.SumberMigrasi(),      // 030-049
+		premiumlist.SumberMigrasi(), // 050-079
 	}
 }

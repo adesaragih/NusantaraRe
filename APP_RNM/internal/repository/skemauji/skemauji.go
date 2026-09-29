@@ -32,7 +32,7 @@ import (
 	"nusantarare/inti/kontrak"
 	"nusantarare/inti/migrasi"
 	"nusantarare/modul"
-	premiumlistservices "nusantarare/modul/premiumlist/services"
+	"nusantarare/modul/premiumlist/services"
 )
 
 // ErrTanpaOracle dikembalikan bila ORACLE_DSN tidak dikonfigurasi.
@@ -541,5 +541,5 @@ func ddlTiruanTreaty(skema string) []string {
 // PremiumList; penunjang uji ini - yang memang mengenal semua modul - yang
 // menyerahkannya, sehingga yang dibaca test sama dengan yang dibaca produksi.
 func PembacaPolis(repo *db.DB) kontrak.PembacaPolis {
-	return premiumlistservices.PembacaPolis(premiumlistservices.New(repo))
+	return services.PembacaPolis(services.New(repo))
 }

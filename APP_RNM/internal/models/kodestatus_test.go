@@ -50,7 +50,9 @@ func TestKodeStatusLiteralHanyaDiModels(t *testing.T) {
 			return err
 		}
 		rel := relLapisan(jalur)
-		if strings.HasPrefix(rel, "models/") {
+		// Refactor bentuk B (30-09-2026): kosakata status baris dibagi Claim
+		// Life dan Komite, kini tinggal di kontrak lintas modul - SATU tempat.
+		if strings.HasPrefix(rel, "models/") || rel == "inti/kontrak/klaim.go" {
 			return nil
 		}
 		bersih := polaKomentar.ReplaceAllString(string(isi), "")
@@ -71,7 +73,7 @@ func TestKodeStatusLiteralHanyaDiModels(t *testing.T) {
 			diperiksa)
 	}
 	if len(temuan) != 0 {
-		t.Errorf("literal kode status di luar models: %v. Pakai models.KodeOutstanding, "+
+		t.Errorf("literal kode status di luar models: %v. Pakai kontrak.KodeOutstanding, "+
 			"KodeAksep, atau KodeDitolak - nilainya menipu bila dibaca sendirian, "+
 			"dan literal yang tersebar tidak dapat ditelusuri", temuan)
 	}

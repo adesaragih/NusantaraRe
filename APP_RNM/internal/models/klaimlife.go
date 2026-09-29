@@ -8,84 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"nusantarare/inti/kontrak"
 	"nusantarare/inti/uang"
 	"nusantarare/inti/utils"
 )
-
-// StatusBaris adalah keadaan satu baris AdjustmentList.
-//
-// Baris AdjustmentList - bukan klaim, bukan peserta - adalah unit keputusan
-// mesin status (ADR-U-0011).
-type StatusBaris int
-
-const (
-	// StatusTidakDiketahui dipakai untuk kolom kosong maupun kode di luar
-	// ketiga nilai yang tertulis di spec. Artinya TIDAK ditebak.
-	StatusTidakDiketahui StatusBaris = iota
-	StatusOutstanding
-	StatusAksep
-	StatusDitolak
-)
-
-// String menulis status sebagai kata yang dibaca pengguna.
-//
-// Tiket 01 AC-3 / spec.md US-26: status ditampilkan sebagai kata, bukan sebagai
-// nama field `STS_REJECT` dan bukan sebagai angka.
-func (s StatusBaris) String() string {
-	switch s {
-	case StatusOutstanding:
-		return "Outstanding"
-	case StatusAksep:
-		return "Aksep"
-	case StatusDitolak:
-		return "Ditolak"
-	default:
-		return "Tidak diketahui"
-	}
-}
-
-// Diketahui membedakan status yang benar-benar tertulis di spec dari yang tidak.
-func (s StatusBaris) Diketahui() bool { return s != StatusTidakDiketahui }
-
-// Kode mentah kolom STS_REJECT, ditulis dan dibandingkan sebagai TEKS
-// (ADR-U-0022). Menamainya di satu tempat membuat penulisnya dapat dicari:
-// nol yang tersebar sebagai literal di banyak berkas tidak dapat ditelusuri.
-//
-// ⛔ Kode "4" SENGAJA tidak punya nama di sini. Ia ada di data warisan,
-// artinya belum diputuskan work owner, dan sistem baru tidak pernah
-// menulisnya. Nama akan membuatnya tampak seperti pilihan yang sah.
-const (
-	KodeOutstanding = "0"
-	KodeAksep       = "1"
-	KodeDitolak     = "2"
-)
-
-// StatusBarisDariKode menerjemahkan nilai kolom `STS_REJECT`.
-//
-// ⚠️ Namanya menyesatkan: nilai "1" berarti **DIAKSEP**, bukan ditolak.
-// spec.md bab Problem butir 3, dan tabel "Penyimpangan sadar 4":
-//
-//	ReasLifeAdmin insert ke Outstanding -> "0"
-//	ReasLifeAdmin reject langsung       -> "2"
-//	ReasLifeSPV tambah baris Outstanding-> "0"
-//
-// dan `[terverifikasi]` nilai "1" = diaksep (spec.md US-26, CONTEXT.md).
-//
-// Perbandingan dilakukan atas TEKS, tidak pernah lewat bilangan (ADR-U-0022):
-// "006" yang dibaca sebagai 6 lolos pulang-pergi dan memecahkan penggolong.
-// Karena itu "00" dan "01" BUKAN "0" dan "1".
-func StatusBarisDariKode(kode string) StatusBaris {
-	switch kode {
-	case KodeOutstanding:
-		return StatusOutstanding
-	case KodeAksep:
-		return StatusAksep
-	case KodeDitolak:
-		return StatusDitolak
-	default:
-		return StatusTidakDiketahui
-	}
-}
 
 // BarisAdjustment adalah satu baris `AdjustmentList` milik seorang peserta.
 //
@@ -137,7 +63,9 @@ type BarisAdjustment struct {
 }
 
 // Status menerjemahkan kode mentah baris ini.
-func (b BarisAdjustment) Status() StatusBaris { return StatusBarisDariKode(b.KodeStatus) }
+func (b BarisAdjustment) Status() kontrak.StatusBaris {
+	return kontrak.StatusBarisDariKode(b.KodeStatus)
+}
 
 // MarshalJSON menulis baris untuk kontrak API.
 //

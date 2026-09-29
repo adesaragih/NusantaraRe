@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/kontrak"
 	"nusantarare/inti/uang"
 	"nusantarare/inti/utils"
 )
@@ -87,9 +88,9 @@ func TestBarisKeduaMewarisiDelapanKolomTanpaStatus(t *testing.T) {
 		t.Fatalf("baris pertama: %v", err)
 	}
 	// Baris pertama sudah disimpan ke Outstanding.
-	p.Baris[0].KodeStatus = models.KodeOutstanding
+	p.Baris[0].KodeStatus = kontrak.KodeOutstanding
 
-	if err := TambahBaris(&p, models.BarisAdjustment{KodeStatus: models.KodeAksep}); err != nil {
+	if err := TambahBaris(&p, models.BarisAdjustment{KodeStatus: kontrak.KodeAksep}); err != nil {
 		t.Fatalf("baris kedua: %v", err)
 	}
 	if len(p.Baris) != 2 {
@@ -125,7 +126,7 @@ func TestBarisKeduaMewarisiDelapanKolomTanpaStatus(t *testing.T) {
 			kedua.KodeStatus)
 	}
 	// Baris pertama tidak ikut berubah.
-	if p.Baris[0].KodeStatus != models.KodeOutstanding {
+	if p.Baris[0].KodeStatus != kontrak.KodeOutstanding {
 		t.Errorf("baris pertama berubah menjadi %q", p.Baris[0].KodeStatus)
 	}
 }
@@ -153,7 +154,7 @@ func TestTandaiOutstandingHanyaMenyentuhBarisTanpaStatus(t *testing.T) {
 		MataUang: "IDR",
 		Baris: []models.BarisAdjustment{
 			{ID: "A", KodeStatus: ""},
-			{ID: "B", KodeStatus: models.KodeAksep},
+			{ID: "B", KodeStatus: kontrak.KodeAksep},
 			{ID: "C", KodeStatus: ""},
 		},
 	}}
@@ -162,10 +163,10 @@ func TestTandaiOutstandingHanyaMenyentuhBarisTanpaStatus(t *testing.T) {
 		t.Fatalf("baris tersentuh = %d, mau 2", n)
 	}
 	baris := pohon.Klaim.Peserta[0].Baris
-	if baris[0].KodeStatus != models.KodeOutstanding || baris[2].KodeStatus != models.KodeOutstanding {
+	if baris[0].KodeStatus != kontrak.KodeOutstanding || baris[2].KodeStatus != kontrak.KodeOutstanding {
 		t.Errorf("baris tanpa status tidak menjadi Outstanding: %v", baris)
 	}
-	if baris[1].KodeStatus != models.KodeAksep {
+	if baris[1].KodeStatus != kontrak.KodeAksep {
 		t.Errorf("baris yang sudah diaksep ditimpa menjadi %q; nol ditulis MENURUT AKSI, "+
 			"dan baris yang sudah disimpan tidak disentuh ulang", baris[1].KodeStatus)
 	}

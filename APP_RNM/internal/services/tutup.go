@@ -25,6 +25,7 @@ import (
 	"nusantarare/inti"
 	"nusantarare/inti/db"
 	"nusantarare/inti/jejak"
+	"nusantarare/inti/kontrak"
 )
 
 // TutupKlaim membungkus pemeriksaan gerbang tutup dan penutupannya.
@@ -118,9 +119,6 @@ func (t *TutupKlaim) Periksa(ctx context.Context, id string) (HasilPeriksaTutup,
 // pemakai menutup berulang kali untuk menemukan satu penghalang tiap kali.
 var ErrMasihAdaPenghalang = errors.New("services: klaim belum boleh ditutup")
 
-// ErrKasusSudahTertutup - perubahan atas kasus yang sudah ditutup.
-var ErrKasusSudahTertutup = errors.New("services: kasus sudah ditutup")
-
 // ErrTahapTidakMenutup - penutupan dari tahap yang layarnya tidak
 // menawarkannya.
 var ErrTahapTidakMenutup = errors.New("services: tahap ini tidak menawarkan Close Claim")
@@ -170,8 +168,8 @@ func (t *TutupKlaim) Tutup(ctx context.Context, pelaku inti.Pelaku, klaimID stri
 	if err != nil {
 		return err
 	}
-	if models.KasusTertutup(status) {
-		return fmt.Errorf("%w: %s", ErrKasusSudahTertutup, klaimID)
+	if kontrak.KasusTertutup(status) {
+		return fmt.Errorf("%w: %s", kontrak.ErrKasusSudahTertutup, klaimID)
 	}
 
 	// ⛔ Tahap ASAL, sama seperti perpindahan: orang menutup kasus yang
@@ -202,7 +200,7 @@ func (t *TutupKlaim) Tutup(ctx context.Context, pelaku inti.Pelaku, klaimID stri
 
 	return t.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		if err := baca.TutupKasus(ctx, tx, klaimID, asal.String(),
-			models.StatusWorkSelesai, saat); err != nil {
+			kontrak.StatusWorkSelesai, saat); err != nil {
 			return err
 		}
 		return t.jejak.Rekam(ctx, tx, jejak.CatatanJejak{
@@ -212,7 +210,7 @@ func (t *TutupKlaim) Tutup(ctx context.Context, pelaku inti.Pelaku, klaimID stri
 			// ⚠️ Tujuannya status kerja, bukan tahap: sesudah tutup TAHAP
 			// kosong, dan jejak yang mencatat "ke: (kosong)" tidak dapat
 			// dibaca siapa pun setahun kemudian.
-			Ke:     models.StatusWorkSelesai,
+			Ke:     kontrak.StatusWorkSelesai,
 			AkunID: pelaku.AkunID,
 			Waktu:  saat,
 		})
@@ -241,8 +239,8 @@ func (s *Service) PastikanKasusTerbuka(ctx context.Context, klaimID string) erro
 	if err != nil {
 		return err
 	}
-	if models.KasusTertutup(status) {
-		return fmt.Errorf("%w: %s tidak dapat diubah lagi", ErrKasusSudahTertutup, klaimID)
+	if kontrak.KasusTertutup(status) {
+		return fmt.Errorf("%w: %s tidak dapat diubah lagi", kontrak.ErrKasusSudahTertutup, klaimID)
 	}
 	return nil
 }

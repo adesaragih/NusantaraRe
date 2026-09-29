@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/kontrak"
 )
 
 // punyaTemuan mencari satu jenis temuan di dalam daftar.
@@ -82,8 +83,8 @@ func TestStatusKerjaHanyaDariCompleteDate(t *testing.T) {
 	tutup, temuan := LengkapiWork([]BarisLama{{
 		CASEID: "UJI-CASE-1", COMPLETE_DATE: "2026-02-01",
 	}})
-	if tutup.StatusWork != models.StatusWorkSelesai {
-		t.Errorf("STATUS_WORK = %q, mau %q", tutup.StatusWork, models.StatusWorkSelesai)
+	if tutup.StatusWork != kontrak.StatusWorkSelesai {
+		t.Errorf("STATUS_WORK = %q, mau %q", tutup.StatusWork, kontrak.StatusWorkSelesai)
 	}
 	tm := punyaTemuan(temuan, TemuanStatusKerjaDisimpulkan)
 	if tm == nil {

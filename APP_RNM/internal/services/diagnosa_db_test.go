@@ -21,6 +21,7 @@ import (
 	"nusantarare/internal/services"
 	"nusantarare/inti"
 	"nusantarare/inti/galat"
+	"nusantarare/inti/kontrak"
 )
 
 // pelakuAdminUji memegang tahap Outstanding, yaitu tahap awal pohon uji.
@@ -143,7 +144,7 @@ func TestKeputusanPesertaMencerminKeSeluruhDiagnosa(t *testing.T) {
 	// Keputusan peserta: aksep.
 	saat := time.Date(2026, 9, 27, 10, 0, 0, 0, time.UTC)
 	if err := svc.Status().DenganJejak(&jejakUji{}).Ubah(ctx, pelakuAdminUji,
-		pohon.Work.ID, pesertaID, adj[0].ID, models.StatusAksep, saat); err != nil {
+		pohon.Work.ID, pesertaID, adj[0].ID, kontrak.StatusAksep, saat); err != nil {
 		t.Fatalf("Ubah status: %v", err)
 	}
 
@@ -158,8 +159,8 @@ func TestKeputusanPesertaMencerminKeSeluruhDiagnosa(t *testing.T) {
 		t.Fatalf("diagnosa = %d, mau 2", len(daftar))
 	}
 	for _, d := range daftar {
-		if d.KodeStatus != models.KodeAksep {
-			t.Errorf("diagnosa %d berkode %q, mau %q", d.ID, d.KodeStatus, models.KodeAksep)
+		if d.KodeStatus != kontrak.KodeAksep {
+			t.Errorf("diagnosa %d berkode %q, mau %q", d.ID, d.KodeStatus, kontrak.KodeAksep)
 		}
 	}
 

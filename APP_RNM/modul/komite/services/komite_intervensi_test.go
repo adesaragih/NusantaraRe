@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"nusantarare/internal/models"
-	"nusantarare/internal/repository"
 	"nusantarare/inti"
 	"nusantarare/inti/outbox"
+	"nusantarare/modul/komite/models"
+	"nusantarare/modul/komite/repository"
 )
 
 // TestKodeEfekSamaDiTigaLapis - km5: kode di models, repository, dan outbox sama.

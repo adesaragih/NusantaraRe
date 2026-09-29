@@ -22,6 +22,7 @@ import (
 	"nusantarare/inti"
 	intidb "nusantarare/inti/db"
 	"nusantarare/inti/jejak"
+	"nusantarare/inti/kontrak"
 )
 
 // jejakUji menggantikan tempat jejak audit yang belum disahkan (butir am).
@@ -67,7 +68,7 @@ func pohonUjiStatus(t *testing.T, svc *services.Service, db *intidb.DB) models.P
 			NomorKlaim: "UJI-CLM-400",
 			Peserta: []models.Peserta{{
 				NomorSertifikat: "006", MataUang: "IDR",
-				Baris: []models.BarisAdjustment{{KodeStatus: models.KodeOutstanding}},
+				Baris: []models.BarisAdjustment{{KodeStatus: kontrak.KodeOutstanding}},
 			}},
 		},
 	}
@@ -109,7 +110,7 @@ func TestUbahStatusMencerminkanTigaTingkat(t *testing.T) {
 	saat := time.Date(2026, 9, 26, 22, 0, 0, 0, time.UTC)
 	err = svc.Status().DenganJejak(jejak).Ubah(ctx,
 		inti.Pelaku{AkunID: "UJI-AKUN"},
-		pohon.Work.ID, peserta[0].ID, adj[0].ID, models.StatusAksep, saat)
+		pohon.Work.ID, peserta[0].ID, adj[0].ID, kontrak.StatusAksep, saat)
 	if err != nil {
 		t.Fatalf("Ubah: %v", err)
 	}
@@ -119,8 +120,8 @@ func TestUbahStatusMencerminkanTigaTingkat(t *testing.T) {
 	if err != nil {
 		t.Fatalf("membaca ulang baris: %v", err)
 	}
-	if got := perBaris[peserta[0].ID][0].KodeStatus; got != models.KodeAksep {
-		t.Errorf("kode baris = %q, mau %q", got, models.KodeAksep)
+	if got := perBaris[peserta[0].ID][0].KodeStatus; got != kontrak.KodeAksep {
+		t.Errorf("kode baris = %q, mau %q", got, kontrak.KodeAksep)
 	}
 	if perBaris[peserta[0].ID][0].TanggalAkseptasi.IsZero() {
 		t.Error("ACCEPTATION_DATE tidak terstempel saat baris diaksep")
@@ -134,16 +135,16 @@ func TestUbahStatusMencerminkanTigaTingkat(t *testing.T) {
 	if err != nil {
 		t.Fatalf("membaca ulang peserta: %v", err)
 	}
-	if peserta[0].KodeStatus != models.KodeAksep {
-		t.Errorf("STS_REJECT peserta = %q, mau %q", peserta[0].KodeStatus, models.KodeAksep)
+	if peserta[0].KodeStatus != kontrak.KodeAksep {
+		t.Errorf("STS_REJECT peserta = %q, mau %q", peserta[0].KodeStatus, kontrak.KodeAksep)
 	}
 	// Header ikut tercermin.
 	hdr, err := baca.AmbilHeader(ctx, pohon.Work.ID)
 	if err != nil || hdr == nil {
 		t.Fatalf("membaca header: %v", err)
 	}
-	if hdr.KodeStatus != models.KodeAksep {
-		t.Errorf("kode header = %q, mau %q", hdr.KodeStatus, models.KodeAksep)
+	if hdr.KodeStatus != kontrak.KodeAksep {
+		t.Errorf("kode header = %q, mau %q", hdr.KodeStatus, kontrak.KodeAksep)
 	}
 	if len(jejak.catatan) != 1 || jejak.catatan[0].AkunID != "UJI-AKUN" {
 		t.Errorf("jejak = %+v, mau satu catatan ber-AkunID UJI-AKUN", jejak.catatan)
@@ -153,7 +154,7 @@ func TestUbahStatusMencerminkanTigaTingkat(t *testing.T) {
 	// terhadap basis data, bukan hanya di dalam proses ini.
 	err = svc.Status().DenganJejak(jejak).Ubah(ctx,
 		inti.Pelaku{AkunID: "UJI-AKUN"},
-		pohon.Work.ID, peserta[0].ID, adj[0].ID, models.StatusDitolak, saat)
+		pohon.Work.ID, peserta[0].ID, adj[0].ID, kontrak.StatusDitolak, saat)
 	if !errors.Is(err, services.ErrBarisSudahFinal) {
 		t.Errorf("transisi kedua: galat = %v, mau ErrBarisSudahFinal", err)
 	}
@@ -176,7 +177,7 @@ func TestKegagalanDiTengahTidakMeninggalkanSeparuhJadi(t *testing.T) {
 	saat := time.Date(2026, 9, 26, 22, 0, 0, 0, time.UTC)
 	err := svc.Status().DenganJejak(jejakGagal{}).Ubah(ctx,
 		inti.Pelaku{AkunID: "UJI-AKUN"},
-		pohon.Work.ID, peserta[0].ID, adj[0].ID, models.StatusAksep, saat)
+		pohon.Work.ID, peserta[0].ID, adj[0].ID, kontrak.StatusAksep, saat)
 	if !errors.Is(err, errJejakSengaja) {
 		t.Fatalf("galat = %v, mau errJejakSengaja", err)
 	}
@@ -186,15 +187,15 @@ func TestKegagalanDiTengahTidakMeninggalkanSeparuhJadi(t *testing.T) {
 	if err != nil {
 		t.Fatalf("membaca ulang baris: %v", err)
 	}
-	if got := perBaris[peserta[0].ID][0].KodeStatus; got != models.KodeOutstanding {
+	if got := perBaris[peserta[0].ID][0].KodeStatus; got != kontrak.KodeOutstanding {
 		t.Errorf("baris = %q sesudah transaksi batal, mau tetap %q",
-			got, models.KodeOutstanding)
+			got, kontrak.KodeOutstanding)
 	}
 	hdr, err := baca.AmbilHeader(ctx, pohon.Work.ID)
 	if err != nil || hdr == nil {
 		t.Fatalf("membaca header: %v", err)
 	}
-	if hdr.KodeStatus == models.KodeAksep {
+	if hdr.KodeStatus == kontrak.KodeAksep {
 		t.Error("header tertinggal Aksep padahal transaksinya batal - " +
 			"pencerminan separuh jadi")
 	}
@@ -228,12 +229,12 @@ func TestTolakMencabutPenandaDipilihDiTransaksiYangSama(t *testing.T) {
 	}
 
 	perBaris, _ = baca.AmbilBaris(ctx, pohon.Work.ID)
-	if got := perBaris[peserta[0].ID][0].KodeStatus; got != models.KodeDitolak {
-		t.Errorf("kode baris = %q, mau %q", got, models.KodeDitolak)
+	if got := perBaris[peserta[0].ID][0].KodeStatus; got != kontrak.KodeDitolak {
+		t.Errorf("kode baris = %q, mau %q", got, kontrak.KodeDitolak)
 	}
 	peserta, _ = baca.AmbilPeserta(ctx, pohon.Work.ID)
-	if peserta[0].KodeStatus != models.KodeDitolak {
-		t.Errorf("STS_REJECT peserta = %q, mau %q", peserta[0].KodeStatus, models.KodeDitolak)
+	if peserta[0].KodeStatus != kontrak.KodeDitolak {
+		t.Errorf("STS_REJECT peserta = %q, mau %q", peserta[0].KodeStatus, kontrak.KodeDitolak)
 	}
 	if peserta[0].IsCheck != "false" {
 		t.Errorf("IS_CHECK peserta = %q, mau false - penolakan mencabut penanda dipilih",

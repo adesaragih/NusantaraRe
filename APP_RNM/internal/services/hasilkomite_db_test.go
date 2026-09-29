@@ -18,6 +18,7 @@ import (
 	"nusantarare/inti"
 	intidb "nusantarare/inti/db"
 	"nusantarare/inti/galat"
+	"nusantarare/inti/kontrak"
 )
 
 // TestPutaranMelahirkanBarisOutstandingBaru - AC 5 spec, jalur penuh.
@@ -65,10 +66,10 @@ func TestPutaranMelahirkanBarisOutstandingBaru(t *testing.T) {
 	lama, baru := daftar[0], daftar[1]
 	// ⛔ Keputusan baris lama TIDAK tersentuh. Konteks ini membaca keputusan
 	// Komite, ia tidak menimpanya.
-	if lama.KodeStatus != models.KodeDitolak {
+	if lama.KodeStatus != kontrak.KodeDitolak {
 		t.Errorf("baris lama berkode %q; keputusannya tertimpa", lama.KodeStatus)
 	}
-	if baru.KodeStatus != models.KodeOutstanding {
+	if baru.KodeStatus != kontrak.KodeOutstanding {
 		t.Errorf("baris baru berkode %q, mau Outstanding", baru.KodeStatus)
 	}
 	if baru.ID == lama.ID || baru.ID == "" {
@@ -110,7 +111,7 @@ func TestPutaranMelahirkanBarisOutstandingBaru(t *testing.T) {
 	if err != nil || hdr == nil {
 		t.Fatalf("membaca header: %v", err)
 	}
-	if hdr.KodeStatus != models.KodeOutstanding {
+	if hdr.KodeStatus != kontrak.KodeOutstanding {
 		t.Errorf("header berkode %q, mau Outstanding - ia mencerminkan baris "+
 			"terakhir, dan baris terakhir kini yang baru", hdr.KodeStatus)
 	}
@@ -197,7 +198,7 @@ func TestPutaranHanyaDiClaimAnalis(t *testing.T) {
 			Tahap: models.TahapOutstanding.String(), PyPosition: models.PeranAdminLife},
 		Klaim: models.Klaim{NomorKlaim: "UJI-CLM-741",
 			Peserta: []models.Peserta{{NomorSertifikat: "006", MataUang: "IDR",
-				Baris: []models.BarisAdjustment{{KodeStatus: models.KodeDitolak}}}}},
+				Baris: []models.BarisAdjustment{{KodeStatus: kontrak.KodeDitolak}}}}},
 	}
 	if err := svc.DalamTransaksi(ctx, func(tx *intidb.Tx) error {
 		return repository.NewPohonKlaim(db).Simpan(ctx, tx, pohon)

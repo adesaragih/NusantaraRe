@@ -13,6 +13,7 @@ import (
 	"nusantarare/internal/services"
 	"nusantarare/inti"
 	"nusantarare/inti/galat"
+	"nusantarare/inti/kontrak"
 )
 
 func TestKetigaRuteDiagnosaTerdaftar(t *testing.T) {
@@ -113,7 +114,7 @@ func TestGalatDiagnosaDipetakanKeKodeYangBenar(t *testing.T) {
 		{"tanpa identitas", inti.ErrTanpaIdentitas, http.StatusUnauthorized},
 		{"tanpa wewenang", inti.ErrTanpaWewenang, http.StatusForbidden},
 		{"peserta terkunci", services.ErrDiagnosaTerkunci, http.StatusConflict},
-		{"kasus tertutup", services.ErrKasusSudahTertutup, http.StatusConflict},
+		{"kasus tertutup", kontrak.ErrKasusSudahTertutup, http.StatusConflict},
 		{"tahap salah", services.ErrTahapTidakBergridPeserta, http.StatusConflict},
 		{"nilai kepanjangan", services.ErrNilaiDiagnosaKepanjangan,
 			http.StatusUnprocessableEntity},

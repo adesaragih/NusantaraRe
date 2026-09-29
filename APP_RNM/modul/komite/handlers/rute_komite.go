@@ -22,10 +22,11 @@ import (
 	"strconv"
 	"time"
 
-	"nusantarare/internal/services"
 	"nusantarare/inti"
 	"nusantarare/inti/galat"
 	"nusantarare/inti/jejak"
+	"nusantarare/inti/kontrak"
+	"nusantarare/modul/komite/services"
 )
 
 // inboxKomite melayani GET /api/komite.
@@ -161,10 +162,10 @@ func jawabGalatKomite(w http.ResponseWriter, err error) bool {
 	case errors.Is(err, services.ErrTanggaKomiteBerhenti),
 		errors.Is(err, services.ErrEskalasiTanpaTingkatAtas),
 		errors.Is(err, services.ErrKeputusanKomiteBersamaan),
-		errors.Is(err, services.ErrKasusSudahTertutup):
+		errors.Is(err, kontrak.ErrKasusSudahTertutup):
 		galat.Tulis(w, http.StatusConflict, err.Error())
-	case errors.Is(err, services.ErrNomorAkseptasiBerganda),
-		errors.Is(err, services.ErrKodeBisnisBelumTersimpan):
+	case errors.Is(err, kontrak.ErrNomorAkseptasiBerganda),
+		errors.Is(err, kontrak.ErrKodeBisnisBelumTersimpan):
 		// 409: keadaan DATA (nomor bertabrakan / kode bisnis kosong).
 		galat.Tulis(w, http.StatusConflict, err.Error())
 	case errors.Is(err, services.ErrPenyelesaianAkhirBelumAda):
@@ -174,4 +175,34 @@ func jawabGalatKomite(w http.ResponseWriter, err error) bool {
 		galat.Tulis(w, http.StatusInternalServerError, "gagal memproses permintaan komite")
 	}
 	return true
+}
+
+// Router menyusun rute modul ini SAJA, di mux sendiri.
+//
+// Refactor bentuk B (30-09-2026): dipakai uji HTTP modul ini, yang dulu
+// memakai `Router` bersama milik seluruh aplikasi. Produksi tidak memakainya:
+// `cmd/api` mendaftarkan `DaftarkanRute` ke mux yang sama dengan modul lain.
+func Router(svc *services.Service, stubPelaku bool) http.Handler {
+	mux := http.NewServeMux()
+	DaftarkanRute(mux, svc, stubPelaku)
+	return mux
+}
+
+// DaftarkanRute mendaftarkan seluruh rute modul Komite Claim Life.
+//
+// Refactor bentuk B (30-09-2026): rute ini dulu ditulis di
+// `internal/handlers.Router`; kini dipanggil `cmd/api`.
+func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
+	// Komite Claim Life tiket 01 - Inbox Komite dan satu kasus. Keduanya GET:
+	// membaca saja; keputusan komite menyusul di tiket 02.
+	mux.HandleFunc("GET /api/komite", inboxKomite(svc, stubPelaku))
+	// Tiket 08 - literal mendahului `{id}` (pola paling spesifik menang).
+	mux.HandleFunc("GET /api/komite/laporan-harian", laporanHarianKomite(svc, stubPelaku))
+	mux.HandleFunc("GET /api/komite/{id}", kasusKomite(svc, stubPelaku))
+	// Tiket 09 - riwayat tangga; membaca, bukan memutuskan.
+	mux.HandleFunc("GET /api/komite/{id}/riwayat", riwayatKomite(svc, stubPelaku))
+	// Tiket 02 - keputusan satu tingkat (`ShowTransfer` Submit).
+	mux.HandleFunc("POST /api/komite/{id}/keputusan", putuskanKomite(svc, stubPelaku))
+	// Tiket 03 - eskalasi naik satu tingkat (admin).
+	mux.HandleFunc("POST /api/komite/{id}/eskalasi", eskalasiKomite(svc, stubPelaku))
 }

@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"nusantarare/internal/repository"
 	"nusantarare/inti"
 	"nusantarare/inti/db"
+	"nusantarare/modul/komite/repository"
 )
 
 // TestGiliranHanyaAnggotaBerjalan - ADR-0014, AC 1 spec.

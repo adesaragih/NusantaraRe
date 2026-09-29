@@ -15,7 +15,11 @@ package models
 //   - diagnosa : satu baris pada peserta - ICD, nama penyakit, kelompok.
 //   - penyakit : satu baris katalog `DISEASE_LIFE`. Sumber, bukan milik.
 
-import "strings"
+import (
+	"strings"
+
+	"nusantarare/inti/kontrak"
+)
 
 // Diagnosa adalah satu baris `.DiagnoseList` milik seorang peserta.
 //
@@ -117,7 +121,7 @@ const (
 // dikunci `TestKodeStatusLiteralHanyaDiModels`.
 func DiagnosaTerkunci(stsRejectPeserta string) bool {
 	k := strings.TrimSpace(stsRejectPeserta)
-	return k == KodeAksep || k == KodeDitolak
+	return k == kontrak.KodeAksep || k == kontrak.KodeDitolak
 }
 
 // UrutanBerikutnya mengembalikan nomor urut baris baru.

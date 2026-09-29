@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"nusantarare/inti/kontrak"
 	"nusantarare/inti/uang"
 )
 
@@ -18,16 +19,16 @@ import (
 func TestStatusBarisDariKode(t *testing.T) {
 	kasus := []struct {
 		kode      string
-		mau       StatusBaris
+		mau       kontrak.StatusBaris
 		mauKata   string
 		diketahui bool
 	}{
-		{"0", StatusOutstanding, "Outstanding", true},
-		{"1", StatusAksep, "Aksep", true},
-		{"2", StatusDitolak, "Ditolak", true},
+		{"0", kontrak.StatusOutstanding, "Outstanding", true},
+		{"1", kontrak.StatusAksep, "Aksep", true},
+		{"2", kontrak.StatusDitolak, "Ditolak", true},
 	}
 	for _, k := range kasus {
-		got := StatusBarisDariKode(k.kode)
+		got := kontrak.StatusBarisDariKode(k.kode)
 		if got != k.mau {
 			t.Errorf("kode %q: dapat %v, mau %v", k.kode, got, k.mau)
 		}
@@ -44,8 +45,8 @@ func TestStatusBarisDariKode(t *testing.T) {
 // TIDAK ditebak artinya. Spec hanya menetapkan 0, 1, dan 2.
 func TestStatusBarisTidakMenebak(t *testing.T) {
 	for _, kode := range []string{"", "3", "9", "X", " "} {
-		got := StatusBarisDariKode(kode)
-		if got != StatusTidakDiketahui {
+		got := kontrak.StatusBarisDariKode(kode)
+		if got != kontrak.StatusTidakDiketahui {
 			t.Errorf("kode %q: dapat %v, mau StatusTidakDiketahui", kode, got)
 		}
 		if got.Diketahui() {
@@ -58,13 +59,13 @@ func TestStatusBarisTidakMenebak(t *testing.T) {
 // pulang-pergi dan memecahkan penggolong - karena itu perbandingan kode tidak
 // pernah lewat bilangan.
 func TestKodeStatusTidakPernahJadiBilangan(t *testing.T) {
-	if StatusBarisDariKode("00") != StatusTidakDiketahui {
+	if kontrak.StatusBarisDariKode("00") != kontrak.StatusTidakDiketahui {
 		t.Error(`"00" tidak boleh dianggap sama dengan "0"`)
 	}
-	if StatusBarisDariKode("01") != StatusTidakDiketahui {
+	if kontrak.StatusBarisDariKode("01") != kontrak.StatusTidakDiketahui {
 		t.Error(`"01" tidak boleh dianggap sama dengan "1"`)
 	}
-	if StatusBarisDariKode("006") != StatusTidakDiketahui {
+	if kontrak.StatusBarisDariKode("006") != kontrak.StatusTidakDiketahui {
 		t.Error(`"006" tidak boleh dianggap sama dengan "6"`)
 	}
 }
@@ -73,7 +74,7 @@ func TestKodeStatusTidakPernahJadiBilangan(t *testing.T) {
 // dilaporkan tanpa ditebak.
 func TestBarisMembawaKodeMentah(t *testing.T) {
 	b := BarisAdjustment{KodeStatus: "7"}
-	if b.Status() != StatusTidakDiketahui {
+	if b.Status() != kontrak.StatusTidakDiketahui {
 		t.Fatalf("status = %v", b.Status())
 	}
 	if b.KodeStatus != "7" {

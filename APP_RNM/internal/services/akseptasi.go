@@ -31,6 +31,7 @@ import (
 	"nusantarare/inti/db"
 	"nusantarare/inti/galat"
 	"nusantarare/inti/jejak"
+	"nusantarare/inti/kontrak"
 )
 
 var (
@@ -40,26 +41,16 @@ var (
 	// ErrBarisSudahBernomorAkseptasi - `.ACCEPTEDNO` sudah terisi.
 	ErrBarisSudahBernomorAkseptasi = errors.New(
 		"services: baris sudah punya nomor akseptasi")
-	// ErrKodeBisnisBelumTersimpan - kode bisnis tidak ada di model relasional.
-	//
-	// ⛔ TEMUAN AUDIT A0. Nomor akseptasi memuat kode bisnis
-	// (`'RNML-A'||{pyWorkPage.BusinessCode}||…`), tetapi model relasional kita
-	// TIDAK menyimpannya: `T_GENERAL_CLAIM` punya `BUSINESS_NAME` saja, dan
-	// `BUSINESSID` bukan salah satu dari 18 kolom datar warisan yang `Simpan`
-	// tulis. Ia dipakai sekali saat pendaftaran lalu hilang.
-	//
-	// Gagal terang, bukan dikarang: menebak kode bisnis berarti menerbitkan
-	// nomor akseptasi di seri yang salah, dan nomor itu tercetak di dokumen.
-	// Kolomnya lahir di A1.
-	ErrKodeBisnisBelumTersimpan = errors.New(
-		"services: kode bisnis klaim belum tersimpan di model relasional (butir A1)")
+)
+
+var (
 	// ErrNomorAkseptasiBerganda dipaparkan ULANG di sini.
 	//
 	// ⛔ Supaya `handlers` tidak perlu mengimpor `repository` hanya demi satu
 	// sentinel - arah `handlers -> services -> repository` dijaga penjaga
 	// statik, dan melanggarnya demi kenyamanan satu baris adalah harga yang
 	// salah.
-	ErrNomorAkseptasiBerganda = repository.ErrNomorAkseptasiBerganda
+	ErrNomorAkseptasiBerganda = kontrak.ErrNomorAkseptasiBerganda
 )
 
 // Awalan nomor akseptasi per Type.
@@ -159,7 +150,7 @@ func PeriksaBolehAksep(p models.Peserta, b models.BarisAdjustment) error {
 		return fmt.Errorf("%w: baris %q bernomor %q",
 			ErrBarisSudahBernomorAkseptasi, b.ID, b.NomorAkseptasi)
 	}
-	if b.KodeStatus != models.KodeOutstanding {
+	if b.KodeStatus != kontrak.KodeOutstanding {
 		return fmt.Errorf("%w: baris %q berkode %q",
 			ErrBarisBukanOutstanding, b.ID, b.KodeStatus)
 	}
@@ -323,7 +314,7 @@ func (a *Akseptasi) SimpanAdjustment(ctx context.Context, pelaku inti.Pelaku,
 	// ⛔ Kode bisnis belum tersimpan di mana pun - lihat ErrKodeBisnisBelumTersimpan.
 	kodeBisnis := strings.TrimSpace(hdrKodeBisnis)
 	if kodeBisnis == "" {
-		return "", fmt.Errorf("%w: klaim %q", ErrKodeBisnisBelumTersimpan, klaimID)
+		return "", fmt.Errorf("%w: klaim %q", kontrak.ErrKodeBisnisBelumTersimpan, klaimID)
 	}
 
 	var nomor string
@@ -336,17 +327,17 @@ func (a *Akseptasi) SimpanAdjustment(ctx context.Context, pelaku inti.Pelaku,
 		// Mesin transisi tiket 04 dipakai APA ADANYA - kefinalan, pencerminan
 		// tiga tingkat, dan jejaknya. Nol aturan status ditulis ulang di sini.
 		if err := baca.PerbaruiStatusBaris(ctx, tx, pesertaID, baris.ID,
-			models.KodeOutstanding, models.KodeAksep, nomor, saat); err != nil {
+			kontrak.KodeOutstanding, kontrak.KodeAksep, nomor, saat); err != nil {
 			return err
 		}
-		if err := baca.CerminkanHeader(ctx, tx, klaimID, models.KodeAksep, nomor); err != nil {
+		if err := baca.CerminkanHeader(ctx, tx, klaimID, kontrak.KodeAksep, nomor); err != nil {
 			return err
 		}
 		return a.jejak.Rekam(ctx, tx, jejak.CatatanJejak{
 			AdjustmentID: baris.ID,
 			KlaimID:      klaimID,
 			Dari:         baris.KodeStatus,
-			Ke:           models.KodeAksep,
+			Ke:           kontrak.KodeAksep,
 			AkunID:       pelaku.AkunID,
 			Waktu:        saat,
 		})
@@ -396,7 +387,7 @@ func (p penerbitOracle) Terbitkan(ctx context.Context, tx *db.Tx,
 		return "", err
 	}
 	if dipakai {
-		return "", fmt.Errorf("%w: %q", repository.ErrNomorAkseptasiBerganda, nomor)
+		return "", fmt.Errorf("%w: %q", kontrak.ErrNomorAkseptasiBerganda, nomor)
 	}
 	return nomor, nil
 }

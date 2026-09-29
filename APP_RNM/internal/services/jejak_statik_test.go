@@ -38,8 +38,16 @@ var polaPenulisTransisi = regexp.MustCompile(
 // lagi memanggil Rekam tanpa pernah dijalankan) akan lolos. Pengakuan yang
 // lebih kuat daripada yang diperiksanya adalah cacat yang berulang di sesi
 // ini; ia diperbaiki di tempat ia muncul.
+// berkasPenerusKontrak - penerus dan penolak kontrak Claim Life untuk
+// Komite; lihat pengecualian di dalam uji di bawah.
+var berkasPenerusKontrak = map[string]string{
+	"klaimuntukkomite.go":      "penerus kontrak (Claim Life): satu baris penerus per metode",
+	"klaim_belum_disambung.go": "penolak kontrak (Komite): setiap metode menjawab galat, nol tulisan",
+}
+
 func TestSetiapPenulisTransisiMerekamJejak(t *testing.T) {
 	diperiksa := 0
+	penerusKontrakTerlihat := map[string]bool{}
 	err := filepath.Walk(akarAplikasiPindai, func(jalur string, info os.FileInfo, err error) error {
 		if err == nil && info.IsDir() && lewatiFolderPindai(info.Name()) {
 			return filepath.SkipDir
@@ -54,6 +62,15 @@ func TestSetiapPenulisTransisiMerekamJejak(t *testing.T) {
 		// Repository MENJALANKAN SQL-nya; jejaknya direkam layanan yang
 		// memanggilnya. Yang dijaga di sini lapisan layanan.
 		if strings.Contains(filepath.ToSlash(jalur), "/repository/") {
+			return nil
+		}
+		// Refactor bentuk B (30-09-2026): penerus kontrak Claim Life untuk
+		// Komite diperlakukan sama dengan repository - satu baris penerus per
+		// metode. Jejaknya direkam pemanggil Komite (komite_akseptasi.go) di
+		// fungsi yang sama dengan panggilan kontraknya, dan fungsi itu tetap
+		// diperiksa di sini.
+		if _, ada := berkasPenerusKontrak[filepath.Base(jalur)]; ada {
+			penerusKontrakTerlihat[filepath.Base(jalur)] = true
 			return nil
 		}
 		isi, err := os.ReadFile(jalur)
@@ -85,6 +102,12 @@ func TestSetiapPenulisTransisiMerekamJejak(t *testing.T) {
 	if diperiksa < 2 {
 		t.Fatalf("hanya %d fungsi penulis transisi ditemukan; pembacanya yang rusak, "+
 			"bukan kodenya", diperiksa)
+	}
+	// Pengecualian yang tidak terpakai adalah pengecualian yang basi.
+	for nama := range berkasPenerusKontrak {
+		if !penerusKontrakTerlihat[nama] {
+			t.Errorf("%s tidak ditemukan; cabut pengecualiannya", nama)
+		}
 	}
 }
 

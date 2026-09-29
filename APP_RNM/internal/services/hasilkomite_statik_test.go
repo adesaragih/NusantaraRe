@@ -26,6 +26,7 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/services"
+	"nusantarare/inti/kontrak"
 )
 
 // polaKolomStatusKedua mencocokkan kolom yang akan menyimpan keputusan Komite
@@ -119,7 +120,7 @@ func TestNolKolomStatusKeduaDiSkema(t *testing.T) {
 func TestBarisLanjutanSelaluMemulaiPutaranBaru(t *testing.T) {
 	asal := models.Peserta{ID: "P-1", MataUang: "IDR",
 		Baris: []models.BarisAdjustment{{
-			ID: "A-1", KodeStatus: models.KodeDitolak,
+			ID: "A-1", KodeStatus: kontrak.KodeDitolak,
 			NomorAkseptasi: "UJI-AKS", KomiteID: "KMT-000009",
 			CurrencyID: "IDR",
 		}}}
@@ -130,7 +131,7 @@ func TestBarisLanjutanSelaluMemulaiPutaranBaru(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if baru.KodeStatus != models.KodeOutstanding {
+	if baru.KodeStatus != kontrak.KodeOutstanding {
 		t.Errorf("baris lanjutan berkode %q, mau Outstanding", baru.KodeStatus)
 	}
 	for _, k := range []struct{ nama, isi string }{
@@ -178,7 +179,7 @@ func TestBarisLanjutanSelaluMemulaiPutaranBaru(t *testing.T) {
 func TestKonteksIniTidakPernahMenulisKeputusan(t *testing.T) {
 	dicoba := 0
 	for _, kodeAsal := range []string{
-		models.KodeDitolak, models.KodeOutstanding, models.KodeAksep, "", "9",
+		kontrak.KodeDitolak, kontrak.KodeOutstanding, kontrak.KodeAksep, "", "9",
 	} {
 		p := models.Peserta{ID: "P-1", MataUang: "IDR",
 			Baris: []models.BarisAdjustment{{ID: "A-1", KodeStatus: kodeAsal}}}
@@ -188,7 +189,7 @@ func TestKonteksIniTidakPernahMenulisKeputusan(t *testing.T) {
 			// Hanya penolakan yang membuka putaran; sisanya memang ditolak.
 			continue
 		}
-		if baru.KodeStatus == models.KodeAksep || baru.KodeStatus == models.KodeDitolak {
+		if baru.KodeStatus == kontrak.KodeAksep || baru.KodeStatus == kontrak.KodeDitolak {
 			t.Errorf("asal %q menghasilkan baris berKEPUTUSAN %q; keputusan "+
 				"milik Komite Claim Life, konteks ini hanya membacanya",
 				kodeAsal, baru.KodeStatus)

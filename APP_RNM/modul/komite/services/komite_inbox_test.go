@@ -7,9 +7,9 @@ import (
 	"errors"
 	"testing"
 
-	"nusantarare/internal/repository"
 	"nusantarare/inti"
 	"nusantarare/inti/db"
+	"nusantarare/modul/komite/repository"
 )
 
 func kasusUji() repository.KasusKomite {

@@ -96,7 +96,9 @@ func TestNonProduksiStubTanpaPanggilan(t *testing.T) {
 func TestBarisAsingDitolak(t *testing.T) {
 	p := PelaksanaKomite{Lingkungan: inti.Produksi, Riwayat: &riwayatUji{}}
 	b := barisKomite(t, JenisEfekKomiteEmail, layanan.KunciLayanan{})
-	b.Modul = ModulClaimLife
+	// Modul LAIN - nilai kolom MODUL milik Claim Life. Refactor bentuk B:
+	// literal, sebab uji modul ini tidak boleh mengimpor Claim Life.
+	b.Modul = "CLAIMLIFE"
 	if err := p.Laksanakan(context.Background(), nil, b); !errors.Is(err, galat.ErrPermintaanTidakSah) {
 		t.Errorf("baris modul lain: %v", err)
 	}

@@ -12,6 +12,7 @@ import (
 	"nusantarare/internal/services"
 	"nusantarare/inti"
 	"nusantarare/inti/galat"
+	"nusantarare/inti/kontrak"
 	"nusantarare/inti/unggah"
 )
 
@@ -67,7 +68,7 @@ func TestGalatDokumenDipetakanKeKodeYangBenar(t *testing.T) {
 		mau  int
 	}{
 		{"tanpa identitas", inti.ErrTanpaIdentitas, http.StatusUnauthorized},
-		{"kasus tertutup", services.ErrKasusSudahTertutup, http.StatusConflict},
+		{"kasus tertutup", kontrak.ErrKasusSudahTertutup, http.StatusConflict},
 		// ⛔ 503, bukan 500 dan bukan 400: folder yang belum disetel adalah
 		// keadaan SERVER yang belum siap, bukan permintaan yang salah.
 		{"folder belum disetel", unggah.ErrUnggahanDirBelumDisetel,

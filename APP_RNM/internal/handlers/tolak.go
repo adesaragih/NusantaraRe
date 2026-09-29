@@ -20,6 +20,7 @@ import (
 	"nusantarare/inti"
 	"nusantarare/inti/galat"
 	"nusantarare/inti/jejak"
+	"nusantarare/inti/kontrak"
 )
 
 // permintaanTolakJSON - isian dialog Reject Outstanding (OQ-M5, GILIRAN-17).
@@ -83,7 +84,7 @@ func tolakBaris(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			galat.Tulis(w, http.StatusUnprocessableEntity,
 				"klaim belum bernomor; penolakan baris menunggu nomor klaim")
 			return
-		case errors.Is(err, services.ErrKasusSudahTertutup):
+		case errors.Is(err, kontrak.ErrKasusSudahTertutup):
 			galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
 			return
 		case errors.Is(err, galat.ErrPermintaanTidakSah):

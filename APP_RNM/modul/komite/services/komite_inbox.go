@@ -18,11 +18,11 @@ import (
 	"strings"
 	"time"
 
-	"nusantarare/internal/models"
-	"nusantarare/internal/repository"
 	"nusantarare/inti"
 	"nusantarare/inti/db"
 	"nusantarare/inti/galat"
+	"nusantarare/inti/kontrak"
+	"nusantarare/modul/komite/repository"
 )
 
 // ErrKasusKomiteTakDitemukan - tidak ada kasus komite dengan id itu.
@@ -109,7 +109,7 @@ func keBarisTampil(b repository.BarisInboxKomite) BarisInboxKomiteTampil {
 		KomiteLoop:      b.KomiteLoop,
 		NilaiKlaim:      b.NilaiKlaim,
 		MataUang:        b.MataUang,
-		StatusBaris:     models.StatusBarisDariKode(b.StsReject).String(),
+		StatusBaris:     kontrak.StatusBarisDariKode(b.StsReject).String(),
 	}
 }
 
@@ -130,7 +130,7 @@ func (i *InboxKomite) Ambil(ctx context.Context, pelaku inti.Pelaku, halaman, uk
 		ukuran = ukuranInboxKomiteMaks
 	}
 	baris, total, err := repository.NewInboxKomite(i.svc.DB()).Ambil(ctx, pelaku.AkunID,
-		models.StatusWorkSelesai, (halaman-1)*ukuran, ukuran)
+		kontrak.StatusWorkSelesai, (halaman-1)*ukuran, ukuran)
 	if err != nil {
 		return HalamanInboxKomite{}, err
 	}
@@ -201,7 +201,7 @@ func susunKasusTampil(k repository.KasusKomite, akunID string) (KasusKomiteTampi
 		})
 		if saya && a.Urut == k.Baris.TingkatBerjalan &&
 			a.Approval == repository.ApprovalKomiteMenunggu &&
-			!models.KasusTertutup(k.Baris.StatusWork) {
+			!kontrak.KasusTertutup(k.Baris.StatusWork) {
 			out.GiliranSaya = true
 		}
 	}

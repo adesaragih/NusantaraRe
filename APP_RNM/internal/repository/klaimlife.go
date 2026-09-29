@@ -16,6 +16,7 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/inti/db"
+	"nusantarare/inti/kontrak"
 	"nusantarare/inti/uang"
 	"nusantarare/inti/utils"
 )
@@ -449,7 +450,7 @@ func (r *KlaimLife) TandaiBarisOutstanding(ctx context.Context, tx *db.Tx, adjID
 	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.ExecContext(ctx, q, models.KodeOutstanding, adjID)
+	hasil, err := tx.ExecContext(ctx, q, kontrak.KodeOutstanding, adjID)
 	if err != nil {
 		return fmt.Errorf("repository: menandai baris Outstanding: %w", err)
 	}

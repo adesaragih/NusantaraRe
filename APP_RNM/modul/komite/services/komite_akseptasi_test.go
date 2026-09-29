@@ -3,8 +3,8 @@ package services
 // Nomor akseptasi Komite - tiket 04a. TANPA Oracle.
 
 import (
-	"nusantarare/internal/repository"
 	"nusantarare/inti"
+	"nusantarare/modul/komite/repository"
 	"os"
 	"strings"
 	"testing"
@@ -60,10 +60,13 @@ func TestKeunikanDiperiksaSebelumStempel(t *testing.T) {
 }
 
 // TestRekamAkhirSatuJalurDalamAkseptasi - tiket 04b, AC 16 spec.
+//
+// Refactor bentuk B (30-09-2026): kode status kini `kontrak.Kode*` (kosakata
+// dibagi Claim Life dan Komite), dulu `models.Kode*`.
 func TestRekamAkhirSatuJalurDalamAkseptasi(t *testing.T) {
 	kode := sumberKomiteAkseptasi(t)
 	iHeader := strings.Index(kode, "baca.CerminkanHeader(")
-	iRekam := strings.Index(kode, "p.rekamAkhir(ctx, tx, kasus, models.KodeAksep, nomor, saat)")
+	iRekam := strings.Index(kode, "p.rekamAkhir(ctx, tx, kasus, kontrak.KodeAksep, nomor, saat)")
 	iJejak := strings.Index(kode, "p.jejak.Rekam(")
 	if iHeader < 0 || iRekam < 0 || iJejak < 0 || !(iHeader < iRekam && iRekam < iJejak) {
 		t.Error("urutan akseptasi harus: stempel → rekam akhir → jejak")
@@ -82,8 +85,8 @@ func TestTolakAkhirDuaTingkatBarisSatuJalur(t *testing.T) {
 	}
 	badan := kode[i:]
 	for _, wajib := range []string{"periksaGiliran(kasus, pelaku.AkunID)",
-		"models.KodeOutstanding, models.KodeDitolak", "baca.CabutPenandaDipilih(",
-		"baca.CerminkanHeader(ctx, tx, klaimID, models.KodeDitolak", "p.rekamAkhir(ctx, tx, kasus, models.KodeDitolak",
+		"kontrak.KodeOutstanding, kontrak.KodeDitolak", "baca.CabutPenandaDipilih(",
+		"baca.CerminkanHeader(ctx, tx, klaimID, kontrak.KodeDitolak", "p.rekamAkhir(ctx, tx, kasus, kontrak.KodeDitolak",
 		"p.jejak.Rekam("} {
 		if !strings.Contains(badan, wajib) {
 			t.Errorf("Tolak tidak memuat %q", wajib)

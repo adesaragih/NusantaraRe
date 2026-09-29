@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"nusantarare/inti/kontrak"
 	"nusantarare/inti/uang"
 )
 
@@ -64,8 +65,8 @@ func TestHitungTotalPeserta(t *testing.T) {
 		//   baris 2:  1  2  3  4  5  6
 		//   jumlah : 11 22 33 44 55 66
 		baris := []BarisAdjustment{
-			barisUji(t, "0", KodeAksep),
-			barisUji(t, "", KodeAksep),
+			barisUji(t, "0", kontrak.KodeAksep),
+			barisUji(t, "", kontrak.KodeAksep),
 		}
 		total, err := HitungTotalPeserta(baris, "IDR")
 		if err != nil {
@@ -84,10 +85,10 @@ func TestHitungTotalPeserta(t *testing.T) {
 		// Langkah 8.1 b4221 dan 23.1 b10841 sama-sama berprasyarat KOSONG:
 		// tidak ada penyaringan atas STS_REJECT sama sekali. Menyaringnya
 		// menghasilkan angka yang lebih masuk akal dan bukan angka Pega.
-		diaksep := []BarisAdjustment{barisUji(t, "", KodeAksep)}
+		diaksep := []BarisAdjustment{barisUji(t, "", kontrak.KodeAksep)}
 		campur := []BarisAdjustment{
-			barisUji(t, "", KodeAksep),
-			barisUji(t, "", KodeDitolak),
+			barisUji(t, "", kontrak.KodeAksep),
+			barisUji(t, "", kontrak.KodeDitolak),
 		}
 		satu, err := HitungTotalPeserta(diaksep, "IDR")
 		if err != nil {
@@ -130,8 +131,8 @@ func TestHitungTotalPeserta(t *testing.T) {
 		// Money.Add MENOLAK nilai kosong, jadi tanpa penjagaan ini satu
 		// kolom kosong akan menggagalkan SELURUH pembacaan Detail - layar
 		// putih karena satu sel yang memang boleh kosong.
-		penuh := barisUji(t, "", KodeAksep)
-		bolong := barisUji(t, "", KodeAksep)
+		penuh := barisUji(t, "", kontrak.KodeAksep)
+		bolong := barisUji(t, "", kontrak.KodeAksep)
 		bolong.SumInsured = uang.Money{}
 		total, err := HitungTotalPeserta([]BarisAdjustment{penuh, bolong}, "IDR")
 		if err != nil {
@@ -146,8 +147,8 @@ func TestHitungTotalPeserta(t *testing.T) {
 	})
 
 	t.Run("mata uang beragam DITOLAK", func(t *testing.T) {
-		a := barisUji(t, "", KodeAksep)
-		b := barisUji(t, "", KodeAksep)
+		a := barisUji(t, "", kontrak.KodeAksep)
+		b := barisUji(t, "", kontrak.KodeAksep)
 		b.CurrencyID = "USD"
 		_, err := HitungTotalPeserta([]BarisAdjustment{a, b}, "IDR")
 		if !errors.Is(err, ErrTotalMataUangBeragam) {
@@ -161,7 +162,7 @@ func TestHitungTotalPeserta(t *testing.T) {
 		// itu - dan ronde pertama melabelinya ulang menjadi mata uang
 		// penampung, sehingga ia terjumlah diam-diam di bawah mata uang yang
 		// salah. Money.Add yang seharusnya menolaknya justru dilucuti.
-		b := barisUji(t, "", KodeAksep)
+		b := barisUji(t, "", kontrak.KodeAksep)
 		usd, err := uang.NewMoney("5", "USD")
 		if err != nil {
 			t.Fatal(err)
@@ -175,7 +176,7 @@ func TestHitungTotalPeserta(t *testing.T) {
 	t.Run("nilai uang TANPA label mata uang mengikut penampung", func(t *testing.T) {
 		// Ia bukan mata uang lain; ia hanya belum berlabel. Menolaknya akan
 		// menggagalkan seluruh pembacaan Detail untuk data yang sah.
-		b := barisUji(t, "", KodeAksep)
+		b := barisUji(t, "", kontrak.KodeAksep)
 		tanpaLabel, err := uang.NewMoney("5", "")
 		if err != nil {
 			t.Fatal(err)
@@ -191,7 +192,7 @@ func TestHitungTotalPeserta(t *testing.T) {
 	})
 
 	t.Run("mata uang peserta kosong: diisi dari baris", func(t *testing.T) {
-		total, err := HitungTotalPeserta([]BarisAdjustment{barisUji(t, "", KodeAksep)}, "")
+		total, err := HitungTotalPeserta([]BarisAdjustment{barisUji(t, "", kontrak.KodeAksep)}, "")
 		if err != nil {
 			t.Fatalf("HitungTotalPeserta: %v", err)
 		}
@@ -322,7 +323,7 @@ func TestNamaJSONTotalPesertaDikunci(t *testing.T) {
 // cacat "rute tanpa pemanggil" dalam bentuk lain.
 func TestTotalPesertaMenyeberangDiJSONPeserta(t *testing.T) {
 	p := Peserta{NomorSertifikat: "UJI-001", MataUang: "IDR"}
-	total, err := HitungTotalPeserta([]BarisAdjustment{barisUji(t, "", KodeAksep)}, "IDR")
+	total, err := HitungTotalPeserta([]BarisAdjustment{barisUji(t, "", kontrak.KodeAksep)}, "IDR")
 	if err != nil {
 		t.Fatalf("HitungTotalPeserta: %v", err)
 	}

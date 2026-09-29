@@ -1,5 +1,9 @@
 package models
 
+import (
+	"nusantarare/inti/kontrak"
+)
+
 // Status klaim sebagai TURUNAN - tiket 04.
 //
 // Untuk apa berkas ini: status klaim DIHITUNG dari status baris-barisnya,
@@ -70,11 +74,11 @@ func (k Klaim) StatusTurunan() StatusKlaim {
 		for _, b := range p.Baris {
 			cacah++
 			switch b.Status() {
-			case StatusOutstanding:
+			case kontrak.StatusOutstanding:
 				outstanding++
-			case StatusAksep:
+			case kontrak.StatusAksep:
 				aksep++
-			case StatusDitolak:
+			case kontrak.StatusDitolak:
 				// ditolak: tidak menambah apa pun, tetapi ia DIKENAL
 			default:
 				takDikenal++

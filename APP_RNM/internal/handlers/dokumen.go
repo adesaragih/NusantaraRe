@@ -28,6 +28,7 @@ import (
 	"nusantarare/internal/services"
 	"nusantarare/inti"
 	"nusantarare/inti/galat"
+	"nusantarare/inti/kontrak"
 	"nusantarare/inti/unggah"
 )
 
@@ -160,7 +161,7 @@ func jawabGalatDokumen(w http.ResponseWriter, err error) bool {
 		galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
 	case errors.Is(err, inti.ErrTanpaWewenang):
 		galat.Tulis(w, http.StatusForbidden, "wewenang tidak mencukupi")
-	case errors.Is(err, services.ErrKasusSudahTertutup):
+	case errors.Is(err, kontrak.ErrKasusSudahTertutup):
 		galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
 	case errors.Is(err, unggah.ErrUnggahanDirBelumDisetel):
 		// 503: bukan salah pemanggil. Ia keadaan server yang belum siap, dan

@@ -71,7 +71,7 @@ func tubuhFungsi(teks, nama string) string {
 func TestSetiapLayananPengubahMemeriksaKasusTerbuka(t *testing.T) {
 	const panggilan = "PastikanKasusTerbuka(ctx, klaimID)"
 	for berkas, daftar := range layananPengubah {
-		isi, err := os.ReadFile(berkas)
+		isi, err := bacaBerkasLayanan(berkas)
 		if err != nil {
 			t.Errorf("membaca %s: %v", berkas, err)
 			continue
@@ -243,6 +243,7 @@ var rutePengubah = map[string]string{
 var letakTabelRute = []string{
 	filepath.Join("..", "handlers", "handlers.go"),
 	filepath.Join("..", "..", "modul", "premiumlist", "handlers", "rute_premiumlist.go"),
+	filepath.Join("..", "..", "modul", "komite", "handlers", "rute_komite.go"),
 }
 
 // bacaBerkasLayanan membaca berkas layanan pelayan rute, di modul mana pun.

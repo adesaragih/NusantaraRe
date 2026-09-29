@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti/kontrak"
 )
 
 // TestBarisBaruTidakBolehLahirBerkeputusan - kepemilikan keputusan.
@@ -24,7 +25,7 @@ import (
 func TestBarisBaruTidakBolehLahirBerkeputusan(t *testing.T) {
 	r := NewPohonKlaim(nil)
 	ctx := context.Background()
-	for _, kode := range []string{models.KodeAksep, models.KodeDitolak, "9"} {
+	for _, kode := range []string{kontrak.KodeAksep, kontrak.KodeDitolak, "9"} {
 		_, err := r.SisipkanBaris(ctx, nil, "P-1",
 			models.BarisAdjustment{KodeStatus: kode})
 		if !errors.Is(err, ErrBarisBaruBerkeputusan) {
@@ -39,7 +40,7 @@ func TestBarisBaruTidakBolehLahirBerkeputusan(t *testing.T) {
 	// yang lolos penjaga akan lanjut menyentuh basis data, dan test ini
 	// berjalan tanpa Oracle. Penolakannya tetap dibuktikan lewat penulis
 	// sungguhan di atas, sehingga aturan ini terbukti BENAR-BENAR terpasang.
-	for _, kode := range []string{models.KodeOutstanding, ""} {
+	for _, kode := range []string{kontrak.KodeOutstanding, ""} {
 		if err := PeriksaBarisBaru(kode); err != nil {
 			t.Errorf("kode %q ditolak; ia baris pembuka putaran: %v", kode, err)
 		}

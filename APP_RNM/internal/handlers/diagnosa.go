@@ -30,6 +30,7 @@ import (
 	"nusantarare/internal/services"
 	"nusantarare/inti"
 	"nusantarare/inti/galat"
+	"nusantarare/inti/kontrak"
 )
 
 // isiDiagnosa adalah badan permintaan `PUT`.
@@ -150,7 +151,7 @@ func jawabGalatDiagnosa(w http.ResponseWriter, err error) bool {
 		// ditolak dengan kalimat yang menyebut sebabnya.
 		galat.Tulis(w, http.StatusConflict,
 			"peserta sudah diputus; diagnosanya tidak dapat diubah lagi")
-	case errors.Is(err, services.ErrKasusSudahTertutup):
+	case errors.Is(err, kontrak.ErrKasusSudahTertutup):
 		galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
 	case errors.Is(err, services.ErrTahapTidakBergridPeserta):
 		galat.Tulis(w, http.StatusConflict,

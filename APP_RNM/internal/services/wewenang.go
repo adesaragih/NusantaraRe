@@ -17,8 +17,8 @@ package services
 import (
 	"fmt"
 
-	"nusantarare/internal/models"
 	"nusantarare/inti"
+	"nusantarare/inti/kontrak"
 )
 
 // Izin - apa yang boleh dilakukan - dinamai terpisah dari PERAN, dan
@@ -61,11 +61,11 @@ const (
 //
 // ⚠️ `ReasLifeMedicalAdvisor` tidak menulis satu pun - tahap telaah medis
 // MENELAAH, ia tidak memutuskan akseptasi (AC 9 spec).
-func WajibPeranPengubahStatus(p inti.Pelaku, ke models.StatusBaris) error {
+func WajibPeranPengubahStatus(p inti.Pelaku, ke kontrak.StatusBaris) error {
 	switch ke {
-	case models.StatusDitolak:
+	case kontrak.StatusDitolak:
 		return inti.WajibPeran(p, PeranRejectOutstanding)
-	case models.StatusAksep:
+	case kontrak.StatusAksep:
 		// ⛔ Aksep punya DUA jalur, dan keduanya sah:
 		//
 		//   1. Komite memutuskan  → `KomitePostAdjustment` (tiket 11, dibaca)

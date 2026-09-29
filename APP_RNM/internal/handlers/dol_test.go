@@ -13,6 +13,7 @@ import (
 	"nusantarare/internal/services"
 	"nusantarare/inti"
 	"nusantarare/inti/galat"
+	"nusantarare/inti/kontrak"
 )
 
 func TestRuteTanggalKlaimTerdaftarDiSarangPeserta(t *testing.T) {
@@ -37,7 +38,7 @@ func TestGalatTanggalDipetakanKeKodeYangBenar(t *testing.T) {
 	}{
 		{"tanpa identitas", inti.ErrTanpaIdentitas, http.StatusUnauthorized},
 		{"tanpa wewenang", inti.ErrTanpaWewenang, http.StatusForbidden},
-		{"kasus tertutup", services.ErrKasusSudahTertutup, http.StatusConflict},
+		{"kasus tertutup", kontrak.ErrKasusSudahTertutup, http.StatusConflict},
 		{"tahap salah", services.ErrTahapTidakBolehUbahTanggal, http.StatusConflict},
 		{"terkunci sesudah Save to RNM", services.ErrTanggalTerkunciSesudahSaveRNM, http.StatusConflict},
 		{"tahap tak dikenal", services.ErrTahapTidakDikenal, http.StatusUnprocessableEntity},
@@ -109,7 +110,7 @@ func TestRuteCabutPesertaDanGalatnya(t *testing.T) {
 	}{
 		{inti.ErrTanpaIdentitas, http.StatusUnauthorized},
 		{inti.ErrTanpaWewenang, http.StatusForbidden},
-		{services.ErrKasusSudahTertutup, http.StatusConflict},
+		{kontrak.ErrKasusSudahTertutup, http.StatusConflict},
 		{services.ErrPesertaTidakDapatDicabut, http.StatusConflict},
 		{galat.ErrPermintaanTidakSah, http.StatusBadRequest},
 		{services.ErrTahapTidakDikenal, http.StatusUnprocessableEntity},

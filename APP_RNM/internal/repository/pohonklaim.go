@@ -28,6 +28,7 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/inti/db"
+	"nusantarare/inti/kontrak"
 	"nusantarare/inti/uang"
 	"nusantarare/inti/utils"
 )
@@ -159,7 +160,7 @@ var ErrBarisBaruBerkeputusan = errors.New(
 // Hanya Outstanding dan kosong yang lolos: baris baru memulai putaran, ia
 // tidak lahir sudah diputus.
 func PeriksaBarisBaru(kodeStatus string) error {
-	if kodeStatus != "" && kodeStatus != models.KodeOutstanding {
+	if kodeStatus != "" && kodeStatus != kontrak.KodeOutstanding {
 		return fmt.Errorf("%w: baris baru berkode %q",
 			ErrBarisBaruBerkeputusan, kodeStatus)
 	}

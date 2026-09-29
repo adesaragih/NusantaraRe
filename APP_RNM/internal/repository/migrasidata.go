@@ -31,6 +31,7 @@ import (
 
 	"nusantarare/internal/models"
 	"nusantarare/inti"
+	"nusantarare/inti/kontrak"
 	"nusantarare/inti/uang"
 	"nusantarare/inti/utils"
 )
@@ -234,7 +235,7 @@ func BongkarBarisLama(baris []BarisLama) ([]models.PohonKlaim, LaporanRekonsilia
 			for _, b := range br {
 				adj, temuan := barisAdjustmentDari(b)
 				lap.Temuan = append(lap.Temuan, temuan...)
-				if b.STS_REJECT == models.KodeOutstanding ||
+				if b.STS_REJECT == kontrak.KodeOutstanding ||
 					strings.TrimSpace(b.ACCEPTATION_DATE) != "" {
 					lap.BarisHardcode++
 				}

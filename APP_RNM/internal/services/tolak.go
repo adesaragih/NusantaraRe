@@ -25,6 +25,7 @@ import (
 	"nusantarare/inti"
 	"nusantarare/inti/db"
 	"nusantarare/inti/galat"
+	"nusantarare/inti/kontrak"
 )
 
 // PeranRejectOutstanding adalah peran yang boleh menolak baris Outstanding.
@@ -136,7 +137,7 @@ func (st *Status) Tolak(ctx context.Context, pelaku inti.Pelaku,
 	// Property-Set, dan dua transaksi berarti peserta dapat tertinggal masih
 	// "dipilih" padahal barisnya sudah batal.
 	return st.ubah(ctx, pelaku, klaimID, pesertaID, adjID,
-		models.StatusDitolak, saat, true, komentar)
+		kontrak.StatusDitolak, saat, true, komentar)
 }
 
 // BatasKomentarJejak - lebar `T_CLAIMLF_JEJAK.KOMENTAR` VARCHAR2(4000) dalam

@@ -1,6 +1,10 @@
 package models
 
-import "testing"
+import (
+	"testing"
+
+	"nusantarare/inti/kontrak"
+)
 
 // Uji gerbang `Close Claim` — ProtectCloseClaim_act, dibaca sebagai pohon.
 //
@@ -24,8 +28,8 @@ import "testing"
 func TestBolehTutupKlaim(t *testing.T) {
 	t.Run("seluruh peserta diaksep: boleh", func(t *testing.T) {
 		baris := []BarisTutup{
-			{Urutan: 1, NomorSertifikat: "UJI-001", KodeStatus: KodeAksep},
-			{Urutan: 2, NomorSertifikat: "UJI-002", KodeStatus: KodeAksep},
+			{Urutan: 1, NomorSertifikat: "UJI-001", KodeStatus: kontrak.KodeAksep},
+			{Urutan: 2, NomorSertifikat: "UJI-002", KodeStatus: kontrak.KodeAksep},
 		}
 		if !BolehTutupKlaim(baris) {
 			t.Error("seluruhnya diaksep tetapi ditolak")
@@ -37,8 +41,8 @@ func TestBolehTutupKlaim(t *testing.T) {
 
 	t.Run("satu peserta belum diaksep: tertahan", func(t *testing.T) {
 		baris := []BarisTutup{
-			{Urutan: 1, NomorSertifikat: "UJI-001", KodeStatus: KodeAksep},
-			{Urutan: 2, NomorSertifikat: "UJI-002", KodeStatus: KodeOutstanding},
+			{Urutan: 1, NomorSertifikat: "UJI-001", KodeStatus: kontrak.KodeAksep},
+			{Urutan: 2, NomorSertifikat: "UJI-002", KodeStatus: kontrak.KodeOutstanding},
 		}
 		if BolehTutupKlaim(baris) {
 			t.Error("satu peserta belum diaksep tetapi tutup diizinkan")
@@ -54,7 +58,7 @@ func TestBolehTutupKlaim(t *testing.T) {
 		// ("2") juga bukan 1, jadi ia menahan pula. Memperlakukan "ditolak"
 		// sebagai "selesai" akan menutup klaim yang barisnya belum diputus
 		// ulang - dan XML tidak pernah mengatakannya.
-		baris := []BarisTutup{{Urutan: 1, NomorSertifikat: "UJI-001", KodeStatus: KodeDitolak}}
+		baris := []BarisTutup{{Urutan: 1, NomorSertifikat: "UJI-001", KodeStatus: kontrak.KodeDitolak}}
 		if BolehTutupKlaim(baris) {
 			t.Error("peserta ditolak seharusnya tetap menahan tutup")
 		}
@@ -73,8 +77,8 @@ func TestBolehTutupKlaim(t *testing.T) {
 		// berulang kali, menemukan satu penghalang baru tiap kali.
 		baris := []BarisTutup{
 			{Urutan: 1, NomorSertifikat: "UJI-001", KodeStatus: ""},
-			{Urutan: 2, NomorSertifikat: "UJI-002", KodeStatus: KodeAksep},
-			{Urutan: 3, NomorSertifikat: "UJI-003", KodeStatus: KodeDitolak},
+			{Urutan: 2, NomorSertifikat: "UJI-002", KodeStatus: kontrak.KodeAksep},
+			{Urutan: 3, NomorSertifikat: "UJI-003", KodeStatus: kontrak.KodeDitolak},
 		}
 		p := PenghalangTutupKlaim(baris)
 		if len(p) != 2 {
@@ -142,11 +146,11 @@ func TestKodeStatusDibandingkanPersis(t *testing.T) {
 		baris := []BarisTutup{{Urutan: 1, NomorSertifikat: "UJI-001", KodeStatus: mirip}}
 		if BolehTutupKlaim(baris) {
 			t.Errorf("kode %q diterima sebagai diaksep; hanya %q yang berarti diaksep",
-				mirip, KodeAksep)
+				mirip, kontrak.KodeAksep)
 		}
 	}
 	// Dan yang persis tetap diterima.
-	baris := []BarisTutup{{Urutan: 1, NomorSertifikat: "UJI-001", KodeStatus: KodeAksep}}
+	baris := []BarisTutup{{Urutan: 1, NomorSertifikat: "UJI-001", KodeStatus: kontrak.KodeAksep}}
 	if !BolehTutupKlaim(baris) {
 		t.Error("kode yang persis ditolak")
 	}
@@ -159,8 +163,8 @@ func TestStatusWorkSelesaiVerbatim(t *testing.T) {
 	// seluruh alur adalah shape End1 (`Register_Flow.xml` b899); bila teks
 	// ini bergeser satu huruf, baris kita tidak akan cocok dengan baris
 	// Pega di basis data yang sama.
-	if StatusWorkSelesai != "Resolved-Completed" {
-		t.Errorf("StatusWorkSelesai = %q, mau %q", StatusWorkSelesai, "Resolved-Completed")
+	if kontrak.StatusWorkSelesai != "Resolved-Completed" {
+		t.Errorf("StatusWorkSelesai = %q, mau %q", kontrak.StatusWorkSelesai, "Resolved-Completed")
 	}
 }
 
@@ -168,7 +172,7 @@ func TestKasusTertutup(t *testing.T) {
 	t.Run("kosong berarti BELUM ditutup", func(t *testing.T) {
 		// ⛔ Kosong bukan "tidak diketahui" (ADR-U-0027). Seluruh baris yang
 		// sudah ada berkolom kosong, dan seluruhnya memang belum ditutup.
-		if KasusTertutup("") {
+		if kontrak.KasusTertutup("") {
 			t.Error("kolom kosong dibaca sebagai tertutup")
 		}
 	})
@@ -177,12 +181,12 @@ func TestKasusTertutup(t *testing.T) {
 			" Resolved-Completed", "Resolved-Completed ", "resolved-completed",
 			"Resolved", "Resolved-Complete", "\tResolved-Completed",
 		} {
-			if KasusTertutup(mirip) {
+			if kontrak.KasusTertutup(mirip) {
 				t.Errorf("%q dibaca sebagai tertutup; hanya %q yang menutup",
-					mirip, StatusWorkSelesai)
+					mirip, kontrak.StatusWorkSelesai)
 			}
 		}
-		if !KasusTertutup(StatusWorkSelesai) {
+		if !kontrak.KasusTertutup(kontrak.StatusWorkSelesai) {
 			t.Error("nilai yang persis tidak dibaca sebagai tertutup")
 		}
 	})

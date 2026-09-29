@@ -24,6 +24,8 @@ import (
 	intidb "nusantarare/inti/db"
 	"nusantarare/inti/migrasi"
 	"nusantarare/modul"
+	komitehandlers "nusantarare/modul/komite/handlers"
+	komiteservices "nusantarare/modul/komite/services"
 	premiumlisthandlers "nusantarare/modul/premiumlist/handlers"
 	premiumlistservices "nusantarare/modul/premiumlist/services"
 	treatyhandlers "nusantarare/modul/treaty/handlers"
@@ -65,6 +67,8 @@ func main() {
 	svcPL := premiumlistservices.DariDasar(dasar)
 	// Butir pl4/av: Claim Life membaca polis PremiumList lewat inti/kontrak.
 	svc := services.DariDasar(dasar).DenganPembacaPolis(premiumlistservices.PembacaPolis(svcPL))
+	// Butir km3: Komite membaca dan menuntaskan baris klaim lewat inti/kontrak.
+	svcKM := komiteservices.DariDasar(dasar).DenganKlaim(services.KlaimUntukKomite(svc))
 	svcTCO := treatyservices.DariDasar(dasar).
 		// OQ-TCO-08: bawaan stub; ⛔ garam tidak pernah dicetak.
 		DenganPenyimpananLampiranTCO(cfg.PelaksanaStorage == config.PelaksanaStorageNyata, cfg.StorageTokenSalt)
@@ -93,6 +97,7 @@ func main() {
 		Addr: cfg.HTTPAddr,
 		Handler: handlers.Router(svc, cfg.AuthStub, func(mux *http.ServeMux) {
 			premiumlisthandlers.DaftarkanRute(mux, svcPL, cfg.AuthStub)
+			komitehandlers.DaftarkanRute(mux, svcKM, cfg.AuthStub)
 			treatyhandlers.DaftarkanRute(mux, svcTCO, cfg.AuthStub)
 		}),
 		ReadHeaderTimeout: 10 * time.Second,

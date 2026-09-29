@@ -36,6 +36,7 @@ import (
 	"time"
 
 	"nusantarare/inti/db"
+	"nusantarare/inti/kontrak"
 )
 
 // AnggotaTangga adalah satu anggota komite yang akan ditulis ke tangganya.
@@ -48,12 +49,6 @@ type AnggotaTangga struct {
 	Jabatan    string
 	Email      string
 }
-
-// approvalAwal adalah nilai `KOMITE_APPROVAL` saat tangga dibentuk.
-//
-// `[terverifikasi]` `GetListKomiteLife.xml` b1197: `= 0` (disalin
-// `CreateKMTLife_Act` b1188). TEKS, bukan bilangan (ADR-U-0022).
-const approvalAwal = "0"
 
 // BuatKasusKomite melahirkan kasus komite beserta tangganya.
 //
@@ -133,7 +128,7 @@ func (r *PohonKlaim) BuatKasusKomite(ctx context.Context, tx *db.Tx,
 		}
 		hasil, err := tx.ExecContext(ctx, qList, id, kasusID, a.Urut,
 			db.KosongJadiNil(a.OperatorID), db.KosongJadiNil(a.Jabatan),
-			db.KosongJadiNil(a.Email), approvalAwal)
+			db.KosongJadiNil(a.Email), kontrak.ApprovalKomiteAwal)
 		if err != nil {
 			return "", fmt.Errorf("repository: menulis anggota tangga komite: %w", err)
 		}

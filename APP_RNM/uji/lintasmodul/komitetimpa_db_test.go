@@ -1,6 +1,6 @@
 //go:build db
 
-package repository_test
+package lintasmodul_test
 
 // OQ-K-05 (GILIRAN-17) terhadap skema uji Oracle: langkah 5.1
 // `KomitePostAdjustment` - keadaan tangga terbaca di dalam transaksi, lalu
@@ -13,9 +13,10 @@ import (
 	"testing"
 	"time"
 
-	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
 	"nusantarare/inti"
+	"nusantarare/modul/komite/models"
+	komiterepository "nusantarare/modul/komite/repository"
 )
 
 func TestTimpaTanggaTolakAkhirMenimpaSeluruhTingkatBerkeputusan(t *testing.T) {
@@ -50,7 +51,7 @@ func TestTimpaTanggaTolakAkhirMenimpaSeluruhTingkatBerkeputusan(t *testing.T) {
 	if err != nil {
 		t.Fatalf("melahirkan kasus komite: %v", err)
 	}
-	inbox := repository.NewInboxKomite(db)
+	inbox := komiterepository.NewInboxKomite(db)
 	if err := inbox.CatatKeputusan(ctx, tx, kasusID, 1, "UJI-OP-1", models.KeputusanKomiteSetuju, "UJI ok", saat); err != nil {
 		t.Fatalf("keputusan tingkat 1: %v", err)
 	}

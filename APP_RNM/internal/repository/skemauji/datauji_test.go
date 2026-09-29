@@ -17,6 +17,7 @@ import (
 	"nusantarare/internal/models"
 	"nusantarare/inti"
 	"nusantarare/inti/config"
+	"nusantarare/inti/kontrak"
 	"nusantarare/inti/migrasi"
 	premiumlistmodels "nusantarare/modul/premiumlist/models"
 )
@@ -200,7 +201,7 @@ func TestDataUjiNolKebocoran(t *testing.T) {
 		premiumlistmodels.TahapPolisPenawaran, premiumlistmodels.TahapPolisDetail,
 		premiumlistmodels.TahapPolisSummary, premiumlistmodels.StatusPolisSelesai,
 		premiumlistmodels.FlagPolisPenawaran, premiumlistmodels.FlagPolisPremium,
-		models.KodeOutstanding, models.KodeDitolak,
+		kontrak.KodeOutstanding, kontrak.KodeDitolak,
 		models.PeranAdminLife, models.PeranMedicalLife, models.PeranSPVLife,
 		models.TahapInputRegister.String(), models.TahapOutstanding.String(),
 		models.TahapMedicalCheck.String(), models.TahapClaimAnalis.String(),
@@ -356,7 +357,7 @@ func TestDataUjiPunyaBarisSiapSerahKomite(t *testing.T) {
 	sisip := sisipanDataUji(t, bacaDataUji(t))
 	var siap []sisipDataUji
 	for _, s := range sisip {
-		if s.tabel == "T_CLAIMLF_ADJUSTMENT" && s.teks("STS_REJECT") == models.KodeOutstanding &&
+		if s.tabel == "T_CLAIMLF_ADJUSTMENT" && s.teks("STS_REJECT") == kontrak.KodeOutstanding &&
 			s.ambil("KOMITE_ID") == "" && s.teks("NAME_OF_BANK") != "" &&
 			s.teks("ID_BANK") != "" && s.teks("ACCOUNT_NO") != "" && s.ambil("CLAIM_AMOUNT") != "" {
 			siap = append(siap, s)

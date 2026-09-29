@@ -26,7 +26,11 @@ package models
 //
 // Dibaca sesudah: statusklaim.go.
 
-import "fmt"
+import (
+	"fmt"
+
+	"nusantarare/inti/kontrak"
+)
 
 // BarisTutup adalah satu peserta sebagaimana dilihat gerbang tutup.
 //
@@ -88,7 +92,7 @@ func PenghalangTutupKlaim(baris []BarisTutup) []Penghalang {
 		// `.STS_REJECT != 1` apa adanya - menahannya. Paket ini pun sudah
 		// menyatakan aturannya di StatusBarisDariKode: perbandingan atas
 		// TEKS, dan "00" BUKAN "0" (ADR-U-0022).
-		if b.KodeStatus == KodeAksep {
+		if b.KodeStatus == kontrak.KodeAksep {
 			continue
 		}
 		out = append(out, Penghalang{Urutan: b.Urutan, NomorSertifikat: b.NomorSertifikat})
@@ -104,28 +108,6 @@ func PenghalangTutupKlaim(baris []BarisTutup) []Penghalang {
 func BolehTutupKlaim(baris []BarisTutup) bool {
 	return len(PenghalangTutupKlaim(baris)) == 0
 }
-
-// StatusWorkSelesai adalah SATU-SATUNYA nilai yang pernah ditulis ke
-// `T_WORK_CLAIM.STATUS_WORK`.
-//
-// ⛔ VERBATIM dari `Flow/Register_Flow.xml` baris 899, di dalam
-// `<rowdata REPEATINGINDEX="End1">` (baris 883) yang ber-`pyMOId` End1
-// (885) dan `pxObjClass` `Data-MO-Event-End` (901). Sembilan shape lainnya
-// ber-`pyWorkStatus` KOSONG, jadi hanya End1 yang menetapkan status kerja.
-//
-// ⛔ Status Pega untuk kasus yang sedang BERJALAN (`New`, `Open`,
-// `Pending-…`) tidak ada di ekspor ini dan TIDAK DIKARANG: kasus terbuka
-// berkolom kosong. Kosong berarti "belum ditutup", bukan "tidak diketahui"
-// (ADR-U-0027).
-const StatusWorkSelesai = "Resolved-Completed"
-
-// KasusTertutup menjawab apakah baris work sudah ditutup.
-//
-// ⛔ Dibandingkan PERSIS, tanpa merapikan spasi - alasan yang sama dengan
-// gerbang di atas: pembanding yang lebih longgar daripada aslinya akan
-// memperlakukan kasus yang di sistem lama masih terbuka sebagai tertutup,
-// dan menolak setiap perubahan atasnya tanpa jalan keluar yang terlihat.
-func KasusTertutup(statusWork string) bool { return statusWork == StatusWorkSelesai }
 
 // tahapPenawarTutup adalah kedua tahap yang layarnya menawarkan `Close Claim`.
 //

@@ -17,6 +17,7 @@ import (
 	"nusantarare/internal/services"
 	"nusantarare/inti"
 	"nusantarare/inti/galat"
+	"nusantarare/inti/kontrak"
 )
 
 // dampakJSON adalah bentuk jawaban cacah dampak.
@@ -87,7 +88,7 @@ func jawabGalatHapus(w http.ResponseWriter, err error) bool {
 			"penghapusan klaim selalu berupa penanda dan nilai pembalik, "+
 				"tidak pernah hapus fisik (ADR-U-0031); DELETE tidak berlaku "+
 				"atas sumber daya ini")
-	case errors.Is(err, services.ErrKasusSudahTertutup):
+	case errors.Is(err, kontrak.ErrKasusSudahTertutup):
 		galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
 	case errors.Is(err, galat.ErrPermintaanTidakSah):
 		galat.Tulis(w, http.StatusBadRequest, err.Error())
