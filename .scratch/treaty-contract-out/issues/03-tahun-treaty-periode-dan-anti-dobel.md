@@ -159,3 +159,11 @@ jejak 3 catatan, 404), frontend `pages/treaty-contract-out/InboxTreatyContract.t
 (29 label diuji terhadap korpus), `api.ts` (+5 fungsi/antarmuka), menu + rute App.
 
 **Status:** selesai 28-09-2026 — commit `treaty-contract-out: tiket 03 — tahun treaty, periode, anti-dobel`.
+
+### Ralat bertanggal 29-09-2026 — tco5 menu satu butir
+
+**Keputusan work owner tco5**: *"untuk menu hanya Treaty Contract Out; Treaty Contract ReinsType dan Treaty Contract
+Description dihapus"*. Kelompok sidebar **Treaty Contract Out** memuat SATU butir berlabel **`Treaty Contract Out`**
+(`MENU_TCO.treatyContractOut`; asalnya harness portal `InboxTreatyContract` b151). Layar tahun treaty ini pintu
+masuk tunggal modul; kontrak dan klausul dibuka dari tombol `ReinsType` b20778 dan `List Description` b22196 di
+barisnya, seperti Pega.

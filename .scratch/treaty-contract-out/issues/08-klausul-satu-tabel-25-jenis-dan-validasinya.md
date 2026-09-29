@@ -236,3 +236,10 @@ hidup** (bukan `pyStepsBlockName = //`) dengan prasyarat **aktif** (`pyStepsPreC
   tiket 02.
 - **OQ-TCO-16 — ditutup.** Jawaban: *"benar"*. Nama kolom master `TREATYDESC` (`DESCNAME`, `ISXOL`, `STATUSAKTIF`),
   `OCCUPATION` (`NAME`), `CLAUSE` (`INFO`, `TYPE = 'FIRE'`) dikonfirmasi.
+
+### Ralat bertanggal 29-09-2026 — tco5 menu satu butir
+
+**Keputusan work owner tco5**: butir menu ketiga `InboxTreatyContractDescription` **dibuang** — harness itu popup dari
+form kontrak (`Section/InputTreatyContract.xml` tombol `List Description` b22196 → harness b22323/b23088). Layar
+klausul (`PanelKlausulTahun`) tetap, dibuka tombol `List Description` baris tahun treaty. Halaman pembungkus
+`InboxTreatyContractDescription.tsx` tidak lagi dirujuk menu; rutenya di `App.tsx` (suntingan work owner) menunggu.

@@ -31,6 +31,10 @@ import { MENU_TCO } from '../assets/labels.treaty-contract-out'
  * memeriksa bentuk. Union memindahkan penjagaannya ke kompiler — lebih
  * awal, dan tanpa pagar tambahan.
  */
+// ⚠️ tco5: `tco-kontrak` / `tco-klausul` TIDAK lagi punya butir menu — kedua
+// layar dibuka tombol `ReinsType` / `List Description` layar tahun treaty.
+// Nilainya tetap di union karena rutenya ada di `App.tsx`, yang memuat suntingan
+// work owner yang belum di-commit (brief lanjutan 3: jangan disentuh).
 export type ModulTetap = 'beranda' | 'inbox' | 'register' | 'premiumlist' | 'komite' | 'tco-tahun' | 'tco-kontrak' | 'tco-klausul'
 
 /** Satu entri menu yang dapat dicari. */
@@ -46,7 +50,7 @@ export interface EntriMenu {
 /**
  * Entri sidebar yang benar-benar dapat dibuka.
  *
- * ⛔ EMPAT butir modul, ditambah Beranda. Empat belas kelompok lain berdiri
+ * ⛔ LIMA butir modul (tco5: Treaty Contract Out satu butir), ditambah Beranda. Empat belas kelompok lain berdiri
  * di sidebar TANPA butir — dan karena itu tidak ada di sini pula. Entri yang
  * berdiri di daftar ini tetapi tidak di sidebar dapat dibuka lewat palet
  * walau menunya tidak terlihat; itu persis cacat yang REFERENSI_UI bayar
@@ -61,12 +65,10 @@ export const ENTRI_MENU: readonly EntriMenu[] = [
   { modul: 'register', label: MENU.register, kelompok: MODUL.claimLife },
   { modul: 'premiumlist', label: MENU_MODUL.premiumList, kelompok: MODUL.premiumListLife },
   { modul: 'komite', label: MENU_MODUL.inboxKomite, kelompok: MODUL.komiteClaimLife },
-  // Treaty Contract Out tiket 03 — VERBATIM pyLabel harness (b151).
-  { modul: 'tco-tahun', label: MENU_TCO.inboxTreatyContract, kelompok: MODUL.treatyContractOut },
-  // Tiket 04: butir kedua kelompok - VERBATIM pyLabel harness b151.
-  { modul: 'tco-kontrak', label: MENU_TCO.inboxTreatyContractReinsType, kelompok: MODUL.treatyContractOut },
-  // Tiket 08: butir ketiga kelompok - VERBATIM pyLabel harness b359.
-  { modul: 'tco-klausul', label: MENU_TCO.inboxTreatyContractDescription, kelompok: MODUL.treatyContractOut },
+  // Treaty Contract Out — tco5 [keputusan work owner 29-09-2026]: SATU butir
+  // "Treaty Contract Out" (asal harness InboxTreatyContract). Butir ReinsType
+  // dan Description dibuang: di Pega keduanya popup form kontrak (b20778, b22196).
+  { modul: 'tco-tahun', label: MENU_TCO.treatyContractOut, kelompok: MODUL.treatyContractOut },
 ]
 
 /** Satu baris hasil palet. */

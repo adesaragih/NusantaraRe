@@ -162,3 +162,11 @@ dibaca lengkap dengan prasyarat dan penandanya; langkah ber-`pyStepsBlockName = 
   29 Februari → 28 Februari, hari terakhir bulan tetap hari terakhir bulan (28 Februari tahun biasa → 29 Februari tahun
   kabisat). Uji: tahun biasa, kabisat Januari (dulu 2024-12-31), kabisat Oktober (dulu 366 hari), melewati 29 Februari,
   29 Februari, akhir bulan — dibuktikan merah terhadap rumus lama (4 kasus).
+
+### Ralat bertanggal 29-09-2026 — tco5 menu satu butir
+
+**Keputusan work owner tco5**: butir menu kedua `InboxTreatyContractReinsType` **dibuang**. XML membenarkannya: harness
+itu bukan menu portal, melainkan popup dari form kontrak — `Section/InputTreatyContract.xml` tombol `ReinsType` b20778 →
+harness b20947/b21627. Editor kontrak (`PanelKontrakTahun`) tetap, dibuka tombol `ReinsType` baris tahun treaty.
+Halaman pembungkus `InboxTreatyContractReinsType.tsx` (pemilih tahun, penyimpangan 6 di atas) tidak lagi dirujuk menu;
+rutenya masih ada di `App.tsx` yang memuat suntingan work owner belum di-commit — dibuang saat berkas itu di-commit.

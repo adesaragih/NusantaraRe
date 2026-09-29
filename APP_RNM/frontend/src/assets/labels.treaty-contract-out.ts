@@ -9,8 +9,15 @@
 // dijaga `components/treaty-contract-out/namaJujur.test.ts`.
 
 /**
- * Menu kelompok **Treaty Contract Out** — tiga harness portal (kelas
- * `Data-Portal`), butirnya VERBATIM `<pyLabel>` tiap harness.
+ * Menu kelompok **Treaty Contract Out** — tco5 `[DIPUTUSKAN work owner
+ * 29-09-2026]`: *"untuk menu hanya Treaty Contract Out; Treaty Contract
+ * ReinsType dan Treaty Contract Description dihapus"*. SATU butir.
+ *
+ * XML membenarkannya: `InboxTreatyContractReinsType` dan
+ * `InboxTreatyContractDescription` BUKAN menu portal melainkan popup dari form
+ * kontrak — `Section/InputTreatyContract.xml` tombol `ReinsType` b20778 →
+ * harness b20947/b21627, tombol `List Description` b22196 → harness
+ * b22323/b23088. Keduanya dibuka tombol itu di layar tahun treaty.
  *
  * ⚠️ Nama kelompok = nama FOLDER korpus, pola `MODUL` di `labels.ts`
  * (`MODUL.treatyContractOut`, ditambahkan ADITIF di tiket 03).
@@ -18,11 +25,13 @@
 export const MENU_TCO = {
   /** Nama folder korpus `D:\XML\RNM_BRD\Treaty Contract Out`. */
   kelompok: 'Treaty Contract Out',
-  /** `Harness/InboxTreatyContract.xml` b151 `<pyLabel>`. */
+  /** tco5: label SATU-SATUNYA butir menu `[keputusan work owner]`; asalnya harness portal `InboxTreatyContract`. */
+  treatyContractOut: 'Treaty Contract Out',
+  /** `Harness/InboxTreatyContract.xml` b151 `<pyLabel>` — nama harness asal butir itu (bukan label menu sejak tco5). */
   inboxTreatyContract: 'InboxTreatyContract',
-  /** `Harness/InboxTreatyContractReinsType.xml` b151 `<pyLabel>`. */
+  /** `Harness/InboxTreatyContractReinsType.xml` b151 `<pyLabel>` — popup tombol `ReinsType` b20778, bukan menu. */
   inboxTreatyContractReinsType: 'InboxTreatyContractReinsType',
-  /** `Harness/InboxTreatyContractDescription.xml` b359 `<pyLabel>`. */
+  /** `Harness/InboxTreatyContractDescription.xml` b359 `<pyLabel>` — popup tombol `List Description` b22196, bukan menu. */
   inboxTreatyContractDescription: 'InboxTreatyContractDescription',
 } as const
 
