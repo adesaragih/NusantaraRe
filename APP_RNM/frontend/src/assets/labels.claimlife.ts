@@ -293,6 +293,17 @@ export const DETAIL = {
   maxClaimReceived: 'MAX CLAIM RECEIVED',
   /** b22641 `pyLabel` -> `pyActivity SaveAdjustment_Act` b22665. */
   simpanAdjustment: 'Save Adjustment',
+  /**
+   * Butir bo — grid `.AdjustmentList` b17126: b17937 `pyLabel` -> `addRow`
+   * b17947 + `SetIndexAdjustmentList` b17991; tampil hanya bila
+   * `pyWorkPage.pyPosition =='ReasLifeSPV'` b18160.
+   */
+  tambahAdjustment: 'Add',
+  /**
+   * b19120 `pyLabel` -> `deleteRow` b19130; tampil bila `.PrintFaceClaim == ''
+   * && pyPosition =='ReasLifeSPV'` b19399. ⛔ Berdiri tetapi MATI — ADR-U-0031.
+   */
+  hapusAdjustment: 'Delete',
 
   /**
    * `CloseClaim_Section.xml` b1081 `pyLabel`.

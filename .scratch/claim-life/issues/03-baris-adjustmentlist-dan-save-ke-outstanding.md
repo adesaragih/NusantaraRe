@@ -749,3 +749,77 @@ menghendaki gerbang itu, ia keputusan **baru**, bukan replikasi.
 Yang tetap: gerbang "belum diunggah" (langkah 3–4) dan daftar kategori butir **ar1**, yang kini
 hanya dipakai validasi unggahan. Bab 26-09 butir 3 (tabel dua gerbang) dan ralat #3 GILIRAN-11
 tetap sebagai catatan pembacaan. Teks AC 45 disunting di tempat (lihat AC-nya).
+
+## ⛔ Ralat bertanggal — 29 September 2026 (GILIRAN-13 paket 2, butir **bo**: `Add` membuat baris pertama)
+
+**Celah yang ditutup.** Tiket ini dan tiket 11 hanya punya jalur yang **menuntut** baris pertama sudah ada
+(`…/putaran` mewarisi dari `.AdjustmentList(1)`; akseptasi, tolak, dan Komite menyunting baris yang ada).
+Pendaftaran melahirkan peserta **tanpa** baris (`Baris: []`), jadi grid adjustment layar Detail kosong untuk
+selamanya — dan `…/putaran` atas peserta itu menjawab **400 "bukan milik klaim"**, sebab `AmbilBaris`
+menggabung ke baris adjustment dan peserta tanpa baris tidak muncul di sana.
+
+**Pembacaan XML — sebagai pohon, `pyStepsBlockName` dicetak** (seluruh activity Claim Life yang menyebut
+`AdjustmentList`; nol langkah di bawah bertanda `//`):
+
+| Activity | Langkah | Apa yang dilakukannya pada `AdjustmentList` |
+| --- | --- | --- |
+| `SetIndexAdjustmentList` | 1 b328, 2, 3 b570–744 | `.IsCheck = true` peserta; `.IndexPremiumList`; baris `(<LAST>)` mewarisi delapan kolom dari `(1)` — pada grid kosong keduanya baris yang SAMA |
+| `SaveInsuredClaim_Act` | 2.2 b1341 | menulis `TempDetail.pxResults(<LAST>).AdjustmentList(<LAST>)` — halaman **sementara** unggahan |
+| `SavePesertaClaim` | 7.8 b3671 *(hidup, WHEN b3919 `.IsCheck=="true"`)* | menulis delapan kolom baris `(<LAST>)` peserta `(<LAST>)` — **baris pertama lahir saat pendaftaran** |
+| `SaveOutStandingLife_Act` | 22.1 b10548 | `@LengthOfPageList(.AdjustmentList)=0` → **lewati** peserta tanpa baris |
+| `SpreadingClaimLife_Act` | 7.1 b1962, 8.2 b2394 | mengisi `SpreadingList`/`RetroLifeList` baris yang ada |
+| `SaveAdjustment_Act` | 1.5 b1808, 1.6 b1979 | akseptasi atas baris `(<LAST>)` yang ada |
+| `DeletePesertaClaimLife` | 1.1 b316 | menomori ulang `.IndexPremiumList` baris yang ada |
+| `serviceInsertArasapasClaimLife_act` | 1.1 b311 | membaca baris yang ada |
+
+Yang **melahirkan** baris hanya dua: tombol `Add` (`Section/ClaimLifeDetailGCNM.xml` b17937 → `addRow`
+b17947 + `SetIndexAdjustmentList` b17991; tampil bila `pyWorkPage.pyPosition =='ReasLifeSPV'` b18160) dan
+pendaftaran 7.8.
+
+**Yang dibangun** (`[DIPUTUSKAN; veto work owner]` butir bo):
+
+- **Satu rute, bukan dua** — `POST /api/klaim-life/{id}/peserta/{pesertaId}/putaran`. Tombol XML-nya pun
+  satu; yang membedakan kedua jalur hanya keadaan grid, dan itu dibaca layanan. Peserta tanpa baris →
+  `Putaran.tambahPertama`; peserta berbaris → jalur putaran tiket 11, **tidak diubah**.
+- **Baris pertama KOSONG** — `services.BarisPertama`, nilai nol seluruhnya, termasuk mata uang
+  (`TambahBaris` mengisi mata uang dari peserta untuk baris pertama; itu bukan bentuk `Add`). Penanda
+  dipilih (`IS_CHECK = 'true'`, `models.PenandaDipilih`) dipasang di transaksi yang sama; jejak kelahiran
+  baris direkam (DARI/KE kosong — barisnya belum berstatus); header **tidak** dicerminkan.
+- **Gerbang**, di atas gerbang `Tambah` (identitas, `PeranSimpanOutstanding`, kasus terbuka): (1) tahap
+  **Claim Analis** (b18160) → `ErrTahapTanpaAddAdjustment` 409; (2) pemegangnya — sama dengan
+  `PeranSimpanOutstanding`, dijaga `TestPemegangClaimAnalisSamaDenganPeranPutaran`; (3) **tujuh gerbang
+  `.STS_REJECT=='1' || '2'`** peserta (b2628, b4682, b5059, b5870, b6152, b7335, b15234) →
+  `ErrPesertaSudahDiputus` 409. `Add` b17937 sendiri **tidak** membawa `pyDisabledWhen` — gerbang (3)
+  diberlakukan karena butir bo memintanya. Pada jalur putaran gerbang (1) dan (3) **tidak** dipasang:
+  (3) bertentangan dengannya (peserta yang ditolak berkode `"2"`, justru yang dibuka putarannya), dan (1)
+  akan mengubah jalur yang sudah berjalan tanpa bukti di tahap mana kasus berdiri sesudah Komite menolak.
+- **Layar** — `KlaimLife.tsx`: tombol `Add` (`DETAIL.tambahAdjustment`, `bolehAddAdjustment`: Claim
+  Analis, grid kosong, peserta belum diputus, kasus terbuka) memanggil rute yang sama dengan "Putaran
+  berikutnya".
+- ⛔ **`Delete` b19120 BERDIRI TETAPI MATI** (`DETAIL.hapusAdjustment`, tombol `disabled`). `deleteRow`
+  b19130 menghapus baris; **ADR-U-0031** menetapkan nol hapus fisik di jalur pengguna — penghapusan adalah
+  PENANDA + nilai balik — dan `T_CLAIMLF_ADJUSTMENT` tidak punya kolom penanda. Membuatnya keputusan skema
+  (migrasi) yang tidak ada di brief → **OQ-N7**.
+
+**Bukti:** `APP_RNM/internal/services/adjustment.go:BarisPertama`,
+`APP_RNM/internal/services/hasilkomite.go:Putaran.tambahPertama`, `APP_RNM/internal/handlers/putaran.go:jawabGalatPutaran`;
+uji `TestBarisPertamaLahirKosong`, `TestBarisPertamaHanyaUntukGridKosong`,
+`TestBarisPertamaMenghormatiGerbangSTSReject`, `TestPemegangClaimAnalisSamaDenganPeranPutaran`,
+`TestTombolAddAdjustmentVERBATIMDariKorpus`, `TestGalatPutaranDipetakanKeKodeYangBenar`,
+`TestPutaranTanpaOracle503`; `db`: `TestAddMelahirkanBarisPertamaKosong`,
+`TestAddBarisPertamaMenjagaGerbangnya` (**melewati** tanpa `ORACLE_DSN` — melewati bukan lulus); layar:
+`src/services/adjustmentpertama.test.ts`, `src/assets/labels.test.ts` (b17937, b19120).
+
+**Pertanyaan terbuka yang lahir:**
+
+- **OQ-N7** — `Delete` baris adjustment: kolom penanda hapus di `T_CLAIMLF_ADJUSTMENT` (dan penyaring di
+  setiap pembaca hilir, ADR-U-0031 Akibat 2), atau `Delete` dinyatakan tidak berlaku? XML menampilkannya
+  hanya untuk baris yang belum disimpan ke Outstanding (`.PrintFaceClaim == ''` b19399).
+- **OQ-N8** — baris pertama lahir **kosong**, dan **nol rute** menyunting sel baris adjustment
+  (`CLAIM_AMOUNT`, `CURRENCY`, kolom uang lain). `Save to RNM` langkah 11.17 menolak baris tanpa
+  `CLAIM_GROSS` (b6043), jadi kasus yang barisnya lahir lewat `Add` belum dapat disimpan ke Outstanding
+  sampai rute sunting sel ada.
+- **OQ-N9** — di Pega baris pertama lahir **saat pendaftaran** (`SavePesertaClaim` 7.8); di sini pendaftaran
+  melahirkan peserta tanpa baris (AC 32 tiket 02). `Add` menutup jalan layarnya, tetapi urutan kerjanya
+  berbeda: Pega mengisi baris saat Register di tahap Admin, sedangkan `Add` hanya tampil di Claim Analis.
+  Apakah pendaftaran semestinya melahirkan baris pertama (dan `Add` hanya untuk baris tambahan)?

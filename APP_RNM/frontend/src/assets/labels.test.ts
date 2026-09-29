@@ -187,6 +187,9 @@ describe.skipIf(!adaKorpus)('label layar Detail berbukti barisnya', () => {
     ['Find Disease', 5061, 'pyLabel'],
     ['Edit Date', 14115, 'pyLabel'],
     ['Save Adjustment', 22641, 'pyLabel'],
+    // Butir bo: kedua tombol grid `.AdjustmentList` b17126.
+    ['Add', 17937, 'pyLabel'],
+    ['Delete', 19120, 'pyLabel'],
     // Butir bk: sel read-only `.MAXCLAIM_RECEIVED` b12131.
     ['MAX CLAIM RECEIVED', 12124, 'pyLabelPreview'],
     // ⛔ ENAM total, bukan lima. Yang ini sempat luput karena
@@ -294,7 +297,7 @@ describe.skipIf(!adaKorpus)('label layar Detail berbukti barisnya', () => {
       )
     })
 
-  it('DETAIL memuat kesebelas label itu, tidak kurang', () => {
+  it('DETAIL memuat setiap label itu, tidak kurang dan tidak lebih', () => {
     const nilai = Object.values(DETAIL)
     for (const [label] of [...medanDetail, ...medanTutup]) {
       expect(nilai).toContain(label)

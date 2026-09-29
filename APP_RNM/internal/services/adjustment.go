@@ -15,6 +15,7 @@ package services
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/cockroachdb/apd/v3"
@@ -24,6 +25,11 @@ import (
 
 // ErrBarisTidakSah menandai baris adjustment yang tidak dapat dibentuk.
 var ErrBarisTidakSah = errors.New("services: baris adjustment tidak sah")
+
+// ErrPesertaSudahDiputus - peserta sudah diaksep atau ditolak; isian layar
+// Detail-nya beku (tujuh gerbang `.STS_REJECT`, lihat BarisPertama).
+var ErrPesertaSudahDiputus = errors.New(
+	"services: peserta sudah diputus, isian layar Detail-nya tidak dapat diubah")
 
 // kolomDiwarisi adalah kedelapan kolom yang diwarisi baris kedua dan seterusnya.
 //
@@ -123,6 +129,51 @@ func TambahBaris(p *models.Peserta, baru models.BarisAdjustment) error {
 	}
 	p.Baris = append(p.Baris, baru)
 	return nil
+}
+
+// BarisPertama membentuk baris adjustment PERTAMA seorang peserta - butir bo
+// (GILIRAN-13, `[DIPUTUSKAN; veto work owner]`).
+//
+// `[terverifikasi]` `Section/ClaimLifeDetailGCNM.xml`: grid `.AdjustmentList`
+// b17126, tombol `Add` b17937 -> `addRow` b17947 + `SetIndexAdjustmentList`
+// b17991. Pada grid KOSONG, langkah 3 activity itu (`.AdjustmentList(<LAST>).X
+// = .AdjustmentList(1).X`, b570-744) menyalin baris ke DIRINYA SENDIRI - jadi
+// baris pertama lahir KOSONG seluruhnya, dan itulah yang dikembalikan.
+//
+// ⛔ Bukan `TambahBaris`. Cabang baris-pertama di sana mengisi mata uang dari
+// peserta; butir bo memutuskan "seperti XML", dan XML tidak mengisinya.
+// Penanda dipilih (`SetIndexAdjustmentList` langkah 1 b328, `.IsCheck = true`)
+// dipasang layanannya di transaksi yang sama - ia milik PESERTA, bukan baris.
+//
+// ⛔ Gerbang `.STS_REJECT` peserta: `pyDisabledWhen` `.STS_REJECT=='1' ||
+// .STS_REJECT=='2'` tujuh kali di layar yang sama (b2628, b4682, b5059,
+// b5870, b6152, b7335, b15234) - peserta yang sudah diputus membekukan isian
+// layar Detail. `Add` b17937 sendiri TIDAK membawanya (hanya syarat tampil
+// b18160); butir bo memberlakukannya pada baris pertama. Pada jalur putaran
+// gerbang ini TIDAK berlaku: peserta yang barisnya ditolak berkode "2", dan
+// justru dialah yang dibuka putaran berikutnya.
+//
+// ⛔ Pembacaan seluruh activity Claim Life yang menyebut `AdjustmentList`,
+// sebagai pohon (`pyStepsBlockName` dicetak; `//` = mati, dan tidak satu pun
+// langkah di bawah bertanda itu): `SaveInsuredClaim_Act` 2.2 b1341 menulis
+// `TempDetail.pxResults(<LAST>).AdjustmentList(<LAST>)` - halaman sementara
+// unggahan; `SavePesertaClaim` 7.8 b3671 (hidup, WHEN b3919) menulis baris
+// pertama saat PENDAFTARAN; `SaveOutStandingLife_Act` 22.1 b10548 MELEWATI
+// peserta tanpa baris; `SpreadingClaimLife_Act` 7.1/8.2 dan `SaveAdjustment_Act`
+// 1.5/1.6, `DeletePesertaClaimLife` 1.1, serta `serviceInsertArasapasClaimLife_act`
+// 1.1 b311 hanya menyunting atau membaca baris yang sudah ada. Yang
+// melahirkan baris hanya dua: `Add` dan pendaftaran 7.8.
+func BarisPertama(p models.Peserta) (models.BarisAdjustment, error) {
+	if len(p.Baris) > 0 {
+		return models.BarisAdjustment{}, fmt.Errorf(
+			"%w: peserta %q sudah berbaris %d - baris berikutnya lahir lewat putaran",
+			ErrBarisTidakSah, p.ID, len(p.Baris))
+	}
+	if models.DiagnosaTerkunci(p.KodeStatus) {
+		return models.BarisAdjustment{}, fmt.Errorf("%w: peserta %q berkode %q",
+			ErrPesertaSudahDiputus, p.ID, strings.TrimSpace(p.KodeStatus))
+	}
+	return models.BarisAdjustment{}, nil
 }
 
 // TandaiOutstanding menuliskan STS_REJECT = 0 pada baris yang BELUM pernah

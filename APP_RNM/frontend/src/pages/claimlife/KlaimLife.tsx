@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 
-import { DETAIL, TOMBOL_KOMITE } from '../../assets/labels.claimlife'
+import { DETAIL, TAHAP, TOMBOL_KOMITE } from '../../assets/labels.claimlife'
 import { PanelTotalPeserta } from '../../components/claimlife/PanelTotalPeserta'
 import { PanelDokumenPeserta } from '../../components/claimlife/PanelDokumenPeserta'
 import { GridDiagnosa } from '../../components/claimlife/GridDiagnosa'
@@ -28,6 +28,7 @@ import {
   tambahPutaran,
   simpanAdjustment,
   bolehSimpanAdjustment,
+  bolehAddAdjustment,
   bolehPutaranBaru,
   bolehSerahkanDiLayar,
   dampakHapusKlaim,
@@ -274,12 +275,12 @@ export default function KlaimLife() {
       const kode = kodeStatusGalat(err)
       setGalat(
         kode === 403
-          ? 'Hanya ReasLifeSPV yang dapat membuka putaran berikutnya.'
+          ? 'Hanya ReasLifeSPV yang dapat menambah baris adjustment.'
           : kode === 409
-            ? (pesanGalat(err) ?? 'Putaran berikutnya hanya lahir sesudah baris terakhir ditolak.')
+            ? (pesanGalat(err) ?? 'Baris adjustment tidak dapat ditambahkan pada keadaan ini.')
             : kode === 501
               ? 'Jejak audit belum dapat direkam; tempatnya belum diputuskan.'
-              : 'Gagal membuka putaran berikutnya.',
+              : 'Gagal menambah baris adjustment.',
       )
     } finally {
       setMemutar(null)
@@ -617,6 +618,39 @@ export default function KlaimLife() {
                     onClick={() => void putaranBaru(p.id)}
                   >
                     {memutar === p.id ? 'Membuka…' : 'Putaran berikutnya'}
+                  </button>
+                </p>
+              )}
+
+              {/* ⭐ Butir bo (GILIRAN-13) — kedua tombol grid `.AdjustmentList`
+                  b17126.
+
+                  `Add` b17937 (`addRow` b17947 + `SetIndexAdjustmentList`
+                  b17991) tampil hanya bila `pyPosition =='ReasLifeSPV'`
+                  (b18160). Pada grid KOSONG ia melahirkan baris pertama:
+                  kosong, peserta ditandai dipilih. Pada grid berbaris `Add`
+                  adalah jalur PUTARAN — rute yang sama, dan tombolnya
+                  "Putaran berikutnya" di atas.
+
+                  ⛔ `Delete` b19120 (`deleteRow` b19130) BERDIRI tetapi MATI.
+                  ADR-U-0031: nol hapus fisik di jalur pengguna — penghapusan
+                  adalah PENANDA, dan `T_CLAIMLF_ADJUSTMENT` belum punya kolom
+                  penandanya. Itu keputusan skema, bukan milik layar. */}
+              {bolehAddAdjustment(klaim, p) && (
+                <p>
+                  <button
+                    type="button"
+                    disabled={memutar === p.id}
+                    onClick={() => void putaranBaru(p.id)}
+                  >
+                    {DETAIL.tambahAdjustment}
+                  </button>
+                </p>
+              )}
+              {klaim.tahap === TAHAP.claimAnalis && p.baris.length > 0 && (
+                <p>
+                  <button type="button" disabled title="Baris adjustment tidak dapat dihapus.">
+                    {DETAIL.hapusAdjustment}
                   </button>
                 </p>
               )}

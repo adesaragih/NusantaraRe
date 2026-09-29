@@ -639,14 +639,16 @@ export function bolehSimpanAdjustment(
 }
 
 /**
- * Membuka putaran adjustment berikutnya bagi seorang peserta.
+ * `Add` grid adjustment: baris PERTAMA pada grid kosong (butir bo), atau
+ * putaran adjustment berikutnya bagi seorang peserta.
  *
  * Inilah yang membuat klaim TIDAK TERMINAL: penolakan Komite menghasilkan
  * putaran berikutnya, bukan akhir (ADR-U-0011). Yang terminal adalah BARIS.
  *
  * Jawaban yang mungkin:
  *   403 bukan ReasLifeSPV
- *   409 baris terakhir belum ditolak
+ *   409 baris terakhir belum ditolak; baris pertama di luar Claim Analis;
+ *       peserta sudah diputus; kasus tertutup
  *   501 tempat jejak audit belum diputuskan (butir am)
  */
 export async function tambahPutaran(klaimID: string, pesertaID: string): Promise<void> {
@@ -667,6 +669,30 @@ export async function tambahPutaran(klaimID: string, pesertaID: string): Promise
 export function bolehPutaranBaru(baris: BarisAdjustment[]): boolean {
   const terakhir = baris[baris.length - 1]
   return terakhir !== undefined && terakhir.kodeStatus === KODE_DITOLAK
+}
+
+/**
+ * Apakah layar menawarkan `Add` b17937 pada grid adjustment KOSONG — butir bo.
+ *
+ * ⛔ Empat syarat, semuanya dari XML atau dari layanan:
+ *
+ *   1. tahap Claim Analis — syarat tampil `pyWorkPage.pyPosition
+ *      =='ReasLifeSPV'` b18160;
+ *   2. grid kosong — bila sudah berbaris, `Add` adalah jalur PUTARAN
+ *      (`bolehPutaranBaru`), rute yang sama (`tambahPutaran`);
+ *   3. peserta belum diputus — tujuh gerbang `.STS_REJECT=='1' ||
+ *      .STS_REJECT=='2'` di layar Detail (`bolehUbahDiagnosa`);
+ *   4. kasus belum tertutup (butir bb).
+ *
+ * ⚠️ Kenyamanan, bukan pagar: services menolak dengan 403/409.
+ */
+export function bolehAddAdjustment(klaim: Klaim, peserta: Peserta): boolean {
+  return (
+    !kasusTertutup(klaim) &&
+    klaim.tahap === TAHAP.claimAnalis &&
+    peserta.baris.length === 0 &&
+    bolehUbahDiagnosa(peserta)
+  )
 }
 
 /**

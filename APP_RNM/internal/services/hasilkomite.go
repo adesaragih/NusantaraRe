@@ -32,6 +32,11 @@ import (
 var ErrBukanPenolakan = errors.New(
 	"services: baris lanjutan hanya lahir sesudah baris terakhir ditolak")
 
+// ErrTahapTanpaAddAdjustment - `Add` grid adjustment tampil hanya di Claim
+// Analis: `pyWorkPage.pyPosition =='ReasLifeSPV'` (ClaimLifeDetailGCNM b18160).
+var ErrTahapTanpaAddAdjustment = errors.New(
+	"services: baris adjustment pertama hanya dapat ditambahkan di tahap Claim Analis")
+
 // ⛔ JALUR BACA DIBUANG - ia kode mati, dan saya sudah pernah berjanji tidak
 // mengulanginya.
 //
@@ -105,6 +110,86 @@ func BarisLanjutan(p models.Peserta) (models.BarisAdjustment, error) {
 	return baru, nil
 }
 
+// tambahPertama melahirkan baris adjustment PERTAMA - `Add` b17937 pada grid
+// kosong (butir bo, `[DIPUTUSKAN; veto work owner]`).
+//
+// Gerbangnya, DI ATAS gerbang `Tambah` (identitas, peran, kasus terbuka):
+//
+//  1. TAHAP. `Add` tampil hanya bila `pyWorkPage.pyPosition =='ReasLifeSPV'`
+//     (b18160) - pemegang Claim Analis. Kolom `TAHAP` menang; `PY_POSITION`
+//     cadangan (`tahapKasus`, butir at).
+//  2. PEMEGANG. Peran pemegang tahap itu - sama dengan
+//     `PeranSimpanOutstanding`, dan
+//     `TestPemegangClaimAnalisSamaDenganPeranPutaran` menjaga kesamaannya.
+//  3. `.STS_REJECT` PESERTA - lihat BarisPertama.
+//
+// ⛔ Jalur putaran TIDAK diberi gerbang 1 dan 3. Gerbang 3 bertentangan
+// dengannya (peserta yang ditolak berkode "2" - justru yang dibuka
+// putarannya), dan gerbang 1 akan mengubah jalur yang sudah berjalan sejak
+// tiket 11 tanpa bukti di mana kasusnya berdiri sesudah Komite menolak.
+//
+// ⛔ Header TIDAK dicerminkan, berbeda dengan putaran: baris pertama lahir
+// TANPA status (STS_REJECT ditulis Save Outstanding, 22.1.3.2), jadi belum ada
+// keputusan apa pun untuk dicerminkan.
+func (pt *Putaran) tambahPertama(ctx context.Context, pelaku Pelaku,
+	baca *repository.KlaimLife, klaimID, pesertaID string, saat time.Time) error {
+
+	tahap, err := tahapKasus(ctx, baca, klaimID)
+	if err != nil {
+		return err
+	}
+	if tahap != models.TahapClaimAnalis {
+		return fmt.Errorf("%w: tahap %s", ErrTahapTanpaAddAdjustment, tahap)
+	}
+	peranTahap, ada := models.PeranPemegangTahap(tahap)
+	if !ada {
+		return fmt.Errorf("%w: tahap %q", ErrPeranTahapBelumDiputuskan, tahap)
+	}
+	if err := WajibPeran(pelaku, peranTahap); err != nil {
+		return err
+	}
+
+	semua, err := baca.AmbilPeserta(ctx, klaimID)
+	if err != nil {
+		return err
+	}
+	var peserta *models.Peserta
+	for i := range semua {
+		if semua[i].ID == pesertaID {
+			peserta = &semua[i]
+		}
+	}
+	if peserta == nil {
+		return fmt.Errorf("%w: peserta %q bukan milik klaim %q",
+			ErrPermintaanTidakSah, pesertaID, klaimID)
+	}
+	baru, err := BarisPertama(*peserta)
+	if err != nil {
+		return err
+	}
+
+	pohon := repository.NewPohonKlaim(pt.svc.db)
+	return pt.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+		id, err := pohon.SisipkanBaris(ctx, tx, pesertaID, baru)
+		if err != nil {
+			return err
+		}
+		// `SetIndexAdjustmentList` langkah 1 b328: `.IsCheck = true`
+		// (models.PenandaDipilih) - di transaksi yang sama dengan barisnya.
+		if err := baca.PasangPenandaDipilih(ctx, tx, pesertaID); err != nil {
+			return err
+		}
+		// Kelahiran baris terekam (ADR-U-0007): DARI dan KE kosong, sebab
+		// barisnya belum berstatus - yang dicatat SIAPA, KAPAN, dan BARIS mana.
+		return pt.jejak.Rekam(ctx, tx, CatatanJejak{
+			AdjustmentID: id,
+			KlaimID:      klaimID,
+			AkunID:       pelaku.AkunID,
+			Waktu:        saat,
+		})
+	})
+}
+
 // barisTerakhirPeserta mengembalikan SALINAN baris paling akhir.
 //
 // ⛔ Salinan, bukan penunjuk. Ronde pertama mengembalikan
@@ -138,7 +223,13 @@ func (pt *Putaran) DenganJejak(j Jejak) *Putaran {
 	return &salin
 }
 
-// Tambah menambahkan satu baris adjustment putaran berikutnya.
+// Tambah menambahkan satu baris adjustment: baris PERTAMA bila pesertanya
+// belum berbaris (butir bo, lihat tambahPertama), atau baris putaran
+// berikutnya bila baris terakhirnya ditolak.
+//
+// ⛔ SATU rute untuk keduanya - butir bo mempersilakan satu atau dua, dan
+// yang lebih sederhana dipilih: tombol XML-nya pun satu (`Add` b17937), dan
+// yang membedakan kedua jalur hanya keadaan grid, yang dibaca di sini.
 //
 // ⛔ Ia TIDAK menulis keputusan. Yang ditulisnya baris BARU berstatus
 // Outstanding; keputusan atas baris lama tetap milik Komite dan tidak
@@ -179,8 +270,12 @@ func (pt *Putaran) Tambah(ctx context.Context, pelaku Pelaku,
 	}
 	daftar, ada := perBaris[pesertaID]
 	if !ada {
-		return fmt.Errorf("%w: peserta %q bukan milik klaim %q",
-			ErrPermintaanTidakSah, pesertaID, klaimID)
+		// ⛔ BUTIR bo (GILIRAN-13). `AmbilBaris` menggabung ke baris
+		// adjustment, jadi peserta TANPA baris tidak muncul di sini. Dahulu
+		// cabang ini menjawab "bukan milik klaim" - dan grid kosong tidak
+		// pernah dapat diisi siapa pun. Kini ia `Add` pada grid kosong;
+		// kepemilikannya diperiksa di sana lewat `AmbilPeserta`.
+		return pt.tambahPertama(ctx, pelaku, baca, klaimID, pesertaID, saat)
 	}
 
 	baru, err := BarisLanjutan(models.Peserta{ID: pesertaID, Baris: daftar})
