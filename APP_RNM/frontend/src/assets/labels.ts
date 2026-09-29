@@ -172,6 +172,8 @@ export const KERANGKA = {
   perluasMenu: 'Perluas menu',
   cariMenu: 'Cari menu',
   pintasCari: 'Ctrl K',
+  modeGelap: 'Mode gelap',
+  modeTerang: 'Mode terang',
   profil: 'Profil',
   keBeranda: 'ke Beranda',
   modeStub: 'mode stub',

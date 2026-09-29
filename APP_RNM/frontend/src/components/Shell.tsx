@@ -44,7 +44,16 @@ import { PagarGalat } from '../PagarGalat'
 import { type Sesi } from '../store/sesi'
 import { KelompokMenu } from './KelompokMenu'
 import { PaletMenu } from './PaletMenu'
-import { IkonCari, IkonChevron, IkonMenu, IkonRumah, IkonTutup } from './ui/dasar'
+import { useTema } from '../hooks/useTema'
+import {
+  IkonBulan,
+  IkonCari,
+  IkonChevron,
+  IkonMatahari,
+  IkonMenu,
+  IkonRumah,
+  IkonTutup,
+} from './ui/dasar'
 
 /** Halaman yang Shell dapat tampilkan. */
 // ⚠️ `outstanding` dan `detail` BUKAN butir menu: di Pega keduanya
@@ -159,6 +168,7 @@ export interface ShellProps {
 
 export function Shell({ masuk, halaman, onPindah, children }: ShellProps) {
   const lebar = useLayarLebar()
+  const { tema, balik: balikTema } = useTema()
   // Tablet (768–1023px) mulai dengan panel terciut, seperti template:
   // ruang kerja lebih lega tanpa menyembunyikan menu.
   const [terlipat, setTerlipat] = useState(
@@ -435,44 +445,59 @@ export function Shell({ masuk, halaman, onPindah, children }: ShellProps) {
             <kbd aria-hidden="true">{KERANGKA.pintasCari}</kbd>
           </button>
 
-          <div className="shell__profil" ref={profilRef}>
+          {/* `.topbar-actions` template: tombol tema + profil, didorong ke kanan. */}
+          <div className="shell__aksi">
+            {/* Sakelar tema. `aria-pressed` + nama TETAP "Mode gelap": pembaca
+                layar mendengar "Mode gelap, tertekan/tidak". Ikonnya tema TUJUAN. */}
             <button
               type="button"
-              className="shell__profil-pemicu"
-              aria-expanded={profilBuka}
-              aria-controls="shell-profil"
-              aria-label={`${KERANGKA.profil} ${masuk.akunID}`}
-              onClick={() => {
-                setProfilBuka((v) => !v)
-              }}
+              className="shell__ikon"
+              aria-pressed={tema === 'gelap'}
+              aria-label={KERANGKA.modeGelap}
+              title={tema === 'gelap' ? KERANGKA.modeTerang : KERANGKA.modeGelap}
+              onClick={balikTema}
             >
-              <span className="shell__avatar" aria-hidden="true">
-                {inisial(masuk.akunID)}
-              </span>
-              <span className="shell__profil-teks" aria-hidden="true">
-                <strong>{masuk.akunID}</strong>
-                <span>{sebutanPeran}</span>
-              </span>
-              <span className="shell__profil-panah" aria-hidden="true">
-                <IkonChevron />
-              </span>
+              {tema === 'gelap' ? <IkonMatahari /> : <IkonBulan />}
             </button>
-            {profilBuka && (
-              <div className="shell__profil-menu" id="shell-profil">
-                <p className="shell__profil-akun">{masuk.akunID}</p>
-                <ul className="shell__profil-peran">
-                  {masuk.peran.map((p) => (
-                    <li key={p}>
-                      {PERAN_ID[p]}
-                      <span>{p}</span>
-                    </li>
-                  ))}
-                </ul>
-                {/* ⛔ Tombol Keluar DIBUANG: tanpa masuk tidak ada keluar.
-                    Identitas datang dari env saat aplikasi menyala. */}
-                <p className="shell__profil-stub">{KERANGKA.modeStub}</p>
-              </div>
-            )}
+            <div className="shell__profil" ref={profilRef}>
+              <button
+                type="button"
+                className="shell__profil-pemicu"
+                aria-expanded={profilBuka}
+                aria-controls="shell-profil"
+                aria-label={`${KERANGKA.profil} ${masuk.akunID}`}
+                onClick={() => {
+                  setProfilBuka((v) => !v)
+                }}
+              >
+                <span className="shell__avatar" aria-hidden="true">
+                  {inisial(masuk.akunID)}
+                </span>
+                <span className="shell__profil-teks" aria-hidden="true">
+                  <strong>{masuk.akunID}</strong>
+                  <span>{sebutanPeran}</span>
+                </span>
+                <span className="shell__profil-panah" aria-hidden="true">
+                  <IkonChevron />
+                </span>
+              </button>
+              {profilBuka && (
+                <div className="shell__profil-menu" id="shell-profil">
+                  <p className="shell__profil-akun">{masuk.akunID}</p>
+                  <ul className="shell__profil-peran">
+                    {masuk.peran.map((p) => (
+                      <li key={p}>
+                        {PERAN_ID[p]}
+                        <span>{p}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {/* ⛔ Tombol Keluar DIBUANG: tanpa masuk tidak ada keluar.
+                      Identitas datang dari env saat aplikasi menyala. */}
+                  <p className="shell__profil-stub">{KERANGKA.modeStub}</p>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 

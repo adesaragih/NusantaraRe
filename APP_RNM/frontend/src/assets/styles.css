@@ -35,6 +35,20 @@
   /* Tidak ada di template: latar merah muda untuk isian bergalat, diturunkan
      dari --danger dengan cara template menurunkan --primary-soft. */
   --danger-bg: #fbeceb;
+  /* Warna yang dulu tertulis langsung di aturan (29-09-2026, mode gelap):
+     dijadikan token supaya blok `data-theme="dark"` dapat menukarnya.
+     Nilai terangnya TIDAK berubah. */
+  --danger-border: #efc4c0;
+  --info-border: #d3daf5;
+  --success-border: #bfe3cf;
+  --warning-border: #f3dfae;
+  --hover-baris: #fafbfd;
+  --topbar-bg: rgba(255, 255, 255, 0.9);
+  --kilau-sorot: #e3e8f0;
+  --bayang-lapis: 0 16px 40px rgba(23, 32, 51, 0.25);
+  --bayang-menu: 0 16px 40px rgba(23, 32, 51, 0.16);
+  --tirai: rgba(15, 20, 35, 0.45);
+  color-scheme: light;
   --radius: 12px;
   --radius-sm: 8px;
   --speed: 0.25s;
@@ -120,6 +134,60 @@
      `box-shadow: var(--ring)` ikut tanpa disunting satu-satu. */
   --ring: 0 0 0 2px var(--surface), 0 0 0 4px var(--primary);
   --t: 120ms ease;
+}
+
+/* MODE GELAP — 29-09-2026 (sakelar di topbar; lib/tema.ts, hooks/useTema.ts).
+
+   Template tidak punya mode gelap. Palet ini DITURUNKAN dari token template:
+   biru nila yang sama dinaikkan terangnya, permukaan biru-abu gelap alih-alih
+   hitam murni. Kontras diukur: teks --text/--text-2/--text-3 di atas
+   --surface 16:1 / 8,8:1 / 5,7:1; putih di atas --primary 5,2:1;
+   --primary-text di atas --primary-soft 7,5:1; pasangan status ≥ 7,6:1.
+
+   `color-scheme: dark` membuat kontrol bawaan (pemilih tanggal, <select>,
+   bilah gulir) ikut gelap. Nama token SAMA dengan tema terang — tidak ada
+   aturan komponen yang perlu tahu tema mana yang aktif. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --primary: #4a63d8;
+  --primary-hover: #5b73e3;
+  --primary-soft: #1f2a55;
+  --primary-text: #aebcff;
+  --accent: #e8a317;
+  --bg: #0f1420;
+  --surface: #171d2b;
+  --surface-2: #222a3b;
+  --border: #2c3548;
+  --text: #e6e9f0;
+  --text-2: #b4bccb;
+  --text-3: #8c96aa;
+  --success-bg: #0f3324;
+  --success-text: #6fd6a2;
+  --warning-bg: #3a2c0c;
+  --warning-text: #f2c261;
+  --danger: #f0685e;
+  --danger-text: #ff9a90;
+  --danger-bg: #3d1a1a;
+  --danger-border: #6b2a2a;
+  --info-border: #33427f;
+  --success-border: #1d5a3f;
+  --warning-border: #6a5217;
+  --hover-baris: #1c2333;
+  --topbar-bg: rgba(23, 29, 43, 0.9);
+  --kilau-sorot: #2a3345;
+  --bayang-lapis: 0 16px 40px rgba(0, 0, 0, 0.55);
+  --bayang-menu: 0 16px 40px rgba(0, 0, 0, 0.5);
+  --tirai: rgba(3, 6, 12, 0.6);
+  --sh-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --sh-2: 0 2px 8px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.35);
+  --sh-3: 0 12px 32px rgba(0, 0, 0, 0.55);
+}
+/* Ikon --primary di atas --primary-soft hanya 2,7:1 di tema gelap (grafik
+   butuh 3:1): ikon di atas latar lembut memakai --primary-text. Tema terang
+   tetap `color: var(--primary)` seperti template. */
+:root[data-theme="dark"] .shell__butir--aktif > svg,
+:root[data-theme="dark"] .beranda__peran-ikon {
+  color: var(--primary-text);
 }
 
 * {
@@ -278,7 +346,7 @@ table {
   border-bottom-right-radius: calc(var(--radius) - 1px);
 }
 :where(tbody tr:hover) {
-  background: #fafbfd;
+  background: var(--hover-baris);
 }
 /* Tabel di DALAM kartu: kartunya yang bertepi. Tepi kedua di dalamnya
    terbaca sebagai bingkai ganda. */
@@ -1626,7 +1694,7 @@ table {
 .btn--danger {
   background: var(--surface);
   color: var(--danger-text);
-  border-color: #efc4c0;
+  border-color: var(--danger-border);
 }
 .btn--danger:hover:not(:disabled) {
   background: var(--danger-bg);
@@ -1789,13 +1857,13 @@ table {
 }
 .alert--error {
   background: var(--danger-bg);
-  border-color: #efc4c0;
+  border-color: var(--danger-border);
   border-left-color: var(--danger);
   color: var(--danger-text);
 }
 .alert--info {
   background: var(--primary-soft);
-  border-color: #d3daf5;
+  border-color: var(--info-border);
   border-left-color: var(--primary);
   color: var(--primary-text);
 }
@@ -1804,7 +1872,7 @@ table {
    galat tidak terbaca sebagai konfirmasi. */
 .alert--ok {
   background: var(--success-bg);
-  border-color: #bfe3cf;
+  border-color: var(--success-border);
   border-left-color: var(--success-text);
   color: var(--success-text);
 }
@@ -1857,7 +1925,7 @@ table {
 }
 .alert--warn {
   background: var(--warning-bg);
-  border-color: #f3dfae;
+  border-color: var(--warning-border);
   border-left-color: var(--accent);
   color: var(--warning-text);
 }
@@ -2622,7 +2690,7 @@ table {
   inset: 0;
   z-index: 100;
   /* Lapisan gelap `.overlay` template — tanpa blur. */
-  background: rgba(15, 20, 35, 0.45);
+  background: var(--tirai);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2639,7 +2707,7 @@ table {
   background: var(--surface);
   /* 29-09-2026 — sudut kartu template (12px) dan bayangan laci template. */
   border-radius: var(--radius);
-  box-shadow: 0 16px 40px rgba(23, 32, 51, 0.25);
+  box-shadow: var(--bayang-lapis);
   width: 460px;
   max-width: 100%;
   max-height: 86vh;
@@ -3337,7 +3405,7 @@ textarea.field__input {
   font-size: var(--fs-sm);
   padding: 1px 4px;
   border-radius: var(--r-sm);
-  background: rgba(23, 32, 51, 0.06);
+  background: var(--surface-2);
 }
 
 /* ============================================ PANEL SAMPING YANG TERLIPAT
@@ -3414,7 +3482,7 @@ textarea.field__input {
   flex: none;
   width: 15px;
   height: 15px;
-  border: 2px solid rgba(23, 32, 51, 0.16);
+  border: 2px solid var(--border);
   border-top-color: var(--blue);
   border-radius: var(--r-pill);
   animation: putar 620ms linear infinite;
@@ -3427,7 +3495,7 @@ textarea.field__input {
   display: block;
   height: 11px;
   border-radius: var(--r-pill);
-  background: linear-gradient(90deg, var(--surface-2) 25%, #e3e8f0 37%, var(--surface-2) 63%);
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--kilau-sorot) 37%, var(--surface-2) 63%);
   background-size: 400% 100%;
   animation: kilau 1.3s ease infinite;
 }
@@ -3771,7 +3839,7 @@ textarea.field__input {
 /* Baris terpilih — penanda konteks. Tanpa ini pengguna kehilangan jejak
    grup/deskripsi mana yang sedang ditampilkan panel kanan. */
 .row--aktif {
-  background: rgba(23, 32, 51, 0.06);
+  background: var(--surface-2);
 }
 .row--aktif td {
   font-weight: 600;
@@ -4375,7 +4443,7 @@ textarea.field__input {
 .polis__catatan {
   margin: 12px 0 0;
   padding: 12px 16px;
-  border: 1px solid #f3dfae;
+  border: 1px solid var(--warning-border);
   border-left: 4px solid var(--accent);
   border-radius: var(--radius-sm);
   background: var(--warning-bg);
@@ -4507,7 +4575,7 @@ textarea.field__input {
 .shell--laci .shell__sidebar {
   transform: translateX(0);
   visibility: visible;
-  box-shadow: 0 16px 40px rgba(23, 32, 51, 0.25);
+  box-shadow: var(--bayang-lapis);
   transition:
     transform var(--speed) ease,
     width var(--speed) ease,
@@ -4748,7 +4816,7 @@ textarea.field__input {
   position: fixed;
   inset: 0;
   z-index: 40;
-  background: rgba(15, 20, 35, 0.45);
+  background: var(--tirai);
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--speed) ease;
@@ -4775,7 +4843,7 @@ textarea.field__input {
   gap: 8px;
   height: var(--topbar-h);
   padding: 0 16px;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--topbar-bg);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border);
@@ -4850,6 +4918,13 @@ textarea.field__input {
   display: none;
 }
 
+/* `.topbar-actions` template: tombol tema + profil. */
+.shell__aksi {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
 .shell__profil {
   position: relative;
   flex-shrink: 0;
@@ -4910,7 +4985,7 @@ textarea.field__input {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: 0 16px 40px rgba(23, 32, 51, 0.16);
+  box-shadow: var(--bayang-menu);
 }
 .shell__profil-akun {
   margin: 0 0 8px;
@@ -4980,7 +5055,7 @@ textarea.field__input {
   align-items: flex-start;
   justify-content: center;
   padding: 12vh 16px 16px;
-  background: rgba(15, 20, 35, 0.45);
+  background: var(--tirai);
 }
 .palet {
   display: flex;
@@ -4991,7 +5066,7 @@ textarea.field__input {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: 0 16px 40px rgba(23, 32, 51, 0.25);
+  box-shadow: var(--bayang-lapis);
 }
 .palet__kepala {
   display: flex;
@@ -5347,7 +5422,7 @@ textarea.field__input {
   .shell__cari kbd {
     display: inline-block;
   }
-  .shell__profil {
+  .shell__aksi {
     margin-left: auto;
   }
   .kepala-halaman {

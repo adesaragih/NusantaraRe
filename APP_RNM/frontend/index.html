@@ -4,6 +4,21 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Nusantara Re</title>
+    <!-- Tema terang/gelap dipasang SEBELUM halaman tergambar, supaya mode gelap
+         tidak berkedip putih. Kunci dan nilainya = src/lib/tema.ts (dijaga
+         tema.test.ts); sesudah React menyala, hooks/useTema.ts mengambil alih. -->
+    <script>
+      (function () {
+        var tema = null;
+        try {
+          tema = localStorage.getItem('tema-tampilan');
+        } catch (e) {}
+        if (tema !== 'gelap' && tema !== 'terang') {
+          tema = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'gelap' : 'terang';
+        }
+        document.documentElement.dataset.theme = tema === 'gelap' ? 'dark' : 'light';
+      })();
+    </script>
     <!-- Huruf Plus Jakarta Sans — persis workpage-template.html (29-09-2026).
          Bila jaringan memblokir Google Fonts, --font jatuh ke system-ui/Segoe UI. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />

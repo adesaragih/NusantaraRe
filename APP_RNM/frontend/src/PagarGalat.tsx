@@ -39,7 +39,9 @@ export class PagarGalat extends Component<{ children: ReactNode }, Keadaan> {
         </p>
         <pre
           style={{
-            background: "#f6f8fa",
+            // Token, bukan hex: kotak terang tetap terang di mode gelap
+            // sementara teksnya ikut terang — tak terbaca.
+            background: "var(--surface-2)",
             padding: "12px",
             borderRadius: "6px",
             whiteSpace: "pre-wrap",
