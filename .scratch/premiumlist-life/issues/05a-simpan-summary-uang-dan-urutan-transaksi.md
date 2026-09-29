@@ -449,3 +449,10 @@ ulang dari korpus: 36 `@divide`, pemetaan 80 kolom baris demi baris, dan keempat
 - ⚠️ Angka ke kolom `NUMBER` warisan dikirim sebagai teks dan bergantung pada NLS sesi — pola yang
   sudah ada (`nilaiSisipPeserta`), tidak diubah di tiket ini. `jenisNilai` menyerupai enum di
   `kolompeserta.go`; disatukan bila keduanya disentuh lagi.
+
+## Keputusan bertanggal — 29 September 2026 (GILIRAN-17 paket 4: OQ-PL-09, OQ-PL-10) `[keputusan work owner 29-09-2026 — lembar keputusan, "rekomendasi"]`
+
+| OQ | Keputusan | Keadaan |
+| --- | --- | --- |
+| **PL-09** | tulis `M_LIFE_PREMIUM_SUMMARY` sesuai pl2, dalam transaksi simpan summary yang sama, kolom VERBATIM dari prosedur yang ditiru | ⛔ **terhalang — tidak ditulis, tidak ditebak.** `InsertPLSummary` memanggil `POOLDATA.PEGA_M_LIFE_PREMIUM_SUMMARY` secara **posisional** (37 masuk + 2 keluar), jadi nama kolomnya hanya ada di badan prosedur. Badan itu tidak tercatat di repo mana pun, dan hitungannya tidak cocok (1 `ID` + 37 argumen = 38 lawan 37 kolom). Memetakan dengan tebakan menyimpan uang di kolom yang mungkin salah. **Dipindah ke daftar serah terima DBA**: `ALL_SOURCE` `PEGA_M_LIFE_PREMIUM_SUMMARY` dan `ALL_TAB_COLUMNS` `M_LIFE_PREMIUM_SUMMARY`. Sesudah itu penulisnya satu fungsi di `polis_warisan.go`, dipanggil sesudah `GantiRekap` |
+| **PL-10** | kolom uang kosong di `M_LIFE_PREMIUM_DETAIL` warisan = **0**, seperti Pega | ✅ `repository.kolomNolBilaKosongWarisan` (45 kolom) di `nilaiSalinWarisan`, satu fungsi di tepi repository warisan. Himpunannya adalah kolom `SaveMasterLPDet` yang memakai `TempInputDetail.CARIn`, dengan `CARIn = @toDecimal(.X)` di `InsertLifePremiumDetail_act` langkah 3.3.3 (b1843, hidup), termasuk `RISK` (CARI50). Kolom teks, tanggal, `PERIOD_YY/MM`, `PASSED_PERIOD`, dan `AGE`/`ENTRY_AGE`/`CURRENT_AGE` (tanpa `@toDecimal`) tetap NULL. ADR-U-0027 tetap berlaku untuk tabel `T_*`. Uji: `TestKosongWarisanJadiNolSepertiToDecimal`, dan `TestKolomNolBilaKosongWarisanDariKorpus`, yang menurunkan himpunannya ulang dari korpus dua arah (mutasi menjadi merah) |

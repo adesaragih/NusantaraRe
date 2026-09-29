@@ -108,3 +108,6 @@ adalah `PROC_GENERATE_SEQUENCE_NUMBER`.
 | `ProdDateTime` di aplikasi | **tidak dihitung**. Ia hanya hidup di JSON halaman `InsertJsonPolisLife_Act` langkah 5 (b1237), dan `JSON_POLIS` tidak lagi ditulis (pl1). Ia juga **bukan** muatan `convertJsonNusareToProduction`, karena `tglInput` = `.pxCreateDateTime` (OQ-PL-14) |
 | konstanta | `25` ditanam bertanda b1170 dengan uji yang disematkan ke korpus, bersama paket kode PremiumList (GILIRAN-17 paket 4). Penjaga "nol ambang tertanam" (`ambangperiode_test.go`) tetap berlaku untuk periode dan penomoran |
 | selisih yang dicatat | untuk 26–31 Desember, Pega menulis tahun **berjalan** + bulan `01` (bulan digulir b800, tahun `@CurrentDate("yyyy")`), sehingga hasilnya Januari tahun yang sama. `models.PeriodeProduksi` menggulir tahunnya. Karena `ProdDateTime` tidak dihitung, selisih ini tidak berdampak hari ini |
+
+Tambahan GILIRAN-17 paket 4: konstanta `models.AmbangProdDateTimePega = 25` ditanam bertanda b1170/b1092. Ujinya
+`TestAmbangProdDateTimeTertanamB1170` membaca baris b1170 pecahan korpus. Pemakainya nol hari ini, sesuai catatan di atas.

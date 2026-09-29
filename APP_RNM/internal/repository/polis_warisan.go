@@ -165,6 +165,33 @@ var kolomPesertaWarisan = []struct {
 	{"RISK", "d.RISK", nilaiTeks},
 }
 
+// kolomNolBilaKosongWarisan - OQ-PL-10 DITUTUP 29-09-2026 (GILIRAN-17)
+// `[keputusan work owner]`: kolom yang di `SaveMasterLPDet` memakai
+// `TempInputDetail.CARIn` dengan `CARIn = @toDecimal(.X)` di
+// `InsertLifePremiumDetail_act` langkah 3.3.3 (b1843, hidup) - 45 kolom
+// termasuk `RISK` (CARI50). `@toDecimal("")` = 0, jadi di tabel warisan kolom
+// ini TIDAK PERNAH NULL. Kolom teks, tanggal, dan `PERIOD_YY/MM`,
+// `PASSED_PERIOD`, `AGE`, `ENTRY_AGE`, `CURRENT_AGE` (disalin `TempValue.X`
+// langsung, tanpa `@toDecimal`) tetap NULL bila kosong.
+//
+// ⛔ SATU tempat, di tepi repository WARISAN. ADR-U-0027 (kosong bukan nol)
+// tetap berlaku untuk tabel `T_*`. Himpunannya diturunkan ulang dari korpus
+// oleh `TestKolomNolBilaKosongWarisanDariKorpus`, dua arah.
+var kolomNolBilaKosongWarisan = map[string]bool{
+	"SHARE_NUSANTARA_RE": true, "COMM": true, "FLEET_DISCOUNT": true, "NET_PREMIUM": true,
+	"GROSS_PREMIUM": true, "CLAIM": true, "TAX": true, "BROKERAGE_FEE": true,
+	"OVR_COMM": true, "SUM_INSURED": true, "CEDING_RETENTION": true, "SUM_REASURED": true,
+	"PROF_COMM": true, "GROSS_PREMIUM_REFUND": true, "NET_PREMIUM_REFUND": true, "COMM_REFUND": true,
+	"BROKERAGE_FEE_REFUND": true, "OVR_COMM_REFUND": true, "TAX_REFUND": true, "SHARE_RETRO": true,
+	"GROSS_PREMIUM_RETRO": true, "DISCOUNT_PREMIUM_RETRO": true, "OVR_COMM_RETRO": true, "BROKERAGE_FEE_RETRO": true,
+	"NET_PREMIUM_RETRO": true, "GROSS_PREMIUM_REFUND_RETRO": true, "DISCOUNT_PREMIUM_REFUND_RETRO": true, "OVR_COMM_REFUND_RETRO": true,
+	"BROKERAGE_FEE_REFUND_RETRO": true, "NET_PREMIUM_REFUND_RETRO": true, "CLAIM_AMOUNT": true, "RATE": true,
+	"SUM_AT_RISK_GROSS": true, "SUM_AT_RISK_RETRO": true, "RETROCEDED_SHARE": true, "SHARE_NUSANTARA_RE_GROSS": true,
+	"DEDUCTION": true, "FACTOR": true, "DEDUCTION_REFUND": true, "RI_ADMIN_FEE_REFUND_RETRO": true,
+	"RI_ADMIN_FEE_RETRO": true, "RI_ADMIN_FEE_REFUND": true, "RI_ADMIN_FEE": true, "EM_PERCENT": true,
+	"RISK": true,
+}
+
 // StatusSalinWarisan adalah `CARI48`, VERBATIM.
 //
 // `[terverifikasi]` `@if(TempWorkPage.Type=="QR","0",@if(TempWorkPage.Type=="QP","0","1"))`
@@ -214,7 +241,9 @@ func sqlSisipPesertaWarisan(tabel, urutan string) string {
 
 // nilaiSalinWarisan menyusun argumen satu baris, urut `kolomPesertaWarisan`.
 //
-// ⛔ Kosong menjadi NULL, bukan teks kosong maupun "0" (ADR-U-0027).
+// ⛔ Kosong menjadi NULL, bukan teks kosong - KECUALI kolom
+// `kolomNolBilaKosongWarisan`, yang menjadi "0" seperti `@toDecimal` Pega
+// (OQ-PL-10, GILIRAN-17).
 func nilaiSalinWarisan(nomorPL, idPega string, b BarisWarisan) []any {
 	arg := make([]any, 0, len(kolomPesertaWarisan))
 	for _, k := range kolomPesertaWarisan {
@@ -234,6 +263,10 @@ func nilaiSalinWarisan(nomorPL, idPega string, b BarisWarisan) []any {
 		}
 		v := b.Nilai[k.Kolom]
 		if !v.Valid || strings.TrimSpace(v.String) == "" {
+			if kolomNolBilaKosongWarisan[k.Kolom] {
+				arg = append(arg, "0")
+				continue
+			}
 			arg = append(arg, nil)
 			continue
 		}

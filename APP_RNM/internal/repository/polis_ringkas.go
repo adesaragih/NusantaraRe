@@ -116,6 +116,25 @@ func sqlPolisRingkas(polis string) string {
 }
 
 // Ringkas membaca versi berjalan sebuah nomor polis.
+// NomorPolisDariID membaca `NO_POLIS` satu polis dari pengenal work-nya
+// (`T_PREMIUM_LIST.ID` = `T_WORK_POLIS.ID`) - parameter `noPolis`
+// `convertJsonNusareToProduction` (OQ-PL-14, GILIRAN-17).
+func (r *RingkasPolisLife) NomorPolisDariID(ctx context.Context, polisID string) (string, error) {
+	polis, err := r.db.Qualify("T_PREMIUM_LIST")
+	if err != nil {
+		return "", err
+	}
+	q := fmt.Sprintf(`SELECT p.NO_POLIS FROM %s p WHERE p.ID = :1`, polis)
+	if err := PeriksaSQL(q); err != nil {
+		return "", err
+	}
+	var no sql.NullString
+	if err := r.db.sql.QueryRowContext(ctx, q, polisID).Scan(&no); err != nil {
+		return "", fmt.Errorf("repository: membaca nomor polis %q: %w", polisID, err)
+	}
+	return strings.TrimSpace(no.String), nil
+}
+
 func (r *RingkasPolisLife) Ringkas(ctx context.Context, nomorPolis string) (
 	PolisRingkas, error) {
 

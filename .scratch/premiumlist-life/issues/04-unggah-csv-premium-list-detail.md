@@ -267,3 +267,17 @@ seluruh nilai uji berawalan `UJI-`.
 `models.ValidasiUnggah` beserta ujinya; `MEDICAL_STATUS` tidak lagi kolom judul wajib. Teks AC yang
 menuntutnya disunting di tempat. Celah hidup yang dicatat: langkah 2 mengisi 0 kolom uang kosong
 (**OQ-PL-12**), langkah 3–8 memeriksa keberadaan medan header (pesannya ada, belum dipakai).
+
+## Keputusan bertanggal — 29 September 2026 (GILIRAN-17 paket 4: OQ-PL-12 ditutup) `[keputusan work owner 29-09-2026 — lembar keputusan, "rekomendasi"]`
+
+Kolom uang CSV yang **kosong = 0**, seperti `ValidasiUploadPL_act` langkah 2: 2.1 (b2121) sampai 2.32 (b6691). Setiap langkah itu
+berbentuk `.X = 0` dengan WHEN `@PropertyHasValue(.X)`, dan `pyStepsBlockName`-nya kosong; `//` pertama baru di b8025.
+- `models.IsiNolUangKosong` mengisi ke-32 `KolomUangUnggah`, urutan sama. Himpunannya disematkan ke korpus
+  (`TestNolUangLangkah2DariKorpus`).
+- Ia dipanggil di **satu jalan** tinjau/simpan (`services.periksaBerkas`), **sebelum** `ValidasiUnggah`; urutannya dijaga
+  `TestPeriksaBerkasMengisiNolSebelumValidasi`. Akibatnya "HARUS ADA" langkah 9.12–9.17 tidak berbunyi atas sel kosong,
+  seperti sistem lama.
+- Nilai 0 itu ikut tersimpan di `T_PREMIUM_LIST_DETAIL`, seperti Pega (`SavePremiumList_Act` langkah 8). Ini penafsiran
+  **masukan** (sel kosong berarti nol), bukan pengisian tabel, sehingga ADR-U-0027 tidak dilanggar.
+
+Uji: `TestIsiNolUangKosongSepertiLangkah2`.

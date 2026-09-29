@@ -16,7 +16,9 @@ package models
 // SUMBER-PENOMORAN-DBA.md), dan `ProdDateTime` digeser `InsertJsonPolisLife_Act`
 // langkah 4 (b1065, nilai b1092, gerbang b1170 `>25` TERTANAM). Bentuk
 // hitungnya ditiru dari b1092; ambangnya dari tabel sesuai `[keputusan work
-// owner]` "ikuti yang dari DB" - penerapannya pada `ProdDateTime` OQ-PL-13.
+// owner]` "ikuti yang dari DB" - untuk periode yang ditampilkan dan penomoran
+// PL. ⛔ OQ-PL-13 DITUTUP 29-09-2026 (GILIRAN-17): `ProdDateTime` sendiri IKUT
+// XML - 25 tertanam (`AmbangProdDateTimePega`).
 //
 //	langkah 2 b715   `RDB-List` -> `GETTanggalClosing_SQL`
 //	                  (`SELECT * FROM POOLDATA.TANGGAL_CLOSING`)
@@ -59,6 +61,19 @@ var ErrTanggalTutupBukuKosong = errors.New(
 // ErrTanggalTutupBukuTidakMasukAkal - nilainya di luar 1..31.
 var ErrTanggalTutupBukuTidakMasukAkal = errors.New(
 	"models: tanggal tutup buku di luar 1..31")
+
+// AmbangProdDateTimePega - OQ-PL-13 DITUTUP 29-09-2026 (GILIRAN-17)
+// `[keputusan work owner]`: `ProdDateTime` ikut XML, ambang 25 TERTANAM -
+// `InsertJsonPolisLife_Act` langkah 4 (b1065, hidup), gerbang b1170
+// `@toDecimal(Local.currentdate)>25`, nilai b1092 `@CurrentDate("yyyy",
+// "Asia/Jakarta")+Local.NextMonth+"01T050000.000 GMT"`.
+//
+// ⚠️ Nol pemakai hari ini: `ProdDateTime` hanya hidup di JSON halaman (langkah
+// 5 b1237), dan `JSON_POLIS` tidak lagi ditulis (pl1); ia juga bukan muatan
+// `convertJsonNusareToProduction` (`tglInput` = `.pxCreateDateTime`). Penjaga
+// "nol ambang tertanam" (ambangperiode_test.go) tetap berlaku untuk periode
+// dan penomoran. Uji: `TestAmbangProdDateTimeTertanamB1170`.
+const AmbangProdDateTimePega = 25
 
 // JamPeriodeGMT adalah jam periode produksi - VERBATIM `T050000.000 GMT`.
 //

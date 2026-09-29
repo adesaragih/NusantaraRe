@@ -232,10 +232,13 @@ lintas konteks**, bukan perubahan internal.
     `[terverifikasi]` step 17 ter-remark; `[keputusan work owner]` dibuang. ⛔ *Ralat 28-09-2026:*
     step 17 (`//` b5383) memanggil `InsertLifePremiumDetail` (b5422), **bukan** layanan ini;
     `convertJsonNusareToProduction` **hidup** di `serviceInsertArasapasLife_act` langkah 5 (b963) —
-    premis keputusannya dikonfirmasi ulang, **OQ-PL-14**.
+    premis keputusannya dikonfirmasi ulang, **OQ-PL-14**. ⛔ *Ralat 29-09-2026 (GILIRAN-17, keputusan work owner):*
+    cerita ini **dibatalkan**. `convertJsonNusareToProduction` **ditiru lewat outbox**, dengan pelaksana stub
+    (`PelaksanaPremiumList`, tiket 06; panggilan nyata menunggu OQ-PL-11).
 35. Sebagai **tim migrasi**, saya ingin commit implisit Pega **tidak** ditiru. `[terverifikasi]`
     step 16 `Commit` ter-remark.
-36. Sebagai **tim migrasi**, saya ingin ambang `25` **tidak** ditanam di kode. `[keputusan work
+36. ⛔ *Ralat 29-09-2026 (GILIRAN-17, OQ-PL-13):* tetap berlaku untuk periode dan penomoran PL. `ProdDateTime`
+    ikut XML, dengan 25 tertanam (`AmbangProdDateTimePega`, b1170). Sebagai **tim migrasi**, saya ingin ambang `25` **tidak** ditanam di kode. `[keputusan work
     owner]` — ikuti versi yang membaca `TANGGAL_CLOSING`.
 37. Sebagai **tim migrasi**, saya ingin shape "Input Premium List Summary" **tidak** dibangun kecuali
     terbukti terpakai. `[terverifikasi]` nol connector masuk, nol rujukan harness (**OQ-023**).

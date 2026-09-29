@@ -52,7 +52,8 @@ giliran ini; statusnya tetap seperti baris paritasnya (bila ada) — **belum** a
 
 - **OQ-PL-12** — langkah 2 `ValidasiUploadPL_act` menjadikan kolom uang yang kosong **0** sebelum
   pemeriksaan "HARUS ADA"; aplikasi menolaknya (ADR-U-0027: kosong bukan nol). Ikuti Pega (terima
-  sebagai 0) atau pertahankan penolakan sebagai penyimpangan sadar?
+  sebagai 0) atau pertahankan penolakan sebagai penyimpangan sadar? — ✅ **ditutup 29-09-2026 (GILIRAN-17): ikuti
+  Pega, `IsiNolUangKosong` sebelum validasi (tiket 04).**
 - **OQ-PL-13** — "ikuti yang dari DB" berdiri di atas premis bahwa `SubmitPremiumList_Act` membaca
   ambang secara hidup; nyatanya ia hanya mengalir ke langkah 15 yang ter-remark. Pembaca hidup tabel
   itu adalah `PROC_GENERATE_SEQUENCE_NUMBER` (nomor PL); `ProdDateTime` di Pega memakai `>25`
@@ -60,7 +61,8 @@ giliran ini; statusnya tetap seperti baris paritasnya (bila ada) — **belum** a
   tertanam (b1170); `ProdDateTime` tidak dihitung aplikasi (tiket 02).**
 - **OQ-PL-14** — cerita spec 34 membuang `ConvertJsonNusareToProduction` dengan alasan step 17
   ter-remark; step 17 memanggil `InsertLifePremiumDetail`, dan `convertJsonNusareToProduction` hidup
-  di `serviceInsertArasapasLife_act` langkah 5 (b963). Tetap dibuang?
+  di `serviceInsertArasapasLife_act` langkah 5 (b963). Tetap dibuang? — ✅ **ditutup 29-09-2026 (GILIRAN-17):
+  ditiru lewat outbox, pelaksana stub `PelaksanaPremiumList` (tiket 06).**
 
 ## Pertanyaan terbuka GILIRAN-13/14 — 29-09-2026
 

@@ -31,10 +31,11 @@ package models
 // (`CekDoubleInsured` memang hidup, tetapi di `Calculate1_Act` 7.5 untuk
 // akumulasi retensi ceding - bukan penolakan unggah.)
 //
-// ⚠️ CELAH TERCATAT - OQ-PL-12: karena langkah 2, kolom uang wajib yang
-// KOSONG di sistem lama menjadi 0 dan lolos "HARUS ADA" langkah 9.12-9.17;
-// di sini ia ditolak (ADR-U-0027: kosong bukan nol). Keputusannya milik work
-// owner.
+// ⛔ OQ-PL-12 DITUTUP 29-09-2026 (GILIRAN-17) `[keputusan work owner]`: seperti
+// langkah 2, kolom uang yang KOSONG menjadi 0 (`IsiNolUangKosong`) SEBELUM
+// validasi, sehingga "HARUS ADA" langkah 9.12-9.17 tidak berbunyi atas sel
+// kosong - persis sistem lama. Nilai 0 itu ikut tersimpan, seperti Pega
+// (`SavePremiumList_Act` langkah 8 mengulang daftar yang sama).
 //
 // ⛔ PESAN DISALIN VERBATIM, termasuk yang menjanjikan hal yang tidak
 // diperiksa. Lihat `PesanNetPremium` dan OQ-069.
@@ -232,6 +233,26 @@ var KolomUangUnggah = []string{
 	"BROKERAGE_FEE_RETRO", "NET_PREMIUM_RETRO", "GROSS_PREMIUM_REFUND_RETRO",
 	"DISCOUNT_PREMIUM_REFUND_RETRO", "OVR_COMM_REFUND_RETRO",
 	"BROKERAGE_FEE_REFUND_RETRO", "NET_PREMIUM_REFUND_RETRO", "CLAIM_AMOUNT",
+}
+
+// IsiNolUangKosong - `ValidasiUploadPL_act` langkah 2 (2.1 b2121 ... 2.32
+// b6691, `pyStepsBlockName` kosong): tiap kolom `KolomUangUnggah` yang
+// `!@PropertyHasValue` disetel `0`. Kolom yang tidak ada di berkas pun kosong
+// menurut Pega. OQ-PL-12 (GILIRAN-17).
+//
+// ⚠️ Ini PENAFSIRAN MASUKAN (sel kosong berarti nol), bukan pengisian tabel:
+// ADR-U-0027 tetap berlaku untuk kolom yang memang tidak bernilai.
+func IsiNolUangKosong(baris []BarisUnggah) {
+	for i := range baris {
+		if baris[i].Nilai == nil {
+			baris[i].Nilai = map[string]string{}
+		}
+		for _, k := range KolomUangUnggah {
+			if strings.TrimSpace(baris[i].Nilai[k]) == "" {
+				baris[i].Nilai[k] = "0"
+			}
+		}
+	}
 }
 
 // kolomUangWajib adalah enam kolom uang yang HARUS ada isinya.

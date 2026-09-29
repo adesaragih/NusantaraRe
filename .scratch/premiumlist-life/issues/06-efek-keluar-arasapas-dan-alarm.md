@@ -170,3 +170,18 @@ tidak ada. Stub tetap gagal terang sampai pemilik layanan menyatakan dari mana i
 ### Angka
 
 Go **540 PASS · 0 FAIL** tingkat atas; vet (+`-tags db`), gofmt bersih · vitest **348** · tsc bersih.
+
+## Keputusan bertanggal — 29 September 2026 (GILIRAN-17 paket 4: OQ-PL-14 ditutup) `[keputusan work owner 29-09-2026 — lembar keputusan, "rekomendasi"]`
+
+`convertJsonNusareToProduction` **ditiru lewat outbox**, dengan pelaksana **stub** (berkaitan OQ-PL-11). Premis AC 30 dan cerita
+spec 34 ("tidak dihidupkan kembali") diralat.
+
+| Hal | Isi |
+| --- | --- |
+| XML | `serviceInsertArasapasLife_act` langkah 5 (b915, `Connect-REST` b963, POST b966-967), satu-satunya panggilan keluar activity itu (hanya langkah 9 ter-remark, b1597), dari `InsertJsonPolisLife_Act` langkah 15 b5168 bergerbang `IsPEGAPROD` b5236 |
+| parameter | `ConnectREST/ConvertJsonNusareToProduction.xml`: `noPolis` b200 ← `.OfferFacIn.PolicyData.PolicyNo`, `caseId` b209 ← `.pzInsKey`, `tglInput` b221 ← `.pxCreateDateTime`. Dirakit `services.RakitParameterConvertJson`, nama VERBATIM dan disematkan ke korpus |
+| efek segera | `EfekArasapasPolis` (tetap), sesudah commit; yang gagal mendarat di outbox `T_LOG_SERVICE_RNM`, `MODUL = PREMIUMLISTLIFE` |
+| pelaksana outbox | **baru**: `services.PelaksanaPremiumList` (pola `PelaksanaKomite`). Modul/jenis diperiksa. Di luar produksi ia mengembalikan `ErrPengirimStubNonProduksi`. Di produksi ia membaca `NO_POLIS` (`RingkasPolisLife.NomorPolisDariID`), merakit parameter, me-resolve `M_LINK_SERVICE`, lalu berhenti dengan `ErrArasapasBelumDisetujui`, tanpa panggilan keluar |
+| selisih dicatat | `tglInput` = waktu muatan outbox (saat keputusan), karena `.pxCreateDateTime` tidak punya kolom (`T_WORK_POLIS` tanpa waktu lahir); sudah di OQ-PL-11. Nomor polis tidak disimpan di muatan outbox |
+| belum | penjadwal pekerja outbox di `cmd/api` (sama dengan modul lain); langkah 6–7 log produksi (`InsertLogServiceProd`) dibangun bersama panggilan nyata |
+| uji | `TestParameterConvertJsonVerbatim`, `TestPelaksanaPremiumListStub` |

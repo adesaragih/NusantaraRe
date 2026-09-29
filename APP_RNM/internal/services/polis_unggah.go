@@ -231,6 +231,8 @@ func periksaBerkas(berkas io.Reader) ([]models.BarisUnggah, models.HasilUnggah, 
 	if err != nil {
 		return nil, models.HasilUnggah{}, err
 	}
+	// OQ-PL-12 (GILIRAN-17): langkah 2 - uang kosong = 0 SEBELUM validasi.
+	models.IsiNolUangKosong(baris)
 	return baris, models.ValidasiUnggah(baris), nil
 }
 

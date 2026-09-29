@@ -210,3 +210,25 @@ func TestSimpanMemvalidasiUlang(t *testing.T) {
 		t.Error("hapus dan sisip tidak keduanya di dalam satu transaksi")
 	}
 }
+
+// OQ-PL-12 (GILIRAN-17): SATU jalan tinjau/simpan mengisi 0 pada uang kosong
+// SEBELUM validasi - urutannya yang membuat "HARUS ADA" tidak berbunyi.
+func TestPeriksaBerkasMengisiNolSebelumValidasi(t *testing.T) {
+	isi, err := os.ReadFile("polis_unggah.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(isi)
+	i := strings.Index(s, "func periksaBerkas(")
+	if i < 0 {
+		t.Fatal("periksaBerkas tidak ada")
+	}
+	badan := s[i:]
+	if j := strings.Index(badan[1:], "\nfunc "); j >= 0 {
+		badan = badan[:j+1]
+	}
+	nol, val := strings.Index(badan, "models.IsiNolUangKosong(baris)"), strings.Index(badan, "models.ValidasiUnggah(baris)")
+	if nol < 0 || val < 0 || nol > val {
+		t.Errorf("periksaBerkas harus memanggil IsiNolUangKosong SEBELUM ValidasiUnggah (nol=%d, validasi=%d)", nol, val)
+	}
+}
