@@ -12,10 +12,12 @@ package repository
 // Istilah:
 //   - test statik : test yang membaca kode sumber, bukan menjalankannya.
 
+// Refactor bentuk B paket 8 (30-09-2026): TestHandlersTidakMengimporRepository dan TestNolNamaTabelTelanjangDiQuery berlaku untuk
+// SELURUH aplikasi, jadi pindah apa adanya ke
+// `inti/penjaga/lintasaplikasi_test.go`.
 import (
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"testing"
 )
@@ -92,31 +94,6 @@ func TestHapusFisikTidakDipanggilDiLuarTest(t *testing.T) {
 	}
 }
 
-// Lapisan handlers tidak boleh menyentuh repository langsung.
-//
-// Arah ketergantungan proyek ini satu arah: handlers -> services -> repository.
-// Memotongnya membuat aturan dagang tersebar ke lapisan yang tugasnya hanya
-// menerima permintaan HTTP.
-func TestHandlersTidakMengimporRepository(t *testing.T) {
-	diperiksa := 0
-	// Refactor bentuk B (30-09-2026): handlers SETIAP modul, dan repository
-	// SETIAP modul. `inti/db` ikut dilarang: isinya dulu kepala paket
-	// repository (koneksi dan transaksi), jadi larangan lama tetap utuh.
-	polaRepository := regexp.MustCompile(`"nusantarare/(internal/repository|modul/[^/"]+/repository|inti/db)"`)
-	for nama, isi := range berkasGoSelainTest(t) {
-		if !strings.Contains(nama, "/handlers/") {
-			continue
-		}
-		diperiksa++
-		if polaRepository.MatchString(isi) {
-			t.Errorf("%s mengimpor repository; seharusnya lewat services", nama)
-		}
-	}
-	if diperiksa == 0 {
-		t.Fatal("nol berkas handlers terbaca; pembacanya yang rusak")
-	}
-}
-
 // Baris datar warisan ditulis 18 dari 55 kolom - dan angkanya dikunci di sini.
 //
 // `Simpan` menulis sebagian kolom saja; 37 sisanya tinggal NULL dan didaftar
@@ -165,77 +142,6 @@ func TestCacahKolomWarisanYangDitulisSimpan(t *testing.T) {
 	if kosong != len(seluruh)-mau {
 		t.Errorf("kolom yang tinggal NULL = %d, mau %d", kosong, len(seluruh)-mau)
 	}
-}
-
-// ADR-U-0033: nol nama tabel telanjang di dalam teks query.
-//
-// "Telanjang" berarti tanpa awalan skema. Query begitu benar hanya selama sesi
-// kebetulan menunjuk skema yang tepat, dan salahnya baru muncul saat pindah
-// lingkungan - jauh dari orang yang menulisnya. ADR-U-0033 Akibat 3 menuntut
-// test yang menemukannya gagal; sampai ronde 3 test itu tidak pernah ada, dan
-// SYS.ALL_OBJECTS sempat lolos sebagai ALL_OBJECTS telanjang.
-//
-// Yang dianggap SAH sesudah FROM / INTO / UPDATE / JOIN:
-//   - "%s"            nama yang sudah dilewatkan Qualify
-//   - "A.B"           sudah berawalan skema, termasuk SYS.
-//   - "{skema}.B"     penanda di berkas migrasi
-//   - "DUAL"          tabel semu milik Oracle, tidak punya skema
-//
-// Dan `FOR UPDATE` DILEWATI: ia klausa penguncian baris, bukan pernyataan
-// UPDATE, sehingga kata sesudahnya (`SKIP`, `NOWAIT`, atau tidak ada) bukan
-// nama tabel. Penyempitan ini dibuktikan MASIH MENGGIGIT sebelum dipakai.
-// ⛔ KOMENTAR DIBUANG SEBELUM PENCOCOKAN, sejak 27-09-2026. Tanpa itu
-// prosa yang MENERANGKAN sebuah query - hal biasa di repositori ini -
-// dituduh sebagai query-nya. Yang menyalakannya satu kalimat di
-// `diagnosa.go`: "menirunya dengan N UPDATE berarti daftar berlubang", dan
-// penjaga membaca `UPDATE berarti` sebagai `UPDATE <nama tabel>`.
-//
-// ⚠️ Penjaga yang menuduh hal yang BENAR akan dilonggarkan orang,
-// bukan dipatuhi. Jadi ia dipersempit sekarang - dan dibuktikan MASIH
-// MENGGIGIT sebelum dipakai, sebagaimana penyempitan `FOR UPDATE` di atas.
-//
-// Kembaran yang sudah lebih dulu melakukan hal yang sama, dengan sebab
-// yang sama persis: `polaKomentar` di `models/kodestatus_test.go`.
-var polaKomentarBaris = regexp.MustCompile(`(?m)^\s*//.*$`)
-
-// polaTabelTelanjang mencari kata sesudah FROM / INTO / UPDATE / JOIN.
-var polaTabelTelanjang = regexp.MustCompile(
-	`(?i)(\bFOR\s+)?\b(FROM|INTO|UPDATE|JOIN)\s+([A-Za-z_{%][\w{}%.]*)`)
-
-func TestNolNamaTabelTelanjangDiQuery(t *testing.T) {
-	diperiksa := 0
-	for nama, isi := range berkasGoSelainTest(t) {
-		// Refactor bentuk B (30-09-2026): SQL kini juga tinggal di
-		// `modul/*/repository` dan `inti/*`. Dulu hanya `/internal/repository/`
-		// - saringan itu diam-diam menyempit begitu kode pindah (cacah log
-		// dasar 275 rujukan; sesudah paket 1-2 tanpa perbaikan ini, 168).
-		// Paket 5: skema uji pindah dari internal/repository/skemauji ke
-		// uji/skemauji - SQL tiruannya tetap dalam cakupan.
-		if !strings.Contains(nama, "/repository/") && !strings.Contains(nama, "/inti/") &&
-			!strings.Contains(nama, "/uji/skemauji/") {
-			continue
-		}
-		isi = polaKomentarBaris.ReplaceAllString(isi, "")
-		for _, m := range polaTabelTelanjang.FindAllStringSubmatch(isi, -1) {
-			if m[1] != "" { // klausa `FOR UPDATE`, bukan pernyataan
-				continue
-			}
-			objek := m[3]
-			diperiksa++
-			switch {
-			case strings.Contains(objek, "."): // berawalan skema atau {skema}
-			case strings.Contains(objek, "%s"): // datang dari Qualify
-			case strings.EqualFold(objek, "DUAL"): // tabel semu Oracle
-			default:
-				t.Errorf("%s: %s %s - nama tabel telanjang (ADR-U-0033)",
-					nama, strings.ToUpper(m[2]), objek)
-			}
-		}
-	}
-	if diperiksa == 0 {
-		t.Fatal("nol rujukan tabel terbaca; pembacanya yang rusak")
-	}
-	t.Logf("%d rujukan tabel diperiksa", diperiksa)
 }
 
 // Setiap pemanggil skemauji.Buka memeriksa BolehDilewati sebelum melewat.

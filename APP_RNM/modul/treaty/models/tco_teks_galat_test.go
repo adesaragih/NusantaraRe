@@ -20,7 +20,9 @@ func TestTCOTanpaJSONKLAIM(t *testing.T) {
 	// Refactor bentuk B (30-09-2026): modul ini kini di modul/treaty/; rentang
 	// migrasinya (3xx) - bila kelak ada - tinggal di modul/treaty/migrations.
 	// Refactor bentuk B paket 7: frontend modul ini kini frontend/src/modul/treaty/.
-	for _, pola := range []string{"../*/tco_*.go", "../migrations/3*.sql", "../../../frontend/src/modul/treaty/labels*",
+	// Paket 8: seluruh akar folder itu (api.ts, menu.ts, rute.tsx, labels.ts) -
+	// dulu klien backendnya di services/api.ts bersama dan tidak terbaca.
+	for _, pola := range []string{"../*/tco_*.go", "../migrations/3*.sql", "../../../frontend/src/modul/treaty/*",
 		"../../../frontend/src/modul/treaty/components/*", "../../../frontend/src/modul/treaty/pages/*"} {
 		berkas, _ := filepath.Glob(pola)
 		for _, b := range berkas {

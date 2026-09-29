@@ -145,39 +145,45 @@ atas beberapa butir yang jawabannya **sudah diketahui**, dan laporkan hasilnya b
 ## 5. Struktur folder aplikasi target
 
 **Lokasinya: `OUTPUT_HASIL_RNM\APP_RNM\`** *(sejak 25 September 2026 sore; sebelumnya langsung di
-`OUTPUT_HASIL_RNM\`)*. Seluruh kode Go dan React ada di dalam `APP_RNM\` — `cmd/`, `internal/`,
-`pkg/`, `frontend/`, `go.mod`, `Makefile` — sedangkan `discovery/`, `docs/`, `CONTEXT.md`,
+`OUTPUT_HASIL_RNM\`)*. Seluruh kode Go dan React ada di dalam `APP_RNM\` — `cmd/`, `inti/`,
+`modul/`, `uji/`, `frontend/`, `go.mod`, `Makefile` — sedangkan `discovery/`, `docs/`, `CONTEXT.md`,
 `.scratch/`, `dastin/`, `jefri/` tetap di `OUTPUT_HASIL_RNM\`. **Satu repo git, berakar di
 `OUTPUT_HASIL_RNM\`.** Frontend memakai **TypeScript**: komponen `.tsx`, modul lain `.ts`, nol
 `.jsx`. Kode ditulis untuk pembaca yang **baru mengenal Go dan React** — mulai dari
 `APP_RNM\README-BACA-DULU.md`.
 
+**Bentuk B (refactor 30 September 2026, `PROMPT-REFACTOR-BENTUK-B-MODUL.md`):** `internal/` dan
+`pkg/` sudah tidak ada. Kode bersama di `inti/`, kode tiap modul di `modul/<nama>/`; deploy sebagian
+modul, commit per folder, pemilik folder, dan cara menambah modul di
+`APP_RNM\PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md`.
+
 ```
 APP_RNM/
-├── README-BACA-DULU.md
-├── cmd/api/main.go
-├── internal/
-│   ├── config/
-│   ├── handlers/
-│   ├── models/
-│   ├── repository/
-│   └── services/
-├── pkg/utils/
+├── README-BACA-DULU.md · PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md
+├── cmd/api/                ← memasang modul dari daftar; MODUL_AKTIF
+├── inti/                   ← SATU-SATUNYA kode bersama; tidak mengimpor modul
+│   ├── config/ db/ migrasi/ outbox/ layanan/ jejak/ penomor/ galat/ unggah/ uang/ utils/
+│   ├── kontrak/            ← antarmuka lintas modul, tanpa implementasi
+│   └── penjaga/            ← test penjaga seluruh aplikasi
+├── modul/
+│   ├── daftar.go           ← daftar modul; menyambung inti/kontrak
+│   └── claimlife/ premiumlist/ komite/ treaty/
+│       └── models/ repository/ services/ handlers/ migrations/ modul.go
+├── uji/skemauji/ uji/lintasmodul/   ← penunjang uji netral
 ├── frontend/               ← React via Vite, TypeScript (.tsx)
-│   ├── src/assets/
-│   ├── src/components/
-│   ├── src/hooks/
-│   ├── src/pages/
-│   ├── src/services/
-│   ├── src/store/
-│   ├── src/App.tsx · src/main.tsx · src/vite-env.d.ts
+│   ├── src/inti/           ← Shell, ui/dasar, klien.ts, lib/, hooks/, store/, labels.ts
+│   ├── src/modul/daftar.ts ← merakit menu dan rute
+│   ├── src/modul/<nama>/   ← pages/ components/ labels.ts api.ts menu.ts rute.tsx
+│   ├── src/App.tsx · src/Beranda.tsx · src/main.tsx · src/vite-env.d.ts
 │   └── package.json · tsconfig.json · vite.config.ts
 ├── go.mod · go.sum
 └── Makefile
 ```
 
-**Arah dependency: `handlers` → `services` → `repository`.** Tidak boleh terbalik, tidak boleh
-memotong lapisan.
+**Arah dependency: `handlers` → `services` → `repository`,** di dalam satu modul. Tidak boleh
+terbalik, tidak boleh memotong lapisan. **`modul/X` tidak mengimpor `modul/Y`** — lewat
+`inti/kontrak`, disambung `modul/daftar.go`; ditegakkan `inti/penjaga/impor_lintas_modul_test.go`
+dan `frontend/src/inti/lapisan.guard.test.ts`.
 
 ## 6. Pertanyaan terbuka — 61 terbuka, 38 memblokir FASE B
 

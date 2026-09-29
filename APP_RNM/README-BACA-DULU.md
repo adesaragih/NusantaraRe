@@ -8,18 +8,22 @@ Folder ini memuat **seluruh aplikasi** hasil migrasi Pega → Go + React + Oracl
 
 | Folder / berkas | Isinya, dalam bahasa sehari-hari |
 | --- | --- |
-| `cmd/api/main.go` | Pintu masuk backend. Membaca pengaturan, menyambung Oracle, mendaftarkan alamat-alamat HTTP, lalu menunggu permintaan |
+| `cmd/api/` | Pintu masuk backend. Membaca pengaturan, menyambung Oracle, memasang modul yang AKTIF (`MODUL_AKTIF`, `rakit.go`), lalu menunggu permintaan |
 | `inti/` | **Kode bersama semua modul** (refactor bentuk B, 30-09-2026): koneksi dan transaksi (`inti/db`), outbox efek keluar, resolver layanan, jejak audit, penomor, pelari migrasi, jawaban galat HTTP, gerbang unggahan, uang. Tidak pernah mengimpor modul |
+| `inti/kontrak/` | Antarmuka lintas modul, TANPA implementasi (`PembacaPolis`, `KlaimKomite`) — modul tidak saling mengimpor |
 | `inti/config/` | Membaca **env var** (variabel lingkungan) seperti `ORACLE_DSN`. Tidak ada alamat atau kata sandi yang ditulis di kode |
-| `internal/handlers/` | Penerima permintaan HTTP. Tugasnya sempit: baca permintaan, panggil *service*, tulis jawaban JSON |
-| `internal/services/` | Aturan dagang dan perakitan data. Di sinilah "klaim punya peserta, peserta punya baris" disusun |
-| `internal/repository/` | Satu-satunya lapisan yang berbicara ke Oracle. Seluruh SQL ada di sini, dan **hanya** di sini |
-| `internal/repository/migrations/` | Berkas `.sql` bernomor yang membentuk tabel. Satu berkas = satu langkah, dan tiap langkah punya pasangan `_down.sql` untuk membatalkannya. Ditanam ke biner, jadi tidak perlu dicari di disk saat program jalan |
-| `internal/repository/barislamakolom.go` | Daftar **62 kolom** tabel datar warisan beserta tipenya dari katalog Oracle, ditulis SEKALI; **55** di antaranya yang ditulis rule Pega. Pembaca, penulis fixture, dan tabel tiruan mengambil daftar yang sama, sehingga urutan `SELECT` dan urutan `Scan` tidak mungkin berselisih |
-| `internal/repository/skemauji/` | Menyiapkan skema uji Oracle untuk test bertag `db`: menjalankan migrasi yang sama dengan aplikasi, mengisi fixture buatan, lalu membongkarnya |
-| `internal/models/` | Bentuk data (struct): `Klaim`, `Peserta`, `BarisAdjustment`. `Money` dan `Ratio` kini di `inti/uang/` |
+| `inti/penjaga/` | Test penjaga yang berlaku untuk SELURUH aplikasi: impor lintas modul, higiene migrasi, alamat layanan, nama orang, nama tabel telanjang |
+| `modul/daftar.go` | Daftar modul: merakit `Service` tiap modul dan menyambung `inti/kontrak` |
+| `modul/<nama>/` | Satu modul — `claimlife`, `premiumlist`, `komite`, `treaty` — dengan lapisannya sendiri: |
+| `modul/<nama>/handlers/` | Penerima permintaan HTTP. Tugasnya sempit: baca permintaan, panggil *service*, tulis jawaban JSON |
+| `modul/<nama>/services/` | Aturan dagang dan perakitan data. Di sinilah "klaim punya peserta, peserta punya baris" disusun |
+| `modul/<nama>/repository/` | Satu-satunya lapisan yang berbicara ke Oracle. Seluruh SQL modul itu ada di sini, dan **hanya** di sini |
+| `modul/<nama>/migrations/` | Berkas `.sql` bernomor yang membentuk tabel modul itu (rentang nomor per modul). Satu berkas = satu langkah, dan tiap langkah punya pasangan `_down.sql` untuk membatalkannya. Ditanam ke biner, jadi tidak perlu dicari di disk saat program jalan |
+| `modul/claimlife/repository/barislamakolom.go` | Daftar **62 kolom** tabel datar warisan beserta tipenya dari katalog Oracle, ditulis SEKALI; **55** di antaranya yang ditulis rule Pega. Pembaca, penulis fixture, dan tabel tiruan mengambil daftar yang sama, sehingga urutan `SELECT` dan urutan `Scan` tidak mungkin berselisih |
+| `modul/<nama>/models/` | Bentuk data (struct): `Klaim`, `Peserta`, `BarisAdjustment`. `Money` dan `Ratio` kini di `inti/uang/` |
+| `uji/skemauji/` | Menyiapkan skema uji Oracle untuk test bertag `db`: menjalankan migrasi yang sama dengan aplikasi, mengisi fixture buatan, lalu membongkarnya |
 | `inti/utils/` | Alat bantu umum: konversi teks ↔ desimal, format tanggal |
-| `frontend/` | Tampilan React (TypeScript, berkas `.tsx`). Dijalankan Vite |
+| `frontend/` | Tampilan React (TypeScript, berkas `.tsx`). Dijalankan Vite. `src/inti/` bersama, `src/modul/<nama>/` per modul, `src/App.tsx` merakit |
 | `Makefile` | Daftar perintah: jalankan, bangun, uji. Setiap target adalah satu-dua perintah biasa |
 | `bin/` | Hasil `go build` — tidak masuk git |
 
@@ -32,18 +36,22 @@ handlers  →  services  →  repository  →  Oracle
 `handlers` tidak boleh menyentuh `repository` langsung. Kalau Anda menulis SQL di luar
 `repository`, atau memanggil `repository` dari `handlers`, itu salah tempat.
 
+**Antarmodul** — `modul/X` tidak pernah mengimpor `modul/Y`; ia memakai antarmuka `inti/kontrak`
+yang disambung `modul/daftar.go`. Cara deploy sebagian modul, commit per folder, dan menambah
+modul: `PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md`.
+
 ## 2. Satu permintaan, dari layar sampai Oracle dan kembali
 
 Contoh: pengguna mengetik `UJI-KLAIM-1` lalu menekan **Buka**.
 
 | Langkah | Berkas | Yang terjadi |
 | ---: | --- | --- |
-| 1 | `frontend/src/pages/KlaimLife.tsx` | Fungsi `cari` dipanggil; halaman masuk keadaan "memuat" |
-| 2 | `frontend/src/services/api.ts` | `ambilKlaimLife(id)` mengirim `GET /api/klaim-life/UJI-KLAIM-1` |
-| 3 | `internal/handlers/klaimlife.go` | Backend menerima, mengambil `{id}` dari alamat, memanggil *service* |
-| 4 | `internal/services/klaimlife.go` | `Ambil` meminta header, peserta, dan baris ke *repository*, lalu merakitnya |
-| 5 | `internal/repository/klaimlife.go` | Tiga query SQL ke Oracle. Uang diminta sebagai **teks** lewat `TO_CHAR` |
-| 6 | `internal/models/klaimlife.go` | `MarshalJSON` menentukan bentuk JSON yang dikirim balik; kode status diterjemahkan menjadi kata |
+| 1 | `frontend/src/modul/claimlife/pages/KlaimLife.tsx` | Fungsi `cari` dipanggil; halaman masuk keadaan "memuat" |
+| 2 | `frontend/src/modul/claimlife/api.ts` | `ambilKlaimLife(id)` mengirim `GET /api/klaim-life/UJI-KLAIM-1` lewat `minta` (`inti/klien.ts`) |
+| 3 | `modul/claimlife/handlers/klaimlife.go` | Backend menerima, mengambil `{id}` dari alamat, memanggil *service* |
+| 4 | `modul/claimlife/services/klaimlife.go` | `Ambil` meminta header, peserta, dan baris ke *repository*, lalu merakitnya |
+| 5 | `modul/claimlife/repository/klaimlife.go` | Tiga query SQL ke Oracle. Uang diminta sebagai **teks** lewat `TO_CHAR` |
+| 6 | `modul/claimlife/models/klaimlife.go` | `MarshalJSON` menentukan bentuk JSON yang dikirim balik; kode status diterjemahkan menjadi kata |
 | 7 | `KlaimLife.tsx` | Jawaban disimpan lewat `setKlaim`; React menggambar ulang tabel |
 
 Nama medan JSON di langkah 6 (`nomorKlaim`, `jumlahKlaim`, …) **harus sama persis** dengan
@@ -51,13 +59,14 @@ Nama medan JSON di langkah 6 (`nomorKlaim`, `jumlahKlaim`, …) **harus sama per
 
 ## 3. Urutan membaca yang disarankan
 
-**Go** — dari luar ke dalam: `cmd/api/main.go` → `inti/config/config.go` →
-`internal/handlers/handlers.go` → `internal/handlers/klaimlife.go` →
-`internal/services/klaimlife.go` → `internal/repository/klaimlife.go` →
-`internal/models/klaimlife.go` → `internal/models/money.go`.
+**Go** — dari luar ke dalam: `cmd/api/main.go` → `cmd/api/rakit.go` → `inti/config/config.go` →
+`modul/daftar.go` → `modul/claimlife/modul.go` → `modul/claimlife/handlers/handlers.go` →
+`modul/claimlife/handlers/klaimlife.go` → `modul/claimlife/services/klaimlife.go` →
+`modul/claimlife/repository/klaimlife.go` → `modul/claimlife/models/klaimlife.go` → `inti/uang/`.
 
-**React** — dari titik masuk: `frontend/src/main.tsx` → `App.tsx` → `pages/KlaimLife.tsx` →
-`services/api.ts` → `store/index.ts`.
+**React** — dari titik masuk: `frontend/src/main.tsx` → `App.tsx` → `modul/daftar.ts` →
+`modul/claimlife/rute.tsx` → `modul/claimlife/pages/KlaimLife.tsx` → `modul/claimlife/api.ts` →
+`inti/klien.ts` → `inti/store/index.ts`.
 
 Setiap berkas punya komentar kepala yang menjelaskan **untuk apa berkas ini** dan istilah
 yang dipakainya.
@@ -73,7 +82,7 @@ yang dipakainya.
 | **model** | Struct Go yang menggambarkan satu jenis data |
 | **seam** | Titik tempat test menggerakkan sistem: lewat HTTP, lewat *repository*, atau lewat *service* murni |
 | **fixture** | Data contoh buatan untuk test — selalu berawalan `UJI-`, tidak pernah data sungguhan |
-| **skema uji** | Tabel sementara yang dibuat test lalu dibuang lagi (`internal/repository/skemauji/`) |
+| **skema uji** | Tabel sementara yang dibuat test lalu dibuang lagi (`uji/skemauji/`) |
 | **test statik** | Test yang membaca kode sumber sebagai teks, bukan menjalankannya. Dipakai untuk aturan yang tidak dapat dijaga kompilator — misalnya "`Hapus` tidak boleh dipanggil di luar test" (`batasanpemakaian_test.go`) |
 | **komponen** (React) | Fungsi yang mengembalikan tampilan |
 | **`useState`** | Kotak penyimpan nilai di dalam komponen; mengganti isinya menggambar ulang tampilan |
@@ -90,12 +99,12 @@ $env:Path = 'C:\Program Files\Go\bin;C:\Program Files\nodejs;' + $env:Path
 
 | Tujuan | Perintah | Yang diharapkan |
 | --- | --- | --- |
-| Uji backend tanpa Oracle | `go vet ./...` lalu `go test ./...` | `ok` di `internal/models` dan `internal/repository` |
-| Bentuk tabel ke Oracle uji | `go run ./cmd/api -migrate` | menjalankan berkas di `internal/repository/migrations/` sekali masing-masing; aman diulang, dan **menolak** berjalan bila `IS_PEGA_PROD=true` |
-| Uji backend **dengan** Oracle uji | `go test -tags=db ./internal/...` | perlu `ORACLE_DSN` + `ORACLE_SCHEMA` + `ORACLE_SKEMA_UJI=true`; tanpa `ORACLE_DSN` test **melewati** dengan pesan, bukan lulus diam-diam |
-| Jalankan backend | `go run ./cmd/api` | log `http: mendengarkan di :8080` |
+| Uji backend tanpa Oracle | `go vet ./...` lalu `go test ./...` | `ok` di setiap paket `inti/...`, `modul/...`, `cmd/api` |
+| Bentuk tabel ke Oracle uji | `go run ./cmd/api -migrate` | menjalankan berkas di `modul/*/migrations/` SEMUA modul (tidak ikut `MODUL_AKTIF`) sekali masing-masing; aman diulang, dan **menolak** berjalan bila `IS_PEGA_PROD=true` |
+| Uji backend **dengan** Oracle uji | `go test -tags=db ./...` | perlu `ORACLE_DSN` + `ORACLE_SCHEMA` + `ORACLE_SKEMA_UJI=true`; tanpa `ORACLE_DSN` test **melewati** dengan pesan, bukan lulus diam-diam |
+| Jalankan backend | `go run ./cmd/api` | log `http: mendengarkan di :8080`; `MODUL_AKTIF=claimlife,komite` memasang sebagian modul |
 | Periksa tipe frontend | `cd frontend` lalu `npm run typecheck` | tidak mencetak galat |
-| Uji frontend | `npm test` | `5 passed` |
+| Uji frontend | `npm test` | seluruh berkas uji `passed` |
 | Jalankan frontend | `npm run dev` | buka `http://localhost:5173/` |
 | Bangun frontend | `npm run build` | menjalankan `tsc` dulu, lalu Vite membuat `dist/` |
 

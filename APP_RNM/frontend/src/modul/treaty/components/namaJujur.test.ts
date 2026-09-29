@@ -13,9 +13,12 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 // Refactor bentuk B (30-09-2026): folder modul kini `modul/treaty/`.
+// Paket 8: akar modulnya IKUT dipindai - `api.ts`, `menu.ts`, `rute.tsx`,
+// `labels.ts`. Dulu klien backend modul ini hidup di `services/api.ts`
+// bersama semua modul, dan karena itu tidak pernah terbaca penjaga ini.
 const AKAR = join(__dirname, '..')
-const FOLDER = [join(AKAR, 'components'), join(AKAR, 'pages')]
-const BERKAS_TUNGGAL = [join(AKAR, 'labels.ts')]
+const FOLDER = [join(AKAR, 'components'), join(AKAR, 'pages'), AKAR]
+const BERKAS_TUNGGAL: string[] = []
 
 function sumberModul(): string[] {
   const hasil: string[] = []

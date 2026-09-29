@@ -374,7 +374,8 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 // DaftarkanRute mendaftarkan seluruh rute modul PremiumList Life.
 //
 // Refactor bentuk B (30-09-2026): rute ini dulu ditulis di
-// `internal/handlers.Router`; kini dipanggil `cmd/api`.
+// `internal/handlers.Router`; kini dipanggil `modul/premiumlist/modul.go`, yang
+// dipasang `cmd/api` bila modul ini aktif (MODUL_AKTIF).
 func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	// --- modul PremiumList Life (tiket 01) ---
 	//

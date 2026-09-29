@@ -145,11 +145,16 @@ func gabungSemua(t *testing.T) string {
 	return b.String()
 }
 
-// milikClaimLife menjawab apakah berkas migrasi itu milik rentang Claim Life
-// (001-049, termasuk Komite 030-049).
+// modul menyebut modul pemilik sebuah berkas migrasi - nama folder di atas
+// `migrations/`-nya (`modul/<nama>/migrations/`).
 //
-// ⛔ Batasnya NOMOR, dan itu keputusan yang tercatat. Disalin apa adanya dari
-// `internal/repository/migrasi_test.go`.
-func milikClaimLife(nama string) bool {
-	return nama < "050_"
+// Refactor bentuk B paket 8: menggantikan `milikClaimLife` yang membagi
+// menurut NOMOR (`nama < "050_"`). Pemilik kini dibaca dari tempat berkasnya,
+// sehingga penjaga per modul tidak bergantung pada rentang nomor modul lain.
+func (g *gabunganMigrasi) modul(nama string) string {
+	j, ada := g.asal[nama]
+	if !ada {
+		return ""
+	}
+	return filepath.Base(filepath.Dir(filepath.Dir(j)))
 }

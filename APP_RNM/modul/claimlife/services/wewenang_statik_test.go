@@ -9,14 +9,15 @@ package services_test
 // proyek ini satu arah, dan penjaga yang membalikkannya mengajari kebiasaan
 // yang justru dilarangnya.
 
+// Refactor bentuk B paket 8 (30-09-2026): TestNolNamaOrangDiKode (nama orang) berlaku untuk
+// SELURUH aplikasi, jadi pindah apa adanya ke
+// `inti/penjaga/lintasaplikasi_test.go`.
 import (
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
-
-	"nusantarare/modul/premiumlist/models"
 )
 
 // polaPenulisStatus mencocokkan baris yang MENULIS status baris adjustment.
@@ -77,7 +78,7 @@ var berkasYangBolehMenulisStatus = map[string]string{
 	"klaim_belum_disambung.go": "",
 }
 
-// TestSetiapPenulisStatusBergerbangPeran menelusuri SELURUH `internal/`.
+// TestSetiapPenulisStatusBergerbangPeran menelusuri SELURUH aplikasi (dulu `internal/`).
 //
 // Ronde pertama hanya membaca satu berkas dan mencari satu potongan teks,
 // sambil mengaku memeriksa "setiap fungsi layanan yang mengubah status" -
@@ -136,126 +137,4 @@ func TestSetiapPenulisStatusBergerbangPeran(t *testing.T) {
 		t.Fatalf("hanya %d penulis status ditemukan; pembacanya yang rusak, bukan kodenya",
 			diperiksa)
 	}
-}
-
-// polaNamaOrangTetap mencocokkan pemberian TEKS TETAP ke medan yang namanya
-// menandakan nama orang - termasuk teks berkutip-balik.
-//
-// ⛔ STRUKTURAL, bukan berdaftar-nama. Percobaan pertama memuat daftar nama
-// operator nyata dari korpus, dan itu sendiri melanggar pagar keamanan brief
-// induk ("nilai nama orang tidak disalin ke artefak mana pun").
-//
-// ⚠️ Ia HEURISTIK, dan batasnya dinyatakan di tiket: nama yang masuk lewat
-// konstanta perantara, lewat medan yang tidak terdaftar, atau lewat
-// perbandingan `AkunID == "..."` tidak tertangkap. Penjaga yang menyebut
-// batasnya lebih berguna daripada penjaga yang mengaku sempurna.
-var polaNamaOrangTetap = regexp.MustCompile(
-	"(?i)(OpName|NamaOrang|PolicyHolder|NameOfInsured|Tertanggung)" +
-		"\\s*[:=]+\\s*[\"`][^\"`]+[\"`]")
-
-// pesanVerbatimYangSah adalah NILAI yang cocok dengan pola di atas tetapi
-// BUKAN nama orang - masing-masing beserta alasannya.
-//
-// ⛔ DIPERSEMPIT 28-09-2026 dengan daftar bernama, BUKAN dengan melonggarkan
-// polanya. Penjaga yang menuduh hal yang benar akan dilonggarkan orang, bukan
-// dipatuhi - pelajaran yang sudah dibayar dua kali di repo ini (nama tabel
-// telanjang, ambang tutup buku).
-//
-// Yang menuduh di sini: konstanta PESAN VALIDASI yang disalin VERBATIM dari
-// `ValidasiUploadPL_act.xml`. Namanya memuat "PolicyHolder"/"Tertanggung"
-// sebab itulah KOLOM yang divalidasi, dan nilainya kalimat galat huruf besar
-// - bukan nama siapa pun.
-//
-// ⛔ KUNCINYA DIAMBIL DARI `models`, TIDAK DIKETIK ULANG. Menuliskan
-// kalimatnya harfiah di sini akan membuat penjaga ini menuduh DIRINYA
-// SENDIRI - dan itu persis yang terjadi pada ronde pertama penyempitan ini.
-// Mengambilnya dari konstantanya juga berarti daftar ini ikut basi begitu
-// pesannya berubah, alih-alih diam-diam tetap mengecualikan teks lama.
-// ⛔ ALASANNYA DI KOMENTAR, BUKAN DI NILAI. Menuliskannya sebagai nilai teks
-// membuat BARIS DAFTAR INI SENDIRI cocok dengan polanya - `...Tertanggung:
-// "alasan"` - dan penjaga ini menuduh dirinya sendiri. Sudah terjadi, dua
-// kali, saat penyempitan ini ditulis.
-var pesanVerbatimYangSah = []string{
-	// ValidasiUploadPL_act `local.err3` - pesan kolom NAME_OF_INSURED.
-	models.PesanNamaTertanggung,
-	// ValidasiUploadPL_act `local.err17` - pesan rujukan master POLICY HOLDER.
-	models.PesanPolicyHolder,
-}
-
-// pesanVerbatimDiterima menjawab apakah sebuah nilai ada di daftar itu.
-func pesanVerbatimDiterima(nilai string) bool {
-	for _, p := range pesanVerbatimYangSah {
-		if p == nilai {
-			return true
-		}
-	}
-	return false
-}
-
-// polaNilaiTerkutip mengambil nilai di dalam tanda kutip sebuah baris cocok.
-var polaNilaiTerkutip = regexp.MustCompile("[\"`]([^\"`]+)[\"`]")
-
-func TestNolNamaOrangDiKode(t *testing.T) {
-	diperiksa := 0
-	err := filepath.Walk(akarAplikasiPindai, func(jalur string, info os.FileInfo, err error) error {
-		if err == nil && info.IsDir() && lewatiFolderPindai(info.Name()) {
-			return filepath.SkipDir
-		}
-		if err != nil {
-			return err
-		}
-		if info.IsDir() || !strings.HasSuffix(jalur, ".go") {
-			return nil
-		}
-		isi, err := os.ReadFile(jalur)
-		if err != nil {
-			return err
-		}
-		diperiksa++
-		for _, baris := range strings.Split(string(isi), "\n") {
-			if strings.HasPrefix(strings.TrimSpace(baris), "//") {
-				continue
-			}
-			cocok := polaNamaOrangTetap.FindString(baris)
-			if cocok == "" {
-				continue
-			}
-			// Nilai sintetis BERAWALAN UJI- memang bentuk yang pagar keamanan
-			// brief tuntut untuk fixture. Diperiksa di AWAL teksnya, bukan di
-			// mana saja - "Budi UJI-1" bukan nilai sintetis.
-			if awalanUjiSintetis(cocok) {
-				continue
-			}
-			// Pesan validasi VERBATIM - didaftar satu per satu beserta
-			// alasannya, lihat `pesanVerbatimYangSah`. Yang dicocokkan
-			// NILAINYA, bukan seluruh barisnya: baris yang sama dapat ditulis
-			// dengan spasi berbeda, dan daftar yang mencocokkan spasi akan
-			// lolos begitu seseorang menjalankan gofmt.
-			if m := polaNilaiTerkutip.FindStringSubmatch(cocok); m != nil &&
-				pesanVerbatimDiterima(m[1]) {
-				continue
-			}
-			t.Errorf("%s memberi nilai tetap ke medan bernama-orang: %s",
-				filepath.ToSlash(jalur), strings.TrimSpace(baris))
-		}
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if diperiksa < 10 {
-		t.Fatalf("hanya %d berkas terbaca; pembacanya yang rusak", diperiksa)
-	}
-}
-
-// awalanUjiSintetis menyatakan teks yang dikutip dimulai dengan UJI-.
-func awalanUjiSintetis(cocok string) bool {
-	for _, kutip := range []string{"\"", "`"} {
-		i := strings.Index(cocok, kutip)
-		if i < 0 {
-			continue
-		}
-		return strings.HasPrefix(cocok[i+1:], "UJI-")
-	}
-	return false
 }

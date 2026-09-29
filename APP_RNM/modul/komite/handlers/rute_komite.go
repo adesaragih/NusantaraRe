@@ -191,7 +191,8 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 // DaftarkanRute mendaftarkan seluruh rute modul Komite Claim Life.
 //
 // Refactor bentuk B (30-09-2026): rute ini dulu ditulis di
-// `internal/handlers.Router`; kini dipanggil `cmd/api`.
+// `internal/handlers.Router`; kini dipanggil `modul/komite/modul.go`, yang
+// dipasang `cmd/api` bila modul ini aktif (MODUL_AKTIF).
 func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	// Komite Claim Life tiket 01 - Inbox Komite dan satu kasus. Keduanya GET:
 	// membaca saja; keputusan komite menyusul di tiket 02.

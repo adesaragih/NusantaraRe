@@ -444,11 +444,11 @@ Dari folder APP_RNM:
 
   go vet ./...
   go test ./...
-    harus: ok untuk internal/models, internal/repository, dan
-    internal/repository/skemauji; 83 test lulus; paket lain "[no test files]".
+    harus: ok untuk setiap paket inti/..., modul/..., uji/..., dan cmd/api;
+    paket lain "[no test files]".
 
-  go test -tags=db ./internal/...
-    tanpa ORACLE_DSN: 19 test SKIP dengan pesan
+  go test -tags=db ./...
+    tanpa ORACLE_DSN: test bertag db SKIP dengan pesan
     "lewati: skemauji: ORACLE_DSN belum dikonfigurasi". Itu perilaku yang
     benar, bukan lulus diam-diam.
     dengan ORACLE_DSN + ORACLE_SCHEMA + ORACLE_SKEMA_UJI=true: seluruhnya
@@ -465,7 +465,7 @@ Dari folder frontend:
 
   npm run typecheck
   npm test
-    harus: 5 passed.
+    harus: seluruh berkas uji passed.
   npm run build
     harus: tsc bersih, lalu "built in ... ms".
 
@@ -513,23 +513,33 @@ Gabungan yang setara "make check" (make tidak terpasang):
 9. PETA FOLDER SINGKAT
 ================================================================================
 
-  APP_RNM\
-    cmd\api\main.go              titik masuk backend; flag -migrate
-    internal\config\             baca env var: HTTP_ADDR, ORACLE_DSN,
-                                 ORACLE_SCHEMA, IS_PEGA_PROD, SERVICE_*
-    internal\handlers\           rute HTTP; tidak menyentuh Oracle langsung
-    internal\services\           aturan dagang dan perakitan data
-    internal\repository\         satu-satunya lapisan yang berbicara ke Oracle
-    internal\repository\migrations\
-                                 berkas .sql bernomor 001-008 (+ _down)
-    internal\repository\skemauji\
-                                 skema uji Oracle untuk test bertag db
-    internal\models\             bentuk data (struct)
-    pkg\utils\                   desimal dan tanggal
-    frontend\                    React + TypeScript, dijalankan Vite
+  APP_RNM\   (refactor bentuk B, 30 September 2026)
+    cmd\api\                     titik masuk backend; flag -migrate; MODUL_AKTIF
+    inti\                        SATU-SATUNYA kode bersama; tidak mengimpor modul
+    inti\config\                 baca env var: HTTP_ADDR, ORACLE_DSN,
+                                 ORACLE_SCHEMA, IS_PEGA_PROD, MODUL_AKTIF, ...
+    inti\kontrak\                antarmuka lintas modul, tanpa implementasi
+    inti\penjaga\                test penjaga seluruh aplikasi
+    modul\daftar.go              daftar modul; menyambung inti\kontrak
+    modul\<nama>\                claimlife, premiumlist, komite, treaty:
+      handlers\                 rute HTTP; tidak menyentuh Oracle langsung
+      services\                 aturan dagang dan perakitan data
+      repository\               satu-satunya lapisan yang berbicara ke Oracle
+      migrations\               berkas .sql bernomor (+ _down), rentang per
+                                 modul: Claim Life 001-029, Komite 030-049,
+                                 PremiumList 050-079
+      models\                   bentuk data (struct)
+      modul.go                  nama modul, rute, pekerja latar, migrasi
+    uji\skemauji\                skema uji Oracle untuk test bertag db
+    inti\utils\                  desimal dan tanggal
+    frontend\                    React + TypeScript, dijalankan Vite;
+                                 src\inti\ bersama, src\modul\<nama>\ per modul
     Makefile                     daftar perintah (make tidak terpasang)
     .env.example                 nama variabel backend, tanpa nilai
     README-BACA-DULU.md          peta baca untuk pemula
+    PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md
+                                 deploy sebagian modul, git per folder,
+                                 pemilik folder, menambah modul
 
   Arah ketergantungan, selalu satu arah:
     handlers -> services -> repository -> Oracle

@@ -11,7 +11,7 @@ package models_test
 // halaman memegang nilai yang sama. Dua salinan berarti dua kesempatan untuk
 // berbeda, dan yang membaca salinan basi tidak akan pernah tahu.
 //
-// ⚠️ Penjaga ini menelusuri SELURUH `internal/`, bukan hanya paket ini.
+// ⚠️ Penjaga ini menelusuri SELURUH aplikasi (dulu `internal/`), bukan hanya paket ini.
 // Percobaan pertama hanya memindai `internal/models` sambil mengaku memeriksa
 // seluruhnya - pengakuan yang lebih luas daripada yang diperiksanya, dan itu
 // jenis penjaga yang paling berbahaya: ia menenangkan tanpa menjaga.

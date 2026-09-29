@@ -5,11 +5,11 @@ package repository
 // Fixture SINTETIS: nol nama orang, nol nomor polis nyata, nol potongan data
 // produksi; seluruh nilai berawalan UJI.
 
+// Refactor bentuk B paket 8 (30-09-2026): TestTCONolTabelBaru dan TestTCONolNamaTabelBaruDiKode (tco4) berlaku untuk
+// SELURUH aplikasi, jadi pindah apa adanya ke
+// `inti/penjaga/lintasaplikasi_test.go`.
 import (
 	"database/sql"
-	"os"
-	"path/filepath"
-	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -142,29 +142,6 @@ func TestKolomWarisanTCOSesuaiProcedure(t *testing.T) {
 	}
 }
 
-// tco4 (keputusan work owner 29-09-2026): NOL tabel baru untuk modul ini -
-// rentang migrasinya 300-319 kosong, dan tidak satu pun berkas migrasi mana
-// pun membuat tabel atau sequence bernama Treaty Contract Out.
-func TestTCONolTabelBaru(t *testing.T) {
-	pola := regexp.MustCompile(`(?i)CREATE\s+(TABLE|SEQUENCE)\s+\{skema\}\.(\w+)`)
-	nama := regexp.MustCompile(`(?i)^(SEQ_)?(T_)?(M?TREATY|PROPORTIONAL)`)
-	berkas := 0
-	for n, teks := range seluruhSQL(t, false) {
-		berkas++
-		if n >= "300_" && n < "320_" {
-			t.Errorf("%s: berkas migrasi di rentang Treaty Contract Out 300-319 - tco4 menolak tabel baru", n)
-		}
-		for _, m := range pola.FindAllStringSubmatch(teks, -1) {
-			if nama.MatchString(m[2]) {
-				t.Errorf("%s membuat %s %s - tco4: modul ini memakai tabel warisan", n, m[1], m[2])
-			}
-		}
-	}
-	if berkas == 0 {
-		t.Fatal("nol berkas migrasi terbaca; pembacanya yang rusak")
-	}
-}
-
 // Tepi tulis: stempel Pega, tanggal YYYYMMDD, dan desimal - dua arah.
 func TestTepiTulisWarisanTCODuaArah(t *testing.T) {
 	w := time.Date(2026, 9, 29, 5, 6, 7, 891_000_000, time.UTC)
@@ -202,58 +179,6 @@ func TestTepiTulisWarisanTCODuaArah(t *testing.T) {
 	}
 	if TulisDesimalWarisanTCO(nil) != nil {
 		t.Error("nil harus NULL")
-	}
-}
-
-// tco4: nol nama tabel baru modul (T_ + TREATY…/MTREATY…/PROPORTIONAL…) di KODE
-// Go dan frontend. Komentar - catatan sejarah dan ralat - dibuang lebih dulu.
-// Polanya dirakit dari potongan supaya berkas ini sendiri tidak memuatnya.
-func TestTCONolNamaTabelBaruDiKode(t *testing.T) {
-	pola := regexp.MustCompile("T" + "_" + `(TREATY|MTREATY|PROPORTIONAL)\w*`) // tanpa \b: SEQ_ + nama ikut
-	if !pola.MatchString("SELECT ID FROM S."+"T"+"_TREATYYEAR") || !pola.MatchString("S.SEQ_"+"T"+"_TREATYYEAR") ||
-		pola.MatchString("SELECT ID FROM S.TREATYYEAR") {
-		t.Fatal("pola penjaga tidak menggigit atau menuduh nama warisan")
-	}
-	ekor := regexp.MustCompile(`(^|\s)//.*$`)
-	blok := regexp.MustCompile(`(?s)/\*.*?\*/`)
-	berkas := 0
-	for _, akar := range []string{akarModul + "/inti", akarModul + "/modul", akarModul + "/cmd", akarModul + "/frontend/src"} {
-		err := filepath.Walk(filepath.FromSlash(akar), func(jalur string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-			if info.IsDir() {
-				if info.Name() == "node_modules" || info.Name() == "dist" {
-					return filepath.SkipDir
-				}
-				return nil
-			}
-			if ext := filepath.Ext(jalur); ext != ".go" && ext != ".ts" && ext != ".tsx" {
-				return nil
-			}
-			isi, err := os.ReadFile(jalur)
-			if err != nil {
-				return err
-			}
-			berkas++
-			kode := blok.ReplaceAllString(string(isi), "")
-			for i, baris := range strings.Split(kode, "\n") {
-				baris = ekor.ReplaceAllString(baris, "")
-				if filepath.Ext(jalur) != ".go" && strings.HasPrefix(strings.TrimSpace(baris), "*") {
-					continue // badan JSDoc
-				}
-				if m := pola.FindString(baris); m != "" {
-					t.Errorf("%s:%d menyebut %s - tco4: modul ini memakai tabel warisan", filepath.ToSlash(jalur), i+1, m)
-				}
-			}
-			return nil
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-	if berkas < 100 {
-		t.Fatalf("hanya %d berkas terbaca; pembacanya yang rusak", berkas)
 	}
 }
 

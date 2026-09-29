@@ -1,6 +1,7 @@
-// Package utils memuat helper publik yang tidak bergantung pada internal/.
-// Arah ketergantungan hanya satu arah: internal/ boleh mengimpor pkg/,
-// pkg/ tidak pernah mengimpor internal/.
+// Package utils memuat helper publik yang tidak bergantung pada modul mana pun.
+// Arah ketergantungan hanya satu arah: modul/ boleh mengimpor inti/utils,
+// inti/ tidak pernah mengimpor modul/ (refactor bentuk B; dulu pkg/utils dan
+// internal/).
 package utils
 
 import (

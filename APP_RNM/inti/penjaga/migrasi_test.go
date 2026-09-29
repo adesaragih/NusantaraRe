@@ -137,28 +137,40 @@ func TestNamaYangDibuangTidakAda(t *testing.T) {
 // menuntut bukti - bukan kemudahan.
 func TestKaskadeHanyaPadaRelasiTerdaftar(t *testing.T) {
 	berkas := seluruhSQL(t, false)
-	berkaskade := map[string]bool{
-		"003_": true, "004_": true, "005_": true, "006_": true,
-		// Relasi 9: roster komite. 013 membuatnya TANPA kaskade (cacat),
-		// 030 memasangnya lewat ALTER. Keduanya terdaftar: yang pertama
-		// karena kelak diperbaiki di tempatnya, yang kedua karena ia
-		// perbaikannya.
-		"030_": true,
-		// Relasi 10: diagnosa per peserta (butir bd). Buktinya bukan
-		// selera: `.DiagnoseList` hidup DI DALAM halaman peserta -
-		// `SetDisease.xml` b389 menutup dengan `Obj-Save pyWorkPage`,
-		// bukan menyimpan halaman diagnosa sendiri. Menghapus peserta
-		// karena itu menghapus daftarnya.
-		"018_": true,
+	// Refactor bentuk B paket 8: daftarnya PER MODUL, menurut folder migrasi
+	// berkasnya - dulu satu daftar untuk rentang nomor 001-049. Modul yang
+	// tidak disebut di sini menjaga kaskadenya sendiri (PremiumList:
+	// `TestSeluruhFKPohonPolisBerkaskade`); Treaty Contract Out tanpa migrasi.
+	berkaskade := map[string]map[string]bool{
+		"claimlife": {
+			"003_": true, "004_": true, "005_": true, "006_": true,
+			// Relasi 10: diagnosa per peserta (butir bd). Buktinya bukan
+			// selera: `.DiagnoseList` hidup DI DALAM halaman peserta -
+			// `SetDisease.xml` b389 menutup dengan `Obj-Save pyWorkPage`,
+			// bukan menyimpan halaman diagnosa sendiri. Menghapus peserta
+			// karena itu menghapus daftarnya.
+			"018_": true,
+		},
+		"komite": {
+			// Relasi 9: roster komite. 013 membuatnya TANPA kaskade (cacat),
+			// 030 memasangnya lewat ALTER. Keduanya terdaftar: yang pertama
+			// karena kelak diperbaiki di tempatnya, yang kedua karena ia
+			// perbaikannya.
+			"030_": true,
+		},
 	}
+	diperiksa := map[string]int{}
 	for nama, teks := range berkas {
-		if !milikClaimLife(nama) {
+		modul := berkasMigrasi.modul(nama)
+		terdaftar, diatur := berkaskade[modul]
+		if !diatur {
 			continue
 		}
+		diperiksa[modul]++
 		isi := strings.ToUpper(teks)
 		ada := strings.Contains(isi, "ON DELETE CASCADE")
 		mau := false
-		for awalan := range berkaskade {
+		for awalan := range terdaftar {
 			if strings.HasPrefix(nama, awalan) {
 				mau = true
 			}
@@ -167,6 +179,14 @@ func TestKaskadeHanyaPadaRelasiTerdaftar(t *testing.T) {
 			t.Errorf("%s: ON DELETE CASCADE ada=%v, mau=%v", nama, ada, mau)
 		}
 	}
+	// ⛔ Nama modul yang salah ketik di daftar tidak boleh mematikan
+	// penjaganya diam-diam: setiap modul yang disebut harus punya berkas.
+	for modul := range berkaskade {
+		if diperiksa[modul] == 0 {
+			t.Errorf("modul %q di daftar kaskade tidak punya satu pun berkas migrasi", modul)
+		}
+	}
+	t.Logf("berkas diperiksa per modul: %v", diperiksa)
 }
 
 // AC: seluruh kolom uang bertipe desimal, tidak ada yang berupa teks, dan
