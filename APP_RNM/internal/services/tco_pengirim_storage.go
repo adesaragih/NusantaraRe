@@ -19,8 +19,10 @@ package services
 //	`UploadDoc` (`App`, `Kodestring`, `Durasi`, `Folder`, `Namafile`, `Image`,
 //	`ext`, `MimeType`; b1339-b1641); gagal bila `URLImage` kosong (b2902).
 //	`Treaty Contract Out/Activity/GetUrlGoogleStorage_Act.xml` (b1346-b1431:
-//	`App`, `Kodestring`, `Folder`, `Namafile`, `Durasi`) dan
-//	`DeleteGoogleStorage_Act.xml` (b1019-b1091: `App`, `Kodestring`, `Namafile`).
+//	`App`, `Kodestring`, `Folder`, `Namafile`, `Durasi`; `Folder` = jalur folder
+//	objek berakhiran `/`, b1260-b1326) dan `DeleteGoogleStorage_Act.xml`
+//	(b1019-b1091: `App`, `Kodestring`, `Namafile` = jalur objek PENUH
+//	`<folder>/<nama>`, tanpa `Folder`).
 //
 // ⛔ Alamat, token, dan garam TIDAK PERNAH masuk pesan galat maupun log:
 // galat jaringan diringkas tanpa rinciannya (alamat IP/inang ada di sana).
@@ -37,7 +39,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"mime"
 	"net/http"
 	"net/url"
 	"strings"
@@ -47,10 +48,12 @@ import (
 // BatasWaktuStorageTCO - `ServiceGoogle.xml` b29 `pyResponseTimeout 300000`.
 const BatasWaktuStorageTCO = 300 * time.Second
 
-// FolderStorageTCO - folder objek lampiran modul ini di layanan penyimpanan.
-// `[keputusan kami]` (OQ-TCO-22): Pega Claim Life menyusun `Param.Folder +
-// "/Doc/" + tahun/bulan`; korpus Treaty Contract Out tidak memuat unggahnya.
-const FolderStorageTCO = "TreatyContractOut"
+// FolderStorageTCO - folder objek lampiran modul ini di layanan penyimpanan,
+// BERAKHIRAN `/` seperti Pega (Claim Life `InsertGoogleStorage_Act` b1407-b1408
+// `Param.Folder+"/Doc/"+YYYY+"/"+MM+"/"`). Jalur objek = folder + `IMAGEID`.
+// `[keputusan kami]` (OQ-TCO-22) untuk namanya: korpus Treaty Contract Out
+// tidak memuat unggahnya.
+const FolderStorageTCO = "TreatyContractOut/"
 
 // DurasiURLStorageTCO - `Durasi` URL bertanda tangan (satuan menurut layanan).
 // `[keputusan kami]` (OQ-TCO-22): nilainya dari pemanggil di Pega.
@@ -62,8 +65,12 @@ const batasJawabanStorageTCO = 1 << 20
 var (
 	// ErrStorageTakTerjangkauTCO - jaringan/batas waktu; layak dicoba ulang.
 	ErrStorageTakTerjangkauTCO = errors.New("services: layanan penyimpanan tidak terjangkau")
-	// ErrStorageGagalTCO - layanan menjawab galat (5xx, 401, 403, 429); layak dicoba ulang.
+	// ErrStorageGagalTCO - layanan menjawab galat (5xx, 404 titik layanan, 3xx,
+	// 401, 403, 429); layak dicoba ulang.
 	ErrStorageGagalTCO = errors.New("services: layanan penyimpanan menjawab galat")
+	// ErrStorageTokenDitolakTCO - 401/403: cache token dikosongkan sebelum
+	// percobaan berikutnya. Membungkus ErrStorageGagalTCO.
+	ErrStorageTokenDitolakTCO = fmt.Errorf("%w: token ditolak", ErrStorageGagalTCO)
 	// ErrStorageMenolakPermintaanTCO - layanan menolak bentuk permintaan (400, 422);
 	// PERMANEN sampai manusia bertindak.
 	ErrStorageMenolakPermintaanTCO = errors.New("services: layanan penyimpanan menolak permintaan")
@@ -121,14 +128,31 @@ func galatJaringanTCO(err error) error {
 	return ErrStorageTakTerjangkauTCO
 }
 
+// galatStatusTCO - jawaban TITIK LAYANAN (upload/geturl/delete).
+//
+// ⛔ 404 dari titik layanan BUKAN "berkas tidak ada": ia juga jawaban jalur
+// `M_LINK_SERVICE` yang salah, dan menelannya membuat hapus berhasil diam-diam.
+// "Tidak ada" hanya dibaca dari URL bertanda tangan (`galatStatusObjekTCO`).
 func galatStatusTCO(kode int) error {
 	switch {
 	case kode == http.StatusBadRequest || kode == http.StatusUnprocessableEntity:
 		return fmt.Errorf("%w: status %d", ErrStorageMenolakPermintaanTCO, kode)
-	case kode == http.StatusNotFound:
-		return ErrBerkasTidakAdaDiPenyimpanan
+	case kode == http.StatusUnauthorized || kode == http.StatusForbidden:
+		return fmt.Errorf("%w: status %d", ErrStorageTokenDitolakTCO, kode)
 	}
 	return fmt.Errorf("%w: status %d", ErrStorageGagalTCO, kode)
+}
+
+// galatStatusObjekTCO - jawaban URL bertanda tangan: 404 = objek tidak ada.
+func galatStatusObjekTCO(kode int) error {
+	if kode == http.StatusNotFound {
+		return ErrBerkasTidakAdaDiPenyimpanan
+	}
+	if kode == http.StatusUnauthorized || kode == http.StatusForbidden {
+		// Tanda tangan URL ditolak - bukan token kita.
+		return fmt.Errorf("%w: status %d", ErrStorageGagalTCO, kode)
+	}
+	return galatStatusTCO(kode)
 }
 
 // kirimJSON mengirim satu permintaan JSON dan membaca jawabannya.
@@ -170,19 +194,18 @@ func (p *pengirimBerkasHTTPTCO) dasar(ctx context.Context, token, kunci string) 
 	return permintaanStorageTCO{App: app, Kodestring: token, Namafile: kunci}, nil
 }
 
-// ekstensiDariMime - `ext` unggahan (`InsertGoogleStorage_Act` b587-b588:
-// huruf kecil, tanpa titik).
-func ekstensiDariMime(tipe string) string {
-	ext, _ := mime.ExtensionsByType(tipe)
-	if len(ext) == 0 {
-		return ""
-	}
-	return strings.ToLower(strings.TrimPrefix(ext[0], "."))
+// normalEkstensiTCO - `ext` unggahan dari NAMA BERKAS ASLI
+// (`InsertGoogleStorage_Act` b587-b588 `@toLowerCase(Param.Ext)`): huruf
+// kecil, tanpa titik. Tidak ditebak dari MIME - tabel MIME berbeda per OS.
+func normalEkstensiTCO(ext string) string {
+	return strings.ToLower(strings.TrimPrefix(strings.TrimSpace(ext), "."))
 }
 
 // Kirim - unggah: isi dikirim base64 di medan `Image`; objek bernama `kunci`
-// (IMAGEID) sehingga pengulangan menulis ke objek yang SAMA (AC 58).
-func (p *pengirimBerkasHTTPTCO) Kirim(ctx context.Context, alamat, token, kunci string, isi io.Reader, tipe string) error {
+// (IMAGEID) di `FolderStorageTCO` sehingga pengulangan menulis ke objek yang
+// SAMA (AC 58).
+func (p *pengirimBerkasHTTPTCO) Kirim(ctx context.Context, alamat, token, kunci string, isi io.Reader,
+	tipe, ekstensi string) error {
 	b, err := p.dasar(ctx, token, kunci)
 	if err != nil {
 		return err
@@ -195,7 +218,7 @@ func (p *pengirimBerkasHTTPTCO) Kirim(ctx context.Context, alamat, token, kunci 
 		return fmt.Errorf("%w: berkas melebihi batas", ErrStorageMenolakPermintaanTCO)
 	}
 	durasi := DurasiURLStorageTCO
-	b.Durasi, b.Folder, b.MimeType, b.Ext = &durasi, FolderStorageTCO, tipe, ekstensiDariMime(tipe)
+	b.Durasi, b.Folder, b.MimeType, b.Ext = &durasi, FolderStorageTCO, tipe, normalEkstensiTCO(ekstensi)
 	b.Image = base64.StdEncoding.EncodeToString(data)
 	j, err := p.kirimJSON(ctx, alamat, b)
 	if err != nil {
@@ -220,20 +243,31 @@ func (p *pengirimBerkasHTTPTCO) urlBertanda(ctx context.Context, alamat, token, 
 	if err != nil {
 		return "", err
 	}
+	// ⛔ HANYA https: isi lampiran tidak melintas jaringan tanpa sandi, dan
+	// jawaban layanan tidak dapat menyuruh backend membuka alamat polos.
 	u, err := url.Parse(strings.TrimSpace(j.URLImage))
-	if err != nil || u.Host == "" || (u.Scheme != "https" && u.Scheme != "http") {
+	if err != nil || u.Host == "" || u.Scheme != "https" {
 		return "", fmt.Errorf("%w: URLImage tidak berbentuk", ErrStorageJawabanRusakTCO)
 	}
 	return u.String(), nil
 }
 
 // unduh membuka URL bertanda tangan yang DIBERIKAN layanan saat jalan.
-func (p *pengirimBerkasHTTPTCO) unduh(ctx context.Context, bertanda string) (*http.Response, error) {
+//
+// ⛔ Pengalihan TIDAK diikuti (3xx = galat): URL bertanda tangan menunjuk
+// objeknya langsung, dan pengalihan dari jawaban luar adalah jalan membuka
+// alamat internal. `jengkal` = header Range (cek keberadaan tanpa mengunduh).
+func (p *pengirimBerkasHTTPTCO) unduh(ctx context.Context, bertanda, jengkal string) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, bertanda, nil)
 	if err != nil {
 		return nil, fmt.Errorf("%w: URLImage tidak berbentuk", ErrStorageJawabanRusakTCO)
 	}
-	jwb, err := p.klien.Do(req)
+	if jengkal != "" {
+		req.Header.Set("Range", jengkal)
+	}
+	klien := *p.klien
+	klien.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	jwb, err := klien.Do(req)
 	if err != nil {
 		return nil, galatJaringanTCO(err)
 	}
@@ -246,20 +280,23 @@ func (p *pengirimBerkasHTTPTCO) Ambil(ctx context.Context, alamat, token, kunci 
 	if err != nil {
 		return nil, err
 	}
-	jwb, err := p.unduh(ctx, bertanda)
+	jwb, err := p.unduh(ctx, bertanda, "")
 	if err != nil {
 		return nil, err
 	}
 	if jwb.StatusCode < 200 || jwb.StatusCode > 299 {
 		_ = jwb.Body.Close()
-		return nil, galatStatusTCO(jwb.StatusCode)
+		return nil, galatStatusObjekTCO(jwb.StatusCode)
 	}
 	return jwb.Body, nil
 }
 
-// Buang - `delete` (`App`, `Kodestring`, `Namafile`).
+// Buang - `delete`: `Namafile` = jalur objek PENUH folder + nama
+// (`DeleteGoogleStorage_Act` b1091: `.Folder` tersimpan dikurangi awalan
+// skema `gs` + `.App`),
+// tanpa `Folder`. Jawaban selain 2xx = galat - termasuk 404 (lihat galatStatusTCO).
 func (p *pengirimBerkasHTTPTCO) Buang(ctx context.Context, alamat, token, kunci string) error {
-	b, err := p.dasar(ctx, token, kunci)
+	b, err := p.dasar(ctx, token, FolderStorageTCO+kunci)
 	if err != nil {
 		return err
 	}
@@ -267,19 +304,17 @@ func (p *pengirimBerkasHTTPTCO) Buang(ctx context.Context, alamat, token, kunci 
 	return err
 }
 
-// Periksa - `geturl` lalu memastikan objeknya dapat dibuka.
+// Periksa - `geturl` lalu membuka SATU byte objeknya: 404 = tidak ada.
 func (p *pengirimBerkasHTTPTCO) Periksa(ctx context.Context, alamat, token, kunci string) (bool, error) {
 	bertanda, err := p.urlBertanda(ctx, alamat, token, kunci)
-	if errors.Is(err, ErrBerkasTidakAdaDiPenyimpanan) {
-		return false, nil
-	}
 	if err != nil {
 		return false, err
 	}
-	jwb, err := p.unduh(ctx, bertanda)
+	jwb, err := p.unduh(ctx, bertanda, "bytes=0-0")
 	if err != nil {
 		return false, err
 	}
+	_, _ = io.Copy(io.Discard, io.LimitReader(jwb.Body, 1<<10))
 	_ = jwb.Body.Close()
 	switch {
 	case jwb.StatusCode == http.StatusNotFound:
@@ -287,5 +322,5 @@ func (p *pengirimBerkasHTTPTCO) Periksa(ctx context.Context, alamat, token, kunc
 	case jwb.StatusCode >= 200 && jwb.StatusCode <= 299:
 		return true, nil
 	}
-	return false, galatStatusTCO(jwb.StatusCode)
+	return false, galatStatusObjekTCO(jwb.StatusCode)
 }

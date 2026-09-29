@@ -57,7 +57,7 @@ func main() {
 		DenganLingkungan(services.LingkunganDariFlag(cfg.IsPegaProd)).
 		DenganUnggahanDir(cfg.UnggahanDir).
 		// OQ-TCO-08: bawaan stub; ⛔ garam tidak pernah dicetak.
-		DenganPenyimpananLampiranTCO(cfg.PelaksanaStorage, cfg.StorageTokenSalt)
+		DenganPenyimpananLampiranTCO(cfg.PelaksanaStorage == config.PelaksanaStorageNyata, cfg.StorageTokenSalt)
 	if svc.PunyaDatabase() {
 		log.Printf("oracle: skema %s", svc.SkemaAktif())
 	} else {
@@ -90,7 +90,7 @@ func main() {
 	defer berhenti()
 
 	log.Printf("lampiran treaty contract out: pelaksana penyimpanan %s", cfg.PelaksanaStorage)
-	jalankanPekerjaLampiranTCO(ctx, svc, cfg)
+	pekerjaSelesai := jalankanPekerjaLampiranTCO(ctx, svc, cfg)
 
 	go func() {
 		log.Printf("http: mendengarkan di %s", srv.Addr)
@@ -107,25 +107,40 @@ func main() {
 	if err := srv.Shutdown(tutup); err != nil {
 		log.Printf("http: penutupan tidak bersih: %v", err)
 	}
+	// ⛔ Ditunggu SEBELUM db ditutup (defer di atas): putaran yang sedang
+	// berjalan menuntaskan atau membatalkan transaksinya sendiri.
+	select {
+	case <-pekerjaSelesai:
+	case <-tutup.Done():
+		log.Print("lampiran treaty contract out: pekerja latar belum berhenti saat batas penutupan")
+	}
 }
 
 // jalankanPekerjaLampiranTCO menyalakan pekerja latar antrean lampiran Treaty
 // Contract Out (OQ-TCO-09, keputusan work owner 29-09-2026).
 //
 // Mati bila TCO_PEKERJA_LAMPIRAN_INTERVAL kosong/0 atau tanpa Oracle. Ia
-// berhenti bersama ctx proses.
-func jalankanPekerjaLampiranTCO(ctx context.Context, svc *services.Service, cfg config.Config) {
+// berhenti bersama ctx proses; kanal yang dikembalikan tertutup saat ia
+// benar-benar berhenti (langsung tertutup bila tidak dinyalakan).
+func jalankanPekerjaLampiranTCO(ctx context.Context, svc *services.Service, cfg config.Config) <-chan struct{} {
+	selesai := make(chan struct{})
 	if cfg.IntervalPekerjaLampiranTCO <= 0 {
 		log.Print("lampiran treaty contract out: pekerja latar mati (interval kosong)")
-		return
+		close(selesai)
+		return selesai
 	}
 	if !svc.PunyaDatabase() {
 		log.Print("lampiran treaty contract out: pekerja latar mati (tanpa oracle)")
-		return
+		close(selesai)
+		return selesai
 	}
 	log.Printf("lampiran treaty contract out: pekerja latar tiap %s", cfg.IntervalPekerjaLampiranTCO)
-	go handlers.LayananLampiranTCO(svc).JalankanPekerja(ctx, cfg.IntervalPekerjaLampiranTCO,
-		func(s string) { log.Print(s) })
+	go func() {
+		defer close(selesai)
+		handlers.LayananLampiranTCO(svc).JalankanPekerja(ctx, cfg.IntervalPekerjaLampiranTCO,
+			func(s string) { log.Print(s) })
+	}()
+	return selesai
 }
 
 // bongkarMigrasi adalah titik masuk `-migrate-down`.

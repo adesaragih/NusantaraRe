@@ -55,14 +55,15 @@ func TestPelaksanaStorageDitolak(t *testing.T) {
 
 func TestIntervalPekerjaLampiranTCO(t *testing.T) {
 	kosongkanEnvDasar(t)
-	for raw, mau := range map[string]time.Duration{"": 0, "0": 0, "30s": 30 * time.Second, " 1m ": time.Minute} {
+	for raw, mau := range map[string]time.Duration{"": 0, "0": 0, "1s": time.Second, "30s": 30 * time.Second, " 1m ": time.Minute} {
 		t.Setenv(EnvIntervalPekerjaLampiranTCO, raw)
 		c, err := Load()
 		if err != nil || c.IntervalPekerjaLampiranTCO != mau {
 			t.Errorf("%q: %v %v", raw, c.IntervalPekerjaLampiranTCO, err)
 		}
 	}
-	for _, raw := range []string{"30", "sebentar", "-1s"} {
+	// Batas bawah 1s: `30ms` hampir pasti salah ketik untuk `30s`.
+	for _, raw := range []string{"30", "sebentar", "-1s", "30ms", "1ns"} {
 		t.Setenv(EnvIntervalPekerjaLampiranTCO, raw)
 		if _, err := Load(); !errors.Is(err, ErrKonfigurasi) || !strings.Contains(err.Error(), EnvIntervalPekerjaLampiranTCO) {
 			t.Errorf("%q diterima: %v", raw, err)

@@ -23,7 +23,7 @@ func TestPenyimpananLokalMenimpaKunciYangSama(t *testing.T) {
 	p := services.PenyimpananLokalDi(folder)
 	ctx := context.Background()
 	for _, isi := range []string{"PERTAMA", "KEDUA"} {
-		if err := p.Simpan(ctx, "ABCDEF0123456789", strings.NewReader(isi), "application/pdf"); err != nil {
+		if err := p.Simpan(ctx, "ABCDEF0123456789", strings.NewReader(isi), "application/pdf", ""); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -57,7 +57,7 @@ func TestPenyimpananLokalMenimpaKunciYangSama(t *testing.T) {
 func TestPenyimpananLokalMenolakKunciBerjalur(t *testing.T) {
 	p := services.PenyimpananLokalDi(t.TempDir())
 	for _, k := range []string{"../../keluar", `..\x`, "a/b", "", "PENDEK"} {
-		if err := p.Simpan(context.Background(), k, strings.NewReader("x"), ""); !errors.Is(err, services.ErrPermintaanTidakSah) {
+		if err := p.Simpan(context.Background(), k, strings.NewReader("x"), "", ""); !errors.Is(err, services.ErrPermintaanTidakSah) {
 			t.Errorf("kunci %q: %v", k, err)
 		}
 	}
@@ -65,7 +65,7 @@ func TestPenyimpananLokalMenolakKunciBerjalur(t *testing.T) {
 
 func TestPenyimpananLokalTanpaFolderGagalTerang(t *testing.T) {
 	p := services.PenyimpananLokalTCO(services.New(nil))
-	if err := p.Simpan(context.Background(), "ABCDEF0123456789", strings.NewReader("x"), ""); !errors.Is(err, services.ErrUnggahanDirBelumDisetel) {
+	if err := p.Simpan(context.Background(), "ABCDEF0123456789", strings.NewReader("x"), "", ""); !errors.Is(err, services.ErrUnggahanDirBelumDisetel) {
 		t.Errorf("tanpa UNGGAHAN_DIR: %v", err)
 	}
 }
@@ -96,7 +96,7 @@ func (p *pengirimLampiranUji) catat(alamat, token string) {
 	p.alamat = append(p.alamat, alamat)
 	p.token = append(p.token, token)
 }
-func (p *pengirimLampiranUji) Kirim(_ context.Context, alamat, token, _ string, isi io.Reader, _ string) error {
+func (p *pengirimLampiranUji) Kirim(_ context.Context, alamat, token, _ string, isi io.Reader, _, _ string) error {
 	p.catat(alamat, token)
 	_, err := io.Copy(io.Discard, isi)
 	return err
@@ -142,11 +142,11 @@ func TestPenyimpananJarakJauhAlamatDariResolverSaatJalan(t *testing.T) {
 	p := services.NewPenyimpananJarakJauhTCO(r,
 		services.NewCacheTokenTCO(&sumberTokenLampiranUji{jam: jam}, jam, services.MarginTokenTCO), kirim)
 	ctx := context.Background()
-	if err := p.Simpan(ctx, "ABCDEF0123456789", strings.NewReader("x"), ""); err != nil {
+	if err := p.Simpan(ctx, "ABCDEF0123456789", strings.NewReader("x"), "", ""); err != nil {
 		t.Fatal(err)
 	}
 	r.alamat[services.KunciUnggahBerkas] = "alamat-uji-unggah-2"
-	if err := p.Simpan(ctx, "ABCDEF0123456789", strings.NewReader("x"), ""); err != nil {
+	if err := p.Simpan(ctx, "ABCDEF0123456789", strings.NewReader("x"), "", ""); err != nil {
 		t.Fatal(err)
 	}
 	if err := p.Hapus(ctx, "ABCDEF0123456789"); err != nil {
@@ -155,7 +155,8 @@ func TestPenyimpananJarakJauhAlamatDariResolverSaatJalan(t *testing.T) {
 	if _, err := p.Ada(ctx, "ABCDEF0123456789"); err != nil {
 		t.Fatal(err)
 	}
-	mau := []string{"alamat-uji-unggah-1", "alamat-uji-unggah-2", "alamat-uji-hapus", "alamat-uji-url"}
+	// Hapus memeriksa keberadaan lebih dulu (`geturl`), lalu `delete`.
+	mau := []string{"alamat-uji-unggah-1", "alamat-uji-unggah-2", "alamat-uji-url", "alamat-uji-hapus", "alamat-uji-url"}
 	if strings.Join(kirim.alamat, ",") != strings.Join(mau, ",") {
 		t.Errorf("alamat terpakai %v, mau %v", kirim.alamat, mau)
 	}
@@ -169,7 +170,7 @@ func TestPenyimpananJarakJauhAlamatDariResolverSaatJalan(t *testing.T) {
 
 func TestPenyimpananJarakJauhTanpaPengirimBelumDisetujui(t *testing.T) {
 	p := services.NewPenyimpananJarakJauhTCO(&resolverLampiranUji{}, nil, nil)
-	err := p.Simpan(context.Background(), "ABCDEF0123456789", strings.NewReader("x"), "")
+	err := p.Simpan(context.Background(), "ABCDEF0123456789", strings.NewReader("x"), "", "")
 	if !errors.Is(err, services.ErrPenyimpananBelumDisetujui) || services.LayakDicobaUlang(err) {
 		t.Errorf("tanpa pengirim: %v", err)
 	}
@@ -203,7 +204,7 @@ func TestTokenGagalTerlihatDanTransportTidakDipanggil(t *testing.T) {
 		&resolverLampiranUji{alamat: map[services.KunciLayanan]string{services.KunciUnggahBerkas: "alamat-uji"}},
 		services.NewCacheTokenTCO(&sumberTokenLampiranUji{gagal: errors.New("GET_TOKEN_STORAGE menolak"), jam: jam},
 			jam, services.MarginTokenTCO), kirim)
-	err := p.Simpan(context.Background(), "ABCDEF0123456789", strings.NewReader("x"), "")
+	err := p.Simpan(context.Background(), "ABCDEF0123456789", strings.NewReader("x"), "", "")
 	if !errors.Is(err, services.ErrTokenPenyimpananGagal) {
 		t.Errorf("token gagal: %v", err)
 	}

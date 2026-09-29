@@ -26,7 +26,7 @@ Satu tempat untuk seluruh pertanyaan terbuka modul ini. Rincian dan buktinya tet
 | OQ-TCO-19 | tombol simpan tunggal | tiket 09 | **ditutup** — *"tidak perlu"*; rute simpan utuh dibuang (kelompok 3) |
 | OQ-TCO-20 | "klausul milik kontrak ini" di popup hapus | tiket 10 | **ditutup** — *"dari induknya"* (kelompok 2) |
 | OQ-TCO-21 | hapus kontrak yang kombinasinya dipakai bersama | tinjauan lanjutan 1 | **ditutup** — *"hapus saja, samain dengan pega"* (kelompok 2) |
-| OQ-TCO-22 | `Folder` / `Durasi` / `Namafile` unggahan penyimpanan nyata | tiket 12 (lanjutan 2, kelompok 5) | terbuka — `[keputusan kami]` `TreatyContractOut` / `60` / `IMAGEID` |
+| OQ-TCO-22 | `Folder` / `Durasi` / `Namafile` unggahan penyimpanan nyata | tiket 12 (lanjutan 2, kelompok 5) | terbuka — `[keputusan kami]` `TreatyContractOut/` / `60` / `IMAGEID` |
 
 ## Keputusan work owner 29-09-2026
 

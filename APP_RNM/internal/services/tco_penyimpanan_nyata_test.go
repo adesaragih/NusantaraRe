@@ -26,7 +26,8 @@ type penyimpanTokenUji struct {
 	app       string
 	appErr    error
 	lama      string
-	habis     time.Time
+	sisa      time.Duration
+	minimum   []time.Duration
 	simpanErr error
 	dibaca    int
 	disimpan  []tokenTersimpanUji
@@ -36,9 +37,16 @@ func (p *penyimpanTokenUji) AppStorage(context.Context) (string, error) {
 	p.dibaca++
 	return p.app, p.appErr
 }
-func (p *penyimpanTokenUji) TokenBerlaku(_ context.Context, _ *repository.Tx, _ string, _ time.Time) (string, time.Time, error) {
+
+// TokenBerlaku meniru `INPUTDATE > saat + sisaMinimum` kueri Oracle-nya.
+func (p *penyimpanTokenUji) TokenBerlaku(_ context.Context, _ *repository.Tx, _ string, _ time.Time,
+	sisaMinimum time.Duration) (string, time.Duration, error) {
 	p.dibaca++
-	return p.lama, p.habis, nil
+	p.minimum = append(p.minimum, sisaMinimum)
+	if p.lama == "" || p.sisa <= sisaMinimum {
+		return "", 0, nil
+	}
+	return p.lama, p.sisa, nil
 }
 func (p *penyimpanTokenUji) SimpanToken(_ context.Context, _ *repository.Tx, app, token, pengguna string, sampai time.Time) error {
 	if p.simpanErr != nil {
@@ -55,10 +63,21 @@ func TestSumberTokenStoragePakaiUlangAtauTerbitkan(t *testing.T) {
 	jam := func() time.Time { return saat }
 	ctx := context.Background()
 
-	lama := &penyimpanTokenUji{app: appUjiStorage, lama: tokenUjiStorage, habis: saat.Add(40 * time.Second)}
+	lama := &penyimpanTokenUji{app: appUjiStorage, lama: tokenUjiStorage, sisa: 40 * time.Second}
 	tok, exp, err := services.NewSumberTokenStorageTCO(transaksiUji, lama, garamUjiStorage, jam).TokenBaru(ctx)
 	if err != nil || tok != tokenUjiStorage || !exp.Equal(saat.Add(40*time.Second)) || len(lama.disimpan) != 0 {
 		t.Errorf("pakai ulang: %q %v %v, disimpan %d", tok, exp, err, len(lama.disimpan))
+	}
+	if len(lama.minimum) != 1 || lama.minimum[0] != services.MarginTokenTCO {
+		t.Errorf("ambang pakai ulang %v, mau MarginTokenTCO", lama.minimum)
+	}
+
+	// AC 60: token yang sisa umurnya di dalam margin TIDAK dipakai ulang -
+	// tanpa ini cache menerima token hampir mati yang sama berulang kali.
+	hampir := &penyimpanTokenUji{app: appUjiStorage, lama: tokenUjiStorage, sisa: 10 * time.Second}
+	tok, exp, err = services.NewSumberTokenStorageTCO(transaksiUji, hampir, garamUjiStorage, jam).TokenBaru(ctx)
+	if err != nil || tok == tokenUjiStorage || !exp.Equal(saat.Add(time.Minute)) || len(hampir.disimpan) != 1 {
+		t.Errorf("token hampir mati dipakai ulang: %v %v, disimpan %d", exp, err, len(hampir.disimpan))
 	}
 
 	baru := &penyimpanTokenUji{app: appUjiStorage}
@@ -107,23 +126,17 @@ func TestPenyimpananLampiranPilihanPelaksana(t *testing.T) {
 	if _, jauh := services.PenyimpananLampiranTCO(svc).(*services.PenyimpananJarakJauhTCO); jauh {
 		t.Error("bawaan memasang rangkaian jarak jauh")
 	}
-	for _, v := range []string{"", "stub", "STUB", "lain"} {
-		s := svc.DenganPenyimpananLampiranTCO(v, garamUjiStorage)
-		if s.PenyimpananLampiranNyataTCO() {
-			t.Errorf("%q menyalakan pelaksana nyata", v)
-		}
+	if s := svc.DenganPenyimpananLampiranTCO(false, garamUjiStorage); s.PenyimpananLampiranNyataTCO() {
+		t.Error("false menyalakan pelaksana nyata")
 	}
-	for _, v := range []string{"nyata", " NYATA "} {
-		s := svc.DenganPenyimpananLampiranTCO(v, garamUjiStorage)
-		k, jauh := services.PenyimpananLampiranTCO(s).(*services.PenyimpananJarakJauhTCO)
-		if !s.PenyimpananLampiranNyataTCO() || !jauh {
-			t.Errorf("%q: pelaksana nyata tidak terpasang", v)
-			continue
-		}
-		// Tanpa Oracle tidak ada alamat yang dapat di-resolve: gagal, tanpa panggilan keluar.
-		if err := k.Simpan(context.Background(), kunciUjiStorage, strings.NewReader("x"), ""); err == nil {
-			t.Errorf("%q tanpa Oracle: simpan berhasil", v)
-		}
+	s := svc.DenganPenyimpananLampiranTCO(true, garamUjiStorage)
+	k, jauh := services.PenyimpananLampiranTCO(s).(*services.PenyimpananJarakJauhTCO)
+	if !s.PenyimpananLampiranNyataTCO() || !jauh {
+		t.Fatal("pelaksana nyata tidak terpasang")
+	}
+	// Tanpa Oracle tidak ada alamat yang dapat di-resolve: gagal terang, tanpa panggilan keluar.
+	if err := k.Simpan(context.Background(), kunciUjiStorage, strings.NewReader("x"), "", ""); !errors.Is(err, repository.ErrTanpaOracle) {
+		t.Errorf("tanpa Oracle: %v", err)
 	}
 	if svc.PenyimpananLampiranNyataTCO() {
 		t.Error("DenganPenyimpananLampiranTCO mengubah Service asal")
@@ -200,5 +213,18 @@ func TestPekerjaLampiranTCO(t *testing.T) {
 	}
 	if r.simpan.cacah() != 1 {
 		t.Errorf("berkas di penyimpanan %d, mau 1", r.simpan.cacah())
+	}
+}
+
+// `ext` UploadDoc dari NAMA BERKAS ASLI, huruf kecil tanpa titik
+// (InsertGoogleStorage_Act b587 `@toLowerCase(Param.Ext)`) - tidak ditebak dari MIME.
+func TestLampiranEkstensiDariNamaBerkas(t *testing.T) {
+	r := rakitanLampiran(t)
+	r.unggah(t, "1000001", "Kontrak.Final.PDF", "ISI")
+	r.unggah(t, "1000001", "tanpa-titik", "ISI")
+	r.simpan.mu.Lock()
+	defer r.simpan.mu.Unlock()
+	if len(r.simpan.ekstensi) != 2 || r.simpan.ekstensi[0] != "pdf" || r.simpan.ekstensi[1] != "" {
+		t.Errorf("ekstensi %q, mau [pdf \"\"]", r.simpan.ekstensi)
 	}
 }

@@ -3,7 +3,7 @@ package services_test
 // Uji transport penyimpanan lampiran (OQ-TCO-08) - SERVER TIRUAN LOKAL.
 //
 // ⛔ Tidak ada layanan sungguhan yang dipanggil: setiap alamat berasal dari
-// `httptest.NewServer` saat uji berjalan; nol alamat literal di berkas ini.
+// `httptest.NewTLSServer` saat uji berjalan; nol alamat literal di berkas ini.
 // Token dan garam di sini palsu (awalan UJI-).
 
 import (
@@ -34,30 +34,45 @@ const (
 func appUjiStorageTCO(context.Context) (string, error) { return appUjiStorage, nil }
 
 type permintaanStorageDiterima struct {
-	jalur, metode, jenis string
-	badan                map[string]any
+	jalur, metode, jenis, jengkal string
+	badan                         map[string]any
 }
 
-// layananStorageUji meniru layanan penyimpanan: `/upload`, `/geturl`,
-// `/delete`, dan objek bertanda tangan di `/objek/{kunci}`.
+// layananStorageUji meniru layanan penyimpanan seperti Pega memakainya:
+// `/upload` menyimpan di `Folder + Namafile`, `/geturl` memberi URL bertanda
+// tangan `/objek/{folder}{nama}`, `/delete` membuang `Namafile` = jalur penuh.
 type layananStorageUji struct {
-	mu        sync.Mutex
-	objek     map[string][]byte
-	diterima  []permintaanStorageDiterima
-	paksa     map[string]int
-	urlKosong bool
-	srv       *httptest.Server
+	mu          sync.Mutex
+	objek       map[string][]byte
+	diterima    []permintaanStorageDiterima
+	paksa       map[string]int
+	paksaSekali map[string]int
+	urlGanti    func(jalurObjek string) string
+	urlKosong   bool
+	srv         *httptest.Server
 }
 
 func layananStorageTiruan(t *testing.T) *layananStorageUji {
 	t.Helper()
-	l := &layananStorageUji{objek: map[string][]byte{}, paksa: map[string]int{}}
-	l.srv = httptest.NewServer(http.HandlerFunc(l.layani))
+	l := &layananStorageUji{objek: map[string][]byte{}, paksa: map[string]int{}, paksaSekali: map[string]int{}}
+	l.srv = httptest.NewTLSServer(http.HandlerFunc(l.layani))
 	t.Cleanup(l.srv.Close)
 	return l
 }
 
 func (l *layananStorageUji) alamat(jalur string) string { return l.srv.URL + jalur }
+
+func (l *layananStorageUji) setel(fn func()) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	fn()
+}
+
+func (l *layananStorageUji) salinDiterima() []permintaanStorageDiterima {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return append([]permintaanStorageDiterima(nil), l.diterima...)
+}
 
 func inangDari(alamat string) string {
 	u, _ := url.Parse(alamat)
@@ -67,23 +82,38 @@ func inangDari(alamat string) string {
 func (l *layananStorageUji) layani(w http.ResponseWriter, r *http.Request) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	var badan map[string]any
+	_ = json.NewDecoder(r.Body).Decode(&badan)
+	l.diterima = append(l.diterima, permintaanStorageDiterima{jalur: r.URL.Path, metode: r.Method,
+		jenis: r.Header.Get("Content-Type"), jengkal: r.Header.Get("Range"), badan: badan})
+	if kode, ada := l.paksaSekali[r.URL.Path]; ada {
+		delete(l.paksaSekali, r.URL.Path)
+		w.WriteHeader(kode)
+		return
+	}
 	if kode, ada := l.paksa[r.URL.Path]; ada {
 		w.WriteHeader(kode)
 		return
 	}
-	if nama, ada := strings.CutPrefix(r.URL.Path, "/objek/"); ada {
-		isi, ada := l.objek[nama]
+	if r.URL.Path == "/alih" {
+		http.Redirect(w, r, "/objek/"+services.FolderStorageTCO+kunciUjiStorage, http.StatusFound)
+		return
+	}
+	if jalur, ada := strings.CutPrefix(r.URL.Path, "/objek/"); ada {
+		isi, ada := l.objek[jalur]
 		if !ada {
 			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		if r.Header.Get("Range") != "" && len(isi) > 0 {
+			w.WriteHeader(http.StatusPartialContent)
+			_, _ = w.Write(isi[:1])
 			return
 		}
 		_, _ = w.Write(isi)
 		return
 	}
-	var badan map[string]any
-	_ = json.NewDecoder(r.Body).Decode(&badan)
-	l.diterima = append(l.diterima, permintaanStorageDiterima{jalur: r.URL.Path, metode: r.Method,
-		jenis: r.Header.Get("Content-Type"), badan: badan})
+	folder, _ := badan["Folder"].(string)
 	nama, _ := badan["Namafile"].(string)
 	w.Header().Set("Content-Type", "application/json")
 	switch r.URL.Path {
@@ -94,15 +124,19 @@ func (l *layananStorageUji) layani(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		l.objek[nama] = data
-		u := l.alamat("/objek/" + nama)
+		l.objek[folder+nama] = data
+		u := l.alamat("/objek/" + folder + nama)
 		if l.urlKosong {
 			u = ""
 		}
 		_ = json.NewEncoder(w).Encode(map[string]string{"URLImage": u})
 	case "/geturl":
 		// Seperti URL bertanda tangan: diberikan walau objeknya tidak ada.
-		_ = json.NewEncoder(w).Encode(map[string]string{"URLImage": l.alamat("/objek/" + nama)})
+		u := l.alamat("/objek/" + folder + nama)
+		if l.urlGanti != nil {
+			u = l.urlGanti(folder + nama)
+		}
+		_ = json.NewEncoder(w).Encode(map[string]string{"URLImage": u})
 	case "/delete":
 		delete(l.objek, nama)
 		_ = json.NewEncoder(w).Encode(map[string]string{})
@@ -111,28 +145,39 @@ func (l *layananStorageUji) layani(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (l *layananStorageUji) isiObjek(jalur string) ([]byte, bool) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	b, ada := l.objek[jalur]
+	return b, ada
+}
+
 func (l *layananStorageUji) cacahObjek() int {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	return len(l.objek)
 }
 
-// Bentuk `UploadDoc` (InsertGoogleStorage_Act b1339-b1641) dan pengulangan ke
-// objek yang SAMA (AC 58).
+// Bentuk `UploadDoc` (InsertGoogleStorage_Act b1339-b1641), `ext` dari nama
+// berkas asli (b587), dan pengulangan ke objek yang SAMA (AC 58).
 func TestPengirimStorageUnggahBentukUploadDoc(t *testing.T) {
 	l := layananStorageTiruan(t)
 	p := services.NewPengirimBerkasHTTPTCO(l.srv.Client(), appUjiStorageTCO)
 	ctx := context.Background()
 	for i := 0; i < 2; i++ {
 		if err := p.Kirim(ctx, l.alamat("/upload"), tokenUjiStorage, kunciUjiStorage,
-			strings.NewReader("ISI-PDF"), "application/pdf"); err != nil {
+			strings.NewReader("ISI-PDF"), "application/pdf", ".PDF"); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if l.cacahObjek() != 1 || string(l.objek[kunciUjiStorage]) != "ISI-PDF" {
-		t.Fatalf("objek: %d, isi %q", l.cacahObjek(), l.objek[kunciUjiStorage])
+	jalur := services.FolderStorageTCO + kunciUjiStorage
+	if isi, _ := l.isiObjek(jalur); l.cacahObjek() != 1 || string(isi) != "ISI-PDF" {
+		t.Fatalf("objek: %d, isi %q", l.cacahObjek(), isi)
 	}
-	d := l.diterima[0]
+	if !strings.HasSuffix(services.FolderStorageTCO, "/") {
+		t.Error("folder tanpa garis miring penutup (Pega b1407-b1408)")
+	}
+	d := l.salinDiterima()[0]
 	if d.metode != http.MethodPost || d.jenis != "application/json" {
 		t.Errorf("metode %q jenis %q", d.metode, d.jenis)
 	}
@@ -144,13 +189,21 @@ func TestPengirimStorageUnggahBentukUploadDoc(t *testing.T) {
 			t.Errorf("medan %s = %v, mau %v", k, d.badan[k], v)
 		}
 	}
+	// Tanpa ekstensi: medan `ext` tidak dikirim, TIDAK ditebak dari MIME.
+	if err := p.Kirim(ctx, l.alamat("/upload"), tokenUjiStorage, kunciUjiStorage,
+		strings.NewReader("x"), "image/jpeg", ""); err != nil {
+		t.Fatal(err)
+	}
+	if b := l.salinDiterima()[2].badan; b["ext"] != nil {
+		t.Errorf("ext ditebak: %v", b["ext"])
+	}
 }
 
 func TestPengirimStorageAmbilPeriksaBuang(t *testing.T) {
 	l := layananStorageTiruan(t)
 	p := services.NewPengirimBerkasHTTPTCO(l.srv.Client(), appUjiStorageTCO)
 	ctx := context.Background()
-	if err := p.Kirim(ctx, l.alamat("/upload"), tokenUjiStorage, kunciUjiStorage, strings.NewReader("ISI"), "text/plain"); err != nil {
+	if err := p.Kirim(ctx, l.alamat("/upload"), tokenUjiStorage, kunciUjiStorage, strings.NewReader("ISI"), "text/plain", "txt"); err != nil {
 		t.Fatal(err)
 	}
 	rc, err := p.Ambil(ctx, l.alamat("/geturl"), tokenUjiStorage, kunciUjiStorage)
@@ -165,13 +218,21 @@ func TestPengirimStorageAmbilPeriksaBuang(t *testing.T) {
 	if ada, err := p.Periksa(ctx, l.alamat("/geturl"), tokenUjiStorage, kunciUjiStorage); err != nil || !ada {
 		t.Errorf("periksa sebelum buang: %v %v", ada, err)
 	}
+	if d := l.salinDiterima(); d[len(d)-1].jengkal != "bytes=0-0" {
+		t.Errorf("periksa mengunduh objek utuh (Range %q)", d[len(d)-1].jengkal)
+	}
 	if err := p.Buang(ctx, l.alamat("/delete"), tokenUjiStorage, kunciUjiStorage); err != nil {
 		t.Fatal(err)
 	}
-	b := l.diterima[len(l.diterima)-1].badan
-	if b["App"] != appUjiStorage || b["Kodestring"] != tokenUjiStorage || b["Namafile"] != kunciUjiStorage ||
-		b["Image"] != nil || b["Folder"] != nil {
-		t.Errorf("badan delete (DeleteGoogleStorage_Act b1019-b1091): %v", b)
+	d := l.salinDiterima()
+	b := d[len(d)-1].badan
+	// DeleteGoogleStorage_Act b1091: Namafile = jalur objek PENUH, tanpa Folder.
+	if b["App"] != appUjiStorage || b["Kodestring"] != tokenUjiStorage ||
+		b["Namafile"] != services.FolderStorageTCO+kunciUjiStorage || b["Image"] != nil || b["Folder"] != nil {
+		t.Errorf("badan delete: %v", b)
+	}
+	if l.cacahObjek() != 0 {
+		t.Fatal("objek tidak terhapus - delete menunjuk jalur lain")
 	}
 	if ada, err := p.Periksa(ctx, l.alamat("/geturl"), tokenUjiStorage, kunciUjiStorage); err != nil || ada {
 		t.Errorf("periksa sesudah buang: %v %v", ada, err)
@@ -179,11 +240,45 @@ func TestPengirimStorageAmbilPeriksaBuang(t *testing.T) {
 	if _, err := p.Ambil(ctx, l.alamat("/geturl"), tokenUjiStorage, kunciUjiStorage); !errors.Is(err, services.ErrBerkasTidakAdaDiPenyimpanan) {
 		t.Errorf("ambil sesudah buang: %v", err)
 	}
-	l.mu.Lock()
-	l.paksa["/geturl"] = http.StatusNotFound
-	l.mu.Unlock()
-	if ada, err := p.Periksa(ctx, l.alamat("/geturl"), tokenUjiStorage, kunciUjiStorage); err != nil || ada {
-		t.Errorf("periksa geturl 404: %v %v", ada, err)
+}
+
+// ⛔ 404 TITIK LAYANAN bukan "berkas tidak ada" - ia juga jawaban jalur
+// M_LINK_SERVICE yang salah; "tidak ada" hanya dari URL bertanda tangan.
+func TestPengirimStorage404TitikLayananBukanBerkasHilang(t *testing.T) {
+	l := layananStorageTiruan(t)
+	p := services.NewPengirimBerkasHTTPTCO(l.srv.Client(), appUjiStorageTCO)
+	ctx := context.Background()
+	if err := p.Buang(ctx, l.alamat("/salah-jalur"), tokenUjiStorage, kunciUjiStorage); errors.Is(err, services.ErrBerkasTidakAdaDiPenyimpanan) ||
+		!errors.Is(err, services.ErrStorageGagalTCO) {
+		t.Errorf("delete 404: %v", err)
+	}
+	if ada, err := p.Periksa(ctx, l.alamat("/salah-jalur"), tokenUjiStorage, kunciUjiStorage); ada || !errors.Is(err, services.ErrStorageGagalTCO) {
+		t.Errorf("geturl 404: %v %v", ada, err)
+	}
+}
+
+// ⛔ URL bertanda tangan hanya https, dan pengalihannya tidak diikuti.
+func TestPengirimStorageURLBertandaTerjaga(t *testing.T) {
+	l := layananStorageTiruan(t)
+	p := services.NewPengirimBerkasHTTPTCO(l.srv.Client(), appUjiStorageTCO)
+	ctx := context.Background()
+	if err := p.Kirim(ctx, l.alamat("/upload"), tokenUjiStorage, kunciUjiStorage, strings.NewReader("ISI"), "", ""); err != nil {
+		t.Fatal(err)
+	}
+	polos := strings.Replace(l.srv.URL, "https", "http", 1)
+	l.setel(func() { l.urlGanti = func(j string) string { return polos + "/objek/" + j } })
+	if _, err := p.Ambil(ctx, l.alamat("/geturl"), tokenUjiStorage, kunciUjiStorage); !errors.Is(err, services.ErrStorageJawabanRusakTCO) {
+		t.Errorf("URLImage polos: %v", err)
+	}
+	l.setel(func() { l.urlGanti = func(string) string { return l.alamat("/alih") } })
+	sebelum := len(l.salinDiterima())
+	if _, err := p.Ambil(ctx, l.alamat("/geturl"), tokenUjiStorage, kunciUjiStorage); !errors.Is(err, services.ErrStorageGagalTCO) {
+		t.Errorf("pengalihan: %v", err)
+	}
+	for _, d := range l.salinDiterima()[sebelum:] {
+		if strings.HasPrefix(d.jalur, "/objek/") {
+			t.Errorf("pengalihan diikuti ke %s", d.jalur)
+		}
 	}
 }
 
@@ -204,33 +299,32 @@ func TestPengirimStorageGalatTanpaAlamatAtauToken(t *testing.T) {
 	for kode, mau := range map[int]error{
 		http.StatusBadRequest:          services.ErrStorageMenolakPermintaanTCO,
 		http.StatusUnprocessableEntity: services.ErrStorageMenolakPermintaanTCO,
-		http.StatusNotFound:            services.ErrBerkasTidakAdaDiPenyimpanan,
-		http.StatusUnauthorized:        services.ErrStorageGagalTCO,
+		http.StatusNotFound:            services.ErrStorageGagalTCO,
+		http.StatusUnauthorized:        services.ErrStorageTokenDitolakTCO,
+		http.StatusForbidden:           services.ErrStorageTokenDitolakTCO,
 		http.StatusTooManyRequests:     services.ErrStorageGagalTCO,
 		http.StatusInternalServerError: services.ErrStorageGagalTCO,
 	} {
-		l.mu.Lock()
-		l.paksa["/upload"] = kode
-		l.mu.Unlock()
-		err := p.Kirim(ctx, l.alamat("/upload"), tokenUjiStorage, kunciUjiStorage, strings.NewReader("x"), "")
+		l.setel(func() { l.paksa["/upload"] = kode })
+		err := p.Kirim(ctx, l.alamat("/upload"), tokenUjiStorage, kunciUjiStorage, strings.NewReader("x"), "", "")
 		if !errors.Is(err, mau) {
 			t.Errorf("status %d: %v, mau %v", kode, err, mau)
 			continue
 		}
 		bersihDariRahasia(t, err, inangDari(l.srv.URL))
 	}
-	l.mu.Lock()
-	delete(l.paksa, "/upload")
-	l.urlKosong = true
-	l.mu.Unlock()
-	if err := p.Kirim(ctx, l.alamat("/upload"), tokenUjiStorage, kunciUjiStorage, strings.NewReader("x"), ""); !errors.Is(err, services.ErrStorageJawabanRusakTCO) {
+	l.setel(func() {
+		delete(l.paksa, "/upload")
+		l.urlKosong = true
+	})
+	if err := p.Kirim(ctx, l.alamat("/upload"), tokenUjiStorage, kunciUjiStorage, strings.NewReader("x"), "", ""); !errors.Is(err, services.ErrStorageJawabanRusakTCO) {
 		t.Errorf("URLImage kosong (b2902): %v", err)
 	}
 
-	mati := httptest.NewServer(http.NotFoundHandler())
+	mati := httptest.NewTLSServer(http.NotFoundHandler())
 	alamatMati := mati.URL + "/upload"
 	mati.Close()
-	err := p.Kirim(ctx, alamatMati, tokenUjiStorage, kunciUjiStorage, strings.NewReader("x"), "")
+	err := p.Kirim(ctx, alamatMati, tokenUjiStorage, kunciUjiStorage, strings.NewReader("x"), "", "")
 	if !errors.Is(err, services.ErrStorageTakTerjangkauTCO) {
 		t.Fatalf("server mati: %v", err)
 	}
@@ -247,7 +341,7 @@ func TestPengirimStorageGalatTanpaAlamatAtauToken(t *testing.T) {
 	}))
 	defer func() { close(lepas); lambat.Close() }()
 	pl := services.NewPengirimBerkasHTTPTCO(&http.Client{Timeout: 50 * time.Millisecond}, appUjiStorageTCO)
-	err = pl.Kirim(ctx, lambat.URL+"/upload", tokenUjiStorage, kunciUjiStorage, strings.NewReader("x"), "")
+	err = pl.Kirim(ctx, lambat.URL+"/upload", tokenUjiStorage, kunciUjiStorage, strings.NewReader("x"), "", "")
 	if !errors.Is(err, services.ErrStorageTakTerjangkauTCO) || !strings.Contains(err.Error(), "batas waktu") {
 		t.Errorf("batas waktu: %v", err)
 	}
@@ -256,34 +350,36 @@ func TestPengirimStorageGalatTanpaAlamatAtauToken(t *testing.T) {
 	tanpaApp := services.NewPengirimBerkasHTTPTCO(l.srv.Client(), func(context.Context) (string, error) {
 		return "", repository.ErrAppStorageKosongTCO
 	})
-	l.mu.Lock()
-	sebelum := len(l.diterima)
-	l.mu.Unlock()
-	if err := tanpaApp.Kirim(ctx, l.alamat("/upload"), tokenUjiStorage, kunciUjiStorage, strings.NewReader("x"), ""); !errors.Is(err, repository.ErrAppStorageKosongTCO) {
+	sebelum := len(l.salinDiterima())
+	if err := tanpaApp.Kirim(ctx, l.alamat("/upload"), tokenUjiStorage, kunciUjiStorage, strings.NewReader("x"), "", ""); !errors.Is(err, repository.ErrAppStorageKosongTCO) {
 		t.Errorf("tanpa App: %v", err)
 	}
-	if len(l.diterima) != sebelum {
+	if len(l.salinDiterima()) != sebelum {
 		t.Error("permintaan terkirim padahal App belum ada")
 	}
 }
 
-// Rangkaian utuh: resolver (M_LINK_SERVICE tiruan) -> cache token -> sumber
+// rangkaianNyataUji: resolver (M_LINK_SERVICE tiruan) -> cache token -> sumber
 // token GET_TOKEN_STORAGE tiruan -> transport HTTP -> server tiruan lokal.
-func TestPenyimpananNyataUjungKeUjung(t *testing.T) {
-	l := layananStorageTiruan(t)
+func rangkaianNyataUji(l *layananStorageUji, hapus string) (*services.PenyimpananJarakJauhTCO, *penyimpanTokenUji, time.Time) {
 	saat := time.Date(2026, 9, 29, 9, 0, 0, 0, time.UTC)
 	jam := func() time.Time { return saat }
 	r := &resolverLampiranUji{alamat: map[services.KunciLayanan]string{
 		services.KunciUnggahBerkas: l.alamat("/upload"),
 		services.KunciURLBerkas:    l.alamat("/geturl"),
-		services.KunciHapusBerkas:  l.alamat("/delete"),
+		services.KunciHapusBerkas:  l.alamat(hapus),
 	}}
 	gudangToken := &penyimpanTokenUji{app: appUjiStorage}
 	sumber := services.NewSumberTokenStorageTCO(transaksiUji, gudangToken, garamUjiStorage, jam)
-	p := services.NewPenyimpananJarakJauhTCO(r, services.NewCacheTokenTCO(sumber, jam, services.MarginTokenTCO),
-		services.NewPengirimBerkasHTTPTCO(l.srv.Client(), appUjiStorageTCO))
+	return services.NewPenyimpananJarakJauhTCO(r, services.NewCacheTokenTCO(sumber, jam, services.MarginTokenTCO),
+		services.NewPengirimBerkasHTTPTCO(l.srv.Client(), appUjiStorageTCO)), gudangToken, saat
+}
+
+func TestPenyimpananNyataUjungKeUjung(t *testing.T) {
+	l := layananStorageTiruan(t)
+	p, gudangToken, saat := rangkaianNyataUji(l, "/delete")
 	ctx := context.Background()
-	if err := p.Simpan(ctx, kunciUjiStorage, strings.NewReader("ISI"), "application/pdf"); err != nil {
+	if err := p.Simpan(ctx, kunciUjiStorage, strings.NewReader("ISI"), "application/pdf", "pdf"); err != nil {
 		t.Fatal(err)
 	}
 	if ada, err := p.Ada(ctx, kunciUjiStorage); err != nil || !ada {
@@ -293,8 +389,8 @@ func TestPenyimpananNyataUjungKeUjung(t *testing.T) {
 		t.Fatal(err)
 	}
 	mau, _ := services.RakitToken(garamUjiStorage, saat)
-	for _, d := range l.diterima {
-		if d.badan["Kodestring"] != mau {
+	for _, d := range l.salinDiterima() {
+		if !strings.HasPrefix(d.jalur, "/objek/") && d.badan["Kodestring"] != mau {
 			t.Errorf("%s: Kodestring bukan token rakitan", d.jalur)
 		}
 	}
@@ -303,5 +399,49 @@ func TestPenyimpananNyataUjungKeUjung(t *testing.T) {
 	}
 	if l.cacahObjek() != 0 {
 		t.Error("objek masih ada sesudah hapus")
+	}
+	// Berkas yang sudah tidak ada: dibaca dari objeknya, delete tidak dikirim.
+	sebelum := len(l.salinDiterima())
+	if err := p.Hapus(ctx, kunciUjiStorage); !errors.Is(err, services.ErrBerkasTidakAdaDiPenyimpanan) {
+		t.Errorf("hapus berkas yang sudah tidak ada: %v", err)
+	}
+	for _, d := range l.salinDiterima()[sebelum:] {
+		if d.jalur == "/delete" {
+			t.Error("delete dikirim untuk objek yang tidak ada")
+		}
+	}
+}
+
+// Jalur delete yang salah di M_LINK_SERVICE: galat terlihat, objek tetap ada.
+func TestPenyimpananNyataHapusJalurSalahTidakDiam(t *testing.T) {
+	l := layananStorageTiruan(t)
+	p, _, _ := rangkaianNyataUji(l, "/salah-jalur")
+	ctx := context.Background()
+	if err := p.Simpan(ctx, kunciUjiStorage, strings.NewReader("ISI"), "", ""); err != nil {
+		t.Fatal(err)
+	}
+	err := p.Hapus(ctx, kunciUjiStorage)
+	if err == nil || errors.Is(err, services.ErrBerkasTidakAdaDiPenyimpanan) {
+		t.Errorf("hapus ke jalur salah: %v", err)
+	}
+	if l.cacahObjek() != 1 {
+		t.Error("objek hilang padahal delete gagal")
+	}
+}
+
+// Token yang DITOLAK layanan (401/403) dilupakan: percobaan berikutnya menerbitkan yang baru.
+func TestPenyimpananNyataTokenDitolakDilupakan(t *testing.T) {
+	l := layananStorageTiruan(t)
+	p, gudangToken, _ := rangkaianNyataUji(l, "/delete")
+	ctx := context.Background()
+	l.setel(func() { l.paksaSekali["/upload"] = http.StatusUnauthorized })
+	if err := p.Simpan(ctx, kunciUjiStorage, strings.NewReader("ISI"), "", ""); !errors.Is(err, services.ErrStorageTokenDitolakTCO) {
+		t.Fatalf("401: %v", err)
+	}
+	if err := p.Simpan(ctx, kunciUjiStorage, strings.NewReader("ISI"), "", ""); err != nil {
+		t.Fatal(err)
+	}
+	if len(gudangToken.disimpan) != 2 {
+		t.Errorf("token diterbitkan %d kali, mau 2 (yang ditolak dilupakan)", len(gudangToken.disimpan))
 	}
 }

@@ -195,8 +195,33 @@ sumber RANTAI TEKNIS dan LABEL; perilakunya ditetapkan AC tiket ini (penyimpanga
   `DeleteGoogleStorage_Act` — kosong kecuali `EXIT` (b1765). Nol langkah ter-remark `//`: setiap langkah yang dikutip
   transport memang berjalan di Pega.
 - **Dibuka: OQ-TCO-22** — `[keputusan kami]` untuk yang korpus modul ini tidak memuat (unggah lampiran fitur baru):
-  `Folder = "TreatyContractOut"` (Claim Life menyusun `Param.Folder + "/Doc/" + tahun/bulan`), `Durasi = 60`,
-  `Namafile = IMAGEID`, `ext` dari MIME, dan `Periksa` = `geturl` lalu GET objeknya.
+  `Folder = "TreatyContractOut/"` (Claim Life menyusun `Param.Folder + "/Doc/" + tahun/bulan + "/"`), `Durasi = 60`,
+  dan `Namafile = IMAGEID`.
 - **Kode bersama yang disentuh (aditif):** medan `Service.penyimpananTCO` (`services/services.go`), dua kunci
   `internal/config` + `.env.example`, `cmd/api/main.go`, dan peta `berkasKlienHTTPDisetujui` di
   `services/efekkeluar_statik_test.go` (satu baris, jumlahnya dikunci; `://` dan env tetap diperiksa untuk berkas itu).
+
+### Ralat bertanggal 29-09-2026 — temuan /code-review kelompok 6
+
+- **Jalur hapus salah (diperbaiki).** Delete kini mengirim `Namafile` = jalur objek PENUH `folder + IMAGEID` tanpa `Folder`
+  (`DeleteGoogleStorage_Act` b1091); folder berakhiran `/` seperti Pega (Insert b1407–b1408, GetUrl b1260–b1326). Dulu
+  delete menunjuk akar bucket, dan objek sebenarnya tertinggal.
+- **404 titik layanan ≠ berkas hilang (diperbaiki).** 404 dari upload/geturl/delete = galat layanan (dicoba ulang,
+  terlihat); "berkas tidak ada" hanya dari URL bertanda tangan. `Hapus` memeriksa keberadaan lebih dulu (`geturl` + GET
+  `Range: bytes=0-0`), jadi berkas yang sudah tidak ada tetap tidak menggagalkan (AC lama) tanpa menelan jalur
+  `M_LINK_SERVICE` yang salah.
+- **Token (diperbaiki).** Token dipakai ulang hanya bila sisa umurnya > `MarginTokenTCO` (AC 60; penyimpangan sadar kecil
+  dari `GET_TOKEN_STORAGE` yang memakai ulang token apa pun yang belum lewat). Sisa umur dihitung DI ORACLE terhadap
+  waktu yang di-bind — `INPUTDATE` tidak dibaca ke jam aplikasi (DATE tanpa zona). 401/403 mengosongkan cache token.
+- **`ext` (diperbaiki).** Dari nama berkas asli, huruf kecil tanpa titik (`@toLowerCase(Param.Ext)` b587), bukan
+  ditebak dari tabel MIME OS. `KlienPenyimpananTCO.Simpan` dan `PengirimBerkasTCO.Kirim` menerima `ekstensi`.
+- **URL bertanda tangan (diperbaiki).** Hanya https; pengalihan tidak diikuti.
+- **Pekerja (diperbaiki).** `TCO_PEKERJA_LAMPIRAN_INTERVAL` minimal `1s` (atau 0); `cmd/api` menunggu pekerja berhenti
+  sebelum db ditutup. Pemilih kini `DenganPenyimpananLampiranTCO(nyata bool, garam)` — nilai env diputuskan satu kali di
+  `internal/config`.
+- **Dibiarkan, dengan alasan:** (a) I/O jaringan di dalam transaksi outbox — pola bersama `PekerjaEfek` (pungut,
+  jalankan, tuntaskan satu transaksi; `SKIP LOCKED` hidup selama transaksi); memisahkannya menuntut desain sewa baris
+  lintas modul; risikonya: baris lampiran terkunci selama unggahan berjalan (paling lama batas waktu 300 s). (b) Memori
+  unggahan ~3× ukuran berkas (base64 + JSON) — batas 25 MiB, Pega pun menaruh base64 utuh di halaman. (c) Kueri token
+  modul tidak memakai `PohonKlaim.TokenBerlaku` bersama — ia butuh sisa umur + margin, dan kode token bersama dipakai modul
+  klaim. (d) `APPNAME` dibaca per operasi — seperti resolver `M_LINK_SERVICE`, perubahan DBA berlaku tanpa restart.

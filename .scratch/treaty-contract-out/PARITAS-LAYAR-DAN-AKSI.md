@@ -81,7 +81,7 @@ Nomor baris = `Section/GridTreatyArrangementAttachment.xml` kecuali disebut lain
 | `TreatyOutSaveAttachment.xml` b376 `Tidak ada file yg diattach` | 400 dengan teks VERBATIM | ✅ |
 | `GetAllAttachment2_Sql` / `GetAttachment2_Sql` (`M_ATTACHMENTTREATY_2 where treatyid = {TreatyIn.ID}`) | — | ➖ kunci treaty inward tidak dibawa (penjaga Go + JS) |
 | — (tidak ada di Pega) | status terkirim / tertunda / gagal + galat terakhir; `Ulangi` (`POST …/{lid}/ulangi`); `Periksa keselarasan` (`GET …/selaras`) | ✅ tambahan AC 55, 58, 61 |
-| `ConnectREST/ServiceGoogle.xml`, `LinkService`, `GetTokenStorage_SQL`, `InsertGoogleStorage_Act` / `GetUrlGoogleStorage_Act` / `DeleteGoogleStorage_Act` | `PenyimpananLampiranTCO`: bawaan stub lokal `PenyimpananLokalTCO`; `PELAKSANA_STORAGE=nyata` → `PenyimpananJarakJauhTCO` (resolver `M_LINK_SERVICE` saat jalan, `CacheTokenTCO`, token `GCP_IMAGE`/garam env) + transport HTTP `UploadDoc` | ✅ OQ-TCO-08 (keputusan work owner 29-09-2026); `Folder`/`Durasi` OQ-TCO-22 |
+| `ConnectREST/ServiceGoogle.xml`, `LinkService`, `GetTokenStorage_SQL`, `InsertGoogleStorage_Act` / `GetUrlGoogleStorage_Act` / `DeleteGoogleStorage_Act` | `PenyimpananLampiranTCO`: bawaan stub lokal `PenyimpananLokalTCO`; `PELAKSANA_STORAGE=nyata` → `PenyimpananJarakJauhTCO` (resolver `M_LINK_SERVICE` saat jalan, `CacheTokenTCO`, token `GCP_IMAGE`/garam env) + transport HTTP `UploadDoc` (delete dengan jalur objek penuh, b1091) | ✅ OQ-TCO-08 (keputusan work owner 29-09-2026); `Folder`/`Durasi` OQ-TCO-22 |
 | — (tidak ada di Pega) | pekerja latar antrean lampiran `JalankanPekerja` dari `cmd/api`, interval `TCO_PEKERJA_LAMPIRAN_INTERVAL` (bawaan mati) | ✅ OQ-TCO-09 |
 
 ## Tiket 04 — kontrak treaty di dalam tahun (`InputTreatyContractReinsType`)

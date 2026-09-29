@@ -77,7 +77,7 @@ func (p penyimpananLokalTCO) jalur(kunci string) (string, error) {
 
 // Simpan menulis lewat berkas sementara lalu mengganti namanya: kunci yang
 // SAMA ditimpa utuh, tidak pernah menjadi dua berkas atau berkas setengah.
-func (p penyimpananLokalTCO) Simpan(_ context.Context, kunci string, isi io.Reader, _ string) error {
+func (p penyimpananLokalTCO) Simpan(_ context.Context, kunci string, isi io.Reader, _, _ string) error {
 	tujuan, err := p.jalur(kunci)
 	if err != nil {
 		return err
@@ -175,6 +175,13 @@ func NewCacheTokenTCO(sumber SumberTokenTCO, jam func() time.Time, margin time.D
 	return &CacheTokenTCO{sumber: sumber, jam: jam, margin: margin}
 }
 
+// Lupakan mengosongkan cache - dipanggil saat layanan menolak token (401/403).
+func (c *CacheTokenTCO) Lupakan() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.token, c.kedaluwarsa = "", time.Time{}
+}
+
 // Token mengembalikan token yang masih cukup umur, atau menerbitkan yang baru.
 //
 // ⛔ Kegagalan MENGOSONGKAN cache: token lama yang tersisa tidak boleh dipakai
@@ -206,7 +213,7 @@ func (c *CacheTokenTCO) Token(ctx context.Context) (string, error) {
 // Implementasinya `NewPengirimBerkasHTTPTCO` (OQ-TCO-08). ⛔ Galatnya TIDAK
 // BOLEH memuat alamat, token, atau garam.
 type PengirimBerkasTCO interface {
-	Kirim(ctx context.Context, alamat, token, kunci string, isi io.Reader, mime string) error
+	Kirim(ctx context.Context, alamat, token, kunci string, isi io.Reader, mime, ekstensi string) error
 	Ambil(ctx context.Context, alamat, token, kunci string) (io.ReadCloser, error)
 	Buang(ctx context.Context, alamat, token, kunci string) error
 	Periksa(ctx context.Context, alamat, token, kunci string) (bool, error)
@@ -252,19 +259,24 @@ func (p *PenyimpananJarakJauhTCO) siapkan(ctx context.Context, kunci KunciLayana
 	return alamat, tok, nil
 }
 
-func galatJarakJauh(kunci KunciLayanan, err error) error {
+// galatJarakJauh membungkus galat transport; token yang DITOLAK layanan
+// dilupakan supaya percobaan berikutnya menerbitkan yang baru.
+func (p *PenyimpananJarakJauhTCO) galatJarakJauh(kunci KunciLayanan, err error) error {
+	if errors.Is(err, ErrStorageTokenDitolakTCO) && p.token != nil {
+		p.token.Lupakan()
+	}
 	// ⛔ Menyebut KUNCI layanan, tidak pernah alamatnya.
 	return fmt.Errorf("services: penyimpanan jarak jauh (%s/%s): %w", kunci.Kategori1, kunci.Kategori2, err)
 }
 
 // Simpan - kunci `("Google", "upload")`.
-func (p *PenyimpananJarakJauhTCO) Simpan(ctx context.Context, kunci string, isi io.Reader, mime string) error {
+func (p *PenyimpananJarakJauhTCO) Simpan(ctx context.Context, kunci string, isi io.Reader, mime, ekstensi string) error {
 	alamat, tok, err := p.siapkan(ctx, KunciUnggahBerkas)
 	if err != nil {
 		return err
 	}
-	if err := p.pengirim.Kirim(ctx, alamat, tok, kunci, isi, mime); err != nil {
-		return galatJarakJauh(KunciUnggahBerkas, err)
+	if err := p.pengirim.Kirim(ctx, alamat, tok, kunci, isi, mime, ekstensi); err != nil {
+		return p.galatJarakJauh(KunciUnggahBerkas, err)
 	}
 	return nil
 }
@@ -280,22 +292,30 @@ func (p *PenyimpananJarakJauhTCO) Buka(ctx context.Context, kunci string) (io.Re
 		if errors.Is(err, ErrBerkasTidakAdaDiPenyimpanan) {
 			return nil, err
 		}
-		return nil, galatJarakJauh(KunciURLBerkas, err)
+		return nil, p.galatJarakJauh(KunciURLBerkas, err)
 	}
 	return rc, nil
 }
 
 // Hapus - kunci `("Google", "delete")`.
+//
+// ⚠️ Keberadaan diperiksa LEBIH DULU (`geturl` + URL bertanda tangan): "berkas
+// sudah tidak ada" dibaca dari objeknya sendiri, bukan dari 404 titik hapus -
+// 404 itu juga jawaban jalur `M_LINK_SERVICE` yang salah.
 func (p *PenyimpananJarakJauhTCO) Hapus(ctx context.Context, kunci string) error {
+	ada, err := p.Ada(ctx, kunci)
+	if err != nil {
+		return err
+	}
+	if !ada {
+		return ErrBerkasTidakAdaDiPenyimpanan
+	}
 	alamat, tok, err := p.siapkan(ctx, KunciHapusBerkas)
 	if err != nil {
 		return err
 	}
 	if err := p.pengirim.Buang(ctx, alamat, tok, kunci); err != nil {
-		if errors.Is(err, ErrBerkasTidakAdaDiPenyimpanan) {
-			return err
-		}
-		return galatJarakJauh(KunciHapusBerkas, err)
+		return p.galatJarakJauh(KunciHapusBerkas, err)
 	}
 	return nil
 }
@@ -308,7 +328,7 @@ func (p *PenyimpananJarakJauhTCO) Ada(ctx context.Context, kunci string) (bool, 
 	}
 	ada, err := p.pengirim.Periksa(ctx, alamat, tok, kunci)
 	if err != nil {
-		return false, galatJarakJauh(KunciURLBerkas, err)
+		return false, p.galatJarakJauh(KunciURLBerkas, err)
 	}
 	return ada, nil
 }

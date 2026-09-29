@@ -31,12 +31,6 @@ import (
 	"nusantarare/internal/repository"
 )
 
-// Nilai `PELAKSANA_STORAGE`.
-const (
-	PelaksanaStorageStubTCO  = "stub"
-	PelaksanaStorageNyataTCO = "nyata"
-)
-
 // AkunPekerjaLampiranTCO - pelaku jejak kerja antrean oleh pekerja latar.
 const AkunPekerjaLampiranTCO = "SISTEM-PEKERJA-TCO"
 
@@ -54,11 +48,11 @@ type pengaturanPenyimpananTCO struct {
 
 // DenganPenyimpananLampiranTCO memasang pelaksana penyimpanan lampiran.
 //
-// ⚠️ Dipanggil sekali dari `cmd/api` dengan `config.PelaksanaStorage` dan
-// `config.StorageTokenSalt`. Nilai selain `nyata` = stub.
-func (s *Service) DenganPenyimpananLampiranTCO(pelaksana, garam string) *Service {
+// ⚠️ Dipanggil sekali dari `cmd/api`: `nyata` diputuskan `internal/config`
+// (`PELAKSANA_STORAGE`), garam = `config.StorageTokenSalt`.
+func (s *Service) DenganPenyimpananLampiranTCO(nyata bool, garam string) *Service {
 	salin := *s
-	p := &pengaturanPenyimpananTCO{nyata: strings.EqualFold(strings.TrimSpace(pelaksana), PelaksanaStorageNyataTCO)}
+	p := &pengaturanPenyimpananTCO{nyata: nyata}
 	if p.nyata {
 		var penyimp PenyimpanTokenStorageTCO
 		if salin.db != nil {
@@ -104,7 +98,8 @@ func (resolverTanpaOracleTCO) Resolve(context.Context, KunciLayanan) (string, er
 // PenyimpanTokenStorageTCO - bacaan dan tulisan token yang sumber token pakai.
 type PenyimpanTokenStorageTCO interface {
 	AppStorage(ctx context.Context) (string, error)
-	TokenBerlaku(ctx context.Context, tx *repository.Tx, app string, saat time.Time) (string, time.Time, error)
+	TokenBerlaku(ctx context.Context, tx *repository.Tx, app string, saat time.Time,
+		sisaMinimum time.Duration) (string, time.Duration, error)
 	SimpanToken(ctx context.Context, tx *repository.Tx, app, token, pengguna string, sampai time.Time) error
 }
 
@@ -113,16 +108,22 @@ type penyimpanTokenOracleTCO struct{ db *repository.DB }
 func (p penyimpanTokenOracleTCO) AppStorage(ctx context.Context) (string, error) {
 	return p.db.AppStorageTCO(ctx)
 }
-func (p penyimpanTokenOracleTCO) TokenBerlaku(ctx context.Context, tx *repository.Tx, app string, saat time.Time) (string, time.Time, error) {
-	return p.db.TokenStorageBerlakuTCO(ctx, tx, app, saat)
+func (p penyimpanTokenOracleTCO) TokenBerlaku(ctx context.Context, tx *repository.Tx, app string, saat time.Time,
+	sisaMinimum time.Duration) (string, time.Duration, error) {
+	return p.db.TokenStorageBerlakuTCO(ctx, tx, app, saat, sisaMinimum)
 }
 func (p penyimpanTokenOracleTCO) SimpanToken(ctx context.Context, tx *repository.Tx, app, token, pengguna string, sampai time.Time) error {
 	return repository.NewPohonKlaim(p.db).SimpanToken(ctx, tx, app, token, pengguna, sampai)
 }
 
 // sumberTokenStorageTCO - `GET_TOKEN_STORAGE` ditiru (lihat `tokenstorage.go`):
-// token berlaku dipakai ulang BESERTA kedaluwarsanya; bila tidak ada, token
-// baru dirakit dengan garam dan disimpan dengan umur satu menit.
+// token berlaku dipakai ulang BESERTA sisa umurnya; bila tidak ada, token baru
+// dirakit dengan garam dan disimpan dengan umur satu menit.
+//
+// ⚠️ PENYIMPANGAN SADAR KECIL: Pega memakai ulang token apa pun yang
+// `INPUTDATE > SYSDATE`. Di sini hanya yang sisa umurnya > `MarginTokenTCO`
+// (AC 60) - tanpa itu cache yang menyegarkan di jendela margin menerima token
+// yang sama yang hampir mati, berulang, satu transaksi per panggilan.
 type sumberTokenStorageTCO struct {
 	transaksi PenjalanTransaksiTCO
 	penyimp   PenyimpanTokenStorageTCO
@@ -164,12 +165,12 @@ func (s sumberTokenStorageTCO) TokenBaru(ctx context.Context) (string, time.Time
 	var sampai time.Time
 	err = s.transaksi(ctx, func(tx *repository.Tx) error {
 		saat := jam()
-		lama, habis, err := penyimp.TokenBerlaku(ctx, tx, app, saat)
+		lama, sisa, err := penyimp.TokenBerlaku(ctx, tx, app, saat, MarginTokenTCO)
 		if err != nil {
 			return err
 		}
 		if lama != "" {
-			tok, sampai = lama, habis
+			tok, sampai = lama, saat.Add(sisa)
 			return nil
 		}
 		baru, err := RakitToken(s.garam, saat)

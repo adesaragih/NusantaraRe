@@ -34,9 +34,13 @@ func sqlAppStorageTCO(tabel string) string {
 	return fmt.Sprintf(`SELECT APPNAME FROM %s WHERE APPNAME IS NOT NULL FETCH FIRST 1 ROWS ONLY`, tabel)
 }
 
+// sqlTokenStorageBerlakuTCO - sisa umur (detik) dihitung DI ORACLE terhadap
+// waktu yang di-bind, bukan dengan membaca `INPUTDATE` ke Go: DATE tidak
+// membawa zona, dan membandingkannya dengan jam aplikasi dapat meleset sebesar
+// selisih zona. Tulis (`SimpanToken`) dan baca melewati konversi bind yang sama.
 func sqlTokenStorageBerlakuTCO(tabel string) string {
-	return fmt.Sprintf(`SELECT KODEAKSES, INPUTDATE FROM %s
-		 WHERE APPNAME = :1 AND INPUTDATE > :2
+	return fmt.Sprintf(`SELECT KODEAKSES, ROUND((CAST(INPUTDATE AS DATE) - CAST(:1 AS DATE)) * 86400) FROM %s
+		 WHERE APPNAME = :2 AND INPUTDATE > :3
 		 ORDER BY INPUTDATE DESC
 		 FETCH FIRST 1 ROWS ONLY`, tabel)
 }
@@ -62,31 +66,32 @@ func (d *DB) AppStorageTCO(ctx context.Context) (string, error) {
 	return app.String, nil
 }
 
-// TokenStorageBerlakuTCO mencari token berlaku dan kedaluwarsanya.
-// Mengembalikan token kosong bila tidak ada.
-func (d *DB) TokenStorageBerlakuTCO(ctx context.Context, tx *Tx, appName string, saat time.Time) (string, time.Time, error) {
+// TokenStorageBerlakuTCO mencari token yang masih berlaku LEBIH DARI
+// `sisaMinimum` sesudah `saat`, beserta sisa umurnya. Token kosong = tidak ada.
+func (d *DB) TokenStorageBerlakuTCO(ctx context.Context, tx *Tx, appName string, saat time.Time,
+	sisaMinimum time.Duration) (string, time.Duration, error) {
 	if tx == nil {
-		return "", time.Time{}, errors.New("repository: token penyimpanan menuntut transaksi")
+		return "", 0, errors.New("repository: token penyimpanan menuntut transaksi")
 	}
 	tabel, err := d.Qualify("GCP_IMAGE")
 	if err != nil {
-		return "", time.Time{}, err
+		return "", 0, err
 	}
 	q := sqlTokenStorageBerlakuTCO(tabel)
 	if err := PeriksaSQL(q); err != nil {
-		return "", time.Time{}, err
+		return "", 0, err
 	}
 	var (
-		kode   sql.NullString
-		sampai sql.NullTime
+		kode sql.NullString
+		sisa sql.NullFloat64
 	)
-	err = tx.tx.QueryRowContext(ctx, q, appName, saat).Scan(&kode, &sampai)
+	err = tx.tx.QueryRowContext(ctx, q, saat, appName, saat.Add(sisaMinimum)).Scan(&kode, &sisa)
 	if errors.Is(err, sql.ErrNoRows) {
-		return "", time.Time{}, nil
+		return "", 0, nil
 	}
 	if err != nil {
 		// ⛔ Galat driver tidak diteruskan: pesannya dapat memuat nilai kolom kredensial.
-		return "", time.Time{}, fmt.Errorf("repository: membaca token penyimpanan untuk %q", appName)
+		return "", 0, fmt.Errorf("repository: membaca token penyimpanan untuk %q", appName)
 	}
-	return kode.String, sampai.Time, nil
+	return kode.String, time.Duration(sisa.Float64) * time.Second, nil
 }

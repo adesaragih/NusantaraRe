@@ -167,15 +167,22 @@ func bacaPelaksanaStorage(raw string) (string, error) {
 	}
 }
 
-// bacaInterval - kosong = 0 (mati); format time.ParseDuration ("30s", "1m").
+// intervalMinimum - pekerja yang berketuk lebih rapat dari ini membanjiri
+// outbox bersama (`FOR UPDATE SKIP LOCKED` per ketukan); `30ms` hampir pasti
+// salah ketik untuk `30s`.
+const intervalMinimum = time.Second
+
+// bacaInterval - kosong/0 = 0 (mati); format time.ParseDuration ("30s", "1m"),
+// minimal 1s.
 func bacaInterval(nama, raw string) (time.Duration, error) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
 		return 0, nil
 	}
 	d, err := time.ParseDuration(raw)
-	if err != nil || d < 0 {
-		return 0, fmt.Errorf("%w: %s bukan durasi non-negatif (contoh 30s, 1m): %q", ErrKonfigurasi, nama, raw)
+	if err != nil || d < 0 || (d > 0 && d < intervalMinimum) {
+		return 0, fmt.Errorf("%w: %s harus 0 atau durasi minimal %s (contoh 30s, 1m): %q",
+			ErrKonfigurasi, nama, intervalMinimum, raw)
 	}
 	return d, nil
 }

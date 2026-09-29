@@ -32,9 +32,10 @@ import (
 type DampakHapusTCO struct {
 	Kontrak, Reinsurer, Security, Business, KlausulTetap int64
 	// Bersama - kontrak LAIN (tahun lain, teks tahun + grup sama) yang memakai
-	// kombinasi yang sama. Reinsurer/security/business mereka IKUT terhapus,
-	// seperti Pega [keputusan work owner 29-09-2026, OQ-TCO-21]; cacahnya wajib
-	// disebut popup dan dikonfirmasi pemakai.
+	// kombinasi yang sama. Reinsurer/security mereka IKUT terhapus, seperti
+	// Pega [keputusan work owner 29-09-2026, OQ-TCO-21]; business hanya yang
+	// `TREATYYEARID` tahun ini atau kosong (`saringBusinessKaskadeTCO`). Cacahnya
+	// wajib disebut popup dan dikonfirmasi pemakai.
 	Bersama int64
 }
 

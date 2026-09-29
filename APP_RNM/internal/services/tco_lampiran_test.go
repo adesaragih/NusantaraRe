@@ -242,9 +242,11 @@ type penyimpananLampiranUji struct {
 	// gagal - galat Simpan; tulisDulu - tulis berkasnya LALU gagal (jawaban hilang).
 	gagal     error
 	tulisDulu bool
+	// ekstensi - argumen `ekstensi` tiap Simpan (OQ-TCO-08: dari nama berkas asli).
+	ekstensi []string
 }
 
-func (p *penyimpananLampiranUji) Simpan(_ context.Context, kunci string, isi io.Reader, _ string) error {
+func (p *penyimpananLampiranUji) Simpan(_ context.Context, kunci string, isi io.Reader, _, ekstensi string) error {
 	data, err := io.ReadAll(isi)
 	if err != nil {
 		return err
@@ -252,6 +254,7 @@ func (p *penyimpananLampiranUji) Simpan(_ context.Context, kunci string, isi io.
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.simpan++
+	p.ekstensi = append(p.ekstensi, ekstensi)
 	if p.gagal != nil && !p.tulisDulu {
 		return p.gagal
 	}

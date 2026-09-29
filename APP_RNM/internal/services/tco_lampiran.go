@@ -132,7 +132,8 @@ type PemeriksaTahunTCO interface {
 // `ErrBerkasTidakAdaDiPenyimpanan`; toleransinya tinggal di berkas ini, bukan
 // diserahkan ke tiap klien.
 type KlienPenyimpananTCO interface {
-	Simpan(ctx context.Context, kunci string, isi io.Reader, mime string) error
+	// ekstensi - dari nama berkas asli, huruf kecil tanpa titik (`ext` UploadDoc).
+	Simpan(ctx context.Context, kunci string, isi io.Reader, mime, ekstensi string) error
 	Buka(ctx context.Context, kunci string) (io.ReadCloser, error)
 	Hapus(ctx context.Context, kunci string) error
 	Ada(ctx context.Context, kunci string) (bool, error)
@@ -181,7 +182,7 @@ func (antreanLampiranBelumDisuntik) Tuntaskan(context.Context, *repository.Tx, s
 
 type penyimpananBelumDisuntik struct{}
 
-func (penyimpananBelumDisuntik) Simpan(context.Context, string, io.Reader, string) error {
+func (penyimpananBelumDisuntik) Simpan(context.Context, string, io.Reader, string, string) error {
 	return ErrPenyimpananLampiranBelumDisuntik
 }
 func (penyimpananBelumDisuntik) Buka(context.Context, string) (io.ReadCloser, error) {
@@ -606,10 +607,13 @@ func (l *LampiranTahunTCO) sesudahAksi(ctx context.Context, akunID, tahunID stri
 
 // kirimSekarang menjalankan antrean modul ini sesudah sebuah aksi.
 //
-// ⚠️ Tidak ada pekerja outbox yang berjalan di `cmd/api` untuk modul mana pun
-// (nol pemanggil `SatuPutaran` di kode produksi), jadi antrean dijalankan di
-// sini. Kegagalan EFEK tercatat di outbox dan tampil sebagai status; yang
-// dilaporkan di sini hanya kegagalan menjalankan antreannya sendiri.
+// ⚠️ Efek aksi ini dijalankan SEKETIKA supaya status tampil di jawaban yang
+// sama; sisanya dipungut pekerja latar `JalankanPekerja` (OQ-TCO-09) bila
+// `cmd/api` menyalakannya. Keduanya boleh berjalan bersamaan: `FOR UPDATE SKIP
+// LOCKED` pemungutan membuat satu baris outbox dijalankan satu pihak saja, dan
+// unggah ulang menulis ke objek yang sama (`IMAGEID`). Kegagalan EFEK tercatat
+// di outbox dan tampil sebagai status; yang dilaporkan di sini hanya kegagalan
+// menjalankan antreannya sendiri.
 //
 // ⛔ Temuan /code-review: yang dijalankan HANYA efek milik lampiran aksi ini
 // (`rujukan`) - bukan antrean pemakai lain, yang dulu ikut terkirim di dalam
@@ -756,7 +760,8 @@ func (l *LampiranTahunTCO) kirimUnggah(ctx context.Context, tx *repository.Tx, b
 	if err != nil {
 		return fmt.Errorf("services: membuka berkas antrean lampiran %s: %w", rekam.ID, err)
 	}
-	simpanErr := l.penyimpanan.Simpan(ctx, rekam.ImageID, f, rekam.FileMimeType)
+	simpanErr := l.penyimpanan.Simpan(ctx, rekam.ImageID, f, rekam.FileMimeType,
+		strings.ToLower(strings.TrimPrefix(filepath.Ext(rekam.FileName), ".")))
 	_ = f.Close()
 	if simpanErr != nil {
 		return fmt.Errorf("services: mengunggah lampiran %s: %w", rekam.ID, simpanErr)

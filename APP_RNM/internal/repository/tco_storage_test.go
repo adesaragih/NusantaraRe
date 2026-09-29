@@ -20,8 +20,10 @@ func TestSQLStorageTCO(t *testing.T) {
 			t.Errorf("%s bukan bacaan: %s", nama, q)
 		}
 	}
-	// `GET_TOKEN_STORAGE`: token TERBARU yang belum kedaluwarsa, nilai lewat bind.
-	for _, wajib := range []string{"APPNAME = :1", "INPUTDATE > :2", "ORDER BY INPUTDATE DESC", "FETCH FIRST 1 ROWS ONLY"} {
+	// `GET_TOKEN_STORAGE`: token TERBARU yang belum kedaluwarsa, nilai lewat bind;
+	// sisa umur dihitung DI ORACLE (tanpa membaca DATE ke jam aplikasi).
+	for _, wajib := range []string{"(CAST(INPUTDATE AS DATE) - CAST(:1 AS DATE)) * 86400", "APPNAME = :2",
+		"INPUTDATE > :3", "ORDER BY INPUTDATE DESC", "FETCH FIRST 1 ROWS ONLY"} {
 		if !strings.Contains(tok, wajib) {
 			t.Errorf("kueri token tanpa %q", wajib)
 		}
@@ -30,7 +32,7 @@ func TestSQLStorageTCO(t *testing.T) {
 
 func TestTokenStorageBerlakuTCOMenuntutTransaksi(t *testing.T) {
 	var d *DB
-	if _, _, err := d.TokenStorageBerlakuTCO(context.Background(), nil, "UJI-APP", time.Now()); err == nil {
+	if _, _, err := d.TokenStorageBerlakuTCO(context.Background(), nil, "UJI-APP", time.Now(), time.Second); err == nil {
 		t.Error("tanpa transaksi diterima")
 	}
 }

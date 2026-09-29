@@ -562,5 +562,5 @@ export const HAPUS_TCO = {
   /** `[tidak ada di korpus]` */
   memuatDampak: 'Menghitung baris yang akan ikut terhapus…',
   /** `[tidak ada di korpus]` — OQ-TCO-21 [keputusan work owner 29-09-2026]: hapus seperti Pega, tetapi tidak diam. */
-  bersama: 'kontrak lain memakai kombinasi yang sama — reinsurer, security, dan business-nya IKUT terhapus bersama kontrak ini (seperti Pega).',
+  bersama: 'kontrak lain memakai kombinasi yang sama — reinsurer dan security-nya IKUT terhapus bersama kontrak ini (seperti Pega); business milik tahun treaty lain tidak ikut.',
 } as const
