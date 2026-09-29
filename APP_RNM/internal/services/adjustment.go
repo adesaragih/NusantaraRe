@@ -161,9 +161,8 @@ const angkaDesimalPendaftaran = 4
 // ⛔ Status TIDAK ditulis: 7.8 tidak menyentuh `STS_REJECT`, dan `Save to RNM`
 // 22.1.3.2 yang kemudian menulis "0" bagi baris tanpa status.
 //
-// ⛔ Kolom sumber yang KOSONG tetap kosong. `[dugaan]` `@toDecimal("")` Pega
-// menghasilkan nol; mengarang nol lebih buruk daripada mengosongkannya
-// (ADR-U-0027).
+// ⛔ Kolom sumber yang KOSONG dibaca NOL - `toDecimalPega`, keputusan work owner
+// 29-09-2026, HANYA di langkah ini (lihat komentar fungsi itu).
 func BarisPendaftaran(p models.Peserta) (models.BarisAdjustment, bool, error) {
 	// `.IsCheck=="true"` - teks, persis (b3919).
 	if p.IsCheck != models.PenandaDipilih {
@@ -184,11 +183,9 @@ func BarisPendaftaran(p models.Peserta) (models.BarisAdjustment, bool, error) {
 		{"RETROCEDED_SHARE", p.RetrocededShare, &b.RetrocededShare},
 	} {
 		*m.ke = models.Money{Currency: p.MataUang}
-		if m.dari.Kosong() {
-			continue
-		}
+		sumber := toDecimalPega(m.dari)
 		// Satu aturan pembulatan untuk seluruh paket - `bulat` (spreading.go).
-		empat, err := bulat(utils.DecimalContext(), m.dari.Amount, angkaDesimalPendaftaran)
+		empat, err := bulat(utils.DecimalContext(), sumber, angkaDesimalPendaftaran)
 		if err != nil {
 			return models.BarisAdjustment{}, false, fmt.Errorf(
 				"%w: peserta %q %s: %w", ErrBarisTidakSah, p.ID, m.nama, err)
@@ -196,6 +193,71 @@ func BarisPendaftaran(p models.Peserta) (models.BarisAdjustment, bool, error) {
 		m.ke.Amount = empat
 	}
 	return b, true, nil
+}
+
+// toDecimalPega meniru `@toDecimal(x)` Pega atas satu medan uang: KOSONG -> 0.
+//
+// ⛔ PENYIMPANGAN BERTANGGAL TERHADAP ADR-U-0027 - keputusan work owner
+// 29-09-2026 (GILIRAN-15, "ikuti rekomendasi"): ikut Pega HANYA di langkah 7.8
+// `SavePesertaClaim` (baris adjustment yang lahir saat Submit Register). Di
+// sana ketujuh medan `@divide(@toDecimal(…),1,4)` membaca sumber kosong
+// sebagai nol, dan baris pertama itulah yang diwarisi setiap putaran
+// berikutnya. ADR-U-0027 ("kosong bukan nol") tetap berlaku di SELURUH tempat
+// lain - termasuk pembulatan peserta 7.7 (`BulatkanPesertaPendaftaran`).
+//
+// ⛔ Satu fungsi konversi, dipakai satu pemanggil. Menyebarkan "kosong = nol"
+// ke pemanggil lain berarti menyebarkan penyimpangannya tanpa keputusan.
+func toDecimalPega(m models.Money) *apd.Decimal {
+	if m.Kosong() {
+		return apd.New(0, 0)
+	}
+	return m.Amount
+}
+
+// BulatkanPesertaPendaftaran meniru pembulatan peserta langkah 7.7 - OQ-N10
+// ditutup (keputusan work owner 29-09-2026).
+//
+// `[terverifikasi]` `SavePesertaClaim.xml` 7.7 b2744 (hidup, WHEN `.IsCheck=="true"`
+// b3631): sepuluh medan `@divide(@toDecimal(@replaceAll(.X,",",".")),1,4)` -
+// GROSS_PREMIUM b2770, NET_PREMIUM b2824, SHARE_NUSANTARA_RE b2845 (`@if`
+// pemilih GROSS sudah diterapkan `repository.ShareNusantaraReTeks`),
+// SUM_INSURED b2872, CEDING_RETENTION b2893, SUM_REASURED b3107, EM_PERCENT
+// b3134, CLAIM_AMOUNT b3281, SHARE_RETRO b3401, RETROCEDED_SHARE b3561.
+//
+// ⛔ KOSONG TETAP KOSONG di sini (ADR-U-0027): penyimpangan "kosong = nol"
+// diputuskan hanya untuk 7.8.
+func BulatkanPesertaPendaftaran(peserta []models.Peserta) error {
+	ctx := utils.DecimalContext()
+	for i := range peserta {
+		p := &peserta[i]
+		for _, m := range []struct {
+			nama string
+			ke   *models.Money
+		}{
+			{"GROSS_PREMIUM", &p.GrossPremium}, {"NET_PREMIUM", &p.NetPremium},
+			{"SHARE_NUSANTARA_RE", &p.ShareNusantaraRe}, {"SUM_INSURED", &p.SumInsured},
+			{"CEDING_RETENTION", &p.CedingRetention}, {"SUM_REASURED", &p.SumReasured},
+			{"CLAIM_AMOUNT", &p.JumlahKlaim}, {"SHARE_RETRO", &p.ShareRetro},
+			{"RETROCEDED_SHARE", &p.RetrocededShare},
+		} {
+			if m.ke.Kosong() {
+				continue
+			}
+			empat, err := bulat(ctx, m.ke.Amount, angkaDesimalPendaftaran)
+			if err != nil {
+				return fmt.Errorf("%w: peserta %q %s: %w", ErrBarisTidakSah, p.ID, m.nama, err)
+			}
+			m.ke.Amount = empat
+		}
+		if p.EMPercent.Value != nil {
+			empat, err := bulat(ctx, p.EMPercent.Value, angkaDesimalPendaftaran)
+			if err != nil {
+				return fmt.Errorf("%w: peserta %q EM_PERCENT: %w", ErrBarisTidakSah, p.ID, err)
+			}
+			p.EMPercent.Value = empat
+		}
+	}
+	return nil
 }
 
 // LahirkanBarisPendaftaran memasang baris 7.8 pada setiap peserta terpilih.

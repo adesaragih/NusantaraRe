@@ -719,10 +719,9 @@ sel grid b17126 dan panel `Adjustment_Detail` `Read-only`). *(Tiket 03.)*
 **OQ-N9** — ✅ **DITUTUP 29-09-2026, butir bp** `[DIPUTUSKAN; veto work owner]`: "apakah pendaftaran semestinya
 melahirkan baris pertama" — ya, `SavePesertaClaim` 7.8 b3671 (hidup, WHEN b3919). Dibangun di GILIRAN-14.
 
-**OQ-N10** *(untuk work owner)* — `SavePesertaClaim` 7.7 membulatkan nilai **peserta** ke empat angka
-(`@divide(…,1,4)` b2770–b3561); peserta Go disimpan apa adanya dari `NUMBER(38,8)`. Baris pertama (7.8) sudah
-dibulatkan, jadi pada sumber berdesimal lebih dari empat nilai peserta dan baris pertamanya berbeda di angka kelima.
-Tiru juga pembulatan peserta? *(Tiket 02.)*
+**OQ-N10** — ✅ **DITUTUP 29-09-2026** (work owner): pembulatan empat angka langkah 7.7 **ditiru** pada nilai peserta
+(`services.BulatkanPesertaPendaftaran`); kosong tetap kosong di peserta. Bersamaan: di langkah 7.8 SAJA sumber kosong
+dibaca **0** seperti `@toDecimal("")` — penyimpangan bertanggal terhadap ADR-U-0027. *(Tiket 02, GILIRAN-15.)*
 
 **OQ-N11** — dipindah ke daftar **pemilik ekspor** di bawah (keputusan work owner 29-09-2026).
 

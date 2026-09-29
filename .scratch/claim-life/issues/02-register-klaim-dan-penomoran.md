@@ -1,6 +1,6 @@
 # 02: Register klaim Life + penomoran
 
-**Status:** sebagian — baris adjustment pertama dan INSERT datar `OS_AKSEPTASI_KLAIM_LIFE` kini terjadi saat daftar (GILIRAN-14 butir bp; bukti Oracle menunggu uji `db`), penomoran serentak belum teruji, AC procedure menunggu teks baru work owner, pembulatan nilai peserta 7.7 belum ditiru (OQ-N10)
+**Status:** sebagian — baris adjustment pertama dan INSERT datar `OS_AKSEPTASI_KLAIM_LIFE` kini terjadi saat daftar (GILIRAN-14 butir bp; bukti Oracle menunggu uji `db`), penomoran serentak belum teruji, AC procedure menunggu teks baru work owner; pembulatan peserta 7.7 ditiru sejak GILIRAN-15 (OQ-N10 ditutup)
 
 **Blocked by:** 01 (kerangka aplikasi + seam API), **14 (skema relasional klaim — PREFACTOR)**
 
@@ -695,3 +695,18 @@ di skema uji sebelum `Submit` Register diuji di layar.
   disimpan apa adanya dari `NUMBER(38,8)`. Baris pertama (7.8) sudah dibulatkan, jadi pada sumber berdesimal
   lebih dari empat, nilai peserta dan baris pertamanya berbeda di angka kelima. Tiru juga pembulatan
   peserta?
+
+## ⛔ Keputusan work owner bertanggal — 29 September 2026 (GILIRAN-15 paket 2: N10 dan "kosong = nol" di 7.8)
+
+**OQ-N10 — DITUTUP: pembulatan 7.7 DITIRU.** `services.BulatkanPesertaPendaftaran`, dipanggil `Pendaftaran.Daftar`
+sebelum baris 7.8 lahir, membulatkan sepuluh medan peserta ke empat angka setengah ke atas dengan `bulat` bersama —
+`[terverifikasi]` `SavePesertaClaim.xml` 7.7 b2744: GROSS_PREMIUM b2770, NET_PREMIUM b2824, SHARE_NUSANTARA_RE b2845,
+SUM_INSURED b2872, CEDING_RETENTION b2893, SUM_REASURED b3107, EM_PERCENT b3134, CLAIM_AMOUNT b3281, SHARE_RETRO
+b3401, RETROCEDED_SHARE b3561. Kosong **tetap kosong** di peserta. Uji: `TestPesertaDibulatkanSeperti7_7` (contoh
+literal).
+
+**⛔ Penyimpangan bertanggal terhadap ADR-U-0027 — HANYA di langkah 7.8.** Keputusan work owner: ikut Pega. Ketujuh
+medan uang baris adjustment yang lahir saat Submit (`@divide(@toDecimal(…),1,4)` b3697–b3849) membaca sumber KOSONG
+sebagai **0**, seperti `@toDecimal("")`. `CURRENCY` b3868 bukan `@toDecimal` dan tetap teks apa adanya. Satu fungsi
+konversi yang memuatnya: `services.toDecimalPega` (komentarnya menyatakan penyimpangan ini); ADR-U-0027 tetap berlaku di
+seluruh tempat lain. Uji: `TestBarisPendaftaranKosongDibacaNol`.

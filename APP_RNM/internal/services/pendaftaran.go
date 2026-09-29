@@ -202,6 +202,12 @@ func (p *Pendaftaran) Daftar(ctx context.Context, pelaku Pelaku, minta Permintaa
 		// transaksi yang sama dengan pesertanya; dan karena barisnya kini
 		// ada, `Simpan` ikut menulis baris datar `OS_AKSEPTASI_KLAIM_LIFE`
 		// (AC 32 tiket 02).
+		// ⛔ OQ-N10 (GILIRAN-15): nilai peserta dibulatkan seperti 7.7 LEBIH
+		// DULU - baris 7.8 menyalin nilai dari sumber yang sama dengan rumus
+		// yang sama, jadi urutannya tidak mengubah angka.
+		if err := BulatkanPesertaPendaftaran(peserta); err != nil {
+			return err
+		}
 		if err := LahirkanBarisPendaftaran(peserta); err != nil {
 			return err
 		}

@@ -92,20 +92,85 @@ func TestBarisPendaftaranHanyaBagiPesertaTerpilih(t *testing.T) {
 	}
 }
 
-// TestBarisPendaftaranMembiarkanKosongTetapKosong - ADR-U-0027.
+// TestBarisPendaftaranKosongDibacaNol - keputusan work owner 29-09-2026.
 //
-// ⚠️ `[dugaan]` `@toDecimal("")` Pega menghasilkan nol. Di sini kolom sumber
-// yang KOSONG tetap kosong: mengarang nol lebih buruk daripada
-// mengosongkannya, dan "belum diisi" tetap dapat dibedakan dari "nol".
-func TestBarisPendaftaranMembiarkanKosongTetapKosong(t *testing.T) {
+// ⛔ PENYIMPANGAN BERTANGGAL terhadap ADR-U-0027, HANYA di langkah 7.8: ketujuh
+// medan `@divide(@toDecimal(…),1,4)` membaca sumber KOSONG sebagai NOL - seperti
+// `@toDecimal("")` Pega. `CURRENCY` b3868 bukan `@toDecimal` dan tetap teks
+// apa adanya.
+func TestBarisPendaftaranKosongDibacaNol(t *testing.T) {
+	p := models.Peserta{ID: "P-1", IsCheck: models.PenandaDipilih, MataUang: ""}
+	baru, lahir, err := services.BarisPendaftaran(p)
+	if err != nil || !lahir {
+		t.Fatalf("lahir %v, galat %v", lahir, err)
+	}
+	for _, k := range []struct {
+		medan string
+		got   models.Money
+	}{
+		{"CEDING_RETENTION", baru.CedingRetention}, {"SHARE_NUSANTARA_RE", baru.ShareNusantaraRe},
+		{"SUM_INSURED", baru.SumInsured}, {"SUM_REASURED", baru.SumReasured},
+		{"SHARE_RETRO", baru.ShareRetro}, {"CLAIM_AMOUNT", baru.JumlahKlaim},
+		{"RETROCEDED_SHARE", baru.RetrocededShare},
+	} {
+		if k.got.Kosong() || k.got.Amount.Sign() != 0 {
+			t.Errorf("%s dari sumber kosong = %s, mau 0 (@toDecimal(\"\"))",
+				k.medan, utils.FormatDecimal(k.got.Amount))
+		}
+	}
+	if baru.JumlahKlaim.Currency != "" {
+		t.Errorf("CURRENCY kosong menjadi %q; ia bukan @toDecimal", baru.JumlahKlaim.Currency)
+	}
+}
+
+// TestPesertaDibulatkanSeperti7_7 - OQ-N10 ditutup (keputusan 29-09-2026).
+//
+// `[terverifikasi]` `SavePesertaClaim.xml` 7.7 b2744: sepuluh medan peserta
+// `@divide(@toDecimal(@replaceAll(.X,",",".")),1,4)` - GROSS_PREMIUM b2770,
+// NET_PREMIUM b2824, SHARE_NUSANTARA_RE b2845, SUM_INSURED b2872,
+// CEDING_RETENTION b2893, SUM_REASURED b3107, EM_PERCENT b3134, CLAIM_AMOUNT
+// b3281, SHARE_RETRO b3401, RETROCEDED_SHARE b3561.
+//
+// ⛔ Kosong TETAP kosong di sini: penyimpangan "kosong = nol" berlaku HANYA di
+// 7.8 (ADR-U-0027 tetap di tempat lain).
+func TestPesertaDibulatkanSeperti7_7(t *testing.T) {
 	p := pesertaTerpilih(t)
-	p.JumlahKlaim = models.Money{Currency: "IDR"}
-	baru, _, err := services.BarisPendaftaran(p)
+	p.NetPremium = uang(t, "45000.00005", "IDR")
+	em, err := models.NewRatio("0.123456", 6)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !baru.JumlahKlaim.Kosong() {
-		t.Errorf("CLAIM_AMOUNT kosong menjadi %s", utils.FormatDecimal(baru.JumlahKlaim.Amount))
+	p.EMPercent = em
+	p.SumReasured = models.Money{Currency: "IDR"} // kosong - tetap kosong
+	daftar := []models.Peserta{p}
+	if err := services.BulatkanPesertaPendaftaran(daftar); err != nil {
+		t.Fatal(err)
+	}
+	q := daftar[0]
+	for _, k := range []struct {
+		medan string
+		got   models.Money
+		mau   string
+	}{
+		{"CEDING_RETENTION", q.CedingRetention, "100000.1235"},
+		{"SUM_INSURED", q.SumInsured, "1000000.1235"},
+		{"SHARE_RETRO", q.ShareRetro, "200000.0001"},
+		{"RETROCEDED_SHARE", q.RetrocededShare, "150001"},
+		{"CLAIM_AMOUNT", q.JumlahKlaim, "25000.1234"},
+		{"NET_PREMIUM", q.NetPremium, "45000.0001"},
+		{"GROSS_PREMIUM", q.GrossPremium, "50000"},
+		{"SHARE_NUSANTARA_RE", q.ShareNusantaraRe, "800000"},
+	} {
+		if k.got.Amount == nil || k.got.Amount.Cmp(uang(t, k.mau, "IDR").Amount) != 0 {
+			t.Errorf("%s = %s, mau %s", k.medan, utils.FormatDecimal(k.got.Amount), k.mau)
+		}
+	}
+	if q.EMPercent.Value == nil || q.EMPercent.Value.Cmp(uang(t, "0.1235", "").Amount) != 0 {
+		t.Errorf("EM_PERCENT = %s, mau 0.1235", utils.FormatDecimal(q.EMPercent.Value))
+	}
+	if !q.SumReasured.Kosong() {
+		t.Errorf("SUM_REASURED kosong menjadi %s; di 7.7 kosong tetap kosong",
+			utils.FormatDecimal(q.SumReasured.Amount))
 	}
 }
 
