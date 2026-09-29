@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"nusantarare/internal/models"
 	"nusantarare/internal/services"
 )
 
@@ -23,7 +24,7 @@ func TestPenyimpananLokalMenimpaKunciYangSama(t *testing.T) {
 	p := services.PenyimpananLokalDi(folder)
 	ctx := context.Background()
 	for _, isi := range []string{"PERTAMA", "KEDUA"} {
-		if err := p.Simpan(ctx, "ABCDEF0123456789", strings.NewReader(isi), "application/pdf", ""); err != nil {
+		if _, err := p.Simpan(ctx, "ABCDEF0123456789", strings.NewReader(isi), "application/pdf", ""); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -57,7 +58,7 @@ func TestPenyimpananLokalMenimpaKunciYangSama(t *testing.T) {
 func TestPenyimpananLokalMenolakKunciBerjalur(t *testing.T) {
 	p := services.PenyimpananLokalDi(t.TempDir())
 	for _, k := range []string{"../../keluar", `..\x`, "a/b", "", "PENDEK"} {
-		if err := p.Simpan(context.Background(), k, strings.NewReader("x"), "", ""); !errors.Is(err, services.ErrPermintaanTidakSah) {
+		if _, err := p.Simpan(context.Background(), k, strings.NewReader("x"), "", ""); !errors.Is(err, services.ErrPermintaanTidakSah) {
 			t.Errorf("kunci %q: %v", k, err)
 		}
 	}
@@ -65,7 +66,7 @@ func TestPenyimpananLokalMenolakKunciBerjalur(t *testing.T) {
 
 func TestPenyimpananLokalTanpaFolderGagalTerang(t *testing.T) {
 	p := services.PenyimpananLokalTCO(services.New(nil))
-	if err := p.Simpan(context.Background(), "ABCDEF0123456789", strings.NewReader("x"), "", ""); !errors.Is(err, services.ErrUnggahanDirBelumDisetel) {
+	if _, err := p.Simpan(context.Background(), "ABCDEF0123456789", strings.NewReader("x"), "", ""); !errors.Is(err, services.ErrUnggahanDirBelumDisetel) {
 		t.Errorf("tanpa UNGGAHAN_DIR: %v", err)
 	}
 }
@@ -96,10 +97,10 @@ func (p *pengirimLampiranUji) catat(alamat, token string) {
 	p.alamat = append(p.alamat, alamat)
 	p.token = append(p.token, token)
 }
-func (p *pengirimLampiranUji) Kirim(_ context.Context, alamat, token, _ string, isi io.Reader, _, _ string) error {
+func (p *pengirimLampiranUji) Kirim(_ context.Context, alamat, token, kunci string, isi io.Reader, _, _ string) (models.ObjekPenyimpananTCO, error) {
 	p.catat(alamat, token)
 	_, err := io.Copy(io.Discard, isi)
-	return err
+	return models.ObjekPenyimpananTCO{ImageID: kunci, Namafile: kunci}, err
 }
 func (p *pengirimLampiranUji) Ambil(_ context.Context, alamat, token, _ string) (io.ReadCloser, error) {
 	p.catat(alamat, token)
@@ -142,11 +143,11 @@ func TestPenyimpananJarakJauhAlamatDariResolverSaatJalan(t *testing.T) {
 	p := services.NewPenyimpananJarakJauhTCO(r,
 		services.NewCacheTokenTCO(&sumberTokenLampiranUji{jam: jam}, jam, services.MarginTokenTCO), kirim)
 	ctx := context.Background()
-	if err := p.Simpan(ctx, "ABCDEF0123456789", strings.NewReader("x"), "", ""); err != nil {
+	if _, err := p.Simpan(ctx, "ABCDEF0123456789", strings.NewReader("x"), "", ""); err != nil {
 		t.Fatal(err)
 	}
 	r.alamat[services.KunciUnggahBerkas] = "alamat-uji-unggah-2"
-	if err := p.Simpan(ctx, "ABCDEF0123456789", strings.NewReader("x"), "", ""); err != nil {
+	if _, err := p.Simpan(ctx, "ABCDEF0123456789", strings.NewReader("x"), "", ""); err != nil {
 		t.Fatal(err)
 	}
 	if err := p.Hapus(ctx, "ABCDEF0123456789"); err != nil {
@@ -170,7 +171,7 @@ func TestPenyimpananJarakJauhAlamatDariResolverSaatJalan(t *testing.T) {
 
 func TestPenyimpananJarakJauhTanpaPengirimBelumDisetujui(t *testing.T) {
 	p := services.NewPenyimpananJarakJauhTCO(&resolverLampiranUji{}, nil, nil)
-	err := p.Simpan(context.Background(), "ABCDEF0123456789", strings.NewReader("x"), "", "")
+	_, err := p.Simpan(context.Background(), "ABCDEF0123456789", strings.NewReader("x"), "", "")
 	if !errors.Is(err, services.ErrPenyimpananBelumDisetujui) || services.LayakDicobaUlang(err) {
 		t.Errorf("tanpa pengirim: %v", err)
 	}
@@ -204,7 +205,7 @@ func TestTokenGagalTerlihatDanTransportTidakDipanggil(t *testing.T) {
 		&resolverLampiranUji{alamat: map[services.KunciLayanan]string{services.KunciUnggahBerkas: "alamat-uji"}},
 		services.NewCacheTokenTCO(&sumberTokenLampiranUji{gagal: errors.New("GET_TOKEN_STORAGE menolak"), jam: jam},
 			jam, services.MarginTokenTCO), kirim)
-	err := p.Simpan(context.Background(), "ABCDEF0123456789", strings.NewReader("x"), "", "")
+	_, err := p.Simpan(context.Background(), "ABCDEF0123456789", strings.NewReader("x"), "", "")
 	if !errors.Is(err, services.ErrTokenPenyimpananGagal) {
 		t.Errorf("token gagal: %v", err)
 	}
@@ -287,17 +288,25 @@ func TestTCOLampiranTanpaAlamatLiteral(t *testing.T) {
 	}
 }
 
-// Lampiran melekat pada TAHUN treaty: kode yang merujuk kunci treaty inward
-// atau tabel lampiran warisannya gagal.
-func TestTCOLampiranTanpaRujukanTreatyInward(t *testing.T) {
-	pola := regexp.MustCompile(`(?i)treatyid\b|treaty_in\b|treatyin\b|m_attachmenttreaty`)
+// RALAT tco4 atas penjaga lama "tanpa rujukan treaty inward": `TreatyIn.ID`
+// di modul ini diisi `TreatyYear + TreatyYearID` (`TreatyOutSaveAttachment`
+// b1402), jadi `M_ATTACHMENTTREATY_2.TREATYID` MILIK tahun treaty. Yang kini
+// dijaga: kuncinya dirakit dari tahun treaty, di satu tempat.
+func TestTCOLampiranBerkunciTahunTreaty(t *testing.T) {
+	if k := models.KunciTreatyLampiranTCO("2026", "1000001"); k != "20261000001" {
+		t.Errorf("TREATYID %q, mau TreatyYear + TreatyYearID", k)
+	}
+	pola := regexp.MustCompile(`models\.KunciTreatyLampiranTCO\(`)
+	pemakai := 0
 	for nama, isi := range berkasProduksiTCO(t) {
-		if !strings.Contains(nama, "lampiran") && !strings.Contains(nama, "penyimpanan") &&
-			!strings.Contains(nama, "rute_treaty_contract_out") {
-			continue
+		if pola.MatchString(buangKomentarBaris(isi)) {
+			pemakai++
+			if !strings.HasSuffix(filepath.ToSlash(nama), "repository/tco_lampiran.go") {
+				t.Errorf("%s merakit TREATYID sendiri - satu tempat saja (repository)", nama)
+			}
 		}
-		if m := pola.FindString(buangKomentarBaris(isi)); m != "" {
-			t.Errorf("%s merujuk %q - lampiran melekat pada tahun treaty, bukan treaty inward", nama, m)
-		}
+	}
+	if pemakai != 1 {
+		t.Errorf("perakit TREATYID dipakai %d berkas, mau 1", pemakai)
 	}
 }

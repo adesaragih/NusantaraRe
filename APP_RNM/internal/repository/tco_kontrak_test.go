@@ -47,7 +47,7 @@ func TestTCOPlaceholderTidakBerulang(t *testing.T) {
 	for nama, q := range map[string]string{
 		"dobel tahun":    sqlCariDobelTahunTreaty("S.T"),
 		"dobel kontrak":  sqlCariDobelKontrakTCO("S.T"),
-		"lampiran":       sqlDaftarLampiranTCO("S.T", "S.O", true),
+		"lampiran":       sqlDaftarLampiranTCO("S.T", "S.I", "S.O", true),
 		"share lain":     sqlShareLainTCO("S.T"),
 		"perbarui reas":  sqlPerbaruiReinsurerTCO("S.T"),
 		"dobel bisnis":   sqlCariDobelBusinessTCO("S.T"),

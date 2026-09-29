@@ -127,11 +127,14 @@ func (a *antreanLampiranUji) cacahStatus(jenis, status string) int {
 }
 
 type gudangLampiranUji struct {
-	mu         sync.Mutex
-	baris      map[string]models.LampiranTCO
-	urut       int
-	gagalSisip error
-	antrean    *antreanLampiranUji
+	// objek / objekDihapus - catatan T_STORAGE_IMAGE (tco4).
+	objek        []models.ObjekPenyimpananTCO
+	objekDihapus []string
+	mu           sync.Mutex
+	baris        map[string]models.LampiranTCO
+	urut         int
+	gagalSisip   error
+	antrean      *antreanLampiranUji
 }
 
 func (g *gudangLampiranUji) barisDengan(l models.LampiranTCO) repository.BarisLampiranTCO {
@@ -202,15 +205,32 @@ func (g *gudangLampiranUji) Hapus(_ context.Context, _ *repository.Tx, tahunID, 
 	return nil
 }
 
-func (g *gudangLampiranUji) TandaiTerkirim(_ context.Context, _ *repository.Tx, id, storageID string) error {
+// SimpanObjek meniru `Insert_T_Storage_SQL`: objek tercatat = lampiran
+// ber-T_STORAGE_ID itu terkirim.
+func (g *gudangLampiranUji) SimpanObjek(_ context.Context, _ *repository.Tx, o models.ObjekPenyimpananTCO) error {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	l, ada := g.baris[id]
-	if !ada {
-		return repository.ErrLampiranTidakAda
+	g.objek = append(g.objek, o)
+	for id, l := range g.baris {
+		if l.ImageID == o.ImageID {
+			l.TStorageID = o.ImageID
+			g.baris[id] = l
+		}
 	}
-	l.TStorageID = storageID
-	g.baris[id] = l
+	return nil
+}
+
+// HapusObjek meniru `DeleteStorage_SQL`.
+func (g *gudangLampiranUji) HapusObjek(_ context.Context, _ *repository.Tx, imageID string) error {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.objekDihapus = append(g.objekDihapus, imageID)
+	for id, l := range g.baris {
+		if l.ImageID == imageID {
+			l.TStorageID = ""
+			g.baris[id] = l
+		}
+	}
 	return nil
 }
 
@@ -226,20 +246,20 @@ type penyimpananLampiranUji struct {
 	ekstensi []string
 }
 
-func (p *penyimpananLampiranUji) Simpan(_ context.Context, kunci string, isi io.Reader, _, ekstensi string) error {
+func (p *penyimpananLampiranUji) Simpan(_ context.Context, kunci string, isi io.Reader, _, ekstensi string) (models.ObjekPenyimpananTCO, error) {
 	data, err := io.ReadAll(isi)
 	if err != nil {
-		return err
+		return models.ObjekPenyimpananTCO{}, err
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.simpan++
 	p.ekstensi = append(p.ekstensi, ekstensi)
 	if p.gagal != nil && !p.tulisDulu {
-		return p.gagal
+		return models.ObjekPenyimpananTCO{}, p.gagal
 	}
 	p.isi[kunci] = data
-	return p.gagal
+	return models.ObjekPenyimpananTCO{ImageID: kunci, Namafile: kunci, URLPublic: "UJI-URL-" + kunci}, p.gagal
 }
 
 func (p *penyimpananLampiranUji) Buka(_ context.Context, kunci string) (io.ReadCloser, error) {
@@ -386,7 +406,7 @@ func TestLampiranUnggahSampaiTerkirim(t *testing.T) {
 	}
 	l := h.Lampiran
 	if l.Status != models.StatusLampiranTerkirim || l.Category != "R/I SLIP" || l.UserID != "UJI-ADMIN" ||
-		l.IDTreatyYear != "1000001" || l.Ukuran != 7 || l.FileMimeType == "" {
+		l.IDTreatyYear != "1000001" || l.FileMimeType == "" {
 		t.Errorf("hasil: %+v", l)
 	}
 	if r.simpan.cacah() != 1 {
@@ -712,5 +732,27 @@ func TestLampiranAksiHanyaMenjalankanEfekMiliknya(t *testing.T) {
 	}
 	if r.antrean.cacahStatus(services.JenisEfekStorageUnggah, repository.StatusEfekSelesai) != 1 {
 		t.Error("efek lampiran sendiri tidak selesai")
+	}
+}
+
+// tco4: objek terkirim DICATAT seperti Insert_T_Storage_SQL (URL dari jawaban
+// penyimpanan), dan dibuang seperti DeleteStorage_SQL sesudah hapus berhasil.
+func TestLampiranObjekPenyimpananDicatatDanDibuang(t *testing.T) {
+	r := rakitanLampiran(t)
+	h := r.unggah(t, "1000001", "a.pdf", "ISI")
+	r.gudang.mu.Lock()
+	objek := append([]models.ObjekPenyimpananTCO(nil), r.gudang.objek...)
+	r.gudang.mu.Unlock()
+	if len(objek) != 1 || objek[0].ImageID == "" || objek[0].URLPublic != "UJI-URL-"+objek[0].ImageID ||
+		objek[0].Namafile != objek[0].ImageID {
+		t.Fatalf("objek tercatat: %+v", objek)
+	}
+	if _, err := r.l.Hapus(context.Background(), pelakuUjiTCO, "1000001", h.Lampiran.ID); err != nil {
+		t.Fatal(err)
+	}
+	r.gudang.mu.Lock()
+	defer r.gudang.mu.Unlock()
+	if len(r.gudang.objekDihapus) != 1 || r.gudang.objekDihapus[0] != objek[0].ImageID {
+		t.Errorf("catatan objek dibuang: %v", r.gudang.objekDihapus)
 	}
 }

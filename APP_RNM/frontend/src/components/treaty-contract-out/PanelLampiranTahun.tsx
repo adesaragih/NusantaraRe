@@ -60,12 +60,6 @@ export function adaTerkirim(daftar: LampiranTahun[]): boolean {
 }
 
 /** Ukuran berkas yang dapat dibaca. */
-export function teksUkuran(n: number): string {
-  if (n < 1024) return `${n} B`
-  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`
-  return `${(n / (1024 * 1024)).toFixed(1)} MB`
-}
-
 export default function PanelLampiranTahun({ tahunID }: { tahunID: string }) {
   const [daftar, setDaftar] = useState<LampiranTahun[] | null>(null)
   const [kategori, setKategori] = useState<string[]>([])
@@ -219,8 +213,7 @@ export default function PanelLampiranTahun({ tahunID }: { tahunID: string }) {
                     </button>
                   ) : (
                     l.fileName
-                  )}{' '}
-                  <small>{teksUkuran(l.ukuran)}</small>
+                  )}
                 </td>
                 <td>{l.category}</td>
                 <td title={l.galat !== '' ? l.galat : undefined}>

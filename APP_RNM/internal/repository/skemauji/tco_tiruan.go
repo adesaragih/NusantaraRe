@@ -40,6 +40,8 @@ var namaTabelTiruanTCO = []string{
 	repository.MasterBusinessTCO,
 	// Tiket 08: master jenis klausul dan pemilih ExclutionTreaty.
 	repository.MasterJenisKlausulTCO, repository.MasterOccupationTCO, repository.MasterClauseTCO,
+	// tco4: lampiran di tabel warisan.
+	repository.TabelLampiranTCO, repository.TabelObjekPenyimpananTCO,
 }
 
 // namaTabelWarisanTCO adalah enam tabel warisan yang modul ini tulis dan baca
@@ -131,6 +133,16 @@ func ddlTiruanTCO(skema string) []string {
 			skema, repository.MasterKursTahunanTCO),
 		fmt.Sprintf("CREATE TABLE %s.%s (ID VARCHAR2(100), OLDID VARCHAR2(100), CURRENCY VARCHAR2(100), "+
 			"CURRENCYSYMBOL VARCHAR2(100))", skema, repository.MasterMataUangTCO))
+	// tco4: tabel lampiran warisan. Kolom = RDB korpus (GetAllAttachment2_Sql,
+	// InsertAttachment2_Sql Treaty In, Insert/Update_T_Storage_SQL); TIPE
+	// [terbuka - DBA] - teks generik, EXPDATE/TANGGAL_UPLOAD DATE (To_date korpus).
+	out = append(out,
+		fmt.Sprintf("CREATE TABLE %s.%s (ID VARCHAR2(100), TREATYID VARCHAR2(100), CATEGORY VARCHAR2(1000), "+
+			"FILENAME VARCHAR2(1000), FILEMIMETYPE VARCHAR2(1000), DATA_JSON CLOB, USERNAME VARCHAR2(1000), "+
+			"CATEGORY_ID VARCHAR2(1000), T_STORAGE_ID VARCHAR2(100))", skema, repository.TabelLampiranTCO),
+		fmt.Sprintf("CREATE TABLE %s.%s (IMAGEID VARCHAR2(100), URLPUBLIC VARCHAR2(4000), APPFOLDER VARCHAR2(1000), "+
+			"EXPDATE DATE, FILENAME VARCHAR2(1000), APPNAME VARCHAR2(100), STORAGE VARCHAR2(100), TANGGAL_UPLOAD DATE)",
+			skema, repository.TabelObjekPenyimpananTCO))
 	return out
 }
 

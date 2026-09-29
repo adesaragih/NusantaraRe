@@ -2167,8 +2167,8 @@ export interface LampiranTahun {
   fileName: string
   fileMimeType: string
   category: string
-  ukuran: number
   userId: string
+  /** tco4: dibaca dari ID warisan (stempel `YYYYMMDDHH24MISSFF3`). Ukuran berkas tidak disimpan tabel warisan. */
   tglUpload: string
   status: StatusLampiranTahun
   /** Cacah percobaan efek unggah terakhir. */

@@ -135,7 +135,7 @@ func TestPenyimpananLampiranPilihanPelaksana(t *testing.T) {
 		t.Fatal("pelaksana nyata tidak terpasang")
 	}
 	// Tanpa Oracle tidak ada alamat yang dapat di-resolve: gagal terang, tanpa panggilan keluar.
-	if err := k.Simpan(context.Background(), kunciUjiStorage, strings.NewReader("x"), "", ""); !errors.Is(err, repository.ErrTanpaOracle) {
+	if _, err := k.Simpan(context.Background(), kunciUjiStorage, strings.NewReader("x"), "", ""); !errors.Is(err, repository.ErrTanpaOracle) {
 		t.Errorf("tanpa Oracle: %v", err)
 	}
 	if svc.PenyimpananLampiranNyataTCO() {

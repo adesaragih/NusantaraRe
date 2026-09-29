@@ -1,18 +1,26 @@
 package repository
 
-// Lampiran tahun treaty - tiket 12 Treaty Contract Out (FITUR BARU).
+// Lampiran tahun treaty - tiket 12 Treaty Contract Out, tco4: tabel WARISAN.
 //
-// Untuk apa berkas ini: rekam `T_TREATYYEAR_LAMPIRAN` dan master kategori
-// `CATEGORY_ATTACH_REAS` (dibaca saja). Isi berkas TIDAK di sini - ia di
-// penyimpanan, di balik antarmuka di services.
+// Untuk apa berkas ini: rekam lampiran di `M_ATTACHMENTTREATY_2`, objek berkas
+// di `T_STORAGE_IMAGE`, dan master kategori `CATEGORY_ATTACH_REAS` (dibaca
+// saja) - persis RDB warisannya:
 //
-// ⛔ Lampiran melekat pada TAHUN treaty (`IDTREATYYEAR`). Rujukan ke kunci
-// treaty inward tidak ada di berkas ini; penjaga
-// `TestTCOLampiranTanpaRujukanTreatyInward` menegakkannya.
+//	GetAllAttachment2_Sql.xml b84 / GetAttachment2_Sql.xml b85   baca, `where treatyid = {TreatyIn.ID}`
+//	DeleteAttachment2_Sql.xml b84    `delete M_ATTACHMENTTREATY_2 where treatyid = .. and id = ..`
+//	InsertAtatchment_Sql.xml b60     `PEGA_M_ATTACHMENT(IDPEGA, DATAPEGA)` - badan [terbuka - DBA],
+//	                                 kolom ditiru dari penulis langsung tabel yang SAMA:
+//	                                 `Treaty In/RDBList/InsertAttachment2_Sql.xml` b84 (OQ-TCO-24)
+//	Insert_T_Storage_SQL.xml b85 (Claim Fac In), DeleteStorage_SQL.xml b85   `T_STORAGE_IMAGE`
 //
-// ⛔ Status "gagal" dibaca dari outbox bersama `T_LOG_SERVICE_RNM` - HANYA
-// dibaca, disaring `MODUL` modul ini. Tulisan ke outbox lewat fungsi yang sudah
-// ada (`PohonKlaim.AntreEfek` dan kawan-kawan), bukan SQL baru.
+// ⛔ Kunci pemilik `TREATYID` = `TreatyYear + TreatyYearID` (teks disambung):
+// `TreatyOutSaveAttachment` b1402 dan `DeleteAttachmentTreaty` b252 mengisi
+// `TreatyIn.ID` begitu [terverifikasi]. RALAT tiket 12 ("kunci treaty inward"):
+// nama halamannya `TreatyIn`, isinya milik modul ini.
+//
+// ⛔ Status "terkirim" = baris `T_STORAGE_IMAGE` untuk `T_STORAGE_ID` ada;
+// "gagal" dibaca dari outbox bersama `T_LOG_SERVICE_RNM` (milik aplikasi) -
+// disaring `MODUL` modul ini.
 //
 // Dibaca sesudah: tco_tahun.go, efekkeluar.go.
 
@@ -37,13 +45,15 @@ const MasterKategoriLampiranTCO = "CATEGORY_ATTACH_REAS"
 // TabelOutboxBersama - outbox efek keluar lintas modul (migrasi 015).
 const TabelOutboxBersama = "T_LOG_SERVICE_RNM"
 
-// ⚠️ SEMENTARA sampai paket 3 tco4 mengarahkan lampiran ke
-// `M_ATTACHMENTTREATY_2` + `T_STORAGE_IMAGE`: tabel dan sequence di bawah
-// TIDAK ADA lagi (migrasi 307 dibuang).
+// Tabel dan nilai WARISAN lampiran (tco4).
 const (
-	TabelLampiranTCO          = "T_TREATYYEAR_LAMPIRAN"
-	SeqLampiranTCO            = "SEQ_T_TREATYYEAR_LAMPIRAN"
-	LebarIdentitasLampiranTCO = 9
+	// TabelLampiranTCO - `M_ATTACHMENTTREATY_2`.
+	TabelLampiranTCO = "M_ATTACHMENTTREATY_2"
+	// TabelObjekPenyimpananTCO - `T_STORAGE_IMAGE`.
+	TabelObjekPenyimpananTCO = "T_STORAGE_IMAGE"
+	// KategoriPegaLampiranTCO - `CATEGORY` = `.pyCategory` = "File"
+	// (`TreatyOutSaveAttachment` b558); kategori PILIHAN di `CATEGORY_ID`.
+	KategoriPegaLampiranTCO = "File"
 )
 
 // ErrLampiranTidakAda - lampiran tidak ada, atau bukan milik tahun treaty itu.
@@ -103,73 +113,136 @@ func (k *KategoriLampiran) Daftar(ctx context.Context) ([]string, error) {
 	return hasil, rows.Err()
 }
 
-// MasterLampiranTCO membaca dan menulis `T_TREATYYEAR_LAMPIRAN`.
+// MasterLampiranTCO membaca dan menulis `M_ATTACHMENTTREATY_2` + `T_STORAGE_IMAGE`.
 type MasterLampiranTCO struct{ db *DB }
 
 // NewMasterLampiranTCO menyusun gudangnya.
 func NewMasterLampiranTCO(db *DB) *MasterLampiranTCO { return &MasterLampiranTCO{db: db} }
 
-const pilihLampiranTCO = `l.ID, l.IDTREATYYEAR, l.FILENAME, l.FILEMIMETYPE, l.CATEGORY, l.IMAGEID,
-	       l.T_STORAGE_ID, TO_CHAR(l.UKURAN), l.USERID, TO_CHAR(l.TGLUPLOAD, 'YYYY-MM-DD HH24:MI:SS')`
+// IDLampiranTCO - `TO_CHAR(SYSTIMESTAMP, 'YYYYMMDDHH24MISSFF3')` (Treaty In
+// `InsertAttachment2_Sql` b84), jam WIB. Ia sekaligus cap waktu unggahnya.
+func IDLampiranTCO(saat time.Time) string {
+	w := saat.In(zonaJakartaTCO)
+	return w.Format("20060102150405") + fmt.Sprintf("%03d", w.Nanosecond()/int(time.Millisecond))
+}
+
+// waktuDariIDLampiranTCO - kebalikan `IDLampiranTCO`; ID berbentuk lain -> nol.
+func waktuDariIDLampiranTCO(id string) time.Time {
+	if len(id) != 17 {
+		return time.Time{}
+	}
+	w, err := time.ParseInLocation("20060102150405", id[:14], zonaJakartaTCO)
+	if err != nil {
+		return time.Time{}
+	}
+	ms, err := strconv.Atoi(id[14:])
+	if err != nil {
+		return time.Time{}
+	}
+	return w.Add(time.Duration(ms) * time.Millisecond)
+}
+
+// pilihLampiranTCO - kolom GetAllAttachment2_Sql + keberadaan objeknya.
+//
+// ⚠️ Subkueri skalar, bukan JOIN: `T_STORAGE_IMAGE` tanpa PK `[terbuka - DBA]`,
+// dan JOIN atas baris objek kembar menggandakan lampiran.
+func pilihLampiranTCO(objek string) string {
+	return fmt.Sprintf(`a.ID, a.FILENAME, a.FILEMIMETYPE, a.CATEGORY_ID, a.T_STORAGE_ID,
+	       (SELECT MAX(s.IMAGEID) FROM %s s WHERE s.IMAGEID = a.T_STORAGE_ID), a.USERNAME`, objek)
+}
 
 // sqlDaftarLampiranTCO membaca lampiran satu tahun + efek unggah terakhirnya.
 //
 // ⛔ Efek TERAKHIR per lampiran (`ROW_NUMBER ... DIBUAT DESC`): pengulangan
 // menambah baris outbox baru, dan status yang tampil adalah nasib percobaan
 // terbaru, bukan yang pertama.
-func sqlDaftarLampiranTCO(tabel, outbox string, satu bool) string {
+func sqlDaftarLampiranTCO(tabel, objek, outbox string, satu bool) string {
 	saring := ""
 	if satu {
-		saring = " AND l.ID = :4"
+		saring = " AND a.ID = :4"
 	}
 	return fmt.Sprintf(`SELECT %s,
 	       o.STATUS, o.GALAT_TERAKHIR, o.PERCOBAAN
-	  FROM %s l
+	  FROM %s a
 	  LEFT JOIN (SELECT RUJUKAN, STATUS, GALAT_TERAKHIR, PERCOBAAN,
 	                    ROW_NUMBER() OVER (PARTITION BY RUJUKAN ORDER BY DIBUAT DESC, ID DESC) AS URUT
 	               FROM %s
 	              WHERE MODUL = :1 AND JENIS_EFEK = :2) o
-	    ON o.RUJUKAN = l.ID AND o.URUT = 1
-	 WHERE l.IDTREATYYEAR = :3%s
-	 ORDER BY l.ID DESC`, pilihLampiranTCO, tabel, outbox, saring)
+	    ON o.RUJUKAN = a.ID AND o.URUT = 1
+	 WHERE a.TREATYID = :3%s
+	 ORDER BY a.ID DESC`, pilihLampiranTCO(objek), tabel, outbox, saring)
 }
 
-func sqlAmbilUntukKirimLampiranTCO(tabel string) string {
-	return fmt.Sprintf(`SELECT %s FROM %s l WHERE l.ID = :1 FOR UPDATE`, pilihLampiranTCO, tabel)
+func sqlKunciLampiranTCO(tabel string) string {
+	return fmt.Sprintf(`SELECT ID FROM %s WHERE ID = :1 FOR UPDATE`, tabel)
 }
 
+func sqlAmbilUntukKirimLampiranTCO(tabel, objek string) string {
+	return fmt.Sprintf(`SELECT %s FROM %s a WHERE a.ID = :1`, pilihLampiranTCO(objek), tabel)
+}
+
+func sqlAdaIDLampiranTCO(tabel string) string {
+	return fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE ID = :1`, tabel)
+}
+
+// sqlSisipLampiranTCO - kolom `InsertAttachment2_Sql` b84; `DATA_JSON` NULL
+// (nol kolom dokumen - atribut lampiran berkolom bernama).
 func sqlSisipLampiranTCO(tabel string) string {
 	return fmt.Sprintf(`INSERT INTO %s
-	       (ID, IDTREATYYEAR, FILENAME, FILEMIMETYPE, CATEGORY, IMAGEID, T_STORAGE_ID,
-	        UKURAN, USERID, TGLUPLOAD)
-	VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10)`, tabel)
+	       (ID, TREATYID, CATEGORY, FILENAME, FILEMIMETYPE, DATA_JSON, USERNAME, CATEGORY_ID, T_STORAGE_ID)
+	VALUES (:1, :2, :3, :4, :5, NULL, :6, :7, :8)`, tabel)
 }
 
+// sqlHapusLampiranTCO - `DeleteAttachment2_Sql` b84.
 func sqlHapusLampiranTCO(tabel string) string {
-	return fmt.Sprintf(`DELETE FROM %s WHERE ID = :1 AND IDTREATYYEAR = :2`, tabel)
+	return fmt.Sprintf(`DELETE FROM %s WHERE TREATYID = :1 AND ID = :2`, tabel)
 }
 
-func sqlTandaiLampiranTCO(tabel string) string {
-	return fmt.Sprintf(`UPDATE %s SET T_STORAGE_ID = :1 WHERE ID = :2`, tabel)
+// sqlSimpanObjekTCO - `Insert_T_Storage_SQL` (Claim Fac In) b85: `EXPDATE`
+// `To_date(exp, 'DD/MM/YYYY HH24:MI:SS')`, `STORAGE` 'standard'.
+func sqlSimpanObjekTCO(tabel string) string {
+	return fmt.Sprintf(`INSERT INTO %s
+	       (IMAGEID, URLPUBLIC, APPFOLDER, EXPDATE, FILENAME, APPNAME, STORAGE)
+	VALUES (:1, :2, :3, TO_DATE(:4, 'DD/MM/YYYY HH24:MI:SS'), :5, :6, 'standard')`, tabel)
 }
 
-// pindaiLampiranTCO membaca sepuluh kolom `pilihLampiranTCO`.
-func pindaiLampiranTCO(n [10]sql.NullString) (models.LampiranTCO, error) {
-	l := models.LampiranTCO{
-		ID: n[0].String, IDTreatyYear: n[1].String, FileName: n[2].String,
-		FileMimeType: n[3].String, Category: n[4].String, ImageID: n[5].String,
-		TStorageID: n[6].String, UserID: n[8].String,
+// sqlHapusObjekTCO - `DeleteStorage_SQL` b85.
+func sqlHapusObjekTCO(tabel string) string {
+	return fmt.Sprintf(`DELETE FROM %s WHERE IMAGEID = :1`, tabel)
+}
+
+func sqlTreatyYearLampiranTCO(tabel string) string {
+	return fmt.Sprintf(`SELECT TREATYYEAR FROM %s WHERE ID = :1`, tabel)
+}
+
+// kunciTreaty - `TREATYID` lampiran satu tahun treaty: `TreatyYear + ID`.
+func (m *MasterLampiranTCO) kunciTreaty(ctx context.Context, q kuerierTCO, tahunID string) (string, error) {
+	tabel, err := m.db.Qualify(TabelTahunTCO)
+	if err != nil {
+		return "", err
 	}
-	if s := strings.TrimSpace(n[7].String); s != "" {
-		u, err := strconv.ParseInt(s, 10, 64)
-		if err != nil {
-			return l, fmt.Errorf("repository: UKURAN lampiran %s bernilai %q: %w", l.ID, s, err)
-		}
-		l.Ukuran = u
+	sq := sqlTreatyYearLampiranTCO(tabel)
+	if err := PeriksaSQL(sq); err != nil {
+		return "", err
 	}
-	var err error
-	l.TglUpload, err = uraiTanggalTeks(n[9], "TGLUPLOAD")
-	return l, err
+	var th sql.NullString
+	err = q.QueryRowContext(ctx, sq, tahunID).Scan(&th)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", ErrTahunTreatyTidakAda
+	}
+	if err != nil {
+		return "", fmt.Errorf("repository: membaca tahun treaty lampiran %s: %w", tahunID, err)
+	}
+	return models.KunciTreatyLampiranTCO(th.String, tahunID), nil
+}
+
+// pindaiLampiranTCO membaca tujuh kolom `pilihLampiranTCO`.
+func pindaiLampiranTCO(n [7]sql.NullString, tahunID string) models.LampiranTCO {
+	return models.LampiranTCO{
+		ID: n[0].String, IDTreatyYear: tahunID, FileName: n[1].String, FileMimeType: n[2].String,
+		Category: n[3].String, ImageID: n[4].String, TStorageID: n[5].String, UserID: n[6].String,
+		TglUpload: waktuDariIDLampiranTCO(n[0].String),
+	}
 }
 
 // Daftar membaca lampiran satu tahun treaty, ID DESC.
@@ -180,9 +253,9 @@ func (m *MasterLampiranTCO) Daftar(ctx context.Context, modul, jenisUnggah, tahu
 
 // Ambil membaca SATU lampiran, dibatasi tahun treaty-nya.
 //
-// ⛔ Dibatasi tahun, bukan dicari dengan ID saja: ID lampiran datang dari
-// jalur URL, dan tanpa batas itu jalur tahun mana pun menyerahkan lampiran
-// tahun lain.
+// ⛔ Dibatasi tahun (`TREATYID`), bukan dicari dengan ID saja: ID lampiran
+// datang dari jalur URL, dan tanpa batas itu jalur tahun mana pun menyerahkan
+// lampiran tahun lain.
 func (m *MasterLampiranTCO) Ambil(ctx context.Context, modul, jenisUnggah, tahunID, id string) (
 	BarisLampiranTCO, error) {
 	baris, err := m.baca(ctx, modul, jenisUnggah, tahunID, id)
@@ -195,9 +268,21 @@ func (m *MasterLampiranTCO) Ambil(ctx context.Context, modul, jenisUnggah, tahun
 	return baris[0], nil
 }
 
+func (m *MasterLampiranTCO) tabelLampiran() (string, string, error) {
+	tabel, err := m.db.Qualify(TabelLampiranTCO)
+	if err != nil {
+		return "", "", err
+	}
+	objek, err := m.db.Qualify(TabelObjekPenyimpananTCO)
+	if err != nil {
+		return "", "", err
+	}
+	return tabel, objek, nil
+}
+
 func (m *MasterLampiranTCO) baca(ctx context.Context, modul, jenisUnggah, tahunID, id string) (
 	[]BarisLampiranTCO, error) {
-	tabel, err := m.db.Qualify(TabelLampiranTCO)
+	tabel, objek, err := m.tabelLampiran()
 	if err != nil {
 		return nil, err
 	}
@@ -205,11 +290,15 @@ func (m *MasterLampiranTCO) baca(ctx context.Context, modul, jenisUnggah, tahunI
 	if err != nil {
 		return nil, err
 	}
-	q := sqlDaftarLampiranTCO(tabel, outbox, id != "")
+	kunci, err := m.kunciTreaty(ctx, m.db.bacaTCO(ctx), tahunID)
+	if err != nil {
+		return nil, err
+	}
+	q := sqlDaftarLampiranTCO(tabel, objek, outbox, id != "")
 	if err := PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	arg := []any{modul, jenisUnggah, tahunID}
+	arg := []any{modul, jenisUnggah, kunci}
 	if id != "" {
 		arg = append(arg, id)
 	}
@@ -220,18 +309,13 @@ func (m *MasterLampiranTCO) baca(ctx context.Context, modul, jenisUnggah, tahunI
 	defer func() { _ = rows.Close() }()
 	var hasil []BarisLampiranTCO
 	for rows.Next() {
-		var n [10]sql.NullString
+		var n [7]sql.NullString
 		var status, galat sql.NullString
 		var percobaan sql.NullInt64
-		if err := rows.Scan(&n[0], &n[1], &n[2], &n[3], &n[4], &n[5], &n[6], &n[7], &n[8], &n[9],
-			&status, &galat, &percobaan); err != nil {
+		if err := rows.Scan(&n[0], &n[1], &n[2], &n[3], &n[4], &n[5], &n[6], &status, &galat, &percobaan); err != nil {
 			return nil, err
 		}
-		l, err := pindaiLampiranTCO(n)
-		if err != nil {
-			return nil, err
-		}
-		hasil = append(hasil, BarisLampiranTCO{LampiranTCO: l, StatusEfek: status.String,
+		hasil = append(hasil, BarisLampiranTCO{LampiranTCO: pindaiLampiranTCO(n, tahunID), StatusEfek: status.String,
 			GalatEfek: galat.String, PercobaanEfek: int(percobaan.Int64)})
 	}
 	return hasil, rows.Err()
@@ -240,63 +324,97 @@ func (m *MasterLampiranTCO) baca(ctx context.Context, modul, jenisUnggah, tahunI
 // AmbilUntukKirim mengunci satu lampiran untuk pelaksana efek.
 //
 // ⛔ `FOR UPDATE`: dua pelaksana atas lampiran yang sama menunggu satu sama
-// lain, dan yang kedua melihat `T_STORAGE_ID` yang sudah terisi.
+// lain, dan yang kedua melihat objek `T_STORAGE_IMAGE` yang sudah tercatat.
+// Kunci dan bacaan dua pernyataan: subkueri skalar tidak bercampur FOR UPDATE.
 func (m *MasterLampiranTCO) AmbilUntukKirim(ctx context.Context, tx *Tx, id string) (models.LampiranTCO, error) {
 	if tx == nil {
 		return models.LampiranTCO{}, errors.New("repository: mengunci lampiran menuntut transaksi")
 	}
-	tabel, err := m.db.Qualify(TabelLampiranTCO)
+	tabel, objek, err := m.tabelLampiran()
 	if err != nil {
 		return models.LampiranTCO{}, err
 	}
-	q := sqlAmbilUntukKirimLampiranTCO(tabel)
+	qk := sqlKunciLampiranTCO(tabel)
+	if err := PeriksaSQL(qk); err != nil {
+		return models.LampiranTCO{}, err
+	}
+	var terkunci sql.NullString
+	if err := tx.tx.QueryRowContext(ctx, qk, id).Scan(&terkunci); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.LampiranTCO{}, ErrLampiranTidakAda
+		}
+		return models.LampiranTCO{}, fmt.Errorf("repository: mengunci lampiran %s: %w", id, err)
+	}
+	q := sqlAmbilUntukKirimLampiranTCO(tabel, objek)
 	if err := PeriksaSQL(q); err != nil {
 		return models.LampiranTCO{}, err
 	}
-	var n [10]sql.NullString
-	err = tx.tx.QueryRowContext(ctx, q, id).Scan(&n[0], &n[1], &n[2], &n[3], &n[4], &n[5],
-		&n[6], &n[7], &n[8], &n[9])
-	if errors.Is(err, sql.ErrNoRows) {
-		return models.LampiranTCO{}, ErrLampiranTidakAda
+	var n [7]sql.NullString
+	if err := tx.tx.QueryRowContext(ctx, q, id).Scan(&n[0], &n[1], &n[2], &n[3], &n[4], &n[5], &n[6]); err != nil {
+		return models.LampiranTCO{}, fmt.Errorf("repository: membaca lampiran %s: %w", id, err)
 	}
-	if err != nil {
-		return models.LampiranTCO{}, fmt.Errorf("repository: mengunci lampiran %s: %w", id, err)
-	}
-	return pindaiLampiranTCO(n)
+	return pindaiLampiranTCO(n, ""), nil
 }
 
-// Sisip menulis satu lampiran; ID dari `SEQ_T_TREATYYEAR_LAMPIRAN`.
+// Sisip menulis satu lampiran; ID = stempel waktu unggahnya (`IDLampiranTCO`).
+//
+// ⚠️ `M_ATTACHMENTTREATY_2` tanpa PK yang diketahui: ID yang sudah terpakai
+// (dua unggahan pada milidetik yang sama) digeser satu milidetik
+// `[keputusan kami]` - dua lampiran tidak boleh berbagi ID.
 func (m *MasterLampiranTCO) Sisip(ctx context.Context, tx *Tx, l models.LampiranTCO) (string, error) {
 	if tx == nil {
 		return "", errors.New("repository: menyisipkan lampiran menuntut transaksi")
 	}
-	tabel, err := m.db.Qualify(TabelLampiranTCO)
+	tabel, _, err := m.tabelLampiran()
 	if err != nil {
 		return "", err
 	}
-	id, err := m.db.IdentitasBerikutTCO(ctx, tx, SeqLampiranTCO)
+	kunci, err := m.kunciTreaty(ctx, tx.tx, l.IDTreatyYear)
 	if err != nil {
 		return "", err
+	}
+	qa := sqlAdaIDLampiranTCO(tabel)
+	if err := PeriksaSQL(qa); err != nil {
+		return "", err
+	}
+	saat := l.TglUpload
+	var id string
+	for i := 0; ; i++ {
+		id = IDLampiranTCO(saat)
+		var n int
+		if err := tx.tx.QueryRowContext(ctx, qa, id).Scan(&n); err != nil {
+			return "", fmt.Errorf("repository: memeriksa ID lampiran: %w", err)
+		}
+		if n == 0 {
+			break
+		}
+		if i >= 1000 {
+			return "", fmt.Errorf("repository: ID lampiran %s dan seribu penggantinya sudah terpakai", id)
+		}
+		saat = saat.Add(time.Millisecond)
 	}
 	q := sqlSisipLampiranTCO(tabel)
 	if err := PeriksaSQL(q); err != nil {
 		return "", err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, id, l.IDTreatyYear, kosongJadiNil(l.FileName),
-		kosongJadiNil(l.FileMimeType), kosongJadiNil(l.Category), l.ImageID,
-		kosongJadiNil(l.TStorageID), l.Ukuran, kosongJadiNil(l.UserID), tanggalJadiNil(l.TglUpload))
+	hasil, err := tx.tx.ExecContext(ctx, q, id, kunci, KategoriPegaLampiranTCO, kosongJadiNil(l.FileName),
+		kosongJadiNil(l.FileMimeType), kosongJadiNil(l.UserID), kosongJadiNil(l.Category), l.ImageID)
 	if err != nil {
 		return "", fmt.Errorf("repository: menyisipkan lampiran: %w", err)
 	}
 	return id, pastikanSatuBaris(hasil, "penyisipan lampiran")
 }
 
-// Hapus membuang satu lampiran milik tahun treaty itu.
+// Hapus membuang satu lampiran milik tahun treaty itu (`DeleteAttachment2_Sql`).
 func (m *MasterLampiranTCO) Hapus(ctx context.Context, tx *Tx, tahunID, id string) error {
 	if tx == nil {
 		return errors.New("repository: menghapus lampiran menuntut transaksi")
 	}
-	tabel, err := m.db.Qualify(TabelLampiranTCO)
+	tabel, _, err := m.tabelLampiran()
+	if err != nil {
+		return err
+	}
+	kunci, err := m.kunciTreaty(ctx, tx.tx, tahunID)
 	if err != nil {
 		return err
 	}
@@ -304,7 +422,7 @@ func (m *MasterLampiranTCO) Hapus(ctx context.Context, tx *Tx, tahunID, id strin
 	if err := PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, id, tahunID)
+	hasil, err := tx.tx.ExecContext(ctx, q, kunci, id)
 	if err != nil {
 		return fmt.Errorf("repository: menghapus lampiran %s: %w", id, err)
 	}
@@ -314,28 +432,45 @@ func (m *MasterLampiranTCO) Hapus(ctx context.Context, tx *Tx, tahunID, id strin
 	return pastikanSatuBaris(hasil, "penghapusan lampiran")
 }
 
-// TandaiTerkirim menulis `T_STORAGE_ID`; teks kosong mengosongkannya lagi
-// (perbaikan rekam yang berkasnya hilang di penyimpanan).
-func (m *MasterLampiranTCO) TandaiTerkirim(ctx context.Context, tx *Tx, id, storageID string) error {
+// SimpanObjek mencatat objek yang sudah ada di penyimpanan (`Insert_T_Storage_SQL`).
+func (m *MasterLampiranTCO) SimpanObjek(ctx context.Context, tx *Tx, o models.ObjekPenyimpananTCO) error {
 	if tx == nil {
-		return errors.New("repository: menandai lampiran menuntut transaksi")
+		return errors.New("repository: mencatat objek penyimpanan menuntut transaksi")
 	}
-	tabel, err := m.db.Qualify(TabelLampiranTCO)
+	_, objek, err := m.tabelLampiran()
 	if err != nil {
 		return err
 	}
-	q := sqlTandaiLampiranTCO(tabel)
+	q := sqlSimpanObjekTCO(objek)
 	if err := PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, kosongJadiNil(storageID), id)
+	hasil, err := tx.tx.ExecContext(ctx, q, o.ImageID, kosongJadiNil(o.URLPublic), kosongJadiNil(o.AppFolder),
+		kosongJadiNil(o.Exp), kosongJadiNil(o.Namafile), kosongJadiNil(o.App))
 	if err != nil {
-		return fmt.Errorf("repository: menandai lampiran %s: %w", id, err)
+		// ⛔ URL bertanda tangan tidak disebut: ia memuat tanda tangan akses.
+		return fmt.Errorf("repository: mencatat objek penyimpanan %s", o.ImageID)
 	}
-	if n, err := hasil.RowsAffected(); err == nil && n == 0 {
-		return ErrLampiranTidakAda
+	return pastikanSatuBaris(hasil, "pencatatan objek penyimpanan")
+}
+
+// HapusObjek membuang catatan objek (`DeleteStorage_SQL`); nol baris bukan galat.
+func (m *MasterLampiranTCO) HapusObjek(ctx context.Context, tx *Tx, imageID string) error {
+	if tx == nil {
+		return errors.New("repository: menghapus catatan objek menuntut transaksi")
 	}
-	return pastikanSatuBaris(hasil, "penandaan lampiran")
+	_, objek, err := m.tabelLampiran()
+	if err != nil {
+		return err
+	}
+	q := sqlHapusObjekTCO(objek)
+	if err := PeriksaSQL(q); err != nil {
+		return err
+	}
+	if _, err := tx.tx.ExecContext(ctx, q, imageID); err != nil {
+		return fmt.Errorf("repository: menghapus catatan objek %s: %w", imageID, err)
+	}
+	return nil
 }
 
 // sqlPungutEfekRujukanTCO - `sqlPungutEfek` + `AND RUJUKAN = :4`: pemungutan

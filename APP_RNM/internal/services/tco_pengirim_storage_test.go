@@ -165,7 +165,7 @@ func TestPengirimStorageUnggahBentukUploadDoc(t *testing.T) {
 	p := services.NewPengirimBerkasHTTPTCO(l.srv.Client(), appUjiStorageTCO)
 	ctx := context.Background()
 	for i := 0; i < 2; i++ {
-		if err := p.Kirim(ctx, l.alamat("/upload"), tokenUjiStorage, kunciUjiStorage,
+		if _, err := p.Kirim(ctx, l.alamat("/upload"), tokenUjiStorage, kunciUjiStorage,
 			strings.NewReader("ISI-PDF"), "application/pdf", ".PDF"); err != nil {
 			t.Fatal(err)
 		}
@@ -190,7 +190,7 @@ func TestPengirimStorageUnggahBentukUploadDoc(t *testing.T) {
 		}
 	}
 	// Tanpa ekstensi: medan `ext` tidak dikirim, TIDAK ditebak dari MIME.
-	if err := p.Kirim(ctx, l.alamat("/upload"), tokenUjiStorage, kunciUjiStorage,
+	if _, err := p.Kirim(ctx, l.alamat("/upload"), tokenUjiStorage, kunciUjiStorage,
 		strings.NewReader("x"), "image/jpeg", ""); err != nil {
 		t.Fatal(err)
 	}
@@ -203,7 +203,7 @@ func TestPengirimStorageAmbilPeriksaBuang(t *testing.T) {
 	l := layananStorageTiruan(t)
 	p := services.NewPengirimBerkasHTTPTCO(l.srv.Client(), appUjiStorageTCO)
 	ctx := context.Background()
-	if err := p.Kirim(ctx, l.alamat("/upload"), tokenUjiStorage, kunciUjiStorage, strings.NewReader("ISI"), "text/plain", "txt"); err != nil {
+	if _, err := p.Kirim(ctx, l.alamat("/upload"), tokenUjiStorage, kunciUjiStorage, strings.NewReader("ISI"), "text/plain", "txt"); err != nil {
 		t.Fatal(err)
 	}
 	rc, err := p.Ambil(ctx, l.alamat("/geturl"), tokenUjiStorage, kunciUjiStorage)
@@ -262,7 +262,7 @@ func TestPengirimStorageURLBertandaTerjaga(t *testing.T) {
 	l := layananStorageTiruan(t)
 	p := services.NewPengirimBerkasHTTPTCO(l.srv.Client(), appUjiStorageTCO)
 	ctx := context.Background()
-	if err := p.Kirim(ctx, l.alamat("/upload"), tokenUjiStorage, kunciUjiStorage, strings.NewReader("ISI"), "", ""); err != nil {
+	if _, err := p.Kirim(ctx, l.alamat("/upload"), tokenUjiStorage, kunciUjiStorage, strings.NewReader("ISI"), "", ""); err != nil {
 		t.Fatal(err)
 	}
 	polos := strings.Replace(l.srv.URL, "https", "http", 1)
@@ -306,7 +306,7 @@ func TestPengirimStorageGalatTanpaAlamatAtauToken(t *testing.T) {
 		http.StatusInternalServerError: services.ErrStorageGagalTCO,
 	} {
 		l.setel(func() { l.paksa["/upload"] = kode })
-		err := p.Kirim(ctx, l.alamat("/upload"), tokenUjiStorage, kunciUjiStorage, strings.NewReader("x"), "", "")
+		_, err := p.Kirim(ctx, l.alamat("/upload"), tokenUjiStorage, kunciUjiStorage, strings.NewReader("x"), "", "")
 		if !errors.Is(err, mau) {
 			t.Errorf("status %d: %v, mau %v", kode, err, mau)
 			continue
@@ -317,14 +317,14 @@ func TestPengirimStorageGalatTanpaAlamatAtauToken(t *testing.T) {
 		delete(l.paksa, "/upload")
 		l.urlKosong = true
 	})
-	if err := p.Kirim(ctx, l.alamat("/upload"), tokenUjiStorage, kunciUjiStorage, strings.NewReader("x"), "", ""); !errors.Is(err, services.ErrStorageJawabanRusakTCO) {
+	if _, err := p.Kirim(ctx, l.alamat("/upload"), tokenUjiStorage, kunciUjiStorage, strings.NewReader("x"), "", ""); !errors.Is(err, services.ErrStorageJawabanRusakTCO) {
 		t.Errorf("URLImage kosong (b2902): %v", err)
 	}
 
 	mati := httptest.NewTLSServer(http.NotFoundHandler())
 	alamatMati := mati.URL + "/upload"
 	mati.Close()
-	err := p.Kirim(ctx, alamatMati, tokenUjiStorage, kunciUjiStorage, strings.NewReader("x"), "", "")
+	_, err := p.Kirim(ctx, alamatMati, tokenUjiStorage, kunciUjiStorage, strings.NewReader("x"), "", "")
 	if !errors.Is(err, services.ErrStorageTakTerjangkauTCO) {
 		t.Fatalf("server mati: %v", err)
 	}
@@ -341,7 +341,7 @@ func TestPengirimStorageGalatTanpaAlamatAtauToken(t *testing.T) {
 	}))
 	defer func() { close(lepas); lambat.Close() }()
 	pl := services.NewPengirimBerkasHTTPTCO(&http.Client{Timeout: 50 * time.Millisecond}, appUjiStorageTCO)
-	err = pl.Kirim(ctx, lambat.URL+"/upload", tokenUjiStorage, kunciUjiStorage, strings.NewReader("x"), "", "")
+	_, err = pl.Kirim(ctx, lambat.URL+"/upload", tokenUjiStorage, kunciUjiStorage, strings.NewReader("x"), "", "")
 	if !errors.Is(err, services.ErrStorageTakTerjangkauTCO) || !strings.Contains(err.Error(), "batas waktu") {
 		t.Errorf("batas waktu: %v", err)
 	}
@@ -351,7 +351,7 @@ func TestPengirimStorageGalatTanpaAlamatAtauToken(t *testing.T) {
 		return "", repository.ErrAppStorageKosongTCO
 	})
 	sebelum := len(l.salinDiterima())
-	if err := tanpaApp.Kirim(ctx, l.alamat("/upload"), tokenUjiStorage, kunciUjiStorage, strings.NewReader("x"), "", ""); !errors.Is(err, repository.ErrAppStorageKosongTCO) {
+	if _, err := tanpaApp.Kirim(ctx, l.alamat("/upload"), tokenUjiStorage, kunciUjiStorage, strings.NewReader("x"), "", ""); !errors.Is(err, repository.ErrAppStorageKosongTCO) {
 		t.Errorf("tanpa App: %v", err)
 	}
 	if len(l.salinDiterima()) != sebelum {
@@ -379,7 +379,7 @@ func TestPenyimpananNyataUjungKeUjung(t *testing.T) {
 	l := layananStorageTiruan(t)
 	p, gudangToken, saat := rangkaianNyataUji(l, "/delete")
 	ctx := context.Background()
-	if err := p.Simpan(ctx, kunciUjiStorage, strings.NewReader("ISI"), "application/pdf", "pdf"); err != nil {
+	if _, err := p.Simpan(ctx, kunciUjiStorage, strings.NewReader("ISI"), "application/pdf", "pdf"); err != nil {
 		t.Fatal(err)
 	}
 	if ada, err := p.Ada(ctx, kunciUjiStorage); err != nil || !ada {
@@ -417,7 +417,7 @@ func TestPenyimpananNyataHapusJalurSalahTidakDiam(t *testing.T) {
 	l := layananStorageTiruan(t)
 	p, _, _ := rangkaianNyataUji(l, "/salah-jalur")
 	ctx := context.Background()
-	if err := p.Simpan(ctx, kunciUjiStorage, strings.NewReader("ISI"), "", ""); err != nil {
+	if _, err := p.Simpan(ctx, kunciUjiStorage, strings.NewReader("ISI"), "", ""); err != nil {
 		t.Fatal(err)
 	}
 	err := p.Hapus(ctx, kunciUjiStorage)
@@ -435,10 +435,10 @@ func TestPenyimpananNyataTokenDitolakDilupakan(t *testing.T) {
 	p, gudangToken, _ := rangkaianNyataUji(l, "/delete")
 	ctx := context.Background()
 	l.setel(func() { l.paksaSekali["/upload"] = http.StatusUnauthorized })
-	if err := p.Simpan(ctx, kunciUjiStorage, strings.NewReader("ISI"), "", ""); !errors.Is(err, services.ErrStorageTokenDitolakTCO) {
+	if _, err := p.Simpan(ctx, kunciUjiStorage, strings.NewReader("ISI"), "", ""); !errors.Is(err, services.ErrStorageTokenDitolakTCO) {
 		t.Fatalf("401: %v", err)
 	}
-	if err := p.Simpan(ctx, kunciUjiStorage, strings.NewReader("ISI"), "", ""); err != nil {
+	if _, err := p.Simpan(ctx, kunciUjiStorage, strings.NewReader("ISI"), "", ""); err != nil {
 		t.Fatal(err)
 	}
 	if len(gudangToken.disimpan) != 2 {

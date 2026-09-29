@@ -2,13 +2,15 @@ package models
 
 // Lampiran tahun treaty - tiket 12 Treaty Contract Out (FITUR BARU).
 //
-// Untuk apa berkas ini: bentuk satu baris `T_TREATYYEAR_LAMPIRAN` dan aturan
-// murni di sekitarnya - status, kategori, nama berkas di disk dan di zip.
+// Untuk apa berkas ini: bentuk satu baris lampiran di tabel WARISAN
+// `M_ATTACHMENTTREATY_2` + objeknya di `T_STORAGE_IMAGE` (tco4) dan aturan
+// murni di sekitarnya - kunci pemilik, status, kategori, nama berkas di disk
+// dan di zip.
 //
-// ⚠️ Penyimpangan sadar 9 `[keputusan work owner]`: jalur lampiran Pega
-// (`M_ATTACHMENTTREATY_2`) belum rampung dan berkunci ID treaty INWARD. Korpus
-// di sini sumber RANTAI TEKNIS (kategori, kunci berkas, label), bukan sumber
-// perilaku; perilakunya ditetapkan AC tiket 12.
+// ⚠️ RALAT tco4 atas penyimpangan sadar 9: jalur lampiran Pega memang
+// `M_ATTACHMENTTREATY_2`, dan kuncinya BUKAN treaty inward - `TreatyIn.ID`
+// diisi `TreatyYear + TreatyYearID` di modul ini (`TreatyOutSaveAttachment`
+// b1402). Perilaku status/ulangi tetap AC tiket 12.
 //
 // Dibaca sesudah: tco_tahun.go.
 
@@ -19,21 +21,46 @@ import (
 	"time"
 )
 
-// LampiranTCO adalah satu baris `T_TREATYYEAR_LAMPIRAN`.
+// LampiranTCO adalah satu baris `M_ATTACHMENTTREATY_2`.
+//
+// ⚠️ Tabel warisan tanpa kolom ukuran dan tanggal unggah: `TglUpload` dibaca
+// dari ID-nya (stempel `YYYYMMDDHH24MISSFF3`); ukuran tidak disimpan - layar
+// Pega pun tidak menampilkannya (`GetAllAttachment2_Sql` b84).
 type LampiranTCO struct {
-	ID           string
+	ID string
+	// IDTreatyYear - tahun treaty pemilik; kolom warisannya `TREATYID`
+	// (`KunciTreatyLampiranTCO`).
 	IDTreatyYear string
 	FileName     string
 	FileMimeType string
-	Category     string
-	// ImageID adalah kunci berkas di penyimpanan - acak, lahir bersama
-	// barisnya, tidak pernah berubah. Pengulangan menulis ke kunci yang sama.
+	// Category - kategori PILIHAN (`CATEGORY_ID`); `CATEGORY` warisan = "File".
+	Category string
+	// ImageID adalah kunci berkas di penyimpanan (`T_STORAGE_ID`) - acak,
+	// lahir bersama barisnya, tidak pernah berubah. Pengulangan menulis ke
+	// kunci yang sama.
 	ImageID string
-	// TStorageID terisi sesudah penyimpanan memastikan berkasnya ada.
+	// TStorageID terisi bila `T_STORAGE_IMAGE` mencatat objeknya (terkirim).
 	TStorageID string
-	Ukuran     int64
 	UserID     string
 	TglUpload  time.Time
+}
+
+// KunciTreatyLampiranTCO - `TREATYID` lampiran: `TreatyYear + TreatyYearID`
+// disambung (`TreatyOutSaveAttachment` b1402, `DeleteAttachmentTreaty` b252).
+func KunciTreatyLampiranTCO(treatyYear, tahunID string) string {
+	return strings.TrimSpace(treatyYear) + strings.TrimSpace(tahunID)
+}
+
+// ObjekPenyimpananTCO - satu baris `T_STORAGE_IMAGE`: yang Pega catat sesudah
+// unggah berhasil (`Insert_T_Storage_SQL` Claim Fac In b85). Teks APA ADANYA
+// dari jawaban layanan; `Exp` berbentuk `DD/MM/YYYY HH24:MI:SS` (To_date Pega).
+type ObjekPenyimpananTCO struct {
+	ImageID   string
+	URLPublic string
+	AppFolder string
+	Exp       string
+	Namafile  string
+	App       string
 }
 
 // Status lampiran yang tampil di layar.

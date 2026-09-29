@@ -43,6 +43,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"nusantarare/internal/models"
 )
 
 // BatasWaktuStorageTCO - `ServiceGoogle.xml` b29 `pyResponseTimeout 300000`.
@@ -205,30 +207,33 @@ func normalEkstensiTCO(ext string) string {
 // (IMAGEID) di `FolderStorageTCO` sehingga pengulangan menulis ke objek yang
 // SAMA (AC 58).
 func (p *pengirimBerkasHTTPTCO) Kirim(ctx context.Context, alamat, token, kunci string, isi io.Reader,
-	tipe, ekstensi string) error {
+	tipe, ekstensi string) (models.ObjekPenyimpananTCO, error) {
 	b, err := p.dasar(ctx, token, kunci)
 	if err != nil {
-		return err
+		return models.ObjekPenyimpananTCO{}, err
 	}
 	data, err := io.ReadAll(io.LimitReader(isi, BatasUkuranUnggahan+1))
 	if err != nil {
-		return fmt.Errorf("services: membaca berkas antrean: %w", err)
+		return models.ObjekPenyimpananTCO{}, fmt.Errorf("services: membaca berkas antrean: %w", err)
 	}
 	if int64(len(data)) > BatasUkuranUnggahan {
-		return fmt.Errorf("%w: berkas melebihi batas", ErrStorageMenolakPermintaanTCO)
+		return models.ObjekPenyimpananTCO{}, fmt.Errorf("%w: berkas melebihi batas", ErrStorageMenolakPermintaanTCO)
 	}
 	durasi := DurasiURLStorageTCO
 	b.Durasi, b.Folder, b.MimeType, b.Ext = &durasi, FolderStorageTCO, tipe, normalEkstensiTCO(ekstensi)
 	b.Image = base64.StdEncoding.EncodeToString(data)
 	j, err := p.kirimJSON(ctx, alamat, b)
 	if err != nil {
-		return err
+		return models.ObjekPenyimpananTCO{}, err
 	}
 	if strings.TrimSpace(j.URLImage) == "" {
 		// `InsertGoogleStorage_Act.xml` b2902: `URLImage == ""` = gagal.
-		return fmt.Errorf("%w: URLImage kosong", ErrStorageJawabanRusakTCO)
+		return models.ObjekPenyimpananTCO{}, fmt.Errorf("%w: URLImage kosong", ErrStorageJawabanRusakTCO)
 	}
-	return nil
+	// tco4: yang Pega catat ke T_STORAGE_IMAGE (`Insert_T_Storage_SQL` b85):
+	// URLImage, appfolder, exp, Namafile, App - apa adanya dari jawaban.
+	return models.ObjekPenyimpananTCO{ImageID: kunci, URLPublic: j.URLImage, AppFolder: j.AppFolder, Exp: j.Exp,
+		Namafile: kunci, App: b.App}, nil
 }
 
 // urlBertanda meminta URL bertanda tangan satu objek (`geturl`).

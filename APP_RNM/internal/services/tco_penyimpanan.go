@@ -31,6 +31,8 @@ import (
 	"regexp"
 	"sync"
 	"time"
+
+	"nusantarare/internal/models"
 )
 
 // kunciBerkasSah - kunci penyimpanan adalah heksa `IMAGEID`; apa pun selain
@@ -77,7 +79,16 @@ func (p penyimpananLokalTCO) jalur(kunci string) (string, error) {
 
 // Simpan menulis lewat berkas sementara lalu mengganti namanya: kunci yang
 // SAMA ditimpa utuh, tidak pernah menjadi dua berkas atau berkas setengah.
-func (p penyimpananLokalTCO) Simpan(_ context.Context, kunci string, isi io.Reader, _, _ string) error {
+func (p penyimpananLokalTCO) Simpan(_ context.Context, kunci string, isi io.Reader, _, _ string) (models.ObjekPenyimpananTCO, error) {
+	if err := p.tulis(kunci, isi); err != nil {
+		return models.ObjekPenyimpananTCO{}, err
+	}
+	// Stub: tidak ada URL publik, folder aplikasi, atau kedaluwarsa - yang
+	// dicatat ke T_STORAGE_IMAGE hanya kunci dan nama objeknya.
+	return models.ObjekPenyimpananTCO{ImageID: kunci, Namafile: kunci}, nil
+}
+
+func (p penyimpananLokalTCO) tulis(kunci string, isi io.Reader) error {
 	tujuan, err := p.jalur(kunci)
 	if err != nil {
 		return err
@@ -213,7 +224,7 @@ func (c *CacheTokenTCO) Token(ctx context.Context) (string, error) {
 // Implementasinya `NewPengirimBerkasHTTPTCO` (OQ-TCO-08). ⛔ Galatnya TIDAK
 // BOLEH memuat alamat, token, atau garam.
 type PengirimBerkasTCO interface {
-	Kirim(ctx context.Context, alamat, token, kunci string, isi io.Reader, mime, ekstensi string) error
+	Kirim(ctx context.Context, alamat, token, kunci string, isi io.Reader, mime, ekstensi string) (models.ObjekPenyimpananTCO, error)
 	Ambil(ctx context.Context, alamat, token, kunci string) (io.ReadCloser, error)
 	Buang(ctx context.Context, alamat, token, kunci string) error
 	Periksa(ctx context.Context, alamat, token, kunci string) (bool, error)
@@ -270,15 +281,16 @@ func (p *PenyimpananJarakJauhTCO) galatJarakJauh(kunci KunciLayanan, err error) 
 }
 
 // Simpan - kunci `("Google", "upload")`.
-func (p *PenyimpananJarakJauhTCO) Simpan(ctx context.Context, kunci string, isi io.Reader, mime, ekstensi string) error {
+func (p *PenyimpananJarakJauhTCO) Simpan(ctx context.Context, kunci string, isi io.Reader, mime, ekstensi string) (models.ObjekPenyimpananTCO, error) {
 	alamat, tok, err := p.siapkan(ctx, KunciUnggahBerkas)
 	if err != nil {
-		return err
+		return models.ObjekPenyimpananTCO{}, err
 	}
-	if err := p.pengirim.Kirim(ctx, alamat, tok, kunci, isi, mime, ekstensi); err != nil {
-		return p.galatJarakJauh(KunciUnggahBerkas, err)
+	o, err := p.pengirim.Kirim(ctx, alamat, tok, kunci, isi, mime, ekstensi)
+	if err != nil {
+		return models.ObjekPenyimpananTCO{}, p.galatJarakJauh(KunciUnggahBerkas, err)
 	}
-	return nil
+	return o, nil
 }
 
 // Buka - kunci `("Google", "geturl")`.

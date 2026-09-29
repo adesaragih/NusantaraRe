@@ -94,14 +94,17 @@ var (
 	errJenisEfekAsingTCO   = errors.New("services: jenis efek bukan milik pelaksana lampiran")
 )
 
-// GudangLampiranTCO membaca dan menulis rekam lampiran + jejaknya.
+// GudangLampiranTCO membaca dan menulis rekam lampiran + catatan objeknya (tco4).
 type GudangLampiranTCO interface {
 	Daftar(ctx context.Context, tahunID string) ([]repository.BarisLampiranTCO, error)
 	Ambil(ctx context.Context, tahunID, id string) (repository.BarisLampiranTCO, error)
 	AmbilUntukKirim(ctx context.Context, tx *repository.Tx, id string) (models.LampiranTCO, error)
 	Sisip(ctx context.Context, tx *repository.Tx, l models.LampiranTCO) (string, error)
 	Hapus(ctx context.Context, tx *repository.Tx, tahunID, id string) error
-	TandaiTerkirim(ctx context.Context, tx *repository.Tx, id, storageID string) error
+	// SimpanObjek - `Insert_T_Storage_SQL`: objek berkas tercatat = terkirim (tco4).
+	SimpanObjek(ctx context.Context, tx *repository.Tx, o models.ObjekPenyimpananTCO) error
+	// HapusObjek - `DeleteStorage_SQL`: catatan objek dibuang.
+	HapusObjek(ctx context.Context, tx *repository.Tx, imageID string) error
 }
 
 // AntreanLampiranTCO adalah outbox yang dipakai lampiran, sudah bermodul.
@@ -131,7 +134,8 @@ type PemeriksaTahunTCO interface {
 // diserahkan ke tiap klien.
 type KlienPenyimpananTCO interface {
 	// ekstensi - dari nama berkas asli, huruf kecil tanpa titik (`ext` UploadDoc).
-	Simpan(ctx context.Context, kunci string, isi io.Reader, mime, ekstensi string) error
+	// Hasilnya yang dicatat ke `T_STORAGE_IMAGE` (tco4).
+	Simpan(ctx context.Context, kunci string, isi io.Reader, mime, ekstensi string) (models.ObjekPenyimpananTCO, error)
 	Buka(ctx context.Context, kunci string) (io.ReadCloser, error)
 	Hapus(ctx context.Context, kunci string) error
 	Ada(ctx context.Context, kunci string) (bool, error)
@@ -156,7 +160,10 @@ func (gudangLampiranBelumDisuntik) Sisip(context.Context, *repository.Tx, models
 func (gudangLampiranBelumDisuntik) Hapus(context.Context, *repository.Tx, string, string) error {
 	return ErrGudangLampiranBelumDisuntik
 }
-func (gudangLampiranBelumDisuntik) TandaiTerkirim(context.Context, *repository.Tx, string, string) error {
+func (gudangLampiranBelumDisuntik) SimpanObjek(context.Context, *repository.Tx, models.ObjekPenyimpananTCO) error {
+	return ErrGudangLampiranBelumDisuntik
+}
+func (gudangLampiranBelumDisuntik) HapusObjek(context.Context, *repository.Tx, string) error {
 	return ErrGudangLampiranBelumDisuntik
 }
 
@@ -177,8 +184,8 @@ func (antreanLampiranBelumDisuntik) Tuntaskan(context.Context, *repository.Tx, s
 
 type penyimpananBelumDisuntik struct{}
 
-func (penyimpananBelumDisuntik) Simpan(context.Context, string, io.Reader, string, string) error {
-	return ErrPenyimpananLampiranBelumDisuntik
+func (penyimpananBelumDisuntik) Simpan(context.Context, string, io.Reader, string, string) (models.ObjekPenyimpananTCO, error) {
+	return models.ObjekPenyimpananTCO{}, ErrPenyimpananLampiranBelumDisuntik
 }
 func (penyimpananBelumDisuntik) Buka(context.Context, string) (io.ReadCloser, error) {
 	return nil, ErrPenyimpananLampiranBelumDisuntik
@@ -218,8 +225,11 @@ func (g gudangLampiranOracle) Sisip(ctx context.Context, tx *repository.Tx, l mo
 func (g gudangLampiranOracle) Hapus(ctx context.Context, tx *repository.Tx, tahunID, id string) error {
 	return g.m.Hapus(ctx, tx, tahunID, id)
 }
-func (g gudangLampiranOracle) TandaiTerkirim(ctx context.Context, tx *repository.Tx, id, storageID string) error {
-	return g.m.TandaiTerkirim(ctx, tx, id, storageID)
+func (g gudangLampiranOracle) SimpanObjek(ctx context.Context, tx *repository.Tx, o models.ObjekPenyimpananTCO) error {
+	return g.m.SimpanObjek(ctx, tx, o)
+}
+func (g gudangLampiranOracle) HapusObjek(ctx context.Context, tx *repository.Tx, imageID string) error {
+	return g.m.HapusObjek(ctx, tx, imageID)
 }
 
 // GudangLampiranOracle menyusun gudang lampiran di atas Oracle.
@@ -276,7 +286,6 @@ type LampiranTampil struct {
 	FileName     string `json:"fileName"`
 	FileMimeType string `json:"fileMimeType"`
 	Category     string `json:"category"`
-	Ukuran       int64  `json:"ukuran"`
 	UserID       string `json:"userId"`
 	TglUpload    string `json:"tglUpload"`
 	// Status - `terkirim` / `tertunda` / `gagal` (models.StatusLampiranTCO).
@@ -294,7 +303,7 @@ func TampilLampiran(b repository.BarisLampiranTCO) LampiranTampil {
 		galat = b.GalatEfek
 	}
 	return LampiranTampil{ID: b.ID, IDTreatyYear: b.IDTreatyYear, FileName: b.FileName,
-		FileMimeType: b.FileMimeType, Category: b.Category, Ukuran: b.Ukuran, UserID: b.UserID,
+		FileMimeType: b.FileMimeType, Category: b.Category, UserID: b.UserID,
 		TglUpload: utils.FormatTanggalWaktu(b.TglUpload), Status: status,
 		Percobaan: b.PercobaanEfek, Galat: galat}
 }
@@ -496,8 +505,8 @@ func namaDasarBerkas(nama string) string {
 //  1. gerbang identitas, tahun, folder, nama, kategori - sebelum satu byte pun
 //     mendarat;
 //  2. berkas ke folder antrean LEBIH DULU, dinamai kunci berkasnya - byte yang
-//     mendarat tidak pernah tanpa jejak;
-//  3. satu transaksi: rekam + efek outbox + jejak;
+//     mendarat tidak pernah tanpa rekam;
+//  3. satu transaksi: rekam `M_ATTACHMENTTREATY_2` + efek outbox (tco4: nol jejak modul);
 //  4. sesudah commit, antrean dijalankan. Kegagalannya TIDAK membatalkan
 //     langkah 3 (AC 55) - ia tampil sebagai status.
 func (l *LampiranTahunTCO) Unggah(ctx context.Context, pelaku Pelaku, tahunID string,
@@ -542,14 +551,10 @@ func (l *LampiranTahunTCO) Unggah(ctx context.Context, pelaku Pelaku, tahunID st
 		}
 		return HasilLampiranTCO{}, err
 	}
-	info, err := os.Stat(jalur)
-	if err != nil {
-		_ = os.Remove(jalur)
-		return HasilLampiranTCO{}, fmt.Errorf("services: membaca ukuran berkas antrean: %w", err)
-	}
+	// tco4: ukuran tidak disimpan - `M_ATTACHMENTTREATY_2` tidak punya kolomnya.
 	rekam := models.LampiranTCO{IDTreatyYear: tahunID, FileName: nama,
 		FileMimeType: models.MimeDokumen(berkas.Mime, nama), Category: kategori, ImageID: imageID,
-		Ukuran: info.Size(), UserID: pelaku.AkunID, TglUpload: saat}
+		UserID: pelaku.AkunID, TglUpload: saat}
 
 	err = l.transaksi(ctx, func(tx *repository.Tx) error {
 		id, err := l.gudang.Sisip(ctx, tx, rekam)
@@ -642,7 +647,8 @@ func (l *LampiranTahunTCO) JalankanAntrean(ctx context.Context, akunID string, m
 // SatuPutaran memungut SATU efek, menjalankannya, dan menuntaskannya.
 //
 // ⛔ Satu transaksi: pungut, jalankan, tuntaskan - pola `PekerjaEfek`. Yang
-// berbeda hanya jalur menyerahnya: jejaknya ke `T_TREATYCO_JEJAK`.
+// berbeda hanya jalur menyerahnya: tco4 tanpa jejak modul - status outbox
+// gagal-permanen itulah catatannya.
 func (l *LampiranTahunTCO) SatuPutaran(ctx context.Context, akunID string, saat time.Time) error {
 	return l.satuPutaran(ctx, akunID, saat, func(tx *repository.Tx, saat time.Time) (repository.BarisEfekKeluar, error) {
 		return l.antrean.Pungut(ctx, tx, saat)
@@ -669,12 +675,8 @@ func (l *LampiranTahunTCO) satuPutaran(ctx context.Context, akunID string, saat 
 		if err := l.antrean.Tuntaskan(ctx, tx, b.ID, status, jadwal, ringkasGalatTCO(jalanErr), saat); err != nil {
 			return err
 		}
-		if !menyerah {
-			return nil
-		}
-		// ⛔ Menyerah MASUK JEJAK, di transaksi yang sama (ADR-0015, ADR-0007).
-		// Pesan galatnya tinggal di outbox; jejak menyebut efek apa dan bahwa
-		// ia menyerah.
+		// tco4: nol jejak modul (Pega tidak mencatatnya) - menyerah terlihat
+		// dari status gagal-permanen dan galatnya di outbox.
 		return nil
 	})
 }
@@ -707,7 +709,7 @@ func (l *LampiranTahunTCO) laksanakan(ctx context.Context, tx *repository.Tx, b 
 	case JenisEfekStorageUnggah:
 		return l.kirimUnggah(ctx, tx, b)
 	case JenisEfekStorageHapus:
-		return l.kirimHapus(ctx, b)
+		return l.kirimHapus(ctx, tx, b)
 	default:
 		return fmt.Errorf("%w: %q", errJenisEfekAsingTCO, b.Jenis)
 	}
@@ -717,7 +719,7 @@ func (l *LampiranTahunTCO) laksanakan(ctx context.Context, tx *repository.Tx, b 
 //
 // ⛔ Tiga jalan selesai-tanpa-kerja, dan ketiganya sengaja:
 //   - rekamnya sudah dihapus: efek hapus yang membersihkan;
-//   - `T_STORAGE_ID` sudah terisi: percobaan sebelumnya berhasil;
+//   - objeknya sudah tercatat di `T_STORAGE_IMAGE`: percobaan sebelumnya berhasil;
 //   - berkas antrean hilang TETAPI penyimpanan memiliki kuncinya: percobaan
 //     sebelumnya menulis berkasnya lalu gagal dicatat.
 //
@@ -744,18 +746,24 @@ func (l *LampiranTahunTCO) kirimUnggah(ctx context.Context, tx *repository.Tx, b
 		if !ada {
 			return fmt.Errorf("%w: lampiran %s", ErrBerkasSumberLampiranHilang, rekam.ID)
 		}
-		return l.gudang.TandaiTerkirim(ctx, tx, rekam.ID, rekam.ImageID)
+		// Jawaban unggah yang dulu hilang tidak dapat dipulihkan: yang dicatat
+		// hanya kunci objeknya.
+		return l.gudang.SimpanObjek(ctx, tx, models.ObjekPenyimpananTCO{ImageID: rekam.ImageID, Namafile: rekam.ImageID})
 	}
 	if err != nil {
 		return fmt.Errorf("services: membuka berkas antrean lampiran %s: %w", rekam.ID, err)
 	}
-	simpanErr := l.penyimpanan.Simpan(ctx, rekam.ImageID, f, rekam.FileMimeType,
+	objek, simpanErr := l.penyimpanan.Simpan(ctx, rekam.ImageID, f, rekam.FileMimeType,
 		strings.ToLower(strings.TrimPrefix(filepath.Ext(rekam.FileName), ".")))
 	_ = f.Close()
 	if simpanErr != nil {
 		return fmt.Errorf("services: mengunggah lampiran %s: %w", rekam.ID, simpanErr)
 	}
-	if err := l.gudang.TandaiTerkirim(ctx, tx, rekam.ID, rekam.ImageID); err != nil {
+	objek.ImageID = rekam.ImageID
+	if objek.Namafile == "" {
+		objek.Namafile = rekam.ImageID
+	}
+	if err := l.gudang.SimpanObjek(ctx, tx, objek); err != nil {
 		return err
 	}
 	// ⚠️ Berkas antrean dibuang sesudah penandaan. Bila transaksinya kemudian
@@ -764,17 +772,22 @@ func (l *LampiranTahunTCO) kirimUnggah(ctx context.Context, tx *repository.Tx, b
 	return nil
 }
 
-// kirimHapus membuang berkas di penyimpanan dan berkas antreannya.
+// kirimHapus membuang berkas di penyimpanan, catatan objeknya
+// (`DeleteStorage_SQL`, sesudah REST delete seperti `DeleteGoogleStorage_Act`
+// b1582-b1635), dan berkas antreannya.
 //
 // ⛔ Berkas yang SUDAH tidak ada bukan kegagalan: penghapusan rekam tidak
 // boleh gagal karena penyimpanan lebih dulu kehilangan berkasnya.
-func (l *LampiranTahunTCO) kirimHapus(ctx context.Context, b repository.BarisEfekKeluar) error {
+func (l *LampiranTahunTCO) kirimHapus(ctx context.Context, tx *repository.Tx, b repository.BarisEfekKeluar) error {
 	var m muatanLampiranTCO
 	if err := json.Unmarshal([]byte(b.Muatan), &m); err != nil || strings.TrimSpace(m.ImageID) == "" {
 		return fmt.Errorf("%w: efek %s", errMuatanLampiranRusak, b.ID)
 	}
 	if err := l.penyimpanan.Hapus(ctx, m.ImageID); err != nil && !errors.Is(err, ErrBerkasTidakAdaDiPenyimpanan) {
 		return fmt.Errorf("services: menghapus berkas lampiran %s: %w", m.LampiranID, err)
+	}
+	if err := l.gudang.HapusObjek(ctx, tx, m.ImageID); err != nil {
+		return err
 	}
 	if m.BerkasAntre != "" && m.BerkasAntre == filepath.Base(m.BerkasAntre) {
 		if err := os.Remove(filepath.Join(l.folderAntre(), m.BerkasAntre)); err != nil && !os.IsNotExist(err) {
@@ -929,7 +942,8 @@ func (l *LampiranTahunTCO) Ulangi(ctx context.Context, pelaku Pelaku, tahunID, i
 	saat := l.jam()
 	err = l.transaksi(ctx, func(tx *repository.Tx) error {
 		if terkirim {
-			if err := l.gudang.TandaiTerkirim(ctx, tx, id, ""); err != nil {
+			// Catatan objek tanpa berkas dibuang dulu; unggah ulang mencatatnya lagi.
+			if err := l.gudang.HapusObjek(ctx, tx, b.ImageID); err != nil {
 				return err
 			}
 		}

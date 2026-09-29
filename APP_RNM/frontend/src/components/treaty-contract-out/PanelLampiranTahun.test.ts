@@ -10,7 +10,7 @@ import { describe, expect, it } from 'vitest'
 import { LAMPIRAN_TCO } from '../../assets/labels.treaty-contract-out'
 import type { LampiranTahun } from '../../services/api'
 import { jalurIsiLampiran, jalurSemuaLampiran } from '../../services/api'
-import { adaTerkirim, bolehUlangi, bolehUnduh, labelStatusLampiran, teksUkuran } from './PanelLampiranTahun'
+import { adaTerkirim, bolehUlangi, bolehUnduh, labelStatusLampiran } from './PanelLampiranTahun'
 
 function tanpaKomentar(teks: string): string {
   return teks
@@ -26,7 +26,7 @@ const bagianApiLampiran = API.slice(API.indexOf('Treaty Contract Out tiket 12'))
 function lampiran(status: LampiranTahun['status']): LampiranTahun {
   return {
     id: '1000000001', idTreatyYear: '1000001', fileName: 'UJI-kontrak.pdf', fileMimeType: 'application/pdf',
-    category: 'CLAUSES', ukuran: 2048, userId: 'UJI-ADMIN', tglUpload: '2026-09-29 09:00:00', status,
+    category: 'CLAUSES', userId: 'UJI-ADMIN', tglUpload: '2026-09-29 09:00:00', status,
     percobaan: 1, galat: '',
   }
 }
@@ -46,10 +46,8 @@ describe('aturan panel lampiran', () => {
     expect(adaTerkirim([lampiran('tertunda'), lampiran('terkirim')])).toBe(true)
     expect(adaTerkirim([lampiran('gagal')])).toBe(false)
   })
-  it('ukuran ditulis dalam byte / KB / MB', () => {
-    expect(teksUkuran(512)).toBe('512 B')
-    expect(teksUkuran(2048)).toBe('2.0 KB')
-    expect(teksUkuran(3 * 1024 * 1024)).toBe('3.0 MB')
+  it('tco4: ukuran tidak tampil — M_ATTACHMENTTREATY_2 tidak menyimpannya (GetAllAttachment2_Sql b84)', () => {
+    expect(PANEL).not.toMatch(/\.ukuran|teksUkuran/)
   })
   it('jalur unduh menyebut tahun treaty dan lampirannya', () => {
     expect(jalurIsiLampiran('1000001', '1000000001')).toBe(
@@ -77,7 +75,7 @@ describe('kabel dan larangan', () => {
     }
     expect(PANEL).not.toMatch(/>\s*(Add attachment|Download All|Refresh|Delete)\s*</)
   })
-  it('lampiran melekat pada tahun treaty, bukan treaty inward', () => {
+  it('layar hanya menyebut tahun treaty — TREATYID (TreatyYear + TreatyYearID) dirakit backend (tco4)', () => {
     for (const teks of [PANEL, bagianApiLampiran]) {
       expect(teks).not.toMatch(/treatyIn\b|treaty_in|TREATYID|M_ATTACHMENTTREATY/i)
     }

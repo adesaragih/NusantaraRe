@@ -67,7 +67,6 @@ func (u *ujiTCO) ambilMentah(t *testing.T, jalur string) (int, http.Header, []by
 
 type lampiranJSON struct {
 	ID, IDTreatyYear, FileName, Category, Status, Galat, UserID string
-	Ukuran                                                      int64
 }
 
 // AC 54-61 lewat HTTP: unggah -> terkirim, daftar, unduh satu, unduh semua,
@@ -117,9 +116,25 @@ func TestLampiranTahunTreatyLingkaranPenuh(t *testing.T) {
 	}
 	_ = json.Unmarshal([]byte(badan), &hasil)
 	l := hasil.Lampiran
+	// tco4: ID = stempel YYYYMMDDHH24MISSFF3 (17 digit) di M_ATTACHMENTTREATY_2.
 	if l.Status != "terkirim" || l.Category != "R/I SLIP" || l.IDTreatyYear != tahun.ID || l.UserID != "UJI-ADMIN" ||
-		l.Ukuran != int64(len("ISI-UJI-LAMPIRAN")) || len(l.ID) != 10 || hasil.Peringatan != "" {
+		len(l.ID) != 17 || hasil.Peringatan != "" {
 		t.Fatalf("hasil unggah: %+v", hasil)
+	}
+	// Baris warisan: TREATYID = TreatyYear + TreatyYearID, CATEGORY "File",
+	// kategori pilihan di CATEGORY_ID, objek tercatat di T_STORAGE_IMAGE.
+	var treatyID, kategoriPega, kategoriID, storageID string
+	if err := u.sqlDBMentah().QueryRowContext(u.ctx, `SELECT TREATYID, CATEGORY, CATEGORY_ID, T_STORAGE_ID FROM `+
+		u.skema+`.M_ATTACHMENTTREATY_2 WHERE ID = :1`, l.ID).Scan(&treatyID, &kategoriPega, &kategoriID, &storageID); err != nil {
+		t.Fatal(err)
+	}
+	if treatyID != "2026"+tahun.ID || kategoriPega != "File" || kategoriID != "R/I SLIP" {
+		t.Errorf("baris warisan: TREATYID %q CATEGORY %q CATEGORY_ID %q", treatyID, kategoriPega, kategoriID)
+	}
+	var objek int
+	if err := u.sqlDBMentah().QueryRowContext(u.ctx, `SELECT COUNT(*) FROM `+u.skema+`.T_STORAGE_IMAGE
+		 WHERE IMAGEID = :1 AND STORAGE = 'standard'`, storageID).Scan(&objek); err != nil || objek != 1 {
+		t.Errorf("objek T_STORAGE_IMAGE: %d %v", objek, err)
 	}
 
 	kode, badan = u.minta(t, http.MethodGet, dasar, nil, true)
