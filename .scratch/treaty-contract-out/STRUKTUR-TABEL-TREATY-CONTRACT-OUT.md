@@ -50,12 +50,13 @@ Rule korpus (folder `D:\XML\RNM_BRD\Treaty Contract Out\`), dibaca 29-09-2026; `
 | Bentuk | Kolom | Bukti |
 | --- | --- | --- |
 | stempel Pega `YYYYMMDDTHHMMSS.SSS GMT` (UTC) | `TREATYYEAR.TGLUPDATE`, `TREATYCONTRACT.TGLUPDATE` | `@getCurrentTimeStamp()` — `SaveTreatyYear_Act` b328, `SaveTreatyContract_Act` b1458 `[terverifikasi]` |
-| stempel Pega dari **00:00 Asia/Jakarta** | `TREATYYEAR.STARTDATE`, `TREATYYEAR.ENDDATE` | `[dugaan kuat]` properti DateTime: `KirimTahunGroupID` b508/b529 mengirimnya sebagai `CARIDATETIME`, kontrak memformatnya `@FormatDateTime(…,"dd/MM/yyyy","Asia/Jakarta")` (`SaveTreatyContract_Act` b1479/b1508), `SetTanggalTreatyContract` b567 `+8 jam`. Dibaca: stempel → zona Jakarta → tanggal. **OQ-TCO-01** |
+| **`YYYYMMDD`** (delapan angka, tanpa jam/zona) | `TREATYYEAR.STARTDATE`, `TREATYYEAR.ENDDATE` | data DEV 182/182 baris (brief lanjutan 4) — **OQ-TCO-01 ditutup**; dugaan kuat "stempel 00:00 WIB" lanjutan 3 dibantah data. Dibaca HANYA bentuk ini; bentuk lain → galat berkata-kata (`tanggalTahunWarisanTeks`) |
 | DATE lewat `to_date(…,'DD/MM/YYYY')` | `TREATYCONTRACT.TREATYSTARTDATE/ENDDATE` | `dba-procedures.md`; `SaveTreatyContract_Act` b1479 `[terverifikasi]` |
-| desimal titik tanpa pemisah ribuan | `PROPORTIONALARRG.RP/USD/PCT/PCTME`, `MTREATYSECURITY.PCT_SHARE` | `[dugaan kuat]` hasil `@toDecimal` (`HitungRpUsd_depan` b293–b294, b382–b383). Dibaca: titik ATAU koma (`UraiDesimalWarisanTCO`). **OQ-TCO-23** |
+| desimal titik tanpa pemisah ribuan | `PROPORTIONALARRG.RP/USD/PCT/PCTME`, `MTREATYSECURITY.PCT_SHARE` | hasil `@toDecimal` (`HitungRpUsd_depan` b293–b294, b382–b383); data DEV `RP` 930 bertitik / 0 berkoma, `PCT` 520 / 0 — **OQ-TCO-23 ditutup: titik**. Dibaca: titik ATAU koma (`UraiDesimalWarisanTCO`) |
 | waktu simpan (DATE) | `PROPORTIONALARRG.TGLUPDATE` | procedure memakai `SYSDATE` `[data DBA]`; layanan mengikat jam simpannya (setara) |
-| NULL (Pega tidak mengisinya) | `TREATYREINSURER.IUDATE/STATUSON/STDRATING/STARTDATE/ENDDATE` (dari baris lama bila diubah) | `NewTreatyReinsurerDetail_Act` b917–b1086 mengosongkan `[terverifikasi]` |
-| diisi layanan walau Pega kosong | `TREATYREINSURER.USERID/TGLUPDATE`, `TREATYBUSINESS.USERID/TGLUPDATE` | penyimpangan sadar kecil (jejak modul dibuang) — **OQ-TCO-25** |
+| NULL (Pega tidak mengisinya) | `TREATYREINSURER.IUDATE/STATUSON/STDRATING` (dari baris lama bila diubah) | `NewTreatyReinsurerDetail_Act` b917–b1086 mengosongkan `[terverifikasi]` |
+| **selalu NULL** (sisip dan ubah) | `TREATYREINSURER.STARTDATE/ENDDATE` | kontrol `ViewDetailTreatyReinsurerGrid1.xml` b10311/b10516 bersyarat `1=2` (b10431/b10636); `NewTreatyReinsurerDetail_Act` b938/b959; data DEV 430/430 kosong — **OQ-TCO-01** (lanjutan 4) |
+| **NULL seperti Pega** (`USERID` reinsurer lama dipertahankan saat ubah) | `TREATYREINSURER.USERID/TGLUPDATE`, `TREATYBUSINESS.USERID/TGLUPDATE` | data DEV 0/430 dan 2/4.621 terisi — **OQ-TCO-25 ditutup** (lanjutan 4); pelaku di log aplikasi |
 
 ---
 
@@ -73,7 +74,7 @@ Tahun treaty. `[data DBA]` seluruh kolom VARCHAR2. Penulis **SaveYear**; ID `'1'
 | `USERID` | VARCHAR2 | param 6 — `OperatorID.pyUserName` (b281) |
 | `TGLUPDATE` | VARCHAR2 | param 7 — stempel Pega |
 | `PROPORTION` | VARCHAR2 | param 8 — `[terbuka]` arti |
-| `STARTDATE` | VARCHAR2 | param 9 — stempel Pega 00:00 Jakarta (OQ-TCO-01) |
+| `STARTDATE` | VARCHAR2 | param 9 — `YYYYMMDD` (OQ-TCO-01 ditutup, lanjutan 4) |
 | `ENDDATE` | VARCHAR2 | param 10 — idem |
 
 ## TREATYCONTRACT
@@ -111,13 +112,13 @@ Reinsurer pada kombinasi **(TREATYYEAR, TREATYGROUPID, REINSTYPEID)** — bukan 
 | `RICOMM` | NUMBER | param 10 — bind angka |
 | `PCTSHARE` | NUMBER | param 11 — bind angka |
 | `IUDATE` | VARCHAR2 | param 12 — NULL (Pega mengosongkan) |
-| `USERID` | VARCHAR2 | param 13 — akun pembuat (OQ-TCO-25) |
-| `STARTDATE` | VARCHAR2 | param 14 — stempel Pega 00:00 WIB bila terisi |
+| `USERID` | VARCHAR2 | param 13 — NULL untuk baris baru, nilai baris lama saat ubah (OQ-TCO-25, lanjutan 4) |
+| `STARTDATE` | VARCHAR2 | param 14 — selalu NULL (OQ-TCO-01, lanjutan 4) |
 | `ENDDATE` | VARCHAR2 | param 15 — idem |
 | `STATUSON` | VARCHAR2 | param 16 — NULL |
 | `STDRATING` | VARCHAR2 | param 17 — NULL |
 | `OPERATORNAME` | VARCHAR2 | param 18 — `OperatorID.pyUserName` (`SaveTreatyReinsurerDetail1_Act` b378) |
-| `TGLUPDATE` | VARCHAR2 | param 19 — stempel Pega (OQ-TCO-25) |
+| `TGLUPDATE` | VARCHAR2 | param 19 — NULL seperti Pega (OQ-TCO-25, lanjutan 4) |
 
 ## MTREATYSECURITY
 
@@ -153,8 +154,8 @@ TGLUPDATE` `[data DBA]`. Penghapus **DelBiz**, **DelContract** (langkah 2: `TREA
 | `REINSTYPENAME` | VARCHAR2 | param 8 |
 | `BIZCODE` | VARCHAR2 | param 9 |
 | `BIZNAME` | VARCHAR2 | param 10 |
-| `USERID` | VARCHAR2 | param 11 — akun penyimpan (Pega tidak mengisi — OQ-TCO-25) |
-| `TGLUPDATE` | VARCHAR2 | param 12 — stempel Pega (OQ-TCO-25) |
+| `USERID` | VARCHAR2 | param 11 — NULL seperti Pega (OQ-TCO-25, lanjutan 4) |
+| `TGLUPDATE` | VARCHAR2 | param 12 — NULL seperti Pega (OQ-TCO-25, lanjutan 4) |
 
 ## PROPORTIONALARRG
 
@@ -232,13 +233,13 @@ Objek berkas di layanan penyimpanan. Penulis: `Insert_T_Storage_SQL` (Saudara b8
 | Kolom | Tipe katalog | Isi |
 | --- | --- | --- |
 | `IMAGEID` | `[terbuka — DBA]` | kunci |
-| `URLPUBLIC` | `[terbuka — DBA]` | `URLImage` jawaban unggah |
-| `APPFOLDER` | `[terbuka — DBA]` | `appfolder` jawaban unggah; delete mengirim `Namafile` = `APPFOLDER` dikurangi `gs://` + App + `/` (`DeleteGoogleStorage_Act` b1091) |
-| `EXPDATE` | DATE | `To_date(exp, 'DD/MM/YYYY HH24:MI:SS')` |
+| `URLPUBLIC` | `[terbuka — DBA]` | `URLImage` jawaban unggah; disegarkan jawaban geturl (`Update_T_Storage_SQL`, OQ-TCO-26) |
+| `APPFOLDER` | `[terbuka — DBA]` | `appfolder` jawaban unggah, disegarkan jawaban geturl (OQ-TCO-26); delete mengirim `Namafile` = `APPFOLDER` dikurangi `gs://` + App + `/` (`DeleteGoogleStorage_Act` b1091) |
+| `EXPDATE` | DATE | `To_date(exp, 'DD/MM/YYYY HH24:MI:SS')`; `exp` jawaban diubah seperti Pega dulu (`models.ExpStorageTCO`, b2146/b2211, unggah b2366/b2431) |
 | `FILENAME` | `[terbuka — DBA]` | `Namafile` |
 | `APPNAME` | `[terbuka — DBA]` | `T_FOLDER_IMAGE.APPNAME` (`GetAppName_SQL` b59) |
 | `STORAGE` | `[terbuka — DBA]` | `'standard'` |
-| `TANGGAL_UPLOAD` | DATE | `To_date(DateTime, 'MM/DD/YYYY HH24:MI:SS')` (Update b85) |
+| `TANGGAL_UPLOAD` | DATE | `To_date(DateTime, 'MM/DD/YYYY HH24:MI:SS')` (Update b85) — diisi saat geturl (OQ-TCO-26); NULL sampai geturl pertama |
 
 ---
 

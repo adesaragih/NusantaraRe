@@ -1165,3 +1165,103 @@ Treaty Contract Out.
 | Uji penuh | enam kali (`angka.sh`), dua pengukuran dasar gagal (jalur worktree terlalu panjang; `main` tidak ter-build) |
 | Oracle / layanan luar | 0 SQL, 0 panggilan |
 | Token / biaya | tidak terlihat dari dalam sesi — tidak dilaporkan |
+
+## Lanjutan 4 — bentuk nilai mengikuti DATA warisan (29-09-2026, langsung di `main`)
+
+Brief `PROMPT-LANJUTAN-TREATY-CONTRACT-OUT-4.md` (`4fb273d`): tiga kueri agregat ke DEV oleh asisten (bentuk teks saja,
+digit diganti `9`, nol nilai disalin). Executor **tidak** menjalankan SQL apa pun ke Oracle. Setiap commit memakai
+jalur eksplisit (`git commit -o -- <jalur>`); suntingan `App.tsx` milik work owner dan suntingan frontend sesi lain
+tidak disentuh.
+
+**Pembacaan XML**, dengan `pyStepsBlockName` dicetak:
+
+- activity: `NewTreatyReinsurerDetail_Act` b917/b938/b959, `SetUbahTreatyReinsurerList_Act` b1097–b1177,
+  `SaveTreatyReinsurerDetail1_Act` b377, `SaveTreatyBusinessDetail_Act`, `TreatyOutSaveAttachment` b1355–b1674,
+  `Delete_act` (b783/b900/b1034 ter-remark `//`);
+- `GetUrlGoogleStorage_Act`: langkah dan transisi mentah b704 `UploadDoc.exp==""`, langkah 6 "JIKA EXPDATE SUDAH EXPIRED";
+- RDB: `SaveMasterTreatyReinsurer_SQL` b79, `SaveMasterTreatyBusiness_SQL` b85, `Update_T_Storage_SQL` b85,
+  `InsertAtatchment_Sql` b60;
+- modul saudara: `Claim Fac In/Activity/InsertGoogleStorage_Act.xml` dan `Claim Life/Activity/InsertGoogleStorage_Act.xml`
+  b2366/b2431, untuk ubahan `exp`;
+- sensus korpus nama `M_ATTACHMENTTREATY` / `ID_COUNT`.
+
+⚠️ Satu nilai medan operator (`pxCreateOperator`) sempat tampil di keluaran alat sesi karena saringan grep kurang lengkap.
+Nilai itu **tidak** disalin ke artefak mana pun, dan saringan sesudahnya ditambah pola `Operator`.
+
+| Paket | Commit | RDB / katalog | Kode |
+| --- | --- | --- | --- |
+| 1 — OQ-TCO-01 | `708a351` | data DEV `TREATYYEAR` 182/182 `YYYYMMDD`, `TREATYREINSURER` 430/430 kosong; `ViewDetailTreatyReinsurerGrid1.xml` b10311/b10516 bersyarat `1=2`; `SaveMasterTreatyReinsurer_SQL` b79 | `TanggalYYYYMMDDTCO`, `tanggalTahunWarisanTeks` (bentuk lain = galat), `uraiYYYYMMDDTCO`; `medanReinsurerTCO` STARTDATE/ENDDATE NULL; ralat tiket 03, 05 |
+| 2 — OQ-TCO-25/26/24 | `8426880` | data DEV 0/430, 2/4.621; `Update_T_Storage_SQL` b85; `GetUrlGoogleStorage_Act` b2125–b2427; `InsertGoogleStorage_Act` b2366/b2431; `InsertAtatchment_Sql` b60 | layanan reinsurer/business tanpa USERID/TGLUPDATE + log pelaku; `PencatatObjekTCO` / `segarkan` / `PerbaruiObjek`; `models.ExpStorageTCO` (juga jalur unggah); `dba-procedures.md`; ralat tiket 05, 07, 12 |
+| 3 — halaman yatim | — dilewati | — | work owner tidak menulis *"buang suntingan App.tsx"*; `App.tsx` tidak disentuh |
+| perbaikan tinjauan | `80d1985` | — | `models.TanggalUploadStorageTCO`; tanggal reinsurer lama tidak dibawa ke jawaban; peringatan urutan `kirimHapus` |
+| 4 — dokumen | commit ini | — | STRUKTUR (bentuk nilai), spec, PARITAS, register OQ, bab ini |
+
+### OQ
+
+- **OQ-TCO-01 ditutup**: `YYYYMMDD`; stempel ditolak; tanggal reinsurer tidak ditulis.
+- **OQ-TCO-23 ditutup**: titik.
+- **OQ-TCO-25 ditutup**: kolom kosong seperti Pega; pelaku di log aplikasi.
+- **OQ-TCO-26 ditutup**: ditiru sesudah tiap geturl.
+- **OQ-TCO-24 tetap terbuka**: rekonsiliasi korpus sudah dicatat. Badan `ALL_SOURCE` belum terbaca, karena sesi executor
+  tidak punya jalan kredensial yang aman (`.env` terlarang; `muat-env.ps1` menggemakan nilai env). Kuerinya siap di
+  `dba-procedures.md`.
+- **OQ-TCO-22** tetap milik work owner.
+
+**Penyimpangan sadar baru.**
+
+- **Geturl**: Pega memakai ulang `URLPUBLIC` bila belum kedaluwarsa. Kode memanggil geturl tiap unduh/periksa, lalu
+  menyegarkan baris; isi tabel sesudahnya sama.
+- **Tanggal reinsurer**: Pega meneruskan tanggal reinsurer lama saat ubah, sedangkan kode mengikat NULL. Keduanya sama
+  selama kolom itu kosong (430/430).
+- **Gagal menyegarkan `T_STORAGE_IMAGE`**: dicatat di log, unduhan tetap jalan.
+
+### /code-review singkat (`708a351`, `8426880`) — satu subagen
+
+Tidak ada temuan berat. Urutan bind sisip/perbarui reinsurer (`:1..:19`) dan `UPDATE T_STORAGE_IMAGE` (`:1..:5`)
+cocok. Risiko kunci sudah diperiksa di setiap pemanggil `Buka`/`Ada`: tidak ada yang memegang kunci baris
+`T_STORAGE_IMAGE` saat geturl. Tidak ada sisa pemakai API yang dibuang.
+
+| Temuan | Tindakan |
+| --- | --- |
+| `DateTime` geturl diteruskan mentah ke `TO_DATE` | `TanggalUploadStorageTCO`: hanya `MM/DD/YYYY HH24:MI:SS`, lainnya NULL (`80d1985`) |
+| reinsurer yang diubah menjawab tanggal lama padahal yang tersimpan NULL | tidak dibawa lagi; uji menegaskan kosong (`80d1985`) |
+| klaim "URL tidak pernah di log" tidak teruji | komentar dilunakkan: pesan tidak memuat URL, sebabnya galat repository (`80d1985`) |
+| urutan `kirimHapus` rawan menunggu kunci sendiri bila dibalik | komentar peringatan (`80d1985`) |
+| komentar CariDobel dan dokumen basi | diperbaiki (`80d1985`, commit ini) |
+| satu baris `TREATYYEAR` berbentuk lain menggagalkan daftar/ambil tahun | **dibiarkan**: bentuk asing di kolom itu ditolak dengan sengaja (brief §2). Pemeriksaan di lingkungan bersama yang pernah menjalankan build tco4 (`da010bb`..`708a351`): `SELECT COUNT(*) FROM POOLDATA.TREATYYEAR WHERE NOT REGEXP_LIKE(STARTDATE, '^[0-9]{8}$') OR NOT REGEXP_LIKE(ENDDATE, '^[0-9]{8}$')`. Agregat DEV saat brief disusun: 182/182 `YYYYMMDD` |
+
+### Angka uji per commit (Lanjutan 4)
+
+| Commit | Go tingkat atas | Go semua | Go tag `db` | vitest | build |
+| --- | ---: | ---: | --- | --- | ---: |
+| `f31626c` (akhir lanjutan 3) | 904 | 1.005 | 904 + 53 | 613 / 52 | 81 |
+| `708a351` paket 1 | 906 | 1.007 | 906 + 53 | 613 / 52 | 82 ⁽¹⁾ |
+| `8426880` paket 2 | 913 | 1.014 | 913 + 53 | 620 / 53 ⁽²⁾ | 84 ⁽²⁾ |
+| `80d1985` perbaikan tinjauan | 914 | 1.015 | 914 + 53 | 620 / 53 ⁽²⁾ | 84 ⁽²⁾ |
+
+⁽¹⁾ Modul build 81 → 82 berasal dari merge desain sesi lain (`c4fa04d`). ⁽²⁾ Vitest dan build diukur atas pohon kerja
+bersama, yang memuat suntingan frontend sesi lain yang belum di-commit (`tema.ts`, `Shell.tsx`, dan lainnya); bukan
+dari modul ini.
+
+⛔ Tag `db` dijalankan tanpa Oracle, jadi 53 uji dilewati, termasuk uji `Update_T_Storage_SQL` yang baru di
+`TestLampiranTahunTreatyLingkaranPenuh`. Tidak ada SQL yang dijalankan ke Oracle, dan `-migrate` tidak dijalankan.
+
+Bukti merah lewat mutasi sementara yang lalu dipulihkan:
+
+- paket 1: pembaca tahun diganti versi toleran, dan tanggal reinsurer ditulis;
+- paket 2: `segarkan` dibuang, dan `exp` unggah dikembalikan mentah.
+
+Setiap mutasi menjadi merah, lalu hijau lagi sesudah dipulihkan.
+
+### TELEMETRI EKSEKUSI — Lanjutan 4
+
+| Butir | Nilai |
+| --- | --- |
+| Commit | 3 kerja/perbaikan (`708a351`, `8426880`, `80d1985`) + 1 dokumen penutup ini, langsung di `main` |
+| Rentang cap waktu commit | 15:31:10 → 16:01:31 (+ penutup) |
+| Ukuran (tiga commit kerja) | 28 berkas, +711 / −122 baris |
+| Korpus dibaca | 8 RDB (tag SQL), 8 activity modul + 2 activity saudara (`pyStepsBlockName` dicetak), 1 section (`ViewDetailTreatyReinsurerGrid1.xml`), sensus nama tabel di seluruh korpus |
+| Subagen | 1 (tinjauan `/code-review`) |
+| Uji penuh | empat kali (`angka.sh`) |
+| Oracle / layanan luar | 0 SQL, 0 panggilan |
+| Token / biaya | tidak terlihat dari dalam sesi — tidak dilaporkan |

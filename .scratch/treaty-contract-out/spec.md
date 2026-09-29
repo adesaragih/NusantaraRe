@@ -21,6 +21,12 @@ Skill: `/mattpocock-skills:to-spec`
 > `InboxTreatyContractDescription` adalah popup form kontrak (`InputTreatyContract.xml` b20778/b22196), bukan menu.
 > Bagian spec di bawah yang menyebut tabel `T_*`, skema relasional baru, atau migrasi data tunduk pada ralat ini.
 
+> ⛔ **RALAT BERTANGGAL 29-09-2026 — lanjutan 4 `[asisten dari data DEV; veto work owner]`.** Bentuk nilai mengikuti
+> DATA warisan: `TREATYYEAR.STARTDATE/ENDDATE` ditulis dan dibaca `YYYYMMDD` (bentuk lain ditolak, OQ-TCO-01);
+> `TREATYREINSURER.STARTDATE/ENDDATE` tidak ditulis; `USERID`/`TGLUPDATE` reinsurer dan business tidak diisi layanan
+> (OQ-TCO-25; pelaku di log aplikasi); desimal teks bertitik (OQ-TCO-23); `Update_T_Storage_SQL` ditiru sesudah tiap
+> geturl, `exp` diubah seperti Pega (OQ-TCO-26). Rekonsiliasi `PEGA_M_ATTACHMENT`: `dba-procedures.md` (OQ-TCO-24).
+
 > **Konvensi penandaan.** `[terverifikasi]` = terbukti korpus dengan **class + nama + path**;
 > `[keputusan work owner]`; `[fakta bisnis — work owner]`; `[data DBA]`; `[terbuka]` = OQ.
 > **Identitas rule wajib menyertakan class** — nama sama di class berbeda = rule berbeda.

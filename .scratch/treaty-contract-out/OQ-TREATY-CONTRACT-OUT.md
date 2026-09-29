@@ -5,7 +5,7 @@ Satu tempat untuk seluruh pertanyaan terbuka modul ini. Rincian dan buktinya tet
 
 | OQ | Pokok | Dibuka | Status |
 | --- | --- | --- | --- |
-| OQ-TCO-01 | bentuk teks tanggal warisan (tujuh bentuk dikenal pengurai) **+ bentuk TULIS** `STARTDATE`/`ENDDATE` tahun & reinsurer (tco4: stempel Pega 00:00 WIB, `[dugaan kuat]`) | tiket 01, lanjutan 3 | terbuka — dipastikan DBA dari sampel baris hidup |
+| OQ-TCO-01 | bentuk teks tanggal warisan (tujuh bentuk dikenal pengurai) **+ bentuk TULIS** `STARTDATE`/`ENDDATE` tahun & reinsurer (tco4: stempel Pega 00:00 WIB, `[dugaan kuat]`) | tiket 01, lanjutan 3 | **ditutup** (lanjutan 4, dari data DEV) — `TREATYYEAR.STARTDATE/ENDDATE` `YYYYMMDD` (182/182), pembaca menolak bentuk lain; `TREATYREINSURER.STARTDATE/ENDDATE` tidak ditulis (430/430 kosong) — `708a351` |
 | OQ-TCO-02 | arti/bentuk `IUDATE` | tiket 01 | terbuka |
 | OQ-TCO-03 | isi hidup `PROPORTIONALLIST`/`OBJECT` | tiket 01 | terbuka |
 | OQ-TCO-04 | arti `PROPORTION` | tiket 01 | terbuka |
@@ -27,10 +27,10 @@ Satu tempat untuk seluruh pertanyaan terbuka modul ini. Rincian dan buktinya tet
 | OQ-TCO-20 | "klausul milik kontrak ini" di popup hapus | tiket 10 | **ditutup** — *"dari induknya"* (kelompok 2) |
 | OQ-TCO-21 | hapus kontrak yang kombinasinya dipakai bersama | tinjauan lanjutan 1 | **ditutup** — *"hapus saja, samain dengan pega"* (kelompok 2) |
 | OQ-TCO-22 | `Folder` / `Durasi` / `Namafile` unggahan penyimpanan nyata | tiket 12 (lanjutan 2, kelompok 5) | terbuka — untuk work owner; nilai `TreatyContractOut/` / `60` / `IMAGEID` dipertahankan berlabel `[terbuka — OQ-TCO-22]` |
-| OQ-TCO-23 | bentuk TULIS desimal teks `PROPORTIONALARRG.RP/USD/PCT/PCTME/KURS`, `MTREATYSECURITY.PCT_SHARE` (tco4: titik, tanpa ribuan, `[dugaan kuat]` hasil `@toDecimal`) | lanjutan 3 | terbuka — DBA: sampel baris hidup (titik atau koma?) |
-| OQ-TCO-24 | badan `PEGA_M_ATTACHMENT` (penulis lampiran Treaty Contract Out, `InsertAtatchment_Sql` b60), tipe kolom dan PK/indeks `M_ATTACHMENTTREATY_2` / `T_STORAGE_IMAGE` (daftar lampiran membaca `T_STORAGE_IMAGE` per `IMAGEID`) | lanjutan 3 | terbuka — DBA; kolom ditiru dari `Treaty In/InsertAttachment2_Sql` b84 |
-| OQ-TCO-25 | `USERID`/`TGLUPDATE` reinsurer dan business diisi layanan walau Pega mengosongkannya (jejak modul dibuang tco4) | lanjutan 3 | terbuka — work owner: pertahankan atau kosongkan seperti Pega |
-| OQ-TCO-26 | `Update_T_Storage_SQL` (menyegarkan `URLPUBLIC`/`EXPDATE`/`TANGGAL_UPLOAD` sesudah `geturl`, `GetUrlGoogleStorage_Act`) belum ditiru — unduhan kita memakai URL bertanda tangan segar tiap kali; pembaca lain tabel bersama melihat URL saat unggah | /code-review lanjutan 3 | terbuka — work owner: perlu ditiru? |
+| OQ-TCO-23 | bentuk TULIS desimal teks `PROPORTIONALARRG.RP/USD/PCT/PCTME/KURS`, `MTREATYSECURITY.PCT_SHARE` (tco4: titik, tanpa ribuan, `[dugaan kuat]` hasil `@toDecimal`) | lanjutan 3 | **ditutup** (lanjutan 4, dari data DEV) — titik: `RP` 930 bertitik / 0 berkoma, `PCT` 520 / 0; kode sudah menulis titik |
+| OQ-TCO-24 | badan `PEGA_M_ATTACHMENT` (penulis lampiran Treaty Contract Out, `InsertAtatchment_Sql` b60), tipe kolom dan PK/indeks `M_ATTACHMENTTREATY_2` / `T_STORAGE_IMAGE` (daftar lampiran membaca `T_STORAGE_IMAGE` per `IMAGEID`) | lanjutan 3 | terbuka — rekonsiliasi korpus dicatat di `dba-procedures.md` (lanjutan 4, `8426880`): satu pemanggil hidup, pembaca `_2`, nol sebutan `M_ATTACHMENTTREATY`/`ID_COUNT` di korpus; **badan `ALL_SOURCE` belum terbaca** (sesi executor tanpa jalan kredensial yang aman) — kueri siap; kode tetap menulis `_2` |
+| OQ-TCO-25 | `USERID`/`TGLUPDATE` reinsurer dan business diisi layanan walau Pega mengosongkannya (jejak modul dibuang tco4) | lanjutan 3 | **ditutup** (lanjutan 4) — kosongkan seperti Pega (data DEV 0/430, 2/4.621); pelaku di log aplikasi — `8426880` |
+| OQ-TCO-26 | `Update_T_Storage_SQL` (menyegarkan `URLPUBLIC`/`EXPDATE`/`TANGGAL_UPLOAD` sesudah `geturl`, `GetUrlGoogleStorage_Act`) belum ditiru — unduhan kita memakai URL bertanda tangan segar tiap kali; pembaca lain tabel bersama melihat URL saat unggah | /code-review lanjutan 3 | **ditutup** (lanjutan 4) — ditiru: sesudah tiap geturl yang berhasil, transaksi pendek sendiri; `exp` diubah seperti Pega, juga di jalur unggah — `8426880` |
 
 ## Keputusan work owner 29-09-2026
 

@@ -10,6 +10,11 @@
 > kolom procedure, lampiran di `M_ATTACHMENTTREATY_2` + `T_STORAGE_IMAGE`, dan menu SATU butir `Treaty Contract Out`
 > (ReinsType/Description = popup tombol form, b20778/b22196).
 
+> ⛔ **Ralat bertanggal 29-09-2026 — lanjutan 4** `[asisten dari data DEV; veto work owner]`: tanggal tahun `YYYYMMDD`,
+> tanggal reinsurer tidak ditulis (OQ-TCO-01); `USERID`/`TGLUPDATE` reinsurer/business kosong seperti Pega (OQ-TCO-25);
+> `GetUrlGoogleStorage_Act` kini juga menjalankan padanan `Update_T_Storage_SQL` (OQ-TCO-26). Baris di bawah yang
+> menyebut "stempel 00:00 WIB" atau "diisi layanan" dibaca menurut ralat ini.
+
 ## Menu — tiga harness portal (kelas `Data-Portal`)
 
 | Korpus | Sistem baru | Keadaan |
