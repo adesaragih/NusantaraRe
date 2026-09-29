@@ -81,13 +81,16 @@ type DampakTampil struct {
 	Security     int64 `json:"security"`
 	Business     int64 `json:"business"`
 	KlausulTetap int64 `json:"klausulTetap"`
-	// Bersama - kontrak lain yang memakai kombinasi yang sama (reinsurer/security tidak ikut).
+	// Bersama - kontrak LAIN yang memakai kombinasi yang sama; anak kombinasinya
+	// IKUT terhapus seperti Pega (OQ-TCO-21) - popup wajib menyebutnya.
 	Bersama int64 `json:"bersama"`
 }
 
 // KonfirmasiHapus adalah jumlah yang pemakai lihat di popup lalu setujui.
 type KonfirmasiHapus struct {
 	Reinsurer, Security, Business int64
+	// Bersama - cacah kontrak lain terdampak yang pemakai lihat (OQ-TCO-21).
+	Bersama int64
 }
 
 func tampilDampak(d repository.DampakHapusTCO) DampakTampil {
@@ -193,9 +196,9 @@ func (l *KaskadeTCO) DampakHapusKontrak(ctx context.Context, pelaku Pelaku, tahu
 }
 
 func periksaKonfirmasi(d repository.DampakHapusTCO, k KonfirmasiHapus) error {
-	if d.Reinsurer != k.Reinsurer || d.Security != k.Security || d.Business != k.Business {
-		return fmt.Errorf("%w: dikonfirmasi %d reinsurer, %d security, %d business; sekarang %d, %d, %d - tinjau ulang",
-			ErrDampakBerubah, k.Reinsurer, k.Security, k.Business, d.Reinsurer, d.Security, d.Business)
+	if d.Reinsurer != k.Reinsurer || d.Security != k.Security || d.Business != k.Business || d.Bersama != k.Bersama {
+		return fmt.Errorf("%w: dikonfirmasi %d reinsurer, %d security, %d business, %d kontrak lain; sekarang %d, %d, %d, %d - tinjau ulang",
+			ErrDampakBerubah, k.Reinsurer, k.Security, k.Business, k.Bersama, d.Reinsurer, d.Security, d.Business, d.Bersama)
 	}
 	return nil
 }
@@ -232,10 +235,13 @@ func (l *KaskadeTCO) HapusKontrak(ctx context.Context, pelaku Pelaku, tahunID, k
 		if err := periksaKonfirmasi(terhapus, k); err != nil {
 			return err
 		}
-		return l.jejak(c, tx, pelaku.AkunID, repository.TabelKontrakTCO, kontrakID, repository.AksiJejakHapus,
-			fmt.Sprintf("kontrak dihapus kombinasi %s/%s/%s beserta %d reinsurer, %d security, %d business; %d klausul tidak disentuh",
-				kom.TreatyYear, kom.TreatyGroupID, kom.ReinsTypeID, terhapus.Reinsurer, terhapus.Security, terhapus.Business,
-				sekarang.KlausulTetap), l.jam())
+		ket := fmt.Sprintf("kontrak dihapus kombinasi %s/%s/%s beserta %d reinsurer, %d security, %d business; %d klausul tidak disentuh",
+			kom.TreatyYear, kom.TreatyGroupID, kom.ReinsTypeID, terhapus.Reinsurer, terhapus.Security, terhapus.Business,
+			sekarang.KlausulTetap)
+		if terhapus.Bersama > 0 {
+			ket += fmt.Sprintf("; kombinasi dipakai %d kontrak lain - anaknya ikut terhapus (OQ-TCO-21)", terhapus.Bersama)
+		}
+		return l.jejak(c, tx, pelaku.AkunID, repository.TabelKontrakTCO, kontrakID, repository.AksiJejakHapus, ket, l.jam())
 	})
 	if err != nil {
 		return "", err

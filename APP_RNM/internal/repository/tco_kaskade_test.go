@@ -83,19 +83,20 @@ func TestLangkahHapusKontrakTanpaKlausul(t *testing.T) {
 	}
 }
 
-// Temuan /code-review: kombinasi dipakai bersama kontrak lain -> reinsurer,
-// security, dan bisnis tanpa TREATYYEARID TIDAK ikut terhapus.
-func TestLangkahHapusKontrakBersama(t *testing.T) {
+// OQ-TCO-21 [keputusan work owner 29-09-2026]: kombinasi yang dipakai kontrak
+// lain tetap dikaskade SEPERTI PEGA - keempat langkah, bisnis tahan NULL.
+// (Menggantikan uji perbaikan /code-review lanjutan 1 yang mengecualikannya.)
+func TestLangkahHapusKontrakSepertiPegaWalauBersama(t *testing.T) {
 	tb := tabelKaskadeTCO{kontrak: "S.K", reinsurer: "S.R", security: "S.S", business: "S.B", klausul: "S.P", tahun: "S.Y"}
 	d := DampakHapusTCO{Bersama: 1}
 	var tabel []string
 	for _, l := range langkahHapusKontrakTCO(tb, models.KombinasiTCO{TreatyYear: "2026", TreatyGroupID: "10001", ReinsTypeID: "10003"}, "1000001", "1000003", &d) {
 		tabel = append(tabel, l.tabel)
-		if l.tabel == tb.business && strings.Contains(l.q, "IS NULL") {
-			t.Errorf("bisnis milik bersama ikut terhapus: %s", l.q)
+		if l.tabel == tb.business && !strings.Contains(l.q, "OR TREATYYEARID IS NULL") {
+			t.Errorf("bisnis tanpa TREATYYEARID tidak ikut seperti Pega: %s", l.q)
 		}
 	}
-	if strings.Join(tabel, ",") != "S.K,S.B" {
+	if strings.Join(tabel, ",") != "S.K,S.B,S.S,S.R" {
 		t.Errorf("langkah bersama: %v", tabel)
 	}
 	if err := PeriksaSQL(sqlKontrakBersamaTCO("S.K", "S.Y")); err != nil {
@@ -113,6 +114,20 @@ func TestAntiDobelTahunDanKontrakDikunci(t *testing.T) {
 		t.Error("CariDobel kontrak tidak mengunci tahun induk")
 	}
 	if err := PeriksaSQL(sqlJumlahAnakTahunTCO("S.K", "S.P")); err != nil {
+		t.Error(err)
+	}
+}
+
+// OQ-TCO-20 [keputusan work owner 29-09-2026]: klausul milik kontrak dihitung
+// dari induknya - induk berjenis kontrak + anak yang induknya berjenis kontrak.
+func TestKlausulMilikKontrakDariInduknya(t *testing.T) {
+	if saringKlausulTetapTCO != `TREATYYEARID = :1 AND ((PARENTREINSTYPEID = :2 AND REINSTYPEID = :3) OR PARENTREINSTYPEID = :4)` {
+		t.Errorf("saringan klausul: %s", saringKlausulTetapTCO)
+	}
+	if strings.Contains(saringKlausulTetapTCO, "'00'") {
+		t.Error("sentinel induk ditanam di SQL; harus di-bind")
+	}
+	if err := PeriksaSQL(sqlHitungTCO("S.P", saringKlausulTetapTCO)); err != nil {
 		t.Error(err)
 	}
 }

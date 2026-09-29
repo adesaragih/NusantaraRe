@@ -2792,7 +2792,7 @@ export interface DampakHapusTCO {
   security: number
   business: number
   klausulTetap: number
-  /** Kontrak lain yang memakai kombinasi yang sama — reinsurer/security-nya tidak ikut. */
+  /** Kontrak lain yang memakai kombinasi yang sama — anak kombinasinya IKUT terhapus (OQ-TCO-21). */
   bersama: number
 }
 
@@ -2809,7 +2809,7 @@ export async function ambilDampakHapusKontrak(tahunID: string, kontrakID: string
 export async function hapusKontrak(tahunID: string, kontrakID: string, d: DampakHapusTCO): Promise<string> {
   const j = await minta<{ pesan: string }>(jalurKontrakHapus(tahunID, kontrakID), {
     metode: 'DELETE',
-    kueri: { reinsurer: String(d.reinsurer), security: String(d.security), business: String(d.business) },
+    kueri: { reinsurer: String(d.reinsurer), security: String(d.security), business: String(d.business), bersama: String(d.bersama) },
   })
   return j.pesan
 }

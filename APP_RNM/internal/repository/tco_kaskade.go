@@ -32,8 +32,9 @@ import (
 type DampakHapusTCO struct {
 	Kontrak, Reinsurer, Security, Business, KlausulTetap int64
 	// Bersama - kontrak LAIN (tahun lain, teks tahun + grup sama) yang memakai
-	// kombinasi yang sama. Bila > 0 reinsurer/security dan bisnis tanpa
-	// TREATYYEARID milik bersama - TIDAK ikut terhapus (temuan /code-review).
+	// kombinasi yang sama. Reinsurer/security/business mereka IKUT terhapus,
+	// seperti Pega [keputusan work owner 29-09-2026, OQ-TCO-21]; cacahnya wajib
+	// disebut popup dan dikonfirmasi pemakai.
 	Bersama int64
 }
 
@@ -42,10 +43,12 @@ const (
 	saringBusinessKaskadeTCO  = `TREATYYEAR = :1 AND (TREATYYEARID = :2 OR TREATYYEARID IS NULL) AND TREATYGROUPID = :3 AND REINSTYPEID = :4`
 	saringReinsurerKaskadeTCO = `TREATYYEAR = :1 AND TREATYGROUPID = :2 AND REINSTYPEID = :3`
 	saringSecurityKaskadeTCO  = `REAS_ID IN (SELECT ID FROM %s WHERE TREATYYEAR = :1 AND TREATYGROUPID = :2 AND REINSTYPEID = :3)`
-	// Klausul jenis reasuransi itu di tahun itu - induk maupun anak.
-	saringKlausulTetapTCO = `TREATYYEARID = :1 AND (REINSTYPEID = :2 OR PARENTREINSTYPEID = :3)`
-	// Bisnis milik tahun ini saja (bila kombinasi dipakai bersama).
-	saringBusinessTahunKaskadeTCO = `TREATYYEAR = :1 AND TREATYYEARID = :2 AND TREATYGROUPID = :3 AND REINSTYPEID = :4`
+	// Klausul milik kontrak itu, dihitung DARI INDUKNYA [keputusan work owner
+	// 29-09-2026, OQ-TCO-20]: baris induk (`PARENTREINSTYPEID` = sentinel "00")
+	// berjenis reasuransi kontrak, dan baris anak yang `PARENTREINSTYPEID`-nya
+	// jenis kontrak - bukan anak yang kebetulan ber-REINSTYPEID sama di bawah
+	// induk lain. Hanya DIHITUNG; klausul tidak dihapus (Pega, AC 44).
+	saringKlausulTetapTCO = `TREATYYEARID = :1 AND ((PARENTREINSTYPEID = :2 AND REINSTYPEID = :3) OR PARENTREINSTYPEID = :4)`
 )
 
 // sqlKontrakBersamaTCO - kontrak lain yang kombinasinya sama.
@@ -137,7 +140,7 @@ func (k *KaskadeTCO) DampakKontrak(ctx context.Context, kom models.KombinasiTCO,
 		}
 	}
 	if d.KlausulTetap, err = k.hitung(ctx, sqlHitungTCO(t.klausul, saringKlausulTetapTCO),
-		tahunID, kom.ReinsTypeID, kom.ReinsTypeID); err != nil {
+		tahunID, models.ParentReinsTypeTanpaInduk, kom.ReinsTypeID, kom.ReinsTypeID); err != nil {
 		return DampakHapusTCO{}, err
 	}
 	return d, nil
@@ -191,28 +194,20 @@ type langkahKaskadeTCO struct {
 // langkahHapusKontrakTCO - urutan `DeleteFromTREATYCONTRACT_SQL` b80-b93:
 // kontrak, business, security, reinsurer. ⛔ Tidak ada langkah klausul.
 //
-// ⚠️ Temuan /code-review: bila kontrak lain (`d.Bersama` > 0) memakai kombinasi
-// yang sama, reinsurer/security dan bisnis tanpa TREATYYEARID adalah MILIK
-// BERSAMA - hanya kontrak dan bisnis ber-TREATYYEARID tahun ini yang terhapus.
-// Pega menghapus seluruhnya; itu merusak kontrak lain.
+// ⛔ SEPERTI PEGA walau kombinasinya dipakai kontrak lain (`d.Bersama` > 0):
+// seluruh anak kombinasi ikut terhapus [keputusan work owner 29-09-2026,
+// OQ-TCO-21 - "hapus saja, samain dengan pega"]. Yang mencegah penghapusan
+// diam adalah popup (cacah kontrak lain) dan konfirmasinya, bukan kaskade ini.
 func langkahHapusKontrakTCO(t tabelKaskadeTCO, kom models.KombinasiTCO, tahunID, kontrakID string, d *DampakHapusTCO) []langkahKaskadeTCO {
 	argBiz := []any{kom.TreatyYear, tahunID, kom.TreatyGroupID, kom.ReinsTypeID}
-	saringBiz := saringBusinessKaskadeTCO
-	if d.Bersama > 0 {
-		saringBiz = saringBusinessTahunKaskadeTCO
-	}
-	langkah := []langkahKaskadeTCO{
-		{t.kontrak, sqlHapusKontrakKaskadeTCO(t.kontrak), "", []any{kontrakID, tahunID}, &d.Kontrak},
-		{t.business, sqlHapusKaskadeTCO(t.business, saringBiz), sqlHitungTCO(t.business, saringBiz), argBiz, &d.Business},
-	}
-	if d.Bersama > 0 {
-		return langkah
-	}
 	saringSec := fmt.Sprintf(saringSecurityKaskadeTCO, t.reinsurer)
-	return append(langkah,
-		langkahKaskadeTCO{t.security, sqlHapusKaskadeTCO(t.security, saringSec), sqlHitungTCO(t.security, saringSec), argKombinasi(kom), &d.Security},
-		langkahKaskadeTCO{t.reinsurer, sqlHapusKaskadeTCO(t.reinsurer, saringReinsurerKaskadeTCO),
-			sqlHitungTCO(t.reinsurer, saringReinsurerKaskadeTCO), argKombinasi(kom), &d.Reinsurer})
+	return []langkahKaskadeTCO{
+		{t.kontrak, sqlHapusKontrakKaskadeTCO(t.kontrak), "", []any{kontrakID, tahunID}, &d.Kontrak},
+		{t.business, sqlHapusKaskadeTCO(t.business, saringBusinessKaskadeTCO), sqlHitungTCO(t.business, saringBusinessKaskadeTCO), argBiz, &d.Business},
+		{t.security, sqlHapusKaskadeTCO(t.security, saringSec), sqlHitungTCO(t.security, saringSec), argKombinasi(kom), &d.Security},
+		{t.reinsurer, sqlHapusKaskadeTCO(t.reinsurer, saringReinsurerKaskadeTCO),
+			sqlHitungTCO(t.reinsurer, saringReinsurerKaskadeTCO), argKombinasi(kom), &d.Reinsurer},
+	}
 }
 
 // DampakReinsurer menghitung security yang ikut terhapus bersama reinsurer itu.

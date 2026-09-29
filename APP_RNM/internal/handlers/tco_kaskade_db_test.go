@@ -44,6 +44,15 @@ func TestKaskadeHapusKontrakKlausulTetapHidup(t *testing.T) {
 		return k.ID
 	}
 	a, b := kontrak("10003"), kontrak("10005")
+	// OQ-TCO-21: tahun LAIN berteks tahun + grup sama, kontrak berjenis sama ->
+	// kombinasi (2026, 10001, 10003) dipakai bersama; popup menyebut 1 kontrak lain.
+	_, badanLain := u.minta(t, http.MethodPost, "/api/treaty-contract-out/tahun", badanTahun("2026-07-01", "2027-06-30"), true)
+	var tahunLain tahunJSON
+	_ = json.Unmarshal([]byte(badanLain), &tahunLain)
+	if kode, bd := u.minta(t, http.MethodPost, "/api/treaty-contract-out/tahun/"+tahunLain.ID+"/kontrak",
+		map[string]string{"reinsTypeId": "10003", "treatyStartDate": "2026-07-01", "treatyEndDate": "2027-07-01"}, true); kode != http.StatusOK {
+		t.Fatalf("kontrak tahun lain: %d %s", kode, bd)
+	}
 	reas := func(kid, agen, share string) string {
 		_, bd := u.minta(t, http.MethodPost, dasarTahun+"/kontrak/"+kid+"/reinsurer",
 			map[string]string{"reinsurerId": agen, "pctShare": share, "ricomm": "0"}, true)
@@ -75,14 +84,14 @@ func TestKaskadeHapusKontrakKlausulTetapHidup(t *testing.T) {
 	// Popup: jumlah tiap jenis + klausul yang tetap hidup.
 	kode, badan := u.minta(t, http.MethodGet, dasarTahun+"/kontrak/"+a+"/dampak-hapus", nil, true)
 	if kode != http.StatusOK || !strings.Contains(badan, `"reinsurer":2`) || !strings.Contains(badan, `"security":1`) ||
-		!strings.Contains(badan, `"business":2`) || !strings.Contains(badan, `"klausulTetap":1`) {
+		!strings.Contains(badan, `"business":2`) || !strings.Contains(badan, `"klausulTetap":1`) || !strings.Contains(badan, `"bersama":1`) {
 		t.Fatalf("dampak: %d %s", kode, badan)
 	}
 	// Angka lain dari popup -> 409, tidak ada yang terhapus.
-	if kode, _ := u.minta(t, http.MethodDelete, dasarTahun+"/kontrak/"+a+"?reinsurer=2&security=1&business=1", nil, true); kode != http.StatusConflict {
+	if kode, _ := u.minta(t, http.MethodDelete, dasarTahun+"/kontrak/"+a+"?reinsurer=2&security=1&business=1&bersama=1", nil, true); kode != http.StatusConflict {
 		t.Errorf("angka berubah: %d", kode)
 	}
-	kode, badan = u.minta(t, http.MethodDelete, dasarTahun+"/kontrak/"+a+"?reinsurer=2&security=1&business=2", nil, true)
+	kode, badan = u.minta(t, http.MethodDelete, dasarTahun+"/kontrak/"+a+"?reinsurer=2&security=1&business=2&bersama=1", nil, true)
 	if kode != http.StatusOK || !strings.Contains(badan, "Data Berhasil di Hapus") {
 		t.Fatalf("hapus: %d %s", kode, badan)
 	}
@@ -109,7 +118,7 @@ func TestKaskadeHapusKontrakKlausulTetapHidup(t *testing.T) {
 		t.Errorf("reinsurer kontrak lain terhapus")
 	}
 	if n := hitung(`SELECT COUNT(*) FROM `+s+`.T_TREATYCO_JEJAK WHERE TABEL = 'T_TREATYCONTRACT' AND BARIS_ID = :1 AND AKSI = 'hapus'
-		 AND KETERANGAN LIKE '%2 reinsurer, 1 security, 2 business; 1 klausul tidak disentuh%'`, a); n != 1 {
+		 AND KETERANGAN LIKE '%2 reinsurer, 1 security, 2 business; 1 klausul tidak disentuh; kombinasi dipakai 1 kontrak lain%'`, a); n != 1 {
 		t.Errorf("jejak hapus kontrak: %d", n)
 	}
 	// Hapus reinsurer kontrak lain: popup 0 security; Ya -> hilang.

@@ -3,7 +3,7 @@ package handlers
 // Pintu HTTP kaskade hapus + popup - tiket 10.
 //
 //	GET    /api/treaty-contract-out/tahun/{id}/kontrak/{kid}/dampak-hapus                    isi popup Ya/Batal
-//	DELETE /api/treaty-contract-out/tahun/{id}/kontrak/{kid}?reinsurer=&security=&business=  Delete b11809 (Ya)
+//	DELETE /api/treaty-contract-out/tahun/{id}/kontrak/{kid}?reinsurer=&security=&business=&bersama=  Delete b11809 (Ya)
 //	GET    /api/treaty-contract-out/tahun/{id}/kontrak/{kid}/reinsurer/{rid}/dampak-hapus      isi popup reinsurer
 //	DELETE /api/treaty-contract-out/tahun/{id}/kontrak/{kid}/reinsurer/{rid}?security=         Delete b4936 (Ya)
 //
@@ -41,7 +41,7 @@ func daftarkanRuteKaskadeTCO(mux *http.ServeMux, svc *services.Service, stub boo
 // konfirmasiDariKueri membaca jumlah yang dikonfirmasi pemakai; wajib.
 func konfirmasiDariKueri(r *http.Request, kunci ...string) (services.KonfirmasiHapus, bool) {
 	var k services.KonfirmasiHapus
-	isi := map[string]*int64{"reinsurer": &k.Reinsurer, "security": &k.Security, "business": &k.Business}
+	isi := map[string]*int64{"reinsurer": &k.Reinsurer, "security": &k.Security, "business": &k.Business, "bersama": &k.Bersama}
 	for _, n := range kunci {
 		v, err := strconv.ParseInt(r.URL.Query().Get(n), 10, 64)
 		if err != nil || v < 0 {
@@ -74,9 +74,9 @@ func hapusKontrakTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		if !punyaDBTCO(w, svc) {
 			return
 		}
-		k, ok := konfirmasiDariKueri(r, "reinsurer", "security", "business")
+		k, ok := konfirmasiDariKueri(r, "reinsurer", "security", "business", "bersama")
 		if !ok {
-			galat(w, http.StatusBadRequest, "jumlah reinsurer, security, dan business yang dikonfirmasi wajib (lihat dampak-hapus)")
+			galat(w, http.StatusBadRequest, "jumlah reinsurer, security, business, dan kontrak lain yang dikonfirmasi wajib (lihat dampak-hapus)")
 			return
 		}
 		pesan, err := layananKaskadeTCO(svc).HapusKontrak(r.Context(), pelakuDari(r, stub), r.PathValue("id"), r.PathValue("kid"), k)

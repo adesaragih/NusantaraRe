@@ -561,6 +561,6 @@ export const HAPUS_TCO = {
   klausulTetap: 'baris klausul TIDAK ikut terhapus — klausul milik tahun/grup/jenis reasuransi, bukan milik satu kontrak.',
   /** `[tidak ada di korpus]` */
   memuatDampak: 'Menghitung baris yang akan ikut terhapus…',
-  /** `[tidak ada di korpus]` — temuan /code-review: kombinasi dipakai bersama kontrak tahun lain. */
-  bersama: 'kontrak lain memakai kombinasi yang sama — reinsurer, security, dan business tanpa tahun treaty-nya TIDAK ikut terhapus.',
+  /** `[tidak ada di korpus]` — OQ-TCO-21 [keputusan work owner 29-09-2026]: hapus seperti Pega, tetapi tidak diam. */
+  bersama: 'kontrak lain memakai kombinasi yang sama — reinsurer, security, dan business-nya IKUT terhapus bersama kontrak ini (seperti Pega).',
 } as const

@@ -210,7 +210,8 @@ Nomor baris = `Section/InputTreatyContractReinsType.xml`.
 | --- | --- | --- |
 | `Delete` kontrak b11809 (tanpa konfirmasi) | `GET .../kontrak/{kid}/dampak-hapus` → popup (reinsurer, security, business; klausul TIDAK terhapus) → `DELETE .../kontrak/{kid}?reinsurer=&security=&business=` | ✅ AC 42/43, penyimpangan sadar 4 |
 | `DeleteFromTREATYCONTRACT_SQL` b80–b94 (empat DELETE + COMMIT) | empat DELETE di `T_`, satu transaksi, nol COMMIT; bisnis tahan `TREATYYEARID` NULL | ✅ AC 45, 63/64 |
-| `PROPORTIONALARRG` tidak ikut | klausul tidak disentuh; jumlahnya disebut di popup; langkah kaskade diuji tanpa klausul | ✅ AC 44 |
+| `PROPORTIONALARRG` tidak ikut | klausul tidak disentuh; jumlahnya (dari induknya, OQ-TCO-20) disebut di popup; langkah kaskade diuji tanpa klausul | ✅ AC 44 |
+| kaskade menghapus seluruh anak kombinasi walau dipakai kontrak tahun lain | seperti Pega (OQ-TCO-21); popup memperingatkan cacah kontrak lain, cacahnya ikut dikonfirmasi | ✅ keputusan work owner 29-09-2026 |
 | `Data Berhasil di Hapus` b762 | pesan sukses VERBATIM | ✅ |
 | `Delete` reinsurer b4936 → `DeleteFromTreatyReinsurer_Act` | popup (jumlah security) → `DELETE .../reinsurer/{rid}?security=` | ✅ |
 | `DetailTreatyExclustion` → `DetailTreatyExclustion_Sec` (panel rinci exclusion Occupation, `pyEditAction` b8801) | form baris exclusion di `PanelJenisKlausul`; tetap hidup sesudah kontrak dihapus | ✅ |

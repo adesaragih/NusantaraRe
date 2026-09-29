@@ -934,3 +934,14 @@ Delapan jawaban konfirmasi. Label kode `[keputusan kami]` / `[dugaan kuat]` → 
 `models/tco_kurs.go`, tiruan skema, label frontend). Konstanta `BusinessNonaktif = "0"` dikunci uji baru
 `TestNilaiIsActiveKeputusanWorkOwner`. Blok "Keputusan work owner 29-09-2026" di tiket 04, 05, 06, 07, 08, 11. Register
 OQ modul dibuat: `OQ-TREATY-CONTRACT-OUT.md`.
+
+### Kelompok 2 — OQ-TCO-21 hapus seperti Pega · OQ-TCO-20 klausul dari induknya
+
+- `repository/tco_kaskade.go`: `langkahHapusKontrakTCO` kembali empat langkah Pega tanpa percabangan "kombinasi bersama"
+  (saringan bisnis tahun-saja dibuang); `Bersama` tetap dihitung untuk popup. Saringan klausul popup
+  `TREATYYEARID = :1 AND ((PARENTREINSTYPEID = :2 AND REINSTYPEID = :3) OR PARENTREINSTYPEID = :4)`, sentinel di-bind.
+- `services/tco_kaskade.go`: `KonfirmasiHapus.Bersama` ikut dibandingkan sebelum dan sesudah hapus; jejak menyebut kontrak
+  lain terdampak. Handler: kueri `DELETE …&bersama=` wajib.
+- Frontend: popup menampilkan cacah kontrak lain sebagai peringatan (`role="alert"`), `hapusKontrak` mengirim `bersama`.
+- Uji perbaikan konkurensi lanjutan 1 yang mengecualikan kombinasi bersama DIGANTI `TestLangkahHapusKontrakSepertiPegaWalauBersama`;
+  uji db kaskade kini membuat tahun lain berkombinasi sama dan memeriksa `"bersama":1`.

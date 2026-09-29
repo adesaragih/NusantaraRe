@@ -63,8 +63,8 @@ export default function KonfirmasiHapusTCO({
             </p>
           )}
           {jenis === 'kontrak' && dampak.bersama > 0 && (
-            <p className="polis__catatan" role="note">
-              {dampak.bersama} {HAPUS_TCO.bersama}
+            <p className="alert alert--warn" role="alert">
+              <strong>{dampak.bersama}</strong> {HAPUS_TCO.bersama}
             </p>
           )}
         </>

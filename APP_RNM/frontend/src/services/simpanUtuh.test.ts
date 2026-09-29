@@ -12,3 +12,12 @@ describe('status simpan (AC 39)', () => {
     }
   })
 })
+
+describe('hapus kontrak mengirim cacah kontrak lain (OQ-TCO-21)', () => {
+  it('kueri DELETE memuat bersama', async () => {
+    const { readFileSync } = await import('node:fs')
+    const { join } = await import('node:path')
+    const kode = readFileSync(join(__dirname, 'api.ts'), 'utf8')
+    expect(kode).toContain('bersama: String(d.bersama)')
+  })
+})

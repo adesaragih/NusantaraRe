@@ -128,3 +128,21 @@ func TestHapusReinsurerKaskade(t *testing.T) {
 		t.Errorf("bawaan: %v", err)
 	}
 }
+
+// OQ-TCO-21: cacah kontrak lain terdampak ikut dikonfirmasi dan dicatat jejak.
+func TestHapusKontrakBersamaDikonfirmasi(t *testing.T) {
+	d := dampakUji()
+	d.Bersama = 2
+	k, j := &kaskadeUji{dampak: d, terhapus: d}, &jejakKaskadeUji{}
+	if _, err := layananKaskade(k, j, new(int)).HapusKontrak(context.Background(), pelakuUjiTCO, "1000001", "1000003",
+		services.KonfirmasiHapus{Reinsurer: 2, Security: 3, Business: 1}); !errors.Is(err, services.ErrDampakBerubah) || k.dihapus != 0 {
+		t.Errorf("kontrak lain tidak dikonfirmasi: %v (dihapus %d)", err, k.dihapus)
+	}
+	if _, err := layananKaskade(k, j, new(int)).HapusKontrak(context.Background(), pelakuUjiTCO, "1000001", "1000003",
+		services.KonfirmasiHapus{Reinsurer: 2, Security: 3, Business: 1, Bersama: 2}); err != nil || k.dihapus != 1 {
+		t.Fatalf("hapus bersama: %v", err)
+	}
+	if !strings.Contains(j.baris[0], "kombinasi dipakai 2 kontrak lain - anaknya ikut terhapus") {
+		t.Errorf("jejak: %v", j.baris)
+	}
+}

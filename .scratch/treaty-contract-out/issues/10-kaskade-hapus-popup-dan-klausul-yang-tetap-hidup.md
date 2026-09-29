@@ -149,3 +149,15 @@ Nomor baris = baris mentah berkas korpus `Treaty Contract Out/`.
 | frontend | `KonfirmasiHapusTCO.tsx` (+uji), `HAPUS_TCO`, `api.ts` (+4), tombol `Delete` kontrak & reinsurer hidup | popup memakai `Modal` bersama (X, backdrop, Batal, Escape) |
 
 **Status:** selesai 29-09-2026 — commit `treaty-contract-out: tiket 10 — kaskade hapus, popup, klausul yang tetap hidup`.
+
+## Keputusan work owner 29-09-2026
+
+- **OQ-TCO-21 — ditutup.** Jawaban: *"hapus saja, samain dengan pega"*. **Ralat bertanggal 29-09-2026** atas perbaikan
+  /code-review lanjutan 1 (`0883587`): kaskade kembali SEPERTI PEGA — kontrak, business (`TREATYYEARID = … OR IS NULL`),
+  security, reinsurer kombinasi ikut terhapus **termasuk** yang juga dipakai kontrak tahun lain berteks tahun + grup sama.
+  Popup `KonfirmasiHapusTCO` tetap, dan kini wajib menyebut **cacah kontrak lain yang ikut terdampak** sebagai peringatan;
+  cacah itu ikut dikonfirmasi (`DELETE …?bersama=`) — berubah sejak popup → 409, tidak ada yang terhapus; jejak menyebutnya.
+  Klausul tetap tidak dihapus (aturan Pega, AC 44).
+- **OQ-TCO-20 — ditutup.** Jawaban: *"dari induknya"*. Angka klausul popup = baris induk (`PARENTREINSTYPEID` = `"00"`,
+  di-bind) berjenis reasuransi kontrak + baris anak yang `PARENTREINSTYPEID`-nya jenis kontrak; anak berjenis sama di
+  bawah induk lain tidak lagi terhitung. Uji `TestKlausulMilikKontrakDariInduknya`.

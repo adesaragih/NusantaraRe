@@ -24,8 +24,8 @@ Satu tempat untuk seluruh pertanyaan terbuka modul ini. Rincian dan buktinya tet
 | OQ-TCO-17 | security dobel ditolak, `%Share` 0..100 | tiket 06 | **ditutup** — *"setuju"* (penyimpangan sadar dari Pega) |
 | OQ-TCO-18 | `KURS` diisi, skala 8, dua kurs = master rusak | tiket 11 | **ditutup** — *"setuju"* |
 | OQ-TCO-19 | tombol simpan tunggal | tiket 09 | dijawab 29-09-2026 *"tidak perlu"* — diterapkan kelompok 3 |
-| OQ-TCO-20 | "klausul milik kontrak ini" di popup hapus | tiket 10 | dijawab 29-09-2026 *"dari induknya"* — diterapkan kelompok 2 |
-| OQ-TCO-21 | hapus kontrak yang kombinasinya dipakai bersama | tinjauan lanjutan 1 | dijawab 29-09-2026 *"hapus saja, samain dengan pega"* — diterapkan kelompok 2 |
+| OQ-TCO-20 | "klausul milik kontrak ini" di popup hapus | tiket 10 | **ditutup** — *"dari induknya"* (kelompok 2) |
+| OQ-TCO-21 | hapus kontrak yang kombinasinya dipakai bersama | tinjauan lanjutan 1 | **ditutup** — *"hapus saja, samain dengan pega"* (kelompok 2) |
 
 ## Keputusan work owner 29-09-2026
 

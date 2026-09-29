@@ -17,7 +17,7 @@ func TestRuteKaskadeTerdaftarDanTanpaDatabase503(t *testing.T) {
 	dasar := "/api/treaty-contract-out/tahun/1000001/kontrak/1000003"
 	for _, r := range []struct{ metode, jalur string }{
 		{http.MethodGet, dasar + "/dampak-hapus"},
-		{http.MethodDelete, dasar + "?reinsurer=0&security=0&business=0"},
+		{http.MethodDelete, dasar + "?reinsurer=0&security=0&business=0&bersama=0"},
 		{http.MethodGet, dasar + "/reinsurer/1000007/dampak-hapus"},
 		{http.MethodDelete, dasar + "/reinsurer/1000007?security=0"},
 	} {

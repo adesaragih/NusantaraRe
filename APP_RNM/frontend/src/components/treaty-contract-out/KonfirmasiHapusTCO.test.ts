@@ -32,4 +32,8 @@ describe('popup konfirmasi hapus', () => {
     expect((baca('PanelReinsurerKombinasi.tsx').match(/ambilDampakHapusReinsurer\(/g) ?? []).length).toBe(2)
     expect(baca('KonfirmasiHapusTCO.tsx')).toContain('dampak.bersama > 0')
   })
+  it('OQ-TCO-21: kontrak lain terdampak disebut sebagai peringatan dan ikut dikonfirmasi', () => {
+    expect(HAPUS_TCO.bersama).toMatch(/IKUT terhapus/)
+    expect(baca('KonfirmasiHapusTCO.tsx')).toContain('role="alert"')
+  })
 })
