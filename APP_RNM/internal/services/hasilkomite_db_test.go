@@ -134,3 +134,49 @@ func TestPutaranKeduaDitolakSelamaBarisTerakhirBelumDiputus(t *testing.T) {
 	}
 	_ = baris
 }
+
+// TestPutaranPesertaTanpaBarisDijawabJujur - ralat bo (GILIRAN-14 butir bp).
+//
+// Baris pertama lahir saat Submit Register; peserta tanpa baris hanya ada
+// pada klaim LAMA. `Add` atasnya tidak melahirkan apa pun: 409 "tidak ada
+// baris" (`ErrBukanPenolakan`), bukan 400 - dan peserta milik klaim LAIN tetap
+// 400.
+func TestPutaranPesertaTanpaBarisDijawabJujur(t *testing.T) {
+	svc, tutup := siapkanPendaftaran(t)
+	defer tutup()
+	db, tutupDB := repoUji(t)
+	defer tutupDB()
+	ctx := context.Background()
+
+	pohon := models.PohonKlaim{
+		Work: models.WorkClaim{ID: "CLM-UJI740", Lini: models.LiniLife, Type: "QP",
+			Tahap: models.TahapClaimAnalis.String(), PyPosition: models.PeranSPVLife},
+		Klaim: models.Klaim{NomorKlaim: "UJI-CLM-740",
+			Peserta: []models.Peserta{{NomorSertifikat: "006", MataUang: "IDR"}}},
+	}
+	if err := svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+		return repository.NewPohonKlaim(db).Simpan(ctx, tx, pohon)
+	}); err != nil {
+		t.Fatalf("menyiapkan pohon: %v", err)
+	}
+	peserta, err := repository.NewKlaimLife(db).AmbilPeserta(ctx, "CLM-UJI740")
+	if err != nil || len(peserta) != 1 {
+		t.Fatalf("membaca peserta: %v (%d)", err, len(peserta))
+	}
+	spv := services.Pelaku{AkunID: "UJI-SPV", Peran: []string{services.PeranSPV}}
+	if err := svc.Putaran().DenganJejak(&jejakUji{}).Tambah(ctx, spv,
+		"CLM-UJI740", peserta[0].ID, saatUjiKomite); !errors.Is(err, services.ErrBukanPenolakan) {
+		t.Errorf("peserta tanpa baris: galat = %v, mau ErrBukanPenolakan", err)
+	}
+	if err := svc.Putaran().DenganJejak(&jejakUji{}).Tambah(ctx, spv,
+		"CLM-UJI740", "PESERTA-LAIN", saatUjiKomite); !errors.Is(err, services.ErrPermintaanTidakSah) {
+		t.Errorf("peserta klaim lain: galat = %v, mau ErrPermintaanTidakSah", err)
+	}
+	perBaris, err := repository.NewKlaimLife(db).AmbilBaris(ctx, "CLM-UJI740")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(perBaris) != 0 {
+		t.Errorf("baris lahir walau ditolak: %v", perBaris)
+	}
+}

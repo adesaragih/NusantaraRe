@@ -1,8 +1,9 @@
 package handlers
 
-// Pintu HTTP `Add` grid adjustment - putaran berikutnya (tiket 11) dan baris
-// PERTAMA (GILIRAN-13 butir bo). Satu rute: yang membedakan keduanya keadaan
-// grid, dan itu diputuskan services.
+// Pintu HTTP `Add` grid adjustment - putaran berikutnya (tiket 11).
+//
+// ⛔ Sejak GILIRAN-14 butir bp baris PERTAMA lahir saat Submit Register, tidak
+// lagi di sini (ralat bo).
 //
 // Nol aturan dagang di sini. Yang memutuskan boleh atau tidak adalah services.
 //
@@ -49,16 +50,6 @@ func jawabGalatPutaran(w http.ResponseWriter, err error) bool {
 		// keadaan yang ada - baris terakhirnya belum ditolak.
 		galat(w, http.StatusConflict,
 			"putaran berikutnya hanya lahir sesudah baris terakhir ditolak")
-	case errors.Is(err, services.ErrTahapTanpaAddAdjustment):
-		// Padanan syarat tampil b18160 - di Pega tombolnya tidak ada, di sini
-		// permintaannya ditolak dengan kalimat yang menyebut sebabnya.
-		galat(w, http.StatusConflict,
-			"baris adjustment pertama hanya dapat ditambahkan di tahap Claim Analis")
-	case errors.Is(err, services.ErrPesertaSudahDiputus):
-		galat(w, http.StatusConflict,
-			"peserta sudah diputus; isian layar Detail-nya tidak dapat diubah lagi")
-	case errors.Is(err, services.ErrTahapTidakDikenal):
-		galat(w, http.StatusConflict, "tahap kasus ini tidak dikenal")
 	case errors.Is(err, services.ErrKasusSudahTertutup):
 		galat(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
 	case errors.Is(err, services.ErrPermintaanTidakSah):

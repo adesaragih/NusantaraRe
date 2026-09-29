@@ -15,21 +15,16 @@ package services
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/cockroachdb/apd/v3"
 
 	"nusantarare/internal/models"
+	"nusantarare/pkg/utils"
 )
 
 // ErrBarisTidakSah menandai baris adjustment yang tidak dapat dibentuk.
 var ErrBarisTidakSah = errors.New("services: baris adjustment tidak sah")
-
-// ErrPesertaSudahDiputus - peserta sudah diaksep atau ditolak; isian layar
-// Detail-nya beku (tujuh gerbang `.STS_REJECT`, lihat BarisPertama).
-var ErrPesertaSudahDiputus = errors.New(
-	"services: peserta sudah diputus, isian layar Detail-nya tidak dapat diubah")
 
 // kolomDiwarisi adalah kedelapan kolom yang diwarisi baris kedua dan seterusnya.
 //
@@ -131,49 +126,94 @@ func TambahBaris(p *models.Peserta, baru models.BarisAdjustment) error {
 	return nil
 }
 
-// BarisPertama membentuk baris adjustment PERTAMA seorang peserta - butir bo
-// (GILIRAN-13, `[DIPUTUSKAN; veto work owner]`).
+// angkaDesimalPendaftaran adalah skala `@divide(…,1,4)` langkah 7.8.
 //
-// `[terverifikasi]` `Section/ClaimLifeDetailGCNM.xml`: grid `.AdjustmentList`
-// b17126, tombol `Add` b17937 -> `addRow` b17947 + `SetIndexAdjustmentList`
-// b17991. Pada grid KOSONG, langkah 3 activity itu (`.AdjustmentList(<LAST>).X
-// = .AdjustmentList(1).X`, b570-744) menyalin baris ke DIRINYA SENDIRI - jadi
-// baris pertama lahir KOSONG seluruhnya, dan itulah yang dikembalikan.
+// `[terverifikasi]` `SavePesertaClaim.xml` b3697-b3849: pembagian dengan SATU
+// pada empat angka - pembulatan yang ditulis sebagai pembagian. KEANEHAN
+// WARISAN, disalin apa adanya; bentuk yang sama ditiru rekap PremiumList
+// (`models.AngkaDesimalRekap`), dengan konteks desimal yang sama
+// (`utils.DecimalContext`, setengah ke atas).
+const angkaDesimalPendaftaran = 4
+
+// BarisPendaftaran membentuk baris adjustment yang lahir saat Submit Register
+// - GILIRAN-14 butir bp (`[DIPUTUSKAN; veto work owner]`).
 //
-// ⛔ Bukan `TambahBaris`. Cabang baris-pertama di sana mengisi mata uang dari
-// peserta; butir bo memutuskan "seperti XML", dan XML tidak mengisinya.
-// Penanda dipilih (`SetIndexAdjustmentList` langkah 1 b328, `.IsCheck = true`)
-// dipasang layanannya di transaksi yang sama - ia milik PESERTA, bukan baris.
+// `[terverifikasi]` `Activity/SavePesertaClaim.xml` (tombol `Submit`
+// `Section/InputRegisterClaimLife.xml` b27369 -> b27393), langkah 7.8 b3671
+// "Set property AdjustmentList" - HIDUP (`pyStepsBlockName` kosong),
+// `pyStepsPreCondition=true` b3691, WHEN `.IsCheck=="true"` b3919 (True=2
+// lanjut, False=3 lewati). Ia menulis `PremiumListDetail(<LAST>).
+// AdjustmentList(<LAST>)` - baris PERTAMA peserta yang baru saja 7.7
+// tambahkan - dengan delapan medan dari baris sumber yang sama:
 //
-// ⛔ Gerbang `.STS_REJECT` peserta: `pyDisabledWhen` `.STS_REJECT=='1' ||
-// .STS_REJECT=='2'` tujuh kali di layar yang sama (b2628, b4682, b5059,
-// b5870, b6152, b7335, b15234) - peserta yang sudah diputus membekukan isian
-// layar Detail. `Add` b17937 sendiri TIDAK membawanya (hanya syarat tampil
-// b18160); butir bo memberlakukannya pada baris pertama. Pada jalur putaran
-// gerbang ini TIDAK berlaku: peserta yang barisnya ditolak berkode "2", dan
-// justru dialah yang dibuka putaran berikutnya.
+//	CEDING_RETENTION b3696   SHARE_RETRO      b3808
+//	SHARE_NUSANTARA_RE b3742 CLAIM_AMOUNT     b3828
+//	SUM_INSURED b3768        RETROCEDED_SHARE b3848
+//	SUM_REASURED b3788       CURRENCY         b3868
 //
-// ⛔ Pembacaan seluruh activity Claim Life yang menyebut `AdjustmentList`,
-// sebagai pohon (`pyStepsBlockName` dicetak; `//` = mati, dan tidak satu pun
-// langkah di bawah bertanda itu): `SaveInsuredClaim_Act` 2.2 b1341 menulis
-// `TempDetail.pxResults(<LAST>).AdjustmentList(<LAST>)` - halaman sementara
-// unggahan; `SavePesertaClaim` 7.8 b3671 (hidup, WHEN b3919) menulis baris
-// pertama saat PENDAFTARAN; `SaveOutStandingLife_Act` 22.1 b10548 MELEWATI
-// peserta tanpa baris; `SpreadingClaimLife_Act` 7.1/8.2 dan `SaveAdjustment_Act`
-// 1.5/1.6, `DeletePesertaClaimLife` 1.1, serta `serviceInsertArasapasClaimLife_act`
-// 1.1 b311 hanya menyunting atau membaca baris yang sudah ada. Yang
-// melahirkan baris hanya dua: `Add` dan pendaftaran 7.8.
-func BarisPertama(p models.Peserta) (models.BarisAdjustment, error) {
-	if len(p.Baris) > 0 {
-		return models.BarisAdjustment{}, fmt.Errorf(
-			"%w: peserta %q sudah berbaris %d - baris berikutnya lahir lewat putaran",
-			ErrBarisTidakSah, p.ID, len(p.Baris))
+// Tujuh yang pertama `@divide(@toDecimal(@replaceAll(.X,",",".")),1,4)`;
+// `@replaceAll` tidak berbuat apa-apa di sini, sebab sumbernya dibaca sebagai
+// `TO_CHAR(…,'TM9')` bertitik desimal. `SHARE_NUSANTARA_RE` b3743 memakai
+// `@if` yang SAMA dengan peserta 7.7 b2845, jadi nilai peserta - yang sudah
+// memilihnya lewat `repository.ShareNusantaraReTeks` - dipakai apa adanya.
+//
+// ⛔ Status TIDAK ditulis: 7.8 tidak menyentuh `STS_REJECT`, dan `Save to RNM`
+// 22.1.3.2 yang kemudian menulis "0" bagi baris tanpa status.
+//
+// ⛔ Kolom sumber yang KOSONG tetap kosong. `[dugaan]` `@toDecimal("")` Pega
+// menghasilkan nol; mengarang nol lebih buruk daripada mengosongkannya
+// (ADR-U-0027).
+func BarisPendaftaran(p models.Peserta) (models.BarisAdjustment, bool, error) {
+	// `.IsCheck=="true"` - teks, persis (b3919).
+	if p.IsCheck != models.PenandaDipilih {
+		return models.BarisAdjustment{}, false, nil
 	}
-	if models.DiagnosaTerkunci(p.KodeStatus) {
-		return models.BarisAdjustment{}, fmt.Errorf("%w: peserta %q berkode %q",
-			ErrPesertaSudahDiputus, p.ID, strings.TrimSpace(p.KodeStatus))
+	var b models.BarisAdjustment
+	for _, m := range []struct {
+		nama string
+		dari models.Money
+		ke   *models.Money
+	}{
+		{"CEDING_RETENTION", p.CedingRetention, &b.CedingRetention},
+		{"SHARE_NUSANTARA_RE", p.ShareNusantaraRe, &b.ShareNusantaraRe},
+		{"SUM_INSURED", p.SumInsured, &b.SumInsured},
+		{"SUM_REASURED", p.SumReasured, &b.SumReasured},
+		{"SHARE_RETRO", p.ShareRetro, &b.ShareRetro},
+		{"CLAIM_AMOUNT", p.JumlahKlaim, &b.JumlahKlaim},
+		{"RETROCEDED_SHARE", p.RetrocededShare, &b.RetrocededShare},
+	} {
+		*m.ke = models.Money{Currency: p.MataUang}
+		if m.dari.Kosong() {
+			continue
+		}
+		bulat := new(apd.Decimal)
+		if _, err := utils.DecimalContext().Quantize(bulat, m.dari.Amount,
+			-angkaDesimalPendaftaran); err != nil {
+			return models.BarisAdjustment{}, false, fmt.Errorf(
+				"%w: peserta %q %s: %w", ErrBarisTidakSah, p.ID, m.nama, err)
+		}
+		m.ke.Amount = bulat
 	}
-	return models.BarisAdjustment{}, nil
+	return b, true, nil
+}
+
+// LahirkanBarisPendaftaran memasang baris 7.8 pada setiap peserta terpilih.
+//
+// ⛔ Dipanggil pendaftaran di DALAM transaksinya, sebelum pohon disimpan: satu
+// transaksi untuk peserta dan barisnya, seperti satu `Obj-Save` Pega. Baris
+// ini `.AdjustmentList(1)` yang diwarisi putaran berikutnya
+// (`SetIndexAdjustmentList` langkah 3, `WarisiKolom`).
+func LahirkanBarisPendaftaran(peserta []models.Peserta) error {
+	for i := range peserta {
+		b, lahir, err := BarisPendaftaran(peserta[i])
+		if err != nil {
+			return err
+		}
+		if lahir {
+			peserta[i].Baris = append(peserta[i].Baris, b)
+		}
+	}
+	return nil
 }
 
 // TandaiOutstanding menuliskan STS_REJECT = 0 pada baris yang BELUM pernah

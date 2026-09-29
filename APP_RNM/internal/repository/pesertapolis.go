@@ -21,6 +21,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -245,7 +246,57 @@ const kolomSalin = `ID, PL_NUMBER, POLICY_NO, CERTIFICATE_NO, CURRENCY, ` +
 	`TO_CHAR(SHARE_NUSANTARA_RE_GROSS, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''), ` +
 	`TO_CHAR(AGE, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''), ` +
 	`TO_CHAR(ENTRY_AGE, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''), ` +
-	`TO_CHAR(CURRENT_AGE, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,''')`
+	`TO_CHAR(CURRENT_AGE, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''), ` +
+	// ⭐ GILIRAN-14 butir bp - di EKOR, supaya nol posisi lain bergeser.
+	// `SavePesertaClaim` 7.7 b3280 dan 7.8 b3828 menyalin `.CLAIM_AMOUNT`
+	// sumber ke peserta DAN ke baris adjustment pertamanya. `[terverifikasi]`
+	// kolom 67 katalog M_LIFE_PREMIUM_DETAIL; penulis PremiumList mengisinya
+	// (`polis_warisan.go`).
+	`TO_CHAR(CLAIM_AMOUNT, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,''')`
+
+// cacahKolomSalin adalah cacah ekspresi kolomSalin - posisi yang dibaca
+// salinKePeserta. Dikunci TestUrutanKolomSalinDikunci.
+const cacahKolomSalin = 29
+
+// NamaKolomSalinPeserta mengeluarkan nama kolom yang dibaca kolomSalin.
+//
+// Diekspor untuk penjaga tiruan skema uji: tiruan yang tertinggal dari
+// pembacanya membuat setiap uji db pendaftaran gagal tanpa ada yang tahu.
+func NamaKolomSalinPeserta() []string {
+	return namaKolomDaftarPilih(kolomSalin)
+}
+
+// namaKolomDaftarPilih mengambil nama kolom dari satu daftar pilih (kolom
+// hasil sebuah kueri).
+//
+// Pemecahnya koma di tingkat teratas; bentuk yang ditemui hanya dua - nama
+// telanjang dan `TO_CHAR(NAMA, …)`.
+func namaKolomDaftarPilih(daftar string) []string {
+	var butir []string
+	tingkat, awal := 0, 0
+	for i, c := range daftar {
+		switch c {
+		case '(':
+			tingkat++
+		case ')':
+			tingkat--
+		case ',':
+			if tingkat == 0 {
+				butir = append(butir, daftar[awal:i])
+				awal = i + 1
+			}
+		}
+	}
+	butir = append(butir, daftar[awal:])
+	pola := regexp.MustCompile(`^(?:TO_CHAR\()?\s*([A-Z][A-Z0-9_]*)`)
+	var keluar []string
+	for _, b := range butir {
+		if m := pola.FindStringSubmatch(strings.TrimSpace(b)); m != nil {
+			keluar = append(keluar, m[1])
+		}
+	}
+	return keluar
+}
 
 // AmbilUntukKlaim membaca peserta terpilih dan menyiapkannya untuk disalin.
 //
@@ -281,7 +332,7 @@ func (r *PesertaPolis) AmbilUntukKlaim(ctx context.Context, nomorPremiList strin
 			return nil, err
 		}
 		baris := r.db.sql.QueryRowContext(ctx, q, nomorPremiList, no)
-		sel := make([]sql.NullString, 28)
+		sel := make([]sql.NullString, cacahKolomSalin)
 		tujuan := make([]any, len(sel))
 		for i := range sel {
 			tujuan[i] = &sel[i]
@@ -355,6 +406,7 @@ func salinKePeserta(sel []sql.NullString) (models.Peserta, error) {
 		{sel[15], &p.SumInsured}, {sel[16], &p.SumReasured}, {sel[17], &p.GrossPremium},
 		{sel[18], &p.NetPremium}, {sel[19], &p.CedingRetention}, {share, &p.ShareNusantaraRe},
 		{sel[21], &p.ShareRetro}, {sel[22], &p.RetrocededShare},
+		{sel[28], &p.JumlahKlaim},
 	}
 	for _, u := range uang {
 		m, err := uraiUang(p.NomorSertifikat, "kolom polis", u.v, p.MataUang)

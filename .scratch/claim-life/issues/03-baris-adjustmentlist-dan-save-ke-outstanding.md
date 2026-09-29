@@ -1,6 +1,6 @@
 # 03: Baris `AdjustmentList` + Save ke Outstanding
 
-**Status:** sebagian — Save to RNM ADA sejak GILIRAN-11 paket 1 (`services/simpanrnm.go`); spreading tanpa pemanggil produksi; bendera `Save` tanpa kolom (OQ-N1); **`Add` baris pertama ADA sejak GILIRAN-13** (butir bo); `Delete` berdiri tetapi MATI, tanpa rute (OQ-N7); sunting sel baris belum ada (OQ-N8)
+**Status:** sebagian — Save to RNM ADA sejak GILIRAN-11 paket 1 (`services/simpanrnm.go`); spreading tanpa pemanggil produksi; bendera `Save` tanpa kolom (OQ-N1); baris pertama **lahir saat Submit Register** sejak GILIRAN-14 (butir bp; `Add` = putaran saja — bo diralat); `Delete` berdiri tetapi MATI, tanpa rute (OQ-N7); sunting sel baris belum ada (OQ-N8)
 
 **Blocked by:** 02 (register klaim + penomoran), **14 (skema relasional klaim — PREFACTOR)**
 
@@ -838,3 +838,25 @@ uji `TestBarisPertamaLahirKosong`, `TestBarisPertamaHanyaUntukGridKosong`,
    diff GILIRAN-13; dicatat, tidak disunting.
 3. **`Delete` di layar** mengabaikan syarat tampil `.PrintFaceClaim == ''` (b19399) — kolom itu tidak ada
    di kontrak API, dan tombolnya mati di baris mana pun.
+
+## ⛔ Ralat bertanggal — 29 September 2026 (GILIRAN-14 paket 1: butir **bp** meralat **bo**)
+
+Bab GILIRAN-13 di atas menulis bahwa baris pertama dibuat tombol `Add` pada grid kosong, dan bahwa
+"yang melahirkan baris hanya dua: `Add` dan pendaftaran 7.8" — lalu **tetap** tidak membangun yang kedua
+(**OQ-N9**). Keliru jalan lahirnya: `SavePesertaClaim` 7.8 b3671 (hidup, WHEN `.IsCheck=="true"` b3919)
+melahirkan baris pertama setiap peserta terpilih **saat Submit Register**, jadi grid peserta terpilih tidak
+pernah kosong. Tiket 02 memuat buktinya dan yang dibangun (`services.LahirkanBarisPendaftaran`).
+
+**Ralat bo (dibuang, bukan dibiarkan mati):** `services.BarisPertama`, `Putaran.tambahPertama`,
+`ErrTahapTanpaAddAdjustment`, `ErrPesertaSudahDiputus`, dan kedua uji `db`-nya. `Add` kembali = jalur
+**putaran** tiket 11. Peserta tanpa baris — kini hanya ada pada klaim LAMA (A4 migrasi data; DEV: nol klaim
+terlihat) — dijawab jujur **409** "tidak ada baris" (`BarisLanjutan`), bukan 400 "bukan milik klaim":
+kepemilikannya diperiksa lewat `AmbilPeserta` (`pesertaMilikKlaim`); uji `db`
+`TestPutaranPesertaTanpaBarisDijawabJujur`.
+
+**Layar:** tombol "Putaran berikutnya" dan `Add` untuk grid kosong digabung menjadi SATU tombol **`Add`**
+(`DETAIL.tambahAdjustment`), tampil di tahap Claim Analis (b18160) bila baris terakhir ditolak
+(`bolehAddAdjustment`). XML hanya punya satu tombol; dua label untuk satu rute adalah temuan tinjauan
+GILIRAN-13. Uji `src/services/tomboladd.test.ts`.
+
+**OQ-N9 ditutup** oleh bp. **OQ-N8** (sunting sel) tetap terbuka sampai butir br (paket 3).

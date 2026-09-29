@@ -78,6 +78,9 @@ var kolomPeserta = []struct {
 	{"SHARE_RETRO", kolomAngka, func(p models.Peserta) string { return utils.FormatDecimal(p.ShareRetro.Amount) }},
 	{"RETROCEDED_SHARE", kolomAngka, func(p models.Peserta) string { return utils.FormatDecimal(p.RetrocededShare.Amount) }},
 	{"EM_PERCENT", kolomAngka, func(p models.Peserta) string { return utils.FormatDecimal(p.EMPercent.Value) }},
+	// ⭐ GILIRAN-14 butir bp: `SavePesertaClaim` 7.7 b3280. Kolomnya ada di 003
+	// sejak awal, tetapi tidak pernah ditulis.
+	{"CLAIM_AMOUNT", kolomAngka, func(p models.Peserta) string { return utils.FormatDecimal(p.JumlahKlaim.Amount) }},
 
 	// ⭐ AGE kolomnya sudah ada di migrasi 003 sejak awal, tetapi tidak
 	// pernah terisi karena kolomSalin tidak membacanya. Diisi sejak
@@ -212,6 +215,7 @@ func rakitPeserta(id string, sel []sql.NullString) (models.Peserta, error) {
 		{"CEDING_RETENTION", &p.CedingRetention},
 		{"SHARE_NUSANTARA_RE", &p.ShareNusantaraRe},
 		{"SHARE_RETRO", &p.ShareRetro}, {"RETROCEDED_SHARE", &p.RetrocededShare},
+		{"CLAIM_AMOUNT", &p.JumlahKlaim},
 	}
 	for _, u := range uang {
 		m, err := uraiUang(id, u.kolom, nilai[u.kolom], p.MataUang)

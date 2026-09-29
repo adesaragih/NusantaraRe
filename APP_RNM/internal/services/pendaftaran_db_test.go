@@ -15,10 +15,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/apd/v3"
+
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
 	"nusantarare/internal/repository/skemauji"
 	"nusantarare/internal/services"
+	"nusantarare/pkg/utils"
 )
 
 // penomorUji memberi nomor yang dapat diramalkan, menggantikan butir o.
@@ -131,6 +134,62 @@ func TestDaftarMenulisTigaTempatDanBarisDatar(t *testing.T) {
 	if ps.SumberID != "UJI-SRC-1" {
 		t.Errorf("SOURCE_ID = %q, mau UJI-SRC-1", ps.SumberID)
 	}
+
+	// ⭐ BUTIR bp (GILIRAN-14): satu baris adjustment lahir bersama peserta
+	// terpilih - `SavePesertaClaim` 7.8 - dibaca ULANG dari Oracle.
+	perBaris, err := repository.NewKlaimLife(skemaRepo(t)).AmbilBaris(ctx, pohon.Work.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	baris := perBaris[ps.ID]
+	if len(baris) != 1 {
+		t.Fatalf("baris adjustment peserta = %d, mau 1 (butir bp)", len(baris))
+	}
+	for _, k := range []struct {
+		medan string
+		got   models.Money
+		mau   string
+	}{
+		{"SUM_INSURED", baris[0].SumInsured, "1000000"},
+		{"CEDING_RETENTION", baris[0].CedingRetention, "100000"},
+		{"CLAIM_AMOUNT", baris[0].JumlahKlaim, "25000.1234"},
+	} {
+		if got := k.got.Amount; got == nil || got.Cmp(uangUjiDB(t, k.mau)) != 0 {
+			t.Errorf("%s = %v, mau %s (7.8, empat angka)", k.medan, got, k.mau)
+		}
+	}
+	if baris[0].KodeStatus != "" {
+		t.Errorf("baris lahir berkode %q; 7.8 tidak menulis STS_REJECT", baris[0].KodeStatus)
+	}
+	// AC 32: baris datar warisan kini ikut tertulis - barisnya ada.
+	datar, err := repository.NewPohonKlaim(skemaRepo(t)).CacahBarisLama(ctx, pohon.Work.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if datar != 1 {
+		t.Errorf("baris datar OS_AKSEPTASI_KLAIM_LIFE = %d, mau 1 (AC 32)", datar)
+	}
+}
+
+// skemaRepo membuka repository skema uji yang sama untuk pembacaan ulang.
+func skemaRepo(t *testing.T) *repository.DB {
+	t.Helper()
+	db, err := skemauji.BukaRepositori()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = db.Close() })
+	return db
+}
+
+// uangUjiDB mengurai desimal pembanding tanpa float.
+func uangUjiDB(t *testing.T, s string) *apd.Decimal {
+	t.Helper()
+	d, err := utils.ParseDecimal(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return d
 }
 
 // ⛔ Peserta ber-EDMSTATUS 'Batal' tidak dapat didaftarkan.

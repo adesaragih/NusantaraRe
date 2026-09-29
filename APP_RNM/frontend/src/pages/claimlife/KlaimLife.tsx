@@ -29,7 +29,6 @@ import {
   simpanAdjustment,
   bolehSimpanAdjustment,
   bolehAddAdjustment,
-  bolehPutaranBaru,
   bolehSerahkanDiLayar,
   dampakHapusKlaim,
   hapusKlaim,
@@ -610,27 +609,18 @@ export default function KlaimLife() {
                 </p>
               )}
 
-              {bolehPutaranBaru(p.baris) && (
-                <p>
-                  <button
-                    type="button"
-                    disabled={memutar === p.id}
-                    onClick={() => void putaranBaru(p.id)}
-                  >
-                    {memutar === p.id ? 'Membuka…' : 'Putaran berikutnya'}
-                  </button>
-                </p>
-              )}
-
-              {/* ⭐ Butir bo (GILIRAN-13) — kedua tombol grid `.AdjustmentList`
-                  b17126.
+              {/* ⭐ Kedua tombol grid `.AdjustmentList` b17126.
 
                   `Add` b17937 (`addRow` b17947 + `SetIndexAdjustmentList`
                   b17991) tampil hanya bila `pyPosition =='ReasLifeSPV'`
-                  (b18160). Pada grid KOSONG ia melahirkan baris pertama:
-                  kosong, peserta ditandai dipilih. Pada grid berbaris `Add`
-                  adalah jalur PUTARAN — rute yang sama, dan tombolnya
-                  "Putaran berikutnya" di atas.
+                  (b18160). Ia jalur PUTARAN: baris baru mewarisi delapan
+                  kolom dari baris pertama.
+
+                  ⛔ RALAT GILIRAN-14 (butir bp, meralat bo): baris PERTAMA
+                  lahir saat Submit Register (`SavePesertaClaim` 7.8), bukan
+                  lewat `Add`. Tombol "Putaran berikutnya" yang dahulu berdiri
+                  di samping `Add` DIGANTI tombol ini: XML hanya punya satu
+                  tombol, dan dua label untuk satu rute membingungkan.
 
                   ⛔ `Delete` b19120 (`deleteRow` b19130) BERDIRI tetapi MATI.
                   ADR-U-0031: nol hapus fisik di jalur pengguna — penghapusan

@@ -17,36 +17,6 @@ import (
 	"testing"
 )
 
-// kolomDariDaftarPilih mengambil nama kolom dari satu daftar SELECT.
-//
-// `X` → X; `TO_CHAR(X, …)` → X. Koma di dalam kurung tidak memisah.
-func kolomDariDaftarPilih(daftar string) []string {
-	var butir []string
-	tingkat, awal := 0, 0
-	for i, c := range daftar {
-		switch c {
-		case '(':
-			tingkat++
-		case ')':
-			tingkat--
-		case ',':
-			if tingkat == 0 {
-				butir = append(butir, daftar[awal:i])
-				awal = i + 1
-			}
-		}
-	}
-	butir = append(butir, daftar[awal:])
-	pola := regexp.MustCompile(`^(?:TO_CHAR\()?\s*([A-Z][A-Z0-9_]*)`)
-	var keluar []string
-	for _, b := range butir {
-		if m := pola.FindStringSubmatch(strings.TrimSpace(b)); m != nil {
-			keluar = append(keluar, m[1])
-		}
-	}
-	return keluar
-}
-
 // kolomDitulisWarisan adalah seluruh kolom yang diisi `PesertaWarisan.Ganti`.
 func kolomDitulisWarisan() map[string]bool {
 	ada := map[string]bool{"ID": true}
@@ -69,8 +39,8 @@ func TestKolomBacaClaimLifeDiisiPenulisPremiumList(t *testing.T) {
 		t.Fatal("daftar pilih sqlCariPeserta tidak terbaca; pembacanya yang rusak")
 	}
 	for nama, kolom := range map[string][]string{
-		"kolomSalin":     kolomDariDaftarPilih(kolomSalin),
-		"sqlCariPeserta": kolomDariDaftarPilih(m[1]),
+		"kolomSalin":     NamaKolomSalinPeserta(),
+		"sqlCariPeserta": namaKolomDaftarPilih(m[1]),
 	} {
 		if len(kolom) < 5 {
 			t.Fatalf("%s: hanya %d kolom terbaca; pembacanya yang rusak", nama, len(kolom))
@@ -78,7 +48,7 @@ func TestKolomBacaClaimLifeDiisiPenulisPremiumList(t *testing.T) {
 		// ⚠️ Instrumen diuji atas jawaban yang sudah diketahui: ujung pertama
 		// dan terakhir tiap daftar harus terbaca, termasuk yang ber-TO_CHAR.
 		mau := map[string][2]string{
-			"kolomSalin":     {"ID", "CURRENT_AGE"},
+			"kolomSalin":     {"ID", "CLAIM_AMOUNT"},
 			"sqlCariPeserta": {"PL_NUMBER", "EDMSTATUS"},
 		}[nama]
 		if kolom[0] != mau[0] || kolom[len(kolom)-1] != mau[1] {

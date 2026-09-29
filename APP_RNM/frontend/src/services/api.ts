@@ -639,16 +639,15 @@ export function bolehSimpanAdjustment(
 }
 
 /**
- * `Add` grid adjustment: baris PERTAMA pada grid kosong (butir bo), atau
- * putaran adjustment berikutnya bagi seorang peserta.
+ * `Add` grid adjustment — putaran adjustment berikutnya bagi seorang peserta.
  *
  * Inilah yang membuat klaim TIDAK TERMINAL: penolakan Komite menghasilkan
  * putaran berikutnya, bukan akhir (ADR-U-0011). Yang terminal adalah BARIS.
  *
  * Jawaban yang mungkin:
  *   403 bukan ReasLifeSPV
- *   409 baris terakhir belum ditolak; baris pertama di luar Claim Analis;
- *       peserta sudah diputus; kasus tertutup
+ *   409 baris terakhir belum ditolak (atau peserta tanpa baris — klaim lama);
+ *       kasus tertutup
  *   501 tempat jejak audit belum diputuskan (butir am)
  */
 export async function tambahPutaran(klaimID: string, pesertaID: string): Promise<void> {
@@ -672,26 +671,26 @@ export function bolehPutaranBaru(baris: BarisAdjustment[]): boolean {
 }
 
 /**
- * Apakah layar menawarkan `Add` b17937 pada grid adjustment KOSONG — butir bo.
+ * Apakah layar menawarkan `Add` b17937 — tombol grid `.AdjustmentList`.
  *
- * ⛔ Empat syarat, semuanya dari XML atau dari layanan:
+ * ⛔ RALAT 29-09-2026 (GILIRAN-14 butir bp, meralat bo): `Add` adalah jalur
+ * PUTARAN saja. Baris pertama lahir saat Submit Register (`SavePesertaClaim`
+ * 7.8), jadi grid peserta terpilih tidak pernah kosong — GILIRAN-13 sempat
+ * menjadikan `Add` pada grid kosong jalan lahir baris pertama.
+ *
+ * ⛔ Tiga syarat:
  *
  *   1. tahap Claim Analis — syarat tampil `pyWorkPage.pyPosition
  *      =='ReasLifeSPV'` b18160;
- *   2. grid kosong — bila sudah berbaris, `Add` adalah jalur PUTARAN
- *      (`bolehPutaranBaru`), rute yang sama (`tambahPutaran`);
- *   3. peserta belum diputus — tujuh gerbang `.STS_REJECT=='1' ||
- *      .STS_REJECT=='2'` di layar Detail (`bolehUbahDiagnosa`);
- *   4. kasus belum tertutup (butir bb).
+ *   2. baris terakhir DITOLAK (`bolehPutaranBaru`) — di keadaan lain
+ *      layanan menjawab 409, dan tombol yang selalu ditolak bukan tombol;
+ *   3. kasus belum tertutup (butir bb).
  *
  * ⚠️ Kenyamanan, bukan pagar: services menolak dengan 403/409.
  */
 export function bolehAddAdjustment(klaim: Klaim, peserta: Peserta): boolean {
   return (
-    !kasusTertutup(klaim) &&
-    klaim.tahap === TAHAP.claimAnalis &&
-    peserta.baris.length === 0 &&
-    bolehUbahDiagnosa(peserta)
+    !kasusTertutup(klaim) && klaim.tahap === TAHAP.claimAnalis && bolehPutaranBaru(peserta.baris)
   )
 }
 

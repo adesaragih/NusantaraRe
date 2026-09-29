@@ -77,7 +77,7 @@ END;
       `OS_AKSEPTASI_KLAIM_LIFE` justru **gagal**. Keduanya dalam **satu transaksi**.
       **REVISI 2026-09-18:** ⛔ pendaftaran **tidak** menulis tabel polis maupun marketing — keduanya
       **dihapus**. Test yang menemukan penulisan ke tabel polis atau marketing milik klaim
-      **gagal**. *(AC 32 spec — koreksi 2026-09-16; `[keputusan work owner]`)* — belum: `Pendaftaran.Daftar` menulis `T_WORK_CLAIM` + `T_GENERAL_CLAIM` + peserta, tetapi peserta lahir tanpa baris adjustment sehingga `BarisLamaDari` menghasilkan nol baris datar — `OS_AKSEPTASI_KLAIM_LIFE` tidak ditulis saat daftar
+      **gagal**. *(AC 32 spec — koreksi 2026-09-16; `[keputusan work owner]`)* — **kode ada sejak GILIRAN-14 butir bp**: peserta terpilih kini lahir BERBARIS (`SavePesertaClaim` 7.8), jadi `BarisLamaDari` menghasilkan satu baris datar per peserta dan `OS_AKSEPTASI_KLAIM_LIFE` tertulis di transaksi pendaftaran. ⚠️ Bukti Oracle-nya `TestDaftarMenulisTigaTempatDanBarisDatar` (bertag `db`, **melewati** tanpa `ORACLE_DSN`) — AC ini tetap `[ ]` sampai uji itu dijalankan terhadap skema uji
 - [x] ⚠️ **Tidak ada blob JSON** sebagai penyimpan isi klaim. *(AC 31 spec; penyimpangan sadar 1)* — bukti: uji `TestKolomUangDesimalDanNolJSON` (nol `JSON`/`CLOB`/`BLOB` di DDL klaim)
 - [ ] Header memuat keempat field `PremiumListSummary` — `CLAIM_NO`, `PL_NUMBER`, `RISLIPRNM`,
       `BUSINESS_NAME` — beserta `CASEID` dan `CLAIM_RETRO`. *(AC 36 spec)* — belum: `PohonKlaim.Simpan` hanya mengisi `CLAIM_NO`, `POLICY_NO`, `BUSINESS_NAME` (dan `Daftar` tidak mengisi `NamaBisnis`); `RI_SLIP_RNM` dan jumlah `CLAIM_RETRO` tidak ditulis; `CASEID` pindah ke `T_WORK_CLAIM`
@@ -651,3 +651,47 @@ Baris adjustment pertama kini dapat lahir lewat tombol `Add` di layar Detail (ta
 butir bo). **Pendaftaran tidak diubah** — peserta tetap lahir tanpa baris (AC 32 di atas tetap terbuka).
 Pega melahirkan baris pertama saat pendaftaran (`SavePesertaClaim` 7.8 b3671, hidup, WHEN b3919); selisih
 urutan kerjanya dicatat sebagai **OQ-N9** (tiket 03).
+
+## ⛔ Ralat bertanggal — 29 September 2026 (GILIRAN-14 paket 1, butir **bp**: baris adjustment lahir saat Submit Register)
+
+`[DIPUTUSKAN; veto work owner]` butir **bp**. Catatan GILIRAN-13 di atas ("pendaftaran tidak diubah";
+**OQ-N9** "apakah pendaftaran semestinya melahirkan baris pertama") **dicabut**: itu bukan pertanyaan,
+melainkan bunyi XML yang terlewat.
+
+**Bukti** (pohon, `pyStepsBlockName` dicetak): `Activity/SavePesertaClaim.xml`, dipanggil tombol `Submit`
+(`Section/InputRegisterClaimLife.xml` b27369 → b27393). Langkah 7 berulang atas `TempDetail.pxResults`
+(b1461); **7.7** b2744 menambahkan peserta (`PremiumListDetail(<APPEND>)`) dan **7.8** b3671 menulis
+`PremiumListDetail(<LAST>).AdjustmentList(<LAST>)` — keduanya hidup, keduanya ber-WHEN `.IsCheck=="true"`
+(b3631 untuk 7.7, **b3919** untuk 7.8; True=2 lanjut, False=3 lewati). Delapan medan 7.8: `CEDING_RETENTION`
+b3696, `SHARE_NUSANTARA_RE` b3742 (`@if` yang sama dengan peserta b2845), `SUM_INSURED` b3768, `SUM_REASURED`
+b3788, `SHARE_RETRO` b3808, `CLAIM_AMOUNT` b3828, `RETROCEDED_SHARE` b3848 — ketujuhnya
+`@divide(@toDecimal(@replaceAll(.X,",",".")),1,4)` — dan `CURRENCY` b3868.
+
+**Yang dibangun:**
+- `services.BarisPendaftaran` (murni) + `LahirkanBarisPendaftaran`, dipanggil `Pendaftaran.Daftar` di
+  transaksi kedua, sebelum `Simpan`. Pembulatan empat angka lewat `utils.DecimalContext` (setengah ke atas),
+  sama dengan rekap PremiumList. Status **tidak** ditulis (7.8 tidak menyentuhnya; `Save to RNM` 22.1.3.2
+  yang menulis `0`). Kolom sumber kosong tetap kosong (`[dugaan]` Pega menjadikannya nol; ADR-U-0027).
+- `CLAIM_AMOUNT` kini **dibaca** dari `M_LIFE_PREMIUM_DETAIL` (posisi 28 `kolomSalin`, di ekor supaya nol
+  posisi lain bergeser) dan **disimpan** di peserta (`kolomPeserta`, 7.7 b3280) — sebelumnya tidak dibaca
+  sama sekali. Penulis PremiumList sudah mengisinya (`polis_warisan.go`), jadi kontrak dua sisi tetap utuh.
+- ⛔ **Temuan sampingan:** tiruan `M_LIFE_PREMIUM_DETAIL` di skema uji tertinggal empat kolom yang
+  `kolomSalin` baca sejak lanjutan 10 (`SHARE_NUSANTARA_RE_GROSS`, `AGE`, `ENTRY_AGE`, `CURRENT_AGE`). Setiap
+  uji `db` yang mendaftarkan klaim akan gagal ORA-00904 — tidak terlihat karena uji itu selalu melewati.
+  Dilengkapi, dan kini dijaga `skemauji.TestTiruanPesertaPolisMemuatSetiapKolomSalin`.
+
+**Uji:** `TestBarisPendaftaranMenyalinDelapanMedan7_8` (contoh literal, pembulatan terlihat),
+`TestBarisPendaftaranHanyaBagiPesertaTerpilih` (`"false"`/kosong → nol baris),
+`TestBarisPendaftaranMembiarkanKosongTetapKosong`, `TestLahirkanBarisPendaftaranSatuPerPeserta` (baris ini
+yang diwarisi putaran), `TestPesertaMenyimpanJumlahKlaim`, `TestPesertaMembacaKembaliJumlahKlaim`,
+`TestUrutanKolomSalinDikunci` (29 posisi); `db`: `TestDaftarMenulisTigaTempatDanBarisDatar` (baris + satu
+baris datar).
+
+⚠️ **Akibat bagi skema uji:** pendaftaran kini MENULIS `OS_AKSEPTASI_KLAIM_LIFE` (AC 32). Tabel itu harus ada
+di skema uji sebelum `Submit` Register diuji di layar.
+
+**Pertanyaan terbuka baru:**
+- **OQ-N10** — 7.7 membulatkan nilai **peserta** ke empat angka (`@divide(…,1,4)` b2770–b3561); peserta Go
+  disimpan apa adanya dari `NUMBER(38,8)`. Baris pertama (7.8) sudah dibulatkan, jadi pada sumber berdesimal
+  lebih dari empat, nilai peserta dan baris pertamanya berbeda di angka kelima. Tiru juga pembulatan
+  peserta?

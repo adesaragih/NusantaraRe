@@ -197,6 +197,14 @@ func (p *Pendaftaran) Daftar(ctx context.Context, pelaku Pelaku, minta Permintaa
 		if err != nil {
 			return err
 		}
+		// ⛔ BUTIR bp (GILIRAN-14): baris adjustment pertama LAHIR DI SINI,
+		// seperti `SavePesertaClaim` 7.8 - bukan kelak lewat `Add`. Di
+		// transaksi yang sama dengan pesertanya; dan karena barisnya kini
+		// ada, `Simpan` ikut menulis baris datar `OS_AKSEPTASI_KLAIM_LIFE`
+		// (AC 32 tiket 02).
+		if err := LahirkanBarisPendaftaran(peserta); err != nil {
+			return err
+		}
 
 		hasil = models.PohonKlaim{
 			Work: models.WorkClaim{

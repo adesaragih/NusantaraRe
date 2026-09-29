@@ -274,6 +274,14 @@ type Peserta struct {
 	ShareRetro       Money
 	RetrocededShare  Money
 	EMPercent        Ratio
+	// JumlahKlaim adalah `CLAIM_AMOUNT` peserta - GILIRAN-14 butir bp.
+	//
+	// `[terverifikasi]` `SavePesertaClaim` 7.7 b3280 menyalinnya ke peserta,
+	// dan 7.8 b3828 ke baris adjustment pertama - keduanya dari kolom yang
+	// sama di sumber (`M_LIFE_PREMIUM_DETAIL.CLAIM_AMOUNT`). Sebelum bp ia
+	// tidak dibaca sama sekali, sehingga baris pertama tidak dapat lahir
+	// bernilai.
+	JumlahKlaim Money
 
 	// ⛔ NAMA ORANG SENGAJA TIDAK ADA DI SINI. NAME_OF_INSURED dan
 	// POLICY_HOLDER punya kolomnya di DDL, tetapi tidak disalin: nama

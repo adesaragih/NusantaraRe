@@ -352,7 +352,10 @@ func TestStatusDanStatusOldBukanPenandaHidup(t *testing.T) {
 // valuasi menjadi tanggal lapse, uang menjadi uang lain, dan itu baru terlihat
 // jauh di hilir, kalau pernah terlihat.
 //
-// Yang dikunci: cacahnya 28, dan nama kolom pada tiap posisi.
+// Yang dikunci: cacahnya 29, dan nama kolom pada tiap posisi.
+//
+// ⭐ Posisi 28 `CLAIM_AMOUNT` lahir GILIRAN-14 butir bp - DITAMBAHKAN DI EKOR,
+// bukan disisipkan, justru supaya nol posisi lain bergeser.
 //
 // ⚠️ Empat kolom TERAKHIR (24-27) berbeda sifatnya dari dua puluh empat
 // yang pertama: ia BAHAN, bukan isi. Tidak satu pun mendarat langsung di
@@ -380,7 +383,7 @@ func TestUrutanKolomSalinDikunci(t *testing.T) {
 	}
 	ekspresi = append(ekspresi, strings.TrimSpace(kolomSalin[mulai:]))
 
-	const mau = 28
+	const mau = 29
 	if len(ekspresi) != mau {
 		t.Fatalf("kolomSalin memuat %d ekspresi, mau %d; salinKePeserta membaca "+
 			"posisi 0-%d dan akan bergeser seluruhnya", len(ekspresi), mau, mau-1)
@@ -398,6 +401,9 @@ func TestUrutanKolomSalinDikunci(t *testing.T) {
 
 		// Bahan bagi pilihpeserta.go, bukan isi medan.
 		"SHARE_NUSANTARA_RE_GROSS", "AGE", "ENTRY_AGE", "CURRENT_AGE",
+
+		// Isi lagi: `SavePesertaClaim` 7.7 b3280 / 7.8 b3828 (butir bp).
+		"CLAIM_AMOUNT",
 	}
 	for i, nama := range urut {
 		// ⛔ Nama diambil PERSIS, bukan lewat strings.Contains. Dengan
