@@ -187,9 +187,9 @@ describe.skipIf(!adaKorpus)('label layar Detail berbukti barisnya', () => {
     ['Find Disease', 5061, 'pyLabel'],
     ['Edit Date', 14115, 'pyLabel'],
     ['Save Adjustment', 22641, 'pyLabel'],
-    // Butir bo: kedua tombol grid `.AdjustmentList` b17126.
+    // Butir bo: tombol grid `.AdjustmentList` b17126. (`Delete` b19120 tidak
+    // dirender - OQ-N7 ditutup 29-09-2026, ADR-U-0031.)
     ['Add', 17937, 'pyLabel'],
-    ['Delete', 19120, 'pyLabel'],
     // Butir bk: sel read-only `.MAXCLAIM_RECEIVED` b12131.
     ['MAX CLAIM RECEIVED', 12124, 'pyLabelPreview'],
     // ⛔ ENAM total, bukan lima. Yang ini sempat luput karena

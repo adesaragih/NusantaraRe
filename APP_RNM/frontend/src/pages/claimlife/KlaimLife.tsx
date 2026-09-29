@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 
-import { DETAIL, TAHAP, TOMBOL_KOMITE } from '../../assets/labels.claimlife'
+import { DETAIL, TOMBOL_KOMITE } from '../../assets/labels.claimlife'
 import { PanelTotalPeserta } from '../../components/claimlife/PanelTotalPeserta'
 import { PanelDokumenPeserta } from '../../components/claimlife/PanelDokumenPeserta'
 import { GridDiagnosa } from '../../components/claimlife/GridDiagnosa'
@@ -622,13 +622,11 @@ export default function KlaimLife() {
                   di samping `Add` DIGANTI tombol ini: XML hanya punya satu
                   tombol, dan dua label untuk satu rute membingungkan.
 
-                  ⛔ `Delete` b19120 (`deleteRow` b19130) BERDIRI tetapi MATI.
-                  ADR-U-0031: nol hapus fisik di jalur pengguna — penghapusan
-                  adalah PENANDA, dan `T_CLAIMLF_ADJUSTMENT` belum punya kolom
-                  penandanya. Itu keputusan skema, bukan milik layar.
-                  ⚠️ Syarat tampil XML-nya `.PrintFaceClaim == ''` (b19399)
-                  TIDAK ditiru: `PrintFaceClaim` tidak ada di kontrak API, dan
-                  tombol yang mati tidak berbuat apa-apa di baris mana pun. */}
+                  ⛔ `Delete` b19120 (`deleteRow` b19130) TIDAK DIRENDER —
+                  keputusan work owner 29-09-2026 (OQ-N7 ditutup): ADR-U-0031
+                  melarang hapus fisik, dan `T_CLAIMLF_ADJUSTMENT` tanpa kolom
+                  penanda. Tombol mati yang berdiri menjanjikan aksi yang tidak
+                  akan pernah ada. */}
               {bolehAddAdjustment(klaim, p) && (
                 <p>
                   <button
@@ -637,13 +635,6 @@ export default function KlaimLife() {
                     onClick={() => void putaranBaru(p.id)}
                   >
                     {DETAIL.tambahAdjustment}
-                  </button>
-                </p>
-              )}
-              {klaim.tahap === TAHAP.claimAnalis && p.baris.length > 0 && (
-                <p>
-                  <button type="button" disabled title="Baris adjustment tidak dapat dihapus.">
-                    {DETAIL.hapusAdjustment}
                   </button>
                 </p>
               )}

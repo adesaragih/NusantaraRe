@@ -710,15 +710,11 @@ ter-remark berarti tidak pernah berlaku. `PeriksaDokumenLengkap` dan pendukungny
 
 ## GILIRAN-13/14 — 29-09-2026
 
-**OQ-N7** *(untuk work owner)* — `Delete` baris adjustment (`ClaimLifeDetailGCNM.xml` b19120, tampil bila
-`.PrintFaceClaim == ''` b19399): ADR-U-0031 melarang hapus fisik, dan `T_CLAIMLF_ADJUSTMENT` tidak punya kolom
-penanda hapus. Tambah kolom penanda (dan penyaring di setiap pembaca hilir), atau nyatakan `Delete` tidak berlaku?
-Tombolnya berdiri tetapi mati. *(Tiket 03, ralat GILIRAN-13.)*
+**OQ-N7** — ✅ **DITUTUP 29-09-2026** (work owner, "ikuti rekomendasi"): `Delete` baris adjustment (b19120) **tidak
+berlaku** — ADR-U-0031, tabel tanpa kolom penanda. Tombolnya tidak dirender. *(Tiket 03, GILIRAN-15.)*
 
-**OQ-N8** *(untuk work owner — TERBUKA, terkait OQ-N11)* — baris adjustment tidak punya rute sunting sel, sedangkan
-`Save to RNM` 11.17 (b6043) menolak `.CLAIM_GROSS` kosong. Sejak GILIRAN-14 butir bp baris lahir ber-`CLAIM_AMOUNT`
-dari polisnya, dan gerbang terpenuhi lewat pemetaan `.CLAIM_GROSS` → `CLAIM_AMOUNT`; butir br menemukan NOL sel yang
-dapat disunting menurut XML. *(Tiket 03.)*
+**OQ-N8** — ✅ **DITUTUP 29-09-2026** (work owner): ikut XML — **tidak ada** sunting sel baris adjustment (butir br; semua
+sel grid b17126 dan panel `Adjustment_Detail` `Read-only`). *(Tiket 03.)*
 
 **OQ-N9** — ✅ **DITUTUP 29-09-2026, butir bp** `[DIPUTUSKAN; veto work owner]`: "apakah pendaftaran semestinya
 melahirkan baris pertama" — ya, `SavePesertaClaim` 7.8 b3671 (hidup, WHEN b3919). Dibangun di GILIRAN-14.
@@ -728,7 +724,16 @@ melahirkan baris pertama" — ya, `SavePesertaClaim` 7.8 b3671 (hidup, WHEN b391
 dibulatkan, jadi pada sumber berdesimal lebih dari empat nilai peserta dan baris pertamanya berbeda di angka kelima.
 Tiru juga pembulatan peserta? *(Tiket 02.)*
 
-**OQ-N11** *(untuk work owner)* — `.CLAIM_GROSS` (`AdjustmentDetail_Section.xml`) `Read-only` (b2961/b2970) tetapi
-wajib (b2977/b3021/b3026) dan beraksi `change` → `CountClaimAmountLife_Act` (b3036/b3049); nol penulis `.CLAIM_GROSS`
-di korpus Claim Life. Siapa yang mengisinya di Pega? Sampai dijawab, aplikasi memetakannya ke `CLAIM_AMOUNT` yang lahir
-di pendaftaran. *(Tiket 03.)*
+**OQ-N11** — dipindah ke daftar **pemilik ekspor** di bawah (keputusan work owner 29-09-2026).
+
+## 29 September 2026 — untuk pemilik ekspor Pega (GILIRAN-15)
+
+**OQ-N11** *(untuk pemilik ekspor)* — siapa yang mengisi `.CLAIM_GROSS` baris adjustment? `Section/
+AdjustmentDetail_Section.xml` menandainya `Read-only` (b2961/b2970), tetapi wajib (`pyRequired true` b2977/b3026,
+`pyRequiredNew always` b3021) dan beraksi `change` → `CountClaimAmountLife_Act` (b3036/b3049) — bentuk medan masukan
+yang dikunci. **Pembaca 4, penulis 0** di korpus Claim Life: `CountClaimAmountLife_Act`, `RejectOSClaimLife_Act`,
+`SaveOutStandingLife_Act` (gerbang 11.17 b6043), `SpreadingClaimLife_Act` hanya membacanya — `[terverifikasi]` dua
+metode: `grep -rlE "CLAIM_GROSS" .` (5 berkas: 4 activity + section itu) dan pohon langkah keempat activity (nol
+`PropertiesName = …CLAIM_GROSS`). Apakah ada rule di luar ekspor ini (declare expression, activity kelas lain) yang
+menulisnya, atau medan itu memang diisi pengguna di versi yang berjalan? *Sementara:* aplikasi tidak menulisnya;
+catatan 7 tiket 03 (`CLAIM_GROSS` = `CLAIM_AMOUNT`, tiket 14) tetap berlaku sampai dijawab.

@@ -12,6 +12,9 @@ package services_test
 // kolom adalah kode mati. Uji ini mengunci vonisnya - bila korpus kelak
 // berkata lain, uji ini yang merah lebih dulu.
 //
+// ✅ Keputusan work owner 29-09-2026 (GILIRAN-15): vonis DITERIMA - br dan OQ-N8
+// ditutup, ikut XML. Uji ini tetap sebagai penjaganya.
+//
 // Cara membaca (sensus §4a CLAUDE.md - wadah dinamai, kunci dipasang):
 //   - WADAH: grid dibatasi rentang b17126 (`pyPageListProperty
 //     .AdjustmentList`) sampai b19583 (`pyEditAction` grid itu); panel adalah

@@ -71,13 +71,16 @@ describe('layar Detail memasang Add dan Delete', () => {
     expect(SUMBER.match(/void putaranBaru\(p\.id\)/g)).toHaveLength(1)
   })
 
-  it('Delete BERDIRI tetapi mati — ADR-U-0031, nol hapus fisik', () => {
-    expect(SUMBER).toContain('{DETAIL.hapusAdjustment}')
-    expect(SUMBER).not.toMatch(/hapusAdjustment\s*\(/)
+  it('Delete baris adjustment TIDAK dirender — OQ-N7 ditutup (GILIRAN-15)', () => {
+    // ⛔ Keputusan work owner 29-09-2026: `Delete` b19120 TIDAK BERLAKU.
+    // ADR-U-0031 melarang hapus fisik, dan `T_CLAIMLF_ADJUSTMENT` tanpa kolom
+    // penanda. Tombol mati yang berdiri menjanjikan aksi yang tidak akan ada.
+    expect(SUMBER).not.toContain('hapusAdjustment')
+    expect(SUMBER).not.toContain('Baris adjustment tidak dapat dihapus')
   })
 
-  it('label VERBATIM b17937 dan b19120', () => {
+  it('label VERBATIM b17937', () => {
     expect(DETAIL.tambahAdjustment).toBe('Add')
-    expect(DETAIL.hapusAdjustment).toBe('Delete')
+    expect('hapusAdjustment' in DETAIL).toBe(false)
   })
 })

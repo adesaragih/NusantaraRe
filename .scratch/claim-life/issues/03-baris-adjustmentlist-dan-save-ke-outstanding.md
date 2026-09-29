@@ -1,6 +1,6 @@
 # 03: Baris `AdjustmentList` + Save ke Outstanding
 
-**Status:** sebagian — Save to RNM ADA sejak GILIRAN-11 paket 1 (`services/simpanrnm.go`); spreading tanpa pemanggil produksi; bendera `Save` tanpa kolom (OQ-N1); baris pertama **lahir saat Submit Register** sejak GILIRAN-14 (butir bp; `Add` = putaran saja — bo diralat); `Delete` berdiri tetapi MATI, tanpa rute (OQ-N7); sunting sel: **nol sel dapat disunting menurut XML** (butir br; OQ-N8 tetap terbuka, terkait OQ-N11 — **vonis br menunggu work owner**)
+**Status:** sebagian — Save to RNM ADA sejak GILIRAN-11 paket 1 (`services/simpanrnm.go`); spreading tanpa pemanggil produksi; bendera `Save` tanpa kolom (OQ-N1); baris pertama **lahir saat Submit Register** sejak GILIRAN-14 (butir bp; `Add` = putaran saja — bo diralat); `Delete` **tidak berlaku, tidak dirender** (OQ-N7 ditutup 29-09-2026); sunting sel: **tidak ada — ikut XML** (butir br dan OQ-N8 ditutup work owner 29-09-2026); `CLAIM_GROSS` menunggu pemilik ekspor (OQ-N11)
 
 **Blocked by:** 02 (register klaim + penomoran), **14 (skema relasional klaim — PREFACTOR)**
 
@@ -923,3 +923,24 @@ rute — **work owner yang memutuskan** apakah vonis itu diterima atau `CLAIM_GR
 - **Jejak kelahiran baris saat Register tidak direkam** — ADR-U-0007 menjejak TRANSISI STATUS, dan baris 7.8 lahir
   tanpa status; transisi pertamanya (`0`, Save to RNM) direkam jalur itu. Cabang `tambahPertama` yang dibuang dahulu
   merekamnya (DARI/KE kosong); dicatat, tidak ditiru di pendaftaran.
+
+## ⛔ Keputusan work owner bertanggal — 29 September 2026 (GILIRAN-15 paket 1: br, N7, N11 — "ikuti rekomendasi")
+
+**br dan OQ-N8 — DITUTUP.** *Ikut XML: tidak ada sunting sel adjustment.* Vonis bab GILIRAN-14 diterima: keempat kolom
+grid b17126 dan seluruh medan panel `Adjustment_Detail` `Read-only`. Tidak ada rute `PUT …/adjustment/{adjId}`;
+`TestGridAdjustmentNolSelDapatDisunting` tetap sebagai penjaganya. Keberatan GILIRAN-14 ("bp hanya memenuhi 11.17 lewat
+pemetaan") dijawab dengan keputusan ini sendiri: nilai baris lahir dari polisnya saat Register (7.8), dan sunting sel
+bukan bagian sistem lama.
+
+**OQ-N7 — DITUTUP.** *`Delete` baris adjustment TIDAK BERLAKU.* ADR-U-0031 melarang hapus fisik di jalur pengguna, dan
+`T_CLAIMLF_ADJUSTMENT` tidak punya kolom penanda. Tombol `Delete` b19120 kini **tidak dirender** sama sekali — bukan
+tombol mati: tombol yang berdiri tetapi tidak dapat ditekan menjanjikan aksi yang tidak akan pernah ada.
+`DETAIL.hapusAdjustment` dibuang; uji `src/services/tomboladd.test.ts` menuntut ketiadaannya. Alasannya juga di
+`PARITAS-LAYAR-DAN-AKSI.md` bab 4.
+
+**OQ-N11 — dipindah ke daftar pemilik ekspor** (`OQ-untuk-tim.md`). *Sementara kosong:* aplikasi TIDAK menulis
+`CLAIM_GROSS` dan tidak mengarang penulisnya — buktinya 4 pembaca, 0 penulis (dua metode, bab br di atas).
+⚠️ Hubungannya dengan **catatan 7** (tiket 14: "kolom kita untuk `CLAIM_GROSS` bernama `CLAIM_AMOUNT` — satu nilai, dua
+nama"): pemetaan itu keputusan lama dan TIDAK diubah; gerbang `Save to RNM` 11.17 tetap membaca `CLAIM_AMOUNT`. Bila
+pemilik ekspor menjawab bahwa `CLAIM_GROSS` nilai TERSENDIRI (bukan `CLAIM_AMOUNT`), catatan 7 dibuka ulang — dan
+gerbang 11.17 akan menolak setiap baris sampai penulisnya ada.

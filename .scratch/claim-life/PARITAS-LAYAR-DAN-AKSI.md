@@ -589,3 +589,11 @@ yang mengutip baris mati — diralat di tempat.
 Activity Claim Life lain: **nol** remark — sensus ini tidak mengubah statusnya; celah langkah
 hidupnya tetap seperti baris-baris di atas.
 
+### ⛔ 29-09-2026 (GILIRAN-15) — `Delete` baris adjustment TIDAK BERLAKU (OQ-N7 ditutup)
+
+`Section/ClaimLifeDetailGCNM.xml` `Delete` b19120 → `deleteRow` b19130 (tampil bila `.PrintFaceClaim == '' &&
+pyPosition=='ReasLifeSPV'` b19399) **tidak ditiru dan tidak dirender** — keputusan work owner. Sebabnya: `deleteRow` adalah
+hapus fisik, ADR-U-0031 melarangnya di jalur pengguna, dan `T_CLAIMLF_ADJUSTMENT` tidak punya kolom penanda hapus untuk
+padanan logisnya. GILIRAN-13 sempat merendernya sebagai tombol mati; dibuang, sebab tombol yang tidak pernah dapat
+ditekan menjanjikan aksi yang tidak ada. Sunting sel baris adjustment pun tidak berlaku (butir br — semua sel
+`Read-only`).

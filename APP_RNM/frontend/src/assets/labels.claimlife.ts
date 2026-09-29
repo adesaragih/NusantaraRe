@@ -299,11 +299,6 @@ export const DETAIL = {
    * `pyWorkPage.pyPosition =='ReasLifeSPV'` b18160.
    */
   tambahAdjustment: 'Add',
-  /**
-   * b19120 `pyLabel` -> `deleteRow` b19130; tampil bila `.PrintFaceClaim == ''
-   * && pyPosition =='ReasLifeSPV'` b19399. ⛔ Berdiri tetapi MATI — ADR-U-0031.
-   */
-  hapusAdjustment: 'Delete',
 
   /**
    * `CloseClaim_Section.xml` b1081 `pyLabel`.
