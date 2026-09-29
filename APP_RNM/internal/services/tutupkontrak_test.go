@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -238,6 +239,27 @@ var rutePengubah = map[string]string{
 	"POST /api/komite/{id}/eskalasi": "komite_keputusan.go",
 }
 
+// letakTabelRute - berkas yang mendaftarkan rute berpenjaga kasus tertutup.
+var letakTabelRute = []string{
+	filepath.Join("..", "handlers", "handlers.go"),
+	filepath.Join("..", "..", "modul", "premiumlist", "handlers", "rute_premiumlist.go"),
+}
+
+// bacaBerkasLayanan membaca berkas layanan pelayan rute, di modul mana pun.
+//
+// Refactor bentuk B (30-09-2026): dulu selalu di folder ini; layanan modul
+// yang sudah pindah tinggal di modul/<nama>/services.
+func bacaBerkasLayanan(nama string) ([]byte, error) {
+	if b, err := os.ReadFile(nama); err == nil {
+		return b, nil
+	}
+	cocok, _ := filepath.Glob(filepath.Join("..", "..", "modul", "*", "services", nama))
+	if len(cocok) != 1 {
+		return nil, fmt.Errorf("%s ditemukan di %d folder layanan modul", nama, len(cocok))
+	}
+	return os.ReadFile(cocok[0])
+}
+
 var polaRute = regexp.MustCompile(`mux\.HandleFunc\(\s*\n?\s*"([A-Z]+) ([^"]+)"`)
 
 // penjagaTutupBawaan adalah panggilan yang membuktikan sebuah layanan
@@ -266,9 +288,15 @@ var penjagaTutup = map[string]string{
 }
 
 func TestSetiapRuteNonGETPunyaPenjagaKasusTertutup(t *testing.T) {
-	isi, err := os.ReadFile(filepath.Join("..", "handlers", "handlers.go"))
-	if err != nil {
-		t.Fatalf("membaca tabel rute: %v", err)
+	// Refactor bentuk B (30-09-2026): tabel rute kini tersebar - Router Claim
+	// Life dan pendaftar rute modul yang sudah pindah ke modul/<nama>/.
+	var isi []byte
+	for _, letak := range letakTabelRute {
+		b, err := os.ReadFile(letak)
+		if err != nil {
+			t.Fatalf("membaca tabel rute %s: %v", letak, err)
+		}
+		isi = append(append(isi, b...), '\n')
 	}
 	cocok := polaRute.FindAllStringSubmatch(string(isi), -1)
 	if len(cocok) == 0 {
@@ -312,7 +340,7 @@ func TestSetiapRuteNonGETPunyaPenjagaKasusTertutup(t *testing.T) {
 			}
 			continue
 		}
-		b, err := os.ReadFile(berkas)
+		b, err := bacaBerkasLayanan(berkas)
 		if err != nil {
 			t.Errorf("rute %q menunjuk %s yang tidak terbaca: %v", kunci, berkas, err)
 			continue

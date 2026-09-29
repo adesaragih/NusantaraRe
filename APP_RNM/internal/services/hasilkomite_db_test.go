@@ -152,7 +152,7 @@ func TestPutaranPesertaTanpaBarisDijawabJujur(t *testing.T) {
 	ctx := context.Background()
 
 	pohon := models.PohonKlaim{
-		Work: models.WorkClaim{ID: "CLM-UJI740", Lini: models.LiniLife, Type: "QP",
+		Work: models.WorkClaim{ID: "CLM-UJI740", Lini: inti.LiniLife, Type: "QP",
 			Tahap: models.TahapClaimAnalis.String(), PyPosition: models.PeranSPVLife},
 		Klaim: models.Klaim{NomorKlaim: "UJI-CLM-740",
 			Peserta: []models.Peserta{{NomorSertifikat: "006", MataUang: "IDR"}}},
@@ -193,7 +193,7 @@ func TestPutaranHanyaDiClaimAnalis(t *testing.T) {
 	ctx := context.Background()
 
 	pohon := models.PohonKlaim{
-		Work: models.WorkClaim{ID: "CLM-UJI741", Lini: models.LiniLife, Type: "QP",
+		Work: models.WorkClaim{ID: "CLM-UJI741", Lini: inti.LiniLife, Type: "QP",
 			Tahap: models.TahapOutstanding.String(), PyPosition: models.PeranAdminLife},
 		Klaim: models.Klaim{NomorKlaim: "UJI-CLM-741",
 			Peserta: []models.Peserta{{NomorSertifikat: "006", MataUang: "IDR",

@@ -13,6 +13,7 @@ import (
 	"nusantarare/internal/services"
 	"nusantarare/inti"
 	"nusantarare/inti/galat"
+	"nusantarare/inti/kontrak"
 )
 
 func TestRuteSimpanRNMTerdaftar(t *testing.T) {
@@ -56,7 +57,7 @@ func TestGalatSimpanRNMDipetakanKeKodeYangBenar(t *testing.T) {
 			http.StatusNotFound},
 		{"type", services.ErrTypeTidakDikenal, http.StatusUnprocessableEntity},
 		{"business", services.ErrBusinessCodeTidakDikenal, http.StatusUnprocessableEntity},
-		{"polis", services.ErrPolisNomorTakDitemukan, http.StatusUnprocessableEntity},
+		{"polis", kontrak.ErrPolisNomorTakDitemukan, http.StatusUnprocessableEntity},
 		{"permintaan", galat.ErrPermintaanTidakSah, http.StatusBadRequest},
 		{"lain", errors.New("x"), http.StatusInternalServerError},
 	} {

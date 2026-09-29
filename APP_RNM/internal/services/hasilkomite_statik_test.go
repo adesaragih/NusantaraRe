@@ -60,13 +60,21 @@ func TestNolKolomStatusKeduaDiSkema(t *testing.T) {
 	// `ReadDir` tanpa rekursi dan `HasSuffix(".sql")` yang peka huruf besar,
 	// sehingga `migrations/komite/011.sql` dan `012.SQL` tidak pernah dibaca.
 	// Keduanya dibangun sebagai elakan dan terbukti hijau.
-	dir := filepath.Join("..", "repository", "migrations")
+	//
+	// Refactor bentuk B (30-09-2026): dulu satu folder,
+	// `internal/repository/migrations`, yang ketika itu memuat migrasi semua
+	// modul. Kini SETIAP berkas .sql di bawah folder `migrations/` mana pun di
+	// akar aplikasi - aturannya milik skema, bukan milik satu folder.
 	diperiksa, dikecualikanKomite := 0, 0
-	err := filepath.Walk(dir, func(jalur string, info os.FileInfo, err error) error {
+	err := filepath.Walk(akarAplikasiPindai, func(jalur string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		if info.IsDir() || !strings.EqualFold(filepath.Ext(jalur), ".sql") {
+		if info.IsDir() && lewatiFolderPindai(info.Name()) {
+			return filepath.SkipDir
+		}
+		if info.IsDir() || !strings.EqualFold(filepath.Ext(jalur), ".sql") ||
+			!strings.Contains(filepath.ToSlash(jalur), "/migrations/") {
 			return nil
 		}
 		isi, err := os.ReadFile(jalur)

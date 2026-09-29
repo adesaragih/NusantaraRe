@@ -30,6 +30,7 @@ import (
 	"strings"
 
 	"nusantarare/internal/models"
+	"nusantarare/inti"
 	"nusantarare/inti/uang"
 	"nusantarare/inti/utils"
 )
@@ -157,7 +158,7 @@ func BongkarBarisLama(baris []BarisLama) ([]models.PohonKlaim, LaporanRekonsilia
 		p := models.PohonKlaim{
 			Work: models.WorkClaim{
 				CaseID:       caseID,
-				Lini:         models.LiniLife,
+				Lini:         inti.LiniLife,
 				Type:         rows[0].TYPE,
 				CreateOpName: rows[0].CREATEOPNAME,
 			},

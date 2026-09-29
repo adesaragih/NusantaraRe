@@ -96,51 +96,6 @@ func Router(svc *services.Service, stubPelaku bool, tambahan ...func(*http.Serve
 	mux.HandleFunc("GET /api/dokumen/{dokId}/isi", isiDokumen(svc, stubPelaku))
 	mux.HandleFunc("DELETE /api/klaim-life/{id}/dokumen/{dokId}",
 		hapusDokumen(svc, stubPelaku))
-	// --- modul PremiumList Life (tiket 01) ---
-	//
-	// ⚠️ Penambahan ADITIF oleh sesi PremiumList; nol baris Claim Life
-	// yang disunting. Rutenya sendiri hidup di `rute_premiumlist.go`.
-	//
-	// ⛔ SATU rute keputusan. `Offer`/`Premium` BUKAN keputusan pengguna
-	// melainkan hasil `Decision3` atas bendera kasus - sejak GILIRAN-14
-	// butir bq diterapkan di dalam `Confirm`; rute penggolong manual dibuang.
-	mux.HandleFunc("GET /api/polis-life", kotakMasukPolis(svc, stubPelaku))
-	// GILIRAN-13 butir bn - tombol portal `Input Offer` / `Input Premium`
-	// (`CreateInputLife`) melahirkan kasus polis.
-	mux.HandleFunc("POST /api/polis-life", buatKasusPolis(svc, stubPelaku))
-	mux.HandleFunc("GET /api/polis-life/periode",
-		periodeProduksi(svc, stubPelaku))
-	mux.HandleFunc("POST /api/polis-life/{id}/keputusan",
-		putuskanPenawaran(svc, stubPelaku))
-	// Tiket 03 - layar detail dan penomoran PL.
-	//
-	// ⛔ MEMBACA DAN MENERBITKAN TIDAK SATU RUTE. Rute yang "membaca, dan
-	// menerbitkan bila belum ada" membuat setiap penyegaran halaman
-	// berpotensi menggerakkan penghitung. Nomornya dibaca lewat
-	// `GET /api/polis-life/{id}` - yang sudah membawanya - dan rute GET
-	// khusus nomor DIBUANG 28-09-2026 karena nol pemanggil: rute tanpa
-	// pemanggil adalah permukaan yang tidak seorang pun uji.
-	// Butir pl4/av - kontrak hilir ke Claim Life.
-	mux.HandleFunc("GET /api/polis-life/ringkas", ringkasPolis(svc, stubPelaku))
-	mux.HandleFunc("GET /api/polis-life/{id}", kepalaPolis(svc, stubPelaku))
-	mux.HandleFunc("GET /api/polis-life/{id}/peserta",
-		pesertaPolis(svc, stubPelaku))
-	mux.HandleFunc("POST /api/polis-life/{id}/nomor",
-		terbitkanNomorPolis(svc, stubPelaku))
-	// Tiket 04 - unggahan CSV peserta.
-	//
-	// ⛔ TINJAU DAN SIMPAN TERPISAH. Rute tunggal yang "menyimpan bila lolos"
-	// menghilangkan kesempatan melihat hasilnya lebih dahulu - yaitu tepat
-	// yang AC tiket ini minta.
-	mux.HandleFunc("POST /api/polis-life/{id}/unggah/tinjau",
-		tinjauUnggahPolis(svc, stubPelaku))
-	mux.HandleFunc("POST /api/polis-life/{id}/unggah/simpan",
-		simpanUnggahPolis(svc, stubPelaku))
-	// Tiket 05a bagian 2 - layar `ShowLifePremiumSummary`.
-	//
-	// ⛔ GET menghitung tanpa menyimpan; POST menyimpan dalam SATU transaksi
-	// (nomor, rekap, salinan peserta warisan). Dua rute supaya melihat rekap
-	// tidak pernah menerbitkan nomor.
 	// Komite Claim Life tiket 01 - Inbox Komite dan satu kasus. Keduanya GET:
 	// membaca saja; keputusan komite menyusul di tiket 02.
 	mux.HandleFunc("GET /api/komite", inboxKomite(svc, stubPelaku))
@@ -153,10 +108,8 @@ func Router(svc *services.Service, stubPelaku bool, tambahan ...func(*http.Serve
 	mux.HandleFunc("POST /api/komite/{id}/keputusan", putuskanKomite(svc, stubPelaku))
 	// Tiket 03 - eskalasi naik satu tingkat (admin).
 	mux.HandleFunc("POST /api/komite/{id}/eskalasi", eskalasiKomite(svc, stubPelaku))
-	mux.HandleFunc("GET /api/polis-life/{id}/summary", rekapPolis(svc, stubPelaku))
-	mux.HandleFunc("POST /api/polis-life/{id}/summary",
-		submitRekapPolis(svc, stubPelaku))
-	// --- modul yang sudah pindah ke modul/<nama>/ (Treaty Contract Out) ---
+	// --- modul yang sudah pindah ke modul/<nama>/ (Treaty Contract Out,
+	// PremiumList Life) ---
 	//
 	// Rutenya hidup di modulnya masing-masing; `cmd/api` yang menyerahkannya.
 	for _, daftarkan := range tambahan {

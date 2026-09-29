@@ -217,7 +217,7 @@ func (p *Pendaftaran) Daftar(ctx context.Context, pelaku inti.Pelaku, minta Perm
 		hasil = models.PohonKlaim{
 			Work: models.WorkClaim{
 				ID:   pengenal,
-				Lini: models.LiniLife,
+				Lini: inti.LiniLife,
 				Type: minta.Type,
 				// `[keputusan work owner 26-09-2026, butir ae1]` CASEID =
 				// pengenal work object.

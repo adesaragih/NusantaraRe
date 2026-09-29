@@ -62,7 +62,7 @@ func repoUji(t *testing.T) (*intidb.DB, func()) {
 func pohonUjiStatus(t *testing.T, svc *services.Service, db *intidb.DB) models.PohonKlaim {
 	t.Helper()
 	pohon := models.PohonKlaim{
-		Work: models.WorkClaim{ID: "CLM-UJI400", Lini: models.LiniLife, Type: "QP"},
+		Work: models.WorkClaim{ID: "CLM-UJI400", Lini: inti.LiniLife, Type: "QP"},
 		Klaim: models.Klaim{
 			NomorKlaim: "UJI-CLM-400",
 			Peserta: []models.Peserta{{

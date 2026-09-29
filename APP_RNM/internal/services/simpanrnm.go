@@ -418,7 +418,7 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku inti.Pelaku, klaimID stri
 	if err != nil {
 		return hasil, err
 	}
-	polis, err := repository.NewRingkasPolisLife(x.svc.DB()).Ringkas(ctx, klaim.NomorPolis)
+	polis, err := x.svc.PembacaPolis().Ringkas(ctx, klaim.NomorPolis)
 	if err != nil {
 		return hasil, err
 	}

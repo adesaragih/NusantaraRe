@@ -23,27 +23,34 @@ import (
 var polaKolomTotal = regexp.MustCompile(`(?i)\bTOTAL_[A-Z_]+`)
 
 func TestMigrasiTidakMenyimpanTotalPeserta(t *testing.T) {
-	dir := filepath.Join("..", "repository", "migrations")
-	masuk, err := os.ReadDir(dir)
-	if err != nil {
-		t.Fatalf("membaca %s: %v", dir, err)
+	// Refactor bentuk B (30-09-2026): dulu satu folder,
+	// `internal/repository/migrations`, yang ketika itu memuat migrasi semua
+	// modul. Kini folder `migrations/` SETIAP modul.
+	var masuk []string
+	for _, pola := range []string{
+		filepath.Join("..", "repository", "migrations", "*.sql"),
+		filepath.Join("..", "..", "modul", "*", "migrations", "*.sql"),
+	} {
+		cocok, err := filepath.Glob(pola)
+		if err != nil {
+			t.Fatalf("membaca %s: %v", pola, err)
+		}
+		masuk = append(masuk, cocok...)
 	}
 	if len(masuk) == 0 {
 		t.Fatal("nol berkas migrasi - penjaga ini tidak menjaga apa pun")
 	}
-	for _, e := range masuk {
-		if e.IsDir() || !strings.HasSuffix(e.Name(), ".sql") {
-			continue
-		}
-		isi, err := os.ReadFile(filepath.Join(dir, e.Name()))
+	for _, jalur := range masuk {
+		nama := filepath.Base(jalur)
+		isi, err := os.ReadFile(jalur)
 		if err != nil {
-			t.Fatalf("membaca %s: %v", e.Name(), err)
+			t.Fatalf("membaca %s: %v", nama, err)
 		}
 		for _, cocok := range polaKolomTotal.FindAllString(string(isi), -1) {
 			t.Errorf("%s memuat kolom %q. Keenam total peserta DIHITUNG saat "+
 				"dibaca (models.HitungTotalPeserta, bukti di SavePesertaClaim.xml "+
 				"b4221-b4743); menyimpannya membuat angka uang yang dapat basi "+
-				"terhadap baris adjustment-nya sendiri.", e.Name(), cocok)
+				"terhadap baris adjustment-nya sendiri.", nama, cocok)
 		}
 	}
 }

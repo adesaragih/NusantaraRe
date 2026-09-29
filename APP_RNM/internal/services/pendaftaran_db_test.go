@@ -17,7 +17,6 @@ import (
 
 	"github.com/cockroachdb/apd/v3"
 
-	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
 	"nusantarare/internal/repository/skemauji"
 	"nusantarare/internal/services"
@@ -61,7 +60,8 @@ func siapkanPendaftaran(t *testing.T) (*services.Service, func()) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return services.New(db), func() {
+	// Refactor bentuk B: pembaca polis PremiumList disambung seperti di cmd/api.
+	return services.New(db).DenganPembacaPolis(skemauji.PembacaPolis(db)), func() {
 		_ = skemauji.Bongkar(ctx, sqlDB, skema)
 		_ = db.Close()
 		_ = sqlDB.Close()
@@ -95,8 +95,8 @@ func TestDaftarMenulisTigaTempatDanBarisDatar(t *testing.T) {
 	if !strings.HasPrefix(pohon.Work.ID, repository.AwalanKlaim) {
 		t.Errorf("pengenal work %q tidak berawalan %q", pohon.Work.ID, repository.AwalanKlaim)
 	}
-	if pohon.Work.Lini != models.LiniLife {
-		t.Errorf("LINI = %q, mau %q", pohon.Work.Lini, models.LiniLife)
+	if pohon.Work.Lini != inti.LiniLife {
+		t.Errorf("LINI = %q, mau %q", pohon.Work.Lini, inti.LiniLife)
 	}
 
 	// Header terbaca kembali, beserta mata uangnya (butir z1).

@@ -18,6 +18,7 @@ import (
 	"nusantarare/internal/services"
 	"nusantarare/inti"
 	"nusantarare/inti/galat"
+	"nusantarare/inti/kontrak"
 )
 
 // jawabGalatSimpanRNM menerjemahkan galat Save to RNM. true = sudah dijawab.
@@ -46,7 +47,7 @@ func jawabGalatSimpanRNM(w http.ResponseWriter, err error) bool {
 		galat.Tulis(w, http.StatusNotFound, "klaim tidak ada")
 	case errors.Is(err, services.ErrTypeTidakDikenal),
 		errors.Is(err, services.ErrBusinessCodeTidakDikenal),
-		errors.Is(err, services.ErrPolisNomorTakDitemukan):
+		errors.Is(err, kontrak.ErrPolisNomorTakDitemukan):
 		// 422: datanya yang belum lengkap untuk diperiksa, bukan aplikasinya
 		// yang rusak - kalimatnya menyebut apa yang kurang.
 		galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())

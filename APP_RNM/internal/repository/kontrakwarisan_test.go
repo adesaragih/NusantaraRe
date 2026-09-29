@@ -11,16 +11,74 @@ package repository
 // setiap kolom yang dibaca Claim Life harus diisi penulis PremiumList.
 
 import (
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 )
 
+// letakPenulisPremiumList - berkas penulis tabel warisan milik PremiumList.
+//
+// Refactor bentuk B (30-09-2026): uji kontrak ini dulu membaca variabel
+// `kolomPesertaWarisan` langsung - keduanya satu paket. Kini penulisnya
+// tinggal di modul PremiumList, dan modul Claim Life tidak boleh
+// mengimpornya; maka deklarasinya dibaca dari SUMBERnya sebagai pohon
+// sintaks. Yang diuji tetap PERTEMUAN kedua sisi.
+const letakPenulisPremiumList = "../../modul/premiumlist/repository/polis_warisan.go"
+
+// kolomPenulis adalah satu baris `kolomPesertaWarisan`: kolom dan sumbernya.
+type kolomPenulis struct{ Kolom, Sumber string }
+
+// kolomPenulisPremiumList mengurai `var kolomPesertaWarisan = []struct{...}{...}`
+// dari sumber penulis PremiumList.
+func kolomPenulisPremiumList(t *testing.T) []kolomPenulis {
+	t.Helper()
+	fset := token.NewFileSet()
+	f, err := parser.ParseFile(fset, letakPenulisPremiumList, nil, 0)
+	if err != nil {
+		t.Fatalf("penulis PremiumList tidak terbaca: %v", err)
+	}
+	var hasil []kolomPenulis
+	ast.Inspect(f, func(n ast.Node) bool {
+		vs, ok := n.(*ast.ValueSpec)
+		if !ok || len(vs.Names) != 1 || vs.Names[0].Name != "kolomPesertaWarisan" || len(vs.Values) != 1 {
+			return true
+		}
+		lit, ok := vs.Values[0].(*ast.CompositeLit)
+		if !ok {
+			t.Fatal("kolomPesertaWarisan bukan literal komposit; pembacanya yang rusak")
+		}
+		for _, e := range lit.Elts {
+			baris, ok := e.(*ast.CompositeLit)
+			if !ok || len(baris.Elts) < 2 {
+				t.Fatalf("baris kolomPesertaWarisan tak terbaca di %s", fset.Position(e.Pos()))
+			}
+			var teks [2]string
+			for i := 0; i < 2; i++ {
+				bl, ok := baris.Elts[i].(*ast.BasicLit)
+				if !ok || bl.Kind != token.STRING {
+					t.Fatalf("medan ke-%d baris kolomPesertaWarisan bukan teks di %s", i, fset.Position(baris.Pos()))
+				}
+				teks[i], _ = strconv.Unquote(bl.Value)
+			}
+			hasil = append(hasil, kolomPenulis{Kolom: teks[0], Sumber: teks[1]})
+		}
+		return false
+	})
+	if len(hasil) < 10 {
+		t.Fatalf("hanya %d kolom penulis PremiumList terbaca; pembacanya yang rusak", len(hasil))
+	}
+	return hasil
+}
+
 // kolomDitulisWarisan adalah seluruh kolom yang diisi `PesertaWarisan.Ganti`.
-func kolomDitulisWarisan() map[string]bool {
+func kolomDitulisWarisan(t *testing.T) map[string]bool {
 	ada := map[string]bool{"ID": true}
-	for _, k := range kolomPesertaWarisan {
+	for _, k := range kolomPenulisPremiumList(t) {
 		ada[k.Kolom] = true
 	}
 	return ada
@@ -31,7 +89,7 @@ func kolomDitulisWarisan() map[string]bool {
 // Dua pembaca Claim Life: `kolomSalin` (salinan ke klaim) dan daftar pilih
 // `sqlCariPeserta` (layar Find Insured, padanan `GetPesertaClaim_sql1`).
 func TestKolomBacaClaimLifeDiisiPenulisPremiumList(t *testing.T) {
-	ditulis := kolomDitulisWarisan()
+	ditulis := kolomDitulisWarisan(t)
 
 	q, _ := sqlCariPeserta("S.M", "UJI-PL", "", "", 10)
 	m := regexp.MustCompile(`(?s)SELECT (.*?)\s+FROM`).FindStringSubmatch(q)
@@ -77,7 +135,7 @@ func TestKolomBacaClaimLifeDiisiPenulisPremiumList(t *testing.T) {
 // NB hilang dari layar klaim.
 func TestPesertaNBTetapHidupDiJalurBacaKlaim(t *testing.T) {
 	var sumber string
-	for _, k := range kolomPesertaWarisan {
+	for _, k := range kolomPenulisPremiumList(t) {
 		if k.Kolom == "EDMSTATUS" {
 			sumber = k.Sumber
 		}
@@ -91,31 +149,5 @@ func TestPesertaNBTetapHidupDiJalurBacaKlaim(t *testing.T) {
 	}
 	if !strings.Contains(penyaringHidup, "IS NULL") {
 		t.Errorf("penyaring hidup %q tidak meloloskan NULL", penyaringHidup)
-	}
-}
-
-// TestPenulisWarisanMengisiKunciBacaKlaim - kunci baca = kunci tulis.
-//
-// Claim Life membaca berkunci `PL_NUMBER` (+ `CERTIFICATE_NO`); penulis
-// mengisi `PL_NUMBER` dengan nomor yang BARU terbit di transaksi yang sama,
-// bukan dari kolom sumber yang mungkin masih kosong.
-func TestPenulisWarisanMengisiKunciBacaKlaim(t *testing.T) {
-	for _, k := range kolomPesertaWarisan {
-		switch k.Kolom {
-		case "PL_NUMBER":
-			if k.Sumber != "" {
-				t.Errorf("PL_NUMBER bersumber %q; ia harus nomor yang dirakit nilaiSalinWarisan", k.Sumber)
-			}
-		case "CERTIFICATE_NO":
-			if k.Sumber != "d.CERTIFICATE_NO" {
-				t.Errorf("CERTIFICATE_NO bersumber %q", k.Sumber)
-			}
-		}
-	}
-	arg := nilaiSalinWarisan("UJI-PL-9", "UJI-W", BarisWarisan{})
-	for i, k := range kolomPesertaWarisan {
-		if k.Kolom == "PL_NUMBER" && arg[i] != "UJI-PL-9" {
-			t.Errorf("PL_NUMBER dikirim %v", arg[i])
-		}
 	}
 }

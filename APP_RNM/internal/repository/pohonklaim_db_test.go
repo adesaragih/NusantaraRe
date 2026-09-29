@@ -22,10 +22,12 @@ import (
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
 	"nusantarare/internal/repository/skemauji"
+	"nusantarare/inti"
 	"nusantarare/inti/db"
 	"nusantarare/inti/migrasi"
 	intiuang "nusantarare/inti/uang"
 	"nusantarare/inti/utils"
+	"nusantarare/modul"
 )
 
 func siapkanPohon(t *testing.T) (*db.DB, *repository.PohonKlaim, func()) {
@@ -78,7 +80,7 @@ func contohPohon(t *testing.T) models.PohonKlaim {
 	}
 	return models.PohonKlaim{
 		Work: models.WorkClaim{
-			ID: "CLM-UJI900", Lini: models.LiniLife, Type: "UJI-TYPE", CaseID: "UJI-CASE-900",
+			ID: "CLM-UJI900", Lini: inti.LiniLife, Type: "UJI-TYPE", CaseID: "UJI-CASE-900",
 		},
 		Klaim: models.Klaim{
 			ID: "CLM-UJI900", NomorKlaim: "UJI-CLM-9", NomorPolis: "UJI-POL-9",
@@ -117,7 +119,7 @@ func TestMigrasiIdempoten(t *testing.T) {
 	db, _, bersihkan := siapkanPohon(t)
 	defer bersihkan()
 
-	lap, err := migrasi.Jalankan(context.Background(), db, repository.SumberMigrasi())
+	lap, err := migrasi.Jalankan(context.Background(), db, modul.SumberMigrasi()...)
 	if err != nil {
 		t.Fatalf("migrasi kedua gagal: %v", err)
 	}
@@ -154,7 +156,7 @@ func TestLangkahGagalSeparuhJalanTetapSelesai(t *testing.T) {
 	}
 	defer func() { _ = sqlDB.Close() }()
 
-	if _, err := migrasi.Bongkar(ctx, db, repository.SumberMigrasi()); err != nil {
+	if _, err := migrasi.Bongkar(ctx, db, modul.SumberMigrasi()...); err != nil {
 		t.Fatalf("membongkar: %v", err)
 	}
 	// ⛔ Pernyataan yang dijalankan adalah pernyataan PERTAMA langkah 001 yang
@@ -174,7 +176,7 @@ func TestLangkahGagalSeparuhJalanTetapSelesai(t *testing.T) {
 		t.Fatalf("membuat sisa objek: %v", err)
 	}
 
-	lap, err := migrasi.Jalankan(ctx, db, repository.SumberMigrasi())
+	lap, err := migrasi.Jalankan(ctx, db, modul.SumberMigrasi()...)
 	if err != nil {
 		t.Fatalf("migrasi menolak meneruskan langkah yang separuh jadi: %v", err)
 	}
@@ -193,10 +195,10 @@ func TestJalurMundurDiuji(t *testing.T) {
 	defer bersihkan()
 	ctx := context.Background()
 
-	if _, err := migrasi.Bongkar(ctx, db, repository.SumberMigrasi()); err != nil {
+	if _, err := migrasi.Bongkar(ctx, db, modul.SumberMigrasi()...); err != nil {
 		t.Fatalf("jalur mundur gagal: %v", err)
 	}
-	lap, err := migrasi.Jalankan(ctx, db, repository.SumberMigrasi())
+	lap, err := migrasi.Jalankan(ctx, db, modul.SumberMigrasi()...)
 	if err != nil {
 		t.Fatalf("migrasi ulang sesudah mundur gagal: %v", err)
 	}
@@ -477,7 +479,7 @@ func TestNamaConstraintBertabrakanMenggagalkanMigrasi(t *testing.T) {
 	}
 	defer func() { _ = sqlDB.Close() }()
 
-	if _, err := migrasi.Bongkar(ctx, db, repository.SumberMigrasi()); err != nil {
+	if _, err := migrasi.Bongkar(ctx, db, modul.SumberMigrasi()...); err != nil {
 		t.Fatalf("membongkar: %v", err)
 	}
 	// Tabel lain yang sudah memakai nama constraint milik langkah 001.
@@ -490,7 +492,7 @@ func TestNamaConstraintBertabrakanMenggagalkanMigrasi(t *testing.T) {
 		_, _ = sqlDB.ExecContext(ctx, "DROP TABLE "+skema+".UJI_TABRAKAN CASCADE CONSTRAINTS")
 	}()
 
-	_, err = migrasi.Jalankan(ctx, db, repository.SumberMigrasi())
+	_, err = migrasi.Jalankan(ctx, db, modul.SumberMigrasi()...)
 	if err == nil {
 		t.Fatal("migrasi LULUS padahal nama constraint bertabrakan - tabel 001 tidak terbuat")
 	}
@@ -536,7 +538,7 @@ func TestBentukTabelBerbedaMenggagalkanMigrasi(t *testing.T) {
 	}
 	defer func() { _ = sqlDB.Close() }()
 
-	if _, err := migrasi.Bongkar(ctx, db, repository.SumberMigrasi()); err != nil {
+	if _, err := migrasi.Bongkar(ctx, db, modul.SumberMigrasi()...); err != nil {
 		t.Fatalf("membongkar: %v", err)
 	}
 	// Tabel bernama sama dengan yang dibuat 007, tetapi kolomnya sengaja
@@ -556,7 +558,7 @@ func TestBentukTabelBerbedaMenggagalkanMigrasi(t *testing.T) {
 		_, _ = sqlDB.ExecContext(ctx, "DROP TABLE "+skema+".T_CLAIMLF_DOCUMENT CASCADE CONSTRAINTS")
 	}()
 
-	_, err = migrasi.Jalankan(ctx, db, repository.SumberMigrasi())
+	_, err = migrasi.Jalankan(ctx, db, modul.SumberMigrasi()...)
 	if err == nil {
 		t.Fatal("migrasi LULUS padahal T_CLAIMLF_DOCUMENT berbentuk lain - " +
 			"aplikasi akan berjalan di atas tabel yang kolomnya bukan miliknya")

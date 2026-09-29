@@ -16,7 +16,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/internal/models"
+	"nusantarare/modul/premiumlist/models"
 )
 
 // polaPenulisStatus mencocokkan baris yang MENULIS status baris adjustment.

@@ -18,7 +18,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/internal/models"
+	"nusantarare/inti"
 )
 
 // sqlTabel mengembalikan teks SQL berkas migrasi yang berawalan nomor tertentu.
@@ -104,8 +104,8 @@ func TestAC23WorkClaimMemuatKolomPindahan(t *testing.T) {
 // kolomnya - karena itu constraint CHECK sengaja tidak dipasang.
 func TestAC28KolomLiniAdaDanKonstantanyaTunggal(t *testing.T) {
 	wajibMemuat(t, sqlTabel(t, "001_"), "T_WORK_CLAIM", []string{"LINI"})
-	if models.LiniLife != "LIFE" {
-		t.Errorf("konstanta lini Life = %q, mau %q", models.LiniLife, "LIFE")
+	if inti.LiniLife != "LIFE" {
+		t.Errorf("konstanta lini Life = %q, mau %q", inti.LiniLife, "LIFE")
 	}
 }
 

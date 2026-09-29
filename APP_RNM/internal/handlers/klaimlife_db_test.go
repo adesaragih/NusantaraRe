@@ -55,7 +55,8 @@ func server(t *testing.T) (*httptest.Server, func()) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	srv := httptest.NewServer(handlers.Router(services.New(db), false))
+	// Refactor bentuk B: pembaca polis PremiumList disambung seperti di cmd/api.
+	srv := httptest.NewServer(handlers.Router(services.New(db).DenganPembacaPolis(skemauji.PembacaPolis(db)), false))
 	return srv, func() {
 		srv.Close()
 		_ = skemauji.Bongkar(ctx, sqlDB, skema)

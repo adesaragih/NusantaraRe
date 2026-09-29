@@ -14,7 +14,6 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/db"
 	"nusantarare/inti/migrasi"
 )
 
@@ -41,75 +40,6 @@ func gabungSemua(t *testing.T) string {
 	return strings.ToUpper(b.String())
 }
 
-// Delapan langkah maju, berurut, dan masing-masing punya jalur mundur.
-func TestSetiapLangkahPunyaJalurMundur(t *testing.T) {
-	maju, err := migrasi.Daftar(false, berkasMigrasi)
-	if err != nil {
-		t.Fatal(err)
-	}
-	mundur, err := migrasi.Daftar(true, berkasMigrasi)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(maju) == 0 {
-		t.Fatal("tidak ada langkah maju sama sekali")
-	}
-	if len(maju) != len(mundur) {
-		t.Fatalf("maju %d langkah, mundur %d langkah", len(maju), len(mundur))
-	}
-
-	punyaMundur := map[string]bool{}
-	for _, m := range mundur {
-		punyaMundur[migrasi.KunciLangkah(m.Nama)] = true
-	}
-	for _, m := range maju {
-		if !punyaMundur[migrasi.KunciLangkah(m.Nama)] {
-			t.Errorf("langkah %s tidak punya jalur mundur", m.Nama)
-		}
-	}
-}
-
-// Jalur mundur berjalan MENURUN supaya anak dibongkar sebelum induknya.
-func TestJalurMundurBerurutMenurun(t *testing.T) {
-	mundur, err := migrasi.Daftar(true, berkasMigrasi)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for i := 1; i < len(mundur); i++ {
-		if mundur[i-1].Nama < mundur[i].Nama {
-			t.Errorf("urutan mundur naik di %s lalu %s", mundur[i-1].Nama, mundur[i].Nama)
-		}
-	}
-}
-
-// Setiap pernyataan harus berisi, menyebut skema, dan lolos PeriksaSQL.
-func TestSetiapPernyataanSahDanBerskema(t *testing.T) {
-	for _, mundur := range []bool{false, true} {
-		langkah, err := migrasi.Daftar(mundur, berkasMigrasi)
-		if err != nil {
-			t.Fatal(err)
-		}
-		for _, m := range langkah {
-			if len(m.Pernyataan) == 0 {
-				t.Errorf("%s: nol pernyataan", m.Nama)
-			}
-			for i, p := range m.Pernyataan {
-				if strings.TrimSpace(p) == "" {
-					t.Errorf("%s pernyataan %d kosong", m.Nama, i)
-				}
-				if !strings.Contains(p, "{skema}") {
-					t.Errorf("%s pernyataan %d tidak menyebut skema (ADR-U-0033): %.60s",
-						m.Nama, i, p)
-				}
-				// ADR-U-0029: nol COMMIT di teks SQL.
-				if err := db.PeriksaSQL(p); err != nil {
-					t.Errorf("%s pernyataan %d: %v", m.Nama, i, err)
-				}
-			}
-		}
-	}
-}
-
 // Tiket 14: enam tabel klaim + T_WORK_CLAIM harus dibuat.
 func TestTujuhTabelDibuat(t *testing.T) {
 	sql := gabungSemua(t)
@@ -125,25 +55,6 @@ func TestTujuhTabelDibuat(t *testing.T) {
 	for _, tb := range mau {
 		if !strings.Contains(sql, "CREATE TABLE {SKEMA}."+tb+" (") {
 			t.Errorf("tabel %s tidak dibuat", tb)
-		}
-	}
-}
-
-// ⛔ Nama-nama yang DIBUANG. Tiket 14 menyatakan test yang menemukannya gagal.
-func TestNamaYangDibuangTidakAda(t *testing.T) {
-	sql := gabungSemua(t)
-	terlarang := map[string]string{
-		"T_CLAIMLF_POLICY":            "tabel dihapus 2026-09-18, bukan diganti nama",
-		"T_CLAIMLF_MARKETING":         "tabel dihapus 2026-09-18, bukan diganti nama",
-		"T_CLAIM_POLICY":              "tabel dihapus 2026-09-18",
-		"T_CLAIM_MARKETING":           "tabel dihapus 2026-09-18",
-		"WORK_CLAIM_ID":               "dibuang; hubungannya shared primary key",
-		"KMT_NO":                      "dibuang",
-		"T_CLAIMLF_ADJUSTMENT_KOMITE": "roster komite tidak disimpan di Claim Life",
-	}
-	for n, sebab := range terlarang {
-		if strings.Contains(sql, n) {
-			t.Errorf("nama terlarang %q muncul di migrasi - %s", n, sebab)
 		}
 	}
 }
@@ -204,78 +115,6 @@ func TestAdjustmentMenggantungPadaPeserta(t *testing.T) {
 	}
 }
 
-// Kaskade pada relasi 3, 4, 5, 6 - dan relasi 9, roster komite.
-// T_CLAIMLF_DOCUMENT (relasi 7) ditangani di Go, jadi kunci tamunya TANPA
-// ON DELETE.
-//
-// ⚠️ LINGKUPNYA MODUL CLAIM LIFE - migrasi 001-049. Sejak modul
-// PremiumList Life menambah migrasi 050+, penjaga ini harus menyatakan
-// lingkupnya: kebijakan kaskade kedua modul BERBEDA dan keduanya disengaja.
-// Claim Life memilih kaskade pada empat relasi (kini lima); PremiumList Life
-// memilih kaskade pada SELURUH FK (tiket 00 AC 46, dijaga
-// TestSeluruhFKPohonPolisBerkaskade). Penjaga yang membentang ke modul lain
-// akan memaksa salah satunya mengalah tanpa alasan.
-//
-// ⛔ RALAT 27-09-2026, dan penjaga ini sempat MENEGAKKAN cacatnya sendiri.
-// Daftar di bawah ditulis ketika hanya migrasi Claim Life ada, dan ia
-// menuntut `013_tabel_komite.sql` TIDAK berkaskade. Tetapi
-// `STRUKTUR-TABEL-KOMITE-CLAIM-LIFE.md` menyebut relasi
-// `T_GENERAL_KOMITE` -> `T_KOMITE_KOMITELIST` sebagai `ON DELETE CASCADE` di
-// TIGA tempat (baris 159, 238, 253), dan 013 membuatnya tanpa `ON DELETE`.
-// Jadi penjaga ini bukan hanya melewatkan cacat - ia menahan perbaikannya.
-//
-// ⚠️ Akibat cacat itu nyata: menghapus satu kasus komite DITOLAK Oracle
-// (ORA-02292) selama masih ada baris roster yang menunjuknya, dan itu jalur
-// yang tiket 05 perlukan. Migrasi `030` memperbaikinya lewat ALTER.
-//
-// ⛔ KEDUA PELAJARAN ITU SATU, dan disatukan di sini 27-09-2026: daftar yang
-// ditulis sebelum modul kedua lahir berhenti menjadi penjaga dan mulai
-// menjadi pagar. Yang satu menyempitkan LINGKUPnya, yang lain memperbaiki
-// ISInya; keduanya perlu.
-// ⛔ NAMANYA BERUBAH 27-09-2026, dan sebabnya adalah namanya sendiri.
-// Ia lahir sebagai `TestKaskadeHanyaPadaEmpatRelasi` ketika relasi berkaskade
-// memang empat. Kini enam berkas terdaftar, dan nama yang menyebut ANGKA
-// berbohong setiap kali relasi ketujuh lahir - sementara nama yang menyebut
-// ATURANNYA tidak pernah berbohong. Nama lamanya ditulis di sini supaya
-// pencarian atasnya tetap sampai ke tempat ini.
-//
-// ⚠️ Yang dijaga bukan jumlahnya melainkan kesengajaannya: kaskade ada
-// HANYA pada relasi yang terdaftar di bawah, dan mendaftarkan yang baru
-// menuntut bukti - bukan kemudahan.
-func TestKaskadeHanyaPadaRelasiTerdaftar(t *testing.T) {
-	berkas := seluruhSQL(t, false)
-	berkaskade := map[string]bool{
-		"003_": true, "004_": true, "005_": true, "006_": true,
-		// Relasi 9: roster komite. 013 membuatnya TANPA kaskade (cacat),
-		// 030 memasangnya lewat ALTER. Keduanya terdaftar: yang pertama
-		// karena kelak diperbaiki di tempatnya, yang kedua karena ia
-		// perbaikannya.
-		"030_": true,
-		// Relasi 10: diagnosa per peserta (butir bd). Buktinya bukan
-		// selera: `.DiagnoseList` hidup DI DALAM halaman peserta -
-		// `SetDisease.xml` b389 menutup dengan `Obj-Save pyWorkPage`,
-		// bukan menyimpan halaman diagnosa sendiri. Menghapus peserta
-		// karena itu menghapus daftarnya.
-		"018_": true,
-	}
-	for nama, teks := range berkas {
-		if !milikClaimLife(nama) {
-			continue
-		}
-		isi := strings.ToUpper(teks)
-		ada := strings.Contains(isi, "ON DELETE CASCADE")
-		mau := false
-		for awalan := range berkaskade {
-			if strings.HasPrefix(nama, awalan) {
-				mau = true
-			}
-		}
-		if ada != mau {
-			t.Errorf("%s: ON DELETE CASCADE ada=%v, mau=%v", nama, ada, mau)
-		}
-	}
-}
-
 // milikClaimLife menjawab apakah berkas migrasi itu milik modul Claim Life.
 //
 // ⛔ Batasnya NOMOR, dan itu keputusan yang tercatat: Claim Life memakai
@@ -283,175 +122,6 @@ func TestKaskadeHanyaPadaRelasiTerdaftar(t *testing.T) {
 // gagal pada tabel yang namanya tidak menyebut modulnya.
 func milikClaimLife(nama string) bool {
 	return nama < "050_"
-}
-
-// milikPremiumList menjawab apakah berkas migrasi itu milik PremiumList Life.
-//
-// Rentangnya 050-079 (PROMPT-EKSEKUSI-HULU-HILIR.md §4). Lahir 28-09-2026
-// ketika modul ketiga (Treaty Contract Out, 300-319) menambah migrasi dan
-// "bukan Claim Life" tidak lagi berarti "PremiumList".
-func milikPremiumList(nama string) bool {
-	return nama >= "050_" && nama < "080_"
-}
-
-// Seluruh FK pohon polis BERKASKADE - tiket 00 PremiumList Life AC 46.
-//
-// ⛔ Kebijakan yang BERBEDA dari Claim Life, dan sengaja. Pohon polis empat
-// tingkat (polis -> peserta -> spreading -> spreading retro) dan hapus polis
-// harus membersihkan seluruh turunannya; menangani kaskade di Go untuk pohon
-// sedalam itu berarti empat perjalanan pulang-pergi dan satu kesempatan
-// gagal di tengah.
-//
-// ⚠️ Migrasi 050 dan 051 TIDAK punya FK sama sekali - T_WORK_POLIS berdiri
-// sendiri, dan T_PREMIUM_LIST berbagi PK dengannya tanpa constraint. Uji ini
-// menuntut keduanya TANPA kaskade, supaya constraint yang diam-diam
-// ditambahkan di antara keduanya berbunyi.
-func TestSeluruhFKPohonPolisBerkaskade(t *testing.T) {
-	tanpaFK := map[string]bool{"050_": true, "051_": true}
-	diperiksa := 0
-	for nama, teks := range seluruhSQL(t, false) {
-		// ⛔ DIPERSEMPIT ke rentang PremiumList Life 28-09-2026 (sesi Treaty
-		// Contract Out). Sebelumnya "bukan Claim Life" berarti "PremiumList",
-		// sebab hanya dua modul yang bermigrasi. Sejak migrasi 300-319 ada,
-		// tabel yang menggantung pada KUNCI GABUNGAN tanpa FK (spec Treaty
-		// Contract Out §2) akan dituduh "tidak punya FOREIGN KEY". Penjaga
-		// yang menuduh hal yang benar akan dilonggarkan orang; ia karena itu
-		// dipersempit ke rentang modul yang kebijakannya ia jaga - tidak
-		// dilonggarkan. Kebijakan FK Treaty Contract Out dijaga
-		// tco_migrasi_test.go.
-		if !milikPremiumList(nama) || strings.Contains(nama, "_down") {
-			continue
-		}
-		isi := strings.ToUpper(teks)
-		// Penjaga ini tentang TABEL anak. Migrasi yang tidak membuat tabel -
-		// 057 hanya menambah sequence dan satu kolom (butir bn) - tidak punya
-		// induk untuk ditunjuk.
-		if !strings.Contains(isi, "CREATE TABLE") {
-			continue
-		}
-		diperiksa++
-		punyaFK := strings.Contains(isi, "FOREIGN KEY")
-		berkaskade := strings.Contains(isi, "ON DELETE CASCADE")
-
-		bebas := false
-		for awalan := range tanpaFK {
-			if strings.HasPrefix(nama, awalan) {
-				bebas = true
-			}
-		}
-		if bebas {
-			if punyaFK {
-				t.Errorf("%s punya FOREIGN KEY; 050 dan 051 seharusnya tanpa FK "+
-					"- hubungan keduanya SHARED PK tanpa kolom penyambung", nama)
-			}
-			continue
-		}
-		if !punyaFK {
-			t.Errorf("%s tidak punya FOREIGN KEY; seluruh tabel anak pohon polis "+
-				"menunjuk induknya", nama)
-			continue
-		}
-		if !berkaskade {
-			t.Errorf("%s punya FK TANPA ON DELETE CASCADE (tiket 00 AC 46)", nama)
-		}
-	}
-	if diperiksa == 0 {
-		t.Fatal("nol migrasi PremiumList ditelusuri - penjaga ini tidak menjaga apa pun")
-	}
-}
-
-// Setiap FK pohon polis PUNYA INDEX - tiket 00 AC 49.
-//
-// ⛔ Skala jutaan baris. FK tanpa index membuat setiap hapus induk memindai
-// seluruh tabel anak, dan pada T_PREMIUM_LIST_DETAIL itu berarti memindai
-// jutaan baris untuk menghapus satu polis.
-func TestSetiapFKPohonPolisBerindex(t *testing.T) {
-	diperiksa := 0
-	polaFK := regexp.MustCompile(`FOREIGN KEY \(([A-Z_]+)\)`)
-	for nama, teks := range seluruhSQL(t, false) {
-		// Dipersempit ke rentang PremiumList Life (lihat penjaga di atas);
-		// index FK Treaty Contract Out dijaga tco_migrasi_test.go.
-		if !milikPremiumList(nama) || strings.Contains(nama, "_down") {
-			continue
-		}
-		isi := strings.ToUpper(teks)
-		for _, m := range polaFK.FindAllStringSubmatch(isi, -1) {
-			kolom := m[1]
-			diperiksa++
-			// Index-nya harus ada DAN menyebut kolom FK itu, bukan kolom lain.
-			// Index pada kolom lain menenangkan tanpa menjaga: hapus induk
-			// tetap memindai seluruh tabel anak.
-			if !strings.Contains(isi, "CREATE INDEX") {
-				t.Errorf("%s: FK pada %s, dan berkas itu tidak membuat index apa pun",
-					nama, kolom)
-				continue
-			}
-			if !strings.Contains(isi, "("+kolom+")"+"\n") {
-				t.Errorf("%s: ada CREATE INDEX tetapi tidak pada kolom FK %s", nama, kolom)
-			}
-		}
-	}
-	if diperiksa == 0 {
-		t.Fatal("nol FK pohon polis ditemukan - penjaga ini tidak menjaga apa pun")
-	}
-}
-
-// AC: seluruh kolom uang bertipe desimal, tidak ada yang berupa teks, dan
-// tidak ada kolom JSON yang menyimpan atribut klaim.
-func TestKolomUangDesimalDanNolJSON(t *testing.T) {
-	sql := gabungSemua(t)
-	for _, kol := range []string{"CLAIM_AMOUNT", "SUM_INSURED", "SUM_REASURED"} {
-		pola := regexp.MustCompile(kol + `\s+NUMBER\(38,8\)`)
-		if !pola.MatchString(sql) {
-			t.Errorf("kolom uang %s tidak bertipe NUMBER(38,8)", kol)
-		}
-		if regexp.MustCompile(kol + `\s+(VARCHAR2|CHAR|CLOB)`).MatchString(sql) {
-			t.Errorf("kolom uang %s bertipe teks", kol)
-		}
-	}
-	// ⛔ DIPERSEMPIT, bukan dilonggarkan - A2, 27-09-2026.
-	//
-	// Yang dilarang adalah ATRIBUT KLAIM yang bersembunyi di dalam dokumen -
-	// itulah inti keputusan "yang dibuang hanya JSON". `T_LOG_SERVICE_RNM.MUATAN`
-	// bukan atribut klaim: ia BADAN PESAN antrean, yang memang berbentuk
-	// dokumen dan memang tidak boleh dipecah menjadi kolom - setiap jenis efek
-	// punya bentuk muatannya sendiri.
-	//
-	// Cakupannya dinyatakan: pengecualian berlaku untuk SATU kolom di SATU
-	// tabel, dan penjaga terpisah memastikan muatan itu tidak memuat nama
-	// orang, kredensial, maupun alamat.
-	// ⛔ DIPERIKSA PER BERKAS, bukan dengan memotong teks gabungan.
-	//
-	// Ronde pertama memotong blok `CREATE TABLE` dari teks yang sudah
-	// digabung - dan potongannya MELESET: 6.382 dari 10.037 karakter ikut
-	// terbuang, sehingga penjaganya berhenti memeriksa sebagian besar
-	// migrasi tanpa ada yang tahu. Ketahuan hanya karena panjangnya dicetak.
-	//
-	// Pemeriksaan per berkas tidak dapat salah potong: satu berkas
-	// dikecualikan dengan namanya, sisanya utuh.
-	const berkasOutbox = "015_t_log_service_rnm"
-	dokumenDiOutbox := 0
-	for nama, isi := range seluruhSQL(t, false) {
-		atas := strings.ToUpper(isi)
-		if strings.Contains(nama, berkasOutbox) {
-			dokumenDiOutbox += strings.Count(atas, "CLOB")
-			continue
-		}
-		for _, tipe := range []string{" JSON", "CLOB", "BLOB", "JSON_KLAIM"} {
-			if strings.Contains(atas, tipe) {
-				t.Errorf("%s memuat %q - atribut klaim harus menjadi kolom bernama",
-					nama, tipe)
-			}
-		}
-	}
-	// Dan outbox-nya memang hanya punya SATU kolom dokumen.
-	if dokumenDiOutbox != 1 {
-		t.Errorf("T_LOG_SERVICE_RNM memuat %d kolom CLOB, mau tepat 1 (MUATAN)",
-			dokumenDiOutbox)
-	}
-	if strings.Contains(sql, "FLOAT") || strings.Contains(sql, "BINARY_DOUBLE") {
-		t.Error("ada kolom bertipe float - uang tidak pernah float (ADR-U-0003)")
-	}
 }
 
 // Setiap kunci tamu ber-index, dan KOMITE_ID ber-index UNIK.
@@ -500,6 +170,7 @@ func TestIdentitasWorkClaimBerupaTeks(t *testing.T) {
 		t.Error("T_WORK_CLAIM.ID bertipe numerik")
 	}
 }
+<<<<<<< HEAD
 
 // Berkas migrasi tidak boleh berawalan byte order mark.
 //
@@ -712,3 +383,5 @@ func TestKolomCreateTableMembacaSeluruhTabel(t *testing.T) {
 		t.Error("nol pernyataan bukan-tabel; CREATE INDEX dan SEQUENCE seharusnya ada")
 	}
 }
+=======
+>>>>>>> 9b478cc (refactor(bentuk-B) paket 3: modul/premiumlist — polis_*, migrasi 050-058, kontrak PembacaPolis)

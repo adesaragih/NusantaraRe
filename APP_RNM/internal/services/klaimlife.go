@@ -9,7 +9,7 @@ import (
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
 	"nusantarare/inti/db"
-	"nusantarare/inti/migrasi"
+	"nusantarare/inti/kontrak"
 )
 
 // ErrKlaimTidakAda dikembalikan bila klaim yang diminta tidak ada.
@@ -23,7 +23,7 @@ type KlaimLife struct {
 	diag *repository.Diagnosa
 	kurs *db.MataUang
 	// Butir bk: ambang `MAXEXPIREDCLAIM` penanda `MAX CLAIM RECEIVED`.
-	polis  *repository.RingkasPolisLife
+	polis  kontrak.PembacaPolis
 	produk *repository.ProdukLife
 }
 
@@ -36,7 +36,7 @@ func (s *Service) KlaimLife() *KlaimLife {
 		repo:   repository.NewKlaimLife(s.DB()),
 		diag:   repository.NewDiagnosa(s.DB()),
 		kurs:   db.NewMataUang(s.DB()),
-		polis:  repository.NewRingkasPolisLife(s.DB()),
+		polis:  s.PembacaPolis(),
 		produk: repository.NewProdukLife(s.DB()),
 	}
 }
@@ -162,34 +162,6 @@ func (k *KlaimLife) Ambil(ctx context.Context, id string) (*models.Klaim, error)
 	return klaim, nil
 }
 
-// JalankanMigrasi membentuk tabel di basis data yang dikonfigurasi.
-//
-// Ia dipanggil oleh `go run ./cmd/api -migrate` (target `make migrate`).
-// Pelarinya menolak berjalan bila lingkungan menunjuk produksi Pega
-// (ADR-U-0005), dan aman dijalankan berulang kali.
-func (s *Service) JalankanMigrasi(ctx context.Context) (migrasi.Laporan, error) {
-	if !s.PunyaDatabase() {
-		return migrasi.Laporan{}, db.ErrTanpaOracle
-	}
-	return migrasi.Jalankan(ctx, s.DB(), repository.SumberMigrasi())
-}
-
-// BongkarMigrasi menjalankan jalur mundur tiap langkah yang TERCATAT selesai.
-//
-// ⛔ Ia MENGHAPUS tabel. Sampai 26-09-2026 satu-satunya pemanggilnya adalah
-// skema uji, sehingga orang yang ingin membongkar skema uji sendiri terpaksa
-// menyalin isi berkas *_down.sql ke sqlplus - dan itu melewati pengaman
-// T_MIGRASI, yang hanya membongkar langkah yang benar-benar tercatat.
-//
-// Pemanggilnya WAJIB memagari lebih dulu lewat Config.PastikanSkemaUji.
-// Lapisan ini tidak membaca environment sendiri.
-func (s *Service) BongkarMigrasi(ctx context.Context) (migrasi.Laporan, error) {
-	if !s.PunyaDatabase() {
-		return migrasi.Laporan{}, db.ErrTanpaOracle
-	}
-	return migrasi.Bongkar(ctx, s.DB(), repository.SumberMigrasi())
-}
-
 // lengkapiPengenalMataUang mengisi `CURRENCYID` baris yang belum punya.
 //
 // ⛔ Hanya yang KOSONG. Baris yang sudah berpengenal tidak disentuh: nilai
@@ -246,7 +218,7 @@ func (k *KlaimLife) ambangTerimaKlaim(ctx context.Context, nomorPolis string) (
 		return "", "klaim tanpa nomor polis; ambang MAXEXPIREDCLAIM tidak dapat dibaca", nil
 	}
 	polis, err := k.polis.Ringkas(ctx, nomorPolis)
-	if errors.Is(err, repository.ErrPolisNomorTakDitemukan) {
+	if errors.Is(err, kontrak.ErrPolisNomorTakDitemukan) {
 		return "", "polis belum ada di PremiumList Life; ambang MAXEXPIREDCLAIM tidak dapat dibaca", nil
 	}
 	if err != nil {

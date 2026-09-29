@@ -22,6 +22,10 @@ import (
 	"nusantarare/inti"
 	"nusantarare/inti/config"
 	intidb "nusantarare/inti/db"
+	"nusantarare/inti/migrasi"
+	"nusantarare/modul"
+	premiumlisthandlers "nusantarare/modul/premiumlist/handlers"
+	premiumlistservices "nusantarare/modul/premiumlist/services"
 	treatyhandlers "nusantarare/modul/treaty/handlers"
 	treatyservices "nusantarare/modul/treaty/services"
 )
@@ -58,7 +62,9 @@ func main() {
 	dasar := inti.NewDasar(db).
 		DenganLingkungan(inti.LingkunganDariFlag(cfg.IsPegaProd)).
 		DenganUnggahanDir(cfg.UnggahanDir)
-	svc := services.DariDasar(dasar)
+	svcPL := premiumlistservices.DariDasar(dasar)
+	// Butir pl4/av: Claim Life membaca polis PremiumList lewat inti/kontrak.
+	svc := services.DariDasar(dasar).DenganPembacaPolis(premiumlistservices.PembacaPolis(svcPL))
 	svcTCO := treatyservices.DariDasar(dasar).
 		// OQ-TCO-08: bawaan stub; ⛔ garam tidak pernah dicetak.
 		DenganPenyimpananLampiranTCO(cfg.PelaksanaStorage == config.PelaksanaStorageNyata, cfg.StorageTokenSalt)
@@ -86,6 +92,7 @@ func main() {
 	srv := &http.Server{
 		Addr: cfg.HTTPAddr,
 		Handler: handlers.Router(svc, cfg.AuthStub, func(mux *http.ServeMux) {
+			premiumlisthandlers.DaftarkanRute(mux, svcPL, cfg.AuthStub)
 			treatyhandlers.DaftarkanRute(mux, svcTCO, cfg.AuthStub)
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
@@ -174,7 +181,8 @@ func bongkarMigrasi(svc *services.Service, cfg config.Config) {
 	if err := svc.CekKesehatan(ctx); err != nil {
 		log.Fatalf("bongkar: tidak dapat menjangkau oracle: %v", err)
 	}
-	lap, err := svc.BongkarMigrasi(ctx)
+	// Refactor bentuk B: SEMUA modul terdaftar, tidak bergantung modul aktif.
+	lap, err := migrasi.Bongkar(ctx, svc.DB(), modul.SumberMigrasi()...)
 	if err != nil {
 		log.Fatalf("bongkar: %v", err)
 	}
@@ -199,7 +207,8 @@ func jalankanMigrasi(svc *services.Service) {
 	if err := svc.CekKesehatan(ctx); err != nil {
 		log.Fatalf("migrasi: tidak dapat menjangkau oracle: %v", err)
 	}
-	lap, err := svc.JalankanMigrasi(ctx)
+	// Refactor bentuk B: SEMUA modul terdaftar, tidak bergantung modul aktif.
+	lap, err := migrasi.Jalankan(ctx, svc.DB(), modul.SumberMigrasi()...)
 	if err != nil {
 		log.Fatalf("migrasi: %v", err)
 	}

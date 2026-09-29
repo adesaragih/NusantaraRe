@@ -17,6 +17,7 @@ import (
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
 	"nusantarare/internal/repository/skemauji"
+	"nusantarare/inti"
 )
 
 func TestCerminMengisiTertanggungDariSumber(t *testing.T) {
@@ -59,7 +60,7 @@ func TestCerminMengisiTertanggungDariSumber(t *testing.T) {
 
 	simpan := func(id, sumber string) (models.PohonKlaim, error) {
 		p := models.PohonKlaim{
-			Work: models.WorkClaim{ID: id, CaseID: id, Lini: models.LiniLife, Type: "QP"},
+			Work: models.WorkClaim{ID: id, CaseID: id, Lini: inti.LiniLife, Type: "QP"},
 			Klaim: models.Klaim{
 				NomorKlaim: "UJI-" + id, NomorPolis: "UJI-POL-0001",
 				Peserta: []models.Peserta{{

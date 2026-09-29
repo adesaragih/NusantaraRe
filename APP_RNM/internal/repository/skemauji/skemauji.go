@@ -29,7 +29,10 @@ import (
 	"nusantarare/internal/repository"
 	"nusantarare/inti/config"
 	"nusantarare/inti/db"
+	"nusantarare/inti/kontrak"
 	"nusantarare/inti/migrasi"
+	"nusantarare/modul"
+	premiumlistservices "nusantarare/modul/premiumlist/services"
 )
 
 // ErrTanpaOracle dikembalikan bila ORACLE_DSN tidak dikonfigurasi.
@@ -185,7 +188,7 @@ func Pasang(ctx context.Context, db *sql.DB, skema string) error {
 		return err
 	}
 	defer func() { _ = repo.Close() }()
-	if _, err := migrasi.Jalankan(ctx, repo, repository.SumberMigrasi()); err != nil {
+	if _, err := migrasi.Jalankan(ctx, repo, modul.SumberMigrasi()...); err != nil {
 		return fmt.Errorf("skemauji: menjalankan migrasi: %w", err)
 	}
 
@@ -255,7 +258,7 @@ func Bongkar(ctx context.Context, db *sql.DB, skema string) error {
 		return err
 	}
 	defer func() { _ = repo.Close() }()
-	if _, err := migrasi.Bongkar(ctx, repo, repository.SumberMigrasi()); err != nil {
+	if _, err := migrasi.Bongkar(ctx, repo, modul.SumberMigrasi()...); err != nil {
 		return fmt.Errorf("skemauji: membongkar migrasi: %w", err)
 	}
 
@@ -528,4 +531,15 @@ func ddlTiruanTreaty(skema string) []string {
 			ENDDATE DATE
 		)`, skema, namaTabelTahunTreaty),
 	}
+}
+
+// PembacaPolis menyambung pembaca polis PremiumList Life untuk test bertag
+// `db` yang menguji Claim Life (butir pl4/av).
+//
+// Refactor bentuk B (30-09-2026): di produksi `cmd/api` yang menyambungnya
+// lewat `inti/kontrak`. Test Claim Life tidak boleh mengimpor modul
+// PremiumList; penunjang uji ini - yang memang mengenal semua modul - yang
+// menyerahkannya, sehingga yang dibaca test sama dengan yang dibaca produksi.
+func PembacaPolis(repo *db.DB) kontrak.PembacaPolis {
+	return premiumlistservices.PembacaPolis(premiumlistservices.New(repo))
 }

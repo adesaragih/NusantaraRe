@@ -444,7 +444,7 @@ func (p *Penyerahan) Serahkan(ctx context.Context, pelaku inti.Pelaku,
 		komiteID, err := p.kasus.Buat(ctx, tx, MuatanKomite{
 			KlaimID:       klaimID,
 			AdjustmentID:  adjID,
-			Lini:          models.LiniLife,
+			Lini:          inti.LiniLife,
 			Type:          tipe,
 			Anggota:       anggota,
 			JumlahKlaim:   baris.JumlahKlaim,

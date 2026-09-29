@@ -92,7 +92,7 @@ func (a *AmbangKlaim) Hitung(ctx context.Context, pelaku inti.Pelaku,
 		return PenandaBatasKlaim{}, fmt.Errorf("%w: nomor polis kosong", intigalat.ErrPermintaanTidakSah)
 	}
 
-	polis, err := repository.NewRingkasPolisLife(a.svc.DB()).Ringkas(ctx, nomorPolis)
+	polis, err := a.svc.PembacaPolis().Ringkas(ctx, nomorPolis)
 	if err != nil {
 		return PenandaBatasKlaim{}, err
 	}

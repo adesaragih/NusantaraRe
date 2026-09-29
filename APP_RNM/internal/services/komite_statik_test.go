@@ -74,7 +74,8 @@ var berkasKomiteBolehMenyebut = map[string]string{
 	//
 	// ⚠️ Pengecualian ini TIDAK melonggarkan aturannya: berkas itu berkas
 	// UJI, ia tidak menulis satu baris pun ke basis data.
-	"internal/repository/strukturkolom_test.go": "penjaga bentuk skema lintas dokumen; berkas uji, nol jalur simpan",
+	// Refactor bentuk B (30-09-2026): penjaga lintas modul, kini di inti/penjaga.
+	"inti/penjaga/strukturkolom_test.go": "penjaga bentuk skema lintas dokumen; berkas uji, nol jalur simpan",
 	// ⛔ MODUL KOMITE CLAIM LIFE sendiri - giliran 10, tiket 01 Komite.
 	// Premis penjaga ini adalah batas KONTEKS: Claim Life tidak memutuskan
 	// atas nama Komite. Berkas di bawah BUKAN Claim Life - brief
@@ -107,9 +108,10 @@ func TestNolPenyimpanKeputusanKomiteDiKonteksIni(t *testing.T) {
 		// dan swa-periksa `diperiksa < 20` tidak mungkin menangkap pengecualian
 		// yang terlalu lebar.
 		diperiksa++
+		// Jalur relatif akar APP_RNM - `internal/...`, `inti/...`, `modul/...`.
 		rel := filepath.ToSlash(jalur)
-		if i := strings.Index(rel, "internal/"); i >= 0 {
-			rel = rel[i:]
+		for strings.HasPrefix(rel, "../") {
+			rel = strings.TrimPrefix(rel, "../")
 		}
 		if alasan, boleh := berkasKomiteBolehMenyebut[rel]; boleh {
 			t.Logf("dikecualikan: %s (%s)", rel, alasan)

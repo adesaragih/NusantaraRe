@@ -260,7 +260,7 @@ func (u *Unggahan) Unggah(ctx context.Context, pelaku inti.Pelaku,
 		// diantre terpisah dapat hilang sendirian, dan berkas yang sudah
 		// mendarat tidak akan pernah bertaut.
 		_, err := outbox.NewPenyimpan(u.svc.DB()).AntreEfek(ctx, tx,
-			models.LiniLife, ModulClaimLife, unggah.JenisEfekStorageUnggah, idTeks,
+			inti.LiniLife, ModulClaimLife, unggah.JenisEfekStorageUnggah, idTeks,
 			muatanBerkas(klaimID, jalur, nama), saat)
 		return err
 	})

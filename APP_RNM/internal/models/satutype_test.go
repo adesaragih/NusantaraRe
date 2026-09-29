@@ -77,8 +77,10 @@ var medanTypeYangSah = map[string]string{
 	// pernah disimpan ke tabel klaim. Menyalinnya ke `T_WORK_CLAIM.TYPE`
 	// akan membuat dua `Type` untuk satu klaim, dan yang satu akan basi
 	// begitu polisnya di-endorse.
-	"repository/polis_ringkas.go": "PolisRingkas - Type POLIS dibaca dari T_PREMIUM_LIST untuk PolicyDataLife",
-	"services/polis_ringkas.go":   "bentuk layar PolicyDataLife, jalur baca",
+	// Refactor bentuk B (30-09-2026): tipe `PolisRingkas` kini kontrak lintas
+	// modul (dulu repository/polis_ringkas.go).
+	"inti/kontrak/polis.go":     "PolisRingkas - Type POLIS dibaca dari T_PREMIUM_LIST untuk PolicyDataLife",
+	"services/polis_ringkas.go": "bentuk layar PolicyDataLife, jalur baca",
 }
 
 func TestTypeKlaimHanyaSatuRumahTersimpan(t *testing.T) {

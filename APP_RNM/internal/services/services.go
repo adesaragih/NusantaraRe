@@ -14,6 +14,7 @@ import (
 
 	"nusantarare/inti"
 	"nusantarare/inti/db"
+	"nusantarare/inti/kontrak"
 )
 
 var (
@@ -29,6 +30,9 @@ var (
 // disematkan. Yang tersisa di sini hanya milik modul.
 type Service struct {
 	*inti.Dasar
+	// pembacaPolis - pembaca polis ringkas PremiumList Life (butir pl4/av),
+	// disambung `cmd/api` lewat `inti/kontrak`. nil = belum disambung.
+	pembacaPolis kontrak.PembacaPolis
 }
 
 // DenganUnggahanDir menyetel folder berkas unggahan - lihat
@@ -49,6 +53,37 @@ func New(db *db.DB) *Service {
 // (lingkungan efek keluar, folder unggahan) - satu akar untuk semua modul.
 func DariDasar(d *inti.Dasar) *Service {
 	return &Service{Dasar: d}
+}
+
+// DenganPembacaPolis menyambung pembaca polis PremiumList Life.
+//
+// Refactor bentuk B (30-09-2026): Claim Life dulu membaca `T_PREMIUM_LIST`
+// lewat repository PremiumList secara langsung. Kini ia hanya mengenal
+// antarmuka `kontrak.PembacaPolis`; `cmd/api` yang menyambungnya.
+func (s *Service) DenganPembacaPolis(p kontrak.PembacaPolis) *Service {
+	salin := *s
+	salin.pembacaPolis = p
+	return &salin
+}
+
+// ErrPembacaPolisBelumDisambung - proses menyentuh Oracle tetapi pembaca
+// polis PremiumList tidak pernah disambung (salah rakit, bukan data).
+var ErrPembacaPolisBelumDisambung = errors.New(
+	"services: pembaca polis PremiumList belum disambung (inti/kontrak.PembacaPolis)")
+
+// PembacaPolis mengembalikan pembaca polis yang disambung, atau pembaca yang
+// menolak TERANG bila belum - bukan antarmuka nil yang membuat proses panik.
+func (s *Service) PembacaPolis() kontrak.PembacaPolis {
+	if s.pembacaPolis == nil {
+		return pembacaPolisBelumDisambung{}
+	}
+	return s.pembacaPolis
+}
+
+type pembacaPolisBelumDisambung struct{}
+
+func (pembacaPolisBelumDisambung) Ringkas(context.Context, string) (kontrak.PolisRingkas, error) {
+	return kontrak.PolisRingkas{}, ErrPembacaPolisBelumDisambung
 }
 
 // DenganLingkungan menyetel lingkungan efek keluarnya - lihat
