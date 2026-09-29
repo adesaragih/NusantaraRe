@@ -233,6 +233,55 @@ var masterYangTidakDisentuh = []string{
 // berikutnya akan menyalin caranya.
 const berkasIzinViewProduk = "ambangproduk.go"
 
+// berkasIzinMaster - berkas yang boleh menyebut SATU master, dan pemeriksa
+// batas izinnya. Tiap berkas berizin tetap DILARANG menyebut master lain.
+//
+// ⛔ Diperluas 29-09-2026 - `[keputusan work owner, GILIRAN-17 OQ-M7]`: izin
+// baca `RATE_LIFE` sempit seperti butir bh (`ratelife.go`, `RateLife.Baca`,
+// lima kolom bernama, berkunci `IDUSEDBY`). `OUTWARDRATEID` tetap terbuka -
+// DBA; Spreading tetap tidak dipanggil.
+var berkasIzinMaster = map[string]struct {
+	master  string
+	periksa func(*testing.T, string)
+}{
+	berkasIzinViewProduk: {"PRODUCTINWARD_LIFE", izinViewProduk},
+	"ratelife.go":        {"RATE_LIFE", izinViewRate},
+}
+
+// izinViewRate - batas izin `RATE_LIFE` (OQ-M7): satu pembaca, lima kolom,
+// nol `USEDBY` (nama pemakai), nol `TYPE`, nol tulisan, nol JSONDATA.
+func izinViewRate(t *testing.T, isi string) {
+	t.Helper()
+	if !strings.Contains(isi, "func (r *RateLife) Baca(") {
+		t.Error("ratelife.go tidak lagi memuat pembaca `RateLife.Baca`")
+	}
+	if len(KolomRateLife) != 5 {
+		t.Errorf("izin RATE_LIFE mencakup TEPAT lima kolom; daftarnya kini %d", len(KolomRateLife))
+	}
+	for _, k := range KolomRateLife {
+		if !strings.Contains(isi, k) {
+			t.Errorf("ratelife.go tidak membaca kolom %q", k)
+		}
+	}
+	if strings.Contains(strings.ReplaceAll(isi, "IDUSEDBY", ""), "USEDBY") {
+		t.Error("ratelife.go membaca USEDBY - nama pemakai, di luar izin")
+	}
+	if strings.Contains(isi, "r.TYPE") {
+		t.Error("ratelife.go membaca TYPE - di luar izin")
+	}
+	if strings.Contains(isi, "SELECT *") {
+		t.Error("ratelife.go memakai SELECT *")
+	}
+	for _, tulis := range []string{"INSERT", "UPDATE ", "DELETE", "MERGE"} {
+		if strings.Contains(strings.ToUpper(isi), tulis) {
+			t.Errorf("ratelife.go memuat %q - izin RATE_LIFE READ-ONLY", tulis)
+		}
+	}
+	if strings.Contains(strings.ToUpper(isi), "JSONDATA") {
+		t.Error("ratelife.go menyebut JSONDATA - AC 38 melarangnya")
+	}
+}
+
 // izinViewProduk memeriksa bahwa berkas berizin itu tetap di dalam batasnya.
 func izinViewProduk(t *testing.T, isi string) {
 	t.Helper()
@@ -277,13 +326,20 @@ func TestMasterViewTidakDisentuh(t *testing.T) {
 		// menuduh justru penjelasan itu, di `spreading.go` dan `skemauji.go`.
 		// Penjaga yang menuduh dokumentasinya sendiri akan dimatikan orang.
 		kode := buangKomentarSumber(nama, isi)
-		// Berkas berizin butir bh diperiksa dengan aturannya sendiri, yang
-		// LEBIH ketat daripada sekadar "tidak menyebut namanya".
-		if strings.HasSuffix(filepath.ToSlash(nama), "/"+berkasIzinViewProduk) {
-			izinViewProduk(t, kode)
-			continue
+		// Berkas berizin diperiksa dengan aturannya sendiri, yang LEBIH ketat
+		// daripada sekadar "tidak menyebut namanya" - dan master LAIN tetap
+		// terlarang baginya.
+		izinkan := ""
+		for berkas, izin := range berkasIzinMaster {
+			if strings.HasSuffix(filepath.ToSlash(nama), "/"+berkas) {
+				izin.periksa(t, kode)
+				izinkan = izin.master
+			}
 		}
 		for _, master := range masterYangTidakDisentuh {
+			if master == izinkan {
+				continue
+			}
 			if strings.Contains(kode, master) {
 				t.Errorf("%s menyebut %q. Kedua master pertama VIEW atas JSONDATA "+
 					"dan tidak diperlakukan sebagai tabel relasional; JSON produk "+
@@ -403,4 +459,17 @@ func buangKomentarSumber(nama, isi string) string {
 		b.WriteString("\n")
 	}
 	return b.String()
+}
+
+// OQ-N2 (GILIRAN-17): Simpan mengisi tertanggung cermin untuk setiap baris
+// yang pesertanya punya baris sumber - di transaksi yang sama.
+func TestSimpanMengisiTertanggungCermin(t *testing.T) {
+	isi, ada := cariBerkas(berkasSumberProduksi(t), "repository/pohonklaim.go")
+	if !ada {
+		t.Fatal("pohonklaim.go tidak terbaca")
+	}
+	simpan := potongFungsi(buangKomentarGo(isi), "func (r *PohonKlaim) Simpan(")
+	if !strings.Contains(simpan, ".IsiTertanggungCermin(ctx, tx,") {
+		t.Error("Simpan tidak mengisi NAME_OF_INSURED/DOB/CEDINGCO cermin (OQ-N2)")
+	}
 }

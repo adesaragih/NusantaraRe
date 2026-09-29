@@ -478,6 +478,53 @@ func (r *PohonKlaim) Simpan(ctx context.Context, tx *Tx, p models.PohonKlaim) er
 			return err
 		}
 	}
+	// ⛔ OQ-N2 DITUTUP (GILIRAN-17): NAME_OF_INSURED, DOB, CEDINGCO cermin
+	// diisi DI DALAM SQL dari baris sumber peserta, transaksi yang sama -
+	// nama dan tanggal lahir tidak pernah melintasi Go. Peserta tanpa baris
+	// sumber (`SOURCE_ID` kosong) hanya lahir dari uji/migrasi: pendaftaran
+	// membaca peserta ULANG dari sumbernya, dan Save to RNM menolak peserta
+	// tanpa SOURCE_ID.
+	cermin := NewKlaimLife(r.db)
+	for _, ps := range p.Klaim.Peserta {
+		if strings.TrimSpace(ps.SumberID) == "" {
+			continue
+		}
+		k := KunciPesertaSumber{PLNumber: ps.NomorPremiList, Sertifikat: ps.NomorSertifikat, SumberID: ps.SumberID}
+		for _, adj := range ps.Baris {
+			if err = cermin.IsiTertanggungCermin(ctx, tx, adj.ID, k, p.Klaim.NomorPolis); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// sqlIsiCedingCermin - CEDINGCO cermin dari POLIS (OQ-N2, GILIRAN-17):
+// `pyWorkPage.PolicyDataLife.CedingCo` b9226 -> `InsertJsonKlaimLife_sql`
+// b114. `T_PREMIUM_LIST.CEDING_CO` baris PROD_KE terakhir - bentuk yang sama
+// dengan `sqlPolisRingkas` - sumber yang sama dengan yang dibandingkan
+// pemeriksa klaim ganda (`o.CEDINGCO = :4`). Polis yang tidak ada = NULL,
+// sama seperti sebelum GILIRAN-17.
+func sqlIsiCedingCermin(lama, polis string) string {
+	return fmt.Sprintf(`UPDATE %s o
+	   SET CEDINGCO = (SELECT pl.CEDING_CO FROM %s pl WHERE pl.NO_POLIS = :1
+	                    ORDER BY NVL(pl.PROD_KE, 0) DESC FETCH FIRST 1 ROWS ONLY)
+	 WHERE o.ID = :2`, lama, polis)
+}
+
+// isiCedingCermin menjalankan `sqlIsiCedingCermin` di transaksi pemanggil.
+func (r *KlaimLife) isiCedingCermin(ctx context.Context, tx *Tx, lama, adjID, nomorPolis string) error {
+	polis, err := r.db.Qualify("T_PREMIUM_LIST")
+	if err != nil {
+		return err
+	}
+	q := sqlIsiCedingCermin(lama, polis)
+	if err := PeriksaSQL(q); err != nil {
+		return err
+	}
+	if _, err := tx.tx.ExecContext(ctx, q, kosongJadiNil(nomorPolis), adjID); err != nil {
+		return fmt.Errorf("repository: mengisi CEDINGCO cermin %s: %w", adjID, err)
+	}
 	return nil
 }
 

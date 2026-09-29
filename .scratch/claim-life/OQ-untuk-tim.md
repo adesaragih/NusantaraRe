@@ -627,6 +627,15 @@ atas `RATE_LIFE`, view master yang katalognya `[data DBA]` dan tidak ditiru skem
 > (view master, seperti izin sempit butir bh)? Tanpa keduanya Spreading tidak dapat berjalan dan
 > panel ini tidak punya isi.
 
+✅ **OQ-M7 DITUTUP 29-09-2026 (GILIRAN-17)** `[keputusan work owner 29-09-2026 — lembar keputusan, "rekomendasi"]`: izin baca **`RATE_LIFE`** sempit seperti butir
+bh:
+- satu pembaca `RateLife.Baca` (`repository/ratelife.go`), baca-saja;
+- lima kolom bernama `ID, AGE, CONTRACT, GENDER, RATE`, berkunci `IDUSEDBY` (`GetRateRetro` b84);
+- nol `USEDBY`, nol `TYPE`, nol `JSONDATA`, nol tulisan.
+
+Penjaga master kini berupa peta izin per berkas, dan tiap berkas berizin tetap dilarang menyebut master lain.
+`OUTWARDRATEID` tetap **`[terbuka — DBA]`**, dan Spreading **tetap tidak dipanggil** sampai sumbernya ada (daftar serah terima).
+
 **OQ-M8** *(untuk work owner — wewenang, temuan)* — rute DOL yang sudah ada
 (`PUT …/tanggal-kejadian`, tiket 06) **tidak** menegakkan gerbang b1000 yang sama: siapa pun yang
 beridentitas dapat mengubah DOL pada kasus terbuka di tahap apa pun. Rute tiga tanggal yang baru
@@ -684,6 +693,30 @@ Nama dan tanggal lahir tidak pernah meninggalkan basis data: pencocokannya mengg
 `M_LIFE_PREMIUM_DETAIL` di dalam SQL (`repository/gandawarisan.go`).
 > Bolehkah cermin warisan mengisi ketiga kolom itu, supaya klaim ganda antarklaim baru tertangkap?
 
+✅ **OQ-N2 DITUTUP 29-09-2026 (GILIRAN-17)** `[keputusan work owner 29-09-2026 — lembar keputusan, "rekomendasi"]`: cermin `OS_AKSEPTASI_KLAIM_LIFE` **mengisi**
+`NAME_OF_INSURED`, `DOB`, `CEDINGCO` seperti Pega (`SaveOutStandingLife_Act` 22.1.1 b8906/b8946/b9226 →
+`InsertJsonKlaimLife_sql` b93/b95/b114). Rinciannya:
+- nama dan DOB ditulis **di dalam SQL** dari baris sumber `M_LIFE_PREMIUM_DETAIL` (`UPDATE … SELECT`,
+  `sqlIsiTertanggungCermin`, `TRUNC(m.DOB)`), jadi tidak pernah melintasi Go, log, uji, atau dokumen;
+- `CEDINGCO` diambil dari polis `T_PREMIUM_LIST.CEDING_CO`, sumber yang sama dengan yang dibandingkan pemeriksa;
+- baris sumber yang tidak ada menjadi galat.
+
+Dua saringan pemeriksa ditambah supaya tidak ada regresi. Klaim **sendiri** (`CASEID`) dikecualikan, dan pemeriksa kematian
+juga mengecualikan baris cermin **tanpa status**. Alasannya: di Pega baris cermin baru lahir saat Save Outstanding dengan
+`'0'` (b176). Tanpa saringan itu, `ORDER BY … DESC` (NULL lebih dulu) akan menaruh baris aplikasi yang baru terdaftar di depan
+baris era Pega yang sah. Klaim ganda antarklaim baru kini tertangkap **sesudah klaim lawannya berstatus** (keputusan
+Komite, `RekamAkhirWarisan`). Klaim yang masih menunggu Komite belum tertangkap → **OQ-N13**.
+
+**OQ-N13** *(untuk work owner — baru, GILIRAN-17)* — status cermin saat Save to RNM. Di Pega, `InsertJsonKlaimLife_sql`
+menulis baris cermin **saat Save Outstanding** dengan `STS_REJECT = '0'` (b176) dan `ACCEPTATION_DATE = SYSDATE` (b175).
+Sesudah itu klaim yang sedang menunggu Komite sudah terlihat oleh pemeriksa klaim ganda klaim lain (status `'0'`).
+
+Aplikasi ini menulis baris cermin **saat pendaftaran** dengan status NULL. Langkah Save to RNM memperlakukan tabel warisan
+**baca-saja** (brief GILIRAN-11; header `simpanrnm.go` langkah 22). Akibatnya, sejak OQ-N2 klaim ganda antarklaim baru
+tertangkap hanya sesudah klaim lawannya diputus Komite.
+> Bolehkah Save to RNM menyetel `STS_REJECT = '0'` (dan `ACCEPTATION_DATE`?) pada baris cermin yang barisnya ditandai, seperti
+> b175/b176, sehingga klaim yang menunggu Komite pun tertangkap?
+
 **OQ-N3** *(untuk work owner)* — gerbang langkah 27: `RetroID=="L0000141" ||
 SecurityReinsurerID=="L0000134"` (b11794) dan `RetroID=="1000013"` (b11817) KELUAR sebelum Arasapas.
 Modul Komite **membuang** gerbang yang sama *(OQ-064, `KomitePostAdjustment` langkah 9)*; keputusan
@@ -733,6 +766,13 @@ menyebut sebabnya (`ErrGerbangRetroTakTerputuskan`) — mengirim efek keluar ata
 Modul Komite memutuskan "cutover 7 Feb 2025 tidak dipakai lagi" (CONTEXT.md, Komite ronde 1 #4)
 untuk blok yang di **Komite** memang ter-remark (4.14, 5.5); keputusan itu tidak menyebut Claim Life.
 > Berlakukah keputusan Komite #4 juga di sini (tukar cukup dua WHEN), atau adakah sumber `ProdDateTime`?
+
+✅ **OQ-N5 DITUTUP 29-09-2026 (GILIRAN-17)** `[keputusan work owner 29-09-2026 — lembar keputusan, "rekomendasi"]`: keputusan Komite "cutover 7 Feb 2025 tidak
+dipakai" **berlaku juga** di Claim Life. Penukaran `InsertJsonClaimLife_Act` langkah 2 cukup **dua** WHEN: `Type` TP/TR (b1268)
+dan security reinsurer terisi (b1291). Syarat `ProdDateTime` b1314 tidak dipakai. `ErrGerbangRetroTakTerputuskan` beserta
+jawaban `ditahan` **dibuang**, karena tidak lagi mungkin terjadi, dan `ArasapasDilewatiRetro` kini murni `bool`. Catatan:
+`SaveOutStandingLife_Act` 22.1.2 (b9657) mengulang tukar yang sama untuk kolom `RETROID`/`SECURITYREINSURER*` cermin, yang
+tidak ditulis aplikasi ini.
 
 **OQ-N6** *(untuk work owner)* — **kelengkapan dokumen per kategori.** Spec (penyimpangan sadar 5)
 dan AC 45 tiket 03 menyebut *"Documents are incomplete, please complete the documents"* sebagai

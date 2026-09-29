@@ -20,8 +20,10 @@ func urutanPenampung(q string) string {
 func TestSQLGandaBerurutPosisi(t *testing.T) {
 	for nama, u := range map[string]struct{ q, mau string }{
 		"dob":    {sqlDOBSumberKosong("S"), "123"},
-		"death":  {sqlStatusWarisanTerakhir("L", "S"), "1234"},
-		"health": {sqlAdaWarisanSamaDOL("L", "S"), "12345"},
+		"death":  {sqlStatusWarisanTerakhir("L", "S"), "12345"},
+		"health": {sqlAdaWarisanSamaDOL("L", "S"), "123456"},
+		"cermin": {sqlIsiTertanggungCermin("L", "S"), "1234567"},
+		"ceding": {sqlIsiCedingCermin("L", "P"), "12"},
 	} {
 		if err := PeriksaSQL(u.q); err != nil {
 			t.Errorf("%s: %v", nama, err)
@@ -53,6 +55,57 @@ func TestSQLGandaVerbatimKunci(t *testing.T) {
 	}
 	if !strings.Contains(sqlAdaWarisanSamaDOL("L", "S"), "o.LAPSE_DATE = TO_DATE(:5") {
 		t.Error("health tidak menyaring LAPSE_DATE = DOL")
+	}
+}
+
+// OQ-N2 DITUTUP (GILIRAN-17): sesudah cermin mengisi nama/DOB/CEDINGCO, baris
+// milik klaim SENDIRI dan baris yang belum pernah di-Save to RNM (status NULL
+// - di Pega baris cermin baru lahir saat Save Outstanding dengan '0', b176)
+// tidak boleh ikut: `ORDER BY ... DESC` Oracle menaruh NULL di depan, dan
+// baris seperti itu akan MENUTUPI baris era Pega yang sah.
+func TestSQLGandaMengecualikanKlaimSendiriDanBarisTanpaStatus(t *testing.T) {
+	death := sqlStatusWarisanTerakhir("L", "S")
+	for _, mau := range []string{"AND o.STS_REJECT IS NOT NULL", "AND (o.CASEID IS NULL OR o.CASEID <> :5)"} {
+		if !strings.Contains(death, mau) {
+			t.Errorf("death tanpa %q:\n%s", mau, death)
+		}
+	}
+	if health := sqlAdaWarisanSamaDOL("L", "S"); !strings.Contains(health, "AND (o.CASEID IS NULL OR o.CASEID <> :6)") {
+		t.Errorf("health tidak mengecualikan klaim sendiri:\n%s", health)
+	}
+}
+
+// OQ-N2 DITUTUP (GILIRAN-17): cermin OS_AKSEPTASI_KLAIM_LIFE mengisi
+// NAME_OF_INSURED, DOB, CEDINGCO seperti Pega (SaveOutStandingLife_Act 22.1.1
+// b8906/b8946/b9226 -> InsertJsonKlaimLife_sql b93/b95/b114) - DI DALAM SQL:
+// nama dan tanggal lahir disalin dari baris sumber M_LIFE_PREMIUM_DETAIL oleh
+// Oracle, tidak pernah dibaca atau diikat dari Go. CEDINGCO dari polis
+// (`PolicyDataLife.CedingCo` b9226), sumber yang sama dengan pemeriksa ganda.
+func TestSQLIsiTertanggungCerminDariSumber(t *testing.T) {
+	q := sqlIsiTertanggungCermin("L", "S")
+	for _, mau := range []string{"UPDATE L o", "SET (NAME_OF_INSURED, DOB) =",
+		"SELECT m.NAME_OF_INSURED, TRUNC(m.DOB)", "FROM S m",
+		"m.PL_NUMBER = :1 AND m.CERTIFICATE_NO = :2 AND m.ID = :3",
+		"WHERE o.ID = :4", "m2.PL_NUMBER = :5 AND m2.CERTIFICATE_NO = :6 AND m2.ID = :7"} {
+		if !strings.Contains(q, mau) {
+			t.Errorf("tanpa %q:\n%s", mau, q)
+		}
+	}
+	c := sqlIsiCedingCermin("L", "P")
+	for _, mau := range []string{"UPDATE L o", "SET CEDINGCO = (SELECT pl.CEDING_CO FROM P pl WHERE pl.NO_POLIS = :1",
+		"ORDER BY NVL(pl.PROD_KE, 0) DESC FETCH FIRST 1 ROWS ONLY", "WHERE o.ID = :2"} {
+		if !strings.Contains(c, mau) {
+			t.Errorf("ceding tanpa %q:\n%s", mau, c)
+		}
+	}
+	if err := PeriksaSQL(c); err != nil {
+		t.Error(err)
+	}
+	if strings.Contains(strings.ToUpper(q), "RETURNING") {
+		t.Error("nama/DOB dikembalikan ke Go")
+	}
+	if err := PeriksaSQL(q); err != nil {
+		t.Error(err)
 	}
 }
 

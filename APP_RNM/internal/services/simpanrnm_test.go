@@ -209,46 +209,41 @@ func TestArasapasDilewatiUntukTigaKodeRetro(t *testing.T) {
 		{"L0000141", "", true}, {"", "L0000134", true}, {"1000013", "", true},
 		{"L0000134", "", false}, {"", "L0000141", false}, {"", "", false},
 	} {
-		got, err := services.ArasapasDilewatiRetro(services.PolisRetro{
+		got := services.ArasapasDilewatiRetro(services.PolisRetro{
 			Tipe: "QR", RetroID: u.retro, SecurityReinsurerID: u.sec})
-		if err != nil || got != u.lewat {
-			t.Errorf("retro %q sec %q: %v, %v; mau %v", u.retro, u.sec, got, err, u.lewat)
+		if got != u.lewat {
+			t.Errorf("retro %q sec %q: %v; mau %v", u.retro, u.sec, got, u.lewat)
 		}
 	}
 }
 
-// Langkah 27 membaca SALINAN yang mungkin ditukar `InsertJsonClaimLife_Act`
-// langkah 2 (b1268 TP/TR, b1291 SecurityReinsurer terisi, b1314 ProdDateTime).
-func TestArasapasRetroSadarPenukaran(t *testing.T) {
+// Langkah 27 membaca SALINAN yang ditukar `InsertJsonClaimLife_Act` langkah 2.
+// OQ-N5 DITUTUP (GILIRAN-17): keputusan Komite "cutover 7 Feb 2025 tidak
+// dipakai" berlaku juga di sini - tukar cukup DUA WHEN (b1268 TP/TR, b1291
+// SecurityReinsurer terisi); b1314 `ProdDateTime` tidak dipakai.
+func TestArasapasRetroTukarDuaSyarat(t *testing.T) {
 	polis := func(tipe, retro, sec, secNama string) services.PolisRetro {
 		return services.PolisRetro{Tipe: tipe, RetroID: retro, SecurityReinsurerID: sec,
 			SecurityReinsurer: secNama}
 	}
-	// Tukar MUNGKIN, dan hasilnya BERBEDA -> hanya ProdDateTime yang dapat
-	// memutuskan: gagal terang, bukan tebakan.
-	for _, p := range []services.PolisRetro{
-		polis("TP", "L0000141", "S-1", "UJI-SEC"), // tanpa tukar keluar; ditukar tidak
-		polis("TR", "R-1", "L0000141", "UJI-SEC"), // tanpa tukar tidak; ditukar keluar
-	} {
-		if _, err := services.ArasapasDilewatiRetro(p); !errors.Is(err, services.ErrGerbangRetroTakTerputuskan) {
-			t.Errorf("%+v: %v, mau ErrGerbangRetroTakTerputuskan", p, err)
-		}
-	}
-	// Hasil sama dengan dan tanpa tukar -> ProdDateTime tidak perlu diketahui.
 	for _, u := range []struct {
 		p     services.PolisRetro
 		lewat bool
 	}{
+		// Dua WHEN benar -> DITUKAR, dan gerbang membaca nilai sesudah tukar.
+		{polis("TP", "L0000141", "S-1", "UJI-SEC"), false}, // retro sesudah tukar S-1
+		{polis("TR", "R-1", "L0000141", "UJI-SEC"), true},  // retro sesudah tukar L0000141
+		{polis("TP", "R-1", "L0000134", "UJI-SEC"), false}, // security sesudah tukar R-1
+		{polis("TR", "L0000134", "R-1", "UJI-SEC"), true},  // security sesudah tukar L0000134
 		{polis("TP", "R-1", "S-1", "UJI-SEC"), false},
 		{polis("TR", "L0000141", "L0000141", "UJI-SEC"), true},
-		// b1291: nama security reinsurer kosong -> tidak pernah ditukar.
+		// b1291: nama security reinsurer kosong -> tidak ditukar.
 		{polis("TP", "L0000141", "S-1", ""), true},
-		// b1268: bukan TP/TR -> tidak pernah ditukar.
+		// b1268: bukan TP/TR -> tidak ditukar.
 		{polis("QR", "R-1", "L0000141", "UJI-SEC"), false},
 	} {
-		got, err := services.ArasapasDilewatiRetro(u.p)
-		if err != nil || got != u.lewat {
-			t.Errorf("%+v: %v, %v; mau %v", u.p, got, err, u.lewat)
+		if got := services.ArasapasDilewatiRetro(u.p); got != u.lewat {
+			t.Errorf("%+v: %v; mau %v", u.p, got, u.lewat)
 		}
 	}
 }

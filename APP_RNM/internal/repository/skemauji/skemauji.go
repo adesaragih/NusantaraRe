@@ -419,7 +419,9 @@ func ddlTiruanPesertaPolis(skema string) string {
 		AGE NUMBER,
 		ENTRY_AGE NUMBER,
 		CURRENT_AGE NUMBER,
-		CLAIM_AMOUNT NUMBER
+		CLAIM_AMOUNT NUMBER,
+		NAME_OF_INSURED VARCHAR2(255),
+		DOB DATE
 	)`, skema, namaTabelPesertaPolis)
 }
 
@@ -443,7 +445,8 @@ func IsiPesertaPolis(ctx context.Context, db *sql.DB, skema string) error {
 		 WPC, BEGIN_DATE, EFFECTIVE_DATE, LAPSE_DATE, EXPIRED_DATE,
 		 SUM_INSURED, SUM_REASURED, GROSS_PREMIUM, NET_PREMIUM,
 		 CEDING_RETENTION, SHARE_NUSANTARA_RE, SHARE_RETRO,
-		 RETROCEDED_SHARE, EM_PERCENT, EDMSTATUS, CLAIM_AMOUNT)
+		 RETROCEDED_SHARE, EM_PERCENT, EDMSTATUS, CLAIM_AMOUNT,
+		 NAME_OF_INSURED, DOB)
 		VALUES (:1,:2,:3,:4,:5,
 		 TO_DATE(:6,'YYYY-MM-DD'),
 		 TO_DATE(:7,'YYYY-MM-DD'), TO_DATE(:8,'YYYY-MM-DD'),
@@ -451,7 +454,8 @@ func IsiPesertaPolis(ctx context.Context, db *sql.DB, skema string) error {
 		 TO_DATE(:11,'YYYY-MM-DD'), TO_DATE(:12,'YYYY-MM-DD'),
 		 TO_DATE(:13,'YYYY-MM-DD'), TO_DATE(:14,'YYYY-MM-DD'),
 		 TO_DATE(:15,'YYYY-MM-DD'),
-		 :16,:17,:18,:19,:20,:21,:22,:23,:24,:25,:26)`, skema, namaTabelPesertaPolis)
+		 :16,:17,:18,:19,:20,:21,:22,:23,:24,:25,:26,
+		 :27, TO_DATE(:28,'YYYY-MM-DD'))`, skema, namaTabelPesertaPolis)
 
 	baris := [][]any{
 		// Peserta hidup: EDMSTATUS NULL, seperti seluruh baris new business.
@@ -459,13 +463,13 @@ func IsiPesertaPolis(ctx context.Context, db *sql.DB, skema string) error {
 			"2026-01-01", "2026-12-31", "2026-02-01", "2026-11-30",
 			"2026-03-01", "2026-01-01", "2026-01-15", "2027-01-01", "2026-12-31",
 			"1000000", "900000", "50000", "45000", "100000", "800000", "200000",
-			"150000", "0.1", nil, "25000.123449"},
+			"150000", "0.1", nil, "25000.123449", "UJI-TERTANGGUNG-1", "1980-01-01"},
 		// Peserta batal: HARUS disaring keluar.
 		{"UJI-SRC-2", "UJI-PL-1", "UJI-POL-0001", "010", "IDR", "2026-01-01",
 			"2026-01-01", "2026-12-31", "2026-02-01", "2026-11-30",
 			"2026-03-01", "2026-01-01", "2026-01-15", "2027-01-01", "2026-12-31",
 			"2000000", "1800000", "60000", "55000", "200000", "1600000", "400000",
-			"300000", "0.2", "Batal", nil},
+			"300000", "0.2", "Batal", nil, "UJI-TERTANGGUNG-2", "1981-02-02"},
 	}
 	for _, b := range baris {
 		if _, err := db.ExecContext(ctx, q, b...); err != nil {

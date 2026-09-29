@@ -58,7 +58,7 @@ dijalankan ulang; normalisasi atribut polis. Rujukan silang: AC 51–54 spec.
 - [ ] ⚠️ Master `RATE_LIFE`, `PRODUCTINWARD_LIFE`, `CURRENCY` diperlakukan sebagai **view atas
       `JSONDATA`**, bukan sebagai tabel relasional biasa. **Pengecualian 2026-09-16:** **produk**
       dibaca dari **`product_life` relasional** (hasil migrasi Master Product Name Life), bukan dari
-      `m_product_life.JSONDATA`. *(AC 38 spec)* — belum: master tidak disentuh migrasi (`TestMasterViewTidakDisentuh`), tetapi pembaca `RATE_LIFE`/`PRODUCTINWARD_LIFE` belum ada dan produk tidak dibaca dari `product_life` relasional di mana pun (OQ-M7)
+      `m_product_life.JSONDATA`. *(AC 38 spec)* — belum: master tidak disentuh migrasi (`TestMasterViewTidakDisentuh`), tetapi pembaca `RATE_LIFE`/`PRODUCTINWARD_LIFE` belum ada dan produk tidak dibaca dari `product_life` relasional di mana pun (OQ-M7) — *ralat 29-09-2026 (GILIRAN-17): pembaca sempit keduanya kini ada (`ambangproduk.go` butir bh, `ratelife.go` OQ-M7); `OUTWARDRATEID` tetap terbuka — DBA*
 - [x] `NO_SEQ` terjaga **per kombinasi `(CLASS, JENIS, TAHUN)`**, bukan sebagai penghitung global. — bukti: `APP_RNM/internal/repository/penomor.go:Penomor.UrutNomorBerikut` (kunci `CLASS`, `JENIS`, `TAHUN`), `APP_RNM/internal/repository/migrasinomor.go:TandaAirSequence`; uji `TestTandaAirDihitungPerKombinasiKunci`
 - [ ] Kolom `LAYER_1`…`LAYER_4` dipindahkan apa adanya **tanpa ditafsirkan** — perannya belum
       terverifikasi. — belum: migrasi Claim Life sengaja TIDAK membawa `LAYER_1`..`LAYER_4` (`kolomTidakDibawa`, uji `TestKolomTakDibawaHanyaAdaDiKatalog`) — nilainya tinggal di tabel datar, tidak dipindahkan

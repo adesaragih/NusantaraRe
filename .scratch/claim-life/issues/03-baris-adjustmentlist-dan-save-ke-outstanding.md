@@ -1000,3 +1000,20 @@ Mencabut peserta = **penanda**; layar menyembunyikannya.
 | penjaga | `TestSetiapPenyentuhTabelPesertaMenyaringPenandaCabut` — fungsi baru yang menyentuh tabel peserta gagal sampai menyaring atau dikecualikan; dibuktikan merah lewat mutasi |
 | yang tidak disentuh | baris cermin warisan `OS_AKSEPTASI_KLAIM_LIFE` peserta itu (status NULL; pemeriksaan klaim ganda hanya bereaksi pada `'0'`/`'1'`) |
 | uji | `TestBolehCabutPesertaSebelumSaveRNM`, `TestSQLCabutPesertaMenandaiBukanMenghapus`, `TestMigrasi022PenandaCabutPeserta`, `TestCabutPesertaMenjagaPagarnya`, `TestRuteCabutPesertaDanGalatnya`, `cabutpeserta.test.ts`, `labels.test.ts`, `db` `TestCabutPesertaMenandaiDanMenyembunyikan` |
+
+## Keputusan bertanggal — 29 September 2026 (GILIRAN-17 paket 3: OQ-N2, OQ-N5, OQ-M7 ditutup) `[keputusan work owner 29-09-2026 — lembar keputusan, "rekomendasi"]`
+
+| OQ | Keputusan | Bukti XML | Kode |
+| --- | --- | --- | --- |
+| **N2** | cermin mengisi `NAME_OF_INSURED`, `DOB`, `CEDINGCO` seperti Pega, **di dalam SQL** | `SaveOutStandingLife_Act` 22.1.1 b8747 (CARI6 b8906, CARI8 b8946, CARI27 b9226) → `InsertJsonKlaimLife_sql` b93/b95/b114 | `PohonKlaim.Simpan` → `KlaimLife.IsiTertanggungCermin` (`UPDATE … SELECT` dari `M_LIFE_PREMIUM_DETAIL`, `TRUNC(m.DOB)`, `EXISTS` = sumber hilang jadi galat) + `sqlIsiCedingCermin` (`T_PREMIUM_LIST.CEDING_CO`, PROD_KE terakhir); pemeriksa ganda mengecualikan `CASEID` sendiri dan (kematian) baris tanpa status — baris aplikasi yang baru terdaftar tidak menutupi baris era Pega |
+| **N5** | tukar retro **dua** WHEN; `ProdDateTime` tidak dipakai | `InsertJsonClaimLife_Act` langkah 2 b1016 (`pyStepsBlockName` kosong b1028): b1268, b1291; b1314 dibuang | `ArasapasDilewatiRetro` murni `bool`; `ErrGerbangRetroTakTerputuskan` dan jawaban `ditahan` dibuang |
+| **M7** | izin baca `RATE_LIFE` sempit seperti butir bh | `GetRateRetro` b84 (`SpreadingClaimLife_Act` langkah 6 b1692/b1750, `CARI3 = .OUTWARDRATEID` b1527–b1528) | `repository/ratelife.go` `RateLife.Baca`, lima kolom; penjaga `TestMasterViewTidakDisentuh` = peta izin per berkas (`izinViewRate`); `OUTWARDRATEID` `[terbuka — DBA]`, Spreading tidak dipanggil |
+
+Yang tetap terbuka: **OQ-N13** (baru). Status cermin `'0'` saat Save to RNM (b176) belum ditulis, karena langkah itu
+memperlakukan tabel warisan baca-saja. Karena itu klaim yang menunggu Komite belum tertangkap sebagai ganda.
+
+Uji: `TestSQLIsiTertanggungCerminDariSumber`, `TestSQLGandaMengecualikanKlaimSendiriDanBarisTanpaStatus`,
+`TestSQLGandaBerurutPosisi`, `TestSimpanMengisiTertanggungCermin`, `TestArasapasRetroTukarDuaSyarat`,
+`TestRateLifeKolomTetapBerkunciIDUSEDBY`, `TestRateLifePengenalKosongGagalTerang`, `TestMasterViewTidakDisentuh` (mutasi `USEDBY`
+menjadi merah), dan `db` `TestCerminMengisiTertanggungDariSumber`. Uji `db` itu menghitung kecocokan nama/DOB di Oracle; nilainya
+tidak dibaca ke Go.

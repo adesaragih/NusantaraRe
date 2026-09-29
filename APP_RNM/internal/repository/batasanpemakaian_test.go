@@ -303,7 +303,11 @@ func TestSetiapPemanggilBukaMemeriksaBolehDilewati(t *testing.T) {
 	//
 	// SEPULUH lagi sejak tco4 (29-09-2026): tco_pindah_db_test.go dibuang
 	// bersama migrasi data ke tabel T_* - tidak ada tabel tujuan.
-	const mau = 10
+	//
+	// SEBELAS sejak GILIRAN-17 (OQ-N2): cermintertanggung_db_test.go membuka
+	// koneksinya sendiri untuk mengisi baris sumber peserta tiruan dan
+	// menghitung kecocokan nama/DOB DI DALAM Oracle (nilai tidak dibaca ke Go).
+	const mau = 11
 	if diperiksa != mau {
 		t.Errorf("pemanggil skemauji.Buka() ditemukan %d, mau %d; "+
 			"bila memang bertambah, perbarui angkanya di sini", diperiksa, mau)

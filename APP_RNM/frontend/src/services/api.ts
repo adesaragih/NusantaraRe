@@ -988,9 +988,9 @@ export interface HasilSimpanRNM {
   /** Baris tanpa status yang kini Outstanding (langkah 22.1.3.2). */
   barisDitandai: number
   /**
-   * Keadaan efek Arasapas langkah 28, sebagai kata: `terkirim`, `gagal, …`,
-   * `dilewati: …` (lingkungan bukan produksi, atau kode retro langkah 27), atau
-   * `ditahan: …` bila gerbang langkah 27 bergantung pada `ProdDateTime` (OQ-N5).
+   * Keadaan efek Arasapas langkah 28, sebagai kata: `terkirim`, `gagal, …`, atau
+   * `dilewati: …` (lingkungan bukan produksi, atau kode retro langkah 27 — dibaca
+   * sesudah tukar dua syarat, OQ-N5 ditutup GILIRAN-17).
    */
   arasapas: string
 }

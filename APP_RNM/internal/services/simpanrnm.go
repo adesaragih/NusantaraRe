@@ -253,25 +253,21 @@ func dolDalamJendelaRNM(p models.Peserta, gross bool) bool {
 // (`InsertJsonClaimLife_Act`): langkah 1 menyalin apa adanya, langkah 2
 // "Tukar SecurityReinsurer dengan RetroName" (TIDAK ter-remark) menukar kedua
 // pengenal - b1152-1153 `ClaimData.RetroID = SecurityReinsurerID`, b1194-1195
-// `ClaimData.SecurityReinsurerID = RetroID` - bila KETIGA WHEN-nya benar:
+// `ClaimData.SecurityReinsurerID = RetroID` - bila WHEN-nya benar:
 //
 //	b1268 `Type=="TP"||Type=="TR"`
 //	b1291 `SecurityReinsurerID!="" && SecurityReinsurer!=""`
-//	b1314 `OfferFacIn.PolicyData.ProdDateTime < "20250207T000000.000 GMT"`
 //
-// Tidak ada sumber `ProdDateTime` di aplikasi ini (OQ-N5).
+// ⛔ OQ-N5 DITUTUP 29-09-2026 (GILIRAN-17) `[keputusan work owner]`: keputusan
+// Komite "cutover 7 Feb 2025 tidak dipakai" (CONTEXT.md, Komite ronde 1 #4)
+// berlaku JUGA di Claim Life. WHEN ketiga, b1314 `OfferFacIn.PolicyData.
+// ProdDateTime < "20250207T000000.000 GMT"`, tidak dipakai - dua WHEN cukup.
 type PolisRetro struct {
 	Tipe                string
 	RetroID             string
 	SecurityReinsurerID string
 	SecurityReinsurer   string
 }
-
-// ErrGerbangRetroTakTerputuskan - hasil langkah 27 bergantung pada penukaran
-// langkah 2 `InsertJsonClaimLife_Act`, dan penukaran itu bergantung pada
-// `ProdDateTime` yang tidak tersedia (OQ-N5).
-var ErrGerbangRetroTakTerputuskan = errors.New(
-	"services: gerbang retro langkah 27 bergantung pada ProdDateTime polis, yang tidak tersedia (OQ-N5)")
 
 // kodeRetroKeluar - b11794 `RetroID=="L0000141" || SecurityReinsurerID==
 // "L0000134"` dan b11817 `RetroID=="1000013"`, keduanya WhenTrue 6.
@@ -281,30 +277,20 @@ func kodeRetroKeluar(retroID, securityReinsurerID string) bool {
 }
 
 // ArasapasDilewatiRetro adalah langkah 27 - MURNI: true berarti activity
-// KELUAR sebelum Arasapas langkah 28.
-//
-// ⛔ Gagal terang, bukan tebakan (ADR-U-0027): bila penukaran MUNGKIN terjadi
-// (b1268 dan b1291 benar) dan hasilnya BERBEDA dengan dan tanpa tukar, hanya
-// `ProdDateTime` (b1314) yang dapat memutuskan - dan ia tidak ada. Selama
-// hasilnya sama, `ProdDateTime` tidak perlu diketahui.
+// KELUAR sebelum Arasapas langkah 28. Ia membaca nilai SESUDAH tukar
+// `InsertJsonClaimLife_Act` langkah 2 (dua WHEN, OQ-N5).
 //
 // ⚠️ Modul Komite MEMBUANG gerbang yang sama `[keputusan work owner, OQ-064]`
-// untuk `KomitePostAdjustment`, dan cutover 7 Feb 2025 dinyatakan tidak
-// dipakai lagi di sana (CONTEXT.md, Komite ronde 1 #4) - untuk blok yang di
-// Komite memang ter-remark. Keduanya tidak menyebut Claim Life, jadi di sini
-// XML yang menang, dan selisihnya dilaporkan (OQ-N3, OQ-N5).
-func ArasapasDilewatiRetro(p PolisRetro) (bool, error) {
-	tanpaTukar := kodeRetroKeluar(p.RetroID, p.SecurityReinsurerID)
+// untuk `KomitePostAdjustment`. Di Claim Life gerbangnya DIPERTAHANKAN
+// (OQ-N3 ditutup GILIRAN-17): XML Claim Life hidup.
+func ArasapasDilewatiRetro(p PolisRetro) bool {
 	tipe := strings.ToUpper(strings.TrimSpace(p.Tipe))
-	mungkinTukar := (tipe == TypeTP || tipe == TypeTR) &&
+	tukar := (tipe == TypeTP || tipe == TypeTR) &&
 		!kosongTeks(p.SecurityReinsurerID) && !kosongTeks(p.SecurityReinsurer)
-	if !mungkinTukar {
-		return tanpaTukar, nil
+	if tukar {
+		return kodeRetroKeluar(p.SecurityReinsurerID, p.RetroID)
 	}
-	if kodeRetroKeluar(p.SecurityReinsurerID, p.RetroID) != tanpaTukar {
-		return false, ErrGerbangRetroTakTerputuskan
-	}
-	return tanpaTukar, nil
+	return kodeRetroKeluar(p.RetroID, p.SecurityReinsurerID)
 }
 
 // ErrSimpanRNMBukanOutstanding - tombol `Save to RNM` hanya ada di layar
@@ -435,6 +421,12 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku Pelaku, klaimID string,
 		return hasil, err
 	}
 	m := MasukanRNM{Tipe: tipe, ContentNote: note}
+	// OQ-N2 (GILIRAN-17): baris cermin klaim ini sendiri dikecualikan dari
+	// pemeriksaan klaim ganda - di Pega ia belum ada saat langkah 11.x.
+	caseID, err := baca.CaseIDKlaim(ctx, klaimID)
+	if err != nil {
+		return hasil, err
+	}
 	for _, p := range klaim.Peserta {
 		if strings.TrimSpace(p.SumberID) == "" {
 			return hasil, fmt.Errorf("%w: peserta %q tanpa SOURCE_ID; DOB dan klaim ganda "+
@@ -447,11 +439,11 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku Pelaku, klaimID string,
 			return hasil, err
 		}
 		if strings.TrimSpace(note) == contentNoteDeath {
-			if pr.StatusWarisanTerakhir, err = baca.StatusWarisanTerakhir(ctx, k, polis.CedingCo); err != nil {
+			if pr.StatusWarisanTerakhir, err = baca.StatusWarisanTerakhir(ctx, k, polis.CedingCo, caseID); err != nil {
 				return hasil, err
 			}
 		} else if dol := tanggalSaja(p.TanggalKejadian); dol != "" {
-			if pr.AdaKlaimSehatSamaDOL, err = baca.AdaWarisanSamaDOL(ctx, k, polis.CedingCo, dol); err != nil {
+			if pr.AdaKlaimSehatSamaDOL, err = baca.AdaWarisanSamaDOL(ctx, k, polis.CedingCo, dol, caseID); err != nil {
 				return hasil, err
 			}
 		}
@@ -510,7 +502,7 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku Pelaku, klaimID string,
 		// mencerminkan header dalam transaksinya sendiri (PerbaruiStatusBaris,
 		// tiket 04), karena Arasapas di sini efek keluar yang dapat gagal
 		// atau dilewati; di sini pun sama, termasuk saat Arasapas dilewati
-		// atau ditahan (OQ-N3).
+		// (OQ-N3 - dipertahankan di transaksi simpan, GILIRAN-17).
 		if hasil.BarisDitandai > 0 {
 			akhir := BarisTerakhir(klaim)
 			if err := baca.CerminkanHeader(ctx, tx, klaimID, akhir.KodeStatus,
@@ -530,14 +522,9 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku Pelaku, klaimID string,
 	// ⚠️ Di sistem lama keluar di langkah 27 (kode 6) melewati Obj-Save
 	// langkah 29 juga; di sini tulisan langkah 16-22 sudah di-commit lebih
 	// dulu. Lihat OQ-N3.
-	lewat, err := ArasapasDilewatiRetro(PolisRetro{Tipe: tipe, RetroID: polis.RetroID,
+	lewat := ArasapasDilewatiRetro(PolisRetro{Tipe: tipe, RetroID: polis.RetroID,
 		SecurityReinsurerID: polis.SecurityReinsurerID, SecurityReinsurer: polis.SecurityReinsurer})
 	switch {
-	case err != nil:
-		// Tidak dikirim: mengirim efek keluar atas tebakan lebih buruk
-		// daripada menahannya dengan alasan yang terbaca.
-		hasil.Arasapas = "ditahan: gerbang retro langkah 27 bergantung pada ProdDateTime " +
-			"polis, yang tidak tersedia (OQ-N5)"
 	case lewat:
 		hasil.Arasapas = "dilewati: kode retro langkah 27"
 	default:
