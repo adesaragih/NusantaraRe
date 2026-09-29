@@ -132,3 +132,20 @@ func TestKonversiKurs(t *testing.T) {
 		}
 	}
 }
+
+// Temuan /code-review: TOIDR rusak di baris periode LAIN tidak menggagalkan
+// pencarian; TOIDR rusak di baris yang berlaku adalah master rusak.
+func TestKursBarisLainRusakTidakMenggagalkan(t *testing.T) {
+	baris := []models.KursTCO{
+		{TeksToIDR: "15500.25", Mulai: mulaiTahunKurs, Akhir: time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC), Quarter: "0"},
+		{TeksToIDR: "", Mulai: time.Date(2012, 1, 1, 0, 0, 0, 0, time.UTC), Akhir: time.Date(2012, 12, 31, 0, 0, 0, 0, time.UTC)},
+	}
+	k, err := layananKurs(&masterKursUji{baris: baris}).KursTahun(context.Background(), pelakuUjiTCO, "1000001")
+	if err != nil || k.Kurs != "15500.25" {
+		t.Errorf("baris lama rusak menggagalkan: %+v %v", k, err)
+	}
+	baris[0].TeksToIDR = "0"
+	if _, err := layananKurs(&masterKursUji{baris: baris}).KursTahun(context.Background(), pelakuUjiTCO, "1000001"); !errors.Is(err, services.ErrMasterKursRusak) {
+		t.Errorf("baris berlaku rusak: %v", err)
+	}
+}

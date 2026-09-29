@@ -79,7 +79,11 @@ func (GalatKursTidakAda) Is(target error) bool { return target == ErrKursTidakAd
 
 // KursTCO adalah satu baris master kurs yang sudah diurai.
 type KursTCO struct {
-	ToIDR      *apd.Decimal
+	// ToIDR - diurai hanya untuk baris yang BERLAKU (temuan /code-review):
+	// seperti Pega, `TOIDR` baris lain yang rusak tidak menggagalkan pencarian.
+	ToIDR *apd.Decimal
+	// TeksToIDR - `TOIDR` apa adanya dari master (VARCHAR2).
+	TeksToIDR  string
 	Mulai      time.Time
 	Akhir      time.Time
 	IDCurrency string
@@ -146,7 +150,7 @@ func PilihKursBerlakuTCO(baris []KursTCO, tanggal time.Time) (KursTCO, error) {
 }
 
 func kuantisasiKurs(d *apd.Decimal, skala int32) (*apd.Decimal, error) {
-	k := konteksBagi
+	k := utils.DecimalContext()
 	k.Rounding = apd.RoundHalfUp
 	hasil := new(apd.Decimal)
 	if _, err := k.Quantize(hasil, d, -skala); err != nil {
@@ -165,7 +169,7 @@ func UsdDariRpTCO(rp, kurs *apd.Decimal, skala int32) (*apd.Decimal, error) {
 		return nil, nil
 	}
 	hasil := new(apd.Decimal)
-	if _, err := konteksBagi.Quo(hasil, rp, kurs); err != nil {
+	if _, err := utils.DecimalContext().Quo(hasil, rp, kurs); err != nil {
 		return nil, fmt.Errorf("models: menghitung Usd dari Rp: %w", err)
 	}
 	return kuantisasiKurs(hasil, skala)
@@ -180,8 +184,21 @@ func RpDariUsdTCO(usd, kurs *apd.Decimal) (*apd.Decimal, error) {
 		return nil, nil
 	}
 	hasil := new(apd.Decimal)
-	if _, err := konteksBagi.Mul(hasil, usd, kurs); err != nil {
+	if _, err := utils.DecimalContext().Mul(hasil, usd, kurs); err != nil {
 		return nil, fmt.Errorf("models: menghitung Rp dari Usd: %w", err)
 	}
 	return kuantisasiKurs(hasil, skalaRpDariUsdTCO)
+}
+
+// LengkapiKursTCO mengurai `TOIDR` baris yang terpilih bila belum diurai.
+func LengkapiKursTCO(k KursTCO) (KursTCO, error) {
+	if k.ToIDR != nil {
+		return k, nil
+	}
+	d, err := UraiNilaiKursTCO(k.TeksToIDR)
+	if err != nil {
+		return KursTCO{}, fmt.Errorf("%w (baris berlaku %s - %s)", err, utils.FormatTanggal(k.Mulai), utils.FormatTanggal(k.Akhir))
+	}
+	k.ToIDR = d
+	return k, nil
 }

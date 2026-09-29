@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
@@ -142,6 +143,26 @@ func TestKursTanpaLiteralMataUangDanNamaJujur(t *testing.T) {
 		for _, larang := range []string{"float32", "float64", "ParseFloat"} {
 			if strings.Contains(s, larang) {
 				t.Errorf("%s memuat %s", berkas, larang)
+			}
+		}
+	}
+}
+
+// Temuan /code-review: modul tidak membuat konteks apd sendiri dan tidak
+// menulis konteks bersama - `utils.DecimalContext()` memberi salinan.
+func TestModulTanpaKonteksApdSendiri(t *testing.T) {
+	for _, pola := range []string{"tco_*.go", "../services/tco_*.go", "../repository/tco_*.go"} {
+		berkas, _ := filepath.Glob(pola)
+		for _, b := range berkas {
+			if strings.HasSuffix(b, "_test.go") {
+				continue
+			}
+			isi, err := os.ReadFile(b)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if strings.Contains(string(isi), "apd.BaseContext") || strings.Contains(string(isi), "WithPrecision(") {
+				t.Errorf("%s membuat apd.Context sendiri", b)
 			}
 		}
 	}

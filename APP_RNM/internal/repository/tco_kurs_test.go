@@ -45,12 +45,15 @@ func nsKurs(v ...string) [6]sql.NullString {
 
 func TestUraiBarisKursTCO(t *testing.T) {
 	k, err := uraiBarisKursTCO(nsKurs("15500,25", "20260101T000000.000 GMT", "20261231T000000.000 GMT", "UJI-USD", "USD", "0"))
-	if err != nil || k.ToIDR.Text('f') != "15500.25" || k.Mulai.Format("2006-01-02") != "2026-01-01" ||
+	if err != nil || k.ToIDR != nil || k.TeksToIDR != "15500,25" || k.Mulai.Format("2006-01-02") != "2026-01-01" ||
 		k.Akhir.Format("2006-01-02") != "2026-12-31" || k.IDCurrency != "UJI-USD" || k.Quarter != "0" {
 		t.Errorf("urai: %+v %v", k, err)
 	}
+	// TOIDR kosong tidak menggagalkan pembacaan (diurai hanya bila berlaku).
+	if _, err := uraiBarisKursTCO(nsKurs("", "20120101T000000.000 GMT", "20121231T000000.000 GMT")); err != nil {
+		t.Errorf("TOIDR baris lama yang rusak menggagalkan pembacaan: %v", err)
+	}
 	for _, buruk := range [][6]sql.NullString{
-		nsKurs("", "20260101T000000.000 GMT", "20261231T000000.000 GMT"),
 		nsKurs("15500", "01/01/2026", "20261231T000000.000 GMT"),
 		nsKurs("15500", "20260101T000000.000 GMT", ""),
 	} {

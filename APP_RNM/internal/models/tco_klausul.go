@@ -26,6 +26,8 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/apd/v3"
+
+	"nusantarare/pkg/utils"
 )
 
 // Nama medan klausul - properti Pega VERBATIM (AC 32).
@@ -401,7 +403,6 @@ func PeriksaKlausulTCO(a AturanKlausul, k KlausulTreaty) error {
 
 var (
 	seratusKlausul = apd.New(100, 0)
-	konteksBagi    = apd.BaseContext.WithPrecision(38)
 )
 
 // RpUsdAnakTCO - `Activity/HitungRpUsd.xml`: `Usd = Pct * Usd_induk / 100`,
@@ -414,14 +415,16 @@ func RpUsdAnakTCO(pct, rpInduk, usdInduk *apd.Decimal) (rp, usd *apd.Decimal, er
 			return nil, nil
 		}
 		hasil := new(apd.Decimal)
-		if _, err := konteksBagi.Mul(hasil, pct, x); err != nil {
+		if _, err := utils.DecimalContext().Mul(hasil, pct, x); err != nil {
 			return nil, err
 		}
-		if _, err := konteksBagi.Quo(hasil, hasil, seratusKlausul); err != nil {
+		if _, err := utils.DecimalContext().Quo(hasil, hasil, seratusKlausul); err != nil {
 			return nil, err
 		}
 		kuantum := new(apd.Decimal)
-		k := konteksBagi
+		// SALINAN per panggilan (temuan /code-review): menulis Rounding ke konteks
+		// bersama adalah data race.
+		k := utils.DecimalContext()
 		k.Rounding = apd.RoundHalfUp
 		if _, err := k.Quantize(kuantum, hasil, -skalaPersenTCO); err != nil {
 			return nil, err

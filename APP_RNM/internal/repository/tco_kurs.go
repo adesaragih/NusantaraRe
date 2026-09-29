@@ -75,13 +75,15 @@ func (m *MasterKursTCO) Daftar(ctx context.Context, idCurrency, quarter string) 
 	return hasil, rows.Err()
 }
 
-// uraiBarisKursTCO mengurai satu baris master; galatnya menyebut baris itu.
+// uraiBarisKursTCO mengurai tanggal satu baris master; galatnya menyebut
+// baris itu. `TOIDR` dibawa sebagai teks - diurai hanya bila barisnya berlaku.
+//
+// ⚠️ Tanggal yang rusak TETAP galat: kueri Pega menjalankan `TO_TIMESTAMP_TZ`
+// atas setiap baris kandidat, sehingga di Pega pun satu tanggal rusak
+// menggagalkan pencarian.
 func uraiBarisKursTCO(n [6]sql.NullString) (models.KursTCO, error) {
-	k := models.KursTCO{IDCurrency: n[3].String, Currency: n[4].String, Quarter: n[5].String}
+	k := models.KursTCO{TeksToIDR: n[0].String, IDCurrency: n[3].String, Currency: n[4].String, Quarter: n[5].String}
 	var err error
-	if k.ToIDR, err = models.UraiNilaiKursTCO(n[0].String); err != nil {
-		return models.KursTCO{}, fmt.Errorf("%w (baris STARTDATE %q)", err, n[1].String)
-	}
 	if k.Mulai, err = models.UraiTanggalKursTCO("STARTDATE", n[1].String); err != nil {
 		return models.KursTCO{}, err
 	}

@@ -539,6 +539,8 @@ func (l *KlausulTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID string, 
 			}
 		} else if err := l.gudang.Perbarui(ctx, tx, k); err != nil {
 			return err
+		} else if err := l.hitungUlangAnak(repository.DenganBacaTxTCO(ctx, tx), tx, pelaku, a, lama, k); err != nil {
+			return err
 		}
 		return l.gudang.Jejak(ctx, tx, pelaku.AkunID, k.ID, repository.AksiJejakSimpan, ket, k.TglUpdate)
 	})
@@ -612,4 +614,50 @@ func (l *KlausulTCO) Pilihan(ctx context.Context, pelaku Pelaku, master, cari st
 		hasil = append(hasil, PilihanTampil{ID: p.ID, Nama: p.Nama})
 	}
 	return hasil, nil
+}
+
+// hitungUlangAnak - temuan /code-review: Rp/Usd anak adalah TURUNAN induknya
+// (`HitungRpUsd`), yang tersimpan. Induk yang Rp/Usd-nya berubah menghitung
+// ulang seluruh anaknya di transaksi yang sama, supaya nilai tersimpan tetap
+// Pct x induk / 100 (Pega hanya menghitung saat anak disimpan).
+func (l *KlausulTCO) hitungUlangAnak(ctx context.Context, tx *repository.Tx, pelaku Pelaku, a models.AturanKlausul,
+	lama, induk models.KlausulTreaty) error {
+
+	if a.Anak || induk.ReinsTypeID == "" {
+		return nil
+	}
+	aturanAnak, ada := models.CariAturanKlausul(a.DescID, true, "")
+	if !ada || (desimalSama(lama.Rp, induk.Rp) && desimalSama(lama.Usd, induk.Usd)) {
+		return nil
+	}
+	anak, err := l.gudang.Daftar(ctx, induk.TreatyYearID, a.DescID, induk.ReinsTypeID)
+	if err != nil {
+		return err
+	}
+	for _, c := range anak {
+		rp, usd, err := models.RpUsdAnakTCO(c.Pct, induk.Rp, induk.Usd)
+		if err != nil {
+			return err
+		}
+		if desimalSama(c.Rp, rp) && desimalSama(c.Usd, usd) {
+			continue
+		}
+		c.Rp, c.Usd, c.UserID, c.TglUpdate = rp, usd, pelaku.AkunID, induk.TglUpdate
+		if err := l.gudang.Perbarui(ctx, tx, c); err != nil {
+			return err
+		}
+		if err := l.gudang.Jejak(ctx, tx, pelaku.AkunID, c.ID, repository.AksiJejakSimpan,
+			"klausul "+aturanAnak.Jenis+" dihitung ulang dari induk "+induk.ID, induk.TglUpdate); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// desimalSama - dua desimal (boleh nil) bernilai sama.
+func desimalSama(a, b *apd.Decimal) bool {
+	if a == nil || b == nil {
+		return a == nil && b == nil
+	}
+	return a.Cmp(b) == 0
 }

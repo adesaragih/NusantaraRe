@@ -154,6 +154,9 @@ func (l *KursTCO) Berlaku(ctx context.Context, tahun models.TahunTreaty) (models
 	case err != nil:
 		return models.KursTCO{}, err
 	}
+	if k, err = models.LengkapiKursTCO(k); err != nil {
+		return models.KursTCO{}, fmt.Errorf("%w: %v", ErrMasterKursRusak, err)
+	}
 	if k.Currency == "" {
 		k.Currency = models.KodeMataUangAsalKursTCO
 	}

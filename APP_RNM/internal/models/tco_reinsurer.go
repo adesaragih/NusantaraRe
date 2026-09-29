@@ -50,8 +50,7 @@ const (
 )
 
 var (
-	seratus  = apd.New(100, 0)
-	konteksD = apd.BaseContext.WithPrecision(utils.DecimalPrecision)
+	seratus = apd.New(100, 0)
 )
 
 // UraiPersenMasukTCO menormalkan satu nilai persen di BATAS MASUKAN.
@@ -99,7 +98,7 @@ func TotalShareTCO(shares []*apd.Decimal) (*apd.Decimal, error) {
 		if s == nil {
 			continue
 		}
-		if _, err := konteksD.Add(jumlah, jumlah, s); err != nil {
+		if _, err := utils.DecimalContext().Add(jumlah, jumlah, s); err != nil {
 			return nil, fmt.Errorf("models: menjumlahkan share: %w", err)
 		}
 	}

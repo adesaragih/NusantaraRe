@@ -371,3 +371,30 @@ func TestKlausulTanpaKursDitolak(t *testing.T) {
 		}
 	}
 }
+
+// Temuan /code-review: induk yang Rp-nya berubah menghitung ulang anaknya.
+func TestKlausulIndukBerubahMenghitungUlangAnak(t *testing.T) {
+	g, n := gudangKlausulKosong(), 0
+	l := layananKlausul(g, &n)
+	h, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", epi("10003", "1000"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", services.KlausulMasuk{DescID: "10009", Anak: true,
+		ParentReinsTypeID: "10003", Medan: map[string]string{"ReinsTypeID": "10005", "Pct": "25"}})
+	if err != nil || a.Klausul.Medan["Rp"] != "250.00000000" {
+		t.Fatalf("anak: %+v %v", a, err)
+	}
+	ubah := epi("10003", "2000")
+	ubah.ID = h.Klausul.ID
+	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", ubah); err != nil {
+		t.Fatal(err)
+	}
+	c := g.baris[a.Klausul.ID]
+	if c.Rp.Text('f') != "500.00000000" || c.Usd.Text('f') != "40.00000000" {
+		t.Errorf("anak tidak dihitung ulang: Rp %v Usd %v", c.Rp, c.Usd)
+	}
+	if !strings.Contains(strings.Join(g.jejak, "\n"), "dihitung ulang dari induk "+h.Klausul.ID) {
+		t.Errorf("jejak hitung ulang: %v", g.jejak)
+	}
+}
