@@ -45,6 +45,11 @@ export const KASUS_KOMITE = {
   comment: 'Comment',
   /** `KOMITE_OPERATORID` — pengenal akun; kosakata kami. */
   anggota: 'Anggota',
+  /**
+   * OQ-K-05 (GILIRAN-17) — keputusan tingkat sebelum langkah 5.1 menimpanya.
+   * Kosakata kami: Pega tidak menampilkan riwayat yang ditimpanya.
+   */
+  asli: 'Sebelum ditimpa Tolak akhir',
   eskalasi: 'Eskalasi',
   giliranAnda: 'Giliran Anda memutuskan.',
   bukanGiliran: 'Bukan giliran Anda — kasus ini menunggu tingkat lain atau sudah selesai.',

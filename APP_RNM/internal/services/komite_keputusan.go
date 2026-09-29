@@ -222,6 +222,8 @@ func (k *KeputusanKomite) Putuskan(ctx context.Context, pelaku Pelaku,
 			Ke:           models.KataKeputusanKomite(akibat.Keputusan) + " (" + kasusID + ")",
 			AkunID:       pelaku.AkunID,
 			Waktu:        saat,
+			// Migrasi 021 (GILIRAN-17): komentar keputusan ikut tercatat.
+			Komentar: komentar,
 		})
 	})
 	if err != nil {

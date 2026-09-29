@@ -21,8 +21,10 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
+	"nusantarare/internal/models"
 	"time"
 )
 
@@ -90,6 +92,87 @@ func (r *InboxKomite) CatatKeputusan(ctx context.Context, tx *Tx, kasusID string
 		return fmt.Errorf("repository: membaca cacah kepala komite: %w", err)
 	} else if n != 1 {
 		return fmt.Errorf("%w: kepala kasus %q", ErrKeputusanKomiteBersamaan, kasusID)
+	}
+	return nil
+}
+
+// sqlTanggaSebelumDitimpa - keadaan tangga SEBELUM 5.1 menimpanya, dibaca di
+// dalam transaksi keputusan: keputusan tingkat akhir yang baru saja ditulis
+// `CatatKeputusan` (langkah 3) ikut terbaca, beserta komentarnya.
+func sqlTanggaSebelumDitimpa(list string) string {
+	return fmt.Sprintf(`SELECT KOMITE_URUT, KOMITE_OPERATORID, KOMITE_APPROVAL, KOMITE_COMMENT
+	  FROM %s WHERE DATA_KOMITE_ID = :1 ORDER BY KOMITE_URUT`, list)
+}
+
+// TanggaSebelumDitimpa membaca tangga satu kasus di dalam `tx` (OQ-K-05).
+func (r *InboxKomite) TanggaSebelumDitimpa(ctx context.Context, tx *Tx, kasusID string) ([]AnggotaKasus, error) {
+	if tx == nil {
+		return nil, errors.New("repository: membaca tangga sebelum penimpaan menuntut transaksi")
+	}
+	list, err := r.db.Qualify("T_KOMITE_KOMITELIST")
+	if err != nil {
+		return nil, err
+	}
+	q := sqlTanggaSebelumDitimpa(list)
+	if err := PeriksaSQL(q); err != nil {
+		return nil, err
+	}
+	rows, err := tx.tx.QueryContext(ctx, q, kasusID)
+	if err != nil {
+		return nil, fmt.Errorf("repository: membaca tangga komite: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	var out []AnggotaKasus
+	for rows.Next() {
+		var a AnggotaKasus
+		var op, ap, kom sql.NullString
+		if err := rows.Scan(&a.Urut, &op, &ap, &kom); err != nil {
+			return nil, fmt.Errorf("repository: memindai tangga komite: %w", err)
+		}
+		a.OperatorID, a.Approval, a.Komentar = op.String, ap.String, kom.String
+		out = append(out, a)
+	}
+	return out, rows.Err()
+}
+
+// sqlTimpaTanggaTolakAkhir - `KomitePostAdjustment` langkah 5.1 "Set Reject
+// Komite berjenjang" (b5784; `pyStepsBlockName` kosong b5795, hidup):
+// perulangan SELURUH `KomiteList` baris adjustment itu (repeat b6127) -
+// `KomiteAproval = 2` b5899, `KomiteComment = ""` b5945, `DateApprove =
+// @CurrentDateTime()` b5965. OQ-K-05 DITUTUP 29-09-2026 (GILIRAN-17).
+//
+// ⛔ `KOMITE_APPROVAL IS NOT NULL`: tingkat yang DILEWATI eskalasi (NULL,
+// tiket 03) tidak pernah memberi keputusan - menimpanya menjadi Tolak adalah
+// keputusan karangan. Pega tidak mengenal eskalasi, jadi di Pega seluruh
+// tingkat memang berkeputusan saat 5.1 berjalan.
+func sqlTimpaTanggaTolakAkhir(list string) string {
+	return fmt.Sprintf(`UPDATE %s
+	   SET KOMITE_APPROVAL = :1, KOMITE_COMMENT = NULL, DATE_APPROVE = :2
+	 WHERE DATA_KOMITE_ID = :3 AND KOMITE_APPROVAL IS NOT NULL`, list)
+}
+
+// TimpaTanggaTolakAkhir menjalankan langkah 5.1 di dalam `tx`. Nol baris =
+// galat: tingkat akhir yang menolak pasti sudah menulis keputusannya.
+func (r *InboxKomite) TimpaTanggaTolakAkhir(ctx context.Context, tx *Tx, kasusID string, saat time.Time) error {
+	if tx == nil {
+		return errors.New("repository: penimpaan tangga komite menuntut transaksi")
+	}
+	list, err := r.db.Qualify("T_KOMITE_KOMITELIST")
+	if err != nil {
+		return err
+	}
+	q := sqlTimpaTanggaTolakAkhir(list)
+	if err := PeriksaSQL(q); err != nil {
+		return err
+	}
+	h, err := tx.tx.ExecContext(ctx, q, models.KeputusanKomiteTolak, saat, kasusID)
+	if err != nil {
+		return fmt.Errorf("repository: menimpa tangga komite: %w", err)
+	}
+	if n, err := h.RowsAffected(); err != nil {
+		return fmt.Errorf("repository: membaca cacah penimpaan tangga: %w", err)
+	} else if n < 1 {
+		return fmt.Errorf("%w: kasus %q tanpa tingkat berkeputusan", ErrKeputusanKomiteBersamaan, kasusID)
 	}
 	return nil
 }

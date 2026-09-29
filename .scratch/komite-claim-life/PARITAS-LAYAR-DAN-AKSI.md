@@ -34,7 +34,7 @@
 | 4 Approve Last Komite: 4.7–4.12 nomor, 4.15 Insert ke OS | `penyelesaiAkhirOracle.Akseptasi` + `RekamAkhirWarisan` | 04a, 04b |
 | 4.17/4.18 `PrintAkseptasiPDF` | — | ⚠️ 04b belum |
 | 5 Reject: 5.3, 5.6 | `penyelesaiAkhirOracle.Tolak` | 05 |
-| 5.1 timpa seluruh tangga | — | ⛔ tidak ditiru (OQ-K-05) |
+| 5.1 timpa seluruh tangga | `penyelesaiAkhirOracle.Tolak` → `TanggaSebelumDitimpa`, `jejakTimpaTangga`, `TimpaTanggaTolakAkhir` | ✅ **ditiru — OQ-K-05 ditutup 29-09-2026 (GILIRAN-17)**; keputusan lama dijejaki dulu, tingkat dilewati eskalasi tidak ditimpa |
 | 8 `InsertJsonClaimLife_Act` | — | ⛔ JSON dibuang |
 | 9 EXIT retro | — | ⛔ dibuang (OQ-064) |
 | 10 Arasapas · 11 email · 12 Kasir | outbox `T_LOG_SERVICE_RNM` (`KOMITELIFE`) + `PelaksanaKomite` | 06, 07 |

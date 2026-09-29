@@ -178,11 +178,12 @@ func (p penyelesaiAkhirOracle) rekamAkhir(ctx context.Context, tx *repository.Tx
 //	                                    PremiumListDetail.STS_REJECT = 2, .IsCheck = "false"
 //	5.6 "Insert ke OS"                  UpdateOsAkseptasiClaimLife_sql
 //
-// ⚠️ 5.1 TIDAK DITIRU - OQ-K-05 `[terbuka — work owner]`. Ia menimpa keputusan
-// `1` dan komentar SETIAP tingkat sebelumnya dengan `2` dan teks kosong:
-// riwayat tangga (tiket 09) dan jejak per tingkat (ADR-0007) kehilangan
-// siapa yang menyetujui sebelum tingkat akhir menolak. Yang ditulis di sini
-// hanya keputusan tingkat akhir itu sendiri (`CatatKeputusan`, tiket 02).
+// ⛔ 5.1 DITIRU - OQ-K-05 DITUTUP 29-09-2026 (GILIRAN-17) `[keputusan work
+// owner]`: satu UPDATE bersyarat menimpa keputusan seluruh tingkat yang
+// memutus dengan `2`, komentar kosong, `DateApprove` sekarang. SEBELUM
+// menimpa, keputusan dan komentar lama tiap tingkat dicatat di jejak
+// (ADR-0007, kolom `KOMENTAR` migrasi 021), sehingga riwayat tangga tiket 09
+// tetap dapat membacanya (`susunRiwayat`, `Asli`).
 //
 // ⛔ `AcceptStatus` TIDAK diteruskan ke Claim Life (ADR-0001): ia dipetakan di
 // batas ini menjadi `STS_REJECT = 2` - kode Claim Life `KodeDitolak`.
@@ -197,6 +198,21 @@ func (p penyelesaiAkhirOracle) Tolak(ctx context.Context, tx *repository.Tx,
 	if strings.TrimSpace(kasus.AdjID) == "" || strings.TrimSpace(kasus.PesertaID) == "" {
 		return fmt.Errorf("%w: kasus %q tanpa baris adjustment/peserta", ErrPermintaanTidakSah,
 			kasus.Baris.KasusID)
+	}
+	// 5.1 - tangga dibaca DI DALAM transaksi (keputusan tingkat akhir langkah
+	// 3 ikut terbaca), keputusan lamanya dijejaki, lalu ditimpa.
+	komite := repository.NewInboxKomite(p.svc.db)
+	tangga, err := komite.TanggaSebelumDitimpa(ctx, tx, kasus.Baris.KasusID)
+	if err != nil {
+		return err
+	}
+	for _, c := range jejakTimpaTangga(kasus, tangga, pelaku, saat) {
+		if err := p.jejak.Rekam(ctx, tx, c); err != nil {
+			return err
+		}
+	}
+	if err := komite.TimpaTanggaTolakAkhir(ctx, tx, kasus.Baris.KasusID, saat); err != nil {
+		return err
 	}
 	baca := repository.NewKlaimLife(p.svc.db)
 	// 5.3 - dua tingkat baris, nilai yang sama, satu operasi (AC 15 spec).

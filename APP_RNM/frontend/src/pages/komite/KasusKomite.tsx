@@ -26,6 +26,7 @@ import {
   eskalasiKomite,
   putuskanKomite,
   type KasusKomite as Kasus,
+  type KeputusanAsliKomite,
   type RiwayatKomite,
 } from '../../services/api'
 import { selKomite, tingkatKomite } from './InboxKomite'
@@ -42,6 +43,15 @@ export const PILIHAN_KEPUTUSAN = [
  * ⚠️ `[asumsi — OQ-007/OQ-021]` admin komite = `ReasLifeAdmin`. Server tetap
  * yang menegakkan; ini hanya menyembunyikan tombol yang pasti ditolak.
  */
+/**
+ * Keputusan asli tingkat yang tertimpa langkah 5.1 — MURNI (OQ-K-05,
+ * GILIRAN-17): `Setuju — komentar`, atau tanda kosong bila tidak tertimpa.
+ */
+export function teksKeputusanAsli(asli: KeputusanAsliKomite | undefined): string {
+  if (asli === undefined) return '—'
+  return asli.comment.trim() === '' ? asli.status : `${asli.status} — ${asli.comment}`
+}
+
 export function bolehEskalasi(peran: readonly KodePeran[], k: Kasus | null): boolean {
   if (k === null) return false
   return peran.includes(PERAN.admin) && k.kasus.tingkatBerjalan > 0 &&
@@ -183,6 +193,7 @@ export default function KasusKomite({
                   <th>{KASUS_KOMITE.status}</th>
                   <th>{KASUS_KOMITE.dateApprove}</th>
                   <th>{KASUS_KOMITE.comment}</th>
+                  <th>{KASUS_KOMITE.asli}</th>
                 </tr>
               </thead>
               <tbody>
@@ -194,6 +205,7 @@ export default function KasusKomite({
                     <td>{a.status}</td>
                     <td>{selKomite(a.dateApprove)}</td>
                     <td>{selKomite(a.comment)}</td>
+                    <td>{teksKeputusanAsli(a.asli)}</td>
                   </tr>
                 ))}
               </tbody>

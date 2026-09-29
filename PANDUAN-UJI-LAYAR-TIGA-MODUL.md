@@ -1050,12 +1050,13 @@ Uji silang: login sebagai `UJI-B` atau `UJI-C` sebelum tingkat 1 memutuskan → 
 | C2 | `UJI-B` (tk 2) | Setuju | naik ke tingkat 3 | tidak terbit | tetap "Outstanding" | `email-komite` |
 | C3 | `UJI-C` (tk 3, akhir) | Setuju | berhenti; kepala kasus menjadi `0 / 3` | **terbit sekali**: `<awalan>A<kode bisnis>.MM.YY.<5 digit>` untuk `QR`/`QP`, `<awalan>AR…` untuk `TP`/`TR` | "Aksep", kolom "Nomor akseptasi" terisi | `arasapas-komite`, `email-komite`, **+ `kasir-komite` hanya bila Type bukan `TP`/`TR` dan `IS_KPR = "KPR"`** |
 | C4 | tingkat akhir | Tolak | berhenti | tidak terbit | "Ditolak"; peserta dapat dipilih ulang; tombol Claim Life `Add` muncul (tahap Claim Analis, khusus `ReasLifeSPV`) | `email-komite` |
-| C5 | tingkat tengah (mis. `UJI-A`) | Tolak | berhenti; tingkat sisanya tetap "Menunggu" tetapi tidak masuk Inbox siapa pun | tidak terbit | **tetap "Outstanding" dan "sudah diserahkan"** (OQ-K-05b) | `email-komite` |
+| C5 | tingkat tengah (mis. `UJI-A`) | Tolak | berhenti; tingkat sisanya tetap "Menunggu" tetapi tidak masuk Inbox siapa pun | tidak terbit | **tetap "Outstanding" dan "sudah diserahkan"**, tidak dapat diserahkan ulang dan tidak pernah ditolak — **disengaja, ikut XML** (OQ-K-05b ditutup GILIRAN-17) | `email-komite` |
 
 Sesudah keputusan, tabel efek tampil dengan keadaan ringkas "tersimpan, belum tuntas", tiap efek
 "tertunda", "Percobaan" `0` — dan akan **tetap begitu** (tidak ada pekerja pengirim, §4).
-Pada C4, tingkat-tingkat sebelumnya **tetap** "Setuju" di tabel tangga (langkah 5.1 Pega tidak
-ditiru, OQ-K-05).
+Pada C4, **seluruh** tingkat yang memutus menjadi "Tolak" tanpa komentar di tabel tangga (langkah 5.1 Pega
+ditiru, OQ-K-05 ditutup GILIRAN-17); kolom "Sebelum ditimpa Tolak akhir" menampilkan keputusan dan komentar
+aslinya (mis. `Setuju — …`). Tingkat yang dilewati eskalasi tetap "Dilewati (eskalasi)".
 
 #### Langkah D — Penolakan keputusan dan eskalasi (teks server, `handlers/rute_komite.go:144-173`)
 
@@ -1152,8 +1153,8 @@ format `YYYY-MM-DD HH:MM:SS` (`services/komite_inbox.go:91-96`).
 | 9 | Blok rincian `ShowTransfer` (`IsTreatyIn`, Type TP/TR, `SwiftCode`, `RetrocadedShare`) | Belum dibawa ke layar | PARITAS — belum |
 | 10 | Dokumen/PDF akseptasi | `PrintAkseptasiPDF` belum dibangun, tanpa mesin PDF maupun templat | 04b — sebagian |
 | 11 | Kebijakan tabrakan nomor akseptasi | Tabrakan menahan keputusan (409); kebijakan lewati/pisah seri belum diputuskan; perlu data tabrakan | 04a — sebagian, OQ-K-04a |
-| 12 | Tolak akhir menimpa seluruh tangga (langkah 5.1 Pega) | Sengaja tidak ditiru; tingkat sebelumnya tetap "Setuju" — hasil layar bukan keputusan final | 05 — sebagian, OQ-K-05 |
-| 13 | Jalan keluar Tolak di tingkat tengah | Baris tetap Outstanding + "sudah diserahkan", tak dapat diserahkan ulang; penyelesaian belum diputuskan | 05 — sebagian, OQ-K-05b |
+| 12 | ~~Tolak akhir menimpa seluruh tangga (langkah 5.1 Pega)~~ | **Ditiru sejak GILIRAN-17** (OQ-K-05 ditutup); keputusan asli tampil di kolom "Sebelum ditimpa Tolak akhir" | 05 |
+| 13 | Jalan keluar Tolak di tingkat tengah | Baris tetap Outstanding + "sudah diserahkan", tak dapat diserahkan ulang — **ikut XML, disengaja** (OQ-K-05b ditutup GILIRAN-17); jalan keluar = fitur baru | 05 |
 | 14 | Syarat "dipilih" dan "belum bernomor" saat keputusan | Hanya `STS_REJECT = 0` yang dijaga | 05 — sebagian |
 | 15 | Email di setiap tingkat vs AC "hanya final" | Kode mengantre email tiap tingkat; AC tiket menunggu dicabut work owner | 06 — sebagian |
 | 16 | Lock penghitung nomor lepas segera sesudah nomor | Lock bertahan sampai commit keputusan; tidak teruji oleh satu penguji | 04a — sebagian |

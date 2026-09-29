@@ -126,3 +126,11 @@ make check
 ### Angka
 
 Go **596 PASS · 0 FAIL** tingkat atas; vet (+`-tags db`), gofmt bersih · vitest **358** · tsc bersih.
+
+## Keputusan bertanggal — 29 September 2026 (GILIRAN-17 paket 5: OQ-K-05) `[keputusan work owner 29-09-2026 — lembar keputusan, "rekomendasi"]`
+
+Sejak langkah 5.1 ditiru (tiket 05), tolak akhir menimpa keputusan seluruh tingkat yang memutus menjadi `2` tanpa komentar.
+Riwayat tetap dapat dibaca. `Riwayat` membaca seluruh jejak kasus (`… (<kasus>)`), dan `susunRiwayat` memasang
+`asli` {status, comment} dari jejak "ditimpa" (ditulis sebelum penimpaan). Layar kasus menampilkannya di kolom **"Sebelum
+ditimpa Tolak akhir"**; label ini kosakata aplikasi, karena Pega tidak menampilkan riwayat yang ditimpanya. Tingkat yang
+tidak tertimpa menampilkan `—`.

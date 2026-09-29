@@ -18,6 +18,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
@@ -28,6 +29,9 @@ import (
 const (
 	awalanJejakTingkat  = "Komite tingkat "
 	awalanJejakEskalasi = "Eskalasi ke tingkat "
+	// awalanJejakTimpa - OQ-K-05 (GILIRAN-17): keputusan ASLI tingkat yang
+	// ditimpa langkah 5.1, ditulis SEBELUM penimpaan (ADR-0007).
+	awalanJejakTimpa    = "Ditimpa tolak akhir: "
 	KataTingkatDilewati = "Dilewati (eskalasi)"
 	KataTingkatMenunggu = "Menunggu"
 )
@@ -42,6 +46,15 @@ type BarisRiwayatKomite struct {
 	Status       string `json:"status"`
 	TanggalPutus string `json:"dateApprove"`
 	Comment      string `json:"comment"`
+	// Asli - keputusan tingkat ini SEBELUM langkah 5.1 menimpanya (OQ-K-05);
+	// nil bila tidak tertimpa.
+	Asli *KeputusanAsliKomite `json:"asli,omitempty"`
+}
+
+// KeputusanAsliKomite - dibaca dari jejak "ditimpa" (OQ-K-05, GILIRAN-17).
+type KeputusanAsliKomite struct {
+	Status  string `json:"status"`
+	Comment string `json:"comment"`
 }
 
 // EskalasiRiwayat adalah satu eskalasi yang terbaca dari jejak.
@@ -92,6 +105,23 @@ func susunRiwayat(k repository.KasusKomite, jejak []repository.JejakKomite) Riwa
 		})
 	}
 	for _, j := range jejak {
+		// OQ-K-05: jejak "ditimpa" memasang keputusan asli pada tingkatnya.
+		if rest, ok := strings.CutPrefix(j.Ke, awalanJejakTimpa); ok {
+			urut, err := strconv.Atoi(strings.TrimPrefix(j.Dari, awalanJejakTingkat))
+			if err != nil {
+				continue
+			}
+			kata := rest
+			if i := strings.LastIndex(rest, " ("); i >= 0 {
+				kata = rest[:i]
+			}
+			for n := range r.Tangga {
+				if r.Tangga[n].Urut == urut {
+					r.Tangga[n].Asli = &KeputusanAsliKomite{Status: kata, Comment: j.Komentar}
+				}
+			}
+			continue
+		}
 		m := polaEskalasi.FindStringSubmatch(j.Ke)
 		if m == nil {
 			continue
@@ -102,6 +132,32 @@ func susunRiwayat(k repository.KasusKomite, jejak []repository.JejakKomite) Riwa
 			Oleh: j.AkunID, Waktu: j.Waktu.Format("2006-01-02 15:04:05")})
 	}
 	return r
+}
+
+// jejakTimpaTangga - OQ-K-05 (GILIRAN-17), MURNI: satu catatan per tingkat
+// yang MEMUTUS (`1`/`2`), memuat keputusan dan komentar lamanya, ditulis
+// SEBELUM langkah 5.1 menimpanya. Tingkat dilewati (NULL) dan menunggu (`0`)
+// tidak dicatat - keduanya tidak ditimpa.
+func jejakTimpaTangga(k repository.KasusKomite, tangga []repository.AnggotaKasus,
+	pelaku Pelaku, saat time.Time) []CatatanJejak {
+
+	var out []CatatanJejak
+	for _, a := range tangga {
+		kata := models.KataKeputusanKomite(a.Approval)
+		if kata == "" {
+			continue
+		}
+		out = append(out, CatatanJejak{
+			AdjustmentID: k.AdjID,
+			KlaimID:      k.Baris.KlaimID,
+			Dari:         awalanJejakTingkat + strconv.Itoa(a.Urut),
+			Ke:           awalanJejakTimpa + kata + " (" + k.Baris.KasusID + ")",
+			AkunID:       pelaku.AkunID,
+			Waktu:        saat,
+			Komentar:     a.Komentar,
+		})
+	}
+	return out
 }
 
 // Riwayat membaca riwayat satu kasus - untuk siapa pun yang teridentifikasi.
@@ -120,7 +176,9 @@ func (i *InboxKomite) Riwayat(ctx context.Context, pelaku Pelaku, kasusID string
 	if err != nil {
 		return RiwayatKomite{}, err
 	}
-	jejak, err := baca.JejakEskalasi(ctx, k.AdjID, awalanJejakEskalasi+"%("+kasusID+")")
+	// Seluruh jejak kasus ini (eskalasi dan "ditimpa", OQ-K-05) - polanya
+	// menyebut kasusnya, sehingga kasus lain atas baris yang sama tidak ikut.
+	jejak, err := baca.JejakEskalasi(ctx, k.AdjID, "%("+kasusID+")")
 	if err != nil {
 		return RiwayatKomite{}, err
 	}

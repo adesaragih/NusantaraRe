@@ -130,3 +130,35 @@ adanya; jalan keluarnya (tolak tengah = tolak baris? lepaskan `KOMITE_ID`?) kepu
 ### Angka
 
 Go **580 PASS · 0 FAIL** tingkat atas; vet (+`-tags db`), gofmt bersih · vitest **357** · tsc bersih.
+
+## Keputusan bertanggal — 29 September 2026 (GILIRAN-17 paket 5: OQ-K-05, OQ-K-05b ditutup) `[keputusan work owner 29-09-2026 — lembar keputusan, "rekomendasi"]`
+
+### OQ-K-05 — langkah 5.1 **ditiru**
+
+`KomitePostAdjustment` langkah 5.1 "Set Reject Komite berjenjang" berada di b5784; `pyStepsBlockName`-nya kosong di b5795,
+jadi langkah itu hidup. Ia berjalan dengan repeat `EMBEDDED` (b6127) atas seluruh `KomiteList` baris adjustment itu. Isinya
+`KomiteAproval = 2` (b5899), `KomiteComment = ""` (b5945), dan `DateApprove = @CurrentDateTime()` (b5965).
+
+| Hal | Isi |
+| --- | --- |
+| tempat | `penyelesaiAkhirOracle.Tolak`, di **awal**, sebelum 5.3, dalam transaksi keputusan yang sama |
+| 1. baca | `InboxKomite.TanggaSebelumDitimpa` membaca tangga di dalam transaksi, sehingga keputusan dan komentar tingkat akhir dari langkah 3 ikut terbaca |
+| 2. jejak | `jejakTimpaTangga` menulis satu catatan per tingkat yang **memutus**: `Komite tingkat N` → `Ditimpa tolak akhir: <kata lama> (<kasus>)`, dengan `KOMENTAR` = komentar lama (kolom migrasi 021, ADR-0007) |
+| 3. timpa | **satu** `UPDATE` bersyarat, `InboxKomite.TimpaTanggaTolakAkhir`: `KOMITE_APPROVAL = 2, KOMITE_COMMENT = NULL, DATE_APPROVE = now WHERE DATA_KOMITE_ID = :kasus AND KOMITE_APPROVAL IS NOT NULL` |
+| tingkat dilewati | tingkat yang dilewati eskalasi (NULL, tiket 03) **tidak** ditimpa, karena tingkat itu tidak pernah memberi keputusan. Pega tidak mengenal eskalasi, jadi di Pega seluruh tingkat memang berkeputusan saat 5.1 berjalan |
+| riwayat | `susunRiwayat` memasang `asli` {status, comment} pada tingkat yang tertimpa, dari jejak "ditimpa"; layar kasus menampilkannya di kolom "Sebelum ditimpa Tolak akhir". Jejak keputusan per tingkat kini juga membawa komentarnya |
+| penjaga | `TestTolakAkhirDuaTingkatBarisSatuJalur` **dibalik**: kini ia menuntut urutan baca → jejak → timpa → 5.3, dan SQL tetap di repository |
+| uji | `TestJejakTimpaTanggaHanyaTingkatBerkeputusan`, `TestRiwayatMenampilkanKeputusanAsliTingkatTertimpa`, `TestSQLTimpaTanggaTolakAkhir`, `KasusKomite.test.ts`, `db` `TestTimpaTanggaTolakAkhirMenimpaSeluruhTingkatBerkeputusan` |
+
+### OQ-K-05b — ikut XML, perilaku dipertahankan
+
+Tolak di tingkat **tengah** menghentikan tangga **tanpa menyentuh baris klaim**. Langkah 5 bergerbang
+`KomiteCount == KomiteLoop` (b8119), dan `IsKomiteLoop` palsu sesudah Tolak. Kodenya tidak berubah
+(`komite_keputusan.go`: hanya `CatatKeputusan` + email). **Akibatnya, dan ini disengaja mengikuti XML:**
+- baris adjustment tetap **Outstanding**;
+- `KOMITE_ID`-nya tetap menunjuk kasus komite yang sudah berhenti;
+- penyerahan ulang ditolak (`ErrBarisSudahDiserahkan`, `services/komite.go`; `repository/klaimlife.go` `KOMITE_ID IS NULL`);
+- baris itu juga **tidak pernah** ditolak.
+
+Tidak ada jalan keluar di aplikasi. Bila bisnis menghendakinya, itu keputusan baru (fitur), bukan paritas. Panduan uji
+langkah C5 menyatakannya.

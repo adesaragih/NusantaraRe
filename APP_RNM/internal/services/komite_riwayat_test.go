@@ -73,3 +73,24 @@ func TestPenulisDanPembacaJejakSatuBentuk(t *testing.T) {
 		t.Error("penulis jejak mengetik ulang teksnya; pembaca riwayat akan menyimpang")
 	}
 }
+
+// OQ-K-05 (GILIRAN-17): tingkat yang tertimpa 5.1 menampilkan keputusan dan
+// komentar ASLI-nya dari jejak "ditimpa"; eskalasi tetap terbaca.
+func TestRiwayatMenampilkanKeputusanAsliTingkatTertimpa(t *testing.T) {
+	k := repository.KasusKomite{AdjID: "UJI-ADJ", Baris: repository.BarisInboxKomite{KasusID: "KMTLF-UJI"},
+		Tangga: []repository.AnggotaKasus{{Urut: 1, Approval: "2"}, {Urut: 2, Approval: "2"}}}
+	jejak := []repository.JejakKomite{
+		{Dari: awalanJejakTingkat + "1", Ke: awalanJejakTimpa + "Setuju (KMTLF-UJI)", Komentar: "UJI ok", AkunID: "UJI-C"},
+		{Dari: awalanJejakTingkat + "1", Ke: "Setuju (KMTLF-UJI)", AkunID: "UJI-A"},
+	}
+	r := susunRiwayat(k, jejak)
+	if r.Tangga[0].Asli == nil || r.Tangga[0].Asli.Status != "Setuju" || r.Tangga[0].Asli.Comment != "UJI ok" {
+		t.Errorf("tingkat 1 tanpa keputusan asli: %+v", r.Tangga[0])
+	}
+	if r.Tangga[1].Asli != nil {
+		t.Errorf("tingkat 2 tidak tertimpa, tetapi berketerangan asli: %+v", r.Tangga[1].Asli)
+	}
+	if len(r.Eskalasi) != 0 {
+		t.Errorf("jejak keputusan terbaca sebagai eskalasi: %+v", r.Eskalasi)
+	}
+}

@@ -140,3 +140,32 @@ func TestRekamAkhirSatuJalurDanDipagari(t *testing.T) {
 		}
 	}
 }
+
+// OQ-K-05 (GILIRAN-17): langkah 5.1 - SATU UPDATE bersyarat atas seluruh
+// tingkat yang MEMUTUS; tingkat yang dilewati eskalasi (NULL) tidak disentuh.
+func TestSQLTimpaTanggaTolakAkhir(t *testing.T) {
+	q := sqlTimpaTanggaTolakAkhir("S.L")
+	for _, mau := range []string{"UPDATE S.L", "SET KOMITE_APPROVAL = :1, KOMITE_COMMENT = NULL, DATE_APPROVE = :2",
+		"WHERE DATA_KOMITE_ID = :3 AND KOMITE_APPROVAL IS NOT NULL"} {
+		if !strings.Contains(q, mau) {
+			t.Errorf("tanpa %q:\n%s", mau, q)
+		}
+	}
+	if err := PeriksaSQL(q); err != nil {
+		t.Error(err)
+	}
+	b := sqlTanggaSebelumDitimpa("S.L")
+	for _, mau := range []string{"SELECT KOMITE_URUT, KOMITE_OPERATORID, KOMITE_APPROVAL, KOMITE_COMMENT",
+		"FROM S.L WHERE DATA_KOMITE_ID = :1", "ORDER BY KOMITE_URUT"} {
+		if !strings.Contains(b, mau) {
+			t.Errorf("tangga tanpa %q:\n%s", mau, b)
+		}
+	}
+	r := NewInboxKomite(nil)
+	if _, err := r.TanggaSebelumDitimpa(context.Background(), nil, "K"); err == nil {
+		t.Error("membaca tangga tanpa transaksi diterima")
+	}
+	if err := r.TimpaTanggaTolakAkhir(context.Background(), nil, "K", time.Now()); err == nil {
+		t.Error("menimpa tangga tanpa transaksi diterima")
+	}
+}

@@ -2002,6 +2002,12 @@ export interface KasusKomite {
 }
 
 /** Riwayat tangga — `GET /api/komite/{id}/riwayat` (tiket 09; siapa pun). */
+/** Keputusan asli satu tingkat yang tertimpa langkah 5.1 (OQ-K-05). */
+export interface KeputusanAsliKomite {
+  status: string
+  comment: string
+}
+
 export interface RiwayatKomite {
   kasusId: string
   adjustmentId: string
@@ -2013,6 +2019,13 @@ export interface RiwayatKomite {
     status: string
     dateApprove: string
     comment: string
+    /**
+     * Keputusan tingkat ini SEBELUM langkah 5.1 `KomitePostAdjustment`
+     * menimpanya (tingkat akhir menolak → seluruh tingkat `2`, komentar
+     * kosong). Dibaca dari jejak — OQ-K-05, GILIRAN-17. Tidak ada bila tidak
+     * tertimpa.
+     */
+    asli?: KeputusanAsliKomite
   }[]
   eskalasi: { dariTingkat: number; keTingkat: number; oleh: string; waktu: string }[]
 }

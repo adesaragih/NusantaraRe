@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { KEPUTUSAN_KOMITE } from '../../assets/labels.komite'
 import { PERAN } from '../../assets/labels.claimlife'
 import type { KasusKomite } from '../../services/api'
-import { bolehEskalasi, kalimatHasilKeputusan, PILIHAN_KEPUTUSAN } from './KasusKomite'
+import { bolehEskalasi, kalimatHasilKeputusan, PILIHAN_KEPUTUSAN, teksKeputusanAsli } from './KasusKomite'
 
 // Uji layar keputusan Komite — tiket 02.
 
@@ -63,5 +63,15 @@ describe('keputusan komite', () => {
   it('formulir hanya pada giliran pelaku; dropdown wajib', () => {
     expect(SUMBER).toContain('k.giliranSaya && (')
     expect(SUMBER).toMatch(/<select\s+required/)
+  })
+})
+
+// OQ-K-05 (GILIRAN-17): tingkat yang tertimpa langkah 5.1 menampilkan
+// keputusan dan komentar ASLI-nya; yang tidak tertimpa menampilkan tanda kosong.
+describe('keputusan asli tingkat tertimpa', () => {
+  it('kata dan komentar asli, atau tanda kosong', () => {
+    expect(teksKeputusanAsli({ status: 'Setuju', comment: 'UJI ok' })).toBe('Setuju — UJI ok')
+    expect(teksKeputusanAsli({ status: 'Setuju', comment: '' })).toBe('Setuju')
+    expect(teksKeputusanAsli(undefined)).toBe('—')
   })
 })

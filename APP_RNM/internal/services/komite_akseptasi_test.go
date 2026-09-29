@@ -3,9 +3,11 @@ package services
 // Nomor akseptasi Komite - tiket 04a. TANPA Oracle.
 
 import (
+	"nusantarare/internal/repository"
 	"os"
 	"strings"
 	"testing"
+	"time"
 )
 
 func sumberKomiteAkseptasi(t *testing.T) string {
@@ -89,8 +91,49 @@ func TestTolakAkhirDuaTingkatBarisSatuJalur(t *testing.T) {
 	if strings.Contains(badan, "ErrPenyelesaianAkhirBelumAda") {
 		t.Error("Tolak masih gagal terang - tiket 05 belum tersambung")
 	}
-	// ⛔ 5.1 tidak ditiru: tidak ada penimpaan tangga seluruhnya.
-	if strings.Contains(kode, "KOMITE_APPROVAL = '2'") || strings.Contains(kode, "TimpaTangga") {
-		t.Error("penimpaan seluruh tangga (5.1) ditiru, padahal OQ-K-05 menahannya")
+	// ⛔ OQ-K-05 DITUTUP (GILIRAN-17): 5.1 DITIRU - tangga dibaca di dalam
+	// transaksi, keputusan lama tiap tingkat dijejaki, lalu SATU UPDATE
+	// bersyarat menimpanya; semuanya SEBELUM 5.3. SQL-nya tinggal di
+	// repository (penjaga komite_statik), bukan di sini.
+	urut := []string{"komite.TanggaSebelumDitimpa(ctx, tx, kasus.Baris.KasusID)", "jejakTimpaTangga(",
+		"komite.TimpaTanggaTolakAkhir(ctx, tx, kasus.Baris.KasusID, saat)", "baca.PerbaruiStatusBaris("}
+	lalu := -1
+	for _, s := range urut {
+		j := strings.Index(badan, s)
+		if j < 0 || j < lalu {
+			t.Errorf("urutan 5.1 salah di %q (urutan: %v)", s, urut)
+		}
+		lalu = j
+	}
+	if strings.Contains(kode, "KOMITE_APPROVAL = '2'") {
+		t.Error("SQL penimpaan tangga ditulis di services; tempatnya repository")
+	}
+}
+
+// OQ-K-05 (GILIRAN-17): jejak "ditimpa" hanya untuk tingkat yang MEMUTUS -
+// tingkat yang dilewati eskalasi (NULL) tidak pernah memberi keputusan
+// (tiket 03), dan tingkat yang menunggu tidak ada saat tingkat akhir menolak.
+func TestJejakTimpaTanggaHanyaTingkatBerkeputusan(t *testing.T) {
+	saat := time.Date(2026, 9, 29, 10, 0, 0, 0, time.UTC)
+	tangga := []repository.AnggotaKasus{
+		{Urut: 1, OperatorID: "UJI-A", Approval: "1", Komentar: "UJI setuju"},
+		{Urut: 2, OperatorID: "UJI-B", Approval: ""},
+		{Urut: 3, OperatorID: "UJI-C", Approval: "2", Komentar: "UJI tolak akhir"},
+	}
+	kasus := repository.KasusKomite{AdjID: "UJI-ADJ", Baris: repository.BarisInboxKomite{KasusID: "KMTLF-UJI", KlaimID: "UJI-K"}}
+	j := jejakTimpaTangga(kasus, tangga, Pelaku{AkunID: "UJI-C"}, saat)
+	if len(j) != 2 {
+		t.Fatalf("jejak %d, mau 2 (tingkat 1 dan 3): %+v", len(j), j)
+	}
+	if j[0].Dari != awalanJejakTingkat+"1" || j[0].Ke != awalanJejakTimpa+"Setuju (KMTLF-UJI)" || j[0].Komentar != "UJI setuju" {
+		t.Errorf("tingkat 1: %+v", j[0])
+	}
+	if j[1].Dari != awalanJejakTingkat+"3" || j[1].Komentar != "UJI tolak akhir" || j[1].AdjustmentID != "UJI-ADJ" {
+		t.Errorf("tingkat 3: %+v", j[1])
+	}
+	for _, c := range j {
+		if len(c.Ke) > 64 || len(c.Dari) > 64 {
+			t.Errorf("DARI/KE melebihi VARCHAR2(64): %+v", c)
+		}
 	}
 }
