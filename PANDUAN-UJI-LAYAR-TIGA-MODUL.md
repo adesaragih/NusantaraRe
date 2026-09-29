@@ -39,14 +39,63 @@ Wajib, **kedua sisi bersama** (tanpa itu Inbox tampak KOSONG, padahal di balikny
 kosong dari DBA — tidak pernah `POOLDATA`, tidak pernah produksi. Executor **tidak** menjalankan
 `-migrate`; pembentukan tabel di skema uji adalah langkah DBA/work owner (bab 3 berkas itu).
 
-⚠️ **Data awal harus disiapkan di luar aplikasi** — tiga modul punya titik buta yang sama:
+### 0.1 Tiga titik buta — ditutup GILIRAN-13 (29-09-2026)
 
-1. **Claim Life:** pendaftaran tidak membuat baris adjustment, dan **tidak ada rute yang membuat baris
-   adjustment pertama**. `Save Adjustment`, `Reject Outstanding`, `Send Claim to Committee`,
-   `Putaran berikutnya`, dan Close Claim yang sukses hanya dapat diuji pada klaim yang barisnya sudah
-   ada (bab 1, bagian 1.3).
-2. **PremiumList Life:** aplikasi belum dapat **membuat kasus**; siapkan satu kasus per tahap (bab 2, bagian 1.2).
-3. **Komite:** roster `EMAILKOMITE` sintetis dan satu baris adjustment yang siap diserahkan (bab 3, bagian 1.3).
+| # | Titik buta (GILIRAN-11) | Kini | Commit |
+| --- | --- | --- | --- |
+| 1 | **PremiumList** tidak dapat membuat kasus | tombol `Input Offer` / `Input Premium` di Inbox **membuat kasus** dan langsung membukanya di `Input Offer Life` — keduanya mulai di tahap yang sama; benderanya (`"0"`/`"1"`) baru bekerja sesudah `Confirm` | `a291a20` (butir **bn**, migrasi **057**) |
+| 2 | **Claim Life** tanpa rute pembuat baris adjustment pertama | tombol `Add` di layar Detail (tahap **Claim Analis**, grid peserta yang **kosong**) melahirkan baris pertama — kosong, peserta ditandai dipilih. `Delete` berdiri tetapi **mati** (ADR-U-0031, OQ-N7) | `0af1773` (butir **bo**) |
+| 3 | **Komite** tanpa roster dan baris siap serah | bukan celah kode — **data sintetis** di §0.2 | paket 3 |
+
+⚠️ **Dua yang tetap perlu diketahui.** Baris yang lahir lewat `Add` **kosong**, dan belum ada rute yang
+menyunting selnya (**OQ-N8**) — `Save to RNM` menolak baris tanpa jumlah klaim. Dan migrasi **057** harus
+sudah berjalan di skema uji sebelum tombol PremiumList dipakai: executor **tidak** menjalankan `-migrate`.
+
+### 0.2 Memuat data uji sintetis ke skema uji
+
+Berkas: **`APP_RNM/internal/repository/skemauji/data_uji_tiga_modul.sql`**. Executor **tidak**
+menjalankannya — Anda yang memuatnya.
+
+1. Pastikan `-migrate` (termasuk **057**) sudah berjalan di skema uji.
+2. Buka SQL*Plus, SQLcl, atau SQL Developer, **tersambung ke skema uji** (bila akun Anda bukan
+   pemiliknya: `ALTER SESSION SET CURRENT_SCHEMA = <skema uji>` lebih dulu).
+3. Jalankan berkasnya **utuh** (SQL Developer: *Run Script*, F5).
+4. Periksa hasilnya, lalu **tetapkan transaksinya sendiri** — berkas ini sengaja tidak melakukannya.
+
+Berkas itu **menolak berjalan** bila:
+
+| Keadaan | Kode galat |
+| --- | --- |
+| skema aktif **memuat** `POOLDATA` (pagar yang sama dengan `-migrate-down`) | `ORA-20901` |
+| skema belum dimigrasi (`T_MIGRASI` tidak ada) | `ORA-20902` |
+| migrasi 057 belum berjalan | `ORA-20903` |
+| data `UJI-*` sudah pernah dimuat — memuat ulang = `-migrate-down` lalu `-migrate` | `ORA-20904` |
+
+⚠️ Syarat `ORACLE_SKEMA_UJI=true` dan `IS_PEGA_PROD=false` **tidak dapat** dibaca SQL: memilih
+sambungan yang benar adalah tanggung jawab Anda. Seluruh `INSERT` berada di **satu** blok — gagal di
+mana pun, nol baris tertinggal.
+
+Isinya — seluruhnya sintetis (`UJI-*`, surel `uji-…@contoh.invalid`):
+
+| Modul | Kasus | Keadaan | Untuk menguji |
+| --- | --- | --- | --- |
+| PremiumList | `UJI-PL-A` | `Input Offer Life` | keputusan penawaran (bab 2 §2.3) |
+| PremiumList | `UJI-PL-B` | `Input Premium Detail` | unggah CSV, nomor PL (bab 2 §2.4) |
+| PremiumList | `UJI-PL-C` | `Input Premium Summary`, dua peserta | rekap dan `Submit` (bab 2 §2.5) |
+| PremiumList | `UJI-PL-D` | `Resolved-Completed`, polis `UJI-POL-0001` | uji negatif kasus tertutup; polis tempat klaim berpijak |
+| Claim Life | `UJI-CLM-1` | `Input Register`, satu baris tanpa status | tab Input Register (akun `UJI-ADMIN`) |
+| Claim Life | `UJI-CLM-2` | `Outstanding Claim`, satu baris tanpa status | `Save to RNM` (sesudah dokumen peserta diunggah — gerbang langkah 3–4), lalu `Reject Outstanding` |
+| Claim Life | `UJI-CLM-3` | `Medical Check`, satu baris Outstanding | layar Medical Check |
+| Claim Life | `UJI-CLM-4` | `Claim Analis`, tiga peserta | A: `Send Claim to Committee` / `Save Adjustment`; B (tanpa baris): `Add`; C (baris ditolak): `Putaran berikutnya` |
+| Komite | roster `EMAILKOMITE` | `UJI-KOMITE-1`…`4` | baris `UJI-ADJ-4-A1` (150.000.000 IDR) ditutup `UJI-KOMITE-1` dan `-2`; `-3` di atas pitanya, `-4` tidak aktif |
+
+⛔ **Kasus Admin menuntut akun yang sama.** `UJI-CLM-1` dan `UJI-CLM-2` dibuat atas nama `UJI-ADMIN`
+(akun stub bawaan): kedua tab Admin menyaring pembuatnya. Untuk bertindak sebagai anggota Komite,
+setel `VITE_STUB_PELAKU=UJI-KOMITE-1` lalu jalankan ulang Vite.
+
+⚠️ `EMAILKOMITE` bukan tabel migrasi. Bila skema uji belum memilikinya, berkas membuat **tiruan**
+berkolom yang dibaca aplikasi; bila DBA sudah menyalin tabel aslinya dan tabel itu punya kolom wajib
+lain, pemuatan batal utuh dengan `ORA-01400`.
 
 Urutan uji yang disarankan: **PremiumList** (polis) → **Claim Life** (klaim atas polis itu) →
 **Komite** (baris yang diserahkan).
