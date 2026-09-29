@@ -237,3 +237,84 @@ akan dijawab 401.
 | Berkas ditulis / disunting | 1: bab ini (+±75 baris) |
 | Putaran instrumen gagal lalu diulang | 1: satu loop `for f in $(grep -rl …)` memecah jalur korpus yang berspasi, lalu diulang dengan jalur yang dikutip |
 | Token / biaya | tidak terlihat dari dalam sesi, jadi tidak dikarang |
+
+## Lanjutan 1 — titik awal (29-09-2026)
+
+Brief `PROMPT-LANJUTAN-TREATY-CONTRACT-OUT-1.md` (commit `918eeed`). Pohon kerja bersih di `918eeed`; `0022865` (bab jeda)
+dan `678fd25` (tiket 03) ada di riwayat. Rancangan tiket 12 dari bab Jeda dipakai tanpa dirancang ulang.
+
+| Perintah | Hasil titik awal |
+| --- | --- |
+| `go vet ./...` · `go vet -tags=db ./...` · `gofmt -l .` | bersih |
+| `go test ./...` | 776 lulus, 0 gagal |
+| `go test -tags=db ./...` | 776 lulus, 46 dilewati (tanpa skema uji: `ORACLE_DSN` tidak dikonfigurasi di sesi ini), 0 gagal |
+| `npx tsc --noEmit` · `npx vite build` | bersih |
+| `npx vitest run` | 431 lulus di 38 berkas |
+
+## Tiket 12 — lampiran di tahun treaty (FITUR BARU)
+
+### Yang dibangun
+
+| Lapisan | Berkas | Isi |
+| --- | --- | --- |
+| skema | `migrations/307_t_treatyyear_lampiran.sql` (+`_down`), bab STRUKTUR `T_TREATYYEAR_LAMPIRAN` | tabel kedelapan tco1; FK ke tahun tanpa kaskade; `IMAGEID` unik; sequence lebar 9 |
+| models | `tco_lampiran.go` (+uji) | status turunan, kategori VERBATIM master, nama berkas antrean dan entri zip yang aman |
+| repository | `tco_lampiran.go`, `tco_jejak.go` (+3 aksi) | rekam lampiran; efek unggah terakhir dibaca dari outbox bersama (`ROW_NUMBER … DIBUAT DESC`, disaring `MODUL`) |
+| services | `tco_lampiran.go`, `tco_penyimpanan.go` (+uji) | layanan lampiran dengan pekerja modul sendiri; stub lokal; rangkaian jarak jauh; cache token |
+| handlers | `tco_lampiran.go` (+uji, +uji `db`), `rute_treaty_contract_out.go` (+1 panggilan, +pemetaan galat) | 8 rute |
+| frontend | `PanelLampiranTahun.tsx` (+uji), `labels.treaty-contract-out.ts` `LAMPIRAN_TCO`, `api.ts` (+9 ekspor), `InboxTreatyContract.tsx` (+panel) | unduhan lewat `fetch` berheader identitas; nol `<a href>` |
+
+### Keputusan yang mengikat
+
+- Lampiran opsional (AC 55): kegagalan penyimpanan hanya mengubah status; rekam, jejak, dan berkas antrean tetap.
+- Pengulangan tidak menggandakan berkas (AC 58): kunci penyimpanan adalah `IMAGEID` rekam itu sendiri; pelaksana
+  idempoten di tiga jalan (rekam terhapus, sudah terkirim, berkas antrean hilang tetapi penyimpanan memilikinya).
+  Dibuktikan dengan mutasi: kunci acak per percobaan membuat uji pengulangan gagal (2 berkas, mau 1).
+- Hapus berkas yang sudah tidak ada tidak menggagalkan penghapusan rekam. Dibuktikan dengan mutasi: toleransi dicabut,
+  dua uji gagal.
+- Menyerah (permanen atau jatah percobaan habis) masuk jejak `T_TREATYCO_JEJAK` di transaksi yang sama.
+- Alamat di-resolve saat jalan per operasi (AC 59); penjaga statik modul (`TestTCOLampiranTanpaAlamatLiteral`)
+  dibuktikan menggigit dengan berkas mutan.
+
+### Kode bersama yang disentuh (aditif / dipersempit, dilaporkan)
+
+| Berkas | Perubahan |
+| --- | --- |
+| `repository/migrasi_test.go` | kunci cacah CREATE 71→74 dan CREATE TABLE 27→28, dengan komentar bertanggal |
+| `handlers/penyuntikan_test.go` | +1 entri `tco_lampiran.go` (lima penyuntikan wajib) |
+| `repository/skemauji/tco_tiruan.go` (milik modul) | +tiruan `CATEGORY_ATTACH_REAS`, `IsiKategoriLampiranTCO` |
+| `handlers/tco_db_test.go` (milik modul) | server uji memakai `UNGGAHAN_DIR` sementara |
+| `handlers/rute_treaty_contract_out_test.go` (milik modul) | larangan jalur hapus tahun dipersempit ke jalur tahun itu sendiri dan diperluas ke `tco_lampiran.go` |
+| fungsi bersama yang DIPANGGIL, tidak diubah | `PohonKlaim.AntreEfek/PungutEfek/TuntaskanEfek`, `Backoff`, `LayakDicobaUlang`, `Unggahan.tulisBerkas`, `models.MimeDokumen`, `models.ImageIDBaru`, `ResolverEndpoint`, `KunciUnggahBerkas/KunciURLBerkas/KunciHapusBerkas` |
+
+### Ralat / OQ
+
+Empat ralat bertanggal di tiket 12: paket `internal/clients` tidak ada; cache token dibangun di atas antarmuka karena
+jalur token nyata menuntut persetujuan; tidak ada pekerja outbox di `cmd/api`; kolom ID master kategori tidak terbukti.
+**OQ-TCO-08 (baru):** sumber token Oracle untuk penyimpanan nyata (`GET_TOKEN_STORAGE` + garam) belum dipasang, menunggu
+persetujuan penyambungan. **OQ-TCO-09 (baru):** pekerja latar yang menjalankan `SatuPutaran` berkala belum ada; lampiran
+yang gagal sementara dicoba lagi saat aksi berikutnya atau lewat `Ulangi`.
+
+### Angka uji
+
+| Perintah | Hasil |
+| --- | --- |
+| `go vet ./...` · `go vet -tags=db ./...` · `gofmt -l .` | bersih |
+| `go test ./...` | 808 lulus, 0 gagal (+32 dari titik awal) |
+| `go test -tags=db ./...` | 808 lulus, 47 dilewati (+1: `TestLampiranTahunTreatyLingkaranPenuh`, tanpa skema uji), 0 gagal |
+| `npx tsc --noEmit` · `npx vite build` | bersih |
+| `npx vitest run` | 452 lulus di 39 berkas (+21) |
+
+⚠️ SQL tiket 12 belum pernah dijalankan terhadap Oracle: uji `db` dilewati karena skema uji tidak dikonfigurasi di sesi ini.
+
+### TELEMETRI EKSEKUSI — tiket 12
+
+| Ukuran | Nilai |
+| --- | --- |
+| Berkas dibaca | ±30 (±16 korpus pada sesi jeda + 2 pemeriksaan cacah `ServiceGoogle`/`LinkService`; ±14 pola kode) |
+| Berkas XML korpus disensus | `GridTreatyArrangementAttachment.xml`, `InputTreatyContract.xml` (b11700–b13240), `TreatyOutSaveAttachment.xml`, `SetCategoryAttachTreatyin.xml`, `ServiceGoogle.xml`, `LinkService.xml`; 10 baris label + 5 baris aksi diverifikasi satu per satu |
+| Perintah dijalankan | ±45 |
+| Berkas ditulis / disunting | 13 baru (+±2.300 baris), 12 disunting (+±200) |
+| Putaran instrumen gagal lalu diulang | 5: heredoc panjang gagal diurai (repository ditulis ulang lewat Write); dua kali heredoc memakan garis miring terbalik (uji label dan uji halaman, diperbaiki lewat skrip Write dan Edit); tiga nama pemalsuan bertabrakan dengan uji lain (`efekUji`, `resolverUji`, dll., diberi akhiran); penjaga alamat bersama menangkap pola `://` di uji statik modul sendiri (pola dirakit dari potongan) |
+| Token / biaya | tidak terlihat dari dalam sesi, jadi tidak dikarang |
+

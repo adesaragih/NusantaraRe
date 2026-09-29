@@ -83,4 +83,14 @@ describe('paritas layar', () => {
     expect(KODE).not.toContain('.filter(')
     expect(KODE).toContain("from '../../components/treaty-contract-out/PilihJenisReasuransi'")
   })
+  it('tiket 12: panel lampiran hanya untuk tahun yang sudah ber-ID, bukan syarat simpan', () => {
+    expect(KODE).toContain('<PanelLampiranTahun tahunID={form.id} />')
+    expect(KODE).toMatch(/form\.id !== '' \?/)
+    expect(KODE).toContain('LAMPIRAN_TCO.simpanDulu')
+    // Simpan tahun tidak menunggu lampiran: fungsi simpan tidak menyebut lampiran.
+    const awal = KODE.indexOf('async function simpan')
+    const simpan = KODE.slice(awal, KODE.indexOf('\n  }\n', awal))
+    expect(simpan).toContain('simpanTahunTreaty(')
+    expect(simpan).not.toMatch(/[Ll]ampiran/)
+  })
 })

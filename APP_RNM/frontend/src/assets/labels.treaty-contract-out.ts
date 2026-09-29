@@ -121,3 +121,47 @@ export const TAHUN_TCO = {
   catatanLabelBersilang:
     'Label tahun di grid dan di form bersilang di sistem lama (OQ-TCO-05); keduanya dibawa apa adanya.',
 } as const
+
+/**
+ * Tiket 12 — panel lampiran tahun treaty (FITUR BARU, penyimpangan sadar 9).
+ *
+ * Nomor baris = `Section/GridTreatyArrangementAttachment.xml` kecuali disebut
+ * lain; panel itu disertakan `Section/InputTreatyContract.xml` b13074.
+ *
+ * ⛔ `Download` b2391 (→ `DownloadAll_Act` generik) TIDAK dibawa sebagai
+ * tombol kedua: `Download All` b2659 (→ `TreatyOutDownloadAll_Act`) adalah
+ * aksi yang sama untuk modul ini, dan dua tombol unduh-semua berdampingan
+ * hanya membingungkan.
+ */
+export const LAMPIRAN_TCO = {
+  /** `Section/InputTreatyContract.xml` b11721 `<pyValue>`. */
+  attachmentFor: 'Attachment for',
+  /** b1785 `<pyValue>`. */
+  forTreatyContractOut: 'For Treaty Contract Out',
+  /** b578 `<pyLabel>` → `SetCategory_act` b596 → flow action `TreatyOutAttachContent` b642. */
+  addAttachment: 'Add attachment',
+  /** b1023 `<pyLabel>` → `LoadAttachmentTreatyOut` b1041. */
+  refresh: 'Refresh',
+  /** b2659 `<pyLabel>` → `TreatyOutDownloadAll_Act` b2677. */
+  downloadAll: 'Download All',
+  /** b3032 `<pyValue>` — judul kolom; sel `.pyFileName` b3428 → `TreatyOutDownloadOne` b3488. */
+  kolomFileName: 'File Name',
+  /** b3170 `<pyValue>` — judul kolom; sel `.pyCategory` b3705. Juga label pemilih kategori. */
+  kolomType: 'Type',
+  /** b3897 `<pyLabel>` → `DeleteAttachmentTreaty` b3915. */
+  delete: 'Delete',
+  /** `Activity/TreatyOutSaveAttachment.xml` b376 `Local.Err` — VERBATIM. */
+  tanpaBerkas: 'Tidak ada file yg diattach',
+
+  /** `[tidak ada di korpus]` — kosakata kami (fiturnya tidak ada di Pega). */
+  kolomStatus: 'Status',
+  statusTerkirim: 'terkirim',
+  statusTertunda: 'tertunda',
+  statusGagal: 'gagal',
+  ulangi: 'Ulangi',
+  periksaSelaras: 'Periksa keselarasan',
+  selarasBersih: 'Rekam lampiran dan berkas di penyimpanan sejalan.',
+  kosong: 'Belum ada lampiran pada tahun treaty ini.',
+  simpanDulu: 'Simpan tahun treaty lebih dulu; lampiran melekat pada tahun treaty yang sudah ber-ID.',
+  pilihKategori: '— pilih —',
+} as const

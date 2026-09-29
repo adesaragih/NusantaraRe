@@ -61,4 +61,25 @@ korpus 20 — ralat §8 `PROMPT-EKSEKUSI-HULU-HILIR.md`). Ditambahkan ADITIF ber
 | `CheckYear` b335 `isNumber(TreatyYear)` (`pyMessageLabel CheckYearly` — teks tidak diekspor) | `ErrTahunTreatyBukanAngka` → 422 | ✅ (teks pesan kosakata kami) |
 | — (tidak ada di Pega) | gerbang periode terbalik (AC 9) → 422; anti-dobel (AC 73) → 409 menyebut ID baris lain | ✅ tambahan sadar |
 | form kedua `Input New Data` `InputTreatyContract.xml` b6351 (tanpa Start/End/UW Year; `ReinsuranceType` b7954 bukan parameter procedure) | — | ⚠️ `[terbuka]` mana yang tampil di Pega; form lengkap yang dibangun |
-| `GridTreatyArrangementAttachment` (`Attachment for` b11721) | — | 🔜 tiket 12 |
+| `GridTreatyArrangementAttachment` (`Attachment for` b11721) | `PanelLampiranTahun` di form tahun ber-ID | ✅ tiket 12 |
+
+## Tiket 12 — lampiran tahun treaty (`GridTreatyArrangementAttachment`, FITUR BARU)
+
+Nomor baris = `Section/GridTreatyArrangementAttachment.xml` kecuali disebut lain.
+
+| Unsur korpus | Sistem baru | Keadaan |
+| --- | --- | --- |
+| `InputTreatyContract.xml` b11721 `Attachment for`, b13074 include panel | `PanelLampiranTahun` di form tahun treaty yang sudah ber-ID; tahun baru menampilkan catatan "simpan dulu" | ✅ |
+| b1785 `For Treaty Contract Out` | subjudul panel | ✅ |
+| `Add attachment` b578 → `SetCategory_act` b596 → `TreatyOutAttachContent` b642 (`pyAttachmentScreen`) → `TreatyOutSaveAttachment` → `InsertAtatchment_Sql` → `PEGA_M_ATTACHMENT` | pemilih `Type` (master `CATEGORY_ATTACH_REAS`) + kotak berkas → `POST /api/treaty-contract-out/tahun/{id}/lampiran` (multipart) → rekam `T_TREATYYEAR_LAMPIRAN` + efek outbox `storage-unggah` + jejak, satu transaksi | ✅ prosedur tidak dipanggil |
+| `Refresh` b1023 → `LoadAttachmentTreatyOut` | `GET /tahun/{id}/lampiran` | ✅ |
+| `Download All` b2659 → `TreatyOutDownloadAll_Act` | `GET /tahun/{id}/lampiran/semua` (zip) lewat `fetch` berheader identitas | ✅ |
+| `Download` b2391 → `DownloadAll_Act` | — | ➖ tombol kedua untuk aksi yang sama |
+| sel `.pyFileName` b3428 → `TreatyOutDownloadOne` b3488 | tombol nama berkas → `GET /tahun/{id}/lampiran/{lid}/isi` lewat `fetch` berheader identitas | ✅ |
+| kolom `File Name` b3032 · `Type` b3170 (`.pyCategory` b3705) | kolom tabel panel | ✅ |
+| `Delete` b3897 → `DeleteAttachmentTreaty` → `DeleteAttachment2_Sql` | `DELETE /tahun/{id}/lampiran/{lid}` → rekam + efek `storage-hapus` + jejak; berkas yang sudah tidak ada tidak menggagalkan | ✅ |
+| `TreatyOutSaveAttachment.xml` b376 `Tidak ada file yg diattach` | 400 dengan teks VERBATIM | ✅ |
+| `GetAllAttachment2_Sql` / `GetAttachment2_Sql` (`M_ATTACHMENTTREATY_2 where treatyid = {TreatyIn.ID}`) | — | ➖ kunci treaty inward tidak dibawa (penjaga Go + JS) |
+| — (tidak ada di Pega) | status terkirim / tertunda / gagal + galat terakhir; `Ulangi` (`POST …/{lid}/ulangi`); `Periksa keselarasan` (`GET …/selaras`) | ✅ tambahan AC 55, 58, 61 |
+| `ConnectREST/ServiceGoogle.xml`, `LinkService`, `GetTokenStorage_SQL` | `PenyimpananJarakJauhTCO` (resolver `M_LINK_SERVICE` saat jalan, `CacheTokenTCO`), transport tidak diimplementasikan → `ErrPenyimpananBelumDisetujui`; yang dipasang di DEV adalah stub lokal `PenyimpananLokalTCO` | ⚠️ penyambungan nyata menuntut persetujuan manusia |
+

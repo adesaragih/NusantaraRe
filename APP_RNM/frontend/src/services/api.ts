@@ -2152,3 +2152,145 @@ export async function simpanTahunTreaty(masuk: TahunTreatyMasuk): Promise<TahunT
     badan: masuk,
   })
 }
+
+// ---------------------------------------------------------------------------
+// Treaty Contract Out tiket 12 — lampiran tahun treaty (FITUR BARU).
+// ---------------------------------------------------------------------------
+
+/** Status lampiran — kosakata kami, fiturnya tidak ada di Pega. */
+export type StatusLampiranTahun = 'terkirim' | 'tertunda' | 'gagal'
+
+/** Satu lampiran tahun treaty. Kunci berkas di penyimpanan TIDAK dikirim backend. */
+export interface LampiranTahun {
+  id: string
+  idTreatyYear: string
+  fileName: string
+  fileMimeType: string
+  category: string
+  ukuran: number
+  userId: string
+  tglUpload: string
+  status: StatusLampiranTahun
+  /** Cacah percobaan efek unggah terakhir. */
+  percobaan: number
+  /** Galat efek unggah terakhir; kosong bila terkirim. */
+  galat: string
+}
+
+/** Jawaban unggah / ulangi. `peringatan` terisi bila antrean tidak dapat dijalankan. */
+export interface HasilLampiranTahun {
+  lampiran: LampiranTahun
+  peringatan: string
+}
+
+/** Satu rekam yang tidak sejalan dengan penyimpanan (AC 61). */
+export interface TemuanSelarasLampiran {
+  lampiranId: string
+  fileName: string
+  masalah: string
+  perbaikan: 'ulangi' | 'hapus'
+}
+
+function jalurLampiranTahun(tahunID: string): string {
+  return `/api/treaty-contract-out/tahun/${encodeURIComponent(tahunID)}/lampiran`
+}
+
+/** Master kategori `CATEGORY_ATTACH_REAS`; kosong = 503 dari backend. */
+export async function ambilKategoriLampiranTCO(): Promise<string[]> {
+  const j = await minta<{ daftar: string[] | null }>('/api/treaty-contract-out/kategori-lampiran')
+  return j.daftar ?? []
+}
+
+/** `Refresh` b1023 — daftar lampiran satu tahun treaty. */
+export async function ambilLampiranTahun(tahunID: string): Promise<LampiranTahun[]> {
+  const j = await minta<{ daftar: LampiranTahun[] | null }>(jalurLampiranTahun(tahunID))
+  return j.daftar ?? []
+}
+
+/** `Add attachment` b578 — multipart lewat `mintaFormulir` (identitas ikut). */
+export async function unggahLampiranTahun(
+  tahunID: string,
+  berkas: File,
+  kategori: string,
+): Promise<HasilLampiranTahun> {
+  const isi = new FormData()
+  isi.append('berkas', berkas)
+  isi.append('kategori', kategori)
+  return mintaFormulir<HasilLampiranTahun>(jalurLampiranTahun(tahunID), isi)
+}
+
+/** `Delete` b3897. Penghapusan di penyimpanan menyusul lewat outbox. */
+export async function hapusLampiranTahun(tahunID: string, lampiranID: string): Promise<{ peringatan: string }> {
+  return minta<{ peringatan: string }>(
+    `${jalurLampiranTahun(tahunID)}/${encodeURIComponent(lampiranID)}`,
+    { metode: 'DELETE' },
+  )
+}
+
+/** Unggah ulang lampiran yang tertunda / gagal / kehilangan berkasnya (AC 58, 61). */
+export async function ulangiLampiranTahun(tahunID: string, lampiranID: string): Promise<HasilLampiranTahun> {
+  return minta<HasilLampiranTahun>(
+    `${jalurLampiranTahun(tahunID)}/${encodeURIComponent(lampiranID)}/ulangi`,
+    { metode: 'POST' },
+  )
+}
+
+/** Keselarasan rekam dengan penyimpanan (AC 61). */
+export async function periksaSelarasLampiran(tahunID: string): Promise<TemuanSelarasLampiran[]> {
+  const j = await minta<{ temuan: TemuanSelarasLampiran[] | null }>(`${jalurLampiranTahun(tahunID)}/selaras`)
+  return j.temuan ?? []
+}
+
+/** Jalur isi satu lampiran — tautan nama berkas b3470 (`TreatyOutDownloadOne`). */
+export function jalurIsiLampiran(tahunID: string, lampiranID: string): string {
+  return `${jalurLampiranTahun(tahunID)}/${encodeURIComponent(lampiranID)}/isi`
+}
+
+/** Jalur arsip seluruh lampiran terkirim — `Download All` b2659. */
+export function jalurSemuaLampiran(tahunID: string): string {
+  return `${jalurLampiranTahun(tahunID)}/semua`
+}
+
+/**
+ * Mengunduh berkas lewat `fetch` BERHEADER IDENTITAS lalu menyerahkannya ke
+ * peramban sebagai Blob.
+ *
+ * ⛔ BUKAN `<a href>`. Tautan biasa tidak membawa `X-Pelaku`, dan rute unduh
+ * bergerbang identitas seperti rute lain — tautan biasa dijawab 401. Jalur ini
+ * satu-satunya cara layar modul ini mengunduh.
+ *
+ * ⛔ Jawaban galat diurai sebagai amplop `{"galat": ...}` yang sama dengan
+ * `minta`, sehingga 409 "rekam tanpa berkas" tampil dengan kalimatnya.
+ */
+export async function unduhBerkasBeridentitas(jalur: string, namaBerkas: string): Promise<void> {
+  const kendali = new AbortController()
+  const jam = setTimeout(() => {
+    kendali.abort()
+  }, BATAS_WAKTU_MS)
+  let jawab: Response
+  try {
+    jawab = await fetch(rakitURL(jalur), { headers: { ...headerIdentitas() }, signal: kendali.signal })
+  } finally {
+    clearTimeout(jam)
+  }
+  if (!jawab.ok) {
+    let pesan: string | undefined
+    try {
+      const o = (await jawab.json()) as { galat?: unknown }
+      pesan = typeof o.galat === 'string' && o.galat !== '' ? o.galat : undefined
+    } catch {
+      pesan = undefined
+    }
+    throw new ApiFailure(jawab.status, { code: 'DITOLAK_BACKEND', message: pesan })
+  }
+  const blob = await jawab.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = namaBerkas
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+}
+

@@ -254,6 +254,29 @@ dihapus tidak dapat menyimpan siapa yang menghapusnya.
 
 **Index:** `IDX_T_TREATYCO_JEJAK_BARIS (TABEL, BARIS_ID)`.
 
+
+## T_TREATYYEAR_LAMPIRAN
+
+Lampiran berkas pada tahun treaty — **fitur baru** tiket 12 (penyimpangan sadar 9), ditambahkan 29-09-2026. Tanpa
+padanan warisan: `M_ATTACHMENTTREATY_2` berkunci ID treaty inward (`GetAllAttachment2_Sql.xml`) dan tetap milik konteks
+itu. Nama kolom mengikuti tabel warisan di mana maknanya sama.
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID` | teks | tidak | PK | `SEQ_T_TREATYYEAR_LAMPIRAN` (lebar 9) |
+| `IDTREATYYEAR` | teks | tidak | FK → `T_TREATYYEAR.ID` tanpa kaskade | tahun treaty induk (bukan `TREATYID` inward) |
+| `FILENAME` | teks | ya | | nama berkas unggahan (`GetAllAttachment2_Sql` `filename`) |
+| `FILEMIMETYPE` | teks | ya | | jenis berkas (`FILEMIMETYPE`) |
+| `CATEGORY` | teks | ya | | teks `NOTE` master `CATEGORY_ATTACH_REAS` (`SetCategoryAttachTreatyin.xml` b500) |
+| `IMAGEID` | teks | tidak | unik | kunci berkas di penyimpanan; acak, lahir bersama baris, tidak pernah berubah |
+| `T_STORAGE_ID` | teks | ya | | terisi sesudah penyimpanan memastikan berkasnya ada; kosong = tertunda |
+| `UKURAN` | angka bulat | ya | | byte berkas |
+| `USERID` | teks | ya | | pengenal akun pengunggah — nol nama orang |
+| `TGLUPLOAD` | DATE | ya | | waktu unggah |
+
+**Sequence:** `SEQ_T_TREATYYEAR_LAMPIRAN`.
+
+**Index:** `IDX_T_TYLAMPIRAN_TAHUN (IDTREATYYEAR)`; unik `UQ_T_TYLAMPIRAN_IMAGEID (IMAGEID)`.
 ---
 
 ### Catatan tiket 01 — tabel yang TIDAK dibuat modul ini

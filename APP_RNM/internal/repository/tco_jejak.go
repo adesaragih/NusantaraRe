@@ -20,6 +20,10 @@ import (
 const (
 	AksiJejakSimpan = "simpan"
 	AksiJejakHapus  = "hapus"
+	// Tiket 12 - lampiran tahun treaty.
+	AksiJejakUnggah   = "unggah"
+	AksiJejakUlangi   = "ulangi"
+	AksiJejakMenyerah = "menyerah"
 )
 
 // CatatanJejakTCO adalah satu baris jejak seperti dibaca kembali.

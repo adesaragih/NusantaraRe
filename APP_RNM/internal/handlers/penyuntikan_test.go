@@ -79,6 +79,17 @@ var petaSuntikan = map[string][]suntikan{
 			wajib:    []string{"DenganGudang(services.GudangTahunTreatyOracle(svc))"},
 		},
 	},
+	// Tiket 12 (aditif 29-09-2026): lima pasangan lampiran; bawaannya gagal terang.
+	"tco_lampiran.go": {{
+		penyusun: "svc.LampiranTahunTCO()",
+		wajib: []string{
+			"DenganGudang(services.GudangLampiranOracle(svc))",
+			"DenganKategori(services.KategoriLampiranOracle(svc))",
+			"DenganAntrean(services.AntreanLampiranOracle(svc))",
+			"DenganPenyimpanan(services.PenyimpananLokalTCO(svc))",
+			"DenganTahun(services.GudangTahunTreatyOracle(svc))",
+		},
+	}},
 }
 
 func TestHandlerMenyuntikkanImplementasiNyata(t *testing.T) {

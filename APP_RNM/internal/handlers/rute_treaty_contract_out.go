@@ -45,6 +45,8 @@ func daftarkanRuteTreatyContractOut(mux *http.ServeMux, svc *services.Service, s
 		satuTahunTreaty(svc, stubPelaku))
 	mux.HandleFunc("PUT /api/treaty-contract-out/tahun/{id}",
 		simpanTahunTreaty(svc, stubPelaku, true))
+	// Tiket 12: lampiran tahun treaty (tco_lampiran.go).
+	daftarkanRuteLampiranTCO(mux, svc, stubPelaku)
 }
 
 // jawabanDaftarJenisReasuransi adalah badan jawaban daftar jenis reasuransi.
@@ -180,8 +182,28 @@ func jawabGalatTreatyContractOut(w http.ResponseWriter, err error) bool {
 		// siap - master rujukan kosong atau tersaring habis - bukan
 		// permintaan yang salah, dan bukan daftar kosong yang diam (ADR-0015).
 		galat(w, http.StatusServiceUnavailable, err.Error())
+	case errors.Is(err, services.ErrKategoriLampiranKosong),
+		errors.Is(err, services.ErrUnggahanDirBelumDisetel):
+		// Tiket 12: keadaan server - master kategori kosong atau folder
+		// unggahan belum disetel - bukan salah pemanggil.
+		galat(w, http.StatusServiceUnavailable, err.Error())
 	case errors.Is(err, services.ErrTahunTreatyTidakAda):
 		galat(w, http.StatusNotFound, "tahun treaty tidak ditemukan")
+	case errors.Is(err, services.ErrLampiranTidakAda):
+		galat(w, http.StatusNotFound, "lampiran tidak ditemukan pada tahun treaty ini")
+	case errors.Is(err, services.ErrLampiranBelumTerkirim),
+		errors.Is(err, services.ErrLampiranSudahTerkirim),
+		errors.Is(err, services.ErrLampiranTanpaBerkas),
+		errors.Is(err, services.ErrBerkasSumberLampiranHilang):
+		// 409: keadaan DATA lampiran; pesannya menyebut lampiran mana dan
+		// perbaikannya.
+		galat(w, http.StatusConflict, err.Error())
+	case errors.Is(err, services.ErrBerkasTerlaluBesar):
+		galat(w, http.StatusRequestEntityTooLarge, err.Error())
+	case errors.Is(err, services.ErrBerkasKosong):
+		galat(w, http.StatusBadRequest, services.PesanTanpaBerkasTCO)
+	case errors.Is(err, services.ErrKategoriLampiranTidakDikenal):
+		galat(w, http.StatusUnprocessableEntity, err.Error())
 	case errors.Is(err, services.ErrTahunTreatyDobel):
 		// 409: keadaan DATA - kombinasi periode + grup sudah dipakai baris
 		// lain - dan pesannya menyebut baris mana (AC 73).

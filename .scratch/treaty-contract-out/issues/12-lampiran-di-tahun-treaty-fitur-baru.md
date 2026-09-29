@@ -1,6 +1,6 @@
 # 12: Lampiran di tahun treaty — **FITUR BARU**
 
-**Status:** ready-for-agent
+**Status:** selesai (29-09-2026)
 
 **Blocked by:** 03 (tahun treaty sebagai induk lampiran)
 
@@ -122,3 +122,51 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+
+---
+
+## Pembacaan ulang XML — 29-09-2026 (sesi modul, lanjutan 1)
+
+Nomor baris = baris mentah berkas korpus (satu tag per baris), diverifikasi dengan `awk 'NR==n'`. Korpus di sini adalah
+sumber RANTAI TEKNIS dan LABEL; perilakunya ditetapkan AC tiket ini (penyimpangan sadar 9).
+
+| Unsur | Bukti | Dibawa sebagai |
+| --- | --- | --- |
+| letak panel | `Section/InputTreatyContract.xml` b11721 `Attachment for`, b13074 `<pyInclude>GridTreatyArrangementAttachment</pyInclude>` | panel di form tahun treaty yang sudah ber-ID (`PanelLampiranTahun.tsx`) |
+| tombol dan kolom | `Section/GridTreatyArrangementAttachment.xml`: b578 `Add attachment` (→ `SetCategory_act` b596 → flow action `TreatyOutAttachContent` b642), b1023 `Refresh` (→ `LoadAttachmentTreatyOut` b1041), b1785 `For Treaty Contract Out`, b2659 `Download All` (→ `TreatyOutDownloadAll_Act` b2677), b3032 `File Name` (sel `.pyFileName` b3428 → `TreatyOutDownloadOne` b3488), b3170 `Type` (sel `.pyCategory` b3705), b3897 `Delete` (→ `DeleteAttachmentTreaty` b3915) | `LAMPIRAN_TCO`, 10 baris diuji terhadap korpus |
+| tombol `Download` | b2391 → `DownloadAll_Act` generik | ➖ tidak dibawa sebagai tombol kedua; `Download All` adalah aksi yang sama untuk modul ini |
+| pesan tanpa berkas | `Activity/TreatyOutSaveAttachment.xml` b376 `"Tidak ada file yg diattach"` | 400 dengan teks VERBATIM |
+| kunci lampiran Pega | `TreatyOutSaveAttachment.xml` b1402 dan `DeleteAttachmentTreaty.xml` b252: `TreatyYear + TreatyYearID`; `RDBList/GetAllAttachment2_Sql.xml` `M_ATTACHMENTTREATY_2 where treatyid = {TreatyIn.ID}` | ➖ tidak dibawa; kunci = `IDTREATYYEAR`; penjaga statik Go dan JS menolak rujukan treaty inward |
+| penulisan Pega | `RDBList/InsertAtatchment_Sql.xml` → `POOLDATA.PEGA_M_ATTACHMENT` (CLOB JSON + `COMMIT`) | ➖ tidak dibawa (prosedur tidak dipanggil, nol COMMIT, nol JSON/CLOB) |
+| master kategori | `RDBList/CategoryAttach_SQL.xml` `select * from CATEGORY_ATTACH_REAS order by note`; `Activity/SetCategoryAttachTreatyin.xml` b500 `.NOTE` | dibaca saja: `SELECT DISTINCT NOTE … ORDER BY NOTE`; kolom `CATEGORY` menyimpan teks `NOTE` master apa adanya |
+| rantai penyimpanan | `RDBList/GetTokenStorage_SQL.xml` (`GET_TOKEN_STORAGE` + `COMMIT`), `GetLinkStorage_SQL.xml`, `Update_T_Storage_SQL.xml`, `DeleteStorage_SQL.xml` atas `T_STORAGE_IMAGE`; `Activity/GetLinkService.xml` b705–b706 | bentuknya ditiru di balik antarmuka (`PenyimpananJarakJauhTCO`: resolver `M_LINK_SERVICE` saat jalan + cache token); `T_STORAGE_IMAGE` dan prosedur tidak disentuh |
+| `ConnectREST/ServiceGoogle.xml`, `SystemSettings/LinkService.xml` | masing-masing tepat satu `://`, dan keduanya di `<pyHelpURI>` (tautan bantuan platform), bukan alamat layanan | klaim tiket "tanpa URL literal" terkonfirmasi; nilai tautan tidak disalin |
+
+### Ralat bertanggal 29-09-2026
+
+1. **Area codebase `internal/clients`** — paket itu tidak ada di codebase (`internal/` = config, handlers, models,
+   repository, services). Klien penyimpanan (`KlienPenyimpananTCO`) diletakkan di `services`, sejajar dengan
+   `ResolverEndpoint` dan `PelaksanaEfek` yang sudah ada di sana.
+2. **"Cache token"** — jalur token yang ada (`services.TokenStorage` atas `GCP_IMAGE`) menulis tabel warisan dan menuntut
+   garam `STORAGE_TOKEN_SALT`. Karena endpoint penyimpanan nyata tidak dipanggil, yang dibangun adalah `CacheTokenTCO`
+   (pakai ulang, perbarui 15 detik sebelum kedaluwarsa, gagal terang) di atas antarmuka `SumberTokenTCO`. Sumber
+   token Oracle belum dipasang; ia bagian dari penyambungan nyata yang menuntut persetujuan manusia.
+3. **Pekerja outbox** — tidak ada pekerja yang berjalan di `cmd/api` untuk modul mana pun (nol pemanggil `SatuPutaran`
+   di kode produksi). Antrean modul ini dijalankan sesudah unggah, hapus, dan ulangi; `SatuPutaran` diekspor untuk
+   pekerja latar kelak. Pekerja bawaan `PekerjaEfek` tidak dipakai karena jalur menyerahnya menulis jejak Claim Life.
+4. **Kolom master kategori** — hanya `NOTE` yang terbukti dipakai; `CATEGORY_ID` di `M_ATTACHMENTTREATY_2` tidak dibawa
+   karena kolom ID master tidak terbukti di korpus (`select *`).
+
+### Yang dibangun
+
+| Lapisan | Berkas | Isi |
+| --- | --- | --- |
+| skema | `migrations/307_t_treatyyear_lampiran.sql` (+`_down`) | `T_TREATYYEAR_LAMPIRAN`, FK ke `T_TREATYYEAR` tanpa kaskade, `IMAGEID` unik, `SEQ_T_TREATYYEAR_LAMPIRAN`, index tahun |
+| models | `tco_lampiran.go` | `LampiranTCO`, `StatusLampiranTCO` (terkirim menang), `KategoriLampiranSah`, `NamaBerkasAntreLampiranTCO` (nama unggahan tidak menentukan jalur), `NamaEntriZipLampiranTCO` |
+| repository | `tco_lampiran.go` | `KategoriLampiran` (dibaca saja), `MasterLampiranTCO` (daftar + efek unggah terakhir dari outbox bersama, ambil berbatas tahun, kunci `FOR UPDATE`, sisip, hapus, tandai) |
+| services | `tco_lampiran.go`, `tco_penyimpanan.go` | `LampiranTahunTCO` (unggah, daftar, unduh, unduh semua, hapus, ulangi, periksa selaras, pekerja modul sendiri), stub lokal, rangkaian jarak jauh, cache token |
+| handlers | `tco_lampiran.go` (+ uji, + uji `db`) | 8 rute; pemetaan galat 400/404/409/413/422/503 |
+| frontend | `PanelLampiranTahun.tsx` (+ uji), `LAMPIRAN_TCO`, `api.ts` (+9) | unggah multipart, unduh lewat `fetch` berheader identitas, status + galat terlihat, `Ulangi`, `Periksa keselarasan` |
+
+**Status:** selesai 29-09-2026 — commit `treaty-contract-out: tiket 12 — lampiran di tahun treaty`.

@@ -40,6 +40,9 @@ var sequenceDikenalTCO = map[string]int{
 	SeqReinsurerTCO: LebarIdentitasTCO, SeqSecurityTCO: LebarIdentitasTCO,
 	SeqBusinessTCO: LebarIdentitasTCO, SeqKlausulTCO: LebarIdentitasKlausulTCO,
 	SeqJejakTCO: LebarIdentitasTCO,
+	// Tiket 12: lampiran - lebar 9, sebab lampiran jauh lebih banyak daripada
+	// tahun treaty dan ErrIdentitasMelampauiLebar lebih baik tidak pernah terjadi.
+	SeqLampiranTCO: LebarIdentitasLampiranTCO,
 }
 
 // ErrSequenceTakDikenal - nama sequence di luar daftar modul.

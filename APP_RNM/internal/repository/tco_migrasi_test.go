@@ -42,10 +42,14 @@ func TestTCOSeluruhBerkasTigaRatusanDiRentangModul(t *testing.T) {
 	}
 }
 
-// tco1: tujuh tabel, seluruhnya berawalan T_, nama warisan TIDAK dibuat.
-func TestTCOTujuhTabelBerawalanT(t *testing.T) {
+// tco1: delapan tabel, seluruhnya berawalan T_, nama warisan TIDAK dibuat.
+//
+// ⚠️ 29-09-2026 tiket 12: tabel kedelapan T_TREATYYEAR_LAMPIRAN (migrasi 307)
+// - "dua tabel lain" brief tco1 = jejak (tiket 01) + lampiran (tiket 12).
+func TestTCODelapanTabelBerawalanT(t *testing.T) {
 	mau := []string{TabelTahunTCO, TabelKontrakTCO, TabelReinsurerTCO,
-		TabelSecurityTCO, TabelBusinessTCO, TabelKlausulTCO, TabelJejakTCO}
+		TabelSecurityTCO, TabelBusinessTCO, TabelKlausulTCO, TabelJejakTCO,
+		TabelLampiranTCO}
 	var gabung strings.Builder
 	for _, teks := range sqlTreatyContractOut(t) {
 		gabung.WriteString(teks)
@@ -147,6 +151,16 @@ func TestTCOKebijakanKunciTamu(t *testing.T) {
 	if !strings.Contains(security, "REFERENCES {SKEMA}.T_TREATYREINSURER (ID) ON DELETE CASCADE") {
 		t.Error("T_MTREATYSECURITY harus menunjuk T_TREATYREINSURER dengan ON DELETE CASCADE (tiket 06)")
 	}
+	// Tiket 12 (29-09-2026): lampiran menunjuk TAHUN treaty - bukan ID treaty
+	// inward - dan TANPA kaskade. Baris lampiran menyimpan kunci berkas di
+	// penyimpanan; kaskade diam-diam akan meninggalkan berkas yatim di sana.
+	lampiran := cariMigrasi(t, berkas, "307_")
+	if !strings.Contains(lampiran, "REFERENCES {SKEMA}.T_TREATYYEAR (ID)") {
+		t.Error("T_TREATYYEAR_LAMPIRAN tidak menunjuk T_TREATYYEAR")
+	}
+	if strings.Contains(lampiran, "ON DELETE CASCADE") {
+		t.Error("lampiran berkaskade dari tahun - berkas di penyimpanan akan yatim tanpa jejak")
+	}
 	// Setiap FK ber-index pada kolomnya.
 	polaFK := regexp.MustCompile(`FOREIGN KEY \(([A-Z_]+)\)`)
 	diperiksa := 0
@@ -158,8 +172,9 @@ func TestTCOKebijakanKunciTamu(t *testing.T) {
 			}
 		}
 	}
-	if diperiksa != 2 {
-		t.Errorf("FK di 300-319: %d, mau tepat 2 (kontrak->tahun, security->reinsurer)", diperiksa)
+	if diperiksa != 3 {
+		t.Errorf("FK di 300-319: %d, mau tepat 3 (kontrak->tahun, security->reinsurer, "+
+			"lampiran->tahun)", diperiksa)
 	}
 }
 

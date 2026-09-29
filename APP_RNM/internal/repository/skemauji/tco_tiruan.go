@@ -32,6 +32,8 @@ var namaTabelTiruanTCO = []string{
 	"TREATYYEAR", "TREATYCONTRACT", "TREATYREINSURER",
 	"MTREATYSECURITY", "TREATYBUSINESS", "PROPORTIONALARRG",
 	repository.MasterJenisReasuransiTCO, repository.MasterGrupTreatyTCO,
+	// Tiket 12: master kategori lampiran.
+	repository.MasterKategoriLampiranTCO,
 }
 
 // namaTabelWarisanTCO adalah enam tabel warisan yang dipindahkan migrasi data.
@@ -77,6 +79,11 @@ func ddlTiruanTCO(skema string) []string {
 	out = append(out, fmt.Sprintf(
 		"CREATE TABLE %s.%s (ID VARCHAR2(1000), TREATYGROUPNAME VARCHAR2(1000), OLDID VARCHAR2(1000))",
 		skema, repository.MasterGrupTreatyTCO))
+	// Tiket 12: master kategori lampiran - hanya `NOTE` yang terbukti dipakai
+	// (`SetCategoryAttachTreatyin.xml` b500); ID ditiru sebagai kolom bebas.
+	out = append(out, fmt.Sprintf(
+		"CREATE TABLE %s.%s (ID VARCHAR2(1000), NOTE VARCHAR2(1000))",
+		skema, repository.MasterKategoriLampiranTCO))
 	return out
 }
 
@@ -170,6 +177,18 @@ func IsiGrupTreatyTCO(ctx context.Context, db *sql.DB, skema string, baris []Gru
 	for _, b := range baris {
 		if _, err := db.ExecContext(ctx, q, b.ID, b.TreatyGroupName); err != nil {
 			return fmt.Errorf("skemauji: mengisi tiruan master grup treaty: %w", err)
+		}
+	}
+	return nil
+}
+
+// IsiKategoriLampiranTCO mengisi tiruan CATEGORY_ATTACH_REAS (tiket 12).
+func IsiKategoriLampiranTCO(ctx context.Context, db *sql.DB, skema string, note []string) error {
+	q := fmt.Sprintf("INSERT INTO %s.%s (ID, NOTE) VALUES (:1, :2)",
+		skema, repository.MasterKategoriLampiranTCO)
+	for i, n := range note {
+		if _, err := db.ExecContext(ctx, q, fmt.Sprintf("UJI-%02d", i+1), n); err != nil {
+			return fmt.Errorf("skemauji: mengisi tiruan master kategori lampiran: %w", err)
 		}
 	}
 	return nil

@@ -1,0 +1,74 @@
+package models
+
+import "testing"
+
+// Status lampiran diturunkan dari DUA sumber: kunci penyimpanan yang sudah
+// dipastikan, dan nasib efek outbox-nya. Terkirim menang atas apa pun yang
+// outbox katakan - berkas yang sudah ada di penyimpanan tidak "gagal".
+func TestStatusLampiranTCO(t *testing.T) {
+	kasus := []struct {
+		storage  string
+		menyerah bool
+		mau      string
+	}{
+		{"", false, StatusLampiranTertunda},
+		{"", true, StatusLampiranGagal},
+		{"ABC", false, StatusLampiranTerkirim},
+		{"ABC", true, StatusLampiranTerkirim},
+		{"   ", false, StatusLampiranTertunda},
+	}
+	for _, k := range kasus {
+		if dapat := StatusLampiranTCO(k.storage, k.menyerah); dapat != k.mau {
+			t.Errorf("StatusLampiranTCO(%q, %v) = %q, mau %q", k.storage, k.menyerah, dapat, k.mau)
+		}
+	}
+}
+
+// Kategori disimpan VERBATIM seperti master menuliskannya, meski pemakai
+// mengetik dengan huruf dan spasi berbeda.
+func TestKategoriLampiranSah(t *testing.T) {
+	master := []string{"CLAUSES", "R/I SLIP", "OTHERS"}
+	if k, ok := KategoriLampiranSah(master, "  r/i slip "); !ok || k != "R/I SLIP" {
+		t.Errorf("r/i slip -> %q %v", k, ok)
+	}
+	for _, salah := range []string{"", "   ", "SLIP", "R/I"} {
+		if _, ok := KategoriLampiranSah(master, salah); ok {
+			t.Errorf("%q lolos padahal bukan kategori master", salah)
+		}
+	}
+}
+
+// Nama berkas antrean hanya berisi kunci + akhiran yang disaring: nama
+// unggahan tidak pernah menentukan jalur di disk.
+func TestNamaBerkasAntreLampiranTCO(t *testing.T) {
+	kasus := map[[2]string]string{
+		{"ABC123", "kontrak.PDF"}:              "ABC123.pdf",
+		{"ABC123", "tanpa-akhiran"}:            "ABC123",
+		{"ABC123", `..\..\rahasia.exe`}:        "ABC123.exe",
+		{"ABC123", "a.b/../../x.txt"}:          "ABC123.txt",
+		{"ABC123", "aneh.p%d$f"}:               "ABC123",
+		{"ABC123", "panjang.abcdefghijklmnop"}: "ABC123",
+	}
+	for masuk, mau := range kasus {
+		if dapat := NamaBerkasAntreLampiranTCO(masuk[0], masuk[1]); dapat != mau {
+			t.Errorf("NamaBerkasAntreLampiranTCO(%q, %q) = %q, mau %q", masuk[0], masuk[1], dapat, mau)
+		}
+	}
+}
+
+// Entri zip "Download All" berawalan ID lampiran (dua berkas senama tidak
+// saling timpa) dan tidak pernah memuat jalur.
+func TestNamaEntriZipLampiranTCO(t *testing.T) {
+	kasus := map[[2]string]string{
+		{"1000000001", "kontrak.pdf"}:      "1000000001_kontrak.pdf",
+		{"1000000002", `C:\tmp\slip.xlsx`}: "1000000002_slip.xlsx",
+		{"1000000003", "../../etc/passwd"}: "1000000003_passwd",
+		{"1000000004", ""}:                 "1000000004_berkas",
+		{"1000000005", ".."}:               "1000000005_berkas",
+	}
+	for masuk, mau := range kasus {
+		if dapat := NamaEntriZipLampiranTCO(masuk[0], masuk[1]); dapat != mau {
+			t.Errorf("NamaEntriZipLampiranTCO(%q, %q) = %q, mau %q", masuk[0], masuk[1], dapat, mau)
+		}
+	}
+}

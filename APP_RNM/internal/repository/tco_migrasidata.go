@@ -61,6 +61,8 @@ const (
 	TabelBusinessTCO  = "T_TREATYBUSINESS"
 	TabelKlausulTCO   = "T_PROPORTIONALARRG"
 	TabelJejakTCO     = "T_TREATYCO_JEJAK"
+	// TabelLampiranTCO - lampiran tahun treaty, fitur BARU tiket 12 (tanpa warisan).
+	TabelLampiranTCO = "T_TREATYYEAR_LAMPIRAN"
 )
 
 // Sequence tiap tabel baru, beserta LEBAR digit di belakang awalan '1'
@@ -73,9 +75,13 @@ const (
 	SeqBusinessTCO  = "SEQ_T_TREATYBUSINESS"
 	SeqKlausulTCO   = "SEQ_T_PROPORTIONALARRG"
 	SeqJejakTCO     = "SEQ_T_TREATYCO_JEJAK"
+	// SeqLampiranTCO - tiket 12.
+	SeqLampiranTCO = "SEQ_T_TREATYYEAR_LAMPIRAN"
 
 	LebarIdentitasTCO        = 6
 	LebarIdentitasKlausulTCO = 7
+	// LebarIdentitasLampiranTCO - tiket 12, tanpa padanan warisan (keputusan kami).
+	LebarIdentitasLampiranTCO = 9
 )
 
 // urutanWarisanTCO adalah urutan pemindahan: induk sebelum anak (FK).

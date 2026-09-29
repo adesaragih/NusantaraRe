@@ -43,10 +43,20 @@ func TestRuteTreatyContractOutTerdaftarSatuBaris(t *testing.T) {
 			t.Errorf("rute %s tidak terdaftar", mau)
 		}
 	}
-	// Master dan daftar MEMBACA: tidak pernah POST.
+	// Master dan daftar MEMBACA: tidak pernah POST. Tahun treaty tidak punya
+	// jalur hapus.
+	//
+	// ⚠️ 29-09-2026 tiket 12: dipersempit ke jalur TAHUN itu sendiri (tanda
+	// kutip penutup ikut dicocokkan) dan diperluas ke tco_lampiran.go -
+	// `DELETE .../tahun/{id}/lampiran/{lid}` menghapus LAMPIRAN, bukan tahun.
+	lampiran, err := os.ReadFile("tco_lampiran.go")
+	if err != nil {
+		t.Fatal(err)
+	}
 	for _, tidak := range []string{`"POST /api/treaty-contract-out/jenis-reasuransi"`,
-		`"POST /api/treaty-contract-out/grup-treaty"`, `"DELETE /api/treaty-contract-out/tahun`} {
-		if strings.Contains(string(rute), tidak) {
+		`"POST /api/treaty-contract-out/grup-treaty"`, `"POST /api/treaty-contract-out/kategori-lampiran"`,
+		`"DELETE /api/treaty-contract-out/tahun"`, `"DELETE /api/treaty-contract-out/tahun/{id}"`} {
+		if strings.Contains(string(rute), tidak) || strings.Contains(string(lampiran), tidak) {
 			t.Errorf("rute %s tidak boleh ada", tidak)
 		}
 	}
