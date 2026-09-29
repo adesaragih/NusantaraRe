@@ -31,7 +31,7 @@ import {
   IkonPerisai,
   IkonStetoskop,
 } from '../components/ui/dasar'
-import { ENTRI_MENU, type ModulTetap } from '../lib/daftarMenu'
+import { ENTRI_MENU, halamanAktif, type ModulTetap } from '../lib/daftarMenu'
 import {
   ambilKotakMasuk,
   pesanGalat,
@@ -61,15 +61,23 @@ export interface KartuModul {
  * ⛔ Diturunkan dari `ENTRI_MENU`, sumber yang SAMA dengan sidebar dan palet.
  * Daftar keempat yang menyebut modul yang sama adalah daftar keempat yang
  * akan menyimpang.
+ *
+ * `aktif` - modul dari `GET /api/modul-aktif` (MODUL_AKTIF, refactor bentuk
+ * B). Tombol kartu MEMBUKA modul, jadi ia menu juga: kartu modul yang
+ * NONAKTIF tidak tampil, seperti kelompoknya di sidebar. `null` = semua.
  */
-export function kartuModul(): KartuModul[] {
-  return Object.values(MODUL).map((nama) => {
-    const pertama = ENTRI_MENU.find((e) => e.kelompok === nama)
-    return {
-      nama,
-      tujuan: pertama?.modul ?? null,
-      label: pertama?.label ?? null,
-    }
+export function kartuModul(aktif: readonly string[] | null = null): KartuModul[] {
+  return Object.values(MODUL).flatMap((nama) => {
+    const milik = ENTRI_MENU.filter((e) => e.kelompok === nama)
+    const pertama = milik.find((e) => halamanAktif(e.modul, aktif))
+    if (milik.length > 0 && pertama === undefined) return []
+    return [
+      {
+        nama,
+        tujuan: pertama?.modul ?? null,
+        label: pertama?.label ?? null,
+      },
+    ]
   })
 }
 
@@ -91,14 +99,25 @@ const TAHAP_BERANDA: readonly { nomor: NomorTahap; nama: string; ikon: ReactNode
 export default function Beranda({
   masuk,
   onBuka,
+  modulAktif = null,
 }: {
   masuk: Sesi
   onBuka: (modul: ModulTetap) => void
+  /** Modul aktif dari backend; `null` = semua (lihat `halamanAktif`). */
+  modulAktif?: readonly string[] | null
 }) {
   const [antrean, setAntrean] = useState<AntreanTahap[] | null>(null)
   const [galat, setGalat] = useState<string | null>(null)
+  // Cacah antrean milik Claim Life: modul itu NONAKTIF = kartunya tidak
+  // tampil dan kotak masuknya tidak diminta (rutenya memang tidak ada).
+  const claimLifeAktif = halamanAktif('inbox', modulAktif)
 
   useEffect(() => {
+    if (!claimLifeAktif) {
+      setAntrean(null)
+      setGalat(null)
+      return
+    }
     let hidup = true
     void (async () => {
       try {
@@ -120,9 +139,9 @@ export default function Beranda({
     return () => {
       hidup = false
     }
-  }, [])
+  }, [claimLifeAktif])
 
-  const kartu = kartuModul()
+  const kartu = kartuModul(modulAktif)
   const jumlahAktif = kartu.filter((k) => k.tujuan !== null).length
   const memuat = antrean === null && galat === null
 
@@ -150,21 +169,23 @@ export default function Beranda({
         </p>
       )}
 
-      <section className="beranda__antrean" aria-label={BERANDA.ringkasan} aria-busy={memuat}>
-        {TAHAP_BERANDA.map((t) => {
-          const a = antrean?.find((x) => x.nomor === t.nomor)
-          return (
-            <div key={t.nomor} className="kartu beranda__antrean-butir">
-              <p className="beranda__antrean-nama">
-                {t.ikon}
-                {a?.nama ?? t.nama}
-              </p>
-              <p className="beranda__antrean-angka">{a === undefined ? '—' : a.total}</p>
-              <p className="beranda__antrean-catatan">{BERANDA.catatanTahap}</p>
-            </div>
-          )
-        })}
-      </section>
+      {claimLifeAktif && (
+        <section className="beranda__antrean" aria-label={BERANDA.ringkasan} aria-busy={memuat}>
+          {TAHAP_BERANDA.map((t) => {
+            const a = antrean?.find((x) => x.nomor === t.nomor)
+            return (
+              <div key={t.nomor} className="kartu beranda__antrean-butir">
+                <p className="beranda__antrean-nama">
+                  {t.ikon}
+                  {a?.nama ?? t.nama}
+                </p>
+                <p className="beranda__antrean-angka">{a === undefined ? '—' : a.total}</p>
+                <p className="beranda__antrean-catatan">{BERANDA.catatanTahap}</p>
+              </div>
+            )
+          })}
+        </section>
+      )}
 
       <div className="beranda__kisi">
         <section className="kartu" aria-labelledby="beranda-modul">

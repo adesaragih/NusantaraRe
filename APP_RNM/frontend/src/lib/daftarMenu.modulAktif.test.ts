@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { MODUL } from '../assets/labels'
+import { kartuModul } from '../pages/Beranda'
 import { ambilModulAktif } from '../services/api'
 import {
   daftarPalet,
@@ -69,6 +70,19 @@ describe('menu modul nonaktif hilang', () => {
       .map((h) => h.modul)
       .filter((m) => m !== 'beranda')
     expect(new Set(dariSidebar)).toEqual(new Set(dariPalet))
+  })
+
+  it('Beranda: kartu modul nonaktif hilang, yang belum dimigrasi tetap', () => {
+    // Tombol kartu Beranda MEMBUKA modul - ia menu juga.
+    const kartu = kartuModul(['komite'])
+    expect(kartu.filter((k) => k.tujuan !== null).map((k) => k.nama)).toEqual([MODUL.komiteClaimLife])
+    expect(kartu.filter((k) => k.tujuan === null)).toHaveLength(14)
+    expect(kartuModul(null)).toEqual(kartuModul())
+    // Cacah antrean Claim Life tidak diminta bila modul itu nonaktif.
+    const beranda = readFileSync(join(SRC, 'pages', 'Beranda.tsx'), 'utf8')
+    expect(beranda).toContain("const claimLifeAktif = halamanAktif('inbox', modulAktif)")
+    expect(beranda).toContain('if (!claimLifeAktif) {')
+    expect(readFileSync(join(SRC, 'App.tsx'), 'utf8')).toContain('<Beranda masuk={masuk} onBuka={setHalaman} modulAktif={modulAktif} />')
   })
 
   it('null = semua tampil, persis seperti sebelum MODUL_AKTIF', () => {

@@ -77,7 +77,7 @@ export default function App() {
 
   return (
     <Shell masuk={masuk} halaman={halaman} onPindah={setHalaman} modulAktif={modulAktif}>
-      {halaman === 'beranda' && <Beranda masuk={masuk} onBuka={setHalaman} />}
+      {halaman === 'beranda' && <Beranda masuk={masuk} onBuka={setHalaman} modulAktif={modulAktif} />}
       {halaman === 'premiumlist' && polis.id === '' && (
         <InboxPremiumList
           onBuka={(caseID, tahap) => {
