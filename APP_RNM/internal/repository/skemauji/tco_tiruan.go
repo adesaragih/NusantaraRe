@@ -42,8 +42,18 @@ var namaTabelTiruanTCO = []string{
 	repository.MasterJenisKlausulTCO, repository.MasterOccupationTCO, repository.MasterClauseTCO,
 }
 
-// namaTabelWarisanTCO adalah enam tabel warisan yang dipindahkan migrasi data.
+// namaTabelWarisanTCO adalah enam tabel warisan yang modul ini tulis dan baca
+// LANGSUNG (tco4) - di skema uji ditiru dengan tipe `[data DBA]`.
 var namaTabelWarisanTCO = namaTabelTiruanTCO[:6]
+
+// namaSequenceTiruanTCO - sequence WARISAN yang penulis modul pakai (tco4).
+var namaSequenceTiruanTCO = []string{repository.SeqTahunTCO, repository.SeqKontrakTCO,
+	repository.SeqReinsurerTCO, repository.SeqBusinessTCO, repository.SeqKlausulTCO}
+
+// ddlSecurityTiruanTCO - `MTREATYSECURITY` PERSIS DDL `[data DBA]`: tanpa PK,
+// NOT NULL dan DEFAULT warisan ikut ditiru supaya penulis diuji terhadapnya.
+const ddlSecurityTiruanTCO = `THN_TREATY VARCHAR2(4) DEFAULT '1' NOT NULL, TOP_ID VARCHAR2(9), TP_TREATY CHAR(2),
+	REAS_ID CHAR(7) NOT NULL, PCT_SHARE VARCHAR2(99), USER_ID CHAR(99), REAS_SECURITY CHAR(10) NOT NULL`
 
 // lebarCharTCO adalah lebar kolom CHAR `[data DBA]` MTREATYSECURITY.
 var lebarCharTCO = map[string]int{
@@ -76,7 +86,13 @@ func ddlTiruanTCO(skema string) []string {
 		if tabel == "PROPORTIONALARRG" {
 			kolom = append(kolom, kolomMatiTiruanTCO...)
 		}
+		if tabel == "MTREATYSECURITY" {
+			kolom = []string{ddlSecurityTiruanTCO}
+		}
 		out = append(out, fmt.Sprintf("CREATE TABLE %s.%s (%s)", skema, tabel, strings.Join(kolom, ", ")))
+	}
+	for _, seq := range namaSequenceTiruanTCO {
+		out = append(out, fmt.Sprintf("CREATE SEQUENCE %s.%s START WITH 1 NOCACHE", skema, seq))
 	}
 	out = append(out, fmt.Sprintf(
 		"CREATE TABLE %s.%s (ID VARCHAR2(1000), NOTE VARCHAR2(1000), TYPE VARCHAR2(1000), FLAG VARCHAR2(1000), NOURUT VARCHAR2(1000))",

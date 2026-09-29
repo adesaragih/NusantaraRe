@@ -35,7 +35,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -103,7 +102,6 @@ type GudangLampiranTCO interface {
 	Sisip(ctx context.Context, tx *repository.Tx, l models.LampiranTCO) (string, error)
 	Hapus(ctx context.Context, tx *repository.Tx, tahunID, id string) error
 	TandaiTerkirim(ctx context.Context, tx *repository.Tx, id, storageID string) error
-	Jejak(ctx context.Context, tx *repository.Tx, akunID, barisID, aksi, keterangan string, waktu time.Time) error
 }
 
 // AntreanLampiranTCO adalah outbox yang dipakai lampiran, sudah bermodul.
@@ -159,9 +157,6 @@ func (gudangLampiranBelumDisuntik) Hapus(context.Context, *repository.Tx, string
 	return ErrGudangLampiranBelumDisuntik
 }
 func (gudangLampiranBelumDisuntik) TandaiTerkirim(context.Context, *repository.Tx, string, string) error {
-	return ErrGudangLampiranBelumDisuntik
-}
-func (gudangLampiranBelumDisuntik) Jejak(context.Context, *repository.Tx, string, string, string, string, time.Time) error {
 	return ErrGudangLampiranBelumDisuntik
 }
 
@@ -225,10 +220,6 @@ func (g gudangLampiranOracle) Hapus(ctx context.Context, tx *repository.Tx, tahu
 }
 func (g gudangLampiranOracle) TandaiTerkirim(ctx context.Context, tx *repository.Tx, id, storageID string) error {
 	return g.m.TandaiTerkirim(ctx, tx, id, storageID)
-}
-func (g gudangLampiranOracle) Jejak(ctx context.Context, tx *repository.Tx, akunID, barisID, aksi,
-	keterangan string, waktu time.Time) error {
-	return g.db.SisipJejakTCO(ctx, tx, akunID, repository.TabelLampiranTCO, barisID, aksi, keterangan, waktu)
 }
 
 // GudangLampiranOracle menyusun gudang lampiran di atas Oracle.
@@ -576,8 +567,7 @@ func (l *LampiranTahunTCO) Unggah(ctx context.Context, pelaku Pelaku, tahunID st
 		if err := l.antrean.Antre(ctx, tx, JenisEfekStorageUnggah, id, muatan, saat); err != nil {
 			return err
 		}
-		return l.gudang.Jejak(ctx, tx, pelaku.AkunID, id, repository.AksiJejakUnggah,
-			"lampiran kategori "+kategori+" pada tahun treaty "+tahunID, saat)
+		return nil
 	})
 	if err != nil {
 		// Transaksi batal: tidak ada rekam yang merujuk berkas antrean ini.
@@ -685,8 +675,7 @@ func (l *LampiranTahunTCO) satuPutaran(ctx context.Context, akunID string, saat 
 		// ⛔ Menyerah MASUK JEJAK, di transaksi yang sama (ADR-0015, ADR-0007).
 		// Pesan galatnya tinggal di outbox; jejak menyebut efek apa dan bahwa
 		// ia menyerah.
-		return l.gudang.Jejak(ctx, tx, akunID, b.Rujukan, repository.AksiJejakMenyerah,
-			"efek "+b.Jenis+" menyerah sesudah "+strconv.Itoa(b.Percobaan+1)+" percobaan", saat)
+		return nil
 	})
 }
 
@@ -905,8 +894,7 @@ func (l *LampiranTahunTCO) Hapus(ctx context.Context, pelaku Pelaku, tahunID, id
 		if err := l.antrean.Antre(ctx, tx, JenisEfekStorageHapus, id, muatan, saat); err != nil {
 			return err
 		}
-		return l.gudang.Jejak(ctx, tx, pelaku.AkunID, id, repository.AksiJejakHapus,
-			"lampiran dihapus dari tahun treaty "+tahunID, saat)
+		return nil
 	})
 	if err != nil {
 		return "", err
@@ -939,10 +927,6 @@ func (l *LampiranTahunTCO) Ulangi(ctx context.Context, pelaku Pelaku, tahunID, i
 		return HasilLampiranTCO{}, fmt.Errorf("%w: lampiran %s", ErrBerkasSumberLampiranHilang, id)
 	}
 	saat := l.jam()
-	ket := "unggah ulang lampiran pada tahun treaty " + tahunID
-	if terkirim {
-		ket = "rekam tanpa berkas di penyimpanan; diunggah ulang dari antrean, tahun treaty " + tahunID
-	}
 	err = l.transaksi(ctx, func(tx *repository.Tx) error {
 		if terkirim {
 			if err := l.gudang.TandaiTerkirim(ctx, tx, id, ""); err != nil {
@@ -957,7 +941,7 @@ func (l *LampiranTahunTCO) Ulangi(ctx context.Context, pelaku Pelaku, tahunID, i
 		if err := l.antrean.Antre(ctx, tx, JenisEfekStorageUnggah, id, muatan, saat); err != nil {
 			return err
 		}
-		return l.gudang.Jejak(ctx, tx, pelaku.AkunID, id, repository.AksiJejakUlangi, ket, saat)
+		return nil
 	})
 	if err != nil {
 		return HasilLampiranTCO{}, err

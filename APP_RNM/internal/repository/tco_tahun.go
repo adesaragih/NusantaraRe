@@ -1,6 +1,6 @@
 package repository
 
-// Tahun treaty - `T_TREATYYEAR` (tiket 03 Treaty Contract Out).
+// Tahun treaty - tabel WARISAN `TREATYYEAR` (tiket 03 Treaty Contract Out; tco4).
 //
 // Padanan `RDBList/SaveMasterTreatyYear_SQL.xml` -> `PEGA_TREATYYEAR`
 // (`[data DBA]` UPSERT dikunci ID; ID baru `'1' || lpad(TreatyYear_seq, 6)`;
@@ -15,9 +15,11 @@ package repository
 // ⛔ Anti-dobel (AC 73) adalah pertanyaan keunikan di basis data: `CariDobel`
 // dijalankan DI DALAM transaksi penyimpanan, bukan dari cache layar.
 //
-// Tanggal dibaca lewat TO_CHAR berformat dan ditulis sebagai time.Time;
-// nol pergeseran zona. Setiap query menyebut skemanya lewat Qualify
-// (ADR-U-0033), nol COMMIT (ADR-U-0029).
+// ⛔ tco4: seluruh kolom `TREATYYEAR` VARCHAR2 `[data DBA]`. `STARTDATE`/
+// `ENDDATE` ditulis stempel Pega 00:00 WIB, `TGLUPDATE` stempel
+// `@getCurrentTimeStamp()`; dibaca lewat pengurai warisan (tco_warisan.go).
+// Setiap query menyebut skemanya lewat Qualify (ADR-U-0033), nol COMMIT
+// (ADR-U-0029).
 
 import (
 	"context"
@@ -41,16 +43,15 @@ type HalamanTahunTreaty struct {
 	Ukuran  int
 }
 
-// MasterTahunTreaty membaca dan menulis `T_TREATYYEAR`.
+// MasterTahunTreaty membaca dan menulis `TREATYYEAR`.
 type MasterTahunTreaty struct{ db *DB }
 
 // NewMasterTahunTreaty menyusunnya.
 func NewMasterTahunTreaty(db *DB) *MasterTahunTreaty { return &MasterTahunTreaty{db: db} }
 
-// daftarPilihTahunTreaty adalah sepuluh kolom warisan, tanggal sebagai teks.
+// daftarPilihTahunTreaty adalah sepuluh kolom warisan, apa adanya (VARCHAR2).
 const daftarPilihTahunTreaty = `ID, TREATYYEAR, UNDERWRITINGYEAR, TREATYGROUPID, TREATYGROUPNAME, PROPORTION,
-	       TO_CHAR(STARTDATE, 'YYYY-MM-DD HH24:MI:SS'), TO_CHAR(ENDDATE, 'YYYY-MM-DD HH24:MI:SS'),
-	       USERID, TO_CHAR(TGLUPDATE, 'YYYY-MM-DD HH24:MI:SS')`
+	       STARTDATE, ENDDATE, USERID, TGLUPDATE`
 
 // sqlDaftarTahunTreaty - urutan `.ID DESC` (BrowseTreatyYear_RD b672).
 func sqlDaftarTahunTreaty(tabel string) string {
@@ -85,27 +86,18 @@ func sqlPerbaruiTahunTreaty(tabel string) string {
 	 WHERE ID = :10`, tabel)
 }
 
-// sqlCariDobelTahunTreaty - AC 73: (STARTDATE, ENDDATE, TREATYGROUPID) yang
-// sudah dipakai baris LAIN.
+// sqlCariDobelTahunTreaty - AC 73: kandidat baris LAIN segrup; tanggalnya
+// dibandingkan di Go (tco4: `STARTDATE`/`ENDDATE` VARCHAR2 berbentuk campur,
+// `TRUNC` tidak berlaku).
 //
-// ⛔ `(:4 IS NULL OR ID <> :5)`, bukan `ID <> :4` telanjang: teks kosong
-// adalah NULL di Oracle, dan `ID <> NULL` tidak pernah benar - baris baru
-// tidak akan pernah menemukan dobelnya.
-//
-// ⚠️ 29-09-2026 (tiket 04): DUA placeholder berbeda, nilai yang sama diikat
-// dua kali. Semula `:4` dipakai dua kali dengan satu argumen; benar tidaknya
-// bergantung pada driver mengikat per nama atau per kemunculan, dan belum
-// pernah dijalankan terhadap Oracle. Placeholder berbeda benar di keduanya.
-//
-// TRUNC di kedua sisi: baris warisan boleh membawa jam pada kolom DATE.
+// ⛔ `(:2 IS NULL OR ID <> :3)`, bukan `ID <> :2` telanjang: teks kosong
+// adalah NULL di Oracle, dan `ID <> NULL` tidak pernah benar. Placeholder
+// berbeda untuk nilai yang sama (tiket 04).
 func sqlCariDobelTahunTreaty(tabel string) string {
-	return fmt.Sprintf(`SELECT ID FROM %s
+	return fmt.Sprintf(`SELECT ID, STARTDATE, ENDDATE FROM %s
 	 WHERE TREATYGROUPID = :1
-	   AND TRUNC(STARTDATE) = TRUNC(:2)
-	   AND TRUNC(ENDDATE) = TRUNC(:3)
-	   AND (:4 IS NULL OR ID <> :5)
-	 ORDER BY ID
-	 FETCH FIRST 1 ROWS ONLY`, tabel)
+	   AND (:2 IS NULL OR ID <> :3)
+	 ORDER BY ID`, tabel)
 }
 
 // tanggalJadiNil membind waktu nol sebagai NULL (ADR-U-0027).
@@ -140,13 +132,13 @@ func pindaiTahunTreaty(baca interface{ Scan(...any) error }) (models.TahunTreaty
 		UserID: n[8].String,
 	}
 	var err error
-	if t.StartDate, err = uraiTanggalTeks(n[6], "STARTDATE"); err != nil {
+	if t.StartDate, err = tanggalWarisanTeks(n[6], "STARTDATE"); err != nil {
 		return t, err
 	}
-	if t.EndDate, err = uraiTanggalTeks(n[7], "ENDDATE"); err != nil {
+	if t.EndDate, err = tanggalWarisanTeks(n[7], "ENDDATE"); err != nil {
 		return t, err
 	}
-	if t.TglUpdate, err = uraiTanggalTeks(n[9], "TGLUPDATE"); err != nil {
+	if t.TglUpdate, err = waktuWarisanTeks(n[9], "TGLUPDATE"); err != nil {
 		return t, err
 	}
 	return t, nil
@@ -231,8 +223,8 @@ func (m *MasterTahunTreaty) Sisip(ctx context.Context, tx *Tx, t models.TahunTre
 	hasil, err := tx.tx.ExecContext(ctx, q, id,
 		kosongJadiNil(t.TreatyYear), kosongJadiNil(t.UnderwritingYear),
 		kosongJadiNil(t.TreatyGroupID), kosongJadiNil(t.TreatyGroupName),
-		kosongJadiNil(t.UserID), tanggalJadiNil(t.TglUpdate), kosongJadiNil(t.Proportion),
-		tanggalJadiNil(t.StartDate), tanggalJadiNil(t.EndDate))
+		kosongJadiNil(t.UserID), kosongJadiNil(StempelPegaTCO(t.TglUpdate)), kosongJadiNil(t.Proportion),
+		kosongJadiNil(StempelTanggalJakartaTCO(t.StartDate)), kosongJadiNil(StempelTanggalJakartaTCO(t.EndDate)))
 	if err != nil {
 		return "", fmt.Errorf("repository: menyisipkan tahun treaty: %w", err)
 	}
@@ -255,8 +247,8 @@ func (m *MasterTahunTreaty) Perbarui(ctx context.Context, tx *Tx, t models.Tahun
 	hasil, err := tx.tx.ExecContext(ctx, q,
 		kosongJadiNil(t.TreatyYear), kosongJadiNil(t.UnderwritingYear),
 		kosongJadiNil(t.TreatyGroupID), kosongJadiNil(t.TreatyGroupName),
-		kosongJadiNil(t.UserID), tanggalJadiNil(t.TglUpdate), kosongJadiNil(t.Proportion),
-		tanggalJadiNil(t.StartDate), tanggalJadiNil(t.EndDate), t.ID)
+		kosongJadiNil(t.UserID), kosongJadiNil(StempelPegaTCO(t.TglUpdate)), kosongJadiNil(t.Proportion),
+		kosongJadiNil(StempelTanggalJakartaTCO(t.StartDate)), kosongJadiNil(StempelTanggalJakartaTCO(t.EndDate)), t.ID)
 	if err != nil {
 		return fmt.Errorf("repository: memperbarui tahun treaty %s: %w", t.ID, err)
 	}
@@ -296,16 +288,32 @@ func (m *MasterTahunTreaty) CariDobel(ctx context.Context, tx *Tx, grupID string
 	if err := PeriksaSQL(q); err != nil {
 		return "", err
 	}
-	var id sql.NullString
-	err = tx.tx.QueryRowContext(ctx, q, grupID, mulai, akhir, kosongJadiNil(kecualiID),
-		kosongJadiNil(kecualiID)).Scan(&id)
-	if errors.Is(err, sql.ErrNoRows) {
-		return "", nil
-	}
+	rows, err := tx.tx.QueryContext(ctx, q, grupID, kosongJadiNil(kecualiID), kosongJadiNil(kecualiID))
 	if err != nil {
 		return "", fmt.Errorf("repository: memeriksa dobel tahun treaty: %w", err)
 	}
-	return id.String, nil
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var id, awal, akhirTeks sql.NullString
+		if err := rows.Scan(&id, &awal, &akhirTeks); err != nil {
+			return "", err
+		}
+		// ⚠️ Baris warisan bertanggal tak terurai tidak dapat "sama": dilewati,
+		// bukan menggagalkan penyimpanan tahun lain.
+		a, okA := UraiTanggalWarisanTCO(awal.String)
+		b, okB := UraiTanggalWarisanTCO(akhirTeks.String)
+		if okA && okB && tanggalSamaTCO(a, mulai) && tanggalSamaTCO(b, akhir) {
+			return id.String, nil
+		}
+	}
+	return "", rows.Err()
+}
+
+// tanggalSamaTCO - tanggal kalender yang sama (jam diabaikan).
+func tanggalSamaTCO(a, b time.Time) bool {
+	ya, ma, da := a.Date()
+	yb, mb, db := b.Date()
+	return ya == yb && ma == mb && da == db
 }
 
 func sqlKunciTabelTahunTCO(tabel string) string {

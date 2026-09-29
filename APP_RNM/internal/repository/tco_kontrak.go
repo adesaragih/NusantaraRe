@@ -2,7 +2,7 @@ package repository
 
 // Kontrak treaty di dalam tahun treaty - tiket 04 Treaty Contract Out.
 //
-// Untuk apa berkas ini: baca/tulis `T_TREATYCONTRACT`, meniru logika
+// Untuk apa berkas ini: baca/tulis tabel WARISAN `TREATYCONTRACT` (tco4), meniru logika
 // `POOLDATA.PEGA_TREATYCONTRACT` (`RDBList/SaveMasterTreatyContract_SQL.xml`,
 // 8 parameter + 2 keluaran) TANPA memanggil prosedurnya (prinsip o).
 //
@@ -28,7 +28,10 @@ import (
 // ErrKontrakTidakAda - kontrak tidak ada, atau bukan milik tahun treaty itu.
 var ErrKontrakTidakAda = errors.New("repository: kontrak treaty tidak ditemukan pada tahun treaty ini")
 
-// MasterKontrakTCO membaca dan menulis `T_TREATYCONTRACT`.
+// MasterKontrakTCO membaca dan menulis `TREATYCONTRACT`.
+//
+// ⚠️ tco4: `TREATYSTARTDATE`/`TREATYENDDATE` DATE (procedure `to_date(…,
+// 'DD/MM/YYYY')`); `TGLUPDATE` VARCHAR2(1000) berisi stempel Pega.
 type MasterKontrakTCO struct{ db *DB }
 
 // NewMasterKontrakTCO menyusun gudangnya.
@@ -36,7 +39,7 @@ func NewMasterKontrakTCO(db *DB) *MasterKontrakTCO { return &MasterKontrakTCO{db
 
 const pilihKontrakTCO = `ID, IDTREATYYEAR, REINSTYPEID, REINSTYPENAME,
 	       TO_CHAR(TREATYSTARTDATE, 'YYYY-MM-DD HH24:MI:SS'), TO_CHAR(TREATYENDDATE, 'YYYY-MM-DD HH24:MI:SS'),
-	       USERID, TO_CHAR(TGLUPDATE, 'YYYY-MM-DD HH24:MI:SS')`
+	       USERID, TGLUPDATE`
 
 // sqlDaftarKontrakTCO - grid `BrowseTreatyContract_RD` (rule-nya TIDAK diekspor
 // korpus) disaring `InputData.HASIL13 = Param.IDTreatyYear`
@@ -91,7 +94,7 @@ func pindaiKontrakTCO(baca interface{ Scan(...any) error }) (models.KontrakTreat
 	if k.TreatyEndDate, err = uraiTanggalTeks(n[5], "TREATYENDDATE"); err != nil {
 		return k, err
 	}
-	k.TglUpdate, err = uraiTanggalTeks(n[7], "TGLUPDATE")
+	k.TglUpdate, err = waktuWarisanTeks(n[7], "TGLUPDATE")
 	return k, err
 }
 
@@ -141,7 +144,7 @@ func (m *MasterKontrakTCO) Ambil(ctx context.Context, tahunID, id string) (model
 	return k, nil
 }
 
-// Sisip menulis kontrak baru; ID dari `SEQ_T_TREATYCONTRACT` (ADR-0006).
+// Sisip menulis kontrak baru; ID dari `TREATYCONTRACT_SEQ` warisan (ADR-0006).
 func (m *MasterKontrakTCO) Sisip(ctx context.Context, tx *Tx, k models.KontrakTreaty) (string, error) {
 	if tx == nil {
 		return "", errors.New("repository: menyisipkan kontrak menuntut transaksi")
@@ -160,7 +163,7 @@ func (m *MasterKontrakTCO) Sisip(ctx context.Context, tx *Tx, k models.KontrakTr
 	}
 	hasil, err := tx.tx.ExecContext(ctx, q, id, k.IDTreatyYear, kosongJadiNil(k.ReinsTypeID),
 		kosongJadiNil(k.ReinsTypeName), tanggalJadiNil(k.TreatyStartDate), tanggalJadiNil(k.TreatyEndDate),
-		kosongJadiNil(k.UserID), tanggalJadiNil(k.TglUpdate))
+		kosongJadiNil(k.UserID), kosongJadiNil(StempelPegaTCO(k.TglUpdate)))
 	if err != nil {
 		return "", fmt.Errorf("repository: menyisipkan kontrak: %w", err)
 	}
@@ -182,7 +185,7 @@ func (m *MasterKontrakTCO) Perbarui(ctx context.Context, tx *Tx, k models.Kontra
 	}
 	hasil, err := tx.tx.ExecContext(ctx, q, kosongJadiNil(k.ReinsTypeID), kosongJadiNil(k.ReinsTypeName),
 		tanggalJadiNil(k.TreatyStartDate), tanggalJadiNil(k.TreatyEndDate), kosongJadiNil(k.UserID),
-		tanggalJadiNil(k.TglUpdate), k.ID, k.IDTreatyYear)
+		kosongJadiNil(StempelPegaTCO(k.TglUpdate)), k.ID, k.IDTreatyYear)
 	if err != nil {
 		return fmt.Errorf("repository: memperbarui kontrak %s: %w", k.ID, err)
 	}

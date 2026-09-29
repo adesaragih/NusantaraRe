@@ -59,7 +59,6 @@ type GudangBusinessTCO interface {
 	Sisip(ctx context.Context, tx *repository.Tx, b models.BusinessTreaty) (string, error)
 	Perbarui(ctx context.Context, tx *repository.Tx, b models.BusinessTreaty) error
 	Hapus(ctx context.Context, tx *repository.Tx, k models.KombinasiTCO, id string) error
-	Jejak(ctx context.Context, tx *repository.Tx, akunID, barisID, aksi, keterangan string, waktu time.Time) error
 }
 
 // PembacaBusinessMasterTCO membaca master `BUSINESS` (dibaca saja).
@@ -88,9 +87,6 @@ func (businessBelumDisuntik) Perbarui(context.Context, *repository.Tx, models.Bu
 func (businessBelumDisuntik) Hapus(context.Context, *repository.Tx, models.KombinasiTCO, string) error {
 	return ErrGudangBusinessBelumDisuntik
 }
-func (businessBelumDisuntik) Jejak(context.Context, *repository.Tx, string, string, string, string, time.Time) error {
-	return ErrGudangBusinessBelumDisuntik
-}
 
 type masterBusinessBelumDisuntik struct{}
 
@@ -104,11 +100,6 @@ func (masterBusinessBelumDisuntik) Ambil(context.Context, string) (repository.Bu
 type gudangBusinessOracle struct {
 	*repository.MasterBusinessKombinasiTCO
 	db *repository.DB
-}
-
-func (g gudangBusinessOracle) Jejak(ctx context.Context, tx *repository.Tx, akunID, barisID, aksi,
-	keterangan string, waktu time.Time) error {
-	return g.db.SisipJejakTCO(ctx, tx, akunID, repository.TabelBusinessTCO, barisID, aksi, keterangan, waktu)
 }
 
 // GudangBusinessOracle menyusun gudang bisnis di atas Oracle.
@@ -311,18 +302,14 @@ func (l *BusinessTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID, kontra
 		if lain != "" {
 			return GalatBusinessDobel{IDLain: lain, BizCode: b.BizCode}
 		}
-		ket := "bisnis diperbarui"
 		if b.ID == "" {
-			ket = "bisnis baru"
 			if b.ID, err = l.gudang.Sisip(ctx, tx, b); err != nil {
 				return err
 			}
 		} else if err := l.gudang.Perbarui(ctx, tx, b); err != nil {
 			return err
 		}
-		return l.gudang.Jejak(ctx, tx, pelaku.AkunID, b.ID, repository.AksiJejakSimpan,
-			fmt.Sprintf("%s kode %s aktif %s kombinasi %s/%s/%s", ket, b.BizCode, b.IsActive,
-				k.TreatyYear, k.TreatyGroupID, k.ReinsTypeID), b.TglUpdate)
+		return nil
 	})
 	if err != nil {
 		return BusinessTampil{}, err
@@ -346,8 +333,7 @@ func (l *BusinessTCO) Hapus(ctx context.Context, pelaku Pelaku, tahunID, kontrak
 		if err := l.gudang.Hapus(ctx, tx, k, id); err != nil {
 			return err
 		}
-		return l.gudang.Jejak(ctx, tx, pelaku.AkunID, id, repository.AksiJejakHapus,
-			fmt.Sprintf("bisnis dihapus kombinasi %s/%s/%s", k.TreatyYear, k.TreatyGroupID, k.ReinsTypeID), l.jam())
+		return nil
 	})
 	if err != nil {
 		return "", err

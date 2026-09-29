@@ -25,8 +25,7 @@ func layananKaskadeTCO(svc *services.Service) *services.KaskadeTCO {
 		DenganKaskade(services.KaskadeOracle(svc)).
 		DenganKontrak(services.PemegangKontrakOracle(svc)).
 		DenganTahun(services.GudangTahunTreatyOracle(svc)).
-		DenganReinsurer(services.GudangReinsurerOracle(svc)).
-		DenganJejak(services.PerekamJejakKaskadeOracle(svc))
+		DenganReinsurer(services.GudangReinsurerOracle(svc))
 }
 
 const jalurKontrakKaskadeTCO = "/api/treaty-contract-out/tahun/{id}/kontrak/{kid}"

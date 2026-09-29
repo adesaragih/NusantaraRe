@@ -8,7 +8,6 @@ import (
 	"sort"
 	"strings"
 	"testing"
-	"time"
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
@@ -18,7 +17,6 @@ import (
 type gudangBusinessUji struct {
 	baris map[string]models.BusinessTreaty
 	urut  int
-	jejak []string
 	dobel string
 }
 
@@ -66,10 +64,6 @@ func (g *gudangBusinessUji) Hapus(_ context.Context, _ *repository.Tx, k models.
 	delete(g.baris, id)
 	return nil
 }
-func (g *gudangBusinessUji) Jejak(_ context.Context, _ *repository.Tx, akun, baris, aksi, ket string, _ time.Time) error {
-	g.jejak = append(g.jejak, akun+"|"+baris+"|"+aksi+"|"+ket)
-	return nil
-}
 
 type masterBusinessUji struct{}
 
@@ -108,9 +102,6 @@ func TestBusinessSimpanBaru(t *testing.T) {
 	if h.BizName != "UJI BISNIS SATU" || h.TreatyYearID != "1000001" || h.TreatyYear != "2026" ||
 		h.ReinsTypeID != "10003" || h.UserID != "UJI-ADMIN" || !h.Aktif {
 		t.Errorf("hasil: %+v", h)
-	}
-	if len(g.jejak) != 1 || !strings.Contains(g.jejak[0], "bisnis baru") {
-		t.Errorf("jejak: %v", g.jejak)
 	}
 }
 
@@ -151,7 +142,7 @@ func TestBusinessGerbang(t *testing.T) {
 		if !errors.Is(err, k.mau) {
 			t.Errorf("mau %v, dapat %v", k.mau, err)
 		}
-		if len(g.baris)+len(g.jejak) != 0 {
+		if len(g.baris) != 0 {
 			t.Errorf("%v: tetap menulis", k.mau)
 		}
 	}
@@ -173,8 +164,8 @@ func TestBusinessHapus(t *testing.T) {
 	if err != nil || pesan != "Data Dengan ID "+a.ID+" Berhasil di Hapus" {
 		t.Errorf("hapus: %q %v", pesan, err)
 	}
-	if len(g.baris) != 0 || !strings.Contains(g.jejak[len(g.jejak)-1], "|hapus|") {
-		t.Errorf("baris %d jejak %v", len(g.baris), g.jejak)
+	if len(g.baris) != 0 {
+		t.Errorf("baris %d", len(g.baris))
 	}
 	if _, err := l.Hapus(context.Background(), pelakuUjiTCO, "1000001", "1000003", a.ID); !errors.Is(err, services.ErrBusinessTidakAda) {
 		t.Errorf("hapus kedua: %v", err)

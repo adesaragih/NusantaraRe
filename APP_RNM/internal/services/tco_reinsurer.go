@@ -46,7 +46,6 @@ type GudangReinsurerTCO interface {
 	ShareLain(ctx context.Context, tx *repository.Tx, k models.KombinasiTCO, kecualiID string) ([]*apd.Decimal, error)
 	Sisip(ctx context.Context, tx *repository.Tx, r models.ReinsurerTreaty) (string, error)
 	Perbarui(ctx context.Context, tx *repository.Tx, r models.ReinsurerTreaty) error
-	Jejak(ctx context.Context, tx *repository.Tx, akunID, barisID, aksi, keterangan string, waktu time.Time) error
 }
 
 // PemegangKontrakTCO membaca dan mengunci kontrak pembuka kombinasi.
@@ -76,9 +75,6 @@ func (reinsurerBelumDisuntik) Sisip(context.Context, *repository.Tx, models.Rein
 	return "", ErrGudangReinsurerBelumDisuntik
 }
 func (reinsurerBelumDisuntik) Perbarui(context.Context, *repository.Tx, models.ReinsurerTreaty) error {
-	return ErrGudangReinsurerBelumDisuntik
-}
-func (reinsurerBelumDisuntik) Jejak(context.Context, *repository.Tx, string, string, string, string, time.Time) error {
 	return ErrGudangReinsurerBelumDisuntik
 }
 
@@ -119,10 +115,6 @@ func (g gudangReinsurerOracle) Sisip(ctx context.Context, tx *repository.Tx, r m
 }
 func (g gudangReinsurerOracle) Perbarui(ctx context.Context, tx *repository.Tx, r models.ReinsurerTreaty) error {
 	return g.m.Perbarui(ctx, tx, r)
-}
-func (g gudangReinsurerOracle) Jejak(ctx context.Context, tx *repository.Tx, akunID, barisID, aksi,
-	keterangan string, waktu time.Time) error {
-	return g.db.SisipJejakTCO(ctx, tx, akunID, repository.TabelReinsurerTCO, barisID, aksi, keterangan, waktu)
 }
 
 // GudangReinsurerOracle menyusun gudang reinsurer di atas Oracle.
@@ -370,9 +362,7 @@ func (l *ReinsurerTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID, kontr
 		if err := l.kontrak.Kunci(ctx, tx, tahunID, kontrakID); err != nil {
 			return err
 		}
-		ket := "reinsurer diperbarui"
 		if r.ID == "" {
-			ket = "reinsurer baru"
 			r.UserID = pelaku.AkunID
 		} else {
 			lama, err := l.gudang.Ambil(ctx, k, r.ID)
@@ -400,9 +390,7 @@ func (l *ReinsurerTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID, kontr
 		} else if err := l.gudang.Perbarui(ctx, tx, r); err != nil {
 			return err
 		}
-		return l.gudang.Jejak(ctx, tx, pelaku.AkunID, r.ID, repository.AksiJejakSimpan,
-			fmt.Sprintf("%s kombinasi %s/%s/%s share %s total %s", ket, k.TreatyYear, k.TreatyGroupID,
-				k.ReinsTypeID, r.PctShare.Text('f'), total.Text('f')), r.TglUpdate)
+		return nil
 	})
 	if err != nil {
 		return HasilReinsurerTampil{}, err

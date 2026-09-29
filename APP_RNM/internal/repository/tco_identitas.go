@@ -1,10 +1,11 @@
 package repository
 
-// Identitas baris Treaty Contract Out dari sequence - tiket 01 (ADR-0006).
+// Identitas baris Treaty Contract Out dari sequence WARISAN - tiket 01
+// (ADR-0006), tco4: sequence yang procedure `PEGA_*` sendiri pakai.
 //
-// Bentuk warisan dipertahankan (spec §7): `'1' || lpad(seq.nextval, N, '0')`,
-// N = 6 untuk tahun, kontrak, reinsurer, security, business; N = 7 untuk
-// klausul. Pengguna TIDAK PERNAH mengetik identitas (AC 5).
+// Bentuk warisan (spec §7): `'1' || lpad(seq.nextval, N, '0')`, N = 6 untuk
+// tahun, kontrak, reinsurer, business; N = 7 untuk klausul. Security TIDAK
+// punya identitas. Pengguna TIDAK PERNAH mengetik identitas (AC 5).
 //
 // ⛔ PENYIMPANGAN SADAR KECIL dari `lpad`: bila nomor urut punya LEBIH banyak
 // digit daripada lebarnya, Oracle `LPAD` memotongnya DIAM-DIAM dari kanan
@@ -37,11 +38,9 @@ func FormatIdentitasTCO(n int64, lebar int) (string, error) {
 // sequenceDikenalTCO membatasi nama yang boleh disebut di SQL.
 var sequenceDikenalTCO = map[string]int{
 	SeqTahunTCO: LebarIdentitasTCO, SeqKontrakTCO: LebarIdentitasTCO,
-	SeqReinsurerTCO: LebarIdentitasTCO, SeqSecurityTCO: LebarIdentitasTCO,
-	SeqBusinessTCO: LebarIdentitasTCO, SeqKlausulTCO: LebarIdentitasKlausulTCO,
-	SeqJejakTCO: LebarIdentitasTCO,
-	// Tiket 12: lampiran - lebar 9, sebab lampiran jauh lebih banyak daripada
-	// tahun treaty dan ErrIdentitasMelampauiLebar lebih baik tidak pernah terjadi.
+	SeqReinsurerTCO: LebarIdentitasTCO, SeqBusinessTCO: LebarIdentitasTCO,
+	SeqKlausulTCO: LebarIdentitasKlausulTCO,
+	// Tiket 12: lampiran - sementara sampai paket 3 tco4.
 	SeqLampiranTCO: LebarIdentitasLampiranTCO,
 }
 

@@ -8,7 +8,6 @@ import (
 	"sort"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/cockroachdb/apd/v3"
 
@@ -20,7 +19,6 @@ import (
 type gudangKlausulUji struct {
 	baris map[string]models.KlausulTreaty
 	urut  int
-	jejak []string
 	dobel string
 }
 
@@ -69,10 +67,6 @@ func (g *gudangKlausulUji) Sisip(_ context.Context, _ *repository.Tx, k models.K
 }
 func (g *gudangKlausulUji) Perbarui(_ context.Context, _ *repository.Tx, k models.KlausulTreaty) error {
 	g.baris[k.ID] = k
-	return nil
-}
-func (g *gudangKlausulUji) Jejak(_ context.Context, _ *repository.Tx, akun, baris, aksi, ket string, _ time.Time) error {
-	g.jejak = append(g.jejak, akun+"|"+baris+"|"+aksi+"|"+ket)
 	return nil
 }
 
@@ -206,8 +200,8 @@ func TestKlausulIndukEPI(t *testing.T) {
 	k := h.Klausul
 	if k.TreatyYearID != "1000001" || k.TreatyYear != "2026" || k.TreatyDescName != "UJI EPI" || k.ReinsTypeName != "UJI QUOTA SHARE" ||
 		k.ParentReinsTypeID != "00" || k.Medan["Rp"] != "1000000.5" || k.Medan["Usd"] != "80000.04000000" ||
-		k.Kurs != "12.5" || n != 1 || len(g.jejak) != 1 {
-		t.Errorf("induk: %+v kunci %d jejak %v", k, n, g.jejak)
+		k.Kurs != "12.5" || n != 1 {
+		t.Errorf("induk: %+v kunci %d", k, n)
 	}
 }
 
@@ -393,8 +387,5 @@ func TestKlausulIndukBerubahMenghitungUlangAnak(t *testing.T) {
 	c := g.baris[a.Klausul.ID]
 	if c.Rp.Text('f') != "500.00000000" || c.Usd.Text('f') != "40.00000000" {
 		t.Errorf("anak tidak dihitung ulang: Rp %v Usd %v", c.Rp, c.Usd)
-	}
-	if !strings.Contains(strings.Join(g.jejak, "\n"), "dihitung ulang dari induk "+h.Klausul.ID) {
-		t.Errorf("jejak hitung ulang: %v", g.jejak)
 	}
 }

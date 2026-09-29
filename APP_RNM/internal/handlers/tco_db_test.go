@@ -8,7 +8,7 @@
 // Tiket 02: saringan jenis reasuransi hanya terbukti benar terhadap master
 // yang benar-benar memuat ID yang dikecualikan. Tiket 03: identitas dari
 // sequence, upsert ber-ID, anti-dobel sebagai pertanyaan keunikan di basis
-// data, jejak di transaksi yang sama.
+// data (tco4: tabel warisan, nol jejak modul).
 package handlers_test
 
 import (
@@ -228,7 +228,7 @@ func badanTahun(mulai, akhir string) map[string]string {
 
 // Tiket 03: baru -> ID '1'+6 digit dari sequence; daftar ID DESC; perbarui
 // menimpa tanpa baris baru; anti-dobel 409 menyebut baris lain; periode
-// terbalik 422; jejak dua catatan.
+// terbalik 422; bentuk teks warisan tersimpan.
 func TestTahunTreatyLingkaranPenuh(t *testing.T) {
 	u, bersihkan := serverTCO(t)
 	defer bersihkan()
@@ -305,13 +305,15 @@ func TestTahunTreatyLingkaranPenuh(t *testing.T) {
 		t.Errorf("periode terbalik: status = %d, badan = %s", kode, badan)
 	}
 
-	// Jejak (AC 41): dua catatan untuk baris pertama (baru + diperbarui ×2 = 3).
-	jejak, err := u.db.JejakTCO(u.ctx, repository.TabelTahunTCO, baru.ID)
-	if err != nil {
+	// tco4: nol jejak modul (AC 41 gugur - Pega tidak mencatat jejak modul
+	// ini). Yang diperiksa: bentuk teks warisan yang benar-benar tersimpan.
+	var awal, tgl sql.NullString
+	if err := u.sqlDBMentah().QueryRowContext(u.ctx, `SELECT STARTDATE, TGLUPDATE FROM `+u.skema+`.TREATYYEAR WHERE ID = :1`,
+		baru.ID).Scan(&awal, &tgl); err != nil {
 		t.Fatal(err)
 	}
-	if len(jejak) != 3 || jejak[0].AkunID != "UJI-ADMIN" || jejak[0].Aksi != repository.AksiJejakSimpan {
-		t.Errorf("jejak: %+v", jejak)
+	if awal.String != "20251231T170000.000 GMT" || !strings.HasSuffix(tgl.String, " GMT") {
+		t.Errorf("bentuk tersimpan: STARTDATE %q TGLUPDATE %q (mau stempel Pega 00:00 WIB)", awal.String, tgl.String)
 	}
 
 	// Tidak ada -> 404.

@@ -16,6 +16,7 @@ package repository
 // STRUKTUR-TABEL-TREATY-CONTRACT-OUT.md`.
 
 import (
+	"database/sql"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -35,6 +36,34 @@ const (
 	warisanSecurityTCO  = "MTREATYSECURITY"
 	warisanBusinessTCO  = "TREATYBUSINESS"
 	warisanKlausulTCO   = "PROPORTIONALARRG"
+)
+
+// Nama tabel yang repository modul TULIS dan BACA - tabel warisan itu
+// sendiri (tco4). Nama logis dipertahankan supaya pemanggil tidak berubah.
+const (
+	TabelTahunTCO     = warisanTahunTCO
+	TabelKontrakTCO   = warisanKontrakTCO
+	TabelReinsurerTCO = warisanReinsurerTCO
+	TabelSecurityTCO  = warisanSecurityTCO
+	TabelBusinessTCO  = warisanBusinessTCO
+	TabelKlausulTCO   = warisanKlausulTCO
+)
+
+// Sequence WARISAN yang procedure penulis pakai `[data DBA]`
+// (dba-procedures.md): `'1' || lpad(seq.nextval, lebar, '0')`. Nama Oracle
+// tak berkutip tidak peka huruf - `TreatyYear_seq` = `TREATYYEAR_SEQ`.
+//
+// ⛔ MTREATYSECURITY TIDAK punya identitas (tanpa PK, `[data DBA]`): barisnya
+// dikunci `(REAS_ID, TRIM(REAS_SECURITY))` seperti `UpdateMTreatySecurity`.
+const (
+	SeqTahunTCO     = "TREATYYEAR_SEQ"
+	SeqKontrakTCO   = "TREATYCONTRACT_SEQ"
+	SeqReinsurerTCO = "M_TREATYREINSURER_SEQ"
+	SeqBusinessTCO  = "TREATY_BUSINESS_SEQ"
+	SeqKlausulTCO   = "PROPORTIONALARRG_SEQ"
+
+	LebarIdentitasTCO        = 6
+	LebarIdentitasKlausulTCO = 7
 )
 
 // kolomWarisanTCO adalah kolom tiap tabel warisan, VERBATIM, urutan parameter
@@ -117,8 +146,12 @@ func TipeWarisanTCO(tabel, kolom string) TipeWarisan {
 //     memotong `substring(.TreatyStartDate, 0, 4)` sebagai tahun.
 //   - YYYYMMDDTHHMMSS.mmm GMT: stempel DateTime Pega (`TREATYEXCHANGEYEARLY`
 //     dibaca `TO_TIMESTAMP_TZ(STARTDATE, 'YYYYMMDD"T"HH24MISS.FF3 TZR')`,
-//     `GetMasterKursList.xml`). `[dugaan]` bagian tanggalnya adalah tanggal
-//     kalender yang dimaksud - tanpa pergeseran zona (AC 67).
+//     `GetMasterKursList.xml`). ⛔ RALAT 29-09-2026 (tco4): stempel ini
+//     GMT, dan tanggal kalendernya dibaca di zona Asia/Jakarta - Pega sendiri
+//     memformatnya begitu (`SaveTreatyContract_Act` b1479 `@FormatDateTime(…,
+//     "dd/MM/yyyy","Asia/Jakarta")`; `SetTanggalTreatyContract` b567 menambah
+//     8 jam sebelum memakainya). `…T170000.000 GMT` = 00:00 WIB hari BERIKUT.
+//     Dugaan lama "tanpa pergeseran zona" dibantah XML.
 //   - DD/MM/YYYY: bentuk yang procedure `to_date(…,'DD/MM/YYYY')` terima
 //     (`PEGA_TREATYCONTRACT`, `SaveTreatyContract_Act.xml` b1040/b1479).
 //   - YYYY-MM-DD[ HH24:MI:SS]: bentuk utils.ParseTanggal.
@@ -154,11 +187,15 @@ func UraiTanggalWarisanTCO(teks string) (time.Time, bool) {
 		if !b.pola.MatchString(t) {
 			continue
 		}
-		bahan := t
 		if b.nama == "stempel Pega" {
-			bahan = t[:8]
+			w, ok := UraiWaktuWarisanTCO(t)
+			if !ok {
+				return time.Time{}, false
+			}
+			y, m, d := w.In(zonaJakartaTCO).Date()
+			return time.Date(y, m, d, 0, 0, 0, 0, time.UTC), true
 		}
-		hasil, err := time.Parse(b.layout, bahan)
+		hasil, err := time.Parse(b.layout, t)
 		if err != nil {
 			return time.Time{}, false
 		}
@@ -228,4 +265,95 @@ func EkorIdentitasTCO(id string, lebar int) (int64, bool) {
 		return 0, false
 	}
 	return n, true
+}
+
+// ---------------------------------------------------------------------------
+// Tepi TULIS - bentuk teks yang Pega tulis ke kolom VARCHAR2 warisan (tco4).
+// Peta kolom -> bentuk: STRUKTUR-TABEL-TREATY-CONTRACT-OUT.md bab "Bentuk nilai".
+// ---------------------------------------------------------------------------
+
+// zonaJakartaTCO - WIB. Tetap +7 (Indonesia tanpa DST sejak 1964); zona tetap
+// dipakai supaya biner tidak bergantung basis data zona sistem operasi.
+var zonaJakartaTCO = time.FixedZone("WIB", 7*60*60)
+
+// polaStempelPegaTCO - `YYYYMMDDTHHMMSS[.mmm][ GMT]`.
+var polaStempelPegaTCO = regexp.MustCompile(`^(\d{8}T\d{6})(?:\.(\d{1,3}))?(?: GMT)?$`)
+
+// UraiWaktuWarisanTCO membaca stempel Pega sebagai INSTAN (UTC); bentuk
+// tanggal lain dibaca apa adanya (UTC). Kosong = waktu nol, ok.
+func UraiWaktuWarisanTCO(teks string) (time.Time, bool) {
+	t := strings.TrimSpace(teks)
+	if t == "" {
+		return time.Time{}, true
+	}
+	m := polaStempelPegaTCO.FindStringSubmatch(t)
+	if m == nil {
+		return UraiTanggalWarisanTCO(t)
+	}
+	w, err := time.ParseInLocation("20060102T150405", m[1], time.UTC)
+	if err != nil {
+		return time.Time{}, false
+	}
+	if m[2] != "" {
+		ms, _ := strconv.Atoi((m[2] + "00")[:3])
+		w = w.Add(time.Duration(ms) * time.Millisecond)
+	}
+	return w, true
+}
+
+// StempelPegaTCO - bentuk `@getCurrentTimeStamp()`: `YYYYMMDDTHHMMSS.mmm GMT`
+// (UTC). Waktu nol = teks kosong (NULL).
+//
+// `[terverifikasi]` `SaveTreatyYear_Act` b328, `SaveTreatyContract_Act` b1458.
+func StempelPegaTCO(w time.Time) string {
+	if w.IsZero() {
+		return ""
+	}
+	u := w.UTC()
+	return u.Format("20060102T150405") + fmt.Sprintf(".%03d GMT", u.Nanosecond()/int(time.Millisecond))
+}
+
+// StempelTanggalJakartaTCO - tanggal kalender -> stempel Pega pukul 00:00 WIB
+// (bentuk properti DateTime yang dipilih dari kalender, dibaca kembali di
+// zona Jakarta). `[dugaan kuat]` - OQ-TCO-01.
+func StempelTanggalJakartaTCO(tgl time.Time) string {
+	if tgl.IsZero() {
+		return ""
+	}
+	y, m, d := tgl.Date()
+	return StempelPegaTCO(time.Date(y, m, d, 0, 0, 0, 0, zonaJakartaTCO))
+}
+
+// TulisDesimalWarisanTCO - desimal ke kolom teks warisan: titik, tanpa
+// pemisah ribuan, tanpa eksponen, nol di ekor dibuang. nil = NULL.
+//
+// `[dugaan kuat]` bentuk hasil `@toDecimal` Pega (`HitungRpUsd_depan`
+// b293-b294, b382-b383) - OQ-TCO-23. Pembaca menerima titik ATAU koma.
+func TulisDesimalWarisanTCO(d *apd.Decimal) any {
+	if d == nil {
+		return nil
+	}
+	r := new(apd.Decimal).Set(d)
+	r.Reduce(r)
+	// Text('f') menulis bentuk biasa walau Reduce menghasilkan eksponen positif.
+	return r.Text('f')
+}
+
+// tanggalWarisanTeks - kolom VARCHAR2 bertanggal -> tanggal kalender; teks
+// yang tidak dikenal GAGAL TERANG, tidak menjadi kosong diam-diam.
+func tanggalWarisanTeks(v sql.NullString, kolom string) (time.Time, error) {
+	t, ok := UraiTanggalWarisanTCO(v.String)
+	if !ok {
+		return time.Time{}, fmt.Errorf("repository: kolom %s bernilai %q: bentuk tanggal tidak dikenal", kolom, v.String)
+	}
+	return t, nil
+}
+
+// waktuWarisanTeks - kolom VARCHAR2 cap waktu (`TGLUPDATE`) -> instan.
+func waktuWarisanTeks(v sql.NullString, kolom string) (time.Time, error) {
+	t, ok := UraiWaktuWarisanTCO(v.String)
+	if !ok {
+		return time.Time{}, fmt.Errorf("repository: kolom %s bernilai %q: bentuk waktu tidak dikenal", kolom, v.String)
+	}
+	return t, nil
 }

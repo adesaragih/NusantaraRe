@@ -7,7 +7,6 @@ import (
 	"errors"
 	"strings"
 	"testing"
-	"time"
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
@@ -36,16 +35,9 @@ func (k *kaskadeUji) HapusReinsurer(context.Context, *repository.Tx, models.Komb
 	return k.terhapus, nil
 }
 
-type jejakKaskadeUji struct{ baris []string }
-
-func (j *jejakKaskadeUji) rekam(_ context.Context, _ *repository.Tx, akun, tabel, baris, aksi, ket string, _ time.Time) error {
-	j.baris = append(j.baris, strings.Join([]string{akun, tabel, baris, aksi, ket}, "|"))
-	return nil
-}
-
-func layananKaskade(k *kaskadeUji, j *jejakKaskadeUji, dikunci *int) *services.KaskadeTCO {
+func layananKaskade(k *kaskadeUji, dikunci *int) *services.KaskadeTCO {
 	return services.New(nil).KaskadeTCO().DenganKaskade(k).DenganKontrak(kontrakPemegangUji{dikunci: dikunci}).
-		DenganTahun(tahunReinsurerUji{}).DenganReinsurer(reinsurerIndukSec()).DenganJejak(j.rekam).
+		DenganTahun(tahunReinsurerUji{}).DenganReinsurer(reinsurerIndukSec()).
 		DenganTransaksi(transaksiUji).DenganJam(jamUji)
 }
 
@@ -56,50 +48,46 @@ func dampakUji() repository.DampakHapusTCO {
 // AC 43/44: popup menyebut jumlah tiap jenis DAN klausul yang tetap hidup.
 func TestDampakHapusKontrak(t *testing.T) {
 	k := &kaskadeUji{dampak: dampakUji()}
-	d, err := layananKaskade(k, &jejakKaskadeUji{}, new(int)).DampakHapusKontrak(context.Background(), pelakuUjiTCO, "1000001", "1000003")
+	d, err := layananKaskade(k, new(int)).DampakHapusKontrak(context.Background(), pelakuUjiTCO, "1000001", "1000003")
 	if err != nil || d.Reinsurer != 2 || d.Security != 3 || d.Business != 1 || d.KlausulTetap != 5 {
 		t.Errorf("dampak: %+v %v", d, err)
 	}
 	if k.kombinasi.TreatyYear != "2026" || k.kombinasi.TreatyGroupID != "10001" || k.kombinasi.ReinsTypeID != "10003" {
 		t.Errorf("kombinasi: %+v", k.kombinasi)
 	}
-	if _, err := layananKaskade(k, &jejakKaskadeUji{}, new(int)).DampakHapusKontrak(context.Background(), pelakuUjiTCO, "1000001", "1000099"); !errors.Is(err, services.ErrKontrakTidakAda) {
+	if _, err := layananKaskade(k, new(int)).DampakHapusKontrak(context.Background(), pelakuUjiTCO, "1000001", "1000099"); !errors.Is(err, services.ErrKontrakTidakAda) {
 		t.Errorf("kontrak asing: %v", err)
 	}
 }
 
-// AC 42, 45, jejak: kaskade dalam satu transaksi, kontrak dikunci, jejak
-// menyebut jumlah tiap jenis dan klausul yang tidak disentuh; pesan VERBATIM.
+// AC 42, 45: kaskade dalam satu transaksi, kontrak dikunci; pesan VERBATIM.
+// tco4: nol jejak modul (Pega tidak mencatatnya).
 func TestHapusKontrakKaskade(t *testing.T) {
-	k, j, dikunci := &kaskadeUji{dampak: dampakUji(), terhapus: dampakUji()}, &jejakKaskadeUji{}, 0
-	pesan, err := layananKaskade(k, j, &dikunci).HapusKontrak(context.Background(), pelakuUjiTCO, "1000001", "1000003",
+	k, dikunci := &kaskadeUji{dampak: dampakUji(), terhapus: dampakUji()}, 0
+	pesan, err := layananKaskade(k, &dikunci).HapusKontrak(context.Background(), pelakuUjiTCO, "1000001", "1000003",
 		services.KonfirmasiHapus{Reinsurer: 2, Security: 3, Business: 1})
 	if err != nil || pesan != "Data Berhasil di Hapus" || k.dihapus != 1 || dikunci != 1 {
 		t.Fatalf("hapus: %q %v dihapus %d dikunci %d", pesan, err, k.dihapus, dikunci)
-	}
-	if len(j.baris) != 1 || !strings.Contains(j.baris[0], "T_TREATYCONTRACT|1000003|hapus|") ||
-		!strings.Contains(j.baris[0], "2 reinsurer, 3 security, 1 business; 5 klausul tidak disentuh") {
-		t.Errorf("jejak: %v", j.baris)
 	}
 }
 
 // Batal di popup = tidak ada permintaan hapus. Angka yang berubah sejak popup
 // ditolak SEBELUM menghapus; angka terhapus yang berbeda membatalkan transaksi.
 func TestHapusKontrakAngkaHarusSamaDenganPopup(t *testing.T) {
-	k, j := &kaskadeUji{dampak: dampakUji(), terhapus: dampakUji()}, &jejakKaskadeUji{}
-	_, err := layananKaskade(k, j, new(int)).HapusKontrak(context.Background(), pelakuUjiTCO, "1000001", "1000003",
+	k := &kaskadeUji{dampak: dampakUji(), terhapus: dampakUji()}
+	_, err := layananKaskade(k, new(int)).HapusKontrak(context.Background(), pelakuUjiTCO, "1000001", "1000003",
 		services.KonfirmasiHapus{Reinsurer: 2, Security: 2, Business: 1})
-	if !errors.Is(err, services.ErrDampakBerubah) || k.dihapus != 0 || len(j.baris) != 0 {
+	if !errors.Is(err, services.ErrDampakBerubah) || k.dihapus != 0 {
 		t.Errorf("berubah sebelum hapus: %v dihapus %d", err, k.dihapus)
 	}
 	lain := dampakUji()
 	lain.Business = 2
 	k2 := &kaskadeUji{dampak: dampakUji(), terhapus: lain}
-	if _, err := layananKaskade(k2, j, new(int)).HapusKontrak(context.Background(), pelakuUjiTCO, "1000001", "1000003",
-		services.KonfirmasiHapus{Reinsurer: 2, Security: 3, Business: 1}); !errors.Is(err, services.ErrDampakBerubah) || len(j.baris) != 0 {
+	if _, err := layananKaskade(k2, new(int)).HapusKontrak(context.Background(), pelakuUjiTCO, "1000001", "1000003",
+		services.KonfirmasiHapus{Reinsurer: 2, Security: 3, Business: 1}); !errors.Is(err, services.ErrDampakBerubah) {
 		t.Errorf("terhapus berbeda dari hitungan: %v", err)
 	}
-	if _, err := layananKaskade(k, j, new(int)).HapusKontrak(context.Background(), services.Pelaku{}, "1000001", "1000003",
+	if _, err := layananKaskade(k, new(int)).HapusKontrak(context.Background(), services.Pelaku{}, "1000001", "1000003",
 		services.KonfirmasiHapus{}); !errors.Is(err, services.ErrTanpaIdentitas) {
 		t.Errorf("identitas: %v", err)
 	}
@@ -107,8 +95,8 @@ func TestHapusKontrakAngkaHarusSamaDenganPopup(t *testing.T) {
 
 func TestHapusReinsurerKaskade(t *testing.T) {
 	d := repository.DampakHapusTCO{Reinsurer: 1, Security: 2}
-	k, j := &kaskadeUji{dampak: d, terhapus: d}, &jejakKaskadeUji{}
-	l := layananKaskade(k, j, new(int))
+	k := &kaskadeUji{dampak: d, terhapus: d}
+	l := layananKaskade(k, new(int))
 	dt, err := l.DampakHapusReinsurer(context.Background(), pelakuUjiTCO, "1000001", "1000003", "1000007")
 	if err != nil || dt.Security != 2 {
 		t.Fatalf("dampak reinsurer: %+v %v", dt, err)
@@ -117,8 +105,8 @@ func TestHapusReinsurerKaskade(t *testing.T) {
 		t.Errorf("reinsurer asing: %v", err)
 	}
 	pesan, err := l.HapusReinsurer(context.Background(), pelakuUjiTCO, "1000001", "1000003", "1000007", services.KonfirmasiHapus{Reinsurer: 1, Security: 2})
-	if err != nil || !strings.Contains(pesan, "1000007") || !strings.Contains(j.baris[0], "T_TREATYREINSURER|1000007|hapus|reinsurer dihapus beserta 2 security") {
-		t.Errorf("hapus reinsurer: %q %v %v", pesan, err, j.baris)
+	if err != nil || !strings.Contains(pesan, "1000007") {
+		t.Errorf("hapus reinsurer: %q %v", pesan, err)
 	}
 	if _, err := l.HapusReinsurer(context.Background(), pelakuUjiTCO, "1000001", "1000003", "1000007", services.KonfirmasiHapus{Reinsurer: 1, Security: 1}); !errors.Is(err, services.ErrDampakBerubah) {
 		t.Errorf("security berubah: %v", err)
@@ -129,20 +117,17 @@ func TestHapusReinsurerKaskade(t *testing.T) {
 	}
 }
 
-// OQ-TCO-21: cacah kontrak lain terdampak ikut dikonfirmasi dan dicatat jejak.
+// OQ-TCO-21: cacah kontrak lain terdampak ikut dikonfirmasi.
 func TestHapusKontrakBersamaDikonfirmasi(t *testing.T) {
 	d := dampakUji()
 	d.Bersama = 2
-	k, j := &kaskadeUji{dampak: d, terhapus: d}, &jejakKaskadeUji{}
-	if _, err := layananKaskade(k, j, new(int)).HapusKontrak(context.Background(), pelakuUjiTCO, "1000001", "1000003",
+	k := &kaskadeUji{dampak: d, terhapus: d}
+	if _, err := layananKaskade(k, new(int)).HapusKontrak(context.Background(), pelakuUjiTCO, "1000001", "1000003",
 		services.KonfirmasiHapus{Reinsurer: 2, Security: 3, Business: 1}); !errors.Is(err, services.ErrDampakBerubah) || k.dihapus != 0 {
 		t.Errorf("kontrak lain tidak dikonfirmasi: %v (dihapus %d)", err, k.dihapus)
 	}
-	if _, err := layananKaskade(k, j, new(int)).HapusKontrak(context.Background(), pelakuUjiTCO, "1000001", "1000003",
+	if _, err := layananKaskade(k, new(int)).HapusKontrak(context.Background(), pelakuUjiTCO, "1000001", "1000003",
 		services.KonfirmasiHapus{Reinsurer: 2, Security: 3, Business: 1, Bersama: 2}); err != nil || k.dihapus != 1 {
 		t.Fatalf("hapus bersama: %v", err)
-	}
-	if !strings.Contains(j.baris[0], "kombinasi dipakai 2 kontrak lain - anaknya ikut terhapus") {
-		t.Errorf("jejak: %v", j.baris)
 	}
 }

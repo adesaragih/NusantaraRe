@@ -62,7 +62,6 @@ type GudangSecurityTCO interface {
 	Sisip(ctx context.Context, tx *repository.Tx, s models.SecurityReinsurer) (string, error)
 	Perbarui(ctx context.Context, tx *repository.Tx, s models.SecurityReinsurer) error
 	Hapus(ctx context.Context, tx *repository.Tx, reasID, id string) error
-	Jejak(ctx context.Context, tx *repository.Tx, akunID, barisID, aksi, keterangan string, waktu time.Time) error
 }
 
 // PembacaReinsurerTCO membaca satu reinsurer milik kombinasi - induk security.
@@ -90,18 +89,10 @@ func (securityBelumDisuntik) Perbarui(context.Context, *repository.Tx, models.Se
 func (securityBelumDisuntik) Hapus(context.Context, *repository.Tx, string, string) error {
 	return ErrGudangSecurityBelumDisuntik
 }
-func (securityBelumDisuntik) Jejak(context.Context, *repository.Tx, string, string, string, string, time.Time) error {
-	return ErrGudangSecurityBelumDisuntik
-}
 
 type gudangSecurityOracle struct {
 	*repository.MasterSecurityTCO
 	db *repository.DB
-}
-
-func (g gudangSecurityOracle) Jejak(ctx context.Context, tx *repository.Tx, akunID, barisID, aksi,
-	keterangan string, waktu time.Time) error {
-	return g.db.SisipJejakTCO(ctx, tx, akunID, repository.TabelSecurityTCO, barisID, aksi, keterangan, waktu)
 }
 
 // GudangSecurityOracle menyusun gudang security di atas Oracle.
@@ -275,23 +266,17 @@ func (l *SecurityTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID, kontra
 		return SecurityTampil{}, err
 	}
 	tampil := repository.SecurityTCO{SecurityReinsurer: s, ClientName: master.ClientName}
-	waktu := l.jam()
 	err = l.transaksi(ctx, func(tx *repository.Tx) error {
 		if err := l.kontrak.Kunci(ctx, tx, tahunID, kontrakID); err != nil {
 			return err
 		}
-		ket := "security baru"
 		if s.ID != "" {
-			ket = "security diperbarui"
 			lama, err := l.gudang.Ambil(ctx, r.ID, s.ID)
 			if err != nil {
 				return err
 			}
 			// Kolom yang UPDATE warisan tidak sentuh dipertahankan dari barisnya.
 			s.TopID, s.TpTreaty, s.UserID = lama.TopID, lama.TpTreaty, lama.UserID
-			if lama.ReasSecurity != s.ReasSecurity {
-				ket = fmt.Sprintf("security diperbarui (dari %s)", lama.ReasSecurity)
-			}
 		}
 		lain, err := l.gudang.CariDobel(ctx, tx, r.ID, s.ReasSecurity, s.ID)
 		if err != nil {
@@ -307,9 +292,10 @@ func (l *SecurityTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID, kontra
 		} else if err := l.gudang.Perbarui(ctx, tx, s); err != nil {
 			return err
 		}
-		return l.gudang.Jejak(ctx, tx, pelaku.AkunID, s.ID, repository.AksiJejakSimpan,
-			// Reinsurer disebut dengan kode agennya - identitas bisnis yang stabil.
-			fmt.Sprintf("%s %s share %s reinsurer %s", ket, s.ReasSecurity, s.PctShare.Text('f'), r.ReinsurerID), waktu)
+		// tco4: MTREATYSECURITY tanpa identitas - "ID" security = REAS_SECURITY
+		// terpangkas; mengganti nama security mengganti kuncinya.
+		s.ID = strings.TrimSpace(s.ReasSecurity)
+		return nil
 	})
 	if err != nil {
 		return SecurityTampil{}, err
@@ -335,8 +321,7 @@ func (l *SecurityTCO) Hapus(ctx context.Context, pelaku Pelaku, tahunID, kontrak
 		if err := l.gudang.Hapus(ctx, tx, r.ID, id); err != nil {
 			return err
 		}
-		return l.gudang.Jejak(ctx, tx, pelaku.AkunID, id, repository.AksiJejakHapus,
-			"security dihapus reinsurer "+r.ID, l.jam())
+		return nil
 	})
 	if err != nil {
 		return "", err

@@ -1,21 +1,25 @@
 package repository
 
-// Security reinsurer - tiket 06 Treaty Contract Out.
+// Security reinsurer - tiket 06 Treaty Contract Out, tco4: tabel WARISAN
+// `MTREATYSECURITY` (tanpa PK `[data DBA]`).
 //
-// Untuk apa berkas ini: baca/tulis `T_MTREATYSECURITY` dengan struktur bersih
-// (penyimpangan sadar 5) - pengganti tiga SQL mentah warisan:
+// Untuk apa berkas ini: baca/tulis `MTREATYSECURITY` persis seperti tiga SQL
+// warisannya, yang tidak dipanggil tetapi ditiru:
 //
 //	InsertToMTreatySecurity.xml b60   insert ... values (7 nilai POSISIONAL)
-//	UpdateMTreatySecurity.xml b85-89  ... where REAS_ID = .. and trim(REAS_SECURITY) = trim(..)
+//	UpdateMTreatySecurity.xml b85     ... where REAS_ID = .. and trim(REAS_SECURITY) = trim(..)
 //	DeleteSecurityReinsurer.xml b85   ... where REAS_ID = .. and trim(REAS_SECURITY) = trim(..)
 //
-// ⛔ Setiap penulisan berdaftar-kolom (AC 19); setiap pencocokan berkunci `ID`
-// surrogate + `REAS_ID` - nama security tidak pernah menjadi kunci (AC 18) dan
-// tidak ada fungsi pemangkas spasi di SQL mana pun (AC 20).
+// ⛔ Kunci baris = (`REAS_ID`, `TRIM(REAS_SECURITY)`) - seperti Pega. Tabel
+// warisan tidak punya identitas lain; `REAS_SECURITY` CHAR(10) berekor spasi,
+// maka `TRIM` di kedua sisi. `models.SecurityReinsurer.ID` membawa
+// `REAS_SECURITY` yang sudah dipangkas - satu security per reinsurer
+// (OQ-TCO-17, keputusan work owner) menjamin kunci itu unik.
+// RALAT tco4 atas tiket 06 AC 18/AC 20 (ID surrogate, nol TRIM di SQL):
+// tabelnya tidak punya ID.
 //
-// ⛔ `TOP_ID`, `TP_TREATY`, `USER_ID` ditulis NULL EKSPLISIT saat sisip -
-// warisan mengosongkannya (`''`) - dan tidak disentuh saat diperbarui, sama
-// dengan UPDATE warisan. Artinya `[terbuka]` (blocker tiket 06).
+// Sisipan menulis DAFTAR KOLOM bernama (AC 19) dengan nilai yang sama dengan
+// sisipan posisional warisan: `TOP_ID`, `TP_TREATY`, `USER_ID` = `''` (NULL).
 //
 // Dibaca sesudah: tco_reinsurer.go.
 
@@ -24,6 +28,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
+
+	"github.com/cockroachdb/apd/v3"
 
 	"nusantarare/internal/models"
 )
@@ -31,8 +38,9 @@ import (
 // ErrSecurityTidakAda - baris security bukan milik reinsurer itu.
 var ErrSecurityTidakAda = errors.New("repository: security tidak ditemukan pada reinsurer ini")
 
-// kolomSecurityTCO - daftar kolom sisip, BERNAMA (AC 19).
-var kolomSecurityTCO = []string{"ID", "THN_TREATY", "TOP_ID", "TP_TREATY", "REAS_ID", "PCT_SHARE", "USER_ID", "REAS_SECURITY"}
+// kolomSecurityTCO - daftar kolom sisip, BERNAMA (AC 19), urutan posisi
+// `InsertToMTreatySecurity` b60.
+var kolomSecurityTCO = []string{"THN_TREATY", "TOP_ID", "TP_TREATY", "REAS_ID", "PCT_SHARE", "USER_ID", "REAS_SECURITY"}
 
 // SecurityTCO adalah satu baris security beserta nama tampilnya dari master.
 type SecurityTCO struct {
@@ -41,60 +49,64 @@ type SecurityTCO struct {
 	ClientName string
 }
 
-// MasterSecurityTCO membaca dan menulis `T_MTREATYSECURITY`.
+// MasterSecurityTCO membaca dan menulis `MTREATYSECURITY`.
 type MasterSecurityTCO struct{ db *DB }
 
 // NewMasterSecurityTCO menyusun gudangnya.
 func NewMasterSecurityTCO(db *DB) *MasterSecurityTCO { return &MasterSecurityTCO{db: db} }
 
+// pilihSecurityTCO - `PCT_SHARE` VARCHAR2(99) dibaca APA ADANYA (diurai di Go,
+// titik atau koma); kolom CHAR dipangkas di Go.
 func pilihSecurityTCO() string {
-	return "s.ID, s.THN_TREATY, s.TOP_ID, s.TP_TREATY, s.REAS_ID, " + fmt.Sprintf(fmtDesimal, "s.PCT_SHARE") +
-		", s.USER_ID, s.REAS_SECURITY, a.CLIENTNAME"
+	return "s.THN_TREATY, s.TOP_ID, s.TP_TREATY, s.REAS_ID, s.PCT_SHARE, s.USER_ID, s.REAS_SECURITY, a.CLIENTNAME"
 }
 
 // sqlDaftarSecurityTCO - `SelectSecurityReinsurer` saringan `A AND D` (b550):
 // `.THN_TREATY = Param.THN_TREATY` dan `.REAS_ID = Param.REAS_ID`; nama dari
 // master `AGENT` (LEFT JOIN - security yang agennya nonaktif tetap tampil).
+// Urutan `TRIM(REAS_SECURITY)` `[keputusan kami]`: tabel tanpa identitas.
 func sqlDaftarSecurityTCO(tabel, agent string) string {
 	return fmt.Sprintf(`SELECT %s
-	  FROM %s s LEFT JOIN %s a ON a.ID = s.REAS_SECURITY
+	  FROM %s s LEFT JOIN %s a ON a.ID = TRIM(s.REAS_SECURITY)
 	 WHERE s.REAS_ID = :1 AND s.THN_TREATY = :2
-	 ORDER BY s.ID ASC`, pilihSecurityTCO(), tabel, agent)
+	 ORDER BY TRIM(s.REAS_SECURITY) ASC`, pilihSecurityTCO(), tabel, agent)
 }
 
 func sqlAmbilSecurityTCO(tabel, agent string) string {
 	return fmt.Sprintf(`SELECT %s
-	  FROM %s s LEFT JOIN %s a ON a.ID = s.REAS_SECURITY
-	 WHERE s.ID = :1 AND s.REAS_ID = :2`, pilihSecurityTCO(), tabel, agent)
+	  FROM %s s LEFT JOIN %s a ON a.ID = TRIM(s.REAS_SECURITY)
+	 WHERE s.REAS_ID = :1 AND TRIM(s.REAS_SECURITY) = TRIM(:2)`, pilihSecurityTCO(), tabel, agent)
 }
 
-// sqlCariDobelSecurityTCO - security yang sama di bawah reinsurer yang sama,
-// dicocokkan PERSIS (nilai dibersihkan sekali di batas masukan).
+// sqlCariDobelSecurityTCO - security yang sama di bawah reinsurer yang sama;
+// baris yang sedang diubah (kunci lamanya) dikecualikan.
 func sqlCariDobelSecurityTCO(tabel string) string {
-	return fmt.Sprintf(`SELECT ID FROM %s WHERE REAS_ID = :1 AND REAS_SECURITY = :2 AND (:3 IS NULL OR ID <> :4)
-	 ORDER BY ID FETCH FIRST 1 ROWS ONLY`, tabel)
+	return fmt.Sprintf(`SELECT TRIM(REAS_SECURITY) FROM %s
+	 WHERE REAS_ID = :1 AND TRIM(REAS_SECURITY) = TRIM(:2) AND (:3 IS NULL OR TRIM(REAS_SECURITY) <> TRIM(:4))
+	 FETCH FIRST 1 ROWS ONLY`, tabel)
 }
 
 func sqlSisipSecurityTCO(tabel string) string {
 	return fmt.Sprintf(`INSERT INTO %s
-	       (ID, THN_TREATY, TOP_ID, TP_TREATY, REAS_ID, PCT_SHARE, USER_ID, REAS_SECURITY)
-	VALUES (:1, :2, NULL, NULL, :3, :4, NULL, :5)`, tabel)
+	       (THN_TREATY, TOP_ID, TP_TREATY, REAS_ID, PCT_SHARE, USER_ID, REAS_SECURITY)
+	VALUES (:1, NULL, NULL, :2, :3, NULL, :4)`, tabel)
 }
 
 // sqlPerbaruiSecurityTCO - tiga kolom yang UPDATE warisan tulis (b86-b88),
-// berkunci `ID` + `REAS_ID`.
+// berkunci `REAS_ID` + `TRIM(REAS_SECURITY)` LAMA (b89).
 func sqlPerbaruiSecurityTCO(tabel string) string {
 	return fmt.Sprintf(`UPDATE %s
 	   SET THN_TREATY = :1, PCT_SHARE = :2, REAS_SECURITY = :3
-	 WHERE ID = :4 AND REAS_ID = :5`, tabel)
+	 WHERE REAS_ID = :4 AND TRIM(REAS_SECURITY) = TRIM(:5)`, tabel)
 }
 
+// sqlHapusSecurityTCO - `DeleteSecurityReinsurer` b85.
 func sqlHapusSecurityTCO(tabel string) string {
-	return fmt.Sprintf(`DELETE FROM %s WHERE ID = :1 AND REAS_ID = :2`, tabel)
+	return fmt.Sprintf(`DELETE FROM %s WHERE REAS_ID = :1 AND TRIM(REAS_SECURITY) = TRIM(:2)`, tabel)
 }
 
 func pindaiSecurityTCO(baca interface{ Scan(...any) error }) (SecurityTCO, error) {
-	var n [9]sql.NullString
+	var n [8]sql.NullString
 	tujuan := make([]any, len(n))
 	for i := range n {
 		tujuan[i] = &n[i]
@@ -102,12 +114,16 @@ func pindaiSecurityTCO(baca interface{ Scan(...any) error }) (SecurityTCO, error
 	if err := baca.Scan(tujuan...); err != nil {
 		return SecurityTCO{}, err
 	}
-	s := SecurityTCO{SecurityReinsurer: models.SecurityReinsurer{ID: n[0].String, ThnTreaty: n[1].String,
-		TopID: n[2].String, TpTreaty: n[3].String, ReasID: n[4].String, UserID: n[6].String,
-		ReasSecurity: n[7].String}, ClientName: n[8].String}
-	var err error
-	s.PctShare, err = desimalDariTeks(n[5], "PCT_SHARE")
-	return s, err
+	pangkas := func(v sql.NullString) string { return strings.TrimSpace(v.String) }
+	s := SecurityTCO{SecurityReinsurer: models.SecurityReinsurer{ID: pangkas(n[6]), ThnTreaty: pangkas(n[0]),
+		TopID: pangkas(n[1]), TpTreaty: pangkas(n[2]), ReasID: pangkas(n[3]), UserID: pangkas(n[5]),
+		ReasSecurity: pangkas(n[6])}, ClientName: n[7].String}
+	d, alasan, ok := UraiDesimalWarisanTCO(n[4].String)
+	if !ok {
+		return s, fmt.Errorf("repository: kolom PCT_SHARE bernilai %q: %s", n[4].String, alasan)
+	}
+	s.PctShare = d
+	return s, nil
 }
 
 func (m *MasterSecurityTCO) tabelBaca() (string, string, error) {
@@ -122,7 +138,7 @@ func (m *MasterSecurityTCO) tabelBaca() (string, string, error) {
 	return tabel, agent, nil
 }
 
-// Daftar membaca security seorang reinsurer, `ID ASC`.
+// Daftar membaca security seorang reinsurer.
 func (m *MasterSecurityTCO) Daftar(ctx context.Context, reasID, thnTreaty string) ([]SecurityTCO, error) {
 	tabel, agent, err := m.tabelBaca()
 	if err != nil {
@@ -148,7 +164,7 @@ func (m *MasterSecurityTCO) Daftar(ctx context.Context, reasID, thnTreaty string
 	return hasil, rows.Err()
 }
 
-// Ambil membaca satu security milik reinsurer itu.
+// Ambil membaca satu security milik reinsurer itu; `id` = `REAS_SECURITY`.
 func (m *MasterSecurityTCO) Ambil(ctx context.Context, reasID, id string) (SecurityTCO, error) {
 	tabel, agent, err := m.tabelBaca()
 	if err != nil {
@@ -158,7 +174,7 @@ func (m *MasterSecurityTCO) Ambil(ctx context.Context, reasID, id string) (Secur
 	if err := PeriksaSQL(q); err != nil {
 		return SecurityTCO{}, err
 	}
-	s, err := pindaiSecurityTCO(m.db.bacaTCO(ctx).QueryRowContext(ctx, q, id, reasID))
+	s, err := pindaiSecurityTCO(m.db.bacaTCO(ctx).QueryRowContext(ctx, q, reasID, id))
 	if errors.Is(err, sql.ErrNoRows) {
 		return SecurityTCO{}, ErrSecurityTidakAda
 	}
@@ -168,7 +184,8 @@ func (m *MasterSecurityTCO) Ambil(ctx context.Context, reasID, id string) (Secur
 	return s, nil
 }
 
-// CariDobel mencari baris LAIN yang memegang security yang sama.
+// CariDobel mencari baris LAIN yang memegang security yang sama; `kecualiID`
+// = kunci lama baris yang sedang diubah.
 func (m *MasterSecurityTCO) CariDobel(ctx context.Context, tx *Tx, reasID, reasSecurity, kecualiID string) (string, error) {
 	if tx == nil {
 		return "", errors.New("repository: pencarian dobel security menuntut transaksi")
@@ -192,7 +209,7 @@ func (m *MasterSecurityTCO) CariDobel(ctx context.Context, tx *Tx, reasID, reasS
 	return id, nil
 }
 
-// Sisip menulis security baru; ID dari `SEQ_T_MTREATYSECURITY`.
+// Sisip menulis security baru; "identitas"nya = `REAS_SECURITY` terpangkas.
 func (m *MasterSecurityTCO) Sisip(ctx context.Context, tx *Tx, s models.SecurityReinsurer) (string, error) {
 	if tx == nil {
 		return "", errors.New("repository: menyisipkan security menuntut transaksi")
@@ -201,23 +218,20 @@ func (m *MasterSecurityTCO) Sisip(ctx context.Context, tx *Tx, s models.Security
 	if err != nil {
 		return "", err
 	}
-	id, err := m.db.IdentitasBerikutTCO(ctx, tx, SeqSecurityTCO)
-	if err != nil {
-		return "", err
-	}
 	q := sqlSisipSecurityTCO(tabel)
 	if err := PeriksaSQL(q); err != nil {
 		return "", err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, id, kosongJadiNil(s.ThnTreaty), s.ReasID, desimalJadiNil(s.PctShare),
+	hasil, err := tx.tx.ExecContext(ctx, q, kosongJadiNil(s.ThnTreaty), s.ReasID, TulisDesimalWarisanTCO(s.PctShare),
 		s.ReasSecurity)
 	if err != nil {
 		return "", fmt.Errorf("repository: menyisipkan security: %w", err)
 	}
-	return id, pastikanSatuBaris(hasil, "penyisipan security")
+	return strings.TrimSpace(s.ReasSecurity), pastikanSatuBaris(hasil, "penyisipan security")
 }
 
-// Perbarui menimpa tahun, share, dan security - berkunci ID + REAS_ID (AC 18/20).
+// Perbarui menimpa tahun, share, dan security - berkunci `REAS_ID` +
+// `TRIM(REAS_SECURITY)` lama (`s.ID`).
 func (m *MasterSecurityTCO) Perbarui(ctx context.Context, tx *Tx, s models.SecurityReinsurer) error {
 	if tx == nil {
 		return errors.New("repository: memperbarui security menuntut transaksi")
@@ -230,8 +244,8 @@ func (m *MasterSecurityTCO) Perbarui(ctx context.Context, tx *Tx, s models.Secur
 	if err := PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, kosongJadiNil(s.ThnTreaty), desimalJadiNil(s.PctShare), s.ReasSecurity,
-		s.ID, s.ReasID)
+	hasil, err := tx.tx.ExecContext(ctx, q, kosongJadiNil(s.ThnTreaty), TulisDesimalWarisanTCO(s.PctShare),
+		s.ReasSecurity, s.ReasID, s.ID)
 	if err != nil {
 		return fmt.Errorf("repository: memperbarui security %s: %w", s.ID, err)
 	}
@@ -254,7 +268,7 @@ func (m *MasterSecurityTCO) Hapus(ctx context.Context, tx *Tx, reasID, id string
 	if err := PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, id, reasID)
+	hasil, err := tx.tx.ExecContext(ctx, q, reasID, id)
 	if err != nil {
 		return fmt.Errorf("repository: menghapus security %s: %w", id, err)
 	}
@@ -262,4 +276,14 @@ func (m *MasterSecurityTCO) Hapus(ctx context.Context, tx *Tx, reasID, id string
 		return ErrSecurityTidakAda
 	}
 	return pastikanSatuBaris(hasil, "penghapusan security")
+}
+
+// desimalWarisanTCO - teks desimal warisan (VARCHAR2) -> desimal; galat
+// menyebut kolomnya.
+func desimalWarisanTCO(v sql.NullString, kolom string) (*apd.Decimal, error) {
+	d, alasan, ok := UraiDesimalWarisanTCO(v.String)
+	if !ok {
+		return nil, fmt.Errorf("repository: kolom %s bernilai %q: %s", kolom, v.String, alasan)
+	}
+	return d, nil
 }

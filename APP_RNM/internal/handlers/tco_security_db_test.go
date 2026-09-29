@@ -11,7 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/internal/repository"
 	"nusantarare/internal/repository/skemauji"
 )
 
@@ -37,28 +36,32 @@ func TestSecurityLingkaranPenuh(t *testing.T) {
 	_ = json.Unmarshal([]byte(badan), &r)
 	dasar := reas + "/" + r.Reinsurer.ID + "/security"
 
-	// AC 17/18: security berPK surrogate '1' + 6 digit, nama dari master, share desimal persis.
+	// AC 17: nama dari master, share desimal persis. tco4: MTREATYSECURITY tanpa
+	// identitas - "ID" = REAS_SECURITY terpangkas (kunci UpdateMTreatySecurity).
 	kode, badan := u.minta(t, http.MethodPost, dasar, map[string]string{"reasSecurity": "UJI-R2", "pctShare": "33,33333333"}, true)
 	if kode != http.StatusOK {
 		t.Fatalf("POST security: %d %s", kode, badan)
 	}
 	var s struct{ ID, ReasID, ThnTreaty, ReasSecurity, ClientName, PctShare string }
 	_ = json.Unmarshal([]byte(badan), &s)
-	if len(s.ID) != 7 || s.ReasID != r.Reinsurer.ID || s.ThnTreaty != "2026" || s.ClientName != "UJI REAS DUA" ||
+	if s.ID != "UJI-R2" || s.ReasID != r.Reinsurer.ID || s.ThnTreaty != "2026" || s.ClientName != "UJI REAS DUA" ||
 		s.PctShare != "33.33333333" {
 		t.Fatalf("security baru: %+v", s)
 	}
 	// AC 19: tiga kolom [terbuka] NULL eksplisit.
 	var kosong int
-	if err := u.sqlDBMentah().QueryRowContext(u.ctx, `SELECT COUNT(*) FROM `+u.skema+`.T_MTREATYSECURITY
-		 WHERE ID = :1 AND TOP_ID IS NULL AND TP_TREATY IS NULL AND USER_ID IS NULL`, s.ID).Scan(&kosong); err != nil || kosong != 1 {
+	if err := u.sqlDBMentah().QueryRowContext(u.ctx, `SELECT COUNT(*) FROM `+u.skema+`.MTREATYSECURITY
+		 WHERE REAS_ID = :1 AND TRIM(REAS_SECURITY) = :2 AND TOP_ID IS NULL AND TP_TREATY IS NULL AND USER_ID IS NULL`,
+		r.Reinsurer.ID, s.ID).Scan(&kosong); err != nil || kosong != 1 {
 		t.Errorf("kolom [terbuka] tidak NULL: %d %v", kosong, err)
 	}
-	// User story 14: ganti nama -> baris yang SAMA.
+	// User story 14: ganti nama -> baris yang SAMA ditimpa (UpdateMTreatySecurity
+	// berkunci nama LAMA), kuncinya kini nama baru.
 	kode, badan = u.minta(t, http.MethodPut, dasar+"/"+s.ID, map[string]string{"reasSecurity": "UJI-R3", "pctShare": "20"}, true)
-	if kode != http.StatusOK || !strings.Contains(badan, `"id":"`+s.ID+`"`) || !strings.Contains(badan, "UJI REAS TIGA") {
+	if kode != http.StatusOK || !strings.Contains(badan, `"id":"UJI-R3"`) || !strings.Contains(badan, "UJI REAS TIGA") {
 		t.Fatalf("ganti nama: %d %s", kode, badan)
 	}
+	s.ID = "UJI-R3"
 	// Dobel ditolak; security kedua diterima.
 	if kode, _ := u.minta(t, http.MethodPost, dasar, map[string]string{"reasSecurity": "UJI-R3", "pctShare": "1"}, true); kode != http.StatusConflict {
 		t.Errorf("dobel: %d", kode)
@@ -77,17 +80,7 @@ func TestSecurityLingkaranPenuh(t *testing.T) {
 	if kode, badan := u.minta(t, http.MethodGet, reas, nil, true); kode != http.StatusOK || !strings.Contains(badan, `"total":1`) {
 		t.Errorf("hapus security menyentuh reinsurer: %d %s", kode, badan)
 	}
-	jejak, err := u.db.JejakTCO(u.ctx, repository.TabelSecurityTCO, s.ID)
-	if err != nil || len(jejak) != 3 {
-		t.Errorf("jejak security (baru, ubah, hapus): %+v %v", jejak, err)
-	}
-	// FK ON DELETE CASCADE: reinsurer dihapus -> security di bawahnya ikut (tiket 10 memakai ini).
-	if _, err := u.sqlDBMentah().ExecContext(u.ctx, `DELETE FROM `+u.skema+`.T_TREATYREINSURER WHERE ID = :1`, r.Reinsurer.ID); err != nil {
-		t.Fatal(err)
-	}
-	var sisa int
-	if err := u.sqlDBMentah().QueryRowContext(u.ctx, `SELECT COUNT(*) FROM `+u.skema+`.T_MTREATYSECURITY WHERE ID = :1`,
-		s2.ID).Scan(&sisa); err != nil || sisa != 0 {
-		t.Errorf("kaskade FK: %d %v", sisa, err)
-	}
+	// tco4: MTREATYSECURITY tanpa FK - kaskade reinsurer -> security dijalankan
+	// layanan (DeleteFromTreatyReinsurer_Act), diuji tco_kaskade_db_test.go.
+	_ = s2
 }

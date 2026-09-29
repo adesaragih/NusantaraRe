@@ -66,7 +66,6 @@ type GudangKontrakTCO interface {
 	Perbarui(ctx context.Context, tx *repository.Tx, k models.KontrakTreaty) error
 	CariDobel(ctx context.Context, tx *repository.Tx, tahunID, reinsTypeID, kecualiID string) (string, error)
 	JumlahAnakKombinasi(ctx context.Context, tx *repository.Tx, kom models.KombinasiTCO, tahunID string) (int64, error)
-	Jejak(ctx context.Context, tx *repository.Tx, akunID, barisID, aksi, keterangan string, waktu time.Time) error
 }
 
 type gudangKontrakBelumDisuntik struct{}
@@ -89,9 +88,6 @@ func (gudangKontrakBelumDisuntik) Perbarui(context.Context, *repository.Tx, mode
 }
 func (gudangKontrakBelumDisuntik) CariDobel(context.Context, *repository.Tx, string, string, string) (string, error) {
 	return "", ErrGudangKontrakBelumDisuntik
-}
-func (gudangKontrakBelumDisuntik) Jejak(context.Context, *repository.Tx, string, string, string, string, time.Time) error {
-	return ErrGudangKontrakBelumDisuntik
 }
 
 type gudangKontrakOracle struct {
@@ -117,10 +113,6 @@ func (g gudangKontrakOracle) CariDobel(ctx context.Context, tx *repository.Tx, t
 func (g gudangKontrakOracle) JumlahAnakKombinasi(ctx context.Context, tx *repository.Tx, kom models.KombinasiTCO,
 	tahunID string) (int64, error) {
 	return g.m.JumlahAnakKombinasi(ctx, tx, kom, tahunID)
-}
-func (g gudangKontrakOracle) Jejak(ctx context.Context, tx *repository.Tx, akunID, barisID, aksi,
-	keterangan string, waktu time.Time) error {
-	return g.db.SisipJejakTCO(ctx, tx, akunID, repository.TabelKontrakTCO, barisID, aksi, keterangan, waktu)
 }
 
 // GudangKontrakOracle menyusun gudang kontrak di atas Oracle.
@@ -322,17 +314,14 @@ func (k *KontrakTreatyTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID st
 				}
 			}
 		}
-		ket := "kontrak diperbarui"
 		if kontrak.ID == "" {
-			ket = "kontrak baru"
 			if kontrak.ID, err = k.gudang.Sisip(ctx, tx, kontrak); err != nil {
 				return err
 			}
 		} else if err := k.gudang.Perbarui(ctx, tx, kontrak); err != nil {
 			return err
 		}
-		return k.gudang.Jejak(ctx, tx, pelaku.AkunID, kontrak.ID, repository.AksiJejakSimpan,
-			ket+" jenis reasuransi "+kontrak.ReinsTypeID+" tahun treaty "+tahunID, kontrak.TglUpdate)
+		return nil
 	})
 	if err != nil {
 		return KontrakTampil{}, err

@@ -68,12 +68,6 @@ func (kaskadeBelumDisuntik) HapusReinsurer(context.Context, *repository.Tx, mode
 // KaskadeOracle menyusun pelaksana kaskade di atas Oracle.
 func KaskadeOracle(svc *Service) PelaksanaKaskadeTCO { return repository.NewKaskadeTCO(svc.db) }
 
-// PerekamJejakKaskadeOracle - `SisipJejakTCO` di atas Oracle.
-func PerekamJejakKaskadeOracle(svc *Service) func(ctx context.Context, tx *repository.Tx, akunID, tabel, barisID, aksi,
-	keterangan string, waktu time.Time) error {
-	return svc.db.SisipJejakTCO
-}
-
 // DampakTampil adalah isi popup konfirmasi.
 type DampakTampil struct {
 	Kontrak      int64 `json:"kontrak"`
@@ -105,7 +99,6 @@ type KaskadeTCO struct {
 	kontrak   PemegangKontrakTCO
 	tahun     PemeriksaTahunTCO
 	reinsurer PembacaReinsurerTCO
-	jejak     func(ctx context.Context, tx *repository.Tx, akunID, tabel, barisID, aksi, keterangan string, waktu time.Time) error
 	jam       func() time.Time
 	transaksi func(ctx context.Context, fn func(tx *repository.Tx) error) error
 }
@@ -114,9 +107,7 @@ type KaskadeTCO struct {
 func (s *Service) KaskadeTCO() *KaskadeTCO {
 	return &KaskadeTCO{svc: s, kaskade: kaskadeBelumDisuntik{}, kontrak: pemegangKontrakBelumDisuntik{},
 		tahun: gudangTahunTreatyBelumDisuntik{}, reinsurer: reinsurerBelumDisuntik{},
-		jejak: func(context.Context, *repository.Tx, string, string, string, string, string, time.Time) error {
-			return ErrGudangKaskadeBelumDisuntik
-		}, jam: time.Now, transaksi: s.DalamTransaksi}
+		jam: time.Now, transaksi: s.DalamTransaksi}
 }
 
 func (l *KaskadeTCO) salin() *KaskadeTCO { s := *l; return &s }
@@ -146,14 +137,6 @@ func (l *KaskadeTCO) DenganTahun(t PemeriksaTahunTCO) *KaskadeTCO {
 func (l *KaskadeTCO) DenganReinsurer(r PembacaReinsurerTCO) *KaskadeTCO {
 	s := l.salin()
 	s.reinsurer = r
-	return s
-}
-
-// DenganJejak memasang perekam jejak.
-func (l *KaskadeTCO) DenganJejak(j func(ctx context.Context, tx *repository.Tx, akunID, tabel, barisID, aksi,
-	keterangan string, waktu time.Time) error) *KaskadeTCO {
-	s := l.salin()
-	s.jejak = j
 	return s
 }
 
@@ -241,7 +224,7 @@ func (l *KaskadeTCO) HapusKontrak(ctx context.Context, pelaku Pelaku, tahunID, k
 		if terhapus.Bersama > 0 {
 			ket += fmt.Sprintf("; kombinasi dipakai %d kontrak lain - anaknya ikut terhapus (OQ-TCO-21)", terhapus.Bersama)
 		}
-		return l.jejak(c, tx, pelaku.AkunID, repository.TabelKontrakTCO, kontrakID, repository.AksiJejakHapus, ket, l.jam())
+		return nil
 	})
 	if err != nil {
 		return "", err
@@ -304,8 +287,7 @@ func (l *KaskadeTCO) HapusReinsurer(ctx context.Context, pelaku Pelaku, tahunID,
 		if err := periksaKonfirmasi(terhapus, k); err != nil {
 			return err
 		}
-		return l.jejak(c, tx, pelaku.AkunID, repository.TabelReinsurerTCO, reinsurerID, repository.AksiJejakHapus,
-			fmt.Sprintf("reinsurer dihapus beserta %d security", terhapus.Security), l.jam())
+		return nil
 	})
 	if err != nil {
 		return "", err

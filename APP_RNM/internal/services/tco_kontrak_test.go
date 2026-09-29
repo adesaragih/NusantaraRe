@@ -7,7 +7,6 @@ import (
 	"errors"
 	"strings"
 	"testing"
-	"time"
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
@@ -20,7 +19,6 @@ type gudangKontrakUji struct {
 	dobel     string
 	disisip   int
 	diperbaru int
-	jejak     []string
 	anak      int64
 }
 
@@ -61,10 +59,6 @@ func (g *gudangKontrakUji) CariDobel(_ context.Context, _ *repository.Tx, _, _, 
 }
 func (g *gudangKontrakUji) JumlahAnakKombinasi(context.Context, *repository.Tx, models.KombinasiTCO, string) (int64, error) {
 	return g.anak, nil
-}
-func (g *gudangKontrakUji) Jejak(_ context.Context, _ *repository.Tx, akun, baris, aksi, ket string, _ time.Time) error {
-	g.jejak = append(g.jejak, akun+"|"+baris+"|"+aksi+"|"+ket)
-	return nil
 }
 
 type tahunKontrakUji struct{}
@@ -126,8 +120,8 @@ func TestKontrakSimpanBaru(t *testing.T) {
 		k.UserID != "UJI-ADMIN" || k.TglUpdate != "2026-09-28 10:00:00" || k.TreatyStartDate != "2026-01-01" {
 		t.Errorf("hasil: %+v", k)
 	}
-	if g.disisip != 1 || len(g.jejak) != 1 || !strings.Contains(g.jejak[0], "|simpan|kontrak baru") {
-		t.Errorf("sisip %d jejak %v", g.disisip, g.jejak)
+	if g.disisip != 1 {
+		t.Errorf("sisip %d", g.disisip)
 	}
 }
 
@@ -141,8 +135,8 @@ func TestKontrakSimpanPerbarui(t *testing.T) {
 	if _, err := layananKontrak(g).Simpan(context.Background(), pelakuUjiTCO, "1000001", m); err != nil {
 		t.Fatal(err)
 	}
-	if g.disisip != 0 || g.diperbaru != 1 || !strings.Contains(g.jejak[0], "kontrak diperbarui") {
-		t.Errorf("sisip %d perbarui %d jejak %v", g.disisip, g.diperbaru, g.jejak)
+	if g.disisip != 0 || g.diperbaru != 1 {
+		t.Errorf("sisip %d perbarui %d", g.disisip, g.diperbaru)
 	}
 	m.ID = "1000008"
 	if _, err := layananKontrak(g).Simpan(context.Background(), pelakuUjiTCO, "1000001", m); !errors.Is(err, services.ErrKontrakTidakAda) {
@@ -175,7 +169,7 @@ func TestKontrakGerbang(t *testing.T) {
 		if !errors.Is(err, k.mau) {
 			t.Errorf("mau %v, dapat %v", k.mau, err)
 		}
-		if g.disisip+g.diperbaru+len(g.jejak) != 0 {
+		if g.disisip+g.diperbaru != 0 {
 			t.Errorf("%v: tetap menulis", k.mau)
 		}
 	}
@@ -194,7 +188,7 @@ func TestKontrakDobelDitolak(t *testing.T) {
 			t.Errorf("pesan tanpa %q: %s", mau, err)
 		}
 	}
-	if g.disisip+len(g.jejak) != 0 {
+	if g.disisip != 0 {
 		t.Error("dobel tetap menulis")
 	}
 }

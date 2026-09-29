@@ -9,7 +9,7 @@ import (
 func TestSQLKontrakTCO(t *testing.T) {
 	d := sqlDaftarKontrakTCO("S.T")
 	for _, mau := range []string{"WHERE IDTREATYYEAR = :1", "ORDER BY ID DESC", "REINSTYPEID", "REINSTYPENAME",
-		"TO_CHAR(TREATYSTARTDATE", "TO_CHAR(TREATYENDDATE", "USERID", "TO_CHAR(TGLUPDATE"} {
+		"TO_CHAR(TREATYSTARTDATE", "TO_CHAR(TREATYENDDATE", "USERID", "TGLUPDATE"} {
 		if !strings.Contains(d, mau) {
 			t.Errorf("daftar tanpa %q:\n%s", mau, d)
 		}

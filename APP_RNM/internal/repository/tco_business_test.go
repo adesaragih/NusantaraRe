@@ -19,36 +19,26 @@ func TestSQLBusinessTCODaftarTanpaSaringanAktif(t *testing.T) {
 	}
 }
 
-// AC 23: pembaruan menulis SELURUH medan non-kunci - bukan hanya lima kolom
-// prosedur warisan. Setiap kolom sisip (selain kunci) harus ada di SET.
-func TestSQLBusinessTCOPerbaruiSeluruhMedan(t *testing.T) {
-	kunci := map[string]bool{"ID": true, "TREATYYEAR": true, "TREATYGROUPID": true, "REINSTYPEID": true}
-	sisip := sqlSisipBusinessTCO("S.T")
-	daftarKolom := sisip[strings.Index(sisip, "(")+1 : strings.Index(sisip, ")")]
+// tco4 (RALAT AC 23): UPDATE PERSIS `PEGA_TREATYBUSINESS` [data DBA] - hanya
+// ISACTIVE, BIZCODE, BIZNAME, USERID, TGLUPDATE; dibatasi kombinasi.
+func TestSQLBusinessTCOPerbaruiSepertiProcedure(t *testing.T) {
 	set := sqlPerbaruiBusinessTCO("S.T")
 	set = set[strings.Index(set, "SET"):strings.Index(set, "WHERE")]
-	cacah := 0
-	for _, k := range strings.Split(daftarKolom, ",") {
-		k = strings.TrimSpace(k)
-		if kunci[k] {
-			continue
-		}
-		cacah++
-		if !regexp.MustCompile(`\b` + k + ` = :`).MatchString(set) {
-			t.Errorf("kolom %s tidak diperbarui - field terkirim yang tidak tersimpan (AC 23)", k)
-		}
+	var kolom []string
+	for _, m := range regexp.MustCompile(`(\w+) = :\d+`).FindAllStringSubmatch(set, -1) {
+		kolom = append(kolom, m[1])
 	}
-	if cacah != 8 {
-		t.Errorf("kolom non-kunci %d, mau 8 (12 parameter prosedur dikurangi 4 kunci)", cacah)
+	if strings.Join(kolom, ",") != "ISACTIVE,BIZCODE,BIZNAME,USERID,TGLUPDATE" {
+		t.Errorf("SET %v, mau lima kolom UPDATE procedure", kolom)
 	}
-	if !strings.Contains(sqlPerbaruiBusinessTCO("S.T"), "WHERE ID = :9 AND TREATYYEAR = :10 AND TREATYGROUPID = :11 AND REINSTYPEID = :12") {
+	if !strings.Contains(sqlPerbaruiBusinessTCO("S.T"), "WHERE ID = :6 AND TREATYYEAR = :7 AND TREATYGROUPID = :8 AND REINSTYPEID = :9") {
 		t.Error("pembaruan tidak dibatasi kombinasi")
 	}
 }
 
 // AC 63/64: hapus menyentuh SATU tabel; nol tabel dokumen kembar.
 func TestSQLBusinessTCOHapusSatuTabel(t *testing.T) {
-	h := sqlHapusBusinessTCO("S.T_TREATYBUSINESS")
+	h := sqlHapusBusinessTCO("S.TREATYBUSINESS")
 	if strings.Count(strings.ToUpper(h), "DELETE") != 1 || strings.Contains(strings.ToUpper(h), "M_TREATYBUSINESS") {
 		t.Errorf("hapus: %s", h)
 	}

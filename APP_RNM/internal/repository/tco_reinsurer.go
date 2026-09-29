@@ -2,7 +2,7 @@ package repository
 
 // Reinsurer pada kombinasi (tahun, grup, jenis) - tiket 05 Treaty Contract Out.
 //
-// Untuk apa berkas ini: baca/tulis `T_TREATYREINSURER` (meniru logika
+// Untuk apa berkas ini: baca/tulis `TREATYREINSURER` (meniru logika
 // `POOLDATA.PEGA_TREATYREINSURER`, 19 parameter, TANPA memanggilnya) dan
 // pembaca master reinsurer `AGENT` (dibaca saja).
 //
@@ -125,7 +125,10 @@ func (m *MasterReinsurerAgent) Ambil(ctx context.Context, id string) (ReinsurerM
 	return ReinsurerMasterTCO{ID: n[0].String, ClientName: n[1].String, ClientID: n[2].String}, nil
 }
 
-// MasterReinsurerTCO membaca dan menulis `T_TREATYREINSURER`.
+// MasterReinsurerTCO membaca dan menulis tabel WARISAN `TREATYREINSURER` (tco4).
+//
+// ⚠️ `RICOMM`/`PCTSHARE` NUMBER; `STARTDATE`/`ENDDATE`/`TGLUPDATE` VARCHAR2
+// `[data DBA]` - stempel Pega, dibaca lewat pengurai warisan.
 type MasterReinsurerTCO struct{ db *DB }
 
 // NewMasterReinsurerTCO menyusun gudangnya.
@@ -134,8 +137,7 @@ func NewMasterReinsurerTCO(db *DB) *MasterReinsurerTCO { return &MasterReinsurer
 var pilihReinsurerTCO = `ID, TREATYYEAR, TREATYGROUPID, TREATYGROUPNAME, REINSTYPEID, REINSTYPENAME,
 	       REINSURERID, CLIENTID, NAME, ` + fmt.Sprintf(fmtDesimal, "RICOMM") + `, ` +
 	fmt.Sprintf(fmtDesimal, "PCTSHARE") + `, IUDATE, USERID,
-	       TO_CHAR(STARTDATE, 'YYYY-MM-DD HH24:MI:SS'), TO_CHAR(ENDDATE, 'YYYY-MM-DD HH24:MI:SS'),
-	       STATUSON, STDRATING, OPERATORNAME, TO_CHAR(TGLUPDATE, 'YYYY-MM-DD HH24:MI:SS')`
+	       STARTDATE, ENDDATE, STATUSON, STDRATING, OPERATORNAME, TGLUPDATE`
 
 const saringKombinasiTCO = `TREATYYEAR = :1 AND TREATYGROUPID = :2 AND REINSTYPEID = :3`
 
@@ -201,13 +203,13 @@ func pindaiReinsurerTCO(baca interface{ Scan(...any) error }) (models.ReinsurerT
 	if r.PctShare, err = desimalDariTeks(n[10], "PCTSHARE"); err != nil {
 		return r, err
 	}
-	if r.StartDate, err = uraiTanggalTeks(n[13], "STARTDATE"); err != nil {
+	if r.StartDate, err = tanggalWarisanTeks(n[13], "STARTDATE"); err != nil {
 		return r, err
 	}
-	if r.EndDate, err = uraiTanggalTeks(n[14], "ENDDATE"); err != nil {
+	if r.EndDate, err = tanggalWarisanTeks(n[14], "ENDDATE"); err != nil {
 		return r, err
 	}
-	r.TglUpdate, err = uraiTanggalTeks(n[18], "TGLUPDATE")
+	r.TglUpdate, err = waktuWarisanTeks(n[18], "TGLUPDATE")
 	return r, err
 }
 
@@ -302,7 +304,7 @@ func (m *MasterReinsurerTCO) ShareLain(ctx context.Context, tx *Tx, k models.Kom
 	return hasil, rows.Err()
 }
 
-// Sisip menulis reinsurer baru; ID dari `SEQ_T_TREATYREINSURER` (ADR-0006).
+// Sisip menulis reinsurer baru; ID dari `M_TREATYREINSURER_SEQ` warisan (ADR-0006).
 func (m *MasterReinsurerTCO) Sisip(ctx context.Context, tx *Tx, r models.ReinsurerTreaty) (string, error) {
 	if tx == nil {
 		return "", errors.New("repository: menyisipkan reinsurer menuntut transaksi")
@@ -323,8 +325,9 @@ func (m *MasterReinsurerTCO) Sisip(ctx context.Context, tx *Tx, r models.Reinsur
 		kosongJadiNil(r.TreatyGroupName), kosongJadiNil(r.ReinsTypeID), kosongJadiNil(r.ReinsTypeName),
 		kosongJadiNil(r.ReinsurerID), kosongJadiNil(r.ClientID), kosongJadiNil(r.Name),
 		desimalJadiNil(r.Ricomm), desimalJadiNil(r.PctShare), kosongJadiNil(r.IUDate), kosongJadiNil(r.UserID),
-		tanggalJadiNil(r.StartDate), tanggalJadiNil(r.EndDate), kosongJadiNil(r.StatusOn),
-		kosongJadiNil(r.StdRating), kosongJadiNil(r.OperatorName), tanggalJadiNil(r.TglUpdate))
+		kosongJadiNil(StempelTanggalJakartaTCO(r.StartDate)), kosongJadiNil(StempelTanggalJakartaTCO(r.EndDate)),
+		kosongJadiNil(r.StatusOn), kosongJadiNil(r.StdRating), kosongJadiNil(r.OperatorName),
+		kosongJadiNil(StempelPegaTCO(r.TglUpdate)))
 	if err != nil {
 		return "", fmt.Errorf("repository: menyisipkan reinsurer: %w", err)
 	}
@@ -347,8 +350,9 @@ func (m *MasterReinsurerTCO) Perbarui(ctx context.Context, tx *Tx, r models.Rein
 	hasil, err := tx.tx.ExecContext(ctx, q, kosongJadiNil(r.TreatyGroupName), kosongJadiNil(r.ReinsTypeName),
 		kosongJadiNil(r.ReinsurerID), kosongJadiNil(r.ClientID), kosongJadiNil(r.Name),
 		desimalJadiNil(r.Ricomm), desimalJadiNil(r.PctShare), kosongJadiNil(r.IUDate), kosongJadiNil(r.UserID),
-		tanggalJadiNil(r.StartDate), tanggalJadiNil(r.EndDate), kosongJadiNil(r.StatusOn),
-		kosongJadiNil(r.StdRating), kosongJadiNil(r.OperatorName), tanggalJadiNil(r.TglUpdate),
+		kosongJadiNil(StempelTanggalJakartaTCO(r.StartDate)), kosongJadiNil(StempelTanggalJakartaTCO(r.EndDate)),
+		kosongJadiNil(r.StatusOn), kosongJadiNil(r.StdRating), kosongJadiNil(r.OperatorName),
+		kosongJadiNil(StempelPegaTCO(r.TglUpdate)),
 		r.ID, r.TreatyYear, r.TreatyGroupID, r.ReinsTypeID)
 	if err != nil {
 		return fmt.Errorf("repository: memperbarui reinsurer %s: %w", r.ID, err)

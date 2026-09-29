@@ -10,7 +10,6 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/internal/repository"
 	"nusantarare/internal/repository/skemauji"
 )
 
@@ -89,9 +88,5 @@ func TestReinsurerKombinasiLingkaranPenuh(t *testing.T) {
 		map[string]string{"reinsurerId": "UJI-R1", "pctShare": "30", "ricomm": "10"}, true)
 	if kode != http.StatusOK || !strings.Contains(badan, `"totalShare":"96.66666667"`) {
 		t.Errorf("PUT: %d %s", kode, badan)
-	}
-	jejak, err := u.db.JejakTCO(u.ctx, repository.TabelReinsurerTCO, h.Reinsurer.ID)
-	if err != nil || len(jejak) != 2 {
-		t.Errorf("jejak reinsurer: %+v %v", jejak, err)
 	}
 }

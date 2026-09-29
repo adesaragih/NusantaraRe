@@ -20,7 +20,6 @@ import (
 type gudangReinsurerUji struct {
 	baris   map[string]models.ReinsurerTreaty
 	urut    int
-	jejak   []string
 	dikunci int
 }
 
@@ -64,10 +63,6 @@ func (g *gudangReinsurerUji) Perbarui(_ context.Context, _ *repository.Tx, r mod
 		return repository.ErrReinsurerTidakAda
 	}
 	g.baris[r.ID] = r
-	return nil
-}
-func (g *gudangReinsurerUji) Jejak(_ context.Context, _ *repository.Tx, akun, baris, aksi, ket string, _ time.Time) error {
-	g.jejak = append(g.jejak, akun+"|"+baris+"|"+aksi+"|"+ket)
 	return nil
 }
 
@@ -155,8 +150,8 @@ func TestReinsurerSimpanBaruPadaKombinasi(t *testing.T) {
 		r.OperatorName != "UJI-ADMIN" || r.UserID != "UJI-ADMIN" {
 		t.Errorf("hasil: %+v", r)
 	}
-	if h.TotalShare != "33.33333333" || g.dikunci != 1 || len(g.jejak) != 1 {
-		t.Errorf("total %s, kunci %d, jejak %v", h.TotalShare, g.dikunci, g.jejak)
+	if h.TotalShare != "33.33333333" || g.dikunci != 1 {
+		t.Errorf("total %s, kunci %d", h.TotalShare, g.dikunci)
 	}
 }
 
@@ -219,7 +214,7 @@ func TestReinsurerGerbang(t *testing.T) {
 		if !errors.Is(err, k.mau) {
 			t.Errorf("mau %v, dapat %v", k.mau, err)
 		}
-		if len(g.baris)+len(g.jejak) != 0 {
+		if len(g.baris) != 0 {
 			t.Errorf("%v: tetap menulis", k.mau)
 		}
 	}

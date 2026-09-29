@@ -20,7 +20,6 @@ type gudangTahunUji struct {
 	dobel       string
 	disisip     []models.TahunTreaty
 	diperbaru   []models.TahunTreaty
-	jejak       []string
 	perbaruiErr error
 	anak        int64
 }
@@ -51,10 +50,6 @@ func (g *gudangTahunUji) CariDobel(context.Context, *repository.Tx, string, time
 }
 func (g *gudangTahunUji) JumlahAnak(context.Context, *repository.Tx, string) (int64, error) {
 	return g.anak, nil
-}
-func (g *gudangTahunUji) Jejak(_ context.Context, _ *repository.Tx, akun, baris, aksi, ket string, _ time.Time) error {
-	g.jejak = append(g.jejak, akun+"|"+baris+"|"+aksi+"|"+ket)
-	return nil
 }
 
 // transaksiUji menjalankan fn tanpa Oracle (tx nil); gudang palsu mengabaikannya.
@@ -106,9 +101,6 @@ func TestTahunTreatySimpanBaru(t *testing.T) {
 	if len(g.disisip) != 1 || len(g.diperbaru) != 0 {
 		t.Errorf("sisip %d, perbarui %d", len(g.disisip), len(g.diperbaru))
 	}
-	if len(g.jejak) != 1 || g.jejak[0] != "UJI-ADMIN|1000009|simpan|tahun treaty baru" {
-		t.Errorf("jejak: %v", g.jejak)
-	}
 }
 
 // AC 8: ID terisi = pembaruan, bukan baris baru.
@@ -123,16 +115,10 @@ func TestTahunTreatySimpanPerbarui(t *testing.T) {
 	if hasil.ID != "1000001" || len(g.disisip) != 0 || len(g.diperbaru) != 1 {
 		t.Errorf("hasil %+v sisip %d perbarui %d", hasil, len(g.disisip), len(g.diperbaru))
 	}
-	if g.jejak[0] != "UJI-ADMIN|1000001|simpan|tahun treaty diperbarui" {
-		t.Errorf("jejak: %v", g.jejak)
-	}
 	// Baris yang tidak ada: galat repository diteruskan, nol jejak.
 	g2 := &gudangTahunUji{perbaruiErr: repository.ErrTahunTreatyTidakAda}
 	if _, err := layananTahun(g2).Simpan(context.Background(), pelakuUjiTCO, m); !errors.Is(err, services.ErrTahunTreatyTidakAda) {
 		t.Errorf("tidak ada: %v", err)
-	}
-	if len(g2.jejak) != 0 {
-		t.Error("jejak ditulis padahal pembaruan gagal")
 	}
 }
 
@@ -148,7 +134,7 @@ func TestTahunTreatyAntiDobel(t *testing.T) {
 			t.Errorf("pesan tanpa %q: %s", mau, err)
 		}
 	}
-	if len(g.disisip)+len(g.diperbaru)+len(g.jejak) != 0 {
+	if len(g.disisip)+len(g.diperbaru) != 0 {
 		t.Error("dobel tetap menulis")
 	}
 }
@@ -172,7 +158,7 @@ func TestTahunTreatyValidasiSebelumTransaksi(t *testing.T) {
 		if !errors.Is(err, k.mau) {
 			t.Errorf("mau %v, dapat %v", k.mau, err)
 		}
-		if len(g.disisip)+len(g.jejak) != 0 {
+		if len(g.disisip) != 0 {
 			t.Errorf("%v: tetap menulis", k.mau)
 		}
 	}

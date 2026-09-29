@@ -8,7 +8,6 @@ import (
 	"sort"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/cockroachdb/apd/v3"
 
@@ -17,10 +16,10 @@ import (
 	"nusantarare/internal/services"
 )
 
+// gudangSecurityUji meniru MTREATYSECURITY warisan (tco4): tanpa identitas,
+// baris dikunci REAS_SECURITY terpangkas (per reinsurer - uji memakai satu).
 type gudangSecurityUji struct {
 	baris map[string]models.SecurityReinsurer
-	urut  int
-	jejak []string
 }
 
 func (g *gudangSecurityUji) Daftar(_ context.Context, reasID, thn string) ([]repository.SecurityTCO, error) {
@@ -49,16 +48,19 @@ func (g *gudangSecurityUji) CariDobel(_ context.Context, _ *repository.Tx, reasI
 	return "", nil
 }
 func (g *gudangSecurityUji) Sisip(_ context.Context, _ *repository.Tx, s models.SecurityReinsurer) (string, error) {
-	g.urut++
-	s.ID = "100010" + string(rune('0'+g.urut))
+	s.ID = strings.TrimSpace(s.ReasSecurity)
 	g.baris[s.ID] = s
 	return s.ID, nil
 }
+
+// Perbarui - UpdateMTreatySecurity: berkunci nama LAMA (`s.ID`), nama baru ditulis.
 func (g *gudangSecurityUji) Perbarui(_ context.Context, _ *repository.Tx, s models.SecurityReinsurer) error {
 	lama, ada := g.baris[s.ID]
 	if !ada || lama.ReasID != s.ReasID {
 		return repository.ErrSecurityTidakAda
 	}
+	delete(g.baris, s.ID)
+	s.ID = strings.TrimSpace(s.ReasSecurity)
 	g.baris[s.ID] = s
 	return nil
 }
@@ -68,10 +70,6 @@ func (g *gudangSecurityUji) Hapus(_ context.Context, _ *repository.Tx, reasID, i
 		return repository.ErrSecurityTidakAda
 	}
 	delete(g.baris, id)
-	return nil
-}
-func (g *gudangSecurityUji) Jejak(_ context.Context, _ *repository.Tx, akun, baris, aksi, ket string, _ time.Time) error {
-	g.jejak = append(g.jejak, akun+"|"+baris+"|"+aksi+"|"+ket)
 	return nil
 }
 
@@ -111,14 +109,11 @@ func TestSecuritySimpanBaru(t *testing.T) {
 	if b.TopID != "" || b.TpTreaty != "" || b.UserID != "" {
 		t.Errorf("kolom [terbuka] tidak dibiarkan kosong seperti warisan: %+v", b)
 	}
-	if len(g.jejak) != 1 || !strings.Contains(g.jejak[0], "security baru UJI-R2 share 33.33333333 reinsurer UJI-R1") {
-		t.Errorf("jejak: %v", g.jejak)
-	}
 }
 
-// User story 14: mengganti nama security tidak memutus rujukannya - baris yang
-// SAMA (ID sama, REAS_ID sama) yang berubah. Warisan: UPDATE berkunci nama baru
-// tidak mengenai baris mana pun.
+// User story 14: mengganti nama security menimpa baris yang SAMA - seperti
+// UpdateMTreatySecurity b89 (berkunci nama LAMA). tco4: tabel tanpa identitas,
+// maka kunci baris itu kini nama baru.
 func TestSecurityGantiNamaTetapBarisYangSama(t *testing.T) {
 	g := gudangSecurityKosong()
 	l := layananSecurity(g, reinsurerIndukSec())
@@ -132,11 +127,8 @@ func TestSecurityGantiNamaTetapBarisYangSama(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if b.ID != a.ID || len(g.baris) != 1 || g.baris[a.ID].ReasSecurity != "UJI-R2" || g.baris[a.ID].ReasID != "1000007" {
-		t.Errorf("ganti nama memutus rujukan: %+v %+v", b, g.baris)
-	}
-	if !strings.Contains(g.jejak[1], "(dari UJI-R1)") {
-		t.Errorf("jejak ganti nama: %v", g.jejak)
+	if a.ID != "UJI-R1" || b.ID != "UJI-R2" || len(g.baris) != 1 || g.baris["UJI-R2"].ReasID != "1000007" {
+		t.Errorf("ganti nama: %+v %+v", b, g.baris)
 	}
 }
 
@@ -162,7 +154,7 @@ func TestSecurityGerbang(t *testing.T) {
 		if !errors.Is(err, k.mau) {
 			t.Errorf("%s: %v, mau %v", k.nama, err, k.mau)
 		}
-		if len(g.baris) != 0 || len(g.jejak) != 0 {
+		if len(g.baris) != 0 {
 			t.Errorf("%s: gagal tetapi menulis", k.nama)
 		}
 	}
@@ -210,9 +202,6 @@ func TestSecurityHapusSatuBaris(t *testing.T) {
 	}
 	if _, err := l.Hapus(context.Background(), pelakuUjiTCO, "1000001", "1000003", "1000007", a.ID); !errors.Is(err, services.ErrSecurityTidakAda) {
 		t.Errorf("hapus dua kali: %v", err)
-	}
-	if !strings.Contains(g.jejak[len(g.jejak)-1], "security dihapus reinsurer 1000007") {
-		t.Errorf("jejak hapus: %v", g.jejak)
 	}
 }
 

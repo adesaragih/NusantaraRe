@@ -16,11 +16,11 @@ import (
 // sama, dan migrasi modul tidak membuat tabel klausul per jenis.
 func TestKlausulSatuTabel(t *testing.T) {
 	for nama, q := range map[string]string{
-		"daftar": sqlDaftarKlausulTCO("S.T_PROPORTIONALARRG"), "ambil": sqlAmbilKlausulTCO("S.T_PROPORTIONALARRG"),
-		"induk": sqlIndukKlausulTCO("S.T_PROPORTIONALARRG"), "sisip": sqlSisipKlausulTCO("S.T_PROPORTIONALARRG"),
-		"perbarui": sqlPerbaruiKlausulTCO("S.T_PROPORTIONALARRG"), "pct": sqlPctAnakLainTCO("S.T_PROPORTIONALARRG"),
+		"daftar": sqlDaftarKlausulTCO("S.PROPORTIONALARRG"), "ambil": sqlAmbilKlausulTCO("S.PROPORTIONALARRG"),
+		"induk": sqlIndukKlausulTCO("S.PROPORTIONALARRG"), "sisip": sqlSisipKlausulTCO("S.PROPORTIONALARRG"),
+		"perbarui": sqlPerbaruiKlausulTCO("S.PROPORTIONALARRG"), "pct": sqlPctAnakLainTCO("S.PROPORTIONALARRG"),
 	} {
-		if strings.Count(q, "S.T_PROPORTIONALARRG") != 1 {
+		if strings.Count(q, "S.PROPORTIONALARRG") != 1 {
 			t.Errorf("%s tidak memakai tepat satu tabel klausul: %s", nama, q)
 		}
 	}
@@ -82,12 +82,22 @@ func TestSQLKlausulTCO(t *testing.T) {
 	if !strings.Contains(d, "TREATYYEARID = :1 AND TREATYDESCID = :2 AND PARENTREINSTYPEID = :3 ORDER BY ID ASC") {
 		t.Errorf("daftar: %s", d)
 	}
-	q, err := sqlCariDobelKlausulTCO("S.T", []string{models.MedanCoInsMin, models.MedanCoInsMax})
-	if err != nil || !strings.Contains(q, "COINS_MIN = :4 AND COINS_MAX = :5") || !strings.Contains(q, "(:6 IS NULL OR ID <> :7)") {
-		t.Errorf("dobel: %v %s", err, q)
+	q := sqlCariDobelKlausulTCO("S.T")
+	if !strings.Contains(q, "TREATYYEARID = :1 AND TREATYDESCID = :2 AND PARENTREINSTYPEID = :3") ||
+		!strings.Contains(q, "(:4 IS NULL OR ID <> :5)") {
+		t.Errorf("dobel: %s", q)
 	}
-	if _, err := sqlCariDobelKlausulTCO("S.T", []string{"JSONDATA"}); err == nil {
-		t.Error("kunci dobel di luar daftar putih diterima")
+	// tco4: kolom desimal TEKS warisan tidak pernah dibungkus TO_CHAR berformat angka.
+	pilih := pilihKlausulTCO()
+	for _, teks := range []string{"RP", "USD", "PCT", "PCTME", "KURS"} {
+		if strings.Contains(pilih, "TO_CHAR("+teks+",") {
+			t.Errorf("TO_CHAR atas kolom VARCHAR2 %s", teks)
+		}
+	}
+	for _, angka := range []string{"TREATYLIMIT", "COINS_MIN", "COINS_MAX", "MORERP", "MOREUSD"} {
+		if !strings.Contains(pilih, "TO_CHAR("+angka+",") {
+			t.Errorf("kolom NUMBER %s tidak dibaca TO_CHAR ber-NLS", angka)
+		}
 	}
 	for _, s := range []string{d, p, q, sqlSisipKlausulTCO("S.T"), sqlJenisKlausulTCO("S.D"),
 		sqlCariPilihanTCO("S.O", "NAME"), sqlAmbilPilihanTCO("S.C", "INFO"), sqlKunciTahunTCO("S.Y")} {
@@ -115,7 +125,8 @@ func TestPindaiKlausulTCO(t *testing.T) {
 	for i := range nilai {
 		nilai[i] = ""
 	}
-	nilai[0], nilai[5], nilai[17], nilai[22], nilai[24], nilai[14] = "10000001", "10009", "12.5", "00", "1000000.5", "2026-09-29 10:00:00"
+	// tco4: PCT/RP teks warisan - koma diterima.
+	nilai[0], nilai[5], nilai[17], nilai[22], nilai[24], nilai[14] = "10000001", "10009", "12,5", "00", "1000000.5", "2026-09-29 10:00:00"
 	k, err := pindaiKlausulTCO(barisPalsu{nilai: nilai})
 	if err != nil {
 		t.Fatal(err)
@@ -138,5 +149,26 @@ func TestKlausulMenulisKolomHilir(t *testing.T) {
 		if !tulis[k] {
 			t.Errorf("kolom hilir %s tidak ditulis penulis klausul", k)
 		}
+	}
+}
+
+// tco4: kunci dobel dibandingkan di Go - nilai desimal sama walau teksnya beda,
+// kosong tidak pernah sama, medan di luar daftar putih ditolak.
+func TestMedanSamaKlausulTCO(t *testing.T) {
+	d := func(teks string) *apd.Decimal {
+		v, _, _ := UraiDesimalWarisanTCO(teks)
+		return v
+	}
+	a := models.KlausulTreaty{Pct: d("12.5"), Layer: "UJI-L1"}
+	b := models.KlausulTreaty{Pct: d("12,50"), Layer: " UJI-L1 "}
+	for medan, mau := range map[string]bool{models.MedanPct: true, models.MedanLayer: true, models.MedanRp: false,
+		models.MedanMethod: false} {
+		sama, err := medanSamaKlausulTCO(a, b, medan)
+		if err != nil || sama != mau {
+			t.Errorf("%s: %v %v, mau %v", medan, sama, err, mau)
+		}
+	}
+	if _, err := medanSamaKlausulTCO(a, b, "JSONDATA"); err == nil {
+		t.Error("kunci dobel di luar daftar putih diterima")
 	}
 }

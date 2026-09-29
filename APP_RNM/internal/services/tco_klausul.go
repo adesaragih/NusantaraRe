@@ -67,7 +67,6 @@ type GudangKlausulTCO interface {
 	CariDobel(ctx context.Context, tx *repository.Tx, k models.KlausulTreaty, kunci []string) (string, error)
 	Sisip(ctx context.Context, tx *repository.Tx, k models.KlausulTreaty) (string, error)
 	Perbarui(ctx context.Context, tx *repository.Tx, k models.KlausulTreaty) error
-	Jejak(ctx context.Context, tx *repository.Tx, akunID, barisID, aksi, keterangan string, waktu time.Time) error
 }
 
 // PembacaMasterKlausulTCO membaca master TREATYDESC / OCCUPATION / CLAUSE.
@@ -106,9 +105,6 @@ func (klausulBelumDisuntik) Sisip(context.Context, *repository.Tx, models.Klausu
 func (klausulBelumDisuntik) Perbarui(context.Context, *repository.Tx, models.KlausulTreaty) error {
 	return ErrGudangKlausulBelumDisuntik
 }
-func (klausulBelumDisuntik) Jejak(context.Context, *repository.Tx, string, string, string, string, time.Time) error {
-	return ErrGudangKlausulBelumDisuntik
-}
 func (klausulBelumDisuntik) JenisKlausul(context.Context, string) ([]repository.JenisKlausulMasterTCO, error) {
 	return nil, ErrGudangKlausulBelumDisuntik
 }
@@ -131,11 +127,6 @@ func (pengunciTahunBelumDisuntik) Ambil(context.Context, string) (models.TahunTr
 type gudangKlausulOracle struct {
 	*repository.MasterKlausulTCO
 	db *repository.DB
-}
-
-func (g gudangKlausulOracle) Jejak(ctx context.Context, tx *repository.Tx, akunID, barisID, aksi,
-	keterangan string, waktu time.Time) error {
-	return g.db.SisipJejakTCO(ctx, tx, akunID, repository.TabelKlausulTCO, barisID, aksi, keterangan, waktu)
 }
 
 // GudangKlausulOracle menyusun gudang klausul di atas Oracle.
@@ -532,9 +523,7 @@ func (l *KlausulTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID string, 
 				return fmt.Errorf("%w: induk %s memiliki %d baris anak", ErrKlausulIndukBeranak, k.ID, len(anak))
 			}
 		}
-		ket := "klausul " + a.Jenis + " diperbarui"
 		if k.ID == "" {
-			ket = "klausul " + a.Jenis + " baru"
 			if k.ID, err = l.gudang.Sisip(ctx, tx, k); err != nil {
 				return err
 			}
@@ -543,7 +532,7 @@ func (l *KlausulTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID string, 
 		} else if err := l.hitungUlangAnak(repository.DenganBacaTxTCO(ctx, tx), tx, pelaku, a, lama, k); err != nil {
 			return err
 		}
-		return l.gudang.Jejak(ctx, tx, pelaku.AkunID, k.ID, repository.AksiJejakSimpan, ket, k.TglUpdate)
+		return nil
 	})
 	if err != nil {
 		return HasilKlausulTampil{}, err
@@ -627,7 +616,7 @@ func (l *KlausulTCO) hitungUlangAnak(ctx context.Context, tx *repository.Tx, pel
 	if a.Anak || induk.ReinsTypeID == "" {
 		return nil
 	}
-	aturanAnak, ada := models.CariAturanKlausul(a.DescID, true, "")
+	_, ada := models.CariAturanKlausul(a.DescID, true, "")
 	if !ada || (desimalSama(lama.Rp, induk.Rp) && desimalSama(lama.Usd, induk.Usd)) {
 		return nil
 	}
@@ -645,10 +634,6 @@ func (l *KlausulTCO) hitungUlangAnak(ctx context.Context, tx *repository.Tx, pel
 		}
 		c.Rp, c.Usd, c.UserID, c.TglUpdate = rp, usd, pelaku.AkunID, induk.TglUpdate
 		if err := l.gudang.Perbarui(ctx, tx, c); err != nil {
-			return err
-		}
-		if err := l.gudang.Jejak(ctx, tx, pelaku.AkunID, c.ID, repository.AksiJejakSimpan,
-			"klausul "+aturanAnak.Jenis+" dihitung ulang dari induk "+induk.ID, induk.TglUpdate); err != nil {
 			return err
 		}
 	}

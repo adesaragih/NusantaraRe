@@ -72,7 +72,7 @@ func TestKaskadeHapusKontrakKlausulTetapHidup(t *testing.T) {
 		t.Fatalf("business: %d %s", kode, bd)
 	}
 	// Baris bisnis lama tanpa TREATYYEARID - kaskade wajib tahan NULL.
-	if _, err := u.sqlDBMentah().ExecContext(u.ctx, `INSERT INTO `+u.skema+`.T_TREATYBUSINESS
+	if _, err := u.sqlDBMentah().ExecContext(u.ctx, `INSERT INTO `+u.skema+`.TREATYBUSINESS
 		 (ID, ISACTIVE, TREATYYEAR, TREATYYEARID, TREATYGROUPID, REINSTYPEID, BIZCODE) VALUES ('UJI-BN1', '1', '2026', NULL, '10001', '10003', 'UJI-B9')`); err != nil {
 		t.Fatal(err)
 	}
@@ -103,10 +103,10 @@ func TestKaskadeHapusKontrakKlausulTetapHidup(t *testing.T) {
 		return n
 	}
 	s := u.skema
-	if n := hitung(`SELECT COUNT(*) FROM `+s+`.T_TREATYREINSURER WHERE REINSTYPEID = '10003'`) +
-		hitung(`SELECT COUNT(*) FROM `+s+`.T_MTREATYSECURITY`) +
-		hitung(`SELECT COUNT(*) FROM `+s+`.T_TREATYBUSINESS WHERE REINSTYPEID = '10003'`) +
-		hitung(`SELECT COUNT(*) FROM `+s+`.T_TREATYCONTRACT WHERE ID = :1`, a); n != 0 {
+	if n := hitung(`SELECT COUNT(*) FROM `+s+`.TREATYREINSURER WHERE REINSTYPEID = '10003'`) +
+		hitung(`SELECT COUNT(*) FROM `+s+`.MTREATYSECURITY`) +
+		hitung(`SELECT COUNT(*) FROM `+s+`.TREATYBUSINESS WHERE REINSTYPEID = '10003'`) +
+		hitung(`SELECT COUNT(*) FROM `+s+`.TREATYCONTRACT WHERE ID = :1`, a); n != 0 {
 		t.Errorf("anak tersisa: %d", n)
 	}
 	// Klausul TETAP HIDUP dan terbaca (AC 44); kontrak lain tidak tersentuh.
@@ -114,12 +114,8 @@ func TestKaskadeHapusKontrakKlausulTetapHidup(t *testing.T) {
 	if kode != http.StatusOK || !strings.Contains(badan, `"total":1`) {
 		t.Errorf("klausul ikut terhapus: %d %s", kode, badan)
 	}
-	if n := hitung(`SELECT COUNT(*) FROM `+s+`.T_TREATYREINSURER WHERE ID = :1`, rb); n != 1 {
+	if n := hitung(`SELECT COUNT(*) FROM `+s+`.TREATYREINSURER WHERE ID = :1`, rb); n != 1 {
 		t.Errorf("reinsurer kontrak lain terhapus")
-	}
-	if n := hitung(`SELECT COUNT(*) FROM `+s+`.T_TREATYCO_JEJAK WHERE TABEL = 'T_TREATYCONTRACT' AND BARIS_ID = :1 AND AKSI = 'hapus'
-		 AND KETERANGAN LIKE '%2 reinsurer, 1 security, 2 business; 1 klausul tidak disentuh; kombinasi dipakai 1 kontrak lain%'`, a); n != 1 {
-		t.Errorf("jejak hapus kontrak: %d", n)
 	}
 	// Hapus reinsurer kontrak lain: popup 0 security; Ya -> hilang.
 	kode, badan = u.minta(t, http.MethodGet, dasarTahun+"/kontrak/"+b+"/reinsurer/"+rb+"/dampak-hapus", nil, true)
@@ -127,7 +123,7 @@ func TestKaskadeHapusKontrakKlausulTetapHidup(t *testing.T) {
 		t.Errorf("dampak reinsurer: %d %s", kode, badan)
 	}
 	if kode, _ := u.minta(t, http.MethodDelete, dasarTahun+"/kontrak/"+b+"/reinsurer/"+rb+"?security=0", nil, true); kode != http.StatusOK ||
-		hitung(`SELECT COUNT(*) FROM `+s+`.T_TREATYREINSURER WHERE ID = :1`, rb) != 0 {
+		hitung(`SELECT COUNT(*) FROM `+s+`.TREATYREINSURER WHERE ID = :1`, rb) != 0 {
 		t.Errorf("hapus reinsurer: %d", kode)
 	}
 }

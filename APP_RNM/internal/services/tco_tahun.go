@@ -70,8 +70,6 @@ type GudangTahunTreatyTCO interface {
 	CariDobel(ctx context.Context, tx *repository.Tx, grupID string, mulai, akhir time.Time,
 		kecualiID string) (string, error)
 	JumlahAnak(ctx context.Context, tx *repository.Tx, tahunID string) (int64, error)
-	Jejak(ctx context.Context, tx *repository.Tx, akunID, barisID, aksi, keterangan string,
-		waktu time.Time) error
 }
 
 type gudangTahunTreatyBelumDisuntik struct{}
@@ -93,9 +91,6 @@ func (gudangTahunTreatyBelumDisuntik) CariDobel(context.Context, *repository.Tx,
 }
 func (gudangTahunTreatyBelumDisuntik) JumlahAnak(context.Context, *repository.Tx, string) (int64, error) {
 	return 0, ErrGudangTahunTreatyBelumDisuntik
-}
-func (gudangTahunTreatyBelumDisuntik) Jejak(context.Context, *repository.Tx, string, string, string, string, time.Time) error {
-	return ErrGudangTahunTreatyBelumDisuntik
 }
 
 type gudangTahunTreatyOracle struct {
@@ -121,10 +116,6 @@ func (g gudangTahunTreatyOracle) CariDobel(ctx context.Context, tx *repository.T
 }
 func (g gudangTahunTreatyOracle) JumlahAnak(ctx context.Context, tx *repository.Tx, tahunID string) (int64, error) {
 	return g.baca.JumlahAnak(ctx, tx, tahunID)
-}
-func (g gudangTahunTreatyOracle) Jejak(ctx context.Context, tx *repository.Tx, akunID, barisID, aksi,
-	keterangan string, waktu time.Time) error {
-	return g.svc.db.SisipJejakTCO(ctx, tx, akunID, repository.TabelTahunTCO, barisID, aksi, keterangan, waktu)
 }
 
 // GudangTahunTreatyOracle adalah gudang sungguhan, dipasang handler.
@@ -344,18 +335,16 @@ func (t *TahunTreatyTCO) Simpan(ctx context.Context, pelaku Pelaku, masuk TahunT
 				}
 			}
 		}
-		keterangan := "tahun treaty diperbarui"
 		if model.ID == "" {
 			id, err := t.gudang.Sisip(ctx, tx, model)
 			if err != nil {
 				return err
 			}
 			model.ID = id
-			keterangan = "tahun treaty baru"
 		} else if err := t.gudang.Perbarui(ctx, tx, model); err != nil {
 			return err
 		}
-		return t.gudang.Jejak(ctx, tx, pelaku.AkunID, model.ID, repository.AksiJejakSimpan, keterangan, saat)
+		return nil
 	})
 	if err != nil {
 		return TahunTreatyTampil{}, err

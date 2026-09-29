@@ -211,8 +211,8 @@ func Pasang(ctx context.Context, db *sql.DB, skema string) error {
 		}
 	}
 
-	// Tiruan enam tabel warisan Treaty Contract Out (tiket 01 modul itu,
-	// tco2) - sumber uji migrasi datanya. Ditambahkan ADITIF 28-09-2026.
+	// Tiruan enam tabel warisan Treaty Contract Out + sequence warisannya -
+	// tco4: tabel yang modul itu tulis dan baca langsung. ADITIF 28/29-09-2026.
 	for _, q := range ddlTiruanTCO(skema) {
 		if _, err := db.ExecContext(ctx, q); err != nil {
 			if !strings.Contains(err.Error(), "ORA-00955") {
@@ -235,6 +235,15 @@ func Bongkar(ctx context.Context, db *sql.DB, skema string) error {
 		if _, err := db.ExecContext(ctx, q); err != nil {
 			if !strings.Contains(err.Error(), "ORA-00942") { // tabel tidak ada
 				return fmt.Errorf("skemauji: membongkar tiruan %s: %w", nama, err)
+			}
+		}
+	}
+	// Treaty Contract Out tco4 (aditif 29-09-2026): sequence warisan tiruan.
+	for _, nama := range namaSequenceTiruanTCO {
+		q := fmt.Sprintf(`DROP SEQUENCE %s.%s`, skema, nama)
+		if _, err := db.ExecContext(ctx, q); err != nil {
+			if !strings.Contains(err.Error(), "ORA-02289") { // sequence tidak ada
+				return fmt.Errorf("skemauji: membongkar sequence tiruan %s: %w", nama, err)
 			}
 		}
 	}

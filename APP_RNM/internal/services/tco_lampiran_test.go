@@ -130,7 +130,6 @@ type gudangLampiranUji struct {
 	mu         sync.Mutex
 	baris      map[string]models.LampiranTCO
 	urut       int
-	jejak      []string
 	gagalSisip error
 	antrean    *antreanLampiranUji
 }
@@ -213,25 +212,6 @@ func (g *gudangLampiranUji) TandaiTerkirim(_ context.Context, _ *repository.Tx, 
 	l.TStorageID = storageID
 	g.baris[id] = l
 	return nil
-}
-
-func (g *gudangLampiranUji) Jejak(_ context.Context, _ *repository.Tx, akun, baris, aksi, ket string, _ time.Time) error {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	g.jejak = append(g.jejak, akun+"|"+baris+"|"+aksi+"|"+ket)
-	return nil
-}
-
-func (g *gudangLampiranUji) jejakBeraksi(aksi string) int {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	n := 0
-	for _, j := range g.jejak {
-		if strings.Split(j, "|")[2] == aksi {
-			n++
-		}
-	}
-	return n
 }
 
 // penyimpananLampiranUji meniru penyimpanan berkas: peta kunci -> isi.
@@ -420,9 +400,6 @@ func TestLampiranUnggahSampaiTerkirim(t *testing.T) {
 	if sisa := r.berkasAntre(t); len(sisa) != 0 {
 		t.Errorf("berkas antrean tertinggal sesudah terkirim: %v", sisa)
 	}
-	if r.gudang.jejakBeraksi(repository.AksiJejakUnggah) != 1 {
-		t.Errorf("jejak unggah: %v", r.gudang.jejak)
-	}
 	if r.antrean.cacahStatus(services.JenisEfekStorageUnggah, repository.StatusEfekSelesai) != 1 {
 		t.Error("efek unggah tidak selesai")
 	}
@@ -485,8 +462,9 @@ func TestLampiranMenyerahTerlihat(t *testing.T) {
 	r := rakitanLampiran(t)
 	r.simpan.setelGagal(services.ErrPenyimpananBelumDisetujui, false)
 	h := r.unggah(t, "1000001", "a.pdf", "ISI")
-	if h.Lampiran.Status != models.StatusLampiranGagal || r.gudang.jejakBeraksi(repository.AksiJejakMenyerah) != 1 {
-		t.Errorf("permanen: status %q, jejak %v", h.Lampiran.Status, r.gudang.jejak)
+	// tco4: nol jejak modul - "menyerah" terlihat dari status outbox.
+	if h.Lampiran.Status != models.StatusLampiranGagal || r.antrean.cacahStatus(services.JenisEfekStorageUnggah, repository.StatusEfekGagalPermanen) != 1 {
+		t.Errorf("permanen: status %q", h.Lampiran.Status)
 	}
 
 	r2 := rakitanLampiran(t)
@@ -502,8 +480,8 @@ func TestLampiranMenyerahTerlihat(t *testing.T) {
 	if e.status != repository.StatusEfekGagalPermanen || e.percobaan > 20 {
 		t.Errorf("sementara: status %q sesudah %d percobaan", e.status, e.percobaan)
 	}
-	if r2.gudang.jejakBeraksi(repository.AksiJejakMenyerah) != 1 {
-		t.Errorf("jejak menyerah: %v", r2.gudang.jejak)
+	if r2.antrean.cacahStatus(services.JenisEfekStorageUnggah, repository.StatusEfekGagalPermanen) != 1 {
+		t.Error("outbox tidak berstatus gagal permanen")
 	}
 }
 
@@ -517,8 +495,8 @@ func TestLampiranUlangiSesudahGagal(t *testing.T) {
 	if err != nil || u.Lampiran.Status != models.StatusLampiranTerkirim {
 		t.Fatalf("ulangi: %+v %v", u, err)
 	}
-	if r.simpan.cacah() != 1 || r.gudang.jejakBeraksi(repository.AksiJejakUlangi) != 1 {
-		t.Errorf("berkas %d, jejak %v", r.simpan.cacah(), r.gudang.jejak)
+	if r.simpan.cacah() != 1 {
+		t.Errorf("berkas %d", r.simpan.cacah())
 	}
 }
 
@@ -610,8 +588,8 @@ func TestLampiranHapusBerkasSudahTidakAda(t *testing.T) {
 	if _, err := r.l.Hapus(context.Background(), pelakuUjiTCO, "1000001", h.Lampiran.ID); err != nil {
 		t.Fatal(err)
 	}
-	if len(r.gudang.baris) != 0 || r.gudang.jejakBeraksi(repository.AksiJejakHapus) != 1 {
-		t.Errorf("rekam %d, jejak %v", len(r.gudang.baris), r.gudang.jejak)
+	if len(r.gudang.baris) != 0 {
+		t.Errorf("rekam %d", len(r.gudang.baris))
 	}
 	if r.antrean.cacahStatus(services.JenisEfekStorageHapus, repository.StatusEfekSelesai) != 1 {
 		t.Error("efek hapus tidak selesai - berkas yang sudah tidak ada dianggap kegagalan")

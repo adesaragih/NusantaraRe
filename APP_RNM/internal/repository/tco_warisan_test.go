@@ -9,14 +9,17 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"nusantarare/pkg/utils"
 )
 
 func TestUraiTanggalWarisanTCOMengenalBentukYangDikenal(t *testing.T) {
 	kasus := map[string]string{
-		"20260131":                "2026-01-31 00:00:00",
-		"20260131T170000.000 GMT": "2026-01-31 00:00:00",
+		"20260131": "2026-01-31 00:00:00",
+		// RALAT tco4: stempel GMT dibaca di zona Jakarta - 17:00 GMT = 00:00 WIB esok.
+		"20260131T170000.000 GMT": "2026-02-01 00:00:00",
+		"20260131T000000.000 GMT": "2026-01-31 00:00:00",
 		"31/01/2026":              "2026-01-31 00:00:00",
 		"2026-01-31":              "2026-01-31 00:00:00",
 		"2026-01-31 10:20:30":     "2026-01-31 10:20:30",
@@ -146,5 +149,41 @@ func TestTCONolTabelBaru(t *testing.T) {
 	}
 	if berkas == 0 {
 		t.Fatal("nol berkas migrasi terbaca; pembacanya yang rusak")
+	}
+}
+
+// Tepi tulis: stempel Pega, tanggal Jakarta, dan desimal - dua arah.
+func TestTepiTulisWarisanTCODuaArah(t *testing.T) {
+	w := time.Date(2026, 9, 29, 5, 6, 7, 891_000_000, time.UTC)
+	if s := StempelPegaTCO(w); s != "20260929T050607.891 GMT" {
+		t.Errorf("stempel %q", s)
+	}
+	if b, ok := UraiWaktuWarisanTCO(StempelPegaTCO(w)); !ok || !b.Equal(w) {
+		t.Errorf("stempel pulang %v %v", b, ok)
+	}
+	if StempelPegaTCO(time.Time{}) != "" {
+		t.Error("waktu nol harus teks kosong (NULL)")
+	}
+	tgl := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	s := StempelTanggalJakartaTCO(tgl)
+	if s != "20251231T170000.000 GMT" {
+		t.Errorf("tanggal Jakarta %q, mau 00:00 WIB = 17:00 GMT hari sebelumnya", s)
+	}
+	if b, ok := UraiTanggalWarisanTCO(s); !ok || !b.Equal(tgl) {
+		t.Errorf("tanggal pulang %v %v, mau %v", b, ok, tgl)
+	}
+	for masuk, mau := range map[string]string{"12.50": "12.5", "1000000000.12345678": "1000000000.12345678",
+		"100": "100", "0.0": "0", "-3.10": "-3.1"} {
+		d, _ := utils.ParseDecimal(masuk)
+		if dapat := TulisDesimalWarisanTCO(d); dapat != mau {
+			t.Errorf("desimal %s -> %v, mau %s", masuk, dapat, mau)
+		}
+		pulang, _, ok := UraiDesimalWarisanTCO(mau)
+		if !ok || pulang.Cmp(d) != 0 {
+			t.Errorf("desimal %s tidak pulang utuh", masuk)
+		}
+	}
+	if TulisDesimalWarisanTCO(nil) != nil {
+		t.Error("nil harus NULL")
 	}
 }

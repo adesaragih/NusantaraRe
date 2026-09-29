@@ -1,6 +1,6 @@
 package repository
 
-// Klausul - SATU tabel `T_PROPORTIONALARRG` untuk 25 jenis - tiket 08.
+// Klausul - SATU tabel `PROPORTIONALARRG` untuk 25 jenis - tiket 08.
 //
 // Untuk apa berkas ini: baca/tulis klausul (meniru logika
 // `PEGA_PROPORTIONALARRG` 35 parameter dan `PEGA_M_PROPORTIONALARRG_CHILD` 26
@@ -168,7 +168,13 @@ func (m *MasterKlausulPilihan) AmbilPilihan(ctx context.Context, master, id stri
 	return PilihanMasterTCO{ID: gotID.String, Nama: nama.String}, nil
 }
 
-// MasterKlausulTCO membaca dan menulis `T_PROPORTIONALARRG`.
+// MasterKlausulTCO membaca dan menulis tabel WARISAN `PROPORTIONALARRG` (tco4).
+//
+// ⚠️ Tipe CAMPUR `[data DBA]`: `TREATYLIMIT, COINS_MIN, COINS_MAX, MORERP,
+// MOREUSD` NUMBER; `RP, USD, PCT, PCTME` VARCHAR2(1000); `KURS` tidak disebut
+// DBA (diperlakukan teks); `TGLUPDATE` DATE. Kolom teks dibaca APA ADANYA dan
+// diurai di Go (titik atau koma), ditulis sebagai teks desimal
+// (`TulisDesimalWarisanTCO`) - `TO_CHAR` berformat angka atasnya akan gagal.
 type MasterKlausulTCO struct{ db *DB }
 
 // NewMasterKlausulTCO menyusun gudangnya.
@@ -185,8 +191,12 @@ var kolomKlausulTCO = []string{"ID", "TREATYYEAR", "TREATYYEARID", "TREATYGROUPI
 var KolomKhususIndukTCO = []string{"ID_OCCUPATION", "OCCUPATION", "ID_CLAUSE", "CLAUSE", "TREATYLIMIT", "COINS_MIN",
 	"COINS_MAX", "MORERP", "MOREUSD"}
 
+// kolomDesimalKlausul - kolom bernilai desimal; kolomAngkaKlausul - yang NUMBER.
 var kolomDesimalKlausul = map[string]bool{"KURS": true, "PCT": true, "PCTME": true, "RP": true, "USD": true,
 	"TREATYLIMIT": true, "COINS_MIN": true, "COINS_MAX": true, "MORERP": true, "MOREUSD": true}
+
+var kolomAngkaKlausul = map[string]bool{"TREATYLIMIT": true, "COINS_MIN": true, "COINS_MAX": true,
+	"MORERP": true, "MOREUSD": true}
 
 func pilihKlausulTCO() string {
 	var b strings.Builder
@@ -195,7 +205,7 @@ func pilihKlausulTCO() string {
 			b.WriteString(", ")
 		}
 		switch {
-		case kolomDesimalKlausul[k]:
+		case kolomAngkaKlausul[k]:
 			b.WriteString(fmt.Sprintf(fmtDesimal, k))
 		case k == "TGLUPDATE":
 			b.WriteString("TO_CHAR(TGLUPDATE, 'YYYY-MM-DD HH24:MI:SS')")
@@ -215,24 +225,30 @@ var kolomDariMedan = map[string]string{
 	models.MedanIDClause: "ID_CLAUSE", models.MedanClause: "CLAUSE", models.MedanLayer: "LAYER",
 }
 
-// sqlCariDobelKlausulTCO merakit pencarian baris "sudah pernah diinput" dari
-// kunci jenis. Nama kolom dari daftar putih `kolomDariMedan` - tidak pernah
-// dari masukan klien.
-func sqlCariDobelKlausulTCO(tabel string, kunci []string) (string, error) {
-	var syarat []string
-	n := 3
-	for _, m := range kunci {
-		kolom, ok := kolomDariMedan[m]
-		if !ok {
-			return "", fmt.Errorf("repository: medan kunci dobel %q tidak dikenal", m)
-		}
-		n++
-		syarat = append(syarat, fmt.Sprintf("%s = :%d", kolom, n))
+// sqlCariDobelKlausulTCO - kandidat baris LAIN pada lingkup yang sama; kunci
+// jenis dibandingkan di Go (tco4: `PCT`/`RP`/`USD` teks warisan - `12.5` dan
+// `12,50` sama nilainya, tidak sama teksnya).
+func sqlCariDobelKlausulTCO(tabel string) string {
+	return fmt.Sprintf(`SELECT %s FROM %s
+	 WHERE TREATYYEARID = :1 AND TREATYDESCID = :2 AND PARENTREINSTYPEID = :3
+	   AND (:4 IS NULL OR ID <> :5)
+	 ORDER BY ID`, pilihKlausulTCO(), tabel)
+}
+
+// medanSamaKlausulTCO - satu medan kunci bernilai sama. Kosong tidak pernah
+// sama (padanan `=` SQL atas NULL). Nama medan dari daftar putih.
+func medanSamaKlausulTCO(a, b models.KlausulTreaty, medan string) (bool, error) {
+	kolom, ok := kolomDariMedan[medan]
+	if !ok {
+		return false, fmt.Errorf("repository: medan kunci dobel %q tidak dikenal", medan)
 	}
-	return fmt.Sprintf(`SELECT ID FROM %s
-	 WHERE TREATYYEARID = :1 AND TREATYDESCID = :2 AND PARENTREINSTYPEID = :3 AND %s
-	   AND (:%d IS NULL OR ID <> :%d)
-	 ORDER BY ID FETCH FIRST 1 ROWS ONLY`, tabel, strings.Join(syarat, " AND "), n+1, n+2), nil
+	if kolomDesimalKlausul[kolom] {
+		da, _, okA := UraiDesimalWarisanTCO(models.NilaiMedanKlausul(a, medan))
+		db, _, okB := UraiDesimalWarisanTCO(models.NilaiMedanKlausul(b, medan))
+		return okA && okB && da != nil && db != nil && da.Cmp(db) == 0, nil
+	}
+	x, y := strings.TrimSpace(models.NilaiMedanKlausul(a, medan)), strings.TrimSpace(models.NilaiMedanKlausul(b, medan))
+	return x != "" && x == y, nil
 }
 
 // sqlDaftarKlausulTCO - urut `ID ASC`: identitas dari sequence, jadi urutan
@@ -252,10 +268,11 @@ func sqlIndukKlausulTCO(tabel string) string {
 	 ORDER BY ID ASC FETCH FIRST 1 ROWS ONLY`, pilihKlausulTCO(), tabel)
 }
 
+// sqlPctAnakLainTCO - `PCT` VARCHAR2 dibaca apa adanya (tco4).
 func sqlPctAnakLainTCO(tabel string) string {
-	return fmt.Sprintf(`SELECT ID, %s FROM %s
+	return fmt.Sprintf(`SELECT ID, PCT FROM %s
 	 WHERE TREATYYEARID = :1 AND TREATYDESCID = :2 AND PARENTREINSTYPEID = :3 AND (:4 IS NULL OR ID <> :5) FOR UPDATE`,
-		fmt.Sprintf(fmtDesimal, "PCT"), tabel)
+		tabel)
 }
 
 func sqlSisipKlausulTCO(tabel string) string {
@@ -313,7 +330,11 @@ func pindaiKlausulTCO(baca interface{ Scan(...any) error }) (models.KlausulTreat
 		{"TREATYLIMIT", &k.TreatyLimit}, {"COINS_MIN", &k.CoinsMin}, {"COINS_MAX", &k.CoinsMax},
 		{"MORERP", &k.MoreRp}, {"MOREUSD", &k.MoreUsd}}
 	for _, d := range desimal {
-		v, err := desimalDariTeks(nilai[d.kolom], d.kolom)
+		baca := desimalWarisanTCO
+		if kolomAngkaKlausul[d.kolom] {
+			baca = desimalDariTeks
+		}
+		v, err := baca(nilai[d.kolom], d.kolom)
 		if err != nil {
 			return k, err
 		}
@@ -327,7 +348,8 @@ func pindaiKlausulTCO(baca interface{ Scan(...any) error }) (models.KlausulTreat
 // nilaiKolomKlausul menyusun argumen untuk ke-35 kolom; baris ANAK menulis
 // NULL pada sembilan kolom khusus induk (AC 25).
 func nilaiKolomKlausul(k models.KlausulTreaty) map[string]any {
-	d := desimalJadiNil
+	d := TulisDesimalWarisanTCO // RP, USD, PCT, PCTME, KURS: teks warisan
+	n := desimalJadiNil         // TREATYLIMIT, COINS_*, MORE*: NUMBER
 	v := map[string]any{"ID": k.ID, "TREATYYEAR": kosongJadiNil(k.TreatyYear), "TREATYYEARID": kosongJadiNil(k.TreatyYearID),
 		"TREATYGROUPID": kosongJadiNil(k.TreatyGroupID), "TREATYGROUPNAME": kosongJadiNil(k.TreatyGroupName),
 		"TREATYDESCID": kosongJadiNil(k.TreatyDescID), "TREATYDESCNAME": kosongJadiNil(k.TreatyDescName),
@@ -339,8 +361,8 @@ func nilaiKolomKlausul(k models.KlausulTreaty) map[string]any {
 		"TERRITORIALLIMIT": kosongJadiNil(k.TerritorialLimit), "PARENTREINSTYPEID": kosongJadiNil(k.ParentReinsTypeID),
 		"SPREADINGORDER": kosongJadiNil(k.SpreadingOrder), "RP": d(k.Rp), "USD": d(k.Usd),
 		"ID_OCCUPATION": kosongJadiNil(k.IDOccupation), "OCCUPATION": kosongJadiNil(k.Occupation),
-		"ID_CLAUSE": kosongJadiNil(k.IDClause), "CLAUSE": kosongJadiNil(k.Clause), "TREATYLIMIT": d(k.TreatyLimit),
-		"COINS_MIN": d(k.CoinsMin), "COINS_MAX": d(k.CoinsMax), "MORERP": d(k.MoreRp), "MOREUSD": d(k.MoreUsd)}
+		"ID_CLAUSE": kosongJadiNil(k.IDClause), "CLAUSE": kosongJadiNil(k.Clause), "TREATYLIMIT": n(k.TreatyLimit),
+		"COINS_MIN": n(k.CoinsMin), "COINS_MAX": n(k.CoinsMax), "MORERP": n(k.MoreRp), "MOREUSD": n(k.MoreUsd)}
 	if models.KlausulAnakTCO(k) {
 		for _, kolom := range KolomKhususIndukTCO {
 			v[kolom] = nil
@@ -435,7 +457,7 @@ func (m *MasterKlausulTCO) PctAnakLain(ctx context.Context, tx *Tx, tahunID, des
 		if err := rows.Scan(&id, &pct); err != nil {
 			return nil, err
 		}
-		d, err := desimalDariTeks(pct, "PCT")
+		d, err := desimalWarisanTCO(pct, "PCT")
 		if err != nil {
 			return nil, err
 		}
@@ -456,30 +478,37 @@ func (m *MasterKlausulTCO) CariDobel(ctx context.Context, tx *Tx, k models.Klaus
 	if err != nil {
 		return "", err
 	}
-	q, err := sqlCariDobelKlausulTCO(tabel, kunci)
-	if err != nil {
-		return "", err
-	}
+	q := sqlCariDobelKlausulTCO(tabel)
 	if err := PeriksaSQL(q); err != nil {
 		return "", err
 	}
-	arg := []any{k.TreatyYearID, k.TreatyDescID, k.ParentReinsTypeID}
-	for _, medan := range kunci {
-		arg = append(arg, kosongJadiNil(models.NilaiMedanKlausul(k, medan)))
-	}
-	arg = append(arg, kosongJadiNil(k.ID), kosongJadiNil(k.ID))
-	var id string
-	err = tx.tx.QueryRowContext(ctx, q, arg...).Scan(&id)
-	if errors.Is(err, sql.ErrNoRows) {
-		return "", nil
-	}
+	rows, err := tx.tx.QueryContext(ctx, q, k.TreatyYearID, k.TreatyDescID, k.ParentReinsTypeID,
+		kosongJadiNil(k.ID), kosongJadiNil(k.ID))
 	if err != nil {
 		return "", fmt.Errorf("repository: mencari klausul dobel: %w", err)
 	}
-	return id, nil
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		lain, err := pindaiKlausulTCO(rows)
+		if err != nil {
+			return "", err
+		}
+		sama := true
+		for _, medan := range kunci {
+			ok, err := medanSamaKlausulTCO(k, lain, medan)
+			if err != nil {
+				return "", err
+			}
+			sama = sama && ok
+		}
+		if sama {
+			return lain.ID, nil
+		}
+	}
+	return "", rows.Err()
 }
 
-// Sisip menulis klausul baru; ID '1' + 7 digit dari `SEQ_T_PROPORTIONALARRG`.
+// Sisip menulis klausul baru; ID '1' + 7 digit dari `PROPORTIONALARRG_SEQ` warisan.
 func (m *MasterKlausulTCO) Sisip(ctx context.Context, tx *Tx, k models.KlausulTreaty) (string, error) {
 	if tx == nil {
 		return "", errors.New("repository: menyisipkan klausul menuntut transaksi")

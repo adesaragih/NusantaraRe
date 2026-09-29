@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/internal/repository"
 	"nusantarare/internal/repository/skemauji"
 )
 
@@ -65,9 +64,5 @@ func TestBusinessKombinasiLingkaranPenuh(t *testing.T) {
 	kode, badan = u.minta(t, http.MethodDelete, dasar+"/"+b.ID, nil, true)
 	if kode != http.StatusOK || !strings.Contains(badan, "Data Dengan ID "+b.ID+" Berhasil di Hapus") {
 		t.Errorf("hapus: %d %s", kode, badan)
-	}
-	jejak, err := u.db.JejakTCO(u.ctx, repository.TabelBusinessTCO, b.ID)
-	if err != nil || len(jejak) != 3 {
-		t.Errorf("jejak bisnis: %+v %v", jejak, err)
 	}
 }

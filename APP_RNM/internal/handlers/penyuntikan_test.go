@@ -128,7 +128,7 @@ var petaSuntikan = map[string][]suntikan{
 			"DenganKontrak(services.PemegangKontrakOracle(svc))",
 			"DenganTahun(services.GudangTahunTreatyOracle(svc))",
 			"DenganReinsurer(services.GudangReinsurerOracle(svc))",
-			"DenganJejak(services.PerekamJejakKaskadeOracle(svc))",
+			// tco4: nol jejak modul (T_TREATYCO_JEJAK dibuang; Pega tidak mencatatnya).
 		},
 	}},
 	// Tiket 11 (aditif 29-09-2026): tahun, master kurs, master mata uang.

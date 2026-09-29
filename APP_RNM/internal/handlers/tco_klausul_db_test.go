@@ -82,7 +82,7 @@ func TestKlausulLingkaranPenuh(t *testing.T) {
 	var anak struct{ Klausul struct{ ID string } }
 	_ = json.Unmarshal([]byte(badan), &anak)
 	var nullInduk int
-	if err := u.sqlDBMentah().QueryRowContext(u.ctx, `SELECT COUNT(*) FROM `+u.skema+`.T_PROPORTIONALARRG
+	if err := u.sqlDBMentah().QueryRowContext(u.ctx, `SELECT COUNT(*) FROM `+u.skema+`.PROPORTIONALARRG
 		 WHERE ID = :1 AND ID_OCCUPATION IS NULL AND OCCUPATION IS NULL AND ID_CLAUSE IS NULL AND CLAUSE IS NULL
 		   AND TREATYLIMIT IS NULL AND COINS_MIN IS NULL AND COINS_MAX IS NULL AND MORERP IS NULL AND MOREUSD IS NULL`,
 		anak.Klausul.ID).Scan(&nullInduk); err != nil || nullInduk != 1 {
@@ -101,9 +101,5 @@ func TestKlausulLingkaranPenuh(t *testing.T) {
 		"medan": map[string]string{"ID_Occupation": "UJI-O1", "Occupation": "KARANGAN", "Line": "A", "Usd": "1", "Rp": "15000"}}, true)
 	if kode != http.StatusOK || !strings.Contains(badan, `"Occupation":"UJI OKUPASI"`) {
 		t.Errorf("exclusion: %d %s", kode, badan)
-	}
-	jejak, err := u.db.JejakTCO(u.ctx, repository.TabelKlausulTCO, h.Klausul.ID)
-	if err != nil || len(jejak) != 1 {
-		t.Errorf("jejak klausul: %+v %v", jejak, err)
 	}
 }

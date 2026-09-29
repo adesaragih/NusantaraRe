@@ -7,7 +7,7 @@ package repository
 // `TREATYCONTRACT` warisan hari ini (spec b224-b232, OQ-042). Ketiganya belum
 // dimigrasi. Kontraknya ditulis DI SINI - satu pembaca per kueri hilir, dengan
 // kolom VERBATIM kueri itu - supaya saat mereka dibangun, mereka membaca tabel
-// T_* lewat pembaca yang sudah dikunci uji, bukan menulis kueri sendiri.
+// warisan yang SAMA (tco4) lewat pembaca yang sudah dikunci uji.
 //
 // Sumber tiap pembaca `[terverifikasi]` (path korpus, kolom dan WHERE
 // disalin apa adanya):
@@ -28,7 +28,10 @@ package repository
 // ⛔ Nilai TREATYDESCID '10001' yang hilir tulis sebagai literal TIDAK ditanam
 // di sini: ia parameter, milik pemanggil (pola penyimpangan sadar 7).
 //
-// Uang dan persen keluar sebagai TEKS desimal (fmtDesimal), nol float.
+// Uang dan persen keluar sebagai TEKS desimal bertitik, nol float. tco4:
+// `PCT`/`RP`/`USD` PROPORTIONALARRG VARCHAR2 - dibaca apa adanya seperti
+// kueri hilir Pega (`a.Pct`), dinormalkan di Go (`UraiDesimalWarisanTCO`);
+// `RICOMM`/`PCTSHARE` NUMBER - TO_CHAR ber-NLS.
 
 import (
 	"context"
@@ -81,9 +84,7 @@ var (
 )
 
 const daftarPilihKlausulHilir = `TREATYYEAR, TREATYGROUPID, TREATYDESCID, REINSTYPEID, REINSTYPENAME,
-	       TO_CHAR(PCT, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''),
-	       TO_CHAR(RP, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''),
-	       TO_CHAR(USD, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,''')`
+	       PCT, RP, USD`
 
 // sqlKlausulHilir - GetLimitPLATreatyin / GetLimitPLADLA_Sql.
 func sqlKlausulHilir(tabel string) string {
@@ -131,9 +132,7 @@ func sqlGrupTreatyAktifHilir(tabel string) string {
 // dibatasi kontrak yang berlaku pada tanggal.
 func sqlLimitTreatyHilir(business, klausul, kontrak string) string {
 	return fmt.Sprintf(`SELECT p.TREATYYEAR, p.TREATYGROUPID, p.TREATYDESCID, p.REINSTYPEID, p.REINSTYPENAME,
-	       TO_CHAR(p.PCT, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''),
-	       TO_CHAR(p.RP, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''),
-	       TO_CHAR(p.USD, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,''')
+	       p.PCT, p.RP, p.USD
 	  FROM %s b
 	  JOIN %s p
 	    ON p.TREATYYEARID = b.TREATYYEARID
@@ -166,10 +165,20 @@ func (r *KontrakHilirTCO) bacaKlausul(ctx context.Context, q string, arg ...any)
 		if err := rows.Scan(&n[0], &n[1], &n[2], &n[3], &n[4], &n[5], &n[6], &n[7]); err != nil {
 			return nil, err
 		}
+		var angka [3]string
+		for i, kolom := range []string{"PCT", "RP", "USD"} {
+			d, err := desimalWarisanTCO(n[5+i], kolom)
+			if err != nil {
+				return nil, err
+			}
+			if v := TulisDesimalWarisanTCO(d); v != nil {
+				angka[i] = v.(string)
+			}
+		}
 		out = append(out, KlausulHilir{
 			TreatyYear: n[0].String, TreatyGroupID: n[1].String, TreatyDescID: n[2].String,
 			ReinsTypeID: n[3].String, ReinsTypeName: n[4].String,
-			Pct: n[5].String, Rp: n[6].String, Usd: n[7].String,
+			Pct: angka[0], Rp: angka[1], Usd: angka[2],
 		})
 	}
 	return out, rows.Err()

@@ -1,6 +1,6 @@
 package repository
 
-// Uji bentuk SQL tahun treaty, jejak, dan grup treaty - TANPA Oracle (tiket 03).
+// Uji bentuk SQL tahun treaty dan grup treaty - TANPA Oracle (tiket 03, tco4).
 
 import (
 	"strings"
@@ -8,12 +8,17 @@ import (
 )
 
 func TestSQLTahunTreatyUrutIDDesc(t *testing.T) {
-	q := sqlDaftarTahunTreaty("S.T_TREATYYEAR")
+	q := sqlDaftarTahunTreaty("S.TREATYYEAR")
 	for _, mau := range []string{"ORDER BY ID DESC", "OFFSET :1 ROWS FETCH NEXT :2 ROWS ONLY",
-		"TO_CHAR(STARTDATE, 'YYYY-MM-DD HH24:MI:SS')", "TO_CHAR(TGLUPDATE, 'YYYY-MM-DD HH24:MI:SS')"} {
+		"STARTDATE, ENDDATE, USERID, TGLUPDATE"} {
 		if !strings.Contains(q, mau) {
 			t.Errorf("SQL daftar tanpa %q:\n%s", mau, q)
 		}
+	}
+	// tco4: kolom tanggal TREATYYEAR VARCHAR2 - TO_CHAR berformat tanggal
+	// akan gagal (ORA-01722) atau salah baca.
+	if strings.Contains(q, "TO_CHAR(") {
+		t.Errorf("TO_CHAR pada kolom VARCHAR2 warisan:\n%s", q)
 	}
 	if strings.Contains(q, "SELECT *") {
 		t.Error("SELECT * dilarang")
@@ -23,7 +28,7 @@ func TestSQLTahunTreatyUrutIDDesc(t *testing.T) {
 	}
 	for _, q := range []string{sqlDaftarTahunTreaty("S.T"), sqlAmbilTahunTreaty("S.T"),
 		sqlSisipTahunTreaty("S.T"), sqlPerbaruiTahunTreaty("S.T"), sqlCariDobelTahunTreaty("S.T"),
-		sqlSisipJejakTCO("S.J"), sqlBacaJejakTCO("S.J"), sqlGrupTreatyTCO("S.G")} {
+		sqlGrupTreatyTCO("S.G")} {
 		if err := PeriksaSQL(q); err != nil {
 			t.Errorf("%v:\n%s", err, q)
 		}
@@ -54,19 +59,9 @@ func TestSQLTahunTreatySisipDanPerbaruiSeluruhKolom(t *testing.T) {
 // sendiri, dan tahan terhadap ID kosong (NULL Oracle).
 func TestSQLCariDobelTahunTreaty(t *testing.T) {
 	q := sqlCariDobelTahunTreaty("S.T")
-	for _, mau := range []string{"TREATYGROUPID = :1", "TRUNC(STARTDATE) = TRUNC(:2)",
-		"TRUNC(ENDDATE) = TRUNC(:3)", "(:4 IS NULL OR ID <> :5)", "FETCH FIRST 1 ROWS ONLY"} {
+	for _, mau := range []string{"SELECT ID, STARTDATE, ENDDATE", "TREATYGROUPID = :1", "(:2 IS NULL OR ID <> :3)"} {
 		if !strings.Contains(q, mau) {
 			t.Errorf("SQL dobel tanpa %q:\n%s", mau, q)
-		}
-	}
-}
-
-func TestSQLJejakTCOBernamaLengkap(t *testing.T) {
-	q := sqlSisipJejakTCO("S.J")
-	for _, k := range []string{"ID", "WAKTU", "AKUN_ID", "TABEL", "BARIS_ID", "AKSI", "KETERANGAN"} {
-		if !strings.Contains(q, k) {
-			t.Errorf("jejak tanpa kolom %s", k)
 		}
 	}
 }
@@ -84,8 +79,9 @@ type barisPalsu struct{ nilai []any }
 func (b barisPalsu) Scan(tujuan ...any) error { return isiNullString(tujuan, b.nilai) }
 
 func TestPindaiTahunTreaty(t *testing.T) {
+	// tco4: teks warisan - stempel Pega 00:00 WIB dan stempel TGLUPDATE.
 	baris := barisPalsu{nilai: []any{"1000001", "2026", "2026", "10001", "UJI GRUP", "P",
-		"2026-01-01 00:00:00", "", "UJI-OP", "2026-09-15 10:00:00"}}
+		"20251231T170000.000 GMT", "", "UJI-OP", "20260915T100000.000 GMT"}}
 	th, err := pindaiTahunTreaty(baris)
 	if err != nil {
 		t.Fatal(err)
@@ -93,7 +89,8 @@ func TestPindaiTahunTreaty(t *testing.T) {
 	if th.ID != "1000001" || th.TreatyGroupName != "UJI GRUP" || th.Proportion != "P" {
 		t.Errorf("teks: %+v", th)
 	}
-	if th.StartDate.Year() != 2026 || !th.EndDate.IsZero() || th.TglUpdate.Hour() != 10 {
+	if th.StartDate.Year() != 2026 || th.StartDate.Month() != 1 || th.StartDate.Day() != 1 ||
+		!th.EndDate.IsZero() || th.TglUpdate.Hour() != 10 {
 		t.Errorf("tanggal: %v %v %v", th.StartDate, th.EndDate, th.TglUpdate)
 	}
 	buruk := barisPalsu{nilai: []any{"1", "", "", "", "", "", "kapan-kapan", "", "", ""}}

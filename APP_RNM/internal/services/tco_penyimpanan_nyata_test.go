@@ -153,7 +153,7 @@ func TestLampiranGalatStorageNyataPermanen(t *testing.T) {
 		r := rakitanLampiran(t)
 		r.simpan.setelGagal(gagal, false)
 		h := r.unggah(t, "1000001", "a.pdf", "ISI")
-		if h.Lampiran.Status != models.StatusLampiranGagal || r.gudang.jejakBeraksi(repository.AksiJejakMenyerah) != 1 {
+		if h.Lampiran.Status != models.StatusLampiranGagal || r.antrean.cacahStatus(services.JenisEfekStorageUnggah, repository.StatusEfekGagalPermanen) != 1 {
 			t.Errorf("%v: status %q", gagal, h.Lampiran.Status)
 		}
 	}

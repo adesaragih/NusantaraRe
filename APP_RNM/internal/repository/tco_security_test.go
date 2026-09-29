@@ -6,7 +6,9 @@ import (
 	"testing"
 )
 
-// AC 18-20: kolom bernama, kunci surrogate, nol pemangkas spasi.
+// AC 19: kolom bernama. tco4 (RALAT AC 18/20 tiket 06): tabel warisan tanpa
+// identitas - kunci (REAS_ID, TRIM(REAS_SECURITY)) PERSIS UpdateMTreatySecurity
+// b89 dan DeleteSecurityReinsurer b85.
 func TestSQLSecurityTCO(t *testing.T) {
 	sisip := sqlSisipSecurityTCO("S.T")
 	if !strings.Contains(sisip, "("+strings.Join(kolomSecurityTCO, ", ")+")") {
@@ -16,19 +18,18 @@ func TestSQLSecurityTCO(t *testing.T) {
 		t.Errorf("TOP_ID, TP_TREATY, USER_ID harus NULL eksplisit: %s", sisip)
 	}
 	perbarui, hapus := sqlPerbaruiSecurityTCO("S.T"), sqlHapusSecurityTCO("S.T")
-	if !strings.Contains(perbarui, "WHERE ID = :4 AND REAS_ID = :5") || !strings.Contains(hapus, "WHERE ID = :1 AND REAS_ID = :2") {
-		t.Errorf("kunci bukan ID surrogate + REAS_ID:\n%s\n%s", perbarui, hapus)
+	if !strings.Contains(perbarui, "SET THN_TREATY = :1, PCT_SHARE = :2, REAS_SECURITY = :3") ||
+		!strings.Contains(perbarui, "WHERE REAS_ID = :4 AND TRIM(REAS_SECURITY) = TRIM(:5)") {
+		t.Errorf("perbarui bukan UpdateMTreatySecurity b85-b89:\n%s", perbarui)
 	}
-	for nama, q := range map[string]string{"perbarui": perbarui, "hapus": hapus} {
-		if strings.Contains(q[strings.Index(q, "WHERE"):], "REAS_SECURITY") {
-			t.Errorf("%s memakai nama security sebagai kunci: %s", nama, q)
-		}
+	if !strings.Contains(hapus, "WHERE REAS_ID = :1 AND TRIM(REAS_SECURITY) = TRIM(:2)") {
+		t.Errorf("hapus bukan DeleteSecurityReinsurer b85:\n%s", hapus)
 	}
 	semua := []string{sisip, perbarui, hapus, sqlCariDobelSecurityTCO("S.T"),
 		sqlDaftarSecurityTCO("S.T", "S.A"), sqlAmbilSecurityTCO("S.T", "S.A")}
 	for _, q := range semua {
-		if strings.Contains(strings.ToUpper(q), "TRIM(") {
-			t.Errorf("SQL security memakai TRIM: %s", q)
+		if strings.Contains(q, " ID,") || strings.Contains(q, "s.ID") {
+			t.Errorf("SQL security menyebut ID yang tidak ada di MTREATYSECURITY: %s", q)
 		}
 		if err := PeriksaSQL(q); err != nil {
 			t.Errorf("PeriksaSQL: %v", err)
@@ -65,13 +66,14 @@ func TestTCONolInsertPosisional(t *testing.T) {
 }
 
 func TestPindaiSecurityTCO(t *testing.T) {
-	baris := barisPalsu{nilai: []any{"1000001", "2026", "", "", "1000007", "12.5", "", "UJI-AG1", "UJI SECURITY"}}
+	// CHAR berekor spasi dipangkas; PCT_SHARE teks warisan berkoma diterima.
+	baris := barisPalsu{nilai: []any{"2026", "", "  ", "1000007", "12,5", "", "UJI-AG1   ", "UJI SECURITY"}}
 	s, err := pindaiSecurityTCO(baris)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if s.ID != "1000001" || s.ReasID != "1000007" || s.ReasSecurity != "UJI-AG1" || s.ClientName != "UJI SECURITY" ||
-		s.PctShare.Text('f') != "12.5" {
+	if s.ID != "UJI-AG1" || s.ReasID != "1000007" || s.ReasSecurity != "UJI-AG1" || s.ClientName != "UJI SECURITY" ||
+		s.PctShare.Text('f') != "12.5" || s.TpTreaty != "" {
 		t.Errorf("pindai: %+v", s)
 	}
 }

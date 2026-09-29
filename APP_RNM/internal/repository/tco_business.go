@@ -2,7 +2,7 @@ package repository
 
 // Business pada kombinasi (tahun, grup, jenis) - tiket 07 Treaty Contract Out.
 //
-// Untuk apa berkas ini: baca/tulis/hapus `T_TREATYBUSINESS` (meniru logika
+// Untuk apa berkas ini: baca/tulis/hapus `TREATYBUSINESS` (meniru logika
 // `POOLDATA.PEGA_TREATYBUSINESS`, 12 parameter, TANPA memanggilnya) dan pembaca
 // master `BUSINESS` (dibaca saja).
 //
@@ -116,7 +116,7 @@ func (m *MasterBusiness) Ambil(ctx context.Context, id string) (BusinessMasterTC
 	return BusinessMasterTCO{ID: gotID.String, Note: note.String}, nil
 }
 
-// MasterBusinessKombinasiTCO membaca dan menulis `T_TREATYBUSINESS`.
+// MasterBusinessKombinasiTCO membaca dan menulis `TREATYBUSINESS`.
 type MasterBusinessKombinasiTCO struct{ db *DB }
 
 // NewMasterBusinessKombinasiTCO menyusun gudangnya.
@@ -124,8 +124,9 @@ func NewMasterBusinessKombinasiTCO(db *DB) *MasterBusinessKombinasiTCO {
 	return &MasterBusinessKombinasiTCO{db: db}
 }
 
+// pilihBusinessTCO - tco4: seluruh kolom `TREATYBUSINESS` VARCHAR2 `[data DBA]`.
 const pilihBusinessTCO = `ID, ISACTIVE, TREATYYEAR, TREATYYEARID, TREATYGROUPID, TREATYGROUPNAME, REINSTYPEID,
-	       REINSTYPENAME, BIZCODE, BIZNAME, USERID, TO_CHAR(TGLUPDATE, 'YYYY-MM-DD HH24:MI:SS')`
+	       REINSTYPENAME, BIZCODE, BIZNAME, USERID, TGLUPDATE`
 
 // sqlDaftarBusinessTCO - SELURUH baris kombinasi, aktif maupun nonaktif (AC 22).
 //
@@ -147,12 +148,14 @@ func sqlSisipBusinessTCO(tabel string) string {
 	VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11, :12)`, tabel)
 }
 
-// sqlPerbaruiBusinessTCO - SELURUH medan non-kunci (AC 23), dibatasi kombinasi.
+// sqlPerbaruiBusinessTCO - PERSIS UPDATE `PEGA_TREATYBUSINESS` `[data DBA]`:
+// hanya `ISACTIVE, BIZCODE, BIZNAME, USERID, TGLUPDATE`, dibatasi kombinasi.
+// RALAT tco4 atas AC 23 ("seluruh medan non-kunci"): procedure tidak menyentuh
+// `TREATYYEARID`/`TREATYGROUPNAME`/`REINSTYPENAME` saat memperbarui.
 func sqlPerbaruiBusinessTCO(tabel string) string {
 	return fmt.Sprintf(`UPDATE %s
-	   SET ISACTIVE = :1, TREATYYEARID = :2, TREATYGROUPNAME = :3, REINSTYPENAME = :4,
-	       BIZCODE = :5, BIZNAME = :6, USERID = :7, TGLUPDATE = :8
-	 WHERE ID = :9 AND TREATYYEAR = :10 AND TREATYGROUPID = :11 AND REINSTYPEID = :12`, tabel)
+	   SET ISACTIVE = :1, BIZCODE = :2, BIZNAME = :3, USERID = :4, TGLUPDATE = :5
+	 WHERE ID = :6 AND TREATYYEAR = :7 AND TREATYGROUPID = :8 AND REINSTYPEID = :9`, tabel)
 }
 
 // sqlHapusBusinessTCO - SATU tabel (AC 63/64), dibatasi kombinasi.
@@ -180,7 +183,7 @@ func pindaiBusinessTCO(baca interface{ Scan(...any) error }) (models.BusinessTre
 		ReinsTypeID: n[6].String, ReinsTypeName: n[7].String, BizCode: n[8].String, BizName: n[9].String,
 		UserID: n[10].String}
 	var err error
-	b.TglUpdate, err = uraiTanggalTeks(n[11], "TGLUPDATE")
+	b.TglUpdate, err = waktuWarisanTeks(n[11], "TGLUPDATE")
 	return b, err
 }
 
@@ -255,7 +258,7 @@ func (m *MasterBusinessKombinasiTCO) CariDobel(ctx context.Context, tx *Tx, k mo
 	return id, nil
 }
 
-// Sisip menulis baris bisnis baru; ID dari `SEQ_T_TREATYBUSINESS`.
+// Sisip menulis baris bisnis baru; ID dari `TREATY_BUSINESS_SEQ`.
 func (m *MasterBusinessKombinasiTCO) Sisip(ctx context.Context, tx *Tx, b models.BusinessTreaty) (string, error) {
 	if tx == nil {
 		return "", errors.New("repository: menyisipkan bisnis menuntut transaksi")
@@ -275,7 +278,7 @@ func (m *MasterBusinessKombinasiTCO) Sisip(ctx context.Context, tx *Tx, b models
 	hasil, err := tx.tx.ExecContext(ctx, q, id, kosongJadiNil(b.IsActive), kosongJadiNil(b.TreatyYear),
 		kosongJadiNil(b.TreatyYearID), kosongJadiNil(b.TreatyGroupID), kosongJadiNil(b.TreatyGroupName),
 		kosongJadiNil(b.ReinsTypeID), kosongJadiNil(b.ReinsTypeName), kosongJadiNil(b.BizCode),
-		kosongJadiNil(b.BizName), kosongJadiNil(b.UserID), tanggalJadiNil(b.TglUpdate))
+		kosongJadiNil(b.BizName), kosongJadiNil(b.UserID), kosongJadiNil(StempelPegaTCO(b.TglUpdate)))
 	if err != nil {
 		return "", fmt.Errorf("repository: menyisipkan bisnis: %w", err)
 	}
@@ -295,9 +298,8 @@ func (m *MasterBusinessKombinasiTCO) Perbarui(ctx context.Context, tx *Tx, b mod
 	if err := PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, kosongJadiNil(b.IsActive), kosongJadiNil(b.TreatyYearID),
-		kosongJadiNil(b.TreatyGroupName), kosongJadiNil(b.ReinsTypeName), kosongJadiNil(b.BizCode),
-		kosongJadiNil(b.BizName), kosongJadiNil(b.UserID), tanggalJadiNil(b.TglUpdate),
+	hasil, err := tx.tx.ExecContext(ctx, q, kosongJadiNil(b.IsActive), kosongJadiNil(b.BizCode),
+		kosongJadiNil(b.BizName), kosongJadiNil(b.UserID), kosongJadiNil(StempelPegaTCO(b.TglUpdate)),
 		b.ID, b.TreatyYear, b.TreatyGroupID, b.ReinsTypeID)
 	if err != nil {
 		return fmt.Errorf("repository: memperbarui bisnis %s: %w", b.ID, err)

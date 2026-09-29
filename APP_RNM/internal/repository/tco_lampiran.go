@@ -37,6 +37,15 @@ const MasterKategoriLampiranTCO = "CATEGORY_ATTACH_REAS"
 // TabelOutboxBersama - outbox efek keluar lintas modul (migrasi 015).
 const TabelOutboxBersama = "T_LOG_SERVICE_RNM"
 
+// ⚠️ SEMENTARA sampai paket 3 tco4 mengarahkan lampiran ke
+// `M_ATTACHMENTTREATY_2` + `T_STORAGE_IMAGE`: tabel dan sequence di bawah
+// TIDAK ADA lagi (migrasi 307 dibuang).
+const (
+	TabelLampiranTCO          = "T_TREATYYEAR_LAMPIRAN"
+	SeqLampiranTCO            = "SEQ_T_TREATYYEAR_LAMPIRAN"
+	LebarIdentitasLampiranTCO = 9
+)
+
 // ErrLampiranTidakAda - lampiran tidak ada, atau bukan milik tahun treaty itu.
 var ErrLampiranTidakAda = errors.New("repository: lampiran tidak ditemukan pada tahun treaty ini")
 

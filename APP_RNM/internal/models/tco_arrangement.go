@@ -3,7 +3,7 @@ package models
 // Entitas master arrangement kontrak treaty non-life - tiket 01 Treaty
 // Contract Out.
 //
-// Untuk apa berkas ini: bentuk enam tabel `T_TREATY*` (STRUKTUR-TABEL-
+// Untuk apa berkas ini: bentuk enam tabel `TREATY*` warisan (STRUKTUR-TABEL-
 // TREATY-CONTRACT-OUT.md) di sisi Go, dengan tipe yang SUDAH dirapikan
 // (penyimpangan sadar 6): uang dan persen `*apd.Decimal`, tanggal `time.Time`.
 //
@@ -29,7 +29,7 @@ import (
 	"github.com/cockroachdb/apd/v3"
 )
 
-// TahunTreaty adalah satu baris `T_TREATYYEAR`.
+// TahunTreaty adalah satu baris `TREATYYEAR`.
 type TahunTreaty struct {
 	ID               string
 	TreatyYear       string
@@ -45,7 +45,7 @@ type TahunTreaty struct {
 	TglUpdate  time.Time
 }
 
-// KontrakTreaty adalah satu baris `T_TREATYCONTRACT` - satu jenis reasuransi
+// KontrakTreaty adalah satu baris `TREATYCONTRACT` - satu jenis reasuransi
 // yang dibuka pada sebuah tahun treaty.
 type KontrakTreaty struct {
 	ID              string
@@ -58,7 +58,7 @@ type KontrakTreaty struct {
 	TglUpdate       time.Time
 }
 
-// ReinsurerTreaty adalah satu baris `T_TREATYREINSURER`.
+// ReinsurerTreaty adalah satu baris `TREATYREINSURER`.
 //
 // `Name` adalah nama PERUSAHAAN reinsurer (kolom warisan `NAME`), bukan nama
 // orang. `OperatorName` diisi `OperatorID.pyUserName` - pengenal akun.
@@ -86,21 +86,23 @@ type ReinsurerTreaty struct {
 	TglUpdate    time.Time
 }
 
-// SecurityReinsurer adalah satu baris `T_MTREATYSECURITY` - struktur bersih
-// (penyimpangan sadar 5): `ID` surrogate, `ReasSecurity` atribut biasa.
+// SecurityReinsurer adalah satu baris `MTREATYSECURITY` warisan (tco4): tabel
+// TANPA identitas - `ID` membawa `REAS_SECURITY` terpangkas, kunci baris
+// (`REAS_ID`, `TRIM(REAS_SECURITY)`) seperti `UpdateMTreatySecurity`. RALAT
+// penyimpangan sadar 5 (PK surrogate) - dibatalkan tco4.
 type SecurityReinsurer struct {
 	ID        string
 	ThnTreaty string
 	TopID     string
 	TpTreaty  string
-	// ReasID menunjuk ReinsurerTreaty.ID (FK berkaskade).
+	// ReasID menunjuk ReinsurerTreaty.ID (tanpa FK - kaskade oleh layanan).
 	ReasID       string
 	PctShare     *apd.Decimal
 	UserID       string
 	ReasSecurity string
 }
 
-// BusinessTreaty adalah satu baris `T_TREATYBUSINESS`.
+// BusinessTreaty adalah satu baris `TREATYBUSINESS`.
 type BusinessTreaty struct {
 	ID       string
 	IsActive string
@@ -118,7 +120,7 @@ type BusinessTreaty struct {
 	TglUpdate       time.Time
 }
 
-// KlausulTreaty adalah satu baris `T_PROPORTIONALARRG` - SATU bentuk untuk
+// KlausulTreaty adalah satu baris `PROPORTIONALARRG` - SATU bentuk untuk
 // dua puluh lima jenis klausul (penyimpangan sadar 2), dibedakan
 // `TreatyDescID`.
 //

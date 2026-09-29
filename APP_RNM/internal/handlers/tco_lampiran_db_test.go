@@ -18,8 +18,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"nusantarare/internal/repository"
 )
 
 // mintaMultipart mengirim satu berkas + kategori.
@@ -73,7 +71,7 @@ type lampiranJSON struct {
 }
 
 // AC 54-61 lewat HTTP: unggah -> terkirim, daftar, unduh satu, unduh semua,
-// keselarasan (rekam tanpa berkas terdeteksi), hapus, jejak.
+// keselarasan (rekam tanpa berkas terdeteksi), hapus.
 func TestLampiranTahunTreatyLingkaranPenuh(t *testing.T) {
 	u, bersihkan := serverTCO(t)
 	defer bersihkan()
@@ -175,16 +173,5 @@ func TestLampiranTahunTreatyLingkaranPenuh(t *testing.T) {
 	kode, badan = u.minta(t, http.MethodGet, dasar, nil, true)
 	if kode != http.StatusOK || !strings.Contains(badan, `"total":0`) {
 		t.Errorf("daftar sesudah hapus: %d %s", kode, badan)
-	}
-	jejak, err := u.db.JejakTCO(u.ctx, repository.TabelLampiranTCO, l.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	aksi := map[string]int{}
-	for _, j := range jejak {
-		aksi[j.Aksi]++
-	}
-	if aksi[repository.AksiJejakUnggah] != 1 || aksi[repository.AksiJejakHapus] != 1 {
-		t.Errorf("jejak: %+v", jejak)
 	}
 }

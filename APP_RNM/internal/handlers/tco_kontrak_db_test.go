@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/internal/repository"
 	"nusantarare/internal/repository/skemauji"
 )
 
@@ -86,9 +85,5 @@ func TestKontrakTreatyLingkaranPenuh(t *testing.T) {
 	kode, badan = u.minta(t, http.MethodGet, dasar, nil, true)
 	if kode != http.StatusOK || !strings.Contains(badan, `"total":1`) || !strings.Contains(badan, `"treatyStartDate":"2026-02-01"`) {
 		t.Errorf("daftar sesudah PUT: %d %s", kode, badan)
-	}
-	jejak, err := u.db.JejakTCO(u.ctx, repository.TabelKontrakTCO, k.ID)
-	if err != nil || len(jejak) != 2 {
-		t.Errorf("jejak kontrak: %+v %v", jejak, err)
 	}
 }

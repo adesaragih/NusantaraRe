@@ -7,7 +7,7 @@ package repository
 // dan `RDBList/DeleteFromTreatyReinsurer_Act.xml` b60-b64 (security lalu
 // reinsurer), di tabel `T_` - SATU keluarga tabel (AC 63/64).
 //
-// ⛔ `T_PROPORTIONALARRG` (klausul) TIDAK disentuh (AC 44; penyimpangan sadar
+// ⛔ `PROPORTIONALARRG` (klausul) TIDAK disentuh (AC 44; penyimpangan sadar
 // 4): klausul milik tahun/grup/jenis, dipakai lintas kontrak. Ia hanya
 // DIHITUNG, supaya popup dapat menyatakannya tetap hidup.
 //

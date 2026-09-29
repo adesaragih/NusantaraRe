@@ -2088,7 +2088,7 @@ export async function ambilGrupTreaty(): Promise<{ daftar: GrupTreaty[]; total: 
 }
 
 /**
- * Satu tahun treaty (`T_TREATYYEAR`). Nama kunci mengikuti `InputTreatyYear.*`.
+ * Satu tahun treaty (`TREATYYEAR`). Nama kunci mengikuti `InputTreatyYear.*`.
  * Tanggal TEKS `YYYY-MM-DD` (kosong = kosong); `tglUpdate` `YYYY-MM-DD HH:MM:SS`.
  * `proportion` menyimpan pilihan "Reinsurance Type" (`.ID` master) — OQ-TCO-04.
  */
@@ -2300,7 +2300,7 @@ export async function unduhBerkasBeridentitas(jalur: string, namaBerkas: string)
 // Treaty Contract Out tiket 04 — kontrak treaty di dalam tahun treaty.
 // ---------------------------------------------------------------------------
 
-/** Satu kontrak — kolom `T_TREATYCONTRACT`. Tanggal YYYY-MM-DD. */
+/** Satu kontrak — kolom `TREATYCONTRACT`. Tanggal YYYY-MM-DD. */
 export interface KontrakTreaty {
   id: string
   idTreatyYear: string
