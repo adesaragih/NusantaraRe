@@ -46,7 +46,8 @@ var letakStruktur = []string{
 	"../../../.scratch/claim-life/STRUKTUR-TABEL-CLAIM-LIFE.md",
 	"../../../.scratch/komite-claim-life/STRUKTUR-TABEL-KOMITE-CLAIM-LIFE.md",
 	"../../../.scratch/premiumlist-life/STRUKTUR-TABEL-PREMIUMLIST-LIFE.md",
-	// Modul keempat, tiket 01 Treaty Contract Out (migrasi 300-306).
+	// Modul keempat, Treaty Contract Out. Sejak tco4 (29-09-2026) dokumennya
+	// PETA TABEL WARISAN: seluruh tabelnya terdaftar tabelBukanMilikKita.
 	"../../../.scratch/treaty-contract-out/STRUKTUR-TABEL-TREATY-CONTRACT-OUT.md",
 }
 
@@ -83,7 +84,23 @@ var tabelDikecualikan = map[string]string{}
 var tabelBukanMilikKita = map[string]string{
 	"M_TEMPUPLOADLIFE": "tabel warisan penampung unggahan CSV, ditulis " +
 		"`RDBList/InsertDataUploadLife.xml` di sistem lama; dibaca tiket 04, tidak dibuat",
+	// ⛔ Treaty Contract Out tco4 (keputusan work owner 29-09-2026): "khusus
+	// modul treaty contract out tidak ada tabel baru sama sekali". Modul ini
+	// MENULIS dan membaca tabel-tabel ini persis seperti RDB XML-nya - tetapi
+	// tidak membuatnya. TestTabelBukanMilikKitaTidakDibuat menolak migrasi
+	// yang membuatnya.
+	"TREATYYEAR":           alasanWarisanTCO,
+	"TREATYCONTRACT":       alasanWarisanTCO,
+	"TREATYREINSURER":      alasanWarisanTCO,
+	"MTREATYSECURITY":      alasanWarisanTCO,
+	"TREATYBUSINESS":       alasanWarisanTCO,
+	"PROPORTIONALARRG":     alasanWarisanTCO,
+	"M_ATTACHMENTTREATY_2": alasanWarisanTCO,
+	"T_STORAGE_IMAGE":      alasanWarisanTCO,
 }
+
+const alasanWarisanTCO = "tabel warisan POOLDATA yang Treaty Contract Out tulis dan baca " +
+	"tanpa membuatnya (tco4, keputusan work owner 29-09-2026)"
 
 // namaTabelBeda memetakan nama tabel di STRUKTUR ke nama yang dipakai DDL.
 var namaTabelBeda = map[string]string{

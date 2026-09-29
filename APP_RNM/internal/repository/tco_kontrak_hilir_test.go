@@ -3,7 +3,8 @@ package repository
 // Uji kontrak baca hilir Treaty Contract Out - TANPA Oracle (tiket 01, tco3).
 //
 // Tiga sisi dikunci:
-//  1. kolom yang pembaca sebut ADA di DDL tabel T_* (300-305);
+//  1. kolom yang pembaca sebut ADA di tabel WARISAN (`KolomWarisanTCO`,
+//     urutan parameter procedure penulisnya) - tco4: tidak ada DDL modul;
 //  2. kolom yang pembaca sebut ADA di kueri hilir korpus - VERBATIM;
 //  3. nol kata kerja tulis di pembaca.
 //
@@ -17,27 +18,17 @@ import (
 	"testing"
 )
 
-// kolomDDLTCO membaca kolom tiap tabel T_* dari berkas migrasi 300-306.
-func kolomDDLTCO(t *testing.T) map[string]map[string]bool {
+// kolomWarisanUjiTCO - kolom tiap tabel WARISAN yang modul ini tulis dan
+// baca (tco4), dari `KolomWarisanTCO`.
+func kolomWarisanUjiTCO(t *testing.T) map[string]map[string]bool {
 	t.Helper()
 	hasil := map[string]map[string]bool{}
-	for nama, teks := range seluruhSQL(t, false) {
-		if !strings.HasPrefix(nama, "30") {
-			continue
+	for _, tabel := range []string{warisanTahunTCO, warisanKontrakTCO, warisanReinsurerTCO,
+		warisanSecurityTCO, warisanBusinessTCO, warisanKlausulTCO} {
+		hasil[tabel] = map[string]bool{}
+		for _, k := range KolomWarisanTCO(tabel) {
+			hasil[tabel][k] = true
 		}
-		for _, p := range strings.Split(teks, "\n/") {
-			tabel, kolom := KolomCreateTable(p)
-			if tabel == "" {
-				continue
-			}
-			hasil[tabel] = map[string]bool{}
-			for _, k := range kolom {
-				hasil[tabel][k] = true
-			}
-		}
-	}
-	if len(hasil) == 0 {
-		t.Fatal("nol tabel T_* terbaca dari migrasi; pembacanya yang rusak")
 	}
 	return hasil
 }
@@ -50,24 +41,24 @@ var pembacaHilir = []struct {
 	// where adalah kolom yang dipakai penyaring, ikut wajib ada di DDL.
 	where []string
 }{
-	{"KlausulUntukHilir", sqlKlausulHilir("S.T_PROPORTIONALARRG"), TabelKlausulTCO, KolomKlausulHilir,
+	{"KlausulUntukHilir", sqlKlausulHilir("S.PROPORTIONALARRG"), warisanKlausulTCO, KolomKlausulHilir,
 		[]string{"TREATYDESCID", "TREATYYEAR", "TREATYGROUPID", "REINSTYPEID"}},
-	{"KlausulIndukUntukHilir", sqlKlausulIndukHilir("S.T_PROPORTIONALARRG"), TabelKlausulTCO, KolomKlausulHilir,
+	{"KlausulIndukUntukHilir", sqlKlausulIndukHilir("S.PROPORTIONALARRG"), warisanKlausulTCO, KolomKlausulHilir,
 		[]string{"PARENTREINSTYPEID"}},
-	{"ReinsurerUntukHilir", sqlReinsurerHilir("S.T_TREATYREINSURER"), TabelReinsurerTCO, KolomReinsurerHilir,
+	{"ReinsurerUntukHilir", sqlReinsurerHilir("S.TREATYREINSURER"), warisanReinsurerTCO, KolomReinsurerHilir,
 		[]string{"REINSTYPEID", "TREATYYEAR", "TREATYGROUPID"}},
-	{"BusinessUntukHilir", sqlBusinessHilir("S.T_TREATYBUSINESS"), TabelBusinessTCO, KolomBusinessHilir,
+	{"BusinessUntukHilir", sqlBusinessHilir("S.TREATYBUSINESS"), warisanBusinessTCO, KolomBusinessHilir,
 		[]string{"BIZCODE"}},
-	{"GrupTreatyAktifUntukHilir", sqlGrupTreatyAktifHilir("S.T_TREATYBUSINESS"), TabelBusinessTCO,
+	{"GrupTreatyAktifUntukHilir", sqlGrupTreatyAktifHilir("S.TREATYBUSINESS"), warisanBusinessTCO,
 		[]string{"TREATYGROUPID"}, []string{"BIZCODE", "TREATYYEAR", "ISACTIVE"}},
 }
 
-func TestKontrakHilirTCOKolomAdaDiDDL(t *testing.T) {
-	ddl := kolomDDLTCO(t)
+func TestKontrakHilirTCOKolomAdaDiWarisan(t *testing.T) {
+	ddl := kolomWarisanUjiTCO(t)
 	for _, p := range pembacaHilir {
 		kolomTabel := ddl[p.tabel]
 		if len(kolomTabel) == 0 {
-			t.Fatalf("%s: tabel %s tidak ada di DDL", p.nama, p.tabel)
+			t.Fatalf("%s: tabel %s bukan tabel warisan modul", p.nama, p.tabel)
 		}
 		for _, k := range append(append([]string{}, p.kolom...), p.where...) {
 			if !kolomTabel[k] {
@@ -79,11 +70,11 @@ func TestKontrakHilirTCOKolomAdaDiDDL(t *testing.T) {
 		}
 	}
 	// Pembaca gabungan menyentuh tiga tabel.
-	gabung := sqlLimitTreatyHilir("S.T_TREATYBUSINESS", "S.T_PROPORTIONALARRG", "S.T_TREATYCONTRACT")
+	gabung := sqlLimitTreatyHilir("S.TREATYBUSINESS", "S.PROPORTIONALARRG", "S.TREATYCONTRACT")
 	for tabel, kolom := range map[string][]string{
-		TabelBusinessTCO: {"TREATYYEARID", "REINSTYPEID", "BIZCODE"},
-		TabelKlausulTCO:  {"TREATYYEARID", "REINSTYPEID", "TREATYDESCID", "PCT", "RP", "USD"},
-		TabelKontrakTCO:  {"IDTREATYYEAR", "REINSTYPEID", "TREATYSTARTDATE", "TREATYENDDATE"},
+		warisanBusinessTCO: {"TREATYYEARID", "REINSTYPEID", "BIZCODE"},
+		warisanKlausulTCO:  {"TREATYYEARID", "REINSTYPEID", "TREATYDESCID", "PCT", "RP", "USD"},
+		warisanKontrakTCO:  {"IDTREATYYEAR", "REINSTYPEID", "TREATYSTARTDATE", "TREATYENDDATE"},
 	} {
 		for _, k := range kolom {
 			if !ddl[tabel][k] {

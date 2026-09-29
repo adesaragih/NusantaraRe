@@ -300,7 +300,10 @@ func TestSetiapPemanggilBukaMemeriksaBolehDilewati(t *testing.T) {
 	// SEBELAS sejak tiket 02 Treaty Contract Out: handlers/tco_db_test.go
 	// membuka koneksinya sendiri untuk mengisi tiruan master REINSURANCETYPE
 	// dan menyalakan stub identitas pada Router-nya.
-	const mau = 11
+	//
+	// SEPULUH lagi sejak tco4 (29-09-2026): tco_pindah_db_test.go dibuang
+	// bersama migrasi data ke tabel T_* - tidak ada tabel tujuan.
+	const mau = 10
 	if diperiksa != mau {
 		t.Errorf("pemanggil skemauji.Buka() ditemukan %d, mau %d; "+
 			"bila memang bertambah, perbarui angkanya di sini", diperiksa, mau)

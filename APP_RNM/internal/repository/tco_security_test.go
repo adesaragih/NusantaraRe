@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"os"
 	"regexp"
 	"strings"
 	"testing"
@@ -37,19 +36,6 @@ func TestSQLSecurityTCO(t *testing.T) {
 	}
 	if !strings.Contains(sqlDaftarSecurityTCO("S.T", "S.A"), "WHERE s.REAS_ID = :1 AND s.THN_TREATY = :2") {
 		t.Error("daftar tidak menyaring A AND D SelectSecurityReinsurer")
-	}
-}
-
-// Daftar kolom sisip = kolom DDL tiket 01, satu per satu.
-func TestKolomSecuritySamaDenganDDL(t *testing.T) {
-	isi, err := os.ReadFile("migrations/303_t_mtreatysecurity.sql")
-	if err != nil {
-		t.Fatal(err)
-	}
-	pernyataan := strings.Split(string(isi), "\n/\n")[0]
-	_, kolom := KolomCreateTable(pernyataan)
-	if strings.Join(kolom, ",") != strings.Join(kolomSecurityTCO, ",") {
-		t.Errorf("DDL %v, sisip %v", kolom, kolomSecurityTCO)
 	}
 }
 

@@ -69,13 +69,6 @@ func TestSQLJejakTCOBernamaLengkap(t *testing.T) {
 			t.Errorf("jejak tanpa kolom %s", k)
 		}
 	}
-	// Kolom jejak ada di DDL 306.
-	ddl := kolomDDLTCO(t)[TabelJejakTCO]
-	for _, k := range []string{"ID", "WAKTU", "AKUN_ID", "TABEL", "BARIS_ID", "AKSI", "KETERANGAN"} {
-		if !ddl[k] {
-			t.Errorf("kolom %s tidak ada di DDL T_TREATYCO_JEJAK", k)
-		}
-	}
 }
 
 func TestSQLGrupTreatyTCO(t *testing.T) {

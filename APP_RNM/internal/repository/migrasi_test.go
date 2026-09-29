@@ -745,8 +745,15 @@ func TestSeluruhCreateDapatDibacaNamanya(t *testing.T) {
 =======
 	// +3 dari 307 (tiket 12 Treaty Contract Out, 29-09-2026): tabel
 	// T_TREATYYEAR_LAMPIRAN + index + sequence = 74.
+<<<<<<< HEAD
 	const mau = 74
 >>>>>>> 7b1db9b (treaty-contract-out: tiket 12 — lampiran di tahun treaty)
+=======
+	// Penyatuan 29-09-2026: 50 (dasar) + 1 (057, butir bn) + 24 (300-307 Treaty Contract Out) = 75.
+	// ⛔ tco4 (keputusan work owner 29-09-2026): Treaty Contract Out NOL tabel
+	// baru - 300-307 dibuang, kembali ke 50 + 1 = 51.
+	const mau = 51
+>>>>>>> e6905ed (treaty-contract-out: tco4 — nol tabel baru, migrasi 300-307 dibuang)
 	if diperiksa != mau {
 		t.Errorf("pernyataan CREATE diperiksa %d, mau %d", diperiksa, mau)
 	}
@@ -847,7 +854,8 @@ func TestKolomCreateTableMembacaSeluruhTabel(t *testing.T) {
 	// dan PK-nya sudah berindeks sendiri.
 	// +7 tabel dari 300-306 (tiket 01 Treaty Contract Out) = 27.
 	// +1 tabel dari 307 (tiket 12 Treaty Contract Out, lampiran) = 28.
-	const mauTabel = 28
+	// ⛔ tco4 (29-09-2026): 300-307 dibuang - kembali ke 20.
+	const mauTabel = 20
 	if tabel != mauTabel {
 		t.Errorf("CREATE TABLE terbaca %d, mau %d", tabel, mauTabel)
 	}

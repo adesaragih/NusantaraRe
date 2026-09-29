@@ -1,288 +1,248 @@
-# Struktur Tabel — Treaty Contract Out (master arrangement kontrak treaty non-life)
+# Struktur Tabel — Treaty Contract Out: PETA TABEL WARISAN yang dipakai
 
-Acuan bentuk tabel untuk aplikasi Go. Dibuat 2026-09-28 di tiket 01 (PREFACTOR).
-Presisi fisik adalah keputusan modul ini (NUMBER(38,8), pola PremiumList Life) dan menunggu pencocokan DBA.
-Berkas ini menggambarkan BENTUK, bukan alasan — alasannya ada di `spec.md` dan `issues/01`.
+**Keputusan tco4 `[DIPUTUSKAN work owner 29-09-2026]`** — menggantikan tco1. Kutipan: *"khusus modul treaty contract out
+tidak ada tabel baru sama sekali!!!"*. Modul ini **tidak membuat satu tabel atau sequence pun**: ia menulis dan membaca
+tabel yang **sudah ada** di `POOLDATA`, dengan **nama tabel dan kolom VERBATIM**, persis seperti RDB XML. Migrasi
+`300`–`307` (tco1: `T_TREATYYEAR` … `T_TREATYYEAR_LAMPIRAN`) **dibuang** 29-09-2026.
 
-⚠️ **Berkas ini adalah acuan TUNGGAL nama kolom.** Penjaga `TestKolomDDLCocokDenganStruktur` membandingkan
-setiap tabel di sini dengan DDL migrasi 300–306 dua arah.
+Berkas ini **peta**, bukan DDL: tabel → kolom VERBATIM → tipe katalog → RDB penulis/pembaca → bentuk nilai yang ditulis.
+Penjaga yang memakainya:
 
-**Keputusan tco1 `[DIPUTUSKAN; veto work owner]`** — nama tabel berawalan **`T_`**. Keenam nama warisan
-(`TREATYYEAR`, `TREATYCONTRACT`, `TREATYREINSURER`, `MTREATYSECURITY`, `TREATYBUSINESS`, `PROPORTIONALARRG`)
-**sudah dipakai** tabel hidup di skema `POOLDATA` yang sama. Tabel warisan **tidak disentuh**: tidak ditulis,
-tidak di-`ALTER`, hanya dibaca oleh skrip migrasi data (tiket 01) sebagai sumber.
+- `TestKolomDDLCocokDenganStruktur` / `TestTabelBukanMilikKitaTidakDibuat` (`strukturkolom_test.go`): setiap tabel di sini
+  terdaftar `tabelBukanMilikKita` — migrasi mana pun yang **membuatnya** gagal;
+- `TestTCONolTabelBaru` (`tco_warisan_test.go`): nol berkas migrasi di rentang `300`–`319`;
+- `TestKolomWarisanTCOSesuaiProcedure`: daftar kolom `KolomWarisanTCO` = urutan parameter procedure penulisnya.
 
-**Nama kolom VERBATIM dari warisan** — termasuk yang dibaca hilir (`Claim Prop`, `Komite Claim Prop`,
-`Claim Fac In`; spec b224–b232, kontrak `tco_kontrak_hilir.go`). Yang berubah hanya TIPE (uang/persen → angka
-desimal, tanggal → DATE) dan satu PK surrogate baru di `T_MTREATYSECURITY`.
+Sumber tipe: `dba-procedures.md` bab "DDL + 4 procedure master lain" `[data DBA]`. Kolom yang DBA tidak sebut tipenya
+tertulis **VARCHAR2 `[tidak disebut DBA]`** dan diperlakukan teks.
 
-**Tipe ditulis sebagai kategori logis:** teks · angka desimal · DATE · timestamp.
-Pemetaan fisik: teks → `VARCHAR2(255)` (pengenal `*ID` → `VARCHAR2(32)`; teks bebas panjang → `VARCHAR2(1000)`);
-angka desimal → `NUMBER(38,8)`; DATE → `DATE`; timestamp → `TIMESTAMP`.
+⛔ Procedure **tidak dipanggil** (keputusan **o**): isinya ditiru di Go — UPSERT dikunci `ID`, ID baru `'1' || lpad(seq, n)`
+dengan sequence **warisan**, nol `COMMIT` di teks SQL (ADR-U-0029; `DalamTransaksi` yang commit).
 
-⚠️ Seluruh kolom **nullable** kecuali PK; wajib-isi ditegakkan di Go (ADR-U-0027). NOT NULL akan menolak baris
-warisan yang memang kosong saat migrasi data.
+⛔ Nol tabel jejak modul: `T_TREATYCO_JEJAK` dibuang, Pega tidak mencatat jejak modul ini. Efek keluar lampiran memakai
+outbox bersama `T_LOG_SERVICE_RNM` milik aplikasi (bukan tabel modul ini).
 
-⛔ Nol `COMMIT` di teks SQL (ADR-U-0029). Nol kolom dokumen: setiap atribut arrangement adalah kolom bernama
-(penyimpangan sadar 1 — tabel `M_*` warisan MATI, tidak dibaca migrasi).
+Rule korpus (folder `D:\XML\RNM_BRD\Treaty Contract Out\`), dibaca 29-09-2026; `pyStepsBlockName` RDB: tidak ada
+(Rule-Connect-SQL tanpa langkah):
 
-Rule korpus yang dirujuk (folder `D:\XML\RNM_BRD\Treaty Contract Out\`):
-
-| Singkatan | Rule | Peran |
+| Singkatan | Rule | Isi |
 | --- | --- | --- |
-| **SaveYear** | `RDBList/SaveMasterTreatyYear_SQL.xml` → `POOLDATA.PEGA_TREATYYEAR` (10 param + 2 out) | penulis `TREATYYEAR` |
-| **SaveContract** | `RDBList/SaveMasterTreatyContract_SQL.xml` → `POOLDATA.PEGA_TREATYCONTRACT` (8 + 2 out) | penulis `TREATYCONTRACT` |
-| **SaveReins** | `RDBList/SaveMasterTreatyReinsurer_SQL.xml` → `POOLDATA.PEGA_TREATYREINSURER` (19 + 2 out) | penulis `TREATYREINSURER` |
-| **SaveBiz** | `RDBList/SaveMasterTreatyBusiness_SQL.xml` → `POOLDATA.PEGA_TREATYBUSINESS` (12 + 2 out) | penulis `TREATYBUSINESS` |
-| **SaveArrg** | `RDBList/SaveMasterProportionalArrg.xml` → `POOLDATA.PEGA_PROPORTIONALARRG` (35 + 2 out) | penulis `PROPORTIONALARRG` induk |
-| **SaveArrgChild** | `RDBList/SaveMasterProportionalArrgChild.xml` → `POOLDATA.PEGA_M_PROPORTIONALARRG_CHILD` (26 + 2 out) | penulis `PROPORTIONALARRG` anak — tabel yang SAMA `[data DBA]` |
-| **InsSec** | `RDBList/InsertToMTreatySecurity.xml` — `insert into mtreatysecurity values (…)` posisional 7 nilai | penulis `MTREATYSECURITY` |
-| **DDL-DBA** | `dba-procedures.md` bab "DDL + 4 procedure master lain" `[data DBA]` | tipe warisan |
+| **SaveYear** | `RDBList/SaveMasterTreatyYear_SQL.xml` b84 | `POOLDATA.PEGA_TREATYYEAR` (10 param + 2 out) |
+| **SaveContract** | `RDBList/SaveMasterTreatyContract_SQL.xml` b84 | `POOLDATA.PEGA_TREATYCONTRACT` (8 + 2 out) |
+| **SaveReins** | `RDBList/SaveMasterTreatyReinsurer_SQL.xml` b79 | `POOLDATA.PEGA_TREATYREINSURER` (19 + 2 out) |
+| **SaveBiz** | `RDBList/SaveMasterTreatyBusiness_SQL.xml` b85 | `POOLDATA.PEGA_TREATYBUSINESS` (12 + 2 out) |
+| **SaveArrg** | `RDBList/SaveMasterProportionalArrg.xml` b85 | `POOLDATA.PEGA_PROPORTIONALARRG` (35 + 2 out) |
+| **SaveArrgChild** | `RDBList/SaveMasterProportionalArrgChild.xml` b85 | `POOLDATA.PEGA_M_PROPORTIONALARRG_CHILD` (26 + 2 out) — tabel yang SAMA `[data DBA]` |
+| **InsSec** | `RDBList/InsertToMTreatySecurity.xml` b60 | `insert into mtreatysecurity values (…)` posisional 7 nilai |
+| **UpdSec** | `RDBList/UpdateMTreatySecurity.xml` b85 | `where REAS_ID = … and trim(REAS_SECURITY) = trim(…)` |
+| **DelSec** | `RDBList/DeleteSecurityReinsurer.xml` b85 | idem kunci |
+| **DelReins** | `RDBList/DeleteFromTreatyReinsurer_Act.xml` b59 | security `REAS_ID` lalu reinsurer `ID` |
+| **DelBiz** | `RDBList/DeleteRowBusinessList.xml` b85 | `delete from treatybusiness where id` *(tab Delete `m_treatybusiness` b88 tidak dipakai `RDB-List`)* |
+| **DelContract** | `RDBList/DeleteFromTREATYCONTRACT_SQL.xml` b79 | empat DELETE: kontrak, business, security, reinsurer |
+| **InsAtt** | `RDBList/InsertAtatchment_Sql.xml` b60 | `POOLDATA.PEGA_M_ATTACHMENT(IDPEGA, DATAPEGA CLOB)` — badan **`[terbuka — DBA]`** |
+| **GetAtt** | `RDBList/GetAllAttachment2_Sql.xml` b84, `GetAttachment2_Sql.xml` b85 | `M_ATTACHMENTTREATY_2 where treatyid = {TreatyIn.ID}` |
+| **DelAtt** | `RDBList/DeleteAttachment2_Sql.xml` b84 | `delete M_ATTACHMENTTREATY_2 where treatyid = … and id = …` |
+| **Storage** | `RDBList/GetLinkStorage_SQL.xml`, `Update_T_Storage_SQL.xml`, `DeleteStorage_SQL.xml`, `GetTokenStorage_SQL.xml` | `T_STORAGE_IMAGE`, `GET_TOKEN_STORAGE` |
+| **Saudara** | `Treaty In/RDBList/InsertAttachment2_Sql.xml` b84; `Claim Fac In/RDBList/Insert_T_Storage_SQL.xml` b85, `GenerateImageID_SQL.xml` b79, `GetAppName_SQL.xml` b59 | penulis tabel warisan YANG SAMA di modul saudara — bukti kolom |
+
+**Bentuk nilai yang ditulis** (kolom teks warisan yang memuat tanggal/angka):
+
+| Bentuk | Kolom | Bukti |
+| --- | --- | --- |
+| stempel Pega `YYYYMMDDTHHMMSS.SSS GMT` (UTC) | `TREATYYEAR.TGLUPDATE`, `TREATYCONTRACT.TGLUPDATE` | `@getCurrentTimeStamp()` — `SaveTreatyYear_Act` b328, `SaveTreatyContract_Act` b1458 `[terverifikasi]` |
+| stempel Pega dari **00:00 Asia/Jakarta** | `TREATYYEAR.STARTDATE`, `TREATYYEAR.ENDDATE` | `[dugaan kuat]` properti DateTime: `KirimTahunGroupID` b508/b529 mengirimnya sebagai `CARIDATETIME`, kontrak memformatnya `@FormatDateTime(…,"dd/MM/yyyy","Asia/Jakarta")` (`SaveTreatyContract_Act` b1479/b1508), `SetTanggalTreatyContract` b567 `+8 jam`. Dibaca: stempel → zona Jakarta → tanggal. **OQ-TCO-01** |
+| DATE lewat `to_date(…,'DD/MM/YYYY')` | `TREATYCONTRACT.TREATYSTARTDATE/ENDDATE` | `dba-procedures.md`; `SaveTreatyContract_Act` b1479 `[terverifikasi]` |
+| desimal titik tanpa pemisah ribuan | `PROPORTIONALARRG.RP/USD/PCT/PCTME`, `MTREATYSECURITY.PCT_SHARE` | `[dugaan kuat]` hasil `@toDecimal` (`HitungRpUsd_depan` b293–b294, b382–b383). Dibaca: titik ATAU koma (`UraiDesimalWarisanTCO`). **OQ-TCO-23** |
+| `SYSDATE` | `PROPORTIONALARRG.TGLUPDATE` | procedure mengabaikan param dan memakai `SYSDATE` `[data DBA]` |
+| NULL (Pega tidak mengisinya) | `TREATYREINSURER.TGLUPDATE/USERID/IUDATE/STATUSON/STDRATING`, `TREATYBUSINESS.TGLUPDATE/USERID` | `NewTreatyReinsurerDetail_Act` b917–b1086 mengosongkan; simpan tidak mengisi `[terverifikasi]` |
 
 ---
 
-## T_TREATYYEAR
+## TREATYYEAR
 
-Tahun treaty — wadah seluruh kontrak satu tahun per grup. Sumber warisan `POOLDATA.TREATYYEAR`
-(`[data DBA]` seluruh kolom `VARCHAR2`).
+Tahun treaty. `[data DBA]` seluruh kolom VARCHAR2. Penulis **SaveYear**; ID `'1' || lpad(TreatyYear_seq.nextval, 6, '0')`.
 
-| Kolom | Tipe | Null | Kunci | Sumber |
-| --- | --- | --- | --- | --- |
-| `ID` | teks | tidak | PK | SaveYear param 1; warisan `'1' \|\| lpad(TreatyYear_seq.nextval, 6, '0')` |
-| `TREATYYEAR` | teks | ya | | SaveYear param 2 — kode tahun, tetap teks (ADR-U-0022) |
-| `UNDERWRITINGYEAR` | teks | ya | | SaveYear param 3 |
-| `TREATYGROUPID` | teks | ya | | SaveYear param 4 — kunci gabungan anak |
-| `TREATYGROUPNAME` | teks | ya | | SaveYear param 5 |
-| `USERID` | teks | ya | | SaveYear param 6 (`OperatorID.pyUserName`) |
-| `TGLUPDATE` | DATE | ya | | SaveYear param 7; warisan `VARCHAR2` → DATE (AC 53) |
-| `PROPORTION` | teks | ya | | SaveYear param 8 — `[terbuka]` arti; layar `InputDtlTreatyContact.xml` b6829 mengisinya dari pilihan "Reinsurance Type" `.ID`; dibawa apa adanya sebagai teks |
-| `STARTDATE` | DATE | ya | | SaveYear param 9; warisan `VARCHAR2` → DATE (AC 53) |
-| `ENDDATE` | DATE | ya | | SaveYear param 10; warisan `VARCHAR2` → DATE (AC 53) |
+| Kolom | Tipe katalog | Isi |
+| --- | --- | --- |
+| `ID` | VARCHAR2 | param 1; UPSERT kunci |
+| `TREATYYEAR` | VARCHAR2 | param 2 — kode tahun (ADR-U-0022) |
+| `UNDERWRITINGYEAR` | VARCHAR2 | param 3 |
+| `TREATYGROUPID` | VARCHAR2 | param 4 |
+| `TREATYGROUPNAME` | VARCHAR2 | param 5 |
+| `USERID` | VARCHAR2 | param 6 — `OperatorID.pyUserName` (b281) |
+| `TGLUPDATE` | VARCHAR2 | param 7 — stempel Pega |
+| `PROPORTION` | VARCHAR2 | param 8 — `[terbuka]` arti |
+| `STARTDATE` | VARCHAR2 | param 9 — stempel Pega 00:00 Jakarta (OQ-TCO-01) |
+| `ENDDATE` | VARCHAR2 | param 10 — idem |
 
-**Sequence:** `SEQ_T_TREATYYEAR` — identitas `'1' + lpad(6)`; nilai berjalan diselaraskan migrasi data.
+## TREATYCONTRACT
 
-**Index:** tidak ada di luar PK. Anti-dobel `(STARTDATE, ENDDATE, TREATYGROUPID)` (AC 73) ditegakkan di Go,
-**bukan** unique index: data warisan boleh sudah memuat duplikat.
+Kontrak (jenis reasuransi) di satu tahun. Penulis **SaveContract**; ID `'1' || lpad(treatycontract_seq.nextval, 6, '0')`.
+Penghapus **DelContract** (langkah 1).
 
----
+| Kolom | Tipe katalog | Isi |
+| --- | --- | --- |
+| `ID` | VARCHAR2 `[tidak disebut DBA]` | param 1 |
+| `IDTREATYYEAR` | VARCHAR2 `[tidak disebut DBA]` | param 2 → `TREATYYEAR.ID` (tanpa FK) |
+| `REINSTYPEID` | VARCHAR2 `[tidak disebut DBA]` | param 3 — master `REINSURANCETYPE` |
+| `REINSTYPENAME` | VARCHAR2 `[tidak disebut DBA]` | param 4 |
+| `TREATYSTARTDATE` | DATE | param 5 — `to_date(…,'DD/MM/YYYY')` |
+| `TREATYENDDATE` | DATE | param 6 — idem |
+| `USERID` | VARCHAR2 `[tidak disebut DBA]` | param 7 — `OperatorID.pyUserName` |
+| `TGLUPDATE` | VARCHAR2(1000) | param 8 — stempel Pega |
 
-## T_TREATYCONTRACT
+## TREATYREINSURER
 
-Kontrak treaty (jenis reasuransi) di dalam satu tahun treaty. Sumber warisan `POOLDATA.TREATYCONTRACT`.
+Reinsurer pada kombinasi **(TREATYYEAR, TREATYGROUPID, REINSTYPEID)** — bukan FK ke kontrak. Penulis **SaveReins**; ID
+`'1' || lpad(M_TREATYREINSURER_SEQ.nextval, 6, '0')`. Pembaca `GetMasterReinsurerList` b85 dan hilir `GetListRetro_Sql`.
 
-| Kolom | Tipe | Null | Kunci | Sumber |
-| --- | --- | --- | --- | --- |
-| `ID` | teks | tidak | PK | SaveContract param 1; warisan `'1' \|\| lpad(treatycontract_seq.nextval, 6, '0')` |
-| `IDTREATYYEAR` | teks | ya | FK → `T_TREATYYEAR.ID` | SaveContract param 2 |
-| `REINSTYPEID` | teks | ya | | SaveContract param 3 — dari master `REINSURANCETYPE` (tiket 02) |
-| `REINSTYPENAME` | teks | ya | | SaveContract param 4 |
-| `TREATYSTARTDATE` | DATE | ya | | SaveContract param 5; warisan sudah `DATE` |
-| `TREATYENDDATE` | DATE | ya | | SaveContract param 6; warisan sudah `DATE` |
-| `USERID` | teks | ya | | SaveContract param 7 (`OperatorID.pyUserName`) |
-| `TGLUPDATE` | DATE | ya | | SaveContract param 8; warisan `VARCHAR2(1000)` → DATE (AC 53) |
+| Kolom | Tipe katalog | Isi |
+| --- | --- | --- |
+| `ID` | VARCHAR2 | param 1 |
+| `TREATYYEAR` | VARCHAR2 | param 2 — kunci gabungan |
+| `TREATYGROUPID` | VARCHAR2 | param 3 — kunci gabungan |
+| `TREATYGROUPNAME` | VARCHAR2 | param 4 |
+| `REINSTYPEID` | VARCHAR2 | param 5 — kunci gabungan |
+| `REINSTYPENAME` | VARCHAR2 | param 6 |
+| `REINSURERID` | VARCHAR2 | param 7 |
+| `CLIENTID` | VARCHAR2 | param 8 |
+| `NAME` | VARCHAR2 | param 9 |
+| `RICOMM` | NUMBER | param 10 — bind angka |
+| `PCTSHARE` | NUMBER | param 11 — bind angka |
+| `IUDATE` | VARCHAR2 | param 12 — NULL (Pega mengosongkan) |
+| `USERID` | VARCHAR2 | param 13 — NULL |
+| `STARTDATE` | VARCHAR2 | param 14 — NULL |
+| `ENDDATE` | VARCHAR2 | param 15 — NULL |
+| `STATUSON` | VARCHAR2 | param 16 — NULL |
+| `STDRATING` | VARCHAR2 | param 17 — NULL |
+| `OPERATORNAME` | VARCHAR2 | param 18 — `OperatorID.pyUserName` (`SaveTreatyReinsurerDetail1_Act` b378) |
+| `TGLUPDATE` | VARCHAR2 | param 19 — NULL |
 
-**Sequence:** `SEQ_T_TREATYCONTRACT`.
+## MTREATYSECURITY
 
-**Index:** `IDX_T_TREATYCONTRACT_TAHUN (IDTREATYYEAR)`.
+Security di bawah seorang reinsurer. `[data DBA]` **tanpa PK**. Kunci baris = **(`REAS_ID`, `trim(REAS_SECURITY)`)** —
+UpdSec b85 dan DelSec b85; OQ-TCO-17 (security dobel ditolak) menjamin keunikannya. Penulis **InsSec** (posisional; Go
+menulis daftar kolom bernama dengan nilai yang sama).
 
-**Relasi:** FK ke tahun **tanpa** `ON DELETE CASCADE` — menghapus tahun yang masih berkontrak ditolak Oracle
-(ORA-02292), gagal terang. Tidak ada jalur hapus tahun di tiket mana pun.
+| Kolom | Tipe katalog | Isi |
+| --- | --- | --- |
+| `THN_TREATY` | VARCHAR2(4) DEFAULT '1' NOT NULL | posisi 1 — `InputData.CARI8` = `.TreatyYear` baris reinsurer |
+| `TOP_ID` | VARCHAR2(9) | posisi 2 — `''` (NULL) |
+| `TP_TREATY` | CHAR(2) | posisi 3 — `''` (NULL) |
+| `REAS_ID` | CHAR(7) NOT NULL | posisi 4 — `TREATYREINSURER.ID` |
+| `PCT_SHARE` | VARCHAR2(99) | posisi 5 — desimal teks (OQ-TCO-23) |
+| `USER_ID` | CHAR(99) | posisi 6 — `''` (NULL) |
+| `REAS_SECURITY` | CHAR(10) NOT NULL | posisi 7 — nama security; CHAR berekor spasi → dibandingkan `trim` |
 
----
+## TREATYBUSINESS
 
-## T_TREATYREINSURER
+Bisnis pada kombinasi tahun + grup + jenis. `[data DBA]` seluruh kolom VARCHAR2. Penulis **SaveBiz**; ID
+`'1' || lpad(TREATY_BUSINESS_SEQ.nextval, 6, '0')`. ⚠️ UPDATE procedure hanya men-set `ISACTIVE, BIZCODE, BIZNAME, USERID,
+TGLUPDATE` `[data DBA]`. Penghapus **DelBiz**, **DelContract** (langkah 2: `TREATYYEARID = … OR TREATYYEARID IS NULL`).
 
-Reinsurer pada kombinasi **(TREATYYEAR, TREATYGROUPID, REINSTYPEID)** — BUKAN FK ke kontrak
-(`[fakta bisnis — work owner]`, spec §2). Sumber warisan `POOLDATA.TREATYREINSURER`.
+| Kolom | Tipe katalog | Isi |
+| --- | --- | --- |
+| `ID` | VARCHAR2 | param 1 |
+| `ISACTIVE` | VARCHAR2 | param 2 — `"0"` nonaktif (OQ-TCO-13) |
+| `TREATYYEAR` | VARCHAR2 | param 3 |
+| `TREATYYEARID` | VARCHAR2 | param 4 — `InputTreatyContract.IDTreatyYear` (`SaveTreatyBusinessDetail_Act` b355) |
+| `TREATYGROUPID` | VARCHAR2 | param 5 |
+| `TREATYGROUPNAME` | VARCHAR2 | param 6 |
+| `REINSTYPEID` | VARCHAR2 | param 7 |
+| `REINSTYPENAME` | VARCHAR2 | param 8 |
+| `BIZCODE` | VARCHAR2 | param 9 |
+| `BIZNAME` | VARCHAR2 | param 10 |
+| `USERID` | VARCHAR2 | param 11 — NULL (Pega tidak mengisi) |
+| `TGLUPDATE` | VARCHAR2 | param 12 — NULL |
 
-| Kolom | Tipe | Null | Kunci | Sumber |
-| --- | --- | --- | --- | --- |
-| `ID` | teks | tidak | PK | SaveReins param 1; warisan `'1' \|\| lpad(M_TREATYREINSURER_SEQ.nextval, 6, '0')` |
-| `TREATYYEAR` | teks | ya | | SaveReins param 2 — kunci gabungan; dibaca hilir `GetListRetro_Sql` |
-| `TREATYGROUPID` | teks | ya | | SaveReins param 3 — kunci gabungan; dibaca hilir |
-| `TREATYGROUPNAME` | teks | ya | | SaveReins param 4 |
-| `REINSTYPEID` | teks | ya | | SaveReins param 5 — kunci gabungan; dibaca hilir |
-| `REINSTYPENAME` | teks | ya | | SaveReins param 6 |
-| `REINSURERID` | teks | ya | | SaveReins param 7; dibaca hilir |
-| `CLIENTID` | teks | ya | | SaveReins param 8; dibaca hilir |
-| `NAME` | teks | ya | | SaveReins param 9 — nama perusahaan reinsurer; dibaca hilir |
-| `RICOMM` | angka desimal | ya | | SaveReins param 10; warisan sudah `NUMBER`; dibaca hilir |
-| `PCTSHARE` | angka desimal | ya | | SaveReins param 11; warisan sudah `NUMBER`; dibaca hilir |
-| `IUDATE` | teks | ya | | SaveReins param 12 — `[terbuka]` arti dan bentuk; tidak termasuk daftar tanggal AC 53, dibawa apa adanya |
-| `USERID` | teks | ya | | SaveReins param 13 |
-| `STARTDATE` | DATE | ya | | SaveReins param 14; warisan `VARCHAR2` → DATE (AC 53) |
-| `ENDDATE` | DATE | ya | | SaveReins param 15; warisan `VARCHAR2` → DATE (AC 53) |
-| `STATUSON` | teks | ya | | SaveReins param 16 |
-| `STDRATING` | teks | ya | | SaveReins param 17 — field dipakai-ulang, isi belum terverifikasi; dibawa apa adanya |
-| `OPERATORNAME` | teks | ya | | SaveReins param 18 (`OperatorID.pyUserName`) |
-| `TGLUPDATE` | DATE | ya | | SaveReins param 19; warisan `VARCHAR2` → DATE (AC 53) |
+## PROPORTIONALARRG
 
-**Sequence:** `SEQ_T_TREATYREINSURER`.
+Klausul arrangement — induk dan "anak" di tabel yang SAMA `[data DBA]`. Penulis **SaveArrg** (35) / **SaveArrgChild** (26,
+tanpa sembilan kolom terakhir); ID `'1' || lpad(PROPORTIONALARRG_SEQ.nextval, 7, '0')`. Pembaca hidup relasional:
+`GetMasterDescriptionLimitParentList` b85 dan hilir. RDB `GetMasterDescription*`/`GetMasterPanggilID`/`GetMasterPortfolioListDetail`
+membaca JSON `m_PROPORTIONALARRG` — **mati** `[keputusan work owner]`, tidak ditulis procedure mana pun; tidak dibaca.
 
-**Index:** `IDX_T_TREATYREINSURER_KOMB (TREATYYEAR, TREATYGROUPID, REINSTYPEID)` — kunci gabungan yang dipakai
-`GetMasterReinsurerList`, kaskade hapus, dan hilir.
+| Kolom | Tipe katalog | Isi |
+| --- | --- | --- |
+| `ID` | VARCHAR2 `[tidak disebut DBA]` | param 1 |
+| `TREATYYEAR` | VARCHAR2 `[tidak disebut DBA]` | param 2 |
+| `TREATYYEARID` | VARCHAR2 `[tidak disebut DBA]` | param 3 |
+| `TREATYGROUPID` | VARCHAR2 `[tidak disebut DBA]` | param 4 |
+| `TREATYGROUPNAME` | VARCHAR2 `[tidak disebut DBA]` | param 5 |
+| `TREATYDESCID` | VARCHAR2 `[tidak disebut DBA]` | param 6 — master `TREATYDESC` |
+| `TREATYDESCNAME` | VARCHAR2 `[tidak disebut DBA]` | param 7 |
+| `REINSTYPEID` | VARCHAR2 `[tidak disebut DBA]` | param 8 |
+| `REINSTYPENAME` | VARCHAR2 `[tidak disebut DBA]` | param 9 |
+| `LAYER` | VARCHAR2 `[tidak disebut DBA]` | param 10 |
+| `LAYERPART` | VARCHAR2 `[tidak disebut DBA]` | param 11 |
+| `LAYERPARTTYPE` | VARCHAR2 `[tidak disebut DBA]` | param 12 |
+| `LAYERTYPE` | VARCHAR2 `[tidak disebut DBA]` | param 13 |
+| `KURS` | VARCHAR2 `[tidak disebut DBA]` | param 14 — teks `TREATYEXCHANGEYEARLY.TOIDR` apa adanya |
+| `TGLUPDATE` | DATE | param 15 diabaikan; `SYSDATE` |
+| `USERID` | VARCHAR2 `[tidak disebut DBA]` | param 16 — `OperatorID.pyUserName` |
+| `LINE` | VARCHAR2 `[tidak disebut DBA]` | param 17 |
+| `PCT` | VARCHAR2(1000) | param 18 — desimal teks |
+| `PCTME` | VARCHAR2(1000) | param 19 — desimal teks |
+| `YDCF` | VARCHAR2 `[tidak disebut DBA]` | param 20 |
+| `METHOD` | VARCHAR2 `[tidak disebut DBA]` | param 21 |
+| `TERRITORIALLIMIT` | VARCHAR2 `[tidak disebut DBA]` | param 22 |
+| `PARENTREINSTYPEID` | VARCHAR2 `[tidak disebut DBA]` | param 23 — `"00"` = induk (OQ-TCO-20) |
+| `SPREADINGORDER` | VARCHAR2 `[tidak disebut DBA]` | param 24 |
+| `RP` | VARCHAR2(1000) | param 25 — desimal teks |
+| `USD` | VARCHAR2(1000) | param 26 — desimal teks |
+| `ID_OCCUPATION` | VARCHAR2 `[tidak disebut DBA]` | param 27 — induk saja |
+| `OCCUPATION` | VARCHAR2 `[tidak disebut DBA]` | param 28 — induk saja |
+| `ID_CLAUSE` | VARCHAR2 `[tidak disebut DBA]` | param 29 — induk saja |
+| `CLAUSE` | VARCHAR2 `[tidak disebut DBA]` | param 30 — induk saja |
+| `TREATYLIMIT` | NUMBER | param 31 — induk saja; bind angka |
+| `COINS_MIN` | NUMBER | param 32 — induk saja |
+| `COINS_MAX` | NUMBER | param 33 — induk saja |
+| `MORERP` | NUMBER | param 34 — induk saja |
+| `MOREUSD` | NUMBER | param 35 — induk saja |
 
----
+Kolom katalog yang procedure **tidak** set: `OBJECT VARCHAR2(50)`, `PROPORTIONALLIST VARCHAR2(1000)` — tidak ditulis, tidak dibaca.
 
-## T_MTREATYSECURITY
+## M_ATTACHMENTTREATY_2
 
-Security di bawah seorang reinsurer. Sumber warisan `POOLDATA.MTREATYSECURITY` (`[data DBA]` **tanpa PK**,
-INSERT posisional). Penyimpangan sadar 5: PK surrogate, kolom bernama, `PCT_SHARE` desimal, `REAS_SECURITY`
-atribut biasa.
+Lampiran tahun treaty. Kunci pemilik **`TREATYID = TreatyYear + TreatyYearID`** (teks disambung) — `TreatyOutSaveAttachment`
+b1402 dan `DeleteAttachmentTreaty` b252 `[terverifikasi]`; **ralat** tiket 12 yang menyebutnya kunci treaty inward. Penulis
+Treaty Contract Out: procedure `PEGA_M_ATTACHMENT(IDPEGA, DATAPEGA)` — badannya **`[terbuka — DBA]`** (OQ-TCO-24); kolom
+dan bentuk ID ditiru dari penulis langsung tabel yang SAMA di `Treaty In/RDBList/InsertAttachment2_Sql.xml` b84.
+Tipe: `[terbuka — DBA]`, diperlakukan VARCHAR2.
 
-| Kolom | Tipe | Null | Kunci | Sumber |
-| --- | --- | --- | --- | --- |
-| `ID` | teks | tidak | PK | **baru** — surrogate dari `SEQ_T_MTREATYSECURITY`, diberikan saat migrasi (AC 68) |
-| `THN_TREATY` | teks | ya | | InsSec posisi 1 (`InputData.CARI8` = `.TreatyYear` baris reinsurer, `ViewDetailTreatyReinsurerGrid1.xml` b5301) |
-| `TOP_ID` | teks | ya | | InsSec posisi 2 — dikosongkan `''`; `[terbuka]` arti, dibawa sebagai kolom bernama |
-| `TP_TREATY` | teks | ya | | InsSec posisi 3 — dikosongkan `''`; `[terbuka]` |
-| `REAS_ID` | teks | ya | FK → `T_TREATYREINSURER.ID` `ON DELETE CASCADE` | InsSec posisi 4 (`InputData.CARI9` = `.ID` baris reinsurer, b5307) |
-| `PCT_SHARE` | angka desimal | ya | | InsSec posisi 5; warisan `VARCHAR2(99)` → desimal (AC 51) |
-| `USER_ID` | teks | ya | | InsSec posisi 6 — dikosongkan `''`; `[terbuka]` |
-| `REAS_SECURITY` | teks | ya | | InsSec posisi 7 — nama security, **bukan** bagian kunci (AC 18) |
+| Kolom | Tipe katalog | Isi |
+| --- | --- | --- |
+| `ID` | `[terbuka — DBA]` | `TO_CHAR(SYSTIMESTAMP, 'YYYYMMDDHH24MISSFF3')` (Saudara b84) |
+| `TREATYID` | `[terbuka — DBA]` | `TreatyYear + TreatyYearID` |
+| `CATEGORY` | `[terbuka — DBA]` | `.pyCategory` = `"File"` (`TreatyOutSaveAttachment` b558) |
+| `FILENAME` | `[terbuka — DBA]` | nama berkas unggahan |
+| `FILEMIMETYPE` | `[terbuka — DBA]` | MIME |
+| `DATA_JSON` | `[terbuka — DBA]` | Saudara: `Datain.CARI50`; modul ini: NULL (nol kolom dokumen) |
+| `USERNAME` | `[terbuka — DBA]` | `OperatorID.pyUserIdentifier` |
+| `CATEGORY_ID` | `[terbuka — DBA]` | kategori pilihan (master `CATEGORY_ATTACH_REAS`); `GetAttachment2_Sql` menyaringnya |
+| `T_STORAGE_ID` | `[terbuka — DBA]` | `T_STORAGE_IMAGE.IMAGEID` objek berkas |
 
-**Sequence:** `SEQ_T_MTREATYSECURITY`.
+## T_STORAGE_IMAGE
 
-**Index:** `IDX_T_MTREATYSECURITY_REAS (REAS_ID)`.
+Objek berkas di layanan penyimpanan. Penulis: `Insert_T_Storage_SQL` (Saudara b85) sesudah unggah berhasil;
+`Update_T_Storage_SQL` b85; `DeleteStorage_SQL` b85 sesudah hapus berhasil. Pembaca `GetLinkStorage_SQL` b85.
+`IMAGEID` = `STANDARD_HASH('ASMPP' || SYSTIMESTAMP || SYS_GUID(), 'MD5')` (`GenerateImageID_SQL` b79; `models.ImageIDBaru`).
 
-**Relasi:** satu-satunya FK berkaskade di modul ini — security memang milik reinsurernya
-(`DeleteFromTreatyReinsurer_Act.xml` menghapus security lalu reinsurer, tiket 06).
-
----
-
-## T_TREATYBUSINESS
-
-Jenis bisnis yang ditanggung pada kombinasi (TREATYYEAR, TREATYGROUPID, REINSTYPEID). Sumber warisan
-`POOLDATA.TREATYBUSINESS` (`[data DBA]` seluruh kolom `VARCHAR2`).
-
-| Kolom | Tipe | Null | Kunci | Sumber |
-| --- | --- | --- | --- | --- |
-| `ID` | teks | tidak | PK | SaveBiz param 1; warisan `'1' \|\| lpad(TREATY_BUSINESS_SEQ.nextval, 6, '0')`; dibaca hilir `GetTreatyGroup_Sql` |
-| `ISACTIVE` | teks | ya | | SaveBiz param 2 — hilir menyaring `isactive='1'` (`Claim Prop/RDBList/GetTreatyGroupID.xml`) |
-| `TREATYYEAR` | teks | ya | | SaveBiz param 3; dibaca hilir |
-| `TREATYYEARID` | teks | ya | | SaveBiz param 4 — **boleh NULL di data lama** (`DeleteFromTREATYCONTRACT_SQL.xml`: `OR TREATYYEARID IS NULL`); tanpa FK |
-| `TREATYGROUPID` | teks | ya | | SaveBiz param 5; dibaca hilir |
-| `TREATYGROUPNAME` | teks | ya | | SaveBiz param 6 |
-| `REINSTYPEID` | teks | ya | | SaveBiz param 7; dibaca hilir |
-| `REINSTYPENAME` | teks | ya | | SaveBiz param 8 |
-| `BIZCODE` | teks | ya | | SaveBiz param 9; dibaca hilir |
-| `BIZNAME` | teks | ya | | SaveBiz param 10; dibaca hilir |
-| `USERID` | teks | ya | | SaveBiz param 11 |
-| `TGLUPDATE` | DATE | ya | | SaveBiz param 12; warisan `VARCHAR2` → DATE (AC 53) |
-
-**Sequence:** `SEQ_T_TREATYBUSINESS`.
-
-**Index:** `IDX_T_TREATYBUSINESS_KOMB (TREATYYEAR, TREATYGROUPID, REINSTYPEID)`.
-
----
-
-## T_PROPORTIONALARRG
-
-SATU tabel untuk 25 jenis klausul (penyimpangan sadar 2), dibedakan `TREATYDESCID`. Sumber warisan
-`POOLDATA.PROPORTIONALARRG`. Baris "anak" (7 jenis, SaveArrgChild) mengisi NULL pada sembilan kolom khusus induk:
-`ID_OCCUPATION`, `OCCUPATION`, `ID_CLAUSE`, `CLAUSE`, `TREATYLIMIT`, `COINS_MIN`, `COINS_MAX`, `MORERP`, `MOREUSD`.
-
-Kolom `PROPORTIONALLIST` dan `OBJECT` warisan **tidak dibawa** (AC 70): tidak di-set procedure mana pun;
-migrasi data melaporkan bila ada isi hidup di sana.
-
-| Kolom | Tipe | Null | Kunci | Sumber |
-| --- | --- | --- | --- | --- |
-| `ID` | teks | tidak | PK | SaveArrg param 1; warisan `'1' \|\| lpad(PROPORTIONALARRG_SEQ.nextval, 7, '0')` — **7 digit** |
-| `TREATYYEAR` | teks | ya | | SaveArrg param 2 — kunci gabungan; dibaca hilir |
-| `TREATYYEARID` | teks | ya | | SaveArrg param 3; dibaca hilir `GetDataTreatyLimit_Sql` |
-| `TREATYGROUPID` | teks | ya | | SaveArrg param 4 — kunci gabungan; dibaca hilir |
-| `TREATYGROUPNAME` | teks | ya | | SaveArrg param 5 |
-| `TREATYDESCID` | teks | ya | | SaveArrg param 6 — jenis klausul dari master `TREATYDESC`; dibaca hilir |
-| `TREATYDESCNAME` | teks | ya | | SaveArrg param 7 |
-| `REINSTYPEID` | teks | ya | | SaveArrg param 8 — kunci gabungan; dibaca hilir |
-| `REINSTYPENAME` | teks | ya | | SaveArrg param 9; dibaca hilir |
-| `LAYER` | teks | ya | | SaveArrg param 10 — istilah apa adanya (spec §4) |
-| `LAYERPART` | teks | ya | | SaveArrg param 11 |
-| `LAYERPARTTYPE` | teks | ya | | SaveArrg param 12 |
-| `LAYERTYPE` | teks | ya | | SaveArrg param 13 |
-| `KURS` | angka desimal | ya | | SaveArrg param 14 — nilai kurs, desimal (tiket 11 AC); diisi kurs yang dipakai menghitung `Usd` tujuh induk berkurs (warisan praktis selalu kosong, OQ-TCO-18) |
-| `TGLUPDATE` | DATE | ya | | SaveArrg param 15; warisan sudah `DATE` |
-| `USERID` | teks | ya | | SaveArrg param 16 |
-| `LINE` | teks | ya | | SaveArrg param 17 |
-| `PCT` | angka desimal | ya | | SaveArrg param 18; warisan `VARCHAR2(1000)` → desimal (AC 52); dibaca hilir |
-| `PCTME` | angka desimal | ya | | SaveArrg param 19; warisan `VARCHAR2(1000)` → desimal (AC 52) |
-| `YDCF` | teks | ya | | SaveArrg param 20 |
-| `METHOD` | teks | ya | | SaveArrg param 21 |
-| `TERRITORIALLIMIT` | teks | ya | | SaveArrg param 22 |
-| `PARENTREINSTYPEID` | teks | ya | | SaveArrg param 23 — sentinel `"00"` = tanpa induk (`Activity/GetPeriode.xml` b889); dibaca hilir `GetQuotaShare` |
-| `SPREADINGORDER` | teks | ya | | SaveArrg param 24 |
-| `RP` | angka desimal | ya | | SaveArrg param 25; warisan `VARCHAR2(1000)` → desimal (AC 51); dibaca hilir |
-| `USD` | angka desimal | ya | | SaveArrg param 26; warisan `VARCHAR2(1000)` → desimal (AC 51); dibaca hilir |
-| `ID_OCCUPATION` | teks | ya | | SaveArrg param 27 — khusus induk |
-| `OCCUPATION` | teks | ya | | SaveArrg param 28 — khusus induk |
-| `ID_CLAUSE` | teks | ya | | SaveArrg param 29 — khusus induk |
-| `CLAUSE` | teks | ya | | SaveArrg param 30 — khusus induk |
-| `TREATYLIMIT` | angka desimal | ya | | SaveArrg param 31 — khusus induk; warisan sudah `NUMBER` |
-| `COINS_MIN` | angka desimal | ya | | SaveArrg param 32 — khusus induk; warisan sudah `NUMBER` |
-| `COINS_MAX` | angka desimal | ya | | SaveArrg param 33 — khusus induk; warisan sudah `NUMBER` |
-| `MORERP` | angka desimal | ya | | SaveArrg param 34 — khusus induk; warisan sudah `NUMBER` |
-| `MOREUSD` | angka desimal | ya | | SaveArrg param 35 — khusus induk; warisan sudah `NUMBER` |
-
-**Sequence:** `SEQ_T_PROPORTIONALARRG` — 7 digit.
-
-**Index:** `IDX_T_PROPARRG_KOMB (TREATYYEAR, TREATYGROUPID, REINSTYPEID)` dan
-`IDX_T_PROPARRG_DESC (TREATYYEARID, TREATYGROUPID, TREATYDESCID, PARENTREINSTYPEID)` — bentuk `WHERE`
-`GetMasterDescriptionLimitParentList` dan `TreatyTestChildTotal_Act`.
-
-**Relasi:** TIDAK ada FK ke kontrak — klausul milik level tahun/grup/jenis, dan kaskade hapus kontrak
-(tiket 10) **tidak** menyentuhnya.
+| Kolom | Tipe katalog | Isi |
+| --- | --- | --- |
+| `IMAGEID` | `[terbuka — DBA]` | kunci |
+| `URLPUBLIC` | `[terbuka — DBA]` | `URLImage` jawaban unggah |
+| `APPFOLDER` | `[terbuka — DBA]` | `appfolder` jawaban unggah; delete mengirim `Namafile` = `APPFOLDER` dikurangi `gs://` + App + `/` (`DeleteGoogleStorage_Act` b1091) |
+| `EXPDATE` | DATE | `To_date(exp, 'DD/MM/YYYY HH24:MI:SS')` |
+| `FILENAME` | `[terbuka — DBA]` | `Namafile` |
+| `APPNAME` | `[terbuka — DBA]` | `T_FOLDER_IMAGE.APPNAME` (`GetAppName_SQL` b59) |
+| `STORAGE` | `[terbuka — DBA]` | `'standard'` |
+| `TANGGAL_UPLOAD` | DATE | `To_date(DateTime, 'MM/DD/YYYY HH24:MI:SS')` (Update b85) |
 
 ---
 
-## T_TREATYCO_JEJAK
+## Master yang dibaca saja
 
-Jejak audit modul ini (ADR-0007; AC 41 spec; tiket 10 "siapa, kapan, berapa baris tiap jenis"). Tabel BARU
-tanpa padanan warisan: `USERID`/`TGLUPDATE` pada tiap baris hanya menyimpan penulis terakhir, dan baris yang
-dihapus tidak dapat menyimpan siapa yang menghapusnya.
-
-| Kolom | Tipe | Null | Kunci | Sumber |
-| --- | --- | --- | --- | --- |
-| `ID` | teks | tidak | PK | `SEQ_T_TREATYCO_JEJAK` |
-| `WAKTU` | timestamp | ya | | kapan (ADR-0007) — TIMESTAMP, dua tindakan dalam detik yang sama tetap terbedakan |
-| `AKUN_ID` | teks | ya | | siapa — pengenal akun pelaku, nol nama orang |
-| `TABEL` | teks | ya | | tabel yang disentuh (`T_TREATYYEAR`, … ) |
-| `BARIS_ID` | teks | ya | | `ID` baris yang disentuh |
-| `AKSI` | teks | ya | | `simpan` / `hapus` |
-| `KETERANGAN` | teks | ya | | rincian, mis. cacah baris tiap jenis pada kaskade hapus (tiket 10) |
-
-**Sequence:** `SEQ_T_TREATYCO_JEJAK`.
-
-**Index:** `IDX_T_TREATYCO_JEJAK_BARIS (TABEL, BARIS_ID)`.
-
-
-## T_TREATYYEAR_LAMPIRAN
-
-Lampiran berkas pada tahun treaty — **fitur baru** tiket 12 (penyimpangan sadar 9), ditambahkan 29-09-2026. Tanpa
-padanan warisan: `M_ATTACHMENTTREATY_2` berkunci ID treaty inward (`GetAllAttachment2_Sql.xml`) dan tetap milik konteks
-itu. Nama kolom mengikuti tabel warisan di mana maknanya sama.
-
-| Kolom | Tipe | Null | Kunci | Sumber |
-| --- | --- | --- | --- | --- |
-| `ID` | teks | tidak | PK | `SEQ_T_TREATYYEAR_LAMPIRAN` (lebar 9) |
-| `IDTREATYYEAR` | teks | tidak | FK → `T_TREATYYEAR.ID` tanpa kaskade | tahun treaty induk (bukan `TREATYID` inward) |
-| `FILENAME` | teks | ya | | nama berkas unggahan (`GetAllAttachment2_Sql` `filename`) |
-| `FILEMIMETYPE` | teks | ya | | jenis berkas (`FILEMIMETYPE`) |
-| `CATEGORY` | teks | ya | | teks `NOTE` master `CATEGORY_ATTACH_REAS` (`SetCategoryAttachTreatyin.xml` b500) |
-| `IMAGEID` | teks | tidak | unik | kunci berkas di penyimpanan; acak, lahir bersama baris, tidak pernah berubah |
-| `T_STORAGE_ID` | teks | ya | | terisi sesudah penyimpanan memastikan berkasnya ada; kosong = tertunda |
-| `UKURAN` | angka bulat | ya | | byte berkas |
-| `USERID` | teks | ya | | pengenal akun pengunggah — nol nama orang |
-| `TGLUPLOAD` | DATE | ya | | waktu unggah |
-
-**Sequence:** `SEQ_T_TREATYYEAR_LAMPIRAN`.
-
-**Index:** `IDX_T_TYLAMPIRAN_TAHUN (IDTREATYYEAR)`; unik `UQ_T_TYLAMPIRAN_IMAGEID (IMAGEID)`.
----
-
-### Catatan tiket 01 — tabel yang TIDAK dibuat modul ini
-
-| Objek warisan | Perlakuan |
-| --- | --- |
-| `REINSURANCETYPE`, `TREATYDESC`, `TREATYGROUP`, `TREATYEXCHANGEYEARLY`, `CATEGORY_ATTACH_REAS`, master mata uang | master **dibaca saja** dari `POOLDATA` (spec b107); tidak dibuat, tidak ditulis |
-| `M_PROPORTIONALARRG`, `M_TREATYCONTRACT`, `M_TREATYYEAR`, `M_TREATYBUSINESS` | tabel dokumen MATI — tidak dibaca migrasi, tidak dibuat (AC 63, 64) |
-| `TREATYYEAR`, `TREATYCONTRACT`, `TREATYREINSURER`, `MTREATYSECURITY`, `TREATYBUSINESS`, `PROPORTIONALARRG` | sumber migrasi data — dibaca sekali oleh `tco_migrasidata.go`, tidak pernah ditulis |
+Tidak ditulis modul ini (`masterDibacaSajaTCO`): `REINSURANCETYPE`, `TREATYGROUP`, `TREATYDESC`, `TREATYEXCHANGEYEARLY`,
+`CURRENCY`, `CATEGORY_ATTACH_REAS`, `AGENT`, `BUSINESS`, `OCCUPATION`, `CLAUSE`, `T_FOLDER_IMAGE`, `M_LINK_SERVICE`.
+`GCP_IMAGE` ditulis lewat kode token bersama (`GET_TOKEN_STORAGE` ditiru). Outbox `T_LOG_SERVICE_RNM` milik aplikasi.
