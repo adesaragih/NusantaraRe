@@ -207,12 +207,21 @@ menjawab 503 *"lebih dari satu kurs berlaku pada tanggal yang sama: 2 baris"* pa
 2025-07-01, 2026-06-01). `[data DEV 29-09-2026 — dibaca executor, SELECT baca-saja atas izin work owner]`: master USD `QUARTER='0'` memuat 12 baris, di antaranya **dua pasang baris
 kembar persis** — `14500.00` `20190801T00000.000 GMT`–`20200630T000000.000 GMT` (dua kali) dan `16500.00`
 `20250701T140000.000 GMT`–`20260630T140000.000 GMT` (dua kali); nol tanggal ditolak Oracle.
+Perintah audit, dua metode: (1) penyisir `GET` baca-saja — `GET /api/treaty-contract-out/tahun?halaman=&ukuran=100`
+sampai habis (182 baris), lalu `GET …/tahun/{id}/kurs` untuk setiap tahun; kode status dicacah per tahun dan tanggal
+mulainya dicatat → 159×200, 23×503 pada tiga tanggal; (2) SQL baca-saja atas `POOLDATA.TREATYEXCHANGEYEARLY`
+(`QUARTER='0' AND IDCURRENCY='10001'`): `COUNT(*)` → 12, dan swa-gabung pasangan tumpang-tindih
+`x.M <= y.A AND y.M <= x.A` dengan `M`/`A` = `TRUNC(TO_TIMESTAMP_TZ(STARTDATE|ENDDATE DEFAULT NULL ON CONVERSION ERROR,
+'YYYYMMDD"T"HH24MISS.FF3 TZR'))`, `x.ROWID < y.ROWID` → tepat 2 pasangan, keduanya kembar persis. Jendela: 29-09-2026
+sore, backend `:8080` versi `3748a9d`.
 
 *Keputusan (jawaban: "Kembar identik = satu kurs").* **OQ-TCO-18 dipersempit**: dua baris berlaku atau lebih yang
-TOIDR-nya **sama menurut angka** adalah satu kurs — Pega "terakhir menang" memberi nilai yang sama, jadi tidak ada yang
-ditebak; yang dipakai baris yang mulainya paling akhir (periode `Mulai`/`Akhir` di layar tidak bergantung urutan baca).
-TOIDR **berbeda** tetap master rusak (503), kini dengan kedua nilainya disebut. Cacah baris kembar dilaporkan
-(`barisMasterKembar` di `GET …/kurs`) dan **disebut di layar** bersama `barisMasterDitolak`
-(`PanelJenisKlausul.catatanMasterKurs`). Uji: `TestPilihKursBerlakuTCOBarisKembar` (kembar persis, kembar menurut angka
-dengan periode berbeda, TOIDR berbeda, TOIDR rusak); uji lama yang menuntut galat atas `{berlaku, berlaku}` diganti.
-Data master TIDAK disentuh; menghapus baris kembar tetap urusan DBA.
+**identik** — teks `TOIDR` sama persis, hari mulai dan hari akhir (hasil `trunc(TO_TIMESTAMP_TZ(..))` Oracle) sama —
+adalah satu kurs: Pega "terakhir menang" memberi nilai yang sama, jadi tidak ada yang ditebak. Yang TIDAK identik —
+`TOIDR` berbeda, teks lain untuk angka yang sama (`16500` lawan `16500.00`), atau periode berbeda — tetap master rusak
+(503), kini dengan kedua baris disebut. Cacah baris kembar dilaporkan (`barisMasterKembar` di `GET …/kurs`) dan
+**disebut di layar** (`PanelJenisKlausul.catatanMasterKurs`). Uji: `TestPilihKursBerlakuTCOBarisKembar` (dua dan tiga
+kembar persis; empat bentuk tidak identik); uji lama yang menuntut galat atas `{berlaku, berlaku}` diganti.
+*Tinjauan (/code-review):* versi pertama aturan ini menerima pula `TOIDR` yang sama menurut angka dengan periode
+berbeda dan memilih baris bermulai paling akhir — melampaui jawaban work owner; dipersempit ke "identik" sebelum
+dipakai. Data master TIDAK disentuh; menghapus baris kembar tetap urusan DBA.

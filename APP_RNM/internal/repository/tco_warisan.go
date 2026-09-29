@@ -204,7 +204,7 @@ func UraiTanggalWarisanTCO(teks string) (time.Time, bool) {
 }
 
 // polaRibuanTitikTCO - `1.000.000`: titik pemisah ribuan, lihat UraiDesimalWarisanTCO.
-var polaRibuanTitikTCO = regexp.MustCompile(`^-?\d{1,3}(\.\d{3}){2,}$`)
+var polaRibuanTitikTCO = regexp.MustCompile(`^-?[1-9]\d{0,2}(\.\d{3}){2,}$`)
 
 // UraiDesimalWarisanTCO membaca teks uang/persen warisan.
 //
@@ -219,12 +219,14 @@ var polaRibuanTitikTCO = regexp.MustCompile(`^-?\d{1,3}(\.\d{3}){2,}$`)
 // selingkup gagal terbuka (temuan /code-review lanjutan 3).
 //
 // Titik pemisah RIBUAN (`1.000.000`) DITERIMA hanya dalam bentuk yang tidak
-// mungkin desimal: dua titik atau lebih, kelompok pertama 1-3 angka, setiap
-// kelompok sesudahnya tepat tiga angka - desimal hanya punya satu titik, jadi
-// ini bukan tebakan. `[data DEV 29-09-2026]` `PROPORTIONALARRG` Limit MB:
-// `RP`/`USD` "1.000.000" sedangkan `PCTME`/`MORERP` baris yang sama 1000000;
-// tanpanya satu baris mematikan seluruh grid (500). `1.000` (SATU titik) tetap
-// desimal.
+// mungkin desimal: dua titik atau lebih, kelompok pertama 1-3 angka tanpa nol
+// di depan, setiap kelompok sesudahnya tepat tiga angka - desimal hanya punya
+// satu titik, jadi ini bukan tebakan. `[data DEV 29-09-2026]`
+// `PROPORTIONALARRG` Limit MB: `RP`/`USD` "1.000.000" sedangkan
+// `PCTME`/`MORERP` baris yang sama 1000000; tanpanya satu baris mematikan
+// seluruh grid (500). ⚠️ `1.000` / `500.000` (SATU titik) tetap DESIMAL - bila
+// kolom uang warisan juga memuat ribuan bertitik satu, ia terbaca 1000x lebih
+// kecil tanpa galat (OQ-TCO-27, terbuka).
 //
 // Teks kosong adalah KOSONG (nil, ok=true).
 func UraiDesimalWarisanTCO(teks string) (*apd.Decimal, string, bool) {

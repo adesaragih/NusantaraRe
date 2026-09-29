@@ -2772,9 +2772,7 @@ export interface KursTahun {
   idCurrency: string
   quarter: string
   treatyYear: string
-  /** Cacah baris master yang tanggalnya ditolak Oracle (lanjutan 6). */
-  barisMasterDitolak?: number
-  /** Cacah baris berlaku lain yang TOIDR-nya sama — master memuat baris kembar. */
+  /** Cacah baris berlaku lain yang identik — master memuat baris kembar. Opsional: backend lama tidak mengirimnya. */
   barisMasterKembar?: number
 }
 

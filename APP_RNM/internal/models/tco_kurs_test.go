@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -67,11 +68,11 @@ func TestPilihKursBerlakuTCO(t *testing.T) {
 	}
 }
 
-// Dua baris atau lebih berlaku [keputusan work owner 29-09-2026, mempersempit
-// OQ-TCO-18]: KEMBAR (TOIDR sama menurut angka) = satu kurs - Pega "terakhir
-// menang" memberi nilai yang sama, tanpa menebak; TOIDR BERBEDA tetap master
-// rusak. Data DEV yang melahirkannya: dua pasang baris kembar persis
-// (14500.00 2019-08-01..2020-06-30, 16500.00 2025-07-01..2026-06-30).
+// Dua baris atau lebih berlaku [keputusan work owner 29-09-2026, "Kembar
+// identik = satu kurs", mempersempit OQ-TCO-18]: baris IDENTIK - teks TOIDR,
+// hari mulai, hari akhir sama - adalah satu kurs (Pega "terakhir menang"
+// memberi nilai yang sama, tanpa menebak); selain itu tetap master rusak.
+// Data DEV yang melahirkannya: dua pasang baris kembar persis.
 func TestPilihKursBerlakuTCOBarisKembar(t *testing.T) {
 	baris := func(teks, mulai, akhir string) KursTCO {
 		return KursTCO{TeksToIDR: teks, Mulai: tglKurs(mulai), Akhir: tglKurs(akhir)}
@@ -79,28 +80,26 @@ func TestPilihKursBerlakuTCOBarisKembar(t *testing.T) {
 	a := baris("16500.00", "2025-07-01", "2026-06-30")
 
 	k, err := PilihKursBerlakuTCO(HasilMasterKursTCO{Berlaku: []KursTCO{a, a}}, tglKurs("2026-06-01"))
-	if err != nil || k.ToIDR.Text('f') != "16500.00" || k.BarisKembar != 1 {
+	if err != nil || k.TeksToIDR != "16500.00" || k.BarisKembar != 1 {
 		t.Errorf("kembar persis: %+v %v", k, err)
 	}
-
-	// Kembar menurut ANGKA, bukan teks; periode boleh berbeda - yang dipakai
-	// baris yang mulainya paling akhir (periode yang baru dimulai).
-	b := baris("16500", "2026-06-01", "2027-05-31")
-	k, err = PilihKursBerlakuTCO(HasilMasterKursTCO{Berlaku: []KursTCO{a, b, a}}, tglKurs("2026-06-15"))
-	if err != nil || k.BarisKembar != 2 || !k.Mulai.Equal(tglKurs("2026-06-01")) {
-		t.Errorf("kembar menurut angka: %+v %v", k, err)
+	if k, err := PilihKursBerlakuTCO(HasilMasterKursTCO{Berlaku: []KursTCO{a, a, a}}, tglKurs("2026-06-01")); err != nil ||
+		k.BarisKembar != 2 {
+		t.Errorf("tiga kembar persis: %+v %v", k, err)
 	}
 
-	_, err = PilihKursBerlakuTCO(HasilMasterKursTCO{Berlaku: []KursTCO{a, baris("16600", "2025-07-01", "2026-06-30")}},
-		tglKurs("2026-06-01"))
-	if !errors.Is(err, ErrKursGanda) || !strings.Contains(err.Error(), `"16500.00"`) || !strings.Contains(err.Error(), `"16600"`) {
-		t.Errorf("TOIDR berbeda harus tetap master rusak dan menyebut keduanya: %v", err)
-	}
-
-	// TOIDR rusak pada salah satu baris berlaku: tidak dapat dibandingkan - galat terang.
-	if _, err := PilihKursBerlakuTCO(HasilMasterKursTCO{Berlaku: []KursTCO{a, baris("abc", "2025-07-01", "2026-06-30")}},
-		tglKurs("2026-06-01")); !errors.Is(err, ErrKursTakTerurai) {
-		t.Errorf("TOIDR rusak: %v", err)
+	// TIDAK identik - tetap master rusak, dan pesannya menyebut kedua baris.
+	for nama, b := range map[string]KursTCO{
+		"TOIDR berbeda":               baris("16600", "2025-07-01", "2026-06-30"),
+		"angka sama, teks lain":       baris("16500", "2025-07-01", "2026-06-30"),
+		"TOIDR sama, periode berbeda": baris("16500.00", "2026-06-01", "2027-05-31"),
+		"TOIDR sama, akhir berbeda":   baris("16500.00", "2025-07-01", "2026-12-31"),
+	} {
+		_, err := PilihKursBerlakuTCO(HasilMasterKursTCO{Berlaku: []KursTCO{a, b}}, tglKurs("2026-06-15"))
+		if !errors.Is(err, ErrKursGanda) || !strings.Contains(err.Error(), `"16500.00"`) ||
+			!strings.Contains(err.Error(), fmt.Sprintf("%q", b.TeksToIDR)) {
+			t.Errorf("%s: harus tetap master rusak dan menyebut kedua baris: %v", nama, err)
+		}
 	}
 }
 

@@ -80,15 +80,12 @@ export function aturanAnak(j: JenisKlausul): AturanKlausul | undefined {
 }
 
 /**
- * Catatan master kurs — baris kembar (keputusan work owner 29-09-2026: dipakai
- * sebagai satu kurs) dan baris yang tanggalnya ditolak Oracle (lanjutan 6)
- * DISEBUT, bukan disembunyikan. `null` bila master bersih.
+ * Catatan master kurs — baris kembar identik (keputusan work owner 29-09-2026:
+ * dipakai sebagai satu kurs) DISEBUT, bukan disembunyikan. `null` bila tidak ada.
  */
 export function catatanMasterKurs(k: KursTahun): string | null {
-  const bagian: string[] = []
-  if ((k.barisMasterKembar ?? 0) > 0) bagian.push(`${k.barisMasterKembar} ${KURS_TCO.catatanKembar}`)
-  if ((k.barisMasterDitolak ?? 0) > 0) bagian.push(`${k.barisMasterDitolak} ${KURS_TCO.catatanDitolak}`)
-  return bagian.length === 0 ? null : bagian.join('; ')
+  const n = k.barisMasterKembar ?? 0
+  return n > 0 ? `${n} ${KURS_TCO.catatanKembar}` : null
 }
 
 /** Jenis menuntut kurs bila salah satu aturannya berkurs (tiket 11). */
@@ -370,6 +367,7 @@ export default function PanelJenisKlausul({
     if (!berkurs) return
     ambilKursTahun(tahunID).then(setKurs).catch(setGalatKurs)
   }, [berkurs, tahunID])
+  const catatanKurs = kurs !== null ? catatanMasterKurs(kurs) : null
   return (
     <section className="panel">
       <header className="inbox__kepala">
@@ -392,9 +390,9 @@ export default function PanelJenisKlausul({
           {KURS_TCO.kurs}: {kurs.kurs} ({KURS_TCO.berlaku} {kurs.mulai} {KURS_TCO.sampai} {kurs.akhir})
         </p>
       )}
-      {berkurs && kurs !== null && catatanMasterKurs(kurs) !== null && (
+      {berkurs && catatanKurs !== null && (
         <p className="polis__catatan" role="note">
-          {catatanMasterKurs(kurs)}
+          {catatanKurs}
         </p>
       )}
       {berkurs && galatKurs !== null && <Gagal galat={galatKurs} />}

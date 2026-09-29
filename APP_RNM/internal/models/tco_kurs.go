@@ -102,9 +102,8 @@ type KursTCO struct {
 	// BarisDitolak - cacah baris master yang tanggalnya ditolak Oracle pada
 	// baca yang sama; diisi `PilihKursBerlakuTCO`, dilaporkan ke layar.
 	BarisDitolak int
-	// BarisKembar - cacah baris berlaku LAIN yang TOIDR-nya sama dengan yang
-	// dipakai (master memuat baris kembar); diisi `PilihKursBerlakuTCO`,
-	// dilaporkan ke layar.
+	// BarisKembar - cacah baris berlaku LAIN yang identik dengan yang dipakai
+	// (master memuat baris kembar); diisi `PilihKursBerlakuTCO`, disebut di layar.
 	BarisKembar int
 }
 
@@ -146,12 +145,13 @@ func UraiNilaiKursTCO(teks string) (*apd.Decimal, error) {
 // ⚠️ Pega memutar seluruh hasil dan menyimpan yang TERAKHIR (`testingKurs`
 // langkah 3) - urutan tak tentu. Dua baris berlaku yang TOIDR-nya BERBEDA
 // dinyatakan sebagai galat (master rusak) [keputusan work owner 29-09-2026]
-// (OQ-TCO-18, ditutup). Baris KEMBAR - TOIDR sama menurut angka - adalah satu
-// kurs: "terakhir menang" memberi nilai yang sama, jadi tidak ada yang
-// ditebak [keputusan work owner 29-09-2026, mempersempit OQ-TCO-18]; data DEV
-// memuat dua pasang baris kembar persis. Yang dipakai baris yang mulainya
-// paling akhir (periode yang baru dimulai), supaya `Mulai`/`Akhir` di layar
-// tidak bergantung urutan baca.
+// (OQ-TCO-18, ditutup). Baris KEMBAR IDENTIK - TOIDR yang sama persis, hari
+// mulai dan hari akhir yang sama - adalah satu kurs: "terakhir menang"
+// memberi nilai yang sama, jadi tidak ada yang ditebak [keputusan work owner
+// 29-09-2026, "Kembar identik = satu kurs", mempersempit OQ-TCO-18]; data DEV
+// memuat dua pasang baris kembar persis. Baris yang TIDAK identik - TOIDR,
+// mulai, atau akhir berbeda, termasuk teks lain untuk angka yang sama - tetap
+// master rusak.
 //
 // Tanpa baris berlaku tetapi ada baris yang tanggalnya ditolak Oracle: salah
 // satunya mungkin baris yang dicari - master rusak, bukan "tidak ada kurs".
@@ -166,28 +166,22 @@ func PilihKursBerlakuTCO(h HasilMasterKursTCO, tanggal time.Time) (KursTCO, erro
 		return KursTCO{}, fmt.Errorf("%w pada %s", ErrKursTidakAda, tgl)
 	}
 	k := h.Berlaku[0]
-	if len(h.Berlaku) > 1 {
-		var err error
-		if k, err = LengkapiKursTCO(k); err != nil {
-			return KursTCO{}, err
+	for _, b := range h.Berlaku[1:] {
+		if !kembarIdentikTCO(k, b) {
+			return KursTCO{}, fmt.Errorf("%w: %d baris pada %s yang tidak identik (TOIDR %q %s s.d. %s dan TOIDR %q %s s.d. %s)",
+				ErrKursGanda, len(h.Berlaku), tgl, k.TeksToIDR, utils.FormatTanggal(k.Mulai), utils.FormatTanggal(k.Akhir),
+				b.TeksToIDR, utils.FormatTanggal(b.Mulai), utils.FormatTanggal(b.Akhir))
 		}
-		for _, b := range h.Berlaku[1:] {
-			lain, err := LengkapiKursTCO(b)
-			if err != nil {
-				return KursTCO{}, err
-			}
-			if lain.ToIDR.Cmp(k.ToIDR) != 0 {
-				return KursTCO{}, fmt.Errorf("%w: %d baris pada %s dengan TOIDR berbeda (%q dan %q)", ErrKursGanda,
-					len(h.Berlaku), tgl, k.TeksToIDR, lain.TeksToIDR)
-			}
-			if lain.Mulai.After(k.Mulai) {
-				k = lain
-			}
-		}
-		k.BarisKembar = len(h.Berlaku) - 1
 	}
+	k.BarisKembar = len(h.Berlaku) - 1
 	k.BarisDitolak = len(h.Ditolak)
 	return k, nil
+}
+
+// kembarIdentikTCO - dua baris berlaku identik: teks TOIDR sama persis, hari
+// mulai dan hari akhir (hasil `trunc(TO_TIMESTAMP_TZ(..))` Oracle) sama.
+func kembarIdentikTCO(a, b KursTCO) bool {
+	return strings.TrimSpace(a.TeksToIDR) == strings.TrimSpace(b.TeksToIDR) && a.Mulai.Equal(b.Mulai) && a.Akhir.Equal(b.Akhir)
 }
 
 func kuantisasiKurs(d *apd.Decimal, skala int32) (*apd.Decimal, error) {

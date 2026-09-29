@@ -254,17 +254,26 @@ klausul (`PanelKlausulTahun`) tetap, dibuka tombol `List Description` baris tahu
 
 ## ⛔ Ralat bertanggal — 29-09-2026 (penyisiran layar: `Limit MB` 500 karena titik ribuan)
 
-*Temuan.* Penyisiran `GET` seluruh grid klausul (182 tahun × 13 jenis, induk dan anak — 4.188 panggilan) mendapati
-tepat **dua** 500 *"gagal memproses permintaan treaty contract out"*: jenis `10017` `Limit MB` tahun `1000680` dan
-`1000672`. `[data DEV 29-09-2026 — dibaca executor, SELECT baca-saja atas izin work owner]`: baris induk `PROPORTIONALARRG` tahun `1000680` menyimpan `RP` dan `USD` = `"1.000.000"`,
-sedangkan `PCTME` dan `MORERP` baris yang sama `1000000`. `repository.UraiDesimalWarisanTCO` tidak mengenal titik
+*Temuan.* Penyisiran `GET` seluruh grid klausul — 2.366 grid induk (182 tahun × 13 jenis, `induk=00`) dan 1.822 grid
+anak (setiap `reinsTypeId` baris induk), 4.188 panggilan — mendapati tepat **dua** 500 *"gagal memproses permintaan
+treaty contract out"*: jenis `10017` `Limit MB` tahun `1000680` dan `1000672`. Perintah audit: `GET …/jenis-klausul?isXol=0|1`
+(13 jenis), `GET …/tahun?ukuran=100` sampai habis (182), lalu `GET …/tahun/{id}/klausul?descId={jenis}&induk=00` dan
+`…&induk={reinsTypeId}`; kode status dicacah. Jendela: 29-09-2026 sore, backend `:8080` versi `3748a9d`. `[data DEV 29-09-2026 — dibaca executor, SELECT baca-saja atas izin work owner]`: baris induk `PROPORTIONALARRG` tahun `1000680` menyimpan `RP` dan `USD` = `"1.000.000"`,
+sedangkan `PCTME` dan `MORERP` baris yang sama `1000000` (`SELECT ID, RP, USD, PCT, PCTME, KURS, TGLUPDATE, …
+FROM POOLDATA.PROPORTIONALARRG WHERE TREATYYEARID='1000680' AND TREATYDESCID='10017' AND PARENTREINSTYPEID='00'` → 1
+baris). ⚠️ Baris tahun `1000672` **tidak dibaca** (di luar izin baca); bahwa sebabnya sama `[dugaan]` — dipastikan
+dengan penyisiran ulang sesudah backend dimuat ulang. `repository.UraiDesimalWarisanTCO` tidak mengenal titik
 pemisah ribuan, dan satu baris mematikan seluruh grid jenis itu.
 
 *Perbaikan.* (1) Titik pemisah ribuan DITERIMA hanya dalam bentuk yang tidak mungkin desimal — dua titik atau lebih,
-kelompok pertama 1–3 angka, setiap kelompok sesudahnya tepat tiga angka (`^-?\d{1,3}(\.\d{3}){2,}$`); `1.000` (satu
-titik) tetap desimal, dan `1.00.000`, `1000.000.000`, `1.000.000,5` tetap ditolak — bukan tebakan. Berlaku untuk
-setiap kolom desimal teks warisan modul ini. Bentuk TULIS tidak berubah (OQ-TCO-23): menyimpan ulang baris itu
-menulis `1000000`. Uji `TestUraiDesimalWarisanTCORibuanTitik`. (2) Cabang 500 `jawabGalatTreatyContractOut` kini
+kelompok pertama 1–3 angka tanpa nol di depan, setiap kelompok sesudahnya tepat tiga angka
+(`^-?[1-9]\d{0,2}(\.\d{3}){2,}$`); `1.000` (satu titik) tetap desimal, dan `1.00.000`, `1000.000.000`, `1.000.000,5`,
+`000.000.000` tetap ditolak — bukan tebakan. Jangkauannya: setiap pemakai `repository.UraiDesimalWarisanTCO` — kolom
+`RP`/`USD`/`PCT`/`PCTME`/`KURS` klausul (termasuk pemeriksa dobel `medanSamaKlausulTCO` dan Pct anak), pembaca hilir
+`tco_kontrak_hilir.go`, dan `PCT_SHARE` security; **bukan** `TOIDR` kurs (`models.UraiNilaiKursTCO`) dan bukan
+masukan layar. Bentuk TULIS tidak berubah (OQ-TCO-23): menyimpan ulang baris seperti itu menulis `1000000` — untuk
+baris Limit MB ini praktis tidak terjadi, karena jenisnya `Ditahan` (AC 36) dan tidak dapat disimpan. ⚠️ Nilai bertitik
+SATU (`500.000`) tetap dibaca sebagai desimal — **OQ-TCO-27**. Uji `TestUraiDesimalWarisanTCORibuanTitik`. (2) Cabang 500 `jawabGalatTreatyContractOut` kini
 **mencatat sebab aslinya** di log backend (`log.Printf`) — sebelumnya galat tak terduga hilang di layar DAN di konsol,
 sehingga diagnosanya menuntut membaca DEV langsung. Pemakai tetap mendapat kalimat umum. Uji
 `TestGalat500TreatyContractOutMencatatSebabnya`.
