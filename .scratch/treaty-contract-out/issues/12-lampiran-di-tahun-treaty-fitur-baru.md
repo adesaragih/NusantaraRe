@@ -170,3 +170,33 @@ sumber RANTAI TEKNIS dan LABEL; perilakunya ditetapkan AC tiket ini (penyimpanga
 | frontend | `PanelLampiranTahun.tsx` (+ uji), `LAMPIRAN_TCO`, `api.ts` (+9) | unggah multipart, unduh lewat `fetch` berheader identitas, status + galat terlihat, `Ulangi`, `Periksa keselarasan` |
 
 **Status:** selesai 29-09-2026 — commit `treaty-contract-out: tiket 12 — lampiran di tahun treaty`.
+
+## Keputusan work owner 29-09-2026
+
+- **OQ-TCO-08 — ditutup.** Jawaban: *"sekarang"*. Pelaksana **nyata** efek penyimpanan lampiran terpasang di balik
+  `PELAKSANA_STORAGE=nyata`; bawaan tetap `stub` (`PenyimpananLokalTCO`, folder `UNGGAHAN_DIR`). Rangkaiannya:
+  `PenyimpananLampiranTCO` (pemilih) → `PenyimpananJarakJauhTCO` (alamat per operasi dari `M_LINK_SERVICE` **saat jalan**:
+  `Google/upload`, `Google/geturl`, `Google/delete` — tidak disalin ke mana pun) → `CacheTokenTCO` → sumber token
+  `GET_TOKEN_STORAGE` ditiru di Go (`GCP_IMAGE`: token berlaku dipakai ulang beserta kedaluwarsanya, atau
+  `RakitToken(garam, saat)` disimpan dengan umur 1 menit, satu transaksi; `App` = `T_FOLDER_IMAGE.APPNAME`, dibaca saja)
+  → transport `NewPengirimBerkasHTTPTCO` (`services/tco_pengirim_storage.go`: POST JSON halaman `UploadDoc`, batas waktu
+  300 s dari `ServiceGoogle.xml` b29; unduh lewat URL bertanda tangan yang diberikan layanan). Garam dari env
+  `STORAGE_TOKEN_SALT`; `nyata` tanpa garam **ditolak saat menyala**. Galat tidak pernah memuat alamat, token, atau garam.
+  Uji memakai **server tiruan lokal** (`httptest`); tidak ada layanan sungguhan yang dipanggil dari uji maupun sesi ini.
+- **OQ-TCO-09 — ditutup.** Jawaban: *"perlu"*. `LampiranTahunTCO.JalankanPekerja(ctx, interval, catat)` menjalankan
+  `JalankanAntrean` (paling banyak 50 efek per ketukan) setiap `TCO_PEKERJA_LAMPIRAN_INTERVAL`; kosong/0 = **mati**
+  (bawaan, juga di uji). Dihidupkan dari `cmd/api` (`jalankanPekerjaLampiranTCO`) hanya bila Oracle terpasang, dan berhenti
+  bersama sinyal proses. Coba ulang dan anti-dobel memakai yang sudah ada: `Backoff` + `percobaanMaksimum` outbox,
+  `FOR UPDATE SKIP LOCKED` pemungutan, nama objek = `IMAGEID` (unggah ulang menimpa objek yang sama, AC 58).
+- **Galat permanen baru** (tidak diputar ulang antrean): layanan menolak bentuk permintaan (400/422), garam kosong, `APPNAME`
+  kosong. Jaringan, batas waktu, 401/403/429/5xx tetap dicoba ulang.
+- **Pembacaan ulang XML — `pyStepsBlockName` dicetak:** Claim Life `InsertGoogleStorage_Act` — seluruh langkah kosong
+  kecuali `EXIT` (b2953, `Page-Remove`); Treaty Contract Out `GetUrlGoogleStorage_Act` — kosong kecuali `EXIT` (b2790);
+  `DeleteGoogleStorage_Act` — kosong kecuali `EXIT` (b1765). Nol langkah ter-remark `//`: setiap langkah yang dikutip
+  transport memang berjalan di Pega.
+- **Dibuka: OQ-TCO-22** — `[keputusan kami]` untuk yang korpus modul ini tidak memuat (unggah lampiran fitur baru):
+  `Folder = "TreatyContractOut"` (Claim Life menyusun `Param.Folder + "/Doc/" + tahun/bulan`), `Durasi = 60`,
+  `Namafile = IMAGEID`, `ext` dari MIME, dan `Periksa` = `geturl` lalu GET objeknya.
+- **Kode bersama yang disentuh (aditif):** medan `Service.penyimpananTCO` (`services/services.go`), dua kunci
+  `internal/config` + `.env.example`, `cmd/api/main.go`, dan peta `berkasKlienHTTPDisetujui` di
+  `services/efekkeluar_statik_test.go` (satu baris, jumlahnya dikunci; `://` dan env tetap diperiksa untuk berkas itu).

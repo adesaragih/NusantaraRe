@@ -5,15 +5,16 @@ package services
 // Untuk apa berkas ini: DUA implementasi `KlienPenyimpananTCO`.
 //
 //  1. `PenyimpananLokalTCO` - STUB DEV. Berkas ditaruh di folder kita sendiri
-//     di bawah `UNGGAHAN_DIR`. Inilah yang dipasang handler hari ini.
+//     di bawah `UNGGAHAN_DIR`. Bawaan (`PELAKSANA_STORAGE=stub`).
 //  2. `PenyimpananJarakJauhTCO` - bentuk penyambungan nyata: alamat
 //     di-resolve SAAT JALAN dari `M_LINK_SERVICE` (ADR-0013, `ServiceGoogle`
 //     tanpa URL literal), token dari cache yang memperbarui SEBELUM kedaluwarsa
 //     (AC 60), transport di balik `PengirimBerkasTCO`.
 //
-// ⛔ Transport nyata TIDAK diimplementasikan: penyambungan Google Storage
-// menuntut persetujuan manusia. Tanpa pengirim, rangkaian jarak jauh gagal
-// dengan `ErrPenyimpananBelumDisetujui` - permanen, tampil di outbox.
+// Transport nyata: `tco_pengirim_storage.go` [keputusan work owner 29-09-2026,
+// OQ-TCO-08]; dipilih `PenyimpananLampiranTCO` bila `PELAKSANA_STORAGE=nyata`.
+// Tanpa pengirim, rangkaian jarak jauh gagal dengan
+// `ErrPenyimpananBelumDisetujui` - permanen, tampil di outbox.
 //
 // ⛔ Nol URL, nol env var di berkas ini (ADR-0013); penjaga
 // `TestNolAlamatLayananDiKode` dan `TestTCOLampiranTanpaAlamatLiteral`.
@@ -202,8 +203,8 @@ func (c *CacheTokenTCO) Token(ctx context.Context) (string, error) {
 
 // PengirimBerkasTCO adalah transport ke penyimpanan jarak jauh.
 //
-// ⛔ Tidak ada implementasinya di repositori ini (persetujuan manusia).
-// Galat implementasi kelak TIDAK BOLEH memuat alamatnya.
+// Implementasinya `NewPengirimBerkasHTTPTCO` (OQ-TCO-08). ⛔ Galatnya TIDAK
+// BOLEH memuat alamat, token, atau garam.
 type PengirimBerkasTCO interface {
 	Kirim(ctx context.Context, alamat, token, kunci string, isi io.Reader, mime string) error
 	Ambil(ctx context.Context, alamat, token, kunci string) (io.ReadCloser, error)

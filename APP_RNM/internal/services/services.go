@@ -37,6 +37,9 @@ type Service struct {
 	// unggahanDir adalah folder lokal berkas unggahan (butir be). Kosong
 	// berarti unggahan GAGAL TERANG - bukan bawaan diam-diam.
 	unggahanDir string
+	// penyimpananTCO - pelaksana penyimpanan lampiran Treaty Contract Out
+	// (OQ-TCO-08). nil = stub; lihat tco_penyimpanan_nyata.go.
+	penyimpananTCO *pengaturanPenyimpananTCO
 }
 
 // DenganUnggahanDir menyetel folder berkas unggahan.

@@ -55,6 +55,8 @@ var masterDibacaSajaTCO = []string{
 	"BUSINESS",
 	// Tiket 11: master mata uang (`GetCurrencyID`) - pengenal USD untuk kurs.
 	"CURRENCY",
+	// OQ-TCO-08: APPNAME penyimpanan (`GetAppName_SQL`).
+	"T_FOLDER_IMAGE",
 	// Tiket 08: pemilih ExclutionTreaty (`BrowseOccupationFIRE_RD`,
 	// `BrowseFireClauseFacIn_RD`). `TREATYDESC` sudah di atas.
 	"OCCUPATION", "CLAUSE",

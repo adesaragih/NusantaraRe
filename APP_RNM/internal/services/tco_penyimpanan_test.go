@@ -265,12 +265,24 @@ func TestTCOLampiranTanpaAlamatLiteral(t *testing.T) {
 		"klien HTTP":   regexp.MustCompile(`http\.(Post|Get|Head|NewRequest|DefaultClient)|http\.Client\{|\.Do\(req`),
 		"host literal": regexp.MustCompile(`(?i)storage\.googleapis|googleapis\.com`),
 	}
+	// ⚠️ SATU berkas boleh memegang klien HTTP - transport OQ-TCO-08
+	// [keputusan work owner 29-09-2026]. Pola lain tetap berlaku untuknya.
+	const transportDisetujui = "tco_pengirim_storage.go"
+	transportTerlihat := false
 	for nama, isi := range berkasProduksiTCO(t) {
 		for jenis, pola := range terlarang {
-			if pola.MatchString(isi) {
-				t.Errorf("%s memuat %s - alamat di-resolve saat jalan dari M_LINK_SERVICE (ADR-0013)", nama, jenis)
+			if !pola.MatchString(isi) {
+				continue
 			}
+			if jenis == "klien HTTP" && filepath.Base(nama) == transportDisetujui {
+				transportTerlihat = true
+				continue
+			}
+			t.Errorf("%s memuat %s - alamat di-resolve saat jalan dari M_LINK_SERVICE (ADR-0013)", nama, jenis)
 		}
+	}
+	if !transportTerlihat {
+		t.Errorf("pengecualian %s tidak terpakai - hapus dari penjaga ini", transportDisetujui)
 	}
 }
 

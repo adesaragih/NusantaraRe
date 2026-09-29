@@ -158,7 +158,8 @@ var petaSuntikan = map[string][]suntikan{
 			"DenganGudang(services.GudangLampiranOracle(svc))",
 			"DenganKategori(services.KategoriLampiranOracle(svc))",
 			"DenganAntrean(services.AntreanLampiranOracle(svc))",
-			"DenganPenyimpanan(services.PenyimpananLokalTCO(svc))",
+			// OQ-TCO-08: pemilih stub/nyata, bukan stub mati.
+			"DenganPenyimpanan(services.PenyimpananLampiranTCO(svc))",
 			"DenganTahun(services.GudangTahunTreatyOracle(svc))",
 		},
 	}},

@@ -689,7 +689,10 @@ func (l *LampiranTahunTCO) satuPutaran(ctx context.Context, akunID string, saat 
 // layakUlangLampiranTCO - `LayakDicobaUlang` + keadaan permanen milik lampiran.
 func layakUlangLampiranTCO(err error) bool {
 	for _, permanen := range []error{ErrBerkasSumberLampiranHilang, errMuatanLampiranRusak,
-		errJenisEfekAsingTCO, ErrUnggahanDirBelumDisetel, ErrPenyimpananLampiranBelumDisuntik} {
+		errJenisEfekAsingTCO, ErrUnggahanDirBelumDisetel, ErrPenyimpananLampiranBelumDisuntik,
+		// OQ-TCO-08 pelaksana nyata: keadaan yang tidak berubah karena dicoba lagi.
+		ErrStorageMenolakPermintaanTCO, ErrGaramTokenKosong, ErrAppNameKosong,
+		repository.ErrAppStorageKosongTCO} {
 		if errors.Is(err, permanen) {
 			return false
 		}

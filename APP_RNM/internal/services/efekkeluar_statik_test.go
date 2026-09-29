@@ -87,6 +87,15 @@ var berkasAlamatDikecualikan = map[string]string{
 	"internal/services/efekkeluar_statik_test.go": "berkas penjaga ini sendiri - polanya harus tertulis",
 }
 
+// berkasKlienHTTPDisetujui dikecualikan dari pemeriksaan KLIEN HTTP SAJA -
+// `://` dan env tetap diperiksa. Tiap baris menyebut persetujuan manusianya;
+// jumlahnya dikunci di bawah.
+var berkasKlienHTTPDisetujui = map[string]string{
+	"internal/services/tco_pengirim_storage.go": "transport penyimpanan lampiran Treaty Contract Out - " +
+		"[keputusan work owner 29-09-2026, OQ-TCO-08]; alamat dari M_LINK_SERVICE saat jalan, " +
+		"hanya aktif bila PELAKSANA_STORAGE=nyata",
+}
+
 // bolehBacaEnv menyatakan sebuah berkas berhak membaca env var.
 //
 // ⚠️ Hanya `internal/config` dan berkas test. Daftar ini aturan arsitektur,
@@ -106,7 +115,7 @@ func bolehBacaEnv(jalur string) bool {
 
 // TestNolAlamatLayananDiKode menegakkan ADR-U-0013.
 func TestNolAlamatLayananDiKode(t *testing.T) {
-	diperiksa, dikecualikan := 0, 0
+	diperiksa, dikecualikan, klienDisetujui := 0, 0, 0
 	akar := filepath.Join("..", "..")
 	err := filepath.Walk(akar, func(jalur string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -154,8 +163,13 @@ func TestNolAlamatLayananDiKode(t *testing.T) {
 		// luar. Batasnya dinyatakan: sebuah panggilan keluar yang disembunyikan
 		// di dalam berkas test tidak akan tertangkap - tetapi ia juga tidak
 		// pernah berjalan di produksi.
-		if m := polaKlienHTTP.FindString(kode); m != "" &&
-			!strings.HasSuffix(filepath.ToSlash(jalur), "_test.go") {
+		m := polaKlienHTTP.FindString(kode)
+		if alasan, boleh := berkasKlienHTTPDisetujui[rel]; boleh && m != "" {
+			t.Logf("klien HTTP disetujui: %s (%s)", rel, alasan)
+			klienDisetujui++
+			m = ""
+		}
+		if m != "" && !strings.HasSuffix(filepath.ToSlash(jalur), "_test.go") {
 			t.Errorf("%s: memuat klien HTTP keluar (%q); konversi ke produksi "+
 				"TIDAK lagi mengirim payload - hilir membaca langsung dari tabel "+
 				"klaim (`[keputusan work owner 2026-09-16]`), dan menghubungkan "+
@@ -214,6 +228,12 @@ func TestNolAlamatLayananDiKode(t *testing.T) {
 	if dikecualikan != len(berkasAlamatDikecualikan) {
 		t.Errorf("%d berkas dikecualikan, sedangkan petanya memuat %d",
 			dikecualikan, len(berkasAlamatDikecualikan))
+	}
+	// ⛔ Pengecualian klien HTTP juga dikunci: baris yang tidak lagi memuat
+	// klien HTTP harus dihapus dari petanya.
+	if klienDisetujui != len(berkasKlienHTTPDisetujui) {
+		t.Errorf("%d berkas klien HTTP disetujui terpakai, sedangkan petanya memuat %d",
+			klienDisetujui, len(berkasKlienHTTPDisetujui))
 	}
 }
 

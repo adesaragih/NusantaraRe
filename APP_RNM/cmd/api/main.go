@@ -55,7 +55,9 @@ func main() {
 	// tetap tersimpan di lingkungan non-produksi.
 	svc := services.New(db).
 		DenganLingkungan(services.LingkunganDariFlag(cfg.IsPegaProd)).
-		DenganUnggahanDir(cfg.UnggahanDir)
+		DenganUnggahanDir(cfg.UnggahanDir).
+		// OQ-TCO-08: bawaan stub; ⛔ garam tidak pernah dicetak.
+		DenganPenyimpananLampiranTCO(cfg.PelaksanaStorage, cfg.StorageTokenSalt)
 	if svc.PunyaDatabase() {
 		log.Printf("oracle: skema %s", svc.SkemaAktif())
 	} else {
@@ -87,6 +89,9 @@ func main() {
 	ctx, berhenti := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer berhenti()
 
+	log.Printf("lampiran treaty contract out: pelaksana penyimpanan %s", cfg.PelaksanaStorage)
+	jalankanPekerjaLampiranTCO(ctx, svc, cfg)
+
 	go func() {
 		log.Printf("http: mendengarkan di %s", srv.Addr)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -102,6 +107,25 @@ func main() {
 	if err := srv.Shutdown(tutup); err != nil {
 		log.Printf("http: penutupan tidak bersih: %v", err)
 	}
+}
+
+// jalankanPekerjaLampiranTCO menyalakan pekerja latar antrean lampiran Treaty
+// Contract Out (OQ-TCO-09, keputusan work owner 29-09-2026).
+//
+// Mati bila TCO_PEKERJA_LAMPIRAN_INTERVAL kosong/0 atau tanpa Oracle. Ia
+// berhenti bersama ctx proses.
+func jalankanPekerjaLampiranTCO(ctx context.Context, svc *services.Service, cfg config.Config) {
+	if cfg.IntervalPekerjaLampiranTCO <= 0 {
+		log.Print("lampiran treaty contract out: pekerja latar mati (interval kosong)")
+		return
+	}
+	if !svc.PunyaDatabase() {
+		log.Print("lampiran treaty contract out: pekerja latar mati (tanpa oracle)")
+		return
+	}
+	log.Printf("lampiran treaty contract out: pekerja latar tiap %s", cfg.IntervalPekerjaLampiranTCO)
+	go handlers.LayananLampiranTCO(svc).JalankanPekerja(ctx, cfg.IntervalPekerjaLampiranTCO,
+		func(s string) { log.Print(s) })
 }
 
 // bongkarMigrasi adalah titik masuk `-migrate-down`.

@@ -37,16 +37,18 @@ import (
 // saat menyalin; yang di sini supaya permintaan raksasa berhenti di pintu.
 const batasPermintaanLampiran = services.BatasUkuranUnggahan + batasFormulir
 
-// layananLampiranTCO memasang seluruh implementasi nyata.
+// LayananLampiranTCO memasang seluruh implementasi nyata - dipakai rute di
+// berkas ini DAN pekerja latar di `cmd/api` (OQ-TCO-09).
 //
-// ⛔ Penyimpanannya STUB LOKAL (`PenyimpananLokalTCO`): endpoint penyimpanan
-// nyata tidak dipanggil di sesi ini.
-func layananLampiranTCO(svc *services.Service) *services.LampiranTahunTCO {
+// Penyimpanannya dipilih `PenyimpananLampiranTCO` menurut `PELAKSANA_STORAGE`
+// (OQ-TCO-08, keputusan work owner 29-09-2026): bawaan STUB LOKAL; `nyata`
+// hanya bila work owner menyetelnya.
+func LayananLampiranTCO(svc *services.Service) *services.LampiranTahunTCO {
 	return svc.LampiranTahunTCO().
 		DenganGudang(services.GudangLampiranOracle(svc)).
 		DenganKategori(services.KategoriLampiranOracle(svc)).
 		DenganAntrean(services.AntreanLampiranOracle(svc)).
-		DenganPenyimpanan(services.PenyimpananLokalTCO(svc)).
+		DenganPenyimpanan(services.PenyimpananLampiranTCO(svc)).
 		DenganTahun(services.GudangTahunTreatyOracle(svc))
 }
 
@@ -80,7 +82,7 @@ func kategoriLampiranTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		if !punyaDBTCO(w, svc) {
 			return
 		}
-		d, err := layananLampiranTCO(svc).Kategori(r.Context(), pelakuDari(r, stub))
+		d, err := LayananLampiranTCO(svc).Kategori(r.Context(), pelakuDari(r, stub))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
@@ -98,7 +100,7 @@ func daftarLampiranTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		if !punyaDBTCO(w, svc) {
 			return
 		}
-		d, err := layananLampiranTCO(svc).Daftar(r.Context(), pelakuDari(r, stub), r.PathValue("id"))
+		d, err := LayananLampiranTCO(svc).Daftar(r.Context(), pelakuDari(r, stub), r.PathValue("id"))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
@@ -128,7 +130,7 @@ func unggahLampiranTCO(svc *services.Service, stub bool) http.HandlerFunc {
 			return
 		}
 		defer func() { _ = berkas.Close() }()
-		hasil, err := layananLampiranTCO(svc).Unggah(r.Context(), pelakuDari(r, stub), r.PathValue("id"),
+		hasil, err := LayananLampiranTCO(svc).Unggah(r.Context(), pelakuDari(r, stub), r.PathValue("id"),
 			services.BerkasMasuk{NamaFile: kepala.Filename, Mime: kepala.Header.Get("Content-Type"),
 				Kategori: r.FormValue("kategori"), Isi: berkas})
 		if jawabGalatTreatyContractOut(w, err) {
@@ -164,7 +166,7 @@ func unduhLampiranTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		if !punyaDBTCO(w, svc) {
 			return
 		}
-		meta, isi, err := layananLampiranTCO(svc).Unduh(r.Context(), pelakuDari(r, stub),
+		meta, isi, err := LayananLampiranTCO(svc).Unduh(r.Context(), pelakuDari(r, stub),
 			r.PathValue("id"), r.PathValue("lid"))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
@@ -185,7 +187,7 @@ func unduhSemuaLampiranTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		// tahun tidak ada, rekam tanpa berkas - masih dapat dijawab sebagai
 		// galat JSON biasa.
 		var arsip *zip.Writer
-		err := layananLampiranTCO(svc).UnduhSemua(r.Context(), pelakuDari(r, stub), tahunID,
+		err := LayananLampiranTCO(svc).UnduhSemua(r.Context(), pelakuDari(r, stub), tahunID,
 			func(nama string, isi io.Reader) error {
 				if arsip == nil {
 					kepalaUnduhan(w, "application/zip", "lampiran-tahun-treaty-"+tahunID+".zip")
@@ -221,7 +223,7 @@ func selarasLampiranTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		if !punyaDBTCO(w, svc) {
 			return
 		}
-		t, err := layananLampiranTCO(svc).PeriksaSelaras(r.Context(), pelakuDari(r, stub), r.PathValue("id"))
+		t, err := LayananLampiranTCO(svc).PeriksaSelaras(r.Context(), pelakuDari(r, stub), r.PathValue("id"))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
@@ -234,7 +236,7 @@ func ulangiLampiranTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		if !punyaDBTCO(w, svc) {
 			return
 		}
-		hasil, err := layananLampiranTCO(svc).Ulangi(r.Context(), pelakuDari(r, stub),
+		hasil, err := LayananLampiranTCO(svc).Ulangi(r.Context(), pelakuDari(r, stub),
 			r.PathValue("id"), r.PathValue("lid"))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
@@ -252,7 +254,7 @@ func hapusLampiranTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		if !punyaDBTCO(w, svc) {
 			return
 		}
-		p, err := layananLampiranTCO(svc).Hapus(r.Context(), pelakuDari(r, stub),
+		p, err := LayananLampiranTCO(svc).Hapus(r.Context(), pelakuDari(r, stub),
 			r.PathValue("id"), r.PathValue("lid"))
 		if jawabGalatTreatyContractOut(w, err) {
 			return

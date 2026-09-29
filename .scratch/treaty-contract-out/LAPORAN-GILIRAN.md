@@ -961,3 +961,33 @@ sementara dan `TetapkanIdentitasTCO` (`repository/tco_transaksi_utuh.go` → `tc
 `ADD_MONTHS(mulai, 12)`; `tahunKabisatTeks` dibuang. Pembacaan ulang `SetTanggalTreatyContract` mencetak
 `pyStepsBlockName` (langkah 7–9 `//`). Uji tabel baru dibuktikan merah terhadap rumus lama (4 kasus berbeda), lalu hijau;
 kasus 29 Februari juga di seam layanan (`TestKontrakAkhirBawaan`). Penyimpangan sadar bertanggal di tiket 04.
+
+### Kelompok 5 — OQ-TCO-08/09 pekerja latar dan pelaksana penyimpanan nyata
+
+- **Transport** `services/tco_pengirim_storage.go` — `NewPengirimBerkasHTTPTCO`: POST JSON halaman `UploadDoc` (nama medan
+  verbatim), `geturl` → URL bertanda tangan → GET, `delete`; status 400/422 = permanen, 404 = berkas tidak ada, selebihnya
+  dicoba ulang; galat jaringan diringkas tanpa alamat/inang/IP. Satu-satunya berkas yang memegang klien HTTP keluar.
+- **Token** `services/tco_penyimpanan_nyata.go` — `NewSumberTokenStorageTCO`: `GET_TOKEN_STORAGE` ditiru (pakai ulang
+  `GCP_IMAGE` beserta kedaluwarsanya, atau `RakitToken` + simpan umur 1 menit, satu transaksi). Repositori baru
+  `repository/tco_storage.go`: `AppStorageTCO` (`T_FOLDER_IMAGE`, masuk `masterDibacaSajaTCO`) dan
+  `TokenStorageBerlakuTCO` (token + `INPUTDATE`).
+- **Pemilih** `PenyimpananLampiranTCO` / `Service.DenganPenyimpananLampiranTCO(pelaksana, garam)` — bawaan stub; `nyata`
+  merakit resolver `M_LINK_SERVICE` + cache token sekali per proses + transport. Tanpa Oracle: resolver gagal terang
+  (`ResolverLinkServiceOracle` bersama panik dengan db nil — tidak disentuh, dielakkan di pemilih modul).
+- **Pekerja** `LampiranTahunTCO.JalankanPekerja` + `cmd/api` `jalankanPekerjaLampiranTCO`; `LayananLampiranTCO` diekspor
+  dari handler supaya rute dan pekerja memakai rakitan yang sama (penjaga penyuntikan menuntut pemilihnya).
+- **Config** `PELAKSANA_STORAGE` (`stub`|`nyata`, nilai lain ditolak; `nyata` tanpa `STORAGE_TOKEN_SALT` ditolak — pesan
+  menyebut nama kunci, bukan nilainya) dan `TCO_PEKERJA_LAMPIRAN_INTERVAL` (durasi Go; kosong = mati).
+- **Penjaga** `TestNolAlamatLayananDiKode`: peta baru `berkasKlienHTTPDisetujui` (satu baris, jumlah dikunci) mengecualikan
+  transport dari pemeriksaan klien HTTP **saja**; `TestTCOLampiranTanpaAlamatLiteral` idem, dengan cek "pengecualian
+  terpakai". Komentar transport sempat memuat skema-alamat literal dan tertangkap penjaga modul — diganti teks.
+- **Uji baru (14 tingkat atas):** transport ×4 (bentuk `UploadDoc` + unggah ulang satu objek; ambil/periksa/buang; peta
+  status + server mati + batas waktu + App kosong, galat bersih dari inang/token/garam; ujung-ke-ujung resolver → cache →
+  sumber token → HTTP), sumber token ×2, pemilih ×1, galat permanen lewat antrean ×1, pekerja ×1 (mati di interval ≤ 0;
+  menjalankan antrean lalu berhenti bersama ctx), config ×3, SQL repositori ×2. Semua alamat dari `httptest` saat jalan.
+- **Temuan saat membangun:** handler "lambat" uji batas waktu yang tidak membaca badan membuat `httptest.Server.Close`
+  menunggu selamanya — diberi kanal pelepas. `errors.Unwrap` atas galat tanpa `%w` menghasilkan nil — dibuang.
+- **Pembacaan ulang XML** (`pyStepsBlockName` dicetak): `InsertGoogleStorage_Act` (Claim Life), `GetUrlGoogleStorage_Act`,
+  `DeleteGoogleStorage_Act` (Treaty Contract Out) — seluruh langkah kosong kecuali `EXIT` terakhir; nol langkah `//`.
+- **OQ-TCO-22 dibuka** (`Folder`/`Durasi`/`Namafile`, lihat register). Tidak ada SQL yang dijalankan ke Oracle; tidak ada
+  layanan sungguhan yang dipanggil.
