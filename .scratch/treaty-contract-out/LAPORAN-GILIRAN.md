@@ -1265,3 +1265,30 @@ Setiap mutasi menjadi merah, lalu hijau lagi sesudah dipulihkan.
 | Uji penuh | empat kali (`angka.sh`) |
 | Oracle / layanan luar | 0 SQL, 0 panggilan |
 | Token / biaya | tidak terlihat dari dalam sesi — tidak dilaporkan |
+
+## Lanjutan 5 — OQ-TCO-24 ditutup dari `ALL_SOURCE` (29-09-2026, langsung di `main`)
+
+Brief `PROMPT-LANJUTAN-TREATY-CONTRACT-OUT-5.md` (`c75f069`). Badan `PEGA_M_ATTACHMENT` dibaca asisten dari `ALL_SOURCE`
+(baca-saja, baris komentar dibuang). Executor tidak menjalankan SQL apa pun ke Oracle. Dikerjakan dalam satu commit; berkas
+frontend yang sedang disunting sesi lain tidak disentuh.
+
+- **Kesimpulan**: prosedur meng-upsert simpanan JSON halaman `M_ATTACHMENTTREATY` (`DATA_JSON` per `ID`), dan
+  `id_count` adalah variabel lokal, bukan tabel. **Keputusan**: aplikasi tetap menulis dan membaca `M_ATTACHMENTTREATY_2`;
+  simpanan JSON tidak diteruskan (spec §15).
+- **Temuan warisan tambahan dari korpus**, dengan `pyStepsBlockName` dicetak: langkah hidup `TreatyOutSaveAttachment` hanya
+  b1674 (JSON). `Java` b1016 hanya menyegarkan clipboard, dan tidak ada langkah hidup yang menulis `_2`. Akibatnya daftar
+  Pega modul ini (`_2`) tidak memuat lampiran yang disimpan modul ini. Dicatat, tidak disatukan.
+- **Kode**: hanya komentar (`repository/tco_lampiran.go`, `services/tco_lampiran.go`); perilaku tidak berubah.
+- **Dokumen**: `dba-procedures.md` (badan + kesimpulan), register OQ (24 ditutup), ralat bertanggal STRUKTUR dan tiket 12.
+- **Tetap terbuka**: OQ-TCO-22 (work owner); paket 3 lanjutan 4, yang menunggu `App.tsx` bebas dari suntingan sesi lain.
+
+### TELEMETRI EKSEKUSI — Lanjutan 5
+
+| Butir | Nilai |
+| --- | --- |
+| Commit | 1 (dokumen + komentar), langsung di `main`, jalur eksplisit |
+| Korpus dibaca | `TreatyOutSaveAttachment` (langkah, `pyStepsBlockName`, sumber `Java` b1016; medan operator disaring) |
+| Subagen | 0 |
+| Uji penuh | sekali (`angka.sh`) |
+| Oracle / layanan luar | 0 SQL, 0 panggilan |
+| Token / biaya | tidak terlihat dari dalam sesi — tidak dilaporkan |

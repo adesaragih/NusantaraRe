@@ -249,3 +249,14 @@ sumber RANTAI TEKNIS dan LABEL; perilakunya ditetapkan AC tiket ini (penyimpanga
 - Uji: `TestExpStorageTCOSepertiPega`, `TestSQLPerbaruiObjekTCOSepertiUpdateTStorage`,
   `TestPenyimpananMenyegarkanObjekSesudahGetURL`, `TestPenyimpananNyataMenyegarkanObjekSesudahGetURL`, dan tag `db`
   `TestLampiranTahunTreatyLingkaranPenuh`.
+
+## Ralat bertanggal 29-09-2026 — lanjutan 5, OQ-TCO-24 ditutup `[data DBA — ALL_SOURCE; keputusan asisten dari bukti, veto work owner]`
+
+- Badan `PEGA_M_ATTACHMENT` (35 baris) meng-upsert **simpanan JSON halaman** `M_ATTACHMENTTREATY` (`DATA_JSON` CLOB per
+  `ID` = `TreatyYear + TreatyYearID`, `DATEINPUT` tanggal). Prosedur itu tidak menyentuh `M_ATTACHMENTTREATY_2`.
+- `ID_COUNT` **bukan tabel**, melainkan variabel lokal `id_count`. Ini meralat dugaan di ralat lanjutan 4 di atas.
+- Keputusan: aplikasi tetap menulis dan membaca `M_ATTACHMENTTREATY_2`; simpanan JSON **tidak diteruskan** (spec §15
+  "Dualitas JSON dibuang").
+- Temuan warisan yang dicatat: di Pega, penulis hidup modul (`TreatyOutSaveAttachment` b1674) tidak menulis `_2`, padahal
+  daftar dan hapus modul membacanya. Hal ini sejalan dengan penyimpangan sadar 9 dan dengan status fitur baru tiket ini.
+- Perilaku kode tidak berubah; hanya komentar `repository/tco_lampiran.go` dan `services/tco_lampiran.go` yang diperbarui.

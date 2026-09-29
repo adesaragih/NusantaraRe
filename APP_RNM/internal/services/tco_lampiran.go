@@ -7,8 +7,10 @@ package services
 //
 // ⚠️ Penyimpangan sadar 9 `[keputusan work owner]`: jalur lampiran Pega
 // (`TreatyOutSaveAttachment` -> `InsertAtatchment_Sql` -> `PEGA_M_ATTACHMENT`,
-// dibaca dengan `GetAllAttachment2_Sql`) belum rampung dan berkunci ID treaty
-// inward. Korpus adalah sumber RANTAI TEKNIS dan LABEL; perilakunya dari AC.
+// dibaca dengan `GetAllAttachment2_Sql`) belum rampung: prosedurnya hanya
+// meng-upsert simpanan JSON `M_ATTACHMENTTREATY`, daftarnya membaca
+// `M_ATTACHMENTTREATY_2` (OQ-TCO-24 ditutup; simpanan JSON tidak diteruskan).
+// Korpus adalah sumber RANTAI TEKNIS dan LABEL; perilakunya dari AC.
 //
 // ⛔ Taruhannya berbeda dari Komite Claim Life: lampiran OPSIONAL. Yang wajib
 // adalah kegagalannya TERLIHAT dan DAPAT DIULANG (ADR-0015), bukan berhasil.

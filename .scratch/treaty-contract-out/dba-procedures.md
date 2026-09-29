@@ -100,7 +100,7 @@ Tanggal: 2026-09-15. `[data DBA]`. Modul ini **satu-satunya penulis** tabel-tabe
 - **Perbaikan sadar tipe:** semua uang/persen → decimal; semua tanggal → DATE; `MTREATYSECURITY` PK
   surrogate + tipe wajar; kolom dead (`PROPORTIONALLIST`, `OBJECT`) tidak dibawa kecuali dipastikan.
 
-## `PEGA_M_ATTACHMENT` — rekonsiliasi lampiran (OQ-TCO-24, lanjutan 4, 29-09-2026)
+## `PEGA_M_ATTACHMENT` — rekonsiliasi lampiran (OQ-TCO-24 — **ditutup** lanjutan 5, 29-09-2026)
 
 ### Pasti dari korpus `[terverifikasi]`
 
@@ -114,30 +114,42 @@ Tanggal: 2026-09-15. `[data DBA]`. Modul ini **satu-satunya penulis** tabel-tabe
   dan nol yang menyebut `ID_COUNT`. Kedua nama itu hanya dikenal dari badan prosedur (agregat brief lanjutan 4 §1:
   35 baris `ALL_SOURCE`).
 
-### Belum terbaca — kueri siap
+### Badan prosedur `[data DBA — ALL_SOURCE POOLDATA, dibaca asisten, baca-saja; 35 baris, baris komentar dibuang]`
 
-Badan 35 baris itu **belum dibaca** di sesi executor. Sesi ini tidak punya jalan kredensial yang aman: `.env` terlarang, dan
-`muat-env.ps1` menggemakan nilai env, termasuk garam penyimpanan. Kueri di bawah hanya membaca. Buang baris komentar
-(`--`, `/* */`) sebelum menyalin, karena kepala prosedur lazim memuat nama pembuatnya.
+Hanya strukturnya yang dicatat di sini. Kepala komentar prosedur tidak disalin.
 
-```sql
-SELECT line, text FROM all_source
- WHERE owner = 'POOLDATA' AND name = 'PEGA_M_ATTACHMENT' AND type = 'PROCEDURE'
- ORDER BY line;
-SELECT object_name, object_type FROM all_objects
- WHERE owner = 'POOLDATA' AND object_name IN ('M_ATTACHMENTTREATY', 'M_ATTACHMENTTREATY_2', 'ID_COUNT');
-SELECT table_name, column_name, data_type, data_length, nullable FROM all_tab_columns
- WHERE owner = 'POOLDATA' AND table_name IN ('M_ATTACHMENTTREATY', 'M_ATTACHMENTTREATY_2')
- ORDER BY table_name, column_id;
-```
+| Baris | Isi |
+| --- | --- |
+| 1 | `PEGA_M_ATTACHMENT(IDPega IN VARCHAR2, DataPega IN CLOB, ErrMsg OUT VARCHAR2, StsSimpan OUT NUMBER)` |
+| 7 | `SELECT count(id) INTO id_count FROM pooldata.M_ATTACHMENTTREATY WHERE ID = IDPega` |
+| 14–16 | bila ada: `UPDATE pooldata.M_ATTACHMENTTREATY SET DATA_JSON = DataPega WHERE ID = IDPega; COMMIT` |
+| 24–26 | bila tidak: `INSERT INTO pooldata.M_ATTACHMENTTREATY (ID, DATA_JSON, DATEINPUT) VALUES (IDPega, DataPega, TO_DATE(to_char(sysdate,'dd/MM/yyyy'),'dd/MM/yyyy'))`, tanpa `COMMIT` di cabang ini (`COMMIT` datang dari RDB `InsertAtatchment_Sql` b60) |
 
-### Temuan warisan (menunggu badan) — TIDAK disatukan
+- **`id_count` adalah variabel lokal, bukan tabel.** Ini meralat dugaan lanjutan 4 bahwa `ID_COUNT` sebuah tabel penghitung
+  ID. Karena itu pula namanya nol di korpus: ia hanya hidup di dalam badan prosedur.
+- Katalog: `M_ATTACHMENTTREATY` **dan** `M_ATTACHMENTTREATY_2` keduanya ada di `POOLDATA`.
+- `M_ATTACHMENTTREATY` adalah **simpanan JSON halaman**: `DATA_JSON` CLOB per `ID`, di-upsert dan ditimpa tiap simpan.
+  `DATEINPUT` = tanggal hari ini tanpa jam. Isinya menurut pemanggil: `ID` = `TreatyYear + TreatyYearID` (b1402), `DATA_JSON`
+  = JSON halaman `TempData`, salinan halaman berkas `Embed-DragDropFile` (b683; `pyCategory` "File" b558).
+- `M_ATTACHMENTTREATY_2` adalah tabel **relasional** yang dibaca dan dihapus seluruh RDB modul.
 
-Bila badan menulis `M_ATTACHMENTTREATY` (bukan `_2`), dan `_2` bukan view atau sinonim atasnya, lampiran yang disimpan
-Pega **tidak pernah tampil** di daftar Pega sendiri, karena `GetAllAttachment2_Sql` membaca `_2`. Kode modul ini menulis
-`M_ATTACHMENTTREATY_2`, yaitu tabel yang dibaca dan dihapus Pega, dengan kolom dari `Treaty In/InsertAttachment2_Sql` b84.
-Kode **tidak** menulis `M_ATTACHMENTTREATY` maupun `ID_COUNT`. `ID_COUNT` `[dugaan]` penghitung ID; kode memakai stempel
-`YYYYMMDDHH24MISSFF3` WIB. Keputusan menulis ke tabel prosedur (atau ke keduanya) milik work owner sesudah badannya terbaca.
+### Kesimpulan dan keputusan
+
+**Temuan warisan — dicatat, tidak disatukan.** Di Pega, langkah hidup `TreatyOutSaveAttachment` hanya menulis simpanan JSON
+`M_ATTACHMENTTREATY`. Langkah `Java` b1016 hanya menyegarkan clipboard `.pyAttachments` / `D_AttachmentList`, dan tidak ada
+langkah hidup yang menulis `M_ATTACHMENTTREATY_2`. Padahal daftar dan hapus modul (`GetAllAttachment2_Sql`,
+`GetAttachment2_Sql`, `DeleteAttachment2_Sql`) membaca `_2`. Jadi lampiran yang disimpan dari modul ini di Pega tidak
+tampil di daftarnya sendiri, kecuali `_2` diisi penulis lain. Hal ini sejalan dengan penyimpangan sadar 9 (jalur lampiran
+Pega belum rampung) dan dengan tiket 12 sebagai fitur baru.
+
+**Keputusan `[asisten dari bukti; veto work owner]`** (brief lanjutan 5 §1):
+
+- aplikasi **tetap menulis dan membaca `M_ATTACHMENTTREATY_2`**, dengan kolom dari `Treaty In/InsertAttachment2_Sql` b84;
+- aplikasi **tidak** menulis simpanan JSON `M_ATTACHMENTTREATY`.
+
+Keputusan ini konsisten dengan keputusan proyek bahwa simpanan JSON halaman Pega tidak diteruskan (spec §15 "Dualitas JSON
+dibuang"; PremiumList: revisi penyimpanan JSON dibuang). Tidak ada pembaca hilir `M_ATTACHMENTTREATY` di korpus: sensus di
+atas menemukan nol sebutan. Kode memakai stempel `YYYYMMDDHH24MISSFF3` WIB sebagai `ID` baris `_2`.
 
 ## `Update_T_Storage_SQL` — ditiru (OQ-TCO-26, lanjutan 4, 29-09-2026)
 

@@ -39,7 +39,7 @@ Rule korpus (folder `D:\XML\RNM_BRD\Treaty Contract Out\`), dibaca 29-09-2026; `
 | **DelReins** | `RDBList/DeleteFromTreatyReinsurer_Act.xml` b59 | security `REAS_ID` lalu reinsurer `ID` |
 | **DelBiz** | `RDBList/DeleteRowBusinessList.xml` b85 | `delete from treatybusiness where id` *(tab Delete `m_treatybusiness` b88 tidak dipakai `RDB-List`)* |
 | **DelContract** | `RDBList/DeleteFromTREATYCONTRACT_SQL.xml` b79 | empat DELETE: kontrak, business, security, reinsurer |
-| **InsAtt** | `RDBList/InsertAtatchment_Sql.xml` b60 | `POOLDATA.PEGA_M_ATTACHMENT(IDPEGA, DATAPEGA CLOB)` — badan **`[terbuka — DBA]`** |
+| **InsAtt** | `RDBList/InsertAtatchment_Sql.xml` b60 | `POOLDATA.PEGA_M_ATTACHMENT(IDPEGA, DATAPEGA CLOB)` — upsert simpanan JSON `M_ATTACHMENTTREATY` `[data DBA — ALL_SOURCE]`; **tidak diteruskan** (OQ-TCO-24) |
 | **GetAtt** | `RDBList/GetAllAttachment2_Sql.xml` b84, `GetAttachment2_Sql.xml` b85 | `M_ATTACHMENTTREATY_2 where treatyid = {TreatyIn.ID}` |
 | **DelAtt** | `RDBList/DeleteAttachment2_Sql.xml` b84 | `delete M_ATTACHMENTTREATY_2 where treatyid = … and id = …` |
 | **Storage** | `RDBList/GetLinkStorage_SQL.xml`, `Update_T_Storage_SQL.xml`, `DeleteStorage_SQL.xml`, `GetTokenStorage_SQL.xml` | `T_STORAGE_IMAGE`, `GET_TOKEN_STORAGE` |
@@ -211,6 +211,15 @@ b1402 dan `DeleteAttachmentTreaty` b252 `[terverifikasi]`; **ralat** tiket 12 ya
 Treaty Contract Out: procedure `PEGA_M_ATTACHMENT(IDPEGA, DATAPEGA)` — badannya **`[terbuka — DBA]`** (OQ-TCO-24); kolom
 dan bentuk ID ditiru dari penulis langsung tabel yang SAMA di `Treaty In/RDBList/InsertAttachment2_Sql.xml` b84.
 Tipe: `[terbuka — DBA]`, diperlakukan VARCHAR2.
+
+> **Ralat bertanggal 29-09-2026 — lanjutan 5, OQ-TCO-24 ditutup** `[data DBA — ALL_SOURCE; keputusan asisten dari bukti,
+> veto work owner]`:
+>
+> - `PEGA_M_ATTACHMENT` **tidak** menulis tabel ini. Ia meng-upsert simpanan JSON halaman `M_ATTACHMENTTREATY`
+>   (`ID`, `DATA_JSON` CLOB, `DATEINPUT`).
+> - `ID_COUNT` **bukan tabel**, melainkan variabel lokal `id_count` di dalam prosedur.
+> - Penulis tabel ini dalam modul adalah aplikasi, dengan kolom dari `Treaty In/InsertAttachment2_Sql` b84.
+> - Simpanan JSON `M_ATTACHMENTTREATY` tidak ditulis dan tidak dibaca (spec §15). Rinciannya di `dba-procedures.md`.
 
 | Kolom | Tipe katalog | Isi |
 | --- | --- | --- |

@@ -8,9 +8,11 @@ package repository
 //
 //	GetAllAttachment2_Sql.xml b84 / GetAttachment2_Sql.xml b85   baca, `where treatyid = {TreatyIn.ID}`
 //	DeleteAttachment2_Sql.xml b84    `delete M_ATTACHMENTTREATY_2 where treatyid = .. and id = ..`
-//	InsertAtatchment_Sql.xml b60     `PEGA_M_ATTACHMENT(IDPEGA, DATAPEGA)` - badan [terbuka - DBA],
-//	                                 kolom ditiru dari penulis langsung tabel yang SAMA:
-//	                                 `Treaty In/RDBList/InsertAttachment2_Sql.xml` b84 (OQ-TCO-24)
+//	InsertAtatchment_Sql.xml b60     `PEGA_M_ATTACHMENT(IDPEGA, DATAPEGA)` - [data DBA, ALL_SOURCE]
+//	                                 upsert simpanan JSON halaman `M_ATTACHMENTTREATY.DATA_JSON`
+//	                                 per ID, TIDAK diteruskan (OQ-TCO-24 ditutup, spec §15);
+//	                                 kolom `_2` ditiru dari penulis langsung tabel yang SAMA:
+//	                                 `Treaty In/RDBList/InsertAttachment2_Sql.xml` b84
 //	Insert_T_Storage_SQL.xml b85 (Claim Fac In), DeleteStorage_SQL.xml b85   `T_STORAGE_IMAGE`
 //
 // ⛔ Kunci pemilik `TREATYID` = `TreatyYear + TreatyYearID` (teks disambung):
