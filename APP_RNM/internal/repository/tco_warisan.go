@@ -285,15 +285,44 @@ func StempelPegaTCO(w time.Time) string {
 	return u.Format("20060102T150405") + fmt.Sprintf(".%03d GMT", u.Nanosecond()/int(time.Millisecond))
 }
 
-// StempelTanggalJakartaTCO - tanggal kalender -> stempel Pega pukul 00:00 WIB
-// (bentuk properti DateTime yang dipilih dari kalender, dibaca kembali di
-// zona Jakarta). `[dugaan kuat]` - OQ-TCO-01.
-func StempelTanggalJakartaTCO(tgl time.Time) string {
+// TanggalYYYYMMDDTCO - tanggal kalender -> `YYYYMMDD`, bentuk `TREATYYEAR.
+// STARTDATE/ENDDATE` warisan. OQ-TCO-01 DITUTUP dari data DEV (brief lanjutan
+// 4): 182/182 baris berbentuk delapan angka - bukan stempel Pega (dugaan kuat
+// lanjutan 3 dibantah data). Waktu nol = teks kosong (NULL).
+func TanggalYYYYMMDDTCO(tgl time.Time) string {
 	if tgl.IsZero() {
 		return ""
 	}
-	y, m, d := tgl.Date()
-	return StempelPegaTCO(time.Date(y, m, d, 0, 0, 0, 0, zonaJakartaTCO))
+	return tgl.Format("20060102")
+}
+
+// polaYYYYMMDDTCO - delapan angka, satu-satunya bentuk tanggal tahun treaty.
+var polaYYYYMMDDTCO = regexp.MustCompile(`^\d{8}$`)
+
+// tanggalTahunWarisanTeks - `TREATYYEAR.STARTDATE/ENDDATE`: HANYA `YYYYMMDD`.
+// Bentuk lain (termasuk stempel `…T…GMT`) GAGAL dengan galat berkata-kata -
+// bentuk asing di kolom ini berarti penulis lain yang perlu diketahui, bukan
+// ditebak. Kosong = kosong.
+func tanggalTahunWarisanTeks(v sql.NullString, kolom string) (time.Time, error) {
+	t, ok := uraiYYYYMMDDTCO(v.String)
+	if !ok {
+		return time.Time{}, fmt.Errorf("repository: kolom %s bernilai %q: bukan YYYYMMDD (bentuk TREATYYEAR warisan)",
+			kolom, v.String)
+	}
+	return t, nil
+}
+
+// uraiYYYYMMDDTCO - `YYYYMMDD` -> tanggal (UTC 00:00); kosong = nol, ok.
+func uraiYYYYMMDDTCO(teks string) (time.Time, bool) {
+	t := strings.TrimSpace(teks)
+	if t == "" {
+		return time.Time{}, true
+	}
+	if !polaYYYYMMDDTCO.MatchString(t) {
+		return time.Time{}, false
+	}
+	hasil, err := time.Parse("20060102", t)
+	return hasil, err == nil
 }
 
 // TulisDesimalWarisanTCO - desimal ke kolom teks warisan: titik, tanpa

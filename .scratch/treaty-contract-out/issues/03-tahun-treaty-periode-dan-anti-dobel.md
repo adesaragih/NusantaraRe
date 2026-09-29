@@ -174,3 +174,15 @@ barisnya, seperti Pega.
   ditulis stempel Pega 00:00 WIB, `TGLUPDATE` `@getCurrentTimeStamp()` (`SaveTreatyYear_Act` b328).
 - Anti-dobel AC 73 dibandingkan di Go (tanggal teks berbentuk campur; `TRUNC` tidak berlaku atas VARCHAR2).
 - **AC 41 (jejak) gugur**: nol tabel jejak modul — Pega tidak mencatat jejak modul ini.
+
+## Ralat bertanggal 29-09-2026 — lanjutan 4, OQ-TCO-01 ditutup dari data `[asisten dari data; veto work owner]`
+
+- `TREATYYEAR.STARTDATE`/`ENDDATE` ditulis **`YYYYMMDD`** (delapan angka, tanggal kalender, tanpa jam/zona) —
+  agregat bentuk teks di DEV: 182/182 baris delapan angka. Ralat atas butir tco4 di atas: stempel Pega 00:00 WIB
+  (`[dugaan kuat]` lanjutan 3) **dibantah data**; `repository.TanggalYYYYMMDDTCO`.
+- Pembaca kolom itu **hanya** menerima `YYYYMMDD`; bentuk lain (termasuk stempel `…T…GMT`) → galat yang menyebut
+  kolom dan nilainya (`tanggalTahunWarisanTeks`), bukan ditebak. `TGLUPDATE` tetap stempel `@getCurrentTimeStamp()`
+  (182/182 cocok) dan tetap dibaca pengurai toleran.
+- Anti-dobel AC 73 membandingkan tanggal hasil urai `YYYYMMDD`.
+- Uji dua arah: `TestTepiTulisWarisanTCODuaArah`, `TestTanggalTahunHanyaYYYYMMDD`, `TestPindaiTahunTreaty`
+  (stempel ditolak), `TestTahunTreatyLingkaranPenuh` (tag `db`: `STARTDATE` tersimpan `20260101`).

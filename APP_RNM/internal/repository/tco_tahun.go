@@ -17,8 +17,8 @@ package repository
 // dijalankan DI DALAM transaksi penyimpanan, bukan dari cache layar.
 //
 // ⛔ tco4: seluruh kolom `TREATYYEAR` VARCHAR2 `[data DBA]`. `STARTDATE`/
-// `ENDDATE` ditulis stempel Pega 00:00 WIB, `TGLUPDATE` stempel
-// `@getCurrentTimeStamp()`; dibaca lewat pengurai warisan (tco_warisan.go).
+// `ENDDATE` ditulis dan dibaca `YYYYMMDD` (OQ-TCO-01 ditutup dari data DEV,
+// 182/182 baris), `TGLUPDATE` stempel `@getCurrentTimeStamp()`.
 // Setiap query menyebut skemanya lewat Qualify (ADR-U-0033), nol COMMIT
 // (ADR-U-0029).
 
@@ -133,10 +133,10 @@ func pindaiTahunTreaty(baca interface{ Scan(...any) error }) (models.TahunTreaty
 		UserID: n[8].String,
 	}
 	var err error
-	if t.StartDate, err = tanggalWarisanTeks(n[6], "STARTDATE"); err != nil {
+	if t.StartDate, err = tanggalTahunWarisanTeks(n[6], "STARTDATE"); err != nil {
 		return t, err
 	}
-	if t.EndDate, err = tanggalWarisanTeks(n[7], "ENDDATE"); err != nil {
+	if t.EndDate, err = tanggalTahunWarisanTeks(n[7], "ENDDATE"); err != nil {
 		return t, err
 	}
 	if t.TglUpdate, err = waktuWarisanTeks(n[9], "TGLUPDATE"); err != nil {
@@ -225,7 +225,7 @@ func (m *MasterTahunTreaty) Sisip(ctx context.Context, tx *Tx, t models.TahunTre
 		kosongJadiNil(t.TreatyYear), kosongJadiNil(t.UnderwritingYear),
 		kosongJadiNil(t.TreatyGroupID), kosongJadiNil(t.TreatyGroupName),
 		kosongJadiNil(t.UserID), kosongJadiNil(StempelPegaTCO(t.TglUpdate)), kosongJadiNil(t.Proportion),
-		kosongJadiNil(StempelTanggalJakartaTCO(t.StartDate)), kosongJadiNil(StempelTanggalJakartaTCO(t.EndDate)))
+		kosongJadiNil(TanggalYYYYMMDDTCO(t.StartDate)), kosongJadiNil(TanggalYYYYMMDDTCO(t.EndDate)))
 	if err != nil {
 		return "", fmt.Errorf("repository: menyisipkan tahun treaty: %w", err)
 	}
@@ -249,7 +249,7 @@ func (m *MasterTahunTreaty) Perbarui(ctx context.Context, tx *Tx, t models.Tahun
 		kosongJadiNil(t.TreatyYear), kosongJadiNil(t.UnderwritingYear),
 		kosongJadiNil(t.TreatyGroupID), kosongJadiNil(t.TreatyGroupName),
 		kosongJadiNil(t.UserID), kosongJadiNil(StempelPegaTCO(t.TglUpdate)), kosongJadiNil(t.Proportion),
-		kosongJadiNil(StempelTanggalJakartaTCO(t.StartDate)), kosongJadiNil(StempelTanggalJakartaTCO(t.EndDate)), t.ID)
+		kosongJadiNil(TanggalYYYYMMDDTCO(t.StartDate)), kosongJadiNil(TanggalYYYYMMDDTCO(t.EndDate)), t.ID)
 	if err != nil {
 		return fmt.Errorf("repository: memperbarui tahun treaty %s: %w", t.ID, err)
 	}
@@ -301,8 +301,8 @@ func (m *MasterTahunTreaty) CariDobel(ctx context.Context, tx *Tx, grupID string
 		}
 		// ⚠️ Baris warisan bertanggal tak terurai tidak dapat "sama": dilewati,
 		// bukan menggagalkan penyimpanan tahun lain.
-		a, okA := UraiTanggalWarisanTCO(awal.String)
-		b, okB := UraiTanggalWarisanTCO(akhirTeks.String)
+		a, okA := uraiYYYYMMDDTCO(awal.String)
+		b, okB := uraiYYYYMMDDTCO(akhirTeks.String)
 		if okA && okB && tanggalSamaTCO(a, mulai) && tanggalSamaTCO(b, akhir) {
 			return id.String, nil
 		}

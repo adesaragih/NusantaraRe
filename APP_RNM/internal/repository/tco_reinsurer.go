@@ -128,7 +128,7 @@ func (m *MasterReinsurerAgent) Ambil(ctx context.Context, id string) (ReinsurerM
 // MasterReinsurerTCO membaca dan menulis tabel WARISAN `TREATYREINSURER` (tco4).
 //
 // ⚠️ `RICOMM`/`PCTSHARE` NUMBER; `STARTDATE`/`ENDDATE`/`TGLUPDATE` VARCHAR2
-// `[data DBA]` - stempel Pega, dibaca lewat pengurai warisan.
+// `[data DBA]`, dibaca lewat pengurai warisan (toleran).
 type MasterReinsurerTCO struct{ db *DB }
 
 // NewMasterReinsurerTCO menyusun gudangnya.
@@ -211,6 +211,33 @@ func pindaiReinsurerTCO(baca interface{ Scan(...any) error }) (models.ReinsurerT
 	}
 	r.TglUpdate, err = waktuWarisanTeks(n[18], "TGLUPDATE")
 	return r, err
+}
+
+// medanReinsurerTCO - REINSURERID … TGLUPDATE, urutan kolom sisip/perbarui.
+//
+// ⛔ `STARTDATE`/`ENDDATE` SELALU NULL (lanjutan 4, OQ-TCO-01): Pega tidak
+// pernah menulisnya - kontrolnya di `ViewDetailTreatyReinsurerGrid1.xml`
+// b10311/b10516 bersyarat tampil `1=2` (b10431/b10636), `NewTreatyReinsurerDetail_Act`
+// b938/b959 mengosongkannya; data DEV 430/430 kosong.
+func medanReinsurerTCO(r models.ReinsurerTreaty) []any {
+	return []any{kosongJadiNil(r.ReinsurerID), kosongJadiNil(r.ClientID), kosongJadiNil(r.Name),
+		desimalJadiNil(r.Ricomm), desimalJadiNil(r.PctShare), kosongJadiNil(r.IUDate), kosongJadiNil(r.UserID),
+		nil, nil, // STARTDATE, ENDDATE
+		kosongJadiNil(r.StatusOn), kosongJadiNil(r.StdRating), kosongJadiNil(r.OperatorName),
+		kosongJadiNil(StempelPegaTCO(r.TglUpdate))}
+}
+
+// argSisipReinsurerTCO - :1..:19 `sqlSisipReinsurerTCO`.
+func argSisipReinsurerTCO(id string, r models.ReinsurerTreaty) []any {
+	return append([]any{id, kosongJadiNil(r.TreatyYear), kosongJadiNil(r.TreatyGroupID),
+		kosongJadiNil(r.TreatyGroupName), kosongJadiNil(r.ReinsTypeID), kosongJadiNil(r.ReinsTypeName)},
+		medanReinsurerTCO(r)...)
+}
+
+// argPerbaruiReinsurerTCO - :1..:19 `sqlPerbaruiReinsurerTCO`.
+func argPerbaruiReinsurerTCO(r models.ReinsurerTreaty) []any {
+	arg := append([]any{kosongJadiNil(r.TreatyGroupName), kosongJadiNil(r.ReinsTypeName)}, medanReinsurerTCO(r)...)
+	return append(arg, r.ID, r.TreatyYear, r.TreatyGroupID, r.ReinsTypeID)
 }
 
 func argKombinasi(k models.KombinasiTCO) []any {
@@ -321,13 +348,7 @@ func (m *MasterReinsurerTCO) Sisip(ctx context.Context, tx *Tx, r models.Reinsur
 	if err := PeriksaSQL(q); err != nil {
 		return "", err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, id, kosongJadiNil(r.TreatyYear), kosongJadiNil(r.TreatyGroupID),
-		kosongJadiNil(r.TreatyGroupName), kosongJadiNil(r.ReinsTypeID), kosongJadiNil(r.ReinsTypeName),
-		kosongJadiNil(r.ReinsurerID), kosongJadiNil(r.ClientID), kosongJadiNil(r.Name),
-		desimalJadiNil(r.Ricomm), desimalJadiNil(r.PctShare), kosongJadiNil(r.IUDate), kosongJadiNil(r.UserID),
-		kosongJadiNil(StempelTanggalJakartaTCO(r.StartDate)), kosongJadiNil(StempelTanggalJakartaTCO(r.EndDate)),
-		kosongJadiNil(r.StatusOn), kosongJadiNil(r.StdRating), kosongJadiNil(r.OperatorName),
-		kosongJadiNil(StempelPegaTCO(r.TglUpdate)))
+	hasil, err := tx.tx.ExecContext(ctx, q, argSisipReinsurerTCO(id, r)...)
 	if err != nil {
 		return "", fmt.Errorf("repository: menyisipkan reinsurer: %w", err)
 	}
@@ -347,13 +368,7 @@ func (m *MasterReinsurerTCO) Perbarui(ctx context.Context, tx *Tx, r models.Rein
 	if err := PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, kosongJadiNil(r.TreatyGroupName), kosongJadiNil(r.ReinsTypeName),
-		kosongJadiNil(r.ReinsurerID), kosongJadiNil(r.ClientID), kosongJadiNil(r.Name),
-		desimalJadiNil(r.Ricomm), desimalJadiNil(r.PctShare), kosongJadiNil(r.IUDate), kosongJadiNil(r.UserID),
-		kosongJadiNil(StempelTanggalJakartaTCO(r.StartDate)), kosongJadiNil(StempelTanggalJakartaTCO(r.EndDate)),
-		kosongJadiNil(r.StatusOn), kosongJadiNil(r.StdRating), kosongJadiNil(r.OperatorName),
-		kosongJadiNil(StempelPegaTCO(r.TglUpdate)),
-		r.ID, r.TreatyYear, r.TreatyGroupID, r.ReinsTypeID)
+	hasil, err := tx.tx.ExecContext(ctx, q, argPerbaruiReinsurerTCO(r)...)
 	if err != nil {
 		return fmt.Errorf("repository: memperbarui reinsurer %s: %w", r.ID, err)
 	}

@@ -312,8 +312,8 @@ func TestTahunTreatyLingkaranPenuh(t *testing.T) {
 		baru.ID).Scan(&awal, &tgl); err != nil {
 		t.Fatal(err)
 	}
-	if awal.String != "20251231T170000.000 GMT" || !strings.HasSuffix(tgl.String, " GMT") {
-		t.Errorf("bentuk tersimpan: STARTDATE %q TGLUPDATE %q (mau stempel Pega 00:00 WIB)", awal.String, tgl.String)
+	if awal.String != "20260101" || !strings.HasSuffix(tgl.String, " GMT") {
+		t.Errorf("bentuk tersimpan: STARTDATE %q TGLUPDATE %q (mau YYYYMMDD dan stempel Pega)", awal.String, tgl.String)
 	}
 
 	// Tidak ada -> 404.

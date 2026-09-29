@@ -79,9 +79,9 @@ type barisPalsu struct{ nilai []any }
 func (b barisPalsu) Scan(tujuan ...any) error { return isiNullString(tujuan, b.nilai) }
 
 func TestPindaiTahunTreaty(t *testing.T) {
-	// tco4: teks warisan - stempel Pega 00:00 WIB dan stempel TGLUPDATE.
+	// Lanjutan 4 (OQ-TCO-01): tanggal YYYYMMDD seperti data warisan; TGLUPDATE stempel Pega.
 	baris := barisPalsu{nilai: []any{"1000001", "2026", "2026", "10001", "UJI GRUP", "P",
-		"20251231T170000.000 GMT", "", "UJI-OP", "20260915T100000.000 GMT"}}
+		"20260101", "", "UJI-OP", "20260915T100000.000 GMT"}}
 	th, err := pindaiTahunTreaty(baris)
 	if err != nil {
 		t.Fatal(err)
@@ -93,8 +93,10 @@ func TestPindaiTahunTreaty(t *testing.T) {
 		!th.EndDate.IsZero() || th.TglUpdate.Hour() != 17 { // 10:00 GMT = 17:00 WIB
 		t.Errorf("tanggal: %v %v %v", th.StartDate, th.EndDate, th.TglUpdate)
 	}
-	buruk := barisPalsu{nilai: []any{"1", "", "", "", "", "", "kapan-kapan", "", "", ""}}
-	if _, err := pindaiTahunTreaty(buruk); err == nil {
-		t.Error("tanggal yang tidak terurai harus galat, bukan kosong diam-diam")
+	for _, bentuk := range []string{"kapan-kapan", "20251231T170000.000 GMT"} {
+		buruk := barisPalsu{nilai: []any{"1", "", "", "", "", "", bentuk, "", "", ""}}
+		if _, err := pindaiTahunTreaty(buruk); err == nil {
+			t.Errorf("%q harus galat, bukan kosong atau ditebak", bentuk)
+		}
 	}
 }

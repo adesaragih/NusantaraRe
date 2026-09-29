@@ -160,3 +160,15 @@ Nomor baris = baris mentah berkas korpus; langkah aktivitas dibaca lengkap (pras
   `ENDDATE`/`TGLUPDATE` VARCHAR2 (stempel Pega). `USERID`/`TGLUPDATE` diisi layanan walau Pega mengosongkannya
   (`NewTreatyReinsurerDetail_Act` b917) — penyimpangan sadar kecil, **OQ-TCO-25**.
 - **Jejak gugur**.
+
+## Ralat bertanggal 29-09-2026 — lanjutan 4, OQ-TCO-01 `[asisten dari data; veto work owner]`
+
+- `TREATYREINSURER.STARTDATE`/`ENDDATE` **tidak ditulis** — sisip dan perbarui mengikat NULL
+  (`repository.medanReinsurerTCO`). Bukti: kontrolnya di `ViewDetailTreatyReinsurerGrid1.xml` b10311/b10516 bersyarat
+  tampil `1=2` (b10431/b10636); `NewTreatyReinsurerDetail_Act` b938/b959 (`pyStepsBlockName` kosong) mengosongkannya;
+  `SetUbahTreatyReinsurerList_Act` b1117/b1157 (`pyStepsBlockName` kosong) hanya menyalin nilai baris itu sendiri;
+  `SaveMasterTreatyReinsurer_SQL` b79 meneruskannya apa adanya ke `PEGA_TREATYREINSURER`; data DEV 430/430 kosong.
+  Butir tco4 di atas ("stempel Pega") diralat.
+- Pega meneruskan nilai lama saat ubah; kode menulis NULL. Keduanya sama selama kolom kosong (430/430); baris
+  berisi tanggal dari penulis lain akan dikosongkan saat reinsurer itu diubah dari modul ini — dicatat, bukan ditebak.
+- Uji: `TestReinsurerTanggalTidakDitulis` (argumen :14/:15 sisip, :10/:11 perbarui = NULL; `OPERATORNAME` tidak bergeser).

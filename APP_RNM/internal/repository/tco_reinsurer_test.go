@@ -1,8 +1,10 @@
 package repository
 
 import (
+	"nusantarare/internal/models"
 	"strings"
 	"testing"
+	"time"
 )
 
 // Daftar per KOMBINASI (GetMasterReinsurerList), urut ID ASC (RD b730); uang
@@ -72,5 +74,23 @@ func TestPindaiReinsurerTCO(t *testing.T) {
 	buruk := barisPalsu{nilai: []any{"1", "", "", "", "", "", "", "", "", "tujuh", "", "", "", "", "", "", "", "", ""}}
 	if _, err := pindaiReinsurerTCO(buruk); err == nil {
 		t.Error("RICOMM bukan angka harus galat, bukan nol diam-diam")
+	}
+}
+
+// Lanjutan 4 (OQ-TCO-01): STARTDATE/ENDDATE reinsurer SELALU NULL - Pega tidak
+// menulisnya (kontrol b10311/b10516 bersyarat 1=2, data DEV 430/430 kosong).
+func TestReinsurerTanggalTidakDitulis(t *testing.T) {
+	r := models.ReinsurerTreaty{ID: "1000007", TreatyYear: "2026", StartDate: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate: time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC), OperatorName: "UJI-OP"}
+	sisip, perbarui := argSisipReinsurerTCO("1000007", r), argPerbaruiReinsurerTCO(r)
+	if len(sisip) != 19 || len(perbarui) != 19 {
+		t.Fatalf("argumen %d / %d, mau 19 / 19", len(sisip), len(perbarui))
+	}
+	// :14/:15 sisip dan :10/:11 perbarui = STARTDATE, ENDDATE.
+	if sisip[13] != nil || sisip[14] != nil || perbarui[9] != nil || perbarui[10] != nil {
+		t.Errorf("tanggal reinsurer ditulis: sisip %v %v, perbarui %v %v", sisip[13], sisip[14], perbarui[9], perbarui[10])
+	}
+	if sisip[17] != "UJI-OP" || perbarui[13] != "UJI-OP" {
+		t.Errorf("OPERATORNAME bergeser: %v %v", sisip[17], perbarui[13])
 	}
 }

@@ -6,6 +6,7 @@ package repository
 // produksi; seluruh nilai berawalan UJI.
 
 import (
+	"database/sql"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -139,7 +140,7 @@ func TestTCONolTabelBaru(t *testing.T) {
 	}
 }
 
-// Tepi tulis: stempel Pega, tanggal Jakarta, dan desimal - dua arah.
+// Tepi tulis: stempel Pega, tanggal YYYYMMDD, dan desimal - dua arah.
 func TestTepiTulisWarisanTCODuaArah(t *testing.T) {
 	w := time.Date(2026, 9, 29, 5, 6, 7, 891_000_000, time.UTC)
 	if s := StempelPegaTCO(w); s != "20260929T050607.891 GMT" {
@@ -151,13 +152,17 @@ func TestTepiTulisWarisanTCODuaArah(t *testing.T) {
 	if StempelPegaTCO(time.Time{}) != "" {
 		t.Error("waktu nol harus teks kosong (NULL)")
 	}
+	// OQ-TCO-01 (lanjutan 4, data DEV 182/182): tanggal tahun = delapan angka.
 	tgl := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
-	s := StempelTanggalJakartaTCO(tgl)
-	if s != "20251231T170000.000 GMT" {
-		t.Errorf("tanggal Jakarta %q, mau 00:00 WIB = 17:00 GMT hari sebelumnya", s)
+	s := TanggalYYYYMMDDTCO(tgl)
+	if s != "20260101" {
+		t.Errorf("tanggal tahun %q, mau 20260101", s)
 	}
-	if b, ok := UraiTanggalWarisanTCO(s); !ok || !b.Equal(tgl) {
+	if b, ok := uraiYYYYMMDDTCO(s); !ok || !b.Equal(tgl) {
 		t.Errorf("tanggal pulang %v %v, mau %v", b, ok, tgl)
+	}
+	if TanggalYYYYMMDDTCO(time.Time{}) != "" {
+		t.Error("tanggal nol harus teks kosong (NULL)")
 	}
 	for masuk, mau := range map[string]string{"12.50": "12.5", "1000000000.12345678": "1000000000.12345678",
 		"100": "100", "0.0": "0", "-3.10": "-3.1"} {
@@ -226,3 +231,21 @@ func TestTCONolNamaTabelBaruDiKode(t *testing.T) {
 		t.Fatalf("hanya %d berkas terbaca; pembacanya yang rusak", berkas)
 	}
 }
+
+// OQ-TCO-01: kolom tanggal TREATYYEAR HANYA menerima YYYYMMDD - stempel Pega
+// dan bentuk lain ditolak dengan galat yang menyebut kolom dan bentuknya.
+func TestTanggalTahunHanyaYYYYMMDD(t *testing.T) {
+	for _, baik := range []string{"20260101", " 20261231 ", ""} {
+		if _, err := tanggalTahunWarisanTeks(sqlNull(baik), "STARTDATE"); err != nil {
+			t.Errorf("%q ditolak: %v", baik, err)
+		}
+	}
+	for _, buruk := range []string{"20251231T170000.000 GMT", "01/01/2026", "2026-01-01", "2026011", "20261340"} {
+		_, err := tanggalTahunWarisanTeks(sqlNull(buruk), "STARTDATE")
+		if err == nil || !strings.Contains(err.Error(), "bukan YYYYMMDD") || !strings.Contains(err.Error(), "STARTDATE") {
+			t.Errorf("%q: %v", buruk, err)
+		}
+	}
+}
+
+func sqlNull(s string) sql.NullString { return sql.NullString{String: s, Valid: s != ""} }
