@@ -1109,3 +1109,59 @@ bentuk tulis; OQ-TCO-23 bentuk desimal teks; OQ-TCO-24 badan `PEGA_M_ATTACHMENT`
 `USERID`/`TGLUPDATE` diisi layanan); label kode `[terbuka — OQ-TCO-22]`.
 
 ⚠️ `.scratch/cadangan/` (untracked) hilang dari disk selama sesi — bukan oleh commit atau perintah sesi ini.
+
+### Paket 5 — uji penuh + /code-review singkat
+
+Penjaga statik baru: `TestTCONolTabelBaru` (paket 1) dan `TestTCONolNamaTabelBaruDiKode` (nol `T_TREATY*`/`T_MTREATY*`/
+`T_PROPORTIONAL*` di kode Go dan frontend sesudah komentar dibuang, termasuk berawalan `SEQ_`) — keduanya dibuktikan
+merah terhadap pelanggaran tanam. Tinjauan `e6905ed..445ad74`: 14 temuan; diperbaiki di `f31626c`:
+
+| Temuan | Tindakan |
+| --- | --- |
+| pengurai desimal menolak >8 desimal (batas `T_*` yang dibuang) atas teks VARCHAR2 warisan | batas dibuang; notasi eksponen ditolak eksplisit |
+| mengganti `TREATYYEAR` memutus lampiran (`TREATYID` = teks tahun + ID) | `JumlahAnak` ikut menghitung `M_ATTACHMENTTREATY_2` |
+| `TGLUPDATE` tampil UTC | stempel dibaca dalam WIB |
+| duplikat security warisan tak dapat diubah/dihapus | UPDATE/DELETE semua baris senama, seperti Pega |
+| `REAS_SECURITY` > 10 karakter → ORA-12899 (500) | gerbang 422 `ErrSecurityMelampauiLebar` |
+| jawaban simpan business memuat kolom yang tidak tersimpan | kolom non-UPDATE diambil dari baris lama |
+| `SimpanObjek` menelan sebab galat | `%w` |
+| celah pola penjaga untuk `SEQ_T_…` | pola tanpa `\b` depan + uji-diri |
+| komentar basi (T_, jejak, SYSDATE), kode mati | dibersihkan |
+| kolom klausul/security bersumber ganda | diturunkan dari `KolomWarisanTCO`/`TipeWarisanTCO` |
+
+Dibiarkan, beralasan: migrasi 300–307 dibuang tanpa langkah bongkar (brief §0: objek DEV sudah dihapus, `T_MIGRASI`
+29 langkah); `Update_T_Storage_SQL` belum ditiru → **OQ-TCO-26**; indeks `T_STORAGE_IMAGE.IMAGEID` → OQ-TCO-24.
+
+### Angka uji per commit (Lanjutan 3)
+
+| Commit | Go tingkat atas | Go semua | Go tag `db` | vitest | build |
+| --- | ---: | ---: | --- | --- | ---: |
+| `5cc123f` (awal lanjutan 2, verifikasi brief §0.1) | 911 | — | 911 + 56 dilewati | 614 | 81 |
+| `db7770f` (HEAD sebelum paket 1; memuat `5415aab`) | tidak ter-build (`cmd/api`) | — | — | 613 ⁽¹⁾ | — |
+| `e6905ed` paket 1 | 894 | 995 | 894 + 53 | 613 / 52 | 81 |
+| `da010bb` paket 2 | 897 | 998 | 897 + 53 | 613 / 52 | 81 |
+| `ea06c8b` paket 3 | 901 | 1.002 | 901 + 53 | 613 / 52 | 81 |
+| `25b26c5` paket 3b | 901 | 1.002 | 901 + 53 | 613 / 52 | 81 |
+| `445ad74` paket 4 | 901 ⁽²⁾ | — | — | 613 | 81 |
+| `f31626c` paket 5 | 904 | 1.005 | 904 + 53 | 613 / 52 | 81 |
+
+⁽¹⁾ vitest 614 → 613 berasal dari commit claim-life sesi lain (`2a0f0ca`), bukan modul ini. ⁽²⁾ Paket 4 hanya
+dokumen + satu komentar kode; uji repository/services dijalankan, suite penuh tidak diulang. Penurunan 17 di paket 1 =
+uji konversi/pemindahan data yang dibuang; `db` 56 → 53 = tiga uji `tco_pindah_db_test.go`. ⛔ Tag `db` = tanpa Oracle
+(dilewati); **tidak ada SQL yang dijalankan ke Oracle** di sesi ini dan `-migrate` tidak dijalankan.
+
+**`-migrate` kini aman dijalankan lagi**: tidak ada berkas migrasi modul ini; ia tidak membuat tabel apa pun untuk
+Treaty Contract Out.
+
+### TELEMETRI EKSEKUSI — Lanjutan 3
+
+| Butir | Nilai |
+| --- | --- |
+| Commit | 6 kerja/perbaikan (`e6905ed`, `da010bb`, `ea06c8b`, `25b26c5`, `445ad74`, `f31626c`) + 1 dokumen penutup ini, langsung di `main` |
+| Rentang cap waktu commit | 13:57:52 → 15:08:19 |
+| Ukuran (commit sesi ini saja) | 127 sentuhan berkas, +2.392 / −2.422 baris; ditambah 21 berkas −1.733 baris yang tersapu ke `5415aab` |
+| Korpus dibaca | 36 RDB modul + 7 RDB modul saudara (tag SQL saja), 168 activity modul (daftar-putih tag, `pyStepsBlockName` dicetak), `InputTreatyContract.xml` enam baris diverifikasi |
+| Subagen | 1 (tinjauan `/code-review`) |
+| Uji penuh | enam kali (`angka.sh`), dua pengukuran dasar gagal (jalur worktree terlalu panjang; `main` tidak ter-build) |
+| Oracle / layanan luar | 0 SQL, 0 panggilan |
+| Token / biaya | tidak terlihat dari dalam sesi — tidak dilaporkan |
