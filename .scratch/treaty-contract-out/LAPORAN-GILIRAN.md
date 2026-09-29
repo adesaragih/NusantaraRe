@@ -991,3 +991,69 @@ kasus 29 Februari juga di seam layanan (`TestKontrakAkhirBawaan`). Penyimpangan 
   `DeleteGoogleStorage_Act` (Treaty Contract Out) — seluruh langkah kosong kecuali `EXIT` terakhir; nol langkah `//`.
 - **OQ-TCO-22 dibuka** (`Folder`/`Durasi`/`Namafile`, lihat register). Tidak ada SQL yang dijalankan ke Oracle; tidak ada
   layanan sungguhan yang dipanggil.
+
+### Kelompok 6 — uji penuh + /code-review singkat
+
+Cakupan: konteks Treaty Contract Out `8c27b9e..HEAD` (berkas `tco_*`, rute modul, frontend modul, dokumen modul) dan kode
+bersama yang disentuh `db8e2e9..5eb41d7`. Commit modul lain yang masuk lewat merge `8bc983c` di luar cakupan. 15 temuan;
+tiap temuan diverifikasi ke kode atau korpus sebelum ditindak. Diperbaiki di `2c59fd3`:
+
+| Temuan | Bukti verifikasi | Tindakan |
+| --- | --- | --- |
+| delete menunjuk akar bucket | `DeleteGoogleStorage_Act` b1091 `Namafile` = jalur penuh; Insert b1407–b1408 folder berakhiran `/` | `Namafile = FolderStorageTCO + IMAGEID`; folder `TreatyContractOut/`; tiruan server kini memakai folder |
+| 404 titik layanan = "berkas hilang" | `galatStatusTCO` lama | 404 titik layanan = galat layanan; "tidak ada" hanya dari URL bertanda tangan; `Hapus` cek keberadaan dulu |
+| token hampir mati dipakai ulang | cache menyegarkan di jendela margin, sumber mengembalikan token sama | ambang sisa umur > `MarginTokenTCO` |
+| `INPUTDATE` dibaca ke jam aplikasi | `sql.NullTime` dibanding `time.Now()` | sisa umur dihitung di Oracle (`CAST … AS DATE`), bind waktu yang sama |
+| 401/403 tidak mengosongkan cache | — | `CacheTokenTCO.Lupakan` saat `ErrStorageTokenDitolakTCO` |
+| `ext` ditebak dari tabel MIME OS | `mime.ExtensionsByType` urut abjad (`image/jpeg` → `jfif`) | `ekstensi` dari nama berkas asli (b587) lewat `Simpan`/`Kirim` |
+| URL bertanda tangan http + pengalihan | `urlBertanda` menerima http, klien mengikuti 3xx | hanya https; 3xx = galat |
+| interval tanpa batas bawah | `bacaInterval` | minimal `1s` atau 0 |
+| pekerja tidak ditunggu saat mati | `cmd/api` | kanal selesai ditunggu sebelum `db.Close` |
+| konstanta pelaksana ganda | `PelaksanaStorage*TCO` = konstanta config | pemilih menerima `bool` dari config |
+| komentar `kirimSekarang` basi | "nol pemanggil `SatuPutaran`" | diganti: pekerja latar + `SKIP LOCKED` |
+| teks popup: business kontrak lain ikut terhapus | `saringBusinessKaskadeTCO` membatasi `TREATYYEARID` tahun ini/NULL | teks + komentar struct dibetulkan |
+
+Dibiarkan, dengan alasan (tercatat di tiket 12): I/O jaringan di dalam transaksi outbox (pola bersama `PekerjaEfek`;
+memisahkannya menuntut desain sewa lintas modul), memori unggahan ~3× (batas 25 MiB), kueri token modul terpisah dari
+`PohonKlaim.TokenBerlaku` (butuh sisa umur + margin; kode bersama dipakai modul klaim), `APPNAME` dibaca per operasi
+(perubahan DBA berlaku tanpa restart, seperti resolver). Uji baru 5 tingkat atas (404 titik layanan, URL bertanda terjaga,
+jalur hapus salah tidak diam, token ditolak dilupakan, `ext` dari nama berkas); uji urutan alamat lama disesuaikan
+(Hapus kini `geturl` lalu `delete`).
+
+### Angka uji per commit (Lanjutan 2)
+
+| Commit | Go tingkat atas | Go semua (sub-uji) | Go tag `db` | vitest | build |
+| --- | ---: | ---: | --- | --- | ---: |
+| `043116f` (awal) | 900 | 1.001 | 900 + 57 dilewati | 612 / 53 berkas | 81 |
+| `db8e2e9` kelompok 1 | 901 | — | 901 + 57 | 612 / 53 | 81 |
+| `32a48f8` kelompok 2 | 903 | — | 903 + 57 | 614 / 53 | 81 |
+| `c29c687` kelompok 3 | 892 | — | 892 + 56 | 614 / 52 | 81 |
+| `3060776` kelompok 4 | 892 | — | 892 + 56 | 614 / 52 | 81 |
+| `5eb41d7` kelompok 5 | 906 | 1.007 | 906 + 56 | 614 / 52 | 81 |
+| `2c59fd3` kelompok 6 | 911 | 1.012 | 911 + 56 | 614 / 52 | 81 |
+
+⚠️ Tag `db` = dikompilasi dan dijalankan tanpa Oracle: uji `db` dilewati, **tidak ada SQL yang dijalankan ke Oracle** di
+sesi ini. Turunnya 11 di kelompok 3 = uji rute simpan utuh yang dibuang.
+
+### Kunci env baru (nilai TIDAK ditulis di sini)
+
+| Kunci | Isi | Bawaan |
+| --- | --- | --- |
+| `PELAKSANA_STORAGE` | `stub` atau `nyata`; nilai lain ditolak saat menyala | `stub` |
+| `STORAGE_TOKEN_SALT` | garam token penyimpanan — diisi work owner lewat saluran rahasia DBA; wajib bila `nyata` | kosong |
+| `TCO_PEKERJA_LAMPIRAN_INTERVAL` | durasi Go (`30s`, `1m`), minimal `1s`; kosong/0 = pekerja mati | kosong |
+
+Menyalakan pelaksana nyata: isi `STORAGE_TOKEN_SALT`, setel `PELAKSANA_STORAGE=nyata`, pastikan `M_LINK_SERVICE` memuat
+`Google/upload`, `Google/geturl`, `Google/delete` dan `T_FOLDER_IMAGE.APPNAME` terisi, lalu nyalakan backend.
+
+### TELEMETRI EKSEKUSI — Lanjutan 2
+
+| Butir | Nilai |
+| --- | --- |
+| Commit | 6 kerja (`db8e2e9` … `2c59fd3`) + 1 dokumen penutup ini, langsung di `main` |
+| Rentang cap waktu commit | 12:22:23 → 13:26:41 (dasar `043116f` 12:16:07) |
+| Ukuran `043116f..2c59fd3` | 73 berkas, +2.201 / −1.571 baris (61 berkas di `APP_RNM`) |
+| Subagen | 1 (tinjauan `/code-review`, bercabang) |
+| Uji penuh | satu per baris tabel angka (`angka.sh`: gofmt, vet, go test tanpa/dengan tag `db`, tsc, vitest, vite build) |
+| Oracle / layanan luar | 0 SQL dijalankan; 0 panggilan ke layanan sungguhan (uji memakai `httptest` lokal) |
+| Token / biaya | tidak terlihat dari dalam sesi — tidak dilaporkan |
