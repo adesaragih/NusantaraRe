@@ -1,6 +1,6 @@
 # 08: Klausul — satu tabel, 25 jenis, validasi per jenis
 
-**Status:** ready-for-agent
+**Status:** selesai (29-09-2026)
 
 **Blocked by:** 04 (kombinasi tahun/grup/jenis dibuka oleh kontrak)
 
@@ -174,3 +174,56 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+## Pembacaan ulang XML — 29-09-2026 (sesi modul, lanjutan 1)
+
+Nomor baris = baris mentah berkas korpus `Treaty Contract Out/`; langkah aktivitas dibaca lengkap, **hanya langkah
+hidup** (bukan `pyStepsBlockName = //`) dengan prasyarat **aktif** (`pyStepsPreCondition = true`).
+
+| Unsur | Bukti | Dibawa sebagai |
+| --- | --- | --- |
+| jalan masuk | `Section/InputTreatyContract.xml` b22196 `List Description` → harness `Harness/InboxTreatyContractDescription.xml` b359 | tombol baris tahun membuka `PanelKlausulTahun`; menu `InboxTreatyContractDescription` memilih tahun lebih dulu |
+| kepala | harness b2003 `TreatyGroupID`, b2489 `Underwriting Year` (`.TreatyYear`), b2665 `Transaction Year` (`.UnderwritingYear`), b2839/b3025 tanggal, b3209 `Treaty Description`, b3382 `Proportion Type` | tujuh medan baca-saja; label bersilang OQ-TCO-05 dibawa apa adanya |
+| grid jenis | harness b4880 `For Non XOL` (saringan `IsXOL` b5324/b5335 = `0`), b7971 `For XOL` (b8415/b8426 = `1`); kolom b5440 `ID`, b5549 `Description Name`; tombol b6059 `Show` | `GET /api/treaty-contract-out/jenis-klausul?isXol=` dari master `TREATYDESC` (baca-saja, AC 26/27) |
+| DescID → jenis | `Activity/SetKirimIDDesc.xml` — 54 rujukan `InputData.CARIDESC` (mis. b1017/b1142 `10001` → `InputTreatyArrTreatyLimit`, b1196/b1288 `10001` → `InputTreatyArrTreatyLimitChild`, b1342 `10010` → `InputTreatyRicomm`) | induk dan anak **berbagi** DescID, dibedakan `PARENTREINSTYPEID` (`"00"` = induk) |
+| aturan wajib-isi | sensus 25 aktivitas `Activity/SaveTreatyArr*` (langkah `Property-Set-Messages` berprasyarat `<medan>==""`, WhenTrue 2) | `models.AturanKlausulTCO` — satu tabel di kode (AC 34), pesan menyebut medan (AC 35) |
+| Rp/Usd anak | `Activity/HitungRpUsd.xml` b252/b341 (TreatyLimitChild), b370/b397 (PLA), b418/b439 (CashLoss), b460/b481 (EPI): `toDecimal(Pct) * toDecimal(<induk>.Usd\|Rp) / 100` | `RpUsdAnakTCO` — `apd`, kuantisasi 8 desimal; klien tidak mengirimnya |
+| total Pct anak | `Activity/SaveTreatyArrEpiList_Act.xml` b1055 `Menjumlahkan Total PCT`, b1300 `Valdiasi Total agar tidak boleh lebih dari 100` (tujuh aktivitas anak memuatnya) | total anak BARU > 100 ditolak 422 (baris dikunci `FOR UPDATE`) |
+| spreading | `Activity/TreatyTestChildTotal_Act.xml` b892 `ERRMSG + " \n Please make sure spreading is 100%"`; dipanggil `SaveTreatyArrTreatyLimitChild_Act.xml` b3820 dan tombol `GridTreatyArrangementTreatyLimit.xml` b11687/b11883 | **peringatan** sesudah simpan TreatyLimitChild — baris tetap tersimpan |
+| anti-dobel | `SaveTreatyArrEPI_Act.xml` b2011 `"Data sudah pernah di Input"` berprasyarat b2089 `@equals(OutputData.HASILD7,1)`; `RDBList/SaveMasterProportionalArrg.xml` b120–b121 hanya mengeluarkan `HASIL1`, `HASIL2` | pesan VERBATIM, kunci dobel per jenis `[keputusan kami]` (OQ-TCO-14), 409 menyebut baris lain |
+| exclusion | empat sub-bagian `GridTreatyArrangementExclutionTreaty{Occupation,Clausule,Object,Periode}.xml` mengirim `Param.Type` (b5082/b5168, b4305/b4392, b2086/b2202, b1798/b1916); nilai `Occupation` b7718, `Clause` b6943 | satu jenis, empat subjenis; nama occupation/clause dari master |
+| form per jenis | label medan b2777–b4487 `GridTreatyArrangementEpi.xml`; `Save` b5501, `Add` b8980, `Edit` b10917, `Show Child` b11200; `GridTreatyArrTreatyEpiList.xml` b3029 `Pct`, b8657 `Close Child`; label khusus MinLOL b1540, MinLOLMB b1548, MaxCoinsPanel b1525, Coins b3394/b4193/b4880, Exclusion b2007/b2296/b2745/b2935/b3222, b2030/b2320, b566, b500 | `PanelJenisKlausul` dirakit dari aturan server; ±50 baris label diuji ke korpus |
+
+### Ralat bertanggal 29-09-2026
+
+1. **`TerritorialLimit` bukan gerbang** CoinsPanel, MaxCoinsPanel, MinLOL, MinLOLMB, ExclutionTreaty: prasyaratnya
+   NONAKTIF (`SaveTreatyArrCoinsPanel_Act.xml` b862/b1045/b1232 `pyStepsPreCondition=false`) dan merujuk halaman lain
+   (b984/b1172 `InputTreatyExclutionTreaty`, b1338 `InputTreatyTerr`) — residu salin-tempel. Tabel tiket diralat.
+2. **CoinsPanel** mewajibkan `CoIns_Min`, `CoIns_Max`, `TreatyLimit` (form `From`/`To`/`Treaty Limit`); **MaxCoinsPanel**
+   `CoIns_Max`; **MinLOL/MinLOLMB** `Pct`.
+3. **ExclutionTreaty** = empat subjenis (`Param.Type`): Occupation (`ID_Occupation`, `Occupation`, `Line`, `Usd`, `Rp`
+   wajib), Clause (`ID_Clause`, `Clause` wajib). Object dan Periode mengirim `Type` kosong — di Pega nol validasi
+   berjalan; satu-satunya medan formnya diwajibkan `[keputusan kami]` (**OQ-TCO-14**).
+4. **Total Pct anak "wajib 100%"** hanya **peringatan** dan hanya pada TreatyLimitChild; yang MENOLAK adalah total > 100,
+   dan itu berlaku pada ketujuh jenis anak.
+5. **`Data sudah pernah di Input` mati di Pega**: prasyarat `HASILD7` tidak pernah diisi prosedur. AC 30 ditegakkan
+   dengan kunci dobel per jenis (`KunciDobel` di tabel aturan) — **OQ-TCO-14**.
+6. **Pemilih `ReinsTypeID`** di form memakai `D_EnumerationList` yang tidak diekspor; sistem baru memakai daftar jenis
+   reasuransi tiket 02 (**OQ-TCO-15**).
+7. **Nama kolom master** `TREATYDESC` (`DESCNAME`, `ISXOL`, `STATUSAKTIF`), `OCCUPATION` (`NAME`), `CLAUSE` (`INFO`,
+   `TYPE = 'FIRE'`) diturunkan dari properti RD, bukan dari SQL korpus `[dugaan kuat]` (**OQ-TCO-16**).
+8. **LimitMB dan Portfolio ditahan** (AC 36): simpan ditolak 422 dengan alasannya; layar menampilkan alasan itu, bukan form.
+9. **Ruang lingkup baris** = `TREATYYEARID` (+ `TREATYDESCID`, `PARENTREINSTYPEID`) — bukan kombinasi teks.
+   `TREATYYEAR`/`TREATYGROUPID` tetap ditulis untuk hilir.
+
+### Yang dibangun
+
+| Lapisan | Berkas | Isi |
+| --- | --- | --- |
+| models | `tco_klausul.go` (+uji) | `AturanKlausulTCO` (25 jenis + 3 subjenis exclusion tambahan), `PeriksaKlausulTCO`, `RpUsdAnakTCO`, `PeriksaTotalAnakTCO`, `PeringatanSpreadingTCO`, `UraiDesimalMasukTCO` |
+| repository | `tco_klausul.go` (+uji) | `MasterKlausulTCO` satu tabel `T_PROPORTIONALARRG` (35 kolom, 9 kolom induk NULL untuk anak), master `TREATYDESC`/`OCCUPATION`/`CLAUSE` baca-saja, `MasterTahunTreaty.Kunci` |
+| services | `tco_klausul.go` (+uji) | `KlausulTCO`: jenis+aturan, daftar (total Pct + peringatan), simpan satu transaksi {kunci tahun, dobel, total anak, tulis, jejak} |
+| handlers | `tco_klausul.go` (+uji, +uji `db`) | 5 rute; tanpa jalur hapus |
+| frontend | `PanelKlausulTahun.tsx`, `PanelJenisKlausul.tsx`, `InboxTreatyContractDescription.tsx` (+uji), `KLAUSUL_TCO`/`LABEL_MEDAN_*`, `api.ts` (+4), tombol `List Description` hidup, butir menu ketiga | |
+
+**Status:** selesai 29-09-2026 — commit `treaty-contract-out: tiket 08 — klausul satu tabel, 25 jenis, validasinya`.

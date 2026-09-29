@@ -31,7 +31,7 @@ import { MENU_TCO } from '../assets/labels.treaty-contract-out'
  * memeriksa bentuk. Union memindahkan penjagaannya ke kompiler — lebih
  * awal, dan tanpa pagar tambahan.
  */
-export type ModulTetap = 'beranda' | 'inbox' | 'register' | 'premiumlist' | 'komite' | 'tco-tahun' | 'tco-kontrak'
+export type ModulTetap = 'beranda' | 'inbox' | 'register' | 'premiumlist' | 'komite' | 'tco-tahun' | 'tco-kontrak' | 'tco-klausul'
 
 /** Satu entri menu yang dapat dicari. */
 export interface EntriMenu {
@@ -65,6 +65,8 @@ export const ENTRI_MENU: readonly EntriMenu[] = [
   { modul: 'tco-tahun', label: MENU_TCO.inboxTreatyContract, kelompok: MODUL.treatyContractOut },
   // Tiket 04: butir kedua kelompok - VERBATIM pyLabel harness b151.
   { modul: 'tco-kontrak', label: MENU_TCO.inboxTreatyContractReinsType, kelompok: MODUL.treatyContractOut },
+  // Tiket 08: butir ketiga kelompok - VERBATIM pyLabel harness b359.
+  { modul: 'tco-klausul', label: MENU_TCO.inboxTreatyContractDescription, kelompok: MODUL.treatyContractOut },
 ]
 
 /** Satu baris hasil palet. */

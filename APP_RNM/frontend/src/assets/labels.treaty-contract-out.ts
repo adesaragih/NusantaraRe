@@ -340,3 +340,126 @@ export const BUSINESS_TCO = {
   /** `[tidak ada di korpus]` */
   tersimpan: 'Bisnis tersimpan.',
 } as const
+
+/**
+ * Tiket 08 — layar klausul (harness `InboxTreatyContractDescription` b359).
+ *
+ * Nomor baris = `Harness/InboxTreatyContractDescription.xml` kecuali disebut lain.
+ */
+export const KLAUSUL_TCO = {
+  /** b2003 — `InputTreatyArrangementDesc.TreatyGroupID`. */
+  headerTreatyGroupId: 'TreatyGroupID',
+  /** b2489 — `.TreatyYear` (label bersilang, lihat OQ-TCO-05). */
+  headerUnderwritingYear: 'Underwriting Year',
+  /** b2665 — `.UnderwritingYear`. */
+  headerTransactionYear: 'Transaction Year',
+  /** b2839. */
+  headerStartDate: 'Start Date',
+  /** b3025. */
+  headerEndDate: 'End Date',
+  /** b3209 — `.TreatyGroupName`. */
+  headerTreatyDescription: 'Treaty Description',
+  /** b3382 — `.Proportion`. */
+  headerProportionType: 'Proportion Type',
+  /** b4880 `<pyValue>` — grid `BrowseTreatyDesc_RD` `IsXOL = 0` (b5335). */
+  gridNonXol: 'For Non XOL',
+  /** b7971 `<pyValue>` — grid `IsXOL = 1` (b8426). */
+  gridXol: 'For XOL',
+  /** b5440 `<pyValue>` — sel `.ID`. */
+  kolomId: 'ID',
+  /** b5549 `<pyValue>` — sel `.DescName`. */
+  kolomDescriptionName: 'Description Name',
+  /** b6059 `<pyLabel>` → `BrowseDescriptionLimit` + `testingKurs` + `SetKirimIDDesc` + `PanggilID` + `RefreshErrorProportionalarrg`. */
+  show: 'Show',
+  /** `Section/GridTreatyArrangementEpi.xml` b4487. */
+  formModifiedDate: 'Modified Date',
+  /** `GridTreatyArrangementEpi.xml` b5501. */
+  save: 'Save',
+  /** `GridTreatyArrangementEpi.xml` b8980. */
+  add: 'Add',
+  /** `GridTreatyArrangementEpi.xml` b10917. */
+  edit: 'Edit',
+  /** `GridTreatyArrangementEpi.xml` b11200 → `BrowseTreatyArrEpiParentList`. */
+  showChild: 'Show Child',
+  /** `Section/GridTreatyArrTreatyEpiList.xml` b8657 → `CancelActivityTreatyLimitChild`. */
+  closeChild: 'Close Child',
+  /** `Section/GridTreatyArrangementExclutionTreaty.xml` b955. */
+  exclusionTreaty: 'Exclusion Treaty',
+
+  /** `[tidak ada di korpus]` */
+  cancel: 'Cancel',
+  /** `[tidak ada di korpus]` */
+  tutup: 'Tutup',
+  /** `[tidak ada di korpus]` */
+  kosong: 'Belum ada baris klausul.',
+  /** `[tidak ada di korpus]` */
+  totalPct: 'Total Pct',
+  /** `[tidak ada di korpus]` */
+  tersimpan: 'Klausul tersimpan.',
+  /** `[tidak ada di korpus]` */
+  cariPilihan: 'Cari',
+  /** `[tidak ada di korpus]` */
+  pilihTahun: 'Tahun treaty',
+  /** `[tidak ada di korpus]` */
+  pilihTahunDulu: 'Pilih tahun treaty lebih dulu, atau buka lewat tombol List Description di layar InboxTreatyContract.',
+  /** `[tidak ada di korpus]` — Rp/Usd anak dihitung server (HitungRpUsd). */
+  turunanServer: 'Rp dan Usd baris anak dihitung dari induknya (Pct × nilai induk ÷ 100).',
+} as const
+
+/**
+ * Label medan klausul — VERBATIM dari form tiap jenis (tiket 08).
+ *
+ * Bawaan per medan; `LABEL_MEDAN_KHUSUS` menimpa per jenis/subjenis. ⚠️ Form
+ * exclusion memakai label rujukan properti `.Occupation` b2296 / `.Clause`
+ * b2320 — yang tampil adalah nama propertinya.
+ */
+export const LABEL_MEDAN_KLAUSUL = {
+  /** `GridTreatyArrangementEpi.xml` b2777. */
+  ReinsTypeID: 'ReinsType',
+  /** b3215. */
+  Line: 'Line',
+  /** b3372. */
+  Rp: 'Rp',
+  /** b3798. */
+  Usd: 'Usd',
+  /** `GridTreatyArrTreatyEpiList.xml` b3029. */
+  Pct: 'Pct',
+  /** `GridTreatyArrangementProfitCommision.xml` b3223. */
+  PctMe: 'PctMe',
+  /** b3481. */
+  Ydcf: 'Ydcf',
+  /** `GridTreatyArrangementBordereAux.xml` b2702. */
+  Method: 'Method',
+  /** `GridTreatyArrangementTerrLimit.xml` b2742. */
+  TerritorialLimit: 'Territorial Limit',
+  /** `GridTreatyArrangementCoins.xml` b3394. */
+  CoIns_Min: 'From',
+  /** b4193. */
+  CoIns_Max: 'To',
+  /** b4880. */
+  TreatyLimit: 'Treaty Limit',
+  /** `GridTreatyArrangementExclutionTreatyOccupation.xml` b2007. */
+  ID_Occupation: 'ID Occupation',
+  /** b2296 (`.Occupation`). */
+  Occupation: 'Occupation',
+  /** `GridTreatyArrangementExclutionTreatyClausule.xml` b2030. */
+  ID_Clause: 'ID Clause',
+  /** b2320 (`.Clause`). */
+  Clause: 'Clause',
+  /** `GridTreatyArrangementExclutionTreatyPeriode.xml` b500. */
+  Layer: 'Max Periode (Month)',
+} as const satisfies Readonly<Record<string, string>>
+
+/** Penimpaan label per `jenis` atau `jenis/subjenis`. */
+export const LABEL_MEDAN_KHUSUS = {
+  /** `GridTreatyArrangementMinLOL.xml` b1540. */
+  MinLOL: { Pct: 'Minimum LOL (%)' },
+  /** `GridTreatyArrangementMInLOLMB.xml` b1548. */
+  MinLOLMB: { Pct: 'Minimum LOL MB (%)' },
+  /** `GridTreatyArrangementMaxCoinsPanel.xml` b1525. */
+  MaxCoinsPanel: { CoIns_Max: 'Max Coins Panel' },
+  /** `GridTreatyArrangementExclutionTreatyOccupation.xml` b2745 / b2935 / b3222. */
+  'ExclutionTreaty/Occupation': { Line: 'Class of Contruction', Usd: 'TSI Less Than (USD)', Rp: 'TSI Less Than (IDR)' },
+  /** `GridTreatyArrangementExclutionTreatyObject.xml` b566 (`TSI BI &gt;`). */
+  'ExclutionTreaty/Object': { Pct: 'TSI BI >' },
+} as const satisfies Readonly<Record<string, Readonly<Record<string, string>>>>

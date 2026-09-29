@@ -2518,3 +2518,112 @@ export async function ambilBusinessMaster(): Promise<BusinessMaster[]> {
   const j = await minta<{ daftar: BusinessMaster[] | null }>('/api/treaty-contract-out/business-master')
   return j.daftar ?? []
 }
+
+// ---------------------------------------------------------------------------
+// Treaty Contract Out tiket 08 — klausul: satu tabel, 25 jenis.
+// ---------------------------------------------------------------------------
+
+/** Aturan satu jenis dari server — satu tabel kebenaran untuk form. */
+export interface AturanKlausul {
+  jenis: string
+  anak: boolean
+  subjenis: string
+  medan: string[]
+  wajib: string[]
+  turunan: string[] | null
+  ditahan: string
+  sumber: string
+}
+
+/** Satu baris grid jenis (`BrowseTreatyDesc_RD`) beserta aturannya. */
+export interface JenisKlausul {
+  id: string
+  descName: string
+  isXol: string
+  statusAktif: string
+  aturan: AturanKlausul[]
+  catatan: string
+}
+
+/** Satu klausul. ⛔ Nilai medan TEKS — uang dan persen tidak pernah `Number`. */
+export interface Klausul {
+  id: string
+  treatyYear: string
+  treatyYearId: string
+  treatyGroupId: string
+  treatyDescId: string
+  treatyDescName: string
+  reinsTypeId: string
+  reinsTypeName: string
+  parentReinsTypeId: string
+  subjenis: string
+  medan: Record<string, string>
+  kurs: string
+  userId: string
+  tglUpdate: string
+}
+
+/** Grid satu jenis (induk atau anak satu induk). */
+export interface DaftarKlausul {
+  daftar: Klausul[]
+  total: number
+  totalPct: string
+  peringatan: string
+}
+
+/** Badan simpan satu klausul. */
+export interface KlausulMasuk {
+  id: string
+  descId: string
+  anak: boolean
+  subjenis: string
+  parentReinsTypeId: string
+  medan: Record<string, string>
+}
+
+/** Jawaban simpan; `peringatan` = "Please make sure spreading is 100%" bila berlaku. */
+export interface HasilKlausul {
+  klausul: Klausul
+  totalPct: string
+  peringatan: string
+}
+
+/** Satu pilihan occupation / clause. */
+export interface PilihanKlausul {
+  id: string
+  nama: string
+}
+
+/** Grid `For Non XOL` (isXol '0') / `For XOL` (isXol '1'). */
+export async function ambilJenisKlausul(isXol: string): Promise<JenisKlausul[]> {
+  const j = await minta<{ daftar: JenisKlausul[] | null }>('/api/treaty-contract-out/jenis-klausul', {
+    kueri: { isXol },
+  })
+  return j.daftar ?? []
+}
+
+/** Grid satu jenis — `induk` '00' untuk baris induk, jenis reasuransi induk untuk anak. */
+export async function ambilKlausul(tahunID: string, descId: string, induk: string): Promise<DaftarKlausul> {
+  const j = await minta<DaftarKlausul>(`/api/treaty-contract-out/tahun/${encodeURIComponent(tahunID)}/klausul`, {
+    kueri: { descId, induk },
+  })
+  return { ...j, daftar: j.daftar ?? [] }
+}
+
+/** `Save` per jenis — POST bila baru, PUT /{id} bila ubah. */
+export async function simpanKlausul(tahunID: string, masuk: KlausulMasuk): Promise<HasilKlausul> {
+  const jalur = `/api/treaty-contract-out/tahun/${encodeURIComponent(tahunID)}/klausul`
+  if (masuk.id === '') {
+    return minta(jalur, { metode: 'POST', badan: masuk })
+  }
+  return minta(`${jalur}/${encodeURIComponent(masuk.id)}`, { metode: 'PUT', badan: masuk })
+}
+
+/** Pemilih ExclutionTreaty — `occupation` (BrowseOccupationFIRE_RD) atau `clause` (BrowseFireClauseFacIn_RD). */
+export async function cariPilihanKlausul(master: 'occupation' | 'clause', cari: string): Promise<PilihanKlausul[]> {
+  const j = await minta<{ daftar: PilihanKlausul[] | null }>(
+    `/api/treaty-contract-out/klausul-pilihan/${master}`,
+    { kueri: { cari } },
+  )
+  return j.daftar ?? []
+}

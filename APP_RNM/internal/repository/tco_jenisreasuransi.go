@@ -53,6 +53,9 @@ var masterDibacaSajaTCO = []string{
 	"AGENT",
 	// Tiket 07: master bisnis (pemilih `BrowseFilterBusiness_RD`).
 	"BUSINESS",
+	// Tiket 08: pemilih ExclutionTreaty (`BrowseOccupationFIRE_RD`,
+	// `BrowseFireClauseFacIn_RD`). `TREATYDESC` sudah di atas.
+	"OCCUPATION", "CLAUSE",
 }
 
 // BlacklistJenisReasuransiNonLife adalah dua belas awalan ID yang disingkirkan

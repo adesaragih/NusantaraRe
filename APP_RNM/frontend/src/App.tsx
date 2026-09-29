@@ -12,6 +12,7 @@ import KlaimLife from './pages/claimlife/KlaimLife'
 import OutstandingClaimLife from './pages/claimlife/OutstandingClaimLife'
 import RegisterKlaim from './pages/claimlife/RegisterKlaim'
 import InboxTreatyContract from './pages/treaty-contract-out/InboxTreatyContract'
+import InboxTreatyContractDescription from './pages/treaty-contract-out/InboxTreatyContractDescription'
 import InboxTreatyContractReinsType from './pages/treaty-contract-out/InboxTreatyContractReinsType'
 import { Shell, type Halaman } from './components/Shell'
 import { BelumTersedia } from './components/ui/dasar'
@@ -131,6 +132,7 @@ export default function App() {
       {halaman === 'tco-tahun' && <InboxTreatyContract />}
       {/* Tiket 04 — editor kontrak dari menu (harness InboxTreatyContractReinsType). */}
       {halaman === 'tco-kontrak' && <InboxTreatyContractReinsType />}
+      {halaman === 'tco-klausul' && <InboxTreatyContractDescription />}
       {halaman === 'register' && <RegisterKlaim />}
       {halaman === 'detail' && <KlaimLife />}
     </Shell>

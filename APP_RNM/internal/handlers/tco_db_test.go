@@ -14,6 +14,7 @@ package handlers_test
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -43,7 +44,11 @@ type ujiTCO struct {
 	isiAgent func([]skemauji.AgentUji)
 	// Tiket 07: master bisnis BUSINESS.
 	isiBusiness func([]skemauji.BusinessUji)
+	// Tiket 08: sambungan mentah skema uji - untuk memeriksa pola NULL kolom.
+	mentah *sql.DB
 }
+
+func (u *ujiTCO) sqlDBMentah() *sql.DB { return u.mentah }
 
 // serverTCO memasang skema uji dan Router BER-STUB identitas: rute modul ini
 // bergerbang identitas (401 tanpa X-Pelaku), jadi header harus terbaca.
@@ -75,7 +80,7 @@ func serverTCO(t *testing.T) (*ujiTCO, func()) {
 	unggahan := t.TempDir()
 	u := &ujiTCO{
 		srv:   httptest.NewServer(handlers.Router(services.New(db).DenganUnggahanDir(unggahan), true)),
-		sqlDB: sqlDB, db: db, skema: skema, ctx: ctx, unggahan: unggahan,
+		sqlDB: sqlDB, db: db, skema: skema, ctx: ctx, unggahan: unggahan, mentah: sqlDB,
 	}
 	u.isiBusiness = func(baris []skemauji.BusinessUji) {
 		if err := skemauji.IsiBusinessTCO(ctx, sqlDB, skema, baris); err != nil {

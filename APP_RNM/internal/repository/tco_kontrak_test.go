@@ -45,13 +45,17 @@ func TestSQLKontrakTCO(t *testing.T) {
 // per kemunculan memberi hasil yang sama.
 func TestTCOPlaceholderTidakBerulang(t *testing.T) {
 	for nama, q := range map[string]string{
-		"dobel tahun":   sqlCariDobelTahunTreaty("S.T"),
-		"dobel kontrak": sqlCariDobelKontrakTCO("S.T"),
-		"lampiran":      sqlDaftarLampiranTCO("S.T", "S.O", true),
-		"share lain":    sqlShareLainTCO("S.T"),
-		"perbarui reas": sqlPerbaruiReinsurerTCO("S.T"),
-		"dobel bisnis":  sqlCariDobelBusinessTCO("S.T"),
-		"perbarui biz":  sqlPerbaruiBusinessTCO("S.T"),
+		"dobel tahun":    sqlCariDobelTahunTreaty("S.T"),
+		"dobel kontrak":  sqlCariDobelKontrakTCO("S.T"),
+		"lampiran":       sqlDaftarLampiranTCO("S.T", "S.O", true),
+		"share lain":     sqlShareLainTCO("S.T"),
+		"perbarui reas":  sqlPerbaruiReinsurerTCO("S.T"),
+		"dobel bisnis":   sqlCariDobelBusinessTCO("S.T"),
+		"perbarui biz":   sqlPerbaruiBusinessTCO("S.T"),
+		"daftar klausul": sqlDaftarKlausulTCO("S.T"),
+		"pct anak":       sqlPctAnakLainTCO("S.T"),
+		"perbarui klaus": sqlPerbaruiKlausulTCO("S.T"),
+		"sisip klausul":  sqlSisipKlausulTCO("S.T"),
 	} {
 		lihat := map[string]bool{}
 		for _, b := range strings.FieldsFunc(q, func(r rune) bool {

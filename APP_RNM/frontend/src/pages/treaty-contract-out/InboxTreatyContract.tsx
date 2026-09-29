@@ -17,6 +17,7 @@
 // salin tahun treaty dibuang (AC 72). `ReinsType` dan `List Description`
 // berdiri, menyebut tiket yang ditunggunya (04, 08) — bukan disembunyikan.
 // Tiket 04 (29-09-2026): `ReinsType` kini membuka `PanelKontrakTahun`.
+// Tiket 08 (29-09-2026): `List Description` kini membuka `PanelKlausulTahun`.
 //
 // ⚠️ OQ-TCO-05: label tahun bersilang antara grid dan form di korpus; keduanya
 // dibawa apa adanya dan catatannya tampil di layar.
@@ -27,6 +28,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { LAMPIRAN_TCO, TAHUN_TCO } from '../../assets/labels.treaty-contract-out'
+import PanelKlausulTahun from '../../components/treaty-contract-out/PanelKlausulTahun'
 import PanelKontrakTahun from '../../components/treaty-contract-out/PanelKontrakTahun'
 import PanelLampiranTahun from '../../components/treaty-contract-out/PanelLampiranTahun'
 import PilihJenisReasuransi from '../../components/treaty-contract-out/PilihJenisReasuransi'
@@ -125,6 +127,9 @@ export default function InboxTreatyContract() {
   // Tiket 04: tombol `ReinsType` b20778 membuka editor kontrak tahun itu
   // (Pega: `BrowseReinsTypeYear` + `showHarness` popup `InboxTreatyContractReinsType`).
   const [tahunKontrak, setTahunKontrak] = useState<TahunTreaty | null>(null)
+  // Tiket 08: tombol `List Description` b22196 membuka layar klausul tahun itu
+  // (Pega: `showHarness` `InboxTreatyContractDescription`).
+  const [tahunKlausul, setTahunKlausul] = useState<TahunTreaty | null>(null)
 
   const muat = useCallback(async (h: number) => {
     setSibuk(true)
@@ -267,6 +272,16 @@ export default function InboxTreatyContract() {
         />
       )}
 
+      {tahunKlausul !== null && (
+        <PanelKlausulTahun
+          key={tahunKlausul.id}
+          tahun={tahunKlausul}
+          onTutup={() => {
+            setTahunKlausul(null)
+          }}
+        />
+      )}
+
       {sibuk && <Memuat />}
       {galat !== null && <Gagal galat={galat} />}
       {hal !== null && hal.baris.length === 0 && <Kosong pesan={TAHUN_TCO.kosong} />}
@@ -312,7 +327,13 @@ export default function InboxTreatyContract() {
                   >
                     {TAHUN_TCO.reinsType}
                   </button>{' '}
-                  <button type="button" className="btn btn--ghost btn--sm" disabled title={`${TAHUN_TCO.menungguTiket} 08`}>
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--sm"
+                    onClick={() => {
+                      setTahunKlausul(b)
+                    }}
+                  >
                     {TAHUN_TCO.listDescription}
                   </button>
                 </td>

@@ -108,6 +108,16 @@ var petaSuntikan = map[string][]suntikan{
 			"DenganMaster(services.MasterBusinessOracle(svc))",
 		},
 	}},
+	// Tiket 08 (aditif 29-09-2026): gudang klausul, tiga master, tahun, jenis reasuransi.
+	"tco_klausul.go": {{
+		penyusun: "svc.KlausulTCO()",
+		wajib: []string{
+			"DenganGudang(services.GudangKlausulOracle(svc))",
+			"DenganMaster(services.MasterKlausulOracle(svc))",
+			"DenganTahun(services.PengunciTahunOracle(svc))",
+			"DenganJenis(services.PembacaJenisReasuransiOracle(svc))",
+		},
+	}},
 	// Tiket 12 (aditif 29-09-2026): lima pasangan lampiran; bawaannya gagal terang.
 	"tco_lampiran.go": {{
 		penyusun: "svc.LampiranTahunTCO()",

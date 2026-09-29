@@ -488,3 +488,72 @@ ditulis VERBATIM. Baris nonaktif berisi `0`, sehingga hilir tetap tidak membacan
 | Berkas ditulis / disunting | 11 baru (+±1.300 baris), 10 disunting (+±200) |
 | Putaran instrumen gagal lalu diulang | 1: salinan cadangan mutasi sempat ditaruh di `/tmp` alih-alih scratchpad — dipulihkan dan dibuang |
 | Token / biaya | tidak terlihat dari dalam sesi, jadi tidak dikarang |
+
+## Tiket 08 — klausul satu tabel, 25 jenis, validasinya
+
+### Yang dibangun
+
+| Lapisan | Berkas | Isi |
+| --- | --- | --- |
+| models | `tco_klausul.go` (+uji) | tabel aturan 25 jenis di KODE (AC 34), gerbang wajib-isi yang menyebut medan (AC 35), jenis ditahan (AC 36), Rp/Usd anak, batas total anak, peringatan spreading |
+| repository | `tco_klausul.go` (+uji) | satu tabel `T_PROPORTIONALARRG` untuk seluruh jenis (AC 24), anak menulis NULL di sembilan kolom induk (AC 25), urut `ID ASC` (AC 31), master jenis/occupation/clause baca-saja (AC 27) |
+| services | `tco_klausul.go` (+uji) | `KlausulTCO` — simpan satu transaksi, anti-dobel 409 VERBATIM (AC 30), induk beranak tidak boleh ganti jenis reasuransi |
+| handlers | `tco_klausul.go` (+uji, +uji `db`) | 5 rute; nol jalur hapus |
+| frontend | `PanelKlausulTahun.tsx`, `PanelJenisKlausul.tsx`, `InboxTreatyContractDescription.tsx` (+uji), label + ±50 baris korpus diuji, `api.ts` (+4) | tombol `List Description` hidup; butir menu ketiga kelompok |
+
+### Bukti merah lebih dulu untuk aturan uang
+
+`RpUsdAnakTCO` dimutasi ke `float64` (`strconv.ParseFloat` → kali → bagi): uji lama tidak menangkapnya; kasus bernilai
+besar (`12193263122359396.42211401` × `152415.78762536`) ditambahkan dan **merah** di bawah mutasi, hijau di `apd`.
+Mutasi dibuang; salinan asli dipulihkan dari scratchpad.
+
+### Kode bersama yang disentuh (aditif, dilaporkan)
+
+| Berkas | Perubahan |
+| --- | --- |
+| `handlers/penyuntikan_test.go` | +1 entri `tco_klausul.go` |
+| `handlers/tco_db_test.go` (milik modul) | `sqlDBMentah()` untuk mengisi tiruan master |
+| `repository/tco_jenisreasuransi.go`, `skemauji/tco_tiruan.go` (milik modul) | `masterDibacaSajaTCO` +`TREATYDESC`, `OCCUPATION`, `CLAUSE`; tiruan ketiganya + `IsiJenisKlausulTCO`, `IsiPilihanKlausulTCO` |
+| `frontend/src/lib/daftarMenu.ts`, `App.tsx`, `components/Shell.test.ts` | butir menu `tco-klausul` (6 → 7) |
+
+### Ralat / OQ
+
+Sembilan ralat bertanggal di tiket 08 (TerritorialLimit bukan gerbang; medan CoinsPanel; exclusion empat subjenis;
+spreading hanya peringatan TreatyLimitChild; `Data sudah pernah di Input` mati di Pega; pemilih jenis anak; nama kolom
+master; LimitMB/Portfolio ditahan; ruang lingkup `TREATYYEARID`). **OQ baru:**
+
+- **OQ-TCO-14** — kunci anti-dobel per jenis dan wajib-isi Object/Periode `[keputusan kami]`; Product + UW.
+- **OQ-TCO-15** — daftar pilihan `ReinsTypeID` form klausul (`D_EnumerationList` tidak diekspor) → daftar tiket 02.
+- **OQ-TCO-16** — nama kolom master `TREATYDESC`/`OCCUPATION`/`CLAUSE` dari properti RD; DBA.
+
+OQ spec yang tetap terbuka: aturan LimitMB & Portfolio (AC 36), arti bisnis istilah klausul.
+
+### Kontrak hilir
+
+`KolomKlausulHilir` (TREATYYEAR, TREATYGROUPID, TREATYDESCID, REINSTYPEID, REINSTYPENAME, PCT, RP, USD) dan saringan induk
+`PARENTREINSTYPEID` (`GetQuotaShare`, Claim Fac In) seluruhnya ditulis penulis klausul — dikunci
+`TestKlausulMenulisKolomHilir`. Rp/Usd anak yang dibaca `GetLimitPLATreatyin` (Claim Prop) adalah angka turunan yang
+tersimpan, sama seperti Pega.
+
+### Angka uji
+
+| Perintah | Hasil |
+| --- | --- |
+| `go vet ./...` · `go vet -tags=db ./...` · `gofmt -l .` | bersih |
+| `go test ./...` | 878 lulus, 0 gagal (+24) |
+| `go test -tags=db ./...` | 878 lulus, 51 dilewati (+1: `TestKlausulLingkaranPenuh`, tanpa skema uji), 0 gagal |
+| `npx tsc --noEmit` · `npx vite build` | bersih |
+| `npx vitest run` | 556 lulus di 46 berkas (+20, +3 berkas) |
+
+⚠️ SQL tiket 08 belum pernah dijalankan terhadap Oracle: uji `db` dilewati karena skema uji tidak dikonfigurasi di sesi ini.
+
+### TELEMETRI EKSEKUSI — tiket 08
+
+| Ukuran | Nilai |
+| --- | --- |
+| Berkas dibaca | ±45 (±38 korpus: 25 aktivitas `SaveTreatyArr*`, `SetKirimIDDesc`, `HitungRpUsd`, `TreatyTestChildTotal_Act`, 2 RDBList simpan, harness, ±18 section form; ±7 pola kode) |
+| Berkas XML korpus disensus | 25 aktivitas simpan (langkah + prasyarat), 18 section form (medan + label), harness klausul; ±50 baris label/aksi diverifikasi oleh uji |
+| Perintah dijalankan | ±45 |
+| Berkas ditulis / disunting | 15 baru (3.222 baris), 14 disunting (+411 −17) |
+| Putaran instrumen gagal lalu diulang | 3: uji statis sempat memakai literal skema-alamat (ditangkap penjaga global); peta kolom sempat memicu positif palsu penjaga tulis-warisan (dipindah); `noUncheckedIndexedAccess` pada peta label (diubah ke `as const satisfies`) |
+| Token / biaya | tidak terlihat dari dalam sesi, jadi tidak dikarang |

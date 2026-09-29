@@ -38,6 +38,8 @@ var namaTabelTiruanTCO = []string{
 	repository.MasterReinsurerAgentTCO,
 	// Tiket 07: master bisnis.
 	repository.MasterBusinessTCO,
+	// Tiket 08: master jenis klausul dan pemilih ExclutionTreaty.
+	repository.MasterJenisKlausulTCO, repository.MasterOccupationTCO, repository.MasterClauseTCO,
 }
 
 // namaTabelWarisanTCO adalah enam tabel warisan yang dipindahkan migrasi data.
@@ -97,6 +99,14 @@ func ddlTiruanTCO(skema string) []string {
 	out = append(out, fmt.Sprintf(
 		"CREATE TABLE %s.%s (ID VARCHAR2(1000), OLDID VARCHAR2(1000), NOTE VARCHAR2(1000), BUSINESSGROUPID VARCHAR2(1000))",
 		skema, repository.MasterBusinessTCO))
+	// Tiket 08: kolom = nama properti RD / SQL korpus (OQ-TCO-16).
+	out = append(out,
+		fmt.Sprintf("CREATE TABLE %s.%s (ID VARCHAR2(1000), DESCNAME VARCHAR2(1000), ISXOL VARCHAR2(10), STATUSAKTIF VARCHAR2(10))",
+			skema, repository.MasterJenisKlausulTCO),
+		fmt.Sprintf("CREATE TABLE %s.%s (ID VARCHAR2(1000), NAME VARCHAR2(1000), TYPE VARCHAR2(100))",
+			skema, repository.MasterOccupationTCO),
+		fmt.Sprintf("CREATE TABLE %s.%s (ID VARCHAR2(1000), INFO VARCHAR2(1000), TYPE VARCHAR2(100))",
+			skema, repository.MasterClauseTCO))
 	return out
 }
 
@@ -244,4 +254,34 @@ func kosongJadiNilUji(s string) any {
 		return nil
 	}
 	return s
+}
+
+// JenisKlausulUji adalah satu baris fixture master TREATYDESC.
+type JenisKlausulUji struct{ ID, DescName, IsXOL string }
+
+// IsiJenisKlausulTCO mengisi tiruan TREATYDESC (tiket 08).
+func IsiJenisKlausulTCO(ctx context.Context, db *sql.DB, skema string, baris []JenisKlausulUji) error {
+	q := fmt.Sprintf("INSERT INTO %s.%s (ID, DESCNAME, ISXOL, STATUSAKTIF) VALUES (:1, :2, :3, '1')",
+		skema, repository.MasterJenisKlausulTCO)
+	for _, b := range baris {
+		if _, err := db.ExecContext(ctx, q, b.ID, b.DescName, b.IsXOL); err != nil {
+			return fmt.Errorf("skemauji: mengisi tiruan master jenis klausul: %w", err)
+		}
+	}
+	return nil
+}
+
+// IsiPilihanKlausulTCO mengisi tiruan OCCUPATION atau CLAUSE (tiket 08).
+func IsiPilihanKlausulTCO(ctx context.Context, db *sql.DB, skema, master string, pilihan map[string]string) error {
+	kolom := "NAME"
+	if master == repository.MasterClauseTCO {
+		kolom = "INFO"
+	}
+	q := fmt.Sprintf("INSERT INTO %s.%s (ID, %s, TYPE) VALUES (:1, :2, :3)", skema, master, kolom)
+	for id, nama := range pilihan {
+		if _, err := db.ExecContext(ctx, q, id, nama, repository.TipeFireTCO); err != nil {
+			return fmt.Errorf("skemauji: mengisi tiruan %s: %w", master, err)
+		}
+	}
+	return nil
 }

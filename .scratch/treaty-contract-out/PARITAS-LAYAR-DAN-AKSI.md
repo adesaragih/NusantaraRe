@@ -10,7 +10,7 @@
 | --- | --- | --- |
 | `Harness/InboxTreatyContract.xml` b151 `<pyLabel>InboxTreatyContract</pyLabel>` → section `GridTreatyContract` (b931) → `InputTreatyContract` (`GridTreatyContract.xml` b2482) | sidebar **Treaty Contract Out → InboxTreatyContract** | 🔜 tiket 03 |
 | `Harness/InboxTreatyContractReinsType.xml` b151 `<pyLabel>InboxTreatyContractReinsType</pyLabel>` → judul `ReinsType` b1670 → section `PanggilReinsType` (b1825) → `InputTreatyContractReinsType` (`PanggilReinsType.xml` b1300) | sidebar **Treaty Contract Out → InboxTreatyContractReinsType** | ✅ tiket 04 (pemilih tahun + editor) |
-| `Harness/InboxTreatyContractDescription.xml` b359 `<pyLabel>InboxTreatyContractDescription</pyLabel>` → `NitipKurs` b3882, `SubViewDetailDescription` b11366, `ViewDetailDescriptionProp` b12583, `ViewDetailDescriptionNonProp` b13547 | sidebar **Treaty Contract Out → InboxTreatyContractDescription** | 🔜 tiket 08 |
+| `Harness/InboxTreatyContractDescription.xml` b359 `<pyLabel>InboxTreatyContractDescription</pyLabel>` → `NitipKurs` b3882, `SubViewDetailDescription` b11366, `ViewDetailDescriptionProp` b12583, `ViewDetailDescriptionNonProp` b13547 | sidebar **Treaty Contract Out → InboxTreatyContractDescription** (pilih tahun → `PanelKlausulTahun`) | ✅ tiket 08 |
 
 ⚠️ Kelompok **Treaty Contract Out** BELUM ada di sidebar (`labels.ts` `MODUL` memuat 17 kelompok; folder
 korpus 20 — ralat §8 `PROMPT-EKSEKUSI-HULU-HILIR.md`). Ditambahkan ADITIF bersama layar pertama (tiket 03).
@@ -53,7 +53,7 @@ korpus 20 — ralat §8 `PROMPT-EKSEKUSI-HULU-HILIR.md`). Ditambahkan ADITIF ber
 | `Add` b16387 → `NewInputTreatyYear_Act` | tombol `Add` → `formKosong()` | ✅ |
 | `Edit` b19939 → `SetTreatyYear_Act` b20030 | tombol `Edit` → `formDari(baris)` | ✅ |
 | `ReinsType` b20778 → harness 2 | tombol membuka `PanelKontrakTahun` untuk baris itu | ✅ tiket 04 |
-| `List Description` b22196 → harness 3 | tombol berdiri `disabled` "menunggu tiket 08" | 🔜 tiket 08 |
+| `List Description` b22196 → harness 3 | tombol membuka `PanelKlausulTahun` tahun itu | ✅ tiket 08 |
 | `Copy` b20459 + `From`/`To` b2374/b3818 + `Proces` b5104 → `BrowseCopyData` | — | ➖ AC 72 |
 | form `Input New Data` (`InputDtlTreatyContact.xml` b5437): `ID` b6379 · `Treaty Group` b6560 (`BrowseTreatyGroup_RD` b6624) · `Reinsurance Type` b6800 → `.Proportion` b6829 · `Start Date` b7532 · `End Date` b7816 · `Underwriting Year` b8004 → `.TreatyYear` · `Transaction Year` b8284 → `.UnderwritingYear` · `Modified Date` b9097 · `Username` b9282 | `Field`/`FieldTanggal`/`Pilih` (grup dari `GET /grup-treaty`) / `PilihJenisReasuransi`; ID, Modified Date, Username hanya dibaca | ✅ |
 | `Save` b10332 → `SaveTreatyYear_Act` (b280 UserID, b327 TglUpdate, prasyarat b388/b411/b434, RDB `SaveMasterTreatyYear_SQL` → `PEGA_TREATYYEAR`) | `POST /tahun` (baru, ID dari `SEQ_T_TREATYYEAR`) / `PUT /tahun/{id}` (seluruh medan) → `T_TREATYYEAR` + jejak `T_TREATYCO_JEJAK`, satu transaksi | ✅ logika ditiru, procedure tidak dipanggil |
@@ -147,3 +147,21 @@ Nomor baris = `Section/ViewDetailTreatyBusinessGrid.xml`.
 | `Save` b6966 → `SaveTreatyBusinessDetail_Act` → `SaveMasterTreatyBusiness_SQL` → `PEGA_TREATYBUSINESS` | `POST`/`PUT .../business` → `T_TREATYBUSINESS` SELURUH medan + jejak | ✅ AC 23, prosedur tidak dipanggil |
 | `Information` b9319/b10064 (`ERRMSG4` "Data sudah pernah di Input") | baris status; 409 dobel | ✅ ralat 4 |
 | `Close List` b10889 → `CancelActivity` | tombol tutup panel | ✅ |
+
+## Tiket 08 — klausul (`InboxTreatyContractDescription` → 25 section `GridTreatyArrangement*`)
+
+Nomor baris = `Harness/InboxTreatyContractDescription.xml` kecuali disebut lain.
+
+| Unsur korpus | Sistem baru | Keadaan |
+| --- | --- | --- |
+| kepala b2003–b3382 (tujuh medan) | tujuh `Field` baca-saja | ✅ OQ-TCO-05 |
+| `For Non XOL` b4880 / `For XOL` b7971 (`BrowseTreatyDesc_RD`, `IsXOL` 0/1) · `ID` b5440 · `Description Name` b5549 | `GET /jenis-klausul?isXol=` dari `TREATYDESC` (baca-saja) | ✅ AC 26/27 |
+| `Show` b6059 → `BrowseDescriptionLimit` + `testingKurs` + `SetKirimIDDesc` + `PanggilID` | membuka `PanelJenisKlausul`; beberapa jenis boleh terbuka bersamaan | ✅ AC 29 (kurs → tiket 11) |
+| 18 section induk: `Add` / `Edit` / `Save` (`GridTreatyArrangementEpi.xml` b8980/b10917/b5501) → `SaveTreatyArr*_Act` → `SaveMasterProportionalArrg` | `POST`/`PUT /tahun/{id}/klausul` → `T_PROPORTIONALARRG`, aturan per jenis dari server | ✅ AC 24/33/35, prosedur tidak dipanggil |
+| 7 section anak: `Show Child` b11200 → `Browse*ParentList`; `Close Child` (`GridTreatyArrTreatyEpiList.xml` b8657) → `Save*List_Act` → `SaveMasterProportionalArrgChild` | grid anak per induk; Rp/Usd turunan; total Pct + peringatan | ✅ AC 25/28 |
+| `HitungRpUsd` | `RpUsdAnakTCO` di server | ✅ |
+| `TreatyTestChildTotal_Act` (TreatyLimitChild) | peringatan `Please make sure spreading is 100%` sesudah simpan | ✅ ralat 4 |
+| ExclutionTreaty: empat sub-bagian (`Param.Type`) + pemilih `BrowseOccupationFIRE_RD` / `BrowseFireClauseFacIn_RD` | satu jenis, empat subjenis; `GET /klausul-pilihan/{occupation,clause}` | ✅ OQ-TCO-14/16 |
+| `SaveTreatyArrLimitMB_Act`, `SaveTreatyArrPortfolio_Act` | ditahan: 422 + alasan di layar | ⏸ AC 36 (Product + UW) |
+| 16 `CancelActivity*` | `Cancel` per panel membuang isian panel itu saja | ✅ AC 29 |
+| `NitipKurs` b3882 / `testingKurs` | — | 🔜 tiket 11 |

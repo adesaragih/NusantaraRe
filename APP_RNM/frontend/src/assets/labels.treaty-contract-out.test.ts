@@ -13,7 +13,10 @@ import { describe, expect, it } from 'vitest'
 
 import {
   JENIS_REASURANSI_TCO,
+  KLAUSUL_TCO,
   KONTRAK_TCO,
+  LABEL_MEDAN_KHUSUS,
+  LABEL_MEDAN_KLAUSUL,
   LAMPIRAN_TCO,
   MENU_TCO,
   REINSURER_TCO,
@@ -200,6 +203,58 @@ describe.skipIf(!adaKorpus)('label Treaty Contract Out berbukti barisnya', () =>
     expect(baris(KONTRAK, 10859).trim()).toBe('<pyActivity>BrowseTreatyBusinessList_Act</pyActivity>')
   })
 
+  it('tiket 08: layar klausul — kepala, dua grid, tombol, dan label medan per jenis VERBATIM', () => {
+    const H = join('Harness', 'InboxTreatyContractDescription.xml')
+    const lf = (v: string) => `<pyLabelFieldValue>${v}</pyLabelFieldValue>`
+    const nilai = (v: string) => `<pyValue>${v}</pyValue>`
+    const tombol = (v: string) => `<pyLabel>${v}</pyLabel>`
+    expect(baris(H, 359).trim()).toBe(tombol(MENU_TCO.inboxTreatyContractDescription))
+    const kepala: [number, string][] = [
+      [2003, KLAUSUL_TCO.headerTreatyGroupId], [2489, KLAUSUL_TCO.headerUnderwritingYear],
+      [2665, KLAUSUL_TCO.headerTransactionYear], [2839, KLAUSUL_TCO.headerStartDate], [3025, KLAUSUL_TCO.headerEndDate],
+      [3209, KLAUSUL_TCO.headerTreatyDescription], [3382, KLAUSUL_TCO.headerProportionType],
+    ]
+    for (const [n, v] of kepala) expect(baris(H, n).trim(), String(n)).toBe(lf(v))
+    for (const [n, v] of [[4880, KLAUSUL_TCO.gridNonXol], [5440, KLAUSUL_TCO.kolomId],
+      [5549, KLAUSUL_TCO.kolomDescriptionName], [7971, KLAUSUL_TCO.gridXol]] as [number, string][]) {
+      expect(baris(H, n).trim(), String(n)).toBe(nilai(v))
+    }
+    expect(baris(H, 6059).trim()).toBe(tombol(KLAUSUL_TCO.show))
+    expect(baris(GRID, 22196).trim()).toBe(tombol(TAHUN_TCO.listDescription))
+    const epi = join('Section', 'GridTreatyArrangementEpi.xml')
+    for (const [n, v] of [[2777, LABEL_MEDAN_KLAUSUL.ReinsTypeID], [3215, LABEL_MEDAN_KLAUSUL.Line], [3372, LABEL_MEDAN_KLAUSUL.Rp],
+      [3798, LABEL_MEDAN_KLAUSUL.Usd], [4487, KLAUSUL_TCO.formModifiedDate]] as [number, string][]) {
+      expect(baris(epi, n).trim(), String(n)).toBe(lf(v))
+    }
+    for (const [n, v] of [[5501, KLAUSUL_TCO.save], [8980, KLAUSUL_TCO.add], [10917, KLAUSUL_TCO.edit],
+      [11200, KLAUSUL_TCO.showChild]] as [number, string][]) {
+      expect(baris(epi, n).trim(), String(n)).toBe(tombol(v))
+    }
+    const sec = (b: string) => join('Section', `GridTreatyArrangement${b}.xml`)
+    const anak = join('Section', 'GridTreatyArrTreatyEpiList.xml')
+    expect(baris(anak, 3029).trim()).toBe(lf(LABEL_MEDAN_KLAUSUL.Pct))
+    expect(baris(anak, 8657).trim()).toBe(tombol(KLAUSUL_TCO.closeChild))
+    const medan: [string, number, string][] = [
+      ['BordereAux', 2702, LABEL_MEDAN_KLAUSUL.Method], ['TerrLimit', 2742, LABEL_MEDAN_KLAUSUL.TerritorialLimit],
+      ['ProfitCommision', 3223, LABEL_MEDAN_KLAUSUL.PctMe], ['ProfitCommision', 3481, LABEL_MEDAN_KLAUSUL.Ydcf],
+      ['Coins', 3394, LABEL_MEDAN_KLAUSUL.CoIns_Min], ['Coins', 4193, LABEL_MEDAN_KLAUSUL.CoIns_Max],
+      ['Coins', 4880, LABEL_MEDAN_KLAUSUL.TreatyLimit],
+      ['MinLOL', 1540, LABEL_MEDAN_KHUSUS.MinLOL.Pct], ['MInLOLMB', 1548, LABEL_MEDAN_KHUSUS.MinLOLMB.Pct],
+      ['MaxCoinsPanel', 1525, LABEL_MEDAN_KHUSUS.MaxCoinsPanel.CoIns_Max],
+      ['ExclutionTreatyOccupation', 2007, LABEL_MEDAN_KLAUSUL.ID_Occupation],
+      ['ExclutionTreatyOccupation', 2296, `.${LABEL_MEDAN_KLAUSUL.Occupation}`],
+      ['ExclutionTreatyOccupation', 2745, LABEL_MEDAN_KHUSUS['ExclutionTreaty/Occupation'].Line],
+      ['ExclutionTreatyOccupation', 2935, LABEL_MEDAN_KHUSUS['ExclutionTreaty/Occupation'].Usd],
+      ['ExclutionTreatyOccupation', 3222, LABEL_MEDAN_KHUSUS['ExclutionTreaty/Occupation'].Rp],
+      ['ExclutionTreatyClausule', 2030, LABEL_MEDAN_KLAUSUL.ID_Clause],
+      ['ExclutionTreatyClausule', 2320, `.${LABEL_MEDAN_KLAUSUL.Clause}`],
+      ['ExclutionTreatyPeriode', 500, LABEL_MEDAN_KLAUSUL.Layer],
+    ]
+    for (const [b, n, v] of medan) expect(baris(sec(b), n).trim(), `${b} ${n}`).toBe(lf(v))
+    expect(baris(sec('ExclutionTreatyObject'), 566).trim().replace(/&gt;/g, '>')).toBe(lf(LABEL_MEDAN_KHUSUS['ExclutionTreaty/Object'].Pct))
+    expect(baris(sec('ExclutionTreaty'), 955).trim()).toBe(nilai(KLAUSUL_TCO.exclusionTreaty))
+  })
+
   it('nama kelompok adalah nama folder korpus', () => {
     expect(existsSync(join('D:\\XML\\RNM_BRD', MENU_TCO.kelompok))).toBe(true)
   })
@@ -220,7 +275,7 @@ describe('label yang tidak bergantung korpus', () => {
   })
   it('yang tidak ada di korpus ditandai begitu', () => {
     const sumber = readFileSync(join(__dirname, 'labels.treaty-contract-out.ts'), 'utf8')
-    for (const kunci of ['masterKosong', 'belumDipilih', 'kosong:', 'menungguTiket', 'catatanLabelBersilang']) {
+    for (const kunci of ['masterKosong', 'belumDipilih', 'kosong:', 'menungguTiket', 'catatanLabelBersilang', 'turunanServer', 'pilihTahunDulu', 'cariPilihan']) {
       const i = sumber.indexOf(kunci)
       expect(i, kunci).toBeGreaterThan(0)
       expect(sumber.slice(sumber.lastIndexOf('/**', i), i)).toContain('[tidak ada di korpus]')

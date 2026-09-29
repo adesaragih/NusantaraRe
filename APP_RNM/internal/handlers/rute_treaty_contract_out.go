@@ -53,6 +53,8 @@ func daftarkanRuteTreatyContractOut(mux *http.ServeMux, svc *services.Service, s
 	daftarkanRuteReinsurerTCO(mux, svc, stubPelaku)
 	// Tiket 07: business pada kombinasi kontrak (tco_business.go).
 	daftarkanRuteBusinessTCO(mux, svc, stubPelaku)
+	// Tiket 08: klausul - satu tabel, 25 jenis (tco_klausul.go).
+	daftarkanRuteKlausulTCO(mux, svc, stubPelaku)
 }
 
 // jawabanDaftarJenisReasuransi adalah badan jawaban daftar jenis reasuransi.
@@ -222,6 +224,21 @@ func jawabGalatTreatyContractOut(w http.ResponseWriter, err error) bool {
 	case errors.Is(err, models.ErrBusinessKodeKosong),
 		errors.Is(err, models.ErrBusinessAktifTakSah),
 		errors.Is(err, services.ErrBusinessDiLuarMaster):
+		galat(w, http.StatusUnprocessableEntity, err.Error())
+	case errors.Is(err, services.ErrKlausulTidakAda):
+		galat(w, http.StatusNotFound, err.Error())
+	case errors.Is(err, services.ErrKlausulDobel),
+		errors.Is(err, services.ErrKlausulIndukBeranak):
+		galat(w, http.StatusConflict, err.Error())
+	case errors.Is(err, services.ErrKlausulJenisBerubah):
+		galat(w, http.StatusBadRequest, err.Error())
+	case errors.Is(err, models.ErrKlausulJenisTakDikenal),
+		errors.Is(err, models.ErrKlausulDitahan),
+		errors.Is(err, models.ErrKlausulMedanWajib),
+		errors.Is(err, models.ErrMedanBukanMilikJenis),
+		errors.Is(err, models.ErrTotalPctAnakMelebihi100),
+		errors.Is(err, services.ErrJenisKlausulDiLuarMaster),
+		errors.Is(err, services.ErrPilihanDiLuarMaster):
 		galat(w, http.StatusUnprocessableEntity, err.Error())
 	case errors.Is(err, services.ErrLampiranTidakAda):
 		galat(w, http.StatusNotFound, "lampiran tidak ditemukan pada tahun treaty ini")
