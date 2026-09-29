@@ -93,7 +93,7 @@ var berkasAlamatDikecualikan = map[string]string{
 // `://` dan env tetap diperiksa. Tiap baris menyebut persetujuan manusianya;
 // jumlahnya dikunci di bawah.
 var berkasKlienHTTPDisetujui = map[string]string{
-	"internal/services/tco_pengirim_storage.go": "transport penyimpanan lampiran Treaty Contract Out - " +
+	"modul/treaty/services/tco_pengirim_storage.go": "transport penyimpanan lampiran Treaty Contract Out - " +
 		"[keputusan work owner 29-09-2026, OQ-TCO-08]; alamat dari M_LINK_SERVICE saat jalan, " +
 		"hanya aktif bila PELAKSANA_STORAGE=nyata",
 }

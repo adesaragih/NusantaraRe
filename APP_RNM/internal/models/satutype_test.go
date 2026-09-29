@@ -82,9 +82,12 @@ var medanTypeYangSah = map[string]string{
 }
 
 func TestTypeKlaimHanyaSatuRumahTersimpan(t *testing.T) {
-	akar := ".."
+	akar := akarAplikasiPindai
 	var temuan []string
 	err := filepath.Walk(akar, func(jalur string, info os.FileInfo, err error) error {
+		if err == nil && info.IsDir() && lewatiFolderPindai(info.Name()) {
+			return filepath.SkipDir
+		}
 		if err != nil {
 			return err
 		}
@@ -99,7 +102,7 @@ func TestTypeKlaimHanyaSatuRumahTersimpan(t *testing.T) {
 		if !polaMedanType.MatchString(string(isi)) {
 			return nil
 		}
-		rel := filepath.ToSlash(strings.TrimPrefix(filepath.ToSlash(jalur), "../"))
+		rel := relLapisan(jalur)
 		temuan = append(temuan, rel)
 		return nil
 	})

@@ -24,7 +24,7 @@ import (
 	"fmt"
 	"strings"
 
-	"nusantarare/internal/repository"
+	"nusantarare/modul/treaty/repository"
 )
 
 // namaTabelTiruanTCO adalah tabel yang ditiru dan dibongkar bersama skema uji.

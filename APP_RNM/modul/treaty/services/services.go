@@ -1,48 +1,36 @@
-// Package services memuat aturan dagang, batas transaksi, dan penegakan
-// wewenang.
+// Package services memuat aturan dagang modul Treaty Contract Out.
 //
 // Arah ketergantungan: handlers -> services -> repository. Paket ini tidak
-// pernah mengimpor handlers.
-//
-// Fase 0 - scaffold: nol aturan dagang. Yang ada di sini adalah batas
-// transaksi dan bentuk penegakan wewenang yang harus diikuti setiap tiket.
+// pernah mengimpor handlers, dan tidak pernah mengimpor modul lain - yang
+// bersama datang dari `inti/`.
 package services
+
+// Akar layanan modul Treaty Contract Out - refactor bentuk B.
+//
+// Untuk apa berkas ini: sampai 30-09-2026 metode-metode Treaty menumpang di
+// `Service` bersama milik Claim Life. Kini modul ini punya `Service` sendiri;
+// yang bersama - koneksi, lingkungan efek keluar, folder unggahan, transaksi -
+// datang dari `inti.Dasar` yang disematkan. Nol perilaku baru.
 
 import (
 	"context"
-	"errors"
 
 	"nusantarare/inti"
 	"nusantarare/inti/db"
 )
 
-var (
-	// ErrWajibIsi dikembalikan bila medan wajib kosong. Seluruh kolom
-	// nullable di database; kewajiban isi ditegakkan DI SINI (ADR-U-0027).
-	ErrWajibIsi = errors.New("services: medan wajib belum terisi")
-)
-
-// Service adalah akar seluruh layanan.
-//
-// Refactor bentuk B (30-09-2026): yang bersama - koneksi, lingkungan efek
-// keluar, folder unggahan, transaksi - tinggal di `inti.Dasar` yang
-// disematkan. Yang tersisa di sini hanya milik modul.
+// Service adalah akar layanan Treaty Contract Out.
 type Service struct {
 	*inti.Dasar
-}
-
-// DenganUnggahanDir menyetel folder berkas unggahan - lihat
-// `Dasar.DenganUnggahanDir`.
-func (s *Service) DenganUnggahanDir(dir string) *Service {
-	salin := *s
-	salin.Dasar = s.Dasar.DenganUnggahanDir(dir)
-	return &salin
+	// penyimpananTCO - pelaksana penyimpanan lampiran Treaty Contract Out
+	// (OQ-TCO-08). nil = stub; lihat tco_penyimpanan_nyata.go.
+	penyimpananTCO *pengaturanPenyimpananTCO
 }
 
 // New membuat Service. db boleh nil bila proses berjalan tanpa Oracle;
 // layanan yang memerlukannya akan menolak saat dipanggil.
-func New(db *db.DB) *Service {
-	return &Service{Dasar: inti.NewDasar(db)}
+func New(d *db.DB) *Service {
+	return &Service{Dasar: inti.NewDasar(d)}
 }
 
 // DariDasar membuat Service di atas akar yang sudah disetel `cmd/api`
@@ -51,8 +39,16 @@ func DariDasar(d *inti.Dasar) *Service {
 	return &Service{Dasar: d}
 }
 
+// DenganUnggahanDir menyetel folder berkas unggahan - lihat
+// `inti.Dasar.DenganUnggahanDir`.
+func (s *Service) DenganUnggahanDir(dir string) *Service {
+	salin := *s
+	salin.Dasar = s.Dasar.DenganUnggahanDir(dir)
+	return &salin
+}
+
 // DenganLingkungan menyetel lingkungan efek keluarnya - lihat
-// `Dasar.DenganLingkungan`.
+// `inti.Dasar.DenganLingkungan`.
 func (s *Service) DenganLingkungan(l inti.Lingkungan) *Service {
 	salin := *s
 	salin.Dasar = s.Dasar.DenganLingkungan(l)
@@ -67,7 +63,7 @@ func (s *Service) DenganLingkungan(l inti.Lingkungan) *Service {
 // dipanggil pada nil. Begitu pula CekKesehatan dan SkemaAktif.
 func (s *Service) PunyaDatabase() bool { return s != nil && s.Dasar.PunyaDatabase() }
 
-// CekKesehatan memeriksa apakah Oracle terjangkau - lihat `Dasar.CekKesehatan`.
+// CekKesehatan memeriksa apakah Oracle terjangkau - lihat `inti.Dasar.CekKesehatan`.
 func (s *Service) CekKesehatan(ctx context.Context) error {
 	if !s.PunyaDatabase() {
 		return db.ErrTanpaOracle

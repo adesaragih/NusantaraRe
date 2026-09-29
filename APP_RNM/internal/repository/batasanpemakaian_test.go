@@ -99,12 +99,16 @@ func TestHapusFisikTidakDipanggilDiLuarTest(t *testing.T) {
 // menerima permintaan HTTP.
 func TestHandlersTidakMengimporRepository(t *testing.T) {
 	diperiksa := 0
+	// Refactor bentuk B (30-09-2026): handlers SETIAP modul, dan repository
+	// SETIAP modul. `inti/db` ikut dilarang: isinya dulu kepala paket
+	// repository (koneksi dan transaksi), jadi larangan lama tetap utuh.
+	polaRepository := regexp.MustCompile(`"nusantarare/(internal/repository|modul/[^/"]+/repository|inti/db)"`)
 	for nama, isi := range berkasGoSelainTest(t) {
-		if !strings.Contains(nama, "/internal/handlers/") {
+		if !strings.Contains(nama, "/handlers/") {
 			continue
 		}
 		diperiksa++
-		if strings.Contains(isi, `"nusantarare/internal/repository"`) {
+		if polaRepository.MatchString(isi) {
 			t.Errorf("%s mengimpor repository; seharusnya lewat services", nama)
 		}
 	}
@@ -201,7 +205,11 @@ var polaTabelTelanjang = regexp.MustCompile(
 func TestNolNamaTabelTelanjangDiQuery(t *testing.T) {
 	diperiksa := 0
 	for nama, isi := range berkasGoSelainTest(t) {
-		if !strings.Contains(nama, "/internal/repository/") {
+		// Refactor bentuk B (30-09-2026): SQL kini juga tinggal di
+		// `modul/*/repository` dan `inti/*`. Dulu hanya `/internal/repository/`
+		// - saringan itu diam-diam menyempit begitu kode pindah (cacah log
+		// dasar 275 rujukan; sesudah paket 1-2 tanpa perbaikan ini, 168).
+		if !strings.Contains(nama, "/repository/") && !strings.Contains(nama, "/inti/") {
 			continue
 		}
 		isi = polaKomentarBaris.ReplaceAllString(isi, "")
@@ -328,32 +336,40 @@ func TestSetiapPemanggilBukaMemeriksaBolehDilewati(t *testing.T) {
 //   - satu baris dengan kata "warisan"  rujukan sadar ke tabel warisan
 func TestNamaTabelDokumenLamaHanyaUntukWarisan(t *testing.T) {
 	var berkas []string
-	akar := filepath.FromSlash(akarModul + "/internal/repository")
-	err := filepath.Walk(akar, func(p string, info os.FileInfo, err error) error {
+	// Refactor bentuk B (30-09-2026): dulu hanya `internal/repository`; kini
+	// juga `inti/` dan `modul/` - nama tabel warisan tidak boleh lahir kembali
+	// di modul mana pun.
+	for _, akar := range []string{
+		filepath.FromSlash(akarModul + "/internal/repository"),
+		filepath.FromSlash(akarModul + "/inti"),
+		filepath.FromSlash(akarModul + "/modul"),
+	} {
+		err := filepath.Walk(akar, func(p string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if info.IsDir() {
+				return nil
+			}
+			n := filepath.ToSlash(p)
+			// Berkas ini sendiri menyebut nama itu di komentar dan literalnya, jadi
+			// ia akan menghitung dirinya sendiri. Alat ukur tidak boleh masuk ke
+			// dalam benda yang diukurnya.
+			//
+			// ⚠️ Pengecualian ini TIDAK dipakai menyembunyikan pelanggaran: setiap
+			// baris berkas ini yang menyebut nama lama ditulis agar lulus aturannya
+			// sendiri - lewat frasa Int-, atau bersama kata "warisan".
+			if strings.HasSuffix(n, "/batasanpemakaian_test.go") {
+				return nil
+			}
+			if strings.HasSuffix(n, ".sql") || strings.HasSuffix(n, ".go") {
+				berkas = append(berkas, p)
+			}
+			return nil
+		})
 		if err != nil {
-			return err
+			t.Fatal(err)
 		}
-		if info.IsDir() {
-			return nil
-		}
-		n := filepath.ToSlash(p)
-		// Berkas ini sendiri menyebut nama itu di komentar dan literalnya, jadi
-		// ia akan menghitung dirinya sendiri. Alat ukur tidak boleh masuk ke
-		// dalam benda yang diukurnya.
-		//
-		// ⚠️ Pengecualian ini TIDAK dipakai menyembunyikan pelanggaran: setiap
-		// baris berkas ini yang menyebut nama lama ditulis agar lulus aturannya
-		// sendiri - lewat frasa Int-, atau bersama kata "warisan".
-		if strings.HasSuffix(n, "/batasanpemakaian_test.go") {
-			return nil
-		}
-		if strings.HasSuffix(n, ".sql") || strings.HasSuffix(n, ".go") {
-			berkas = append(berkas, p)
-		}
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
 	}
 	if len(berkas) == 0 {
 		t.Fatal("nol berkas terbaca; pembacanya yang rusak")

@@ -23,7 +23,12 @@ import (
 // stubPelaku datang dari konfigurasi dan disetel SEKALI di sini. Ia bukan
 // autentikasi - lihat pelaku.go - dan konfigurasi sudah menolaknya bila
 // lingkungan menunjuk produksi.
-func Router(svc *services.Service, stubPelaku bool) http.Handler {
+//
+// Refactor bentuk B (30-09-2026): rute modul yang sudah pindah ke
+// `modul/<nama>/` TIDAK didaftarkan di sini - paket ini tidak boleh mengimpor
+// modul lain. `cmd/api` menyerahkannya lewat `tambahan`, dan urutannya sama
+// dengan sebelumnya: sesudah seluruh rute di bawah.
+func Router(svc *services.Service, stubPelaku bool, tambahan ...func(*http.ServeMux)) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", healthz(svc))
 	mux.HandleFunc("GET /api/klaim-life/{id}", klaimLife(svc))
@@ -151,11 +156,12 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 	mux.HandleFunc("GET /api/polis-life/{id}/summary", rekapPolis(svc, stubPelaku))
 	mux.HandleFunc("POST /api/polis-life/{id}/summary",
 		submitRekapPolis(svc, stubPelaku))
-	// --- modul Treaty Contract Out (tiket 02+) ---
+	// --- modul yang sudah pindah ke modul/<nama>/ (Treaty Contract Out) ---
 	//
-	// ⚠️ Penambahan ADITIF oleh sesi Treaty Contract Out: SATU baris. Rutenya
-	// sendiri hidup di `rute_treaty_contract_out.go`.
-	daftarkanRuteTreatyContractOut(mux, svc, stubPelaku)
+	// Rutenya hidup di modulnya masing-masing; `cmd/api` yang menyerahkannya.
+	for _, daftarkan := range tambahan {
+		daftarkan(mux)
+	}
 	return mux
 }
 

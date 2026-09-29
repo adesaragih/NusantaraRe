@@ -76,7 +76,10 @@ var berkasYangBolehMenulisStatus = map[string]string{
 // lolos darinya.
 func TestSetiapPenulisStatusBergerbangPeran(t *testing.T) {
 	diperiksa := 0
-	err := filepath.Walk("..", func(jalur string, info os.FileInfo, err error) error {
+	err := filepath.Walk(akarAplikasiPindai, func(jalur string, info os.FileInfo, err error) error {
+		if err == nil && info.IsDir() && lewatiFolderPindai(info.Name()) {
+			return filepath.SkipDir
+		}
 		if err != nil {
 			return err
 		}
@@ -185,7 +188,10 @@ var polaNilaiTerkutip = regexp.MustCompile("[\"`]([^\"`]+)[\"`]")
 
 func TestNolNamaOrangDiKode(t *testing.T) {
 	diperiksa := 0
-	err := filepath.Walk("..", func(jalur string, info os.FileInfo, err error) error {
+	err := filepath.Walk(akarAplikasiPindai, func(jalur string, info os.FileInfo, err error) error {
+		if err == nil && info.IsDir() && lewatiFolderPindai(info.Name()) {
+			return filepath.SkipDir
+		}
 		if err != nil {
 			return err
 		}

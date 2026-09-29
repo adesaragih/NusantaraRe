@@ -34,7 +34,10 @@ var polaKomentar = regexp.MustCompile(`(?m)^\s*//.*$`)
 func TestKodeStatusLiteralHanyaDiModels(t *testing.T) {
 	var temuan []string
 	diperiksa := 0
-	err := filepath.Walk("..", func(jalur string, info os.FileInfo, err error) error {
+	err := filepath.Walk(akarAplikasiPindai, func(jalur string, info os.FileInfo, err error) error {
+		if err == nil && info.IsDir() && lewatiFolderPindai(info.Name()) {
+			return filepath.SkipDir
+		}
 		if err != nil {
 			return err
 		}
@@ -46,7 +49,7 @@ func TestKodeStatusLiteralHanyaDiModels(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		rel := filepath.ToSlash(strings.TrimPrefix(filepath.ToSlash(jalur), "../"))
+		rel := relLapisan(jalur)
 		if strings.HasPrefix(rel, "models/") {
 			return nil
 		}

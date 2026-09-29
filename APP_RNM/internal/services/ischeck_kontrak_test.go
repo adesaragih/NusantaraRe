@@ -67,7 +67,13 @@ func TestNilaiPenandaDipilihDariXML(t *testing.T) {
 // peserta yang lahir dari jalur itu.
 func TestNolPenulisPenandaDipilihBernilaiLain(t *testing.T) {
 	diperiksa := 0
-	err := filepath.Walk("..", func(jalur string, info os.FileInfo, err error) error {
+	err := filepath.Walk(filepath.Join("..", ".."), func(jalur string, info os.FileInfo, err error) error {
+		if err == nil && info.IsDir() {
+			switch info.Name() {
+			case "frontend", "node_modules", "bin", ".git", "dist", "unggahan":
+				return filepath.SkipDir
+			}
+		}
 		if err != nil || info.IsDir() || !strings.HasSuffix(jalur, ".go") ||
 			strings.HasSuffix(jalur, "_test.go") {
 			return err

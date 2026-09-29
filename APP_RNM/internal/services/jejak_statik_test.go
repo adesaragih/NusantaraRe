@@ -40,7 +40,10 @@ var polaPenulisTransisi = regexp.MustCompile(
 // ini; ia diperbaiki di tempat ia muncul.
 func TestSetiapPenulisTransisiMerekamJejak(t *testing.T) {
 	diperiksa := 0
-	err := filepath.Walk("..", func(jalur string, info os.FileInfo, err error) error {
+	err := filepath.Walk(akarAplikasiPindai, func(jalur string, info os.FileInfo, err error) error {
+		if err == nil && info.IsDir() && lewatiFolderPindai(info.Name()) {
+			return filepath.SkipDir
+		}
 		if err != nil {
 			return err
 		}

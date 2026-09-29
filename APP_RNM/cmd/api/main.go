@@ -22,6 +22,8 @@ import (
 	"nusantarare/inti"
 	"nusantarare/inti/config"
 	intidb "nusantarare/inti/db"
+	treatyhandlers "nusantarare/modul/treaty/handlers"
+	treatyservices "nusantarare/modul/treaty/services"
 )
 
 func main() {
@@ -50,9 +52,14 @@ func main() {
 	//
 	// ⚠️ Ia menggerbangi EFEK KELUAR saja, tidak pernah penyimpanan: klaim
 	// tetap tersimpan di lingkungan non-produksi.
-	svc := services.New(db).
+	//
+	// Refactor bentuk B (30-09-2026): SATU akar untuk semua modul; setiap
+	// modul membangun `Service`-nya sendiri di atasnya.
+	dasar := inti.NewDasar(db).
 		DenganLingkungan(inti.LingkunganDariFlag(cfg.IsPegaProd)).
-		DenganUnggahanDir(cfg.UnggahanDir).
+		DenganUnggahanDir(cfg.UnggahanDir)
+	svc := services.DariDasar(dasar)
+	svcTCO := treatyservices.DariDasar(dasar).
 		// OQ-TCO-08: bawaan stub; ⛔ garam tidak pernah dicetak.
 		DenganPenyimpananLampiranTCO(cfg.PelaksanaStorage == config.PelaksanaStorageNyata, cfg.StorageTokenSalt)
 	if svc.PunyaDatabase() {
@@ -77,8 +84,10 @@ func main() {
 	}
 
 	srv := &http.Server{
-		Addr:              cfg.HTTPAddr,
-		Handler:           handlers.Router(svc, cfg.AuthStub),
+		Addr: cfg.HTTPAddr,
+		Handler: handlers.Router(svc, cfg.AuthStub, func(mux *http.ServeMux) {
+			treatyhandlers.DaftarkanRute(mux, svcTCO, cfg.AuthStub)
+		}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
@@ -86,7 +95,7 @@ func main() {
 	defer berhenti()
 
 	log.Printf("lampiran treaty contract out: pelaksana penyimpanan %s", cfg.PelaksanaStorage)
-	pekerjaSelesai := jalankanPekerjaLampiranTCO(ctx, svc, cfg)
+	pekerjaSelesai := jalankanPekerjaLampiranTCO(ctx, svcTCO, cfg)
 
 	go func() {
 		log.Printf("http: mendengarkan di %s", srv.Addr)
@@ -118,7 +127,7 @@ func main() {
 // Mati bila TCO_PEKERJA_LAMPIRAN_INTERVAL kosong/0 atau tanpa Oracle. Ia
 // berhenti bersama ctx proses; kanal yang dikembalikan tertutup saat ia
 // benar-benar berhenti (langsung tertutup bila tidak dinyalakan).
-func jalankanPekerjaLampiranTCO(ctx context.Context, svc *services.Service, cfg config.Config) <-chan struct{} {
+func jalankanPekerjaLampiranTCO(ctx context.Context, svc *treatyservices.Service, cfg config.Config) <-chan struct{} {
 	selesai := make(chan struct{})
 	if cfg.IntervalPekerjaLampiranTCO <= 0 {
 		log.Print("lampiran treaty contract out: pekerja latar mati (interval kosong)")
@@ -133,7 +142,7 @@ func jalankanPekerjaLampiranTCO(ctx context.Context, svc *services.Service, cfg 
 	log.Printf("lampiran treaty contract out: pekerja latar tiap %s", cfg.IntervalPekerjaLampiranTCO)
 	go func() {
 		defer close(selesai)
-		handlers.LayananLampiranTCO(svc).JalankanPekerja(ctx, cfg.IntervalPekerjaLampiranTCO,
+		treatyhandlers.LayananLampiranTCO(svc).JalankanPekerja(ctx, cfg.IntervalPekerjaLampiranTCO,
 			func(s string) { log.Print(s) })
 	}()
 	return selesai
