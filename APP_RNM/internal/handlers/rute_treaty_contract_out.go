@@ -122,6 +122,7 @@ func daftarTahunTreaty(svc *services.Service, stubPelaku bool) http.HandlerFunc 
 		ukuran, _ := strconv.Atoi(r.URL.Query().Get("ukuran"))
 		hal, err := svc.TahunTreatyTCO().
 			DenganGudang(services.GudangTahunTreatyOracle(svc)).
+			DenganGrup(services.PembacaGrupTreatyOracle(svc)).
 			Daftar(r.Context(), pelakuDari(r, stubPelaku), halaman, ukuran)
 		if jawabGalatTreatyContractOut(w, err) {
 			return
@@ -139,6 +140,7 @@ func satuTahunTreaty(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 		}
 		t, err := svc.TahunTreatyTCO().
 			DenganGudang(services.GudangTahunTreatyOracle(svc)).
+			DenganGrup(services.PembacaGrupTreatyOracle(svc)).
 			Ambil(r.Context(), pelakuDari(r, stubPelaku), r.PathValue("id"))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
@@ -173,6 +175,7 @@ func simpanTahunTreaty(svc *services.Service, stubPelaku bool, perbarui bool) ht
 		}
 		hasil, err := svc.TahunTreatyTCO().
 			DenganGudang(services.GudangTahunTreatyOracle(svc)).
+			DenganGrup(services.PembacaGrupTreatyOracle(svc)).
 			Simpan(r.Context(), pelakuDari(r, stubPelaku), masuk)
 		if jawabGalatTreatyContractOut(w, err) {
 			return
@@ -224,6 +227,8 @@ func jawabGalatTreatyContractOut(w http.ResponseWriter, err error) bool {
 		errors.Is(err, models.ErrPersenDiLuarRentang),
 		errors.Is(err, models.ErrTotalShareMelebihi100),
 		errors.Is(err, services.ErrReinsurerDiLuarMaster):
+		galat(w, http.StatusUnprocessableEntity, err.Error())
+	case errors.Is(err, services.ErrGrupTreatyDiLuarMaster):
 		galat(w, http.StatusUnprocessableEntity, err.Error())
 	case errors.Is(err, services.ErrKontrakBeranak),
 		errors.Is(err, services.ErrTahunBeranak):

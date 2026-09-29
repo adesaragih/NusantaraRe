@@ -52,7 +52,16 @@ func (u *ujiTCO) sqlDBMentah() *sql.DB { return u.mentah }
 
 // serverTCO memasang skema uji dan Router BER-STUB identitas: rute modul ini
 // bergerbang identitas (401 tanpa X-Pelaku), jadi header harus terbaca.
+// serverTCO - server uji dengan master grup bawaan 10001 "UJI GRUP" (tahun
+// treaty memeriksa grupnya ke master sejak temuan /code-review).
 func serverTCO(t *testing.T) (*ujiTCO, func()) {
+	u, bersihkan := serverTCOAwal(t)
+	u.isiGrup([]skemauji.GrupTreatyUji{{ID: "10001", TreatyGroupName: "UJI GRUP"}})
+	return u, bersihkan
+}
+
+// serverTCOAwal - server uji dengan seluruh master kosong.
+func serverTCOAwal(t *testing.T) (*ujiTCO, func()) {
 	t.Helper()
 	sqlDB, skema, err := skemauji.Buka()
 	if err != nil {
@@ -312,7 +321,7 @@ func TestTahunTreatyLingkaranPenuh(t *testing.T) {
 }
 
 func TestGrupTreatyDibacaSajaUrutIDDesc(t *testing.T) {
-	u, bersihkan := serverTCO(t)
+	u, bersihkan := serverTCOAwal(t)
 	defer bersihkan()
 	if kode, _ := u.minta(t, http.MethodGet, "/api/treaty-contract-out/grup-treaty", nil, true); kode != http.StatusServiceUnavailable {
 		t.Errorf("master kosong: status %d, mau 503", kode)

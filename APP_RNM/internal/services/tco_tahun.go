@@ -33,6 +33,8 @@ import (
 )
 
 var (
+	// ErrGrupTreatyDiLuarMaster - TreatyGroupID tidak ada di master TREATYGROUP (422).
+	ErrGrupTreatyDiLuarMaster = errors.New("services: grup treaty tidak ada di master")
 	// ErrTahunBeranak - tahun/grup tidak dapat diganti selama tahun treaty beranak (409).
 	ErrTahunBeranak = errors.New("services: tahun treaty dan grupnya tidak dapat diganti selama kontrak/klausul masih ada")
 	// ErrGudangTahunTreatyBelumDisuntik - handler lupa memasang gudang.
@@ -186,16 +188,25 @@ const ukuranHalamanTahunMaks = 500
 // ⚠️ Berakhiran TCO sebab `services.TahunTreaty` sudah dipakai Claim Life
 // (spreading.go) untuk TREATYYEAR_LIFE - dua hal berbeda, dua nama.
 type TahunTreatyTCO struct {
-	svc       *Service
-	gudang    GudangTahunTreatyTCO
+	svc    *Service
+	gudang GudangTahunTreatyTCO
+	// grup - master TREATYGROUP: ID diperiksa, nama DARI master (temuan /code-review).
+	grup      PembacaGrupTreatyTCO
 	jam       func() time.Time
 	transaksi func(ctx context.Context, fn func(tx *repository.Tx) error) error
 }
 
 // TahunTreatyTCO menyusun layanannya dengan gudang yang GAGAL TERANG.
 func (s *Service) TahunTreatyTCO() *TahunTreatyTCO {
-	return &TahunTreatyTCO{svc: s, gudang: gudangTahunTreatyBelumDisuntik{}, jam: time.Now,
+	return &TahunTreatyTCO{grup: pembacaGrupTreatyBelumDisuntik{}, svc: s, gudang: gudangTahunTreatyBelumDisuntik{}, jam: time.Now,
 		transaksi: s.DalamTransaksi}
+}
+
+// DenganGrup memasang pembaca master grup treaty.
+func (t *TahunTreatyTCO) DenganGrup(g PembacaGrupTreatyTCO) *TahunTreatyTCO {
+	salin := *t
+	salin.grup = g
+	return &salin
 }
 
 // DenganGudang memasang gudang.
@@ -299,6 +310,12 @@ func (t *TahunTreatyTCO) Simpan(ctx context.Context, pelaku Pelaku, masuk TahunT
 	if err := models.PeriksaTahunTreaty(model); err != nil {
 		return TahunTreatyTampil{}, err
 	}
+	// Temuan /code-review: grup diperiksa ke master dan NAMANYA dari master -
+	// nama itu disalin ke kontrak/reinsurer/business lewat kombinasi dan dibaca
+	// hilir; teks bebas dari klien tidak boleh sampai ke sana.
+	if model.TreatyGroupName, err = t.namaGrupDariMaster(ctx, model.TreatyGroupID); err != nil {
+		return TahunTreatyTampil{}, err
+	}
 
 	err = t.transaksi(ctx, func(tx *repository.Tx) error {
 		idLain, err := t.gudang.CariDobel(ctx, tx, model.TreatyGroupID, model.StartDate, model.EndDate, model.ID)
@@ -344,4 +361,21 @@ func (t *TahunTreatyTCO) Simpan(ctx context.Context, pelaku Pelaku, masuk TahunT
 		return TahunTreatyTampil{}, err
 	}
 	return TampilTahunTreaty(model), nil
+}
+
+// namaGrupDariMaster mencari nama grup treaty di master `TREATYGROUP`.
+func (t *TahunTreatyTCO) namaGrupDariMaster(ctx context.Context, id string) (string, error) {
+	daftar, err := t.grup.Daftar(ctx)
+	if err != nil {
+		return "", err
+	}
+	if len(daftar) == 0 {
+		return "", ErrMasterGrupTreatyKosong
+	}
+	for _, g := range daftar {
+		if g.ID == id {
+			return g.TreatyGroupName, nil
+		}
+	}
+	return "", fmt.Errorf("%w: TreatyGroupID %q", ErrGrupTreatyDiLuarMaster, id)
 }

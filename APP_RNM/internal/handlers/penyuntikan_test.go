@@ -76,7 +76,8 @@ var petaSuntikan = map[string][]suntikan{
 		},
 		{
 			penyusun: "svc.TahunTreatyTCO()",
-			wajib:    []string{"DenganGudang(services.GudangTahunTreatyOracle(svc))"},
+			wajib: []string{"DenganGudang(services.GudangTahunTreatyOracle(svc))",
+				"DenganGrup(services.PembacaGrupTreatyOracle(svc))"},
 		},
 	},
 	// Tiket 04 (aditif 29-09-2026): gudang kontrak, tahun induk, daftar jenis.

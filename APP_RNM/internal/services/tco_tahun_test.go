@@ -63,7 +63,7 @@ func transaksiUji(_ context.Context, fn func(tx *repository.Tx) error) error { r
 var jamUji = func() time.Time { return time.Date(2026, 9, 28, 10, 0, 0, 0, time.UTC) }
 
 func layananTahun(g *gudangTahunUji) *services.TahunTreatyTCO {
-	return services.New(nil).TahunTreatyTCO().DenganGudang(g).DenganTransaksi(transaksiUji).DenganJam(jamUji)
+	return services.New(nil).TahunTreatyTCO().DenganGudang(g).DenganGrup(grupTahunUji{}).DenganTransaksi(transaksiUji).DenganJam(jamUji)
 }
 
 func masukWajar() services.TahunTreatyMasuk {
@@ -218,5 +218,30 @@ func TestTahunGantiTahunBeranakDitolak(t *testing.T) {
 	g.anak = 0
 	if _, err := layananTahun(g).Simpan(context.Background(), pelakuUjiTCO, m); err != nil || len(g.diperbaru) != 1 {
 		t.Errorf("ganti tahun tanpa anak: %v", err)
+	}
+}
+
+type grupTahunUji struct{}
+
+func (grupTahunUji) Daftar(context.Context) ([]repository.GrupTreatyTCO, error) {
+	return []repository.GrupTreatyTCO{{ID: "10001", TreatyGroupName: "UJI GRUP"}, {ID: "10002", TreatyGroupName: "UJI GRUP B"}}, nil
+}
+
+// Temuan /code-review: nama grup DARI master; ID di luar master ditolak.
+func TestTahunGrupDariMaster(t *testing.T) {
+	g := &gudangTahunUji{}
+	m := masukWajar()
+	m.TreatyGroupName = "KARANGAN KLIEN"
+	h, err := layananTahun(g).Simpan(context.Background(), pelakuUjiTCO, m)
+	if err != nil || h.TreatyGroupName != "UJI GRUP" || g.disisip[0].TreatyGroupName != "UJI GRUP" {
+		t.Errorf("nama grup: %+v %v", h, err)
+	}
+	m.TreatyGroupID = "99999"
+	if _, err := layananTahun(g).Simpan(context.Background(), pelakuUjiTCO, m); !errors.Is(err, services.ErrGrupTreatyDiLuarMaster) {
+		t.Errorf("grup asing: %v", err)
+	}
+	if _, err := services.New(nil).TahunTreatyTCO().DenganGudang(g).DenganTransaksi(transaksiUji).Simpan(context.Background(),
+		pelakuUjiTCO, masukWajar()); !errors.Is(err, services.ErrPembacaGrupTreatyBelumDisuntik) {
+		t.Errorf("tanpa pembaca grup: %v", err)
 	}
 }
