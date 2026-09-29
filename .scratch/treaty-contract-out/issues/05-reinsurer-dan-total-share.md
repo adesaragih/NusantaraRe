@@ -172,3 +172,12 @@ Nomor baris = baris mentah berkas korpus; langkah aktivitas dibaca lengkap (pras
 - Pega meneruskan nilai lama saat ubah; kode menulis NULL. Keduanya sama selama kolom kosong (430/430); baris
   berisi tanggal dari penulis lain akan dikosongkan saat reinsurer itu diubah dari modul ini — dicatat, bukan ditebak.
 - Uji: `TestReinsurerTanggalTidakDitulis` (argumen :14/:15 sisip, :10/:11 perbarui = NULL; `OPERATORNAME` tidak bergeser).
+
+## Ralat bertanggal 29-09-2026 — lanjutan 4, OQ-TCO-25 `[asisten dari data; veto work owner]`
+
+- `USERID`/`TGLUPDATE` **tidak diisi layanan**, seperti Pega (`NewTreatyReinsurerDetail_Act` b917; tidak ada langkah yang
+  mengisi `TglUpdate`; data DEV 0/430). Ralat atas butir tco4 "diisi layanan".
+- Saat ubah, `USERID` baris dipertahankan (`SetUbahTreatyReinsurerList_Act` b1097); baris kosong tetap kosong.
+- `OPERATORNAME` tetap diisi pengubah (`OperatorID.pyUserName` b377).
+- Pelaku tercatat di log aplikasi.
+- Uji: `TestReinsurerKolomPelakuKosongSepertiPega`, `TestReinsurerSimpanMencatatPelakuDiLog`.

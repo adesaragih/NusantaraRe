@@ -25,9 +25,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
+	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
 )
 
@@ -86,7 +88,23 @@ func PenyimpananLampiranTCO(svc *Service) KlienPenyimpananTCO {
 	if svc.db != nil {
 		resolver = ResolverLinkServiceOracle(svc)
 	}
-	return NewPenyimpananJarakJauhTCO(resolver, svc.penyimpananTCO.cache, NewPengirimBerkasHTTPTCO(nil, app))
+	p := NewPenyimpananJarakJauhTCO(resolver, svc.penyimpananTCO.cache, NewPengirimBerkasHTTPTCO(nil, app))
+	if svc.db != nil {
+		p = p.DenganPencatatObjek(pencatatObjekOracleTCO{m: repository.NewMasterLampiranTCO(svc.db),
+			transaksi: svc.DalamTransaksi}, func(s string) { log.Print(s) })
+	}
+	return p
+}
+
+// pencatatObjekOracleTCO - `Update_T_Storage_SQL` dalam transaksi pendeknya
+// sendiri; Pega menjalankannya sebagai RDB-List lepas, di luar simpan apa pun.
+type pencatatObjekOracleTCO struct {
+	m         *repository.MasterLampiranTCO
+	transaksi func(ctx context.Context, fn func(tx *repository.Tx) error) error
+}
+
+func (p pencatatObjekOracleTCO) PerbaruiObjek(ctx context.Context, o models.ObjekPenyimpananTCO) error {
+	return p.transaksi(ctx, func(tx *repository.Tx) error { return p.m.PerbaruiObjek(ctx, tx, o) })
 }
 
 type resolverTanpaOracleTCO struct{}

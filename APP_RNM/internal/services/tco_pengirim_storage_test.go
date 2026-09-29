@@ -129,14 +129,15 @@ func (l *layananStorageUji) layani(w http.ResponseWriter, r *http.Request) {
 		if l.urlKosong {
 			u = ""
 		}
-		_ = json.NewEncoder(w).Encode(map[string]string{"URLImage": u})
+		_ = json.NewEncoder(w).Encode(map[string]string{"URLImage": u, "exp": expUjiStorage})
 	case "/geturl":
 		// Seperti URL bertanda tangan: diberikan walau objeknya tidak ada.
 		u := l.alamat("/objek/" + folder + nama)
 		if l.urlGanti != nil {
 			u = l.urlGanti(folder + nama)
 		}
-		_ = json.NewEncoder(w).Encode(map[string]string{"URLImage": u})
+		_ = json.NewEncoder(w).Encode(map[string]string{"URLImage": u, "exp": expUjiStorage,
+			"appfolder": "UJI-FOLDER", "DateTime": "09/29/2026 09:00:00"})
 	case "/delete":
 		delete(l.objek, nama)
 		_ = json.NewEncoder(w).Encode(map[string]string{})
@@ -206,7 +207,7 @@ func TestPengirimStorageAmbilPeriksaBuang(t *testing.T) {
 	if _, err := p.Kirim(ctx, l.alamat("/upload"), tokenUjiStorage, kunciUjiStorage, strings.NewReader("ISI"), "text/plain", "txt"); err != nil {
 		t.Fatal(err)
 	}
-	rc, err := p.Ambil(ctx, l.alamat("/geturl"), tokenUjiStorage, kunciUjiStorage)
+	rc, _, err := p.Ambil(ctx, l.alamat("/geturl"), tokenUjiStorage, kunciUjiStorage)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -215,7 +216,7 @@ func TestPengirimStorageAmbilPeriksaBuang(t *testing.T) {
 	if string(isi) != "ISI" {
 		t.Errorf("isi %q", isi)
 	}
-	if ada, err := p.Periksa(ctx, l.alamat("/geturl"), tokenUjiStorage, kunciUjiStorage); err != nil || !ada {
+	if ada, _, err := p.Periksa(ctx, l.alamat("/geturl"), tokenUjiStorage, kunciUjiStorage); err != nil || !ada {
 		t.Errorf("periksa sebelum buang: %v %v", ada, err)
 	}
 	if d := l.salinDiterima(); d[len(d)-1].jengkal != "bytes=0-0" {
@@ -234,10 +235,10 @@ func TestPengirimStorageAmbilPeriksaBuang(t *testing.T) {
 	if l.cacahObjek() != 0 {
 		t.Fatal("objek tidak terhapus - delete menunjuk jalur lain")
 	}
-	if ada, err := p.Periksa(ctx, l.alamat("/geturl"), tokenUjiStorage, kunciUjiStorage); err != nil || ada {
+	if ada, _, err := p.Periksa(ctx, l.alamat("/geturl"), tokenUjiStorage, kunciUjiStorage); err != nil || ada {
 		t.Errorf("periksa sesudah buang: %v %v", ada, err)
 	}
-	if _, err := p.Ambil(ctx, l.alamat("/geturl"), tokenUjiStorage, kunciUjiStorage); !errors.Is(err, services.ErrBerkasTidakAdaDiPenyimpanan) {
+	if _, _, err := p.Ambil(ctx, l.alamat("/geturl"), tokenUjiStorage, kunciUjiStorage); !errors.Is(err, services.ErrBerkasTidakAdaDiPenyimpanan) {
 		t.Errorf("ambil sesudah buang: %v", err)
 	}
 }
@@ -252,7 +253,7 @@ func TestPengirimStorage404TitikLayananBukanBerkasHilang(t *testing.T) {
 		!errors.Is(err, services.ErrStorageGagalTCO) {
 		t.Errorf("delete 404: %v", err)
 	}
-	if ada, err := p.Periksa(ctx, l.alamat("/salah-jalur"), tokenUjiStorage, kunciUjiStorage); ada || !errors.Is(err, services.ErrStorageGagalTCO) {
+	if ada, _, err := p.Periksa(ctx, l.alamat("/salah-jalur"), tokenUjiStorage, kunciUjiStorage); ada || !errors.Is(err, services.ErrStorageGagalTCO) {
 		t.Errorf("geturl 404: %v %v", ada, err)
 	}
 }
@@ -267,12 +268,12 @@ func TestPengirimStorageURLBertandaTerjaga(t *testing.T) {
 	}
 	polos := strings.Replace(l.srv.URL, "https", "http", 1)
 	l.setel(func() { l.urlGanti = func(j string) string { return polos + "/objek/" + j } })
-	if _, err := p.Ambil(ctx, l.alamat("/geturl"), tokenUjiStorage, kunciUjiStorage); !errors.Is(err, services.ErrStorageJawabanRusakTCO) {
+	if _, _, err := p.Ambil(ctx, l.alamat("/geturl"), tokenUjiStorage, kunciUjiStorage); !errors.Is(err, services.ErrStorageJawabanRusakTCO) {
 		t.Errorf("URLImage polos: %v", err)
 	}
 	l.setel(func() { l.urlGanti = func(string) string { return l.alamat("/alih") } })
 	sebelum := len(l.salinDiterima())
-	if _, err := p.Ambil(ctx, l.alamat("/geturl"), tokenUjiStorage, kunciUjiStorage); !errors.Is(err, services.ErrStorageGagalTCO) {
+	if _, _, err := p.Ambil(ctx, l.alamat("/geturl"), tokenUjiStorage, kunciUjiStorage); !errors.Is(err, services.ErrStorageGagalTCO) {
 		t.Errorf("pengalihan: %v", err)
 	}
 	for _, d := range l.salinDiterima()[sebelum:] {
@@ -443,5 +444,39 @@ func TestPenyimpananNyataTokenDitolakDilupakan(t *testing.T) {
 	}
 	if len(gudangToken.disimpan) != 2 {
 		t.Errorf("token diterbitkan %d kali, mau 2 (yang ditolak dilupakan)", len(gudangToken.disimpan))
+	}
+}
+
+// expUjiStorage - `exp` jawaban layanan berbentuk ISO (Pega membuang `-`/`:`).
+const expUjiStorage = "2026-09-29T10:00:00.000Z"
+
+// OQ-TCO-26 (lanjutan 4): jawaban geturl (`exp` ISO, `appfolder`, `DateTime`)
+// sampai ke pencatat dalam bentuk To_date `Update_T_Storage_SQL`; jawaban
+// unggah pun mengubah `exp` seperti `InsertGoogleStorage_Act` b2366/b2431.
+func TestPenyimpananNyataMenyegarkanObjekSesudahGetURL(t *testing.T) {
+	l := layananStorageTiruan(t)
+	p, _, _ := rangkaianNyataUji(l, "/delete")
+	pc := &pencatatObjekUji{}
+	p = p.DenganPencatatObjek(pc, func(string) {})
+	ctx := context.Background()
+	o, err := p.Simpan(ctx, kunciUjiStorage, strings.NewReader("ISI"), "application/pdf", "pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if o.Exp != "29/09/2026 10:00:00" {
+		t.Errorf("exp unggah %q, mau bentuk To_date", o.Exp)
+	}
+	rc, err := p.Buka(ctx, kunciUjiStorage)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = rc.Close()
+	if len(pc.objek) != 1 {
+		t.Fatalf("disegarkan %d kali, mau 1", len(pc.objek))
+	}
+	g := pc.objek[0]
+	if g.ImageID != kunciUjiStorage || g.URLPublic != l.alamat("/objek/"+services.FolderStorageTCO+kunciUjiStorage) ||
+		g.AppFolder != "UJI-FOLDER" || g.Exp != "29/09/2026 10:00:00" || g.TanggalUpload != "09/29/2026 09:00:00" {
+		t.Errorf("objek disegarkan: %+v", g)
 	}
 }

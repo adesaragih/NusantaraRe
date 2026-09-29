@@ -232,29 +232,35 @@ func (p *pengirimBerkasHTTPTCO) Kirim(ctx context.Context, alamat, token, kunci 
 	}
 	// tco4: yang Pega catat ke T_STORAGE_IMAGE (`Insert_T_Storage_SQL` b85):
 	// URLImage, appfolder, exp, Namafile, App - apa adanya dari jawaban.
-	return models.ObjekPenyimpananTCO{ImageID: kunci, URLPublic: j.URLImage, AppFolder: j.AppFolder, Exp: j.Exp,
-		Namafile: kunci, App: b.App}, nil
+	// `exp` diubah seperti `InsertGoogleStorage_Act` b2366/b2431 (OQ-TCO-26).
+	return models.ObjekPenyimpananTCO{ImageID: kunci, URLPublic: j.URLImage, AppFolder: j.AppFolder,
+		Exp: models.ExpStorageTCO(j.Exp), Namafile: kunci, App: b.App}, nil
 }
 
-// urlBertanda meminta URL bertanda tangan satu objek (`geturl`).
-func (p *pengirimBerkasHTTPTCO) urlBertanda(ctx context.Context, alamat, token, kunci string) (string, error) {
+// urlBertanda meminta URL bertanda tangan satu objek (`geturl`). Objeknya =
+// yang `GetUrlGoogleStorage_Act` b2125-b2295 salin ke `UpdateDoc` untuk
+// `Update_T_Storage_SQL` (OQ-TCO-26).
+func (p *pengirimBerkasHTTPTCO) urlBertanda(ctx context.Context, alamat, token, kunci string) (
+	string, models.ObjekPenyimpananTCO, error) {
+
 	b, err := p.dasar(ctx, token, kunci)
 	if err != nil {
-		return "", err
+		return "", models.ObjekPenyimpananTCO{}, err
 	}
 	durasi := DurasiURLStorageTCO
 	b.Durasi, b.Folder = &durasi, FolderStorageTCO
 	j, err := p.kirimJSON(ctx, alamat, b)
 	if err != nil {
-		return "", err
+		return "", models.ObjekPenyimpananTCO{}, err
 	}
 	// ⛔ HANYA https: isi lampiran tidak melintas jaringan tanpa sandi, dan
 	// jawaban layanan tidak dapat menyuruh backend membuka alamat polos.
 	u, err := url.Parse(strings.TrimSpace(j.URLImage))
 	if err != nil || u.Host == "" || u.Scheme != "https" {
-		return "", fmt.Errorf("%w: URLImage tidak berbentuk", ErrStorageJawabanRusakTCO)
+		return "", models.ObjekPenyimpananTCO{}, fmt.Errorf("%w: URLImage tidak berbentuk", ErrStorageJawabanRusakTCO)
 	}
-	return u.String(), nil
+	return u.String(), models.ObjekPenyimpananTCO{ImageID: kunci, URLPublic: j.URLImage, AppFolder: j.AppFolder,
+		Exp: models.ExpStorageTCO(j.Exp), TanggalUpload: j.DateTime}, nil
 }
 
 // unduh membuka URL bertanda tangan yang DIBERIKAN layanan saat jalan.
@@ -279,21 +285,23 @@ func (p *pengirimBerkasHTTPTCO) unduh(ctx context.Context, bertanda, jengkal str
 	return jwb, nil
 }
 
-// Ambil - `geturl` lalu unduh isinya.
-func (p *pengirimBerkasHTTPTCO) Ambil(ctx context.Context, alamat, token, kunci string) (io.ReadCloser, error) {
-	bertanda, err := p.urlBertanda(ctx, alamat, token, kunci)
+// Ambil - `geturl` lalu unduh isinya; objek geturl ikut dijawab.
+func (p *pengirimBerkasHTTPTCO) Ambil(ctx context.Context, alamat, token, kunci string) (
+	io.ReadCloser, models.ObjekPenyimpananTCO, error) {
+
+	bertanda, objek, err := p.urlBertanda(ctx, alamat, token, kunci)
 	if err != nil {
-		return nil, err
+		return nil, models.ObjekPenyimpananTCO{}, err
 	}
 	jwb, err := p.unduh(ctx, bertanda, "")
 	if err != nil {
-		return nil, err
+		return nil, models.ObjekPenyimpananTCO{}, err
 	}
 	if jwb.StatusCode < 200 || jwb.StatusCode > 299 {
 		_ = jwb.Body.Close()
-		return nil, galatStatusObjekTCO(jwb.StatusCode)
+		return nil, models.ObjekPenyimpananTCO{}, galatStatusObjekTCO(jwb.StatusCode)
 	}
-	return jwb.Body, nil
+	return jwb.Body, objek, nil
 }
 
 // Buang - `delete`: `Namafile` = jalur objek PENUH folder + nama
@@ -309,23 +317,26 @@ func (p *pengirimBerkasHTTPTCO) Buang(ctx context.Context, alamat, token, kunci 
 	return err
 }
 
-// Periksa - `geturl` lalu membuka SATU byte objeknya: 404 = tidak ada.
-func (p *pengirimBerkasHTTPTCO) Periksa(ctx context.Context, alamat, token, kunci string) (bool, error) {
-	bertanda, err := p.urlBertanda(ctx, alamat, token, kunci)
+// Periksa - `geturl` lalu membuka SATU byte objeknya: 404 = tidak ada. Objek
+// geturl dijawab hanya bila objeknya ada.
+func (p *pengirimBerkasHTTPTCO) Periksa(ctx context.Context, alamat, token, kunci string) (
+	bool, models.ObjekPenyimpananTCO, error) {
+
+	bertanda, objek, err := p.urlBertanda(ctx, alamat, token, kunci)
 	if err != nil {
-		return false, err
+		return false, models.ObjekPenyimpananTCO{}, err
 	}
 	jwb, err := p.unduh(ctx, bertanda, "bytes=0-0")
 	if err != nil {
-		return false, err
+		return false, models.ObjekPenyimpananTCO{}, err
 	}
 	_, _ = io.Copy(io.Discard, io.LimitReader(jwb.Body, 1<<10))
 	_ = jwb.Body.Close()
 	switch {
 	case jwb.StatusCode == http.StatusNotFound:
-		return false, nil
+		return false, models.ObjekPenyimpananTCO{}, nil
 	case jwb.StatusCode >= 200 && jwb.StatusCode <= 299:
-		return true, nil
+		return true, objek, nil
 	}
-	return false, galatStatusObjekTCO(jwb.StatusCode)
+	return false, models.ObjekPenyimpananTCO{}, galatStatusObjekTCO(jwb.StatusCode)
 }

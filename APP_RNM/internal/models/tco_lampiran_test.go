@@ -72,3 +72,21 @@ func TestNamaEntriZipLampiranTCO(t *testing.T) {
 		}
 	}
 }
+
+// OQ-TCO-26 (lanjutan 4): `exp` jawaban penyimpanan diubah seperti Pega
+// (`GetUrlGoogleStorage_Act` b2146/b2211, `InsertGoogleStorage_Act` b2366/b2431):
+// buang `-`/`:`, baca sebagai GMT, tulis `dd/MM/yyyy HH:mm:ss` - bentuk To_date SQL-nya.
+func TestExpStorageTCOSepertiPega(t *testing.T) {
+	for masuk, mau := range map[string]string{
+		"2026-09-29T10:05:07.123Z": "29/09/2026 10:05:07",
+		"2026-09-29T10:05:07Z":     "29/09/2026 10:05:07",
+		"20260929T100507.000 GMT":  "29/09/2026 10:05:07",
+		"":                         "",
+		"29/09/2026 10:05:07":      "",
+		"kapan-kapan":              "",
+	} {
+		if dapat := ExpStorageTCO(masuk); dapat != mau {
+			t.Errorf("%q -> %q, mau %q", masuk, dapat, mau)
+		}
+	}
+}

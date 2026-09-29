@@ -61,6 +61,30 @@ type ObjekPenyimpananTCO struct {
 	Exp       string
 	Namafile  string
 	App       string
+	// TanggalUpload - `UploadDoc.Response.DateTime` apa adanya, bentuk
+	// `MM/DD/YYYY HH24:MI:SS` (`Update_T_Storage_SQL` b85); diisi jawaban geturl.
+	TanggalUpload string
+}
+
+// polaExpStorageTCO - `YYYYMMDDTHHMMSS` di awal `exp` sesudah `-`/`:` dibuang.
+var polaExpStorageTCO = regexp.MustCompile(`^\d{8}T\d{6}`)
+
+// ExpStorageTCO - `exp` jawaban layanan -> bentuk `To_date(exp, 'DD/MM/YYYY
+// HH24:MI:SS')`, seperti Pega (`GetUrlGoogleStorage_Act` b2146/b2211,
+// `InsertGoogleStorage_Act` b2366/b2431): `-`/`:` dibuang, dibaca sebagai GMT,
+// ditulis `dd/MM/yyyy HH:mm:ss` GMT. Bentuk yang tidak terbaca -> kosong (NULL),
+// bukan galat To_date yang menggagalkan pencatatan (OQ-TCO-26, lanjutan 4).
+func ExpStorageTCO(exp string) string {
+	polos := strings.NewReplacer("-", "", ":", "").Replace(strings.TrimSpace(exp))
+	awal := polaExpStorageTCO.FindString(polos)
+	if awal == "" {
+		return ""
+	}
+	t, err := time.Parse("20060102T150405", awal)
+	if err != nil {
+		return ""
+	}
+	return t.Format("02/01/2006 15:04:05")
 }
 
 // Status lampiran yang tampil di layar.

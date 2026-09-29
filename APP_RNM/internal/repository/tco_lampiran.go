@@ -206,6 +206,17 @@ func sqlSimpanObjekTCO(tabel string) string {
 	VALUES (:1, :2, :3, TO_DATE(:4, 'DD/MM/YYYY HH24:MI:SS'), :5, :6, 'standard')`, tabel)
 }
 
+// sqlPerbaruiObjekTCO - `Update_T_Storage_SQL` b85 apa adanya (OQ-TCO-26):
+// empat kolom disegarkan dari jawaban geturl, kunci `IMAGEID`.
+func sqlPerbaruiObjekTCO(tabel string) string {
+	return fmt.Sprintf(`UPDATE %s
+	   SET URLPUBLIC = :1,
+	       APPFOLDER = :2,
+	       EXPDATE = TO_DATE(:3, 'DD/MM/YYYY HH24:MI:SS'),
+	       TANGGAL_UPLOAD = TO_DATE(:4, 'MM/DD/YYYY HH24:MI:SS')
+	 WHERE IMAGEID = :5`, tabel)
+}
+
 // sqlHapusObjekTCO - `DeleteStorage_SQL` b85.
 func sqlHapusObjekTCO(tabel string) string {
 	return fmt.Sprintf(`DELETE FROM %s WHERE IMAGEID = :1`, tabel)
@@ -453,6 +464,28 @@ func (m *MasterLampiranTCO) SimpanObjek(ctx context.Context, tx *Tx, o models.Ob
 		return fmt.Errorf("repository: mencatat objek penyimpanan %s: %w", o.ImageID, err)
 	}
 	return pastikanSatuBaris(hasil, "pencatatan objek penyimpanan")
+}
+
+// PerbaruiObjek menyegarkan catatan objek sesudah geturl (`Update_T_Storage_SQL`).
+// Nol baris bukan galat - seperti Pega, objek tanpa catatan dibiarkan.
+func (m *MasterLampiranTCO) PerbaruiObjek(ctx context.Context, tx *Tx, o models.ObjekPenyimpananTCO) error {
+	if tx == nil {
+		return errors.New("repository: menyegarkan catatan objek menuntut transaksi")
+	}
+	_, objek, err := m.tabelLampiran()
+	if err != nil {
+		return err
+	}
+	q := sqlPerbaruiObjekTCO(objek)
+	if err := PeriksaSQL(q); err != nil {
+		return err
+	}
+	if _, err := tx.tx.ExecContext(ctx, q, kosongJadiNil(o.URLPublic), kosongJadiNil(o.AppFolder),
+		kosongJadiNil(o.Exp), kosongJadiNil(o.TanggalUpload), o.ImageID); err != nil {
+		// Galat Oracle tidak menggemakan nilai bind; URL tidak ditulis di sini.
+		return fmt.Errorf("repository: menyegarkan catatan objek %s: %w", o.ImageID, err)
+	}
+	return nil
 }
 
 // HapusObjek membuang catatan objek (`DeleteStorage_SQL`); nol baris bukan galat.

@@ -18,8 +18,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
-	"time"
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
@@ -166,7 +166,7 @@ type BusinessTCO struct {
 	kontrak   PemegangKontrakTCO
 	tahun     PemeriksaTahunTCO
 	master    PembacaBusinessMasterTCO
-	jam       func() time.Time
+	catat     func(string) // log aplikasi: pelaku yang tidak ditulis ke kolom warisan (OQ-TCO-25)
 	transaksi func(ctx context.Context, fn func(tx *repository.Tx) error) error
 }
 
@@ -174,10 +174,13 @@ type BusinessTCO struct {
 func (s *Service) BusinessTCO() *BusinessTCO {
 	return &BusinessTCO{svc: s, gudang: businessBelumDisuntik{}, kontrak: pemegangKontrakBelumDisuntik{},
 		tahun: gudangTahunTreatyBelumDisuntik{}, master: masterBusinessBelumDisuntik{},
-		jam: time.Now, transaksi: s.DalamTransaksi}
+		catat: func(p string) { log.Print(p) }, transaksi: s.DalamTransaksi}
 }
 
 func (l *BusinessTCO) salin() *BusinessTCO { s := *l; return &s }
+
+// DenganCatat mengganti tujuan log aplikasi - dipakai uji.
+func (l *BusinessTCO) DenganCatat(c func(string)) *BusinessTCO { s := l.salin(); s.catat = c; return s }
 
 // DenganGudang memasang gudang bisnis.
 func (l *BusinessTCO) DenganGudang(g GudangBusinessTCO) *BusinessTCO {
@@ -206,9 +209,6 @@ func (l *BusinessTCO) DenganMaster(m PembacaBusinessMasterTCO) *BusinessTCO {
 	s.master = m
 	return s
 }
-
-// DenganJam mengganti sumber waktu - dipakai uji.
-func (l *BusinessTCO) DenganJam(j func() time.Time) *BusinessTCO { s := l.salin(); s.jam = j; return s }
 
 // DenganTransaksi mengganti pelaksana transaksi - dipakai uji.
 func (l *BusinessTCO) DenganTransaksi(f func(ctx context.Context, fn func(tx *repository.Tx) error) error) *BusinessTCO {
@@ -276,10 +276,13 @@ func (l *BusinessTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID, kontra
 		return BusinessTampil{}, err
 	}
 	// `SaveTreatyBusinessDetail_Act` langkah 1: TreatyYearID = IDTreatyYear kontrak.
+	// OQ-TCO-25 (lanjutan 4): USERID/TGLUPDATE tidak diisi, seperti Pega - tidak
+	// ada langkah yang mengisi `InputTreatyBusiness.UserID/TglUpdate`, dan
+	// `SaveMasterTreatyBusiness_SQL` b85 meneruskannya kosong; data DEV 2/4.621.
 	b := models.BusinessTreaty{ID: strings.TrimSpace(m.ID), IsActive: strings.TrimSpace(m.IsActive),
 		TreatyYear: k.TreatyYear, TreatyYearID: tahunID, TreatyGroupID: k.TreatyGroupID,
 		TreatyGroupName: k.TreatyGroupName, ReinsTypeID: k.ReinsTypeID, ReinsTypeName: k.ReinsTypeName,
-		BizCode: strings.TrimSpace(m.BizCode), UserID: pelaku.AkunID, TglUpdate: l.jam()}
+		BizCode: strings.TrimSpace(m.BizCode)}
 	if err := models.PeriksaBusinessTCO(b); err != nil {
 		return BusinessTampil{}, err
 	}
@@ -320,6 +323,7 @@ func (l *BusinessTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID, kontra
 	if err != nil {
 		return BusinessTampil{}, err
 	}
+	l.catat(fmt.Sprintf("treaty contract out: business %s disimpan oleh akun %s", b.ID, pelaku.AkunID))
 	return TampilBusiness(b), nil
 }
 

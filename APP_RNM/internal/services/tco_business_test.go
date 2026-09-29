@@ -84,7 +84,7 @@ func layananBusiness(g *gudangBusinessUji) *services.BusinessTCO {
 	dikunci := 0
 	return services.New(nil).BusinessTCO().DenganGudang(g).DenganKontrak(kontrakPemegangUji{dikunci: &dikunci}).
 		DenganTahun(tahunReinsurerUji{}).DenganMaster(masterBusinessUji{}).
-		DenganTransaksi(transaksiUji).DenganJam(jamUji)
+		DenganTransaksi(transaksiUji).DenganCatat(func(string) {})
 }
 
 func gudangBusinessKosong() *gudangBusinessUji {
@@ -100,7 +100,7 @@ func TestBusinessSimpanBaru(t *testing.T) {
 		t.Fatal(err)
 	}
 	if h.BizName != "UJI BISNIS SATU" || h.TreatyYearID != "1000001" || h.TreatyYear != "2026" ||
-		h.ReinsTypeID != "10003" || h.UserID != "UJI-ADMIN" || !h.Aktif {
+		h.ReinsTypeID != "10003" || h.UserID != "" || h.TglUpdate != "" || !h.Aktif {
 		t.Errorf("hasil: %+v", h)
 	}
 }
@@ -117,7 +117,8 @@ func TestBusinessNonaktifkanDanPerbaruiSeluruhMedan(t *testing.T) {
 		t.Fatal(err)
 	}
 	b := g.baris[a.ID]
-	if b.IsActive != "0" || b.BizCode != "UJI-B2" || b.BizName != "UJI BISNIS DUA" || b.UserID != "UJI-PENGUBAH" ||
+	// OQ-TCO-25: USERID/TGLUPDATE tidak diisi, seperti Pega (data DEV 2/4.621 terisi).
+	if b.IsActive != "0" || b.BizCode != "UJI-B2" || b.BizName != "UJI BISNIS DUA" || b.UserID != "" || !b.TglUpdate.IsZero() ||
 		b.TreatyYearID != "1000001" || b.TreatyGroupName != "UJI GRUP" || b.ReinsTypeName != "UJI QS" {
 		t.Errorf("perbarui tidak menulis seluruh medan: %+v", b)
 	}
@@ -198,5 +199,18 @@ func TestBusinessPerbaruiMenjawabYangTersimpan(t *testing.T) {
 	}
 	if b.TreatyYearID != "" || b.TreatyGroupName != "UJI GRUP LAMA" || b.Aktif {
 		t.Errorf("jawaban bukan yang tersimpan: %+v", b)
+	}
+}
+
+// OQ-TCO-25: pelaku tidak ditulis ke kolom warisan, tetapi tercatat di log aplikasi.
+func TestBusinessSimpanMencatatPelakuDiLog(t *testing.T) {
+	var log []string
+	l := layananBusiness(gudangBusinessKosong()).DenganCatat(func(s string) { log = append(log, s) })
+	h, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", "1000003", services.BusinessMasuk{BizCode: "UJI-B1", IsActive: "1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(log) != 1 || !strings.Contains(log[0], "business "+h.ID) || !strings.Contains(log[0], "UJI-ADMIN") {
+		t.Errorf("log: %q", log)
 	}
 }

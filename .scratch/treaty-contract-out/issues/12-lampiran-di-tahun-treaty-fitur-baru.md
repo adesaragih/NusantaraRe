@@ -237,3 +237,15 @@ sumber RANTAI TEKNIS dan LABEL; perilakunya ditetapkan AC tiket ini (penyimpanga
 - Terkirim = objek tercatat di `T_STORAGE_IMAGE`. Ukuran berkas tidak disimpan (kolom tidak ada; layar Pega tidak
   menampilkannya) — dibuang dari API dan layar. **Jejak lampiran gugur**; menyerah terlihat dari status outbox.
 - OQ-TCO-22 (`Folder`/`Durasi`/`Namafile`) tetap untuk work owner; nilai sekarang berlabel `[terbuka — OQ-TCO-22]`.
+
+## Ralat bertanggal 29-09-2026 — lanjutan 4, OQ-TCO-24/26 `[asisten dari data; veto work owner]`
+
+- **OQ-TCO-26 ditiru**: `Update_T_Storage_SQL` dijalankan sesudah tiap `geturl` yang berhasil
+  (`PenyimpananJarakJauhTCO.segarkan`), dengan `exp` dan `DateTime` dalam bentuk To_date-nya. `exp` pada jalur unggah
+  kini juga diubah seperti `InsertGoogleStorage_Act` b2366/b2431. Rinciannya di `dba-procedures.md`.
+- **OQ-TCO-24**: rekonsiliasi korpus sudah dicatat. Satu pemanggil hidup `PEGA_M_ATTACHMENT` (`TreatyOutSaveAttachment`
+  b1674); pembaca/penghapus membaca `M_ATTACHMENTTREATY_2`; nol sebutan `M_ATTACHMENTTREATY`/`ID_COUNT` di korpus.
+  Badan prosedurnya belum terbaca (kueri siap di `dba-procedures.md`). Kode tetap menulis `_2` dan tidak disatukan.
+- Uji: `TestExpStorageTCOSepertiPega`, `TestSQLPerbaruiObjekTCOSepertiUpdateTStorage`,
+  `TestPenyimpananMenyegarkanObjekSesudahGetURL`, `TestPenyimpananNyataMenyegarkanObjekSesudahGetURL`, dan tag `db`
+  `TestLampiranTahunTreatyLingkaranPenuh`.

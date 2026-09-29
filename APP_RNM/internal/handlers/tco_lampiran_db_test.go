@@ -18,6 +18,10 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"nusantarare/internal/models"
+	"nusantarare/internal/repository"
+	"nusantarare/internal/services"
 )
 
 // mintaMultipart mengirim satu berkas + kategori.
@@ -135,6 +139,24 @@ func TestLampiranTahunTreatyLingkaranPenuh(t *testing.T) {
 	if err := u.sqlDBMentah().QueryRowContext(u.ctx, `SELECT COUNT(*) FROM `+u.skema+`.T_STORAGE_IMAGE
 		 WHERE IMAGEID = :1 AND STORAGE = 'standard'`, storageID).Scan(&objek); err != nil || objek != 1 {
 		t.Errorf("objek T_STORAGE_IMAGE: %d %v", objek, err)
+	}
+	// OQ-TCO-26 (lanjutan 4): `Update_T_Storage_SQL` terhadap Oracle - kedua
+	// bentuk To_date (`DD/MM/YYYY` exp, `MM/DD/YYYY` DateTime) diterima.
+	mo := repository.NewMasterLampiranTCO(u.db)
+	if err := services.New(u.db).DalamTransaksi(u.ctx, func(tx *repository.Tx) error {
+		return mo.PerbaruiObjek(u.ctx, tx, models.ObjekPenyimpananTCO{ImageID: storageID, URLPublic: "UJI-URL-SEGAR",
+			AppFolder: "UJI-FOLDER", Exp: "29/09/2026 10:00:00", TanggalUpload: "09/29/2026 09:00:00"})
+	}); err != nil {
+		t.Fatal(err)
+	}
+	var urlSegar, folder, exp, unggah string
+	if err := u.sqlDBMentah().QueryRowContext(u.ctx, `SELECT URLPUBLIC, APPFOLDER, TO_CHAR(EXPDATE, 'YYYYMMDDHH24MISS'),
+		 TO_CHAR(TANGGAL_UPLOAD, 'YYYYMMDDHH24MISS') FROM `+u.skema+`.T_STORAGE_IMAGE WHERE IMAGEID = :1`, storageID).
+		Scan(&urlSegar, &folder, &exp, &unggah); err != nil {
+		t.Fatal(err)
+	}
+	if urlSegar != "UJI-URL-SEGAR" || folder != "UJI-FOLDER" || exp != "20260929100000" || unggah != "20260929090000" {
+		t.Errorf("Update_T_Storage_SQL: %q %q %q %q", urlSegar, folder, exp, unggah)
 	}
 
 	kode, badan = u.minta(t, http.MethodGet, dasar, nil, true)

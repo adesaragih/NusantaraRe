@@ -106,7 +106,7 @@ func (masterReinsurerUji) Ambil(_ context.Context, id string) (repository.Reinsu
 func layananReinsurer(g *gudangReinsurerUji) *services.ReinsurerTCO {
 	return services.New(nil).ReinsurerTCO().DenganGudang(g).DenganKontrak(kontrakPemegangUji{dikunci: &g.dikunci}).
 		DenganTahun(tahunReinsurerUji{}).DenganMaster(masterReinsurerUji{}).
-		DenganTransaksi(transaksiUji).DenganJam(jamUji)
+		DenganTransaksi(transaksiUji).DenganCatat(func(string) {})
 }
 
 func gudangReinsurerKosong() *gudangReinsurerUji {
@@ -147,7 +147,7 @@ func TestReinsurerSimpanBaruPadaKombinasi(t *testing.T) {
 	r := h.Reinsurer
 	if r.TreatyYear != "2026" || r.TreatyGroupID != "10001" || r.ReinsTypeID != "10003" || r.ReinsTypeName != "UJI QS" ||
 		r.Name != "UJI REAS SATU" || r.ClientID != "UJI-C1" || r.PctShare != "33.33333333" || r.Ricomm != "12.5" ||
-		r.OperatorName != "UJI-ADMIN" || r.UserID != "UJI-ADMIN" {
+		r.OperatorName != "UJI-ADMIN" || r.UserID != "" || r.TglUpdate != "" {
 		t.Errorf("hasil: %+v", r)
 	}
 	if h.TotalShare != "33.33333333" || g.dikunci != 1 {
@@ -220,8 +220,9 @@ func TestReinsurerGerbang(t *testing.T) {
 	}
 }
 
-// Medan tersembunyi (IUDate, StartDate, EndDate, StatusOn) dan UserID pembuat
-// DIPERTAHANKAN saat diubah; OperatorName = pengubah terakhir.
+// Medan tersembunyi (IUDate, StartDate, EndDate, StatusOn, UserID) DIPERTAHANKAN
+// saat diubah (`SetUbahTreatyReinsurerList_Act` b1097-b1177); OperatorName =
+// pengubah terakhir; TglUpdate tidak diisi (OQ-TCO-25).
 func TestReinsurerPerbaruiMempertahankanMedanTersembunyi(t *testing.T) {
 	g := gudangReinsurerKosong()
 	mulai := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -236,7 +237,7 @@ func TestReinsurerPerbaruiMempertahankanMedanTersembunyi(t *testing.T) {
 	}
 	r := g.baris["1000009"]
 	if r.IUDate != "UJI-IU" || !r.StartDate.Equal(mulai) || r.StatusOn != "1" || r.UserID != "UJI-PEMBUAT" ||
-		r.OperatorName != "UJI-PENGUBAH" || r.Name != "UJI REAS DUA" || h.TotalShare != "20" {
+		r.OperatorName != "UJI-PENGUBAH" || r.Name != "UJI REAS DUA" || h.TotalShare != "20" || !r.TglUpdate.IsZero() {
 		t.Errorf("perbarui: %+v total %s", r, h.TotalShare)
 	}
 	// Reinsurer kombinasi LAIN tidak dapat diubah lewat kontrak ini.
@@ -251,5 +252,35 @@ func TestReinsurerCariMaster(t *testing.T) {
 	d, err := layananReinsurer(gudangReinsurerKosong()).CariMaster(context.Background(), pelakuUjiTCO, "ab")
 	if err != nil || len(d) != 1 || d[0].ClientName != "UJI REAS ab" || d[0].ClientID != "UJI-C1" {
 		t.Errorf("cari: %+v %v", d, err)
+	}
+}
+
+// OQ-TCO-25 (lanjutan 4): USERID/TGLUPDATE reinsurer TIDAK diisi layanan, seperti
+// Pega (`NewTreatyReinsurerDetail_Act` b917 mengosongkan UserId; tidak ada langkah
+// yang mengisi TglUpdate; data DEV 0/430 terisi). Baris lama yang kosong tetap kosong.
+func TestReinsurerKolomPelakuKosongSepertiPega(t *testing.T) {
+	g := gudangReinsurerKosong()
+	g.baris["1000009"] = models.ReinsurerTreaty{ID: "1000009", TreatyYear: "2026", TreatyGroupID: "10001",
+		ReinsTypeID: "10003", ReinsurerID: "UJI-R1", PctShare: apd.New(10, 0)}
+	m := reinsurerMasuk("UJI-R1", "20", "2")
+	m.ID = "1000009"
+	if _, err := layananReinsurer(g).Simpan(context.Background(), pelakuUjiTCO, "1000001", "1000003", m); err != nil {
+		t.Fatal(err)
+	}
+	if r := g.baris["1000009"]; r.UserID != "" || !r.TglUpdate.IsZero() || r.OperatorName != "UJI-ADMIN" {
+		t.Errorf("kolom pelaku: UserID %q TglUpdate %v OperatorName %q", r.UserID, r.TglUpdate, r.OperatorName)
+	}
+}
+
+// OQ-TCO-25: pelaku tidak ditulis ke kolom warisan, tetapi tercatat di log aplikasi.
+func TestReinsurerSimpanMencatatPelakuDiLog(t *testing.T) {
+	var log []string
+	l := layananReinsurer(gudangReinsurerKosong()).DenganCatat(func(s string) { log = append(log, s) })
+	h, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", "1000003", reinsurerMasuk("UJI-R1", "10", "1"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(log) != 1 || !strings.Contains(log[0], "reinsurer "+h.Reinsurer.ID) || !strings.Contains(log[0], "UJI-ADMIN") {
+		t.Errorf("log: %q", log)
 	}
 }

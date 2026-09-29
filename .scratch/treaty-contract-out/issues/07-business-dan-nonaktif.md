@@ -154,3 +154,11 @@ Nomor baris = baris mentah berkas korpus; langkah aktivitas dibaca lengkap.
   USERID, TGLUPDATE`; `TREATYYEARID`/`TREATYGROUPNAME`/`REINSTYPENAME` tidak diperbarui. Tabel `TREATYBUSINESS`
   warisan (VARCHAR2), sequence `TREATY_BUSINESS_SEQ`. `USERID`/`TGLUPDATE` diisi layanan — **OQ-TCO-25**.
 - **Jejak gugur**.
+
+## Ralat bertanggal 29-09-2026 — lanjutan 4, OQ-TCO-25 `[asisten dari data; veto work owner]`
+
+- `USERID`/`TGLUPDATE` **tidak diisi layanan**, seperti Pega. Tidak ada langkah yang mengisi
+  `InputTreatyBusiness.UserID/TglUpdate`, dan `SaveMasterTreatyBusiness_SQL` b85 meneruskannya kosong; data DEV 2/4.621.
+- UPDATE prosedur tetap lima kolom, jadi kedua kolom menjadi NULL saat baris diubah, seperti Pega.
+- Pelaku tercatat di log aplikasi. Ralat atas butir tco4 "diisi layanan".
+- Uji: `TestBusinessSimpanBaru`, `TestBusinessNonaktifkanDanPerbaruiSeluruhMedan`, `TestBusinessSimpanMencatatPelakuDiLog`.

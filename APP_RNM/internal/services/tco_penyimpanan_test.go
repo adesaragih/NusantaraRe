@@ -89,8 +89,9 @@ func (r *resolverLampiranUji) Resolve(_ context.Context, k services.KunciLayanan
 }
 
 type pengirimLampiranUji struct {
-	alamat []string
-	token  []string
+	alamat   []string
+	token    []string
+	tidakAda bool
 }
 
 func (p *pengirimLampiranUji) catat(alamat, token string) {
@@ -102,17 +103,36 @@ func (p *pengirimLampiranUji) Kirim(_ context.Context, alamat, token, kunci stri
 	_, err := io.Copy(io.Discard, isi)
 	return models.ObjekPenyimpananTCO{ImageID: kunci, Namafile: kunci}, err
 }
-func (p *pengirimLampiranUji) Ambil(_ context.Context, alamat, token, _ string) (io.ReadCloser, error) {
+func (p *pengirimLampiranUji) Ambil(_ context.Context, alamat, token, kunci string) (io.ReadCloser, models.ObjekPenyimpananTCO, error) {
 	p.catat(alamat, token)
-	return io.NopCloser(strings.NewReader("ISI")), nil
+	return io.NopCloser(strings.NewReader("ISI")), objekGetURLUji(kunci), nil
 }
 func (p *pengirimLampiranUji) Buang(_ context.Context, alamat, token, _ string) error {
 	p.catat(alamat, token)
 	return nil
 }
-func (p *pengirimLampiranUji) Periksa(_ context.Context, alamat, token, _ string) (bool, error) {
+func (p *pengirimLampiranUji) Periksa(_ context.Context, alamat, token, kunci string) (bool, models.ObjekPenyimpananTCO, error) {
 	p.catat(alamat, token)
-	return true, nil
+	if p.tidakAda {
+		return false, models.ObjekPenyimpananTCO{}, nil
+	}
+	return true, objekGetURLUji(kunci), nil
+}
+
+func objekGetURLUji(kunci string) models.ObjekPenyimpananTCO {
+	return models.ObjekPenyimpananTCO{ImageID: kunci, URLPublic: "UJI-URL-" + kunci, AppFolder: "UJI-FOLDER",
+		Exp: "29/09/2026 10:00:00", TanggalUpload: "09/29/2026 09:00:00"}
+}
+
+// pencatatObjekUji meniru `Update_T_Storage_SQL` (OQ-TCO-26).
+type pencatatObjekUji struct {
+	objek []models.ObjekPenyimpananTCO
+	gagal error
+}
+
+func (p *pencatatObjekUji) PerbaruiObjek(_ context.Context, o models.ObjekPenyimpananTCO) error {
+	p.objek = append(p.objek, o)
+	return p.gagal
 }
 
 type sumberTokenLampiranUji struct {
@@ -308,5 +328,48 @@ func TestTCOLampiranBerkunciTahunTreaty(t *testing.T) {
 	}
 	if pemakai != 1 {
 		t.Errorf("perakit TREATYID dipakai %d berkas, mau 1", pemakai)
+	}
+}
+
+// OQ-TCO-26 (lanjutan 4): tiap `geturl` yang berhasil menyegarkan
+// `T_STORAGE_IMAGE` seperti `Update_T_Storage_SQL` (`GetUrlGoogleStorage_Act`
+// b2125-b2427); objek yang tidak ada tidak disegarkan; gagal menyegarkan hanya
+// dicatat (IMAGEID, tanpa URL) dan tidak menggagalkan unduhan.
+func TestPenyimpananMenyegarkanObjekSesudahGetURL(t *testing.T) {
+	saat := time.Date(2026, 9, 29, 9, 0, 0, 0, time.UTC)
+	jam := func() time.Time { return saat }
+	r := &resolverLampiranUji{alamat: map[services.KunciLayanan]string{services.KunciURLBerkas: "alamat-uji-url"}}
+	kirim := &pengirimLampiranUji{}
+	pc := &pencatatObjekUji{}
+	var log []string
+	p := services.NewPenyimpananJarakJauhTCO(r,
+		services.NewCacheTokenTCO(&sumberTokenLampiranUji{jam: jam}, jam, services.MarginTokenTCO), kirim).
+		DenganPencatatObjek(pc, func(s string) { log = append(log, s) })
+	ctx := context.Background()
+	const kunci = "ABCDEF0123456789"
+	rc, err := p.Buka(ctx, kunci)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = rc.Close()
+	if ada, err := p.Ada(ctx, kunci); err != nil || !ada {
+		t.Fatalf("ada: %v %v", ada, err)
+	}
+	kirim.tidakAda = true
+	if ada, err := p.Ada(ctx, kunci); err != nil || ada {
+		t.Fatalf("mau tidak ada: %v %v", ada, err)
+	}
+	if len(pc.objek) != 2 || pc.objek[0] != objekGetURLUji(kunci) || pc.objek[1] != objekGetURLUji(kunci) {
+		t.Errorf("disegarkan: %+v", pc.objek)
+	}
+	kirim.tidakAda, pc.gagal = false, errors.New("UJI ORA-00060")
+	rc, err = p.Buka(ctx, kunci)
+	if err != nil {
+		t.Fatalf("unduhan gagal karena penyegaran: %v", err)
+	}
+	_ = rc.Close()
+	if len(log) != 1 || !strings.Contains(log[0], kunci) || !strings.Contains(log[0], "UJI ORA-00060") ||
+		strings.Contains(log[0], "UJI-URL") {
+		t.Errorf("log: %q", log)
 	}
 }

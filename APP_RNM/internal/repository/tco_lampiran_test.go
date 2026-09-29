@@ -3,6 +3,7 @@ package repository
 // Uji SQL lampiran di tabel WARISAN - TANPA Oracle (tiket 12, tco4).
 
 import (
+	"context"
 	"database/sql"
 	"strings"
 	"testing"
@@ -76,5 +77,25 @@ func TestKunciTreatyLampiranTCO(t *testing.T) {
 	if l.Category != "CLAUSES" || l.ImageID != "ABCDEF" || l.TStorageID != "ABCDEF" || l.IDTreatyYear != "1000001" ||
 		l.TglUpload.IsZero() {
 		t.Errorf("pindai: %+v", l)
+	}
+}
+
+// OQ-TCO-26 (lanjutan 4): `Update_T_Storage_SQL` b85 ditiru apa adanya - empat
+// kolom, kunci IMAGEID, tanpa COMMIT; menuntut transaksi seperti penulis lain.
+func TestSQLPerbaruiObjekTCOSepertiUpdateTStorage(t *testing.T) {
+	q := sqlPerbaruiObjekTCO("S.I")
+	for _, mau := range []string{"UPDATE S.I", "URLPUBLIC = :1", "APPFOLDER = :2",
+		"EXPDATE = TO_DATE(:3, 'DD/MM/YYYY HH24:MI:SS')", "TANGGAL_UPLOAD = TO_DATE(:4, 'MM/DD/YYYY HH24:MI:SS')",
+		"WHERE IMAGEID = :5"} {
+		if !strings.Contains(q, mau) {
+			t.Errorf("tanpa %q:\n%s", mau, q)
+		}
+	}
+	if err := PeriksaSQL(q); err != nil {
+		t.Error(err)
+	}
+	err := NewMasterLampiranTCO(nil).PerbaruiObjek(context.Background(), nil, models.ObjekPenyimpananTCO{ImageID: "UJI"})
+	if err == nil {
+		t.Error("tanpa transaksi harus galat")
 	}
 }

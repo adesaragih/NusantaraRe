@@ -99,3 +99,73 @@ Tanggal: 2026-09-15. `[data DBA]`. Modul ini **satu-satunya penulis** tabel-tabe
 - **OQ-001 ✅ DITUTUP** — DDL 8 tabel diterima; tipe/nullability/index diketahui.
 - **Perbaikan sadar tipe:** semua uang/persen → decimal; semua tanggal → DATE; `MTREATYSECURITY` PK
   surrogate + tipe wajar; kolom dead (`PROPORTIONALLIST`, `OBJECT`) tidak dibawa kecuali dipastikan.
+
+## `PEGA_M_ATTACHMENT` — rekonsiliasi lampiran (OQ-TCO-24, lanjutan 4, 29-09-2026)
+
+### Pasti dari korpus `[terverifikasi]`
+
+- `InsertAtatchment_Sql` b60: `POOLDATA.PEGA_M_ATTACHMENT(IDPEGA, DATAPEGA CLOB, ERRMSG out, STSSAVE out)` lalu `COMMIT`.
+- **Satu pemanggil hidup**: `TreatyOutSaveAttachment` b1674 (`pyStepsBlockName` kosong). `IDPEGA` = `TreatyYear + TreatyYearID`
+  (b1402), `DATAPEGA` = `@ASM.GetPageJSONString()` halaman `TempData` (b1510), `CARI19 = 1` (b1355).
+- `Delete_act` b1022 memanggil prosedur yang sama, tetapi langkahnya **ter-remark** (`pyStepsBlockName` `//` b1034; juga
+  b783, b900), jadi tidak pernah jalan. Jalur hapus yang hidup: `DeleteGoogleStorage_Act` b396 lalu `DeleteAttachment2_Sql` b565.
+- Pembaca dan penghapus: `GetAllAttachment2_Sql`, `GetAttachment2_Sql`, `DeleteAttachment2_Sql` membaca `M_ATTACHMENTTREATY_2`.
+- Sensus seluruh korpus `RNM_BRD` (tanpa folder keluaran): **nol** RDB/activity yang menyebut `M_ATTACHMENTTREATY` tanpa `_2`,
+  dan nol yang menyebut `ID_COUNT`. Kedua nama itu hanya dikenal dari badan prosedur (agregat brief lanjutan 4 §1:
+  35 baris `ALL_SOURCE`).
+
+### Belum terbaca — kueri siap
+
+Badan 35 baris itu **belum dibaca** di sesi executor. Sesi ini tidak punya jalan kredensial yang aman: `.env` terlarang, dan
+`muat-env.ps1` menggemakan nilai env, termasuk garam penyimpanan. Kueri di bawah hanya membaca. Buang baris komentar
+(`--`, `/* */`) sebelum menyalin, karena kepala prosedur lazim memuat nama pembuatnya.
+
+```sql
+SELECT line, text FROM all_source
+ WHERE owner = 'POOLDATA' AND name = 'PEGA_M_ATTACHMENT' AND type = 'PROCEDURE'
+ ORDER BY line;
+SELECT object_name, object_type FROM all_objects
+ WHERE owner = 'POOLDATA' AND object_name IN ('M_ATTACHMENTTREATY', 'M_ATTACHMENTTREATY_2', 'ID_COUNT');
+SELECT table_name, column_name, data_type, data_length, nullable FROM all_tab_columns
+ WHERE owner = 'POOLDATA' AND table_name IN ('M_ATTACHMENTTREATY', 'M_ATTACHMENTTREATY_2')
+ ORDER BY table_name, column_id;
+```
+
+### Temuan warisan (menunggu badan) — TIDAK disatukan
+
+Bila badan menulis `M_ATTACHMENTTREATY` (bukan `_2`), dan `_2` bukan view atau sinonim atasnya, lampiran yang disimpan
+Pega **tidak pernah tampil** di daftar Pega sendiri, karena `GetAllAttachment2_Sql` membaca `_2`. Kode modul ini menulis
+`M_ATTACHMENTTREATY_2`, yaitu tabel yang dibaca dan dihapus Pega, dengan kolom dari `Treaty In/InsertAttachment2_Sql` b84.
+Kode **tidak** menulis `M_ATTACHMENTTREATY` maupun `ID_COUNT`. `ID_COUNT` `[dugaan]` penghitung ID; kode memakai stempel
+`YYYYMMDDHH24MISSFF3` WIB. Keputusan menulis ke tabel prosedur (atau ke keduanya) milik work owner sesudah badannya terbaca.
+
+## `Update_T_Storage_SQL` — ditiru (OQ-TCO-26, lanjutan 4, 29-09-2026)
+
+- Urutan `GetUrlGoogleStorage_Act`:
+  - langkah 6 "JIKA EXPDATE SUDAH EXPIRED": `geturl`, lalu `UpdateDoc` (b2145–b2295);
+  - `Update_T_Storage_SQL` b2427 (`pyStepsBlockName` kosong) mengisi `URLPUBLIC`, `APPFOLDER`,
+    `EXPDATE = To_date(exp,'DD/MM/YYYY HH24:MI:SS')`, dan `TANGGAL_UPLOAD = To_date(DateTime,'MM/DD/YYYY HH24:MI:SS')`,
+    `WHERE imageid`.
+- Kode: `repository.PerbaruiObjek` (`sqlPerbaruiObjekTCO`, teks SQL sama, tanpa `COMMIT`) dijalankan oleh
+  `PenyimpananJarakJauhTCO.segarkan`. Pemicunya: tiap `geturl` yang berhasil, yaitu `Buka`, dan `Ada` bila objeknya ada.
+  - Penyegaran berjalan dalam transaksi pendeknya sendiri, karena pemanggil tidak memegang kunci baris itu saat `geturl`.
+  - Bila gagal, kegagalan dicatat di log (IMAGEID dan sebab, tanpa URL) dan unduhan tetap jalan.
+- **Penyimpangan sadar**: Pega memakai ulang `URLPUBLIC` tersimpan bila belum kedaluwarsa (transisi
+  `UploadDoc.exp==""` b704), jadi `geturl` hanya dipanggil bila perlu. Kode memanggil `geturl` setiap unduh/periksa (URL
+  bertanda tangan segar), lalu menyegarkan baris. Isi tabel sesudahnya sama: URL dan `exp` terakhir.
+- `exp` diubah seperti Pega (b2146/b2211): `-`/`:` dibuang, dibaca sebagai GMT, ditulis `dd/MM/yyyy HH:mm:ss`
+  (`models.ExpStorageTCO`). Bentuk tak terbaca menjadi NULL.
+- **RALAT jalur unggah**: `exp` kini diubah dengan cara yang sama (`InsertGoogleStorage_Act` b2366/b2431). Sebelumnya `exp`
+  diteruskan mentah ke `TO_DATE(...,'DD/MM/YYYY HH24:MI:SS')`, sehingga jawaban berbentuk ISO akan gagal dengan ORA-01861.
+
+## Kolom pelaku `USERID`/`TGLUPDATE` (OQ-TCO-25, lanjutan 4, 29-09-2026)
+
+- `SaveMasterTreatyReinsurer_SQL` b79 dan `SaveMasterTreatyBusiness_SQL` b85 meneruskan `UserId`/`TglUpdate` apa adanya.
+- Pega tidak mengisi kolom itu:
+  - reinsurer: `NewTreatyReinsurerDetail_Act` b917 mengosongkan `UserId`; `SetUbahTreatyReinsurerList_Act` b1097 hanya
+    menyalin nilai dari barisnya; tidak ada langkah yang mengisi `TglUpdate`;
+  - business: tidak ada langkah yang mengisi keduanya.
+- Data DEV cocok: 0/430 dan 2/4.621 baris terisi.
+- Kode: layanan tidak mengisi kedua kolom. Pelaku tercatat di log aplikasi
+  (`treaty contract out: reinsurer|business <ID> disimpan oleh akun <akun>`) dan di `OPERATORNAME` reinsurer
+  (`OperatorID.pyUserName` b377).

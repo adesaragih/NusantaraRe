@@ -225,9 +225,17 @@ func (c *CacheTokenTCO) Token(ctx context.Context) (string, error) {
 // BOLEH memuat alamat, token, atau garam.
 type PengirimBerkasTCO interface {
 	Kirim(ctx context.Context, alamat, token, kunci string, isi io.Reader, mime, ekstensi string) (models.ObjekPenyimpananTCO, error)
-	Ambil(ctx context.Context, alamat, token, kunci string) (io.ReadCloser, error)
+	// Ambil dan Periksa menjawab objek geturl (`UpdateDoc` Pega) untuk
+	// `Update_T_Storage_SQL`; Periksa hanya bila objeknya ada.
+	Ambil(ctx context.Context, alamat, token, kunci string) (io.ReadCloser, models.ObjekPenyimpananTCO, error)
 	Buang(ctx context.Context, alamat, token, kunci string) error
-	Periksa(ctx context.Context, alamat, token, kunci string) (bool, error)
+	Periksa(ctx context.Context, alamat, token, kunci string) (bool, models.ObjekPenyimpananTCO, error)
+}
+
+// PencatatObjekTCO menyegarkan catatan `T_STORAGE_IMAGE` sesudah geturl -
+// `Update_T_Storage_SQL` (OQ-TCO-26, lanjutan 4).
+type PencatatObjekTCO interface {
+	PerbaruiObjek(ctx context.Context, o models.ObjekPenyimpananTCO) error
 }
 
 // PenyimpananJarakJauhTCO merangkai resolver, cache token, dan transport.
@@ -235,6 +243,8 @@ type PenyimpananJarakJauhTCO struct {
 	resolver ResolverEndpoint
 	token    *CacheTokenTCO
 	pengirim PengirimBerkasTCO
+	pencatat PencatatObjekTCO // nil = tanpa penyegaran (tanpa Oracle)
+	catat    func(string)
 }
 
 // NewPenyimpananJarakJauhTCO menyusun rangkaiannya; `pengirim` nil berarti
@@ -242,6 +252,31 @@ type PenyimpananJarakJauhTCO struct {
 func NewPenyimpananJarakJauhTCO(resolver ResolverEndpoint, token *CacheTokenTCO,
 	pengirim PengirimBerkasTCO) *PenyimpananJarakJauhTCO {
 	return &PenyimpananJarakJauhTCO{resolver: resolver, token: token, pengirim: pengirim}
+}
+
+// DenganPencatatObjek memasang `Update_T_Storage_SQL` sesudah tiap geturl yang
+// berhasil; `catat` menerima kegagalan penyegaran.
+func (p *PenyimpananJarakJauhTCO) DenganPencatatObjek(pc PencatatObjekTCO, catat func(string)) *PenyimpananJarakJauhTCO {
+	s := *p
+	s.pencatat, s.catat = pc, catat
+	return &s
+}
+
+// segarkan - `GetUrlGoogleStorage_Act` b2375-b2427: `Update_T_Storage_SQL`
+// dengan jawaban geturl.
+//
+// ⚠️ Gagal menyegarkan TIDAK menggagalkan unduhan: kolomnya salinan jawaban
+// layanan yang dibaca ulang tiap kali, bukan sumber kebenaran; kegagalannya
+// dicatat (IMAGEID dan sebab; URL tidak pernah). Pemanggil tidak memegang
+// kunci baris `T_STORAGE_IMAGE` saat geturl - transaksi pendek pencatat tidak
+// menunggu transaksi pemanggil.
+func (p *PenyimpananJarakJauhTCO) segarkan(ctx context.Context, o models.ObjekPenyimpananTCO) {
+	if p.pencatat == nil || o.ImageID == "" {
+		return
+	}
+	if err := p.pencatat.PerbaruiObjek(ctx, o); err != nil && p.catat != nil {
+		p.catat(fmt.Sprintf("lampiran treaty contract out: menyegarkan catatan objek %s gagal: %v", o.ImageID, err))
+	}
 }
 
 // siapkan meresolve alamat SAAT JALAN lalu mengambil token.
@@ -299,13 +334,14 @@ func (p *PenyimpananJarakJauhTCO) Buka(ctx context.Context, kunci string) (io.Re
 	if err != nil {
 		return nil, err
 	}
-	rc, err := p.pengirim.Ambil(ctx, alamat, tok, kunci)
+	rc, objek, err := p.pengirim.Ambil(ctx, alamat, tok, kunci)
 	if err != nil {
 		if errors.Is(err, ErrBerkasTidakAdaDiPenyimpanan) {
 			return nil, err
 		}
 		return nil, p.galatJarakJauh(KunciURLBerkas, err)
 	}
+	p.segarkan(ctx, objek)
 	return rc, nil
 }
 
@@ -338,9 +374,12 @@ func (p *PenyimpananJarakJauhTCO) Ada(ctx context.Context, kunci string) (bool, 
 	if err != nil {
 		return false, err
 	}
-	ada, err := p.pengirim.Periksa(ctx, alamat, tok, kunci)
+	ada, objek, err := p.pengirim.Periksa(ctx, alamat, tok, kunci)
 	if err != nil {
 		return false, p.galatJarakJauh(KunciURLBerkas, err)
+	}
+	if ada {
+		p.segarkan(ctx, objek)
 	}
 	return ada, nil
 }

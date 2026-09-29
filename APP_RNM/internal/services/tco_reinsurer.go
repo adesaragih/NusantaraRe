@@ -20,8 +20,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
-	"time"
 
 	"github.com/cockroachdb/apd/v3"
 
@@ -226,7 +226,7 @@ type ReinsurerTCO struct {
 	kontrak   PemegangKontrakTCO
 	tahun     PemeriksaTahunTCO
 	master    PembacaReinsurerMasterTCO
-	jam       func() time.Time
+	catat     func(string) // log aplikasi: pelaku yang tidak ditulis ke kolom warisan (OQ-TCO-25)
 	transaksi func(ctx context.Context, fn func(tx *repository.Tx) error) error
 }
 
@@ -234,10 +234,17 @@ type ReinsurerTCO struct {
 func (s *Service) ReinsurerTCO() *ReinsurerTCO {
 	return &ReinsurerTCO{svc: s, gudang: reinsurerBelumDisuntik{}, kontrak: pemegangKontrakBelumDisuntik{},
 		tahun: gudangTahunTreatyBelumDisuntik{}, master: masterReinsurerBelumDisuntik{},
-		jam: time.Now, transaksi: s.DalamTransaksi}
+		catat: func(p string) { log.Print(p) }, transaksi: s.DalamTransaksi}
 }
 
 func (l *ReinsurerTCO) salin() *ReinsurerTCO { s := *l; return &s }
+
+// DenganCatat mengganti tujuan log aplikasi - dipakai uji.
+func (l *ReinsurerTCO) DenganCatat(c func(string)) *ReinsurerTCO {
+	s := l.salin()
+	s.catat = c
+	return s
+}
 
 // DenganGudang memasang gudang reinsurer.
 func (l *ReinsurerTCO) DenganGudang(g GudangReinsurerTCO) *ReinsurerTCO {
@@ -264,13 +271,6 @@ func (l *ReinsurerTCO) DenganTahun(t PemeriksaTahunTCO) *ReinsurerTCO {
 func (l *ReinsurerTCO) DenganMaster(m PembacaReinsurerMasterTCO) *ReinsurerTCO {
 	s := l.salin()
 	s.master = m
-	return s
-}
-
-// DenganJam mengganti sumber waktu - dipakai uji.
-func (l *ReinsurerTCO) DenganJam(j func() time.Time) *ReinsurerTCO {
-	s := l.salin()
-	s.jam = j
 	return s
 }
 
@@ -336,7 +336,7 @@ func (l *ReinsurerTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID, kontr
 	r := models.ReinsurerTreaty{ID: strings.TrimSpace(m.ID), TreatyYear: k.TreatyYear, TreatyGroupID: k.TreatyGroupID,
 		TreatyGroupName: k.TreatyGroupName, ReinsTypeID: k.ReinsTypeID, ReinsTypeName: k.ReinsTypeName,
 		ReinsurerID: strings.TrimSpace(m.ReinsurerID), StdRating: strings.TrimSpace(m.StdRating),
-		OperatorName: pelaku.AkunID, TglUpdate: l.jam()}
+		OperatorName: pelaku.AkunID} // OperatorName = `OperatorID.pyUserName` b377
 	if err := models.PeriksaReinsurerTCO(r); err != nil {
 		return HasilReinsurerTampil{}, err
 	}
@@ -362,19 +362,19 @@ func (l *ReinsurerTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID, kontr
 		if err := l.kontrak.Kunci(ctx, tx, tahunID, kontrakID); err != nil {
 			return err
 		}
-		if r.ID == "" {
-			r.UserID = pelaku.AkunID
-		} else {
+		// OQ-TCO-25 (lanjutan 4): USERID/TGLUPDATE tidak diisi, seperti Pega -
+		// `NewTreatyReinsurerDetail_Act` b917 mengosongkan UserId, tidak ada
+		// langkah yang mengisi TglUpdate; data DEV 0/430 terisi. Pelaku tetap
+		// tercatat di log aplikasi dan di OPERATORNAME.
+		if r.ID != "" {
 			lama, err := l.gudang.Ambil(ctx, k, r.ID)
 			if err != nil {
 				return err
 			}
-			// Medan tersembunyi form dipertahankan dari barisnya.
+			// Medan tersembunyi form dipertahankan dari barisnya
+			// (`SetUbahTreatyReinsurerList_Act` b1097-b1177).
 			r.IUDate, r.StartDate, r.EndDate, r.StatusOn = lama.IUDate, lama.StartDate, lama.EndDate, lama.StatusOn
 			r.UserID = lama.UserID
-			if strings.TrimSpace(r.UserID) == "" {
-				r.UserID = pelaku.AkunID
-			}
 		}
 		lain, err := l.gudang.ShareLain(ctx, tx, k, r.ID)
 		if err != nil {
@@ -395,6 +395,7 @@ func (l *ReinsurerTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID, kontr
 	if err != nil {
 		return HasilReinsurerTampil{}, err
 	}
+	l.catat(fmt.Sprintf("treaty contract out: reinsurer %s disimpan oleh akun %s", r.ID, pelaku.AkunID))
 	return HasilReinsurerTampil{Reinsurer: TampilReinsurer(r), TotalShare: utils.FormatDecimal(total)}, nil
 }
 
