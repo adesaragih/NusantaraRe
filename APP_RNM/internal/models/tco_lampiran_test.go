@@ -90,3 +90,21 @@ func TestExpStorageTCOSepertiPega(t *testing.T) {
 		}
 	}
 }
+
+// Temuan /code-review lanjutan 4: `DateTime` geturl masuk To_date
+// `MM/DD/YYYY HH24:MI:SS` - bentuk lain jadi kosong (NULL), bukan ORA-01843
+// yang menggagalkan seluruh `Update_T_Storage_SQL`.
+func TestTanggalUploadStorageTCOHanyaBentukToDate(t *testing.T) {
+	for masuk, mau := range map[string]string{
+		"09/29/2026 09:00:00":  "09/29/2026 09:00:00",
+		" 09/29/2026 09:00:00": "09/29/2026 09:00:00",
+		"2026-09-29T09:00:00Z": "",
+		"29/09/2026 09:00:00":  "",
+		"09/29/2026":           "",
+		"":                     "",
+	} {
+		if dapat := TanggalUploadStorageTCO(masuk); dapat != mau {
+			t.Errorf("%q -> %q, mau %q", masuk, dapat, mau)
+		}
+	}
+}

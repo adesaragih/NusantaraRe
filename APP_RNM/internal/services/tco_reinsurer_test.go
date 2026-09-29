@@ -220,9 +220,11 @@ func TestReinsurerGerbang(t *testing.T) {
 	}
 }
 
-// Medan tersembunyi (IUDate, StartDate, EndDate, StatusOn, UserID) DIPERTAHANKAN
-// saat diubah (`SetUbahTreatyReinsurerList_Act` b1097-b1177); OperatorName =
-// pengubah terakhir; TglUpdate tidak diisi (OQ-TCO-25).
+// Medan tersembunyi (IUDate, StatusOn, UserID) DIPERTAHANKAN saat diubah
+// (`SetUbahTreatyReinsurerList_Act` b1097-b1177); OperatorName = pengubah
+// terakhir; TglUpdate tidak diisi (OQ-TCO-25). StartDate/EndDate TIDAK dibawa:
+// repository selalu mengikat NULL (OQ-TCO-01), jadi jawaban pun kosong
+// (temuan /code-review lanjutan 4).
 func TestReinsurerPerbaruiMempertahankanMedanTersembunyi(t *testing.T) {
 	g := gudangReinsurerKosong()
 	mulai := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -236,7 +238,7 @@ func TestReinsurerPerbaruiMempertahankanMedanTersembunyi(t *testing.T) {
 		t.Fatal(err)
 	}
 	r := g.baris["1000009"]
-	if r.IUDate != "UJI-IU" || !r.StartDate.Equal(mulai) || r.StatusOn != "1" || r.UserID != "UJI-PEMBUAT" ||
+	if r.IUDate != "UJI-IU" || !r.StartDate.IsZero() || r.StatusOn != "1" || r.UserID != "UJI-PEMBUAT" ||
 		r.OperatorName != "UJI-PENGUBAH" || r.Name != "UJI REAS DUA" || h.TotalShare != "20" || !r.TglUpdate.IsZero() {
 		t.Errorf("perbarui: %+v total %s", r, h.TotalShare)
 	}

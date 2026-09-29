@@ -260,7 +260,7 @@ func (p *pengirimBerkasHTTPTCO) urlBertanda(ctx context.Context, alamat, token, 
 		return "", models.ObjekPenyimpananTCO{}, fmt.Errorf("%w: URLImage tidak berbentuk", ErrStorageJawabanRusakTCO)
 	}
 	return u.String(), models.ObjekPenyimpananTCO{ImageID: kunci, URLPublic: j.URLImage, AppFolder: j.AppFolder,
-		Exp: models.ExpStorageTCO(j.Exp), TanggalUpload: j.DateTime}, nil
+		Exp: models.ExpStorageTCO(j.Exp), TanggalUpload: models.TanggalUploadStorageTCO(j.DateTime)}, nil
 }
 
 // unduh membuka URL bertanda tangan yang DIBERIKAN layanan saat jalan.

@@ -783,6 +783,10 @@ func (l *LampiranTahunTCO) kirimHapus(ctx context.Context, tx *repository.Tx, b 
 	if err := json.Unmarshal([]byte(b.Muatan), &m); err != nil || strings.TrimSpace(m.ImageID) == "" {
 		return fmt.Errorf("%w: efek %s", errMuatanLampiranRusak, b.ID)
 	}
+	// ⛔ Urutan: `Hapus` penyimpanan (geturl + `Update_T_Storage_SQL` dalam
+	// transaksinya SENDIRI, OQ-TCO-26) SEBELUM `HapusObjek` di `tx`. Dibalik,
+	// transaksi pendek penyegaran menunggu kunci baris milik `tx` ini sendiri
+	// - Oracle tidak mendeteksinya, efek menggantung sampai konteks habis.
 	if err := l.penyimpanan.Hapus(ctx, m.ImageID); err != nil && !errors.Is(err, ErrBerkasTidakAdaDiPenyimpanan) {
 		return fmt.Errorf("services: menghapus berkas lampiran %s: %w", m.LampiranID, err)
 	}

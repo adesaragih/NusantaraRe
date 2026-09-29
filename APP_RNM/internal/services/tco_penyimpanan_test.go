@@ -334,7 +334,7 @@ func TestTCOLampiranBerkunciTahunTreaty(t *testing.T) {
 // OQ-TCO-26 (lanjutan 4): tiap `geturl` yang berhasil menyegarkan
 // `T_STORAGE_IMAGE` seperti `Update_T_Storage_SQL` (`GetUrlGoogleStorage_Act`
 // b2125-b2427); objek yang tidak ada tidak disegarkan; gagal menyegarkan hanya
-// dicatat (IMAGEID, tanpa URL) dan tidak menggagalkan unduhan.
+// dicatat (IMAGEID dan sebab) dan tidak menggagalkan unduhan.
 func TestPenyimpananMenyegarkanObjekSesudahGetURL(t *testing.T) {
 	saat := time.Date(2026, 9, 29, 9, 0, 0, 0, time.UTC)
 	jam := func() time.Time { return saat }

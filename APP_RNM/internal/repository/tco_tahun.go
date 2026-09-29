@@ -88,8 +88,8 @@ func sqlPerbaruiTahunTreaty(tabel string) string {
 }
 
 // sqlCariDobelTahunTreaty - AC 73: kandidat baris LAIN segrup; tanggalnya
-// dibandingkan di Go (tco4: `STARTDATE`/`ENDDATE` VARCHAR2 berbentuk campur,
-// `TRUNC` tidak berlaku).
+// dibandingkan di Go (tco4: `STARTDATE`/`ENDDATE` VARCHAR2 `YYYYMMDD`, `TRUNC`
+// tidak berlaku atas teks; baris berbentuk lain dilewati, bukan ditebak).
 //
 // ⛔ `(:2 IS NULL OR ID <> :3)`, bukan `ID <> :2` telanjang: teks kosong
 // adalah NULL di Oracle, dan `ID <> NULL` tidak pernah benar. Placeholder

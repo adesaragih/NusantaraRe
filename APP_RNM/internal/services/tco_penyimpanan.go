@@ -267,7 +267,9 @@ func (p *PenyimpananJarakJauhTCO) DenganPencatatObjek(pc PencatatObjekTCO, catat
 //
 // ⚠️ Gagal menyegarkan TIDAK menggagalkan unduhan: kolomnya salinan jawaban
 // layanan yang dibaca ulang tiap kali, bukan sumber kebenaran; kegagalannya
-// dicatat (IMAGEID dan sebab; URL tidak pernah). Pemanggil tidak memegang
+// dicatat (IMAGEID dan sebab). Pesan ini sendiri tidak memuat URL; sebabnya
+// galat repository, dan galat Oracle tidak menggemakan nilai bind - bukan
+// jaminan untuk galat sambungan kolam (bisa menyebut inang). Pemanggil tidak memegang
 // kunci baris `T_STORAGE_IMAGE` saat geturl - transaksi pendek pencatat tidak
 // menunggu transaksi pemanggil.
 func (p *PenyimpananJarakJauhTCO) segarkan(ctx context.Context, o models.ObjekPenyimpananTCO) {

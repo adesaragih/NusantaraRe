@@ -372,9 +372,10 @@ func (l *ReinsurerTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID, kontr
 				return err
 			}
 			// Medan tersembunyi form dipertahankan dari barisnya
-			// (`SetUbahTreatyReinsurerList_Act` b1097-b1177).
-			r.IUDate, r.StartDate, r.EndDate, r.StatusOn = lama.IUDate, lama.StartDate, lama.EndDate, lama.StatusOn
-			r.UserID = lama.UserID
+			// (`SetUbahTreatyReinsurerList_Act` b1097-b1177). StartDate/EndDate
+			// tidak: repository selalu mengikat NULL (OQ-TCO-01), jadi jawaban
+			// memuat yang tersimpan (temuan /code-review lanjutan 4).
+			r.IUDate, r.StatusOn, r.UserID = lama.IUDate, lama.StatusOn, lama.UserID
 		}
 		lain, err := l.gudang.ShareLain(ctx, tx, k, r.ID)
 		if err != nil {

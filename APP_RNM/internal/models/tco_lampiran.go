@@ -66,6 +66,18 @@ type ObjekPenyimpananTCO struct {
 	TanggalUpload string
 }
 
+// TanggalUploadStorageTCO - `DateTime` jawaban geturl APA ADANYA bila berbentuk
+// `MM/DD/YYYY HH24:MI:SS` (To_date `Update_T_Storage_SQL` b85, `UpdateDoc.DateTime`
+// b2274); bentuk lain -> kosong (NULL), bukan ORA-01843 yang menggagalkan seluruh
+// penyegaran (temuan /code-review lanjutan 4).
+func TanggalUploadStorageTCO(teks string) string {
+	t := strings.TrimSpace(teks)
+	if _, err := time.Parse("01/02/2006 15:04:05", t); err != nil {
+		return ""
+	}
+	return t
+}
+
 // polaExpStorageTCO - `YYYYMMDDTHHMMSS` di awal `exp` sesudah `-`/`:` dibuang.
 var polaExpStorageTCO = regexp.MustCompile(`^\d{8}T\d{6}`)
 
