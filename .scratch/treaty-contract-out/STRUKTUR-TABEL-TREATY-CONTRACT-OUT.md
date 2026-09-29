@@ -200,7 +200,7 @@ migrasi data melaporkan bila ada isi hidup di sana.
 | `LAYERPART` | teks | ya | | SaveArrg param 11 |
 | `LAYERPARTTYPE` | teks | ya | | SaveArrg param 12 |
 | `LAYERTYPE` | teks | ya | | SaveArrg param 13 |
-| `KURS` | angka desimal | ya | | SaveArrg param 14 — nilai kurs, desimal (tiket 11 AC) |
+| `KURS` | angka desimal | ya | | SaveArrg param 14 — nilai kurs, desimal (tiket 11 AC); diisi kurs yang dipakai menghitung `Usd` tujuh induk berkurs (warisan praktis selalu kosong, OQ-TCO-18) |
 | `TGLUPDATE` | DATE | ya | | SaveArrg param 15; warisan sudah `DATE` |
 | `USERID` | teks | ya | | SaveArrg param 16 |
 | `LINE` | teks | ya | | SaveArrg param 17 |

@@ -101,6 +101,12 @@ type AturanKlausul struct {
 	BatasTotalAnak bool
 	// PeringatanSpreading - `TreatyTestChildTotal_Act` sesudah simpan.
 	PeringatanSpreading bool
+	// Berkurs - form jenis ini menuntut kurs berlaku (`NewTreatyArr*`: "Tidak ada
+	// Nilai Kurs di Tahun : "), tiket 11.
+	Berkurs bool
+	// Konversi - arah konversi kurs di form: `KonversiRpKeUsd` (Usd turunan,
+	// `HitungRpUsd_depan`) atau `KonversiDuaArah` (`CalculateTSIExcludeTreaty`).
+	Konversi string
 	// Sumber - aktivitas Pega VERBATIM.
 	Sumber string
 }
@@ -111,20 +117,29 @@ var (
 	medanAnak       = []string{MedanReinsTypeID, MedanPct}
 	wajibAnak       = []string{MedanReinsTypeID, MedanPct, MedanRp, MedanUsd}
 	turunanAnak     = []string{MedanRp, MedanUsd}
-	kunciReins      = []string{MedanReinsTypeID}
+	// turunanIndukKurs - `Usd` form induk hanya dibaca (mis. `GridTreatyArrangementEpi.xml`
+	// b3775) dan diisi `HitungRpUsd_depan`: `Usd = Rp / Kurs` (tiket 11).
+	turunanIndukKurs = []string{MedanUsd}
+	kunciReins       = []string{MedanReinsTypeID}
+)
+
+// Arah konversi kurs di form (tiket 11).
+const (
+	KonversiRpKeUsd = "RpKeUsd"
+	KonversiDuaArah = "DuaArah"
 )
 
 const alasanDitahan = "aturan wajib-isi jenis %s belum ditetapkan Product + UW (AC 36)"
 
 func induk(jenis, desc, sumber string) AturanKlausul {
 	return AturanKlausul{Jenis: jenis, DescID: desc, Medan: medanReinsRpUsd, Wajib: wajibReinsRpUsd,
-		KunciDobel: kunciReins, Sumber: sumber}
+		Turunan: turunanIndukKurs, KunciDobel: kunciReins, Berkurs: true, Konversi: KonversiRpKeUsd, Sumber: sumber}
 }
 
 func anak(jenis, desc, sumber string, peringatan bool) AturanKlausul {
 	return AturanKlausul{Jenis: jenis, DescID: desc, Anak: true, Medan: medanAnak, Wajib: wajibAnak,
 		Turunan: turunanAnak, KunciDobel: kunciReins, BatasTotalAnak: true, PeringatanSpreading: peringatan,
-		Sumber: sumber}
+		Berkurs: true, Sumber: sumber}
 }
 
 // AturanKlausulTCO - SELURUH jenis. Satu tempat, di kode (AC 34).
@@ -161,7 +176,7 @@ var AturanKlausulTCO = []AturanKlausul{
 	{Jenis: "ExclutionTreaty", DescID: DescExclutionTreaty, Subjenis: SubjenisOccupation,
 		Medan:      []string{MedanIDOccupation, MedanOccupation, MedanLine, MedanUsd, MedanRp},
 		Wajib:      []string{MedanIDOccupation, MedanOccupation, MedanLine, MedanUsd, MedanRp},
-		KunciDobel: []string{MedanIDOccupation}, Sumber: "SaveTreatyArrExclutionTreaty_Act"},
+		KunciDobel: []string{MedanIDOccupation}, Konversi: KonversiDuaArah, Sumber: "SaveTreatyArrExclutionTreaty_Act"},
 	{Jenis: "ExclutionTreaty", DescID: DescExclutionTreaty, Subjenis: SubjenisClause,
 		Medan: []string{MedanIDClause, MedanClause}, Wajib: []string{MedanIDClause, MedanClause},
 		KunciDobel: []string{MedanIDClause}, Sumber: "SaveTreatyArrExclutionTreaty_Act"},

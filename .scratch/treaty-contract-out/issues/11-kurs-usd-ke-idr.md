@@ -1,6 +1,6 @@
 # 11: Kurs USD → IDR
 
-**Status:** ready-for-agent
+**Status:** selesai (29-09-2026)
 
 **Blocked by:** 08 (kurs melekat pada baris klausul)
 
@@ -113,3 +113,48 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+## Pembacaan ulang XML — 29-09-2026 (sesi modul, lanjutan 1)
+
+Nomor baris = baris mentah berkas korpus `Treaty Contract Out/` kecuali disebut lain; langkah aktivitas dibaca lengkap.
+
+| Unsur | Bukti | Dibawa sebagai |
+| --- | --- | --- |
+| jalur hidup | `Activity/testingKurs.xml`: b273 `CARI1 = Param.StartDate`; b438 `RDB-List GetMasterKursList`; b579–b580 `InputTreatyArrangement.Kurs = .HASIL1` (untuk SETIAP hasil — yang terakhir menang) | `services.KursTCO.Berlaku` (nama tanpa "testing") |
+| kueri | `RDBList/GetMasterKursList.xml` b85–b86: `Quarter='0'`, `to_date(CARI1,'YYYYMMDD') BETWEEN trunc(TO_TIMESTAMP_TZ(STARTDATE,…)) AND trunc(TO_TIMESTAMP_TZ(ENDDATE,…))`, `IDCURRENCY` literal | `TREATYEXCHANGEYEARLY` `[data DBA]` dibaca saja; `QUARTER`/`IDCURRENCY` di-bind; tanggal diurai sekali di Go |
+| pemanggil | `Harness/InboxTreatyContractDescription.xml` `Show` Non XOL b6138 (`StartDate = InputTreatyArrangementDesc.StartDate` b6153); `Show` XOL b9256 (`TreatyYear = …TreatyYear` b9271) | `GET /tahun/{id}/kurs` memakai `StartDate` tahun untuk KEDUA grid |
+| master mata uang | `Claim Life/RDBList/GetCurrencyID.xml` b85 `SELECT ID … FROM POOLDATA.CURRENCY WHERE CURRENCY = {kode}`; `NB FacIn/RDBList/GetCurrencyIDByName.xml` (`ID, OLDID, CURRENCY, CURRENCYSYMBOL`) | pengenal USD = `MataUang.Pengenal("USD")` (kode bersama, tidak diubah) |
+| konversi induk | `Activity/HitungRpUsd_depan.xml` b383 `Usd = @divide(Rp, Kurs, 8)` (TreatyLimit), b405–b510 `Usd = Rp / Kurs` (PLA, CashLossLimit, FacIn, ExGratia, EPI, ClaimCoorp); dipanggil onchange Rp (mis. `GridTreatyArrangementEpi.xml` b3630); medan `Usd` hanya dibaca di ketujuh form (EPI b3775, PLA b3821, TreatyLimit b4062, FacIn b3653, CashLossLimit b3777, ClaimCoorp b3747, ExGratia b1911) | tujuh induk: `Usd` TURUNAN `Rp ÷ Kurs` skala 8 di server |
+| konversi exclusion | `Activity/CalculateTSIExcludeTreaty.xml` b248 IDR → `Usd = @divide(Rp, Kurs, 4)`; b394 USD → `Rp = Usd * Kurs`; dipanggil `GridTreatyArrangementExclutionTreatyOccupation.xml` b3003/b3123/b3290/b3412 | pratinjau dua arah lewat `GET /tahun/{id}/kurs/konversi`; kedua nilai tetap masukan |
+| gerbang | 14 aktivitas `NewTreatyArr*` (7 induk + 7 anak): `DATASHOW = @if(Kurs="","","1")` lalu `ERRMSG2 = "Tidak ada Nilai Kurs di Tahun : " + TreatyYear` (mis. `NewTreatyArrEpi.xml` b707, b870, b948) | jenis berkurs ditolak 422 dengan pesan VERBATIM; `Add` nonaktif di layar |
+| tempat kurs | `Section/NitipKurs.xml` b512 (`InputTreatyArrangement.Kurs`, harness b3882); `SaveMasterProportionalArrg.xml` b98 menulis `InputTreatyArrTreatyLimit.Kurs` | `KURS` klausul = kurs yang dipakai (tujuh induk berkurs) |
+
+### Ralat bertanggal 29-09-2026
+
+1. **Grid XOL tidak pernah menemukan kurs di Pega**: `Show` XOL (b9256) mengirim parameter `TreatyYear` (b9271), padahal
+   `testingKurs` membaca `Param.StartDate` (b273) → `to_date('')` → nol baris. Sistem baru memakai `StartDate` tahun
+   untuk kedua grid.
+2. **Kolom `KURS` warisan praktis selalu kosong**: prosedur menulis `InputTreatyArrTreatyLimit.Kurs` (b98), sedangkan
+   satu-satunya penulis kurs mengisi `InputTreatyArrangement.Kurs` (`testingKurs` b579, `RefreshKurs` b244). Sistem baru
+   menyimpan kurs yang DIPAKAI menghitung `Usd` pada tujuh induk berkurs `[keputusan kami]` (**OQ-TCO-18**).
+3. **Tiket 08 diralat**: `Usd` tujuh induk (TreatyLimit, PLA, CashLossLimit, FacIn, ExGratia, EPI, ClaimCoorp) bukan
+   masukan — ia hanya dibaca di form dan diturunkan `Rp ÷ Kurs`. Klien yang mengirimnya ditolak 422.
+4. **Skala pembagian**: hanya TreatyLimit yang tersurat 8 desimal (`@divide(…, 8)`); enam form lain memakai `/` tanpa
+   skala. Sistem baru memakai 8 (skala kolom `NUMBER(38,8)`) untuk ketujuhnya, setengah-ke-atas; exclusion IDR → USD
+   tetap 4 VERBATIM (**OQ-TCO-18**).
+5. **Dua baris kurs berlaku pada tanggal yang sama**: Pega menyimpan yang terakhir (urutan tak tentu). Sistem baru
+   menolaknya sebagai master rusak (503) `[keputusan kami]`, bukan menebak (**OQ-TCO-18**).
+6. **`QUARTER = '0'`** diikuti apa adanya (`QuarterKursTahunanTCO`); artinya tetap `[terbuka]`.
+7. **Tanggal mulai tahun kosong** diperlakukan sebagai "tidak ada kurs" (pesan yang sama), bukan tanggal nol.
+
+### Yang dibangun
+
+| Lapisan | Berkas | Isi |
+| --- | --- | --- |
+| models | `tco_kurs.go` (+uji) | urai tanggal/nilai master sekali, `PilihKursBerlakuTCO`, `UsdDariRpTCO` / `RpDariUsdTCO` (apd), `GalatKursTidakAda` VERBATIM; aturan klausul `Berkurs`/`Konversi` |
+| repository | `tco_kurs.go` (+uji) | `MasterKursTCO` baca-saja, saringan di-bind; tiruan `TREATYEXCHANGEYEARLY` + `CURRENCY` |
+| services | `tco_kurs.go` (+uji) | `KursTCO` (berlaku, konversi); `KlausulTCO.DenganKurs` — Usd induk turunan, `KURS` tersimpan, gerbang anak |
+| handlers | `tco_kurs.go` (+uji, +uji `db`) | 2 rute GET; uji `db` klausul diperbarui |
+| frontend | `PanelJenisKlausul.tsx` (+uji), `KURS_TCO`, `api.ts` (+2) | kurs berlaku / pesan server, `Add` nonaktif tanpa kurs, pratinjau konversi dari server |
+
+**Status:** selesai 29-09-2026 — commit `treaty-contract-out: tiket 11 — kurs USD ke IDR`.

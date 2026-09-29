@@ -163,7 +163,10 @@ type AturanTampil struct {
 	Wajib    []string `json:"wajib"`
 	Turunan  []string `json:"turunan"`
 	Ditahan  string   `json:"ditahan"`
-	Sumber   string   `json:"sumber"`
+	// Berkurs / Konversi - tiket 11.
+	Berkurs  bool   `json:"berkurs"`
+	Konversi string `json:"konversi"`
+	Sumber   string `json:"sumber"`
 }
 
 // JenisKlausulTampil adalah satu baris grid jenis + aturannya.
@@ -259,6 +262,7 @@ type KlausulTCO struct {
 	master    PembacaMasterKlausulTCO
 	tahun     PengunciTahunTCO
 	jenis     PembacaJenisReasuransiTCO
+	kurs      PembacaKursTCO
 	jam       func() time.Time
 	transaksi func(ctx context.Context, fn func(tx *repository.Tx) error) error
 }
@@ -266,7 +270,7 @@ type KlausulTCO struct {
 // KlausulTCO menyusun layanannya; bawaannya gagal terang.
 func (s *Service) KlausulTCO() *KlausulTCO {
 	return &KlausulTCO{svc: s, gudang: klausulBelumDisuntik{}, master: klausulBelumDisuntik{},
-		tahun: pengunciTahunBelumDisuntik{}, jenis: pembacaJenisReasuransiBelumDisuntik{},
+		tahun: pengunciTahunBelumDisuntik{}, jenis: pembacaJenisReasuransiBelumDisuntik{}, kurs: kursBelumDisuntik{},
 		jam: time.Now, transaksi: s.DalamTransaksi}
 }
 
@@ -300,6 +304,13 @@ func (l *KlausulTCO) DenganJenis(j PembacaJenisReasuransiTCO) *KlausulTCO {
 	return s
 }
 
+// DenganKurs memasang pembaca kurs berlaku (tiket 11).
+func (l *KlausulTCO) DenganKurs(k PembacaKursTCO) *KlausulTCO {
+	s := l.salin()
+	s.kurs = k
+	return s
+}
+
 // DenganJam mengganti sumber waktu - dipakai uji.
 func (l *KlausulTCO) DenganJam(j func() time.Time) *KlausulTCO { s := l.salin(); s.jam = j; return s }
 
@@ -312,7 +323,7 @@ func (l *KlausulTCO) DenganTransaksi(f func(ctx context.Context, fn func(tx *rep
 
 func tampilAturan(a models.AturanKlausul) AturanTampil {
 	return AturanTampil{Jenis: a.Jenis, Anak: a.Anak, Subjenis: a.Subjenis, Medan: a.Medan, Wajib: a.Wajib,
-		Turunan: a.Turunan, Ditahan: a.Ditahan, Sumber: a.Sumber}
+		Turunan: a.Turunan, Ditahan: a.Ditahan, Berkurs: a.Berkurs, Konversi: a.Konversi, Sumber: a.Sumber}
 }
 
 // JenisKlausul membaca grid jenis (`BrowseTreatyDesc_RD`) + aturan tiap jenis.
@@ -453,7 +464,7 @@ func (l *KlausulTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID string, 
 	k.UserID, k.TglUpdate = pelaku.AkunID, l.jam()
 	for _, turunan := range a.Turunan {
 		if _, dikirim := m.Medan[turunan]; dikirim {
-			return HasilKlausulTampil{}, fmt.Errorf("%w: %s dihitung server dari induknya (HitungRpUsd)",
+			return HasilKlausulTampil{}, fmt.Errorf("%w: %s dihitung server, tidak dikirim klien",
 				models.ErrMedanBukanMilikJenis, turunan)
 		}
 	}
@@ -462,6 +473,21 @@ func (l *KlausulTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID string, 
 	}
 	if err := l.lengkapiDariMaster(ctx, a, &k); err != nil {
 		return HasilKlausulTampil{}, err
+	}
+	// Tiket 11: form berkurs menuntut kurs berlaku (`NewTreatyArr*`); induk
+	// ber-Rp/Usd menurunkan `Usd = Rp / Kurs` (`HitungRpUsd_depan`) dan
+	// menyimpan kurs yang dipakai di `KURS`.
+	if a.Berkurs {
+		kurs, err := l.kurs.Berlaku(ctx, tahun)
+		if err != nil {
+			return HasilKlausulTampil{}, err
+		}
+		if a.Konversi == models.KonversiRpKeUsd {
+			k.Kurs = kurs.ToIDR
+			if k.Usd, err = models.UsdDariRpTCO(k.Rp, kurs.ToIDR, models.SkalaUsdDariRpTCO); err != nil {
+				return HasilKlausulTampil{}, err
+			}
+		}
 	}
 	if a.Anak {
 		induk, err := l.gudang.Induk(ctx, tahunID, a.DescID, parent)

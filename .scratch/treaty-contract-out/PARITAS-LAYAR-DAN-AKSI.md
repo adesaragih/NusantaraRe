@@ -156,7 +156,7 @@ Nomor baris = `Harness/InboxTreatyContractDescription.xml` kecuali disebut lain.
 | --- | --- | --- |
 | kepala b2003–b3382 (tujuh medan) | tujuh `Field` baca-saja | ✅ OQ-TCO-05 |
 | `For Non XOL` b4880 / `For XOL` b7971 (`BrowseTreatyDesc_RD`, `IsXOL` 0/1) · `ID` b5440 · `Description Name` b5549 | `GET /jenis-klausul?isXol=` dari `TREATYDESC` (baca-saja) | ✅ AC 26/27 |
-| `Show` b6059 → `BrowseDescriptionLimit` + `testingKurs` + `SetKirimIDDesc` + `PanggilID` | membuka `PanelJenisKlausul`; beberapa jenis boleh terbuka bersamaan | ✅ AC 29 (kurs → tiket 11) |
+| `Show` b6059 → `BrowseDescriptionLimit` + `testingKurs` + `SetKirimIDDesc` + `PanggilID` | membuka `PanelJenisKlausul`; beberapa jenis boleh terbuka bersamaan | ✅ AC 29; kurs ✅ tiket 11 |
 | 18 section induk: `Add` / `Edit` / `Save` (`GridTreatyArrangementEpi.xml` b8980/b10917/b5501) → `SaveTreatyArr*_Act` → `SaveMasterProportionalArrg` | `POST`/`PUT /tahun/{id}/klausul` → `T_PROPORTIONALARRG`, aturan per jenis dari server | ✅ AC 24/33/35, prosedur tidak dipanggil |
 | 7 section anak: `Show Child` b11200 → `Browse*ParentList`; `Close Child` (`GridTreatyArrTreatyEpiList.xml` b8657) → `Save*List_Act` → `SaveMasterProportionalArrgChild` | grid anak per induk; Rp/Usd turunan; total Pct + peringatan | ✅ AC 25/28 |
 | `HitungRpUsd` | `RpUsdAnakTCO` di server | ✅ |
@@ -164,7 +164,7 @@ Nomor baris = `Harness/InboxTreatyContractDescription.xml` kecuali disebut lain.
 | ExclutionTreaty: empat sub-bagian (`Param.Type`) + pemilih `BrowseOccupationFIRE_RD` / `BrowseFireClauseFacIn_RD` | satu jenis, empat subjenis; `GET /klausul-pilihan/{occupation,clause}` | ✅ OQ-TCO-14/16 |
 | `SaveTreatyArrLimitMB_Act`, `SaveTreatyArrPortfolio_Act` | ditahan: 422 + alasan di layar | ⏸ AC 36 (Product + UW) |
 | 16 `CancelActivity*` | `Cancel` per panel membuang isian panel itu saja | ✅ AC 29 |
-| `NitipKurs` b3882 / `testingKurs` | — | 🔜 tiket 11 |
+| `NitipKurs` b3882 / `testingKurs` | baris kurs berlaku di panel jenis berkurs (`GET /tahun/{id}/kurs`) | ✅ tiket 11 |
 
 ## Tiket 06 — security di bawah reinsurer (`InputTreatyContractReinsType` bagian `HASILD21`)
 
@@ -181,3 +181,15 @@ Nomor baris = `Section/InputTreatyContractReinsType.xml`.
 | `Save` b20246 → `SaveSecurityReinsurer_Act` → `InsertToMTreatySecurity` / `UpdateMTreatySecurity` | `POST`/`PUT .../security` → `T_MTREATYSECURITY` kolom bernama + jejak | ✅ AC 18–20, ralat 1/3 |
 | `Error` b20980 · `Informasi` b21717 | galat / baris status | ✅ |
 | `DeleteTreatyReins_Act` → `DeleteFromTreatyReinsurer_Act` | FK `ON DELETE CASCADE`; tombol hapus reinsurer | 🔜 tiket 10 |
+
+## Tiket 11 — kurs USD → IDR (`testingKurs`, `HitungRpUsd_depan`, `CalculateTSIExcludeTreaty`)
+
+| Unsur korpus | Sistem baru | Keadaan |
+| --- | --- | --- |
+| `testingKurs` (Show Non XOL b6138 `StartDate`; Show XOL b9256 `TreatyYear`) → `GetMasterKursList` | `GET /tahun/{id}/kurs` — StartDate tahun untuk kedua grid | ✅ ralat 1 |
+| `IDCURRENCY = '10001'` literal di SQL | pengenal dari master `CURRENCY` lewat kode `USD` | ✅ AC 47 |
+| `HitungRpUsd_depan` onchange Rp tujuh form induk; `Usd` hanya dibaca | `Usd` turunan server `Rp ÷ Kurs` (skala 8); pratinjau `GET /kurs/konversi` | ✅ ralat 3/4 |
+| `CalculateTSIExcludeTreaty` (exclusion Occupation, `Curr` IDR/USD) | pratinjau dua arah dari server; kedua nilai tersimpan terpisah | ✅ AC 49 |
+| 14 `NewTreatyArr*`: "Tidak ada Nilai Kurs di Tahun : " + TreatyYear, form tidak tampil | 422 VERBATIM saat simpan; `Add` nonaktif + pesan di panel | ✅ ADR-0015 |
+| `RefreshKurs` (mengosongkan `Kurs`) | tidak dibawa: kurs dibaca ulang tiap panel dibuka | ✅ |
+| `SetTreatyArrangementDesc_Act` (5/6 langkah di-remark) | tidak dibawa | ✅ AC 50 |

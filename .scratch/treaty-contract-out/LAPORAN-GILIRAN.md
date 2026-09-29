@@ -624,3 +624,68 @@ dikonfigurasi di sesi ini.
 | Berkas ditulis / disunting | 11 baru (1.602 baris), 8 disunting (+183 −2) |
 | Putaran instrumen gagal lalu diulang | 3: heredoc panjang gagal diurai (berkas ditulis lewat Write); pola sunting panel reinsurer tanpa `try {` (diperbaiki); heredoc memakan backslash di skrip turunan (disunting lewat Edit) |
 | Token / biaya | tidak terlihat dari dalam sesi, jadi tidak dikarang |
+
+## Tiket 11 — kurs USD ke IDR
+
+### Yang dibangun
+
+| Lapisan | Berkas | Isi |
+| --- | --- | --- |
+| models | `tco_kurs.go` (+uji) | tanggal/nilai master diurai sekali (AC 53), pemilihan kurs berlaku (AC 46), konversi apd (AC 51), pesan VERBATIM; aturan klausul `Berkurs`/`Konversi` |
+| repository | `tco_kurs.go` (+uji) | `TREATYEXCHANGEYEARLY` dibaca saja, `QUARTER`/`IDCURRENCY` di-bind (AC 47/48) |
+| services | `tco_kurs.go` (+uji) | `KursTCO`; `KlausulTCO` menurunkan `Usd` induk dan menyimpan `KURS` |
+| handlers | `tco_kurs.go` (+uji, +uji `db`) | `GET /tahun/{id}/kurs`, `GET /tahun/{id}/kurs/konversi` |
+| frontend | `PanelJenisKlausul.tsx`, `KURS_TCO`, `api.ts` (+2) | kurs berlaku / pesan server, `Add` nonaktif tanpa kurs, pratinjau konversi server |
+
+### Bukti merah lebih dulu untuk aturan uang
+
+`RpDariUsdTCO` dimutasi ke `float64` (`strconv.ParseFloat` × lalu `FormatFloat`): `TestKonversiKursTCO` **merah**
+(`2004267622717146800000.00000000` alih-alih `2004267622717146774324.82837777`); dipulihkan → hijau. Nilai harapan
+dihitung ulang dengan `decimal` Python presisi 80 setelah satu literal tulisan tangan terbukti salah.
+
+### Kode bersama yang disentuh (aditif, dilaporkan)
+
+| Berkas | Perubahan |
+| --- | --- |
+| `repository/matauangid.go` (Claim Life) | **dipakai, tidak diubah** — `MataUang.Pengenal("USD")` |
+| `handlers/penyuntikan_test.go` | +1 entri `tco_kurs.go`; entri `tco_klausul.go` +`DenganKurs` |
+| `repository/tco_jenisreasuransi.go`, `skemauji/tco_tiruan.go` (milik modul) | `masterDibacaSajaTCO` +`CURRENCY`; tiruan `TREATYEXCHANGEYEARLY` + `CURRENCY`, `IsiKursTCO`, `IsiMataUangTCO` |
+| `models/tco_klausul.go`, `services/tco_klausul.go` + uji (milik modul, tiket 08) | tujuh induk: `Usd` turunan; aturan `Berkurs`/`Konversi`; uji tiket 08 diperbarui ke perilaku ini |
+
+### Ralat / OQ
+
+Tujuh ralat bertanggal di tiket 11 (grid XOL tak pernah menemukan kurs; `KURS` warisan selalu kosong; `Usd` induk
+turunan — meralat tiket 08; skala pembagian; dua kurs berlaku; `QUARTER`; StartDate kosong). **OQ baru:**
+
+- **OQ-TCO-18** — `KURS` diisi kurs yang dipakai, skala 8 untuk ketujuh pembagian, dan dua kurs berlaku = master rusak
+  (503) `[keputusan kami]`; Finance + DBA.
+
+OQ spec yang tetap terbuka: arti `QUARTER = '0'`.
+
+### Kontrak hilir
+
+`KolomKlausulHilir` tidak berubah (RP, USD tetap dua kolom — AC 49). `USD` induk yang dibaca `GetLimitPLATreatyin`
+(Claim Prop) kini selalu terisi `Rp ÷ Kurs`, seperti yang Pega simpan dari form yang `Usd`-nya hanya dibaca.
+
+### Angka uji
+
+| Perintah | Hasil |
+| --- | --- |
+| `go vet ./...` · `go vet -tags=db ./...` · `gofmt -l .` | bersih |
+| `go test ./...` | 908 lulus, 0 gagal (+14) |
+| `go test -tags=db ./...` | 908 lulus, 53 dilewati (+1: `TestKursLingkaranPenuh`, tanpa skema uji), 0 gagal |
+| `npx tsc --noEmit` · `npx vite build` | bersih |
+| `npx vitest run` | 568 lulus di 47 berkas (+5) |
+
+⚠️ SQL tiket 11 belum pernah dijalankan terhadap Oracle: uji `db` dilewati karena skema uji tidak dikonfigurasi di sesi ini.
+
+### TELEMETRI EKSEKUSI — tiket 11
+
+| Ukuran | Nilai |
+| --- | --- |
+| Berkas dibaca | ±30 (±20 korpus: `testingKurs`, `RefreshKurs`, `HitungRpUsd_depan`, `CalculateTSIExcludeTreaty`, `NewTreatyArrEpi`, `GetMasterKursList`, dua SQL simpan, `NitipKurs`, harness, tujuh form induk, SQL `CURRENCY` dua modul lain; ±10 pola kode) |
+| Berkas XML korpus disensus | 14 `NewTreatyArr*` (gerbang kurs), 7 form induk (medan `Usd` hanya dibaca), 4 pemanggil `CalculateTSIExcludeTreaty`; 7 baris bukti diuji ke korpus |
+| Perintah dijalankan | ±40 |
+| Berkas ditulis / disunting | 9 baru (1.038 baris), 14 disunting (+368 −41) |
+| Putaran instrumen gagal lalu diulang | 4: literal harapan besar salah hitung (dihitung ulang dengan `decimal`); penjaga tulis-warisan menangkap `.CURRENCY` di tiruan (diganti konstanta); pola sunting penjaga penyuntikan tidak unik (konteks diperluas); regex skrip uji mendahului pola penggantian |
+| Token / biaya | tidak terlihat dari dalam sesi, jadi tidak dikarang |

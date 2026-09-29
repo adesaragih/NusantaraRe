@@ -53,6 +53,8 @@ var masterDibacaSajaTCO = []string{
 	"AGENT",
 	// Tiket 07: master bisnis (pemilih `BrowseFilterBusiness_RD`).
 	"BUSINESS",
+	// Tiket 11: master mata uang (`GetCurrencyID`) - pengenal USD untuk kurs.
+	"CURRENCY",
 	// Tiket 08: pemilih ExclutionTreaty (`BrowseOccupationFIRE_RD`,
 	// `BrowseFireClauseFacIn_RD`). `TREATYDESC` sudah di atas.
 	"OCCUPATION", "CLAUSE",

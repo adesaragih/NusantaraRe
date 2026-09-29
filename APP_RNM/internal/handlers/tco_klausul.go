@@ -23,7 +23,8 @@ func layananKlausulTCO(svc *services.Service) *services.KlausulTCO {
 		DenganGudang(services.GudangKlausulOracle(svc)).
 		DenganMaster(services.MasterKlausulOracle(svc)).
 		DenganTahun(services.PengunciTahunOracle(svc)).
-		DenganJenis(services.PembacaJenisReasuransiOracle(svc))
+		DenganJenis(services.PembacaJenisReasuransiOracle(svc)).
+		DenganKurs(services.PembacaKursOracle(svc))
 }
 
 func daftarkanRuteKlausulTCO(mux *http.ServeMux, svc *services.Service, stub bool) {

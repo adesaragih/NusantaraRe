@@ -119,21 +119,33 @@ func layananKlausul(g *gudangKlausulUji, dikunci *int) *services.KlausulTCO {
 	return services.New(nil).KlausulTCO().DenganGudang(g).DenganMaster(masterKlausulUji{}).
 		DenganTahun(tahunKlausulUji{dikunci: dikunci}).
 		DenganJenis(jenisKontrakUji{{ID: "10003", Note: "UJI QUOTA SHARE"}, {ID: "10005", Note: "UJI SURPLUS"}}).
-		DenganTransaksi(transaksiUji).DenganJam(jamUji)
+		DenganKurs(kursKlausulUji{}).DenganTransaksi(transaksiUji).DenganJam(jamUji)
 }
 
 func gudangKlausulKosong() *gudangKlausulUji {
 	return &gudangKlausulUji{baris: map[string]models.KlausulTreaty{}}
 }
 
-func epi(reins, rp, usd string) services.KlausulMasuk {
-	return services.KlausulMasuk{DescID: "10009", Medan: map[string]string{"ReinsTypeID": reins, "Rp": rp, "Usd": usd}}
+// epi - induk EPI; `Usd` TIDAK dikirim: turunan `Rp / Kurs` (tiket 11).
+func epi(reins, rp string) services.KlausulMasuk {
+	return services.KlausulMasuk{DescID: "10009", Medan: map[string]string{"ReinsTypeID": reins, "Rp": rp}}
+}
+
+// kursKlausulUji - kurs berlaku 12.5 (angka bulat supaya turunan mudah dibaca);
+// `kosong` meniru periode tanpa baris kurs.
+type kursKlausulUji struct{ kosong bool }
+
+func (k kursKlausulUji) Berlaku(_ context.Context, tahun models.TahunTreaty) (models.KursTCO, error) {
+	if k.kosong {
+		return models.KursTCO{}, models.GalatKursTidakAda{TreatyYear: tahun.TreatyYear}
+	}
+	return models.KursTCO{ToIDR: apd.New(125, -1), IDCurrency: "UJI-USD", Currency: "USD", Quarter: "0"}, nil
 }
 
 func TestKlausulTanpaIdentitasDanBawaan(t *testing.T) {
 	n := 0
 	l := layananKlausul(gudangKlausulKosong(), &n)
-	if _, err := l.Simpan(context.Background(), services.Pelaku{}, "1000001", epi("10003", "1", "1")); !errors.Is(err, services.ErrTanpaIdentitas) {
+	if _, err := l.Simpan(context.Background(), services.Pelaku{}, "1000001", epi("10003", "1")); !errors.Is(err, services.ErrTanpaIdentitas) {
 		t.Errorf("identitas: %v", err)
 	}
 	if _, err := services.New(nil).KlausulTCO().JenisKlausul(context.Background(), pelakuUjiTCO, ""); !errors.Is(err, services.ErrGudangKlausulBelumDisuntik) {
@@ -173,21 +185,28 @@ func TestJenisKlausulDariMasterDenganAturan(t *testing.T) {
 func TestKlausulIndukEPI(t *testing.T) {
 	g, n := gudangKlausulKosong(), 0
 	l := layananKlausul(g, &n)
-	_, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", epi("10003", "1000", ""))
-	if !errors.Is(err, models.ErrKlausulMedanWajib) || !strings.Contains(err.Error(), "Usd") {
+	_, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", epi("10003", ""))
+	if !errors.Is(err, models.ErrKlausulMedanWajib) || !strings.Contains(err.Error(), "Rp") {
 		t.Fatalf("wajib: %v", err)
 	}
-	h, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", epi("10003", "1.000.000,5", "70"))
+	// Tiket 11: `Usd` induk hanya dibaca di form Pega - klien tidak mengirimnya.
+	kirimUsd := epi("10003", "1000")
+	kirimUsd.Medan["Usd"] = "70"
+	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", kirimUsd); !errors.Is(err, models.ErrMedanBukanMilikJenis) {
+		t.Errorf("Usd dari klien: %v", err)
+	}
+	h, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", epi("10003", "1.000.000,5"))
 	if !errors.Is(err, models.ErrPersenBukanDesimal) {
 		t.Errorf("desimal ganda: %v", err)
 	}
-	h, err = l.Simpan(context.Background(), pelakuUjiTCO, "1000001", epi("10003", "1000000,5", "70"))
+	h, err = l.Simpan(context.Background(), pelakuUjiTCO, "1000001", epi("10003", "1000000,5"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	k := h.Klausul
 	if k.TreatyYearID != "1000001" || k.TreatyYear != "2026" || k.TreatyDescName != "UJI EPI" || k.ReinsTypeName != "UJI QUOTA SHARE" ||
-		k.ParentReinsTypeID != "00" || k.Medan["Rp"] != "1000000.5" || k.Medan["Usd"] != "70" || n != 1 || len(g.jejak) != 1 {
+		k.ParentReinsTypeID != "00" || k.Medan["Rp"] != "1000000.5" || k.Medan["Usd"] != "80000.04000000" ||
+		k.Kurs != "12.5" || n != 1 || len(g.jejak) != 1 {
 		t.Errorf("induk: %+v kunci %d jejak %v", k, n, g.jejak)
 	}
 }
@@ -197,7 +216,7 @@ func TestKlausulIndukEPI(t *testing.T) {
 func TestKlausulAnakTurunanDanTotal(t *testing.T) {
 	g, n := gudangKlausulKosong(), 0
 	l := layananKlausul(g, &n)
-	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", epi("10003", "1000", "80")); err != nil {
+	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", epi("10003", "1000")); err != nil {
 		t.Fatal(err)
 	}
 	anak := func(reins, pct string) services.KlausulMasuk {
@@ -234,7 +253,7 @@ func TestKlausulAnakTurunanDanTotal(t *testing.T) {
 func TestKlausulPeringatanSpreadingTreatyLimitChild(t *testing.T) {
 	g, n := gudangKlausulKosong(), 0
 	l := layananKlausul(g, &n)
-	induk := services.KlausulMasuk{DescID: "10001", Medan: map[string]string{"ReinsTypeID": "10003", "Rp": "100", "Usd": "10"}}
+	induk := services.KlausulMasuk{DescID: "10001", Medan: map[string]string{"ReinsTypeID": "10003", "Rp": "100"}}
 	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", induk); err != nil {
 		t.Fatal(err)
 	}
@@ -254,7 +273,7 @@ func TestKlausulPeringatanSpreadingTreatyLimitChild(t *testing.T) {
 func TestKlausulDobelDanDitahan(t *testing.T) {
 	g, n := gudangKlausulKosong(), 0
 	g.dobel = "10000009"
-	_, err := layananKlausul(g, &n).Simpan(context.Background(), pelakuUjiTCO, "1000001", epi("10003", "1", "1"))
+	_, err := layananKlausul(g, &n).Simpan(context.Background(), pelakuUjiTCO, "1000001", epi("10003", "1"))
 	if !errors.Is(err, services.ErrKlausulDobel) || !strings.Contains(err.Error(), "Data sudah pernah di Input") || !strings.Contains(err.Error(), "10000009") {
 		t.Errorf("dobel: %v", err)
 	}
@@ -287,24 +306,27 @@ func TestKlausulExclusionOccupation(t *testing.T) {
 }
 
 // Pembaruan mempertahankan kolom di luar form dan tidak memindah jenis; induk
-// beranak tidak boleh berganti jenis reasuransi.
+// beranak tidak boleh berganti jenis reasuransi. Tiket 11: `KURS` = kurs
+// berlaku saat disimpan, `Usd` dihitung ulang dari `Rp`.
 func TestKlausulPerbarui(t *testing.T) {
 	g, n := gudangKlausulKosong(), 0
 	l := layananKlausul(g, &n)
-	h, _ := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", epi("10003", "100", "10"))
+	h, _ := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", epi("10003", "100"))
 	id := h.Klausul.ID
 	lama := g.baris[id]
 	lama.Kurs = apd.New(15500, 0)
+	lama.LayerType = "UJI-L"
 	g.baris[id] = lama
-	m := epi("10003", "200", "20")
+	m := epi("10003", "200")
 	m.ID = id
 	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", m); err != nil {
 		t.Fatal(err)
 	}
-	if g.baris[id].Kurs.Text('f') != "15500" || g.baris[id].Rp.Text('f') != "200" {
+	if g.baris[id].Kurs.Text('f') != "12.5" || g.baris[id].Rp.Text('f') != "200" || g.baris[id].Usd.Text('f') != "16.00000000" ||
+		g.baris[id].LayerType != "UJI-L" {
 		t.Errorf("perbarui: %+v", g.baris[id])
 	}
-	pindah := services.KlausulMasuk{ID: id, DescID: "10001", Medan: map[string]string{"ReinsTypeID": "10003", "Rp": "1", "Usd": "1"}}
+	pindah := services.KlausulMasuk{ID: id, DescID: "10001", Medan: map[string]string{"ReinsTypeID": "10003", "Rp": "1"}}
 	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", pindah); !errors.Is(err, services.ErrKlausulJenisBerubah) {
 		t.Errorf("pindah jenis: %v", err)
 	}
@@ -312,9 +334,40 @@ func TestKlausulPerbarui(t *testing.T) {
 		ParentReinsTypeID: "10003", Medan: map[string]string{"ReinsTypeID": "10005", "Pct": "10"}}); err != nil {
 		t.Fatal(err)
 	}
-	ganti := epi("10005", "200", "20")
+	ganti := epi("10005", "200")
 	ganti.ID = id
 	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", ganti); !errors.Is(err, services.ErrKlausulIndukBeranak) {
 		t.Errorf("induk beranak berganti jenis: %v", err)
+	}
+}
+
+// Tiket 11 (ADR-0015): jenis berkurs - tujuh induk ber-Rp/Usd dan tujuh anak -
+// ditolak dengan pesan VERBATIM bila tahun tidak punya kurs; jenis lain tidak.
+func TestKlausulTanpaKursDitolak(t *testing.T) {
+	n := 0
+	l := layananKlausul(gudangKlausulKosong(), &n).DenganKurs(kursKlausulUji{kosong: true})
+	_, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", epi("10003", "1000"))
+	if !errors.Is(err, services.ErrKursTidakAda) || err.Error() != "Tidak ada Nilai Kurs di Tahun : 2026" {
+		t.Errorf("induk tanpa kurs: %v", err)
+	}
+	_, err = l.Simpan(context.Background(), pelakuUjiTCO, "1000001", services.KlausulMasuk{DescID: "10009", Anak: true,
+		ParentReinsTypeID: "10003", Medan: map[string]string{"ReinsTypeID": "10005", "Pct": "10"}})
+	if !errors.Is(err, services.ErrKursTidakAda) {
+		t.Errorf("anak tanpa kurs: %v", err)
+	}
+	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", services.KlausulMasuk{DescID: "10013", Subjenis: "Occupation",
+		Medan: map[string]string{"ID_Occupation": "UJI-1", "Line": "A", "Usd": "1", "Rp": "15000"}}); err != nil {
+		t.Errorf("exclusion tidak berkurs di Pega: %v", err)
+	}
+	d, _ := layananKlausul(gudangKlausulKosong(), &n).JenisKlausul(context.Background(), pelakuUjiTCO, "0")
+	for _, j := range d {
+		for _, a := range j.Aturan {
+			if a.Jenis == "EPI" && (!a.Berkurs || a.Konversi != models.KonversiRpKeUsd || len(a.Turunan) != 1) {
+				t.Errorf("aturan EPI: %+v", a)
+			}
+			if a.Jenis == "ExclutionTreaty" && a.Subjenis == "Occupation" && (a.Berkurs || a.Konversi != models.KonversiDuaArah) {
+				t.Errorf("aturan exclusion: %+v", a)
+			}
+		}
 	}
 }

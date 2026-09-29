@@ -2532,6 +2532,10 @@ export interface AturanKlausul {
   wajib: string[]
   turunan: string[] | null
   ditahan: string
+  /** Tiket 11: form menuntut kurs berlaku (`NewTreatyArr*`). */
+  berkurs: boolean
+  /** Tiket 11: '' | 'RpKeUsd' (`HitungRpUsd_depan`) | 'DuaArah' (`CalculateTSIExcludeTreaty`). */
+  konversi: string
   sumber: string
 }
 
@@ -2689,4 +2693,39 @@ export async function hapusSecurity(tahunID: string, kontrakID: string, reinsure
     metode: 'DELETE',
   })
   return j.pesan
+}
+
+// ---------------------------------------------------------------------------
+// Treaty Contract Out tiket 11 — kurs USD → IDR.
+// ---------------------------------------------------------------------------
+
+/** Kurs berlaku pada tanggal mulai tahun treaty. ⛔ TEKS — tidak pernah `Number`. */
+export interface KursTahun {
+  kurs: string
+  tanggal: string
+  mulai: string
+  akhir: string
+  currency: string
+  idCurrency: string
+  quarter: string
+  treatyYear: string
+}
+
+/** Hasil konversi; kedua nilai tetap terpisah (AC 49). */
+export interface KonversiKurs {
+  rp: string
+  usd: string
+  kurs: string
+}
+
+/** `testingKurs` — 422 "Tidak ada Nilai Kurs di Tahun : <tahun>" bila kosong. */
+export async function ambilKursTahun(tahunID: string): Promise<KursTahun> {
+  return minta<KursTahun>(`/api/treaty-contract-out/tahun/${encodeURIComponent(tahunID)}/kurs`)
+}
+
+/** Konversi di SERVER (desimal persis): dari 'Rp' → Usd pada skala '8' / '4'; dari 'Usd' → Rp. */
+export async function konversiKurs(tahunID: string, dari: 'Rp' | 'Usd', nilai: string, skala: '4' | '8'): Promise<KonversiKurs> {
+  return minta<KonversiKurs>(`/api/treaty-contract-out/tahun/${encodeURIComponent(tahunID)}/kurs/konversi`, {
+    kueri: { dari, nilai, skala },
+  })
 }

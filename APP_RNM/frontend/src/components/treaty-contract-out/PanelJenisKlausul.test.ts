@@ -12,8 +12,10 @@ import {
   barisSubjenis,
   formKlausulDari,
   formKlausulKosong,
+  jenisBerkurs,
   keMasukKlausul,
   labelMedan,
+  rencanaKonversi,
 } from './PanelJenisKlausul'
 
 const KODE = readFileSync(join(__dirname, 'PanelJenisKlausul.tsx'), 'utf8')
@@ -23,7 +25,7 @@ const KODE = readFileSync(join(__dirname, 'PanelJenisKlausul.tsx'), 'utf8')
 
 function aturan(p: Partial<AturanKlausul>): AturanKlausul {
   return { jenis: 'EPI', anak: false, subjenis: '', medan: ['ReinsTypeID', 'Line', 'Rp', 'Usd'],
-    wajib: ['ReinsTypeID', 'Rp', 'Usd'], turunan: null, ditahan: '', sumber: 'SaveTreatyArrEPI_Act', ...p }
+    wajib: ['ReinsTypeID', 'Rp', 'Usd'], turunan: null, ditahan: '', berkurs: false, konversi: '', sumber: 'SaveTreatyArrEPI_Act', ...p }
 }
 
 function klausul(p: Partial<Klausul>): Klausul {
@@ -86,5 +88,31 @@ describe('kabel', () => {
   it('Show Child dan Close Child dari label', () => {
     expect(KODE).toContain('KLAUSUL_TCO.showChild')
     expect(KODE).toContain('KLAUSUL_TCO.closeChild')
+  })
+})
+
+describe('kurs (tiket 11)', () => {
+  it('rencana konversi mengikuti HitungRpUsd_depan dan CalculateTSIExcludeTreaty', () => {
+    expect(rencanaKonversi('RpKeUsd', 'Rp')).toEqual({ dari: 'Rp', ke: 'Usd', skala: '8' })
+    expect(rencanaKonversi('RpKeUsd', 'Usd')).toBeNull()
+    expect(rencanaKonversi('DuaArah', 'Rp')).toEqual({ dari: 'Rp', ke: 'Usd', skala: '4' })
+    expect(rencanaKonversi('DuaArah', 'Usd')).toEqual({ dari: 'Usd', ke: 'Rp', skala: '8' })
+    expect(rencanaKonversi('', 'Rp')).toBeNull()
+  })
+  it('jenis berkurs bila salah satu aturannya berkurs', () => {
+    const j: JenisKlausul = { id: '10009', descName: 'UJI EPI', isXol: '0', statusAktif: '1', catatan: '',
+      aturan: [aturan({ berkurs: true, konversi: 'RpKeUsd', turunan: ['Usd'] }), aturan({ jenis: 'EpiList', anak: true, berkurs: true })] }
+    expect(jenisBerkurs(j)).toBe(true)
+    expect(jenisBerkurs({ ...j, aturan: [aturan({})] })).toBe(false)
+  })
+  it('induk berkurs: Usd TURUNAN tidak dikirim', () => {
+    const a = aturan({ berkurs: true, konversi: 'RpKeUsd', turunan: ['Usd'] })
+    const m = keMasukKlausul(a, '10009', { id: '', medan: { ReinsTypeID: '10003', Line: '', Rp: '1000', Usd: '0.06451613' } }, '00')
+    expect(Object.keys(m.medan)).not.toContain('Usd')
+  })
+  it('kurs dibaca dari server; tanpa kurs Add nonaktif; konversi di server', () => {
+    expect(KODE).toContain('ambilKursTahun(tahunID)')
+    expect(KODE).toContain('disabled={aturan.berkurs && !kursAda}')
+    expect(KODE).toContain('konversiKurs(tahunID, r.dari, nilai, r.skala)')
   })
 })

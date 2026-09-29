@@ -510,3 +510,24 @@ export const SECURITY_TCO = {
   /** `[tidak ada di korpus]` */
   tutup: 'Tutup',
 } as const
+
+/**
+ * Tiket 11 — kurs USD → IDR di layar klausul.
+ *
+ * ⚠️ Korpus tidak punya label tampil untuk kurs: section `NitipKurs`
+ * (`Harness/InboxTreatyContractDescription.xml` b3882) hanya menitip
+ * `InputTreatyArrangement.Kurs` (`Section/NitipKurs.xml` b512). Pesan kurs
+ * kosong datang VERBATIM dari server (`NewTreatyArrEpi.xml` b870).
+ */
+export const KURS_TCO = {
+  /** `[tidak ada di korpus]` */
+  kurs: 'Kurs USD → IDR',
+  /** `[tidak ada di korpus]` */
+  berlaku: 'berlaku',
+  /** `[tidak ada di korpus]` */
+  sampai: 's.d.',
+  /** `[tidak ada di korpus]` — `HitungRpUsd_depan`: Usd = Rp ÷ Kurs, dihitung server. */
+  catatanRpKeUsd: 'Usd dihitung server dari Rp ÷ Kurs.',
+  /** `[tidak ada di korpus]` — `CalculateTSIExcludeTreaty`. */
+  catatanDuaArah: 'Mengisi IDR menghitung USD (Rp ÷ Kurs), mengisi USD menghitung IDR (Usd × Kurs) — di server.',
+} as const

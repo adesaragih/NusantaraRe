@@ -31,6 +31,8 @@ func TestKlausulLingkaranPenuh(t *testing.T) {
 		map[string]string{"UJI-O1": "UJI OKUPASI"}); err != nil {
 		t.Fatal(err)
 	}
+	// Tiket 11: induk EPI dan anaknya berkurs.
+	isiKursUji(t, u)
 	_, badan := u.minta(t, http.MethodPost, "/api/treaty-contract-out/tahun", badanTahun("2026-01-01", "2026-12-31"), true)
 	var tahun tahunJSON
 	_ = json.Unmarshal([]byte(badan), &tahun)
@@ -40,31 +42,32 @@ func TestKlausulLingkaranPenuh(t *testing.T) {
 	if kode != http.StatusOK || !strings.Contains(badan, `"total":3`) || !strings.Contains(badan, `"jenis":"EpiList"`) {
 		t.Fatalf("jenis: %d %s", kode, badan)
 	}
-	// Induk EPI: identitas '1' + 7 digit; sentinel "00".
+	// Induk EPI: identitas '1' + 7 digit; sentinel "00"; Usd = Rp / Kurs (tiket 11).
 	kode, badan = u.minta(t, http.MethodPost, dasar, map[string]any{"descId": "10009",
-		"medan": map[string]string{"ReinsTypeID": "10003", "Rp": "1000000,5", "Usd": "70"}}, true)
+		"medan": map[string]string{"ReinsTypeID": "10003", "Rp": "1000000,5"}}, true)
 	if kode != http.StatusOK {
 		t.Fatalf("induk: %d %s", kode, badan)
 	}
 	var h struct {
 		Klausul struct {
-			ID, ParentReinsTypeID string
-			Medan                 map[string]string
+			ID, ParentReinsTypeID, Kurs string
+			Medan                       map[string]string
 		}
 	}
 	_ = json.Unmarshal([]byte(badan), &h)
-	if len(h.Klausul.ID) != 8 || h.Klausul.ParentReinsTypeID != "00" || h.Klausul.Medan["Rp"] != "1000000.5" {
+	if len(h.Klausul.ID) != 8 || h.Klausul.ParentReinsTypeID != "00" || h.Klausul.Medan["Rp"] != "1000000.5" ||
+		h.Klausul.Medan["Usd"] != "64.51512072" || h.Klausul.Kurs != "15500.25" {
 		t.Fatalf("induk: %+v", h)
 	}
 	// Dobel, medan wajib, jenis ditahan.
 	if kode, badan := u.minta(t, http.MethodPost, dasar, map[string]any{"descId": "10009",
-		"medan": map[string]string{"ReinsTypeID": "10003", "Rp": "1", "Usd": "1"}}, true); kode != http.StatusConflict ||
+		"medan": map[string]string{"ReinsTypeID": "10003", "Rp": "1"}}, true); kode != http.StatusConflict ||
 		!strings.Contains(badan, "Data sudah pernah di Input") {
 		t.Errorf("dobel: %d %s", kode, badan)
 	}
 	if kode, badan := u.minta(t, http.MethodPost, dasar, map[string]any{"descId": "10009",
-		"medan": map[string]string{"ReinsTypeID": "10005", "Rp": "1"}}, true); kode != http.StatusUnprocessableEntity ||
-		!strings.Contains(badan, "Usd") {
+		"medan": map[string]string{"ReinsTypeID": "10005"}}, true); kode != http.StatusUnprocessableEntity ||
+		!strings.Contains(badan, "Rp") {
 		t.Errorf("wajib: %d %s", kode, badan)
 	}
 	if kode, _ := u.minta(t, http.MethodPost, dasar, map[string]any{"descId": "10017", "medan": map[string]string{}}, true); kode != http.StatusUnprocessableEntity {
@@ -73,7 +76,7 @@ func TestKlausulLingkaranPenuh(t *testing.T) {
 	// Anak EpiList: Rp/Usd turunan; sembilan kolom khusus induk NULL di Oracle.
 	kode, badan = u.minta(t, http.MethodPost, dasar, map[string]any{"descId": "10009", "anak": true,
 		"parentReinsTypeId": "10003", "medan": map[string]string{"ReinsTypeID": "10005", "Pct": "25"}}, true)
-	if kode != http.StatusOK || !strings.Contains(badan, `"Rp":"250000.12500000"`) || !strings.Contains(badan, `"Usd":"17.50000000"`) {
+	if kode != http.StatusOK || !strings.Contains(badan, `"Rp":"250000.12500000"`) || !strings.Contains(badan, `"Usd":"16.12878018"`) {
 		t.Fatalf("anak: %d %s", kode, badan)
 	}
 	var anak struct{ Klausul struct{ ID string } }

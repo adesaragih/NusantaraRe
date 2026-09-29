@@ -57,6 +57,8 @@ func daftarkanRuteTreatyContractOut(mux *http.ServeMux, svc *services.Service, s
 	daftarkanRuteKlausulTCO(mux, svc, stubPelaku)
 	// Tiket 06: security di bawah reinsurer (tco_security.go).
 	daftarkanRuteSecurityTCO(mux, svc, stubPelaku)
+	// Tiket 11: kurs USD -> IDR (tco_kurs.go).
+	daftarkanRuteKursTCO(mux, svc, stubPelaku)
 }
 
 // jawabanDaftarJenisReasuransi adalah badan jawaban daftar jenis reasuransi.
@@ -219,6 +221,14 @@ func jawabGalatTreatyContractOut(w http.ResponseWriter, err error) bool {
 		errors.Is(err, models.ErrTotalShareMelebihi100),
 		errors.Is(err, services.ErrReinsurerDiLuarMaster):
 		galat(w, http.StatusUnprocessableEntity, err.Error())
+	case errors.Is(err, services.ErrKursTidakAda):
+		// 422 + pesan VERBATIM `NewTreatyArrEpi.xml` b870 (ADR-0015).
+		galat(w, http.StatusUnprocessableEntity, err.Error())
+	case errors.Is(err, services.ErrMasterKursRusak):
+		// 503: master kurs / mata uang tidak dapat dipakai - keadaan server.
+		galat(w, http.StatusServiceUnavailable, err.Error())
+	case errors.Is(err, services.ErrKonversiKursTidakSah):
+		galat(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, services.ErrSecurityTidakAda):
 		galat(w, http.StatusNotFound, "security tidak ditemukan pada reinsurer ini")
 	case errors.Is(err, services.ErrSecurityDobel):

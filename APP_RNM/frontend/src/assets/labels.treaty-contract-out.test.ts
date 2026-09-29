@@ -15,6 +15,7 @@ import {
   JENIS_REASURANSI_TCO,
   KLAUSUL_TCO,
   KONTRAK_TCO,
+  KURS_TCO,
   LABEL_MEDAN_KHUSUS,
   LABEL_MEDAN_KLAUSUL,
   LAMPIRAN_TCO,
@@ -275,6 +276,19 @@ describe.skipIf(!adaKorpus)('label Treaty Contract Out berbukti barisnya', () =>
     ]
     for (const [n, v] of kasus) expect(baris(KONTRAK, n).trim(), String(n)).toBe(v)
     expect(baris(REAS, 5277).trim()).toBe(tombol(REINSURER_TCO.securityReinsurer))
+  })
+
+  it('tiket 11: jalur kurs yang dipakai - testingKurs di kedua grid; XOL mengirim TreatyYear, bukan StartDate', () => {
+    const H = join('Harness', 'InboxTreatyContractDescription.xml')
+    expect(baris(H, 6138).trim()).toBe('<pyActivity>testingKurs</pyActivity>')
+    expect(baris(H, 6153).trim()).toBe('<pyValue>InputTreatyArrangementDesc.StartDate</pyValue>')
+    expect(baris(H, 9256).trim()).toBe('<pyActivity>testingKurs</pyActivity>')
+    expect(baris(H, 9271).trim()).toBe('<pyValue>InputTreatyArrangementDesc.TreatyYear</pyValue>')
+    expect(baris(join('Activity', 'testingKurs.xml'), 273).trim()).toBe('<PropertiesValue>Param.StartDate</PropertiesValue>')
+    expect(baris(join('Section', 'NitipKurs.xml'), 512).trim()).toBe('<pyValue>InputTreatyArrangement.Kurs</pyValue>')
+    expect(baris(join('Activity', 'NewTreatyArrEpi.xml'), 870).trim()).toBe(
+      '<PropertiesValue>"Tidak ada Nilai Kurs di Tahun : "+ InputTreatyArrangementDesc.TreatyYear</PropertiesValue>')
+    expect(Object.values(KURS_TCO).join(' ')).not.toMatch(/testing/i)
   })
 
   it('nama kelompok adalah nama folder korpus', () => {

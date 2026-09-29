@@ -107,6 +107,14 @@ func ddlTiruanTCO(skema string) []string {
 			skema, repository.MasterOccupationTCO),
 		fmt.Sprintf("CREATE TABLE %s.%s (ID VARCHAR2(1000), INFO VARCHAR2(1000), TYPE VARCHAR2(100))",
 			skema, repository.MasterClauseTCO))
+	// Tiket 11: master kurs - SELURUH kolom VARCHAR2 [data DBA]; master mata
+	// uang - kolom yang SQL korpus sebut (`GetCurrencyIDByName`).
+	out = append(out,
+		fmt.Sprintf("CREATE TABLE %s.%s (TOIDR VARCHAR2(100), TOUSD VARCHAR2(100), IDCURRENCY VARCHAR2(100), "+
+			"CURRENCY VARCHAR2(100), QUARTER VARCHAR2(10), STARTDATE VARCHAR2(100), ENDDATE VARCHAR2(100))",
+			skema, repository.MasterKursTahunanTCO),
+		fmt.Sprintf("CREATE TABLE %s.%s (ID VARCHAR2(100), OLDID VARCHAR2(100), CURRENCY VARCHAR2(100), "+
+			"CURRENCYSYMBOL VARCHAR2(100))", skema, repository.MasterMataUangTCO))
 	return out
 }
 
@@ -281,6 +289,32 @@ func IsiPilihanKlausulTCO(ctx context.Context, db *sql.DB, skema, master string,
 	for id, nama := range pilihan {
 		if _, err := db.ExecContext(ctx, q, id, nama, repository.TipeFireTCO); err != nil {
 			return fmt.Errorf("skemauji: mengisi tiruan %s: %w", master, err)
+		}
+	}
+	return nil
+}
+
+// KursUji adalah satu baris tiruan master kurs (teks, seperti warisannya).
+type KursUji struct{ ToIDR, IDCurrency, Currency, Quarter, StartDate, EndDate string }
+
+// IsiKursTCO mengisi tiruan TREATYEXCHANGEYEARLY (tiket 11).
+func IsiKursTCO(ctx context.Context, db *sql.DB, skema string, baris []KursUji) error {
+	q := fmt.Sprintf("INSERT INTO %s.%s (TOIDR, IDCURRENCY, CURRENCY, QUARTER, STARTDATE, ENDDATE) VALUES (:1, :2, :3, :4, :5, :6)",
+		skema, repository.MasterKursTahunanTCO)
+	for _, b := range baris {
+		if _, err := db.ExecContext(ctx, q, b.ToIDR, b.IDCurrency, b.Currency, b.Quarter, b.StartDate, b.EndDate); err != nil {
+			return fmt.Errorf("skemauji: mengisi tiruan master kurs: %w", err)
+		}
+	}
+	return nil
+}
+
+// IsiMataUangTCO mengisi tiruan CURRENCY: kode -> pengenal (tiket 11).
+func IsiMataUangTCO(ctx context.Context, db *sql.DB, skema string, kodeKeID map[string]string) error {
+	q := fmt.Sprintf("INSERT INTO %s.%s (ID, CURRENCY) VALUES (:1, :2)", skema, repository.MasterMataUangTCO)
+	for kode, id := range kodeKeID {
+		if _, err := db.ExecContext(ctx, q, id, kode); err != nil {
+			return fmt.Errorf("skemauji: mengisi tiruan mata uang: %w", err)
 		}
 	}
 	return nil

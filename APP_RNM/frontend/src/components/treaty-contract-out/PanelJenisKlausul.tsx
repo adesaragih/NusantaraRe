@@ -8,19 +8,26 @@
 // ⛔ AC 29: setiap panel memegang isiannya SENDIRI; `Cancel` membuang isian
 // panel ini saja, tidak menyentuh jenis lain yang sedang dikerjakan.
 // ⛔ Nilai uang/persen TEKS sepanjang jalan; Rp/Usd anak dihitung server.
+//
+// Tiket 11: jenis berkurs menampilkan kurs berlaku tahun itu (`testingKurs`);
+// tanpa kurs, pesan server tampil dan `Add` nonaktif (Pega: `DATASHOW = ""`).
+// Pratinjau konversi Rp ↔ Usd dihitung SERVER (`konversiKurs`) — bukan JS.
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { KLAUSUL_TCO, LABEL_MEDAN_KHUSUS, LABEL_MEDAN_KLAUSUL } from '../../assets/labels.treaty-contract-out'
+import { KLAUSUL_TCO, KURS_TCO, LABEL_MEDAN_KHUSUS, LABEL_MEDAN_KLAUSUL } from '../../assets/labels.treaty-contract-out'
 import {
   ambilKlausul,
+  ambilKursTahun,
   cariPilihanKlausul,
+  konversiKurs,
   simpanKlausul,
   type AturanKlausul,
   type DaftarKlausul,
   type JenisKlausul,
   type Klausul,
   type KlausulMasuk,
+  type KursTahun,
   type PilihanKlausul,
 } from '../../services/api'
 import { Field, Gagal, Kosong, Memuat, Pilih } from '../ui/dasar'
@@ -72,11 +79,33 @@ export function aturanAnak(j: JenisKlausul): AturanKlausul | undefined {
   return j.aturan.find((a) => a.anak)
 }
 
+/** Jenis menuntut kurs bila salah satu aturannya berkurs (tiket 11). */
+export function jenisBerkurs(j: JenisKlausul): boolean {
+  return j.aturan.some((a) => a.berkurs)
+}
+
+/**
+ * Konversi yang dipicu satu medan: `RpKeUsd` — Rp → Usd skala 8
+ * (`HitungRpUsd_depan`); `DuaArah` — Rp → Usd skala 4, Usd → Rp
+ * (`CalculateTSIExcludeTreaty`). `null` bila medan itu tidak memicu apa pun.
+ */
+export function rencanaKonversi(
+  konversi: string,
+  medan: string,
+): { dari: 'Rp' | 'Usd'; ke: 'Rp' | 'Usd'; skala: '4' | '8' } | null {
+  if (konversi === 'RpKeUsd' && medan === 'Rp') return { dari: 'Rp', ke: 'Usd', skala: '8' }
+  if (konversi === 'DuaArah' && medan === 'Rp') return { dari: 'Rp', ke: 'Usd', skala: '4' }
+  if (konversi === 'DuaArah' && medan === 'Usd') return { dari: 'Usd', ke: 'Rp', skala: '8' }
+  return null
+}
+
 function FormMedan({
+  tahunID,
   aturan,
   form,
   onUbah,
 }: {
+  tahunID: string
   aturan: AturanKlausul
   form: FormKlausul
   onUbah: (medan: string, nilai: string) => void
@@ -84,6 +113,21 @@ function FormMedan({
   const [cari, setCari] = useState('')
   const [pilihan, setPilihan] = useState<PilihanKlausul[]>([])
   const turunan = new Set(aturan.turunan ?? [])
+  // Hanya jawaban konversi TERAKHIR yang dipakai (ketikan cepat).
+  const urutan = useRef(0)
+
+  function ubahDanKonversi(medan: string, nilai: string): void {
+    onUbah(medan, nilai)
+    const r = rencanaKonversi(aturan.konversi, medan)
+    if (r === null || nilai.trim() === '') return
+    const ke = ++urutan.current
+    konversiKurs(tahunID, r.dari, nilai, r.skala)
+      .then((h) => {
+        if (ke === urutan.current) onUbah(r.ke, r.ke === 'Usd' ? h.usd : h.rp)
+      })
+      // Ketikan setengah jadi bukan desimal sah; simpan tetap diperiksa server.
+      .catch(() => undefined)
+  }
   return (
     <div className="form-grid">
       {aturan.medan.map((m) => {
@@ -128,7 +172,7 @@ function FormMedan({
             key={m}
             label={label}
             value={form.medan[m] ?? ''}
-            onChange={(v) => onUbah(m, v)}
+            onChange={(v) => ubahDanKonversi(m, v)}
             required={aturan.wajib.includes(m)}
           />
         )
@@ -143,12 +187,15 @@ function GridAturan({
   jenis,
   aturan,
   induk,
+  kursAda,
   onShowChild,
 }: {
   tahunID: string
   jenis: JenisKlausul
   aturan: AturanKlausul
   induk: string
+  /** Tiket 11: false = jenis berkurs tanpa kurs berlaku — `Add` nonaktif. */
+  kursAda: boolean
   onShowChild?: (k: Klausul) => void
 }) {
   const [daftar, setDaftar] = useState<DaftarKlausul | null>(null)
@@ -204,9 +251,12 @@ function GridAturan({
       {galat !== null && <Gagal galat={galat} />}
       {info !== null && <p role="status">{info}</p>}
       {aturan.anak && <p className="polis__catatan">{KLAUSUL_TCO.turunanServer}</p>}
+      {aturan.konversi === 'RpKeUsd' && <p className="polis__catatan">{KURS_TCO.catatanRpKeUsd}</p>}
+      {aturan.konversi === 'DuaArah' && <p className="polis__catatan">{KURS_TCO.catatanDuaArah}</p>}
       {form !== null && (
         <>
           <FormMedan
+            tahunID={tahunID}
             aturan={aturan}
             form={form}
             onUbah={(m, v) => {
@@ -231,7 +281,12 @@ function GridAturan({
         </>
       )}
       <div className="aksi-baris">
-        <button type="button" className="btn btn--primary" onClick={() => setForm(formKlausulKosong(aturan))}>
+        <button
+          type="button"
+          className="btn btn--primary"
+          disabled={aturan.berkurs && !kursAda}
+          onClick={() => setForm(formKlausulKosong(aturan))}
+        >
           {KLAUSUL_TCO.add}
         </button>
         {aturan.anak && daftar !== null && (
@@ -295,6 +350,14 @@ export default function PanelJenisKlausul({
 }) {
   const [indukTerpilih, setIndukTerpilih] = useState<Klausul | null>(null)
   const anak = aturanAnak(jenis)
+  const berkurs = jenisBerkurs(jenis)
+  const [kurs, setKurs] = useState<KursTahun | null>(null)
+  const [galatKurs, setGalatKurs] = useState<unknown>(null)
+
+  useEffect(() => {
+    if (!berkurs) return
+    ambilKursTahun(tahunID).then(setKurs).catch(setGalatKurs)
+  }, [berkurs, tahunID])
   return (
     <section className="panel">
       <header className="inbox__kepala">
@@ -312,6 +375,12 @@ export default function PanelJenisKlausul({
           {jenis.catatan}
         </p>
       )}
+      {berkurs && kurs !== null && (
+        <p role="status">
+          {KURS_TCO.kurs}: {kurs.kurs} ({KURS_TCO.berlaku} {kurs.mulai} {KURS_TCO.sampai} {kurs.akhir})
+        </p>
+      )}
+      {berkurs && galatKurs !== null && <Gagal galat={galatKurs} />}
       {aturanInduk(jenis).map((a) => (
         <GridAturan
           key={`${a.jenis}/${a.subjenis}`}
@@ -319,6 +388,7 @@ export default function PanelJenisKlausul({
           jenis={jenis}
           aturan={a}
           induk="00"
+          kursAda={kurs !== null}
           onShowChild={anak !== undefined ? (k) => setIndukTerpilih(k) : undefined}
         />
       ))}
@@ -330,6 +400,7 @@ export default function PanelJenisKlausul({
             jenis={jenis}
             aturan={anak}
             induk={indukTerpilih.reinsTypeId}
+            kursAda={kurs !== null}
           />
           <button type="button" className="btn btn--ghost btn--sm" onClick={() => setIndukTerpilih(null)}>
             {KLAUSUL_TCO.closeChild}
