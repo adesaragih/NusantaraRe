@@ -85,7 +85,7 @@ func layananSecurity(g *gudangSecurityUji, r *gudangReinsurerUji) *services.Secu
 	dikunci := 0
 	return services.New(nil).SecurityTCO().DenganGudang(g).DenganReinsurer(r).
 		DenganKontrak(kontrakPemegangUji{dikunci: &dikunci}).DenganTahun(tahunReinsurerUji{}).
-		DenganMaster(masterReinsurerUji{}).DenganTransaksi(transaksiUji).DenganJam(jamUji)
+		DenganMaster(masterReinsurerUji{}).DenganTransaksi(transaksiUji)
 }
 
 func gudangSecurityKosong() *gudangSecurityUji {

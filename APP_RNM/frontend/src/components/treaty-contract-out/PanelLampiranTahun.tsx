@@ -59,7 +59,6 @@ export function adaTerkirim(daftar: LampiranTahun[]): boolean {
   return daftar.some(bolehUnduh)
 }
 
-/** Ukuran berkas yang dapat dibaca. */
 export default function PanelLampiranTahun({ tahunID }: { tahunID: string }) {
   const [daftar, setDaftar] = useState<LampiranTahun[] | null>(null)
   const [kategori, setKategori] = useState<string[]>([])

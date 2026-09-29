@@ -90,7 +90,7 @@ func TestPindaiTahunTreaty(t *testing.T) {
 		t.Errorf("teks: %+v", th)
 	}
 	if th.StartDate.Year() != 2026 || th.StartDate.Month() != 1 || th.StartDate.Day() != 1 ||
-		!th.EndDate.IsZero() || th.TglUpdate.Hour() != 10 {
+		!th.EndDate.IsZero() || th.TglUpdate.Hour() != 17 { // 10:00 GMT = 17:00 WIB
 		t.Errorf("tanggal: %v %v %v", th.StartDate, th.EndDate, th.TglUpdate)
 	}
 	buruk := barisPalsu{nilai: []any{"1", "", "", "", "", "", "kapan-kapan", "", "", ""}}

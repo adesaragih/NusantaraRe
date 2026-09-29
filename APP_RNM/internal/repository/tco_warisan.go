@@ -97,9 +97,8 @@ func KolomWarisanTCO(tabel string) []string {
 	return append([]string(nil), kolomWarisanTCO[tabel]...)
 }
 
-// kolomMatiKlausulTCO ada di DDL warisan tetapi tidak di-set procedure mana
+// `PROPORTIONALLIST` dan `OBJECT` ada di DDL warisan tetapi tidak di-set procedure mana
 // pun (AC 70). Tidak dibawa; isi hidupnya dicacah dan dilaporkan.
-var kolomMatiKlausulTCO = []string{"PROPORTIONALLIST", "OBJECT"}
 
 // TipeWarisan menyebut tipe DEKLARASI kolom warisan `[data DBA]`.
 //
@@ -176,8 +175,8 @@ var bentukTanggalWarisanTCO = []struct {
 // UraiTanggalWarisanTCO membaca teks tanggal warisan.
 //
 // Teks kosong adalah KOSONG (waktu nol, ok=true) - bukan galat (ADR-U-0027).
-// Hasilnya tanpa lokasi (UTC) dan tanpa pergeseran: angka yang tertulis
-// adalah angka yang disimpan.
+// Hasilnya tanggal kalender (UTC, 00:00). Bentuk tanggal dibaca apa adanya;
+// stempel Pega (GMT) dibaca di zona Jakarta lebih dulu (lihat daftar bentuk).
 func UraiTanggalWarisanTCO(teks string) (time.Time, bool) {
 	t := strings.TrimSpace(teks)
 	if t == "" {
@@ -204,12 +203,6 @@ func UraiTanggalWarisanTCO(teks string) (time.Time, bool) {
 	return time.Time{}, false
 }
 
-// Batas NUMBER(38,8): delapan angka di belakang koma, tiga puluh di depan.
-const (
-	skalaTujuanTCO   = 8
-	digitBulatTujuan = 30
-)
-
 // UraiDesimalWarisanTCO membaca teks uang/persen warisan.
 //
 // Koma sebagai pemisah desimal DITERIMA - `[terverifikasi]` existing
@@ -217,9 +210,10 @@ const (
 // b571, `SetErrorMessageReinsurer.xml` b270). Teks yang memuat koma DAN titik
 // sekaligus ditolak: menafsirkannya berarti menebak mana ribuan mana desimal.
 //
-// Nilai yang melampaui NUMBER(38,8) - lebih dari delapan angka di belakang
-// koma atau lebih dari tiga puluh di depannya - DITOLAK di sini, sebab Oracle
-// akan membulatkannya DIAM-DIAM saat disimpan (AC 66).
+// ⚠️ tco4: TANPA batas skala. Batas NUMBER(38,8) milik tabel `T_*` yang
+// dibuang; kolom warisan yang dibaca di sini VARCHAR2 dan boleh menyimpan
+// `33.3333333333` yang diketik di Pega - menolaknya membuat seluruh layar
+// selingkup gagal terbuka (temuan /code-review lanjutan 3).
 //
 // Teks kosong adalah KOSONG (nil, ok=true).
 func UraiDesimalWarisanTCO(teks string) (*apd.Decimal, string, bool) {
@@ -233,38 +227,15 @@ func UraiDesimalWarisanTCO(teks string) (*apd.Decimal, string, bool) {
 		}
 		t = strings.ReplaceAll(t, ",", ".")
 	}
+	// Notasi eksponen bukan bentuk desimal Pega (`@toDecimal` / ketikan layar).
+	if strings.ContainsAny(t, "eE") {
+		return nil, "notasi eksponen bukan bentuk desimal warisan", false
+	}
 	d, err := utils.ParseDecimal(t)
 	if err != nil {
 		return nil, err.Error(), false
 	}
-	ringkas := new(apd.Decimal).Set(d)
-	ringkas.Reduce(ringkas)
-	if ringkas.Exponent < -skalaTujuanTCO {
-		return nil, fmt.Sprintf("lebih dari %d angka di belakang koma", skalaTujuanTCO), false
-	}
-	if ringkas.NumDigits()+int64(ringkas.Exponent) > digitBulatTujuan {
-		return nil, fmt.Sprintf("lebih dari %d angka di depan koma", digitBulatTujuan), false
-	}
 	return d, "", true
-}
-
-// polaEkorIdentitasTCO mengenali identitas warisan `'1' + digit`.
-var polaEkorIdentitasTCO = regexp.MustCompile(`^1(\d+)$`)
-
-// EkorIdentitasTCO membaca nomor urut dari identitas berbentuk '1' + lpad.
-//
-// `1000001` dengan lebar 6 memberi 1; `10000001` dengan lebar 7 memberi 1.
-// Bentuk lain - termasuk lebar yang tidak sesuai - bukan identitas sequence.
-func EkorIdentitasTCO(id string, lebar int) (int64, bool) {
-	m := polaEkorIdentitasTCO.FindStringSubmatch(strings.TrimSpace(id))
-	if m == nil || len(m[1]) != lebar {
-		return 0, false
-	}
-	n, err := strconv.ParseInt(m[1], 10, 64)
-	if err != nil {
-		return 0, false
-	}
-	return n, true
 }
 
 // ---------------------------------------------------------------------------
@@ -279,7 +250,7 @@ var zonaJakartaTCO = time.FixedZone("WIB", 7*60*60)
 // polaStempelPegaTCO - `YYYYMMDDTHHMMSS[.mmm][ GMT]`.
 var polaStempelPegaTCO = regexp.MustCompile(`^(\d{8}T\d{6})(?:\.(\d{1,3}))?(?: GMT)?$`)
 
-// UraiWaktuWarisanTCO membaca stempel Pega sebagai INSTAN (UTC); bentuk
+// UraiWaktuWarisanTCO membaca stempel Pega sebagai INSTAN (dalam WIB); bentuk
 // tanggal lain dibaca apa adanya (UTC). Kosong = waktu nol, ok.
 func UraiWaktuWarisanTCO(teks string) (time.Time, bool) {
 	t := strings.TrimSpace(teks)
@@ -298,7 +269,8 @@ func UraiWaktuWarisanTCO(teks string) (time.Time, bool) {
 		ms, _ := strconv.Atoi((m[2] + "00")[:3])
 		w = w.Add(time.Duration(ms) * time.Millisecond)
 	}
-	return w, true
+	// Ditampilkan dalam WIB - jam yang Pega tampilkan (temuan /code-review).
+	return w.In(zonaJakartaTCO), true
 }
 
 // StempelPegaTCO - bentuk `@getCurrentTimeStamp()`: `YYYYMMDDTHHMMSS.mmm GMT`

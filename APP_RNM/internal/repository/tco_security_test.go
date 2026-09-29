@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"regexp"
 	"strings"
 	"testing"
@@ -75,5 +76,23 @@ func TestPindaiSecurityTCO(t *testing.T) {
 	if s.ID != "UJI-AG1" || s.ReasID != "1000007" || s.ReasSecurity != "UJI-AG1" || s.ClientName != "UJI SECURITY" ||
 		s.PctShare.Text('f') != "12.5" || s.TpTreaty != "" {
 		t.Errorf("pindai: %+v", s)
+	}
+}
+
+type hasilUjiSecurity int64
+
+func (h hasilUjiSecurity) LastInsertId() (int64, error) { return 0, nil }
+func (h hasilUjiSecurity) RowsAffected() (int64, error) { return int64(h), nil }
+
+// Temuan /code-review lanjutan 3: UPDATE/DELETE berkunci nama mengenai SEMUA
+// baris senama seperti Pega - duplikat warisan tetap dapat diubah dan dihapus.
+func TestPalingSedikitSatuSecurityTCO(t *testing.T) {
+	if err := palingSedikitSatuSecurityTCO(hasilUjiSecurity(0)); !errors.Is(err, ErrSecurityTidakAda) {
+		t.Errorf("nol baris: %v", err)
+	}
+	for _, n := range []int64{1, 2} {
+		if err := palingSedikitSatuSecurityTCO(hasilUjiSecurity(n)); err != nil {
+			t.Errorf("%d baris: %v", n, err)
+		}
 	}
 }

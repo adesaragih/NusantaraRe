@@ -113,8 +113,13 @@ func TestAntiDobelTahunDanKontrakDikunci(t *testing.T) {
 	if !strings.Contains(string(isi), "kunci := sqlKunciTahunTCO(tahun)") {
 		t.Error("CariDobel kontrak tidak mengunci tahun induk")
 	}
-	if err := PeriksaSQL(sqlJumlahAnakTahunTCO("S.K", "S.P")); err != nil {
+	q := sqlJumlahAnakTahunTCO("S.K", "S.P", "S.A", "S.Y")
+	if err := PeriksaSQL(q); err != nil {
 		t.Error(err)
+	}
+	// tco4 (temuan /code-review): lampiran ikut dihitung - TREATYID = TREATYYEAR || ID.
+	if !strings.Contains(q, "a.TREATYID = y.TREATYYEAR || y.ID") || !strings.Contains(q, "y.ID = :3") {
+		t.Errorf("anak tahun tanpa lampiran:\n%s", q)
 	}
 }
 

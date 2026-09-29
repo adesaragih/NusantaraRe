@@ -58,7 +58,7 @@ func (g GalatKlausulDobel) Error() string {
 // Is membuat `errors.Is(err, ErrKlausulDobel)` benar.
 func (GalatKlausulDobel) Is(target error) bool { return target == ErrKlausulDobel }
 
-// GudangKlausulTCO membaca dan menulis klausul + jejaknya.
+// GudangKlausulTCO membaca dan menulis klausul.
 type GudangKlausulTCO interface {
 	Daftar(ctx context.Context, tahunID, descID, parentReinsTypeID string) ([]models.KlausulTreaty, error)
 	Ambil(ctx context.Context, tahunID, id string) (models.KlausulTreaty, error)

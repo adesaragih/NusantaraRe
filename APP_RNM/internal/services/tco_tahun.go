@@ -15,7 +15,7 @@ package services
 // keunikan di basis data, dan jawabannya menyebut tahun treaty mana yang
 // sudah memakai kombinasi itu.
 //
-// ⛔ Jejak (ADR-0007) ditulis di transaksi yang sama; gudang dan pelaksana
+// ⛔ tco4: nol jejak modul (Pega tidak mencatatnya); gudang dan pelaksana
 // transaksi DISUNTIK supaya gerbangnya teruji tanpa Oracle.
 //
 // ⛔ Fitur salin tahun treaty TIDAK ADA di sini maupun di mana pun (AC 72).

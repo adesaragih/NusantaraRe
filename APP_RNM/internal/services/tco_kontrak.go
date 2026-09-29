@@ -58,7 +58,7 @@ func (g GalatKontrakDobel) Error() string {
 // Is membuat `errors.Is(err, ErrKontrakDobel)` benar.
 func (GalatKontrakDobel) Is(target error) bool { return target == ErrKontrakDobel }
 
-// GudangKontrakTCO membaca dan menulis kontrak + jejaknya.
+// GudangKontrakTCO membaca dan menulis kontrak.
 type GudangKontrakTCO interface {
 	Daftar(ctx context.Context, tahunID string) ([]models.KontrakTreaty, error)
 	Ambil(ctx context.Context, tahunID, id string) (models.KontrakTreaty, error)
@@ -259,7 +259,7 @@ func (k *KontrakTreatyTCO) namaJenisDariMaster(ctx context.Context, id string) (
 // (`SaveTreatyContract_Act`).
 //
 // Urutannya: identitas -> tahun induk ada -> tanggal terurai -> gerbang murni
-// -> jenis dari master -> satu transaksi {dobel, sisip/perbarui, jejak}.
+// -> jenis dari master -> satu transaksi {dobel, sisip/perbarui} (tco4: tanpa jejak).
 func (k *KontrakTreatyTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID string, m KontrakMasuk) (KontrakTampil, error) {
 	if err := WajibIdentitas(pelaku); err != nil {
 		return KontrakTampil{}, err

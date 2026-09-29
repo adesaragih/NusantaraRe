@@ -12,7 +12,7 @@ package repository
 // pembaca ini. Transaksi tetap dibuka dan di-commit sekali oleh
 // `Service.DalamTransaksi` pemanggil (nol COMMIT di teks SQL).
 //
-// Dibaca sesudah: tco_identitas.go, tco_jejak.go.
+// Dibaca sesudah: tco_identitas.go.
 
 import (
 	"context"

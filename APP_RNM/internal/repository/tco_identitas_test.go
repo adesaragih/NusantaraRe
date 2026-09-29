@@ -2,6 +2,7 @@ package repository
 
 import (
 	"errors"
+	"strconv"
 	"testing"
 )
 
@@ -34,17 +35,26 @@ func TestFormatIdentitasTCOMenolakYangTidakMuat(t *testing.T) {
 	}
 }
 
+// ekorIdentitasUjiTCO membaca nomor urut identitas '1' + lpad (pembantu uji).
+func ekorIdentitasUjiTCO(id string, lebar int) (int64, bool) {
+	if len(id) != lebar+1 || id[0] != '1' {
+		return 0, false
+	}
+	n, err := strconv.ParseInt(id[1:], 10, 64)
+	return n, err == nil
+}
+
 // Bentuk yang diterbitkan terbaca kembali oleh pengurai ekor - dua sisi.
 func TestIdentitasTCOPulangPergi(t *testing.T) {
 	id, err := FormatIdentitasTCO(3188, LebarIdentitasKlausulTCO)
 	if err != nil {
 		t.Fatal(err)
 	}
-	n, ok := EkorIdentitasTCO(id, LebarIdentitasKlausulTCO)
+	n, ok := ekorIdentitasUjiTCO(id, LebarIdentitasKlausulTCO)
 	if !ok || n != 3188 {
 		t.Errorf("%s -> %d %v", id, n, ok)
 	}
-	if _, ok := EkorIdentitasTCO(id, LebarIdentitasTCO); ok {
+	if _, ok := ekorIdentitasUjiTCO(id, LebarIdentitasTCO); ok {
 		t.Error("identitas lebar 7 tidak boleh terbaca sebagai lebar 6")
 	}
 }

@@ -4,7 +4,8 @@ package repository
 //
 // Padanan `RDBList/SaveMasterTreatyYear_SQL.xml` -> `PEGA_TREATYYEAR`
 // (`[data DBA]` UPSERT dikunci ID; ID baru `'1' || lpad(TreatyYear_seq, 6)`;
-// TGLUPDATE = SYSDATE; tidak COMMIT sendiri) dan
+// tidak COMMIT sendiri; tco4: tabel warisan `TREATYYEAR`, TGLUPDATE stempel
+// Pega) dan
 // `ReportDefinition/BrowseTreatyYear_RD.xml` (sort `.ID DESC` b672, maks 500
 // b757). Prosedurnya TIDAK dipanggil (keputusan o): logikanya di sini.
 //
@@ -335,9 +336,13 @@ func (m *MasterTahunTreaty) kunciTabelTahunTCO(ctx context.Context, tx *Tx) erro
 	return nil
 }
 
-func sqlJumlahAnakTahunTCO(kontrak, klausul string) string {
-	return fmt.Sprintf(`SELECT (SELECT COUNT(*) FROM %s WHERE IDTREATYYEAR = :1) + (SELECT COUNT(*) FROM %s WHERE TREATYYEARID = :2) FROM DUAL`,
-		kontrak, klausul)
+// sqlJumlahAnakTahunTCO - kontrak + klausul + LAMPIRAN (tco4: kunci lampiran
+// `TREATYID` = teks `TREATYYEAR` + ID - mengubah TREATYYEAR memutusnya;
+// temuan /code-review).
+func sqlJumlahAnakTahunTCO(kontrak, klausul, lampiran, tahun string) string {
+	return fmt.Sprintf(`SELECT (SELECT COUNT(*) FROM %s WHERE IDTREATYYEAR = :1) + (SELECT COUNT(*) FROM %s WHERE TREATYYEARID = :2)
+	     + (SELECT COUNT(*) FROM %s a, %s y WHERE y.ID = :3 AND a.TREATYID = y.TREATYYEAR || y.ID) FROM DUAL`,
+		kontrak, klausul, lampiran, tahun)
 }
 
 // JumlahAnak menghitung kontrak + klausul tahun itu - baris yang kombinasinya
@@ -354,12 +359,20 @@ func (m *MasterTahunTreaty) JumlahAnak(ctx context.Context, tx *Tx, tahunID stri
 	if err != nil {
 		return 0, err
 	}
-	q := sqlJumlahAnakTahunTCO(kontrak, klausul)
+	lampiran, err := m.db.Qualify(TabelLampiranTCO)
+	if err != nil {
+		return 0, err
+	}
+	tahun, err := m.db.Qualify(TabelTahunTCO)
+	if err != nil {
+		return 0, err
+	}
+	q := sqlJumlahAnakTahunTCO(kontrak, klausul, lampiran, tahun)
 	if err := PeriksaSQL(q); err != nil {
 		return 0, err
 	}
 	var n int64
-	if err := tx.tx.QueryRowContext(ctx, q, tahunID, tahunID).Scan(&n); err != nil {
+	if err := tx.tx.QueryRowContext(ctx, q, tahunID, tahunID, tahunID).Scan(&n); err != nil {
 		return 0, fmt.Errorf("repository: menghitung anak tahun treaty %s: %w", tahunID, err)
 	}
 	return n, nil

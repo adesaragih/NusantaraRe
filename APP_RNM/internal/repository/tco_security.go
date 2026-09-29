@@ -40,7 +40,7 @@ var ErrSecurityTidakAda = errors.New("repository: security tidak ditemukan pada 
 
 // kolomSecurityTCO - daftar kolom sisip, BERNAMA (AC 19), urutan posisi
 // `InsertToMTreatySecurity` b60.
-var kolomSecurityTCO = []string{"THN_TREATY", "TOP_ID", "TP_TREATY", "REAS_ID", "PCT_SHARE", "USER_ID", "REAS_SECURITY"}
+var kolomSecurityTCO = KolomWarisanTCO(warisanSecurityTCO)
 
 // SecurityTCO adalah satu baris security beserta nama tampilnya dari master.
 type SecurityTCO struct {
@@ -249,10 +249,7 @@ func (m *MasterSecurityTCO) Perbarui(ctx context.Context, tx *Tx, s models.Secur
 	if err != nil {
 		return fmt.Errorf("repository: memperbarui security %s: %w", s.ID, err)
 	}
-	if n, err := hasil.RowsAffected(); err == nil && n == 0 {
-		return ErrSecurityTidakAda
-	}
-	return pastikanSatuBaris(hasil, "pembaruan security")
+	return palingSedikitSatuSecurityTCO(hasil)
 }
 
 // Hapus membuang SATU security - baris reinsurer induknya tidak disentuh.
@@ -272,10 +269,22 @@ func (m *MasterSecurityTCO) Hapus(ctx context.Context, tx *Tx, reasID, id string
 	if err != nil {
 		return fmt.Errorf("repository: menghapus security %s: %w", id, err)
 	}
-	if n, err := hasil.RowsAffected(); err == nil && n == 0 {
+	return palingSedikitSatuSecurityTCO(hasil)
+}
+
+// palingSedikitSatuSecurityTCO - UPDATE/DELETE berkunci nama mengenai SEMUA
+// baris senama, seperti `UpdateMTreatySecurity`/`DeleteSecurityReinsurer`:
+// warisan tanpa PK boleh sudah menyimpan duplikat, dan menolak lebih dari satu
+// baris membuat duplikat itu tidak pernah dapat diperbaiki (temuan /code-review).
+func palingSedikitSatuSecurityTCO(hasil sql.Result) error {
+	n, err := hasil.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("repository: mencacah baris security: %w", err)
+	}
+	if n == 0 {
 		return ErrSecurityTidakAda
 	}
-	return pastikanSatuBaris(hasil, "penghapusan security")
+	return nil
 }
 
 // desimalWarisanTCO - teks desimal warisan (VARCHAR2) -> desimal; galat

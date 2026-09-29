@@ -5,7 +5,7 @@ package repository
 // Untuk apa berkas ini: hitung dampak dan jalankan kaskade yang ditiru dari
 // `RDBList/DeleteFromTREATYCONTRACT_SQL.xml` b80-b93 (empat DELETE berurut)
 // dan `RDBList/DeleteFromTreatyReinsurer_Act.xml` b60-b64 (security lalu
-// reinsurer), di tabel `T_` - SATU keluarga tabel (AC 63/64).
+// reinsurer), di tabel WARISAN (tco4) - SATU keluarga tabel (AC 63/64).
 //
 // ⛔ `PROPORTIONALARRG` (klausul) TIDAK disentuh (AC 44; penyimpangan sadar
 // 4): klausul milik tahun/grup/jenis, dipakai lintas kontrak. Ia hanya

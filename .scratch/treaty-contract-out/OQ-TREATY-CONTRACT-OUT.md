@@ -28,8 +28,9 @@ Satu tempat untuk seluruh pertanyaan terbuka modul ini. Rincian dan buktinya tet
 | OQ-TCO-21 | hapus kontrak yang kombinasinya dipakai bersama | tinjauan lanjutan 1 | **ditutup** — *"hapus saja, samain dengan pega"* (kelompok 2) |
 | OQ-TCO-22 | `Folder` / `Durasi` / `Namafile` unggahan penyimpanan nyata | tiket 12 (lanjutan 2, kelompok 5) | terbuka — untuk work owner; nilai `TreatyContractOut/` / `60` / `IMAGEID` dipertahankan berlabel `[terbuka — OQ-TCO-22]` |
 | OQ-TCO-23 | bentuk TULIS desimal teks `PROPORTIONALARRG.RP/USD/PCT/PCTME/KURS`, `MTREATYSECURITY.PCT_SHARE` (tco4: titik, tanpa ribuan, `[dugaan kuat]` hasil `@toDecimal`) | lanjutan 3 | terbuka — DBA: sampel baris hidup (titik atau koma?) |
-| OQ-TCO-24 | badan `PEGA_M_ATTACHMENT` (penulis lampiran Treaty Contract Out, `InsertAtatchment_Sql` b60) dan tipe kolom `M_ATTACHMENTTREATY_2` / `T_STORAGE_IMAGE` | lanjutan 3 | terbuka — DBA; kolom ditiru dari `Treaty In/InsertAttachment2_Sql` b84 |
+| OQ-TCO-24 | badan `PEGA_M_ATTACHMENT` (penulis lampiran Treaty Contract Out, `InsertAtatchment_Sql` b60), tipe kolom dan PK/indeks `M_ATTACHMENTTREATY_2` / `T_STORAGE_IMAGE` (daftar lampiran membaca `T_STORAGE_IMAGE` per `IMAGEID`) | lanjutan 3 | terbuka — DBA; kolom ditiru dari `Treaty In/InsertAttachment2_Sql` b84 |
 | OQ-TCO-25 | `USERID`/`TGLUPDATE` reinsurer dan business diisi layanan walau Pega mengosongkannya (jejak modul dibuang tco4) | lanjutan 3 | terbuka — work owner: pertahankan atau kosongkan seperti Pega |
+| OQ-TCO-26 | `Update_T_Storage_SQL` (menyegarkan `URLPUBLIC`/`EXPDATE`/`TANGGAL_UPLOAD` sesudah `geturl`, `GetUrlGoogleStorage_Act`) belum ditiru — unduhan kita memakai URL bertanda tangan segar tiap kali; pembaca lain tabel bersama melihat URL saat unggah | /code-review lanjutan 3 | terbuka — work owner: perlu ditiru? |
 
 ## Keputusan work owner 29-09-2026
 

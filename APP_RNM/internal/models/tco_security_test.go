@@ -68,3 +68,16 @@ func TestSecurityTanpaFloat(t *testing.T) {
 		}
 	}
 }
+
+// REAS_SECURITY CHAR(10) [data DBA]: kode lebih panjang ditolak 422, bukan
+// ORA-12899 (temuan /code-review lanjutan 3).
+func TestSecurityMelampauiLebarCHAR10(t *testing.T) {
+	ok := SecurityReinsurer{ReasID: "1000007", ReasSecurity: "UJI-AGEN10"}
+	if err := PeriksaSecurityTCO(ok); err != nil {
+		t.Errorf("sepuluh karakter: %v", err)
+	}
+	panjang := SecurityReinsurer{ReasID: "1000007", ReasSecurity: "UJI-AGEN-11"}
+	if err := PeriksaSecurityTCO(panjang); !errors.Is(err, ErrSecurityMelampauiLebar) {
+		t.Errorf("sebelas karakter: %v", err)
+	}
+}

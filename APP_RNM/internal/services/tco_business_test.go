@@ -178,3 +178,25 @@ func TestBusinessMaster(t *testing.T) {
 		t.Errorf("master: %+v %v", d, err)
 	}
 }
+
+// tco4 (temuan /code-review): UPDATE procedure hanya lima kolom - jawaban simpan
+// memuat kolom yang benar-benar tersimpan, bukan nilai kombinasi saat ini.
+func TestBusinessPerbaruiMenjawabYangTersimpan(t *testing.T) {
+	g := gudangBusinessKosong()
+	l := layananBusiness(g)
+	a, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", "1000003", services.BusinessMasuk{BizCode: "UJI-B1", IsActive: "1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	lama := g.baris[a.ID]
+	lama.TreatyYearID, lama.TreatyGroupName = "", "UJI GRUP LAMA" // baris warisan: TREATYYEARID NULL
+	g.baris[a.ID] = lama
+	b, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", "1000003",
+		services.BusinessMasuk{ID: a.ID, BizCode: "UJI-B1", IsActive: "0"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if b.TreatyYearID != "" || b.TreatyGroupName != "UJI GRUP LAMA" || b.Aktif {
+		t.Errorf("jawaban bukan yang tersimpan: %+v", b)
+	}
+}

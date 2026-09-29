@@ -448,8 +448,9 @@ func (m *MasterLampiranTCO) SimpanObjek(ctx context.Context, tx *Tx, o models.Ob
 	hasil, err := tx.tx.ExecContext(ctx, q, o.ImageID, kosongJadiNil(o.URLPublic), kosongJadiNil(o.AppFolder),
 		kosongJadiNil(o.Exp), kosongJadiNil(o.Namafile), kosongJadiNil(o.App))
 	if err != nil {
-		// ⛔ URL bertanda tangan tidak disebut: ia memuat tanda tangan akses.
-		return fmt.Errorf("repository: mencatat objek penyimpanan %s", o.ImageID)
+		// Galat Oracle tidak menggemakan nilai bind; URL bertanda tangan tidak
+		// ditulis sendiri di pesan ini (temuan /code-review: sebabnya dibawa).
+		return fmt.Errorf("repository: mencatat objek penyimpanan %s: %w", o.ImageID, err)
 	}
 	return pastikanSatuBaris(hasil, "pencatatan objek penyimpanan")
 }

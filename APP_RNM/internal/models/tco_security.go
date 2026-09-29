@@ -34,7 +34,13 @@ const LabelSecurityNameTCO = "Security Name"
 // LabelShareSecurityTCO - label form b19888.
 const LabelShareSecurityTCO = "%Share"
 
+// LebarReasSecurityTCO - `REAS_SECURITY CHAR(10) NOT NULL` `[data DBA]`.
+const LebarReasSecurityTCO = 10
+
 var (
+	// ErrSecurityMelampauiLebar - kode security tidak muat di CHAR(10) warisan
+	// (temuan /code-review: tanpa gerbang ini Oracle menjawab ORA-12899 = 500).
+	ErrSecurityMelampauiLebar = errors.New("models: kode security melampaui 10 karakter kolom REAS_SECURITY")
 	// ErrSecurityKosong - `Security Name` wajib (b19642/b19693).
 	ErrSecurityKosong = errors.New("models: security wajib dipilih")
 	// ErrSecurityTanpaReinsurer - security selalu menggantung pada reinsurer (AC 17).
@@ -48,6 +54,9 @@ func PeriksaSecurityTCO(s SecurityReinsurer) error {
 	}
 	if strings.TrimSpace(s.ReasSecurity) == "" {
 		return fmt.Errorf("%w: %s", ErrSecurityKosong, LabelSecurityNameTCO)
+	}
+	if len(strings.TrimSpace(s.ReasSecurity)) > LebarReasSecurityTCO {
+		return fmt.Errorf("%w: %s %q", ErrSecurityMelampauiLebar, LabelSecurityNameTCO, s.ReasSecurity)
 	}
 	return nil
 }

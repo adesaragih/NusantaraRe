@@ -7,11 +7,12 @@ package services
 // `Security Reinsurer` (`ViewDetailTreatyReinsurerGrid1.xml` b5277 ->
 // `SetSecurityReinsurer`: `THN_TREATY = .TreatyYear`, `REAS_ID = .ID`).
 //
-// ⛔ Tiga cacat warisan yang TIDAK dibawa (penyimpangan sadar 5):
-//   - UPDATE mencocokkan `trim(REAS_SECURITY) = trim(CARI10)` dengan CARI10 =
-//     nama BARU (`SaveSecurityReinsurer_Act.xml` b420/b953) - mengganti nama
-//     security tidak mengenai baris lamanya. Di sini baris dicocokkan `ID`.
-//   - DELETE berkunci nama - menghapus SEMUA baris bernama sama. Di sini satu ID.
+// ⛔ tco4: tabel warisan `MTREATYSECURITY` tanpa identitas - SQL-nya PERSIS
+// `UpdateMTreatySecurity`/`DeleteSecurityReinsurer` (kunci `REAS_ID` +
+// `TRIM(REAS_SECURITY)`, semua baris senama). Cacat warisan yang TIDAK dibawa:
+//   - UPDATE Pega mengisi kuncinya dengan CARI10 = nama BARU
+//     (`SaveSecurityReinsurer_Act.xml` b420/b953) - mengganti nama security
+//     tidak mengenai baris lamanya. Di sini kuncinya nama LAMA dari rute (`ID`).
 //   - `Local.IsUpdate` dihitung (langkah 3, b760) lalu tidak dipakai: sisip vs
 //     perbarui diputus `HASILD3` (b1225/b1409), sehingga security yang sama
 //     dapat tersisip dua kali. Di sini dobel ditolak 409 - PENYIMPANGAN SADAR
@@ -28,7 +29,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"nusantarare/internal/models"
 	"nusantarare/internal/repository"
@@ -54,7 +54,7 @@ func (g GalatSecurityDobel) Error() string {
 // Is membuat `errors.Is(err, ErrSecurityDobel)` benar.
 func (GalatSecurityDobel) Is(target error) bool { return target == ErrSecurityDobel }
 
-// GudangSecurityTCO membaca, menulis, dan menghapus security + jejaknya.
+// GudangSecurityTCO membaca, menulis, dan menghapus security.
 type GudangSecurityTCO interface {
 	Daftar(ctx context.Context, reasID, thnTreaty string) ([]repository.SecurityTCO, error)
 	Ambil(ctx context.Context, reasID, id string) (repository.SecurityTCO, error)
@@ -145,7 +145,6 @@ type SecurityTCO struct {
 	kontrak   PemegangKontrakTCO
 	tahun     PemeriksaTahunTCO
 	master    PembacaReinsurerMasterTCO
-	jam       func() time.Time
 	transaksi func(ctx context.Context, fn func(tx *repository.Tx) error) error
 }
 
@@ -153,7 +152,7 @@ type SecurityTCO struct {
 func (s *Service) SecurityTCO() *SecurityTCO {
 	return &SecurityTCO{svc: s, gudang: securityBelumDisuntik{}, reinsurer: reinsurerBelumDisuntik{},
 		kontrak: pemegangKontrakBelumDisuntik{}, tahun: gudangTahunTreatyBelumDisuntik{},
-		master: masterReinsurerBelumDisuntik{}, jam: time.Now, transaksi: s.DalamTransaksi}
+		master: masterReinsurerBelumDisuntik{}, transaksi: s.DalamTransaksi}
 }
 
 func (l *SecurityTCO) salin() *SecurityTCO { s := *l; return &s }
@@ -192,9 +191,6 @@ func (l *SecurityTCO) DenganMaster(m PembacaReinsurerMasterTCO) *SecurityTCO {
 	s.master = m
 	return s
 }
-
-// DenganJam mengganti sumber waktu - dipakai uji.
-func (l *SecurityTCO) DenganJam(j func() time.Time) *SecurityTCO { s := l.salin(); s.jam = j; return s }
 
 // DenganTransaksi mengganti pelaksana transaksi - dipakai uji.
 func (l *SecurityTCO) DenganTransaksi(f func(ctx context.Context, fn func(tx *repository.Tx) error) error) *SecurityTCO {

@@ -51,7 +51,7 @@ func (g GalatBusinessDobel) Error() string {
 // Is membuat `errors.Is(err, ErrBusinessDobel)` benar.
 func (GalatBusinessDobel) Is(target error) bool { return target == ErrBusinessDobel }
 
-// GudangBusinessTCO membaca, menulis, dan menghapus baris bisnis + jejaknya.
+// GudangBusinessTCO membaca, menulis, dan menghapus baris bisnis.
 type GudangBusinessTCO interface {
 	Daftar(ctx context.Context, k models.KombinasiTCO) ([]models.BusinessTreaty, error)
 	Ambil(ctx context.Context, k models.KombinasiTCO, id string) (models.BusinessTreaty, error)
@@ -306,10 +306,16 @@ func (l *BusinessTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID, kontra
 			if b.ID, err = l.gudang.Sisip(ctx, tx, b); err != nil {
 				return err
 			}
-		} else if err := l.gudang.Perbarui(ctx, tx, b); err != nil {
+			return nil
+		}
+		// tco4: UPDATE procedure hanya lima kolom - kolom lain baris lama yang
+		// tersimpan, jadi itu pula yang dijawab (temuan /code-review).
+		lama, err := l.gudang.Ambil(ctx, k, b.ID)
+		if err != nil {
 			return err
 		}
-		return nil
+		b.TreatyYearID, b.TreatyGroupName, b.ReinsTypeName = lama.TreatyYearID, lama.TreatyGroupName, lama.ReinsTypeName
+		return l.gudang.Perbarui(ctx, tx, b)
 	})
 	if err != nil {
 		return BusinessTampil{}, err

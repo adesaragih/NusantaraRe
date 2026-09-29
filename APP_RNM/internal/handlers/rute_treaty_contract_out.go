@@ -249,7 +249,8 @@ func jawabGalatTreatyContractOut(w http.ResponseWriter, err error) bool {
 	case errors.Is(err, services.ErrSecurityDobel):
 		galat(w, http.StatusConflict, err.Error())
 	case errors.Is(err, models.ErrSecurityKosong),
-		errors.Is(err, models.ErrSecurityTanpaReinsurer):
+		errors.Is(err, models.ErrSecurityTanpaReinsurer),
+		errors.Is(err, models.ErrSecurityMelampauiLebar):
 		galat(w, http.StatusUnprocessableEntity, err.Error())
 	case errors.Is(err, services.ErrBusinessTidakAda):
 		galat(w, http.StatusNotFound, "baris bisnis tidak ditemukan pada kombinasi kontrak ini")

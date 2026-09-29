@@ -39,7 +39,7 @@ var (
 	ErrReinsurerDiLuarMaster = repository.ErrReinsurerMasterTidakAda
 )
 
-// GudangReinsurerTCO membaca dan menulis reinsurer + jejaknya.
+// GudangReinsurerTCO membaca dan menulis reinsurer.
 type GudangReinsurerTCO interface {
 	Daftar(ctx context.Context, k models.KombinasiTCO) ([]models.ReinsurerTreaty, error)
 	Ambil(ctx context.Context, k models.KombinasiTCO, id string) (models.ReinsurerTreaty, error)

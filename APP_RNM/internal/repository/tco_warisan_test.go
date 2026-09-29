@@ -6,6 +6,8 @@ package repository
 // produksi; seluruh nilai berawalan UJI.
 
 import (
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
@@ -78,32 +80,17 @@ func TestUraiDesimalWarisanTCO(t *testing.T) {
 
 // ⛔ Oracle membulatkan NUMBER(38,8) DIAM-DIAM. Yang melampaui delapan angka
 // di belakang koma harus ditolak di sini, sebelum satu digit pun hilang.
-func TestUraiDesimalWarisanTCOMenolakPresisiMelampaui(t *testing.T) {
-	_, catatan, ok := UraiDesimalWarisanTCO("0.123456789")
-	if ok || !strings.Contains(catatan, "belakang koma") {
-		t.Errorf("sembilan desimal harus ditolak dengan sebab; ok=%v catatan=%q", ok, catatan)
-	}
-	// Nol di ekor BUKAN presisi: 0.500000000 tetap 0.5.
-	if _, _, ok := UraiDesimalWarisanTCO("0.500000000"); !ok {
-		t.Error("nol di ekor tidak melampaui presisi")
-	}
-	_, catatan, ok = UraiDesimalWarisanTCO("1234567890123456789012345678901")
-	if ok || !strings.Contains(catatan, "depan koma") {
-		t.Errorf("tiga puluh satu digit bulat harus ditolak; ok=%v catatan=%q", ok, catatan)
-	}
-}
-
-func TestEkorIdentitasTCO(t *testing.T) {
-	if n, ok := EkorIdentitasTCO("1000042", LebarIdentitasTCO); !ok || n != 42 {
-		t.Errorf("1000042 -> %d %v, mau 42 true", n, ok)
-	}
-	if n, ok := EkorIdentitasTCO("10000042", LebarIdentitasKlausulTCO); !ok || n != 42 {
-		t.Errorf("10000042 lebar 7 -> %d %v, mau 42 true", n, ok)
-	}
-	for _, buruk := range []string{"10000042", "2000001", "UJI-1", "", "100000"} {
-		if _, ok := EkorIdentitasTCO(buruk, LebarIdentitasTCO); ok {
-			t.Errorf("%q seharusnya bukan identitas lebar 6", buruk)
+// tco4 (temuan /code-review): teks warisan VARCHAR2 tanpa batas skala - nilai
+// berdesimal panjang yang diketik di Pega tetap terbaca utuh.
+func TestUraiDesimalWarisanTCOTanpaBatasSkala(t *testing.T) {
+	for _, teks := range []string{"33.3333333333", "33,3333333333", "1234567890123456789012345678901.5"} {
+		d, catatan, ok := UraiDesimalWarisanTCO(teks)
+		if !ok || d == nil {
+			t.Errorf("%q ditolak: %s", teks, catatan)
 		}
+	}
+	if d, _, _ := UraiDesimalWarisanTCO("33.3333333333"); d.Text('f') != "33.3333333333" {
+		t.Errorf("digit hilang: %s", d.Text('f'))
 	}
 }
 
@@ -134,7 +121,7 @@ func TestKolomWarisanTCOSesuaiProcedure(t *testing.T) {
 // pun membuat tabel atau sequence bernama Treaty Contract Out.
 func TestTCONolTabelBaru(t *testing.T) {
 	pola := regexp.MustCompile(`(?i)CREATE\s+(TABLE|SEQUENCE)\s+\{skema\}\.(\w+)`)
-	nama := regexp.MustCompile(`(?i)^(T_)?(M?TREATY|PROPORTIONAL|SEQ_T_TREATY|SEQ_T_MTREATY|SEQ_T_PROPORTIONAL)`)
+	nama := regexp.MustCompile(`(?i)^(SEQ_)?(T_)?(M?TREATY|PROPORTIONAL)`)
 	berkas := 0
 	for n, teks := range seluruhSQL(t, false) {
 		berkas++
@@ -185,5 +172,57 @@ func TestTepiTulisWarisanTCODuaArah(t *testing.T) {
 	}
 	if TulisDesimalWarisanTCO(nil) != nil {
 		t.Error("nil harus NULL")
+	}
+}
+
+// tco4: nol nama tabel baru modul (T_ + TREATY…/MTREATY…/PROPORTIONAL…) di KODE
+// Go dan frontend. Komentar - catatan sejarah dan ralat - dibuang lebih dulu.
+// Polanya dirakit dari potongan supaya berkas ini sendiri tidak memuatnya.
+func TestTCONolNamaTabelBaruDiKode(t *testing.T) {
+	pola := regexp.MustCompile("T" + "_" + `(TREATY|MTREATY|PROPORTIONAL)\w*`) // tanpa \b: SEQ_ + nama ikut
+	if !pola.MatchString("SELECT ID FROM S."+"T"+"_TREATYYEAR") || !pola.MatchString("S.SEQ_"+"T"+"_TREATYYEAR") ||
+		pola.MatchString("SELECT ID FROM S.TREATYYEAR") {
+		t.Fatal("pola penjaga tidak menggigit atau menuduh nama warisan")
+	}
+	ekor := regexp.MustCompile(`(^|\s)//.*$`)
+	blok := regexp.MustCompile(`(?s)/\*.*?\*/`)
+	berkas := 0
+	for _, akar := range []string{akarModul + "/internal", akarModul + "/cmd", akarModul + "/frontend/src"} {
+		err := filepath.Walk(filepath.FromSlash(akar), func(jalur string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if info.IsDir() {
+				if info.Name() == "node_modules" || info.Name() == "dist" {
+					return filepath.SkipDir
+				}
+				return nil
+			}
+			if ext := filepath.Ext(jalur); ext != ".go" && ext != ".ts" && ext != ".tsx" {
+				return nil
+			}
+			isi, err := os.ReadFile(jalur)
+			if err != nil {
+				return err
+			}
+			berkas++
+			kode := blok.ReplaceAllString(string(isi), "")
+			for i, baris := range strings.Split(kode, "\n") {
+				baris = ekor.ReplaceAllString(baris, "")
+				if filepath.Ext(jalur) != ".go" && strings.HasPrefix(strings.TrimSpace(baris), "*") {
+					continue // badan JSDoc
+				}
+				if m := pola.FindString(baris); m != "" {
+					t.Errorf("%s:%d menyebut %s - tco4: modul ini memakai tabel warisan", filepath.ToSlash(jalur), i+1, m)
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	if berkas < 100 {
+		t.Fatalf("hanya %d berkas terbaca; pembacanya yang rusak", berkas)
 	}
 }

@@ -45,6 +45,7 @@ func TestJawabGalatSecurityTCO(t *testing.T) {
 		{services.GalatSecurityDobel{IDLain: "1000011", ReasSecurity: "UJI-R1"}, http.StatusConflict},
 		{models.ErrSecurityKosong, http.StatusUnprocessableEntity},
 		{models.ErrSecurityTanpaReinsurer, http.StatusUnprocessableEntity},
+		{models.ErrSecurityMelampauiLebar, http.StatusUnprocessableEntity},
 	} {
 		w := httptest.NewRecorder()
 		jawabGalatTreatyContractOut(w, k.err)

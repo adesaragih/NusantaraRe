@@ -180,12 +180,9 @@ type MasterKlausulTCO struct{ db *DB }
 // NewMasterKlausulTCO menyusun gudangnya.
 func NewMasterKlausulTCO(db *DB) *MasterKlausulTCO { return &MasterKlausulTCO{db: db} }
 
-// kolomKlausulTCO - 35 kolom, urutan parameter `PEGA_PROPORTIONALARRG`.
-var kolomKlausulTCO = []string{"ID", "TREATYYEAR", "TREATYYEARID", "TREATYGROUPID", "TREATYGROUPNAME", "TREATYDESCID",
-	"TREATYDESCNAME", "REINSTYPEID", "REINSTYPENAME", "LAYER", "LAYERPART", "LAYERPARTTYPE", "LAYERTYPE", "KURS",
-	"TGLUPDATE", "USERID", "LINE", "PCT", "PCTME", "YDCF", "METHOD", "TERRITORIALLIMIT", "PARENTREINSTYPEID",
-	"SPREADINGORDER", "RP", "USD", "ID_OCCUPATION", "OCCUPATION", "ID_CLAUSE", "CLAUSE", "TREATYLIMIT", "COINS_MIN",
-	"COINS_MAX", "MORERP", "MOREUSD"}
+// kolomKlausulTCO - 35 kolom, urutan parameter `PEGA_PROPORTIONALARRG`; SATU
+// sumber dengan skema warisan (`KolomWarisanTCO`) - temuan /code-review.
+var kolomKlausulTCO = KolomWarisanTCO(warisanKlausulTCO)
 
 // KolomKhususIndukTCO - sembilan kolom yang NULL pada baris anak (AC 25).
 var KolomKhususIndukTCO = []string{"ID_OCCUPATION", "OCCUPATION", "ID_CLAUSE", "CLAUSE", "TREATYLIMIT", "COINS_MIN",
@@ -195,8 +192,15 @@ var KolomKhususIndukTCO = []string{"ID_OCCUPATION", "OCCUPATION", "ID_CLAUSE", "
 var kolomDesimalKlausul = map[string]bool{"KURS": true, "PCT": true, "PCTME": true, "RP": true, "USD": true,
 	"TREATYLIMIT": true, "COINS_MIN": true, "COINS_MAX": true, "MORERP": true, "MOREUSD": true}
 
-var kolomAngkaKlausul = map[string]bool{"TREATYLIMIT": true, "COINS_MIN": true, "COINS_MAX": true,
-	"MORERP": true, "MOREUSD": true}
+var kolomAngkaKlausul = func() map[string]bool {
+	hasil := map[string]bool{}
+	for _, k := range kolomKlausulTCO {
+		if TipeWarisanTCO(warisanKlausulTCO, k) == WarisanAngka {
+			hasil[k] = true
+		}
+	}
+	return hasil
+}()
 
 func pilihKlausulTCO() string {
 	var b strings.Builder
