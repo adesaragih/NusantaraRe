@@ -1,6 +1,6 @@
 # 03: Baris `AdjustmentList` + Save ke Outstanding
 
-**Status:** sebagian — Save to RNM ADA sejak GILIRAN-11 paket 1 (`services/simpanrnm.go`); spreading tanpa pemanggil produksi; bendera `Save` tanpa kolom (OQ-N1); baris pertama **lahir saat Submit Register** sejak GILIRAN-14 (butir bp; `Add` = putaran saja — bo diralat); `Delete` berdiri tetapi MATI, tanpa rute (OQ-N7); sunting sel baris belum ada (OQ-N8)
+**Status:** sebagian — Save to RNM ADA sejak GILIRAN-11 paket 1 (`services/simpanrnm.go`); spreading tanpa pemanggil produksi; bendera `Save` tanpa kolom (OQ-N1); baris pertama **lahir saat Submit Register** sejak GILIRAN-14 (butir bp; `Add` = putaran saja — bo diralat); `Delete` berdiri tetapi MATI, tanpa rute (OQ-N7); sunting sel: **nol sel dapat disunting menurut XML** (butir br, OQ-N8 ditutup, OQ-N11 lahir)
 
 **Blocked by:** 02 (register klaim + penomoran), **14 (skema relasional klaim — PREFACTOR)**
 
@@ -860,3 +860,43 @@ kepemilikannya diperiksa lewat `AmbilPeserta` (`pesertaMilikKlaim`); uji `db`
 GILIRAN-13. Uji `src/services/tomboladd.test.ts`.
 
 **OQ-N9 ditutup** oleh bp. **OQ-N8** (sunting sel) tetap terbuka sampai butir br (paket 3).
+
+## ⛔ Ralat bertanggal — 29 September 2026 (GILIRAN-14 paket 3, butir **br**: sunting sel menurut grid XML)
+
+`[DIPUTUSKAN — XML; veto work owner]` butir **br**: "hanya kolom yang `ClaimLifeDetailGCNM.xml` grid b17126
+tampilkan dapat disunting". Dibaca per kolom — dan **vonisnya nol**.
+
+**Cara membaca, dikalibrasi lebih dulu.** `pyEditOptions` sebuah sel ditulis SEBELUM `pyValue`-nya (rentang sesudah
+`pyValue` sebelumnya). Kosakata di seluruh `Section/` Claim Life: `Auto` 450, `Editable` 15, `Read-only` 315. Jawaban
+yang sudah diketahui: `.CLAIM_RECEIVED_DATE` bertanda **`Editable`** di dialog `EditDateClaimLife_Section.xml` (b1034 —
+dialog yang memang menyuntingnya, rute `PUT …/tanggal-klaim`) dan **`Read-only`** di layar Detail. `pyReadOnlyCondition`
+yang tampak di rentang sebuah sel tidak mengubah opsi selnya (`.DOB`, `.CLAIM_RECEIVED_DATE` di layar Detail tetap
+`Read-only`).
+
+**Grid `.AdjustmentList` b17126** — empat kolom data, keempatnya `pyReadOnly true` / `pyEditOptions Read-only`:
+`.STS_REJECT` (b18203/b18213), `.ADJUSTMENT_DATE` (b18386/b18395), `.ACCEPTEDNO` (b18627/b18635, tampil bila
+`.PrintFaceClaim=1` b18597), `.ACCEPTATION_DATE` (b18831/b18839).
+
+**Panel yang grid buka** — `pyEditingMode expandPane` b19566, `pyEditAction Adjustment_Detail` b19583 →
+`Section/AdjustmentDetail_Section.xml`: SETIAP medan data `Read-only`, nol `Editable` — antara lain `.CURRENCY`
+b1448, `.PCTClaim` b1614, `.CLAIM_PAID` b1937, `.SHARE_NUSANTARA_RE` b2644, `.CEDING_RETENTION` b2807,
+**`.CLAIM_GROSS` b2970**, `.CLAIM_RETRO` b3232, `.SUM_REASURED` b4097, `.SUM_INSURED` b4260, `.SHARE_RETRO` b4423,
+`.RETROCEDED_SHARE` b4614, rekening (`.PayableTo` b5884, `.NameOfBank` b6080, `.SwiftCode` b6620, `.BranchOfBank`
+b6825, `.NoAccount` b7004). Hanya tombol yang `Auto`.
+
+**Yang dibangun: TIDAK ada rute sunting.** Rute `PUT …/adjustment/{adjId}` yang menjawab 422 untuk setiap kolom adalah
+kode mati. Vonisnya dikunci `TestGridAdjustmentNolSelDapatDisunting`, dengan tafsir yang diuji dulu atas jawaban yang
+diketahui (`TestKalibrasiOpsiSuntingDariDialogEditDate`); bila korpus kelak berkata lain, uji itu yang merah lebih dulu.
+
+**OQ-N8 ditutup — oleh bp, bukan oleh rute sunting.** Yang OQ-N8 cemaskan adalah baris kosong yang tidak dapat disimpan
+ke Outstanding (`Save to RNM` 11.17 b6043 menolak `.CLAIM_GROSS` kosong; kolom kita `CLAIM_AMOUNT`, catatan 7). Sejak
+bp, baris pertama lahir saat Register dengan `CLAIM_AMOUNT` dari polisnya (`SavePesertaClaim` 7.8 b3828), jadi
+gerbang itu terpenuhi tanpa sunting sel.
+
+**Pertanyaan terbuka baru:**
+- **OQ-N11** — `.CLAIM_GROSS` di panel `Read-only` (b2961/b2970), tetapi **wajib** (`pyRequired true` b2977/b3026,
+  `pyRequiredNew always` b3021) dan punya aksi `change` → `CountClaimAmountLife_Act` (b3036/b3049) — bentuk medan
+  masukan yang dikunci. Nol activity/data transform di korpus Claim Life yang MENULIS `.CLAIM_GROSS`
+  (`CountClaimAmountLife_Act`, `RejectOSClaimLife_Act`, `SaveOutStandingLife_Act`, `SpreadingClaimLife_Act` hanya
+  membacanya). Siapa yang mengisinya di Pega — pengguna (dan tanda `Read-only` itu keliru dibaca), atau aturan di luar
+  ekspor ini? Sampai dijawab, aplikasi memetakan `.CLAIM_GROSS` ke `CLAIM_AMOUNT` yang lahir di pendaftaran.
