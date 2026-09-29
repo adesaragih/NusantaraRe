@@ -724,14 +724,12 @@ melahirkan baris pertama" — ya, `SavePesertaClaim` 7.8 b3671 (hidup, WHEN b391
 dibaca **0** (`[dugaan]` seperti `@toDecimal("")` Pega) — penyimpangan bertanggal terhadap ADR-U-0027. *(Tiket 02,
 GILIRAN-15.)*
 
-**OQ-N12** *(untuk work owner — lahir dari tinjauan GILIRAN-15)* — dua jawaban 29-09-2026 bertemu dengan catatan 7
-tiket 03. (1) N11: "`CLAIM_GROSS` sementara **kosong**". (2) "Kosong = nol di 7.8": `CLAIM_AMOUNT` baris yang lahir saat
-Submit tidak pernah kosong (paling kecil `0`). (3) Catatan 7 (tiket 14): `CLAIM_GROSS` = `CLAIM_AMOUNT`, sehingga gerbang
-`Save to RNM` 11.17.1 (`simpanrnm.go`, b6043 `.CLAIM_GROSS==""`) membaca `CLAIM_AMOUNT`. Akibatnya gerbang 11.17.1 **tidak
-pernah menolak** baris yang lahir saat Register (dan putaran yang mewarisinya), sedangkan di Pega — `CLAIM_GROSS` tanpa
-penulis — gerbang itu menolak. Perilaku TIDAK diubah executor. Pilih: (a) pertahankan catatan 7 (gerbang praktis mati untuk
-baris 7.8); (b) pisahkan `CLAIM_GROSS` dari `CLAIM_AMOUNT` (kolom baru — migrasi — dan gerbang 11.17.1 akan menolak setiap
-baris sampai penulisnya ada); (c) tunggu jawaban OQ-N11 dari pemilik ekspor. *(Tiket 02, 03.)*
+**OQ-N12** — ✅ **DITUTUP 29-09-2026, pilihan (a)** (work owner, "A"): catatan 7 tiket 03 **dipertahankan** —
+`CLAIM_GROSS` dibaca sama dengan `CLAIM_AMOUNT` baris adjustment, `[sementara — menunggu OQ-N11 pemilik ekspor]`. Gerbang
+`Save to RNM` 11.17.1 (`simpanrnm.go`; b6043 `.CLAIM_GROSS==""`, langkah hidup) tetap membaca `CLAIM_AMOUNT`, perilaku
+tidak berubah. Dasar: bila `CLAIM_GROSS` benar-benar kosong, tidak satu klaim pun lolos Save to RNM di Pega — nilainya
+pasti diisi rule yang tidak diekspor `[dugaan: Declare Expression]`. Tabel buktinya di tiket 03, bab bertanggal
+GILIRAN-16. *(Tiket 02, 03.)*
 
 **OQ-N11** — dipindah ke daftar **pemilik ekspor** di bawah (keputusan work owner 29-09-2026).
 
@@ -745,4 +743,6 @@ yang dikunci. **Pembaca 4, penulis 0** di korpus Claim Life: `CountClaimAmountLi
 metode: `grep -rlE "CLAIM_GROSS" .` di folder `Claim Life` (5 berkas: 4 activity + section itu) dan `py pohon.py
 <activity>.split <keluaran>` atas keempat activity lalu `grep -n "PropertiesName = .*CLAIM_GROSS"` (nol baris). Apakah ada rule di luar ekspor ini (declare expression, activity kelas lain) yang
 menulisnya, atau medan itu memang diisi pengguna di versi yang berjalan? *Sementara:* aplikasi tidak menulisnya;
-catatan 7 tiket 03 (`CLAIM_GROSS` = `CLAIM_AMOUNT`, tiket 14) tetap berlaku sampai dijawab.
+catatan 7 tiket 03 (`CLAIM_GROSS` = `CLAIM_AMOUNT`, tiket 14) tetap berlaku sampai dijawab (OQ-N12 (a)).
+**Permintaan (GILIRAN-16):** mohon ekspor Declare Expression atau rule lain yang mengisi `CLAIM_GROSS` pada kelas
+`Int-LIFE_PREMIUM_DETAIL`/`AdjustmentList`.

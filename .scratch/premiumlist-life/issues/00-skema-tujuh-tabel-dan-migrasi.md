@@ -1,6 +1,6 @@
 # 00: Skema tujuh tabel + `T_WORK_POLIS` + migrasi — **PREFACTOR**
 
-**Status:** sebagian — migrasi data, rekonsiliasi, dan jalur mundur teruji terhadap Oracle belum ada; DDL `050`–`056` + penjaga bentuk sudah; **`057` (`SEQ_WORK_POLIS` + `FLAG_ONGOING_POLICY`) sejak GILIRAN-13** — terpasang di DEV oleh work owner; **`058` (`SEQ_WORK_POLIS` mulai 22374) sejak GILIRAN-15** — OQ-PL-15 ditutup, `[sementara]` sampai DBA memastikan `PC_DATA_UNIQUEID`; belum dijalankan executor
+**Status:** sebagian — migrasi data, rekonsiliasi, dan jalur mundur teruji terhadap Oracle belum ada; DDL `050`–`056` + penjaga bentuk sudah; **`057` (`SEQ_WORK_POLIS` + `FLAG_ONGOING_POLICY`) sejak GILIRAN-13** — terpasang di DEV oleh work owner; **`058` (`SEQ_WORK_POLIS` mulai 22374) sejak GILIRAN-15** — OQ-PL-15 ditutup, `[sementara]` sampai DBA memastikan `PC_DATA_UNIQUEID`; belum dijalankan executor; perintah audit angka 22373 dicatat GILIRAN-16
 
 **Blocked by:** CL-01 (kerangka aplikasi + seam API — scaffolding lintas konteks)
 
@@ -319,3 +319,21 @@ jalan), percobaan ulang berhenti di ORA-02289 — `CREATE`-nya dijalankan manual
 mundur memulihkan bentuk 057 (`START WITH 1`). Penghitung `CREATE` 51 → 52. Penjaga kata cadangan tidak disesuaikan —
 ia memeriksa nama kolom, dan 058 tidak membuat kolom. Pemeriksaan DBA atas `PC_DATA_UNIQUEID`: **OQ-PL-17**. Uji `TestMigrasi058SequenceMulaiDiAtasNomorLama`.
 `-migrate` dijalankan work owner; dua kasus uji `NBLF-2`/`NBLF-3` di DEV tidak disentuh executor.
+
+## Audit angka 22373 — 29 September 2026 (GILIRAN-16)
+
+Perintah audit asal angka 22373 *(asisten, 28-09-2026 — menurut brief GILIRAN-16)*, baca-saja:
+
+```sql
+SELECT COUNT(*), MAX(TO_NUMBER(REGEXP_SUBSTR(IDPEGA,'[0-9]+$'))) FROM POOLDATA.JSON_POLIS WHERE IDPEGA LIKE '%NBLF-%'
+```
+
+→ **33** baris, maksimum **22373**. Ini melengkapi bab GILIRAN-15 di atas ("perintah auditnya tidak disertakan brief"):
+perintahnya kini ada. Executor TIDAK menjalankannya (nol akses DEV sesi ini).
+
+⚠️ Kepala berkas `058_seq_work_polis_mulai_ulang.sql` sengaja **tidak** disunting. Brief: bila 058 sudah terpasang di
+DEV, perintah audit ditulis di tiket ini saja. Executor tidak dapat memastikan apakah work owner sudah menjalankan
+`-migrate` sesudah `c31eb12` — keadaan DEV terakhir yang tercatat (brief GILIRAN-15 §0 dan brief lanjutan 3 Treaty
+§0, 29-09-2026) adalah `T_MIGRASI` 29 langkah, terakhir `057` — maka jalan yang benar di kedua keadaan dipilih. Kepala
+058 menulis tanggal baca 29-09-2026, brief GILIRAN-16 menulis 28-09-2026; dicatat, tidak diputuskan executor.
+OQ-PL-17 (`PC_DATA_UNIQUEID`) tetap terbuka.

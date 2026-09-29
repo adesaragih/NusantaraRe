@@ -215,6 +215,10 @@ func periksaPesertaRNM(m MasukanRNM, p PesertaRNM, idx int, gross bool) error {
 	}
 	for _, b := range p.Baris {
 		// `.CLAIM_GROSS` - kolom kita `CLAIM_AMOUNT` (tiket 03 catatan 7).
+		// ⚠️ [sementara - menunggu OQ-N11 pemilik ekspor] OQ-N12 (a), work owner
+		// 29-09-2026: korpus tanpa penulis `.CLAIM_GROSS` (4 pembaca, 0 penulis;
+		// dugaan Declare Expression yang tidak diekspor). Karena 7.8 membaca sumber
+		// kosong sebagai 0, gerbang ini praktis tidak menolak baris Register.
 		if b.JumlahKlaim.Kosong() {
 			return tolakRNM("11.17.1", fmt.Sprintf(formatGrossKosong, idx))
 		}

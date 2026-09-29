@@ -1,6 +1,6 @@
 # 03: Baris `AdjustmentList` + Save ke Outstanding
 
-**Status:** sebagian — Save to RNM ADA sejak GILIRAN-11 paket 1 (`services/simpanrnm.go`); spreading tanpa pemanggil produksi; bendera `Save` tanpa kolom (OQ-N1); baris pertama **lahir saat Submit Register** sejak GILIRAN-14 (butir bp; `Add` = putaran saja — bo diralat); `Delete` **tidak berlaku, tidak dirender** (OQ-N7 ditutup 29-09-2026); sunting sel: **tidak ada — ikut XML** (butir br dan OQ-N8 ditutup work owner 29-09-2026); `CLAIM_GROSS` menunggu pemilik ekspor (OQ-N11)
+**Status:** sebagian — Save to RNM ADA sejak GILIRAN-11 paket 1 (`services/simpanrnm.go`); spreading tanpa pemanggil produksi; bendera `Save` tanpa kolom (OQ-N1); baris pertama **lahir saat Submit Register** sejak GILIRAN-14 (butir bp; `Add` = putaran saja — bo diralat); `Delete` **tidak berlaku, tidak dirender** (OQ-N7 ditutup 29-09-2026); sunting sel: **tidak ada — ikut XML** (butir br dan OQ-N8 ditutup work owner 29-09-2026); `CLAIM_GROSS` = `CLAIM_AMOUNT` **sementara** (OQ-N12 (a) ditutup 29-09-2026) sampai pemilik ekspor menjawab (OQ-N11)
 
 **Blocked by:** 02 (register klaim + penomoran), **14 (skema relasional klaim — PREFACTOR)**
 
@@ -332,6 +332,8 @@ izinkan sesi ini. Karena itu **tidak dikerjakan**; `[terbuka — work owner §9:
 (`Int-LIFE_PREMIUM_DETAIL`, langkah 8.1); `CURRENCY` dan `CLAIM_GROSS` dibaca dari **baris
 adjustment** (langkah 8.2, objek `.AdjustmentList`). Kolom kita untuk `CLAIM_GROSS` bernama
 `CLAIM_AMOUNT` (tiket 14) — satu nilai, dua nama; dicatat supaya tidak lahir kolom ketiga.
+⚠️ `[sementara — menunggu OQ-N11 pemilik ekspor]` — dipertahankan work owner 29-09-2026 (OQ-N12 (a), bab bertanggal
+GILIRAN-16 di akhir tiket).
 
 **8. Kolom tabel dokumen — sensus butir `ad`, selesai.** `InsertDocument_Act` membuat halaman
 `NewDocument`, mengisinya, memanggil `InsertGoogleStorage_Act`, lalu `Obj-Save`. Properti yang
@@ -957,3 +959,22 @@ pernah menolak** baris yang lahir saat Register (dan putaran yang mewarisinya), 
 penulis — gerbang itu menolak. Perilaku TIDAK diubah executor. Pilih: (a) pertahankan catatan 7 (gerbang praktis mati untuk
 baris 7.8); (b) pisahkan `CLAIM_GROSS` dari `CLAIM_AMOUNT` (kolom baru — migrasi — dan gerbang 11.17.1 akan menolak setiap
 baris sampai penulisnya ada); (c) tunggu jawaban OQ-N11 dari pemilik ekspor.
+
+## ⛔ Keputusan work owner 29-09-2026 — OQ-N12 (a) (GILIRAN-16)
+
+*Kutipan: "A".* **Catatan 7 dipertahankan:** `CLAIM_GROSS` dibaca sama dengan `CLAIM_AMOUNT` baris adjustment,
+`[sementara — menunggu OQ-N11 pemilik ekspor]`. Perilaku tidak berubah: gerbang `Save to RNM` 11.17.1 (`services/simpanrnm.go`) tetap
+membaca `CLAIM_AMOUNT` dan, karena 7.8 membaca sumber kosong sebagai 0, praktis tidak menolak baris yang lahir saat
+Register (dan putaran yang mewarisinya). Dasar — dibaca asisten, diperiksa ulang executor atas
+`Activity/SaveOutStandingLife_Act.xml` (pecahan `><` → `>\n<`) dan pohon langkahnya (`pyStepsBlockName` dicetak):
+
+| Fakta | Bukti |
+| --- | --- |
+| gerbang Save to RNM menolak bila `CLAIM_GROSS` kosong | langkah **11.17.1** `Page-Set-Messages` (nama activity b5935, `pyStepPageReference` `RH_1.pySteps(11).pySteps(17).pySteps(1)` b5936), prasyarat `true` b5954, syarat `.CLAIM_GROSS==""` b6043 |
+| langkah itu **hidup** | `pyStepsBlockName` di dalam 11.17 kosong (b5904 untuk 11.17, b5946 untuk 11.17.1); `//` terdekat b6178 milik langkah **12** (`RH_1.pySteps(12)` b6167) |
+| `CLAIM_GROSS` tanpa penulis di korpus | pembaca: `CountClaimAmountLife_Act`, `RejectOSClaimLife_Act`, `SaveOutStandingLife_Act`, `SpreadingClaimLife_Act` (+ `Section/AdjustmentDetail_Section.xml`); tag `<PropertiesName>` yang memuat `CLAIM_GROSS` di keempat activity: **0** |
+| kesimpulan | bila `CLAIM_GROSS` benar-benar kosong di produksi, **tidak satu klaim pun** dapat melewati Save to RNM di Pega — mustahil untuk sistem yang dipakai; nilainya pasti diisi rule yang tidak diekspor `[dugaan: Declare Expression]` |
+
+Dibuka ulang bila OQ-N11 terjawab dan rule itu menghitung `CLAIM_GROSS` dari sesuatu selain `CLAIM_AMOUNT`: catatan 7
+dicabut, `CLAIM_GROSS` mendapat kolom sendiri (migrasi) beserta penulis yang meniru rule tersebut. Komentar gerbang
+11.17.1 di `simpanrnm.go` merujuk OQ-N12/N11; OQ-N12 ditutup di `OQ-untuk-tim.md`.
