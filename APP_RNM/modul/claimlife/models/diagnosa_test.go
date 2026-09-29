@@ -209,7 +209,7 @@ func TestGerbangDiagnosaVERBATIMDariKorpus(t *testing.T) {
 // TestNamaJSONDiagnosaDikunci mengunci himpunan kunci JSON diagnosa.
 //
 // ⛔ SISI GO DARI KONTRAK DUA SISI. Pasangannya `Diagnosa` di
-// `frontend/src/services/api.ts` dan `GridDiagnosa.test.ts`.
+// `frontend/src/modul/claimlife/api.ts` dan `GridDiagnosa.test.ts`.
 //
 // ⛔ CACAT YANG NYARIS TERJADI, dan sebab uji ini lahir. Ronde pertama
 // `models.Diagnosa` ditulis TANPA tag JSON sama sekali, sementara `api.ts`

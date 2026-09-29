@@ -11,7 +11,7 @@ package repository
 // ⚠️ Batasnya dinyatakan: yang dipindai adalah kode Go modul ini (berkas
 // `tco_*.go` dan `rute_treaty_contract_out.go`, bukan test) sesudah komentar
 // sebaris dan string literal dibuang. Sisi React dijaga
-// `frontend/src/components/treaty-contract-out/namaJujur.test.ts`.
+// `frontend/src/modul/treaty/components/namaJujur.test.ts`.
 
 import (
 	"regexp"

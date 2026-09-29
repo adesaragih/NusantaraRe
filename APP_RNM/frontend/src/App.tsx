@@ -1,23 +1,12 @@
 import { useEffect, useState } from 'react'
 
-import Beranda from './pages/Beranda'
-import InboxPremiumList from './pages/premiumlist/InboxPremiumList'
-import InputOffer from './pages/premiumlist/InputOffer'
-import PremiumListDetail from './pages/premiumlist/PremiumListDetail'
-import PremiumListSummary from './pages/premiumlist/PremiumListSummary'
-import InboxKomite from './pages/komite/InboxKomite'
-import KasusKomite from './pages/komite/KasusKomite'
-import InboxClaimLife from './pages/claimlife/InboxClaimLife'
-import KlaimLife from './pages/claimlife/KlaimLife'
-import OutstandingClaimLife from './pages/claimlife/OutstandingClaimLife'
-import RegisterKlaim from './pages/claimlife/RegisterKlaim'
-import InboxTreatyContract from './pages/treaty-contract-out/InboxTreatyContract'
-import InboxTreatyContractDescription from './pages/treaty-contract-out/InboxTreatyContractDescription'
-import InboxTreatyContractReinsType from './pages/treaty-contract-out/InboxTreatyContractReinsType'
-import { Shell, type Halaman } from './components/Shell'
-import { BelumTersedia } from './components/ui/dasar'
-import { TAHAP_POLIS, ambilModulAktif } from './services/api'
-import { pelakuStub } from './store/sesi'
+import Beranda from './Beranda'
+import { Shell } from './inti/components/Shell'
+import { BelumTersedia } from './inti/components/ui/dasar'
+import { ambilModulAktif } from './inti/klien'
+import { modulDipasang } from './inti/lib/daftarMenu'
+import { pelakuStub } from './inti/store/sesi'
+import { ENTRI_MENU, MODUL_FRONTEND, type Halaman } from './modul/daftar'
 
 // App = identitas + Shell.
 //
@@ -32,12 +21,6 @@ export default function App() {
   // yang sudah ada dan mana yang belum. Membuka langsung ke Inbox membuat
   // aplikasi tampak hanya punya satu modul.
   const [halaman, setHalaman] = useState<Halaman>('beranda')
-  // Kasus yang sedang dibuka. Kosong berarti belum ada yang dipilih.
-  const [kasus, setKasus] = useState('')
-  // Polis yang sedang dibuka, beserta tahapnya - tiket 01 PremiumList.
-  const [polis, setPolis] = useState({ id: '', tahap: '' })
-  // Kasus komite yang sedang dibuka dari Inbox Komite; kosong = daftar.
-  const [kasusKomite, setKasusKomite] = useState('')
   // Modul yang dipasang backend (MODUL_AKTIF, refactor bentuk B). `null` =
   // belum terbaca atau gagal dibaca: SEMUA menu tampil, persis seperti
   // sebelum MODUL_AKTIF ada - satu pembacaan yang gagal tidak mengosongkan
@@ -76,84 +59,18 @@ export default function App() {
   }
 
   return (
-    <Shell masuk={masuk} halaman={halaman} onPindah={setHalaman} modulAktif={modulAktif}>
+    <Shell masuk={masuk} halaman={halaman} onPindah={setHalaman} menu={ENTRI_MENU} modulAktif={modulAktif}>
       {halaman === 'beranda' && <Beranda masuk={masuk} onBuka={setHalaman} modulAktif={modulAktif} />}
-      {halaman === 'premiumlist' && polis.id === '' && (
-        <InboxPremiumList
-          onBuka={(caseID, tahap) => {
-            setPolis({ id: caseID, tahap })
-          }}
-        />
-      )}
       {/*
-        ⛔ DUA LAYAR DI TAHAP YANG SAMA, dan itu bentuk aslinya:
-        `ShowLifePremiumDetail` memuat grid peserta DAN tombol keputusannya.
-        `Reject` bahkan HANYA punya konektor di tahap ini (`Transition9`
-        b2306), jadi memisahkan gridnya dari tombolnya berarti menyembunyikan
-        satu-satunya tempat `Reject` dapat ditekan.
+        Refactor bentuk B (30-09-2026): setiap modul AKTIF merender halamannya
+        sendiri (`modul/<nama>/rute.tsx`) dan menyimpan keadaannya sendiri -
+        kasus, polis, atau kasus komite yang sedang dibuka. Rutenya TETAP
+        terpasang selama modulnya aktif, jadi keadaan itu bertahan saat pemakai
+        pindah halaman, persis seperti ketika ia hidup di sini.
       */}
-      {halaman === 'premiumlist' &&
-        polis.id !== '' &&
-        polis.tahap === TAHAP_POLIS.detail && (
-          <PremiumListDetail polisID={polis.id} />
-        )}
-      {/* Tiket 05a bagian 2 — `ShowLifePremiumSummary`, tahap Input Premium Summary. */}
-      {halaman === 'premiumlist' &&
-        polis.id !== '' &&
-        polis.tahap === TAHAP_POLIS.summary && <PremiumListSummary polisID={polis.id} />}
-      {halaman === 'premiumlist' && polis.id !== '' && (
-        <InputOffer
-          polisID={polis.id}
-          tahap={polis.tahap}
-          onSelesai={() => {
-            setPolis({ id: '', tahap: '' })
-          }}
-        />
-      )}
-      {halaman === 'inbox' && (
-        <InboxClaimLife
-          peran={masuk.peran}
-          onBuka={(workID) => {
-            // ⚠️ Baris Inbox membuka layar TAHAPnya. Tab Outstanding
-            // membuka `OSClaimLife`; tahap lain menyusul bersama
-            // kelompok A3 masing-masing.
-            setKasus(workID)
-            setHalaman('outstanding')
-          }}
-          onRegister={() => {
-            setHalaman('register')
-          }}
-        />
-      )}
-      {halaman === 'outstanding' && (
-        <OutstandingClaimLife
-          klaimID={kasus}
-          onPindah={() => {
-            setHalaman('inbox')
-          }}
-          onDetail={() => {
-            setHalaman('detail')
-          }}
-        />
-      )}
-      {/* Komite Claim Life tiket 01 — Inbox Komite, lalu satu kasus dari baris. */}
-      {halaman === 'komite' && kasusKomite === '' && <InboxKomite onBuka={setKasusKomite} peran={masuk.peran} />}
-      {halaman === 'komite' && kasusKomite !== '' && (
-        <KasusKomite
-          kasusID={kasusKomite}
-          peran={masuk.peran}
-          onKembali={() => {
-            setKasusKomite('')
-          }}
-        />
-      )}
-      {/* Treaty Contract Out tiket 03 — layar tahun treaty (harness InboxTreatyContract). */}
-      {halaman === 'tco-tahun' && <InboxTreatyContract />}
-      {/* Tiket 04 — editor kontrak dari menu (harness InboxTreatyContractReinsType). */}
-      {halaman === 'tco-kontrak' && <InboxTreatyContractReinsType />}
-      {halaman === 'tco-klausul' && <InboxTreatyContractDescription />}
-      {halaman === 'register' && <RegisterKlaim />}
-      {halaman === 'detail' && <KlaimLife />}
+      {MODUL_FRONTEND.filter((m) => modulDipasang(m.nama, modulAktif)).map((m) => (
+        <m.Rute key={m.nama} halaman={halaman} masuk={masuk} onPindah={setHalaman} />
+      ))}
     </Shell>
   )
 }

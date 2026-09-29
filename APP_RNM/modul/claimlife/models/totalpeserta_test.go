@@ -277,7 +277,7 @@ func isiKolom(t *testing.T, b *BarisAdjustment, nama string, nilai uang.Money) {
 // TestNamaJSONTotalPesertaDikunci mengunci keenam nama medan JSON.
 //
 // ⛔ SISI GO DARI KONTRAK DUA SISI. Pasangannya ada di
-// `frontend/src/components/PanelTotalPeserta.test.ts`, blok
+// `frontend/src/modul/claimlife/components/PanelTotalPeserta.test.ts`, blok
 // "kontrak JSON TotalPeserta", dan keduanya memuat daftar nama yang sama.
 //
 // Sebabnya tercatat: tiga cacat berbentuk sama sudah terjadi di modul ini -

@@ -21,7 +21,7 @@ import (
 // Cacat itu tidak berbunyi di satu sisi mana pun: backend benar, klien benar
 // menurut komentarnya sendiri, dan hanya PERTEMUANNYA yang salah. Karena itu
 // kontraknya dikunci di KEDUA sisi - di sini, dan di
-// `frontend/src/services/envelopegalat.test.ts`.
+// `frontend/src/modul/claimlife/envelopegalat.test.ts`.
 
 func TestEnvelopeGalatMemakaiKunciGalat(t *testing.T) {
 	w := httptest.NewRecorder()

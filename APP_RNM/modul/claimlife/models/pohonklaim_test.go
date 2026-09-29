@@ -11,7 +11,7 @@ import (
 // TestNamaJSONDokumenDikunci mengunci himpunan kunci JSON dokumen.
 //
 // ⛔ SISI GO DARI KONTRAK DUA SISI. Pasangannya `Dokumen` di
-// `frontend/src/services/api.ts` dan `PanelDokumenPeserta.test.ts`.
+// `frontend/src/modul/claimlife/api.ts` dan `PanelDokumenPeserta.test.ts`.
 //
 // Tanpa tag JSON, Go mengirim `ID`/`NamaFile` berhuruf besar dan React
 // membaca `undefined` - daftar dokumen yang tampil KOSONG padahal barisnya
