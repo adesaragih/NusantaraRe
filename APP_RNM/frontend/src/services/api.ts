@@ -2778,3 +2778,48 @@ export async function simpanKontrakUtuh(tahunID: string, masuk: KontrakUtuhMasuk
   }
   return h
 }
+
+// ---------------------------------------------------------------------------
+// Treaty Contract Out tiket 10 — kaskade hapus + popup konfirmasi.
+// ---------------------------------------------------------------------------
+
+/** Isi popup: yang ikut terhapus, dan klausul yang TETAP. */
+export interface DampakHapusTCO {
+  kontrak: number
+  reinsurer: number
+  security: number
+  business: number
+  klausulTetap: number
+}
+
+function jalurKontrakHapus(tahunID: string, kontrakID: string): string {
+  return `/api/treaty-contract-out/tahun/${encodeURIComponent(tahunID)}/kontrak/${encodeURIComponent(kontrakID)}`
+}
+
+/** Pratinjau dampak hapus kontrak. */
+export async function ambilDampakHapusKontrak(tahunID: string, kontrakID: string): Promise<DampakHapusTCO> {
+  return minta<DampakHapusTCO>(`${jalurKontrakHapus(tahunID, kontrakID)}/dampak-hapus`)
+}
+
+/** Ya di popup — jumlah yang dilihat dikirim; server menolak (409) bila sudah lain. */
+export async function hapusKontrak(tahunID: string, kontrakID: string, d: DampakHapusTCO): Promise<string> {
+  const j = await minta<{ pesan: string }>(jalurKontrakHapus(tahunID, kontrakID), {
+    metode: 'DELETE',
+    kueri: { reinsurer: String(d.reinsurer), security: String(d.security), business: String(d.business) },
+  })
+  return j.pesan
+}
+
+/** Pratinjau dampak hapus reinsurer (security yang ikut). */
+export async function ambilDampakHapusReinsurer(tahunID: string, kontrakID: string, reinsurerID: string): Promise<DampakHapusTCO> {
+  return minta<DampakHapusTCO>(`${jalurKontrakHapus(tahunID, kontrakID)}/reinsurer/${encodeURIComponent(reinsurerID)}/dampak-hapus`)
+}
+
+/** Ya di popup hapus reinsurer. */
+export async function hapusReinsurer(tahunID: string, kontrakID: string, reinsurerID: string, d: DampakHapusTCO): Promise<string> {
+  const j = await minta<{ pesan: string }>(`${jalurKontrakHapus(tahunID, kontrakID)}/reinsurer/${encodeURIComponent(reinsurerID)}`, {
+    metode: 'DELETE',
+    kueri: { security: String(d.security) },
+  })
+  return j.pesan
+}

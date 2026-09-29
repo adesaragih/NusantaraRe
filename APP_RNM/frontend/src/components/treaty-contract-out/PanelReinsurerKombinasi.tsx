@@ -15,11 +15,14 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { REINSURER_TCO, TAHUN_TCO } from '../../assets/labels.treaty-contract-out'
+import { REINSURER_TCO } from '../../assets/labels.treaty-contract-out'
 import {
+  ambilDampakHapusReinsurer,
   ambilReinsurerKombinasi,
   cariReinsurerMaster,
+  hapusReinsurer,
   simpanReinsurerKombinasi,
+  type DampakHapusTCO,
   type DaftarReinsurer,
   type KombinasiTreaty,
   type ReinsurerMaster,
@@ -27,6 +30,7 @@ import {
   type ReinsurerTreaty,
 } from '../../services/api'
 import { Field, Gagal, Kosong, Memuat, Pilih } from '../ui/dasar'
+import KonfirmasiHapusTCO from './KonfirmasiHapusTCO'
 import PanelSecurityReinsurer from './PanelSecurityReinsurer'
 
 /** Isian form — hanya medan yang tampil di form Pega. */
@@ -90,6 +94,8 @@ export default function PanelReinsurerKombinasi({
   const [info, setInfo] = useState<string | null>(null)
   // Tiket 06: `SetSecurityReinsurer` (THN_TREATY = .TreatyYear, REAS_ID = .ID).
   const [security, setSecurity] = useState<ReinsurerTreaty | null>(null)
+  // Tiket 10: popup Ya/Batal sebelum hapus reinsurer (+ security-nya).
+  const [konfirmasi, setKonfirmasi] = useState<{ reinsurer: ReinsurerTreaty; dampak: DampakHapusTCO | null; galat: unknown } | null>(null)
 
   const muat = useCallback(async () => {
     try {
@@ -147,6 +153,35 @@ export default function PanelReinsurerKombinasi({
       await muat()
     } catch (e) {
       setGalat(e)
+    } finally {
+      setSibuk(false)
+    }
+  }
+
+  function mintaHapus(r: ReinsurerTreaty): void {
+    setInfo(null)
+    setKonfirmasi({ reinsurer: r, dampak: null, galat: null })
+    ambilDampakHapusReinsurer(tahunID, kontrakID, r.id)
+      .then((d) => {
+        setKonfirmasi((c) => (c === null || c.reinsurer.id !== r.id ? c : { ...c, dampak: d }))
+      })
+      .catch((e: unknown) => {
+        setKonfirmasi((c) => (c === null ? c : { ...c, galat: e }))
+      })
+  }
+
+  async function yaHapus(): Promise<void> {
+    if (konfirmasi === null || konfirmasi.dampak === null || sibuk) return
+    setSibuk(true)
+    try {
+      const pesan = await hapusReinsurer(tahunID, kontrakID, konfirmasi.reinsurer.id, konfirmasi.dampak)
+      if (form?.id === konfirmasi.reinsurer.id) setForm(null)
+      if (security?.id === konfirmasi.reinsurer.id) setSecurity(null)
+      setKonfirmasi(null)
+      setInfo(pesan)
+      await muat()
+    } catch (e) {
+      setKonfirmasi((c) => (c === null ? c : { ...c, galat: e }))
     } finally {
       setSibuk(false)
     }
@@ -242,7 +277,7 @@ export default function PanelReinsurerKombinasi({
                   <button type="button" className="btn btn--ghost btn--sm" onClick={() => buka(formReinsurerDari(r))}>
                     {REINSURER_TCO.edit}
                   </button>{' '}
-                  <button type="button" className="btn btn--ghost btn--sm" disabled title={`${TAHUN_TCO.menungguTiket} 10`}>
+                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => mintaHapus(r)}>
                     {REINSURER_TCO.delete}
                   </button>{' '}
                   <button
@@ -268,6 +303,19 @@ export default function PanelReinsurerKombinasi({
         </table>
       )}
 
+      {konfirmasi !== null && (
+        <KonfirmasiHapusTCO
+          jenis="reinsurer"
+          nama={konfirmasi.reinsurer.name || konfirmasi.reinsurer.reinsurerId}
+          dampak={konfirmasi.dampak}
+          galat={konfirmasi.galat}
+          sibuk={sibuk}
+          onYa={() => void yaHapus()}
+          onBatal={() => {
+            setKonfirmasi(null)
+          }}
+        />
+      )}
       {security !== null && (
         <PanelSecurityReinsurer
           key={security.id}

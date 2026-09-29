@@ -63,7 +63,8 @@ describe('paritas layar kontrak', () => {
     expect(KODE).toContain('<PanelBusinessKombinasi')
     expect(KODE).not.toContain('`${TAHUN_TCO.menungguTiket} 05`')
     expect(KODE).not.toContain('`${TAHUN_TCO.menungguTiket} 07`')
-    expect(KODE).toContain('`${TAHUN_TCO.menungguTiket} 10`')
+    expect(KODE).not.toContain('`${TAHUN_TCO.menungguTiket} 10`')
+    expect(KODE).toContain('mintaHapus(k)')
   })
   it('ID, Modified Date, Username hanya dibaca', () => {
     expect(KODE).toMatch(/label=\{KONTRAK_TCO\.formId\}[^/]*readOnly/)

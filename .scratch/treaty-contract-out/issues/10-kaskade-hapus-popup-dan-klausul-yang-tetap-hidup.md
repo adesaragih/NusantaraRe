@@ -1,6 +1,6 @@
 # 10: Kaskade hapus + popup konfirmasi — klausul **tetap hidup**
 
-**Status:** ready-for-agent
+**Status:** selesai (29-09-2026)
 
 **Blocked by:** 06 (security), 07 (business), 09 (pembungkus transaksi)
 
@@ -112,3 +112,40 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+## Pembacaan ulang XML — 29-09-2026 (sesi modul, lanjutan 1)
+
+Nomor baris = baris mentah berkas korpus `Treaty Contract Out/`.
+
+| Unsur | Bukti | Dibawa sebagai |
+| --- | --- | --- |
+| tombol hapus kontrak | `Section/InputTreatyContractReinsType.xml` b11809 `Delete` → b11833 `BrowseDeleteRowTreatyInContract` dengan `IDTreatyYear` b11848, `TreatyYear` b11854, `TreatyGroupID` b11860, `ReinsTypeID` b11866, `ID` b11872; **tanpa konfirmasi** | `Delete` → popup Ya/Batal (penyimpangan sadar 4) |
+| orkestrator | `Activity/BrowseDeleteRowTreatyInContract.xml` b371–b482 (`CARI16..CARI20`), b615 `DeleteFromTREATYCONTRACT_SQL`, b762 `"Data Berhasil di Hapus"`; langkah salin b879/b922 di-remark | pesan VERBATIM; jalur salin tidak dibawa |
+| kaskade | `RDBList/DeleteFromTREATYCONTRACT_SQL.xml` b80–b82 kontrak (`id` + `IDTREATYYEAR`), b83–b87 business (`(TREATYYEARID = … OR TREATYYEARID IS NULL)` b85), b88–b89 security (`REAS_ID IN (SELECT id FROM TREATYREINSURER …)`), b90–b93 reinsurer, b94 `COMMIT;` | empat DELETE urutan sama di tabel `T_`, satu transaksi, nol COMMIT di teks SQL; klausul TIDAK disentuh |
+| hapus reinsurer | `Section/ViewDetailTreatyReinsurerGrid1.xml` b4936 `Delete` → b4953 `DeleteTreatyReins_Act` (b248 `TempCariTreatyInsurer.ID = .ID`, b408 → `DeleteFromTreatyReinsurer_Act` b60–b64: security lalu reinsurer); tanpa konfirmasi, tanpa pesan | popup (jumlah security) → hapus satu transaksi |
+| panel rinci exclusion | `FlowAction/DetailTreatyExclustion.xml` b92 → `Section/DetailTreatyExclustion_Sec.xml` (`Add` b881 → `NewTreatyArrExclutionTreaty`, `Edit` b2032 → `SetTreatyArrExclustionTreatyOccupation_Act`), dipakai sebagai `pyEditAction` grid exclusion Occupation (`GridTreatyArrangementExclutionTreatyOccupation.xml` b8801, `expandPane`) | baris klausul exclusion — ikut TETAP HIDUP; di sistem baru form baris di `PanelJenisKlausul` |
+
+### Ralat bertanggal 29-09-2026
+
+1. **Pega tidak punya popup konfirmasi** untuk hapus kontrak maupun reinsurer — popup Ya/Batal adalah penyimpangan sadar 4,
+   seluruh teksnya `[tidak ada di korpus]` kecuali pesan sukses b762.
+2. **Angka popup = angka terhapus** dijamin di server: `DELETE` membawa jumlah yang dilihat pemakai; di dalam transaksi
+   kontrak dikunci, dampak dihitung ULANG dengan saringan yang sama (satu sumber `WHERE`), berbeda → 409 tanpa menghapus,
+   dan jumlah baris yang benar-benar terhapus dibandingkan lagi (berbeda → transaksi dibatalkan).
+3. **Klausul yang "tetap hidup" dihitung** untuk popup: baris `T_PROPORTIONALARRG` tahun itu yang `REINSTYPEID` atau
+   `PARENTREINSTYPEID`-nya jenis reasuransi kontrak `[keputusan kami]` (**OQ-TCO-20**).
+4. **Hapus reinsurer** memakai penghapusan eksplisit security lalu reinsurer (jumlahnya dicatat), walau FK `ON DELETE
+   CASCADE` migrasi 303 juga ada.
+5. `DetailTreatyExclustion` → `DetailTreatyExclustion_Sec` (brief) ternyata panel rinci baris exclusion, bukan popup
+   hapus; dicatat di paritas sebagai bagian klausul yang tidak disentuh kaskade.
+
+### Yang dibangun
+
+| Lapisan | Berkas | Isi |
+| --- | --- | --- |
+| repository | `tco_kaskade.go` (+uji) | `KaskadeTCO`: dampak + kaskade, satu sumber saringan, langkah kaskade diuji langsung (nol langkah klausul) |
+| services | `tco_kaskade.go` (+uji) | `KaskadeTCO`: pratinjau, hapus satu transaksi dengan hitung ulang + konfirmasi, jejak berjumlah |
+| handlers | `tco_kaskade.go` (+uji, +uji `db` dua arah) | 4 rute (`dampak-hapus` + `DELETE` kontrak/reinsurer) |
+| frontend | `KonfirmasiHapusTCO.tsx` (+uji), `HAPUS_TCO`, `api.ts` (+4), tombol `Delete` kontrak & reinsurer hidup | popup memakai `Modal` bersama (X, backdrop, Batal, Escape) |
+
+**Status:** selesai 29-09-2026 — commit `treaty-contract-out: tiket 10 — kaskade hapus, popup, klausul yang tetap hidup`.

@@ -531,3 +531,34 @@ export const KURS_TCO = {
   /** `[tidak ada di korpus]` — `CalculateTSIExcludeTreaty`. */
   catatanDuaArah: 'Mengisi IDR menghitung USD (Rp ÷ Kurs), mengisi USD menghitung IDR (Usd × Kurs) — di server.',
 } as const
+
+/**
+ * Tiket 10 — popup konfirmasi hapus (penyimpangan sadar 4).
+ *
+ * ⚠️ Pega menghapus TANPA konfirmasi (`Delete` kontrak `InputTreatyContractReinsType.xml`
+ * b11809, `Delete` reinsurer `ViewDetailTreatyReinsurerGrid1.xml` b4936). Seluruh
+ * teks popup karena itu `[tidak ada di korpus]`, kecuali pesan sukses kontrak yang
+ * datang VERBATIM dari server (`BrowseDeleteRowTreatyInContract.xml` b762).
+ */
+export const HAPUS_TCO = {
+  /** `[tidak ada di korpus]` */
+  judulKontrak: 'Hapus kontrak?',
+  /** `[tidak ada di korpus]` */
+  judulReinsurer: 'Hapus reinsurer?',
+  /** `[tidak ada di korpus]` */
+  ya: 'Ya',
+  /** `[tidak ada di korpus]` */
+  batal: 'Batal',
+  /** `[tidak ada di korpus]` */
+  ikutTerhapus: 'Ikut terhapus:',
+  /** `[tidak ada di korpus]` */
+  reinsurer: 'reinsurer',
+  /** `[tidak ada di korpus]` */
+  security: 'security',
+  /** `[tidak ada di korpus]` */
+  business: 'business',
+  /** `[tidak ada di korpus]` — AC 44: klausul milik tahun/grup/jenis, bukan milik satu kontrak. */
+  klausulTetap: 'baris klausul TIDAK ikut terhapus — klausul milik tahun/grup/jenis reasuransi, bukan milik satu kontrak.',
+  /** `[tidak ada di korpus]` */
+  memuatDampak: 'Menghitung baris yang akan ikut terhapus…',
+} as const

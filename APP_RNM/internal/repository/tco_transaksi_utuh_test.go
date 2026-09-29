@@ -70,3 +70,14 @@ func TestSQLTransaksiUtuhTCO(t *testing.T) {
 		}
 	}
 }
+
+// Tiket 10: baca-lewat-tx tidak pernah memberi identitas sementara.
+func TestBacaTxTanpaIdentitasSementara(t *testing.T) {
+	ctx := DenganBacaTxTCO(context.Background(), &Tx{})
+	if _, ok := identitasSementaraTCO(ctx, SeqJejakTCO); ok {
+		t.Error("baca-lewat-tx memberi identitas sementara")
+	}
+	if DenganBacaTxTCO(context.Background(), nil) != context.Background() {
+		t.Error("tx nil harus mengembalikan ctx apa adanya")
+	}
+}

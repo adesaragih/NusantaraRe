@@ -61,6 +61,8 @@ func daftarkanRuteTreatyContractOut(mux *http.ServeMux, svc *services.Service, s
 	daftarkanRuteKursTCO(mux, svc, stubPelaku)
 	// Tiket 09: simpan utuh satu kontrak - satu transaksi (tco_simpan_utuh.go).
 	daftarkanRuteSimpanUtuhTCO(mux, svc, stubPelaku)
+	// Tiket 10: kaskade hapus kontrak/reinsurer + popup (tco_kaskade.go).
+	daftarkanRuteKaskadeTCO(mux, svc, stubPelaku)
 }
 
 // jawabanDaftarJenisReasuransi adalah badan jawaban daftar jenis reasuransi.
@@ -223,6 +225,10 @@ func jawabGalatTreatyContractOut(w http.ResponseWriter, err error) bool {
 		errors.Is(err, models.ErrTotalShareMelebihi100),
 		errors.Is(err, services.ErrReinsurerDiLuarMaster):
 		galat(w, http.StatusUnprocessableEntity, err.Error())
+	case errors.Is(err, services.ErrDampakBerubah),
+		errors.Is(err, services.ErrKaskadeTidakUtuh):
+		// 409: keadaan DATA berubah sejak popup - tinjau ulang, tidak ada yang terhapus.
+		galat(w, http.StatusConflict, err.Error())
 	case errors.Is(err, services.ErrKursTidakAda):
 		// 422 + pesan VERBATIM `NewTreatyArrEpi.xml` b870 (ADR-0015).
 		galat(w, http.StatusUnprocessableEntity, err.Error())

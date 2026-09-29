@@ -104,7 +104,7 @@ Nomor baris = `Section/InputTreatyContractReinsType.xml` kecuali disebut lain.
 | `Edit` b10519 → `SetUbahTreatyContract` | form dari baris | ✅ |
 | `Business List` b10842 | membuka `PanelBusinessKombinasi` | ✅ tiket 07 |
 | `Reinsurer List` b11308 | membuka `PanelReinsurerKombinasi` | ✅ tiket 05 |
-| `Delete` b11809 → `BrowseDeleteRowTreatyInContract` | tombol berdiri `disabled` | 🔜 tiket 10 |
+| `Delete` b11809 → `BrowseDeleteRowTreatyInContract` | popup Ya/Batal berjumlah → kaskade satu transaksi | ✅ tiket 10 |
 | `ViewDetailTreatyReinsurerGrid1` b13311 | `PanelReinsurerKombinasi` | ✅ tiket 05 |
 | `ViewDetailTreatyBusinessGrid` b14064 | `PanelBusinessKombinasi` | ✅ tiket 07 |
 | grid security `SelectSecurityReinsurer` b16069 | `PanelSecurityReinsurer` | ✅ tiket 06 |
@@ -122,7 +122,7 @@ Nomor baris = `Section/ViewDetailTreatyReinsurerGrid1.xml`.
 | grid `BrowseDetailTreatyReisurer_RD` (kombinasi, `ID ASC`): `ReinsID` b2418 · `Reinsurer` b2560 · `%Share` b2702 · `%Comm` b2844 · `Rating` b2990 · `Operator Name` b3138 | `GET /tahun/{id}/kontrak/{kid}/reinsurer` | ✅ |
 | `Total Share -->>` b6186 (`InputTreatyReinsurer.TotalShare`) | kaki tabel, desimal persis dari server | ✅ AC 15 |
 | `Edit` b4491 → `SetUbahTreatyReinsurerList_Act` | form dari baris | ✅ |
-| `Delete` b4936 → `DeleteTreatyReins_Act` | tombol berdiri `disabled` | 🔜 tiket 10 |
+| `Delete` b4936 → `DeleteTreatyReins_Act` | popup Ya/Batal (jumlah security) → hapus satu transaksi | ✅ tiket 10 |
 | `Security Reinsurer` b5277 | tombol membuka `PanelSecurityReinsurer` reinsurer itu | ✅ tiket 06 |
 | form `ID` b7842 · `Reins.ID` b8042 · `Reinsurer` b8226 (pemilih `BrowseAgentReinsSOA_RD`) · `%Share` b8522 · `%Comm` b8800 · `Rating` b9076 · `Operator Name` b11100 | ID/Reins.ID/Operator Name baca-saja; kotak cari + pemilih master aktif | ✅ OQ-TCO-12 |
 | delapan medan tersembunyi `pyCondition 1=2` | tidak diterima dari klien; dipertahankan server | ✅ |
@@ -180,7 +180,7 @@ Nomor baris = `Section/InputTreatyContractReinsType.xml`.
 | form `Security ID` b19468 (nonaktif) · `Security Name` b19648 (pemilih `BrowseAgentReinsSOA_RD`) · `%Share` b19888 | baca-saja · `Pilih` dari `GET /reinsurer-master` · teks desimal wajib 0..100 | ✅ ralat 4, OQ-TCO-17 |
 | `Save` b20246 → `SaveSecurityReinsurer_Act` → `InsertToMTreatySecurity` / `UpdateMTreatySecurity` | `POST`/`PUT .../security` → `T_MTREATYSECURITY` kolom bernama + jejak | ✅ AC 18–20, ralat 1/3 |
 | `Error` b20980 · `Informasi` b21717 | galat / baris status | ✅ |
-| `DeleteTreatyReins_Act` → `DeleteFromTreatyReinsurer_Act` | FK `ON DELETE CASCADE`; tombol hapus reinsurer | 🔜 tiket 10 |
+| `DeleteTreatyReins_Act` → `DeleteFromTreatyReinsurer_Act` | security lalu reinsurer, eksplisit + FK `ON DELETE CASCADE` | ✅ tiket 10 |
 
 ## Tiket 11 — kurs USD → IDR (`testingKurs`, `HitungRpUsd_depan`, `CalculateTSIExcludeTreaty`)
 
@@ -203,3 +203,15 @@ Nomor baris = `Section/InputTreatyContractReinsType.xml`.
 | — (tidak ada di Pega) | `POST /tahun/{id}/kontrak-utuh`, `PUT /tahun/{id}/kontrak/{kid}/utuh` — enam tabel, satu transaksi | ✅ AC 37–41 |
 | — | tombol simpan tunggal di layar | ⏸ OQ-TCO-19 |
 | `StsSimpan` 1/0 `[data DBA]` | `status` "1" jawaban simpan utuh; selain "1" = gagal (server & klien) | ✅ AC 39 |
+
+## Tiket 10 — kaskade hapus, popup, klausul yang tetap hidup
+
+| Unsur korpus | Sistem baru | Keadaan |
+| --- | --- | --- |
+| `Delete` kontrak b11809 (tanpa konfirmasi) | `GET .../kontrak/{kid}/dampak-hapus` → popup (reinsurer, security, business; klausul TIDAK terhapus) → `DELETE .../kontrak/{kid}?reinsurer=&security=&business=` | ✅ AC 42/43, penyimpangan sadar 4 |
+| `DeleteFromTREATYCONTRACT_SQL` b80–b94 (empat DELETE + COMMIT) | empat DELETE di `T_`, satu transaksi, nol COMMIT; bisnis tahan `TREATYYEARID` NULL | ✅ AC 45, 63/64 |
+| `PROPORTIONALARRG` tidak ikut | klausul tidak disentuh; jumlahnya disebut di popup; langkah kaskade diuji tanpa klausul | ✅ AC 44 |
+| `Data Berhasil di Hapus` b762 | pesan sukses VERBATIM | ✅ |
+| `Delete` reinsurer b4936 → `DeleteFromTreatyReinsurer_Act` | popup (jumlah security) → `DELETE .../reinsurer/{rid}?security=` | ✅ |
+| `DetailTreatyExclustion` → `DetailTreatyExclustion_Sec` (panel rinci exclusion Occupation, `pyEditAction` b8801) | form baris exclusion di `PanelJenisKlausul`; tetap hidup sesudah kontrak dihapus | ✅ |
+| jalur salin `SaveMasterCopyData_SQL` (b922, di-remark) | tidak dibawa (AC 72) | ✅ |

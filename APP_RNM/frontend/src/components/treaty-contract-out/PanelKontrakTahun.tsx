@@ -17,18 +17,22 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { JENIS_REASURANSI_TCO, KONTRAK_TCO, TAHUN_TCO } from '../../assets/labels.treaty-contract-out'
+import { JENIS_REASURANSI_TCO, KONTRAK_TCO } from '../../assets/labels.treaty-contract-out'
 import { formatDate } from '../../lib/format'
 import { keInputTanggal } from '../../lib/tanggalInput'
 import {
   ambilAkhirBawaanKontrak,
+  ambilDampakHapusKontrak,
   ambilKontrakTahun,
+  hapusKontrak,
   simpanKontrakTahun,
   type KontrakMasuk,
   type KontrakTreaty,
   type TahunTreaty,
+  type DampakHapusTCO,
 } from '../../services/api'
 import { Field, FieldTanggal, Gagal, Kosong, Memuat } from '../ui/dasar'
+import KonfirmasiHapusTCO from './KonfirmasiHapusTCO'
 import PanelBusinessKombinasi from './PanelBusinessKombinasi'
 import PanelReinsurerKombinasi from './PanelReinsurerKombinasi'
 import PilihJenisReasuransi from './PilihJenisReasuransi'
@@ -89,6 +93,8 @@ export default function PanelKontrakTahun({ tahun, onTutup }: { tahun: TahunTrea
   const [kontrakReinsurer, setKontrakReinsurer] = useState<string | null>(null)
   // Tiket 07: `Business List` b10842 membuka panel bisnis kombinasi kontrak itu.
   const [kontrakBusiness, setKontrakBusiness] = useState<string | null>(null)
+  // Tiket 10: popup Ya/Batal sebelum kaskade hapus kontrak.
+  const [konfirmasi, setKonfirmasi] = useState<{ kontrak: KontrakTreaty; dampak: DampakHapusTCO | null; galat: unknown } | null>(null)
 
   const muat = useCallback(async () => {
     try {
@@ -138,6 +144,36 @@ export default function PanelKontrakTahun({ tahun, onTutup }: { tahun: TahunTrea
       await muat()
     } catch (e) {
       setGalat(e)
+    } finally {
+      setSibuk(false)
+    }
+  }
+
+  function mintaHapus(k: KontrakTreaty): void {
+    setInfo(null)
+    setKonfirmasi({ kontrak: k, dampak: null, galat: null })
+    ambilDampakHapusKontrak(tahun.id, k.id)
+      .then((d) => {
+        setKonfirmasi((c) => (c === null || c.kontrak.id !== k.id ? c : { ...c, dampak: d }))
+      })
+      .catch((e: unknown) => {
+        setKonfirmasi((c) => (c === null ? c : { ...c, galat: e }))
+      })
+  }
+
+  async function yaHapus(): Promise<void> {
+    if (konfirmasi === null || konfirmasi.dampak === null || sibuk) return
+    setSibuk(true)
+    try {
+      const pesan = await hapusKontrak(tahun.id, konfirmasi.kontrak.id, konfirmasi.dampak)
+      if (form?.id === konfirmasi.kontrak.id) setForm(null)
+      if (kontrakReinsurer === konfirmasi.kontrak.id) setKontrakReinsurer(null)
+      if (kontrakBusiness === konfirmasi.kontrak.id) setKontrakBusiness(null)
+      setKonfirmasi(null)
+      setInfo(pesan)
+      await muat()
+    } catch (e) {
+      setKonfirmasi((c) => (c === null ? c : { ...c, galat: e }))
     } finally {
       setSibuk(false)
     }
@@ -248,7 +284,7 @@ export default function PanelKontrakTahun({ tahun, onTutup }: { tahun: TahunTrea
                   >
                     {KONTRAK_TCO.reinsurerList}
                   </button>{' '}
-                  <button type="button" className="btn btn--ghost btn--sm" disabled title={`${TAHUN_TCO.menungguTiket} 10`}>
+                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => mintaHapus(k)}>
                     {KONTRAK_TCO.delete}
                   </button>
                 </td>
@@ -258,6 +294,19 @@ export default function PanelKontrakTahun({ tahun, onTutup }: { tahun: TahunTrea
         </table>
       )}
 
+      {konfirmasi !== null && (
+        <KonfirmasiHapusTCO
+          jenis="kontrak"
+          nama={konfirmasi.kontrak.reinsTypeName || konfirmasi.kontrak.reinsTypeId}
+          dampak={konfirmasi.dampak}
+          galat={konfirmasi.galat}
+          sibuk={sibuk}
+          onYa={() => void yaHapus()}
+          onBatal={() => {
+            setKonfirmasi(null)
+          }}
+        />
+      )}
       {kontrakBusiness !== null && (
         <PanelBusinessKombinasi
           key={kontrakBusiness}

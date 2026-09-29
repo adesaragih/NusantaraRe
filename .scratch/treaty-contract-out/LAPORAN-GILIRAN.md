@@ -753,3 +753,68 @@ tersisa) dilewati karena skema uji tidak dikonfigurasi di sesi ini. Uji tanpa Or
 | Berkas ditulis / disunting | 10 baru (1.185 baris), 16 disunting (+95 −24) |
 | Putaran instrumen gagal lalu diulang | 3: penjaga `JSON_KLAIM` pertama ikut membaca berkas uji dan direktori (dibatasi ke produksi); konstanta aksi jejak huruf kecil; penjaga alamat-layanan global menangkap `http.Header` (diganti penyematan) |
 | Token / biaya | tidak terlihat dari dalam sesi, jadi tidak dikarang |
+
+## Tiket 10 — kaskade hapus, popup, klausul yang tetap hidup
+
+### Yang dibangun
+
+| Lapisan | Berkas | Isi |
+| --- | --- | --- |
+| repository | `tco_kaskade.go` (+uji) | dampak + kaskade kontrak (urutan Pega) dan reinsurer; saringan hitung = saringan hapus |
+| services | `tco_kaskade.go` (+uji) | pratinjau; hapus satu transaksi: kunci, hitung ulang, bandingkan dengan yang dikonfirmasi, hapus, bandingkan lagi, jejak |
+| handlers | `tco_kaskade.go` (+uji, +uji `db`) | 4 rute |
+| frontend | `KonfirmasiHapusTCO.tsx` (+uji), `HAPUS_TCO`, `api.ts` (+4) | popup Ya/Batal di panel kontrak dan panel reinsurer |
+
+### Bukti merah lebih dulu
+
+- AC 44: mutasi yang menambah langkah hapus klausul ke `langkahHapusKontrakTCO` → `TestLangkahHapusKontrakTanpaKlausul`
+  **merah** (langkah menyasar klausul; urutan berubah); dipulihkan → hijau. Celah yang ditemukan sebelum mutasi: penjaga
+  pertama memeriksa daftar SQL tulisan tangan, bukan langkah yang dijalankan — langkahnya dipindah ke satu fungsi yang diuji.
+- Angka popup: `TestHapusKontrakAngkaHarusSamaDenganPopup` menolak angka yang berubah SEBELUM hapus (nol penghapusan) dan
+  angka terhapus yang berbeda (transaksi dibatalkan, nol jejak).
+
+### Kode bersama yang disentuh (aditif, dilaporkan)
+
+| Berkas | Perubahan |
+| --- | --- |
+| `handlers/penyuntikan_test.go` | +1 entri `tco_kaskade.go` |
+| `frontend/src/services/api.ts` | +4 fungsi, tipe `DampakHapusTCO` — nama `DampakHapus` sudah dipakai Claim Life dan TypeScript akan MENGGABUNGKAN deklarasinya; tipe Claim Life tidak tersentuh |
+| `components/ui/dasar.tsx` (`Modal`) | **dipakai, tidak diubah** |
+| penjaga `TestHandlersTidakMengimporRepository` | tidak diubah; galat repository dialiaskan lewat `services.ErrKaskadeTidakUtuh` |
+
+### Ralat / OQ
+
+Lima ralat bertanggal di tiket 10 (Pega tanpa popup; angka popup = angka terhapus di server; klausul yang dihitung;
+hapus reinsurer eksplisit; `DetailTreatyExclustion` panel rinci). **OQ baru:**
+
+- **OQ-TCO-20** — definisi "klausul milik kontrak ini" untuk angka popup (REINSTYPEID atau PARENTREINSTYPEID tahun itu)
+  `[keputusan kami]`; Product + UW.
+
+### Kontrak hilir
+
+Tidak berubah untuk klausul (tidak disentuh). Setelah kontrak dihapus, reinsurer/business kombinasinya hilang — pembaca
+hilir `ReinsurerUntukHilir` / `BusinessUntukHilir` membaca nol baris untuk kombinasi itu, sama seperti Pega.
+
+### Angka uji
+
+| Perintah | Hasil |
+| --- | --- |
+| `go vet ./...` · `go vet -tags=db ./...` · `gofmt -l .` | bersih |
+| `go test ./...` | 931 lulus, 0 gagal (+11) |
+| `go test -tags=db ./...` | 931 lulus, 55 dilewati (+1: `TestKaskadeHapusKontrakKlausulTetapHidup`, tanpa skema uji), 0 gagal |
+| `npx tsc --noEmit` · `npx vite build` | bersih |
+| `npx vitest run` | 573 lulus di 49 berkas (+4, +1 berkas) |
+
+⚠️ Kaskade dua arah (tiga anak hilang, klausul masih ada, bisnis ber-`TREATYYEARID` NULL ikut terhapus) BELUM terbukti
+terhadap Oracle: uji `db` dilewati karena skema uji tidak dikonfigurasi di sesi ini.
+
+### TELEMETRI EKSEKUSI — tiket 10
+
+| Ukuran | Nilai |
+| --- | --- |
+| Berkas dibaca | ±20 (±9 korpus: `BrowseDeleteRowTreatyInContract`, `DeleteFromTREATYCONTRACT_SQL`, `DeleteTreatyReins_Act`, `DeleteFromTreatyReinsurer_Act`, `DetailTreatyExclustion` + `_Sec`, dua section tombol, grid exclusion; ±11 pola kode) |
+| Berkas XML korpus disensus | 2 aktivitas hapus, 2 SQL kaskade, 1 flow action + section, 3 section tombol |
+| Perintah dijalankan | ±30 |
+| Berkas ditulis / disunting | 9 baru (1.155 baris), 10 disunting (+218 −6) |
+| Putaran instrumen gagal lalu diulang | 4: nama `PerekamJejakOracle` bertabrakan dengan kode Claim Life (diganti); `DampakHapus` bergabung dengan tipe Claim Life (diganti `DampakHapusTCO`); penjaga arsitektur menolak impor repository di handler (alias services); regex uji `tahunID?` salah |
+| Token / biaya | tidak terlihat dari dalam sesi, jadi tidak dikarang |

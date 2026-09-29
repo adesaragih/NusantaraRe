@@ -75,6 +75,15 @@ func DenganTransaksiUtuhTCO(ctx context.Context, tx *Tx) context.Context {
 	return context.WithValue(ctx, kunciUtuhTCO{}, &utuhTCO{tx: tx})
 }
 
+// DenganBacaTxTCO menandai ctx: pembaca modul memakai tx, identitas TETAP
+// seperti biasa (tiket 10: hitung ulang dampak di dalam transaksi hapus).
+func DenganBacaTxTCO(ctx context.Context, tx *Tx) context.Context {
+	if tx == nil {
+		return ctx
+	}
+	return context.WithValue(ctx, kunciUtuhTCO{}, &utuhTCO{tx: tx, tetap: true})
+}
+
 func utuhDari(ctx context.Context) *utuhTCO {
 	u, _ := ctx.Value(kunciUtuhTCO{}).(*utuhTCO)
 	return u
