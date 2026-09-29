@@ -20,6 +20,11 @@ import (
 
 const letakDataUji = "skemauji/data_uji_tiga_modul.sql"
 
+// awalanSkemaUji adalah variabel substitusi yang ditanyakan alat saat berkas
+// dijalankan - ADR-U-0033: nama skema adalah konfigurasi, bukan skema bawaan
+// sesi.
+const awalanSkemaUji = "&&skema_uji.."
+
 // sisipDataUji adalah satu INSERT di berkas data uji.
 type sisipDataUji struct {
 	tabel string
@@ -105,7 +110,7 @@ func pecahNilai(daftar string) []string {
 }
 
 var polaSisipDataUji = regexp.MustCompile(
-	`(?s)INSERT INTO ([A-Z_]+)\s*\(([^)]*)\)\s*VALUES\s*\((.*?)\);`)
+	`(?s)INSERT INTO &&skema_uji\.\.([A-Z_]+)\s*\(([^)]*)\)\s*VALUES\s*\((.*?)\);`)
 
 func sisipanDataUji(t *testing.T, sql string) []sisipDataUji {
 	t.Helper()
@@ -124,7 +129,7 @@ func sisipanDataUji(t *testing.T, sql string) []sisipDataUji {
 }
 
 // Kolom tiruan EMAILKOMITE - dibaca dari DDL di berkas itu sendiri.
-var polaTiruanRoster = regexp.MustCompile(`(?s)CREATE TABLE EMAILKOMITE \((.*?)\)'`)
+var polaTiruanRoster = regexp.MustCompile(`(?s)CREATE TABLE &&skema_uji\.\.EMAILKOMITE \((.*?)\)'`)
 
 func kolomTiruanRoster(t *testing.T, sql string) []string {
 	t.Helper()
@@ -234,6 +239,10 @@ func TestDataUjiNolKebocoran(t *testing.T) {
 func TestDataUjiBerpagarSepertiMigrateDown(t *testing.T) {
 	sql := bacaDataUji(t)
 	pagar := "INSTR(UPPER(v_skema), '" + config.NamaSkemaWarisan + "') > 0"
+	// Yang dipagari nama yang DIKETIK - skema yang juga mengawali setiap
+	// tabel - bukan skema bawaan sesi.
+	asal := regexp.MustCompile(`v_skema\s+VARCHAR2\(128\) := UPPER\(TRIM\('` +
+		regexp.QuoteMeta(strings.TrimSuffix(awalanSkemaUji, "..")) + `'\)\)`)
 	var blok []string
 	for _, b := range strings.Split(sql, "\n/\n") {
 		if strings.Contains(b, "BEGIN") {
@@ -244,6 +253,9 @@ func TestDataUjiBerpagarSepertiMigrateDown(t *testing.T) {
 		t.Fatalf("%d blok PL/SQL, mau sedikitnya 2 (pagar+tiruan, data)", len(blok))
 	}
 	for i, b := range blok {
+		if !asal.MatchString(b) {
+			t.Errorf("blok %d: v_skema tidak diturunkan dari %q", i+1, asal)
+		}
 		p := strings.Index(b, pagar)
 		if p < 0 {
 			t.Errorf("blok %d tanpa pagar %q", i+1, pagar)
@@ -367,4 +379,53 @@ func bandingAngka(a, b string) int {
 		return 1
 	}
 	return 0
+}
+
+// TestDataUjiBerawalanSkema - ADR-U-0033 Akibat 1 dan 3, berlaku juga di sini.
+//
+// ⛔ `TestNolNamaTabelTelanjangDiQuery` hanya membaca berkas `.go`; berkas SQL
+// ini lolos darinya. Ronde pertama berkas ini memang telanjang seluruhnya dan
+// bergantung pada `ALTER SESSION SET CURRENT_SCHEMA` - persis ketergantungan
+// yang ADR-U-0033 larang.
+func TestDataUjiBerawalanSkema(t *testing.T) {
+	sql := bacaDataUji(t)
+	pola := regexp.MustCompile(`(?i)\b(FROM|INTO|TABLE|JOIN)\s+([A-Za-z_&.$]+)`)
+	cacah := 0
+	for _, m := range pola.FindAllStringSubmatch(sql, -1) {
+		nama := m[2]
+		// `SELECT ... INTO v_ada` - variabel PL/SQL, bukan tabel.
+		if strings.EqualFold(m[1], "INTO") && strings.HasPrefix(nama, "v_") {
+			continue
+		}
+		cacah++
+		if !strings.HasPrefix(nama, awalanSkemaUji) && !strings.HasPrefix(nama, "SYS.") {
+			t.Errorf("%s %s: nama tabel tanpa awalan skema (ADR-U-0033)", m[1], nama)
+		}
+	}
+	if cacah < 30 {
+		t.Fatalf("hanya %d rujukan tabel terbaca; pembacanya yang rusak", cacah)
+	}
+}
+
+// TestDataUjiRosterDipakaiUlang - muat ulang sesudah `-migrate-down` tidak
+// gagal pada roster.
+//
+// ⛔ EMAILKOMITE bukan tabel migrasi: tiruan dan barisnya BERTAHAN melewati
+// `-migrate-down`. Tanpa pengaman ini jalur muat ulang yang didokumentasikan
+// berkas ini sendiri selalu berakhir ORA-00001 (temuan tinjauan GILIRAN-13).
+func TestDataUjiRosterDipakaiUlang(t *testing.T) {
+	sql := bacaDataUji(t)
+	cek := "SELECT COUNT(*) INTO v_roster FROM " + awalanSkemaUji + "EMAILKOMITE WHERE ID LIKE 'UJI-EK-%';"
+	buka := strings.Index(sql, cek)
+	jika := strings.Index(sql, "IF v_roster = 0 THEN")
+	tutup := strings.LastIndex(sql, "END IF;")
+	if buka < 0 || jika < buka {
+		t.Fatalf("pemeriksaan roster yang sudah ada tidak ditemukan sebelum IF-nya")
+	}
+	for _, s := range []int{strings.Index(sql, "INSERT INTO "+awalanSkemaUji+"EMAILKOMITE"),
+		strings.LastIndex(sql, "INSERT INTO "+awalanSkemaUji+"EMAILKOMITE")} {
+		if s < jika || s > tutup {
+			t.Errorf("INSERT roster di luar IF v_roster = 0 (posisi %d, IF %d, END IF %d)", s, jika, tutup)
+		}
+	}
 }

@@ -59,10 +59,13 @@ Berkas: **`APP_RNM/internal/repository/skemauji/data_uji_tiga_modul.sql`**. Exec
 menjalankannya — Anda yang memuatnya.
 
 1. Pastikan `-migrate` (termasuk **057**) sudah berjalan di skema uji.
-2. Buka SQL*Plus, SQLcl, atau SQL Developer, **tersambung ke skema uji** (bila akun Anda bukan
-   pemiliknya: `ALTER SESSION SET CURRENT_SCHEMA = <skema uji>` lebih dulu).
-3. Jalankan berkasnya **utuh** (SQL Developer: *Run Script*, F5).
-4. Periksa hasilnya, lalu **tetapkan transaksinya sendiri** — berkas ini sengaja tidak melakukannya.
+2. Buka SQL*Plus, SQLcl, atau SQL Developer dengan akun yang berhak menulis ke skema uji.
+3. Jalankan berkasnya **utuh** (SQL Developer: *Run Script*, F5). Alatnya **menanyakan `skema_uji`**
+   sekali — ketik nama skema uji. Setiap tabel diawali nama itu (ADR-U-0033), dan nama yang diketik
+   itulah yang dipagari.
+4. Periksa hasilnya, lalu **tetapkan transaksinya sendiri** — berkas ini sengaja tidak menetapkan DML-nya.
+   (Bila tiruan `EMAILKOMITE` dibuat, DDL-nya menetapkan transaksi yang sedang terbuka — ia berjalan
+   sebelum DML apa pun.)
 
 Berkas itu **menolak berjalan** bila:
 
@@ -71,10 +74,12 @@ Berkas itu **menolak berjalan** bila:
 | skema aktif **memuat** `POOLDATA` (pagar yang sama dengan `-migrate-down`) | `ORA-20901` |
 | skema belum dimigrasi (`T_MIGRASI` tidak ada) | `ORA-20902` |
 | migrasi 057 belum berjalan | `ORA-20903` |
-| data `UJI-*` sudah pernah dimuat — memuat ulang = `-migrate-down` lalu `-migrate` | `ORA-20904` |
+| klaim/polis `UJI-*` sudah pernah dimuat — memuat ulang = `-migrate-down` lalu `-migrate` | `ORA-20904` |
 
-⚠️ Syarat `ORACLE_SKEMA_UJI=true` dan `IS_PEGA_PROD=false` **tidak dapat** dibaca SQL: memilih
-sambungan yang benar adalah tanggung jawab Anda. Seluruh `INSERT` berada di **satu** blok — gagal di
+⚠️ `ORACLE_SKEMA_UJI=true` tidak dapat dibaca SQL — padanannya nama skema yang Anda ketik.
+`IS_PEGA_PROD=false` pun tidak: memilih sambungan yang benar tetap tanggung jawab Anda. Roster
+`EMAILKOMITE` **bertahan** melewati `-migrate-down` (bukan tabel migrasi); pemuatan ulang memakai ulang
+baris `UJI-EK-*` yang sudah ada. Seluruh `INSERT` berada di **satu** blok — gagal di
 mana pun, nol baris tertinggal.
 
 Isinya — seluruhnya sintetis (`UJI-*`, surel `uji-…@contoh.invalid`):

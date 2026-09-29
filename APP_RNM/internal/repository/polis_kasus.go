@@ -8,11 +8,21 @@ package repository
 //
 // ⛔ PENGENAL `NBLF-<n>`, tanpa nol di depan - dari DATA, bukan dikarang.
 // Korpus tidak memuat awalan kelas `ASM-FW-GISFW-Work-LIFE` (nol
-// `pyWorkIDPrefix` untuk kelas itu); sampel baca-saja DEV 29-09-2026
-// (`ROWNUM <= 200`, bentuk saja, nol baris disalin) atas `JSON_OFFER_LIFE` dan
-// `M_LIFE_PREMIUM_SUMMARY` menjawab 400/400 `ASM-FW-GISFW-WORK NBLF-<1..5
-// digit>`, nol berawalan nol. Pengenal disimpan berbentuk `pyID` - tanpa
-// awalan kelas - sama dengan `T_WORK_CLAIM` (`CLM-…`).
+// `pyWorkIDPrefix` untuk kelas itu).
+//
+// `[terverifikasi — sampel baca-saja DEV 29-09-2026]` 400/400 nilai berbentuk
+// `ASM-FW-GISFW-WORK NBLF-<1..5 digit>`, nol berawalan nol. Perintah audit:
+// `SELECT IDPEGA FROM POOLDATA.<tabel> WHERE ROWNUM <= 200` untuk
+// `JSON_OFFER_LIFE` dan `M_LIFE_PREMIUM_SUMMARY`; nilainya DIUBAH menjadi
+// bentuk di mesin (angka -> `<n>`) sebelum dicetak, nol nilai disimpan.
+//
+// ⚠️ SAMPEL, bukan agregat seperti yang pl3 minta: kueri `GROUP BY` atas
+// seluruh tabel dihentikan sesudah 300 detik (terlalu berat untuk DEV), dan
+// sampel 200 baris per tabel menggantikannya. Bentuk di luar sampel itu
+// `[belum terverifikasi]`.
+//
+// Pengenal disimpan berbentuk `pyID` - tanpa awalan kelas - sama dengan
+// `T_WORK_CLAIM` (`CLM-…`).
 //
 // Dibaca sesudah: polis_work.go, pengenalwork.go.
 

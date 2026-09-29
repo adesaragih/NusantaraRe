@@ -635,7 +635,10 @@ export default function KlaimLife() {
                   ⛔ `Delete` b19120 (`deleteRow` b19130) BERDIRI tetapi MATI.
                   ADR-U-0031: nol hapus fisik di jalur pengguna — penghapusan
                   adalah PENANDA, dan `T_CLAIMLF_ADJUSTMENT` belum punya kolom
-                  penandanya. Itu keputusan skema, bukan milik layar. */}
+                  penandanya. Itu keputusan skema, bukan milik layar.
+                  ⚠️ Syarat tampil XML-nya `.PrintFaceClaim == ''` (b19399)
+                  TIDAK ditiru: `PrintFaceClaim` tidak ada di kontrak API, dan
+                  tombol yang mati tidak berbuat apa-apa di baris mana pun. */}
               {bolehAddAdjustment(klaim, p) && (
                 <p>
                   <button

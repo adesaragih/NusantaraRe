@@ -2,6 +2,11 @@ package repository
 
 // Migrasi 050-056 lawan STRUKTUR PremiumList Life - tiket 09. TANPA Oracle.
 //
+// ⚠️ Sejak GILIRAN-13 (057, butir bn) pembacanya menyisir SELURUH rentang 05x,
+// termasuk `ALTER ... ADD`. Nama uji di bawah tetap `050Sampai056` sebab ia
+// dirujuk sebagai bukti AC di tiket 00 dan 09 - mengganti nama berarti
+// memutus rujukan itu.
+//
 // ⛔ Kenapa ada, padahal `TestKolomDDLCocokDenganStruktur` sudah ada: penjaga
 // itu mencocokkan NAMA kolom. Kolom uang yang bernama benar tetapi bertipe
 // `VARCHAR2`, kolom wajib yang lupa `NOT NULL`, atau FK tanpa index lolos

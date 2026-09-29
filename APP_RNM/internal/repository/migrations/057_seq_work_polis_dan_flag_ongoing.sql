@@ -10,9 +10,11 @@
 -- itu dibaca dari data warisan, bukan dari DDL.
 --
 -- ⚠️ START WITH 1 AMAN HANYA SELAMA T_WORK_POLIS BELUM BERISI BARIS WARISAN.
--- Pengenal warisan `NBLF-<n>` sudah mencapai lima digit (sampel DEV
--- 29-09-2026). Sebelum data warisan dimigrasikan ke T_WORK_POLIS, urutan ini
--- wajib dimajukan melewati angka warisan terbesar - OQ-PL-15.
+-- `[terverifikasi — sampel baca-saja DEV 29-09-2026, 200 baris per tabel]`
+-- pengenal warisan `NBLF-<n>` sudah mencapai lima digit; perintah auditnya di
+-- kepala repository/polis_kasus.go. Sebelum data warisan dimigrasikan ke
+-- T_WORK_POLIS, urutan ini wajib dimajukan melewati angka warisan terbesar -
+-- OQ-PL-15.
 --
 -- ⛔ FLAG_ONGOING_POLICY menyimpan nilai VERBATIM `FlagPolicy` tombol portal:
 -- "0" (`Input Offer`, Section/PremiumList.xml b3310/b3597) dan "1"

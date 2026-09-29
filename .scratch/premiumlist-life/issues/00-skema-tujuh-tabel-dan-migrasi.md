@@ -302,5 +302,8 @@ kolom STRUKTUR 219 → 220 dan cacah `CREATE` 50 → 51, keduanya dengan alasann
 
 Awalan pengenal `NBLF-` dan bentuknya (tanpa nol di depan) **dibaca dari data**, bukan dikarang: sampel
 baca-saja DEV `ROWNUM <= 200` atas `JSON_OFFER_LIFE` dan `M_LIFE_PREMIUM_SUMMARY` — 400/400 berbentuk
-`ASM-FW-GISFW-WORK NBLF-<1..5 digit>`, nol berawalan nol. ⚠️ `START WITH 1` aman hanya selama
+`ASM-FW-GISFW-WORK NBLF-<1..5 digit>`, nol berawalan nol. Perintah audit: `SELECT IDPEGA FROM
+POOLDATA.<tabel> WHERE ROWNUM <= 200`, nilai diubah menjadi bentuk di mesin, nol nilai disimpan. ⚠️ Itu
+**sampel**, bukan agregat seperti yang pl3 minta: kueri `GROUP BY` seluruh tabel dihentikan sesudah 300
+detik. ⚠️ `START WITH 1` aman hanya selama
 `T_WORK_POLIS` belum berisi baris warisan — **OQ-PL-15**.

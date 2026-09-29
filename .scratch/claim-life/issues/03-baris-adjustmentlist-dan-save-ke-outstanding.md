@@ -1,6 +1,6 @@
 # 03: Baris `AdjustmentList` + Save ke Outstanding
 
-**Status:** sebagian — Save to RNM ADA sejak GILIRAN-11 paket 1 (`services/simpanrnm.go`); spreading tanpa pemanggil produksi; bendera `Save` tanpa kolom (OQ-N1); **`Add` baris pertama ADA sejak GILIRAN-13** (butir bo); `Delete` tidak dibangun (OQ-N7); sunting sel baris belum ada (OQ-N8)
+**Status:** sebagian — Save to RNM ADA sejak GILIRAN-11 paket 1 (`services/simpanrnm.go`); spreading tanpa pemanggil produksi; bendera `Save` tanpa kolom (OQ-N1); **`Add` baris pertama ADA sejak GILIRAN-13** (butir bo); `Delete` berdiri tetapi MATI, tanpa rute (OQ-N7); sunting sel baris belum ada (OQ-N8)
 
 **Blocked by:** 02 (register klaim + penomoran), **14 (skema relasional klaim — PREFACTOR)**
 
@@ -823,3 +823,18 @@ uji `TestBarisPertamaLahirKosong`, `TestBarisPertamaHanyaUntukGridKosong`,
   melahirkan peserta tanpa baris (AC 32 tiket 02). `Add` menutup jalan layarnya, tetapi urutan kerjanya
   berbeda: Pega mengisi baris saat Register di tahap Admin, sedangkan `Add` hanya tampil di Claim Analis.
   Apakah pendaftaran semestinya melahirkan baris pertama (dan `Add` hanya untuk baris tambahan)?
+
+### Tambahan tinjauan — 29 September 2026 (GILIRAN-13, `/code-review`)
+
+1. **`pyStepsBlockName` kedua activity besar, dicetak.** Tabel pembacaan di atas memuat langkah yang
+   menyentuh `AdjustmentList` saja, dan tidak satu pun bertanda `//`. Langkah LAIN yang ter-remark:
+   `SavePesertaClaim` **tujuh** — 3 b777, 4 b922, 7.2 b1863, 7.3 b2039, 7.4 b2279, 7.6 b2606, 9 b4875;
+   `SaveOutStandingLife_Act` **delapan** — 11.3 b3495, 11.9 b4632, 11.11 b5009, 12 b6178, 13 b7074,
+   14 b7293, 15 b7512, **23 b10649**.
+2. ⚠️ **Langkah 23 `SaveOutStandingLife_Act` ter-remark**, beserta anaknya 23.1 b10841 / 23.2 b11066.
+   Bab 27-09 ("enam total peserta") dan komentar `KlaimLife.tsx` (panel total) mengutip 23.1/23.2
+   sebagai penghitung total — kutipan itu menunjuk langkah MATI. Nilainya tetap benar lewat
+   `SavePesertaClaim` 8.1 b4220 / 8.2 b4591 (langkah 8 hidup); yang salah hanya kutipannya. Di luar
+   diff GILIRAN-13; dicatat, tidak disunting.
+3. **`Delete` di layar** mengabaikan syarat tampil `.PrintFaceClaim == ''` (b19399) — kolom itu tidak ada
+   di kontrak API, dan tombolnya mati di baris mana pun.
