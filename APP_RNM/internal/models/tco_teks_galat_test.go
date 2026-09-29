@@ -1,24 +1,15 @@
 package models
 
+// Penjaga teks galat - tiket 09 Treaty Contract Out. Sejak OQ-TCO-19
+// (keputusan work owner 29-09-2026) simpan utuh dibuang; AC 40 tetap berlaku
+// untuk setiap pesan galat modul.
+
 import (
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 )
-
-// AC 39: nilai selain "1" - termasuk kosong dan NULL - selalu gagal.
-func TestStatusSimpanSuksesTCO(t *testing.T) {
-	teks := func(s string) *string { return &s }
-	if !StatusSimpanSuksesTCO(teks("1")) {
-		t.Error(`"1" harus sukses`)
-	}
-	for _, s := range []*string{nil, teks(""), teks("0"), teks(" 1"), teks("1 "), teks("01"), teks("2"), teks("sukses")} {
-		if StatusSimpanSuksesTCO(s) {
-			t.Errorf("%v dibaca sukses", s)
-		}
-	}
-}
 
 // AC 40 (penyimpangan sadar 8): teks galat salin-tempel prosedur (JSON + _KLAIM)
 // tidak ada di sumber PRODUKSI modul - termasuk isi string pesan, yang tidak

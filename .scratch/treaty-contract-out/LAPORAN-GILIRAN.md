@@ -945,3 +945,12 @@ OQ modul dibuat: `OQ-TREATY-CONTRACT-OUT.md`.
 - Frontend: popup menampilkan cacah kontrak lain sebagai peringatan (`role="alert"`), `hapusKontrak` mengirim `bersama`.
 - Uji perbaikan konkurensi lanjutan 1 yang mengecualikan kombinasi bersama DIGANTI `TestLangkahHapusKontrakSepertiPegaWalauBersama`;
   uji db kaskade kini membuat tahun lain berkombinasi sama dan memeriksa `"bersama":1`.
+
+### Kelompok 3 — OQ-TCO-19 rute simpan kontrak utuh dibuang
+
+Dibuang (tanpa pemanggil sejak jawaban *"tidak perlu"*): `handlers/tco_simpan_utuh.go` (+uji, +uji `db`),
+`services/tco_simpan_utuh.go`, `services/tco_simpan_utuh_cache.go` (+uji), `models/tco_status_simpan.go`, identitas
+sementara dan `TetapkanIdentitasTCO` (`repository/tco_transaksi_utuh.go` → `tco_baca_tx.go`, hanya `DenganBacaTxTCO` /
+`bacaTCO` yang tersisa), kait identitas sementara di `IdentitasBerikutTCO`, entri penjaga penyuntikan, klien frontend
+`simpanKontrakUtuh` / `statusSimpanSukses` (+`simpanUtuh.test.ts`). Penjaga `JSON_KLAIM` dipindah ke
+`models/tco_teks_galat_test.go`. Uji baru `TestRuteSimpanUtuhDibuang` (kedua rute tidak lagi dilayani).

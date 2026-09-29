@@ -60,8 +60,6 @@ func TestTCOPlaceholderTidakBerulang(t *testing.T) {
 		"perbarui sec":   sqlPerbaruiSecurityTCO("S.T"),
 		"dobel security": sqlCariDobelSecurityTCO("S.T"),
 		"daftar sec":     sqlDaftarSecurityTCO("S.T", "S.A"),
-		"salin reas":     sqlSalinReinsurerTCO("S.R"),
-		"jejak utuh":     sqlGantiBarisJejakTCO("S.J"),
 		"kurs":           sqlDaftarKursTCO("S.K"),
 	} {
 		lihat := map[string]bool{}

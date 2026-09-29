@@ -137,3 +137,16 @@ Nomor baris = baris mentah berkas korpus `Treaty Contract Out/`.
 | frontend | `api.ts` (+`simpanKontrakUtuh`, `statusSimpanSukses`), `simpanUtuh.test.ts` | tanpa tombol (OQ-TCO-19) |
 
 **Status:** selesai 29-09-2026 — commit `treaty-contract-out: tiket 09 — simpan atomik lintas enam tabel`.
+
+## Keputusan work owner 29-09-2026
+
+- **OQ-TCO-19 — ditutup.** Jawaban: *"tidak perlu"*. **Ralat bertanggal 29-09-2026 — sebagian `wontfix` (keputusan work
+  owner):** rute `POST /tahun/{id}/kontrak-utuh` dan `PUT /tahun/{id}/kontrak/{kid}/utuh` DIBUANG beserta handler,
+  orkestrator `SimpanUtuhTCO`, cache master per permintaan, identitas sementara (`S…T`, `TetapkanIdentitasTCO`), aturan
+  status `"1"` di jawaban, dan klien frontend `simpanKontrakUtuh` — seluruhnya tanpa pemanggil. Penyimpanan tetap **per
+  panel seperti Pega**.
+- **Yang tetap berlaku** (dipakai panel): setiap `Save` panel satu transaksi, commit sekali oleh `DalamTransaksi`, nol
+  COMMIT di teks SQL, jejak setiap simpan, galat terang, penjaga teks `JSON_KLAIM` (AC 40,
+  `models/tco_teks_galat_test.go`), dan pembaca-lewat-transaksi `DenganBacaTxTCO` (`repository/tco_baca_tx.go`).
+- **`wontfix`**: AC 37 (satu transaksi untuk seluruh isi satu kontrak), AC 39 (status `"1"` jawaban simpan utuh), dan
+  "identitas tidak terpakai saat gagal lintas baris" — ketiganya hanya bermakna untuk simpan utuh.

@@ -36,4 +36,10 @@ describe('popup konfirmasi hapus', () => {
     expect(HAPUS_TCO.bersama).toMatch(/IKUT terhapus/)
     expect(baca('KonfirmasiHapusTCO.tsx')).toContain('role="alert"')
   })
+  it('OQ-TCO-21: DELETE kontrak mengirim cacah kontrak lain', () => {
+    expect(readFileSync(join(__dirname, '..', '..', 'services', 'api.ts'), 'utf8')).toContain('bersama: String(d.bersama)')
+  })
+  it('OQ-TCO-19: klien simpan kontrak utuh dibuang', () => {
+    expect(readFileSync(join(__dirname, '..', '..', 'services', 'api.ts'), 'utf8')).not.toMatch(/simpanKontrakUtuh|kontrak-utuh/)
+  })
 })

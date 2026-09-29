@@ -308,8 +308,7 @@ func (l *SecurityTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID, kontra
 			return err
 		}
 		return l.gudang.Jejak(ctx, tx, pelaku.AkunID, s.ID, repository.AksiJejakSimpan,
-			// Reinsurer disebut dengan kode agennya: identitas barisnya bisa masih
-			// sementara di dalam simpan utuh (temuan /code-review).
+			// Reinsurer disebut dengan kode agennya - identitas bisnis yang stabil.
 			fmt.Sprintf("%s %s share %s reinsurer %s", ket, s.ReasSecurity, s.PctShare.Text('f'), r.ReinsurerID), waktu)
 	})
 	if err != nil {

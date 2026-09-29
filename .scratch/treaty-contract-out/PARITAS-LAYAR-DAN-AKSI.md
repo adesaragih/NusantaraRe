@@ -200,9 +200,9 @@ Nomor baris = `Section/InputTreatyContractReinsType.xml`.
 | --- | --- | --- |
 | `COMMIT;` di enam rule Connect-SQL (mis. `SaveMasterProportionalArrg.xml` b123) | nol COMMIT di teks SQL; commit sekali per permintaan | ✅ |
 | `Save` per panel (kontrak, reinsurer, security, business, 25 klausul), masing-masing COMMIT | tetap per panel, masing-masing satu transaksi + jejak | ✅ paritas |
-| — (tidak ada di Pega) | `POST /tahun/{id}/kontrak-utuh`, `PUT /tahun/{id}/kontrak/{kid}/utuh` — enam tabel, satu transaksi | ✅ AC 37–41 |
-| — | tombol simpan tunggal di layar | ⏸ OQ-TCO-19 |
-| `StsSimpan` 1/0 `[data DBA]` | `status` "1" jawaban simpan utuh; selain "1" = gagal (server & klien) | ✅ AC 39 |
+| — (tidak ada di Pega) | ~~`POST /tahun/{id}/kontrak-utuh`, `PUT /tahun/{id}/kontrak/{kid}/utuh`~~ — dibuang (OQ-TCO-19, keputusan work owner 29-09-2026) | ✖ wontfix |
+| — | tombol simpan tunggal di layar | ✖ tidak perlu (OQ-TCO-19) |
+| `StsSimpan` 1/0 `[data DBA]` | prosedur tidak dipanggil; jawaban simpan utuh dibuang (OQ-TCO-19) | ✖ wontfix |
 
 ## Tiket 10 — kaskade hapus, popup, klausul yang tetap hidup
 

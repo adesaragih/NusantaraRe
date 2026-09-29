@@ -62,3 +62,25 @@ func TestJawabGalatKaskadeTCO(t *testing.T) {
 		}
 	}
 }
+
+// OQ-TCO-19 (keputusan work owner 29-09-2026, "tidak perlu"): rute simpan
+// kontrak utuh dibuang - penyimpanan per panel seperti Pega.
+func TestRuteSimpanUtuhDibuang(t *testing.T) {
+	router := Router(services.New(nil), true)
+	for _, r := range []struct{ metode, jalur string }{
+		{http.MethodPost, "/api/treaty-contract-out/tahun/1000001/kontrak-utuh"},
+		{http.MethodPut, "/api/treaty-contract-out/tahun/1000001/kontrak/1000003/utuh"},
+	} {
+		w := httptest.NewRecorder()
+		q := httptest.NewRequest(r.metode, r.jalur, strings.NewReader("{}"))
+		q.Header.Set("X-Pelaku", "UJI-ADMIN")
+		router.ServeHTTP(w, q)
+		if w.Code == http.StatusServiceUnavailable || w.Code == http.StatusOK {
+			t.Errorf("%s %s masih dilayani (%d)", r.metode, r.jalur, w.Code)
+		}
+	}
+	isi, _ := os.ReadFile("rute_treaty_contract_out.go")
+	if strings.Contains(string(isi), "SimpanUtuh") || strings.Contains(string(isi), "kontrak-utuh") {
+		t.Error("rute simpan utuh masih terdaftar")
+	}
+}
