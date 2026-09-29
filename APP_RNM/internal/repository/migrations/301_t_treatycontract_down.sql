@@ -1,6 +1,0 @@
--- Jalur mundur 301 - T_TREATYCONTRACT. Index ikut terbuang bersama tabelnya.
-DROP TABLE {skema}.T_TREATYCONTRACT CASCADE CONSTRAINTS
-/
-
-DROP SEQUENCE {skema}.SEQ_T_TREATYCONTRACT
-/
