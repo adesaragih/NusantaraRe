@@ -9,7 +9,7 @@ import { HAPUS_TCO } from '../../assets/labels.treaty-contract-out'
 import { rincianDampak } from './KonfirmasiHapusTCO'
 
 const baca = (b: string) => readFileSync(join(__dirname, b), 'utf8')
-const d = { kontrak: 1, reinsurer: 2, security: 3, business: 1, klausulTetap: 5 }
+const d = { kontrak: 1, reinsurer: 2, security: 3, business: 1, klausulTetap: 5, bersama: 0 }
 
 describe('popup konfirmasi hapus', () => {
   it('menyebut jumlah tiap jenis (AC 43)', () => {
@@ -26,5 +26,10 @@ describe('popup konfirmasi hapus', () => {
       expect(kode, panel).toMatch(/onBatal=\{\(\) => \{\s*setKonfirmasi\(null\)\s*\}\}/)
       expect(kode, panel).toMatch(/hapus(Kontrak|Reinsurer)\(tahun(ID|\.id)[^)]*konfirmasi\.dampak\)/)
     }
+  })
+  it('temuan /code-review: angka dimuat ulang sesudah galat; kombinasi bersama dinyatakan', () => {
+    expect((baca('PanelKontrakTahun.tsx').match(/ambilDampakHapusKontrak\(/g) ?? []).length).toBe(2)
+    expect((baca('PanelReinsurerKombinasi.tsx').match(/ambilDampakHapusReinsurer\(/g) ?? []).length).toBe(2)
+    expect(baca('KonfirmasiHapusTCO.tsx')).toContain('dampak.bersama > 0')
   })
 })

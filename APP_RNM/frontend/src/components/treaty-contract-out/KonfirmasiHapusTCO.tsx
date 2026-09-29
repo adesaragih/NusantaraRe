@@ -62,6 +62,11 @@ export default function KonfirmasiHapusTCO({
               {dampak.klausulTetap} {HAPUS_TCO.klausulTetap}
             </p>
           )}
+          {jenis === 'kontrak' && dampak.bersama > 0 && (
+            <p className="polis__catatan" role="note">
+              {dampak.bersama} {HAPUS_TCO.bersama}
+            </p>
+          )}
         </>
       )}
     </Modal>

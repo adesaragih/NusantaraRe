@@ -2792,6 +2792,8 @@ export interface DampakHapusTCO {
   security: number
   business: number
   klausulTetap: number
+  /** Kontrak lain yang memakai kombinasi yang sama — reinsurer/security-nya tidak ikut. */
+  bersama: number
 }
 
 function jalurKontrakHapus(tahunID: string, kontrakID: string): string {

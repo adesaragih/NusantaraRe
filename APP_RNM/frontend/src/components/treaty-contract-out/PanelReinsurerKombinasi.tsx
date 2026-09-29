@@ -181,7 +181,14 @@ export default function PanelReinsurerKombinasi({
       setInfo(pesan)
       await muat()
     } catch (e) {
-      setKonfirmasi((c) => (c === null ? c : { ...c, galat: e }))
+      // Temuan /code-review: angka popup dimuat ulang sesudah galat.
+      const id = konfirmasi.reinsurer.id
+      setKonfirmasi((c) => (c === null ? c : { ...c, galat: e, dampak: null }))
+      ambilDampakHapusReinsurer(tahunID, kontrakID, id)
+        .then((d) => {
+          setKonfirmasi((c) => (c === null || c.reinsurer.id !== id ? c : { ...c, dampak: d }))
+        })
+        .catch(() => undefined)
     } finally {
       setSibuk(false)
     }

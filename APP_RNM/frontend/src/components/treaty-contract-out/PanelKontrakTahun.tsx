@@ -173,7 +173,15 @@ export default function PanelKontrakTahun({ tahun, onTutup }: { tahun: TahunTrea
       setInfo(pesan)
       await muat()
     } catch (e) {
-      setKonfirmasi((c) => (c === null ? c : { ...c, galat: e }))
+      // Temuan /code-review: angka popup dimuat ulang sesudah galat (mis. 409
+      // "jumlah berubah") - Ya tidak lagi mengirim angka basi berulang-ulang.
+      const id = konfirmasi.kontrak.id
+      setKonfirmasi((c) => (c === null ? c : { ...c, galat: e, dampak: null }))
+      ambilDampakHapusKontrak(tahun.id, id)
+        .then((d) => {
+          setKonfirmasi((c) => (c === null || c.kontrak.id !== id ? c : { ...c, dampak: d }))
+        })
+        .catch(() => undefined)
     } finally {
       setSibuk(false)
     }

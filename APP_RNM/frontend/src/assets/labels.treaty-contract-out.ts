@@ -561,4 +561,6 @@ export const HAPUS_TCO = {
   klausulTetap: 'baris klausul TIDAK ikut terhapus — klausul milik tahun/grup/jenis reasuransi, bukan milik satu kontrak.',
   /** `[tidak ada di korpus]` */
   memuatDampak: 'Menghitung baris yang akan ikut terhapus…',
+  /** `[tidak ada di korpus]` — temuan /code-review: kombinasi dipakai bersama kontrak tahun lain. */
+  bersama: 'kontrak lain memakai kombinasi yang sama — reinsurer, security, dan business tanpa tahun treaty-nya TIDAK ikut terhapus.',
 } as const
