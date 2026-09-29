@@ -142,4 +142,37 @@ export const BERANDA = {
   aktif: 'aktif',
   antrean: 'antrean',
   tanpaAntrean: 'belum ada kotak masuk',
+  // Tata letak workpage-template.html (29-09-2026) — sama-sama kerangka kami.
+  subjudul: 'Ringkasan antrean dan modul yang dapat Anda buka.',
+  ringkasan: 'Antrean Claim Life',
+  catatanTahap: 'Claim Life',
+  judulModul: 'Modul',
+  kolomModul: 'Modul',
+  kolomStatus: 'Status',
+  kolomAntrean: 'Antrean',
+  kolomAksi: 'Aksi',
+  judulPeran: 'Peran Anda',
+} as const
+
+/**
+ * Label bingkai aplikasi — sidebar, topbar, menu profil.
+ *
+ * ⚠️ `[tidak ada di korpus]` `[kerangka aplikasi, bukan menu Pega]`. Tak satu
+ * pun teks ini berasal dari sistem lama: ia bingkai aplikasi baru (desain
+ * `workpage-template.html`, 29-09-2026), bukan layar yang dimigrasi. Karena
+ * itu ia berbahasa Indonesia dan tidak membawa nomor baris XML.
+ */
+export const KERANGKA = {
+  lewati: 'Lewati ke konten utama',
+  menuSamping: 'Menu samping',
+  navUtama: 'Navigasi utama',
+  bukaMenu: 'Buka menu',
+  tutupMenu: 'Tutup menu',
+  ciutkanMenu: 'Ciutkan menu',
+  perluasMenu: 'Perluas menu',
+  cariMenu: 'Cari menu',
+  pintasCari: 'Ctrl K',
+  profil: 'Profil',
+  keBeranda: 'ke Beranda',
+  modeStub: 'mode stub',
 } as const

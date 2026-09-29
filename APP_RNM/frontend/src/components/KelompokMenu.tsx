@@ -21,6 +21,13 @@
  * children adalah ReactNode, jadi KelompokMenu boleh memuat KelompokMenu
  * lain — struktur yang CITRIX akan pakai. Menu Treaty yang ada TIDAK
  * ditambah tingkatnya: perubahan ini tampilan, bukan susunan.
+ *
+ * # Panel terciut (desain workpage-template.html, 29-09-2026)
+ *
+ * Saat panel hanya menampilkan ikon, anak kelompok tidak terlihat. Karena
+ * itu klik pada judulnya MEMBENTANGKAN panel dan membuka kelompok itu —
+ * bukan melipatnya diam-diam di balik ikon, yang dari luar tampak seperti
+ * tombol mati.
  */
 import { useState, type ReactNode } from "react";
 
@@ -30,6 +37,7 @@ import {
   terbukaKah,
   type GudangMini,
 } from "../lib/lipatMenu";
+import { IkonChevron } from "./ui/dasar";
 
 // localStorage disentuh lewat fungsi supaya kegagalannya (mode privat,
 // kebijakan peramban) terkurung — bacaLipatan/simpanLipatan sudah menelan
@@ -45,6 +53,9 @@ function gudang(): GudangMini | null {
 export function KelompokMenu({
   nama,
   memuatAktif,
+  lencana,
+  terciut = false,
+  onBentang,
   anak = false,
   children,
 }: {
@@ -52,6 +63,12 @@ export function KelompokMenu({
   nama: string;
   /** true bila halaman AKTIF ada di dalam kelompok ini (A2). */
   memuatAktif: boolean;
+  /** Dua huruf pengganti ikon (`lib/singkatan.ts`), bebas tabrakan. */
+  lencana: string;
+  /** true bila PANEL sedang hanya menampilkan ikon. */
+  terciut?: boolean;
+  /** Membentangkan panel — dipanggil saat judul diklik dalam mode ikon. */
+  onBentang?: () => void;
   /** true untuk kelompok di dalam kelompok (tingkat dua — A5). */
   anak?: boolean;
   children: ReactNode;
@@ -60,33 +77,49 @@ export function KelompokMenu({
     terbukaKah(nama, bacaLipatan(gudang()), memuatAktif),
   );
 
-  const balik = () => {
-    setTerbuka((v) => {
-      const baru = !v;
-      const l = bacaLipatan(gudang());
-      l[nama] = baru;
-      simpanLipatan(gudang(), l);
-      return baru;
-    });
+  const setel = (baru: boolean) => {
+    const l = bacaLipatan(gudang());
+    l[nama] = baru;
+    simpanLipatan(gudang(), l);
+    setTerbuka(baru);
+  };
+
+  const klik = () => {
+    if (terciut && onBentang) {
+      onBentang();
+      setel(true);
+      return;
+    }
+    setel(!terbuka);
   };
 
   return (
-    <div className={"kelompok" + (anak ? " kelompok--anak" : "")}>
+    <div
+      className={
+        "kelompok" +
+        (anak ? " kelompok--anak" : "") +
+        (memuatAktif ? " kelompok--aktif" : "")
+      }
+    >
       <button
         type="button"
         className="kelompok__judul"
         aria-expanded={terbuka}
-        onClick={balik}
+        title={terciut ? nama : undefined}
+        onClick={klik}
       >
+        <span className="kelompok__lencana" aria-hidden="true">
+          {lencana}
+        </span>
+        <span className="kelompok__teks">{nama}</span>
         <span
           className={
             "kelompok__panah" + (terbuka ? " kelompok__panah--buka" : "")
           }
           aria-hidden="true"
         >
-          ▸
+          <IkonChevron />
         </span>
-        <span className="kelompok__teks">{nama}</span>
       </button>
       {terbuka && <div className="kelompok__isi">{children}</div>}
     </div>

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
+import { KERANGKA } from '../assets/labels'
+import { IkonCari } from './ui/dasar'
 import {
   daftarPalet,
   saringPalet,
@@ -83,39 +85,43 @@ export function PaletMenu({
         if (e.target === e.currentTarget) onTutup()
       }}
     >
-      <div className="palet" role="dialog" aria-modal="true" aria-label="Cari menu">
-        <input
-          ref={kotak}
-          className="palet__isian"
-          type="text"
-          value={kueri}
-          placeholder="Cari menu…"
-          aria-label="Cari menu"
-          onChange={(e) => {
-            setKueri(e.target.value)
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') {
-              e.preventDefault()
-              onTutup()
-              return
-            }
-            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-              e.preventDefault()
-              if (hasil.length === 0) return
-              const arah = e.key === 'ArrowDown' ? 1 : -1
-              setSorot((s) => (s + arah + hasil.length) % hasil.length)
-              return
-            }
-            if (e.key === 'Enter') {
-              const h = hasil[sorot]
-              if (h !== undefined) {
+      <div className="palet" role="dialog" aria-modal="true" aria-label={KERANGKA.cariMenu}>
+        <label className="palet__kepala">
+          <IkonCari ukuran={20} />
+          <input
+            ref={kotak}
+            className="palet__isian"
+            type="text"
+            value={kueri}
+            placeholder="Cari menu…"
+            aria-label={KERANGKA.cariMenu}
+            onChange={(e) => {
+              setKueri(e.target.value)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
                 e.preventDefault()
-                pilih(h)
+                onTutup()
+                return
               }
-            }
-          }}
-        />
+              if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault()
+                if (hasil.length === 0) return
+                const arah = e.key === 'ArrowDown' ? 1 : -1
+                setSorot((s) => (s + arah + hasil.length) % hasil.length)
+                return
+              }
+              if (e.key === 'Enter') {
+                const h = hasil[sorot]
+                if (h !== undefined) {
+                  e.preventDefault()
+                  pilih(h)
+                }
+              }
+            }}
+          />
+          <kbd aria-hidden="true">Esc</kbd>
+        </label>
         {hasil.length === 0 ? (
           // ⛔ Daftar kosong SENYAP terbaca sebagai layar rusak. Ia menyebut
           // apa yang dicari, supaya pemakai tahu ia mengetik bukan menunggu.

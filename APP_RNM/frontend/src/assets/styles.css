@@ -7,16 +7,46 @@
    Dipulihkan dari transkrip sesi, lalu diperiksa: setiap var() yang dipakai
    berkas ini punya definisinya di sini. */
 :root {
-  --navy: #03045e;
-  --blue: #0077b6;
-  --blue-dark: #005f92;
-  --bg: #ffffff;
-  --alt-row: #eaf4fb;
-  --border: #d9e2ea;
-  --text: #1c2430;
-  --muted: #5b6875;
-  --danger: #b3261e;
-  --danger-bg: #fdecea;
+  /* PALET — PERSIS `D:/XML/RNM_BRD/workpage-template.html` (29-09-2026,
+     keputusan pemilik proyek: "warna dan huruf persis template"). Nama
+     template dipakai apa adanya untuk aturan baru.
+
+     ⚠️ `--bg` kini LATAR HALAMAN (#f4f6fa), seperti di template. Sebelum
+     29-09-2026 `--bg` berarti permukaan putih; seluruh pemakaian lama sudah
+     dipindah ke `--surface`, jadi `var(--bg)` di aturan lama tidak ada lagi. */
+  --primary: #2b44b0;
+  --primary-hover: #233a9b;
+  --primary-soft: #eceffb;
+  --primary-text: #2339a3;
+  --accent: #e8a317;
+  --bg: #f4f6fa;
+  --surface: #ffffff;
+  --surface-2: #eef1f6;
+  --border: #e1e6ee;
+  --text: #172033;
+  --text-2: #4a5468;
+  --text-3: #626d84;
+  --success-bg: #e3f4eb;
+  --success-text: #166a43;
+  --warning-bg: #fdf3dc;
+  --warning-text: #8a5800;
+  --danger: #c8372d;
+  --danger-text: #a82b22;
+  /* Tidak ada di template: latar merah muda untuk isian bergalat, diturunkan
+     dari --danger dengan cara template menurunkan --primary-soft. */
+  --danger-bg: #fbeceb;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --speed: 0.25s;
+  --font: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+
+  /* ALIAS nama lama — 4.000 baris di bawah memakainya. Menunjuk ke token
+     template, bukan hex sendiri, supaya palet tetap SATU sumber. */
+  --navy: var(--text);
+  --blue: var(--primary);
+  --blue-dark: var(--primary-hover);
+  --alt-row: var(--surface-2);
+  --muted: var(--text-3);
   /* SKALA UKURAN HURUF — sembilan tingkat, tanpa pecahan.
 
      Sebelum ini ada delapan belas ukuran, enam di antaranya berbeda setengah
@@ -45,8 +75,12 @@
      kesepuluh item sejak lama — jadi yang melebar panelnya. 272px
      menyisakan ~190px untuk teks sesudah margin, padding, lencana, dan
      jarak; nama terpanjang (28 aksara @13px) muat. */
-  --sidebar-w: 272px;
-  --sidebar-w-terlipat: 72px;
+  /* 29-09-2026: 272/72 -> 280/76. 76px = `--sidebar-w-mini` template;
+     280px = lebar laci template (`min(280px, 85vw)`), dipakai juga di
+     desktop karena nama kelompok korpus (mis. "Master Contract Retro
+     Life") lebih panjang daripada menu template. */
+  --sidebar-w: 280px;
+  --sidebar-w-terlipat: 76px;
 
   /* §0G.1 (ronde 264) — TINGGI topbar, dibutuhkan DUA pihak sekaligus.
      Sejak topbar membentang penuh di atas sidebar, panel samping harus
@@ -78,10 +112,13 @@
      itu. */
   --r-xl: 16px;
   --r-pill: 999px;
-  --sh-1: 0 1px 2px rgba(3, 4, 94, 0.06);
-  --sh-2: 0 2px 8px rgba(3, 4, 94, 0.07), 0 1px 2px rgba(3, 4, 94, 0.05);
-  --sh-3: 0 12px 32px rgba(3, 4, 94, 0.14);
-  --ring: 0 0 0 3px rgba(0, 119, 182, 0.28);
+  --sh-1: 0 1px 2px rgba(23, 32, 51, 0.06);
+  --sh-2: 0 2px 8px rgba(23, 32, 51, 0.07), 0 1px 2px rgba(23, 32, 51, 0.05);
+  --sh-3: 0 12px 32px rgba(23, 32, 51, 0.14);
+  /* Cincin fokus = `outline: 2px solid var(--primary); outline-offset: 2px`
+     template, ditulis sebagai bayangan supaya aturan lama yang memakai
+     `box-shadow: var(--ring)` ikut tanpa disunting satu-satu. */
+  --ring: 0 0 0 2px var(--surface), 0 0 0 4px var(--primary);
   --t: 120ms ease;
 }
 
@@ -96,10 +133,11 @@ body,
   margin: 0;
 }
 
+/* Huruf, ukuran dasar, dan latar = `body` template (29-09-2026). */
 body {
-  font-family: "Montserrat", system-ui, sans-serif;
+  font-family: var(--font);
   font-weight: 400;
-  font-size: var(--fs-base);
+  font-size: 16px;
   line-height: 1.5;
   color: var(--text);
   background: var(--bg);
@@ -119,34 +157,259 @@ body {
    ukuran sendiri (.modal__title, .panel__title) tetap menang, karena kelas
    lebih kuat daripada elemen — jadi blok ini menambah dasar, bukan menimpa
    keputusan yang sudah ada. */
+/* 29-09-2026 — skala judul template. `h1` sejak itu hanya ada untuk
+   pembaca layar (judul topbar Shell); judul TERLIHAT tiap layar adalah
+   `h2`-nya, jadi `h2` memakai rupa `.page-head h1` template. `h3` = judul
+   kartu (`.card-head h2` template, 17px). Jarak bawahnya dasar saja: kepala
+   halaman yang sudah menata judulnya sendiri (`.inbox__judul`, dst.)
+   menimpanya dengan kelas. */
 h1,
 h2,
 h3,
 h4 {
   margin: 0;
-  color: var(--navy);
-  font-weight: 600;
+  color: var(--text);
+  font-weight: 700;
   line-height: 1.3;
-  letter-spacing: -0.2px;
 }
 h1 {
-  font-size: var(--fs-2xl);
+  font-size: 20px;
 }
 h2 {
-  font-size: var(--fs-xl);
+  margin-bottom: 16px;
+  font-size: clamp(24px, 4vw, 30px);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 h3 {
-  font-size: var(--fs-lg);
+  margin-bottom: 12px;
+  font-size: 17px;
 }
 h4 {
-  font-size: var(--fs-md);
-  letter-spacing: 0;
+  margin-bottom: 8px;
+  font-size: 15px;
+  font-weight: 600;
 }
 
 /* Angka disejajarkan per kolom. Pada daftar keuangan, digit yang bergeser
    membuat mata harus membaca ulang tiap baris. */
 table {
   font-variant-numeric: tabular-nums;
+}
+
+/* ======================================================================
+   DASAR ELEMEN TANPA KELAS — rupa workpage-template.html (29-09-2026)
+
+   Banyak layar modul merender <table>, <button>, <input>, <select> TANPA
+   kelas (KlaimLife, RegisterKlaim, KasusKomite, PremiumListDetail,
+   InputOffer…). Sebelum blok ini mereka tampil sebagai kontrol bawaan
+   peramban. Semua selektor dibungkus :where() sehingga spesifisitasnya
+   NOL: kelas komponen mana pun (.btn, .field__input, .inbox__tabel…)
+   tetap menang tanpa !important dan tanpa bergantung urutan berkas.
+   ====================================================================== */
+
+/* Fokus papan ketik selalu terlihat — `:focus-visible` template. */
+:where(:focus-visible) {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+:where(a) {
+  color: var(--primary-text);
+}
+
+:where(input[type="checkbox"], input[type="radio"]) {
+  accent-color: var(--primary);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Tabel = `table/th/td` template, dibungkus sebagai kartu: tepi 1px dan
+   sudut 12px pada tabelnya sendiri, karena kebanyakan tabel layar modul
+   tidak punya pembungkus. `border-collapse: separate` WAJIB — sudut
+   membulat tidak berlaku pada tabel `collapse`. */
+:where(table) {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+:where(th) {
+  padding: 10px 16px;
+  text-align: left;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-3);
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+:where(td) {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+:where(tr:last-child > td) {
+  border-bottom: 0;
+}
+:where(thead tr:first-child > th:first-child) {
+  border-top-left-radius: calc(var(--radius) - 1px);
+}
+:where(thead tr:first-child > th:last-child) {
+  border-top-right-radius: calc(var(--radius) - 1px);
+}
+:where(tbody tr:last-child > td:first-child) {
+  border-bottom-left-radius: calc(var(--radius) - 1px);
+}
+:where(tbody tr:last-child > td:last-child) {
+  border-bottom-right-radius: calc(var(--radius) - 1px);
+}
+:where(tbody tr:hover) {
+  background: #fafbfd;
+}
+/* Tabel di DALAM kartu: kartunya yang bertepi. Tepi kedua di dalamnya
+   terbaca sebagai bingkai ganda. */
+:where(.kartu, .panel, .polis, .modal) :where(table) {
+  border: 0;
+  border-radius: 0;
+  /* Latar putih bersudut siku menutupi sudut kartu yang membulat. */
+  background: transparent;
+}
+:where(.kartu, .panel, .polis, .modal) :where(th) {
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+}
+
+/* Tombol tanpa kelas = `.btn .btn-outline` template. Tombol tanpa kelas di
+   layar modul adalah tombol sekunder (Cari, Tinjau, Confirm, Batal…);
+   tombol utama memakai `.btn--primary` dari `ui/dasar.tsx`. */
+:where(button:not([class])),
+:where(input[type="file"])::file-selector-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+:where(input[type="file"])::file-selector-button {
+  margin-right: 12px;
+}
+:where(button:not([class]):hover:not(:disabled)),
+:where(input[type="file"]:hover)::file-selector-button {
+  background: var(--surface-2);
+}
+:where(button:not([class]):disabled) {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+:where(input[type="file"]) {
+  font-size: 14px;
+  color: var(--text-2);
+}
+
+/* Isian tanpa kelas = kotak cari template: 42px, tepi 1px, fokus biru. */
+:where(
+    input:not([type="checkbox"], [type="radio"], [type="file"], [type="range"], [type="submit"], [type="button"]):not([class]),
+    select:not([class]),
+    textarea:not([class])
+  ) {
+  height: 42px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+:where(textarea:not([class])) {
+  height: auto;
+  padding: 10px 12px;
+}
+:where(input:not([class]), select:not([class]), textarea:not([class])):focus {
+  outline: 2px solid var(--primary);
+  outline-offset: -1px;
+}
+:where(input:not([class]))::placeholder {
+  color: var(--text-3);
+}
+
+:where(label) {
+  color: var(--text-2);
+  font-size: 14px;
+}
+/* Label polos yang MEMBUNGKUS isian (`<label>Teks <input/></label>` di
+   RegisterKlaim, KasusKomite, PanelTanggalKlaim…): teks di atas, isian di
+   bawah — pola `.field__label` — berjarak dari kontrol sebelahnya. Tanpa
+   ini teks label menempel langsung ke kotak isian tetangganya. */
+:where(label:not([class]):has(> input, > select, > textarea)) {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 12px 12px 0;
+  vertical-align: bottom;
+  font-size: 13px;
+  font-weight: 600;
+}
+/* Kotak centang/radio tetap SEBARIS dengan teksnya. */
+:where(label:not([class]):has(> input[type="checkbox"], > input[type="radio"])) {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+/* Tombol sesudah deretan label berisi isian: dasarnya sejajar dasar isian. */
+:where(label:not([class]):has(> input, > select, > textarea)) + :where(button) {
+  margin-bottom: 12px;
+  vertical-align: bottom;
+}
+/* Tombol berderet di satu baris teks hanya dipisah satu spasi (~4px);
+   jarak tombol template 8px. */
+:where(button:not([class])) + :where(button),
+:where(button) + :where(button:not([class])) {
+  margin-left: 4px;
+}
+:where(summary) {
+  cursor: pointer;
+  color: var(--text-2);
+  font-size: 14px;
+  font-weight: 600;
+}
+:where(kbd) {
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text-3);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 /* ---------------------------------------------------------------- logo */
@@ -161,40 +424,6 @@ table {
    `.sidebar__logo-img` ronde 264) dan `.login__logo`, yang mengatur
    GAMBAR, bukan huruf. */
 
-/* -------------------------------------------------------------- layout */
-/* §0G.1 (ronde 264) — cangkang kini BERTUMPUK: topbar penuh di atas, lalu
-   baris sidebar+konten di bawahnya. Sebelumnya ia satu baris mendatar dan
-   topbar duduk di dalam kolom kanan, sehingga topbar dan sidebar bertemu di
-   sudut dan terbaca sebagai satu blok siku — keluhan yang §0G.2.3 sebut.
-
-   Halaman TETAP menggulir pada `body`. Susunan "app shell" (tinggi 100vh,
-   isi yang menggulir sendiri) sempat dipertimbangkan dan DITOLAK: ia
-   memindahkan wadah gulir, dan beberapa aturan yang sudah jalan bergantung
-   pada gulir jendela (`.table-wrap { max-height: calc(100vh - 300px) }`,
-   judul kelompok yang menempel). Menukar wadah gulir untuk perubahan
-   presentasi melanggar "nol perubahan pada yang sudah jalan". */
-.shell {
-  display: flex;
-  flex-direction: column;
-  min-height: 100%;
-  /* §0G.2.3 (ronde 264) — TANAH tempat panel melayang.
-     Panel putih di atas halaman putih tidak melayang; ia hanya kehilangan
-     garisnya. Acuan REFERENCE_UI/sidebar_2.jpeg dan SIDEBAR.png sama-sama
-     menaruh panelnya di atas latar sangat muda, dan itulah yang membuat
-     bentuk melayangnya terbaca.
-
-     `--alt-row` (#eaf4fb) adalah biru paling muda yang SUDAH ada di palet —
-     nol hex baru. Yang terlihat hanyalah selokan selebar --nav-layang di
-     sekeliling panel: `.content` tetap putih, dan tidak satu pun halaman
-     berubah warnanya. */
-  background: var(--alt-row);
-}
-.shell__badan {
-  display: flex;
-  flex: 1;
-  min-height: 0;
-}
-
 /* KOREKSI TV2-291 (ronde 250) — panel menu PUTIH.
    Pemilik proyek: "SIDEBAR ITU PUTIH AJA KALI YA TAPI KETIKA MAU DI KLIK
    BARU ADA GRADIENT BUTTON NYA WARNA BIRU NYA!"
@@ -207,11 +436,11 @@ table {
 
    Kontras DIUKUR lebih dulu (WCAG 2.1, ambang AA teks normal 4,5:1),
    dan seluruh penggantinya memakai palet yang SUDAH ada — nol hex baru:
-     --muted #5b6875 di atas --bg      5,70:1
+     --muted var(--text-3) di atas --bg      5,70:1
      --text  #1c2430 di atas --bg     15,62:1
      --bg    #ffffff di atas --blue    4,87:1
      --bg    #ffffff di atas --navy   17,75:1
-     --muted #5b6875 di atas --alt-row 5,11:1 */
+     --muted var(--text-3) di atas --alt-row 5,11:1 */
 /* §5.1 RONDE 270 (E.1-E.4) — PANEL BIRU.
 
    Pemilik proyek 22-09-2026: *"SIDEBAR BALIKKAN DENGAN BACKGROUND BIRU!
@@ -233,9 +462,9 @@ table {
    panel yang SAMA dalam varian terang dan varian biru bersebelahan:
 
 	latar panel varian biru  #3339cd  L=0,08038
-	--blue-dark  #005f92     L=0,10260   <- terdekat
-	--navy       #03045e     L=0,00914   <- 9x lebih gelap
-	--blue       #0077b6     L=0,16571
+	--blue-dark  var(--primary-hover)     L=0,10260   <- terdekat
+	--navy       var(--text)     L=0,00914   <- 9x lebih gelap
+	--blue       var(--primary)     L=0,16571
 
    `--navy` akan menghasilkan panel yang praktis hitam, bukan "background
    biru". `--blue-dark` yang paling dekat dengan terang acuannya.
@@ -245,20 +474,20 @@ table {
    ---------------------------------------------------------------------------
 
    ⚠️ RIWAYAT, BUKAN KEADAAN SEKARANG. Tabel ini dihitung ronde 270 untuk
-   panel `#005F92`. Panelnya sudah berganti dua kali sejak itu (`#0B1120`
+   panel `var(--primary-hover)`. Panelnya sudah berganti dua kali sejak itu (`#0B1120`
    ronde 271, `#2A4B78` ronde 274), dan setiap angka di kolom kanan ikut
    berubah. Tabel yang BERLAKU dihitung ulang setiap kali uji berjalan, di
    `App.ronde270sidebar.test.ts` E.2 — sembilan kasus sejak ronde 274.
    Jangan mengutip angka dari sini.
 
 	kasus              teks      latar      rasio
-	nama menu          #ffffff   #005f92     6,88:1
-	kepala grup        #eaf4fb   #005f92     6,17:1
-	menu diblokir      #d9e2ea   #005f92     5,25:1
+	nama menu          #ffffff   var(--primary-hover)     6,88:1
+	kepala grup        var(--surface-2)   var(--primary-hover)     6,17:1
+	menu diblokir      var(--border)   var(--primary-hover)     5,25:1
 	lencana 2-huruf    #ffffff   putih .14   5,06:1
 	hover              #ffffff   putih .10   5,52:1
-	TERPILIH teks      #03045e   #eaf4fb    15,92:1
-	TERPILIH lencana   #ffffff   #0077b6     4,87:1
+	TERPILIH teks      var(--text)   var(--surface-2)    15,92:1
+	TERPILIH lencana   #ffffff   var(--primary)     4,87:1
 	bendera SOON       #7a5200   #fff7e6     6,49:1
 
    ---------------------------------------------------------------------------
@@ -288,7 +517,7 @@ table {
   /* ⚠️ RONDE 274 §A.2 — PERGANTIAN WARNA PANEL YANG KELIMA.
 
      19-09  identitas pengguna dipindah ke kaki sidebar
-     20-09  "SIDEBAR ITU PUTIH AJA KALI YA"          -> var(--bg)
+     20-09  "SIDEBAR ITU PUTIH AJA KALI YA"          -> var(--surface)
      22-09  "BALIKKAN DENGAN BACKGROUND BIRU"        -> var(--blue-dark)
      23-09  "SAYA ACC YANG ANDA REKOMENDASIKAN"      -> #0B1120
      23-09 10:13  diubah DI LUAR sesi      -> #2A4B78  (DIBALIK ronde 272)
@@ -332,7 +561,7 @@ table {
      halus, dan satu garis tepi PENUH yang tipis. Garis penuh BUKAN
      pengulangan las: ia mengelilingi kartu, bukan menyambungkannya ke
      tetangga — dan acuan SIDEBAR.png varian terang memang memakainya.
-     Tanpa garis itu, kartu putih di atas selokan #eaf4fb hanya
+     Tanpa garis itu, kartu putih di atas selokan var(--surface-2) hanya
      mengandalkan bayangan setipis --sh-2, dan tepinya hilang di layar
      dengan gamma tinggi.
 
@@ -431,96 +660,6 @@ table {
    menggantinya dengan kotak lain. Logonya kini `logo-treaty.png`, aset
    turunan bertransparansi sungguhan — tidak ada yang perlu dibungkus. */
 
-/* Kelompok sidebar yang dapat dilipat (ronde 103). Judulnya <button>
-   sungguhan supaya keyboard bekerja tanpa kode tambahan; gayanya meniru
-   .sidebar__section supaya perpindahannya tidak mengubah rupa. */
-/* KOREKSI TV2-287 butir 5 (ronde 249): judulnya MENEMPEL saat digulir.
-   Pemilik proyek melaporkan "kelompok pertama tanpa label" — labelnya ADA
-   (App.tsx, KelompokMenu nama="Treaty Master") dan selalu dirender; yang
-   hilang adalah TAMPAKNYA begitu daftar 22 menu digeser ke bawah. Latar
-   navy yang sama dengan panel wajib ikut, atau item yang lewat di
-   belakangnya terbaca menembus judul. */
-/* KOREKSI KEDUA TV2-291 (ronde 250) — cacat di perbaikan ronde 249.
-   Aturan ini menetapkan `background: var(--navy)` lalu, sebelas baris
-   kemudian, `background: transparent`. Yang belakangan MENANG. Jadi
-   judul menempelnya berhasil sementara latarnya tidak pernah ada, dan
-   item yang lewat di belakangnya memang terbaca menembus judul —
-   persis keadaan yang komentar di atas nyatakan harus dicegah. Kini
-   satu deklarasi saja, dan warnanya mengikuti panel. */
-.kelompok__judul {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  /* Ronde 270 — latar sticky mengikuti PANEL. Kalau tidak, item yang
-     lewat di belakangnya terbaca menembus judul; itu cacat yang koreksi
-     kedua TV2-291 sudah perbaiki sekali, dan mengganti warna panel tanpa
-     mengganti ini akan menghidupkannya lagi. */
-  background: #2a4b78;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  width: 100%;
-  padding: 14px 20px 8px;
-  border: 0;
-  font-size: var(--fs-2xs);
-  font-weight: 600;
-  letter-spacing: 1.1px;
-  text-transform: uppercase;
-  /* RONDE 274 (A.5) — 5,81:1 di atas panel #2A4B78, terukur 23-09-2026.
-     Angkanya turun dari 12,38:1 karena panelnyalah yang berganti; warnanya
-     sendiri tidak disentuh dan tidak perlu disentuh — ia masih di atas AA.
-
-     `--alt-row` yang dulu di sini memberi 16,89:1 di atas panel lama (kini
-     7,93:1), yaitu SETERANG nama menunya sendiri; kepala grup yang sama
-     terangnya dengan isinya berhenti berfungsi sebagai kepala. #C3D3E8
-     satu tingkat lebih redup dan tetap di atas ambang. */
-  color: #c3d3e8;
-  cursor: pointer;
-  text-align: left;
-}
-.kelompok__judul:hover .kelompok__teks {
-  color: var(--bg);
-}
-.kelompok__judul:focus-visible {
-  /* Cincin fokus WAJIB terbaca di atas panelnya sendiri. `--blue` di atas
-     `--blue-dark` hanya 1,41:1 — cincin yang tidak terlihat bukan cincin. */
-  outline: 2px solid var(--bg);
-  outline-offset: -2px;
-  border-radius: var(--r-sm);
-}
-.kelompok__panah {
-  display: inline-block;
-  transition: transform 0.15s ease;
-  font-size: 10px;
-}
-.kelompok__panah--buka {
-  transform: rotate(90deg);
-}
-/* Isi kelompok menjorok ke dalam - pola menu bertingkat pada umumnya. */
-.kelompok__isi {
-  padding-left: 8px;
-}
-/* Tingkat DUA (disiapkan untuk CITRIX): menjorok lebih dalam, judulnya
-   lebih kecil. Menu Treaty yang ada TIDAK memakai tingkat ini. */
-.kelompok--anak .kelompok__judul {
-  padding: 8px 20px 6px 28px;
-}
-.kelompok--anak .kelompok__isi {
-  padding-left: 16px;
-}
-/* Saat panel terlipat jadi ikon saja, judul kelompok menyusut jadi garis -
-   perilaku yang sama dengan .sidebar__section lama. */
-.sidebar--terlipat .kelompok__judul {
-  height: 1px;
-  margin: 10px 16px;
-  padding: 0;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.22);
-}
-.sidebar--terlipat .kelompok__isi {
-  padding-left: 0;
-}
-
 /* Item nav sebagai pil membulat, bukan baris penuh dengan garis kiri.
    Pil memberi target klik yang jelas dan terlihat lebih tenang saat aktif. */
 .sidebar__link {
@@ -537,7 +676,7 @@ table {
      membulat", inspirasi tampilan "Oval"). */
   border-radius: var(--r-pill);
   /* 6,88:1 di atas --blue-dark. */
-  color: var(--bg);
+  color: var(--surface);
   text-decoration: none;
   font-size: var(--fs-md);
   cursor: pointer;
@@ -573,11 +712,11 @@ table {
 
      ⚠️ RONDE 274 — angka "5,06:1" yang berdiri di sini SALAH sejak ronde
      271, dan ditemukan saat mengukur ulang A.5. Ia benar untuk panel
-     `#005F92`, yaitu DUA warna panel yang lalu; ronde 271 memindahkan
+     `var(--primary-hover)`, yaitu DUA warna panel yang lalu; ronde 271 memindahkan
      panel ke `#0B1120` tanpa menghitung ulang komentarnya. Nilainya yang
      sebenarnya, per panel:
 
-	#005F92   5,06:1     <- angka yang tertulis di sini
+	var(--primary-hover)   5,06:1     <- angka yang tertulis di sini
 	#0B1120  12,76:1     <- keadaan sebelum ronde 274
 	#2A4B78   6,04:1     <- sekarang
 
@@ -585,7 +724,7 @@ table {
      Pagar kontraslah yang memeriksanya; komentar tidak memeriksa apa pun,
      dan komentar yang angkanya diwarisi lebih buruk daripada tanpa angka. */
   background: rgba(255, 255, 255, 0.14);
-  color: var(--bg);
+  color: var(--surface);
   font-size: var(--fs-2xs);
   font-weight: 600;
   letter-spacing: 0.2px;
@@ -636,7 +775,7 @@ table {
    dibalik juga: tile `--blue` dengan huruf putih, 4,87:1. */
 .sidebar__link--active .sidebar__ikon {
   background: var(--blue);
-  color: var(--bg);
+  color: var(--surface);
 }
 
 /* Nama menu yang panjang dipotong dengan elipsis, bukan dibungkus ke baris
@@ -653,7 +792,7 @@ table {
      lebih gelap daripadanya (0,140 lawan 0,892) supaya hover tidak pernah
      tertukar dengan terpilih. Putih di atasnya 5,52:1. */
   background: rgba(255, 255, 255, 0.1);
-  color: var(--bg);
+  color: var(--surface);
 }
 /* KOREKSI TV2-287 butir 6 (ronde 249): penanda kiri `inset 3px 0 0`
    DICABUT. Ia bayangan SIKU, dan sejak item berbentuk pil penuh
@@ -727,7 +866,7 @@ table {
 
 .content {
   flex: 1;
-  background: var(--bg);
+  background: var(--surface);
   min-width: 0;
 }
 
@@ -740,7 +879,7 @@ table {
    SAMAKAN". Acuan: REFERENCE_UI/topbar_nav.jpeg.
 
    Gradiennya tersusun dari DUA warna yang sudah hidup di berkas ini —
-   `--navy` (#03045e) dan `#2a4b78` milik sidebar — sehingga bilah ini satu
+   `--navy` (var(--text)) dan `#2a4b78` milik sidebar — sehingga bilah ini satu
    keluarga dengan panel di bawahnya dan NOL hex baru masuk (PAGAR KERAS
    §8). Arah 90deg: gelap di kiri tempat logo berdiri, lebih terang di
    kanan tempat chip profil duduk.
@@ -775,7 +914,7 @@ table {
      (pesan siang): "topbar pakai warna sidebar #2A4B78".
 
      Sebelumnya `linear-gradient(90deg, var(--navy), #2a4b78)`, yaitu
-     membentang dari #03045e ke #2a4b78. Gradien itu dipasang ronde 275
+     membentang dari var(--text) ke #2a4b78. Gradien itu dipasang ronde 275
      B.2 meniru acuan topbar_nav.jpeg, dan acuannya tidak berubah — yang
      berubah keputusannya. Dua permukaan yang bersentuhan (bilah dan
      sidebar) kini benar-benar satu warna, bukan dua yang mirip.
@@ -799,7 +938,7 @@ table {
      "seperti sidebar" terpenuhi dua kali: melayang, dan radius sama.
 
      Warna di atas bilah pada acuan #ddedfa; latar `.shell` V2 --alt-row
-     #eaf4fb. Nyaris sama, sehingga bilah melayang menghasilkan tampak
+     var(--surface-2). Nyaris sama, sehingga bilah melayang menghasilkan tampak
      yang sama TANPA satu pun warna baru.
 
      `margin` tanpa sisi bawah: `.sidebar` membawa selokan atasnya
@@ -902,7 +1041,7 @@ table {
   border: 1px solid rgba(255, 255, 255, 0.26);
   border-radius: var(--r-sm);
   background: rgba(255, 255, 255, 0.1);
-  color: var(--bg);
+  color: var(--surface);
   cursor: pointer;
   transition:
     background var(--t),
@@ -910,8 +1049,8 @@ table {
     color var(--t);
 }
 .topbar__toggle:hover {
-  background: #f4f8fb;
-  border-color: #c3d3e0;
+  background: var(--surface-2);
+  border-color: var(--border);
 }
 .topbar__toggle:focus-visible {
   outline: none;
@@ -923,7 +1062,7 @@ table {
   font-weight: 600;
   letter-spacing: -0.2px;
   /* 8,84:1 di atas ujung TERANG gradien (#2a4b78). */
-  color: var(--bg);
+  color: var(--surface);
   line-height: 1.25;
   white-space: nowrap;
   overflow: hidden;
@@ -997,7 +1136,7 @@ table {
 .topbar__profil-nama {
   font-size: var(--fs-md);
   font-weight: 600;
-  color: var(--bg);
+  color: var(--surface);
   max-width: 160px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1028,7 +1167,7 @@ table {
   z-index: 30;
   min-width: 232px;
   padding: 12px;
-  background: var(--bg);
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   box-shadow: var(--sh-2);
@@ -1077,7 +1216,7 @@ table {
    tidak diubah — yang berubah hanya tempatnya. */
 .btn--keluar {
   width: 100%;
-  background: var(--bg);
+  background: var(--surface);
   border-color: var(--border);
   color: var(--muted);
   font-weight: 600;
@@ -1101,7 +1240,7 @@ table {
   /* DIBALIK ronde 275: di atas bilah navy, lencana navy lenyap. Putih
      berisi huruf navy terukur 8,84:1 dua arah.  hanya dipakai
      topbar (App.tsx:647), jadi pembalikan ini tidak menyentuh layar lain. */
-  background: var(--bg);
+  background: var(--surface);
   color: #2a4b78;
   display: flex;
   align-items: center;
@@ -1188,7 +1327,7 @@ table {
      DAPAT DIBATALKAN. Nilai sebelum ronde 256, supaya pemilik proyek bisa
      menolaknya setelah melihat tanpa perlu menggali riwayat:
 
-       background: var(--navy);     <- #03045e, navy pekat
+       background: var(--navy);     <- var(--text), navy pekat
        color: #fff;
 
      Sebabnya bukan radius. Ronde 252 mengukur REFERENCE_UI/*.png terhadap
@@ -1228,10 +1367,10 @@ table {
   padding: 10px 14px;
   /* TV2-308 (ronde 253) — `--border` -> `--alt-row`.
      Terukur pada acuan REFERENCE_UI 2.png: garis antar-baris berluminans
-     240-248 di atas putih — nyaris tak terlihat. `--border` #d9e2ea
+     240-248 di atas putih — nyaris tak terlihat. `--border` var(--border)
      berluminans 224, jauh lebih tegas, dan garis tegas berulang 30 kali
      ke bawah itulah yang membuat grid terasa kaku.
-     `--alt-row` #eaf4fb berluminans 242 dan SUDAH ADA di palet — nol hex
+     `--alt-row` var(--surface-2) berluminans 242 dan SUDAH ADA di palet — nol hex
      baru (PAGAR KERAS §4). */
   border-bottom: 1px solid var(--alt-row);
   vertical-align: middle;
@@ -1256,7 +1395,7 @@ table {
   transition: background var(--t);
 }
 .table tbody tr:hover {
-  background: rgba(0, 119, 182, 0.06);
+  background: rgba(43, 68, 176, 0.06);
 }
 /* Jarak dikurangi dari 44px menjadi 22px: isinya sekarang blok `.kosong` yang
    membawa jarak dan ikonnya sendiri, sehingga 44px membuat tabel kosong
@@ -1295,16 +1434,22 @@ table {
 
 /* -------------------------------------------------------------- tombol */
 .btn {
+  /* 29-09-2026 — `.btn` workpage-template: 44px, 15px/600, sudut 8px.
+     Tanpa varian ia `.btn-outline` template: permukaan putih bertepi. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 18px;
   font-family: inherit;
-  font-size: var(--fs-md);
+  font-size: 15px;
   font-weight: 600;
-  padding: 8px 16px;
-  /* TV2-291 (ronde 250): --r-sm (6px) -> --r-md (8px).
-     "BENTUK TABEL NYA JUGA LEBIH MODERN DONG BULAT AN NYA GITU JANGAN
-     KOTAK KAKU". Acuan REFERENCE_UI/2.png memakai ~8px pada tombol
-     bilah alat. Token yang sudah ada; nol nilai baru. */
-  border-radius: var(--r-md);
-  border: 1px solid transparent;
+  white-space: nowrap;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
   cursor: pointer;
   /* TV2-329 (ronde 256) — wadah riak.
      `overflow: hidden` WAJIB: tanpanya riak mekar KELUAR dari tombol dan
@@ -1317,6 +1462,11 @@ table {
     border-color var(--t),
     box-shadow var(--t),
     transform var(--t);
+}
+/* Hover bawaan (`.btn-outline:hover` template). Ditaruh SEBELUM varian:
+   spesifisitasnya sama dengan hover varian, jadi varian menang karena urutan. */
+.btn:hover:not(:disabled) {
+  background: var(--surface-2);
 }
 
 /* TV2-329 — RIAK (ripple) dan KILAU (shimmer).
@@ -1410,7 +1560,7 @@ table {
   top: calc(100% + 4px);
   left: 0;
   right: 0;
-  background: var(--bg);
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r-md);
   box-shadow: var(--sh-2);
@@ -1457,33 +1607,34 @@ table {
 }
 
 .btn--primary {
-  background: var(--blue);
+  background: var(--primary);
+  border-color: transparent;
   color: #fff;
-  box-shadow: var(--sh-1);
 }
 .btn--primary:hover:not(:disabled) {
   background: var(--blue-dark);
 }
 .btn--ghost {
-  background: var(--bg);
+  background: var(--surface);
   color: var(--navy);
   border-color: var(--border);
 }
 .btn--ghost:hover:not(:disabled) {
-  background: #f4f8fb;
-  border-color: #c3d3e0;
+  background: var(--surface-2);
+  border-color: var(--border);
 }
 .btn--danger {
-  background: var(--bg);
-  color: var(--danger);
-  border-color: #e6b4b0;
+  background: var(--surface);
+  color: var(--danger-text);
+  border-color: #efc4c0;
 }
 .btn--danger:hover:not(:disabled) {
   background: var(--danger-bg);
 }
 .btn--sm {
-  padding: 6px 11px;
-  font-size: var(--fs-sm);
+  height: 36px;
+  padding: 0 12px;
+  font-size: 14px;
 }
 
 /* --------------------------------------------------------------- form */
@@ -1493,11 +1644,10 @@ table {
 }
 .field__label {
   display: block;
-  font-size: var(--fs-sm);
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.2px;
-  margin-bottom: 5px;
-  color: var(--navy);
+  margin-bottom: 6px;
+  color: var(--text-2);
 }
 .field__req {
   color: var(--danger);
@@ -1505,29 +1655,31 @@ table {
 }
 .field__input {
   width: 100%;
+  /* 29-09-2026 — kotak cari template: 42px, 15px, sudut 8px. */
+  height: 42px;
   font-family: inherit;
-  font-size: var(--fs-md);
-  padding: 9px 12px;
+  font-size: 15px;
+  padding: 0 12px;
   border: 1px solid var(--border);
-  /* TV2-291: --r-sm -> --r-md, sepadan dengan .btn supaya isian dan
-     tombol yang berdampingan di satu baris tidak bersudut beda. */
-  border-radius: var(--r-md);
-  background: var(--bg);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
   color: var(--text);
   transition:
     border-color var(--t),
     box-shadow var(--t);
 }
 .field__input::placeholder {
-  color: #9aa7b4;
+  color: var(--text-3);
 }
 .field__input:hover {
-  border-color: #c3d3e0;
+  border-color: var(--border);
 }
 .field__input:focus {
-  outline: none;
-  border-color: var(--blue);
-  box-shadow: var(--ring);
+  /* Fokus template: garis 2px --primary DI DALAM tepi (offset -1px). */
+  outline: 2px solid var(--primary);
+  outline-offset: -1px;
+  border-color: var(--primary);
+  box-shadow: none;
 }
 .field__input--error {
   border-color: var(--danger);
@@ -1538,18 +1690,19 @@ table {
    bukan isian. Tanpa gaya sendiri ia tak dapat dibedakan dari kotak yang
    dapat diketik — kelas ini sempat yatim, ditemukan review r166. */
 .field__input--readonly {
-  background: #eef2f7;
-  color: #33415c;
+  background: var(--bg);
+  color: var(--text-2);
   cursor: default;
 }
 .field__input--error:focus {
-  box-shadow: 0 0 0 3px rgba(179, 38, 30, 0.22);
+  outline-color: var(--danger);
+  box-shadow: none;
 }
 .field__error {
-  margin-top: 5px;
-  font-size: var(--fs-sm);
+  margin-top: 6px;
+  font-size: 13px;
   font-weight: 500;
-  color: var(--danger);
+  color: var(--danger-text);
 }
 
 /* Kotak sandi + tombol mata (ronde 246/247). Tombol DUDUK DI ATAS input
@@ -1627,33 +1780,33 @@ table {
 /* ------------------------------------------------------------- notifikasi */
 /* Batang aksen di kiri: jenis pesan terbaca sebelum teksnya dibaca. */
 .alert {
-  padding: 12px 15px;
-  border-radius: var(--r-md);
-  font-size: var(--fs-md);
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
   margin-bottom: 16px;
   border: 1px solid;
   border-left-width: 4px;
 }
 .alert--error {
   background: var(--danger-bg);
-  border-color: #e6b4b0;
+  border-color: #efc4c0;
   border-left-color: var(--danger);
-  color: var(--danger);
+  color: var(--danger-text);
 }
 .alert--info {
-  background: #eef6fc;
-  border-color: #b9dcf2;
-  border-left-color: var(--blue);
-  color: #0b4a6f;
+  background: var(--primary-soft);
+  border-color: #d3daf5;
+  border-left-color: var(--primary);
+  color: var(--primary-text);
 }
 /* Hasil BERHASIL. Ronde 101: sebelumnya tidak ada varian ini — satu-satunya
    kabar baik yang pernah ditampilkan adalah ketiadaan galat, dan ketiadaan
    galat tidak terbaca sebagai konfirmasi. */
 .alert--ok {
-  background: #eefaf1;
-  border-color: #b5e3c5;
-  border-left-color: #1e8e4b;
-  color: #14532d;
+  background: var(--success-bg);
+  border-color: #bfe3cf;
+  border-left-color: var(--success-text);
+  color: var(--success-text);
 }
 /* Deretan tombol aksi pada satu baris, melipat di layar sempit. */
 .aksi-baris {
@@ -1673,7 +1826,7 @@ table {
      panel halaman yang ikut berubah. */
   max-height: 60vh;
   overflow-y: auto;
-  border: 1px solid #dbe4ec;
+  border: 1px solid var(--border);
   border-radius: var(--r-md);
 }
 .pilih-cari__baris {
@@ -1690,7 +1843,7 @@ table {
   font: inherit;
 }
 .pilih-cari__baris:hover {
-  background: #f2f7fb;
+  background: var(--surface-2);
 }
 .pilih-cari__ket {
   font-size: var(--fs-sm);
@@ -1703,10 +1856,10 @@ table {
   color: var(--muted);
 }
 .alert--warn {
-  background: #fff7e6;
-  border-color: #f0d9a0;
-  border-left-color: #c98a00;
-  color: #7a5200;
+  background: var(--warning-bg);
+  border-color: #f3dfae;
+  border-left-color: var(--accent);
+  color: var(--warning-text);
 }
 .alert ul {
   margin: 7px 0 0;
@@ -1865,7 +2018,7 @@ table {
      PUTIHNYA, LALU JEJAK-JEJAKNYA DITERANGIN LAGI".
 
      Putih murni, dan ia BUKAN hex baru: `--bg` sudah `#ffffff`. Token
-     tersendiri tetap dipakai, bukan `var(--bg)`, karena keduanya tidak
+     tersendiri tetap dipakai, bukan `var(--surface)`, karena keduanya tidak
      berkaitan — mengganti latar halaman kelak tidak boleh diam-diam
      mengganti warna kepala jalur.
 
@@ -2059,7 +2212,7 @@ table {
      Keduanya di atas ambang AA 4,5:1. Angka --muted/--alt-row bukan
      hitungan baru: ia sudah tercatat di kepala berkas ini sejak ronde
      sebelumnya untuk baris tabel selang-seling. */
-  background: linear-gradient(180deg, var(--bg) 0%, var(--alt-row) 100%);
+  background: linear-gradient(180deg, var(--surface) 0%, var(--alt-row) 100%);
   /* Padding seimbang: atas-bawah sedikit lebih lega daripada kiri-kanan,
      supaya kartu tidak tampak gepeng. */
   padding: 40px 36px 36px;
@@ -2080,7 +2233,7 @@ table {
      ronde ini. Digantikan `--navy` (3, 4, 94) — warna yang jelas sedang
      ia dekati. `--navy` sedikit lebih terang, jadi alfanya naik 0,38 ->
      0,42 supaya kedalaman bayangannya tidak ikut berkurang. */
-  box-shadow: 0 18px 48px rgba(3, 4, 94, 0.42);
+  box-shadow: 0 18px 48px rgba(23, 32, 51, 0.42);
   /* Masuk sekali saat kartu muncul (§0G.3). */
   animation: login-kartu-masuk 420ms ease-out both;
 }
@@ -2186,7 +2339,7 @@ table {
   /* §2.2 ronde 272 (B.7) — ISIAN BERNUANSA, bukan putih di atas putih.
 
      Ronde 270 `#1` mencatat ini sebagai yang masih kurang terhadap acuan,
-     dan sebabnya terukur: `.field__input` mewarisi `background: var(--bg)`
+     dan sebabnya terukur: `.field__input` mewarisi `background: var(--surface)`
      (#ffffff) sementara ujung ATAS gradient kartu juga #ffffff. Kotaknya
      karena itu hanya terlihat dari garis tepinya.
 
@@ -2199,7 +2352,7 @@ table {
 /* Placeholder di kartu ini SAJA.
 
    ⚠️ Terukur 23-09-2026, SEBELUM ronde ini menyentuh apa pun:
-   `.field__input::placeholder` memakai #9aa7b4, yang memberi **2,45:1**
+   `.field__input::placeholder` memakai var(--text-3), yang memberi **2,45:1**
    di atas #ffffff — GAGAL AA, dan itu berlaku di SELURUH aplikasi. Ia
    bukan cacat yang lahir ronde ini, dan memperbaikinya secara global
    menggelapkan placeholder di 40-an layar sekaligus membuka risiko ia
@@ -2224,11 +2377,11 @@ table {
 .login__card .field__input:focus {
   box-shadow:
     var(--ring),
-    0 0 0 6px rgba(0, 119, 182, 0.1);
+    0 0 0 6px rgba(43, 68, 176, 0.1);
   /* Isian kartu ini bernuansa; medan yang SEDANG diisi kembali ke `--bg`
      sehingga ia lebih TERANG daripada tetangganya. Keadaan yang terbaca
      dari jarak pandang, dan nol warna baru — kedua ujungnya token. */
-  background: var(--bg);
+  background: var(--surface);
 }
 /* Glif pemandu ikut menyala bersama cincin fokus. `currentColor` di
    `sifatIkon` yang membuat satu baris ini cukup. */
@@ -2328,7 +2481,7 @@ table {
 /* ------------------------------------------------------------- toolbar */
 .toolbar {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
   flex-wrap: wrap;
   margin-bottom: 16px;
@@ -2468,8 +2621,8 @@ table {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: rgba(3, 4, 94, 0.42);
-  backdrop-filter: blur(3px);
+  /* Lapisan gelap `.overlay` template — tanpa blur. */
+  background: rgba(15, 20, 35, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2483,11 +2636,10 @@ table {
 .modal {
   display: flex;
   flex-direction: column;
-  background: var(--bg);
-  /* TV2-291: --r-lg -> --r-xl (16px), mengikuti bentuk lembar modal di
-     REFERENCE_UI/4.png. */
-  border-radius: var(--r-xl);
-  box-shadow: var(--sh-3);
+  background: var(--surface);
+  /* 29-09-2026 — sudut kartu template (12px) dan bayangan laci template. */
+  border-radius: var(--radius);
+  box-shadow: 0 16px 40px rgba(23, 32, 51, 0.25);
   width: 460px;
   max-width: 100%;
   max-height: 86vh;
@@ -2500,17 +2652,16 @@ table {
   align-items: flex-start;
   gap: 12px;
   flex: none;
-  padding: 20px 22px 12px;
+  padding: 20px 20px 14px;
   border-bottom: 1px solid var(--border);
 }
 .modal__title {
   flex: 1;
   min-width: 0;
   margin: 0;
-  font-size: var(--fs-lg);
-  font-weight: 600;
-  letter-spacing: -0.1px;
-  color: var(--navy);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
 }
 
 /* Tombol tutup di POJOK KANAN ATAS. Ia tidak menggantikan tombol Batal di
@@ -2521,24 +2672,22 @@ table {
   align-items: center;
   justify-content: center;
   flex: none;
-  width: 28px;
-  height: 28px;
-  margin: -2px -4px 0 0;
+  width: 36px;
+  height: 36px;
+  margin: -6px -8px 0 0;
   padding: 0;
-  border: 1px solid transparent;
-  border-radius: var(--r-sm);
+  border: 0;
+  border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--muted);
+  color: var(--text-2);
   cursor: pointer;
   transition:
     background var(--t),
-    border-color var(--t),
     color var(--t);
 }
 .modal__close:hover {
-  background: #f4f8fb;
-  border-color: var(--border);
-  color: var(--navy);
+  background: var(--surface-2);
+  color: var(--text);
 }
 .modal__close:focus-visible {
   outline: none;
@@ -2549,15 +2698,15 @@ table {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: 18px 22px;
+  padding: 20px;
 }
 
 .modal__actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   justify-content: flex-end;
   flex: none;
-  padding: 14px 22px 18px;
+  padding: 14px 20px 20px;
   border-top: 1px solid var(--border);
 }
 /* Batal di KIRI, aksi utama di kanan.
@@ -2646,7 +2795,7 @@ table {
   position: fixed;
   inset: 0;
   z-index: 40;
-  background: rgba(3, 4, 94, 0.4);
+  background: rgba(23, 32, 51, 0.4);
   backdrop-filter: blur(2px);
 }
 
@@ -2720,7 +2869,7 @@ table {
   justify-content: center;
   border: 1px solid var(--border);
   border-radius: var(--r-sm);
-  background: var(--bg);
+  background: var(--surface);
   color: var(--navy);
   font-size: var(--fs-sm);
   line-height: 1;
@@ -2836,8 +2985,8 @@ table {
      Dua kandidat dari palet yang sudah ada, dihitung ulang di atas panel
      BARU supaya tidak seorang pun mewarisi angka panel lama:
 
-	--muted  #5b6875   3,30:1 -> 1,55:1   jauh di bawah ambang
-	--border #d9e2ea  14,36:1 -> 6,74:1   lulus, tetapi hampir
+	--muted  var(--text-3)   3,30:1 -> 1,55:1   jauh di bawah ambang
+	--border var(--border)  14,36:1 -> 6,74:1   lulus, tetapi hampir
 	                                      seterang nama menu (7,93:1)
 	                                      sehingga "diblokir" tidak
 	                                      lagi terbaca redup
@@ -2887,29 +3036,34 @@ table {
   border-bottom: 1px solid var(--border);
 }
 .tabs__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  margin-bottom: -1px;
   font-family: inherit;
-  font-size: var(--fs-md);
+  font-size: 15px;
   font-weight: 500;
-  padding: 9px 14px;
+  padding: 0 16px;
   border: none;
   border-bottom: 2px solid transparent;
   background: transparent;
-  color: var(--muted);
+  color: var(--text-2);
   cursor: pointer;
-  border-radius: var(--r-sm) var(--r-sm) 0 0;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
   transition:
     color var(--t),
     background var(--t),
     border-color var(--t);
 }
 .tabs__item:hover {
-  background: #f4f8fb;
+  background: var(--surface-2);
   color: var(--navy);
 }
 .tabs__item--aktif {
-  color: var(--navy);
+  color: var(--primary-text);
   font-weight: 600;
-  border-bottom-color: var(--blue);
+  border-bottom-color: var(--primary);
 }
 .tabs__item:focus-visible {
   outline: none;
@@ -2930,16 +3084,14 @@ table {
    yang berubah hanya garis, radius, dan bayangan. */
 .panel {
   margin-bottom: 24px;
-  padding: 18px 20px;
-  /* KOREKSI ronde 246/247: border tegas DICABUT, bayangan DINAIKKAN
-     --sh-1 -> --sh-2 — instruksi eksplisit pemilik proyek "kartu/panel
-     berbayang lembut, BUKAN border tegas". Nilai warna/radius TIDAK
-     berubah (--r-md sudah ada sejak sebelumnya).
-     TV2-291 (ronde 250): --r-md -> --r-lg. Kartu selebar panel terbaca
-     kaku pada 8px; acuan REFERENCE_UI/1.png memakai ~12px. */
-  border-radius: var(--r-lg);
-  background: var(--bg);
-  box-shadow: var(--sh-2);
+  padding: 20px;
+  /* 29-09-2026 — `.card` workpage-template: tepi 1px, sudut 12px, TANPA
+     bayangan. Menggantikan keputusan ronde 246/247 ("berbayang lembut,
+     BUKAN border tegas") atas keputusan pemilik proyek yang lebih baru:
+     rupa persis template. */
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
   animation: panel-masuk 160ms ease;
 }
 
@@ -2966,19 +3118,16 @@ table {
   box-shadow: none;
 }
 .panel__title {
-  font-size: var(--fs-md);
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
-  color: var(--navy);
-  margin: 0 0 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border);
+  /* `.card-head h2` template: 17px/700, tanpa huruf kapital dan garis. */
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 14px;
 }
 .panel__note {
-  font-size: var(--fs-sm);
-  color: var(--muted);
-  margin: -4px 0 12px;
+  font-size: 13px;
+  color: var(--text-3);
+  margin: -8px 0 14px;
 }
 
 /* Panel ANAK — panel di DALAM panel (grid Child pada Treaty Arrangement,
@@ -3005,8 +3154,8 @@ table {
    SD-14 uji pembeda: nol angka, nol keputusan bisnis — hanya pengelompokan
    yang terbaca (kolom KIRI tabel SD-14). */
 .panel--anak {
-  box-shadow: var(--sh-1);
-  border-left: 3px solid var(--border);
+  background: var(--bg);
+  border-left: 3px solid var(--primary-soft);
 }
 
 /* Satu kolom. DIPERTAHANKAN untuk panel ber-textarea (Exclusions, Special
@@ -3055,6 +3204,8 @@ table {
    ditambahkan hanya arah resize. Selektor elemen+kelas, bukan kelas baru,
    supaya input satu baris tidak ikut dapat diubah tingginya. */
 textarea.field__input {
+  height: auto;
+  padding: 10px 12px;
   resize: vertical;
   line-height: 1.5;
 }
@@ -3104,9 +3255,9 @@ textarea.field__input {
      sudah ada di :root — "satu sumber, bukan nilai tersebar". */
   border-radius: var(--r-pill);
   font-size: var(--fs-sm);
-  background: #eef2f7;
+  background: var(--surface-2);
   color: #33415c;
-  border: 1px solid #dbe4ec;
+  border: 1px solid var(--border);
 }
 /* Terpenuhi — mis. total share TEPAT 100 (SD-05). */
 .pil--ok {
@@ -3186,7 +3337,7 @@ textarea.field__input {
   font-size: var(--fs-sm);
   padding: 1px 4px;
   border-radius: var(--r-sm);
-  background: rgba(3, 4, 94, 0.06);
+  background: rgba(23, 32, 51, 0.06);
 }
 
 /* ============================================ PANEL SAMPING YANG TERLIPAT
@@ -3263,7 +3414,7 @@ textarea.field__input {
   flex: none;
   width: 15px;
   height: 15px;
-  border: 2px solid rgba(3, 4, 94, 0.16);
+  border: 2px solid rgba(23, 32, 51, 0.16);
   border-top-color: var(--blue);
   border-radius: var(--r-pill);
   animation: putar 620ms linear infinite;
@@ -3276,7 +3427,7 @@ textarea.field__input {
   display: block;
   height: 11px;
   border-radius: var(--r-pill);
-  background: linear-gradient(90deg, #eef3f8 25%, #dce7f1 37%, #eef3f8 63%);
+  background: linear-gradient(90deg, var(--surface-2) 25%, #e3e8f0 37%, var(--surface-2) 63%);
   background-size: 400% 100%;
   animation: kilau 1.3s ease infinite;
 }
@@ -3305,7 +3456,7 @@ textarea.field__input {
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 12px 0;
+  padding: 32px 16px;
   text-align: center;
 }
 .kosong__ikon {
@@ -3315,18 +3466,18 @@ textarea.field__input {
   width: 54px;
   height: 54px;
   border-radius: var(--r-pill);
-  background: #f2f7fb;
-  color: #9aa7b4;
+  background: var(--surface-2);
+  color: var(--text-3);
 }
 .kosong__pesan {
-  font-size: var(--fs-base);
+  font-size: 15px;
   font-weight: 600;
-  color: var(--navy);
+  color: var(--text);
 }
 .kosong__petunjuk {
   max-width: 380px;
-  font-size: var(--fs-sm);
-  color: var(--muted);
+  font-size: 14px;
+  color: var(--text-2);
 }
 
 /* ======================================================== RESPONSIF
@@ -3620,7 +3771,7 @@ textarea.field__input {
 /* Baris terpilih — penanda konteks. Tanpa ini pengguna kehilangan jejak
    grup/deskripsi mana yang sedang ditampilkan panel kanan. */
 .row--aktif {
-  background: rgba(3, 4, 94, 0.06);
+  background: rgba(23, 32, 51, 0.06);
 }
 .row--aktif td {
   font-weight: 600;
@@ -3672,7 +3823,7 @@ textarea.field__input {
   position: sticky;
   left: 0;
   z-index: 1;
-  background: var(--bg);
+  background: var(--surface);
   box-shadow: 1px 0 0 var(--border);
 }
 .table--kunci-kolom1 thead th:first-child {
@@ -3774,110 +3925,6 @@ textarea.field__input {
   max-width: 96vw;
 }
 
-/* ==========================================================================
-   PALET CARI MENU (Ctrl+K) — TV2-438, ronde 276
-   ==========================================================================
-
-   NOL hex baru (§8 pagar keras): setiap warna di bawah token yang sudah
-   ada. Satu-satunya rgba() adalah tirai, dan ia memakai --navy lewat
-   color-mix supaya ia ikut berubah bila paletnya berubah.
-
-   Tirainya `align-items: flex-start` + padding atas, bukan center: palet
-   yang melompat ke tengah layar memindahkan mata pemakai jauh dari topbar
-   tempat ia baru saja menekan tombol. */
-.palet__tirai {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 12vh;
-  background: color-mix(in srgb, var(--navy) 38%, transparent);
-}
-
-.palet {
-  width: min(560px, calc(100vw - 32px));
-  max-height: 70vh;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  box-shadow: var(--sh-2);
-  overflow: hidden;
-}
-
-.palet__kotak {
-  border: 0;
-  border-bottom: 1px solid var(--border);
-  padding: 14px 16px;
-  font-size: 15px;
-  font-family: inherit;
-  color: inherit;
-  outline: none;
-}
-
-.palet__daftar {
-  list-style: none;
-  margin: 0;
-  padding: 6px;
-  overflow-y: auto;
-}
-
-.palet__baris {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  width: 100%;
-  padding: 9px 10px;
-  border: 0;
-  border-radius: var(--r-sm);
-  background: transparent;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-/* Sorotan dipakai papan ketik DAN tetikus, jadi satu kelas saja — dua
-   gaya yang berbeda membuat pemakai melihat DUA baris terpilih. */
-.palet__baris--sorot {
-  background: var(--alt-row, #eaf4fb);
-}
-
-.palet__label {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Kelompok adalah KONTEKS, bukan judul: ia memberi tahu di mana menu itu
-   berada di sidebar, sehingga pemakai belajar letaknya sambil memakai
-   pintasnya — bukan menggantikan kebiasaan itu. */
-.palet__kelompok {
-  flex: none;
-  font-size: var(--fs-sm);
-  color: var(--muted);
-}
-
-.palet__flag {
-  flex: none;
-  font-size: var(--fs-sm);
-  color: var(--muted);
-  border: 1px solid var(--border);
-  border-radius: var(--r-pill);
-  padding: 0 7px;
-}
-
-.palet__kosong {
-  margin: 0;
-  padding: 18px 16px;
-  color: var(--muted);
-  font-size: var(--fs-sm);
-}
-
 /* Kendali cari di topbar — TV2-442 (ronde 277).
 
    Keputusan pemilik proyek 24-09-2026: "GUNAKAN KOTAK DI KANAN SEPERTI
@@ -3911,7 +3958,7 @@ textarea.field__input {
 
      Sengaja lebih redup daripada putih: tulisan ini PEMANDU, bukan judul,
      dan di acuan pun ia lebih redup daripada nama profil di sebelahnya.
-     Yang TIDAK boleh adalah meredamnya sampai `--muted` (#5b6875) — di
+     Yang TIDAK boleh adalah meredamnya sampai `--muted` (var(--text-3)) — di
      atas latar ini hanya 1,42:1, hilang sama sekali. */
   color: #aec1d8;
   font: inherit;
@@ -3936,7 +3983,7 @@ textarea.field__input {
   border: 1px solid rgba(255, 255, 255, 0.34);
   border-radius: var(--r-sm);
   padding: 1px 5px;
-  color: var(--bg);
+  color: var(--surface);
   /* Didorong ke UJUNG KANAN kotak, seperti acuan — glif dan tulisan
      berkumpul di kiri, chip menempel tepi kanan. */
   margin-left: auto;
@@ -3982,8 +4029,8 @@ textarea.field__input {
   gap: 14px;
   padding: 28px;
   border-radius: 14px;
-  background: var(--bg);
-  box-shadow: 0 18px 48px rgba(3, 4, 94, 0.28);
+  background: var(--surface);
+  box-shadow: 0 18px 48px rgba(23, 32, 51, 0.28);
 }
 
 .masuk__judul {
@@ -4110,7 +4157,7 @@ textarea.field__input {
   padding: 6px 12px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: var(--bg);
+  background: var(--surface);
   font-size: 13px;
   cursor: pointer;
 }
@@ -4120,342 +4167,45 @@ textarea.field__input {
   box-shadow: var(--ring);
 }
 
-/* ======================================================================
-   SHELL — F0.3. Memakai token tata letak yang sudah ada di berkas ini
-   (--sidebar-w, --sidebar-w-terlipat, --topbar-h); nol hex baru.
-   ====================================================================== */
-.shell {
-  display: grid;
-  grid-template-columns: var(--sidebar-w) 1fr;
-  min-height: 100vh;
-}
-
-.shell--terlipat {
-  grid-template-columns: var(--sidebar-w-terlipat) 1fr;
-}
-
-.shell__sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 14px 10px;
-  background: var(--navy);
-  color: #fff;
-  overflow: hidden;
-}
-
-.shell__merek {
-  display: flex;
-  flex-direction: column;
-  padding: 6px 8px 14px;
-  line-height: 1.25;
-}
-
-.shell__merek-nama {
-  font-size: 15px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.shell__merek-sub {
-  font-size: 11.5px;
-  opacity: 0.75;
-  white-space: nowrap;
-}
-
-/* Saat terlipat, teks disembunyikan tetapi TIDAK dihapus dari pohon —
-   pembaca layar tetap membacanya, dan lebarnya tidak melonjak. */
-.shell--terlipat .shell__merek-sub,
-.shell--terlipat .shell__butir {
-  font-size: 0;
-}
-
-.shell__nav {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.shell__butir {
-  width: 100%;
-  padding: 9px 12px;
-  border: 0;
-  border-radius: 7px;
-  background: transparent;
-  color: #dfe7f5;
-  font-size: 13.5px;
-  text-align: left;
-  cursor: pointer;
-}
-
-.shell__butir:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.shell__butir--aktif {
-  background: var(--blue);
-  color: #fff;
-  font-weight: 600;
-}
-
-.shell__butir:focus-visible {
-  outline: none;
-  box-shadow: var(--ring);
-}
-
-.shell__kanan {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.shell__topbar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  height: var(--topbar-h);
-  padding: 0 16px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg);
-}
-
-.shell__judul {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--navy);
-}
-
-.shell__ikon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  background: var(--bg);
-  cursor: pointer;
-}
-
-.shell__ikon:focus-visible {
-  outline: none;
-  box-shadow: var(--ring);
-}
-
-/* Tombol laci hanya ada di lebar ponsel. */
-.shell__ikon--laci {
-  display: none;
-}
-
-.shell__cari {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 12px;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  background: var(--bg);
-  color: var(--muted);
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.shell__cari kbd {
-  padding: 1px 5px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  font-size: 11px;
-}
-
-.shell__profil {
-  position: relative;
-}
-
-.shell__profil-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  z-index: 20;
-  min-width: 210px;
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  background: var(--bg);
-  box-shadow: 0 12px 30px rgba(3, 4, 94, 0.16);
-}
-
-.shell__profil-akun {
-  margin: 0 0 6px;
-  font-size: 13.5px;
-  font-weight: 600;
-}
-
-.shell__profil-peran {
-  margin: 0 0 10px;
-  padding-left: 16px;
-  font-size: 12.5px;
-  color: var(--muted);
-}
-
-.shell__keluar {
-  width: 100%;
-  padding: 7px 10px;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  background: var(--bg);
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.shell__isi {
-  flex: 1;
-  min-width: 0;
-  padding: 18px 16px 32px;
-}
-
-.shell__tirai {
-  display: none;
-}
-
-/* Palet Ctrl+K. */
-.palet {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  display: grid;
-  place-items: start center;
-  padding-top: 12vh;
-  background: rgba(3, 4, 94, 0.32);
-}
-
-.palet__kotak {
-  position: relative;
-  width: min(560px, calc(100vw - 32px));
-  padding: 14px;
-  border-radius: 12px;
-  background: var(--bg);
-  box-shadow: 0 24px 60px rgba(3, 4, 94, 0.3);
-}
-
-.palet__isian {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  font-size: 14px;
-}
-
-.palet__isian:focus-visible {
-  outline: none;
-  box-shadow: var(--ring);
-}
-
-.palet__hasil {
-  margin: 10px 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.palet__hasil-butir {
-  width: 100%;
-  padding: 9px 12px;
-  border: 0;
-  border-radius: 7px;
-  background: transparent;
-  font-size: 13.5px;
-  text-align: left;
-  cursor: pointer;
-}
-
-.palet__hasil-butir--sorot,
-.palet__hasil-butir:hover {
-  background: #eef4fb;
-}
-
-.palet__kosong {
-  padding: 10px 12px;
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.palet__tutup {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 28px;
-  height: 28px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  cursor: pointer;
-}
-
-/* Lebar tablet: panel melipat sendiri (perilaku referensi). */
-@media (max-width: 1100px) {
-  .shell {
-    grid-template-columns: var(--sidebar-w-terlipat) 1fr;
-  }
-}
-
-/* Ponsel: sidebar menjadi LACI yang menutupi, bukan kolom yang menyempit. */
-@media (max-width: 720px) {
-  .shell {
-    grid-template-columns: 1fr;
-  }
-
-  .shell__sidebar {
-    position: fixed;
-    inset: 0 auto 0 0;
-    z-index: 50;
-    width: var(--sidebar-w);
-    transform: translateX(-100%);
-    transition: transform 0.18s ease;
-  }
-
-  .shell--laci .shell__sidebar {
-    transform: translateX(0);
-  }
-
-  .shell--laci .shell__tirai {
-    position: fixed;
-    inset: 0;
-    z-index: 40;
-    display: block;
-    border: 0;
-    background: rgba(3, 4, 94, 0.32);
-  }
-
-  .shell__ikon--laci {
-    display: inline-flex;
-  }
-}
-
 /* ====================================================== INBOX CLAIM LIFE */
 .inbox__kepala {
+  /* `.page-head` template: judul kiri, aksi kanan, melipat di layar sempit. */
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 14px;
+  gap: 12px 16px;
+  margin-bottom: 20px;
 }
 
 .inbox__judul {
-  margin: 0;
-  font-size: 17px;
-  color: var(--navy);
+  margin: 0 auto 0 0;
+}
+/* Kalimat penjelas di bawah judul, seperti `.page-head p` template. */
+.inbox__aturan {
+  flex-basis: 100%;
+  order: 1;
+  margin: -6px 0 0;
+  color: var(--text-2);
 }
 
 .inbox__register {
   margin-left: auto;
-  padding: 8px 16px;
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 18px;
   border: 0;
-  border-radius: 7px;
-  background: var(--blue);
+  border-radius: var(--radius-sm);
+  background: var(--primary);
   color: #fff;
-  font-size: 13.5px;
+  font: inherit;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
+  transition: background-color 0.15s;
+}
+.inbox__register:hover {
+  background: var(--primary-hover);
 }
 
 .inbox__register:focus-visible {
@@ -4472,83 +4222,101 @@ textarea.field__input {
 
 .inbox__tab-butir {
   display: inline-flex;
-  align-items: baseline;
-  gap: 7px;
-  padding: 9px 14px;
-  border: 1px solid transparent;
-  border-bottom: 0;
-  border-radius: 8px 8px 0 0;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  margin-bottom: -1px;
+  padding: 0 16px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
   background: transparent;
-  font-size: 13.5px;
+  color: var(--text-2);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
   cursor: pointer;
+  transition:
+    color 0.15s,
+    background-color 0.15s;
+}
+.inbox__tab-butir:hover {
+  background: var(--surface-2);
+  color: var(--text);
 }
 
 .inbox__tab-butir--aktif {
-  border-color: var(--border);
-  background: var(--bg);
+  border-bottom-color: var(--primary);
+  color: var(--primary-text);
   font-weight: 600;
-  color: var(--navy);
 }
 
 /* Terjemahan berdiri DI SAMPING judul VERBATIM, tidak menggantikannya. */
 .inbox__tab-id {
-  font-size: 11.5px;
-  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-3);
 }
 
 .inbox__lencana {
-  min-width: 20px;
-  padding: 1px 6px;
-  border-radius: 10px;
-  background: var(--blue);
+  /* `.badge` template. */
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary-text);
+  font-size: 12px;
+  font-weight: 700;
+}
+.inbox__tab-butir--aktif .inbox__lencana {
+  background: var(--primary);
   color: #fff;
-  font-size: 11px;
-  text-align: center;
 }
 
 .inbox__tabel {
-  width: 100%;
-  margin-top: 14px;
-  border-collapse: collapse;
-  font-size: 13px;
+  /* Rupa tabelnya dari dasar `:where(table)` — kartu bertepi, kepala abu. */
+  margin-top: 16px;
 }
-
-.inbox__tabel th,
+/* Daftar kasus berisi ID, tanggal, dan kode — sel TIDAK dipecah di tengah
+   token (kebijakan ronde 67): "NBLF-3" dan "28-09-2026" yang patah di
+   tanda hubung terbaca sebagai dua nilai. Tabel yang jadi terlalu lebar
+   digulir oleh `.shell__isi`. */
 .inbox__tabel td {
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--border);
-  text-align: left;
-}
-
-.inbox__tabel th {
-  color: var(--muted);
-  font-weight: 600;
   white-space: nowrap;
 }
+
+
 
 .inbox__baris {
   cursor: pointer;
 }
 
 .inbox__baris:hover {
-  background: #eef4fb;
+  background: var(--surface-2);
 }
 
 .inbox__halaman {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: 14px;
-  font-size: 13px;
-  color: var(--muted);
+  margin-top: 16px;
+  font-size: 14px;
+  color: var(--text-2);
 }
 
 .inbox__halaman button {
-  padding: 6px 12px;
+  height: 36px;
+  padding: 0 14px;
   border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--bg);
-  font-size: 13px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -4560,31 +4328,31 @@ textarea.field__input {
 /* ============================================== PANEL DATA POLIS (Register) */
 .polis {
   margin: 16px 0;
-  padding: 14px 16px;
+  padding: 20px;
   border: 1px solid var(--border);
-  border-radius: 9px;
+  border-radius: var(--radius);
+  background: var(--surface);
 }
 
 .polis__judul {
-  margin: 0 0 10px;
-  font-size: 14px;
-  color: var(--navy);
+  margin: 0 0 14px;
+  font-size: 17px;
 }
 
 .polis__daftar {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 8px 18px;
+  gap: 0 24px;
   margin: 0;
 }
 
 .polis__medan {
   display: flex;
   justify-content: space-between;
-  gap: 10px;
-  padding: 5px 0;
-  border-bottom: 1px dotted var(--border);
-  font-size: 13px;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
 }
 
 .polis__medan dt {
@@ -4606,68 +4374,72 @@ textarea.field__input {
 
 .polis__catatan {
   margin: 12px 0 0;
-  padding: 9px 11px;
-  border: 1px solid #e0b400;
-  border-left-width: 4px;
-  border-radius: 7px;
-  background: #fff8e1;
-  color: #4a3a00;
-  font-size: 12.5px;
+  padding: 12px 16px;
+  border: 1px solid #f3dfae;
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  font-size: 14px;
   line-height: 1.5;
-}
-
-/* Penanda mode stub di menu profil — F0.6, menggantikan tombol Keluar. */
-.shell__profil-stub {
-  margin: 0;
-  padding: 6px 9px;
-  border: 1px solid #e0b400;
-  border-radius: 6px;
-  background: #fff8e1;
-  color: #4a3a00;
-  font-size: 11.5px;
-  text-align: center;
 }
 
 /* ====================================================== OUTSTANDING CLAIM */
 .os__kepala {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 4px;
+  gap: 12px 16px;
+  margin-bottom: 16px;
 }
 
 .os__judul {
   margin: 0;
-  font-size: 17px;
-  color: var(--navy);
 }
 
 .os__detail {
   margin-left: auto;
-  padding: 7px 14px;
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 18px;
   border: 1px solid var(--border);
-  border-radius: 7px;
-  background: var(--bg);
-  font-size: 13px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
 }
 
 .os__aksi {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 14px;
+  gap: 8px;
+  margin-top: 16px;
 }
 
 .os__tombol {
-  padding: 9px 16px;
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 18px;
   border: 0;
-  border-radius: 7px;
-  background: var(--blue);
+  border-radius: var(--radius-sm);
+  background: var(--primary);
   color: #fff;
-  font-size: 13.5px;
+  font: inherit;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
+  transition: background-color 0.15s;
+}
+.os__tombol:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+.os__detail:hover {
+  background: var(--surface-2);
 }
 
 .os__tombol:disabled {
@@ -4680,135 +4452,999 @@ textarea.field__input {
   box-shadow: var(--ring);
 }
 
-/* ---------------------------------------------------------------------------
- * Beranda, kelompok kosong, dan palet — butir bg.
- *
- * ⚠️ Nilai warna dan jarak MEMAKAI token yang sudah ada di berkas ini; nol
- * warna baru diperkenalkan. Token kedua untuk warna yang sama adalah token
- * yang akan bergeser sendiri saat temanya diubah.
- * ------------------------------------------------------------------------- */
+/* ======================================================================
+   KERANGKA — sidebar, topbar, menu profil, palet Ctrl+K, Beranda.
 
-/* Kelompok sidebar yang modulnya belum dipindahkan. Ia BERDIRI, dan
-   menyebut sebabnya — lihat Shell.tsx. */
-.shell__belum {
-  margin: 0;
-  padding: 0.35rem 0.75rem 0.5rem 1.5rem;
-  font-size: 0.78rem;
-  font-style: italic;
-  opacity: 0.6;
-}
+   Desain: `D:/XML/RNM_BRD/workpage-template.html` (29-09-2026), palet dan
+   huruf PERSIS template atas keputusan pemilik proyek. Ukuran, jarak, dan
+   warna di bawah DISALIN dari template; nama kelas tetap milik aplikasi
+   (`.nav-link` template = `.shell__butir`, `.card` = `.kartu`, dst.).
 
-.shell__butir--beranda {
+   Menggantikan enam blok lama (cangkang referensi, kelompok referensi,
+   palet referensi, Shell F0.3, penanda stub, Beranda butir bg) yang
+   saling menimpa. Mobile-first seperti template: gaya dasar untuk ponsel,
+   @media di bawah melebarkannya.
+   ====================================================================== */
+
+.shell__lewati {
+  position: absolute;
+  left: 12px;
+  top: -60px;
+  z-index: 100;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: #fff;
   font-weight: 600;
-  margin-bottom: 0.35rem;
+  text-decoration: none;
+}
+.shell__lewati:focus {
+  top: 12px;
 }
 
-.beranda__judul {
-  margin: 0 0 0.2rem;
-}
-
-.beranda__peran {
-  margin: 0 0 1.25rem;
-  font-size: 0.85rem;
-  opacity: 0.7;
-}
-
-.beranda__antrean {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  list-style: none;
-  margin: 0 0 1.5rem;
-  padding: 0;
-}
-
-.beranda__antrean-butir {
+/* ------------------------------------------------------------ sidebar */
+/* Ponsel (bawaan): laci di luar layar kiri. `visibility: hidden` membuat
+   menu yang tertutup tidak terjangkau Tab. */
+.shell__sidebar {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 50;
+  width: min(280px, 85vw);
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
-  min-width: 9rem;
-  padding: 0.6rem 0.9rem;
-  border: 1px solid var(--garis, #d9dee5);
-  border-radius: 0.5rem;
+  overflow: hidden;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  transform: translateX(-100%);
+  visibility: hidden;
+  transition:
+    transform var(--speed) ease,
+    width var(--speed) ease,
+    visibility 0s linear var(--speed);
+}
+.shell--laci .shell__sidebar {
+  transform: translateX(0);
+  visibility: visible;
+  box-shadow: 0 16px 40px rgba(23, 32, 51, 0.25);
+  transition:
+    transform var(--speed) ease,
+    width var(--speed) ease,
+    visibility 0s;
 }
 
-.beranda__antrean-nama {
-  font-size: 0.78rem;
-  opacity: 0.75;
+.shell__merek {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  height: var(--topbar-h);
+  padding: 0 12px 0 20px;
+  border-bottom: 1px solid var(--border);
 }
-
-.beranda__antrean-angka {
-  font-size: 1.4rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.beranda__kartu {
+/* Tanda merek: kotak --primary seperti `.brand-mark` template, berisi
+   inisial produk — BUKAN logo matahari "Arunika" milik template, yang
+   template sendiri tandai "ganti dengan logo perusahaan Anda". Garis emas
+   di dasarnya adalah --accent template. Diganti logo resmi bila asetnya
+   diberikan (lihat `PRODUK` di labels.claimlife.ts). */
+.shell__merek-tanda {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
-  gap: 0.75rem;
-  list-style: none;
-  margin: 0;
-  padding: 0;
+  place-items: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--primary);
+  box-shadow: inset 0 -3px 0 var(--accent);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
-
-.beranda__kartu-butir {
+.shell__merek-teks {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
-  padding: 0.85rem 1rem;
-  border: 1px solid var(--garis, #d9dee5);
-  border-radius: 0.5rem;
+  min-width: 0;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  transition: opacity var(--speed) ease;
+}
+.shell__merek-sub {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-3);
+}
+.shell__tutup {
+  margin-left: auto;
 }
 
-/* ⛔ Kartu modul yang belum ada TETAP terlihat, hanya diredupkan. Aplikasi
-   yang menampilkan tiga modul dari tujuh belas tampak lengkap padahal
-   tidak — dan layar yang tampak lengkap padahal tidak adalah layar yang
-   tidak akan dicari lagi. */
-.beranda__kartu-butir--pasif {
-  opacity: 0.55;
+.shell__nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
-
-.beranda__kartu-nama {
+.shell__daftar {
   margin: 0;
-  font-size: 0.95rem;
+  padding: 0;
+  list-style: none;
 }
 
-.beranda__kartu-keadaan {
+/* Butir menu = `.nav-link` template. */
+.shell__butir {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  height: 44px;
+  margin-bottom: 2px;
+  padding: 0 12px 0 16px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-2);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+.shell__butir:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.shell__butir--aktif,
+.shell__butir--aktif:hover {
+  background: var(--primary-soft);
+  color: var(--primary-text);
+  font-weight: 600;
+}
+/* Ikon 20px di slot selebar lencana (24px), supaya teks Beranda sejajar
+   dengan teks judul kelompok di bawahnya. */
+.shell__butir > svg {
+  flex-shrink: 0;
+  margin: 0 2px;
+}
+.shell__butir--aktif > svg {
+  color: var(--primary);
+}
+.shell__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: opacity var(--speed) ease;
+}
+/* Beranda bukan modul: sedikit jarak memisahkannya dari kelompok. */
+.shell__butir--beranda {
+  margin-bottom: 10px;
+}
+/* Butir anak menjorok sejajar teks judul kelompoknya (16 + 24 + 12). */
+.shell__butir--anak {
+  height: 40px;
+  padding-left: 52px;
+  font-size: 14px;
+}
+
+/* Kelompok modul. Judulnya tombol berbentuk `.nav-link`; lencana dua
+   huruf menempati slot ikon. */
+.kelompok {
+  margin-bottom: 2px;
+}
+.kelompok__judul {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  height: 44px;
+  padding: 0 12px 0 16px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-2);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+.kelompok__judul:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.kelompok__lencana {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.kelompok--aktif > .kelompok__judul {
+  color: var(--text);
+}
+.kelompok--aktif > .kelompok__judul .kelompok__lencana {
+  background: var(--primary-soft);
+  color: var(--primary-text);
+}
+.kelompok__teks {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: opacity var(--speed) ease;
+}
+.kelompok__panah {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  color: var(--text-3);
+  transform: rotate(-90deg);
+  transition:
+    transform 0.15s ease,
+    opacity var(--speed) ease;
+}
+.kelompok__panah--buka {
+  transform: none;
+}
+.kelompok__isi {
+  padding: 2px 0 6px;
+}
+.kelompok--anak .kelompok__judul {
+  padding-left: 28px;
+}
+
+/* Kelompok TANPA butir: bukan tombol — tidak ada yang dapat dibuka. Nama
+   dan keadaannya bertumpuk, jadi "belum dimigrasi" terbaca tanpa perlu
+   membuka apa pun. */
+.kelompok--kosong {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 5px 12px 5px 16px;
+  color: var(--text-3);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.kelompok--kosong .kelompok__teks {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+.kelompok--kosong .kelompok__lencana {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--border);
+  color: var(--text-3);
+}
+.shell__belum {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Lapisan gelap di belakang laci ponsel (klik = tutup). */
+.shell__tirai {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(15, 20, 35, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--speed) ease;
+}
+.shell--laci .shell__tirai {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ------------------------------------------------------------- topbar */
+.shell__kanan {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 100vh;
+  transition: margin-left var(--speed) ease;
+}
+.shell__topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: var(--topbar-h);
+  padding: 0 16px;
+  background: rgba(255, 255, 255, 0.9);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+/* `.icon-btn` template. */
+.shell__ikon {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-2);
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+.shell__ikon:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.shell__topbar-merek {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.shell__topbar-merek .shell__merek-tanda {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+/* Pemicu palet. Di ponsel hanya ikon; mulai 640px ia berupa kotak cari
+   template yang membuka palet Ctrl+K. */
+.shell__cari {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-2);
+  font: inherit;
+  cursor: pointer;
+}
+.shell__cari:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.shell__cari-teks,
+.shell__cari kbd {
+  display: none;
+}
+
+.shell__profil {
+  position: relative;
+  flex-shrink: 0;
+}
+.shell__profil-pemicu {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+.shell__profil-pemicu:hover {
+  background: var(--surface-2);
+}
+.shell__avatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary-text);
+  font-size: 13px;
+  font-weight: 700;
+}
+.shell__profil-teks {
+  display: none;
+  line-height: 1.25;
+}
+.shell__profil-teks strong {
+  display: block;
+  font-size: 14px;
+}
+.shell__profil-teks span {
+  font-size: 12px;
+  color: var(--text-3);
+}
+.shell__profil-panah {
+  display: none;
+  padding-right: 6px;
+  color: var(--text-3);
+}
+.shell__profil-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 40;
+  min-width: 240px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 16px 40px rgba(23, 32, 51, 0.16);
+}
+.shell__profil-akun {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.shell__profil-peran {
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+.shell__profil-peran li {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+  font-size: 14px;
+  font-weight: 600;
+}
+.shell__profil-peran li span {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-3);
+}
+/* Penanda mode stub (F0.6, pengganti tombol Keluar) — pil peringatan. */
+.shell__profil-stub {
+  display: inline-block;
   margin: 0;
-  font-size: 0.8rem;
-  opacity: 0.75;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  font-size: 12px;
+  font-weight: 600;
 }
 
-.beranda__kartu-tautan {
-  align-self: flex-start;
-  margin-top: 0.25rem;
+/* `.content` template: lebar maksimum 1400px, kolom berjarak. */
+.shell__isi {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+/* Sasaran tautan "Lewati ke konten" — fokus programatik, tanpa cincin. */
+.shell__isi:focus {
+  outline: none;
+}
+/* Tabel yang lebih lebar dari layar digulir DI SINI. `body` sengaja
+   `overflow-x: hidden` (TV2-291), jadi tanpa wadah gulir kolom kanan tabel
+   lebar terpotong dan tak terjangkau. Kebanyakan tabel layar modul tidak
+   punya pembungkus `.table-wrap`, maka wadahnya isi halaman. */
+.shell__isi {
+  overflow-x: auto;
 }
 
-/* Tirai palet: klik di luar menutup. */
+/* -------------------------------------------------------------- palet */
 .palet__tirai {
   position: fixed;
   inset: 0;
+  z-index: 60;
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding-top: 12vh;
-  background: rgb(0 0 0 / 35%);
-  z-index: 40;
+  padding: 12vh 16px 16px;
+  background: rgba(15, 20, 35, 0.45);
 }
-
+.palet {
+  display: flex;
+  flex-direction: column;
+  width: min(560px, 100%);
+  max-height: 70vh;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 16px 40px rgba(23, 32, 51, 0.25);
+}
+.palet__kepala {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  padding: 0 12px 0 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-3);
+}
+/* Kotaknya tanpa garis sendiri; fokus ditandai garis --primary di dasar
+   kepala palet, supaya tetap terlihat. */
+.palet__kepala:focus-within {
+  box-shadow: inset 0 -2px 0 var(--primary);
+}
+.palet__isian {
+  flex: 1;
+  min-width: 0;
+  height: 56px;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 16px;
+  outline: none;
+}
+.palet__isian::placeholder {
+  color: var(--text-3);
+}
+.palet__hasil {
+  margin: 0;
+  padding: 8px;
+  list-style: none;
+  overflow-y: auto;
+}
+.palet__hasil-butir {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-2);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+.palet__hasil-butir--sorot {
+  background: var(--primary-soft);
+  color: var(--primary-text);
+}
 .palet__label {
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-
 .palet__kelompok {
-  font-size: 0.75rem;
-  opacity: 0.6;
+  flex: none;
+  font-size: 13px;
+  color: var(--text-3);
 }
-
+.palet__hasil-butir--sorot .palet__kelompok {
+  color: var(--primary-text);
+}
 .palet__kosong {
   margin: 0;
-  padding: 0.75rem 1rem;
-  font-size: 0.85rem;
-  opacity: 0.75;
+  padding: 20px 16px;
+  color: var(--text-3);
+  font-size: 14px;
+}
+
+/* ------------------------------------------ kartu, kepala halaman, pil */
+/* `.card` template — boleh dipakai layar mana pun. */
+.kartu {
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.kartu__kepala {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 16px 12px;
+}
+.kartu__kepala h3 {
+  margin: 0;
+}
+.kartu__kepala p {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--text-3);
+}
+.kartu__tabel {
+  overflow-x: auto;
+}
+
+/* `.page-head` template. */
+.kepala-halaman {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.kepala-halaman h2 {
+  margin: 0;
+}
+.kepala-halaman p {
+  margin: 6px 0 0;
+  color: var(--text-2);
+}
+
+/* `.status` template — pil bertitik. */
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.status--aktif {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+.status--proses {
+  background: var(--primary-soft);
+  color: var(--primary-text);
+}
+.status--tinjau {
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
+.status--pasif {
+  background: var(--surface-2);
+  color: var(--text-2);
+}
+
+/* `.hide-mobile` / `.show-mobile` template. */
+.sembunyi-ponsel {
+  display: none;
+}
+.tampil-ponsel {
+  display: block;
+}
+
+/* Tombol layar modul yang berkelas tetapi belum punya gaya: rupa `.btn`
+   template. Kelasnya tetap milik halamannya. */
+.inbox__ekspor,
+.pl-detail__terbitkan,
+.pl-summary__submit,
+.unggah-csv__simpan {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+.inbox__ekspor:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+/* Tiga yang MENJALANKAN keputusan (Generate PL Number, Submit, Simpan
+   permanen) = `.btn-primary` template. */
+.pl-detail__terbitkan,
+.pl-summary__submit,
+.unggah-csv__simpan {
+  border-color: transparent;
+  background: var(--primary);
+  color: #fff;
+}
+.pl-detail__terbitkan:hover:not(:disabled),
+.pl-summary__submit:hover:not(:disabled),
+.unggah-csv__simpan:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+:is(.inbox__ekspor, .pl-detail__terbitkan, .pl-summary__submit, .unggah-csv__simpan):disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ------------------------------------------------------------ Beranda */
+.beranda {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.beranda__antrean {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.beranda__antrean-butir {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+}
+.beranda__antrean-nama {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-2);
+}
+.beranda__antrean-nama svg {
+  flex-shrink: 0;
+  color: var(--primary);
+}
+.beranda__antrean-angka {
+  margin: 0;
+  font-size: clamp(22px, 3vw, 28px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.beranda__antrean-catatan {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-3);
+}
+.beranda__kisi {
+  display: grid;
+  gap: 20px;
+}
+.beranda__kartu td:first-child {
+  min-width: 200px;
+}
+.beranda__kartu-nama {
+  font-weight: 600;
+}
+.beranda__kartu-keadaan {
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--text-3);
+}
+.beranda__kartu-butir--pasif .beranda__kartu-nama {
+  color: var(--text-3);
+  font-weight: 500;
+}
+.beranda__aksi {
+  text-align: right;
+  white-space: nowrap;
+}
+/* `.link` template. */
+.beranda__kartu-tautan {
+  margin: -8px;
+  padding: 8px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--primary-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.beranda__kartu-tautan:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.beranda__peran-daftar {
+  margin: 0;
+  padding: 0 16px 8px;
+  list-style: none;
+}
+.beranda__peran-daftar li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+}
+.beranda__peran-daftar li:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+.beranda__peran-daftar strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+}
+.beranda__peran-daftar strong + span {
+  font-size: 13px;
+  color: var(--text-3);
+}
+.beranda__peran-ikon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+/* ---------------------------------------------------------- responsif */
+@media (min-width: 640px) {
+  .shell__cari {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1 1 auto;
+    width: auto;
+    max-width: 420px;
+    height: 42px;
+    margin-left: 0;
+    padding: 0 8px 0 12px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-3);
+    font-size: 16px;
+    text-align: left;
+  }
+  .shell__cari:hover {
+    background: var(--surface);
+    color: var(--text-2);
+  }
+  .shell__cari-teks {
+    display: block;
+    flex: 1;
+  }
+  .shell__cari kbd {
+    display: inline-block;
+  }
+  .shell__profil {
+    margin-left: auto;
+  }
+  .kepala-halaman {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+  .sembunyi-ponsel {
+    display: table-cell;
+  }
+  .tampil-ponsel {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) {
+  /* Panel selalu tampil di kiri. */
+  .shell__sidebar {
+    width: var(--sidebar-w);
+    transform: none;
+    visibility: visible;
+  }
+  .shell__tutup,
+  .shell__topbar-merek,
+  .shell__tirai {
+    display: none;
+  }
+  .shell__kanan {
+    margin-left: var(--sidebar-w);
+  }
+  .shell__topbar {
+    padding: 0 24px 0 16px;
+  }
+  .shell__isi {
+    padding: 32px 24px 48px;
+    gap: 24px;
+  }
+  .kartu__kepala {
+    padding: 20px 20px 14px;
+  }
+  .beranda__antrean-butir {
+    padding: 20px;
+  }
+  .beranda__peran-daftar {
+    padding: 0 20px 8px;
+  }
+
+  /* Mode terciut: panel hanya ikon/lencana; namanya jadi tooltip. */
+  .shell--terlipat .shell__sidebar {
+    width: var(--sidebar-w-terlipat);
+  }
+  .shell--terlipat .shell__kanan {
+    margin-left: var(--sidebar-w-terlipat);
+  }
+  .shell--terlipat .shell__merek-teks,
+  .shell--terlipat .shell__label,
+  .shell--terlipat .kelompok__teks,
+  .shell--terlipat .kelompok__panah {
+    opacity: 0;
+  }
+  .shell--terlipat .kelompok__isi {
+    display: none;
+  }
+  .shell--terlipat .shell__nav {
+    scrollbar-width: none;
+  }
+  /* Anak kelompok tersembunyi, jadi kelompok yang memuat halaman aktif
+     ditandai pada lencananya — seperti badge yang menjadi titik di template. */
+  .shell--terlipat .kelompok--aktif > .kelompok__judul {
+    background: var(--primary-soft);
+  }
+  .shell--terlipat .kelompok--aktif .kelompok__lencana {
+    background: var(--primary);
+    color: #fff;
+  }
+}
+
+@media (min-width: 1024px) {
+  .shell__profil-teks {
+    display: block;
+  }
+  .shell__profil-panah {
+    display: grid;
+  }
+  .beranda__antrean {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .shell__isi {
+    padding-inline: 32px;
+  }
+  .beranda__kisi {
+    grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
 }

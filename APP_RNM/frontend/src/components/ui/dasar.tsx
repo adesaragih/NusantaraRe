@@ -841,6 +841,98 @@ export function IkonCari({ ukuran = 15 }: { ukuran?: number }) {
   );
 }
 
+/*
+ * Ikon bingkai aplikasi — desain `workpage-template.html` (29-09-2026).
+ *
+ * Template memuat Lucide dari CDN; di sini bentuknya DISALIN dari
+ * `lucide-static@1.48.0` (lisensi ISC) — versi yang sama dengan template —
+ * supaya aplikasi tetap nol paket ikon dan tetap jalan tanpa internet.
+ * Ketebalan 1.8 mengikuti `svg.lucide { stroke-width: 1.8 }` di template.
+ */
+
+/** `house` — butir Beranda. */
+export function IkonRumah({ ukuran = 20 }: { ukuran?: number }) {
+  return (
+    <svg {...sifatIkon(ukuran)} strokeWidth={1.8}>
+      <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
+      <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    </svg>
+  );
+}
+
+/** `menu` — tombol ciutkan/buka menu di topbar. */
+export function IkonMenu({ ukuran = 20 }: { ukuran?: number }) {
+  return (
+    <svg {...sifatIkon(ukuran)} strokeWidth={1.8}>
+      <path d="M4 5h16M4 12h16M4 19h16" />
+    </svg>
+  );
+}
+
+/** `chevron-down` — kelompok menu terbuka/terlipat, pemicu menu profil. */
+export function IkonChevron({ ukuran = 16 }: { ukuran?: number }) {
+  return (
+    <svg {...sifatIkon(ukuran)} strokeWidth={1.8}>
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
+/** `inbox` — kartu tahap Input Register di Beranda. */
+export function IkonKotakMasuk({ ukuran = 16 }: { ukuran?: number }) {
+  return (
+    <svg {...sifatIkon(ukuran)} strokeWidth={1.8}>
+      <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
+      <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
+    </svg>
+  );
+}
+
+/** `hourglass` — kartu tahap Outstanding Claim di Beranda. */
+export function IkonJamPasir({ ukuran = 16 }: { ukuran?: number }) {
+  return (
+    <svg {...sifatIkon(ukuran)} strokeWidth={1.8}>
+      <path d="M5 22h14M5 2h14" />
+      <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22" />
+      <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />
+    </svg>
+  );
+}
+
+/** `stethoscope` — kartu tahap Medical Check di Beranda. */
+export function IkonStetoskop({ ukuran = 16 }: { ukuran?: number }) {
+  return (
+    <svg {...sifatIkon(ukuran)} strokeWidth={1.8}>
+      <path d="M11 2v2M5 2v2" />
+      <path d="M5 3H4a2 2 0 0 0-2 2v4a6 6 0 0 0 12 0V5a2 2 0 0 0-2-2h-1" />
+      <path d="M8 15a6 6 0 0 0 12 0v-3" />
+      <circle cx="20" cy="10" r="2" />
+    </svg>
+  );
+}
+
+/** `file-search` — kartu tahap Claim Analis di Beranda. */
+export function IkonBerkasCari({ ukuran = 16 }: { ukuran?: number }) {
+  return (
+    <svg {...sifatIkon(ukuran)} strokeWidth={1.8}>
+      <path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" />
+      <path d="M14 2v5a1 1 0 0 0 1 1h5" />
+      <circle cx="11.5" cy="14.5" r="2.5" />
+      <path d="M13.3 16.3 15 18" />
+    </svg>
+  );
+}
+
+/** `shield-check` — kartu Peran Anda di Beranda. */
+export function IkonPerisai({ ukuran = 16 }: { ukuran?: number }) {
+  return (
+    <svg {...sifatIkon(ukuran)} strokeWidth={1.8}>
+      <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  );
+}
+
 /** Kotak kosong, untuk keadaan "belum ada data". */
 export function IkonKosong({ ukuran = 30 }: { ukuran?: number }) {
   return (

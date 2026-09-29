@@ -14,11 +14,23 @@
 // ⚠️ Nol adalah angka; "belum ada kotak masuk" adalah keadaan. Menampilkan
 // nol untuk modul yang endpointnya belum ada berarti berbohong dengan angka
 // yang terlihat benar.
+//
+// ⚠️ TATA LETAK mengikuti `workpage-template.html` (29-09-2026): kepala
+// halaman, empat kartu ringkasan, lalu kisi dua kolom — tabel modul dan
+// kartu peran. Kartu ringkasan berdiri SEJAK AWAL dengan tanda "—": kartu
+// yang baru muncul sesudah data tiba menggeser seluruh layar ke bawah.
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 
-import { BERANDA, KETERANGAN_BELUM_DIMIGRASI, MENU, MODUL } from '../assets/labels'
-import { TAHAP } from '../assets/labels.claimlife'
+import { BERANDA, KETERANGAN_BELUM_DIMIGRASI, MODUL } from '../assets/labels'
+import { PERAN_ID, TAHAP } from '../assets/labels.claimlife'
+import {
+  IkonBerkasCari,
+  IkonJamPasir,
+  IkonKotakMasuk,
+  IkonPerisai,
+  IkonStetoskop,
+} from '../components/ui/dasar'
 import { ENTRI_MENU, type ModulTetap } from '../lib/daftarMenu'
 import {
   ambilKotakMasuk,
@@ -68,6 +80,14 @@ export function ringkasanAntrean(antrean: AntreanTahap[] | null): string {
   return `${jumlah} ${BERANDA.antrean}`
 }
 
+/** Keempat tahap Claim Life — urutan kartu SAMA dengan urutan permintaan. */
+const TAHAP_BERANDA: readonly { nomor: NomorTahap; nama: string; ikon: ReactNode }[] = [
+  { nomor: TAHAP_NOMOR.inputRegister, nama: TAHAP.inputRegister, ikon: <IkonKotakMasuk /> },
+  { nomor: TAHAP_NOMOR.outstanding, nama: TAHAP.outstandingClaim, ikon: <IkonJamPasir /> },
+  { nomor: TAHAP_NOMOR.medicalCheck, nama: TAHAP.medicalCheck, ikon: <IkonStetoskop /> },
+  { nomor: TAHAP_NOMOR.claimAnalis, nama: TAHAP.claimAnalis, ikon: <IkonBerkasCari /> },
+]
+
 export default function Beranda({
   masuk,
   onBuka,
@@ -85,14 +105,7 @@ export default function Beranda({
         // Keempat tahap Claim Life. Dimuat berbarengan: empat permintaan
         // berurutan membuat Beranda terasa lambat tanpa sebab.
         const hasil = await Promise.all(
-          (
-            [
-              [TAHAP_NOMOR.inputRegister, TAHAP.inputRegister],
-              [TAHAP_NOMOR.outstanding, TAHAP.outstandingClaim],
-              [TAHAP_NOMOR.medicalCheck, TAHAP.medicalCheck],
-              [TAHAP_NOMOR.claimAnalis, TAHAP.claimAnalis],
-            ] as const
-          ).map(async ([nomor, nama]) => {
+          TAHAP_BERANDA.map(async ({ nomor, nama }) => {
             const h = await ambilKotakMasuk(nomor, 1, 1)
             return { nomor, nama: h.namaTahap || nama, total: h.total }
           }),
@@ -110,60 +123,140 @@ export default function Beranda({
   }, [])
 
   const kartu = kartuModul()
+  const jumlahAktif = kartu.filter((k) => k.tujuan !== null).length
+  const memuat = antrean === null && galat === null
+
+  /** Isi kolom Antrean satu modul. "—" = tidak ada angka untuk ditampilkan. */
+  function antreanModul(k: KartuModul): string {
+    if (k.tujuan === null) return '—'
+    if (k.nama !== MODUL.claimLife) return BERANDA.tanpaAntrean
+    return antrean === null ? '—' : ringkasanAntrean(antrean)
+  }
 
   return (
-    <section className="beranda">
-      <h2 className="beranda__judul">
-        {BERANDA.salam}, {masuk.akunID}
-      </h2>
-      <p className="beranda__peran">{masuk.peran.join(', ')}</p>
+    <div className="beranda">
+      <section className="kepala-halaman">
+        <div>
+          <h2 className="beranda__judul">
+            {BERANDA.salam}, {masuk.akunID}
+          </h2>
+          <p className="beranda__peran">{BERANDA.subjudul}</p>
+        </div>
+      </section>
 
-      {galat !== null && <p role="alert">{galat}</p>}
-
-      {antrean !== null && (
-        <ul className="beranda__antrean">
-          {antrean.map((a) => (
-            <li key={a.nomor} className="beranda__antrean-butir">
-              <span className="beranda__antrean-nama">{a.nama}</span>
-              <span className="beranda__antrean-angka">{a.total}</span>
-            </li>
-          ))}
-        </ul>
+      {galat !== null && (
+        <p className="alert alert--error" role="alert">
+          {galat}
+        </p>
       )}
 
-      <ul className="beranda__kartu">
-        {kartu.map((k) => (
-          <li
-            key={k.nama}
-            className={`beranda__kartu-butir${
-              k.tujuan === null ? ' beranda__kartu-butir--pasif' : ''
-            }`}
-          >
-            <h3 className="beranda__kartu-nama">{k.nama}</h3>
-            {k.tujuan === null || k.label === null ? (
-              /* ⛔ Menyebut keadaannya, bukan menyembunyikan kartunya. */
-              <p className="beranda__kartu-keadaan">{KETERANGAN_BELUM_DIMIGRASI}</p>
-            ) : (
-              <>
-                <p className="beranda__kartu-keadaan">
-                  {BERANDA.aktif}
-                  {k.nama === MODUL.claimLife && ` — ${ringkasanAntrean(antrean)}`}
-                  {k.nama !== MODUL.claimLife && ` — ${BERANDA.tanpaAntrean}`}
-                </p>
-                <button
-                  type="button"
-                  className="beranda__kartu-tautan"
-                  onClick={() => {
-                    onBuka(k.tujuan as ModulTetap)
-                  }}
-                >
-                  {k.label === MENU.inbox ? MENU.inbox : k.label}
-                </button>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
-    </section>
+      <section className="beranda__antrean" aria-label={BERANDA.ringkasan} aria-busy={memuat}>
+        {TAHAP_BERANDA.map((t) => {
+          const a = antrean?.find((x) => x.nomor === t.nomor)
+          return (
+            <div key={t.nomor} className="kartu beranda__antrean-butir">
+              <p className="beranda__antrean-nama">
+                {t.ikon}
+                {a?.nama ?? t.nama}
+              </p>
+              <p className="beranda__antrean-angka">{a === undefined ? '—' : a.total}</p>
+              <p className="beranda__antrean-catatan">{BERANDA.catatanTahap}</p>
+            </div>
+          )
+        })}
+      </section>
+
+      <div className="beranda__kisi">
+        <section className="kartu" aria-labelledby="beranda-modul">
+          <div className="kartu__kepala">
+            <div>
+              <h3 id="beranda-modul">{BERANDA.judulModul}</h3>
+              <p>
+                {jumlahAktif} {BERANDA.aktif} · {kartu.length - jumlahAktif}{' '}
+                {KETERANGAN_BELUM_DIMIGRASI}
+              </p>
+            </div>
+          </div>
+          <div className="kartu__tabel">
+            <table className="beranda__kartu">
+              <thead>
+                <tr>
+                  <th scope="col">{BERANDA.kolomModul}</th>
+                  <th scope="col">{BERANDA.kolomStatus}</th>
+                  <th scope="col" className="sembunyi-ponsel">
+                    {BERANDA.kolomAntrean}
+                  </th>
+                  <th scope="col">
+                    <span className="sr-only">{BERANDA.kolomAksi}</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {kartu.map((k) => (
+                  <tr
+                    key={k.nama}
+                    className={`beranda__kartu-butir${
+                      k.tujuan === null ? ' beranda__kartu-butir--pasif' : ''
+                    }`}
+                  >
+                    <td>
+                      <span className="beranda__kartu-nama">{k.nama}</span>
+                      {/* Di ponsel kolom Antrean disembunyikan — angkanya
+                          pindah ke bawah nama, seperti tenggat di template. */}
+                      {k.tujuan !== null && (
+                        <span className="beranda__kartu-keadaan tampil-ponsel">
+                          {antreanModul(k)}
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      {/* ⛔ Menyebut keadaannya, bukan menyembunyikan barisnya. */}
+                      <span
+                        className={`status ${k.tujuan === null ? 'status--pasif' : 'status--aktif'}`}
+                      >
+                        {k.tujuan === null ? KETERANGAN_BELUM_DIMIGRASI : BERANDA.aktif}
+                      </span>
+                    </td>
+                    <td className="sembunyi-ponsel">{antreanModul(k)}</td>
+                    <td className="beranda__aksi">
+                      {k.tujuan !== null && k.label !== null && (
+                        <button
+                          type="button"
+                          className="beranda__kartu-tautan"
+                          onClick={() => {
+                            onBuka(k.tujuan as ModulTetap)
+                          }}
+                        >
+                          {k.label}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="kartu" aria-labelledby="beranda-peran">
+          <div className="kartu__kepala">
+            <h3 id="beranda-peran">{BERANDA.judulPeran}</h3>
+          </div>
+          <ul className="beranda__peran-daftar">
+            {masuk.peran.map((p) => (
+              <li key={p}>
+                <span className="beranda__peran-ikon" aria-hidden="true">
+                  <IkonPerisai />
+                </span>
+                <span>
+                  <strong>{PERAN_ID[p]}</strong>
+                  <span>{p}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
+    </div>
   )
 }
