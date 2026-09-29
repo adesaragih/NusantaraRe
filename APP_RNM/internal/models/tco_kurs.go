@@ -48,7 +48,8 @@ const QuarterKursTahunanTCO = "0"
 // `ID`, `Claim Life/RDBList/GetCurrencyID.xml`), bukan ditanam (AC 47).
 const KodeMataUangAsalKursTCO = "USD"
 
-// SkalaUsdDariRpTCO - `HitungRpUsd_depan.xml` b383 `@divide(Rp, Kurs, 8)`.
+// SkalaUsdDariRpTCO - `HitungRpUsd_depan.xml` b383 `@divide(Rp, Kurs, 8)`; skala 8
+// untuk ketujuh form induk [keputusan work owner 29-09-2026] (OQ-TCO-18).
 const SkalaUsdDariRpTCO = 8
 
 // SkalaUsdExclusionTCO - `CalculateTSIExcludeTreaty.xml` b248 `@divide(Rp, Kurs, 4)`.
@@ -131,7 +132,8 @@ func UraiNilaiKursTCO(teks string) (*apd.Decimal, error) {
 // PilihKursBerlakuTCO memilih SATU baris dengan Mulai <= tanggal <= Akhir.
 //
 // ⚠️ Pega memutar seluruh hasil dan menyimpan yang TERAKHIR (`testingKurs`
-// langkah 3) - urutan tak tentu. Dua baris berlaku dinyatakan sebagai galat.
+// langkah 3) - urutan tak tentu. Dua baris berlaku dinyatakan sebagai galat
+// (master rusak) [keputusan work owner 29-09-2026] (OQ-TCO-18, ditutup).
 func PilihKursBerlakuTCO(baris []KursTCO, tanggal time.Time) (KursTCO, error) {
 	tgl := time.Date(tanggal.Year(), tanggal.Month(), tanggal.Day(), 0, 0, 0, 0, time.UTC)
 	var cocok []KursTCO

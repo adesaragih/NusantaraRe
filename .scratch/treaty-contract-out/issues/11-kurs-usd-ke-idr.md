@@ -158,3 +158,9 @@ Nomor baris = baris mentah berkas korpus `Treaty Contract Out/` kecuali disebut 
 | frontend | `PanelJenisKlausul.tsx` (+uji), `KURS_TCO`, `api.ts` (+2) | kurs berlaku / pesan server, `Add` nonaktif tanpa kurs, pratinjau konversi dari server |
 
 **Status:** selesai 29-09-2026 — commit `treaty-contract-out: tiket 11 — kurs USD ke IDR`.
+
+## Keputusan work owner 29-09-2026
+
+- **OQ-TCO-18 — ditutup.** Jawaban: *"setuju"*. `KURS` diisi kurs yang dipakai menghitung `Usd` tujuh induk berkurs,
+  skala 8 untuk ketujuh pembagian (exclusion IDR → USD tetap 4 VERBATIM), dan dua baris kurs berlaku = master rusak (503)
+  `[keputusan work owner 29-09-2026]`.

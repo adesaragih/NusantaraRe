@@ -142,3 +142,8 @@ Nomor baris = baris mentah berkas korpus; langkah aktivitas dibaca lengkap.
 | frontend | `PanelBusinessKombinasi.tsx` (+uji), `BUSINESS_TCO` (13 baris diuji ke korpus), `api.ts` (+4), tombol `Business List` hidup | |
 
 **Status:** selesai 29-09-2026 — commit `treaty-contract-out: tiket 07 — business + nonaktif`.
+
+## Keputusan work owner 29-09-2026
+
+- **OQ-TCO-13 — ditutup.** Jawaban: *"0 berarti nonaktif"*. `models.BusinessNonaktif = "0"`,
+  `models.BusinessAktif = "1"` dikunci `TestNilaiIsActiveKeputusanWorkOwner` `[keputusan work owner 29-09-2026]`.

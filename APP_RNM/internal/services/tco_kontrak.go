@@ -298,6 +298,8 @@ func (k *KontrakTreatyTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID st
 		if err != nil {
 			return err
 		}
+		// Satu jenis reasuransi satu kontrak per tahun [keputusan work owner 29-09-2026]
+		// (OQ-TCO-11, ditutup).
 		if lain != "" {
 			return GalatKontrakDobel{IDLain: lain, ReinsTypeID: kontrak.ReinsTypeID}
 		}

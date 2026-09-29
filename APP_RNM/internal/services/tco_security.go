@@ -14,7 +14,9 @@ package services
 //   - DELETE berkunci nama - menghapus SEMUA baris bernama sama. Di sini satu ID.
 //   - `Local.IsUpdate` dihitung (langkah 3, b760) lalu tidak dipakai: sisip vs
 //     perbarui diputus `HASILD3` (b1225/b1409), sehingga security yang sama
-//     dapat tersisip dua kali. Di sini dobel ditolak 409 `[keputusan kami]`.
+//     dapat tersisip dua kali. Di sini dobel ditolak 409 - PENYIMPANGAN SADAR
+//     dari Pega [keputusan work owner 29-09-2026] (OQ-TCO-17, ditutup); begitu pula
+//     `%Share` wajib 0..100 (`models.UraiShareSecurityTCO`).
 //
 // ⛔ Reinsurer diturunkan server dari jalur (tahun -> kontrak -> kombinasi ->
 // reinsurer); `THN_TREATY` = `TreatyYear` reinsurer (b5301), tidak dari klien.

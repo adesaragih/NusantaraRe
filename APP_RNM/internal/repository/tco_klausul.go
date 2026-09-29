@@ -34,7 +34,8 @@ const (
 	// MasterJenisKlausulTCO - `BrowseTreatyDesc_RD` (kelas
 	// `ASM-FW-GISFW-Int-TREATYDESC`; `.ID` ASC, `.DescName`, `.IsXOL`,
 	// `.StatusAktif`; saringan `.IsXOL = Param.IsXOL`). Kolom fisik = nama
-	// properti `[dugaan kuat]` - nol SQL korpus menyebutnya (OQ-TCO-16).
+	// properti, dikonfirmasi [keputusan work owner 29-09-2026] - nol SQL korpus
+	// menyebutnya (OQ-TCO-16, ditutup).
 	MasterJenisKlausulTCO = "TREATYDESC"
 	// MasterOccupationTCO - `BrowseOccupationFIRE_RD` (`.Type = "FIRE"`,
 	// `.ID` -> ID_Occupation, `.Name` -> Occupation). Kolom `ID`, `NAME`, `TYPE`
@@ -42,7 +43,7 @@ const (
 	MasterOccupationTCO = "OCCUPATION"
 	// MasterClauseTCO - `BrowseFireClauseFacIn_RD` (`.Type = "FIRE"`, urut
 	// `.Info` ASC; `.ID` -> ID_Clause, `.Info` -> Clause). Kolom fisik = nama
-	// properti `[dugaan kuat]` (OQ-TCO-16).
+	// properti, dikonfirmasi [keputusan work owner 29-09-2026] (OQ-TCO-16, ditutup).
 	MasterClauseTCO = "CLAUSE"
 	// TipeFireTCO - saringan kedua pemilih exclusion.
 	TipeFireTCO = "FIRE"

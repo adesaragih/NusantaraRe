@@ -158,3 +158,8 @@ Nomor baris = baris mentah berkas korpus `Treaty Contract Out/`; langkah aktivit
 | frontend | `PanelSecurityReinsurer.tsx` (+uji), `SECURITY_TCO` (19 baris diuji ke korpus), `api.ts` (+3), tombol `Security Reinsurer` hidup | |
 
 **Status:** selesai 29-09-2026 — commit `treaty-contract-out: tiket 06 — security reinsurer, struktur bersih`.
+
+## Keputusan work owner 29-09-2026
+
+- **OQ-TCO-17 — ditutup.** Jawaban: *"setuju"*. Security dobel per reinsurer ditolak 409 dan `%Share` wajib 0..100 —
+  keduanya **penyimpangan sadar dari Pega** (Pega tidak menegakkan keduanya) `[keputusan work owner 29-09-2026]`.

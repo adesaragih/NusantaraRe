@@ -31,3 +31,13 @@ func TestBusinessAktifTCO(t *testing.T) {
 		}
 	}
 }
+
+// OQ-TCO-13 ditutup: work owner menetapkan "0 berarti nonaktif".
+func TestNilaiIsActiveKeputusanWorkOwner(t *testing.T) {
+	if BusinessAktif != "1" || BusinessNonaktif != "0" {
+		t.Fatalf("IsActive aktif %q nonaktif %q, mau 1 dan 0", BusinessAktif, BusinessNonaktif)
+	}
+	if BusinessAktifTCO(BusinessTreaty{IsActive: BusinessNonaktif}) {
+		t.Error("baris bernilai 0 dibaca aktif")
+	}
+}

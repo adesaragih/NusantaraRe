@@ -920,3 +920,17 @@ OQ spec yang tetap terbuka: aturan LimitMB & Portfolio (AC 36), arti `QUARTER = 
 | Putaran instrumen gagal lalu diulang | 3: `git worktree add` di scratchpad gagal (jalur berkas repositori lain terlalu panjang; tidak meninggalkan sisa, `git worktree prune` bersih) → diganti `git archive`; impor `time` salah kelompok; tipe `DampakHapus` Claim Life (tahap sebelumnya) |
 | Token / biaya | tidak terlihat dari dalam sesi, jadi tidak dikarang |
 
+## Lanjutan 2 — jawaban work owner atas OQ-TCO-08 … 21 (29-09-2026, langsung di `main`)
+
+Titik awal `main` @ `043116f`: Go 900 uji tingkat atas lulus (1.001 termasuk sub-uji), tag `db` 57 dilewati; vitest 612;
+build 81 modul. Suntingan work owner yang belum di-commit (`App.tsx`, `labels.ts`, `KelompokMenu.tsx`, `dasar.tsx`,
+`.scratch/cadangan/`) dibiarkan dan tidak ikut satu commit pun.
+
+### Kelompok 1 — OQ-TCO-11 … 18 dikonfirmasi
+
+Delapan jawaban konfirmasi. Label kode `[keputusan kami]` / `[dugaan kuat]` → `[keputusan work owner 29-09-2026]`
+(`services/tco_kontrak.go`, `repository/tco_reinsurer.go`, `models/tco_business.go`, `models/tco_klausul.go`,
+`services/tco_klausul.go`, `repository/tco_klausul.go`, `models/tco_security.go`, `services/tco_security.go`,
+`models/tco_kurs.go`, tiruan skema, label frontend). Konstanta `BusinessNonaktif = "0"` dikunci uji baru
+`TestNilaiIsActiveKeputusanWorkOwner`. Blok "Keputusan work owner 29-09-2026" di tiket 04, 05, 06, 07, 08, 11. Register
+OQ modul dibuat: `OQ-TREATY-CONTRACT-OUT.md`.

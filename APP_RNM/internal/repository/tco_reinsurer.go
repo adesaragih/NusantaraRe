@@ -32,8 +32,8 @@ import (
 // ReinsurerID, `.ClientName` -> NAME, `.ClientID` -> CLIENTID; saringan
 // `.ClientName Contains` + `.StatusActive = 1`. Kolom fisik `ID`, `CLIENTNAME`,
 // `CLIENTID` terbukti di SQL korpus (`Claim Fac In/RDBList/GetLeaderReport.xml`,
-// `GetAddressCeding.xml`); `STATUSACTIVE` dari nama properti RD `[dugaan kuat]`
-// (OQ-TCO-12).
+// `GetAddressCeding.xml`); `STATUSACTIVE` dari nama properti RD, dikonfirmasi
+// [keputusan work owner 29-09-2026] (OQ-TCO-12, ditutup).
 const MasterReinsurerAgentTCO = "AGENT"
 
 // NilaiAgentAktifTCO - `BrowseAgentReinsSOA_RD` b579 `pyFilterValue 1`.

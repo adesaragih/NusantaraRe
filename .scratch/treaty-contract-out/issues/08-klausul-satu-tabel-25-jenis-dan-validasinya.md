@@ -227,3 +227,12 @@ hidup** (bukan `pyStepsBlockName = //`) dengan prasyarat **aktif** (`pyStepsPreC
 | frontend | `PanelKlausulTahun.tsx`, `PanelJenisKlausul.tsx`, `InboxTreatyContractDescription.tsx` (+uji), `KLAUSUL_TCO`/`LABEL_MEDAN_*`, `api.ts` (+4), tombol `List Description` hidup, butir menu ketiga | |
 
 **Status:** selesai 29-09-2026 — commit `treaty-contract-out: tiket 08 — klausul satu tabel, 25 jenis, validasinya`.
+
+## Keputusan work owner 29-09-2026
+
+- **OQ-TCO-14 — ditutup.** Jawaban: *"setuju"*. Kunci anti-dobel per jenis (`KunciDobel`) dan wajib-isi satu-satunya
+  medan subjenis Object/Periode dikonfirmasi `[keputusan work owner 29-09-2026]`.
+- **OQ-TCO-15 — ditutup.** Jawaban: *"benar"*. Pilihan `ReinsTypeID` form klausul = daftar jenis reasuransi tersaring
+  tiket 02.
+- **OQ-TCO-16 — ditutup.** Jawaban: *"benar"*. Nama kolom master `TREATYDESC` (`DESCNAME`, `ISXOL`, `STATUSAKTIF`),
+  `OCCUPATION` (`NAME`), `CLAUSE` (`INFO`, `TYPE = 'FIRE'`) dikonfirmasi.

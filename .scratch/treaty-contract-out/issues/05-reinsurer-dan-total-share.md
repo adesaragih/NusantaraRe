@@ -148,3 +148,8 @@ Nomor baris = baris mentah berkas korpus; langkah aktivitas dibaca lengkap (pras
 | frontend | `PanelReinsurerKombinasi.tsx` (+uji), `REINSURER_TCO` (21 baris diuji ke korpus), `api.ts` (+3), tombol `Reinsurer List` hidup | uang teks sepanjang jalan |
 
 **Status:** selesai 29-09-2026 — commit `treaty-contract-out: tiket 05 — reinsurer + total share`.
+
+## Keputusan work owner 29-09-2026
+
+- **OQ-TCO-12 — ditutup.** Jawaban: *"benar"*. Kolom fisik `STATUSACTIVE` master `AGENT` (nama properti RD
+  `BrowseAgentReinsSOA_RD`) dikonfirmasi `[keputusan work owner 29-09-2026]`.

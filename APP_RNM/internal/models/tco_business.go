@@ -21,8 +21,8 @@ import (
 //
 // `[terverifikasi]` hilir menyaring `isactive='1'` (`Claim Prop/RDBList/
 // GetTreatyGroupID.xml`) dan grid `BrowseTreatyBusiness_RD` b670-b675
-// `.IsActive = 1`. `[dugaan kuat]` nilai nonaktif `0` - daftar pilihan radio
-// milik properti, tidak diekspor (OQ-TCO-13).
+// `.IsActive = 1`. Nilai nonaktif `0` [keputusan work owner 29-09-2026] - "0 berarti nonaktif";
+// daftar pilihan radio milik properti tidak diekspor (OQ-TCO-13, ditutup).
 const (
 	BusinessAktif    = "1"
 	BusinessNonaktif = "0"

@@ -386,7 +386,8 @@ func (l *KlausulTCO) Daftar(ctx context.Context, pelaku Pelaku, tahunID, descID,
 	return hasil, nil
 }
 
-// namaReinsType memeriksa ID jenis reasuransi di daftar tersaring tiket 02.
+// namaReinsType memeriksa ID jenis reasuransi di daftar tersaring tiket 02 -
+// daftar pilihan form klausul [keputusan work owner 29-09-2026] (OQ-TCO-15, ditutup).
 func (l *KlausulTCO) namaReinsType(ctx context.Context, id string) (string, error) {
 	daftar, err := l.jenis.DaftarNonLife(ctx)
 	if err != nil {
@@ -476,7 +477,7 @@ func (l *KlausulTCO) Simpan(ctx context.Context, pelaku Pelaku, tahunID string, 
 	}
 	// Tiket 11: form berkurs menuntut kurs berlaku (`NewTreatyArr*`); induk
 	// ber-Rp/Usd menurunkan `Usd = Rp / Kurs` (`HitungRpUsd_depan`) dan
-	// menyimpan kurs yang dipakai di `KURS`.
+	// menyimpan kurs yang dipakai di `KURS` [keputusan work owner 29-09-2026] (OQ-TCO-18).
 	if a.Berkurs {
 		kurs, err := l.kurs.Berlaku(ctx, tahun)
 		if err != nil {

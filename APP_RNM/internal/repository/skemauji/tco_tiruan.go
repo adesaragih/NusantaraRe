@@ -91,7 +91,7 @@ func ddlTiruanTCO(skema string) []string {
 		"CREATE TABLE %s.%s (ID VARCHAR2(1000), NOTE VARCHAR2(1000))",
 		skema, repository.MasterKategoriLampiranTCO))
 	// Tiket 05: master reinsurer - kolom yang SQL korpus sebut (ID, CLIENTNAME,
-	// CLIENTID) + STATUSACTIVE dari properti RD (OQ-TCO-12).
+	// CLIENTID) + STATUSACTIVE dari properti RD (OQ-TCO-12, dikonfirmasi work owner).
 	out = append(out, fmt.Sprintf(
 		"CREATE TABLE %s.%s (ID VARCHAR2(1000), CLIENTNAME VARCHAR2(1000), CLIENTID VARCHAR2(1000), STATUSACTIVE VARCHAR2(10))",
 		skema, repository.MasterReinsurerAgentTCO))
@@ -99,7 +99,7 @@ func ddlTiruanTCO(skema string) []string {
 	out = append(out, fmt.Sprintf(
 		"CREATE TABLE %s.%s (ID VARCHAR2(1000), OLDID VARCHAR2(1000), NOTE VARCHAR2(1000), BUSINESSGROUPID VARCHAR2(1000))",
 		skema, repository.MasterBusinessTCO))
-	// Tiket 08: kolom = nama properti RD / SQL korpus (OQ-TCO-16).
+	// Tiket 08: kolom = nama properti RD / SQL korpus (OQ-TCO-16, dikonfirmasi work owner).
 	out = append(out,
 		fmt.Sprintf("CREATE TABLE %s.%s (ID VARCHAR2(1000), DESCNAME VARCHAR2(1000), ISXOL VARCHAR2(10), STATUSAKTIF VARCHAR2(10))",
 			skema, repository.MasterJenisKlausulTCO),

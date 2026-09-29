@@ -15,7 +15,8 @@ package models
 // ⚠️ `SetErrorMessageReinsurer` memeriksa `InputTreatyReinsurer.PctShare`
 // (b518), BUKAN share security - residu salin-tempel; di Pega share security
 // tidak diperiksa sama sekali. Maksud gerbangnya (0..100, `SetErrorMessageBetween`)
-// ditegakkan di sini, dan AC 17 ("beserta porsinya") menjadikannya wajib.
+// ditegakkan di sini, dan AC 17 ("beserta porsinya") menjadikannya wajib -
+// PENYIMPANGAN SADAR dari Pega [keputusan work owner 29-09-2026] (OQ-TCO-17, ditutup).
 //
 // Dibaca sesudah: tco_reinsurer.go.
 

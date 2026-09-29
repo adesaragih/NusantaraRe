@@ -332,7 +332,7 @@ export const BUSINESS_TCO = {
   /** b10889 `<pyLabel>` → `CancelActivity` b10914. */
   closeList: 'Close List',
 
-  /** `[tidak ada di korpus]` — nilai radio Active (OQ-TCO-13). */
+  /** `[tidak ada di korpus]` — nilai radio Active; `0` = nonaktif [keputusan work owner 29-09-2026] (OQ-TCO-13). */
   aktif: 'Aktif',
   nonaktif: 'Nonaktif',
   /** `[tidak ada di korpus]` */

@@ -149,3 +149,7 @@ dibaca lengkap dengan prasyarat dan penandanya; langkah ber-`pyStepsBlockName = 
 
 **Status:** selesai 29-09-2026 — commit `treaty-contract-out: tiket 04 — kontrak treaty di dalam tahun`.
 
+## Keputusan work owner 29-09-2026
+
+- **OQ-TCO-11 — ditutup.** Jawaban: *"benar"*. Satu jenis reasuransi satu kontrak per tahun treaty (anti-dobel
+  `CariDobel`, 409 `Data sudah pernah di Input`) dikonfirmasi; labelnya kini `[keputusan work owner 29-09-2026]`.

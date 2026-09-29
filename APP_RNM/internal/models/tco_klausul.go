@@ -183,8 +183,10 @@ var AturanKlausulTCO = []AturanKlausul{
 		Medan: []string{MedanIDClause, MedanClause}, Wajib: []string{MedanIDClause, MedanClause},
 		KunciDobel: []string{MedanIDClause}, Sumber: "SaveTreatyArrExclutionTreaty_Act"},
 	// ⚠️ Object dan Periode: Save mengirim `Type` KOSONG, sehingga di Pega nol
-	// validasi berjalan. Satu-satunya medan formnya diwajibkan [keputusan kami]
-	// - baris exclusion dengan satu-satunya medannya kosong tidak bermakna.
+	// validasi berjalan. Satu-satunya medan formnya diwajibkan
+	// [keputusan work owner 29-09-2026] (OQ-TCO-14, ditutup) - baris exclusion dengan
+	// satu-satunya medannya kosong tidak bermakna. Kunci dobel per jenis
+	// (`KunciDobel`) dikonfirmasi keputusan yang sama.
 	{Jenis: "ExclutionTreaty", DescID: DescExclutionTreaty, Subjenis: SubjenisObject,
 		Medan: []string{MedanPct}, Wajib: []string{MedanPct}, KunciDobel: []string{MedanPct},
 		Sumber: "SaveTreatyArrExclutionTreaty_Act"},
