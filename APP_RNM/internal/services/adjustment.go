@@ -151,9 +151,10 @@ const angkaDesimalPendaftaran = 4
 //	SUM_INSURED b3768        RETROCEDED_SHARE b3848
 //	SUM_REASURED b3788       CURRENCY         b3868
 //
-// Tujuh yang pertama `@divide(@toDecimal(@replaceAll(.X,",",".")),1,4)`;
-// `@replaceAll` tidak berbuat apa-apa di sini, sebab sumbernya dibaca sebagai
-// `TO_CHAR(…,'TM9')` bertitik desimal. `SHARE_NUSANTARA_RE` b3743 memakai
+// Tujuh yang pertama `@divide(@toDecimal(@replaceAll(.X,",",".")),1,4)`.
+// (Catatan pembaca Go, BUKAN bunyi korpus: `@replaceAll` tidak berbuat
+// apa-apa di sini, sebab `repository.kolomSalin` membaca sumbernya lewat
+// `TO_CHAR(…,'TM9')` bertitik desimal.) `SHARE_NUSANTARA_RE` b3743 memakai
 // `@if` yang SAMA dengan peserta 7.7 b2845, jadi nilai peserta - yang sudah
 // memilihnya lewat `repository.ShareNusantaraReTeks` - dipakai apa adanya.
 //
@@ -186,13 +187,13 @@ func BarisPendaftaran(p models.Peserta) (models.BarisAdjustment, bool, error) {
 		if m.dari.Kosong() {
 			continue
 		}
-		bulat := new(apd.Decimal)
-		if _, err := utils.DecimalContext().Quantize(bulat, m.dari.Amount,
-			-angkaDesimalPendaftaran); err != nil {
+		// Satu aturan pembulatan untuk seluruh paket - `bulat` (spreading.go).
+		empat, err := bulat(utils.DecimalContext(), m.dari.Amount, angkaDesimalPendaftaran)
+		if err != nil {
 			return models.BarisAdjustment{}, false, fmt.Errorf(
 				"%w: peserta %q %s: %w", ErrBarisTidakSah, p.ID, m.nama, err)
 		}
-		m.ke.Amount = bulat
+		m.ke.Amount = empat
 	}
 	return b, true, nil
 }

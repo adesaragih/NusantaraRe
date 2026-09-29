@@ -56,16 +56,43 @@ type KeadaanPolis struct {
 	// saat tertutup. Kosong berarti belum pernah disetel (ADR-U-0027).
 	Status string
 	Lini   string
-	// Flag - `FLAG_ONGOING_POLICY` (057, butir bn): "0" Input Offer, "1" Input
-	// Premium. Butir bq merutekan `Decision3` darinya. Kosong pada baris yang
-	// lahir sebelum 057.
-	Flag string
 }
 
 // sqlKeadaanPolis merakit pembacaannya.
 func sqlKeadaanPolis(tabel string) string {
 	return fmt.Sprintf(
-		`SELECT ID, LINI, POSITION, STATUS, FLAG_ONGOING_POLICY FROM %s WHERE ID = :1`, tabel)
+		`SELECT ID, LINI, POSITION, STATUS FROM %s WHERE ID = :1`, tabel)
+}
+
+// sqlBenderaPolis membaca `FLAG_ONGOING_POLICY` saja - butir bq.
+//
+// ⛔ TERPISAH dari keadaan, dan itu sengaja (temuan tinjauan GILIRAN-14):
+// kolomnya lahir di 057. Membacanya di `Keadaan` membuat SETIAP keputusan -
+// `Reject`, `Decline` - gagal ORA-00904 selama 057 belum berjalan, padahal
+// hanya `Confirm` di tahap penawaran yang membutuhkannya.
+func sqlBenderaPolis(tabel string) string {
+	return fmt.Sprintf(`SELECT FLAG_ONGOING_POLICY FROM %s WHERE ID = :1`, tabel)
+}
+
+// Bendera membaca `FLAG_ONGOING_POLICY` satu polis ("" bila kosong).
+func (r *WorkPolis) Bendera(ctx context.Context, id string) (string, error) {
+	tabel, err := r.db.Qualify("T_WORK_POLIS")
+	if err != nil {
+		return "", err
+	}
+	q := sqlBenderaPolis(tabel)
+	if err := PeriksaSQL(q); err != nil {
+		return "", err
+	}
+	var flag sql.NullString
+	err = r.db.sql.QueryRowContext(ctx, q, id).Scan(&flag)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", ErrWorkPolisTidakAda
+	}
+	if err != nil {
+		return "", fmt.Errorf("repository: membaca bendera polis: %w", err)
+	}
+	return flag.String, nil
 }
 
 // Keadaan membaca tahap dan status kerja satu polis.
@@ -78,8 +105,8 @@ func (r *WorkPolis) Keadaan(ctx context.Context, id string) (KeadaanPolis, error
 	if err := PeriksaSQL(q); err != nil {
 		return KeadaanPolis{}, err
 	}
-	var pengenal, lini, posisi, status, flag sql.NullString
-	err = r.db.sql.QueryRowContext(ctx, q, id).Scan(&pengenal, &lini, &posisi, &status, &flag)
+	var pengenal, lini, posisi, status sql.NullString
+	err = r.db.sql.QueryRowContext(ctx, q, id).Scan(&pengenal, &lini, &posisi, &status)
 	if errors.Is(err, sql.ErrNoRows) {
 		return KeadaanPolis{}, ErrWorkPolisTidakAda
 	}
@@ -88,7 +115,7 @@ func (r *WorkPolis) Keadaan(ctx context.Context, id string) (KeadaanPolis, error
 	}
 	return KeadaanPolis{
 		ID: pengenal.String, Lini: lini.String,
-		Position: posisi.String, Status: status.String, Flag: flag.String,
+		Position: posisi.String, Status: status.String,
 	}, nil
 }
 

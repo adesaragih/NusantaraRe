@@ -137,7 +137,9 @@ func TestDaftarMenulisTigaTempatDanBarisDatar(t *testing.T) {
 
 	// ⭐ BUTIR bp (GILIRAN-14): satu baris adjustment lahir bersama peserta
 	// terpilih - `SavePesertaClaim` 7.8 - dibaca ULANG dari Oracle.
-	perBaris, err := repository.NewKlaimLife(skemaRepo(t)).AmbilBaris(ctx, pohon.Work.ID)
+	db, tutupDB := repoUji(t)
+	defer tutupDB()
+	perBaris, err := repository.NewKlaimLife(db).AmbilBaris(ctx, pohon.Work.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -162,24 +164,13 @@ func TestDaftarMenulisTigaTempatDanBarisDatar(t *testing.T) {
 		t.Errorf("baris lahir berkode %q; 7.8 tidak menulis STS_REJECT", baris[0].KodeStatus)
 	}
 	// AC 32: baris datar warisan kini ikut tertulis - barisnya ada.
-	datar, err := repository.NewPohonKlaim(skemaRepo(t)).CacahBarisLama(ctx, pohon.Work.ID)
+	datar, err := repository.NewPohonKlaim(db).CacahBarisLama(ctx, pohon.Work.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if datar != 1 {
 		t.Errorf("baris datar OS_AKSEPTASI_KLAIM_LIFE = %d, mau 1 (AC 32)", datar)
 	}
-}
-
-// skemaRepo membuka repository skema uji yang sama untuk pembacaan ulang.
-func skemaRepo(t *testing.T) *repository.DB {
-	t.Helper()
-	db, err := skemauji.BukaRepositori()
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = db.Close() })
-	return db
 }
 
 // uangUjiDB mengurai desimal pembanding tanpa float.

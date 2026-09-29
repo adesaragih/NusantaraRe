@@ -168,9 +168,12 @@ type AkibatKeputusan struct {
 	TahapTujuan string
 	// StatusWork terisi bila kasus DITUTUP.
 	StatusWork string
-	// MenungguPenggolong true bila yang berikutnya adalah `Decision3`,
+	// KeDecision3 true bila kendali berpindah ke `Decision3` (`Transition4`
+	// b1560) - sejak butir bq layanan langsung menerapkan hasilnya dari
+	// bendera kasus; nama lama `MenungguPenggolong` dibuang (tidak ada lagi
+	// yang menunggu). Dahulu: true bila yang berikutnya adalah `Decision3`,
 	// yaitu `IsFlagOnGoingPolicy` - Offer atau Premium.
-	MenungguPenggolong bool
+	KeDecision3 bool
 	// SimpanPolis true bila jalurnya melewati `InsertJsonPolisLife_Act` -
 	// `Utility1` b765 sesudah `Transition7`, atau tombol `Submit` layar
 	// summary (b26414). Tiket 05b: yang tersisa dari activity itu sesudah
@@ -214,7 +217,7 @@ func TransisiPenawaran(tahap, keputusan string) (AkibatKeputusan, error) {
 		switch k {
 		case KeputusanConfirm:
 			// Transition4 b1560 [Confirm b1574] -> Decision3.
-			return AkibatKeputusan{MenungguPenggolong: true}, nil
+			return AkibatKeputusan{KeDecision3: true}, nil
 		case KeputusanDecline:
 			// Transition5 b2220 [Decline b2235] -> End1 b832.
 			return AkibatKeputusan{StatusWork: StatusPolisDitolak}, nil
@@ -256,6 +259,12 @@ func TransisiPenawaran(tahap, keputusan string) (AkibatKeputusan, error) {
 var ErrBenderaTanpaKonektor = errors.New(
 	"models: FLAG_ONGOING_POLICY bukan \"0\" maupun \"1\"; Decision3 tidak punya jalur untuknya")
 
+// HasilOtherwiseIsFlagOnGoingPolicy - `pyDefaultResult` decision table (b94).
+//
+// ⚠️ Teksnya sama dengan keputusan pengguna `KeputusanDecline`, tetapi ia
+// HASIL TABEL, bukan keputusan: nol konektor `Decision3` menerimanya.
+const HasilOtherwiseIsFlagOnGoingPolicy = "Decline"
+
 // HasilIsFlagOnGoingPolicy menjalankan decision table `IsFlagOnGoingPolicy`
 // VERBATIM - butir bq.
 //
@@ -270,7 +279,7 @@ func HasilIsFlagOnGoingPolicy(flag string) string {
 	case FlagPolisPremium:
 		return LanjutPremium
 	}
-	return KeputusanDecline
+	return HasilOtherwiseIsFlagOnGoingPolicy
 }
 
 // PenggolongOtomatis menjawab akibat `Decision3` dari bendera kasus - butir bq
@@ -282,7 +291,7 @@ func HasilIsFlagOnGoingPolicy(flag string) string {
 // Pega itu masalah flow; di sini galat terang, bukan jalur yang dikarang.
 func PenggolongOtomatis(flag string) (AkibatKeputusan, error) {
 	hasil := HasilIsFlagOnGoingPolicy(flag)
-	if hasil == KeputusanDecline {
+	if hasil == HasilOtherwiseIsFlagOnGoingPolicy {
 		return AkibatKeputusan{}, fmt.Errorf("%w: bendera %q", ErrBenderaTanpaKonektor, flag)
 	}
 	return LanjutanPenggolong(hasil)

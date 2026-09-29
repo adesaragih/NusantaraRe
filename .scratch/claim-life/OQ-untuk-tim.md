@@ -707,3 +707,28 @@ yang hidup hanya gerbang "dokumen belum diunggah" (langkah 3–4, menyebut nomor
 ✅ **OQ-N6 DITUTUP — 28-09-2026, butir bl** `[DIPUTUSKAN; veto work owner]`: mengikuti XML —
 ter-remark berarti tidak pernah berlaku. `PeriksaDokumenLengkap` dan pendukungnya dibuang
 (GILIRAN-12 paket 1); bila bisnis menghendaki gerbang itu, ia keputusan baru.
+
+## GILIRAN-13/14 — 29-09-2026
+
+**OQ-N7** *(untuk work owner)* — `Delete` baris adjustment (`ClaimLifeDetailGCNM.xml` b19120, tampil bila
+`.PrintFaceClaim == ''` b19399): ADR-U-0031 melarang hapus fisik, dan `T_CLAIMLF_ADJUSTMENT` tidak punya kolom
+penanda hapus. Tambah kolom penanda (dan penyaring di setiap pembaca hilir), atau nyatakan `Delete` tidak berlaku?
+Tombolnya berdiri tetapi mati. *(Tiket 03, ralat GILIRAN-13.)*
+
+**OQ-N8** *(untuk work owner — TERBUKA, terkait OQ-N11)* — baris adjustment tidak punya rute sunting sel, sedangkan
+`Save to RNM` 11.17 (b6043) menolak `.CLAIM_GROSS` kosong. Sejak GILIRAN-14 butir bp baris lahir ber-`CLAIM_AMOUNT`
+dari polisnya, dan gerbang terpenuhi lewat pemetaan `.CLAIM_GROSS` → `CLAIM_AMOUNT`; butir br menemukan NOL sel yang
+dapat disunting menurut XML. *(Tiket 03.)*
+
+**OQ-N9** — ✅ **DITUTUP 29-09-2026, butir bp** `[DIPUTUSKAN; veto work owner]`: "apakah pendaftaran semestinya
+melahirkan baris pertama" — ya, `SavePesertaClaim` 7.8 b3671 (hidup, WHEN b3919). Dibangun di GILIRAN-14.
+
+**OQ-N10** *(untuk work owner)* — `SavePesertaClaim` 7.7 membulatkan nilai **peserta** ke empat angka
+(`@divide(…,1,4)` b2770–b3561); peserta Go disimpan apa adanya dari `NUMBER(38,8)`. Baris pertama (7.8) sudah
+dibulatkan, jadi pada sumber berdesimal lebih dari empat nilai peserta dan baris pertamanya berbeda di angka kelima.
+Tiru juga pembulatan peserta? *(Tiket 02.)*
+
+**OQ-N11** *(untuk work owner)* — `.CLAIM_GROSS` (`AdjustmentDetail_Section.xml`) `Read-only` (b2961/b2970) tetapi
+wajib (b2977/b3021/b3026) dan beraksi `change` → `CountClaimAmountLife_Act` (b3036/b3049); nol penulis `.CLAIM_GROSS`
+di korpus Claim Life. Siapa yang mengisinya di Pega? Sampai dijawab, aplikasi memetakannya ke `CLAIM_AMOUNT` yang lahir
+di pendaftaran. *(Tiket 03.)*

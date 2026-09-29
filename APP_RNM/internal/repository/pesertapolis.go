@@ -266,6 +266,9 @@ func NamaKolomSalinPeserta() []string {
 	return namaKolomDaftarPilih(kolomSalin)
 }
 
+// polaNamaKolomPilih mengenali nama kolom satu butir daftar pilih.
+var polaNamaKolomPilih = regexp.MustCompile(`^(?:TO_CHAR\()?\s*([A-Z][A-Z0-9_]*)`)
+
 // namaKolomDaftarPilih mengambil nama kolom dari satu daftar pilih (kolom
 // hasil sebuah kueri).
 //
@@ -288,10 +291,9 @@ func namaKolomDaftarPilih(daftar string) []string {
 		}
 	}
 	butir = append(butir, daftar[awal:])
-	pola := regexp.MustCompile(`^(?:TO_CHAR\()?\s*([A-Z][A-Z0-9_]*)`)
 	var keluar []string
 	for _, b := range butir {
-		if m := pola.FindStringSubmatch(strings.TrimSpace(b)); m != nil {
+		if m := polaNamaKolomPilih.FindStringSubmatch(strings.TrimSpace(b)); m != nil {
 			keluar = append(keluar, m[1])
 		}
 	}

@@ -34,8 +34,9 @@ func TestPemegangClaimAnalisSamaDenganPeranPutaran(t *testing.T) {
 //
 // ⚠️ b17991 (activity pewaris delapan kolom) SENGAJA tidak diperiksa di sini:
 // namanya memuat pola indeks posisi yang dilarang penjaga AC 62
-// (`komite_statik_test.go`) di luar komentar. Ia dikutip di komentar
-// `BarisPertama`, bukan dikelabui dengan memecah teksnya.
+// (`komite_statik_test.go`) di luar komentar. Ia dikutip di tiket 03 (bab
+// ralat GILIRAN-13) dan di komentar grid `KlaimLife.tsx`, bukan dikelabui
+// dengan memecah teksnya.
 func TestTombolAddAdjustmentVERBATIMDariKorpus(t *testing.T) {
 	const letak = `D:\XML\RNM_BRD\Claim Life\Section\ClaimLifeDetailGCNM.xml`
 	isi, err := os.ReadFile(letak)

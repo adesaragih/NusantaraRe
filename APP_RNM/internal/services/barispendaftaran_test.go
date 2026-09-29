@@ -58,8 +58,10 @@ func TestBarisPendaftaranMenyalinDelapanMedan7_8(t *testing.T) {
 		{"RETROCEDED_SHARE", baru.RetrocededShare, "150001.0000"},
 		{"CLAIM_AMOUNT", baru.JumlahKlaim, "25000.1234"},
 	} {
-		if got := utils.FormatDecimal(k.got.Amount); got != k.mau {
-			t.Errorf("%s = %s, mau %s (empat angka, setengah ke atas)", k.medan, got, k.mau)
+		// Dibandingkan sebagai BILANGAN: `bulat` merapatkan nol di ekor.
+		if k.got.Amount == nil || k.got.Amount.Cmp(uang(t, k.mau, "IDR").Amount) != 0 {
+			t.Errorf("%s = %s, mau %s (empat angka, setengah ke atas)",
+				k.medan, utils.FormatDecimal(k.got.Amount), k.mau)
 		}
 	}
 	if baru.JumlahKlaim.Currency != "IDR" {
@@ -130,7 +132,7 @@ func TestLahirkanBarisPendaftaranSatuPerPeserta(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if utils.FormatDecimal(baru.SumInsured.Amount) != "1000000.1235" {
+	if baru.SumInsured.Amount.Cmp(uang(t, "1000000.1235", "IDR").Amount) != 0 {
 		t.Errorf("putaran mewarisi SUM_INSURED %s, mau 1000000.1235",
 			utils.FormatDecimal(baru.SumInsured.Amount))
 	}

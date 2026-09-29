@@ -335,8 +335,7 @@ bendera yang kini tersimpan, sedangkan layar kita bertanya — perilaku tidak di
 ## ⛔ Ralat bertanggal — 29 September 2026 (GILIRAN-14 paket 2, butir **bq**: Decision3 dirutekan dari bendera)
 
 `[DIPUTUSKAN — XML; veto work owner]` butir **bq** — **OQ-PL-16 ditutup**. Decision table dibaca utuh
-(`DecisionTable/IsFlagOnGoingPolicy.xml`, berkas pecahan `><` → `>
-<`): satu kolom
+(`DecisionTable/IsFlagOnGoingPolicy.xml`, berkas pecahan `><` → `>\n<`): satu kolom
 `pyWorkPage.FlagOnGoingPolicy` ber-operator `=`; baris `"0"` → `Offer` (b293 → b328) dan `"1"` → `Premium`
 (b294 → b329); `pyEvaluateAllRows` no; **otherwise `Decline`** (`pyDefaultResult` b94). Flow
 `InputPolicyHolder.xml` `Decision3` punya **dua** konektor keluar saja: `Premium` → `ASSIGNMENT63` (Input

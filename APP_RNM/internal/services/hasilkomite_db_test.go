@@ -180,3 +180,31 @@ func TestPutaranPesertaTanpaBarisDijawabJujur(t *testing.T) {
 		t.Errorf("baris lahir walau ditolak: %v", perBaris)
 	}
 }
+
+// TestPutaranHanyaDiClaimAnalis - gerbang b18160 di layanan, bukan hanya layar.
+func TestPutaranHanyaDiClaimAnalis(t *testing.T) {
+	svc, tutup := siapkanPendaftaran(t)
+	defer tutup()
+	db, tutupDB := repoUji(t)
+	defer tutupDB()
+	ctx := context.Background()
+
+	pohon := models.PohonKlaim{
+		Work: models.WorkClaim{ID: "CLM-UJI741", Lini: models.LiniLife, Type: "QP",
+			Tahap: models.TahapOutstanding.String(), PyPosition: models.PeranAdminLife},
+		Klaim: models.Klaim{NomorKlaim: "UJI-CLM-741",
+			Peserta: []models.Peserta{{NomorSertifikat: "006", MataUang: "IDR",
+				Baris: []models.BarisAdjustment{{KodeStatus: models.KodeDitolak}}}}},
+	}
+	if err := svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
+		return repository.NewPohonKlaim(db).Simpan(ctx, tx, pohon)
+	}); err != nil {
+		t.Fatalf("menyiapkan pohon: %v", err)
+	}
+	pesertaID, _ := barisPertama(t, db, "CLM-UJI741")
+	spv := services.Pelaku{AkunID: "UJI-SPV", Peran: []string{services.PeranSPV}}
+	if err := svc.Putaran().DenganJejak(&jejakUji{}).Tambah(ctx, spv,
+		"CLM-UJI741", pesertaID, saatUjiKomite); !errors.Is(err, services.ErrTahapTanpaAddAdjustment) {
+		t.Errorf("Add di Outstanding: galat = %v, mau ErrTahapTanpaAddAdjustment", err)
+	}
+}

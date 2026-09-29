@@ -683,7 +683,9 @@ export function bolehPutaranBaru(baris: BarisAdjustment[]): boolean {
  *   1. tahap Claim Analis — syarat tampil `pyWorkPage.pyPosition
  *      =='ReasLifeSPV'` b18160;
  *   2. baris terakhir DITOLAK (`bolehPutaranBaru`) — di keadaan lain
- *      layanan menjawab 409, dan tombol yang selalu ditolak bukan tombol;
+ *      layanan menjawab 409, dan tombol yang selalu ditolak bukan tombol.
+ *      ⚠️ PENYIMPANGAN SADAR: b18160 menampilkan `Add` tanpa syarat baris;
+ *      syarat ini milik layanan (`BarisLanjutan`), bukan XML;
  *   3. kasus belum tertutup (butir bb).
  *
  * ⚠️ Kenyamanan, bukan pagar: services menolak dengan 403/409.

@@ -1,6 +1,6 @@
 # 03: Baris `AdjustmentList` + Save ke Outstanding
 
-**Status:** sebagian — Save to RNM ADA sejak GILIRAN-11 paket 1 (`services/simpanrnm.go`); spreading tanpa pemanggil produksi; bendera `Save` tanpa kolom (OQ-N1); baris pertama **lahir saat Submit Register** sejak GILIRAN-14 (butir bp; `Add` = putaran saja — bo diralat); `Delete` berdiri tetapi MATI, tanpa rute (OQ-N7); sunting sel: **nol sel dapat disunting menurut XML** (butir br, OQ-N8 ditutup, OQ-N11 lahir)
+**Status:** sebagian — Save to RNM ADA sejak GILIRAN-11 paket 1 (`services/simpanrnm.go`); spreading tanpa pemanggil produksi; bendera `Save` tanpa kolom (OQ-N1); baris pertama **lahir saat Submit Register** sejak GILIRAN-14 (butir bp; `Add` = putaran saja — bo diralat); `Delete` berdiri tetapi MATI, tanpa rute (OQ-N7); sunting sel: **nol sel dapat disunting menurut XML** (butir br; OQ-N8 tetap terbuka, terkait OQ-N11 — **vonis br menunggu work owner**)
 
 **Blocked by:** 02 (register klaim + penomoran), **14 (skema relasional klaim — PREFACTOR)**
 
@@ -867,7 +867,10 @@ GILIRAN-13. Uji `src/services/tomboladd.test.ts`.
 tampilkan dapat disunting". Dibaca per kolom — dan **vonisnya nol**.
 
 **Cara membaca, dikalibrasi lebih dulu.** `pyEditOptions` sebuah sel ditulis SEBELUM `pyValue`-nya (rentang sesudah
-`pyValue` sebelumnya). Kosakata di seluruh `Section/` Claim Life: `Auto` 450, `Editable` 15, `Read-only` 315. Jawaban
+`pyValue` sebelumnya). Kosakata di seluruh `Section/` Claim Life: `Auto` 450, `Editable` 15, `Read-only` 315 —
+`[terverifikasi]` dua metode yang sepakat: (1) `grep -rhoE "<pyEditOptions>[^<]*</pyEditOptions>" Section | sort | uniq -c`
+dari folder `Claim Life`; (2) `py` menyisir setiap baris setiap `Section/*.xml` dengan regex yang sama dan mencacahnya
+per nilai. Jawaban
 yang sudah diketahui: `.CLAIM_RECEIVED_DATE` bertanda **`Editable`** di dialog `EditDateClaimLife_Section.xml` (b1034 —
 dialog yang memang menyuntingnya, rute `PUT …/tanggal-klaim`) dan **`Read-only`** di layar Detail. `pyReadOnlyCondition`
 yang tampak di rentang sebuah sel tidak mengubah opsi selnya (`.DOB`, `.CLAIM_RECEIVED_DATE` di layar Detail tetap
@@ -888,15 +891,35 @@ b6825, `.NoAccount` b7004). Hanya tombol yang `Auto`.
 kode mati. Vonisnya dikunci `TestGridAdjustmentNolSelDapatDisunting`, dengan tafsir yang diuji dulu atas jawaban yang
 diketahui (`TestKalibrasiOpsiSuntingDariDialogEditDate`); bila korpus kelak berkata lain, uji itu yang merah lebih dulu.
 
-**OQ-N8 ditutup — oleh bp, bukan oleh rute sunting.** Yang OQ-N8 cemaskan adalah baris kosong yang tidak dapat disimpan
-ke Outstanding (`Save to RNM` 11.17 b6043 menolak `.CLAIM_GROSS` kosong; kolom kita `CLAIM_AMOUNT`, catatan 7). Sejak
-bp, baris pertama lahir saat Register dengan `CLAIM_AMOUNT` dari polisnya (`SavePesertaClaim` 7.8 b3828), jadi
-gerbang itu terpenuhi tanpa sunting sel.
+**OQ-N8 TETAP TERBUKA** *(diralat tinjauan GILIRAN-14 — draf pertama bab ini menulis "ditutup oleh bp"; menutup
+OQ bukan wewenang executor, CLAUDE.md §6)*. Yang OQ-N8 cemaskan adalah baris yang tidak dapat disimpan ke Outstanding:
+`Save to RNM` 11.17 b6043 menolak `.CLAIM_GROSS` kosong. bp memang melahirkan baris dengan `CLAIM_AMOUNT` (7.8 b3828) —
+tetapi 7.8 **tidak** menulis `.CLAIM_GROSS`, dan gerbangnya terpenuhi hanya lewat pemetaan aplikasi `.CLAIM_GROSS` →
+`CLAIM_AMOUNT` (catatan 7), pemetaan yang justru OQ-N11 pertanyakan. Keduanya karena itu diserahkan bersama ke work
+owner.
+
+⚠️ **Vonis br bertentangan dengan premis keputusannya** ("tombol grid dapat disunting", `PUT …/adjustment/{adjId}`):
+XML menjawab nol sel. Executor mengikuti klausa pengaturnya ("HANYA kolom yang … dapat disunting") dan tidak membangun
+rute — **work owner yang memutuskan** apakah vonis itu diterima atau `CLAIM_GROSS` dibuka sebagai penyimpangan sadar.
 
 **Pertanyaan terbuka baru:**
 - **OQ-N11** — `.CLAIM_GROSS` di panel `Read-only` (b2961/b2970), tetapi **wajib** (`pyRequired true` b2977/b3026,
   `pyRequiredNew always` b3021) dan punya aksi `change` → `CountClaimAmountLife_Act` (b3036/b3049) — bentuk medan
   masukan yang dikunci. Nol activity/data transform di korpus Claim Life yang MENULIS `.CLAIM_GROSS`
   (`CountClaimAmountLife_Act`, `RejectOSClaimLife_Act`, `SaveOutStandingLife_Act`, `SpreadingClaimLife_Act` hanya
-  membacanya). Siapa yang mengisinya di Pega — pengguna (dan tanda `Read-only` itu keliru dibaca), atau aturan di luar
+  membacanya) — `[terverifikasi]` dua metode: (1) `grep -rlE "CLAIM_GROSS" .` di folder `Claim Life` → 5 berkas
+  (keempat activity itu + `AdjustmentDetail_Section.xml`); (2) pohon langkah keempat activity (`pohon.py`,
+  `pyStepsBlockName` dicetak) disisir untuk `PropertiesName = …CLAIM_GROSS` → nol. Siapa yang mengisinya di Pega — pengguna (dan tanda `Read-only` itu keliru dibaca), atau aturan di luar
   ekspor ini? Sampai dijawab, aplikasi memetakan `.CLAIM_GROSS` ke `CLAIM_AMOUNT` yang lahir di pendaftaran.
+
+### Tambahan tinjauan — 29 September 2026 (GILIRAN-14, `/code-review`)
+
+- **Gerbang tahap `Add` kini di layanan juga.** "Add tetap = putaran bergerbang ReasLifeSPV b18160" — gerbang itu
+  semula hanya di layar (`bolehAddAdjustment`). `Putaran.Tambah` kini menolak di luar Claim Analis
+  (`ErrTahapTanpaAddAdjustment`, 409); uji `db` `TestPutaranHanyaDiClaimAnalis`. Fixture `pohonUjiKomite` kini di
+  Claim Analis (penyerahan ke Komite tidak bergerbang tahap).
+- **Syarat "baris terakhir ditolak" di layar adalah penyimpangan sadar**: b18160 menampilkan `Add` tanpa syarat baris;
+  syaratnya milik layanan (`BarisLanjutan`).
+- **Jejak kelahiran baris saat Register tidak direkam** — ADR-U-0007 menjejak TRANSISI STATUS, dan baris 7.8 lahir
+  tanpa status; transisi pertamanya (`0`, Save to RNM) direkam jalur itu. Cabang `tambahPertama` yang dibuang dahulu
+  merekamnya (DARI/KE kosong); dicatat, tidak ditiru di pendaftaran.

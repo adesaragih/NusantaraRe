@@ -93,10 +93,20 @@ func TestTutupPolisDikunciTahapYangDibaca(t *testing.T) {
 	}
 }
 
-// TestKeadaanPolisMembacaBendera - GILIRAN-14 butir bq: Decision3 dirutekan
-// dari `FLAG_ONGOING_POLICY`, jadi keadaan kasus membawanya.
-func TestKeadaanPolisMembacaBendera(t *testing.T) {
-	if q := sqlKeadaanPolis(tabelUjiWorkPolis); !strings.Contains(q, "FLAG_ONGOING_POLICY") {
-		t.Errorf("keadaan polis tidak membaca FLAG_ONGOING_POLICY:\n%s", q)
+// TestBenderaPolisDibacaTerpisah - GILIRAN-14 butir bq.
+//
+// ⛔ Keadaan kasus TIDAK membaca kolom 057; hanya pembaca bendera yang
+// membacanya, supaya `Reject`/`Decline` tidak ikut gagal selama 057 belum
+// berjalan di sebuah skema.
+func TestBenderaPolisDibacaTerpisah(t *testing.T) {
+	if q := sqlKeadaanPolis(tabelUjiWorkPolis); strings.Contains(q, "FLAG_ONGOING_POLICY") {
+		t.Errorf("keadaan polis membaca kolom 057:\n%s", q)
+	}
+	q := sqlBenderaPolis(tabelUjiWorkPolis)
+	if err := PeriksaSQL(q); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(q, "FLAG_ONGOING_POLICY") || !strings.Contains(q, ":1") {
+		t.Errorf("pembaca bendera:\n%s", q)
 	}
 }

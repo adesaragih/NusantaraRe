@@ -39,7 +39,8 @@ func TestDecision3DirutekanDariBendera(t *testing.T) {
 		t.Fatal(err)
 	}
 	teks := string(isi)
-	if !strings.Contains(teks, "models.PenggolongOtomatis(keadaan.Flag)") {
+	if !strings.Contains(teks, ".Bendera(ctx, keadaan.ID)") ||
+		!strings.Contains(teks, "models.PenggolongOtomatis(flag)") {
 		t.Error("Putuskan tidak merutekan Decision3 dari bendera kasus")
 	}
 	if strings.Contains(teks, "func (p *Penawaran) Golongkan") {
@@ -110,7 +111,7 @@ func TestConfirmDiPenawaranTidakMenulisApaPun(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !akibat.MenungguPenggolong {
+	if !akibat.KeDecision3 {
 		t.Fatal("Confirm di penawaran tidak menunggu penggolong")
 	}
 	if akibat.TahapTujuan != "" || akibat.Ditutup() {

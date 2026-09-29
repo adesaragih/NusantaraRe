@@ -50,6 +50,12 @@ func jawabGalatPutaran(w http.ResponseWriter, err error) bool {
 		// keadaan yang ada - baris terakhirnya belum ditolak.
 		galat(w, http.StatusConflict,
 			"putaran berikutnya hanya lahir sesudah baris terakhir ditolak")
+	case errors.Is(err, services.ErrTahapTanpaAddAdjustment):
+		// Padanan syarat tampil b18160 - di Pega tombolnya tidak ada.
+		galat(w, http.StatusConflict,
+			"Add baris adjustment hanya tersedia di tahap Claim Analis")
+	case errors.Is(err, services.ErrTahapTidakDikenal):
+		galat(w, http.StatusConflict, "tahap kasus ini tidak dikenal")
 	case errors.Is(err, services.ErrKasusSudahTertutup):
 		galat(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
 	case errors.Is(err, services.ErrPermintaanTidakSah):

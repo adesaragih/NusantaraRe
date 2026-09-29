@@ -138,13 +138,17 @@ func (p *Penawaran) Putuskan(ctx context.Context, pelaku Pelaku,
 		return models.AkibatKeputusan{}, err
 	}
 	sebab := keputusan
-	if akibat.MenungguPenggolong {
-		lanjut, err := models.PenggolongOtomatis(keadaan.Flag)
+	if akibat.KeDecision3 {
+		flag, err := repository.NewWorkPolis(p.svc.db).Bendera(ctx, keadaan.ID)
+		if err != nil {
+			return models.AkibatKeputusan{}, err
+		}
+		lanjut, err := models.PenggolongOtomatis(flag)
 		if err != nil {
 			return models.AkibatKeputusan{}, fmt.Errorf("polis %q: %w", polisID, err)
 		}
 		akibat = lanjut
-		sebab = keputusan + " -> " + models.HasilIsFlagOnGoingPolicy(keadaan.Flag)
+		sebab = keputusan + " -> " + models.HasilIsFlagOnGoingPolicy(flag)
 	}
 	if _, err := p.terapkan(ctx, pelaku, keadaan, akibat, sebab, saat); err != nil {
 		return models.AkibatKeputusan{}, err

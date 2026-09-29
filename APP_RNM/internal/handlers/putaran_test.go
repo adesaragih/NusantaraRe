@@ -21,6 +21,8 @@ func TestGalatPutaranDipetakanKeKodeYangBenar(t *testing.T) {
 		{"tanpa wewenang", services.ErrTanpaWewenang, http.StatusForbidden},
 		{"baris terakhir belum ditolak", services.ErrBukanPenolakan, http.StatusConflict},
 		{"kasus tertutup", services.ErrKasusSudahTertutup, http.StatusConflict},
+		{"bukan Claim Analis", services.ErrTahapTanpaAddAdjustment, http.StatusConflict},
+		{"tahap tidak dikenal", services.ErrTahapTidakDikenal, http.StatusConflict},
 		{"permintaan tidak sah", services.ErrPermintaanTidakSah, http.StatusBadRequest},
 		// Dibungkus sebab-sebabnya - seperti layanan membungkusnya.
 		{"dibungkus", fmt.Errorf("%w: peserta \"P-1\" tidak ada baris",

@@ -34,7 +34,7 @@ func TestPenggolongOtomatisMenurutDecisionTable(t *testing.T) {
 	if premium.TahapTujuan != models.TahapPolisDetail || premium.Ditutup() {
 		t.Errorf(`bendera "1" = %+v, mau pindah ke %q`, premium, models.TahapPolisDetail)
 	}
-	if offer.MenungguPenggolong || premium.MenungguPenggolong {
+	if offer.KeDecision3 || premium.KeDecision3 {
 		t.Error("hasil penggolong otomatis masih menunggu penggolong")
 	}
 }
@@ -51,9 +51,9 @@ func TestBenderaDiLuarTabelTidakPunyaKonektor(t *testing.T) {
 		if !errors.Is(err, models.ErrBenderaTanpaKonektor) {
 			t.Errorf("bendera %q: galat = %v, mau ErrBenderaTanpaKonektor", flag, err)
 		}
-		if got := models.HasilIsFlagOnGoingPolicy(flag); got != models.KeputusanDecline {
+		if got := models.HasilIsFlagOnGoingPolicy(flag); got != models.HasilOtherwiseIsFlagOnGoingPolicy {
 			t.Errorf("bendera %q: hasil tabel %q, mau %q (otherwise b94)",
-				flag, got, models.KeputusanDecline)
+				flag, got, models.HasilOtherwiseIsFlagOnGoingPolicy)
 		}
 	}
 }

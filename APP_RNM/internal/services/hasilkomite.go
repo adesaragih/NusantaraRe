@@ -32,6 +32,11 @@ import (
 var ErrBukanPenolakan = errors.New(
 	"services: baris lanjutan hanya lahir sesudah baris terakhir ditolak")
 
+// ErrTahapTanpaAddAdjustment - `Add` grid adjustment tampil hanya di Claim
+// Analis: `pyWorkPage.pyPosition =='ReasLifeSPV'` (ClaimLifeDetailGCNM b18160).
+var ErrTahapTanpaAddAdjustment = errors.New(
+	"services: Add baris adjustment hanya tersedia di tahap Claim Analis")
+
 // ⛔ JALUR BACA DIBUANG - ia kode mati, dan saya sudah pernah berjanji tidak
 // mengulanginya.
 //
@@ -202,6 +207,17 @@ func (pt *Putaran) Tambah(ctx context.Context, pelaku Pelaku,
 	}
 
 	baca := repository.NewKlaimLife(pt.svc.db)
+	// ⛔ GERBANG TAHAP - GILIRAN-14 (tinjauan): "Add tetap = putaran
+	// bergerbang ReasLifeSPV b18160". `pyPosition=='ReasLifeSPV'` berarti kasus
+	// dipegang SPV - tahap Claim Analis. Sebelumnya gerbang ini hanya di layar;
+	// layar bukan pagar.
+	tahap, err := tahapKasus(ctx, baca, klaimID)
+	if err != nil {
+		return err
+	}
+	if tahap != models.TahapClaimAnalis {
+		return fmt.Errorf("%w: tahap %s", ErrTahapTanpaAddAdjustment, tahap)
+	}
 	perBaris, err := baca.AmbilBaris(ctx, klaimID)
 	if err != nil {
 		return err

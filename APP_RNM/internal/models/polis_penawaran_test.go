@@ -48,9 +48,9 @@ func TestTabelTransisiSamaDenganPetaKonektor(t *testing.T) {
 		if got.StatusWork != u.mauStatus {
 			t.Errorf("%s: status = %q, mau %q", u.nama, got.StatusWork, u.mauStatus)
 		}
-		if got.MenungguPenggolong != u.mauGolong {
+		if got.KeDecision3 != u.mauGolong {
 			t.Errorf("%s: menunggu penggolong = %v, mau %v",
-				u.nama, got.MenungguPenggolong, u.mauGolong)
+				u.nama, got.KeDecision3, u.mauGolong)
 		}
 	}
 }
