@@ -978,3 +978,11 @@ Register (dan putaran yang mewarisinya). Dasar — dibaca asisten, diperiksa ula
 Dibuka ulang bila OQ-N11 terjawab dan rule itu menghitung `CLAIM_GROSS` dari sesuatu selain `CLAIM_AMOUNT`: catatan 7
 dicabut, `CLAIM_GROSS` mendapat kolom sendiri (migrasi) beserta penulis yang meniru rule tersebut. Komentar gerbang
 11.17.1 di `simpanrnm.go` merujuk OQ-N12/N11; OQ-N12 ditutup di `OQ-untuk-tim.md`.
+
+## Keputusan bertanggal — 29 September 2026 (GILIRAN-17 paket 1: OQ-N1, OQ-N3 ditutup) `[keputusan work owner 29-09-2026 — lembar keputusan, "rekomendasi"]`
+
+| OQ | Keputusan | Bukti | Kode |
+| --- | --- | --- | --- |
+| **N1** | bendera simpan `pyWorkPage.Save` = **keadaan turunan**, tanpa kolom | langkah 21/24 (b11448), `pyDisabledWhen` b21095, kontainer *Participant Details* b15490 | tidak berubah — tombol tetap hidup, tulisan idempoten; 22.1.3.2 tetap tidak ditiru hurufnya |
+| **N3** | gerbang retro langkah 27 **dipertahankan** | `RetroID=="L0000141" \|\| SecurityReinsurerID=="L0000134"` b11794, `RetroID=="1000013"` b11817 — XML Claim Life hidup; OQ-064 milik Komite | tidak berubah (`ArasapasDilewatiRetro`, dibaca sesudah tukar — lihat OQ-N5) |
+| **N3 tambahan** | cermin header `T_GENERAL_CLAIM.STS_REJECT`/`ACCEPTED_NO` **tetap di transaksi simpan** | sistem lama: `serviceInsertArasapasClaimLife_act` 1.1.1 b371/b417, lewat langkah 28 | tidak berubah |

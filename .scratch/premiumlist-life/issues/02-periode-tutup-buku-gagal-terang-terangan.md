@@ -95,3 +95,16 @@ kekeliruannya baru terlihat saat tutup buku. Ini kegagalan tersembunyi, bukan ke
 go test ./internal/...
 cd frontend && npm test
 ```
+
+## Keputusan bertanggal — 29 September 2026 (GILIRAN-17 paket 1: OQ-PL-13 ditutup) `[keputusan work owner 29-09-2026 — lembar keputusan, "rekomendasi"]`
+
+✅ **OQ-PL-13 DITUTUP 29-09-2026 (GILIRAN-17)** `[keputusan work owner 29-09-2026 — lembar keputusan, "rekomendasi"]`: `ProdDateTime` **ikut XML** — ambang
+**25 tertanam** (`InsertJsonPolisLife_Act` langkah 4, gerbang b1170 `@toDecimal(Local.currentdate)>25`, nilai b1092). Keputusan
+"ikuti yang dari DB" tetap berlaku untuk periode yang ditampilkan dan untuk penomoran PL, karena pembaca hidup `TANGGAL_CLOSING`
+adalah `PROC_GENERATE_SEQUENCE_NUMBER`.
+
+| Hal | Keadaan |
+| --- | --- |
+| `ProdDateTime` di aplikasi | **tidak dihitung**. Ia hanya hidup di JSON halaman `InsertJsonPolisLife_Act` langkah 5 (b1237), dan `JSON_POLIS` tidak lagi ditulis (pl1). Ia juga **bukan** muatan `convertJsonNusareToProduction`, karena `tglInput` = `.pxCreateDateTime` (OQ-PL-14) |
+| konstanta | `25` ditanam bertanda b1170 dengan uji yang disematkan ke korpus, bersama paket kode PremiumList (GILIRAN-17 paket 4). Penjaga "nol ambang tertanam" (`ambangperiode_test.go`) tetap berlaku untuk periode dan penomoran |
+| selisih yang dicatat | untuk 26–31 Desember, Pega menulis tahun **berjalan** + bulan `01` (bulan digulir b800, tahun `@CurrentDate("yyyy")`), sehingga hasilnya Januari tahun yang sama. `models.PeriodeProduksi` menggulir tahunnya. Karena `ProdDateTime` tidak dihitung, selisih ini tidak berdampak hari ini |

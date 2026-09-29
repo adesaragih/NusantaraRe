@@ -72,7 +72,7 @@ giliran ini; statusnya tetap seperti baris paritasnya (bila ada) — **belum** a
 
 | Activity | Langkah `//` (b) | Ditiru? | Keputusan |
 | --- | --- | --- | --- |
-| `HitServiceToKasirKMTLife_Act` | 11 b3033 (`Connect-REST`, satu-satunya panggilan keluar) | tidak — pengirim Kasir stub `ErrKasirBelumDisetujui` | ⛔ **Sistem lama tidak pernah memanggil Kasir** dari jalur ini. ADR-0015, spec, CONTEXT, tiket 07/08 diralat buktinya; premis ADR-0015 → **OQ-K-06** |
+| `HitServiceToKasirKMTLife_Act` | 11 b3033 (`Connect-REST`, satu-satunya panggilan keluar) | tidak — pengirim Kasir stub `ErrKasirBelumDisetujui` | ⛔ **Sistem lama tidak pernah memanggil Kasir** dari jalur ini. ADR-0015, spec, CONTEXT, tiket 07/08 diralat buktinya; **OQ-K-06 ditutup 29-09-2026 (GILIRAN-17): Kasir tetap stub, sambungan nyata = fitur baru** |
 | `KomitePostAdjustment` | 4.4 b1725 · 4.5 b1943 (nomor lewat RDB) · 4.6 b2160 · 4.14 b4947 · 5.5 b7673 (tukar retro) | tidak — nomor 4.7–4.12 (`models/komite_nomor.go`), stempel 4.11/4.12 | tercatat sejak tiket 04a; 4.6 isinya sama dengan 4.11/4.12 yang hidup; tukar → keputusan ronde 1 #4 |
 | `LoadDocumentKomiteLife_ACT` | 1 b245 (+1.1–1.8) | tidak | — |
 | `LoadDocumentLife_ACT` | 1.4 b913 (+1.4.1, 1.4.2) | tidak | dicatat di PARITAS Claim Life |

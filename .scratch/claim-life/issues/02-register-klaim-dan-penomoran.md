@@ -728,3 +728,11 @@ pernah menolak** baris yang lahir saat Register (dan putaran yang mewarisinya), 
 penulis — gerbang itu menolak. Perilaku TIDAK diubah executor. Pilih: (a) pertahankan catatan 7 (gerbang praktis mati untuk
 baris 7.8); (b) pisahkan `CLAIM_GROSS` dari `CLAIM_AMOUNT` (kolom baru — migrasi — dan gerbang 11.17.1 akan menolak setiap
 baris sampai penulisnya ada); (c) tunggu jawaban OQ-N11 dari pemilik ekspor.
+
+## Keputusan bertanggal — 29 September 2026 (GILIRAN-17 paket 1: OQ-M4 ditutup) `[keputusan work owner 29-09-2026 — lembar keputusan, "rekomendasi"]`
+
+Klaim XOL **tidak** membawa peserta dari berkas. Tombol `Claim Life - Upload CSV` di Register
+(`FlowAction/UploadCSV_ClaimLife.xml:144`, `UploadCSVClaimLife_Act` b490–b539; pemetaan `SetClaimXOL_Act`
+`InputRegisterClaimLife` b6763, 28 kolom b478–b1065, bendera XOL b1169, `LoadDataPeserta_Act` b282/b327) **tidak
+dibangun**. Kolom yang dibawa berkas itu — uang, jendela valuasi, nama tertanggung — tetap dibaca ulang dari
+PremiumList saat pendaftaran. Ini keputusan tercatat, bukan celah paritas.

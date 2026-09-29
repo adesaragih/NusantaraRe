@@ -155,3 +155,8 @@ Akibatnya bagi tiket ini: pengirim Kasir (`services/komite_pengirim.go`) tetap s
 Menyambungkannya adalah perilaku **baru** (OQ-K-06). Yang hidup dan tidak ditiru: `INSERT
 DIRECTTOKASIR_LOG` langkah 13 — dicatat sebagai celah di PARITAS bab "Sensus remark 28-09-2026".
 
+## Keputusan bertanggal — 29 September 2026 (GILIRAN-17 paket 1: OQ-K-06 ditutup) `[keputusan work owner 29-09-2026 — lembar keputusan, "rekomendasi"]`
+
+Kasir **tetap stub** (`services/komite_pengirim.go`, `ErrKasirBelumDisetujui`). Menyambungkan Kasir nyata adalah
+**fitur baru**, bukan paritas: di ruleset korpus satu-satunya `Connect-REST` `HitServiceToKasirKMTLife_Act` langkah 11
+(b3021) ter-remark (`//` b3033). ADR-0015 diberi catatan bertanggal.

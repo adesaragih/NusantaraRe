@@ -56,7 +56,8 @@ giliran ini; statusnya tetap seperti baris paritasnya (bila ada) — **belum** a
 - **OQ-PL-13** — "ikuti yang dari DB" berdiri di atas premis bahwa `SubmitPremiumList_Act` membaca
   ambang secara hidup; nyatanya ia hanya mengalir ke langkah 15 yang ter-remark. Pembaca hidup tabel
   itu adalah `PROC_GENERATE_SEQUENCE_NUMBER` (nomor PL); `ProdDateTime` di Pega memakai `>25`
-  tertanam. Apakah ambang DB juga berlaku untuk `ProdDateTime`?
+  tertanam. Apakah ambang DB juga berlaku untuk `ProdDateTime`? — ✅ **ditutup 29-09-2026 (GILIRAN-17): ikut XML, 25
+  tertanam (b1170); `ProdDateTime` tidak dihitung aplikasi (tiket 02).**
 - **OQ-PL-14** — cerita spec 34 membuang `ConvertJsonNusareToProduction` dengan alasan step 17
   ter-remark; step 17 memanggil `InsertLifePremiumDetail`, dan `convertJsonNusareToProduction` hidup
   di `serviceInsertArasapasLife_act` langkah 5 (b963). Tetap dibuang?

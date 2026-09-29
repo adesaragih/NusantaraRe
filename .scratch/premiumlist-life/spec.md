@@ -331,6 +331,11 @@ dari tabel; `InsertJsonPolisLife_Act` (`20260728`, **lebih baru**) masih menanam
 > nomor PL digulir `PROC_GENERATE_SEQUENCE_NUMBER` (membaca tabel itu sendiri), dan `ProdDateTime`
 > digeser `InsertJsonPolisLife_Act` langkah 4 (`>25` tertanam, b1170). Keputusan "ikuti yang dari DB"
 > tetap; penerapannya pada `ProdDateTime` (yang di Pega memakai 25) dikonfirmasi ulang — **OQ-PL-13**.
+>
+> ✅ **OQ-PL-13 DITUTUP 29-09-2026 (GILIRAN-17)** `[keputusan work owner 29-09-2026 — lembar keputusan, "rekomendasi"]`: `ProdDateTime` **ikut XML** — ambang
+> **25 tertanam** (`InsertJsonPolisLife_Act` langkah 4, gerbang b1170 `@toDecimal(Local.currentdate)>25`, nilai b1092). Keputusan
+> "ikuti yang dari DB" tetap berlaku untuk periode yang ditampilkan dan untuk penomoran PL, karena pembaca hidup `TANGGAL_CLOSING`
+> adalah `PROC_GENERATE_SEQUENCE_NUMBER`.
 
 ### 5. Uang — teks di batas, desimal di dalam
 

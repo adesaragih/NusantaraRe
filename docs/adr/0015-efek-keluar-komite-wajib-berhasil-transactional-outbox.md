@@ -153,4 +153,12 @@ yang menyentuh uang**, dan layak dikonfirmasi Product+UW sebelum rilis — lihat
 | **OQ-065** (baru) | Langkah "Tukar SecurityReinsurer dengan RetroName" (step 4.14 & 5.5) **ter-remark** — apa yang kini masuk ke kolom retro pada rekam akseptasi |
 | **OQ-035** | `serviceInsertArasapasClaimLife_act` satu salinan dipakai dua konteks |
 | **OQ-002** | Kontrak layanan **Kasir** tidak ada di korpus — bentuk permintaan, makna jawaban, dan apakah ia menghormati ID idempoten belum diketahui. *(Dipersempit 28-09-2026: bentuk permintaan ADA — JSON langkah 9 b2774 — dan medan jawaban `ReponseCode`/`ResponseMsg` dibaca langkah 12 b3214; yang belum diketahui: apakah panggilan nyata ada di produksi, dan siapa pembaca `DIRECTTOKASIR_LOG`.)* |
-| **OQ-K-06** (baru 28-09-2026) | Panggilan REST Kasir ter-remark di korpus (b3033) — apakah alasan ADR ini ("Kasir memindahkan uang") tetap berlaku, dan apakah menyambungkan Kasir nyata adalah perilaku BARU yang diminta |
+| **OQ-K-06** (baru 28-09-2026) | **TERTUTUP** 29-09-2026 (GILIRAN-17) — lihat catatan bertanggal di bawah |
+
+## Catatan bertanggal — 29 September 2026 (GILIRAN-17, OQ-K-06 ditutup) `[keputusan work owner 29-09-2026 — lembar keputusan, "rekomendasi"]`
+
+Kasir **tetap stub** (`ErrKasirBelumDisetujui`), dan menyambungkan Kasir nyata adalah **fitur baru**. Dasarnya: di
+ruleset korpus, satu-satunya `Connect-REST` `HitServiceToKasirKMTLife_Act` (langkah 11, b3021) ter-remark (`//` b3033).
+Jadi sistem lama tidak memanggil Kasir dari jalur ini. Prinsip ADR ini, bahwa efek keluar Komite wajib berhasil lewat
+transactional outbox, **tetap** berlaku untuk efek yang memang dikirim. Efek Kasir tetap diantre, tetapi pengirimnya
+gagal terang sampai fitur sambungan nyata diminta dan disetujui.

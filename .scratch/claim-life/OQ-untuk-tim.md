@@ -572,6 +572,11 @@ memvalidasi terhadap jendela yang TERSIMPAN.
 > Apakah klaim XOL boleh membawa peserta di luar PremiumList dari berkas? Bila ya: kolom mana yang
 > dipercaya dari berkas, dan siapa yang berwenang mengunggahnya?
 
+✅ **OQ-M4 DITUTUP 29-09-2026 (GILIRAN-17)** `[keputusan work owner 29-09-2026 — lembar keputusan, "rekomendasi"]`: klaim XOL **tidak** membawa peserta dari
+berkas. `Claim Life - Upload CSV` (`UploadCSVClaimLife_Act` + `SetClaimXOL_Act`) **tidak dibangun**; peserta tetap dibaca
+ulang dari PremiumList saat pendaftaran, dan `ValidasiDOL` tetap bersandar pada jendela yang tersimpan. Ralat bertanggal di
+tiket 02.
+
 **OQ-M5** *(untuk work owner)* — dialog Reject Outstanding (`RejectOSClaimLife_Sec`): Date b790, PIC
 b975, Remarks b1687, Submit b3117. `RejectOSClaimLife_Act` menambah baris `KomiteList`
 *(`IDKomite="Claim Admin"`, `KomiteAproval=2`, `KomiteComment` = Remarks — b2173-b2263)*. Aplikasi
@@ -641,6 +646,10 @@ idempoten: nomor hanya bila `CLAIM_NO` kosong, `STS_REJECT=0` hanya pada baris t
 sesudah simpan pertama. Tanpa bendera, menirunya berarti membatalkan penolakan Admin diam-diam.
 > Kolom bendera simpan di `T_WORK_CLAIM` (migrasi baru), atau cukup keadaan turunan?
 
+✅ **OQ-N1 DITUTUP 29-09-2026 (GILIRAN-17)** `[keputusan work owner 29-09-2026 — lembar keputusan, "rekomendasi"]`: bendera simpan = **keadaan turunan**,
+tanpa kolom, tanpa migrasi. Tulisan `Save to RNM` tetap idempoten, dan langkah 22.1.3.2 tetap tidak ditiru hurufnya
+(tiket 03).
+
 **OQ-N2** *(untuk work owner / DBA)* — klaim ganda (langkah 11.2–11.6) membaca
 `OS_AKSEPTASI_KLAIM_LIFE` dengan kunci `CEDINGCO`, `NAME_OF_INSURED`, `DOB`, `CERTIFICATE_NO`,
 `PL_NUMBER`. Dua hal: (1) baris warisan yang **aplikasi ini** tulis saat pendaftaran membiarkan
@@ -656,6 +665,9 @@ SecurityReinsurerID=="L0000134"` (b11794) dan `RetroID=="1000013"` (b11817) KELU
 Modul Komite **membuang** gerbang yang sama *(OQ-064, `KomitePostAdjustment` langkah 9)*; keputusan
 itu tidak menyebut Claim Life, jadi di sini **XML yang menang** (`ArasapasDilewatiRetro`).
 > Berlakukah OQ-064 juga untuk Save to RNM?
+
+✅ **OQ-N3 DITUTUP 29-09-2026 (GILIRAN-17)** `[keputusan work owner 29-09-2026 — lembar keputusan, "rekomendasi"]`: gerbang retro langkah 27 (b11794, b11817)
+**dipertahankan**, karena XML Claim Life hidup dan OQ-064 milik Komite. Kode tidak berubah (`ArasapasDilewatiRetro`).
 
 **OQ-N4** *(untuk pemilik ekspor — temuan)* — tiga residu yang tidak ditiru, dengan buktinya:
 (a) langkah 5 `@contains(.Protect,"1")` → pesan *"Claim gross tidak boleh lebih besar dari Share
@@ -684,6 +696,9 @@ dinilai. Selisihnya waktu simpan halaman kerja, bukan isi tabel — dicatat, tid
 tidak bila langkah 27 keluar. Aplikasi ini mencerminkannya di transaksi simpan (pola setiap penulis
 status, tiket 04), jadi header ikut berubah juga di non-produksi dan saat Arasapas dilewati/ditahan.
 > Tambahan untuk OQ-N3: pertahankan cermin header di transaksi simpan, atau ikatkan pada Arasapas?
+
+✅ **Tambahan OQ-N3 DITUTUP 29-09-2026 (GILIRAN-17)** `[keputusan work owner 29-09-2026 — lembar keputusan, "rekomendasi"]`: cermin header
+(`T_GENERAL_CLAIM.STS_REJECT`/`ACCEPTED_NO`) **tetap di transaksi simpan**. Kode tidak berubah.
 
 **OQ-N5** *(untuk work owner / pemilik data polis)* — penukaran retro `InsertJsonClaimLife_Act`
 langkah 2 bergerbang tiga WHEN: `Type` TP/TR (b1268), `SecurityReinsurerID` dan `SecurityReinsurer`
