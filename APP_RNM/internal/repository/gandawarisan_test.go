@@ -22,8 +22,8 @@ func TestSQLGandaBerurutPosisi(t *testing.T) {
 		"dob":    {sqlDOBSumberKosong("S"), "123"},
 		"death":  {sqlStatusWarisanTerakhir("L", "S"), "12345"},
 		"health": {sqlAdaWarisanSamaDOL("L", "S"), "123456"},
-		"cermin": {sqlIsiTertanggungCermin("L", "S"), "1234567"},
-		"ceding": {sqlIsiCedingCermin("L", "P"), "12"},
+		"cermin": {sqlIsiTertanggungCermin("L", "S"), "12345678"},
+		"ceding": {sqlIsiCedingCermin("L", "P"), "123"},
 	} {
 		if err := PeriksaSQL(u.q); err != nil {
 			t.Errorf("%s: %v", nama, err)
@@ -86,14 +86,14 @@ func TestSQLIsiTertanggungCerminDariSumber(t *testing.T) {
 	for _, mau := range []string{"UPDATE L o", "SET (NAME_OF_INSURED, DOB) =",
 		"SELECT m.NAME_OF_INSURED, TRUNC(m.DOB)", "FROM S m",
 		"m.PL_NUMBER = :1 AND m.CERTIFICATE_NO = :2 AND m.ID = :3",
-		"WHERE o.ID = :4", "m2.PL_NUMBER = :5 AND m2.CERTIFICATE_NO = :6 AND m2.ID = :7"} {
+		"WHERE o.ID = :4 AND o.CASEID = :5", "m2.PL_NUMBER = :6 AND m2.CERTIFICATE_NO = :7 AND m2.ID = :8"} {
 		if !strings.Contains(q, mau) {
 			t.Errorf("tanpa %q:\n%s", mau, q)
 		}
 	}
 	c := sqlIsiCedingCermin("L", "P")
 	for _, mau := range []string{"UPDATE L o", "SET CEDINGCO = (SELECT pl.CEDING_CO FROM P pl WHERE pl.NO_POLIS = :1",
-		"ORDER BY NVL(pl.PROD_KE, 0) DESC FETCH FIRST 1 ROWS ONLY", "WHERE o.ID = :2"} {
+		"ORDER BY NVL(pl.PROD_KE, 0) DESC FETCH FIRST 1 ROWS ONLY", "WHERE o.ID = :2 AND o.CASEID = :3"} {
 		if !strings.Contains(c, mau) {
 			t.Errorf("ceding tanpa %q:\n%s", mau, c)
 		}

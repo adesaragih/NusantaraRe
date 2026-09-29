@@ -34,9 +34,13 @@ func TestMigrasi022PenandaCabutPeserta(t *testing.T) {
 // Penulisnya menandai, tidak menghapus - dan hanya sekali, hanya peserta
 // milik klaim itu (ADR-U-0031).
 func TestSQLCabutPesertaMenandaiBukanMenghapus(t *testing.T) {
-	q := sqlCabutPeserta("S.P")
+	q := sqlCabutPeserta("S.P", "S.A")
 	for _, mau := range []string{"UPDATE S.P SET STS_HAPUS = '1'",
-		"WHERE ID = :1 AND CLAIM_ID = :2 AND STS_HAPUS IS NULL"} {
+		"WHERE ID = :1 AND CLAIM_ID = :2 AND STS_HAPUS IS NULL",
+		// Temuan /code-review: "belum Save to RNM" diperiksa ulang DI DALAM
+		// pernyataan - balapan dengan Save to RNM tidak dapat mencabut.
+		"AND NOT EXISTS (SELECT 1 FROM S.A a JOIN S.P p2 ON p2.ID = a.PREMIUM_LIST_DETAIL_ID",
+		"WHERE p2.CLAIM_ID = :3 AND p2.STS_HAPUS IS NULL AND a.STS_REJECT IS NOT NULL)"} {
 		if !strings.Contains(q, mau) {
 			t.Errorf("tanpa %q:\n%s", mau, q)
 		}
@@ -51,13 +55,17 @@ func TestSQLCabutPesertaMenandaiBukanMenghapus(t *testing.T) {
 
 // pengecualianSaringCabut - fungsi yang menyentuh tabel peserta TANPA
 // menyaring penandanya, masing-masing dengan alasannya.
+//
+// ⛔ Berkunci `berkas:fungsi` dan diperiksa atas kode TANPA komentar (temuan
+// /code-review): nama fungsi telanjang meloloskan fungsi senama di berkas
+// lain, dan `STS_HAPUS` di komentar bukan saringan.
 var pengecualianSaringCabut = map[string]string{
-	"Simpan":               "menyisip peserta baru saat pendaftaran - belum ada yang dapat dicabut",
-	"HapusFisik":           "hanya dipakai uji - membersihkan klaim uji utuh",
-	"Dampak":               "dampak hapus klaim UTUH (masih 405) - peserta tercabut ikut terhapus",
-	"tabel":                "pembantu nama tabel diagnosa; SQL-nya di sqlAmbilDiagnosa (diperiksa di bawah)",
-	"PerbaruiTanggalKlaim": "SQL-nya di sqlTanggalKlaim (diperiksa di bawah)",
-	"SudahSaveRNM":         "SQL-nya di sqlSudahSaveRNM (diperiksa di bawah)",
+	"pohonklaim.go:Simpan":              "menyisip peserta baru saat pendaftaran - belum ada yang dapat dicabut",
+	"pohonklaim.go:HapusFisik":          "hanya dipakai uji - membersihkan klaim uji utuh",
+	"pohonklaim.go:Dampak":              "dampak hapus klaim UTUH (masih 405) - peserta tercabut ikut terhapus",
+	"diagnosa.go:tabel":                 "pembantu nama tabel diagnosa; SQL-nya di sqlAmbilDiagnosa (diperiksa di bawah)",
+	"klaimlife.go:PerbaruiTanggalKlaim": "SQL-nya di sqlTanggalKlaim (diperiksa di bawah)",
+	"klaimlife.go:SudahSaveRNM":         "SQL-nya di sqlSudahSaveRNM (diperiksa di bawah)",
 }
 
 // wajibSaringCabut - pembangun SQL yang menyentuh tabel peserta lewat
@@ -83,7 +91,7 @@ func TestSetiapPenyentuhTabelPesertaMenyaringPenandaCabut(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		s := string(isi)
+		s := buangKomentarGo(string(isi))
 		lok := polaFungsi.FindAllStringSubmatchIndex(s, -1)
 		for i, l := range lok {
 			akhir := len(s)
@@ -100,8 +108,7 @@ func TestSetiapPenyentuhTabelPesertaMenyaringPenandaCabut(t *testing.T) {
 			continue
 		}
 		diperiksa++
-		nama := kunci[strings.Index(kunci, ":")+1:]
-		if _, ada := pengecualianSaringCabut[nama]; ada {
+		if _, ada := pengecualianSaringCabut[kunci]; ada {
 			continue
 		}
 		if !strings.Contains(b, "STS_HAPUS") {

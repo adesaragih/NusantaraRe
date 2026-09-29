@@ -127,16 +127,20 @@ func sqlIsiTertanggungCermin(lama, sumber string) string {
 	   SET (NAME_OF_INSURED, DOB) =
 	       (SELECT m.NAME_OF_INSURED, TRUNC(m.DOB) FROM %s m
 	         WHERE m.PL_NUMBER = :1 AND m.CERTIFICATE_NO = :2 AND m.ID = :3 AND ROWNUM = 1)
-	 WHERE o.ID = :4
+	 WHERE o.ID = :4 AND o.CASEID = :5
 	   AND EXISTS (SELECT 1 FROM %s m2
-	                WHERE m2.PL_NUMBER = :5 AND m2.CERTIFICATE_NO = :6 AND m2.ID = :7 AND ROWNUM = 1)`,
+	                WHERE m2.PL_NUMBER = :6 AND m2.CERTIFICATE_NO = :7 AND m2.ID = :8 AND ROWNUM = 1)`,
 		lama, sumber, sumber)
 }
 
 // IsiTertanggungCermin mengisi NAME_OF_INSURED, DOB, CEDINGCO satu baris
 // cermin (`adjID`) dari baris sumbernya - lihat `sqlIsiTertanggungCermin`.
 // Di dalam transaksi pemanggilnya; baris sumber yang tidak ada = galat.
-func (r *KlaimLife) IsiTertanggungCermin(ctx context.Context, tx *Tx, adjID string,
+//
+// ⛔ Dikunci `ID` DAN `CASEID` (temuan /code-review): pengenal baris aplikasi
+// adalah angka sequence, dan baris era Pega berpengenal sama milik klaim lain
+// tidak boleh tersentuh.
+func (r *KlaimLife) IsiTertanggungCermin(ctx context.Context, tx *Tx, adjID, caseID string,
 	k KunciPesertaSumber, nomorPolis string) error {
 
 	lama, sumber, err := r.duaTabelGanda()
@@ -148,14 +152,14 @@ func (r *KlaimLife) IsiTertanggungCermin(ctx context.Context, tx *Tx, adjID stri
 		return err
 	}
 	hasil, err := tx.tx.ExecContext(ctx, q, k.PLNumber, k.Sertifikat, k.SumberID,
-		adjID, k.PLNumber, k.Sertifikat, k.SumberID)
+		adjID, caseID, k.PLNumber, k.Sertifikat, k.SumberID)
 	if err != nil {
 		return fmt.Errorf("repository: mengisi tertanggung cermin %s: %w", adjID, err)
 	}
 	if err := pastikanSatuBaris(hasil, "pengisian tertanggung cermin"); err != nil {
 		return fmt.Errorf("%w: baris sumber peserta %q atau baris cermin %q tidak ada", err, k.SumberID, adjID)
 	}
-	return r.isiCedingCermin(ctx, tx, lama, adjID, nomorPolis)
+	return r.isiCedingCermin(ctx, tx, lama, adjID, caseID, nomorPolis)
 }
 
 func (r *KlaimLife) duaTabelGanda() (lama, sumber string, err error) {

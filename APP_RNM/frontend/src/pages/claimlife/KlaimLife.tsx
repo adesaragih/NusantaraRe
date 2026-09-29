@@ -328,9 +328,16 @@ export default function KlaimLife() {
     setMencabut(pesertaID)
     try {
       await cabutPeserta(klaim.id, pesertaID)
-      setKlaim(await ambilKlaimLife(klaim.id))
     } catch (err: unknown) {
       setGalat(pesanGalat(err) ?? 'Gagal mencabut peserta.')
+      setMencabut(null)
+      return
+    }
+    // Pencabutan SUDAH berhasil; gagal membaca ulang bukan gagal mencabut.
+    try {
+      setKlaim(await ambilKlaimLife(klaim.id))
+    } catch {
+      setGalat('Peserta sudah dicabut, tetapi klaim gagal dibaca ulang; tekan Buka.')
     } finally {
       setMencabut(null)
     }
@@ -344,8 +351,6 @@ export default function KlaimLife() {
     setMenolak(adjID)
     try {
       await tolakBarisAdjustment(klaim.id, adjID, remarks)
-      setDialogTolak(null)
-      setKlaim(await ambilKlaimLife(klaim.id))
     } catch (err: unknown) {
       const kode = kodeStatusGalat(err)
       setGalatTolak(
@@ -361,6 +366,16 @@ export default function KlaimLife() {
                   ? 'Jejak audit belum dapat direkam; tempatnya belum diputuskan.'
                   : 'Gagal menolak baris.',
       )
+      setMenolak(null)
+      return
+    }
+    // Penolakan SUDAH tersimpan: dialog ditutup, dan kegagalan membaca ulang
+    // dilaporkan di layar, bukan di dialog yang sudah tertutup.
+    setDialogTolak(null)
+    try {
+      setKlaim(await ambilKlaimLife(klaim.id))
+    } catch {
+      setGalat('Baris sudah ditolak, tetapi klaim gagal dibaca ulang; tekan Buka.')
     } finally {
       setMenolak(null)
     }
@@ -514,6 +529,7 @@ export default function KlaimLife() {
                     {' '}
                     <button
                       type="button"
+                      aria-label={`${TOMBOL.cabutPeserta} peserta ${p.nomorSertifikat || p.id}`}
                       disabled={mencabut === p.id}
                       onClick={() => void cabut(p.id)}
                     >

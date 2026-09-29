@@ -491,10 +491,37 @@ func (r *PohonKlaim) Simpan(ctx context.Context, tx *Tx, p models.PohonKlaim) er
 		}
 		k := KunciPesertaSumber{PLNumber: ps.NomorPremiList, Sertifikat: ps.NomorSertifikat, SumberID: ps.SumberID}
 		for _, adj := range ps.Baris {
-			if err = cermin.IsiTertanggungCermin(ctx, tx, adj.ID, k, p.Klaim.NomorPolis); err != nil {
+			if err = cermin.IsiTertanggungCermin(ctx, tx, adj.ID, p.Work.CaseID, k, p.Klaim.NomorPolis); err != nil {
 				return err
 			}
 		}
+	}
+	return nil
+}
+
+// sqlHapusCerminBelumDisimpan - OQ-M6 (temuan /code-review GILIRAN-17): baris
+// cermin peserta yang DICABUT sebelum Save to RNM dibuang. Di Pega baris
+// cermin baru lahir saat Save Outstanding (`InsertJsonKlaimLife_sql`), jadi
+// peserta yang dilepas sebelumnya tidak pernah punya baris; aplikasi ini
+// menulisnya saat pendaftaran. Dikunci `CASEID` + `STS_REJECT IS NULL` -
+// baris era Pega dan baris yang sudah berstatus tidak tersentuh.
+func sqlHapusCerminBelumDisimpan(lama string) string {
+	return fmt.Sprintf(`DELETE FROM %s WHERE ID = :1 AND CASEID = :2 AND STS_REJECT IS NULL`, lama)
+}
+
+// HapusCerminBelumDisimpan menjalankannya di transaksi pemanggil; nol baris
+// bukan galat (baris lahir sebelum cermin ditulis, atau sudah tidak ada).
+func (r *KlaimLife) HapusCerminBelumDisimpan(ctx context.Context, tx *Tx, adjID, caseID string) error {
+	lama, err := r.db.Qualify(namaTabelLama)
+	if err != nil {
+		return err
+	}
+	q := sqlHapusCerminBelumDisimpan(lama)
+	if err := PeriksaSQL(q); err != nil {
+		return err
+	}
+	if _, err := tx.tx.ExecContext(ctx, q, adjID, caseID); err != nil {
+		return fmt.Errorf("repository: membuang cermin peserta tercabut %s: %w", adjID, err)
 	}
 	return nil
 }
@@ -509,11 +536,11 @@ func sqlIsiCedingCermin(lama, polis string) string {
 	return fmt.Sprintf(`UPDATE %s o
 	   SET CEDINGCO = (SELECT pl.CEDING_CO FROM %s pl WHERE pl.NO_POLIS = :1
 	                    ORDER BY NVL(pl.PROD_KE, 0) DESC FETCH FIRST 1 ROWS ONLY)
-	 WHERE o.ID = :2`, lama, polis)
+	 WHERE o.ID = :2 AND o.CASEID = :3`, lama, polis)
 }
 
 // isiCedingCermin menjalankan `sqlIsiCedingCermin` di transaksi pemanggil.
-func (r *KlaimLife) isiCedingCermin(ctx context.Context, tx *Tx, lama, adjID, nomorPolis string) error {
+func (r *KlaimLife) isiCedingCermin(ctx context.Context, tx *Tx, lama, adjID, caseID, nomorPolis string) error {
 	polis, err := r.db.Qualify("T_PREMIUM_LIST")
 	if err != nil {
 		return err
@@ -522,7 +549,7 @@ func (r *KlaimLife) isiCedingCermin(ctx context.Context, tx *Tx, lama, adjID, no
 	if err := PeriksaSQL(q); err != nil {
 		return err
 	}
-	if _, err := tx.tx.ExecContext(ctx, q, kosongJadiNil(nomorPolis), adjID); err != nil {
+	if _, err := tx.tx.ExecContext(ctx, q, kosongJadiNil(nomorPolis), adjID, caseID); err != nil {
 		return fmt.Errorf("repository: mengisi CEDINGCO cermin %s: %w", adjID, err)
 	}
 	return nil

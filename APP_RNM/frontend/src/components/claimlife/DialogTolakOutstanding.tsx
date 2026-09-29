@@ -75,6 +75,11 @@ export function DialogTolakOutstanding({
           }}
         />
       </label>
+      {remarks.trim() !== '' && !sah && (
+        <p role="alert">
+          {REJECT_OS.alasan} melebihi {BATAS_REMARKS_BYTE} byte.
+        </p>
+      )}
       {galat !== null && <p role="alert">{galat}</p>}
     </Modal>
   )

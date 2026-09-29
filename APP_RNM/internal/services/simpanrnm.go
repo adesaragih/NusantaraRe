@@ -427,6 +427,11 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku Pelaku, klaimID string,
 	if err != nil {
 		return hasil, err
 	}
+	if strings.TrimSpace(caseID) == "" {
+		// CASEID klaim aplikasi = pengenal work (butir ae1). Tanpa ini
+		// `o.CASEID <> NULL` akan menyaring SELURUH baris warisan.
+		caseID = klaimID
+	}
 	for _, p := range klaim.Peserta {
 		if strings.TrimSpace(p.SumberID) == "" {
 			return hasil, fmt.Errorf("%w: peserta %q tanpa SOURCE_ID; DOB dan klaim ganda "+

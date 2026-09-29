@@ -9,9 +9,11 @@ package services
 // (b18082). Di Pega peserta DILEPAS dari halaman kasus; di sini ditandai
 // (`STS_HAPUS`, migrasi 022, ADR-U-0031), dan setiap pembaca menyaringnya.
 //
-// ⚠️ Baris cermin warisan `OS_AKSEPTASI_KLAIM_LIFE` peserta itu (ditulis saat
-// pendaftaran, status NULL) TIDAK disentuh: tabel warisan tanpa penanda, dan
-// pemeriksaan klaim ganda hanya bereaksi pada status '0'/'1'.
+// ⛔ Baris cermin warisan `OS_AKSEPTASI_KLAIM_LIFE` peserta itu (ditulis saat
+// pendaftaran, status NULL; sejak OQ-N2 bernama/ber-DOB) DIBUANG di transaksi
+// yang sama (temuan /code-review GILIRAN-17): di Pega baris cermin baru lahir
+// saat Save Outstanding, jadi peserta yang dilepas sebelumnya tidak pernah
+// terlihat hilir. Hanya baris berstatus NULL milik `CASEID` klaim ini.
 //
 // Dibaca sesudah: dol.go (gerbang tahap), statusbaris.go (jejak).
 
@@ -81,10 +83,23 @@ func (st *Status) CabutPeserta(ctx context.Context, pelaku Pelaku,
 		return fmt.Errorf("%w: peserta %q bukan milik klaim %q",
 			ErrPermintaanTidakSah, pesertaID, klaimID)
 	}
-	// ⛔ Penanda dan jejaknya dalam SATU transaksi (ADR-U-0007).
+	perBaris, err := baca.AmbilBaris(ctx, klaimID)
+	if err != nil {
+		return err
+	}
+	caseID, err := baca.CaseIDKlaim(ctx, klaimID)
+	if err != nil {
+		return err
+	}
+	// ⛔ Penanda, cermin, dan jejaknya dalam SATU transaksi (ADR-U-0007).
 	return st.svc.DalamTransaksi(ctx, func(tx *repository.Tx) error {
 		if err := baca.CabutPeserta(ctx, tx, klaimID, pesertaID); err != nil {
 			return err
+		}
+		for _, b := range perBaris[pesertaID] {
+			if err := baca.HapusCerminBelumDisimpan(ctx, tx, b.ID, caseID); err != nil {
+				return err
+			}
 		}
 		return st.jejak.Rekam(ctx, tx, CatatanJejak{
 			KlaimID: klaimID,

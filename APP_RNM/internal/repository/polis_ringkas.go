@@ -115,7 +115,6 @@ func sqlPolisRingkas(polis string) string {
 	  FETCH FIRST 1 ROWS ONLY`, polis)
 }
 
-// Ringkas membaca versi berjalan sebuah nomor polis.
 // NomorPolisDariID membaca `NO_POLIS` satu polis dari pengenal work-nya
 // (`T_PREMIUM_LIST.ID` = `T_WORK_POLIS.ID`) - parameter `noPolis`
 // `convertJsonNusareToProduction` (OQ-PL-14, GILIRAN-17).
@@ -135,6 +134,7 @@ func (r *RingkasPolisLife) NomorPolisDariID(ctx context.Context, polisID string)
 	return strings.TrimSpace(no.String), nil
 }
 
+// Ringkas membaca versi berjalan sebuah nomor polis.
 func (r *RingkasPolisLife) Ringkas(ctx context.Context, nomorPolis string) (
 	PolisRingkas, error) {
 

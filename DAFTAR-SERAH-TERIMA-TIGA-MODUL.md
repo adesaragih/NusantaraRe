@@ -59,3 +59,7 @@ tiket dan di `.scratch/claim-life/OQ-untuk-tim.md`.
 
 *Migrasi `021_kolom_komentar_jejak.sql` dan `022_kolom_sts_hapus_peserta.sql` (+ `_down`) dijalankan **work owner** sesudah
 giliran ini; executor tidak menjalankan `-migrate` dan tidak menyentuh Oracle.*
+
+⛔ **Urutan deploy (temuan /code-review):** binari dari commit GILIRAN-17 **menuntut** kedua kolom itu. Sebelum `021` terpasang,
+setiap penulisan jejak (8 kolom) gagal ORA-00904; sebelum `022`, setiap pembacaan peserta Claim Life gagal ORA-00904. Migrasi
+tidak berjalan saat binari mulai, jadi jalankan `-migrate` (`make migrate`) **lebih dulu**, baru jalankan binarinya.

@@ -359,7 +359,6 @@ func (r *KlaimLife) IsiNomorKlaimKosong(ctx context.Context, tx *Tx, klaimID, no
 	return nil
 }
 
-// sqlTandaiBarisOutstanding - `Save to RNM` langkah 22.1.3.2.
 // sqlSudahSaveRNM - penanda turunan "klaim ini sudah pernah di-Save to RNM"
 // (OQ-M1, GILIRAN-17): ada baris adjustment klaim itu yang `STS_REJECT`-nya
 // tidak NULL. Hasilnya 0 atau 1 (`ROWNUM = 1` sebelum COUNT).
@@ -397,9 +396,17 @@ func (r *KlaimLife) SudahSaveRNM(ctx context.Context, klaimID string) (bool, err
 
 // sqlCabutPeserta - OQ-M6 (GILIRAN-17): menandai, tidak menghapus
 // (ADR-U-0031); hanya peserta milik klaim itu, hanya sekali.
-func sqlCabutPeserta(tabel string) string {
+//
+// ⛔ `NOT EXISTS` memeriksa ULANG "belum Save to RNM" (b18082) DI DALAM
+// pernyataannya (temuan /code-review): gerbang layanan dibaca di luar
+// transaksi, dan Save to RNM yang menyela di antaranya tidak boleh diikuti
+// pencabutan.
+func sqlCabutPeserta(tabel, adj string) string {
 	return fmt.Sprintf(`UPDATE %s SET STS_HAPUS = '1'
-	 WHERE ID = :1 AND CLAIM_ID = :2 AND STS_HAPUS IS NULL`, tabel)
+	 WHERE ID = :1 AND CLAIM_ID = :2 AND STS_HAPUS IS NULL
+	   AND NOT EXISTS (SELECT 1 FROM %s a JOIN %s p2 ON p2.ID = a.PREMIUM_LIST_DETAIL_ID
+	                    WHERE p2.CLAIM_ID = :3 AND p2.STS_HAPUS IS NULL AND a.STS_REJECT IS NOT NULL)`,
+		tabel, adj, tabel)
 }
 
 // CabutPeserta menandai seorang peserta dicabut dari klaimnya - tombol
@@ -410,17 +417,22 @@ func (r *KlaimLife) CabutPeserta(ctx context.Context, tx *Tx, klaimID, pesertaID
 	if err != nil {
 		return err
 	}
-	q := sqlCabutPeserta(tabel)
+	adj, err := r.db.Qualify("T_CLAIMLF_ADJUSTMENT")
+	if err != nil {
+		return err
+	}
+	q := sqlCabutPeserta(tabel, adj)
 	if err := PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.tx.ExecContext(ctx, q, pesertaID, klaimID)
+	hasil, err := tx.tx.ExecContext(ctx, q, pesertaID, klaimID, klaimID)
 	if err != nil {
 		return fmt.Errorf("repository: mencabut peserta: %w", err)
 	}
 	return pastikanSatuBaris(hasil, "pencabutan peserta (STS_HAPUS)")
 }
 
+// sqlTandaiBarisOutstanding - `Save to RNM` langkah 22.1.3.2.
 const sqlTandaiBarisOutstanding = `UPDATE %s SET STS_REJECT = :1 WHERE ID = :2 AND STS_REJECT IS NULL`
 
 // TandaiBarisOutstanding menulis `STS_REJECT = 0` ke SATU baris adjustment

@@ -211,7 +211,9 @@ func sqlSisipPeserta(detail string) string {
 //
 // ⛔ Kosong menjadi NULL, bukan teks kosong maupun "0". Kolom yang belum diisi
 // dan kolom bernilai nol adalah dua keadaan berbeda, dan hanya satu di
-// antaranya perlu dikerjakan orang.
+// antaranya perlu dikerjakan orang. ⚠️ Kolom UANG tidak pernah kosong di sini
+// sejak OQ-PL-12 (GILIRAN-17): `models.IsiNolUangKosong` mengisinya "0"
+// sebelum validasi, seperti `ValidasiUploadPL_act` langkah 2.
 func nilaiSisipPeserta(id, polisID string, b models.BarisUnggah) []any {
 	ambil := func(k string) any {
 		v := strings.TrimSpace(b.Nilai[k])

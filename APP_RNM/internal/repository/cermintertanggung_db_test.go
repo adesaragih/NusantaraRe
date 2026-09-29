@@ -39,6 +39,18 @@ func TestCerminMengisiTertanggungDariSumber(t *testing.T) {
 	if err := skemauji.IsiPesertaPolis(ctx, sqlDB, skema); err != nil {
 		t.Fatalf("mengisi peserta polis tiruan: %v", err)
 	}
+	// Polis tiruan: CEDINGCO cermin datang dari `T_PREMIUM_LIST.CEDING_CO`
+	// baris PROD_KE terakhir (b9226) - dua versi, yang terbaru menang.
+	for _, q := range []string{
+		`INSERT INTO ` + skema + `.T_WORK_POLIS (ID) VALUES ('UJI-POLIS-1710')`,
+		`INSERT INTO ` + skema + `.T_WORK_POLIS (ID) VALUES ('UJI-POLIS-1711')`,
+		`INSERT INTO ` + skema + `.T_PREMIUM_LIST (ID, NO_POLIS, CEDING_CO, PROD_KE) VALUES ('UJI-POLIS-1710', 'UJI-POL-0001', 'UJI-CEDING-LAMA', 0)`,
+		`INSERT INTO ` + skema + `.T_PREMIUM_LIST (ID, NO_POLIS, CEDING_CO, PROD_KE) VALUES ('UJI-POLIS-1711', 'UJI-POL-0001', 'UJI-CEDING-1', 1)`,
+	} {
+		if _, err := sqlDB.ExecContext(ctx, q); err != nil {
+			t.Fatalf("polis tiruan: %v", err)
+		}
+	}
 	db, err := skemauji.BukaRepositori()
 	if err != nil {
 		t.Fatal(err)
@@ -80,6 +92,14 @@ func TestCerminMengisiTertanggungDariSumber(t *testing.T) {
 	}
 	if cocok != 1 {
 		t.Errorf("baris cermin bertertanggung sama dengan sumbernya: %d, mau 1", cocok)
+	}
+	var ceding int
+	if err := sqlDB.QueryRowContext(ctx, `SELECT COUNT(*) FROM `+skema+`.OS_AKSEPTASI_KLAIM_LIFE
+		  WHERE CASEID = :1 AND CEDINGCO = 'UJI-CEDING-1'`, "CLM-UJI1710").Scan(&ceding); err != nil {
+		t.Fatal(err)
+	}
+	if ceding != 1 {
+		t.Errorf("CEDINGCO cermin bukan milik versi polis terbaru: %d, mau 1", ceding)
 	}
 
 	// Baris sumber yang tidak ada: GALAT, bukan cermin tanpa nama diam-diam.

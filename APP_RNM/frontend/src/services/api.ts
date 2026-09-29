@@ -2001,13 +2001,13 @@ export interface KasusKomite {
   efek: { keadaan: string; efek: EfekKomite[] }
 }
 
-/** Riwayat tangga — `GET /api/komite/{id}/riwayat` (tiket 09; siapa pun). */
 /** Keputusan asli satu tingkat yang tertimpa langkah 5.1 (OQ-K-05). */
 export interface KeputusanAsliKomite {
   status: string
   comment: string
 }
 
+/** Riwayat tangga — `GET /api/komite/{id}/riwayat` (tiket 09; siapa pun). */
 export interface RiwayatKomite {
   kasusId: string
   adjustmentId: string

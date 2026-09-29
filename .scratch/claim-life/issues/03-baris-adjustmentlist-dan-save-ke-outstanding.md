@@ -998,7 +998,7 @@ Mencabut peserta = **penanda**; layar menyembunyikannya.
 | rute | `POST /api/klaim-life/{id}/peserta/{pesertaId}/cabut` — Admin, kasus terbuka, `models.BolehCabutPeserta` (Outstanding **dan** belum Save to RNM — padanan b18082, OQ-M1), peserta milik klaim; penanda + jejak (`peserta <id>` → `dicabut`) satu transaksi |
 | pembaca | setiap pembaca dan penulis tabel peserta menyaring `STS_HAPUS IS NULL`: peserta, baris adjustment, dokumen (daftar, satu, pemilik), diagnosa, spreading, penanda Save to RNM, tanggal, status, `IS_CHECK`. Pengecualian beralasan: `Simpan` (sisip), `HapusFisik` (uji), `Dampak` (hapus klaim utuh) |
 | penjaga | `TestSetiapPenyentuhTabelPesertaMenyaringPenandaCabut` — fungsi baru yang menyentuh tabel peserta gagal sampai menyaring atau dikecualikan; dibuktikan merah lewat mutasi |
-| yang tidak disentuh | baris cermin warisan `OS_AKSEPTASI_KLAIM_LIFE` peserta itu (status NULL; pemeriksaan klaim ganda hanya bereaksi pada `'0'`/`'1'`) |
+| cermin warisan | ⛔ *Ralat /code-review GILIRAN-17:* baris cermin `OS_AKSEPTASI_KLAIM_LIFE` peserta itu (status NULL, sejak OQ-N2 bernama) **dibuang** di transaksi yang sama (`HapusCerminBelumDisimpan`, `CASEID` + `STS_REJECT IS NULL`). Di Pega baris cermin baru lahir saat Save Outstanding, jadi peserta yang dilepas sebelumnya tidak pernah terlihat hilir |
 | uji | `TestBolehCabutPesertaSebelumSaveRNM`, `TestSQLCabutPesertaMenandaiBukanMenghapus`, `TestMigrasi022PenandaCabutPeserta`, `TestCabutPesertaMenjagaPagarnya`, `TestRuteCabutPesertaDanGalatnya`, `cabutpeserta.test.ts`, `labels.test.ts`, `db` `TestCabutPesertaMenandaiDanMenyembunyikan` |
 
 ## Keputusan bertanggal — 29 September 2026 (GILIRAN-17 paket 3: OQ-N2, OQ-N5, OQ-M7 ditutup) `[keputusan work owner 29-09-2026 — lembar keputusan, "rekomendasi"]`
@@ -1017,3 +1017,19 @@ Uji: `TestSQLIsiTertanggungCerminDariSumber`, `TestSQLGandaMengecualikanKlaimSen
 `TestRateLifeKolomTetapBerkunciIDUSEDBY`, `TestRateLifePengenalKosongGagalTerang`, `TestMasterViewTidakDisentuh` (mutasi `USEDBY`
 menjadi merah), dan `db` `TestCerminMengisiTertanggungDariSumber`. Uji `db` itu menghitung kecocokan nama/DOB di Oracle; nilainya
 tidak dibaca ke Go.
+
+## Perbaikan /code-review GILIRAN-17 — 29 September 2026
+
+| Temuan | Tindakan |
+| --- | --- |
+| peserta tercabut meninggalkan baris cermin bernama di `OS_AKSEPTASI_KLAIM_LIFE` | dibuang dalam transaksi pencabutan (baris milik `CASEID` itu yang belum berstatus) |
+| dokumen dapat diunggah ke peserta tercabut atau milik klaim lain | `Unggahan.Unggah` memeriksa peserta aktif milik klaim (`pesertaMilikKlaim`) sebelum berkas ditulis |
+| balapan Save to RNM dengan cabut | `sqlCabutPeserta` memeriksa ulang "belum Save to RNM" di dalam pernyataan (`NOT EXISTS`) |
+| cermin tertanggung/ceding dikunci `ID` saja | kini `ID` **dan** `CASEID` |
+| `CASEID` kosong menyaring seluruh baris warisan di pemeriksa ganda | jatuh ke pengenal work (`CASEID` klaim aplikasi, butir ae1) |
+| galat muat-ulang sesudah tolak/cabut hilang di dialog yang tertutup | dilaporkan di layar dengan kalimat yang benar ("sudah ditolak/dicabut, tetapi gagal dibaca ulang") |
+| penjaga saringan `STS_HAPUS` lolos lewat komentar dan nama fungsi senama | diperiksa atas kode tanpa komentar, pengecualian berkunci `berkas:fungsi` |
+| tombol `DELETE` bernama sama untuk tiap peserta; Remarks > 4000 byte tanpa pesan | `aria-label` bernomor sertifikat; pesan batas byte di dialog |
+
+Sisa yang dicatat, **tidak** diubah: peserta **terakhir** dapat dicabut, dan Save to RNM atas klaim tanpa peserta aktif
+tidak menandai apa pun (Pega `deleteRow` pun tidak membatasinya). Bila bisnis menghendaki batas itu, ia keputusan baru.

@@ -192,6 +192,20 @@ func TautanUnduhBawaan(id int64) string {
 }
 
 // pagariUnggahan menjalankan gerbang yang sama untuk ketiga jalurnya.
+// pesertaMilikKlaim - peserta aktif (tidak tercabut) milik klaim itu.
+func (u *Unggahan) pesertaMilikKlaim(ctx context.Context, klaimID, pesertaID string) error {
+	peserta, err := repository.NewKlaimLife(u.svc.db).AmbilPeserta(ctx, klaimID)
+	if err != nil {
+		return err
+	}
+	for _, p := range peserta {
+		if p.ID == pesertaID {
+			return nil
+		}
+	}
+	return fmt.Errorf("%w: peserta %q bukan peserta aktif klaim %q", ErrPermintaanTidakSah, pesertaID, klaimID)
+}
+
 func (u *Unggahan) pagari(ctx context.Context, pelaku Pelaku, klaimID string) error {
 	if err := WajibIdentitas(pelaku); err != nil {
 		return err
@@ -230,6 +244,12 @@ func (u *Unggahan) Unggah(ctx context.Context, pelaku Pelaku,
 	if strings.TrimSpace(pesertaID) == "" {
 		return models.Dokumen{}, fmt.Errorf("%w: pengenal peserta wajib diisi",
 			ErrPermintaanTidakSah)
+	}
+	// ⛔ Temuan /code-review GILIRAN-17: peserta harus milik klaim ini dan
+	// TIDAK tercabut (OQ-M6) - `AmbilPeserta` menyaring keduanya. Tanpanya
+	// dokumen mendarat pada peserta yang tak terlihat, tak dapat dihapus.
+	if err := u.pesertaMilikKlaim(ctx, klaimID, pesertaID); err != nil {
+		return models.Dokumen{}, err
 	}
 	if strings.TrimSpace(u.folder) == "" {
 		return models.Dokumen{}, ErrUnggahanDirBelumDisetel

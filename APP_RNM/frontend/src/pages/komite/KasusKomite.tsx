@@ -38,12 +38,6 @@ export const PILIHAN_KEPUTUSAN = [
 ] as const
 
 /**
- * Kontrol eskalasi hanya untuk admin, dan hanya bila masih ada tingkat di atas.
- *
- * ⚠️ `[asumsi — OQ-007/OQ-021]` admin komite = `ReasLifeAdmin`. Server tetap
- * yang menegakkan; ini hanya menyembunyikan tombol yang pasti ditolak.
- */
-/**
  * Keputusan asli tingkat yang tertimpa langkah 5.1 — MURNI (OQ-K-05,
  * GILIRAN-17): `Setuju — komentar`, atau tanda kosong bila tidak tertimpa.
  */
@@ -52,6 +46,12 @@ export function teksKeputusanAsli(asli: KeputusanAsliKomite | undefined): string
   return asli.comment.trim() === '' ? asli.status : `${asli.status} — ${asli.comment}`
 }
 
+/**
+ * Kontrol eskalasi hanya untuk admin, dan hanya bila masih ada tingkat di atas.
+ *
+ * ⚠️ `[asumsi — OQ-007/OQ-021]` admin komite = `ReasLifeAdmin`. Server tetap
+ * yang menegakkan; ini hanya menyembunyikan tombol yang pasti ditolak.
+ */
 export function bolehEskalasi(peran: readonly KodePeran[], k: Kasus | null): boolean {
   if (k === null) return false
   return peran.includes(PERAN.admin) && k.kasus.tingkatBerjalan > 0 &&
