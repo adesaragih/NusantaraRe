@@ -87,12 +87,15 @@ func berkasGoSelainTest(t *testing.T) map[string]string {
 // konstantaTeksDiSumber membaca nilai konstanta/variabel teks bernama dari
 // sumber Go bukan-uji sebuah folder paket, TANPA mengimpor paketnya - `inti`
 // tidak mengimpor modul (`impor_lintas_modul_test.go`). Nama yang tidak
-// ditemukan membuat uji panik: daftar yang basi harus berbunyi.
-func konstantaTeksDiSumber(dir string, nama ...string) []string {
+// ditemukan menggagalkan uji pemanggilnya: daftar yang basi harus berbunyi.
+// ⛔ Dipanggil DARI uji, bukan dari inisialisasi paket - kegagalan di
+// inisialisasi menjatuhkan SELURUH biner uji penjaga (temuan /code-review).
+func konstantaTeksDiSumber(t *testing.T, dir string, nama ...string) []string {
+	t.Helper()
 	folder := filepath.Join(akarAplikasi, filepath.FromSlash(dir))
 	isi, err := os.ReadDir(folder)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 	nilai := map[string]string{}
 	fset := token.NewFileSet()
@@ -102,7 +105,7 @@ func konstantaTeksDiSumber(dir string, nama ...string) []string {
 		}
 		f, err := parser.ParseFile(fset, filepath.Join(folder, e.Name()), nil, 0)
 		if err != nil {
-			panic(err)
+			t.Fatal(err)
 		}
 		for _, d := range f.Decls {
 			g, ok := d.(*ast.GenDecl)
@@ -128,7 +131,7 @@ func konstantaTeksDiSumber(dir string, nama ...string) []string {
 	for _, n := range nama {
 		teks, ada := nilai[n]
 		if !ada {
-			panic("konstanta teks " + n + " tidak ada di " + dir)
+			t.Fatalf("konstanta teks %s tidak ada di %s", n, dir)
 		}
 		hasil = append(hasil, teks)
 	}
@@ -383,16 +386,18 @@ var polaNamaOrangTetap = regexp.MustCompile(
 // membuat BARIS DAFTAR INI SENDIRI cocok dengan polanya - `...Tertanggung:
 // "alasan"` - dan penjaga ini menuduh dirinya sendiri. Sudah terjadi, dua
 // kali, saat penyempitan ini ditulis.
-var pesanVerbatimYangSah = konstantaTeksDiSumber("modul/premiumlist/models",
-	// ValidasiUploadPL_act `local.err3` - pesan kolom NAME_OF_INSURED.
-	"PesanNamaTertanggung",
-	// ValidasiUploadPL_act `local.err17` - pesan rujukan master POLICY HOLDER.
-	"PesanPolicyHolder",
-)
+func pesanVerbatimYangSah(t *testing.T) []string {
+	return konstantaTeksDiSumber(t, "modul/premiumlist/models",
+		// ValidasiUploadPL_act `local.err3` - pesan kolom NAME_OF_INSURED.
+		"PesanNamaTertanggung",
+		// ValidasiUploadPL_act `local.err17` - pesan rujukan master POLICY HOLDER.
+		"PesanPolicyHolder",
+	)
+}
 
 // pesanVerbatimDiterima menjawab apakah sebuah nilai ada di daftar itu.
-func pesanVerbatimDiterima(nilai string) bool {
-	for _, p := range pesanVerbatimYangSah {
+func pesanVerbatimDiterima(sah []string, nilai string) bool {
+	for _, p := range sah {
 		if p == nilai {
 			return true
 		}
@@ -404,6 +409,7 @@ func pesanVerbatimDiterima(nilai string) bool {
 var polaNilaiTerkutip = regexp.MustCompile("[\"`]([^\"`]+)[\"`]")
 
 func TestNolNamaOrangDiKode(t *testing.T) {
+	sah := pesanVerbatimYangSah(t)
 	diperiksa := 0
 	err := filepath.Walk(akarAplikasi, func(jalur string, info os.FileInfo, err error) error {
 		if err == nil && info.IsDir() && lewatiFolderPindai(info.Name()) {
@@ -440,7 +446,7 @@ func TestNolNamaOrangDiKode(t *testing.T) {
 			// dengan spasi berbeda, dan daftar yang mencocokkan spasi akan
 			// lolos begitu seseorang menjalankan gofmt.
 			if m := polaNilaiTerkutip.FindStringSubmatch(cocok); m != nil &&
-				pesanVerbatimDiterima(m[1]) {
+				pesanVerbatimDiterima(sah, m[1]) {
 				continue
 			}
 			t.Errorf("%s memberi nilai tetap ke medan bernama-orang: %s",
@@ -518,11 +524,6 @@ func TestHandlersTidakMengimporRepository(t *testing.T) {
 //
 // ⚠️ Penjaga yang menuduh hal yang BENAR akan dilonggarkan orang,
 // bukan dipatuhi. Jadi ia dipersempit sekarang - dan dibuktikan MASIH
-// MENGGIGIT sebelum dipakai, sebagaimana penyempitan `FOR UPDATE` di atas.
-//
-// Kembaran yang sudah lebih dulu melakukan hal yang sama, dengan sebab
-// yang sama persis: `polaKomentar` di `models/kodestatus_test.go`.
-var polaKomentarBaris = regexp.MustCompile(`(?m)^\s*//.*$`)
 
 // polaTabelTelanjang mencari kata sesudah FROM / INTO / UPDATE / JOIN.
 var polaTabelTelanjang = regexp.MustCompile(
@@ -541,7 +542,9 @@ func TestNolNamaTabelTelanjangDiQuery(t *testing.T) {
 			!strings.Contains(nama, "/uji/skemauji/") {
 			continue
 		}
-		isi = polaKomentarBaris.ReplaceAllString(isi, "")
+		// Baris komentar dibuang lebih dulu (paket 8: `buangKomentar` berkas
+		// ini, pengganti `polaKomentarBaris` yang setara).
+		isi = buangKomentar(isi)
 		for _, m := range polaTabelTelanjang.FindAllStringSubmatch(isi, -1) {
 			if m[1] != "" { // klausa `FOR UPDATE`, bukan pernyataan
 				continue

@@ -30,12 +30,16 @@ APP_RNM/
 
 | Dari | Boleh mengimpor | Penjaga |
 | --- | --- | --- |
-| `modul/X/...` (Go) | `inti/...`, `modul/X/...`; berkas uji juga `uji/skemauji` | `inti/penjaga/impor_lintas_modul_test.go` |
+| `modul/X/...` (Go) | `inti/...`, `modul/X/...`; berkas uji juga `uji/skemauji` ¹ | `inti/penjaga/impor_lintas_modul_test.go` |
 | `inti/...` (Go) | `inti/...` saja | idem |
 | `cmd/...` (Go) | `inti/...` dan daftar `nusantarare/modul` — tidak pernah satu modul langsung | idem |
 | `frontend/src/modul/X/**` | `inti/**`, `modul/X/**` | `frontend/src/inti/lapisan.guard.test.ts` |
 | `frontend/src/inti/**` | `inti/**` saja | idem |
 | `modul/daftar.go`, `frontend/src/modul/daftar.ts`, `App.tsx`, `Beranda.tsx`, `uji/` | apa pun — merekalah tempat yang mengenal semua modul | — |
+
+¹ `uji/skemauji` SENGAJA mengenal semua modul: ia membangun skema uji **utuh** (migrasi semua modul,
+fixture Claim Life dan PremiumList). Karena itu ia satu-satunya jalur lintas modul yang disahkan —
+hanya untuk berkas uji, dan hanya lewat paket itu.
 
 Modul yang membutuhkan modul lain **tidak mengimpornya**: ia meminta antarmuka di `inti/kontrak`,
 dan `modul/daftar.go` menyambungkannya. Dua sambungan yang ada hari ini:
@@ -63,12 +67,13 @@ go run ./cmd/api                        # atau .\bin\api.exe
 | *(aplikasi)* | selalu ada | `/healthz`, `/api/modul-aktif` |
 
 - **Kosong (bawaan) = semua modul.**
-- Modul yang tidak disebut: rutenya **tidak didaftarkan** (jawabannya 404), **pekerja latarnya tidak
-  jalan**, dan **menunya tidak tampil** — sidebar, palet Ctrl+K, dan kartu Beranda. Frontend membaca
+- Modul yang tidak disebut: rutenya **tidak didaftarkan** — jawabannya 404 berbadan JSON
+  `{"galat":"modul <nama> tidak aktif di proses ini (MODUL_AKTIF)"}`, supaya layar tidak menyangka
+  backend mati — **pekerja latarnya tidak jalan**, dan **menunya tidak tampil** — sidebar, palet Ctrl+K, dan kartu Beranda. Frontend membaca
   daftar modul aktif dari `GET /api/modul-aktif` (`{"modul":["claimlife","komite"]}`); **tidak ada env
   Vite** untuk ini, jadi satu bangunan frontend melayani deploy mana pun.
 - Nama yang salah ketik **menolak menyala**: backend berhenti dengan pesan yang menyebut nama itu dan
-  nama-nama yang dikenal — termasuk saat `-migrate`.
+  nama-nama yang dikenal. `-migrate` / `-migrate-down` tidak membaca `MODUL_AKTIF` sama sekali.
 - **Migrasi tidak ikut `MODUL_AKTIF`.** `-migrate` selalu menjalankan migrasi SEMUA modul terdaftar,
   supaya skema utuh (tabel satu modul dirujuk modul lain, dan data warisan tidak memilih modul).
 - Bila `/api/modul-aktif` gagal dibaca, frontend menampilkan **semua** menu — persis perilaku sebelum
@@ -78,15 +83,20 @@ go run ./cmd/api                        # atau .\bin\api.exe
 
 1. Layar Register dan Outstanding **Claim Life** mengisi panel data polis dari
    `GET /api/polis-life/ringkas` — rute **PremiumList**. Tanpa `premiumlist`, panel itu menampilkan
-   galat; halaman lain Claim Life tetap jalan. (Di backend, Claim Life membaca polis lewat
-   `kontrak.PembacaPolis` di dalam proses, dan itu tetap tersambung apa pun `MODUL_AKTIF`.)
+   galat "modul premiumlist tidak aktif"; halaman lain Claim Life tetap jalan. (Di backend, Claim Life
+   membaca polis lewat `kontrak.PembacaPolis` di dalam proses, dan itu tetap tersambung apa pun
+   `MODUL_AKTIF`.) Ketergantungan ini lewat **HTTP**, jadi penjaga impor tidak melihatnya.
+   Menghapusnya berarti rute Claim Life sendiri yang menyajikan polis lewat `kontrak.PembacaPolis` —
+   rute baru, di luar lingkup refactor bentuk B (yang melarang perubahan rute). `[pertanyaan terbuka]`
 2. **Komite** menuntaskan baris klaim Claim Life lewat `kontrak.KlaimKomite` di dalam proses — tetap
    tersambung apa pun `MODUL_AKTIF`. Menyerahkan kasus ke Komite adalah tombol di layar Claim Life.
 3. Kartu antrean di Beranda adalah cacah kotak masuk Claim Life; tanpa `claimlife` kartu itu tidak
-   tampil dan tidak diminta.
+   tampil dan tidak diminta **lagi sesudah daftar modul aktif terbaca**. Pada muatan pertama Beranda
+   dapat mengirim empat permintaan itu sebelum `/api/modul-aktif` menjawab; jawabannya diabaikan
+   begitu daftarnya tiba.
 
 Memecah modul ke **proses berbeda** di belakang reverse proxy (per awalan rute di atas) belum
-didukung: frontend membaca `/api/modul-aktif` dari satu backend saja. `[terbuka]`
+didukung: frontend membaca `/api/modul-aktif` dari satu backend saja. `[pertanyaan terbuka]`
 
 ## 3. Git per folder
 

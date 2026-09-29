@@ -31,16 +31,17 @@ var ruteContoh = map[string]string{
 	"treaty":      "/api/treaty-contract-out/tahun",
 }
 
-func muxUji(t *testing.T, diminta []string) (*http.ServeMux, []inti.Modul) {
+func muxUji(t *testing.T, diminta []string) (http.Handler, []inti.Modul) {
 	t.Helper()
-	aktif, err := pilihModulAktif(modul.Rakit(inti.NewDasar(nil), config.Config{}, func(string) {}), diminta)
+	terdaftar := modul.Rakit(inti.NewDasar(nil), config.Config{}, func(string) {})
+	aktif, err := pilihModulAktif(terdaftar, diminta)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return rakitMux(inti.NewDasar(nil), aktif), aktif
+	return rakitMux(inti.NewDasar(nil), terdaftar, aktif), aktif
 }
 
-func kode(mux *http.ServeMux, jalur string) int {
+func kode(mux http.Handler, jalur string) int {
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, httptest.NewRequest(http.MethodGet, jalur, nil))
 	return w.Code
@@ -60,6 +61,23 @@ func TestModulNonaktifRutenya404(t *testing.T) {
 	// Rute milik aplikasi tetap ada walau modul mana pun nonaktif.
 	if k := kode(mux, "/healthz"); k != http.StatusOK {
 		t.Errorf("/healthz menjawab %d", k)
+	}
+	// ⛔ 404 modul nonaktif berbadan JSON `{galat}` yang menyebut modulnya:
+	// teks `404 page not found` terbaca frontend sebagai "backend mati".
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/api/polis-life/ringkas?nomorPolis=UJI-1", nil))
+	var badan struct {
+		Galat string `json:"galat"`
+	}
+	if w.Code != http.StatusNotFound || !strings.HasPrefix(w.Header().Get("Content-Type"), "application/json") ||
+		json.NewDecoder(w.Body).Decode(&badan) != nil || !strings.Contains(badan.Galat, "premiumlist") {
+		t.Errorf("rute modul nonaktif: kode %d, Content-Type %q, galat %q", w.Code, w.Header().Get("Content-Type"), badan.Galat)
+	}
+	// Jalur yang bukan milik modul MANA PUN tetap 404 bawaan mux, seperti dulu.
+	w = httptest.NewRecorder()
+	mux.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/api/tidak-ada", nil))
+	if w.Code != http.StatusNotFound || strings.HasPrefix(w.Header().Get("Content-Type"), "application/json") {
+		t.Errorf("jalur tak dikenal: kode %d, Content-Type %q", w.Code, w.Header().Get("Content-Type"))
 	}
 }
 

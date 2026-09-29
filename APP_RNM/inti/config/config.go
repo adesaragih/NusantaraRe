@@ -182,8 +182,6 @@ func bacaPelaksanaStorage(raw string) (string, error) {
 // salah ketik untuk `30s`.
 const intervalMinimum = time.Second
 
-// bacaInterval - kosong/0 = 0 (mati); format time.ParseDuration ("30s", "1m"),
-// minimal 1s.
 // bacaDaftarModul mengurai MODUL_AKTIF: dipisah koma, spasi dibuang, huruf
 // kecil, butir kosong dan ganda dilewati. Kosong seluruhnya = nil (semua).
 func bacaDaftarModul(raw string) []string {
@@ -200,6 +198,8 @@ func bacaDaftarModul(raw string) []string {
 	return hasil
 }
 
+// bacaInterval - kosong/0 = 0 (mati); format time.ParseDuration ("30s", "1m"),
+// minimal 1s.
 func bacaInterval(nama, raw string) (time.Duration, error) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {

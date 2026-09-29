@@ -5,19 +5,17 @@ package repository
 // Refactor bentuk B (30-09-2026): penjaga Treaty dulu meminjam pembantu uji
 // Claim Life (`batasanpemakaian_test.go`, `migrasibatas_test.go`,
 // `migrasi_test.go`). Modul Treaty kini membawa salinannya sendiri, supaya
-// uji satu modul tidak pernah bergantung pada berkas uji modul lain. Isinya
-// sama; satu beda yang disengaja: `seluruhSQL` membaca SETIAP folder
-// `migrations/` di bawah akar aplikasi - bukan hanya milik satu modul - sebab
-// penjaga "nol tabel baru Treaty" menjaga migrasi semua modul.
+// uji satu modul tidak pernah bergantung pada berkas uji modul lain.
+//
+// Paket 8: penjaga "nol tabel baru Treaty" (tco4), yang membaca migrasi SEMUA
+// modul, pindah ke `inti/penjaga/lintasaplikasi_test.go` - pembaca migrasinya
+// (`seluruhSQL`, `sumberMigrasi`) ikut pergi dari berkas ini.
 
 import (
-	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"nusantarare/inti/migrasi"
 )
 
 // akarModul menunjuk folder APP_RNM dari folder paket ini.
@@ -128,49 +126,4 @@ func buangKomentarSumber(nama, isi string) string {
 		b.WriteString("\n")
 	}
 	return b.String()
-}
-
-// sumberMigrasi mengumpulkan SETIAP folder `migrations/` di bawah akar
-// aplikasi sebagai sumber pelari migrasi.
-func sumberMigrasi(t *testing.T) []fs.FS {
-	t.Helper()
-	var sumber []fs.FS
-	err := filepath.Walk(filepath.FromSlash(akarModul), func(p string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !info.IsDir() {
-			return nil
-		}
-		switch info.Name() {
-		case "frontend", "node_modules", "bin", ".git":
-			return filepath.SkipDir
-		case "migrations":
-			// Pelari membaca `migrations/*.sql` dari akar sumbernya.
-			sumber = append(sumber, os.DirFS(filepath.Dir(p)))
-			return filepath.SkipDir
-		}
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(sumber) == 0 {
-		t.Fatal("nol folder migrations terbaca; pembacanya yang rusak")
-	}
-	return sumber
-}
-
-// seluruhSQL - isi setiap langkah migrasi semua modul, per nama berkas.
-func seluruhSQL(t *testing.T, mundur bool) map[string]string {
-	t.Helper()
-	langkah, err := migrasi.Daftar(mundur, sumberMigrasi(t)...)
-	if err != nil {
-		t.Fatal(err)
-	}
-	out := map[string]string{}
-	for _, m := range langkah {
-		out[m.Nama] = strings.Join(m.Pernyataan, "\n")
-	}
-	return out
 }

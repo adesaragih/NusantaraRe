@@ -34,6 +34,8 @@ import {
 import { ambilKotakMasuk, TAHAP_NOMOR, type NomorTahap } from './modul/claimlife/api'
 import { pesanGalat } from './inti/klien'
 import { type Sesi } from './inti/store/sesi'
+import { modulDipasang } from './inti/lib/daftarMenu'
+import { NAMA_CLAIMLIFE } from './modul/claimlife/menu'
 import { ENTRI_MENU, halamanAktif, type Halaman } from './modul/daftar'
 
 /** Satu tahap Claim Life beserta cacah antreannya. */
@@ -106,7 +108,7 @@ export default function Beranda({
   const [galat, setGalat] = useState<string | null>(null)
   // Cacah antrean milik Claim Life: modul itu NONAKTIF = kartunya tidak
   // tampil dan kotak masuknya tidak diminta (rutenya memang tidak ada).
-  const claimLifeAktif = halamanAktif('inbox', modulAktif)
+  const claimLifeAktif = modulDipasang(NAMA_CLAIMLIFE, modulAktif)
 
   useEffect(() => {
     if (!claimLifeAktif) {

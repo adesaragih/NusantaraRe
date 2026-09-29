@@ -59,13 +59,6 @@ func main() {
 	dasar := inti.NewDasar(db).
 		DenganLingkungan(inti.LingkunganDariFlag(cfg.IsPegaProd)).
 		DenganUnggahanDir(cfg.UnggahanDir)
-	catat := func(s string) { log.Print(s) }
-	// Refactor bentuk B: modul yang dipasang dipilih MODUL_AKTIF (kosong =
-	// semua). Nama yang tidak dikenal menolak menyala.
-	aktif, err := pilihModulAktif(modul.Rakit(dasar, cfg, catat), cfg.ModulAktif)
-	if err != nil {
-		log.Fatalf("konfigurasi: %v", err)
-	}
 	if dasar.PunyaDatabase() {
 		log.Printf("oracle: skema %s", dasar.SkemaAktif())
 	} else {
@@ -87,9 +80,20 @@ func main() {
 		return
 	}
 
+	catat := func(s string) { log.Print(s) }
+	// Refactor bentuk B: modul yang dipasang dipilih MODUL_AKTIF (kosong =
+	// semua). Nama yang tidak dikenal menolak menyala. ⛔ SESUDAH cabang
+	// -migrate / -migrate-down: migrasi tidak ikut MODUL_AKTIF, jadi salah
+	// ketik di sana tidak boleh menghalanginya (temuan /code-review).
+	terdaftar := modul.Rakit(dasar, cfg, catat)
+	aktif, err := pilihModulAktif(terdaftar, cfg.ModulAktif)
+	if err != nil {
+		log.Fatalf("konfigurasi: %v", err)
+	}
+
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddr,
-		Handler:           rakitMux(dasar, aktif),
+		Handler:           rakitMux(dasar, terdaftar, aktif),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 

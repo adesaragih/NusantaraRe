@@ -74,7 +74,7 @@ describe('menu modul nonaktif hilang', () => {
     expect(kartuModul(null)).toEqual(kartuModul())
     // Cacah antrean Claim Life tidak diminta bila modul itu nonaktif.
     const beranda = readFileSync(join(SRC, 'Beranda.tsx'), 'utf8')
-    expect(beranda).toContain("const claimLifeAktif = halamanAktif('inbox', modulAktif)")
+    expect(beranda).toContain('const claimLifeAktif = modulDipasang(NAMA_CLAIMLIFE, modulAktif)')
     expect(beranda).toContain('if (!claimLifeAktif) {')
     expect(readFileSync(join(SRC, 'App.tsx'), 'utf8')).toContain('<Beranda masuk={masuk} onBuka={setHalaman} modulAktif={modulAktif} />')
   })
@@ -105,6 +105,12 @@ describe('nama modul sama dengan backend', () => {
     expect(new Set(dariFrontend)).toEqual(new Set(dariGo))
     // Daftar modul frontend = daftar modul backend (refactor bentuk B paket 7).
     expect(new Set(MODUL_FRONTEND.map((m) => m.nama))).toEqual(new Set(dariGo))
+    // ⛔ Nama halaman UNIK lintas modul: `MODUL_BACKEND` dirakit dengan
+    // `Object.fromEntries`, dan halaman kembar diam-diam dimiliki modul yang
+    // terdaftar belakangan - dua rute merender halaman yang sama (/code-review).
+    const semuaHalaman = MODUL_FRONTEND.flatMap((m) => [...m.halaman])
+    expect(new Set(semuaHalaman).size).toBe(semuaHalaman.length)
+    expect(semuaHalaman).not.toContain('beranda')
   })
 
   it('setiap entri menu punya pemilik yang terdaftar', () => {
@@ -152,7 +158,9 @@ describe('GET /api/modul-aktif', () => {
     expect(shell).toContain('modulAktif={modulAktif}')
     const palet = readFileSync(join(SRC, 'inti', 'components', 'PaletMenu.tsx'), 'utf8')
     expect(palet).toContain('daftarPalet(menu, modulAktif)')
-    // Dan rute modul nonaktif tidak dipasang (paket 7: App merakit dari modul).
+    // Dan rute modul nonaktif tidak dipasang (paket 7: App merakit dari modul),
+    // dan halaman modul yang ternyata nonaktif kembali ke Beranda.
     expect(app).toContain('MODUL_FRONTEND.filter((m) => modulDipasang(m.nama, modulAktif))')
+    expect(app).toContain("if (!halamanAktif(halaman, modulAktif)) setHalaman('beranda')")
   })
 })

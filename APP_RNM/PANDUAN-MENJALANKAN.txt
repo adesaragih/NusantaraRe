@@ -147,10 +147,12 @@ Memilih modul yang dipasang (MODUL_AKTIF, sejak refactor bentuk B):
 
   Nama yang salah ketik DITOLAK saat menyala: backend berhenti dengan pesan
   yang menyebut nama itu dan nama-nama yang dikenal - bukan diam-diam
-  mematikan satu modul.
+  mematikan satu modul. Rute modul nonaktif menjawab 404 berbadan JSON
+  {"galat":"modul <nama> tidak aktif di proses ini (MODUL_AKTIF)"}.
 
-  Migrasi (-migrate) TIDAK ikut MODUL_AKTIF: skema selalu dibangun dari
-  SEMUA modul terdaftar, supaya tabel yang dirujuk modul lain tetap ada.
+  Migrasi (-migrate, -migrate-down) TIDAK membaca MODUL_AKTIF: skema selalu
+  dibangun dari SEMUA modul terdaftar, supaya tabel yang dirujuk modul lain
+  tetap ada.
 
   Cek dari jendela lain:
 

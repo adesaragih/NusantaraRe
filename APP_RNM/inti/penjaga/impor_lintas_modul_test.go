@@ -8,7 +8,10 @@ package penjaga
 //  1. `modul/X/...` hanya mengimpor `inti/...` dan `modul/X/...`. Ketergantungan
 //     lintas modul lewat antarmuka di `inti/kontrak`, disambung di daftar
 //     modul (`modul/daftar.go`). Berkas UJI sebuah modul boleh memakai
-//     penunjang uji netral `uji/skemauji` (skema Oracle tiruan).
+//     `uji/skemauji` - pengecualian BERNAMA: paket itu sengaja mengenal semua
+//     modul, sebab ia membangun skema uji UTUH (migrasi semua modul, fixture
+//     Claim Life dan PremiumList). Ia satu-satunya jalur lintas modul yang
+//     disahkan, hanya untuk berkas uji; `uji/lintasmodul` tidak.
 //  2. `inti/...` hanya mengimpor `inti/...` - inti tidak mengenal modul.
 //  3. `cmd/...` hanya mengimpor `inti/...` dan daftar modul `nusantarare/modul`
 //     - ia memasang modul dari daftar, tidak pernah satu modul langsung.

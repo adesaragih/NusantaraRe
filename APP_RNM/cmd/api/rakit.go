@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"nusantarare/inti"
+	"nusantarare/inti/galat"
 )
 
 // pilihModulAktif menyaring modul terdaftar menurut MODUL_AKTIF.
@@ -53,16 +54,54 @@ func pilihModulAktif(terdaftar []inti.Modul, diminta []string) ([]inti.Modul, er
 	return aktif, nil
 }
 
-// rakitMux menyusun mux aplikasi: rute milik aplikasi, lalu rute setiap modul
-// aktif menurut urutan daftar.
-func rakitMux(dasar *inti.Dasar, aktif []inti.Modul) *http.ServeMux {
+// rakitMux menyusun handler aplikasi: rute milik aplikasi, lalu rute setiap
+// modul aktif menurut urutan daftar.
+//
+// Rute modul NONAKTIF dijawab 404 berbadan JSON `{galat}` yang menyebut
+// modulnya - bukan teks `404 page not found` bawaan mux, yang frontend baca
+// sebagai "jawaban bukan JSON, backend tidak terjangkau" dan menyuruh orang
+// menyalakan ulang backend yang sedang berjalan (temuan /code-review paket
+// 6-8). Saat semua modul aktif, handler yang dikembalikan ADALAH mux-nya:
+// nol jawaban berubah.
+func rakitMux(dasar *inti.Dasar, terdaftar, aktif []inti.Modul) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", healthz(dasar))
 	mux.HandleFunc("GET /api/modul-aktif", modulAktif(aktif))
+	dipasang := map[string]bool{}
 	for _, m := range aktif {
 		m.DaftarkanRute(mux)
+		dipasang[m.Nama()] = true
 	}
-	return mux
+	type ruteNonaktif struct {
+		nama string
+		mux  *http.ServeMux
+	}
+	var nonaktif []ruteNonaktif
+	for _, m := range terdaftar {
+		if dipasang[m.Nama()] {
+			continue
+		}
+		// Rutenya didaftarkan ke mux TERPISAH yang hanya dipakai untuk
+		// mengenali jalurnya - handler-nya tidak pernah dipanggil.
+		kenal := http.NewServeMux()
+		m.DaftarkanRute(kenal)
+		nonaktif = append(nonaktif, ruteNonaktif{nama: m.Nama(), mux: kenal})
+	}
+	if len(nonaktif) == 0 {
+		return mux
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, pola := mux.Handler(r); pola == "" {
+			for _, n := range nonaktif {
+				if _, p := n.mux.Handler(r); p != "" {
+					galat.Tulis(w, http.StatusNotFound,
+						fmt.Sprintf("modul %s tidak aktif di proses ini (MODUL_AKTIF)", n.nama))
+					return
+				}
+			}
+		}
+		mux.ServeHTTP(w, r)
+	})
 }
 
 // jawabanModulAktif adalah badan GET /api/modul-aktif.
@@ -130,8 +169,15 @@ func jalankanPekerja(ctx context.Context, aktif []inti.Modul) []inti.Pekerja {
 
 // tungguPekerja menunggu setiap pekerja berhenti sampai batas `tutup`, dan
 // mencetak pesan modul yang pekerjanya belum berhenti.
+//
+// Pekerja tanpa kanal `Selesai` (nilai nol `inti.Pekerja{}`) dianggap sudah
+// berhenti: menunggu kanal nil memakan seluruh batas penutupan tanpa satu
+// baris log pun (temuan /code-review).
 func tungguPekerja(tutup context.Context, semua []inti.Pekerja, catat func(string)) {
 	for _, p := range semua {
+		if p.Selesai == nil {
+			continue
+		}
 		select {
 		case <-p.Selesai:
 		case <-tutup.Done():

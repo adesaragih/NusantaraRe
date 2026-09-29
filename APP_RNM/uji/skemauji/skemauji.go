@@ -63,13 +63,16 @@ const namaSkemaWarisan = config.NamaSkemaWarisan
 // salah konfigurasi, menunjuk produksi, atau menunjuk skema yang bukan skema
 // uji - harus menggagalkan test. Sebelum ronde 4 seluruhnya dilewati, sehingga
 // IS_PEGA_PROD=true pun menghasilkan lari hijau yang tidak menguji apa pun.
-// SumberMigrasi mengembalikan folder migrasi SETIAP modul terdaftar - daftar
-// yang sama dengan `-migrate`. Refactor bentuk B paket 8: uji db sebuah modul
-// memanggil ini, bukan `nusantarare/modul` langsung, supaya modul tidak
-// mengimpor daftar yang mengenal modul lain (`impor_lintas_modul_test.go`).
-func SumberMigrasi() []fs.FS { return modul.SumberMigrasi() }
-
 func BolehDilewati(err error) bool { return errors.Is(err, ErrTanpaOracle) }
+
+// SumberMigrasi mengembalikan folder migrasi SETIAP modul terdaftar - daftar
+// yang sama dengan `-migrate`.
+//
+// Refactor bentuk B paket 8: paket ini SENGAJA mengenal semua modul - skema
+// uji adalah skema UTUH - dan karena itu satu-satunya jalur lintas modul yang
+// disahkan bagi berkas uji sebuah modul (`impor_lintas_modul_test.go`). Uji db
+// modul memanggil ini, bukan daftar `nusantarare/modul` langsung.
+func SumberMigrasi() []fs.FS { return modul.SumberMigrasi() }
 
 // pastikanAman menjalankan seluruh pemeriksaan pintu masuk, dalam satu urutan.
 //

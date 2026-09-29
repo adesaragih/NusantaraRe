@@ -6,7 +6,7 @@ import { BelumTersedia } from './inti/components/ui/dasar'
 import { ambilModulAktif } from './inti/klien'
 import { modulDipasang } from './inti/lib/daftarMenu'
 import { pelakuStub } from './inti/store/sesi'
-import { ENTRI_MENU, MODUL_FRONTEND, type Halaman } from './modul/daftar'
+import { ENTRI_MENU, halamanAktif, MODUL_FRONTEND, type Halaman } from './modul/daftar'
 
 // App = identitas + Shell.
 //
@@ -40,6 +40,13 @@ export default function App() {
       batal = true
     }
   }, [])
+  // Daftar modul aktif tiba SESUDAH pemakai sempat membuka halaman modul yang
+  // ternyata nonaktif (semua menu tampil selama daftarnya `null`): rute modul
+  // itu dilepas, jadi halamannya kembali ke Beranda alih-alih layar kosong
+  // (temuan /code-review). Tanpa MODUL_AKTIF tidak pernah terjadi.
+  useEffect(() => {
+    if (!halamanAktif(halaman, modulAktif)) setHalaman('beranda')
+  }, [halaman, modulAktif])
 
   if (masuk === null) {
     return (
