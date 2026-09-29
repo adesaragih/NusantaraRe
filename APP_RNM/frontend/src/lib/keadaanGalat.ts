@@ -82,6 +82,19 @@ function backendMati(): KeadaanGalat {
   };
 }
 
+/**
+ * Kalimat yang backend sendiri kirim di amplop `{"galat": …}`, atau
+ * `undefined` bila jawabannya tidak membawanya.
+ *
+ * Pesan kode BACKEND_TIDAK_TERJANGKAU ditulis KLIEN (`bukanJSON` di
+ * `services/api.ts`), bukan backend — karena itu ia bukan galat backend.
+ */
+function galatDariBackend(g: GalatApiSeperti): string | undefined {
+  if (g.detail.code === KODE_BACKEND_MATI) return undefined;
+  const p = g.detail.message;
+  return typeof p === "string" && p.trim() !== "" ? p : undefined;
+}
+
 export function klasifikasiGalat(galat: unknown): KeadaanGalat | null {
   if (galat == null) return null;
 
@@ -94,12 +107,19 @@ export function klasifikasiGalat(galat: unknown): KeadaanGalat | null {
        (Vite) maupun reverse-proxy produksi menjawab 502/503/504 — atau
        500 dengan badan yang bukan JSON, yang `request()` ubah menjadi
        kode BACKEND_TIDAK_TERJANGKAU. Bagi pemakai keadaannya SAMA dengan
-       koneksi ditolak, jadi pesannya pun sama. */
+       koneksi ditolak, jadi pesannya pun sama.
+
+       ⛔ 502/503/504 yang MEMBAWA `{"galat": …}` datang dari backend
+       sendiri — ia menyala dan menolak dengan alasan (mis. 503 master
+       kurs rusak, lanjutan 6 Treaty Contract Out). Menyebutnya "backend
+       tidak terhubung" menelan alasannya dan menyuruh pemakai menyalakan
+       backend yang sudah menyala. */
     if (
       galat.detail.code === KODE_BACKEND_MATI ||
-      galat.status === 502 ||
-      galat.status === 503 ||
-      galat.status === 504
+      (galatDariBackend(galat) === undefined &&
+        (galat.status === 502 ||
+          galat.status === 503 ||
+          galat.status === 504))
     ) {
       return backendMati();
     }
