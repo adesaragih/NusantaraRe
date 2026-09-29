@@ -29,6 +29,7 @@ import {
   type TahunTreaty,
 } from '../../services/api'
 import { Field, FieldTanggal, Gagal, Kosong, Memuat } from '../ui/dasar'
+import PanelReinsurerKombinasi from './PanelReinsurerKombinasi'
 import PilihJenisReasuransi from './PilihJenisReasuransi'
 
 /** Isian form — nama medan mengikuti `InputTreatyContract.*`. */
@@ -83,6 +84,8 @@ export default function PanelKontrakTahun({ tahun, onTutup }: { tahun: TahunTrea
   const [sibuk, setSibuk] = useState(false)
   const [galat, setGalat] = useState<unknown>(null)
   const [info, setInfo] = useState<string | null>(null)
+  // Tiket 05: `Reinsurer List` b11308 membuka panel reinsurer kombinasi kontrak itu.
+  const [kontrakReinsurer, setKontrakReinsurer] = useState<string | null>(null)
 
   const muat = useCallback(async () => {
     try {
@@ -227,7 +230,13 @@ export default function PanelKontrakTahun({ tahun, onTutup }: { tahun: TahunTrea
                   <button type="button" className="btn btn--ghost btn--sm" disabled title={`${TAHUN_TCO.menungguTiket} 07`}>
                     {KONTRAK_TCO.businessList}
                   </button>{' '}
-                  <button type="button" className="btn btn--ghost btn--sm" disabled title={`${TAHUN_TCO.menungguTiket} 05`}>
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--sm"
+                    onClick={() => {
+                      setKontrakReinsurer(k.id)
+                    }}
+                  >
                     {KONTRAK_TCO.reinsurerList}
                   </button>{' '}
                   <button type="button" className="btn btn--ghost btn--sm" disabled title={`${TAHUN_TCO.menungguTiket} 10`}>
@@ -238,6 +247,17 @@ export default function PanelKontrakTahun({ tahun, onTutup }: { tahun: TahunTrea
             ))}
           </tbody>
         </table>
+      )}
+
+      {kontrakReinsurer !== null && (
+        <PanelReinsurerKombinasi
+          key={kontrakReinsurer}
+          tahunID={tahun.id}
+          kontrakID={kontrakReinsurer}
+          onTutup={() => {
+            setKontrakReinsurer(null)
+          }}
+        />
       )}
     </section>
   )

@@ -231,3 +231,68 @@ export const KONTRAK_TCO = {
   catatanLabelBersilang: 'Label ReinsType di kepala layar memuat nama grup treaty di sistem lama; dibawa apa adanya.',
 } as const
 
+/**
+ * Tiket 05 — panel reinsurer pada kombinasi (tahun, grup, jenis).
+ *
+ * Nomor baris = `Section/ViewDetailTreatyReinsurerGrid1.xml` (disertakan
+ * `InputTreatyContractReinsType.xml` b13311, dibuka tombol baris kontrak
+ * `Reinsurer List` b11308 → `BrowseTreatyReinsurerList_Act` b11325).
+ *
+ * ⛔ `Tambah` b1996 (tombol kedua ke `NewTreatyReinsurerDetail_Act` yang sama
+ * dengan `Add` b1730) TIDAK dibawa sebagai tombol kedua.
+ */
+export const REINSURER_TCO = {
+  /** b1730 `<pyLabel>` → `NewTreatyReinsurerDetail_Act` b1754. */
+  add: 'Add',
+  /** b2418 `<pyValue>` — sel `.ReinsurerID`. */
+  kolomReinsId: 'ReinsID',
+  /** b2560 `<pyValue>` — sel `.NAME`. */
+  kolomReinsurer: 'Reinsurer',
+  /** b2702 `<pyValue>` — sel `.PctShare`. */
+  kolomShare: '%Share',
+  /** b2844 `<pyValue>` — sel `.Ricomm`. */
+  kolomComm: '%Comm',
+  /** b2990 `<pyValue>` — sel `.StdRating`. */
+  kolomRating: 'Rating',
+  /** b3138 `<pyValue>` — sel `.OperatorName`. */
+  kolomOperatorName: 'Operator Name',
+  /** b4491 `<pyLabel>` → `SetUbahTreatyReinsurerList_Act` b4543. */
+  edit: 'Edit',
+  /** b4936 `<pyLabel>` → `DeleteTreatyReins_Act` b4953 — tiket 10. */
+  delete: 'Delete',
+  /** b5277 `<pyLabel>` — tiket 06. */
+  securityReinsurer: 'Security Reinsurer',
+  /** b6186 `<pyValue>` (`--&gt;&gt;` di XML) — nilai `InputTreatyReinsurer.TotalShare` b6330. */
+  totalShare: 'Total Share -->>',
+  /** b7842. */
+  formId: 'ID',
+  /** b8042 — `InputTreatyReinsurer.ReinsurerID`, diisi pemilih. */
+  formReinsId: 'Reins.ID',
+  /** b8226 — pemilih `BrowseAgentReinsSOA_RD`, tampil `.ClientName`. */
+  formReinsurer: 'Reinsurer',
+  /** b8522 — `InputTreatyReinsurer.PctShare` (koma atau titik desimal). */
+  formShare: '%Share',
+  /** b8800 — `InputTreatyReinsurer.Ricomm`. */
+  formComm: '%Comm',
+  /** b9076 — `InputTreatyReinsurer.StdRating`. */
+  formRating: 'Rating',
+  /** b11100 — hanya dibaca. */
+  formOperatorName: 'Operator Name',
+  /** b11405 `<pyLabel>` → `SaveTreatyReinsurerDetail1_Act` b11429. */
+  save: 'Save',
+  /** b12131 — `OutputParam.ERRMSG6`. */
+  error: 'Error',
+  /** b12868 — `OutputParam.ERRMSG`. */
+  informasi: 'Informasi',
+
+  /** `[tidak ada di korpus]` */
+  cariReinsurer: 'Cari nama reinsurer',
+  /** `[tidak ada di korpus]` */
+  kosong: 'Belum ada reinsurer pada kombinasi ini.',
+  /** `[tidak ada di korpus]` */
+  tersimpan: 'Reinsurer tersimpan.',
+  /** `[tidak ada di korpus]` */
+  tutup: 'Tutup',
+  /** `[tidak ada di korpus]` — kepala kombinasi (`OutputData.HASIL1/3/2` b2284–b2296). */
+  kombinasi: 'Kombinasi',
+} as const

@@ -48,6 +48,8 @@ func TestTCOPlaceholderTidakBerulang(t *testing.T) {
 		"dobel tahun":   sqlCariDobelTahunTreaty("S.T"),
 		"dobel kontrak": sqlCariDobelKontrakTCO("S.T"),
 		"lampiran":      sqlDaftarLampiranTCO("S.T", "S.O", true),
+		"share lain":    sqlShareLainTCO("S.T"),
+		"perbarui reas": sqlPerbaruiReinsurerTCO("S.T"),
 	} {
 		lihat := map[string]bool{}
 		for _, b := range strings.FieldsFunc(q, func(r rune) bool {

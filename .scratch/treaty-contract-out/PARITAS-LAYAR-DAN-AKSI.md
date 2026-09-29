@@ -103,9 +103,28 @@ Nomor baris = `Section/InputTreatyContractReinsType.xml` kecuali disebut lain.
 | grid `BrowseTreatyContract_RD` (tidak diekspor): `Reins Type` b9164 · `Treaty Start` b9304 · `Treaty End` b9444 | `GET /tahun/{id}/kontrak`, `ID DESC` | ✅ |
 | `Edit` b10519 → `SetUbahTreatyContract` | form dari baris | ✅ |
 | `Business List` b10842 | tombol berdiri `disabled` | 🔜 tiket 07 |
-| `Reinsurer List` b11308 | tombol berdiri `disabled` | 🔜 tiket 05 |
+| `Reinsurer List` b11308 | membuka `PanelReinsurerKombinasi` | ✅ tiket 05 |
 | `Delete` b11809 → `BrowseDeleteRowTreatyInContract` | tombol berdiri `disabled` | 🔜 tiket 10 |
-| `ViewDetailTreatyReinsurerGrid1` b13311, `ViewDetailTreatyBusinessGrid` b14064, grid security `SelectSecurityReinsurer` b16069 | — | 🔜 tiket 05, 07, 06 |
+| `ViewDetailTreatyReinsurerGrid1` b13311 | `PanelReinsurerKombinasi` | ✅ tiket 05 |
+| `ViewDetailTreatyBusinessGrid` b14064, grid security `SelectSecurityReinsurer` b16069 | — | 🔜 tiket 07, 06 |
 | gerbang `SaveTreatyContract_Act` langkah 2–6, 12 (DIKOMENTARI) | jenis wajib dari daftar, tanggal wajib, periode (AC 9), dobel 409 `Data sudah pernah di Input` | ✅ ralat 1–2, OQ-TCO-11 |
 | gerbang `SetTanggalTreatyContract` langkah 4 (HIDUP) | tahun mulai = tahun treaty → 422 | ✅ |
 
+## Tiket 05 — reinsurer pada kombinasi (`ViewDetailTreatyReinsurerGrid1`)
+
+Nomor baris = `Section/ViewDetailTreatyReinsurerGrid1.xml`.
+
+| Unsur korpus | Sistem baru | Keadaan |
+| --- | --- | --- |
+| `Add` b1730 → `NewTreatyReinsurerDetail_Act` | form kosong | ✅ |
+| `Tambah` b1996 (aksi sama) | — | ➖ tombol kedua untuk aksi yang sama |
+| grid `BrowseDetailTreatyReisurer_RD` (kombinasi, `ID ASC`): `ReinsID` b2418 · `Reinsurer` b2560 · `%Share` b2702 · `%Comm` b2844 · `Rating` b2990 · `Operator Name` b3138 | `GET /tahun/{id}/kontrak/{kid}/reinsurer` | ✅ |
+| `Total Share -->>` b6186 (`InputTreatyReinsurer.TotalShare`) | kaki tabel, desimal persis dari server | ✅ AC 15 |
+| `Edit` b4491 → `SetUbahTreatyReinsurerList_Act` | form dari baris | ✅ |
+| `Delete` b4936 → `DeleteTreatyReins_Act` | tombol berdiri `disabled` | 🔜 tiket 10 |
+| `Security Reinsurer` b5277 | tombol berdiri `disabled` | 🔜 tiket 06 |
+| form `ID` b7842 · `Reins.ID` b8042 · `Reinsurer` b8226 (pemilih `BrowseAgentReinsSOA_RD`) · `%Share` b8522 · `%Comm` b8800 · `Rating` b9076 · `Operator Name` b11100 | ID/Reins.ID/Operator Name baca-saja; kotak cari + pemilih master aktif | ✅ OQ-TCO-12 |
+| delapan medan tersembunyi `pyCondition 1=2` | tidak diterima dari klien; dipertahankan server | ✅ |
+| `%Share`/`%Comm` → `SetErrorMessageReinsurer` (koma → titik, 0..100) | `models.UraiPersenMasukTCO` di batas masukan | ✅ |
+| `Save` b11405 → `SaveTreatyReinsurerDetail1_Act` → `SaveMasterTreatyReinsurer_SQL` → `PEGA_TREATYREINSURER` | `POST`/`PUT .../reinsurer` → `T_TREATYREINSURER` + jejak; total > 100 → 422 VERBATIM | ✅ prosedur tidak dipanggil |
+| `Error` b12131 · `Informasi` b12868 | pita galat + baris status | ✅ |

@@ -2348,3 +2348,95 @@ export async function ambilAkhirBawaanKontrak(tahunID: string, mulai: string): P
   return j.treatyEndDate
 }
 
+// ---------------------------------------------------------------------------
+// Treaty Contract Out tiket 05 — reinsurer pada kombinasi kontrak.
+// ---------------------------------------------------------------------------
+
+/** Kunci gabungan anak kontrak (tahun teks, grup, jenis). */
+export interface KombinasiTreaty {
+  treatyYear: string
+  treatyGroupId: string
+  treatyGroupName: string
+  reinsTypeId: string
+  reinsTypeName: string
+}
+
+/** Satu reinsurer. ⛔ `pctShare` dan `ricomm` TEKS desimal — tidak pernah `Number`. */
+export interface ReinsurerTreaty {
+  id: string
+  treatyYear: string
+  treatyGroupId: string
+  treatyGroupName: string
+  reinsTypeId: string
+  reinsTypeName: string
+  reinsurerId: string
+  clientId: string
+  name: string
+  ricomm: string
+  pctShare: string
+  iuDate: string
+  userId: string
+  startDate: string
+  endDate: string
+  statusOn: string
+  stdRating: string
+  operatorName: string
+  tglUpdate: string
+}
+
+/** Grid reinsurer + `Total Share -->>`. */
+export interface DaftarReinsurer {
+  daftar: ReinsurerTreaty[]
+  total: number
+  /** Teks desimal persis dari server. */
+  totalShare: string
+  kombinasi: KombinasiTreaty
+}
+
+/** Badan simpan — hanya medan yang tampil di form. */
+export interface ReinsurerMasuk {
+  id: string
+  reinsurerId: string
+  /** Teks; koma atau titik desimal — dinormalkan server. */
+  pctShare: string
+  ricomm: string
+  stdRating: string
+}
+
+/** Satu pilihan master reinsurer (`BrowseAgentReinsSOA_RD`). */
+export interface ReinsurerMaster {
+  id: string
+  clientName: string
+  clientId: string
+}
+
+function jalurReinsurer(tahunID: string, kontrakID: string): string {
+  return `/api/treaty-contract-out/tahun/${encodeURIComponent(tahunID)}/kontrak/${encodeURIComponent(kontrakID)}/reinsurer`
+}
+
+/** `Reinsurer List` b11308 — reinsurer kombinasi kontrak + total share. */
+export async function ambilReinsurerKombinasi(tahunID: string, kontrakID: string): Promise<DaftarReinsurer> {
+  const j = await minta<DaftarReinsurer>(jalurReinsurer(tahunID, kontrakID))
+  return { ...j, daftar: j.daftar ?? [] }
+}
+
+/** `Save` b11405 — POST bila baru, PUT /{id} bila ubah. */
+export async function simpanReinsurerKombinasi(
+  tahunID: string,
+  kontrakID: string,
+  masuk: ReinsurerMasuk,
+): Promise<{ reinsurer: ReinsurerTreaty; totalShare: string }> {
+  const jalur = jalurReinsurer(tahunID, kontrakID)
+  if (masuk.id === '') {
+    return minta(jalur, { metode: 'POST', badan: masuk })
+  }
+  return minta(`${jalur}/${encodeURIComponent(masuk.id)}`, { metode: 'PUT', badan: masuk })
+}
+
+/** Pemilih `Reinsurer` b8226 — master aktif yang namanya memuat teks. */
+export async function cariReinsurerMaster(teks: string): Promise<ReinsurerMaster[]> {
+  const j = await minta<{ daftar: ReinsurerMaster[] | null }>('/api/treaty-contract-out/reinsurer-master', {
+    kueri: { cari: teks },
+  })
+  return j.daftar ?? []
+}

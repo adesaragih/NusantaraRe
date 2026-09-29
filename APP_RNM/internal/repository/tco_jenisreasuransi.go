@@ -49,6 +49,8 @@ const MasterJenisReasuransiTCO = "REINSURANCETYPE"
 var masterDibacaSajaTCO = []string{
 	MasterJenisReasuransiTCO, "TREATYDESC", "TREATYGROUP", "TREATYEXCHANGEYEARLY",
 	"CATEGORY_ATTACH_REAS",
+	// Tiket 05: master reinsurer (pemilih `BrowseAgentReinsSOA_RD`).
+	"AGENT",
 }
 
 // BlacklistJenisReasuransiNonLife adalah dua belas awalan ID yang disingkirkan

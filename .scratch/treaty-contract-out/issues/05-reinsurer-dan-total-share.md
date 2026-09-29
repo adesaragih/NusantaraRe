@@ -1,6 +1,6 @@
 # 05: Reinsurer + total share
 
-**Status:** ready-for-agent
+**Status:** selesai (29-09-2026)
 
 **Blocked by:** 04 (kombinasi tahun/grup/jenis dibuka oleh kontrak)
 
@@ -99,3 +99,52 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+---
+
+## Pembacaan ulang XML — 29-09-2026 (sesi modul, lanjutan 1)
+
+Nomor baris = baris mentah berkas korpus; langkah aktivitas dibaca lengkap (prasyarat, `//` = dikomentari).
+
+| Unsur | Bukti | Dibawa sebagai |
+| --- | --- | --- |
+| jalan masuk | `InputTreatyContractReinsType.xml` b11308 `Reinsurer List` → `BrowseTreatyReinsurerList_Act` b11325 (`CARI4 = Param.TreatyYear`, `CARI5 = TreatyGroupID`, `CARI6 = ReinsTypeID`) + `SetTreatyReinsurerList_Act`; panel `ViewDetailTreatyReinsurerGrid1` b13311 | tombol `Reinsurer List` membuka `PanelReinsurerKombinasi` |
+| kunci kombinasi | `RDBList/GetMasterReinsurerList.xml` `TreatyYear={CARI4} and TreatyGroupID={CARI5} and ReinsTypeID={CARI6}`; `ReportDefinition/BrowseDetailTreatyReisurer_RD.xml` saringan b651/b668/b685, urut `.ID ASC` b727/b730 | kombinasi diturunkan server dari tahun (TREATYYEAR teks, TREATYGROUPID) + kontrak (REINSTYPEID) |
+| total share | `BrowseTreatyReinsurerList_Act` langkah 3 (loop `pTotalShare + toDecimal(replaceAll(.PctShare,",","."))`), langkah 4 `TotalShare`; `SetUbahTreatyReinsurerList_Act` langkah 3 (`PctShare1 = .PctShare` baris yang diubah) | `models.TotalShareTCO` (apd) + `totalShare` di jawaban daftar |
+| gerbang simpan | `SaveTreatyReinsurerDetail1_Act`: langkah 3 b694 `"Data tidak boleh kosong...!!!"` bila ReinsurerID kosong; langkah 7 b1357 `"Persentase tidak boleh lebih dari 100!"` kecuali `TotalShare + (PctShare - PctShare1) <= 100.000` (b1452); langkah 9 RDB `SaveMasterTreatyReinsurer_SQL` hanya bila kedua syarat itu lolos; langkah 4, 5, 8, 10–15 DIKOMENTARI | 422 dengan teks VERBATIM; total dihitung di dalam transaksi dengan kontrak dikunci |
+| rentang dan koma | `SetErrorMessageReinsurer.xml` langkah 1 `@replaceAll(PctShare/Ricomm, ",", ".")`; langkah 2–3 `SetErrorMessageBetween` (b452/b631) bila `> 100 || < 0` | `models.UraiPersenMasukTCO` sekali di batas masukan: koma → titik, tolak koma+titik, ≤ 8 desimal, 0..100 |
+| form | `ViewDetailTreatyReinsurerGrid1.xml` b7842 `ID`, b8042 `Reins.ID`, b8226 `Reinsurer` (pemilih `BrowseAgentReinsSOA_RD`: `.ID` → ReinsurerID, `.ClientName` → NAME, `.ClientID` → CLIENTID), b8522 `%Share`, b8800 `%Comm`, b9076 `Rating`, b11100 `Operator Name`, b11405 `Save`; delapan medan tanpa label (TreatyYear, TreatyGroupID, ReinsTypeID, UserId, IUDate, StartDate, EndDate, StatusOn, CLIENTID) tersembunyi permanen `pyCondition 1=2` | form panel dengan lima medan tampil; medan tersembunyi dipertahankan server |
+| master reinsurer | `BrowseAgentReinsSOA_RD.xml` kelas `ASM-FW-GISFW-Int-AGENT`, `.ClientName Contains` tanpa beda huruf (b569–b572), `.StatusActive = 1` (b579–b591); kolom fisik `ID`/`CLIENTNAME`/`CLIENTID` terbukti di `Claim Fac In/RDBList/GetLeaderReport.xml` dan `GetAddressCeding.xml` | `GET /api/treaty-contract-out/reinsurer-master?cari=` (dibaca saja) |
+| grid | b1730 `Add`, b1996 `Tambah` (aksi sama), kolom b2418 `ReinsID` · b2560 `Reinsurer` · b2702 `%Share` · b2844 `%Comm` · b2990 `Rating` · b3138 `Operator Name`; b4491 `Edit`; b4936 `Delete` → `DeleteTreatyReins_Act` (tiket 10); b5277 `Security Reinsurer` (tiket 06); b6186 `Total Share -->>` (b6330 nilai) | grid + kaki total; `Tambah` tidak dibawa sebagai tombol kedua |
+
+### Ralat bertanggal 29-09-2026
+
+1. **"Total share ≠ 100 bukan gerbang" hanya separuh benar.** Kurang dari 100 memang tidak ditolak. Lebih dari 100
+   DITOLAK di Pega (`SaveTreatyReinsurerDetail1_Act` langkah 7 + 9, b1357/b1452) dengan pesan `Persentase tidak boleh
+   lebih dari 100!` — dibawa sebagai 422. Pemeriksaan dilakukan di dalam transaksi dengan baris kontrak pembuka
+   kombinasi dikunci (`FOR UPDATE`), supaya dua penulis serentak tidak sama-sama lolos.
+2. **Share dan komisi wajib, masing-masing 0..100.** Rentang dari `SetErrorMessageReinsurer` (hidup di Pega, pada
+   perubahan medan); kewajiban mengisi dari AC 14 ("masing-masing dengan share dan komisi") — Pega tidak
+   menggerbanginya.
+3. **Reinsurer dari master `AGENT`, nama dan client dari master.** Klien hanya mengirim `reinsurerId`; `NAME` dan
+   `CLIENTID` diambil server. Kolom `STATUSACTIVE` diturunkan dari nama properti RD `.StatusActive` — **OQ-TCO-12**.
+4. **`OPERATORNAME` menyimpan pengenal akun**, bukan `pyUserName` (nama tampilan orang) — nol nama orang di data baru.
+   `USERID` = pembuat baris (dipertahankan saat diubah).
+5. **Kombinasi dikunci teks `TREATYYEAR`, bukan `ID` tahun** (`BrowseTreatyReinsurerList_Act` langkah 1): dua tahun
+   treaty berteks tahun dan grup sama berbagi reinsurer untuk jenis yang sama — dibawa apa adanya
+   (`models.KombinasiTCO`).
+6. **`STDRATING`** di tabel non-life adalah medan `Rating` biasa (b9076). Pemakaian ulangnya sebagai total share ada di
+   varian Life (`SetTreatyReinsurerList_Act` langkah 4 `InputTreatyReinsurerLife.STDRATING = dPctShare`) dan tidak
+   menyentuh tabel ini.
+
+### Yang dibangun
+
+| Lapisan | Berkas | Isi |
+| --- | --- | --- |
+| models | `tco_reinsurer.go`, `tco_kombinasi.go` (+uji) | `UraiPersenMasukTCO`, `TotalShareTCO`, `PeriksaTotalShareTCO`, `PeriksaReinsurerTCO`; uji uang dibuktikan merah terhadap float64 dulu |
+| repository | `tco_reinsurer.go` (+uji), `tco_kontrak.go` (+`Kunci`) | daftar per kombinasi `ID ASC`, share lain `FOR UPDATE`, sisip/perbarui berbatas kombinasi; master `AGENT` dengan LIKE ber-ESCAPE |
+| services | `tco_reinsurer.go` (+uji) | `ReinsurerTCO`: kombinasi dari tahun + kontrak; satu transaksi {kunci kontrak, total ≤ 100, tulis, jejak} |
+| handlers | `tco_reinsurer.go` (+uji, +uji `db`) | 4 rute |
+| frontend | `PanelReinsurerKombinasi.tsx` (+uji), `REINSURER_TCO` (21 baris diuji ke korpus), `api.ts` (+3), tombol `Reinsurer List` hidup | uang teks sepanjang jalan |
+
+**Status:** selesai 29-09-2026 — commit `treaty-contract-out: tiket 05 — reinsurer + total share`.

@@ -219,3 +219,37 @@ func (m *MasterKontrakTCO) CariDobel(ctx context.Context, tx *Tx, tahunID, reins
 	}
 	return id, nil
 }
+
+func sqlKunciKontrakTCO(tabel string) string {
+	return fmt.Sprintf(`SELECT ID FROM %s WHERE IDTREATYYEAR = :1 AND ID = :2 FOR UPDATE`, tabel)
+}
+
+// Kunci mengunci baris kontrak selama transaksi penulis anak-anaknya.
+//
+// ⛔ Tiket 05: penulisan reinsurer MENJUMLAHKAN share kombinasi lalu menulis;
+// dua penulis serentak yang sama-sama melihat total 60 akan sama-sama
+// menambah 40. Mengunci kontrak pembuka kombinasinya menjadikan keduanya
+// berurutan. `FOR UPDATE` atas baris reinsurer saja tidak cukup: baris BARU
+// milik penulis lain tidak terkunci olehnya.
+func (m *MasterKontrakTCO) Kunci(ctx context.Context, tx *Tx, tahunID, id string) error {
+	if tx == nil {
+		return errors.New("repository: mengunci kontrak menuntut transaksi")
+	}
+	tabel, err := m.db.Qualify(TabelKontrakTCO)
+	if err != nil {
+		return err
+	}
+	q := sqlKunciKontrakTCO(tabel)
+	if err := PeriksaSQL(q); err != nil {
+		return err
+	}
+	var got string
+	err = tx.tx.QueryRowContext(ctx, q, tahunID, id).Scan(&got)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrKontrakTidakAda
+	}
+	if err != nil {
+		return fmt.Errorf("repository: mengunci kontrak %s: %w", id, err)
+	}
+	return nil
+}

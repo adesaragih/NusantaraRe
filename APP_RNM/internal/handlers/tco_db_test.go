@@ -39,6 +39,8 @@ type ujiTCO struct {
 	// Tiket 12: master kategori lampiran dan folder unggahan uji.
 	isiKategori func([]string)
 	unggahan    string
+	// Tiket 05: master reinsurer AGENT.
+	isiAgent func([]skemauji.AgentUji)
 }
 
 // serverTCO memasang skema uji dan Router BER-STUB identitas: rute modul ini
@@ -72,6 +74,11 @@ func serverTCO(t *testing.T) (*ujiTCO, func()) {
 	u := &ujiTCO{
 		srv:   httptest.NewServer(handlers.Router(services.New(db).DenganUnggahanDir(unggahan), true)),
 		sqlDB: sqlDB, db: db, skema: skema, ctx: ctx, unggahan: unggahan,
+	}
+	u.isiAgent = func(baris []skemauji.AgentUji) {
+		if err := skemauji.IsiAgentTCO(ctx, sqlDB, skema, baris); err != nil {
+			t.Fatalf("mengisi master reinsurer: %v", err)
+		}
 	}
 	u.isiKategori = func(note []string) {
 		if err := skemauji.IsiKategoriLampiranTCO(ctx, sqlDB, skema, note); err != nil {

@@ -376,3 +376,62 @@ yang dibaca hilir dari reinsurer, business, dan klausul.
 | Putaran instrumen gagal lalu diulang | 3: nama pembantu uji `tgl` bertabrakan di models (diganti `tglTeks`); pemalsuan pemindai `pemindaiUji` tidak ada (dipakai `barisPalsu` yang sudah ada); grep langkah aktivitas tak terbaca karena tag bersarang (diganti pembuang XML) |
 | Token / biaya | tidak terlihat dari dalam sesi, jadi tidak dikarang |
 
+## Tiket 05 — reinsurer + total share
+
+### Yang dibangun
+
+| Lapisan | Berkas | Isi |
+| --- | --- | --- |
+| models | `tco_reinsurer.go`, `tco_kombinasi.go` (+uji) | aturan uang dan gerbang reinsurer; kombinasi |
+| repository | `tco_reinsurer.go` (+uji), `tco_kontrak.go` `Kunci` | reinsurer per kombinasi; master `AGENT` |
+| services | `tco_reinsurer.go` (+uji) | `ReinsurerTCO` |
+| handlers | `tco_reinsurer.go` (+uji, +uji `db`) | 4 rute |
+| frontend | `PanelReinsurerKombinasi.tsx` (+uji), `REINSURER_TCO`, `api.ts` (+3) | panel dari tombol `Reinsurer List` |
+
+### Bukti merah lebih dulu untuk aturan uang
+
+Uji `UraiPersenMasukTCO`, `TotalShareTCO`, dan `PeriksaTotalShareTCO` dijalankan dulu terhadap implementasi sementara
+berbasis `float64`: gagal di tiga uji (`0.1 + 0.2 = 0.30000000000000004`; tiga sepertiga kehilangan skala `100.00000000`;
+rentang dan skala tidak ditegakkan). Implementasi `apd` kemudian meluluskannya.
+
+### Kode bersama yang disentuh (aditif, dilaporkan)
+
+| Berkas | Perubahan |
+| --- | --- |
+| `handlers/penyuntikan_test.go` | +1 entri `tco_reinsurer.go` (empat penyuntikan wajib) |
+| `repository/tco_jenisreasuransi.go` (milik modul) | `masterDibacaSajaTCO` +`AGENT` |
+| `repository/skemauji/tco_tiruan.go` (milik modul) | +tiruan `AGENT`, `IsiAgentTCO` |
+
+### Ralat / OQ
+
+Enam ralat bertanggal di tiket 05; yang terpenting: total share > 100 DITOLAK di Pega (catatan tiket menyebut total
+bukan gerbang). **OQ-TCO-12 (baru):** nama kolom fisik `STATUSACTIVE` master `AGENT` diturunkan dari properti RD.
+
+### Kontrak hilir
+
+Kolom yang dibaca hilir (`KolomReinsurerHilir`: TREATYYEAR, TREATYGROUPID, REINSTYPEID, REINSURERID, CLIENTID, NAME,
+RICOMM, PCTSHARE) ditulis VERBATIM; `TestKontrakHilirTCO*` tetap hijau. Penulis kini mengisi `NAME`/`CLIENTID` dari
+master, sehingga pembaca hilir mendapat nama perusahaan yang sama dengan master.
+
+### Angka uji
+
+| Perintah | Hasil |
+| --- | --- |
+| `go vet ./...` · `go vet -tags=db ./...` · `gofmt -l .` | bersih |
+| `go test ./...` | 840 lulus, 0 gagal (+17) |
+| `go test -tags=db ./...` | 840 lulus, 49 dilewati (+1: `TestReinsurerKombinasiLingkaranPenuh`, tanpa skema uji), 0 gagal |
+| `npx tsc --noEmit` · `npx vite build` | bersih |
+| `npx vitest run` | 514 lulus di 42 berkas (+30) |
+
+⚠️ SQL tiket 05 belum pernah dijalankan terhadap Oracle: uji `db` dilewati karena skema uji tidak dikonfigurasi di sesi ini.
+
+### TELEMETRI EKSEKUSI — tiket 05
+
+| Ukuran | Nilai |
+| --- | --- |
+| Berkas dibaca | ±20 (10 korpus: 7 aktivitas, section 14.763 baris, 2 RD, 2 RDBList modul lain untuk kolom `AGENT`; ±10 pola kode) |
+| Berkas XML korpus disensus | `SaveTreatyReinsurerDetail1_Act.xml` (15 langkah), `SetErrorMessageReinsurer.xml`, `SetUbahTreatyReinsurerList_Act.xml`, `NewTreatyReinsurerDetail_Act.xml`, `BrowseTreatyReinsurerList_Act.xml`, `SetTreatyReinsurerList_Act.xml`, `ViewDetailTreatyReinsurerGrid1.xml`, `BrowseDetailTreatyReisurer_RD.xml`, `BrowseAgentReinsSOA_RD.xml`, `GetMasterReinsurerList.xml`; 26 baris label/aksi diverifikasi |
+| Perintah dijalankan | ±30 |
+| Berkas ditulis / disunting | 11 baru (+±1.700 baris), 11 disunting (+±250) |
+| Putaran instrumen gagal lalu diulang | 2: harapan total `100` di uji `db` salah (Oracle memberi skala 8 → `100.00000000`, diperbaiki sebelum dijalankan); dua metode bawaan tak terpakai dibuang |
+| Token / biaya | tidak terlihat dari dalam sesi, jadi tidak dikarang |

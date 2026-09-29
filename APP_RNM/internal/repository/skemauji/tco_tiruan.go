@@ -34,6 +34,8 @@ var namaTabelTiruanTCO = []string{
 	repository.MasterJenisReasuransiTCO, repository.MasterGrupTreatyTCO,
 	// Tiket 12: master kategori lampiran.
 	repository.MasterKategoriLampiranTCO,
+	// Tiket 05: master reinsurer.
+	repository.MasterReinsurerAgentTCO,
 }
 
 // namaTabelWarisanTCO adalah enam tabel warisan yang dipindahkan migrasi data.
@@ -84,6 +86,11 @@ func ddlTiruanTCO(skema string) []string {
 	out = append(out, fmt.Sprintf(
 		"CREATE TABLE %s.%s (ID VARCHAR2(1000), NOTE VARCHAR2(1000))",
 		skema, repository.MasterKategoriLampiranTCO))
+	// Tiket 05: master reinsurer - kolom yang SQL korpus sebut (ID, CLIENTNAME,
+	// CLIENTID) + STATUSACTIVE dari properti RD (OQ-TCO-12).
+	out = append(out, fmt.Sprintf(
+		"CREATE TABLE %s.%s (ID VARCHAR2(1000), CLIENTNAME VARCHAR2(1000), CLIENTID VARCHAR2(1000), STATUSACTIVE VARCHAR2(10))",
+		skema, repository.MasterReinsurerAgentTCO))
 	return out
 }
 
@@ -189,6 +196,23 @@ func IsiKategoriLampiranTCO(ctx context.Context, db *sql.DB, skema string, note 
 	for i, n := range note {
 		if _, err := db.ExecContext(ctx, q, fmt.Sprintf("UJI-%02d", i+1), n); err != nil {
 			return fmt.Errorf("skemauji: mengisi tiruan master kategori lampiran: %w", err)
+		}
+	}
+	return nil
+}
+
+// AgentUji adalah satu baris fixture master reinsurer.
+type AgentUji struct {
+	ID, ClientName, ClientID, StatusActive string
+}
+
+// IsiAgentTCO mengisi tiruan AGENT (tiket 05).
+func IsiAgentTCO(ctx context.Context, db *sql.DB, skema string, baris []AgentUji) error {
+	q := fmt.Sprintf("INSERT INTO %s.%s (ID, CLIENTNAME, CLIENTID, STATUSACTIVE) VALUES (:1, :2, :3, :4)",
+		skema, repository.MasterReinsurerAgentTCO)
+	for _, b := range baris {
+		if _, err := db.ExecContext(ctx, q, b.ID, b.ClientName, b.ClientID, b.StatusActive); err != nil {
+			return fmt.Errorf("skemauji: mengisi tiruan master reinsurer: %w", err)
 		}
 	}
 	return nil

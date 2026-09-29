@@ -11,7 +11,14 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { JENIS_REASURANSI_TCO, KONTRAK_TCO, LAMPIRAN_TCO, MENU_TCO, TAHUN_TCO } from './labels.treaty-contract-out'
+import {
+  JENIS_REASURANSI_TCO,
+  KONTRAK_TCO,
+  LAMPIRAN_TCO,
+  MENU_TCO,
+  REINSURER_TCO,
+  TAHUN_TCO,
+} from './labels.treaty-contract-out'
 
 const KORPUS = 'D:\\XML\\RNM_BRD\\Treaty Contract Out'
 const adaKorpus = existsSync(KORPUS)
@@ -26,6 +33,7 @@ const GRID = 'Section\\InputTreatyContract.xml'
 const FORM = 'Section\\InputDtlTreatyContact.xml'
 const LAMPIRAN = 'Section\\GridTreatyArrangementAttachment.xml'
 const KONTRAK = 'Section\\InputTreatyContractReinsType.xml'
+const REAS = 'Section\\ViewDetailTreatyReinsurerGrid1.xml'
 
 describe.skipIf(!adaKorpus)('label Treaty Contract Out berbukti barisnya', () => {
   const kasus: Array<[string, string, number, string]> = [
@@ -88,6 +96,27 @@ describe.skipIf(!adaKorpus)('label Treaty Contract Out berbukti barisnya', () =>
     [KONTRAK, 'pyLabel', 10842, KONTRAK_TCO.businessList],
     [KONTRAK, 'pyLabel', 11308, KONTRAK_TCO.reinsurerList],
     [KONTRAK, 'pyLabel', 11809, KONTRAK_TCO.delete],
+    // tiket 05 - panel reinsurer
+    [REAS, 'pyLabel', 1730, REINSURER_TCO.add],
+    [REAS, 'pyValue', 2418, REINSURER_TCO.kolomReinsId],
+    [REAS, 'pyValue', 2560, REINSURER_TCO.kolomReinsurer],
+    [REAS, 'pyValue', 2702, REINSURER_TCO.kolomShare],
+    [REAS, 'pyValue', 2844, REINSURER_TCO.kolomComm],
+    [REAS, 'pyValue', 2990, REINSURER_TCO.kolomRating],
+    [REAS, 'pyValue', 3138, REINSURER_TCO.kolomOperatorName],
+    [REAS, 'pyLabel', 4491, REINSURER_TCO.edit],
+    [REAS, 'pyLabel', 4936, REINSURER_TCO.delete],
+    [REAS, 'pyLabel', 5277, REINSURER_TCO.securityReinsurer],
+    [REAS, 'pyLabelFieldValue', 7842, REINSURER_TCO.formId],
+    [REAS, 'pyLabelFieldValue', 8042, REINSURER_TCO.formReinsId],
+    [REAS, 'pyLabelFieldValue', 8226, REINSURER_TCO.formReinsurer],
+    [REAS, 'pyLabelFieldValue', 8522, REINSURER_TCO.formShare],
+    [REAS, 'pyLabelFieldValue', 8800, REINSURER_TCO.formComm],
+    [REAS, 'pyLabelFieldValue', 9076, REINSURER_TCO.formRating],
+    [REAS, 'pyLabelFieldValue', 11100, REINSURER_TCO.formOperatorName],
+    [REAS, 'pyLabel', 11405, REINSURER_TCO.save],
+    [REAS, 'pyLabelFieldValue', 12131, REINSURER_TCO.error],
+    [REAS, 'pyLabelFieldValue', 12868, REINSURER_TCO.informasi],
   ]
 
   it.each(kasus)('%s baris %i memuat <%s>', (jalur, tag, nomor, teks) => {
@@ -133,6 +162,16 @@ describe.skipIf(!adaKorpus)('label Treaty Contract Out berbukti barisnya', () =>
     expect(baris(KONTRAK, 9992).trim()).toBe('<pyValue>.ReinsTypeName</pyValue>')
     // Medan ID hanya berlabel bawaan kontrol - label "ID" kita tandai bukan dari korpus.
     expect(baris(KONTRAK, 2478).trim()).toBe('<pyLabelFieldValue>Formatted Text</pyLabelFieldValue>')
+  })
+
+  it('tiket 05: Total Share (ber-entitas di XML), aksi tombol, dan Tambah yang tidak dibawa', () => {
+    expect(baris(REAS, 6186).trim().replace(/&gt;/g, '>')).toBe(`<pyValue>${REINSURER_TCO.totalShare}</pyValue>`)
+    expect(baris(REAS, 1754).trim()).toBe('<pyActivity>NewTreatyReinsurerDetail_Act</pyActivity>')
+    expect(baris(REAS, 4543).trim()).toBe('<pyActivity>SetUbahTreatyReinsurerList_Act</pyActivity>')
+    expect(baris(REAS, 11429).trim()).toBe('<pyActivity>SaveTreatyReinsurerDetail1_Act</pyActivity>')
+    expect(baris(KONTRAK, 11325).trim()).toBe('<pyActivity>BrowseTreatyReinsurerList_Act</pyActivity>')
+    expect(baris(REAS, 1996).trim()).toBe('<pyLabel>Tambah</pyLabel>')
+    expect(Object.values(REINSURER_TCO)).not.toContain('Tambah')
   })
 
   it('nama kelompok adalah nama folder korpus', () => {
