@@ -147,8 +147,8 @@ func TestSimpanUtuhGagalPadaKlausulKeN(t *testing.T) {
 
 // Identitas sementara tidak berarti bagi pemakai - disamarkan di pesan.
 func TestGalatSimpanUtuhMenyamarkanIdentitasSementara(t *testing.T) {
-	err := services.GalatSimpanUtuhTCO{Bagian: "klausul ke-3", Galat: services.GalatKlausulDobel{IDLain: "S000000004T", Jenis: "EPI"}}
-	if strings.Contains(err.Error(), "S000000004T") || !strings.Contains(err.Error(), "(baris baru dalam permintaan ini)") ||
+	err := services.GalatSimpanUtuhTCO{Bagian: "klausul ke-3", Galat: services.GalatKlausulDobel{IDLain: "S1234567890000004T", Jenis: "EPI"}}
+	if strings.Contains(err.Error(), "S1234567890000004T") || !strings.Contains(err.Error(), "(baris baru dalam permintaan ini)") ||
 		!errors.Is(err, services.ErrKlausulDobel) {
 		t.Errorf("%v", err)
 	}

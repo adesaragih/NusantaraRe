@@ -11,8 +11,10 @@ package repository
 //     permintaan yang sama (kontrak baru, reinsurer baru, induk klausul baru)
 //     terlihat oleh langkah berikutnya. Di luar mode itu tetap pool biasa.
 //  2. IDENTITAS SEMENTARA. Selama mode itu `IdentitasBerikutTCO` TIDAK
-//     menyentuh sequence: ia memberi `S#########T` (lebar tetap, bukan angka,
-//     tidak pernah bertabrakan dengan identitas '1' + digit). Baru sesudah
+//     menyentuh sequence: ia memberi `S` + 10 digit acak per transaksi + 6
+//     digit urut + `T` (lebar tetap, bukan angka, tidak pernah bertabrakan dengan
+//     identitas '1' + digit, dan UNIK antartransaksi - dua simpan utuh serentak
+//     tidak saling menunggu kunci indeks PK yang sama). Baru sesudah
 //     SELURUH baris lolos, `TetapkanIdentitasTCO` mengambil nomor sequence dan
 //     mengganti identitas sementara. Kegagalan di baris ke-N karena itu tidak
 //     menghabiskan satu nomor pun (AC tiket 09: "tidak menyisakan identitas
@@ -26,9 +28,11 @@ package repository
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
 	"errors"
 	"fmt"
+	"math/big"
 	"regexp"
 	"strings"
 )
@@ -50,6 +54,7 @@ type kunciUtuhTCO struct{}
 // utuhTCO adalah keadaan satu transaksi utuh.
 type utuhTCO struct {
 	tx       *Tx
+	awalan   string
 	urut     int
 	sementar []barisSementaraTCO
 	tetap    bool
@@ -61,7 +66,7 @@ type barisSementaraTCO struct{ sequence, sementara string }
 var ErrIdentitasUtuhTCO = errors.New("repository: penetapan identitas transaksi utuh gagal")
 
 // polaIdentitasSementaraTCO - bentuk identitas sementara.
-var polaIdentitasSementaraTCO = regexp.MustCompile(`S\d{9}T`)
+var polaIdentitasSementaraTCO = regexp.MustCompile(`S\d{16}T`)
 
 // PolaIdentitasSementaraTCO - untuk menyamarkan identitas sementara di pesan galat.
 func PolaIdentitasSementaraTCO() *regexp.Regexp { return polaIdentitasSementaraTCO }
@@ -72,7 +77,19 @@ func DenganTransaksiUtuhTCO(ctx context.Context, tx *Tx) context.Context {
 	if tx == nil {
 		return ctx
 	}
-	return context.WithValue(ctx, kunciUtuhTCO{}, &utuhTCO{tx: tx})
+	return context.WithValue(ctx, kunciUtuhTCO{}, &utuhTCO{tx: tx, awalan: awalanSementaraTCO()})
+}
+
+// awalanSementaraTCO - 10 digit acak per transaksi utuh.
+func awalanSementaraTCO() string {
+	n, err := rand.Int(rand.Reader, big.NewInt(10_000_000_000))
+	if err != nil {
+		// crypto/rand tidak gagal di platform yang didukung; bila gagal,
+		// identitas tetap unik DI DALAM transaksi - hanya keunikan
+		// antartransaksi yang hilang (menunggu kunci, bukan data salah).
+		return "0000000000"
+	}
+	return fmt.Sprintf("%010d", n)
 }
 
 // DenganBacaTxTCO menandai ctx: pembaca modul memakai tx, identitas TETAP
@@ -104,7 +121,7 @@ func identitasSementaraTCO(ctx context.Context, sequence string) (string, bool) 
 		return "", false
 	}
 	u.urut++
-	s := fmt.Sprintf("S%09dT", u.urut)
+	s := fmt.Sprintf("S%s%06dT", u.awalan, u.urut)
 	u.sementar = append(u.sementar, barisSementaraTCO{sequence: sequence, sementara: s})
 	return s, true
 }

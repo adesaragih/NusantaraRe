@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"nusantarare/internal/repository"
 	"nusantarare/internal/repository/skemauji"
 )
 
@@ -93,7 +94,7 @@ func TestSimpanUtuhAtomikLintasEnamTabel(t *testing.T) {
 		map[string]any{"descId": "10009", "anak": true, "parentReinsTypeId": "10003", "medan": map[string]string{"ReinsTypeID": "10003", "Pct": "50"}},
 		epiInduk), true)
 	if kode != http.StatusConflict || !strings.Contains(badan, "klausul ke-3") || !strings.Contains(badan, "Data sudah pernah di Input") ||
-		strings.Contains(badan, "S00") {
+		repository.PolaIdentitasSementaraTCO().MatchString(badan) {
 		t.Fatalf("gagal ke-3: %d %s", kode, badan)
 	}
 	sesudah := hitungUtuh(t, u)
@@ -110,7 +111,7 @@ func TestSimpanUtuhAtomikLintasEnamTabel(t *testing.T) {
 	// Sukses: satu transaksi, identitas tetap, security menunjuk reinsurer tetap.
 	kode, badan = u.minta(t, http.MethodPut, jalur, bundel(epiInduk,
 		map[string]any{"descId": "10009", "anak": true, "parentReinsTypeId": "10003", "medan": map[string]string{"ReinsTypeID": "10003", "Pct": "50"}}), true)
-	if kode != http.StatusOK || !strings.Contains(badan, `"status":"1"`) || strings.Contains(badan, "S00") {
+	if kode != http.StatusOK || !strings.Contains(badan, `"status":"1"`) || repository.PolaIdentitasSementaraTCO().MatchString(badan) {
 		t.Fatalf("sukses: %d %s", kode, badan)
 	}
 	var h struct {
@@ -140,7 +141,8 @@ func TestSimpanUtuhAtomikLintasEnamTabel(t *testing.T) {
 		 (SELECT COUNT(*) FROM `+u.skema+`.T_TREATYCO_JEJAK WHERE ID LIKE 'S%T' OR BARIS_ID LIKE 'S%T') +
 		 (SELECT COUNT(*) FROM `+u.skema+`.T_TREATYREINSURER WHERE ID LIKE 'S%T') +
 		 (SELECT COUNT(*) FROM `+u.skema+`.T_MTREATYSECURITY WHERE ID LIKE 'S%T' OR REAS_ID LIKE 'S%T') +
-		 (SELECT COUNT(*) FROM `+u.skema+`.T_PROPORTIONALARRG WHERE ID LIKE 'S%T') FROM DUAL`).Scan(&sementara); err != nil || sementara != 0 {
+		 (SELECT COUNT(*) FROM `+u.skema+`.T_PROPORTIONALARRG WHERE ID LIKE 'S%T') +
+		 (SELECT COUNT(*) FROM `+u.skema+`.T_TREATYCO_JEJAK WHERE REGEXP_LIKE(KETERANGAN, 'S[0-9]{16}T')) FROM DUAL`).Scan(&sementara); err != nil || sementara != 0 {
 		t.Errorf("identitas sementara tersisa: %d %v", sementara, err)
 	}
 }

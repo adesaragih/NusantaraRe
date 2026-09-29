@@ -20,13 +20,19 @@ func TestIdentitasSementaraTCO(t *testing.T) {
 	ctx := DenganTransaksiUtuhTCO(context.Background(), &Tx{})
 	a, _ := identitasSementaraTCO(ctx, SeqKontrakTCO)
 	b, _ := identitasSementaraTCO(ctx, SeqJejakTCO)
-	if a != "S000000001T" || b != "S000000002T" || !PolaIdentitasSementaraTCO().MatchString(a) {
+	if len(a) != 18 || a[:11] != b[:11] || a[11:] != "000001T" || b[11:] != "000002T" ||
+		!PolaIdentitasSementaraTCO().MatchString(a) || len(a) > 32 {
 		t.Errorf("sementara: %q %q", a, b)
+	}
+	// Temuan /code-review: dua transaksi serentak tidak boleh memberi identitas yang sama.
+	lain, _ := identitasSementaraTCO(DenganTransaksiUtuhTCO(context.Background(), &Tx{}), SeqKontrakTCO)
+	if lain == a {
+		t.Errorf("dua transaksi utuh memberi identitas sementara sama: %q", a)
 	}
 	// IdentitasBerikutTCO tidak menyentuh sequence dalam mode utuh.
 	var d DB
 	id, err := d.IdentitasBerikutTCO(ctx, &Tx{}, SeqReinsurerTCO)
-	if err != nil || id != "S000000003T" {
+	if err != nil || id != a[:11]+"000003T" {
 		t.Errorf("IdentitasBerikutTCO dalam mode utuh: %q %v", id, err)
 	}
 	if _, err := d.IdentitasBerikutTCO(ctx, &Tx{}, "SEQ_LAIN"); !errors.Is(err, ErrSequenceTakDikenal) {

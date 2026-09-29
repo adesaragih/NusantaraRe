@@ -111,7 +111,7 @@ func TestSecuritySimpanBaru(t *testing.T) {
 	if b.TopID != "" || b.TpTreaty != "" || b.UserID != "" {
 		t.Errorf("kolom [terbuka] tidak dibiarkan kosong seperti warisan: %+v", b)
 	}
-	if len(g.jejak) != 1 || !strings.Contains(g.jejak[0], "security baru UJI-R2 share 33.33333333 reinsurer 1000007") {
+	if len(g.jejak) != 1 || !strings.Contains(g.jejak[0], "security baru UJI-R2 share 33.33333333 reinsurer UJI-R1") {
 		t.Errorf("jejak: %v", g.jejak)
 	}
 }
