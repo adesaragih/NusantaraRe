@@ -93,7 +93,7 @@ func main() {
 
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddr,
-		Handler:           rakitMux(dasar, terdaftar, aktif),
+		Handler:           rakitMux(dasar, terdaftar, aktif, cfg.AuthStub),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 

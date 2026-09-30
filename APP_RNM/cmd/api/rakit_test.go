@@ -38,7 +38,7 @@ func muxUji(t *testing.T, diminta []string) (http.Handler, []inti.Modul) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return rakitMux(inti.NewDasar(nil), terdaftar, aktif), aktif
+	return rakitMux(inti.NewDasar(nil), terdaftar, aktif, false), aktif
 }
 
 func kode(mux http.Handler, jalur string) int {
@@ -109,6 +109,26 @@ func TestModulAktifDilaporkan(t *testing.T) {
 	// Urutan DAFTAR, bukan urutan env.
 	if mau := []string{"claimlife", "komiteclaimlife"}; !reflect.DeepEqual(badan.Modul, mau) {
 		t.Errorf("modul aktif = %v, mau %v", badan.Modul, mau)
+	}
+}
+
+// GET /api/menu milik aplikasi: terpasang walau hanya satu modul aktif, dan
+// tanpa Oracle menjawab 503 BERGALAT - bukan 404 modul nonaktif, bukan menu
+// kosong diam-diam.
+func TestRuteMenuTerpasangDanGagalTerang(t *testing.T) {
+	for _, diminta := range [][]string{nil, {"treatycontractout"}} {
+		mux, _ := muxUji(t, diminta)
+		w := httptest.NewRecorder()
+		mux.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/api/menu", nil))
+		var badan struct {
+			Galat string `json:"galat"`
+		}
+		if err := json.NewDecoder(w.Body).Decode(&badan); err != nil {
+			t.Fatalf("MODUL_AKTIF %v: badan bukan JSON: %v", diminta, err)
+		}
+		if w.Code != http.StatusServiceUnavailable || !strings.Contains(badan.Galat, "M_NAV_MENU") {
+			t.Errorf("MODUL_AKTIF %v: kode %d, galat %q - mau 503 yang menyebut M_NAV_MENU", diminta, w.Code, badan.Galat)
+		}
 	}
 }
 

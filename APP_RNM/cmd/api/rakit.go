@@ -19,6 +19,7 @@ import (
 
 	"nusantarare/inti"
 	"nusantarare/inti/galat"
+	"nusantarare/inti/menu"
 )
 
 // pilihModulAktif menyaring modul terdaftar menurut MODUL_AKTIF.
@@ -72,10 +73,16 @@ func pilihModulAktif(terdaftar []inti.Modul, namaLama map[string]string, diminta
 // menyalakan ulang backend yang sedang berjalan (temuan /code-review paket
 // 6-8). Saat semua modul aktif, handler yang dikembalikan ADALAH mux-nya:
 // nol jawaban berubah.
-func rakitMux(dasar *inti.Dasar, terdaftar, aktif []inti.Modul) http.Handler {
+//
+// `GET /api/menu` (M_NAV_MENU, brief menu 30-09-2026) milik aplikasi: ia
+// dipasang walau modul mana pun nonaktif, dan butir modul nonaktif tidak
+// dikirimnya. `stubPelaku` = AUTH_STUB, diteruskan ke saringan per akun
+// (`menu.SaringMenuUntukPelaku`, hari ini meneruskan semua).
+func rakitMux(dasar *inti.Dasar, terdaftar, aktif []inti.Modul, stubPelaku bool) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", healthz(dasar))
 	mux.HandleFunc("GET /api/modul-aktif", modulAktif(aktif))
+	mux.HandleFunc("GET /api/menu", ruteMenu(dasar, aktif, stubPelaku))
 	dipasang := map[string]bool{}
 	for _, m := range aktif {
 		m.DaftarkanRute(mux)
@@ -131,6 +138,22 @@ func modulAktif(aktif []inti.Modul) http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(jawab)
 	}
+}
+
+// ruteMenu merakit `GET /api/menu` di atas pembaca Oracle - atau tanpa
+// pembaca bila proses berjalan tanpa database (jawabannya 503 bergalat).
+func ruteMenu(dasar *inti.Dasar, aktif []inti.Modul, stubPelaku bool) http.HandlerFunc {
+	var nama []string
+	for _, m := range aktif {
+		nama = append(nama, m.Nama())
+	}
+	// ⚠️ nil ANTARMUKA, bukan *menu.Pembaca bernilai nil: yang kedua tidak
+	// sama dengan nil dan akan dipanggil.
+	var pembaca menu.PembacaMenu
+	if dasar.PunyaDatabase() {
+		pembaca = menu.NewPembaca(dasar.DB())
+	}
+	return menu.Rute(pembaca, nama, stubPelaku)
 }
 
 type jawabanSehat struct {
