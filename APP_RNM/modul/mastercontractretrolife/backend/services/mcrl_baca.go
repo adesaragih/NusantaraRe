@@ -37,6 +37,15 @@ type Gudang interface {
 	AmbilMasterReinsurer(ctx context.Context, id string) (models.MasterReinsurer, bool, error)
 	CariMasterBusiness(ctx context.Context, kata string) ([]models.MasterBusiness, error)
 	AmbilMasterBusiness(ctx context.Context, id string) (models.MasterBusiness, bool, error)
+
+	// Penulis tahun treaty (paket 2). `USERID` dari model, `TGLUPDATE` =
+	// SYSDATE, ID baru dari sequence - ketiganya di dalam gudang.
+	SisipTahun(ctx context.Context, tx *db.Tx, t models.TahunTreaty) (string, error)
+	PerbaruiTahun(ctx context.Context, tx *db.Tx, t models.TahunTreaty) error
+	// SalinTahunKeAnak menulis salinan tahun (K4) ke anaknya yang berbeda:
+	// business `TREATYYEAR`, kontrak `TREATYSTARTDATE`/`TREATYENDDATE`; baris
+	// yang berubah mendapat `USERID` t.UserID dan `TGLUPDATE` baru (K6).
+	SalinTahunKeAnak(ctx context.Context, tx *db.Tx, t models.TahunTreaty) (int64, error)
 }
 
 // Galat "tidak ada" per entitas (404) - handler tidak mengimpor repository.

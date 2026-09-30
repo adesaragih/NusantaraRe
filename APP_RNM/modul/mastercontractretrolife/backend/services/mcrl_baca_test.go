@@ -17,7 +17,20 @@ import (
 	"nusantarare/modul/mastercontractretrolife/backend/tiruan"
 )
 
-var pelaku = inti.Pelaku{AkunID: "UJI-PELAKU"}
+var (
+	pelaku   = inti.Pelaku{AkunID: "UJI-PELAKU"}
+	noPelaku = inti.Pelaku{}
+)
+
+// containsAll - seluruh potongan ada di s.
+func containsAll(s string, potongan ...string) bool {
+	for _, p := range potongan {
+		if !strings.Contains(s, p) {
+			return false
+		}
+	}
+	return true
+}
 
 func layananUji(g *tiruan.Gudang) *services.Layanan {
 	return services.BaruLayanan(g, g.Transaksi, nil)

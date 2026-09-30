@@ -11,6 +11,7 @@ import (
 	"context"
 	"sort"
 	"strings"
+	"time"
 
 	"nusantarare/inti/backend/db"
 	"nusantarare/modul/mastercontractretrolife/backend/models"
@@ -35,6 +36,71 @@ type Gudang struct {
 	Panggilan []string
 	// Komit mencacah transaksi yang ditutup sukses.
 	Komit int
+	// Seq - nomor urut berikut per tabel (bawaan 44, seperti `START WITH 44`).
+	Seq map[string]int64
+	// Jam - cap `TGLUPDATE` (SYSDATE tiruan).
+	Jam time.Time
+	// GagalTulis - bila terisi, penulis yang namanya disebut gagal dengan galat
+	// itu (uji atomisitas dan K8).
+	GagalTulis map[string]error
+}
+
+func (g *Gudang) nomorBaru(tabel string) (string, error) {
+	n, ada := g.Seq[tabel]
+	if !ada {
+		n = 44
+	}
+	g.Seq[tabel] = n + 1
+	return repository.FormatIdentitas(n)
+}
+
+func (g *Gudang) gagal(nama string) error { return g.GagalTulis[nama] }
+
+// SisipTahun - ID dari sequence tiruan, TGLUPDATE = Jam.
+func (g *Gudang) SisipTahun(_ context.Context, _ *db.Tx, t models.TahunTreaty) (string, error) {
+	if err := g.gagal("SisipTahun"); err != nil {
+		return "", err
+	}
+	id, err := g.nomorBaru(repository.TabelTahun)
+	if err != nil {
+		return "", err
+	}
+	t.ID, t.TglUpdate = id, g.Jam
+	g.Tahun[id] = t
+	return id, nil
+}
+
+// PerbaruiTahun - seluruh medan; ID tak ada = ErrTidakAda.
+func (g *Gudang) PerbaruiTahun(_ context.Context, _ *db.Tx, t models.TahunTreaty) error {
+	if err := g.gagal("PerbaruiTahun"); err != nil {
+		return err
+	}
+	if _, ada := g.Tahun[t.ID]; !ada {
+		return repository.ErrTidakAda
+	}
+	t.TglUpdate = g.Jam
+	g.Tahun[t.ID] = t
+	return nil
+}
+
+// SalinTahunKeAnak - K4/R5 atas business dan kontrak tahun itu yang berbeda.
+func (g *Gudang) SalinTahunKeAnak(_ context.Context, _ *db.Tx, t models.TahunTreaty) (int64, error) {
+	var n int64
+	for id, b := range g.Business {
+		if b.TreatyYearID == t.ID && b.TreatyYear != t.TreatyYear {
+			b.TreatyYear, b.UserID, b.TglUpdate = t.TreatyYear, t.UserID, g.Jam
+			g.Business[id] = b
+			n++
+		}
+	}
+	for id, k := range g.Kontrak {
+		if k.IDTreatyYear == t.ID && (!k.TreatyStartDate.Equal(t.StartDate) || !k.TreatyEndDate.Equal(t.EndDate)) {
+			k.TreatyStartDate, k.TreatyEndDate, k.UserID, k.TglUpdate = t.StartDate, t.EndDate, t.UserID, g.Jam
+			g.Kontrak[id] = k
+			n++
+		}
+	}
+	return n, nil
 }
 
 // Baru menyusun gudang kosong.
@@ -42,7 +108,8 @@ func Baru() *Gudang {
 	return &Gudang{
 		Tahun: map[string]models.TahunTreaty{}, Kontrak: map[string]models.Kontrak{},
 		Reinsurer: map[string]models.Reinsurer{}, Security: map[string]models.SecurityReinsurer{},
-		Business: map[string]models.Business{},
+		Business: map[string]models.Business{}, Seq: map[string]int64{},
+		Jam: time.Date(2026, 9, 30, 10, 0, 0, 0, time.UTC), GagalTulis: map[string]error{},
 	}
 }
 
