@@ -1,9 +1,9 @@
-# PROMPT — MENU **DATAR**: satu modul = satu menu, dikelompokkan per `GROUPMENU` *(sesi baru, folder `OUTPUT_HASIL_RNM`, cabang `main` @ `483e589` atau lebih baru)*
+# PROMPT — MENU **DATAR**: satu modul = satu menu, dikelompokkan per `GROUPMENU` *(sesi baru, folder `OUTPUT_HASIL_RNM`, cabang **`dev`** @ `19e5f36` atau lebih baru)*
 
 > Keputusan work owner 30-09-2026: *"menu jangan ada model seperti child. Buat grouping menu antar GROUPMENU dari tabel M_NAV_MENU.
 > Butir inbox, register, premiumlist, komite, tco-tahun harusnya tidak perlu, karena 1 modul 1 menu."*
 > Struktur tim satu folder per modul *(`APP_RNM/inti/{backend,frontend}`, `APP_RNM/modul/<nama>/{backend,frontend,docs}`)*.
-> Commit dengan jalur eksplisit (`git commit -o -- <jalur>`). **Nol `git push`, nol `git pull --rebase`** — push dilakukan work owner.
+> Kerja dan commit di cabang **`dev`** *(bukan `main`)*, dengan jalur eksplisit (`git commit -o -- <jalur>`). **Nol `git push`, nol `git pull --rebase`** — push dilakukan work owner.
 > `-migrate` dijalankan **work owner**. Hanya sesi ini yang menyunting `inti/` selama brief ini berjalan.
 
 ## 0. KEADAAN AWAL *(diukur asisten 30-09-2026, DEV baca-saja, agregat)*
