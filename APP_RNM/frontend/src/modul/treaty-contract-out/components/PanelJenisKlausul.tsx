@@ -20,7 +20,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { DESIMAL_TAK_DIBATASI, formatNumber } from '../../../inti/lib/format'
+import { DESIMAL_TAK_DIBATASI, formatNumber } from '../../../../../inti/frontend/lib/format'
 import { KLAUSUL_TCO, KURS_TCO, LABEL_MEDAN_KHUSUS, LABEL_MEDAN_KLAUSUL } from '../labels'
 import {
   ambilKlausul,
@@ -36,7 +36,7 @@ import {
   type KursTahun,
   type PilihanKlausul,
 } from '../api'
-import { Field, Gagal, Kosong, Memuat, Pilih } from '../../../inti/components/ui/dasar'
+import { Field, Gagal, Kosong, Memuat, Pilih } from '../../../../../inti/frontend/components/ui/dasar'
 import PilihJenisReasuransi from './PilihJenisReasuransi'
 
 /** Label medan: penimpaan per jenis/subjenis, lalu bawaan, lalu nama medan. */

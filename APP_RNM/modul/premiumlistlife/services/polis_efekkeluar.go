@@ -27,9 +27,9 @@ package services
 import (
 	"context"
 
-	"nusantarare/inti"
-	"nusantarare/inti/layanan"
-	"nusantarare/inti/outbox"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/layanan"
+	"nusantarare/inti/backend/outbox"
 )
 
 // ModulPremiumListLife mengisi kolom `MODUL` outbox `T_LOG_SERVICE_RNM`.

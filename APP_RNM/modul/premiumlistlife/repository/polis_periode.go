@@ -31,7 +31,7 @@ import (
 	"errors"
 	"fmt"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 // TutupBuku membaca tanggal tutup buku yang berlaku.

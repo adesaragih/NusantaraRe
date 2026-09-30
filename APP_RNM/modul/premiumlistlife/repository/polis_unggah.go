@@ -30,7 +30,7 @@ import (
 	"strconv"
 	"strings"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 	"nusantarare/modul/premiumlistlife/models"
 )
 

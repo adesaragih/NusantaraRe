@@ -30,11 +30,11 @@ import (
 	"strings"
 	"time"
 
-	"nusantarare/inti"
-	"nusantarare/inti/db"
-	"nusantarare/inti/galat"
-	"nusantarare/inti/jejak"
-	"nusantarare/inti/outbox"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/galat"
+	"nusantarare/inti/backend/jejak"
+	"nusantarare/inti/backend/outbox"
 	"nusantarare/modul/premiumlistlife/models"
 	"nusantarare/modul/premiumlistlife/repository"
 )

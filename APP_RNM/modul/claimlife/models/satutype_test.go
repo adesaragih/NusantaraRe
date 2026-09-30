@@ -79,8 +79,8 @@ var medanTypeYangSah = map[string]string{
 	// begitu polisnya di-endorse.
 	// Refactor bentuk B (30-09-2026): tipe `PolisRingkas` kini kontrak lintas
 	// modul (dulu repository/polis_ringkas.go).
-	"inti/kontrak/polis.go":     "PolisRingkas - Type POLIS dibaca dari T_PREMIUM_LIST untuk PolicyDataLife",
-	"services/polis_ringkas.go": "bentuk layar PolicyDataLife, jalur baca",
+	"inti/backend/kontrak/polis.go": "PolisRingkas - Type POLIS dibaca dari T_PREMIUM_LIST untuk PolicyDataLife",
+	"services/polis_ringkas.go":     "bentuk layar PolicyDataLife, jalur baca",
 }
 
 func TestTypeKlaimHanyaSatuRumahTersimpan(t *testing.T) {

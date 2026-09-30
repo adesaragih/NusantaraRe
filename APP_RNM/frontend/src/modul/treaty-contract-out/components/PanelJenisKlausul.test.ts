@@ -85,9 +85,11 @@ describe('kabel', () => {
   })
   it('uang/persen tidak menjadi angka JavaScript', () => {
     // `(?<![A-Za-z])`: `formatNumber(` (pemformat TEKS bersama, bekerja pada
-    // digit tanpa float - `inti/lib/format.ts`) bukan `Number(` JavaScript.
+    // digit tanpa float - `inti/frontend/lib/format.ts`) bukan `Number(` JavaScript.
     expect(KODE).not.toMatch(/(?<![A-Za-z])Number\(|parseFloat|toFixed/)
-    expect(KODE).toContain("from '../../../inti/lib/format'")
+    // Sasaran impornya, bukan kedalaman `../`: letak folder berganti (struktur
+    // tim satu folder per modul), pemformat bersamanya tidak.
+    expect(KODE).toMatch(/from '(\.\.\/)+inti\/frontend\/lib\/format'/)
   })
   it('Show Child dan Close Child dari label', () => {
     expect(KODE).toContain('KLAUSUL_TCO.showChild')

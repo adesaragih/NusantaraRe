@@ -20,10 +20,10 @@ import (
 	"strings"
 	"time"
 
-	"nusantarare/inti"
-	"nusantarare/inti/db"
-	"nusantarare/inti/galat"
-	"nusantarare/inti/jejak"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/galat"
+	"nusantarare/inti/backend/jejak"
 	"nusantarare/modul/komiteclaimlife/models"
 	"nusantarare/modul/komiteclaimlife/repository"
 )

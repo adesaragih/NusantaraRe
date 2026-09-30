@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"nusantarare/inti/galat"
+	"nusantarare/inti/backend/galat"
 	"nusantarare/modul/claimlife/services"
 )
 

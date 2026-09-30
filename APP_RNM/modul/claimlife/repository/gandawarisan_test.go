@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 func urutanPenampung(q string) string {

@@ -17,8 +17,8 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { DESIMAL_TAK_DIBATASI, formatNumber } from '../../../inti/lib/format'
-import { PilihSaring } from '../../../inti/components/ui/pilihSaring'
+import { DESIMAL_TAK_DIBATASI, formatNumber } from '../../../../../inti/frontend/lib/format'
+import { PilihSaring } from '../../../../../inti/frontend/components/ui/pilihSaring'
 import { SECURITY_TCO } from '../labels'
 import {
   ambilSecurity,
@@ -28,7 +28,7 @@ import {
   type SecurityMasuk,
   type SecurityReinsurer,
 } from '../api'
-import { Field, Gagal, Kosong, Memuat } from '../../../inti/components/ui/dasar'
+import { Field, Gagal, Kosong, Memuat } from '../../../../../inti/frontend/components/ui/dasar'
 import { useCariReinsurerMaster } from './cariReinsurerMaster'
 
 /** Isian form — `Security ID` (hanya dibaca), nama dari master, `%Share`. */

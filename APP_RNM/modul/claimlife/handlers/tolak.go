@@ -16,10 +16,10 @@ import (
 	"net/http"
 	"time"
 
-	"nusantarare/inti"
-	"nusantarare/inti/galat"
-	"nusantarare/inti/jejak"
-	"nusantarare/inti/kontrak"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/galat"
+	"nusantarare/inti/backend/jejak"
+	"nusantarare/inti/backend/kontrak"
 	"nusantarare/modul/claimlife/services"
 )
 

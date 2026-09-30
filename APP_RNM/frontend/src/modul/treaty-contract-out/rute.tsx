@@ -6,8 +6,8 @@
 // penomoran halaman, panel backend mati, pilihan kosong, tutup popup) ikut
 // Inggris di layar ini saja; label modul di `labels.ts`.
 
-import { BahasaUI } from '../../inti/components/ui/bahasaUI'
-import type { PropsRute } from '../../inti/modul'
+import { BahasaUI } from '../../../../inti/frontend/components/ui/bahasaUI'
+import type { PropsRute } from '../../../../inti/frontend/modul'
 import type { HalamanTreaty } from './menu'
 import InboxTreatyContract from './pages/InboxTreatyContract'
 import InboxTreatyContractDescription from './pages/InboxTreatyContractDescription'

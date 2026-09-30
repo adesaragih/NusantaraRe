@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti"
+	inti "nusantarare/inti/backend"
 	"nusantarare/modul/premiumlistlife/models"
 )
 

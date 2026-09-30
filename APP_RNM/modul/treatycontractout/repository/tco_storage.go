@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"time"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 // MasterFolderImageTCO - tabel warisan asal `APPNAME` penyimpanan.

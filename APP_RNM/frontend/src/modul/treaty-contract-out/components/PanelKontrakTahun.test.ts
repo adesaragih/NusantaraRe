@@ -5,6 +5,7 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
+import { AKAR_APLIKASI } from '../../../../../inti/frontend/uji/sumber'
 import { alihRinci, denganTanggalTahun, formKontrakDari, formKontrakKosong, keMasukKontrak } from './PanelKontrakTahun'
 
 const KODE = readFileSync(join(__dirname, 'PanelKontrakTahun.tsx'), 'utf8')
@@ -107,7 +108,7 @@ describe('Business List / Reinsurer List — satu panel rinci (keputusan work ow
     // `.inbox__tabel td { white-space: nowrap }` diwarisi isi sel: tanpa aturan
     // ini seluruh kalimat panel Business/Reinsurer/Security (dan popup hapus di
     // dalamnya) tidak membungkus.
-    const css = readFileSync(join(__dirname, '..', '..', '..', 'inti', 'styles.css'), 'utf8')
+    const css = readFileSync(join(AKAR_APLIKASI, 'inti', 'frontend', 'styles.css'), 'utf8')
     expect(css).toMatch(/\.inbox__tabel tr\.inbox__rinci > td \{\s*white-space: normal;/)
   })
 })

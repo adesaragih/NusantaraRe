@@ -10,8 +10,8 @@ import (
 	"errors"
 	"testing"
 
-	"nusantarare/inti"
-	"nusantarare/inti/db"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/db"
 	"nusantarare/modul/claimlife/models"
 	"nusantarare/modul/claimlife/repository"
 	"nusantarare/modul/claimlife/services"

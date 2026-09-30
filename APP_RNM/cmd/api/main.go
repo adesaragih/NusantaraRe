@@ -20,10 +20,10 @@ import (
 	"syscall"
 	"time"
 
-	"nusantarare/inti"
-	"nusantarare/inti/config"
-	intidb "nusantarare/inti/db"
-	"nusantarare/inti/migrasi"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/config"
+	intidb "nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/migrasi"
 	"nusantarare/modul"
 )
 
@@ -127,7 +127,7 @@ func main() {
 // ⛔ Ia MENGHAPUS tabel, dan karena itu dipagari sama persis dengan test bertag
 // db: menolak IS_PEGA_PROD=true, menolak tanpa ORACLE_SKEMA_UJI=true, dan
 // menolak skema yang memuat POOLDATA. Pagarnya satu-satunya, tinggal di
-// inti/config, supaya jalur ini dan jalur test tidak mungkin berselisih.
+// inti/backend/config, supaya jalur ini dan jalur test tidak mungkin berselisih.
 //
 // Kenapa flag ini ada: sampai 26-09-2026 jalur mundur hanya punya pemanggil
 // test. Orang yang ingin membongkar skema uji terpaksa menyalin isi berkas

@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"nusantarare/inti"
-	"nusantarare/inti/kontrak"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/kontrak"
 	"nusantarare/modul/claimlife/models"
 	"nusantarare/modul/claimlife/services"
 )

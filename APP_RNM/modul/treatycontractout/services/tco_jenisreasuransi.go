@@ -21,8 +21,8 @@ import (
 	"context"
 	"errors"
 
-	"nusantarare/inti"
-	"nusantarare/inti/db"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/db"
 	"nusantarare/modul/treatycontractout/repository"
 )
 

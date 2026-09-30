@@ -24,7 +24,7 @@ import (
 	"errors"
 	"fmt"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 	"nusantarare/modul/treatycontractout/models"
 )
 

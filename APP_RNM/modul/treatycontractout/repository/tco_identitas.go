@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 // ErrIdentitasMelampauiLebar - nomor urut tidak muat di lebar identitas.

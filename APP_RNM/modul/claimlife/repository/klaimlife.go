@@ -2,7 +2,7 @@
 //
 // Arah ketergantungan: handlers -> services -> repository. Tidak terbalik,
 // tidak memotong. Paket ini tidak pernah mengimpor handlers atau services.
-// Pintu koneksi dan transaksinya tinggal di `inti/db` (refactor bentuk B).
+// Pintu koneksi dan transaksinya tinggal di `inti/backend/db` (refactor bentuk B).
 package repository
 
 import (
@@ -14,10 +14,10 @@ import (
 
 	"time"
 
-	"nusantarare/inti/db"
-	"nusantarare/inti/kontrak"
-	"nusantarare/inti/uang"
-	"nusantarare/inti/utils"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/kontrak"
+	"nusantarare/inti/backend/uang"
+	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/claimlife/models"
 )
 

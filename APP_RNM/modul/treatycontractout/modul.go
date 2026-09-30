@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"time"
 
-	"nusantarare/inti"
+	inti "nusantarare/inti/backend"
 	"nusantarare/modul/treatycontractout/handlers"
 	"nusantarare/modul/treatycontractout/services"
 )

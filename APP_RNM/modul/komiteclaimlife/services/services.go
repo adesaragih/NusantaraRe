@@ -3,7 +3,7 @@
 // Arah ketergantungan: handlers -> services -> repository. Paket ini tidak
 // pernah mengimpor handlers, dan tidak pernah mengimpor modul lain - yang
 // bersama datang dari `inti/`, dan yang dibutuhkan dari Claim Life datang
-// lewat `inti/kontrak.KlaimKomite`.
+// lewat `inti/backend/kontrak.KlaimKomite`.
 package services
 
 // Akar layanan modul Komite Claim Life - refactor bentuk B.
@@ -18,9 +18,9 @@ import (
 	"context"
 	"errors"
 
-	"nusantarare/inti"
-	"nusantarare/inti/db"
-	"nusantarare/inti/kontrak"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/kontrak"
 )
 
 // Service adalah akar layanan Komite Claim Life.
@@ -52,7 +52,7 @@ func (s *Service) DenganKlaim(k kontrak.KlaimKomite) *Service {
 // ErrKlaimBelumDisambung - proses menyentuh Oracle tetapi kontrak Claim Life
 // tidak pernah disambung (salah rakit, bukan data).
 var ErrKlaimBelumDisambung = errors.New(
-	"services: kontrak Claim Life untuk Komite belum disambung (inti/kontrak.KlaimKomite)")
+	"services: kontrak Claim Life untuk Komite belum disambung (inti/backend/kontrak.KlaimKomite)")
 
 // Klaim mengembalikan kontrak Claim Life yang disambung, atau penolak TERANG
 // bila belum - bukan antarmuka nil yang membuat proses panik.

@@ -26,8 +26,8 @@ import (
 	"regexp"
 	"strings"
 
-	"nusantarare/inti/db"
-	"nusantarare/inti/utils"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/utils"
 )
 
 // medanLama memasangkan satu nama kolom dengan tempat nilainya ditampung.

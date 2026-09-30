@@ -17,8 +17,8 @@ package services
 //   - antre-ulang : tempat kegagalan disimpan untuk dicoba lagi nanti.
 
 import (
-	"nusantarare/inti/layanan"
-	"nusantarare/inti/outbox"
+	"nusantarare/inti/backend/layanan"
+	"nusantarare/inti/backend/outbox"
 )
 
 // EfekKeluarClaimLife menyusun KETIGA efek keluar modul ini, berurutan.

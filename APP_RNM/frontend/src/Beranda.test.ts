@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { BERANDA, KETERANGAN_BELUM_DIMIGRASI, MODUL } from './inti/labels'
+import { BERANDA, KETERANGAN_BELUM_DIMIGRASI, MODUL } from '../../inti/frontend/labels'
 import { kartuModul, ringkasanAntrean, type AntreanTahap } from './Beranda'
 
 // Uji Beranda — butir bg.

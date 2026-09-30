@@ -15,10 +15,10 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { MENU, PERAN, type KodePeran } from '../../../inti/labels'
+import { MENU, PERAN, type KodePeran } from '../../../../../inti/frontend/labels'
 import { TAHAP, TAHAP_ID } from '../labels'
-import { Gagal, Kosong, Memuat } from '../../../inti/components/ui/dasar'
-import { unduhXlsx, type KolomEksporXlsx } from '../../../inti/lib/exportXlsx'
+import { Gagal, Kosong, Memuat } from '../../../../../inti/frontend/components/ui/dasar'
+import { unduhXlsx, type KolomEksporXlsx } from '../../../../../inti/frontend/lib/exportXlsx'
 import {
   ambilKotakMasuk,
   TAHAP_NOMOR,

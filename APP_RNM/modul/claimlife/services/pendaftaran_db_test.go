@@ -17,10 +17,10 @@ import (
 
 	"github.com/cockroachdb/apd/v3"
 
-	"nusantarare/inti"
-	"nusantarare/inti/db"
-	intiuang "nusantarare/inti/uang"
-	"nusantarare/inti/utils"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/db"
+	intiuang "nusantarare/inti/backend/uang"
+	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/claimlife/repository"
 	"nusantarare/modul/claimlife/services"
 	"nusantarare/uji/skemauji"

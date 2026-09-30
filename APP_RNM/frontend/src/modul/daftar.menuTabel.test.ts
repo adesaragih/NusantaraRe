@@ -3,9 +3,10 @@ import { join } from 'node:path'
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { ambilMenu } from '../inti/klien'
-import { MODUL } from '../inti/labels'
-import { HALAMAN_BERANDA } from '../inti/lib/daftarMenu'
+import { AKAR_APLIKASI } from '../../../inti/frontend/uji/sumber'
+import { ambilMenu } from '../../../inti/frontend/klien'
+import { MODUL } from '../../../inti/frontend/labels'
+import { HALAMAN_BERANDA } from '../../../inti/frontend/lib/daftarMenu'
 import { ENTRI_MENU } from './daftar'
 
 // Penjaga DUA ARAH: isi M_NAV_MENU (migrasi `inti` 900-949) ↔ `modul/daftar.ts`
@@ -17,7 +18,7 @@ import { ENTRI_MENU } from './daftar'
 // tabel juga tidak. Keduanya diam di layar (hanya satu baris konsol). Uji
 // inilah yang membuatnya berbunyi sebelum sampai ke layar.
 
-const FOLDER_MIGRASI_INTI = join(__dirname, '..', '..', '..', 'inti', 'migrations')
+const FOLDER_MIGRASI_INTI = join(AKAR_APLIKASI, 'inti', 'backend', 'migrations')
 const SQL = readdirSync(FOLDER_MIGRASI_INTI)
   .filter((n) => n.endsWith('.sql') && !n.endsWith('_down.sql'))
   .sort()
@@ -101,7 +102,7 @@ describe('GET /api/menu', () => {
 describe('sidebar dan palet dari GET /api/menu', () => {
   const SRC = join(__dirname, '..')
   const app = readFileSync(join(SRC, 'App.tsx'), 'utf8')
-  const shell = readFileSync(join(SRC, 'inti', 'components', 'Shell.tsx'), 'utf8')
+  const shell = readFileSync(join(AKAR_APLIKASI, 'inti', 'frontend', 'components', 'Shell.tsx'), 'utf8')
 
   it('App membacanya dan meneruskannya ke Shell', () => {
     expect(app).toContain('ambilMenu()')

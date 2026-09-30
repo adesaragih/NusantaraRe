@@ -26,7 +26,7 @@ import (
 	"fmt"
 	"strings"
 
-	"nusantarare/inti/penomor"
+	"nusantarare/inti/backend/penomor"
 )
 
 // ClassPenghitungKomiteLife adalah `CLASS` penghitung - `pyWorkPage.pxObjClass`.

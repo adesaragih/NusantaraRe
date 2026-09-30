@@ -7,14 +7,14 @@ package repository
 
 // Refactor bentuk B paket 8 (30-09-2026): TestTCONolTabelBaru dan TestTCONolNamaTabelBaruDiKode (tco4) berlaku untuk
 // SELURUH aplikasi, jadi pindah apa adanya ke
-// `inti/penjaga/lintasaplikasi_test.go`.
+// `inti/backend/penjaga/lintasaplikasi_test.go`.
 import (
 	"database/sql"
 	"strings"
 	"testing"
 	"time"
 
-	"nusantarare/inti/utils"
+	"nusantarare/inti/backend/utils"
 )
 
 func TestUraiTanggalWarisanTCOMengenalBentukYangDikenal(t *testing.T) {

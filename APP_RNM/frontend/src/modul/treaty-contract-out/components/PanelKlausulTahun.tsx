@@ -16,9 +16,9 @@
 import { useEffect, useState } from 'react'
 
 import { KLAUSUL_TCO, MENU_TCO } from '../labels'
-import { formatDate } from '../../../inti/lib/format'
+import { formatDate } from '../../../../../inti/frontend/lib/format'
 import { ambilJenisKlausul, type JenisKlausul, type TahunTreaty } from '../api'
-import { Field, Gagal, Kosong, Memuat, Modal } from '../../../inti/components/ui/dasar'
+import { Field, Gagal, Kosong, Memuat, Modal } from '../../../../../inti/frontend/components/ui/dasar'
 import PanelJenisKlausul from './PanelJenisKlausul'
 import { labelProporsi } from '../proporsi'
 

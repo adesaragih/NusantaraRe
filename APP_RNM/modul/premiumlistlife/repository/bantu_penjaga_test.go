@@ -18,7 +18,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/migrasi"
+	"nusantarare/inti/backend/migrasi"
 )
 
 // akarModul menunjuk folder APP_RNM dari folder paket ini.

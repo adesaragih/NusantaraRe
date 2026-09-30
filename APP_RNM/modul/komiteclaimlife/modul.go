@@ -11,7 +11,7 @@ import (
 	"io/fs"
 	"net/http"
 
-	"nusantarare/inti"
+	inti "nusantarare/inti/backend"
 	"nusantarare/modul/komiteclaimlife/handlers"
 	"nusantarare/modul/komiteclaimlife/services"
 )
@@ -24,7 +24,7 @@ import (
 var berkasMigrasi embed.FS
 
 // SumberMigrasi menyerahkan folder `migrations/` modul ini kepada pelari
-// migrasi (`inti/migrasi`).
+// migrasi (`inti/backend/migrasi`).
 func SumberMigrasi() fs.FS { return berkasMigrasi }
 
 // Nama pengenal modul ini di MODUL_AKTIF dan di GET /api/modul-aktif.

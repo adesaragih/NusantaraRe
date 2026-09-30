@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"nusantarare/inti/kontrak"
-	"nusantarare/inti/uang"
-	"nusantarare/inti/utils"
+	"nusantarare/inti/backend/kontrak"
+	"nusantarare/inti/backend/uang"
+	"nusantarare/inti/backend/utils"
 )
 
 // BarisAdjustment adalah satu baris `AdjustmentList` milik seorang peserta.

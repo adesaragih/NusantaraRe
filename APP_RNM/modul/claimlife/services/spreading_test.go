@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	intiuang "nusantarare/inti/uang"
-	"nusantarare/inti/utils"
+	intiuang "nusantarare/inti/backend/uang"
+	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/claimlife/services"
 )
 

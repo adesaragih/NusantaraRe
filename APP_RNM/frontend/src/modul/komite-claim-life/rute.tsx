@@ -3,7 +3,7 @@
 
 import { useState } from 'react'
 
-import type { PropsRute } from '../../inti/modul'
+import type { PropsRute } from '../../../../inti/frontend/modul'
 import type { HalamanKomite } from './menu'
 import InboxKomite from './pages/InboxKomite'
 import KasusKomite from './pages/KasusKomite'

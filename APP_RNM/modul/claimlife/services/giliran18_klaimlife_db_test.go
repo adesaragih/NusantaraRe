@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"nusantarare/inti"
-	intidb "nusantarare/inti/db"
+	inti "nusantarare/inti/backend"
+	intidb "nusantarare/inti/backend/db"
 	"nusantarare/modul/claimlife/models"
 	"nusantarare/modul/claimlife/repository"
 )

@@ -17,8 +17,8 @@ package services
 import (
 	"fmt"
 
-	"nusantarare/inti"
-	"nusantarare/inti/kontrak"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/kontrak"
 )
 
 // Izin - apa yang boleh dilakukan - dinamai terpisah dari PERAN, dan

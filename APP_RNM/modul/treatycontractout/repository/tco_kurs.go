@@ -20,7 +20,7 @@ package repository
 // uang di teks SQL (AC 47); pengenalnya dibaca dari master `CURRENCY` lewat
 // `MataUang.Pengenal` (kode bersama, tidak diubah).
 //
-// Dibaca sesudah: models/tco_kurs.go, inti/db/matauang.go.
+// Dibaca sesudah: models/tco_kurs.go, inti/backend/db/matauang.go.
 
 import (
 	"context"
@@ -28,7 +28,7 @@ import (
 	"fmt"
 	"time"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 	"nusantarare/modul/treatycontractout/models"
 )
 

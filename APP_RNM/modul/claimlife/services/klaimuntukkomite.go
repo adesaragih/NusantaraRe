@@ -5,15 +5,15 @@ package services
 // Untuk apa berkas ini: Komite Claim Life dulu memanggil repository Claim Life
 // (`NewKlaimLife`, `NewPohonKlaim`) dan `Service.PastikanKasusTerbuka`
 // langsung - keduanya satu paket. Kini Komite modul sendiri dan hanya mengenal
-// `inti/kontrak.KlaimKomite`; berkas ini implementasinya. Setiap metode
+// `inti/backend/kontrak.KlaimKomite`; berkas ini implementasinya. Setiap metode
 // meneruskan apa adanya ke pemanggilan yang dulu Komite lakukan sendiri.
 
 import (
 	"context"
 	"time"
 
-	"nusantarare/inti/db"
-	"nusantarare/inti/kontrak"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/kontrak"
 	"nusantarare/modul/claimlife/repository"
 )
 

@@ -37,7 +37,7 @@ import {
   type DampakHapus,
   type Klaim,
 } from '../api'
-import { kodeStatusGalat, pesanGalat } from '../../../inti/klien'
+import { kodeStatusGalat, pesanGalat } from '../../../../../inti/frontend/klien'
 
 // ============================================================================
 // pages/KlaimLife.tsx — halaman "buka satu klaim Life" (tiket 01 AC-2).

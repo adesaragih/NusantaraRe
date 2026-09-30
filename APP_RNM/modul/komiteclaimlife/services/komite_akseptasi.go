@@ -29,12 +29,12 @@ import (
 	"strings"
 	"time"
 
-	"nusantarare/inti"
-	"nusantarare/inti/db"
-	"nusantarare/inti/galat"
-	"nusantarare/inti/jejak"
-	"nusantarare/inti/kontrak"
-	"nusantarare/inti/penomor"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/galat"
+	"nusantarare/inti/backend/jejak"
+	"nusantarare/inti/backend/kontrak"
+	"nusantarare/inti/backend/penomor"
 	"nusantarare/modul/komiteclaimlife/models"
 	"nusantarare/modul/komiteclaimlife/repository"
 )
@@ -66,7 +66,7 @@ func (p penyelesaiAkhirOracle) Akseptasi(ctx context.Context, tx *db.Tx,
 			kasus.Baris.KasusID)
 	}
 	// Refactor bentuk B: baris dan header klaim milik Claim Life, dibaca dan
-	// ditulis lewat inti/kontrak.KlaimKomite di dalam transaksi ini.
+	// ditulis lewat inti/backend/kontrak.KlaimKomite di dalam transaksi ini.
 	baca := p.svc.Klaim()
 	// `TempOpenPage.PolicyDataLife.Type` / `.BusinessCode` - klaim induk.
 	tipe, err := baca.TypeKlaim(ctx, klaimID)

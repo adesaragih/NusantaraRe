@@ -33,9 +33,9 @@ import (
 	"io"
 	"strings"
 
-	"nusantarare/inti"
-	"nusantarare/inti/db"
-	"nusantarare/inti/galat"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/galat"
 	"nusantarare/modul/premiumlistlife/models"
 	"nusantarare/modul/premiumlistlife/repository"
 )

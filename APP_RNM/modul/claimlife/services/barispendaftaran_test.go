@@ -11,9 +11,9 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/kontrak"
-	intiuang "nusantarare/inti/uang"
-	"nusantarare/inti/utils"
+	"nusantarare/inti/backend/kontrak"
+	intiuang "nusantarare/inti/backend/uang"
+	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/claimlife/models"
 	"nusantarare/modul/claimlife/services"
 )

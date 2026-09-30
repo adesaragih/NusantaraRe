@@ -7,7 +7,7 @@ package services
 // Untuk apa berkas ini:
 //
 //  1. `PenyimpananLampiranTCO` memilih pelaksana efek penyimpanan menurut
-//     `PELAKSANA_STORAGE` (dibaca `inti/config`, dipasang `cmd/api`):
+//     `PELAKSANA_STORAGE` (dibaca `inti/backend/config`, dipasang `cmd/api`):
 //     `stub` (BAWAAN) = folder lokal; `nyata` = rangkaian jarak jauh -
 //     alamat dari `M_LINK_SERVICE` saat jalan, token dari `GCP_IMAGE` /
 //     rumus `GET_TOKEN_STORAGE` (`RakitToken`, garam `STORAGE_TOKEN_SALT`),
@@ -29,8 +29,8 @@ import (
 	"strings"
 	"time"
 
-	"nusantarare/inti/db"
-	"nusantarare/inti/layanan"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/layanan"
 	"nusantarare/modul/treatycontractout/models"
 	"nusantarare/modul/treatycontractout/repository"
 )
@@ -52,7 +52,7 @@ type pengaturanPenyimpananTCO struct {
 
 // DenganPenyimpananLampiranTCO memasang pelaksana penyimpanan lampiran.
 //
-// ⚠️ Dipanggil sekali dari `cmd/api`: `nyata` diputuskan `inti/config`
+// ⚠️ Dipanggil sekali dari `cmd/api`: `nyata` diputuskan `inti/backend/config`
 // (`PELAKSANA_STORAGE`), garam = `config.StorageTokenSalt`.
 func (s *Service) DenganPenyimpananLampiranTCO(nyata bool, garam string) *Service {
 	salin := *s

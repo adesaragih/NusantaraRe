@@ -32,8 +32,8 @@ package services
 import (
 	"context"
 
-	"nusantarare/inti"
-	"nusantarare/inti/db"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/db"
 	"nusantarare/modul/claimlife/models"
 	"nusantarare/modul/claimlife/repository"
 )

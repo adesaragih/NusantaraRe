@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 func TestMigrasi022PenandaCabutPeserta(t *testing.T) {

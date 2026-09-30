@@ -11,7 +11,7 @@ package skemauji
 import (
 	"testing"
 
-	"nusantarare/inti/migrasi"
+	"nusantarare/inti/backend/migrasi"
 	"nusantarare/modul"
 )
 

@@ -13,10 +13,10 @@ import (
 	"testing"
 	"time"
 
-	"nusantarare/inti/galat"
-	"nusantarare/inti/layanan"
-	"nusantarare/inti/outbox"
-	"nusantarare/inti/unggah"
+	"nusantarare/inti/backend/galat"
+	"nusantarare/inti/backend/layanan"
+	"nusantarare/inti/backend/outbox"
+	"nusantarare/inti/backend/unggah"
 	"nusantarare/modul/treatycontractout/models"
 	"nusantarare/modul/treatycontractout/services"
 )

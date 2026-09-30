@@ -60,7 +60,7 @@ import (
 	"fmt"
 	"strings"
 
-	"nusantarare/inti/penomor"
+	"nusantarare/inti/backend/penomor"
 )
 
 // KodeTipePL memilih huruf tipe yang masuk ke nomor.

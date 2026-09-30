@@ -13,9 +13,9 @@ import (
 	"context"
 	"time"
 
-	"nusantarare/inti"
-	"nusantarare/inti/db"
-	"nusantarare/inti/penomor"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/penomor"
 	"nusantarare/modul/premiumlistlife/repository"
 )
 

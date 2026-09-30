@@ -25,8 +25,8 @@
 import { Fragment, useCallback, useEffect, useState } from 'react'
 
 import { JENIS_REASURANSI_TCO, KONTRAK_TCO } from '../labels'
-import { formatDate } from '../../../inti/lib/format'
-import { keInputTanggal } from '../../../inti/lib/tanggalInput'
+import { formatDate } from '../../../../../inti/frontend/lib/format'
+import { keInputTanggal } from '../../../../../inti/frontend/lib/tanggalInput'
 import {
   ambilDampakHapusKontrak,
   ambilKontrakTahun,
@@ -37,7 +37,7 @@ import {
   type TahunTreaty,
   type DampakHapusTCO,
 } from '../api'
-import { Field, Gagal, Kosong, Memuat } from '../../../inti/components/ui/dasar'
+import { Field, Gagal, Kosong, Memuat } from '../../../../../inti/frontend/components/ui/dasar'
 import KonfirmasiHapusTCO from './KonfirmasiHapusTCO'
 import PanelBusinessKombinasi from './PanelBusinessKombinasi'
 import PanelReinsurerKombinasi from './PanelReinsurerKombinasi'

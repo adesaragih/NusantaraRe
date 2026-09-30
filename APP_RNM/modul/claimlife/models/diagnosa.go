@@ -18,7 +18,7 @@ package models
 import (
 	"strings"
 
-	"nusantarare/inti/kontrak"
+	"nusantarare/inti/backend/kontrak"
 )
 
 // Diagnosa adalah satu baris `.DiagnoseList` milik seorang peserta.

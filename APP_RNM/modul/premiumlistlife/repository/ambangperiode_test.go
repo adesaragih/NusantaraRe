@@ -20,7 +20,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 // polaAmbangTertanam mencocokkan HARI INI yang dibandingkan dengan angka.
@@ -56,7 +56,7 @@ func TestNolAmbangTutupBukuTertanam(t *testing.T) {
 		// tinggal adalah penjaga yang menjaga tempat yang salah.
 		// Refactor bentuk B (30-09-2026): lapisan yang sama di SETIAP modul,
 		// ditambah `inti/` - periode produksi kini tinggal di
-		// `inti/penomor/periode.go`. Dulu hanya `/internal/...`: saringan itu
+		// `inti/backend/penomor/periode.go`. Dulu hanya `/internal/...`: saringan itu
 		// diam-diam menyempit (cacah log dasar 158; tanpa perbaikan ini, 107).
 		if !strings.Contains(nama, "/repository/") &&
 			!strings.Contains(nama, "/services/") &&

@@ -10,10 +10,10 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti"
-	"nusantarare/inti/db"
-	"nusantarare/inti/galat"
-	"nusantarare/inti/kontrak"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/galat"
+	"nusantarare/inti/backend/kontrak"
 	"nusantarare/modul/claimlife/models"
 	"nusantarare/modul/claimlife/services"
 )

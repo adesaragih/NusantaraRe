@@ -16,7 +16,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { GRID_REKAP, SUMMARY_POLIS, type KolomRekap } from '../labels'
-import { Gagal, Kosong, Memuat } from '../../../inti/components/ui/dasar'
+import { Gagal, Kosong, Memuat } from '../../../../../inti/frontend/components/ui/dasar'
 import {
   ambilKepalaPolis,
   ambilRekapPolis,

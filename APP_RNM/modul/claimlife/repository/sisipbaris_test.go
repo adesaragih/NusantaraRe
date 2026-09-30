@@ -9,7 +9,7 @@ import (
 	"errors"
 	"testing"
 
-	"nusantarare/inti/kontrak"
+	"nusantarare/inti/backend/kontrak"
 	"nusantarare/modul/claimlife/models"
 )
 

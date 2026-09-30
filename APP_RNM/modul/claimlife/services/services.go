@@ -12,9 +12,9 @@ import (
 	"context"
 	"errors"
 
-	"nusantarare/inti"
-	"nusantarare/inti/db"
-	"nusantarare/inti/kontrak"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/kontrak"
 )
 
 var (
@@ -31,7 +31,7 @@ var (
 type Service struct {
 	*inti.Dasar
 	// pembacaPolis - pembaca polis ringkas PremiumList Life (butir pl4/av),
-	// disambung `cmd/api` lewat `inti/kontrak`. nil = belum disambung.
+	// disambung `cmd/api` lewat `inti/backend/kontrak`. nil = belum disambung.
 	pembacaPolis kontrak.PembacaPolis
 }
 
@@ -69,7 +69,7 @@ func (s *Service) DenganPembacaPolis(p kontrak.PembacaPolis) *Service {
 // ErrPembacaPolisBelumDisambung - proses menyentuh Oracle tetapi pembaca
 // polis PremiumList tidak pernah disambung (salah rakit, bukan data).
 var ErrPembacaPolisBelumDisambung = errors.New(
-	"services: pembaca polis PremiumList belum disambung (inti/kontrak.PembacaPolis)")
+	"services: pembaca polis PremiumList belum disambung (inti/backend/kontrak.PembacaPolis)")
 
 // PembacaPolis mengembalikan pembaca polis yang disambung, atau pembaca yang
 // menolak TERANG bila belum - bukan antarmuka nil yang membuat proses panik.

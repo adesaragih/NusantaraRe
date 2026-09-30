@@ -19,7 +19,7 @@ import { useEffect, useState } from 'react'
 import { OUTSTANDING, TAHAP, TOMBOL_OS } from '../labels'
 import { PanelDataPolis } from '../components/PanelDataPolis'
 import { PanelPindahTahap } from '../components/PanelPindahTahap'
-import { Gagal } from '../../../inti/components/ui/dasar'
+import { Gagal } from '../../../../../inti/frontend/components/ui/dasar'
 import {
   ambilDataPolis,
   ambilKlaimLife,
@@ -27,7 +27,7 @@ import {
   type HasilSimpanRNM,
   type PolicyDataLife,
 } from '../api'
-import { pesanGalat } from '../../../inti/klien'
+import { pesanGalat } from '../../../../../inti/frontend/klien'
 
 export interface OutstandingProps {
   /** Pengenal work kasus yang sedang dibuka. */

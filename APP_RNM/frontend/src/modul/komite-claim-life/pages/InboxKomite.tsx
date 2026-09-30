@@ -8,9 +8,9 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { PERAN, type KodePeran } from '../../../inti/labels'
+import { PERAN, type KodePeran } from '../../../../../inti/frontend/labels'
 import { EFEK_KOMITE, INBOX_KOMITE, KOLOM_INBOX_KOMITE } from '../labels'
-import { Gagal, Kosong, Memuat } from '../../../inti/components/ui/dasar'
+import { Gagal, Kosong, Memuat } from '../../../../../inti/frontend/components/ui/dasar'
 import {
   ambilInboxKomite,
   ambilLaporanHarianKomite,

@@ -11,8 +11,8 @@ import (
 
 	"github.com/cockroachdb/apd/v3"
 
-	"nusantarare/inti/penomor"
-	"nusantarare/inti/utils"
+	"nusantarare/inti/backend/penomor"
+	"nusantarare/inti/backend/utils"
 )
 
 // d menyusun desimal dari teks - nol float di uji ini pun.

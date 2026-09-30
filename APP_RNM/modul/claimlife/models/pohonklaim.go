@@ -24,7 +24,7 @@ package models
 import (
 	"time"
 
-	"nusantarare/inti/uang"
+	"nusantarare/inti/backend/uang"
 )
 
 // WorkClaim adalah akar pohon: satu baris work object, lintas-lini.

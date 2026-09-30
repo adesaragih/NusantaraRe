@@ -14,7 +14,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/migrasi"
+	"nusantarare/inti/backend/migrasi"
 )
 
 func seluruhSQL(t *testing.T, mundur bool) map[string]string {

@@ -16,8 +16,8 @@
 import { useState } from 'react'
 
 import { REJECT_OS, TOMBOL } from '../labels'
-import { pelakuStub } from '../../../inti/store/sesi'
-import { Modal } from '../../../inti/components/ui/dasar'
+import { pelakuStub } from '../../../../../inti/frontend/store/sesi'
+import { Modal } from '../../../../../inti/frontend/components/ui/dasar'
 
 /** Lebar `T_CLAIMLF_JEJAK.KOMENTAR` VARCHAR2(4000) dalam BYTE (migrasi 021). */
 export const BATAS_REMARKS_BYTE = 4000

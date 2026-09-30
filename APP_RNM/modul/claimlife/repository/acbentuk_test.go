@@ -18,7 +18,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti"
+	inti "nusantarare/inti/backend"
 )
 
 // sqlTabel mengembalikan teks SQL berkas migrasi yang berawalan nomor tertentu.

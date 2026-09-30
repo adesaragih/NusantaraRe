@@ -19,9 +19,9 @@ import (
 
 	"github.com/cockroachdb/apd/v3"
 
-	"nusantarare/inti"
-	"nusantarare/inti/uang"
-	"nusantarare/inti/utils"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/uang"
+	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/claimlife/models"
 )
 

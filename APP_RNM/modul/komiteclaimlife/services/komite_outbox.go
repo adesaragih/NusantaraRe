@@ -42,11 +42,11 @@ import (
 	"strings"
 	"time"
 
-	"nusantarare/inti"
-	"nusantarare/inti/db"
-	"nusantarare/inti/layanan"
-	"nusantarare/inti/outbox"
-	"nusantarare/inti/penomor"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/layanan"
+	"nusantarare/inti/backend/outbox"
+	"nusantarare/inti/backend/penomor"
 	"nusantarare/modul/komiteclaimlife/models"
 	"nusantarare/modul/komiteclaimlife/repository"
 )

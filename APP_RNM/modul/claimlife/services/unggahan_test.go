@@ -16,10 +16,10 @@ import (
 	"testing"
 	"time"
 
-	"nusantarare/inti"
-	"nusantarare/inti/galat"
-	"nusantarare/inti/outbox"
-	"nusantarare/inti/unggah"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/galat"
+	"nusantarare/inti/backend/outbox"
+	"nusantarare/inti/backend/unggah"
 )
 
 // kategoriUji menggantikan daftar kategori yang belum ada di korpus.

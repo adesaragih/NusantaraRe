@@ -37,11 +37,11 @@ import (
 	"strings"
 	"time"
 
-	"nusantarare/inti"
-	"nusantarare/inti/db"
-	"nusantarare/inti/galat"
-	"nusantarare/inti/outbox"
-	"nusantarare/inti/unggah"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/galat"
+	"nusantarare/inti/backend/outbox"
+	"nusantarare/inti/backend/unggah"
 	"nusantarare/modul/claimlife/models"
 	"nusantarare/modul/claimlife/repository"
 )

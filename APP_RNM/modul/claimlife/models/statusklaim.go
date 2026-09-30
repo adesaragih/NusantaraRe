@@ -1,7 +1,7 @@
 package models
 
 import (
-	"nusantarare/inti/kontrak"
+	"nusantarare/inti/backend/kontrak"
 )
 
 // Status klaim sebagai TURUNAN - tiket 04.

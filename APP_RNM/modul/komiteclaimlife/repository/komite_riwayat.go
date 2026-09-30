@@ -13,7 +13,7 @@ import (
 	"fmt"
 	"time"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 // JejakKomite adalah satu catatan jejak.

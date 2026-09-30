@@ -24,7 +24,7 @@ import {
   type BusinessTreaty,
   type DaftarBusiness,
 } from '../api'
-import { Field, Gagal, Kosong, Memuat, Pilih } from '../../../inti/components/ui/dasar'
+import { Field, Gagal, Kosong, Memuat, Pilih } from '../../../../../inti/frontend/components/ui/dasar'
 
 /** Isian form. */
 export interface FormBusiness {

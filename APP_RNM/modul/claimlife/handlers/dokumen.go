@@ -25,10 +25,10 @@ import (
 	"strconv"
 	"time"
 
-	"nusantarare/inti"
-	"nusantarare/inti/galat"
-	"nusantarare/inti/kontrak"
-	"nusantarare/inti/unggah"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/galat"
+	"nusantarare/inti/backend/kontrak"
+	"nusantarare/inti/backend/unggah"
 	"nusantarare/modul/claimlife/services"
 )
 

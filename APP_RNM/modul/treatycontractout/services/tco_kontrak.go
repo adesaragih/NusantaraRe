@@ -21,10 +21,10 @@ import (
 	"strings"
 	"time"
 
-	"nusantarare/inti"
-	"nusantarare/inti/db"
-	"nusantarare/inti/galat"
-	"nusantarare/inti/utils"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/galat"
+	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/treatycontractout/models"
 	"nusantarare/modul/treatycontractout/repository"
 )

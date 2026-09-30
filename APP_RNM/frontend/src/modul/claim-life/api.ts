@@ -10,8 +10,8 @@ import {
   mintaFormulir,
   type PenghalangTutup,
   rakitURL,
-} from '../../inti/klien'
-import { headerIdentitas } from '../../inti/store/sesi'
+} from '../../../../inti/frontend/klien'
+import { headerIdentitas } from '../../../../inti/frontend/store/sesi'
 import { TAHAP } from './labels'
 
 /**

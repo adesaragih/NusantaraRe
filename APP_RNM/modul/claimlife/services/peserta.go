@@ -7,7 +7,7 @@ package services
 import (
 	"context"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 	"nusantarare/modul/claimlife/repository"
 )
 

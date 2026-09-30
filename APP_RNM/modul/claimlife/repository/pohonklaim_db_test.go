@@ -19,11 +19,11 @@ import (
 
 	"strings"
 
-	"nusantarare/inti"
-	"nusantarare/inti/db"
-	"nusantarare/inti/migrasi"
-	intiuang "nusantarare/inti/uang"
-	"nusantarare/inti/utils"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/migrasi"
+	intiuang "nusantarare/inti/backend/uang"
+	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/claimlife"
 	"nusantarare/modul/claimlife/models"
 	"nusantarare/modul/claimlife/repository"

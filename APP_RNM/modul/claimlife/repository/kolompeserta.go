@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"strings"
 
-	"nusantarare/inti/db"
-	"nusantarare/inti/uang"
-	"nusantarare/inti/utils"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/uang"
+	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/claimlife/models"
 )
 

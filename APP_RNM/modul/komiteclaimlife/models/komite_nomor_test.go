@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	"nusantarare/inti/penomor"
+	"nusantarare/inti/backend/penomor"
 )
 
 // TestNomorAkseptasiKomiteDariLiteral - langkah 4.11 / 4.12.

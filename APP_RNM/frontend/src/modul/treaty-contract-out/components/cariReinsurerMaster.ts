@@ -10,7 +10,7 @@
 
 import { useCallback, useRef, useState } from 'react'
 
-import type { OpsiSaring } from '../../../inti/components/ui/pilihSaring'
+import type { OpsiSaring } from '../../../../../inti/frontend/components/ui/pilihSaring'
 import { cariReinsurerMaster, type ReinsurerMaster } from '../api'
 
 /** Satu butir pilihan: nama, dengan ID sebagai keterangan (nama kembar dapat dibedakan). */

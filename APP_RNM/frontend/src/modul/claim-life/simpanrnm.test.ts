@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ApiFailure, pesanGalat } from '../../inti/klien'
+import { ApiFailure, pesanGalat } from '../../../../inti/frontend/klien'
 import { simpanKeRNM } from './api'
 
 // Uji klien `Save to RNM` — `InputOSClaimLife.xml` b21102 → SaveOutStandingLife_Act.

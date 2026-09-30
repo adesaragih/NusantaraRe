@@ -33,7 +33,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/utils"
+	"nusantarare/inti/backend/utils"
 )
 
 // berkasKatalogWarisan adalah dokumen [data DBA] hasil pembacaan ALL_TAB_COLUMNS.

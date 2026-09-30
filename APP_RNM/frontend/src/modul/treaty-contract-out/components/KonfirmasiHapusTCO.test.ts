@@ -5,6 +5,7 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
+import { AKAR_APLIKASI } from '../../../../../inti/frontend/uji/sumber'
 import { HAPUS_TCO } from '../labels'
 import { rincianDampak } from './KonfirmasiHapusTCO'
 
@@ -18,7 +19,7 @@ function semuaApi(): string {
   const modul = readdirSync(join(src, 'modul'), { withFileTypes: true })
     .filter((d) => d.isDirectory() && existsSync(join(src, 'modul', d.name, 'api.ts')))
     .map((d) => join(src, 'modul', d.name, 'api.ts'))
-  return [join(src, 'inti', 'klien.ts'), ...modul].map((f) => readFileSync(f, 'utf8')).join('\n')
+  return [join(AKAR_APLIKASI, 'inti', 'frontend', 'klien.ts'), ...modul].map((f) => readFileSync(f, 'utf8')).join('\n')
 }
 
 const baca = (b: string) => readFileSync(join(__dirname, b), 'utf8')

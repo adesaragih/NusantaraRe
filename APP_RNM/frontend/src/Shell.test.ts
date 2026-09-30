@@ -10,14 +10,15 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { MENU, MENU_MODUL, MODUL, MODUL_LAIN_TERLARANG } from './inti/labels'
+import { AKAR_APLIKASI } from '../../inti/frontend/uji/sumber'
+import { MENU, MENU_MODUL, MODUL, MODUL_LAIN_TERLARANG } from '../../inti/frontend/labels'
 import { MENU_TCO } from './modul/treaty-contract-out/labels'
 import { ENTRI_MENU } from './modul/daftar'
 
-const SUMBER = readFileSync(join(__dirname, 'inti', 'components', 'Shell.tsx'), 'utf8')
+const SUMBER = readFileSync(join(AKAR_APLIKASI, 'inti', 'frontend', 'components', 'Shell.tsx'), 'utf8')
 const APP = readFileSync(join(__dirname, 'App.tsx'), 'utf8')
 /** Sejak butir bg palet hidup di berkasnya sendiri. */
-const PALET = readFileSync(join(__dirname, 'inti', 'components', 'PaletMenu.tsx'), 'utf8')
+const PALET = readFileSync(join(AKAR_APLIKASI, 'inti', 'frontend', 'components', 'PaletMenu.tsx'), 'utf8')
 
 const KORPUS = 'D:\\XML\\RNM_BRD\\Claim Life'
 const adaKorpus = existsSync(KORPUS)
@@ -129,7 +130,7 @@ describe('bukti XML label menu', () => {
   })
 
   it('Inbox ditandai tidak ada di korpus', () => {
-    const labels = readFileSync(join(__dirname, 'inti', 'labels.ts'), 'utf8')
+    const labels = readFileSync(join(AKAR_APLIKASI, 'inti', 'frontend', 'labels.ts'), 'utf8')
     const blok = labels.slice(labels.indexOf('export const MENU'))
     // Klaimnya harus berdiri di komentar tepat di atas MENU.
     const kepala = labels.slice(labels.lastIndexOf('/**', labels.indexOf('export const MENU')), labels.indexOf('export const MENU'))

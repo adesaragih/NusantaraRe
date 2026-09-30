@@ -5,16 +5,17 @@
 // cara membuktikan header identitas sungguh ikut, dan sungguh hilang saat
 // keluar.
 
-import { readFileSync, readdirSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { PERAN } from '../../inti/labels'
-import { klasifikasiGalat } from '../../inti/lib/keadaanGalat'
+import { berkasTS } from '../../../../inti/frontend/uji/sumber'
+import { PERAN } from '../../../../inti/frontend/labels'
+import { klasifikasiGalat } from '../../../../inti/frontend/lib/keadaanGalat'
 
 import { ambilKlaimLife, hapusKlaim, tolakBarisAdjustment } from './api'
-import { pesanGalat } from '../../inti/klien'
+import { pesanGalat } from '../../../../inti/frontend/klien'
 
 /** Satu panggilan fetch yang tertangkap. */
 interface Tangkapan {
@@ -178,20 +179,11 @@ describe('axios benar-benar dilepas', () => {
     // ⛔ Penjaga arah-balik. Dua klien HTTP berdampingan berarti dua model
     // galat, dan yang satu akan diam-diam kalah - layar menampilkan "terjadi
     // kesalahan" untuk penolakan yang sebenarnya membawa kalimat server.
-    const akar = join(__dirname, '..', '..')
-    const tertuduh: string[] = []
-    const telusur = (dir: string): void => {
-      for (const isi of readdirSync(dir, { withFileTypes: true })) {
-        const p = join(dir, isi.name)
-        if (isi.isDirectory()) {
-          telusur(p)
-        } else if (/\.tsx?$/.test(isi.name)) {
-          const teks = readFileSync(p, 'utf8')
-          if (/from ['"]axios['"]/.test(teks)) tertuduh.push(p)
-        }
-      }
-    }
-    telusur(akar)
+    // Seluruh akar kode frontend (`inti/frontend/uji/sumber.ts`), bukan satu
+    // folder: sejak struktur tim satu folder per modul kodenya tersebar.
+    const berkas = berkasTS()
+    expect(berkas.length).toBeGreaterThan(100)
+    const tertuduh = berkas.filter((p) => /from ['"]axios['"]/.test(readFileSync(p, 'utf8')))
     expect(tertuduh).toEqual([])
   })
 

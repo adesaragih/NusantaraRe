@@ -26,10 +26,10 @@ import (
 	"strconv"
 	"time"
 
-	"nusantarare/inti"
-	"nusantarare/inti/galat"
-	"nusantarare/inti/jejak"
-	"nusantarare/inti/penomor"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/galat"
+	"nusantarare/inti/backend/jejak"
+	"nusantarare/inti/backend/penomor"
 	"nusantarare/modul/premiumlistlife/models"
 	"nusantarare/modul/premiumlistlife/services"
 )

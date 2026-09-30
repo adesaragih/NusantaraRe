@@ -32,7 +32,7 @@ import (
 	"strings"
 	"time"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 	"nusantarare/modul/premiumlistlife/models"
 )
 

@@ -25,7 +25,7 @@ import (
 
 	"github.com/cockroachdb/apd/v3"
 
-	"nusantarare/inti/utils"
+	"nusantarare/inti/backend/utils"
 )
 
 // Nama enam tabel WARISAN yang modul ini tulis dan baca (tco4).

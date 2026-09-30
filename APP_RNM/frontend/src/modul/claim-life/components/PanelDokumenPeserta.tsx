@@ -35,9 +35,9 @@
 import { useState } from 'react'
 
 import { DOKUMEN } from '../labels'
-import { simpanBlob } from '../../../inti/lib/simpanBlob'
+import { simpanBlob } from '../../../../../inti/frontend/lib/simpanBlob'
 import { ambilIsiDokumen, hapusDokumen, unggahDokumen, type Dokumen } from '../api'
-import { pesanGalat } from '../../../inti/klien'
+import { pesanGalat } from '../../../../../inti/frontend/klien'
 
 /** Satu baris daftar, sesudah diputuskan apa yang tampil. */
 export interface BarisDokumen {

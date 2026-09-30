@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"nusantarare/inti/penomor"
+	"nusantarare/inti/backend/penomor"
 	"nusantarare/modul/premiumlistlife/models"
 )
 

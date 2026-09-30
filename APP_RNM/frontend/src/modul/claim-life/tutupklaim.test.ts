@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ApiFailure } from '../../inti/klien'
+import { ApiFailure } from '../../../../inti/frontend/klien'
 import {
   bolehTutupDiLayar,
   kasusTertutup,

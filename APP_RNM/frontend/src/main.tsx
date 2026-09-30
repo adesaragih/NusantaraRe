@@ -6,7 +6,7 @@ import App from './App'
 // Lembar gaya tunggal aplikasi (F0.1, diadopsi dari REFERENSI_UI).
 // Diimpor SEKALI di sini; komponen tidak mengimpor CSS sendiri-sendiri,
 // supaya urutan aturan tidak bergantung urutan impor komponen.
-import './inti/styles.css'
+import '../../inti/frontend/styles.css'
 
 // Titik masuk frontend — berkas pertama yang dijalankan browser.
 // index.html punya <div id="root">; React "menempel" ke elemen itu, lalu

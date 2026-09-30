@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 // TestSQLRosterMeniruFilterReportDefinition.

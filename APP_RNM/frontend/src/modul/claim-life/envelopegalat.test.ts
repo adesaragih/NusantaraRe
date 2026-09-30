@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ApiFailure, pesanGalat } from '../../inti/klien'
+import { ApiFailure, pesanGalat } from '../../../../inti/frontend/klien'
 import { cariPesertaLife } from './api'
 
 // Kontrak envelope galat, SISI KLIEN.

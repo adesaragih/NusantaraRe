@@ -3,8 +3,9 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { MODUL } from '../inti/labels'
-import { butirDatar, type ButirSidebar } from '../inti/lib/daftarMenu'
+import { AKAR_APLIKASI } from '../../../inti/frontend/uji/sumber'
+import { MODUL } from '../../../inti/frontend/labels'
+import { butirDatar, type ButirSidebar } from '../../../inti/frontend/lib/daftarMenu'
 import { ENTRI_MENU } from './daftar'
 
 // Menu DATAR - [keputusan work owner 30-09-2026] untuk Treaty Contract Out:
@@ -40,7 +41,7 @@ describe('menu datar', () => {
     expect(butirDatar([t, { ...t, halaman: 'tco-kontrak' }])).toBeUndefined()
   })
   it('Shell merender butir datar sebagai satu tombol, tanpa KelompokMenu', () => {
-    const shell = readFileSync(join(__dirname, '..', 'inti', 'components', 'Shell.tsx'), 'utf8')
+    const shell = readFileSync(join(AKAR_APLIKASI, 'inti', 'frontend', 'components', 'Shell.tsx'), 'utf8')
     expect(shell).toContain('const datar = butirDatar(k.butir)')
     const awal = shell.indexOf(': datar !== undefined ? (')
     const cabang = shell.slice(awal, shell.indexOf(') : (', awal))

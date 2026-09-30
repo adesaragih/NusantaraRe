@@ -3,7 +3,7 @@ package services
 // Nomor akseptasi Komite - tiket 04a. TANPA Oracle.
 
 import (
-	"nusantarare/inti"
+	inti "nusantarare/inti/backend"
 	"nusantarare/modul/komiteclaimlife/repository"
 	"os"
 	"strings"

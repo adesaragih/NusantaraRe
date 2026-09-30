@@ -18,7 +18,7 @@ import (
 	"context"
 	"database/sql"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 // kuerierTCO - bagian `*sql.DB` / `*sql.Tx` yang dipakai pembaca modul.

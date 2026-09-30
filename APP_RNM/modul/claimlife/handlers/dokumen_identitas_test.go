@@ -17,7 +17,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti"
+	inti "nusantarare/inti/backend"
 	"nusantarare/modul/claimlife/services"
 )
 
@@ -48,7 +48,7 @@ func TestUnduhDokumenTanpaHeaderIdentitasDitolak401(t *testing.T) {
 
 // Nama header yang dibaca pelakuDari HARUS sama dengan yang dikirim klien.
 func TestNamaHeaderIdentitasSamaDenganKlien(t *testing.T) {
-	isi, err := os.ReadFile(filepath.Join("..", "..", "..", "frontend", "src", "inti", "store", "sesi.ts"))
+	isi, err := os.ReadFile(filepath.Join("..", "..", "..", "inti", "frontend", "store", "sesi.ts"))
 	if err != nil {
 		t.Fatal(err)
 	}

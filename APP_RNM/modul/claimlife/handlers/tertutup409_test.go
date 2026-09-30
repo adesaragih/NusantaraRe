@@ -68,7 +68,7 @@ func menerjemahkanTertutup(nama string, fungsi map[string]*ast.FuncDecl, dilihat
 		switch x := n.(type) {
 		case *ast.SelectorExpr:
 			// Refactor bentuk B (30-09-2026): galatnya kini tinggal di
-			// inti/kontrak (dibagi dengan Komite); `services.` tetap dikenali.
+			// inti/backend/kontrak (dibagi dengan Komite); `services.` tetap dikenali.
 			if id, ok := x.X.(*ast.Ident); ok && (id.Name == "services" || id.Name == "kontrak") &&
 				x.Sel.Name == "ErrKasusSudahTertutup" {
 				ketemu = true

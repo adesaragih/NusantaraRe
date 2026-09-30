@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { ApiFailure, pesanGalat } from '../../inti/klien'
+import { ApiFailure, pesanGalat } from '../../../../inti/frontend/klien'
 import {
   jumlahUang,
   tampilUang,

@@ -15,7 +15,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 func teks(s string) sql.NullString { return sql.NullString{String: s, Valid: true} }

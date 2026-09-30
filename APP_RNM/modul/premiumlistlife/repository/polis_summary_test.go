@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/migrasi"
-	"nusantarare/inti/utils"
+	"nusantarare/inti/backend/migrasi"
+	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/premiumlistlife/models"
 )
 

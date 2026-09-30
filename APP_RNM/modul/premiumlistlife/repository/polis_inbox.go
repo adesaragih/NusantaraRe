@@ -42,7 +42,7 @@ import (
 	"strconv"
 	"time"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 // BarisInboxPolis adalah satu baris kotak masuk PremiumList.

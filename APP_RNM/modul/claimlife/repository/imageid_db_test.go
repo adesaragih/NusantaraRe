@@ -21,7 +21,7 @@ import (
 	"context"
 	"testing"
 
-	"nusantarare/inti/unggah"
+	"nusantarare/inti/backend/unggah"
 	"nusantarare/uji/skemauji"
 )
 

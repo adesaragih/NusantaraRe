@@ -1,8 +1,8 @@
 // Menu modul Claim Life - refactor bentuk B (30-09-2026): dipindah apa adanya
 // dari `ENTRI_MENU` di `lib/daftarMenu.ts`.
 
-import { MENU, MODUL } from '../../inti/labels'
-import type { ButirMenuModul } from '../../inti/lib/daftarMenu'
+import { MENU, MODUL } from '../../../../inti/frontend/labels'
+import type { ButirMenuModul } from '../../../../inti/frontend/lib/daftarMenu'
 
 /** Nama modul - SAMA dengan `const Nama` di `modul/claimlife/modul.go`. */
 export const NAMA_CLAIMLIFE = 'claimlife'

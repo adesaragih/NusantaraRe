@@ -17,8 +17,8 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/config"
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/config"
+	"nusantarare/inti/backend/db"
 	"nusantarare/modul/claimlife/handlers"
 	"nusantarare/modul/claimlife/services"
 	"nusantarare/uji/skemauji"

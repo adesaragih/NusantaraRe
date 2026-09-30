@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 // AC 22: daftar memuat baris NONAKTIF (tanpa saringan ISACTIVE); per kombinasi.

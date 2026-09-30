@@ -40,7 +40,7 @@ import (
 	"errors"
 	"fmt"
 
-	"nusantarare/inti/uang"
+	"nusantarare/inti/backend/uang"
 )
 
 // ErrTotalMataUangBeragam menandai peserta yang baris adjustment-nya

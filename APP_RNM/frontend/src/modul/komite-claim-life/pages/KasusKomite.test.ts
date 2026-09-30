@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import { KEPUTUSAN_KOMITE } from '../labels'
-import { PERAN } from '../../../inti/labels'
+import { PERAN } from '../../../../../inti/frontend/labels'
 import type { KasusKomite } from '../api'
 import { bolehEskalasi, kalimatHasilKeputusan, PILIHAN_KEPUTUSAN, teksKeputusanAsli } from './KasusKomite'
 

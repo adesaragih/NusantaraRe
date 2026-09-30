@@ -25,9 +25,9 @@ import (
 
 	"github.com/cockroachdb/apd/v3"
 
-	"nusantarare/inti"
-	"nusantarare/inti/db"
-	"nusantarare/inti/utils"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/treatycontractout/models"
 	"nusantarare/modul/treatycontractout/repository"
 )

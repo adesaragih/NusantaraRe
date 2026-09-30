@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ApiFailure, pesanGalat } from '../../inti/klien'
+import { ApiFailure, pesanGalat } from '../../../../inti/frontend/klien'
 import { ubahTanggalKejadian } from './api'
 
 // Uji klien tanggal kejadian — tombol `Edit Date` layar Detail.

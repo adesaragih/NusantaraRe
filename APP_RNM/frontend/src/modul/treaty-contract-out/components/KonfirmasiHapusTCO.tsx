@@ -8,7 +8,7 @@
 
 import { HAPUS_TCO } from '../labels'
 import type { DampakHapusTCO } from '../api'
-import { Gagal, Modal } from '../../../inti/components/ui/dasar'
+import { Gagal, Modal } from '../../../../../inti/frontend/components/ui/dasar'
 
 /** Baris rincian popup — kontrak menyebut tiga anak + klausul; reinsurer menyebut security. */
 export function rincianDampak(d: DampakHapusTCO, jenis: 'kontrak' | 'reinsurer'): string[] {

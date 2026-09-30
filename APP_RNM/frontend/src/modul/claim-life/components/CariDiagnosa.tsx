@@ -42,7 +42,7 @@ import { useState } from 'react'
 
 import { DETAIL } from '../labels'
 import { cariPenyakit, UKURAN_HALAMAN_PENYAKIT, type Penyakit } from '../api'
-import { pesanGalat } from '../../../inti/klien'
+import { pesanGalat } from '../../../../../inti/frontend/klien'
 
 /**
  * Label VERBATIM dari korpus.

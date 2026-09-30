@@ -74,8 +74,8 @@ var berkasKomiteBolehMenyebut = map[string]string{
 	//
 	// ⚠️ Pengecualian ini TIDAK melonggarkan aturannya: berkas itu berkas
 	// UJI, ia tidak menulis satu baris pun ke basis data.
-	// Refactor bentuk B (30-09-2026): penjaga lintas modul, kini di inti/penjaga.
-	"inti/penjaga/strukturkolom_test.go": "penjaga bentuk skema lintas dokumen; berkas uji, nol jalur simpan",
+	// Refactor bentuk B (30-09-2026): penjaga lintas modul, kini di inti/backend/penjaga.
+	"inti/backend/penjaga/strukturkolom_test.go": "penjaga bentuk skema lintas dokumen; berkas uji, nol jalur simpan",
 	// ⛔ MODUL KOMITE CLAIM LIFE sendiri - giliran 10, tiket 01 Komite.
 	// Premis penjaga ini adalah batas KONTEKS: Claim Life tidak memutuskan
 	// atas nama Komite. Berkas di bawah BUKAN Claim Life - brief

@@ -35,8 +35,8 @@ import (
 	"fmt"
 	"time"
 
-	"nusantarare/inti/db"
-	"nusantarare/inti/kontrak"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/kontrak"
 )
 
 // AnggotaTangga adalah satu anggota komite yang akan ditulis ke tangganya.

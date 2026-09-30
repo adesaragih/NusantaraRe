@@ -20,7 +20,7 @@ import (
 	"testing"
 	"time"
 
-	"nusantarare/inti/layanan"
+	"nusantarare/inti/backend/layanan"
 	"nusantarare/modul/treatycontractout/repository"
 	"nusantarare/modul/treatycontractout/services"
 )

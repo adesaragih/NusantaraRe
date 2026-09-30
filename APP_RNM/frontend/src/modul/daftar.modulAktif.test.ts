@@ -3,10 +3,11 @@ import { join } from 'node:path'
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { MODUL } from '../inti/labels'
+import { AKAR_APLIKASI } from '../../../inti/frontend/uji/sumber'
+import { MODUL } from '../../../inti/frontend/labels'
 import { kartuModul } from '../Beranda'
-import { ambilModulAktif } from '../inti/klien'
-import { daftarPalet, susunMenu, type MenuTabel } from '../inti/lib/daftarMenu'
+import { ambilModulAktif } from '../../../inti/frontend/klien'
+import { daftarPalet, susunMenu, type MenuTabel } from '../../../inti/frontend/lib/daftarMenu'
 import { ENTRI_MENU, halamanAktif, MODUL_BACKEND, MODUL_FRONTEND } from './daftar'
 
 // MODUL_AKTIF di frontend - refactor bentuk B paket 6.
@@ -166,7 +167,7 @@ describe('GET /api/modul-aktif', () => {
     // Sejak menu dari tabel (30-09-2026) Shell tidak lagi menyaring modul
     // aktif: GET /api/menu tidak mengirim butir modul nonaktif (cmd/api
     // meneruskan daftar modul aktif ke rute menu).
-    const shell = readFileSync(join(SRC, 'inti', 'components', 'Shell.tsx'), 'utf8')
+    const shell = readFileSync(join(AKAR_APLIKASI, 'inti', 'frontend', 'components', 'Shell.tsx'), 'utf8')
     expect(shell).not.toContain('modulAktif')
     const rakit = readFileSync(join(SRC, '..', '..', 'cmd', 'api', 'rakit.go'), 'utf8')
     expect(rakit).toContain('mux.HandleFunc("GET /api/menu", ruteMenu(dasar, aktif, stubPelaku))')

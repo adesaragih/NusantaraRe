@@ -1,8 +1,8 @@
 // Menu modul Komite Claim Life - refactor bentuk B (30-09-2026): dipindah apa
 // adanya dari `ENTRI_MENU` di `lib/daftarMenu.ts`.
 
-import { MENU_MODUL, MODUL } from '../../inti/labels'
-import type { ButirMenuModul } from '../../inti/lib/daftarMenu'
+import { MENU_MODUL, MODUL } from '../../../../inti/frontend/labels'
+import type { ButirMenuModul } from '../../../../inti/frontend/lib/daftarMenu'
 
 /** Nama modul - SAMA dengan `const Nama` di `modul/komiteclaimlife/modul.go`. */
 export const NAMA_KOMITE = 'komiteclaimlife'

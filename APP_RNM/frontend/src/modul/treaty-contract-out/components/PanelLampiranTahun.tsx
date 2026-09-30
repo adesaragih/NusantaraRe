@@ -16,7 +16,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { LAMPIRAN_TCO } from '../labels'
-import { Gagal, Kosong, Memuat, Pilih } from '../../../inti/components/ui/dasar'
+import { Gagal, Kosong, Memuat, Pilih } from '../../../../../inti/frontend/components/ui/dasar'
 import {
   ambilKategoriLampiranTCO,
   ambilLampiranTahun,
@@ -30,7 +30,7 @@ import {
   type StatusLampiranTahun,
   type TemuanSelarasLampiran,
 } from '../api'
-import { unduhBerkasBeridentitas } from '../../../inti/klien'
+import { unduhBerkasBeridentitas } from '../../../../../inti/frontend/klien'
 
 /** Label status di layar. */
 export function labelStatusLampiran(s: StatusLampiranTahun): string {

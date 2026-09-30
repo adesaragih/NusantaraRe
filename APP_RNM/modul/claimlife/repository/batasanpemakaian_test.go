@@ -14,7 +14,7 @@ package repository
 
 // Refactor bentuk B paket 8 (30-09-2026): TestHandlersTidakMengimporRepository dan TestNolNamaTabelTelanjangDiQuery berlaku untuk
 // SELURUH aplikasi, jadi pindah apa adanya ke
-// `inti/penjaga/lintasaplikasi_test.go`.
+// `inti/backend/penjaga/lintasaplikasi_test.go`.
 import (
 	"os"
 	"path/filepath"

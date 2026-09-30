@@ -11,7 +11,7 @@ package services_test
 
 // Refactor bentuk B paket 8 (30-09-2026): TestNolNamaOrangDiKode (nama orang) berlaku untuk
 // SELURUH aplikasi, jadi pindah apa adanya ke
-// `inti/penjaga/lintasaplikasi_test.go`.
+// `inti/backend/penjaga/lintasaplikasi_test.go`.
 import (
 	"os"
 	"path/filepath"
@@ -68,7 +68,7 @@ var berkasYangBolehMenulisStatus = map[string]string{
 	"pohonklaim.go":   "",
 	"migrasidata.go":  "",
 	// Refactor bentuk B (30-09-2026): penerus kontrak Claim Life untuk Komite
-	// (`inti/kontrak.KlaimKomite`). Seperti repository, ia tidak memegang
+	// (`inti/backend/kontrak.KlaimKomite`). Seperti repository, ia tidak memegang
 	// pelaku; gerbangnya `periksaGiliran` di komite_akseptasi.go - pemanggil
 	// yang terdaftar di atas - dan deklarasi antarmukanya (klaim.go) nol
 	// pernyataan.

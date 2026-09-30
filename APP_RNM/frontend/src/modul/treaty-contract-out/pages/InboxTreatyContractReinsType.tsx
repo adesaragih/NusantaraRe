@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react'
 
 import { KONTRAK_TCO } from '../labels'
 import PanelKontrakTahun from '../components/PanelKontrakTahun'
-import { Gagal, Memuat, Pilih } from '../../../inti/components/ui/dasar'
+import { Gagal, Memuat, Pilih } from '../../../../../inti/frontend/components/ui/dasar'
 import { ambilTahunTreaty, type TahunTreaty } from '../api'
 import { labelProporsi } from '../proporsi'
 

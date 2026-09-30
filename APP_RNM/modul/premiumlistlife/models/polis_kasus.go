@@ -31,7 +31,7 @@ import (
 	"errors"
 	"fmt"
 
-	"nusantarare/inti"
+	inti "nusantarare/inti/backend"
 )
 
 // Nilai `FlagOnGoingPolicy` - VERBATIM `FlagPolicy` tombol portal (butir bn).

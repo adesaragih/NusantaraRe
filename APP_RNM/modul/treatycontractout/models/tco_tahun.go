@@ -24,7 +24,7 @@ import (
 	"strings"
 	"time"
 
-	"nusantarare/inti/utils"
+	"nusantarare/inti/backend/utils"
 )
 
 var (

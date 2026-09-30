@@ -39,7 +39,7 @@ import (
 	"fmt"
 	"strings"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 // KolomRateLife adalah LIMA kolom yang izin OQ-M7 cakup - dibaca penjaga

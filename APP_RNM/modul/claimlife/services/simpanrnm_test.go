@@ -11,10 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"nusantarare/inti"
-	"nusantarare/inti/db"
-	"nusantarare/inti/galat"
-	intiuang "nusantarare/inti/uang"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/galat"
+	intiuang "nusantarare/inti/backend/uang"
 	"nusantarare/modul/claimlife/models"
 	"nusantarare/modul/claimlife/services"
 )

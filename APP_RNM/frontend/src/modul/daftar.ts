@@ -11,8 +11,8 @@
 // di `MODUL_FRONTEND`. Nama modulnya SAMA dengan `const Nama` di
 // `modul/<nama>/modul.go` - dijaga `daftar.modulAktif.test.ts`.
 
-import { HALAMAN_BERANDA, modulDipasang, type EntriMenu } from '../inti/lib/daftarMenu'
-import type { ModulFrontend } from '../inti/modul'
+import { HALAMAN_BERANDA, modulDipasang, type EntriMenu } from '../../../inti/frontend/lib/daftarMenu'
+import type { ModulFrontend } from '../../../inti/frontend/modul'
 import { HALAMAN_CLAIMLIFE, MENU_CLAIMLIFE, NAMA_CLAIMLIFE, type HalamanClaimLife } from './claim-life/menu'
 import { RuteClaimLife } from './claim-life/rute'
 import { HALAMAN_KOMITE, MENU_KOMITE, NAMA_KOMITE, type HalamanKomite } from './komite-claim-life/menu'

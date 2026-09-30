@@ -22,8 +22,8 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/config"
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/config"
+	"nusantarare/inti/backend/db"
 	"nusantarare/modul/treatycontractout/handlers"
 	"nusantarare/modul/treatycontractout/repository"
 	"nusantarare/modul/treatycontractout/services"

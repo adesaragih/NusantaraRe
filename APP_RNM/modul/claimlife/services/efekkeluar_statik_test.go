@@ -19,15 +19,15 @@ package services_test
 
 // Refactor bentuk B paket 8 (30-09-2026): TestNolAlamatLayananDiKode (alamat layanan, ADR-U-0013) berlaku untuk
 // SELURUH aplikasi, jadi pindah apa adanya ke
-// `inti/penjaga/lintasaplikasi_test.go`.
+// `inti/backend/penjaga/lintasaplikasi_test.go`.
 import (
 	"context"
 	"errors"
 	"testing"
 
-	"nusantarare/inti"
-	"nusantarare/inti/db"
-	"nusantarare/inti/outbox"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/outbox"
 	"nusantarare/modul/claimlife/services"
 )
 

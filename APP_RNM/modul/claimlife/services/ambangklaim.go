@@ -26,9 +26,9 @@ import (
 	"errors"
 	"fmt"
 
-	"nusantarare/inti"
-	"nusantarare/inti/db"
-	intigalat "nusantarare/inti/galat"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/db"
+	intigalat "nusantarare/inti/backend/galat"
 	"nusantarare/modul/claimlife/models"
 	"nusantarare/modul/claimlife/repository"
 )

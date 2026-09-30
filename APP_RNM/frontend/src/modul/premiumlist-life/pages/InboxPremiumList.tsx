@@ -25,8 +25,8 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { KOLOM_INBOX_POLIS, TOMBOL_POLIS } from '../labels'
-import { Gagal, Kosong, Memuat } from '../../../inti/components/ui/dasar'
-import { unduhXlsx, type KolomEksporXlsx } from '../../../inti/lib/exportXlsx'
+import { Gagal, Kosong, Memuat } from '../../../../../inti/frontend/components/ui/dasar'
+import { unduhXlsx, type KolomEksporXlsx } from '../../../../../inti/frontend/lib/exportXlsx'
 import {
   ambilKotakMasukPolis,
   buatKasusPolis,

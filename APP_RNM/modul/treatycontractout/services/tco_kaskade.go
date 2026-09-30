@@ -26,8 +26,8 @@ import (
 	"fmt"
 	"time"
 
-	"nusantarare/inti"
-	"nusantarare/inti/db"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/db"
 	"nusantarare/modul/treatycontractout/models"
 	"nusantarare/modul/treatycontractout/repository"
 )

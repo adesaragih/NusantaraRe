@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"nusantarare/inti"
-	"nusantarare/inti/db"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/db"
 	"nusantarare/modul/komiteclaimlife/repository"
 )
 

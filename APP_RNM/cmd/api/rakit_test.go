@@ -17,9 +17,9 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti"
-	"nusantarare/inti/config"
-	"nusantarare/inti/migrasi"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/config"
+	"nusantarare/inti/backend/migrasi"
 	"nusantarare/modul"
 )
 
@@ -183,7 +183,7 @@ func TestMigrasiTetapLengkapSaatModulNonaktif(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Migrasi lintas modul milik `inti` (900-949, M_NAV_MENU) ikut dihitung.
-	milikInti, err := filepath.Glob(filepath.Join("..", "..", "inti", "migrations", "*.sql"))
+	milikInti, err := filepath.Glob(filepath.Join("..", "..", "inti", "backend", "migrations", "*.sql"))
 	if err != nil {
 		t.Fatal(err)
 	}

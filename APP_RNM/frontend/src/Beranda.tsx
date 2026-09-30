@@ -22,7 +22,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react'
 
-import { BERANDA, KETERANGAN_BELUM_DIMIGRASI, MODUL, PERAN_ID } from './inti/labels'
+import { BERANDA, KETERANGAN_BELUM_DIMIGRASI, MODUL, PERAN_ID } from '../../inti/frontend/labels'
 import { TAHAP } from './modul/claim-life/labels'
 import {
   IkonBerkasCari,
@@ -30,11 +30,11 @@ import {
   IkonKotakMasuk,
   IkonPerisai,
   IkonStetoskop,
-} from './inti/components/ui/dasar'
+} from '../../inti/frontend/components/ui/dasar'
 import { ambilKotakMasuk, TAHAP_NOMOR, type NomorTahap } from './modul/claim-life/api'
-import { pesanGalat } from './inti/klien'
-import { type Sesi } from './inti/store/sesi'
-import { modulDipasang } from './inti/lib/daftarMenu'
+import { pesanGalat } from '../../inti/frontend/klien'
+import { type Sesi } from '../../inti/frontend/store/sesi'
+import { modulDipasang } from '../../inti/frontend/lib/daftarMenu'
 import { NAMA_CLAIMLIFE } from './modul/claim-life/menu'
 import { ENTRI_MENU, halamanAktif, type Halaman } from './modul/daftar'
 

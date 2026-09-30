@@ -3,7 +3,7 @@
 
 import { useState } from 'react'
 
-import type { PropsRute } from '../../inti/modul'
+import type { PropsRute } from '../../../../inti/frontend/modul'
 import type { HalamanClaimLife } from './menu'
 import InboxClaimLife from './pages/InboxClaimLife'
 import KlaimLife from './pages/KlaimLife'

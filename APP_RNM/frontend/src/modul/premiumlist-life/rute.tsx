@@ -3,7 +3,7 @@
 
 import { useState } from 'react'
 
-import type { PropsRute } from '../../inti/modul'
+import type { PropsRute } from '../../../../inti/frontend/modul'
 import { TAHAP_POLIS } from './api'
 import type { HalamanPremiumList } from './menu'
 import InboxPremiumList from './pages/InboxPremiumList'

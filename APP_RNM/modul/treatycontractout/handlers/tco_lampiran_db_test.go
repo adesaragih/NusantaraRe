@@ -19,7 +19,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 	"nusantarare/modul/treatycontractout/models"
 	"nusantarare/modul/treatycontractout/repository"
 	"nusantarare/modul/treatycontractout/services"

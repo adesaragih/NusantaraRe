@@ -8,7 +8,7 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { PERAN } from '../../../inti/labels'
+import { PERAN } from '../../../../../inti/frontend/labels'
 import { TAHAP } from '../labels'
 import { TAHAP_NOMOR } from '../api'
 import { KOLOM_EKSPOR, tabUntuk } from './InboxClaimLife'

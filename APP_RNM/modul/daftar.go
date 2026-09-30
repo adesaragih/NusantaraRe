@@ -13,8 +13,8 @@ package modul
 import (
 	"io/fs"
 
-	"nusantarare/inti"
-	"nusantarare/inti/config"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/config"
 	"nusantarare/modul/claimlife"
 	claimlifeservices "nusantarare/modul/claimlife/services"
 	"nusantarare/modul/komiteclaimlife"
@@ -53,15 +53,15 @@ var NamaLama = map[string]string{
 }
 
 // Rakit membangun SETIAP modul terdaftar di atas satu akar bersama, dan
-// menyambung kontrak lintas modulnya (`inti/kontrak`).
+// menyambung kontrak lintas modulnya (`inti/backend/kontrak`).
 //
 // Urutannya urutan pendaftaran rute dan urutan GET /api/modul-aktif. `catat`
 // adalah pencatat proses (log) untuk modul yang mencatat saat menyala.
 func Rakit(dasar *inti.Dasar, cfg config.Config, catat func(string)) []inti.Modul {
 	svcPL := premiumlistservices.DariDasar(dasar)
-	// Butir pl4/av: Claim Life membaca polis PremiumList lewat inti/kontrak.
+	// Butir pl4/av: Claim Life membaca polis PremiumList lewat inti/backend/kontrak.
 	svcCL := claimlifeservices.DariDasar(dasar).DenganPembacaPolis(premiumlistservices.PembacaPolis(svcPL))
-	// Butir km3: Komite membaca dan menuntaskan baris klaim lewat inti/kontrak.
+	// Butir km3: Komite membaca dan menuntaskan baris klaim lewat inti/backend/kontrak.
 	svcKM := komiteservices.DariDasar(dasar).DenganKlaim(claimlifeservices.KlaimUntukKomite(svcCL))
 	svcTCO := treatyservices.DariDasar(dasar).
 		// OQ-TCO-08: bawaan stub; ⛔ garam tidak pernah dicetak.

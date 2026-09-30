@@ -35,8 +35,8 @@ import (
 	"fmt"
 	"strings"
 
-	"nusantarare/inti/db"
-	"nusantarare/inti/kontrak"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/kontrak"
 	"nusantarare/modul/komiteclaimlife/models"
 )
 

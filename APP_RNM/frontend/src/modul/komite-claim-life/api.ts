@@ -2,7 +2,7 @@
 // per endpoint. Klien HTTP-nya `inti/klien.ts` (refactor bentuk B, 30-09-2026:
 // dipecah dari `services/api.ts` tanpa mengubah satu panggilan pun).
 
-import { minta } from '../../inti/klien'
+import { minta } from '../../../../inti/frontend/klien'
 
 // ——— Komite Claim Life tiket 01: Inbox Komite ———
 

@@ -39,7 +39,7 @@ import (
 	"fmt"
 	"strings"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 // MasterJenisReasuransiTCO adalah nama tabel master jenis reasuransi.

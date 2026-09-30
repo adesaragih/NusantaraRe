@@ -3,7 +3,7 @@
 // Arah ketergantungan: handlers -> services -> repository. Paket ini tidak
 // pernah mengimpor handlers, dan tidak pernah mengimpor modul lain - yang
 // bersama datang dari `inti/`, dan yang diberikan ke modul lain lewat
-// `inti/kontrak`.
+// `inti/backend/kontrak`.
 package services
 
 // Akar layanan modul PremiumList Life - refactor bentuk B.
@@ -16,9 +16,9 @@ package services
 import (
 	"context"
 
-	"nusantarare/inti"
-	"nusantarare/inti/db"
-	"nusantarare/inti/kontrak"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/kontrak"
 	"nusantarare/modul/premiumlistlife/repository"
 )
 
@@ -81,7 +81,7 @@ func (s *Service) SkemaAktif() string {
 }
 
 // PembacaPolis menyediakan pembaca polis ringkas modul ini untuk Claim Life
-// (butir pl4/av) - `inti/kontrak.PembacaPolis`.
+// (butir pl4/av) - `inti/backend/kontrak.PembacaPolis`.
 //
 // Refactor bentuk B (30-09-2026): Claim Life dulu memanggil
 // `repository.NewRingkasPolisLife` langsung. Kini `cmd/api` menyerahkan hasil

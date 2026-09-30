@@ -17,7 +17,7 @@ import {
   type HasilDaftar,
   type PolicyDataLife,
 } from '../api'
-import { pesanGalat } from '../../../inti/klien'
+import { pesanGalat } from '../../../../../inti/frontend/klien'
 
 /**
  * kalimatGalat memilih kalimat yang ditampilkan pita merah.

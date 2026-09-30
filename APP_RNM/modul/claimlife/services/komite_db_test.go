@@ -18,12 +18,12 @@ import (
 
 	"github.com/cockroachdb/apd/v3"
 
-	"nusantarare/inti"
-	intidb "nusantarare/inti/db"
-	"nusantarare/inti/kontrak"
-	"nusantarare/inti/outbox"
-	intiuang "nusantarare/inti/uang"
-	"nusantarare/inti/utils"
+	inti "nusantarare/inti/backend"
+	intidb "nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/kontrak"
+	"nusantarare/inti/backend/outbox"
+	intiuang "nusantarare/inti/backend/uang"
+	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/claimlife/models"
 	"nusantarare/modul/claimlife/repository"
 	"nusantarare/modul/claimlife/services"

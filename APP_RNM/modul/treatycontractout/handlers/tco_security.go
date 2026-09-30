@@ -18,8 +18,8 @@ import (
 	"net/http"
 	"strings"
 
-	"nusantarare/inti"
-	"nusantarare/inti/galat"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/galat"
 	"nusantarare/modul/treatycontractout/services"
 )
 

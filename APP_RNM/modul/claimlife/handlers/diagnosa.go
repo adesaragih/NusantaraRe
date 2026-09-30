@@ -27,9 +27,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"nusantarare/inti"
-	"nusantarare/inti/galat"
-	"nusantarare/inti/kontrak"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/galat"
+	"nusantarare/inti/backend/kontrak"
 	"nusantarare/modul/claimlife/services"
 )
 

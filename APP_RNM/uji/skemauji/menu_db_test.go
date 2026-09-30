@@ -16,9 +16,9 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti"
-	"nusantarare/inti/menu"
-	"nusantarare/inti/migrasi"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/menu"
+	"nusantarare/inti/backend/migrasi"
 	"nusantarare/uji/skemauji"
 )
 

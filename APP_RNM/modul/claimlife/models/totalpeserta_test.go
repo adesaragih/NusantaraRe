@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/kontrak"
-	"nusantarare/inti/uang"
+	"nusantarare/inti/backend/kontrak"
+	"nusantarare/inti/backend/uang"
 )
 
 // uang membangun nilai uang untuk uji; gagal keras bila teksnya salah.

@@ -11,7 +11,7 @@ import (
 	"context"
 	"time"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 // klaimBelumDisambung menolak setiap panggilan dengan ErrKlaimBelumDisambung.

@@ -23,7 +23,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 // sqlKategoriWajib merakit pernyataannya.

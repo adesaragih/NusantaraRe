@@ -3,8 +3,9 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { MENU, MENU_MODUL, MODUL } from '../inti/labels'
-import { daftarPalet, saringPalet } from '../inti/lib/daftarMenu'
+import { AKAR_APLIKASI } from '../../../inti/frontend/uji/sumber'
+import { MENU, MENU_MODUL, MODUL } from '../../../inti/frontend/labels'
+import { daftarPalet, saringPalet } from '../../../inti/frontend/lib/daftarMenu'
 import { ENTRI_MENU } from './daftar'
 
 // Sinkron sidebar ↔ palet — DUA ARAH, butir bg.
@@ -19,8 +20,8 @@ import { ENTRI_MENU } from './daftar'
 // tidak di sidebar dapat dibuka lewat Ctrl+K walau menunya tidak terlihat,
 // dan itu persis cacat yang REFERENSI_UI bayar sekali.
 
-const SHELL = readFileSync(join(__dirname, '..', 'inti', 'components', 'Shell.tsx'), 'utf8')
-const DAFTAR_MENU = readFileSync(join(__dirname, '..', 'inti', 'lib', 'daftarMenu.ts'), 'utf8')
+const SHELL = readFileSync(join(AKAR_APLIKASI, 'inti', 'frontend', 'components', 'Shell.tsx'), 'utf8')
+const DAFTAR_MENU = readFileSync(join(AKAR_APLIKASI, 'inti', 'frontend', 'lib', 'daftarMenu.ts'), 'utf8')
 const APP = readFileSync(join(__dirname, '..', 'App.tsx'), 'utf8')
 
 describe('sidebar ↔ palet, dua arah', () => {

@@ -9,9 +9,9 @@ import (
 	"errors"
 	"testing"
 
-	"nusantarare/inti"
-	"nusantarare/inti/layanan"
-	"nusantarare/inti/outbox"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/layanan"
+	"nusantarare/inti/backend/outbox"
 	"nusantarare/modul/claimlife/services"
 )
 

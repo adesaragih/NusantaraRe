@@ -14,7 +14,7 @@ import (
 	"context"
 	"testing"
 
-	"nusantarare/inti"
+	inti "nusantarare/inti/backend"
 	"nusantarare/modul/claimlife/models"
 	"nusantarare/modul/claimlife/repository"
 	"nusantarare/uji/skemauji"

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"nusantarare/inti/unggah"
+	"nusantarare/inti/backend/unggah"
 )
 
 func TestMimeDokumen(t *testing.T) {

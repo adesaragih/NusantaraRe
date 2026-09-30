@@ -21,7 +21,7 @@ import (
 	"context"
 	"fmt"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 // SequenceNomorAkseptasi adalah sequence penerbit urut nomor akseptasi.

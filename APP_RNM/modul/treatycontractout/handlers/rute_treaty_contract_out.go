@@ -28,9 +28,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"nusantarare/inti"
-	"nusantarare/inti/galat"
-	"nusantarare/inti/unggah"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/galat"
+	"nusantarare/inti/backend/unggah"
 	"nusantarare/modul/treatycontractout/models"
 	"nusantarare/modul/treatycontractout/services"
 )

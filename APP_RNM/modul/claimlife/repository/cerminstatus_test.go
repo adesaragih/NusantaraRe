@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 // TestSetelCerminOutstandingHanyaKolomStatus - larangan "tabel warisan

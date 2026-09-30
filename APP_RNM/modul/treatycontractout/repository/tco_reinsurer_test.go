@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 	"nusantarare/modul/treatycontractout/models"
 	"strings"
 	"testing"

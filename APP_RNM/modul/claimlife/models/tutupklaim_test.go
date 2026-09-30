@@ -3,7 +3,7 @@ package models
 import (
 	"testing"
 
-	"nusantarare/inti/kontrak"
+	"nusantarare/inti/backend/kontrak"
 )
 
 // Uji gerbang `Close Claim` — ProtectCloseClaim_act, dibaca sebagai pohon.

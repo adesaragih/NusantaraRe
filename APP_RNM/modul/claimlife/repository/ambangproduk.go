@@ -43,7 +43,7 @@ import (
 	"fmt"
 	"strings"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 // ErrAmbangProdukTakDitemukan - produk itu tidak ada di view.

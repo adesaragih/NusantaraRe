@@ -23,7 +23,7 @@
 import { useRef, useState } from 'react'
 
 import { UNGGAH_CSV } from '../labels'
-import { Gagal } from '../../../inti/components/ui/dasar'
+import { Gagal } from '../../../../../inti/frontend/components/ui/dasar'
 import {
   simpanUnggahPolis,
   tinjauUnggahPolis,

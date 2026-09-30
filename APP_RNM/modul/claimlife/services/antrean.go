@@ -14,8 +14,8 @@ package services
 // Dibaca sesudah: efekkeluar.go.
 
 import (
-	"nusantarare/inti/layanan"
-	"nusantarare/inti/outbox"
+	"nusantarare/inti/backend/layanan"
+	"nusantarare/inti/backend/outbox"
 )
 
 // ModulClaimLife mengisi kolom `MODUL` baris outbox milik Claim Life.

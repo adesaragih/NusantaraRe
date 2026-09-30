@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 func TestRateLifeKolomTetapBerkunciIDUSEDBY(t *testing.T) {

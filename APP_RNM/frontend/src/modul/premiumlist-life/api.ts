@@ -2,7 +2,7 @@
 // fungsi per endpoint. Klien HTTP-nya `inti/klien.ts` (refactor bentuk B,
 // 30-09-2026: dipecah dari `services/api.ts` tanpa mengubah satu panggilan pun).
 
-import { minta, mintaFormulir } from '../../inti/klien'
+import { minta, mintaFormulir } from '../../../../inti/frontend/klien'
 
 // ---------------------------------------------------------------------------
 // MODUL PREMIUMLIST LIFE — kotak masuk dan keputusan penawaran (tiket 01).

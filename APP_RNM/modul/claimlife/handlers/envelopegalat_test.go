@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/galat"
+	"nusantarare/inti/backend/galat"
 )
 
 // Kontrak envelope galat, SISI BACKEND.

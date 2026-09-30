@@ -23,9 +23,9 @@ import (
 	"strings"
 	"time"
 
-	"nusantarare/inti"
-	"nusantarare/inti/db"
-	"nusantarare/inti/galat"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/galat"
 	"nusantarare/modul/claimlife/models"
 	"nusantarare/modul/claimlife/repository"
 )

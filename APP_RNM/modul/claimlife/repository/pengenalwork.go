@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"strings"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 // Awalan pengenal work object, satu per jenis baris.

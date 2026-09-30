@@ -29,10 +29,10 @@ import (
 	"sort"
 	"strings"
 
-	"nusantarare/inti"
-	"nusantarare/inti/kontrak"
-	"nusantarare/inti/uang"
-	"nusantarare/inti/utils"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/kontrak"
+	"nusantarare/inti/backend/uang"
+	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/claimlife/models"
 )
 

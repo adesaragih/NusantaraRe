@@ -45,9 +45,9 @@ import {
   type Penyakit,
   type Peserta,
 } from '../api'
-import { pesanGalat } from '../../../inti/klien'
+import { pesanGalat } from '../../../../../inti/frontend/klien'
 import { CariDiagnosa } from './CariDiagnosa'
-import { BelumTersedia } from '../../../inti/components/ui/dasar'
+import { BelumTersedia } from '../../../../../inti/frontend/components/ui/dasar'
 
 /**
  * Menyusun kalimat untuk sel yang belum diisi.

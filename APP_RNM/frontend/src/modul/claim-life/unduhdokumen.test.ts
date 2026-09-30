@@ -7,15 +7,15 @@
 // dijawab 401. Kedua sisi benar menurut dirinya sendiri; pertemuannya yang
 // salah. Sisi Go dikunci `handlers/dokumen_identitas_test.go`.
 
-import { readFileSync, readdirSync } from 'node:fs'
-import { join } from 'node:path'
+import { readFileSync } from 'node:fs'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { PERAN } from '../../inti/labels'
+import { berkasSumberTS } from '../../../../inti/frontend/uji/sumber'
+import { PERAN } from '../../../../inti/frontend/labels'
 
 import { ambilIsiDokumen } from './api'
-import { pesanGalat } from '../../inti/klien'
+import { pesanGalat } from '../../../../inti/frontend/klien'
 
 interface Tangkapan {
   url: string
@@ -72,20 +72,12 @@ describe('ambilIsiDokumen', () => {
   })
 })
 
-/** Seluruh berkas sumber non-uji di bawah src/. */
+/**
+ * Seluruh berkas sumber non-uji frontend - perakit, `inti/frontend`, dan setiap
+ * `modul/<nama>/frontend` (`inti/frontend/uji/sumber.ts`).
+ */
 function sumberSrc(): { jalur: string; isi: string }[] {
-  const hasil: { jalur: string; isi: string }[] = []
-  const jelajah = (dir: string): void => {
-    for (const e of readdirSync(dir, { withFileTypes: true })) {
-      const p = join(dir, e.name)
-      if (e.isDirectory()) jelajah(p)
-      else if (/\.(ts|tsx)$/.test(e.name) && !/\.test\.(ts|tsx)$/.test(e.name)) {
-        hasil.push({ jalur: p, isi: readFileSync(p, 'utf8') })
-      }
-    }
-  }
-  jelajah(join(__dirname, '..', '..'))
-  return hasil
+  return berkasSumberTS().map((jalur) => ({ jalur, isi: readFileSync(jalur, 'utf8') }))
 }
 
 describe('nol pranala ke /api/ — setiap permintaan lewat fetch yang membawa identitas', () => {

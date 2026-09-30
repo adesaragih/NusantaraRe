@@ -12,11 +12,11 @@ package services
 import (
 	"strings"
 
-	"nusantarare/inti/db"
-	"nusantarare/inti/galat"
-	"nusantarare/inti/layanan"
-	"nusantarare/inti/outbox"
-	"nusantarare/inti/unggah"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/galat"
+	"nusantarare/inti/backend/layanan"
+	"nusantarare/inti/backend/outbox"
+	"nusantarare/inti/backend/unggah"
 )
 
 // pesanIntiInggrisTCO - kalimat asal (`Error()` sentinel `inti/`) -> padanan Inggris.

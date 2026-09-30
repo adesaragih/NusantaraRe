@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/galat"
+	"nusantarare/inti/backend/galat"
 	"nusantarare/modul/treatycontractout/services"
 )
 

@@ -7,7 +7,7 @@ import (
 	"errors"
 	"testing"
 
-	"nusantarare/inti"
+	inti "nusantarare/inti/backend"
 	"nusantarare/modul/treatycontractout/repository"
 	"nusantarare/modul/treatycontractout/services"
 )

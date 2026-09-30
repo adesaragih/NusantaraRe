@@ -21,7 +21,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { DETAIL_POLIS, JUDUL_KOLOM_PESERTA } from '../labels'
-import { Gagal, Kosong, Memuat } from '../../../inti/components/ui/dasar'
+import { Gagal, Kosong, Memuat } from '../../../../../inti/frontend/components/ui/dasar'
 import UnggahCSVPeserta from './UnggahCSVPeserta'
 import {
   ambilKepalaPolis,

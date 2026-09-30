@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 // AC 19: kolom bernama. tco4 (RALAT AC 18/20 tiket 06): tabel warisan tanpa

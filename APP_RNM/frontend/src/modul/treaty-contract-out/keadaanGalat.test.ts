@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { ApiFailure, pesanGalat } from '../../inti/klien'
+import { ApiFailure, pesanGalat } from '../../../../inti/frontend/klien'
 import { ambilKursTahun, konversiKurs } from './api'
 
-import { KODE_BACKEND_MATI, klasifikasiGalat } from '../../inti/lib/keadaanGalat'
+import { KODE_BACKEND_MATI, klasifikasiGalat } from '../../../../inti/frontend/lib/keadaanGalat'
 
 // 503 DARI backend lawan 503 dari proxy — lanjutan 6 Treaty Contract Out.
 //

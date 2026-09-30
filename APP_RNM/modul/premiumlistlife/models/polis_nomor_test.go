@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/penomor"
+	"nusantarare/inti/backend/penomor"
 )
 
 func TestKodeTipePLEmpatCabangDariData(t *testing.T) {

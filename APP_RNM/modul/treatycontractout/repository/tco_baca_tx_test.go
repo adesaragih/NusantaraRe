@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 func TestBacaTxTCO(t *testing.T) {

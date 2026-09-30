@@ -14,10 +14,10 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti"
-	"nusantarare/inti/config"
-	"nusantarare/inti/kontrak"
-	"nusantarare/inti/migrasi"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/config"
+	"nusantarare/inti/backend/kontrak"
+	"nusantarare/inti/backend/migrasi"
 	"nusantarare/modul/claimlife/models"
 	premiumlistmodels "nusantarare/modul/premiumlistlife/models"
 )

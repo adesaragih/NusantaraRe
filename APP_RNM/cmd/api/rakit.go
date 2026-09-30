@@ -17,9 +17,9 @@ import (
 	"strings"
 	"time"
 
-	"nusantarare/inti"
-	"nusantarare/inti/galat"
-	"nusantarare/inti/menu"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/galat"
+	"nusantarare/inti/backend/menu"
 )
 
 // pilihModulAktif menyaring modul terdaftar menurut MODUL_AKTIF.

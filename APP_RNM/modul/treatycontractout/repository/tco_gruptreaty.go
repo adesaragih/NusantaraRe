@@ -22,7 +22,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 // MasterGrupTreatyTCO adalah nama tabel master grup treaty.

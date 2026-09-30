@@ -8,7 +8,7 @@ package repository
 // uji satu modul tidak pernah bergantung pada berkas uji modul lain.
 //
 // Paket 8: penjaga "nol tabel baru Treaty" (tco4), yang membaca migrasi SEMUA
-// modul, pindah ke `inti/penjaga/lintasaplikasi_test.go` - pembaca migrasinya
+// modul, pindah ke `inti/backend/penjaga/lintasaplikasi_test.go` - pembaca migrasinya
 // (`seluruhSQL`, `sumberMigrasi`) ikut pergi dari berkas ini.
 
 import (

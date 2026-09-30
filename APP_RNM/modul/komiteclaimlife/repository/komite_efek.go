@@ -16,8 +16,8 @@ import (
 	"fmt"
 	"time"
 
-	"nusantarare/inti/db"
-	"nusantarare/inti/outbox"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/outbox"
 )
 
 // ModulOutboxKomite = `services.ModulKomiteLife` - diuji sama.

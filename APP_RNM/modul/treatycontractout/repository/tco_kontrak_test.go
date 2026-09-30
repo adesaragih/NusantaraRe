@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 // Kolom VERBATIM `PEGA_TREATYCONTRACT` (8 parameter), urut ID DESC, dibatasi tahun.

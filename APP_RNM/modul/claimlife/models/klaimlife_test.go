@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/kontrak"
-	"nusantarare/inti/uang"
+	"nusantarare/inti/backend/kontrak"
+	"nusantarare/inti/backend/uang"
 )
 
 // Tiket 01 AC-3: status ditampilkan sebagai kata (Outstanding / Aksep / Ditolak),

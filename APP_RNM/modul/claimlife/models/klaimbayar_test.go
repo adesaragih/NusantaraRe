@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/uang"
-	"nusantarare/inti/utils"
+	"nusantarare/inti/backend/uang"
+	"nusantarare/inti/backend/utils"
 )
 
 func uangUji(t *testing.T, s string) uang.Money {

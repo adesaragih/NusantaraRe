@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/uang"
-	"nusantarare/inti/utils"
+	"nusantarare/inti/backend/uang"
+	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/premiumlistlife/models"
 )
 

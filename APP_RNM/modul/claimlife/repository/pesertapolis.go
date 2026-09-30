@@ -25,8 +25,8 @@ import (
 	"strconv"
 	"strings"
 
-	"nusantarare/inti/db"
-	"nusantarare/inti/uang"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/uang"
 	"nusantarare/modul/claimlife/models"
 )
 

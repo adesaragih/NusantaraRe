@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/utils"
+	"nusantarare/inti/backend/utils"
 )
 
 // contohBaris membuat satu baris lama yang wajar, lalu memberi kesempatan

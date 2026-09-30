@@ -18,8 +18,8 @@ import (
 	"strings"
 	"time"
 
-	"nusantarare/inti/kontrak"
-	"nusantarare/inti/utils"
+	"nusantarare/inti/backend/kontrak"
+	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/claimlife/models"
 )
 

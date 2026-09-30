@@ -11,7 +11,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { PERAN, type KodePeran } from '../../../inti/labels'
+import { PERAN, type KodePeran } from '../../../../../inti/frontend/labels'
 import {
   EFEK_KOMITE,
   ESKALASI_KOMITE,
@@ -19,7 +19,7 @@ import {
   KEPUTUSAN_KOMITE,
   KOLOM_INBOX_KOMITE,
 } from '../labels'
-import { Gagal, Memuat } from '../../../inti/components/ui/dasar'
+import { Gagal, Memuat } from '../../../../../inti/frontend/components/ui/dasar'
 import {
   ambilKasusKomite,
   ambilRiwayatKomite,

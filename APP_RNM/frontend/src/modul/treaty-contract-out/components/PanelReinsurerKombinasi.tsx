@@ -15,7 +15,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { DESIMAL_TAK_DIBATASI, formatNumber } from '../../../inti/lib/format'
+import { DESIMAL_TAK_DIBATASI, formatNumber } from '../../../../../inti/frontend/lib/format'
 import { REINSURER_TCO } from '../labels'
 import {
   ambilDampakHapusReinsurer,
@@ -28,8 +28,8 @@ import {
   type ReinsurerMasuk,
   type ReinsurerTreaty,
 } from '../api'
-import { Field, Gagal, Kosong, Memuat } from '../../../inti/components/ui/dasar'
-import { PilihSaring } from '../../../inti/components/ui/pilihSaring'
+import { Field, Gagal, Kosong, Memuat } from '../../../../../inti/frontend/components/ui/dasar'
+import { PilihSaring } from '../../../../../inti/frontend/components/ui/pilihSaring'
 import { useCariReinsurerMaster } from './cariReinsurerMaster'
 import KonfirmasiHapusTCO from './KonfirmasiHapusTCO'
 import PanelSecurityReinsurer from './PanelSecurityReinsurer'

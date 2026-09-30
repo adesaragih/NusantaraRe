@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 // Uji penyusun SQL pencarian peserta - LoadDataPesertaSpesifik_Act.

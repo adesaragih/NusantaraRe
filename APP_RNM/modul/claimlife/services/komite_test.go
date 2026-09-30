@@ -9,10 +9,10 @@ import (
 	"errors"
 	"testing"
 
-	"nusantarare/inti"
-	"nusantarare/inti/galat"
-	"nusantarare/inti/kontrak"
-	"nusantarare/inti/utils"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/galat"
+	"nusantarare/inti/backend/kontrak"
+	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/claimlife/models"
 	"nusantarare/modul/claimlife/services"
 )

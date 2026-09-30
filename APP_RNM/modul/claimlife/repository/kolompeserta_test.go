@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/uang"
+	"nusantarare/inti/backend/uang"
 	"nusantarare/modul/claimlife/models"
 )
 

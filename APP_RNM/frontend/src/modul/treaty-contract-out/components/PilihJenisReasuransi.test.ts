@@ -39,7 +39,7 @@ describe('layar tidak menyaring dan tidak mengarang', () => {
     }
   })
   it('memakai Pilih dari ui/dasar dan label dari berkas label', () => {
-    expect(SUMBER).toContain("from '../../../inti/components/ui/dasar'")
+    expect(SUMBER).toMatch(/from '(\.\.\/)+inti\/frontend\/components\/ui\/dasar'/)
     expect(SUMBER).toContain("from '../labels'")
   })
   it('ID tidak lewat Number()', () => {

@@ -15,7 +15,7 @@ import { useEffect, useState } from 'react'
 
 import { JENIS_REASURANSI_TCO } from '../labels'
 import { ambilJenisReasuransiTreaty, type JenisReasuransiTreaty } from '../api'
-import { Gagal, Memuat, Pilih, type Opsi } from '../../../inti/components/ui/dasar'
+import { Gagal, Memuat, Pilih, type Opsi } from '../../../../../inti/frontend/components/ui/dasar'
 
 /** Pilihan `Pilih` dari daftar server: nilai = `.ID` (TEKS), label = `.Note`. */
 export function opsiJenisReasuransi(daftar: readonly JenisReasuransiTreaty[]): Opsi[] {

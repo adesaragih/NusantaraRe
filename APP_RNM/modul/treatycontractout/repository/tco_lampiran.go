@@ -35,8 +35,8 @@ import (
 	"strings"
 	"time"
 
-	"nusantarare/inti/db"
-	"nusantarare/inti/outbox"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/outbox"
 	"nusantarare/modul/treatycontractout/models"
 )
 

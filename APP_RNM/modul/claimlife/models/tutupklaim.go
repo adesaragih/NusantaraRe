@@ -29,7 +29,7 @@ package models
 import (
 	"fmt"
 
-	"nusantarare/inti/kontrak"
+	"nusantarare/inti/backend/kontrak"
 )
 
 // BarisTutup adalah satu peserta sebagaimana dilihat gerbang tutup.

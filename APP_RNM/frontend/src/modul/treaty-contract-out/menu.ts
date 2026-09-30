@@ -1,8 +1,8 @@
 // Menu modul Treaty Contract Out - refactor bentuk B (30-09-2026): dipindah apa
 // adanya dari `ENTRI_MENU` di `lib/daftarMenu.ts`.
 
-import { MODUL } from '../../inti/labels'
-import type { ButirMenuModul } from '../../inti/lib/daftarMenu'
+import { MODUL } from '../../../../inti/frontend/labels'
+import type { ButirMenuModul } from '../../../../inti/frontend/lib/daftarMenu'
 import { MENU_TCO } from './labels'
 
 /** Nama modul - SAMA dengan `const Nama` di `modul/treatycontractout/modul.go`. */

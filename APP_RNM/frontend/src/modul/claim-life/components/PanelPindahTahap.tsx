@@ -24,7 +24,7 @@
 import { useState } from 'react'
 
 import { KONFIRMASI_BALIK, TAHAP, TOMBOL_AKSEPTASI, TOMBOL_MEDIS, TOMBOL_OS } from '../labels'
-import { pesanGalat } from '../../../inti/klien'
+import { pesanGalat } from '../../../../../inti/frontend/klien'
 import { pindahTahap, TAHAP_JALUR, type TahapJalur } from '../api'
 
 /** Satu tombol perpindahan: label VERBATIM dan tahap tujuannya. */

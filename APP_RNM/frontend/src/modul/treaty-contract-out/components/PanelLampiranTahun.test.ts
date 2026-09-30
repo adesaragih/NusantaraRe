@@ -7,6 +7,7 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
+import { AKAR_APLIKASI } from '../../../../../inti/frontend/uji/sumber'
 import { LAMPIRAN_TCO } from '../labels'
 import type { LampiranTahun } from '../api'
 import { jalurIsiLampiran, jalurSemuaLampiran } from '../api'
@@ -64,7 +65,7 @@ describe('kabel dan larangan', () => {
     expect(PANEL).not.toMatch(/window\.open|location\.href/)
     // Refactor bentuk B: pengunduh beridentitas kini pembantu klien bersama
     // (`inti/klien.ts`) - ia membaca amplop galat, dan amplop satu rumah.
-    const klien = readFileSync(join(__dirname, '..', '..', '..', 'inti', 'klien.ts'), 'utf8')
+    const klien = readFileSync(join(AKAR_APLIKASI, 'inti', 'frontend', 'klien.ts'), 'utf8')
     expect(klien).toContain('export async function unduhBerkasBeridentitas')
     const fungsi = klien.slice(klien.indexOf('export async function unduhBerkasBeridentitas'))
     expect(fungsi).toContain('...headerIdentitas()')

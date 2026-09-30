@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/inti/db"
-	"nusantarare/inti/migrasi"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/migrasi"
 )
 
 // TestRingkasMembacaVersiBerjalan - `PROD_KE` TERBESAR, bukan sembarang baris.

@@ -27,7 +27,7 @@ import {
   TOMBOL,
   TOMBOL_KOMITE,
 } from './labels'
-import { PERAN } from '../../inti/labels'
+import { PERAN } from '../../../../inti/frontend/labels'
 
 const KORPUS = 'D:\\XML\\RNM_BRD\\Claim Life'
 const adaKorpus = existsSync(KORPUS)

@@ -34,7 +34,7 @@ import (
 	"fmt"
 	"strings"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 var (

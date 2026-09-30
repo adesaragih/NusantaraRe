@@ -26,7 +26,7 @@ import (
 	"fmt"
 	"time"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 // Batas halaman - dari `InboxPremiumList.xml`.

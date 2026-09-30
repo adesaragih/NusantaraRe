@@ -17,7 +17,7 @@
 import { useState } from 'react'
 
 import { EDIT_DATE } from '../labels'
-import { pesanGalat } from '../../../inti/klien'
+import { pesanGalat } from '../../../../../inti/frontend/klien'
 import { ubahTanggalKlaim, type Peserta, type TanggalKlaim } from '../api'
 
 /**

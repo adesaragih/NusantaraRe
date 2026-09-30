@@ -20,9 +20,9 @@ import (
 	"strings"
 	"time"
 
-	"nusantarare/inti"
-	"nusantarare/inti/db"
-	"nusantarare/inti/utils"
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/treatycontractout/models"
 	"nusantarare/modul/treatycontractout/repository"
 )
@@ -32,7 +32,7 @@ var (
 	ErrGudangKursBelumDisuntik = errors.New("services: exchange-rate reader is not injected")
 	// ErrKursTidakAda - tidak ada kurs berlaku pada tanggal mulai tahun (422).
 	ErrKursTidakAda = models.ErrKursTidakAda
-	// ErrMataUangTidakDikenal - sentinel `inti/db` dibuka untuk handler, yang
+	// ErrMataUangTidakDikenal - sentinel `inti/backend/db` dibuka untuk handler, yang
 	// dilarang mengimpor lapisan repository (penjaga lintas aplikasi).
 	ErrMataUangTidakDikenal = db.ErrMataUangTidakDikenal
 	// ErrMasterKursRusak - master kurs/mata uang tidak dapat dipakai (503).

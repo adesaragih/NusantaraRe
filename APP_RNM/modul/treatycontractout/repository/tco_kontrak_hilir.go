@@ -39,7 +39,7 @@ import (
 	"fmt"
 	"time"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 )
 
 // KontrakHilirTCO adalah pembaca read-only untuk konteks hilir.

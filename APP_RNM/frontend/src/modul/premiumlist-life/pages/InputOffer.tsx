@@ -25,7 +25,7 @@
 import { useEffect, useState } from 'react'
 
 import { KEPUTUSAN_POLIS } from '../labels'
-import { Gagal } from '../../../inti/components/ui/dasar'
+import { Gagal } from '../../../../../inti/frontend/components/ui/dasar'
 import {
   ambilPeriodeProduksi,
   bolehRejectDiTahap,

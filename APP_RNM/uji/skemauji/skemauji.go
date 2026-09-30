@@ -27,10 +27,10 @@ import (
 
 	_ "github.com/sijms/go-ora/v2"
 
-	"nusantarare/inti/config"
-	"nusantarare/inti/db"
-	"nusantarare/inti/kontrak"
-	"nusantarare/inti/migrasi"
+	"nusantarare/inti/backend/config"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/kontrak"
+	"nusantarare/inti/backend/migrasi"
 	"nusantarare/modul"
 	"nusantarare/modul/claimlife/repository"
 	"nusantarare/modul/premiumlistlife/services"
@@ -557,7 +557,7 @@ func ddlTiruanTreaty(skema string) []string {
 // `db` yang menguji Claim Life (butir pl4/av).
 //
 // Refactor bentuk B (30-09-2026): di produksi `cmd/api` yang menyambungnya
-// lewat `inti/kontrak`. Test Claim Life tidak boleh mengimpor modul
+// lewat `inti/backend/kontrak`. Test Claim Life tidak boleh mengimpor modul
 // PremiumList; penunjang uji ini - yang memang mengenal semua modul - yang
 // menyerahkannya, sehingga yang dibaca test sama dengan yang dibaca produksi.
 func PembacaPolis(repo *db.DB) kontrak.PembacaPolis {

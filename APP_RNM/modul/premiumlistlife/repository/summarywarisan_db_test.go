@@ -14,7 +14,7 @@ import (
 
 	"github.com/cockroachdb/apd/v3"
 
-	intidb "nusantarare/inti/db"
+	intidb "nusantarare/inti/backend/db"
 	"nusantarare/modul/premiumlistlife/models"
 	"nusantarare/modul/premiumlistlife/repository"
 	"nusantarare/uji/skemauji"

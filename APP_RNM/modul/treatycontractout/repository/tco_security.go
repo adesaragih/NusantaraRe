@@ -32,7 +32,7 @@ import (
 
 	"github.com/cockroachdb/apd/v3"
 
-	"nusantarare/inti/db"
+	"nusantarare/inti/backend/db"
 	"nusantarare/modul/treatycontractout/models"
 )
 

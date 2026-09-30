@@ -35,9 +35,9 @@ import PanelKlausulTahun from '../components/PanelKlausulTahun'
 import PanelKontrakTahun from '../components/PanelKontrakTahun'
 import PanelLampiranTahun from '../components/PanelLampiranTahun'
 import { PROPORSI_TCO, labelProporsi } from '../proporsi'
-import { Field, FieldTanggal, Gagal, Halaman, Kosong, Memuat, Pilih } from '../../../inti/components/ui/dasar'
-import { formatDate } from '../../../inti/lib/format'
-import { keInputTanggal } from '../../../inti/lib/tanggalInput'
+import { Field, FieldTanggal, Gagal, Halaman, Kosong, Memuat, Pilih } from '../../../../../inti/frontend/components/ui/dasar'
+import { formatDate } from '../../../../../inti/frontend/lib/format'
+import { keInputTanggal } from '../../../../../inti/frontend/lib/tanggalInput'
 import {
   ambilAkhirBawaanTahun,
   ambilGrupTreaty,
