@@ -1,12 +1,5 @@
-/**
- * Label butir menu Komite Claim Life — butir **bg**. Dipindah apa adanya dari
- * `MENU_MODUL` di `inti/frontend/labels.ts` (struktur tim satu folder per
- * modul, 30-09-2026): label satu modul tinggal di folder modul itu.
- */
-export const LABEL_MENU_KOMITE = {
-  /** `[tidak ada di korpus]` — worklist `KomiteRouter`, kosakata kami. */
-  inboxKomite: 'Inbox Komite',
-} as const
+// `LABEL_MENU_KOMITE` (butir menu `Inbox Komite`) DIBUANG - menu datar,
+// keputusan work owner 30-09-2026: tombol modul berlabel `M_NAV_MENU.LABEL`.
 
 /**
  * Label modul Komite Claim Life — tiket 01.

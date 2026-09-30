@@ -31,9 +31,7 @@
 export const MENU_TCO = {
   /** Nama folder korpus `D:\XML\RNM_BRD\Treaty Contract Out`. */
   kelompok: 'Treaty Contract Out',
-  /** tco5: label SATU-SATUNYA butir menu `[keputusan work owner]`; asalnya harness portal `InboxTreatyContract`. */
-  treatyContractOut: 'Treaty Contract Out',
-  /** `Harness/InboxTreatyContract.xml` b151 `<pyLabel>` — nama harness asal butir itu (bukan label menu sejak tco5). */
+  /** `Harness/InboxTreatyContract.xml` b151 `<pyLabel>` — harness asal layar tahun treaty (bukan label menu; menu datar 30-09-2026 memakai `M_NAV_MENU.LABEL`). */
   inboxTreatyContract: 'InboxTreatyContract',
   /** `Harness/InboxTreatyContractReinsType.xml` b151 `<pyLabel>` — popup tombol `ReinsType` b20778, bukan menu. */
   inboxTreatyContractReinsType: 'InboxTreatyContractReinsType',

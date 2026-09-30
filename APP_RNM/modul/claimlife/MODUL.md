@@ -32,9 +32,9 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 
 ## Migrasi
 
-Rentang `001-029`, terpakai `001–022`. Menu modul ini (butir `M_NAV_MENU` baru) ditulis di slot
-`950-951`, di folder `backend/migrations/` modul ini sendiri — bentuk SQL-nya di
-`APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md` bab 6. Nama berkas migrasi yang sudah ada tidak pernah diubah:
+Rentang `001-029`, terpakai `001–022`. Slot menu `950-951` tidak terpakai: baris
+modul ini sudah `DIMIGRASI = '1'` sejak 900, dan menu datar (30-09-2026) tidak punya butir — slot hanya
+menyalakan `DIMIGRASI` (`APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md` bab 6). Nama berkas migrasi yang sudah ada tidak pernah diubah:
 `T_MIGRASI` mencatat nama.
 
 ## Menjalankan uji modul ini saja

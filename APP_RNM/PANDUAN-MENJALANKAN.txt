@@ -13,6 +13,8 @@ Diperbarui 30 September 2026 (refactor bentuk B): MODUL_AKTIF bab 2.
 Diperbarui 30 September 2026 (tabel nama modul): nama modul bab 2 dan 9.
 Diperbarui 30 September 2026 (menu dari tabel M_NAV_MENU): GET /api/menu
 bab 2, migrasi 900 bab 3.
+Diperbarui 30 September 2026 (menu DATAR, satu modul satu menu): jawaban
+GET /api/menu bab 2 dan 3, migrasi 901 bab 3, sidebar bab 4.
 Untuk siapa: siapa pun yang ingin menjalankan aplikasi ini di mesin Windows,
 termasuk yang baru mengenal Go dan React.
 
@@ -197,8 +199,9 @@ Memilih modul yang dipasang (MODUL_AKTIF, sejak refactor bentuk B):
 
     Jawaban:  {"modul":["claimlife","komiteclaimlife"]}
 
-  GET /api/menu mengikuti daftar yang sama: butir menu modul yang tidak
-  disebut tidak dikirim, jadi kelompoknya tidak tampil di sidebar.
+  GET /api/menu mengikuti daftar yang sama: modul yang sudah dimigrasi
+  tetapi tidak disebut tidak dikirim, jadi tombolnya tidak tampil di
+  sidebar. Modul yang belum dimigrasi tetap dikirim (tombol nonaktif).
 
 ================================================================================
 3. BACKEND DENGAN ORACLE (SETELAH DBA MEMBERI SKEMA UJI)
@@ -300,11 +303,27 @@ Setelah itu:
 MENU DARI TABEL M_NAV_MENU (migrasi 900, sejak 30-09-2026)
 
   -migrate juga membuat tabel menu M_NAV_MENU (+ SEQ_M_NAV_MENU, dua index)
-  beserta isi awalnya: 20 kelompok modul (satu per folder korpus) dan 5 butir
-  menu (Inbox Claim Life, Register, PremiumList, Inbox Komite, Treaty
-  Contract Out). Isi awalnya idempoten - aman diulang.
+  beserta isi awalnya: 20 baris modul (satu per folder korpus) dan 5 butir
+  menu. Isi awalnya idempoten - aman diulang.
 
-  PENTING: -migrate dijalankan WORK OWNER, bukan executor.
+  MIGRASI 901 - MENU DATAR (keputusan work owner 30-09-2026: "1 modul
+  1 menu"). 901 membuang kelima butir anak, lalu kunci tamu, index, dan
+  kolom PARENT_ID. Hasilnya 20 baris, satu per modul. Setiap langkahnya
+  dilindungi pemeriksaan katalog, jadi aman diulang bila -migrate gagal di
+  tengah. Berkas jalur mundurnya (901_m_nav_menu_datar_down.sql)
+  mengembalikan kolom dan kelima butir persis - tetapi TIDAK ADA perintah
+  untuk membatalkan 901 saja: -migrate-down membongkar SELURUH langkah
+  (termasuk 900, yang membuang tabelnya) dan hanya mau berjalan di skema
+  uji. Bila 901 harus dibatalkan di DEV, DBA menjalankan isi berkas mundur
+  itu dengan persetujuan work owner.
+
+  PENTING: -migrate dijalankan WORK OWNER, bukan executor - termasuk 901.
+  Di DEV 900 sudah terpasang; 901 BELUM sampai work owner menjalankannya.
+  URUTAN DEPLOY: biner dari commit 2a10257 ke atas LEBIH DULU, baru
+  -migrate 901. Pembaca menu di commit 10df292 (901 saja) masih menyebut
+  PARENT_ID, jadi biner itu menjawab 500 sesudah 901 terpasang. Backend
+  dari 2a10257 ke atas membaca menu dengan benar SEBELUM dan SESUDAH 901
+  (ia hanya membaca baris modul, KODE = MODUL, tanpa kolom PARENT_ID).
 
   Sebelum 900 dijalankan, GET /api/menu menjawab 503
     {"galat":"tabel M_NAV_MENU belum ada - migrasi 900 belum dijalankan (-migrate, oleh work owner)"}
@@ -313,8 +332,17 @@ MENU DARI TABEL M_NAV_MENU (migrasi 900, sejak 30-09-2026)
     Invoke-WebRequest -UseBasicParsing http://localhost:8080/api/menu |
       Select-Object -Expand Content
 
-    Jawaban:  {"golongan":[{"kode":"TREATY","kelompok":[...]}, ...]}
-              golongan TREATY, FACULTATIVE, KLAIM, MASTER
+    Jawaban (dipotong):
+      {"golongan":[
+        {"kode":"TREATY","modul":[
+          {"kode":"nbtreatyin","label":"NB Treaty In","modul":"nbtreatyin","urutan":1,"dimigrasi":false},
+          ...
+          {"kode":"premiumlistlife","label":"PremiumList Life","modul":"premiumlistlife","urutan":5,"dimigrasi":true},
+          ...]},
+        {"kode":"FACULTATIVE","modul":[...]},
+        {"kode":"KLAIM","modul":[...]},
+        {"kode":"MASTER","modul":[...]}]}
+      golongan TREATY, FACULTATIVE, KLAIM, MASTER; satu tingkat di bawahnya.
 
   Menyembunyikan satu menu tanpa deploy: STATUS_AKTIF = '0' pada barisnya.
 
@@ -398,19 +426,22 @@ YANG TAMPIL SEJAK F0.5
         jalur perpindahan memakai KATA (/tahap/outstanding). Keduanya
         memang berbeda hari ini.
 
-  2. SHELL. Sidebar (dapat dilipat; di ponsel menjadi laci), topbar,
-     menu profil, dan palet menu Ctrl+K.
+  2. SHELL. Sidebar (panelnya dapat diciutkan; di ponsel menjadi laci),
+     topbar, menu profil, dan palet menu Ctrl+K.
 
-     MENUNYA DUA BUTIR, dan keduanya berbukti korpus:
+     MENU DATAR (keputusan work owner 30-09-2026): kepala GROUPMENU
+     (TREATY, FACULTATIVE, KLAIM, MASTER), di bawahnya SATU TOMBOL PER
+     MODUL berlabel nama folder korpus. Tidak ada kelompok yang dilipat.
 
-       Claim Life          nama kelompok - Register_Flow.xml:270
-         Inbox Claim Life  [tidak ada di korpus] sebagai label
-         Register          VERBATIM Register_Flow.xml:155
+       TREATY       PremiumList Life  -> halaman PremiumList
+       KLAIM        Claim Life        -> Inbox Claim Life
+                    Komite Claim Life -> Inbox Komite
+       MASTER       Treaty Contract Out -> layar tahun treaty
 
-     Yang TIDAK ada di menu, dan itu disengaja: sebelas modul lain, dan
-     layar-layar yang di Pega dibuka DARI DALAM kasus (16 flow action +
-     3 popup). Menu yang tidak ada di sistem lama adalah menu yang
-     dikarang.
+     Enam belas modul lain tampil sebagai tombol NONAKTIF "belum
+     dimigrasi". Layar yang di Pega dibuka DARI DALAM kasus (16 flow
+     action + 3 popup) tidak ada di menu - menu yang tidak ada di sistem
+     lama adalah menu yang dikarang.
 
   3. INBOX CLAIM LIFE (halaman pertama sesudah masuk).
      Empat tab = empat assignment Register_Flow, judulnya VERBATIM:
@@ -430,8 +461,9 @@ YANG TAMPIL SEJAK F0.5
      Tanpa Oracle, isinya galat "database belum dikonfigurasi"; layar
      tetap tampil.
 
-  4. Tombol Register di kepala Inbox, dan butir menu Register, membuka
-     halaman pendaftaran. Klik satu baris Inbox membuka halaman Detail.
+  4. Tombol Register di kepala Inbox membuka halaman pendaftaran (butir
+     menu Register dicabut 30-09-2026 - satu modul satu menu). Klik satu
+     baris Inbox membuka halaman Detail.
 
 
 Perintah lain, semua dari folder APP_RNM (bukan frontend - lihat atas):

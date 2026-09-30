@@ -1,10 +1,14 @@
 package menu
 
-// Pembaca `M_NAV_MENU` - satu SELECT, baris aktif saja.
+// Pembaca `M_NAV_MENU` - satu SELECT, baris MODUL aktif saja.
+//
+// ⛔ TANPA `PARENT_ID`, dengan saringan `KODE = MODUL` (brief menu datar
+// 30-09-2026 §3): baris modul memenuhinya, lima butir anak 900 tidak
+// (`inbox` bukan `claimlife`). Jadi pembaca ini benar SEBELUM 901 dijalankan
+// (kolom itu masih ada, butirnya tersaring) dan SESUDAHNYA (kolom itu hilang).
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
 	"nusantarare/inti/backend/db"
@@ -28,15 +32,15 @@ func NewPembaca(d *db.DB) *Pembaca { return &Pembaca{db: d} }
 // '0' tidak - konvensi yang sama dengan data warisan.
 const benderaYa = "1"
 
-// sqlMenu merakit pernyataannya - baris STATUS_AKTIF '1' (bind `:1` =
-// benderaYa), urut GROUPMENU, URUTAN (brief menu §3); ID sebagai penentu akhir
+// sqlMenu merakit pernyataannya - baris modul (`KODE = MODUL`) ber-STATUS_AKTIF
+// '1' (bind `:1` = benderaYa), urut GROUPMENU, URUTAN; ID sebagai penentu akhir
 // supaya urutannya tetap.
 func sqlMenu(tabel string) string {
-	return fmt.Sprintf(`SELECT ID, PARENT_ID, KODE, LABEL, GROUPMENU, MODUL, URUTAN, DIMIGRASI FROM %s `+
-		`WHERE STATUS_AKTIF = :1 ORDER BY GROUPMENU, URUTAN, ID`, tabel)
+	return fmt.Sprintf(`SELECT ID, KODE, LABEL, GROUPMENU, MODUL, URUTAN, DIMIGRASI FROM %s `+
+		`WHERE STATUS_AKTIF = :1 AND KODE = MODUL ORDER BY GROUPMENU, URUTAN, ID`, tabel)
 }
 
-// Baca mengembalikan seluruh baris aktif, kelompok dan butir.
+// Baca mengembalikan seluruh baris modul aktif.
 func (p *Pembaca) Baca(ctx context.Context) ([]Baris, error) {
 	tabel, err := p.db.Qualify("M_NAV_MENU")
 	if err != nil {
@@ -54,12 +58,10 @@ func (p *Pembaca) Baca(ctx context.Context) ([]Baris, error) {
 	var out []Baris
 	for rows.Next() {
 		var b Baris
-		var induk sql.NullInt64
 		var dimigrasi string
-		if err := rows.Scan(&b.ID, &induk, &b.Kode, &b.Label, &b.Golongan, &b.Modul, &b.Urutan, &dimigrasi); err != nil {
+		if err := rows.Scan(&b.ID, &b.Kode, &b.Label, &b.Golongan, &b.Modul, &b.Urutan, &dimigrasi); err != nil {
 			return nil, fmt.Errorf("repository: membaca baris M_NAV_MENU: %w", err)
 		}
-		b.IndukID = induk.Int64
 		b.Dimigrasi = dimigrasi == benderaYa
 		out = append(out, b)
 	}
