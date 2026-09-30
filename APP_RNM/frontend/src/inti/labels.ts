@@ -108,6 +108,13 @@ export const MODUL = {
    * dua lainnya menunggu keputusan asisten/work owner.
    */
   treatyContractOut: 'Treaty Contract Out',
+  /**
+   * Dua folder terakhir — ditambahkan brief menu `M_NAV_MENU` 30-09-2026:
+   * isi awal tabel menu memuat DUA PULUH kelompok, satu per folder korpus,
+   * dan LABEL-nya harus ada di sini (`modul/daftar.menuTabel.test.ts`).
+   */
+  treatyIn: 'Treaty In',
+  treatyInAdjustment: 'Treaty In Adjustment',
 } as const
 
 /**
@@ -177,6 +184,8 @@ export const KERANGKA = {
   profil: 'Profil',
   keBeranda: 'ke Beranda',
   modeStub: 'mode stub',
+  /** `[tidak ada di korpus]` — `GET /api/menu` sedang dibaca (menu dari M_NAV_MENU). */
+  memuatMenu: 'Memuat menu…',
 } as const
 
 // ---------------------------------------------------------------------------

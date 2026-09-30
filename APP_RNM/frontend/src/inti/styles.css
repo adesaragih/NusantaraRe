@@ -4890,6 +4890,30 @@ textarea.field__input {
   font-weight: 500;
 }
 
+/* Kepala bagian = GROUPMENU M_NAV_MENU (TREATY, FACULTATIVE, KLAIM, MASTER),
+   menu dari tabel sejak 30-09-2026. Teks kecil berhuruf besar di atas
+   kelompoknya; saat panel terciut ia menjadi garis pemisah. */
+.shell__golongan {
+  margin-top: 14px;
+}
+.shell__golongan-judul {
+  margin: 0 0 4px;
+  padding: 0 16px;
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* GET /api/menu sedang dimuat atau gagal - keadaannya tampil di tempat menu. */
+.shell__menu-keadaan {
+  margin-top: 12px;
+  padding: 0 4px;
+  font-size: 13px;
+}
+
 /* Lapisan gelap di belakang laci ponsel (klik = tutup). */
 .shell__tirai {
   position: fixed;
@@ -5563,6 +5587,13 @@ textarea.field__input {
   }
   .shell--terlipat .kelompok__isi {
     display: none;
+  }
+  .shell--terlipat .shell__golongan-judul {
+    height: 0;
+    margin: 0 12px 8px;
+    padding: 0;
+    border-top: 1px solid var(--border);
+    font-size: 0;
   }
   .shell--terlipat .shell__nav {
     scrollbar-width: none;

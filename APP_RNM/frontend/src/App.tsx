@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react'
 import Beranda from './Beranda'
 import { Shell } from './inti/components/Shell'
 import { BelumTersedia } from './inti/components/ui/dasar'
-import { ambilModulAktif } from './inti/klien'
-import { modulDipasang } from './inti/lib/daftarMenu'
+import { ambilMenu, ambilModulAktif } from './inti/klien'
+import { modulDipasang, type KeadaanMenuTabel } from './inti/lib/daftarMenu'
 import { pelakuStub } from './inti/store/sesi'
 import { ENTRI_MENU, halamanAktif, MODUL_FRONTEND, type Halaman } from './modul/daftar'
 
@@ -40,6 +40,23 @@ export default function App() {
       batal = true
     }
   }, [])
+  // Menu dari tabel M_NAV_MENU (brief menu 30-09-2026). `null` = sedang
+  // dimuat; gagal = sidebar MENAMPILKAN galatnya, bukan menu kosong.
+  const [menuTabel, setMenuTabel] = useState<KeadaanMenuTabel>(null)
+  useEffect(() => {
+    let batal = false
+    ambilMenu().then(
+      (menu) => {
+        if (!batal) setMenuTabel({ menu })
+      },
+      (galat: unknown) => {
+        if (!batal) setMenuTabel({ galat })
+      },
+    )
+    return () => {
+      batal = true
+    }
+  }, [])
   // Daftar modul aktif tiba SESUDAH pemakai sempat membuka halaman modul yang
   // ternyata nonaktif (semua menu tampil selama daftarnya `null`): rute modul
   // itu dilepas, jadi halamannya kembali ke Beranda alih-alih layar kosong
@@ -66,7 +83,7 @@ export default function App() {
   }
 
   return (
-    <Shell masuk={masuk} halaman={halaman} onPindah={setHalaman} menu={ENTRI_MENU} modulAktif={modulAktif}>
+    <Shell masuk={masuk} halaman={halaman} onPindah={setHalaman} menu={ENTRI_MENU} menuTabel={menuTabel}>
       {halaman === 'beranda' && <Beranda masuk={masuk} onBuka={setHalaman} modulAktif={modulAktif} />}
       {/*
         Refactor bentuk B (30-09-2026): setiap modul AKTIF merender halamannya

@@ -6,8 +6,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MODUL } from '../inti/labels'
 import { kartuModul } from '../Beranda'
 import { ambilModulAktif } from '../inti/klien'
-import { butirKelompok, daftarPalet, kelompokTampil, type KelompokSidebar } from '../inti/lib/daftarMenu'
-import { ENTRI_MENU, halamanAktif, MODUL_BACKEND, MODUL_FRONTEND, type Halaman } from './daftar'
+import { daftarPalet, susunMenu, type MenuTabel } from '../inti/lib/daftarMenu'
+import { ENTRI_MENU, halamanAktif, MODUL_BACKEND, MODUL_FRONTEND } from './daftar'
 
 // MODUL_AKTIF di frontend - refactor bentuk B paket 6.
 //
@@ -19,58 +19,65 @@ import { ENTRI_MENU, halamanAktif, MODUL_BACKEND, MODUL_FRONTEND, type Halaman }
 const SRC = join(__dirname, '..')
 const AKAR_MODUL_GO = join(SRC, '..', '..', 'modul')
 
-/** Kelompok sidebar, diturunkan persis seperti `Shell.tsx` menurunkannya. */
-const KELOMPOK: readonly KelompokSidebar<Halaman>[] = Object.values(MODUL).map((nama) => ({
-  nama,
-  butir: butirKelompok(ENTRI_MENU, nama),
-}))
-
-/** Nama kelompok yang memuat butir milik modul backend `nama`. */
-function kelompokMilik(nama: string): string[] {
-  return KELOMPOK.filter((k) => k.butir.some((b) => MODUL_BACKEND[b.halaman] === nama)).map((k) => k.nama)
+/**
+ * Pohon `GET /api/menu` seperti yang backend kirim untuk `aktif`: satu kelompok
+ * per MODUL, butir modul NONAKTIF tidak dikirim (`inti/menu` `Susun`).
+ * Golongan tidak diuji di sini - satu golongan tiruan.
+ */
+function tabel(aktif: readonly string[]): MenuTabel {
+  return {
+    golongan: [
+      {
+        kode: 'KLAIM',
+        kelompok: Object.values(MODUL).map((nama) => {
+          const milik = ENTRI_MENU.filter((e) => e.kelompok === nama)
+          const modul = milik[0]?.pemilik ?? nama.toLowerCase().replace(/ /g, '')
+          return {
+            kode: modul,
+            label: nama,
+            modul,
+            dimigrasi: milik.length > 0,
+            butir: milik
+              .filter((e) => e.pemilik !== null && aktif.includes(e.pemilik))
+              .map((e) => ({ kode: e.modul, label: e.label, modul })),
+          }
+        }),
+      },
+    ],
+  }
 }
 
 describe('menu modul nonaktif hilang', () => {
+  // Saringannya kini di BACKEND (GET /api/menu tidak mengirim butir modul di
+  // luar MODUL_AKTIF - `inti/menu/menu_test.go`); yang dijaga di sini adalah
+  // sisi frontend-nya: kelompok yang butirnya tidak dikirim HILANG, yang
+  // memang belum dimigrasi tetap BERDIRI, dan palet = sidebar.
   it('sidebar: kelompok modul nonaktif hilang, sisanya utuh', () => {
-    const tampil = kelompokTampil(KELOMPOK, ['claimlife'])
-    const nama = tampil.map(({ k }) => k.nama)
-    for (const lain of ['premiumlistlife', 'komiteclaimlife', 'treatycontractout']) {
-      const milik = kelompokMilik(lain)
-      expect(milik.length).toBeGreaterThan(0)
-      for (const n of milik) expect(nama).not.toContain(n)
+    const s = susunMenu(tabel(['claimlife']), ENTRI_MENU)
+    const nama = s.golongan.flatMap((g) => g.kelompok.map((k) => k.nama))
+    for (const lain of [MODUL.premiumListLife, MODUL.komiteClaimLife, MODUL.treatyContractOut]) {
+      expect(nama).not.toContain(lain)
     }
-    const claimLife = tampil.find(({ k }) => k.nama === MODUL.claimLife)
+    const claimLife = s.golongan[0]?.kelompok.find((k) => k.nama === MODUL.claimLife)
     expect(claimLife?.butir.map((b) => b.halaman)).toEqual(['inbox', 'register'])
     // Kelompok yang memang belum dimigrasi tetap berdiri - ia bukan modul nonaktif.
-    const tanpaButir = KELOMPOK.filter((k) => k.butir.length === 0).map((k) => k.nama)
-    expect(tanpaButir).toHaveLength(14)
-    for (const n of tanpaButir) expect(nama).toContain(n)
+    const belum = s.golongan.flatMap((g) => g.kelompok.filter((k) => !k.dimigrasi))
+    expect(belum).toHaveLength(16)
+    expect(s.tanpaRute).toEqual([])
   })
 
-  it('palet: hanya Beranda dan menu modul aktif', () => {
-    const halaman = daftarPalet(ENTRI_MENU, ['claimlife']).map((h) => h.modul)
-    expect(halaman).toEqual(['beranda', 'inbox', 'register'])
-    expect(daftarPalet(ENTRI_MENU, ['treatycontractout', 'komiteclaimlife']).map((h) => h.modul)).toEqual(
-      ENTRI_MENU.filter((e) => ['beranda', 'komite', 'tco-tahun', 'tco-kontrak', 'tco-klausul'].includes(e.modul)).map(
-        (e) => e.modul,
-      ),
-    )
-  })
-
-  it('sidebar dan palet menyaring dengan aturan yang sama', () => {
-    const aktif = ['premiumlistlife', 'treatycontractout']
-    const dariSidebar = kelompokTampil(KELOMPOK, aktif).flatMap(({ butir }) => butir.map((b) => b.halaman))
-    const dariPalet = daftarPalet(ENTRI_MENU, aktif)
-      .map((h) => h.modul)
-      .filter((m) => m !== 'beranda')
-    expect(new Set(dariSidebar)).toEqual(new Set(dariPalet))
+  it('palet: Beranda dan butir sidebar yang sama', () => {
+    const s = susunMenu(tabel(['premiumlistlife', 'treatycontractout']), ENTRI_MENU)
+    const dariSidebar = s.golongan.flatMap((g) => g.kelompok.flatMap((k) => k.butir.map((b) => b.halaman)))
+    expect(daftarPalet(s.entri).map((h) => h.modul)).toEqual(['beranda', ...dariSidebar])
+    expect(dariSidebar).toEqual(['premiumlist', 'tco-tahun'])
   })
 
   it('Beranda: kartu modul nonaktif hilang, yang belum dimigrasi tetap', () => {
     // Tombol kartu Beranda MEMBUKA modul - ia menu juga.
     const kartu = kartuModul(['komiteclaimlife'])
     expect(kartu.filter((k) => k.tujuan !== null).map((k) => k.nama)).toEqual([MODUL.komiteClaimLife])
-    expect(kartu.filter((k) => k.tujuan === null)).toHaveLength(14)
+    expect(kartu.filter((k) => k.tujuan === null)).toHaveLength(16)
     expect(kartuModul(null)).toEqual(kartuModul())
     // Cacah antrean Claim Life tidak diminta bila modul itu nonaktif.
     const beranda = readFileSync(join(SRC, 'Beranda.tsx'), 'utf8')
@@ -79,12 +86,8 @@ describe('menu modul nonaktif hilang', () => {
     expect(readFileSync(join(SRC, 'App.tsx'), 'utf8')).toContain('<Beranda masuk={masuk} onBuka={setHalaman} modulAktif={modulAktif} />')
   })
 
-  it('null = semua tampil, persis seperti sebelum MODUL_AKTIF', () => {
-    expect(kelompokTampil(KELOMPOK, null).map(({ k, butir }) => ({ nama: k.nama, butir }))).toEqual(
-      KELOMPOK.map((k) => ({ nama: k.nama, butir: k.butir })),
-    )
-    expect(daftarPalet(ENTRI_MENU, null)).toEqual(daftarPalet(ENTRI_MENU))
-    expect(daftarPalet(ENTRI_MENU, null)).toHaveLength(ENTRI_MENU.length)
+  it('null = semua rute terpasang, persis seperti sebelum MODUL_AKTIF', () => {
+    for (const e of ENTRI_MENU) expect(halamanAktif(e.modul, null), e.modul).toBe(true)
     // Beranda milik aplikasi: tampil walau tak satu modul pun disebut.
     expect(halamanAktif('beranda', [])).toBe(true)
   })
@@ -156,15 +159,17 @@ describe('GET /api/modul-aktif', () => {
     }
   })
 
-  it('App membacanya dan Shell meneruskannya ke sidebar dan palet', () => {
+  it('App membacanya untuk rute dan Beranda; menunya disaring backend', () => {
     const app = readFileSync(join(SRC, 'App.tsx'), 'utf8')
     expect(app).toContain('ambilModulAktif()')
     expect(app).toContain('modulAktif={modulAktif}')
+    // Sejak menu dari tabel (30-09-2026) Shell tidak lagi menyaring modul
+    // aktif: GET /api/menu tidak mengirim butir modul nonaktif (cmd/api
+    // meneruskan daftar modul aktif ke rute menu).
     const shell = readFileSync(join(SRC, 'inti', 'components', 'Shell.tsx'), 'utf8')
-    expect(shell).toContain('kelompokTampil(kelompok, modulAktif)')
-    expect(shell).toContain('modulAktif={modulAktif}')
-    const palet = readFileSync(join(SRC, 'inti', 'components', 'PaletMenu.tsx'), 'utf8')
-    expect(palet).toContain('daftarPalet(menu, modulAktif)')
+    expect(shell).not.toContain('modulAktif')
+    const rakit = readFileSync(join(SRC, '..', '..', 'cmd', 'api', 'rakit.go'), 'utf8')
+    expect(rakit).toContain('mux.HandleFunc("GET /api/menu", ruteMenu(dasar, aktif, stubPelaku))')
     // Dan rute modul nonaktif tidak dipasang (paket 7: App merakit dari modul),
     // dan halaman modul yang ternyata nonaktif kembali ke Beranda.
     expect(app).toContain('MODUL_FRONTEND.filter((m) => modulDipasang(m.nama, modulAktif))')

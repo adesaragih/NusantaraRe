@@ -38,13 +38,19 @@ describe('sidebar ↔ palet, dua arah', () => {
     // menuliskan butir literal di Shell, `butirKelompok` tidak lagi
     // satu-satunya sumber dan penyimpangan menjadi mungkin lagi.
     // ⛔ Refactor bentuk B paket 7: `ENTRI_MENU` kini tiba lewat prop `menu`
-    // (App -> Shell -> PaletMenu), jadi yang dijaga tiga sambungan: App
-    // memberi `ENTRI_MENU`, Shell menurunkan butir DAN meneruskan palet dari
-    // `menu` yang sama, dan penurunnya menyaring `menu` itu per kelompok.
-    expect(SHELL).toContain('butirKelompok(menu, nama)')
-    expect(SHELL).toContain('menu={menu}')
+    // (App -> Shell -> PaletMenu).
+    // ⛔ Sejak menu dari tabel M_NAV_MENU (30-09-2026): Shell memotong pohon
+    // `GET /api/menu` dengan `menu` (`susunMenu`), lalu SIDEBAR merender
+    // `tersusun.golongan` dan PALET menerima `tersusun.entri` - dua keluaran
+    // SATU pemotongan, dan `susunMenu` mengisi `entri` dari butir yang
+    // sama yang ia masukkan ke kelompok.
     expect(APP).toContain('menu={ENTRI_MENU}')
-    expect(DAFTAR_MENU).toContain("menu.filter((e) => e.kelompok === nama)")
+    expect(SHELL).toContain('susunMenu(menuTabel.menu, menu)')
+    expect(SHELL).toContain('tersusun?.golongan.map((g) =>')
+    expect(SHELL).toContain('menu={tersusun?.entri ?? berandaSaja}')
+    const susun = DAFTAR_MENU.slice(DAFTAR_MENU.indexOf('export function susunMenu'))
+    expect(susun).toContain('kelompok.push({ kode: k.kode, nama: k.label, dimigrasi: k.dimigrasi, butir })')
+    expect(susun.slice(susun.indexOf('kelompok.push('))).toContain('for (const b of butir) {')
   })
 
   it('label palet datang dari labels.ts, tidak diketik ulang', () => {
@@ -94,7 +100,7 @@ describe('nol menu dikarang', () => {
     // tidak ada.
     const berbutir = new Set(ENTRI_MENU.map((e) => e.kelompok))
     const tanpaButir = Object.values(MODUL).filter((n) => !berbutir.has(n))
-    expect(tanpaButir).toHaveLength(14)
+    expect(tanpaButir).toHaveLength(16)
     for (const nama of tanpaButir) {
       // ⛔ DIPERSEMPIT KE MAKSUDNYA 28-09-2026 (sesi Treaty Contract Out).
       // Dulu: hasil pencarian nama kelompok harus KOSONG. Pencocokan palet

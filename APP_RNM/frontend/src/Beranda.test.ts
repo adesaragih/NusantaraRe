@@ -6,12 +6,14 @@ import { kartuModul, ringkasanAntrean, type AntreanTahap } from './Beranda'
 // Uji Beranda — butir bg.
 
 describe('kartuModul', () => {
-  it('delapan belas kartu, satu per kelompok MODUL', () => {
+  it('dua puluh kartu, satu per kelompok MODUL', () => {
     // 18 sejak Treaty Contract Out ditambahkan (28-09-2026).
-    expect(kartuModul()).toHaveLength(18)
+    // 20 sejak brief menu M_NAV_MENU (30-09-2026): Treaty In dan Treaty In
+    // Adjustment - kedua folder korpus terakhir - masuk MODUL.
+    expect(kartuModul()).toHaveLength(20)
   })
 
-  it('empat modul bertujuan, empat belas tanpa', () => {
+  it('empat modul bertujuan, enam belas tanpa', () => {
     // ⛔ Kartu yang belum dimigrasi tetap BERDIRI. Menyembunyikannya
     // membuat aplikasi tampak lengkap padahal empat belas modul belum ada.
     const kartu = kartuModul()
@@ -19,7 +21,7 @@ describe('kartuModul', () => {
     expect(aktif.map((k) => k.nama).sort()).toEqual(
       [MODUL.claimLife, MODUL.komiteClaimLife, MODUL.premiumListLife, MODUL.treatyContractOut].sort(),
     )
-    expect(kartu.filter((k) => k.tujuan === null)).toHaveLength(14)
+    expect(kartu.filter((k) => k.tujuan === null)).toHaveLength(16)
   })
 
   it('kartu Claim Life menunjuk butir PERTAMAnya', () => {

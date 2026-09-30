@@ -4,14 +4,25 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import { MODUL } from '../inti/labels'
-import { butirDatar, butirKelompok } from '../inti/lib/daftarMenu'
+import { butirDatar, type ButirSidebar } from '../inti/lib/daftarMenu'
 import { ENTRI_MENU } from './daftar'
 
 // Menu DATAR - [keputusan work owner 30-09-2026] untuk Treaty Contract Out:
 // navbar tidak bermodel kelompok-beranak "Treaty Contract Out ▸ Treaty
 // Contract Out"; satu tombol langsung. Modul lain TIDAK berubah.
+//
+// Sejak menu dari tabel M_NAV_MENU (30-09-2026) butirnya dari `GET /api/menu`;
+// penanda `datar` tetap milik rute frontend dan dibawa `susunMenu`
+// (`inti/lib/daftarMenu.test.ts`).
 
-const butir = (nama: string) => butirKelompok(ENTRI_MENU, nama)
+/** Butir satu kelompok menurut rute frontend, dalam bentuk sidebar. */
+const butir = (nama: string): ButirSidebar[] =>
+  ENTRI_MENU.filter((e) => e.kelompok === nama).map((e) => ({
+    halaman: e.modul,
+    label: e.label,
+    pemilik: e.pemilik,
+    ...(e.datar === true ? { datar: true as const } : {}),
+  }))
 
 describe('menu datar', () => {
   it('Treaty Contract Out: satu butir, tampil datar', () => {

@@ -1,0 +1,115 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
+import { afterEach, describe, expect, it, vi } from 'vitest'
+
+import { ambilMenu } from '../inti/klien'
+import { MODUL } from '../inti/labels'
+import { HALAMAN_BERANDA } from '../inti/lib/daftarMenu'
+import { ENTRI_MENU } from './daftar'
+
+// Penjaga DUA ARAH: isi awal M_NAV_MENU (migrasi 900) ↔ `modul/daftar.ts`
+// (brief menu 30-09-2026 §3).
+//
+// ⛔ Kenapa statik: sidebar dirakit dari `GET /api/menu` dan DIPOTONG dengan
+// rute frontend - baris tabel tanpa rute tidak tampil, rute tanpa baris
+// tabel juga tidak. Keduanya diam di layar (hanya satu baris konsol). Uji
+// inilah yang membuatnya berbunyi sebelum sampai ke layar.
+
+const SQL = readFileSync(join(__dirname, '..', '..', '..', 'inti', 'migrations', '900_m_nav_menu.sql'), 'utf8')
+
+const POLA_KELOMPOK =
+  /SELECT \{skema\}\.SEQ_M_NAV_MENU\.NEXTVAL, NULL, '([^']+)', '([^']+)', '([A-Z]+)', '([^']+)', \d+, '([01])' FROM DUAL/g
+const POLA_BUTIR =
+  /SELECT \{skema\}\.SEQ_M_NAV_MENU\.NEXTVAL, k\.ID, '([^']+)', '([^']+)', k\.GROUPMENU, k\.MODUL, \d+, k\.DIMIGRASI\s+FROM \{skema\}\.M_NAV_MENU k\s+WHERE k\.KODE = '([^']+)'/g
+
+const kelompok = [...SQL.matchAll(POLA_KELOMPOK)].map((m) => ({ kode: m[1]!, label: m[2]!, dimigrasi: m[5] === '1' }))
+const butir = [...SQL.matchAll(POLA_BUTIR)].map((m) => ({ kode: m[1]!, label: m[2]!, induk: m[3]! }))
+const rute = ENTRI_MENU.filter((e) => e.modul !== HALAMAN_BERANDA)
+
+describe('isi awal 900 ↔ daftar.ts, dua arah', () => {
+  it('setiap INSERT terbaca penjaga ini', () => {
+    // INSERT berbentuk lain adalah baris yang uji ini tidak lihat.
+    expect(kelompok.length + butir.length).toBe((SQL.match(/^INSERT INTO /gm) ?? []).length)
+    expect(kelompok).toHaveLength(20)
+    expect(butir).toHaveLength(5)
+  })
+
+  it('setiap KODE butir isi awal punya rute di daftar.ts', () => {
+    for (const b of butir) expect(rute.map((e) => e.modul as string), b.kode).toContain(b.kode)
+  })
+
+  it('setiap butir daftar.ts punya baris di isi awal', () => {
+    for (const e of rute) expect(butir.map((b) => b.kode), e.modul).toContain(e.modul)
+  })
+
+  it('LABEL butir = label frontend, VERBATIM', () => {
+    for (const e of rute) expect(butir.find((b) => b.kode === e.modul)?.label, e.modul).toBe(e.label)
+  })
+
+  it('induk butir = modul pemilik rutenya', () => {
+    for (const e of rute) expect(butir.find((b) => b.kode === e.modul)?.induk, e.modul).toBe(e.pemilik)
+  })
+
+  it('LABEL kelompok = inti/labels.ts MODUL (20 folder korpus)', () => {
+    expect(new Set(kelompok.map((k) => k.label))).toEqual(new Set(Object.values(MODUL)))
+    expect(Object.values(MODUL)).toHaveLength(20)
+    expect(Object.values(MODUL)).toContain('Treaty In')
+    expect(Object.values(MODUL)).toContain('Treaty In Adjustment')
+  })
+})
+
+describe('GET /api/menu', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  function jawab(badan: string, status = 200): void {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(new Response(badan, { status }))),
+    )
+  }
+
+  it('membaca pohon dari jalur yang dipasang cmd/api', async () => {
+    jawab('{"golongan":[{"kode":"KLAIM","kelompok":[]}]}')
+    await expect(ambilMenu()).resolves.toEqual({ golongan: [{ kode: 'KLAIM', kelompok: [] }] })
+    expect(String(vi.mocked(fetch).mock.calls[0]?.[0])).toContain('/api/menu')
+    const rakit = readFileSync(join(__dirname, '..', '..', '..', 'cmd', 'api', 'rakit.go'), 'utf8')
+    expect(rakit).toContain('mux.HandleFunc("GET /api/menu"')
+  })
+
+  it('bentuk yang tak dikenal GAGAL - bukan menu kosong diam-diam', async () => {
+    for (const badan of ['{}', '{"golongan":{}}', '{"golongan":[{"kode":1}]}']) {
+      jawab(badan)
+      await expect(ambilMenu(), badan).rejects.toThrow('GET /api/menu')
+    }
+  })
+
+  it('galat backend diteruskan apa adanya', async () => {
+    jawab('{"galat":"tabel M_NAV_MENU belum ada - migrasi 900 belum dijalankan (-migrate, oleh work owner)"}', 503)
+    await expect(ambilMenu()).rejects.toMatchObject({ status: 503 })
+  })
+})
+
+describe('sidebar dan palet dari GET /api/menu', () => {
+  const SRC = join(__dirname, '..')
+  const app = readFileSync(join(SRC, 'App.tsx'), 'utf8')
+  const shell = readFileSync(join(SRC, 'inti', 'components', 'Shell.tsx'), 'utf8')
+
+  it('App membacanya dan meneruskannya ke Shell', () => {
+    expect(app).toContain('ambilMenu()')
+    expect(app).toContain('menuTabel={menuTabel}')
+  })
+
+  it('Shell memotongnya dengan rute, mencatat baris tanpa rute, dan memakai daftar yang SAMA untuk palet', () => {
+    expect(shell).toContain('susunMenu(menuTabel.menu, menu)')
+    expect(shell).toContain('console.warn(')
+    expect(shell).toContain('menu={tersusun?.entri ?? berandaSaja}')
+  })
+
+  it('kepala golongan dan galat menu tampil di sidebar', () => {
+    expect(shell).toContain('shell__golongan-judul')
+    expect(shell).toContain('<Gagal galat={menuTabel.galat} />')
+  })
+})

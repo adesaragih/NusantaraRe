@@ -25,6 +25,16 @@
  *
  * Kedua daftar dijaga tetap sama oleh `daftar.sinkron.test.ts`, DUA
  * ARAH — dan berkas itu menuliskan harga pilihan ini apa adanya.
+ *
+ * # Sejak 30-09-2026: sidebar dan palet dari tabel `M_NAV_MENU`
+ *
+ * Permintaan work owner (`PROMPT-MENU-DARI-TABEL-M_NAV_MENU.md`): menu dibuat
+ * dari tabel, supaya kelak dapat disaring per akun. `GET /api/menu` mengirim
+ * pohon GROUPMENU → kelompok → butir; `susunMenu` di bawah MEMOTONGNYA dengan
+ * rute yang benar-benar terdaftar di `modul/daftar.ts`. Keduanya harus
+ * sepakat: baris tabel tanpa rute tidak tampil (dicatat di konsol), rute
+ * tanpa baris tabel juga tidak - dan `modul/daftar.menuTabel.test.ts`
+ * menjaganya dua arah terhadap isi awal migrasi 900.
  */
 
 /** Halaman kerangka aplikasi - bukan milik modul mana pun, selalu ada. */
@@ -83,41 +93,134 @@ export interface ButirSidebar<H extends string = string> {
 
 /** Satu kelompok sidebar beserta butirnya. */
 export interface KelompokSidebar<H extends string = string> {
+  /** `M_NAV_MENU.KODE` - nama modul backend. */
+  kode: string
+  /** Nama tampil - `M_NAV_MENU.LABEL`, nama folder korpus VERBATIM. */
   nama: string
+  /** false = "belum dimigrasi" (`M_NAV_MENU.DIMIGRASI = '0'`). */
+  dimigrasi: boolean
   butir: readonly ButirSidebar<H>[]
 }
 
-/** Butir satu kelompok, DITURUNKAN dari menu - tidak pernah diketik ulang. */
-export function butirKelompok<H extends string>(menu: readonly EntriMenu<H>[], nama: string): ButirSidebar<H>[] {
-  return menu.filter((e) => e.kelompok === nama).map((e) => ({
-    halaman: e.modul,
-    label: e.label,
-    pemilik: e.pemilik,
-    ...(e.datar === true ? { datar: true as const } : {}),
-  }))
+/** Satu kepala bagian sidebar - GROUPMENU (TREATY, FACULTATIVE, KLAIM, MASTER). */
+export interface GolonganSidebar<H extends string = string> {
+  kode: string
+  kelompok: readonly KelompokSidebar<H>[]
+}
+
+// ---------------------------------------------------------------------------
+// Bentuk `GET /api/menu` - backend `inti/menu` (`menu.Menu`).
+// ---------------------------------------------------------------------------
+
+export interface ButirMenuTabel {
+  /** Kunci halaman frontend. */
+  kode: string
+  label: string
+  /** Modul backend pemilik. */
+  modul: string
+}
+
+export interface KelompokMenuTabel {
+  kode: string
+  label: string
+  modul: string
+  dimigrasi: boolean
+  butir: readonly ButirMenuTabel[]
+}
+
+export interface GolonganMenuTabel {
+  kode: string
+  kelompok: readonly KelompokMenuTabel[]
+}
+
+export interface MenuTabel {
+  golongan: readonly GolonganMenuTabel[]
+}
+
+/** Keadaan pembacaan `GET /api/menu`: `null` = sedang dimuat. */
+export type KeadaanMenuTabel = { menu: MenuTabel } | { galat: unknown } | null
+
+const teks = (x: unknown): x is string => typeof x === 'string'
+const objek = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null
+
+/**
+ * Apakah `x` berbentuk `GET /api/menu`.
+ *
+ * ⛔ Bentuk yang tidak dikenal DITOLAK (pemanggilnya menampilkan galat), bukan
+ * dijadikan menu kosong: sidebar yang kosong diam-diam terbaca "aplikasi tanpa
+ * menu".
+ */
+export function bentukMenuTabel(x: unknown): x is MenuTabel {
+  const butirSah = (b: unknown): boolean => objek(b) && teks(b.kode) && teks(b.label) && teks(b.modul)
+  const kelompokSah = (k: unknown): boolean =>
+    objek(k) && teks(k.kode) && teks(k.label) && teks(k.modul) && typeof k.dimigrasi === 'boolean' &&
+    Array.isArray(k.butir) && k.butir.every(butirSah)
+  const golonganSah = (g: unknown): boolean =>
+    objek(g) && teks(g.kode) && Array.isArray(g.kelompok) && g.kelompok.every(kelompokSah)
+  return objek(x) && Array.isArray(x.golongan) && x.golongan.every(golonganSah)
+}
+
+/** Hasil `susunMenu`: yang sidebar render, yang palet cari, dan yang dicatat. */
+export interface MenuTersusun<H extends string = string> {
+  /** Golongan yang TAMPIL, masing-masing dengan kelompok yang tampil. */
+  golongan: GolonganSidebar<H>[]
+  /** Daftar palet: Beranda, lalu setiap butir yang tampil - urutan sidebar. */
+  entri: EntriMenu<H>[]
+  /** Butir tabel tanpa rute frontend, `<kelompok>/<butir>` - untuk konsol. */
+  tanpaRute: string[]
+}
+
+/**
+ * Memotong pohon `GET /api/menu` dengan rute frontend yang terdaftar.
+ *
+ * Aturannya (brief menu 30-09-2026 §3):
+ *   - butir tabel TANPA rute di `rute` tidak tampil, dan dicatat di `tanpaRute`
+ *   - rute TANPA butir tabel tidak tampil (yang diulang hanya baris tabel)
+ *   - LABEL dari tabel; penanda `datar` dari rute frontend (cara tampil)
+ *   - kelompok belum dimigrasi tanpa butir tetap BERDIRI ("belum dimigrasi");
+ *     kelompok dimigrasi yang butirnya habis - modulnya nonaktif (MODUL_AKTIF,
+ *     backend tidak mengirim butirnya) atau tak satu pun berute - hilang:
+ *     "belum dimigrasi" akan berbohong
+ *   - golongan tanpa kelompok tampil hilang
+ *
+ * Beranda bukan baris tabel: ia diambil dari `rute` (pemilik `null`).
+ */
+export function susunMenu<H extends string>(tabel: MenuTabel, rute: readonly EntriMenu<H>[]): MenuTersusun<H> {
+  const beranda = rute.filter((e) => e.pemilik === null)
+  const hasil: MenuTersusun<H> = { golongan: [], entri: [...beranda], tanpaRute: [] }
+  for (const g of tabel.golongan) {
+    const kelompok: KelompokSidebar<H>[] = []
+    for (const k of g.kelompok) {
+      const butir: ButirSidebar<H>[] = []
+      for (const b of k.butir) {
+        const r = rute.find((e) => e.pemilik !== null && e.modul === b.kode)
+        if (r === undefined) {
+          hasil.tanpaRute.push(`${k.kode}/${b.kode}`)
+          continue
+        }
+        butir.push({ halaman: r.modul, label: b.label, pemilik: b.modul, ...(r.datar === true ? { datar: true as const } : {}) })
+      }
+      if (butir.length === 0 && k.dimigrasi) continue
+      kelompok.push({ kode: k.kode, nama: k.label, dimigrasi: k.dimigrasi, butir })
+      for (const b of butir) {
+        hasil.entri.push({
+          modul: b.halaman,
+          label: b.label,
+          kelompok: k.label,
+          pemilik: b.pemilik,
+          ...(b.datar === true ? { datar: true as const } : {}),
+        })
+      }
+    }
+    if (kelompok.length > 0) hasil.golongan.push({ kode: g.kode, kelompok })
+  }
+  return hasil
 }
 
 /** Butir yang dirender DATAR: kelompok beranggota tepat satu butir bertanda `datar`. */
 export function butirDatar<H extends string>(butir: readonly ButirSidebar<H>[]): ButirSidebar<H> | undefined {
   const [b] = butir
   return butir.length === 1 && b?.datar === true ? b : undefined
-}
-
-/**
- * Kelompok sidebar yang tampil, masing-masing dengan butir modul aktifnya saja.
- *
- * ⛔ Kelompok yang memang TANPA butir (belum dimigrasi) tetap berdiri dan
- * menyebut sebabnya. Kelompok yang butirnya HABIS tersaring - modulnya
- * NONAKTIF lewat `MODUL_AKTIF` - hilang sama sekali: modulnya ada, hanya
- * tidak dipasang di proses ini, jadi "belum dimigrasi" akan berbohong.
- */
-export function kelompokTampil<H extends string>(
-  kelompok: readonly KelompokSidebar<H>[],
-  aktif: readonly string[] | null,
-): { k: KelompokSidebar<H>; butir: readonly ButirSidebar<H>[] }[] {
-  return kelompok
-    .map((k) => ({ k, butir: k.butir.filter((b) => modulDipasang(b.pemilik, aktif)) }))
-    .filter(({ k, butir }) => k.butir.length === 0 || butir.length > 0)
 }
 
 /** Satu baris hasil palet. */
@@ -128,12 +231,15 @@ export interface HasilPalet<H extends string = string> {
   modul: H
 }
 
-/** Daftar yang dapat dicari palet - hanya menu modul yang aktif. */
-export function daftarPalet<H extends string>(
-  menu: readonly EntriMenu<H>[],
-  aktif: readonly string[] | null = null,
-): HasilPalet<H>[] {
-  return menu.filter((e) => modulDipasang(e.pemilik, aktif)).map((e) => ({
+/**
+ * Daftar yang dapat dicari palet.
+ *
+ * Sejak menu dari tabel (30-09-2026) `menu` adalah `MenuTersusun.entri` -
+ * butir modul nonaktif sudah tidak dikirim backend, jadi saringan modul aktif
+ * tidak lagi di sini.
+ */
+export function daftarPalet<H extends string>(menu: readonly EntriMenu<H>[]): HasilPalet<H>[] {
+  return menu.map((e) => ({
     kunci: 'modul:' + e.modul,
     label: e.label,
     kelompok: e.kelompok,

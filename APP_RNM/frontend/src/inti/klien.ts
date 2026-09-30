@@ -15,6 +15,7 @@
 //   - `Promise<Klaim>` = "nanti, kalau sudah datang, isinya Klaim".
 // ============================================================================
 
+import { bentukMenuTabel, type MenuTabel } from './lib/daftarMenu'
 import { headerIdentitas } from './store/sesi'
 
 /** Jawaban GET /healthz. */
@@ -176,9 +177,26 @@ export async function cekKesehatan(): Promise<Kesehatan> {
 }
 
 /**
+ * Menu aplikasi dari tabel `M_NAV_MENU` - GET /api/menu, `inti/menu` di
+ * backend (brief menu 30-09-2026). Butir modul nonaktif (MODUL_AKTIF) sudah
+ * tidak dikirim backend.
+ *
+ * ⛔ Bentuk yang tidak dikenal GAGAL - sidebar menampilkan galatnya - bukan
+ * menu kosong diam-diam.
+ */
+export async function ambilMenu(): Promise<MenuTabel> {
+  const data = await minta<unknown>('/api/menu')
+  if (!bentukMenuTabel(data)) {
+    throw new Error('menu: jawaban GET /api/menu tidak berbentuk menu (golongan → kelompok → butir)')
+  }
+  return data
+}
+
+/**
  * Modul yang dipasang backend - GET /api/modul-aktif, cmd/api/rakit.go
- * (refactor bentuk B, `MODUL_AKTIF`). Menu modul yang tidak disebut tidak
- * tampil (`modul/daftar.ts` `halamanAktif`).
+ * (refactor bentuk B, `MODUL_AKTIF`). Rute dan kartu Beranda modul yang tidak
+ * disebut tidak dipasang (`modul/daftar.ts` `halamanAktif`); menunya sudah
+ * disaring backend di GET /api/menu.
  *
  * ⛔ Bentuk yang tidak dikenal menjadi `null` (= semua menu tampil), BUKAN
  * daftar kosong: badan yang tak terbaca bukan pernyataan "tidak ada modul".

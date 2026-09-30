@@ -31,15 +31,15 @@ export function PaletMenu<H extends string>({
   onTutup,
   onPilih,
   menu,
-  modulAktif = null,
 }: {
   onTutup: () => void
   /** Membuka satu hasil. Shell meneruskannya ke pemindah halamannya. */
   onPilih: (modul: H) => void
-  /** Menu yang SAMA dengan sidebar (Shell meneruskannya apa adanya). */
+  /**
+   * Menu yang SAMA dengan sidebar: `MenuTersusun.entri` - pohon `GET /api/menu`
+   * yang sudah dipotong rute frontend (Shell meneruskannya apa adanya).
+   */
   menu: readonly EntriMenu<H>[]
-  /** Modul aktif dari backend; `null` = semua (lihat `halamanAktif`). */
-  modulAktif?: readonly string[] | null
 }) {
   const [kueri, setKueri] = useState('')
   const [sorot, setSorot] = useState(0)
@@ -54,7 +54,7 @@ export function PaletMenu<H extends string>({
    */
   const fokusSebelum = useRef<Element | null>(null)
 
-  const semua = useMemo(() => daftarPalet(menu, modulAktif), [menu, modulAktif])
+  const semua = useMemo(() => daftarPalet(menu), [menu])
   const hasil = useMemo(() => saringPalet(semua, kueri), [semua, kueri])
 
   // Sorotan kembali ke atas setiap kali kuerinya berubah. Tanpa ini sorotan

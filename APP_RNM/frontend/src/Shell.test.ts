@@ -37,14 +37,17 @@ const kode = tanpaKomentar(SUMBER)
 const KELOMPOK_SIDEBAR = Object.values(MODUL)
 
 describe('menu hanya yang berbukti korpus', () => {
-  it('kelompok sidebar TEPAT delapan belas', () => {
+  it('kelompok sidebar TEPAT dua puluh', () => {
     // ⛔ DIRALAT 28-09-2026 (butir bg). Uji ini dulu berbunyi "butir
     // sidebar TEPAT dua" dan membaca literal ${b}const BUTIR${b} di Shell.tsx.
     // Sejak bg, butirnya diturunkan dari ${b}ENTRI_MENU${b} dan kelompoknya
     // tujuh belas - nama folder korpus. Yang dijaga BERPINDAH, bukan hilang.
     // ⛔ DELAPAN BELAS sejak 28-09-2026: kelompok `Treaty Contract Out`
     // ditambahkan sesi modul itu (folder korpus 20; ralat §8 PROMPT-EKSEKUSI).
-    expect(KELOMPOK_SIDEBAR).toHaveLength(18)
+    // ⛔ DUA PULUH sejak brief menu M_NAV_MENU (30-09-2026): isi awal tabel
+    // memuat satu kelompok per folder korpus, Treaty In dan Treaty In
+    // Adjustment ikut (`modul/daftar.menuTabel.test.ts` menjaga LABEL-nya).
+    expect(KELOMPOK_SIDEBAR).toHaveLength(20)
     // Dan seluruhnya disebut di Shell, supaya tidak ada kelompok yang
     // terdaftar di label tetapi tidak dirender.
     for (const nama of KELOMPOK_SIDEBAR) {
@@ -72,12 +75,12 @@ describe('menu hanya yang berbukti korpus', () => {
     expect(ENTRI_MENU.filter((e) => e.kelompok === MENU_TCO.kelompok)).toHaveLength(1)
   })
 
-  it('empat belas kelompok berdiri TANPA butir', () => {
+  it('enam belas kelompok berdiri TANPA butir', () => {
     // ⚠️ Berdiri, bukan disembunyikan. Aplikasi yang menampilkan tiga
     // modul dari tujuh belas tampak lengkap padahal tidak.
     const berbutir = new Set(ENTRI_MENU.map((e) => e.kelompok))
     const kosong = KELOMPOK_SIDEBAR.filter((n) => !berbutir.has(n))
-    expect(kosong).toHaveLength(14)
+    expect(kosong).toHaveLength(16)
     expect(kode).toContain('KETERANGAN_BELUM_DIMIGRASI')
   })
 
