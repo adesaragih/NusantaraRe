@@ -1,0 +1,79 @@
+# CODEOWNERS - struktur tim satu folder per modul (keputusan work owner 30-09-2026).
+#
+# Satu orang fullstack memegang satu modul: seluruh folder APP_RNM/modul/<nama>/
+# (backend/, frontend/, docs/, MODUL.md) miliknya, begitu pula berkas bangkitan
+# daftar modulnya APP_RNM/inti/backend/daftar/modul_<nama>_gen.go - supaya pull
+# request yang memulai sebuah modul hanya menyentuh berkas milik pengembangnya.
+# Semua yang lain milik tim inti: kode bersama, perakit, konfigurasi npm/Go,
+# penjaga, dokumen lintas modul. Menambah pustaka (go.mod, package.json), kontrak
+# lintas modul (inti/backend/kontrak), atau rentang migrasi = pull request ke tim
+# inti. Alurnya: docs/bersama/PANDUAN-TIM-PER-MODUL.md.
+#
+# Nama akun di bawah PENANDA (@TIM-INTI, @PEMILIK-<NAMA>) - work owner mengisinya.
+# Aturan yang cocok TERAKHIR menang (GitHub dan GitLab sama). GitLab membaca
+# CODEOWNERS dari akar, docs/, atau .gitlab/ - salin berkas ini ke
+# .gitlab/CODEOWNERS bila repositori dilayani GitLab.
+
+# Bawaan: tim inti - apa pun yang tidak disebut di bawah (dokumen akar, discovery, ...).
+*                                   @TIM-INTI
+
+# Milik tim inti, disebut terang: bersama SEMUA modul.
+/APP_RNM/inti/                      @TIM-INTI
+/APP_RNM/cmd/                       @TIM-INTI
+/APP_RNM/frontend/                  @TIM-INTI
+/APP_RNM/uji/                       @TIM-INTI
+/APP_RNM/pkg/                       @TIM-INTI
+/APP_RNM/go.mod                     @TIM-INTI
+/APP_RNM/go.sum                     @TIM-INTI
+/APP_RNM/package.json               @TIM-INTI
+/APP_RNM/package-lock.json          @TIM-INTI
+/APP_RNM/vite.config.ts             @TIM-INTI
+/APP_RNM/tsconfig.json              @TIM-INTI
+/APP_RNM/Makefile                   @TIM-INTI
+/APP_RNM/modul/_templat/            @TIM-INTI
+/docs/bersama/                      @TIM-INTI
+/docs/agents/                       @TIM-INTI
+/.github/                           @TIM-INTI
+
+# Satu modul, satu pemilik - 20 folder korpus. Baris berkas bangkitan SESUDAH
+# /APP_RNM/inti/ di atas, jadi ia yang menang.
+/APP_RNM/modul/claimfacin/                                        @PEMILIK-CLAIMFACIN
+/APP_RNM/inti/backend/daftar/modul_claimfacin_gen.go              @PEMILIK-CLAIMFACIN
+/APP_RNM/modul/claimlife/                                         @PEMILIK-CLAIMLIFE
+/APP_RNM/inti/backend/daftar/modul_claimlife_gen.go               @PEMILIK-CLAIMLIFE
+/APP_RNM/modul/claimnonprop/                                      @PEMILIK-CLAIMNONPROP
+/APP_RNM/inti/backend/daftar/modul_claimnonprop_gen.go            @PEMILIK-CLAIMNONPROP
+/APP_RNM/modul/claimprop/                                         @PEMILIK-CLAIMPROP
+/APP_RNM/inti/backend/daftar/modul_claimprop_gen.go               @PEMILIK-CLAIMPROP
+/APP_RNM/modul/edmtreatyin/                                       @PEMILIK-EDMTREATYIN
+/APP_RNM/inti/backend/daftar/modul_edmtreatyin_gen.go             @PEMILIK-EDMTREATYIN
+/APP_RNM/modul/endorsementlife/                                   @PEMILIK-ENDORSEMENTLIFE
+/APP_RNM/inti/backend/daftar/modul_endorsementlife_gen.go         @PEMILIK-ENDORSEMENTLIFE
+/APP_RNM/modul/endorsmentfacin/                                   @PEMILIK-ENDORSMENTFACIN
+/APP_RNM/inti/backend/daftar/modul_endorsmentfacin_gen.go         @PEMILIK-ENDORSMENTFACIN
+/APP_RNM/modul/komiteclaimfacin/                                  @PEMILIK-KOMITECLAIMFACIN
+/APP_RNM/inti/backend/daftar/modul_komiteclaimfacin_gen.go        @PEMILIK-KOMITECLAIMFACIN
+/APP_RNM/modul/komiteclaimlife/                                   @PEMILIK-KOMITECLAIMLIFE
+/APP_RNM/inti/backend/daftar/modul_komiteclaimlife_gen.go         @PEMILIK-KOMITECLAIMLIFE
+/APP_RNM/modul/komiteclaimnonprop/                                @PEMILIK-KOMITECLAIMNONPROP
+/APP_RNM/inti/backend/daftar/modul_komiteclaimnonprop_gen.go      @PEMILIK-KOMITECLAIMNONPROP
+/APP_RNM/modul/komiteclaimprop/                                   @PEMILIK-KOMITECLAIMPROP
+/APP_RNM/inti/backend/daftar/modul_komiteclaimprop_gen.go         @PEMILIK-KOMITECLAIMPROP
+/APP_RNM/modul/mastercontractretrolife/                           @PEMILIK-MASTERCONTRACTRETROLIFE
+/APP_RNM/inti/backend/daftar/modul_mastercontractretrolife_gen.go @PEMILIK-MASTERCONTRACTRETROLIFE
+/APP_RNM/modul/masterproductnamelife/                             @PEMILIK-MASTERPRODUCTNAMELIFE
+/APP_RNM/inti/backend/daftar/modul_masterproductnamelife_gen.go   @PEMILIK-MASTERPRODUCTNAMELIFE
+/APP_RNM/modul/nbfacin/                                           @PEMILIK-NBFACIN
+/APP_RNM/inti/backend/daftar/modul_nbfacin_gen.go                 @PEMILIK-NBFACIN
+/APP_RNM/modul/nbtreatyin/                                        @PEMILIK-NBTREATYIN
+/APP_RNM/inti/backend/daftar/modul_nbtreatyin_gen.go              @PEMILIK-NBTREATYIN
+/APP_RNM/modul/premiumlistlife/                                   @PEMILIK-PREMIUMLISTLIFE
+/APP_RNM/inti/backend/daftar/modul_premiumlistlife_gen.go         @PEMILIK-PREMIUMLISTLIFE
+/APP_RNM/modul/rnwfacin/                                          @PEMILIK-RNWFACIN
+/APP_RNM/inti/backend/daftar/modul_rnwfacin_gen.go                @PEMILIK-RNWFACIN
+/APP_RNM/modul/treatycontractout/                                 @PEMILIK-TREATYCONTRACTOUT
+/APP_RNM/inti/backend/daftar/modul_treatycontractout_gen.go       @PEMILIK-TREATYCONTRACTOUT
+/APP_RNM/modul/treatyin/                                          @PEMILIK-TREATYIN
+/APP_RNM/inti/backend/daftar/modul_treatyin_gen.go                @PEMILIK-TREATYIN
+/APP_RNM/modul/treatyinadjustment/                                @PEMILIK-TREATYINADJUSTMENT
+/APP_RNM/inti/backend/daftar/modul_treatyinadjustment_gen.go      @PEMILIK-TREATYINADJUSTMENT

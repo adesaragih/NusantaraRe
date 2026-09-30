@@ -3,61 +3,77 @@
 Ditulis 30 September 2026, sesudah refactor bentuk B (`..\PROMPT-REFACTOR-BENTUK-B-MODUL.md`,
 paket 1–8). Untuk siapa: pengembang yang memegang satu modul, dan siapa pun yang menyalakan
 aplikasi dengan sebagian modul saja. Diperbarui 30 September 2026: menu dari tabel `M_NAV_MENU`
-(`..\PROMPT-MENU-DARI-TABEL-M_NAV_MENU.md`) — bab 2, 3, 5, dan bab 6 baru.
+(`..\PROMPT-MENU-DARI-TABEL-M_NAV_MENU.md`) — bab 2, 3, 5, dan bab 6 baru. Diperbarui lagi 30 September
+2026: **struktur tim satu folder per modul** (`..\PROMPT-STRUKTUR-TIM-SATU-FOLDER-PER-MODUL.md`) — bab 1,
+3, 4, 5, dan 6. Alur kerja tim dan cara memulai modul kerangka: `..\docs\bersama\PANDUAN-TIM-PER-MODUL.md`.
 
 ## 1. Bentuknya dalam satu layar
 
+Satu modul = **satu folder** `modul/<nama>/` berisi backend, frontend, dokumen, dan `MODUL.md` — dipegang
+satu orang fullstack (`..\.github\CODEOWNERS`).
+
 ```
 APP_RNM/
-  cmd/api/            memasang modul dari daftar; MODUL_AKTIF; /healthz, /api/modul-aktif, /api/menu
-  inti/               SATU-SATUNYA kode bersama — tidak pernah mengimpor modul
-    kontrak/          antarmuka lintas modul, TANPA implementasi (PembacaPolis, KlaimKomite)
-    menu/             GET /api/menu: pembaca M_NAV_MENU, pohon GROUPMENU, SaringMenuUntukPelaku
-    migrations/       tabel lintas modul, rentang 900–949: M_NAV_MENU (900)
-    penjaga/          uji penjaga yang berlaku untuk SELURUH aplikasi
+  go.mod go.sum package.json package-lock.json vite.config.ts tsconfig.json   milik tim inti
+  cmd/api/              memasang modul dari daftar; MODUL_AKTIF; /healthz, /api/modul-aktif, /api/menu
+  inti/
+    backend/            kode Go BERSAMA - tidak pernah mengimpor modul (kecuali daftar/)
+      kontrak/          antarmuka lintas modul, TANPA implementasi (PembacaPolis, KlaimKomite)
+      perakit.go        menyambung kontrak menurut Pendaftaran() setiap modul
+      daftar/           daftar modul BANGKITAN (go generate): modul_<nama>_gen.go per modul
+      menu/             GET /api/menu: pembaca M_NAV_MENU, pohon GROUPMENU, SaringMenuUntukPelaku
+      migrations/       tabel lintas modul 900-949: M_NAV_MENU (900)
+      penjaga/          uji penjaga SELURUH aplikasi - membaca modul/* dan MODUL.md, nol nama modul
+    frontend/           kerangka React bersama: Shell, ui/dasar, klien.ts, lib/, hooks/, store/, labels.ts
   modul/
-    daftar.go         daftar modul: merakit Service tiap modul dan menyambung inti/kontrak
-    claimlife/        models/ repository/ services/ handlers/ migrations/ modul.go
-    premiumlistlife/  …
-    komiteclaimlife/  …
-    treatycontractout/ … (tanpa migrations/: tco4, memakai tabel warisan)
-  uji/                penunjang uji netral: skemauji (skema Oracle tiruan), lintasmodul
-  frontend/src/
-    inti/             Shell, KelompokMenu, PaletMenu, ui/dasar, klien.ts, lib/, hooks/, store/, labels.ts
-    modul/daftar.ts   daftar modul frontend: merakit menu dan rute
-    modul/<nama>/     pages/ components/ labels.ts api.ts menu.ts rute.tsx
-    App.tsx           memasang modul yang AKTIF; Beranda.tsx layar awal aplikasi
+    <nama>/             20 folder, satu per folder korpus (4 dimigrasi, 16 kerangka)
+      MODUL.md          pemilik, rentang migrasi, slot menu, prefix rute, kontrak, pernyataan penjaga
+      backend/          models/ repository/ services/ handlers/ migrations/ modul.go
+      frontend/         pages/ components/ labels.ts api.ts menu.ts rute.tsx
+      docs/             spec, tiket, grilling (dulu ..\.scratch\<nama-panjang>\)
+    _templat/           templat folder modul
+  uji/                  penunjang uji netral: skemauji (skema Oracle tiruan), lintasmodul
+  frontend/             perakit: index.html main.tsx App.tsx Beranda.tsx daftar.ts katalogKorpus.ts
+..\docs\bersama\       ADR, CONTEXT, STRUKTUR-TABEL-INTI, PANDUAN-TIM-PER-MODUL
+..\.github\CODEOWNERS   pemilik setiap folder
 ```
 
 **Tabel nama modul** — satu-satunya sumber, tanpa singkatan *(keputusan work owner 30-09-2026, `PROMPT-REFACTOR-NAMA-MODUL.md`)*:
 
-| Modul korpus | Backend Go `APP_RNM/modul/…` *(tanpa tanda hubung)* | Frontend `frontend/src/modul/…` dan `.scratch/…` | Nilai `MODUL_AKTIF` |
-| --- | --- | --- | --- |
-| Claim Life | `claimlife` *(tetap)* | `claim-life` | `claimlife` |
-| PremiumList Life | `premiumlist` → **`premiumlistlife`** | `premiumlist` → **`premiumlist-life`** | `premiumlistlife` |
-| Komite Claim Life | `komite` → **`komiteclaimlife`** | `komite` → **`komite-claim-life`** | `komiteclaimlife` |
-| Treaty Contract Out | `treaty` → **`treatycontractout`** | `treaty` → **`treaty-contract-out`** | `treatycontractout` |
-| *(modul berikutnya, mis. NB FacIn)* | `nbfacin` | `nb-facin` | `nbfacin` |
+| Modul korpus | Folder `APP_RNM/modul/…` = `MODUL_AKTIF` | Dokumen lama `.scratch/…` |
+| --- | --- | --- |
+| Claim Life | `claimlife` | `claim-life` |
+| PremiumList Life | `premiumlistlife` *(dulu `premiumlist`)* | `premiumlist-life` |
+| Komite Claim Life | `komiteclaimlife` *(dulu `komite`)* | `komite-claim-life` |
+| Treaty Contract Out | `treatycontractout` *(dulu `treaty`)* | `treaty-contract-out` |
+| *(kerangka, mis. NB Treaty In)* | `nbtreatyin` | `nb-treaty-in` |
 
-Aturan: **nama backend = nama dokumen `.scratch` tanpa tanda hubung**; frontend memakai nama `.scratch` persis. Nama paket Go = nama folder.
+Aturan: **nama modul = nama folder korpus tanpa spasi, huruf kecil**. Satu nama untuk folder,
+`const Nama` Go, `MODUL_AKTIF`, dan `KODE` kelompok `M_NAV_MENU`. Paket Go `backend/modul.go` bernama
+`backend` di setiap modul; daftar bangkitan mengimpornya dengan alias nama modul.
 
 **Aturan impor** — ditegakkan uji, bukan kesepakatan:
 
 | Dari | Boleh mengimpor | Penjaga |
 | --- | --- | --- |
-| `modul/X/...` (Go) | `inti/...`, `modul/X/...`; berkas uji juga `uji/skemauji` ¹ | `inti/penjaga/impor_lintas_modul_test.go` |
-| `inti/...` (Go) | `inti/...` saja | idem |
-| `cmd/...` (Go) | `inti/...` dan daftar `nusantarare/modul` — tidak pernah satu modul langsung | idem |
-| `frontend/src/modul/X/**` | `inti/**`, `modul/X/**` | `frontend/src/inti/lapisan.guard.test.ts` |
-| `frontend/src/inti/**` | `inti/**` saja | idem |
-| `modul/daftar.go`, `frontend/src/modul/daftar.ts`, `App.tsx`, `Beranda.tsx`, `uji/` | apa pun — merekalah tempat yang mengenal semua modul | — |
+| `modul/X/backend/...` (Go) | `inti/backend/...`, `modul/X/...`; berkas uji juga `uji/skemauji` ¹. **Tidak pernah** `inti/backend/daftar` | `inti/backend/penjaga/impor_lintas_modul_test.go` |
+| `inti/backend/...` (Go) | `inti/...` saja — kecuali daftar bangkitan `inti/backend/daftar`, yang mengimpor PAKET AKAR `modul/<nama>/backend` | idem |
+| `cmd/...` (Go) | `inti/...` saja — modul dipasang lewat `inti/backend/daftar` | idem |
+| Letak kode Go modul | hanya `modul/<nama>/backend/` | idem |
+| `modul/X/frontend/**` | `inti/frontend/**`, `modul/X/frontend/**` | `inti/frontend/lapisan.guard.test.ts` |
+| `inti/frontend/**` | `inti/frontend/**` saja | idem |
+| `frontend/**` (perakit), `uji/` | apa pun — merekalah tempat yang mengenal semua modul | — |
 
 ¹ `uji/skemauji` SENGAJA mengenal semua modul: ia membangun skema uji **utuh** (migrasi semua modul,
 fixture Claim Life dan PremiumList). Karena itu ia satu-satunya jalur lintas modul yang disahkan —
 hanya untuk berkas uji, dan hanya lewat paket itu.
 
-Modul yang membutuhkan modul lain **tidak mengimpornya**: ia meminta antarmuka di `inti/kontrak`,
-dan `modul/daftar.go` menyambungkannya. Dua sambungan yang ada hari ini:
+Modul yang membutuhkan modul lain **tidak mengimpornya**: `Pendaftaran()` di `backend/modul.go`-nya
+menyatakan `Membutuhkan` (antarmuka `inti/backend/kontrak`) dan membacanya dengan `inti.Ambil`;
+penyedianya menyatakan `Menyediakan` dan menyerahkannya dengan `inti.Sediakan`. Perakit
+(`inti/backend/perakit.go`) membangun penyedia lebih dulu, dan **menolak menyala** — dengan kalimat yang
+menyebut kontrak dan modulnya — bila kontrak dibutuhkan tanpa penyedia, disediakan dua modul, melingkar,
+atau dinyatakan tetapi tidak diserahkan. Dua sambungan yang ada hari ini:
 
 | Antarmuka | Disediakan | Dipakai | Butir |
 | --- | --- | --- | --- |
@@ -91,7 +107,7 @@ go run ./cmd/api                        # atau .\bin\api.exe
   `{"galat":"modul <nama> tidak aktif di proses ini (MODUL_AKTIF)"}`, supaya layar tidak menyangka
   backend mati — **pekerja latarnya tidak jalan**, dan **menunya tidak tampil**: `GET /api/menu` tidak
   mengirim butir modul itu (sidebar dan palet Ctrl+K, bab 6), dan rute serta kartu Beranda-nya disaring
-  dari `GET /api/modul-aktif` (`{"modul":["claimlife","komiteclaimlife"]}`). **Tidak ada env Vite** untuk
+  dari `GET /api/modul-aktif` (`{"modul":["claimlife","komiteclaimlife"]}`, urutan nama modul). **Tidak ada env Vite** untuk
   ini, jadi satu bangunan frontend melayani deploy mana pun.
 - Nama yang salah ketik **menolak menyala**: backend berhenti dengan pesan yang menyebut nama itu dan
   nama-nama yang dikenal. `-migrate` / `-migrate-down` tidak membaca `MODUL_AKTIF` sama sekali.
@@ -124,42 +140,33 @@ didukung: frontend membaca `/api/modul-aktif` dari satu backend saja. `[pertanya
 
 ## 3. Git per folder
 
-Seluruh aplikasi satu repositori; `git pull` selalu menarik semuanya. Yang dapat dipisah per modul
-adalah **apa yang Anda commit, lihat, dan salin**.
-
-| Modul | Folder backend | Folder frontend |
-| --- | --- | --- |
-| Claim Life | `APP_RNM/modul/claimlife/` | `APP_RNM/frontend/src/modul/claim-life/` |
-| PremiumList Life | `APP_RNM/modul/premiumlistlife/` | `APP_RNM/frontend/src/modul/premiumlist-life/` |
-| Komite Claim Life | `APP_RNM/modul/komiteclaimlife/` | `APP_RNM/frontend/src/modul/komite-claim-life/` |
-| Treaty Contract Out | `APP_RNM/modul/treatycontractout/` | `APP_RNM/frontend/src/modul/treaty-contract-out/` |
+Seluruh aplikasi satu repositori; `git pull` selalu menarik semuanya. Satu modul = **satu jalur**:
+yang Anda commit, lihat, dan salin adalah `APP_RNM/modul/<nama>/`.
 
 ```powershell
-# Commit HANYA folder modul Anda. `-o` (--only) mengambil isi jalur itu dari pohon kerja dan
-# mengabaikan apa pun yang sudah di-stage sesi lain — stage di pohon ini dipakai bersama.
-git add -A -- APP_RNM/modul/claimlife APP_RNM/frontend/src/modul/claim-life
-git commit -o -m "claimlife: ..." -- APP_RNM/modul/claimlife APP_RNM/frontend/src/modul/claim-life
+# Commit HANYA folder modul Anda.
+git add -A -- APP_RNM/modul/claimlife
+git commit -m "claimlife: ..." -- APP_RNM/modul/claimlife
 
 # Riwayat dan beda satu modul saja
-git log --oneline -- APP_RNM/modul/claimlife APP_RNM/frontend/src/modul/claim-life
+git log --oneline -- APP_RNM/modul/claimlife
 git diff HEAD~1 -- APP_RNM/modul/komiteclaimlife
 
-# Menarik perubahan: pull utuh, lalu lihat apa yang berubah di luar modul Anda
+# Menarik perubahan: pull utuh, lalu lihat apa yang berubah di luar folder modul
 git pull
-git diff --stat ORIG_HEAD -- APP_RNM/inti APP_RNM/frontend/src/inti APP_RNM/modul/daftar.go APP_RNM/frontend/src/modul/daftar.ts
-
-# Opsional: salinan kerja yang hanya memuat inti + satu modul (git sparse-checkout, mode cone).
-# Mode cone menerima FOLDER; berkas yang langsung berada di folder induknya (modul/daftar.go,
-# APP_RNM/*.md) ikut dengan sendirinya. Folder dokumen di OUTPUT_HASIL_RNM\ ikut tersembunyi.
-git sparse-checkout set APP_RNM/cmd APP_RNM/inti APP_RNM/uji APP_RNM/modul/claimlife APP_RNM/frontend
-git sparse-checkout disable   # kembali ke salinan utuh
+git diff --stat ORIG_HEAD -- APP_RNM/inti APP_RNM/frontend APP_RNM/cmd APP_RNM/uji
 ```
 
-⚠️ Sparse-checkout satu modul **tidak dapat membangun** aplikasi: `modul/daftar.go` dan
-`frontend/src/modul/daftar.ts` mengimpor keempat modul. Pakai untuk membaca dan menyunting; bangun
-dan uji selalu dari salinan utuh.
+Memulai sebuah modul kerangka menambah SATU berkas di luar foldernya: daftar bangkitan
+`APP_RNM/inti/backend/daftar/modul_<nama>_gen.go` (`go generate ./inti/backend/daftar`), yang di
+`CODEOWNERS` juga milik pemilik modul itu. Satu berkas per modul, jadi dua cabang yang memulai dua
+modul tidak pernah berkonflik di sana.
 
-**Aturan yang berlaku untuk setiap commit** (sama dengan gerbang refactor bentuk B):
+⚠️ Sparse-checkout satu modul **tidak dapat membangun backend**: daftar bangkitan mengimpor setiap
+modul terdaftar. Frontend dapat (daftar `import.meta.glob` hanya melihat folder yang ada). Pakai untuk
+membaca dan menyunting; bangun dan uji selalu dari salinan utuh.
+
+**Aturan yang berlaku untuk setiap commit** (gerbang lengkap, sama dengan CI):
 
 ```powershell
 go build ./... ; go build -tags db ./... ; go vet ./... ; go vet -tags db ./... ; gofmt -l cmd inti modul uji
@@ -167,81 +174,82 @@ go test ./... ; go test -tags db ./...          # tanpa ORACLE_DSN: test db SKIP
 npx tsc --noEmit ; npx vitest run ; npx vite build   # dari APP_RNM/ - package.json di sini sejak 30-09-2026
 ```
 
-- Menyentuh `inti/`, `modul/daftar.go`, `frontend/src/inti/`, `frontend/src/modul/daftar.ts`, atau
-  `App.tsx` berarti menyentuh **semua modul**: jalankan seluruh uji, dan minta tinjauan pemilik setiap
-  modul (bab 4).
-- Menambah kebutuhan lintas modul = menambah antarmuka di `inti/kontrak` (tanpa implementasi) dan satu
-  sambungan di `modul/daftar.go` — tidak pernah impor langsung.
+- Menyentuh berkas milik tim inti (`inti/`, `cmd/`, `frontend/`, `uji/`, konfigurasi npm/Go/Vite/TS)
+  berarti menyentuh **semua modul**: jalankan seluruh uji, dan minta tinjauan tim inti (`CODEOWNERS`).
+- Menambah kebutuhan lintas modul = antarmuka baru di `inti/backend/kontrak` (pull request tim inti,
+  tanpa implementasi) dan pernyataan `Menyediakan` / `Membutuhkan` di `Pendaftaran()` kedua modul —
+  tidak pernah impor langsung.
 - **Nama berkas migrasi tidak pernah diubah**: `T_MIGRASI` mencatat nama, dan nama baru membuat
-  `-migrate` menjalankannya ulang. Rentang nomor per modul:
+  `-migrate` menjalankannya ulang. **Nomor selalu tiga digit** (pelari mengurutkan nama sebagai teks:
+  `1000_` akan berjalan sebelum `101_`). Rentang setiap modul dinyatakan `MODUL.md`-nya dan dijaga
+  `inti/backend/penjaga/rentang_test.go` — urut hulu ke hilir, supaya migrasi modul hilir yang merujuk
+  tabel modul hulu selalu berjalan sesudahnya:
 
-| Modul | Rentang | Terpakai |
-| --- | --- | --- |
-| Claim Life | 001–029 | 001–022 |
-| Komite Claim Life | 030–049 | 030 |
-| PremiumList Life | 050–079 | 050–058 |
-| Treaty Contract Out | 300–319 | kosong — tco4: nol tabel baru (`TestTCONolTabelBaru`) |
-| `inti` *(tabel lintas modul, `inti/migrations/`)* | 900–949 | 900 (`M_NAV_MENU` + isi awal) — isi menu HANYA di sini (bab 6) |
+| GROUPMENU | Modul | Rentang migrasi | Slot menu | Terpakai |
+| --- | --- | --- | --- | --- |
+| KLAIM | `claimlife` | 001–029 | 950–951 | 001–022 |
+| KLAIM | `komiteclaimlife` | 030–049 | 952–953 | 030 |
+| TREATY | `premiumlistlife` | 050–099 *(dulu tertulis 050–079)* | 954–955 | 050–058 |
+| MASTER | `treatycontractout` | 300–319 | 956–957 | kosong — tco4: nol tabel baru (`TestTCONolTabelBaru`) |
+| MASTER | `mastercontractretrolife` | 100–139 | 958–959 | kerangka |
+| MASTER | `masterproductnamelife` | 140–179 | 960–961 | kerangka |
+| FACULTATIVE | `nbfacin` | 180–219 | 962–963 | kerangka |
+| FACULTATIVE | `rnwfacin` | 220–259 | 964–965 | kerangka |
+| FACULTATIVE | `endorsmentfacin` | 260–299 | 966–967 | kerangka |
+| TREATY | `nbtreatyin` | 320–359 | 968–969 | kerangka |
+| TREATY | `edmtreatyin` | 360–399 | 970–971 | kerangka |
+| TREATY | `treatyin` | 400–439 | 972–973 | kerangka |
+| TREATY | `treatyinadjustment` | 440–479 | 974–975 | kerangka |
+| TREATY | `endorsementlife` | 480–519 | 976–977 | kerangka |
+| KLAIM | `claimfacin` | 520–559 | 978–979 | kerangka |
+| KLAIM | `claimprop` | 560–599 | 980–981 | kerangka |
+| KLAIM | `claimnonprop` | 600–639 | 982–983 | kerangka |
+| KLAIM | `komiteclaimfacin` | 640–679 | 984–985 | kerangka |
+| KLAIM | `komiteclaimprop` | 680–719 | 986–987 | kerangka |
+| KLAIM | `komiteclaimnonprop` | 720–759 | 988–989 | kerangka |
+| — | `inti` *(tabel lintas modul, `inti/backend/migrations/`)* | 900–949 | — | 900 (`M_NAV_MENU` + isi awal) |
+| — | cadangan, dibagi tim inti lewat pull request | 760–899 dan 990–999 | | |
 
 ## 4. Pemilik folder
 
-Pemilik adalah **sesi/tim yang memegang brief modul itu**; nama orangnya ditetapkan work owner dan
-sengaja tidak ditulis di repositori.
+Pemilik ditetapkan di **`..\.github\CODEOWNERS`** — nama akun di sana PENANDA (`@PEMILIK-CLAIMLIFE`,
+`@TIM-INTI`, …) yang diisi work owner. Aturannya:
 
-| Folder | Pemilik | Brief acuan (di `..\`) |
-| --- | --- | --- |
-| `modul/claimlife/`, `frontend/src/modul/claim-life/` | sesi modul Claim Life | `PROMPT-IMPLEMENTASI-MODUL-CLAIM-LIFE*.md`, `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-*.md` |
-| `modul/premiumlistlife/`, `frontend/src/modul/premiumlist-life/` | sesi modul PremiumList Life | `PROMPT-IMPLEMENTASI-MODUL-PREMIUMLIST-LIFE.md`, `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-*.md` |
-| `modul/komiteclaimlife/`, `frontend/src/modul/komite-claim-life/` | sesi modul Komite Claim Life | `PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-LIFE.md`, `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-*.md` |
-| `modul/treatycontractout/`, `frontend/src/modul/treaty-contract-out/` | sesi modul Treaty Contract Out | `PROMPT-IMPLEMENTASI-MODUL-TREATY-CONTRACT-OUT.md`, `PROMPT-LANJUTAN-TREATY-CONTRACT-OUT-*.md` |
-| `inti/`, `uji/`, `cmd/`, `modul/daftar.go`, `frontend/src/inti/`, `frontend/src/modul/daftar.ts`, `App.tsx`, `Beranda.tsx` | **bersama** — perubahan disetujui work owner dan ditinjau pemilik setiap modul | `PROMPT-REFACTOR-BENTUK-B-MODUL.md` |
+| Jalur | Pemilik |
+| --- | --- |
+| `APP_RNM/modul/<nama>/` (backend, frontend, docs, `MODUL.md`) | pemilik modul itu |
+| `APP_RNM/inti/backend/daftar/modul_<nama>_gen.go` (bangkitan) | pemilik modul itu |
+| `APP_RNM/inti/`, `cmd/`, `frontend/`, `uji/`, `pkg/`, `modul/_templat/` | tim inti |
+| `APP_RNM/go.mod`, `go.sum`, `package.json`, `package-lock.json`, `vite.config.ts`, `tsconfig.json`, `Makefile` | tim inti — pustaka baru lewat pull request |
+| `docs/bersama/`, `docs/agents/`, `.github/`, dokumen akar | tim inti |
 
-`.scratch/<modul>/` (spec, tiket, catatan) tetap di tempatnya dan dimiliki pemilik modulnya.
+Brief acuan setiap modul tercatat di `MODUL.md`-nya.
 
-## 5. Menambah modul baru
+## 5. Memulai modul kerangka, atau menambah modul
 
-Contoh: **NB FacIn** — menurut tabel nama, backend dan `MODUL_AKTIF` `nbfacin`, frontend `nb-facin`
-(nama dokumen `.scratch/nb-facin/` persis).
-
-**Backend**
-
-1. `modul/nbfacin/{models,repository,services,handlers}/` — hanya mengimpor `inti/...` dan
-   dirinya sendiri. `services.DariDasar(dasar *inti.Dasar)` membangun `Service` di atas akar bersama.
-2. `handlers.DaftarkanRute(mux, svc, stubPelaku)` mendaftarkan seluruh rute modul dengan satu awalan
-   (URL rute ditetapkan spec modulnya; nama folder tidak menentukan URL).
-3. Bila bermigrasi: pilih rentang nomor yang belum terpakai (catat di tabel bab 3), taruh berkas di
-   `modul/nbfacin/migrations/` beserta `_down.sql`, dan tanam dengan `//go:embed migrations/*.sql`.
-4. `modul/nbfacin/modul.go` (`package nbfacin`): `const Nama = "nbfacin"`, `Baru(...)`, dan metode `Nama()`,
-   `DaftarkanRute(mux)`, `JalankanPekerja(ctx)` (tanpa pekerja: `inti.TanpaPekerja()`), serta
-   `SumberMigrasi()` bila bermigrasi — pola keempat modul yang ada.
-5. `modul/daftar.go`: satu baris di `Rakit`, dan satu baris di `SumberMigrasi` bila bermigrasi. Butuh
-   modul lain? Tambah antarmuka di `inti/kontrak` dan sambungkan di sini.
-
-**Frontend**
-
-6. `frontend/src/modul/nb-facin/`: `pages/`, `components/`, `labels.ts`, `api.ts` (memakai
-   `minta`/`mintaFormulir` dari `inti/klien`), `menu.ts` (`NAMA_NBFACIN = 'nbfacin'`,
-   `HALAMAN_NBFACIN`, `MENU_NBFACIN`), `rute.tsx` (`RuteNbFacin`, menyimpan keadaan
-   kasusnya sendiri).
-7. `frontend/src/modul/daftar.ts`: satu baris di `MODUL_FRONTEND` dan satu anggota di union `Halaman`.
-   Nama kelompok sidebar-nya sudah ada di `MODUL` (`inti/labels.ts`) bila modulnya salah satu folder
-   korpus.
-8. **Menu**: butir `menu.ts` baru TAMPIL hanya bila ada barisnya di `M_NAV_MENU` — kelompok modulnya
-   sudah ada di isi awal (20 folder korpus, `DIMIGRASI = '0'`); tambahkan butirnya menurut bab 6.
+Keenam belas folder korpus yang belum dimigrasi SUDAH punya folder kerangka (`MODUL.md` dengan rentang
+migrasi dan slot menunya, `docs/` bila ada). Memulai satu = menambah `backend/` dan `frontend/` di
+foldernya sendiri — langkah lengkapnya, beserta kerangka `modul.go`, `menu.ts`, dan `rute.tsx`:
+`..\docs\bersama\PANDUAN-TIM-PER-MODUL.md` bab 4. Modul di luar dua puluh folder korpus bukan bagian
+migrasi ini — keputusan work owner, lewat `modul/_templat/` dan pull request tim inti (bab 5 panduan itu).
 
 **Yang akan memeriksa Anda** — jalankan gerbang bab 3; yang biasanya berbunyi:
 
 | Uji | Menangkap |
 | --- | --- |
-| `inti/penjaga/impor_lintas_modul_test.go`, `frontend/src/inti/lapisan.guard.test.ts` | impor lintas modul |
+| `inti/backend/penjaga/impor_lintas_modul_test.go`, `inti/frontend/lapisan.guard.test.ts` | impor lintas modul, kode Go di luar `backend/` |
+| `inti/backend/daftar/bangkit/main_test.go` | daftar modul basi — jalankan `go generate ./inti/backend/daftar` |
+| `inti/backend/daftar/daftar_test.go`, `inti/backend/perakit_test.go` | kontrak tanpa penyedia, sambungan kontrak |
+| `inti/backend/penjaga/rentang_test.go` | migrasi di luar rentang atau slot, nomor bukan tiga digit, rentang bertumpuk, menu di luar slot |
 | `cmd/api/rakit_test.go` | rute modul nonaktif harus 404; migrasi di disk = migrasi di pelari |
-| `frontend/src/modul/daftar.modulAktif.test.ts` | nama frontend ≠ `const Nama` di `modul/*/modul.go` |
-| `frontend/src/modul/daftar.sinkron.test.ts`, `frontend/src/Shell.test.ts` | sidebar ↔ palet, butir menu berbukti korpus |
-| `frontend/src/modul/daftar.menuTabel.test.ts`, `inti/penjaga/menu_test.go` | isi `M_NAV_MENU` ↔ `menu.ts` dua arah, bentuk SQL menu (bab 6) |
-| `inti/penjaga/*` | higiene migrasi, kata cadangan Oracle, alamat layanan, nama orang, nama tabel telanjang |
+| `frontend/daftar.modulAktif.test.ts`, `frontend/daftar.rakit.test.ts` | nama frontend ≠ nama folder / `const Nama`; `menu.ts` tanpa `rute.tsx` |
+| `frontend/daftar.sinkron.test.ts`, `frontend/Shell.test.ts` | sidebar ↔ palet, butir menu berbukti korpus |
+| `frontend/daftar.menuTabel.test.ts`, `inti/backend/penjaga/menu_test.go` | isi `M_NAV_MENU` ↔ `menu.ts` dua arah, bentuk SQL menu (bab 6), kelompok modul = `LABEL` tabel |
+| `inti/backend/penjaga/*` | higiene migrasi, dokumen STRUKTUR, kata cadangan Oracle, alamat layanan, nama orang, nama tabel telanjang |
 
 `Shell.test.ts` mengunci jumlah butir menu (hari ini lima). Menambah butir menuntut bukti XML
-korpus dan menyunting angka itu dengan alasan — itu disengaja.
+korpus dan menyunting angka itu dengan alasan — itu disengaja, dan karena berkasnya milik tim inti,
+setiap butir menu baru lewat tinjauan tim inti.
 
 ## 6. Menambah menu — satu baris di `M_NAV_MENU` + satu butir di `menu.ts`
 
@@ -250,14 +258,14 @@ Sejak 30-09-2026 sidebar dan palet Ctrl+K dirakit dari tabel **`M_NAV_MENU`** le
 
 | Baris | `PARENT_ID` | `KODE` | Contoh |
 | --- | --- | --- | --- |
-| kelompok modul | kosong | nama modul backend (tabel nama modul) | `claimlife`, `nbfacin` |
+| kelompok modul | kosong | nama modul (tabel nama modul) | `claimlife`, `nbfacin` |
 | butir menu | ID kelompoknya | kunci halaman frontend (`menu.ts`) | `inbox`, `tco-tahun` |
 
 `GROUPMENU` (`TREATY`, `FACULTATIVE`, `KLAIM`, `MASTER`) menjadi kepala bagian sidebar, dalam urutan itu.
 Isi awal (migrasi 900) memuat 20 kelompok — satu per folder korpus — dan 5 butir; daftarnya di
-`..\.scratch\inti\STRUKTUR-TABEL-INTI.md`.
+`..\docs\bersama\STRUKTUR-TABEL-INTI.md`.
 
-**Frontend memotong pohon tabel dengan rute yang terdaftar** (`inti/lib/daftarMenu.ts` `susunMenu`):
+**Frontend memotong pohon tabel dengan rute yang terdaftar** (`inti/frontend/lib/daftarMenu.ts` `susunMenu`):
 
 - baris tabel **tanpa** rute frontend tidak tampil, dan dicatat di konsol peramban
   (`menu: 1 butir M_NAV_MENU tanpa rute frontend, tidak tampil: …`);
@@ -265,16 +273,21 @@ Isi awal (migrasi 900) memuat 20 kelompok — satu per folder korpus — dan 5 b
 - kelompok `DIMIGRASI = '0'` tampil terlipat "belum dimigrasi"; kelompok yang sudah dimigrasi tetapi
   tanpa butir (modulnya tidak ada di `MODUL_AKTIF`) tidak tampil.
 
-Jadi menambah satu menu = **dua sisi, satu deploy**:
+Jadi menambah satu menu = **dua sisi, satu deploy, satu folder**:
 
-1. **Tabel** — migrasi BARU di `inti/migrations/` dengan nomor bebas berikutnya di 900–949
-   (mis. `901_menu_nbfacin.sql` + `901_menu_nbfacin_down.sql`). ⛔ **Jangan menyunting 900**:
-   `T_MIGRASI` mencatat nama, jadi isi 900 yang diubah tidak pernah dijalankan ulang. ⛔ **Jangan dari
-   folder migrasi modul**: isi menu hanya di `inti` (`TestMenuHanyaDiMigrasiInti`). Bentuknya PERSIS
-   bentuk 900 — kedua penjaga membacanya dengan pola itu:
+1. **Tabel** — migrasi BARU di folder migrasi modul Anda sendiri,
+   `modul/<nama>/backend/migrations/`, dengan nomor di **slot menu** modul itu (`MODUL.md`, mis.
+   `nbfacin` 962–963): `962_menu_nbfacin.sql` + `962_menu_nbfacin_down.sql`. Urutan nama berkas sebagai
+   teks menjamin slot 95x berjalan **sesudah** `900_m_nav_menu` di skema baru
+   (`TestSlotMenuBerjalanSesudah900`). ⛔ **Jangan menyunting 900**: `T_MIGRASI` mencatat nama, jadi isi
+   900 yang diubah tidak pernah dijalankan ulang. ⛔ **Jangan di `inti/backend/migrations/`**: 901–949 milik
+   inti, bukan untuk menu, dan folder bersama itu yang dulu membuat dua pengembang bertabrakan
+   (`TestMenuHanyaDi900DanSlotMenuModulnya`). Bentuknya PERSIS bentuk 900 — penjaga membacanya dengan
+   pola itu, dan slot hanya boleh menyentuh kelompok modulnya sendiri
+   (`TestSlotMenuHanyaMenyentuhMenuModulnya`):
 
    ```sql
-   -- 901 - menu NB FacIn: modulnya mendapat layar pertamanya, lalu butirnya.
+   -- 962 - menu NB FacIn: modulnya mendapat layar pertamanya, lalu butirnya.
    UPDATE {skema}.M_NAV_MENU SET DIMIGRASI = '1', TGL_UBAH = SYSDATE
    WHERE KODE = 'nbfacin' AND PARENT_ID IS NULL
    /
@@ -288,18 +301,18 @@ Jadi menambah satu menu = **dua sisi, satu deploy**:
 
    `UPDATE` **sebelum** `INSERT`: butir mewarisi `GROUPMENU`, `MODUL`, dan `DIMIGRASI` induknya saat
    disisipkan. Keduanya idempoten, jadi langkah yang gagal separuh jalan aman diulang pelari. Jalur
-   mundurnya (`_down.sql`) menghapus butirnya (`DELETE … WHERE KODE = 'nbfacin-inbox'`) lalu
-   mengembalikan `DIMIGRASI` ke `'0'`. `UPDATE DIMIGRASI` hanya untuk modul yang mendapat layar
-   **pertamanya**; `TestIsiAwalMenuDimigrasiSamaDenganModulBackend` menuntut `DIMIGRASI = '1'` tepat
-   untuk modul yang punya `modul/<nama>/modul.go`.
+   mundurnya (`_down.sql`) menghapus butirnya (`DELETE FROM {skema}.M_NAV_MENU WHERE KODE = 'nbfacin-inbox'`)
+   lalu mengembalikan `DIMIGRASI` ke `'0'`. `UPDATE DIMIGRASI` hanya untuk modul yang mendapat layar
+   **pertamanya**; `TestMenuDimigrasiSamaDenganModulBackend` menuntut `DIMIGRASI = '1'` — sesudah semua
+   slot — tepat untuk modul yang punya `modul/<nama>/backend/modul.go`.
 
-2. **Kode** — satu butir di `frontend/src/modul/<nama>/menu.ts` dengan `modul` = `KODE` baris tabel dan
+2. **Kode** — satu butir di `modul/<nama>/frontend/menu.ts` dengan `modul` = `KODE` baris tabel dan
    `label` = `LABEL`-nya **VERBATIM** (dan halamannya di `rute.tsx`).
 
-3. **Penjaga** — `frontend/src/modul/daftar.menuTabel.test.ts` (dua arah: `KODE` ↔ `menu.ts`, `LABEL`,
-   induk = modul pemilik) dan `inti/penjaga/menu_test.go` (bentuk SQL, idempoten, `CHECK GROUPMENU`,
-   20 kelompok = folder korpus, daftar butir yang dikunci — sunting angka/daftarnya dengan alasan, seperti
-   `Shell.test.ts`).
+3. **Penjaga** — `frontend/daftar.menuTabel.test.ts` (dua arah atas 900 + slot setiap modul: `KODE` ↔
+   `menu.ts`, `LABEL`, induk = modul pemilik, kelompok modul = `LABEL` tabel) dan
+   `inti/backend/penjaga/menu_test.go` (bentuk SQL, idempoten, `CHECK GROUPMENU`, isi awal 900: 20 kelompok
+   = folder korpus, lima butir). Jumlah seluruh butir dikunci `frontend/Shell.test.ts` (bab 5).
 
 4. **`-migrate` dijalankan work owner** — sampai itu, backend baru pun tetap menjawab dari baris lama,
    dan butir baru tidak tampil.
@@ -308,9 +321,9 @@ Menyembunyikan satu menu: `STATUS_AKTIF = '0'` pada barisnya (atau pada kelompok
 ikut hilang); pembaca menu hanya membaca baris `'1'`. Itu **perubahan data di Oracle** — tulis ke DB,
 jadi dilakukan work owner/DBA dengan persetujuan, bukan executor. Penjaga membaca migrasi, jadi tidak
 melihat perubahan data semacam itu; bila menu itu memang dibuang untuk seterusnya, tuliskan sebagai
-migrasi `inti` berikutnya dan sunting kedua penjaga.
+migrasi di slot menu modul pemiliknya.
 
 **Di luar lingkup hari ini** (dicatat, tidak dibangun): tabel akses per akun (mis. `M_NAV_MENU_AKSES`:
-akun atau peran → `MENU_ID`) dan login. Titik sambungnya sudah ada: `inti/menu`
+akun atau peran → `MENU_ID`) dan login. Titik sambungnya sudah ada: `inti/backend/menu`
 `SaringMenuUntukPelaku(pelaku, menu)` — hari ini meneruskan semua — dipanggil `GET /api/menu` untuk
 setiap permintaan.

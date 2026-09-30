@@ -35,7 +35,7 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 Rentang `030-049`, terpakai `030`. Tabel tangga Komite sendiri lahir di migrasi Claim Life `013`
 (sebelum modul ini berdiri) dan tetap di sana: `T_MIGRASI` mencatat nama, bukan letak. Menu modul
 ini (butir `M_NAV_MENU` baru) ditulis di slot `952-953`, di folder `backend/migrations/` modul ini
-sendiri — bentuk SQL-nya di `PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md` bab 6.
+sendiri — bentuk SQL-nya di `APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md` bab 6.
 
 ## Menjalankan uji modul ini saja
 
@@ -48,7 +48,7 @@ npx vitest run modul/komiteclaimlife
 ```
 
 `npx tsc --noEmit` memeriksa seluruh aplikasi sekaligus — tipe tidak dapat diperiksa per folder.
-Sebelum pull request, jalankan gerbang lengkap (`PANDUAN-TIM-PER-MODUL.md`).
+Sebelum pull request, jalankan gerbang lengkap (`docs/bersama/PANDUAN-TIM-PER-MODUL.md` di akar repo, bab 8).
 
 ## Pernyataan untuk penjaga
 

@@ -146,45 +146,52 @@ atas beberapa butir yang jawabannya **sudah diketahui**, dan laporkan hasilnya b
 
 **Lokasinya: `OUTPUT_HASIL_RNM\APP_RNM\`** *(sejak 25 September 2026 sore; sebelumnya langsung di
 `OUTPUT_HASIL_RNM\`)*. Seluruh kode Go dan React ada di dalam `APP_RNM\` — `cmd/`, `inti/`,
-`modul/`, `uji/`, `frontend/`, `go.mod`, `Makefile` — sedangkan `discovery/`, `docs/`, `CONTEXT.md`,
-`.scratch/`, `dastin/`, `jefri/` tetap di `OUTPUT_HASIL_RNM\`. **Satu repo git, berakar di
+`modul/`, `uji/`, `frontend/`, `go.mod`, `package.json`, `Makefile` — sedangkan `discovery/`, `docs/`
+(termasuk `docs/bersama/`: ADR, `CONTEXT.md`, panduan lintas modul), `.github/CODEOWNERS`, `dastin/`,
+`jefri/` tetap di `OUTPUT_HASIL_RNM\`. Dokumen setiap modul (spec, tiket, grilling) tinggal di folder
+modulnya, `APP_RNM\modul\<nama>\docs\` (dulu `.scratch\<nama-panjang>\`). **Satu repo git, berakar di
 `OUTPUT_HASIL_RNM\`.** Frontend memakai **TypeScript**: komponen `.tsx`, modul lain `.ts`, nol
 `.jsx`. Kode ditulis untuk pembaca yang **baru mengenal Go dan React** — mulai dari
 `APP_RNM\README-BACA-DULU.md`.
 
-**Bentuk B (refactor 30 September 2026, `PROMPT-REFACTOR-BENTUK-B-MODUL.md`):** `internal/` dan
-`pkg/` sudah tidak ada. Kode bersama di `inti/`, kode tiap modul di `modul/<nama>/`; deploy sebagian
-modul, commit per folder, pemilik folder, dan cara menambah modul di
+**Bentuk B (refactor 30 September 2026, `PROMPT-REFACTOR-BENTUK-B-MODUL.md`):** `internal/` sudah
+tidak ada. **Struktur tim satu folder per modul (30 September 2026,
+`PROMPT-STRUKTUR-TIM-SATU-FOLDER-PER-MODUL.md`):** satu orang fullstack memegang satu modul, dan
+segala milik modul itu — backend, frontend, dokumen, `MODUL.md` — tinggal di `modul/<nama>/`. Dua
+puluh folder, satu per folder korpus (4 dimigrasi, 16 kerangka). Alur tim dan memulai modul:
+`docs\bersama\PANDUAN-TIM-PER-MODUL.md`; deploy sebagian modul dan menu:
 `APP_RNM\PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md`.
 
 ```
 APP_RNM/
-├── README-BACA-DULU.md · PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md
+├── README-BACA-DULU.md · PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md · PANDUAN-MENJALANKAN.txt
+├── go.mod · go.sum · package.json · package-lock.json · vite.config.ts · tsconfig.json · Makefile
 ├── cmd/api/                ← memasang modul dari daftar; MODUL_AKTIF
-├── inti/                   ← SATU-SATUNYA kode bersama; tidak mengimpor modul
-│   ├── config/ db/ migrasi/ outbox/ layanan/ jejak/ penomor/ galat/ unggah/ uang/ utils/
-│   ├── kontrak/            ← antarmuka lintas modul, tanpa implementasi
-│   └── penjaga/            ← test penjaga seluruh aplikasi
+├── inti/
+│   ├── backend/            ← kode Go bersama; paket akar diimpor sebagai `inti`
+│   │   ├── config/ db/ migrasi/ outbox/ layanan/ jejak/ penomor/ galat/ unggah/ uang/ utils/ menu/
+│   │   ├── kontrak/        ← antarmuka lintas modul, tanpa implementasi
+│   │   ├── perakit.go      ← menyambung kontrak menurut Pendaftaran() tiap modul
+│   │   ├── daftar/         ← daftar modul BANGKITAN (go generate ./inti/backend/daftar)
+│   │   ├── migrations/     ← tabel lintas modul 900-949 (M_NAV_MENU 900)
+│   │   └── penjaga/        ← test penjaga seluruh aplikasi; membaca modul/* dan MODUL.md
+│   └── frontend/           ← Shell, ui/dasar, klien.ts, lib/, hooks/, store/, labels.ts
 ├── modul/
-│   ├── daftar.go           ← daftar modul; menyambung inti/kontrak
-│   └── claimlife/ premiumlistlife/ komiteclaimlife/ treatycontractout/   ← tabel nama: PROMPT-REFACTOR-NAMA-MODUL.md
-│       └── models/ repository/ services/ handlers/ migrations/ modul.go
+│   ├── <nama>/             ← 20 folder, tabel nama: PROMPT-REFACTOR-NAMA-MODUL.md
+│   │   ├── MODUL.md        ← pemilik, rentang migrasi, slot menu, prefix rute, kontrak
+│   │   ├── backend/        ← models/ repository/ services/ handlers/ migrations/ modul.go
+│   │   ├── frontend/       ← pages/ components/ labels.ts api.ts menu.ts rute.tsx
+│   │   └── docs/           ← spec, tiket (issues/), grilling
+│   └── _templat/
 ├── uji/skemauji/ uji/lintasmodul/   ← penunjang uji netral
-├── frontend/               ← React via Vite, TypeScript (.tsx)
-│   ├── src/inti/           ← Shell, ui/dasar, klien.ts, lib/, hooks/, store/, labels.ts
-│   ├── src/modul/daftar.ts ← merakit menu dan rute
-│   ├── src/modul/<nama>/   ← claim-life/ premiumlist-life/ komite-claim-life/ treaty-contract-out/:
-│   │                         pages/ components/ labels.ts api.ts menu.ts rute.tsx
-│   ├── src/App.tsx · src/Beranda.tsx · src/main.tsx · src/vite-env.d.ts
-│   └── package.json · tsconfig.json · vite.config.ts
-├── go.mod · go.sum
-└── Makefile
+└── frontend/               ← perakit React: index.html, main.tsx, App.tsx, Beranda.tsx, daftar.ts
 ```
 
 **Arah dependency: `handlers` → `services` → `repository`,** di dalam satu modul. Tidak boleh
 terbalik, tidak boleh memotong lapisan. **`modul/X` tidak mengimpor `modul/Y`** — lewat
-`inti/kontrak`, disambung `modul/daftar.go`; ditegakkan `inti/penjaga/impor_lintas_modul_test.go`
-dan `frontend/src/inti/lapisan.guard.test.ts`.
+`inti/backend/kontrak`, dinyatakan di `Pendaftaran()` modulnya dan disambung perakit
+`inti/backend/perakit.go`; ditegakkan `inti/backend/penjaga/impor_lintas_modul_test.go` dan
+`inti/frontend/lapisan.guard.test.ts`.
 
 ## 6. Pertanyaan terbuka — 61 terbuka, 38 memblokir FASE B
 
@@ -249,10 +256,10 @@ mereplikasi alur internal skill. Laporkan:
 
 | Keluaran | Lokasi |
 | --- | --- |
-| Spec | `.scratch/<konteks-slug>/spec.md` |
-| Tiket | `.scratch/<konteks-slug>/issues/NN-<slug>.md` |
-| ADR | `docs/adr/` |
-| `CONTEXT.md` | dibuat **lazy** oleh `/domain-modeling`; seed = `discovery/glossary.md` |
+| Spec | `APP_RNM/modul/<nama>/docs/spec.md` *(dulu `.scratch/<konteks-slug>/`)* |
+| Tiket | `APP_RNM/modul/<nama>/docs/issues/NN-<slug>.md` |
+| ADR | `docs/bersama/adr/` |
+| `CONTEXT.md` | `docs/bersama/CONTEXT.md`; seed = `discovery/glossary.md` |
 
 **Urutan konteks yang diusulkan** (berdasarkan jumlah OQ pemblokir + cakupan bukti,
 `D3-D4-CLOSING-REPORT.md` §4):
@@ -281,8 +288,8 @@ endpoint sesungguhnya ada di tabel Oracle `M_LINK_SERVICE` yang **isinya tidak a
 
 ### Issue tracker
 
-Local markdown di `OUTPUT_HASIL_RNM/.scratch/<konteks-slug>/` — bukan repo git, tanpa tracker
-eksternal. Sembilan slug konteks sejajar dengan `discovery/context-map.md` §1.
+Local markdown di `OUTPUT_HASIL_RNM/APP_RNM/modul/<nama>/docs/` — satu folder per modul (struktur
+tim 30-09-2026; dulu `.scratch/<konteks-slug>/`), tanpa tracker eksternal.
 See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
@@ -293,5 +300,5 @@ See `docs/agents/triage-labels.md`.
 
 ### Domain docs
 
-Single-context: `OUTPUT_HASIL_RNM/CONTEXT.md` (belum ada; seed = `discovery/glossary.md`)
-+ `OUTPUT_HASIL_RNM/docs/adr/`. See `docs/agents/domain.md`.
+Single-context: `OUTPUT_HASIL_RNM/docs/bersama/CONTEXT.md` (seed = `discovery/glossary.md`)
++ `OUTPUT_HASIL_RNM/docs/bersama/adr/`. See `docs/agents/domain.md`.

@@ -30,11 +30,19 @@ import (
 )
 
 // letakStrukturInti - dokumen STRUKTUR tabel lintas modul milik `inti`
-// (900-949): M_NAV_MENU, 30-09-2026.
-const letakStrukturInti = "../../../../.scratch/inti/STRUKTUR-TABEL-INTI.md"
+// (900-949): M_NAV_MENU, 30-09-2026. Sejak struktur tim satu folder per modul
+// di `docs/bersama/` (dokumen lintas modul, milik tim inti; dulu `.scratch/inti/`).
+const letakStrukturInti = "../../../../docs/bersama/STRUKTUR-TABEL-INTI.md"
 
-// letakStruktur menunjuk SELURUH dokumen STRUKTUR: `docs/STRUKTUR-TABEL-*.md`
-// setiap modul, ditambah dokumen `inti`.
+// letakStruktur menunjuk SELURUH dokumen STRUKTUR yang MENGIKAT:
+// `docs/STRUKTUR-TABEL-*.md` setiap modul TERDAFTAR (punya `backend/modul.go`),
+// ditambah dokumen `inti`.
+//
+// ⚠️ Dokumen STRUKTUR modul KERANGKA (belum dimigrasi, tanpa `backend/modul.go`)
+// adalah RANCANGAN: ia boleh menggambarkan tabel dan kolom yang belum dibuat
+// migrasi mana pun (mis. kolom Komite rancangan Komite Claim Prop). Ia mulai
+// mengikat pada saat modulnya mendapat `backend/modul.go` - pada saat itulah
+// DDL-nya wajib cocok, dan kesepakatan atas tabel bersama ikut diperiksa.
 //
 // ⛔ Struktur tim satu folder per modul (30-09-2026): dokumennya DITEMUKAN di
 // folder setiap modul, tidak didaftar di sini - dulu "menambah modul berarti
@@ -55,19 +63,25 @@ func letakStruktur(t *testing.T) []string {
 		t.Fatal(err)
 	}
 	sort.Strings(cocok)
+	var mengikat []string
 	berdokumen := map[string]bool{}
 	for _, c := range cocok {
-		berdokumen[pemilikJalur(c)] = true
+		m := pemilikJalur(c)
+		if _, err := os.Stat(filepath.Join(akarAplikasi, "modul", m, "backend", "modul.go")); err != nil {
+			continue // modul kerangka: rancangan, belum mengikat
+		}
+		mengikat = append(mengikat, c)
+		berdokumen[m] = true
 	}
 	for _, nama := range berkasMigrasi.asal {
 		if m := pemilikJalur(nama); m != "inti" && !berdokumen[m] {
 			t.Fatalf("modul %s bermigrasi tetapi tanpa docs/STRUKTUR-TABEL-*.md", m)
 		}
 	}
-	if len(cocok) < 4 {
-		t.Fatalf("hanya %d dokumen STRUKTUR modul ditemukan; pembacanya yang rusak", len(cocok))
+	if len(mengikat) < 4 {
+		t.Fatalf("hanya %d dokumen STRUKTUR modul terdaftar ditemukan; pembacanya yang rusak", len(mengikat))
 	}
-	return append(cocok, filepath.FromSlash(letakStrukturInti))
+	return append(mengikat, filepath.FromSlash(letakStrukturInti))
 }
 
 // Tabel yang LEBIH DARI SATU dokumen gambarkan kini DITURUNKAN dari dokumennya

@@ -25,7 +25,9 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"testing/fstest"
 
+	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/migrasi"
 )
 
@@ -302,5 +304,35 @@ func TestAturanRentangMenggigit(t *testing.T) {
 		if _, _, err := rentangNomor(nilai); (err == nil) != sah {
 			t.Errorf("rentang %s: sah=%v, mau %v (%v)", nilai, err == nil, sah, err)
 		}
+	}
+}
+
+// ⛔ R3: di skema uji dari NOL, 900 (CREATE TABLE M_NAV_MENU + isi awal)
+// berjalan SEBELUM slot menu 95x mana pun - pelari mengurutkan nama berkas
+// sebagai teks, dan tiga digit menjamin urutan itu. Diperiksa lewat pelari
+// yang sama dengan `-migrate`, atas migrasi inti sungguhan dan satu modul
+// tiruan yang punya berkas slot menu, bukan dengan membandingkan teks sendiri.
+func TestSlotMenuBerjalanSesudah900(t *testing.T) {
+	for m, j := range jatahSetiapModul(t) {
+		if j.slot[0] <= 900 {
+			t.Errorf("modul %s: slot menu %03d tidak sesudah 900", m, j.slot[0])
+		}
+	}
+	tiruan := fstest.MapFS{
+		"migrations/952_menu_tiruan.sql":      {Data: []byte("UPDATE {skema}.M_NAV_MENU SET DIMIGRASI = '1', TGL_UBAH = SYSDATE\nWHERE KODE = 'tiruan' AND PARENT_ID IS NULL\n/\n")},
+		"migrations/952_menu_tiruan_down.sql": {Data: []byte("UPDATE {skema}.M_NAV_MENU SET DIMIGRASI = '0', TGL_UBAH = SYSDATE\nWHERE KODE = 'tiruan' AND PARENT_ID IS NULL\n/\n")},
+		"migrations/030_tiruan.sql":           {Data: []byte("CREATE TABLE {skema}.T_TIRUAN (ID NUMBER(10))\n/\n")},
+		"migrations/030_tiruan_down.sql":      {Data: []byte("DROP TABLE {skema}.T_TIRUAN\n/\n")},
+	}
+	langkah, err := migrasi.Daftar(false, inti.SumberMigrasi(), tiruan)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var urut []string
+	for _, l := range langkah {
+		urut = append(urut, l.Nama)
+	}
+	if mau := []string{"030_tiruan.sql", "900_m_nav_menu.sql", "952_menu_tiruan.sql"}; strings.Join(urut, ",") != strings.Join(mau, ",") {
+		t.Errorf("urutan pelari %v, mau %v", urut, mau)
 	}
 }

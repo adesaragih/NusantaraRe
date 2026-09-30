@@ -34,7 +34,7 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 
 Rentang `050-099` *(ralat 30-09-2026: dulu tertulis `050–079` di panduan deploy)*, terpakai
 `050–058`. Menu modul ini (butir `M_NAV_MENU` baru) ditulis di slot `954-955`, di folder
-`backend/migrations/` modul ini sendiri — bentuk SQL-nya di `PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md`
+`backend/migrations/` modul ini sendiri — bentuk SQL-nya di `APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md`
 bab 6. Nama berkas migrasi yang sudah ada tidak pernah diubah: `T_MIGRASI` mencatat nama.
 
 ## Menjalankan uji modul ini saja
@@ -48,7 +48,7 @@ npx vitest run modul/premiumlistlife
 ```
 
 `npx tsc --noEmit` memeriksa seluruh aplikasi sekaligus — tipe tidak dapat diperiksa per folder.
-Sebelum pull request, jalankan gerbang lengkap (`PANDUAN-TIM-PER-MODUL.md`).
+Sebelum pull request, jalankan gerbang lengkap (`docs/bersama/PANDUAN-TIM-PER-MODUL.md` di akar repo, bab 8).
 
 ## Pernyataan untuk penjaga
 

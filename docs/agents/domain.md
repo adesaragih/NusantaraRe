@@ -2,7 +2,7 @@
 
 Cara skill engineering mengonsumsi dokumentasi domain proyek ini ketika menjelajah basis kode.
 
-**Layout: single-context.** Satu `CONTEXT.md` + `docs/adr/`.
+**Layout: single-context.** Satu `docs/bersama/CONTEXT.md` + `docs/bersama/adr/`.
 
 > **Catatan lokasi (penting).** Template bawaan skill memakai root repo. Di proyek ini root
 > (`D:\XML\RNM_BRD\`) adalah **korpus ekspor Pega yang READ-ONLY**; seluruh keluaran agent berada di
@@ -10,10 +10,11 @@ Cara skill engineering mengonsumsi dokumentasi domain proyek ini ketika menjelaj
 
 ## Before exploring, read these
 
-- **`OUTPUT_HASIL_RNM/CONTEXT.md`** — glossary domain proyek.
+- **`OUTPUT_HASIL_RNM/docs/bersama/CONTEXT.md`** — glossary domain proyek (dipindah dari akar
+  `OUTPUT_HASIL_RNM/` ke `docs/bersama/` oleh struktur tim satu folder per modul, 30-09-2026).
   **Belum dibuat.** Kandidat seed-nya sudah siap: **`OUTPUT_HASIL_RNM/discovery/glossary.md`**
   (169 entri, seluruhnya berkolom Bukti `path + rule`). Lihat §"Seed CONTEXT.md" di bawah.
-- **`OUTPUT_HASIL_RNM/docs/adr/`** — ADR yang menyentuh area yang akan dikerjakan.
+- **`OUTPUT_HASIL_RNM/docs/bersama/adr/`** — ADR yang menyentuh area yang akan dikerjakan.
   **Masih kosong**; ADR pertama baru ditulis di FASE B.
 
 Bila salah satu berkas ini belum ada, **lanjutkan diam-diam**. Jangan menandai ketiadaannya, jangan
@@ -27,17 +28,18 @@ Single-context (layout proyek ini):
 
 ```
 OUTPUT_HASIL_RNM/
-├── CONTEXT.md                  ← belum ada; seed = discovery/glossary.md
 ├── docs/
-│   ├── adr/                    ← kosong; ADR ditulis di FASE B
+│   ├── bersama/                ← dokumen lintas modul (struktur tim satu folder per modul, 30-09-2026)
+│   │   ├── CONTEXT.md          ← glossary; seed = discovery/glossary.md
+│   │   ├── adr/                ← ADR lintas modul
+│   │   └── PANDUAN-TIM-PER-MODUL.md
 │   └── agents/
 │       ├── issue-tracker.md
 │       ├── triage-labels.md
 │       └── domain.md
-├── .scratch/                   ← issue tracker local-markdown
-│   └── <konteks-slug>/
-│       ├── spec.md
-│       └── issues/NN-<slug>.md
+├── APP_RNM/modul/<nama>/docs/  ← issue tracker local-markdown, satu folder per modul
+│   ├── spec.md
+│   └── issues/NN-<slug>.md
 └── discovery/                  ← keluaran FASE A (sumber bukti)
     ├── README.md
     ├── D1-CLOSING-REPORT.md

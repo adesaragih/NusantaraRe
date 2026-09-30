@@ -1,12 +1,13 @@
 # Issue tracker: Local Markdown
 
-Issues dan spec untuk proyek ini hidup sebagai berkas markdown di **`OUTPUT_HASIL_RNM/.scratch/`**.
+Issues dan spec untuk proyek ini hidup sebagai berkas markdown di **folder modulnya**:
+**`OUTPUT_HASIL_RNM/APP_RNM/modul/<nama>/docs/`**.
 
-> ⚠️ **Struktur tim satu folder per modul (30-09-2026).** Dokumen modul yang kodenya sudah dibangun
-> kini tinggal di folder modulnya: **`APP_RNM/modul/<nama>/docs/`** — `claimlife` (dulu
-> `.scratch/claim-life/`), `premiumlistlife`, `komiteclaimlife`, `treatycontractout`. Nama folder =
-> nama `.scratch` tanpa tanda hubung. Folder `.scratch/<nama-panjang>/` modul lain tetap di tempatnya
-> sampai foldernya dibuat.
+> ⚠️ **Struktur tim satu folder per modul (30-09-2026).** Dulu `OUTPUT_HASIL_RNM/.scratch/<nama-panjang>/`;
+> kini setiap dokumen modul — spec, tiket, grilling — tinggal bersama kode modulnya, dan dua puluh folder
+> modul (satu per folder korpus) sudah berdiri. `<nama>` = nama folder `.scratch` lama tanpa tanda hubung
+> (`claim-life` → `claimlife`, `nb-treaty-in` → `nbtreatyin`). Dokumen lintas modul (ADR, `CONTEXT.md`)
+> di `OUTPUT_HASIL_RNM/docs/bersama/`.
 
 > **Catatan lokasi (penting).** Template bawaan skill memakai `.scratch/` di **root repo**.
 > Di proyek ini root (`D:\XML\RNM_BRD\`) adalah **korpus ekspor Pega yang READ-ONLY** — 20 folder
@@ -16,10 +17,10 @@ Issues dan spec untuk proyek ini hidup sebagai berkas markdown di **`OUTPUT_HASI
 
 ## Conventions
 
-- Satu konteks per direktori: **`OUTPUT_HASIL_RNM/.scratch/<konteks-slug>/`**
-- Spec berada di `OUTPUT_HASIL_RNM/.scratch/<konteks-slug>/spec.md`
+- Satu modul per direktori: **`OUTPUT_HASIL_RNM/APP_RNM/modul/<nama>/docs/`**
+- Spec berada di `OUTPUT_HASIL_RNM/APP_RNM/modul/<nama>/docs/spec.md`
 - Issue implementasi satu berkas per tiket di
-  `OUTPUT_HASIL_RNM/.scratch/<konteks-slug>/issues/<NN>-<slug>.md`, bernomor dari `01`,
+  `OUTPUT_HASIL_RNM/APP_RNM/modul/<nama>/docs/issues/<NN>-<slug>.md`, bernomor dari `01`,
   **tidak pernah** satu berkas gabungan
 - Status triage dicatat sebagai baris `Status:` di dekat bagian atas tiap berkas issue
   (lihat `triage-labels.md` untuk string perannya)
@@ -44,8 +45,8 @@ Issues dan spec untuk proyek ini hidup sebagai berkas markdown di **`OUTPUT_HASI
 
 ## When a skill says "publish to the issue tracker"
 
-Buat berkas baru di bawah `OUTPUT_HASIL_RNM/.scratch/<konteks-slug>/` (buat direktorinya bila
-belum ada).
+Buat berkas baru di bawah `OUTPUT_HASIL_RNM/APP_RNM/modul/<nama>/docs/` (buat direktori `docs/`
+bila belum ada; folder modulnya sudah berdiri untuk kedua puluh modul korpus).
 
 ## When a skill says "fetch the relevant ticket"
 
