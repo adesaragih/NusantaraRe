@@ -35,7 +35,10 @@ Skill: `/mattpocock-skills:to-spec`
 > dan Transaction Year (tahun Start Date) — semuanya tetap dapat diubah. (6) `Reinsurance Type` tahun treaty = dua
 > pilihan `Proportional` → "Proportional", `NonProportional` → "Non Proportional" (bukan master jenis reasuransi) —
 > **OQ-TCO-04 ditutup**. (7) Start Date dan End Date **kontrak** (layar ReinsType) **hanya dibaca** dan = tanggal tahun
-> treaty induknya — server menetapkannya, tanggal kiriman klien diabaikan (tiket 04).
+> treaty induknya — server menetapkannya, tanggal kiriman klien diabaikan (tiket 04). (8) Jawaban atas tiga pertanyaan
+> sesudah /code-review: form **Reinsurer** disamakan dengan Security — kotak cari dibuang, pemilih = dropdown yang dapat
+> difilter (`inti` `PilihSaring`, menggantikan `<datalist>`); **format angka tetap gaya Indonesia** `1.234.567,89`
+> (hanya teks yang Inggris); pesan jenis klausul yang **ditahan** tetap tampil (tiket 05, 06).
 
 > ⛔ **RALAT BERTANGGAL 30-09-2026 — tampilan layar `[DIPUTUSKAN work owner]`** (delapan butir, pesan work owner).
 > (1) Catatan pengembang yang bukan galat sistem **tidak tampil** di layar — label bersilang OQ-TCO-05 (tahun dan

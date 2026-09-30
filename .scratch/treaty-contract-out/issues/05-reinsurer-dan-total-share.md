@@ -181,3 +181,12 @@ Nomor baris = baris mentah berkas korpus; langkah aktivitas dibaca lengkap (pras
 - `OPERATORNAME` tetap diisi pengubah (`OperatorID.pyUserName` b377).
 - Pelaku tercatat di log aplikasi.
 - Uji: `TestReinsurerKolomPelakuKosongSepertiPega`, `TestReinsurerSimpanMencatatPelakuDiLog`.
+
+## ⛔ Keputusan work owner bertanggal — 30-09-2026 (pemilih reinsurer)
+
+*Jawaban: "Ya, samakan".* Kotak `Search reinsurer name` di form reinsurer **dibuang**; `Reinsurer` adalah dropdown
+yang dapat difilter dengan mengetik — `inti/components/ui/pilihSaring.tsx` (panah membuka seluruh daftar, ketik
+menyaring ke server karena master aktif > 100 nama, ArrowUp/Down/Enter/Escape), sama dengan `Security Name` (tiket 06).
+Pencarian master satu hook untuk keduanya (`components/cariReinsurerMaster.ts`): jawaban basi dibuang — sukses maupun
+gagal — dan dibatalkan saat form lain dibuka. Butir daftar menampilkan ID sebagai keterangan (nama kembar dapat
+dibedakan). Uji `cariReinsurerMaster.test.ts`, `pilihSaring.test.ts`, `PanelReinsurerKombinasi.test.ts`.
