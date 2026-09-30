@@ -440,7 +440,7 @@ Perintah lain, semua dari folder APP_RNM (bukan frontend - lihat atas):
   -------------------  ---------------------------------------------------------
   npm run typecheck    periksa tipe TypeScript (tsc --noEmit); tanpa keluaran
                        bila bersih
-  npm test             vitest, saat ini 114 test di 8 berkas
+  npm test             vitest, 30-09-2026: 750 test di 67 berkas
   npm run build        tsc dulu, lalu Vite membuat folder dist/
   npm run preview      sajikan isi dist/ untuk dicoba (bukan server dev)
 
