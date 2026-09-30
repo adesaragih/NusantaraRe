@@ -282,10 +282,12 @@ export function Shell<H extends string>({
       ? ''
       : PERAN_ID[peranUtama] + (masuk.peran.length > 1 ? ` +${masuk.peran.length - 1}` : '')
 
+  // Logo resmi perusahaan (diserahkan work owner 30-09-2026) menggantikan
+  // kotak berinisial; gambarnya dipasang di CSS (`.shell__merek-tanda`),
+  // bukan `src={...}`, supaya penjaga "nol src dinamis" tetap utuh.
+  // Dekoratif: nama produk ditulis di sebelahnya.
   const tandaMerek = (
-    <span className="shell__merek-tanda" aria-hidden="true">
-      {inisial(PRODUK.nama)}
-    </span>
+    <span className="shell__merek-tanda" aria-hidden="true" />
   )
 
   return (

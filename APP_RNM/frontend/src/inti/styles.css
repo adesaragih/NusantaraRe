@@ -4672,19 +4672,16 @@ textarea.field__input {
    template sendiri tandai "ganti dengan logo perusahaan Anda". Garis emas
    di dasarnya adalah --accent template. Diganti logo resmi bila asetnya
    diberikan (lihat `PRODUK` di labels.claimlife.ts). */
+/* 30-09-2026: logo resmi (PNG 144 px, persegi) menggantikan kotak
+   berinisial. Dipasang sebagai gambar latar supaya Shell tidak memakai
+   `src={...}`. Latar merah dan sudut membulat sudah ada di gambarnya. */
 .shell__merek-tanda {
-  display: grid;
-  place-items: center;
+  display: block;
   flex-shrink: 0;
   width: 36px;
   height: 36px;
-  border-radius: 10px;
-  background: var(--primary);
-  box-shadow: inset 0 -3px 0 var(--accent);
-  color: #fff;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  border-radius: 8px;
+  background: url('./assets/logo-nusantara-re.png') center / contain no-repeat;
 }
 .shell__merek-teks {
   display: flex;
@@ -4970,8 +4967,7 @@ textarea.field__input {
 .shell__topbar-merek .shell__merek-tanda {
   width: 30px;
   height: 30px;
-  border-radius: 8px;
-  font-size: 12px;
+  border-radius: 7px;
 }
 
 /* Pemicu palet. Di ponsel hanya ikon; mulai 640px ia berupa kotak cari
