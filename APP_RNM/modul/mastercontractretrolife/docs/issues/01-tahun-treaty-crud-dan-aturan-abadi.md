@@ -114,3 +114,9 @@ make check
 | *"Pemanggilan procedure penulis; pemeriksaan `o_message`"* | procedure **tidak dipanggil** (keputusan o, R4): upsert, `ID` `'1' ‖ LPAD(TREATYYEAR_LIFE_SEQ, 6, '0')`, `TGLUPDATE = SYSDATE`, `USERID` pelaku ditiru di Go; tidak ada `o_message` — galat Go sampai ke layar (K8) |
 | *"`ID VARCHAR2(100)` (**PK**)"* | nol PK di DEV (K1); keunikan dijamin sequence (K3) |
 | — | layar: grid `BrowseTreatyYear_Life_RD` urut `ID ASC`; tombol baris **`Edit`**, **`ReinsType`**; baris baru lewat tombol berlabel VERBATIM **`End Period`** (`InputRetrocessionLife.xml` b8888); form `Input New Data` dengan `Save`/`Cancel`; wajib-isi berpesan VERBATIM `"Value cannot be empty."` (`SaveTreatyYearLife_Act` b313). Label kolom `TREATYYEAR` = **TRANSACTION YEAR** |
+
+## Ralat 01-10-2026 (paket 9)
+
+| Kalimat lama | Ralat |
+| --- | --- |
+| *"baris baru lewat tombol berlabel VERBATIM **`End Period`** (`InputRetrocessionLife.xml` b8888)"* | tombol b8888 bertekskan **`Add`** (`pyModes.pyLabel` b9007, tooltip `Add New Data` b9005); **`End Period`** (b8927) adalah label SEL di sampingnya (`pyIncludeLabel` true). Layar menampilkan keduanya (RALAT R14) |

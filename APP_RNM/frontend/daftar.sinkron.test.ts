@@ -7,7 +7,7 @@ import { AKAR_APLIKASI, folderKorpusBelumDimigrasi } from '../inti/frontend/uji/
 import { menuTabelDariMigrasi } from '../inti/frontend/uji/menuBersih'
 import { FOLDER_KORPUS } from './katalogKorpus'
 import { daftarPalet, saringPalet, susunMenu } from '../inti/frontend/lib/daftarMenu'
-import { ENTRI_MENU } from './daftar'
+import { ENTRI_MENU, MODUL_FRONTEND } from './daftar'
 
 // Sinkron sidebar ↔ palet — DUA ARAH, butir bg.
 //
@@ -31,7 +31,7 @@ describe('sidebar ↔ palet, dua arah', () => {
   it('palet = Beranda + satu entri per tombol modul yang dapat dibuka, urutan sidebar', () => {
     const dariSidebar = PALET.golongan.flatMap((g) => g.modul.flatMap((t) => (t.halaman === null ? [] : [[t.halaman, t.label]])))
     expect(PALET.entri.map((e) => [e.modul, e.label])).toEqual([['beranda', 'Beranda'], ...dariSidebar])
-    expect(dariSidebar).toHaveLength(4)
+    expect(dariSidebar).toHaveLength(MODUL_FRONTEND.length)
     // Label entri palet = LABEL tabel = nama folder korpus.
     const sah = new Set<string>(Object.values(FOLDER_KORPUS))
     for (const e of PALET.entri.slice(1)) expect(sah.has(e.label), e.label).toBe(true)
