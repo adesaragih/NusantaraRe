@@ -311,7 +311,7 @@ export function Pilih({
       >
         <option value="">{teksKosong}</option>
         {asing && (
-          <option value={value}>{value} (tidak ada di daftar referensi)</option>
+          <option value={value}>{value} {teksUI.tidakDiDaftar}</option>
         )}
         {opsi.map((o) => (
           <option key={o.value} value={o.value}>

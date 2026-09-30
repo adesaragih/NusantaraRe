@@ -24,6 +24,12 @@ export interface TeksUI {
   halamanDari: (kini: number, total: number) => string
   sebelumnya: string
   berikutnya: string
+  /** `Pilih`: nilai tersimpan yang tidak ada di daftar pilihan. */
+  tidakDiDaftar: string
+  /** `PilihSaring`: petunjuk kotak, daftar kosong, tombol panah. */
+  ketikUntukMenyaring: string
+  tidakCocok: string
+  bukaDaftar: string
 }
 
 export const TEKS_UI: Readonly<Record<Bahasa, TeksUI>> = {
@@ -39,6 +45,10 @@ export const TEKS_UI: Readonly<Record<Bahasa, TeksUI>> = {
     halamanDari: (kini, total) => `Halaman ${kini} dari ${total}`,
     sebelumnya: 'Sebelumnya',
     berikutnya: 'Berikutnya',
+    tidakDiDaftar: '(tidak ada di daftar referensi)',
+    ketikUntukMenyaring: 'Ketik untuk menyaring',
+    tidakCocok: 'Tidak ada yang cocok',
+    bukaDaftar: 'Buka daftar',
   },
   en: {
     memuat: 'Loading...',
@@ -52,5 +62,9 @@ export const TEKS_UI: Readonly<Record<Bahasa, TeksUI>> = {
     halamanDari: (kini, total) => `Page ${kini} of ${total}`,
     sebelumnya: 'Previous',
     berikutnya: 'Next',
+    tidakDiDaftar: '(not in the reference list)',
+    ketikUntukMenyaring: 'Type to filter',
+    tidakCocok: 'No matches',
+    bukaDaftar: 'Open list',
   },
 }

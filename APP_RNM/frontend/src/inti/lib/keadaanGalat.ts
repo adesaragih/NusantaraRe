@@ -69,23 +69,9 @@ function galatJaringan(g: unknown): boolean {
 /** Kode yang `request()` pasang ketika jawaban bukan JSON sama sekali. */
 export const KODE_BACKEND_MATI = "BACKEND_TIDAK_TERJANGKAU";
 
-function backendMati(bahasa: Bahasa): KeadaanGalat {
-  if (bahasa === "en") {
-    return {
-      jenis: "backend-mati",
-      pesan:
-        "Backend not connected (127.0.0.1:8080). The screen below is empty " +
-        "NOT because there is no data, but because the request did not " +
-        "reach the backend.",
-      petunjuk:
-        "Start the backend in PowerShell: Set-Location APP_RNM ; " +
-        ". .\\muat-env.ps1 ; go run .\\cmd\\api — then reload this " +
-        "page. Go does NOT read .env by itself; muat-env.ps1 loads it " +
-        "into that window.",
-    };
-  }
-  return {
-    jenis: "backend-mati",
+/** Panel backend mati, per bahasa — bentuk yang sama dengan `TEKS_UI`. */
+const BACKEND_MATI: Readonly<Record<Bahasa, { pesan: string; petunjuk: string }>> = {
+  id: {
     pesan:
       "Backend tidak terhubung (127.0.0.1:8080). Layar di bawah kosong " +
       "BUKAN karena datanya tidak ada, melainkan karena permintaannya " +
@@ -95,7 +81,22 @@ function backendMati(bahasa: Bahasa): KeadaanGalat {
       ". .\\muat-env.ps1 ; go run .\\cmd\\api — lalu muat ulang " +
       "halaman ini. Go TIDAK membaca .env sendiri; muat-env.ps1 yang " +
       "memuatnya ke jendela itu.",
-  };
+  },
+  en: {
+    pesan:
+      "Backend not connected (127.0.0.1:8080). The screen below is empty " +
+      "NOT because there is no data, but because the request did not " +
+      "reach the backend.",
+    petunjuk:
+      "Start the backend in PowerShell: Set-Location APP_RNM ; " +
+      ". .\\muat-env.ps1 ; go run .\\cmd\\api — then reload this " +
+      "page. Go does NOT read .env by itself; muat-env.ps1 loads it " +
+      "into that window.",
+  },
+};
+
+function backendMati(bahasa: Bahasa): KeadaanGalat {
+  return { jenis: "backend-mati", ...BACKEND_MATI[bahasa] };
 }
 
 /** Teks cadangan penolakan tanpa kalimat backend. */

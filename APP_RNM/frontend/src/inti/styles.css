@@ -1739,6 +1739,72 @@ table {
 .field__input::placeholder {
   color: var(--text-3);
 }
+
+/* PilihSaring (`components/ui/pilihSaring.tsx`, 30-09-2026) — dropdown yang
+   dapat difilter dengan mengetik. Token yang SUDAH ada saja; nol warna baru. */
+.pilih-saring {
+  position: relative;
+}
+.pilih-saring__kotak {
+  position: relative;
+}
+.pilih-saring__kotak .field__input {
+  padding-right: 38px;
+}
+.pilih-saring__panah {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 42px;
+  border: 0;
+  background: none;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.pilih-saring__daftar {
+  position: absolute;
+  z-index: 20;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 260px;
+  margin: 4px 0 0;
+  padding: 4px 0;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--sh-2);
+}
+.pilih-saring__opsi,
+.pilih-saring__kosong {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+}
+.pilih-saring__opsi {
+  cursor: pointer;
+}
+.pilih-saring__opsi--sorot {
+  background: var(--surface-2);
+}
+.pilih-saring__opsi[aria-selected="true"] {
+  color: var(--primary-text);
+  font-weight: 600;
+}
+.pilih-saring__kosong,
+.pilih-saring__ket {
+  color: var(--text-3);
+}
+.pilih-saring__ket {
+  font-size: 12px;
+  white-space: nowrap;
+}
 .field__input:hover {
   border-color: var(--border);
 }
