@@ -339,7 +339,8 @@ func (l *KlausulTCO) JenisKlausul(ctx context.Context, pelaku inti.Pelaku, isXOL
 			}
 		}
 		if len(t.Aturan) == 0 {
-			t.Catatan = "jenis ini belum punya aturan wajib-isi di kode; belum dapat disimpan"
+			// Jenis master tanpa aturan di kode - kalimat untuk pemakai (30-09-2026).
+			t.Catatan = "jenis ini belum dapat disimpan: aturan wajib-isinya belum tersedia"
 		}
 		hasil = append(hasil, t)
 	}

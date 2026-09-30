@@ -24,7 +24,7 @@ describe('panel klausul tahun', () => {
   it('satu grid "Treaty Desc" (isXol 0); grid For XOL dibuang', () => {
     expect(KODE).toContain("ambilJenisKlausul('0')")
     expect(KODE).not.toContain("ambilJenisKlausul('1')")
-    expect(KODE).toContain('KLAUSUL_TCO.gridNonXol')
+    expect(KODE).toContain('KLAUSUL_TCO.gridTreatyDesc')
     expect(KODE).not.toContain('gridXol')
   })
   it('kepala tahun hanya dibaca — tujuh medan', () => {

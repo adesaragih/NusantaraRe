@@ -523,7 +523,7 @@ export interface PilihanKlausul {
   nama: string
 }
 
-/** Grid `For Non XOL` (isXol '0') / `For XOL` (isXol '1'). */
+/** Jenis klausul per `isXol`; layar memakai '0' saja (grid `Treaty Desc` — For XOL dibuang 30-09-2026). */
 export async function ambilJenisKlausul(isXol: string): Promise<JenisKlausul[]> {
   const j = await minta<{ daftar: JenisKlausul[] | null }>('/api/treaty-contract-out/jenis-klausul', {
     kueri: { isXol },

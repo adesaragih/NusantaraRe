@@ -316,7 +316,7 @@ export default function PanelKontrakTahun({ tahun, onTutup }: { tahun: TahunTrea
                   </td>
                 </tr>
                 {rinci?.kontrakID === k.id && (
-                  <tr>
+                  <tr className="inbox__rinci">
                     <td colSpan={4}>
                       {rinci.daftar === 'business' ? (
                         <PanelBusinessKombinasi

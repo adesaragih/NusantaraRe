@@ -56,7 +56,7 @@ export default function PanelKlausulTahun({ tahun, onTutup }: { tahun: TahunTrea
         <Field label={KLAUSUL_TCO.headerProportionType} value={tahun.proportion} onChange={() => undefined} readOnly />
       </div>
       <section className="panel">
-        <h3 className="panel__title">{KLAUSUL_TCO.gridNonXol}</h3>
+        <h3 className="panel__title">{KLAUSUL_TCO.gridTreatyDesc}</h3>
         {galat !== null && <Gagal galat={galat} />}
         {daftar === null && galat === null && <Memuat />}
         {daftar !== null && daftar.length === 0 && <Kosong pesan={KLAUSUL_TCO.kosong} />}
@@ -78,6 +78,7 @@ export default function PanelKlausulTahun({ tahun, onTutup }: { tahun: TahunTrea
                     <button
                       type="button"
                       className="btn btn--ghost btn--sm"
+                      aria-haspopup="dialog"
                       onClick={() => {
                         setTerbuka((t) => alihJenisTunggal(t, j.id))
                       }}

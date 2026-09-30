@@ -28,7 +28,7 @@
 // Tiket 12: panel lampiran `GridTreatyArrangementAttachment` (b13074) tampil di
 // form tahun yang sudah ber-ID - `components/PanelLampiranTahun`.
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { TAHUN_TCO } from '../labels'
 import PanelKlausulTahun from '../components/PanelKlausulTahun'
@@ -136,6 +136,8 @@ export default function InboxTreatyContract() {
   // (Pega: `showHarness` `InboxTreatyContractDescription`). SATU keadaan untuk
   // keduanya: membuka yang satu menutup yang lain.
   const [rinci, setRinci] = useState<RinciTahun | null>(null)
+  // Posisi gulir tabel saat panel dibuka - dikembalikan saat panel ditutup.
+  const gulirTabel = useRef(0)
 
   const muat = useCallback(async (h: number) => {
     setSibuk(true)
@@ -192,6 +194,7 @@ export default function InboxTreatyContract() {
   }
 
   function bukaRinci(r: RinciTahun): void {
+    if (typeof window !== 'undefined') gulirTabel.current = window.scrollY
     setRinci(r)
     // Tabel panjang tersembunyi: mulai dari atas panel, bukan dari tengah layar.
     if (typeof window !== 'undefined') window.scrollTo({ top: 0 })
@@ -202,6 +205,9 @@ export default function InboxTreatyContract() {
   if (rinci !== null) {
     const tutup = () => {
       setRinci(null)
+      // Kembali ke baris yang tadi diklik, sesudah tabel dirender ulang.
+      const y = gulirTabel.current
+      if (typeof window !== 'undefined') window.requestAnimationFrame(() => window.scrollTo({ top: y }))
     }
     return (
       <section className="inbox">

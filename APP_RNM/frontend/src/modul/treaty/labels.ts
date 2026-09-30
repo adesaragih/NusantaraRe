@@ -186,7 +186,7 @@ export const KONTRAK_TCO = {
   /**
    * b1358 — label `ReinsType` pada medan `InputTreatyContractReinsType.TreatyGroupName`
    * b1386. ⚠️ Label dan nilainya bersilang di korpus (nama GRUP berlabel ReinsType);
-   * dibawa apa adanya, catatannya tampil di layar.
+   * dibawa apa adanya (catatannya tidak tampil di layar sejak 30-09-2026).
    */
   headerReinsType: 'ReinsType',
   /** b2905 — `InputData.CARIDATETIME`; perubahan → `SetTanggalTreatyContract` b3007. */
@@ -367,7 +367,7 @@ export const KLAUSUL_TCO = {
    * "For Non XOL"; diganti [keputusan work owner 30-09-2026]. Grid `For XOL`
    * (b7971, `IsXOL = 1`) dibuang [keputusan work owner 30-09-2026] — masternya kosong di DEV.
    */
-  gridNonXol: 'Treaty Desc',
+  gridTreatyDesc: 'Treaty Desc',
   /** b5440 `<pyValue>` — sel `.ID`. */
   kolomId: 'ID',
   /** b5549 `<pyValue>` — sel `.DescName`. */

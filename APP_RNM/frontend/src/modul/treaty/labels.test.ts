@@ -219,7 +219,7 @@ describe.skipIf(!adaKorpus)('label Treaty Contract Out berbukti barisnya', () =>
     for (const [n, v] of kepala) expect(baris(H, n).trim(), String(n)).toBe(lf(v))
     // b4880 "For Non XOL" diganti "Treaty Desc" dan grid XOL b7971 dibuang [keputusan work owner 30-09-2026].
     expect(baris(H, 4880).trim()).toBe(nilai('For Non XOL'))
-    expect(KLAUSUL_TCO.gridNonXol).toBe('Treaty Desc')
+    expect(KLAUSUL_TCO.gridTreatyDesc).toBe('Treaty Desc')
     for (const [n, v] of [[5440, KLAUSUL_TCO.kolomId],
       [5549, KLAUSUL_TCO.kolomDescriptionName]] as [number, string][]) {
       expect(baris(H, n).trim(), String(n)).toBe(nilai(v))

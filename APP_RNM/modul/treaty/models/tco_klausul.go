@@ -131,7 +131,10 @@ const (
 	KonversiDuaArah = "DuaArah"
 )
 
-const alasanDitahan = "aturan wajib-isi jenis %s belum ditetapkan Product + UW (AC 36)"
+// alasanDitahan - kalimat untuk PEMAKAI [keputusan work owner 30-09-2026: nol
+// catatan pengembang di layar]. Sebabnya: aturan wajib-isi belum ditetapkan
+// Product + UW (AC 36).
+const alasanDitahan = "jenis %s belum dapat diisi: aturan wajib-isinya belum ditetapkan"
 
 func induk(jenis, desc, sumber string) AturanKlausul {
 	return AturanKlausul{Jenis: jenis, DescID: desc, Medan: medanReinsRpUsd, Wajib: wajibReinsRpUsd,
@@ -149,7 +152,8 @@ var AturanKlausulTCO = []AturanKlausul{
 	induk("TreatyLimit", DescTreatyLimit, "SaveTreatyArrTreatyLimit_Act"),
 	anak("TreatyLimitChild", DescTreatyLimit, "SaveTreatyArrTreatyLimitChild_Act", true),
 	{Jenis: "Portfolio", DescID: DescPortfolio, Medan: []string{MedanMethod},
-		Ditahan: fmt.Sprintf(alasanDitahan, "Portfolio") + "; bentuk penyimpanan daftar bersarangnya ikut OQ",
+		// Bentuk penyimpanan daftar bersarangnya juga masih OQ - tidak disebut di layar.
+		Ditahan: fmt.Sprintf(alasanDitahan, "Portfolio"),
 		Sumber:  "SaveTreatyArrPortfolio_Act"},
 	induk("PLA", DescPLA, "SaveTreatyArrPLA_Act"),
 	anak("PLAList", DescPLA, "SaveTreatyArrPLAList_Act", false),

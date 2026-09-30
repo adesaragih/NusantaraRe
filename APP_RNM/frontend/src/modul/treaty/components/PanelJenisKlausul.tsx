@@ -5,8 +5,9 @@
 // padanan 25 section `GridTreatyArrangement*` / `GridTreatyArr*List` yang
 // masing-masing punya `Add` / `Edit` / `Save` / `Show Child` / `Close Child`.
 //
-// ⛔ AC 29: setiap panel memegang isiannya SENDIRI; `Cancel` membuang isian
-// panel ini saja, tidak menyentuh jenis lain yang sedang dikerjakan.
+// ⛔ Setiap grid aturan memegang isiannya SENDIRI; `Cancel` membuang isian grid
+// itu saja. Satu jenis tampil sekaligus, di popup (`PanelKlausulTahun`,
+// keputusan work owner 30-09-2026 — menggantikan AC 29).
 // ⛔ Nilai uang/persen TEKS sepanjang jalan; Rp/Usd anak dihitung server.
 //
 // Tiket 11: jenis berkurs menampilkan kurs berlaku tahun itu (`testingKurs`);
@@ -192,7 +193,8 @@ function FormMedan({
           return <Field key={m} label={label} value={form.medan[m] ?? ''} onChange={() => undefined} readOnly />
         }
         if (turunan.has(m)) {
-          return <Field key={m} label={label} value={form.medan[m] ?? ''} onChange={() => undefined} readOnly />
+          // Hanya dibaca dan TIDAK dikirim (`keMasukKlausul`) - aman diberi pemisah ribuan.
+          return <Field key={m} label={label} value={tampilMedanKlausul(m, form.medan[m] ?? '')} onChange={() => undefined} readOnly />
         }
         return (
           <Field

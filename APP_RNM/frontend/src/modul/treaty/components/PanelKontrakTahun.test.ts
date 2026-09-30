@@ -91,9 +91,17 @@ describe('Business List / Reinsurer List — satu panel rinci (keputusan work ow
     expect(KODE).toContain('const [rinci, setRinci] = useState<RinciKontrak | null>(null)')
     expect(KODE).not.toMatch(/setKontrakBusiness|setKontrakReinsurer/)
     expect(KODE).toContain('{rinci?.kontrakID === k.id && (')
+    expect(KODE).toContain('<tr className="inbox__rinci">')
     expect(KODE).toContain('<td colSpan={4}>')
   })
   it('nol catatan pengembang di layar', () => {
     expect(KODE).not.toMatch(/catatanLabelBersilang|polis__catatan/)
+  })
+  it('baris rinci TIDAK mewarisi nowrap sel tabel (temuan /code-review 30-09-2026)', () => {
+    // `.inbox__tabel td { white-space: nowrap }` diwarisi isi sel: tanpa aturan
+    // ini seluruh kalimat panel Business/Reinsurer/Security (dan popup hapus di
+    // dalamnya) tidak membungkus.
+    const css = readFileSync(join(__dirname, '..', '..', '..', 'inti', 'styles.css'), 'utf8')
+    expect(css).toMatch(/\.inbox__tabel tr\.inbox__rinci > td \{\s*white-space: normal;/)
   })
 })
