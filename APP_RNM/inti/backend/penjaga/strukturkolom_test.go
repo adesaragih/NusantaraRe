@@ -45,12 +45,12 @@ const letakStruktur = "../../../.scratch/claim-life/STRUKTUR-TABEL-CLAIM-LIFE.md
 // tetapi ia menuntut penjaga sendiri:
 // `TestDokumenSTRUKTURSepakatAtasTabelBersama`.
 var letakStruktur = []string{
-	"../../../../.scratch/claim-life/STRUKTUR-TABEL-CLAIM-LIFE.md",
-	"../../../../.scratch/komite-claim-life/STRUKTUR-TABEL-KOMITE-CLAIM-LIFE.md",
-	"../../../../.scratch/premiumlist-life/STRUKTUR-TABEL-PREMIUMLIST-LIFE.md",
+	"../../../modul/claimlife/docs/STRUKTUR-TABEL-CLAIM-LIFE.md",
+	"../../../modul/komiteclaimlife/docs/STRUKTUR-TABEL-KOMITE-CLAIM-LIFE.md",
+	"../../../modul/premiumlistlife/docs/STRUKTUR-TABEL-PREMIUMLIST-LIFE.md",
 	// Modul keempat, Treaty Contract Out. Sejak tco4 (29-09-2026) dokumennya
 	// PETA TABEL WARISAN: seluruh tabelnya terdaftar tabelBukanMilikKita.
-	"../../../../.scratch/treaty-contract-out/STRUKTUR-TABEL-TREATY-CONTRACT-OUT.md",
+	"../../../modul/treatycontractout/docs/STRUKTUR-TABEL-TREATY-CONTRACT-OUT.md",
 	// Tabel lintas modul milik `inti` (900-949): M_NAV_MENU, 30-09-2026.
 	"../../../../.scratch/inti/STRUKTUR-TABEL-INTI.md",
 }

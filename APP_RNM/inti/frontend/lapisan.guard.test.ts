@@ -18,8 +18,7 @@ import { berkasTS, relatifAplikasi } from './uji/sumber'
 //
 // Struktur tim satu folder per modul (30-09-2026): jalur dibaca relatif
 // APP_RNM - `inti/frontend/**` adalah inti, `modul/<nama>/frontend/**` adalah
-// modul, dan selebihnya (`frontend/**`, perakit) adalah aplikasi. Selama
-// modul masih di `frontend/src/modul/<nama>/`, letak itu dihitung modul juga.
+// modul, dan selebihnya (`frontend/**`, perakit) adalah aplikasi.
 //
 // ⚠️ Impor dibaca pengurai TypeScript (`preProcessFile`), bukan pola teks:
 // teks yang MENYEBUT sebuah impor di dalam string atau komentar tidak
@@ -28,7 +27,7 @@ import { berkasTS, relatifAplikasi } from './uji/sumber'
 /** Lapisan sebuah berkas (jalur relatif APP_RNM, bergaris-miring). */
 function lapisan(rel: string): string {
   if (rel.startsWith('inti/frontend/')) return 'inti'
-  const m = /^modul\/([^/]+)\/frontend\//.exec(rel) ?? /^frontend\/src\/modul\/([^/]+)\//.exec(rel)
+  const m = /^modul\/([^/]+)\/frontend\//.exec(rel)
   if (m) return `modul:${m[1] ?? ''}`
   return 'aplikasi'
 }
@@ -64,7 +63,7 @@ describe('lapisan frontend: inti <- modul <- aplikasi', () => {
     for (const { dari } of impor) perLapis.set(lapisan(dari), (perLapis.get(lapisan(dari)) ?? 0) + 1)
     // ⛔ Penjaga yang membaca nol impor di satu lapis lulus atas apa pun.
     expect(perLapis.get('inti') ?? 0).toBeGreaterThan(30)
-    for (const m of ['claim-life', 'premiumlist-life', 'komite-claim-life', 'treaty-contract-out']) {
+    for (const m of ['claimlife', 'premiumlistlife', 'komiteclaimlife', 'treatycontractout']) {
       expect(perLapis.get(`modul:${m}`) ?? 0, `impor modul ${m}`).toBeGreaterThan(10)
     }
     const langgar = impor
@@ -91,9 +90,6 @@ describe('lapisan frontend: inti <- modul <- aplikasi', () => {
       ['modul/komiteclaimlifex/frontend/api.ts', 'modul/komiteclaimlife/frontend/api.ts', false],
       // Berkas `modul/<nama>/` di LUAR frontend/ bukan kode frontend modul itu.
       ['modul/claimlife/frontend/api.ts', 'modul/claimlife/docs/x.ts', false],
-      // Letak lama selama paket 2: `frontend/src/modul/<nama>/` tetap modul.
-      ['frontend/src/modul/claim-life/pages/X.tsx', 'frontend/src/modul/premiumlist-life/api.ts', false],
-      ['frontend/src/modul/claim-life/api.ts', 'inti/frontend/klien.ts', true],
     ]
     for (const [dari, ke, boleh] of kasus) {
       expect(pelanggaranLapisan(dari, ke) === null, `${dari} -> ${ke}`).toBe(boleh)

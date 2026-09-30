@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"strings"
 
-	plrepo "nusantarare/modul/premiumlistlife/repository"
+	plrepo "nusantarare/modul/premiumlistlife/backend/repository"
 )
 
 // namaTabelSummaryPolis adalah tabel warisan rekap polis yang ditiru.

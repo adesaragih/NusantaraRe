@@ -32,8 +32,8 @@ import (
 	"nusantarare/inti/backend/kontrak"
 	"nusantarare/inti/backend/migrasi"
 	"nusantarare/modul"
-	"nusantarare/modul/claimlife/repository"
-	"nusantarare/modul/premiumlistlife/services"
+	"nusantarare/modul/claimlife/backend/repository"
+	"nusantarare/modul/premiumlistlife/backend/services"
 )
 
 // ErrTanpaOracle dikembalikan bila ORACLE_DSN tidak dikonfigurasi.
@@ -159,7 +159,7 @@ func samakanNLS(ctx context.Context, db *sql.DB) error {
 // ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL!RNM!UPDATEOSAKSEPTASICLAIMLIFE_SQL
 // bertipe Rule-Connect-SQL. ✅ [data DBA] TIPE kolomnya SUDAH DIKETAHUI sejak
 // 26-09-2026: dibaca dari ALL_TAB_COLUMNS instance pengembangan dan disimpan di
-// .scratch/claim-life/TIPE-KOLOM-OS-AKSEPTASI-KLAIM-LIFE.md. Tiruan ini tidak
+// modul/claimlife/docs/TIPE-KOLOM-OS-AKSEPTASI-KLAIM-LIFE.md. Tiruan ini tidak
 // lagi menebak, dan tabelnya 62 kolom - bukan 55. ⚠️ Produksi belum dibaca;
 // DBA yang dapat memastikan bentuknya sama.
 //

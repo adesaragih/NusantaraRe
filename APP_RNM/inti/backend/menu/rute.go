@@ -22,7 +22,7 @@ import (
 // ⛔ Kegagalan dijawab galat TERANG, tidak pernah menu kosong: sidebar yang
 // kosong diam-diam terbaca "aplikasi tanpa menu". Rincian galat driver
 // tinggal di log server, tidak di badan jawaban - pesannya dapat memuat
-// nilai kolom (pola `modul/claimlife/handlers`, `inti/backend/layanan`).
+// nilai kolom (pola `modul/claimlife/backend/handlers`, `inti/backend/layanan`).
 func Rute(pembaca PembacaMenu, modulAktif []string, stubPelaku bool) http.HandlerFunc {
 	aktif := append([]string(nil), modulAktif...)
 	return func(w http.ResponseWriter, r *http.Request) {

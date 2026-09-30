@@ -2,6 +2,12 @@
 
 Issues dan spec untuk proyek ini hidup sebagai berkas markdown di **`OUTPUT_HASIL_RNM/.scratch/`**.
 
+> ⚠️ **Struktur tim satu folder per modul (30-09-2026).** Dokumen modul yang kodenya sudah dibangun
+> kini tinggal di folder modulnya: **`APP_RNM/modul/<nama>/docs/`** — `claimlife` (dulu
+> `.scratch/claim-life/`), `premiumlistlife`, `komiteclaimlife`, `treatycontractout`. Nama folder =
+> nama `.scratch` tanpa tanda hubung. Folder `.scratch/<nama-panjang>/` modul lain tetap di tempatnya
+> sampai foldernya dibuat.
+
 > **Catatan lokasi (penting).** Template bawaan skill memakai `.scratch/` di **root repo**.
 > Di proyek ini root (`D:\XML\RNM_BRD\`) adalah **korpus ekspor Pega yang READ-ONLY** — 20 folder
 > modul, 9.369 berkas `.xml`, tidak boleh disentuh. Seluruh keluaran agent karena itu berada di

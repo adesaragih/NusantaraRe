@@ -13,7 +13,7 @@ import (
 
 // PembacaPolis membaca polis ringkas PremiumList Life - butir pl4/av.
 //
-// Disediakan PremiumList (`modul/premiumlistlife/services.PembacaPolis`), dipakai
+// Disediakan PremiumList (`modul/premiumlistlife/backend/services.PembacaPolis`), dipakai
 // Claim Life (layar `PolicyDataLife`, `Save to RNM`, ambang klaim). Galat untuk
 // nomor yang tidak ada: `ErrPolisNomorTakDitemukan`.
 type PembacaPolis interface {

@@ -18,8 +18,8 @@ import (
 	"nusantarare/inti/backend/config"
 	"nusantarare/inti/backend/kontrak"
 	"nusantarare/inti/backend/migrasi"
-	"nusantarare/modul/claimlife/models"
-	premiumlistmodels "nusantarare/modul/premiumlistlife/models"
+	"nusantarare/modul/claimlife/backend/models"
+	premiumlistmodels "nusantarare/modul/premiumlistlife/backend/models"
 )
 
 // Refactor bentuk B (30-09-2026): uji ini dulu tinggal di

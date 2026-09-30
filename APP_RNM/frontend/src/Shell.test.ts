@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest'
 
 import { AKAR_APLIKASI } from '../../inti/frontend/uji/sumber'
 import { MENU, MENU_MODUL, MODUL, MODUL_LAIN_TERLARANG } from '../../inti/frontend/labels'
-import { MENU_TCO } from './modul/treaty-contract-out/labels'
+import { MENU_TCO } from '../../modul/treatycontractout/frontend/labels'
 import { ENTRI_MENU } from './modul/daftar'
 
 const SUMBER = readFileSync(join(AKAR_APLIKASI, 'inti', 'frontend', 'components', 'Shell.tsx'), 'utf8')

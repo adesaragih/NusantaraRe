@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"testing"
 
-	"nusantarare/modul/claimlife/repository"
+	"nusantarare/modul/claimlife/backend/repository"
 )
 
 // TestTiruanPesertaPolisMemuatSetiapKolomSalin - tiruan tidak boleh

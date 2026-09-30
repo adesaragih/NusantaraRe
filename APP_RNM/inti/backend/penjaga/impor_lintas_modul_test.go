@@ -142,25 +142,25 @@ func TestAturanImporMenggigit(t *testing.T) {
 		rel, imp string
 		boleh    bool
 	}{
-		{"modul/claimlife/services/x.go", "nusantarare/modul/komiteclaimlife/models", false},
-		{"modul/claimlife/services/x_test.go", "nusantarare/modul/premiumlistlife/models", false},
-		{"modul/komiteclaimlife/services/x.go", "nusantarare/modul", false},
-		{"modul/komiteclaimlife/services/x.go", "nusantarare/uji/skemauji", false},
-		{"modul/komiteclaimlife/services/x_test.go", "nusantarare/uji/lintasmodul", false},
-		{"modul/komiteclaimlife/services/x_test.go", "nusantarare/uji/skemauji", true},
-		{"modul/komiteclaimlife/services/x.go", "nusantarare/modul/komiteclaimlife/models", true},
-		{"modul/komiteclaimlife/modul.go", "nusantarare/modul/komiteclaimlife/handlers", true},
+		{"modul/claimlife/backend/services/x.go", "nusantarare/modul/komiteclaimlife/backend/models", false},
+		{"modul/claimlife/backend/services/x_test.go", "nusantarare/modul/premiumlistlife/backend/models", false},
+		{"modul/komiteclaimlife/backend/services/x.go", "nusantarare/modul", false},
+		{"modul/komiteclaimlife/backend/services/x.go", "nusantarare/uji/skemauji", false},
+		{"modul/komiteclaimlife/backend/services/x_test.go", "nusantarare/uji/lintasmodul", false},
+		{"modul/komiteclaimlife/backend/services/x_test.go", "nusantarare/uji/skemauji", true},
+		{"modul/komiteclaimlife/backend/services/x.go", "nusantarare/modul/komiteclaimlife/backend/models", true},
+		{"modul/komiteclaimlife/backend/modul.go", "nusantarare/modul/komiteclaimlife/backend/handlers", true},
 		// Tabrakan awalan: `komiteclaimlifeb` diawali nama modul ini, tetapi modul LAIN.
-		{"modul/komiteclaimlife/services/x.go", "nusantarare/modul/komiteclaimlifeb/models", false},
-		{"modul/komiteclaimlife/services/x.go", "nusantarare/inti/backend/kontrak", true},
-		{"modul/daftar.go", "nusantarare/modul/treatycontractout/services", true},
-		{"inti/backend/kontrak/x.go", "nusantarare/modul/claimlife/models", false},
+		{"modul/komiteclaimlife/backend/services/x.go", "nusantarare/modul/komiteclaimlifeb/models", false},
+		{"modul/komiteclaimlife/backend/services/x.go", "nusantarare/inti/backend/kontrak", true},
+		{"modul/daftar.go", "nusantarare/modul/treatycontractout/backend/services", true},
+		{"inti/backend/kontrak/x.go", "nusantarare/modul/claimlife/backend/models", false},
 		{"inti/backend/penjaga/x_test.go", "nusantarare/uji/skemauji", false},
 		{"inti/backend/db/x.go", "nusantarare/inti/backend/galat", true},
 		{"cmd/api/main.go", "nusantarare/modul", true},
-		{"cmd/api/main.go", "nusantarare/modul/treatycontractout/handlers", false},
-		{"uji/lintasmodul/x_test.go", "nusantarare/modul/komiteclaimlife/services", true},
-		{"modul/claimlife/services/x.go", "github.com/sijms/go-ora/v2", true},
+		{"cmd/api/main.go", "nusantarare/modul/treatycontractout/backend/handlers", false},
+		{"uji/lintasmodul/x_test.go", "nusantarare/modul/komiteclaimlife/backend/services", true},
+		{"modul/claimlife/backend/services/x.go", "github.com/sijms/go-ora/v2", true},
 	} {
 		if dapat := pelanggaranImpor(k.rel, k.imp) == ""; dapat != k.boleh {
 			t.Errorf("%s -> %s: boleh=%v, mau %v", k.rel, k.imp, dapat, k.boleh)

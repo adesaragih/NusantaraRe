@@ -15,14 +15,14 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/config"
-	"nusantarare/modul/claimlife"
-	claimlifeservices "nusantarare/modul/claimlife/services"
-	"nusantarare/modul/komiteclaimlife"
-	komiteservices "nusantarare/modul/komiteclaimlife/services"
-	"nusantarare/modul/premiumlistlife"
-	premiumlistservices "nusantarare/modul/premiumlistlife/services"
-	"nusantarare/modul/treatycontractout"
-	treatyservices "nusantarare/modul/treatycontractout/services"
+	claimlife "nusantarare/modul/claimlife/backend"
+	claimlifeservices "nusantarare/modul/claimlife/backend/services"
+	komiteclaimlife "nusantarare/modul/komiteclaimlife/backend"
+	komiteservices "nusantarare/modul/komiteclaimlife/backend/services"
+	premiumlistlife "nusantarare/modul/premiumlistlife/backend"
+	premiumlistservices "nusantarare/modul/premiumlistlife/backend/services"
+	treatycontractout "nusantarare/modul/treatycontractout/backend"
+	treatyservices "nusantarare/modul/treatycontractout/backend/services"
 )
 
 // SumberMigrasi mengembalikan folder migrasi SETIAP modul terdaftar.

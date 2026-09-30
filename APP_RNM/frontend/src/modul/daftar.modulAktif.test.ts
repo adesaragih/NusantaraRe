@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -18,7 +18,7 @@ import { ENTRI_MENU, halamanAktif, MODUL_BACKEND, MODUL_FRONTEND } from './dafta
 // frontend adalah nama yang sama dengan `const Nama` di `modul/*/modul.go`.
 
 const SRC = join(__dirname, '..')
-const AKAR_MODUL_GO = join(SRC, '..', '..', 'modul')
+const AKAR_MODUL = join(SRC, '..', '..', 'modul')
 
 /**
  * Pohon `GET /api/menu` seperti yang backend kirim untuk `aktif`: satu kelompok
@@ -95,23 +95,27 @@ describe('menu modul nonaktif hilang', () => {
 })
 
 describe('nama modul sama dengan backend', () => {
-  it('MODUL_BACKEND menyebut tepat modul `modul/*/modul.go`', () => {
-    const dariGo = readdirSync(AKAR_MODUL_GO, { withFileTypes: true })
-      .filter((d) => d.isDirectory())
+  it('MODUL_BACKEND menyebut tepat modul `modul/*/backend/modul.go`', () => {
+    // Satu folder per modul (30-09-2026): modul TERDAFTAR = folder yang punya
+    // `backend/modul.go`. Folder kerangka (hanya MODUL.md dan docs/) bukan modul
+    // terdaftar - ia belum dimigrasi.
+    const dariGo = readdirSync(AKAR_MODUL, { withFileTypes: true })
+      .filter((d) => d.isDirectory() && existsSync(join(AKAR_MODUL, d.name, 'backend', 'modul.go')))
       .map((d) => {
-        const sumber = readFileSync(join(AKAR_MODUL_GO, d.name, 'modul.go'), 'utf8')
+        const sumber = readFileSync(join(AKAR_MODUL, d.name, 'backend', 'modul.go'), 'utf8')
         const cocok = /^const Nama = "([a-z]+)"$/m.exec(sumber)
-        expect(cocok, `modul/${d.name}/modul.go tanpa const Nama`).not.toBeNull()
+        expect(cocok, `modul/${d.name}/backend/modul.go tanpa const Nama`).not.toBeNull()
         // Tabel nama modul (30-09-2026): nama folder backend = `const Nama`.
         expect(cocok?.[1], `modul/${d.name}: folder dan const Nama berbeda`).toBe(d.name)
         return cocok?.[1] ?? ''
       })
     expect(dariGo.length).toBeGreaterThanOrEqual(4)
-    // Dan folder frontend = nama .scratch; tanpa tanda hubung = nama backend.
-    const folderFrontend = readdirSync(__dirname, { withFileTypes: true })
-      .filter((d) => d.isDirectory())
+    // Dan setiap modul terdaftar punya `frontend/` di foldernya sendiri - satu
+    // nama untuk backend, frontend, dan dokumen.
+    const folderFrontend = readdirSync(AKAR_MODUL, { withFileTypes: true })
+      .filter((d) => d.isDirectory() && existsSync(join(AKAR_MODUL, d.name, 'frontend')))
       .map((d) => d.name)
-    expect(new Set(folderFrontend.map((n) => n.replace(/-/g, '')))).toEqual(new Set(dariGo))
+    expect(new Set(folderFrontend)).toEqual(new Set(dariGo))
     const dariFrontend = Object.values(MODUL_BACKEND).filter((m): m is string => m !== null)
     expect(new Set(dariFrontend)).toEqual(new Set(dariGo))
     // Daftar modul frontend = daftar modul backend (refactor bentuk B paket 7).

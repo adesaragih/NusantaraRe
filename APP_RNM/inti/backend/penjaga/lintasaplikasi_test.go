@@ -24,7 +24,7 @@ import (
 
 // buangKomentar menghapus baris komentar sebelum pencocokan, supaya prosa yang
 // MENYEBUT sebuah pemanggilan tidak dituduh sebagai pemanggilannya.
-// Salinan `modul/claimlife/services/jejak_statik_test.go` (paket berbeda).
+// Salinan `modul/claimlife/backend/services/jejak_statik_test.go` (paket berbeda).
 func buangKomentar(isi string) string {
 	var b strings.Builder
 	for _, baris := range strings.Split(isi, "\n") {
@@ -38,7 +38,7 @@ func buangKomentar(isi string) string {
 }
 
 // lewatiFolderPindai - folder yang bukan sumber Go aplikasi.
-// Salinan `modul/claimlife/services/pindai_bantu_test.go`.
+// Salinan `modul/claimlife/backend/services/pindai_bantu_test.go`.
 func lewatiFolderPindai(nama string) bool {
 	switch nama {
 	case "frontend", "node_modules", "bin", ".git", "dist", "unggahan":
@@ -49,7 +49,7 @@ func lewatiFolderPindai(nama string) bool {
 
 // berkasGoSelainTest mengumpulkan seluruh berkas .go yang BUKAN test, berkunci
 // jalur bergaya-garis-miring dari folder paket ini.
-// Salinan `modul/claimlife/repository/batasanpemakaian_test.go`.
+// Salinan `modul/claimlife/backend/repository/batasanpemakaian_test.go`.
 func berkasGoSelainTest(t *testing.T) map[string]string {
 	t.Helper()
 	hasil := map[string]string{}
@@ -199,7 +199,7 @@ var berkasAlamatDikecualikan = map[string]string{
 // `://` dan env tetap diperiksa. Tiap baris menyebut persetujuan manusianya;
 // jumlahnya dikunci di bawah.
 var berkasKlienHTTPDisetujui = map[string]string{
-	"modul/treatycontractout/services/tco_pengirim_storage.go": "transport penyimpanan lampiran Treaty Contract Out - " +
+	"modul/treatycontractout/backend/services/tco_pengirim_storage.go": "transport penyimpanan lampiran Treaty Contract Out - " +
 		"[keputusan work owner 29-09-2026, OQ-TCO-08]; alamat dari M_LINK_SERVICE saat jalan, " +
 		"hanya aktif bila PELAKSANA_STORAGE=nyata",
 }
@@ -387,7 +387,7 @@ var polaNamaOrangTetap = regexp.MustCompile(
 // "alasan"` - dan penjaga ini menuduh dirinya sendiri. Sudah terjadi, dua
 // kali, saat penyempitan ini ditulis.
 func pesanVerbatimYangSah(t *testing.T) []string {
-	return konstantaTeksDiSumber(t, "modul/premiumlistlife/models",
+	return konstantaTeksDiSumber(t, "modul/premiumlistlife/backend/models",
 		// ValidasiUploadPL_act `local.err3` - pesan kolom NAME_OF_INSURED.
 		"PesanNamaTertanggung",
 		// ValidasiUploadPL_act `local.err17` - pesan rujukan master POLICY HOLDER.
@@ -484,7 +484,7 @@ func TestHandlersTidakMengimporRepository(t *testing.T) {
 	// Refactor bentuk B (30-09-2026): handlers SETIAP modul, dan repository
 	// SETIAP modul. `inti/backend/db` ikut dilarang: isinya dulu kepala paket
 	// repository (koneksi dan transaksi), jadi larangan lama tetap utuh.
-	polaRepository := regexp.MustCompile(`"nusantarare/(internal/repository|modul/[^/"]+/repository|inti/backend/db)"`)
+	polaRepository := regexp.MustCompile(`"nusantarare/(internal/repository|modul/[^/"]+/backend/repository|inti/backend/db)"`)
 	for nama, isi := range berkasGoSelainTest(t) {
 		if !strings.Contains(nama, "/handlers/") {
 			continue

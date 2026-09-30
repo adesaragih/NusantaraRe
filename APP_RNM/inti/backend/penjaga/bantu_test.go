@@ -27,7 +27,7 @@ func berkasHandler(t *testing.T) []string {
 	var hasil []string
 	for _, pola := range []string{
 		filepath.Join(akarAplikasi, "internal", "handlers", "*.go"),
-		filepath.Join(akarAplikasi, "modul", "*", "handlers", "*.go"),
+		filepath.Join(akarAplikasi, "modul", "*", "backend", "handlers", "*.go"),
 	} {
 		cocok, err := filepath.Glob(pola)
 		if err != nil {

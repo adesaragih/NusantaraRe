@@ -1,4 +1,5 @@
 /// <reference types="vitest/config" />
+import { existsSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 
@@ -33,12 +34,21 @@ import react from '@vitejs/plugin-react'
 //   Env var yang sudah ada di proses (mis. disetel di terminal) menang atas
 //   isi .env - itu perilaku bawaan loadEnv.
 // - `server.fs.allow` menyebut ketiga tempat kode itu: server dev menolak
-//   menyajikan berkas di luar daftar ini.
+//   menyajikan berkas di luar daftar ini. Untuk modul, HANYA folder
+//   `modul/<nama>/frontend` - bukan `backend/` atau `docs/` di sebelahnya -
+//   dihitung dari isi folder `modul/` saat server menyala: modul baru ikut
+//   tanpa menyunting berkas ini (nyalakan ulang `npm run dev`).
 // - `test.dir` + `test.include`: Vitest mencari berkas uji di ketiganya juga;
 //   bawaannya hanya di bawah `root`.
 
 const AKAR = fileURLToPath(new URL('.', import.meta.url))
 const AKAR_FRONTEND = join(AKAR, 'frontend')
+const AKAR_MODUL = join(AKAR, 'modul')
+const FRONTEND_MODUL = existsSync(AKAR_MODUL)
+  ? readdirSync(AKAR_MODUL, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => join(AKAR_MODUL, d.name, 'frontend'))
+  : []
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, AKAR_FRONTEND, '')
@@ -57,7 +67,7 @@ export default defineConfig(({ mode }) => {
           }
         : undefined,
       fs: {
-        allow: [AKAR_FRONTEND, join(AKAR, 'inti', 'frontend'), join(AKAR, 'modul'), join(AKAR, 'node_modules')],
+        allow: [AKAR_FRONTEND, join(AKAR, 'inti', 'frontend'), ...FRONTEND_MODUL, join(AKAR, 'node_modules')],
       },
     },
     build: {

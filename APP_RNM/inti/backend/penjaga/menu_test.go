@@ -253,13 +253,13 @@ func TestIsiAwalMenuDuaPuluhKelompok(t *testing.T) {
 // DIMIGRASI '1' tepat untuk modul yang sudah punya folder backend
 // `modul/<nama>/modul.go` - bukan daftar tangan yang dapat tertinggal.
 func TestIsiAwalMenuDimigrasiSamaDenganModulBackend(t *testing.T) {
-	cocok, err := filepath.Glob(filepath.Join(akarAplikasi, "modul", "*", "modul.go"))
+	cocok, err := filepath.Glob(filepath.Join(akarAplikasi, "modul", "*", "backend", "modul.go"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	var backend []string
 	for _, c := range cocok {
-		backend = append(backend, filepath.Base(filepath.Dir(c)))
+		backend = append(backend, filepath.Base(filepath.Dir(filepath.Dir(c))))
 	}
 	sort.Strings(backend)
 	if len(backend) == 0 {

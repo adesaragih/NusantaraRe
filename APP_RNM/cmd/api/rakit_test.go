@@ -178,7 +178,7 @@ func TestMigrasiTetapLengkapSaatModulNonaktif(t *testing.T) {
 		dariPelari = append(dariPelari, l.Nama)
 	}
 	var dariDisk []string
-	berkas, err := filepath.Glob(filepath.Join("..", "..", "modul", "*", "migrations", "*.sql"))
+	berkas, err := filepath.Glob(filepath.Join("..", "..", "modul", "*", "backend", "migrations", "*.sql"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -206,10 +206,10 @@ func TestMigrasiTetapLengkapSaatModulNonaktif(t *testing.T) {
 	}
 	// Prasyarat POSITIF: pemeriksaan "tanpa folder migrations" di bawah lulus
 	// dengan sendirinya bila nama folder modulnya salah.
-	if _, err := os.Stat(filepath.Join("..", "..", "modul", "treatycontractout")); err != nil {
+	if _, err := os.Stat(filepath.Join("..", "..", "modul", "treatycontractout", "backend")); err != nil {
 		t.Fatalf("folder modul Treaty Contract Out tidak ditemukan: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join("..", "..", "modul", "treatycontractout", "migrations")); err == nil {
+	if _, err := os.Stat(filepath.Join("..", "..", "modul", "treatycontractout", "backend", "migrations")); err == nil {
 		t.Error("modul treatycontractout kini punya folder migrations - tco4 menyatakan nol tabel baru")
 	}
 }

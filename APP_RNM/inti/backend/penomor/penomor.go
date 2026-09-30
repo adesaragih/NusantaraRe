@@ -17,7 +17,7 @@ package penomor
 // ulang penguncian.
 //
 // `[data DBA — belum dikonfirmasi DBA]` Sumbernya
-// `.scratch/claim-life/SUMBER-PENOMORAN-DBA.md`, yang melabeli dirinya sendiri
+// `modul/claimlife/docs/SUMBER-PENOMORAN-DBA.md`, yang melabeli dirinya sendiri
 // *"dibaca sendiri dari katalog instance pengembangan, belum dikonfirmasi
 // DBA"*. Label di sini mengikuti label sumbernya — tidak dinaikkan.
 //

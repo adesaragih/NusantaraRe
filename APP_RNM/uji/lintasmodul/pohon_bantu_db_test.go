@@ -16,8 +16,8 @@ import (
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/db"
 	intiuang "nusantarare/inti/backend/uang"
-	"nusantarare/modul/claimlife/models"
-	"nusantarare/modul/claimlife/repository"
+	"nusantarare/modul/claimlife/backend/models"
+	"nusantarare/modul/claimlife/backend/repository"
 	"nusantarare/uji/skemauji"
 )
 

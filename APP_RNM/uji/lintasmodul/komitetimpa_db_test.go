@@ -14,9 +14,9 @@ import (
 	"time"
 
 	inti "nusantarare/inti/backend"
-	"nusantarare/modul/claimlife/repository"
-	"nusantarare/modul/komiteclaimlife/models"
-	komiterepository "nusantarare/modul/komiteclaimlife/repository"
+	"nusantarare/modul/claimlife/backend/repository"
+	"nusantarare/modul/komiteclaimlife/backend/models"
+	komiterepository "nusantarare/modul/komiteclaimlife/backend/repository"
 )
 
 func TestTimpaTanggaTolakAkhirMenimpaSeluruhTingkatBerkeputusan(t *testing.T) {
