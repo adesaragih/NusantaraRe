@@ -1,5 +1,9 @@
 # PROMPT — TIGA MODUL SEKALIGUS, RUMPUN LIFE: **Master Contract Retro Life · Master Product Name Life · Endorsement Life** *(sesi baru, folder `OUTPUT_HASIL_RNM`, cabang **`dev`**)*
 
+> ⛔ **DITAHAN 30-09-2026** *(keputusan work owner: "aku mau hanya ini, Treaty Contract Retro Life")*. Kerjakan dulu **hanya**
+> Master Contract Retro Life lewat **`PROMPT-IMPLEMENTASI-MODUL-MASTER-CONTRACT-RETRO-LIFE.md`**. Brief ini dipakai lagi untuk Master Product
+> Name Life dan Endorsement Life sesudahnya; bab 2 di bawah sudah tercakup brief tunggal itu.
+
 > Permintaan work owner 30-09-2026: *"kerjakan 3 modul sekaligus, jangan hanya 1 tiket, jangan banyak yang di-skip, baca ulang XML, ambil logic,
 > button, dan method yang benar dari XML, jangan membuat menu yang tidak ada di Pega. XML patokan dasar; tiket = hasil grilling; tiket yang salah
 > diperbaiki di dokumennya."*
