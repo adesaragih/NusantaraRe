@@ -5,15 +5,8 @@
 // bergeser, dan yang bergeser tidak berbunyi: keduanya benar menurut dirinya
 // sendiri.
 
-/**
- * Label butir menu PremiumList Life — butir **bg**. Dipindah apa adanya dari
- * `MENU_MODUL` di `inti/frontend/labels.ts` (struktur tim satu folder per
- * modul, 30-09-2026): label satu modul tinggal di folder modul itu.
- */
-export const LABEL_MENU_PREMIUMLIST = {
-  /** Harness portal `PremiumLife_harness` → section `PremiumList`. */
-  premiumList: 'PremiumList',
-} as const
+// `LABEL_MENU_PREMIUMLIST` (butir menu `PremiumList`) DIBUANG - menu datar,
+// keputusan work owner 30-09-2026: tombol modul berlabel `M_NAV_MENU.LABEL`.
 
 /**
  * Kolom kotak masuk — `ReportDefinition/InboxPremiumList.xml`.

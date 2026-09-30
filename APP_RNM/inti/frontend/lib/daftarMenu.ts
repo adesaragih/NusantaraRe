@@ -1,73 +1,67 @@
 /**
- * Daftar menu yang dapat dicari palet Ctrl+K — butir **bg**.
+ * Menu sidebar dan palet Ctrl+K — butir **bg**, menu dari tabel `M_NAV_MENU`.
  *
  * Pola `REFERENSI_UI/frontend/src/lib/daftarMenu.ts`, disederhanakan: di
  * sana separuh menu datang dari daftar entitas master yang dimuat backend;
- * di sini seluruhnya tetap, sebab modul kami tidak punya registry dinamis.
+ * di sini seluruhnya datang dari `GET /api/menu`.
  *
  * # Refactor bentuk B (30-09-2026): berkas ini tidak mengenal modul
  *
- * Isi menu dirakit dari `modul/<nama>/menu.ts` oleh daftar modul aplikasi
- * (`frontend/daftar.ts`, `ENTRI_MENU`) dan diteruskan `App.tsx` ke Shell. Yang
- * tinggal di sini hanya BENTUK entri dan aturan yang sama untuk semua modul:
- * penyaring modul aktif, penurun kelompok sidebar, dan pencari palet.
+ * Halaman awal setiap modul dirakit dari `modul/<nama>/menu.ts` oleh daftar
+ * modul aplikasi (`frontend/daftar.ts`, `ENTRI_MENU`) dan diteruskan `App.tsx`
+ * ke Shell. Yang tinggal di sini hanya BENTUK entri dan aturan yang sama untuk
+ * semua modul: penyaring modul aktif, pemotong menu tabel, dan pencari palet.
  *
- * # Kenapa daftar ini TERPISAH dari sidebar
+ * # Menu DATAR — keputusan work owner 30-09-2026
  *
- * Diukur, bukan diduga:
+ * `PROMPT-MENU-DATAR-PER-GROUPMENU.md`: *"menu jangan ada model seperti child.
+ * Buat grouping menu antar GROUPMENU dari tabel M_NAV_MENU ... 1 modul 1
+ * menu."* `GET /api/menu` mengirim golongan → modul (satu tingkat), dan
+ * `susunMenu` di bawah MEMOTONGNYA dengan modul yang benar-benar terdaftar di
+ * `frontend/daftar.ts`: baris dimigrasi tanpa modul frontend tidak tampil
+ * (dicatat di konsol), modul frontend tanpa baris tabel tidak tampil pula.
+ * Klik tombol modul membuka halaman awalnya (`HALAMAN_AWAL_<X>` di `menu.ts`).
+ * `frontend/daftar.menuTabel.test.ts` menjaga keduanya dua arah terhadap
+ * hasil bersih migrasi 900 + 901 + slot menu.
  *
- *   `components/KelompokMenu.tsx` merender anaknya HANYA ketika kelompoknya
- *   terbuka — kelompok yang terlipat melepas anaknya dari DOM.
+ * # Palet membaca daftar yang SAMA dengan sidebar
  *
- * Jadi palet TIDAK boleh membaca DOM sidebar: ia hanya akan menemukan entri
- * di kelompok yang kebetulan terbuka, lalu menjawab "tidak ada" untuk menu
- * yang ADA. Dan sejak butir **bg** empat belas kelompok memang terlipat.
- *
- * Kedua daftar dijaga tetap sama oleh `daftar.sinkron.test.ts`, DUA
- * ARAH — dan berkas itu menuliskan harga pilihan ini apa adanya.
- *
- * # Sejak 30-09-2026: sidebar dan palet dari tabel `M_NAV_MENU`
- *
- * Permintaan work owner (`PROMPT-MENU-DARI-TABEL-M_NAV_MENU.md`): menu dibuat
- * dari tabel, supaya kelak dapat disaring per akun. `GET /api/menu` mengirim
- * pohon GROUPMENU → kelompok → butir; `susunMenu` di bawah MEMOTONGNYA dengan
- * rute yang benar-benar terdaftar di `frontend/daftar.ts`. Keduanya harus
- * sepakat: baris tabel tanpa rute tidak tampil (dicatat di konsol), rute
- * tanpa baris tabel juga tidak - dan `frontend/daftar.menuTabel.test.ts`
- * menjaganya dua arah terhadap isi awal migrasi 900.
+ * `susunMenu` menghasilkan tombol sidebar DAN entri palet dari satu
+ * pemotongan, jadi keduanya tidak dapat menyimpang (`daftar.sinkron.test.ts`).
  */
 
 /** Halaman kerangka aplikasi - bukan milik modul mana pun, selalu ada. */
 export const HALAMAN_BERANDA = 'beranda'
 
 /**
- * Satu butir menu milik sebuah modul, seperti yang ditulis `menu.ts`-nya.
+ * Satu entri menu yang dapat dibuka - Beranda, atau halaman AWAL satu modul.
  *
- * `H` adalah union halaman modul itu, bukan `string`: nama halaman yang salah
- * ketik membuka layar kosong, dan tidak satu pun uji TEKS akan melihatnya.
+ * `H` adalah union halaman, bukan `string`: nama halaman yang salah ketik
+ * membuka layar kosong, dan tidak satu pun uji TEKS akan melihatnya.
  */
-export interface ButirMenuModul<H extends string = string> {
+export interface EntriMenu<H extends string = string> {
   /** Halaman tujuan — argumen yang sidebar pakai. */
   modul: H
-  /** Nama yang TAMPIL. Selalu dari label, tidak pernah diketik ulang. */
-  label: string
-  /** Nama kelompok sidebar tempat ia berada — ditampilkan sebagai konteks. */
-  kelompok: string
   /**
-   * true = butir SATU-SATUNYA kelompoknya tampil DATAR di sidebar: satu
-   * tombol langsung, tanpa judul kelompok yang dilipat dan tanpa anak.
-   * Kelompok berbutir lebih dari satu mengabaikannya. Bawaan: bertingkat.
+   * Nama yang tampil bila menu tabel belum terbaca (Beranda, kartu Beranda).
+   * Tombol sidebar dan palet memakai `M_NAV_MENU.LABEL`, bukan ini.
    */
-  datar?: true
-}
-
-/** Satu entri menu yang dapat dicari, beserta modul backend pemiliknya. */
-export interface EntriMenu<H extends string = string> extends ButirMenuModul<H> {
+  label: string
+  /**
+   * Nama modul - nama folder korpus VERBATIM (`Beranda` untuk Beranda); kunci
+   * kartu Beranda. Penjaga dua arah menuntut ia sama dengan LABEL barisnya.
+   */
+  kelompok: string
   /**
    * Modul backend pemilik - nama yang sama dengan `MODUL_AKTIF` dan
    * `GET /api/modul-aktif`. `null` = milik aplikasi, selalu tampil (Beranda).
    */
   pemilik: string | null
+  /**
+   * Seluruh halaman modul ini - tombolnya menyala selama salah satunya tampil
+   * (mis. Outstanding milik Claim Life). Kosong untuk Beranda.
+   */
+  halamanModul?: readonly H[]
 }
 
 /**
@@ -82,55 +76,41 @@ export function modulDipasang(pemilik: string | null, aktif: readonly string[] |
   return aktif === null || pemilik === null || aktif.includes(pemilik)
 }
 
-/** Satu butir sidebar - bentuk yang Shell turunkan dari menu. */
-export interface ButirSidebar<H extends string = string> {
-  halaman: H
-  label: string
-  pemilik: string | null
-  /** Lihat `ButirMenuModul.datar`; hanya ada bila true. */
-  datar?: true
-}
-
-/** Satu kelompok sidebar beserta butirnya. */
-export interface KelompokSidebar<H extends string = string> {
+/** Satu tombol sidebar - SATU modul. */
+export interface TombolModul<H extends string = string> {
   /** `M_NAV_MENU.KODE` - nama modul backend. */
   kode: string
-  /** Nama tampil - `M_NAV_MENU.LABEL`, nama folder korpus VERBATIM. */
-  nama: string
-  /** false = "belum dimigrasi" (`M_NAV_MENU.DIMIGRASI = '0'`). */
-  dimigrasi: boolean
-  butir: readonly ButirSidebar<H>[]
+  /** `M_NAV_MENU.LABEL` - nama folder korpus VERBATIM. */
+  label: string
+  /** Halaman awal modul; `null` = belum dimigrasi (tombol nonaktif). */
+  halaman: H | null
+  /** Seluruh halaman modul - tombolnya aktif selama salah satunya tampil. */
+  halamanModul: readonly H[]
 }
 
 /** Satu kepala bagian sidebar - GROUPMENU (TREATY, FACULTATIVE, KLAIM, MASTER). */
 export interface GolonganSidebar<H extends string = string> {
   kode: string
-  kelompok: readonly KelompokSidebar<H>[]
+  modul: readonly TombolModul<H>[]
 }
 
 // ---------------------------------------------------------------------------
-// Bentuk `GET /api/menu` - backend `inti/menu` (`menu.Menu`).
+// Bentuk `GET /api/menu` - backend `inti/backend/menu` (`menu.Menu`).
 // ---------------------------------------------------------------------------
 
-export interface ButirMenuTabel {
-  /** Kunci halaman frontend. */
-  kode: string
-  label: string
-  /** Modul backend pemilik. */
-  modul: string
-}
-
-export interface KelompokMenuTabel {
+export interface ModulMenuTabel {
+  /** Nama modul backend (`M_NAV_MENU.KODE` = `MODUL`). */
   kode: string
   label: string
   modul: string
+  urutan: number
+  /** false = belum dimigrasi (`DIMIGRASI = '0'`). */
   dimigrasi: boolean
-  butir: readonly ButirMenuTabel[]
 }
 
 export interface GolonganMenuTabel {
   kode: string
-  kelompok: readonly KelompokMenuTabel[]
+  modul: readonly ModulMenuTabel[]
 }
 
 export interface MenuTabel {
@@ -148,28 +128,27 @@ const objek = (x: unknown): x is Record<string, unknown> => typeof x === 'object
  *
  * ⛔ Bentuk yang tidak dikenal DITOLAK (pemanggilnya menampilkan galat), bukan
  * dijadikan menu kosong: sidebar yang kosong diam-diam terbaca "aplikasi tanpa
- * menu".
+ * menu". Bentuk pohon lama (golongan → kelompok → butir) ikut ditolak.
  */
 export function bentukMenuTabel(x: unknown): x is MenuTabel {
-  const butirSah = (b: unknown): boolean => objek(b) && teks(b.kode) && teks(b.label) && teks(b.modul)
-  const kelompokSah = (k: unknown): boolean =>
-    objek(k) && teks(k.kode) && teks(k.label) && teks(k.modul) && typeof k.dimigrasi === 'boolean' &&
-    Array.isArray(k.butir) && k.butir.every(butirSah)
+  const modulSah = (m: unknown): boolean =>
+    objek(m) && teks(m.kode) && teks(m.label) && teks(m.modul) && typeof m.urutan === 'number' &&
+    typeof m.dimigrasi === 'boolean'
   const golonganSah = (g: unknown): boolean =>
-    objek(g) && teks(g.kode) && Array.isArray(g.kelompok) && g.kelompok.every(kelompokSah)
+    objek(g) && teks(g.kode) && Array.isArray(g.modul) && g.modul.every(modulSah)
   return objek(x) && Array.isArray(x.golongan) && x.golongan.every(golonganSah)
 }
 
 /** Hasil `susunMenu`: yang sidebar render, yang palet cari, dan yang dicatat. */
 export interface MenuTersusun<H extends string = string> {
-  /** Golongan yang TAMPIL, masing-masing dengan kelompok yang tampil. */
+  /** Golongan yang TAMPIL, masing-masing dengan tombol modulnya. */
   golongan: GolonganSidebar<H>[]
-  /** Daftar palet: Beranda, lalu setiap butir yang tampil - urutan sidebar. */
+  /** Daftar palet: Beranda, lalu setiap modul dimigrasi yang tampil - urutan sidebar. */
   entri: EntriMenu<H>[]
-  /** Butir tabel tanpa rute frontend, `<kelompok>/<butir>` - untuk konsol. */
+  /** Baris dimigrasi tanpa modul frontend terdaftar, `<kode>` - untuk konsol. */
   tanpaRute: string[]
-  /** Butir tabel di bawah kelompok `DIMIGRASI = '0'`, tidak tampil - untuk konsol. */
-  terlipat: string[]
+  /** Modul frontend terdaftar yang barisnya `DIMIGRASI = '0'` (tombol nonaktif) - untuk konsol. */
+  nonaktifBerute: string[]
 }
 
 /** Entri milik APLIKASI (Beranda, pemilik `null`) - bukan baris tabel, selalu ada. */
@@ -178,55 +157,43 @@ export function entriAplikasi<H extends string>(rute: readonly EntriMenu<H>[]): 
 }
 
 /**
- * Memotong pohon `GET /api/menu` dengan rute frontend yang terdaftar.
+ * Memotong menu `GET /api/menu` dengan modul frontend yang terdaftar.
  *
- * Aturannya (brief menu 30-09-2026 §3):
- *   - butir tabel TANPA rute di `rute` tidak tampil, dan dicatat di `tanpaRute`
- *   - rute TANPA butir tabel tidak tampil (yang diulang hanya baris tabel)
- *   - LABEL dari tabel; penanda `datar` dari rute frontend (cara tampil)
- *   - kelompok `DIMIGRASI = '0'` tetap BERDIRI, terlipat "belum dimigrasi" -
- *     tanpa butir, walau tabel (keliru) memberinya butir berute: butir itu
- *     dicatat di `terlipat`
- *   - kelompok dimigrasi yang butirnya habis - modulnya nonaktif (MODUL_AKTIF,
- *     backend tidak mengirim butirnya) atau tak satu pun berute - hilang:
- *     "belum dimigrasi" akan berbohong
- *   - golongan tanpa kelompok tampil hilang
+ * Aturannya (brief menu datar 30-09-2026 §1, §3):
+ *   - satu TOMBOL per modul, di bawah kepala GROUPMENU; label = LABEL tabel
+ *   - modul `DIMIGRASI = '0'` tampil NONAKTIF ("belum dimigrasi"), tanpa
+ *     halaman - walau frontend (keliru) mendaftarkannya: itu dicatat di
+ *     `nonaktifBerute`
+ *   - modul dimigrasi TANPA modul frontend terdaftar tidak tampil, dicatat di
+ *     `tanpaRute`; modul frontend tanpa baris tabel tidak tampil pula
+ *   - modul dimigrasi di luar MODUL_AKTIF tidak dikirim backend - tidak tampil
+ *   - golongan tanpa tombol hilang
+ *   - palet: Beranda lalu setiap tombol yang dapat dibuka, urutan sidebar
  *
  * Beranda bukan baris tabel: ia diambil dari `rute` (pemilik `null`).
  */
 export function susunMenu<H extends string>(tabel: MenuTabel, rute: readonly EntriMenu<H>[]): MenuTersusun<H> {
-  const hasil: MenuTersusun<H> = { golongan: [], entri: entriAplikasi(rute), tanpaRute: [], terlipat: [] }
+  const hasil: MenuTersusun<H> = { golongan: [], entri: entriAplikasi(rute), tanpaRute: [], nonaktifBerute: [] }
   for (const g of tabel.golongan) {
-    const kelompok: KelompokSidebar<H>[] = []
-    for (const k of g.kelompok) {
-      if (!k.dimigrasi) {
-        for (const b of k.butir) hasil.terlipat.push(`${k.kode}/${b.kode}`)
-        kelompok.push({ kode: k.kode, nama: k.label, dimigrasi: false, butir: [] })
+    const modul: TombolModul<H>[] = []
+    for (const m of g.modul) {
+      const r = rute.find((e) => e.pemilik !== null && e.pemilik === m.kode)
+      if (!m.dimigrasi) {
+        if (r !== undefined) hasil.nonaktifBerute.push(m.kode)
+        modul.push({ kode: m.kode, label: m.label, halaman: null, halamanModul: [] })
         continue
       }
-      const butir: ButirSidebar<H>[] = []
-      for (const b of k.butir) {
-        const r = rute.find((e) => e.pemilik !== null && e.modul === b.kode)
-        if (r === undefined) {
-          hasil.tanpaRute.push(`${k.kode}/${b.kode}`)
-          continue
-        }
-        butir.push({ halaman: r.modul, label: b.label, pemilik: b.modul, ...(r.datar === true ? { datar: true as const } : {}) })
+      if (r === undefined) {
+        hasil.tanpaRute.push(m.kode)
+        continue
       }
-      if (butir.length === 0) continue
-      kelompok.push({ kode: k.kode, nama: k.label, dimigrasi: true, butir })
-      // Palet = sidebar: entri dari butir yang SAMA, datar ikut apa adanya.
-      for (const { halaman, ...sisa } of butir) hasil.entri.push({ modul: halaman, kelompok: k.label, ...sisa })
+      modul.push({ kode: m.kode, label: m.label, halaman: r.modul, halamanModul: r.halamanModul ?? [r.modul] })
+      // Palet = sidebar: entri dari tombol yang SAMA.
+      hasil.entri.push({ modul: r.modul, label: m.label, kelompok: g.kode, pemilik: m.kode })
     }
-    if (kelompok.length > 0) hasil.golongan.push({ kode: g.kode, kelompok })
+    if (modul.length > 0) hasil.golongan.push({ kode: g.kode, modul })
   }
   return hasil
-}
-
-/** Butir yang dirender DATAR: kelompok beranggota tepat satu butir bertanda `datar`. */
-export function butirDatar<H extends string>(butir: readonly ButirSidebar<H>[]): ButirSidebar<H> | undefined {
-  const [b] = butir
-  return butir.length === 1 && b?.datar === true ? b : undefined
 }
 
 /** Satu baris hasil palet. */
@@ -240,9 +207,8 @@ export interface HasilPalet<H extends string = string> {
 /**
  * Daftar yang dapat dicari palet.
  *
- * Sejak menu dari tabel (30-09-2026) `menu` adalah `MenuTersusun.entri` -
- * butir modul nonaktif sudah tidak dikirim backend, jadi saringan modul aktif
- * tidak lagi di sini.
+ * `menu` adalah `MenuTersusun.entri` - modul nonaktif sudah tidak dikirim
+ * backend, dan modul yang belum dimigrasi tidak punya entri.
  */
 export function daftarPalet<H extends string>(menu: readonly EntriMenu<H>[]): HasilPalet<H>[] {
   return menu.map((e) => ({
@@ -258,20 +224,19 @@ export function daftarPalet<H extends string>(menu: readonly EntriMenu<H>[]): Ha
  *
  * # Mencocokkan POTONGAN, bukan awalan
  *
- * Nama menu di sini berkata-kata banyak (`Inbox Claim Life`,
- * `Inbox Komite`). Pemakai mengingat kata TENGAH sesering kata depan, jadi
- * pencocokan awalan akan gagal untuk ketikan yang paling wajar.
+ * Nama modul di sini berkata-kata banyak (`Komite Claim Life`,
+ * `Treaty Contract Out`). Pemakai mengingat kata TENGAH sesering kata depan,
+ * jadi pencocokan awalan akan gagal untuk ketikan yang paling wajar.
  *
  * # Setiap KATA harus cocok, dan urutannya bebas
  *
- * `'life claim'` menemukan `Inbox Claim Life` — mengetik dua kata yang
- * diingat, dalam urutan apa pun, adalah cara orang mencari. Pencocokan
- * seluruh-frasa akan menolaknya.
+ * `'life claim'` menemukan `Claim Life` — mengetik dua kata yang diingat,
+ * dalam urutan apa pun, adalah cara orang mencari. Pencocokan seluruh-frasa
+ * akan menolaknya.
  *
- * # Huruf besar-kecil diabaikan, kelompok ikut dicari
+ * # Huruf besar-kecil diabaikan, golongan ikut dicari
  *
- * Mengetik `premiumlist` menemukan butir di kelompok `PremiumList Life`
- * walau label butirnya sendiri hanya `PremiumList`.
+ * Mengetik `klaim` menemukan setiap modul di golongan KLAIM.
  */
 export function saringPalet<H extends string>(daftar: readonly HasilPalet<H>[], kueri: string): HasilPalet<H>[] {
   const kata = kueri.trim().toLowerCase().split(/\s+/).filter(Boolean)

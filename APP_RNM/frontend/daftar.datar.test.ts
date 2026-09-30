@@ -1,51 +1,88 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { AKAR_APLIKASI } from '../inti/frontend/uji/sumber'
+import { AKAR_APLIKASI, folderKorpusBelumDimigrasi } from '../inti/frontend/uji/sumber'
+import { menuTabelDariMigrasi } from '../inti/frontend/uji/menuBersih'
+import { MENU } from '../inti/frontend/labels'
+import { susunMenu } from '../inti/frontend/lib/daftarMenu'
 import { FOLDER_KORPUS } from './katalogKorpus'
-import { butirDatar, type ButirSidebar } from '../inti/frontend/lib/daftarMenu'
-import { ENTRI_MENU } from './daftar'
+import { ENTRI_MENU, MODUL_FRONTEND } from './daftar'
 
-// Menu DATAR - [keputusan work owner 30-09-2026] untuk Treaty Contract Out:
-// navbar tidak bermodel kelompok-beranak "Treaty Contract Out ▸ Treaty
-// Contract Out"; satu tombol langsung. Modul lain TIDAK berubah.
+// Menu DATAR - [keputusan work owner 30-09-2026] (`PROMPT-MENU-DATAR-PER-GROUPMENU.md`):
+// "menu jangan ada model seperti child ... 1 modul 1 menu". Di bawah kepala
+// GROUPMENU: satu tombol per modul, tanpa kelompok yang dilipat, tanpa anak,
+// tanpa panah buka-tutup. Klik tombol modul membuka halaman awalnya.
 //
-// Sejak menu dari tabel M_NAV_MENU (30-09-2026) butirnya dari `GET /api/menu`;
-// penanda `datar` tetap milik rute frontend dan dibawa `susunMenu`
-// (`inti/lib/daftarMenu.test.ts`).
+// Menggantikan uji penanda `datar` Treaty Contract Out (`butirDatar`): yang
+// dulu satu pengecualian kini aturan untuk semua modul.
 
-/** Butir satu kelompok menurut rute frontend, dalam bentuk sidebar. */
-const butir = (nama: string): ButirSidebar[] =>
-  ENTRI_MENU.filter((e) => e.kelompok === nama).map((e) => ({
-    halaman: e.modul,
-    label: e.label,
-    pemilik: e.pemilik,
-    ...(e.datar === true ? { datar: true as const } : {}),
-  }))
+const SHELL = readFileSync(join(AKAR_APLIKASI, 'inti', 'frontend', 'components', 'Shell.tsx'), 'utf8')
+const NAV = SHELL.slice(SHELL.indexOf('<nav className="shell__nav"'), SHELL.indexOf('</nav>'))
+const SEMUA = susunMenu(menuTabelDariMigrasi(null), ENTRI_MENU)
+const TOMBOL = SEMUA.golongan.flatMap((g) => g.modul)
 
-describe('menu datar', () => {
-  it('Treaty Contract Out: satu butir, tampil datar', () => {
-    const d = butirDatar(butir(FOLDER_KORPUS.treatyContractOut))
-    expect(d?.halaman).toBe('tco-tahun')
+describe('sidebar satu tombol per modul, dikelompokkan GROUPMENU', () => {
+  it('tepat satu tombol per modul yang dimigrasi dan aktif - kini empat', () => {
+    const aktif = TOMBOL.filter((t) => t.halaman !== null)
+    expect(aktif.map((t) => t.kode).sort()).toEqual(MODUL_FRONTEND.map((m) => m.nama).sort())
+    expect(aktif).toHaveLength(4)
+    expect(new Set(TOMBOL.map((t) => t.kode)).size).toBe(TOMBOL.length)
   })
-  it('modul lain tetap bertingkat - penanda tidak menular', () => {
-    for (const nama of [FOLDER_KORPUS.claimLife, FOLDER_KORPUS.premiumListLife, FOLDER_KORPUS.komiteClaimLife]) {
-      expect(butirDatar(butir(nama)), nama).toBeUndefined()
-      expect(butir(nama).some((b) => 'datar' in b), nama).toBe(false)
+
+  it('Treaty Contract Out tetap SATU tombol (tco5)', () => {
+    expect(TOMBOL.filter((t) => t.label === FOLDER_KORPUS.treatyContractOut)).toHaveLength(1)
+  })
+
+  it("tombol nonaktif untuk DIMIGRASI='0' - tepat folder korpus yang belum dimigrasi", () => {
+    const nonaktif = TOMBOL.filter((t) => t.halaman === null).map((t) => t.label)
+    expect(nonaktif.sort()).toEqual(folderKorpusBelumDimigrasi())
+    expect(NAV).toContain('aria-disabled="true"')
+    expect(NAV).toContain('{KETERANGAN_BELUM_DIMIGRASI}')
+  })
+
+  it('kepala bagian = GROUPMENU, urutan TREATY, FACULTATIVE, KLAIM, MASTER', () => {
+    expect(SEMUA.golongan.map((g) => g.kode)).toEqual(['TREATY', 'FACULTATIVE', 'KLAIM', 'MASTER'])
+  })
+
+  it('tidak ada elemen buka-tutup kelompok di sidebar', () => {
+    for (const terlarang of ['KelompokMenu', 'aria-expanded', 'kelompok__panah', 'kelompok__judul', 'IkonChevron', 'kelompok__isi']) {
+      expect(NAV, terlarang).not.toContain(terlarang)
     }
+    expect(existsSync(join(AKAR_APLIKASI, 'inti', 'frontend', 'components', 'KelompokMenu.tsx'))).toBe(false)
+    expect(existsSync(join(AKAR_APLIKASI, 'inti', 'frontend', 'lib', 'lipatMenu.ts'))).toBe(false)
   })
-  it('penanda diabaikan bila kelompoknya berbutir lebih dari satu', () => {
-    const t = butir(FOLDER_KORPUS.treatyContractOut)[0]!
-    expect(butirDatar([t, { ...t, halaman: 'tco-kontrak' }])).toBeUndefined()
+})
+
+describe('klik tombol modul membuka halaman awalnya', () => {
+  it.each([
+    ['claimlife', 'inbox'],
+    ['premiumlistlife', 'premiumlist'],
+    ['komiteclaimlife', 'komite'],
+    ['treatycontractout', 'tco-tahun'],
+  ])('%s → %s', (modul, halaman) => {
+    expect(TOMBOL.find((t) => t.kode === modul)?.halaman).toBe(halaman)
+    expect(MODUL_FRONTEND.find((m) => m.nama === modul)?.halamanAwal).toBe(halaman)
   })
-  it('Shell merender butir datar sebagai satu tombol, tanpa KelompokMenu', () => {
-    const shell = readFileSync(join(AKAR_APLIKASI, 'inti', 'frontend', 'components', 'Shell.tsx'), 'utf8')
-    expect(shell).toContain('const datar = butirDatar(k.butir)')
-    const awal = shell.indexOf(': datar !== undefined ? (')
-    const cabang = shell.slice(awal, shell.indexOf(') : (', awal))
-    expect(cabang).toContain('pilih(datar.halaman)')
-    expect(cabang).not.toContain('<KelompokMenu')
+
+  it('tombol memanggil pilih() dengan halaman tombol itu', () => {
+    expect(NAV).toContain('const tujuan = m.halaman')
+    expect(NAV).toContain('pilih(tujuan)')
+  })
+
+  it('tombol modul menyala selama halaman modul itu tampil (mis. Outstanding milik Claim Life)', () => {
+    expect(TOMBOL.find((t) => t.kode === 'claimlife')?.halamanModul).toContain('outstanding')
+    expect(NAV).toContain('const aktif = m.halamanModul.includes(halaman as H)')
+  })
+
+  it('tombol Register di Inbox Claim Life tetap membuka Register', () => {
+    const inbox = readFileSync(join(AKAR_APLIKASI, 'modul', 'claimlife', 'frontend', 'pages', 'InboxClaimLife.tsx'), 'utf8')
+    const rute = readFileSync(join(AKAR_APLIKASI, 'modul', 'claimlife', 'frontend', 'rute.tsx'), 'utf8')
+    expect(inbox).toContain('onClick={onRegister}')
+    expect(inbox).toContain('{MENU.register}')
+    expect(MENU.register).toBe('Register')
+    const panggil = rute.slice(rute.indexOf('onRegister={() => {'))
+    expect(panggil.slice(0, 80)).toContain("onPindah('register')")
   })
 })

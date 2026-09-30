@@ -4753,7 +4753,7 @@ textarea.field__input {
   font-weight: 600;
 }
 /* Ikon 20px di slot selebar lencana (24px), supaya teks Beranda sejajar
-   dengan teks judul kelompok di bawahnya. */
+   dengan teks tombol modul di bawahnya. */
 .shell__butir > svg {
   flex-shrink: 0;
   margin: 0 2px;
@@ -4767,52 +4767,16 @@ textarea.field__input {
   text-overflow: ellipsis;
   transition: opacity var(--speed) ease;
 }
-/* Beranda bukan modul: sedikit jarak memisahkannya dari kelompok. */
+/* Beranda bukan modul: sedikit jarak memisahkannya dari golongan. */
 .shell__butir--beranda {
   margin-bottom: 10px;
 }
-/* Butir DATAR (`ButirMenuModul.datar`) berdiri di antara judul kelompok -
-   hurufnya mengikuti `.kelompok__judul`, bukan butir anak. */
-.shell__butir--datar {
-  font-size: 14px;
-  font-weight: 600;
-}
-/* Butir anak menjorok sejajar teks judul kelompoknya (16 + 24 + 12). */
-.shell__butir--anak {
-  height: 40px;
-  padding-left: 52px;
-  font-size: 14px;
-}
-
-/* Kelompok modul. Judulnya tombol berbentuk `.nav-link`; lencana dua
+/* Tombol MODUL - menu datar, keputusan work owner 30-09-2026: satu modul satu
+   tombol di bawah kepala GROUPMENU, tanpa kelompok yang dilipat. Lencana dua
    huruf menempati slot ikon. */
-.kelompok {
-  margin-bottom: 2px;
-}
-.kelompok__judul {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  height: 44px;
-  padding: 0 12px 0 16px;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: none;
-  color: var(--text-2);
-  font: inherit;
+.shell__butir--modul {
   font-size: 14px;
   font-weight: 600;
-  text-align: left;
-  white-space: nowrap;
-  cursor: pointer;
-  transition:
-    background-color 0.15s,
-    color 0.15s;
-}
-.kelompok__judul:hover {
-  background: var(--surface-2);
-  color: var(--text);
 }
 .kelompok__lencana {
   display: grid;
@@ -4827,10 +4791,7 @@ textarea.field__input {
   font-weight: 700;
   letter-spacing: 0.02em;
 }
-.kelompok--aktif > .kelompok__judul {
-  color: var(--text);
-}
-.kelompok--aktif > .kelompok__judul .kelompok__lencana {
+.shell__butir--aktif > .kelompok__lencana {
   background: var(--primary-soft);
   color: var(--primary-text);
 }
@@ -4841,46 +4802,27 @@ textarea.field__input {
   text-overflow: ellipsis;
   transition: opacity var(--speed) ease;
 }
-.kelompok__panah {
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  color: var(--text-3);
-  transform: rotate(-90deg);
-  transition:
-    transform 0.15s ease,
-    opacity var(--speed) ease;
-}
-.kelompok__panah--buka {
-  transform: none;
-}
-.kelompok__isi {
-  padding: 2px 0 6px;
-}
-.kelompok--anak .kelompok__judul {
-  padding-left: 28px;
-}
 
-/* Kelompok TANPA butir: bukan tombol — tidak ada yang dapat dibuka. Nama
-   dan keadaannya bertumpuk, jadi "belum dimigrasi" terbaca tanpa perlu
-   membuka apa pun. */
-.kelompok--kosong {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+/* Tombol modul yang BELUM dimigrasi (`DIMIGRASI = '0'`): nonaktif, tidak
+   dapat diklik. Nama dan keadaannya bertumpuk, jadi "belum dimigrasi"
+   terbaca tanpa perlu membuka apa pun. */
+.shell__butir--nonaktif,
+.shell__butir--nonaktif:hover {
+  height: auto;
   min-height: 44px;
-  padding: 5px 12px 5px 16px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  background: none;
   color: var(--text-3);
-  font-size: 14px;
   font-weight: 500;
-  white-space: nowrap;
+  cursor: default;
 }
-.kelompok--kosong .kelompok__teks {
+.shell__butir--nonaktif .kelompok__teks {
   display: flex;
   flex-direction: column;
   line-height: 1.3;
 }
-.kelompok--kosong .kelompok__lencana {
+.shell__butir--nonaktif .kelompok__lencana {
   background: transparent;
   box-shadow: inset 0 0 0 1px var(--border);
   color: var(--text-3);
@@ -4891,8 +4833,8 @@ textarea.field__input {
 }
 
 /* Kepala bagian = GROUPMENU M_NAV_MENU (TREATY, FACULTATIVE, KLAIM, MASTER),
-   menu dari tabel sejak 30-09-2026. Teks kecil berhuruf besar di atas
-   kelompoknya; saat panel terciut ia menjadi garis pemisah. */
+   menu dari tabel sejak 30-09-2026. Teks kecil berhuruf besar di atas tombol
+   modulnya; saat panel terciut ia menjadi garis pemisah. */
 .shell__golongan {
   margin-top: 14px;
 }
@@ -5581,12 +5523,8 @@ textarea.field__input {
   }
   .shell--terlipat .shell__merek-teks,
   .shell--terlipat .shell__label,
-  .shell--terlipat .kelompok__teks,
-  .shell--terlipat .kelompok__panah {
+  .shell--terlipat .kelompok__teks {
     opacity: 0;
-  }
-  .shell--terlipat .kelompok__isi {
-    display: none;
   }
   .shell--terlipat .shell__golongan-judul {
     height: 0;
@@ -5598,12 +5536,8 @@ textarea.field__input {
   .shell--terlipat .shell__nav {
     scrollbar-width: none;
   }
-  /* Anak kelompok tersembunyi, jadi kelompok yang memuat halaman aktif
-     ditandai pada lencananya — seperti badge yang menjadi titik di template. */
-  .shell--terlipat .kelompok--aktif > .kelompok__judul {
-    background: var(--primary-soft);
-  }
-  .shell--terlipat .kelompok--aktif .kelompok__lencana,
+  /* Teks tersembunyi, jadi modul yang memuat halaman aktif ditandai pada
+     lencananya — seperti badge yang menjadi titik di template. */
   .shell--terlipat .shell__butir--aktif > .kelompok__lencana {
     background: var(--primary);
     color: #fff;

@@ -10,8 +10,10 @@ import { rakitModulFrontend, type BerkasMenu, type BerkasRute, type Halaman } fr
 
 const ruteKosong: RuteModul<Halaman> = () => null
 
-function menu(nama: string): { PENDAFTARAN_MENU: MenuModul } {
-  return { PENDAFTARAN_MENU: { nama, kelompok: `Kelompok ${nama}`, halaman: [], menu: [] } }
+function menu(nama: string, halamanAwal = 'awal'): { PENDAFTARAN_MENU: MenuModul } {
+  // `MenuModul` bawaan berhalaman `HalamanTerdaftar`; modul tiruan memakai
+  // halaman tiruan, jadi bentuknya dilonggarkan di satu tempat ini.
+  return { PENDAFTARAN_MENU: { nama, kelompok: `Kelompok ${nama}`, halaman: ['awal'], halamanAwal } as unknown as MenuModul }
 }
 
 describe('rakitModulFrontend', () => {
@@ -24,7 +26,17 @@ describe('rakitModulFrontend', () => {
     const hasil = rakitModulFrontend(m, r)
     expect(hasil.map((x) => x.nama)).toEqual(['alfa', 'beta'])
     expect(hasil[0]?.kelompok).toBe('Kelompok alfa')
+    expect(hasil[0]?.halamanAwal).toBe('awal')
     expect(hasil[0]?.Rute).toBe(ruteKosong)
+  })
+
+  it('HALAMAN_AWAL yang bukan halaman modul itu DITOLAK (menu datar 30-09-2026)', () => {
+    expect(() =>
+      rakitModulFrontend(
+        { '../modul/alfa/frontend/menu.ts': menu('alfa', 'lain') },
+        { '../modul/alfa/frontend/rute.tsx': { RUTE_MODUL: ruteKosong } },
+      ),
+    ).toThrow('halaman awal "lain" bukan halaman modul itu')
   })
 
   it('folder yang hanya punya salah satu berkasnya DITOLAK dengan menyebut foldernya', () => {

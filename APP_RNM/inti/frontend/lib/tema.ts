@@ -8,7 +8,7 @@
  *   2. Tema dipasang sebagai `data-theme` pada <html> — SATU sakelar yang
  *      dibaca styles.css. Skrip sebaris di index.html memasangnya SEBELUM
  *      halaman tergambar; tanpa itu mode gelap berkedip putih setiap muat.
- *   3. Penyimpanan tidak dapat dipercaya (pola lipatMenu.ts): localStorage
+ *   3. Penyimpanan tidak dapat dipercaya: localStorage
  *      diblokir, penuh, atau berisi sampah → jatuh ke tema sistem tanpa
  *      melempar.
  *
@@ -17,7 +17,17 @@
  * ini. Mengubah salah satunya saja membuat halaman dimuat dengan tema yang
  * salah lalu melompat — tema.test.ts menjaga keduanya tetap sama.
  */
-import type { GudangMini } from './lipatMenu'
+/**
+ * Potongan Storage yang dipakai - memudahkan uji tanpa peramban.
+ *
+ * Dulu tinggal di `lipatMenu.ts` (lipatan kelompok sidebar); berkas itu
+ * dibuang bersama kelompok yang dapat dilipat (menu datar, keputusan work
+ * owner 30-09-2026), dan tema satu-satunya pemakainya yang tersisa.
+ */
+export interface GudangMini {
+  getItem(k: string): string | null
+  setItem(k: string, v: string): void
+}
 
 export type Tema = 'terang' | 'gelap'
 

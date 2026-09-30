@@ -4,10 +4,11 @@ import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { AKAR_APLIKASI, folderKorpusBelumDimigrasi } from '../inti/frontend/uji/sumber'
+import { menuTabelDariMigrasi } from '../inti/frontend/uji/menuBersih'
 import { FOLDER_KORPUS } from './katalogKorpus'
 import { kartuModul } from './Beranda'
 import { ambilModulAktif } from '../inti/frontend/klien'
-import { daftarPalet, susunMenu, type MenuTabel } from '../inti/frontend/lib/daftarMenu'
+import { daftarPalet, susunMenu } from '../inti/frontend/lib/daftarMenu'
 import { ENTRI_MENU, halamanAktif, MODUL_BACKEND, MODUL_FRONTEND } from './daftar'
 
 // MODUL_AKTIF di frontend - refactor bentuk B paket 6.
@@ -20,57 +21,30 @@ import { ENTRI_MENU, halamanAktif, MODUL_BACKEND, MODUL_FRONTEND } from './dafta
 const SRC = __dirname
 const AKAR_MODUL = join(AKAR_APLIKASI, 'modul')
 
-/**
- * Pohon `GET /api/menu` seperti yang backend kirim untuk `aktif`: satu kelompok
- * per MODUL, butir modul NONAKTIF tidak dikirim (`inti/menu` `Susun`).
- * Golongan tidak diuji di sini - satu golongan tiruan.
- */
-function tabel(aktif: readonly string[]): MenuTabel {
-  return {
-    golongan: [
-      {
-        kode: 'KLAIM',
-        kelompok: Object.values(FOLDER_KORPUS).map((nama) => {
-          const milik = ENTRI_MENU.filter((e) => e.kelompok === nama)
-          const modul = milik[0]?.pemilik ?? nama.toLowerCase().replace(/ /g, '')
-          return {
-            kode: modul,
-            label: nama,
-            modul,
-            dimigrasi: milik.length > 0,
-            butir: milik
-              .filter((e) => e.pemilik !== null && aktif.includes(e.pemilik))
-              .map((e) => ({ kode: e.modul, label: e.label, modul })),
-          }
-        }),
-      },
-    ],
-  }
-}
-
 describe('menu modul nonaktif hilang', () => {
-  // Saringannya kini di BACKEND (GET /api/menu tidak mengirim butir modul di
-  // luar MODUL_AKTIF - `inti/menu/menu_test.go`); yang dijaga di sini adalah
-  // sisi frontend-nya: kelompok yang butirnya tidak dikirim HILANG, yang
-  // memang belum dimigrasi tetap BERDIRI, dan palet = sidebar.
-  it('sidebar: kelompok modul nonaktif hilang, sisanya utuh', () => {
-    const s = susunMenu(tabel(['claimlife']), ENTRI_MENU)
-    const nama = s.golongan.flatMap((g) => g.kelompok.map((k) => k.nama))
+  // Saringannya di BACKEND (GET /api/menu tidak mengirim modul dimigrasi di
+  // luar MODUL_AKTIF - `inti/backend/menu/menu_test.go`); menu tabel di sini
+  // disusun dari HASIL BERSIH migrasi menu seperti backend menyusunnya
+  // (`menuTabelDariMigrasi`). Yang dijaga: tombol modul nonaktif HILANG, modul
+  // yang belum dimigrasi tetap BERDIRI nonaktif, dan palet = sidebar.
+  it('sidebar: tombol modul nonaktif hilang, sisanya utuh', () => {
+    const s = susunMenu(menuTabelDariMigrasi(['claimlife']), ENTRI_MENU)
+    const tombol = s.golongan.flatMap((g) => g.modul)
     for (const lain of [FOLDER_KORPUS.premiumListLife, FOLDER_KORPUS.komiteClaimLife, FOLDER_KORPUS.treatyContractOut]) {
-      expect(nama).not.toContain(lain)
+      expect(tombol.map((t) => t.label)).not.toContain(lain)
     }
-    const claimLife = s.golongan[0]?.kelompok.find((k) => k.nama === FOLDER_KORPUS.claimLife)
-    expect(claimLife?.butir.map((b) => b.halaman)).toEqual(['inbox', 'register'])
-    // Kelompok yang memang belum dimigrasi tetap berdiri - ia bukan modul nonaktif.
+    expect(tombol.find((t) => t.label === FOLDER_KORPUS.claimLife)?.halaman).toBe('inbox')
+    // Modul yang memang belum dimigrasi tetap berdiri - ia bukan modul nonaktif.
     // Daftarnya pernyataan `Status` di MODUL.md setiap modul, bukan angka di sini.
-    const belum = s.golongan.flatMap((g) => g.kelompok.filter((k) => !k.dimigrasi))
-    expect(belum.map((k) => k.nama).sort()).toEqual(folderKorpusBelumDimigrasi())
+    const belum = tombol.filter((t) => t.halaman === null)
+    expect(belum.map((t) => t.label).sort()).toEqual(folderKorpusBelumDimigrasi())
     expect(s.tanpaRute).toEqual([])
+    expect(s.nonaktifBerute).toEqual([])
   })
 
-  it('palet: Beranda dan butir sidebar yang sama', () => {
-    const s = susunMenu(tabel(['premiumlistlife', 'treatycontractout']), ENTRI_MENU)
-    const dariSidebar = s.golongan.flatMap((g) => g.kelompok.flatMap((k) => k.butir.map((b) => b.halaman)))
+  it('palet: Beranda dan tombol sidebar yang sama', () => {
+    const s = susunMenu(menuTabelDariMigrasi(['premiumlistlife', 'treatycontractout']), ENTRI_MENU)
+    const dariSidebar = s.golongan.flatMap((g) => g.modul.flatMap((t) => (t.halaman === null ? [] : [t.halaman])))
     expect(daftarPalet(s.entri).map((h) => h.modul)).toEqual(['beranda', ...dariSidebar])
     expect(dariSidebar).toEqual(['premiumlist', 'tco-tahun'])
   })
@@ -170,8 +144,8 @@ describe('GET /api/modul-aktif', () => {
     expect(app).toContain('ambilModulAktif()')
     expect(app).toContain('modulAktif={modulAktif}')
     // Sejak menu dari tabel (30-09-2026) Shell tidak lagi menyaring modul
-    // aktif: GET /api/menu tidak mengirim butir modul nonaktif (cmd/api
-    // meneruskan daftar modul aktif ke rute menu).
+    // aktif: GET /api/menu tidak mengirim modul dimigrasi yang nonaktif
+    // (cmd/api meneruskan daftar modul aktif ke rute menu).
     const shell = readFileSync(join(AKAR_APLIKASI, 'inti', 'frontend', 'components', 'Shell.tsx'), 'utf8')
     expect(shell).not.toContain('modulAktif')
     const rakit = readFileSync(join(AKAR_APLIKASI, 'cmd', 'api', 'rakit.go'), 'utf8')
