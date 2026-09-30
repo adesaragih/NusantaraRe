@@ -50,7 +50,9 @@ func TestKontrakTreatyLingkaranPenuh(t *testing.T) {
 	var k kontrakJSON
 	_ = json.Unmarshal([]byte(badan), &k)
 	if len(k.ID) != 7 || !strings.HasPrefix(k.ID, "1") || k.IDTreatyYear != tahun.ID ||
-		k.ReinsTypeName != "UJI QUOTA SHARE" || k.UserID != "UJI-ADMIN" || k.TreatyEndDate != "2027-01-01" {
+		k.ReinsTypeName != "UJI QUOTA SHARE" || k.UserID != "UJI-ADMIN" ||
+		// Tanggal dari TAHUN (2026-01-01..2026-12-31), bukan kiriman klien (keputusan work owner 30-09-2026).
+		k.TreatyStartDate != "2026-01-01" || k.TreatyEndDate != "2026-12-31" {
 		t.Fatalf("kontrak baru: %+v", k)
 	}
 
@@ -59,11 +61,9 @@ func TestKontrakTreatyLingkaranPenuh(t *testing.T) {
 	if kode != http.StatusConflict || !strings.Contains(badan, "Data has already been entered") || !strings.Contains(badan, k.ID) {
 		t.Errorf("dobel: %d %s", kode, badan)
 	}
-	// Gerbang 422.
+	// Gerbang 422 (tanggal kiriman klien diabaikan - gerbang tanggal diuji di services).
 	for nama, ubah := range map[string]map[string]string{
-		"tahun mulai beda": {"reinsTypeId": "10005", "treatyStartDate": "2027-01-01", "treatyEndDate": "2028-01-01"},
-		"periode terbalik": {"reinsTypeId": "10005", "treatyStartDate": "2026-06-01", "treatyEndDate": "2026-01-01"},
-		"jenis blacklist":  {"reinsTypeId": "10004", "treatyStartDate": "2026-01-01", "treatyEndDate": "2027-01-01"},
+		"jenis blacklist": {"reinsTypeId": "10004", "treatyStartDate": "2026-01-01", "treatyEndDate": "2027-01-01"},
 	} {
 		if kode, badan := u.minta(t, http.MethodPost, dasar, ubah, true); kode != http.StatusUnprocessableEntity {
 			t.Errorf("%s: %d %s", nama, kode, badan)
@@ -83,7 +83,7 @@ func TestKontrakTreatyLingkaranPenuh(t *testing.T) {
 		t.Fatalf("PUT: %d %s", kode, badan)
 	}
 	kode, badan = u.minta(t, http.MethodGet, dasar, nil, true)
-	if kode != http.StatusOK || !strings.Contains(badan, `"total":1`) || !strings.Contains(badan, `"treatyStartDate":"2026-02-01"`) {
+	if kode != http.StatusOK || !strings.Contains(badan, `"total":1`) || !strings.Contains(badan, `"treatyStartDate":"2026-01-01"`) {
 		t.Errorf("daftar sesudah PUT: %d %s", kode, badan)
 	}
 }

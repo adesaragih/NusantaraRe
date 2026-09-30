@@ -5,7 +5,7 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { alihRinci, formKontrakDari, formKontrakKosong, keMasukKontrak } from './PanelKontrakTahun'
+import { alihRinci, denganTanggalTahun, formKontrakDari, formKontrakKosong, keMasukKontrak } from './PanelKontrakTahun'
 
 const KODE = readFileSync(join(__dirname, 'PanelKontrakTahun.tsx'), 'utf8')
   .split('\n')
@@ -47,11 +47,17 @@ describe('paritas layar kontrak', () => {
     expect(KODE).toContain('<PilihJenisReasuransi')
     expect(KODE).not.toMatch(/reinsTypeName:\s*e\.target/)
   })
-  it('tanggal mulai mengisi tanggal akhir bawaan dari server; tanggal akhir hanya dirinya (IsEndDate)', () => {
-    const mulai = KODE.slice(KODE.indexOf('function ubahMulai'), KODE.indexOf('function ubahAkhir'))
-    expect(mulai).toContain('ambilAkhirBawaanKontrak(')
-    const akhir = KODE.slice(KODE.indexOf('function ubahAkhir'))
-    expect(akhir.slice(0, akhir.indexOf('\n  }\n'))).not.toContain('ambilAkhirBawaanKontrak(')
+  it('Start/End Date HANYA DIBACA dan = tanggal tahun treaty (keputusan work owner 30-09-2026)', () => {
+    const f = denganTanggalTahun(formKontrakKosong(), { startDate: '2026-01-01', endDate: '2026-12-31' })
+    expect([f.treatyStartDate, f.treatyEndDate]).toEqual(['2026-01-01', '2026-12-31'])
+    // Kontrak lama dengan tanggal lain tampil (dan tersimpan) dengan tanggal tahunnya.
+    const lama = { ...formKontrakKosong(), id: 'K1', treatyStartDate: '2026-02-01', treatyEndDate: '2027-01-31' }
+    expect(denganTanggalTahun(lama, { startDate: '2026-01-01', endDate: '2026-12-31' }).treatyStartDate).toBe('2026-01-01')
+    expect(KODE).toMatch(/label=\{KONTRAK_TCO\.formStartDate\}[^/]*readOnly/)
+    expect(KODE).toMatch(/label=\{KONTRAK_TCO\.formEndDate\}[^/]*readOnly/)
+    expect(KODE).not.toMatch(/FieldTanggal|ambilAkhirBawaanKontrak|function ubahMulai/)
+    expect(KODE).toContain('buka(denganTanggalTahun(formKontrakKosong(), tahun))')
+    expect(KODE).toContain('buka(denganTanggalTahun(formKontrakDari(k), tahun))')
   })
   it('Undo mengembalikan isian terakhir yang dimuat', () => {
     expect(KODE).toMatch(/setForm\(asal\)/)

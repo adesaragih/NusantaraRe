@@ -275,14 +275,6 @@ export async function ambilAkhirBawaanTahun(mulai: string): Promise<string> {
   return j.endDate
 }
 
-/** `SetTanggalTreatyContract` — tanggal akhir bawaan dari tanggal mulai (dihitung server). */
-export async function ambilAkhirBawaanKontrak(tahunID: string, mulai: string): Promise<string> {
-  const j = await minta<{ treatyEndDate: string }>(`${jalurKontrakTahun(tahunID)}/akhir-bawaan`, {
-    kueri: { mulai },
-  })
-  return j.treatyEndDate
-}
-
 // ---------------------------------------------------------------------------
 // Treaty Contract Out tiket 05 — reinsurer pada kombinasi kontrak.
 // ---------------------------------------------------------------------------

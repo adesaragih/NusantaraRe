@@ -12,8 +12,10 @@
 // (`InputTreatyContract.xml` b20778 → `showHarness` popup). Di sini ia panel
 // yang dibuka dari baris itu, atau dari butir menu dengan pemilih tahun.
 //
-// ⛔ Tanggal akhir bawaan dihitung SERVER (`SetTanggalTreatyContract`,
-// mulai + 1 tahun kalender, OQ-TCO-10) — satu tempat, tidak ditulis ulang di sini.
+// ⛔ [keputusan work owner 30-09-2026] Start Date dan End Date kontrak HANYA
+// DIBACA dan = tanggal TAHUN treaty induknya ("datanya diambil dari depan") —
+// server yang menetapkannya (`KontrakTreatyTCO.Simpan`); isian tanggal dan
+// End Date bawaan +1 tahun di form ini dibuang.
 //
 // [keputusan work owner 30-09-2026] `Business List` dan `Reinsurer List`
 // membuka SATU panel rinci sekaligus, tepat di bawah baris kontraknya: membuka
@@ -26,7 +28,6 @@ import { JENIS_REASURANSI_TCO, KONTRAK_TCO } from '../labels'
 import { formatDate } from '../../../inti/lib/format'
 import { keInputTanggal } from '../../../inti/lib/tanggalInput'
 import {
-  ambilAkhirBawaanKontrak,
   ambilDampakHapusKontrak,
   ambilKontrakTahun,
   hapusKontrak,
@@ -36,7 +37,7 @@ import {
   type TahunTreaty,
   type DampakHapusTCO,
 } from '../api'
-import { Field, FieldTanggal, Gagal, Kosong, Memuat } from '../../../inti/components/ui/dasar'
+import { Field, Gagal, Kosong, Memuat } from '../../../inti/components/ui/dasar'
 import KonfirmasiHapusTCO from './KonfirmasiHapusTCO'
 import PanelBusinessKombinasi from './PanelBusinessKombinasi'
 import PanelReinsurerKombinasi from './PanelReinsurerKombinasi'
@@ -64,6 +65,11 @@ export function formKontrakDari(k: KontrakTreaty): FormKontrak {
     id: k.id, reinsTypeId: k.reinsTypeId, treatyStartDate: k.treatyStartDate, treatyEndDate: k.treatyEndDate,
     tglUpdate: k.tglUpdate, userId: k.userId,
   }
+}
+
+/** Tanggal kontrak = tanggal tahun treaty induknya (keputusan work owner 30-09-2026). */
+export function denganTanggalTahun(f: FormKontrak, tahun: Pick<TahunTreaty, 'startDate' | 'endDate'>): FormKontrak {
+  return { ...f, treatyStartDate: tahun.startDate, treatyEndDate: tahun.endDate }
 }
 
 function tanggalKirim(v: string): string {
@@ -132,23 +138,6 @@ export default function PanelKontrakTahun({ tahun, onTutup }: { tahun: TahunTrea
     setInfo(null)
     setAsal(f)
     setForm(f)
-  }
-
-  function ubahMulai(v: string): void {
-    setForm((f) => (f === null ? f : { ...f, treatyStartDate: v }))
-    const iso = keInputTanggal(v)
-    if (iso === '') return
-    ambilAkhirBawaanKontrak(tahun.id, iso)
-      .then((akhir) => {
-        setForm((f) => (f === null ? f : { ...f, treatyEndDate: akhir }))
-      })
-      .catch((e: unknown) => {
-        setGalat(e)
-      })
-  }
-
-  function ubahAkhir(v: string): void {
-    setForm((f) => (f === null ? f : { ...f, treatyEndDate: v }))
   }
 
   async function simpan(): Promise<void> {
@@ -239,8 +228,8 @@ export default function PanelKontrakTahun({ tahun, onTutup }: { tahun: TahunTrea
                 setForm((f) => (f === null ? f : { ...f, reinsTypeId: v }))
               }}
             />
-            <FieldTanggal label={KONTRAK_TCO.formStartDate} value={form.treatyStartDate} onChange={ubahMulai} />
-            <FieldTanggal label={KONTRAK_TCO.formEndDate} value={form.treatyEndDate} onChange={ubahAkhir} />
+            <Field label={KONTRAK_TCO.formStartDate} value={formatDate(form.treatyStartDate)} onChange={() => undefined} readOnly />
+            <Field label={KONTRAK_TCO.formEndDate} value={formatDate(form.treatyEndDate)} onChange={() => undefined} readOnly />
             <Field label={KONTRAK_TCO.formModifiedDate} value={form.tglUpdate} onChange={() => undefined} readOnly />
             <Field label={KONTRAK_TCO.formUsername} value={form.userId} onChange={() => undefined} readOnly />
           </div>
@@ -264,7 +253,7 @@ export default function PanelKontrakTahun({ tahun, onTutup }: { tahun: TahunTrea
       )}
 
       <div className="aksi-baris">
-        <button type="button" className="btn btn--primary" onClick={() => buka(formKontrakKosong())}>
+        <button type="button" className="btn btn--primary" onClick={() => buka(denganTanggalTahun(formKontrakKosong(), tahun))}>
           {KONTRAK_TCO.add}
         </button>
       </div>
@@ -288,7 +277,7 @@ export default function PanelKontrakTahun({ tahun, onTutup }: { tahun: TahunTrea
                   <td>{sel(formatDate(k.treatyStartDate))}</td>
                   <td>{sel(formatDate(k.treatyEndDate))}</td>
                   <td className="table__actions">
-                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => buka(formKontrakDari(k))}>
+                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => buka(denganTanggalTahun(formKontrakDari(k), tahun))}>
                       {KONTRAK_TCO.edit}
                     </button>{' '}
                     <button

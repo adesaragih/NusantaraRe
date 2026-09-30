@@ -7,6 +7,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"nusantarare/inti"
 	"nusantarare/inti/db"
@@ -67,10 +68,16 @@ func (g *gudangKontrakUji) JumlahAnakKombinasi(context.Context, *db.Tx, models.K
 type tahunKontrakUji struct{}
 
 func (tahunKontrakUji) Ambil(_ context.Context, id string) (models.TahunTreaty, error) {
-	if id != "1000001" {
-		return models.TahunTreaty{}, repository.ErrTahunTreatyTidakAda
+	tgl := func(s string) time.Time { t, _ := time.Parse("2006-01-02", s); return t }
+	switch id {
+	case "1000001":
+		return models.TahunTreaty{ID: id, TreatyYear: "2026", StartDate: tgl("2026-01-01"), EndDate: tgl("2026-12-31")}, nil
+	case "1000003": // tahun warisan tanpa tanggal
+		return models.TahunTreaty{ID: id, TreatyYear: "2026"}, nil
+	case "1000004": // tahun mulai tahun treaty berbeda
+		return models.TahunTreaty{ID: id, TreatyYear: "2026", StartDate: tgl("2027-01-01"), EndDate: tgl("2027-12-31")}, nil
 	}
-	return models.TahunTreaty{ID: id, TreatyYear: "2026"}, nil
+	return models.TahunTreaty{}, repository.ErrTahunTreatyTidakAda
 }
 
 type jenisKontrakUji []repository.JenisReasuransiTCO
@@ -157,12 +164,9 @@ func TestKontrakGerbang(t *testing.T) {
 		{"9999999", func(*services.KontrakMasuk) {}, services.ErrTahunTreatyTidakAda},
 		{"1000001", func(m *services.KontrakMasuk) { m.ReinsTypeID = "" }, models.ErrKontrakJenisReasuransiKosong},
 		{"1000001", func(m *services.KontrakMasuk) { m.ReinsTypeID = "99999" }, services.ErrJenisReasuransiDiLuarDaftar},
-		{"1000001", func(m *services.KontrakMasuk) { m.TreatyEndDate = "2025-12-31" }, models.ErrPeriodeTerbalik},
-		{"1000001", func(m *services.KontrakMasuk) {
-			m.TreatyStartDate, m.TreatyEndDate = "2027-01-01", "2028-01-01"
-		}, models.ErrKontrakTahunMulaiBeda},
-		{"1000001", func(m *services.KontrakMasuk) { m.TreatyStartDate = "01/01/2026" }, galat.ErrPermintaanTidakSah},
-		{"1000001", func(m *services.KontrakMasuk) { m.TreatyEndDate = "" }, models.ErrKontrakAkhirKosong},
+		// Tanggal dari TAHUN induk (keputusan work owner 30-09-2026): gerbangnya atas tanggal tahun.
+		{"1000003", func(*services.KontrakMasuk) {}, models.ErrKontrakMulaiKosong},
+		{"1000004", func(*services.KontrakMasuk) {}, models.ErrKontrakTahunMulaiBeda},
 	}
 	for _, k := range kasus {
 		g := gudangKontrakKosong()
@@ -231,5 +235,23 @@ func TestKontrakGantiJenisBeranakDitolak(t *testing.T) {
 	g.anak = 0
 	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", m); err != nil || g.diperbaru != 1 {
 		t.Errorf("ganti jenis tanpa anak: %v", err)
+	}
+}
+
+// Keputusan work owner 30-09-2026: tanggal kontrak = tanggal tahun treaty
+// induknya; tanggal kiriman klien - betapapun salahnya - DIABAIKAN.
+func TestKontrakTanggalDariTahun(t *testing.T) {
+	for nama, ubah := range map[string]func(*services.KontrakMasuk){
+		"tanggal lain":     func(m *services.KontrakMasuk) { m.TreatyStartDate, m.TreatyEndDate = "2027-01-01", "2028-01-01" },
+		"periode terbalik": func(m *services.KontrakMasuk) { m.TreatyEndDate = "2025-12-31" },
+		"bukan tanggal":    func(m *services.KontrakMasuk) { m.TreatyStartDate = "01/01/2026" },
+		"kosong":           func(m *services.KontrakMasuk) { m.TreatyStartDate, m.TreatyEndDate = "", "" },
+	} {
+		m := kontrakMasuk()
+		ubah(&m)
+		k, err := layananKontrak(gudangKontrakKosong()).Simpan(context.Background(), pelakuUjiTCO, "1000001", m)
+		if err != nil || k.TreatyStartDate != "2026-01-01" || k.TreatyEndDate != "2026-12-31" {
+			t.Errorf("%s: %+v %v", nama, k, err)
+		}
 	}
 }

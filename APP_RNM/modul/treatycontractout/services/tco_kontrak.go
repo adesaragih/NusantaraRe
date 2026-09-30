@@ -129,9 +129,11 @@ func GudangKontrakOracle(svc *Service) GudangKontrakTCO {
 // berdasarkan `ReinsTypeID` (AC 10, 11 - tidak diketik bebas). Medannya ada
 // hanya supaya klien yang mengirimnya tidak ditolak.
 type KontrakMasuk struct {
-	ID              string `json:"id"`
-	ReinsTypeID     string `json:"reinsTypeId"`
-	ReinsTypeName   string `json:"reinsTypeName"`
+	ID            string `json:"id"`
+	ReinsTypeID   string `json:"reinsTypeId"`
+	ReinsTypeName string `json:"reinsTypeName"`
+	// TreatyStartDate, TreatyEndDate - DIABAIKAN server sejak 30-09-2026:
+	// tanggal kontrak = tanggal tahun treaty induknya (`Simpan`).
 	TreatyStartDate string `json:"treatyStartDate"`
 	TreatyEndDate   string `json:"treatyEndDate"`
 }
@@ -261,8 +263,13 @@ func (k *KontrakTreatyTCO) namaJenisDariMaster(ctx context.Context, id string) (
 // Simpan menulis kontrak baru atau memperbarui yang ada - `Save` b3618
 // (`SaveTreatyContract_Act`).
 //
-// Urutannya: identitas -> tahun induk ada -> tanggal terurai -> gerbang murni
-// -> jenis dari master -> satu transaksi {dobel, sisip/perbarui} (tco4: tanpa jejak).
+// Urutannya: identitas -> tahun induk ada -> tanggal dari tahun induk -> gerbang
+// murni -> jenis dari master -> satu transaksi {dobel, sisip/perbarui} (tco4: tanpa jejak).
+//
+// ⛔ Tanggal kontrak = Start/End Date TAHUN treaty induknya [keputusan work owner 30-09-2026: "start date dan end date pada ReinsType read only, datanya diambil dari depan"] -
+// "dari depan sampai belakang tanggalnya sama". Tanggal kiriman klien
+// DIABAIKAN; gerbang periode dan "tahun mulai = tahun treaty" tetap berjalan
+// atas tanggal tahun itu.
 func (k *KontrakTreatyTCO) Simpan(ctx context.Context, pelaku inti.Pelaku, tahunID string, m KontrakMasuk) (KontrakTampil, error) {
 	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return KontrakTampil{}, err
@@ -271,16 +278,8 @@ func (k *KontrakTreatyTCO) Simpan(ctx context.Context, pelaku inti.Pelaku, tahun
 	if err != nil {
 		return KontrakTampil{}, err
 	}
-	mulai, err := uraiTanggalKontrak("TreatyStartDate", m.TreatyStartDate)
-	if err != nil {
-		return KontrakTampil{}, err
-	}
-	akhir, err := uraiTanggalKontrak("TreatyEndDate", m.TreatyEndDate)
-	if err != nil {
-		return KontrakTampil{}, err
-	}
 	kontrak := models.KontrakTreaty{ID: strings.TrimSpace(m.ID), IDTreatyYear: tahunID,
-		ReinsTypeID: strings.TrimSpace(m.ReinsTypeID), TreatyStartDate: mulai, TreatyEndDate: akhir,
+		ReinsTypeID: strings.TrimSpace(m.ReinsTypeID), TreatyStartDate: tahun.StartDate, TreatyEndDate: tahun.EndDate,
 		UserID: pelaku.AkunID, TglUpdate: k.jam()}
 	if err := models.PeriksaKontrakTreaty(kontrak, tahun.TreatyYear); err != nil {
 		return KontrakTampil{}, err

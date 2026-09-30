@@ -34,7 +34,8 @@ Skill: `/mattpocock-skills:to-spec`
 > (+1 tahun kalender, aturan kontrak `AkhirKontrakBawaanTCO`, rute `GET …/tahun/akhir-bawaan`) serta Underwriting Year
 > dan Transaction Year (tahun Start Date) — semuanya tetap dapat diubah. (6) `Reinsurance Type` tahun treaty = dua
 > pilihan `Proportional` → "Proportional", `NonProportional` → "Non Proportional" (bukan master jenis reasuransi) —
-> **OQ-TCO-04 ditutup**.
+> **OQ-TCO-04 ditutup**. (7) Start Date dan End Date **kontrak** (layar ReinsType) **hanya dibaca** dan = tanggal tahun
+> treaty induknya — server menetapkannya, tanggal kiriman klien diabaikan (tiket 04).
 
 > ⛔ **RALAT BERTANGGAL 30-09-2026 — tampilan layar `[DIPUTUSKAN work owner]`** (delapan butir, pesan work owner).
 > (1) Catatan pengembang yang bukan galat sistem **tidak tampil** di layar — label bersilang OQ-TCO-05 (tahun dan

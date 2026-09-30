@@ -176,3 +176,15 @@ rutenya masih ada di `App.tsx` yang memuat suntingan work owner belum di-commit 
 - Tabel `TREATYCONTRACT` warisan, sequence `TREATYCONTRACT_SEQ`; `TREATYSTARTDATE`/`ENDDATE` DATE, `TGLUPDATE`
   VARCHAR2(1000) berisi stempel Pega (`SaveTreatyContract_Act` b1458). OQ-TCO-10 (+1 tahun kalender) tetap.
 - **Jejak gugur** (nol tabel jejak modul).
+
+## ⛔ Keputusan work owner bertanggal — 30-09-2026 (tanggal kontrak = tanggal tahun)
+
+*Kutipan: "start date dan end date pada ReinsType, itu read only, datanya di ambil dari depan. jadi dari depan sampe
+belakang tanggalnya sama".* `KontrakTreatyTCO.Simpan` kini menetapkan `TREATYSTARTDATE`/`TREATYENDDATE` = `STARTDATE`/
+`ENDDATE` tahun treaty induknya; `treatyStartDate`/`treatyEndDate` kiriman klien **diabaikan**. Gerbang yang ada tetap
+berjalan atas tanggal tahun itu: tahun tanpa Start Date → `ErrKontrakMulaiKosong`, tahun mulai ≠ Treaty Year →
+`ErrKontrakTahunMulaiBeda`, periode terbalik. Layar menampilkan kedua tanggal **baca-saja** (Add dan Edit), dan isian
+End Date bawaan +1 tahun di form kontrak dibuang — **menggantikan** OQ-TCO-10 untuk form ini (rute
+`…/kontrak/akhir-bawaan` tetap ada, tidak dipakai layar). ⚠️ Kontrak lama yang tanggalnya berbeda dari tahunnya
+tampil di grid dengan tanggal tersimpannya, dan **berubah ke tanggal tahun bila disimpan ulang**. Uji
+`TestKontrakTanggalDariTahun`, `TestKontrakGerbang`, `PanelKontrakTahun.test.ts`.
