@@ -117,3 +117,7 @@ make check
 | *"Pemanggilan procedure penulis reinsurer"* | tidak dipanggil (R4); `REINSTYPEID`/`REINSTYPENAME`/`TREATYYEARID` ditulis sebagai salinan kontrak (K4) |
 | *"`REINSTYPEID` **tidak ditulis** pada baris reinsurer"* | kolom tetap **ditulis** sebagai salinan induk (K4) — skema tidak diubah |
 | — | wajib-isi hidup `NAME, REINSURERID_LIFE, PCTSHARE, COMMISION, OVR_COMM` (`SaveSecurityLife_Act` b595), pesan VERBATIM `"All value cannot be empty."`; pilihan reinsurer dari `BrowseCedingCoLife_RD` (`AGENT`, `ID` memuat `L0`, `STATUSACTIVE = 1`); label `COMMISION` = **(%) DISCOUNT** |
+
+## Status 01-10-2026 (paket 11)
+
+**Status:** ✅ **dibangun** — paket 4 (`c10d50f`: share/komisi 0..100, total tanpa blokir), panel `Reinsurer List` dengan total mencolok ≠ 100 paket 9+10 (`a3c07bc`).

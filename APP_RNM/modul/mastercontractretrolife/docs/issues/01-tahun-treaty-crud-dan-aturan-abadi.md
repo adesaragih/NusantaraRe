@@ -120,3 +120,7 @@ make check
 | Kalimat lama | Ralat |
 | --- | --- |
 | *"baris baru lewat tombol berlabel VERBATIM **`End Period`** (`InputRetrocessionLife.xml` b8888)"* | tombol b8888 bertekskan **`Add`** (`pyModes.pyLabel` b9007, tooltip `Add New Data` b9005); **`End Period`** (b8927) adalah label SEL di sampingnya (`pyIncludeLabel` true). Layar menampilkan keduanya (RALAT R14) |
+
+## Status 01-10-2026 (paket 11)
+
+**Status:** ✅ **dibangun** — backend paket 2 (`fd42b86`), layar halaman awal paket 9+10 (`a3c07bc`). Tahun treaty tanpa rute hapus (abadi).

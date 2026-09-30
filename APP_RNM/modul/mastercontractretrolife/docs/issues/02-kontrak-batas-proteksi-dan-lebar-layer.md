@@ -117,3 +117,7 @@ make check
 | *"`INSERTTREATYCONTRACT_LIFE` menulis `IDR_SELISIH`/`USD_SELISIH` apa adanya dari parameter"* | korpus modul **nol penulis** kedua kolom (`SaveTreatyLimit_Act` b1001/b1023 hanya membaca); Go menghitung lalu menulisnya (K5) |
 | *"Batas bawah yang lebih besar dari batas atas ditolak"* | tanpa bukti XML; dibangun sebagai bawaan — OQ-MCRL-09 |
 | — | pesan wajib-isi VERBATIM `"All value cannot be empty."` (`SaveTreatyLimit_Act` b313); tombol hapus berlabel **`Delete`** (ikon, b15161) |
+
+## Status 01-10-2026 (paket 11)
+
+**Status:** ✅ **dibangun** — paket 3 (`38c3d42`: batas, selisih dihitung Go K5, tanggal dari tahun K4), panel `Reins Type` paket 9+10 (`a3c07bc`).

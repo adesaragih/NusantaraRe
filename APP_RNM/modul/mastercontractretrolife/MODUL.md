@@ -16,7 +16,7 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | Status | dimigrasi |
 | Rentang migrasi | `100-139` |
 | Slot menu | `958-959` |
-| Prefix rute API | — (ditetapkan spec modul ini) |
+| Prefix rute API | `/api/master-contract-retro-life` |
 | Kontrak disediakan | — |
 | Kontrak dipakai | — |
 
@@ -29,6 +29,28 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | `backend/` | `models/` `repository/` `services/` `handlers/` `tiruan/` `migrations/` `modul.go` — paket Go `nusantarare/modul/mastercontractretrolife/backend/...` |
 | `frontend/` | `pages/` `components/` `labels.ts` `api.ts` `tampilan.ts` `mcrl.css` `menu.ts` `rute.tsx` dan berkas `*.test.ts` |
 | `docs/` | spec, tiket (`issues/`), grilling, PARITAS, RALAT, OQ, STRUKTUR — dulu `.scratch/master-contract-retro-life/` |
+
+## Rute API
+
+Prefix `/api/master-contract-retro-life` (`backend/handlers/rute_mcrl.go` `Prefix`). Setiap rute menuntut identitas
+pelaku (401 tanpa), menjawab 503 bila Oracle tidak dikonfigurasi, dan galatnya berbadan `{"galat": "..."}`.
+Nol kontrak lintas modul: master rujukan dibaca langsung dari tabelnya.
+
+| Metode dan jalur | Layar / tombol Pega |
+| --- | --- |
+| `GET /tahun` | grid halaman awal `MASTER CONTRACT RETRO LIFE` |
+| `POST /tahun` · `PUT /tahun/{id}` | `Add` (label sel `End Period`) / `Edit` → `Save` |
+| `GET /tahun/{id}/kontrak` · `POST /tahun/{id}/kontrak` · `PUT /kontrak/{id}` | `ReinsType` → panel `Reins Type`; `Add`/`Edit` → `Save` |
+| `GET /kontrak/{id}/reinsurer` · `POST /kontrak/{id}/reinsurer` · `PUT /reinsurer/{id}` | `Reinsurer List` (+ `Total Share -->>`) |
+| `GET /reinsurer/{id}/security` · `POST /reinsurer/{id}/security` · `PUT /security/{id}` | `Security Reinsurer` (+ eksposur) |
+| `GET /kontrak/{id}/business` · `POST /kontrak/{id}/business` · `PUT /business/{id}` | `Business List` |
+| `GET /business/{id}/salin-semua` · `POST /business/{id}/salin-semua` | `Copy to all Reinstype` — pratinjau, lalu konfirmasi berbadan `{"sasaran": [...]}` |
+| `GET /{kontrak\|reinsurer\|security\|business}/{id}/dampak-hapus` · `DELETE /{…}/{id}` | `Delete` — popup berdampak, lalu hapus berbadan `{"dampak": {...}}`; nol rute hapus tahun |
+| `GET /jenis-reasuransi` | dropdown `REINS TYPE` (master `REINSURANCETYPE` `.Flag = 1`) |
+| `GET /master-reinsurer?cari=` | autocomplete `REINSURER NAME` / `SECURITY REINSURER NAME` |
+| `GET /master-business?cari=` | autocomplete `BUSINESS NAME` |
+| `GET /ringkasan-rate?cari=` · `GET /rate?idusedby=` | autocomplete `R/I RATE` · `View Rate` (`Rate List`) — 503 berkalimat sampai OQ-MCRL-13 |
+| `GET /laporan/total-share-bukan-100?tahun=` | tanpa layar (tiket 11, OQ-MCRL-07) |
 
 ## Migrasi
 

@@ -86,3 +86,7 @@ make check
 | Kalimat lama | Ralat |
 | --- | --- |
 | *"Layar laporan; tiap baris dapat dibuka ke kontraknya"* | tidak ada layar maupun tombol di Pega (brief: *"Jangan membuat menu, layar, tombol, atau aksi yang tidak ada di Pega"*) → **rute API baca saja** `GET /api/master-contract-retro-life/laporan/total-share-bukan-100` — OQ-MCRL-07 (R10) |
+
+## Status 01-10-2026 (paket 11)
+
+**Status:** ⏸️ **rute API saja** — `GET …/laporan/total-share-bukan-100` paket 4 (`c10d50f`); layar menunggu OQ-MCRL-07 (nol padanan Pega).

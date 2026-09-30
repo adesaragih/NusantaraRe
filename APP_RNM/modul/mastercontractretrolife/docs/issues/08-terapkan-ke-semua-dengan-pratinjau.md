@@ -93,3 +93,7 @@ make check
 | *"penerapan massal karena itu **tidak atomik**"*; AC *"laporkan berapa berhasil dan berapa gagal"* | procedure tidak dipanggil (R4): satu transaksi — semua sasaran atau tidak sama sekali; AC sebagian-gagal gugur |
 | *"tercatat di jejak audit"* | nol tabel jejak (K6): `USERID`/`TGLUPDATE` tiap baris + satu baris log server berisi cacah |
 | — | tiap sasaran mendapat baris **baru** (`INSERT`, `TREATYBUSINESS_LIFE_SEQ`), tanpa penjaga dobel seperti Pega — OQ-MCRL-06 |
+
+## Status 01-10-2026 (paket 11)
+
+**Status:** ✅ **dibangun** — pratinjau + konfirmasi + satu transaksi paket 6 (`b3e097d`; AC sebagian-gagal gugur oleh R4), popup pratinjau paket 9+10 (`a3c07bc`).

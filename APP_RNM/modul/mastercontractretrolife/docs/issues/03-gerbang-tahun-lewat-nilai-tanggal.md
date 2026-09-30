@@ -95,3 +95,7 @@ make check
 | *"sistem menolak kontrak yang tanggal mulainya jatuh di tahun berbeda"* | bawaan sampai OQ-MCRL-01 dijawab: **ikut XML — tidak ditegakkan**. Pelajaran GILIRAN-11: dua gerbang mati pernah ditegakkan di modul lain dan harus dicabut |
 
 **Status:** `[menunggu OQ-MCRL-01]` — tidak dibangun. Uji paket 3 membuktikan kontrak dengan tahun berbeda **tetap tersimpan**.
+
+## Status 01-10-2026 (paket 11)
+
+**Status:** ⏸️ tetap `[menunggu OQ-MCRL-01]` — gerbang tidak ditegakkan, di backend maupun layar (ikut Pega, K7).

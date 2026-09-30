@@ -104,3 +104,7 @@ make check
 | *"Layar menampilkan **share mentah dan eksposur efektif berdampingan**"* | kolom eksposur tidak ada di grid Pega — ditambahkan dengan label tiket, OQ-MCRL-08 (R11) |
 | *"ditegakkan **FK** di basis data"* | nol FK di DEV (K1); induk diperiksa Go |
 | — | `Add` Pega mengosongkan halaman reinsurer, bukan form security — sistem baru mengosongkan form security (OQ-MCRL-12); `(%) SHARE` 0..100 (R3) |
+
+## Status 01-10-2026 (paket 11)
+
+**Status:** ✅ **dibangun** — paket 5 (`484f9d4`: eksposur share × share induk), panel `Security Reinsurer` dengan share mentah dan eksposur berdampingan paket 9+10 (`a3c07bc`).

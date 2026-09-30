@@ -110,3 +110,7 @@ make check
 | TAMBAHAN-TIKET: *"Test kaskade **tidak boleh** mengandaikan aplikasi yang menghapus anak"* | justru aplikasi yang menghapus anak; uji membuktikan urutan dan hasil akhirnya |
 | *"Penghapusan tercatat di **jejak audit**"* | nol tabel jejak (K6): satu baris log server berisi cacah baris terhapus per tabel, tanpa nama orang |
 | — | pesan sukses VERBATIM `"Data Berhasil di Hapus"` (kontrak/reinsurer/security) dan `"Data Dengan ID <id> Berhasil di Hapus"` (business); konfirmasi yang jumlahnya tidak lagi cocok dengan data ditolak 409 tanpa satu baris pun terhapus |
+
+## Status 01-10-2026 (paket 11)
+
+**Status:** ✅ **dibangun** — kaskade satu transaksi, cacah dikonfirmasi paket 7 (`81b78bd`), popup `Yes`/`Cancel` di keempat panel paket 9+10 (`a3c07bc`).
