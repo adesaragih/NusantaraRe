@@ -257,9 +257,12 @@ func (r *SummaryPolis) KepalaSummaryWarisan(ctx context.Context, tx *db.Tx,
 		}
 		return KepalaSummaryWarisan{}, fmt.Errorf("repository: membaca kepala summary warisan: %w", err)
 	}
+	// ⛔ Apa adanya, TANPA pangkas - sama dengan `p.PL_NUMBER_EDM` salinan
+	// detail (temuan /code-review GILIRAN-18): dua tabel warisan satu submit
+	// tidak boleh berselisih pada kunci yang sama.
 	return KepalaSummaryWarisan{
 		NomorPL:  nomorPL,
-		NomorEDM: strings.TrimSpace(edm.String),
+		NomorEDM: edm.String,
 		COB:      cob.String,
 		IDPega:   polisID,
 	}, nil

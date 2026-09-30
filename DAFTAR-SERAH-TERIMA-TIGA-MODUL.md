@@ -45,8 +45,9 @@ tiket dan di `.scratch/claim-life/OQ-untuk-tim.md`.
 
 ## 5. Work owner — baru dari GILIRAN-17
 
-*Kosong sejak GILIRAN-18.* N13 diputuskan dari bukti XML b176 (lihat §7). Work owner tetap dapat **memveto**; bila diveto,
-yang dibalik satu pemanggilan di `simpanrnm.go` langkah 22.
+*Kosong sejak GILIRAN-18.* N13 ditutup **atas perintah brief GILIRAN-18 yang diserahkan work owner** (CLAUDE.md §6), dan
+keputusannya berasal dari bukti XML b176 (lihat §7). Work owner tetap memegang **veto**. Bila diveto, yang dibalik adalah
+`SetelCerminOutstanding` di `simpanrnm.go` langkah 22 dan `sqlIkutkanStatusCermin` di `PerbaruiStatusBaris`.
 
 ## 6. Menunggu jawaban lain
 
@@ -59,6 +60,10 @@ yang dibalik satu pemanggilan di `simpanrnm.go` langkah 22.
 *Migrasi `021_kolom_komentar_jejak.sql` dan `022_kolom_sts_hapus_peserta.sql` (+ `_down`) dijalankan **work owner** sesudah
 giliran ini; executor tidak menjalankan `-migrate` dan tidak menyentuh Oracle.*
 
+⛔ **Prasyarat GILIRAN-18:** `Submit` PremiumList kini menulis `M_LIFE_PREMIUM_SUMMARY` lewat `M_LIFE_PREMIUM_SUMMARY_SEQ`
+di `ORACLE_SCHEMA`. Keduanya ada di DEV; skema lain harus memuatnya. Klaim Life yang sudah Save to RNM sebelum `1b51183`
+cerminnya tetap NULL sampai tombol ditekan ulang atau barisnya diputus (tiket 03).
+
 ⛔ **Urutan deploy (temuan /code-review):** binari dari commit GILIRAN-17 **menuntut** kedua kolom itu. Sebelum `021` terpasang,
 setiap penulisan jejak (8 kolom) gagal ORA-00904; sebelum `022`, setiap pembacaan peserta Claim Life gagal ORA-00904. Migrasi
 tidak berjalan saat binari mulai, jadi jalankan `-migrate` (`make migrate`) **lebih dulu**, baru jalankan binarinya.
@@ -67,5 +72,5 @@ tidak berjalan saat binari mulai, jadi jalankan `-migrate` (`make migrate`) **le
 
 | Butir | Dari | Ditutup oleh | Commit |
 | --- | --- | --- | --- |
-| **PL-09** | §1 DBA | Asisten membaca badan `PEGA_M_LIFE_PREMIUM_SUMMARY` dari `ALL_SOURCE` DEV (`.scratch/premiumlist-life/dba-procedure-PEGA_M_LIFE_PREMIUM_SUMMARY.md`, `526fc93`). Isinya ditiru di Go: 37 kolom + `ID` dari sequence, dalam transaksi simpan summary yang sama. Tipe kolom dan index tabel itu tetap `[belum terverifikasi]`; keduanya dicatat di tiket 05a, bukan butir DBA baru | `0021df1` |
-| **N13** | §5 work owner | Ikut XML b176 `[keputusan asisten dari bukti; veto work owner]`: Save to RNM menyetel `STS_REJECT = '0'` cermin. Larangan baca-saja dicabut untuk kolom itu **saja**; `ACCEPTATION_DATE` (b175) tidak ikut (tiket 03) | `1b51183` |
+| **PL-09** | §1 DBA | Ditutup atas perintah brief GILIRAN-18 (work owner). Asisten membaca badan `PEGA_M_LIFE_PREMIUM_SUMMARY` dari `ALL_SOURCE` DEV (`.scratch/premiumlist-life/dba-procedure-PEGA_M_LIFE_PREMIUM_SUMMARY.md`, `526fc93`). Isinya ditiru di Go: 37 kolom + `ID` dari sequence, dalam transaksi simpan summary yang sama. Tipe kolom dan index tabel itu tetap `[belum terverifikasi]`; keduanya dicatat di tiket 05a, bukan butir DBA baru | `0021df1` |
+| **N13** | §5 work owner | Ditutup atas perintah brief GILIRAN-18 (work owner), ikut XML b176 `[keputusan asisten dari bukti; veto work owner]`. Save to RNM menyetel `STS_REJECT = '0'` cermin, dan sejak perbaikan /code-review penolakan/akseptasi ikut menyelaraskannya. Larangan baca-saja dicabut untuk kolom itu **saja**; `ACCEPTATION_DATE` (b175) tidak ikut (tiket 03) | `1b51183` + perbaikan |

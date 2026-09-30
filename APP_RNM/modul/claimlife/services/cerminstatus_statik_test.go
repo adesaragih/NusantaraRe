@@ -39,3 +39,18 @@ func TestSimpanRNMMenyetelCerminDiTransaksiYangSama(t *testing.T) {
 		lalu = i
 	}
 }
+
+// TestLangkahCerminSaveRNM - baris baru ditandai DAN dicerminkan; baris yang
+// sudah Outstanding hanya dicerminkan (cermin NULL milik klaim yang disimpan
+// sebelum N13 pulih saat tombolnya ditekan ulang, OQ-N1); baris berkeputusan
+// tidak disentuh.
+func TestLangkahCerminSaveRNM(t *testing.T) {
+	for kode, mau := range map[string][2]bool{
+		"": {true, true}, " ": {true, true}, "0": {false, true}, "1": {false, false}, "2": {false, false},
+	} {
+		tandai, cermin := langkahCerminSaveRNM(kode)
+		if tandai != mau[0] || cermin != mau[1] {
+			t.Errorf("kode %q: tandai %v cermin %v, mau %v", kode, tandai, cermin, mau)
+		}
+	}
+}

@@ -1053,3 +1053,22 @@ tidak menandai apa pun (Pega `deleteRow` pun tidak membatasinya). Bila bisnis me
 ⚠️ **Sisa, dicatat dan tidak diubah:**
 - **`ACCEPTATION_DATE`.** b175 mengisi kolom ini dengan `SYSDATE` di baris yang sama. Kolom itu **tidak** ikut dicabut dari larangan, jadi urutan `ORDER BY o.ACCEPTATION_DATE DESC` pemeriksa ganda untuk cermin aplikasi tetap memakai nilai pendaftaran.
 - **Baris adjustment putaran Komite** (`PohonKlaim.SisipkanBaris`, tiket 11). Baris ini tidak punya baris cermin, sehingga penyetelnya menyentuh nol baris; ini bukan galat. Di Pega, Save to RNM menyisip cermin untuk setiap baris baru. Menyisip di sini berarti menulis kolom lain, di luar pencabutan yang sempit ini.
+
+## Perbaikan /code-review GILIRAN-18 — 30 September 2026
+
+| Temuan | Tindakan |
+| --- | --- |
+| ⛔ **Regresi yang lahir dari N13:** sesudah Save to RNM cermin `'0'`, lalu Admin menolak baris itu. Cermin **tertahan `'0'`**, dan gerbang 11.4 (`==0 \|\| ==1` pesan) memblokir **setiap** klaim kematian berikutnya atas tertanggung itu. Di Pega, `RejectOSClaimLife_Act` langkah 5 `Insert ke OS` (b1970, `pyStepsBlockName` kosong b1982) dan `SaveAdjustment_Act` 1.6.2 (b2363, kosong b2375) menulis cermin lewat `UpdateOsAkseptasiClaimLife_sql` | status cermin kini **mengikuti** titik tunggal penulis status, `KlaimLife.PerbaruiStatusBaris` (`sqlIkutkanStatusCermin`). Hanya kolom `STS_REJECT`, batas pencabutan yang sama. Kunci `ID` + `CASEID` klaim pemilik peserta (`NVL(CASE_ID, ID)`). Hanya cermin yang NULL atau masih berkode lama yang disentuh, sehingga cermin tulisan Komite (`RekamAkhirWarisan`) tidak ditimpa. Nol baris bukan galat. Rule Pega meng-`INSERT` baris baru; di sini baris yang ada diperbarui, penyimpangan yang sama dengan Komite. Catatan tiket 05 "jalur datar warisan tidak dikerjakan — pemetaan belum ada" terjawab untuk kolom ini: pemetaannya kini ada sejak pendaftaran |
+| klaim yang di-Save to RNM **sebelum** `1b51183` cerminnya tetap NULL | ditekan ulang (tombol tetap hidup, OQ-N1): baris yang sudah Outstanding kini ikut dicerminkan (`langkahCerminSaveRNM`), hanya bila cerminnya masih NULL. Saat ditolak atau diaksep, cermin NULL ikut diselaraskan |
+| fixture uji `db` N13 memakai `UJI-POLIS-1801`, sama dengan uji `db` PremiumList | diganti `UJI-POLIS-1811` |
+| penulis cermin tersebar di layanan, bukan di titik tunggal | penyelarasan reject/akseptasi dipindah ke `PerbaruiStatusBaris`; Save to RNM tetap memanggil `SetelCerminOutstanding` karena `TandaiBarisOutstanding` bukan `PerbaruiStatusBaris` (sensus penulis) |
+
+Uji baru:
+- `TestStatusCerminMengikutiPenulisStatus`: teks SQL untuk dua bentuk kode lama, dan `PerbaruiStatusBaris` memanggilnya.
+- `TestLangkahCerminSaveRNM`.
+- Uji `db` `TestSaveRNMMenyetelCerminSehinggaKlaimGandaTertangkap`, kini dengan satu tahap tambahan: A ditolak, cermin A `'2'`, dan B melihat `'2'` sehingga lolos 11.4.
+
+⚠️ **Sisa, dicatat dan tidak diubah:**
+1. **Balapan.** Dua Save to RNM serentak atas tertanggung yang sama sama-sama membaca cermin lawan NULL, jadi keduanya lolos. Gerbang dibaca di luar transaksi tulis, dan Pega punya jendela yang sama.
+2. **`ACCEPTATION_DATE` cermin aplikasi.** Kolom ini tetap bernilai pendaftaran. Dengan `ORDER BY … DESC`, NULL didahulukan.
+3. **Cermin klaim yang di-Save to RNM sebelum `1b51183`.** Cermin itu tetap NULL sampai tombol ditekan ulang atau barisnya diputus. Tidak ada migrasi data (brief: nol migrasi baru); bila work owner menghendaki pemulihan sekaligus, itu satu `UPDATE` data oleh DBA.

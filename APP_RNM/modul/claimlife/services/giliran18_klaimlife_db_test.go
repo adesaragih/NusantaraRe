@@ -10,6 +10,7 @@ package services_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"nusantarare/inti"
 	intidb "nusantarare/inti/db"
@@ -33,10 +34,12 @@ func TestSaveRNMMenyetelCerminSehinggaKlaimGandaTertangkap(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		q := `INSERT INTO ` + nama + ` (ID) VALUES ('UJI-POLIS-1801')`
+		// ⚠️ Pengenal berbeda dari uji db PremiumList (`UJI-POLIS-1801`) -
+		// temuan /code-review: dua paket memakai skema uji yang sama.
+		q := `INSERT INTO ` + nama + ` (ID) VALUES ('UJI-POLIS-1811')`
 		if tabel == "T_PREMIUM_LIST" {
 			q = `INSERT INTO ` + nama + ` (ID, NO_POLIS, CEDING_CO, PROD_KE)
-			     VALUES ('UJI-POLIS-1801', 'UJI-POL-0001', 'UJI-CEDING-1', 0)`
+			     VALUES ('UJI-POLIS-1811', 'UJI-POL-0001', 'UJI-CEDING-1', 0)`
 		}
 		if _, err := db.ExecContext(ctx, q); err != nil {
 			t.Fatalf("polis tiruan: %v", err)
@@ -110,6 +113,25 @@ func TestSaveRNMMenyetelCerminSehinggaKlaimGandaTertangkap(t *testing.T) {
 	}
 	if s, err := baca.StatusWarisanTerakhir(ctx, k, "UJI-CEDING-1", "CLM-UJI1801"); err != nil || s != "" {
 		t.Errorf("klaim A melihat cerminnya sendiri: %q, %v", s, err)
+	}
+
+	// Temuan /code-review: Admin MENOLAK baris A (RejectOSClaimLife_Act langkah
+	// 5) - cermin mengikuti '2', dan klaim B tidak lagi terblokir (11.4 `==2`
+	// lewati). Tanpa penyelarasan, cermin tertahan '0' selamanya.
+	pesertaA, err := baca.AmbilPeserta(ctx, "CLM-UJI1801")
+	if err != nil || len(pesertaA) != 1 {
+		t.Fatalf("peserta A: %v (%d)", err, len(pesertaA))
+	}
+	if err := svc.DalamTransaksi(ctx, func(tx *intidb.Tx) error {
+		return baca.PerbaruiStatusBaris(ctx, tx, pesertaA[0].ID, adjA, "0", "2", "", time.Time{})
+	}); err != nil {
+		t.Fatalf("menolak baris A: %v", err)
+	}
+	if statusCermin(adjA) != "2" {
+		t.Errorf("cermin A sesudah ditolak: %s, mau '2'", statusCermin(adjA))
+	}
+	if s, err := baca.StatusWarisanTerakhir(ctx, k, "UJI-CEDING-1", "CLM-UJI1802"); err != nil || s != "2" {
+		t.Errorf("sesudah A ditolak: status terlihat B = %q, %v; mau '2' (lolos 11.4)", s, err)
 	}
 
 	// Baris yang SUDAH berkeputusan tidak ditimpa, dan CASEID lain tidak tersentuh.

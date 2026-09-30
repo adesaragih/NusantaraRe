@@ -549,6 +549,11 @@ Syarat data yang dituntut query:
 3. `TYPE` bernilai salah satu dari `QR`/`QP`/`TP`/`TR`, dan `BUSINESS_CODE` terisi. Keduanya bahan nomor dan rekap.
 4. Tabel rujukan: `POOLDATA.TANGGAL_CLOSING` terisi (bahan periode), dan awalan `KODE_PRODUKSI` untuk lini Life
    tersedia (bahan awalan nomor).
+5. *(GILIRAN-18)* **Tabel warisan yang ditulis `Submit`** (dan `Confirm` lewat `Utility1`) harus ada di skema
+   `ORACLE_SCHEMA`: `M_LIFE_PREMIUM_DETAIL` + `M_LIFE_PREMIUM_DETAIL_SEQ` (pl2), dan `M_LIFE_PREMIUM_SUMMARY` +
+   `M_LIFE_PREMIUM_SUMMARY_SEQ` (PL-09). Di DEV keduanya ada. Di skema uji kosong, `Submit` gagal ORA-00942/ORA-02289
+   dan seluruh transaksinya batal. `COB` rekap warisan diambil dari `T_PREMIUM_LIST.BUSINESS_NAME`; isi kolom itu
+   di data uji bila ingin `COB` tidak NULL.
 
 #### 1.3 Perilaku layar yang perlu diketahui sebelum mulai
 

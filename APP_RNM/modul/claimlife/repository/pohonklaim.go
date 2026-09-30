@@ -526,6 +526,37 @@ func (r *KlaimLife) SetelCerminOutstanding(ctx context.Context, tx *db.Tx, adjID
 	return int(n), nil
 }
 
+// sqlIkutkanStatusCermin - temuan /code-review GILIRAN-18 atas OQ-N13: status
+// cermin MENGIKUTI setiap penulis `PerbaruiStatusBaris`.
+//
+// `[terverifikasi]` Di Pega penolakan Admin (`RejectOSClaimLife_Act` langkah 5
+// `Insert ke OS` b1970, `pyStepsBlockName` kosong b1982) dan akseptasi
+// (`SaveAdjustment_Act` 1.6.2 b2363, kosong b2375) menulis cermin lewat
+// `UpdateOsAkseptasiClaimLife_sql`. Tanpa ini, cermin yang disetel '0' oleh
+// Save to RNM TERTAHAN '0' sesudah baris ditolak, dan gerbang 11.4
+// (`==0 || ==1` pesan) memblokir setiap klaim kematian berikutnya atas
+// tertanggung itu - regresi yang dilahirkan N13 sendiri.
+//
+// ⛔ `STS_REJECT` SAJA - batas pencabutan larangan yang sama dengan N13.
+// Rule itu meng-`INSERT` baris baru; di sini baris cerminnya sudah ada sejak
+// pendaftaran, jadi DIPERBARUI (penyimpangan yang sama dengan
+// `RekamAkhirWarisan` Komite). Kunci `ID` baris adjustment + `CASEID` klaim
+// pemilik peserta (`NVL(CASE_ID, ID)`, bentuk yang sama dengan pengecualian
+// pemeriksa ganda). Hanya cermin yang masih NULL atau masih berkode lama yang
+// ikut - cermin yang sudah ditulis jalur lain (Komite) tidak ditimpa, dan
+// cermin NULL milik klaim yang disimpan sebelum N13 ikut pulih.
+func sqlIkutkanStatusCermin(lama, work, pes string, dariKosong bool) string {
+	syarat := "o.STS_REJECT IS NULL"
+	if !dariKosong {
+		syarat = "(o.STS_REJECT IS NULL OR o.STS_REJECT = :4)"
+	}
+	return fmt.Sprintf(`UPDATE %s o SET o.STS_REJECT = :1
+	 WHERE o.ID = :2
+	   AND o.CASEID = (SELECT NVL(w.CASE_ID, w.ID) FROM %s w, %s p
+	                    WHERE p.ID = :3 AND w.ID = p.CLAIM_ID)
+	   AND %s`, lama, work, pes, syarat)
+}
+
 // sqlIsiCedingCermin - CEDINGCO cermin dari POLIS (OQ-N2, GILIRAN-17):
 // `pyWorkPage.PolicyDataLife.CedingCo` b9226 -> `InsertJsonKlaimLife_sql`
 // b114. `T_PREMIUM_LIST.CEDING_CO` baris PROD_KE terakhir - bentuk yang sama

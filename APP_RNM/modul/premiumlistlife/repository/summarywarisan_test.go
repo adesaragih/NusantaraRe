@@ -289,3 +289,43 @@ func TestGantiSummaryWarisanMenolakKepalaKosong(t *testing.T) {
 		t.Errorf("rekap kosong: %v, mau ErrRekapKosong", err)
 	}
 }
+
+// TestSetiapKolomUangSummaryPunyaSumberRekap - TANPA korpus (temuan
+// /code-review GILIRAN-18).
+//
+// ⛔ Cabang bawaan `nilaiSummaryWarisan` membaca `r.Jumlah[kolom]`, dan kolom
+// yang tidak dijumlah rekap menjadi "0" TANPA galat - "nol diam-diam" yang
+// diperingatkan `models`. `TestSumberSummaryWarisanDariKorpus` menagihnya
+// juga, tetapi ia SKIP di mesin tanpa korpus; uji ini tidak.
+func TestSetiapKolomUangSummaryPunyaSumberRekap(t *testing.T) {
+	jumlah := map[string]bool{}
+	for _, k := range models.KolomJumlahSummary {
+		jumlah[k] = true
+	}
+	uang, teks := 0, 0
+	for _, k := range kolomSummaryWarisan {
+		if !KolomUangSummaryWarisan(k) {
+			teks++
+			continue
+		}
+		uang++
+		switch k {
+		case "PREMIUM", "COMMISSION", "BALANCE":
+			continue
+		}
+		if !jumlah[k] {
+			t.Errorf("kolom uang %s tidak dijumlah models.KolomJumlahSummary; ia akan selalu 0", k)
+		}
+	}
+	if uang != 32 || teks != 5 {
+		t.Errorf("uang %d, teks %d; mau 32 + 5 (badan prosedur)", uang, teks)
+	}
+	// Kelima kolom teks dipetakan cabang tersendiri, bukan jatuh ke cabang uang.
+	kepala := KepalaSummaryWarisan{NomorPL: "UJI-PL-1", NomorEDM: "UJI-EDM-1", COB: "UJI-COB", IDPega: "UJI-W-1"}
+	arg := nilaiSummaryWarisan(kepala, rekapUjiPL09())
+	for i, k := range kolomSummaryWarisan {
+		if !KolomUangSummaryWarisan(k) && arg[i] == "0" {
+			t.Errorf("kolom teks %s jatuh ke cabang uang", k)
+		}
+	}
+}

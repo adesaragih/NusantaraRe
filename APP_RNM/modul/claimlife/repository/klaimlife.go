@@ -566,6 +566,29 @@ func (r *KlaimLife) PerbaruiStatusBaris(ctx context.Context, tx *db.Tx,
 				l.nama, n)
 		}
 	}
+	// Temuan /code-review GILIRAN-18 (OQ-N13): cermin warisan mengikuti status
+	// baris - `sqlIkutkanStatusCermin`. ⚠️ Nol baris BUKAN galat: baris putaran
+	// Komite tidak punya cermin, dan cermin yang sudah ditulis jalur lain tidak
+	// ditimpa.
+	lama, err := r.db.Qualify(namaTabelLama)
+	if err != nil {
+		return err
+	}
+	work, err := r.db.Qualify("T_WORK_CLAIM")
+	if err != nil {
+		return err
+	}
+	q := sqlIkutkanStatusCermin(lama, work, pes, kosong(kodeLama))
+	if err := db.PeriksaSQL(q); err != nil {
+		return err
+	}
+	arg := []any{db.KosongJadiNil(kode), adjID, pesertaID}
+	if !kosong(kodeLama) {
+		arg = append(arg, kodeLama)
+	}
+	if _, err := tx.ExecContext(ctx, q, arg...); err != nil {
+		return fmt.Errorf("repository: mencerminkan status ke cermin warisan: %w", err)
+	}
 	return nil
 }
 

@@ -513,3 +513,17 @@ argumen yatim. Hitungan "37 kolom" di tiket ini (baris 56–57) yang keliru.
 - **Tipe kolom** `M_LIFE_PREMIUM_SUMMARY` `[belum terverifikasi]`. Katalog DEV mencatat cacahnya, bukan tipenya. Tiruan memakai `NUMBER` untuk uang, dan angka dikirim sebagai teks sehingga bergantung pada NLS sesi, pola yang sama dengan `GantiRekap`.
 - **Index** `PL_NUMBER` tabel itu `[belum terverifikasi]`.
 - **Bentuk `IDPEGA`.** `pyID` (`NBLF-<n>`), sama dengan salinan detail. Baris warisan Pega berbentuk `pzInsKey` berawalan kelas (`polis_kasus.go`), sehingga `DELETE` kami tidak pernah menyentuh baris buatan Pega.
+
+## Perbaikan /code-review GILIRAN-18 — 30 September 2026
+
+| Temuan | Tindakan |
+| --- | --- |
+| cabang bawaan `nilaiSummaryWarisan` mengubah kolom uang yang tidak dijumlah rekap menjadi `"0"` tanpa galat; satu-satunya penjaganya SKIP tanpa korpus | uji tanpa korpus `TestSetiapKolomUangSummaryPunyaSumberRekap`: setiap kolom uang selain tiga turunan harus ada di `models.KolomJumlahSummary` (32 uang + 5 teks), dan kelima kolom teks tidak jatuh ke cabang uang |
+| `PL_NUMBER_EDM` summary dipangkas, sedangkan salinan detail tidak | kini apa adanya, sama dengan detail |
+| `Submit`/`Confirm` (Utility1) kini menuntut `M_LIFE_PREMIUM_SUMMARY` + `_SEQ` di `ORACLE_SCHEMA` | prasyarat ditulis di PANDUAN-UJI §2.1.2 butir 5, bersama `M_LIFE_PREMIUM_DETAIL` + `_SEQ` yang sudah dituntut sejak pl2 |
+
+⚠️ **Sisa, dicatat dan tidak diubah:**
+1. **`COB` NULL untuk polis buatan aplikasi.** `T_PREMIUM_LIST.BUSINESS_NAME` belum punya penulis di repo ini. Header polis belum ditulis kode mana pun, sama dengan `ID_PEGA` (lihat `PesertaWarisan.Ganti`). Nilainya ada bila header diisi data uji atau migrasi.
+2. **Bentuk `IDPEGA`.** Nilainya `pyID` (`NBLF-<n>`), sama dengan salinan detail. Sampel DEV 200 baris per tabel (`polis_kasus.go`) berbentuk `ASM-FW-GISFW-WORK NBLF-<n>`. Menyamakan bentuk kedua tabel warisan dengan Pega adalah keputusan tersendiri, karena mengubah kunci hapus-idempoten detail dan summary sekaligus.
+3. **Teks desimal ke kolom yang mungkin `NUMBER`.** Konversinya bergantung pada NLS sesi, seperti parameter `VARCHAR2` prosedur itu sendiri dan seperti `GantiRekap`. **Kegagalan membatalkan seluruh `Submit`.** Ini keputusan pl2 (satu transaksi), yang dengan sadar berbeda dari `EXCEPTION … StsSave := 0` prosedur.
+4. **Satu pembacaan `T_PREMIUM_LIST` tambahan** di dalam transaksi bernomor. Dibiarkan terpisah supaya penomoran (`Identitas`) tidak ikut berubah.

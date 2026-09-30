@@ -715,11 +715,14 @@ Aplikasi ini menulis baris cermin **saat pendaftaran** dengan status NULL. Langk
 **baca-saja** (brief GILIRAN-11; header `simpanrnm.go` langkah 22). Akibatnya, sejak OQ-N2 klaim ganda antarklaim baru
 tertangkap hanya sesudah klaim lawannya diputus Komite.
 
-✅ **OQ-N13 DITUTUP 30-09-2026 (GILIRAN-18, `1b51183`)** `[keputusan asisten dari bukti; veto work owner]`: ikut XML. Save to
+✅ **OQ-N13 DITUTUP 30-09-2026 (GILIRAN-18, `1b51183`)** atas perintah brief GILIRAN-18 yang diserahkan work owner
+(CLAUDE.md §6) `[keputusan asisten dari bukti; veto work owner]`: ikut XML. Save to
 RNM menyetel `STS_REJECT = '0'` pada baris cermin setiap baris adjustment yang baru ditandai, di transaksi yang sama
 (`KlaimLife.SetelCerminOutstanding`, dikunci `ID` + `CASEID` + `STS_REJECT IS NULL`). Larangan baca-saja dicabut untuk kolom
-itu **saja**; `ACCEPTATION_DATE` (b175) tidak ikut. Klaim yang menunggu Komite kini tertangkap sebagai ganda. Rincian dan sisa:
-tiket 03, bab 30-09-2026.
+itu **saja**; `ACCEPTATION_DATE` (b175) tidak ikut. Klaim yang menunggu Komite kini tertangkap sebagai ganda. Perbaikan
+/code-review: penolakan dan akseptasi ikut menyelaraskan status cermin (`PerbaruiStatusBaris`), seperti
+`UpdateOsAkseptasiClaimLife_sql` di Pega. Tanpa itu, cermin yang ditolak tertahan `'0'` dan memblokir klaim sah. Rincian dan
+sisa: tiket 03, dua bab 30-09-2026.
 > Bolehkah Save to RNM menyetel `STS_REJECT = '0'` (dan `ACCEPTATION_DATE`?) pada baris cermin yang barisnya ditandai, seperti
 > b175/b176, sehingga klaim yang menunggu Komite pun tertangkap?
 

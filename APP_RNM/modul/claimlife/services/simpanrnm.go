@@ -320,6 +320,24 @@ type HasilSimpanRNM struct {
 	Arasapas string `json:"arasapas"`
 }
 
+// langkahCerminSaveRNM memutuskan apa yang dikerjakan Save to RNM atas satu
+// baris: baris tanpa status DITANDAI (22.1.3.2) dan dicerminkan (b176); baris
+// yang sudah Outstanding HANYA dicerminkan - cermin NULL milik klaim yang
+// disimpan sebelum N13 pulih saat tombolnya ditekan ulang (OQ-N1, tombol
+// tetap hidup); baris berkeputusan tidak disentuh sama sekali.
+//
+// Temuan /code-review GILIRAN-18. `SetelCerminOutstanding` sendiri hanya
+// menyentuh cermin yang masih NULL, jadi mencerminkan ulang baris '0' aman.
+func langkahCerminSaveRNM(kode string) (tandai, cermin bool) {
+	switch strings.TrimSpace(kode) {
+	case "":
+		return true, true
+	case kontrak.KodeOutstanding:
+		return false, true
+	}
+	return false, false
+}
+
 // SimpanRNM adalah layanan Save to RNM.
 type SimpanRNM struct {
 	svc      *Service
@@ -494,11 +512,14 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku inti.Pelaku, klaimID stri
 			p := &klaim.Peserta[i]
 			for j := range p.Baris {
 				b := &p.Baris[j]
-				if strings.TrimSpace(b.KodeStatus) != "" {
+				tandai, cermin := langkahCerminSaveRNM(b.KodeStatus)
+				if !cermin {
 					continue
 				}
-				if err := baca.TandaiBarisOutstanding(ctx, tx, b.ID); err != nil {
-					return err
+				if tandai {
+					if err := baca.TandaiBarisOutstanding(ctx, tx, b.ID); err != nil {
+						return err
+					}
 				}
 				// OQ-N13 (GILIRAN-18) - langkah 22.1.3.1 `InsertJsonKlaimLife_sql`
 				// b176: cermin baris ini '0', supaya klaim ganda antarklaim baru
@@ -509,6 +530,9 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku inti.Pelaku, klaimID stri
 					return err
 				}
 				hasil.CerminDisetel += n
+				if !tandai {
+					continue
+				}
 				b.KodeStatus = kontrak.KodeOutstanding
 				if err := x.jejak.Rekam(ctx, tx, jejak.CatatanJejak{
 					AdjustmentID: b.ID, KlaimID: klaimID, Dari: "", Ke: kontrak.KodeOutstanding,
