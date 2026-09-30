@@ -7,7 +7,11 @@ package services
 // Treaty Contract Out [keputusan work owner 30-09-2026 untuk TCO]; pesan yang
 // ada di korpus dibawa VERBATIM (`PesanKosongTahun`, `PesanKosongSemua`, dst).
 
-import "strings"
+import (
+	"errors"
+	"regexp"
+	"strings"
+)
 
 // Pesan VERBATIM korpus.
 const (
@@ -29,14 +33,27 @@ func PesanHapusBusiness(id string) string {
 	return "Data Dengan ID" + " " + id + " " + "Berhasil di Hapus"
 }
 
-// Pesan - kalimat galat untuk layar: awalan lapisan dibuang, isinya tetap.
+// pesanLayar - galat yang punya kalimat layar sendiri, berbeda dari teks
+// lognya (mis. `repository.GalatMaster`: sebab Oracle hanya di log).
+type pesanLayar interface{ PesanLayar() string }
+
+var polaMarkup = regexp.MustCompile(`<[^>]*>`)
+
+// Pesan - kalimat galat untuk layar, di SATU tempat (tiket 10): kalimat layar
+// galat bila ada, awalan lapisan dibuang, dan markup dibuang - nilai masukan
+// atau teks luar yang memuat tag tidak pernah kembali sebagai tag.
 func Pesan(err error) string {
 	if err == nil {
 		return ""
 	}
+	var l pesanLayar
 	s := err.Error()
+	if errors.As(err, &l) {
+		s = l.PesanLayar()
+	}
 	for _, a := range []string{"services: ", "repository: ", "models: "} {
 		s = strings.ReplaceAll(s, a, "")
 	}
-	return s
+	s = polaMarkup.ReplaceAllString(s, "")
+	return strings.TrimSpace(strings.NewReplacer("<", "", ">", "").Replace(s))
 }

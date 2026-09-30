@@ -161,3 +161,11 @@ func TestRateTanpaIdUsedByDitolak(t *testing.T) {
 		t.Fatalf("idusedby kosong: %v", err)
 	}
 }
+
+// Pembersih galat di SATU tempat (tiket 10): tag dibuang BERSAMA isinya.
+func TestPesanMembuangMarkupDanAwalanLapisan(t *testing.T) {
+	err := errors.New(`services: <span style="color:red">Data gagal</span> disimpan`)
+	if got := services.Pesan(err); got != "Data gagal disimpan" {
+		t.Errorf("Pesan = %q", got)
+	}
+}

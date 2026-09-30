@@ -397,6 +397,14 @@ func Baru() *Gudang {
 	}
 }
 
+// galatMaster - pembungkus yang sama dengan repository.
+func (g *Gudang) galatMaster(objek string) error {
+	if g.GalatMaster == nil {
+		return nil
+	}
+	return repository.MasterTidakTerbaca(objek, g.GalatMaster)
+}
+
 func (g *Gudang) catat(s ...string) { g.Panggilan = append(g.Panggilan, strings.Join(s, "|")) }
 
 func urutID[T any](m map[string]T, saring func(T) bool, id func(T) string, menurun bool) []T {
@@ -492,7 +500,7 @@ func (g *Gudang) AmbilBusiness(_ context.Context, _ *db.Tx, id string) (models.B
 
 // JenisReasuransiLife - daftar tetap uji.
 func (g *Gudang) JenisReasuransiLife(context.Context) ([]models.JenisReasuransi, error) {
-	return g.Jenis, g.GalatMaster
+	return g.Jenis, g.galatMaster(repository.MasterJenisReasuransi)
 }
 
 // CariMasterReinsurer - `Contains`, tidak peka huruf besar-kecil.
@@ -503,17 +511,17 @@ func (g *Gudang) CariMasterReinsurer(_ context.Context, kata string) ([]models.M
 			hasil = append(hasil, m)
 		}
 	}
-	return hasil, g.GalatMaster
+	return hasil, g.galatMaster(repository.MasterReinsurer)
 }
 
 // AmbilMasterReinsurer - menurut ID.
 func (g *Gudang) AmbilMasterReinsurer(_ context.Context, id string) (models.MasterReinsurer, bool, error) {
 	for _, m := range g.MasterRe {
 		if m.ID == id {
-			return m, true, g.GalatMaster
+			return m, true, g.galatMaster(repository.MasterReinsurer)
 		}
 	}
-	return models.MasterReinsurer{}, false, g.GalatMaster
+	return models.MasterReinsurer{}, false, g.galatMaster(repository.MasterReinsurer)
 }
 
 // CariMasterBusiness - `Contains` atas Note.
@@ -524,17 +532,17 @@ func (g *Gudang) CariMasterBusiness(_ context.Context, kata string) ([]models.Ma
 			hasil = append(hasil, m)
 		}
 	}
-	return hasil, g.GalatMaster
+	return hasil, g.galatMaster(repository.MasterBusiness)
 }
 
 // AmbilMasterBusiness - menurut ID.
 func (g *Gudang) AmbilMasterBusiness(_ context.Context, id string) (models.MasterBusiness, bool, error) {
 	for _, m := range g.MasterBiz {
 		if m.ID == id {
-			return m, true, g.GalatMaster
+			return m, true, g.galatMaster(repository.MasterBusiness)
 		}
 	}
-	return models.MasterBusiness{}, false, g.GalatMaster
+	return models.MasterBusiness{}, false, g.galatMaster(repository.MasterBusiness)
 }
 
 // Transaksi meniru `inti.Dasar.DalamTransaksi` untuk `services.BaruLayanan`:

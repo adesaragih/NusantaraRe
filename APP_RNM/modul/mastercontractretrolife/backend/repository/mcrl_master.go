@@ -31,6 +31,37 @@ const BatasPilihan = 100
 // skema); pesannya menyebut objeknya, tidak diam.
 var ErrMasterTidakTerbaca = errors.New("repository: reference master cannot be read")
 
+// GalatMaster membungkus kegagalan membaca satu master: `Error()` membawa
+// sebab aslinya (untuk log server), `PesanLayar()` hanya objeknya - teks mentah
+// Oracle tidak pernah sampai ke layar (K8, tiket 10).
+type GalatMaster struct {
+	Objek string
+	Sebab error
+}
+
+// MasterTidakTerbaca menyusun GalatMaster - dipakai repository dan tiruan uji.
+func MasterTidakTerbaca(objek string, sebab error) error {
+	return GalatMaster{Objek: objek, Sebab: sebab}
+}
+
+func (g GalatMaster) Error() string {
+	if g.Sebab == nil {
+		return fmt.Sprintf("%v: %s", ErrMasterTidakTerbaca, g.Objek)
+	}
+	return fmt.Sprintf("%v: %s: %v", ErrMasterTidakTerbaca, g.Objek, g.Sebab)
+}
+
+// Is membuat errors.Is(err, ErrMasterTidakTerbaca) benar.
+func (GalatMaster) Is(target error) bool { return target == ErrMasterTidakTerbaca }
+
+// Unwrap membuka sebab aslinya.
+func (g GalatMaster) Unwrap() error { return g.Sebab }
+
+// PesanLayar - kalimat untuk layar: objeknya saja.
+func (g GalatMaster) PesanLayar() string {
+	return fmt.Sprintf("reference master cannot be read: %s", g.Objek)
+}
+
 // Teks SQL master - fungsi murni atas nama tabel berkualifikasi (diuji tanpa Oracle).
 
 func sqlJenisReasuransi(t string) string {
@@ -79,19 +110,19 @@ func (g *Gudang) bacaMaster(ctx context.Context, objek string, susun func(string
 	}
 	rows, err := g.db.QueryContext(ctx, q, args...)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s: %v", ErrMasterTidakTerbaca, objek, err)
+		return nil, MasterTidakTerbaca(objek, err)
 	}
 	defer func() { _ = rows.Close() }()
 	var hasil []barisTeks
 	for rows.Next() {
 		b, err := pindai(rows, kolom)
 		if err != nil {
-			return nil, fmt.Errorf("%w: %s: %v", ErrMasterTidakTerbaca, objek, err)
+			return nil, MasterTidakTerbaca(objek, err)
 		}
 		hasil = append(hasil, b)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("%w: %s: %v", ErrMasterTidakTerbaca, objek, err)
+		return nil, MasterTidakTerbaca(objek, err)
 	}
 	return hasil, nil
 }
