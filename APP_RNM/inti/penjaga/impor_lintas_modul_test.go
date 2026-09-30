@@ -150,7 +150,8 @@ func TestAturanImporMenggigit(t *testing.T) {
 		{"modul/komiteclaimlife/services/x_test.go", "nusantarare/uji/skemauji", true},
 		{"modul/komiteclaimlife/services/x.go", "nusantarare/modul/komiteclaimlife/models", true},
 		{"modul/komiteclaimlife/modul.go", "nusantarare/modul/komiteclaimlife/handlers", true},
-		{"modul/komiteclaimlife/services/x.go", "nusantarare/modul/komiteb/models", false},
+		// Tabrakan awalan: `komiteclaimlifeb` diawali nama modul ini, tetapi modul LAIN.
+		{"modul/komiteclaimlife/services/x.go", "nusantarare/modul/komiteclaimlifeb/models", false},
 		{"modul/komiteclaimlife/services/x.go", "nusantarare/inti/kontrak", true},
 		{"modul/daftar.go", "nusantarare/modul/treatycontractout/services", true},
 		{"inti/kontrak/x.go", "nusantarare/modul/claimlife/models", false},

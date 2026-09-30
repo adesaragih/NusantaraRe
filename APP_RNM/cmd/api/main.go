@@ -86,7 +86,7 @@ func main() {
 	// -migrate / -migrate-down: migrasi tidak ikut MODUL_AKTIF, jadi salah
 	// ketik di sana tidak boleh menghalanginya (temuan /code-review).
 	terdaftar := modul.Rakit(dasar, cfg, catat)
-	aktif, err := pilihModulAktif(terdaftar, cfg.ModulAktif)
+	aktif, err := pilihModulAktif(terdaftar, modul.NamaLama, cfg.ModulAktif)
 	if err != nil {
 		log.Fatalf("konfigurasi: %v", err)
 	}

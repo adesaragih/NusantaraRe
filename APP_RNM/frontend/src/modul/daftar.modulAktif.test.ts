@@ -98,9 +98,16 @@ describe('nama modul sama dengan backend', () => {
         const sumber = readFileSync(join(AKAR_MODUL_GO, d.name, 'modul.go'), 'utf8')
         const cocok = /^const Nama = "([a-z]+)"$/m.exec(sumber)
         expect(cocok, `modul/${d.name}/modul.go tanpa const Nama`).not.toBeNull()
+        // Tabel nama modul (30-09-2026): nama folder backend = `const Nama`.
+        expect(cocok?.[1], `modul/${d.name}: folder dan const Nama berbeda`).toBe(d.name)
         return cocok?.[1] ?? ''
       })
     expect(dariGo.length).toBeGreaterThanOrEqual(4)
+    // Dan folder frontend = nama .scratch; tanpa tanda hubung = nama backend.
+    const folderFrontend = readdirSync(__dirname, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name)
+    expect(new Set(folderFrontend.map((n) => n.replace(/-/g, '')))).toEqual(new Set(dariGo))
     const dariFrontend = Object.values(MODUL_BACKEND).filter((m): m is string => m !== null)
     expect(new Set(dariFrontend)).toEqual(new Set(dariGo))
     // Daftar modul frontend = daftar modul backend (refactor bentuk B paket 7).

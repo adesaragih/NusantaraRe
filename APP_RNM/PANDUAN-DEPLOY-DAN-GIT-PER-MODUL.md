@@ -81,6 +81,9 @@ go run ./cmd/api                        # atau .\bin\api.exe
 - **Kosong (bawaan) = semua modul.**
 - **Nama lama** (`premiumlist`, `komite`, `treaty` — sebelum 30-09-2026) **ditolak** saat menyala
   dengan pesan yang menyebut nama barunya; tidak ada dua nama untuk satu modul.
+- ⚠️ **Deploy backend dan frontend bersama** untuk perubahan nama ini: `GET /api/modul-aktif` kini
+  menjawab nama baru, dan bundel frontend lama (atau yang tertahan di cache peramban) tidak
+  mengenalinya — menu PremiumList, Komite, dan Treaty akan hilang sampai bundelnya diganti.
 - Modul yang tidak disebut: rutenya **tidak didaftarkan** — jawabannya 404 berbadan JSON
   `{"galat":"modul <nama> tidak aktif di proses ini (MODUL_AKTIF)"}`, supaya layar tidak menyangka
   backend mati — **pekerja latarnya tidak jalan**, dan **menunya tidak tampil** — sidebar, palet Ctrl+K, dan kartu Beranda. Frontend membaca

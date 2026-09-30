@@ -39,6 +39,17 @@ func SumberMigrasi() []fs.FS {
 	}
 }
 
+// NamaLama memetakan nama modul SEBELUM tabel nama modul (keputusan work
+// owner 30-09-2026, `PROMPT-REFACTOR-NAMA-MODUL.md`) ke namanya kini. Hanya
+// dipakai untuk MENOLAK nama lama di MODUL_AKTIF dengan kalimat yang menyebut
+// nama barunya - tidak pernah untuk menerimanya. Setiap nilainya wajib nama
+// modul terdaftar (dijaga `cmd/api/rakit_test.go`).
+var NamaLama = map[string]string{
+	"premiumlist": "premiumlistlife",
+	"komite":      "komiteclaimlife",
+	"treaty":      "treatycontractout",
+}
+
 // Rakit membangun SETIAP modul terdaftar di atas satu akar bersama, dan
 // menyambung kontrak lintas modulnya (`inti/kontrak`).
 //

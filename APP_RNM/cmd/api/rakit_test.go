@@ -34,7 +34,7 @@ var ruteContoh = map[string]string{
 func muxUji(t *testing.T, diminta []string) (http.Handler, []inti.Modul) {
 	t.Helper()
 	terdaftar := modul.Rakit(inti.NewDasar(nil), config.Config{}, func(string) {})
-	aktif, err := pilihModulAktif(terdaftar, diminta)
+	aktif, err := pilihModulAktif(terdaftar, modul.NamaLama, diminta)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -113,18 +113,29 @@ func TestModulAktifDilaporkan(t *testing.T) {
 }
 
 func TestModulAktifTakDikenalDitolak(t *testing.T) {
-	_, err := pilihModulAktif(modul.Rakit(inti.NewDasar(nil), config.Config{}, func(string) {}),
-		[]string{"claimlife", "klaim"})
+	terdaftar := modul.Rakit(inti.NewDasar(nil), config.Config{}, func(string) {})
+	_, err := pilihModulAktif(terdaftar, modul.NamaLama, []string{"claimlife", "klaim"})
 	if err == nil || !strings.Contains(err.Error(), `"klaim"`) {
 		t.Fatalf("nama tak dikenal tidak ditolak dengan menyebut namanya: %v", err)
 	}
 	// Nama lama (sebelum tabel nama modul 30-09-2026) ditolak dengan kalimat
 	// yang menyebut nama BARUnya - bukan diterima diam-diam, bukan "tak dikenal".
-	for lama, baru := range map[string]string{
-		"premiumlist": "premiumlistlife", "komite": "komiteclaimlife", "treaty": "treatycontractout",
-	} {
-		_, err := pilihModulAktif(modul.Rakit(inti.NewDasar(nil), config.Config{}, func(string) {}),
-			[]string{"claimlife", lama})
+	// Diperiksa atas peta YANG DIPAKAI (`modul.NamaLama`), dan setiap nama
+	// barunya wajib modul terdaftar: menyuruh operator memakai nama yang juga
+	// ditolak lebih buruk daripada tidak menjawab.
+	dikenal := map[string]bool{}
+	for _, m := range terdaftar {
+		dikenal[m.Nama()] = true
+	}
+	if len(modul.NamaLama) < 3 {
+		t.Fatalf("peta nama lama memuat %d nama, mau sekurangnya 3", len(modul.NamaLama))
+	}
+	for lama, baru := range modul.NamaLama {
+		if !dikenal[baru] || dikenal[lama] {
+			t.Errorf("nama lama %q -> %q: pengganti terdaftar=%v, nama lama masih terdaftar=%v",
+				lama, baru, dikenal[baru], dikenal[lama])
+		}
+		_, err := pilihModulAktif(terdaftar, modul.NamaLama, []string{"claimlife", lama})
 		if err == nil || !strings.Contains(err.Error(), "nama modul lama") ||
 			!strings.Contains(err.Error(), `"`+baru+`"`) {
 			t.Errorf("nama lama %q: galat %v, mau menyebut %q", lama, err, baru)
@@ -164,7 +175,12 @@ func TestMigrasiTetapLengkapSaatModulNonaktif(t *testing.T) {
 		t.Errorf("pelari menjalankan %d langkah, disk memuat %d:\npelari %v\ndisk   %v",
 			len(dariPelari), len(dariDisk), dariPelari, dariDisk)
 	}
+	// Prasyarat POSITIF: pemeriksaan "tanpa folder migrations" di bawah lulus
+	// dengan sendirinya bila nama folder modulnya salah.
+	if _, err := os.Stat(filepath.Join("..", "..", "modul", "treatycontractout")); err != nil {
+		t.Fatalf("folder modul Treaty Contract Out tidak ditemukan: %v", err)
+	}
 	if _, err := os.Stat(filepath.Join("..", "..", "modul", "treatycontractout", "migrations")); err == nil {
-		t.Error("modul treaty kini punya folder migrations - tco4 menyatakan nol tabel baru")
+		t.Error("modul treatycontractout kini punya folder migrations - tco4 menyatakan nol tabel baru")
 	}
 }

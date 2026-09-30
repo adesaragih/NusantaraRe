@@ -21,23 +21,17 @@ import (
 	"nusantarare/inti/galat"
 )
 
-// namaModulLama - nama singkat sebelum tabel nama modul (keputusan work owner
-// 30-09-2026, `PROMPT-REFACTOR-NAMA-MODUL.md`) beserta penggantinya. Env yang
-// masih memakainya DITOLAK dengan kalimat yang menyebut nama barunya: menerima
-// diam-diam membuat dua nama untuk satu modul, menolak tanpa sebab membuat
-// orang menebak.
-var namaModulLama = map[string]string{
-	"premiumlist": "premiumlistlife",
-	"komite":      "komiteclaimlife",
-	"treaty":      "treatycontractout",
-}
-
 // pilihModulAktif menyaring modul terdaftar menurut MODUL_AKTIF.
 //
 // Kosong = SEMUA modul (bawaan). Nama yang tidak dikenal DITOLAK: salah ketik
 // di env yang diam-diam mematikan satu modul akan terbaca "modul itu memang
 // tidak ada", dan tidak seorang pun tahu sebabnya.
-func pilihModulAktif(terdaftar []inti.Modul, diminta []string) ([]inti.Modul, error) {
+//
+// `namaLama` (`modul.NamaLama`) memetakan nama modul sebelum tabel nama modul
+// 30-09-2026 ke namanya kini: env yang masih memakainya DITOLAK dengan kalimat
+// yang menyebut nama barunya - menerima diam-diam membuat dua nama untuk satu
+// modul, menolak tanpa sebab membuat orang menebak.
+func pilihModulAktif(terdaftar []inti.Modul, namaLama map[string]string, diminta []string) ([]inti.Modul, error) {
 	if len(diminta) == 0 {
 		return terdaftar, nil
 	}
@@ -49,7 +43,7 @@ func pilihModulAktif(terdaftar []inti.Modul, diminta []string) ([]inti.Modul, er
 	}
 	pilih := map[string]bool{}
 	for _, n := range diminta {
-		if baru, lama := namaModulLama[n]; lama && !dikenal[n] {
+		if baru, lama := namaLama[n]; lama && !dikenal[n] {
 			return nil, fmt.Errorf("MODUL_AKTIF memakai nama modul lama %q; sejak 30-09-2026 namanya %q "+
 				"(tabel nama modul, PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md)", n, baru)
 		}
