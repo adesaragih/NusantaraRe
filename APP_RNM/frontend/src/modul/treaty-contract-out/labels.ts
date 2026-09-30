@@ -129,6 +129,8 @@ export const TAHUN_TCO = {
 
   /** `[tidak ada di korpus]` — kosakata kami. */
   kosong: 'No treaty years yet.',
+  /** `[tidak ada di korpus]` — simpan berhasil, form tertutup (keputusan work owner 30-09-2026). */
+  tersimpan: 'Treaty year saved.',
   /** `[tidak ada di korpus]` — tombol yang menunggu tiketnya. */
   menungguTiket: 'awaiting ticket',
 } as const
@@ -174,6 +176,11 @@ export const LAMPIRAN_TCO = {
   selarasBersih: 'Attachment records and stored files are consistent.',
   kosong: 'No attachments for this treaty year yet.',
   pilihKategori: '— select —',
+  /** `[tidak ada di korpus]` — kode perbaikan keselarasan (`ulangi` / `hapus`) sebagai kata layar. */
+  perbaikanUlangi: 'retry',
+  perbaikanHapus: 'delete',
+  /** `[tidak ada di korpus]` — kepala kolom tombol (pembaca layar). */
+  kolomAksi: 'actions',
 } as const
 
 /**
@@ -291,8 +298,6 @@ export const REINSURER_TCO = {
   /** b12868 — `OutputParam.ERRMSG`; korpus "Informasi", diterjemahkan [keputusan work owner 30-09-2026: bahasa Inggris]. */
   informasi: 'Information',
 
-  /** `[tidak ada di korpus]` */
-  cariReinsurer: 'Search reinsurer name',
   /** `[tidak ada di korpus]` */
   kosong: 'No reinsurers for this combination yet.',
   /** `[tidak ada di korpus]` */
@@ -503,10 +508,6 @@ export const SECURITY_TCO = {
 
   /** `[tidak ada di korpus]` */
   judul: 'Security',
-  /** `[tidak ada di korpus]` — isian `Security Name`: dropdown yang dapat difilter dengan mengetik. */
-  ketikUntukFilter: 'Type to filter',
-  /** `[tidak ada di korpus]` */
-  tidakCocok: 'No matching security',
   /** `[tidak ada di korpus]` */
   kosong: 'No securities for this reinsurer yet.',
   /** `[tidak ada di korpus]` */

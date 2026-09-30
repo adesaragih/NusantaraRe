@@ -303,7 +303,10 @@ function GridAturan({
           type="button"
           className="btn btn--primary"
           disabled={aturan.berkurs && !kursAda}
-          onClick={() => setForm(formKlausulKosong(aturan))}
+          onClick={() => {
+            setInfo(null)
+            setForm(formKlausulKosong(aturan))
+          }}
         >
           {KLAUSUL_TCO.add}
         </button>
@@ -336,7 +339,10 @@ function GridAturan({
                 ))}
                 <td>{k.tglUpdate}</td>
                 <td className="table__actions">
-                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => setForm(formKlausulDari(aturan, k))}>
+                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => {
+                      setInfo(null)
+                      setForm(formKlausulDari(aturan, k))
+                    }}>
                     {KLAUSUL_TCO.edit}
                   </button>
                   {onShowChild !== undefined && (

@@ -145,6 +145,7 @@ export default function InboxTreatyContract() {
   const [form, setForm] = useState<FormTahun | null>(null)
   const [galatSimpan, setGalatSimpan] = useState<unknown>(null)
   const [menyimpan, setMenyimpan] = useState(false)
+  const [info, setInfo] = useState<string | null>(null)
   const [grup, setGrup] = useState<GrupTreaty[]>([])
   const [galatGrup, setGalatGrup] = useState<unknown>(null)
   // Tiket 04: tombol `ReinsType` b20778 membuka editor kontrak tahun itu
@@ -200,6 +201,7 @@ export default function InboxTreatyContract() {
     try {
       await simpanTahunTreaty(keMasuk(form))
       setForm(null)
+      setInfo(TAHUN_TCO.tersimpan)
       await muat(halaman)
     } catch (e) {
       setGalatSimpan(e)
@@ -220,12 +222,17 @@ export default function InboxTreatyContract() {
     const iso = keInputTanggal(v.trim())
     if (form === null || form.id !== '' || iso === '') return
     const ke = ++urutanAkhir.current
+    // End Date yang diketik pemakai SELAMA permintaan berjalan tidak ditimpa.
+    const akhirSaatMinta = form.endDate
     ambilAkhirBawaanTahun(iso)
       .then((akhir) => {
         if (ke !== urutanAkhir.current) return
-        setForm((f) => (f === null || f.id !== '' || f.startDate !== v ? f : { ...f, endDate: akhir }))
+        setForm((f) =>
+          f === null || f.id !== '' || f.startDate !== v || f.endDate !== akhirSaatMinta ? f : { ...f, endDate: akhir },
+        )
       })
       .catch((e: unknown) => {
+        if (ke !== urutanAkhir.current) return
         setGalatSimpan(e)
       })
   }
@@ -266,12 +273,14 @@ export default function InboxTreatyContract() {
           className="btn btn--primary"
           onClick={() => {
             setGalatSimpan(null)
+            setInfo(null)
             setForm(formKosong())
           }}
         >
           {TAHUN_TCO.add}
         </button>
       </header>
+      {info !== null && <p role="status">{info}</p>}
 
       {form !== null && (
         <section className="panel">
@@ -358,6 +367,7 @@ export default function InboxTreatyContract() {
                     className="btn btn--ghost btn--sm"
                     onClick={() => {
                       setGalatSimpan(null)
+                      setInfo(null)
                       setForm(formDari(b))
                     }}
                   >

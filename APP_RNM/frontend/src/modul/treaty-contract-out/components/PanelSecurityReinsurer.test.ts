@@ -5,14 +5,7 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import {
-  formSecurityDari,
-  formSecurityKosong,
-  kataCariSecurity,
-  keMasukSecurity,
-  labelPilihanSecurity,
-  pilihanDariTeks,
-} from './PanelSecurityReinsurer'
+import { formSecurityDari, formSecurityKosong, keMasukSecurity } from './PanelSecurityReinsurer'
 
 const KODE = readFileSync(join(__dirname, 'PanelSecurityReinsurer.tsx'), 'utf8')
   .split('\n')
@@ -39,7 +32,7 @@ describe('form security', () => {
 describe('kabel', () => {
   it('Security ID hanya dibaca; Security Name dari master yang sama dengan reinsurer', () => {
     expect((KODE.match(/readOnly/g) ?? []).length).toBe(1)
-    expect(KODE).toContain('cariReinsurerMaster(kataCariSecurity(teks))')
+    expect(KODE).toContain('const master = useCariReinsurerMaster(setGalat)')
   })
   it('hapus langsung menurut ID, tanpa konfirmasi (Pega: aksi refresh)', () => {
     expect(KODE).toContain('hapusSecurity(tahunID, kontrakID, reinsurerID, s.id)')
@@ -53,29 +46,13 @@ describe('kabel', () => {
 })
 
 describe('Security Name: dropdown yang dapat difilter (keputusan work owner 30-09-2026)', () => {
-  const master = [
-    { id: '10001', clientName: 'UJI REAS SATU', clientId: '' },
-    { id: '10002', clientName: 'UJI REAS SATU', clientId: '' },
-    { id: '10003', clientName: '', clientId: '' },
-  ]
-  it('isian "Cari security" dibuang; satu isian bertautan datalist', () => {
-    expect(KODE).not.toMatch(/cariSecurity|Cari security/)
-    expect(KODE).toContain('list={idDaftar}')
-    expect(KODE).toContain('<datalist id={idDaftar}>')
+  it('isian "Cari security" dibuang; satu PilihSaring', () => {
+    expect(KODE).not.toMatch(/cariSecurity|Cari security|<datalist/)
+    expect(KODE).toContain('<PilihSaring')
+    expect(KODE).toContain('onCari={master.cari}')
   })
-  it('label pilihan menyebut ID — nama kembar tetap dapat dibedakan', () => {
-    expect(labelPilihanSecurity(master[0]!)).toBe('UJI REAS SATU (10001)')
-    expect(labelPilihanSecurity(master[1]!)).not.toBe(labelPilihanSecurity(master[0]!))
-    expect(labelPilihanSecurity(master[2]!)).toBe('10003')
-  })
-  it('hanya teks yang TEPAT label pilihan yang memilih security', () => {
-    expect(pilihanDariTeks('UJI REAS SATU (10002)', master)?.id).toBe('10002')
-    expect(pilihanDariTeks('UJI REAS', master)).toBeUndefined()
-  })
-  it('kata cari ke server tanpa ekor " (ID)"', () => {
-    expect(kataCariSecurity('UJI REAS SATU (10001)')).toBe('UJI REAS SATU')
-    expect(kataCariSecurity('UJI REAS SATU (100')).toBe('UJI REAS SATU')
-    expect(kataCariSecurity('  asuransi ')).toBe('asuransi')
+  it('membuka form lain membatalkan jawaban cari yang masih di jalan', () => {
+    const buka = KODE.slice(KODE.indexOf('function buka'))
+    expect(buka.slice(0, buka.indexOf('\n  }\n'))).toContain('master.reset()')
   })
 })
-

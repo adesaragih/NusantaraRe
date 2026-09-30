@@ -144,3 +144,16 @@ describe('Add tahun treaty: Start Date mengisi tahun dan End Date (keputusan wor
   })
 })
 
+describe('End Date bawaan aman dari balapan (temuan /code-review 30-09-2026)', () => {
+  const ubah = KODE.slice(KODE.indexOf('function ubahMulai'), KODE.indexOf('function bukaRinci'))
+  it('jawaban basi dibuang - sukses maupun gagal', () => {
+    expect((ubah.match(/if \(ke !== urutanAkhir\.current\) return/g) ?? []).length).toBe(2)
+  })
+  it('End Date yang diketik selama permintaan berjalan tidak ditimpa', () => {
+    expect(ubah).toContain('const akhirSaatMinta = form.endDate')
+    expect(ubah).toContain('f.endDate !== akhirSaatMinta')
+  })
+  it('simpan berhasil memberi pesan saved', () => {
+    expect(KODE).toContain('setInfo(TAHUN_TCO.tersimpan)')
+  })
+})

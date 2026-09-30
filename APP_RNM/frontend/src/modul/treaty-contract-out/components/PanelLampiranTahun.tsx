@@ -174,7 +174,7 @@ export default function PanelLampiranTahun({ tahunID }: { tahunID: string }) {
         <ul role="alert">
           {temuan.map((t) => (
             <li key={t.lampiranId}>
-              {t.lampiranId} {t.fileName}: {t.masalah} ({t.perbaikan})
+              {t.lampiranId} {t.fileName}: {t.masalah} ({t.perbaikan === 'ulangi' ? LAMPIRAN_TCO.perbaikanUlangi : LAMPIRAN_TCO.perbaikanHapus})
             </li>
           ))}
         </ul>
@@ -189,7 +189,7 @@ export default function PanelLampiranTahun({ tahunID }: { tahunID: string }) {
               <th scope="col">{LAMPIRAN_TCO.kolomFileName}</th>
               <th scope="col">{LAMPIRAN_TCO.kolomType}</th>
               <th scope="col">{LAMPIRAN_TCO.kolomStatus}</th>
-              <th scope="col" aria-label="aksi" />
+              <th scope="col" aria-label={LAMPIRAN_TCO.kolomAksi} />
             </tr>
           </thead>
           <tbody>

@@ -89,3 +89,11 @@ describe('kabel dan larangan', () => {
     expect(PANEL).toContain('.galat')
   })
 })
+
+describe('bahasa Inggris (keputusan work owner 30-09-2026)', () => {
+  it('kode perbaikan dan kepala kolom tombol tidak tampil mentah', () => {
+    const kode = readFileSync(join(__dirname, 'PanelLampiranTahun.tsx'), 'utf8')
+    expect(kode).toContain('LAMPIRAN_TCO.perbaikanUlangi')
+    expect(kode).not.toMatch(/\(\{t\.perbaikan\}\)|aria-label="aksi"/)
+  })
+})

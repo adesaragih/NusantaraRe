@@ -12,26 +12,24 @@
 // SAMA (User story 14). ⛔ `%Share` TEKS sepanjang jalan.
 //
 // [keputusan work owner 30-09-2026] Isian `Cari security` DIBUANG; `Security
-// Name` sendiri adalah dropdown yang dapat difilter dengan mengetik (`<input
-// list>` + `<datalist>`). Master reinsurer aktif > 100 nama dan server
-// memotong di 100, jadi setiap ketikan juga mencari ke server — nama di luar
-// 100 pertama tetap dapat dipilih.
+// Name` sendiri adalah dropdown yang dapat difilter dengan mengetik
+// (`PilihSaring` + `useCariReinsurerMaster`, dicari ke server — master > 100 nama).
 
-import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { DESIMAL_TAK_DIBATASI, formatNumber } from '../../../inti/lib/format'
+import { PilihSaring } from '../../../inti/components/ui/pilihSaring'
 import { SECURITY_TCO } from '../labels'
 import {
   ambilSecurity,
-  cariReinsurerMaster,
   hapusSecurity,
   simpanSecurity,
   type DaftarSecurity,
-  type ReinsurerMaster,
   type SecurityMasuk,
   type SecurityReinsurer,
 } from '../api'
 import { Field, Gagal, Kosong, Memuat } from '../../../inti/components/ui/dasar'
+import { useCariReinsurerMaster } from './cariReinsurerMaster'
 
 /** Isian form — `Security ID` (hanya dibaca), nama dari master, `%Share`. */
 export interface FormSecurity {
@@ -49,21 +47,6 @@ export function formSecurityKosong(): FormSecurity {
 /** `ShowEditSecurityReinsurer`: form dari baris, mode ubah. */
 export function formSecurityDari(s: SecurityReinsurer): FormSecurity {
   return { id: s.id, reasSecurity: s.reasSecurity, clientName: s.clientName, pctShare: s.pctShare }
-}
-
-/** Teks satu pilihan `Security Name`: nama beserta ID — nama kembar tetap dapat dibedakan. */
-export function labelPilihanSecurity(p: Pick<ReinsurerMaster, 'id' | 'clientName'>): string {
-  return p.clientName.trim() === '' ? p.id : `${p.clientName} (${p.id})`
-}
-
-/** Pilihan yang teks isiannya TEPAT label pilihan itu; `undefined` = belum dipilih. */
-export function pilihanDariTeks(teks: string, pilihan: readonly ReinsurerMaster[]): ReinsurerMaster | undefined {
-  return pilihan.find((p) => labelPilihanSecurity(p) === teks)
-}
-
-/** Kata cari ke server: teks ketikan tanpa ekor " (ID)" label pilihan. */
-export function kataCariSecurity(teks: string): string {
-  return teks.replace(/\s*\([^()]*\)?\s*$/, '').trim()
 }
 
 /** Badan simpan — nama tampil TIDAK dikirim (server membacanya dari master). */
@@ -84,15 +67,10 @@ export default function PanelSecurityReinsurer({
 }) {
   const [daftar, setDaftar] = useState<DaftarSecurity | null>(null)
   const [form, setForm] = useState<FormSecurity | null>(null)
-  const [teksNama, setTeksNama] = useState('')
-  const [pilihan, setPilihan] = useState<ReinsurerMaster[]>([])
-  // Hanya jawaban cari TERAKHIR yang dipakai (ketikan cepat).
-  const urutanCari = useRef(0)
-  const idNama = useId()
-  const idDaftar = useId()
   const [sibuk, setSibuk] = useState(false)
   const [galat, setGalat] = useState<unknown>(null)
   const [info, setInfo] = useState<string | null>(null)
+  const master = useCariReinsurerMaster(setGalat)
 
   const muat = useCallback(async () => {
     try {
@@ -109,34 +87,9 @@ export default function PanelSecurityReinsurer({
   function buka(f: FormSecurity): void {
     setGalat(null)
     setInfo(null)
-    setTeksNama(f.reasSecurity === '' ? '' : labelPilihanSecurity({ id: f.reasSecurity, clientName: f.clientName }))
-    setPilihan([])
+    // Jawaban cari form sebelumnya tidak boleh mengisi form ini.
+    master.reset()
     setForm(f)
-  }
-
-  /** Isi dropdown dari server: kosong = 100 nama pertama, ketikan = nama yang memuatnya. */
-  function cari(teks: string): void {
-    const ke = ++urutanCari.current
-    cariReinsurerMaster(kataCariSecurity(teks))
-      .then((d) => {
-        if (ke === urutanCari.current) setPilihan(d)
-      })
-      .catch((e: unknown) => {
-        setGalat(e)
-      })
-  }
-
-  function ketikNama(teks: string): void {
-    setTeksNama(teks)
-    const p = pilihanDariTeks(teks, pilihan)
-    if (p !== undefined) {
-      // Satu pilihan dropdown diklik: teksnya TEPAT label pilihan itu.
-      setForm((f) => (f === null ? f : { ...f, reasSecurity: p.id, clientName: p.clientName }))
-      return
-    }
-    // Masih mengetik: belum ada security terpilih, daftar difilter server.
-    setForm((f) => (f === null ? f : { ...f, reasSecurity: '', clientName: '' }))
-    cari(teks)
   }
 
   async function simpan(): Promise<void> {
@@ -239,35 +192,18 @@ export default function PanelSecurityReinsurer({
         <div className="panel">
           <div className="form-grid">
             <Field label={SECURITY_TCO.formSecurityId} value={form.reasSecurity} onChange={() => undefined} readOnly />
-            <div className="field">
-              <label className="field__label" htmlFor={idNama}>
-                {SECURITY_TCO.formSecurityName}
-                <span className="field__req">*</span>
-              </label>
-              <input
-                id={idNama}
-                className="field__input"
-                list={idDaftar}
-                value={teksNama}
-                placeholder={SECURITY_TCO.ketikUntukFilter}
-                autoComplete="off"
-                aria-required="true"
-                onFocus={() => {
-                  if (pilihan.length === 0) cari(teksNama)
-                }}
-                onChange={(e) => {
-                  ketikNama(e.target.value)
-                }}
-              />
-              <datalist id={idDaftar}>
-                {pilihan.map((p) => (
-                  <option key={p.id} value={labelPilihanSecurity(p)} />
-                ))}
-              </datalist>
-              {teksNama.trim() !== '' && form.reasSecurity === '' && pilihan.length === 0 && (
-                <div className="field__error">{SECURITY_TCO.tidakCocok}</div>
-              )}
-            </div>
+            <PilihSaring
+              label={SECURITY_TCO.formSecurityName}
+              value={form.reasSecurity}
+              teksTerpilih={form.clientName || form.reasSecurity}
+              opsi={master.pilihan}
+              memuat={master.memuat}
+              onCari={master.cari}
+              onPilih={(o) => {
+                setForm((f) => (f === null ? f : { ...f, reasSecurity: o.value, clientName: o.label }))
+              }}
+              required
+            />
             <Field
               label={SECURITY_TCO.formShare}
               value={form.pctShare}

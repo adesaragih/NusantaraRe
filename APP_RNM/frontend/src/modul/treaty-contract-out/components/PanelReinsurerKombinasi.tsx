@@ -20,17 +20,17 @@ import { REINSURER_TCO } from '../labels'
 import {
   ambilDampakHapusReinsurer,
   ambilReinsurerKombinasi,
-  cariReinsurerMaster,
   hapusReinsurer,
   simpanReinsurerKombinasi,
   type DampakHapusTCO,
   type DaftarReinsurer,
   type KombinasiTreaty,
-  type ReinsurerMaster,
   type ReinsurerMasuk,
   type ReinsurerTreaty,
 } from '../api'
-import { Field, Gagal, Kosong, Memuat, Pilih } from '../../../inti/components/ui/dasar'
+import { Field, Gagal, Kosong, Memuat } from '../../../inti/components/ui/dasar'
+import { PilihSaring } from '../../../inti/components/ui/pilihSaring'
+import { useCariReinsurerMaster } from './cariReinsurerMaster'
 import KonfirmasiHapusTCO from './KonfirmasiHapusTCO'
 import PanelSecurityReinsurer from './PanelSecurityReinsurer'
 
@@ -88,11 +88,12 @@ export default function PanelReinsurerKombinasi({
 }) {
   const [daftar, setDaftar] = useState<DaftarReinsurer | null>(null)
   const [form, setForm] = useState<FormReinsurer | null>(null)
-  const [cari, setCari] = useState('')
-  const [pilihan, setPilihan] = useState<ReinsurerMaster[]>([])
   const [sibuk, setSibuk] = useState(false)
   const [galat, setGalat] = useState<unknown>(null)
   const [info, setInfo] = useState<string | null>(null)
+  // [keputusan work owner 30-09-2026] Pemilih `Reinsurer` = dropdown yang dapat
+  // difilter dengan mengetik, sama dengan `Security Name`; kotak cari dibuang.
+  const master = useCariReinsurerMaster(setGalat)
   // Tiket 06: `SetSecurityReinsurer` (THN_TREATY = .TreatyYear, REAS_ID = .ID).
   const [security, setSecurity] = useState<ReinsurerTreaty | null>(null)
   // Tiket 10: popup Ya/Batal sebelum hapus reinsurer (+ security-nya).
@@ -113,8 +114,8 @@ export default function PanelReinsurerKombinasi({
   function buka(f: FormReinsurer): void {
     setGalat(null)
     setInfo(null)
-    setCari('')
-    setPilihan([])
+    // Jawaban cari form sebelumnya tidak boleh mengisi form ini.
+    master.reset()
     setForm(f)
   }
 
@@ -122,24 +123,6 @@ export default function PanelReinsurerKombinasi({
     return (v: string) => {
       setForm((f) => (f === null ? f : { ...f, [k]: v }))
     }
-  }
-
-  function cariMaster(teks: string): void {
-    setCari(teks)
-    if (teks.trim().length < 2) {
-      setPilihan([])
-      return
-    }
-    cariReinsurerMaster(teks)
-      .then(setPilihan)
-      .catch((e: unknown) => {
-        setGalat(e)
-      })
-  }
-
-  function pilihMaster(id: string): void {
-    const m = pilihan.find((p) => p.id === id)
-    setForm((f) => (f === null ? f : { ...f, reinsurerId: id, name: m?.clientName ?? '' }))
   }
 
   async function simpan(): Promise<void> {
@@ -226,18 +209,16 @@ export default function PanelReinsurerKombinasi({
           <div className="form-grid">
             <Field label={REINSURER_TCO.formId} value={form.id} onChange={() => undefined} readOnly />
             <Field label={REINSURER_TCO.formReinsId} value={form.reinsurerId} onChange={() => undefined} readOnly />
-            <Field label={REINSURER_TCO.cariReinsurer} value={cari} onChange={cariMaster} />
-            <Pilih
+            <PilihSaring
               label={REINSURER_TCO.formReinsurer}
               value={form.reinsurerId}
-              onChange={pilihMaster}
-              opsi={
-                pilihan.length > 0
-                  ? pilihan.map((p) => ({ value: p.id, label: p.clientName }))
-                  : form.reinsurerId === ''
-                    ? []
-                    : [{ value: form.reinsurerId, label: form.name }]
-              }
+              teksTerpilih={form.name || form.reinsurerId}
+              opsi={master.pilihan}
+              memuat={master.memuat}
+              onCari={master.cari}
+              onPilih={(o) => {
+                setForm((f) => (f === null ? f : { ...f, reinsurerId: o.value, name: o.label }))
+              }}
               required
             />
             <Field label={REINSURER_TCO.formShare} value={form.pctShare} onChange={ubah('pctShare')} required />

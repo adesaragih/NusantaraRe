@@ -12,10 +12,11 @@ import { KONTRAK_TCO } from '../labels'
 import PanelKontrakTahun from '../components/PanelKontrakTahun'
 import { Gagal, Memuat, Pilih } from '../../../inti/components/ui/dasar'
 import { ambilTahunTreaty, type TahunTreaty } from '../api'
+import { labelProporsi } from '../proporsi'
 
 /** Label pilihan tahun: tahun treaty · grup · jenis. */
 export function labelTahun(t: TahunTreaty): string {
-  return [t.treatyYear, t.treatyGroupName, t.proportion].filter((v) => v.trim() !== '').join(' · ') || t.id
+  return [t.treatyYear, t.treatyGroupName, labelProporsi(t.proportion)].filter((v) => v.trim() !== '').join(' · ') || t.id
 }
 
 export default function InboxTreatyContractReinsType() {

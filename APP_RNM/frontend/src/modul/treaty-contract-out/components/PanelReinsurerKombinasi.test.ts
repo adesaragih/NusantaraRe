@@ -56,7 +56,8 @@ describe('paritas dan uang', () => {
     expect(KODE).toContain('daftar.totalShare')
   })
   it('reinsurer dipilih dari master, bukan diketik (Reins.ID hanya dibaca)', () => {
-    expect(KODE).toContain('cariReinsurerMaster(')
+    // Master dicari lewat hook bersama (`cariReinsurerMaster.ts`) - keputusan work owner 30-09-2026.
+    expect(KODE).toContain('useCariReinsurerMaster(setGalat)')
     expect(KODE).toMatch(/label=\{REINSURER_TCO\.formReinsId\}[^/]*readOnly/)
   })
   it('Delete dan Security Reinsurer berdiri menunggu tiketnya', () => {
@@ -67,3 +68,14 @@ describe('paritas dan uang', () => {
     expect(KODE).toContain('<PanelSecurityReinsurer')
   })
 })
+
+describe('Reinsurer: dropdown yang dapat difilter (keputusan work owner 30-09-2026)', () => {
+  it('kotak "Search reinsurer name" dibuang; satu PilihSaring dari hook bersama', () => {
+    expect(KODE).not.toMatch(/cariReinsurer\b|cariMaster|<Pilih\b/)
+    expect(KODE).toContain('<PilihSaring')
+    expect(KODE).toContain('const master = useCariReinsurerMaster(setGalat)')
+    const buka = KODE.slice(KODE.indexOf('function buka'))
+    expect(buka.slice(0, buka.indexOf('\n  }\n'))).toContain('master.reset()')
+  })
+})
+
