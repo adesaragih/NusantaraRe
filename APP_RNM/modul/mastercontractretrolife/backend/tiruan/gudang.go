@@ -83,6 +83,54 @@ func (g *Gudang) PerbaruiTahun(_ context.Context, _ *db.Tx, t models.TahunTreaty
 	return nil
 }
 
+// SisipKontrak - ID dari sequence tiruan.
+func (g *Gudang) SisipKontrak(_ context.Context, _ *db.Tx, k models.Kontrak) (string, error) {
+	if err := g.gagal("SisipKontrak"); err != nil {
+		return "", err
+	}
+	id, err := g.nomorBaru(repository.TabelKontrak)
+	if err != nil {
+		return "", err
+	}
+	k.ID, k.TglUpdate = id, g.Jam
+	g.Kontrak[id] = k
+	return id, nil
+}
+
+// PerbaruiKontrak - IDTREATYYEAR tidak berpindah.
+func (g *Gudang) PerbaruiKontrak(_ context.Context, _ *db.Tx, k models.Kontrak) error {
+	if err := g.gagal("PerbaruiKontrak"); err != nil {
+		return err
+	}
+	lama, ada := g.Kontrak[k.ID]
+	if !ada {
+		return repository.ErrTidakAda
+	}
+	k.IDTreatyYear, k.TglUpdate = lama.IDTreatyYear, g.Jam
+	g.Kontrak[k.ID] = k
+	return nil
+}
+
+// SalinKontrakKeAnak - K4 atas reinsurer dan business kontrak itu.
+func (g *Gudang) SalinKontrakKeAnak(_ context.Context, _ *db.Tx, k models.Kontrak) (int64, error) {
+	var n int64
+	for id, r := range g.Reinsurer {
+		if r.TreatyContractID == k.ID && (r.ReinsTypeID != k.ReinsTypeID || r.ReinsTypeName != k.ReinsTypeName) {
+			r.ReinsTypeID, r.ReinsTypeName, r.UserID, r.TglUpdate = k.ReinsTypeID, k.ReinsTypeName, k.UserID, g.Jam
+			g.Reinsurer[id] = r
+			n++
+		}
+	}
+	for id, b := range g.Business {
+		if b.TreatyContractID == k.ID && (b.ReinsTypeID != k.ReinsTypeID || b.ReinsTypeName != k.ReinsTypeName) {
+			b.ReinsTypeID, b.ReinsTypeName, b.UserID, b.TglUpdate = k.ReinsTypeID, k.ReinsTypeName, k.UserID, g.Jam
+			g.Business[id] = b
+			n++
+		}
+	}
+	return n, nil
+}
+
 // SalinTahunKeAnak - K4/R5 atas business dan kontrak tahun itu yang berbeda.
 func (g *Gudang) SalinTahunKeAnak(_ context.Context, _ *db.Tx, t models.TahunTreaty) (int64, error) {
 	var n int64

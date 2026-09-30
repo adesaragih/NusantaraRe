@@ -90,5 +90,26 @@ func desimal(label, v string) (*apd.Decimal, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s %q is not a number", ErrMasukanTidakSah, label, v)
 	}
+	// ⛔ NUMBER Oracle menyimpan paling banyak 38 digit bermakna; lebih dari
+	// itu DIBULATKAN diam-diam. Ditolak di sini, tidak dibulatkan (T7 ronde 2:
+	// "penolakan itu harus terlihat").
+	ringkas := new(apd.Decimal).Set(d)
+	ringkas.Reduce(ringkas)
+	if ringkas.NumDigits() > utils.DecimalPrecision {
+		return nil, fmt.Errorf("%w: %s %q has more than %d significant digits", ErrMasukanTidakSah, label, v,
+			utils.DecimalPrecision)
+	}
 	return d, nil
+}
+
+// kurang = a - b; nil bila salah satunya nil.
+func kurang(a, b *apd.Decimal) (*apd.Decimal, error) {
+	if a == nil || b == nil {
+		return nil, nil
+	}
+	hasil := new(apd.Decimal)
+	if _, err := utils.DecimalContext().Sub(hasil, a, b); err != nil {
+		return nil, fmt.Errorf("services: computing a difference: %w", err)
+	}
+	return hasil, nil
 }

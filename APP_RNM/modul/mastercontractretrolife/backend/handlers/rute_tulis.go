@@ -4,6 +4,8 @@ package handlers
 //
 //	POST /api/master-contract-retro-life/tahun          tahun BARU - `End Period` → `Save` (paket 2)
 //	PUT  /api/master-contract-retro-life/tahun/{id}     ubah - `Edit` → `Save` (paket 2)
+//	POST /api/master-contract-retro-life/tahun/{id}/kontrak  kontrak BARU - `Add` → `Save` (paket 3)
+//	PUT  /api/master-contract-retro-life/kontrak/{id}   ubah kontrak - `Edit` → `Save` (paket 3)
 //
 // ⛔ POST dan PUT terpisah walau Pega punya satu `Save` ber-upsert: identitas
 // baris baru tidak pernah datang dari klien (ADR-0006), dan badan PUT yang
@@ -56,4 +58,30 @@ func daftarkanTulis(pasang func(string, rute)) {
 		hasil, err := l.SimpanTahun(r.Context(), p, m, false)
 		tulis(w, hasil, err)
 	})
+	// Kontrak (paket 3): `Add` → `Save` di bawah tahun; `Edit` → `Save` per kontrak.
+	pasang("POST "+Prefix+"/tahun/{id}/kontrak", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		var m services.KontrakMasuk
+		if bacaBadan(w, r, &m) || tolakIDBaru(w, m.ID) {
+			return
+		}
+		hasil, err := l.SimpanKontrak(r.Context(), p, r.PathValue("id"), m)
+		tulis(w, hasil, err)
+	})
+	pasang("PUT "+Prefix+"/kontrak/{id}", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		var m services.KontrakMasuk
+		if bacaBadan(w, r, &m) || idJalur(w, r, &m.ID) {
+			return
+		}
+		hasil, err := l.SimpanKontrak(r.Context(), p, "", m)
+		tulis(w, hasil, err)
+	})
+}
+
+// tolakIDBaru - baris baru tidak boleh membawa id (ADR-0006); 400 dan true.
+func tolakIDBaru(w http.ResponseWriter, id string) bool {
+	if id != "" {
+		galat.Tulis(w, http.StatusBadRequest, services.Pesan(services.ErrIDDariKlien))
+		return true
+	}
+	return false
 }

@@ -46,6 +46,13 @@ type Gudang interface {
 	// business `TREATYYEAR`, kontrak `TREATYSTARTDATE`/`TREATYENDDATE`; baris
 	// yang berubah mendapat `USERID` t.UserID dan `TGLUPDATE` baru (K6).
 	SalinTahunKeAnak(ctx context.Context, tx *db.Tx, t models.TahunTreaty) (int64, error)
+
+	// Penulis kontrak (paket 3).
+	SisipKontrak(ctx context.Context, tx *db.Tx, k models.Kontrak) (string, error)
+	PerbaruiKontrak(ctx context.Context, tx *db.Tx, k models.Kontrak) error
+	// SalinKontrakKeAnak menulis salinan jenis kontrak (K4) ke reinsurer dan
+	// business kontrak itu yang berbeda; baris berubah mendapat USERID/TGLUPDATE.
+	SalinKontrakKeAnak(ctx context.Context, tx *db.Tx, k models.Kontrak) (int64, error)
 }
 
 // Galat "tidak ada" per entitas (404) - handler tidak mengimpor repository.

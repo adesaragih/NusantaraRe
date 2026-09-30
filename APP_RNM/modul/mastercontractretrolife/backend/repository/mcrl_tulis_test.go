@@ -5,10 +5,15 @@ package repository
 import (
 	"context"
 	"errors"
+	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 
+	"github.com/cockroachdb/apd/v3"
+
 	"nusantarare/inti/backend/db"
+	"nusantarare/modul/mastercontractretrolife/backend/models"
 )
 
 func TestFormatIdentitasSepertiProcedure(t *testing.T) {
@@ -50,6 +55,61 @@ func TestSQLPenulisTahun(t *testing.T) {
 			t.Errorf("%s: %v", nama, err)
 		}
 	}
+}
+
+func TestPecahAngkaKebalNLS(t *testing.T) {
+	for masuk, mau := range map[string]struct {
+		koef  string
+		skala int64
+	}{
+		"1500000000.10": {"150000000010", 2}, "0.000000001": {"1", 9}, "-12.5": {"-125", 1},
+		"0": {"0", 0}, "100": {"100", 0}, "0.00": {"0", 0},
+	} {
+		d, _, err := apd.NewFromString(masuk)
+		if err != nil {
+			t.Fatal(err)
+		}
+		koef, skala := PecahAngka(d)
+		if koef != mau.koef || skala != mau.skala {
+			t.Errorf("PecahAngka(%s) = (%v, %d), mau (%s, %d)", masuk, koef, skala, mau.koef, mau.skala)
+		}
+	}
+	if koef, skala := PecahAngka(nil); koef != nil || skala != 0 {
+		t.Errorf("nil = NULL: (%v, %d)", koef, skala)
+	}
+}
+
+// Jumlah penampung SQL = jumlah argumen bind yang dikirim penulis.
+func TestPenampungKontrakCocokArgumen(t *testing.T) {
+	k := models.Kontrak{}
+	if n, mau := hitungPenampung(sqlSisipKontrak("S.T")), len(argUang(make([]any, 5), k))+2; n != mau {
+		t.Errorf("sisip kontrak: %d penampung, %d argumen", n, mau)
+	}
+	if n, mau := hitungPenampung(sqlPerbaruiKontrak("S.T")), len(argUang(make([]any, 3), k))+3; n != mau {
+		t.Errorf("ubah kontrak: %d penampung, %d argumen", n, mau)
+	}
+	if n := hitungPenampung(sqlSalinJenisKeAnak("S.T")); n != 6 {
+		t.Errorf("salin jenis: %d penampung, mau 6", n)
+	}
+	if n := hitungPenampung(sqlSalinTahunKeKontrak("S.T")); n != 6 {
+		t.Errorf("salin tahun ke kontrak: %d penampung, mau 6", n)
+	}
+}
+
+var polaPenampung = regexp.MustCompile(`:(\d+)\b`)
+
+// hitungPenampung - penampung BERBEDA :n, dan harus rapat 1..n.
+func hitungPenampung(q string) int {
+	ada := map[string]bool{}
+	for _, m := range polaPenampung.FindAllStringSubmatch(q, -1) {
+		ada[m[1]] = true
+	}
+	for i := 1; i <= len(ada); i++ {
+		if !ada[strconv.Itoa(i)] {
+			return -1
+		}
+	}
+	return len(ada)
 }
 
 func TestSequenceHanyaLimaMilikModul(t *testing.T) {
