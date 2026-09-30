@@ -62,6 +62,8 @@ describe('hasil bersih M_NAV_MENU ↔ daftar.ts, dua arah', () => {
   it('setiap INSERT terbaca penjaga ini', () => {
     // INSERT berbentuk lain adalah baris yang uji ini tidak lihat.
     expect(BERSIH.insertTerbaca).toBe(BERSIH.insert)
+    // Dan setiap pernyataan lain pun dikenal - bukan diabaikan diam-diam.
+    expect(BERSIH.takDikenal).toEqual([])
     expect(berkasMenu().map((b) => b.nama)).toEqual(expect.arrayContaining(['900_m_nav_menu.sql', '901_m_nav_menu_datar.sql']))
   })
 
@@ -164,7 +166,7 @@ describe('sidebar dan palet dari GET /api/menu', () => {
   })
 
   it("modul DIMIGRASI '0' dirender nonaktif 'belum dimigrasi'", () => {
-    expect(shell).toContain('{m.halaman === null ? (')
+    expect(shell).toContain('{tujuan === null ? (')
     expect(shell).toContain('aria-disabled="true"')
   })
 })

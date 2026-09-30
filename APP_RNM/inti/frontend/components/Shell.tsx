@@ -254,15 +254,11 @@ export function Shell<H extends string>({
     [onPindah],
   )
 
-  // Judul pembaca layar: modul pemilik halaman (label tabel bila sudah
-  // terbaca), cadangannya `MENU.inbox` seperti sebelum menu datar. Judul yang
-  // TERLIHAT adalah kepala tiap halaman dan tidak berubah (mis. Inbox Claim Life).
+  // Judul pembaca layar - ungkapan yang SAMA dengan sebelum menu datar: label
+  // entri halaman itu, cadangannya `MENU.inbox`. Judul yang TERLIHAT adalah
+  // kepala tiap halaman dan tidak berubah (mis. Inbox Claim Life).
   const judulAktif =
-    halaman === HALAMAN_BERANDA
-      ? BERANDA.judul
-      : (tersusun?.golongan.flatMap((g) => g.modul).find((m) => m.halamanModul.includes(halaman as H))?.label ??
-        menu.find((e) => e.modul === halaman || e.halamanModul?.includes(halaman as H))?.label ??
-        MENU.inbox)
+    menu.find((e) => e.modul === halaman)?.label ?? MENU.inbox
 
   const labelMenu = lebar
     ? terlipat
@@ -364,9 +360,10 @@ export function Shell<H extends string>({
                 <ul className="shell__daftar" aria-label={g.kode}>
                   {g.modul.map((m) => {
                     const aktif = m.halamanModul.includes(halaman as H)
+                    const tujuan = m.halaman
                     return (
                       <li key={m.kode}>
-                        {m.halaman === null ? (
+                        {tujuan === null ? (
                           /* `DIMIGRASI = '0'`: tombol NONAKTIF yang menyebut
                              sebabnya - tidak disembunyikan, tidak dapat diklik. */
                           <button
@@ -385,27 +382,22 @@ export function Shell<H extends string>({
                             </span>
                           </button>
                         ) : (
-                          (() => {
-                            const tujuan = m.halaman
-                            return (
-                              <button
-                                type="button"
-                                className={`shell__butir shell__butir--modul${aktif ? ' shell__butir--aktif' : ''}`}
-                                aria-current={aktif ? 'page' : undefined}
-                                // Nama modul VERBATIM korpus bisa lebih panjang dari
-                                // panel dan terpotong elipsis — tooltip memuat utuhnya.
-                                title={m.label}
-                                onClick={() => {
-                                  pilih(tujuan)
-                                }}
-                              >
-                                <span className="kelompok__lencana" aria-hidden="true">
-                                  {lencana.get(m.label)}
-                                </span>
-                                <span className="shell__label">{m.label}</span>
-                              </button>
-                            )
-                          })()
+                          <button
+                            type="button"
+                            className={`shell__butir shell__butir--modul${aktif ? ' shell__butir--aktif' : ''}`}
+                            aria-current={aktif ? 'page' : undefined}
+                            // Nama modul VERBATIM korpus bisa lebih panjang dari
+                            // panel dan terpotong elipsis — tooltip memuat utuhnya.
+                            title={m.label}
+                            onClick={() => {
+                              pilih(tujuan)
+                            }}
+                          >
+                            <span className="kelompok__lencana" aria-hidden="true">
+                              {lencana.get(m.label)}
+                            </span>
+                            <span className="shell__label">{m.label}</span>
+                          </button>
                         )}
                       </li>
                     )

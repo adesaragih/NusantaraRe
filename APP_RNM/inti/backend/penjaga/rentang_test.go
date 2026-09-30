@@ -16,8 +16,8 @@ package penjaga
 //   - dua `MODUL.md` tidak berbagi nomor, dan tidak ada yang memakai 900-949;
 //   - baris `M_NAV_MENU` hanya di 900 (isi awal milik `inti`) dan di slot menu
 //     modul pemiliknya - dan slot itu hanya menyentuh menu modul itu sendiri.
-//     `inti` boleh mengubah BENTUK tabel itu (901, menu datar 30-09-2026),
-//     tetapi tidak menambah baris di luar 900.
+//     `inti` menyentuhnya hanya di 900 (isi awal) dan 901 (bentuk datar,
+//     menu datar 30-09-2026).
 
 import (
 	"fmt"
@@ -154,10 +154,12 @@ func TestMenuHanyaDi900DanSlotMenuModulnya(t *testing.T) {
 		n, _ := nomorBerkas(nama)
 		switch {
 		case pemilik == "inti":
-			// 901 (menu datar) mengubah BENTUK tabel itu - membuang butir anak
-			// dan PARENT_ID - tanpa menambah baris. INSERT hanya di 900.
-			if !strings.HasPrefix(nama, "900_") && strings.Contains(strings.ToUpper(isi), "INSERT INTO {SKEMA}.M_NAV_MENU") {
-				t.Errorf("%s (inti) menambah baris M_NAV_MENU - isi menu inti hanya di 900; menu modul di slot menunya", nama)
+			// 900 (isi awal) dan 901 (bentuk datar, menu datar 30-09-2026)
+			// SAJA. Langkah inti lain yang menyentuh M_NAV_MENU tidak
+			// diterapkan skema tiruan penjaga menu (`langkahMenu`) - menu
+			// yang tidak diperiksa siapa pun (temuan /code-review).
+			if !strings.HasPrefix(nama, "900_") && !strings.HasPrefix(nama, "901_") {
+				t.Errorf("%s (inti) menyentuh M_NAV_MENU - hanya 900 (isi awal) dan 901 (bentuk datar); menu modul di slot menunya", nama)
 			}
 		case !jatah[pemilik].diSlot(n):
 			t.Errorf("%s (modul %s) menyentuh M_NAV_MENU di luar slot menunya %03d-%03d",

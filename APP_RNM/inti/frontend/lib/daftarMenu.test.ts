@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { bentukMenuTabel, entriAplikasi, HALAMAN_BERANDA, susunMenu, type EntriMenu, type MenuTabel } from './daftarMenu'
+import { bentukMenuTabel, daftarPalet, entriAplikasi, HALAMAN_BERANDA, susunMenu, type EntriMenu, type MenuTabel } from './daftarMenu'
 
 // Menu DATAR dari tabel M_NAV_MENU (keputusan work owner 30-09-2026): menu
 // `GET /api/menu` (golongan → modul) DIPOTONG dengan modul frontend yang
@@ -71,10 +71,12 @@ describe('susunMenu: satu tombol per modul di bawah GROUPMENU', () => {
   })
 
   it('palet: Beranda lalu setiap tombol yang dapat dibuka, urutan sidebar, golongan sebagai konteks', () => {
-    expect(s.entri.map((e) => [e.modul, e.label, e.kelompok])).toEqual([
-      ['beranda', 'Beranda', 'Beranda'],
-      ['inbox', 'Claim Life', 'KLAIM'],
+    // `kelompok` SATU makna - nama modul; golongannya dibawa terpisah.
+    expect(s.entri.map((e) => [e.modul, e.label, e.kelompok, e.golongan])).toEqual([
+      ['beranda', 'Beranda', 'Beranda', undefined],
+      ['inbox', 'Claim Life', 'Claim Life', 'KLAIM'],
     ])
+    expect(daftarPalet(s.entri).map((h) => h.kelompok)).toEqual(['Beranda', 'KLAIM'])
   })
 
   it('entriAplikasi: hanya milik aplikasi (Beranda)', () => {

@@ -310,13 +310,20 @@ MENU DARI TABEL M_NAV_MENU (migrasi 900, sejak 30-09-2026)
   1 menu"). 901 membuang kelima butir anak, lalu kunci tamu, index, dan
   kolom PARENT_ID. Hasilnya 20 baris, satu per modul. Setiap langkahnya
   dilindungi pemeriksaan katalog, jadi aman diulang bila -migrate gagal di
-  tengah. Jalur mundurnya (-migrate-down) mengembalikan kolom dan kelima
-  butir persis.
+  tengah. Berkas jalur mundurnya (901_m_nav_menu_datar_down.sql)
+  mengembalikan kolom dan kelima butir persis - tetapi TIDAK ADA perintah
+  untuk membatalkan 901 saja: -migrate-down membongkar SELURUH langkah
+  (termasuk 900, yang membuang tabelnya) dan hanya mau berjalan di skema
+  uji. Bila 901 harus dibatalkan di DEV, DBA menjalankan isi berkas mundur
+  itu dengan persetujuan work owner.
 
   PENTING: -migrate dijalankan WORK OWNER, bukan executor - termasuk 901.
   Di DEV 900 sudah terpasang; 901 BELUM sampai work owner menjalankannya.
-  Backend baru membaca menu dengan benar SEBELUM dan SESUDAH 901 (ia hanya
-  membaca baris modul, KODE = MODUL, tanpa kolom PARENT_ID).
+  URUTAN DEPLOY: biner dari commit 2a10257 ke atas LEBIH DULU, baru
+  -migrate 901. Pembaca menu di commit 10df292 (901 saja) masih menyebut
+  PARENT_ID, jadi biner itu menjawab 500 sesudah 901 terpasang. Backend
+  dari 2a10257 ke atas membaca menu dengan benar SEBELUM dan SESUDAH 901
+  (ia hanya membaca baris modul, KODE = MODUL, tanpa kolom PARENT_ID).
 
   Sebelum 900 dijalankan, GET /api/menu menjawab 503
     {"galat":"tabel M_NAV_MENU belum ada - migrasi 900 belum dijalankan (-migrate, oleh work owner)"}

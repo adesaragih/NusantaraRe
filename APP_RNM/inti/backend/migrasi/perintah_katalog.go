@@ -41,7 +41,7 @@ type PerintahKatalog struct {
 var polaPerintahKatalog = regexp.MustCompile(`(?s)^DECLARE\s+n NUMBER;\s+BEGIN\s+` +
 	`SELECT COUNT\(\*\)\s+INTO\s+n\s+FROM\s+SYS\.(ALL_TAB_COLUMNS|ALL_CONSTRAINTS|ALL_INDEXES)\s+` +
 	`WHERE OWNER = UPPER\('\{skema\}'\) AND TABLE_NAME = '(\w+)' AND (COLUMN_NAME|CONSTRAINT_NAME|INDEX_NAME) = '(\w+)';\s+` +
-	`IF n (>|=) 0 THEN\s+EXECUTE IMMEDIATE '([^']*)';\s+END IF;\s+END;$`)
+	`IF n (>|=) 0 THEN\s+EXECUTE IMMEDIATE '([^']+)';\s+END IF;\s+END;$`)
 
 // sepadan - kolom katalog yang boleh ditanyakan setiap katalog.
 var sepadan = map[string]string{

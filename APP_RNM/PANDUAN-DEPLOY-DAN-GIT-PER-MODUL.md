@@ -106,7 +106,7 @@ go run ./cmd/api                        # atau .\bin\api.exe
 - Modul yang tidak disebut: rutenya **tidak didaftarkan** — jawabannya 404 berbadan JSON
   `{"galat":"modul <nama> tidak aktif di proses ini (MODUL_AKTIF)"}`, supaya layar tidak menyangka
   backend mati — **pekerja latarnya tidak jalan**, dan **menunya tidak tampil**: `GET /api/menu` tidak
-  mengirim butir modul itu (sidebar dan palet Ctrl+K, bab 6), dan rute serta kartu Beranda-nya disaring
+  mengirim tombol modul itu (sidebar dan palet Ctrl+K, bab 6), dan rute serta kartu Beranda-nya disaring
   dari `GET /api/modul-aktif` (`{"modul":["claimlife","komiteclaimlife"]}`, urutan nama modul). **Tidak ada env Vite** untuk
   ini, jadi satu bangunan frontend melayani deploy mana pun.
 - Nama yang salah ketik **menolak menyala**: backend berhenti dengan pesan yang menyebut nama itu dan
@@ -218,7 +218,7 @@ Pemilik ditetapkan di **`..\.github\CODEOWNERS`** — nama akun di sana PENANDA 
 | Jalur | Pemilik |
 | --- | --- |
 | `APP_RNM/modul/<nama>/` (backend, frontend, docs) | pemilik modul itu |
-| `APP_RNM/modul/<nama>/MODUL.md`, `APP_RNM/modul/<nama>/backend/migrations/9*` (slot menu) | ditulis pemilik modul, disetujui tim inti — rentang, slot, `Status`, pernyataan penjaga, butir menu |
+| `APP_RNM/modul/<nama>/MODUL.md`, `APP_RNM/modul/<nama>/backend/migrations/9*` (slot menu) | ditulis pemilik modul, disetujui tim inti — rentang, slot, `Status`, pernyataan penjaga, penanda `DIMIGRASI` |
 | `APP_RNM/inti/backend/daftar/modul_<nama>_gen.go` (bangkitan) | pemilik modul itu |
 | `APP_RNM/inti/`, `cmd/`, `frontend/`, `uji/`, `pkg/`, `modul/_templat/` | tim inti |
 | `APP_RNM/go.mod`, `go.sum`, `package.json`, `package-lock.json`, `vite.config.ts`, `tsconfig.json`, `Makefile` | tim inti — pustaka baru lewat pull request |
@@ -244,15 +244,16 @@ migrasi ini — keputusan work owner, lewat `modul/_templat/` dan pull request t
 | `inti/backend/penjaga/rentang_test.go` | migrasi di luar rentang atau slot, nomor bukan tiga digit, rentang bertumpuk, menu di luar slot |
 | `cmd/api/rakit_test.go` | rute modul nonaktif harus 404; migrasi di disk = migrasi di pelari |
 | `frontend/daftar.modulAktif.test.ts`, `frontend/daftar.rakit.test.ts` | nama frontend ≠ nama folder / `const Nama`; `menu.ts` tanpa `rute.tsx` |
-| `frontend/daftar.sinkron.test.ts`, `frontend/Shell.test.ts` | sidebar ↔ palet, butir menu berbukti korpus |
-| `frontend/daftar.menuTabel.test.ts`, `inti/backend/penjaga/menu_test.go` | isi `M_NAV_MENU` ↔ `menu.ts` dua arah, bentuk SQL menu (bab 6), kelompok modul = `LABEL` tabel |
+| `frontend/daftar.sinkron.test.ts`, `frontend/Shell.test.ts`, `frontend/daftar.datar.test.ts` | sidebar ↔ palet, satu tombol per modul, label = folder korpus, nol elemen buka-tutup |
+| `frontend/daftar.menuTabel.test.ts`, `inti/backend/penjaga/menu_test.go` | hasil bersih `M_NAV_MENU` ↔ `menu.ts` (`HALAMAN_AWAL`) dua arah, bentuk SQL menu (bab 6), nama modul = `LABEL` tabel |
 | `inti/backend/penjaga/*` | higiene migrasi, dokumen STRUKTUR, kata cadangan Oracle, alamat layanan, nama orang, nama tabel telanjang |
 
-Butir menu baru menuntut bukti XML korpus, dan setiap butir menu baru lewat tinjauan tim inti — itu
-disengaja. Sejak 30-09-2026 tinjauannya lewat `CODEOWNERS` atas berkas slot menu `9*` di folder
-migrasi modul, bukan lewat angka kunci di `Shell.test.ts` (dulu lima): angka di berkas bersama
-membuat dua modul yang menambah butir bersamaan berkonflik di baris yang sama. Kelompok yang belum
-dimigrasi dibaca dari `Status` di `MODUL.md` setiap modul.
+Menyalakan menu modul (`DIMIGRASI = '1'`) lewat tinjauan tim inti — itu disengaja: modul yang tampil
+bermenu harus benar-benar punya layar. Sejak 30-09-2026 tinjauannya lewat `CODEOWNERS` atas berkas slot
+menu `9*` di folder migrasi modul, bukan lewat angka kunci di `Shell.test.ts` (dulu lima): angka di berkas
+bersama membuat dua modul yang berubah bersamaan berkonflik di baris yang sama. Menu datar (keputusan
+work owner 30-09-2026): tidak ada butir di bawah modul, jadi tidak ada "butir menu baru" yang menuntut
+bukti tersendiri. Modul yang belum dimigrasi dibaca dari `Status` di `MODUL.md` setiap modul.
 
 ## 6. Menambah menu — satu `UPDATE DIMIGRASI` di slot modul + `HALAMAN_AWAL` di `menu.ts`
 
@@ -323,13 +324,15 @@ Jadi "menambah menu" = modul mendapat layar pertamanya — **dua sisi, satu depl
 
 4. **`-migrate` dijalankan work owner** — termasuk **901**. Backend baru sudah benar **sebelum** 901
    (pembacanya menyaring `KODE = MODUL` tanpa menyebut `PARENT_ID`, jadi lima butir lama tersaring) dan
-   **sesudahnya**.
+   **sesudahnya**. ⛔ **Urutan deploy**: biner dari commit `2a10257` ke atas lebih dulu, baru `-migrate`
+   901 — pembaca menu di `10df292` (901 saja) masih menyebut `PARENT_ID` dan menjawab 500 sesudah 901.
 
 Menyembunyikan satu menu: `STATUS_AKTIF = '0'` pada baris modulnya; pembaca menu hanya membaca baris
 `'1'`. Itu **perubahan data di Oracle** — tulis ke DB,
 jadi dilakukan work owner/DBA dengan persetujuan, bukan executor. Penjaga membaca migrasi, jadi tidak
-melihat perubahan data semacam itu; bila menu itu memang dibuang untuk seterusnya, tuliskan sebagai
-migrasi di slot menu modul pemiliknya.
+melihat perubahan data semacam itu. Slot menu modul **tidak** dapat melakukannya (slot hanya boleh
+`UPDATE DIMIGRASI`); bila menu itu memang dibuang untuk seterusnya, itu keputusan work owner yang
+dikerjakan tim inti — migrasi `inti` baru beserta perubahan penjaga `TestMenuHanyaDi900DanSlotMenuModulnya`.
 
 **Di luar lingkup hari ini** (dicatat, tidak dibangun): tabel akses per akun (mis. `M_NAV_MENU_AKSES`:
 akun atau peran → `MENU_ID`) dan login. Titik sambungnya sudah ada: `inti/backend/menu`

@@ -9,10 +9,15 @@
 // Menu DATAR (keputusan work owner 30-09-2026, `PROMPT-MENU-DATAR-PER-GROUPMENU.md`):
 // satu modul satu menu. Tombol "Claim Life" di sidebar membuka HALAMAN AWAL di
 // bawah; butir `inbox` dan `register` dicabut. Register dibuka tombol Register
-// di Inbox Claim Life (`onRegister`, `Register_Flow.xml:155`) - XML Claim Life
-// tidak memuat jalan masuk Register lain (nol rule Portal/Navigation;
-// `Register_Flow.xml` b69 `pyCanStartInteractively` dan b83
-// `pyCanCreateWorkObject` false).
+// di kepala Inbox Claim Life (`onRegister`; labelnya VERBATIM
+// `Register_Flow.xml:155` `<pyLabel>`). Pembacaan ulang XML (30-09-2026): korpus
+// Claim Life TIDAK memuat jalan masuk Register lain - nol rule Portal/
+// Navigation, nol Section inbox/worklist, dan nol rule selain flow itu sendiri
+// yang menyebut `Register_Flow`; flow itu `pyCanStartInteractively` false
+// (pecahan b69) dan `pyCanCreateWorkObject` false (b83). ⚠️ `[belum
+// terverifikasi]` jalan masuk Pega SEBENARNYA: portal Claim Life tidak
+// diekspor, jadi kesetaraan tombol Inbox dengan pembuka Pega tidak terbukti
+// korpus (`[terbuka — pemilik ekspor Pega]`, `inti/frontend/labels.ts` `MENU`).
 
 import type { MenuModul } from '../../../inti/frontend/modul'
 

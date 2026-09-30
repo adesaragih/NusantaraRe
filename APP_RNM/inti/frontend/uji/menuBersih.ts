@@ -30,8 +30,16 @@ export interface BerkasMigrasiMenu {
   isi: string
 }
 
-/** Urutan golongan backend (`menu.Golongan`, CHECK GROUPMENU 900). */
-export const GOLONGAN_MENU = ['TREATY', 'FACULTATIVE', 'KLAIM', 'MASTER'] as const
+/**
+ * Urutan golongan backend - DIBACA dari `inti/backend/menu/menu.go`
+ * (`var Golongan`), bukan salinan tangan (temuan /code-review).
+ */
+export const GOLONGAN_MENU: readonly string[] = (() => {
+  const go = readFileSync(join(AKAR_APLIKASI, 'inti', 'backend', 'menu', 'menu.go'), 'utf8')
+  const isi = /var Golongan = \[\]string\{([^}]*)\}/.exec(go)?.[1]
+  if (isi === undefined) throw new Error('menuBersih: var Golongan tidak terbaca dari inti/backend/menu/menu.go')
+  return [...isi.matchAll(/"([A-Z]+)"/g)].map((m) => m[1]!)
+})()
 
 /** Setiap migrasi maju yang menyebut M_NAV_MENU, urutan nama berkas = urutan pelari. */
 export function berkasMenu(): BerkasMigrasiMenu[] {
@@ -72,7 +80,8 @@ const POLA_KELOMPOK =
   /^INSERT INTO \{skema\}\.M_NAV_MENU \([^)]*\)\s+SELECT \{skema\}\.SEQ_M_NAV_MENU\.NEXTVAL, NULL, '([^']+)', '([^']+)', '([A-Z]+)', '([^']+)', (\d+), '([01])' FROM DUAL/
 const POLA_BUTIR = /^INSERT INTO \{skema\}\.M_NAV_MENU \([^)]*\)\s+SELECT \{skema\}\.SEQ_M_NAV_MENU\.NEXTVAL, k\.ID, '([^']+)'/
 const HAPUS_BUTIR = "EXECUTE IMMEDIATE 'DELETE FROM {skema}.M_NAV_MENU WHERE PARENT_ID IS NOT NULL'"
-const POLA_UBAH = /^UPDATE \{skema\}\.M_NAV_MENU SET DIMIGRASI = '([01])', TGL_UBAH = SYSDATE\s+WHERE KODE = '([^']+)'/
+// Bentuk slot menu SESUDAH 901 saja (`WHERE KODE = '<modul>'`, berjangkar).
+const POLA_UBAH = /^UPDATE \{skema\}\.M_NAV_MENU SET DIMIGRASI = '([01])', TGL_UBAH = SYSDATE\s+WHERE KODE = '([^']+)'$/
 
 /** Hasil bersih: baris modul, butir yang tersisa, dan cacah INSERT yang terbaca. */
 export interface MenuBersih {
@@ -81,11 +90,13 @@ export interface MenuBersih {
   /** Cacah pernyataan INSERT di berkas menu, dan yang terbaca pola di atas. */
   insert: number
   insertTerbaca: number
+  /** Pernyataan yang tidak dikenal - harus kosong (bukan diabaikan diam-diam). */
+  takDikenal: string[]
 }
 
 /** Menerapkan berkas menu berurutan, seperti pelari. */
 export function menuBersih(berkas: readonly BerkasMigrasiMenu[] = berkasMenu()): MenuBersih {
-  const hasil: MenuBersih = { baris: [], butir: [], insert: 0, insertTerbaca: 0 }
+  const hasil: MenuBersih = { baris: [], butir: [], insert: 0, insertTerbaca: 0, takDikenal: [] }
   for (const b of berkas) {
     for (const p of pernyataan(b.isi)) {
       if (p.startsWith('INSERT')) hasil.insert++
@@ -103,14 +114,18 @@ export function menuBersih(berkas: readonly BerkasMigrasiMenu[] = berkasMenu()):
         hasil.butir.push(bt[1]!)
         continue
       }
-      if (p.includes(HAPUS_BUTIR)) {
-        hasil.butir = []
+      if (p.startsWith('CREATE ')) continue
+      // Blok berpelindung katalog 901: hanya DELETE butir yang mengubah baris.
+      if (p.startsWith('DECLARE') && p.includes('EXECUTE IMMEDIATE')) {
+        if (p.includes(HAPUS_BUTIR)) hasil.butir = []
         continue
       }
       const u = POLA_UBAH.exec(p)
       if (u !== null) {
         for (const x of hasil.baris) if (x.kode === u[2]) x.dimigrasi = u[1] === '1'
+        continue
       }
+      hasil.takDikenal.push(`${b.nama}: ${p.slice(0, 80)}`)
     }
   }
   return hasil

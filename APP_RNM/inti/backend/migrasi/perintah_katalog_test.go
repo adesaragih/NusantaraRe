@@ -35,6 +35,9 @@ func TestBacaPerintahKatalog(t *testing.T) {
 			"   WHERE OWNER = UPPER('{skema}') AND TABLE_NAME = 'T' AND INDEX_NAME = 'I';\n" +
 			"  IF n > 0 THEN\n    EXECUTE IMMEDIATE 'DROP INDEX {skema}.I';\n    EXECUTE IMMEDIATE 'DROP TABLE {skema}.T';\n  END IF;\nEND;",
 		"SQL biasa": "DELETE FROM {skema}.M_NAV_MENU WHERE PARENT_ID IS NOT NULL",
+		"perintah kosong": "DECLARE\n  n NUMBER;\nBEGIN\n  SELECT COUNT(*) INTO n FROM SYS.ALL_INDEXES\n" +
+			"   WHERE OWNER = UPPER('{skema}') AND TABLE_NAME = 'T' AND INDEX_NAME = 'I';\n" +
+			"  IF n > 0 THEN\n    EXECUTE IMMEDIATE '';\n  END IF;\nEND;",
 	} {
 		if _, ok := BacaPerintahKatalog(salah); ok {
 			t.Errorf("%s: diterima sebagai blok berpelindung katalog", nama)

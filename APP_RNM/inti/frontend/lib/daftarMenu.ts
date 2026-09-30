@@ -58,6 +58,11 @@ export interface EntriMenu<H extends string = string> {
    */
   pemilik: string | null
   /**
+   * GROUPMENU tombol ini (TREATY, …) - konteks baris palet. Hanya entri yang
+   * disusun dari menu tabel (`susunMenu`) yang membawanya.
+   */
+  golongan?: string
+  /**
    * Seluruh halaman modul ini - tombolnya menyala selama salah satunya tampil
    * (mis. Outstanding milik Claim Life). Kosong untuk Beranda.
    */
@@ -188,8 +193,9 @@ export function susunMenu<H extends string>(tabel: MenuTabel, rute: readonly Ent
         continue
       }
       modul.push({ kode: m.kode, label: m.label, halaman: r.modul, halamanModul: r.halamanModul ?? [r.modul] })
-      // Palet = sidebar: entri dari tombol yang SAMA.
-      hasil.entri.push({ modul: r.modul, label: m.label, kelompok: g.kode, pemilik: m.kode })
+      // Palet = sidebar: entri dari tombol yang SAMA. `kelompok` tetap nama
+      // modul (satu makna); golongannya dibawa sendiri untuk konteks palet.
+      hasil.entri.push({ modul: r.modul, label: m.label, kelompok: m.label, golongan: g.kode, pemilik: m.kode })
     }
     if (modul.length > 0) hasil.golongan.push({ kode: g.kode, modul })
   }
@@ -214,7 +220,8 @@ export function daftarPalet<H extends string>(menu: readonly EntriMenu<H>[]): Ha
   return menu.map((e) => ({
     kunci: 'modul:' + e.modul,
     label: e.label,
-    kelompok: e.kelompok,
+    // Konteks baris palet: GROUPMENU tombolnya; Beranda (tanpa golongan) memakai namanya sendiri.
+    kelompok: e.golongan ?? e.kelompok,
     modul: e.modul,
   }))
 }

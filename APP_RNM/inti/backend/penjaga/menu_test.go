@@ -68,6 +68,12 @@ var (
 	polaUbahDimigrasi = regexp.MustCompile(`(?s)^UPDATE \{skema\}\.M_NAV_MENU SET DIMIGRASI = '([01])', TGL_UBAH = SYSDATE\s+` +
 		`WHERE KODE = '([^']+)'$`)
 	polaIndeksMenu = regexp.MustCompile(`^CREATE INDEX \{skema\}\.(\w+) ON \{skema\}\.M_NAV_MENU \((\w+)\)$`)
+	// polaUbahDimigrasiLama - bentuk slot SEBELUM 901 (menyebut PARENT_ID).
+	// Dikenal supaya skema tiruan menolaknya dengan SEBAB yang benar -
+	// ORA-00904 sesudah 901 - bukan "bentuk tidak dikenal" (temuan /code-review).
+	polaUbahDimigrasiLama = regexp.MustCompile(`(?s)^UPDATE \{skema\}\.M_NAV_MENU SET DIMIGRASI = '([01])', TGL_UBAH = SYSDATE\s+` +
+		`WHERE KODE = '([^']+)' AND PARENT_ID IS NULL$`)
+	polaKonstrain = regexp.MustCompile(`CONSTRAINT (\w+) `)
 )
 
 // barisMenu - satu baris M_NAV_MENU di skema tiruan. `induk` kosong = baris
@@ -79,15 +85,18 @@ type barisMenu struct {
 
 // skemaMenu - M_NAV_MENU tiruan: kolom, kunci tamu ke induk, indeks, baris.
 type skemaMenu struct {
-	ada    bool
-	kolom  map[string]bool
-	fk     bool
-	indeks map[string]string // nama -> kolom
-	baris  []barisMenu
+	ada   bool
+	kolom map[string]bool
+	fk    bool
+	// konstrain - constraint lain CREATE TABLE (PK, UQ, CK): ada di katalog
+	// tiruan, jadi blok yang memeriksanya dievaluasi seperti di Oracle.
+	konstrain map[string]bool
+	indeks    map[string]string // nama -> kolom
+	baris     []barisMenu
 }
 
 func skemaMenuKosong() *skemaMenu {
-	return &skemaMenu{kolom: map[string]bool{}, indeks: map[string]string{}}
+	return &skemaMenu{kolom: map[string]bool{}, konstrain: map[string]bool{}, indeks: map[string]string{}}
 }
 
 func (s *skemaMenu) cari(kode string) int {
@@ -120,6 +129,11 @@ func (s *skemaMenu) terapkan(p string) error {
 			s.kolom[k] = true
 		}
 		s.fk = strings.Contains(p, "CONSTRAINT FK_M_NAV_MENU_INDUK FOREIGN KEY (PARENT_ID)")
+		for _, m := range polaKonstrain.FindAllStringSubmatch(p, -1) {
+			if m[1] != "FK_M_NAV_MENU_INDUK" {
+				s.konstrain[m[1]] = true
+			}
+		}
 		return nil
 	}
 	if m := polaIndeksMenu.FindStringSubmatch(p); m != nil {
@@ -159,6 +173,17 @@ func (s *skemaMenu) terapkan(p string) error {
 			dimigrasi: k.dimigrasi, induk: k.kode, urutan: u})
 		return nil
 	}
+	if m := polaUbahDimigrasiLama.FindStringSubmatch(p); m != nil {
+		if err := s.perluKolom("PARENT_ID"); err != nil {
+			return err
+		}
+		i := s.cari(m[2])
+		if i < 0 || s.baris[i].induk != "" {
+			return fmt.Errorf("UPDATE DIMIGRASI atas %s - baris modul itu tidak (belum) ada", m[2])
+		}
+		s.baris[i].dimigrasi = m[1]
+		return nil
+	}
 	if m := polaUbahDimigrasi.FindStringSubmatch(p); m != nil {
 		i := s.cari(m[2])
 		if i < 0 || s.baris[i].induk != "" {
@@ -171,12 +196,18 @@ func (s *skemaMenu) terapkan(p string) error {
 		if pk.Tabel != "M_NAV_MENU" {
 			return fmt.Errorf("blok berpelindung katalog atas %s, bukan M_NAV_MENU", pk.Tabel)
 		}
+		// ⛔ Perintahnya DIKENALI walau pemeriksaan katalog melewatinya:
+		// perintah yang dilewati di skema tiruan dapat berjalan di Oracle
+		// (temuan /code-review).
+		if !perintahDikenal(pk.Perintah) {
+			return fmt.Errorf("perintah blok berpelindung tidak dikenal penjaga: %s", migrasi.RingkasPernyataan(pk.Perintah))
+		}
 		var ada bool
 		switch pk.Katalog {
 		case "ALL_TAB_COLUMNS":
 			ada = s.kolom[pk.Objek]
 		case "ALL_CONSTRAINTS":
-			ada = pk.Objek == "FK_M_NAV_MENU_INDUK" && s.fk
+			ada = (pk.Objek == "FK_M_NAV_MENU_INDUK" && s.fk) || s.konstrain[pk.Objek]
 		case "ALL_INDEXES":
 			_, ada = s.indeks[pk.Objek]
 		}
@@ -186,6 +217,20 @@ func (s *skemaMenu) terapkan(p string) error {
 		return s.terapkanPerintah(pk.Perintah)
 	}
 	return fmt.Errorf("bentuk tidak dikenal penjaga: %s", migrasi.RingkasPernyataan(p))
+}
+
+// perintahDikenal menjawab apakah isi EXECUTE IMMEDIATE salah satu bentuk
+// yang `terapkanPerintah` kenal - tanpa menerapkannya.
+func perintahDikenal(q string) bool {
+	switch q {
+	case "DELETE FROM {skema}.M_NAV_MENU WHERE PARENT_ID IS NOT NULL",
+		"ALTER TABLE {skema}.M_NAV_MENU DROP CONSTRAINT FK_M_NAV_MENU_INDUK",
+		"ALTER TABLE {skema}.M_NAV_MENU DROP COLUMN PARENT_ID",
+		"ALTER TABLE {skema}.M_NAV_MENU ADD (PARENT_ID NUMBER(10))",
+		"ALTER TABLE {skema}.M_NAV_MENU ADD CONSTRAINT FK_M_NAV_MENU_INDUK FOREIGN KEY (PARENT_ID) REFERENCES {skema}.M_NAV_MENU (ID)":
+		return true
+	}
+	return q == "DROP INDEX {skema}.IX_M_NAV_MENU_PARENT" || polaIndeksMenu.MatchString(q)
 }
 
 // terapkanPerintah - isi EXECUTE IMMEDIATE blok berpelindung katalog.
@@ -611,12 +656,29 @@ func TestSkemaTiruanMenangkapLangkahTanpaPelindung(t *testing.T) {
 			t.Errorf("%s: skema tiruan tidak menolak langkah yang diulang tanpa pelindung", nama)
 		}
 	}
-	// Bentuk UPDATE lama (menyebut PARENT_ID) mati sesudah 901; bentuk slot
-	// menu baru (WHERE KODE saja) menyalakan DIMIGRASI baris modulnya.
+	// Bentuk UPDATE lama (menyebut PARENT_ID) SAH sebelum 901 dan mati di
+	// ORA-00904 sesudahnya - sebabnya kolom yang hilang, bukan bentuknya.
+	lama := "UPDATE {skema}.M_NAV_MENU SET DIMIGRASI = '1', TGL_UBAH = SYSDATE\nWHERE KODE = 'nbfacin' AND PARENT_ID IS NULL"
+	sebelum := skemaSesudah(t, skemaMenuKosong(), "900", langkahInti(t, "900_m_nav_menu.sql"))
+	if err := sebelum.terapkan(lama); err != nil {
+		t.Errorf("UPDATE bentuk lama ditolak SEBELUM 901: %v", err)
+	}
 	s := skemaSesudah(t, skemaMenuKosong(), "900+901",
 		append(langkahInti(t, "900_m_nav_menu.sql"), langkahInti(t, "901_m_nav_menu_datar.sql")...))
-	if err := s.terapkan("UPDATE {skema}.M_NAV_MENU SET DIMIGRASI = '1', TGL_UBAH = SYSDATE\nWHERE KODE = 'nbfacin' AND PARENT_ID IS NULL"); err == nil {
-		t.Error("UPDATE ... AND PARENT_ID IS NULL diterima sesudah 901")
+	if err := s.terapkan(lama); err == nil || !strings.Contains(err.Error(), "ORA-00904") {
+		t.Errorf("UPDATE ... AND PARENT_ID IS NULL sesudah 901: %v, mau ORA-00904", err)
+	}
+	// Blok atas constraint yang ADA (UQ 900) dengan perintah tak dikenal:
+	// ditolak walau pemeriksaannya "n = 0" (dilewati) - di Oracle ia dapat
+	// berjalan.
+	blok := "DECLARE\n  n NUMBER;\nBEGIN\n  SELECT COUNT(*) INTO n FROM SYS.ALL_CONSTRAINTS\n" +
+		"   WHERE OWNER = UPPER('{skema}') AND TABLE_NAME = 'M_NAV_MENU' AND CONSTRAINT_NAME = 'UQ_M_NAV_MENU_KODE';\n" +
+		"  IF n = 0 THEN\n    EXECUTE IMMEDIATE 'DROP TABLE {skema}.M_NAV_MENU';\n  END IF;\nEND;"
+	if err := s.terapkan(blok); err == nil {
+		t.Error("blok berpelindung dengan perintah tak dikenal diterima karena pemeriksaannya melewatinya")
+	}
+	if !s.konstrain["UQ_M_NAV_MENU_KODE"] || !s.konstrain["PK_M_NAV_MENU"] || !s.konstrain["CK_M_NAV_MENU_GROUPMENU"] {
+		t.Errorf("katalog tiruan tidak memuat constraint 900: %v", s.konstrain)
 	}
 	if err := s.terapkan("UPDATE {skema}.M_NAV_MENU SET DIMIGRASI = '1', TGL_UBAH = SYSDATE\nWHERE KODE = 'nbfacin'"); err != nil {
 		t.Errorf("slot menu bentuk datar ditolak sesudah 901: %v", err)
