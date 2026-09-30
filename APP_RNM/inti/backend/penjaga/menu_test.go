@@ -59,13 +59,14 @@ var (
 		`SELECT \{skema\}\.SEQ_M_NAV_MENU\.NEXTVAL, k\.ID, '([^']+)', '([^']+)', k\.GROUPMENU, k\.MODUL, (\d+), k\.DIMIGRASI\s+` +
 		`FROM \{skema\}\.M_NAV_MENU k\s+WHERE k\.KODE = '([^']+)' AND k\.PARENT_ID IS NULL\s+` +
 		`AND NOT EXISTS \(SELECT 1 FROM \{skema\}\.M_NAV_MENU b WHERE b\.KODE = '([^']+)'\)$`)
-	// polaUbahDimigrasi - satu-satunya UPDATE yang dikenal: modul yang
-	// mendapat layar pertamanya (panduan bab 6). Diterapkan menurut urutan
-	// langkah, jadi DIMIGRASI yang dibaca adalah keadaan SESUDAH migrasi.
-	// ⚠️ Bentuk ini menyebut PARENT_ID - sesudah 901 ia mati di ORA-00904
-	// (skema tiruan menagihnya).
+	// polaUbahDimigrasi - satu-satunya UPDATE yang dikenal, dan satu-satunya
+	// isi slot menu modul: modul yang mendapat layar pertamanya menyalakan
+	// DIMIGRASI barisnya (panduan bab 6). Diterapkan menurut urutan langkah,
+	// jadi DIMIGRASI yang dibaca adalah keadaan SESUDAH migrasi.
+	// ⛔ Tanpa `AND PARENT_ID IS NULL` (bentuk sebelum 901): kolom itu dibuang
+	// 901, dan bentuk lama mati di ORA-00904 - skema tiruan menagihnya.
 	polaUbahDimigrasi = regexp.MustCompile(`(?s)^UPDATE \{skema\}\.M_NAV_MENU SET DIMIGRASI = '([01])', TGL_UBAH = SYSDATE\s+` +
-		`WHERE KODE = '([^']+)' AND PARENT_ID IS NULL$`)
+		`WHERE KODE = '([^']+)'$`)
 	polaIndeksMenu = regexp.MustCompile(`^CREATE INDEX \{skema\}\.(\w+) ON \{skema\}\.M_NAV_MENU \((\w+)\)$`)
 )
 
@@ -159,9 +160,6 @@ func (s *skemaMenu) terapkan(p string) error {
 		return nil
 	}
 	if m := polaUbahDimigrasi.FindStringSubmatch(p); m != nil {
-		if err := s.perluKolom("PARENT_ID"); err != nil {
-			return err
-		}
 		i := s.cari(m[2])
 		if i < 0 || s.baris[i].induk != "" {
 			return fmt.Errorf("UPDATE DIMIGRASI atas %s - baris modul itu tidak (belum) ada", m[2])
@@ -613,10 +611,20 @@ func TestSkemaTiruanMenangkapLangkahTanpaPelindung(t *testing.T) {
 			t.Errorf("%s: skema tiruan tidak menolak langkah yang diulang tanpa pelindung", nama)
 		}
 	}
-	// Bentuk UPDATE lama (menyebut PARENT_ID) mati sesudah 901.
+	// Bentuk UPDATE lama (menyebut PARENT_ID) mati sesudah 901; bentuk slot
+	// menu baru (WHERE KODE saja) menyalakan DIMIGRASI baris modulnya.
 	s := skemaSesudah(t, skemaMenuKosong(), "900+901",
 		append(langkahInti(t, "900_m_nav_menu.sql"), langkahInti(t, "901_m_nav_menu_datar.sql")...))
 	if err := s.terapkan("UPDATE {skema}.M_NAV_MENU SET DIMIGRASI = '1', TGL_UBAH = SYSDATE\nWHERE KODE = 'nbfacin' AND PARENT_ID IS NULL"); err == nil {
 		t.Error("UPDATE ... AND PARENT_ID IS NULL diterima sesudah 901")
+	}
+	if err := s.terapkan("UPDATE {skema}.M_NAV_MENU SET DIMIGRASI = '1', TGL_UBAH = SYSDATE\nWHERE KODE = 'nbfacin'"); err != nil {
+		t.Errorf("slot menu bentuk datar ditolak sesudah 901: %v", err)
+	}
+	if i := s.cari("nbfacin"); i < 0 || s.baris[i].dimigrasi != "1" {
+		t.Error("slot menu bentuk datar tidak menyalakan DIMIGRASI nbfacin")
+	}
+	if err := s.terapkan("UPDATE {skema}.M_NAV_MENU SET DIMIGRASI = '1', TGL_UBAH = SYSDATE\nWHERE KODE = 'tidakada'"); err == nil {
+		t.Error("UPDATE atas modul yang tidak ada diterima")
 	}
 }

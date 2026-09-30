@@ -169,10 +169,12 @@ func TestMenuHanyaDi900DanSlotMenuModulnya(t *testing.T) {
 	}
 }
 
-// ⛔ R3: berkas di slot menu sebuah modul HANYA menu modul itu - butir di bawah
-// kelompoknya sendiri dan penanda DIMIGRASI-nya - dalam bentuk yang dibaca
-// penjaga isi menu (bentuk bab 6 PANDUAN-DEPLOY). Tidak ada tabel, tidak ada
-// kelompok baru, tidak ada menu modul lain.
+// ⛔ R3: berkas di slot menu sebuah modul HANYA menyalakan DIMIGRASI baris
+// modul itu - `UPDATE ... SET DIMIGRASI = '1' WHERE KODE = '<modul>'`, jalur
+// mundurnya `'0'` - dalam bentuk yang dibaca penjaga isi menu (bentuk bab 6
+// PANDUAN-DEPLOY). Menu datar (keputusan work owner 30-09-2026): satu modul
+// satu menu, jadi slot menu NOL `INSERT` - tidak ada butir, tidak ada baris
+// baru, tidak ada tabel, tidak ada menu modul lain.
 func TestSlotMenuHanyaMenyentuhMenuModulnya(t *testing.T) {
 	jatah := jatahSetiapModul(t)
 	maju, mundur := pernyataanPerLangkah(t, false), pernyataanPerLangkah(t, true)
@@ -207,48 +209,39 @@ func pernyataanPerLangkah(t *testing.T, mundur bool) map[string][]string {
 	return out
 }
 
-var polaHapusButir = regexp.MustCompile(`(?s)^DELETE FROM \{skema\}\.M_NAV_MENU WHERE KODE = '([^']+)'$`)
-
 // pelanggaranSlotMenu menjawab mengapa pernyataan maju/mundur sebuah berkas
 // slot menu modul `modul` tidak sah; kosong = sah.
+//
+// Sah HANYA: maju `UPDATE ... SET DIMIGRASI = '1' ... WHERE KODE = '<modul>'`,
+// mundur yang sama dengan `'0'`. `INSERT INTO M_NAV_MENU` di slot = MERAH:
+// baris modul sudah ada sejak 900 (satu per folder korpus), dan butir di bawah
+// modul dicabut keputusan work owner 30-09-2026.
 func pelanggaranSlotMenu(modul string, maju, mundur []string) []string {
 	var alasan []string
-	butir := map[string]bool{}
 	if len(maju) == 0 {
 		alasan = append(alasan, "berkas slot menu tanpa satu pun pernyataan")
 	}
+	periksa := func(arah, p, mauDimigrasi string) {
+		if strings.Contains(strings.ToUpper(p), "INSERT INTO") {
+			alasan = append(alasan, arah+"INSERT INTO M_NAV_MENU di slot menu - satu modul satu baris, "+
+				"barisnya sudah ada sejak 900; slot hanya menyalakan DIMIGRASI: "+ringkas(p))
+			return
+		}
+		m := polaUbahDimigrasi.FindStringSubmatch(p)
+		switch {
+		case m == nil:
+			alasan = append(alasan, arah+"pernyataan di luar bentuk slot menu (UPDATE DIMIGRASI baris modulnya): "+ringkas(p))
+		case m[2] != modul:
+			alasan = append(alasan, fmt.Sprintf("%smengubah DIMIGRASI baris %s - slot ini milik %s", arah, m[2], modul))
+		case m[1] != mauDimigrasi:
+			alasan = append(alasan, fmt.Sprintf("%smenyetel DIMIGRASI = '%s', mau '%s'", arah, m[1], mauDimigrasi))
+		}
+	}
 	for _, p := range maju {
-		switch m := polaUbahDimigrasi.FindStringSubmatch(p); {
-		case m != nil:
-			if m[2] != modul {
-				alasan = append(alasan, fmt.Sprintf("mengubah DIMIGRASI kelompok %s - slot ini milik %s", m[2], modul))
-			}
-			continue
-		}
-		if m := polaIsiButir.FindStringSubmatch(p); m != nil {
-			if m[4] != modul {
-				alasan = append(alasan, fmt.Sprintf("menyisipkan butir %s di bawah kelompok %s - slot ini milik %s", m[1], m[4], modul))
-			}
-			butir[m[1]] = true
-			continue
-		}
-		alasan = append(alasan, "pernyataan di luar bentuk menu modul (UPDATE DIMIGRASI kelompoknya, "+
-			"INSERT butir di bawahnya): "+ringkas(p))
+		periksa("", p, "1")
 	}
 	for _, p := range mundur {
-		if m := polaUbahDimigrasi.FindStringSubmatch(p); m != nil {
-			if m[2] != modul {
-				alasan = append(alasan, fmt.Sprintf("jalur mundur mengubah DIMIGRASI kelompok %s - slot ini milik %s", m[2], modul))
-			}
-			continue
-		}
-		if m := polaHapusButir.FindStringSubmatch(p); m != nil {
-			if !butir[m[1]] {
-				alasan = append(alasan, fmt.Sprintf("jalur mundur menghapus %s yang tidak disisipkan langkah majunya", m[1]))
-			}
-			continue
-		}
-		alasan = append(alasan, "pernyataan mundur di luar bentuk menu modul: "+ringkas(p))
+		periksa("jalur mundur ", p, "0")
 	}
 	return alasan
 }
@@ -264,8 +257,9 @@ func ringkas(p string) string {
 // aturannya longgar - hari ini belum ada satu pun berkas slot menu.
 func TestAturanSlotMenuMenggigit(t *testing.T) {
 	ubah := func(kode, dim string) string {
-		return "UPDATE {skema}.M_NAV_MENU SET DIMIGRASI = '" + dim + "', TGL_UBAH = SYSDATE\nWHERE KODE = '" + kode + "' AND PARENT_ID IS NULL"
+		return "UPDATE {skema}.M_NAV_MENU SET DIMIGRASI = '" + dim + "', TGL_UBAH = SYSDATE\nWHERE KODE = '" + kode + "'"
 	}
+	ubahLama := func(kode, dim string) string { return ubah(kode, dim) + " AND PARENT_ID IS NULL" }
 	sisip := func(butir, induk string) string {
 		return "INSERT INTO {skema}.M_NAV_MENU (ID, PARENT_ID, KODE, LABEL, GROUPMENU, MODUL, URUTAN, DIMIGRASI)\n" +
 			"SELECT {skema}.SEQ_M_NAV_MENU.NEXTVAL, k.ID, '" + butir + "', 'Label', k.GROUPMENU, k.MODUL, 1, k.DIMIGRASI\n" +
@@ -278,12 +272,15 @@ func TestAturanSlotMenuMenggigit(t *testing.T) {
 		maju, mundur []string
 		sah          bool
 	}{
-		{"bentuk bab 6, modulnya sendiri", []string{ubah("alfa", "1"), sisip("alfa-inbox", "alfa")},
-			[]string{hapus("alfa-inbox"), ubah("alfa", "0")}, true},
-		{"butir di bawah modul lain", []string{sisip("beta-inbox", "beta")}, []string{hapus("beta-inbox")}, false},
+		{"bentuk bab 6: DIMIGRASI baris modulnya sendiri", []string{ubah("alfa", "1")}, []string{ubah("alfa", "0")}, true},
+		{"INSERT butir di bawah modulnya sendiri (menu datar: merah)", []string{ubah("alfa", "1"), sisip("alfa-inbox", "alfa")},
+			[]string{hapus("alfa-inbox"), ubah("alfa", "0")}, false},
+		{"INSERT baris baru", []string{"INSERT INTO {skema}.M_NAV_MENU (ID, KODE, LABEL, GROUPMENU, MODUL, URUTAN) VALUES (1, 'alfa', 'A', 'KLAIM', 'alfa', 1)"},
+			[]string{ubah("alfa", "0")}, false},
+		{"bentuk lama ber-PARENT_ID (mati sesudah 901)", []string{ubahLama("alfa", "1")}, []string{ubahLama("alfa", "0")}, false},
 		{"DIMIGRASI modul lain", []string{ubah("beta", "1")}, []string{ubah("beta", "0")}, false},
+		{"maju mematikan, mundur menyalakan", []string{ubah("alfa", "0")}, []string{ubah("alfa", "1")}, false},
 		{"membuat tabel di slot", []string{"CREATE TABLE {skema}.T_ALFA (ID NUMBER(10))"}, nil, false},
-		{"mundur menghapus butir lain", []string{sisip("alfa-inbox", "alfa")}, []string{hapus("alfa-lain")}, false},
 		{"slot kosong", nil, nil, false},
 	} {
 		if dapat := len(pelanggaranSlotMenu("alfa", k.maju, k.mundur)) == 0; dapat != k.sah {
@@ -323,8 +320,8 @@ func TestSlotMenuBerjalanSesudah900(t *testing.T) {
 		}
 	}
 	tiruan := fstest.MapFS{
-		"migrations/952_menu_tiruan.sql":      {Data: []byte("UPDATE {skema}.M_NAV_MENU SET DIMIGRASI = '1', TGL_UBAH = SYSDATE\nWHERE KODE = 'tiruan' AND PARENT_ID IS NULL\n/\n")},
-		"migrations/952_menu_tiruan_down.sql": {Data: []byte("UPDATE {skema}.M_NAV_MENU SET DIMIGRASI = '0', TGL_UBAH = SYSDATE\nWHERE KODE = 'tiruan' AND PARENT_ID IS NULL\n/\n")},
+		"migrations/952_menu_tiruan.sql":      {Data: []byte("UPDATE {skema}.M_NAV_MENU SET DIMIGRASI = '1', TGL_UBAH = SYSDATE\nWHERE KODE = 'tiruan'\n/\n")},
+		"migrations/952_menu_tiruan_down.sql": {Data: []byte("UPDATE {skema}.M_NAV_MENU SET DIMIGRASI = '0', TGL_UBAH = SYSDATE\nWHERE KODE = 'tiruan'\n/\n")},
 		"migrations/030_tiruan.sql":           {Data: []byte("CREATE TABLE {skema}.T_TIRUAN (ID NUMBER(10))\n/\n")},
 		"migrations/030_tiruan_down.sql":      {Data: []byte("DROP TABLE {skema}.T_TIRUAN\n/\n")},
 	}
