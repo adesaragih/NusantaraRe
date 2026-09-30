@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -8,15 +8,21 @@ import { MODUL } from '../inti/labels'
 import { HALAMAN_BERANDA } from '../inti/lib/daftarMenu'
 import { ENTRI_MENU } from './daftar'
 
-// Penjaga DUA ARAH: isi awal M_NAV_MENU (migrasi 900) ↔ `modul/daftar.ts`
-// (brief menu 30-09-2026 §3).
+// Penjaga DUA ARAH: isi M_NAV_MENU (migrasi `inti` 900-949) ↔ `modul/daftar.ts`
+// (brief menu 30-09-2026 §3). SELURUH migrasi maju `inti/migrations/` dibaca,
+// bukan 900 saja: menu berikutnya lahir di 901+ (panduan deploy bab 6).
 //
 // ⛔ Kenapa statik: sidebar dirakit dari `GET /api/menu` dan DIPOTONG dengan
 // rute frontend - baris tabel tanpa rute tidak tampil, rute tanpa baris
 // tabel juga tidak. Keduanya diam di layar (hanya satu baris konsol). Uji
 // inilah yang membuatnya berbunyi sebelum sampai ke layar.
 
-const SQL = readFileSync(join(__dirname, '..', '..', '..', 'inti', 'migrations', '900_m_nav_menu.sql'), 'utf8')
+const FOLDER_MIGRASI_INTI = join(__dirname, '..', '..', '..', 'inti', 'migrations')
+const SQL = readdirSync(FOLDER_MIGRASI_INTI)
+  .filter((n) => n.endsWith('.sql') && !n.endsWith('_down.sql'))
+  .sort()
+  .map((n) => readFileSync(join(FOLDER_MIGRASI_INTI, n), 'utf8'))
+  .join('\n')
 
 const POLA_KELOMPOK =
   /SELECT \{skema\}\.SEQ_M_NAV_MENU\.NEXTVAL, NULL, '([^']+)', '([^']+)', '([A-Z]+)', '([^']+)', \d+, '([01])' FROM DUAL/g
@@ -27,7 +33,7 @@ const kelompok = [...SQL.matchAll(POLA_KELOMPOK)].map((m) => ({ kode: m[1]!, lab
 const butir = [...SQL.matchAll(POLA_BUTIR)].map((m) => ({ kode: m[1]!, label: m[2]!, induk: m[3]! }))
 const rute = ENTRI_MENU.filter((e) => e.modul !== HALAMAN_BERANDA)
 
-describe('isi awal 900 ↔ daftar.ts, dua arah', () => {
+describe('isi menu migrasi inti ↔ daftar.ts, dua arah', () => {
   it('setiap INSERT terbaca penjaga ini', () => {
     // INSERT berbentuk lain adalah baris yang uji ini tidak lihat.
     expect(kelompok.length + butir.length).toBe((SQL.match(/^INSERT INTO /gm) ?? []).length)
@@ -35,11 +41,11 @@ describe('isi awal 900 ↔ daftar.ts, dua arah', () => {
     expect(butir).toHaveLength(5)
   })
 
-  it('setiap KODE butir isi awal punya rute di daftar.ts', () => {
+  it('setiap KODE butir isi menu punya rute di daftar.ts', () => {
     for (const b of butir) expect(rute.map((e) => e.modul as string), b.kode).toContain(b.kode)
   })
 
-  it('setiap butir daftar.ts punya baris di isi awal', () => {
+  it('setiap butir daftar.ts punya baris di isi menu', () => {
     for (const e of rute) expect(butir.map((b) => b.kode), e.modul).toContain(e.modul)
   })
 
