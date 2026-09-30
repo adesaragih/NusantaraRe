@@ -478,6 +478,54 @@ func (r *KlaimLife) HapusCerminBelumDisimpan(ctx context.Context, tx *db.Tx, adj
 	return nil
 }
 
+// sqlSetelCerminOutstanding - OQ-N13 (GILIRAN-18) `[keputusan asisten dari
+// bukti; veto work owner]`: Save to RNM menyetel status cermin seperti Pega.
+//
+// `[terverifikasi]` `SaveOutStandingLife_Act` langkah 22.1.3.1 (b10115, hidup)
+// memanggil `InsertJsonKlaimLife_sql` per baris adjustment yang baru disimpan;
+// rule itu menulis `STS_REJECT = '0'` (b176). Di Pega baris cerminnya LAHIR
+// di sana; di aplikasi ini ia lahir saat pendaftaran (status NULL), jadi yang
+// ditiru di sini hanya statusnya.
+//
+// ⛔ Larangan lama "tabel warisan baca-saja di Save to RNM" DICABUT UNTUK
+// KOLOM INI SAJA (tiket 03, 30-09-2026). SET satu kolom; dikunci `ID` +
+// `CASEID` + `STS_REJECT IS NULL` - baris era Pega dan baris yang sudah
+// berkeputusan (Komite) tidak tersentuh.
+func sqlSetelCerminOutstanding(lama string) string {
+	return fmt.Sprintf(`UPDATE %s SET STS_REJECT = :1 WHERE ID = :2 AND CASEID = :3 AND STS_REJECT IS NULL`, lama)
+}
+
+// SetelCerminOutstanding menjalankannya di transaksi pemanggil dan
+// mengembalikan cacah baris cermin yang disetel.
+//
+// ⚠️ Nol baris BUKAN galat: baris adjustment putaran Komite
+// (`SisipkanBaris`) tidak punya baris cermin, dan cermin yang sudah
+// berkeputusan tidak ditimpa. Menyisip cermin yang hilang berarti menulis
+// kolom lain - di luar pencabutan larangan yang sempit ini.
+func (r *KlaimLife) SetelCerminOutstanding(ctx context.Context, tx *db.Tx, adjID, caseID string) (int, error) {
+	if strings.TrimSpace(adjID) == "" || strings.TrimSpace(caseID) == "" {
+		return 0, fmt.Errorf("repository: menolak menyetel cermin tanpa ID adjustment dan CASEID (%q, %q)",
+			adjID, caseID)
+	}
+	lama, err := r.db.Qualify(namaTabelLama)
+	if err != nil {
+		return 0, err
+	}
+	q := sqlSetelCerminOutstanding(lama)
+	if err := db.PeriksaSQL(q); err != nil {
+		return 0, err
+	}
+	hasil, err := tx.ExecContext(ctx, q, kontrak.KodeOutstanding, adjID, caseID)
+	if err != nil {
+		return 0, fmt.Errorf("repository: menyetel status cermin %s: %w", adjID, err)
+	}
+	n, err := hasil.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("repository: mencacah cermin tersetel: %w", err)
+	}
+	return int(n), nil
+}
+
 // sqlIsiCedingCermin - CEDINGCO cermin dari POLIS (OQ-N2, GILIRAN-17):
 // `pyWorkPage.PolicyDataLife.CedingCo` b9226 -> `InsertJsonKlaimLife_sql`
 // b114. `T_PREMIUM_LIST.CEDING_CO` baris PROD_KE terakhir - bentuk yang sama

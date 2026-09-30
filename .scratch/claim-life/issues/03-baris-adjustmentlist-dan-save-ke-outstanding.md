@@ -653,7 +653,7 @@ Yang dibangun: `POST /api/klaim-life/{id}/outstanding` (`handlers/simpanrnm.go` 
 `SimpanRNM.Simpan` → `PeriksaSimpanRNM`, murni), bergerbang tahap **Outstanding Claim** +
 pemegangnya; seluruh gerbang XML diperiksa SEBELUM satu tulisan pun; satu transaksi (nomor bila
 `CLAIM_NO` kosong, `STS_REJECT=0` bagi baris tanpa status, jejak); tabel warisan **hanya dibaca**
-(klaim ganda); Arasapas sesudah commit. Tombol `Save to RNM` (b21102) di `OutstandingClaimLife.tsx`.
+(klaim ganda) — ⛔ *dicabut untuk kolom `STS_REJECT` cermin saja, 30-09-2026 (OQ-N13, bab terakhir)*; Arasapas sesudah commit. Tombol `Save to RNM` (b21102) di `OutstandingClaimLife.tsx`.
 
 ### ⛔ Cara membaca yang menentukan — dari korpus
 
@@ -1011,6 +1011,7 @@ Mencabut peserta = **penanda**; layar menyembunyikannya.
 
 Yang tetap terbuka: **OQ-N13** (baru). Status cermin `'0'` saat Save to RNM (b176) belum ditulis, karena langkah itu
 memperlakukan tabel warisan baca-saja. Karena itu klaim yang menunggu Komite belum tertangkap sebagai ganda.
+*(Ditutup 30-09-2026, GILIRAN-18 paket 2; lihat bab terakhir.)*
 
 Uji: `TestSQLIsiTertanggungCerminDariSumber`, `TestSQLGandaMengecualikanKlaimSendiriDanBarisTanpaStatus`,
 `TestSQLGandaBerurutPosisi`, `TestSimpanMengisiTertanggungCermin`, `TestArasapasRetroTukarDuaSyarat`,
@@ -1033,3 +1034,22 @@ tidak dibaca ke Go.
 
 Sisa yang dicatat, **tidak** diubah: peserta **terakhir** dapat dicabut, dan Save to RNM atas klaim tanpa peserta aktif
 tidak menandai apa pun (Pega `deleteRow` pun tidak membatasinya). Bila bisnis menghendaki batas itu, ia keputusan baru.
+
+## ⛔ Keputusan bertanggal — 30 September 2026 (GILIRAN-18 paket 2: OQ-N13 ditutup) `[keputusan asisten dari bukti; veto work owner]`
+
+**Larangan "tabel warisan baca-saja di Save to RNM" (brief lama) DICABUT UNTUK KOLOM `OS_AKSEPTASI_KLAIM_LIFE.STS_REJECT` SAJA,
+30 September 2026.** Seluruh kolom warisan lain tetap baca-saja di langkah ini.
+
+| Aspek | Isi |
+| --- | --- |
+| Keputusan | ikut XML: cermin disetel `'0'` saat Save to RNM, sehingga klaim ganda antarklaim baru tertangkap tanpa menunggu Komite |
+| Bukti XML | `SaveOutStandingLife_Act` langkah 22 `Insert OS` (b8672) → 22.1 → 22.1.3 (b9905, per `.AdjustmentList`) → 22.1.3.1 `insert ke os akseptasi (outstanding)` (b10115, `RequestType = InsertJsonKlaimLife_sql` b10182, `WHEN .PrintFaceClaim==""` b10272). Keempatnya **hidup**: `pyStepsBlockName` kosong b8669, b8716, b9916, b10127. Langkah 23 ter-remark (`//` b10649). `RDBList/InsertJsonKlaimLife_sql.xml` (pecahan): `ACCEPTATION_DATE` ← `SYSDATE` (b175), **`STS_REJECT` ← `'0'` (b176)** |
+| Selisih bentuk | Di Pega baris cermin **lahir** di langkah itu (`INSERT`). Di aplikasi ini ia lahir saat pendaftaran dengan status NULL (OQ-N2), jadi yang ditiru di sini **hanya statusnya** (`UPDATE`) |
+| SQL | `UPDATE OS_AKSEPTASI_KLAIM_LIFE SET STS_REJECT = :1 WHERE ID = :2 AND CASEID = :3 AND STS_REJECT IS NULL`, `:1 = '0'`. Satu kolom di `SET`; dikunci `ID` baris adjustment + `CASEID` klaim (pola `HapusCerminBelumDisimpan`); baris era Pega dan baris yang sudah berkeputusan (mis. `'1'` Komite) tidak ditimpa; nol `COMMIT` |
+| Tempat | `SimpanRNM.Simpan`, di transaksi yang sama, tepat sesudah `TandaiBarisOutstanding` (22.1.3.2) untuk **setiap** baris tanpa status, sebelum `CerminkanHeader`. `caseID` sama dengan pengecualian pemeriksa ganda (klaim sendiri tetap tidak melihat cerminnya sendiri). Jawaban membawa `cerminDisetel` |
+| Kode | `repository/pohonklaim.go` `sqlSetelCerminOutstanding`, `KlaimLife.SetelCerminOutstanding`; `services/simpanrnm.go` langkah 22 |
+| Uji | `TestSetelCerminOutstandingHanyaKolomStatus` (teks SQL, satu kolom `SET`, `PeriksaSQL`, nol `COMMIT`), `TestSetelCerminOutstandingMenolakKunciKosong`, `TestSimpanRNMMenyetelCerminDiTransaksiYangSama` (urutan transaksi → tandai → setel cermin → header); penjaga `TestSetiapPenulisStatusBergerbangPeran` dan `TestSetiapPenulisTransisiMerekamJejak` kini ikut mengenali `SetelCerminOutstanding(`; `db` `TestSaveRNMMenyetelCerminSehinggaKlaimGandaTertangkap` (SKIP tanpa `ORACLE_DSN`): sebelum Save to RNM A, klaim B tidak melihat A; sesudahnya B melihat `'0'`, A tetap tidak melihat dirinya; cermin `'1'` dan `CASEID` lain tidak tersentuh |
+
+⚠️ **Sisa, dicatat dan tidak diubah:**
+- **`ACCEPTATION_DATE`.** b175 mengisi kolom ini dengan `SYSDATE` di baris yang sama. Kolom itu **tidak** ikut dicabut dari larangan, jadi urutan `ORDER BY o.ACCEPTATION_DATE DESC` pemeriksa ganda untuk cermin aplikasi tetap memakai nilai pendaftaran.
+- **Baris adjustment putaran Komite** (`PohonKlaim.SisipkanBaris`, tiket 11). Baris ini tidak punya baris cermin, sehingga penyetelnya menyentuh nol baris; ini bukan galat. Di Pega, Save to RNM menyisip cermin untuk setiap baris baru. Menyisip di sini berarti menulis kolom lain, di luar pencabutan yang sempit ini.

@@ -28,7 +28,7 @@ import (
 // bawah karena itu menyebut apa yang benar-benar diperiksa, bukan "setiap
 // transisi".
 var polaPenulisTransisi = regexp.MustCompile(
-	`PerbaruiStatusBaris\(|TandaiBarisOutstanding\(|CerminkanHeader\(|PerbaruiTahap\(`)
+	`PerbaruiStatusBaris\(|TandaiBarisOutstanding\(|CerminkanHeader\(|PerbaruiTahap\(|SetelCerminOutstanding\(`)
 
 // TestSetiapPenulisTransisiMerekamJejak menelusuri seluruh lapisan layanan.
 //

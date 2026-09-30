@@ -30,7 +30,7 @@ import (
 // hanya membaca status. Penjaga yang menuduh hal yang benar akan
 // dilonggarkan orang, bukan dipatuhi.
 var polaPenulisStatus = regexp.MustCompile(
-	`KodeStatus\s*=([^=]|$)|PerbaruiStatusBaris\(|TandaiBarisOutstanding\(|CerminkanHeader\(|CabutPenandaDipilih\(`)
+	`KodeStatus\s*=([^=]|$)|PerbaruiStatusBaris\(|TandaiBarisOutstanding\(|CerminkanHeader\(|CabutPenandaDipilih\(|SetelCerminOutstanding\(`)
 
 // berkasYangBolehMenulisStatus adalah berkas layanan yang memang penulisnya,
 // masing-masing dengan gerbang yang wajib ia panggil.

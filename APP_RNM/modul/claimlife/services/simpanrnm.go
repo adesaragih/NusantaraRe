@@ -39,8 +39,10 @@ package services
 //	13-15   nomor lewat `Generate_NoKlaim_Life*`            `//` - TIDAK ditiru
 //	16-20   nomor klaim bila CLAIM_NO kosong                penomor yang sama dengan pendaftaran
 //	21, 24  bendera `pyWorkPage.Save`                       ⚠️ TANPA kolom - OQ-N1
-//	22      insert baris warisan + STS_REJECT=0             warisan BACA SAJA (brief); STS_REJECT
-//	                                                        hanya baris tanpa status (tiket 04)
+//	22      insert baris warisan + STS_REJECT=0             STS_REJECT hanya baris tanpa status
+//	                                                        (tiket 04); cermin `OS_AKSEPTASI_KLAIM_LIFE`
+//	                                                        disetel '0' (b176, OQ-N13 GILIRAN-18) -
+//	                                                        kolom lain warisan tetap BACA SAJA
 //	23      enam total peserta                              `//` - totalnya dari SavePesertaClaim
 //	                                                        langkah 8 (HitungTotalPeserta, saat baca)
 //	25      InsertJsonClaimLife_Act: 1-2 salin + TUKAR      tukarnya dibaca langkah 27 - PolisRetro
@@ -312,6 +314,8 @@ type HasilSimpanRNM struct {
 	NomorBaru bool `json:"nomorBaru"`
 	// BarisDitandai - baris tanpa status yang kini Outstanding (langkah 22.1.3.2).
 	BarisDitandai int `json:"barisDitandai"`
+	// CerminDisetel - baris cermin warisan yang kini '0' (b176, OQ-N13).
+	CerminDisetel int `json:"cerminDisetel"`
 	// Arasapas - keadaan efek langkah 28, sebagai KATA.
 	Arasapas string `json:"arasapas"`
 }
@@ -496,6 +500,15 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku inti.Pelaku, klaimID stri
 				if err := baca.TandaiBarisOutstanding(ctx, tx, b.ID); err != nil {
 					return err
 				}
+				// OQ-N13 (GILIRAN-18) - langkah 22.1.3.1 `InsertJsonKlaimLife_sql`
+				// b176: cermin baris ini '0', supaya klaim ganda antarklaim baru
+				// tertangkap tanpa menunggu Komite. `caseID` yang SAMA dengan
+				// pengecualian pemeriksa ganda di atas.
+				n, err := baca.SetelCerminOutstanding(ctx, tx, b.ID, caseID)
+				if err != nil {
+					return err
+				}
+				hasil.CerminDisetel += n
 				b.KodeStatus = kontrak.KodeOutstanding
 				if err := x.jejak.Rekam(ctx, tx, jejak.CatatanJejak{
 					AdjustmentID: b.ID, KlaimID: klaimID, Dari: "", Ke: kontrak.KodeOutstanding,
