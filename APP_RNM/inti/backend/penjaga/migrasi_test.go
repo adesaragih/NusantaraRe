@@ -291,6 +291,17 @@ func TestPernyataanMulaiDenganPerintah(t *testing.T) {
 		for _, m := range langkah {
 			for i, p := range m.Pernyataan {
 				kata := strings.ToUpper(strings.Fields(p)[0])
+				// Blok PL/SQL hanya dalam SATU bentuk: berpelindung katalog
+				// (`migrasi.BacaPerintahKatalog`, 901 menu datar) - dan
+				// perintah di dalamnya sendiri harus perintah SQL.
+				if kata == "DECLARE" {
+					pk, ok := migrasi.BacaPerintahKatalog(p)
+					if !ok {
+						t.Errorf("%s pernyataan %d: blok PL/SQL di luar bentuk berpelindung katalog", m.Nama, i)
+						continue
+					}
+					kata = strings.ToUpper(strings.Fields(pk.Perintah)[0])
+				}
 				switch kata {
 				case "CREATE", "ALTER", "DROP", "INSERT", "UPDATE", "DELETE", "SELECT":
 				default:

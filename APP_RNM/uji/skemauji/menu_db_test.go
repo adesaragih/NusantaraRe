@@ -2,12 +2,14 @@
 
 package skemauji_test
 
-// M_NAV_MENU diadu dengan Oracle - migrasi 900 dan pembacanya (brief menu
-// 30-09-2026).
+// M_NAV_MENU diadu dengan Oracle - migrasi 900 + 901 (menu datar, keputusan
+// work owner 30-09-2026).
 //
-// Yang hanya Oracle dapat buktikan: INSERT isi awal (NEXTVAL di dalam
-// INSERT ... SELECT, butir membaca induknya) benar-benar berjalan, mengulangnya
-// tidak menggandakan baris, dan CHECK GROUPMENU menolak golongan lain.
+// Yang hanya Oracle dapat buktikan: blok berpelindung katalog 901 benar-benar
+// membuang lima butir, kunci tamu, indeks, dan kolom PARENT_ID; mengulangnya
+// (pelari yang gagal di tengah) tidak galat; jalur mundurnya mengembalikan
+// semuanya dan juga aman diulang; dan CHECK GROUPMENU tetap menolak golongan
+// lain.
 //
 // ⛔ Melewati bila Oracle belum dikonfigurasi. Melewati bukan lulus.
 
@@ -17,12 +19,13 @@ import (
 	"testing"
 
 	inti "nusantarare/inti/backend"
-	"nusantarare/inti/backend/menu"
 	"nusantarare/inti/backend/migrasi"
 	"nusantarare/uji/skemauji"
 )
 
-func TestMenuIsiAwalDariOracleIdempotenDanBerCheck(t *testing.T) {
+// Menggantikan `TestMenuIsiAwalDariOracleIdempotenDanBerCheck` (20 kelompok +
+// 5 butir, INSERT 900 diulang) - brief menu datar 30-09-2026.
+func TestMenuDatarDariOracleIdempotenDanBerCheck(t *testing.T) {
 	sqlDB, skema, err := skemauji.Buka()
 	if err != nil {
 		if !skemauji.BolehDilewati(err) {
@@ -39,62 +42,68 @@ func TestMenuIsiAwalDariOracleIdempotenDanBerCheck(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() { _ = skemauji.Bongkar(ctx, sqlDB, skema) }()
-	repo, err := skemauji.BukaRepositori()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = repo.Close() }()
 
-	hitung := func() (kelompok, butir int) {
+	satu := func(q string, arg ...any) int {
 		t.Helper()
-		baris, err := menu.NewPembaca(repo).Baca(ctx)
+		var n int
+		if err := sqlDB.QueryRowContext(ctx, q, arg...).Scan(&n); err != nil {
+			t.Fatalf("%s: %v", q, err)
+		}
+		return n
+	}
+	bentuk := func() (baris, parent, fk, ix int) {
+		t.Helper()
+		baris = satu(`SELECT COUNT(*) FROM ` + skema + `.M_NAV_MENU`)
+		parent = satu(`SELECT COUNT(*) FROM SYS.ALL_TAB_COLUMNS WHERE OWNER = UPPER(:1)
+			AND TABLE_NAME = 'M_NAV_MENU' AND COLUMN_NAME = 'PARENT_ID'`, skema)
+		fk = satu(`SELECT COUNT(*) FROM SYS.ALL_CONSTRAINTS WHERE OWNER = UPPER(:1)
+			AND TABLE_NAME = 'M_NAV_MENU' AND CONSTRAINT_NAME = 'FK_M_NAV_MENU_INDUK'`, skema)
+		ix = satu(`SELECT COUNT(*) FROM SYS.ALL_INDEXES WHERE OWNER = UPPER(:1)
+			AND TABLE_NAME = 'M_NAV_MENU' AND INDEX_NAME = 'IX_M_NAV_MENU_PARENT'`, skema)
+		return
+	}
+	mau := func(tahap string, baris, sisa int) {
+		t.Helper()
+		b, p, f, i := bentuk()
+		if b != baris || p != sisa || f != sisa || i != sisa {
+			t.Errorf("%s: %d baris, PARENT_ID %d, FK %d, indeks %d - mau %d baris dan ketiganya %d",
+				tahap, b, p, f, i, baris, sisa)
+		}
+	}
+	jalankan := func(berkas string) {
+		t.Helper()
+		pernyataan, err := migrasi.PernyataanLangkah(inti.SumberMigrasi(), berkas)
 		if err != nil {
 			t.Fatal(err)
 		}
-		for _, b := range baris {
-			if b.IndukID == 0 {
-				kelompok++
-			} else {
-				butir++
-			}
-		}
-		return kelompok, butir
-	}
-	if k, b := hitung(); k != 20 || b != 5 {
-		t.Fatalf("sesudah migrasi: %d kelompok, %d butir - mau 20 dan 5", k, b)
-	}
-
-	// Mengulang INSERT isi awal - keadaan langkah yang gagal separuh jalan lalu
-	// diulang pelari - tidak menggandakan satu baris pun.
-	pernyataan, err := migrasi.PernyataanLangkah(inti.SumberMigrasi(), "900_m_nav_menu.sql")
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, p := range pernyataan {
-		if strings.HasPrefix(p, "INSERT") {
+		for _, p := range pernyataan {
 			if _, err := sqlDB.ExecContext(ctx, strings.ReplaceAll(p, "{skema}", skema)); err != nil {
-				t.Fatalf("INSERT ulang: %v", err)
+				t.Fatalf("%s: %v", berkas, err)
 			}
 		}
 	}
-	if k, b := hitung(); k != 20 || b != 5 {
-		t.Errorf("sesudah INSERT ulang: %d kelompok, %d butir - mau tetap 20 dan 5", k, b)
+
+	// Pasang menjalankan 900 lalu 901: 20 baris, satu per modul, datar.
+	mau("sesudah Pasang (900 + 901)", 20, 0)
+	if n := satu(`SELECT COUNT(*) FROM ` + skema + `.M_NAV_MENU WHERE KODE <> MODUL`); n != 0 {
+		t.Errorf("%d baris ber-KODE bukan nama modulnya", n)
 	}
 
-	// Pohon lengkap: empat golongan, butir mewarisi golongan induknya.
-	baris, err := menu.NewPembaca(repo).Baca(ctx)
-	if err != nil {
-		t.Fatal(err)
+	// 901 diulang - keadaan pelari yang gagal di tengah lalu mengulang.
+	jalankan("901_m_nav_menu_datar.sql")
+	mau("sesudah 901 diulang", 20, 0)
+
+	// Jalur mundur: kolom, FK, indeks, dan lima butir kembali; diulang aman.
+	jalankan("901_m_nav_menu_datar_down.sql")
+	mau("sesudah 901 mundur", 25, 1)
+	if n := satu(`SELECT COUNT(*) FROM ` + skema + `.M_NAV_MENU WHERE PARENT_ID IS NOT NULL
+		AND KODE IN ('inbox', 'register', 'premiumlist', 'komite', 'tco-tahun')`); n != 5 {
+		t.Errorf("jalur mundur mengembalikan %d butir, mau 5", n)
 	}
-	m := menu.Susun(baris, []string{"claimlife", "premiumlistlife", "komiteclaimlife", "treatycontractout"})
-	if len(m.Golongan) != 4 {
-		t.Errorf("golongan %d, mau 4", len(m.Golongan))
-	}
-	for _, b := range baris {
-		if b.Kode == "tco-tahun" && b.Golongan != "MASTER" {
-			t.Errorf("butir tco-tahun ber-GROUPMENU %q, mau warisan induknya MASTER", b.Golongan)
-		}
-	}
+	jalankan("901_m_nav_menu_datar_down.sql")
+	mau("sesudah 901 mundur diulang", 25, 1)
+	jalankan("901_m_nav_menu_datar.sql")
+	mau("sesudah 901 lagi", 20, 0)
 
 	// CHECK GROUPMENU menolak golongan di luar keempatnya.
 	_, err = sqlDB.ExecContext(ctx, `INSERT INTO `+skema+`.M_NAV_MENU (ID, KODE, LABEL, GROUPMENU, MODUL, URUTAN) `+
