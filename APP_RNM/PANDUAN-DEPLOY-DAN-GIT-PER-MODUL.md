@@ -15,9 +15,9 @@ APP_RNM/
   modul/
     daftar.go         daftar modul: merakit Service tiap modul dan menyambung inti/kontrak
     claimlife/        models/ repository/ services/ handlers/ migrations/ modul.go
-    premiumlist/      …
-    komite/           …
-    treaty/           … (tanpa migrations/: tco4, memakai tabel warisan)
+    premiumlistlife/  …
+    komiteclaimlife/  …
+    treatycontractout/ … (tanpa migrations/: tco4, memakai tabel warisan)
   uji/                penunjang uji netral: skemauji (skema Oracle tiruan), lintasmodul
   frontend/src/
     inti/             Shell, KelompokMenu, PaletMenu, ui/dasar, klien.ts, lib/, hooks/, store/, labels.ts
@@ -25,6 +25,18 @@ APP_RNM/
     modul/<nama>/     pages/ components/ labels.ts api.ts menu.ts rute.tsx
     App.tsx           memasang modul yang AKTIF; Beranda.tsx layar awal aplikasi
 ```
+
+**Tabel nama modul** — satu-satunya sumber, tanpa singkatan *(keputusan work owner 30-09-2026, `PROMPT-REFACTOR-NAMA-MODUL.md`)*:
+
+| Modul korpus | Backend Go `APP_RNM/modul/…` *(tanpa tanda hubung)* | Frontend `frontend/src/modul/…` dan `.scratch/…` | Nilai `MODUL_AKTIF` |
+| --- | --- | --- | --- |
+| Claim Life | `claimlife` *(tetap)* | `claim-life` | `claimlife` |
+| PremiumList Life | `premiumlist` → **`premiumlistlife`** | `premiumlist` → **`premiumlist-life`** | `premiumlistlife` |
+| Komite Claim Life | `komite` → **`komiteclaimlife`** | `komite` → **`komite-claim-life`** | `komiteclaimlife` |
+| Treaty Contract Out | `treaty` → **`treatycontractout`** | `treaty` → **`treaty-contract-out`** | `treatycontractout` |
+| *(modul berikutnya, mis. NB FacIn)* | `nbfacin` | `nb-facin` | `nbfacin` |
+
+Aturan: **nama backend = nama dokumen `.scratch` tanpa tanda hubung**; frontend memakai nama `.scratch` persis. Nama paket Go = nama folder.
 
 **Aturan impor** — ditegakkan uji, bukan kesepakatan:
 
@@ -54,23 +66,25 @@ dan `modul/daftar.go` menyambungkannya. Dua sambungan yang ada hari ini:
 Satu biner memuat keempat modul; `MODUL_AKTIF` memilih yang **dipasang** saat menyala.
 
 ```powershell
-$env:MODUL_AKTIF = 'claimlife,komite'   # dipisah koma; spasi dan huruf besar diabaikan
+$env:MODUL_AKTIF = 'claimlife,komiteclaimlife'   # dipisah koma; spasi dan huruf besar diabaikan
 go run ./cmd/api                        # atau .\bin\api.exe
 ```
 
 | Nama | Modul | Awalan rute |
 | --- | --- | --- |
 | `claimlife` | Claim Life | `/api/klaim-life`, `/api/peserta-life`, `/api/penyakit-life`, `/api/dokumen` |
-| `premiumlist` | PremiumList Life | `/api/polis-life` |
-| `komite` | Komite Claim Life | `/api/komite` |
-| `treaty` | Treaty Contract Out | `/api/treaty-contract-out` (+ pekerja latar lampiran) |
+| `premiumlistlife` | PremiumList Life | `/api/polis-life` |
+| `komiteclaimlife` | Komite Claim Life | `/api/komite` |
+| `treatycontractout` | Treaty Contract Out | `/api/treaty-contract-out` (+ pekerja latar lampiran) |
 | *(aplikasi)* | selalu ada | `/healthz`, `/api/modul-aktif` |
 
 - **Kosong (bawaan) = semua modul.**
+- **Nama lama** (`premiumlist`, `komite`, `treaty` — sebelum 30-09-2026) **ditolak** saat menyala
+  dengan pesan yang menyebut nama barunya; tidak ada dua nama untuk satu modul.
 - Modul yang tidak disebut: rutenya **tidak didaftarkan** — jawabannya 404 berbadan JSON
   `{"galat":"modul <nama> tidak aktif di proses ini (MODUL_AKTIF)"}`, supaya layar tidak menyangka
   backend mati — **pekerja latarnya tidak jalan**, dan **menunya tidak tampil** — sidebar, palet Ctrl+K, dan kartu Beranda. Frontend membaca
-  daftar modul aktif dari `GET /api/modul-aktif` (`{"modul":["claimlife","komite"]}`); **tidak ada env
+  daftar modul aktif dari `GET /api/modul-aktif` (`{"modul":["claimlife","komiteclaimlife"]}`); **tidak ada env
   Vite** untuk ini, jadi satu bangunan frontend melayani deploy mana pun.
 - Nama yang salah ketik **menolak menyala**: backend berhenti dengan pesan yang menyebut nama itu dan
   nama-nama yang dikenal. `-migrate` / `-migrate-down` tidak membaca `MODUL_AKTIF` sama sekali.
@@ -82,8 +96,8 @@ go run ./cmd/api                        # atau .\bin\api.exe
 ⚠️ **Ketergantungan yang tetap ada saat sebagian modul mati:**
 
 1. Layar Register dan Outstanding **Claim Life** mengisi panel data polis dari
-   `GET /api/polis-life/ringkas` — rute **PremiumList**. Tanpa `premiumlist`, panel itu menampilkan
-   galat "modul premiumlist tidak aktif"; halaman lain Claim Life tetap jalan. (Di backend, Claim Life
+   `GET /api/polis-life/ringkas` — rute **PremiumList**. Tanpa `premiumlistlife`, panel itu menampilkan
+   galat "modul premiumlistlife tidak aktif"; halaman lain Claim Life tetap jalan. (Di backend, Claim Life
    membaca polis lewat `kontrak.PembacaPolis` di dalam proses, dan itu tetap tersambung apa pun
    `MODUL_AKTIF`.) Ketergantungan ini lewat **HTTP**, jadi penjaga impor tidak melihatnya.
    Menghapusnya berarti rute Claim Life sendiri yang menyajikan polis lewat `kontrak.PembacaPolis` —
@@ -105,20 +119,20 @@ adalah **apa yang Anda commit, lihat, dan salin**.
 
 | Modul | Folder backend | Folder frontend |
 | --- | --- | --- |
-| Claim Life | `APP_RNM/modul/claimlife/` | `APP_RNM/frontend/src/modul/claimlife/` |
-| PremiumList Life | `APP_RNM/modul/premiumlist/` | `APP_RNM/frontend/src/modul/premiumlist/` |
-| Komite Claim Life | `APP_RNM/modul/komite/` | `APP_RNM/frontend/src/modul/komite/` |
-| Treaty Contract Out | `APP_RNM/modul/treaty/` | `APP_RNM/frontend/src/modul/treaty/` |
+| Claim Life | `APP_RNM/modul/claimlife/` | `APP_RNM/frontend/src/modul/claim-life/` |
+| PremiumList Life | `APP_RNM/modul/premiumlistlife/` | `APP_RNM/frontend/src/modul/premiumlist-life/` |
+| Komite Claim Life | `APP_RNM/modul/komiteclaimlife/` | `APP_RNM/frontend/src/modul/komite-claim-life/` |
+| Treaty Contract Out | `APP_RNM/modul/treatycontractout/` | `APP_RNM/frontend/src/modul/treaty-contract-out/` |
 
 ```powershell
 # Commit HANYA folder modul Anda. `-o` (--only) mengambil isi jalur itu dari pohon kerja dan
 # mengabaikan apa pun yang sudah di-stage sesi lain — stage di pohon ini dipakai bersama.
-git add -A -- APP_RNM/modul/claimlife APP_RNM/frontend/src/modul/claimlife
-git commit -o -m "claimlife: ..." -- APP_RNM/modul/claimlife APP_RNM/frontend/src/modul/claimlife
+git add -A -- APP_RNM/modul/claimlife APP_RNM/frontend/src/modul/claim-life
+git commit -o -m "claimlife: ..." -- APP_RNM/modul/claimlife APP_RNM/frontend/src/modul/claim-life
 
 # Riwayat dan beda satu modul saja
-git log --oneline -- APP_RNM/modul/claimlife APP_RNM/frontend/src/modul/claimlife
-git diff HEAD~1 -- APP_RNM/modul/komite
+git log --oneline -- APP_RNM/modul/claimlife APP_RNM/frontend/src/modul/claim-life
+git diff HEAD~1 -- APP_RNM/modul/komiteclaimlife
 
 # Menarik perubahan: pull utuh, lalu lihat apa yang berubah di luar modul Anda
 git pull
@@ -165,27 +179,28 @@ sengaja tidak ditulis di repositori.
 
 | Folder | Pemilik | Brief acuan (di `..\`) |
 | --- | --- | --- |
-| `modul/claimlife/`, `frontend/src/modul/claimlife/` | sesi modul Claim Life | `PROMPT-IMPLEMENTASI-MODUL-CLAIM-LIFE*.md`, `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-*.md` |
-| `modul/premiumlist/`, `frontend/src/modul/premiumlist/` | sesi modul PremiumList Life | `PROMPT-IMPLEMENTASI-MODUL-PREMIUMLIST-LIFE.md`, `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-*.md` |
-| `modul/komite/`, `frontend/src/modul/komite/` | sesi modul Komite Claim Life | `PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-LIFE.md`, `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-*.md` |
-| `modul/treaty/`, `frontend/src/modul/treaty/` | sesi modul Treaty Contract Out | `PROMPT-IMPLEMENTASI-MODUL-TREATY-CONTRACT-OUT.md`, `PROMPT-LANJUTAN-TREATY-CONTRACT-OUT-*.md` |
+| `modul/claimlife/`, `frontend/src/modul/claim-life/` | sesi modul Claim Life | `PROMPT-IMPLEMENTASI-MODUL-CLAIM-LIFE*.md`, `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-*.md` |
+| `modul/premiumlistlife/`, `frontend/src/modul/premiumlist-life/` | sesi modul PremiumList Life | `PROMPT-IMPLEMENTASI-MODUL-PREMIUMLIST-LIFE.md`, `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-*.md` |
+| `modul/komiteclaimlife/`, `frontend/src/modul/komite-claim-life/` | sesi modul Komite Claim Life | `PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-LIFE.md`, `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-*.md` |
+| `modul/treatycontractout/`, `frontend/src/modul/treaty-contract-out/` | sesi modul Treaty Contract Out | `PROMPT-IMPLEMENTASI-MODUL-TREATY-CONTRACT-OUT.md`, `PROMPT-LANJUTAN-TREATY-CONTRACT-OUT-*.md` |
 | `inti/`, `uji/`, `cmd/`, `modul/daftar.go`, `frontend/src/inti/`, `frontend/src/modul/daftar.ts`, `App.tsx`, `Beranda.tsx` | **bersama** — perubahan disetujui work owner dan ditinjau pemilik setiap modul | `PROMPT-REFACTOR-BENTUK-B-MODUL.md` |
 
 `.scratch/<modul>/` (spec, tiket, catatan) tetap di tempatnya dan dimiliki pemilik modulnya.
 
 ## 5. Menambah modul baru
 
-Contoh nama: `endorsement` (sama di backend, frontend, dan `MODUL_AKTIF`).
+Contoh: **NB FacIn** — menurut tabel nama, backend dan `MODUL_AKTIF` `nbfacin`, frontend `nb-facin`
+(nama dokumen `.scratch/nb-facin/` persis).
 
 **Backend**
 
-1. `modul/endorsement/{models,repository,services,handlers}/` — hanya mengimpor `inti/...` dan
+1. `modul/nbfacin/{models,repository,services,handlers}/` — hanya mengimpor `inti/...` dan
    dirinya sendiri. `services.DariDasar(dasar *inti.Dasar)` membangun `Service` di atas akar bersama.
 2. `handlers.DaftarkanRute(mux, svc, stubPelaku)` mendaftarkan seluruh rute modul dengan satu awalan
-   (`/api/endorsement-...`).
+   (URL rute ditetapkan spec modulnya; nama folder tidak menentukan URL).
 3. Bila bermigrasi: pilih rentang nomor yang belum terpakai (catat di tabel bab 3), taruh berkas di
-   `modul/endorsement/migrations/` beserta `_down.sql`, dan tanam dengan `//go:embed migrations/*.sql`.
-4. `modul/endorsement/modul.go`: `const Nama = "endorsement"`, `Baru(...)`, dan metode `Nama()`,
+   `modul/nbfacin/migrations/` beserta `_down.sql`, dan tanam dengan `//go:embed migrations/*.sql`.
+4. `modul/nbfacin/modul.go` (`package nbfacin`): `const Nama = "nbfacin"`, `Baru(...)`, dan metode `Nama()`,
    `DaftarkanRute(mux)`, `JalankanPekerja(ctx)` (tanpa pekerja: `inti.TanpaPekerja()`), serta
    `SumberMigrasi()` bila bermigrasi — pola keempat modul yang ada.
 5. `modul/daftar.go`: satu baris di `Rakit`, dan satu baris di `SumberMigrasi` bila bermigrasi. Butuh
@@ -193,9 +208,9 @@ Contoh nama: `endorsement` (sama di backend, frontend, dan `MODUL_AKTIF`).
 
 **Frontend**
 
-6. `frontend/src/modul/endorsement/`: `pages/`, `components/`, `labels.ts`, `api.ts` (memakai
-   `minta`/`mintaFormulir` dari `inti/klien`), `menu.ts` (`NAMA_ENDORSEMENT = 'endorsement'`,
-   `HALAMAN_ENDORSEMENT`, `MENU_ENDORSEMENT`), `rute.tsx` (`RuteEndorsement`, menyimpan keadaan
+6. `frontend/src/modul/nb-facin/`: `pages/`, `components/`, `labels.ts`, `api.ts` (memakai
+   `minta`/`mintaFormulir` dari `inti/klien`), `menu.ts` (`NAMA_NBFACIN = 'nbfacin'`,
+   `HALAMAN_NBFACIN`, `MENU_NBFACIN`), `rute.tsx` (`RuteNbFacin`, menyimpan keadaan
    kasusnya sendiri).
 7. `frontend/src/modul/daftar.ts`: satu baris di `MODUL_FRONTEND` dan satu anggota di union `Halaman`.
    Nama kelompok sidebar-nya sudah ada di `MODUL` (`inti/labels.ts`) bila modulnya salah satu folder

@@ -10,6 +10,7 @@ tampak kosong padahal backend sehat).
 Diperbarui 26 September 2026 (sore): pemuat .env bab 3, .env frontend bab 4,
 proxy Vite bab 5 (celahnya sudah tertutup), PATH permanen bab 1.
 Diperbarui 30 September 2026 (refactor bentuk B): MODUL_AKTIF bab 2.
+Diperbarui 30 September 2026 (tabel nama modul): nama modul bab 2 dan 9.
 Untuk siapa: siapa pun yang ingin menjalankan aplikasi ini di mesin Windows,
 termasuk yang baru mengenal Go dan React.
 
@@ -133,11 +134,33 @@ Mengubah port (bila 8080 sudah dipakai proses lain):
 
 Memilih modul yang dipasang (MODUL_AKTIF, sejak refactor bentuk B):
 
-  $env:MODUL_AKTIF = 'claimlife,komite'
+  $env:MODUL_AKTIF = 'claimlife,komiteclaimlife'
   go run ./cmd/api
 
-  Nama yang dikenal: claimlife, premiumlist, komite, treaty. Dipisah koma;
-  spasi dan huruf besar diabaikan. KOSONG (bawaan) berarti SEMUA modul.
+  Nama yang dikenal: claimlife, premiumlistlife, komiteclaimlife,
+  treatycontractout. Dipisah koma; spasi dan huruf besar diabaikan. KOSONG
+  (bawaan) berarti SEMUA modul. Nama LAMA (premiumlist, komite, treaty -
+  sebelum 30-09-2026) DITOLAK saat menyala dengan pesan yang menyebut nama
+  barunya.
+
+  Tabel nama modul (keputusan work owner 30-09-2026,
+  PROMPT-REFACTOR-NAMA-MODUL.md), satu-satunya sumber, tanpa singkatan:
+
+  Modul korpus         Backend Go modul\   Frontend src\modul\ dan .scratch\   MODUL_AKTIF
+                       (tanpa tanda hubung)
+  -------------------  ------------------  ---------------------------------  -----------------
+  Claim Life           claimlife (tetap)   claim-life                         claimlife
+  PremiumList Life     premiumlist ->      premiumlist ->                     premiumlistlife
+                       premiumlistlife     premiumlist-life
+  Komite Claim Life    komite ->           komite ->                          komiteclaimlife
+                       komiteclaimlife     komite-claim-life
+  Treaty Contract Out  treaty ->           treaty ->                          treatycontractout
+                       treatycontractout   treaty-contract-out
+  (modul berikutnya,   nbfacin             nb-facin                           nbfacin
+   mis. NB FacIn)
+
+  Aturan: nama backend = nama dokumen .scratch tanpa tanda hubung; frontend
+  memakai nama .scratch persis. Nama paket Go = nama folder.
 
   Modul yang tidak disebut:
     - rutenya tidak didaftarkan (jawabannya 404),
@@ -159,7 +182,7 @@ Memilih modul yang dipasang (MODUL_AKTIF, sejak refactor bentuk B):
     Invoke-WebRequest -UseBasicParsing http://localhost:8080/api/modul-aktif |
       Select-Object -Expand Content
 
-    Jawaban:  {"modul":["claimlife","komite"]}
+    Jawaban:  {"modul":["claimlife","komiteclaimlife"]}
 
 ================================================================================
 3. BACKEND DENGAN ORACLE (SETELAH DBA MEMBERI SKEMA UJI)
@@ -523,7 +546,8 @@ Gabungan yang setara "make check" (make tidak terpasang):
     inti\kontrak\                antarmuka lintas modul, tanpa implementasi
     inti\penjaga\                test penjaga seluruh aplikasi
     modul\daftar.go              daftar modul; menyambung inti\kontrak
-    modul\<nama>\                claimlife, premiumlist, komite, treaty:
+    modul\<nama>\                claimlife, premiumlistlife, komiteclaimlife,
+                                 treatycontractout (tabel nama bab 2):
       handlers\                 rute HTTP; tidak menyentuh Oracle langsung
       services\                 aturan dagang dan perakitan data
       repository\               satu-satunya lapisan yang berbicara ke Oracle
@@ -536,6 +560,8 @@ Gabungan yang setara "make check" (make tidak terpasang):
     inti\utils\                  desimal dan tanggal
     frontend\                    React + TypeScript, dijalankan Vite;
                                  src\inti\ bersama, src\modul\<nama>\ per modul
+                                 (claim-life, premiumlist-life,
+                                 komite-claim-life, treaty-contract-out)
     Makefile                     daftar perintah (make tidak terpasang)
     .env.example                 nama variabel backend, tanpa nilai
     README-BACA-DULU.md          peta baca untuk pemula

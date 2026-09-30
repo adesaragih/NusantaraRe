@@ -14,7 +14,7 @@ Folder ini memuat **seluruh aplikasi** hasil migrasi Pega → Go + React + Oracl
 | `inti/config/` | Membaca **env var** (variabel lingkungan) seperti `ORACLE_DSN`. Tidak ada alamat atau kata sandi yang ditulis di kode |
 | `inti/penjaga/` | Test penjaga yang berlaku untuk SELURUH aplikasi: impor lintas modul, higiene migrasi, alamat layanan, nama orang, nama tabel telanjang |
 | `modul/daftar.go` | Daftar modul: merakit `Service` tiap modul dan menyambung `inti/kontrak` |
-| `modul/<nama>/` | Satu modul — `claimlife`, `premiumlist`, `komite`, `treaty` — dengan lapisannya sendiri: |
+| `modul/<nama>/` | Satu modul — `claimlife`, `premiumlistlife`, `komiteclaimlife`, `treatycontractout` (tabel nama di bawah) — dengan lapisannya sendiri: |
 | `modul/<nama>/handlers/` | Penerima permintaan HTTP. Tugasnya sempit: baca permintaan, panggil *service*, tulis jawaban JSON |
 | `modul/<nama>/services/` | Aturan dagang dan perakitan data. Di sinilah "klaim punya peserta, peserta punya baris" disusun |
 | `modul/<nama>/repository/` | Satu-satunya lapisan yang berbicara ke Oracle. Seluruh SQL modul itu ada di sini, dan **hanya** di sini |
@@ -26,6 +26,18 @@ Folder ini memuat **seluruh aplikasi** hasil migrasi Pega → Go + React + Oracl
 | `frontend/` | Tampilan React (TypeScript, berkas `.tsx`). Dijalankan Vite. `src/inti/` bersama, `src/modul/<nama>/` per modul, `src/App.tsx` merakit |
 | `Makefile` | Daftar perintah: jalankan, bangun, uji. Setiap target adalah satu-dua perintah biasa |
 | `bin/` | Hasil `go build` — tidak masuk git |
+
+**Tabel nama modul** — satu-satunya sumber, tanpa singkatan *(keputusan work owner 30-09-2026, `PROMPT-REFACTOR-NAMA-MODUL.md`)*:
+
+| Modul korpus | Backend Go `APP_RNM/modul/…` *(tanpa tanda hubung)* | Frontend `frontend/src/modul/…` dan `.scratch/…` | Nilai `MODUL_AKTIF` |
+| --- | --- | --- | --- |
+| Claim Life | `claimlife` *(tetap)* | `claim-life` | `claimlife` |
+| PremiumList Life | `premiumlist` → **`premiumlistlife`** | `premiumlist` → **`premiumlist-life`** | `premiumlistlife` |
+| Komite Claim Life | `komite` → **`komiteclaimlife`** | `komite` → **`komite-claim-life`** | `komiteclaimlife` |
+| Treaty Contract Out | `treaty` → **`treatycontractout`** | `treaty` → **`treaty-contract-out`** | `treatycontractout` |
+| *(modul berikutnya, mis. NB FacIn)* | `nbfacin` | `nb-facin` | `nbfacin` |
+
+Aturan: **nama backend = nama dokumen `.scratch` tanpa tanda hubung**; frontend memakai nama `.scratch` persis. Nama paket Go = nama folder.
 
 **Arah ketergantungan** — selalu satu arah, tidak pernah memotong:
 
@@ -46,8 +58,8 @@ Contoh: pengguna mengetik `UJI-KLAIM-1` lalu menekan **Buka**.
 
 | Langkah | Berkas | Yang terjadi |
 | ---: | --- | --- |
-| 1 | `frontend/src/modul/claimlife/pages/KlaimLife.tsx` | Fungsi `cari` dipanggil; halaman masuk keadaan "memuat" |
-| 2 | `frontend/src/modul/claimlife/api.ts` | `ambilKlaimLife(id)` mengirim `GET /api/klaim-life/UJI-KLAIM-1` lewat `minta` (`inti/klien.ts`) |
+| 1 | `frontend/src/modul/claim-life/pages/KlaimLife.tsx` | Fungsi `cari` dipanggil; halaman masuk keadaan "memuat" |
+| 2 | `frontend/src/modul/claim-life/api.ts` | `ambilKlaimLife(id)` mengirim `GET /api/klaim-life/UJI-KLAIM-1` lewat `minta` (`inti/klien.ts`) |
 | 3 | `modul/claimlife/handlers/klaimlife.go` | Backend menerima, mengambil `{id}` dari alamat, memanggil *service* |
 | 4 | `modul/claimlife/services/klaimlife.go` | `Ambil` meminta header, peserta, dan baris ke *repository*, lalu merakitnya |
 | 5 | `modul/claimlife/repository/klaimlife.go` | Tiga query SQL ke Oracle. Uang diminta sebagai **teks** lewat `TO_CHAR` |
@@ -65,7 +77,7 @@ Nama medan JSON di langkah 6 (`nomorKlaim`, `jumlahKlaim`, …) **harus sama per
 `modul/claimlife/repository/klaimlife.go` → `modul/claimlife/models/klaimlife.go` → `inti/uang/`.
 
 **React** — dari titik masuk: `frontend/src/main.tsx` → `App.tsx` → `modul/daftar.ts` →
-`modul/claimlife/rute.tsx` → `modul/claimlife/pages/KlaimLife.tsx` → `modul/claimlife/api.ts` →
+`modul/claim-life/rute.tsx` → `modul/claim-life/pages/KlaimLife.tsx` → `modul/claim-life/api.ts` →
 `inti/klien.ts` → `inti/store/index.ts`.
 
 Setiap berkas punya komentar kepala yang menjelaskan **untuk apa berkas ini** dan istilah
@@ -102,7 +114,7 @@ $env:Path = 'C:\Program Files\Go\bin;C:\Program Files\nodejs;' + $env:Path
 | Uji backend tanpa Oracle | `go vet ./...` lalu `go test ./...` | `ok` di setiap paket `inti/...`, `modul/...`, `cmd/api` |
 | Bentuk tabel ke Oracle uji | `go run ./cmd/api -migrate` | menjalankan berkas di `modul/*/migrations/` SEMUA modul (tidak ikut `MODUL_AKTIF`) sekali masing-masing; aman diulang, dan **menolak** berjalan bila `IS_PEGA_PROD=true` |
 | Uji backend **dengan** Oracle uji | `go test -tags=db ./...` | perlu `ORACLE_DSN` + `ORACLE_SCHEMA` + `ORACLE_SKEMA_UJI=true`; tanpa `ORACLE_DSN` test **melewati** dengan pesan, bukan lulus diam-diam |
-| Jalankan backend | `go run ./cmd/api` | log `http: mendengarkan di :8080`; `MODUL_AKTIF=claimlife,komite` memasang sebagian modul |
+| Jalankan backend | `go run ./cmd/api` | log `http: mendengarkan di :8080`; `MODUL_AKTIF=claimlife,komiteclaimlife` memasang sebagian modul |
 | Periksa tipe frontend | `cd frontend` lalu `npm run typecheck` | tidak mencetak galat |
 | Uji frontend | `npm test` | seluruh berkas uji `passed` |
 | Jalankan frontend | `npm run dev` | buka `http://localhost:5173/` |

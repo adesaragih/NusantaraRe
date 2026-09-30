@@ -167,13 +167,14 @@ APP_RNM/
 │   └── penjaga/            ← test penjaga seluruh aplikasi
 ├── modul/
 │   ├── daftar.go           ← daftar modul; menyambung inti/kontrak
-│   └── claimlife/ premiumlist/ komite/ treaty/
+│   └── claimlife/ premiumlistlife/ komiteclaimlife/ treatycontractout/   ← tabel nama: PROMPT-REFACTOR-NAMA-MODUL.md
 │       └── models/ repository/ services/ handlers/ migrations/ modul.go
 ├── uji/skemauji/ uji/lintasmodul/   ← penunjang uji netral
 ├── frontend/               ← React via Vite, TypeScript (.tsx)
 │   ├── src/inti/           ← Shell, ui/dasar, klien.ts, lib/, hooks/, store/, labels.ts
 │   ├── src/modul/daftar.ts ← merakit menu dan rute
-│   ├── src/modul/<nama>/   ← pages/ components/ labels.ts api.ts menu.ts rute.tsx
+│   ├── src/modul/<nama>/   ← claim-life/ premiumlist-life/ komite-claim-life/ treaty-contract-out/:
+│   │                         pages/ components/ labels.ts api.ts menu.ts rute.tsx
 │   ├── src/App.tsx · src/Beranda.tsx · src/main.tsx · src/vite-env.d.ts
 │   └── package.json · tsconfig.json · vite.config.ts
 ├── go.mod · go.sum

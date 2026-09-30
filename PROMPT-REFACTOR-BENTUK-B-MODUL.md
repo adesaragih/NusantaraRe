@@ -1,5 +1,19 @@
 # PROMPT — REFACTOR **BENTUK B**: satu `APP_RNM`, kode bersama di `inti/`, tiap modul di `modul/<nama>/` *(sesi baru, folder `OUTPUT_HASIL_RNM`, cabang `main`)*
 
+> **RALAT NAMA 30-09-2026** *(keputusan work owner 30-09-2026, `PROMPT-REFACTOR-NAMA-MODUL.md`)*: nama folder modul di brief ini (`premiumlist`, `komite`,
+> `treaty`) sudah diseragamkan menurut tabel berikut (`66d39dd` backend, `0d0495b` frontend). Isi brief di
+> bawah dibiarkan sebagai catatan sejarah.
+
+| Modul korpus | Backend Go `APP_RNM/modul/…` *(tanpa tanda hubung)* | Frontend `frontend/src/modul/…` dan `.scratch/…` | Nilai `MODUL_AKTIF` |
+| --- | --- | --- | --- |
+| Claim Life | `claimlife` *(tetap)* | `claim-life` | `claimlife` |
+| PremiumList Life | `premiumlist` → **`premiumlistlife`** | `premiumlist` → **`premiumlist-life`** | `premiumlistlife` |
+| Komite Claim Life | `komite` → **`komiteclaimlife`** | `komite` → **`komite-claim-life`** | `komiteclaimlife` |
+| Treaty Contract Out | `treaty` → **`treatycontractout`** | `treaty` → **`treaty-contract-out`** | `treatycontractout` |
+| *(modul berikutnya, mis. NB FacIn)* | `nbfacin` | `nb-facin` | `nbfacin` |
+
+Aturan: **nama backend = nama dokumen `.scratch` tanpa tanda hubung**; frontend memakai nama `.scratch` persis. Nama paket Go = nama folder.
+
 > Keputusan work owner 29-09-2026: *"bisa menggunakan bentuk B"*. Tujuan: **deploy** dapat memilih modul yang aktif, dan **push/pull git**
 > hampir tidak pernah konflik karena tiap modul hanya menyentuh foldernya sendiri. **Nol perubahan perilaku**: setiap rute, layar, pesan,
 > migrasi, dan uji tetap sama; buktinya adalah angka uji yang **sama persis** sebelum dan sesudah. Commit dengan jalur eksplisit atau
