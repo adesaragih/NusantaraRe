@@ -5,6 +5,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -142,6 +143,26 @@ func hitungPenampung(q string) int {
 		}
 	}
 	return len(ada)
+}
+
+// ⛔ K2: anak terdalam lebih dulu - security, lalu reinsurer dan business.
+func TestKaskadeUrutanAnakLebihDulu(t *testing.T) {
+	g := &Gudang{}
+	var urut []string
+	for _, l := range g.langkahKontrak() {
+		urut = append(urut, l.tabel)
+	}
+	if strings.Join(urut, ",") != TabelSecurity+","+TabelReinsurer+","+TabelBusiness {
+		t.Errorf("urutan kaskade kontrak: %v", urut)
+	}
+	q := sqlHapus("S.TREATYSECURITYREINSURER_LIFE", fmt.Sprintf(anakSecurityDariKontrak, "S.TREATYREINSURER_LIFE"))
+	if !strings.Contains(q, "DELETE FROM S.TREATYSECURITYREINSURER_LIFE WHERE TREATYREINSURERID IN "+
+		"(SELECT ID FROM S.TREATYREINSURER_LIFE WHERE TREATYCONTRACTID = :1)") {
+		t.Errorf("predikat security kontrak: %s", q)
+	}
+	if err := db.PeriksaSQL(q); err != nil {
+		t.Error(err)
+	}
 }
 
 func TestSequenceHanyaLimaMilikModul(t *testing.T) {

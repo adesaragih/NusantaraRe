@@ -14,6 +14,8 @@ package handlers
 //	PUT  /api/master-contract-retro-life/business/{id}  ubah business (paket 6)
 //	GET  /api/master-contract-retro-life/business/{id}/salin-semua  pratinjau `Copy to all Reinstype`
 //	POST /api/master-contract-retro-life/business/{id}/salin-semua  jalankan, badan {"sasaran": [...]}
+//	GET  /api/master-contract-retro-life/{kontrak|reinsurer|security|business}/{id}/dampak-hapus  isi popup
+//	DELETE /api/master-contract-retro-life/{kontrak|reinsurer|security|business}/{id}  badan {"dampak": {...}}
 //
 // ⛔ POST dan PUT terpisah walau Pega punya satu `Save` ber-upsert: identitas
 // baris baru tidak pernah datang dari klien (ADR-0006), dan badan PUT yang
@@ -26,6 +28,7 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/galat"
+	"nusantarare/modul/mastercontractretrolife/backend/models"
 	"nusantarare/modul/mastercontractretrolife/backend/services"
 )
 
@@ -149,6 +152,30 @@ func daftarkanTulis(pasang func(string, rute)) {
 		hasil, err := l.SalinSemua(r.Context(), p, r.PathValue("id"), m.Sasaran)
 		tulis(w, hasil, err)
 	})
+	// Hapus berjenjang (paket 7): popup lebih dulu, lalu DELETE berbadan cacahan popup.
+	// ⛔ Nol rute untuk tahun treaty.
+	for _, jenis := range []services.JenisHapus{services.HapusKontrak, services.HapusReinsurer,
+		services.HapusSecurity, services.HapusBusiness} {
+		jenis := jenis
+		pasang("GET "+Prefix+"/"+string(jenis)+"/{id}/dampak-hapus", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+			hasil, err := l.DampakHapus(r.Context(), p, jenis, r.PathValue("id"))
+			tulis(w, hasil, err)
+		})
+		pasang("DELETE "+Prefix+"/"+string(jenis)+"/{id}", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+			var m struct {
+				Dampak *models.Dampak `json:"dampak"`
+			}
+			if bacaBadan(w, r, &m) {
+				return
+			}
+			if m.Dampak == nil {
+				galat.Tulis(w, http.StatusBadRequest, "delete requires the confirmed impact (dampak) from the confirmation popup")
+				return
+			}
+			hasil, err := l.Hapus(r.Context(), p, jenis, r.PathValue("id"), *m.Dampak)
+			tulis(w, hasil, err)
+		})
+	}
 }
 
 // tolakIDBaru - baris baru tidak boleh membawa id (ADR-0006); 400 dan true.

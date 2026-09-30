@@ -98,6 +98,14 @@ type Business struct {
 	TglUpdate        time.Time
 }
 
+// Dampak - baris ANAK yang ikut terhapus bersama satu induk (K2, tiket 09);
+// baris induknya sendiri tidak dihitung.
+type Dampak struct {
+	Security  int64 `json:"security"`
+	Reinsurer int64 `json:"reinsurer"`
+	Business  int64 `json:"business"`
+}
+
 // TotalShareKontrak - total share satu kontrak untuk laporan tiket 11.
 type TotalShareKontrak struct {
 	KontrakID     string

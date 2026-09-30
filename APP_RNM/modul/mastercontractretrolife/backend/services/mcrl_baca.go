@@ -69,6 +69,15 @@ type Gudang interface {
 	// Penulis business (paket 6) - juga dipakai salin-semua.
 	SisipBusiness(ctx context.Context, tx *db.Tx, b models.Business) (string, error)
 	PerbaruiBusiness(ctx context.Context, tx *db.Tx, b models.Business) error
+
+	// Kaskade hapus (paket 7, K2): pencacah dan penghapus memakai predikat
+	// yang SAMA; penghapus menghapus anak lebih dulu dan mengembalikan cacahnya.
+	DampakHapusKontrak(ctx context.Context, tx *db.Tx, id string) (models.Dampak, error)
+	HapusKontrak(ctx context.Context, tx *db.Tx, id string) (models.Dampak, error)
+	DampakHapusReinsurer(ctx context.Context, tx *db.Tx, id string) (models.Dampak, error)
+	HapusReinsurer(ctx context.Context, tx *db.Tx, id string) (models.Dampak, error)
+	HapusSecurity(ctx context.Context, tx *db.Tx, id string) error
+	HapusBusiness(ctx context.Context, tx *db.Tx, id string) error
 }
 
 // Galat "tidak ada" per entitas (404) - handler tidak mengimpor repository.

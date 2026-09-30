@@ -48,6 +48,9 @@ type Gudang struct {
 	// itu (uji atomisitas dan K8).
 	GagalTulis map[string]error
 	hitung     map[string]int
+	// SelaHapus - dijalankan HapusKontrak sebelum menghapus: meniru baris yang
+	// lahir di antara pencacahan dan penghapusan (lapis kedua kaskade).
+	SelaHapus func()
 }
 
 func (g *Gudang) nomorBaru(tabel string) (string, error) {
@@ -226,6 +229,117 @@ func (g *Gudang) PerbaruiSecurity(_ context.Context, _ *db.Tx, s models.Security
 	s.TreatyYearID, s.TreatyContractID, s.TreatyReinsurerID, s.TglUpdate =
 		lama.TreatyYearID, lama.TreatyContractID, lama.TreatyReinsurerID, g.Jam
 	g.Security[s.ID] = s
+	return nil
+}
+
+// dampakKontrak - predikat sama dengan repository: security lewat reinsurer
+// kontrak, reinsurer/business lewat TREATYCONTRACTID.
+func (g *Gudang) dampakKontrak(id string, hapus bool) models.Dampak {
+	var d models.Dampak
+	reinsurer := map[string]bool{}
+	for rid, r := range g.Reinsurer {
+		if r.TreatyContractID == id {
+			reinsurer[rid] = true
+		}
+	}
+	for sid, s := range g.Security {
+		if reinsurer[s.TreatyReinsurerID] {
+			d.Security++
+			if hapus {
+				delete(g.Security, sid)
+			}
+		}
+	}
+	for rid := range reinsurer {
+		d.Reinsurer++
+		if hapus {
+			delete(g.Reinsurer, rid)
+		}
+	}
+	for bid, b := range g.Business {
+		if b.TreatyContractID == id {
+			d.Business++
+			if hapus {
+				delete(g.Business, bid)
+			}
+		}
+	}
+	return d
+}
+
+func (g *Gudang) dampakReinsurer(id string, hapus bool) models.Dampak {
+	var d models.Dampak
+	for sid, s := range g.Security {
+		if s.TreatyReinsurerID == id {
+			d.Security++
+			if hapus {
+				delete(g.Security, sid)
+			}
+		}
+	}
+	return d
+}
+
+// DampakHapusKontrak - pencacah tiruan.
+func (g *Gudang) DampakHapusKontrak(_ context.Context, _ *db.Tx, id string) (models.Dampak, error) {
+	return g.dampakKontrak(id, false), nil
+}
+
+// HapusKontrak - anak lebih dulu, lalu kontrak.
+func (g *Gudang) HapusKontrak(_ context.Context, _ *db.Tx, id string) (models.Dampak, error) {
+	if g.SelaHapus != nil {
+		g.SelaHapus()
+	}
+	d := g.dampakKontrak(id, true)
+	if err := g.gagal("HapusKontrak"); err != nil {
+		return d, err
+	}
+	if _, ada := g.Kontrak[id]; !ada {
+		return d, repository.ErrTidakAda
+	}
+	delete(g.Kontrak, id)
+	return d, nil
+}
+
+// DampakHapusReinsurer - pencacah tiruan.
+func (g *Gudang) DampakHapusReinsurer(_ context.Context, _ *db.Tx, id string) (models.Dampak, error) {
+	return g.dampakReinsurer(id, false), nil
+}
+
+// HapusReinsurer - security lebih dulu, lalu reinsurer.
+func (g *Gudang) HapusReinsurer(_ context.Context, _ *db.Tx, id string) (models.Dampak, error) {
+	d := g.dampakReinsurer(id, true)
+	if err := g.gagal("HapusReinsurer"); err != nil {
+		return d, err
+	}
+	if _, ada := g.Reinsurer[id]; !ada {
+		return d, repository.ErrTidakAda
+	}
+	delete(g.Reinsurer, id)
+	return d, nil
+}
+
+// HapusSecurity - daun.
+func (g *Gudang) HapusSecurity(_ context.Context, _ *db.Tx, id string) error {
+	if err := g.gagal("HapusSecurity"); err != nil {
+		return err
+	}
+	if _, ada := g.Security[id]; !ada {
+		return repository.ErrTidakAda
+	}
+	delete(g.Security, id)
+	return nil
+}
+
+// HapusBusiness - daun.
+func (g *Gudang) HapusBusiness(_ context.Context, _ *db.Tx, id string) error {
+	if err := g.gagal("HapusBusiness"); err != nil {
+		return err
+	}
+	if _, ada := g.Business[id]; !ada {
+		return repository.ErrTidakAda
+	}
+	delete(g.Business, id)
 	return nil
 }
 
