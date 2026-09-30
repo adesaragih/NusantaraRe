@@ -6,6 +6,49 @@
 > **Nol perubahan perilaku**; angka uji sama sebelum dan sesudah *(boleh bertambah hanya untuk penjaga baru, disebut)*. Pindah dengan `git mv`.
 > **Hanya sesi ini** yang bekerja di `OUTPUT_HASIL_RNM` selama refactor.
 
+## 0.1 RALAT 30-09-2026 *(asisten, sesudah mengukur `main` @ `420bc66`)* — **bab ini mengalahkan bab lain bila bertentangan**
+
+Gambaran pohon lengkap *(akar repo sampai 20 folder modul)* yang disetujui work owner hanya terbentuk bila lima butir berikut ikut dikerjakan.
+
+| # | Masalah di brief lama | Bukti | Ganti menjadi |
+| ---: | --- | --- | --- |
+| R1 | Hanya 4 folder modul yang dipindah; 16 modul lain baru muncul saat dimulai, jadi `CODEOWNERS` dan rentang migrasi tidak bisa ditetapkan sekali di awal | `APP_RNM/modul/` kini 4 folder | paket 6 **juga** membuat **16 folder kerangka** dari `_templat/`, satu per folder korpus yang belum dibangun, nama dari tabel nama *(`claimfacin`, `claimprop`, `claimnonprop`, `komiteclaimfacin`, `komiteclaimprop`, `komiteclaimnonprop`, `nbfacin`, `rnwfacin`, `endorsmentfacin`, `nbtreatyin`, `edmtreatyin`, `treatyin`, `treatyinadjustment`, `endorsementlife`, `mastercontractretrolife`, `masterproductnamelife`)*. Isi kerangka **hanya** `MODUL.md` *(pemilik penanda, rentang R2, slot menu R3, status "belum dimigrasi")* dan `docs/` dari `.scratch/<nama-panjang>/` bila ada. **Nol** `modul.go`, nol halaman, nol menu — kerangka tanpa `backend/modul.go` tidak terdaftar, sehingga `TestIsiAwalMenuDimigrasiSamaDenganModulBackend` tetap hijau |
+| R2 | "Modul baru mengambil blok 100 berikutnya" **tidak muat** | pelari migrasi mengurutkan nama berkas **sebagai teks** di semua sumber sekaligus *(`inti/migrasi/migrasi.go:166` `sort.Strings`)*; nomor 4 digit akan salah urut *(`1000_` sebelum `101_`)*; ruang kosong 3 digit tinggal 100–299, 320–899, 950–999 = 7 blok ratusan untuk 16 modul | rentang **40** nomor, ditetapkan sekarang, urut **hulu ke hilir** supaya migrasi modul hilir yang merujuk tabel modul hulu selalu berjalan sesudahnya — tabel R2 di bawah. PremiumList **050–099** *(PANDUAN-DEPLOY masih menulis 050–079 — diperbarui)* |
+| R3 | Isi menu modul baru wajib di `inti/migrations/901–949` | PANDUAN-DEPLOY bab 6 dan `TestMenuHanyaDiMigrasiInti` | itu folder bersama: dua pengembang menambah `901_…` bersamaan = bentrok, dan pengembang modul menyentuh folder inti. Ganti: tiap modul punya **dua slot menu** di rentang **950–999**, berkas tinggal di **folder migrasi modulnya sendiri** *(mis. `modul/nbfacin/backend/migrations/962_menu_nbfacin.sql`)*. Urutan teks menjamin slot 95x berjalan **sesudah** `900_m_nav_menu` di skema baru. Bentuk SQL persis bab 6 PANDUAN-DEPLOY. Penjaga diganti: baris `M_NAV_MENU` hanya di `900` dan di slot menu milik modul itu *(dibaca dari `MODUL.md`, nol nama modul di penjaga)*; 900–949 tetap milik `inti` saja |
+| R4 | `go generate` menulis daftar modul dari folder | `modul/daftar.go:60-66` **menyambung kontrak dengan tangan** *(PembacaPolis PremiumList ke Claim Life, KlaimKomite Claim Life ke Komite)* — pembangkit tidak dapat menebak sambungan itu | tiap `backend/modul.go` menyatakan kontrak yang **disediakan** dan yang **dibutuhkan** lewat `inti/backend/kontrak`; perakit di `inti` menyambung menurut jenis antarmuka; kontrak dibutuhkan tanpa penyedia = galat saat mulai yang menyebut kontrak dan modulnya *(bukan nil diam-diam)*. Uji: sambungan hasil perakit = sambungan `daftar.go` sekarang. Nama paket `modul.go` = `backend` di semua modul, jadi berkas bangkitan **wajib memakai alias impor** = nama modul |
+| R5 | Folder yang ada tetapi tidak disebut | `APP_RNM/uji/` *(skemauji, lintasmodul)*, `APP_RNM/pkg/utils`, `inti/menu/`, `inti/migrations/` | `uji/` dan `pkg/` **tetap di tempatnya**, milik tim inti di `CODEOWNERS`. `inti/menu/` dan `inti/migrations/` ikut ke `inti/backend/`. Dokumen tersegel *(`grilling-ronde-*`, `VERIFIKASI-*`, `KOREKSI-*`)* dipindah **hanya** dengan `git mv`; isinya byte-identik, dibuktikan hash sebelum dan sesudah di laporan |
+
+**Tabel R2 — rentang migrasi dan slot menu semua modul** *(ditulis juga ke `MODUL.md` masing-masing; nama berkas migrasi yang sudah ada tidak berubah)*
+
+| GROUPMENU | Modul backend | Rentang migrasi | Slot menu |
+| --- | --- | --- | --- |
+| KLAIM | `claimlife` | 001–029 | 950–951 |
+| KLAIM | `komiteclaimlife` | 030–049 | 952–953 |
+| TREATY | `premiumlistlife` | 050–099 | 954–955 |
+| MASTER | `treatycontractout` | 300–319 *(tetap kosong, tco4)* | 956–957 |
+| MASTER | `mastercontractretrolife` | 100–139 | 958–959 |
+| MASTER | `masterproductnamelife` | 140–179 | 960–961 |
+| FACULTATIVE | `nbfacin` | 180–219 | 962–963 |
+| FACULTATIVE | `rnwfacin` | 220–259 | 964–965 |
+| FACULTATIVE | `endorsmentfacin` | 260–299 | 966–967 |
+| TREATY | `nbtreatyin` | 320–359 | 968–969 |
+| TREATY | `edmtreatyin` | 360–399 | 970–971 |
+| TREATY | `treatyin` | 400–439 | 972–973 |
+| TREATY | `treatyinadjustment` | 440–479 | 974–975 |
+| TREATY | `endorsementlife` | 480–519 | 976–977 |
+| KLAIM | `claimfacin` | 520–559 | 978–979 |
+| KLAIM | `claimprop` | 560–599 | 980–981 |
+| KLAIM | `claimnonprop` | 600–639 | 982–983 |
+| KLAIM | `komiteclaimfacin` | 640–679 | 984–985 |
+| KLAIM | `komiteclaimprop` | 680–719 | 986–987 |
+| KLAIM | `komiteclaimnonprop` | 720–759 | 988–989 |
+| — | `inti` | 900–949 | — |
+| — | cadangan, dibagi tim inti lewat pull request | 760–899 dan 990–999 | — |
+
+Penjaga R2: setiap berkas migrasi berada di rentang atau slot menu modulnya; dua `MODUL.md` tidak berbagi nomor; nomor selalu 3 digit.
+
+**Paket di bab 4 bertambah**: paket 4 memuat R4; paket 5 memuat penjaga R2 dan R3; paket 6 memuat R1. Laporan menambah bukti: skema uji dari nol menjalankan `900` sebelum slot `95x`, dan uji `_contoh` memakai satu rentang cadangan lalu dihapus.
+
 ## 0. BENTUK TUJUAN
 
 ```
