@@ -59,7 +59,8 @@ const (
 	// milik sistem baru, Treaty Contract Out adalah treaty non-life
 	// (saringan jenis reasuransi tiket 02).
 	LiniNonLife = "NONLIFE"
-	// PesanTanpaBerkasTCO - VERBATIM `TreatyOutSaveAttachment.xml` b376.
+	// PesanTanpaBerkasTCO - `TreatyOutSaveAttachment.xml` b376 "Tidak ada file yg
+	// diattach", diterjemahkan [keputusan work owner 30-09-2026: bahasa Inggris].
 	PesanTanpaBerkasTCO = "No file attached"
 
 	folderModulTCO       = "treaty-contract-out"
@@ -311,7 +312,8 @@ func TampilLampiran(b repository.BarisLampiranTCO) LampiranTampil {
 	status := models.StatusLampiranTCO(b.TStorageID, b.StatusEfek == outbox.StatusEfekGagalPermanen)
 	galat := ""
 	if status != models.StatusLampiranTerkirim {
-		galat = b.GalatEfek
+		// Baris lama menyimpan kalimat sentinel `inti/` berbahasa Indonesia.
+		galat = TeksInggrisTCO(b.GalatEfek)
 	}
 	return LampiranTampil{ID: b.ID, IDTreatyYear: b.IDTreatyYear, FileName: b.FileName,
 		FileMimeType: b.FileMimeType, Category: b.Category, UserID: b.UserID,
@@ -707,7 +709,7 @@ func layakUlangLampiranTCO(err error) bool {
 }
 
 func ringkasGalatTCO(err error) string {
-	r := []rune(err.Error())
+	r := []rune(TeksInggrisTCO(err.Error()))
 	if len(r) > batasGalatTCO {
 		return string(r[:batasGalatTCO])
 	}

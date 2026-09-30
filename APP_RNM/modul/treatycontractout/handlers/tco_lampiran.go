@@ -128,7 +128,7 @@ func unggahLampiranTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		}
 		berkas, kepala, err := r.FormFile("berkas")
 		if err != nil {
-			// VERBATIM `TreatyOutSaveAttachment.xml` b376.
+			// `TreatyOutSaveAttachment.xml` b376, diterjemahkan [keputusan work owner 30-09-2026: bahasa Inggris].
 			galat.Tulis(w, http.StatusBadRequest, services.PesanTanpaBerkasTCO)
 			return
 		}

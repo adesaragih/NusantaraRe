@@ -75,7 +75,8 @@ var (
 	ErrKursTakTerurai = errors.New("models: exchange-rate master value cannot be parsed")
 )
 
-// GalatKursTidakAda - pesan VERBATIM `NewTreatyArrEpi.xml` b870.
+// GalatKursTidakAda - pesan `NewTreatyArrEpi.xml` b870 "Tidak ada Nilai Kurs di
+// Tahun : " + TreatyYear, diterjemahkan [keputusan work owner 30-09-2026: bahasa Inggris].
 type GalatKursTidakAda struct {
 	TreatyYear string
 	Tanggal    time.Time

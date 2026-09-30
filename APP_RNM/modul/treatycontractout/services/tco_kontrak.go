@@ -43,8 +43,9 @@ var (
 	ErrJenisReasuransiDiLuarDaftar = errors.New("services: reinsurance type outside the filtered REINSURANCETYPE list")
 )
 
-// PesanKontrakDobelTCO - VERBATIM `SaveTreatyContract_Act.xml` langkah 12
-// (b2270 `OutputParam.ERRMSG3`), langkah yang dikomentari di Pega.
+// PesanKontrakDobelTCO - `SaveTreatyContract_Act.xml` langkah 12 (b2270
+// `OutputParam.ERRMSG3` "Data sudah pernah di Input"), langkah yang dikomentari
+// di Pega; diterjemahkan [keputusan work owner 30-09-2026: bahasa Inggris].
 const PesanKontrakDobelTCO = "Data has already been entered"
 
 // GalatKontrakDobel menyebut kontrak mana yang sudah memegang jenis itu.
@@ -351,12 +352,12 @@ func AkhirTahunBawaan(pelaku inti.Pelaku, mulai string) (string, error) {
 	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return "", err
 	}
-	t, err := uraiTanggalKontrak("mulai", mulai)
+	t, err := uraiTanggalKontrak("start date", mulai)
 	if err != nil {
 		return "", err
 	}
 	if t.IsZero() {
-		return "", fmt.Errorf("%w: start date (mulai) is required", galat.ErrPermintaanTidakSah)
+		return "", fmt.Errorf("%w: start date is required", galat.ErrPermintaanTidakSah)
 	}
 	return utils.FormatTanggal(models.AkhirKontrakBawaanTCO(t)), nil
 }

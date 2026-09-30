@@ -44,15 +44,9 @@ func TestAkhirBawaanTahunBaru(t *testing.T) {
 	}
 }
 
-// Keputusan work owner 30-09-2026: kalimat galat Treaty berbahasa Inggris,
-// termasuk sentinel `inti/` yang ikut di rantai galatnya.
+// Keputusan work owner 30-09-2026: 400 berbahasa Inggris - sentinel `inti/`
+// diganti (`services.TeksInggrisTCO`, diuji di services).
 func TestPesanTCOBerbahasaInggris(t *testing.T) {
-	for _, g := range pesanIntiInggrisTCO {
-		p := pesanTCO(fmt.Errorf("%w: UJI detail", g.asal))
-		if strings.Contains(p, g.asal.Error()) || !strings.HasPrefix(p, g.inggris) || !strings.HasSuffix(p, "UJI detail") {
-			t.Errorf("%q -> %q, mau diawali %q", g.asal, p, g.inggris)
-		}
-	}
 	w := httptest.NewRecorder()
 	jawabGalatTreatyContractOut(w, fmt.Errorf("%w: start date (mulai) is required", galat.ErrPermintaanTidakSah))
 	if w.Code != http.StatusBadRequest || !strings.Contains(w.Body.String(), "services: invalid request: start date") {

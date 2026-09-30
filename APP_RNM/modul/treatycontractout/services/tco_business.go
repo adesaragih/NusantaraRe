@@ -41,7 +41,7 @@ var (
 
 // GalatBusinessDobel menyebut baris mana yang sudah memegang kode itu.
 //
-// Pesan VERBATIM `SaveTreatyBusinessDetail_Act.xml` langkah 6 (`ERRMSG4`),
+// Pesan `SaveTreatyBusinessDetail_Act.xml` langkah 6 (`ERRMSG4`, diterjemahkan [keputusan work owner 30-09-2026: bahasa Inggris]),
 // yang layar tampilkan saat prosedur menjawab galat (`ViewDetailTreatyBusinessGrid`
 // b10095 + b10215).
 type GalatBusinessDobel struct{ IDLain, BizCode string }
@@ -331,8 +331,8 @@ func (l *BusinessTCO) Simpan(ctx context.Context, pelaku inti.Pelaku, tahunID, k
 
 // Hapus membuang SATU baris bisnis - `Delete` b4826 (`DeleteRowBusiness`).
 //
-// Mengembalikan pesan VERBATIM `DeleteRowBusiness.xml` langkah 3:
-// `"Data Dengan ID" + " " + ID + " " + "Berhasil di Hapus"`.
+// Mengembalikan pesan `DeleteRowBusiness.xml` langkah 3 (`"Data Dengan ID" + " "
+// + ID + " " + "Berhasil di Hapus"`), diterjemahkan [keputusan work owner 30-09-2026: bahasa Inggris].
 func (l *BusinessTCO) Hapus(ctx context.Context, pelaku inti.Pelaku, tahunID, kontrakID, id string) (string, error) {
 	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return "", err

@@ -27,7 +27,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"nusantarare/inti"
 	"nusantarare/inti/galat"
@@ -259,7 +258,7 @@ func jawabGalatTreatyContractOut(w http.ResponseWriter, err error) bool {
 		// 409: keadaan DATA berubah sejak popup - tinjau ulang, tidak ada yang terhapus.
 		galat.Tulis(w, http.StatusConflict, pesanTCO(err))
 	case errors.Is(err, services.ErrKursTidakAda):
-		// 422 + pesan VERBATIM `NewTreatyArrEpi.xml` b870 (ADR-0015).
+		// 422 + pesan `NewTreatyArrEpi.xml` b870, diterjemahkan [keputusan work owner 30-09-2026: bahasa Inggris] (ADR-0015).
 		galat.Tulis(w, http.StatusUnprocessableEntity, pesanTCO(err))
 	case errors.Is(err, services.ErrMasterKursRusak):
 		// 503: master kurs / mata uang tidak dapat dipakai - keadaan server.
@@ -333,32 +332,10 @@ func jawabGalatTreatyContractOut(w http.ResponseWriter, err error) bool {
 	return true
 }
 
-// pesanIntiInggrisTCO - kalimat sentinel milik `inti/` (bersama; tetap
-// berbahasa Indonesia untuk modul lain) beserta padanan Inggrisnya untuk layar
-// Treaty Contract Out.
-var pesanIntiInggrisTCO = []struct {
-	asal    error
-	inggris string
-}{
-	{galat.ErrPermintaanTidakSah, "services: invalid request"},
-	{unggah.ErrUnggahanDirBelumDisetel, "services: UNGGAHAN_DIR is not set; document upload refused"},
-	{unggah.ErrBerkasTerlaluBesar, "services: file exceeds the size limit"},
-	{unggah.ErrBerkasKosong, "services: file is empty"},
-	{services.ErrMataUangTidakDikenal, "repository: unknown currency code"},
-	{inti.ErrTanpaWewenang, "services: insufficient permission"},
-	{inti.ErrTanpaIdentitas, "services: request without actor identity"},
-}
-
 // pesanTCO - kalimat galat untuk layar Treaty, BERBAHASA INGGRIS [keputusan
-// work owner 30-09-2026: "untuk bahasa pake bahasa inggris, jangan indo"].
-// Kalimat modul ini sudah Inggris; kalimat sentinel `inti/` yang ikut di
-// rantainya diganti di SATU tempat ini, tanpa menyentuh `inti/`.
+// work owner 30-09-2026]; sentinel `inti/` diganti `services.TeksInggrisTCO`.
 func pesanTCO(err error) string {
-	s := err.Error()
-	for _, g := range pesanIntiInggrisTCO {
-		s = strings.ReplaceAll(s, g.asal.Error(), g.inggris)
-	}
-	return s
+	return services.TeksInggrisTCO(err.Error())
 }
 
 // akhirBawaanTahunTCO - End Date bawaan tahun treaty BARU (belum ber-ID):
