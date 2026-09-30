@@ -116,7 +116,7 @@ $env:Path = 'C:\Program Files\Go\bin;C:\Program Files\nodejs;' + $env:Path
 | Bentuk tabel ke Oracle uji | `go run ./cmd/api -migrate` | menjalankan berkas di `modul/*/migrations/` SEMUA modul dan `inti/migrations/` (tidak ikut `MODUL_AKTIF`) sekali masing-masing; aman diulang, dan **menolak** berjalan bila `IS_PEGA_PROD=true` |
 | Uji backend **dengan** Oracle uji | `go test -tags=db ./...` | perlu `ORACLE_DSN` + `ORACLE_SCHEMA` + `ORACLE_SKEMA_UJI=true`; tanpa `ORACLE_DSN` test **melewati** dengan pesan, bukan lulus diam-diam |
 | Jalankan backend | `go run ./cmd/api` | log `http: mendengarkan di :8080`; `MODUL_AKTIF=claimlife,komiteclaimlife` memasang sebagian modul |
-| Periksa tipe frontend | `cd frontend` lalu `npm run typecheck` | tidak mencetak galat |
+| Periksa tipe frontend | `npm run typecheck` — dari `APP_RNM/`, bukan `frontend/` *(sejak 30-09-2026)* | tidak mencetak galat |
 | Uji frontend | `npm test` | seluruh berkas uji `passed` |
 | Jalankan frontend | `npm run dev` | buka `http://localhost:5173/` |
 | Bangun frontend | `npm run build` | menjalankan `tsc` dulu, lalu Vite membuat `dist/` |

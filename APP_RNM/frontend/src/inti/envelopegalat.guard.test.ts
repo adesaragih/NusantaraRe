@@ -17,7 +17,9 @@ import { describe, expect, it } from 'vitest'
 // Keduanya sejenis: pembaca yang bentuknya tidak lagi cocok dengan yang
 // dikirim, dan tidak ada satu pun uji yang memaksa keduanya bertemu.
 
-const SRC = join(process.cwd(), 'src')
+// Dari letak berkas ini, bukan `process.cwd()`: sejak struktur tim satu folder
+// per modul, `npm` dijalankan dari APP_RNM/, bukan dari frontend/.
+const SRC = join(__dirname, '..')
 
 /** Seluruh berkas .ts/.tsx di bawah src, kecuali berkas uji. */
 function berkasSumber(dir = SRC, out: string[] = []): string[] {

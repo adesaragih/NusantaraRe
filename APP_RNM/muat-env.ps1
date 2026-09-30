@@ -63,4 +63,4 @@ foreach ($folder in 'C:\Program Files\Go\bin', 'C:\Program Files\nodejs') {
     }
 }
 
-Write-Host 'Selesai. Backend: go run ./cmd/api   |   frontend: cd frontend; npm run dev'
+Write-Host 'Selesai. Backend: go run ./cmd/api   |   frontend: npm run dev'

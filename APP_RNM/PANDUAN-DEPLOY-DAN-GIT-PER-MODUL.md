@@ -164,7 +164,7 @@ dan uji selalu dari salinan utuh.
 ```powershell
 go build ./... ; go build -tags db ./... ; go vet ./... ; go vet -tags db ./... ; gofmt -l cmd inti modul uji
 go test ./... ; go test -tags db ./...          # tanpa ORACLE_DSN: test db SKIP dengan pesan
-cd frontend ; npx tsc --noEmit ; npx vitest run ; npx vite build
+npx tsc --noEmit ; npx vitest run ; npx vite build   # dari APP_RNM/ - package.json di sini sejak 30-09-2026
 ```
 
 - Menyentuh `inti/`, `modul/daftar.go`, `frontend/src/inti/`, `frontend/src/modul/daftar.ts`, atau

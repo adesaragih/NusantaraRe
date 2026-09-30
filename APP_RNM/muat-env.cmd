@@ -35,4 +35,4 @@ if not errorlevel 1 (
 set "PATH=C:\Program Files\Go\bin;C:\Program Files\nodejs;%PATH%"
 
 echo HTTP_ADDR=%HTTP_ADDR%   ORACLE_SCHEMA=%ORACLE_SCHEMA%   IS_PEGA_PROD=%IS_PEGA_PROD%   ORACLE_DSN=disetel, tidak ditampilkan
-echo Selesai. Backend: go run ./cmd/api   ^|   frontend: cd frontend ^&^& npm run dev
+echo Selesai. Backend: go run ./cmd/api   ^|   frontend: npm run dev

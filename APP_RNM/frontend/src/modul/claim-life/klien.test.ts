@@ -196,7 +196,8 @@ describe('axios benar-benar dilepas', () => {
   })
 
   it('nol axios di package.json', () => {
-    const pkg = readFileSync(join(__dirname, '..', '..', '..', 'package.json'), 'utf8')
+    // package.json tinggal di APP_RNM/ sejak struktur tim satu folder per modul.
+    const pkg = readFileSync(join(__dirname, '..', '..', '..', '..', 'package.json'), 'utf8')
     expect(JSON.parse(pkg) as { dependencies?: Record<string, string> }).not.toHaveProperty(
       'dependencies.axios',
     )

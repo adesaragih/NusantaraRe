@@ -325,15 +325,20 @@ Env var hilang saat jendela ditutup.
 4. FRONTEND
 ================================================================================
 
+⚠️ Sejak 30-09-2026 (struktur tim satu folder per modul) SEMUA perintah npm
+dijalankan dari folder APP_RNM - folder yang sama dengan perintah go -
+BUKAN dari frontend. package.json, package-lock.json, vite.config.ts,
+tsconfig.json, dan node_modules tinggal di APP_RNM, sebab kode frontend kini
+tersebar di frontend\, inti\frontend\, dan modul\<nama>\frontend\.
+index.html, public\, dist\, dan frontend\.env tetap di frontend\.
+
 Pertama kali saja di mesin baru (di mesin ini sudah terpasang):
 
-  Set-Location frontend
-  npm install
+  npm install                  # dari folder APP_RNM
 
 Jalankan server dev:
 
-  Set-Location frontend        # bila belum di dalamnya
-  npm run dev
+  npm run dev                  # dari folder APP_RNM
 
 Log yang benar:
 
@@ -429,7 +434,7 @@ YANG TAMPIL SEJAK F0.5
      halaman pendaftaran. Klik satu baris Inbox membuka halaman Detail.
 
 
-Perintah lain, semua dari folder frontend:
+Perintah lain, semua dari folder APP_RNM (bukan frontend - lihat atas):
 
   Perintah             Guna
   -------------------  ---------------------------------------------------------
@@ -523,7 +528,7 @@ Dari folder APP_RNM:
   gofmt -l .
     harus tidak mencetak apa pun.
 
-Dari folder frontend:
+Dari folder APP_RNM juga (npm tidak lagi dari folder frontend):
 
   npm run typecheck
   npm test
@@ -534,7 +539,7 @@ Dari folder frontend:
 Gabungan yang setara "make check" (make tidak terpasang):
 
   go build ./... ; go vet ./... ; go test ./...
-  Set-Location frontend ; npm run typecheck ; npm test ; Set-Location ..
+  npm run typecheck ; npm test
 
 ================================================================================
 8. BILA TERSANGKUT

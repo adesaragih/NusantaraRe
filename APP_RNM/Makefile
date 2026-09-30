@@ -40,8 +40,10 @@ help:
 run-api:
 	$(GO) run $(API_PKG)
 
+# Sejak 30-09-2026 (struktur tim satu folder per modul) npm dijalankan dari
+# folder ini: package.json dan vite.config.ts tinggal di APP_RNM/, bukan frontend/.
 run-web:
-	cd frontend && $(NPM) run dev
+	$(NPM) run dev
 
 build: build-api build-web
 
@@ -49,7 +51,7 @@ build-api:
 	$(GO) build -o $(BIN) $(API_PKG)
 
 build-web:
-	cd frontend && $(NPM) ci && $(NPM) run build
+	$(NPM) ci && $(NPM) run build
 
 # Nol Oracle: hanya seam `services` murni dan unit lain yang tidak menyentuh DB.
 test:
@@ -59,7 +61,7 @@ test:
 # Frontend memakai TypeScript (.tsx). Vite tidak memeriksa tipe saat build,
 # jadi pemeriksaannya dijalankan tersendiri di sini dan di awal `npm run build`.
 typecheck:
-	cd frontend && $(NPM) run typecheck
+	$(NPM) run typecheck
 
 # Gabungan yang diminta tiket 01 Claim Life: build Go, test Go, tipe + test web.
 # Nol Oracle - seam repository dan HTTP dijalankan terpisah lewat `make test-db`.
@@ -67,8 +69,8 @@ check:
 	$(GO) build ./...
 	$(GO) vet ./...
 	$(GO) test ./...
-	cd frontend && $(NPM) run typecheck
-	cd frontend && $(NPM) test
+	$(NPM) run typecheck
+	$(NPM) test
 
 # Seam `repository` terhadap skema uji Oracle nyata (brief bab 5).
 # Ditandai build tag `db` supaya `make test` tetap lulus tanpa instance.
