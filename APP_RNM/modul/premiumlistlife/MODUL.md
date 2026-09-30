@@ -50,6 +50,33 @@ npx vitest run modul/premiumlistlife
 `npx tsc --noEmit` memeriksa seluruh aplikasi sekaligus — tipe tidak dapat diperiksa per folder.
 Sebelum pull request, jalankan gerbang lengkap (`PANDUAN-TIM-PER-MODUL.md`).
 
+## Pernyataan untuk penjaga
+
+⛔ **Dibaca penjaga** `inti/backend/penjaga` — satu jenis pernyataan per judul `###`, satu baris per
+butir. Penjaganya berlaku untuk setiap modul; yang KHUSUS modul ini dinyatakan di sini, supaya
+mengubahnya tidak pernah menyunting berkas di luar folder ini. Judul yang tidak ada berarti modul
+ini tidak menyatakan apa pun untuk jenis itu. Nilai di dalam `` ` `` dibaca apa adanya.
+
+### Tabel warisan: dibaca, tidak dibuat
+
+Tabel yang dokumen STRUKTUR modul ini gambarkan tetapi SENGAJA tidak dibuat migrasi mana pun
+(`TestKolomDDLCocokDenganStruktur`, `TestTabelBukanMilikKitaTidakDibuat`). Mencabut satu baris =
+kepemilikan tabel berpindah — keputusan work owner.
+
+| Tabel | Alasan |
+| --- | --- |
+| `M_TEMPUPLOADLIFE` | tabel warisan penampung unggahan CSV, ditulis `RDBList/InsertDataUploadLife.xml` di sistem lama; dibaca tiket 04, tidak dibuat |
+
+### Pesan verbatim yang bukan nama orang
+
+Konstanta teks yang cocok dengan pola nama orang tetapi BUKAN nama orang (`TestNolNamaOrangDiKode`).
+Nilainya DIBACA dari sumber konstantanya, tidak diketik ulang.
+
+| Paket | Konstanta | Alasan |
+| --- | --- | --- |
+| `backend/models` | `PesanNamaTertanggung` | ValidasiUploadPL_act `local.err3` - pesan kolom NAME_OF_INSURED. |
+| `backend/models` | `PesanPolicyHolder` | ValidasiUploadPL_act `local.err17` - pesan rujukan master POLICY HOLDER. |
+
 ## Brief acuan
 
 `PROMPT-IMPLEMENTASI-MODUL-PREMIUMLIST-LIFE.md`, `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-*.md` (folder `OUTPUT_HASIL_RNM\`).

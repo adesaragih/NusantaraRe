@@ -50,6 +50,21 @@ npx vitest run modul/komiteclaimlife
 `npx tsc --noEmit` memeriksa seluruh aplikasi sekaligus — tipe tidak dapat diperiksa per folder.
 Sebelum pull request, jalankan gerbang lengkap (`PANDUAN-TIM-PER-MODUL.md`).
 
+## Pernyataan untuk penjaga
+
+⛔ **Dibaca penjaga** `inti/backend/penjaga` — satu jenis pernyataan per judul `###`, satu baris per
+butir. Penjaganya berlaku untuk setiap modul; yang KHUSUS modul ini dinyatakan di sini, supaya
+mengubahnya tidak pernah menyunting berkas di luar folder ini. Judul yang tidak ada berarti modul
+ini tidak menyatakan apa pun untuk jenis itu. Nilai di dalam `` ` `` dibaca apa adanya.
+
+### Kaskade ON DELETE CASCADE
+
+Kaskade HANYA pada berkas migrasi modul ini yang berawalan di bawah (`TestKaskadeHanyaPadaRelasiTerdaftar`).
+
+| Awalan berkas | Relasi |
+| --- | --- |
+| `030_` | relasi 9: roster komite. 013 (migrasi Claim Life) membuatnya TANPA kaskade (cacat), 030 memasangnya lewat ALTER. |
+
 ## Brief acuan
 
 `PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-LIFE.md`, `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-*.md` (folder `OUTPUT_HASIL_RNM\`).

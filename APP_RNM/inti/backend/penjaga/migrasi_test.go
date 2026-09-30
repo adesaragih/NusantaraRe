@@ -81,14 +81,11 @@ func TestSetiapPernyataanSahDanBerskema(t *testing.T) {
 // ⛔ Nama-nama yang DIBUANG. Tiket 14 menyatakan test yang menemukannya gagal.
 func TestNamaYangDibuangTidakAda(t *testing.T) {
 	sql := gabungSemua(t)
-	terlarang := map[string]string{
-		"T_CLAIMLF_POLICY":            "tabel dihapus 2026-09-18, bukan diganti nama",
-		"T_CLAIMLF_MARKETING":         "tabel dihapus 2026-09-18, bukan diganti nama",
-		"T_CLAIM_POLICY":              "tabel dihapus 2026-09-18",
-		"T_CLAIM_MARKETING":           "tabel dihapus 2026-09-18",
-		"WORK_CLAIM_ID":               "dibuang; hubungannya shared primary key",
-		"KMT_NO":                      "dibuang",
-		"T_CLAIMLF_ADJUSTMENT_KOMITE": "roster komite tidak disimpan di Claim Life",
+	// Struktur tim satu folder per modul (30-09-2026): namanya dinyatakan bab
+	// "Nama terlarang di migrasi" MODUL.md modul yang membuangnya.
+	terlarang := namaTerlarangDiMigrasi(t)
+	if len(terlarang) == 0 {
+		t.Fatal("nol nama terlarang dinyatakan; pembacanya yang rusak")
 	}
 	for n, sebab := range terlarang {
 		if strings.Contains(sql, n) {
@@ -139,25 +136,13 @@ func TestKaskadeHanyaPadaRelasiTerdaftar(t *testing.T) {
 	berkas := seluruhSQL(t, false)
 	// Refactor bentuk B paket 8: daftarnya PER MODUL, menurut folder migrasi
 	// berkasnya - dulu satu daftar untuk rentang nomor 001-049. Modul yang
-	// tidak disebut di sini menjaga kaskadenya sendiri (PremiumList:
+	// tidak menyatakan kebijakannya menjaga kaskadenya sendiri (PremiumList:
 	// `TestSeluruhFKPohonPolisBerkaskade`); Treaty Contract Out tanpa migrasi.
-	berkaskade := map[string]map[string]bool{
-		"claimlife": {
-			"003_": true, "004_": true, "005_": true, "006_": true,
-			// Relasi 10: diagnosa per peserta (butir bd). Buktinya bukan
-			// selera: `.DiagnoseList` hidup DI DALAM halaman peserta -
-			// `SetDisease.xml` b389 menutup dengan `Obj-Save pyWorkPage`,
-			// bukan menyimpan halaman diagnosa sendiri. Menghapus peserta
-			// karena itu menghapus daftarnya.
-			"018_": true,
-		},
-		"komiteclaimlife": {
-			// Relasi 9: roster komite. 013 membuatnya TANPA kaskade (cacat),
-			// 030 memasangnya lewat ALTER. Keduanya terdaftar: yang pertama
-			// karena kelak diperbaiki di tempatnya, yang kedua karena ia
-			// perbaikannya.
-			"030_": true,
-		},
+	// Struktur tim satu folder per modul (30-09-2026): daftarnya dinyatakan bab
+	// "Kaskade ON DELETE CASCADE" MODUL.md setiap modul (`kaskadePerModul`).
+	berkaskade := kaskadePerModul(t)
+	if len(berkaskade) == 0 {
+		t.Fatal("nol kebijakan kaskade dinyatakan; pembacanya yang rusak")
 	}
 	diperiksa := map[string]int{}
 	for nama, teks := range berkas {
@@ -179,11 +164,11 @@ func TestKaskadeHanyaPadaRelasiTerdaftar(t *testing.T) {
 			t.Errorf("%s: ON DELETE CASCADE ada=%v, mau=%v", nama, ada, mau)
 		}
 	}
-	// ⛔ Nama modul yang salah ketik di daftar tidak boleh mematikan
-	// penjaganya diam-diam: setiap modul yang disebut harus punya berkas.
+	// ⛔ Kebijakan yang dinyatakan tanpa satu pun berkas tidak boleh mematikan
+	// penjaganya diam-diam: setiap modul yang menyatakannya harus punya berkas.
 	for modul := range berkaskade {
 		if diperiksa[modul] == 0 {
-			t.Errorf("modul %q di daftar kaskade tidak punya satu pun berkas migrasi", modul)
+			t.Errorf("modul %q menyatakan kebijakan kaskade tetapi tidak punya satu pun berkas migrasi", modul)
 		}
 	}
 	t.Logf("berkas diperiksa per modul: %v", diperiksa)

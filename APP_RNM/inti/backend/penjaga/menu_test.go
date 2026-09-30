@@ -1,6 +1,7 @@
 package penjaga
 
-// Penjaga M_NAV_MENU dan ISI menunya - migrasi `inti` 900-949 - TANPA Oracle.
+// Penjaga M_NAV_MENU dan ISI menunya - isi awal `inti` 900 dan slot menu setiap
+// modul (R3) - TANPA Oracle.
 //
 // Untuk apa berkas ini: menu aplikasi kini dirakit dari tabel
 // (`PROMPT-MENU-DARI-TABEL-M_NAV_MENU.md`). Isinya bukan data uji - ia menu
@@ -8,12 +9,16 @@ package penjaga
 // kelompok yang hilang atau satu butir yang salah induk tidak menggagalkan
 // satu pun uji lain; berkas inilah yang menangkapnya.
 //
-// ⛔ Yang dibaca SELURUH migrasi maju milik `inti`, bukan 900 saja: 900 yang
-// sudah dijalankan tidak boleh disunting (`T_MIGRASI` mencatat namanya), jadi
-// menu berikutnya lahir di 901+ (`PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md` bab 6).
-// Penjaga yang hanya membaca 900 akan menolak langkah yang panduannya sendiri
-// suruh. Uji dua arah frontend (`frontend/daftar.menuTabel.test.ts`) membaca
-// folder yang sama.
+// ⛔ Yang dibaca: 900 (isi awal, milik `inti`) DAN berkas slot menu setiap modul
+// (R3, struktur tim satu folder per modul 30-09-2026). 900 yang sudah
+// dijalankan tidak boleh disunting (`T_MIGRASI` mencatat namanya), jadi menu
+// berikutnya lahir di slot menu modul pemiliknya, di folder migrasinya sendiri
+// (`PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md` bab 6; aturan slotnya
+// `rentang_test.go`). Dulu 901+ di `inti/migrations` - folder bersama yang
+// membuat dua pengembang modul bertabrakan. Kunci "isi awal" (20 kelompok,
+// lima butir) membaca 900 saja; penanda DIMIGRASI membaca menu SESUDAH semua
+// slot. Uji dua arah frontend (`frontend/daftar.menuTabel.test.ts`) membaca
+// berkas yang sama.
 
 import (
 	"os"
@@ -63,37 +68,46 @@ var (
 		`WHERE KODE = '([^']+)' AND PARENT_ID IS NULL$`)
 )
 
-// pernyataanMenu - pernyataan maju seluruh langkah milik `inti`, menurut
-// urutan pelari.
-func pernyataanMenu(t *testing.T) []string {
+// pernyataanMenu - pernyataan maju langkah menu, menurut urutan pelari: 900
+// (isi awal) saja bila `hanyaIsiAwal`, selainnya 900 ditambah berkas slot menu
+// setiap modul.
+func pernyataanMenu(t *testing.T, hanyaIsiAwal bool) []string {
 	t.Helper()
 	langkah, err := migrasi.Daftar(false, berkasMigrasi)
 	if err != nil {
 		t.Fatal(err)
 	}
+	var jatah map[string]jatahModul
+	if !hanyaIsiAwal {
+		jatah = jatahSetiapModul(t)
+	}
 	var out []string
 	for _, m := range langkah {
-		if berkasMigrasi.modul(m.Nama) == "inti" {
+		pemilik := berkasMigrasi.modul(m.Nama)
+		n, _ := nomorBerkas(m.Nama)
+		isiAwal := pemilik == "inti" && strings.HasPrefix(m.Nama, "900_")
+		slotModul := !hanyaIsiAwal && pemilik != "inti" && jatah[pemilik].diSlot(n)
+		if isiAwal || slotModul {
 			out = append(out, m.Pernyataan...)
 		}
 	}
 	if len(out) == 0 {
-		t.Fatal("nol pernyataan migrasi inti; 900_m_nav_menu.sql hilang atau pembacanya rusak")
+		t.Fatal("nol pernyataan menu; 900_m_nav_menu.sql hilang atau pembacanya rusak")
 	}
 	return out
 }
 
 // isiMenu membaca kelompok dan butir dari INSERT (dan UPDATE DIMIGRASI)
-// migrasi `inti`.
+// langkah menu - lihat `pernyataanMenu`.
 //
 // ⛔ Setiap DML atas M_NAV_MENU WAJIB cocok dengan salah satu bentuk: DML
 // berbentuk lain adalah baris yang tidak terbaca penjaga ini - dan tidak
 // terbaca pula oleh uji dua arah frontend yang membaca folder yang sama.
-func isiMenu(t *testing.T) ([]kelompokMenu, []butirMenu) {
+func isiMenu(t *testing.T, hanyaIsiAwal bool) ([]kelompokMenu, []butirMenu) {
 	t.Helper()
 	var kelompok []kelompokMenu
 	var butir []butirMenu
-	for i, p := range pernyataanMenu(t) {
+	for i, p := range pernyataanMenu(t, hanyaIsiAwal) {
 		if strings.HasPrefix(p, "CREATE") {
 			continue
 		}
@@ -126,23 +140,16 @@ func isiMenu(t *testing.T) ([]kelompokMenu, []butirMenu) {
 			}
 			continue
 		}
-		t.Errorf("pernyataan %d migrasi inti bentuknya tidak dikenal penjaga: %s",
+		t.Errorf("pernyataan menu %d bentuknya tidak dikenal penjaga: %s",
 			i, migrasi.RingkasPernyataan(p))
 	}
 	return kelompok, butir
 }
 
-// ⛔ Isi M_NAV_MENU hanya ditulis migrasi `inti`: satu tempat, satu bentuk,
-// dibaca kedua penjaga. Migrasi modul yang menyisipkan menunya sendiri tidak
-// terlihat oleh keduanya.
-func TestMenuHanyaDiMigrasiInti(t *testing.T) {
-	for nama, isi := range seluruhSQL(t, false) {
-		if berkasMigrasi.modul(nama) != "inti" && strings.Contains(strings.ToUpper(isi), "M_NAV_MENU") {
-			t.Errorf("%s (modul %s) menyentuh M_NAV_MENU - isi menu hanya di inti/backend/migrations (900-949)",
-				nama, berkasMigrasi.modul(nama))
-		}
-	}
-}
+// Isi M_NAV_MENU hanya di 900 dan di slot menu modul pemiliknya:
+// `TestMenuHanyaDi900DanSlotMenuModulnya` dan
+// `TestSlotMenuHanyaMenyentuhMenuModulnya` (`rentang_test.go`) - menggantikan
+// `TestMenuHanyaDiMigrasiInti` (struktur tim satu folder per modul, R3).
 
 // Rentang 900-949 milik `inti`, dan `inti` hanya bermigrasi di rentang itu.
 func TestMigrasiIntiDiRentang900(t *testing.T) {
@@ -166,7 +173,7 @@ func TestMigrasiIntiDiRentang900(t *testing.T) {
 func TestCheckGroupMenu(t *testing.T) {
 	polaCheck := regexp.MustCompile(`CONSTRAINT CK_M_NAV_MENU_GROUPMENU CHECK \(GROUPMENU IN \(([^)]*)\)\)`)
 	var isi []string
-	for _, p := range pernyataanMenu(t) {
+	for _, p := range pernyataanMenu(t, true) {
 		if nama, _ := migrasi.KolomCreateTable(p); nama != "M_NAV_MENU" {
 			continue
 		}
@@ -185,7 +192,7 @@ func TestCheckGroupMenu(t *testing.T) {
 	for _, g := range golonganMenu {
 		sah[g] = true
 	}
-	kelompok, _ := isiMenu(t)
+	kelompok, _ := isiMenu(t, false)
 	for _, k := range kelompok {
 		if !sah[k.golongan] {
 			t.Errorf("kelompok %s: GROUPMENU %q di luar CHECK", k.kode, k.golongan)
@@ -197,7 +204,7 @@ func TestCheckGroupMenu(t *testing.T) {
 // VERBATIM, KODE = MODUL = nama modul backend (tabel nama modul: nama folder
 // tanpa spasi, huruf kecil).
 func TestIsiAwalMenuDuaPuluhKelompok(t *testing.T) {
-	kelompok, _ := isiMenu(t)
+	kelompok, _ := isiMenu(t, true)
 	if len(kelompok) != 20 {
 		t.Fatalf("isi awal memuat %d kelompok, mau 20 (satu per folder modul korpus)", len(kelompok))
 	}
@@ -250,9 +257,14 @@ func TestIsiAwalMenuDuaPuluhKelompok(t *testing.T) {
 	}
 }
 
-// DIMIGRASI '1' tepat untuk modul yang sudah punya folder backend
-// `modul/<nama>/modul.go` - bukan daftar tangan yang dapat tertinggal.
-func TestIsiAwalMenuDimigrasiSamaDenganModulBackend(t *testing.T) {
+// DIMIGRASI '1' tepat untuk modul yang sudah punya
+// `modul/<nama>/backend/modul.go` - bukan daftar tangan yang dapat tertinggal.
+//
+// Struktur tim satu folder per modul (R3): dibaca SESUDAH slot menu setiap
+// modul - modul yang mendapat `backend/modul.go` pertamanya menyalakan
+// DIMIGRASI kelompoknya di slot menunya sendiri. Dulu
+// `TestIsiAwalMenuDimigrasiSamaDenganModulBackend` (900 dan 901-949 inti).
+func TestMenuDimigrasiSamaDenganModulBackend(t *testing.T) {
 	cocok, err := filepath.Glob(filepath.Join(akarAplikasi, "modul", "*", "backend", "modul.go"))
 	if err != nil {
 		t.Fatal(err)
@@ -265,7 +277,7 @@ func TestIsiAwalMenuDimigrasiSamaDenganModulBackend(t *testing.T) {
 	if len(backend) == 0 {
 		t.Fatal("nol modul backend terbaca; pembacanya yang rusak")
 	}
-	kelompok, _ := isiMenu(t)
+	kelompok, _ := isiMenu(t, false)
 	var dimigrasi []string
 	for _, k := range kelompok {
 		if k.dimigrasi == "1" {
@@ -282,7 +294,7 @@ func TestIsiAwalMenuDimigrasiSamaDenganModulBackend(t *testing.T) {
 // GROUPMENU, MODUL, dan DIMIGRASI butir dibaca dari induknya (bentuk
 // `polaIsiButir`), jadi keduanya tidak dapat berbeda.
 func TestIsiAwalMenuLimaButir(t *testing.T) {
-	kelompok, butir := isiMenu(t)
+	kelompok, butir := isiMenu(t, true)
 	induk := map[string]kelompokMenu{}
 	for _, k := range kelompok {
 		induk[k.kode] = k

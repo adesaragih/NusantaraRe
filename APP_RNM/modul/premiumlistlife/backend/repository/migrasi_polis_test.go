@@ -8,11 +8,12 @@ import (
 
 // milikPremiumList menjawab apakah berkas migrasi itu milik PremiumList Life.
 //
-// Rentangnya 050-079 (PROMPT-EKSEKUSI-HULU-HILIR.md §4). Lahir 28-09-2026
+// Rentangnya 050-099 sejak struktur tim satu folder per modul (R2, MODUL.md);
+// semula 050-079 (PROMPT-EKSEKUSI-HULU-HILIR.md §4). Lahir 28-09-2026
 // ketika modul ketiga (Treaty Contract Out, 300-319) menambah migrasi dan
 // "bukan Claim Life" tidak lagi berarti "PremiumList".
 func milikPremiumList(nama string) bool {
-	return nama >= "050_" && nama < "080_"
+	return nama >= "050_" && nama < "100_"
 }
 
 // Seluruh FK pohon polis BERKASKADE - tiket 00 PremiumList Life AC 46.

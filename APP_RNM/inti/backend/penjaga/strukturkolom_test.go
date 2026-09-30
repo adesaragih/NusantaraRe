@@ -29,40 +29,50 @@ import (
 	"nusantarare/inti/backend/migrasi"
 )
 
-// letakStruktur menunjuk dokumen STRUKTUR dari folder paket ini.
-const letakStruktur = "../../../.scratch/claim-life/STRUKTUR-TABEL-CLAIM-LIFE.md"
+// letakStrukturInti - dokumen STRUKTUR tabel lintas modul milik `inti`
+// (900-949): M_NAV_MENU, 30-09-2026.
+const letakStrukturInti = "../../../../.scratch/inti/STRUKTUR-TABEL-INTI.md"
 
-// letakStruktur menunjuk SELURUH dokumen STRUKTUR dari folder paket ini.
+// letakStruktur menunjuk SELURUH dokumen STRUKTUR: `docs/STRUKTUR-TABEL-*.md`
+// setiap modul, ditambah dokumen `inti`.
 //
-// ⛔ TIGA dokumen sejak tiket 00 kedua modul, dan ketiganya WAJIB - bukan
-// "yang ada saja". Satu berkas migrasi yang tabelnya tidak tercatat di dokumen
-// mana pun adalah tabel yang lahir tanpa keputusan tertulis, dan itulah yang
-// penjaga ini ada untuk cegah. Menambah modul berarti menambah dokumennya DI
-// SINI - bukan menambah pengecualian.
+// ⛔ Struktur tim satu folder per modul (30-09-2026): dokumennya DITEMUKAN di
+// folder setiap modul, tidak didaftar di sini - dulu "menambah modul berarti
+// menambah dokumennya DI SINI", yaitu menyunting berkas milik tim inti. Yang
+// tetap WAJIB: setiap tabel yang dibuat migrasi harus tercatat di dokumen
+// STRUKTUR mana pun (`TestKolomDDLCocokDenganStruktur` menolak tabel DDL tanpa
+// dokumen), dan setiap modul yang bermigrasi harus punya sekurangnya satu
+// dokumen (diperiksa di sini).
 //
 // ⚠️ `T_GENERAL_KOMITE` dan `T_KOMITE_KOMITELIST` disebut DUA dokumen
 // sekaligus. Itu bukan kesalahan - keduanya memang batas antara dua konteks -
 // tetapi ia menuntut penjaga sendiri:
 // `TestDokumenSTRUKTURSepakatAtasTabelBersama`.
-var letakStruktur = []string{
-	"../../../modul/claimlife/docs/STRUKTUR-TABEL-CLAIM-LIFE.md",
-	"../../../modul/komiteclaimlife/docs/STRUKTUR-TABEL-KOMITE-CLAIM-LIFE.md",
-	"../../../modul/premiumlistlife/docs/STRUKTUR-TABEL-PREMIUMLIST-LIFE.md",
-	// Modul keempat, Treaty Contract Out. Sejak tco4 (29-09-2026) dokumennya
-	// PETA TABEL WARISAN: seluruh tabelnya terdaftar tabelBukanMilikKita.
-	"../../../modul/treatycontractout/docs/STRUKTUR-TABEL-TREATY-CONTRACT-OUT.md",
-	// Tabel lintas modul milik `inti` (900-949): M_NAV_MENU, 30-09-2026.
-	"../../../../.scratch/inti/STRUKTUR-TABEL-INTI.md",
+func letakStruktur(t *testing.T) []string {
+	t.Helper()
+	cocok, err := filepath.Glob(filepath.Join(akarAplikasi, "modul", "*", "docs", "STRUKTUR-TABEL-*.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	sort.Strings(cocok)
+	berdokumen := map[string]bool{}
+	for _, c := range cocok {
+		berdokumen[pemilikJalur(c)] = true
+	}
+	for _, nama := range berkasMigrasi.asal {
+		if m := pemilikJalur(nama); m != "inti" && !berdokumen[m] {
+			t.Fatalf("modul %s bermigrasi tetapi tanpa docs/STRUKTUR-TABEL-*.md", m)
+		}
+	}
+	if len(cocok) < 4 {
+		t.Fatalf("hanya %d dokumen STRUKTUR modul ditemukan; pembacanya yang rusak", len(cocok))
+	}
+	return append(cocok, filepath.FromSlash(letakStrukturInti))
 }
 
-// tabelBersamaDuaKonteks adalah tabel yang LEBIH DARI SATU dokumen gambarkan.
-//
-// ⛔ Keduanya batas antara Claim Life dan Komite Claim Life: Claim Life
-// MENYERAHKAN kasus, Komite MEMUTUSKAN. Dokumen yang berbeda isinya berarti
-// salah satu konteks bekerja dari bentuk yang sudah usang - dan bedanya baru
-// terlihat ketika satu sisi menulis kolom yang sisi lain tidak baca.
-var tabelBersamaDuaKonteks = []string{"T_GENERAL_KOMITE", "T_KOMITE_KOMITELIST"}
-
+// Tabel yang LEBIH DARI SATU dokumen gambarkan kini DITURUNKAN dari dokumennya
+// (`TestDokumenSTRUKTURSepakatAtasTabelBersama`), tidak didaftar: daftar
+// bernama tabel satu modul adalah daftar yang harus disunting modul itu.
 // tabelDikecualikan mendaftar tabel yang STRUKTUR sengaja tidak memuat
 // kolomnya, beserta sebabnya.
 // ⭐ Kosong sejak 26-09-2026. T_CLAIMLF_DOCUMENT dulu dikecualikan dengan
@@ -72,57 +82,24 @@ var tabelBersamaDuaKonteks = []string{"T_GENERAL_KOMITE", "T_KOMITE_KOMITELIST"}
 // tidak berlaku adalah lubang, bukan keringanan.
 var tabelDikecualikan = map[string]string{}
 
-// tabelBukanMilikKita mendaftar tabel yang STRUKTUR gambarkan tetapi yang
-// SENGAJA tidak kita buat, beserta alasannya.
+// tabelBukanMilikKita (`modulmd_test.go`) mendaftar tabel yang STRUKTUR
+// gambarkan tetapi yang SENGAJA tidak kita buat, beserta alasannya - dari bab
+// "Tabel warisan: dibaca, tidak dibuat" `MODUL.md` setiap modul.
 //
 // ⛔ MEKANISME YANG BERBEDA dari tabelDikecualikan, dan bedanya penting.
 // `tabelDikecualikan` berarti "tabelnya kita buat, kolomnya saja yang tidak
 // dibandingkan" - dan `TestTabelDikecualikanTetapDibuat` menegakkannya.
-// Daftar di bawah berarti "tabelnya BUKAN milik kita": ia lahir di sistem
-// lama, kita hanya membacanya. Memakai mekanisme pertama untuk maksud kedua
-// akan membuat penjaga itu menuntut kita membuat tabel orang lain.
+// Pernyataan tabel warisan berarti "tabelnya BUKAN milik kita": ia lahir di
+// sistem lama, kita hanya membacanya. Memakai mekanisme pertama untuk maksud
+// kedua akan membuat penjaga itu menuntut kita membuat tabel orang lain.
 //
 // ⚠️ Arah sebaliknya dijaga pula: bila DDL kelak MEMBUAT salah satunya,
 // TestTabelBukanMilikKitaTidakDibuat berbunyi - sebab yang berubah saat itu
 // adalah kepemilikannya, dan itu keputusan work owner.
-var tabelBukanMilikKita = map[string]string{
-	"M_TEMPUPLOADLIFE": "tabel warisan penampung unggahan CSV, ditulis " +
-		"`RDBList/InsertDataUploadLife.xml` di sistem lama; dibaca tiket 04, tidak dibuat",
-	// ⛔ Treaty Contract Out tco4 (keputusan work owner 29-09-2026): "khusus
-	// modul treaty contract out tidak ada tabel baru sama sekali". Modul ini
-	// MENULIS dan membaca tabel-tabel ini persis seperti RDB XML-nya - tetapi
-	// tidak membuatnya. TestTabelBukanMilikKitaTidakDibuat menolak migrasi
-	// yang membuatnya.
-	"TREATYYEAR":           alasanWarisanTCO,
-	"TREATYCONTRACT":       alasanWarisanTCO,
-	"TREATYREINSURER":      alasanWarisanTCO,
-	"MTREATYSECURITY":      alasanWarisanTCO,
-	"TREATYBUSINESS":       alasanWarisanTCO,
-	"PROPORTIONALARRG":     alasanWarisanTCO,
-	"M_ATTACHMENTTREATY_2": alasanWarisanTCO,
-	"T_STORAGE_IMAGE":      alasanWarisanTCO,
-}
-
-const alasanWarisanTCO = "tabel warisan POOLDATA yang Treaty Contract Out tulis dan baca " +
-	"tanpa membuatnya (tco4, keputusan work owner 29-09-2026)"
-
-// namaTabelBeda memetakan nama tabel di STRUKTUR ke nama yang dipakai DDL.
-var namaTabelBeda = map[string]string{
-	// Keputusan work owner 26 September 2026 (brief ronde 2 bab 2j): nama
-	// STRUKTUR berukuran 36 byte, dan Oracle di bawah 12.2 menolak pengenal
-	// lebih dari 30 byte dengan ORA-00972. Nama DDL berukuran 29 byte.
-	"T_CLAIMLF_ADJUSTMENT_SPREADING_RETRO": "T_CLAIMLF_ADJ_SPREADING_RETRO",
-}
-
-// namaKolomBeda memetakan nama kolom di STRUKTUR ke nama yang dipakai DDL.
-var namaKolomBeda = map[string]string{
-	// Keputusan work owner 26 September 2026 (brief ronde 2 bab 2j): 33 dan 35
-	// byte di STRUKTUR, keduanya melewati batas 30 byte. Nama penggantinya
-	// bukan karangan - STRUKTUR sendiri mencatat keduanya berasal dari korpus
-	// RETRO_VALUATION_BEGIN_DATE dan RETRO_VALUATION_EXPIRED_DATE.
-	"RETROCESSION_VALUATION_BEGIN_DATE":   "RETRO_VALUATION_BEGIN_DATE",
-	"RETROCESSION_VALUATION_EXPIRED_DATE": "RETRO_VALUATION_EXPIRED_DATE",
-}
+// Nama tabel dan kolom STRUKTUR yang SENGAJA ditulis lain di DDL dinyatakan di
+// bab "Nama STRUKTUR yang berbeda di DDL" `MODUL.md` modul pemiliknya
+// (`namaStrukturBeda`, `modulmd_test.go`) - mis. batas 30 byte pengenal Oracle
+// di bawah 12.2 (ORA-00972).
 
 var (
 	polaJudulTabel = regexp.MustCompile(`^##\s+([A-Z][A-Z0-9_]+)\s*$`)
@@ -132,7 +109,22 @@ var (
 // kolomMenurutStruktur membaca dokumen STRUKTUR menjadi peta tabel -> kolom.
 func kolomMenurutStruktur(t *testing.T) map[string][]string {
 	t.Helper()
-	isi, err := os.ReadFile(filepath.FromSlash(letakStruktur))
+	hasil := map[string][]string{}
+	for _, letak := range letakStruktur(t) {
+		bacaSatuStruktur(t, letak, hasil)
+	}
+	return hasil
+}
+
+// bacaSatuStruktur menambahkan kolom satu dokumen STRUKTUR ke peta bersama.
+//
+// ⚠️ Tabel yang disebut LEBIH DARI SATU dokumen tidak digabung diam-diam:
+// nama kolom yang sudah ada dilewati, dan kesepakatan antardokumen diperiksa
+// `TestDokumenSTRUKTURSepakatAtasTabelBersama`. Menggabungkan kolomnya akan
+// menyembunyikan dokumen mana yang sudah usang.
+func bacaSatuStruktur(t *testing.T, letak string, hasil map[string][]string) {
+	t.Helper()
+	isi, err := os.ReadFile(filepath.FromSlash(letak))
 	if err != nil {
 		// Sengaja gagal, bukan melewati. Dokumen ini bagian dari repositori
 		// yang sama; bila ia hilang, test inilah yang harus memberitahu.
@@ -227,6 +219,9 @@ func kolomMenurutDDL(t *testing.T) map[string][]string {
 func TestKolomDDLCocokDenganStruktur(t *testing.T) {
 	struktur := kolomMenurutStruktur(t)
 	ddl := kolomMenurutDDL(t)
+	namaTabelBeda := namaStrukturBeda(t, "tabel")
+	namaKolomBeda := namaStrukturBeda(t, "kolom")
+	tabelBukanMilikKita := tabelBukanMilikKita(t)
 
 	if len(ddl) == 0 {
 		t.Fatal("tidak satu pun CREATE TABLE terbaca dari berkas migrasi")
@@ -312,16 +307,34 @@ func TestKolomDDLCocokDenganStruktur(t *testing.T) {
 // membandingkannya dengan dirinya sendiri tidak membuktikan apa pun tentang
 // kesepakatan kedua konteks.
 func TestDokumenSTRUKTURSepakatAtasTabelBersama(t *testing.T) {
-	if len(letakStruktur) < 2 {
+	letak := letakStruktur(t)
+	if len(letak) < 2 {
 		t.Skip("hanya satu dokumen STRUKTUR; tidak ada yang dibandingkan")
 	}
-	perDokumen := make([]map[string][]string, 0, len(letakStruktur))
-	for _, letak := range letakStruktur {
+	perDokumen := make([]map[string][]string, 0, len(letak))
+	for _, l := range letak {
 		satu := map[string][]string{}
-		bacaSatuStruktur(t, letak, satu)
+		bacaSatuStruktur(t, l, satu)
 		perDokumen = append(perDokumen, satu)
 	}
-	for _, tabel := range tabelBersamaDuaKonteks {
+	// Tabel bersama DITURUNKAN: yang kolomnya digambarkan lebih dari satu dokumen.
+	sebutan := map[string]int{}
+	for _, d := range perDokumen {
+		for tabel, kolom := range d {
+			if len(kolom) > 0 {
+				sebutan[tabel]++
+			}
+		}
+	}
+	var tabelBersama []string
+	for tabel, n := range sebutan {
+		if n > 1 {
+			tabelBersama = append(tabelBersama, tabel)
+		}
+	}
+	sort.Strings(tabelBersama)
+	t.Logf("tabel yang digambarkan lebih dari satu dokumen STRUKTUR: %v", tabelBersama)
+	for _, tabel := range tabelBersama {
 		var acuan []string
 		var acuanDari string
 		for i, d := range perDokumen {
@@ -330,7 +343,7 @@ func TestDokumenSTRUKTURSepakatAtasTabelBersama(t *testing.T) {
 				continue
 			}
 			if acuan == nil {
-				acuan, acuanDari = kolom, letakStruktur[i]
+				acuan, acuanDari = kolom, letak[i]
 				continue
 			}
 			if !reflect.DeepEqual(acuan, kolom) {
@@ -338,7 +351,7 @@ func TestDokumenSTRUKTURSepakatAtasTabelBersama(t *testing.T) {
 					"  %s: %v\n  %s: %v\n"+
 					"Keduanya batas antara dua konteks; bentuk yang berbeda berarti "+
 					"salah satunya sudah usang.", tabel, acuanDari, acuan,
-					letakStruktur[i], kolom)
+					letak[i], kolom)
 			}
 		}
 		if acuan == nil {
@@ -365,14 +378,15 @@ func TestTabelDikecualikanTetapDibuat(t *testing.T) {
 // work owner, bukan keputusan yang boleh menyelinap lewat satu berkas migrasi.
 func TestTabelBukanMilikKitaTidakDibuat(t *testing.T) {
 	ddl := kolomMenurutDDL(t)
+	tabelBukanMilikKita := tabelBukanMilikKita(t)
 	if len(tabelBukanMilikKita) == 0 {
 		t.Skip("daftarnya kosong; tidak ada yang dijaga")
 	}
 	for nama, sebab := range tabelBukanMilikKita {
 		if _, ada := ddl[nama]; ada {
 			t.Errorf("%s dibuat migrasi, padahal ia dinyatakan bukan milik kita: %s.\n"+
-				"Bila kepemilikannya memang berpindah, cabut namanya dari "+
-				"tabelBukanMilikKita beserta alasannya - itu keputusan work owner.",
+				"Bila kepemilikannya memang berpindah, cabut barisnya dari bab "+
+				"\"Tabel warisan\" MODUL.md modulnya - itu keputusan work owner.",
 				nama, sebab)
 		}
 	}
@@ -448,7 +462,7 @@ func golonganStruktur(tipe string) string {
 func tipeMenurutStruktur(t *testing.T) map[string]map[string]string {
 	t.Helper()
 	hasil := map[string]map[string]string{}
-	for _, letak := range letakStruktur {
+	for _, letak := range letakStruktur(t) {
 		bacaSatuTipe(t, letak, hasil)
 	}
 	return hasil
@@ -586,6 +600,8 @@ func terapkanAlterModify(t *testing.T, hasil map[string]map[string]string) {
 func TestGolonganTipeDDLCocokDenganStruktur(t *testing.T) {
 	struktur := tipeMenurutStruktur(t)
 	ddl := tipeMenurutDDL(t)
+	namaTabelBeda := namaStrukturBeda(t, "tabel")
+	namaKolomBeda := namaStrukturBeda(t, "kolom")
 	diperiksa := 0
 
 	for tabelStruktur, kolom := range struktur {

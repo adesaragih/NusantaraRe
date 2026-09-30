@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -9,20 +9,38 @@ import { FOLDER_KORPUS } from './katalogKorpus'
 import { HALAMAN_BERANDA } from '../inti/frontend/lib/daftarMenu'
 import { ENTRI_MENU, MODUL_FRONTEND } from './daftar'
 
-// Penjaga DUA ARAH: isi M_NAV_MENU (migrasi `inti` 900-949) ↔ `frontend/daftar.ts`
-// (brief menu 30-09-2026 §3). SELURUH migrasi maju `inti/migrations/` dibaca,
-// bukan 900 saja: menu berikutnya lahir di 901+ (panduan deploy bab 6).
+// Penjaga DUA ARAH: isi M_NAV_MENU ↔ `frontend/daftar.ts` (brief menu
+// 30-09-2026 §3). Yang dibaca: isi awal `inti` 900 DAN berkas slot menu setiap
+// modul di folder migrasinya sendiri (struktur tim satu folder per modul, R3;
+// panduan deploy bab 6) - setiap migrasi maju yang menyebut M_NAV_MENU. Bahwa
+// hanya 900 dan slot menu yang boleh menyebutnya dijaga
+// `inti/backend/penjaga/rentang_test.go`.
 //
 // ⛔ Kenapa statik: sidebar dirakit dari `GET /api/menu` dan DIPOTONG dengan
 // rute frontend - baris tabel tanpa rute tidak tampil, rute tanpa baris
 // tabel juga tidak. Keduanya diam di layar (hanya satu baris konsol). Uji
 // inilah yang membuatnya berbunyi sebelum sampai ke layar.
 
-const FOLDER_MIGRASI_INTI = join(AKAR_APLIKASI, 'inti', 'backend', 'migrations')
-const SQL = readdirSync(FOLDER_MIGRASI_INTI)
-  .filter((n) => n.endsWith('.sql') && !n.endsWith('_down.sql'))
-  .sort()
-  .map((n) => readFileSync(join(FOLDER_MIGRASI_INTI, n), 'utf8'))
+/** Folder migrasi `inti` dan setiap modul. */
+const FOLDER_MIGRASI = [
+  join(AKAR_APLIKASI, 'inti', 'backend', 'migrations'),
+  ...readdirSync(join(AKAR_APLIKASI, 'modul'), { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => join(AKAR_APLIKASI, 'modul', d.name, 'backend', 'migrations'))
+    .filter((d) => existsSync(d)),
+]
+/** Setiap migrasi maju yang menyebut M_NAV_MENU, urutan nama berkas = urutan pelari. */
+const BERKAS_MENU = FOLDER_MIGRASI.flatMap((d) =>
+  readdirSync(d)
+    .filter((n) => n.endsWith('.sql') && !n.endsWith('_down.sql'))
+    .map((n) => ({ nama: n, isi: readFileSync(join(d, n), 'utf8') })),
+)
+  .filter((b) => b.isi.includes('M_NAV_MENU'))
+  .sort((a, b) => (a.nama < b.nama ? -1 : a.nama > b.nama ? 1 : 0))
+const SQL = BERKAS_MENU.map((b) => b.isi).join('\n')
+/** Isi awal saja - 900, milik inti. */
+const SQL_900 = BERKAS_MENU.filter((b) => b.nama.startsWith('900_'))
+  .map((b) => b.isi)
   .join('\n')
 
 const POLA_KELOMPOK =
@@ -32,6 +50,7 @@ const POLA_BUTIR =
 
 const kelompok = [...SQL.matchAll(POLA_KELOMPOK)].map((m) => ({ kode: m[1]!, label: m[2]!, dimigrasi: m[5] === '1' }))
 const butir = [...SQL.matchAll(POLA_BUTIR)].map((m) => ({ kode: m[1]!, label: m[2]!, induk: m[3]! }))
+const butirIsiAwal = [...SQL_900.matchAll(POLA_BUTIR)]
 const rute = ENTRI_MENU.filter((e) => e.modul !== HALAMAN_BERANDA)
 
 describe('isi menu migrasi inti ↔ daftar.ts, dua arah', () => {
@@ -39,7 +58,11 @@ describe('isi menu migrasi inti ↔ daftar.ts, dua arah', () => {
     // INSERT berbentuk lain adalah baris yang uji ini tidak lihat.
     expect(kelompok.length + butir.length).toBe((SQL.match(/^INSERT INTO /gm) ?? []).length)
     expect(kelompok).toHaveLength(20)
-    expect(butir).toHaveLength(5)
+    // Isi awal 900: lima butir. Butir berikutnya lahir di slot menu modulnya;
+    // jumlah seluruhnya dikunci `Shell.test.ts` (menu yang tidak ada di sistem
+    // lama adalah menu yang dikarang).
+    expect(BERKAS_MENU.map((b) => b.nama)).toContain('900_m_nav_menu.sql')
+    expect(butirIsiAwal).toHaveLength(5)
   })
 
   it('setiap KODE butir isi menu punya rute di daftar.ts', () => {

@@ -16,172 +16,31 @@ package penjaga
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
 
-// suntikan adalah satu pasangan: penyusun layanan, dan yang wajib menyertainya.
-type suntikan struct {
-	// penyusun adalah pemanggilan yang mengembalikan layanan ber-stub.
-	penyusun string
-	// wajib adalah penyuntikan yang harus muncul di fungsi yang sama.
-	wajib []string
-}
-
-// petaSuntikan memasangkan tiap berkas handler dengan kewajibannya.
+// petaSuntikan (`modulmd_test.go`) memasangkan tiap berkas handler dengan
+// kewajibannya - dari bab "Penyuntikan wajib di handler" `MODUL.md` setiap
+// modul.
 //
 // ⚠️ Didaftar per berkas, bukan dicari otomatis. Daftar yang dirakit sendiri
 // oleh test dari kode yang diujinya akan selalu cocok dengan kode itu - dan
-// tidak menjaga apa pun.
-var petaSuntikan = map[string][]suntikan{
-	"akseptasi.go": {{
-		penyusun: "svc.Akseptasi()",
-		wajib: []string{
-			"DenganJejak(jejak.PerekamJejakOracle(svc))",
-			"DenganPenerbit(services.PenerbitAkseptasiOracle(svc))",
-		},
-	}},
-	"komite.go": {{
-		penyusun: "svc.Komite()",
-		wajib: []string{
-			"DenganJejak(jejak.PerekamJejakOracle(svc))",
-			"DenganRoster(services.RosterKomiteOracle(svc))",
-			"DenganKasus(services.KasusKomiteOracle(svc))",
-			"DenganPenyalur(services.PenyalurClaimLifeOracle(svc))",
-		},
-	}},
-	"putaran.go": {{
-		penyusun: "svc.Putaran()",
-		wajib:    []string{"DenganJejak(jejak.PerekamJejakOracle(svc))"},
-	}},
-	"register.go": {{
-		penyusun: "svc.Pendaftaran()",
-		wajib:    []string{"DenganPenomor(services.PenomorCounterOracle(svc))"},
-	}},
-	"tolak.go": {{
-		penyusun: "svc.Status()",
-		wajib:    []string{"DenganJejak(jejak.PerekamJejakOracle(svc))"},
-	}},
-	// Treaty Contract Out tiket 02 (aditif 28-09-2026): pembaca master jenis
-	// reasuransi bawaannya gagal terang; handler memasang Oracle-nya.
-	"rute_treaty_contract_out.go": {
-		{
-			penyusun: "svc.JenisReasuransiTreaty()",
-			wajib:    []string{"DenganPembaca(services.PembacaJenisReasuransiOracle(svc))"},
-		},
-		// Tiket 03: master grup treaty dan gudang tahun treaty.
-		{
-			penyusun: "svc.GrupTreaty()",
-			wajib:    []string{"DenganPembaca(services.PembacaGrupTreatyOracle(svc))"},
-		},
-		{
-			penyusun: "svc.TahunTreatyTCO()",
-			wajib: []string{"DenganGudang(services.GudangTahunTreatyOracle(svc))",
-				"DenganGrup(services.PembacaGrupTreatyOracle(svc))"},
-		},
-	},
-	// Tiket 04 (aditif 29-09-2026): gudang kontrak, tahun induk, daftar jenis.
-	"tco_kontrak.go": {{
-		penyusun: "svc.KontrakTreatyTCO()",
-		wajib: []string{
-			"DenganGudang(services.GudangKontrakOracle(svc))",
-			"DenganTahun(services.GudangTahunTreatyOracle(svc))",
-			"DenganJenis(services.PembacaJenisReasuransiOracle(svc))",
-		},
-	}},
-	// Tiket 05 (aditif 29-09-2026): gudang reinsurer, kontrak, tahun, master AGENT.
-	"tco_reinsurer.go": {{
-		penyusun: "svc.ReinsurerTCO()",
-		wajib: []string{
-			"DenganGudang(services.GudangReinsurerOracle(svc))",
-			"DenganKontrak(services.PemegangKontrakOracle(svc))",
-			"DenganTahun(services.GudangTahunTreatyOracle(svc))",
-			"DenganMaster(services.MasterReinsurerOracle(svc))",
-		},
-	}},
-	// Tiket 07 (aditif 29-09-2026): gudang bisnis, kontrak, tahun, master BUSINESS.
-	"tco_business.go": {{
-		penyusun: "svc.BusinessTCO()",
-		wajib: []string{
-			"DenganGudang(services.GudangBusinessOracle(svc))",
-			"DenganKontrak(services.PemegangKontrakOracle(svc))",
-			"DenganTahun(services.GudangTahunTreatyOracle(svc))",
-			"DenganMaster(services.MasterBusinessOracle(svc))",
-		},
-	}},
-	// Tiket 08 (aditif 29-09-2026): gudang klausul, tiga master, tahun, jenis reasuransi.
-	"tco_klausul.go": {{
-		penyusun: "svc.KlausulTCO()",
-		wajib: []string{
-			"DenganGudang(services.GudangKlausulOracle(svc))",
-			"DenganMaster(services.MasterKlausulOracle(svc))",
-			"DenganTahun(services.PengunciTahunOracle(svc))",
-			"DenganJenis(services.PembacaJenisReasuransiOracle(svc))",
-			"DenganKurs(services.PembacaKursOracle(svc))",
-		},
-	}},
-	// Tiket 10 (aditif 29-09-2026): pelaksana kaskade, kontrak, tahun, reinsurer, jejak.
-	"tco_kaskade.go": {{
-		penyusun: "svc.KaskadeTCO()",
-		wajib: []string{
-			"DenganKaskade(services.KaskadeOracle(svc))",
-			"DenganKontrak(services.PemegangKontrakOracle(svc))",
-			"DenganTahun(services.GudangTahunTreatyOracle(svc))",
-			"DenganReinsurer(services.GudangReinsurerOracle(svc))",
-			// tco4: nol jejak modul (T_TREATYCO_JEJAK dibuang; Pega tidak mencatatnya).
-		},
-	}},
-	// Tiket 11 (aditif 29-09-2026): tahun, master kurs, master mata uang.
-	"tco_kurs.go": {{
-		penyusun: "svc.KursTCO()",
-		wajib: []string{
-			"DenganTahun(services.GudangTahunTreatyOracle(svc))",
-			"DenganMaster(services.MasterKursOracle(svc))",
-			"DenganMataUang(services.MataUangOracle(svc))",
-		},
-	}},
-	// Tiket 06 (aditif 29-09-2026): gudang security, reinsurer induk, kontrak, tahun, master AGENT.
-	"tco_security.go": {{
-		penyusun: "svc.SecurityTCO()",
-		wajib: []string{
-			"DenganGudang(services.GudangSecurityOracle(svc))",
-			"DenganReinsurer(services.GudangReinsurerOracle(svc))",
-			"DenganKontrak(services.PemegangKontrakOracle(svc))",
-			"DenganTahun(services.GudangTahunTreatyOracle(svc))",
-			"DenganMaster(services.MasterReinsurerOracle(svc))",
-		},
-	}},
-	// Tiket 12 (aditif 29-09-2026): lima pasangan lampiran; bawaannya gagal terang.
-	"tco_lampiran.go": {{
-		penyusun: "svc.LampiranTahunTCO()",
-		wajib: []string{
-			"DenganGudang(services.GudangLampiranOracle(svc))",
-			"DenganKategori(services.KategoriLampiranOracle(svc))",
-			"DenganAntrean(services.AntreanLampiranOracle(svc))",
-			// OQ-TCO-08: pemilih stub/nyata, bukan stub mati.
-			"DenganPenyimpanan(services.PenyimpananLampiranTCO(svc))",
-			"DenganTahun(services.GudangTahunTreatyOracle(svc))",
-		},
-	}},
-}
+// tidak menjaga apa pun. Struktur tim satu folder per modul (30-09-2026):
+// daftarnya tetap ditulis tangan, oleh MODUL pemilik handler-nya, bukan di sini.
 
-// bacaHandler membaca satu berkas handler, di modul mana pun ia tinggal.
-//
-// Refactor bentuk B (30-09-2026): peta di atas memakai nama berkas; dulu
-// dibaca dari folder yang sama, kini dicari di folder handlers semua modul.
-func bacaHandler(t *testing.T, nama string) ([]byte, error) {
-	t.Helper()
-	jalur, ada := cariHandler(t, nama)
-	if !ada {
-		return nil, os.ErrNotExist
-	}
-	return os.ReadFile(jalur)
+// bacaHandler membaca satu berkas handler; `rel` jalur relatif akar aplikasi
+// (`modul/<nama>/backend/handlers/<berkas>`).
+func bacaHandler(rel string) ([]byte, error) {
+	return os.ReadFile(filepath.Join(akarAplikasi, filepath.FromSlash(rel)))
 }
 
 func TestHandlerMenyuntikkanImplementasiNyata(t *testing.T) {
 	diperiksa := 0
-	for berkas, daftar := range petaSuntikan {
-		isi, err := bacaHandler(t, berkas)
+	peta := petaSuntikan(t)
+	for berkas, daftar := range peta {
+		isi, err := bacaHandler(berkas)
 		if err != nil {
 			t.Errorf("membaca %s: %v", berkas, err)
 			continue
@@ -207,7 +66,7 @@ func TestHandlerMenyuntikkanImplementasiNyata(t *testing.T) {
 	if diperiksa == 0 {
 		t.Fatal("nol penyuntikan diperiksa; pembacanya yang rusak")
 	}
-	t.Logf("%d penyuntikan wajib diperiksa di %d berkas", diperiksa, len(petaSuntikan))
+	t.Logf("%d penyuntikan wajib diperiksa di %d berkas", diperiksa, len(peta))
 }
 
 // Dan cabang 501-nya memang sudah tidak ada lagi.
@@ -224,8 +83,8 @@ func TestNolCabang501StubDiHandler(t *testing.T) {
 		"ErrResolverBelumDiputuskan",
 		"ErrAntreanBelumDiputuskan",
 	}
-	for berkas := range petaSuntikan {
-		isi, err := bacaHandler(t, berkas)
+	for berkas := range petaSuntikan(t) {
+		isi, err := bacaHandler(berkas)
 		if err != nil {
 			t.Errorf("membaca %s: %v", berkas, err)
 			continue

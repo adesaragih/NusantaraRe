@@ -33,7 +33,7 @@ func (b berkasMigrasiDisk) ReadFile(nama string) ([]byte, error) { return fs.Rea
 // ReadDir membaca isi folder, jalur `migrations`.
 func (b berkasMigrasiDisk) ReadDir(nama string) ([]fs.DirEntry, error) { return fs.ReadDir(b.FS, nama) }
 
-// berkasMigrasi - folder `migrations/` modul ini (050-079).
+// berkasMigrasi - folder `migrations/` modul ini (050-099, MODUL.md).
 var berkasMigrasi = berkasMigrasiDisk{os.DirFS("..")}
 
 // seluruhSQL - isi setiap langkah migrasi modul ini, per nama berkas.

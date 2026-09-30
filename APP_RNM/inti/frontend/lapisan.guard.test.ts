@@ -4,7 +4,7 @@ import { dirname, resolve } from 'node:path'
 import ts from 'typescript'
 import { describe, expect, it } from 'vitest'
 
-import { berkasTS, relatifAplikasi } from './uji/sumber'
+import { akarSumberFrontend, berkasTS, relatifAplikasi } from './uji/sumber'
 
 // Penjaga LAPISAN frontend - refactor bentuk B paket 8 (30-09-2026).
 //
@@ -63,8 +63,14 @@ describe('lapisan frontend: inti <- modul <- aplikasi', () => {
     for (const { dari } of impor) perLapis.set(lapisan(dari), (perLapis.get(lapisan(dari)) ?? 0) + 1)
     // ⛔ Penjaga yang membaca nol impor di satu lapis lulus atas apa pun.
     expect(perLapis.get('inti') ?? 0).toBeGreaterThan(30)
-    for (const m of ['claimlife', 'premiumlistlife', 'komiteclaimlife', 'treatycontractout']) {
-      expect(perLapis.get(`modul:${m}`) ?? 0, `impor modul ${m}`).toBeGreaterThan(10)
+    // Setiap modul yang punya `frontend/` - dari folder, bukan daftar nama:
+    // modul baru ikut terperiksa tanpa menyunting penjaga ini.
+    const modul = akarSumberFrontend()
+      .map((a) => /^modul\/([^/]+)\/frontend$/.exec(relatifAplikasi(a))?.[1])
+      .filter((m): m is string => m !== undefined)
+    expect(modul.length, 'modul berfrontend').toBeGreaterThanOrEqual(4)
+    for (const m of modul) {
+      expect(perLapis.get(`modul:${m}`) ?? 0, `impor modul ${m}`).toBeGreaterThan(0)
     }
     const langgar = impor
       .map((i) => ({ ...i, alasan: pelanggaranLapisan(i.dari, i.ke) }))
@@ -74,22 +80,23 @@ describe('lapisan frontend: inti <- modul <- aplikasi', () => {
   })
 
   it('aturannya menggigit dua arah', () => {
+    // ⛔ Nol nama modul sungguhan: `alfa`/`beta` tiruan.
     const kasus: [string, string, boolean][] = [
-      ['modul/claimlife/frontend/pages/X.tsx', 'modul/premiumlistlife/frontend/api.ts', false],
-      ['modul/komiteclaimlife/frontend/pages/X.test.ts', 'modul/claimlife/frontend/labels.ts', false],
-      ['modul/komiteclaimlife/frontend/rute.tsx', 'frontend/daftar.ts', false],
-      ['modul/komiteclaimlife/frontend/rute.tsx', 'frontend/App.tsx', false],
-      ['modul/komiteclaimlife/frontend/rute.tsx', 'modul/komiteclaimlife/frontend/pages/InboxKomite.tsx', true],
-      ['modul/komiteclaimlife/frontend/api.ts', 'inti/frontend/klien.ts', true],
+      ['modul/alfa/frontend/pages/X.tsx', 'modul/beta/frontend/api.ts', false],
+      ['modul/beta/frontend/pages/X.test.ts', 'modul/alfa/frontend/labels.ts', false],
+      ['modul/beta/frontend/rute.tsx', 'frontend/daftar.ts', false],
+      ['modul/beta/frontend/rute.tsx', 'frontend/App.tsx', false],
+      ['modul/beta/frontend/rute.tsx', 'modul/beta/frontend/pages/Inbox.tsx', true],
+      ['modul/beta/frontend/api.ts', 'inti/frontend/klien.ts', true],
       ['inti/frontend/components/Shell.tsx', 'frontend/daftar.ts', false],
-      ['inti/frontend/lib/daftarMenu.ts', 'modul/treatycontractout/frontend/labels.ts', false],
+      ['inti/frontend/lib/daftarMenu.ts', 'modul/alfa/frontend/labels.ts', false],
       ['inti/frontend/components/Shell.tsx', 'inti/frontend/lib/daftarMenu.ts', true],
-      ['frontend/daftar.ts', 'modul/treatycontractout/frontend/rute.tsx', true],
-      ['frontend/App.tsx', 'modul/claimlife/frontend/api.ts', true],
-      // Tabrakan awalan: `komiteclaimlifex` diawali nama modul ini, tetapi modul LAIN.
-      ['modul/komiteclaimlifex/frontend/api.ts', 'modul/komiteclaimlife/frontend/api.ts', false],
+      ['frontend/daftar.ts', 'modul/alfa/frontend/rute.tsx', true],
+      ['frontend/App.tsx', 'modul/alfa/frontend/api.ts', true],
+      // Tabrakan awalan: `betax` diawali nama modul ini, tetapi modul LAIN.
+      ['modul/betax/frontend/api.ts', 'modul/beta/frontend/api.ts', false],
       // Berkas `modul/<nama>/` di LUAR frontend/ bukan kode frontend modul itu.
-      ['modul/claimlife/frontend/api.ts', 'modul/claimlife/docs/x.ts', false],
+      ['modul/alfa/frontend/api.ts', 'modul/alfa/docs/x.ts', false],
     ]
     for (const [dari, ke, boleh] of kasus) {
       expect(pelanggaranLapisan(dari, ke) === null, `${dari} -> ${ke}`).toBe(boleh)

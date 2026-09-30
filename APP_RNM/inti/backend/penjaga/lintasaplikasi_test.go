@@ -386,13 +386,19 @@ var polaNamaOrangTetap = regexp.MustCompile(
 // membuat BARIS DAFTAR INI SENDIRI cocok dengan polanya - `...Tertanggung:
 // "alasan"` - dan penjaga ini menuduh dirinya sendiri. Sudah terjadi, dua
 // kali, saat penyempitan ini ditulis.
+//
+// Struktur tim satu folder per modul (30-09-2026): paket dan nama konstantanya
+// dinyatakan bab "Pesan verbatim yang bukan nama orang" MODUL.md modul
+// pemiliknya (`pesanVerbatimDinyatakan`), beserta alasannya - tidak di sini.
 func pesanVerbatimYangSah(t *testing.T) []string {
-	return konstantaTeksDiSumber(t, "modul/premiumlistlife/backend/models",
-		// ValidasiUploadPL_act `local.err3` - pesan kolom NAME_OF_INSURED.
-		"PesanNamaTertanggung",
-		// ValidasiUploadPL_act `local.err17` - pesan rujukan master POLICY HOLDER.
-		"PesanPolicyHolder",
-	)
+	var sah []string
+	for paket, nama := range pesanVerbatimDinyatakan(t) {
+		sah = append(sah, konstantaTeksDiSumber(t, paket, nama...)...)
+	}
+	if len(sah) == 0 {
+		t.Fatal("nol pesan verbatim dinyatakan; pembacanya yang rusak")
+	}
+	return sah
 }
 
 // pesanVerbatimDiterima menjawab apakah sebuah nilai ada di daftar itu.

@@ -23,7 +23,7 @@ import (
 	"nusantarare/modul/premiumlistlife/backend/services"
 )
 
-// berkasMigrasi adalah folder `migrations/` modul ini (rentang 050-079),
+// berkasMigrasi adalah folder `migrations/` modul ini (rentang 050-099, MODUL.md),
 // ditanam ke biner. Nama berkas TIDAK berubah dari letak lamanya -
 // `T_MIGRASI` mencatat nama, bukan letak.
 //
