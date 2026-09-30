@@ -160,7 +160,7 @@ func TestSimpanTahunTreatyMenolakIdentitasDariKlien(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, mau := range []string{`masuk.ID != "" && masuk.ID != id`, `tahun treaty baru tidak membawa id`} {
+	for _, mau := range []string{`masuk.ID != "" && masuk.ID != id`, `a new treaty year must not carry an id`} {
 		if !strings.Contains(string(rute), mau) {
 			t.Errorf("gerbang %q tidak ada di handler", mau)
 		}

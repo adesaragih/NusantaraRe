@@ -153,7 +153,7 @@ func TestBusinessGerbang(t *testing.T) {
 	g.dobel = "1000004"
 	_, err := layananBusiness(g).Simpan(context.Background(), pelakuUjiTCO, "1000001", "1000003",
 		services.BusinessMasuk{BizCode: "UJI-B1", IsActive: "1"})
-	if !errors.Is(err, services.ErrBusinessDobel) || !strings.Contains(err.Error(), "Data sudah pernah di Input") {
+	if !errors.Is(err, services.ErrBusinessDobel) || !strings.Contains(err.Error(), "Data has already been entered") {
 		t.Errorf("dobel: %v", err)
 	}
 }
@@ -164,7 +164,7 @@ func TestBusinessHapus(t *testing.T) {
 	l := layananBusiness(g)
 	a, _ := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", "1000003", services.BusinessMasuk{BizCode: "UJI-B1", IsActive: "1"})
 	pesan, err := l.Hapus(context.Background(), pelakuUjiTCO, "1000001", "1000003", a.ID)
-	if err != nil || pesan != "Data Dengan ID "+a.ID+" Berhasil di Hapus" {
+	if err != nil || pesan != "Data with ID "+a.ID+" successfully deleted" {
 		t.Errorf("hapus: %q %v", pesan, err)
 	}
 	if len(g.baris) != 0 {

@@ -36,17 +36,17 @@ import (
 
 var (
 	// ErrGudangKlausulBelumDisuntik - gudang klausul belum dipasang.
-	ErrGudangKlausulBelumDisuntik = errors.New("services: gudang klausul belum disuntik")
+	ErrGudangKlausulBelumDisuntik = errors.New("services: clause store is not injected")
 	// ErrKlausulTidakAda - klausul bukan milik tahun treaty itu (404).
 	ErrKlausulTidakAda = repository.ErrKlausulTidakAda
 	// ErrKlausulDobel - "Data sudah pernah di Input" (409, AC 30).
-	ErrKlausulDobel = errors.New("services: klausul dobel")
+	ErrKlausulDobel = errors.New("services: duplicate clause")
 	// ErrJenisKlausulDiLuarMaster - DescID tidak ada di master TREATYDESC (422).
-	ErrJenisKlausulDiLuarMaster = errors.New("services: jenis klausul tidak ada di master TREATYDESC")
+	ErrJenisKlausulDiLuarMaster = errors.New("services: clause type not in the TREATYDESC master")
 	// ErrKlausulJenisBerubah - pembaruan memindah baris ke jenis/induk lain (400).
-	ErrKlausulJenisBerubah = errors.New("services: pembaruan tidak boleh memindah klausul ke jenis atau induk lain")
+	ErrKlausulJenisBerubah = errors.New("services: an update must not move a clause to another type or parent")
 	// ErrKlausulIndukBeranak - jenis reasuransi induk diubah padahal ia beranak (409).
-	ErrKlausulIndukBeranak = errors.New("services: jenis reasuransi induk tidak dapat diubah selama ia memiliki baris anak")
+	ErrKlausulIndukBeranak = errors.New("services: the parent reinsurance type cannot be changed while it has child rows")
 	// ErrPilihanDiLuarMaster - ID occupation/clause tidak ada di master FIRE (422).
 	ErrPilihanDiLuarMaster = repository.ErrPilihanMasterTidakAda
 )
@@ -55,7 +55,7 @@ var (
 type GalatKlausulDobel struct{ IDLain, Jenis string }
 
 func (g GalatKlausulDobel) Error() string {
-	return fmt.Sprintf("%s: klausul %s yang sama sudah ada (baris %s)", PesanKontrakDobelTCO, g.Jenis, g.IDLain)
+	return fmt.Sprintf("%s: the same %s clause already exists (row %s)", PesanKontrakDobelTCO, g.Jenis, g.IDLain)
 }
 
 // Is membuat `errors.Is(err, ErrKlausulDobel)` benar.
@@ -340,7 +340,7 @@ func (l *KlausulTCO) JenisKlausul(ctx context.Context, pelaku inti.Pelaku, isXOL
 		}
 		if len(t.Aturan) == 0 {
 			// Jenis master tanpa aturan di kode - kalimat untuk pemakai (30-09-2026).
-			t.Catatan = "jenis ini belum dapat disimpan: aturan wajib-isinya belum tersedia"
+			t.Catatan = "this type cannot be saved yet: its required-field rules are not available yet"
 		}
 		hasil = append(hasil, t)
 	}
@@ -424,7 +424,7 @@ func (l *KlausulTCO) Simpan(ctx context.Context, pelaku inti.Pelaku, tahunID str
 	}
 	a, ok := models.CariAturanKlausul(m.DescID, m.Anak, m.Subjenis)
 	if !ok {
-		return HasilKlausulTampil{}, fmt.Errorf("%w: TreatyDescID %q anak %v subjenis %q", models.ErrKlausulJenisTakDikenal,
+		return HasilKlausulTampil{}, fmt.Errorf("%w: TreatyDescID %q child %v subtype %q", models.ErrKlausulJenisTakDikenal,
 			m.DescID, m.Anak, m.Subjenis)
 	}
 	if a.Ditahan != "" {
@@ -438,7 +438,7 @@ func (l *KlausulTCO) Simpan(ctx context.Context, pelaku inti.Pelaku, tahunID str
 	if a.Anak {
 		parent = strings.TrimSpace(m.ParentReinsTypeID)
 		if parent == "" || parent == models.ParentReinsTypeTanpaInduk {
-			return HasilKlausulTampil{}, fmt.Errorf("%w: baris anak wajib menyebut ParentReinsTypeID induknya", galat.ErrPermintaanTidakSah)
+			return HasilKlausulTampil{}, fmt.Errorf("%w: a child row must name its parent ParentReinsTypeID", galat.ErrPermintaanTidakSah)
 		}
 	}
 	k := models.KlausulTreaty{}
@@ -449,7 +449,7 @@ func (l *KlausulTCO) Simpan(ctx context.Context, pelaku inti.Pelaku, tahunID str
 			return HasilKlausulTampil{}, err
 		}
 		if lama.TreatyDescID != a.DescID || lama.ParentReinsTypeID != parent {
-			return HasilKlausulTampil{}, fmt.Errorf("%w: baris %s", ErrKlausulJenisBerubah, id)
+			return HasilKlausulTampil{}, fmt.Errorf("%w: row %s", ErrKlausulJenisBerubah, id)
 		}
 		// Medan di luar form (Kurs, Layer*, SpreadingOrder, ...) dipertahankan.
 		k = lama
@@ -460,7 +460,7 @@ func (l *KlausulTCO) Simpan(ctx context.Context, pelaku inti.Pelaku, tahunID str
 	k.UserID, k.TglUpdate = pelaku.AkunID, l.jam()
 	for _, turunan := range a.Turunan {
 		if _, dikirim := m.Medan[turunan]; dikirim {
-			return HasilKlausulTampil{}, fmt.Errorf("%w: %s dihitung server, tidak dikirim klien",
+			return HasilKlausulTampil{}, fmt.Errorf("%w: %s is computed by the server, not sent by the client",
 				models.ErrMedanBukanMilikJenis, turunan)
 		}
 	}
@@ -524,7 +524,7 @@ func (l *KlausulTCO) Simpan(ctx context.Context, pelaku inti.Pelaku, tahunID str
 				return err
 			}
 			if len(anak) > 0 {
-				return fmt.Errorf("%w: induk %s memiliki %d baris anak", ErrKlausulIndukBeranak, k.ID, len(anak))
+				return fmt.Errorf("%w: parent %s has %d child rows", ErrKlausulIndukBeranak, k.ID, len(anak))
 			}
 		}
 		if k.ID == "" {
@@ -597,7 +597,7 @@ func (l *KlausulTCO) Pilihan(ctx context.Context, pelaku inti.Pelaku, master, ca
 	case "clause":
 		tabel = repository.MasterClauseTCO
 	default:
-		return nil, fmt.Errorf("%w: master pilihan %q", galat.ErrPermintaanTidakSah, master)
+		return nil, fmt.Errorf("%w: option master %q", galat.ErrPermintaanTidakSah, master)
 	}
 	d, err := l.master.CariPilihan(ctx, tabel, cari)
 	if err != nil {

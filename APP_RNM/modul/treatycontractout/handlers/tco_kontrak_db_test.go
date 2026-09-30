@@ -56,7 +56,7 @@ func TestKontrakTreatyLingkaranPenuh(t *testing.T) {
 
 	// Dobel: jenis yang sama di tahun yang sama.
 	kode, badan = u.minta(t, http.MethodPost, dasar, masuk, true)
-	if kode != http.StatusConflict || !strings.Contains(badan, "Data sudah pernah di Input") || !strings.Contains(badan, k.ID) {
+	if kode != http.StatusConflict || !strings.Contains(badan, "Data has already been entered") || !strings.Contains(badan, k.ID) {
 		t.Errorf("dobel: %d %s", kode, badan)
 	}
 	// Gerbang 422.

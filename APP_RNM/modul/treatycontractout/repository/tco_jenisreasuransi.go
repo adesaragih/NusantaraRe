@@ -166,14 +166,14 @@ func (m *MasterJenisReasuransi) DaftarNonLife(ctx context.Context) ([]JenisReasu
 	}
 	rows, err := bacaTCO(ctx, m.db).QueryContext(ctx, q, argJenisReasuransiNonLifeTCO()...)
 	if err != nil {
-		return nil, fmt.Errorf("repository: membaca master jenis reasuransi: %w", err)
+		return nil, fmt.Errorf("repository: reading reinsurance type master: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
 	var out []JenisReasuransiTCO
 	for rows.Next() {
 		var id, note, tipe sql.NullString
 		if err := rows.Scan(&id, &note, &tipe); err != nil {
-			return nil, fmt.Errorf("repository: membaca master jenis reasuransi: %w", err)
+			return nil, fmt.Errorf("repository: reading reinsurance type master: %w", err)
 		}
 		out = append(out, JenisReasuransiTCO{ID: id.String, Note: note.String, Tipe: tipe.String})
 	}

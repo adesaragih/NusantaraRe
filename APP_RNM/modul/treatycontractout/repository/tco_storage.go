@@ -30,7 +30,7 @@ import (
 const MasterFolderImageTCO = "T_FOLDER_IMAGE"
 
 // ErrAppStorageKosongTCO - `T_FOLDER_IMAGE` tidak memberi `APPNAME`.
-var ErrAppStorageKosongTCO = errors.New("repository: APPNAME penyimpanan tidak ada di T_FOLDER_IMAGE")
+var ErrAppStorageKosongTCO = errors.New("repository: storage APPNAME not in T_FOLDER_IMAGE")
 
 func sqlAppStorageTCO(tabel string) string {
 	return fmt.Sprintf(`SELECT APPNAME FROM %s WHERE APPNAME IS NOT NULL FETCH FIRST 1 ROWS ONLY`, tabel)
@@ -63,7 +63,7 @@ func AppStorageTCO(ctx context.Context, d *db.DB) (string, error) {
 		return "", ErrAppStorageKosongTCO
 	}
 	if err != nil {
-		return "", fmt.Errorf("repository: membaca APPNAME penyimpanan: %w", err)
+		return "", fmt.Errorf("repository: reading storage APPNAME: %w", err)
 	}
 	return app.String, nil
 }
@@ -73,7 +73,7 @@ func AppStorageTCO(ctx context.Context, d *db.DB) (string, error) {
 func TokenStorageBerlakuTCO(ctx context.Context, d *db.DB, tx *db.Tx, appName string, saat time.Time,
 	sisaMinimum time.Duration) (string, time.Duration, error) {
 	if tx == nil {
-		return "", 0, errors.New("repository: token penyimpanan menuntut transaksi")
+		return "", 0, errors.New("repository: storage token requires a transaction")
 	}
 	tabel, err := d.Qualify("GCP_IMAGE")
 	if err != nil {
@@ -93,7 +93,7 @@ func TokenStorageBerlakuTCO(ctx context.Context, d *db.DB, tx *db.Tx, appName st
 	}
 	if err != nil {
 		// ⛔ Galat driver tidak diteruskan: pesannya dapat memuat nilai kolom kredensial.
-		return "", 0, fmt.Errorf("repository: membaca token penyimpanan untuk %q", appName)
+		return "", 0, fmt.Errorf("repository: reading storage token for %q", appName)
 	}
 	return kode.String, time.Duration(sisa.Float64) * time.Second, nil
 }

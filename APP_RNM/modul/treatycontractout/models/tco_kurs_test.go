@@ -62,7 +62,7 @@ func TestPilihKursBerlakuTCO(t *testing.T) {
 	// yang dicari - master rusak, bukan "tidak ada kurs".
 	_, err = PilihKursBerlakuTCO(HasilMasterKursTCO{Ditolak: ditolak}, tglKurs("2019-08-01"))
 	if !errors.Is(err, ErrKursTakTerurai) || errors.Is(err, ErrKursTidakAda) ||
-		!strings.Contains(err.Error(), `STARTDATE "2019A801T000000.000 GMT"`) || !strings.Contains(err.Error(), "2 baris") ||
+		!strings.Contains(err.Error(), `STARTDATE "2019A801T000000.000 GMT"`) || !strings.Contains(err.Error(), "2 master rows") ||
 		!strings.Contains(err.Error(), FormatTanggalKursTCO) {
 		t.Errorf("hanya ditolak: %v", err)
 	}
@@ -113,7 +113,7 @@ func TestFormatTanggalKursTCO(t *testing.T) {
 // Pesan VERBATIM `NewTreatyArrEpi.xml` b870.
 func TestGalatKursTidakAdaTCO(t *testing.T) {
 	err := GalatKursTidakAda{TreatyYear: "2026", Tanggal: tglKurs("2026-01-01")}
-	if err.Error() != "Tidak ada Nilai Kurs di Tahun : 2026" || !errors.Is(err, ErrKursTidakAda) {
+	if err.Error() != "No exchange rate for Treaty Year : 2026" || !errors.Is(err, ErrKursTidakAda) {
 		t.Errorf("%q", err.Error())
 	}
 }

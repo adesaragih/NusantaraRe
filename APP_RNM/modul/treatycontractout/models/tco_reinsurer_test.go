@@ -86,7 +86,7 @@ func TestTotalShareTCO(t *testing.T) {
 func TestPeriksaReinsurerTCO(t *testing.T) {
 	r := ReinsurerTreaty{ReinsurerID: " ", PctShare: des(t, "10"), Ricomm: des(t, "5")}
 	if err := PeriksaReinsurerTCO(r); !errors.Is(err, ErrReinsurerKosong) ||
-		!strings.Contains(err.Error(), "Data tidak boleh kosong...!!!") {
+		!strings.Contains(err.Error(), "Data cannot be empty...!!!") {
 		t.Errorf("reinsurer kosong: %v", err)
 	}
 	r.ReinsurerID = "UJI-R1"

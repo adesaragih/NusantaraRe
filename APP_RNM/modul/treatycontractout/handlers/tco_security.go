@@ -62,16 +62,16 @@ func simpanSecurityTCO(svc *services.Service, stub, perbarui bool) http.HandlerF
 		}
 		var masuk services.SecurityMasuk
 		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&masuk); err != nil {
-			galat.Tulis(w, http.StatusBadRequest, "badan permintaan bukan JSON security yang sah")
+			galat.Tulis(w, http.StatusBadRequest, "request body is not valid security JSON")
 			return
 		}
 		id := strings.TrimSpace(masuk.ID)
 		switch {
 		case !perbarui && id != "":
-			galat.Tulis(w, http.StatusBadRequest, "identitas security dibuat server; POST tidak boleh membawa id")
+			galat.Tulis(w, http.StatusBadRequest, "the server assigns the security id; POST must not carry an id")
 			return
 		case perbarui && id != "" && id != r.PathValue("sid"):
-			galat.Tulis(w, http.StatusBadRequest, "id di badan berbeda dari id di jalur")
+			galat.Tulis(w, http.StatusBadRequest, "id in the body differs from id in the path")
 			return
 		case perbarui:
 			masuk.ID = r.PathValue("sid")

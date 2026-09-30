@@ -79,7 +79,7 @@ func (m *MasterKursTCO) BacaBerlaku(ctx context.Context, idCurrency, quarter str
 	// `to_date({InputData.CARI1},'YYYYMMDD')` - CARI1 = `Param.StartDate`.
 	rows, err := bacaTCO(ctx, m.db).QueryContext(ctx, q, tanggal.Format("20060102"), quarter, idCurrency)
 	if err != nil {
-		return h, fmt.Errorf("repository: membaca master %s: %w", MasterKursTahunanTCO, err)
+		return h, fmt.Errorf("repository: reading master %s: %w", MasterKursTahunanTCO, err)
 	}
 	defer func() { _ = rows.Close() }()
 	for rows.Next() {

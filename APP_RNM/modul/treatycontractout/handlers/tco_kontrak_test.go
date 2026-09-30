@@ -64,7 +64,7 @@ func TestJawabGalatKontrakTCO(t *testing.T) {
 	}
 	w := httptest.NewRecorder()
 	jawabGalatTreatyContractOut(w, services.GalatKontrakDobel{IDLain: "1000004", ReinsTypeID: "10003"})
-	if !strings.Contains(w.Body.String(), "Data sudah pernah di Input") || !strings.Contains(w.Body.String(), "1000004") {
+	if !strings.Contains(w.Body.String(), "Data has already been entered") || !strings.Contains(w.Body.String(), "1000004") {
 		t.Errorf("pesan 409: %s", w.Body.String())
 	}
 }

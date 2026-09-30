@@ -103,7 +103,7 @@ func TestLampiranTahunTreatyLingkaranPenuh(t *testing.T) {
 		t.Errorf("kategori asing: %d %s", k, b)
 	}
 	if k, b := u.mintaMultipart(t, dasar, "", "", "CLAUSES", true); k != http.StatusBadRequest ||
-		!strings.Contains(b, "Tidak ada file yg diattach") {
+		!strings.Contains(b, "No file attached") {
 		t.Errorf("tanpa berkas: %d %s", k, b)
 	}
 	if k, b := u.mintaMultipart(t, "/api/treaty-contract-out/tahun/1999999/lampiran", "UJI-slip.pdf", "ISI",
@@ -196,7 +196,7 @@ func TestLampiranTahunTreatyLingkaranPenuh(t *testing.T) {
 	}
 	_ = os.Remove(simpan[0])
 	kode, badan = u.minta(t, http.MethodGet, dasar+"/selaras", nil, true)
-	if kode != http.StatusOK || !strings.Contains(badan, `"total":1`) || !strings.Contains(badan, "rekam tanpa berkas") {
+	if kode != http.StatusOK || !strings.Contains(badan, `"total":1`) || !strings.Contains(badan, "record without a file") {
 		t.Errorf("selaras sesudah berkas hilang: %d %s", kode, badan)
 	}
 	if kode, _, isi = u.ambilMentah(t, dasar+"/"+l.ID+"/isi"); kode != http.StatusConflict {
@@ -205,7 +205,7 @@ func TestLampiranTahunTreatyLingkaranPenuh(t *testing.T) {
 
 	// Hapus tetap berhasil meski berkasnya sudah tidak ada.
 	kode, badan = u.minta(t, http.MethodDelete, dasar+"/"+l.ID, nil, true)
-	if kode != http.StatusOK || strings.Contains(badan, "belum dapat") {
+	if kode != http.StatusOK || strings.Contains(badan, "could not") {
 		t.Fatalf("hapus: %d %s", kode, badan)
 	}
 	kode, badan = u.minta(t, http.MethodGet, dasar, nil, true)

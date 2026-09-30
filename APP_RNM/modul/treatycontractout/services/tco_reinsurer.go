@@ -34,7 +34,7 @@ import (
 
 var (
 	// ErrGudangReinsurerBelumDisuntik - gudang reinsurer belum dipasang.
-	ErrGudangReinsurerBelumDisuntik = errors.New("services: gudang reinsurer belum disuntik")
+	ErrGudangReinsurerBelumDisuntik = errors.New("services: reinsurer store is not injected")
 	// ErrReinsurerTidakAda - reinsurer bukan milik kombinasi kontrak itu (404).
 	ErrReinsurerTidakAda = repository.ErrReinsurerTidakAda
 	// ErrReinsurerDiLuarMaster - ReinsurerID tidak ada di master AGENT aktif (422).
@@ -398,7 +398,7 @@ func (l *ReinsurerTCO) Simpan(ctx context.Context, pelaku inti.Pelaku, tahunID, 
 	if err != nil {
 		return HasilReinsurerTampil{}, err
 	}
-	l.catat(fmt.Sprintf("treaty contract out: reinsurer %s disimpan oleh akun %s", r.ID, pelaku.AkunID))
+	l.catat(fmt.Sprintf("treaty contract out: reinsurer %s saved by account %s", r.ID, pelaku.AkunID))
 	return HasilReinsurerTampil{Reinsurer: TampilReinsurer(r), TotalShare: utils.FormatDecimal(total)}, nil
 }
 

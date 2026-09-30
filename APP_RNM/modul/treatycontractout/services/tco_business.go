@@ -30,13 +30,13 @@ import (
 
 var (
 	// ErrGudangBusinessBelumDisuntik - gudang bisnis belum dipasang.
-	ErrGudangBusinessBelumDisuntik = errors.New("services: gudang bisnis belum disuntik")
+	ErrGudangBusinessBelumDisuntik = errors.New("services: business store is not injected")
 	// ErrBusinessTidakAda - baris bisnis bukan milik kombinasi kontrak itu (404).
 	ErrBusinessTidakAda = repository.ErrBusinessTidakAda
 	// ErrBusinessDiLuarMaster - kode bisnis tidak ada di master BUSINESS (422).
 	ErrBusinessDiLuarMaster = repository.ErrBusinessMasterTidakAda
 	// ErrBusinessDobel - kode bisnis sudah ada pada kombinasi (409).
-	ErrBusinessDobel = errors.New("services: bisnis dobel")
+	ErrBusinessDobel = errors.New("services: duplicate business")
 )
 
 // GalatBusinessDobel menyebut baris mana yang sudah memegang kode itu.
@@ -47,7 +47,7 @@ var (
 type GalatBusinessDobel struct{ IDLain, BizCode string }
 
 func (g GalatBusinessDobel) Error() string {
-	return fmt.Sprintf("%s: kode bisnis %s sudah ada pada baris %s kombinasi ini", PesanKontrakDobelTCO, g.BizCode, g.IDLain)
+	return fmt.Sprintf("%s: business code %s already exists in row %s of this combination", PesanKontrakDobelTCO, g.BizCode, g.IDLain)
 }
 
 // Is membuat `errors.Is(err, ErrBusinessDobel)` benar.
@@ -325,7 +325,7 @@ func (l *BusinessTCO) Simpan(ctx context.Context, pelaku inti.Pelaku, tahunID, k
 	if err != nil {
 		return BusinessTampil{}, err
 	}
-	l.catat(fmt.Sprintf("treaty contract out: business %s disimpan oleh akun %s", b.ID, pelaku.AkunID))
+	l.catat(fmt.Sprintf("treaty contract out: business %s saved by account %s", b.ID, pelaku.AkunID))
 	return TampilBusiness(b), nil
 }
 
@@ -350,5 +350,5 @@ func (l *BusinessTCO) Hapus(ctx context.Context, pelaku inti.Pelaku, tahunID, ko
 	if err != nil {
 		return "", err
 	}
-	return "Data Dengan ID " + id + " Berhasil di Hapus", nil
+	return "Data with ID " + id + " successfully deleted", nil
 }

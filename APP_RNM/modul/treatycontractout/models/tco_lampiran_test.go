@@ -63,8 +63,8 @@ func TestNamaEntriZipLampiranTCO(t *testing.T) {
 		{"1000000001", "kontrak.pdf"}:      "1000000001_kontrak.pdf",
 		{"1000000002", `C:\tmp\slip.xlsx`}: "1000000002_slip.xlsx",
 		{"1000000003", "../../etc/passwd"}: "1000000003_passwd",
-		{"1000000004", ""}:                 "1000000004_berkas",
-		{"1000000005", ".."}:               "1000000005_berkas",
+		{"1000000004", ""}:                 "1000000004_file",
+		{"1000000005", ".."}:               "1000000005_file",
 	}
 	for masuk, mau := range kasus {
 		if dapat := NamaEntriZipLampiranTCO(masuk[0], masuk[1]); dapat != mau {

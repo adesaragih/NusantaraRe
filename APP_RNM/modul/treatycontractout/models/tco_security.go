@@ -40,11 +40,11 @@ const LebarReasSecurityTCO = 10
 var (
 	// ErrSecurityMelampauiLebar - kode security tidak muat di CHAR(10) warisan
 	// (temuan /code-review: tanpa gerbang ini Oracle menjawab ORA-12899 = 500).
-	ErrSecurityMelampauiLebar = errors.New("models: kode security melampaui 10 karakter kolom REAS_SECURITY")
+	ErrSecurityMelampauiLebar = errors.New("models: security code exceeds the 10 characters of column REAS_SECURITY")
 	// ErrSecurityKosong - `Security Name` wajib (b19642/b19693).
-	ErrSecurityKosong = errors.New("models: security wajib dipilih")
+	ErrSecurityKosong = errors.New("models: security must be selected")
 	// ErrSecurityTanpaReinsurer - security selalu menggantung pada reinsurer (AC 17).
-	ErrSecurityTanpaReinsurer = errors.New("models: security harus menggantung pada seorang reinsurer")
+	ErrSecurityTanpaReinsurer = errors.New("models: security must belong to a reinsurer")
 )
 
 // PeriksaSecurityTCO menjalankan gerbang wajib-isi satu baris security.

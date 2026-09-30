@@ -134,7 +134,7 @@ const (
 // alasanDitahan - kalimat untuk PEMAKAI [keputusan work owner 30-09-2026: nol
 // catatan pengembang di layar]. Sebabnya: aturan wajib-isi belum ditetapkan
 // Product + UW (AC 36).
-const alasanDitahan = "jenis %s belum dapat diisi: aturan wajib-isinya belum ditetapkan"
+const alasanDitahan = "type %s cannot be filled in yet: its required-field rules have not been set"
 
 func induk(jenis, desc, sumber string) AturanKlausul {
 	return AturanKlausul{Jenis: jenis, DescID: desc, Medan: medanReinsRpUsd, Wajib: wajibReinsRpUsd,
@@ -213,15 +213,15 @@ var AturanKlausulTCO = []AturanKlausul{
 
 var (
 	// ErrKlausulJenisTakDikenal - DescID/anak/subjenis tanpa aturan di kode.
-	ErrKlausulJenisTakDikenal = errors.New("models: jenis klausul tanpa aturan wajib-isi di kode")
+	ErrKlausulJenisTakDikenal = errors.New("models: clause type has no required-field rules in code")
 	// ErrKlausulDitahan - jenis yang aturannya belum ditetapkan (AC 36).
-	ErrKlausulDitahan = errors.New("models: jenis klausul belum dapat disimpan")
+	ErrKlausulDitahan = errors.New("models: clause type cannot be saved yet")
 	// ErrKlausulMedanWajib - medan wajib kosong; pesan menyebut medannya (AC 35).
-	ErrKlausulMedanWajib = errors.New("models: medan wajib klausul kosong")
+	ErrKlausulMedanWajib = errors.New("models: required clause field is empty")
 	// ErrMedanBukanMilikJenis - medan dikirim untuk jenis yang tidak memilikinya.
-	ErrMedanBukanMilikJenis = errors.New("models: medan bukan milik jenis klausul ini")
+	ErrMedanBukanMilikJenis = errors.New("models: field does not belong to this clause type")
 	// ErrTotalPctAnakMelebihi100 - `ASMMessageTotalPct` (teks Pega tidak diekspor).
-	ErrTotalPctAnakMelebihi100 = errors.New("models: total Pct baris anak tidak boleh lebih dari 100")
+	ErrTotalPctAnakMelebihi100 = errors.New("models: total Pct of child rows must not exceed 100")
 )
 
 // PesanSpreadingTCO - VERBATIM `TreatyTestChildTotal_Act.xml` langkah 5.
@@ -312,7 +312,7 @@ func NilaiMedanKlausul(k KlausulTreaty, medan string) string {
 func IsiMedanKlausulTCO(a AturanKlausul, k *KlausulTreaty, masuk map[string]string) error {
 	for medan, teks := range masuk {
 		if !a.punya(medan) {
-			return fmt.Errorf("%w: %s untuk jenis %s", ErrMedanBukanMilikJenis, medan, a.Jenis)
+			return fmt.Errorf("%w: %s for type %s", ErrMedanBukanMilikJenis, medan, a.Jenis)
 		}
 		t := strings.TrimSpace(teks)
 		if medanDesimal[medan] {
@@ -374,7 +374,7 @@ func UraiDesimalMasukTCO(nama, teks string) (*apd.Decimal, error) {
 	t := strings.TrimSpace(teks)
 	if strings.Contains(t, ",") {
 		if strings.Contains(t, ".") {
-			return nil, fmt.Errorf("%w: %s %q memuat koma dan titik sekaligus", ErrPersenBukanDesimal, nama, t)
+			return nil, fmt.Errorf("%w: %s %q contains both a comma and a dot", ErrPersenBukanDesimal, nama, t)
 		}
 		t = strings.ReplaceAll(t, ",", ".")
 	}
@@ -385,7 +385,7 @@ func UraiDesimalMasukTCO(nama, teks string) (*apd.Decimal, error) {
 	r := new(apd.Decimal).Set(d)
 	r.Reduce(r)
 	if r.Exponent < -skalaPersenTCO || r.NumDigits()+int64(r.Exponent) > digitBulatPersen {
-		return nil, fmt.Errorf("%w: %s %q melampaui NUMBER(38,8)", ErrPersenBukanDesimal, nama, teks)
+		return nil, fmt.Errorf("%w: %s %q exceeds NUMBER(38,8)", ErrPersenBukanDesimal, nama, teks)
 	}
 	return d, nil
 }
@@ -402,7 +402,7 @@ func PeriksaKlausulTCO(a AturanKlausul, k KlausulTreaty) error {
 		}
 	}
 	if len(kosong) > 0 {
-		return fmt.Errorf("%w - jenis %s: %s", ErrKlausulMedanWajib, a.Jenis, strings.Join(kosong, ", "))
+		return fmt.Errorf("%w - type %s: %s", ErrKlausulMedanWajib, a.Jenis, strings.Join(kosong, ", "))
 	}
 	return nil
 }
@@ -438,10 +438,10 @@ func RpUsdAnakTCO(pct, rpInduk, usdInduk *apd.Decimal) (rp, usd *apd.Decimal, er
 		return kuantum, nil
 	}
 	if rp, err = hitung(rpInduk); err != nil {
-		return nil, nil, fmt.Errorf("models: menghitung Rp anak: %w", err)
+		return nil, nil, fmt.Errorf("models: computing child Rp: %w", err)
 	}
 	if usd, err = hitung(usdInduk); err != nil {
-		return nil, nil, fmt.Errorf("models: menghitung Usd anak: %w", err)
+		return nil, nil, fmt.Errorf("models: computing child Usd: %w", err)
 	}
 	return rp, usd, nil
 }

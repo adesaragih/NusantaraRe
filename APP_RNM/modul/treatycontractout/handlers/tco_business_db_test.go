@@ -49,7 +49,7 @@ func TestBusinessKombinasiLingkaranPenuh(t *testing.T) {
 		t.Fatalf("baru: %+v", b)
 	}
 	if kode, badan := u.minta(t, http.MethodPost, dasar, map[string]string{"bizCode": "UJI-B1", "isActive": "1"}, true); kode != http.StatusConflict ||
-		!strings.Contains(badan, "Data sudah pernah di Input") {
+		!strings.Contains(badan, "Data has already been entered") {
 		t.Errorf("dobel: %d %s", kode, badan)
 	}
 	// Nonaktifkan + ganti kode: SELURUH medan tersimpan; baris tetap terbaca.
@@ -62,7 +62,7 @@ func TestBusinessKombinasiLingkaranPenuh(t *testing.T) {
 		t.Errorf("daftar nonaktif: %d %s", kode, badan)
 	}
 	kode, badan = u.minta(t, http.MethodDelete, dasar+"/"+b.ID, nil, true)
-	if kode != http.StatusOK || !strings.Contains(badan, "Data Dengan ID "+b.ID+" Berhasil di Hapus") {
+	if kode != http.StatusOK || !strings.Contains(badan, "Data with ID "+b.ID+" successfully deleted") {
 		t.Errorf("hapus: %d %s", kode, badan)
 	}
 }

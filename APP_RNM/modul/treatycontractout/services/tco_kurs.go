@@ -29,13 +29,16 @@ import (
 
 var (
 	// ErrGudangKursBelumDisuntik - pembaca kurs belum dipasang.
-	ErrGudangKursBelumDisuntik = errors.New("services: pembaca kurs belum disuntik")
+	ErrGudangKursBelumDisuntik = errors.New("services: exchange-rate reader is not injected")
 	// ErrKursTidakAda - tidak ada kurs berlaku pada tanggal mulai tahun (422).
 	ErrKursTidakAda = models.ErrKursTidakAda
+	// ErrMataUangTidakDikenal - sentinel `inti/db` dibuka untuk handler, yang
+	// dilarang mengimpor lapisan repository (penjaga lintas aplikasi).
+	ErrMataUangTidakDikenal = db.ErrMataUangTidakDikenal
 	// ErrMasterKursRusak - master kurs/mata uang tidak dapat dipakai (503).
-	ErrMasterKursRusak = errors.New("services: master kurs atau mata uang tidak dapat dipakai")
+	ErrMasterKursRusak = errors.New("services: exchange-rate or currency master cannot be used")
 	// ErrKonversiKursTidakSah - permintaan konversi di luar arah/skala yang dikenal (400).
-	ErrKonversiKursTidakSah = errors.New("services: permintaan konversi kurs tidak sah")
+	ErrKonversiKursTidakSah = errors.New("services: invalid exchange-rate conversion request")
 )
 
 // PembacaKursTCO memberi kurs berlaku untuk satu tahun treaty.
@@ -209,10 +212,10 @@ func (l *KursTCO) Konversi(ctx context.Context, pelaku inti.Pelaku, tahunID, dar
 	case "4":
 		sk = models.SkalaUsdExclusionTCO
 	default:
-		return KonversiTampil{}, fmt.Errorf("%w: skala %q (4 atau 8)", ErrKonversiKursTidakSah, skala)
+		return KonversiTampil{}, fmt.Errorf("%w: scale %q (4 or 8)", ErrKonversiKursTidakSah, skala)
 	}
 	if dari != models.MedanRp && dari != models.MedanUsd {
-		return KonversiTampil{}, fmt.Errorf("%w: dari %q (Rp atau Usd)", ErrKonversiKursTidakSah, dari)
+		return KonversiTampil{}, fmt.Errorf("%w: from %q (Rp or Usd)", ErrKonversiKursTidakSah, dari)
 	}
 	d, err := models.UraiDesimalMasukTCO(dari, nilai)
 	if err != nil {

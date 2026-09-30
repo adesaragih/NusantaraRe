@@ -45,7 +45,7 @@ var kunciBerkasSah = regexp.MustCompile(`^[A-Za-z0-9]{8,64}$`)
 
 func periksaKunciBerkas(kunci string) error {
 	if !kunciBerkasSah.MatchString(kunci) {
-		return fmt.Errorf("%w: kunci berkas %q tidak berbentuk", galat.ErrPermintaanTidakSah, kunci)
+		return fmt.Errorf("%w: file key %q is malformed", galat.ErrPermintaanTidakSah, kunci)
 	}
 	return nil
 }
@@ -98,21 +98,21 @@ func (p penyimpananLokalTCO) tulis(kunci string, isi io.Reader) error {
 		return err
 	}
 	if err := os.MkdirAll(p.folder, 0o750); err != nil {
-		return fmt.Errorf("services: menyiapkan folder penyimpanan lokal: %w", err)
+		return fmt.Errorf("services: preparing local storage folder: %w", err)
 	}
 	f, err := os.CreateTemp(p.folder, ".unggah-*")
 	if err != nil {
-		return fmt.Errorf("services: membuat berkas sementara penyimpanan: %w", err)
+		return fmt.Errorf("services: creating storage temporary file: %w", err)
 	}
 	_, salinErr := io.Copy(f, isi)
 	tutupErr := f.Close()
 	if salinErr != nil || tutupErr != nil {
 		_ = os.Remove(f.Name())
-		return fmt.Errorf("services: menulis penyimpanan lokal: %w", errors.Join(salinErr, tutupErr))
+		return fmt.Errorf("services: writing local storage: %w", errors.Join(salinErr, tutupErr))
 	}
 	if err := os.Rename(f.Name(), tujuan); err != nil {
 		_ = os.Remove(f.Name())
-		return fmt.Errorf("services: menaruh berkas di penyimpanan lokal: %w", err)
+		return fmt.Errorf("services: placing file in local storage: %w", err)
 	}
 	return nil
 }
@@ -137,7 +137,7 @@ func (p penyimpananLokalTCO) Hapus(_ context.Context, kunci string) error {
 	if err := os.Remove(j); os.IsNotExist(err) {
 		return ErrBerkasTidakAdaDiPenyimpanan
 	} else if err != nil {
-		return fmt.Errorf("services: menghapus dari penyimpanan lokal: %w", err)
+		return fmt.Errorf("services: deleting from local storage: %w", err)
 	}
 	return nil
 }
@@ -158,7 +158,7 @@ func (p penyimpananLokalTCO) Ada(_ context.Context, kunci string) (bool, error) 
 
 // ErrTokenPenyimpananGagal - token penyimpanan gagal diambil; efeknya gagal
 // TERLIHAT di outbox, bukan unggahan yang diam saja tidak terjadi (AC 60).
-var ErrTokenPenyimpananGagal = errors.New("services: token penyimpanan gagal diambil")
+var ErrTokenPenyimpananGagal = errors.New("services: failed to obtain storage token")
 
 // MarginTokenTCO - token diperbarui selagi masih sisa sekian.
 //
@@ -210,14 +210,14 @@ func (c *CacheTokenTCO) Token(ctx context.Context) (string, error) {
 	}
 	c.token, c.kedaluwarsa = "", time.Time{}
 	if c.sumber == nil {
-		return "", fmt.Errorf("%w: sumber token belum dipasang", ErrTokenPenyimpananGagal)
+		return "", fmt.Errorf("%w: token source is not installed", ErrTokenPenyimpananGagal)
 	}
 	tok, exp, err := c.sumber.TokenBaru(ctx)
 	if err != nil {
 		return "", fmt.Errorf("%w: %w", ErrTokenPenyimpananGagal, err)
 	}
 	if tok == "" {
-		return "", fmt.Errorf("%w: sumber mengembalikan token kosong", ErrTokenPenyimpananGagal)
+		return "", fmt.Errorf("%w: source returned an empty token", ErrTokenPenyimpananGagal)
 	}
 	c.token, c.kedaluwarsa = tok, exp
 	return tok, nil
@@ -281,7 +281,7 @@ func (p *PenyimpananJarakJauhTCO) segarkan(ctx context.Context, o models.ObjekPe
 		return
 	}
 	if err := p.pencatat.PerbaruiObjek(ctx, o); err != nil && p.catat != nil {
-		p.catat(fmt.Sprintf("lampiran treaty contract out: menyegarkan catatan objek %s gagal: %v", o.ImageID, err))
+		p.catat(fmt.Sprintf("treaty contract out attachments: refreshing object record %s failed: %v", o.ImageID, err))
 	}
 }
 
@@ -302,7 +302,7 @@ func (p *PenyimpananJarakJauhTCO) siapkan(ctx context.Context, kunci layanan.Kun
 		return "", "", err
 	}
 	if p.token == nil {
-		return "", "", fmt.Errorf("%w: cache token belum dipasang", ErrTokenPenyimpananGagal)
+		return "", "", fmt.Errorf("%w: token cache is not installed", ErrTokenPenyimpananGagal)
 	}
 	tok, err := p.token.Token(ctx)
 	if err != nil {
@@ -318,7 +318,7 @@ func (p *PenyimpananJarakJauhTCO) galatJarakJauh(kunci layanan.KunciLayanan, err
 		p.token.Lupakan()
 	}
 	// ⛔ Menyebut KUNCI layanan, tidak pernah alamatnya.
-	return fmt.Errorf("services: penyimpanan jarak jauh (%s/%s): %w", kunci.Kategori1, kunci.Kategori2, err)
+	return fmt.Errorf("services: remote storage (%s/%s): %w", kunci.Kategori1, kunci.Kategori2, err)
 }
 
 // Simpan - kunci `("Google", "upload")`.

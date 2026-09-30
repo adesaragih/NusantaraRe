@@ -39,10 +39,10 @@ const MasterBusinessTCO = "BUSINESS"
 const batasBusinessMasterTCO = 500
 
 // ErrBusinessTidakAda - baris bisnis bukan milik kombinasi itu.
-var ErrBusinessTidakAda = errors.New("repository: baris bisnis tidak ditemukan pada kombinasi ini")
+var ErrBusinessTidakAda = errors.New("repository: business row not found in this combination")
 
 // ErrBusinessMasterTidakAda - kode bisnis tidak ada di master.
-var ErrBusinessMasterTidakAda = errors.New("repository: kode bisnis tidak ada di master BUSINESS")
+var ErrBusinessMasterTidakAda = errors.New("repository: business code not in the BUSINESS master")
 
 // BusinessMasterTCO adalah satu pilihan bisnis.
 type BusinessMasterTCO struct{ ID, Note string }
@@ -82,7 +82,7 @@ func (m *MasterBusiness) Daftar(ctx context.Context) ([]BusinessMasterTCO, error
 	}
 	rows, err := bacaTCO(ctx, m.db).QueryContext(ctx, q)
 	if err != nil {
-		return nil, fmt.Errorf("repository: membaca master %s: %w", MasterBusinessTCO, err)
+		return nil, fmt.Errorf("repository: reading master %s: %w", MasterBusinessTCO, err)
 	}
 	defer func() { _ = rows.Close() }()
 	var hasil []BusinessMasterTCO
@@ -112,7 +112,7 @@ func (m *MasterBusiness) Ambil(ctx context.Context, id string) (BusinessMasterTC
 		return BusinessMasterTCO{}, ErrBusinessMasterTidakAda
 	}
 	if err != nil {
-		return BusinessMasterTCO{}, fmt.Errorf("repository: membaca master %s %s: %w", MasterBusinessTCO, id, err)
+		return BusinessMasterTCO{}, fmt.Errorf("repository: reading master %s %s: %w", MasterBusinessTCO, id, err)
 	}
 	return BusinessMasterTCO{ID: gotID.String, Note: note.String}, nil
 }
@@ -200,7 +200,7 @@ func (m *MasterBusinessKombinasiTCO) Daftar(ctx context.Context, k models.Kombin
 	}
 	rows, err := bacaTCO(ctx, m.db).QueryContext(ctx, q, argKombinasi(k)...)
 	if err != nil {
-		return nil, fmt.Errorf("repository: membaca bisnis kombinasi: %w", err)
+		return nil, fmt.Errorf("repository: reading combination business rows: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
 	var hasil []models.BusinessTreaty
@@ -229,7 +229,7 @@ func (m *MasterBusinessKombinasiTCO) Ambil(ctx context.Context, k models.Kombina
 		return models.BusinessTreaty{}, ErrBusinessTidakAda
 	}
 	if err != nil {
-		return models.BusinessTreaty{}, fmt.Errorf("repository: membaca bisnis %s: %w", id, err)
+		return models.BusinessTreaty{}, fmt.Errorf("repository: reading business %s: %w", id, err)
 	}
 	return b, nil
 }
@@ -237,7 +237,7 @@ func (m *MasterBusinessKombinasiTCO) Ambil(ctx context.Context, k models.Kombina
 // CariDobel mencari baris LAIN berkode bisnis sama pada kombinasi.
 func (m *MasterBusinessKombinasiTCO) CariDobel(ctx context.Context, tx *db.Tx, k models.KombinasiTCO, bizCode, kecualiID string) (string, error) {
 	if tx == nil {
-		return "", errors.New("repository: pencarian dobel bisnis menuntut transaksi")
+		return "", errors.New("repository: business duplicate search requires a transaction")
 	}
 	tabel, err := m.db.Qualify(TabelBusinessTCO)
 	if err != nil {
@@ -254,7 +254,7 @@ func (m *MasterBusinessKombinasiTCO) CariDobel(ctx context.Context, tx *db.Tx, k
 		return "", nil
 	}
 	if err != nil {
-		return "", fmt.Errorf("repository: mencari bisnis dobel: %w", err)
+		return "", fmt.Errorf("repository: searching duplicate business: %w", err)
 	}
 	return id, nil
 }
@@ -262,7 +262,7 @@ func (m *MasterBusinessKombinasiTCO) CariDobel(ctx context.Context, tx *db.Tx, k
 // Sisip menulis baris bisnis baru; ID dari `TREATY_BUSINESS_SEQ`.
 func (m *MasterBusinessKombinasiTCO) Sisip(ctx context.Context, tx *db.Tx, b models.BusinessTreaty) (string, error) {
 	if tx == nil {
-		return "", errors.New("repository: menyisipkan bisnis menuntut transaksi")
+		return "", errors.New("repository: inserting business requires a transaction")
 	}
 	tabel, err := m.db.Qualify(TabelBusinessTCO)
 	if err != nil {
@@ -281,15 +281,15 @@ func (m *MasterBusinessKombinasiTCO) Sisip(ctx context.Context, tx *db.Tx, b mod
 		db.KosongJadiNil(b.ReinsTypeID), db.KosongJadiNil(b.ReinsTypeName), db.KosongJadiNil(b.BizCode),
 		db.KosongJadiNil(b.BizName), db.KosongJadiNil(b.UserID), db.KosongJadiNil(StempelPegaTCO(b.TglUpdate)))
 	if err != nil {
-		return "", fmt.Errorf("repository: menyisipkan bisnis: %w", err)
+		return "", fmt.Errorf("repository: inserting business: %w", err)
 	}
-	return id, db.PastikanSatuBaris(hasil, "penyisipan bisnis")
+	return id, db.PastikanSatuBaris(hasil, "business insert")
 }
 
 // Perbarui menimpa SELURUH medan non-kunci baris bisnis (AC 23).
 func (m *MasterBusinessKombinasiTCO) Perbarui(ctx context.Context, tx *db.Tx, b models.BusinessTreaty) error {
 	if tx == nil {
-		return errors.New("repository: memperbarui bisnis menuntut transaksi")
+		return errors.New("repository: updating business requires a transaction")
 	}
 	tabel, err := m.db.Qualify(TabelBusinessTCO)
 	if err != nil {
@@ -303,18 +303,18 @@ func (m *MasterBusinessKombinasiTCO) Perbarui(ctx context.Context, tx *db.Tx, b 
 		db.KosongJadiNil(b.BizName), db.KosongJadiNil(b.UserID), db.KosongJadiNil(StempelPegaTCO(b.TglUpdate)),
 		b.ID, b.TreatyYear, b.TreatyGroupID, b.ReinsTypeID)
 	if err != nil {
-		return fmt.Errorf("repository: memperbarui bisnis %s: %w", b.ID, err)
+		return fmt.Errorf("repository: updating business %s: %w", b.ID, err)
 	}
 	if n, err := hasil.RowsAffected(); err == nil && n == 0 {
 		return ErrBusinessTidakAda
 	}
-	return db.PastikanSatuBaris(hasil, "pembaruan bisnis")
+	return db.PastikanSatuBaris(hasil, "business update")
 }
 
 // Hapus membuang SATU baris bisnis dari SATU tabel.
 func (m *MasterBusinessKombinasiTCO) Hapus(ctx context.Context, tx *db.Tx, k models.KombinasiTCO, id string) error {
 	if tx == nil {
-		return errors.New("repository: menghapus bisnis menuntut transaksi")
+		return errors.New("repository: deleting business requires a transaction")
 	}
 	tabel, err := m.db.Qualify(TabelBusinessTCO)
 	if err != nil {
@@ -326,10 +326,10 @@ func (m *MasterBusinessKombinasiTCO) Hapus(ctx context.Context, tx *db.Tx, k mod
 	}
 	hasil, err := tx.ExecContext(ctx, q, id, k.TreatyYear, k.TreatyGroupID, k.ReinsTypeID)
 	if err != nil {
-		return fmt.Errorf("repository: menghapus bisnis %s: %w", id, err)
+		return fmt.Errorf("repository: deleting business %s: %w", id, err)
 	}
 	if n, err := hasil.RowsAffected(); err == nil && n == 0 {
 		return ErrBusinessTidakAda
 	}
-	return db.PastikanSatuBaris(hasil, "penghapusan bisnis")
+	return db.PastikanSatuBaris(hasil, "business delete")
 }

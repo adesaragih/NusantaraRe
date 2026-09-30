@@ -31,16 +31,16 @@ import (
 
 var (
 	// ErrReinsurerKosong - VERBATIM `SaveTreatyReinsurerDetail1_Act.xml` b694.
-	ErrReinsurerKosong = errors.New("models: Data tidak boleh kosong...!!! - ReinsurerID wajib dipilih")
+	ErrReinsurerKosong = errors.New("models: Data cannot be empty...!!! - ReinsurerID must be selected")
 	// ErrPersenKosong - share dan komisi wajib (AC 14 "masing-masing dengan
 	// share dan komisi"); Pega tidak menggerbanginya.
-	ErrPersenKosong = errors.New("models: nilai persen wajib diisi")
+	ErrPersenKosong = errors.New("models: percentage value is required")
 	// ErrPersenBukanDesimal - bukan desimal, atau melampaui NUMBER(38,8).
-	ErrPersenBukanDesimal = errors.New("models: nilai persen bukan desimal yang sah")
+	ErrPersenBukanDesimal = errors.New("models: percentage value is not a valid decimal")
 	// ErrPersenDiLuarRentang - `SetErrorMessageBetween` (teks Pega tidak diekspor).
-	ErrPersenDiLuarRentang = errors.New("models: nilai persen harus di antara 0 dan 100")
+	ErrPersenDiLuarRentang = errors.New("models: percentage value must be between 0 and 100")
 	// ErrTotalShareMelebihi100 - VERBATIM `SaveTreatyReinsurerDetail1_Act.xml` b1357.
-	ErrTotalShareMelebihi100 = errors.New("models: Persentase tidak boleh lebih dari 100!")
+	ErrTotalShareMelebihi100 = errors.New("models: Percentage cannot be more than 100!")
 )
 
 const (
@@ -65,7 +65,7 @@ func UraiPersenMasukTCO(nama, teks string) (*apd.Decimal, error) {
 	}
 	if strings.Contains(t, ",") {
 		if strings.Contains(t, ".") {
-			return nil, fmt.Errorf("%w: %s %q memuat koma dan titik sekaligus", ErrPersenBukanDesimal, nama, t)
+			return nil, fmt.Errorf("%w: %s %q contains both a comma and a dot", ErrPersenBukanDesimal, nama, t)
 		}
 		t = strings.ReplaceAll(t, ",", ".")
 	}
@@ -76,11 +76,11 @@ func UraiPersenMasukTCO(nama, teks string) (*apd.Decimal, error) {
 	ringkas := new(apd.Decimal).Set(d)
 	ringkas.Reduce(ringkas)
 	if ringkas.Exponent < -skalaPersenTCO {
-		return nil, fmt.Errorf("%w: %s %q lebih dari %d angka di belakang koma", ErrPersenBukanDesimal,
+		return nil, fmt.Errorf("%w: %s %q has more than %d decimal places", ErrPersenBukanDesimal,
 			nama, teks, skalaPersenTCO)
 	}
 	if ringkas.NumDigits()+int64(ringkas.Exponent) > digitBulatPersen {
-		return nil, fmt.Errorf("%w: %s %q terlalu besar", ErrPersenBukanDesimal, nama, teks)
+		return nil, fmt.Errorf("%w: %s %q is too large", ErrPersenBukanDesimal, nama, teks)
 	}
 	if d.Negative && !d.IsZero() || d.Cmp(seratus) > 0 {
 		return nil, fmt.Errorf("%w: %s = %s", ErrPersenDiLuarRentang, nama, d.Text('f'))
@@ -99,7 +99,7 @@ func TotalShareTCO(shares []*apd.Decimal) (*apd.Decimal, error) {
 			continue
 		}
 		if _, err := utils.DecimalContext().Add(jumlah, jumlah, s); err != nil {
-			return nil, fmt.Errorf("models: menjumlahkan share: %w", err)
+			return nil, fmt.Errorf("models: summing shares: %w", err)
 		}
 	}
 	return jumlah, nil
@@ -118,7 +118,7 @@ func PeriksaTotalShareTCO(lain []*apd.Decimal, baru *apd.Decimal) (*apd.Decimal,
 		return nil, err
 	}
 	if total.Cmp(seratus) > 0 {
-		return total, fmt.Errorf("%w (total share %s, batas %s)", ErrTotalShareMelebihi100,
+		return total, fmt.Errorf("%w (total share %s, limit %s)", ErrTotalShareMelebihi100,
 			total.Text('f'), batasAtasPersenTCO)
 	}
 	return total, nil

@@ -132,7 +132,7 @@ func TestReinsurerTanpaIdentitasDitolak(t *testing.T) {
 
 func TestReinsurerBawaanGagalTerang(t *testing.T) {
 	_, err := services.New(nil).ReinsurerTCO().Daftar(context.Background(), pelakuUjiTCO, "1000001", "1000003")
-	if err == nil || !strings.Contains(err.Error(), "belum disuntik") {
+	if err == nil || !strings.Contains(err.Error(), "is not injected") {
 		t.Errorf("bawaan: %v", err)
 	}
 }
@@ -182,7 +182,7 @@ func TestReinsurerTotalLebihDari100Ditolak(t *testing.T) {
 	l := layananReinsurer(g)
 	a, _ := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", "1000003", reinsurerMasuk("UJI-R1", "60", "1"))
 	_, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", "1000003", reinsurerMasuk("UJI-R2", "40.00000001", "1"))
-	if !errors.Is(err, models.ErrTotalShareMelebihi100) || !strings.Contains(err.Error(), "Persentase tidak boleh lebih dari 100!") {
+	if !errors.Is(err, models.ErrTotalShareMelebihi100) || !strings.Contains(err.Error(), "Percentage cannot be more than 100!") {
 		t.Fatalf("mau total > 100 ditolak, dapat %v", err)
 	}
 	if len(g.baris) != 1 {

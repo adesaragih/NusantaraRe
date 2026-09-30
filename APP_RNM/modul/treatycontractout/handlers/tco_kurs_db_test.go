@@ -58,7 +58,7 @@ func TestKursLingkaranPenuh(t *testing.T) {
 	var tahun27 tahunJSON
 	_ = json.Unmarshal([]byte(badan), &tahun27)
 	kode, badan = u.minta(t, http.MethodGet, "/api/treaty-contract-out/tahun/"+tahun27.ID+"/kurs", nil, true)
-	if kode != http.StatusUnprocessableEntity || !strings.Contains(badan, "Tidak ada Nilai Kurs di Tahun : 2027") {
+	if kode != http.StatusUnprocessableEntity || !strings.Contains(badan, "No exchange rate for Treaty Year : 2027") {
 		t.Errorf("tanpa kurs: %d %s", kode, badan)
 	}
 	// Master kurs tidak ditulis: jumlah barisnya tetap.
@@ -101,7 +101,7 @@ func TestKursTanggalDiuraiOracle(t *testing.T) {
 	var tahun19 tahunJSON
 	_ = json.Unmarshal([]byte(badan), &tahun19)
 	kode, badan = u.minta(t, http.MethodGet, "/api/treaty-contract-out/tahun/"+tahun19.ID+"/kurs", nil, true)
-	if kode != http.StatusServiceUnavailable || !strings.Contains(badan, "ditolak Oracle") || !strings.Contains(badan, "2019A801T000000.000 GMT") {
+	if kode != http.StatusServiceUnavailable || !strings.Contains(badan, "rejected by Oracle") || !strings.Contains(badan, "2019A801T000000.000 GMT") {
 		t.Errorf("hanya ditolak: %d %s", kode, badan)
 	}
 }

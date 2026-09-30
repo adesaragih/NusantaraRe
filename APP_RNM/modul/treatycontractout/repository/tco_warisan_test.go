@@ -192,7 +192,7 @@ func TestTanggalTahunHanyaYYYYMMDD(t *testing.T) {
 	}
 	for _, buruk := range []string{"20251231T170000.000 GMT", "01/01/2026", "2026-01-01", "2026011", "20261340"} {
 		_, err := tanggalTahunWarisanTeks(sqlNull(buruk), "STARTDATE")
-		if err == nil || !strings.Contains(err.Error(), "bukan YYYYMMDD") || !strings.Contains(err.Error(), "STARTDATE") {
+		if err == nil || !strings.Contains(err.Error(), "not YYYYMMDD") || !strings.Contains(err.Error(), "STARTDATE") {
 			t.Errorf("%q: %v", buruk, err)
 		}
 	}

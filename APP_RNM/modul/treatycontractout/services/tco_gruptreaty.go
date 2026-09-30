@@ -17,10 +17,10 @@ import (
 var (
 	// ErrMasterGrupTreatyKosong - master grup treaty kosong atau tidak terbaca.
 	ErrMasterGrupTreatyKosong = errors.New(
-		"services: master grup treaty TREATYGROUP kosong atau tidak terbaca")
+		"services: treaty group master TREATYGROUP is empty or unreadable")
 	// ErrPembacaGrupTreatyBelumDisuntik - handler lupa memasang pembaca.
 	ErrPembacaGrupTreatyBelumDisuntik = errors.New(
-		"services: pembaca master grup treaty belum disuntik")
+		"services: treaty group master reader is not injected")
 )
 
 // PembacaGrupTreatyTCO membaca master grup treaty.

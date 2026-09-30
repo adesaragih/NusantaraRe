@@ -57,7 +57,7 @@ func (m *MasterGrupTreaty) Daftar(ctx context.Context) ([]GrupTreatyTCO, error) 
 	}
 	rows, err := bacaTCO(ctx, m.db).QueryContext(ctx, q)
 	if err != nil {
-		return nil, fmt.Errorf("repository: membaca master grup treaty: %w", err)
+		return nil, fmt.Errorf("repository: reading treaty group master: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
 	var out []GrupTreatyTCO

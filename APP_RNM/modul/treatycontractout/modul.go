@@ -53,23 +53,23 @@ func (m Modul) DaftarkanRute(mux *http.ServeMux) { handlers.DaftarkanRute(mux, m
 // bersama ctx proses; `Selesai` tertutup saat ia benar-benar berhenti
 // (langsung tertutup bila tidak dinyalakan).
 func (m Modul) JalankanPekerja(ctx context.Context) inti.Pekerja {
-	m.catat("lampiran treaty contract out: pelaksana penyimpanan " + m.pelaksana)
+	m.catat("treaty contract out attachments: storage executor " + m.pelaksana)
 	selesai := make(chan struct{})
 	pekerja := inti.Pekerja{
 		Selesai:        selesai,
-		PesanTerlambat: "lampiran treaty contract out: pekerja latar belum berhenti saat batas penutupan",
+		PesanTerlambat: "treaty contract out attachments: background worker had not stopped by the shutdown deadline",
 	}
 	if m.interval <= 0 {
-		m.catat("lampiran treaty contract out: pekerja latar mati (interval kosong)")
+		m.catat("treaty contract out attachments: background worker off (interval empty)")
 		close(selesai)
 		return pekerja
 	}
 	if !m.svc.PunyaDatabase() {
-		m.catat("lampiran treaty contract out: pekerja latar mati (tanpa oracle)")
+		m.catat("treaty contract out attachments: background worker off (no oracle)")
 		close(selesai)
 		return pekerja
 	}
-	m.catat("lampiran treaty contract out: pekerja latar tiap " + m.interval.String())
+	m.catat("treaty contract out attachments: background worker every " + m.interval.String())
 	go func() {
 		defer close(selesai)
 		handlers.LayananLampiranTCO(m.svc).JalankanPekerja(ctx, m.interval, m.catat)

@@ -186,7 +186,7 @@ func TestKontrakDobelDitolak(t *testing.T) {
 	if !errors.Is(err, services.ErrKontrakDobel) {
 		t.Fatalf("mau ErrKontrakDobel, dapat %v", err)
 	}
-	for _, mau := range []string{"Data sudah pernah di Input", "1000004", "10003"} {
+	for _, mau := range []string{"Data has already been entered", "1000004", "10003"} {
 		if !strings.Contains(err.Error(), mau) {
 			t.Errorf("pesan tanpa %q: %s", mau, err)
 		}

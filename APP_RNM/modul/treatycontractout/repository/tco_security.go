@@ -37,7 +37,7 @@ import (
 )
 
 // ErrSecurityTidakAda - baris security bukan milik reinsurer itu.
-var ErrSecurityTidakAda = errors.New("repository: security tidak ditemukan pada reinsurer ini")
+var ErrSecurityTidakAda = errors.New("repository: security not found for this reinsurer")
 
 // kolomSecurityTCO - daftar kolom sisip, BERNAMA (AC 19), urutan posisi
 // `InsertToMTreatySecurity` b60.
@@ -121,7 +121,7 @@ func pindaiSecurityTCO(baca interface{ Scan(...any) error }) (SecurityTCO, error
 		ReasSecurity: pangkas(n[6])}, ClientName: n[7].String}
 	d, alasan, ok := UraiDesimalWarisanTCO(n[4].String)
 	if !ok {
-		return s, fmt.Errorf("repository: kolom PCT_SHARE bernilai %q: %s", n[4].String, alasan)
+		return s, fmt.Errorf("repository: column PCT_SHARE has value %q: %s", n[4].String, alasan)
 	}
 	s.PctShare = d
 	return s, nil
@@ -151,7 +151,7 @@ func (m *MasterSecurityTCO) Daftar(ctx context.Context, reasID, thnTreaty string
 	}
 	rows, err := bacaTCO(ctx, m.db).QueryContext(ctx, q, reasID, thnTreaty)
 	if err != nil {
-		return nil, fmt.Errorf("repository: membaca security reinsurer %s: %w", reasID, err)
+		return nil, fmt.Errorf("repository: reading securities of reinsurer %s: %w", reasID, err)
 	}
 	defer func() { _ = rows.Close() }()
 	var hasil []SecurityTCO
@@ -180,7 +180,7 @@ func (m *MasterSecurityTCO) Ambil(ctx context.Context, reasID, id string) (Secur
 		return SecurityTCO{}, ErrSecurityTidakAda
 	}
 	if err != nil {
-		return SecurityTCO{}, fmt.Errorf("repository: membaca security %s: %w", id, err)
+		return SecurityTCO{}, fmt.Errorf("repository: reading security %s: %w", id, err)
 	}
 	return s, nil
 }
@@ -189,7 +189,7 @@ func (m *MasterSecurityTCO) Ambil(ctx context.Context, reasID, id string) (Secur
 // = kunci lama baris yang sedang diubah.
 func (m *MasterSecurityTCO) CariDobel(ctx context.Context, tx *db.Tx, reasID, reasSecurity, kecualiID string) (string, error) {
 	if tx == nil {
-		return "", errors.New("repository: pencarian dobel security menuntut transaksi")
+		return "", errors.New("repository: security duplicate search requires a transaction")
 	}
 	tabel, err := m.db.Qualify(TabelSecurityTCO)
 	if err != nil {
@@ -205,7 +205,7 @@ func (m *MasterSecurityTCO) CariDobel(ctx context.Context, tx *db.Tx, reasID, re
 		return "", nil
 	}
 	if err != nil {
-		return "", fmt.Errorf("repository: mencari security dobel: %w", err)
+		return "", fmt.Errorf("repository: searching duplicate security: %w", err)
 	}
 	return id, nil
 }
@@ -213,7 +213,7 @@ func (m *MasterSecurityTCO) CariDobel(ctx context.Context, tx *db.Tx, reasID, re
 // Sisip menulis security baru; "identitas"nya = `REAS_SECURITY` terpangkas.
 func (m *MasterSecurityTCO) Sisip(ctx context.Context, tx *db.Tx, s models.SecurityReinsurer) (string, error) {
 	if tx == nil {
-		return "", errors.New("repository: menyisipkan security menuntut transaksi")
+		return "", errors.New("repository: inserting security requires a transaction")
 	}
 	tabel, err := m.db.Qualify(TabelSecurityTCO)
 	if err != nil {
@@ -226,16 +226,16 @@ func (m *MasterSecurityTCO) Sisip(ctx context.Context, tx *db.Tx, s models.Secur
 	hasil, err := tx.ExecContext(ctx, q, db.KosongJadiNil(s.ThnTreaty), s.ReasID, TulisDesimalWarisanTCO(s.PctShare),
 		s.ReasSecurity)
 	if err != nil {
-		return "", fmt.Errorf("repository: menyisipkan security: %w", err)
+		return "", fmt.Errorf("repository: inserting security: %w", err)
 	}
-	return strings.TrimSpace(s.ReasSecurity), db.PastikanSatuBaris(hasil, "penyisipan security")
+	return strings.TrimSpace(s.ReasSecurity), db.PastikanSatuBaris(hasil, "security insert")
 }
 
 // Perbarui menimpa tahun, share, dan security - berkunci `REAS_ID` +
 // `TRIM(REAS_SECURITY)` lama (`s.ID`).
 func (m *MasterSecurityTCO) Perbarui(ctx context.Context, tx *db.Tx, s models.SecurityReinsurer) error {
 	if tx == nil {
-		return errors.New("repository: memperbarui security menuntut transaksi")
+		return errors.New("repository: updating security requires a transaction")
 	}
 	tabel, err := m.db.Qualify(TabelSecurityTCO)
 	if err != nil {
@@ -248,7 +248,7 @@ func (m *MasterSecurityTCO) Perbarui(ctx context.Context, tx *db.Tx, s models.Se
 	hasil, err := tx.ExecContext(ctx, q, db.KosongJadiNil(s.ThnTreaty), TulisDesimalWarisanTCO(s.PctShare),
 		s.ReasSecurity, s.ReasID, s.ID)
 	if err != nil {
-		return fmt.Errorf("repository: memperbarui security %s: %w", s.ID, err)
+		return fmt.Errorf("repository: updating security %s: %w", s.ID, err)
 	}
 	return palingSedikitSatuSecurityTCO(hasil)
 }
@@ -256,7 +256,7 @@ func (m *MasterSecurityTCO) Perbarui(ctx context.Context, tx *db.Tx, s models.Se
 // Hapus membuang SATU security - baris reinsurer induknya tidak disentuh.
 func (m *MasterSecurityTCO) Hapus(ctx context.Context, tx *db.Tx, reasID, id string) error {
 	if tx == nil {
-		return errors.New("repository: menghapus security menuntut transaksi")
+		return errors.New("repository: deleting security requires a transaction")
 	}
 	tabel, err := m.db.Qualify(TabelSecurityTCO)
 	if err != nil {
@@ -268,7 +268,7 @@ func (m *MasterSecurityTCO) Hapus(ctx context.Context, tx *db.Tx, reasID, id str
 	}
 	hasil, err := tx.ExecContext(ctx, q, reasID, id)
 	if err != nil {
-		return fmt.Errorf("repository: menghapus security %s: %w", id, err)
+		return fmt.Errorf("repository: deleting security %s: %w", id, err)
 	}
 	return palingSedikitSatuSecurityTCO(hasil)
 }
@@ -280,7 +280,7 @@ func (m *MasterSecurityTCO) Hapus(ctx context.Context, tx *db.Tx, reasID, id str
 func palingSedikitSatuSecurityTCO(hasil sql.Result) error {
 	n, err := hasil.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("repository: mencacah baris security: %w", err)
+		return fmt.Errorf("repository: counting security rows: %w", err)
 	}
 	if n == 0 {
 		return ErrSecurityTidakAda
@@ -293,7 +293,7 @@ func palingSedikitSatuSecurityTCO(hasil sql.Result) error {
 func desimalWarisanTCO(v sql.NullString, kolom string) (*apd.Decimal, error) {
 	d, alasan, ok := UraiDesimalWarisanTCO(v.String)
 	if !ok {
-		return nil, fmt.Errorf("repository: kolom %s bernilai %q: %s", kolom, v.String, alasan)
+		return nil, fmt.Errorf("repository: column %s has value %q: %s", kolom, v.String, alasan)
 	}
 	return d, nil
 }

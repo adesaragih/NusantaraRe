@@ -60,7 +60,7 @@ const (
 	// (saringan jenis reasuransi tiket 02).
 	LiniNonLife = "NONLIFE"
 	// PesanTanpaBerkasTCO - VERBATIM `TreatyOutSaveAttachment.xml` b376.
-	PesanTanpaBerkasTCO = "Tidak ada file yg diattach"
+	PesanTanpaBerkasTCO = "No file attached"
 
 	folderModulTCO       = "treaty-contract-out"
 	putaranSeusaiAksiTCO = 10
@@ -69,37 +69,37 @@ const (
 
 var (
 	// ErrGudangLampiranBelumDisuntik - gudang rekam lampiran belum dipasang.
-	ErrGudangLampiranBelumDisuntik = errors.New("services: gudang lampiran tahun treaty belum disuntik")
+	ErrGudangLampiranBelumDisuntik = errors.New("services: treaty year attachment store is not injected")
 	// ErrAntreanLampiranBelumDisuntik - outbox lampiran belum dipasang.
-	ErrAntreanLampiranBelumDisuntik = errors.New("services: antrean lampiran tahun treaty belum disuntik")
+	ErrAntreanLampiranBelumDisuntik = errors.New("services: treaty year attachment queue is not injected")
 	// ErrPenyimpananLampiranBelumDisuntik - klien penyimpanan belum dipasang.
-	ErrPenyimpananLampiranBelumDisuntik = errors.New("services: penyimpanan lampiran belum disuntik")
+	ErrPenyimpananLampiranBelumDisuntik = errors.New("services: attachment storage is not injected")
 	// ErrPembacaKategoriLampiranBelumDisuntik - master kategori belum dipasang.
-	ErrPembacaKategoriLampiranBelumDisuntik = errors.New("services: pembaca kategori lampiran belum disuntik")
+	ErrPembacaKategoriLampiranBelumDisuntik = errors.New("services: attachment category reader is not injected")
 	// ErrKategoriLampiranKosong - master kategori kosong: keadaan server (503).
 	ErrKategoriLampiranKosong = errors.New(
-		"services: master kategori lampiran CATEGORY_ATTACH_REAS kosong; lampiran belum dapat diberi kategori")
+		"services: attachment category master CATEGORY_ATTACH_REAS is empty; attachments cannot be given a category yet")
 	// ErrKategoriLampiranTidakDikenal - kategori di luar master (422).
-	ErrKategoriLampiranTidakDikenal = errors.New("services: kategori lampiran tidak ada di master CATEGORY_ATTACH_REAS")
+	ErrKategoriLampiranTidakDikenal = errors.New("services: attachment category not in the CATEGORY_ATTACH_REAS master")
 	// ErrLampiranTidakAda - bukan lampiran tahun treaty itu (404).
 	ErrLampiranTidakAda = repository.ErrLampiranTidakAda
 	// ErrLampiranBelumTerkirim - berkasnya belum dipastikan ada di penyimpanan (409).
-	ErrLampiranBelumTerkirim = errors.New("services: lampiran belum terkirim ke penyimpanan")
+	ErrLampiranBelumTerkirim = errors.New("services: attachment has not been sent to storage yet")
 	// ErrLampiranSudahTerkirim - "ulangi" atas lampiran yang berkasnya ada (409).
-	ErrLampiranSudahTerkirim = errors.New("services: lampiran sudah terkirim dan berkasnya ada di penyimpanan")
+	ErrLampiranSudahTerkirim = errors.New("services: attachment already sent and its file is in storage")
 	// ErrLampiranTanpaBerkas - rekam terkirim tetapi berkasnya tidak ada (AC 61).
 	ErrLampiranTanpaBerkas = errors.New(
-		"services: rekam lampiran ada tetapi berkasnya tidak ada di penyimpanan; periksa keselarasan")
+		"services: attachment record exists but its file is not in storage; run the consistency check")
 	// ErrBerkasSumberLampiranHilang - berkas antrean tidak ada lagi dan
 	// penyimpanan tidak memilikinya: tidak dapat diunggah ulang (permanen).
 	ErrBerkasSumberLampiranHilang = errors.New(
-		"services: berkas sumber lampiran tidak ada lagi; hapus rekamnya lalu unggah ulang")
+		"services: the attachment source file no longer exists; delete the record and upload again")
 	// ErrBerkasTidakAdaDiPenyimpanan - dijawab klien penyimpanan untuk kunci
 	// yang tidak ada. Penghapusan menganggapnya selesai.
-	ErrBerkasTidakAdaDiPenyimpanan = errors.New("services: berkas tidak ada di penyimpanan")
+	ErrBerkasTidakAdaDiPenyimpanan = errors.New("services: file not in storage")
 
-	errMuatanLampiranRusak = errors.New("services: muatan outbox lampiran tidak terbaca")
-	errJenisEfekAsingTCO   = errors.New("services: jenis efek bukan milik pelaksana lampiran")
+	errMuatanLampiranRusak = errors.New("services: attachment outbox payload is unreadable")
+	errJenisEfekAsingTCO   = errors.New("services: effect type does not belong to the attachment executor")
 )
 
 // GudangLampiranTCO membaca dan menulis rekam lampiran + catatan objeknya (tco4).
@@ -353,7 +353,7 @@ type muatanLampiranTCO struct {
 func (m muatanLampiranTCO) teks() (string, error) {
 	b, err := json.Marshal(m)
 	if err != nil {
-		return "", fmt.Errorf("services: merakit muatan lampiran: %w", err)
+		return "", fmt.Errorf("services: building attachment payload: %w", err)
 	}
 	return string(b), nil
 }
@@ -460,7 +460,7 @@ func (l *LampiranTahunTCO) jalurAntre(imageID, nama string) string {
 
 func (l *LampiranTahunTCO) periksaTahun(ctx context.Context, tahunID string) error {
 	if strings.TrimSpace(tahunID) == "" {
-		return fmt.Errorf("%w: pengenal tahun treaty wajib diisi", galat.ErrPermintaanTidakSah)
+		return fmt.Errorf("%w: treaty year ID is required", galat.ErrPermintaanTidakSah)
 	}
 	_, err := l.tahun.Ambil(ctx, tahunID)
 	return err
@@ -527,7 +527,7 @@ func (l *LampiranTahunTCO) Unggah(ctx context.Context, pelaku inti.Pelaku, tahun
 		return HasilLampiranTCO{}, err
 	}
 	if strings.TrimSpace(tahunID) == "" {
-		return HasilLampiranTCO{}, fmt.Errorf("%w: pengenal tahun treaty wajib diisi", galat.ErrPermintaanTidakSah)
+		return HasilLampiranTCO{}, fmt.Errorf("%w: treaty year ID is required", galat.ErrPermintaanTidakSah)
 	}
 	if strings.TrimSpace(l.folder) == "" {
 		return HasilLampiranTCO{}, unggah.ErrUnggahanDirBelumDisetel
@@ -588,7 +588,7 @@ func (l *LampiranTahunTCO) Unggah(ctx context.Context, pelaku inti.Pelaku, tahun
 	if err != nil {
 		// Transaksi batal: tidak ada rekam yang merujuk berkas antrean ini.
 		if e := os.Remove(jalur); e != nil && !os.IsNotExist(e) {
-			return HasilLampiranTCO{}, fmt.Errorf("%w (dan berkas antrean gagal dibuang: %v)", err, e)
+			return HasilLampiranTCO{}, fmt.Errorf("%w (and removing the queued file failed: %v)", err, e)
 		}
 		return HasilLampiranTCO{}, err
 	}
@@ -603,7 +603,7 @@ func (l *LampiranTahunTCO) sesudahAksi(ctx context.Context, akunID, tahunID stri
 	b, err := l.gudang.Ambil(ctx, tahunID, rekam.ID)
 	if err != nil {
 		if peringatan == "" {
-			peringatan = "status lampiran belum dapat dibaca ulang; muat ulang daftar lampiran"
+			peringatan = "attachment status could not be re-read; reload the attachment list"
 		}
 		return HasilLampiranTCO{Lampiran: TampilLampiran(repository.BarisLampiranTCO{LampiranTCO: rekam}),
 			Peringatan: peringatan}
@@ -633,7 +633,7 @@ func (l *LampiranTahunTCO) kirimSekarang(ctx context.Context, akunID, rujukan st
 			return ""
 		}
 		if err != nil {
-			return "antrean pengiriman lampiran belum dapat dijalankan; lampiran tetap tertunda dan dapat diulang"
+			return "the attachment send queue could not run; the attachment stays pending and can be retried"
 		}
 	}
 	return ""
@@ -755,20 +755,20 @@ func (l *LampiranTahunTCO) kirimUnggah(ctx context.Context, tx *db.Tx, b outbox.
 			return errAda
 		}
 		if !ada {
-			return fmt.Errorf("%w: lampiran %s", ErrBerkasSumberLampiranHilang, rekam.ID)
+			return fmt.Errorf("%w: attachment %s", ErrBerkasSumberLampiranHilang, rekam.ID)
 		}
 		// Jawaban unggah yang dulu hilang tidak dapat dipulihkan: yang dicatat
 		// hanya kunci objeknya.
 		return l.gudang.SimpanObjek(ctx, tx, models.ObjekPenyimpananTCO{ImageID: rekam.ImageID, Namafile: rekam.ImageID})
 	}
 	if err != nil {
-		return fmt.Errorf("services: membuka berkas antrean lampiran %s: %w", rekam.ID, err)
+		return fmt.Errorf("services: opening queued file of attachment %s: %w", rekam.ID, err)
 	}
 	objek, simpanErr := l.penyimpanan.Simpan(ctx, rekam.ImageID, f, rekam.FileMimeType,
 		strings.ToLower(strings.TrimPrefix(filepath.Ext(rekam.FileName), ".")))
 	_ = f.Close()
 	if simpanErr != nil {
-		return fmt.Errorf("services: mengunggah lampiran %s: %w", rekam.ID, simpanErr)
+		return fmt.Errorf("services: uploading attachment %s: %w", rekam.ID, simpanErr)
 	}
 	objek.ImageID = rekam.ImageID
 	if objek.Namafile == "" {
@@ -792,21 +792,21 @@ func (l *LampiranTahunTCO) kirimUnggah(ctx context.Context, tx *db.Tx, b outbox.
 func (l *LampiranTahunTCO) kirimHapus(ctx context.Context, tx *db.Tx, b outbox.BarisEfekKeluar) error {
 	var m muatanLampiranTCO
 	if err := json.Unmarshal([]byte(b.Muatan), &m); err != nil || strings.TrimSpace(m.ImageID) == "" {
-		return fmt.Errorf("%w: efek %s", errMuatanLampiranRusak, b.ID)
+		return fmt.Errorf("%w: effect %s", errMuatanLampiranRusak, b.ID)
 	}
 	// ⛔ Urutan: `Hapus` penyimpanan (geturl + `Update_T_Storage_SQL` dalam
 	// transaksinya SENDIRI, OQ-TCO-26) SEBELUM `HapusObjek` di `tx`. Dibalik,
 	// transaksi pendek penyegaran menunggu kunci baris milik `tx` ini sendiri
 	// - Oracle tidak mendeteksinya, efek menggantung sampai konteks habis.
 	if err := l.penyimpanan.Hapus(ctx, m.ImageID); err != nil && !errors.Is(err, ErrBerkasTidakAdaDiPenyimpanan) {
-		return fmt.Errorf("services: menghapus berkas lampiran %s: %w", m.LampiranID, err)
+		return fmt.Errorf("services: deleting file of attachment %s: %w", m.LampiranID, err)
 	}
 	if err := l.gudang.HapusObjek(ctx, tx, m.ImageID); err != nil {
 		return err
 	}
 	if m.BerkasAntre != "" && m.BerkasAntre == filepath.Base(m.BerkasAntre) {
 		if err := os.Remove(filepath.Join(l.folderAntre(), m.BerkasAntre)); err != nil && !os.IsNotExist(err) {
-			return fmt.Errorf("services: membuang berkas antrean lampiran %s: %w", m.LampiranID, err)
+			return fmt.Errorf("services: removing queued file of attachment %s: %w", m.LampiranID, err)
 		}
 	}
 	return nil
@@ -829,12 +829,12 @@ func (l *LampiranTahunTCO) Unduh(ctx context.Context, pelaku inti.Pelaku, tahunI
 	}
 	tampil := TampilLampiran(b)
 	if tampil.Status != models.StatusLampiranTerkirim {
-		return LampiranTampil{}, nil, fmt.Errorf("%w: lampiran %s berstatus %s", ErrLampiranBelumTerkirim,
+		return LampiranTampil{}, nil, fmt.Errorf("%w: attachment %s has status %s", ErrLampiranBelumTerkirim,
 			id, tampil.Status)
 	}
 	rc, err := l.penyimpanan.Buka(ctx, b.ImageID)
 	if errors.Is(err, ErrBerkasTidakAdaDiPenyimpanan) {
-		return LampiranTampil{}, nil, fmt.Errorf("%w: lampiran %s", ErrLampiranTanpaBerkas, id)
+		return LampiranTampil{}, nil, fmt.Errorf("%w: attachment %s", ErrLampiranTanpaBerkas, id)
 	}
 	if err != nil {
 		return LampiranTampil{}, nil, err
@@ -862,7 +862,7 @@ func (l *LampiranTahunTCO) UnduhSemua(ctx context.Context, pelaku inti.Pelaku, t
 		}
 	}
 	if len(terkirim) == 0 {
-		return fmt.Errorf("%w: tidak ada lampiran terkirim pada tahun treaty %s", ErrLampiranBelumTerkirim, tahunID)
+		return fmt.Errorf("%w: no attachment sent in treaty year %s", ErrLampiranBelumTerkirim, tahunID)
 	}
 	var hilang []string
 	for _, t := range terkirim {
@@ -880,7 +880,7 @@ func (l *LampiranTahunTCO) UnduhSemua(ctx context.Context, pelaku inti.Pelaku, t
 		}
 	}
 	if len(hilang) > 0 {
-		return fmt.Errorf("%w: lampiran %s", ErrLampiranTanpaBerkas, strings.Join(hilang, ", "))
+		return fmt.Errorf("%w: attachment %s", ErrLampiranTanpaBerkas, strings.Join(hilang, ", "))
 	}
 	for _, t := range terkirim {
 		rc, err := l.penyimpanan.Buka(ctx, kunci[t.ID])
@@ -949,10 +949,10 @@ func (l *LampiranTahunTCO) Ulangi(ctx context.Context, pelaku inti.Pelaku, tahun
 	}
 	terkirim := strings.TrimSpace(b.TStorageID) != ""
 	if terkirim && ada {
-		return HasilLampiranTCO{}, fmt.Errorf("%w: lampiran %s", ErrLampiranSudahTerkirim, id)
+		return HasilLampiranTCO{}, fmt.Errorf("%w: attachment %s", ErrLampiranSudahTerkirim, id)
 	}
 	if _, err := os.Stat(l.jalurAntre(b.ImageID, b.FileName)); err != nil && !ada {
-		return HasilLampiranTCO{}, fmt.Errorf("%w: lampiran %s", ErrBerkasSumberLampiranHilang, id)
+		return HasilLampiranTCO{}, fmt.Errorf("%w: attachment %s", ErrBerkasSumberLampiranHilang, id)
 	}
 	saat := l.jam()
 	err = l.transaksi(ctx, func(tx *db.Tx) error {
@@ -1015,10 +1015,10 @@ func (l *LampiranTahunTCO) PeriksaSelaras(ctx context.Context, pelaku inti.Pelak
 		switch {
 		case strings.TrimSpace(b.TStorageID) != "":
 			temuan = append(temuan, TemuanSelarasTCO{LampiranID: b.ID, FileName: b.FileName,
-				Masalah: "rekam tanpa berkas di penyimpanan", Perbaikan: perbaikan})
+				Masalah: "record without a file in storage", Perbaikan: perbaikan})
 		case !adaAntre:
 			temuan = append(temuan, TemuanSelarasTCO{LampiranID: b.ID, FileName: b.FileName,
-				Masalah: "berkas sumber hilang; unggahan tidak akan pernah selesai", Perbaikan: perbaikan})
+				Masalah: "source file is missing; the upload will never finish", Perbaikan: perbaikan})
 		}
 	}
 	return temuan, nil

@@ -68,11 +68,11 @@ const skalaRpDariUsdTCO = 8
 
 var (
 	// ErrKursTidakAda - tidak ada baris kurs berlaku pada tanggal itu (ADR-0015).
-	ErrKursTidakAda = errors.New("models: tidak ada kurs berlaku")
+	ErrKursTidakAda = errors.New("models: no exchange rate in effect")
 	// ErrKursGanda - lebih dari satu baris kurs berlaku pada tanggal yang sama.
-	ErrKursGanda = errors.New("models: lebih dari satu kurs berlaku pada tanggal yang sama")
+	ErrKursGanda = errors.New("models: more than one exchange rate in effect on the same date")
 	// ErrKursTakTerurai - teks tanggal/nilai kurs master tidak dapat diurai.
-	ErrKursTakTerurai = errors.New("models: nilai master kurs tidak dapat diurai")
+	ErrKursTakTerurai = errors.New("models: exchange-rate master value cannot be parsed")
 )
 
 // GalatKursTidakAda - pesan VERBATIM `NewTreatyArrEpi.xml` b870.
@@ -81,7 +81,9 @@ type GalatKursTidakAda struct {
 	Tanggal    time.Time
 }
 
-func (g GalatKursTidakAda) Error() string { return "Tidak ada Nilai Kurs di Tahun : " + g.TreatyYear }
+func (g GalatKursTidakAda) Error() string {
+	return "No exchange rate for Treaty Year : " + g.TreatyYear
+}
 
 // Is membuat `errors.Is(err, ErrKursTidakAda)` benar.
 func (GalatKursTidakAda) Is(target error) bool { return target == ErrKursTidakAda }
@@ -125,7 +127,7 @@ func UraiNilaiKursTCO(teks string) (*apd.Decimal, error) {
 	t := strings.TrimSpace(teks)
 	if strings.Contains(t, ",") {
 		if strings.Contains(t, ".") {
-			return nil, fmt.Errorf("%w: TOIDR %q memuat koma dan titik sekaligus", ErrKursTakTerurai, teks)
+			return nil, fmt.Errorf("%w: TOIDR %q contains both a comma and a dot", ErrKursTakTerurai, teks)
 		}
 		t = strings.ReplaceAll(t, ",", ".")
 	}
@@ -134,7 +136,7 @@ func UraiNilaiKursTCO(teks string) (*apd.Decimal, error) {
 		return nil, fmt.Errorf("%w: TOIDR %q", ErrKursTakTerurai, teks)
 	}
 	if d.Sign() <= 0 {
-		return nil, fmt.Errorf("%w: TOIDR %q harus lebih dari nol", ErrKursTakTerurai, teks)
+		return nil, fmt.Errorf("%w: TOIDR %q must be greater than zero", ErrKursTakTerurai, teks)
 	}
 	return d, nil
 }
@@ -160,15 +162,15 @@ func PilihKursBerlakuTCO(h HasilMasterKursTCO, tanggal time.Time) (KursTCO, erro
 	if len(h.Berlaku) == 0 {
 		if len(h.Ditolak) > 0 {
 			d := h.Ditolak[0]
-			return KursTCO{}, fmt.Errorf("%w: tidak ada kurs berlaku pada %s, dan %d baris master tanggalnya ditolak Oracle "+
-				"(bentuk %s), mis. %s %q", ErrKursTakTerurai, tgl, len(h.Ditolak), FormatTanggalKursTCO, d.Kolom, d.Teks)
+			return KursTCO{}, fmt.Errorf("%w: no exchange rate in effect on %s, and %d master rows have dates rejected by Oracle "+
+				"(format %s), e.g. %s %q", ErrKursTakTerurai, tgl, len(h.Ditolak), FormatTanggalKursTCO, d.Kolom, d.Teks)
 		}
-		return KursTCO{}, fmt.Errorf("%w pada %s", ErrKursTidakAda, tgl)
+		return KursTCO{}, fmt.Errorf("%w on %s", ErrKursTidakAda, tgl)
 	}
 	k := h.Berlaku[0]
 	for _, b := range h.Berlaku[1:] {
 		if !kembarIdentikTCO(k, b) {
-			return KursTCO{}, fmt.Errorf("%w: %d baris pada %s yang tidak identik (TOIDR %q %s s.d. %s dan TOIDR %q %s s.d. %s)",
+			return KursTCO{}, fmt.Errorf("%w: %d rows on %s that are not identical (TOIDR %q %s to %s and TOIDR %q %s to %s)",
 				ErrKursGanda, len(h.Berlaku), tgl, k.TeksToIDR, utils.FormatTanggal(k.Mulai), utils.FormatTanggal(k.Akhir),
 				b.TeksToIDR, utils.FormatTanggal(b.Mulai), utils.FormatTanggal(b.Akhir))
 		}
@@ -205,7 +207,7 @@ func UsdDariRpTCO(rp, kurs *apd.Decimal, skala int32) (*apd.Decimal, error) {
 	}
 	hasil := new(apd.Decimal)
 	if _, err := utils.DecimalContext().Quo(hasil, rp, kurs); err != nil {
-		return nil, fmt.Errorf("models: menghitung Usd dari Rp: %w", err)
+		return nil, fmt.Errorf("models: computing Usd from Rp: %w", err)
 	}
 	return kuantisasiKurs(hasil, skala)
 }
@@ -220,7 +222,7 @@ func RpDariUsdTCO(usd, kurs *apd.Decimal) (*apd.Decimal, error) {
 	}
 	hasil := new(apd.Decimal)
 	if _, err := utils.DecimalContext().Mul(hasil, usd, kurs); err != nil {
-		return nil, fmt.Errorf("models: menghitung Rp dari Usd: %w", err)
+		return nil, fmt.Errorf("models: computing Rp from Usd: %w", err)
 	}
 	return kuantisasiKurs(hasil, skalaRpDariUsdTCO)
 }
@@ -232,7 +234,7 @@ func LengkapiKursTCO(k KursTCO) (KursTCO, error) {
 	}
 	d, err := UraiNilaiKursTCO(k.TeksToIDR)
 	if err != nil {
-		return KursTCO{}, fmt.Errorf("%w (baris berlaku %s - %s)", err, utils.FormatTanggal(k.Mulai), utils.FormatTanggal(k.Akhir))
+		return KursTCO{}, fmt.Errorf("%w (row in effect %s - %s)", err, utils.FormatTanggal(k.Mulai), utils.FormatTanggal(k.Akhir))
 	}
 	k.ToIDR = d
 	return k, nil

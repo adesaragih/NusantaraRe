@@ -39,18 +39,18 @@ import (
 
 var (
 	// ErrGudangSecurityBelumDisuntik - gudang security belum dipasang.
-	ErrGudangSecurityBelumDisuntik = errors.New("services: gudang security belum disuntik")
+	ErrGudangSecurityBelumDisuntik = errors.New("services: security store is not injected")
 	// ErrSecurityTidakAda - security bukan milik reinsurer itu (404).
 	ErrSecurityTidakAda = repository.ErrSecurityTidakAda
 	// ErrSecurityDobel - security yang sama sudah tercatat pada reinsurer itu (409).
-	ErrSecurityDobel = errors.New("services: security dobel")
+	ErrSecurityDobel = errors.New("services: duplicate security")
 )
 
 // GalatSecurityDobel menyebut baris mana yang sudah memegang security itu.
 type GalatSecurityDobel struct{ IDLain, ReasSecurity string }
 
 func (g GalatSecurityDobel) Error() string {
-	return fmt.Sprintf("security %s sudah tercatat pada baris %s reinsurer ini", g.ReasSecurity, g.IDLain)
+	return fmt.Sprintf("security %s is already recorded in row %s of this reinsurer", g.ReasSecurity, g.IDLain)
 }
 
 // Is membuat `errors.Is(err, ErrSecurityDobel)` benar.
@@ -325,5 +325,5 @@ func (l *SecurityTCO) Hapus(ctx context.Context, pelaku inti.Pelaku, tahunID, ko
 		return "", err
 	}
 	// `DeleteSecurityReinsurer` tidak menampilkan pesan - `[tidak ada di korpus]`.
-	return "Security dengan ID " + id + " dihapus", nil
+	return "Security with ID " + id + " deleted", nil
 }

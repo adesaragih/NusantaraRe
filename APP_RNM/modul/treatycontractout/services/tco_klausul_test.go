@@ -270,7 +270,7 @@ func TestKlausulDobelDanDitahan(t *testing.T) {
 	g, n := gudangKlausulKosong(), 0
 	g.dobel = "10000009"
 	_, err := layananKlausul(g, &n).Simpan(context.Background(), pelakuUjiTCO, "1000001", epi("10003", "1"))
-	if !errors.Is(err, services.ErrKlausulDobel) || !strings.Contains(err.Error(), "Data sudah pernah di Input") || !strings.Contains(err.Error(), "10000009") {
+	if !errors.Is(err, services.ErrKlausulDobel) || !strings.Contains(err.Error(), "Data has already been entered") || !strings.Contains(err.Error(), "10000009") {
 		t.Errorf("dobel: %v", err)
 	}
 	for _, desc := range []string{"10017", "10002"} {
@@ -343,7 +343,7 @@ func TestKlausulTanpaKursDitolak(t *testing.T) {
 	n := 0
 	l := layananKlausul(gudangKlausulKosong(), &n).DenganKurs(kursKlausulUji{kosong: true})
 	_, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", epi("10003", "1000"))
-	if !errors.Is(err, services.ErrKursTidakAda) || err.Error() != "Tidak ada Nilai Kurs di Tahun : 2026" {
+	if !errors.Is(err, services.ErrKursTidakAda) || err.Error() != "No exchange rate for Treaty Year : 2026" {
 		t.Errorf("induk tanpa kurs: %v", err)
 	}
 	_, err = l.Simpan(context.Background(), pelakuUjiTCO, "1000001", services.KlausulMasuk{DescID: "10009", Anak: true,

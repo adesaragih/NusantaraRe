@@ -73,7 +73,7 @@ func TestReinsurerKombinasiLingkaranPenuh(t *testing.T) {
 	// Total > 100 ditolak; reinsurer nonaktif dan kombinasi tanpa kontrak ditolak.
 	if kode, badan := u.minta(t, http.MethodPost, dasar,
 		map[string]string{"reinsurerId": "UJI-R1", "pctShare": "0.00000001", "ricomm": "0"}, true); kode != http.StatusUnprocessableEntity ||
-		!strings.Contains(badan, "Persentase tidak boleh lebih dari 100!") {
+		!strings.Contains(badan, "Percentage cannot be more than 100!") {
 		t.Errorf("total > 100: %d %s", kode, badan)
 	}
 	if kode, _ := u.minta(t, http.MethodPost, dasar,

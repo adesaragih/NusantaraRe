@@ -199,7 +199,7 @@ func TestPekerjaLampiranTCO(t *testing.T) {
 	}()
 	select {
 	case s := <-catatan:
-		if !strings.Contains(s, "1 efek dijalankan") {
+		if !strings.Contains(s, "1 effect(s) run") {
 			t.Errorf("catatan: %q", s)
 		}
 	case <-time.After(5 * time.Second):

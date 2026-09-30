@@ -239,13 +239,13 @@ func UraiDesimalWarisanTCO(teks string) (*apd.Decimal, string, bool) {
 	}
 	if strings.Contains(t, ",") {
 		if strings.Contains(t, ".") {
-			return nil, "memuat koma dan titik sekaligus", false
+			return nil, "contains both a comma and a dot", false
 		}
 		t = strings.ReplaceAll(t, ",", ".")
 	}
 	// Notasi eksponen bukan bentuk desimal Pega (`@toDecimal` / ketikan layar).
 	if strings.ContainsAny(t, "eE") {
-		return nil, "notasi eksponen bukan bentuk desimal warisan", false
+		return nil, "exponent notation is not a legacy decimal format", false
 	}
 	d, err := utils.ParseDecimal(t)
 	if err != nil {
@@ -322,7 +322,7 @@ var polaYYYYMMDDTCO = regexp.MustCompile(`^\d{8}$`)
 func tanggalTahunWarisanTeks(v sql.NullString, kolom string) (time.Time, error) {
 	t, ok := uraiYYYYMMDDTCO(v.String)
 	if !ok {
-		return time.Time{}, fmt.Errorf("repository: kolom %s bernilai %q: bukan YYYYMMDD (bentuk TREATYYEAR warisan)",
+		return time.Time{}, fmt.Errorf("repository: column %s has value %q: not YYYYMMDD (legacy TREATYYEAR format)",
 			kolom, v.String)
 	}
 	return t, nil
@@ -361,7 +361,7 @@ func TulisDesimalWarisanTCO(d *apd.Decimal) any {
 func tanggalWarisanTeks(v sql.NullString, kolom string) (time.Time, error) {
 	t, ok := UraiTanggalWarisanTCO(v.String)
 	if !ok {
-		return time.Time{}, fmt.Errorf("repository: kolom %s bernilai %q: bentuk tanggal tidak dikenal", kolom, v.String)
+		return time.Time{}, fmt.Errorf("repository: column %s has value %q: unknown date format", kolom, v.String)
 	}
 	return t, nil
 }
@@ -370,7 +370,7 @@ func tanggalWarisanTeks(v sql.NullString, kolom string) (time.Time, error) {
 func waktuWarisanTeks(v sql.NullString, kolom string) (time.Time, error) {
 	t, ok := UraiWaktuWarisanTCO(v.String)
 	if !ok {
-		return time.Time{}, fmt.Errorf("repository: kolom %s bernilai %q: bentuk waktu tidak dikenal", kolom, v.String)
+		return time.Time{}, fmt.Errorf("repository: column %s has value %q: unknown time format", kolom, v.String)
 	}
 	return t, nil
 }

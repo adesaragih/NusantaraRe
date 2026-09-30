@@ -53,10 +53,10 @@ const (
 const batasPilihanKlausulTCO = 100
 
 // ErrKlausulTidakAda - klausul bukan milik tahun treaty itu.
-var ErrKlausulTidakAda = errors.New("repository: klausul tidak ditemukan pada tahun treaty ini")
+var ErrKlausulTidakAda = errors.New("repository: clause not found in this treaty year")
 
 // ErrPilihanMasterTidakAda - ID occupation/clause tidak ada di master FIRE.
-var ErrPilihanMasterTidakAda = errors.New("repository: pilihan tidak ada di master")
+var ErrPilihanMasterTidakAda = errors.New("repository: option not in master")
 
 // JenisKlausulMasterTCO adalah satu baris master `TREATYDESC`.
 type JenisKlausulMasterTCO struct{ ID, DescName, IsXOL, StatusAktif string }
@@ -87,7 +87,7 @@ func (m *MasterKlausulPilihan) JenisKlausul(ctx context.Context, isXOL string) (
 	}
 	rows, err := bacaTCO(ctx, m.db).QueryContext(ctx, q, db.KosongJadiNil(isXOL), db.KosongJadiNil(isXOL))
 	if err != nil {
-		return nil, fmt.Errorf("repository: membaca master %s: %w", MasterJenisKlausulTCO, err)
+		return nil, fmt.Errorf("repository: reading master %s: %w", MasterJenisKlausulTCO, err)
 	}
 	defer func() { _ = rows.Close() }()
 	var hasil []JenisKlausulMasterTCO
@@ -118,7 +118,7 @@ var kolomNamaPilihan = map[string]string{MasterOccupationTCO: "NAME", MasterClau
 func (m *MasterKlausulPilihan) CariPilihan(ctx context.Context, master, teks string) ([]PilihanMasterTCO, error) {
 	kolom, ok := kolomNamaPilihan[master]
 	if !ok {
-		return nil, fmt.Errorf("repository: master pilihan %q tidak dikenal", master)
+		return nil, fmt.Errorf("repository: unknown option master %q", master)
 	}
 	tabel, err := m.db.Qualify(master)
 	if err != nil {
@@ -130,7 +130,7 @@ func (m *MasterKlausulPilihan) CariPilihan(ctx context.Context, master, teks str
 	}
 	rows, err := bacaTCO(ctx, m.db).QueryContext(ctx, q, TipeFireTCO, polaLikeTCO(teks))
 	if err != nil {
-		return nil, fmt.Errorf("repository: membaca master %s: %w", master, err)
+		return nil, fmt.Errorf("repository: reading master %s: %w", master, err)
 	}
 	defer func() { _ = rows.Close() }()
 	var hasil []PilihanMasterTCO
@@ -148,7 +148,7 @@ func (m *MasterKlausulPilihan) CariPilihan(ctx context.Context, master, teks str
 func (m *MasterKlausulPilihan) AmbilPilihan(ctx context.Context, master, id string) (PilihanMasterTCO, error) {
 	kolom, ok := kolomNamaPilihan[master]
 	if !ok {
-		return PilihanMasterTCO{}, fmt.Errorf("repository: master pilihan %q tidak dikenal", master)
+		return PilihanMasterTCO{}, fmt.Errorf("repository: unknown option master %q", master)
 	}
 	tabel, err := m.db.Qualify(master)
 	if err != nil {
@@ -164,7 +164,7 @@ func (m *MasterKlausulPilihan) AmbilPilihan(ctx context.Context, master, id stri
 		return PilihanMasterTCO{}, fmt.Errorf("%w %s: %q", ErrPilihanMasterTidakAda, master, id)
 	}
 	if err != nil {
-		return PilihanMasterTCO{}, fmt.Errorf("repository: membaca master %s %s: %w", master, id, err)
+		return PilihanMasterTCO{}, fmt.Errorf("repository: reading master %s %s: %w", master, id, err)
 	}
 	return PilihanMasterTCO{ID: gotID.String, Nama: nama.String}, nil
 }
@@ -245,7 +245,7 @@ func sqlCariDobelKlausulTCO(tabel string) string {
 func medanSamaKlausulTCO(a, b models.KlausulTreaty, medan string) (bool, error) {
 	kolom, ok := kolomDariMedan[medan]
 	if !ok {
-		return false, fmt.Errorf("repository: medan kunci dobel %q tidak dikenal", medan)
+		return false, fmt.Errorf("repository: unknown duplicate-key field %q", medan)
 	}
 	if kolomDesimalKlausul[kolom] {
 		da, _, okA := UraiDesimalWarisanTCO(models.NilaiMedanKlausul(a, medan))
@@ -382,7 +382,7 @@ func (m *MasterKlausulTCO) bacaBanyak(ctx context.Context, q string, arg ...any)
 	}
 	rows, err := bacaTCO(ctx, m.db).QueryContext(ctx, q, arg...)
 	if err != nil {
-		return nil, fmt.Errorf("repository: membaca klausul: %w", err)
+		return nil, fmt.Errorf("repository: reading clauses: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
 	var hasil []models.KlausulTreaty
@@ -432,7 +432,7 @@ func (m *MasterKlausulTCO) Induk(ctx context.Context, tahunID, descID, reinsType
 		return models.KlausulTreaty{}, err
 	}
 	if len(baris) == 0 {
-		return models.KlausulTreaty{}, fmt.Errorf("%w: induk jenis reasuransi %s", ErrKlausulTidakAda, reinsTypeID)
+		return models.KlausulTreaty{}, fmt.Errorf("%w: parent reinsurance type %s", ErrKlausulTidakAda, reinsTypeID)
 	}
 	return baris[0], nil
 }
@@ -441,7 +441,7 @@ func (m *MasterKlausulTCO) Induk(ctx context.Context, tahunID, descID, reinsType
 func (m *MasterKlausulTCO) PctAnakLain(ctx context.Context, tx *db.Tx, tahunID, descID, parentReinsTypeID, kecualiID string) (
 	[]*apd.Decimal, error) {
 	if tx == nil {
-		return nil, errors.New("repository: membaca Pct anak menuntut transaksi")
+		return nil, errors.New("repository: reading child Pct requires a transaction")
 	}
 	tabel, err := m.db.Qualify(TabelKlausulTCO)
 	if err != nil {
@@ -453,7 +453,7 @@ func (m *MasterKlausulTCO) PctAnakLain(ctx context.Context, tx *db.Tx, tahunID, 
 	}
 	rows, err := tx.QueryContext(ctx, q, tahunID, descID, parentReinsTypeID, db.KosongJadiNil(kecualiID), db.KosongJadiNil(kecualiID))
 	if err != nil {
-		return nil, fmt.Errorf("repository: membaca Pct anak: %w", err)
+		return nil, fmt.Errorf("repository: reading child Pct: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
 	var hasil []*apd.Decimal
@@ -474,7 +474,7 @@ func (m *MasterKlausulTCO) PctAnakLain(ctx context.Context, tx *db.Tx, tahunID, 
 // CariDobel mencari baris LAIN pada lingkup yang sama dengan kunci jenis sama.
 func (m *MasterKlausulTCO) CariDobel(ctx context.Context, tx *db.Tx, k models.KlausulTreaty, kunci []string) (string, error) {
 	if tx == nil {
-		return "", errors.New("repository: pencarian dobel klausul menuntut transaksi")
+		return "", errors.New("repository: clause duplicate search requires a transaction")
 	}
 	if len(kunci) == 0 {
 		return "", nil
@@ -490,7 +490,7 @@ func (m *MasterKlausulTCO) CariDobel(ctx context.Context, tx *db.Tx, k models.Kl
 	rows, err := tx.QueryContext(ctx, q, k.TreatyYearID, k.TreatyDescID, k.ParentReinsTypeID,
 		db.KosongJadiNil(k.ID), db.KosongJadiNil(k.ID))
 	if err != nil {
-		return "", fmt.Errorf("repository: mencari klausul dobel: %w", err)
+		return "", fmt.Errorf("repository: searching duplicate clause: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
 	for rows.Next() {
@@ -516,7 +516,7 @@ func (m *MasterKlausulTCO) CariDobel(ctx context.Context, tx *db.Tx, k models.Kl
 // Sisip menulis klausul baru; ID '1' + 7 digit dari `PROPORTIONALARRG_SEQ` warisan.
 func (m *MasterKlausulTCO) Sisip(ctx context.Context, tx *db.Tx, k models.KlausulTreaty) (string, error) {
 	if tx == nil {
-		return "", errors.New("repository: menyisipkan klausul menuntut transaksi")
+		return "", errors.New("repository: inserting clause requires a transaction")
 	}
 	tabel, err := m.db.Qualify(TabelKlausulTCO)
 	if err != nil {
@@ -536,15 +536,15 @@ func (m *MasterKlausulTCO) Sisip(ctx context.Context, tx *db.Tx, k models.Klausu
 	}
 	hasil, err := tx.ExecContext(ctx, q, arg...)
 	if err != nil {
-		return "", fmt.Errorf("repository: menyisipkan klausul: %w", err)
+		return "", fmt.Errorf("repository: inserting clause: %w", err)
 	}
-	return k.ID, db.PastikanSatuBaris(hasil, "penyisipan klausul")
+	return k.ID, db.PastikanSatuBaris(hasil, "clause insert")
 }
 
 // Perbarui menimpa seluruh kolom non-kunci klausul milik tahun itu.
 func (m *MasterKlausulTCO) Perbarui(ctx context.Context, tx *db.Tx, k models.KlausulTreaty) error {
 	if tx == nil {
-		return errors.New("repository: memperbarui klausul menuntut transaksi")
+		return errors.New("repository: updating clause requires a transaction")
 	}
 	tabel, err := m.db.Qualify(TabelKlausulTCO)
 	if err != nil {
@@ -564,12 +564,12 @@ func (m *MasterKlausulTCO) Perbarui(ctx context.Context, tx *db.Tx, k models.Kla
 	arg = append(arg, k.ID, k.TreatyYearID)
 	hasil, err := tx.ExecContext(ctx, q, arg...)
 	if err != nil {
-		return fmt.Errorf("repository: memperbarui klausul %s: %w", k.ID, err)
+		return fmt.Errorf("repository: updating clause %s: %w", k.ID, err)
 	}
 	if n, err := hasil.RowsAffected(); err == nil && n == 0 {
 		return ErrKlausulTidakAda
 	}
-	return db.PastikanSatuBaris(hasil, "pembaruan klausul")
+	return db.PastikanSatuBaris(hasil, "clause update")
 }
 
 func sqlKunciTahunTCO(tabel string) string {
@@ -580,7 +580,7 @@ func sqlKunciTahunTCO(tabel string) string {
 // Pct anak dan pencarian dobel tidak boleh dilewati penulis serentak.
 func (m *MasterTahunTreaty) Kunci(ctx context.Context, tx *db.Tx, id string) error {
 	if tx == nil {
-		return errors.New("repository: mengunci tahun treaty menuntut transaksi")
+		return errors.New("repository: locking treaty year requires a transaction")
 	}
 	tabel, err := m.db.Qualify(TabelTahunTCO)
 	if err != nil {
@@ -596,7 +596,7 @@ func (m *MasterTahunTreaty) Kunci(ctx context.Context, tx *db.Tx, id string) err
 		return ErrTahunTreatyTidakAda
 	}
 	if err != nil {
-		return fmt.Errorf("repository: mengunci tahun treaty %s: %w", id, err)
+		return fmt.Errorf("repository: locking treaty year %s: %w", id, err)
 	}
 	return nil
 }

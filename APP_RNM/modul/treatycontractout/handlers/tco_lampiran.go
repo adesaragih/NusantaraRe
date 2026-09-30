@@ -69,7 +69,7 @@ func daftarkanRuteLampiranTCO(mux *http.ServeMux, svc *services.Service, stub bo
 // punyaDBTCO menjawab 503 bila Oracle belum dikonfigurasi.
 func punyaDBTCO(w http.ResponseWriter, svc *services.Service) bool {
 	if !svc.PunyaDatabase() {
-		galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+		galat.Tulis(w, http.StatusServiceUnavailable, "database is not configured")
 		return false
 	}
 	return true
@@ -120,10 +120,10 @@ func unggahLampiranTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		if err := r.ParseMultipartForm(galat.BatasFormulir); err != nil {
 			var besar *http.MaxBytesError
 			if errors.As(err, &besar) {
-				galat.Tulis(w, http.StatusRequestEntityTooLarge, "berkas melebihi batas ukuran")
+				galat.Tulis(w, http.StatusRequestEntityTooLarge, "file exceeds the size limit")
 				return
 			}
-			galat.Tulis(w, http.StatusBadRequest, "permintaan bukan multipart yang sah")
+			galat.Tulis(w, http.StatusBadRequest, "request is not valid multipart")
 			return
 		}
 		berkas, kepala, err := r.FormFile("berkas")
@@ -193,7 +193,7 @@ func unduhSemuaLampiranTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		err := LayananLampiranTCO(svc).UnduhSemua(r.Context(), inti.PelakuDari(r, stub), tahunID,
 			func(nama string, isi io.Reader) error {
 				if arsip == nil {
-					kepalaUnduhan(w, "application/zip", "lampiran-tahun-treaty-"+tahunID+".zip")
+					kepalaUnduhan(w, "application/zip", "treaty-year-attachments-"+tahunID+".zip")
 					arsip = zip.NewWriter(w)
 				}
 				f, err := arsip.Create(nama)

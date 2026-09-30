@@ -37,13 +37,13 @@ import (
 
 var (
 	// ErrGrupTreatyDiLuarMaster - TreatyGroupID tidak ada di master TREATYGROUP (422).
-	ErrGrupTreatyDiLuarMaster = errors.New("services: grup treaty tidak ada di master")
+	ErrGrupTreatyDiLuarMaster = errors.New("services: treaty group not in master")
 	// ErrTahunBeranak - tahun/grup tidak dapat diganti selama tahun treaty beranak (409).
-	ErrTahunBeranak = errors.New("services: tahun treaty dan grupnya tidak dapat diganti selama kontrak/klausul masih ada")
+	ErrTahunBeranak = errors.New("services: the treaty year and its group cannot be changed while contracts/clauses still exist")
 	// ErrGudangTahunTreatyBelumDisuntik - handler lupa memasang gudang.
-	ErrGudangTahunTreatyBelumDisuntik = errors.New("services: gudang tahun treaty belum disuntik")
+	ErrGudangTahunTreatyBelumDisuntik = errors.New("services: treaty year store is not injected")
 	// ErrTahunTreatyDobel - AC 73.
-	ErrTahunTreatyDobel = errors.New("services: tahun treaty dengan periode dan grup yang sama sudah ada")
+	ErrTahunTreatyDobel = errors.New("services: a treaty year with the same period and group already exists")
 	// ErrTahunTreatyTidakAda dirujuk ulang supaya handler tidak mengimpor repository.
 	ErrTahunTreatyTidakAda = repository.ErrTahunTreatyTidakAda
 )
@@ -57,7 +57,7 @@ type GalatTahunTreatyDobel struct {
 }
 
 func (g GalatTahunTreatyDobel) Error() string {
-	return fmt.Sprintf("tahun treaty %s sudah memakai StartDate %s, EndDate %s, Treaty Group %s",
+	return fmt.Sprintf("treaty year %s already uses StartDate %s, EndDate %s, Treaty Group %s",
 		g.IDLain, utils.FormatTanggal(g.StartDate), utils.FormatTanggal(g.EndDate), g.TreatyGroupID)
 }
 
@@ -269,7 +269,7 @@ func uraiTanggalMasuk(nama, teks string) (time.Time, error) {
 	}
 	d, err := utils.ParseTanggal(strings.TrimSpace(teks))
 	if err != nil {
-		return time.Time{}, fmt.Errorf("%w: %s bukan tanggal yang dikenal (%q)", galat.ErrPermintaanTidakSah, nama, teks)
+		return time.Time{}, fmt.Errorf("%w: %s is not a recognised date (%q)", galat.ErrPermintaanTidakSah, nama, teks)
 	}
 	return d, nil
 }
@@ -334,7 +334,7 @@ func (t *TahunTreatyTCO) Simpan(ctx context.Context, pelaku inti.Pelaku, masuk T
 					return err
 				}
 				if n > 0 {
-					return fmt.Errorf("%w: tahun treaty %s memiliki %d kontrak/klausul", ErrTahunBeranak, model.ID, n)
+					return fmt.Errorf("%w: treaty year %s has %d contracts/clauses", ErrTahunBeranak, model.ID, n)
 				}
 			}
 		}

@@ -63,7 +63,7 @@ func TestGalat503RuteKursTanpaDatabaseMembawaKalimatnya(t *testing.T) {
 		q := httptest.NewRequest(http.MethodGet, jalur, nil)
 		q.Header.Set("X-Pelaku", "UJI-ADMIN")
 		router.ServeHTTP(w, q)
-		if pesan := badanGalat503(t, jalur, w); pesan != "database belum dikonfigurasi" {
+		if pesan := badanGalat503(t, jalur, w); pesan != "database is not configured" {
 			t.Errorf("%s: galat = %q", jalur, pesan)
 		}
 	}

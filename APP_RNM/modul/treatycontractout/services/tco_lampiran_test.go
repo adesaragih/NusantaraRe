@@ -551,7 +551,7 @@ func TestLampiranGerbangBerkas(t *testing.T) {
 	ctx := context.Background()
 	_, err := r.l.Unggah(ctx, pelakuUjiTCO, "1000001", unggah.BerkasMasuk{NamaFile: "a.pdf",
 		Kategori: "CLAUSES", Isi: strings.NewReader("")})
-	if !errors.Is(err, unggah.ErrBerkasKosong) || !strings.Contains(err.Error(), "Tidak ada file yg diattach") {
+	if !errors.Is(err, unggah.ErrBerkasKosong) || !strings.Contains(err.Error(), "No file attached") {
 		t.Errorf("berkas kosong: %v", err)
 	}
 	_, err = r.l.DenganBatas(4).Unggah(ctx, pelakuUjiTCO, "1000001", unggah.BerkasMasuk{NamaFile: "a.pdf",

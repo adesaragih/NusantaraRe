@@ -30,10 +30,10 @@ var (
 	// ErrMasterJenisReasuransiKosong - saringan non-life tidak meloloskan satu
 	// pun baris master, atau masternya memang kosong.
 	ErrMasterJenisReasuransiKosong = errors.New(
-		"services: master jenis reasuransi REINSURANCETYPE kosong atau tidak memuat jenis non-life yang aktif")
+		"services: reinsurance type master REINSURANCETYPE is empty or has no active non-life type")
 	// ErrPembacaJenisReasuransiBelumDisuntik - handler lupa memasang pembaca.
 	ErrPembacaJenisReasuransiBelumDisuntik = errors.New(
-		"services: pembaca master jenis reasuransi belum disuntik")
+		"services: reinsurance type master reader is not injected")
 )
 
 // PembacaJenisReasuransiTCO membaca master tersaring.

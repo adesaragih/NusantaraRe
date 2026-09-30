@@ -167,7 +167,7 @@ func NamaBerkasAntreLampiranTCO(imageID, namaAsli string) string {
 func NamaEntriZipLampiranTCO(id, namaAsli string) string {
 	dasar := path.Base(strings.ReplaceAll(strings.TrimSpace(namaAsli), `\`, "/"))
 	if dasar == "." || dasar == "/" || dasar == ".." || dasar == "" {
-		dasar = "berkas"
+		dasar = "file"
 	}
 	return id + "_" + dasar
 }

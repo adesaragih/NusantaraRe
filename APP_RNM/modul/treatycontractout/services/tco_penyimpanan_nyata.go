@@ -231,9 +231,9 @@ func (l *LampiranTahunTCO) JalankanPekerja(ctx context.Context, interval time.Du
 		case <-t.C:
 			n, err := l.JalankanAntrean(ctx, AkunPekerjaLampiranTCO, batasPutaranPekerjaTCO)
 			if err != nil && !errors.Is(err, context.Canceled) {
-				catat(fmt.Sprintf("pekerja lampiran TCO: %d efek dijalankan, lalu berhenti: %v", n, err))
+				catat(fmt.Sprintf("TCO attachment worker: %d effect(s) run, then stopped: %v", n, err))
 			} else if n > 0 {
-				catat(fmt.Sprintf("pekerja lampiran TCO: %d efek dijalankan", n))
+				catat(fmt.Sprintf("TCO attachment worker: %d effect(s) run", n))
 			}
 		}
 	}

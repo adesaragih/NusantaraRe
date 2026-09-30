@@ -68,18 +68,18 @@ const batasJawabanStorageTCO = 1 << 20
 
 var (
 	// ErrStorageTakTerjangkauTCO - jaringan/batas waktu; layak dicoba ulang.
-	ErrStorageTakTerjangkauTCO = errors.New("services: layanan penyimpanan tidak terjangkau")
+	ErrStorageTakTerjangkauTCO = errors.New("services: storage service unreachable")
 	// ErrStorageGagalTCO - layanan menjawab galat (5xx, 404 titik layanan, 3xx,
 	// 401, 403, 429); layak dicoba ulang.
-	ErrStorageGagalTCO = errors.New("services: layanan penyimpanan menjawab galat")
+	ErrStorageGagalTCO = errors.New("services: storage service returned an error")
 	// ErrStorageTokenDitolakTCO - 401/403: cache token dikosongkan sebelum
 	// percobaan berikutnya. Membungkus ErrStorageGagalTCO.
-	ErrStorageTokenDitolakTCO = fmt.Errorf("%w: token ditolak", ErrStorageGagalTCO)
+	ErrStorageTokenDitolakTCO = fmt.Errorf("%w: token rejected", ErrStorageGagalTCO)
 	// ErrStorageMenolakPermintaanTCO - layanan menolak bentuk permintaan (400, 422);
 	// PERMANEN sampai manusia bertindak.
-	ErrStorageMenolakPermintaanTCO = errors.New("services: layanan penyimpanan menolak permintaan")
+	ErrStorageMenolakPermintaanTCO = errors.New("services: storage service rejected the request")
 	// ErrStorageJawabanRusakTCO - jawaban tidak berbentuk (`URLImage` kosong, JSON rusak).
-	ErrStorageJawabanRusakTCO = errors.New("services: jawaban layanan penyimpanan tidak berbentuk")
+	ErrStorageJawabanRusakTCO = errors.New("services: storage service response is malformed")
 )
 
 // permintaanStorageTCO - halaman `UploadDoc` sebagai JSON (nama medan VERBATIM).
@@ -124,10 +124,10 @@ func NewPengirimBerkasHTTPTCO(klien *http.Client, app PembacaAppStorageTCO) Peng
 func galatJaringanTCO(err error) error {
 	var ue *url.Error
 	if errors.As(err, &ue) && ue.Timeout() {
-		return fmt.Errorf("%w: batas waktu", ErrStorageTakTerjangkauTCO)
+		return fmt.Errorf("%w: timeout", ErrStorageTakTerjangkauTCO)
 	}
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-		return fmt.Errorf("%w: permintaan dibatalkan", ErrStorageTakTerjangkauTCO)
+		return fmt.Errorf("%w: request cancelled", ErrStorageTakTerjangkauTCO)
 	}
 	return ErrStorageTakTerjangkauTCO
 }
@@ -163,12 +163,12 @@ func galatStatusObjekTCO(kode int) error {
 func (p *pengirimBerkasHTTPTCO) kirimJSON(ctx context.Context, alamat string, badan permintaanStorageTCO) (jawabanStorageTCO, error) {
 	isi, err := json.Marshal(badan)
 	if err != nil {
-		return jawabanStorageTCO{}, fmt.Errorf("services: merakit permintaan penyimpanan: %w", err)
+		return jawabanStorageTCO{}, fmt.Errorf("services: building storage request: %w", err)
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, alamat, bytes.NewReader(isi))
 	if err != nil {
 		// ⛔ Alamat tidak disebut - pesan `url.Parse` memuatnya.
-		return jawabanStorageTCO{}, fmt.Errorf("%w: alamat layanan tidak berbentuk", ErrStorageMenolakPermintaanTCO)
+		return jawabanStorageTCO{}, fmt.Errorf("%w: service address is malformed", ErrStorageMenolakPermintaanTCO)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	jwb, err := p.klien.Do(req)
@@ -189,7 +189,7 @@ func (p *pengirimBerkasHTTPTCO) kirimJSON(ctx context.Context, alamat string, ba
 
 func (p *pengirimBerkasHTTPTCO) dasar(ctx context.Context, token, kunci string) (permintaanStorageTCO, error) {
 	if p.app == nil {
-		return permintaanStorageTCO{}, fmt.Errorf("%w: pembaca App belum dipasang", outbox.ErrPenyimpananBelumDisetujui)
+		return permintaanStorageTCO{}, fmt.Errorf("%w: App reader is not installed", outbox.ErrPenyimpananBelumDisetujui)
 	}
 	app, err := p.app(ctx)
 	if err != nil {
@@ -216,10 +216,10 @@ func (p *pengirimBerkasHTTPTCO) Kirim(ctx context.Context, alamat, token, kunci 
 	}
 	data, err := io.ReadAll(io.LimitReader(isi, unggah.BatasUkuranUnggahan+1))
 	if err != nil {
-		return models.ObjekPenyimpananTCO{}, fmt.Errorf("services: membaca berkas antrean: %w", err)
+		return models.ObjekPenyimpananTCO{}, fmt.Errorf("services: reading queued file: %w", err)
 	}
 	if int64(len(data)) > unggah.BatasUkuranUnggahan {
-		return models.ObjekPenyimpananTCO{}, fmt.Errorf("%w: berkas melebihi batas", ErrStorageMenolakPermintaanTCO)
+		return models.ObjekPenyimpananTCO{}, fmt.Errorf("%w: file exceeds the limit", ErrStorageMenolakPermintaanTCO)
 	}
 	durasi := DurasiURLStorageTCO
 	b.Durasi, b.Folder, b.MimeType, b.Ext = &durasi, FolderStorageTCO, tipe, normalEkstensiTCO(ekstensi)
@@ -230,7 +230,7 @@ func (p *pengirimBerkasHTTPTCO) Kirim(ctx context.Context, alamat, token, kunci 
 	}
 	if strings.TrimSpace(j.URLImage) == "" {
 		// `InsertGoogleStorage_Act.xml` b2902: `URLImage == ""` = gagal.
-		return models.ObjekPenyimpananTCO{}, fmt.Errorf("%w: URLImage kosong", ErrStorageJawabanRusakTCO)
+		return models.ObjekPenyimpananTCO{}, fmt.Errorf("%w: URLImage is empty", ErrStorageJawabanRusakTCO)
 	}
 	// tco4: yang Pega catat ke T_STORAGE_IMAGE (`Insert_T_Storage_SQL` b85):
 	// URLImage, appfolder, exp, Namafile, App - apa adanya dari jawaban.
@@ -259,7 +259,7 @@ func (p *pengirimBerkasHTTPTCO) urlBertanda(ctx context.Context, alamat, token, 
 	// jawaban layanan tidak dapat menyuruh backend membuka alamat polos.
 	u, err := url.Parse(strings.TrimSpace(j.URLImage))
 	if err != nil || u.Host == "" || u.Scheme != "https" {
-		return "", models.ObjekPenyimpananTCO{}, fmt.Errorf("%w: URLImage tidak berbentuk", ErrStorageJawabanRusakTCO)
+		return "", models.ObjekPenyimpananTCO{}, fmt.Errorf("%w: URLImage is malformed", ErrStorageJawabanRusakTCO)
 	}
 	return u.String(), models.ObjekPenyimpananTCO{ImageID: kunci, URLPublic: j.URLImage, AppFolder: j.AppFolder,
 		Exp: models.ExpStorageTCO(j.Exp), TanggalUpload: models.TanggalUploadStorageTCO(j.DateTime)}, nil
@@ -273,7 +273,7 @@ func (p *pengirimBerkasHTTPTCO) urlBertanda(ctx context.Context, alamat, token, 
 func (p *pengirimBerkasHTTPTCO) unduh(ctx context.Context, bertanda, jengkal string) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, bertanda, nil)
 	if err != nil {
-		return nil, fmt.Errorf("%w: URLImage tidak berbentuk", ErrStorageJawabanRusakTCO)
+		return nil, fmt.Errorf("%w: URLImage is malformed", ErrStorageJawabanRusakTCO)
 	}
 	if jengkal != "" {
 		req.Header.Set("Range", jengkal)

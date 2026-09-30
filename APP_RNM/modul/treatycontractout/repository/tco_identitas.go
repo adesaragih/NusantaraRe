@@ -23,16 +23,16 @@ import (
 
 // ErrIdentitasMelampauiLebar - nomor urut tidak muat di lebar identitas.
 var ErrIdentitasMelampauiLebar = errors.New(
-	"repository: nomor urut melampaui lebar identitas; sequence harus ditinjau, bukan dipotong")
+	"repository: sequence number exceeds the identity width; the sequence must be reviewed, not truncated")
 
 // FormatIdentitasTCO merakit '1' + nomor ber-padding nol selebar `lebar`.
 func FormatIdentitasTCO(n int64, lebar int) (string, error) {
 	if n < 0 {
-		return "", fmt.Errorf("%w: %d negatif", ErrIdentitasMelampauiLebar, n)
+		return "", fmt.Errorf("%w: %d is negative", ErrIdentitasMelampauiLebar, n)
 	}
 	ekor := strconv.FormatInt(n, 10)
 	if len(ekor) > lebar {
-		return "", fmt.Errorf("%w: %d tidak muat di %d digit", ErrIdentitasMelampauiLebar, n, lebar)
+		return "", fmt.Errorf("%w: %d does not fit in %d digits", ErrIdentitasMelampauiLebar, n, lebar)
 	}
 	return "1" + fmt.Sprintf("%0*d", lebar, n), nil
 }
@@ -45,7 +45,7 @@ var sequenceDikenalTCO = map[string]int{
 }
 
 // ErrSequenceTakDikenal - nama sequence di luar daftar modul.
-var ErrSequenceTakDikenal = errors.New("repository: sequence bukan milik Treaty Contract Out")
+var ErrSequenceTakDikenal = errors.New("repository: sequence does not belong to Treaty Contract Out")
 
 // IdentitasBerikutTCO menerbitkan identitas baru dari sequence, di dalam
 // transaksi pemanggil.
@@ -64,7 +64,7 @@ func IdentitasBerikutTCO(ctx context.Context, d *db.DB, tx *db.Tx, sequence stri
 	}
 	var n int64
 	if err := tx.QueryRowContext(ctx, q).Scan(&n); err != nil {
-		return "", fmt.Errorf("repository: mengambil nomor dari %s: %w", sequence, err)
+		return "", fmt.Errorf("repository: taking a number from %s: %w", sequence, err)
 	}
 	return FormatIdentitasTCO(n, lebar)
 }

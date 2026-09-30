@@ -77,7 +77,7 @@ func hapusKontrakTCO(svc *services.Service, stub bool) http.HandlerFunc {
 		}
 		k, ok := konfirmasiDariKueri(r, "reinsurer", "security", "business", "bersama")
 		if !ok {
-			galat.Tulis(w, http.StatusBadRequest, "jumlah reinsurer, security, business, dan kontrak lain yang dikonfirmasi wajib (lihat dampak-hapus)")
+			galat.Tulis(w, http.StatusBadRequest, "confirmed counts of reinsurer, security, business and other contracts are required (see dampak-hapus)")
 			return
 		}
 		pesan, err := layananKaskadeTCO(svc).HapusKontrak(r.Context(), inti.PelakuDari(r, stub), r.PathValue("id"), r.PathValue("kid"), k)
@@ -109,7 +109,7 @@ func hapusReinsurerKaskadeTCO(svc *services.Service, stub bool) http.HandlerFunc
 		}
 		k, ok := konfirmasiDariKueri(r, "security")
 		if !ok {
-			galat.Tulis(w, http.StatusBadRequest, "jumlah security yang dikonfirmasi wajib (lihat dampak-hapus)")
+			galat.Tulis(w, http.StatusBadRequest, "confirmed security count is required (see dampak-hapus)")
 			return
 		}
 		k.Reinsurer = 1

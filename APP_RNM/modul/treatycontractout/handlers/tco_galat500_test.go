@@ -23,12 +23,12 @@ func TestGalat500TreatyContractOutMencatatSebabnya(t *testing.T) {
 	defer log.SetOutput(lama)
 
 	w := httptest.NewRecorder()
-	jawabGalatTreatyContractOut(w, errors.New(`repository: kolom RP bernilai "UJI": sebab`))
+	jawabGalatTreatyContractOut(w, errors.New(`repository: column RP has value "UJI": cause`))
 
 	if w.Code != http.StatusInternalServerError {
 		t.Fatalf("kode %d, mau 500", w.Code)
 	}
-	if !strings.Contains(catatan.String(), `kolom RP bernilai "UJI"`) {
+	if !strings.Contains(catatan.String(), `column RP has value "UJI"`) {
 		t.Errorf("sebab asli tidak tercatat di log backend; log = %q", catatan.String())
 	}
 	if strings.Contains(w.Body.String(), "UJI") {

@@ -76,16 +76,16 @@ func simpanReinsurerTCO(svc *services.Service, stub, perbarui bool) http.Handler
 		}
 		var masuk services.ReinsurerMasuk
 		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&masuk); err != nil {
-			galat.Tulis(w, http.StatusBadRequest, "badan permintaan bukan JSON reinsurer yang sah")
+			galat.Tulis(w, http.StatusBadRequest, "request body is not valid reinsurer JSON")
 			return
 		}
 		id := strings.TrimSpace(masuk.ID)
 		switch {
 		case !perbarui && id != "":
-			galat.Tulis(w, http.StatusBadRequest, "identitas reinsurer dibuat server; POST tidak boleh membawa id")
+			galat.Tulis(w, http.StatusBadRequest, "the server assigns the reinsurer id; POST must not carry an id")
 			return
 		case perbarui && id != "" && id != r.PathValue("rid"):
-			galat.Tulis(w, http.StatusBadRequest, "id di badan berbeda dari id di jalur")
+			galat.Tulis(w, http.StatusBadRequest, "id in the body differs from id in the path")
 			return
 		case perbarui:
 			masuk.ID = r.PathValue("rid")

@@ -92,7 +92,7 @@ func TestKaskadeHapusKontrakKlausulTetapHidup(t *testing.T) {
 		t.Errorf("angka berubah: %d", kode)
 	}
 	kode, badan = u.minta(t, http.MethodDelete, dasarTahun+"/kontrak/"+a+"?reinsurer=2&security=1&business=2&bersama=1", nil, true)
-	if kode != http.StatusOK || !strings.Contains(badan, "Data Berhasil di Hapus") {
+	if kode != http.StatusOK || !strings.Contains(badan, "Data successfully deleted") {
 		t.Fatalf("hapus: %d %s", kode, badan)
 	}
 	hitung := func(q string, args ...any) int {

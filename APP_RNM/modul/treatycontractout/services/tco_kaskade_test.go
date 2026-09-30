@@ -68,7 +68,7 @@ func TestHapusKontrakKaskade(t *testing.T) {
 	k, dikunci := &kaskadeUji{dampak: dampakUji(), terhapus: dampakUji()}, 0
 	pesan, err := layananKaskade(k, &dikunci).HapusKontrak(context.Background(), pelakuUjiTCO, "1000001", "1000003",
 		services.KonfirmasiHapus{Reinsurer: 2, Security: 3, Business: 1})
-	if err != nil || pesan != "Data Berhasil di Hapus" || k.dihapus != 1 || dikunci != 1 {
+	if err != nil || pesan != "Data successfully deleted" || k.dihapus != 1 || dikunci != 1 {
 		t.Fatalf("hapus: %q %v dihapus %d dikunci %d", pesan, err, k.dihapus, dikunci)
 	}
 }

@@ -31,21 +31,21 @@ import (
 
 var (
 	// ErrKontrakBeranak - jenis reasuransi tidak dapat diganti selama kombinasinya beranak (409).
-	ErrKontrakBeranak = errors.New("services: jenis reasuransi kontrak tidak dapat diganti selama reinsurer/business masih ada")
+	ErrKontrakBeranak = errors.New("services: the contract reinsurance type cannot be changed while reinsurer/business rows still exist")
 	// ErrGudangKontrakBelumDisuntik - gudang kontrak belum dipasang.
-	ErrGudangKontrakBelumDisuntik = errors.New("services: gudang kontrak treaty belum disuntik")
+	ErrGudangKontrakBelumDisuntik = errors.New("services: treaty contract store is not injected")
 	// ErrKontrakTidakAda - kontrak bukan milik tahun treaty itu (404).
 	ErrKontrakTidakAda = repository.ErrKontrakTidakAda
 	// ErrKontrakDobel - jenis reasuransi itu sudah punya kontrak di tahun ini (409).
-	ErrKontrakDobel = errors.New("services: kontrak dobel")
+	ErrKontrakDobel = errors.New("services: duplicate contract")
 	// ErrJenisReasuransiDiLuarDaftar - ID jenis reasuransi tidak ada di daftar
 	// tersaring tiket 02 (AC 10, 11): tidak diketik bebas (422).
-	ErrJenisReasuransiDiLuarDaftar = errors.New("services: jenis reasuransi di luar daftar tersaring REINSURANCETYPE")
+	ErrJenisReasuransiDiLuarDaftar = errors.New("services: reinsurance type outside the filtered REINSURANCETYPE list")
 )
 
 // PesanKontrakDobelTCO - VERBATIM `SaveTreatyContract_Act.xml` langkah 12
 // (b2270 `OutputParam.ERRMSG3`), langkah yang dikomentari di Pega.
-const PesanKontrakDobelTCO = "Data sudah pernah di Input"
+const PesanKontrakDobelTCO = "Data has already been entered"
 
 // GalatKontrakDobel menyebut kontrak mana yang sudah memegang jenis itu.
 type GalatKontrakDobel struct {
@@ -54,7 +54,7 @@ type GalatKontrakDobel struct {
 }
 
 func (g GalatKontrakDobel) Error() string {
-	return fmt.Sprintf("%s: jenis reasuransi %s sudah dipakai kontrak %s pada tahun treaty ini",
+	return fmt.Sprintf("%s: reinsurance type %s is already used by contract %s in this treaty year",
 		PesanKontrakDobelTCO, g.ReinsTypeID, g.IDLain)
 }
 
@@ -236,7 +236,7 @@ func uraiTanggalKontrak(nama, teks string) (time.Time, error) {
 	}
 	v, err := utils.ParseTanggal(t)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("%w: %s %q bukan tanggal YYYY-MM-DD", galat.ErrPermintaanTidakSah, nama, t)
+		return time.Time{}, fmt.Errorf("%w: %s %q is not a YYYY-MM-DD date", galat.ErrPermintaanTidakSah, nama, t)
 	}
 	return v, nil
 }
@@ -312,7 +312,7 @@ func (k *KontrakTreatyTCO) Simpan(ctx context.Context, pelaku inti.Pelaku, tahun
 					return err
 				}
 				if n > 0 {
-					return fmt.Errorf("%w: kontrak %s masih memiliki %d reinsurer/business pada jenis %s", ErrKontrakBeranak,
+					return fmt.Errorf("%w: contract %s still has %d reinsurer/business rows on type %s", ErrKontrakBeranak,
 						kontrak.ID, n, lama.ReinsTypeID)
 				}
 			}
@@ -341,12 +341,23 @@ func (k *KontrakTreatyTCO) AkhirBawaan(ctx context.Context, pelaku inti.Pelaku, 
 	if _, err := k.tahun.Ambil(ctx, tahunID); err != nil {
 		return "", err
 	}
+	return AkhirTahunBawaan(pelaku, mulai)
+}
+
+// AkhirTahunBawaan - tanggal akhir bawaan dari tanggal mulai, MULAI + 1 TAHUN
+// KALENDER (`models.AkhirKontrakBawaanTCO`, OQ-TCO-10). Dipakai kontrak DAN
+// tahun treaty baru yang belum ber-ID [keputusan work owner 30-09-2026] - satu
+// aturan, satu tempat.
+func AkhirTahunBawaan(pelaku inti.Pelaku, mulai string) (string, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
+		return "", err
+	}
 	t, err := uraiTanggalKontrak("mulai", mulai)
 	if err != nil {
 		return "", err
 	}
 	if t.IsZero() {
-		return "", fmt.Errorf("%w: mulai wajib diisi", galat.ErrPermintaanTidakSah)
+		return "", fmt.Errorf("%w: start date (mulai) is required", galat.ErrPermintaanTidakSah)
 	}
 	return utils.FormatTanggal(models.AkhirKontrakBawaanTCO(t)), nil
 }

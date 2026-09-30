@@ -29,13 +29,13 @@ import (
 
 var (
 	// ErrTahunTreatyGrupKosong - b388.
-	ErrTahunTreatyGrupKosong = errors.New("models: Treaty Group (TREATYGROUPID) wajib diisi")
+	ErrTahunTreatyGrupKosong = errors.New("models: Treaty Group (TREATYGROUPID) is required")
 	// ErrTahunTreatyTahunKosong - b411.
-	ErrTahunTreatyTahunKosong = errors.New("models: Underwriting Year (TREATYYEAR) wajib diisi")
+	ErrTahunTreatyTahunKosong = errors.New("models: Underwriting Year (TREATYYEAR) is required")
 	// ErrTahunTreatyBukanAngka - b434 / CheckYear b335.
-	ErrTahunTreatyBukanAngka = errors.New("models: Underwriting Year (TREATYYEAR) harus angka")
+	ErrTahunTreatyBukanAngka = errors.New("models: Underwriting Year (TREATYYEAR) must be a number")
 	// ErrPeriodeTerbalik - AC 9: masa berlaku berakhir sebelum dimulai.
-	ErrPeriodeTerbalik = errors.New("models: masa berlaku berakhir sebelum dimulai")
+	ErrPeriodeTerbalik = errors.New("models: the period ends before it starts")
 )
 
 // PeriksaPeriodeTCO menolak akhir yang mendahului mulai (AC 9).
@@ -47,7 +47,7 @@ func PeriksaPeriodeTCO(mulai, akhir time.Time, namaMulai, namaAkhir string) erro
 		return nil
 	}
 	if akhir.Before(mulai) {
-		return fmt.Errorf("%w: %s %s mendahului %s %s", ErrPeriodeTerbalik,
+		return fmt.Errorf("%w: %s %s is before %s %s", ErrPeriodeTerbalik,
 			namaAkhir, utils.FormatTanggal(akhir), namaMulai, utils.FormatTanggal(mulai))
 	}
 	return nil

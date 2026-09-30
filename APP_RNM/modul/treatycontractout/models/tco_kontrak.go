@@ -28,16 +28,16 @@ var (
 	// ⚠️ Di Pega gerbang ini DIKOMENTARI (`SaveTreatyContract_Act` langkah 2,
 	// `ASMMessageReinstype`): kontrak baru dengan tanggal terisi tersimpan
 	// tanpa jenis reasuransi. AC tiket 04 menuntutnya - ralat bertanggal.
-	ErrKontrakJenisReasuransiKosong = errors.New("models: ReinsTypeID wajib diisi - jenis reasuransi dipilih dari daftar")
+	ErrKontrakJenisReasuransiKosong = errors.New("models: ReinsTypeID is required - choose a reinsurance type from the list")
 	// ErrKontrakMulaiKosong - `SaveTreatyContract_Act` langkah 3
 	// (`ASMMessageStartDateKosong`, juga dikomentari) dan AC 53.
-	ErrKontrakMulaiKosong = errors.New("models: TreatyStartDate wajib diisi")
+	ErrKontrakMulaiKosong = errors.New("models: TreatyStartDate is required")
 	// ErrKontrakAkhirKosong - tanggal akhir wajib (AC 53).
-	ErrKontrakAkhirKosong = errors.New("models: TreatyEndDate wajib diisi")
+	ErrKontrakAkhirKosong = errors.New("models: TreatyEndDate is required")
 	// ErrKontrakTahunMulaiBeda - `SetTanggalTreatyContract.xml` langkah 4 b847
 	// (`ASMMessageStartDate`, HIDUP): tahun tanggal mulai harus sama dengan
 	// tahun treaty induknya. Teks pesan Pega tidak diekspor.
-	ErrKontrakTahunMulaiBeda = errors.New("models: tahun TreatyStartDate tidak sama dengan tahun treaty")
+	ErrKontrakTahunMulaiBeda = errors.New("models: the TreatyStartDate year differs from the treaty year")
 )
 
 // PeriksaKontrakTreaty menjalankan gerbang simpan kontrak.
@@ -60,7 +60,7 @@ func PeriksaKontrakTreaty(k KontrakTreaty, tahunTreaty string) error {
 	// ⛔ Perbandingan TEKS, seperti `@substring(TreatyStartDate,0,4) <>
 	// TreatyYear` - tahun treaty warisan yang bukan angka tidak pernah sama.
 	if mulai := strconv.Itoa(k.TreatyStartDate.Year()); mulai != strings.TrimSpace(tahunTreaty) {
-		return fmt.Errorf("%w: TreatyStartDate %s bertahun %s, tahun treaty %s", ErrKontrakTahunMulaiBeda,
+		return fmt.Errorf("%w: TreatyStartDate %s is in year %s, treaty year %s", ErrKontrakTahunMulaiBeda,
 			k.TreatyStartDate.Format("2006-01-02"), mulai, strings.TrimSpace(tahunTreaty))
 	}
 	return nil

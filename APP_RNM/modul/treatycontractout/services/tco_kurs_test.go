@@ -111,7 +111,7 @@ func TestKursBarisTanggalDitolakOracle(t *testing.T) {
 // ADR-0015: kegagalan terlihat - periode tanpa kurs, master rusak, mata uang tak dikenal.
 func TestKursGagalTerang(t *testing.T) {
 	_, err := layananKurs(&masterKursUji{baris: barisKurs2026()[1:]}).KursTahun(context.Background(), pelakuUjiTCO, "1000001")
-	if !errors.Is(err, services.ErrKursTidakAda) || err.Error() != "Tidak ada Nilai Kurs di Tahun : 2026" {
+	if !errors.Is(err, services.ErrKursTidakAda) || err.Error() != "No exchange rate for Treaty Year : 2026" {
 		t.Errorf("tanpa kurs: %v", err)
 	}
 	ganda := append(barisKurs2026(), models.KursTCO{ToIDR: apd.New(1, 0), Mulai: mulaiTahunKurs, Akhir: mulaiTahunKurs})

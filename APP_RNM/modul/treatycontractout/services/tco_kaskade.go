@@ -33,15 +33,15 @@ import (
 )
 
 // PesanKontrakTerhapusTCO - VERBATIM `BrowseDeleteRowTreatyInContract.xml` b762.
-const PesanKontrakTerhapusTCO = "Data Berhasil di Hapus"
+const PesanKontrakTerhapusTCO = "Data successfully deleted"
 
 var (
 	// ErrGudangKaskadeBelumDisuntik - pelaksana kaskade belum dipasang.
-	ErrGudangKaskadeBelumDisuntik = errors.New("services: pelaksana kaskade hapus belum disuntik")
+	ErrGudangKaskadeBelumDisuntik = errors.New("services: cascade delete executor is not injected")
 	// ErrKaskadeTidakUtuh - induk yang dihapus tidak tepat satu baris (409).
 	ErrKaskadeTidakUtuh = repository.ErrKaskadeTidakUtuh
 	// ErrDampakBerubah - dampak sekarang berbeda dari yang dikonfirmasi (409).
-	ErrDampakBerubah = errors.New("services: jumlah baris terdampak berubah sejak konfirmasi")
+	ErrDampakBerubah = errors.New("services: the number of affected rows changed since confirmation")
 )
 
 // PelaksanaKaskadeTCO menghitung dan menjalankan kaskade.
@@ -182,7 +182,7 @@ func (l *KaskadeTCO) DampakHapusKontrak(ctx context.Context, pelaku inti.Pelaku,
 
 func periksaKonfirmasi(d repository.DampakHapusTCO, k KonfirmasiHapus) error {
 	if d.Reinsurer != k.Reinsurer || d.Security != k.Security || d.Business != k.Business || d.Bersama != k.Bersama {
-		return fmt.Errorf("%w: dikonfirmasi %d reinsurer, %d security, %d business, %d kontrak lain; sekarang %d, %d, %d, %d - tinjau ulang",
+		return fmt.Errorf("%w: confirmed %d reinsurer, %d security, %d business, %d other contracts; now %d, %d, %d, %d - please review again",
 			ErrDampakBerubah, k.Reinsurer, k.Security, k.Business, k.Bersama, d.Reinsurer, d.Security, d.Business, d.Bersama)
 	}
 	return nil
@@ -220,11 +220,11 @@ func (l *KaskadeTCO) HapusKontrak(ctx context.Context, pelaku inti.Pelaku, tahun
 		if err := periksaKonfirmasi(terhapus, k); err != nil {
 			return err
 		}
-		ket := fmt.Sprintf("kontrak dihapus kombinasi %s/%s/%s beserta %d reinsurer, %d security, %d business; %d klausul tidak disentuh",
+		ket := fmt.Sprintf("contract deleted for combination %s/%s/%s with %d reinsurer, %d security, %d business; %d clauses left untouched",
 			kom.TreatyYear, kom.TreatyGroupID, kom.ReinsTypeID, terhapus.Reinsurer, terhapus.Security, terhapus.Business,
 			sekarang.KlausulTetap)
 		if terhapus.Bersama > 0 {
-			ket += fmt.Sprintf("; kombinasi dipakai %d kontrak lain - anaknya ikut terhapus (OQ-TCO-21)", terhapus.Bersama)
+			ket += fmt.Sprintf("; combination used by %d other contracts - their children were deleted too (OQ-TCO-21)", terhapus.Bersama)
 		}
 		return nil
 	})
@@ -295,5 +295,5 @@ func (l *KaskadeTCO) HapusReinsurer(ctx context.Context, pelaku inti.Pelaku, tah
 		return "", err
 	}
 	// `DeleteTreatyReins_Act` tidak menampilkan pesan - `[tidak ada di korpus]`.
-	return fmt.Sprintf("Reinsurer dengan ID %s dihapus beserta %d security", reinsurerID, k.Security), nil
+	return fmt.Sprintf("Reinsurer with ID %s deleted along with %d security", reinsurerID, k.Security), nil
 }

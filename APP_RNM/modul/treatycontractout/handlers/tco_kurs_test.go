@@ -47,7 +47,7 @@ func TestJawabGalatKursTCO(t *testing.T) {
 		kode  int
 		pesan string
 	}{
-		{models.GalatKursTidakAda{TreatyYear: "2026"}, http.StatusUnprocessableEntity, "Tidak ada Nilai Kurs di Tahun : 2026"},
+		{models.GalatKursTidakAda{TreatyYear: "2026"}, http.StatusUnprocessableEntity, "No exchange rate for Treaty Year : 2026"},
 		{errors.Join(services.ErrMasterKursRusak), http.StatusServiceUnavailable, ""},
 		{services.ErrKonversiKursTidakSah, http.StatusBadRequest, ""},
 	} {

@@ -30,9 +30,9 @@ const (
 
 var (
 	// ErrBusinessKodeKosong - `Business Name` wajib dipilih dari master.
-	ErrBusinessKodeKosong = errors.New("models: BizCode wajib - pilih Business Name dari master BUSINESS")
+	ErrBusinessKodeKosong = errors.New("models: BizCode is required - choose a Business Name from the BUSINESS master")
 	// ErrBusinessAktifTakSah - `Active` wajib (`pyRequired` b6542) dan hanya 1/0.
-	ErrBusinessAktifTakSah = errors.New("models: IsActive wajib bernilai 1 (aktif) atau 0 (nonaktif)")
+	ErrBusinessAktifTakSah = errors.New("models: IsActive must be 1 (active) or 0 (inactive)")
 )
 
 // PeriksaBusinessTCO menjalankan gerbang simpan baris bisnis.

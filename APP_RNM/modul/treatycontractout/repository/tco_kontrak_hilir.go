@@ -158,7 +158,7 @@ func (r *KontrakHilirTCO) bacaKlausul(ctx context.Context, q string, arg ...any)
 	}
 	rows, err := r.db.QueryContext(ctx, q, arg...)
 	if err != nil {
-		return nil, fmt.Errorf("repository: membaca klausul untuk hilir: %w", err)
+		return nil, fmt.Errorf("repository: reading clauses for downstream: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
 	var out []KlausulHilir
@@ -243,7 +243,7 @@ func (r *KontrakHilirTCO) ReinsurerUntukHilir(ctx context.Context,
 	}
 	rows, err := r.db.QueryContext(ctx, q, reinsTypeID, treatyYear, treatyGroupID)
 	if err != nil {
-		return nil, fmt.Errorf("repository: membaca reinsurer untuk hilir: %w", err)
+		return nil, fmt.Errorf("repository: reading reinsurers for downstream: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
 	var out []ReinsurerHilir
@@ -272,7 +272,7 @@ func (r *KontrakHilirTCO) BusinessUntukHilir(ctx context.Context,
 	}
 	rows, err := r.db.QueryContext(ctx, q, bizCode, treatyYear, reinsTypeID)
 	if err != nil {
-		return nil, fmt.Errorf("repository: membaca business untuk hilir: %w", err)
+		return nil, fmt.Errorf("repository: reading business rows for downstream: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
 	var out []BusinessHilir
@@ -301,7 +301,7 @@ func (r *KontrakHilirTCO) GrupTreatyAktifUntukHilir(ctx context.Context,
 	}
 	rows, err := r.db.QueryContext(ctx, q, bizCode, treatyYear)
 	if err != nil {
-		return nil, fmt.Errorf("repository: membaca grup treaty untuk hilir: %w", err)
+		return nil, fmt.Errorf("repository: reading treaty group for downstream: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
 	var out []string

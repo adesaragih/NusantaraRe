@@ -35,7 +35,7 @@ import (
 )
 
 // ErrTahunTreatyTidakAda - tidak ada baris dengan ID itu.
-var ErrTahunTreatyTidakAda = errors.New("repository: tahun treaty tidak ditemukan")
+var ErrTahunTreatyTidakAda = errors.New("repository: treaty year not found")
 
 // HalamanTahunTreaty adalah satu halaman daftar tahun treaty.
 type HalamanTahunTreaty struct {
@@ -117,7 +117,7 @@ func uraiTanggalTeks(v sql.NullString, kolom string) (time.Time, error) {
 	}
 	t, err := utils.ParseTanggal(v.String)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("repository: kolom %s bernilai %q: %w", kolom, v.String, err)
+		return time.Time{}, fmt.Errorf("repository: column %s has value %q: %w", kolom, v.String, err)
 	}
 	return t, nil
 }
@@ -164,7 +164,7 @@ func (m *MasterTahunTreaty) Daftar(ctx context.Context, halaman, ukuran int) (Ha
 		return hasil, err
 	}
 	if err := bacaTCO(ctx, m.db).QueryRowContext(ctx, qCacah).Scan(&hasil.Total); err != nil {
-		return hasil, fmt.Errorf("repository: mencacah tahun treaty: %w", err)
+		return hasil, fmt.Errorf("repository: counting treaty years: %w", err)
 	}
 	q := sqlDaftarTahunTreaty(tabel)
 	if err := db.PeriksaSQL(q); err != nil {
@@ -172,7 +172,7 @@ func (m *MasterTahunTreaty) Daftar(ctx context.Context, halaman, ukuran int) (Ha
 	}
 	rows, err := bacaTCO(ctx, m.db).QueryContext(ctx, q, (halaman-1)*ukuran, ukuran)
 	if err != nil {
-		return hasil, fmt.Errorf("repository: membaca daftar tahun treaty: %w", err)
+		return hasil, fmt.Errorf("repository: reading treaty year list: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
 	for rows.Next() {
@@ -200,7 +200,7 @@ func (m *MasterTahunTreaty) Ambil(ctx context.Context, id string) (models.TahunT
 		return models.TahunTreaty{}, ErrTahunTreatyTidakAda
 	}
 	if err != nil {
-		return models.TahunTreaty{}, fmt.Errorf("repository: membaca tahun treaty %s: %w", id, err)
+		return models.TahunTreaty{}, fmt.Errorf("repository: reading treaty year %s: %w", id, err)
 	}
 	return t, nil
 }
@@ -208,7 +208,7 @@ func (m *MasterTahunTreaty) Ambil(ctx context.Context, id string) (models.TahunT
 // Sisip menulis tahun treaty BARU; identitas dari sequence (ADR-0006).
 func (m *MasterTahunTreaty) Sisip(ctx context.Context, tx *db.Tx, t models.TahunTreaty) (string, error) {
 	if tx == nil {
-		return "", errors.New("repository: menyisipkan tahun treaty menuntut transaksi")
+		return "", errors.New("repository: inserting treaty year requires a transaction")
 	}
 	tabel, err := m.db.Qualify(TabelTahunTCO)
 	if err != nil {
@@ -228,15 +228,15 @@ func (m *MasterTahunTreaty) Sisip(ctx context.Context, tx *db.Tx, t models.Tahun
 		db.KosongJadiNil(t.UserID), db.KosongJadiNil(StempelPegaTCO(t.TglUpdate)), db.KosongJadiNil(t.Proportion),
 		db.KosongJadiNil(TanggalYYYYMMDDTCO(t.StartDate)), db.KosongJadiNil(TanggalYYYYMMDDTCO(t.EndDate)))
 	if err != nil {
-		return "", fmt.Errorf("repository: menyisipkan tahun treaty: %w", err)
+		return "", fmt.Errorf("repository: inserting treaty year: %w", err)
 	}
-	return id, db.PastikanSatuBaris(hasil, "penyisipan tahun treaty")
+	return id, db.PastikanSatuBaris(hasil, "treaty year insert")
 }
 
 // Perbarui menimpa SELURUH kolom tahun treaty ber-ID itu.
 func (m *MasterTahunTreaty) Perbarui(ctx context.Context, tx *db.Tx, t models.TahunTreaty) error {
 	if tx == nil {
-		return errors.New("repository: memperbarui tahun treaty menuntut transaksi")
+		return errors.New("repository: updating treaty year requires a transaction")
 	}
 	tabel, err := m.db.Qualify(TabelTahunTCO)
 	if err != nil {
@@ -252,11 +252,11 @@ func (m *MasterTahunTreaty) Perbarui(ctx context.Context, tx *db.Tx, t models.Ta
 		db.KosongJadiNil(t.UserID), db.KosongJadiNil(StempelPegaTCO(t.TglUpdate)), db.KosongJadiNil(t.Proportion),
 		db.KosongJadiNil(TanggalYYYYMMDDTCO(t.StartDate)), db.KosongJadiNil(TanggalYYYYMMDDTCO(t.EndDate)), t.ID)
 	if err != nil {
-		return fmt.Errorf("repository: memperbarui tahun treaty %s: %w", t.ID, err)
+		return fmt.Errorf("repository: updating treaty year %s: %w", t.ID, err)
 	}
 	n, err := hasil.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("repository: membaca cacah pembaruan tahun treaty: %w", err)
+		return fmt.Errorf("repository: counting updated treaty year rows: %w", err)
 	}
 	if n == 0 {
 		return fmt.Errorf("%w: %s", ErrTahunTreatyTidakAda, t.ID)
@@ -270,7 +270,7 @@ func (m *MasterTahunTreaty) CariDobel(ctx context.Context, tx *db.Tx, grupID str
 	mulai, akhir time.Time, kecualiID string) (string, error) {
 
 	if tx == nil {
-		return "", errors.New("repository: pemeriksaan dobel tahun treaty menuntut transaksi")
+		return "", errors.New("repository: treaty year duplicate check requires a transaction")
 	}
 	// Temuan /code-review: periksa-lalu-sisip tanpa kunci membiarkan dua penulis
 	// serentak sama-sama lolos. Tahun treaty tidak punya baris induk untuk
@@ -292,7 +292,7 @@ func (m *MasterTahunTreaty) CariDobel(ctx context.Context, tx *db.Tx, grupID str
 	}
 	rows, err := tx.QueryContext(ctx, q, grupID, db.KosongJadiNil(kecualiID), db.KosongJadiNil(kecualiID))
 	if err != nil {
-		return "", fmt.Errorf("repository: memeriksa dobel tahun treaty: %w", err)
+		return "", fmt.Errorf("repository: checking duplicate treaty year: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
 	for rows.Next() {
@@ -332,7 +332,7 @@ func (m *MasterTahunTreaty) kunciTabelTahunTCO(ctx context.Context, tx *db.Tx) e
 		return err
 	}
 	if _, err := tx.ExecContext(ctx, q); err != nil {
-		return fmt.Errorf("repository: mengunci tabel tahun treaty: %w", err)
+		return fmt.Errorf("repository: locking treaty year table: %w", err)
 	}
 	return nil
 }
@@ -350,7 +350,7 @@ func sqlJumlahAnakTahunTCO(kontrak, klausul, lampiran, tahun string) string {
 // (TREATYYEAR teks, TREATYGROUPID) ikut ditulis dari tahun.
 func (m *MasterTahunTreaty) JumlahAnak(ctx context.Context, tx *db.Tx, tahunID string) (int64, error) {
 	if tx == nil {
-		return 0, errors.New("repository: menghitung anak tahun treaty menuntut transaksi")
+		return 0, errors.New("repository: counting treaty year children requires a transaction")
 	}
 	kontrak, err := m.db.Qualify(TabelKontrakTCO)
 	if err != nil {
@@ -374,7 +374,7 @@ func (m *MasterTahunTreaty) JumlahAnak(ctx context.Context, tx *db.Tx, tahunID s
 	}
 	var n int64
 	if err := tx.QueryRowContext(ctx, q, tahunID, tahunID, tahunID).Scan(&n); err != nil {
-		return 0, fmt.Errorf("repository: menghitung anak tahun treaty %s: %w", tahunID, err)
+		return 0, fmt.Errorf("repository: counting children of treaty year %s: %w", tahunID, err)
 	}
 	return n, nil
 }

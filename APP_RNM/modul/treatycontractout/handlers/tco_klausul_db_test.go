@@ -62,7 +62,7 @@ func TestKlausulLingkaranPenuh(t *testing.T) {
 	// Dobel, medan wajib, jenis ditahan.
 	if kode, badan := u.minta(t, http.MethodPost, dasar, map[string]any{"descId": "10009",
 		"medan": map[string]string{"ReinsTypeID": "10003", "Rp": "1"}}, true); kode != http.StatusConflict ||
-		!strings.Contains(badan, "Data sudah pernah di Input") {
+		!strings.Contains(badan, "Data has already been entered") {
 		t.Errorf("dobel: %d %s", kode, badan)
 	}
 	if kode, badan := u.minta(t, http.MethodPost, dasar, map[string]any{"descId": "10009",

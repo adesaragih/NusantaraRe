@@ -344,7 +344,7 @@ func TestPengirimStorageGalatTanpaAlamatAtauToken(t *testing.T) {
 	defer func() { close(lepas); lambat.Close() }()
 	pl := services.NewPengirimBerkasHTTPTCO(&http.Client{Timeout: 50 * time.Millisecond}, appUjiStorageTCO)
 	_, err = pl.Kirim(ctx, lambat.URL+"/upload", tokenUjiStorage, kunciUjiStorage, strings.NewReader("x"), "", "")
-	if !errors.Is(err, services.ErrStorageTakTerjangkauTCO) || !strings.Contains(err.Error(), "batas waktu") {
+	if !errors.Is(err, services.ErrStorageTakTerjangkauTCO) || !strings.Contains(err.Error(), "timeout") {
 		t.Errorf("batas waktu: %v", err)
 	}
 	bersihDariRahasia(t, err, inangDari(lambat.URL))
