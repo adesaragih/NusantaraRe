@@ -11,6 +11,8 @@ Diperbarui 26 September 2026 (sore): pemuat .env bab 3, .env frontend bab 4,
 proxy Vite bab 5 (celahnya sudah tertutup), PATH permanen bab 1.
 Diperbarui 30 September 2026 (refactor bentuk B): MODUL_AKTIF bab 2.
 Diperbarui 30 September 2026 (tabel nama modul): nama modul bab 2 dan 9.
+Diperbarui 30 September 2026 (menu dari tabel M_NAV_MENU): GET /api/menu
+bab 2, migrasi 900 bab 3.
 Untuk siapa: siapa pun yang ingin menjalankan aplikasi ini di mesin Windows,
 termasuk yang baru mengenal Go dan React.
 
@@ -117,6 +119,17 @@ Cek dari jendela PowerShell LAIN, atau dari browser:
             (PowerShell menampilkannya sebagai galat merah; itu memang
             jawaban yang diharapkan tanpa Oracle.)
 
+  Invoke-WebRequest -UseBasicParsing http://localhost:8080/api/menu
+
+  Jawaban:  kode 503, badan
+            {"galat":"database belum dikonfigurasi; menu dibaca dari M_NAV_MENU"}
+
+  Menu sidebar dan palet Ctrl+K dibaca dari tabel M_NAV_MENU lewat
+  GET /api/menu (sejak 30-09-2026). Tanpa Oracle sidebar karena itu hanya
+  memuat Beranda dan MENAMPILKAN galat di atas di tempat menu - bukan menu
+  kosong diam-diam. Cara menambah menu: PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md
+  bab 6.
+
 Berhenti: tekan Ctrl+C di jendela backend. Server menutup rapi, paling lama
 10 detik.
 
@@ -183,6 +196,9 @@ Memilih modul yang dipasang (MODUL_AKTIF, sejak refactor bentuk B):
       Select-Object -Expand Content
 
     Jawaban:  {"modul":["claimlife","komiteclaimlife"]}
+
+  GET /api/menu mengikuti daftar yang sama: butir menu modul yang tidak
+  disebut tidak dikirim, jadi kelompoknya tidak tampil di sidebar.
 
 ================================================================================
 3. BACKEND DENGAN ORACLE (SETELAH DBA MEMBERI SKEMA UJI)
@@ -280,6 +296,27 @@ Setelah itu:
   - /api/klaim-life/<id> menjawab 404 {"galat":"klaim tidak ada"} untuk id
     yang belum ada. Data klaim belum ada sampai tiket 02 (register klaim)
     dikerjakan.
+
+MENU DARI TABEL M_NAV_MENU (migrasi 900, sejak 30-09-2026)
+
+  -migrate juga membuat tabel menu M_NAV_MENU (+ SEQ_M_NAV_MENU, dua index)
+  beserta isi awalnya: 20 kelompok modul (satu per folder korpus) dan 5 butir
+  menu (Inbox Claim Life, Register, PremiumList, Inbox Komite, Treaty
+  Contract Out). Isi awalnya idempoten - aman diulang.
+
+  PENTING: -migrate dijalankan WORK OWNER, bukan executor.
+
+  Sebelum 900 dijalankan, GET /api/menu menjawab 503
+    {"galat":"tabel M_NAV_MENU belum ada - migrasi 900 belum dijalankan (-migrate, oleh work owner)"}
+  dan sidebar menampilkan kalimat itu. Sesudahnya:
+
+    Invoke-WebRequest -UseBasicParsing http://localhost:8080/api/menu |
+      Select-Object -Expand Content
+
+    Jawaban:  {"golongan":[{"kode":"TREATY","kelompok":[...]}, ...]}
+              golongan TREATY, FACULTATIVE, KLAIM, MASTER
+
+  Menyembunyikan satu menu tanpa deploy: STATUS_AKTIF = '0' pada barisnya.
 
 Bila sesi berikutnya butuh Oracle lagi, setel ulang ketiga variabel itu.
 Env var hilang saat jendela ditutup.
