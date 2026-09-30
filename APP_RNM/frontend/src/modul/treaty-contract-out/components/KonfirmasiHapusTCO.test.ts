@@ -30,7 +30,7 @@ describe('popup konfirmasi hapus', () => {
     expect(rincianDampak(d, 'reinsurer')).toEqual(['3 security'])
   })
   it('menyatakan eksplisit klausul TIDAK terhapus (AC 44)', () => {
-    expect(HAPUS_TCO.klausulTetap).toMatch(/TIDAK ikut terhapus/)
+    expect(HAPUS_TCO.klausulTetap).toMatch(/are NOT deleted/)
     expect(baca('KonfirmasiHapusTCO.tsx')).toContain('{dampak.klausulTetap} {HAPUS_TCO.klausulTetap}')
   })
   it('Batal tidak menghapus; Ya mengirim jumlah yang DILIHAT', () => {
@@ -46,7 +46,7 @@ describe('popup konfirmasi hapus', () => {
     expect(baca('KonfirmasiHapusTCO.tsx')).toContain('dampak.bersama > 0')
   })
   it('OQ-TCO-21: kontrak lain terdampak disebut sebagai peringatan dan ikut dikonfirmasi', () => {
-    expect(HAPUS_TCO.bersama).toMatch(/IKUT terhapus/)
+    expect(HAPUS_TCO.bersama).toMatch(/ARE deleted/)
     expect(baca('KonfirmasiHapusTCO.tsx')).toContain('role="alert"')
   })
   it('OQ-TCO-21: DELETE kontrak mengirim cacah kontrak lain', () => {

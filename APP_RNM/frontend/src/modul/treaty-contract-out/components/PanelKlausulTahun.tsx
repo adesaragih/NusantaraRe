@@ -20,6 +20,7 @@ import { formatDate } from '../../../inti/lib/format'
 import { ambilJenisKlausul, type JenisKlausul, type TahunTreaty } from '../api'
 import { Field, Gagal, Kosong, Memuat, Modal } from '../../../inti/components/ui/dasar'
 import PanelJenisKlausul from './PanelJenisKlausul'
+import { labelProporsi } from '../proporsi'
 
 /** Jenis yang tampil di popup: menekan jenis yang sama menutupnya, jenis lain menggantinya. */
 export function alihJenisTunggal(terbuka: string | null, id: string): string | null {
@@ -53,7 +54,7 @@ export default function PanelKlausulTahun({ tahun, onTutup }: { tahun: TahunTrea
         <Field label={KLAUSUL_TCO.headerStartDate} value={formatDate(tahun.startDate)} onChange={() => undefined} readOnly />
         <Field label={KLAUSUL_TCO.headerEndDate} value={formatDate(tahun.endDate)} onChange={() => undefined} readOnly />
         <Field label={KLAUSUL_TCO.headerTreatyDescription} value={tahun.treatyGroupName} onChange={() => undefined} readOnly />
-        <Field label={KLAUSUL_TCO.headerProportionType} value={tahun.proportion} onChange={() => undefined} readOnly />
+        <Field label={KLAUSUL_TCO.headerProportionType} value={labelProporsi(tahun.proportion)} onChange={() => undefined} readOnly />
       </div>
       <section className="panel">
         <h3 className="panel__title">{KLAUSUL_TCO.gridTreatyDesc}</h3>

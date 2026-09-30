@@ -15,6 +15,7 @@ import {
   JENIS_REASURANSI_TCO,
   KLAUSUL_TCO,
   KONTRAK_TCO,
+  HAPUS_TCO,
   KURS_TCO,
   LABEL_MEDAN_KHUSUS,
   LABEL_MEDAN_KLAUSUL,
@@ -83,7 +84,8 @@ describe.skipIf(!adaKorpus)('label Treaty Contract Out berbukti barisnya', () =>
     [LAMPIRAN, 'pyValue', 3032, LAMPIRAN_TCO.kolomFileName],
     [LAMPIRAN, 'pyValue', 3170, LAMPIRAN_TCO.kolomType],
     [LAMPIRAN, 'pyLabel', 3897, LAMPIRAN_TCO.delete],
-    ['Activity\\TreatyOutSaveAttachment.xml', 'PropertiesValue', 376, `"${LAMPIRAN_TCO.tanpaBerkas}"`],
+    // Korpus Indonesia; label kita Inggris (keputusan work owner 30-09-2026) - diuji di bawah.
+    ['Activity\\TreatyOutSaveAttachment.xml', 'PropertiesValue', 376, '"Tidak ada file yg diattach"'],
     // tiket 04 - editor kontrak
     ['Harness\\InboxTreatyContractReinsType.xml', 'pyValue', 1670, KONTRAK_TCO.judul],
     [KONTRAK, 'pyLabelFieldValue', 1145, KONTRAK_TCO.headerUnderwritingYear],
@@ -123,7 +125,7 @@ describe.skipIf(!adaKorpus)('label Treaty Contract Out berbukti barisnya', () =>
     [REAS, 'pyLabelFieldValue', 11100, REINSURER_TCO.formOperatorName],
     [REAS, 'pyLabel', 11405, REINSURER_TCO.save],
     [REAS, 'pyLabelFieldValue', 12131, REINSURER_TCO.error],
-    [REAS, 'pyLabelFieldValue', 12868, REINSURER_TCO.informasi],
+    [REAS, 'pyLabelFieldValue', 12868, 'Informasi'],
     // tiket 07 - panel business
     [BIZ, 'pyLabelFieldValue', 1988, BUSINESS_TCO.judul],
     [BIZ, 'pyLabel', 2785, BUSINESS_TCO.add],
@@ -253,7 +255,7 @@ describe.skipIf(!adaKorpus)('label Treaty Contract Out berbukti barisnya', () =>
       ['ExclutionTreatyOccupation', 3222, LABEL_MEDAN_KHUSUS['ExclutionTreaty/Occupation'].Rp],
       ['ExclutionTreatyClausule', 2030, LABEL_MEDAN_KLAUSUL.ID_Clause],
       ['ExclutionTreatyClausule', 2320, `.${LABEL_MEDAN_KLAUSUL.Clause}`],
-      ['ExclutionTreatyPeriode', 500, LABEL_MEDAN_KLAUSUL.Layer],
+      ['ExclutionTreatyPeriode', 500, 'Max Periode (Month)'], // label kita: 'Max Period (Month)' (Inggris)
     ]
     for (const [b, n, v] of medan) expect(baris(sec(b), n).trim(), `${b} ${n}`).toBe(lf(v))
     expect(baris(sec('ExclutionTreatyObject'), 566).trim().replace(/&gt;/g, '>')).toBe(lf(LABEL_MEDAN_KHUSUS['ExclutionTreaty/Object'].Pct))
@@ -270,7 +272,7 @@ describe.skipIf(!adaKorpus)('label Treaty Contract Out berbukti barisnya', () =>
       [17252, tombol(SECURITY_TCO.edit)], [17559, tombol(SECURITY_TCO.delete)],
       [19468, lf(SECURITY_TCO.formSecurityId)], [19648, lf(SECURITY_TCO.formSecurityName)],
       [19888, lf(SECURITY_TCO.formShare)], [20246, tombol(SECURITY_TCO.save)],
-      [20980, lf(SECURITY_TCO.error)], [21717, lf(SECURITY_TCO.informasi)],
+      [20980, lf(SECURITY_TCO.error)], [21717, lf('Informasi')],
       [16724, nilai('.REAS_SECURITY')], [16878, nilai('.CLIENTNAME')], [17013, nilai('.PCT_SHARE')],
       [17276, '<pyActivity>ShowEditSecurityReinsurer</pyActivity>'],
       [17583, '<pyActivity>DeleteSecurityReinsurer</pyActivity>'],
@@ -321,3 +323,19 @@ describe('label yang tidak bergantung korpus', () => {
     }
   })
 })
+
+describe('bahasa Inggris (keputusan work owner 30-09-2026)', () => {
+  it('label korpus berbahasa Indonesia diterjemahkan', () => {
+    expect(LAMPIRAN_TCO.tanpaBerkas).toBe('No file attached')
+    expect(REINSURER_TCO.informasi).toBe('Information')
+    expect(SECURITY_TCO.informasi).toBe('Information')
+    expect(LABEL_MEDAN_KLAUSUL.Layer).toBe('Max Period (Month)')
+  })
+  it('nol kata Indonesia di nilai label Treaty', () => {
+    const semua = [MENU_TCO, JENIS_REASURANSI_TCO, TAHUN_TCO, LAMPIRAN_TCO, KONTRAK_TCO, REINSURER_TCO, BUSINESS_TCO,
+      KLAUSUL_TCO, LABEL_MEDAN_KLAUSUL, SECURITY_TCO, KURS_TCO, HAPUS_TCO].flatMap((o) => Object.values(o).map(String))
+    const indo = /\b(tidak|belum|pilih|tersimpan|tutup|kombinasi|hapus|berlaku|kurs|bisnis|klausul|lampiran|tahun|ikut|ulangi|periksa|informasi|aktif|nonaktif|ya|batal|cari|sampai|terkirim|tertunda|gagal|baris|milik|bukan|dengan|yang)\b/i
+    for (const v of semua) expect(v, v).not.toMatch(indo)
+  })
+})
+

@@ -21,6 +21,21 @@ Skill: `/mattpocock-skills:to-spec`
 > `InboxTreatyContractDescription` adalah popup form kontrak (`InputTreatyContract.xml` b20778/b22196), bukan menu.
 > Bagian spec di bawah yang menyebut tabel `T_*`, skema relasional baru, atau migrasi data tunduk pada ralat ini.
 
+> ⛔ **RALAT BERTANGGAL 30-09-2026 (putaran 2) — bahasa dan form `[DIPUTUSKAN work owner]`.**
+> (1) Catatan baris kurs kembar **tidak tampil** lagi di layar (aturannya tetap: kembar identik = satu kurs; cacahnya
+> tetap di JSON `barisMasterKembar`). (2) **Seluruh teks Treaty Contract Out berbahasa Inggris** — label layar
+> (termasuk label korpus berbahasa Indonesia: `Informasi`, `Tidak ada file yg diattach`, `Max Periode (Month)`), teks
+> bawaan komponen bersama di layar Treaty (`BahasaUI` "en", `inti/lib/teksUI.ts`; modul lain tetap Indonesia), dan
+> seluruh pesan server modul ini — termasuk pesan warisan Pega (`Tidak ada Nilai Kurs di Tahun : ` → `No exchange rate
+> for Treaty Year : `) dan sentinel `inti/` yang ikut di rantai galatnya (`handlers.pesanTCO`). Komentar kode tetap
+> Indonesia. (3) Form security: isian `Cari security` **dibuang**; `Security Name` adalah dropdown yang dapat
+> difilter dengan mengetik (`<datalist>`, dicari ke server — master > 100 nama). (4) Simpan yang berhasil **menutup
+> form** (tahun, kontrak, reinsurer, security, business, klausul). (5) Add tahun treaty: Start Date mengisi End Date
+> (+1 tahun kalender, aturan kontrak `AkhirKontrakBawaanTCO`, rute `GET …/tahun/akhir-bawaan`) serta Underwriting Year
+> dan Transaction Year (tahun Start Date) — semuanya tetap dapat diubah. (6) `Reinsurance Type` tahun treaty = dua
+> pilihan `Proportional` → "Proportional", `NonProportional` → "Non Proportional" (bukan master jenis reasuransi) —
+> **OQ-TCO-04 ditutup**.
+
 > ⛔ **RALAT BERTANGGAL 30-09-2026 — tampilan layar `[DIPUTUSKAN work owner]`** (delapan butir, pesan work owner).
 > (1) Catatan pengembang yang bukan galat sistem **tidak tampil** di layar — label bersilang OQ-TCO-05 (tahun dan
 > kontrak), "simpan dulu" lampiran, "pilih tahun dulu", "dihitung server"; yang tetap: galat, alasan jenis ditahan /

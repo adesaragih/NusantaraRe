@@ -265,6 +265,16 @@ export async function simpanKontrakTahun(tahunID: string, masuk: KontrakMasuk): 
   })
 }
 
+/**
+ * Tanggal akhir bawaan tahun treaty BARU (belum ber-ID) — aturan yang SAMA
+ * dengan kontrak (`models.AkhirKontrakBawaanTCO`, mulai + 1 tahun kalender),
+ * dihitung server [keputusan work owner 30-09-2026].
+ */
+export async function ambilAkhirBawaanTahun(mulai: string): Promise<string> {
+  const j = await minta<{ endDate: string }>('/api/treaty-contract-out/tahun/akhir-bawaan', { kueri: { mulai } })
+  return j.endDate
+}
+
 /** `SetTanggalTreatyContract` — tanggal akhir bawaan dari tanggal mulai (dihitung server). */
 export async function ambilAkhirBawaanKontrak(tahunID: string, mulai: string): Promise<string> {
   const j = await minta<{ treatyEndDate: string }>(`${jalurKontrakTahun(tahunID)}/akhir-bawaan`, {

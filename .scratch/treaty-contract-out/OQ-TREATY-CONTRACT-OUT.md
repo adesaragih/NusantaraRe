@@ -8,7 +8,7 @@ Satu tempat untuk seluruh pertanyaan terbuka modul ini. Rincian dan buktinya tet
 | OQ-TCO-01 | bentuk teks tanggal warisan (tujuh bentuk dikenal pengurai) **+ bentuk TULIS** `STARTDATE`/`ENDDATE` tahun & reinsurer (tco4: stempel Pega 00:00 WIB, `[dugaan kuat]`) | tiket 01, lanjutan 3 | **ditutup** (lanjutan 4, dari data DEV) — `TREATYYEAR.STARTDATE/ENDDATE` `YYYYMMDD` (182/182), pembaca menolak bentuk lain; `TREATYREINSURER.STARTDATE/ENDDATE` tidak ditulis (430/430 kosong) — `708a351` |
 | OQ-TCO-02 | arti/bentuk `IUDATE` | tiket 01 | terbuka |
 | OQ-TCO-03 | isi hidup `PROPORTIONALLIST`/`OBJECT` | tiket 01 | terbuka |
-| OQ-TCO-04 | arti `PROPORTION` | tiket 01 | terbuka |
+| OQ-TCO-04 | arti `PROPORTION` | tiket 01 | **ditutup 30-09-2026** (work owner) — dua nilai `Proportional` / `NonProportional` (label "Proportional" / "Non Proportional"), bukan master jenis reasuransi; daftar `associated` properti `.Proportion` tidak diekspor, selaras param `SetTreatyArrangementDesc_Act` dan `ViewDetailDescription.xml` b3614/b6719 (tiket 03) |
 | OQ-TCO-05 | label "Underwriting Year"/"Transaction Year" bersilang | tiket 03 | terbuka |
 | OQ-TCO-06 | pemilih kontrak memakai blacklist | tiket 02 | terbuka |
 | OQ-TCO-07 | nama fisik `SOANote`/`Code` | tiket 02 | terbuka |

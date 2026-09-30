@@ -17,7 +17,7 @@ import { KODE_BACKEND_MATI, klasifikasiGalat } from '../../inti/lib/keadaanGalat
 //
 // Pasangan uji sisi backend: `internal/handlers/galat503_test.go`.
 
-const KALIMAT = 'services: master kurs atau mata uang tidak dapat dipakai: UJI sebab'
+const KALIMAT = 'services: exchange-rate or currency master cannot be used: UJI sebab'
 
 /** Menjawab setiap permintaan dengan `badan` dan `status`. */
 function jawab(status: number, badan: string, tipe = 'application/json'): void {

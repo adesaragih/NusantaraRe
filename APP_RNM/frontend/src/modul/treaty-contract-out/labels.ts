@@ -7,6 +7,11 @@
 //
 // ⛔ Nol kata "Old" dan "testing" di nama apa pun (penyimpangan sadar 8);
 // dijaga `components/namaJujur.test.ts`.
+//
+// ⛔ [keputusan work owner 30-09-2026: bahasa Inggris] — SELURUH teks layar Treaty Contract Out
+// berbahasa Inggris. Label korpus yang berbahasa Indonesia (`Informasi`,
+// `Tidak ada file yg diattach`) diterjemahkan; teks aslinya tetap dibuktikan
+// `labels.test.ts`. Dijaga: nol kata Indonesia di nilai label.
 
 /**
  * Menu kelompok **Treaty Contract Out** — tco5 `[DIPUTUSKAN work owner
@@ -48,9 +53,9 @@ export const JENIS_REASURANSI_TCO = {
   /** `Section/InputTreatyContract.xml` b7925 `<pyLabelFieldValue>` (dan b7948 `<pyLabelPreview>`). */
   reinsuranceType: 'Reinsurance Type',
   /** `[tidak ada di korpus]` — kosakata kami; keadaan yang ADR-0015 tuntut terlihat. */
-  masterKosong: 'Master jenis reasuransi kosong atau tidak terbaca.',
+  masterKosong: 'Reinsurance type master is empty or unreadable.',
   /** `[tidak ada di korpus]` — teks pilihan kosong `Pilih`. */
-  belumDipilih: '-- pilih jenis reasuransi --',
+  belumDipilih: '-- select reinsurance type --',
 } as const
 
 /**
@@ -123,9 +128,9 @@ export const TAHUN_TCO = {
   cancel: 'Cancel',
 
   /** `[tidak ada di korpus]` — kosakata kami. */
-  kosong: 'Belum ada tahun treaty.',
+  kosong: 'No treaty years yet.',
   /** `[tidak ada di korpus]` — tombol yang menunggu tiketnya. */
-  menungguTiket: 'menunggu tiket',
+  menungguTiket: 'awaiting ticket',
 } as const
 
 /**
@@ -156,19 +161,19 @@ export const LAMPIRAN_TCO = {
   kolomType: 'Type',
   /** b3897 `<pyLabel>` → `DeleteAttachmentTreaty` b3915. */
   delete: 'Delete',
-  /** `Activity/TreatyOutSaveAttachment.xml` b376 `Local.Err` — VERBATIM. */
-  tanpaBerkas: 'Tidak ada file yg diattach',
+  /** `Activity/TreatyOutSaveAttachment.xml` b376 `Local.Err` "Tidak ada file yg diattach" — diterjemahkan [keputusan work owner 30-09-2026: bahasa Inggris]. */
+  tanpaBerkas: 'No file attached',
 
   /** `[tidak ada di korpus]` — kosakata kami (fiturnya tidak ada di Pega). */
   kolomStatus: 'Status',
-  statusTerkirim: 'terkirim',
-  statusTertunda: 'tertunda',
-  statusGagal: 'gagal',
-  ulangi: 'Ulangi',
-  periksaSelaras: 'Periksa keselarasan',
-  selarasBersih: 'Rekam lampiran dan berkas di penyimpanan sejalan.',
-  kosong: 'Belum ada lampiran pada tahun treaty ini.',
-  pilihKategori: '— pilih —',
+  statusTerkirim: 'sent',
+  statusTertunda: 'pending',
+  statusGagal: 'failed',
+  ulangi: 'Retry',
+  periksaSelaras: 'Check consistency',
+  selarasBersih: 'Attachment records and stored files are consistent.',
+  kosong: 'No attachments for this treaty year yet.',
+  pilihKategori: '— select —',
 } as const
 
 /**
@@ -223,13 +228,13 @@ export const KONTRAK_TCO = {
   /** `[tidak ada di korpus]` — label medan ID; korpus hanya punya label bawaan kontrol `Formatted Text` b2478. */
   formId: 'ID',
   /** `[tidak ada di korpus]` — pemilih tahun saat layar dibuka dari menu (Pega membukanya sebagai popup berkonteks). */
-  pilihTahun: 'Tahun treaty',
+  pilihTahun: 'Treaty year',
   /** `[tidak ada di korpus]` */
-  kosong: 'Belum ada kontrak pada tahun treaty ini.',
+  kosong: 'No contracts for this treaty year yet.',
   /** `[tidak ada di korpus]` */
-  tutup: 'Tutup',
+  tutup: 'Close',
   /** `[tidak ada di korpus]` */
-  tersimpan: 'Kontrak tersimpan.',
+  tersimpan: 'Contract saved.',
 } as const
 
 /**
@@ -283,19 +288,19 @@ export const REINSURER_TCO = {
   save: 'Save',
   /** b12131 — `OutputParam.ERRMSG6`. */
   error: 'Error',
-  /** b12868 — `OutputParam.ERRMSG`. */
-  informasi: 'Informasi',
+  /** b12868 — `OutputParam.ERRMSG`; korpus "Informasi", diterjemahkan [keputusan work owner 30-09-2026: bahasa Inggris]. */
+  informasi: 'Information',
 
   /** `[tidak ada di korpus]` */
-  cariReinsurer: 'Cari nama reinsurer',
+  cariReinsurer: 'Search reinsurer name',
   /** `[tidak ada di korpus]` */
-  kosong: 'Belum ada reinsurer pada kombinasi ini.',
+  kosong: 'No reinsurers for this combination yet.',
   /** `[tidak ada di korpus]` */
-  tersimpan: 'Reinsurer tersimpan.',
+  tersimpan: 'Reinsurer saved.',
   /** `[tidak ada di korpus]` */
-  tutup: 'Tutup',
+  tutup: 'Close',
   /** `[tidak ada di korpus]` — kepala kombinasi (`OutputData.HASIL1/3/2` b2284–b2296). */
-  kombinasi: 'Kombinasi',
+  kombinasi: 'Combination',
 } as const
 
 /**
@@ -334,12 +339,12 @@ export const BUSINESS_TCO = {
   closeList: 'Close List',
 
   /** `[tidak ada di korpus]` — nilai radio Active; `0` = nonaktif [keputusan work owner 29-09-2026] (OQ-TCO-13). */
-  aktif: 'Aktif',
-  nonaktif: 'Nonaktif',
+  aktif: 'Active',
+  nonaktif: 'Inactive',
   /** `[tidak ada di korpus]` */
-  kosong: 'Belum ada bisnis pada kombinasi ini.',
+  kosong: 'No businesses for this combination yet.',
   /** `[tidak ada di korpus]` */
-  tersimpan: 'Bisnis tersimpan.',
+  tersimpan: 'Business saved.',
 } as const
 
 /**
@@ -392,17 +397,17 @@ export const KLAUSUL_TCO = {
   /** `[tidak ada di korpus]` */
   cancel: 'Cancel',
   /** `[tidak ada di korpus]` */
-  tutup: 'Tutup',
+  tutup: 'Close',
   /** `[tidak ada di korpus]` */
-  kosong: 'Belum ada baris klausul.',
+  kosong: 'No clause rows yet.',
   /** `[tidak ada di korpus]` */
   totalPct: 'Total Pct',
   /** `[tidak ada di korpus]` */
-  tersimpan: 'Klausul tersimpan.',
+  tersimpan: 'Clause saved.',
   /** `[tidak ada di korpus]` */
-  cariPilihan: 'Cari',
+  cariPilihan: 'Search',
   /** `[tidak ada di korpus]` */
-  pilihTahun: 'Tahun treaty',
+  pilihTahun: 'Treaty year',
 } as const
 
 /**
@@ -445,8 +450,8 @@ export const LABEL_MEDAN_KLAUSUL = {
   ID_Clause: 'ID Clause',
   /** b2320 (`.Clause`). */
   Clause: 'Clause',
-  /** `GridTreatyArrangementExclutionTreatyPeriode.xml` b500. */
-  Layer: 'Max Periode (Month)',
+  /** `GridTreatyArrangementExclutionTreatyPeriode.xml` b500 "Max Periode (Month)" — diterjemahkan [keputusan work owner 30-09-2026: bahasa Inggris]. */
+  Layer: 'Max Period (Month)',
 } as const satisfies Readonly<Record<string, string>>
 
 /** Penimpaan label per `jenis` atau `jenis/subjenis`. */
@@ -493,21 +498,23 @@ export const SECURITY_TCO = {
   save: 'Save',
   /** b20980. */
   error: 'Error',
-  /** b21717. */
-  informasi: 'Informasi',
+  /** b21717; korpus "Informasi", diterjemahkan [keputusan work owner 30-09-2026: bahasa Inggris]. */
+  informasi: 'Information',
 
   /** `[tidak ada di korpus]` */
   judul: 'Security',
+  /** `[tidak ada di korpus]` — isian `Security Name`: dropdown yang dapat difilter dengan mengetik. */
+  ketikUntukFilter: 'Type to filter',
   /** `[tidak ada di korpus]` */
-  cariSecurity: 'Cari security',
+  tidakCocok: 'No matching security',
   /** `[tidak ada di korpus]` */
-  kosong: 'Belum ada security pada reinsurer ini.',
+  kosong: 'No securities for this reinsurer yet.',
   /** `[tidak ada di korpus]` */
-  tersimpan: 'Security tersimpan.',
+  tersimpan: 'Security saved.',
   /** `[tidak ada di korpus]` */
   cancel: 'Cancel',
   /** `[tidak ada di korpus]` */
-  tutup: 'Tutup',
+  tutup: 'Close',
 } as const
 
 /**
@@ -520,13 +527,11 @@ export const SECURITY_TCO = {
  */
 export const KURS_TCO = {
   /** `[tidak ada di korpus]` */
-  kurs: 'Kurs USD → IDR',
+  kurs: 'Exchange rate USD → IDR',
   /** `[tidak ada di korpus]` */
-  berlaku: 'berlaku',
+  berlaku: 'valid',
   /** `[tidak ada di korpus]` */
-  sampai: 's.d.',
-  /** `[tidak ada di korpus]` — keputusan work owner 29-09-2026: baris kembar identik = satu kurs. */
-  catatanKembar: 'baris kembar identik di master kurs — dipakai sebagai satu kurs',
+  sampai: 'to',
 } as const
 
 /**
@@ -539,15 +544,15 @@ export const KURS_TCO = {
  */
 export const HAPUS_TCO = {
   /** `[tidak ada di korpus]` */
-  judulKontrak: 'Hapus kontrak?',
+  judulKontrak: 'Delete contract?',
   /** `[tidak ada di korpus]` */
-  judulReinsurer: 'Hapus reinsurer?',
+  judulReinsurer: 'Delete reinsurer?',
   /** `[tidak ada di korpus]` */
-  ya: 'Ya',
+  ya: 'Yes',
   /** `[tidak ada di korpus]` */
-  batal: 'Batal',
+  batal: 'Cancel',
   /** `[tidak ada di korpus]` */
-  ikutTerhapus: 'Ikut terhapus:',
+  ikutTerhapus: 'Also deleted:',
   /** `[tidak ada di korpus]` */
   reinsurer: 'reinsurer',
   /** `[tidak ada di korpus]` */
@@ -555,9 +560,9 @@ export const HAPUS_TCO = {
   /** `[tidak ada di korpus]` */
   business: 'business',
   /** `[tidak ada di korpus]` — AC 44: klausul milik tahun/grup/jenis, bukan milik satu kontrak. */
-  klausulTetap: 'baris klausul TIDAK ikut terhapus — klausul milik tahun/grup/jenis reasuransi, bukan milik satu kontrak.',
+  klausulTetap: 'clause rows are NOT deleted — clauses belong to the treaty year/group/reinsurance type, not to one contract.',
   /** `[tidak ada di korpus]` */
-  memuatDampak: 'Menghitung baris yang akan ikut terhapus…',
+  memuatDampak: 'Counting the rows that will also be deleted…',
   /** `[tidak ada di korpus]` — OQ-TCO-21 [keputusan work owner 29-09-2026]: hapus seperti Pega, tetapi tidak diam. */
-  bersama: 'kontrak lain memakai kombinasi yang sama — reinsurer dan security-nya IKUT terhapus bersama kontrak ini; business milik tahun treaty lain tidak ikut.',
+  bersama: 'another contract uses the same combination — its reinsurers and securities ARE deleted together with this contract; businesses of other treaty years are not.',
 } as const

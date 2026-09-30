@@ -148,8 +148,9 @@ export default function PanelReinsurerKombinasi({
     setGalat(null)
     setInfo(null)
     try {
-      const h = await simpanReinsurerKombinasi(tahunID, kontrakID, keMasukReinsurer(form))
-      buka(formReinsurerDari(h.reinsurer))
+      await simpanReinsurerKombinasi(tahunID, kontrakID, keMasukReinsurer(form))
+      // Simpan berhasil: form ditutup (keputusan work owner 30-09-2026).
+      setForm(null)
       setInfo(REINSURER_TCO.tersimpan)
       await muat()
     } catch (e) {

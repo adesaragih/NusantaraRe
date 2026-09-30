@@ -159,8 +159,9 @@ export default function PanelBusinessKombinasi({
               disabled={sibuk}
               onClick={() =>
                 void jalankan(async () => {
-                  const b = await simpanBusinessKombinasi(tahunID, kontrakID, keMasukBusiness(form))
-                  setForm(formBusinessDari(b))
+                  await simpanBusinessKombinasi(tahunID, kontrakID, keMasukBusiness(form))
+                  // Simpan berhasil: form ditutup (keputusan work owner 30-09-2026).
+                  setForm(null)
                   return BUSINESS_TCO.tersimpan
                 })
               }

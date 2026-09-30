@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 
 import { TAHUN_TCO } from '../labels'
 import type { TahunTreaty } from '../api'
-import { formDari, formKosong, keMasuk, namaGrup, selTahun } from './InboxTreatyContract'
+import { formDari, formKosong, isiDariMulai, keMasuk, namaGrup, selTahun, tahunDari } from './InboxTreatyContract'
 
 const SUMBER = readFileSync(join(__dirname, 'InboxTreatyContract.tsx'), 'utf8')
 const KODE = SUMBER.split('\n')
@@ -66,7 +66,7 @@ describe('paritas layar', () => {
     }
   })
   it('kolom Reinsurance Type grid menampilkan proportion (b19724)', () => {
-    expect(KODE).toContain('selTahun(b.proportion)')
+    expect(KODE).toContain('selTahun(labelProporsi(b.proportion))')
   })
   it('nol tombol Copy dan nol form salin (AC 72)', () => {
     expect(KODE).not.toMatch(/Copy|salin|BrowseCopyData/)
@@ -83,9 +83,9 @@ describe('paritas layar', () => {
   it('ID, Modified Date, Username hanya dibaca', () => {
     expect((KODE.match(/readOnly/g) ?? []).length).toBe(3)
   })
-  it('layar tidak menyaring daftar dan memakai pemilih jenis reasuransi tiket 02', () => {
+  it('layar tidak menyaring daftar; Reinsurance Type dari daftar Proportional/NonProportional (OQ-TCO-04)', () => {
     expect(KODE).not.toContain('.filter(')
-    expect(KODE).toContain("from '../components/PilihJenisReasuransi'")
+    expect(KODE).toContain("from '../proporsi'")
   })
   it('tiket 12: panel lampiran hanya untuk tahun yang sudah ber-ID, bukan syarat simpan', () => {
     expect(KODE).toContain('<PanelLampiranTahun tahunID={form.id} />')
@@ -112,3 +112,35 @@ describe('paritas layar', () => {
     expect(KODE).not.toMatch(/catatanLabelBersilang|polis__catatan/)
   })
 })
+
+describe('Add tahun treaty: Start Date mengisi tahun dan End Date (keputusan work owner 30-09-2026)', () => {
+  it('tahun diambil dari Start Date', () => {
+    expect(tahunDari('2026-06-01')).toBe('2026')
+    expect(tahunDari('01-06-2026')).toBe('2026')
+    expect(tahunDari('bukan tanggal')).toBe('')
+  })
+  it('form BARU: Underwriting Year dan Transaction Year = tahun Start Date', () => {
+    const f = isiDariMulai(formKosong(), '2026-06-01')
+    expect(f.startDate).toBe('2026-06-01')
+    // `treatyYear` berlabel Underwriting Year, `underwritingYear` berlabel Transaction Year (OQ-TCO-05).
+    expect(f.treatyYear).toBe('2026')
+    expect(f.underwritingYear).toBe('2026')
+  })
+  it('tetap dapat diubah: tahun yang diketik sesudahnya tidak ditimpa sampai Start Date berubah lagi', () => {
+    const f = { ...isiDariMulai(formKosong(), '2026-06-01'), treatyYear: '2027' }
+    expect(f.treatyYear).toBe('2027')
+    expect(isiDariMulai(f, '2028-01-01').treatyYear).toBe('2028')
+  })
+  it('form yang sudah ber-ID tidak diisi ulang', () => {
+    const lama = { ...formKosong(), id: '1000001', treatyYear: '2020', underwritingYear: '2019' }
+    const f = isiDariMulai(lama, '2026-06-01')
+    expect(f.treatyYear).toBe('2020')
+    expect(f.underwritingYear).toBe('2019')
+  })
+  it('End Date dari server - aturan yang sama dengan kontrak; hanya form baru', () => {
+    expect(KODE).toContain('onChange={ubahMulai}')
+    expect(KODE).toContain('ambilAkhirBawaanTahun(iso)')
+    expect(KODE).toMatch(/form\.id !== '' \|\| iso === ''\) return/)
+  })
+})
+

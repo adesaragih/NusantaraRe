@@ -186,3 +186,20 @@ barisnya, seperti Pega.
 - Anti-dobel AC 73 membandingkan tanggal hasil urai `YYYYMMDD`.
 - Uji dua arah: `TestTepiTulisWarisanTCODuaArah`, `TestTanggalTahunHanyaYYYYMMDD`, `TestPindaiTahunTreaty`
   (stempel ditolak), `TestTahunTreatyLingkaranPenuh` (tag `db`: `STARTDATE` tersimpan `20260101`).
+
+## ⛔ Keputusan work owner bertanggal — 30-09-2026 (form tahun treaty)
+
+- **`Reinsurance Type` (`PROPORTION`) — OQ-TCO-04 ditutup.** Dua pilihan: nilai `Proportional` → "Proportional",
+  `NonProportional` → "Non Proportional" (`modul/treaty-contract-out/proporsi.ts`). Korpus b6800 (`pxDropdown`,
+  `pyListSource associated`) menunjuk daftar milik properti `.Proportion` yang tidak diekspor; nilainya selaras
+  keterangan parameter "Proportional / NonProportional" (`SetTreatyArrangementDesc_Act`) dan syarat tampil
+  `.Proportion != 'NonProportional'` (`ViewDetailDescription.xml` b3614/b6719). Ini MENGOREKSI butir 3 bab di atas
+  (`PilihJenisReasuransi` untuk medan ini — `[dugaan]`). Grid dan kepala layar klausul menampilkan labelnya; nilai
+  lama di luar dua itu tampil apa adanya. Server menyimpan nilainya apa adanya (tanpa saringan master).
+- **Add: Start Date mengisi.** Form BARU: End Date = mulai + 1 tahun kalender, dihitung server dengan aturan kontrak
+  (`services.AkhirTahunBawaan` → `models.AkhirKontrakBawaanTCO`, rute `GET /api/treaty-contract-out/tahun/akhir-bawaan`);
+  Underwriting Year dan Transaction Year = tahun Start Date. Ketiganya tetap dapat diubah; mengganti Start Date
+  menghitung ulang. Form yang sudah ber-ID tidak diisi ulang. Uji `InboxTreatyContract.test.ts`,
+  `TestAkhirBawaanTahunBaru`.
+- **Simpan berhasil menutup form** (juga kontrak, reinsurer, security, business, klausul) — penjaga
+  `components/tutupSesudahSimpan.test.ts`.

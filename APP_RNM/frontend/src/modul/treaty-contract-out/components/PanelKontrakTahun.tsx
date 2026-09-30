@@ -157,8 +157,9 @@ export default function PanelKontrakTahun({ tahun, onTutup }: { tahun: TahunTrea
     setGalat(null)
     setInfo(null)
     try {
-      const k = await simpanKontrakTahun(tahun.id, keMasukKontrak(form))
-      buka(formKontrakDari(k))
+      await simpanKontrakTahun(tahun.id, keMasukKontrak(form))
+      // Simpan berhasil: form ditutup (keputusan work owner 30-09-2026).
+      setForm(null)
       setInfo(KONTRAK_TCO.tersimpan)
       await muat()
     } catch (e) {

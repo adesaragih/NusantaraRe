@@ -98,15 +98,6 @@ export function aturanAnak(j: JenisKlausul): AturanKlausul | undefined {
   return j.aturan.find((a) => a.anak)
 }
 
-/**
- * Catatan master kurs — baris kembar identik (keputusan work owner 29-09-2026:
- * dipakai sebagai satu kurs) DISEBUT, bukan disembunyikan. `null` bila tidak ada.
- */
-export function catatanMasterKurs(k: KursTahun): string | null {
-  const n = k.barisMasterKembar ?? 0
-  return n > 0 ? `${n} ${KURS_TCO.catatanKembar}` : null
-}
-
 /** Jenis menuntut kurs bila salah satu aturannya berkurs (tiket 11). */
 export function jenisBerkurs(j: JenisKlausul): boolean {
   return j.aturan.some((a) => a.berkurs)
@@ -252,7 +243,8 @@ function GridAturan({
     setInfo(null)
     try {
       const h = await simpanKlausul(tahunID, keMasukKlausul(aturan, jenis.id, form, induk))
-      setForm(formKlausulDari(aturan, h.klausul))
+      // Simpan berhasil: form ditutup (keputusan work owner 30-09-2026).
+      setForm(null)
       setInfo(h.peringatan !== '' ? h.peringatan : KLAUSUL_TCO.tersimpan)
       await muat()
     } catch (e) {
@@ -387,7 +379,6 @@ export default function PanelJenisKlausul({
     if (!berkurs) return
     ambilKursTahun(tahunID).then(setKurs).catch(setGalatKurs)
   }, [berkurs, tahunID])
-  const catatanKurs = kurs !== null ? catatanMasterKurs(kurs) : null
   return (
     <section className="panel">
       {!tanpaJudul && (
@@ -411,11 +402,6 @@ export default function PanelJenisKlausul({
         <p role="status">
           {KURS_TCO.kurs}: {formatNumber(kurs.kurs, DESIMAL_TAK_DIBATASI)} ({KURS_TCO.berlaku} {kurs.mulai} {KURS_TCO.sampai}{' '}
           {kurs.akhir})
-        </p>
-      )}
-      {berkurs && catatanKurs !== null && (
-        <p className="polis__catatan" role="note">
-          {catatanKurs}
         </p>
       )}
       {berkurs && galatKurs !== null && <Gagal galat={galatKurs} />}

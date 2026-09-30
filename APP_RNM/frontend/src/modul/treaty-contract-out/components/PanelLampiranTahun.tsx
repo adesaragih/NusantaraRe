@@ -147,7 +147,7 @@ export default function PanelLampiranTahun({ tahunID }: { tahunID: string }) {
           disabled={sibuk || !adaTerkirim(baris)}
           onClick={() =>
             void jalankan(async () => {
-              await unduhBerkasBeridentitas(jalurSemuaLampiran(tahunID), `lampiran-tahun-treaty-${tahunID}.zip`)
+              await unduhBerkasBeridentitas(jalurSemuaLampiran(tahunID), `treaty-year-attachments-${tahunID}.zip`)
               return undefined
             })
           }

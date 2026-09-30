@@ -12,7 +12,6 @@ import {
   barisSubjenis,
   formKlausulDari,
   formKlausulKosong,
-  catatanMasterKurs,
   jenisBerkurs,
   tampilMedanKlausul,
   keMasukKlausul,
@@ -122,25 +121,9 @@ describe('kurs (tiket 11)', () => {
   })
 })
 
-describe('catatan master kurs (keputusan baris kembar identik 29-09-2026)', () => {
-  const kurs = { kurs: '16500.00', tanggal: '2026-06-01', mulai: '2025-07-01', akhir: '2026-06-30',
-    currency: 'USD', idCurrency: '10001', quarter: '0', treatyYear: '2026' }
-
-  it('tanpa baris kembar: tidak ada catatan', () => {
-    expect(catatanMasterKurs({ ...kurs, barisMasterKembar: 0 })).toBeNull()
-    // Backend lama tanpa medan itu pun tidak bercatatan.
-    expect(catatanMasterKurs(kurs)).toBeNull()
-  })
-
-  it('baris kembar disebut, bukan disembunyikan', () => {
-    expect(catatanMasterKurs({ ...kurs, barisMasterKembar: 1 })).toBe(
-      '1 baris kembar identik di master kurs — dipakai sebagai satu kurs',
-    )
-  })
-
-  it('catatannya dirender di bawah kurs, dihitung sekali', () => {
-    expect(KODE).toContain('const catatanKurs = kurs !== null ? catatanMasterKurs(kurs) : null')
-    expect(KODE.match(/catatanMasterKurs\(/g)?.length).toBe(2) // definisi + satu panggilan
+describe('nol catatan kurs di layar (keputusan work owner 30-09-2026)', () => {
+  it('catatan baris kembar tidak dirender', () => {
+    expect(KODE).not.toMatch(/catatanMasterKurs|catatanKembar|barisMasterKembar/)
   })
 })
 

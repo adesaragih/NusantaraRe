@@ -34,11 +34,12 @@ import { TAHUN_TCO } from '../labels'
 import PanelKlausulTahun from '../components/PanelKlausulTahun'
 import PanelKontrakTahun from '../components/PanelKontrakTahun'
 import PanelLampiranTahun from '../components/PanelLampiranTahun'
-import PilihJenisReasuransi from '../components/PilihJenisReasuransi'
+import { PROPORSI_TCO, labelProporsi } from '../proporsi'
 import { Field, FieldTanggal, Gagal, Halaman, Kosong, Memuat, Pilih } from '../../../inti/components/ui/dasar'
 import { formatDate } from '../../../inti/lib/format'
 import { keInputTanggal } from '../../../inti/lib/tanggalInput'
 import {
+  ambilAkhirBawaanTahun,
   ambilGrupTreaty,
   ambilTahunTreaty,
   simpanTahunTreaty,
@@ -105,6 +106,22 @@ export function keMasuk(f: FormTahun): TahunTreatyMasuk {
   }
 }
 
+/** Tahun (YYYY) sebuah tanggal isian; kosong bila belum tanggal sah. */
+export function tahunDari(tanggal: string): string {
+  const iso = keInputTanggal(tanggal.trim())
+  return iso === '' ? '' : iso.slice(0, 4)
+}
+
+/**
+ * Start Date diisi. Form BARU [keputusan work owner 30-09-2026]: Underwriting
+ * Year dan Transaction Year mengambil tahun Start Date — keduanya tetap dapat
+ * diubah sesudahnya. Form yang sudah ber-ID tidak diisi ulang.
+ */
+export function isiDariMulai(f: FormTahun, mulai: string): FormTahun {
+  const tahun = f.id === '' ? tahunDari(mulai) : ''
+  return tahun === '' ? { ...f, startDate: mulai } : { ...f, startDate: mulai, treatyYear: tahun, underwritingYear: tahun }
+}
+
 /** Sel kosong ditandai, bukan dibiarkan kosong (ADR-U-0027). */
 export function selTahun(v: string): string {
   return v.trim() === '' ? '—' : v
@@ -138,6 +155,8 @@ export default function InboxTreatyContract() {
   const [rinci, setRinci] = useState<RinciTahun | null>(null)
   // Posisi gulir tabel saat panel dibuka - dikembalikan saat panel ditutup.
   const gulirTabel = useRef(0)
+  // Urutan permintaan End Date bawaan - jawaban basi dibuang.
+  const urutanAkhir = useRef(0)
 
   const muat = useCallback(async (h: number) => {
     setSibuk(true)
@@ -191,6 +210,24 @@ export default function InboxTreatyContract() {
 
   const ubah = (k: keyof FormTahun) => (v: string) => {
     setForm((f) => (f === null ? f : { ...f, [k]: v }))
+  }
+
+  // Form BARU: Start Date mengisi tahun (di sini) dan End Date (server, aturan
+  // yang sama dengan kontrak); semuanya tetap dapat diubah. Hanya jawaban
+  // TERAKHIR yang dipakai, dan hanya bila Start Date belum berubah lagi.
+  function ubahMulai(v: string): void {
+    setForm((f) => (f === null ? f : isiDariMulai(f, v)))
+    const iso = keInputTanggal(v.trim())
+    if (form === null || form.id !== '' || iso === '') return
+    const ke = ++urutanAkhir.current
+    ambilAkhirBawaanTahun(iso)
+      .then((akhir) => {
+        if (ke !== urutanAkhir.current) return
+        setForm((f) => (f === null || f.id !== '' || f.startDate !== v ? f : { ...f, endDate: akhir }))
+      })
+      .catch((e: unknown) => {
+        setGalatSimpan(e)
+      })
   }
 
   function bukaRinci(r: RinciTahun): void {
@@ -254,12 +291,14 @@ export default function InboxTreatyContract() {
               opsi={grup.map((g) => ({ value: g.id, label: g.treatyGroupName }))}
               required
             />
-            <PilihJenisReasuransi
+            {/* OQ-TCO-04 (keputusan work owner 30-09-2026): dua nilai, bukan master jenis reasuransi. */}
+            <Pilih
               label={TAHUN_TCO.formReinsuranceType}
               value={form.proportion}
               onChange={ubah('proportion')}
+              opsi={PROPORSI_TCO.map((p) => ({ value: p.value, label: p.label }))}
             />
-            <FieldTanggal label={TAHUN_TCO.formStartDate} value={form.startDate} onChange={ubah('startDate')} />
+            <FieldTanggal label={TAHUN_TCO.formStartDate} value={form.startDate} onChange={ubahMulai} />
             <FieldTanggal label={TAHUN_TCO.formEndDate} value={form.endDate} onChange={ubah('endDate')} />
             <Field label={TAHUN_TCO.formUnderwritingYear} value={form.treatyYear} onChange={ubah('treatyYear')} required />
             <Field label={TAHUN_TCO.formTransactionYear} value={form.underwritingYear} onChange={ubah('underwritingYear')} />
@@ -312,7 +351,7 @@ export default function InboxTreatyContract() {
                 <td>{selTahun(formatDate(b.startDate))}</td>
                 <td>{selTahun(formatDate(b.endDate))}</td>
                 <td>{selTahun(b.treatyGroupName)}</td>
-                <td>{selTahun(b.proportion)}</td>
+                <td>{selTahun(labelProporsi(b.proportion))}</td>
                 <td className="table__actions">
                   <button
                     type="button"
