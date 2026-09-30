@@ -1,10 +1,14 @@
 // Package menu menyusun menu aplikasi dari tabel `M_NAV_MENU` untuk
-// `GET /api/menu`: pohon GROUPMENU -> kelompok modul -> butir menu.
+// `GET /api/menu`: GROUPMENU -> modul, SATU tingkat.
 //
 // Permintaan work owner 30-09-2026 (`PROMPT-MENU-DARI-TABEL-M_NAV_MENU.md`):
 // menu dibuat dari tabel supaya kelak dapat disaring per akun sesudah login
-// ada. Paket ini milik `inti` karena menu memuat SEMUA modul - termasuk yang
-// belum dimigrasi - dan tidak pernah mengimpor modul mana pun.
+// ada. Keputusan work owner 30-09-2026 berikutnya
+// (`PROMPT-MENU-DATAR-PER-GROUPMENU.md`): "menu jangan ada model seperti
+// child ... 1 modul 1 menu" - tidak ada butir di bawah modul; klik tombol modul
+// membuka halaman awalnya (frontend `HALAMAN_AWAL_<X>`). Paket ini milik
+// `inti` karena menu memuat SEMUA modul - termasuk yang belum dimigrasi - dan
+// tidak pernah mengimpor modul mana pun.
 //
 // Tiga berkas, tiga lapis: `menu.go` (bentuk dan aturan penyusunan, tanpa I/O),
 // `pembaca.go` (SQL), `rute.go` (HTTP).
@@ -22,11 +26,9 @@ import (
 // dengan CHECK di migrasi 900.
 var Golongan = []string{"TREATY", "FACULTATIVE", "KLAIM", "MASTER"}
 
-// Baris adalah satu baris `M_NAV_MENU` yang aktif.
+// Baris adalah satu baris MODUL `M_NAV_MENU` yang aktif (`KODE = MODUL`).
 type Baris struct {
-	ID int64
-	// IndukID 0 = baris KELOMPOK modul (`PARENT_ID` kosong).
-	IndukID   int64
+	ID        int64
 	Kode      string
 	Label     string
 	Golongan  string
@@ -35,29 +37,24 @@ type Baris struct {
 	Dimigrasi bool
 }
 
-// Butir adalah satu butir menu - halaman frontend yang dapat dibuka.
-type Butir struct {
-	// Kode = kunci halaman frontend (`frontend/daftar.ts`).
-	Kode  string `json:"kode"`
+// Modul adalah satu tombol menu - satu modul.
+type Modul struct {
+	// Kode = nama modul backend (tabel nama modul), sama dengan Modul.
+	Kode string `json:"kode"`
+	// Label = nama folder korpus VERBATIM - label tombol.
 	Label string `json:"label"`
 	Modul string `json:"modul"`
-}
-
-// Kelompok adalah satu kelompok modul beserta butirnya.
-type Kelompok struct {
-	// Kode = nama modul backend (tabel nama modul).
-	Kode  string `json:"kode"`
-	Label string `json:"label"`
-	Modul string `json:"modul"`
-	// Dimigrasi false = modul belum punya layar ("belum dimigrasi").
-	Dimigrasi bool    `json:"dimigrasi"`
-	Butir     []Butir `json:"butir"`
+	// Urutan di dalam golongannya.
+	Urutan int `json:"urutan"`
+	// Dimigrasi false = modul belum punya layar (tombol nonaktif,
+	// "belum dimigrasi").
+	Dimigrasi bool `json:"dimigrasi"`
 }
 
 // BagianGolongan adalah satu kepala bagian sidebar (TREATY, ...).
 type BagianGolongan struct {
-	Kode     string     `json:"kode"`
-	Kelompok []Kelompok `json:"kelompok"`
+	Kode  string  `json:"kode"`
+	Modul []Modul `json:"modul"`
 }
 
 // Menu adalah badan `GET /api/menu`.
@@ -65,19 +62,22 @@ type Menu struct {
 	Golongan []BagianGolongan `json:"golongan"`
 }
 
-// Susun membangun pohon dari baris aktif `M_NAV_MENU`.
+// Susun membangun menu dari baris aktif `M_NAV_MENU`.
 //
 // Aturannya:
-//   - golongan menurut `Golongan`; golongan tanpa kelompok tidak dikirim
-//   - kelompok dan butir menurut URUTAN, lalu ID - tidak bergantung pada
-//     ORDER BY pembacanya
-//   - butir milik modul yang TIDAK ada di `modulAktif` (MODUL_AKTIF) tidak
-//     dikirim; kelompoknya tetap, dengan butir kosong
-//   - butir yang induknya tidak terbaca (induk nonaktif) dan butir di bawah
-//     butir (tingkat ketiga) tidak dikirim: tabel ini dua tingkat
+//   - golongan menurut `Golongan`; golongan tanpa modul yang dikirim tidak
+//     dikirim
+//   - modul menurut URUTAN, lalu ID - tidak bergantung pada ORDER BY
+//     pembacanya
+//   - modul yang SUDAH dimigrasi tetapi tidak ada di `modulAktif`
+//     (MODUL_AKTIF) tidak dikirim: halamannya tidak ada di proses ini. Modul
+//     yang BELUM dimigrasi tetap dikirim - frontend menampilkannya nonaktif
+//   - baris yang bukan baris modul (`KODE <> MODUL`: lima butir anak 900
+//     selama 901 belum berjalan) tidak dikirim, juga bila pembaca
+//     meloloskannya
 //
 // ⚠️ GROUPMENU di luar `Golongan` tidak mungkin - CHECK menolaknya di Oracle -
-// jadi kelompok begitu tidak punya tempat dan tidak dikirim.
+// jadi modul begitu tidak punya tempat dan tidak dikirim.
 func Susun(baris []Baris, modulAktif []string) Menu {
 	aktif := map[string]bool{}
 	for _, n := range modulAktif {
@@ -91,28 +91,18 @@ func Susun(baris []Baris, modulAktif []string) Menu {
 		return urut[i].ID < urut[j].ID
 	})
 
-	butirDari := map[int64][]Butir{}
+	modulDari := map[string][]Modul{}
 	for _, b := range urut {
-		if b.IndukID != 0 && aktif[b.Modul] {
-			butirDari[b.IndukID] = append(butirDari[b.IndukID], Butir{Kode: b.Kode, Label: b.Label, Modul: b.Modul})
-		}
-	}
-	kelompokDari := map[string][]Kelompok{}
-	for _, k := range urut {
-		if k.IndukID != 0 {
+		if b.Kode != b.Modul || (b.Dimigrasi && !aktif[b.Modul]) {
 			continue
 		}
-		butir := butirDari[k.ID]
-		if butir == nil {
-			butir = []Butir{}
-		}
-		kelompokDari[k.Golongan] = append(kelompokDari[k.Golongan],
-			Kelompok{Kode: k.Kode, Label: k.Label, Modul: k.Modul, Dimigrasi: k.Dimigrasi, Butir: butir})
+		modulDari[b.Golongan] = append(modulDari[b.Golongan],
+			Modul{Kode: b.Kode, Label: b.Label, Modul: b.Modul, Urutan: b.Urutan, Dimigrasi: b.Dimigrasi})
 	}
 	m := Menu{Golongan: []BagianGolongan{}}
 	for _, g := range Golongan {
-		if len(kelompokDari[g]) > 0 {
-			m.Golongan = append(m.Golongan, BagianGolongan{Kode: g, Kelompok: kelompokDari[g]})
+		if len(modulDari[g]) > 0 {
+			m.Golongan = append(m.Golongan, BagianGolongan{Kode: g, Modul: modulDari[g]})
 		}
 	}
 	return m

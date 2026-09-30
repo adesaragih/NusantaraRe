@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/menu"
 	"nusantarare/inti/backend/migrasi"
 	"nusantarare/uji/skemauji"
 )
@@ -83,8 +84,35 @@ func TestMenuDatarDariOracleIdempotenDanBerCheck(t *testing.T) {
 		}
 	}
 
+	repo, err := skemauji.BukaRepositori()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = repo.Close() }()
+	// Pembaca backend (paket 2): 20 baris modul, empat golongan, satu tingkat -
+	// SEBELUM dan SESUDAH 901 (lihat jalur mundur di bawah).
+	pembaca := func(tahap string) {
+		t.Helper()
+		baris, err := menu.NewPembaca(repo).Baca(ctx)
+		if err != nil {
+			t.Fatalf("%s: pembaca menu: %v", tahap, err)
+		}
+		if len(baris) != 20 {
+			t.Errorf("%s: pembaca membaca %d baris, mau 20 baris modul", tahap, len(baris))
+		}
+		m := menu.Susun(baris, []string{"claimlife", "premiumlistlife", "komiteclaimlife", "treatycontractout"})
+		n := 0
+		for _, g := range m.Golongan {
+			n += len(g.Modul)
+		}
+		if len(m.Golongan) != 4 || n != 20 {
+			t.Errorf("%s: %d golongan, %d modul - mau 4 dan 20", tahap, len(m.Golongan), n)
+		}
+	}
+
 	// Pasang menjalankan 900 lalu 901: 20 baris, satu per modul, datar.
 	mau("sesudah Pasang (900 + 901)", 20, 0)
+	pembaca("sesudah 901")
 	if n := satu(`SELECT COUNT(*) FROM ` + skema + `.M_NAV_MENU WHERE KODE <> MODUL`); n != 0 {
 		t.Errorf("%d baris ber-KODE bukan nama modulnya", n)
 	}
@@ -96,6 +124,9 @@ func TestMenuDatarDariOracleIdempotenDanBerCheck(t *testing.T) {
 	// Jalur mundur: kolom, FK, indeks, dan lima butir kembali; diulang aman.
 	jalankan("901_m_nav_menu_datar_down.sql")
 	mau("sesudah 901 mundur", 25, 1)
+	// Keadaan DEV sebelum work owner menjalankan 901: PARENT_ID dan lima butir
+	// masih ada - pembaca baru tetap benar (KODE = MODUL).
+	pembaca("sebelum 901 (jalur mundur)")
 	if n := satu(`SELECT COUNT(*) FROM ` + skema + `.M_NAV_MENU WHERE PARENT_ID IS NOT NULL
 		AND KODE IN ('inbox', 'register', 'premiumlist', 'komite', 'tco-tahun')`); n != 5 {
 		t.Errorf("jalur mundur mengembalikan %d butir, mau 5", n)

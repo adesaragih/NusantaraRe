@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"sort"
 	"strings"
 	"testing"
 
@@ -14,85 +15,92 @@ import (
 	"nusantarare/inti/backend/db"
 )
 
-// barisUji - potongan isi awal 900, SENGAJA diacak urutannya: pohon tidak
+// barisUji - potongan menu datar (901), SENGAJA diacak urutannya: menu tidak
 // boleh bergantung pada ORDER BY pembacanya.
 func barisUji() []Baris {
 	return []Baris{
-		{ID: 22, IndukID: 2, Kode: "register", Label: "Register", Golongan: "KLAIM", Modul: "claimlife", Urutan: 2, Dimigrasi: true},
 		{ID: 5, Kode: "treatycontractout", Label: "Treaty Contract Out", Golongan: "MASTER", Modul: "treatycontractout", Urutan: 3, Dimigrasi: true},
 		{ID: 1, Kode: "claimfacin", Label: "Claim Fac In", Golongan: "KLAIM", Modul: "claimfacin", Urutan: 1},
 		{ID: 2, Kode: "claimlife", Label: "Claim Life", Golongan: "KLAIM", Modul: "claimlife", Urutan: 2, Dimigrasi: true},
-		{ID: 21, IndukID: 2, Kode: "inbox", Label: "Inbox Claim Life", Golongan: "KLAIM", Modul: "claimlife", Urutan: 1, Dimigrasi: true},
 		{ID: 3, Kode: "nbfacin", Label: "NB FacIn", Golongan: "FACULTATIVE", Modul: "nbfacin", Urutan: 1},
 		{ID: 4, Kode: "premiumlistlife", Label: "PremiumList Life", Golongan: "TREATY", Modul: "premiumlistlife", Urutan: 5, Dimigrasi: true},
-		{ID: 41, IndukID: 4, Kode: "premiumlist", Label: "PremiumList", Golongan: "TREATY", Modul: "premiumlistlife", Urutan: 1, Dimigrasi: true},
-		{ID: 51, IndukID: 5, Kode: "tco-tahun", Label: "Treaty Contract Out", Golongan: "MASTER", Modul: "treatycontractout", Urutan: 1, Dimigrasi: true},
+		{ID: 7, Kode: "komiteclaimlife", Label: "Komite Claim Life", Golongan: "KLAIM", Modul: "komiteclaimlife", Urutan: 6, Dimigrasi: true},
 		{ID: 6, Kode: "nbtreatyin", Label: "NB Treaty In", Golongan: "TREATY", Modul: "nbtreatyin", Urutan: 1},
 	}
 }
 
 var semuaAktif = []string{"claimlife", "premiumlistlife", "komiteclaimlife", "treatycontractout"}
 
-// ringkas menulis pohon sebagai teks satu baris per simpul, supaya selisihnya
+// ringkas menulis menu sebagai teks satu baris per simpul, supaya selisihnya
 // terbaca di pesan uji.
 func ringkas(m Menu) []string {
 	var out []string
 	for _, g := range m.Golongan {
 		out = append(out, g.Kode)
-		for _, k := range g.Kelompok {
+		for _, k := range g.Modul {
 			out = append(out, "  "+k.Kode)
-			for _, b := range k.Butir {
-				out = append(out, "    "+b.Kode)
-			}
 		}
 	}
 	return out
 }
 
-func TestSusunGolonganKelompokButirBerurutan(t *testing.T) {
+// SATU tingkat di bawah golongan: golongan menurut `Golongan`, modul menurut
+// URUTAN lalu ID. Menggantikan `TestSusunGolonganKelompokButirBerurutan`
+// (pohon golongan -> kelompok -> butir).
+func TestSusunSatuTingkatDiBawahGolongan(t *testing.T) {
 	dapat := ringkas(Susun(barisUji(), semuaAktif))
 	mau := []string{
-		"TREATY", "  nbtreatyin", "  premiumlistlife", "    premiumlist",
+		"TREATY", "  nbtreatyin", "  premiumlistlife",
 		"FACULTATIVE", "  nbfacin",
-		"KLAIM", "  claimfacin", "  claimlife", "    inbox", "    register",
-		"MASTER", "  treatycontractout", "    tco-tahun",
+		"KLAIM", "  claimfacin", "  claimlife", "  komiteclaimlife",
+		"MASTER", "  treatycontractout",
 	}
 	if !reflect.DeepEqual(dapat, mau) {
-		t.Errorf("pohon:\n%s\nmau:\n%s", strings.Join(dapat, "\n"), strings.Join(mau, "\n"))
+		t.Errorf("menu:\n%s\nmau:\n%s", strings.Join(dapat, "\n"), strings.Join(mau, "\n"))
 	}
-}
-
-// Butir milik modul yang TIDAK ada di MODUL_AKTIF tidak dikirim; kelompoknya
-// tetap, dengan butir kosong - frontend yang memutuskan cara menampilkannya.
-func TestSusunButirModulNonaktifTidakDikirim(t *testing.T) {
-	m := Susun(barisUji(), []string{"premiumlistlife"})
-	for _, g := range m.Golongan {
-		for _, k := range g.Kelompok {
-			for _, b := range k.Butir {
-				if b.Modul != "premiumlistlife" {
-					t.Errorf("butir %s milik modul nonaktif %s ikut dikirim", b.Kode, b.Modul)
-				}
-			}
-			if k.Kode == "claimlife" && (len(k.Butir) != 0 || !k.Dimigrasi) {
-				t.Errorf("kelompok claimlife: butir %v, dimigrasi %v - mau tetap ada, tanpa butir", k.Butir, k.Dimigrasi)
+	for _, g := range Susun(barisUji(), semuaAktif).Golongan {
+		for _, m := range g.Modul {
+			if m.Kode == "claimfacin" && (m.Dimigrasi || m.Label != "Claim Fac In" || m.Urutan != 1) {
+				t.Errorf("modul claimfacin: %+v", m)
 			}
 		}
 	}
-	if n := len(ringkas(m)); n != 11 {
-		t.Errorf("simpul %d, mau 11 (14 dikurangi inbox, register, tco-tahun)", n)
+}
+
+// Modul DIMIGRASI di luar MODUL_AKTIF tidak dikirim (tidak ada halamannya di
+// proses ini); modul yang BELUM dimigrasi tetap dikirim - frontend menampilkan
+// tombol nonaktif "belum dimigrasi". Menggantikan
+// `TestSusunButirModulNonaktifTidakDikirim`.
+func TestSusunModulDimigrasiDiLuarModulAktifTidakDikirim(t *testing.T) {
+	var kode []string
+	for _, g := range Susun(barisUji(), []string{"premiumlistlife"}).Golongan {
+		for _, m := range g.Modul {
+			kode = append(kode, m.Kode)
+		}
+	}
+	sort.Strings(kode)
+	if mau := []string{"claimfacin", "nbfacin", "nbtreatyin", "premiumlistlife"}; !reflect.DeepEqual(kode, mau) {
+		t.Errorf("modul dikirim %v, mau %v", kode, mau)
+	}
+	// Golongan yang seluruh modulnya tersaring tidak dikirim (MASTER).
+	for _, g := range Susun(barisUji(), []string{"premiumlistlife"}).Golongan {
+		if g.Kode == "MASTER" {
+			t.Errorf("golongan MASTER tanpa modul tampil ikut dikirim: %+v", g)
+		}
 	}
 }
 
-// Butir yang induknya tidak terbaca (induk nonaktif) atau yang induknya BUTIR
-// (tingkat ketiga) tidak dikirim - tabel ini dua tingkat.
-func TestSusunButirYatimDanTingkatKetigaDibuang(t *testing.T) {
+// Baris yang BUKAN baris modul (KODE <> MODUL) - lima butir anak 900 selama 901
+// belum dijalankan, atau jalur mundurnya - tidak dikirim, juga bila pembaca
+// meloloskannya. Menggantikan `TestSusunButirYatimDanTingkatKetigaDibuang`.
+func TestSusunBarisBukanModulDibuang(t *testing.T) {
 	baris := append(barisUji(),
-		Baris{ID: 90, IndukID: 99, Kode: "yatim", Label: "Yatim", Golongan: "KLAIM", Modul: "claimlife", Urutan: 1, Dimigrasi: true},
-		Baris{ID: 91, IndukID: 21, Kode: "cucu", Label: "Cucu", Golongan: "KLAIM", Modul: "claimlife", Urutan: 1, Dimigrasi: true},
+		Baris{ID: 21, Kode: "inbox", Label: "Inbox Claim Life", Golongan: "KLAIM", Modul: "claimlife", Urutan: 1, Dimigrasi: true},
+		Baris{ID: 51, Kode: "tco-tahun", Label: "Treaty Contract Out", Golongan: "MASTER", Modul: "treatycontractout", Urutan: 1, Dimigrasi: true},
 	)
 	for _, s := range ringkas(Susun(baris, semuaAktif)) {
-		if strings.Contains(s, "yatim") || strings.Contains(s, "cucu") {
-			t.Errorf("simpul %q ikut dikirim", strings.TrimSpace(s))
+		if strings.Contains(s, "inbox") || strings.Contains(s, "tco-tahun") {
+			t.Errorf("baris bukan modul %q ikut dikirim", strings.TrimSpace(s))
 		}
 	}
 }
@@ -122,15 +130,21 @@ func TestSaringMenuUntukPelakuMeneruskanSemua(t *testing.T) {
 	}
 }
 
-func TestSQLMenuHanyaBarisAktifBerurutan(t *testing.T) {
+// SQL tanpa PARENT_ID, disaring KODE = MODUL: benar SEBELUM 901 (lima butir
+// lama tidak lolos - `inbox` bukan `claimlife`) dan SESUDAHNYA (kolom itu tidak
+// ada lagi). Menggantikan `TestSQLMenuHanyaBarisAktifBerurutan`.
+func TestSQLMenuBarisModulAktifTanpaParentID(t *testing.T) {
 	q := sqlMenu("SKEMAUJI.M_NAV_MENU")
 	if benderaYa != "1" {
 		t.Errorf("bendera aktif %q, mau \"1\" (konvensi data warisan)", benderaYa)
 	}
-	for _, mau := range []string{"FROM SKEMAUJI.M_NAV_MENU", "WHERE STATUS_AKTIF = :1", "ORDER BY GROUPMENU, URUTAN, ID"} {
+	for _, mau := range []string{"FROM SKEMAUJI.M_NAV_MENU", "WHERE STATUS_AKTIF = :1 AND KODE = MODUL", "ORDER BY GROUPMENU, URUTAN, ID"} {
 		if !strings.Contains(q, mau) {
 			t.Errorf("SQL tidak memuat %q: %s", mau, q)
 		}
+	}
+	if strings.Contains(q, "PARENT_ID") {
+		t.Errorf("SQL masih menyebut PARENT_ID - mati di ORA-00904 sesudah 901: %s", q)
 	}
 	if err := db.PeriksaSQL(q); err != nil {
 		t.Error(err)
@@ -156,14 +170,38 @@ func minta(t *testing.T, h http.HandlerFunc) (*httptest.ResponseRecorder, map[st
 	return w, badan
 }
 
-func TestRuteMenjawabPohon(t *testing.T) {
+// Bentuk jawaban PERSIS: {"golongan":[{"kode","modul":[{kode,label,modul,
+// urutan,dimigrasi}]}]} - satu tingkat, tanpa "kelompok" maupun "butir".
+// Menggantikan `TestRuteMenjawabPohon`.
+func TestRuteMenjawabSatuTingkatDiBawahGolongan(t *testing.T) {
 	w, badan := minta(t, Rute(pembacaUji{baris: barisUji()}, semuaAktif, false))
 	if w.Code != http.StatusOK {
 		t.Fatalf("kode %d: %v", w.Code, badan)
 	}
-	if g, _ := badan["golongan"].([]any); len(g) != 4 {
-		t.Errorf("golongan %d, mau 4: %v", len(g), badan)
+	golongan, _ := badan["golongan"].([]any)
+	if len(golongan) != 4 {
+		t.Fatalf("golongan %d, mau 4: %v", len(golongan), badan)
 	}
+	for _, g := range golongan {
+		bagian := g.(map[string]any)
+		if kunci := kunciUrut(bagian); !reflect.DeepEqual(kunci, []string{"kode", "modul"}) {
+			t.Errorf("kunci golongan %v, mau [kode modul]", kunci)
+		}
+		for _, m := range bagian["modul"].([]any) {
+			if kunci := kunciUrut(m.(map[string]any)); !reflect.DeepEqual(kunci, []string{"dimigrasi", "kode", "label", "modul", "urutan"}) {
+				t.Errorf("kunci modul %v, mau [dimigrasi kode label modul urutan]", kunci)
+			}
+		}
+	}
+}
+
+func kunciUrut(m map[string]any) []string {
+	var k []string
+	for n := range m {
+		k = append(k, n)
+	}
+	sort.Strings(k)
+	return k
 }
 
 // Tanpa Oracle: 503 berbadan galat - bukan menu kosong diam-diam.
