@@ -329,61 +329,29 @@ func TestSeluruhCreateDapatDibacaNamanya(t *testing.T) {
 			}
 		}
 	}
-	// Angkanya dikunci: kalau pemisah pernyataan rusak lagi, cacahnya anjlok
-	// dan test ini gagal alih-alih diam-diam memeriksa lebih sedikit.
-	// Dua puluh sejak 26-09-2026: langkah 009 menambah SEQ_WORK_CLAIM
-	// (butir aa, tiket 02).
+	// ⛔ Cacahnya dihitung DUA CARA (CLAUDE.md §4a): dari pernyataan hasil
+	// pemisah pelari, dan dari baris `CREATE` di teks mentah berkas migrasi.
+	// Kalau pemisah pernyataan rusak lagi, keduanya berselisih dan test ini
+	// gagal alih-alih diam-diam memeriksa lebih sedikit.
 	//
-	// ⛔ Angkanya DIPERBARUI, bukan dilonggarkan - A1 27-09-2026 menambah
-	// butir am: 1 tabel (T_CLAIMLF_JEJAK) + 1 sequence (SEQ_CLAIMLF_JEJAK) +
-	// 2 index = 4 pernyataan CREATE baru.
-	//
-	// ⛔ Diperbarui LAGI - A1 menambah butir af (2 tabel + 1 sequence +
-	// 2 index) dan temuan audit A0 (BUSINESS_CODE, ALTER - tidak dihitung).
-	//
-	// ⛔ Diperbarui LAGI - A2 menambah butir aq: 1 tabel (T_LOG_SERVICE_RNM) +
-	// 1 sequence + 2 index = 4 pernyataan CREATE baru.
-	//
-	// ⛔ Diperbarui LAGI - tiket 00 PremiumList Life menambah TUJUH tabel
-	// (T_WORK_POLIS, T_PREMIUM_LIST, _DETAIL, _SPREADING, _SPREADING_RETRO,
-	// _SUMMARY, T_VIEW_SUGGEST) dan ENAM index FK (dua pada _DETAIL, satu
-	// pada masing-masing tabel anak lainnya). Nol sequence: pengenalnya
-	// dirakit di repository, pola PengenalWorkBerikut (butir pl3).
-	//
-	// ⛔ Diperbarui LAGI - butir bd menambah T_CLAIMLF_DIAGNOSE:
-	// 1 tabel + 1 sequence (SEQ_CLAIMLF_DIAGNOSE) + 1 index (FK peserta).
-	// ALTER pada DISEASE tidak dihitung - ia bukan CREATE.
-	//
-	// 11+7+1 = 19 tabel + 10 sequence + 13+6+1 = 20 index = 49.
-	// +1 tabel dari 019 (butir be, kartu berkas unggahan) = 50.
-	//
-	// ⛔ Diperbarui LAGI - butir bn (GILIRAN-13): +1 sequence SEQ_WORK_POLIS
-	// (057). RALAT atas catatan tiket 00 di atas: "nol sequence" untuk polis
-	// keliru - pl3 memutuskan SEQ_WORK_POLIS, dan ia terlewat. ALTER kolom
-	// FLAG_ONGOING_POLICY tidak dihitung.
-	// ⛔ Diperbarui LAGI - tiket 01 Treaty Contract Out (300-306) menambah
-	// TUJUH tabel (T_TREATYYEAR, T_TREATYCONTRACT, T_TREATYREINSURER,
-	// T_MTREATYSECURITY, T_TREATYBUSINESS, T_PROPORTIONALARRG,
-	// T_TREATYCO_JEJAK) + 7 sequence + 7 index = 21 pernyataan CREATE = 71.
-	// +3 dari 307 (tiket 12 Treaty Contract Out, 29-09-2026): tabel
-	// T_TREATYYEAR_LAMPIRAN + index + sequence = 74.
-	// Penyatuan 29-09-2026: 50 (dasar) + 1 (057, butir bn) + 24 (300-307 Treaty Contract Out) = 75.
-	// ⛔ tco4 (keputusan work owner 29-09-2026): Treaty Contract Out NOL tabel
-	// baru - 300-307 dibuang, kembali ke 50 + 1 = 51.
-	// ⛔ OQ-PL-15 (GILIRAN-15): 058 membuat ULANG SEQ_WORK_POLIS - DROP (tidak
-	// dihitung) lalu CREATE SEQUENCE ... START WITH 22374 (+1) = 52.
-	// ⛔ Diperbarui LAGI - 900 milik `inti` (M_NAV_MENU, brief menu 30-09-2026):
-	// 1 tabel + 2 index (PARENT_ID, GROUPMENU) + 1 sequence = 56. INSERT isi
-	// awal tidak dihitung - ia bukan CREATE.
-	const mau = 56
-	if diperiksa != mau {
-		t.Errorf("pernyataan CREATE diperiksa %d, mau %d", diperiksa, mau)
+	// Struktur tim satu folder per modul (30-09-2026): dulu angkanya DIKUNCI
+	// (`const mau = 56`, riwayat setiap kenaikannya di git log berkas ini), dan
+	// setiap modul yang menambah tabel menyunting berkas milik tim inti ini -
+	// dua modul yang melakukannya bersamaan bertabrakan di satu baris. Dua cara
+	// hitung menjaga hal yang sama tanpa angka yang harus disunting. Instrumennya
+	// diuji atas angka lama: 56 baris CREATE, 21 CREATE TABLE (30-09-2026).
+	if mentah := cacahBarisMentah(t, polaBarisCreate); diperiksa != mentah {
+		t.Errorf("pernyataan CREATE diperiksa %d, teks mentah memuat %d baris CREATE - pemisah pernyataan rusak?",
+			diperiksa, mentah)
+	}
+	if diperiksa < 20 {
+		t.Fatalf("hanya %d pernyataan CREATE terbaca; pembacanya yang rusak", diperiksa)
 	}
 }
 
 // KolomCreateTable membaca nama dan kolom dari setiap CREATE TABLE migrasi.
 //
-// Cacahnya dikunci: delapan CREATE TABLE. Pernyataan yang BUKAN CREATE TABLE -
+// Cacahnya dihitung dua cara (lihat di bawah). Pernyataan yang BUKAN CREATE TABLE -
 // CREATE INDEX dan CREATE SEQUENCE - harus mengembalikan nama kosong, kalau
 // tidak pra-terbang akan mencari "bentuk" sebuah sequence.
 func TestKolomCreateTableMembacaSeluruhTabel(t *testing.T) {
@@ -410,22 +378,14 @@ func TestKolomCreateTableMembacaSeluruhTabel(t *testing.T) {
 			}
 		}
 	}
-	// Tujuh, bukan delapan: T_MIGRASI dibuat siapkanTabelMigrasi, di luar
-	// berkas migrasi. Sesudah migrasi, katalog memang memuat delapan tabel.
-	// 11 tabel Claim Life + 7 tabel PremiumList Life (tiket 00) = 18.
-	// 20 tabel + 10 sequence + 20 index = 50 pernyataan CREATE, cocok dengan
-	// cacah yang dikunci TestSeluruhCreateDapatDibacaNamanya.
-	// +1 tabel, +1 sequence, +1 index dari 018 (butir bd, diagnosa).
-	// +1 tabel dari 019 (butir be) - TANPA sequence dan TANPA index:
-	// identitasnya cap waktu `models.IDDokumenBaru`, bukan nomor kita,
-	// dan PK-nya sudah berindeks sendiri.
-	// +7 tabel dari 300-306 (tiket 01 Treaty Contract Out) = 27.
-	// +1 tabel dari 307 (tiket 12 Treaty Contract Out, lampiran) = 28.
-	// ⛔ tco4 (29-09-2026): 300-307 dibuang - kembali ke 20.
-	// +1 tabel dari 900 milik `inti` (M_NAV_MENU, 30-09-2026) = 21.
-	const mauTabel = 21
-	if tabel != mauTabel {
-		t.Errorf("CREATE TABLE terbaca %d, mau %d", tabel, mauTabel)
+	// T_MIGRASI dibuat siapkanTabelMigrasi, di luar berkas migrasi - tidak
+	// terhitung di sini. Dua cara hitung, seperti TestSeluruhCreateDapatDibacaNamanya:
+	// dulu `const mauTabel = 21` yang disunting setiap modul yang menambah tabel.
+	if mentah := cacahBarisMentah(t, polaBarisCreateTable); tabel != mentah {
+		t.Errorf("CREATE TABLE terbaca %d, teks mentah memuat %d baris CREATE TABLE", tabel, mentah)
+	}
+	if tabel < 10 {
+		t.Fatalf("hanya %d CREATE TABLE terbaca; pembacanya yang rusak", tabel)
 	}
 	if bukanTabel == 0 {
 		t.Error("nol pernyataan bukan-tabel; CREATE INDEX dan SEQUENCE seharusnya ada")

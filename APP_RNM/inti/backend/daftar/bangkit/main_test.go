@@ -174,4 +174,24 @@ func TestDaftarBangkitanSamaDenganFolder(t *testing.T) {
 	if len(berkas) < 4 {
 		t.Fatalf("hanya %d modul terdaftar; pembacanya yang rusak", len(berkas))
 	}
+	// Direktif go:generate di berkas yang berurut SESUDAH setiap berkas
+	// bangkitan: `go generate` membaca berkas menurut abjad, dan pembangkit
+	// membuang berkas modul yang sudah tidak ada (`pembangkit.go`).
+	berkasGo, err := filepath.Glob(filepath.Join("..", "*.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var arahan []string
+	for _, b := range berkasGo {
+		isi, err := os.ReadFile(b)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if strings.Contains(string(isi), "\n//go:generate go run ./bangkit") {
+			arahan = append(arahan, filepath.Base(b))
+		}
+	}
+	if len(arahan) != 1 || arahan[0] <= awalanBerkas+"zzz" {
+		t.Errorf("direktif go:generate di %v; mau tepat satu berkas bernama sesudah %s*%s", arahan, awalanBerkas, akhiranBerkas)
+	}
 }

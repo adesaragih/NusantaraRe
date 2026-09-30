@@ -18,7 +18,7 @@
 // Yang memakai daftar ini: `cmd/api` dan skema uji test bertag `db`.
 package daftar
 
-//go:generate go run ./bangkit
+// Direktif `go generate`: `pembangkit.go` (letaknya disengaja, lihat di sana).
 
 import (
 	"io/fs"

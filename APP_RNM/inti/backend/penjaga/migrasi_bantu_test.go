@@ -19,6 +19,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"testing"
@@ -180,4 +181,32 @@ func pemilikJalur(j string) string {
 		return "inti"
 	}
 	return ""
+}
+
+// Pola baris pembuka pernyataan di teks MENTAH berkas migrasi - cara hitung
+// kedua, tanpa pemisah pernyataan pelari.
+var (
+	polaBarisCreate      = regexp.MustCompile(`(?m)^CREATE\s`)
+	polaBarisCreateTable = regexp.MustCompile(`(?m)^CREATE TABLE\s`)
+)
+
+// cacahBarisMentah menghitung baris yang cocok `pola` di setiap berkas migrasi
+// MAJU, dibaca apa adanya dari disk.
+func cacahBarisMentah(t *testing.T, pola *regexp.Regexp) int {
+	t.Helper()
+	if berkasMigrasi.muat != nil {
+		t.Fatal(berkasMigrasi.muat)
+	}
+	n := 0
+	for nama, jalur := range berkasMigrasi.asal {
+		if strings.HasSuffix(nama, "_down.sql") {
+			continue
+		}
+		isi, err := os.ReadFile(jalur)
+		if err != nil {
+			t.Fatal(err)
+		}
+		n += len(pola.FindAllIndex(isi, -1))
+	}
+	return n
 }

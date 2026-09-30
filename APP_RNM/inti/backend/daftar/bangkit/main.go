@@ -2,7 +2,7 @@
 // struktur tim satu folder per modul (30-09-2026).
 //
 // Dijalankan lewat `go generate ./inti/backend/daftar` dari folder APP_RNM
-// (direktifnya di `inti/backend/daftar/daftar.go`). Untuk setiap folder
+// (direktifnya di `inti/backend/daftar/pembangkit.go`). Untuk setiap folder
 // `modul/<nama>/backend/modul.go` ia menulis SATU berkas
 // `inti/backend/daftar/modul_<nama>_gen.go` yang mendaftarkan
 // `<nama>.Pendaftaran()`, dan membuang berkas bangkitan yang foldernya sudah

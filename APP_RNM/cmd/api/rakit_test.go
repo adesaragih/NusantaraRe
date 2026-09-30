@@ -23,7 +23,9 @@ import (
 	"nusantarare/inti/backend/migrasi"
 )
 
-// ruteContoh - satu rute GET milik setiap modul terdaftar.
+// ruteContoh - satu rute GET milik setiap modul yang dimigrasi sebelum struktur
+// tim satu folder per modul; modul yang lahir sesudahnya tidak perlu ditambah
+// di sini.
 var ruteContoh = map[string]string{
 	"claimlife":         "/api/klaim-life",
 	"premiumlistlife":   "/api/polis-life",
@@ -93,8 +95,11 @@ func TestModulNonaktifRutenya404(t *testing.T) {
 
 func TestModulAktifKosongBerartiSemua(t *testing.T) {
 	mux, aktif := muxUji(t, nil)
-	if len(aktif) != len(ruteContoh) {
-		t.Fatalf("%d modul aktif, mau %d (semua terdaftar)", len(aktif), len(ruteContoh))
+	// Semua TERDAFTAR, dari daftar - bukan dari peta rute contoh di atas: modul
+	// yang baru dimulai tidak boleh memaksa berkas milik tim inti ini disunting
+	// (temuan uji coba bab 5, struktur tim satu folder per modul 30-09-2026).
+	if terdaftar := modulTerdaftar(t); len(aktif) != len(terdaftar) || len(aktif) < len(ruteContoh) {
+		t.Fatalf("%d modul aktif, mau %d (semua terdaftar)", len(aktif), len(terdaftar))
 	}
 	for nama, jalur := range ruteContoh {
 		if k := kode(mux, jalur); k == http.StatusNotFound {
