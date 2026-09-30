@@ -15,6 +15,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
+import { DESIMAL_TAK_DIBATASI, formatNumber } from '../../../inti/lib/format'
 import { REINSURER_TCO } from '../labels'
 import {
   ambilDampakHapusReinsurer,
@@ -276,8 +277,8 @@ export default function PanelReinsurerKombinasi({
               <tr key={r.id} className="inbox__baris">
                 <td>{r.reinsurerId}</td>
                 <td>{r.name}</td>
-                <td>{r.pctShare}</td>
-                <td>{r.ricomm}</td>
+                <td>{formatNumber(r.pctShare, DESIMAL_TAK_DIBATASI)}</td>
+                <td>{formatNumber(r.ricomm, DESIMAL_TAK_DIBATASI)}</td>
                 <td>{r.stdRating}</td>
                 <td>{r.operatorName}</td>
                 <td className="table__actions">
@@ -303,7 +304,7 @@ export default function PanelReinsurerKombinasi({
           <tfoot>
             <tr>
               <td colSpan={2}>{REINSURER_TCO.totalShare}</td>
-              <td>{daftar.totalShare}</td>
+              <td>{formatNumber(daftar.totalShare, DESIMAL_TAK_DIBATASI)}</td>
               <td colSpan={4} />
             </tr>
           </tfoot>

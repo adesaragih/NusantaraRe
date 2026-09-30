@@ -5,21 +5,27 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { alihJenis } from './PanelKlausulTahun'
+import { alihJenisTunggal } from './PanelKlausulTahun'
 
 const KODE = readFileSync(join(__dirname, 'PanelKlausulTahun.tsx'), 'utf8')
 
 describe('panel klausul tahun', () => {
-  it('Show membuka/menutup satu jenis tanpa menyentuh jenis lain (AC 29)', () => {
-    expect(alihJenis([], '10009')).toEqual(['10009'])
-    expect(alihJenis(['10009', '10013'], '10009')).toEqual(['10013'])
-    expect(alihJenis(['10013'], '10001')).toEqual(['10013', '10001'])
+  it('Show membuka SATU jenis; jenis lain menggantinya, jenis yang sama menutupnya (keputusan work owner 30-09-2026)', () => {
+    expect(alihJenisTunggal(null, '10001')).toBe('10001')
+    // Treaty Limit terbuka, lalu Cash Loss Limit ditekan: yang tampil HANYA Cash Loss Limit.
+    expect(alihJenisTunggal('10001', '10004')).toBe('10004')
+    expect(alihJenisTunggal('10004', '10004')).toBeNull()
   })
-  it('dua grid: For Non XOL (isXol 0) dan For XOL (isXol 1)', () => {
+  it('jenis terbuka tampil di POPUP, bukan di bawah grid', () => {
+    expect(KODE).toContain('<Modal')
+    expect(KODE).toMatch(/<Modal[\s\S]*<PanelJenisKlausul[\s\S]*<\/Modal>/)
+    expect(KODE).not.toContain('terbuka.map(')
+  })
+  it('satu grid "Treaty Desc" (isXol 0); grid For XOL dibuang', () => {
     expect(KODE).toContain("ambilJenisKlausul('0')")
-    expect(KODE).toContain("ambilJenisKlausul('1')")
+    expect(KODE).not.toContain("ambilJenisKlausul('1')")
     expect(KODE).toContain('KLAUSUL_TCO.gridNonXol')
-    expect(KODE).toContain('KLAUSUL_TCO.gridXol')
+    expect(KODE).not.toContain('gridXol')
   })
   it('kepala tahun hanya dibaca — tujuh medan', () => {
     expect((KODE.match(/readOnly/g) ?? []).length).toBe(7)

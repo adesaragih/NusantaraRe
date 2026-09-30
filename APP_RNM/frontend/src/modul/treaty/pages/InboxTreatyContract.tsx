@@ -14,20 +14,23 @@
 // isi (422). Layar menampilkan kalimatnya apa adanya (`Gagal`).
 //
 // ⛔ Tombol `Copy` b20459 dan form From/To b2374/b3818 TIDAK dibawa — fitur
-// salin tahun treaty dibuang (AC 72). `ReinsType` dan `List Description`
-// berdiri, menyebut tiket yang ditunggunya (04, 08) — bukan disembunyikan.
-// Tiket 04 (29-09-2026): `ReinsType` kini membuka `PanelKontrakTahun`.
-// Tiket 08 (29-09-2026): `List Description` kini membuka `PanelKlausulTahun`.
+// salin tahun treaty dibuang (AC 72). `ReinsType` membuka `PanelKontrakTahun`
+// (tiket 04), `List Description` membuka `PanelKlausulTahun` (tiket 08).
+//
+// [keputusan work owner 30-09-2026] Panel yang dibuka dari baris tahun hanya
+// SATU sekaligus, dan selama ia terbuka tabel utama DISEMBUNYIKAN — fokus pada
+// grid yang diklik; menutup panel mengembalikan tabel. Catatan pengembang di
+// layar (label bersilang OQ-TCO-05, "simpan dulu") dibuang.
 //
 // ⚠️ OQ-TCO-05: label tahun bersilang antara grid dan form di korpus; keduanya
-// dibawa apa adanya dan catatannya tampil di layar.
+// dibawa apa adanya.
 //
 // Tiket 12: panel lampiran `GridTreatyArrangementAttachment` (b13074) tampil di
 // form tahun yang sudah ber-ID - `components/PanelLampiranTahun`.
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { LAMPIRAN_TCO, TAHUN_TCO } from '../labels'
+import { TAHUN_TCO } from '../labels'
 import PanelKlausulTahun from '../components/PanelKlausulTahun'
 import PanelKontrakTahun from '../components/PanelKontrakTahun'
 import PanelLampiranTahun from '../components/PanelLampiranTahun'
@@ -114,6 +117,9 @@ export function namaGrup(daftar: readonly GrupTreaty[], id: string): string {
 
 const UKURAN = 20
 
+/** Panel yang dibuka dari satu baris tahun — `ReinsType` atau `List Description`. */
+export type RinciTahun = { jenis: 'kontrak' | 'klausul'; tahun: TahunTreaty }
+
 export default function InboxTreatyContract() {
   const [hal, setHal] = useState<HalamanTahunTreaty | null>(null)
   const [halaman, setHalaman] = useState(1)
@@ -126,10 +132,10 @@ export default function InboxTreatyContract() {
   const [galatGrup, setGalatGrup] = useState<unknown>(null)
   // Tiket 04: tombol `ReinsType` b20778 membuka editor kontrak tahun itu
   // (Pega: `BrowseReinsTypeYear` + `showHarness` popup `InboxTreatyContractReinsType`).
-  const [tahunKontrak, setTahunKontrak] = useState<TahunTreaty | null>(null)
   // Tiket 08: tombol `List Description` b22196 membuka layar klausul tahun itu
-  // (Pega: `showHarness` `InboxTreatyContractDescription`).
-  const [tahunKlausul, setTahunKlausul] = useState<TahunTreaty | null>(null)
+  // (Pega: `showHarness` `InboxTreatyContractDescription`). SATU keadaan untuk
+  // keduanya: membuka yang satu menutup yang lain.
+  const [rinci, setRinci] = useState<RinciTahun | null>(null)
 
   const muat = useCallback(async (h: number) => {
     setSibuk(true)
@@ -185,6 +191,29 @@ export default function InboxTreatyContract() {
     setForm((f) => (f === null ? f : { ...f, [k]: v }))
   }
 
+  function bukaRinci(r: RinciTahun): void {
+    setRinci(r)
+    // Tabel panjang tersembunyi: mulai dari atas panel, bukan dari tengah layar.
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0 })
+  }
+
+  // Fokus pada panel yang diklik: tabel utama, form, dan penomoran halaman
+  // TIDAK dirender; `Tutup` panel mengembalikannya (state tabel tetap).
+  if (rinci !== null) {
+    const tutup = () => {
+      setRinci(null)
+    }
+    return (
+      <section className="inbox">
+        {rinci.jenis === 'kontrak' ? (
+          <PanelKontrakTahun key={rinci.tahun.id} tahun={rinci.tahun} onTutup={tutup} />
+        ) : (
+          <PanelKlausulTahun key={rinci.tahun.id} tahun={rinci.tahun} onTutup={tutup} />
+        )}
+      </section>
+    )
+  }
+
   return (
     <section className="inbox">
       <header className="inbox__kepala">
@@ -200,9 +229,6 @@ export default function InboxTreatyContract() {
           {TAHUN_TCO.add}
         </button>
       </header>
-      <p className="polis__catatan" role="note">
-        {TAHUN_TCO.catatanLabelBersilang}
-      </p>
 
       {form !== null && (
         <section className="panel">
@@ -252,34 +278,8 @@ export default function InboxTreatyContract() {
           {/* Tiket 12: panel lampiran (`InputTreatyContract.xml` b13074) melekat
               pada tahun treaty yang SUDAH ber-ID; lampiran bersifat opsional dan
               tidak menjadi syarat tersimpannya tahun treaty (AC 55). */}
-          {form.id !== '' ? (
-            <PanelLampiranTahun tahunID={form.id} />
-          ) : (
-            <p className="polis__catatan" role="note">
-              {LAMPIRAN_TCO.simpanDulu}
-            </p>
-          )}
+          {form.id !== '' && <PanelLampiranTahun tahunID={form.id} />}
         </section>
-      )}
-
-      {tahunKontrak !== null && (
-        <PanelKontrakTahun
-          key={tahunKontrak.id}
-          tahun={tahunKontrak}
-          onTutup={() => {
-            setTahunKontrak(null)
-          }}
-        />
-      )}
-
-      {tahunKlausul !== null && (
-        <PanelKlausulTahun
-          key={tahunKlausul.id}
-          tahun={tahunKlausul}
-          onTutup={() => {
-            setTahunKlausul(null)
-          }}
-        />
       )}
 
       {sibuk && <Memuat />}
@@ -322,7 +322,7 @@ export default function InboxTreatyContract() {
                     type="button"
                     className="btn btn--ghost btn--sm"
                     onClick={() => {
-                      setTahunKontrak(b)
+                      bukaRinci({ jenis: 'kontrak', tahun: b })
                     }}
                   >
                     {TAHUN_TCO.reinsType}
@@ -331,7 +331,7 @@ export default function InboxTreatyContract() {
                     type="button"
                     className="btn btn--ghost btn--sm"
                     onClick={() => {
-                      setTahunKlausul(b)
+                      bukaRinci({ jenis: 'klausul', tahun: b })
                     }}
                   >
                     {TAHUN_TCO.listDescription}

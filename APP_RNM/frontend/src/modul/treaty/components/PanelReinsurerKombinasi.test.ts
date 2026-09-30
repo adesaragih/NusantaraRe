@@ -50,7 +50,9 @@ describe('paritas dan uang', () => {
     }
   })
   it('uang TIDAK PERNAH menjadi angka JavaScript', () => {
-    expect(KODE).not.toMatch(/Number\(|parseFloat|parseInt|toFixed|\+\s*l\.pctShare/)
+    // `(?<![A-Za-z])`: `formatNumber(` (pemformat TEKS bersama, bekerja pada
+    // digit tanpa float - `inti/lib/format.ts`) bukan `Number(` JavaScript.
+    expect(KODE).not.toMatch(/(?<![A-Za-z])Number\(|parseFloat|parseInt|toFixed|\+\s*l\.pctShare/)
     expect(KODE).toContain('daftar.totalShare')
   })
   it('reinsurer dipilih dari master, bukan diketik (Reins.ID hanya dibaca)', () => {

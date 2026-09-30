@@ -5,7 +5,7 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { formKontrakDari, formKontrakKosong, keMasukKontrak } from './PanelKontrakTahun'
+import { alihRinci, formKontrakDari, formKontrakKosong, keMasukKontrak } from './PanelKontrakTahun'
 
 const KODE = readFileSync(join(__dirname, 'PanelKontrakTahun.tsx'), 'utf8')
   .split('\n')
@@ -57,9 +57,9 @@ describe('paritas layar kontrak', () => {
     expect(KODE).toMatch(/setForm\(asal\)/)
   })
   it('Reinsurer List (05) dan Business List (07) membuka panelnya; Delete menunggu 10', () => {
-    expect(KODE).toContain('setKontrakReinsurer(k.id)')
+    expect(KODE).toContain("setRinci((r) => alihRinci(r, 'reinsurer', k.id))")
     expect(KODE).toContain('<PanelReinsurerKombinasi')
-    expect(KODE).toContain('setKontrakBusiness(k.id)')
+    expect(KODE).toContain("setRinci((r) => alihRinci(r, 'business', k.id))")
     expect(KODE).toContain('<PanelBusinessKombinasi')
     expect(KODE).not.toContain('`${TAHUN_TCO.menungguTiket} 05`')
     expect(KODE).not.toContain('`${TAHUN_TCO.menungguTiket} 07`')
@@ -70,5 +70,30 @@ describe('paritas layar kontrak', () => {
     expect(KODE).toMatch(/label=\{KONTRAK_TCO\.formId\}[^/]*readOnly/)
     expect(KODE).toMatch(/label=\{KONTRAK_TCO\.formModifiedDate\}[^/]*readOnly/)
     expect(KODE).toMatch(/label=\{KONTRAK_TCO\.formUsername\}[^/]*readOnly/)
+  })
+})
+
+describe('Business List / Reinsurer List — satu panel rinci (keputusan work owner 30-09-2026)', () => {
+  it('membuka daftar kontrak lain MENUTUP yang terbuka', () => {
+    const b1 = alihRinci(null, 'business', 'K1')
+    expect(b1).toEqual({ daftar: 'business', kontrakID: 'K1' })
+    // Business List kontrak ke-2 dibuka: Business List pertama tertutup.
+    expect(alihRinci(b1, 'business', 'K2')).toEqual({ daftar: 'business', kontrakID: 'K2' })
+    // Begitu pula Reinsurer List: satu saja, termasuk lintas jenis daftar.
+    const r1 = alihRinci(null, 'reinsurer', 'K1')
+    expect(alihRinci(r1, 'reinsurer', 'K2')).toEqual({ daftar: 'reinsurer', kontrakID: 'K2' })
+    expect(alihRinci(b1, 'reinsurer', 'K1')).toEqual({ daftar: 'reinsurer', kontrakID: 'K1' })
+  })
+  it('menekan tombol yang sama menutupnya', () => {
+    expect(alihRinci({ daftar: 'business', kontrakID: 'K1' }, 'business', 'K1')).toBeNull()
+  })
+  it('SATU keadaan, dan panelnya dirender di bawah baris kontraknya', () => {
+    expect(KODE).toContain('const [rinci, setRinci] = useState<RinciKontrak | null>(null)')
+    expect(KODE).not.toMatch(/setKontrakBusiness|setKontrakReinsurer/)
+    expect(KODE).toContain('{rinci?.kontrakID === k.id && (')
+    expect(KODE).toContain('<td colSpan={4}>')
+  })
+  it('nol catatan pengembang di layar', () => {
+    expect(KODE).not.toMatch(/catatanLabelBersilang|polis__catatan/)
   })
 })

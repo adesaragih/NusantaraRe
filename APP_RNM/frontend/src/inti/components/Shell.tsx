@@ -40,6 +40,7 @@ import {
   PRODUK,
 } from '../labels'
 import {
+  butirDatar,
   butirKelompok,
   HALAMAN_BERANDA,
   kelompokTampil,
@@ -337,9 +338,29 @@ export function Shell<H extends string>({
             </li>
 
             {/* Modul NONAKTIF (MODUL_AKTIF): kelompoknya tidak tampil. */}
-            {kelompokTampil(kelompok, modulAktif).map(({ k, butir }) => (
+            {kelompokTampil(kelompok, modulAktif).map(({ k, butir }) => {
+              const datar = butirDatar(butir)
+              return (
               <li key={k.nama}>
-                {butir.length === 0 ? (
+                {datar !== undefined ? (
+                  /* Kelompok beranggota SATU butir bertanda `datar`: satu tombol
+                     langsung, tanpa judul kelompok yang dilipat dan tanpa anak
+                     (Treaty Contract Out, keputusan work owner 30-09-2026). */
+                  <button
+                    type="button"
+                    className={`shell__butir${halaman === datar.halaman ? ' shell__butir--aktif' : ''}`}
+                    aria-current={halaman === datar.halaman ? 'page' : undefined}
+                    title={datar.label}
+                    onClick={() => {
+                      pilih(datar.halaman)
+                    }}
+                  >
+                    <span className="kelompok__lencana" aria-hidden="true">
+                      {LENCANA.get(k.nama)}
+                    </span>
+                    <span className="shell__label">{datar.label}</span>
+                  </button>
+                ) : butir.length === 0 ? (
                   /* Kelompok tanpa butir tetap BERDIRI dan menyebut sebabnya.
                      Menyembunyikannya membuat aplikasi tampak lengkap padahal
                      empat belas modul belum ada. Ia bukan tombol: tidak ada
@@ -387,7 +408,8 @@ export function Shell<H extends string>({
                   </KelompokMenu>
                 )}
               </li>
-            ))}
+              )
+            })}
           </ul>
         </nav>
       </aside>

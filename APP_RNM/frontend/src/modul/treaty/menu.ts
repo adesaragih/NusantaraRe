@@ -22,5 +22,7 @@ export const MENU_TREATY: readonly ButirMenuModul<HalamanTreaty>[] = [
   // Treaty Contract Out — tco5 [keputusan work owner 29-09-2026]: SATU butir
   // "Treaty Contract Out" (asal harness InboxTreatyContract). Butir ReinsType
   // dan Description dibuang: di Pega keduanya popup form kontrak (b20778, b22196).
-  { modul: 'tco-tahun', label: MENU_TCO.treatyContractOut, kelompok: MODUL.treatyContractOut },
+  // [keputusan work owner 30-09-2026] DATAR: satu tombol langsung, tanpa model
+  // kelompok-beranak "Treaty Contract Out ▸ Treaty Contract Out".
+  { modul: 'tco-tahun', label: MENU_TCO.treatyContractOut, kelompok: MODUL.treatyContractOut, datar: true },
 ]

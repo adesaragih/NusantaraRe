@@ -1,12 +1,15 @@
 // Layar klausul satu tahun treaty — tiket 08 Treaty Contract Out.
 //
 // Padanan harness `InboxTreatyContractDescription` (b359) yang dibuka tombol
-// `List Description` baris tahun (b22196): kepala tahun hanya dibaca, dua grid
-// jenis `BrowseTreatyDesc_RD` — `For Non XOL` (IsXOL 0) dan `For XOL`
-// (IsXOL 1) — dan tombol `Show` per jenis yang membuka panelnya.
+// `List Description` baris tahun (b22196): kepala tahun hanya dibaca, grid
+// jenis `BrowseTreatyDesc_RD` `IsXOL = 0` — berjudul "Treaty Desc" — dan
+// tombol `Show` per jenis.
 //
-// ⛔ Setiap jenis yang dibuka memegang isiannya sendiri (AC 29): beberapa
-// jenis boleh terbuka bersamaan, menutup satu tidak menyentuh yang lain.
+// [keputusan work owner 30-09-2026] Grid `For XOL` (`IsXOL = 1`) dibuang —
+// masternya kosong di DEV. `Show` membuka SATU jenis dalam popup: menekan
+// Treaty Limit menampilkan Treaty Limit saja, menekan Cash Loss Limit
+// menggantinya dengan Cash Loss Limit saja. Menggantikan AC 29 ("beberapa
+// jenis boleh terbuka bersamaan").
 // ⚠️ OQ-TCO-05: label `Underwriting Year` menunjuk `.TreatyYear` dan
 // `Transaction Year` menunjuk `.UnderwritingYear` — dibawa apa adanya.
 
@@ -15,72 +18,24 @@ import { useEffect, useState } from 'react'
 import { KLAUSUL_TCO, MENU_TCO } from '../labels'
 import { formatDate } from '../../../inti/lib/format'
 import { ambilJenisKlausul, type JenisKlausul, type TahunTreaty } from '../api'
-import { Field, Gagal, Kosong, Memuat } from '../../../inti/components/ui/dasar'
+import { Field, Gagal, Kosong, Memuat, Modal } from '../../../inti/components/ui/dasar'
 import PanelJenisKlausul from './PanelJenisKlausul'
 
-/** Buka/tutup satu jenis tanpa menyentuh jenis lain yang terbuka. */
-export function alihJenis(terbuka: readonly string[], id: string): string[] {
-  return terbuka.includes(id) ? terbuka.filter((t) => t !== id) : [...terbuka, id]
-}
-
-function GridJenis({
-  judul,
-  daftar,
-  galat,
-  onShow,
-}: {
-  judul: string
-  daftar: JenisKlausul[] | null
-  galat: unknown
-  onShow: (j: JenisKlausul) => void
-}) {
-  return (
-    <section className="panel">
-      <h3 className="panel__title">{judul}</h3>
-      {galat !== null && <Gagal galat={galat} />}
-      {daftar === null && galat === null && <Memuat />}
-      {daftar !== null && daftar.length === 0 && <Kosong pesan={KLAUSUL_TCO.kosong} />}
-      {daftar !== null && daftar.length > 0 && (
-        <table className="inbox__tabel">
-          <thead>
-            <tr>
-              <th>{KLAUSUL_TCO.kolomId}</th>
-              <th>{KLAUSUL_TCO.kolomDescriptionName}</th>
-              <th className="table__actions" />
-            </tr>
-          </thead>
-          <tbody>
-            {daftar.map((j) => (
-              <tr key={j.id} className="inbox__baris">
-                <td>{j.id}</td>
-                <td>{j.descName}</td>
-                <td className="table__actions">
-                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => onShow(j)}>
-                    {KLAUSUL_TCO.show}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </section>
-  )
+/** Jenis yang tampil di popup: menekan jenis yang sama menutupnya, jenis lain menggantinya. */
+export function alihJenisTunggal(terbuka: string | null, id: string): string | null {
+  return terbuka === id ? null : id
 }
 
 export default function PanelKlausulTahun({ tahun, onTutup }: { tahun: TahunTreaty; onTutup?: () => void }) {
-  const [nonXol, setNonXol] = useState<JenisKlausul[] | null>(null)
-  const [xol, setXol] = useState<JenisKlausul[] | null>(null)
-  const [galatNonXol, setGalatNonXol] = useState<unknown>(null)
-  const [galatXol, setGalatXol] = useState<unknown>(null)
-  const [terbuka, setTerbuka] = useState<string[]>([])
+  const [daftar, setDaftar] = useState<JenisKlausul[] | null>(null)
+  const [galat, setGalat] = useState<unknown>(null)
+  const [terbuka, setTerbuka] = useState<string | null>(null)
 
   useEffect(() => {
-    ambilJenisKlausul('0').then(setNonXol).catch(setGalatNonXol)
-    ambilJenisKlausul('1').then(setXol).catch(setGalatXol)
+    ambilJenisKlausul('0').then(setDaftar).catch(setGalat)
   }, [])
 
-  const semua = [...(nonXol ?? []), ...(xol ?? [])]
+  const jenis = terbuka === null ? undefined : daftar?.find((j) => j.id === terbuka)
   return (
     <section className="panel">
       <header className="inbox__kepala">
@@ -100,14 +55,54 @@ export default function PanelKlausulTahun({ tahun, onTutup }: { tahun: TahunTrea
         <Field label={KLAUSUL_TCO.headerTreatyDescription} value={tahun.treatyGroupName} onChange={() => undefined} readOnly />
         <Field label={KLAUSUL_TCO.headerProportionType} value={tahun.proportion} onChange={() => undefined} readOnly />
       </div>
-      <GridJenis judul={KLAUSUL_TCO.gridNonXol} daftar={nonXol} galat={galatNonXol} onShow={(j) => setTerbuka((t) => alihJenis(t, j.id))} />
-      <GridJenis judul={KLAUSUL_TCO.gridXol} daftar={xol} galat={galatXol} onShow={(j) => setTerbuka((t) => alihJenis(t, j.id))} />
-      {terbuka.map((id) => {
-        const j = semua.find((s) => s.id === id)
-        return j === undefined ? null : (
-          <PanelJenisKlausul key={`${tahun.id}/${id}`} tahunID={tahun.id} jenis={j} onTutup={() => setTerbuka((t) => alihJenis(t, id))} />
-        )
-      })}
+      <section className="panel">
+        <h3 className="panel__title">{KLAUSUL_TCO.gridNonXol}</h3>
+        {galat !== null && <Gagal galat={galat} />}
+        {daftar === null && galat === null && <Memuat />}
+        {daftar !== null && daftar.length === 0 && <Kosong pesan={KLAUSUL_TCO.kosong} />}
+        {daftar !== null && daftar.length > 0 && (
+          <table className="inbox__tabel">
+            <thead>
+              <tr>
+                <th>{KLAUSUL_TCO.kolomId}</th>
+                <th>{KLAUSUL_TCO.kolomDescriptionName}</th>
+                <th className="table__actions" />
+              </tr>
+            </thead>
+            <tbody>
+              {daftar.map((j) => (
+                <tr key={j.id} className={j.id === terbuka ? 'inbox__baris belah__baris--aktif' : 'inbox__baris'}>
+                  <td>{j.id}</td>
+                  <td>{j.descName}</td>
+                  <td className="table__actions">
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => {
+                        setTerbuka((t) => alihJenisTunggal(t, j.id))
+                      }}
+                    >
+                      {KLAUSUL_TCO.show}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+      {jenis !== undefined && (
+        <Modal
+          judul={`${jenis.id} — ${jenis.descName}`}
+          labelBatal={KLAUSUL_TCO.tutup}
+          lebar
+          onTutup={() => {
+            setTerbuka(null)
+          }}
+        >
+          <PanelJenisKlausul key={`${tahun.id}/${jenis.id}`} tahunID={tahun.id} jenis={jenis} tanpaJudul />
+        </Modal>
+      )}
     </section>
   )
 }

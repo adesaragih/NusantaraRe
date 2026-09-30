@@ -53,13 +53,7 @@ export default function InboxTreatyContractReinsType() {
           />
         </div>
       )}
-      {terpilih === null ? (
-        <p className="polis__catatan" role="note">
-          {KONTRAK_TCO.pilihTahunDulu}
-        </p>
-      ) : (
-        <PanelKontrakTahun key={terpilih.id} tahun={terpilih} />
-      )}
+      {terpilih !== null && <PanelKontrakTahun key={terpilih.id} tahun={terpilih} />}
     </div>
   )
 }

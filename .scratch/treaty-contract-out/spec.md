@@ -21,6 +21,20 @@ Skill: `/mattpocock-skills:to-spec`
 > `InboxTreatyContractDescription` adalah popup form kontrak (`InputTreatyContract.xml` b20778/b22196), bukan menu.
 > Bagian spec di bawah yang menyebut tabel `T_*`, skema relasional baru, atau migrasi data tunduk pada ralat ini.
 
+> ⛔ **RALAT BERTANGGAL 30-09-2026 — tampilan layar `[DIPUTUSKAN work owner]`** (delapan butir, pesan work owner).
+> (1) Catatan pengembang yang bukan galat sistem **tidak tampil** di layar — label bersilang OQ-TCO-05 (tahun dan
+> kontrak), "simpan dulu" lampiran, "pilih tahun dulu", "dihitung server"; yang tetap: galat, alasan jenis ditahan /
+> belum beraturan (keadaan yang memblokir aksi), dampak popup hapus, dan catatan baris kurs kembar (keputusan
+> 29-09-2026). (2) Nilai desimal **tampil berpemisah ribuan** (`formatNumber`, gaya Indonesia `1.234.567,89`, tanpa
+> digit dibuang) — grid klausul, Total Pct, kurs, `%Share`/`Comm` reinsurer, `%Share` security; isian form tetap
+> mentah. (3) `ReinsType` / `List Description` membuka **satu** panel dan **tabel utama disembunyikan** selama panel
+> terbuka. (4) Grid `For XOL` (`IsXOL = 1`) **dibuang** — masternya kosong di DEV. (5) Grid `For Non XOL` bernama
+> **`Treaty Desc`**. (6) `Show` jenis klausul membuka **popup satu jenis** — Treaty Limit menampilkan Treaty Limit
+> saja; menggantikan AC 29 dan user story 21 ("beberapa jenis dikerjakan bersamaan"). (7) `Business List` /
+> `Reinsurer List` **satu panel sekaligus**, terbuka di bawah baris kontraknya; membuka yang lain menutup yang
+> terbuka. (8) Menu **datar**: satu tombol `Treaty Contract Out`, tanpa kelompok-beranak (mempersempit tco5; modul
+> lain tidak berubah).
+
 > ⛔ **RALAT BERTANGGAL 29-09-2026 — lanjutan 4 `[asisten dari data DEV; veto work owner]`.** Bentuk nilai mengikuti
 > DATA warisan: `TREATYYEAR.STARTDATE/ENDDATE` ditulis dan dibaca `YYYYMMDD` (bentuk lain ditolak, OQ-TCO-01);
 > `TREATYREINSURER.STARTDATE/ENDDATE` tidak ditulis; `USERID`/`TGLUPDATE` reinsurer dan business tidak diisi layanan

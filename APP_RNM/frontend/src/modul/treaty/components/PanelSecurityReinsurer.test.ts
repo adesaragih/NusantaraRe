@@ -39,6 +39,8 @@ describe('kabel', () => {
     expect(KODE).not.toMatch(/confirm\(/)
   })
   it('persen tidak menjadi angka JavaScript', () => {
-    expect(KODE).not.toMatch(/Number\(|parseFloat|toFixed/)
+    // `(?<![A-Za-z])`: `formatNumber(` (pemformat TEKS bersama, bekerja pada
+    // digit tanpa float - `inti/lib/format.ts`) bukan `Number(` JavaScript.
+    expect(KODE).not.toMatch(/(?<![A-Za-z])Number\(|parseFloat|toFixed/)
   })
 })

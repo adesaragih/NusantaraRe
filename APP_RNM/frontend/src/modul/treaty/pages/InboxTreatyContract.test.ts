@@ -73,10 +73,10 @@ describe('paritas layar', () => {
   })
   it('ReinsType membuka editor kontrak (tiket 04); List Description membuka layar klausul (tiket 08)', () => {
     expect(KODE).toContain('TAHUN_TCO.reinsType')
-    expect(KODE).toContain('setTahunKontrak(b)')
+    expect(KODE).toContain("bukaRinci({ jenis: 'kontrak', tahun: b })")
     expect(KODE).toContain('<PanelKontrakTahun')
     expect(KODE).toContain('TAHUN_TCO.listDescription')
-    expect(KODE).toContain('setTahunKlausul(b)')
+    expect(KODE).toContain("bukaRinci({ jenis: 'klausul', tahun: b })")
     expect(KODE).toContain('<PanelKlausulTahun')
     expect(KODE).not.toMatch(/`\$\{TAHUN_TCO.menungguTiket\} 0[48]`/)
   })
@@ -89,12 +89,26 @@ describe('paritas layar', () => {
   })
   it('tiket 12: panel lampiran hanya untuk tahun yang sudah ber-ID, bukan syarat simpan', () => {
     expect(KODE).toContain('<PanelLampiranTahun tahunID={form.id} />')
-    expect(KODE).toMatch(/form\.id !== '' \?/)
-    expect(KODE).toContain('LAMPIRAN_TCO.simpanDulu')
+    expect(KODE).toMatch(/form\.id !== '' &&/)
+    // [keputusan work owner 30-09-2026] catatan "simpan dulu" tidak tampil.
+    expect(KODE).not.toContain('simpanDulu')
     // Simpan tahun tidak menunggu lampiran: fungsi simpan tidak menyebut lampiran.
     const awal = KODE.indexOf('async function simpan')
     const simpan = KODE.slice(awal, KODE.indexOf('\n  }\n', awal))
     expect(simpan).toContain('simpanTahunTreaty(')
     expect(simpan).not.toMatch(/[Ll]ampiran/)
+  })
+
+  it('panel rinci SATU saja, dan selama terbuka tabel utama tidak dirender (keputusan work owner 30-09-2026)', () => {
+    expect(KODE).toContain('const [rinci, setRinci] = useState<RinciTahun | null>(null)')
+    expect(KODE).not.toMatch(/setTahunKontrak|setTahunKlausul/)
+    // Kembalian dini SEBELUM tabel: tabel, form, dan penomoran tidak ikut.
+    const dini = KODE.indexOf('if (rinci !== null) {')
+    expect(dini).toBeGreaterThan(0)
+    expect(dini).toBeLessThan(KODE.indexOf('<table className="inbox__tabel">'))
+    expect(KODE.slice(dini, KODE.indexOf('\n  }\n', dini))).not.toMatch(/<table|<Halaman|form !== null/)
+  })
+  it('nol catatan pengembang di layar (keputusan work owner 30-09-2026)', () => {
+    expect(KODE).not.toMatch(/catatanLabelBersilang|polis__catatan/)
   })
 })

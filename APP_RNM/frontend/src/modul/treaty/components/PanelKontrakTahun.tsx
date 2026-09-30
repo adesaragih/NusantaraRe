@@ -14,8 +14,13 @@
 //
 // ⛔ Tanggal akhir bawaan dihitung SERVER (`SetTanggalTreatyContract`,
 // mulai + 1 tahun kalender, OQ-TCO-10) — satu tempat, tidak ditulis ulang di sini.
+//
+// [keputusan work owner 30-09-2026] `Business List` dan `Reinsurer List`
+// membuka SATU panel rinci sekaligus, tepat di bawah baris kontraknya: membuka
+// yang lain (kontrak lain, atau daftar lain) menutup yang terbuka, menekan
+// tombol yang sama menutupnya.
 
-import { useCallback, useEffect, useState } from 'react'
+import { Fragment, useCallback, useEffect, useState } from 'react'
 
 import { JENIS_REASURANSI_TCO, KONTRAK_TCO } from '../labels'
 import { formatDate } from '../../../inti/lib/format'
@@ -82,6 +87,20 @@ function sel(v: string): string {
   return v.trim() === '' ? '—' : v
 }
 
+/** Panel rinci satu kontrak yang terbuka — Business List atau Reinsurer List. */
+export type RinciKontrak = { daftar: 'business' | 'reinsurer'; kontrakID: string }
+
+/** Tombol daftar satu baris: tombol yang sama menutup, yang lain menggantikan. */
+export function alihRinci(
+  terbuka: RinciKontrak | null,
+  daftar: RinciKontrak['daftar'],
+  kontrakID: string,
+): RinciKontrak | null {
+  return terbuka !== null && terbuka.daftar === daftar && terbuka.kontrakID === kontrakID
+    ? null
+    : { daftar, kontrakID }
+}
+
 export default function PanelKontrakTahun({ tahun, onTutup }: { tahun: TahunTreaty; onTutup?: () => void }) {
   const [daftar, setDaftar] = useState<KontrakTreaty[] | null>(null)
   const [form, setForm] = useState<FormKontrak | null>(null)
@@ -90,9 +109,9 @@ export default function PanelKontrakTahun({ tahun, onTutup }: { tahun: TahunTrea
   const [galat, setGalat] = useState<unknown>(null)
   const [info, setInfo] = useState<string | null>(null)
   // Tiket 05: `Reinsurer List` b11308 membuka panel reinsurer kombinasi kontrak itu.
-  const [kontrakReinsurer, setKontrakReinsurer] = useState<string | null>(null)
   // Tiket 07: `Business List` b10842 membuka panel bisnis kombinasi kontrak itu.
-  const [kontrakBusiness, setKontrakBusiness] = useState<string | null>(null)
+  // SATU keadaan untuk keduanya (keputusan work owner 30-09-2026).
+  const [rinci, setRinci] = useState<RinciKontrak | null>(null)
   // Tiket 10: popup Ya/Batal sebelum kaskade hapus kontrak.
   const [konfirmasi, setKonfirmasi] = useState<{ kontrak: KontrakTreaty; dampak: DampakHapusTCO | null; galat: unknown } | null>(null)
 
@@ -167,8 +186,7 @@ export default function PanelKontrakTahun({ tahun, onTutup }: { tahun: TahunTrea
     try {
       const pesan = await hapusKontrak(tahun.id, konfirmasi.kontrak.id, konfirmasi.dampak)
       if (form?.id === konfirmasi.kontrak.id) setForm(null)
-      if (kontrakReinsurer === konfirmasi.kontrak.id) setKontrakReinsurer(null)
-      if (kontrakBusiness === konfirmasi.kontrak.id) setKontrakBusiness(null)
+      if (rinci?.kontrakID === konfirmasi.kontrak.id) setRinci(null)
       setKonfirmasi(null)
       setInfo(pesan)
       await muat()
@@ -201,9 +219,6 @@ export default function PanelKontrakTahun({ tahun, onTutup }: { tahun: TahunTrea
         <Field label={KONTRAK_TCO.headerUnderwritingYear} value={tahun.underwritingYear} onChange={() => undefined} readOnly />
         <Field label={KONTRAK_TCO.headerReinsType} value={tahun.treatyGroupName} onChange={() => undefined} readOnly />
       </div>
-      <p className="polis__catatan" role="note">
-        {KONTRAK_TCO.catatanLabelBersilang}
-      </p>
 
       {galat !== null && <Gagal galat={galat} />}
       {info !== null && (
@@ -266,37 +281,66 @@ export default function PanelKontrakTahun({ tahun, onTutup }: { tahun: TahunTrea
           </thead>
           <tbody>
             {daftar.map((k) => (
-              <tr key={k.id} className="inbox__baris">
-                <td>{sel(k.reinsTypeName)}</td>
-                <td>{sel(formatDate(k.treatyStartDate))}</td>
-                <td>{sel(formatDate(k.treatyEndDate))}</td>
-                <td className="table__actions">
-                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => buka(formKontrakDari(k))}>
-                    {KONTRAK_TCO.edit}
-                  </button>{' '}
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    onClick={() => {
-                      setKontrakBusiness(k.id)
-                    }}
-                  >
-                    {KONTRAK_TCO.businessList}
-                  </button>{' '}
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    onClick={() => {
-                      setKontrakReinsurer(k.id)
-                    }}
-                  >
-                    {KONTRAK_TCO.reinsurerList}
-                  </button>{' '}
-                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => mintaHapus(k)}>
-                    {KONTRAK_TCO.delete}
-                  </button>
-                </td>
-              </tr>
+              <Fragment key={k.id}>
+                <tr className={rinci?.kontrakID === k.id ? 'inbox__baris belah__baris--aktif' : 'inbox__baris'}>
+                  <td>{sel(k.reinsTypeName)}</td>
+                  <td>{sel(formatDate(k.treatyStartDate))}</td>
+                  <td>{sel(formatDate(k.treatyEndDate))}</td>
+                  <td className="table__actions">
+                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => buka(formKontrakDari(k))}>
+                      {KONTRAK_TCO.edit}
+                    </button>{' '}
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      aria-expanded={rinci?.daftar === 'business' && rinci.kontrakID === k.id}
+                      onClick={() => {
+                        setRinci((r) => alihRinci(r, 'business', k.id))
+                      }}
+                    >
+                      {KONTRAK_TCO.businessList}
+                    </button>{' '}
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      aria-expanded={rinci?.daftar === 'reinsurer' && rinci.kontrakID === k.id}
+                      onClick={() => {
+                        setRinci((r) => alihRinci(r, 'reinsurer', k.id))
+                      }}
+                    >
+                      {KONTRAK_TCO.reinsurerList}
+                    </button>{' '}
+                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => mintaHapus(k)}>
+                      {KONTRAK_TCO.delete}
+                    </button>
+                  </td>
+                </tr>
+                {rinci?.kontrakID === k.id && (
+                  <tr>
+                    <td colSpan={4}>
+                      {rinci.daftar === 'business' ? (
+                        <PanelBusinessKombinasi
+                          key={`business/${k.id}`}
+                          tahunID={tahun.id}
+                          kontrakID={k.id}
+                          onTutup={() => {
+                            setRinci(null)
+                          }}
+                        />
+                      ) : (
+                        <PanelReinsurerKombinasi
+                          key={`reinsurer/${k.id}`}
+                          tahunID={tahun.id}
+                          kontrakID={k.id}
+                          onTutup={() => {
+                            setRinci(null)
+                          }}
+                        />
+                      )}
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
             ))}
           </tbody>
         </table>
@@ -312,26 +356,6 @@ export default function PanelKontrakTahun({ tahun, onTutup }: { tahun: TahunTrea
           onYa={() => void yaHapus()}
           onBatal={() => {
             setKonfirmasi(null)
-          }}
-        />
-      )}
-      {kontrakBusiness !== null && (
-        <PanelBusinessKombinasi
-          key={kontrakBusiness}
-          tahunID={tahun.id}
-          kontrakID={kontrakBusiness}
-          onTutup={() => {
-            setKontrakBusiness(null)
-          }}
-        />
-      )}
-      {kontrakReinsurer !== null && (
-        <PanelReinsurerKombinasi
-          key={kontrakReinsurer}
-          tahunID={tahun.id}
-          kontrakID={kontrakReinsurer}
-          onTutup={() => {
-            setKontrakReinsurer(null)
           }}
         />
       )}

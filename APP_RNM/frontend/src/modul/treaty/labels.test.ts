@@ -217,8 +217,11 @@ describe.skipIf(!adaKorpus)('label Treaty Contract Out berbukti barisnya', () =>
       [3209, KLAUSUL_TCO.headerTreatyDescription], [3382, KLAUSUL_TCO.headerProportionType],
     ]
     for (const [n, v] of kepala) expect(baris(H, n).trim(), String(n)).toBe(lf(v))
-    for (const [n, v] of [[4880, KLAUSUL_TCO.gridNonXol], [5440, KLAUSUL_TCO.kolomId],
-      [5549, KLAUSUL_TCO.kolomDescriptionName], [7971, KLAUSUL_TCO.gridXol]] as [number, string][]) {
+    // b4880 "For Non XOL" diganti "Treaty Desc" dan grid XOL b7971 dibuang [keputusan work owner 30-09-2026].
+    expect(baris(H, 4880).trim()).toBe(nilai('For Non XOL'))
+    expect(KLAUSUL_TCO.gridNonXol).toBe('Treaty Desc')
+    for (const [n, v] of [[5440, KLAUSUL_TCO.kolomId],
+      [5549, KLAUSUL_TCO.kolomDescriptionName]] as [number, string][]) {
       expect(baris(H, n).trim(), String(n)).toBe(nilai(v))
     }
     expect(baris(H, 6059).trim()).toBe(tombol(KLAUSUL_TCO.show))
@@ -311,7 +314,7 @@ describe('label yang tidak bergantung korpus', () => {
   })
   it('yang tidak ada di korpus ditandai begitu', () => {
     const sumber = readFileSync(join(__dirname, 'labels.ts'), 'utf8')
-    for (const kunci of ['masterKosong', 'belumDipilih', 'kosong:', 'menungguTiket', 'catatanLabelBersilang', 'turunanServer', 'pilihTahunDulu', 'cariPilihan']) {
+    for (const kunci of ['masterKosong', 'belumDipilih', 'kosong:', 'menungguTiket', 'cariPilihan']) {
       const i = sumber.indexOf(kunci)
       expect(i, kunci).toBeGreaterThan(0)
       expect(sumber.slice(sumber.lastIndexOf('/**', i), i)).toContain('[tidak ada di korpus]')

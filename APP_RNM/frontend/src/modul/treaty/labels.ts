@@ -126,9 +126,6 @@ export const TAHUN_TCO = {
   kosong: 'Belum ada tahun treaty.',
   /** `[tidak ada di korpus]` — tombol yang menunggu tiketnya. */
   menungguTiket: 'menunggu tiket',
-  /** `[tidak ada di korpus]` — catatan OQ-TCO-05 di layar. */
-  catatanLabelBersilang:
-    'Label tahun di grid dan di form bersilang di sistem lama (OQ-TCO-05); keduanya dibawa apa adanya.',
 } as const
 
 /**
@@ -171,7 +168,6 @@ export const LAMPIRAN_TCO = {
   periksaSelaras: 'Periksa keselarasan',
   selarasBersih: 'Rekam lampiran dan berkas di penyimpanan sejalan.',
   kosong: 'Belum ada lampiran pada tahun treaty ini.',
-  simpanDulu: 'Simpan tahun treaty lebih dulu; lampiran melekat pada tahun treaty yang sudah ber-ID.',
   pilihKategori: '— pilih —',
 } as const
 
@@ -229,15 +225,11 @@ export const KONTRAK_TCO = {
   /** `[tidak ada di korpus]` — pemilih tahun saat layar dibuka dari menu (Pega membukanya sebagai popup berkonteks). */
   pilihTahun: 'Tahun treaty',
   /** `[tidak ada di korpus]` */
-  pilihTahunDulu: 'Pilih tahun treaty lebih dulu, atau buka lewat tombol ReinsType di layar InboxTreatyContract.',
-  /** `[tidak ada di korpus]` */
   kosong: 'Belum ada kontrak pada tahun treaty ini.',
   /** `[tidak ada di korpus]` */
   tutup: 'Tutup',
   /** `[tidak ada di korpus]` */
   tersimpan: 'Kontrak tersimpan.',
-  /** `[tidak ada di korpus]` — catatan label bersilang b1358/b1386. */
-  catatanLabelBersilang: 'Label ReinsType di kepala layar memuat nama grup treaty di sistem lama; dibawa apa adanya.',
 } as const
 
 /**
@@ -370,10 +362,12 @@ export const KLAUSUL_TCO = {
   headerTreatyDescription: 'Treaty Description',
   /** b3382 — `.Proportion`. */
   headerProportionType: 'Proportion Type',
-  /** b4880 `<pyValue>` — grid `BrowseTreatyDesc_RD` `IsXOL = 0` (b5335). */
-  gridNonXol: 'For Non XOL',
-  /** b7971 `<pyValue>` — grid `IsXOL = 1` (b8426). */
-  gridXol: 'For XOL',
+  /**
+   * Grid `BrowseTreatyDesc_RD` `IsXOL = 0` (b5335). Korpus b4880 menamainya
+   * "For Non XOL"; diganti [keputusan work owner 30-09-2026]. Grid `For XOL`
+   * (b7971, `IsXOL = 1`) dibuang [keputusan work owner 30-09-2026] — masternya kosong di DEV.
+   */
+  gridNonXol: 'Treaty Desc',
   /** b5440 `<pyValue>` — sel `.ID`. */
   kolomId: 'ID',
   /** b5549 `<pyValue>` — sel `.DescName`. */
@@ -409,10 +403,6 @@ export const KLAUSUL_TCO = {
   cariPilihan: 'Cari',
   /** `[tidak ada di korpus]` */
   pilihTahun: 'Tahun treaty',
-  /** `[tidak ada di korpus]` */
-  pilihTahunDulu: 'Pilih tahun treaty lebih dulu, atau buka lewat tombol List Description di layar InboxTreatyContract.',
-  /** `[tidak ada di korpus]` — Rp/Usd anak dihitung server (HitungRpUsd). */
-  turunanServer: 'Rp dan Usd baris anak dihitung dari induknya (Pct × nilai induk ÷ 100).',
 } as const
 
 /**
@@ -535,10 +525,6 @@ export const KURS_TCO = {
   berlaku: 'berlaku',
   /** `[tidak ada di korpus]` */
   sampai: 's.d.',
-  /** `[tidak ada di korpus]` — `HitungRpUsd_depan`: Usd = Rp ÷ Kurs, dihitung server. */
-  catatanRpKeUsd: 'Usd dihitung server dari Rp ÷ Kurs.',
-  /** `[tidak ada di korpus]` — `CalculateTSIExcludeTreaty`. */
-  catatanDuaArah: 'Mengisi IDR menghitung USD (Rp ÷ Kurs), mengisi USD menghitung IDR (Usd × Kurs) — di server.',
   /** `[tidak ada di korpus]` — keputusan work owner 29-09-2026: baris kembar identik = satu kurs. */
   catatanKembar: 'baris kembar identik di master kurs — dipakai sebagai satu kurs',
 } as const
@@ -573,5 +559,5 @@ export const HAPUS_TCO = {
   /** `[tidak ada di korpus]` */
   memuatDampak: 'Menghitung baris yang akan ikut terhapus…',
   /** `[tidak ada di korpus]` — OQ-TCO-21 [keputusan work owner 29-09-2026]: hapus seperti Pega, tetapi tidak diam. */
-  bersama: 'kontrak lain memakai kombinasi yang sama — reinsurer dan security-nya IKUT terhapus bersama kontrak ini (seperti Pega); business milik tahun treaty lain tidak ikut.',
+  bersama: 'kontrak lain memakai kombinasi yang sama — reinsurer dan security-nya IKUT terhapus bersama kontrak ini; business milik tahun treaty lain tidak ikut.',
 } as const

@@ -43,6 +43,12 @@ export interface ButirMenuModul<H extends string = string> {
   label: string
   /** Nama kelompok sidebar tempat ia berada — ditampilkan sebagai konteks. */
   kelompok: string
+  /**
+   * true = butir SATU-SATUNYA kelompoknya tampil DATAR di sidebar: satu
+   * tombol langsung, tanpa judul kelompok yang dilipat dan tanpa anak.
+   * Kelompok berbutir lebih dari satu mengabaikannya. Bawaan: bertingkat.
+   */
+  datar?: boolean
 }
 
 /** Satu entri menu yang dapat dicari, beserta modul backend pemiliknya. */
@@ -71,6 +77,8 @@ export interface ButirSidebar<H extends string = string> {
   halaman: H
   label: string
   pemilik: string | null
+  /** Lihat `ButirMenuModul.datar`; hanya ada bila true. */
+  datar?: true
 }
 
 /** Satu kelompok sidebar beserta butirnya. */
@@ -85,7 +93,14 @@ export function butirKelompok<H extends string>(menu: readonly EntriMenu<H>[], n
     halaman: e.modul,
     label: e.label,
     pemilik: e.pemilik,
+    ...(e.datar === true ? { datar: true as const } : {}),
   }))
+}
+
+/** Butir yang dirender DATAR: kelompok beranggota tepat satu butir bertanda `datar`. */
+export function butirDatar<H extends string>(butir: readonly ButirSidebar<H>[]): ButirSidebar<H> | undefined {
+  const [b] = butir
+  return butir.length === 1 && b?.datar === true ? b : undefined
 }
 
 /**

@@ -13,6 +13,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
+import { DESIMAL_TAK_DIBATASI, formatNumber } from '../../../inti/lib/format'
 import { SECURITY_TCO } from '../labels'
 import {
   ambilSecurity,
@@ -186,7 +187,7 @@ export default function PanelSecurityReinsurer({
               <tr key={s.id} className="inbox__baris">
                 <td>{s.reasSecurity}</td>
                 <td>{s.clientName}</td>
-                <td>{s.pctShare}</td>
+                <td>{formatNumber(s.pctShare, DESIMAL_TAK_DIBATASI)}</td>
                 <td className="table__actions">
                   <button type="button" className="btn btn--ghost btn--sm" onClick={() => buka(formSecurityDari(s))}>
                     {SECURITY_TCO.edit}

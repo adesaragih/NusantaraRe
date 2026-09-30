@@ -12,9 +12,14 @@
 // Tiket 11: jenis berkurs menampilkan kurs berlaku tahun itu (`testingKurs`);
 // tanpa kurs, pesan server tampil dan `Add` nonaktif (Pega: `DATASHOW = ""`).
 // Pratinjau konversi Rp ↔ Usd dihitung SERVER (`konversiKurs`) — bukan JS.
+//
+// [keputusan work owner 30-09-2026] Nilai desimal TAMPIL dengan pemisah ribuan
+// (`formatNumber`, gaya Indonesia, nol digit dibuang); isian form tetap teks
+// mentah. Catatan pengembang ("dihitung server") tidak tampil di layar.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { DESIMAL_TAK_DIBATASI, formatNumber } from '../../../inti/lib/format'
 import { KLAUSUL_TCO, KURS_TCO, LABEL_MEDAN_KHUSUS, LABEL_MEDAN_KLAUSUL } from '../labels'
 import {
   ambilKlausul,
@@ -62,6 +67,19 @@ export function keMasukKlausul(a: AturanKlausul, descId: string, f: FormKlausul,
     if (!turunan.has(m)) medan[m] = (f.medan[m] ?? '').trim()
   }
   return { id: f.id, descId, anak: a.anak, subjenis: a.subjenis, parentReinsTypeId: a.anak ? induk : '', medan }
+}
+
+/**
+ * Medan klausul yang DESIMAL (`models.NilaiMedanKlausul`: `d(k.Rp)` …) — hanya
+ * ini yang diberi pemisah ribuan; `Line`, `Layer`, kode, dan teks apa adanya.
+ */
+export const MEDAN_DESIMAL_KLAUSUL: ReadonlySet<string> = new Set([
+  'Rp', 'Usd', 'Pct', 'PctMe', 'CoIns_Min', 'CoIns_Max', 'TreatyLimit',
+])
+
+/** Isi sel grid satu medan: desimal berpemisah ribuan, sisanya apa adanya. */
+export function tampilMedanKlausul(medan: string, nilai: string): string {
+  return MEDAN_DESIMAL_KLAUSUL.has(medan) ? formatNumber(nilai, DESIMAL_TAK_DIBATASI) : nilai
 }
 
 /** Baris exclusion milik subjenis itu (subjenis diturunkan server). */
@@ -259,9 +277,6 @@ function GridAturan({
       </h4>
       {galat !== null && <Gagal galat={galat} />}
       {info !== null && <p role="status">{info}</p>}
-      {aturan.anak && <p className="polis__catatan">{KLAUSUL_TCO.turunanServer}</p>}
-      {aturan.konversi === 'RpKeUsd' && <p className="polis__catatan">{KURS_TCO.catatanRpKeUsd}</p>}
-      {aturan.konversi === 'DuaArah' && <p className="polis__catatan">{KURS_TCO.catatanDuaArah}</p>}
       {form !== null && (
         <>
           <FormMedan
@@ -301,7 +316,7 @@ function GridAturan({
         {aturan.anak && daftar !== null && (
           <span>
             {' '}
-            {KLAUSUL_TCO.totalPct}: {daftar.totalPct}
+            {KLAUSUL_TCO.totalPct}: {formatNumber(daftar.totalPct, DESIMAL_TAK_DIBATASI)}
             {daftar.peringatan !== '' ? ` — ${daftar.peringatan}` : ''}
           </span>
         )}
@@ -323,7 +338,7 @@ function GridAturan({
             {baris.map((k) => (
               <tr key={k.id} className="inbox__baris">
                 {aturan.medan.map((m) => (
-                  <td key={m}>{m === 'ReinsTypeID' ? k.reinsTypeName || k.reinsTypeId : k.medan[m] ?? ''}</td>
+                  <td key={m}>{m === 'ReinsTypeID' ? k.reinsTypeName || k.reinsTypeId : tampilMedanKlausul(m, k.medan[m] ?? '')}</td>
                 ))}
                 <td>{k.tglUpdate}</td>
                 <td className="table__actions">
@@ -352,10 +367,13 @@ export default function PanelJenisKlausul({
   tahunID,
   jenis,
   onTutup,
+  tanpaJudul = false,
 }: {
   tahunID: string
   jenis: JenisKlausul
   onTutup?: () => void
+  /** true di dalam popup: judul jenis sudah di kepala popup. */
+  tanpaJudul?: boolean
 }) {
   const [indukTerpilih, setIndukTerpilih] = useState<Klausul | null>(null)
   const anak = aturanAnak(jenis)
@@ -370,16 +388,18 @@ export default function PanelJenisKlausul({
   const catatanKurs = kurs !== null ? catatanMasterKurs(kurs) : null
   return (
     <section className="panel">
-      <header className="inbox__kepala">
-        <h3 className="panel__title">
-          {jenis.id} — {jenis.descName}
-        </h3>
-        {onTutup !== undefined && (
-          <button type="button" className="btn btn--ghost btn--sm" onClick={onTutup}>
-            {KLAUSUL_TCO.tutup}
-          </button>
-        )}
-      </header>
+      {!tanpaJudul && (
+        <header className="inbox__kepala">
+          <h3 className="panel__title">
+            {jenis.id} — {jenis.descName}
+          </h3>
+          {onTutup !== undefined && (
+            <button type="button" className="btn btn--ghost btn--sm" onClick={onTutup}>
+              {KLAUSUL_TCO.tutup}
+            </button>
+          )}
+        </header>
+      )}
       {jenis.catatan !== '' && (
         <p className="polis__catatan" role="note">
           {jenis.catatan}
@@ -387,7 +407,8 @@ export default function PanelJenisKlausul({
       )}
       {berkurs && kurs !== null && (
         <p role="status">
-          {KURS_TCO.kurs}: {kurs.kurs} ({KURS_TCO.berlaku} {kurs.mulai} {KURS_TCO.sampai} {kurs.akhir})
+          {KURS_TCO.kurs}: {formatNumber(kurs.kurs, DESIMAL_TAK_DIBATASI)} ({KURS_TCO.berlaku} {kurs.mulai} {KURS_TCO.sampai}{' '}
+          {kurs.akhir})
         </p>
       )}
       {berkurs && catatanKurs !== null && (

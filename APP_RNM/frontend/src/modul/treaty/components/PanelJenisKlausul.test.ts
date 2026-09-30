@@ -14,6 +14,7 @@ import {
   formKlausulKosong,
   catatanMasterKurs,
   jenisBerkurs,
+  tampilMedanKlausul,
   keMasukKlausul,
   labelMedan,
   rencanaKonversi,
@@ -84,7 +85,10 @@ describe('kabel', () => {
     expect(KODE).toContain('aturan.ditahan !== ')
   })
   it('uang/persen tidak menjadi angka JavaScript', () => {
-    expect(KODE).not.toMatch(/Number\(|parseFloat|toFixed/)
+    // `(?<![A-Za-z])`: `formatNumber(` (pemformat TEKS bersama, bekerja pada
+    // digit tanpa float - `inti/lib/format.ts`) bukan `Number(` JavaScript.
+    expect(KODE).not.toMatch(/(?<![A-Za-z])Number\(|parseFloat|toFixed/)
+    expect(KODE).toContain("from '../../../inti/lib/format'")
   })
   it('Show Child dan Close Child dari label', () => {
     expect(KODE).toContain('KLAUSUL_TCO.showChild')
@@ -137,5 +141,26 @@ describe('catatan master kurs (keputusan baris kembar identik 29-09-2026)', () =
   it('catatannya dirender di bawah kurs, dihitung sekali', () => {
     expect(KODE).toContain('const catatanKurs = kurs !== null ? catatanMasterKurs(kurs) : null')
     expect(KODE.match(/catatanMasterKurs\(/g)?.length).toBe(2) // definisi + satu panggilan
+  })
+})
+
+describe('tampilan desimal berpemisah ribuan (keputusan work owner 30-09-2026)', () => {
+  it('medan desimal: titik ribuan, koma desimal, TANPA digit dibuang', () => {
+    expect(tampilMedanKlausul('Rp', '1000000')).toBe('1.000.000')
+    expect(tampilMedanKlausul('Usd', '1234567.12345678')).toBe('1.234.567,12345678')
+    expect(tampilMedanKlausul('TreatyLimit', '250000000.50')).toBe('250.000.000,5')
+    expect(tampilMedanKlausul('Pct', '33.3333333333')).toBe('33,3333333333')
+    expect(tampilMedanKlausul('CoIns_Min', '')).toBe('')
+  })
+  it('medan bukan desimal apa adanya — Line, Layer, kode, teks', () => {
+    expect(tampilMedanKlausul('Line', '1000')).toBe('1000')
+    expect(tampilMedanKlausul('Layer', '2')).toBe('2')
+    expect(tampilMedanKlausul('ID_Occupation', '100123')).toBe('100123')
+  })
+  it('grid, Total Pct, dan kurs memakai pemformat yang sama; catatan pengembang tidak tampil', () => {
+    expect(KODE).toContain("tampilMedanKlausul(m, k.medan[m] ?? '')")
+    expect(KODE).toContain('formatNumber(daftar.totalPct, DESIMAL_TAK_DIBATASI)')
+    expect(KODE).toContain('formatNumber(kurs.kurs, DESIMAL_TAK_DIBATASI)')
+    expect(KODE).not.toMatch(/turunanServer|catatanRpKeUsd|catatanDuaArah/)
   })
 })

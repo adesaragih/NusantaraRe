@@ -277,3 +277,14 @@ SATU (`500.000`) tetap dibaca sebagai desimal — **OQ-TCO-27**. Uji `TestUraiDe
 **mencatat sebab aslinya** di log backend (`log.Printf`) — sebelumnya galat tak terduga hilang di layar DAN di konsol,
 sehingga diagnosanya menuntut membaca DEV langsung. Pemakai tetap mendapat kalimat umum. Uji
 `TestGalat500TreatyContractOutMencatatSebabnya`.
+
+## ⛔ Keputusan work owner bertanggal — 30-09-2026 (tampilan layar klausul)
+
+*Butir 4–6 pesan work owner.* Grid `For XOL` (`IsXOL = 1`, b7971) **dibuang** — `GET …/jenis-klausul?isXol=1` di DEV
+kosong (penyisiran 29-09-2026: ke-13 jenis ber-`IsXOL = 0`); rute backend tetap. Grid `IsXOL = 0` berjudul
+**`Treaty Desc`** (korpus b4880: "For Non XOL"). `Show` membuka **satu** jenis dalam popup (`Modal` bersama) — menekan
+jenis lain sesudah popup ditutup menampilkan jenis itu saja. **AC 29 digantikan**: jenis yang tidak sedang terbuka tidak
+memegang isian; menutup popup membuang isian yang belum disimpan jenis itu. Nilai desimal grid (`Rp`, `Usd`, `Pct`,
+`PctMe`, `CoIns_Min`, `CoIns_Max`, `TreatyLimit`), Total Pct, dan kurs tampil berpemisah ribuan (`formatNumber`,
+`DESIMAL_TAK_DIBATASI`); catatan "dihitung server" tidak tampil. Uji: `PanelKlausulTahun.test.ts`
+(`alihJenisTunggal`, popup, satu grid), `PanelJenisKlausul.test.ts` (`tampilMedanKlausul`).
