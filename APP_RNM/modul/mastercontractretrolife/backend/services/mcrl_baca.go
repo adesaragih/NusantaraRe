@@ -65,6 +65,10 @@ type Gudang interface {
 	// Penulis security (paket 5).
 	SisipSecurity(ctx context.Context, tx *db.Tx, s models.SecurityReinsurer) (string, error)
 	PerbaruiSecurity(ctx context.Context, tx *db.Tx, s models.SecurityReinsurer) error
+
+	// Penulis business (paket 6) - juga dipakai salin-semua.
+	SisipBusiness(ctx context.Context, tx *db.Tx, b models.Business) (string, error)
+	PerbaruiBusiness(ctx context.Context, tx *db.Tx, b models.Business) error
 }
 
 // Galat "tidak ada" per entitas (404) - handler tidak mengimpor repository.

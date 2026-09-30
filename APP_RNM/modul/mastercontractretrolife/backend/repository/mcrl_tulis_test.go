@@ -107,6 +107,12 @@ func TestPenampungKontrakCocokArgumen(t *testing.T) {
 	if n := hitungPenampung(sqlPerbaruiSecurity("S.T")); n != 6 {
 		t.Errorf("ubah security: %d penampung, mau 3 + 2 angka + ID", n)
 	}
+	if n := hitungPenampung(sqlSisipBusiness("S.T")); n != 11 {
+		t.Errorf("sisip business: %d penampung, mau 11", n)
+	}
+	if n := hitungPenampung(sqlPerbaruiBusiness("S.T")); n != 9 {
+		t.Errorf("ubah business: %d penampung, mau 9", n)
+	}
 }
 
 func TestSQLTotalSharePerKontrak(t *testing.T) {

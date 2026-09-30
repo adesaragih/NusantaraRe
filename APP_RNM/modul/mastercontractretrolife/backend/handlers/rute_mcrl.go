@@ -161,6 +161,9 @@ func jawabGalat(w http.ResponseWriter, err error) bool {
 		// 422: JSON-nya sah, isinya ditolak gerbang - pesan VERBATIM korpus
 		// untuk wajib-isi, pesan yang menyebut medannya untuk nilai tak sah.
 		galat.Tulis(w, http.StatusUnprocessableEntity, services.Pesan(err))
+	case errors.Is(err, services.ErrDampakBerubah):
+		// 409: keadaan DATA berubah sejak pratinjau/popup - nol baris disentuh.
+		galat.Tulis(w, http.StatusConflict, services.Pesan(err))
 	case errors.Is(err, services.ErrRateMenungguPersetujuan):
 		// 503 berkalimat: sumber tabel rate menunggu persetujuan (OQ-MCRL-13).
 		galat.Tulis(w, http.StatusServiceUnavailable, services.Pesan(err))

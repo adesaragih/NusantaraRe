@@ -10,6 +10,10 @@ package handlers
 //	PUT  /api/master-contract-retro-life/reinsurer/{id} ubah reinsurer (paket 4)
 //	POST /api/master-contract-retro-life/reinsurer/{id}/security  security BARU (paket 5)
 //	PUT  /api/master-contract-retro-life/security/{id}  ubah security (paket 5)
+//	POST /api/master-contract-retro-life/kontrak/{id}/business  business BARU (paket 6)
+//	PUT  /api/master-contract-retro-life/business/{id}  ubah business (paket 6)
+//	GET  /api/master-contract-retro-life/business/{id}/salin-semua  pratinjau `Copy to all Reinstype`
+//	POST /api/master-contract-retro-life/business/{id}/salin-semua  jalankan, badan {"sasaran": [...]}
 //
 // ⛔ POST dan PUT terpisah walau Pega punya satu `Save` ber-upsert: identitas
 // baris baru tidak pernah datang dari klien (ADR-0006), dan badan PUT yang
@@ -111,6 +115,38 @@ func daftarkanTulis(pasang func(string, rute)) {
 			return
 		}
 		hasil, err := l.SimpanSecurity(r.Context(), p, "", m)
+		tulis(w, hasil, err)
+	})
+	// Business (paket 6): `Add` → `Save` di bawah kontrak; `Edit` → `Save`.
+	pasang("POST "+Prefix+"/kontrak/{id}/business", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		var m services.BusinessMasuk
+		if bacaBadan(w, r, &m) || tolakIDBaru(w, m.ID) {
+			return
+		}
+		hasil, err := l.SimpanBusiness(r.Context(), p, r.PathValue("id"), m)
+		tulis(w, hasil, err)
+	})
+	pasang("PUT "+Prefix+"/business/{id}", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		var m services.BusinessMasuk
+		if bacaBadan(w, r, &m) || idJalur(w, r, &m.ID) {
+			return
+		}
+		hasil, err := l.SimpanBusiness(r.Context(), p, "", m)
+		tulis(w, hasil, err)
+	})
+	// `Copy to all Reinstype` (paket 6): pratinjau lalu konfirmasi berdaftar sasaran.
+	pasang("GET "+Prefix+"/business/{id}/salin-semua", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		hasil, err := l.PratinjauSalinSemua(r.Context(), p, r.PathValue("id"))
+		tulis(w, hasil, err)
+	})
+	pasang("POST "+Prefix+"/business/{id}/salin-semua", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		var m struct {
+			Sasaran []string `json:"sasaran"`
+		}
+		if bacaBadan(w, r, &m) {
+			return
+		}
+		hasil, err := l.SalinSemua(r.Context(), p, r.PathValue("id"), m.Sasaran)
 		tulis(w, hasil, err)
 	})
 }

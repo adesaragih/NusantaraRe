@@ -9,6 +9,7 @@ package tiruan
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -46,6 +47,7 @@ type Gudang struct {
 	// GagalTulis - bila terisi, penulis yang namanya disebut gagal dengan galat
 	// itu (uji atomisitas dan K8).
 	GagalTulis map[string]error
+	hitung     map[string]int
 }
 
 func (g *Gudang) nomorBaru(tabel string) (string, error) {
@@ -57,7 +59,43 @@ func (g *Gudang) nomorBaru(tabel string) (string, error) {
 	return repository.FormatIdentitas(n)
 }
 
-func (g *Gudang) gagal(nama string) error { return g.GagalTulis[nama] }
+// gagal - galat tiruan untuk penulis `nama`: `GagalTulis[nama]` selalu, atau
+// `GagalTulis[nama#n]` pada panggilan ke-n (uji gagal di tengah).
+func (g *Gudang) gagal(nama string) error {
+	g.hitung[nama]++
+	if err := g.GagalTulis[fmt.Sprintf("%s#%d", nama, g.hitung[nama])]; err != nil {
+		return err
+	}
+	return g.GagalTulis[nama]
+}
+
+// SisipBusiness - ID dari sequence tiruan.
+func (g *Gudang) SisipBusiness(_ context.Context, _ *db.Tx, b models.Business) (string, error) {
+	if err := g.gagal("SisipBusiness"); err != nil {
+		return "", err
+	}
+	id, err := g.nomorBaru(repository.TabelBusiness)
+	if err != nil {
+		return "", err
+	}
+	b.ID, b.TglUpdate = id, g.Jam
+	g.Business[id] = b
+	return id, nil
+}
+
+// PerbaruiBusiness - kunci induk tidak berpindah.
+func (g *Gudang) PerbaruiBusiness(_ context.Context, _ *db.Tx, b models.Business) error {
+	if err := g.gagal("PerbaruiBusiness"); err != nil {
+		return err
+	}
+	lama, ada := g.Business[b.ID]
+	if !ada {
+		return repository.ErrTidakAda
+	}
+	b.TreatyYearID, b.TreatyContractID, b.TglUpdate = lama.TreatyYearID, lama.TreatyContractID, g.Jam
+	g.Business[b.ID] = b
+	return nil
+}
 
 // SisipTahun - ID dari sequence tiruan, TGLUPDATE = Jam.
 func (g *Gudang) SisipTahun(_ context.Context, _ *db.Tx, t models.TahunTreaty) (string, error) {
@@ -241,7 +279,7 @@ func Baru() *Gudang {
 		Tahun: map[string]models.TahunTreaty{}, Kontrak: map[string]models.Kontrak{},
 		Reinsurer: map[string]models.Reinsurer{}, Security: map[string]models.SecurityReinsurer{},
 		Business: map[string]models.Business{}, Seq: map[string]int64{},
-		Jam: time.Date(2026, 9, 30, 10, 0, 0, 0, time.UTC), GagalTulis: map[string]error{},
+		Jam: time.Date(2026, 9, 30, 10, 0, 0, 0, time.UTC), GagalTulis: map[string]error{}, hitung: map[string]int{},
 	}
 }
 
