@@ -217,7 +217,8 @@ Pemilik ditetapkan di **`..\.github\CODEOWNERS`** — nama akun di sana PENANDA 
 
 | Jalur | Pemilik |
 | --- | --- |
-| `APP_RNM/modul/<nama>/` (backend, frontend, docs, `MODUL.md`) | pemilik modul itu |
+| `APP_RNM/modul/<nama>/` (backend, frontend, docs) | pemilik modul itu |
+| `APP_RNM/modul/<nama>/MODUL.md`, `APP_RNM/modul/<nama>/backend/migrations/9*` (slot menu) | ditulis pemilik modul, disetujui tim inti — rentang, slot, `Status`, pernyataan penjaga, butir menu |
 | `APP_RNM/inti/backend/daftar/modul_<nama>_gen.go` (bangkitan) | pemilik modul itu |
 | `APP_RNM/inti/`, `cmd/`, `frontend/`, `uji/`, `pkg/`, `modul/_templat/` | tim inti |
 | `APP_RNM/go.mod`, `go.sum`, `package.json`, `package-lock.json`, `vite.config.ts`, `tsconfig.json`, `Makefile` | tim inti — pustaka baru lewat pull request |
@@ -247,9 +248,11 @@ migrasi ini — keputusan work owner, lewat `modul/_templat/` dan pull request t
 | `frontend/daftar.menuTabel.test.ts`, `inti/backend/penjaga/menu_test.go` | isi `M_NAV_MENU` ↔ `menu.ts` dua arah, bentuk SQL menu (bab 6), kelompok modul = `LABEL` tabel |
 | `inti/backend/penjaga/*` | higiene migrasi, dokumen STRUKTUR, kata cadangan Oracle, alamat layanan, nama orang, nama tabel telanjang |
 
-`Shell.test.ts` mengunci jumlah butir menu (hari ini lima). Menambah butir menuntut bukti XML
-korpus dan menyunting angka itu dengan alasan — itu disengaja, dan karena berkasnya milik tim inti,
-setiap butir menu baru lewat tinjauan tim inti.
+Butir menu baru menuntut bukti XML korpus, dan setiap butir menu baru lewat tinjauan tim inti — itu
+disengaja. Sejak 30-09-2026 tinjauannya lewat `CODEOWNERS` atas berkas slot menu `9*` di folder
+migrasi modul, bukan lewat angka kunci di `Shell.test.ts` (dulu lima): angka di berkas bersama
+membuat dua modul yang menambah butir bersamaan berkonflik di baris yang sama. Kelompok yang belum
+dimigrasi dibaca dari `Status` di `MODUL.md` setiap modul.
 
 ## 6. Menambah menu — satu baris di `M_NAV_MENU` + satu butir di `menu.ts`
 
@@ -312,7 +315,7 @@ Jadi menambah satu menu = **dua sisi, satu deploy, satu folder**:
 3. **Penjaga** — `frontend/daftar.menuTabel.test.ts` (dua arah atas 900 + slot setiap modul: `KODE` ↔
    `menu.ts`, `LABEL`, induk = modul pemilik, kelompok modul = `LABEL` tabel) dan
    `inti/backend/penjaga/menu_test.go` (bentuk SQL, idempoten, `CHECK GROUPMENU`, isi awal 900: 20 kelompok
-   = folder korpus, lima butir). Jumlah seluruh butir dikunci `frontend/Shell.test.ts` (bab 5).
+   = folder korpus, lima butir). Butir slot modul ditinjau tim inti lewat `CODEOWNERS` (bab 5).
 
 4. **`-migrate` dijalankan work owner** — sampai itu, backend baru pun tetap menjawab dari baris lama,
    dan butir baru tidak tampil.

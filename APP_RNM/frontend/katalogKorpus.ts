@@ -10,7 +10,7 @@
 // M_NAV_MENU, dan menjaga setiap `KELOMPOK_<NAMA>` ada di sini.
 
 /**
- * Nama ketujuh belas kelompok sidebar — butir **bg**.
+ * Nama kedua puluh kelompok sidebar — butir **bg** (dulu tujuh belas; ralat di bawah).
  *
  * ⛔ `[nama folder korpus]`, bukan kosakata kami. Setiap nama di bawah
  * adalah nama folder di `D:\XML\RNM_BRD\` apa adanya, termasuk ejaannya
@@ -20,7 +20,7 @@
  * akan menemukannya.
  *
  * ⛔ Kelompok yang BELUM dimigrasi tetap berdiri, terlipat dan tanpa butir.
- * Menyembunyikannya membuat aplikasi tampak lengkap padahal empat belas
+ * Menyembunyikannya membuat aplikasi tampak lengkap padahal enam belas
  * modul belum ada — dan layar yang tampak lengkap padahal tidak adalah
  * layar yang tidak akan dicari lagi (pelajaran butir av).
  *
@@ -52,7 +52,8 @@ export const FOLDER_KORPUS = {
    * folder, bukan tujuh belas — `Treaty Contract Out`, `Treaty In`, dan
    * `Treaty In Adjustment` terlewat (`PROMPT-EKSEKUSI-HULU-HILIR.md` §8).
    * Yang ditambahkan di sini HANYA kelompok modul yang sesi itu bangun;
-   * dua lainnya menunggu keputusan asisten/work owner.
+   * dua lainnya menunggu keputusan asisten/work owner - keduanya masuk
+   * 30-09-2026 (di bawah).
    */
   treatyContractOut: 'Treaty Contract Out',
   /**

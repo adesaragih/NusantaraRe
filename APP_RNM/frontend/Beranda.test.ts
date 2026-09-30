@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { BERANDA, KETERANGAN_BELUM_DIMIGRASI } from '../inti/frontend/labels'
+import { folderKorpusBelumDimigrasi } from '../inti/frontend/uji/sumber'
 import { FOLDER_KORPUS } from './katalogKorpus'
 import { kartuModul, ringkasanAntrean, type AntreanTahap } from './Beranda'
 
@@ -14,15 +15,23 @@ describe('kartuModul', () => {
     expect(kartuModul()).toHaveLength(20)
   })
 
-  it('empat modul bertujuan, enam belas tanpa', () => {
+  it('modul dimigrasi bertujuan, yang belum dimigrasi tanpa', () => {
     // ⛔ Kartu yang belum dimigrasi tetap BERDIRI. Menyembunyikannya
-    // membuat aplikasi tampak lengkap padahal empat belas modul belum ada.
+    // membuat aplikasi tampak lengkap padahal enam belas modul belum ada.
+    //
+    // Struktur tim satu folder per modul (30-09-2026): dulu "empat bertujuan,
+    // enam belas tanpa" - angka yang harus disunting setiap modul yang
+    // mendapat butir menu pertamanya. Kini: keempat modul lama tetap
+    // bertujuan, dan kartu tanpa tujuan = folder korpus yang `MODUL.md`-nya
+    // menyatakan `belum dimigrasi`.
     const kartu = kartuModul()
-    const aktif = kartu.filter((k) => k.tujuan !== null)
-    expect(aktif.map((k) => k.nama).sort()).toEqual(
-      [FOLDER_KORPUS.claimLife, FOLDER_KORPUS.komiteClaimLife, FOLDER_KORPUS.premiumListLife, FOLDER_KORPUS.treatyContractOut].sort(),
-    )
-    expect(kartu.filter((k) => k.tujuan === null)).toHaveLength(16)
+    const aktif = kartu.filter((k) => k.tujuan !== null).map((k) => k.nama)
+    for (const lama of [FOLDER_KORPUS.claimLife, FOLDER_KORPUS.komiteClaimLife, FOLDER_KORPUS.premiumListLife, FOLDER_KORPUS.treatyContractOut]) {
+      expect(aktif).toContain(lama)
+    }
+    const tanpaTujuan = kartu.filter((k) => k.tujuan === null).map((k) => k.nama)
+    expect(tanpaTujuan.sort()).toEqual(folderKorpusBelumDimigrasi())
+    expect(tanpaTujuan.length).toBeGreaterThan(0)
   })
 
   it('kartu Claim Life menunjuk butir PERTAMAnya', () => {

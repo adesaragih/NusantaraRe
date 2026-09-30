@@ -10,8 +10,10 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { AKAR_APLIKASI } from '../inti/frontend/uji/sumber'
-import { MENU, MENU_MODUL, MODUL_LAIN_TERLARANG } from '../inti/frontend/labels'
+import { AKAR_APLIKASI, folderKorpusBelumDimigrasi } from '../inti/frontend/uji/sumber'
+import { MENU, MODUL_LAIN_TERLARANG } from '../inti/frontend/labels'
+import { LABEL_MENU_KOMITE } from '../modul/komiteclaimlife/frontend/labels'
+import { LABEL_MENU_PREMIUMLIST } from '../modul/premiumlistlife/frontend/labels'
 import { FOLDER_KORPUS } from './katalogKorpus'
 import { MENU_TCO } from '../modul/treatycontractout/frontend/labels'
 import { ENTRI_MENU } from './daftar'
@@ -58,32 +60,46 @@ describe('menu hanya yang berbukti korpus', () => {
     }
   })
 
-  it('butir menu TEPAT lima, dan seluruhnya berbukti', () => {
-    // ⛔ Empat: dua Claim Life, satu PremiumList, satu Komite. Beranda
-    // TIDAK dihitung - ia kerangka aplikasi, bukan menu modul.
+  it('kelima butir menu lama tetap, dan seluruhnya berbukti', () => {
+    // ⛔ Lima: dua Claim Life, satu PremiumList, satu Komite, satu Treaty
+    // Contract Out. Beranda TIDAK dihitung - ia kerangka aplikasi, bukan menu
+    // modul.
     const modul = ENTRI_MENU.filter((e) => e.modul !== 'beranda')
     // Lima sejak tiket 03 Treaty Contract Out. Sempat tujuh (tiket 04, 08);
     // tco5 [keputusan work owner 29-09-2026]: kelompok Treaty Contract Out
     // SATU butir "Treaty Contract Out" - ReinsType dan Description popup form
     // kontrak (InputTreatyContract b20778, b22196), bukan menu.
-    expect(modul).toHaveLength(5)
+    //
+    // ⛔ DIUBAH struktur tim satu folder per modul (30-09-2026): dulu
+    // `toHaveLength(5)` atas SELURUH menu - angka di berkas milik tim inti
+    // yang harus disunting setiap butir menu baru, dan dua modul yang
+    // menambah butir bersamaan berkonflik di baris itu. Yang dijaga tidak
+    // hilang, ia BERPINDAH: butir baru hanya lahir dari baris M_NAV_MENU di
+    // slot menu modulnya (`frontend/daftar.menuTabel.test.ts` menagih kedua
+    // arah), dan berkas slot `9*` di folder migrasi modul ditinjau tim inti
+    // (`.github/CODEOWNERS`) - menu tetap keputusan yang ditinjau, bukan
+    // keputusan sepi.
     const label = modul.map((e) => e.label)
     expect(label).toContain(MENU.inbox)
     expect(label).toContain(MENU.register)
-    expect(label).toContain(MENU_MODUL.premiumList)
-    expect(label).toContain(MENU_MODUL.inboxKomite)
+    expect(label).toContain(LABEL_MENU_PREMIUMLIST.premiumList)
+    expect(label).toContain(LABEL_MENU_KOMITE.inboxKomite)
     expect(label).toContain(MENU_TCO.treatyContractOut)
     expect(label).not.toContain(MENU_TCO.inboxTreatyContractReinsType)
     expect(label).not.toContain(MENU_TCO.inboxTreatyContractDescription)
     expect(ENTRI_MENU.filter((e) => e.kelompok === MENU_TCO.kelompok)).toHaveLength(1)
   })
 
-  it('enam belas kelompok berdiri TANPA butir', () => {
-    // ⚠️ Berdiri, bukan disembunyikan. Aplikasi yang menampilkan tiga
-    // modul dari tujuh belas tampak lengkap padahal tidak.
+  it('kelompok yang belum dimigrasi berdiri TANPA butir', () => {
+    // ⚠️ Berdiri, bukan disembunyikan. Aplikasi yang menampilkan empat
+    // modul dari dua puluh tampak lengkap padahal tidak.
+    //
+    // Struktur tim satu folder per modul (30-09-2026): dulu "enam belas" -
+    // kini daftarnya pernyataan `Status` di MODUL.md setiap modul.
     const berbutir = new Set(ENTRI_MENU.map((e) => e.kelompok))
     const kosong = KELOMPOK_SIDEBAR.filter((n) => !berbutir.has(n))
-    expect(kosong).toHaveLength(16)
+    expect([...kosong].sort()).toEqual(folderKorpusBelumDimigrasi())
+    expect(kosong.length).toBeGreaterThan(0)
     expect(kode).toContain('KETERANGAN_BELUM_DIMIGRASI')
   })
 

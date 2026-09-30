@@ -70,14 +70,14 @@ type Pendaftaran struct {
 // Perakitan adalah yang diterima `Bangun` satu modul: akar bersama,
 // konfigurasi, pencatat proses, dan kontrak yang dibutuhkannya.
 type Perakitan struct {
-	dasar      *Dasar
-	cfg        config.Config
-	catat      func(string)
-	modul      string
-	tersedia   map[Kontrak]any
-	boleh      map[Kontrak]bool
-	disediakan map[Kontrak]any
-	galat      []error
+	dasar           *Dasar
+	cfg             config.Config
+	catat           func(string)
+	modul           string
+	tersedia        map[Kontrak]any
+	bolehDisediakan map[Kontrak]bool
+	disediakan      map[Kontrak]any
+	galat           []error
 }
 
 // Dasar - akar bersama (koneksi, lingkungan, folder unggahan).
@@ -105,7 +105,7 @@ func Ambil[T any](p *Perakitan) T {
 // Sediakan menyerahkan implementasi kontrak T dari modul yang sedang dirakit.
 func Sediakan[T any](p *Perakitan, nilai T) {
 	k := KontrakDari[T]()
-	if !p.boleh[k] {
+	if !p.bolehDisediakan[k] {
 		p.galat = append(p.galat, fmt.Errorf("modul %s menyediakan kontrak %s yang tidak ada di Menyediakan-nya", p.modul, k))
 		return
 	}
@@ -152,13 +152,13 @@ func Rakit(dasar *Dasar, cfg config.Config, catat func(string), daftar []Pendaft
 	var hasil Rakitan
 	for _, d := range urut {
 		p := &Perakitan{dasar: dasar, cfg: cfg, catat: catat, modul: d.Nama,
-			tersedia: map[Kontrak]any{}, boleh: map[Kontrak]bool{}, disediakan: map[Kontrak]any{}}
+			tersedia: map[Kontrak]any{}, bolehDisediakan: map[Kontrak]bool{}, disediakan: map[Kontrak]any{}}
 		for _, k := range d.Membutuhkan {
 			p.tersedia[k] = nilai[k]
 			hasil.Sambungan = append(hasil.Sambungan, Sambungan{Kontrak: k.String(), Penyedia: penyedia[k], Pemakai: d.Nama})
 		}
 		for _, k := range d.Menyediakan {
-			p.boleh[k] = true
+			p.bolehDisediakan[k] = true
 		}
 		m, err := d.Bangun(p)
 		if err != nil {

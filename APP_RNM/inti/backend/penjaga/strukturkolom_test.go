@@ -73,8 +73,8 @@ func letakStruktur(t *testing.T) []string {
 		mengikat = append(mengikat, c)
 		berdokumen[m] = true
 	}
-	for _, nama := range berkasMigrasi.asal {
-		if m := pemilikJalur(nama); m != "inti" && !berdokumen[m] {
+	for _, jalur := range berkasMigrasi.asal {
+		if m := pemilikJalur(jalur); m != "inti" && !berdokumen[m] {
 			t.Fatalf("modul %s bermigrasi tetapi tanpa docs/STRUKTUR-TABEL-*.md", m)
 		}
 	}
@@ -309,9 +309,9 @@ func TestKolomDDLCocokDenganStruktur(t *testing.T) {
 	}
 }
 
-// Kedua dokumen STRUKTUR wajib SEPAKAT atas tabel yang keduanya gambarkan.
+// Dokumen STRUKTUR yang menggambarkan tabel yang SAMA wajib SEPAKAT atasnya.
 //
-// ⛔ `T_GENERAL_KOMITE` dan `T_KOMITE_KOMITELIST` adalah BATAS antara Claim
+// ⛔ Contoh hari ini: `T_GENERAL_KOMITE` dan `T_KOMITE_KOMITELIST` adalah BATAS antara Claim
 // Life dan Komite Claim Life: yang satu menyerahkan kasus, yang lain
 // memutuskan. Dokumen yang berbeda isinya berarti salah satu konteks bekerja
 // dari bentuk yang sudah usang - dan bedanya baru terlihat ketika satu sisi
@@ -348,12 +348,18 @@ func TestDokumenSTRUKTURSepakatAtasTabelBersama(t *testing.T) {
 	}
 	sort.Strings(tabelBersama)
 	t.Logf("tabel yang digambarkan lebih dari satu dokumen STRUKTUR: %v", tabelBersama)
+	// Prasyarat POSITIF: dulu dua tabel bernama wajib ada di kedua dokumen.
+	// Sejak diturunkan, penjaga yang menemukan nol tabel bersama lulus atas
+	// apa pun - padahal batas Claim Life dan Komite Claim Life ada hari ini.
+	if len(tabelBersama) == 0 {
+		t.Fatalf("nol tabel digambarkan lebih dari satu dokumen STRUKTUR (%d dokumen); pembacanya yang rusak", len(letak))
+	}
 	for _, tabel := range tabelBersama {
 		var acuan []string
 		var acuanDari string
 		for i, d := range perDokumen {
-			kolom, ada := d[tabel]
-			if !ada || len(kolom) == 0 {
+			kolom := d[tabel]
+			if len(kolom) == 0 {
 				continue
 			}
 			if acuan == nil {
@@ -367,9 +373,6 @@ func TestDokumenSTRUKTURSepakatAtasTabelBersama(t *testing.T) {
 					"salah satunya sudah usang.", tabel, acuanDari, acuan,
 					letak[i], kolom)
 			}
-		}
-		if acuan == nil {
-			t.Errorf("%s tidak digambarkan dokumen STRUKTUR mana pun", tabel)
 		}
 	}
 }

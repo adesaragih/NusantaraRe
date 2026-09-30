@@ -3,8 +3,10 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { AKAR_APLIKASI } from '../inti/frontend/uji/sumber'
-import { MENU, MENU_MODUL } from '../inti/frontend/labels'
+import { AKAR_APLIKASI, folderKorpusBelumDimigrasi } from '../inti/frontend/uji/sumber'
+import { MENU } from '../inti/frontend/labels'
+import { LABEL_MENU_KOMITE } from '../modul/komiteclaimlife/frontend/labels'
+import { LABEL_MENU_PREMIUMLIST } from '../modul/premiumlistlife/frontend/labels'
 import { FOLDER_KORPUS } from './katalogKorpus'
 import { daftarPalet, saringPalet } from '../inti/frontend/lib/daftarMenu'
 import { ENTRI_MENU } from './daftar'
@@ -60,8 +62,8 @@ describe('sidebar ↔ palet, dua arah', () => {
     const label = ENTRI_MENU.map((e) => e.label)
     expect(label).toContain(MENU.inbox)
     expect(label).toContain(MENU.register)
-    expect(label).toContain(MENU_MODUL.premiumList)
-    expect(label).toContain(MENU_MODUL.inboxKomite)
+    expect(label).toContain(LABEL_MENU_PREMIUMLIST.premiumList)
+    expect(label).toContain(LABEL_MENU_KOMITE.inboxKomite)
   })
 })
 
@@ -82,7 +84,7 @@ describe('saringPalet', () => {
   it('kelompok ikut dicari', () => {
     // `PremiumList` label butirnya; `PremiumList Life` nama kelompoknya.
     const hasil = saringPalet(daftarPalet(ENTRI_MENU), 'premiumlist life')
-    expect(hasil.map((h) => h.label)).toContain(MENU_MODUL.premiumList)
+    expect(hasil.map((h) => h.label)).toContain(LABEL_MENU_PREMIUMLIST.premiumList)
   })
 
   it('kueri kosong mengembalikan seluruhnya, urutan sidebar', () => {
@@ -98,12 +100,14 @@ describe('saringPalet', () => {
 
 describe('nol menu dikarang', () => {
   it('palet TIDAK memuat modul yang belum dimigrasi', () => {
-    // ⛔ Empat belas kelompok berdiri di sidebar TANPA butir. Bila salah
-    // satunya muncul di palet, ia dapat dibuka lewat Ctrl+K — layar yang
-    // tidak ada.
+    // ⛔ Kelompok yang belum dimigrasi berdiri di sidebar TANPA butir. Bila
+    // salah satunya muncul di palet, ia dapat dibuka lewat Ctrl+K — layar
+    // yang tidak ada. Daftarnya pernyataan `Status` di MODUL.md setiap modul
+    // (dulu angka 16 di sini, yang harus disunting setiap modul baru).
     const berbutir = new Set(ENTRI_MENU.map((e) => e.kelompok))
     const tanpaButir = Object.values(FOLDER_KORPUS).filter((n) => !berbutir.has(n))
-    expect(tanpaButir).toHaveLength(16)
+    expect([...tanpaButir].sort()).toEqual(folderKorpusBelumDimigrasi())
+    expect(tanpaButir.length).toBeGreaterThan(0)
     for (const nama of tanpaButir) {
       // ⛔ DIPERSEMPIT KE MAKSUDNYA 28-09-2026 (sesi Treaty Contract Out).
       // Dulu: hasil pencarian nama kelompok harus KOSONG. Pencocokan palet

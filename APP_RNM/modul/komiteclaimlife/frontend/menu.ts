@@ -6,9 +6,9 @@
 // `PENDAFTARAN_MENU` di bawah dibaca perakit `frontend/daftar.ts` lewat
 // `import.meta.glob` - nol baris per modul di berkas bersama.
 
-import { MENU_MODUL } from '../../../inti/frontend/labels'
 import type { ButirMenuModul } from '../../../inti/frontend/lib/daftarMenu'
 import type { MenuModul } from '../../../inti/frontend/modul'
+import { LABEL_MENU_KOMITE } from './labels'
 
 /** Nama modul - SAMA dengan `const Nama` di `modul/komiteclaimlife/backend/modul.go`. */
 export const NAMA_KOMITE = 'komiteclaimlife'
@@ -20,7 +20,7 @@ export const HALAMAN_KOMITE = ['komite'] as const
 export type HalamanKomite = (typeof HALAMAN_KOMITE)[number]
 
 export const MENU_KOMITE: readonly ButirMenuModul<HalamanKomite>[] = [
-  { modul: 'komite', label: MENU_MODUL.inboxKomite, kelompok: KELOMPOK_KOMITE },
+  { modul: 'komite', label: LABEL_MENU_KOMITE.inboxKomite, kelompok: KELOMPOK_KOMITE },
 ]
 
 /** Menu modul ini untuk perakit `frontend/daftar.ts` - nama ekspor sama di setiap modul. */

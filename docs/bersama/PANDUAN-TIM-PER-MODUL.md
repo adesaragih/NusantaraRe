@@ -34,6 +34,7 @@ untuk folder, `const Nama` Go, `MODUL_AKTIF`, dan `KODE` kelompok `M_NAV_MENU`.
 | Jalur | Pemilik | Yang terjadi bila disunting |
 | --- | --- | --- |
 | `APP_RNM/modul/<nama>/` | pemilik modul | pull request ditinjau pemilik modul |
+| `APP_RNM/modul/<nama>/MODUL.md`, `APP_RNM/modul/<nama>/backend/migrations/9*` *(slot menu)* | tim inti — pemilik modul yang menulisnya | rentang, slot, pernyataan penjaga, `Status`, dan butir menu adalah keputusan yang ditinjau tim inti; tetap nol berkas bersama disunting |
 | `APP_RNM/inti/backend/daftar/modul_<nama>_gen.go` | pemilik modul | berkas bangkitan — lahir sekali, saat modul dimulai (bab 4) |
 | `APP_RNM/inti/` (selain di atas), `cmd/`, `frontend/`, `uji/` | tim inti | menyentuh **semua** modul: seluruh uji + tinjauan tim inti |
 | `go.mod`, `go.sum`, `package.json`, `package-lock.json`, `vite.config.ts`, `tsconfig.json`, `Makefile` | tim inti | pustaka baru = pull request ke tim inti |
@@ -43,8 +44,11 @@ Yang **selalu** lewat tim inti, karena ia bersama menurut sifatnya:
 
 - kontrak lintas modul baru (antarmuka di `inti/backend/kontrak`, bab 7);
 - rentang migrasi atau slot menu tambahan (dari cadangan 760–899 dan 990–999);
-- butir menu baru: angka kunci di `frontend/Shell.test.ts` disunting dengan bukti XML korpus (disengaja
-  work owner — menu yang tidak ada di sistem lama adalah menu yang dikarang);
+- butir menu baru: berkas slot menu `9*` di folder migrasi modul Anda, dengan bukti XML korpus —
+  ditinjau tim inti lewat `CODEOWNERS` (disengaja work owner — menu yang tidak ada di sistem lama adalah
+  menu yang dikarang). Dulu lewat angka kunci di `frontend/Shell.test.ts`, yang membuat dua modul
+  berkonflik di baris yang sama;
+- pernyataan untuk penjaga di `MODUL.md` (bab 6) — pengecualian penjaga adalah keputusan tim inti;
 - pustaka npm/Go baru.
 
 ## 3. Alur kerja: cabang per modul → commit di folder sendiri → pull request → CI → merge
@@ -79,7 +83,11 @@ Contoh `nbtreatyin` (rentang migrasi 320–359, slot menu 968–969 — dari `MO
 
 **4.1 Backend** — `modul/nbtreatyin/backend/{models,repository,services,handlers}/`, masing-masing
 mengimpor hanya `inti/backend/...` dan dirinya sendiri (arah `handlers → services → repository`). Lalu
-`modul/nbtreatyin/backend/modul.go`:
+`modul/nbtreatyin/backend/modul.go`.
+
+⚠️ `//go:embed migrations/*.sql` tidak terkompilasi selama folder `migrations/` belum memuat satu
+berkas `.sql` pun: tulis migrasi pertama (4.3) sebelum `go build`, atau — bila modul tidak bermigrasi,
+seperti `treatycontractout` — buang baris `go:embed`, `berkasMigrasi`, dan `Migrasi:` sekaligus.
 
 ```go
 // Package backend merakit modul NB Treaty In (`nbtreatyin`).
@@ -105,7 +113,7 @@ const Nama = "nbtreatyin"
 func Pendaftaran() inti.Pendaftaran {
 	return inti.Pendaftaran{
 		Nama:    Nama,
-		Migrasi: berkasMigrasi, // nil bila modul tidak bermigrasi
+		Migrasi: berkasMigrasi, // buang baris ini (dan go:embed) bila modul tidak bermigrasi
 		// Membutuhkan: []inti.Kontrak{inti.KontrakDari[kontrak.X]()},  lalu inti.Ambil[kontrak.X](p)
 		// Menyediakan: []inti.Kontrak{inti.KontrakDari[kontrak.Y]()},  lalu inti.Sediakan[kontrak.Y](p, ...)
 		Bangun: func(p *inti.Perakitan) (inti.Modul, error) {
@@ -173,10 +181,12 @@ dari folder, dan menolak folder yang hanya punya salah satunya. Label butir menu
 **4.5 Menu** — slot menu Anda: `backend/migrations/968_menu_nbtreatyin.sql` (+ `_down.sql`) yang
 menyalakan `DIMIGRASI` kelompok Anda dan menyisipkan butirnya — bentuk SQL persis di
 `APP_RNM\PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md` bab 6. Label butir di SQL = label di `menu.ts` VERBATIM.
-Angka kunci `frontend/Shell.test.ts` naik satu per butir baru (tinjauan tim inti, bab 2).
+Berkas slot `9*` ditinjau tim inti (`CODEOWNERS`, bab 2); tidak ada angka kunci di berkas bersama.
 
-**4.6 `MODUL.md`** — `Status` → `dimigrasi`; isi `Prefix rute API` dan kontrak; tambahkan pernyataan
-untuk penjaga bila perlu (bab 6).
+**4.6 `MODUL.md`** — `Status` → `dimigrasi` bersamaan dengan butir menu pertama Anda: uji Beranda,
+sidebar, dan palet (`frontend/Beranda.test.ts`, `Shell.test.ts`, `daftar.sinkron.test.ts`,
+`daftar.modulAktif.test.ts`) membaca `Status` ini dan merah bila ia tidak sesuai dengan menunya. Isi
+`Prefix rute API` dan kontrak; tambahkan pernyataan untuk penjaga bila perlu (bab 6).
 
 **4.7 Gerbang** — bab 8, lalu pull request.
 
@@ -204,7 +214,9 @@ tabel per judul, nilai di dalam backtick dibaca apa adanya. Judul yang tidak ada
 | `Pesan verbatim yang bukan nama orang` | Paket · Konstanta · Alasan | `TestNolNamaOrangDiKode` |
 
 Contoh lengkap: `APP_RNM\modul\claimlife\MODUL.md` dan `APP_RNM\modul\treatycontractout\MODUL.md`.
-Pernyataan yang berbentuk salah menggagalkan penjaga dengan kalimat yang menyebut berkas dan judulnya.
+Pernyataan yang berbentuk salah menggagalkan penjaga dengan kalimat yang menyebut berkas dan judulnya —
+termasuk judul `###` yang bukan salah satu dari enam di atas (salah ketik satu huruf dulu membuat
+pernyataan itu diam-diam tidak dibaca).
 
 ## 7. Kontrak lintas modul
 
@@ -240,9 +252,9 @@ Dicatat supaya tidak ada yang mengira semuanya sudah per modul:
 
 | Berkas | Pemilik | Kapan pengembang modul menyentuhnya |
 | --- | --- | --- |
-| `frontend/Shell.test.ts` — kunci jumlah butir menu | tim inti | setiap butir menu baru (disengaja, bab 2) |
 | `frontend/Beranda.tsx` — kartu antrean Claim Life | tim inti | bila kartu Beranda Claim Life berubah |
-| `inti/frontend/labels.ts` — `MENU`, `MENU_MODUL` (label butir Claim Life, PremiumList, Komite) | tim inti | bila label butir itu berubah |
+| `inti/frontend/labels.ts` — `MENU` (label kedua butir Claim Life) | tim inti | bila label butir Claim Life berubah — Shell memakai `MENU.inbox` sebagai judul cadangan, jadi memindahkannya mengubah perilaku |
+| `frontend/Shell.test.ts` — kelompok Treaty Contract Out tepat satu butir | tim inti | bila keputusan tco5 berubah (keputusan work owner) |
 | `inti/backend/penjaga/lintasaplikasi_test.go` — daftar klien HTTP keluar yang disetujui | tim inti | bila modul memanggil layanan luar (butuh persetujuan manusia) |
 | `inti/backend/penjaga/lintasaplikasi_test.go` — dua uji tco4 Treaty Contract Out | tim inti | bila keputusan tco4 berubah (keputusan work owner) |
 | `inti/backend/penjaga/menu_test.go` — isi awal 900 | tim inti | tidak pernah: 900 tidak disunting |

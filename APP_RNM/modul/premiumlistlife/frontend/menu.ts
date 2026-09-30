@@ -6,9 +6,9 @@
 // `PENDAFTARAN_MENU` di bawah dibaca perakit `frontend/daftar.ts` lewat
 // `import.meta.glob` - nol baris per modul di berkas bersama.
 
-import { MENU_MODUL } from '../../../inti/frontend/labels'
 import type { ButirMenuModul } from '../../../inti/frontend/lib/daftarMenu'
 import type { MenuModul } from '../../../inti/frontend/modul'
+import { LABEL_MENU_PREMIUMLIST } from './labels'
 
 /** Nama modul - SAMA dengan `const Nama` di `modul/premiumlistlife/backend/modul.go`. */
 export const NAMA_PREMIUMLIST = 'premiumlistlife'
@@ -20,7 +20,7 @@ export const HALAMAN_PREMIUMLIST = ['premiumlist'] as const
 export type HalamanPremiumList = (typeof HALAMAN_PREMIUMLIST)[number]
 
 export const MENU_PREMIUMLIST: readonly ButirMenuModul<HalamanPremiumList>[] = [
-  { modul: 'premiumlist', label: MENU_MODUL.premiumList, kelompok: KELOMPOK_PREMIUMLIST },
+  { modul: 'premiumlist', label: LABEL_MENU_PREMIUMLIST.premiumList, kelompok: KELOMPOK_PREMIUMLIST },
 ]
 
 /** Menu modul ini untuk perakit `frontend/daftar.ts` - nama ekspor sama di setiap modul. */

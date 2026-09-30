@@ -6,6 +6,16 @@
 // sendiri.
 
 /**
+ * Label butir menu PremiumList Life — butir **bg**. Dipindah apa adanya dari
+ * `MENU_MODUL` di `inti/frontend/labels.ts` (struktur tim satu folder per
+ * modul, 30-09-2026): label satu modul tinggal di folder modul itu.
+ */
+export const LABEL_MENU_PREMIUMLIST = {
+  /** Harness portal `PremiumLife_harness` → section `PremiumList`. */
+  premiumList: 'PremiumList',
+} as const
+
+/**
  * Kolom kotak masuk — `ReportDefinition/InboxPremiumList.xml`.
  *
  * ⛔ SEBELAS dari tiga belas. Dua yang tidak ada:

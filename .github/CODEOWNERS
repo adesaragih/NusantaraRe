@@ -1,7 +1,8 @@
 # CODEOWNERS - struktur tim satu folder per modul (keputusan work owner 30-09-2026).
 #
 # Satu orang fullstack memegang satu modul: seluruh folder APP_RNM/modul/<nama>/
-# (backend/, frontend/, docs/, MODUL.md) miliknya, begitu pula berkas bangkitan
+# (backend/, frontend/, docs/) miliknya - kecuali MODUL.md dan berkas slot menu,
+# yang ditinjau tim inti (baris terakhir berkas ini) - begitu pula berkas bangkitan
 # daftar modulnya APP_RNM/inti/backend/daftar/modul_<nama>_gen.go - supaya pull
 # request yang memulai sebuah modul hanya menyentuh berkas milik pengembangnya.
 # Semua yang lain milik tim inti: kode bersama, perakit, konfigurasi npm/Go,
@@ -77,3 +78,12 @@
 /APP_RNM/inti/backend/daftar/modul_treatyin_gen.go                @PEMILIK-TREATYIN
 /APP_RNM/modul/treatyinadjustment/                                @PEMILIK-TREATYINADJUSTMENT
 /APP_RNM/inti/backend/daftar/modul_treatyinadjustment_gen.go      @PEMILIK-TREATYINADJUSTMENT
+
+# Ditulis pemilik modul, DISETUJUI tim inti - baris ini SESUDAH baris modul di
+# atas, jadi ia yang menang. MODUL.md: rentang migrasi dan slot menu (R2, R3),
+# Status, dan pernyataan untuk penjaga (pengecualian penjaga). Berkas slot menu
+# (950-999) di folder migrasi modul: butir menu baru butuh bukti XML korpus.
+# `9*`, bukan rentang `[5-9]`: CODEOWNERS GitHub tidak mengenal `[ ]`, dan nomor
+# migrasi modul (001-899, tiga digit) tidak pernah berawalan 9.
+/APP_RNM/modul/*/MODUL.md                                         @TIM-INTI
+/APP_RNM/modul/*/backend/migrations/9*                            @TIM-INTI

@@ -45,6 +45,17 @@ const (
 	pernyataanPesanVerbatim = "Pesan verbatim yang bukan nama orang"
 )
 
+// jenisPernyataan - setiap judul yang dibaca penjaga. Judul lain di bab
+// pernyataan ditolak, bukan diabaikan (`TestPernyataanBerjudulAsingDitolak`).
+var jenisPernyataan = map[string]bool{
+	pernyataanTabelWarisan:  true,
+	pernyataanNamaBeda:      true,
+	pernyataanNamaTerlarang: true,
+	pernyataanKaskade:       true,
+	pernyataanSuntikan:      true,
+	pernyataanPesanVerbatim: true,
+}
+
 // modulMD adalah isi satu `MODUL.md` yang dibaca penjaga.
 type modulMD struct {
 	// folder - nama folder `modul/<folder>`.
@@ -130,6 +141,9 @@ func uraiModulMD(isi string) (modulMD, error) {
 			continue
 		case dalamBab && strings.HasPrefix(t, "### "):
 			judul, kepala = strings.TrimSpace(strings.TrimPrefix(t, "### ")), false
+			if !jenisPernyataan[judul] {
+				return m, fmt.Errorf("judul pernyataan %q tidak dikenal penjaga; jenis yang dibaca: docs/bersama/PANDUAN-TIM-PER-MODUL.md bab 6", judul)
+			}
 			if _, ganda := m.pernyataan[judul]; ganda {
 				return m, fmt.Errorf("pernyataan %q ganda", judul)
 			}
@@ -361,4 +375,27 @@ func pesanVerbatimDinyatakan(t *testing.T) map[string][]string {
 		sort.Strings(k)
 	}
 	return hasil
+}
+
+// ⛔ Judul `###` yang bukan salah satu jenis pernyataan ditolak: judul yang
+// salah ketik (mis. `Kaskade ON DELETE CASCADE` tanpa satu huruf) dulu dibaca
+// sebagai jenis BARU yang tidak dibaca penjaga mana pun - pernyataan modul itu
+// diam-diam mati, dan penjaganya tetap hijau (temuan code review 30-09-2026).
+func TestPernyataanBerjudulAsingDitolak(t *testing.T) {
+	kepala := "| Kunci | Nilai |\n| --- | --- |\n| Nama modul | `alfa` |\n\n## Pernyataan untuk penjaga\n\n"
+	tabel := "\n\n| Kode | Alasan |\n| --- | --- |\n| `ALFA_A` | uji |\n"
+	if _, err := uraiModulMD(kepala + "### " + pernyataanKaskade + tabel); err != nil {
+		t.Fatalf("prasyarat: judul yang dikenal ditolak: %v", err)
+	}
+	salah := strings.Replace(pernyataanKaskade, "CASCADE", "CASCAD", 1)
+	if salah == pernyataanKaskade {
+		t.Fatal("prasyarat: pengganti tidak cocok, cacat tidak terpasang")
+	}
+	_, err := uraiModulMD(kepala + "### " + salah + tabel)
+	if err == nil {
+		t.Fatalf("judul %q diterima sebagai jenis pernyataan", salah)
+	}
+	if !strings.Contains(err.Error(), salah) {
+		t.Errorf("galat %q tidak menyebut judulnya", err)
+	}
 }

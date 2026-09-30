@@ -14,7 +14,6 @@ package backend
 import (
 	"context"
 	"embed"
-	"io/fs"
 	"net/http"
 
 	inti "nusantarare/inti/backend"
@@ -29,10 +28,6 @@ import (
 //
 //go:embed migrations/*.sql
 var berkasMigrasi embed.FS
-
-// SumberMigrasi menyerahkan folder `migrations/` modul ini kepada pelari
-// migrasi (`inti/backend/migrasi`).
-func SumberMigrasi() fs.FS { return berkasMigrasi }
 
 // Nama pengenal modul ini di MODUL_AKTIF dan di GET /api/modul-aktif.
 const Nama = "premiumlistlife"

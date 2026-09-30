@@ -21,12 +21,12 @@ import (
 const akarAplikasi = "../../.."
 
 // berkasHandler mengembalikan setiap berkas .go bukan-uji di folder handlers
-// seluruh modul - `internal/handlers` dan `modul/*/handlers`.
+// seluruh modul - `modul/*/backend/handlers` (`internal/` sudah tidak ada sejak
+// refactor bentuk B, CLAUDE.md bab 5).
 func berkasHandler(t *testing.T) []string {
 	t.Helper()
 	var hasil []string
 	for _, pola := range []string{
-		filepath.Join(akarAplikasi, "internal", "handlers", "*.go"),
 		filepath.Join(akarAplikasi, "modul", "*", "backend", "handlers", "*.go"),
 	} {
 		cocok, err := filepath.Glob(pola)
@@ -66,14 +66,14 @@ func cariHandler(t *testing.T, nama string) (string, bool) {
 }
 
 // berkasGoProduksi mengembalikan setiap berkas .go bukan-uji di bawah
-// `internal/`, `inti/`, dan `modul/`.
+// `inti/` dan `modul/`.
 func berkasGoProduksi(t *testing.T) []string {
 	t.Helper()
 	var hasil []string
-	for _, akar := range []string{"internal", "inti", "modul"} {
+	for _, akar := range []string{"inti", "modul"} {
 		dir := filepath.Join(akarAplikasi, akar)
 		if _, err := os.Stat(dir); err != nil {
-			continue // folder yang sudah kosong sesudah refactor
+			t.Fatalf("folder %s tidak terbaca: %v", dir, err)
 		}
 		err := filepath.Walk(dir, func(p string, info os.FileInfo, err error) error {
 			if err != nil {

@@ -11,7 +11,7 @@
 // ⛔ Hanya untuk berkas uji. Kode aplikasi tidak mengimpornya (ia memakai
 // `node:fs`), jadi berkas ini tidak pernah masuk bundel.
 
-import { existsSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
 
 /** Folder APP_RNM - dari letak berkas ini (`inti/frontend/uji`). */
@@ -57,4 +57,42 @@ export function berkasTS(akar: readonly string[] = akarSumberFrontend()): string
 /** Seperti `berkasTS`, tanpa berkas uji. */
 export function berkasSumberTS(akar?: readonly string[]): string[] {
   return berkasTS(akar).filter((j) => !/\.test\.tsx?$/.test(j))
+}
+
+/**
+ * Folder korpus setiap modul yang `MODUL.md`-nya berstatus `belum dimigrasi`,
+ * urut abjad - dibaca dari baris `Status` dan `Folder korpus` tabel kuncinya.
+ *
+ * Untuk apa: uji "kelompok yang belum dimigrasi tetap BERDIRI" dulu mengunci
+ * angkanya (`toHaveLength(16)`) di berkas bersama, sehingga modul yang
+ * mendapat butir menu pertamanya harus menyunting uji milik tim inti - dan dua
+ * modul yang memulai bersamaan berkonflik di baris yang sama. Kini angkanya
+ * PERNYATAAN pemilik modul di foldernya sendiri: modul yang mendapat butir
+ * menu pertamanya mengubah `Status`-nya menjadi `dimigrasi`, dan uji yang
+ * memakai daftar ini merah bila pernyataan itu tidak sesuai dengan menu.
+ *
+ * ⛔ Folder berawalan `_` (`_templat`) bukan modul. MODUL.md tanpa kedua baris
+ * itu, status di luar dua nilai, atau nol MODUL.md terbaca = galat, bukan
+ * daftar kosong yang meluluskan segalanya.
+ */
+export function folderKorpusBelumDimigrasi(): string[] {
+  const modul = join(AKAR_APLIKASI, 'modul')
+  const hasil: string[] = []
+  let dibaca = 0
+  for (const d of readdirSync(modul, { withFileTypes: true })) {
+    if (!d.isDirectory() || d.name.startsWith('_')) continue
+    const isi = readFileSync(join(modul, d.name, 'MODUL.md'), 'utf8')
+    const status = /^\| Status \| (.+?) \|\s*$/m.exec(isi)?.[1]
+    const korpus = /^\| Folder korpus \| `(.+?)` \|\s*$/m.exec(isi)?.[1]
+    if (status === undefined || korpus === undefined) {
+      throw new Error(`modul/${d.name}/MODUL.md tanpa baris Status atau Folder korpus`)
+    }
+    if (status !== 'dimigrasi' && status !== 'belum dimigrasi') {
+      throw new Error(`modul/${d.name}/MODUL.md: Status ${JSON.stringify(status)}, mau dimigrasi atau belum dimigrasi`)
+    }
+    dibaca++
+    if (status === 'belum dimigrasi') hasil.push(korpus)
+  }
+  if (dibaca === 0) throw new Error(`nol MODUL.md terbaca di ${modul}; pembacanya yang rusak`)
+  return hasil.sort()
 }

@@ -168,7 +168,8 @@ func TestPernyataanKontrakYangTidakDitepatiGagal(t *testing.T) {
 	}
 }
 
-// ⛔ Daftar yang bentuknya salah ditolak SEBELUM satu modul pun dibangun, dengan
+// ⛔ Daftar yang bentuknya salah ditolak SEBELUM satu modul pun dibangun (nama
+// modul hasil `Bangun` yang berbeda dari pendaftarannya: sesudahnya), dengan
 // kalimat yang menyebut modulnya - termasuk ketergantungan melingkar, yang
 // tanpa penjagaan membuat proses berputar tanpa henti saat menyala.
 func TestDaftarBerbentukSalahDitolak(t *testing.T) {

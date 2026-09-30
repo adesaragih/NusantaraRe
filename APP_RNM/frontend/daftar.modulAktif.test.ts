@@ -3,7 +3,7 @@ import { join } from 'node:path'
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { AKAR_APLIKASI } from '../inti/frontend/uji/sumber'
+import { AKAR_APLIKASI, folderKorpusBelumDimigrasi } from '../inti/frontend/uji/sumber'
 import { FOLDER_KORPUS } from './katalogKorpus'
 import { kartuModul } from './Beranda'
 import { ambilModulAktif } from '../inti/frontend/klien'
@@ -62,8 +62,9 @@ describe('menu modul nonaktif hilang', () => {
     const claimLife = s.golongan[0]?.kelompok.find((k) => k.nama === FOLDER_KORPUS.claimLife)
     expect(claimLife?.butir.map((b) => b.halaman)).toEqual(['inbox', 'register'])
     // Kelompok yang memang belum dimigrasi tetap berdiri - ia bukan modul nonaktif.
+    // Daftarnya pernyataan `Status` di MODUL.md setiap modul, bukan angka di sini.
     const belum = s.golongan.flatMap((g) => g.kelompok.filter((k) => !k.dimigrasi))
-    expect(belum).toHaveLength(16)
+    expect(belum.map((k) => k.nama).sort()).toEqual(folderKorpusBelumDimigrasi())
     expect(s.tanpaRute).toEqual([])
   })
 
@@ -78,7 +79,7 @@ describe('menu modul nonaktif hilang', () => {
     // Tombol kartu Beranda MEMBUKA modul - ia menu juga.
     const kartu = kartuModul(['komiteclaimlife'])
     expect(kartu.filter((k) => k.tujuan !== null).map((k) => k.nama)).toEqual([FOLDER_KORPUS.komiteClaimLife])
-    expect(kartu.filter((k) => k.tujuan === null)).toHaveLength(16)
+    expect(kartu.filter((k) => k.tujuan === null).map((k) => k.nama).sort()).toEqual(folderKorpusBelumDimigrasi())
     expect(kartuModul(null)).toEqual(kartuModul())
     // Cacah antrean Claim Life tidak diminta bila modul itu nonaktif.
     const beranda = readFileSync(join(SRC, 'Beranda.tsx'), 'utf8')

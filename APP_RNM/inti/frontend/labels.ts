@@ -60,19 +60,10 @@ export const MODUL_LAIN_TERLARANG = [
   'Premium',
 ] as const
 
-/**
- * Butir menu modul yang SUDAH berbukti XML — butir **bg**.
- *
- * ⛔ Empat butir, dan tidak lebih. Tiga modul punya bukti korpusnya:
- * Claim Life *(dua butir)*, PremiumList Life, Komite Claim Life. Empat
- * belas kelompok lain berdiri TANPA butir.
- */
-export const MENU_MODUL = {
-  /** Harness portal `PremiumLife_harness` → section `PremiumList`. */
-  premiumList: 'PremiumList',
-  /** `[tidak ada di korpus]` — worklist `KomiteRouter`, kosakata kami. */
-  inboxKomite: 'Inbox Komite',
-} as const
+// Label butir menu modul lain tinggal di `labels.ts` modulnya sendiri -
+// `LABEL_MENU_PREMIUMLIST`, `LABEL_MENU_KOMITE`, `MENU_TCO` (struktur tim satu
+// folder per modul, 30-09-2026: dulu `MENU_MODUL` di sini). `MENU` di atas
+// tetap di sini karena Shell memakai `MENU.inbox` sebagai judul cadangan.
 
 /** Kata untuk kelompok yang modulnya belum dipindahkan. */
 export const KETERANGAN_BELUM_DIMIGRASI = 'belum dimigrasi'
