@@ -48,7 +48,7 @@ export interface ButirMenuModul<H extends string = string> {
    * tombol langsung, tanpa judul kelompok yang dilipat dan tanpa anak.
    * Kelompok berbutir lebih dari satu mengabaikannya. Bawaan: bertingkat.
    */
-  datar?: boolean
+  datar?: true
 }
 
 /** Satu entri menu yang dapat dicari, beserta modul backend pemiliknya. */

@@ -345,10 +345,10 @@ export function Shell<H extends string>({
                 {datar !== undefined ? (
                   /* Kelompok beranggota SATU butir bertanda `datar`: satu tombol
                      langsung, tanpa judul kelompok yang dilipat dan tanpa anak
-                     (Treaty Contract Out, keputusan work owner 30-09-2026). */
+                     (`ButirMenuModul.datar`). */
                   <button
                     type="button"
-                    className={`shell__butir${halaman === datar.halaman ? ' shell__butir--aktif' : ''}`}
+                    className={`shell__butir shell__butir--datar${halaman === datar.halaman ? ' shell__butir--aktif' : ''}`}
                     aria-current={halaman === datar.halaman ? 'page' : undefined}
                     title={datar.label}
                     onClick={() => {

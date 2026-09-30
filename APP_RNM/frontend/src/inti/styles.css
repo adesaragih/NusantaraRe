@@ -4362,6 +4362,16 @@ textarea.field__input {
   cursor: pointer;
 }
 
+/* Baris RINCI di bawah satu baris tabel (panel yang dibuka dari barisnya):
+   isinya panel berkalimat, jadi `nowrap` sel tabel TIDAK diwarisi, dan
+   baris ini tidak menyala saat kursor lewat seperti baris data. */
+.inbox__tabel tr.inbox__rinci > td {
+  white-space: normal;
+}
+.inbox__rinci:hover {
+  background: transparent;
+}
+
 .inbox__baris:hover {
   background: var(--surface-2);
 }
@@ -4697,6 +4707,12 @@ textarea.field__input {
 /* Beranda bukan modul: sedikit jarak memisahkannya dari kelompok. */
 .shell__butir--beranda {
   margin-bottom: 10px;
+}
+/* Butir DATAR (`ButirMenuModul.datar`) berdiri di antara judul kelompok -
+   hurufnya mengikuti `.kelompok__judul`, bukan butir anak. */
+.shell__butir--datar {
+  font-size: 14px;
+  font-weight: 600;
 }
 /* Butir anak menjorok sejajar teks judul kelompoknya (16 + 24 + 12). */
 .shell__butir--anak {
@@ -5494,7 +5510,8 @@ textarea.field__input {
   .shell--terlipat .kelompok--aktif > .kelompok__judul {
     background: var(--primary-soft);
   }
-  .shell--terlipat .kelompok--aktif .kelompok__lencana {
+  .shell--terlipat .kelompok--aktif .kelompok__lencana,
+  .shell--terlipat .shell__butir--aktif > .kelompok__lencana {
     background: var(--primary);
     color: #fff;
   }
