@@ -39,6 +39,22 @@ export async function ambilJenisReasuransiTreaty(): Promise<DaftarJenisReasurans
   return minta<DaftarJenisReasuransiTreaty>('/api/treaty-contract-out/jenis-reasuransi')
 }
 
+/**
+ * `AturanKlausul.pilihanReins` baris anak Treaty Limit — SAMA dengan
+ * `models.PilihanReinsAnakTreatyLimit` di backend (dijaga uji).
+ */
+export const PILIHAN_REINS_ANAK_TREATY_LIMIT = 'anak-treaty-limit'
+
+/**
+ * Pilihan ReinsType baris anak Treaty Limit (`Show Child`) di bawah induk
+ * `induk`: dua belas jenis porsi + induknya [keputusan work owner 30-09-2026].
+ */
+export async function ambilJenisReasuransiAnakTreatyLimit(induk: string): Promise<DaftarJenisReasuransiTreaty> {
+  return minta<DaftarJenisReasuransiTreaty>('/api/treaty-contract-out/jenis-reasuransi/anak-treaty-limit', {
+    kueri: { induk },
+  })
+}
+
 // ---------------------------------------------------------------------------
 // TREATY CONTRACT OUT — tiket 03: tahun treaty dan master grup treaty.
 // Bentuknya dari `internal/services/tco_tahun.go` dan `tco_gruptreaty.go`.
@@ -464,6 +480,8 @@ export interface AturanKlausul {
   /** Tiket 11: '' | 'RpKeUsd' (`HitungRpUsd_depan`) | 'DuaArah' (`CalculateTSIExcludeTreaty`). */
   konversi: string
   sumber: string
+  /** Sumber pilihan ReinsTypeID: '' = daftar induk tiket 02; `PILIHAN_REINS_ANAK_TREATY_LIMIT`. */
+  pilihanReins?: string
 }
 
 /** Satu baris grid jenis (`BrowseTreatyDesc_RD`) beserta aturannya. */

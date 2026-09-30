@@ -48,6 +48,8 @@ func TestRuteTreatyContractOutTerdaftarSatuBaris(t *testing.T) {
 	}
 	for _, mau := range []string{
 		`"GET /api/treaty-contract-out/jenis-reasuransi"`,
+		// Pilihan ReinsType anak Treaty Limit [keputusan work owner 30-09-2026].
+		`"GET /api/treaty-contract-out/jenis-reasuransi/anak-treaty-limit"`,
 		`"GET /api/treaty-contract-out/grup-treaty"`,
 		`"GET /api/treaty-contract-out/tahun"`,
 		`"POST /api/treaty-contract-out/tahun"`,
@@ -84,11 +86,12 @@ func TestRuteTreatyContractOutTerdaftarSatuBaris(t *testing.T) {
 func TestTreatyContractOutTanpaDatabaseMenjawab503(t *testing.T) {
 	svc := services.New(nil)
 	kasus := map[string]http.HandlerFunc{
-		"jenis-reasuransi": jenisReasuransiTreaty(svc, true),
-		"grup-treaty":      grupTreaty(svc, true),
-		"tahun":            daftarTahunTreaty(svc, true),
-		"tahun/{id}":       satuTahunTreaty(svc, true),
-		"POST tahun":       simpanTahunTreaty(svc, true, false),
+		"jenis-reasuransi":                   jenisReasuransiTreaty(svc, true),
+		"jenis-reasuransi/anak-treaty-limit": jenisReasuransiAnakTreatyLimit(svc, true),
+		"grup-treaty":                        grupTreaty(svc, true),
+		"tahun":                              daftarTahunTreaty(svc, true),
+		"tahun/{id}":                         satuTahunTreaty(svc, true),
+		"POST tahun":                         simpanTahunTreaty(svc, true, false),
 	}
 	for nama, h := range kasus {
 		w := httptest.NewRecorder()
@@ -115,6 +118,7 @@ func TestJawabGalatTreatyContractOut(t *testing.T) {
 		{inti.ErrTanpaIdentitas, http.StatusUnauthorized},
 		{inti.ErrTanpaWewenang, http.StatusForbidden},
 		{services.ErrMasterJenisReasuransiKosong, http.StatusServiceUnavailable},
+		{services.ErrPilihanAnakTreatyLimitKosong, http.StatusServiceUnavailable},
 		{services.ErrMasterGrupTreatyKosong, http.StatusServiceUnavailable},
 		{services.ErrTahunTreatyTidakAda, http.StatusNotFound},
 		{services.GalatTahunTreatyDobel{IDLain: "1000005"}, http.StatusConflict},

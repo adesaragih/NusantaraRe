@@ -16,6 +16,7 @@ import {
   tampilMedanKlausul,
   keMasukKlausul,
   labelMedan,
+  pemilihReinsType,
   rencanaKonversi,
 } from './PanelJenisKlausul'
 
@@ -149,3 +150,28 @@ describe('tampilan desimal berpemisah ribuan (keputusan work owner 30-09-2026)',
     expect(KODE).not.toMatch(/turunanServer|catatanRpKeUsd|catatanDuaArah/)
   })
 })
+
+// ReinsType Treaty Limit ikut XML: `pxAutoComplete` di grid induk
+// (`GridTreatyArrangementTreatyLimit.xml` b3025, RD induk) dan anak
+// (`GridTreatyArrTreatyLimitList.xml` b2892, porsi + induknya
+// [keputusan work owner 30-09-2026]). Jenis lain tidak berubah.
+describe('pemilih ReinsType per aturan', () => {
+  it('Treaty Limit induk: dapat difilter, daftar induk', () => {
+    expect(pemilihReinsType(aturan({ jenis: 'TreatyLimit' }))).toBe('saring-induk')
+  })
+  it('anak Treaty Limit: dapat difilter, daftar porsi + induknya - dari penanda ATURAN', () => {
+    expect(pemilihReinsType(aturan({ jenis: 'TreatyLimitChild', anak: true, pilihanReins: 'anak-treaty-limit' }))).toBe('saring-anak')
+    // Penandanya yang menentukan, bukan nama jenis.
+    expect(pemilihReinsType(aturan({ jenis: 'TreatyLimitChild', anak: true }))).toBe('dropdown')
+  })
+  it('jenis lain tetap dropdown daftar induk', () => {
+    for (const jenis of ['EPI', 'EpiList', 'PLA', 'CashLossLimit', 'Ricomm']) {
+      expect(pemilihReinsType(aturan({ jenis })), jenis).toBe('dropdown')
+    }
+  })
+  it('form anak menerima induknya', () => {
+    expect(KODE).toContain('induk={induk}')
+    expect(KODE).toContain("anakTreatyLimitDari={pemilih === 'saring-anak' ? induk : undefined}")
+  })
+})
+

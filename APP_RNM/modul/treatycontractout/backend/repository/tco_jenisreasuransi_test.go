@@ -115,3 +115,61 @@ func TestSaringanNonLifeTCOVerbatimTerhadapKorpus(t *testing.T) {
 		t.Error("logika A AND B AND C tidak ada di RD")
 	}
 }
+
+// Anak Treaty Limit [keputusan work owner 30-09-2026]: dua belas jenis porsi
+// (awalan yang RD induk singkirkan) + ReinsType induknya sendiri, Flag active.
+func TestSaringanAnakTreatyLimitTCOTabelKebenaran(t *testing.T) {
+	kasus := []struct {
+		id, flag, induk string
+		mau             bool
+	}{
+		{"10004", "active", "10260", true},    // QS (R/I)
+		{"10028", "active", "10260", true},    // QS (OR)
+		{"10248", "active", "10260", true},    // SPL (OR)
+		{"10217", "active", "10260", true},    // porsi terakhir
+		{"100041", "active", "10260", true},   // StartsWith - pelengkap NotStartsWith induk
+		{"10260", "active", "10260", true},    // induknya sendiri
+		{"10007", "active", "10007", true},    // ORS -> ORS
+		{"10259", "active", "10260", false},   // jenis induk LAIN
+		{"10004", "inactive", "10260", false}, // Flag bukan active
+		{"10260", "inactive", "10260", false}, // induk nonaktif pun tidak
+		{"10259", "active", "", false},        // tanpa induk: porsi saja
+	}
+	for _, k := range kasus {
+		if dapat := LolosSaringanAnakTreatyLimitTCO(k.id, k.flag, k.induk); dapat != k.mau {
+			t.Errorf("(%q,%q,induk %q) = %v, mau %v", k.id, k.flag, k.induk, dapat, k.mau)
+		}
+	}
+	// Pelengkap tepat: di antara baris Flag active, satu ID lolos saringan
+	// induk (tipe 1/2/3) ATAU berawalan porsi - tidak pernah keduanya.
+	for _, id := range []string{"10003", "10004", "10028", "10260", "100041"} {
+		if LolosSaringanNonLifeTCO(id, "active", "1") && LolosSaringanAnakTreatyLimitTCO(id, "active", "") {
+			t.Errorf("%s lolos kedua saringan - porsi harus pelengkap daftar induk", id)
+		}
+	}
+}
+
+func TestSQLJenisReasuransiAnakTreatyLimitTCO(t *testing.T) {
+	q := sqlJenisReasuransiAnakTreatyLimitTCO("S.REINSURANCETYPE")
+	if err := db.PeriksaSQL(q); err != nil {
+		t.Fatal(err)
+	}
+	for _, mau := range []string{"SELECT ID, NOTE, TYPE FROM S.REINSURANCETYPE",
+		"FLAG = :1", "(ID = :2", "OR ID LIKE :3", "OR ID LIKE :14)", "ORDER BY NOTE ASC, ID ASC"} {
+		if !strings.Contains(q, mau) {
+			t.Errorf("SQL tanpa %q:\n%s", mau, q)
+		}
+	}
+	if strings.Count(q, " LIKE ") != 12 || strings.Contains(q, "NOT LIKE") || strings.Contains(q, "TYPE IN") {
+		t.Errorf("mau 12 LIKE, tanpa NOT LIKE dan tanpa saringan TYPE:\n%s", q)
+	}
+	arg := argJenisReasuransiAnakTreatyLimitTCO("10260")
+	if len(arg) != 14 || arg[0] != "active" || arg[1] != "10260" || arg[2] != "10004%" || arg[13] != "10217%" {
+		t.Errorf("argumen tidak urut: %v", arg)
+	}
+	for _, id := range BlacklistJenisReasuransiNonLife {
+		if strings.Contains(q, id) {
+			t.Errorf("ID %s ditanam sebagai literal SQL, harus bind", id)
+		}
+	}
+}

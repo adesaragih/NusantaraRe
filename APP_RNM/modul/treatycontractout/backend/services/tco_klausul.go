@@ -161,6 +161,9 @@ type AturanTampil struct {
 	Berkurs  bool   `json:"berkurs"`
 	Konversi string `json:"konversi"`
 	Sumber   string `json:"sumber"`
+	// PilihanReins - `models.AturanKlausul.PilihanReins`: layar memilih
+	// pemilih ReinsType dari sini, bukan dari nama jenis.
+	PilihanReins string `json:"pilihanReins"`
 }
 
 // JenisKlausulTampil adalah satu baris grid jenis + aturannya.
@@ -317,7 +320,8 @@ func (l *KlausulTCO) DenganTransaksi(f func(ctx context.Context, fn func(tx *db.
 
 func tampilAturan(a models.AturanKlausul) AturanTampil {
 	return AturanTampil{Jenis: a.Jenis, Anak: a.Anak, Subjenis: a.Subjenis, Medan: a.Medan, Wajib: a.Wajib,
-		Turunan: a.Turunan, Ditahan: a.Ditahan, Berkurs: a.Berkurs, Konversi: a.Konversi, Sumber: a.Sumber}
+		Turunan: a.Turunan, Ditahan: a.Ditahan, Berkurs: a.Berkurs, Konversi: a.Konversi, Sumber: a.Sumber,
+		PilihanReins: a.PilihanReins}
 }
 
 // JenisKlausul membaca grid jenis (`BrowseTreatyDesc_RD`) + aturan tiap jenis.
@@ -381,15 +385,25 @@ func (l *KlausulTCO) Daftar(ctx context.Context, pelaku inti.Pelaku, tahunID, de
 	return hasil, nil
 }
 
-// namaReinsType memeriksa ID jenis reasuransi di daftar tersaring tiket 02 -
-// daftar pilihan form klausul [keputusan work owner 29-09-2026] (OQ-TCO-15, ditutup).
-func (l *KlausulTCO) namaReinsType(ctx context.Context, id string) (string, error) {
-	daftar, err := l.jenis.DaftarNonLife(ctx)
+// namaReinsType memeriksa ID jenis reasuransi di daftar pilihan jenisnya:
+// bawaan daftar tersaring tiket 02 [keputusan work owner 29-09-2026]
+// (OQ-TCO-15, ditutup); anak Treaty Limit - porsi + induknya (`induk`)
+// [keputusan work owner 30-09-2026].
+func (l *KlausulTCO) namaReinsType(ctx context.Context, a models.AturanKlausul, id, induk string) (string, error) {
+	var daftar []repository.JenisReasuransiTCO
+	var err error
+	kosong := ErrMasterJenisReasuransiKosong
+	if a.PilihanReins == models.PilihanReinsAnakTreatyLimit {
+		daftar, err = l.jenis.DaftarAnakTreatyLimit(ctx, induk)
+		kosong = ErrPilihanAnakTreatyLimitKosong
+	} else {
+		daftar, err = l.jenis.DaftarNonLife(ctx)
+	}
 	if err != nil {
 		return "", err
 	}
 	if len(daftar) == 0 {
-		return "", ErrMasterJenisReasuransiKosong
+		return "", kosong
 	}
 	for _, j := range daftar {
 		if j.ID == id {
@@ -564,7 +578,7 @@ func (l *KlausulTCO) lengkapiDariMaster(ctx context.Context, a models.AturanKlau
 	}
 	var err error
 	if punya(models.MedanReinsTypeID) && k.ReinsTypeID != "" {
-		if k.ReinsTypeName, err = l.namaReinsType(ctx, k.ReinsTypeID); err != nil {
+		if k.ReinsTypeName, err = l.namaReinsType(ctx, a, k.ReinsTypeID, k.ParentReinsTypeID); err != nil {
 			return err
 		}
 	}

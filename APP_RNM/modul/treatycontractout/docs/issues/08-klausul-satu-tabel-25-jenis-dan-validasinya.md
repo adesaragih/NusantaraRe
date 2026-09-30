@@ -288,3 +288,30 @@ memegang isian; menutup popup membuang isian yang belum disimpan jenis itu. Nila
 `PctMe`, `CoIns_Min`, `CoIns_Max`, `TreatyLimit`), Total Pct, dan kurs tampil berpemisah ribuan (`formatNumber`,
 `DESIMAL_TAK_DIBATASI`); catatan "dihitung server" tidak tampil. Uji: `PanelKlausulTahun.test.ts`
 (`alihJenisTunggal`, popup, satu grid), `PanelJenisKlausul.test.ts` (`tampilMedanKlausul`).
+
+## ⛔ Keputusan work owner bertanggal — 30-09-2026 (ReinsType anak Treaty Limit)
+
+*Permintaan: "coba perbaiki reinstype pada treatylimit. ikuti xml nya aja". Jawaban: "12 jenis porsi + induknya".*
+
+**Cacat.** Pilihan `ReinsTypeID` baris anak Treaty Limit memakai daftar induk tiket 02 (RD
+`BrowseReinsuranceType_RD_Old_Ljt_id_isnotnull`), dan simpan menolak ID di luarnya. Padahal XML anak berbeda:
+`GridTreatyArrTreatyLimitList.xml` b2892 `pxAutoComplete` berdaftar `ReinsTypeList.pxResults` (b2981) dari
+pre-activity `TreatyContractSetReinsTypeList` (b2975) — tampil `.CARI2`, ID `.CARI1` (b3019) — **satu-satunya** grid
+klausul bersumber begitu (anak jenis lain `D_EnumerationList`, induk semuanya RD tadi). Aktivitas itu **tidak diekspor**.
+`[data DEV 30-09-2026 — GET baca-saja lewat backend lokal]`: 118 dari 120 baris anak Treaty Limit ber-ReinsType QS (R/I)
+10004, QS (OR) 10028, SPL (OR) 10248, SPL (RI) 10249 — keempatnya di antara dua belas awalan yang RD induk singkirkan; dua
+baris sisanya ORS 10007 di bawah induk ORS. Akibatnya Edit anak menampilkan ReinsType kosong dan simpan ditolak 422.
+
+**Keputusan.** Pilihan anak Treaty Limit = baris `REINSURANCETYPE` Flag `active` yang **berawalan** salah satu dari dua
+belas awalan (StartsWith — pelengkap tepat NotStartsWith RD induk, tanpa saringan Type) **ditambah ReinsType induknya
+sendiri**. Induk Treaty Limit dan anak jenis lain tidak berubah (OQ-TCO-15).
+
+**Yang dibangun.**
+- models `AturanKlausul.PilihanReins` = `anak-treaty-limit` pada `TreatyLimitChild` (dikirim ke layar lewat `AturanTampil`).
+- repository `LolosSaringanAnakTreatyLimitTCO` (tabel kebenaran) + `DaftarAnakTreatyLimit` (SQL bind: `FLAG = :1 AND
+  (ID = :2 OR ID LIKE :3 … :14)`, urut `NOTE, ID`).
+- services `JenisReasuransiTreaty.DaftarAnakTreatyLimit` (induk wajib; kosong = `ErrPilihanAnakTreatyLimitKosong`, 503);
+  simpan anak Treaty Limit memeriksa ID di daftar anak.
+- handler `GET /api/treaty-contract-out/jenis-reasuransi/anak-treaty-limit?induk=`.
+- frontend: ReinsType induk dan anak Treaty Limit memakai `PilihSaring` (XML `pxAutoComplete`, dicari pada nama; anak
+  menampilkan ID sebagai keterangan — `.CARI1` pyShow true); jenis lain tetap dropdown.

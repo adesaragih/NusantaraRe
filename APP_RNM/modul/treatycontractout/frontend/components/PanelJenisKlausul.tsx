@@ -27,6 +27,7 @@ import {
   ambilKursTahun,
   cariPilihanKlausul,
   konversiKurs,
+  PILIHAN_REINS_ANAK_TREATY_LIMIT,
   simpanKlausul,
   type AturanKlausul,
   type DaftarKlausul,
@@ -38,6 +39,7 @@ import {
 } from '../api'
 import { Field, Gagal, Kosong, Memuat, Pilih } from '../../../../inti/frontend/components/ui/dasar'
 import PilihJenisReasuransi from './PilihJenisReasuransi'
+import PilihJenisReasuransiSaring from './PilihJenisReasuransiSaring'
 
 /** Label medan: penimpaan per jenis/subjenis, lalu bawaan, lalu nama medan. */
 export function labelMedan(a: Pick<AturanKlausul, 'jenis' | 'subjenis'>, medan: string): string {
@@ -118,15 +120,29 @@ export function rencanaKonversi(
   return null
 }
 
+/**
+ * Pemilih ReinsTypeID satu aturan. Treaty Limit ikut XML: `pxAutoComplete` di
+ * grid induk (`GridTreatyArrangementTreatyLimit.xml` b3025, daftar induk) dan
+ * anak (`GridTreatyArrTreatyLimitList.xml` b2892, porsi + induknya — dari
+ * penanda aturan `pilihanReins`). Jenis lain: dropdown daftar induk tiket 02.
+ */
+export function pemilihReinsType(a: AturanKlausul): 'saring-induk' | 'saring-anak' | 'dropdown' {
+  if (a.pilihanReins === PILIHAN_REINS_ANAK_TREATY_LIMIT) return 'saring-anak'
+  return a.jenis === 'TreatyLimit' ? 'saring-induk' : 'dropdown'
+}
+
 function FormMedan({
   tahunID,
   aturan,
   form,
+  induk,
   onUbah,
 }: {
   tahunID: string
   aturan: AturanKlausul
   form: FormKlausul
+  /** ReinsTypeID induk (baris anak) atau '00'. */
+  induk: string
   onUbah: (medan: string, nilai: string) => void
 }) {
   const [cari, setCari] = useState('')
@@ -152,7 +168,19 @@ function FormMedan({
       {aturan.medan.map((m) => {
         const label = labelMedan(aturan, m)
         if (m === 'ReinsTypeID') {
-          return <PilihJenisReasuransi key={m} label={label} value={form.medan[m] ?? ''} onChange={(v) => onUbah(m, v)} />
+          const pemilih = pemilihReinsType(aturan)
+          if (pemilih === 'dropdown') {
+            return <PilihJenisReasuransi key={m} label={label} value={form.medan[m] ?? ''} onChange={(v) => onUbah(m, v)} />
+          }
+          return (
+            <PilihJenisReasuransiSaring
+              key={m}
+              label={label}
+              value={form.medan[m] ?? ''}
+              onChange={(v) => onUbah(m, v)}
+              anakTreatyLimitDari={pemilih === 'saring-anak' ? induk : undefined}
+            />
+          )
         }
         if (m === 'ID_Occupation' || m === 'ID_Clause') {
           const master = m === 'ID_Occupation' ? 'occupation' : 'clause'
@@ -277,6 +305,7 @@ function GridAturan({
             tahunID={tahunID}
             aturan={aturan}
             form={form}
+            induk={induk}
             onUbah={(m, v) => {
               setForm((f) => (f === null ? f : { ...f, medan: { ...f.medan, [m]: v } }))
             }}

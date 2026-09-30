@@ -111,7 +111,22 @@ type AturanKlausul struct {
 	Konversi string
 	// Sumber - aktivitas Pega VERBATIM.
 	Sumber string
+	// PilihanReins - sumber pilihan `ReinsTypeID`: kosong = daftar jenis
+	// reasuransi tersaring tiket 02 (RD induk, OQ-TCO-15);
+	// `PilihanReinsAnakTreatyLimit` = porsi + induknya.
+	PilihanReins string
 }
+
+// PilihanReinsAnakTreatyLimit - ReinsType baris anak Treaty Limit dipilih dari
+// dua belas jenis porsi + ReinsType induknya [keputusan work owner 30-09-2026].
+//
+// `[terverifikasi]` `GridTreatyArrTreatyLimitList.xml` b2892-b3019: SATU-
+// SATUNYA grid klausul yang ReinsType-nya tidak dari RD induk maupun
+// `D_EnumerationList`, melainkan `ReinsTypeList.pxResults` dari pre-activity
+// `TreatyContractSetReinsTypeList` - aktivitas yang tidak diekspor. Isinya
+// diputuskan dari data DEV (118/120 anak berporsi, 2 ORS di bawah ORS);
+// saringannya `repository.LolosSaringanAnakTreatyLimitTCO`.
+const PilihanReinsAnakTreatyLimit = "anak-treaty-limit"
 
 var (
 	medanReinsRpUsd = []string{MedanReinsTypeID, MedanLine, MedanRp, MedanUsd}
@@ -141,6 +156,12 @@ func induk(jenis, desc, sumber string) AturanKlausul {
 		Turunan: turunanIndukKurs, KunciDobel: kunciReins, Berkurs: true, Konversi: KonversiRpKeUsd, Sumber: sumber}
 }
 
+// denganPilihanReins memasang sumber pilihan ReinsTypeID yang bukan bawaan.
+func denganPilihanReins(a AturanKlausul, pilihan string) AturanKlausul {
+	a.PilihanReins = pilihan
+	return a
+}
+
 func anak(jenis, desc, sumber string, peringatan bool) AturanKlausul {
 	return AturanKlausul{Jenis: jenis, DescID: desc, Anak: true, Medan: medanAnak, Wajib: wajibAnak,
 		Turunan: turunanAnak, KunciDobel: kunciReins, BatasTotalAnak: true, PeringatanSpreading: peringatan,
@@ -150,7 +171,8 @@ func anak(jenis, desc, sumber string, peringatan bool) AturanKlausul {
 // AturanKlausulTCO - SELURUH jenis. Satu tempat, di kode (AC 34).
 var AturanKlausulTCO = []AturanKlausul{
 	induk("TreatyLimit", DescTreatyLimit, "SaveTreatyArrTreatyLimit_Act"),
-	anak("TreatyLimitChild", DescTreatyLimit, "SaveTreatyArrTreatyLimitChild_Act", true),
+	denganPilihanReins(anak("TreatyLimitChild", DescTreatyLimit, "SaveTreatyArrTreatyLimitChild_Act", true),
+		PilihanReinsAnakTreatyLimit),
 	{Jenis: "Portfolio", DescID: DescPortfolio, Medan: []string{MedanMethod},
 		// Bentuk penyimpanan daftar bersarangnya juga masih OQ - tidak disebut di layar.
 		Ditahan: fmt.Sprintf(alasanDitahan, "Portfolio"),

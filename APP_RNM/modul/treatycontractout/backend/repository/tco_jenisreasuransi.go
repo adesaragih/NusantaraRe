@@ -179,3 +179,92 @@ func (m *MasterJenisReasuransi) DaftarNonLife(ctx context.Context) ([]JenisReasu
 	}
 	return out, rows.Err()
 }
+
+// ---------------------------------------------------------------------------
+// Anak Treaty Limit - `Show Child` `GridTreatyArrTreatyLimitList.xml`.
+//
+// `[terverifikasi]` Grid anak TIDAK memakai RD induk: sel ReinsType b2892
+// `pxAutoComplete` berdaftar `ReinsTypeList.pxResults` (b2981) yang diisi
+// pre-activity `TreatyContractSetReinsTypeList` (b2975), tampil `.CARI2`,
+// ID `.CARI1` -> `InputTreatyArrTreatyLimitChild.ReinsTypeID` (b3019).
+// Satu-satunya grid klausul bersumber begitu; anak jenis lain memakai
+// `D_EnumerationList`. ⛔ Aktivitas itu TIDAK ada di korpus.
+//
+// `[data DEV 30-09-2026 - GET baca-saja lewat backend lokal]`: 118 dari 120
+// baris anak Treaty Limit ber-ReinsType QS (R/I) 10004, QS (OR) 10028,
+// SPL (OR) 10248, SPL (RI) 10249 - keempatnya di antara dua belas awalan yang
+// RD induk singkirkan; dua baris sisanya ORS 10007 di bawah induk ORS 10007.
+//
+// `[keputusan work owner 30-09-2026]` "12 jenis porsi + induknya": pilihan
+// anak = baris Flag active yang BERAWALAN salah satu dari dua belas awalan
+// (StartsWith - pelengkap tepat NotStartsWith induk, tanpa saringan Type),
+// ditambah ReinsType induknya sendiri.
+// ---------------------------------------------------------------------------
+
+// LolosSaringanAnakTreatyLimitTCO adalah tabel kebenaran pilihan anak Treaty
+// Limit, di Go - acuan SQL di bawah. `induk` kosong = porsi saja.
+func LolosSaringanAnakTreatyLimitTCO(id, flag, induk string) bool {
+	if flag != FlagJenisReasuransiAktif {
+		return false
+	}
+	if induk != "" && id == induk {
+		return true
+	}
+	for _, awalan := range BlacklistJenisReasuransiNonLife {
+		if strings.HasPrefix(id, awalan) {
+			return true
+		}
+	}
+	return false
+}
+
+// sqlJenisReasuransiAnakTreatyLimitTCO merakit pembacaan pilihan anak.
+//
+// Bind: :1 flag; :2 ID induk; :3-:14 awalan porsi berakhiran '%'. Urutan
+// `NOTE ASC, ID ASC` sama dengan daftar induk.
+func sqlJenisReasuransiAnakTreatyLimitTCO(tabel string) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "SELECT ID, NOTE, TYPE FROM %s\n WHERE FLAG = :1\n   AND (ID = :2", tabel)
+	for i := range BlacklistJenisReasuransiNonLife {
+		fmt.Fprintf(&b, "\n        OR ID LIKE :%d", 3+i)
+	}
+	b.WriteString(")\n ORDER BY NOTE ASC, ID ASC")
+	return b.String()
+}
+
+// argJenisReasuransiAnakTreatyLimitTCO menyusun argumen bind dalam urutan yang sama.
+func argJenisReasuransiAnakTreatyLimitTCO(induk string) []any {
+	arg := []any{FlagJenisReasuransiAktif, induk}
+	for _, awalan := range BlacklistJenisReasuransiNonLife {
+		arg = append(arg, awalan+"%")
+	}
+	return arg
+}
+
+// DaftarAnakTreatyLimit membaca pilihan ReinsType baris anak Treaty Limit di
+// bawah induk `induk`. Daftar kosong dikembalikan APA ADANYA (services yang
+// memutuskan).
+func (m *MasterJenisReasuransi) DaftarAnakTreatyLimit(ctx context.Context, induk string) ([]JenisReasuransiTCO, error) {
+	tabel, err := m.db.Qualify(MasterJenisReasuransiTCO)
+	if err != nil {
+		return nil, err
+	}
+	q := sqlJenisReasuransiAnakTreatyLimitTCO(tabel)
+	if err := db.PeriksaSQL(q); err != nil {
+		return nil, err
+	}
+	rows, err := bacaTCO(ctx, m.db).QueryContext(ctx, q, argJenisReasuransiAnakTreatyLimitTCO(induk)...)
+	if err != nil {
+		return nil, fmt.Errorf("repository: reading Treaty Limit child reinsurance types: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	var out []JenisReasuransiTCO
+	for rows.Next() {
+		var id, note, tipe sql.NullString
+		if err := rows.Scan(&id, &note, &tipe); err != nil {
+			return nil, fmt.Errorf("repository: reading Treaty Limit child reinsurance types: %w", err)
+		}
+		out = append(out, JenisReasuransiTCO{ID: id.String, Note: note.String, Tipe: tipe.String})
+	}
+	return out, rows.Err()
+}
