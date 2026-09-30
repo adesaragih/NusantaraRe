@@ -3,7 +3,7 @@
 
 import { useState } from 'react'
 
-import type { PropsRute } from '../../../inti/frontend/modul'
+import type { PropsRute, RuteModul } from '../../../inti/frontend/modul'
 import type { HalamanKomite } from './menu'
 import InboxKomite from './pages/InboxKomite'
 import KasusKomite from './pages/KasusKomite'
@@ -28,3 +28,6 @@ export function RuteKomite({ halaman, masuk }: PropsRute<HalamanKomite>) {
     </>
   )
 }
+
+/** Rute modul ini untuk perakit `frontend/daftar.ts` - nama ekspor sama di setiap modul. */
+export const RUTE_MODUL: RuteModul<HalamanKomite> = RuteKomite

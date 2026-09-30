@@ -20,7 +20,8 @@ import (
 func TestRuteTreatyContractOutTerdaftarSatuBaris(t *testing.T) {
 	// Refactor bentuk B (30-09-2026): pendaftar modul kini dipanggil
 	// `modul/treatycontractout/backend/modul.go` (paket 6: `cmd/api` merakit modul AKTIF dari
-	// daftar), bukan `internal/handlers.Router`. Yang dijaga tetap sama: SATU
+	// daftar), bukan `internal/handlers.Router`. Struktur tim satu folder per modul: daftarnya
+	// `inti/backend/daftar` (bangkitan) dan perakit `inti/backend/perakit.go`. Yang dijaga tetap sama: SATU
 	// sentuhan di titik perakitan, dan nol rute modul ini di luar
 	// `rute_treaty_contract_out.go`.
 	rakit, err := os.ReadFile("../modul.go")
@@ -30,7 +31,8 @@ func TestRuteTreatyContractOutTerdaftarSatuBaris(t *testing.T) {
 	if strings.Count(string(rakit), "handlers.DaftarkanRute(mux, m.svc, m.stubPelaku)") != 1 {
 		t.Error("modul.go harus memanggil DaftarkanRute modul ini tepat sekali")
 	}
-	for _, lain := range []string{"../modul.go", "../../../daftar.go", "../../../../cmd/api/main.go",
+	for _, lain := range []string{"../modul.go", "../../../../inti/backend/daftar/daftar.go",
+		"../../../../inti/backend/perakit.go", "../../../../cmd/api/main.go",
 		"../../../../cmd/api/rakit.go", "../../../../modul/claimlife/backend/handlers/handlers.go"} {
 		isi, err := os.ReadFile(lain)
 		if err != nil {

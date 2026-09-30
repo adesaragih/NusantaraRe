@@ -3,11 +3,11 @@ import { join } from 'node:path'
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { AKAR_APLIKASI } from '../../../inti/frontend/uji/sumber'
-import { MODUL } from '../../../inti/frontend/labels'
-import { kartuModul } from '../Beranda'
-import { ambilModulAktif } from '../../../inti/frontend/klien'
-import { daftarPalet, susunMenu, type MenuTabel } from '../../../inti/frontend/lib/daftarMenu'
+import { AKAR_APLIKASI } from '../inti/frontend/uji/sumber'
+import { FOLDER_KORPUS } from './katalogKorpus'
+import { kartuModul } from './Beranda'
+import { ambilModulAktif } from '../inti/frontend/klien'
+import { daftarPalet, susunMenu, type MenuTabel } from '../inti/frontend/lib/daftarMenu'
 import { ENTRI_MENU, halamanAktif, MODUL_BACKEND, MODUL_FRONTEND } from './daftar'
 
 // MODUL_AKTIF di frontend - refactor bentuk B paket 6.
@@ -17,8 +17,8 @@ import { ENTRI_MENU, halamanAktif, MODUL_BACKEND, MODUL_FRONTEND } from './dafta
 // menampilkan SEMUA seperti sebelum MODUL_AKTIF ada, dan nama modul di
 // frontend adalah nama yang sama dengan `const Nama` di `modul/*/modul.go`.
 
-const SRC = join(__dirname, '..')
-const AKAR_MODUL = join(SRC, '..', '..', 'modul')
+const SRC = __dirname
+const AKAR_MODUL = join(AKAR_APLIKASI, 'modul')
 
 /**
  * Pohon `GET /api/menu` seperti yang backend kirim untuk `aktif`: satu kelompok
@@ -30,7 +30,7 @@ function tabel(aktif: readonly string[]): MenuTabel {
     golongan: [
       {
         kode: 'KLAIM',
-        kelompok: Object.values(MODUL).map((nama) => {
+        kelompok: Object.values(FOLDER_KORPUS).map((nama) => {
           const milik = ENTRI_MENU.filter((e) => e.kelompok === nama)
           const modul = milik[0]?.pemilik ?? nama.toLowerCase().replace(/ /g, '')
           return {
@@ -56,10 +56,10 @@ describe('menu modul nonaktif hilang', () => {
   it('sidebar: kelompok modul nonaktif hilang, sisanya utuh', () => {
     const s = susunMenu(tabel(['claimlife']), ENTRI_MENU)
     const nama = s.golongan.flatMap((g) => g.kelompok.map((k) => k.nama))
-    for (const lain of [MODUL.premiumListLife, MODUL.komiteClaimLife, MODUL.treatyContractOut]) {
+    for (const lain of [FOLDER_KORPUS.premiumListLife, FOLDER_KORPUS.komiteClaimLife, FOLDER_KORPUS.treatyContractOut]) {
       expect(nama).not.toContain(lain)
     }
-    const claimLife = s.golongan[0]?.kelompok.find((k) => k.nama === MODUL.claimLife)
+    const claimLife = s.golongan[0]?.kelompok.find((k) => k.nama === FOLDER_KORPUS.claimLife)
     expect(claimLife?.butir.map((b) => b.halaman)).toEqual(['inbox', 'register'])
     // Kelompok yang memang belum dimigrasi tetap berdiri - ia bukan modul nonaktif.
     const belum = s.golongan.flatMap((g) => g.kelompok.filter((k) => !k.dimigrasi))
@@ -77,7 +77,7 @@ describe('menu modul nonaktif hilang', () => {
   it('Beranda: kartu modul nonaktif hilang, yang belum dimigrasi tetap', () => {
     // Tombol kartu Beranda MEMBUKA modul - ia menu juga.
     const kartu = kartuModul(['komiteclaimlife'])
-    expect(kartu.filter((k) => k.tujuan !== null).map((k) => k.nama)).toEqual([MODUL.komiteClaimLife])
+    expect(kartu.filter((k) => k.tujuan !== null).map((k) => k.nama)).toEqual([FOLDER_KORPUS.komiteClaimLife])
     expect(kartu.filter((k) => k.tujuan === null)).toHaveLength(16)
     expect(kartuModul(null)).toEqual(kartuModul())
     // Cacah antrean Claim Life tidak diminta bila modul itu nonaktif.
@@ -153,7 +153,7 @@ describe('GET /api/modul-aktif', () => {
     await expect(ambilModulAktif()).resolves.toEqual(['claimlife', 'komiteclaimlife'])
     const panggil = vi.mocked(fetch).mock.calls[0]
     expect(String(panggil?.[0])).toContain('/api/modul-aktif')
-    const rakit = readFileSync(join(SRC, '..', '..', 'cmd', 'api', 'rakit.go'), 'utf8')
+    const rakit = readFileSync(join(AKAR_APLIKASI, 'cmd', 'api', 'rakit.go'), 'utf8')
     expect(rakit).toContain('mux.HandleFunc("GET /api/modul-aktif"')
   })
 
@@ -173,7 +173,7 @@ describe('GET /api/modul-aktif', () => {
     // meneruskan daftar modul aktif ke rute menu).
     const shell = readFileSync(join(AKAR_APLIKASI, 'inti', 'frontend', 'components', 'Shell.tsx'), 'utf8')
     expect(shell).not.toContain('modulAktif')
-    const rakit = readFileSync(join(SRC, '..', '..', 'cmd', 'api', 'rakit.go'), 'utf8')
+    const rakit = readFileSync(join(AKAR_APLIKASI, 'cmd', 'api', 'rakit.go'), 'utf8')
     expect(rakit).toContain('mux.HandleFunc("GET /api/menu", ruteMenu(dasar, aktif, stubPelaku))')
     // Dan rute modul nonaktif tidak dipasang (paket 7: App merakit dari modul),
     // dan halaman modul yang ternyata nonaktif kembali ke Beranda.

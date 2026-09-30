@@ -3,7 +3,7 @@ package main
 // Perakitan mux aplikasi dari modul yang AKTIF - refactor bentuk B.
 //
 // Untuk apa berkas ini: `cmd/api` tidak mengenal isi modul. Ia menerima daftar
-// modul terdaftar (`modul.Rakit`), menyaringnya menurut MODUL_AKTIF, lalu
+// modul terdaftar (`daftar.Rakit`), menyaringnya menurut MODUL_AKTIF, lalu
 // hanya memasang modul yang lolos - rute dan pekerja latarnya. Modul yang
 // nonaktif tidak punya rute sama sekali (jawabannya 404 dari mux), dan
 // frontend menyembunyikan menunya dari GET /api/modul-aktif.
@@ -28,7 +28,7 @@ import (
 // di env yang diam-diam mematikan satu modul akan terbaca "modul itu memang
 // tidak ada", dan tidak seorang pun tahu sebabnya.
 //
-// `namaLama` (`modul.NamaLama`) memetakan nama modul sebelum tabel nama modul
+// `namaLama` (`daftar.NamaLama`) memetakan nama modul sebelum tabel nama modul
 // 30-09-2026 ke namanya kini: env yang masih memakainya DITOLAK dengan kalimat
 // yang menyebut nama barunya - menerima diam-diam membuat dua nama untuk satu
 // modul, menolak tanpa sebab membuat orang menebak.

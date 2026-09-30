@@ -4,8 +4,8 @@ import { bentukMenuTabel, entriAplikasi, HALAMAN_BERANDA, susunMenu, type EntriM
 
 // Menu dari tabel M_NAV_MENU (brief menu 30-09-2026): pohon `GET /api/menu`
 // DIPOTONG dengan rute frontend yang benar-benar terdaftar. Rute di sini
-// tiruan - `inti/` tidak mengenal modul; uji dua arah dengan `modul/daftar.ts`
-// ada di `modul/daftar.menuTabel.test.ts`.
+// tiruan - `inti/` tidak mengenal modul; uji dua arah dengan `frontend/daftar.ts`
+// ada di `frontend/daftar.menuTabel.test.ts`.
 
 type H = 'beranda' | 'inbox' | 'register' | 'tco-tahun' | 'rute-tanpa-baris'
 

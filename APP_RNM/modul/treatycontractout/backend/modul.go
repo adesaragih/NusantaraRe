@@ -1,4 +1,8 @@
-// Package treatycontractout merakit modul Treaty Contract Out.
+// Package backend merakit modul Treaty Contract Out (`treatycontractout`).
+//
+// Nama paketnya `backend` - sama di setiap modul (nama folder); daftar modul
+// bangkitan mengimpornya dengan alias nama modul. Sejak struktur tim satu
+// folder per modul (30-09-2026) modul ini diserahkan lewat `Pendaftaran()`.
 //
 // Refactor bentuk B (30-09-2026): setiap modul punya satu berkas perakitan
 // (`modul.go`) yang menyerahkan miliknya kepada `cmd/api`: rute HTTP-nya dan
@@ -12,12 +16,32 @@ import (
 	"time"
 
 	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/config"
 	"nusantarare/modul/treatycontractout/backend/handlers"
 	"nusantarare/modul/treatycontractout/backend/services"
 )
 
 // Nama pengenal modul ini di MODUL_AKTIF dan di GET /api/modul-aktif.
 const Nama = "treatycontractout"
+
+// Pendaftaran menyerahkan modul ini kepada perakit (`inti/backend/daftar`,
+// berkas bangkitan `modul_treatycontractout_gen.go`).
+//
+// Nol kontrak lintas modul, nol migrasi (tco4: tabel warisan). Nama lama
+// `treaty` ditolak MODUL_AKTIF dengan kalimat yang menyebut nama ini.
+func Pendaftaran() inti.Pendaftaran {
+	return inti.Pendaftaran{
+		Nama:     Nama,
+		NamaLama: []string{"treaty"},
+		Bangun: func(p *inti.Perakitan) (inti.Modul, error) {
+			cfg := p.Config()
+			svc := services.DariDasar(p.Dasar()).
+				// OQ-TCO-08: bawaan stub; ⛔ garam tidak pernah dicetak.
+				DenganPenyimpananLampiranTCO(cfg.PelaksanaStorage == config.PelaksanaStorageNyata, cfg.StorageTokenSalt)
+			return Baru(svc, cfg.AuthStub, cfg.IntervalPekerjaLampiranTCO, cfg.PelaksanaStorage, p.Catat), nil
+		},
+	}
+}
 
 // Modul adalah perakitan modul Treaty Contract Out untuk `cmd/api` -
 // `inti.Modul`.
@@ -32,7 +56,7 @@ type Modul struct {
 	catat     func(string)
 }
 
-// Baru merakit modul di atas Service yang sudah disambung `modul.Rakit`.
+// Baru merakit modul di atas Service yang sudah disambung (`Pendaftaran`).
 func Baru(svc *services.Service, stubPelaku bool, interval time.Duration, pelaksana string,
 	catat func(string)) Modul {
 	return Modul{svc: svc, stubPelaku: stubPelaku, interval: interval, pelaksana: pelaksana, catat: catat}

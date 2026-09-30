@@ -19,8 +19,8 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/config"
+	"nusantarare/inti/backend/daftar"
 	"nusantarare/inti/backend/migrasi"
-	"nusantarare/modul"
 )
 
 // ruteContoh - satu rute GET milik setiap modul terdaftar.
@@ -33,12 +33,22 @@ var ruteContoh = map[string]string{
 
 func muxUji(t *testing.T, diminta []string) (http.Handler, []inti.Modul) {
 	t.Helper()
-	terdaftar := modul.Rakit(inti.NewDasar(nil), config.Config{}, func(string) {})
-	aktif, err := pilihModulAktif(terdaftar, modul.NamaLama, diminta)
+	terdaftar := modulTerdaftar(t)
+	aktif, err := pilihModulAktif(terdaftar, daftar.NamaLama(), diminta)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return rakitMux(inti.NewDasar(nil), terdaftar, aktif, false), aktif
+}
+
+// modulTerdaftar - setiap modul terdaftar, dirakit tanpa Oracle.
+func modulTerdaftar(t *testing.T) []inti.Modul {
+	t.Helper()
+	r, err := daftar.Rakit(inti.NewDasar(nil), config.Config{}, func(string) {})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return r.Modul
 }
 
 func kode(mux http.Handler, jalur string) int {
@@ -133,29 +143,30 @@ func TestRuteMenuTerpasangDanGagalTerang(t *testing.T) {
 }
 
 func TestModulAktifTakDikenalDitolak(t *testing.T) {
-	terdaftar := modul.Rakit(inti.NewDasar(nil), config.Config{}, func(string) {})
-	_, err := pilihModulAktif(terdaftar, modul.NamaLama, []string{"claimlife", "klaim"})
+	terdaftar := modulTerdaftar(t)
+	namaLama := daftar.NamaLama()
+	_, err := pilihModulAktif(terdaftar, namaLama, []string{"claimlife", "klaim"})
 	if err == nil || !strings.Contains(err.Error(), `"klaim"`) {
 		t.Fatalf("nama tak dikenal tidak ditolak dengan menyebut namanya: %v", err)
 	}
 	// Nama lama (sebelum tabel nama modul 30-09-2026) ditolak dengan kalimat
 	// yang menyebut nama BARUnya - bukan diterima diam-diam, bukan "tak dikenal".
-	// Diperiksa atas peta YANG DIPAKAI (`modul.NamaLama`), dan setiap nama
+	// Diperiksa atas peta YANG DIPAKAI (`daftar.NamaLama`), dan setiap nama
 	// barunya wajib modul terdaftar: menyuruh operator memakai nama yang juga
 	// ditolak lebih buruk daripada tidak menjawab.
 	dikenal := map[string]bool{}
 	for _, m := range terdaftar {
 		dikenal[m.Nama()] = true
 	}
-	if len(modul.NamaLama) < 3 {
-		t.Fatalf("peta nama lama memuat %d nama, mau sekurangnya 3", len(modul.NamaLama))
+	if len(namaLama) < 3 {
+		t.Fatalf("peta nama lama memuat %d nama, mau sekurangnya 3", len(namaLama))
 	}
-	for lama, baru := range modul.NamaLama {
+	for lama, baru := range namaLama {
 		if !dikenal[baru] || dikenal[lama] {
 			t.Errorf("nama lama %q -> %q: pengganti terdaftar=%v, nama lama masih terdaftar=%v",
 				lama, baru, dikenal[baru], dikenal[lama])
 		}
-		_, err := pilihModulAktif(terdaftar, modul.NamaLama, []string{"claimlife", lama})
+		_, err := pilihModulAktif(terdaftar, namaLama, []string{"claimlife", lama})
 		if err == nil || !strings.Contains(err.Error(), "nama modul lama") ||
 			!strings.Contains(err.Error(), `"`+baru+`"`) {
 			t.Errorf("nama lama %q: galat %v, mau menyebut %q", lama, err, baru)
@@ -169,7 +180,7 @@ func TestMigrasiTetapLengkapSaatModulNonaktif(t *testing.T) {
 	if _, aktif := muxUji(t, []string{"treatycontractout"}); len(aktif) != 1 {
 		t.Fatal("prasyarat: hanya satu modul aktif")
 	}
-	langkah, err := migrasi.Daftar(false, modul.SumberMigrasi()...)
+	langkah, err := migrasi.Daftar(false, daftar.SumberMigrasi()...)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -3,7 +3,7 @@
 
 import { useState } from 'react'
 
-import type { PropsRute } from '../../../inti/frontend/modul'
+import type { PropsRute, RuteModul } from '../../../inti/frontend/modul'
 import { TAHAP_POLIS } from './api'
 import type { HalamanPremiumList } from './menu'
 import InboxPremiumList from './pages/InboxPremiumList'
@@ -52,3 +52,6 @@ export function RutePremiumList({ halaman }: PropsRute<HalamanPremiumList>) {
     </>
   )
 }
+
+/** Rute modul ini untuk perakit `frontend/daftar.ts` - nama ekspor sama di setiap modul. */
+export const RUTE_MODUL: RuteModul<HalamanPremiumList> = RutePremiumList

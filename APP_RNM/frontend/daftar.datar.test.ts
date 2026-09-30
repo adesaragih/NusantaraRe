@@ -3,9 +3,9 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { AKAR_APLIKASI } from '../../../inti/frontend/uji/sumber'
-import { MODUL } from '../../../inti/frontend/labels'
-import { butirDatar, type ButirSidebar } from '../../../inti/frontend/lib/daftarMenu'
+import { AKAR_APLIKASI } from '../inti/frontend/uji/sumber'
+import { FOLDER_KORPUS } from './katalogKorpus'
+import { butirDatar, type ButirSidebar } from '../inti/frontend/lib/daftarMenu'
 import { ENTRI_MENU } from './daftar'
 
 // Menu DATAR - [keputusan work owner 30-09-2026] untuk Treaty Contract Out:
@@ -27,17 +27,17 @@ const butir = (nama: string): ButirSidebar[] =>
 
 describe('menu datar', () => {
   it('Treaty Contract Out: satu butir, tampil datar', () => {
-    const d = butirDatar(butir(MODUL.treatyContractOut))
+    const d = butirDatar(butir(FOLDER_KORPUS.treatyContractOut))
     expect(d?.halaman).toBe('tco-tahun')
   })
   it('modul lain tetap bertingkat - penanda tidak menular', () => {
-    for (const nama of [MODUL.claimLife, MODUL.premiumListLife, MODUL.komiteClaimLife]) {
+    for (const nama of [FOLDER_KORPUS.claimLife, FOLDER_KORPUS.premiumListLife, FOLDER_KORPUS.komiteClaimLife]) {
       expect(butirDatar(butir(nama)), nama).toBeUndefined()
       expect(butir(nama).some((b) => 'datar' in b), nama).toBe(false)
     }
   })
   it('penanda diabaikan bila kelompoknya berbutir lebih dari satu', () => {
-    const t = butir(MODUL.treatyContractOut)[0]!
+    const t = butir(FOLDER_KORPUS.treatyContractOut)[0]!
     expect(butirDatar([t, { ...t, halaman: 'tco-kontrak' }])).toBeUndefined()
   })
   it('Shell merender butir datar sebagai satu tombol, tanpa KelompokMenu', () => {

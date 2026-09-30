@@ -28,10 +28,10 @@ import (
 	_ "github.com/sijms/go-ora/v2"
 
 	"nusantarare/inti/backend/config"
+	"nusantarare/inti/backend/daftar"
 	"nusantarare/inti/backend/db"
 	"nusantarare/inti/backend/kontrak"
 	"nusantarare/inti/backend/migrasi"
-	"nusantarare/modul"
 	"nusantarare/modul/claimlife/backend/repository"
 	"nusantarare/modul/premiumlistlife/backend/services"
 )
@@ -71,8 +71,8 @@ func BolehDilewati(err error) bool { return errors.Is(err, ErrTanpaOracle) }
 // Refactor bentuk B paket 8: paket ini SENGAJA mengenal semua modul - skema
 // uji adalah skema UTUH - dan karena itu satu-satunya jalur lintas modul yang
 // disahkan bagi berkas uji sebuah modul (`impor_lintas_modul_test.go`). Uji db
-// modul memanggil ini, bukan daftar `nusantarare/modul` langsung.
-func SumberMigrasi() []fs.FS { return modul.SumberMigrasi() }
+// modul memanggil ini, bukan daftar `inti/backend/daftar` langsung.
+func SumberMigrasi() []fs.FS { return daftar.SumberMigrasi() }
 
 // pastikanAman menjalankan seluruh pemeriksaan pintu masuk, dalam satu urutan.
 //
@@ -198,7 +198,7 @@ func Pasang(ctx context.Context, db *sql.DB, skema string) error {
 		return err
 	}
 	defer func() { _ = repo.Close() }()
-	if _, err := migrasi.Jalankan(ctx, repo, modul.SumberMigrasi()...); err != nil {
+	if _, err := migrasi.Jalankan(ctx, repo, daftar.SumberMigrasi()...); err != nil {
 		return fmt.Errorf("skemauji: menjalankan migrasi: %w", err)
 	}
 
@@ -278,7 +278,7 @@ func Bongkar(ctx context.Context, db *sql.DB, skema string) error {
 		return err
 	}
 	defer func() { _ = repo.Close() }()
-	if _, err := migrasi.Bongkar(ctx, repo, modul.SumberMigrasi()...); err != nil {
+	if _, err := migrasi.Bongkar(ctx, repo, daftar.SumberMigrasi()...); err != nil {
 		return fmt.Errorf("skemauji: membongkar migrasi: %w", err)
 	}
 

@@ -2,7 +2,7 @@
 // per modul (30-09-2026).
 //
 // Untuk apa berkas ini: sampai 30-09-2026 seluruh kode frontend tinggal di satu
-// pohon (`frontend/src`), dan uji yang menelusuri sumber cukup naik ke sana.
+// pohon (dulu `frontend/src`), dan uji yang menelusuri sumber cukup naik ke sana.
 // Kini kode tersebar di tiga tempat - perakit `frontend/`, kerangka bersama
 // `inti/frontend/`, dan setiap `modul/<nama>/frontend/`. Penelusur yang masih
 // naik ke satu akar diam-diam MENYEMPIT: ia tetap hijau, hanya membaca lebih
@@ -34,7 +34,7 @@ export function akarSumberFrontend(): string[] {
         .map((d) => join(modul, d.name, 'frontend'))
         .filter((d) => existsSync(d))
     : []
-  return [join(AKAR_APLIKASI, 'frontend', 'src'), join(AKAR_APLIKASI, 'inti', 'frontend'), ...perModul]
+  return [join(AKAR_APLIKASI, 'frontend'), join(AKAR_APLIKASI, 'inti', 'frontend'), ...perModul]
 }
 
 /** Setiap berkas .ts/.tsx di bawah akar-akar itu, termasuk berkas uji. */

@@ -22,21 +22,22 @@
 
 import { useEffect, useState, type ReactNode } from 'react'
 
-import { BERANDA, KETERANGAN_BELUM_DIMIGRASI, MODUL, PERAN_ID } from '../../inti/frontend/labels'
-import { TAHAP } from '../../modul/claimlife/frontend/labels'
+import { BERANDA, KETERANGAN_BELUM_DIMIGRASI, PERAN_ID } from '../inti/frontend/labels'
+import { FOLDER_KORPUS } from './katalogKorpus'
+import { TAHAP } from '../modul/claimlife/frontend/labels'
 import {
   IkonBerkasCari,
   IkonJamPasir,
   IkonKotakMasuk,
   IkonPerisai,
   IkonStetoskop,
-} from '../../inti/frontend/components/ui/dasar'
-import { ambilKotakMasuk, TAHAP_NOMOR, type NomorTahap } from '../../modul/claimlife/frontend/api'
-import { pesanGalat } from '../../inti/frontend/klien'
-import { type Sesi } from '../../inti/frontend/store/sesi'
-import { modulDipasang } from '../../inti/frontend/lib/daftarMenu'
-import { NAMA_CLAIMLIFE } from '../../modul/claimlife/frontend/menu'
-import { ENTRI_MENU, halamanAktif, type Halaman } from './modul/daftar'
+} from '../inti/frontend/components/ui/dasar'
+import { ambilKotakMasuk, TAHAP_NOMOR, type NomorTahap } from '../modul/claimlife/frontend/api'
+import { pesanGalat } from '../inti/frontend/klien'
+import { type Sesi } from '../inti/frontend/store/sesi'
+import { modulDipasang } from '../inti/frontend/lib/daftarMenu'
+import { NAMA_CLAIMLIFE } from '../modul/claimlife/frontend/menu'
+import { ENTRI_MENU, halamanAktif, type Halaman } from './daftar'
 
 /** Satu tahap Claim Life beserta cacah antreannya. */
 export interface AntreanTahap {
@@ -65,7 +66,7 @@ export interface KartuModul {
  * NONAKTIF tidak tampil, seperti kelompoknya di sidebar. `null` = semua.
  */
 export function kartuModul(aktif: readonly string[] | null = null): KartuModul[] {
-  return Object.values(MODUL).flatMap((nama) => {
+  return Object.values(FOLDER_KORPUS).flatMap((nama) => {
     const milik = ENTRI_MENU.filter((e) => e.kelompok === nama)
     const pertama = milik.find((e) => halamanAktif(e.modul, aktif))
     if (milik.length > 0 && pertama === undefined) return []
@@ -146,7 +147,7 @@ export default function Beranda({
   /** Isi kolom Antrean satu modul. "—" = tidak ada angka untuk ditampilkan. */
   function antreanModul(k: KartuModul): string {
     if (k.tujuan === null) return '—'
-    if (k.nama !== MODUL.claimLife) return BERANDA.tanpaAntrean
+    if (k.nama !== FOLDER_KORPUS.claimLife) return BERANDA.tanpaAntrean
     return antrean === null ? '—' : ringkasanAntrean(antrean)
   }
 

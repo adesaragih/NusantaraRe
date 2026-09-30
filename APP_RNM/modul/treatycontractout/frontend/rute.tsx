@@ -7,7 +7,7 @@
 // Inggris di layar ini saja; label modul di `labels.ts`.
 
 import { BahasaUI } from '../../../inti/frontend/components/ui/bahasaUI'
-import type { PropsRute } from '../../../inti/frontend/modul'
+import type { PropsRute, RuteModul } from '../../../inti/frontend/modul'
 import type { HalamanTreaty } from './menu'
 import InboxTreatyContract from './pages/InboxTreatyContract'
 import InboxTreatyContractDescription from './pages/InboxTreatyContractDescription'
@@ -24,3 +24,6 @@ export function RuteTreaty({ halaman }: PropsRute<HalamanTreaty>) {
     </BahasaUI.Provider>
   )
 }
+
+/** Rute modul ini untuk perakit `frontend/daftar.ts` - nama ekspor sama di setiap modul. */
+export const RUTE_MODUL: RuteModul<HalamanTreaty> = RuteTreaty

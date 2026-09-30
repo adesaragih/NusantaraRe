@@ -3,9 +3,10 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { AKAR_APLIKASI } from '../../../inti/frontend/uji/sumber'
-import { MENU, MENU_MODUL, MODUL } from '../../../inti/frontend/labels'
-import { daftarPalet, saringPalet } from '../../../inti/frontend/lib/daftarMenu'
+import { AKAR_APLIKASI } from '../inti/frontend/uji/sumber'
+import { MENU, MENU_MODUL } from '../inti/frontend/labels'
+import { FOLDER_KORPUS } from './katalogKorpus'
+import { daftarPalet, saringPalet } from '../inti/frontend/lib/daftarMenu'
 import { ENTRI_MENU } from './daftar'
 
 // Sinkron sidebar ↔ palet — DUA ARAH, butir bg.
@@ -22,11 +23,11 @@ import { ENTRI_MENU } from './daftar'
 
 const SHELL = readFileSync(join(AKAR_APLIKASI, 'inti', 'frontend', 'components', 'Shell.tsx'), 'utf8')
 const DAFTAR_MENU = readFileSync(join(AKAR_APLIKASI, 'inti', 'frontend', 'lib', 'daftarMenu.ts'), 'utf8')
-const APP = readFileSync(join(__dirname, '..', 'App.tsx'), 'utf8')
+const APP = readFileSync(join(__dirname, 'App.tsx'), 'utf8')
 
 describe('sidebar ↔ palet, dua arah', () => {
   it('setiap entri palet punya kelompok yang Shell render', () => {
-    const kelompokSah = new Set<string>(Object.values(MODUL))
+    const kelompokSah = new Set<string>(Object.values(FOLDER_KORPUS))
     kelompokSah.add('Beranda')
     for (const e of ENTRI_MENU) {
       expect(kelompokSah.has(e.kelompok)).toBe(true)
@@ -101,7 +102,7 @@ describe('nol menu dikarang', () => {
     // satunya muncul di palet, ia dapat dibuka lewat Ctrl+K — layar yang
     // tidak ada.
     const berbutir = new Set(ENTRI_MENU.map((e) => e.kelompok))
-    const tanpaButir = Object.values(MODUL).filter((n) => !berbutir.has(n))
+    const tanpaButir = Object.values(FOLDER_KORPUS).filter((n) => !berbutir.has(n))
     expect(tanpaButir).toHaveLength(16)
     for (const nama of tanpaButir) {
       // ⛔ DIPERSEMPIT KE MAKSUDNYA 28-09-2026 (sesi Treaty Contract Out).

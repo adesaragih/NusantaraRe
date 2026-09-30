@@ -14,7 +14,7 @@ import { berkasTS, relatifAplikasi } from './uji/sumber'
 //   1. `inti/**` hanya mengimpor `inti/**` - inti tidak mengenal modul.
 //   2. `modul/X/**` hanya mengimpor `inti/**` dan `modul/X/**`. Yang mengenal
 //      semua modul hanya lapisan aplikasi: `App.tsx`, `Beranda.tsx`,
-//      `main.tsx`, dan daftar modul `modul/daftar.ts`.
+//      `main.tsx`, dan daftar modul `frontend/daftar.ts`.
 //
 // Struktur tim satu folder per modul (30-09-2026): jalur dibaca relatif
 // APP_RNM - `inti/frontend/**` adalah inti, `modul/<nama>/frontend/**` adalah
@@ -39,7 +39,7 @@ function pelanggaranLapisan(dari: string, ke: string): string | null {
   if (a === 'aplikasi') return null
   if (a === 'inti') return b === 'inti' ? null : 'inti tidak mengenal modul maupun lapisan aplikasi'
   if (b === 'inti' || b === a) return null
-  return 'modul hanya mengimpor inti/ dan dirinya sendiri; yang merakit modul hanya modul/daftar.ts dan App.tsx'
+  return 'modul hanya mengimpor inti/ dan dirinya sendiri; yang merakit modul hanya frontend/daftar.ts dan App.tsx'
 }
 
 /** Setiap impor RELATIF tiap berkas, sebagai jalur relatif APP_RNM. */
@@ -77,15 +77,15 @@ describe('lapisan frontend: inti <- modul <- aplikasi', () => {
     const kasus: [string, string, boolean][] = [
       ['modul/claimlife/frontend/pages/X.tsx', 'modul/premiumlistlife/frontend/api.ts', false],
       ['modul/komiteclaimlife/frontend/pages/X.test.ts', 'modul/claimlife/frontend/labels.ts', false],
-      ['modul/komiteclaimlife/frontend/rute.tsx', 'frontend/src/modul/daftar.ts', false],
-      ['modul/komiteclaimlife/frontend/rute.tsx', 'frontend/src/App.tsx', false],
+      ['modul/komiteclaimlife/frontend/rute.tsx', 'frontend/daftar.ts', false],
+      ['modul/komiteclaimlife/frontend/rute.tsx', 'frontend/App.tsx', false],
       ['modul/komiteclaimlife/frontend/rute.tsx', 'modul/komiteclaimlife/frontend/pages/InboxKomite.tsx', true],
       ['modul/komiteclaimlife/frontend/api.ts', 'inti/frontend/klien.ts', true],
-      ['inti/frontend/components/Shell.tsx', 'frontend/src/modul/daftar.ts', false],
+      ['inti/frontend/components/Shell.tsx', 'frontend/daftar.ts', false],
       ['inti/frontend/lib/daftarMenu.ts', 'modul/treatycontractout/frontend/labels.ts', false],
       ['inti/frontend/components/Shell.tsx', 'inti/frontend/lib/daftarMenu.ts', true],
-      ['frontend/src/modul/daftar.ts', 'modul/treatycontractout/frontend/rute.tsx', true],
-      ['frontend/src/App.tsx', 'modul/claimlife/frontend/api.ts', true],
+      ['frontend/daftar.ts', 'modul/treatycontractout/frontend/rute.tsx', true],
+      ['frontend/App.tsx', 'modul/claimlife/frontend/api.ts', true],
       // Tabrakan awalan: `komiteclaimlifex` diawali nama modul ini, tetapi modul LAIN.
       ['modul/komiteclaimlifex/frontend/api.ts', 'modul/komiteclaimlife/frontend/api.ts', false],
       // Berkas `modul/<nama>/` di LUAR frontend/ bukan kode frontend modul itu.

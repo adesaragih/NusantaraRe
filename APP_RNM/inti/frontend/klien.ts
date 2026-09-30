@@ -195,7 +195,7 @@ export async function ambilMenu(): Promise<MenuTabel> {
 /**
  * Modul yang dipasang backend - GET /api/modul-aktif, cmd/api/rakit.go
  * (refactor bentuk B, `MODUL_AKTIF`). Rute dan kartu Beranda modul yang tidak
- * disebut tidak dipasang (`modul/daftar.ts` `halamanAktif`); menunya sudah
+ * disebut tidak dipasang (`frontend/daftar.ts` `halamanAktif`); menunya sudah
  * disaring backend di GET /api/menu.
  *
  * ⛔ Bentuk yang tidak dikenal menjadi `null` (= semua menu tampil), BUKAN

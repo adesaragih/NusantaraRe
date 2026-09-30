@@ -8,7 +8,7 @@
  * # Refactor bentuk B (30-09-2026): berkas ini tidak mengenal modul
  *
  * Isi menu dirakit dari `modul/<nama>/menu.ts` oleh daftar modul aplikasi
- * (`modul/daftar.ts`, `ENTRI_MENU`) dan diteruskan `App.tsx` ke Shell. Yang
+ * (`frontend/daftar.ts`, `ENTRI_MENU`) dan diteruskan `App.tsx` ke Shell. Yang
  * tinggal di sini hanya BENTUK entri dan aturan yang sama untuk semua modul:
  * penyaring modul aktif, penurun kelompok sidebar, dan pencari palet.
  *
@@ -31,9 +31,9 @@
  * Permintaan work owner (`PROMPT-MENU-DARI-TABEL-M_NAV_MENU.md`): menu dibuat
  * dari tabel, supaya kelak dapat disaring per akun. `GET /api/menu` mengirim
  * pohon GROUPMENU → kelompok → butir; `susunMenu` di bawah MEMOTONGNYA dengan
- * rute yang benar-benar terdaftar di `modul/daftar.ts`. Keduanya harus
+ * rute yang benar-benar terdaftar di `frontend/daftar.ts`. Keduanya harus
  * sepakat: baris tabel tanpa rute tidak tampil (dicatat di konsol), rute
- * tanpa baris tabel juga tidak - dan `modul/daftar.menuTabel.test.ts`
+ * tanpa baris tabel juga tidak - dan `frontend/daftar.menuTabel.test.ts`
  * menjaganya dua arah terhadap isi awal migrasi 900.
  */
 

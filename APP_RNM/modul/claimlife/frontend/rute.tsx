@@ -3,7 +3,7 @@
 
 import { useState } from 'react'
 
-import type { PropsRute } from '../../../inti/frontend/modul'
+import type { PropsRute, RuteModul } from '../../../inti/frontend/modul'
 import type { HalamanClaimLife } from './menu'
 import InboxClaimLife from './pages/InboxClaimLife'
 import KlaimLife from './pages/KlaimLife'
@@ -47,3 +47,6 @@ export function RuteClaimLife({ halaman, masuk, onPindah }: PropsRute<HalamanCla
     </>
   )
 }
+
+/** Rute modul ini untuk perakit `frontend/daftar.ts` - nama ekspor sama di setiap modul. */
+export const RUTE_MODUL: RuteModul<HalamanClaimLife> = RuteClaimLife

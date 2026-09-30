@@ -5,7 +5,8 @@ package backend
 // Untuk apa berkas ini: `M_NAV_MENU` (900, `PROMPT-MENU-DARI-TABEL-M_NAV_MENU.md`)
 // bukan milik satu modul - ia memuat menu SEMUA modul, termasuk yang belum
 // dimigrasi. Karena itu migrasinya tinggal di `inti/backend/migrations/`, dan
-// `modul.SumberMigrasi` mengumpulkannya bersama folder migrasi setiap modul.
+// `daftar.SumberMigrasi` (`inti/backend/daftar`) mengumpulkannya bersama
+// folder migrasi setiap modul.
 
 import (
 	"embed"

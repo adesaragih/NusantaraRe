@@ -11,8 +11,8 @@ package skemauji
 import (
 	"testing"
 
+	"nusantarare/inti/backend/daftar"
 	"nusantarare/inti/backend/migrasi"
-	"nusantarare/modul"
 )
 
 // kolomMenurutDDL - kolom tiap tabel menurut CREATE TABLE dan ALTER ... ADD
@@ -20,7 +20,7 @@ import (
 func kolomMenurutDDL(t *testing.T) map[string][]string {
 	t.Helper()
 	hasil := map[string][]string{}
-	langkah, err := migrasi.Daftar(false, modul.SumberMigrasi()...)
+	langkah, err := migrasi.Daftar(false, daftar.SumberMigrasi()...)
 	if err != nil {
 		t.Fatal(err)
 	}

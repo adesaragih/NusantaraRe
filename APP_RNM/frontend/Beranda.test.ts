@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { BERANDA, KETERANGAN_BELUM_DIMIGRASI, MODUL } from '../../inti/frontend/labels'
+import { BERANDA, KETERANGAN_BELUM_DIMIGRASI } from '../inti/frontend/labels'
+import { FOLDER_KORPUS } from './katalogKorpus'
 import { kartuModul, ringkasanAntrean, type AntreanTahap } from './Beranda'
 
 // Uji Beranda — butir bg.
@@ -9,7 +10,7 @@ describe('kartuModul', () => {
   it('dua puluh kartu, satu per kelompok MODUL', () => {
     // 18 sejak Treaty Contract Out ditambahkan (28-09-2026).
     // 20 sejak brief menu M_NAV_MENU (30-09-2026): Treaty In dan Treaty In
-    // Adjustment - kedua folder korpus terakhir - masuk MODUL.
+    // Adjustment - kedua folder korpus terakhir - masuk FOLDER_KORPUS (dulu MODUL).
     expect(kartuModul()).toHaveLength(20)
   })
 
@@ -19,13 +20,13 @@ describe('kartuModul', () => {
     const kartu = kartuModul()
     const aktif = kartu.filter((k) => k.tujuan !== null)
     expect(aktif.map((k) => k.nama).sort()).toEqual(
-      [MODUL.claimLife, MODUL.komiteClaimLife, MODUL.premiumListLife, MODUL.treatyContractOut].sort(),
+      [FOLDER_KORPUS.claimLife, FOLDER_KORPUS.komiteClaimLife, FOLDER_KORPUS.premiumListLife, FOLDER_KORPUS.treatyContractOut].sort(),
     )
     expect(kartu.filter((k) => k.tujuan === null)).toHaveLength(16)
   })
 
   it('kartu Claim Life menunjuk butir PERTAMAnya', () => {
-    const cl = kartuModul().find((k) => k.nama === MODUL.claimLife)
+    const cl = kartuModul().find((k) => k.nama === FOLDER_KORPUS.claimLife)
     expect(cl?.tujuan).toBe('inbox')
   })
 })

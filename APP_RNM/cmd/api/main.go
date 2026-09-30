@@ -4,10 +4,14 @@
 // daftarkan handler -> dengarkan. ⛔ Nol aturan dagang di sini.
 //
 // main adalah composition root. Refactor bentuk B (30-09-2026): ia membangun
-// akar bersama (`inti.Dasar`), meminta daftar modul dari `modul.Rakit`,
+// akar bersama (`inti.Dasar`), meminta daftar modul dari `daftar.Rakit`,
 // menyaringnya menurut MODUL_AKTIF (`rakit.go`), lalu memasang rute dan
 // pekerja latar modul yang aktif saja. Migrasi selalu dari SEMUA modul
-// terdaftar (`modul.SumberMigrasi`), tidak ikut MODUL_AKTIF.
+// terdaftar (`daftar.SumberMigrasi`), tidak ikut MODUL_AKTIF.
+//
+// Struktur tim satu folder per modul (30-09-2026): daftar modulnya
+// `inti/backend/daftar`, dibangkitkan dari folder `modul/` (go generate), dan
+// kontrak lintas modul disambung perakit menurut pernyataan tiap modul.
 package main
 
 import (
@@ -22,9 +26,9 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/config"
+	"nusantarare/inti/backend/daftar"
 	intidb "nusantarare/inti/backend/db"
 	"nusantarare/inti/backend/migrasi"
-	"nusantarare/modul"
 )
 
 func main() {
@@ -55,7 +59,7 @@ func main() {
 	// tetap tersimpan di lingkungan non-produksi.
 	//
 	// Refactor bentuk B (30-09-2026): SATU akar untuk semua modul; setiap
-	// modul membangun `Service`-nya sendiri di atasnya (`modul.Rakit`).
+	// modul membangun `Service`-nya sendiri di atasnya (`daftar.Rakit`).
 	dasar := inti.NewDasar(db).
 		DenganLingkungan(inti.LingkunganDariFlag(cfg.IsPegaProd)).
 		DenganUnggahanDir(cfg.UnggahanDir)
@@ -85,8 +89,15 @@ func main() {
 	// semua). Nama yang tidak dikenal menolak menyala. ⛔ SESUDAH cabang
 	// -migrate / -migrate-down: migrasi tidak ikut MODUL_AKTIF, jadi salah
 	// ketik di sana tidak boleh menghalanginya (temuan /code-review).
-	terdaftar := modul.Rakit(dasar, cfg, catat)
-	aktif, err := pilihModulAktif(terdaftar, modul.NamaLama, cfg.ModulAktif)
+	// ⛔ Daftar yang bentuknya salah - mis. kontrak yang dibutuhkan tanpa
+	// penyedia - MENOLAK menyala dengan kalimat yang menyebut kontrak dan
+	// modulnya, bukan nil diam-diam saat permintaan pertama.
+	rakitan, err := daftar.Rakit(dasar, cfg, catat)
+	if err != nil {
+		log.Fatalf("modul: %v", err)
+	}
+	terdaftar := rakitan.Modul
+	aktif, err := pilihModulAktif(terdaftar, daftar.NamaLama(), cfg.ModulAktif)
 	if err != nil {
 		log.Fatalf("konfigurasi: %v", err)
 	}
@@ -149,7 +160,7 @@ func bongkarMigrasi(svc *inti.Dasar, cfg config.Config) {
 		log.Fatalf("bongkar: tidak dapat menjangkau oracle: %v", err)
 	}
 	// Refactor bentuk B: SEMUA modul terdaftar, tidak bergantung modul aktif.
-	lap, err := migrasi.Bongkar(ctx, svc.DB(), modul.SumberMigrasi()...)
+	lap, err := migrasi.Bongkar(ctx, svc.DB(), daftar.SumberMigrasi()...)
 	if err != nil {
 		log.Fatalf("bongkar: %v", err)
 	}
@@ -175,7 +186,7 @@ func jalankanMigrasi(svc *inti.Dasar) {
 		log.Fatalf("migrasi: tidak dapat menjangkau oracle: %v", err)
 	}
 	// Refactor bentuk B: SEMUA modul terdaftar, tidak bergantung modul aktif.
-	lap, err := migrasi.Jalankan(ctx, svc.DB(), modul.SumberMigrasi()...)
+	lap, err := migrasi.Jalankan(ctx, svc.DB(), daftar.SumberMigrasi()...)
 	if err != nil {
 		log.Fatalf("migrasi: %v", err)
 	}

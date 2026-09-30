@@ -1,7 +1,13 @@
-// Package premiumlistlife merakit modul PremiumList Life.
+// Package backend merakit modul PremiumList Life (`premiumlistlife`).
+//
+// Nama paketnya `backend` - sama di setiap modul (nama folder); daftar modul
+// bangkitan mengimpornya dengan alias nama modul.
 //
 // Refactor bentuk B (30-09-2026): setiap modul punya satu berkas perakitan
-// (`modul.go`) yang menyerahkan miliknya kepada `cmd/api`. Di paket ini
+// (`modul.go`) yang menyerahkan miliknya kepada `cmd/api`. Sejak struktur tim
+// satu folder per modul (30-09-2026) penyerahannya lewat `Pendaftaran()`:
+// kontrak yang disediakan dan dibutuhkan DINYATAKAN di sini, dan perakit
+// `inti.Rakit` menyambungnya - bukan baris tangan di daftar bersama. Di paket ini
 // memuat migrasinya, rute HTTP-nya, dan pekerja latarnya (bila ada).
 package backend
 
@@ -12,6 +18,7 @@ import (
 	"net/http"
 
 	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/kontrak"
 	"nusantarare/modul/premiumlistlife/backend/handlers"
 	"nusantarare/modul/premiumlistlife/backend/services"
 )
@@ -30,13 +37,33 @@ func SumberMigrasi() fs.FS { return berkasMigrasi }
 // Nama pengenal modul ini di MODUL_AKTIF dan di GET /api/modul-aktif.
 const Nama = "premiumlistlife"
 
+// Pendaftaran menyerahkan modul ini kepada perakit (`inti/backend/daftar`,
+// berkas bangkitan `modul_premiumlistlife_gen.go`).
+//
+// Kontrak: MENYEDIAKAN `kontrak.PembacaPolis` - butir pl4/av, Claim Life
+// membaca polis modul ini. Nama lama `premiumlist` (sebelum tabel nama modul
+// 30-09-2026) ditolak MODUL_AKTIF dengan kalimat yang menyebut nama ini.
+func Pendaftaran() inti.Pendaftaran {
+	return inti.Pendaftaran{
+		Nama:        Nama,
+		NamaLama:    []string{"premiumlist"},
+		Migrasi:     berkasMigrasi,
+		Menyediakan: []inti.Kontrak{inti.KontrakDari[kontrak.PembacaPolis]()},
+		Bangun: func(p *inti.Perakitan) (inti.Modul, error) {
+			svc := services.DariDasar(p.Dasar())
+			inti.Sediakan[kontrak.PembacaPolis](p, services.PembacaPolis(svc))
+			return Baru(svc, p.Config().AuthStub), nil
+		},
+	}
+}
+
 // Modul adalah perakitan modul PremiumList Life untuk `cmd/api` - `inti.Modul`.
 type Modul struct {
 	svc        *services.Service
 	stubPelaku bool
 }
 
-// Baru merakit modul di atas Service yang sudah disambung `modul.Rakit`.
+// Baru merakit modul di atas Service yang sudah disambung (`Pendaftaran`).
 func Baru(svc *services.Service, stubPelaku bool) Modul {
 	return Modul{svc: svc, stubPelaku: stubPelaku}
 }

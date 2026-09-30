@@ -24,8 +24,9 @@
  * harness b20947/b21627, tombol `List Description` b22196 → harness
  * b22323/b23088. Keduanya dibuka tombol itu di layar tahun treaty.
  *
- * ⚠️ Nama kelompok = nama FOLDER korpus, pola `MODUL` di `labels.ts`
- * (`MODUL.treatyContractOut`, ditambahkan ADITIF di tiket 03).
+ * ⚠️ Nama kelompok = nama FOLDER korpus. Sejak struktur tim satu folder per
+ * modul (30-09-2026) inilah satu-satunya tempatnya (`menu.ts`
+ * `KELOMPOK_TREATY`); dulu juga `MODUL.treatyContractOut` di `inti/labels.ts`.
  */
 export const MENU_TCO = {
   /** Nama folder korpus `D:\XML\RNM_BRD\Treaty Contract Out`. */

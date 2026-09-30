@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 
 import Beranda from './Beranda'
-import { Shell } from '../../inti/frontend/components/Shell'
-import { BelumTersedia } from '../../inti/frontend/components/ui/dasar'
-import { ambilMenu, ambilModulAktif } from '../../inti/frontend/klien'
-import { modulDipasang, type KeadaanMenuTabel } from '../../inti/frontend/lib/daftarMenu'
-import { pelakuStub } from '../../inti/frontend/store/sesi'
-import { ENTRI_MENU, halamanAktif, MODUL_FRONTEND, type Halaman } from './modul/daftar'
+import { Shell } from '../inti/frontend/components/Shell'
+import { BelumTersedia } from '../inti/frontend/components/ui/dasar'
+import { ambilMenu, ambilModulAktif } from '../inti/frontend/klien'
+import { modulDipasang, type KeadaanMenuTabel } from '../inti/frontend/lib/daftarMenu'
+import { pelakuStub } from '../inti/frontend/store/sesi'
+import { ENTRI_MENU, halamanAktif, MODUL_FRONTEND, type Halaman } from './daftar'
 
 // App = identitas + Shell.
 //

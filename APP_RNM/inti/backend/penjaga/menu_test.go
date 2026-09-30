@@ -12,7 +12,7 @@ package penjaga
 // sudah dijalankan tidak boleh disunting (`T_MIGRASI` mencatat namanya), jadi
 // menu berikutnya lahir di 901+ (`PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md` bab 6).
 // Penjaga yang hanya membaca 900 akan menolak langkah yang panduannya sendiri
-// suruh. Uji dua arah frontend (`modul/daftar.menuTabel.test.ts`) membaca
+// suruh. Uji dua arah frontend (`frontend/daftar.menuTabel.test.ts`) membaca
 // folder yang sama.
 
 import (

@@ -37,7 +37,7 @@ type Baris struct {
 
 // Butir adalah satu butir menu - halaman frontend yang dapat dibuka.
 type Butir struct {
-	// Kode = kunci halaman frontend (`modul/daftar.ts`).
+	// Kode = kunci halaman frontend (`frontend/daftar.ts`).
 	Kode  string `json:"kode"`
 	Label string `json:"label"`
 	Modul string `json:"modul"`

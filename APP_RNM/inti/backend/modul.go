@@ -6,7 +6,7 @@ package backend
 // modul menyerahkan dirinya lewat `Modul`, dan `cmd/api` hanya memanggil
 // daftar modul yang AKTIF (MODUL_AKTIF): rutenya didaftarkan, pekerjanya
 // dinyalakan. Migrasi TIDAK lewat sini - ia selalu dari SEMUA modul terdaftar
-// (`modul.SumberMigrasi`), supaya skema selalu utuh.
+// (`daftar.SumberMigrasi`), supaya skema selalu utuh.
 
 import (
 	"context"

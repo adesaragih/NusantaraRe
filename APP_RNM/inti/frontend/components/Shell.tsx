@@ -6,7 +6,7 @@
 // ⛔ SEJAK 30-09-2026 MENU DARI TABEL `M_NAV_MENU` (brief menu, permintaan work
 // owner): sidebar dan palet dirakit dari `GET /api/menu` - golongan TREATY,
 // FACULTATIVE, KLAIM, MASTER sebagai kepala bagian, lalu kelompok modul, lalu
-// butir - DIPOTONG dengan rute yang terdaftar di `modul/daftar.ts`
+// butir - DIPOTONG dengan rute yang terdaftar di `frontend/daftar.ts`
 // (`susunMenu`). Bila `GET /api/menu` gagal, sidebar menampilkan galatnya.
 // Catatan di bawah (bg) tetap berlaku untuk ISI-nya; urutan dan pengelompokan
 // kini milik tabel.

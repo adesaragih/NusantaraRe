@@ -3,13 +3,13 @@ import { join } from 'node:path'
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { AKAR_APLIKASI } from '../../../inti/frontend/uji/sumber'
-import { ambilMenu } from '../../../inti/frontend/klien'
-import { MODUL } from '../../../inti/frontend/labels'
-import { HALAMAN_BERANDA } from '../../../inti/frontend/lib/daftarMenu'
-import { ENTRI_MENU } from './daftar'
+import { AKAR_APLIKASI } from '../inti/frontend/uji/sumber'
+import { ambilMenu } from '../inti/frontend/klien'
+import { FOLDER_KORPUS } from './katalogKorpus'
+import { HALAMAN_BERANDA } from '../inti/frontend/lib/daftarMenu'
+import { ENTRI_MENU, MODUL_FRONTEND } from './daftar'
 
-// Penjaga DUA ARAH: isi M_NAV_MENU (migrasi `inti` 900-949) ↔ `modul/daftar.ts`
+// Penjaga DUA ARAH: isi M_NAV_MENU (migrasi `inti` 900-949) ↔ `frontend/daftar.ts`
 // (brief menu 30-09-2026 §3). SELURUH migrasi maju `inti/migrations/` dibaca,
 // bukan 900 saja: menu berikutnya lahir di 901+ (panduan deploy bab 6).
 //
@@ -58,11 +58,23 @@ describe('isi menu migrasi inti ↔ daftar.ts, dua arah', () => {
     for (const e of rute) expect(butir.find((b) => b.kode === e.modul)?.induk, e.modul).toBe(e.pemilik)
   })
 
-  it('LABEL kelompok = inti/labels.ts MODUL (20 folder korpus)', () => {
-    expect(new Set(kelompok.map((k) => k.label))).toEqual(new Set(Object.values(MODUL)))
-    expect(Object.values(MODUL)).toHaveLength(20)
-    expect(Object.values(MODUL)).toContain('Treaty In')
-    expect(Object.values(MODUL)).toContain('Treaty In Adjustment')
+  // Struktur tim satu folder per modul (30-09-2026): nama kelompok setiap modul
+  // tinggal di `menu.ts`-nya sendiri. Ia harus nama folder korpus, sama dengan
+  // LABEL barisnya di isi menu, dan sama untuk setiap butir modul itu.
+  it('KELOMPOK setiap modul = LABEL kelompoknya di isi menu, dan ada di FOLDER_KORPUS', () => {
+    expect(MODUL_FRONTEND.length).toBeGreaterThanOrEqual(4)
+    for (const m of MODUL_FRONTEND) {
+      expect(Object.values(FOLDER_KORPUS), m.nama).toContain(m.kelompok)
+      expect(kelompok.find((k) => k.kode === m.nama)?.label, m.nama).toBe(m.kelompok)
+      for (const b of m.menu) expect(b.kelompok, `${m.nama}/${b.modul}`).toBe(m.kelompok)
+    }
+  })
+
+  it('LABEL kelompok = FOLDER_KORPUS (20 folder korpus)', () => {
+    expect(new Set(kelompok.map((k) => k.label))).toEqual(new Set(Object.values(FOLDER_KORPUS)))
+    expect(Object.values(FOLDER_KORPUS)).toHaveLength(20)
+    expect(Object.values(FOLDER_KORPUS)).toContain('Treaty In')
+    expect(Object.values(FOLDER_KORPUS)).toContain('Treaty In Adjustment')
   })
 })
 
@@ -82,7 +94,7 @@ describe('GET /api/menu', () => {
     jawab('{"golongan":[{"kode":"KLAIM","kelompok":[]}]}')
     await expect(ambilMenu()).resolves.toEqual({ golongan: [{ kode: 'KLAIM', kelompok: [] }] })
     expect(String(vi.mocked(fetch).mock.calls[0]?.[0])).toContain('/api/menu')
-    const rakit = readFileSync(join(__dirname, '..', '..', '..', 'cmd', 'api', 'rakit.go'), 'utf8')
+    const rakit = readFileSync(join(AKAR_APLIKASI, 'cmd', 'api', 'rakit.go'), 'utf8')
     expect(rakit).toContain('mux.HandleFunc("GET /api/menu"')
   })
 
@@ -100,7 +112,7 @@ describe('GET /api/menu', () => {
 })
 
 describe('sidebar dan palet dari GET /api/menu', () => {
-  const SRC = join(__dirname, '..')
+  const SRC = __dirname
   const app = readFileSync(join(SRC, 'App.tsx'), 'utf8')
   const shell = readFileSync(join(AKAR_APLIKASI, 'inti', 'frontend', 'components', 'Shell.tsx'), 'utf8')
 

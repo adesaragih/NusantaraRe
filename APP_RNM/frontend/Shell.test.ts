@@ -10,10 +10,12 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { AKAR_APLIKASI } from '../../inti/frontend/uji/sumber'
-import { MENU, MENU_MODUL, MODUL, MODUL_LAIN_TERLARANG } from '../../inti/frontend/labels'
-import { MENU_TCO } from '../../modul/treatycontractout/frontend/labels'
-import { ENTRI_MENU } from './modul/daftar'
+import { AKAR_APLIKASI } from '../inti/frontend/uji/sumber'
+import { MENU, MENU_MODUL, MODUL_LAIN_TERLARANG } from '../inti/frontend/labels'
+import { FOLDER_KORPUS } from './katalogKorpus'
+import { MENU_TCO } from '../modul/treatycontractout/frontend/labels'
+import { ENTRI_MENU } from './daftar'
+import { KELOMPOK_CLAIMLIFE } from '../modul/claimlife/frontend/menu'
 
 const SUMBER = readFileSync(join(AKAR_APLIKASI, 'inti', 'frontend', 'components', 'Shell.tsx'), 'utf8')
 const APP = readFileSync(join(__dirname, 'App.tsx'), 'utf8')
@@ -35,7 +37,7 @@ function tanpaKomentar(teks: string): string {
 const kode = tanpaKomentar(SUMBER)
 
 /** Nama kelompok yang Shell render, dibaca dari labelnya. */
-const KELOMPOK_SIDEBAR = Object.values(MODUL)
+const KELOMPOK_SIDEBAR = Object.values(FOLDER_KORPUS)
 
 describe('menu hanya yang berbukti korpus', () => {
   it('kelompok sidebar TEPAT dua puluh', () => {
@@ -47,12 +49,12 @@ describe('menu hanya yang berbukti korpus', () => {
     // ditambahkan sesi modul itu (folder korpus 20; ralat §8 PROMPT-EKSEKUSI).
     // ⛔ DUA PULUH sejak brief menu M_NAV_MENU (30-09-2026): isi awal tabel
     // memuat satu kelompok per folder korpus, Treaty In dan Treaty In
-    // Adjustment ikut (`modul/daftar.menuTabel.test.ts` menjaga LABEL-nya).
+    // Adjustment ikut (`frontend/daftar.menuTabel.test.ts` menjaga LABEL-nya).
     expect(KELOMPOK_SIDEBAR).toHaveLength(20)
     // Dan seluruhnya disebut di Shell, supaya tidak ada kelompok yang
     // terdaftar di label tetapi tidak dirender.
     for (const nama of KELOMPOK_SIDEBAR) {
-      expect(Object.values(MODUL)).toContain(nama)
+      expect(Object.values(FOLDER_KORPUS)).toContain(nama)
     }
   })
 
@@ -126,7 +128,7 @@ describe('bukti XML label menu', () => {
     // Korpus menulisnya tanpa spasi (`ClaimLife`); menu menampilkannya
     // dengan spasi, dan itu satu-satunya penyimpangan yang diizinkan.
     expect(baris270).toContain('<pyWorkTypeName>ClaimLife</pyWorkTypeName>')
-    expect(MENU.kelompokClaimLife.replace(' ', '')).toBe('ClaimLife')
+    expect(KELOMPOK_CLAIMLIFE.replace(' ', '')).toBe('ClaimLife')
   })
 
   it('Inbox ditandai tidak ada di korpus', () => {

@@ -23,12 +23,13 @@ BIN     := bin/api
 ORACLE_SCHEMA ?=
 ORACLE_DEV_CONTAINER ?= nusantarare-oracle
 
-.PHONY: help check typecheck run-api run-web build build-api build-web test test-db db-up db-down migrate
+.PHONY: help check generate typecheck run-api run-web build build-api build-web test test-db db-up db-down migrate
 
 help:
 	@echo "run-api    - jalankan backend Go"
 	@echo "run-web    - jalankan frontend Vite"
 	@echo "build      - build kedua sisi"
+	@echo "generate   - tulis ulang daftar modul Go (inti/backend/daftar) dari folder modul/"
 	@echo "test       - go vet + go test (tanpa Oracle)"
 	@echo "typecheck  - periksa tipe TypeScript frontend (tsc --noEmit)"
 	@echo "test-db    - test seam repository terhadap skema uji Oracle"
@@ -52,6 +53,12 @@ build-api:
 
 build-web:
 	$(NPM) ci && $(NPM) run build
+
+# Daftar modul Go dibangkitkan dari folder modul/<nama>/backend/modul.go
+# (struktur tim satu folder per modul, 30-09-2026). Hasilnya di-commit; uji
+# inti/backend/daftar/bangkit menagihnya bila lupa dijalankan.
+generate:
+	$(GO) generate ./inti/backend/daftar
 
 # Nol Oracle: hanya seam `services` murni dan unit lain yang tidak menyentuh DB.
 test:
