@@ -92,3 +92,15 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+---
+
+## Ralat bertanggal 30-09-2026 — sesi implementasi (paket 0)
+
+> Sumber: `RALAT-DEV-30-09-2026.md` (K1–K8 katalog DEV, R1–R12 pembacaan ulang XML) dan `PARITAS-LAYAR-DAN-AKSI.md`. Kalimat di atas **tidak dihapus**; yang berlaku adalah ralat ini.
+
+| Kalimat lama | Ralat |
+| --- | --- |
+| *"Layar menampilkan **share mentah dan eksposur efektif berdampingan**"* | kolom eksposur tidak ada di grid Pega — ditambahkan dengan label tiket, OQ-MCRL-08 (R11) |
+| *"ditegakkan **FK** di basis data"* | nol FK di DEV (K1); induk diperiksa Go |
+| — | `Add` Pega mengosongkan halaman reinsurer, bukan form security — sistem baru mengosongkan form security (OQ-MCRL-12); `(%) SHARE` 0..100 (R3) |

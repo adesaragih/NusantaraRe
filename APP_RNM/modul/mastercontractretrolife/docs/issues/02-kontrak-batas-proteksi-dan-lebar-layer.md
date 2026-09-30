@@ -104,3 +104,16 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+---
+
+## Ralat bertanggal 30-09-2026 — sesi implementasi (paket 0)
+
+> Sumber: `RALAT-DEV-30-09-2026.md` (K1–K8 katalog DEV, R1–R12 pembacaan ulang XML) dan `PARITAS-LAYAR-DAN-AKSI.md`. Kalimat di atas **tidak dihapus**; yang berlaku adalah ralat ini.
+
+| Kalimat lama | Ralat |
+| --- | --- |
+| *"Kontrak wajib memuat `REINSTYPEID`, tanggal mulai, tanggal akhir …"* (diisi pengguna) | `TREATY START`/`TREATY END` **read-only** di Pega (b3604, b3894), berasal dari tanggal tahun induk (`SetValueRetroLimit_TreatyYearLife` b485/b507) — server mengisinya dari tahun (R5, K4) |
+| *"`INSERTTREATYCONTRACT_LIFE` menulis `IDR_SELISIH`/`USD_SELISIH` apa adanya dari parameter"* | korpus modul **nol penulis** kedua kolom (`SaveTreatyLimit_Act` b1001/b1023 hanya membaca); Go menghitung lalu menulisnya (K5) |
+| *"Batas bawah yang lebih besar dari batas atas ditolak"* | tanpa bukti XML; dibangun sebagai bawaan — OQ-MCRL-09 |
+| — | pesan wajib-isi VERBATIM `"All value cannot be empty."` (`SaveTreatyLimit_Act` b313); tombol hapus berlabel **`Delete`** (ikon, b15161) |

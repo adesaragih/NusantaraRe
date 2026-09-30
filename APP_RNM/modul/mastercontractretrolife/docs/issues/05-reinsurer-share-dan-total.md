@@ -104,3 +104,16 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+---
+
+## Ralat bertanggal 30-09-2026 — sesi implementasi (paket 0)
+
+> Sumber: `RALAT-DEV-30-09-2026.md` (K1–K8 katalog DEV, R1–R12 pembacaan ulang XML) dan `PARITAS-LAYAR-DAN-AKSI.md`. Kalimat di atas **tidak dihapus**; yang berlaku adalah ralat ini.
+
+| Kalimat lama | Ralat |
+| --- | --- |
+| *"`[terverifikasi]` **Validasi per baris** (`SetErrorMessageReinsurer`)"* | activity itu memeriksa halaman non-life `InputTreatyReinsurer`, bukan `InputSecurityLife` yang disunting — di layar life tidak pernah mengena. Maksud gerbang ditegakkan (0..100 untuk `PCTSHARE` dan `COMMISION`; `OVR_COMM` tidak diperiksa Pega), preseden OQ-TCO-17 — OQ-MCRL-03 (R3) |
+| *"Pemanggilan procedure penulis reinsurer"* | tidak dipanggil (R4); `REINSTYPEID`/`REINSTYPENAME`/`TREATYYEARID` ditulis sebagai salinan kontrak (K4) |
+| *"`REINSTYPEID` **tidak ditulis** pada baris reinsurer"* | kolom tetap **ditulis** sebagai salinan induk (K4) — skema tidak diubah |
+| — | wajib-isi hidup `NAME, REINSURERID_LIFE, PCTSHARE, COMMISION, OVR_COMM` (`SaveSecurityLife_Act` b595), pesan VERBATIM `"All value cannot be empty."`; pilihan reinsurer dari `BrowseCedingCoLife_RD` (`AGENT`, `ID` memuat `L0`, `STATUSACTIVE = 1`); label `COMMISION` = **(%) DISCOUNT** |

@@ -883,3 +883,26 @@ sama seperti empat spec sebelumnya; dan **anti-dobel logis** (lihat §Pertanyaan
 **Catatan sumber.** Spec ini bersandar pada korpus Pega `D:\XML\RNM_BRD\` (READ-ONLY), artefak di
 `OUTPUT_HASIL_RNM\`, dan dua berkas `[data DBA]` yang diterima 2026-09-15. Sumber ADR tunggal:
 `docs/adr/ADR-0001`…`ADR-0015`.
+
+---
+
+## Ralat bertanggal 30-09-2026 — sesi implementasi (paket 0)
+
+> Sumber: `RALAT-DEV-30-09-2026.md` (K1–K8 katalog DEV, R1–R12 pembacaan ulang XML) dan `PARITAS-LAYAR-DAN-AKSI.md`. Kalimat di atas **tidak dihapus**; yang berlaku adalah ralat ini.
+
+Delapan penyimpangan sadar di atas **diralat** sebagai berikut — kalimat lama dikutip, tidak dihapus:
+
+| # | Kalimat lama | Ralat |
+| ---: | --- | --- |
+| 1 | *"**Normalisasi** — `REINSTYPEID` sekali di kontrak, `TREATYYEAR` sekali di tahun; anak mewarisi"* | skema tidak diubah; layanan menulis **semua salinan dari induknya** dalam transaksi yang sama (K4) |
+| 2 | *"**`*_SELISIH` dihitung, bukan disimpan mentah**"* | dihitung di Go **lalu tetap ditulis** ke kolomnya (K5) |
+| 3 | *"**Kaskade hapus induk → seluruh anak, dengan popup konfirmasi Ya/Batal SEBELUM hapus**"* | tetap; kaskade **di Go**, satu transaksi, anak lebih dulu (K2) |
+| 4 | *"**Gerbang tahun membandingkan nilai tanggal** … Aturannya dipertahankan"* | gerbang itu mati di Pega → OQ-MCRL-01; bawaan tidak ditegakkan (K7) |
+| 5 | *"**"Terapkan ke semua" + pratinjau/konfirmasi + jejak audit**"* | pratinjau + konfirmasi tetap; jejak = `USERID`/`TGLUPDATE` + log server (K6); sasaran = kontrak setahun berjenis **berbeda** (R2); atomik (R4) |
+| 6 | *"**`HASIL1`/`o_message` wajib diperiksa — gagal terang-terangan, HTML dibersihkan**"* | procedure tidak dipanggil → galat Go sendiri sampai ke layar berkata-kata (K8) |
+| 7 | *"**`ID` menjadi PRIMARY KEY di kelima tabel** — ✅ **sudah dieksekusi di basis data**"* | DEV nol PK (K1); `ID` dari sequence persis procedure (K3); nol DDL |
+| 8 | *"**FK antar tabel** — ✅ **sudah dieksekusi di basis data**, mode **`ON DELETE CASCADE`**"* | DEV nol FK (K1); kaskade di Go (K2); nol DDL |
+
+Ralat lain yang menyentuh bab spec: §4 titik masuk (R1 — halaman awal `GridRetrocessionLife`), §7 validasi 0..100 (R3), §11
+*"Go memanggil kelima stored procedure Oracle apa adanya"* (R4 — keputusan o: tidak dipanggil), §13 arah dan atomisitas (R2, R4),
+§14 PK/FK/tiket migrasi (K1). Pertanyaan A dan D ronde 2 terjawab dari korpus (R7, R8).

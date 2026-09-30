@@ -92,3 +92,13 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+---
+
+## Ralat bertanggal 30-09-2026 — sesi implementasi (paket 0)
+
+> Sumber: `RALAT-DEV-30-09-2026.md` (K1–K8 katalog DEV, R1–R12 pembacaan ulang XML) dan `PARITAS-LAYAR-DAN-AKSI.md`. Kalimat di atas **tidak dihapus**; yang berlaku adalah ralat ini.
+
+| Kalimat lama | Ralat |
+| --- | --- |
+| *"**`o_message` DIPERIKSA** setelah **setiap** pemanggilan procedure"* | procedure **tidak dipanggil** (keputusan o) → tidak ada `o_message` (K8). Yang ditegakkan: setiap galat Go — Oracle, validasi, keadaan data — sampai ke layar berkata-kata; galat tak terduga 500 dicatat di log server; nol galat ditelan. Uji konformansi: kelima jalur simpan menolak dengan badan `{"galat": …}` tanpa markup |
