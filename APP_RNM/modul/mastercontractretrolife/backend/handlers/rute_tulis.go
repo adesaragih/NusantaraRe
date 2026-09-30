@@ -6,6 +6,8 @@ package handlers
 //	PUT  /api/master-contract-retro-life/tahun/{id}     ubah - `Edit` → `Save` (paket 2)
 //	POST /api/master-contract-retro-life/tahun/{id}/kontrak  kontrak BARU - `Add` → `Save` (paket 3)
 //	PUT  /api/master-contract-retro-life/kontrak/{id}   ubah kontrak - `Edit` → `Save` (paket 3)
+//	POST /api/master-contract-retro-life/kontrak/{id}/reinsurer  reinsurer BARU (paket 4)
+//	PUT  /api/master-contract-retro-life/reinsurer/{id} ubah reinsurer (paket 4)
 //
 // ⛔ POST dan PUT terpisah walau Pega punya satu `Save` ber-upsert: identitas
 // baris baru tidak pernah datang dari klien (ADR-0006), dan badan PUT yang
@@ -73,6 +75,23 @@ func daftarkanTulis(pasang func(string, rute)) {
 			return
 		}
 		hasil, err := l.SimpanKontrak(r.Context(), p, "", m)
+		tulis(w, hasil, err)
+	})
+	// Reinsurer (paket 4): `Add` → `Save` di bawah kontrak; `Edit` → `Save`.
+	pasang("POST "+Prefix+"/kontrak/{id}/reinsurer", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		var m services.ReinsurerMasuk
+		if bacaBadan(w, r, &m) || tolakIDBaru(w, m.ID) {
+			return
+		}
+		hasil, err := l.SimpanReinsurer(r.Context(), p, r.PathValue("id"), m)
+		tulis(w, hasil, err)
+	})
+	pasang("PUT "+Prefix+"/reinsurer/{id}", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		var m services.ReinsurerMasuk
+		if bacaBadan(w, r, &m) || idJalur(w, r, &m.ID) {
+			return
+		}
+		hasil, err := l.SimpanReinsurer(r.Context(), p, "", m)
 		tulis(w, hasil, err)
 	})
 }

@@ -13,7 +13,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/apd/v3"
+
 	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/mastercontractretrolife/backend/models"
 	"nusantarare/modul/mastercontractretrolife/backend/repository"
 )
@@ -129,6 +132,58 @@ func (g *Gudang) SalinKontrakKeAnak(_ context.Context, _ *db.Tx, k models.Kontra
 		}
 	}
 	return n, nil
+}
+
+// SisipReinsurer - ID dari sequence tiruan.
+func (g *Gudang) SisipReinsurer(_ context.Context, _ *db.Tx, r models.Reinsurer) (string, error) {
+	if err := g.gagal("SisipReinsurer"); err != nil {
+		return "", err
+	}
+	id, err := g.nomorBaru(repository.TabelReinsurer)
+	if err != nil {
+		return "", err
+	}
+	r.ID, r.TglUpdate = id, g.Jam
+	g.Reinsurer[id] = r
+	return id, nil
+}
+
+// PerbaruiReinsurer - kunci induk tidak berpindah.
+func (g *Gudang) PerbaruiReinsurer(_ context.Context, _ *db.Tx, r models.Reinsurer) error {
+	if err := g.gagal("PerbaruiReinsurer"); err != nil {
+		return err
+	}
+	lama, ada := g.Reinsurer[r.ID]
+	if !ada {
+		return repository.ErrTidakAda
+	}
+	r.TreatyYearID, r.TreatyContractID, r.TglUpdate = lama.TreatyYearID, lama.TreatyContractID, g.Jam
+	g.Reinsurer[r.ID] = r
+	return nil
+}
+
+// TotalSharePerKontrak - LEFT JOIN tiruan atas dua kunci induk.
+func (g *Gudang) TotalSharePerKontrak(_ context.Context, tahunID string) ([]models.TotalShareKontrak, error) {
+	kontrak := urutID(g.Kontrak, func(k models.Kontrak) bool { return tahunID == "" || k.IDTreatyYear == tahunID },
+		func(k models.Kontrak) string { return k.IDTreatyYear + "|" + k.ID }, false)
+	var hasil []models.TotalShareKontrak
+	for _, k := range kontrak {
+		t := models.TotalShareKontrak{KontrakID: k.ID, TahunID: k.IDTreatyYear, TreatyYear: g.Tahun[k.IDTreatyYear].TreatyYear,
+			ReinsTypeName: k.ReinsTypeName}
+		for _, r := range g.Reinsurer {
+			if r.TreatyContractID != k.ID || r.TreatyYearID != k.IDTreatyYear || r.PctShare == nil {
+				continue
+			}
+			if t.Total == nil {
+				t.Total = new(apd.Decimal)
+			}
+			if _, err := utils.DecimalContext().Add(t.Total, t.Total, r.PctShare); err != nil {
+				return nil, err
+			}
+		}
+		hasil = append(hasil, t)
+	}
+	return hasil, nil
 }
 
 // SalinTahunKeAnak - K4/R5 atas business dan kontrak tahun itu yang berbeda.

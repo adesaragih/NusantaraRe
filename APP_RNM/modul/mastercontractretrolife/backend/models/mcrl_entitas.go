@@ -98,6 +98,15 @@ type Business struct {
 	TglUpdate        time.Time
 }
 
+// TotalShareKontrak - total share satu kontrak untuk laporan tiket 11.
+type TotalShareKontrak struct {
+	KontrakID     string
+	TahunID       string
+	TreatyYear    string
+	ReinsTypeName string
+	Total         *apd.Decimal // nil = tanpa reinsurer
+}
+
 // JenisReasuransi - satu pilihan dropdown `REINS TYPE` (`BrowseReinsuranceTypeLimit_RD`).
 type JenisReasuransi struct {
 	ID   string `json:"id"`

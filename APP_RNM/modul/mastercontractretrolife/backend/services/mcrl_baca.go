@@ -53,6 +53,13 @@ type Gudang interface {
 	// SalinKontrakKeAnak menulis salinan jenis kontrak (K4) ke reinsurer dan
 	// business kontrak itu yang berbeda; baris berubah mendapat USERID/TGLUPDATE.
 	SalinKontrakKeAnak(ctx context.Context, tx *db.Tx, k models.Kontrak) (int64, error)
+
+	// Penulis reinsurer (paket 4).
+	SisipReinsurer(ctx context.Context, tx *db.Tx, r models.Reinsurer) (string, error)
+	PerbaruiReinsurer(ctx context.Context, tx *db.Tx, r models.Reinsurer) error
+	// TotalSharePerKontrak - total PCTSHARE tiap kontrak (tahunID kosong = semua),
+	// kontrak tanpa reinsurer ikut dengan total nil (tiket 11).
+	TotalSharePerKontrak(ctx context.Context, tahunID string) ([]models.TotalShareKontrak, error)
 }
 
 // Galat "tidak ada" per entitas (404) - handler tidak mengimpor repository.
@@ -138,10 +145,14 @@ func (l *Layanan) DaftarBusiness(ctx context.Context, p inti.Pelaku, kontrakID s
 	return JawabanBusiness{Kontrak: k, Daftar: kosongBukanNil(d)}, err
 }
 
-// JawabanReinsurer - grid reinsurer satu kontrak, beserta kontraknya.
+// JawabanReinsurer - grid reinsurer satu kontrak, beserta kontraknya dan
+// `Total Share -->>` (b14339; `CountingPercentShare_Act`). `TotalBukan100` =
+// penanda mencolok (tiket 05); penyimpanan tidak pernah diblokir karenanya.
 type JawabanReinsurer struct {
-	Kontrak models.Kontrak     `json:"kontrak"`
-	Daftar  []models.Reinsurer `json:"daftar"`
+	Kontrak       models.Kontrak     `json:"kontrak"`
+	Daftar        []models.Reinsurer `json:"daftar"`
+	TotalShare    string             `json:"totalShare"`
+	TotalBukan100 bool               `json:"totalBukan100"`
 }
 
 // DaftarReinsurer - tombol `Reinsurer List` (`InputRetroLimitReinsurers.xml` b14034).
@@ -154,7 +165,15 @@ func (l *Layanan) DaftarReinsurer(ctx context.Context, p inti.Pelaku, kontrakID 
 		return JawabanReinsurer{}, err
 	}
 	d, err := l.gudang.DaftarReinsurer(ctx, nil, k.IDTreatyYear, k.ID)
-	return JawabanReinsurer{Kontrak: k, Daftar: kosongBukanNil(d)}, err
+	if err != nil {
+		return JawabanReinsurer{}, err
+	}
+	total, err := jumlahShare(sharesReinsurer(d))
+	if err != nil {
+		return JawabanReinsurer{}, err
+	}
+	return JawabanReinsurer{Kontrak: k, Daftar: kosongBukanNil(d), TotalShare: total.Text('f'),
+		TotalBukan100: total.Cmp(seratus) != 0}, nil
 }
 
 // JawabanSecurity - grid security satu reinsurer, beserta induknya (kepala

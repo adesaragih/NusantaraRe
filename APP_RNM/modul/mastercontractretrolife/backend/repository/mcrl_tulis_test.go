@@ -94,6 +94,26 @@ func TestPenampungKontrakCocokArgumen(t *testing.T) {
 	if n := hitungPenampung(sqlSalinTahunKeKontrak("S.T")); n != 6 {
 		t.Errorf("salin tahun ke kontrak: %d penampung, mau 6", n)
 	}
+	r := models.Reinsurer{}
+	if n, mau := hitungPenampung(sqlSisipReinsurer("S.T")), len(argPersenReinsurer(make([]any, 8), r)); n != mau {
+		t.Errorf("sisip reinsurer: %d penampung, %d argumen", n, mau)
+	}
+	if n, mau := hitungPenampung(sqlPerbaruiReinsurer("S.T")), len(argPersenReinsurer(make([]any, 5), r))+1; n != mau {
+		t.Errorf("ubah reinsurer: %d penampung, %d argumen", n, mau)
+	}
+}
+
+func TestSQLTotalSharePerKontrak(t *testing.T) {
+	q := strings.Join(strings.Fields(sqlTotalSharePerKontrak("S.K", "S.R", "S.Y", true)), " ")
+	for _, w := range []string{"LEFT JOIN S.R r ON r.TREATYCONTRACTID = k.ID AND r.TREATYYEARID = k.IDTREATYYEAR",
+		"WHERE k.IDTREATYYEAR = :1", "TO_CHAR(SUM(r.PCTSHARE), 'TM9'"} {
+		if !strings.Contains(q, w) {
+			t.Errorf("tanpa %q: %s", w, q)
+		}
+	}
+	if strings.Contains(sqlTotalSharePerKontrak("S.K", "S.R", "S.Y", false), ":1") {
+		t.Error("tanpa saringan tahun, tidak boleh ada penampung")
+	}
 }
 
 var polaPenampung = regexp.MustCompile(`:(\d+)\b`)

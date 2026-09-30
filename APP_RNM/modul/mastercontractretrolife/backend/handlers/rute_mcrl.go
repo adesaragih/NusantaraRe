@@ -14,6 +14,7 @@
 //	GET  /api/master-contract-retro-life/master-business?cari=    autocomplete `BUSINESS NAME`
 //	GET  /api/master-contract-retro-life/ringkasan-rate?cari=     autocomplete `R/I RATE`
 //	GET  /api/master-contract-retro-life/rate?idusedby=           section `ViewRate` (`Rate List`)
+//	GET  /api/master-contract-retro-life/laporan/total-share-bukan-100?tahun=  tiket 11 (tanpa layar)
 package handlers
 
 import (
@@ -105,6 +106,11 @@ func daftarkanBaca(pasang func(string, rute)) {
 	})
 	pasang("GET "+Prefix+"/rate", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
 		d, err := l.DaftarRate(r.Context(), p, r.URL.Query().Get("idusedby"))
+		tulisDaftar(w, d, err)
+	})
+	// Tiket 11 - kemampuan BARU tanpa padanan Pega: rute baca saja, nol layar (OQ-MCRL-07).
+	pasang("GET "+Prefix+"/laporan/total-share-bukan-100", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		d, err := l.LaporanTotalShareBukan100(r.Context(), p, r.URL.Query().Get("tahun"))
 		tulisDaftar(w, d, err)
 	})
 }
