@@ -21,6 +21,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strings"
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/galat"
@@ -160,6 +161,11 @@ func jawabGalat(w http.ResponseWriter, err error) bool {
 	case errors.Is(err, services.ErrWajibIsi), errors.Is(err, services.ErrMasukanTidakSah):
 		// 422: JSON-nya sah, isinya ditolak gerbang - pesan VERBATIM korpus
 		// untuk wajib-isi, pesan yang menyebut medannya untuk nilai tak sah.
+		// Pesan wajib-isi korpus tidak menyebut medannya; log server menyebutnya.
+		var kosong services.GalatWajibIsi
+		if errors.As(err, &kosong) {
+			log.Printf("master contract retro life: required values empty: %s", strings.Join(kosong.Medan, ", "))
+		}
 		galat.Tulis(w, http.StatusUnprocessableEntity, services.Pesan(err))
 	case errors.Is(err, services.ErrDampakBerubah):
 		// 409: keadaan DATA berubah sejak pratinjau/popup - nol baris disentuh.

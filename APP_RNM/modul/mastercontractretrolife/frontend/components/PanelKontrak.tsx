@@ -88,6 +88,8 @@ export default function PanelKontrak({ tahun, onTutup }: { tahun: TahunTreaty; o
   const [pesan, setPesan] = useState<string | null>(null)
   const [jenis, setJenis] = useState<JenisReasuransi[]>([])
   const [galatJenis, setGalatJenis] = useState<unknown>(null)
+  // Setiap `Add`/`Edit` memuat ulang master jenis - galat sebelumnya tidak hilang tanpa dicoba lagi.
+  const [muatJenisKe, setMuatJenisKe] = useState(0)
   const [anak, setAnak] = useState<Anak | null>(null)
 
   const muat = useCallback(async () => {
@@ -120,7 +122,7 @@ export default function PanelKontrak({ tahun, onTutup }: { tahun: TahunTreaty; o
     return () => {
       hidup = false
     }
-  }, [formTerbuka])
+  }, [formTerbuka, muatJenisKe])
 
   const hapusan = useHapus('kontrak', async (id, p) => {
     if (form?.id === id) setForm(null)
@@ -131,6 +133,7 @@ export default function PanelKontrak({ tahun, onTutup }: { tahun: TahunTreaty; o
   function buka(f: FormKontrak): void {
     setGalatForm(null)
     setGalatJenis(null)
+    setMuatJenisKe((k) => k + 1)
     setPesan(null)
     setForm(f)
   }

@@ -29,8 +29,8 @@ func angkaUji(t *testing.T, s string) *apd.Decimal {
 func gudangReinsurer() *tiruan.Gudang {
 	g := gudangKontrak()
 	g.Kontrak["UJI-K1"] = models.Kontrak{ID: "UJI-K1", IDTreatyYear: "UJI-T1", ReinsTypeID: "10196", ReinsTypeName: "QS"}
-	g.MasterRe = []models.MasterReinsurer{{ID: "UJI-L01", ClientName: "UJI REASURANSI SATU"},
-		{ID: "UJI-L02", ClientName: "UJI REASURANSI DUA"}}
+	g.MasterRe = []models.MasterReinsurer{{ID: "UJI-L01", ClientName: "UJI REASURANSI SATU", StatusActive: models.StatusMasterReinsurerAktif},
+		{ID: "UJI-L02", ClientName: "UJI REASURANSI DUA", StatusActive: models.StatusMasterReinsurerAktif}}
 	return g
 }
 

@@ -52,9 +52,13 @@ func (l *Layanan) SimpanSecurity(ctx context.Context, p inti.Pelaku, reinsurerID
 	if err := inti.WajibIdentitas(p); err != nil {
 		return models.SecurityReinsurer{}, err
 	}
+	if err := pelakuMuat(p, lebarTeks); err != nil {
+		return models.SecurityReinsurer{}, err
+	}
 	var hasil models.SecurityReinsurer
 	err := l.tx(ctx, func(tx *db.Tx) error {
 		ubah := m.ID != ""
+		var reinsurerLama string
 		if ubah {
 			lama, err := l.gudang.AmbilSecurity(ctx, tx, m.ID)
 			if err != nil {
@@ -63,7 +67,11 @@ func (l *Layanan) SimpanSecurity(ctx context.Context, p inti.Pelaku, reinsurerID
 			if reinsurerID != "" && lama.TreatyReinsurerID != reinsurerID {
 				return fmt.Errorf("%w: %s under reinsurer %s", ErrSecurityTidakAda, m.ID, reinsurerID)
 			}
-			reinsurerID = lama.TreatyReinsurerID
+			reinsurerID, reinsurerLama = lama.TreatyReinsurerID, lama.ReinsurerID
+		}
+		// ⛔ Induk dikunci lebih dulu - kaskade hapus reinsurer yang bersamaan menunggu (K2 tanpa FK).
+		if err := l.kunci(ctx, tx, HapusReinsurer, reinsurerID); err != nil {
+			return err
 		}
 		induk, err := l.ambilReinsurer(ctx, tx, reinsurerID)
 		if err != nil {
@@ -73,7 +81,7 @@ func (l *Layanan) SimpanSecurity(ctx context.Context, p inti.Pelaku, reinsurerID
 		if err != nil {
 			return err
 		}
-		if s.ReinsurerName, err = l.namaReinsurer(ctx, "REINS ID", s.ReinsurerID); err != nil {
+		if s.ReinsurerName, err = l.namaReinsurer(ctx, "REINS ID", s.ReinsurerID, !ubah || s.ReinsurerID != reinsurerLama); err != nil {
 			return err
 		}
 		s.TreatyYearID, s.TreatyContractID, s.TreatyReinsurerID = induk.TreatyYearID, induk.TreatyContractID, induk.ID

@@ -43,7 +43,7 @@ func TestKelimaJalurSimpanGagalTerangTanpaMarkup(t *testing.T) {
 	}
 	for _, k := range kasus {
 		u := serverBusiness(t)
-		u.g.MasterRe = []models.MasterReinsurer{{ID: "UJI-L01", ClientName: "UJI REASURANSI"}}
+		u.g.MasterRe = []models.MasterReinsurer{{ID: "UJI-L01", ClientName: "UJI REASURANSI", StatusActive: models.StatusMasterReinsurerAktif}}
 		u.g.Reinsurer["UJI-R1"] = models.Reinsurer{ID: "UJI-R1", TreatyYearID: "UJI-T1", TreatyContractID: "UJI-K1"}
 		u.g.GagalTulis[k.penulis] = errors.New(galatOracleBerHTML)
 		catatan := tangkapLog(t)

@@ -11,6 +11,7 @@ import { pratinjauSalinSemua, salinSemua, type Business, type PratinjauSalin as 
 import { BUSINESS_MCRL, KONTRAK_MCRL, SALIN_MCRL } from '../labels'
 import { sel } from '../tampilan'
 import { Gagal, Modal } from '../../../../inti/frontend/components/ui/dasar'
+import { penutup } from './KonfirmasiHapus'
 
 /** ID sasaran yang dikirim `Yes` - persis yang tampil di pratinjau. */
 export function sasaranDariPratinjau(p: Pratinjau): string[] {
@@ -29,6 +30,9 @@ export default function PratinjauSalin({
   const [pratinjau, setPratinjau] = useState<Pratinjau | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
   const [sibuk, setSibuk] = useState(false)
+  // Pratinjau dimuat ulang sesudah `Yes` gagal (mis. 409: sasaran berubah) - pengguna melihat keadaan
+  // terbaru, dan `Yes` berikutnya mengirim sasaran yang baru dilihat, bukan daftar basi.
+  const [ke, setKe] = useState(0)
 
   useEffect(() => {
     let hidup = true
@@ -42,7 +46,7 @@ export default function PratinjauSalin({
     return () => {
       hidup = false
     }
-  }, [business.id])
+  }, [business.id, ke])
 
   async function ya(): Promise<void> {
     if (pratinjau === null || sibuk) return
@@ -53,6 +57,8 @@ export default function PratinjauSalin({
       onSelesai(h.pesan)
     } catch (e) {
       setGalat(e)
+      setPratinjau(null)
+      setKe((k) => k + 1)
     } finally {
       setSibuk(false)
     }
@@ -63,7 +69,7 @@ export default function PratinjauSalin({
   return (
     <Modal
       judul={BUSINESS_MCRL.copyToAll}
-      onTutup={onBatal}
+      onTutup={penutup(sibuk, onBatal)}
       labelBatal={BUSINESS_MCRL.cancel}
       lebar
       aksi={

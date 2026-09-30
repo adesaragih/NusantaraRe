@@ -91,12 +91,17 @@ func (l *Layanan) Hapus(ctx context.Context, p inti.Pelaku, jenis JenisHapus, id
 	}
 	var hasil HasilHapus
 	err := l.tx(ctx, func(tx *db.Tx) error {
+		// ⛔ Baris yang dihapus dikunci SEBELUM anaknya dihitung: penulis anak mengunci induk yang sama,
+		// jadi anak yang lahir bersamaan menunggu atau terhitung - tidak pernah yatim (K2 tanpa FK).
+		if err := l.kunci(ctx, tx, jenis, id); err != nil {
+			return err
+		}
 		kini, err := l.dampak(ctx, tx, jenis, id)
 		if err != nil {
 			return err
 		}
 		if kini != dikonfirmasi {
-			return fmt.Errorf("%w (confirmed %+v, now %+v)", ErrDampakBerubah, dikonfirmasi, kini)
+			return fmt.Errorf("%w (confirmed %s, now %s)", ErrDampakBerubah, teksDampak(dikonfirmasi), teksDampak(kini))
 		}
 		var terhapus models.Dampak
 		switch jenis {
@@ -114,12 +119,12 @@ func (l *Layanan) Hapus(ctx context.Context, p inti.Pelaku, jenis JenisHapus, id
 			hasil.Pesan = PesanHapusBusiness(id)
 		}
 		if err != nil {
-			return err
+			return tidakAda(err, galatTidakAda(jenis), id)
 		}
 		if terhapus != kini {
 			// Lapis kedua: penghapus menyentuh jumlah lain dari yang dihitung -
 			// batalkan seluruhnya, jangan biarkan yatim atau kelebihan.
-			return fmt.Errorf("services: delete touched %+v but %+v was counted: %w", terhapus, kini, ErrDampakBerubah)
+			return fmt.Errorf("services: delete touched %s but %s were counted: %w", teksDampak(terhapus), teksDampak(kini), ErrDampakBerubah)
 		}
 		hasil.Terhapus = terhapus
 		return nil
@@ -127,7 +132,6 @@ func (l *Layanan) Hapus(ctx context.Context, p inti.Pelaku, jenis JenisHapus, id
 	if err != nil {
 		return HasilHapus{}, err
 	}
-	l.catat(fmt.Sprintf("master contract retro life: deleted %s %s with %d security, %d reinsurer, %d business rows",
-		jenis, id, hasil.Terhapus.Security, hasil.Terhapus.Reinsurer, hasil.Terhapus.Business))
+	l.catat(fmt.Sprintf("master contract retro life: deleted %s %s with %s%s", jenis, id, teksDampak(hasil.Terhapus), oleh(p)))
 	return hasil, nil
 }

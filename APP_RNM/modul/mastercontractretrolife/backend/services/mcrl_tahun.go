@@ -44,6 +44,12 @@ func (m TahunMasuk) keModel() (models.TahunTreaty, error) {
 	if err := w.galat(PesanKosongTahun); err != nil {
 		return t, err
 	}
+	if err := muat("UNDERWRITING YEAR", t.UnderwritingYear, lebarKode); err != nil {
+		return t, err
+	}
+	if err := muat("TRANSACTION YEAR", t.TreatyYear, lebarKode); err != nil {
+		return t, err
+	}
 	var err error
 	if t.StartDate, err = tanggal("START DATE", mulai); err != nil {
 		return t, err
@@ -64,6 +70,9 @@ func (l *Layanan) SimpanTahun(ctx context.Context, p inti.Pelaku, m TahunMasuk, 
 	}
 	t, err := m.keModel()
 	if err != nil {
+		return models.TahunTreaty{}, err
+	}
+	if err := pelakuMuat(p, lebarKode); err != nil {
 		return models.TahunTreaty{}, err
 	}
 	t.UserID = p.AkunID
@@ -88,7 +97,7 @@ func (l *Layanan) SimpanTahun(ctx context.Context, p inti.Pelaku, m TahunMasuk, 
 				return err
 			}
 			if n > 0 {
-				l.catat(fmt.Sprintf("master contract retro life: treaty year %s copied to %d child rows", t.ID, n))
+				l.catat(fmt.Sprintf("master contract retro life: treaty year %s copied to %d child rows%s", t.ID, n, oleh(p)))
 			}
 		}
 		var err error

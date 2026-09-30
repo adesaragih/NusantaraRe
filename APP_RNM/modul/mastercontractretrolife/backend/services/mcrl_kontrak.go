@@ -114,6 +114,9 @@ func (l *Layanan) SimpanKontrak(ctx context.Context, p inti.Pelaku, tahunID stri
 	if err := inti.WajibIdentitas(p); err != nil {
 		return models.Kontrak{}, err
 	}
+	if err := pelakuMuat(p, lebarKode); err != nil {
+		return models.Kontrak{}, err
+	}
 	var hasil models.Kontrak
 	err := l.tx(ctx, func(tx *db.Tx) error {
 		ubah := m.ID != ""
@@ -153,7 +156,7 @@ func (l *Layanan) SimpanKontrak(ctx context.Context, p inti.Pelaku, tahunID stri
 				return err
 			}
 			if n > 0 {
-				l.catat(fmt.Sprintf("master contract retro life: treaty contract %s copied to %d child rows", k.ID, n))
+				l.catat(fmt.Sprintf("master contract retro life: treaty contract %s copied to %d child rows%s", k.ID, n, oleh(p)))
 			}
 		}
 		hasil, err = l.ambilKontrak(ctx, tx, k.ID)

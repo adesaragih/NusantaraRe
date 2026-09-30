@@ -24,6 +24,8 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 
 	inti "nusantarare/inti/backend"
@@ -32,13 +34,28 @@ import (
 	"nusantarare/modul/mastercontractretrolife/backend/services"
 )
 
-// bacaBadan mengurai badan JSON; gagal = 400 dan true.
-func bacaBadan(w http.ResponseWriter, r *http.Request, ke any) bool {
-	if err := json.NewDecoder(r.Body).Decode(ke); err != nil {
-		galat.Tulis(w, http.StatusBadRequest, "request body is not valid JSON")
+// batasBadan - badan permintaan terbesar yang dibaca (64 KiB, sama dengan Treaty Contract Out);
+// isian terpanjang yang sah (`R/I RATE` 1000 byte) jauh di bawahnya.
+const batasBadan = 64 << 10
+
+// bacaBadan mengurai badan JSON SESUDAH identitas diperiksa (401 lebih dulu - permintaan tanpa
+// identitas tidak pernah membuat server menampung badannya); terlalu besar = 413, rusak = 400.
+// Mengembalikan true bila permintaan SUDAH dijawab.
+func bacaBadan(w http.ResponseWriter, r *http.Request, p inti.Pelaku, ke any) bool {
+	if jawabGalat(w, inti.WajibIdentitas(p)) {
 		return true
 	}
-	return false
+	err := json.NewDecoder(http.MaxBytesReader(w, r.Body, batasBadan)).Decode(ke)
+	var besar *http.MaxBytesError
+	switch {
+	case err == nil:
+		return false
+	case errors.As(err, &besar):
+		galat.Tulis(w, http.StatusRequestEntityTooLarge, fmt.Sprintf("request body is larger than %d KiB", batasBadan>>10))
+	default:
+		galat.Tulis(w, http.StatusBadRequest, "request body is not valid JSON")
+	}
+	return true
 }
 
 // idJalur menyamakan id badan dengan id jalur (PUT); beda = 400 dan true.
@@ -55,7 +72,7 @@ func idJalur(w http.ResponseWriter, r *http.Request, id *string) bool {
 func daftarkanTulis(pasang func(string, rute)) {
 	pasang("POST "+Prefix+"/tahun", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
 		var m services.TahunMasuk
-		if bacaBadan(w, r, &m) {
+		if bacaBadan(w, r, p, &m) {
 			return
 		}
 		hasil, err := l.SimpanTahun(r.Context(), p, m, true)
@@ -63,7 +80,7 @@ func daftarkanTulis(pasang func(string, rute)) {
 	})
 	pasang("PUT "+Prefix+"/tahun/{id}", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
 		var m services.TahunMasuk
-		if bacaBadan(w, r, &m) || idJalur(w, r, &m.ID) {
+		if bacaBadan(w, r, p, &m) || idJalur(w, r, &m.ID) {
 			return
 		}
 		hasil, err := l.SimpanTahun(r.Context(), p, m, false)
@@ -72,7 +89,7 @@ func daftarkanTulis(pasang func(string, rute)) {
 	// Kontrak (paket 3): `Add` → `Save` di bawah tahun; `Edit` → `Save` per kontrak.
 	pasang("POST "+Prefix+"/tahun/{id}/kontrak", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
 		var m services.KontrakMasuk
-		if bacaBadan(w, r, &m) || tolakIDBaru(w, m.ID) {
+		if bacaBadan(w, r, p, &m) || tolakIDBaru(w, m.ID) {
 			return
 		}
 		hasil, err := l.SimpanKontrak(r.Context(), p, r.PathValue("id"), m)
@@ -80,7 +97,7 @@ func daftarkanTulis(pasang func(string, rute)) {
 	})
 	pasang("PUT "+Prefix+"/kontrak/{id}", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
 		var m services.KontrakMasuk
-		if bacaBadan(w, r, &m) || idJalur(w, r, &m.ID) {
+		if bacaBadan(w, r, p, &m) || idJalur(w, r, &m.ID) {
 			return
 		}
 		hasil, err := l.SimpanKontrak(r.Context(), p, "", m)
@@ -89,7 +106,7 @@ func daftarkanTulis(pasang func(string, rute)) {
 	// Reinsurer (paket 4): `Add` → `Save` di bawah kontrak; `Edit` → `Save`.
 	pasang("POST "+Prefix+"/kontrak/{id}/reinsurer", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
 		var m services.ReinsurerMasuk
-		if bacaBadan(w, r, &m) || tolakIDBaru(w, m.ID) {
+		if bacaBadan(w, r, p, &m) || tolakIDBaru(w, m.ID) {
 			return
 		}
 		hasil, err := l.SimpanReinsurer(r.Context(), p, r.PathValue("id"), m)
@@ -97,7 +114,7 @@ func daftarkanTulis(pasang func(string, rute)) {
 	})
 	pasang("PUT "+Prefix+"/reinsurer/{id}", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
 		var m services.ReinsurerMasuk
-		if bacaBadan(w, r, &m) || idJalur(w, r, &m.ID) {
+		if bacaBadan(w, r, p, &m) || idJalur(w, r, &m.ID) {
 			return
 		}
 		hasil, err := l.SimpanReinsurer(r.Context(), p, "", m)
@@ -106,7 +123,7 @@ func daftarkanTulis(pasang func(string, rute)) {
 	// Security (paket 5): `Add` → `Save` di bawah reinsurer; `Edit` → `Save`.
 	pasang("POST "+Prefix+"/reinsurer/{id}/security", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
 		var m services.SecurityMasuk
-		if bacaBadan(w, r, &m) || tolakIDBaru(w, m.ID) {
+		if bacaBadan(w, r, p, &m) || tolakIDBaru(w, m.ID) {
 			return
 		}
 		hasil, err := l.SimpanSecurity(r.Context(), p, r.PathValue("id"), m)
@@ -114,7 +131,7 @@ func daftarkanTulis(pasang func(string, rute)) {
 	})
 	pasang("PUT "+Prefix+"/security/{id}", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
 		var m services.SecurityMasuk
-		if bacaBadan(w, r, &m) || idJalur(w, r, &m.ID) {
+		if bacaBadan(w, r, p, &m) || idJalur(w, r, &m.ID) {
 			return
 		}
 		hasil, err := l.SimpanSecurity(r.Context(), p, "", m)
@@ -123,7 +140,7 @@ func daftarkanTulis(pasang func(string, rute)) {
 	// Business (paket 6): `Add` → `Save` di bawah kontrak; `Edit` → `Save`.
 	pasang("POST "+Prefix+"/kontrak/{id}/business", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
 		var m services.BusinessMasuk
-		if bacaBadan(w, r, &m) || tolakIDBaru(w, m.ID) {
+		if bacaBadan(w, r, p, &m) || tolakIDBaru(w, m.ID) {
 			return
 		}
 		hasil, err := l.SimpanBusiness(r.Context(), p, r.PathValue("id"), m)
@@ -131,7 +148,7 @@ func daftarkanTulis(pasang func(string, rute)) {
 	})
 	pasang("PUT "+Prefix+"/business/{id}", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
 		var m services.BusinessMasuk
-		if bacaBadan(w, r, &m) || idJalur(w, r, &m.ID) {
+		if bacaBadan(w, r, p, &m) || idJalur(w, r, &m.ID) {
 			return
 		}
 		hasil, err := l.SimpanBusiness(r.Context(), p, "", m)
@@ -146,7 +163,7 @@ func daftarkanTulis(pasang func(string, rute)) {
 		var m struct {
 			Sasaran []string `json:"sasaran"`
 		}
-		if bacaBadan(w, r, &m) {
+		if bacaBadan(w, r, p, &m) {
 			return
 		}
 		hasil, err := l.SalinSemua(r.Context(), p, r.PathValue("id"), m.Sasaran)
@@ -165,7 +182,7 @@ func daftarkanTulis(pasang func(string, rute)) {
 			var m struct {
 				Dampak *models.Dampak `json:"dampak"`
 			}
-			if bacaBadan(w, r, &m) {
+			if bacaBadan(w, r, p, &m) {
 				return
 			}
 			if m.Dampak == nil {

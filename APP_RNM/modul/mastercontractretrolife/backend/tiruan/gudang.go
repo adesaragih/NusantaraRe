@@ -51,6 +51,30 @@ type Gudang struct {
 	// SelaHapus - dijalankan HapusKontrak sebelum menghapus: meniru baris yang
 	// lahir di antara pencacahan dan penghapusan (lapis kedua kaskade).
 	SelaHapus func()
+	// Kunci mencatat baris yang dikunci `KunciBaris` ("jenis|id"), berurutan.
+	Kunci []string
+}
+
+// KunciBaris - tiruan `SELECT … FOR UPDATE`: mencatat kuncinya; baris tidak ada = ErrTidakAda.
+func (g *Gudang) KunciBaris(_ context.Context, _ *db.Tx, jenis, id string) error {
+	g.Kunci = append(g.Kunci, jenis+"|"+id)
+	var ada bool
+	switch jenis {
+	case "kontrak":
+		_, ada = g.Kontrak[id]
+	case "reinsurer":
+		_, ada = g.Reinsurer[id]
+	case "security":
+		_, ada = g.Security[id]
+	case "business":
+		_, ada = g.Business[id]
+	default:
+		return fmt.Errorf("tiruan: unknown row kind to lock %q", jenis)
+	}
+	if !ada {
+		return fmt.Errorf("%w: %s %s", repository.ErrTidakAda, jenis, id)
+	}
+	return nil
 }
 
 func (g *Gudang) nomorBaru(tabel string) (string, error) {

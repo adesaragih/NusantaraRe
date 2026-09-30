@@ -30,6 +30,7 @@ import (
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/db"
 	"nusantarare/modul/mastercontractretrolife/backend/models"
+	"nusantarare/modul/mastercontractretrolife/backend/repository"
 )
 
 // ErrDampakBerubah - data berubah sejak pratinjau/popup (409); nol baris disentuh.
@@ -54,16 +55,27 @@ func (m BusinessMasuk) keModel() (models.Business, error) {
 	w.teks("RIRATEID", m.RIRateID)
 	w.teks("R/I RATE", m.RIRate)
 	b.RIRateID, b.RIRate = m.RIRateID, m.RIRate
-	return b, w.galat(PesanKosongSemua)
+	if err := w.galat(PesanKosongSemua); err != nil {
+		return b, err
+	}
+	if err := muat("RIRATEID", b.RIRateID, lebarKode); err != nil {
+		return b, err
+	}
+	return b, muat("R/I RATE", b.RIRate, lebarTeks)
 }
 
-func (l *Layanan) namaBusiness(ctx context.Context, kode string) (string, error) {
+// namaBusiness membaca nama business dari master; pilihan BARU wajib lolos saringan autocomplete
+// `BrowseBusinessLife_RD` b651 (`.OLDID StartsWith "L"`).
+func (l *Layanan) namaBusiness(ctx context.Context, kode string, pilihanBaru bool) (string, error) {
 	m, ada, err := l.gudang.AmbilMasterBusiness(ctx, kode)
 	if err != nil {
 		return "", err
 	}
 	if !ada {
 		return "", fmt.Errorf("%w: BUSINESS CODE %q is not in the business master", ErrMasukanTidakSah, kode)
+	}
+	if pilihanBaru && !m.Life() {
+		return "", fmt.Errorf("%w: BUSINESS CODE %q is not a life business", ErrMasukanTidakSah, kode)
 	}
 	return m.Note, nil
 }
@@ -81,8 +93,12 @@ func (l *Layanan) SimpanBusiness(ctx context.Context, p inti.Pelaku, kontrakID s
 		return models.Business{}, err
 	}
 	var hasil models.Business
+	if err := pelakuMuat(p, lebarKode); err != nil {
+		return models.Business{}, err
+	}
 	err := l.tx(ctx, func(tx *db.Tx) error {
 		ubah := m.ID != ""
+		var kodeLama string
 		if ubah {
 			lama, err := l.gudang.AmbilBusiness(ctx, tx, m.ID)
 			if err != nil {
@@ -91,7 +107,11 @@ func (l *Layanan) SimpanBusiness(ctx context.Context, p inti.Pelaku, kontrakID s
 			if kontrakID != "" && lama.TreatyContractID != kontrakID {
 				return fmt.Errorf("%w: %s in treaty contract %s", ErrBusinessTidakAda, m.ID, kontrakID)
 			}
-			kontrakID = lama.TreatyContractID
+			kontrakID, kodeLama = lama.TreatyContractID, lama.BizCode
+		}
+		// ⛔ Induk dikunci lebih dulu - kaskade hapus kontrak yang bersamaan menunggu (K2 tanpa FK).
+		if err := l.kunci(ctx, tx, HapusKontrak, kontrakID); err != nil {
+			return err
 		}
 		k, err := l.ambilKontrak(ctx, tx, kontrakID)
 		if err != nil {
@@ -105,7 +125,7 @@ func (l *Layanan) SimpanBusiness(ctx context.Context, p inti.Pelaku, kontrakID s
 		if err != nil {
 			return err
 		}
-		if b.BizName, err = l.namaBusiness(ctx, b.BizCode); err != nil {
+		if b.BizName, err = l.namaBusiness(ctx, b.BizCode, !ubah || b.BizCode != kodeLama); err != nil {
 			return err
 		}
 		salinanInduk(&b, k, th)
@@ -179,6 +199,9 @@ func (l *Layanan) SalinSemua(ctx context.Context, p inti.Pelaku, businessID stri
 	if err := inti.WajibIdentitas(p); err != nil {
 		return HasilSalin{}, err
 	}
+	if err := pelakuMuat(p, lebarKode); err != nil {
+		return HasilSalin{}, err
+	}
 	hasil := HasilSalin{Pesan: PesanSalinSemua, Baru: []models.Business{}}
 	err := l.tx(ctx, func(tx *db.Tx) error {
 		pr, err := l.sasaranSalin(ctx, tx, businessID)
@@ -197,6 +220,13 @@ func (l *Layanan) SalinSemua(ctx context.Context, p inti.Pelaku, businessID stri
 			return err
 		}
 		for _, k := range pr.Sasaran {
+			// ⛔ Sasaran dikunci - kontrak yang terhapus bersamaan = keadaan berubah, nol baris ditulis.
+			if err := l.gudang.KunciBaris(ctx, tx, string(HapusKontrak), k.ID); err != nil {
+				if errors.Is(err, repository.ErrTidakAda) {
+					return fmt.Errorf("%w (target treaty contract %s was deleted)", ErrDampakBerubah, k.ID)
+				}
+				return err
+			}
 			b := models.Business{BizCode: pr.Business.BizCode, BizName: pr.Business.BizName,
 				RIRateID: pr.Business.RIRateID, RIRate: pr.Business.RIRate, UserID: p.AkunID}
 			salinanInduk(&b, k, th)
@@ -213,6 +243,6 @@ func (l *Layanan) SalinSemua(ctx context.Context, p inti.Pelaku, businessID stri
 	if err != nil {
 		return HasilSalin{}, err
 	}
-	l.catat(fmt.Sprintf("master contract retro life: business %s copied to %d treaty contracts", businessID, hasil.Jumlah))
+	l.catat(fmt.Sprintf("master contract retro life: business %s copied to %d treaty contracts%s", businessID, hasil.Jumlah, oleh(p)))
 	return hasil, nil
 }

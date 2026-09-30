@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { Business, Kontrak, PratinjauSalin, Reinsurer, SecurityReinsurer, TahunTreaty } from './api'
 import { opsiBusiness, opsiRate, opsiReinsurer } from './components/cariMaster'
-import { rincianDampak, tanpaAnak } from './components/KonfirmasiHapus'
+import { penutup, rincianDampak, tanpaAnak } from './components/KonfirmasiHapus'
 import { formBusinessBaru, formBusinessDari, keBusinessMasuk, viewRateTampil } from './components/PanelBusiness'
 import { formKontrakBaru, formKontrakDari, keKontrakMasuk, opsiJenis } from './components/PanelKontrak'
 import { formReinsurerBaru, formReinsurerDari, kelasTotal, keReinsurerMasuk } from './components/PanelReinsurer'
@@ -147,6 +147,17 @@ describe('popup hapus', () => {
     expect(rincianDampak('reinsurer', d)).toEqual(['3 security reinsurer row(s)'])
     expect(rincianDampak('security', d)).toEqual([])
     expect(rincianDampak('business', d)).toEqual([])
+  })
+
+  it('Cancel tidak berlaku selama Yes berjalan (AC 30/35)', () => {
+    let ditutup = 0
+    const tutup = () => {
+      ditutup++
+    }
+    penutup(true, tutup)()
+    expect(ditutup).toBe(0)
+    penutup(false, tutup)()
+    expect(ditutup).toBe(1)
   })
 
   it('tanpa anak dinyatakan (AC 36)', () => {

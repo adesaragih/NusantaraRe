@@ -74,8 +74,10 @@ func sqlCariReinsurer(t string) string {
 	 ORDER BY CLIENTNAME ASC, ID ASC FETCH FIRST %d ROWS ONLY`, t, BatasPilihan)
 }
 
+// sqlAmbilReinsurer - satu reinsurer menurut ID, dengan kolom saringan (life, aktif) yang layanan
+// periksa untuk pilihan BARU (`models.MasterReinsurer.Life`/`Aktif`).
 func sqlAmbilReinsurer(t string) string {
-	return fmt.Sprintf(`SELECT ID, CLIENTNAME FROM %s WHERE ID = :1`, t)
+	return fmt.Sprintf(`SELECT ID, CLIENTNAME, STATUSACTIVE FROM %s WHERE ID = :1`, t)
 }
 
 func sqlCariBusiness(t string) string {
@@ -90,8 +92,8 @@ func sqlAmbilBusiness(t string) string {
 
 // Argumen saringan tetap - nilai VERBATIM RD (flag dan status di models).
 const (
-	idReinsurerLife = "%L0%" // `BrowseCedingCoLife_RD` b565 Contains "L0"
-	awalanBizLife   = "L%"   // `BrowseBusinessLife_RD` b651 StartsWith "L"
+	idReinsurerLife = "%" + models.PenandaReinsurerLife + "%" // `BrowseCedingCoLife_RD` b565 Contains "L0"
+	awalanBizLife   = models.AwalanBusinessLife + "%"         // `BrowseBusinessLife_RD` b651 StartsWith "L"
 )
 
 // PolaCari merakit pola LIKE ber-escape untuk "Contains" RD.
@@ -155,14 +157,16 @@ func (g *Gudang) CariMasterReinsurer(ctx context.Context, kata string) ([]models
 	return hasil, nil
 }
 
-// AmbilMasterReinsurer - satu reinsurer master menurut ID (tanpa saringan
-// aktif: baris lama yang reinsurernya kini nonaktif tetap dapat disunting).
+// AmbilMasterReinsurer - satu reinsurer master menurut ID, TANPA menyaring: baris lama yang
+// reinsurernya kini nonaktif tetap dapat disunting; saringan life/aktif untuk pilihan BARU
+// diperiksa layanan dari kolom yang dibaca di sini.
 func (g *Gudang) AmbilMasterReinsurer(ctx context.Context, id string) (models.MasterReinsurer, bool, error) {
-	bb, err := g.bacaMaster(ctx, MasterReinsurer, sqlAmbilReinsurer, []string{"ID", "CLIENTNAME"}, id)
+	bb, err := g.bacaMaster(ctx, MasterReinsurer, sqlAmbilReinsurer, []string{"ID", "CLIENTNAME", "STATUSACTIVE"}, id)
 	if err != nil || len(bb) == 0 {
 		return models.MasterReinsurer{}, false, err
 	}
-	return models.MasterReinsurer{ID: bb[0].s("ID"), ClientName: bb[0].s("CLIENTNAME")}, true, nil
+	return models.MasterReinsurer{ID: bb[0].s("ID"), ClientName: bb[0].s("CLIENTNAME"),
+		StatusActive: bb[0].s("STATUSACTIVE")}, true, nil
 }
 
 // CariMasterBusiness - pilihan `BUSINESS NAME`.

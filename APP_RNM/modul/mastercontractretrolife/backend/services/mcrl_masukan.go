@@ -93,13 +93,30 @@ func desimal(label, v string) (*apd.Decimal, error) {
 	// ⛔ NUMBER Oracle menyimpan paling banyak 38 digit bermakna; lebih dari
 	// itu DIBULATKAN diam-diam. Ditolak di sini, tidak dibulatkan (T7 ronde 2:
 	// "penolakan itu harus terlihat").
+	// ⛔ Rentang juga dijaga (perbaikan /code-review 01-10-2026): `1E-200` dan
+	// `1E+99999` hanya berdigit satu, tetapi penulisannya sebagai angka biasa
+	// melebihi 38 digit - Oracle menolaknya ORA-01426 (500). Ditolak di sini, 422.
 	ringkas := new(apd.Decimal).Set(d)
 	ringkas.Reduce(ringkas)
-	if ringkas.NumDigits() > utils.DecimalPrecision {
-		return nil, fmt.Errorf("%w: %s %q has more than %d significant digits", ErrMasukanTidakSah, label, v,
+	if ringkas.NumDigits() > utils.DecimalPrecision || rentangDigit(ringkas) > utils.DecimalPrecision {
+		return nil, fmt.Errorf("%w: %s %q has more than %d digits", ErrMasukanTidakSah, label, v,
 			utils.DecimalPrecision)
 	}
 	return d, nil
+}
+
+// rentangDigit - banyak digit bila d ditulis sebagai angka biasa (bulat + pecahan, tanpa nol
+// ekor): `12.345` = 5, `0.001` = 3, `1E+2` = 3.
+func rentangDigit(d *apd.Decimal) int64 {
+	n := d.NumDigits()
+	e := int64(d.Exponent)
+	if e >= 0 {
+		return n + e
+	}
+	if -e > n {
+		return -e
+	}
+	return n
 }
 
 // kurang = a - b; nil bila salah satunya nil.

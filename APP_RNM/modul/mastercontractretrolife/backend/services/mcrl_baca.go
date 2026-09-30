@@ -78,6 +78,10 @@ type Gudang interface {
 	HapusReinsurer(ctx context.Context, tx *db.Tx, id string) (models.Dampak, error)
 	HapusSecurity(ctx context.Context, tx *db.Tx, id string) error
 	HapusBusiness(ctx context.Context, tx *db.Tx, id string) error
+
+	// KunciBaris mengunci satu baris (`SELECT … FOR UPDATE`) sampai tx selesai - induk sebelum anak
+	// ditulis, baris sebelum kaskade menghitung (K2 tanpa FK). `jenis` = nilai JenisHapus.
+	KunciBaris(ctx context.Context, tx *db.Tx, jenis, id string) error
 }
 
 // Galat "tidak ada" per entitas (404) - handler tidak mengimpor repository.

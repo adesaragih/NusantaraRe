@@ -13,7 +13,7 @@ import (
 
 func serverReinsurer(t *testing.T) *uji {
 	u := server(t, true)
-	u.g.MasterRe = []models.MasterReinsurer{{ID: "UJI-L01", ClientName: "UJI REASURANSI SATU"}}
+	u.g.MasterRe = []models.MasterReinsurer{{ID: "UJI-L01", ClientName: "UJI REASURANSI SATU", StatusActive: models.StatusMasterReinsurerAktif}}
 	return u
 }
 

@@ -74,14 +74,19 @@ func (m ReinsurerMasuk) keModel() (models.Reinsurer, error) {
 	return r, nil
 }
 
-// namaReinsurer membaca nama reinsurer dari master AGENT; di luar master = 422.
-func (l *Layanan) namaReinsurer(ctx context.Context, label, id string) (string, error) {
+// namaReinsurer membaca nama reinsurer dari master AGENT; di luar master = 422. Pilihan BARU (baris
+// baru, atau reinsurer yang diganti) wajib lolos saringan autocomplete `BrowseCedingCoLife_RD` - life
+// (b565) dan aktif (b601); baris lama yang reinsurernya kini nonaktif tetap dapat disunting.
+func (l *Layanan) namaReinsurer(ctx context.Context, label, id string, pilihanBaru bool) (string, error) {
 	m, ada, err := l.gudang.AmbilMasterReinsurer(ctx, id)
 	if err != nil {
 		return "", err
 	}
 	if !ada {
 		return "", fmt.Errorf("%w: %s %q is not in the reinsurer master", ErrMasukanTidakSah, label, id)
+	}
+	if pilihanBaru && (!m.Life() || !m.Aktif()) {
+		return "", fmt.Errorf("%w: %s %q is not an active life reinsurer", ErrMasukanTidakSah, label, id)
 	}
 	return m.ClientName, nil
 }
@@ -92,9 +97,13 @@ func (l *Layanan) SimpanReinsurer(ctx context.Context, p inti.Pelaku, kontrakID 
 	if err := inti.WajibIdentitas(p); err != nil {
 		return models.Reinsurer{}, err
 	}
+	if err := pelakuMuat(p, lebarTeks); err != nil {
+		return models.Reinsurer{}, err
+	}
 	var hasil models.Reinsurer
 	err := l.tx(ctx, func(tx *db.Tx) error {
 		ubah := m.ID != ""
+		var reinsurerLama string
 		if ubah {
 			lama, err := l.ambilReinsurer(ctx, tx, m.ID)
 			if err != nil {
@@ -103,7 +112,11 @@ func (l *Layanan) SimpanReinsurer(ctx context.Context, p inti.Pelaku, kontrakID 
 			if kontrakID != "" && lama.TreatyContractID != kontrakID {
 				return fmt.Errorf("%w: %s in treaty contract %s", ErrReinsurerTidakAda, m.ID, kontrakID)
 			}
-			kontrakID = lama.TreatyContractID
+			kontrakID, reinsurerLama = lama.TreatyContractID, lama.ReinsurerID
+		}
+		// ⛔ Induk dikunci lebih dulu - kaskade hapus kontrak yang bersamaan menunggu (K2 tanpa FK).
+		if err := l.kunci(ctx, tx, HapusKontrak, kontrakID); err != nil {
+			return err
 		}
 		k, err := l.ambilKontrak(ctx, tx, kontrakID)
 		if err != nil {
@@ -113,7 +126,7 @@ func (l *Layanan) SimpanReinsurer(ctx context.Context, p inti.Pelaku, kontrakID 
 		if err != nil {
 			return err
 		}
-		if r.ReinsurerName, err = l.namaReinsurer(ctx, "REINS ID", r.ReinsurerID); err != nil {
+		if r.ReinsurerName, err = l.namaReinsurer(ctx, "REINS ID", r.ReinsurerID, !ubah || r.ReinsurerID != reinsurerLama); err != nil {
 			return err
 		}
 		r.TreatyYearID, r.TreatyContractID = k.IDTreatyYear, k.ID

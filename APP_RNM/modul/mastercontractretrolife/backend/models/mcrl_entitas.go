@@ -15,6 +15,7 @@ package models
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/cockroachdb/apd/v3"
@@ -125,7 +126,15 @@ type JenisReasuransi struct {
 type MasterReinsurer struct {
 	ID         string `json:"id"`
 	ClientName string `json:"clientName"`
+	// StatusActive - dibaca saat simpan untuk saringan `.StatusActive = 1`; tidak dikirim ke layar.
+	StatusActive string `json:"-"`
 }
+
+// Life - saringan `BrowseCedingCoLife_RD` b565 `.ID Contains "L0"`.
+func (m MasterReinsurer) Life() bool { return strings.Contains(m.ID, PenandaReinsurerLife) }
+
+// Aktif - saringan `BrowseCedingCoLife_RD` b601 `.StatusActive = 1`.
+func (m MasterReinsurer) Aktif() bool { return m.StatusActive == StatusMasterReinsurerAktif }
 
 // MasterBusiness - satu pilihan autocomplete `BUSINESS NAME` (`BrowseBusinessLife_RD`).
 type MasterBusiness struct {
@@ -134,6 +143,9 @@ type MasterBusiness struct {
 	OldID string `json:"oldId"`
 }
 
+// Life - saringan `BrowseBusinessLife_RD` b651 `.OLDID StartsWith "L"`.
+func (m MasterBusiness) Life() bool { return strings.HasPrefix(m.OldID, AwalanBusinessLife) }
+
 // Nilai saringan master VERBATIM RD - di models karena bernama kode/status
 // (penjaga Claim Life `TestKodeStatusLiteralHanyaDiModels`).
 const (
@@ -141,6 +153,10 @@ const (
 	FlagJenisReasuransiLife = "1"
 	// StatusMasterReinsurerAktif - `BrowseCedingCoLife_RD` b601 `.StatusActive = 1`.
 	StatusMasterReinsurerAktif = "1"
+	// PenandaReinsurerLife - `BrowseCedingCoLife_RD` b565 `.ID Contains "L0"`.
+	PenandaReinsurerLife = "L0"
+	// AwalanBusinessLife - `BrowseBusinessLife_RD` b651 `.OLDID StartsWith "L"`.
+	AwalanBusinessLife = "L"
 )
 
 // waktuJSON menulis stempel waktu; nol menjadi teks kosong (ADR-U-0027).

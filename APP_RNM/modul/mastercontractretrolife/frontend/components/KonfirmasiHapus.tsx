@@ -19,6 +19,14 @@ export function rincianDampak(jenis: JenisHapus, d: Dampak): string[] {
   return baris
 }
 
+/**
+ * Penutup popup: selama `Yes` masih berjalan, `Cancel` (dan tutup popup) TIDAK berlaku - menutup
+ * popup saat permintaan sudah di jalan membuat pengguna mengira nol baris tersentuh (AC 30/35).
+ */
+export function penutup(sibuk: boolean, tutup: () => void): () => void {
+  return sibuk ? () => undefined : tutup
+}
+
 /** AC 36: baris tanpa anak tetap dikonfirmasi, dengan pesan tanpa anak. */
 export function tanpaAnak(d: Dampak): boolean {
   return d.reinsurer + d.security + d.business === 0
@@ -50,7 +58,7 @@ export default function KonfirmasiHapus({
   return (
     <Modal
       judul={judul}
-      onTutup={onBatal}
+      onTutup={penutup(sibuk, onBatal)}
       labelBatal={labelBatal}
       aksi={
         <button type="button" className="btn btn--primary" disabled={sibuk || dampak === null} onClick={onYa}>

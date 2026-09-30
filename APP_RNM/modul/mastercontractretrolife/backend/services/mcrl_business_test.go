@@ -121,8 +121,9 @@ func TestSalinSemuaSatuTransaksiDanPesanVerbatim(t *testing.T) {
 	if baru != 2 || g.Komit != 1 {
 		t.Errorf("%d baris baru dalam %d transaksi, mau 2 dalam 1", baru, g.Komit)
 	}
-	if len(log) != 1 || !containsAll(log[0], "2", "UJI-BZ") || strings.Contains(log[0], "UJI-PELAKU") {
-		t.Errorf("log server (K6, tanpa nama orang): %q", log)
+	// K6 (diperjelas 01-10-2026): satu baris log bercacah, menyebut AKUN pelaku - bukan nama orang.
+	if len(log) != 1 || !containsAll(log[0], "2", "UJI-BZ", "by account UJI-PELAKU") {
+		t.Errorf("log server (K6): %q", log)
 	}
 }
 
