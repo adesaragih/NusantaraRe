@@ -101,6 +101,12 @@ func TestPenampungKontrakCocokArgumen(t *testing.T) {
 	if n, mau := hitungPenampung(sqlPerbaruiReinsurer("S.T")), len(argPersenReinsurer(make([]any, 5), r))+1; n != mau {
 		t.Errorf("ubah reinsurer: %d penampung, %d argumen", n, mau)
 	}
+	if n := hitungPenampung(sqlSisipSecurity("S.T")); n != 9 {
+		t.Errorf("sisip security: %d penampung, mau 7 + 2 angka", n)
+	}
+	if n := hitungPenampung(sqlPerbaruiSecurity("S.T")); n != 6 {
+		t.Errorf("ubah security: %d penampung, mau 3 + 2 angka + ID", n)
+	}
 }
 
 func TestSQLTotalSharePerKontrak(t *testing.T) {

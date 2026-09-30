@@ -162,6 +162,35 @@ func (g *Gudang) PerbaruiReinsurer(_ context.Context, _ *db.Tx, r models.Reinsur
 	return nil
 }
 
+// SisipSecurity - ID dari sequence tiruan.
+func (g *Gudang) SisipSecurity(_ context.Context, _ *db.Tx, s models.SecurityReinsurer) (string, error) {
+	if err := g.gagal("SisipSecurity"); err != nil {
+		return "", err
+	}
+	id, err := g.nomorBaru(repository.TabelSecurity)
+	if err != nil {
+		return "", err
+	}
+	s.ID, s.TglUpdate = id, g.Jam
+	g.Security[id] = s
+	return id, nil
+}
+
+// PerbaruiSecurity - kunci induk tidak berpindah.
+func (g *Gudang) PerbaruiSecurity(_ context.Context, _ *db.Tx, s models.SecurityReinsurer) error {
+	if err := g.gagal("PerbaruiSecurity"); err != nil {
+		return err
+	}
+	lama, ada := g.Security[s.ID]
+	if !ada {
+		return repository.ErrTidakAda
+	}
+	s.TreatyYearID, s.TreatyContractID, s.TreatyReinsurerID, s.TglUpdate =
+		lama.TreatyYearID, lama.TreatyContractID, lama.TreatyReinsurerID, g.Jam
+	g.Security[s.ID] = s
+	return nil
+}
+
 // TotalSharePerKontrak - LEFT JOIN tiruan atas dua kunci induk.
 func (g *Gudang) TotalSharePerKontrak(_ context.Context, tahunID string) ([]models.TotalShareKontrak, error) {
 	kontrak := urutID(g.Kontrak, func(k models.Kontrak) bool { return tahunID == "" || k.IDTreatyYear == tahunID },

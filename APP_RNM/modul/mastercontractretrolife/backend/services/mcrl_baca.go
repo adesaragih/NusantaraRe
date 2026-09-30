@@ -15,6 +15,7 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/mastercontractretrolife/backend/models"
 	"nusantarare/modul/mastercontractretrolife/backend/repository"
 )
@@ -60,6 +61,10 @@ type Gudang interface {
 	// TotalSharePerKontrak - total PCTSHARE tiap kontrak (tahunID kosong = semua),
 	// kontrak tanpa reinsurer ikut dengan total nil (tiket 11).
 	TotalSharePerKontrak(ctx context.Context, tahunID string) ([]models.TotalShareKontrak, error)
+
+	// Penulis security (paket 5).
+	SisipSecurity(ctx context.Context, tx *db.Tx, s models.SecurityReinsurer) (string, error)
+	PerbaruiSecurity(ctx context.Context, tx *db.Tx, s models.SecurityReinsurer) error
 }
 
 // Galat "tidak ada" per entitas (404) - handler tidak mengimpor repository.
@@ -177,10 +182,12 @@ func (l *Layanan) DaftarReinsurer(ctx context.Context, p inti.Pelaku, kontrakID 
 }
 
 // JawabanSecurity - grid security satu reinsurer, beserta induknya (kepala
-// panel `ID Reinsurer` / `Reinsurer Name` / `PCT Share (%)`).
+// panel `ID Reinsurer` / `Reinsurer Name` / `PCT Share (%)`) dan eksposur
+// efektif tiap baris, DIKUNCI ID baris (bukan urutan) - tiket 06, OQ-MCRL-08.
 type JawabanSecurity struct {
-	Induk  models.Reinsurer           `json:"induk"`
-	Daftar []models.SecurityReinsurer `json:"daftar"`
+	Induk    models.Reinsurer           `json:"induk"`
+	Daftar   []models.SecurityReinsurer `json:"daftar"`
+	Eksposur map[string]string          `json:"eksposur"`
 }
 
 // DaftarSecurity - tombol `Security Reinsurer` (`InputSecurityLifeReinsurers.xml` b12441).
@@ -193,7 +200,18 @@ func (l *Layanan) DaftarSecurity(ctx context.Context, p inti.Pelaku, reinsurerID
 		return JawabanSecurity{}, err
 	}
 	d, err := l.gudang.DaftarSecurity(ctx, nil, r.TreatyYearID, r.TreatyContractID, r.ID)
-	return JawabanSecurity{Induk: r, Daftar: kosongBukanNil(d)}, err
+	if err != nil {
+		return JawabanSecurity{}, err
+	}
+	eks := map[string]string{}
+	for _, s := range d {
+		e, err := Eksposur(s.PctShare, r.PctShare)
+		if err != nil {
+			return JawabanSecurity{}, err
+		}
+		eks[s.ID] = utils.FormatDecimal(e)
+	}
+	return JawabanSecurity{Induk: r, Daftar: kosongBukanNil(d), Eksposur: eks}, nil
 }
 
 // JawabanBusiness - grid business satu kontrak, beserta kontraknya.
