@@ -190,4 +190,8 @@ func TestRuteGagalBaca500(t *testing.T) {
 	if w.Code != http.StatusInternalServerError || !strings.Contains(pesan, "M_NAV_MENU") {
 		t.Errorf("kode %d, galat %q - mau 500 yang menyebut M_NAV_MENU", w.Code, pesan)
 	}
+	// Galat driver tidak ke badan jawaban - ia tinggal di log server.
+	if strings.Contains(pesan, "ORA-12541") || strings.Contains(pesan, "listener") {
+		t.Errorf("galat driver bocor ke badan jawaban: %q", pesan)
+	}
 }

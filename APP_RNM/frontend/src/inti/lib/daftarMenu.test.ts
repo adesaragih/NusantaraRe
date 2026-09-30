@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { bentukMenuTabel, HALAMAN_BERANDA, susunMenu, type EntriMenu, type MenuTabel } from './daftarMenu'
+import { bentukMenuTabel, entriAplikasi, HALAMAN_BERANDA, susunMenu, type EntriMenu, type MenuTabel } from './daftarMenu'
 
 // Menu dari tabel M_NAV_MENU (brief menu 30-09-2026): pohon `GET /api/menu`
 // DIPOTONG dengan rute frontend yang benar-benar terdaftar. Rute di sini
@@ -21,7 +21,17 @@ const TABEL: MenuTabel = {
   golongan: [
     {
       kode: 'FACULTATIVE',
-      kelompok: [{ kode: 'nbfacin', label: 'NB FacIn', modul: 'nbfacin', dimigrasi: false, butir: [] }],
+      kelompok: [
+        { kode: 'nbfacin', label: 'NB FacIn', modul: 'nbfacin', dimigrasi: false, butir: [] },
+        // DIMIGRASI '0' yang (keliru) berbutir berute: tetap "belum dimigrasi".
+        {
+          kode: 'rnwfacin',
+          label: 'RNW Fac In',
+          modul: 'rnwfacin',
+          dimigrasi: false,
+          butir: [{ kode: 'register', label: 'Register', modul: 'rnwfacin' }],
+        },
+      ],
     },
     {
       kode: 'KLAIM',
@@ -79,8 +89,15 @@ describe('susunMenu: pohon tabel dipotong rute frontend', () => {
 
   it('kelompok belum dimigrasi tetap berdiri; kelompok dimigrasi tanpa butir hilang', () => {
     const kelompok = s.golongan.flatMap((g) => g.kelompok)
-    expect(kelompok.filter((k) => !k.dimigrasi).map((k) => k.kode)).toEqual(['nbfacin', 'claimfacin'])
+    expect(kelompok.filter((k) => !k.dimigrasi).map((k) => k.kode)).toEqual(['nbfacin', 'rnwfacin', 'claimfacin'])
     expect(kelompok.map((k) => k.kode)).not.toContain('komiteclaimlife')
+  })
+
+  it("DIMIGRASI '0' menentukan: butirnya tidak tampil walau berute, dan dicatat", () => {
+    const rnw = s.golongan[0]?.kelompok.find((k) => k.kode === 'rnwfacin')
+    expect(rnw?.butir).toEqual([])
+    expect(s.entri.filter((e) => e.kelompok === 'RNW Fac In')).toEqual([])
+    expect(s.terlipat).toEqual(['rnwfacin/register'])
   })
 
   it('golongan tanpa kelompok tampil hilang', () => {
@@ -95,6 +112,10 @@ describe('susunMenu: pohon tabel dipotong rute frontend', () => {
     const tco = s.golongan[2]?.kelompok[0]?.butir[0]
     expect(tco).toEqual({ halaman: 'tco-tahun', label: 'Treaty Contract Out', pemilik: 'treatycontractout', datar: true })
     expect(s.golongan[1]?.kelompok[1]?.butir.some((b) => 'datar' in b)).toBe(false)
+  })
+
+  it('entriAplikasi: hanya milik aplikasi (Beranda)', () => {
+    expect(entriAplikasi(RUTE).map((e) => e.modul)).toEqual(['beranda'])
   })
 
   it('palet: Beranda lalu butir yang tampil, urutan sidebar', () => {

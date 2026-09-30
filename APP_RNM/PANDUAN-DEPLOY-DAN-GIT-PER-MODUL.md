@@ -304,8 +304,11 @@ Jadi menambah satu menu = **dua sisi, satu deploy**:
 4. **`-migrate` dijalankan work owner** — sampai itu, backend baru pun tetap menjawab dari baris lama,
    dan butir baru tidak tampil.
 
-Menyembunyikan satu menu tanpa deploy: `STATUS_AKTIF = '0'` pada barisnya (atau pada kelompoknya —
-seluruh butirnya ikut hilang). Pembaca menu hanya membaca baris `'1'`.
+Menyembunyikan satu menu: `STATUS_AKTIF = '0'` pada barisnya (atau pada kelompoknya — seluruh butirnya
+ikut hilang); pembaca menu hanya membaca baris `'1'`. Itu **perubahan data di Oracle** — tulis ke DB,
+jadi dilakukan work owner/DBA dengan persetujuan, bukan executor. Penjaga membaca migrasi, jadi tidak
+melihat perubahan data semacam itu; bila menu itu memang dibuang untuk seterusnya, tuliskan sebagai
+migrasi `inti` berikutnya dan sunting kedua penjaga.
 
 **Di luar lingkup hari ini** (dicatat, tidak dibangun): tabel akses per akun (mis. `M_NAV_MENU_AKSES`:
 akun atau peran → `MENU_ID`) dan login. Titik sambungnya sudah ada: `inti/menu`

@@ -4,6 +4,7 @@ package menu
 // walau modul mana pun nonaktif.
 
 import (
+	"log"
 	"net/http"
 	"strings"
 
@@ -18,8 +19,10 @@ import (
 // `stubPelaku` = AUTH_STUB, dibaca hanya untuk diteruskan ke
 // `SaringMenuUntukPelaku`.
 //
-// ⛔ Kegagalan dijawab galat TERANG (ADR-0015), tidak pernah menu kosong:
-// sidebar yang kosong diam-diam terbaca "aplikasi tanpa menu".
+// ⛔ Kegagalan dijawab galat TERANG, tidak pernah menu kosong: sidebar yang
+// kosong diam-diam terbaca "aplikasi tanpa menu". Rincian galat driver
+// tinggal di log server, tidak di badan jawaban - pesannya dapat memuat
+// nilai kolom (pola `modul/claimlife/handlers`, `inti/layanan`).
 func Rute(pembaca PembacaMenu, modulAktif []string, stubPelaku bool) http.HandlerFunc {
 	aktif := append([]string(nil), modulAktif...)
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -34,7 +37,8 @@ func Rute(pembaca PembacaMenu, modulAktif []string, stubPelaku bool) http.Handle
 					"tabel M_NAV_MENU belum ada - migrasi 900 belum dijalankan (-migrate, oleh work owner)")
 				return
 			}
-			galat.Tulis(w, http.StatusInternalServerError, "menu: membaca M_NAV_MENU gagal: "+err.Error())
+			log.Printf("menu: membaca M_NAV_MENU: %v", err)
+			galat.Tulis(w, http.StatusInternalServerError, "menu: membaca M_NAV_MENU gagal; rinciannya di log server")
 			return
 		}
 		galat.TulisJSON(w, SaringMenuUntukPelaku(inti.PelakuDari(r, stubPelaku), Susun(baris, aktif)))

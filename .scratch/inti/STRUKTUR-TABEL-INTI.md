@@ -25,7 +25,7 @@ terisi adalah **butir menu** di bawah kelompoknya *(halaman frontend yang sudah 
 | `URUTAN` | bilangan bulat | tidak | | urutan tampil | brief §1 — urutan di dalam induknya *(kelompok: di dalam golongannya)* |
 | `STATUS_AKTIF` | teks | tidak | | saringan baca | brief §1 — `'1'` aktif *(bawaan)*, `'0'` nonaktif; konvensi data warisan |
 | `DIMIGRASI` | teks | tidak | | sidebar *(“belum dimigrasi”)* | brief §1 — `'1'` modul sudah punya layar; `'0'` *(bawaan)* tampil terlipat “belum dimigrasi” |
-| `TGL_BUAT` | DATE | tidak | | jejak | brief §1 — bawaan `SYSDATE` |
+| `TGL_BUAT` | DATE | tidak | | jejak | brief §1 (“jejak waktu”); `DEFAULT SYSDATE NOT NULL` keputusan asisten — setiap baris punya waktu buat |
 | `TGL_UBAH` | DATE | ya | | jejak | brief §1 |
 
 **Index:** `PARENT_ID`, `GROUPMENU`. `KODE` berindeks lewat UNIQUE-nya.

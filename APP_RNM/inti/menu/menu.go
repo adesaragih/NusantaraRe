@@ -18,7 +18,8 @@ import (
 
 // Golongan adalah isi CHECK `GROUPMENU`, dalam urutan tampil sidebar - urutan
 // yang work owner tulis ("TREATY, FACULTATIVE, KLAIM, MASTER"), bukan urutan
-// abjad `ORDER BY GROUPMENU`.
+// abjad `ORDER BY GROUPMENU`. `inti/penjaga/menu_test.go` membandingkannya
+// dengan CHECK di migrasi 900.
 var Golongan = []string{"TREATY", "FACULTATIVE", "KLAIM", "MASTER"}
 
 // Baris adalah satu baris `M_NAV_MENU` yang aktif.

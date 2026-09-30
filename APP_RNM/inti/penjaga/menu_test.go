@@ -25,12 +25,15 @@ import (
 	"strings"
 	"testing"
 
+	"nusantarare/inti/menu"
 	"nusantarare/inti/migrasi"
 )
 
-// golonganMenu - isi CHECK GROUPMENU, urutan tampil di sidebar (permintaan
-// work owner 30-09-2026).
-var golonganMenu = []string{"TREATY", "FACULTATIVE", "KLAIM", "MASTER"}
+// golonganMenu - golongan yang `GET /api/menu` kenal (`menu.Golongan`, urutan
+// tampil sidebar). ⛔ BUKAN salinan: golongan yang ditambah ke CHECK tetapi
+// tidak ke `menu.Golongan` akan dibuang `Susun` diam-diam - uji CHECK di bawah
+// menagihnya.
+var golonganMenu = menu.Golongan
 
 // kelompokMenu adalah satu baris kelompok modul di isi menu.
 type kelompokMenu struct {

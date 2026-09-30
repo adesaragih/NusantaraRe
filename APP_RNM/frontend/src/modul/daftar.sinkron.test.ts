@@ -49,8 +49,9 @@ describe('sidebar ↔ palet, dua arah', () => {
     expect(SHELL).toContain('tersusun?.golongan.map((g) =>')
     expect(SHELL).toContain('menu={tersusun?.entri ?? berandaSaja}')
     const susun = DAFTAR_MENU.slice(DAFTAR_MENU.indexOf('export function susunMenu'))
-    expect(susun).toContain('kelompok.push({ kode: k.kode, nama: k.label, dimigrasi: k.dimigrasi, butir })')
-    expect(susun.slice(susun.indexOf('kelompok.push('))).toContain('for (const b of butir) {')
+    const masuk = "kelompok.push({ kode: k.kode, nama: k.label, dimigrasi: true, butir })"
+    expect(susun).toContain(masuk)
+    expect(susun.slice(susun.indexOf(masuk))).toContain('of butir) hasil.entri.push(')
   })
 
   it('label palet datang dari labels.ts, tidak diketik ulang', () => {

@@ -114,8 +114,16 @@ describe('sidebar dan palet dari GET /api/menu', () => {
     expect(shell).toContain('menu={tersusun?.entri ?? berandaSaja}')
   })
 
-  it('kepala golongan dan galat menu tampil di sidebar', () => {
+  it('kepala golongan, galat menu, dan menu kosong tampil di sidebar', () => {
     expect(shell).toContain('shell__golongan-judul')
     expect(shell).toContain('<Gagal galat={menuTabel.galat} />')
+    // Tabel tanpa satu pun baris yang dapat tampil: DIKATAKAN, bukan sidebar
+    // yang hanya berisi Beranda tanpa sebab.
+    expect(shell).toContain('tersusun !== null && tersusun.golongan.length === 0')
+    expect(shell).toContain('{KERANGKA.menuKosong}')
+  })
+
+  it("kelompok DIMIGRASI '0' dirender 'belum dimigrasi' menurut DIMIGRASI-nya", () => {
+    expect(shell).toContain('{!k.dimigrasi ? (')
   })
 })

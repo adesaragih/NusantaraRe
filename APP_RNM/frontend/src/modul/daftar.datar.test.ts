@@ -41,8 +41,9 @@ describe('menu datar', () => {
   })
   it('Shell merender butir datar sebagai satu tombol, tanpa KelompokMenu', () => {
     const shell = readFileSync(join(__dirname, '..', 'inti', 'components', 'Shell.tsx'), 'utf8')
-    expect(shell).toContain('const datar = butirDatar(butir)')
-    const cabang = shell.slice(shell.indexOf('{datar !== undefined ? ('), shell.indexOf(': butir.length === 0 ? ('))
+    expect(shell).toContain('const datar = butirDatar(k.butir)')
+    const awal = shell.indexOf(': datar !== undefined ? (')
+    const cabang = shell.slice(awal, shell.indexOf(') : (', awal))
     expect(cabang).toContain('pilih(datar.halaman)')
     expect(cabang).not.toContain('<KelompokMenu')
   })

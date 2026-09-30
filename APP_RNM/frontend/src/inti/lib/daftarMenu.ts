@@ -168,6 +168,13 @@ export interface MenuTersusun<H extends string = string> {
   entri: EntriMenu<H>[]
   /** Butir tabel tanpa rute frontend, `<kelompok>/<butir>` - untuk konsol. */
   tanpaRute: string[]
+  /** Butir tabel di bawah kelompok `DIMIGRASI = '0'`, tidak tampil - untuk konsol. */
+  terlipat: string[]
+}
+
+/** Entri milik APLIKASI (Beranda, pemilik `null`) - bukan baris tabel, selalu ada. */
+export function entriAplikasi<H extends string>(rute: readonly EntriMenu<H>[]): EntriMenu<H>[] {
+  return rute.filter((e) => e.pemilik === null)
 }
 
 /**
@@ -177,8 +184,10 @@ export interface MenuTersusun<H extends string = string> {
  *   - butir tabel TANPA rute di `rute` tidak tampil, dan dicatat di `tanpaRute`
  *   - rute TANPA butir tabel tidak tampil (yang diulang hanya baris tabel)
  *   - LABEL dari tabel; penanda `datar` dari rute frontend (cara tampil)
- *   - kelompok belum dimigrasi tanpa butir tetap BERDIRI ("belum dimigrasi");
- *     kelompok dimigrasi yang butirnya habis - modulnya nonaktif (MODUL_AKTIF,
+ *   - kelompok `DIMIGRASI = '0'` tetap BERDIRI, terlipat "belum dimigrasi" -
+ *     tanpa butir, walau tabel (keliru) memberinya butir berute: butir itu
+ *     dicatat di `terlipat`
+ *   - kelompok dimigrasi yang butirnya habis - modulnya nonaktif (MODUL_AKTIF,
  *     backend tidak mengirim butirnya) atau tak satu pun berute - hilang:
  *     "belum dimigrasi" akan berbohong
  *   - golongan tanpa kelompok tampil hilang
@@ -186,11 +195,15 @@ export interface MenuTersusun<H extends string = string> {
  * Beranda bukan baris tabel: ia diambil dari `rute` (pemilik `null`).
  */
 export function susunMenu<H extends string>(tabel: MenuTabel, rute: readonly EntriMenu<H>[]): MenuTersusun<H> {
-  const beranda = rute.filter((e) => e.pemilik === null)
-  const hasil: MenuTersusun<H> = { golongan: [], entri: [...beranda], tanpaRute: [] }
+  const hasil: MenuTersusun<H> = { golongan: [], entri: entriAplikasi(rute), tanpaRute: [], terlipat: [] }
   for (const g of tabel.golongan) {
     const kelompok: KelompokSidebar<H>[] = []
     for (const k of g.kelompok) {
+      if (!k.dimigrasi) {
+        for (const b of k.butir) hasil.terlipat.push(`${k.kode}/${b.kode}`)
+        kelompok.push({ kode: k.kode, nama: k.label, dimigrasi: false, butir: [] })
+        continue
+      }
       const butir: ButirSidebar<H>[] = []
       for (const b of k.butir) {
         const r = rute.find((e) => e.pemilik !== null && e.modul === b.kode)
@@ -200,17 +213,10 @@ export function susunMenu<H extends string>(tabel: MenuTabel, rute: readonly Ent
         }
         butir.push({ halaman: r.modul, label: b.label, pemilik: b.modul, ...(r.datar === true ? { datar: true as const } : {}) })
       }
-      if (butir.length === 0 && k.dimigrasi) continue
-      kelompok.push({ kode: k.kode, nama: k.label, dimigrasi: k.dimigrasi, butir })
-      for (const b of butir) {
-        hasil.entri.push({
-          modul: b.halaman,
-          label: b.label,
-          kelompok: k.label,
-          pemilik: b.pemilik,
-          ...(b.datar === true ? { datar: true as const } : {}),
-        })
-      }
+      if (butir.length === 0) continue
+      kelompok.push({ kode: k.kode, nama: k.label, dimigrasi: true, butir })
+      // Palet = sidebar: entri dari butir yang SAMA, datar ikut apa adanya.
+      for (const { halaman, ...sisa } of butir) hasil.entri.push({ modul: halaman, kelompok: k.label, ...sisa })
     }
     if (kelompok.length > 0) hasil.golongan.push({ kode: g.kode, kelompok })
   }

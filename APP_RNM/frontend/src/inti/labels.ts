@@ -186,6 +186,8 @@ export const KERANGKA = {
   modeStub: 'mode stub',
   /** `[tidak ada di korpus]` — `GET /api/menu` sedang dibaca (menu dari M_NAV_MENU). */
   memuatMenu: 'Memuat menu…',
+  /** `[tidak ada di korpus]` — `GET /api/menu` menjawab, tetapi tak satu baris pun dapat tampil. */
+  menuKosong: 'Menu kosong — M_NAV_MENU tidak memuat baris aktif yang dapat dibuka di sini.',
 } as const
 
 // ---------------------------------------------------------------------------

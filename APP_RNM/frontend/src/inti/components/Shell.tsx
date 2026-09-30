@@ -48,6 +48,7 @@ import {
 } from '../labels'
 import {
   butirDatar,
+  entriAplikasi,
   HALAMAN_BERANDA,
   susunMenu,
   type EntriMenu,
@@ -70,19 +71,6 @@ import {
   IkonTutup,
   Memuat,
 } from './ui/dasar'
-
-/**
- * Lencana dua huruf per kelompok — pengganti ikon saat panel terciut.
- *
- * ⚠️ BUKAN ikon Lucide per kelompok: kelompok berbagi lima keluarga (Claim,
- * Komite Claim, Endorsement, Master, NB…), jadi ikon per keluarga membuat
- * empat Claim dan empat Komite tampil kembar di panel ikon. `singkatanUnik`
- * menjamin tak ada dua lencana yang sama - dihitung atas kelompok yang TAMPIL
- * (menu dari tabel, 30-09-2026), jadi daftarnya tidak lagi diketik di sini.
- */
-function lencanaKelompok(nama: readonly string[]): ReadonlyMap<string, string> {
-  return singkatanUnik([...nama])
-}
 
 /** Huruf awal dua kata pertama — "Nusantara Re" → "NR", "UJI-ADMIN" → "UA". */
 function inisial(teks: string): string {
@@ -152,17 +140,30 @@ export function Shell<H extends string>({
     [menuTabel, menu],
   )
   // Palet sebelum/tanpa menu tabel: Beranda saja.
-  const berandaSaja = useMemo(() => menu.filter((e) => e.pemilik === null), [menu])
-  const LENCANA = useMemo(
-    () => lencanaKelompok(tersusun?.golongan.flatMap((g) => g.kelompok.map((k) => k.nama)) ?? []),
+  const berandaSaja = useMemo(() => entriAplikasi(menu), [menu])
+  // Lencana dua huruf per kelompok — pengganti ikon saat panel terciut.
+  // ⚠️ BUKAN ikon Lucide per kelompok: kelompok berbagi lima keluarga (Claim,
+  // Komite Claim, Endorsement, Master, NB…), jadi ikon per keluarga membuat
+  // empat Claim dan empat Komite tampil kembar di panel ikon. `singkatanUnik`
+  // menjamin tak ada dua lencana yang sama - dihitung atas kelompok yang TAMPIL
+  // (menu dari tabel, 30-09-2026), jadi daftarnya tidak lagi diketik di sini.
+  const lencana = useMemo(
+    () => singkatanUnik(tersusun?.golongan.flatMap((g) => g.kelompok.map((k) => k.nama)) ?? []),
     [tersusun],
   )
-  // Baris tabel tanpa rute frontend tidak tampil - dan DICATAT, supaya tabel
-  // yang mendahului kodenya (atau salah ketik KODE) terlihat di konsol.
+  // Baris tabel yang tidak tampil DICATAT, supaya tabel yang mendahului
+  // kodenya (atau salah ketik KODE, atau butir di bawah kelompok yang belum
+  // dimigrasi) terlihat di konsol.
   useEffect(() => {
-    if (tersusun !== null && tersusun.tanpaRute.length > 0) {
+    if (tersusun === null) return
+    if (tersusun.tanpaRute.length > 0) {
       console.warn(
         `menu: ${tersusun.tanpaRute.length} butir M_NAV_MENU tanpa rute frontend, tidak tampil: ${tersusun.tanpaRute.join(', ')}`,
+      )
+    }
+    if (tersusun.terlipat.length > 0) {
+      console.warn(
+        `menu: ${tersusun.terlipat.length} butir M_NAV_MENU di bawah kelompok DIMIGRASI='0', tidak tampil: ${tersusun.terlipat.join(', ')}`,
       )
     }
   }, [tersusun])
@@ -344,6 +345,14 @@ export function Shell<H extends string>({
                 <Gagal galat={menuTabel.galat} />
               </li>
             )}
+            {tersusun !== null && tersusun.golongan.length === 0 && (
+              /* Tabel menjawab, tetapi tak satu baris pun dapat tampil (kosong,
+                 seluruhnya STATUS_AKTIF '0', atau tak satu pun berute):
+                 DIKATAKAN, bukan sidebar yang hanya berisi Beranda tanpa sebab. */
+              <li className="shell__menu-keadaan">
+                <p role="status">{KERANGKA.menuKosong}</p>
+              </li>
+            )}
             {/* Kepala bagian = GROUPMENU (TREATY, FACULTATIVE, KLAIM, MASTER),
                 urutan dari backend. Modul NONAKTIF (MODUL_AKTIF) tidak dikirim
                 butirnya, jadi kelompoknya tidak tampil (`susunMenu`). */}
@@ -354,11 +363,27 @@ export function Shell<H extends string>({
                 </p>
                 <ul className="shell__daftar" aria-label={g.kode}>
                   {g.kelompok.map((k) => {
-                    const butir = k.butir
-                      const datar = butirDatar(butir)
-                      return (
+                    const datar = butirDatar(k.butir)
+                    return (
                       <li key={k.kode}>
-                        {datar !== undefined ? (
+                        {!k.dimigrasi ? (
+                          /* Kelompok `DIMIGRASI = '0'` tetap BERDIRI dan menyebut
+                             sebabnya. Menyembunyikannya membuat aplikasi tampak
+                             lengkap padahal enam belas modul belum ada. Ia bukan
+                             tombol: tidak ada yang dapat dibuka di dalamnya. */
+                          <div
+                            className="kelompok kelompok--kosong"
+                            title={terciut ? `${k.nama} — ${KETERANGAN_BELUM_DIMIGRASI}` : undefined}
+                          >
+                            <span className="kelompok__lencana" aria-hidden="true">
+                              {lencana.get(k.nama)}
+                            </span>
+                            <span className="kelompok__teks">
+                              {k.nama}
+                              <span className="shell__belum">{KETERANGAN_BELUM_DIMIGRASI}</span>
+                            </span>
+                          </div>
+                        ) : datar !== undefined ? (
                           /* Kelompok beranggota SATU butir bertanda `datar`: satu tombol
                              langsung, tanpa judul kelompok yang dilipat dan tanpa anak
                              (`ButirMenuModul.datar`). */
@@ -372,38 +397,21 @@ export function Shell<H extends string>({
                             }}
                           >
                             <span className="kelompok__lencana" aria-hidden="true">
-                              {LENCANA.get(k.nama)}
+                              {lencana.get(k.nama)}
                             </span>
                             <span className="shell__label">{datar.label}</span>
                           </button>
-                        ) : butir.length === 0 ? (
-                          /* Kelompok tanpa butir tetap BERDIRI dan menyebut sebabnya.
-                             Menyembunyikannya membuat aplikasi tampak lengkap padahal
-                             empat belas modul belum ada. Ia bukan tombol: tidak ada
-                             yang dapat dibuka di dalamnya. */
-                          <div
-                            className="kelompok kelompok--kosong"
-                            title={terciut ? `${k.nama} — ${KETERANGAN_BELUM_DIMIGRASI}` : undefined}
-                          >
-                            <span className="kelompok__lencana" aria-hidden="true">
-                              {LENCANA.get(k.nama)}
-                            </span>
-                            <span className="kelompok__teks">
-                              {k.nama}
-                              <span className="shell__belum">{KETERANGAN_BELUM_DIMIGRASI}</span>
-                            </span>
-                          </div>
                         ) : (
                           <KelompokMenu
                             nama={k.nama}
-                            lencana={LENCANA.get(k.nama) ?? ''}
-                            memuatAktif={butir.some((b) => b.halaman === halaman)}
+                            lencana={lencana.get(k.nama) ?? ''}
+                            memuatAktif={k.butir.some((b) => b.halaman === halaman)}
                             terciut={terciut}
                             onBentang={() => {
                               setTerlipat(false)
                             }}
                           >
-                            {butir.map((b) => (
+                            {k.butir.map((b) => (
                               <button
                                 key={b.halaman}
                                 type="button"
@@ -424,7 +432,7 @@ export function Shell<H extends string>({
                           </KelompokMenu>
                         )}
                       </li>
-                      )
+                    )
                   })}
                 </ul>
               </li>
