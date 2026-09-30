@@ -44,10 +44,10 @@ Yang **selalu** lewat tim inti, karena ia bersama menurut sifatnya:
 
 - kontrak lintas modul baru (antarmuka di `inti/backend/kontrak`, bab 7);
 - rentang migrasi atau slot menu tambahan (dari cadangan 760–899 dan 990–999);
-- butir menu baru: berkas slot menu `9*` di folder migrasi modul Anda, dengan bukti XML korpus —
-  ditinjau tim inti lewat `CODEOWNERS` (disengaja work owner — menu yang tidak ada di sistem lama adalah
-  menu yang dikarang). Dulu lewat angka kunci di `frontend/Shell.test.ts`, yang membuat dua modul
-  berkonflik di baris yang sama;
+- menyalakan menu modul Anda: berkas slot menu `9*` di folder migrasi modul Anda — SATU
+  `UPDATE … SET DIMIGRASI = '1' WHERE KODE = '<nama>'`, nol `INSERT` (menu datar, keputusan work owner
+  30-09-2026: satu modul satu menu) — ditinjau tim inti lewat `CODEOWNERS`. Dulu lewat angka kunci di
+  `frontend/Shell.test.ts`, yang membuat dua modul berkonflik di baris yang sama;
 - pernyataan untuk penjaga di `MODUL.md` (bab 6) — pengecualian penjaga adalah keputusan tim inti;
 - pustaka npm/Go baru.
 
@@ -69,9 +69,9 @@ setiap berkas yang dulu harus disunting tiap modul kini ditutup:
 | --- | --- |
 | `modul/daftar.go` — daftar modul dan sambungan kontrak tangan | `inti/backend/daftar` **dibangkitkan**: satu berkas per modul; kontrak dinyatakan di `Pendaftaran()` modulnya dan disambung perakit |
 | `frontend/src/modul/daftar.ts` — satu baris per modul | `frontend/daftar.ts` memakai `import.meta.glob` atas `modul/*/frontend/menu.ts` dan `rute.tsx` — nol baris per modul |
-| `inti/labels.ts` `MODUL` — nama kelompok | nama kelompok di `menu.ts` modul (`KELOMPOK_<NAMA>`); katalog 20 folder korpus di perakit, isinya tetap |
+| `inti/labels.ts` `MODUL` — nama kelompok | nama modul di `menu.ts` modul (`KELOMPOK_<NAMA>`, nama folder korpus); label tombol dari `M_NAV_MENU.LABEL`; katalog 20 folder korpus di perakit, isinya tetap |
 | Nomor migrasi "berikutnya" | rentang **40 nomor per modul**, ditetapkan di `MODUL.md` sejak awal |
-| Menu baru di `inti/migrations/901…` | **slot menu** di folder migrasi modul sendiri (950–989) |
+| Menu baru di `inti/migrations/901…` | **slot menu** di folder migrasi modul sendiri (950–989): satu `UPDATE DIMIGRASI`, nol `INSERT` (901 kini meratakan tabel, milik inti) |
 | Daftar per modul di penjaga (`letakStruktur`, peta penyuntikan, kaskade, …) | penjaga membaca `modul/*` secara umum; yang khusus modul dinyatakan di `MODUL.md`-nya (bab 6) |
 
 Konflik masih mungkin — dan dikenali — hanya bila dua orang menyunting **modul yang sama** (satu pemilik
@@ -146,24 +146,22 @@ perintah ini.
 **4.4 Frontend** — `modul/nbtreatyin/frontend/menu.ts`:
 
 ```ts
-import type { ButirMenuModul } from '../../../inti/frontend/lib/daftarMenu'
 import type { MenuModul } from '../../../inti/frontend/modul'
 
 export const NAMA_NBTREATYIN = 'nbtreatyin'
-/** Nama kelompok sidebar - nama folder korpus VERBATIM. */
+/** Nama modul - nama folder korpus VERBATIM (= M_NAV_MENU.LABEL barisnya). */
 export const KELOMPOK_NBTREATYIN = 'NB Treaty In'
 export const HALAMAN_NBTREATYIN = ['nbtreatyin-inbox'] as const
 export type HalamanNbTreatyIn = (typeof HALAMAN_NBTREATYIN)[number]
 
-export const MENU_NBTREATYIN: readonly ButirMenuModul<HalamanNbTreatyIn>[] = [
-  { modul: 'nbtreatyin-inbox', label: 'Inbox NB Treaty In', kelompok: KELOMPOK_NBTREATYIN },
-]
+/** Halaman yang dibuka tombol "NB Treaty In" di sidebar. */
+export const HALAMAN_AWAL_NBTREATYIN: HalamanNbTreatyIn = 'nbtreatyin-inbox'
 
 export const PENDAFTARAN_MENU: MenuModul<HalamanNbTreatyIn> = {
   nama: NAMA_NBTREATYIN,
   kelompok: KELOMPOK_NBTREATYIN,
   halaman: HALAMAN_NBTREATYIN,
-  menu: MENU_NBTREATYIN,
+  halamanAwal: HALAMAN_AWAL_NBTREATYIN,
 }
 
 declare module '../../../inti/frontend/modul' {
@@ -175,15 +173,17 @@ declare module '../../../inti/frontend/modul' {
 
 dan `rute.tsx` yang mengekspor `export const RUTE_MODUL: RuteModul<HalamanNbTreatyIn> = RuteNbTreatyIn`.
 Nama ekspor `PENDAFTARAN_MENU` dan `RUTE_MODUL` SAMA di setiap modul: `frontend/daftar.ts` mengumpulkannya
-dari folder, dan menolak folder yang hanya punya salah satunya. Label butir menu diambil dari korpus
-(`[tidak ada di korpus]` ditandai terang bila memang tidak ada).
+dari folder, dan menolak folder yang hanya punya salah satunya — juga `halamanAwal` yang bukan salah satu
+halaman modul itu. Menu DATAR (keputusan work owner 30-09-2026): satu modul satu tombol; label tombol
+datang dari `M_NAV_MENU.LABEL`, halaman lain modul dibuka dari dalam halaman awalnya.
 
-**4.5 Menu** — slot menu Anda: `backend/migrations/968_menu_nbtreatyin.sql` (+ `_down.sql`) yang
-menyalakan `DIMIGRASI` kelompok Anda dan menyisipkan butirnya — bentuk SQL persis di
-`APP_RNM\PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md` bab 6. Label butir di SQL = label di `menu.ts` VERBATIM.
-Berkas slot `9*` ditinjau tim inti (`CODEOWNERS`, bab 2); tidak ada angka kunci di berkas bersama.
+**4.5 Menu** — slot menu Anda: `backend/migrations/968_menu_nbtreatyin.sql` (+ `_down.sql`) yang HANYA
+menyalakan `DIMIGRASI` baris modul Anda — satu `UPDATE`, nol `INSERT`; bentuk SQL persis di
+`APP_RNM\PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md` bab 6. Barisnya sudah ada sejak 900; `LABEL`-nya = nama
+modul Anda di `menu.ts` VERBATIM. Berkas slot `9*` ditinjau tim inti (`CODEOWNERS`, bab 2); tidak ada
+angka kunci di berkas bersama.
 
-**4.6 `MODUL.md`** — `Status` → `dimigrasi` bersamaan dengan butir menu pertama Anda: uji Beranda,
+**4.6 `MODUL.md`** — `Status` → `dimigrasi` bersamaan dengan berkas slot menu Anda: uji Beranda,
 sidebar, dan palet (`frontend/Beranda.test.ts`, `Shell.test.ts`, `daftar.sinkron.test.ts`,
 `daftar.modulAktif.test.ts`) membaca `Status` ini dan merah bila ia tidak sesuai dengan menunya. Isi
 `Prefix rute API` dan kontrak; tambahkan pernyataan untuk penjaga bila perlu (bab 6).

@@ -36,6 +36,7 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 ## Migrasi
 
 Rentang `520-559` (tabel R2, urut hulu ke hilir: migrasi modul hilir yang merujuk tabel modul hulu
-selalu berjalan sesudahnya). Butir menu modul ini ditulis di slot `978-979`, di folder
+selalu berjalan sesudahnya). Slot menu `978-979` hanya menyalakan `DIMIGRASI` baris modul ini (satu `UPDATE`,
+nol `INSERT` — menu datar 30-09-2026) saat modul mendapat layar pertamanya, di folder
 `backend/migrations/` modul ini sendiri — bentuk SQL-nya di `APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md`
 bab 6. Nomor selalu tiga digit.

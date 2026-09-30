@@ -36,6 +36,15 @@ Cara kerja: baca `REFERENSI_UI/frontend/src/App.tsx` *(b619–b750 topbar, lipat
 Beranda merender kartu aktif dengan angka dari respons tiruan. Commit
 `shell: Beranda + 17 kelompok modul + PaletMenu + pola grid dari REFERENSI_UI (bg)`.
 
+> ⛔ **Catatan bertanggal 30-09-2026 — butir navigasi DICABUT** `[keputusan work owner 30-09-2026]`
+> (`PROMPT-MENU-DATAR-PER-GROUPMENU.md`): *"menu jangan ada model seperti child. Buat grouping menu antar
+> GROUPMENU dari tabel M_NAV_MENU. Butir inbox, register, premiumlist, komite, tco-tahun harusnya tidak
+> perlu, karena 1 modul 1 menu."* Unsur **Sidebar lengkap** di atas tidak berlaku lagi untuk butirnya:
+> sidebar kini kepala `GROUPMENU` + satu tombol per modul (label = nama folder korpus), klik membuka halaman
+> awal modul, dan modul yang belum dimigrasi tampil sebagai tombol nonaktif, bukan kelompok terlipat.
+> Migrasi `901_m_nav_menu_datar.sql` membuang kelima butir dari `M_NAV_MENU`; kode di cabang `dev`
+> (`10df292`, `2a10257`, `9b9eb80`, `46d3533`). Beranda, PaletMenu, logo, pola grid, dan identitas tetap.
+
 ## 2. URUTAN GILIRAN INI — semua di `main`, nol pesan di antara paket
 
 | # | Bagian | Rujukan |

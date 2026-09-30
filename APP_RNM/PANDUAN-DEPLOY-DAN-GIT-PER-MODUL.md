@@ -254,74 +254,79 @@ migrasi modul, bukan lewat angka kunci di `Shell.test.ts` (dulu lima): angka di 
 membuat dua modul yang menambah butir bersamaan berkonflik di baris yang sama. Kelompok yang belum
 dimigrasi dibaca dari `Status` di `MODUL.md` setiap modul.
 
-## 6. Menambah menu — satu baris di `M_NAV_MENU` + satu butir di `menu.ts`
+## 6. Menambah menu — satu `UPDATE DIMIGRASI` di slot modul + `HALAMAN_AWAL` di `menu.ts`
 
 Sejak 30-09-2026 sidebar dan palet Ctrl+K dirakit dari tabel **`M_NAV_MENU`** lewat `GET /api/menu`
-(permintaan work owner: dasar akses menu per akun sesudah login ada). Tabelnya dua tingkat:
-
-| Baris | `PARENT_ID` | `KODE` | Contoh |
-| --- | --- | --- | --- |
-| kelompok modul | kosong | nama modul (tabel nama modul) | `claimlife`, `nbfacin` |
-| butir menu | ID kelompoknya | kunci halaman frontend (`menu.ts`) | `inbox`, `tco-tahun` |
-
-`GROUPMENU` (`TREATY`, `FACULTATIVE`, `KLAIM`, `MASTER`) menjadi kepala bagian sidebar, dalam urutan itu.
-Isi awal (migrasi 900) memuat 20 kelompok — satu per folder korpus — dan 5 butir; daftarnya di
+(permintaan work owner: dasar akses menu per akun sesudah login ada). Sejak migrasi **901**
+(keputusan work owner 30-09-2026: *"menu jangan ada model seperti child … 1 modul 1 menu"*) tabelnya
+**datar**: 20 baris, satu per folder modul korpus; `KODE` = `MODUL` = nama modul (tabel nama modul);
+`URUTAN` = urutan di dalam `GROUPMENU`. Tidak ada `PARENT_ID`, tidak ada butir anak. Daftarnya di
 `..\docs\bersama\STRUKTUR-TABEL-INTI.md`.
 
-**Frontend memotong pohon tabel dengan rute yang terdaftar** (`inti/frontend/lib/daftarMenu.ts` `susunMenu`):
+Sidebar: kepala `GROUPMENU` (`TREATY`, `FACULTATIVE`, `KLAIM`, `MASTER`, dalam urutan itu), di bawahnya
+**satu tombol per modul** berlabel `LABEL` (nama folder korpus VERBATIM). Klik tombol membuka **halaman
+awal** modul (`HALAMAN_AWAL_<X>`); halaman lain modul itu dibuka dari dalamnya — Register dari tombol
+Register di Inbox Claim Life, Outstanding dan Detail dari baris kasus. Tidak ada kelompok yang dilipat.
 
-- baris tabel **tanpa** rute frontend tidak tampil, dan dicatat di konsol peramban
-  (`menu: 1 butir M_NAV_MENU tanpa rute frontend, tidak tampil: …`);
-- butir `menu.ts` **tanpa** baris tabel tidak tampil — di sidebar maupun palet;
-- kelompok `DIMIGRASI = '0'` tampil terlipat "belum dimigrasi"; kelompok yang sudah dimigrasi tetapi
-  tanpa butir (modulnya tidak ada di `MODUL_AKTIF`) tidak tampil.
+`GET /api/menu` — satu tingkat di bawah golongan:
 
-Jadi menambah satu menu = **dua sisi, satu deploy, satu folder**:
+```json
+{"golongan":[
+  {"kode":"TREATY","modul":[
+    {"kode":"nbtreatyin","label":"NB Treaty In","modul":"nbtreatyin","urutan":1,"dimigrasi":false},
+    {"kode":"premiumlistlife","label":"PremiumList Life","modul":"premiumlistlife","urutan":5,"dimigrasi":true}]},
+  {"kode":"KLAIM","modul":[ … ]}]}
+```
+
+**Frontend memotong menu tabel dengan modul frontend yang terdaftar** (`inti/frontend/lib/daftarMenu.ts`
+`susunMenu`):
+
+- baris `DIMIGRASI = '1'` **tanpa** modul frontend tidak tampil, dan dicatat di konsol peramban
+  (`menu: 1 modul M_NAV_MENU DIMIGRASI='1' tanpa modul frontend, tidak tampil: …`);
+- modul frontend **tanpa** baris tabel tidak tampil — di sidebar maupun palet;
+- baris `DIMIGRASI = '0'` tampil sebagai tombol **nonaktif** "belum dimigrasi" (`aria-disabled`);
+- modul yang sudah dimigrasi tetapi tidak ada di `MODUL_AKTIF` tidak dikirim backend, jadi tidak tampil.
+
+Jadi "menambah menu" = modul mendapat layar pertamanya — **dua sisi, satu deploy, satu folder**:
 
 1. **Tabel** — migrasi BARU di folder migrasi modul Anda sendiri,
    `modul/<nama>/backend/migrations/`, dengan nomor di **slot menu** modul itu (`MODUL.md`, mis.
-   `nbfacin` 962–963): `962_menu_nbfacin.sql` + `962_menu_nbfacin_down.sql`. Urutan nama berkas sebagai
-   teks menjamin slot 95x berjalan **sesudah** `900_m_nav_menu` di skema baru
-   (`TestSlotMenuBerjalanSesudah900`). ⛔ **Jangan menyunting 900**: `T_MIGRASI` mencatat nama, jadi isi
-   900 yang diubah tidak pernah dijalankan ulang. ⛔ **Jangan di `inti/backend/migrations/`**: 901–949 milik
-   inti, bukan untuk menu, dan folder bersama itu yang dulu membuat dua pengembang bertabrakan
-   (`TestMenuHanyaDi900DanSlotMenuModulnya`). Bentuknya PERSIS bentuk 900 — penjaga membacanya dengan
-   pola itu, dan slot hanya boleh menyentuh kelompok modulnya sendiri
-   (`TestSlotMenuHanyaMenyentuhMenuModulnya`):
+   `nbfacin` 962–963): `962_menu_nbfacin.sql` + `962_menu_nbfacin_down.sql`. Isinya SATU pernyataan —
+   menyalakan `DIMIGRASI` baris modul Anda:
 
    ```sql
-   -- 962 - menu NB FacIn: modulnya mendapat layar pertamanya, lalu butirnya.
+   -- 962 - menu NB FacIn: modul ini mendapat layar pertamanya.
    UPDATE {skema}.M_NAV_MENU SET DIMIGRASI = '1', TGL_UBAH = SYSDATE
-   WHERE KODE = 'nbfacin' AND PARENT_ID IS NULL
-   /
-   INSERT INTO {skema}.M_NAV_MENU (ID, PARENT_ID, KODE, LABEL, GROUPMENU, MODUL, URUTAN, DIMIGRASI)
-   SELECT {skema}.SEQ_M_NAV_MENU.NEXTVAL, k.ID, 'nbfacin-inbox', 'Inbox NB FacIn', k.GROUPMENU, k.MODUL, 1, k.DIMIGRASI
-   FROM {skema}.M_NAV_MENU k
-   WHERE k.KODE = 'nbfacin' AND k.PARENT_ID IS NULL
-   AND NOT EXISTS (SELECT 1 FROM {skema}.M_NAV_MENU b WHERE b.KODE = 'nbfacin-inbox')
+   WHERE KODE = 'nbfacin'
    /
    ```
 
-   `UPDATE` **sebelum** `INSERT`: butir mewarisi `GROUPMENU`, `MODUL`, dan `DIMIGRASI` induknya saat
-   disisipkan. Keduanya idempoten, jadi langkah yang gagal separuh jalan aman diulang pelari. Jalur
-   mundurnya (`_down.sql`) menghapus butirnya (`DELETE FROM {skema}.M_NAV_MENU WHERE KODE = 'nbfacin-inbox'`)
-   lalu mengembalikan `DIMIGRASI` ke `'0'`. `UPDATE DIMIGRASI` hanya untuk modul yang mendapat layar
-   **pertamanya**; `TestMenuDimigrasiSamaDenganModulBackend` menuntut `DIMIGRASI = '1'` — sesudah semua
-   slot — tepat untuk modul yang punya `modul/<nama>/backend/modul.go`.
+   Jalur mundurnya sama dengan `'0'`. ⛔ **Nol `INSERT`**: baris modul Anda sudah ada sejak 900, dan
+   `INSERT INTO M_NAV_MENU` di slot menu MERAH (`TestSlotMenuHanyaMenyentuhMenuModulnya`). ⛔ Bentuk
+   lama `… AND PARENT_ID IS NULL` mati di ORA-00904 sesudah 901. ⛔ **Jangan menyunting 900 maupun
+   901**: `T_MIGRASI` mencatat nama, jadi isinya yang diubah tidak pernah dijalankan ulang. ⛔ **Jangan di
+   `inti/backend/migrations/`**: 902–949 milik inti (`TestMenuHanyaDi900DanSlotMenuModulnya`). Urutan nama
+   berkas sebagai teks menjamin slot 95x berjalan **sesudah** 900 dan 901 (`TestSlotMenuBerjalanSesudah900`).
+   `TestMenuDimigrasiSamaDenganModulBackend` menuntut `DIMIGRASI = '1'` — sesudah semua slot — tepat untuk
+   modul yang punya `modul/<nama>/backend/modul.go`.
 
-2. **Kode** — satu butir di `modul/<nama>/frontend/menu.ts` dengan `modul` = `KODE` baris tabel dan
-   `label` = `LABEL`-nya **VERBATIM** (dan halamannya di `rute.tsx`).
+2. **Kode** — `modul/<nama>/frontend/menu.ts`: `HALAMAN_AWAL_<X>` (salah satu `HALAMAN_<X>`) sebagai
+   `PENDAFTARAN_MENU.halamanAwal`, dan `kelompok` = nama folder korpus = `LABEL` barisnya **VERBATIM**
+   (halamannya di `rute.tsx`). Label tombol datang dari tabel, bukan dari modul.
 
-3. **Penjaga** — `frontend/daftar.menuTabel.test.ts` (dua arah atas 900 + slot setiap modul: `KODE` ↔
-   `menu.ts`, `LABEL`, induk = modul pemilik, kelompok modul = `LABEL` tabel) dan
-   `inti/backend/penjaga/menu_test.go` (bentuk SQL, idempoten, `CHECK GROUPMENU`, isi awal 900: 20 kelompok
-   = folder korpus, lima butir). Butir slot modul ditinjau tim inti lewat `CODEOWNERS` (bab 5).
+3. **Penjaga** — `frontend/daftar.menuTabel.test.ts` (dua arah atas hasil bersih 900 + 901 + slot setiap
+   modul ↔ `MODUL_FRONTEND`: baris dimigrasi ↔ modul dengan `HALAMAN_AWAL`, `LABEL` = nama modul; uji
+   gigit kedua arah), `inti/backend/penjaga/menu_test.go` (skema tiruan 900 + 901 + slot: 20 baris = folder
+   korpus, nol butir, nol `PARENT_ID`, `CHECK GROUPMENU`, blok 901 berpelindung katalog), dan
+   `rentang_test.go` (slot hanya `UPDATE DIMIGRASI` modulnya). Berkas slot ditinjau tim inti lewat
+   `CODEOWNERS` (bab 5).
 
-4. **`-migrate` dijalankan work owner** — sampai itu, backend baru pun tetap menjawab dari baris lama,
-   dan butir baru tidak tampil.
+4. **`-migrate` dijalankan work owner** — termasuk **901**. Backend baru sudah benar **sebelum** 901
+   (pembacanya menyaring `KODE = MODUL` tanpa menyebut `PARENT_ID`, jadi lima butir lama tersaring) dan
+   **sesudahnya**.
 
-Menyembunyikan satu menu: `STATUS_AKTIF = '0'` pada barisnya (atau pada kelompoknya — seluruh butirnya
-ikut hilang); pembaca menu hanya membaca baris `'1'`. Itu **perubahan data di Oracle** — tulis ke DB,
+Menyembunyikan satu menu: `STATUS_AKTIF = '0'` pada baris modulnya; pembaca menu hanya membaca baris
+`'1'`. Itu **perubahan data di Oracle** — tulis ke DB,
 jadi dilakukan work owner/DBA dengan persetujuan, bukan executor. Penjaga membaca migrasi, jadi tidak
 melihat perubahan data semacam itu; bila menu itu memang dibuang untuk seterusnya, tuliskan sebagai
 migrasi di slot menu modul pemiliknya.
