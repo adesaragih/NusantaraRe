@@ -242,8 +242,8 @@ var rutePengubah = map[string]string{
 // letakTabelRute - berkas yang mendaftarkan rute berpenjaga kasus tertutup.
 var letakTabelRute = []string{
 	filepath.Join("..", "handlers", "handlers.go"),
-	filepath.Join("..", "..", "..", "modul", "premiumlist", "handlers", "rute_premiumlist.go"),
-	filepath.Join("..", "..", "..", "modul", "komite", "handlers", "rute_komite.go"),
+	filepath.Join("..", "..", "..", "modul", "premiumlistlife", "handlers", "rute_premiumlist.go"),
+	filepath.Join("..", "..", "..", "modul", "komiteclaimlife", "handlers", "rute_komite.go"),
 }
 
 // bacaBerkasLayanan membaca berkas layanan pelayan rute, di modul mana pun.

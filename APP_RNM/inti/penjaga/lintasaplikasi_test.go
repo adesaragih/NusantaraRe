@@ -199,7 +199,7 @@ var berkasAlamatDikecualikan = map[string]string{
 // `://` dan env tetap diperiksa. Tiap baris menyebut persetujuan manusianya;
 // jumlahnya dikunci di bawah.
 var berkasKlienHTTPDisetujui = map[string]string{
-	"modul/treaty/services/tco_pengirim_storage.go": "transport penyimpanan lampiran Treaty Contract Out - " +
+	"modul/treatycontractout/services/tco_pengirim_storage.go": "transport penyimpanan lampiran Treaty Contract Out - " +
 		"[keputusan work owner 29-09-2026, OQ-TCO-08]; alamat dari M_LINK_SERVICE saat jalan, " +
 		"hanya aktif bila PELAKSANA_STORAGE=nyata",
 }
@@ -387,7 +387,7 @@ var polaNamaOrangTetap = regexp.MustCompile(
 // "alasan"` - dan penjaga ini menuduh dirinya sendiri. Sudah terjadi, dua
 // kali, saat penyempitan ini ditulis.
 func pesanVerbatimYangSah(t *testing.T) []string {
-	return konstantaTeksDiSumber(t, "modul/premiumlist/models",
+	return konstantaTeksDiSumber(t, "modul/premiumlistlife/models",
 		// ValidasiUploadPL_act `local.err3` - pesan kolom NAME_OF_INSURED.
 		"PesanNamaTertanggung",
 		// ValidasiUploadPL_act `local.err17` - pesan rujukan master POLICY HOLDER.

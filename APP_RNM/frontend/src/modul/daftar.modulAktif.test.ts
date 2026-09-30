@@ -34,7 +34,7 @@ describe('menu modul nonaktif hilang', () => {
   it('sidebar: kelompok modul nonaktif hilang, sisanya utuh', () => {
     const tampil = kelompokTampil(KELOMPOK, ['claimlife'])
     const nama = tampil.map(({ k }) => k.nama)
-    for (const lain of ['premiumlist', 'komite', 'treaty']) {
+    for (const lain of ['premiumlistlife', 'komiteclaimlife', 'treatycontractout']) {
       const milik = kelompokMilik(lain)
       expect(milik.length).toBeGreaterThan(0)
       for (const n of milik) expect(nama).not.toContain(n)
@@ -50,7 +50,7 @@ describe('menu modul nonaktif hilang', () => {
   it('palet: hanya Beranda dan menu modul aktif', () => {
     const halaman = daftarPalet(ENTRI_MENU, ['claimlife']).map((h) => h.modul)
     expect(halaman).toEqual(['beranda', 'inbox', 'register'])
-    expect(daftarPalet(ENTRI_MENU, ['treaty', 'komite']).map((h) => h.modul)).toEqual(
+    expect(daftarPalet(ENTRI_MENU, ['treatycontractout', 'komiteclaimlife']).map((h) => h.modul)).toEqual(
       ENTRI_MENU.filter((e) => ['beranda', 'komite', 'tco-tahun', 'tco-kontrak', 'tco-klausul'].includes(e.modul)).map(
         (e) => e.modul,
       ),
@@ -58,7 +58,7 @@ describe('menu modul nonaktif hilang', () => {
   })
 
   it('sidebar dan palet menyaring dengan aturan yang sama', () => {
-    const aktif = ['premiumlist', 'treaty']
+    const aktif = ['premiumlistlife', 'treatycontractout']
     const dariSidebar = kelompokTampil(KELOMPOK, aktif).flatMap(({ butir }) => butir.map((b) => b.halaman))
     const dariPalet = daftarPalet(ENTRI_MENU, aktif)
       .map((h) => h.modul)
@@ -68,7 +68,7 @@ describe('menu modul nonaktif hilang', () => {
 
   it('Beranda: kartu modul nonaktif hilang, yang belum dimigrasi tetap', () => {
     // Tombol kartu Beranda MEMBUKA modul - ia menu juga.
-    const kartu = kartuModul(['komite'])
+    const kartu = kartuModul(['komiteclaimlife'])
     expect(kartu.filter((k) => k.tujuan !== null).map((k) => k.nama)).toEqual([MODUL.komiteClaimLife])
     expect(kartu.filter((k) => k.tujuan === null)).toHaveLength(14)
     expect(kartuModul(null)).toEqual(kartuModul())
@@ -134,8 +134,8 @@ describe('GET /api/modul-aktif', () => {
   }
 
   it('membaca daftar modul dari jalur yang dipasang cmd/api', async () => {
-    jawab('{"modul":["claimlife","komite"]}')
-    await expect(ambilModulAktif()).resolves.toEqual(['claimlife', 'komite'])
+    jawab('{"modul":["claimlife","komiteclaimlife"]}')
+    await expect(ambilModulAktif()).resolves.toEqual(['claimlife', 'komiteclaimlife'])
     const panggil = vi.mocked(fetch).mock.calls[0]
     expect(String(panggil?.[0])).toContain('/api/modul-aktif')
     const rakit = readFileSync(join(SRC, '..', '..', 'cmd', 'api', 'rakit.go'), 'utf8')

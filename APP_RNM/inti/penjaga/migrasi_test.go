@@ -151,7 +151,7 @@ func TestKaskadeHanyaPadaRelasiTerdaftar(t *testing.T) {
 			// karena itu menghapus daftarnya.
 			"018_": true,
 		},
-		"komite": {
+		"komiteclaimlife": {
 			// Relasi 9: roster komite. 013 membuatnya TANPA kaskade (cacat),
 			// 030 memasangnya lewat ALTER. Keduanya terdaftar: yang pertama
 			// karena kelak diperbaiki di tempatnya, yang kedua karena ia

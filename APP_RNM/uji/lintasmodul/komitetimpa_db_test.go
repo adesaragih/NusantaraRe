@@ -15,8 +15,8 @@ import (
 
 	"nusantarare/inti"
 	"nusantarare/modul/claimlife/repository"
-	"nusantarare/modul/komite/models"
-	komiterepository "nusantarare/modul/komite/repository"
+	"nusantarare/modul/komiteclaimlife/models"
+	komiterepository "nusantarare/modul/komiteclaimlife/repository"
 )
 
 func TestTimpaTanggaTolakAkhirMenimpaSeluruhTingkatBerkeputusan(t *testing.T) {

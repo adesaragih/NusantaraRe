@@ -17,12 +17,12 @@ import (
 	"nusantarare/inti/config"
 	"nusantarare/modul/claimlife"
 	claimlifeservices "nusantarare/modul/claimlife/services"
-	"nusantarare/modul/komite"
-	komiteservices "nusantarare/modul/komite/services"
-	"nusantarare/modul/premiumlist"
-	premiumlistservices "nusantarare/modul/premiumlist/services"
-	"nusantarare/modul/treaty"
-	treatyservices "nusantarare/modul/treaty/services"
+	"nusantarare/modul/komiteclaimlife"
+	komiteservices "nusantarare/modul/komiteclaimlife/services"
+	"nusantarare/modul/premiumlistlife"
+	premiumlistservices "nusantarare/modul/premiumlistlife/services"
+	"nusantarare/modul/treatycontractout"
+	treatyservices "nusantarare/modul/treatycontractout/services"
 )
 
 // SumberMigrasi mengembalikan folder migrasi SETIAP modul terdaftar.
@@ -33,9 +33,9 @@ import (
 // Treaty Contract Out tidak bermigrasi (tco4: tabel warisan).
 func SumberMigrasi() []fs.FS {
 	return []fs.FS{
-		claimlife.SumberMigrasi(),   // 001-029
-		komite.SumberMigrasi(),      // 030-049
-		premiumlist.SumberMigrasi(), // 050-079
+		claimlife.SumberMigrasi(),       // 001-029
+		komiteclaimlife.SumberMigrasi(), // 030-049
+		premiumlistlife.SumberMigrasi(), // 050-079
 	}
 }
 
@@ -55,8 +55,8 @@ func Rakit(dasar *inti.Dasar, cfg config.Config, catat func(string)) []inti.Modu
 		DenganPenyimpananLampiranTCO(cfg.PelaksanaStorage == config.PelaksanaStorageNyata, cfg.StorageTokenSalt)
 	return []inti.Modul{
 		claimlife.Baru(svcCL, cfg.AuthStub),
-		premiumlist.Baru(svcPL, cfg.AuthStub),
-		komite.Baru(svcKM, cfg.AuthStub),
-		treaty.Baru(svcTCO, cfg.AuthStub, cfg.IntervalPekerjaLampiranTCO, cfg.PelaksanaStorage, catat),
+		premiumlistlife.Baru(svcPL, cfg.AuthStub),
+		komiteclaimlife.Baru(svcKM, cfg.AuthStub),
+		treatycontractout.Baru(svcTCO, cfg.AuthStub, cfg.IntervalPekerjaLampiranTCO, cfg.PelaksanaStorage, catat),
 	}
 }

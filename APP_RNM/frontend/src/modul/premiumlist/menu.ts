@@ -4,8 +4,8 @@
 import { MENU_MODUL, MODUL } from '../../inti/labels'
 import type { ButirMenuModul } from '../../inti/lib/daftarMenu'
 
-/** Nama modul - SAMA dengan `const Nama` di `modul/premiumlist/modul.go`. */
-export const NAMA_PREMIUMLIST = 'premiumlist'
+/** Nama modul - SAMA dengan `const Nama` di `modul/premiumlistlife/modul.go`. */
+export const NAMA_PREMIUMLIST = 'premiumlistlife'
 
 export const HALAMAN_PREMIUMLIST = ['premiumlist'] as const
 export type HalamanPremiumList = (typeof HALAMAN_PREMIUMLIST)[number]

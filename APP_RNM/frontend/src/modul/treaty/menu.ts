@@ -5,8 +5,8 @@ import { MODUL } from '../../inti/labels'
 import type { ButirMenuModul } from '../../inti/lib/daftarMenu'
 import { MENU_TCO } from './labels'
 
-/** Nama modul - SAMA dengan `const Nama` di `modul/treaty/modul.go`. */
-export const NAMA_TREATY = 'treaty'
+/** Nama modul - SAMA dengan `const Nama` di `modul/treatycontractout/modul.go`. */
+export const NAMA_TREATY = 'treatycontractout'
 
 /**
  * Halaman modul ini.

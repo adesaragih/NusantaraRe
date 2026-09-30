@@ -25,10 +25,10 @@ import (
 
 // ruteContoh - satu rute GET milik setiap modul terdaftar.
 var ruteContoh = map[string]string{
-	"claimlife":   "/api/klaim-life",
-	"premiumlist": "/api/polis-life",
-	"komite":      "/api/komite",
-	"treaty":      "/api/treaty-contract-out/tahun",
+	"claimlife":         "/api/klaim-life",
+	"premiumlistlife":   "/api/polis-life",
+	"komiteclaimlife":   "/api/komite",
+	"treatycontractout": "/api/treaty-contract-out/tahun",
 }
 
 func muxUji(t *testing.T, diminta []string) (http.Handler, []inti.Modul) {
@@ -70,7 +70,7 @@ func TestModulNonaktifRutenya404(t *testing.T) {
 		Galat string `json:"galat"`
 	}
 	if w.Code != http.StatusNotFound || !strings.HasPrefix(w.Header().Get("Content-Type"), "application/json") ||
-		json.NewDecoder(w.Body).Decode(&badan) != nil || !strings.Contains(badan.Galat, "premiumlist") {
+		json.NewDecoder(w.Body).Decode(&badan) != nil || !strings.Contains(badan.Galat, "premiumlistlife") {
 		t.Errorf("rute modul nonaktif: kode %d, Content-Type %q, galat %q", w.Code, w.Header().Get("Content-Type"), badan.Galat)
 	}
 	// Jalur yang bukan milik modul MANA PUN tetap 404 bawaan mux, seperti dulu.
@@ -94,7 +94,7 @@ func TestModulAktifKosongBerartiSemua(t *testing.T) {
 }
 
 func TestModulAktifDilaporkan(t *testing.T) {
-	mux, _ := muxUji(t, []string{"komite", "claimlife"})
+	mux, _ := muxUji(t, []string{"komiteclaimlife", "claimlife"})
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/api/modul-aktif", nil))
 	if w.Code != http.StatusOK || !strings.HasPrefix(w.Header().Get("Content-Type"), "application/json") {
@@ -107,7 +107,7 @@ func TestModulAktifDilaporkan(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Urutan DAFTAR, bukan urutan env.
-	if mau := []string{"claimlife", "komite"}; !reflect.DeepEqual(badan.Modul, mau) {
+	if mau := []string{"claimlife", "komiteclaimlife"}; !reflect.DeepEqual(badan.Modul, mau) {
 		t.Errorf("modul aktif = %v, mau %v", badan.Modul, mau)
 	}
 }
@@ -118,12 +118,24 @@ func TestModulAktifTakDikenalDitolak(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), `"klaim"`) {
 		t.Fatalf("nama tak dikenal tidak ditolak dengan menyebut namanya: %v", err)
 	}
+	// Nama lama (sebelum tabel nama modul 30-09-2026) ditolak dengan kalimat
+	// yang menyebut nama BARUnya - bukan diterima diam-diam, bukan "tak dikenal".
+	for lama, baru := range map[string]string{
+		"premiumlist": "premiumlistlife", "komite": "komiteclaimlife", "treaty": "treatycontractout",
+	} {
+		_, err := pilihModulAktif(modul.Rakit(inti.NewDasar(nil), config.Config{}, func(string) {}),
+			[]string{"claimlife", lama})
+		if err == nil || !strings.Contains(err.Error(), "nama modul lama") ||
+			!strings.Contains(err.Error(), `"`+baru+`"`) {
+			t.Errorf("nama lama %q: galat %v, mau menyebut %q", lama, err, baru)
+		}
+	}
 }
 
 // Migrasi tidak ikut MODUL_AKTIF: setiap berkas maju di folder migrations/
 // modul mana pun ada di daftar pelari - dihitung dari disk, bukan dari angka.
 func TestMigrasiTetapLengkapSaatModulNonaktif(t *testing.T) {
-	if _, aktif := muxUji(t, []string{"treaty"}); len(aktif) != 1 {
+	if _, aktif := muxUji(t, []string{"treatycontractout"}); len(aktif) != 1 {
 		t.Fatal("prasyarat: hanya satu modul aktif")
 	}
 	langkah, err := migrasi.Daftar(false, modul.SumberMigrasi()...)
@@ -152,7 +164,7 @@ func TestMigrasiTetapLengkapSaatModulNonaktif(t *testing.T) {
 		t.Errorf("pelari menjalankan %d langkah, disk memuat %d:\npelari %v\ndisk   %v",
 			len(dariPelari), len(dariDisk), dariPelari, dariDisk)
 	}
-	if _, err := os.Stat(filepath.Join("..", "..", "modul", "treaty", "migrations")); err == nil {
+	if _, err := os.Stat(filepath.Join("..", "..", "modul", "treatycontractout", "migrations")); err == nil {
 		t.Error("modul treaty kini punya folder migrations - tco4 menyatakan nol tabel baru")
 	}
 }

@@ -33,7 +33,7 @@ import (
 	"nusantarare/inti/migrasi"
 	"nusantarare/modul"
 	"nusantarare/modul/claimlife/repository"
-	"nusantarare/modul/premiumlist/services"
+	"nusantarare/modul/premiumlistlife/services"
 )
 
 // ErrTanpaOracle dikembalikan bila ORACLE_DSN tidak dikonfigurasi.

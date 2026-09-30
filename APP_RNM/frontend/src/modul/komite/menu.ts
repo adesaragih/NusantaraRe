@@ -4,8 +4,8 @@
 import { MENU_MODUL, MODUL } from '../../inti/labels'
 import type { ButirMenuModul } from '../../inti/lib/daftarMenu'
 
-/** Nama modul - SAMA dengan `const Nama` di `modul/komite/modul.go`. */
-export const NAMA_KOMITE = 'komite'
+/** Nama modul - SAMA dengan `const Nama` di `modul/komiteclaimlife/modul.go`. */
+export const NAMA_KOMITE = 'komiteclaimlife'
 
 export const HALAMAN_KOMITE = ['komite'] as const
 export type HalamanKomite = (typeof HALAMAN_KOMITE)[number]

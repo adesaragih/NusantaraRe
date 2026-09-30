@@ -39,8 +39,8 @@ const KUNCI: Record<keyof PolicyDataLife, true> = {
 describe('kontrak PolicyDataLife dua sisi', () => {
   it('tag JSON struct Go sama dengan medan antarmuka klien', () => {
     const go = readFileSync(
-      // Refactor bentuk B (30-09-2026): layanan PremiumList kini di modul/premiumlist.
-      join(__dirname, '..', '..', '..', '..', 'modul', 'premiumlist', 'services', 'polis_ringkas.go'),
+      // Refactor bentuk B (30-09-2026): layanan PremiumList kini di modul/premiumlistlife.
+      join(__dirname, '..', '..', '..', '..', 'modul', 'premiumlistlife', 'services', 'polis_ringkas.go'),
       'utf8',
     )
     const awal = go.indexOf('type PolicyDataLife struct {')

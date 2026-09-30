@@ -77,10 +77,10 @@ func TestIntervalPekerjaLampiranTCO(t *testing.T) {
 func TestModulAktifDiurai(t *testing.T) {
 	kosongkanEnvDasar(t)
 	for raw, mau := range map[string][]string{
-		"":                           nil,
-		" , ":                        nil,
-		"claimlife":                  {"claimlife"},
-		"Komite, claimlife,,KOMITE ": {"komite", "claimlife"},
+		"":          nil,
+		" , ":       nil,
+		"claimlife": {"claimlife"},
+		"KomiteClaimLife, claimlife,,KOMITECLAIMLIFE ": {"komiteclaimlife", "claimlife"},
 	} {
 		t.Setenv("MODUL_AKTIF", raw)
 		c, err := Load()

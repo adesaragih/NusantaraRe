@@ -28,7 +28,7 @@ import (
 // tinggal di modul PremiumList, dan modul Claim Life tidak boleh
 // mengimpornya; maka deklarasinya dibaca dari SUMBERnya sebagai pohon
 // sintaks. Yang diuji tetap PERTEMUAN kedua sisi.
-const letakPenulisPremiumList = "../../../modul/premiumlist/repository/polis_warisan.go"
+const letakPenulisPremiumList = "../../../modul/premiumlistlife/repository/polis_warisan.go"
 
 // kolomPenulis adalah satu baris `kolomPesertaWarisan`: kolom dan sumbernya.
 type kolomPenulis struct{ Kolom, Sumber string }
