@@ -3,8 +3,9 @@
 // Padanan `inti.Modul` di backend (`inti/backend/modul.go`): setiap modul
 // menyebut NAMA-nya (sama dengan `const Nama` di
 // `modul/<nama>/backend/modul.go` dan `MODUL_AKTIF`), halaman-halamannya, butir
-// menunya (`menu.ts`), dan komponen rutenya (`rute.tsx`). `App.tsx` hanya
-// memasang yang AKTIF. Berkas ini tidak mengenal modul mana pun.
+// halaman AWAL-nya (`menu.ts`, dibuka tombol modul di sidebar - menu datar,
+// keputusan work owner 30-09-2026), dan komponen rutenya (`rute.tsx`).
+// `App.tsx` hanya memasang yang AKTIF. Berkas ini tidak mengenal modul mana pun.
 //
 // # Struktur tim satu folder per modul (30-09-2026)
 //
@@ -16,7 +17,6 @@
 
 import type { ComponentType } from 'react'
 
-import type { ButirMenuModul } from './lib/daftarMenu'
 import type { Sesi } from './store/sesi'
 
 /**
@@ -43,12 +43,20 @@ export type HalamanTerdaftar = HalamanModul[keyof HalamanModul]
 export interface MenuModul<H extends string = HalamanTerdaftar> {
   /** Nama modul backend - SAMA dengan nama folder dan `const Nama` Go. */
   nama: string
-  /** Nama kelompok sidebar modul ini - nama folder korpus VERBATIM. */
+  /**
+   * Nama modul - nama folder korpus VERBATIM (kartu Beranda). Label tombol
+   * sidebar datang dari `M_NAV_MENU.LABEL`; penjaga dua arah menuntut keduanya
+   * sama.
+   */
   kelompok: string
   /** Seluruh halaman modul ini, termasuk yang dibuka DARI DALAM kasus. */
   halaman: readonly H[]
-  /** Butir menu sidebar dan palet, berurutan seperti tampil. */
-  menu: readonly ButirMenuModul<H>[]
+  /**
+   * Halaman yang dibuka tombol modul di sidebar dan palet - satu modul, satu
+   * menu (keputusan work owner 30-09-2026). Halaman lain modul itu dibuka
+   * dari dalam halaman ini.
+   */
+  halamanAwal: H
 }
 
 /** Bentuk ekspor `RUTE_MODUL` di `modul/<nama>/frontend/rute.tsx`. */
@@ -71,12 +79,12 @@ export interface PropsRute<H extends string> {
 export interface ModulFrontend<H extends string> {
   /** Nama modul backend - `MODUL_AKTIF`, `GET /api/modul-aktif`. */
   nama: string
-  /** Nama kelompok sidebar modul ini - nama folder korpus VERBATIM. */
+  /** Nama modul - nama folder korpus VERBATIM (lihat `MenuModul.kelompok`). */
   kelompok: string
   /** Seluruh halaman modul ini, termasuk yang dibuka DARI DALAM kasus. */
   halaman: readonly H[]
-  /** Butir menu sidebar dan palet, berurutan seperti tampil. */
-  menu: readonly ButirMenuModul<H>[]
+  /** Halaman yang dibuka tombol modul (lihat `MenuModul.halamanAwal`). */
+  halamanAwal: H
   /**
    * Komponen rute. ⛔ Ia TETAP terpasang selama modulnya aktif, supaya
    * keadaannya (kasus yang sedang dibuka) bertahan saat pemakai pindah

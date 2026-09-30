@@ -187,7 +187,7 @@ export async function cekKesehatan(): Promise<Kesehatan> {
 export async function ambilMenu(): Promise<MenuTabel> {
   const data = await minta<unknown>('/api/menu')
   if (!bentukMenuTabel(data)) {
-    throw new Error('menu: jawaban GET /api/menu tidak berbentuk menu (golongan → kelompok → butir)')
+    throw new Error('menu: jawaban GET /api/menu tidak berbentuk menu (golongan → modul)')
   }
   return data
 }

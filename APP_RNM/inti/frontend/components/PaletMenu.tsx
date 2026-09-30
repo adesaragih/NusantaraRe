@@ -18,7 +18,7 @@ import { daftarPalet, saringPalet, type EntriMenu, type HasilPalet } from '../li
  * dan batas itu dipagari uji.
  *
  * ⛔ Ia membaca `lib/daftarMenu.ts`, BUKAN DOM sidebar. Sejak butir bg
- * empat belas kelompok terlipat, dan `KelompokMenu` melepas anak kelompok
+ * empat belas kelompok terlipat, dan `KelompokMenu` (dibuang, menu datar 30-09-2026) melepas anak kelompok
  * yang terlipat dari DOM: palet yang membaca DOM akan menjawab "tidak ada"
  * untuk menu yang ADA.
  *

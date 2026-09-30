@@ -12,11 +12,9 @@ import { describe, expect, it } from 'vitest'
 
 import { AKAR_APLIKASI, folderKorpusBelumDimigrasi } from '../inti/frontend/uji/sumber'
 import { MENU, MODUL_LAIN_TERLARANG } from '../inti/frontend/labels'
-import { LABEL_MENU_KOMITE } from '../modul/komiteclaimlife/frontend/labels'
-import { LABEL_MENU_PREMIUMLIST } from '../modul/premiumlistlife/frontend/labels'
 import { FOLDER_KORPUS } from './katalogKorpus'
 import { MENU_TCO } from '../modul/treatycontractout/frontend/labels'
-import { ENTRI_MENU } from './daftar'
+import { ENTRI_MENU, MODUL_FRONTEND } from './daftar'
 import { KELOMPOK_CLAIMLIFE } from '../modul/claimlife/frontend/menu'
 
 const SUMBER = readFileSync(join(AKAR_APLIKASI, 'inti', 'frontend', 'components', 'Shell.tsx'), 'utf8')
@@ -60,10 +58,11 @@ describe('menu hanya yang berbukti korpus', () => {
     }
   })
 
-  it('kelima butir menu lama tetap, dan seluruhnya berbukti', () => {
-    // ⛔ Lima: dua Claim Life, satu PremiumList, satu Komite, satu Treaty
-    // Contract Out. Beranda TIDAK dihitung - ia kerangka aplikasi, bukan menu
-    // modul.
+  it('satu entri per modul terdaftar, berlabel nama folder korpus - nol butir navigasi', () => {
+    // ⛔ MENU DATAR (keputusan work owner 30-09-2026): "1 modul 1 menu" - butir
+    // inbox, register, premiumlist, komite, tco-tahun DICABUT; tombol modul
+    // membuka halaman awalnya. Beranda TIDAK dihitung - ia kerangka aplikasi.
+    // Menggantikan "kelima butir menu lama tetap, dan seluruhnya berbukti".
     const modul = ENTRI_MENU.filter((e) => e.modul !== 'beranda')
     // Lima sejak tiket 03 Treaty Contract Out. Sempat tujuh (tiket 04, 08);
     // tco5 [keputusan work owner 29-09-2026]: kelompok Treaty Contract Out
@@ -80,17 +79,20 @@ describe('menu hanya yang berbukti korpus', () => {
     // (`.github/CODEOWNERS`) - menu tetap keputusan yang ditinjau, bukan
     // keputusan sepi.
     const label = modul.map((e) => e.label)
-    expect(label).toContain(MENU.inbox)
-    expect(label).toContain(MENU.register)
-    expect(label).toContain(LABEL_MENU_PREMIUMLIST.premiumList)
-    expect(label).toContain(LABEL_MENU_KOMITE.inboxKomite)
-    expect(label).toContain(MENU_TCO.treatyContractOut)
+    expect(modul).toHaveLength(MODUL_FRONTEND.length)
+    for (const l of label) expect(Object.values(FOLDER_KORPUS), l).toContain(l)
+    // Label butir navigasi lama tidak tampil lagi sebagai menu.
+    for (const lama of ['Inbox Claim Life', 'Register', 'PremiumList', 'Inbox Komite']) {
+      expect(label, lama).not.toContain(lama)
+    }
     expect(label).not.toContain(MENU_TCO.inboxTreatyContractReinsType)
     expect(label).not.toContain(MENU_TCO.inboxTreatyContractDescription)
     expect(ENTRI_MENU.filter((e) => e.kelompok === MENU_TCO.kelompok)).toHaveLength(1)
+    // Halaman yang dibuka DARI DALAM modul tidak pernah menjadi entri menu.
+    expect(label).toHaveLength(new Set(modul.map((e) => e.pemilik)).size)
   })
 
-  it('kelompok yang belum dimigrasi berdiri TANPA butir', () => {
+  it('modul yang belum dimigrasi berdiri sebagai tombol NONAKTIF, tanpa halaman', () => {
     // ⚠️ Berdiri, bukan disembunyikan. Aplikasi yang menampilkan empat
     // modul dari dua puluh tampak lengkap padahal tidak.
     //
@@ -101,6 +103,7 @@ describe('menu hanya yang berbukti korpus', () => {
     expect([...kosong].sort()).toEqual(folderKorpusBelumDimigrasi())
     expect(kosong.length).toBeGreaterThan(0)
     expect(kode).toContain('KETERANGAN_BELUM_DIMIGRASI')
+    expect(kode).toContain('aria-disabled="true"')
   })
 
   it.each(MODUL_LAIN_TERLARANG)('tidak ada butir menu bernama %s', (nama) => {

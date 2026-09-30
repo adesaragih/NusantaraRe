@@ -11,6 +11,9 @@ kerangka (`claimfacin`, `nbtreatyin`, ...); templat ini untuk modul yang belum a
   nomor selalu tiga digit (`inti/backend/penjaga/rentang_test.go`).
 - Langkah memulai kode (backend/modul.go, `go generate`, frontend/menu.ts + rute.tsx, slot menu):
   `docs/bersama/PANDUAN-TIM-PER-MODUL.md` (akar repo) bab 4–5.
+- Slot menu: SATU `UPDATE {skema}.M_NAV_MENU SET DIMIGRASI = '1', TGL_UBAH = SYSDATE WHERE KODE = '<nama>'`
+  saat modul mendapat layar pertamanya — nol `INSERT` (menu datar, keputusan work owner 30-09-2026;
+  `APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md` bab 6).
 
 ⛔ Folder `_templat` sendiri TIDAK dibaca penjaga dan TIDAK terdaftar: nilainya penanda.
 

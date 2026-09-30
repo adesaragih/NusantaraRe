@@ -33,9 +33,9 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 ## Migrasi
 
 Rentang `030-049`, terpakai `030`. Tabel tangga Komite sendiri lahir di migrasi Claim Life `013`
-(sebelum modul ini berdiri) dan tetap di sana: `T_MIGRASI` mencatat nama, bukan letak. Menu modul
-ini (butir `M_NAV_MENU` baru) ditulis di slot `952-953`, di folder `backend/migrations/` modul ini
-sendiri — bentuk SQL-nya di `APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md` bab 6.
+(sebelum modul ini berdiri) dan tetap di sana: `T_MIGRASI` mencatat nama, bukan letak. Slot menu
+`952-953` tidak terpakai: baris modul ini sudah `DIMIGRASI = '1'` sejak 900, dan menu datar (30-09-2026)
+tidak punya butir — slot hanya menyalakan `DIMIGRASI` (`APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md` bab 6).
 
 ## Menjalankan uji modul ini saja
 

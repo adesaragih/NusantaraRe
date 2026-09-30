@@ -3,7 +3,7 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import type { GudangMini } from './lipatMenu'
+import type { GudangMini } from './tema'
 import { atributTema, bacaTema, KUNCI_TEMA, simpanTema, temaBerlaku } from './tema'
 
 function gudang(isi: Record<string, string> = {}): GudangMini {

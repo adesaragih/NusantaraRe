@@ -1,100 +1,105 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { AKAR_APLIKASI } from '../inti/frontend/uji/sumber'
+import { berkasMenu, menuBersih, type BarisMenuBersih } from '../inti/frontend/uji/menuBersih'
 import { ambilMenu } from '../inti/frontend/klien'
 import { FOLDER_KORPUS } from './katalogKorpus'
-import { HALAMAN_BERANDA } from '../inti/frontend/lib/daftarMenu'
-import { ENTRI_MENU, MODUL_FRONTEND } from './daftar'
+import { MODUL_FRONTEND } from './daftar'
 
-// Penjaga DUA ARAH: isi M_NAV_MENU ↔ `frontend/daftar.ts` (brief menu
-// 30-09-2026 §3). Yang dibaca: isi awal `inti` 900 DAN berkas slot menu setiap
-// modul di folder migrasinya sendiri (struktur tim satu folder per modul, R3;
-// panduan deploy bab 6) - setiap migrasi maju yang menyebut M_NAV_MENU. Bahwa
-// hanya 900 dan slot menu yang boleh menyebutnya dijaga
-// `inti/backend/penjaga/rentang_test.go`.
+// Penjaga DUA ARAH: HASIL BERSIH M_NAV_MENU (900 + 901 + slot menu modul) ↔
+// `frontend/daftar.ts` - menu datar, keputusan work owner 30-09-2026
+// (`PROMPT-MENU-DATAR-PER-GROUPMENU.md` §4). Bahwa hanya 900, 901, dan slot
+// menu yang boleh menyebut M_NAV_MENU dijaga `inti/backend/penjaga/rentang_test.go`.
 //
 // ⛔ Kenapa statik: sidebar dirakit dari `GET /api/menu` dan DIPOTONG dengan
-// rute frontend - baris tabel tanpa rute tidak tampil, rute tanpa baris
-// tabel juga tidak. Keduanya diam di layar (hanya satu baris konsol). Uji
-// inilah yang membuatnya berbunyi sebelum sampai ke layar.
+// modul frontend - baris dimigrasi tanpa modul frontend tidak tampil, modul
+// frontend tanpa baris juga tidak. Keduanya diam di layar (hanya satu baris
+// konsol). Uji inilah yang membuatnya berbunyi sebelum sampai ke layar.
+//
+// Menggantikan uji "lima butir" (KODE butir ↔ rute, LABEL butir, induk butir).
 
-/** Folder migrasi `inti` dan setiap modul. */
-const FOLDER_MIGRASI = [
-  join(AKAR_APLIKASI, 'inti', 'backend', 'migrations'),
-  ...readdirSync(join(AKAR_APLIKASI, 'modul'), { withFileTypes: true })
-    .filter((d) => d.isDirectory())
-    .map((d) => join(AKAR_APLIKASI, 'modul', d.name, 'backend', 'migrations'))
-    .filter((d) => existsSync(d)),
-]
-/** Setiap migrasi maju yang menyebut M_NAV_MENU, urutan nama berkas = urutan pelari. */
-const BERKAS_MENU = FOLDER_MIGRASI.flatMap((d) =>
-  readdirSync(d)
-    .filter((n) => n.endsWith('.sql') && !n.endsWith('_down.sql'))
-    .map((n) => ({ nama: n, isi: readFileSync(join(d, n), 'utf8') })),
-)
-  .filter((b) => b.isi.includes('M_NAV_MENU'))
-  .sort((a, b) => (a.nama < b.nama ? -1 : a.nama > b.nama ? 1 : 0))
-const SQL = BERKAS_MENU.map((b) => b.isi).join('\n')
-/** Isi awal saja - 900, milik inti. */
-const SQL_900 = BERKAS_MENU.filter((b) => b.nama.startsWith('900_'))
-  .map((b) => b.isi)
-  .join('\n')
+/** Bentuk modul frontend yang dibandingkan - subset `ModulFrontend`. */
+interface ModulUji {
+  nama: string
+  kelompok: string
+  halaman: readonly string[]
+  halamanAwal: string
+}
 
-const POLA_KELOMPOK =
-  /SELECT \{skema\}\.SEQ_M_NAV_MENU\.NEXTVAL, NULL, '([^']+)', '([^']+)', '([A-Z]+)', '([^']+)', \d+, '([01])' FROM DUAL/g
-const POLA_BUTIR =
-  /SELECT \{skema\}\.SEQ_M_NAV_MENU\.NEXTVAL, k\.ID, '([^']+)', '([^']+)', k\.GROUPMENU, k\.MODUL, \d+, k\.DIMIGRASI\s+FROM \{skema\}\.M_NAV_MENU k\s+WHERE k\.KODE = '([^']+)'/g
+/**
+ * Selisih dua arah. Kosong = sepakat.
+ *
+ *   - setiap baris `DIMIGRASI = '1'` punya modul frontend dengan HALAMAN_AWAL
+ *     yang benar-benar halamannya, dan nama modulnya = LABEL barisnya
+ *   - setiap modul frontend terdaftar punya baris tabel, dan baris itu
+ *     `DIMIGRASI = '1'` (modul berlayar tidak boleh tampil "belum dimigrasi")
+ */
+function selisihMenuModul(baris: readonly BarisMenuBersih[], modul: readonly ModulUji[]): string[] {
+  const alasan: string[] = []
+  for (const b of baris.filter((x) => x.dimigrasi)) {
+    const m = modul.find((x) => x.nama === b.kode)
+    if (m === undefined) {
+      alasan.push(`baris ${b.kode} DIMIGRASI='1' tanpa modul frontend`)
+      continue
+    }
+    if (!m.halaman.includes(m.halamanAwal)) alasan.push(`modul ${m.nama}: HALAMAN_AWAL ${m.halamanAwal} bukan halamannya`)
+    if (m.kelompok !== b.label) alasan.push(`modul ${m.nama}: nama ${m.kelompok}, LABEL baris ${b.label}`)
+  }
+  for (const m of modul) {
+    const b = baris.find((x) => x.kode === m.nama)
+    if (b === undefined) alasan.push(`modul frontend ${m.nama} tanpa baris M_NAV_MENU`)
+    else if (!b.dimigrasi) alasan.push(`modul frontend ${m.nama}: barisnya DIMIGRASI='0'`)
+  }
+  return alasan
+}
 
-const kelompok = [...SQL.matchAll(POLA_KELOMPOK)].map((m) => ({ kode: m[1]!, label: m[2]!, dimigrasi: m[5] === '1' }))
-const butir = [...SQL.matchAll(POLA_BUTIR)].map((m) => ({ kode: m[1]!, label: m[2]!, induk: m[3]! }))
-const butirIsiAwal = [...SQL_900.matchAll(POLA_BUTIR)]
-const rute = ENTRI_MENU.filter((e) => e.modul !== HALAMAN_BERANDA)
+const BERSIH = menuBersih()
 
-describe('isi menu migrasi inti ↔ daftar.ts, dua arah', () => {
+describe('hasil bersih M_NAV_MENU ↔ daftar.ts, dua arah', () => {
   it('setiap INSERT terbaca penjaga ini', () => {
     // INSERT berbentuk lain adalah baris yang uji ini tidak lihat.
-    expect(kelompok.length + butir.length).toBe((SQL.match(/^INSERT INTO /gm) ?? []).length)
-    expect(kelompok).toHaveLength(20)
-    // Isi awal 900: lima butir. Butir berikutnya lahir di slot menu modulnya;
-    // jumlah seluruhnya dikunci `Shell.test.ts` (menu yang tidak ada di sistem
-    // lama adalah menu yang dikarang).
-    expect(BERKAS_MENU.map((b) => b.nama)).toContain('900_m_nav_menu.sql')
-    expect(butirIsiAwal).toHaveLength(5)
+    expect(BERSIH.insertTerbaca).toBe(BERSIH.insert)
+    // Dan setiap pernyataan lain pun dikenal - bukan diabaikan diam-diam.
+    expect(BERSIH.takDikenal).toEqual([])
+    expect(berkasMenu().map((b) => b.nama)).toEqual(expect.arrayContaining(['900_m_nav_menu.sql', '901_m_nav_menu_datar.sql']))
   })
 
-  it('setiap KODE butir isi menu punya rute di daftar.ts', () => {
-    for (const b of butir) expect(rute.map((e) => e.modul as string), b.kode).toContain(b.kode)
+  it('dua puluh baris modul, nol butir anak (901)', () => {
+    expect(BERSIH.baris).toHaveLength(20)
+    expect(BERSIH.butir).toEqual([])
+    for (const b of BERSIH.baris) expect(b.kode, b.label).toBe(b.modul)
   })
 
-  it('setiap butir daftar.ts punya baris di isi menu', () => {
-    for (const e of rute) expect(butir.map((b) => b.kode), e.modul).toContain(e.modul)
-  })
-
-  it('LABEL butir = label frontend, VERBATIM', () => {
-    for (const e of rute) expect(butir.find((b) => b.kode === e.modul)?.label, e.modul).toBe(e.label)
-  })
-
-  it('induk butir = modul pemilik rutenya', () => {
-    for (const e of rute) expect(butir.find((b) => b.kode === e.modul)?.induk, e.modul).toBe(e.pemilik)
-  })
-
-  // Struktur tim satu folder per modul (30-09-2026): nama kelompok setiap modul
-  // tinggal di `menu.ts`-nya sendiri. Ia harus nama folder korpus, sama dengan
-  // LABEL barisnya di isi menu, dan sama untuk setiap butir modul itu.
-  it('KELOMPOK setiap modul = LABEL kelompoknya di isi menu, dan ada di FOLDER_KORPUS', () => {
+  it('dua arah: baris DIMIGRASI ↔ modul frontend dengan HALAMAN_AWAL', () => {
     expect(MODUL_FRONTEND.length).toBeGreaterThanOrEqual(4)
-    for (const m of MODUL_FRONTEND) {
-      expect(Object.values(FOLDER_KORPUS), m.nama).toContain(m.kelompok)
-      expect(kelompok.find((k) => k.kode === m.nama)?.label, m.nama).toBe(m.kelompok)
-      for (const b of m.menu) expect(b.kelompok, `${m.nama}/${b.modul}`).toBe(m.kelompok)
-    }
+    expect(selisihMenuModul(BERSIH.baris, MODUL_FRONTEND)).toEqual([])
   })
 
-  it('LABEL kelompok = FOLDER_KORPUS (20 folder korpus)', () => {
-    expect(new Set(kelompok.map((k) => k.label))).toEqual(new Set(Object.values(FOLDER_KORPUS)))
+  it('uji gigit: baris dimigrasi tanpa modul frontend', () => {
+    const tanpaSatu = MODUL_FRONTEND.filter((m) => m.nama !== 'premiumlistlife')
+    expect(selisihMenuModul(BERSIH.baris, tanpaSatu)).toEqual(['baris premiumlistlife DIMIGRASI=\'1\' tanpa modul frontend'])
+  })
+
+  it('uji gigit: modul frontend tanpa baris, atau berbaris DIMIGRASI=0', () => {
+    const tiruan = { nama: 'modultiruan', kelompok: 'Modul Tiruan', halaman: ['t'], halamanAwal: 't' }
+    expect(selisihMenuModul(BERSIH.baris, [...MODUL_FRONTEND, tiruan])).toEqual(['modul frontend modultiruan tanpa baris M_NAV_MENU'])
+    const nbfacin = { nama: 'nbfacin', kelompok: 'NB FacIn', halaman: ['nb'], halamanAwal: 'nb' }
+    expect(selisihMenuModul(BERSIH.baris, [...MODUL_FRONTEND, nbfacin])).toEqual(["modul frontend nbfacin: barisnya DIMIGRASI='0'"])
+  })
+
+  it('uji gigit: HALAMAN_AWAL di luar halaman modul, dan nama ≠ LABEL', () => {
+    const rusak = MODUL_FRONTEND.map((m) => (m.nama === 'claimlife' ? { ...m, halamanAwal: 'bukan', kelompok: 'ClaimLife' } : m))
+    expect(selisihMenuModul(BERSIH.baris, rusak)).toEqual([
+      'modul claimlife: HALAMAN_AWAL bukan bukan halamannya',
+      'modul claimlife: nama ClaimLife, LABEL baris Claim Life',
+    ])
+  })
+
+  it('LABEL = FOLDER_KORPUS (20 folder korpus)', () => {
+    expect(new Set(BERSIH.baris.map((b) => b.label))).toEqual(new Set(Object.values(FOLDER_KORPUS)))
     expect(Object.values(FOLDER_KORPUS)).toHaveLength(20)
     expect(Object.values(FOLDER_KORPUS)).toContain('Treaty In')
     expect(Object.values(FOLDER_KORPUS)).toContain('Treaty In Adjustment')
@@ -113,16 +118,17 @@ describe('GET /api/menu', () => {
     )
   }
 
-  it('membaca pohon dari jalur yang dipasang cmd/api', async () => {
-    jawab('{"golongan":[{"kode":"KLAIM","kelompok":[]}]}')
-    await expect(ambilMenu()).resolves.toEqual({ golongan: [{ kode: 'KLAIM', kelompok: [] }] })
+  it('membaca golongan → modul dari jalur yang dipasang cmd/api', async () => {
+    const badan = '{"golongan":[{"kode":"KLAIM","modul":[{"kode":"claimlife","label":"Claim Life","modul":"claimlife","urutan":2,"dimigrasi":true}]}]}'
+    jawab(badan)
+    await expect(ambilMenu()).resolves.toEqual(JSON.parse(badan))
     expect(String(vi.mocked(fetch).mock.calls[0]?.[0])).toContain('/api/menu')
     const rakit = readFileSync(join(AKAR_APLIKASI, 'cmd', 'api', 'rakit.go'), 'utf8')
     expect(rakit).toContain('mux.HandleFunc("GET /api/menu"')
   })
 
-  it('bentuk yang tak dikenal GAGAL - bukan menu kosong diam-diam', async () => {
-    for (const badan of ['{}', '{"golongan":{}}', '{"golongan":[{"kode":1}]}']) {
+  it('bentuk yang tak dikenal - termasuk pohon lama - GAGAL, bukan menu kosong diam-diam', async () => {
+    for (const badan of ['{}', '{"golongan":{}}', '{"golongan":[{"kode":1}]}', '{"golongan":[{"kode":"KLAIM","kelompok":[]}]}']) {
       jawab(badan)
       await expect(ambilMenu(), badan).rejects.toThrow('GET /api/menu')
     }
@@ -144,7 +150,7 @@ describe('sidebar dan palet dari GET /api/menu', () => {
     expect(app).toContain('menuTabel={menuTabel}')
   })
 
-  it('Shell memotongnya dengan rute, mencatat baris tanpa rute, dan memakai daftar yang SAMA untuk palet', () => {
+  it('Shell memotongnya dengan modul frontend, mencatat baris tanpa modul, dan memakai daftar yang SAMA untuk palet', () => {
     expect(shell).toContain('susunMenu(menuTabel.menu, menu)')
     expect(shell).toContain('console.warn(')
     expect(shell).toContain('menu={tersusun?.entri ?? berandaSaja}')
@@ -159,7 +165,8 @@ describe('sidebar dan palet dari GET /api/menu', () => {
     expect(shell).toContain('{KERANGKA.menuKosong}')
   })
 
-  it("kelompok DIMIGRASI '0' dirender 'belum dimigrasi' menurut DIMIGRASI-nya", () => {
-    expect(shell).toContain('{!k.dimigrasi ? (')
+  it("modul DIMIGRASI '0' dirender nonaktif 'belum dimigrasi'", () => {
+    expect(shell).toContain('{tujuan === null ? (')
+    expect(shell).toContain('aria-disabled="true"')
   })
 })

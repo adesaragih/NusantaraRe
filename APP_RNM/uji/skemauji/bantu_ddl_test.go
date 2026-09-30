@@ -32,6 +32,18 @@ func kolomMenurutDDL(t *testing.T) map[string][]string {
 			}
 			if nama, kolom := migrasi.KolomAlterTambah(p); nama != "" {
 				hasil[nama] = append(hasil[nama], kolom...)
+				continue
+			}
+			// Kolom yang DIBUANG (901 menu datar: PARENT_ID) - sama dengan
+			// padanannya di `inti/backend/penjaga` (temuan /code-review).
+			if nama, kolom := migrasi.KolomAlterBuang(p); nama != "" {
+				var sisa []string
+				for _, k := range hasil[nama] {
+					if k != kolom[0] {
+						sisa = append(sisa, k)
+					}
+				}
+				hasil[nama] = sisa
 			}
 		}
 	}

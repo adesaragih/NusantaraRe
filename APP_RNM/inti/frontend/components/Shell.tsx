@@ -5,24 +5,19 @@
 //
 // ⛔ SEJAK 30-09-2026 MENU DARI TABEL `M_NAV_MENU` (brief menu, permintaan work
 // owner): sidebar dan palet dirakit dari `GET /api/menu` - golongan TREATY,
-// FACULTATIVE, KLAIM, MASTER sebagai kepala bagian, lalu kelompok modul, lalu
-// butir - DIPOTONG dengan rute yang terdaftar di `frontend/daftar.ts`
+// FACULTATIVE, KLAIM, MASTER sebagai kepala bagian, lalu SATU TOMBOL PER MODUL
+// - dipotong dengan modul yang terdaftar di `frontend/daftar.ts`
 // (`susunMenu`). Bila `GET /api/menu` gagal, sidebar menampilkan galatnya.
-// Catatan di bawah (bg) tetap berlaku untuk ISI-nya; urutan dan pengelompokan
-// kini milik tabel.
 //
-// ⛔ TUJUH BELAS KELOMPOK, EMPAT BUTIR — butir **bg**, 28-09-2026.
+// ⛔ MENU DATAR — keputusan work owner 30-09-2026
+// (`PROMPT-MENU-DATAR-PER-GROUPMENU.md`): "menu jangan ada model seperti child
+// ... 1 modul 1 menu". Tidak ada kelompok yang dilipat, tidak ada anak, tidak
+// ada panah buka-tutup. Klik tombol modul membuka halaman awalnya
+// (`HALAMAN_AWAL_<X>`); halaman lain modul itu dibuka dari dalamnya.
 //
-// Kelompoknya nama FOLDER korpus `D:/XML/RNM_BRD/` apa adanya. Butirnya
-// hanya untuk tiga modul yang punya bukti XML: Claim Life (dua), PremiumList
-// Life (satu), Komite Claim Life (satu). **Empat belas kelompok lain berdiri
-// terlipat, TANPA butir**, berketerangan `belum dimigrasi`.
-//
-// ⛔ Nol butir dikarang. Menu yang tidak ada di sistem lama adalah menu yang
-// dikarang, dan penjaganya ada di `Shell.test.ts`.
-//
-// ⚠️ Kelompok kosong tetap BERDIRI, tidak disembunyikan. Aplikasi yang
-// menampilkan tiga modul dari tujuh belas tampak lengkap padahal tidak — dan
+// ⚠️ Modul yang belum dimigrasi tetap BERDIRI sebagai tombol NONAKTIF
+// (`aria-disabled`, "belum dimigrasi"), tidak disembunyikan. Aplikasi yang
+// menampilkan empat modul dari dua puluh tampak lengkap padahal tidak — dan
 // layar yang tampak lengkap padahal tidak adalah layar yang tidak akan dicari
 // lagi (pelajaran butir av).
 //
@@ -47,7 +42,6 @@ import {
   PRODUK,
 } from '../labels'
 import {
-  butirDatar,
   entriAplikasi,
   HALAMAN_BERANDA,
   susunMenu,
@@ -57,7 +51,6 @@ import {
 import { singkatanUnik } from '../lib/singkatan'
 import { PagarGalat } from '../PagarGalat'
 import { type Sesi } from '../store/sesi'
-import { KelompokMenu } from './KelompokMenu'
 import { PaletMenu } from './PaletMenu'
 import { useTema } from '../hooks/useTema'
 import {
@@ -118,8 +111,9 @@ export interface ShellProps<H extends string> {
   onPindah: (h: H | typeof HALAMAN_BERANDA) => void
   children: ReactNode
   /**
-   * Rute menu frontend (`ENTRI_MENU`) - PEMOTONG pohon tabel: hanya butir
-   * tabel yang berute di sini yang tampil, di sidebar maupun palet.
+   * Modul frontend terdaftar (`ENTRI_MENU`: Beranda + halaman awal tiap modul)
+   * - PEMOTONG menu tabel: hanya baris tabel yang modulnya terdaftar di sini
+   * yang dapat dibuka, di sidebar maupun palet.
    */
   menu: readonly EntriMenu<H>[]
   /** Pembacaan `GET /api/menu` (M_NAV_MENU): `null` = memuat. */
@@ -134,36 +128,35 @@ export function Shell<H extends string>({
   menu,
   menuTabel,
 }: ShellProps<H>) {
-  // Pohon tabel dipotong rute frontend - SATU hasil untuk sidebar dan palet.
+  // Menu tabel dipotong modul frontend - SATU hasil untuk sidebar dan palet.
   const tersusun = useMemo(
     () => (menuTabel !== null && 'menu' in menuTabel ? susunMenu(menuTabel.menu, menu) : null),
     [menuTabel, menu],
   )
   // Palet sebelum/tanpa menu tabel: Beranda saja.
   const berandaSaja = useMemo(() => entriAplikasi(menu), [menu])
-  // Lencana dua huruf per kelompok — pengganti ikon saat panel terciut.
-  // ⚠️ BUKAN ikon Lucide per kelompok: kelompok berbagi lima keluarga (Claim,
+  // Lencana dua huruf per modul — pengganti ikon saat panel terciut.
+  // ⚠️ BUKAN ikon Lucide per modul: modul berbagi lima keluarga (Claim,
   // Komite Claim, Endorsement, Master, NB…), jadi ikon per keluarga membuat
   // empat Claim dan empat Komite tampil kembar di panel ikon. `singkatanUnik`
-  // menjamin tak ada dua lencana yang sama - dihitung atas kelompok yang TAMPIL
-  // (menu dari tabel, 30-09-2026), jadi daftarnya tidak lagi diketik di sini.
+  // menjamin tak ada dua lencana yang sama - dihitung atas modul yang TAMPIL
+  // (menu dari tabel, 30-09-2026), jadi daftarnya tidak diketik di sini.
   const lencana = useMemo(
-    () => singkatanUnik(tersusun?.golongan.flatMap((g) => g.kelompok.map((k) => k.nama)) ?? []),
+    () => singkatanUnik(tersusun?.golongan.flatMap((g) => g.modul.map((m) => m.label)) ?? []),
     [tersusun],
   )
-  // Baris tabel yang tidak tampil DICATAT, supaya tabel yang mendahului
-  // kodenya (atau salah ketik KODE, atau butir di bawah kelompok yang belum
-  // dimigrasi) terlihat di konsol.
+  // Baris tabel yang tidak dapat dibuka DICATAT, supaya tabel yang mendahului
+  // kodenya (atau salah ketik KODE) terlihat di konsol.
   useEffect(() => {
     if (tersusun === null) return
     if (tersusun.tanpaRute.length > 0) {
       console.warn(
-        `menu: ${tersusun.tanpaRute.length} butir M_NAV_MENU tanpa rute frontend, tidak tampil: ${tersusun.tanpaRute.join(', ')}`,
+        `menu: ${tersusun.tanpaRute.length} modul M_NAV_MENU DIMIGRASI='1' tanpa modul frontend, tidak tampil: ${tersusun.tanpaRute.join(', ')}`,
       )
     }
-    if (tersusun.terlipat.length > 0) {
+    if (tersusun.nonaktifBerute.length > 0) {
       console.warn(
-        `menu: ${tersusun.terlipat.length} butir M_NAV_MENU di bawah kelompok DIMIGRASI='0', tidak tampil: ${tersusun.terlipat.join(', ')}`,
+        `menu: ${tersusun.nonaktifBerute.length} modul frontend terdaftar tetapi M_NAV_MENU DIMIGRASI='0', tombolnya nonaktif: ${tersusun.nonaktifBerute.join(', ')}`,
       )
     }
   }, [tersusun])
@@ -261,6 +254,9 @@ export function Shell<H extends string>({
     [onPindah],
   )
 
+  // Judul pembaca layar - ungkapan yang SAMA dengan sebelum menu datar: label
+  // entri halaman itu, cadangannya `MENU.inbox`. Judul yang TERLIHAT adalah
+  // kepala tiap halaman dan tidak berubah (mis. Inbox Claim Life).
   const judulAktif =
     menu.find((e) => e.modul === halaman)?.label ?? MENU.inbox
 
@@ -315,7 +311,7 @@ export function Shell<H extends string>({
 
         <nav className="shell__nav" aria-label={KERANGKA.navUtama}>
           <ul className="shell__daftar">
-            {/* Beranda berdiri SENDIRI di atas kelompok - ia bukan modul.  */}
+            {/* Beranda berdiri SENDIRI di atas golongan - ia bukan modul.  */}
             <li>
               <button
                 type="button"
@@ -354,82 +350,54 @@ export function Shell<H extends string>({
               </li>
             )}
             {/* Kepala bagian = GROUPMENU (TREATY, FACULTATIVE, KLAIM, MASTER),
-                urutan dari backend. Modul NONAKTIF (MODUL_AKTIF) tidak dikirim
-                butirnya, jadi kelompoknya tidak tampil (`susunMenu`). */}
+                urutan dari backend; di bawahnya SATU tombol per modul. Modul
+                NONAKTIF (MODUL_AKTIF) tidak dikirim backend (`susunMenu`). */}
             {tersusun?.golongan.map((g) => (
               <li key={g.kode} className="shell__golongan">
                 <p className="shell__golongan-judul" aria-hidden="true">
                   {g.kode}
                 </p>
                 <ul className="shell__daftar" aria-label={g.kode}>
-                  {g.kelompok.map((k) => {
-                    const datar = butirDatar(k.butir)
+                  {g.modul.map((m) => {
+                    const aktif = m.halamanModul.includes(halaman as H)
+                    const tujuan = m.halaman
                     return (
-                      <li key={k.kode}>
-                        {!k.dimigrasi ? (
-                          /* Kelompok `DIMIGRASI = '0'` tetap BERDIRI dan menyebut
-                             sebabnya. Menyembunyikannya membuat aplikasi tampak
-                             lengkap padahal enam belas modul belum ada. Ia bukan
-                             tombol: tidak ada yang dapat dibuka di dalamnya. */
-                          <div
-                            className="kelompok kelompok--kosong"
-                            title={terciut ? `${k.nama} — ${KETERANGAN_BELUM_DIMIGRASI}` : undefined}
-                          >
-                            <span className="kelompok__lencana" aria-hidden="true">
-                              {lencana.get(k.nama)}
-                            </span>
-                            <span className="kelompok__teks">
-                              {k.nama}
-                              <span className="shell__belum">{KETERANGAN_BELUM_DIMIGRASI}</span>
-                            </span>
-                          </div>
-                        ) : datar !== undefined ? (
-                          /* Kelompok beranggota SATU butir bertanda `datar`: satu tombol
-                             langsung, tanpa judul kelompok yang dilipat dan tanpa anak
-                             (`ButirMenuModul.datar`). */
+                      <li key={m.kode}>
+                        {tujuan === null ? (
+                          /* `DIMIGRASI = '0'`: tombol NONAKTIF yang menyebut
+                             sebabnya - tidak disembunyikan, tidak dapat diklik. */
                           <button
                             type="button"
-                            className={`shell__butir shell__butir--datar${halaman === datar.halaman ? ' shell__butir--aktif' : ''}`}
-                            aria-current={halaman === datar.halaman ? 'page' : undefined}
-                            title={datar.label}
+                            className="shell__butir shell__butir--modul shell__butir--nonaktif"
+                            aria-disabled="true"
+                            disabled
+                            title={`${m.label} — ${KETERANGAN_BELUM_DIMIGRASI}`}
+                          >
+                            <span className="kelompok__lencana" aria-hidden="true">
+                              {lencana.get(m.label)}
+                            </span>
+                            <span className="kelompok__teks">
+                              {m.label}
+                              <span className="shell__belum">{KETERANGAN_BELUM_DIMIGRASI}</span>
+                            </span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className={`shell__butir shell__butir--modul${aktif ? ' shell__butir--aktif' : ''}`}
+                            aria-current={aktif ? 'page' : undefined}
+                            // Nama modul VERBATIM korpus bisa lebih panjang dari
+                            // panel dan terpotong elipsis — tooltip memuat utuhnya.
+                            title={m.label}
                             onClick={() => {
-                              pilih(datar.halaman)
+                              pilih(tujuan)
                             }}
                           >
                             <span className="kelompok__lencana" aria-hidden="true">
-                              {lencana.get(k.nama)}
+                              {lencana.get(m.label)}
                             </span>
-                            <span className="shell__label">{datar.label}</span>
+                            <span className="shell__label">{m.label}</span>
                           </button>
-                        ) : (
-                          <KelompokMenu
-                            nama={k.nama}
-                            lencana={lencana.get(k.nama) ?? ''}
-                            memuatAktif={k.butir.some((b) => b.halaman === halaman)}
-                            terciut={terciut}
-                            onBentang={() => {
-                              setTerlipat(false)
-                            }}
-                          >
-                            {k.butir.map((b) => (
-                              <button
-                                key={b.halaman}
-                                type="button"
-                                className={`shell__butir shell__butir--anak${
-                                  halaman === b.halaman ? ' shell__butir--aktif' : ''
-                                }`}
-                                aria-current={halaman === b.halaman ? 'page' : undefined}
-                                // Nama menu VERBATIM korpus bisa lebih panjang dari
-                                // panel dan terpotong elipsis — tooltip memuat utuhnya.
-                                title={b.label}
-                                onClick={() => {
-                                  pilih(b.halaman)
-                                }}
-                              >
-                                <span className="shell__label">{b.label}</span>
-                              </button>
-                            ))}
-                          </KelompokMenu>
                         )}
                       </li>
                     )

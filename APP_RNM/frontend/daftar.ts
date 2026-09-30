@@ -69,7 +69,10 @@ export function rakitModulFrontend(menu: BerkasMenu, rute: BerkasRute): ModulFro
       if (m.nama !== folder) {
         throw new Error(`daftar modul: modul/${folder}/frontend/menu.ts menyebut nama "${m.nama}"; nama modul = nama foldernya`)
       }
-      return { nama: m.nama, kelompok: m.kelompok, halaman: m.halaman, menu: m.menu, Rute: r }
+      if (!m.halaman.includes(m.halamanAwal)) {
+        throw new Error(`daftar modul: modul/${folder}/frontend/menu.ts: halaman awal "${m.halamanAwal}" bukan halaman modul itu`)
+      }
+      return { nama: m.nama, kelompok: m.kelompok, halaman: m.halaman, halamanAwal: m.halamanAwal, Rute: r }
     })
 }
 
@@ -83,20 +86,24 @@ export const MODUL_FRONTEND: readonly ModulFrontend<Halaman>[] = rakitModulFront
 )
 
 /**
- * Entri sidebar yang benar-benar dapat dibuka.
+ * Entri yang dapat dibuka: Beranda, lalu SATU per modul terdaftar - halaman
+ * awalnya (menu datar, keputusan work owner 30-09-2026: satu modul satu menu).
  *
- * ⛔ LIMA butir modul (tco5: Treaty Contract Out satu butir), ditambah Beranda. Empat belas kelompok lain berdiri
- * di sidebar TANPA butir — dan karena itu tidak ada di sini pula. Entri yang
- * berdiri di daftar ini tetapi tidak di sidebar dapat dibuka lewat palet
- * walau menunya tidak terlihat; itu persis cacat yang REFERENSI_UI bayar
- * sekali dan tuliskan pelajarannya.
- *
- * Sejak menu dari tabel M_NAV_MENU (30-09-2026) sidebar dan palet mengikuti
- * urutan TABEL; daftar ini hanya PEMOTONGNYA (`susunMenu`), Beranda pertama.
+ * Sidebar dan palet mengikuti urutan dan LABEL tabel M_NAV_MENU; daftar ini
+ * hanya PEMOTONGNYA (`susunMenu`), Beranda pertama. Modul yang belum
+ * dimigrasi tidak punya modul frontend - dan karena itu tidak ada di sini:
+ * entri yang berdiri di sini tetapi tidak di sidebar dapat dibuka lewat palet
+ * walau menunya tidak terlihat, cacat yang REFERENSI_UI bayar sekali.
  */
 export const ENTRI_MENU: readonly EntriMenu<Halaman>[] = [
   { modul: HALAMAN_BERANDA, label: 'Beranda', kelompok: 'Beranda', pemilik: null },
-  ...MODUL_FRONTEND.flatMap((m) => m.menu.map((b) => ({ ...b, pemilik: m.nama }))),
+  ...MODUL_FRONTEND.map((m) => ({
+    modul: m.halamanAwal,
+    label: m.kelompok,
+    kelompok: m.kelompok,
+    pemilik: m.nama,
+    halamanModul: m.halaman,
+  })),
 ]
 
 /**

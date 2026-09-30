@@ -1,130 +1,86 @@
 import { describe, expect, it } from 'vitest'
 
-import { bentukMenuTabel, entriAplikasi, HALAMAN_BERANDA, susunMenu, type EntriMenu, type MenuTabel } from './daftarMenu'
+import { bentukMenuTabel, daftarPalet, entriAplikasi, HALAMAN_BERANDA, susunMenu, type EntriMenu, type MenuTabel } from './daftarMenu'
 
-// Menu dari tabel M_NAV_MENU (brief menu 30-09-2026): pohon `GET /api/menu`
-// DIPOTONG dengan rute frontend yang benar-benar terdaftar. Rute di sini
-// tiruan - `inti/` tidak mengenal modul; uji dua arah dengan `frontend/daftar.ts`
-// ada di `frontend/daftar.menuTabel.test.ts`.
+// Menu DATAR dari tabel M_NAV_MENU (keputusan work owner 30-09-2026): menu
+// `GET /api/menu` (golongan → modul) DIPOTONG dengan modul frontend yang
+// benar-benar terdaftar. Modul di sini tiruan - `inti/` tidak mengenal modul;
+// uji dua arah dengan `frontend/daftar.ts` ada di
+// `frontend/daftar.menuTabel.test.ts`.
+//
+// Menggantikan uji pohon golongan → kelompok → butir (label butir, penanda
+// `datar`, kelompok terlipat).
 
-type H = 'beranda' | 'inbox' | 'register' | 'tco-tahun' | 'rute-tanpa-baris'
+type H = 'beranda' | 'inbox' | 'register' | 'outstanding' | 'tco-tahun' | 'lain'
 
 const RUTE: readonly EntriMenu<H>[] = [
   { modul: HALAMAN_BERANDA, label: 'Beranda', kelompok: 'Beranda', pemilik: null },
-  { modul: 'inbox', label: 'Inbox Claim Life', kelompok: 'Claim Life', pemilik: 'claimlife' },
-  { modul: 'register', label: 'Register', kelompok: 'Claim Life', pemilik: 'claimlife' },
-  { modul: 'tco-tahun', label: 'Treaty Contract Out', kelompok: 'Treaty Contract Out', pemilik: 'treatycontractout', datar: true },
-  { modul: 'rute-tanpa-baris', label: 'Tanpa Baris', kelompok: 'Claim Life', pemilik: 'claimlife' },
+  { modul: 'inbox', label: 'Claim Life', kelompok: 'Claim Life', pemilik: 'claimlife', halamanModul: ['inbox', 'register', 'outstanding'] },
+  { modul: 'tco-tahun', label: 'Treaty Contract Out', kelompok: 'Treaty Contract Out', pemilik: 'treatycontractout', halamanModul: ['tco-tahun'] },
+  // Modul frontend terdaftar TANPA baris tabel - tidak tampil.
+  { modul: 'lain', label: 'Lain', kelompok: 'Lain', pemilik: 'modullain', halamanModul: ['lain'] },
 ]
 
 const TABEL: MenuTabel = {
   golongan: [
     {
       kode: 'FACULTATIVE',
-      kelompok: [
-        { kode: 'nbfacin', label: 'NB FacIn', modul: 'nbfacin', dimigrasi: false, butir: [] },
-        // DIMIGRASI '0' yang (keliru) berbutir berute: tetap "belum dimigrasi".
-        {
-          kode: 'rnwfacin',
-          label: 'RNW Fac In',
-          modul: 'rnwfacin',
-          dimigrasi: false,
-          butir: [{ kode: 'register', label: 'Register', modul: 'rnwfacin' }],
-        },
+      modul: [
+        { kode: 'nbfacin', label: 'NB FacIn', modul: 'nbfacin', urutan: 1, dimigrasi: false },
+        // DIMIGRASI '0' yang (keliru) terdaftar di frontend: tetap nonaktif, dicatat.
+        { kode: 'treatycontractout', label: 'Treaty Contract Out', modul: 'treatycontractout', urutan: 2, dimigrasi: false },
       ],
     },
     {
       kode: 'KLAIM',
-      kelompok: [
-        { kode: 'claimfacin', label: 'Claim Fac In', modul: 'claimfacin', dimigrasi: false, butir: [] },
-        {
-          kode: 'claimlife',
-          label: 'Claim Life',
-          modul: 'claimlife',
-          dimigrasi: true,
-          butir: [
-            { kode: 'inbox', label: 'Inbox Claim Life', modul: 'claimlife' },
-            { kode: 'baris-tanpa-rute', label: 'Tanpa Rute', modul: 'claimlife' },
-            { kode: 'register', label: 'Register', modul: 'claimlife' },
-          ],
-        },
-        // Modul dimigrasi yang butirnya tidak dikirim (MODUL_AKTIF) - hilang.
-        { kode: 'komiteclaimlife', label: 'Komite Claim Life', modul: 'komiteclaimlife', dimigrasi: true, butir: [] },
+      modul: [
+        { kode: 'claimfacin', label: 'Claim Fac In', modul: 'claimfacin', urutan: 1, dimigrasi: false },
+        { kode: 'claimlife', label: 'Claim Life', modul: 'claimlife', urutan: 2, dimigrasi: true },
+        // Dimigrasi TANPA modul frontend - tidak tampil, dicatat.
+        { kode: 'komiteclaimlife', label: 'Komite Claim Life', modul: 'komiteclaimlife', urutan: 6, dimigrasi: true },
       ],
     },
-    {
-      kode: 'MASTER',
-      kelompok: [
-        {
-          kode: 'treatycontractout',
-          label: 'Treaty Contract Out',
-          modul: 'treatycontractout',
-          dimigrasi: true,
-          butir: [{ kode: 'tco-tahun', label: 'Treaty Contract Out', modul: 'treatycontractout' }],
-        },
-      ],
-    },
+    { kode: 'MASTER', modul: [{ kode: 'tanpamodul', label: 'Tanpa Modul', modul: 'tanpamodul', urutan: 1, dimigrasi: true }] },
   ],
 }
 
-describe('susunMenu: pohon tabel dipotong rute frontend', () => {
+describe('susunMenu: satu tombol per modul di bawah GROUPMENU', () => {
   const s = susunMenu(TABEL, RUTE)
 
-  it('golongan dan kelompok berurutan seperti tabel', () => {
-    expect(s.golongan.map((g) => g.kode)).toEqual(['FACULTATIVE', 'KLAIM', 'MASTER'])
-    expect(s.golongan[1]?.kelompok.map((k) => k.nama)).toEqual(['Claim Fac In', 'Claim Life'])
+  it('golongan dan modul berurutan seperti tabel; golongan tanpa tombol hilang', () => {
+    expect(s.golongan.map((g) => g.kode)).toEqual(['FACULTATIVE', 'KLAIM'])
+    expect(s.golongan[1]?.modul.map((m) => m.label)).toEqual(['Claim Fac In', 'Claim Life'])
   })
 
-  it('baris tabel tanpa rute frontend tidak tampil dan dicatat', () => {
-    const claimLife = s.golongan[1]?.kelompok[1]
-    expect(claimLife?.butir.map((b) => b.halaman)).toEqual(['inbox', 'register'])
-    expect(s.tanpaRute).toEqual(['claimlife/baris-tanpa-rute'])
+  it('tombol modul dimigrasi membuka HALAMAN AWAL-nya, label dari tabel', () => {
+    const cl = s.golongan[1]?.modul[1]
+    expect(cl).toEqual({ kode: 'claimlife', label: 'Claim Life', halaman: 'inbox', halamanModul: ['inbox', 'register', 'outstanding'] })
   })
 
-  it('butir frontend tanpa baris tabel tidak tampil', () => {
-    const semua = s.golongan.flatMap((g) => g.kelompok.flatMap((k) => k.butir.map((b) => b.halaman)))
-    expect(semua).not.toContain('rute-tanpa-baris')
-    expect(s.entri.map((e) => e.modul)).not.toContain('rute-tanpa-baris')
+  it("DIMIGRASI '0': tombol nonaktif tanpa halaman - walau modul frontend terdaftar (dicatat)", () => {
+    const nonaktif = s.golongan.flatMap((g) => g.modul.filter((m) => m.halaman === null)).map((m) => m.kode)
+    expect(nonaktif).toEqual(['nbfacin', 'treatycontractout', 'claimfacin'])
+    expect(s.nonaktifBerute).toEqual(['treatycontractout'])
   })
 
-  it('kelompok belum dimigrasi tetap berdiri; kelompok dimigrasi tanpa butir hilang', () => {
-    const kelompok = s.golongan.flatMap((g) => g.kelompok)
-    expect(kelompok.filter((k) => !k.dimigrasi).map((k) => k.kode)).toEqual(['nbfacin', 'rnwfacin', 'claimfacin'])
-    expect(kelompok.map((k) => k.kode)).not.toContain('komiteclaimlife')
+  it('baris dimigrasi tanpa modul frontend tidak tampil dan dicatat; modul frontend tanpa baris tidak tampil', () => {
+    const kode = s.golongan.flatMap((g) => g.modul.map((m) => m.kode))
+    expect(kode).not.toContain('komiteclaimlife')
+    expect(kode).not.toContain('modullain')
+    expect(s.tanpaRute).toEqual(['komiteclaimlife', 'tanpamodul'])
   })
 
-  it("DIMIGRASI '0' menentukan: butirnya tidak tampil walau berute, dan dicatat", () => {
-    const rnw = s.golongan[0]?.kelompok.find((k) => k.kode === 'rnwfacin')
-    expect(rnw?.butir).toEqual([])
-    expect(s.entri.filter((e) => e.kelompok === 'RNW Fac In')).toEqual([])
-    expect(s.terlipat).toEqual(['rnwfacin/register'])
-  })
-
-  it('golongan tanpa kelompok tampil hilang', () => {
-    const t = susunMenu(
-      { golongan: [{ kode: 'TREATY', kelompok: [{ kode: 'x', label: 'X', modul: 'x', dimigrasi: true, butir: [] }] }] },
-      RUTE,
-    )
-    expect(t.golongan).toEqual([])
-  })
-
-  it('LABEL dari tabel; penanda datar dari rute frontend', () => {
-    const tco = s.golongan[2]?.kelompok[0]?.butir[0]
-    expect(tco).toEqual({ halaman: 'tco-tahun', label: 'Treaty Contract Out', pemilik: 'treatycontractout', datar: true })
-    expect(s.golongan[1]?.kelompok[1]?.butir.some((b) => 'datar' in b)).toBe(false)
+  it('palet: Beranda lalu setiap tombol yang dapat dibuka, urutan sidebar, golongan sebagai konteks', () => {
+    // `kelompok` SATU makna - nama modul; golongannya dibawa terpisah.
+    expect(s.entri.map((e) => [e.modul, e.label, e.kelompok, e.golongan])).toEqual([
+      ['beranda', 'Beranda', 'Beranda', undefined],
+      ['inbox', 'Claim Life', 'Claim Life', 'KLAIM'],
+    ])
+    expect(daftarPalet(s.entri).map((h) => h.kelompok)).toEqual(['Beranda', 'KLAIM'])
   })
 
   it('entriAplikasi: hanya milik aplikasi (Beranda)', () => {
     expect(entriAplikasi(RUTE).map((e) => e.modul)).toEqual(['beranda'])
-  })
-
-  it('palet: Beranda lalu butir yang tampil, urutan sidebar', () => {
-    expect(s.entri.map((e) => [e.modul, e.kelompok])).toEqual([
-      ['beranda', 'Beranda'],
-      ['inbox', 'Claim Life'],
-      ['register', 'Claim Life'],
-      ['tco-tahun', 'Treaty Contract Out'],
-    ])
   })
 })
 
@@ -134,9 +90,16 @@ describe('bentukMenuTabel', () => {
     expect(bentukMenuTabel({ golongan: [] })).toBe(true)
   })
   it('menolak bentuk lain - tidak pernah dijadikan menu kosong', () => {
-    for (const x of [null, {}, { golongan: {} }, { golongan: [{ kode: 'KLAIM' }] },
-      { golongan: [{ kode: 'KLAIM', kelompok: [{ kode: 'a', label: 'A', modul: 'a', dimigrasi: '1', butir: [] }] }] },
-      { golongan: [{ kode: 'KLAIM', kelompok: [{ kode: 'a', label: 'A', modul: 'a', dimigrasi: true, butir: [{ kode: 1 }] }] }] }]) {
+    for (const x of [
+      null,
+      {},
+      { golongan: {} },
+      { golongan: [{ kode: 'KLAIM' }] },
+      // Pohon lama (golongan → kelompok → butir) DITOLAK.
+      { golongan: [{ kode: 'KLAIM', kelompok: [{ kode: 'a', label: 'A', modul: 'a', dimigrasi: true, butir: [] }] }] },
+      { golongan: [{ kode: 'KLAIM', modul: [{ kode: 'a', label: 'A', modul: 'a', urutan: 1, dimigrasi: '1' }] }] },
+      { golongan: [{ kode: 'KLAIM', modul: [{ kode: 'a', label: 'A', modul: 'a', urutan: '1', dimigrasi: true }] }] },
+    ]) {
       expect(bentukMenuTabel(x), JSON.stringify(x)).toBe(false)
     }
   })

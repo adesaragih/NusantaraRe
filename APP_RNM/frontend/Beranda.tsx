@@ -49,7 +49,7 @@ export interface AntreanTahap {
 /** Keadaan sebuah kartu modul. */
 export interface KartuModul {
   nama: string
-  /** Butir pertama modul itu, atau null bila belum dimigrasi. */
+  /** Halaman awal modul itu (`HALAMAN_AWAL_<X>`), atau null bila belum dimigrasi. */
   tujuan: Halaman | null
   label: string | null
 }

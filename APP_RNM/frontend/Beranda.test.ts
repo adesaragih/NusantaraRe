@@ -34,9 +34,10 @@ describe('kartuModul', () => {
     expect(tanpaTujuan.length).toBeGreaterThan(0)
   })
 
-  it('kartu Claim Life menunjuk butir PERTAMAnya', () => {
+  it('kartu Claim Life menunjuk HALAMAN AWAL-nya (menu datar 30-09-2026)', () => {
     const cl = kartuModul().find((k) => k.nama === FOLDER_KORPUS.claimLife)
     expect(cl?.tujuan).toBe('inbox')
+    expect(cl?.label).toBe(FOLDER_KORPUS.claimLife)
   })
 })
 

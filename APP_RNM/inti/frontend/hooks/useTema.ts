@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import type { GudangMini } from '../lib/lipatMenu'
+import type { GudangMini } from '../lib/tema'
 import { atributTema, bacaTema, simpanTema, temaBerlaku, type Tema } from '../lib/tema'
 
 const KUERI_GELAP = '(prefers-color-scheme: dark)'

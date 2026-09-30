@@ -291,6 +291,17 @@ func TestPernyataanMulaiDenganPerintah(t *testing.T) {
 		for _, m := range langkah {
 			for i, p := range m.Pernyataan {
 				kata := strings.ToUpper(strings.Fields(p)[0])
+				// Blok PL/SQL hanya dalam SATU bentuk: berpelindung katalog
+				// (`migrasi.BacaPerintahKatalog`, 901 menu datar) - dan
+				// perintah di dalamnya sendiri harus perintah SQL.
+				if kata == "DECLARE" {
+					perintah, alasan := pelanggaranBlokPLSQL(p, mundur)
+					if alasan != "" {
+						t.Errorf("%s pernyataan %d: %s", m.Nama, i, alasan)
+						continue
+					}
+					kata = strings.ToUpper(strings.Fields(perintah)[0])
+				}
 				switch kata {
 				case "CREATE", "ALTER", "DROP", "INSERT", "UPDATE", "DELETE", "SELECT":
 				default:
@@ -389,5 +400,67 @@ func TestKolomCreateTableMembacaSeluruhTabel(t *testing.T) {
 	}
 	if bukanTabel == 0 {
 		t.Error("nol pernyataan bukan-tabel; CREATE INDEX dan SEQUENCE seharusnya ada")
+	}
+}
+
+// polaTambahKolomSebaris - `ALTER TABLE ... ADD (kolom ...)` sebaris, bentuk
+// yang ditulis di dalam EXECUTE IMMEDIATE (bukan ADD CONSTRAINT).
+var polaTambahKolomSebaris = regexp.MustCompile(`(?i)^ALTER\s+TABLE\s+\S+\s+ADD\s*\(`)
+
+// pelanggaranBlokPLSQL menjawab perintah di dalam blok PL/SQL, atau mengapa
+// blok itu tidak sah (kosong = sah). Satu-satunya bentuk yang diterima:
+// berpelindung katalog (`migrasi.BacaPerintahKatalog`, 901 menu datar).
+func pelanggaranBlokPLSQL(p string, mundur bool) (string, string) {
+	pk, ok := migrasi.BacaPerintahKatalog(p)
+	if !ok || len(strings.Fields(pk.Perintah)) == 0 {
+		return "", "blok PL/SQL di luar bentuk berpelindung katalog"
+	}
+	// Perintahnya atas tabel DAN objek yang DITANYAKAN katalog (DROP INDEX
+	// menyebut indeksnya, bukan tabelnya) - blok yang memeriksa satu hal lalu
+	// berbuat pada hal lain ditolak.
+	atasTabel := strings.Contains(pk.Perintah, "{skema}."+pk.Tabel) ||
+		(pk.Katalog == "ALL_INDEXES" && strings.Contains(pk.Perintah, "{skema}."+pk.Objek))
+	// Objek dicocokkan sebagai KATA UTUH: kolom `C` tidak boleh "ditemukan"
+	// di dalam kata COLUMN.
+	objekUtuh := regexp.MustCompile(`(^|[^A-Za-z0-9_])` + regexp.QuoteMeta(pk.Objek) + `([^A-Za-z0-9_]|$)`)
+	if !atasTabel || !objekUtuh.MatchString(pk.Perintah) {
+		return "", "blok memeriksa " + pk.Tabel + "." + pk.Objek + " tetapi perintahnya " + pk.Perintah
+	}
+	// Kolom BARU lewat blok tidak terlihat `KolomAlterTambah` (pembanding
+	// STRUKTUR, penjaga tipe): di jalur maju kolom ditambah `ALTER ... ADD (`
+	// biasa. Jalur mundur (901_down) boleh - penjaga bentuk membaca jalur maju.
+	if !mundur && polaTambahKolomSebaris.MatchString(pk.Perintah) {
+		return "", "kolom baru lewat blok berpelindung tidak terlihat penjaga STRUKTUR: " + pk.Perintah
+	}
+	return pk.Perintah, ""
+}
+
+// Aturan blok PL/SQL MENGGIGIT (temuan /code-review): blok yang memeriksa satu
+// objek lalu berbuat pada objek lain, perintah kosong, dan kolom baru lewat
+// blok di jalur maju - semuanya ditolak.
+func TestAturanBlokPLSQLMenggigit(t *testing.T) {
+	blok := func(katalog, tabel, kolom, objek, banding, perintah string) string {
+		return "DECLARE\n  n NUMBER;\nBEGIN\n  SELECT COUNT(*) INTO n FROM SYS." + katalog + "\n" +
+			"   WHERE OWNER = UPPER('{skema}') AND TABLE_NAME = '" + tabel + "' AND " + kolom + " = '" + objek + "';\n" +
+			"  IF n " + banding + " 0 THEN\n    EXECUTE IMMEDIATE '" + perintah + "';\n  END IF;\nEND;"
+	}
+	for _, k := range []struct {
+		nama   string
+		p      string
+		mundur bool
+		sah    bool
+	}{
+		{"buang kolom yang ditanyakan", blok("ALL_TAB_COLUMNS", "T_A", "COLUMN_NAME", "C", ">", "ALTER TABLE {skema}.T_A DROP COLUMN C"), false, true},
+		{"buang indeks yang ditanyakan", blok("ALL_INDEXES", "T_A", "INDEX_NAME", "IX_A", ">", "DROP INDEX {skema}.IX_A"), false, true},
+		{"memeriksa T_A, membuang tabel lain", blok("ALL_TAB_COLUMNS", "T_A", "COLUMN_NAME", "C", ">", "DROP TABLE {skema}.T_B"), false, false},
+		{"memeriksa kolom C, membuang kolom D", blok("ALL_TAB_COLUMNS", "T_A", "COLUMN_NAME", "C", ">", "ALTER TABLE {skema}.T_A DROP COLUMN D"), false, false},
+		{"perintah kosong", blok("ALL_INDEXES", "T_A", "INDEX_NAME", "IX_A", ">", ""), false, false},
+		{"kolom baru lewat blok, jalur maju", blok("ALL_TAB_COLUMNS", "T_A", "COLUMN_NAME", "C", "=", "ALTER TABLE {skema}.T_A ADD (C VARCHAR2(10))"), false, false},
+		{"kolom kembali lewat blok, jalur mundur", blok("ALL_TAB_COLUMNS", "T_A", "COLUMN_NAME", "C", "=", "ALTER TABLE {skema}.T_A ADD (C VARCHAR2(10))"), true, true},
+		{"tanpa pemeriksaan katalog", "BEGIN\n  EXECUTE IMMEDIATE 'DROP TABLE {skema}.T_A';\nEND;", false, false},
+	} {
+		if _, alasan := pelanggaranBlokPLSQL(k.p, k.mundur); (alasan == "") != k.sah {
+			t.Errorf("%s: sah=%v, mau %v (%s)", k.nama, alasan == "", k.sah, alasan)
+		}
 	}
 }

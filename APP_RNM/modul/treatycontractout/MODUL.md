@@ -33,9 +33,10 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 ## Migrasi
 
 Rentang `300-319` **tetap kosong**: tco4 *(keputusan work owner 29-09-2026)* — modul ini menulis dan
-membaca tabel warisan, nol tabel baru (`TestTCONolTabelBaru`). Slot menu `956-957` untuk butir
-`M_NAV_MENU` baru bila kelak ada (bentuk SQL-nya di `APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md` bab 6);
-berkas slot tidak membuat tabel, jadi tidak melanggar tco4.
+membaca tabel warisan, nol tabel baru (`TestTCONolTabelBaru`). Slot menu `956-957` tidak terpakai:
+baris modul ini sudah `DIMIGRASI = '1'` sejak 900, dan menu datar (30-09-2026) tidak punya butir — slot
+hanya menyalakan `DIMIGRASI` (`APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md` bab 6); berkas slot tidak
+membuat tabel, jadi tidak melanggar tco4.
 
 ## Menjalankan uji modul ini saja
 

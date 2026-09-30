@@ -219,10 +219,32 @@ func kolomMenurutDDL(t *testing.T) map[string][]string {
 			// mana pun.
 			if nama, kolom := migrasi.KolomAlterTambah(p); nama != "" {
 				hasil[nama] = append(hasil[nama], kolom...)
+				continue
+			}
+			// Kolom yang DIBUANG langkah lanjutan (901 menu datar: PARENT_ID)
+			// ikut dikurangi - tanpa ini STRUKTUR yang sudah benar dituduh
+			// kekurangan kolom yang memang tidak ada lagi.
+			if nama, kolom := migrasi.KolomAlterBuang(p); nama != "" {
+				hasil[nama] = kurangiKolom(hasil[nama], kolom)
 			}
 		}
 	}
 	return hasil
+}
+
+// kurangiKolom membuang `buang` dari `kolom`, urutan sisanya tetap.
+func kurangiKolom(kolom, buang []string) []string {
+	var sisa []string
+	for _, k := range kolom {
+		dibuang := false
+		for _, b := range buang {
+			dibuang = dibuang || strings.EqualFold(k, b)
+		}
+		if !dibuang {
+			sisa = append(sisa, k)
+		}
+	}
+	return sisa
 }
 
 // Setiap tabel di DDL memuat persis kolom yang didaftar STRUKTUR.
@@ -559,6 +581,17 @@ func tipeMenurutDDL(t *testing.T) map[string]map[string]string {
 	// ⚠️ Urutannya dijaga `daftarMigrasi` lewat `seluruhSQL`; MODIFY yang
 	// mendahului CREATE-nya sendiri tidak mungkin, sebab nomor migrasi naik.
 	terapkanAlterModify(t, hasil)
+	// Kolom yang DIBUANG (901 menu datar) keluar dari peta tipe - lihat
+	// `kolomMenurutDDL`.
+	for _, isi := range seluruhSQL(t, false) {
+		for _, p := range strings.Split(isi, "\n") {
+			if nama, kolom := migrasi.KolomAlterBuang(p); nama != "" {
+				for _, k := range kolom {
+					delete(hasil[nama], k)
+				}
+			}
+		}
+	}
 	return hasil
 }
 
@@ -665,8 +698,8 @@ var presisiSah = map[string]string{
 	// Persen dan rate ikut di sini atas KETETAPAN MODUL Claim Life, yang
 	// ADR-U-0016 Akibat 2 serahkan kepada modul - bukan penyimpangan darinya.
 	"NUMBER(38,8)": "uang, share, persen, dan rate - keputusan work owner c, 26 September 2026",
-	"NUMBER(5)":    "AGE, umur peserta dalam tahun; M_NAV_MENU.URUTAN, urutan di dalam induknya",
-	"NUMBER(10)":   "M_NAV_MENU.ID dan PARENT_ID, identitas dari sequence - brief menu 30-09-2026",
+	"NUMBER(5)":    "AGE, umur peserta dalam tahun; M_NAV_MENU.URUTAN, urutan di dalam GROUPMENU",
+	"NUMBER(10)":   "M_NAV_MENU.ID, identitas dari sequence - brief menu 30-09-2026 (PARENT_ID dibuang 901)",
 	"NUMBER(19)":   "T_CLAIMLF_DOCUMENT.ID, identitas dari sequence",
 }
 
