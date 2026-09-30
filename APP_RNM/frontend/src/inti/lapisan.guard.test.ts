@@ -68,7 +68,7 @@ describe('lapisan frontend: inti <- modul <- aplikasi', () => {
     for (const { dari } of impor) perLapis.set(lapisan(dari), (perLapis.get(lapisan(dari)) ?? 0) + 1)
     // ⛔ Penjaga yang membaca nol impor di satu lapis lulus atas apa pun.
     expect(perLapis.get('inti') ?? 0).toBeGreaterThan(30)
-    for (const m of ['claimlife', 'premiumlist', 'komite', 'treaty']) {
+    for (const m of ['claim-life', 'premiumlist-life', 'komite-claim-life', 'treaty-contract-out']) {
       expect(perLapis.get(`modul:${m}`) ?? 0, `impor modul ${m}`).toBeGreaterThan(10)
     }
     const langgar = impor
@@ -80,18 +80,18 @@ describe('lapisan frontend: inti <- modul <- aplikasi', () => {
 
   it('aturannya menggigit dua arah', () => {
     const kasus: [string, string, boolean][] = [
-      ['modul/claimlife/pages/X.tsx', 'modul/premiumlist/api.ts', false],
-      ['modul/komite/pages/X.test.ts', 'modul/claimlife/labels.ts', false],
-      ['modul/komite/rute.tsx', 'modul/daftar.ts', false],
-      ['modul/komite/rute.tsx', 'App.tsx', false],
-      ['modul/komite/rute.tsx', 'modul/komite/pages/InboxKomite.tsx', true],
-      ['modul/komite/api.ts', 'inti/klien.ts', true],
+      ['modul/claim-life/pages/X.tsx', 'modul/premiumlist-life/api.ts', false],
+      ['modul/komite-claim-life/pages/X.test.ts', 'modul/claim-life/labels.ts', false],
+      ['modul/komite-claim-life/rute.tsx', 'modul/daftar.ts', false],
+      ['modul/komite-claim-life/rute.tsx', 'App.tsx', false],
+      ['modul/komite-claim-life/rute.tsx', 'modul/komite-claim-life/pages/InboxKomite.tsx', true],
+      ['modul/komite-claim-life/api.ts', 'inti/klien.ts', true],
       ['inti/components/Shell.tsx', 'modul/daftar.ts', false],
-      ['inti/lib/daftarMenu.ts', 'modul/treaty/labels.ts', false],
+      ['inti/lib/daftarMenu.ts', 'modul/treaty-contract-out/labels.ts', false],
       ['inti/components/Shell.tsx', 'inti/lib/daftarMenu.ts', true],
-      ['modul/daftar.ts', 'modul/treaty/rute.tsx', true],
-      ['App.tsx', 'modul/claimlife/api.ts', true],
-      ['modul/komitex/api.ts', 'modul/komite/api.ts', false],
+      ['modul/daftar.ts', 'modul/treaty-contract-out/rute.tsx', true],
+      ['App.tsx', 'modul/claim-life/api.ts', true],
+      ['modul/komite-claim-lifex/api.ts', 'modul/komite-claim-life/api.ts', false],
     ]
     for (const [dari, ke, boleh] of kasus) {
       expect(pelanggaranLapisan(dari, ke) === null, `${dari} -> ${ke}`).toBe(boleh)

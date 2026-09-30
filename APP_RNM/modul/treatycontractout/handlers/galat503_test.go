@@ -21,7 +21,7 @@ import (
 // membawa `galat` tak kosong adalah jawaban backend. Kontrak itu hanya
 // bertahan selama setiap 503 backend memang membawa `galat` - dan itulah yang
 // dikunci di sini. Pasangan uji sisi klien:
-// `frontend/src/modul/treaty/keadaanGalat.test.ts`.
+// `frontend/src/modul/treaty-contract-out/keadaanGalat.test.ts`.
 
 // badanGalat503 memeriksa satu jawaban: 503, JSON, SATU kunci `galat` tak kosong.
 func badanGalat503(t *testing.T, nama string, w *httptest.ResponseRecorder) string {

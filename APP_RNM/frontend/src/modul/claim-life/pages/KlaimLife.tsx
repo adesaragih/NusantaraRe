@@ -52,7 +52,7 @@ import { kodeStatusGalat, pesanGalat } from '../../../inti/klien'
 //
 // ⛔ Nilai uang tidak pernah disentuh aritmetika dan tidak pernah dibungkus
 // Number(). Ia datang sebagai teks desimal dan ditampilkan apa adanya
-// (ADR-U-0003, ADR-U-0016). Penjelasannya di modul/claimlife/api.ts bab 3.
+// (ADR-U-0003, ADR-U-0016). Penjelasannya di modul/claim-life/api.ts bab 3.
 // ============================================================================
 export default function KlaimLife() {
   // Empat kotak keadaan halaman ini.

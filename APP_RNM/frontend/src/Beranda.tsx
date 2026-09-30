@@ -23,7 +23,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 
 import { BERANDA, KETERANGAN_BELUM_DIMIGRASI, MODUL, PERAN_ID } from './inti/labels'
-import { TAHAP } from './modul/claimlife/labels'
+import { TAHAP } from './modul/claim-life/labels'
 import {
   IkonBerkasCari,
   IkonJamPasir,
@@ -31,11 +31,11 @@ import {
   IkonPerisai,
   IkonStetoskop,
 } from './inti/components/ui/dasar'
-import { ambilKotakMasuk, TAHAP_NOMOR, type NomorTahap } from './modul/claimlife/api'
+import { ambilKotakMasuk, TAHAP_NOMOR, type NomorTahap } from './modul/claim-life/api'
 import { pesanGalat } from './inti/klien'
 import { type Sesi } from './inti/store/sesi'
 import { modulDipasang } from './inti/lib/daftarMenu'
-import { NAMA_CLAIMLIFE } from './modul/claimlife/menu'
+import { NAMA_CLAIMLIFE } from './modul/claim-life/menu'
 import { ENTRI_MENU, halamanAktif, type Halaman } from './modul/daftar'
 
 /** Satu tahap Claim Life beserta cacah antreannya. */

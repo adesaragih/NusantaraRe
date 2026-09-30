@@ -11,7 +11,7 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import { MENU, MENU_MODUL, MODUL, MODUL_LAIN_TERLARANG } from './inti/labels'
-import { MENU_TCO } from './modul/treaty/labels'
+import { MENU_TCO } from './modul/treaty-contract-out/labels'
 import { ENTRI_MENU } from './modul/daftar'
 
 const SUMBER = readFileSync(join(__dirname, 'inti', 'components', 'Shell.tsx'), 'utf8')

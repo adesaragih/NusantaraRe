@@ -4,7 +4,7 @@
 // `Section/PremiumList.xml`.
 //
 // ⛔ SEBELAS KOLOM, dan dua yang sengaja tidak ada — lihat
-// `modul/premiumlist/labels.ts`. `KetentuanUnderwriting` b891 tidak punya
+// `modul/premiumlist-life/labels.ts`. `KetentuanUnderwriting` b891 tidak punya
 // kolom di migrasi mana pun, dan sel kosong di layar terbaca "memang kosong"
 // alih-alih "kami tidak punya datanya".
 //

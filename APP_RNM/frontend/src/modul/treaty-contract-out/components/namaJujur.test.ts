@@ -3,8 +3,8 @@
 //
 // Nama korpus yang berbohong (`_Old`, `testingKurs`) tidak boleh merambat
 // ke pengenal sistem baru. Yang dipindai: seluruh berkas sumber modul ini
-// (folder `modul/treaty/components`, `modul/treaty/pages`, dan
-// `modul/treaty/labels.ts`), sesudah komentar dan string
+// (folder `modul/treaty-contract-out/components`, `modul/treaty-contract-out/pages`, dan
+// `modul/treaty-contract-out/labels.ts`), sesudah komentar dan string
 // literal dibuang — nama rule sumber boleh disebut sebagai bukti.
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
@@ -12,7 +12,7 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-// Refactor bentuk B (30-09-2026): folder modul kini `modul/treaty/`.
+// Refactor bentuk B (30-09-2026): folder modul kini `modul/treaty-contract-out/`.
 // Paket 8: akar modulnya IKUT dipindai - `api.ts`, `menu.ts`, `rute.tsx`,
 // `labels.ts`. Dulu klien backend modul ini hidup di `services/api.ts`
 // bersama semua modul, dan karena itu tidak pernah terbaca penjaga ini.

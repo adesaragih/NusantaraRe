@@ -7,7 +7,7 @@ package handlers
 // menjawab 401 untuk setiap unduhan. Sisi ini mengunci bahwa HANDLER rute itu
 // menolak tanpa header (jadi klien wajib mengirimnya) dan bahwa nama header
 // yang dibaca di sini sama dengan yang dikirim klien. Sisi TypeScript:
-// `frontend/src/modul/claimlife/unduhdokumen.test.ts`.
+// `frontend/src/modul/claim-life/unduhdokumen.test.ts`.
 
 import (
 	"net/http"

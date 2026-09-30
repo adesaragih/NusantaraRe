@@ -1,4 +1,4 @@
-// modul/claimlife/api.ts - panggilan backend modul Claim Life, satu fungsi per
+// modul/claim-life/api.ts - panggilan backend modul Claim Life, satu fungsi per
 // endpoint. Klien HTTP-nya `inti/klien.ts` (refactor bentuk B, 30-09-2026:
 // dipecah dari `services/api.ts` tanpa mengubah satu panggilan pun).
 

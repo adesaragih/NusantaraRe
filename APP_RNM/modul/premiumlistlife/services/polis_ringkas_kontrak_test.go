@@ -6,7 +6,7 @@ package services
 // menulis satu kunci, klien membaca kunci lain, dan tidak satu pun uji di
 // satu sisi mana pun gagal. Kontrak lintas modul PremiumList → Claim Life
 // karena itu dikunci di KEDUA sisi: di sini (Go membaca antarmuka
-// TypeScript), dan di `frontend/src/modul/claimlife/policydatalife.kontrak.test.ts`
+// TypeScript), dan di `frontend/src/modul/claim-life/policydatalife.kontrak.test.ts`
 // (TypeScript membaca tag JSON Go).
 
 import (
@@ -60,7 +60,7 @@ func kunciAntarmukaTS(t *testing.T, sumber, nama string) []string {
 }
 
 func TestPolicyDataLifeSamaDiKeduaSisi(t *testing.T) {
-	isi, err := os.ReadFile(filepath.Join("..", "..", "..", "frontend", "src", "modul", "claimlife", "api.ts"))
+	isi, err := os.ReadFile(filepath.Join("..", "..", "..", "frontend", "src", "modul", "claim-life", "api.ts"))
 	if err != nil {
 		t.Fatalf("membaca klien: %v", err)
 	}

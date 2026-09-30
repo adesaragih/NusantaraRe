@@ -1,4 +1,4 @@
-// modul/treaty/api.ts - panggilan backend modul Treaty Contract Out, satu
+// modul/treaty-contract-out/api.ts - panggilan backend modul Treaty Contract Out, satu
 // fungsi per endpoint. Klien HTTP-nya `inti/klien.ts` (refactor bentuk B,
 // 30-09-2026: dipecah dari `services/api.ts` tanpa mengubah satu panggilan pun).
 

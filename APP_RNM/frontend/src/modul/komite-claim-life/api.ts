@@ -1,4 +1,4 @@
-// modul/komite/api.ts - panggilan backend modul Komite Claim Life, satu fungsi
+// modul/komite-claim-life/api.ts - panggilan backend modul Komite Claim Life, satu fungsi
 // per endpoint. Klien HTTP-nya `inti/klien.ts` (refactor bentuk B, 30-09-2026:
 // dipecah dari `services/api.ts` tanpa mengubah satu panggilan pun).
 

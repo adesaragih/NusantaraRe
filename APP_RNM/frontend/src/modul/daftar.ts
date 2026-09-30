@@ -13,19 +13,19 @@
 
 import { HALAMAN_BERANDA, modulDipasang, type EntriMenu } from '../inti/lib/daftarMenu'
 import type { ModulFrontend } from '../inti/modul'
-import { HALAMAN_CLAIMLIFE, MENU_CLAIMLIFE, NAMA_CLAIMLIFE, type HalamanClaimLife } from './claimlife/menu'
-import { RuteClaimLife } from './claimlife/rute'
-import { HALAMAN_KOMITE, MENU_KOMITE, NAMA_KOMITE, type HalamanKomite } from './komite/menu'
-import { RuteKomite } from './komite/rute'
+import { HALAMAN_CLAIMLIFE, MENU_CLAIMLIFE, NAMA_CLAIMLIFE, type HalamanClaimLife } from './claim-life/menu'
+import { RuteClaimLife } from './claim-life/rute'
+import { HALAMAN_KOMITE, MENU_KOMITE, NAMA_KOMITE, type HalamanKomite } from './komite-claim-life/menu'
+import { RuteKomite } from './komite-claim-life/rute'
 import {
   HALAMAN_PREMIUMLIST,
   MENU_PREMIUMLIST,
   NAMA_PREMIUMLIST,
   type HalamanPremiumList,
-} from './premiumlist/menu'
-import { RutePremiumList } from './premiumlist/rute'
-import { HALAMAN_TREATY, MENU_TREATY, NAMA_TREATY, type HalamanTreaty } from './treaty/menu'
-import { RuteTreaty } from './treaty/rute'
+} from './premiumlist-life/menu'
+import { RutePremiumList } from './premiumlist-life/rute'
+import { HALAMAN_TREATY, MENU_TREATY, NAMA_TREATY, type HalamanTreaty } from './treaty-contract-out/menu'
+import { RuteTreaty } from './treaty-contract-out/rute'
 
 /**
  * Halaman yang aplikasi dapat tampilkan, sebagai UNION — bukan `string`.

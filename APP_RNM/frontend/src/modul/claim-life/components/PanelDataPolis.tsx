@@ -2,7 +2,7 @@
 //
 // Meniru himpunan medan `Section/InputRegisterClaimLife.xml` PERSIS: DUA PULUH
 // SATU medan `.PolicyDataLife.*` (av-2, GILIRAN-11) ditambah tiga tombol, seluruhnya dengan nomor barisnya di
-// `modul/claimlife/labels.ts`.
+// `modul/claim-life/labels.ts`.
 //
 // ⛔ KEDUA PULUH SATU MEDAN TERIKAT KE `.PolicyDataLife.*`, bukan isian bebas. Di
 // Pega ia terisi ketika polis dipilih lewat `Choose Policy No` (b3776), dan
