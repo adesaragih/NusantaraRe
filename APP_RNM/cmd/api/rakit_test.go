@@ -162,6 +162,15 @@ func TestMigrasiTetapLengkapSaatModulNonaktif(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Migrasi lintas modul milik `inti` (900-949, M_NAV_MENU) ikut dihitung.
+	milikInti, err := filepath.Glob(filepath.Join("..", "..", "inti", "migrations", "*.sql"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(milikInti) == 0 {
+		t.Fatal("nol berkas migrasi inti di disk; M_NAV_MENU (900) hilang")
+	}
+	berkas = append(berkas, milikInti...)
 	for _, b := range berkas {
 		if n := filepath.Base(b); !strings.HasSuffix(n, "_down.sql") {
 			dariDisk = append(dariDisk, n)

@@ -51,6 +51,8 @@ var letakStruktur = []string{
 	// Modul keempat, Treaty Contract Out. Sejak tco4 (29-09-2026) dokumennya
 	// PETA TABEL WARISAN: seluruh tabelnya terdaftar tabelBukanMilikKita.
 	"../../../.scratch/treaty-contract-out/STRUKTUR-TABEL-TREATY-CONTRACT-OUT.md",
+	// Tabel lintas modul milik `inti` (900-949): M_NAV_MENU, 30-09-2026.
+	"../../../.scratch/inti/STRUKTUR-TABEL-INTI.md",
 }
 
 // tabelBersamaDuaKonteks adalah tabel yang LEBIH DARI SATU dokumen gambarkan.
@@ -630,7 +632,8 @@ var presisiSah = map[string]string{
 	// Persen dan rate ikut di sini atas KETETAPAN MODUL Claim Life, yang
 	// ADR-U-0016 Akibat 2 serahkan kepada modul - bukan penyimpangan darinya.
 	"NUMBER(38,8)": "uang, share, persen, dan rate - keputusan work owner c, 26 September 2026",
-	"NUMBER(5)":    "AGE, umur peserta dalam tahun",
+	"NUMBER(5)":    "AGE, umur peserta dalam tahun; M_NAV_MENU.URUTAN, urutan di dalam induknya",
+	"NUMBER(10)":   "M_NAV_MENU.ID dan PARENT_ID, identitas dari sequence - brief menu 30-09-2026",
 	"NUMBER(19)":   "T_CLAIMLF_DOCUMENT.ID, identitas dari sequence",
 }
 

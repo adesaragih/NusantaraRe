@@ -30,12 +30,14 @@ import (
 // ⛔ Tidak bergantung pada modul yang aktif: skema selalu utuh, sebab tabel
 // satu modul dapat dirujuk tabel modul lain (dan data warisan tidak memilih
 // modul). Pelari mengurutkan langkah menurut NAMA berkas, lintas sumber.
-// Treaty Contract Out tidak bermigrasi (tco4: tabel warisan).
+// Treaty Contract Out tidak bermigrasi (tco4: tabel warisan). `inti` membawa
+// tabel lintas modul (M_NAV_MENU, 900).
 func SumberMigrasi() []fs.FS {
 	return []fs.FS{
 		claimlife.SumberMigrasi(),       // 001-029
 		komiteclaimlife.SumberMigrasi(), // 030-049
 		premiumlistlife.SumberMigrasi(), // 050-079
+		inti.SumberMigrasi(),            // 900-949
 	}
 }
 

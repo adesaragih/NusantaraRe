@@ -387,7 +387,10 @@ func TestSeluruhCreateDapatDibacaNamanya(t *testing.T) {
 	// baru - 300-307 dibuang, kembali ke 50 + 1 = 51.
 	// ⛔ OQ-PL-15 (GILIRAN-15): 058 membuat ULANG SEQ_WORK_POLIS - DROP (tidak
 	// dihitung) lalu CREATE SEQUENCE ... START WITH 22374 (+1) = 52.
-	const mau = 52
+	// ⛔ Diperbarui LAGI - 900 milik `inti` (M_NAV_MENU, brief menu 30-09-2026):
+	// 1 tabel + 2 index (PARENT_ID, GROUPMENU) + 1 sequence = 56. INSERT isi
+	// awal tidak dihitung - ia bukan CREATE.
+	const mau = 56
 	if diperiksa != mau {
 		t.Errorf("pernyataan CREATE diperiksa %d, mau %d", diperiksa, mau)
 	}
@@ -434,7 +437,8 @@ func TestKolomCreateTableMembacaSeluruhTabel(t *testing.T) {
 	// +7 tabel dari 300-306 (tiket 01 Treaty Contract Out) = 27.
 	// +1 tabel dari 307 (tiket 12 Treaty Contract Out, lampiran) = 28.
 	// ⛔ tco4 (29-09-2026): 300-307 dibuang - kembali ke 20.
-	const mauTabel = 20
+	// +1 tabel dari 900 milik `inti` (M_NAV_MENU, 30-09-2026) = 21.
+	const mauTabel = 21
 	if tabel != mauTabel {
 		t.Errorf("CREATE TABLE terbaca %d, mau %d", tabel, mauTabel)
 	}

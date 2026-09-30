@@ -1,0 +1,7 @@
+-- 900 mundur - M_NAV_MENU beserta isinya.
+
+DROP SEQUENCE {skema}.SEQ_M_NAV_MENU
+/
+
+DROP TABLE {skema}.M_NAV_MENU CASCADE CONSTRAINTS
+/
