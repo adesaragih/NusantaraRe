@@ -18,6 +18,8 @@
  * diuji langsung; komponen `Gagal` hanya merendernya.
  */
 
+import type { Bahasa } from "./teksUI";
+
 /** Bentuk minimal ApiFailure yang dibutuhkan — sengaja bukan impor kelas,
  *  supaya modul ini tetap murni dan dapat diuji di node. */
 interface GalatApiSeperti {
@@ -67,7 +69,21 @@ function galatJaringan(g: unknown): boolean {
 /** Kode yang `request()` pasang ketika jawaban bukan JSON sama sekali. */
 export const KODE_BACKEND_MATI = "BACKEND_TIDAK_TERJANGKAU";
 
-function backendMati(): KeadaanGalat {
+function backendMati(bahasa: Bahasa): KeadaanGalat {
+  if (bahasa === "en") {
+    return {
+      jenis: "backend-mati",
+      pesan:
+        "Backend not connected (127.0.0.1:8080). The screen below is empty " +
+        "NOT because there is no data, but because the request did not " +
+        "reach the backend.",
+      petunjuk:
+        "Start the backend in PowerShell: Set-Location APP_RNM ; " +
+        ". .\\muat-env.ps1 ; go run .\\cmd\\api — then reload this " +
+        "page. Go does NOT read .env by itself; muat-env.ps1 loads it " +
+        "into that window.",
+    };
+  }
   return {
     jenis: "backend-mati",
     pesan:
@@ -81,6 +97,12 @@ function backendMati(): KeadaanGalat {
       "memuatnya ke jendela itu.",
   };
 }
+
+/** Teks cadangan penolakan tanpa kalimat backend. */
+const DITOLAK_TANPA_PESAN: Readonly<Record<Bahasa, string>> = {
+  id: "Permintaan ditolak backend",
+  en: "Request rejected by the backend",
+};
 
 /** Kode yang `kegagalanDari` (`inti/klien.ts`) pasang pada jawaban JSON backend. */
 const KODE_DITOLAK_BACKEND = "DITOLAK_BACKEND";
@@ -101,13 +123,17 @@ function membawaGalatBackend(g: GalatApiSeperti): boolean {
   );
 }
 
-export function klasifikasiGalat(galat: unknown): KeadaanGalat | null {
+/**
+ * `bahasa` memilih teks BUATAN KLIEN (panel backend mati, teks cadangan);
+ * kalimat backend selalu tampil apa adanya. Bawaan `id` (`lib/teksUI.ts`).
+ */
+export function klasifikasiGalat(galat: unknown, bahasa: Bahasa = "id"): KeadaanGalat | null {
   if (galat == null) return null;
 
-  if (galatJaringan(galat)) return backendMati();
+  if (galatJaringan(galat)) return backendMati(bahasa);
 
   if (miripApiFailure(galat)) {
-    const pesan = galat.detail.message ?? "Permintaan ditolak backend";
+    const pesan = galat.detail.message ?? DITOLAK_TANPA_PESAN[bahasa];
 
     /* Backend mati LEWAT PROXY tidak menolak fetch: proxy pengembangan
        (Vite) maupun reverse-proxy produksi menjawab 502/503/504 — atau
@@ -133,7 +159,7 @@ export function klasifikasiGalat(galat: unknown): KeadaanGalat | null {
           galat.status === 503 ||
           galat.status === 504))
     ) {
-      return backendMati();
+      return backendMati(bahasa);
     }
     if (galat.detail.code === "NOT_PROVISIONED") {
       return { jenis: "belum-tersedia", pesan };

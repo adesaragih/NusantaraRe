@@ -17,6 +17,7 @@ import {
 
 import { ApiFailure } from '../../klien'
 import { klasifikasiGalat } from "../../lib/keadaanGalat";
+import { useBahasaUI, useTeksUI } from "./bahasaUI";
 
 import { keInputTanggal, dariInputTanggal } from "../../lib/tanggalInput";
 
@@ -284,7 +285,7 @@ export function Pilih({
   opsi,
   error,
   required,
-  kosong = "-- pilih --",
+  kosong,
 }: {
   label: string;
   value: string;
@@ -294,6 +295,8 @@ export function Pilih({
   required?: boolean;
   kosong?: string;
 }) {
+  const teksUI = useTeksUI();
+  const teksKosong = kosong ?? teksUI.pilihKosong;
   const asing = value !== "" && !opsi.some((o) => o.value === value);
   return (
     <div className="field">
@@ -306,7 +309,7 @@ export function Pilih({
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >
-        <option value="">{kosong}</option>
+        <option value="">{teksKosong}</option>
         {asing && (
           <option value={value}>{value} (tidak ada di daftar referensi)</option>
         )}
@@ -333,7 +336,9 @@ export function Pilih({
  * juga ditampilkan apa adanya, bukan diubah menjadi "terjadi kesalahan".
  */
 export function Gagal({ galat }: { galat: unknown }) {
-  const k = klasifikasiGalat(galat);
+  const bahasa = useBahasaUI();
+  const teks = useTeksUI();
+  const k = klasifikasiGalat(galat, bahasa);
   if (!k) return null;
 
   /* Backend mati mendapat panel TERSENDIRI, bukan alert merah biasa:
@@ -355,7 +360,7 @@ export function Gagal({ galat }: { galat: unknown }) {
             className="btn btn--ghost btn--sm"
             onClick={() => window.location.reload()}
           >
-            Muat ulang
+            {teks.muatUlang}
           </button>
         </p>
       </div>
@@ -472,6 +477,7 @@ export function Modal({
   children: ReactNode;
 }) {
   const idJudul = useId();
+  const teksModal = useTeksUI();
 
   // Ronde 240 — transisi KELUAR. `onTutup` sesungguhnya (yang meng-unmount
   // modal ini di pemanggil) ditunda 140ms supaya `.modal--keluar`/
@@ -523,8 +529,8 @@ export function Modal({
         <button
           type="button"
           className="modal__close"
-          aria-label="Tutup"
-          title="Tutup (Esc)"
+          aria-label={teksModal.tutup}
+          title={teksModal.tutupEsc}
           onClick={mulaiTutup}
         >
           <IkonTutup />
@@ -973,11 +979,12 @@ export function IkonKosong({ ukuran = 30 }: { ukuran?: number }) {
  * bergerak tidak dapat dibedakan dari layar yang macet, dan pemakai yang
  * menyangka layarnya macet akan menekan tombolnya dua kali.
  */
-export function Memuat({ pesan = "Memuat..." }: { pesan?: string }) {
+export function Memuat({ pesan }: { pesan?: string }) {
+  const teks = useTeksUI();
   return (
     <div className="memuat" role="status">
       <span className="spinner" aria-hidden="true" />
-      {pesan}
+      {pesan ?? teks.memuat}
     </div>
   );
 }
@@ -1082,15 +1089,16 @@ export function Halaman({
   const awal = total === 0 ? 0 : (kini - 1) * ukuran + 1;
   const akhir = tahu ? Math.min(kini * ukuran, total!) : 0;
   const bisaMaju = tahu ? kini < totalHalaman : !!adaLagi;
+  const teks = useTeksUI();
 
   return (
     <div className="pager">
       <span className="muted">
         {tahu
           ? total === 0
-            ? "Tidak ada baris"
-            : `Menampilkan ${awal}–${akhir} dari ${total}`
-          : `Halaman ${kini}`}
+            ? teks.tidakAdaBaris
+            : teks.menampilkan(awal, akhir, total!)
+          : teks.halaman(kini)}
       </span>
       <div className="pager__aksi">
         <button
@@ -1098,19 +1106,15 @@ export function Halaman({
           disabled={kini <= 1}
           onClick={() => onPindah(kini - 1)}
         >
-          Sebelumnya
+          {teks.sebelumnya}
         </button>
-        {tahu && (
-          <span className="muted">
-            Halaman {kini} dari {totalHalaman}
-          </span>
-        )}
+        {tahu && <span className="muted">{teks.halamanDari(kini, totalHalaman)}</span>}
         <button
           className="btn btn--ghost btn--sm"
           disabled={!bisaMaju}
           onClick={() => onPindah(kini + 1)}
         >
-          Berikutnya
+          {teks.berikutnya}
         </button>
       </div>
     </div>
