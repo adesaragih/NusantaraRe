@@ -52,4 +52,4 @@ try {
       if ($cells.Count -gt 0) { Write-Output ("r" + $row.r + " | " + ($cells -join ' | ')) }
     }
   }
-} finally { $zip.Dispose() }
+} finally { $zip.Dispose() }.
