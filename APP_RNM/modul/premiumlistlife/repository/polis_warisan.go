@@ -1,6 +1,7 @@
 package repository
 
-// Salinan peserta ke tabel warisan `M_LIFE_PREMIUM_DETAIL` - pl2, tiket 05a.
+// Salinan peserta ke tabel warisan `M_LIFE_PREMIUM_DETAIL` - pl2, tiket 05a -
+// dan rekapnya ke `M_LIFE_PREMIUM_SUMMARY` (PL-09, GILIRAN-18).
 //
 // Untuk apa berkas ini: Claim Life membaca peserta polis dari tabel warisan
 // (`GET /api/peserta-life`, pesertapolis.go). Selama tabel itu yang dibaca,
@@ -26,8 +27,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/cockroachdb/apd/v3"
+
 	"nusantarare/inti/db"
 	"nusantarare/inti/penomor"
+	"nusantarare/inti/utils"
+	"nusantarare/modul/premiumlistlife/models"
 )
 
 // jenisNilai membedakan cara sebuah nilai menyeberang ke tabel warisan.
@@ -358,3 +363,201 @@ func (r *PesertaWarisan) Ganti(ctx context.Context, tx *db.Tx, nomorPL, idPega s
 // `[terverifikasi]` `to_Char(M_LIFE_PREMIUM_DETAIL_SEQ.nextval)` - butir
 // pertama `VALUES` di `RDBList/SaveMasterLPDet.xml`.
 const namaUrutanPesertaWarisan = "M_LIFE_PREMIUM_DETAIL_SEQ"
+
+// ---------------------------------------------------------------------------
+// PL-09 (GILIRAN-18) - rekap ke tabel warisan `M_LIFE_PREMIUM_SUMMARY`.
+// ---------------------------------------------------------------------------
+
+// namaTabelSummaryWarisan adalah tabel warisan rekap polis yang DITULIS modul ini.
+const namaTabelSummaryWarisan = "M_LIFE_PREMIUM_SUMMARY"
+
+// namaUrutanSummaryWarisan adalah sequence PK-nya.
+//
+// `[terverifikasi]` `TO_CHAR(M_LIFE_PREMIUM_SUMMARY_SEQ.nextval)` - baris 46
+// badan prosedur (`.scratch/premiumlist-life/dba-procedure-PEGA_M_LIFE_PREMIUM_SUMMARY.md`).
+const namaUrutanSummaryWarisan = "M_LIFE_PREMIUM_SUMMARY_SEQ"
+
+// kolomSummaryWarisan adalah daftar `INSERT` prosedur
+// `PEGA_M_LIFE_PREMIUM_SUMMARY`, VERBATIM - keputusan o: prosedurnya TIDAK
+// dipanggil, isinya ditiru.
+//
+// `[terverifikasi]` Baris 48-85 badan prosedur (`ALL_SOURCE` DEV, dibaca
+// asisten 30-09-2026), urut dokumen, tanpa `ID` (diisi sequence). 37 kolom +
+// `ID` = 38, sama dengan katalog DEV. Setiap kolom menerima parameter
+// BERNAMA SAMA (`P_X`), dan `InsertPLSummary` (`RDBList`) mengisi `P_X` dari
+// `.X` baris `CurrencyList` - `InsertJsonPolisLife_Act` langkah 8.1 (b2296…,
+// hidup). Keduanya ditagih `TestKolomSummaryWarisanVERBATIMDariProsedur` dan
+// `TestSumberSummaryWarisanDariKorpus`.
+//
+// ⚠️ RALAT "38 lawan 37" (tiket 05a): tabelnya 38 kolom, argumennya 37 masuk
+// + 2 keluar. `ID` tidak datang dari argumen - tidak ada argumen yatim.
+var kolomSummaryWarisan = []string{
+	"BALANCE", "BROKERAGE_FEE", "CLAIM", "OVR_COMM", "COB", "COMMISSION",
+	"NET_PREMIUM_REFUND", "GROSS_PREMIUM_REFUND", "COMM_REFUND",
+	"BROKERAGE_FEE_REFUND", "OVR_COMM_REFUND", "TAX_REFUND", "CURRENCY",
+	"PL_NUMBER", "PL_NUMBER_EDM", "PREMIUM", "SHARE_RETRO",
+	"GROSS_PREMIUM_RETRO", "DISCOUNT_PREMIUM_RETRO", "OVR_COMM_RETRO",
+	"BROKERAGE_FEE_RETRO", "NET_PREMIUM_RETRO", "GROSS_PREMIUM_REFUND_RETRO",
+	"DISCOUNT_PREMIUM_REFUND_RETRO", "OVR_COMM_REFUND_RETRO",
+	"BROKERAGE_FEE_REFUND_RETRO", "NET_PREMIUM_REFUND_RETRO", "PROF_COMM",
+	"TAX", "CLAIM_AMOUNT", "RI_ADMIN_FEE_RETRO", "RI_ADMIN_FEE_REFUND_RETRO",
+	"RI_ADMIN_FEE_REFUND", "DEDUCTION_REFUND", "RI_ADMIN_FEE", "DEDUCTION",
+	"IDPEGA",
+}
+
+// kolomTeksSummaryWarisan adalah lima kolom BUKAN uang di daftar itu.
+var kolomTeksSummaryWarisan = map[string]bool{
+	"COB": true, "CURRENCY": true, "PL_NUMBER": true, "PL_NUMBER_EDM": true, "IDPEGA": true,
+}
+
+// NamaKolomSummaryWarisan membuka daftar itu untuk tiruan skema uji
+// (`uji/skemauji`), supaya tiruan tidak mungkin tertinggal dari penulisnya.
+func NamaKolomSummaryWarisan() []string {
+	return append([]string(nil), kolomSummaryWarisan...)
+}
+
+// KolomUangSummaryWarisan menjawab apakah sebuah kolom summary warisan uang.
+func KolomUangSummaryWarisan(kolom string) bool { return !kolomTeksSummaryWarisan[kolom] }
+
+// KepalaSummaryWarisan adalah empat nilai halaman kerja yang dikirim
+// `InsertPLSummary` bersama rekap satu mata uang.
+type KepalaSummaryWarisan struct {
+	// NomorPL - `pyWorkPage.PremiumListSummary.PL_NUMBER` (nomor yang baru terbit).
+	NomorPL string
+	// NomorEDM - `pyWorkPage.PremiumListSummary.PL_NUMBER_EDM`; kosong di new business.
+	NomorEDM string
+	// COB - `pyWorkPage.BusinessName` -> `T_PREMIUM_LIST.BUSINESS_NAME`.
+	COB string
+	// IDPega - `pyWorkPage.pzInsKey` -> pengenal work, SAMA dengan salinan
+	// detail (`PesertaWarisan.Ganti`).
+	IDPega string
+}
+
+// sqlHapusSummaryWarisan merakit pembersihan rekap warisan satu work.
+//
+// ⛔ PENYIMPANGAN SADAR dari prosedur, yang HANYA `INSERT` (tanpa cabang
+// UPDATE/MERGE): di Pega setiap panggilan menambah baris, jadi simpan ulang
+// menumpuk rekap kembar. pl2 menuntut idempoten per `PL_NUMBER`, dikurung
+// `IDPEGA` dengan alasan yang sama dengan `sqlHapusPesertaWarisan` - baris
+// endorsemen ber-`PL_NUMBER` sama milik work lain.
+//
+// ⚠️ `[belum terverifikasi]` index `M_LIFE_PREMIUM_SUMMARY`: tabelnya satu
+// baris per mata uang per polis, bukan 66,8 juta baris peserta.
+func sqlHapusSummaryWarisan(tabel string) string {
+	return fmt.Sprintf(`DELETE FROM %s WHERE PL_NUMBER = :1 AND IDPEGA = :2`, tabel)
+}
+
+// sqlSisipSummaryWarisan merakit penyisipan satu baris rekap warisan.
+func sqlSisipSummaryWarisan(tabel, urutan string) string {
+	penanda := []string{"TO_CHAR(" + urutan + ".NEXTVAL)"}
+	for i := range kolomSummaryWarisan {
+		penanda = append(penanda, fmt.Sprintf(":%d", i+1))
+	}
+	return fmt.Sprintf(`INSERT INTO %s (ID, %s) VALUES (%s)`,
+		tabel, strings.Join(kolomSummaryWarisan, ", "), strings.Join(penanda, ", "))
+}
+
+// nilaiSummaryWarisan menyusun argumen satu rekap, urut `kolomSummaryWarisan`.
+//
+// ⛔ BENTUK TEKS, seperti parameter prosedur (seluruhnya `VARCHAR2`): uang
+// dikirim teks desimal hasil rumus rekap 05a (`models.RekapPerMataUang`,
+// sudah dibulatkan `@divide(…,1,4)`) - `PREMIUM`/`COMMISSION`/`BALANCE`
+// turunan per cabang `Type`, sisanya jumlah bernama sama.
+//
+// ⛔ Uang kosong = "0" (OQ-PL-10): nilai `CARIn` Pega adalah properti desimal
+// yang tidak pernah kosong. Teks kosong (`PL_NUMBER_EDM` new business) = NULL.
+func nilaiSummaryWarisan(k KepalaSummaryWarisan, r models.RekapMataUang) []any {
+	uang := func(v *apd.Decimal) any {
+		if v == nil {
+			return "0"
+		}
+		return utils.FormatDecimal(v)
+	}
+	teks := func(s string) any {
+		if strings.TrimSpace(s) == "" {
+			return nil
+		}
+		return s
+	}
+	arg := make([]any, 0, len(kolomSummaryWarisan))
+	for _, kolom := range kolomSummaryWarisan {
+		switch kolom {
+		case "COB":
+			arg = append(arg, teks(k.COB))
+		case "CURRENCY":
+			arg = append(arg, teks(r.Currency))
+		case "PL_NUMBER":
+			arg = append(arg, teks(k.NomorPL))
+		case "PL_NUMBER_EDM":
+			arg = append(arg, teks(k.NomorEDM))
+		case "IDPEGA":
+			arg = append(arg, teks(k.IDPega))
+		case "PREMIUM":
+			arg = append(arg, uang(r.Premium))
+		case "COMMISSION":
+			arg = append(arg, uang(r.Commission))
+		case "BALANCE":
+			arg = append(arg, uang(r.Balance))
+		default:
+			arg = append(arg, uang(r.Jumlah[kolom]))
+		}
+	}
+	return arg
+}
+
+// SummaryWarisan menulis rekap polis ke tabel warisan.
+type SummaryWarisan struct{ db *db.DB }
+
+// NewSummaryWarisan menyusunnya.
+func NewSummaryWarisan(db *db.DB) *SummaryWarisan { return &SummaryWarisan{db: db} }
+
+// Ganti menghapus rekap warisan lama milik work yang sama lalu menyisipkan
+// satu baris per mata uang - di transaksi MILIK PEMANGGIL (pl2), nol `COMMIT`.
+//
+// Satu baris per mata uang = perulangan `CurrencyList` langkah 8 (b2228,
+// ulangan b3252) yang memanggil prosedur sekali per baris.
+//
+// Mengembalikan cacah baris terhapus dan tersisip.
+func (r *SummaryWarisan) Ganti(ctx context.Context, tx *db.Tx, k KepalaSummaryWarisan,
+	rekap []models.RekapMataUang) (dihapus, disisip int, err error) {
+
+	if strings.TrimSpace(k.NomorPL) == "" {
+		return 0, 0, errors.New("repository: menolak menulis summary warisan tanpa PL_NUMBER")
+	}
+	if strings.TrimSpace(k.IDPega) == "" {
+		return 0, 0, errors.New("repository: menolak menulis summary warisan tanpa pengenal work")
+	}
+	if len(rekap) == 0 {
+		return 0, 0, ErrRekapKosong
+	}
+	tabel, err := r.db.Qualify(namaTabelSummaryWarisan)
+	if err != nil {
+		return 0, 0, err
+	}
+	urutan, err := r.db.Qualify(namaUrutanSummaryWarisan)
+	if err != nil {
+		return 0, 0, err
+	}
+	hapus := sqlHapusSummaryWarisan(tabel)
+	if err := db.PeriksaSQL(hapus); err != nil {
+		return 0, 0, err
+	}
+	h, err := tx.ExecContext(ctx, hapus, k.NomorPL, k.IDPega)
+	if err != nil {
+		return 0, 0, fmt.Errorf("repository: menghapus summary warisan: %w", err)
+	}
+	nh, err := h.RowsAffected()
+	if err != nil {
+		return 0, 0, fmt.Errorf("repository: membaca cacah summary warisan terhapus: %w", err)
+	}
+	sisip := sqlSisipSummaryWarisan(tabel, urutan)
+	if err := db.PeriksaSQL(sisip); err != nil {
+		return 0, 0, err
+	}
+	for _, rm := range rekap {
+		if _, err := tx.ExecContext(ctx, sisip, nilaiSummaryWarisan(k, rm)...); err != nil {
+			return 0, 0, fmt.Errorf("repository: menyisipkan summary warisan %q: %w", rm.Currency, err)
+		}
+	}
+	return int(nh), len(rekap), nil
+}

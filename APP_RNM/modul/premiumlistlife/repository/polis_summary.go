@@ -9,7 +9,8 @@ package repository
 //     `models.RekapPerMataUang`;
 //  2. mengganti rekap `T_PREMIUM_LIST_SUMMARY` (hapus lalu sisip);
 //  3. pl2 - menyalin peserta ke tabel warisan `M_LIFE_PREMIUM_DETAIL`, yang
-//     dibaca Claim Life (`GET /api/peserta-life`).
+//     dibaca Claim Life (`GET /api/peserta-life`), dan membaca kepala rekap
+//     warisan `M_LIFE_PREMIUM_SUMMARY` (PL-09; penulisnya polis_warisan.go).
 //
 // ⛔ PEMBACA TIDAK MENJUMLAH. Pilihan brief giliran 10: SUM/GROUP BY di SQL,
 // ATAU baca lalu hitung dengan rumus murni. Yang dipilih yang KEDUA. Cabang
@@ -223,6 +224,45 @@ func (r *SummaryPolis) GantiRekap(ctx context.Context, tx *db.Tx, polisID string
 		}
 	}
 	return int(n), len(rekap), nil
+}
+
+// sqlKepalaSummaryWarisan merakit pembacaan kepala rekap warisan - PL-09.
+//
+// `COB` <- `pyWorkPage.BusinessName` (`BUSINESS_NAME`, migrasi 051) dan
+// `PL_NUMBER_EDM` <- `pyWorkPage.PremiumListSummary.PL_NUMBER_EDM` - sama
+// dengan sumber `p.PL_NUMBER_EDM` salinan detail.
+func sqlKepalaSummaryWarisan(polis string) string {
+	return fmt.Sprintf(`SELECT BUSINESS_NAME, PL_NUMBER_EDM FROM %s WHERE ID = :1`, polis)
+}
+
+// KepalaSummaryWarisan membaca kepala rekap warisan satu polis.
+//
+// `nomorPL` dan `idPega` datang dari pemanggil - nomor yang baru terbit di
+// transaksi yang sama, dan pengenal work yang sama dengan salinan detail.
+func (r *SummaryPolis) KepalaSummaryWarisan(ctx context.Context, tx *db.Tx,
+	polisID, nomorPL string) (KepalaSummaryWarisan, error) {
+
+	polis, err := r.db.Qualify("T_PREMIUM_LIST")
+	if err != nil {
+		return KepalaSummaryWarisan{}, err
+	}
+	q := sqlKepalaSummaryWarisan(polis)
+	if err := db.PeriksaSQL(q); err != nil {
+		return KepalaSummaryWarisan{}, err
+	}
+	var cob, edm sql.NullString
+	if err := tx.QueryRowContext(ctx, q, polisID).Scan(&cob, &edm); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return KepalaSummaryWarisan{}, fmt.Errorf("%w: %q", ErrPolisTakDitemukan, polisID)
+		}
+		return KepalaSummaryWarisan{}, fmt.Errorf("repository: membaca kepala summary warisan: %w", err)
+	}
+	return KepalaSummaryWarisan{
+		NomorPL:  nomorPL,
+		NomorEDM: strings.TrimSpace(edm.String),
+		COB:      cob.String,
+		IDPega:   polisID,
+	}, nil
 }
 
 // sqlSumberWarisan merakit pembacaan baris sumber salinan warisan - pl2.

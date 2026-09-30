@@ -53,6 +53,8 @@ func TestSimpanDalamUrutanTerkunci(t *testing.T) {
 		"s.nomor.terbitkanDalam(",
 		"s.rekapDalam(",
 		"ringkas.GantiRekap(",
+		"ringkas.KepalaSummaryWarisan(",
+		"summaryWarisan.Ganti(",
 		"ringkas.SumberWarisan(",
 		"warisan.Ganti(",
 	}

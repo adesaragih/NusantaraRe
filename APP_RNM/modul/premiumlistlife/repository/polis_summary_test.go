@@ -153,12 +153,15 @@ func TestPengenalRekapTepat32DanDeterministik(t *testing.T) {
 // ⛔ `SaveMasterLPDet` baris 252 memuat `COMMIT;`. Salinan kami tidak.
 func TestNolCommitDiQueryRekapDanWarisan(t *testing.T) {
 	for nama, q := range map[string]string{
-		"baca uang":     sqlBarisUangPolis("S.D"),
-		"hapus rekap":   sqlHapusRekap("S.S"),
-		"sisip rekap":   sqlSisipRekap("S.S"),
-		"sumber":        sqlSumberWarisan("S.D", "S.P"),
-		"hapus warisan": sqlHapusPesertaWarisan("S.M"),
-		"sisip warisan": sqlSisipPesertaWarisan("S.M", "S.Q"),
+		"baca uang":      sqlBarisUangPolis("S.D"),
+		"hapus rekap":    sqlHapusRekap("S.S"),
+		"sisip rekap":    sqlSisipRekap("S.S"),
+		"sumber":         sqlSumberWarisan("S.D", "S.P"),
+		"hapus warisan":  sqlHapusPesertaWarisan("S.M"),
+		"sisip warisan":  sqlSisipPesertaWarisan("S.M", "S.Q"),
+		"kepala summary": sqlKepalaSummaryWarisan("S.P"),
+		"hapus summary":  sqlHapusSummaryWarisan("S.M"),
+		"sisip summary":  sqlSisipSummaryWarisan("S.M", "S.Q"),
 	} {
 		if strings.Contains(strings.ToUpper(q), "COMMIT") {
 			t.Errorf("query %q memuat COMMIT:\n%s", nama, q)

@@ -217,6 +217,15 @@ func Pasang(ctx context.Context, db *sql.DB, skema string) error {
 		}
 	}
 
+	// Tiruan rekap warisan PremiumList + sequence-nya - PL-09 (GILIRAN-18).
+	for _, q := range ddlTiruanSummaryPolis(skema) {
+		if _, err := db.ExecContext(ctx, q); err != nil {
+			if !strings.Contains(err.Error(), "ORA-00955") {
+				return fmt.Errorf("skemauji: membuat tiruan summary polis: %w", err)
+			}
+		}
+	}
+
 	// Tiruan tabel treaty untuk perhitungan spreading (tiket 03).
 	for _, q := range ddlTiruanTreaty(skema) {
 		if _, err := db.ExecContext(ctx, q); err != nil {
@@ -242,7 +251,7 @@ func Pasang(ctx context.Context, db *sql.DB, skema string) error {
 // ditambah tabel tiruan warisan.
 func Bongkar(ctx context.Context, db *sql.DB, skema string) error {
 	tiruan := []string{namaTabelLama, namaTabelPesertaPolis,
-		namaTabelRetrosesi, namaTabelTahunTreaty}
+		namaTabelRetrosesi, namaTabelTahunTreaty, namaTabelSummaryPolis}
 	// Enam tiruan warisan Treaty Contract Out ikut dibongkar (aditif 28-09-2026).
 	tiruan = append(tiruan, namaTabelTiruanTCO...)
 	for _, nama := range tiruan {
@@ -253,8 +262,9 @@ func Bongkar(ctx context.Context, db *sql.DB, skema string) error {
 			}
 		}
 	}
-	// Treaty Contract Out tco4 (aditif 29-09-2026): sequence warisan tiruan.
-	for _, nama := range namaSequenceTiruanTCO {
+	// Treaty Contract Out tco4 (aditif 29-09-2026) dan PL-09 (GILIRAN-18):
+	// sequence warisan tiruan.
+	for _, nama := range append([]string{namaSequenceSummaryPolis}, namaSequenceTiruanTCO...) {
 		q := fmt.Sprintf(`DROP SEQUENCE %s.%s`, skema, nama)
 		if _, err := db.ExecContext(ctx, q); err != nil {
 			if !strings.Contains(err.Error(), "ORA-02289") { // sequence tidak ada

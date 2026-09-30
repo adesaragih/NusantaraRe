@@ -9,6 +9,7 @@ package services
 //	         `AppendCurrencySummary_DT` untuk ditampilkan).
 //	Submit - SATU transaksi: penomoran (`SubmitPremiumList_Act` langkah
 //	         10-14) → rekap `T_PREMIUM_LIST_SUMMARY` hapus-lalu-sisip →
+//	         PL-09 rekap yang sama ke `M_LIFE_PREMIUM_SUMMARY` →
 //	         pl2 salinan peserta ke `M_LIFE_PREMIUM_DETAIL` → tiket 05b
 //	         `finishAssignment`: kasus ditutup Resolved-Completed + jejak →
 //	         commit.
@@ -282,11 +283,12 @@ func (s *SummaryPremiumList) Submit(ctx context.Context, pelaku inti.Pelaku,
 // warisan - di dalam transaksi MILIK PEMANGGIL.
 //
 // ⛔ URUTANNYA DIKUNCI `TestSimpanDalamUrutanTerkunci`: nomor → rekap →
-// ganti rekap → sumber warisan → ganti warisan.
+// ganti rekap → kepala + ganti summary warisan → sumber warisan → ganti warisan.
 func (s *SummaryPremiumList) simpanDalam(ctx context.Context, tx *db.Tx,
 	polisID string, saat time.Time) (HasilSubmitSummary, error) {
 
 	ringkas := repository.NewSummaryPolis(s.svc.DB())
+	summaryWarisan := repository.NewSummaryWarisan(s.svc.DB())
 	warisan := repository.NewPesertaWarisan(s.svc.DB())
 
 	// 1. Penomoran - langkah 10-14. Lahir sekali: simpan ulang memakai nomor
@@ -303,6 +305,16 @@ func (s *SummaryPremiumList) simpanDalam(ctx context.Context, tx *db.Tx,
 	// 3. Hapus lalu sisip rekap.
 	dihapus, _, err := ringkas.GantiRekap(ctx, tx, polisID, rekap)
 	if err != nil {
+		return HasilSubmitSummary{}, err
+	}
+	// 3b. PL-09 - rekap yang SAMA ke tabel warisan `M_LIFE_PREMIUM_SUMMARY`,
+	//     seperti `PEGA_M_LIFE_PREMIUM_SUMMARY` (langkah 8, b2228-b3252),
+	//     berkunci nomor + work. Prosedurnya tidak dipanggil (keputusan o).
+	kepala, err := ringkas.KepalaSummaryWarisan(ctx, tx, polisID, nomor.Nomor)
+	if err != nil {
+		return HasilSubmitSummary{}, err
+	}
+	if _, _, err := summaryWarisan.Ganti(ctx, tx, kepala, rekap); err != nil {
 		return HasilSubmitSummary{}, err
 	}
 	// 4-5. pl2 - salinan peserta ke tabel warisan, berkunci nomor + work.

@@ -103,7 +103,7 @@ oleh temuan bahwa parameter procedure seluruhnya `VARCHAR2`), **ADR-0006** (peno
 ## Acceptance criteria
 
 - [ ] `PROC_GENERATE_SEQUENCE_NUMBER` dan `PEGA_M_LIFE_PREMIUM_SUMMARY` dipanggil di dalam **satu
-      transaksi Go**, dan transaksi itu **commit sebelum** procedure lain dipanggil. *(AC 20 spec)* — belum: kedua procedure tidak dipanggil (penomoran lewat tabel penghitung; `M_LIFE_PREMIUM_SUMMARY` menunggu OQ-PL-09)
+      transaksi Go**, dan transaksi itu **commit sebelum** procedure lain dipanggil. *(AC 20 spec)* — belum: kedua procedure tidak dipanggil (keputusan o). Penomoran lewat tabel penghitung; isi `PEGA_M_LIFE_PREMIUM_SUMMARY` **ditiru** di transaksi `simpanDalam` yang sama (PL-09, GILIRAN-18)
 - [ ] ~~`INSERTJSONPOLISLIFE` dan `INSERTJSONOFFERLIFE` **tidak** dipanggil dari dalam transaksi
       itu.~~ ⚠️ **TIDAK BERLAKU 2026-09-16** — keduanya **dibuang**; lihat AC pengganti di bawah. — belum: dicoret, tidak berlaku (2026-09-16)
 
@@ -123,27 +123,27 @@ oleh temuan bahwa parameter procedure seluruhnya `VARCHAR2`), **ADR-0006** (peno
       bermata uang ganda menghasilkan **satu baris rekap per mata uang**, masing-masing dengan nilai
       uangnya. *(AC 37 spec; penyimpangan sadar 2)* — bukti: `repository/polis_summary.go:GantiRekap`; uji `TestSatuBarisRekapPerMataUang`, `TestNilaiSisipRekapSejajarDanTepat`
 - [ ] ⚠️ `M_LIFE_PREMIUM_SUMMARY`, `M_LIFE_PREMIUM_DETAIL`, dan `LIFEINPRODUCTION` **tidak ditulis**.
-      Test yang menemukan tulisan ke ketiganya **gagal**. *(AC 33 spec)* — belum: pl2 membalik — `M_LIFE_PREMIUM_DETAIL` ditulis (`repository/polis_warisan.go:Ganti`); `M_LIFE_PREMIUM_SUMMARY`/`LIFEINPRODUCTION` tidak ditulis, tetapi uji penjaganya belum ada
+      Test yang menemukan tulisan ke ketiganya **gagal**. *(AC 33 spec)* — belum: pl2 membalik — `M_LIFE_PREMIUM_DETAIL` (`PesertaWarisan.Ganti`) dan, sejak GILIRAN-18, `M_LIFE_PREMIUM_SUMMARY` (`SummaryWarisan.Ganti`) ditulis di `repository/polis_warisan.go`; `LIFEINPRODUCTION` tidak ditulis, tetapi uji penjaganya belum ada
 - [ ] ⚠️ Bila jalur warisan `SaveMasterLPDet` masih dipakai selama transisi, ia berada **di luar**
       transaksi polis dan **dapat diulang** — ia satu-satunya titik potong yang tersisa.
       *(spec §6; `[data DBA]` `COMMIT` di dalam procedure)*
       *(AC 21 spec)* — belum: pl2 menaruh salinan warisan DI DALAM transaksi `simpanDalam`; dapat diulang (hapus lalu sisip, uji `TestHapusWarisanDikurungNomorDanWork`)
 - [ ] Kegagalan **sebelum** commit summary tidak meninggalkan nomor maupun rekam separuh: test
       menyuntikkan kegagalan di `PEGA_M_LIFE_PREMIUM_SUMMARY` dan memastikan **tidak ada** baris
-      `M_LIFE_PREMIUM_SUMMARY` **dan** sequence tidak bergerak. *(AC 22 spec)* — belum: procedure tidak dipanggil, dan nol uji injeksi kegagalan
+      `M_LIFE_PREMIUM_SUMMARY` **dan** sequence tidak bergerak. *(AC 22 spec)* — belum: procedure tidak dipanggil; tiruannya berada di transaksi pemanggil, dan `TestSummaryWarisanDitulisSepertiProsedur` (`db`, SKIP tanpa Oracle) membuktikan rollback membatalkan tulisannya. Injeksi kegagalan atas `simpanDalam` utuh belum ada
 - [ ] Kegagalan **setelah** commit summary meninggalkan nomor + rekam summary **utuh** dan keadaan itu
       **terdeteksi** — bukan senyap. *(AC 23 spec)* — belum: efek keluar sesudah commit tercatat di outbox (uji `TestEfekBerjalanSesudahCommitBukanDiDalamnya`), tetapi `Putuskan` (jalur Confirm) membuang ringkasan `EfekKeluar`
 - [x] **Ada test yang gagal bila urutan pemanggilan diubah** — urutannya bagian dari kebenaran, bukan
       kebetulan. *(AC 24 spec)* — bukti: uji `TestSimpanDalamUrutanTerkunci`, `TestSimpanSebelumTutupDalamSatuTransaksi`
 - [ ] Konversi teks ↔ desimal terjadi **hanya di lapisan repository**, di satu tempat; lapisan
       services dan handlers hanya mengenal desimal. *(AC 15 spec; **ADR-0003**)* — belum: `services/polis_summary.go:keTampil` memformat desimal ke teks di lapisan services
-- [ ] Ke-37 kolom terisi dari sumber yang benar, dan pemetaannya diuji kolom demi kolom — **bukan**
-      lewat posisi `CARI2`…`CARI34` yang tidak bernama. — belum: `M_LIFE_PREMIUM_SUMMARY` tidak ditulis — OQ-PL-09
+- [x] Ke-37 kolom terisi dari sumber yang benar, dan pemetaannya diuji kolom demi kolom — **bukan**
+      lewat posisi `CARI2`…`CARI34` yang tidak bernama. — bukti: `repository/polis_warisan.go:kolomSummaryWarisan` (37 + `ID` = 38); uji `TestKolomSummaryWarisanVERBATIMDariProsedur` (badan prosedur, dua cara), `TestSumberSummaryWarisanDariKorpus` (`InsertPLSummary` posisional + `CARIn` langkah 8.1), `TestNilaiSummaryWarisanSejajarDanNolBilaKosong`
 - [ ] Nilai uang yang dikirim dan dibaca kembali **identik**, termasuk nilai berpecahan panjang dan
       nilai negatif. Tidak ada pembulatan diam. *(AC 16 spec)* — belum: nol uji pulang-pergi terhadap Oracle; rekap sengaja dibulatkan empat angka (DT)
 - [ ] Baik `PL_NUMBER` maupun `PL_NUMBER_EDM` tersimpan pada rekam summary yang sama sebagai **dua
       nilai terpisah**; jalur new business mengisi yang pertama, endorsement yang kedua.
-      *(AC 13 spec)* — belum: rekam summary warisan tidak ditulis (OQ-PL-09); `T_PREMIUM_LIST_SUMMARY` tanpa kolom `PL_NUMBER`
+      *(AC 13 spec)* — bukti (jalur new business): `M_LIFE_PREMIUM_SUMMARY.PL_NUMBER` = nomor yang terbit, `PL_NUMBER_EDM` = `T_PREMIUM_LIST.PL_NUMBER_EDM` (NULL bila kosong) — `KepalaSummaryWarisan`, uji `TestNilaiSummaryWarisanSejajarDanNolBilaKosong`. Jalur endorsement milik konteks Endorsement Life; `T_PREMIUM_LIST_SUMMARY` tetap tanpa kolom `PL_NUMBER`
 - [ ] Keluaran galat procedure (`ERRMSG`, `STSSAVE`) **diperiksa**; galat yang dilaporkan procedure
       tidak boleh diabaikan sehingga transaksi tampak berhasil. — belum: tidak berlaku — procedure tidak dipanggil (pl1)
 
@@ -354,6 +354,9 @@ lahir-sekali satu fungsi untuk dua jalur) → rekap murni → `GantiRekap` (hapu
 
 ### ⚠️ RALAT AC 33 — `M_LIFE_PREMIUM_DETAIL` DITULIS (pl2), `M_LIFE_PREMIUM_SUMMARY` TIDAK (OQ-PL-09)
 
+> ⭐ **Dilampaui 30-09-2026 (GILIRAN-18):** `M_LIFE_PREMIUM_SUMMARY` kini **ditulis**. Lihat bab
+> *PL-09 ditutup* di akhir tiket.
+
 AC 33 (2026-09-16) melarang penulisan `M_LIFE_PREMIUM_SUMMARY`/`M_LIFE_PREMIUM_DETAIL`.
 **pl2** (brief 3-PREMIUMLIST, 28-09-2026, lebih baru) membaliknya: keduanya ditulis dalam transaksi
 yang sama, sebab Claim Life membaca `M_LIFE_PREMIUM_DETAIL` (`GET /api/peserta-life`). Yang dikerjakan:
@@ -456,3 +459,57 @@ ulang dari korpus: 36 `@divide`, pemetaan 80 kolom baris demi baris, dan keempat
 | --- | --- | --- |
 | **PL-09** | tulis `M_LIFE_PREMIUM_SUMMARY` sesuai pl2, dalam transaksi simpan summary yang sama, kolom VERBATIM dari prosedur yang ditiru | ⛔ **terhalang — tidak ditulis, tidak ditebak.** `InsertPLSummary` memanggil `POOLDATA.PEGA_M_LIFE_PREMIUM_SUMMARY` secara **posisional** (37 masuk + 2 keluar), jadi nama kolomnya hanya ada di badan prosedur. Badan itu tidak tercatat di repo mana pun, dan hitungannya tidak cocok (1 `ID` + 37 argumen = 38 lawan 37 kolom). Memetakan dengan tebakan menyimpan uang di kolom yang mungkin salah. **Dipindah ke daftar serah terima DBA**: `ALL_SOURCE` `PEGA_M_LIFE_PREMIUM_SUMMARY` dan `ALL_TAB_COLUMNS` `M_LIFE_PREMIUM_SUMMARY`. Sesudah itu penulisnya satu fungsi di `polis_warisan.go`, dipanggil sesudah `GantiRekap` |
 | **PL-10** | kolom uang kosong di `M_LIFE_PREMIUM_DETAIL` warisan = **0**, seperti Pega | ✅ `repository.kolomNolBilaKosongWarisan` (45 kolom) di `nilaiSalinWarisan`, satu fungsi di tepi repository warisan. Himpunannya adalah kolom `SaveMasterLPDet` yang memakai `TempInputDetail.CARIn`, dengan `CARIn = @toDecimal(.X)` di `InsertLifePremiumDetail_act` langkah 3.3.3 (b1843, hidup), termasuk `RISK` (CARI50). Kolom teks, tanggal, `PERIOD_YY/MM`, `PASSED_PERIOD`, dan `AGE`/`ENTRY_AGE`/`CURRENT_AGE` (tanpa `@toDecimal`) tetap NULL. ADR-U-0027 tetap berlaku untuk tabel `T_*`. Uji: `TestKosongWarisanJadiNolSepertiToDecimal`, dan `TestKolomNolBilaKosongWarisanDariKorpus`, yang menurunkan himpunannya ulang dari korpus dua arah (mutasi menjadi merah) |
+
+## PL-09 ditutup — 30 September 2026 (GILIRAN-18 paket 1) `[terverifikasi — badan prosedur dari ALL_SOURCE DEV]`
+
+Asisten membaca badan `POOLDATA.PEGA_M_LIFE_PREMIUM_SUMMARY` dari `ALL_SOURCE` DEV. Salinannya, tanpa baris komentar, ada di
+`.scratch/premiumlist-life/dba-procedure-PEGA_M_LIFE_PREMIUM_SUMMARY.md` (commit `526fc93`). Keputusan **o** tetap berlaku:
+prosedur itu **tidak dipanggil**, isinya ditiru di Go.
+
+| Aspek | Badan prosedur | Tiruan Go |
+| --- | --- | --- |
+| tabel | `M_LIFE_PREMIUM_SUMMARY`, 38 kolom (katalog DEV) | `namaTabelSummaryWarisan` |
+| `ID` | `TO_CHAR(M_LIFE_PREMIUM_SUMMARY_SEQ.nextval)` (baris 46) | `TO_CHAR(<skema>.M_LIFE_PREMIUM_SUMMARY_SEQ.NEXTVAL)` di teks `INSERT` |
+| kolom | daftar `INSERT` baris 48–85; `VALUES` = `P_<kolom>` untuk **setiap** kolom | `kolomSummaryWarisan`, urut dokumen (37 + `ID`) |
+| sumber | `InsertPLSummary` posisional: `BusinessName`, `PL_NUMBER`, `PL_NUMBER_EDM`, `CARI2…CARI34`, `pzInsKey`; `CARIn = .X` baris `CurrencyList` (langkah 8.1, b2296…) | `COB` ← `T_PREMIUM_LIST.BUSINESS_NAME`; `PL_NUMBER` ← nomor yang baru terbit; `PL_NUMBER_EDM` ← `T_PREMIUM_LIST.PL_NUMBER_EDM`; `IDPEGA` ← pengenal work (**sama** dengan salinan detail); `CURRENCY` + 32 kolom uang ← rekap 05a bernama sama |
+| bentuk nilai | seluruh parameter `VARCHAR2` | teks desimal hasil `models.RekapPerMataUang`, yang sudah dibulatkan `@divide(…,1,4)`. `PREMIUM`, `COMMISSION`, dan `BALANCE` diturunkan per cabang `Type`; 29 lainnya dari `Jumlah` |
+| uang kosong | `@toDecimal` Pega: tidak pernah kosong | `"0"` (PL-10); teks kosong = NULL |
+| cabang | **hanya `INSERT`**: tidak ada UPDATE/MERGE, satu panggilan per mata uang (ulangan b2228–b3252) | satu baris per mata uang. ⚠️ **Penyimpangan sadar (pl2):** sebelum menyisip, baris lama `DELETE … WHERE PL_NUMBER = :1 AND IDPEGA = :2` dihapus, sehingga simpan ulang tidak menumpuk rekap kembar seperti di Pega |
+| transaksi | `ROLLBACK` di cabang galat; `COMMIT;` ada di teks `InsertPLSummary` | di transaksi `simpanDalam` milik pemanggil, sesudah `GantiRekap` dan sebelum salinan detail; nol `COMMIT` |
+
+**Langkah Pega.** `InsertJsonPolisLife_Act`:
+- langkah 8 `Insert to table summary` (b2236) dan 8.2 `RDB-List InsertPLSummary` (b3056/b3112) **hidup**: `pyStepsBlockName` kosong;
+- langkah 16 `Commit` (b5294) dan 17 `Connect-REST InsertLifePremiumDetail` (b5383) ter-remark (`//`).
+
+**Ralat "38 lawan 37".** Tabelnya 38 kolom; argumennya 37 masuk + 2 keluar. `ID` tidak datang dari argumen, jadi tidak ada
+argumen yatim. Hitungan "37 kolom" di tiket ini (baris 56–57) yang keliru.
+
+**Kode.**
+- `repository/polis_warisan.go`: `kolomSummaryWarisan`, `sqlHapusSummaryWarisan`, `sqlSisipSummaryWarisan`, `nilaiSummaryWarisan`, `SummaryWarisan.Ganti`.
+- `repository/polis_summary.go`: `KepalaSummaryWarisan` membaca tabel kami, sehingga berkas penulis tetap tanpa `SELECT`.
+- `services/polis_summary.go`: `simpanDalam` langkah 3b.
+- `uji/skemauji/pl_tiruan.go`: tiruan tabel dan sequence, dengan kolom diambil dari penulisnya.
+
+**Uji murni.**
+- `TestKolomSummaryWarisanVERBATIMDariProsedur`
+- `TestSumberSummaryWarisanDariKorpus`
+- `TestNilaiSummaryWarisanSejajarDanNolBilaKosong`
+- `TestSisipSummaryWarisanBerurutanDanBerSequence`
+- `TestHapusSummaryWarisanDikurungNomorDanWork`
+- `TestKepalaSummaryWarisanAdaDiMigrasi051`
+- `TestGantiSummaryWarisanMenolakKepalaKosong`
+- `TestNolCommitDiQueryRekapDanWarisan`, kini dengan tiga SQL tambahan
+- `TestSimpanDalamUrutanTerkunci`, kini dengan dua langkah tambahan
+
+**Uji `db`.** `TestSummaryWarisanDitulisSepertiProsedur` SKIP tanpa `ORACLE_DSN`. Yang diujinya:
+- dua putaran simpan (idempoten);
+- baris work lain ber-`PL_NUMBER` sama tidak tersentuh;
+- nilai IDR tepat;
+- uang kosong = 0;
+- `ID` unik dari sequence;
+- rollback membatalkan tulisan.
+
+⚠️ **Sisa.**
+- **Tipe kolom** `M_LIFE_PREMIUM_SUMMARY` `[belum terverifikasi]`. Katalog DEV mencatat cacahnya, bukan tipenya. Tiruan memakai `NUMBER` untuk uang, dan angka dikirim sebagai teks sehingga bergantung pada NLS sesi, pola yang sama dengan `GantiRekap`.
+- **Index** `PL_NUMBER` tabel itu `[belum terverifikasi]`.
+- **Bentuk `IDPEGA`.** `pyID` (`NBLF-<n>`), sama dengan salinan detail. Baris warisan Pega berbentuk `pzInsKey` berawalan kelas (`polis_kasus.go`), sehingga `DELETE` kami tidak pernah menyentuh baris buatan Pega.

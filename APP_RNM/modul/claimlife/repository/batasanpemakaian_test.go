@@ -228,7 +228,11 @@ func TestSetiapPemanggilBukaMemeriksaBolehDilewati(t *testing.T) {
 	// DUA BELAS sejak refactor bentuk B (30-09-2026): uji integrasi Claim
 	// Life + Komite pindah ke uji/lintasmodul dengan salinan `siapkanPohon`
 	// sendiri (paket uji luar tidak dapat dipinjam lintas folder).
-	const mau = 12
+	//
+	// TIGA BELAS sejak GILIRAN-18 (PL-09): premiumlistlife/repository
+	// summarywarisan_db_test.go - modul itu belum punya uji db lain untuk
+	// dipinjam koneksinya, dan uji itu mengisi polis tiruan lewat SQL mentah.
+	const mau = 13
 	if diperiksa != mau {
 		t.Errorf("pemanggil skemauji.Buka() ditemukan %d, mau %d; "+
 			"bila memang bertambah, perbarui angkanya di sini", diperiksa, mau)
