@@ -295,6 +295,15 @@ func milikClaimLife(nama string) bool {
 	return nama < "050_"
 }
 
+// milikPremiumList menjawab apakah berkas migrasi itu milik PremiumList Life.
+//
+// Rentangnya 050-079 (PROMPT-EKSEKUSI-HULU-HILIR.md §4). Lahir 28-09-2026
+// ketika modul ketiga (Treaty Contract Out, 300-319) menambah migrasi dan
+// "bukan Claim Life" tidak lagi berarti "PremiumList".
+func milikPremiumList(nama string) bool {
+	return nama >= "050_" && nama < "080_"
+}
+
 // Seluruh FK pohon polis BERKASKADE - tiket 00 PremiumList Life AC 46.
 //
 // ⛔ Kebijakan yang BERBEDA dari Claim Life, dan sengaja. Pohon polis empat
@@ -311,7 +320,16 @@ func TestSeluruhFKPohonPolisBerkaskade(t *testing.T) {
 	tanpaFK := map[string]bool{"050_": true, "051_": true}
 	diperiksa := 0
 	for nama, teks := range seluruhSQL(t, false) {
-		if milikClaimLife(nama) || strings.Contains(nama, "_down") {
+		// ⛔ DIPERSEMPIT ke rentang PremiumList Life 28-09-2026 (sesi Treaty
+		// Contract Out). Sebelumnya "bukan Claim Life" berarti "PremiumList",
+		// sebab hanya dua modul yang bermigrasi. Sejak migrasi 300-319 ada,
+		// tabel yang menggantung pada KUNCI GABUNGAN tanpa FK (spec Treaty
+		// Contract Out §2) akan dituduh "tidak punya FOREIGN KEY". Penjaga
+		// yang menuduh hal yang benar akan dilonggarkan orang; ia karena itu
+		// dipersempit ke rentang modul yang kebijakannya ia jaga - tidak
+		// dilonggarkan. Kebijakan FK Treaty Contract Out dijaga
+		// tco_migrasi_test.go.
+		if !milikPremiumList(nama) || strings.Contains(nama, "_down") {
 			continue
 		}
 		isi := strings.ToUpper(teks)
@@ -361,7 +379,9 @@ func TestSetiapFKPohonPolisBerindex(t *testing.T) {
 	diperiksa := 0
 	polaFK := regexp.MustCompile(`FOREIGN KEY \(([A-Z_]+)\)`)
 	for nama, teks := range seluruhSQL(t, false) {
-		if milikClaimLife(nama) || strings.Contains(nama, "_down") {
+		// Dipersempit ke rentang PremiumList Life (lihat penjaga di atas);
+		// index FK Treaty Contract Out dijaga tco_migrasi_test.go.
+		if !milikPremiumList(nama) || strings.Contains(nama, "_down") {
 			continue
 		}
 		isi := strings.ToUpper(teks)
@@ -708,11 +728,19 @@ func TestSeluruhCreateDapatDibacaNamanya(t *testing.T) {
 	// 11+7+1 = 19 tabel + 10 sequence + 13+6+1 = 20 index = 49.
 	// +1 tabel dari 019 (butir be, kartu berkas unggahan) = 50.
 	//
+<<<<<<< HEAD
 	// ⛔ Diperbarui LAGI - butir bn (GILIRAN-13): +1 sequence SEQ_WORK_POLIS
 	// (057). RALAT atas catatan tiket 00 di atas: "nol sequence" untuk polis
 	// keliru - pl3 memutuskan SEQ_WORK_POLIS, dan ia terlewat. ALTER kolom
 	// FLAG_ONGOING_POLICY tidak dihitung.
 	const mau = 51
+=======
+	// ⛔ Diperbarui LAGI - tiket 01 Treaty Contract Out (300-306) menambah
+	// TUJUH tabel (T_TREATYYEAR, T_TREATYCONTRACT, T_TREATYREINSURER,
+	// T_MTREATYSECURITY, T_TREATYBUSINESS, T_PROPORTIONALARRG,
+	// T_TREATYCO_JEJAK) + 7 sequence + 7 index = 21 pernyataan CREATE = 71.
+	const mau = 71
+>>>>>>> 1872d26 (treaty-contract-out: tiket 01 — skema relasional + migrasi + tipe dirapikan)
 	if diperiksa != mau {
 		t.Errorf("pernyataan CREATE diperiksa %d, mau %d", diperiksa, mau)
 	}
@@ -811,7 +839,8 @@ func TestKolomCreateTableMembacaSeluruhTabel(t *testing.T) {
 	// +1 tabel dari 019 (butir be) - TANPA sequence dan TANPA index:
 	// identitasnya cap waktu `models.IDDokumenBaru`, bukan nomor kita,
 	// dan PK-nya sudah berindeks sendiri.
-	const mauTabel = 20
+	// +7 tabel dari 300-306 (tiket 01 Treaty Contract Out) = 27.
+	const mauTabel = 27
 	if tabel != mauTabel {
 		t.Errorf("CREATE TABLE terbaca %d, mau %d", tabel, mauTabel)
 	}

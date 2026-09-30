@@ -27,6 +27,10 @@ func main() {
 	migrasi := flag.Bool("migrate", false, "jalankan migrasi lalu keluar")
 	bongkar := flag.Bool("migrate-down", false,
 		"BONGKAR skema uji lalu keluar - MENGHAPUS tabel; perlu ORACLE_SKEMA_UJI=true")
+	// Tiket 01 Treaty Contract Out (tco2). Ditambahkan ADITIF 28-09-2026.
+	pindahTCO := flag.Bool("migrate-data-treaty-contract-out", false,
+		"pindahkan enam tabel warisan master arrangement Treaty Contract Out ke tabel T_* "+
+			"(satu transaksi, rekonsiliasi tepat, sequence diselaraskan) lalu keluar")
 	flag.Parse()
 
 	cfg, err := config.Load()
@@ -58,8 +62,8 @@ func main() {
 		log.Print("oracle: ORACLE_DSN kosong - berjalan tanpa database")
 	}
 
-	if *migrasi && *bongkar {
-		log.Fatal("pilih salah satu: -migrate atau -migrate-down, tidak keduanya")
+	if (*migrasi && *bongkar) || (*pindahTCO && (*migrasi || *bongkar)) {
+		log.Fatal("pilih salah satu: -migrate, -migrate-down, atau -migrate-data-treaty-contract-out")
 	}
 	if *bongkar {
 		bongkarMigrasi(svc, cfg)
@@ -67,6 +71,10 @@ func main() {
 	}
 	if *migrasi {
 		jalankanMigrasi(svc)
+		return
+	}
+	if *pindahTCO {
+		pindahkanDataTreatyContractOut(svc, cfg)
 		return
 	}
 
@@ -161,4 +169,31 @@ func jalankanMigrasi(svc *services.Service) {
 	for _, n := range lap.ObjekSudahAda {
 		log.Printf("  dilewati, objeknya sudah ada: %s", n)
 	}
+}
+
+// pindahkanDataTreatyContractOut adalah titik masuk
+// `-migrate-data-treaty-contract-out` (tiket 01 Treaty Contract Out, tco2).
+//
+// Ia MENULIS ke tabel T_TREATY* dari enam tabel warisan yang hanya dibaca.
+// Menolak IS_PEGA_PROD=true (ADR-U-0005). Laporannya dicetak SELALU - juga
+// saat dibatalkan - sebab temuan dan selisihnya adalah alasan pembatalan.
+func pindahkanDataTreatyContractOut(svc *services.Service, cfg config.Config) {
+	if !svc.PunyaDatabase() {
+		log.Fatal("migrasi data treaty contract out: ORACLE_DSN wajib terisi")
+	}
+	if cfg.IsPegaProd {
+		log.Fatal("migrasi data treaty contract out: menolak berjalan saat IS_PEGA_PROD=true (ADR-U-0005)")
+	}
+	ctx, batal := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer batal()
+	if err := svc.CekKesehatan(ctx); err != nil {
+		log.Fatalf("migrasi data treaty contract out: tidak dapat menjangkau oracle: %v", err)
+	}
+	lap, err := svc.PindahkanDataTreatyContractOut(ctx)
+	log.Printf("laporan migrasi data Treaty Contract Out (skema %s):", svc.SkemaAktif())
+	log.Print(lap.String())
+	if err != nil {
+		log.Fatalf("migrasi data treaty contract out: %v", err)
+	}
+	log.Print("migrasi data treaty contract out: selesai; sequence diselaraskan")
 }

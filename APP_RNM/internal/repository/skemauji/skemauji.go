@@ -210,14 +210,27 @@ func Pasang(ctx context.Context, db *sql.DB, skema string) error {
 			}
 		}
 	}
+
+	// Tiruan enam tabel warisan Treaty Contract Out (tiket 01 modul itu,
+	// tco2) - sumber uji migrasi datanya. Ditambahkan ADITIF 28-09-2026.
+	for _, q := range ddlTiruanTCO(skema) {
+		if _, err := db.ExecContext(ctx, q); err != nil {
+			if !strings.Contains(err.Error(), "ORA-00955") {
+				return fmt.Errorf("skemauji: membuat tiruan warisan Treaty Contract Out: %w", err)
+			}
+		}
+	}
 	return nil
 }
 
 // Bongkar membuang seluruh objek skema uji lewat jalur mundur migrasi,
 // ditambah tabel tiruan warisan.
 func Bongkar(ctx context.Context, db *sql.DB, skema string) error {
-	for _, nama := range []string{namaTabelLama, namaTabelPesertaPolis,
-		namaTabelRetrosesi, namaTabelTahunTreaty} {
+	tiruan := []string{namaTabelLama, namaTabelPesertaPolis,
+		namaTabelRetrosesi, namaTabelTahunTreaty}
+	// Enam tiruan warisan Treaty Contract Out ikut dibongkar (aditif 28-09-2026).
+	tiruan = append(tiruan, namaTabelTiruanTCO...)
+	for _, nama := range tiruan {
 		q := fmt.Sprintf(`DROP TABLE %s.%s CASCADE CONSTRAINTS`, skema, nama)
 		if _, err := db.ExecContext(ctx, q); err != nil {
 			if !strings.Contains(err.Error(), "ORA-00942") { // tabel tidak ada

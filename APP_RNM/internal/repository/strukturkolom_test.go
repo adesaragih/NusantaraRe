@@ -30,6 +30,34 @@ import (
 // letakStruktur menunjuk dokumen STRUKTUR dari folder paket ini.
 const letakStruktur = "../../../.scratch/claim-life/STRUKTUR-TABEL-CLAIM-LIFE.md"
 
+// letakStruktur menunjuk SELURUH dokumen STRUKTUR dari folder paket ini.
+//
+// ⛔ TIGA dokumen sejak tiket 00 kedua modul, dan ketiganya WAJIB - bukan
+// "yang ada saja". Satu berkas migrasi yang tabelnya tidak tercatat di dokumen
+// mana pun adalah tabel yang lahir tanpa keputusan tertulis, dan itulah yang
+// penjaga ini ada untuk cegah. Menambah modul berarti menambah dokumennya DI
+// SINI - bukan menambah pengecualian.
+//
+// ⚠️ `T_GENERAL_KOMITE` dan `T_KOMITE_KOMITELIST` disebut DUA dokumen
+// sekaligus. Itu bukan kesalahan - keduanya memang batas antara dua konteks -
+// tetapi ia menuntut penjaga sendiri:
+// `TestDokumenSTRUKTURSepakatAtasTabelBersama`.
+var letakStruktur = []string{
+	"../../../.scratch/claim-life/STRUKTUR-TABEL-CLAIM-LIFE.md",
+	"../../../.scratch/komite-claim-life/STRUKTUR-TABEL-KOMITE-CLAIM-LIFE.md",
+	"../../../.scratch/premiumlist-life/STRUKTUR-TABEL-PREMIUMLIST-LIFE.md",
+	// Modul keempat, tiket 01 Treaty Contract Out (migrasi 300-306).
+	"../../../.scratch/treaty-contract-out/STRUKTUR-TABEL-TREATY-CONTRACT-OUT.md",
+}
+
+// tabelBersamaDuaKonteks adalah tabel yang LEBIH DARI SATU dokumen gambarkan.
+//
+// ⛔ Keduanya batas antara Claim Life dan Komite Claim Life: Claim Life
+// MENYERAHKAN kasus, Komite MEMUTUSKAN. Dokumen yang berbeda isinya berarti
+// salah satu konteks bekerja dari bentuk yang sudah usang - dan bedanya baru
+// terlihat ketika satu sisi menulis kolom yang sisi lain tidak baca.
+var tabelBersamaDuaKonteks = []string{"T_GENERAL_KOMITE", "T_KOMITE_KOMITELIST"}
+
 // tabelDikecualikan mendaftar tabel yang STRUKTUR sengaja tidak memuat
 // kolomnya, beserta sebabnya.
 // ⭐ Kosong sejak 26-09-2026. T_CLAIMLF_DOCUMENT dulu dikecualikan dengan

@@ -292,7 +292,11 @@ func TestSetiapPemanggilBukaMemeriksaBolehDilewati(t *testing.T) {
 	// SEMBILAN sejak 28-09-2026: imageid_db_test.go mengadu rumus IMAGEID
 	// dengan STANDARD_HASH Oracle, dan ia membuka koneksinya sendiri sebab
 	// yang diuji bukan tabel mana pun melainkan sebuah fungsi.
-	const mau = 9
+	//
+	// SEPULUH sejak 28-09-2026 sore: tco_pindah_db_test.go (tiket 01 Treaty
+	// Contract Out) membuka koneksinya sendiri untuk mengisi tiruan warisan
+	// dan membaca tabel T_* sesudah commit.
+	const mau = 10
 	if diperiksa != mau {
 		t.Errorf("pemanggil skemauji.Buka() ditemukan %d, mau %d; "+
 			"bila memang bertambah, perbarui angkanya di sini", diperiksa, mau)
