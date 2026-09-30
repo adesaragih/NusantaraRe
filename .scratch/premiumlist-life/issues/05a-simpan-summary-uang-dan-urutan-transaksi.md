@@ -1,6 +1,6 @@
 # 05a: Simpan premium summary — konversi uang di satu batas, dan urutan procedure yang mengikat
 
-**Status:** sebagian — satu transaksi polis penuh + injeksi kegagalan, `M_LIFE_PREMIUM_SUMMARY` (OQ-PL-09 — **terhalang DBA**, daftar serah terima), dan uji pulang-pergi Oracle belum ada; kosong = 0 di warisan (**OQ-PL-10 ditutup** GILIRAN-17)
+**Status:** sebagian — satu transaksi polis penuh + injeksi kegagalan dan uji pulang-pergi Oracle belum ada; kosong = 0 di warisan (**OQ-PL-10 ditutup** GILIRAN-17); `M_LIFE_PREMIUM_SUMMARY` **ditulis** seperti `PEGA_M_LIFE_PREMIUM_SUMMARY` (**OQ-PL-09 ditutup** GILIRAN-18, `0021df1`)
 
 **Blocked by:** **00 (skema tujuh tabel — PREFACTOR)**, 03 (penomoran — `PL_NUMBER` adalah masukan
 rekam polis)

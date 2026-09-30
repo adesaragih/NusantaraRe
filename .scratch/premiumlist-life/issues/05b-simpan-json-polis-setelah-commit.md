@@ -180,7 +180,7 @@ grep -n "<pyStepsActivityName>\|<pyStepsDescription>[^<]\|<RequestType>\|<pyStep
 | 5 | `Pega to jsondata` | ⛔ dibuang (JSON) |
 | 6 | `RDB-List GetJsonProductLife` (b1444) | ⛔ bahan payload JSON — dibuang |
 | 7 | QS / 2nd QS / SURPLUS / 2nd SURPLUS (`@contains(.ID,"100003x")`) | ⛔ tidak dimigrasikan `[keputusan work owner]` (catatan asli di bawah) |
-| 8 | `Insert to table summary` → `InsertPLSummary` (b3112) | ✅ **dibangun** — `T_PREMIUM_LIST_SUMMARY` (tiket 05a); `M_LIFE_PREMIUM_SUMMARY` ⛔ OQ-PL-09 |
+| 8 | `Insert to table summary` → `InsertPLSummary` (b3112) | ✅ **dibangun** — `T_PREMIUM_LIST_SUMMARY` (tiket 05a); `M_LIFE_PREMIUM_SUMMARY` ✅ sejak GILIRAN-18 (OQ-PL-09 ditutup, `SummaryWarisan.Ganti`) |
 | 9 | `Pega to json_offer & lifeinproduction` | ⛔ dibuang (JSON) |
 | 10 | `InsertJsonPolis` (b4094) | ⛔ dibuang (JSON) |
 | 11 | `SaveLifeinProduction_SQL` (b4271) | ⛔ `LIFEINPRODUCTION` tidak ditulis (AC 33 spec) |

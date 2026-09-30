@@ -714,6 +714,12 @@ Sesudah itu klaim yang sedang menunggu Komite sudah terlihat oleh pemeriksa klai
 Aplikasi ini menulis baris cermin **saat pendaftaran** dengan status NULL. Langkah Save to RNM memperlakukan tabel warisan
 **baca-saja** (brief GILIRAN-11; header `simpanrnm.go` langkah 22). Akibatnya, sejak OQ-N2 klaim ganda antarklaim baru
 tertangkap hanya sesudah klaim lawannya diputus Komite.
+
+✅ **OQ-N13 DITUTUP 30-09-2026 (GILIRAN-18, `1b51183`)** `[keputusan asisten dari bukti; veto work owner]`: ikut XML. Save to
+RNM menyetel `STS_REJECT = '0'` pada baris cermin setiap baris adjustment yang baru ditandai, di transaksi yang sama
+(`KlaimLife.SetelCerminOutstanding`, dikunci `ID` + `CASEID` + `STS_REJECT IS NULL`). Larangan baca-saja dicabut untuk kolom
+itu **saja**; `ACCEPTATION_DATE` (b175) tidak ikut. Klaim yang menunggu Komite kini tertangkap sebagai ganda. Rincian dan sisa:
+tiket 03, bab 30-09-2026.
 > Bolehkah Save to RNM menyetel `STS_REJECT = '0'` (dan `ACCEPTATION_DATE`?) pada baris cermin yang barisnya ditandai, seperti
 > b175/b176, sehingga klaim yang menunggu Komite pun tertangkap?
 
@@ -838,3 +844,12 @@ Keputusan work owner ("rekomendasi"). Ringkasan status; rinciannya di blok ✅ t
 
 **Baru:** OQ-N13 (status cermin saat Save to RNM), untuk work owner. **Daftar serah terima:**
 `DAFTAR-SERAH-TERIMA-TIGA-MODUL.md` di akar `OUTPUT_HASIL_RNM`.
+
+## 30 September 2026 — GILIRAN-18: dua butir terakhir yang dapat diputuskan
+
+| Modul | Ditutup (kode) | Keluar dari daftar serah terima |
+| --- | --- | --- |
+| Claim Life | **N13** — status cermin `'0'` di Save to RNM, ikut b176 (`1b51183`) | §5 work owner (kini kosong) |
+| PremiumList Life | **PL-09** — `M_LIFE_PREMIUM_SUMMARY` ditiru dari badan `PEGA_M_LIFE_PREMIUM_SUMMARY` (`0021df1`) | §1 DBA |
+
+Keputusan work owner yang masih terbuka di ketiga konteks: **nol**. Sisa butir menunggu penerimanya di daftar serah terima.

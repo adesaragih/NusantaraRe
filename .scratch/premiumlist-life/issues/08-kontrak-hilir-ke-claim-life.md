@@ -1,6 +1,6 @@
 # 08: Kontrak hilir — rekam premium yang dikonsumsi Claim Life
 
-**Status:** sebagian — uji kontrak HTTP terhadap Oracle, `M_LIFE_PREMIUM_SUMMARY` (OQ-PL-09 — terhalang DBA), dan index `PL_NUMBER` di `T_PREMIUM_LIST_DETAIL` belum ada
+**Status:** sebagian — uji kontrak HTTP terhadap Oracle dan index `PL_NUMBER` di `T_PREMIUM_LIST_DETAIL` belum ada; `M_LIFE_PREMIUM_SUMMARY` **ditulis** berkunci `PL_NUMBER` (OQ-PL-09 ditutup GILIRAN-18)
 
 **Blocked by:** **00 (skema tujuh tabel — PREFACTOR)**, 05a (rekam summary), 05b (alur simpan polis — penulisan detail NB menumpang di sana)
 
@@ -148,7 +148,7 @@ seragam dengan EDM.
 - [ ] Kegagalan penulisan detail **tidak** membatalkan premium list yang sudah tersimpan; keadaannya
       **terdeteksi** dan pemanggilan ulang aman berkat penjaga idempotensi. *(AC 23 spec)* — belum: pl2 — kegagalan salinan membatalkan seluruh simpan (satu transaksi), bukan dibiarkan
 - [ ] Rekam `M_LIFE_PREMIUM_SUMMARY` dan `M_LIFE_PREMIUM_DETAIL` jalur new business dapat ditemukan
-      lewat `PL_NUMBER`. *(AC 28 spec)* *(pencarian lewat `PL_NUMBER_EDM` diuji di konteks Endorsement Life)* — belum: `M_LIFE_PREMIUM_SUMMARY` tidak ditulis — OQ-PL-09
+      lewat `PL_NUMBER`. *(AC 28 spec)* *(pencarian lewat `PL_NUMBER_EDM` diuji di konteks Endorsement Life)* — belum: keduanya kini ditulis berkunci `PL_NUMBER` (`M_LIFE_PREMIUM_SUMMARY` sejak GILIRAN-18, `SummaryWarisan.Ganti`); pencariannya baru terbukti di uji `db` `TestSummaryWarisanDitulisSepertiProsedur`, yang SKIP tanpa Oracle
 - [ ] Nilai uang ditulis dan dibaca sebagai **desimal presisi arbitrer**; nilai yang ditulis hulu
       dibaca hilir **identik**, tanpa pembulatan di perbatasan. *(AC 16 spec; **ADR-0003**)* — belum: angka warisan dikirim sebagai teks yang bergantung NLS sesi; nol uji pulang-pergi
 - [x] Bentuk kedua rekam ditandai di kode sebagai **kontrak lintas konteks**; mengubahnya memaksa
@@ -223,7 +223,7 @@ Pembaca daftar pilih diuji atas jawaban yang sudah diketahui (ujung `ID…CURREN
 | titik potong `SaveMasterLPDet` | ➖ lenyap — satu transaksi (pl2) |
 | peserta NB (EDMSTATUS NULL) tetap hidup di jalur baca klaim | ✅ `TestPesertaNBTetapHidupDiJalurBacaKlaim` |
 | bentuk rekam ditandai kontrak lintas konteks | ✅ kedua uji di atas; mengubah salah satu sisi memerahkan uji |
-| `M_LIFE_PREMIUM_SUMMARY` dapat ditemukan lewat `PL_NUMBER` | ⛔ tidak ditulis — OQ-PL-09 (tiket 05a) |
+| `M_LIFE_PREMIUM_SUMMARY` dapat ditemukan lewat `PL_NUMBER` | ⚠️ ditulis sejak GILIRAN-18 (OQ-PL-09 ditutup, tiket 05a); bukti Oracle = uji `db` SKIP |
 | ⚠️ AC relasional "Claim Life membaca dari `T_PREMIUM_LIST_DETAIL`" (2026-09-16) | ⚠️ **dilampaui pl2** (28-09-2026): Claim Life tetap membaca `M_LIFE_PREMIUM_DETAIL`, maka tabel itu ditulis |
 | test kontrak menembus satu seam lewat HTTP terhadap Oracle | ⚠️ belum — skema uji belum memasang 050–056 |
 
