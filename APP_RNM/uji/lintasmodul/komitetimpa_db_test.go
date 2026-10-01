@@ -42,7 +42,7 @@ func TestTimpaTanggaTolakAkhirMenimpaSeluruhTingkatBerkeputusan(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() { _ = tx.Rollback() }()
-	kasusID, err := repo.BuatKasusKomite(ctx, tx, p.Work.ID, "UJI-A-1", inti.LiniLife, "UJI-TYPE",
+	kasusID, err := repo.BuatKasusKomite(ctx, tx, p.Work.ID, "UJI-A-1", inti.LiniLife,
 		[]repository.AnggotaTangga{
 			{Urut: 1, OperatorID: "UJI-OP-1", Jabatan: "UJI-J-1", Email: "uji1@uji.invalid"},
 			{Urut: 2, OperatorID: "UJI-OP-2", Jabatan: "UJI-J-2", Email: "uji2@uji.invalid"},

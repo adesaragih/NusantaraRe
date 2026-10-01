@@ -1,6 +1,6 @@
 # 01: Skema relasional penuh + migrasi JSON → kolom — **PREFACTOR**
 
-**Status:** ready-for-agent
+**Status:** ditangguhkan (01-10-2026) — RALAT P1: produk tetap JSON di dua tabel lama seperti Pega, nol DDL; menunggu OQ-MPNL-01 (paket 0 `71c35b1`)
 
 **Blocked by:** **CL-01** (kerangka aplikasi + seam API — scaffolding lintas konteks, tidak dibuat
 di sini)
@@ -179,3 +179,31 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+---
+
+## Ralat bertanggal 01-10-2026 — sesi implementasi (paket 0)
+
+> Sumber: `../RALAT-DEV-30-09-2026.md` (P1–P6 katalog DEV, R7–R18 pembacaan ulang XML) dan `../PARITAS-LAYAR-DAN-AKSI.md`. Kalimat
+> di atas **tidak dihapus**; yang berlaku adalah ralat ini.
+
+**Status (01-10-2026): ditangguhkan → OQ-MPNL-01.** Kalimat lama *"**Status:** ready-for-agent"* tidak berlaku.
+
+| Kalimat lama | Ralat |
+| --- | --- |
+| *"Sebagai **tim migrasi**, saya ingin setiap atribut produk menjadi **kolom bernama** dan setiap daftar bersarang menjadi **tabel anak**"*; *"⚠️ **Penyimpangan sadar 2 — skema relasional penuh.**"* | **P1**: tiga view (`PRODUCT_LIFE`, `PRODUCTINWARD_LIFE`, `DOCUMENTCLAIM_LIFE`), dua prosedur, dan Claim Life membaca `JSONDATA` kedua tabel lama — produk di tabel baru tidak terlihat oleh mereka. Bawaan: **ikut Pega** — `M_PRODUCT_LIFE` + `M_PRODUCTINWARD_LIFE` dengan `JSONDATA` berkunci Pega, kolom datar `RIRISKID`/`RIRISK`/`PRODUCTNAME`/`BEGIN_DATE`. **Nol tabel baru, nol DDL**, rentang 140–179 kosong |
+| *"⚠️ **Penyimpangan sadar (baru) — dua tabel induk existing DIGABUNG jadi satu `product_life`.**"* | tidak berlaku (P1): dua tabel lama tetap dua, ditulis dalam **satu transaksi** (P4) |
+| *"**`LienClause` → BUKAN tabel** — `LIENCLAUSE` adalah **field skalar**"* | **R10**: ada daftar `ProductName.LienClause` (`Usia`, `Manfaat`, grid b12201) **dan** skalar `ProductNameInward.LIENCLAUSE` |
+| *"**`OutwardList` → BUKAN tabel** — hanya diisi `GetReinsTypeOR_Life` (jalur OR **mati** `1==2`)"* | **R9 / P3**: pengisinya **hidup** — checkbox `On Retention` b47312 → `GetReinsTypeOR_Life` (langkah ber-`PRE=false`); kunci `OutwardList` ditulis bentuk Pega |
+| *"⚠️ Kolom baru bernama **`POLICYHOLDER`**, bukan `POLICYHODER`; migrasi **memetakan** ejaan lama"*; *"⚠️ **Tidak ada kolom `IsORS`**"* | P1: nol kolom baru. Kunci JSON tetap ejaan Pega `POLICYHODER` (dibaca view); `IsORS` tetap ditulis (R9). Nama medan Go boleh `PolicyHolder` — ejaan Pega hanya di repository |
+| *"Sequence `M_PRODUCT_LIFE_SEQ` dan `M_PRODUCT_INWARD_LIFE_SEQ` pindah dengan **nilai berjalan yang benar**"* | tidak ada pemindahan (P1). `ID` baru dari `M_PRODUCT_LIFE_SEQ`; `ID` inward = `ID` produk (P6, R14, OQ-MPNL-02) |
+
+---
+
+## Ralat bertanggal 01-10-2026 — lanjutan 1 (katalog DEV)
+
+> Sumber: brief `PROMPT-LANJUTAN-MASTER-PRODUCT-NAME-LIFE-1.md` §1–§2 (katalog DEV `ALL_TAB_COLUMNS`/`ALL_OBJECTS` dan agregat `JSONDATA`, dibaca asisten, baca-saja). Kalimat di atas tidak dihapus.
+
+| Kalimat lama | Ralat |
+| --- | --- |
+| *"`JSONDATA` (constraint `IS JSON`) + empat kolom hasil flatten: `RIRISKID`, `RIRISK`, `PRODUCTNAME`, `BEGIN_DATE`"* | DEV `M_PRODUCT_LIFE` hanya `ID`, `JSONDATA`, `RIRISKID`, `RIRISK` — **dua** kolom datar; `PRODUCTNAME`/`BEGIN_DATE` tidak ada dan tidak ditulis (OQ-MPNL-08 ditutup, `6fd539c`) |

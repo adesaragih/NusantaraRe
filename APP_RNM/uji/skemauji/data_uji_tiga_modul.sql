@@ -6,7 +6,7 @@
 -- baris adjustment yang siap diserahkan ke Komite.
 --
 -- ⛔ TIDAK dijalankan executor. Work owner memuatnya, SESUDAH `-migrate`
---    (termasuk 057) berjalan di skema uji.
+--    (termasuk 023, 057, dan 059) berjalan di skema uji.
 --
 -- ⛔ Nol data orang, nol nomor polis nyata, nol kredensial, nol alamat
 --    layanan. Seluruh pengenal `UJI-*`, surel `uji-…@contoh.invalid`
@@ -114,7 +114,8 @@ BEGIN
   -- ===================================================================
   -- PremiumList Life - satu polis per tahap (panduan bab 2 §1.2).
   --
-  -- STATUS = tahap (`models.TahapPolis*`), POSITION = `Offer`/`Premium`
+  -- STATUS_WORK = tahap (`models.TahapPolis*`; bernama STATUS sampai 059,
+  -- seragam T_WORK_CLAIM), POSITION = `Offer`/`Premium`
   -- (`models.Posisi*`), FLAG_ONGOING_POLICY "0"/"1" VERBATIM (057, butir bn).
   --
   -- ⭐ GILIRAN-14 butir bq: `Confirm` di Input Offer Life dirutekan dari
@@ -167,32 +168,33 @@ BEGIN
   -- Claim Life - satu klaim per tahap (panduan bab 1 §1.2), atas polis
   -- UJI-POL-0001 (`BUSINESS_CODE` L1 dikenal - Save to RNM menuntutnya).
   --
-  -- Bentuk kolom kerja meniru `services/pendaftaran.go`: CASE_ID = ID,
-  -- CREATE_OP = akun pencipta. ⛔ `UJI-ADMIN` = akun stub bawaan
+  -- Bentuk kolom kerja meniru `services/pendaftaran.go`: CREATE_OP = akun
+  -- pencipta (CASE_ID dibuang Claim Life 023 - ID dipakai; TYPE di header). ⛔ `UJI-ADMIN` = akun stub bawaan
   -- (`VITE_STUB_PELAKU` kosong): kedua tab Admin menyaring CREATE_OP, jadi
   -- akun lain tidak melihat UJI-CLM-1 dan UJI-CLM-2.
   --
-  -- TAHAP + PY_POSITION = pemegangnya (butir at, `models/tahap.go`).
+  -- TAHAP + POSITION (`pyPosition`, bernama PY_POSITION sampai 023) =
+  -- pemegangnya (butir at, `models/tahap.go`).
   -- ===================================================================
-  INSERT INTO &&skema_uji..T_WORK_CLAIM (ID, LINI, PY_POSITION, TYPE, CASE_ID, CREATE_OP, CREATE_OP_NAME, TGL_UPDATE, TAHAP, TGL_CREATE)
-  VALUES ('UJI-CLM-1', 'LIFE', 'ReasLifeAdmin', 'QP', 'UJI-CLM-1', 'UJI-ADMIN', 'UJI-ADMIN', DATE '2026-09-29', 'Input Register', DATE '2026-09-29');
-  INSERT INTO &&skema_uji..T_WORK_CLAIM (ID, LINI, PY_POSITION, TYPE, CASE_ID, CREATE_OP, CREATE_OP_NAME, TGL_UPDATE, TAHAP, TGL_CREATE)
-  VALUES ('UJI-CLM-2', 'LIFE', 'ReasLifeAdmin', 'QP', 'UJI-CLM-2', 'UJI-ADMIN', 'UJI-ADMIN', DATE '2026-09-29', 'Outstanding Claim', DATE '2026-09-29');
-  INSERT INTO &&skema_uji..T_WORK_CLAIM (ID, LINI, PY_POSITION, TYPE, CASE_ID, CREATE_OP, CREATE_OP_NAME, TGL_UPDATE, TAHAP, TGL_CREATE)
-  VALUES ('UJI-CLM-3', 'LIFE', 'ReasLifeMedicalAdvisor', 'QP', 'UJI-CLM-3', 'UJI-ADMIN', 'UJI-ADMIN', DATE '2026-09-29', 'Medical Check', DATE '2026-09-29');
-  INSERT INTO &&skema_uji..T_WORK_CLAIM (ID, LINI, PY_POSITION, TYPE, CASE_ID, CREATE_OP, CREATE_OP_NAME, TGL_UPDATE, TAHAP, TGL_CREATE)
-  VALUES ('UJI-CLM-4', 'LIFE', 'ReasLifeSPV', 'QP', 'UJI-CLM-4', 'UJI-ADMIN', 'UJI-ADMIN', DATE '2026-09-29', 'Claim Analis', DATE '2026-09-29');
+  INSERT INTO &&skema_uji..T_WORK_CLAIM (ID, LINI, POSITION, CREATE_OP, CREATE_OP_NAME, TGL_UPDATE, TAHAP, TGL_CREATE)
+  VALUES ('UJI-CLM-1', 'LIFE', 'ReasLifeAdmin', 'UJI-ADMIN', 'UJI-ADMIN', DATE '2026-09-29', 'Input Register', DATE '2026-09-29');
+  INSERT INTO &&skema_uji..T_WORK_CLAIM (ID, LINI, POSITION, CREATE_OP, CREATE_OP_NAME, TGL_UPDATE, TAHAP, TGL_CREATE)
+  VALUES ('UJI-CLM-2', 'LIFE', 'ReasLifeAdmin', 'UJI-ADMIN', 'UJI-ADMIN', DATE '2026-09-29', 'Outstanding Claim', DATE '2026-09-29');
+  INSERT INTO &&skema_uji..T_WORK_CLAIM (ID, LINI, POSITION, CREATE_OP, CREATE_OP_NAME, TGL_UPDATE, TAHAP, TGL_CREATE)
+  VALUES ('UJI-CLM-3', 'LIFE', 'ReasLifeMedicalAdvisor', 'UJI-ADMIN', 'UJI-ADMIN', DATE '2026-09-29', 'Medical Check', DATE '2026-09-29');
+  INSERT INTO &&skema_uji..T_WORK_CLAIM (ID, LINI, POSITION, CREATE_OP, CREATE_OP_NAME, TGL_UPDATE, TAHAP, TGL_CREATE)
+  VALUES ('UJI-CLM-4', 'LIFE', 'ReasLifeSPV', 'UJI-ADMIN', 'UJI-ADMIN', DATE '2026-09-29', 'Claim Analis', DATE '2026-09-29');
 
   -- Header - shared PK dengan T_WORK_CLAIM. STS_REJECT header = cermin baris
   -- terakhir (tiket 04); NULL bila barisnya belum berstatus.
-  INSERT INTO &&skema_uji..T_GENERAL_CLAIM (ID, CLAIM_NO, STS_REJECT, BUSINESS_NAME, CURRENCY, CASEID_POLICY, POLICY_NO, BUSINESS_CODE)
-  VALUES ('UJI-CLM-1', 'UJI-KL1.092026.00001', NULL, 'UJI-BISNIS-L1', 'IDR', 'UJI-PL-D', 'UJI-POL-0001', 'L1');
-  INSERT INTO &&skema_uji..T_GENERAL_CLAIM (ID, CLAIM_NO, STS_REJECT, BUSINESS_NAME, CURRENCY, CASEID_POLICY, POLICY_NO, BUSINESS_CODE)
-  VALUES ('UJI-CLM-2', 'UJI-KL1.092026.00002', NULL, 'UJI-BISNIS-L1', 'IDR', 'UJI-PL-D', 'UJI-POL-0001', 'L1');
-  INSERT INTO &&skema_uji..T_GENERAL_CLAIM (ID, CLAIM_NO, STS_REJECT, BUSINESS_NAME, CURRENCY, CASEID_POLICY, POLICY_NO, BUSINESS_CODE)
-  VALUES ('UJI-CLM-3', 'UJI-KL1.092026.00003', '0', 'UJI-BISNIS-L1', 'IDR', 'UJI-PL-D', 'UJI-POL-0001', 'L1');
-  INSERT INTO &&skema_uji..T_GENERAL_CLAIM (ID, CLAIM_NO, STS_REJECT, BUSINESS_NAME, CURRENCY, CASEID_POLICY, POLICY_NO, BUSINESS_CODE)
-  VALUES ('UJI-CLM-4', 'UJI-KL1.092026.00004', '0', 'UJI-BISNIS-L1', 'IDR', 'UJI-PL-D', 'UJI-POL-0001', 'L1');
+  INSERT INTO &&skema_uji..T_GENERAL_CLAIM (ID, CLAIM_NO, STS_REJECT, BUSINESS_NAME, CURRENCY, CASEID_POLICY, POLICY_NO, BUSINESS_CODE, TYPE)
+  VALUES ('UJI-CLM-1', 'UJI-KL1.092026.00001', NULL, 'UJI-BISNIS-L1', 'IDR', 'UJI-PL-D', 'UJI-POL-0001', 'L1', 'QP');
+  INSERT INTO &&skema_uji..T_GENERAL_CLAIM (ID, CLAIM_NO, STS_REJECT, BUSINESS_NAME, CURRENCY, CASEID_POLICY, POLICY_NO, BUSINESS_CODE, TYPE)
+  VALUES ('UJI-CLM-2', 'UJI-KL1.092026.00002', NULL, 'UJI-BISNIS-L1', 'IDR', 'UJI-PL-D', 'UJI-POL-0001', 'L1', 'QP');
+  INSERT INTO &&skema_uji..T_GENERAL_CLAIM (ID, CLAIM_NO, STS_REJECT, BUSINESS_NAME, CURRENCY, CASEID_POLICY, POLICY_NO, BUSINESS_CODE, TYPE)
+  VALUES ('UJI-CLM-3', 'UJI-KL1.092026.00003', '0', 'UJI-BISNIS-L1', 'IDR', 'UJI-PL-D', 'UJI-POL-0001', 'L1', 'QP');
+  INSERT INTO &&skema_uji..T_GENERAL_CLAIM (ID, CLAIM_NO, STS_REJECT, BUSINESS_NAME, CURRENCY, CASEID_POLICY, POLICY_NO, BUSINESS_CODE, TYPE)
+  VALUES ('UJI-CLM-4', 'UJI-KL1.092026.00004', '0', 'UJI-BISNIS-L1', 'IDR', 'UJI-PL-D', 'UJI-POL-0001', 'L1', 'QP');
 
   -- Peserta. Tanggal di dalam jendela valuasi (DOL 2026-03-15 di antara
   -- 2026-01-01 dan 2026-12-31) supaya Edit Date dan Save to RNM lolos

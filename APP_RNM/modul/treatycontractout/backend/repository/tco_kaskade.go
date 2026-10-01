@@ -9,7 +9,8 @@ package repository
 //
 // ⛔ `PROPORTIONALARRG` (klausul) TIDAK disentuh (AC 44; penyimpangan sadar
 // 4): klausul milik tahun/grup/jenis, dipakai lintas kontrak. Ia hanya
-// DIHITUNG, supaya popup dapat menyatakannya tetap hidup.
+// DIHITUNG (`klausulTetap` di API); popup tidak lagi menampilkannya
+// [keputusan work owner 01-10-2026].
 //
 // ⛔ Bisnis dicocokkan `(TREATYYEARID = :x OR TREATYYEARID IS NULL)` VERBATIM -
 // baris lama tanpa TREATYYEARID tidak boleh tertinggal.

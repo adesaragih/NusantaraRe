@@ -1,0 +1,134 @@
+/*
+ * Gaya modul Master Product Name Life - SELURUH kelas berawalan `mpnl` (dijaga `gaya.test.ts`).
+ * Kerangka (panel, form-grid, tabel, tombol, medan) memakai kelas bersama `inti/frontend/styles.css`; berkas
+ * ini hanya menambah yang khusus layar modul ini, dengan token warna tema bersama. Diimpor `rute.tsx`.
+ */
+
+/* Label sel tombol b71816 (`End Period`, `pyIncludeLabel` true) di sebelah tombol `Add`. */
+.mpnl-label-sel {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+/* Baris tombol `Add` + `pyGridPaginator` di atas grid produk. */
+.mpnl-aksi-grid {
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Medan + tombol `Choose*` berdampingan (sel b4107 + b5181, ...). */
+.mpnl-medan-pilih {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.mpnl-medan-pilih > :first-child {
+  flex: 1 1 auto;
+}
+
+/* Autocomplete `pxAutoComplete` - daftar saran di bawah medan. */
+.mpnl-saran {
+  position: relative;
+}
+
+.mpnl-saran__daftar {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  margin: 2px 0 0;
+  padding: 4px 0;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--bayang-menu);
+}
+
+.mpnl-saran__butir {
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.mpnl-saran__butir:hover {
+  background: var(--surface-2);
+}
+
+/* Judul grid bersarang (`LIEN CLAUSE (Potongan Manfaat Klaim)`, `PLAN LIST`, ...). */
+.mpnl-judul-grid {
+  margin: 16px 0 6px;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* Sel grid bersarang yang dapat disunting. */
+.mpnl-sel-isi {
+  width: 100%;
+  min-width: 90px;
+}
+
+/* Checkbox `On Retention` b47303 (`pyCheckboxCaption` b47312). */
+.mpnl-centang {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+/* Label statik `OF SUM REASURED` b24882 di samping `Nusantara Re Share (%)`. */
+.mpnl-catatan-medan {
+  align-self: end;
+  padding-bottom: 8px;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+/* Pesan `OutputParam.ERRMSG` (wadah b1269 `STSSAVE==99`, `CopyProduct`). */
+.mpnl-pesan {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+/* Peringatan nama berkas lampiran (b66074, b66233). */
+.mpnl-peringatan {
+  margin: 4px 0;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+/* Status lampiran (tiket 08 AC 4). */
+.mpnl-status {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+
+.mpnl-status--gagal {
+  color: var(--danger);
+}
+
+.mpnl-status--belum {
+  color: var(--muted);
+}
+
+/* Tautan nama berkas b68857 / `View Office Online` b69247 (`pxLink`). */
+.mpnl-tautan {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* Bagian form (umum / inward / daftar / lampiran). */
+.mpnl-bagian {
+  margin-top: 18px;
+}

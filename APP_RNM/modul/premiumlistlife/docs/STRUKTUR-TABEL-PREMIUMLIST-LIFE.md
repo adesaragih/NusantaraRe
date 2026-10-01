@@ -43,18 +43,25 @@ polis**. Bukan anak `T_PREMIUM_LIST`.
 | `ID` | teks | tidak | PK | NB + EDM | keputusan tiket 00 PremiumList |
 | `LINI` | teks | ya | | NB + EDM | keputusan tiket 00 PremiumList — "identitas polis + lini" |
 | `POSITION` | teks | ya | | NB + EDM | keputusan tiket 00 PremiumList, `spec.md` §12 — nilai connector `Confirm`/`Decline`/`Reject`/`Offer`/`Premium` |
-| `STATUS_WORK` | teks | ya | | NB + EDM | keputusan tiket 00 PremiumList, `spec.md` §12 — ⛔ dulu `STATUS`; diganti nama mengikuti struktur DEV (pola `T_WORK_CLAIM`), keputusan work owner 01-10-2026; 050 disunting di tempat + migrasi 063 |
+| `STATUS_WORK` | teks | ya | | NB + EDM | korpus `pyWorkStatus` — keputusan tiket 00 PremiumList, `spec.md` §12; bernama `STATUS` sampai migrasi `059` (seragam dengan `T_WORK_CLAIM`, keputusan work owner 01-10-2026) |
 | `FLAG_ONGOING_POLICY` | teks | ya | | NB | korpus `FlagOnGoingPolicy` — `CreateInputLife` b618, VERBATIM `"0"` (Input Offer) / `"1"` (Input Premium); migrasi `057`, butir **bn** (GILIRAN-13) |
+| `COVER_KEY` | teks | ya | FK | NB + EDM | keputusan work owner 01-10-2026 — penunjuk kasus induk, sama dengan `T_WORK_CLAIM` butir d; **kosong** sampai ada modul yang terbukti mengisinya (nol `pxCoverInsKey` di XML PremiumList dan Endorsement); migrasi `059` |
+| `CREATE_OP` | teks | ya | | NB + EDM | keputusan work owner 01-10-2026 — akun pembuat (`pxCreateOperator`), sama dengan `T_WORK_CLAIM`; kosong untuk baris yang lahir sebelum `059` |
+| `CREATE_OP_NAME` | teks | ya | | NB + EDM | keputusan work owner 01-10-2026 — sama dengan `T_WORK_CLAIM`; diisi akun pembuat sampai login menyediakan nama tampilan; baris lama dari `T_PREMIUM_LIST.CREATE_OP_NAME` |
+| `TGL_CREATE` | DATE | ya | | NB + EDM | keputusan work owner 01-10-2026 — waktu lahir kasus, sama dengan `T_WORK_CLAIM`; baris lama dari `T_PREMIUM_LIST.TGL_INPUT` |
+| `TGL_UPDATE` | DATE | ya | | NB + EDM | keputusan work owner 01-10-2026 — waktu ubah terakhir baris kasus, sama dengan `T_WORK_CLAIM` |
 
-⛔ Kolom **audit** disebut tiket 00 sebagai "audit" **tanpa dinamai**, sehingga tidak ditulis di sini
-— menuliskannya berarti mengarang. Masuk lampiran.
+⛔ Kolom **audit** yang tiket 00 sebut tanpa nama kini **dinamai** oleh keputusan work owner 01-10-2026:
+`CREATE_OP`, `CREATE_OP_NAME`, `TGL_CREATE`, `TGL_UPDATE` — nama dan tipe sama dengan `T_WORK_CLAIM`.
 
-**Index:** tidak ada di luar PK.
+**Index:** `IX_WORK_POLIS_COVER_KEY` (`COVER_KEY`).
 
 **Relasi:**
 
 - 1:1 dengan `T_PREMIUM_LIST` lewat **shared PK** — `ID` sama persis, **tanpa kolom penyambung**
 - baris NB dan baris EDM **sejajar**, tidak saling menunjuk
+- `COVER_KEY` → `T_WORK_POLIS.ID` (menunjuk dirinya sendiri), `FK_WORK_POLIS_COVER_KEY`, **tanpa `ON DELETE`** —
+  menghapus induk yang masih ditunjuk ditolak Oracle, bukan ikut menghapus anak
 
 ---
 
@@ -466,7 +473,9 @@ Ia **di luar pohon polis** — tidak punya FK ke `T_PREMIUM_LIST` dan tidak ikut
 ```
 TINGKAT 1   T_WORK_POLIS ─────────── mandiri · LINTAS-LINI · satu baris per work object
             PK  ID
-            LINI · POSITION · STATUS
+            LINI · POSITION · STATUS_WORK · FLAG_ONGOING_POLICY
+            CREATE_OP · CREATE_OP_NAME · TGL_CREATE · TGL_UPDATE   <- seragam T_WORK_CLAIM (059)
+            FK COVER_KEY -> T_WORK_POLIS.ID   <- self, nullable, tanpa ON DELETE
             |
             |  shared PK: ID sama persis, TANPA kolom penyambung (WORK_POLIS_ID dibuang)
             v
@@ -509,6 +518,7 @@ DI LUAR POHON:  M_TEMPUPLOADLIFE  (tabel singgah unggah CSV, tanpa FK)
 | 6 | `T_PREMIUM_LIST_SPREADING` | `T_PREMIUM_LIST_SPREADING_RETRO` | `SPREADING_ID` | 1:N | CASCADE |
 | 7 | `T_PREMIUM_LIST_DETAIL` | `T_PREMIUM_LIST_DETAIL` | `PARENT_ID` (self-reference, nullable) | 1:N | `[data DBA]` |
 | 8 | `T_PREMIUM_LIST_DETAIL` | `DOCUMENT_POLIS` | `[data DBA]` | 1:N | `[data DBA]` |
+| 9 | `T_WORK_POLIS` | `T_WORK_POLIS` | `COVER_KEY` (self-reference, nullable) | 1:N | ditolak (tanpa `ON DELETE`, sama dengan `T_WORK_CLAIM`) |
 
 Relasi **1** tidak punya kunci tamu untuk di-index — **shared primary key**, dan PK sudah ber-index
 dengan sendirinya. Seluruh kunci tamu lain **ber-index**.
@@ -531,7 +541,8 @@ dengan sendirinya. Seluruh kunci tamu lain **ber-index**.
 - `[terbuka]` polis lama hasil migrasi belum punya baris `T_WORK_POLIS`, padahal PK-nya diambil dari sana
 - `[terbuka]` format identitas kerja `EDMLF-<n>`
 - `[terbuka]` kolom `T_PREMIUM_LIST_SPREADING`, `_SPREADING_RETRO`, dan `T_VIEW_SUGGEST` **sudah ditetapkan** di `spec.md` §12 dan `revisi-penyimpanan-premiumlist.md`; yang belum ditetapkan hanya presisi dan nullability per kolom
-- `[terbuka]` nama kolom audit pada `T_WORK_POLIS` belum ditetapkan; tiket 00 hanya menyebut "audit"
+- ~~`[terbuka]` nama kolom audit pada `T_WORK_POLIS` belum ditetapkan; tiket 00 hanya menyebut "audit"~~ —
+  **ditutup 01-10-2026** (keputusan work owner): `CREATE_OP`, `CREATE_OP_NAME`, `TGL_CREATE`, `TGL_UPDATE`, migrasi `059`
 - `[terbuka]` `DESCRIPTION` dan `WPC` juga tidak ditulis jalur EDM, di luar delapan kolom produk/layer
 - `[terbuka]` header memakai ejaan korpus (`BUSINESS_CODE`, `CEDING_CO`, `ANNUITY_INTEREST`) sedangkan `revisi-penyimpanan-premiumlist.md` memakai snake_case (`BUSINESS_CODE`, `CEDING_CO`, `ANNUITY_INTEREST`)
 - `[terbuka]` `WPC` bertipe DATE di header polis tetapi teks di peserta

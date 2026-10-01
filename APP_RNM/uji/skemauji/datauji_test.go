@@ -305,6 +305,7 @@ func TestDataUjiMenutupSetiapTahap(t *testing.T) {
 	for _, s := range sisip {
 		switch s.tabel {
 		case "T_WORK_POLIS":
+			// STATUS_WORK sejak 059 (seragam T_WORK_CLAIM).
 			polis[s.teks("STATUS_WORK")] = s.teks("ID")
 			if s.teks("STATUS_WORK") == premiumlistmodels.TahapPolisPenawaran {
 				benderaPenawaran[s.teks("FLAG_ONGOING_POLICY")] = true
@@ -332,16 +333,17 @@ func TestDataUjiMenutupSetiapTahap(t *testing.T) {
 			t.Errorf("tidak ada klaim di tahap %q", tahap)
 		}
 	}
-	// PY_POSITION = pemegang tahapnya (butir at): tanpa itu `TahapBerlaku`
-	// dan kolom `TAHAP` dapat berselisih.
+	// POSITION (bernama PY_POSITION sampai Claim Life 023) = pemegang
+	// tahapnya (butir at): tanpa itu `TahapBerlaku` dan kolom `TAHAP` dapat
+	// berselisih.
 	for _, s := range sisip {
 		if s.tabel != "T_WORK_CLAIM" {
 			continue
 		}
 		tahap := models.TahapDariNama(s.teks("TAHAP"))
-		if peran, _ := models.PeranPemegangTahap(tahap); peran != s.teks("PY_POSITION") {
-			t.Errorf("%s: tahap %q dipegang %q, PY_POSITION %q",
-				s.teks("ID"), s.teks("TAHAP"), peran, s.teks("PY_POSITION"))
+		if peran, _ := models.PeranPemegangTahap(tahap); peran != s.teks("POSITION") {
+			t.Errorf("%s: tahap %q dipegang %q, POSITION %q",
+				s.teks("ID"), s.teks("TAHAP"), peran, s.teks("POSITION"))
 		}
 	}
 }

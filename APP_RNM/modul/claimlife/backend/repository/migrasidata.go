@@ -158,13 +158,16 @@ func BongkarBarisLama(baris []BarisLama) ([]models.PohonKlaim, LaporanRekonsilia
 
 		p := models.PohonKlaim{
 			Work: models.WorkClaim{
-				CaseID:       caseID,
+				// ⛔ CASEID warisan MENJADI ID (migrasi 023, keputusan work
+				// owner 01-10-2026): kolom CASE_ID dibuang, dan baris datar
+				// warisan tetap dikelompokkan per CASEID = ID.
+				ID:           caseID,
 				Lini:         inti.LiniLife,
-				Type:         rows[0].TYPE,
 				CreateOpName: rows[0].CREATEOPNAME,
 			},
 			Klaim: models.Klaim{
 				NomorKlaim: rows[0].NO_CLAIM,
+				Type:       rows[0].TYPE,
 				NomorPolis: rows[0].POLICY_NO,
 				NamaBisnis: rows[0].BUSINESSNAME,
 				// Mata uangnya datang dari baris adjustment: header warisan
@@ -348,7 +351,7 @@ func BarisLamaDari(p models.PohonKlaim) []BarisLama {
 		for _, adj := range ps.Baris {
 			out = append(out, BarisLama{
 				ID:             adj.ID,
-				CASEID:         p.Work.CaseID,
+				CASEID:         p.Work.ID,
 				NO_CLAIM:       p.Klaim.NomorKlaim,
 				POLICY_NO:      p.Klaim.NomorPolis,
 				BUSINESSNAME:   p.Klaim.NamaBisnis,
@@ -365,7 +368,7 @@ func BarisLamaDari(p models.PohonKlaim) []BarisLama {
 				// Tanggal ditulis dalam satu bentuk yang sama dengan yang
 				// dapat dibaca kembali ParseTanggal (ADR-U-0022).
 				ACCEPTATION_DATE: utils.FormatTanggal(adj.TanggalAkseptasi),
-				TYPE:             p.Work.Type,
+				TYPE:             p.Klaim.Type,
 				CREATEOPNAME:     p.Work.CreateOpName,
 				// Kembali ke nama warisannya, arah berlawanan dengan
 				// barisAdjustmentDari di atas.

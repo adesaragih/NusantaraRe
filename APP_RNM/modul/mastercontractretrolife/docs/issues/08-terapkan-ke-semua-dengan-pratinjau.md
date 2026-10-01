@@ -80,3 +80,20 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+---
+
+## Ralat bertanggal 30-09-2026 — sesi implementasi (paket 0)
+
+> Sumber: `RALAT-DEV-30-09-2026.md` (K1–K8 katalog DEV, R1–R12 pembacaan ulang XML) dan `PARITAS-LAYAR-DAN-AKSI.md`. Kalimat di atas **tidak dihapus**; yang berlaku adalah ralat ini.
+
+| Kalimat lama | Ralat |
+| --- | --- |
+| *"menerapkan satu business ke **seluruh kontrak berjenis reasuransi sama**"*; *"Gerbang pemilihan baris: `.REINSTYPEID == Param.REINSTYPEID`"* | ⭐ **terbalik**: prakondisi 3.1/3.2 `WhenTrue 3 = lewati` → sasaran = kontrak **lain di tahun treaty yang sama** yang jenisnya **BERBEDA** (pesan Pega `"Copied to all reins types."`) — R2 |
+| *"penerapan massal karena itu **tidak atomik**"*; AC *"laporkan berapa berhasil dan berapa gagal"* | procedure tidak dipanggil (R4): satu transaksi — semua sasaran atau tidak sama sekali; AC sebagian-gagal gugur |
+| *"tercatat di jejak audit"* | nol tabel jejak (K6): `USERID`/`TGLUPDATE` tiap baris + satu baris log server berisi cacah |
+| — | tiap sasaran mendapat baris **baru** (`INSERT`, `TREATYBUSINESS_LIFE_SEQ`), tanpa penjaga dobel seperti Pega — OQ-MCRL-06 |
+
+## Status 01-10-2026 (paket 11)
+
+**Status:** ✅ **dibangun** — pratinjau + konfirmasi + satu transaksi paket 6 (`b3e097d`; AC sebagian-gagal gugur oleh R4), popup pratinjau paket 9+10 (`a3c07bc`).

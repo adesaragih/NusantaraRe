@@ -47,11 +47,28 @@ var ErrFlagPolisTidakSah = errors.New(
 	`models: FlagOnGoingPolicy hanya "0" (Input Offer) atau "1" (Input Premium)`)
 
 // KasusPolisBaru adalah keadaan awal sebuah work object polis.
+//
+// ⛔ Pembuat dan COVER_KEY - kolom seragam `T_WORK_CLAIM` (migrasi 059,
+// keputusan work owner 01-10-2026). `CoverKey` kosong: XML PremiumList tidak
+// memakai penunjuk induk (nol `pxCoverInsKey`).
 type KasusPolisBaru struct {
 	Lini   string
 	Posisi string
 	Status string
 	Flag   string
+	// CoverKey - kasus induk (`T_WORK_POLIS.ID`); kosong = NULL.
+	CoverKey string
+	// CreateOp - akun pembuat, padanan `pxCreateOperator`.
+	CreateOp string
+	// CreateOpName - nama pembuat; berisi akun sampai login menyediakan nama
+	// tampilan (sama dengan Claim Life `pendaftaran.go`).
+	CreateOpName string
+}
+
+// DenganPembuat mengisi pembuat kasus dari akun pelaku.
+func (k KasusPolisBaru) DenganPembuat(akun string) KasusPolisBaru {
+	k.CreateOp, k.CreateOpName = akun, akun
+	return k
 }
 
 // SusunKasusPolisBaru menyusun keadaan awal dari bendera tombolnya.

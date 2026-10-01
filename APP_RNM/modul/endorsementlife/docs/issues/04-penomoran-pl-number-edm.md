@@ -1,6 +1,10 @@
 # 04: Penomoran `PL_NUMBER_EDM` dan kenaikan `PRODKE`
 
-**Status:** ready-for-agent
+> **Ralat 01-10-2026** (gelombang 2 brief, `../RALAT-DEV-01-10-2026.md` — ralat mengalahkan isi di bawah). Teks lama yang tidak berlaku:
+> - **R01** — *"`<nomor polis>`"* → nomor polis = `PL_NUMBER` (`InsertJsonPolisEDM` b102).
+> - **R23** — `PRODKE` NB warisan kosong → dianggap versi 1 (E1) → nomor pertama `<polis>/02`; Pega memberi `/01` — OQ-EDM-008.
+
+**Status:** done 01-10-2026 — c83bf68 (nomor lahir di `Confirm`)
 
 **Blocked by:** **00 (kolom EDM + PARENT_ID — PREFACTOR)**, 02 (nomor dirakit dari nomor polis lama + `PRODKE` yang dibaca saat pemetaan)
 

@@ -1,0 +1,23 @@
+{
+  "sumber": "ALL_TAB_COLUMNS dan ALL_OBJECTS skema DEV, dibaca asisten 01-10-2026 (brief PROMPT-LANJUTAN-MASTER-PRODUCT-NAME-LIFE-1.md §1, §2 L3). Baca-saja; nol nilai baris.",
+  "tabel": {
+    "M_PRODUCT_LIFE": ["ID", "JSONDATA", "RIRISKID", "RIRISK"],
+    "M_PRODUCTINWARD_LIFE": ["ID", "JSONDATA"]
+  },
+  "tipe": {
+    "M_PRODUCT_LIFE.ID": "VARCHAR2(6)",
+    "M_PRODUCT_LIFE.JSONDATA": "CLOB",
+    "M_PRODUCT_LIFE.RIRISKID": "VARCHAR2(10)",
+    "M_PRODUCT_LIFE.RIRISK": "VARCHAR2(100)",
+    "M_PRODUCTINWARD_LIFE.ID": "VARCHAR2(6)",
+    "M_PRODUCTINWARD_LIFE.JSONDATA": "CLOB"
+  },
+  "objekMaster": {
+    "AGENT": "TABLE",
+    "CLIENT": "TABLE",
+    "CURRENCY": "VIEW",
+    "CAUSEOFLOSS_LIFE": "VIEW",
+    "PRODUCT_TYPE_LIFE": "VIEW",
+    "RIRISK_LIFE_SUMMARY": "VIEW"
+  }
+}

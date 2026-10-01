@@ -452,15 +452,10 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku inti.Pelaku, klaimID stri
 	m := MasukanRNM{Tipe: tipe, ContentNote: note}
 	// OQ-N2 (GILIRAN-17): baris cermin klaim ini sendiri dikecualikan dari
 	// pemeriksaan klaim ganda - di Pega ia belum ada saat langkah 11.x.
-	caseID, err := baca.CaseIDKlaim(ctx, klaimID)
-	if err != nil {
-		return hasil, err
-	}
-	if strings.TrimSpace(caseID) == "" {
-		// CASEID klaim aplikasi = pengenal work (butir ae1). Tanpa ini
-		// `o.CASEID <> NULL` akan menyaring SELURUH baris warisan.
-		caseID = klaimID
-	}
+	// CASEID klaim = ID klaim (butir ae1; kolom CASE_ID dibuang migrasi 023,
+	// keputusan work owner 01-10-2026) - tidak pernah kosong, jadi
+	// `o.CASEID <> NULL` tidak dapat menyaring seluruh baris warisan.
+	caseID := klaimID
 	for _, p := range klaim.Peserta {
 		if strings.TrimSpace(p.SumberID) == "" {
 			return hasil, fmt.Errorf("%w: peserta %q tanpa SOURCE_ID; DOB dan klaim ganda "+

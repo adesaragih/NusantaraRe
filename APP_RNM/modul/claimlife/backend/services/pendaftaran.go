@@ -216,20 +216,13 @@ func (p *Pendaftaran) Daftar(ctx context.Context, pelaku inti.Pelaku, minta Perm
 
 		hasil = models.PohonKlaim{
 			Work: models.WorkClaim{
-				ID:   pengenal,
-				Lini: inti.LiniLife,
-				Type: minta.Type,
 				// `[keputusan work owner 26-09-2026, butir ae1]` CASEID =
-				// pengenal work object.
-				//
-				// ⚠️ Ronde sebelumnya saya menolak ini dengan alasan "satu
-				// nilai dua arti" - dan itu keliru: di Pega pun CASEID ADALAH
-				// pengenal work object-nya, jadi menyamakannya adalah paritas
-				// dengan sistem berjalan. Membiarkannya kosong justru yang
-				// merusak: baris datar warisan klaim baru tidak dapat
-				// dikelompokkan hilir yang membaca per CASEID, dan Hapus serta
-				// CacahBarisLama memakai sumbu itu.
-				CaseID:       pengenal,
+				// pengenal work object - sejak migrasi 023 (keputusan work
+				// owner 01-10-2026) kolom CASE_ID dibuang dan ID-nya sendiri
+				// yang dipakai: baris datar warisan klaim baru tetap
+				// dikelompokkan per CASEID = ID.
+				ID:           pengenal,
+				Lini:         inti.LiniLife,
 				CreateOpName: pelaku.AkunID,
 				// ⛔ BUTIR au: `CREATE_OP` adalah padanan `pxCreateOperator`,
 				// dan ITULAH yang worklist Pega rutekan (`Register_Flow.xml`
@@ -244,8 +237,8 @@ func (p *Pendaftaran) Daftar(ctx context.Context, pelaku inti.Pelaku, minta Perm
 				// `Send Back to Register` (`InputOSClaimLife.xml:21404`).
 				Tahap: models.TahapOutstanding.String(),
 				// ⛔ Peran pemegangnya tetap ditulis: `TAHAP` mengatakan di anak
-				// tangga mana, `PY_POSITION` mengatakan peran siapa.
-				PyPosition: models.PeranAdminLife,
+				// tangga mana, `POSITION` (`pyPosition`) mengatakan peran siapa.
+				Position: models.PeranAdminLife,
 				// BUTIR au: waktu LAHIR, terpisah dari waktu ubah.
 				TglCreate: saat,
 				TglUpdate: saat,
@@ -254,6 +247,8 @@ func (p *Pendaftaran) Daftar(ctx context.Context, pelaku inti.Pelaku, minta Perm
 				ID:         pengenal,
 				NomorKlaim: nomor,
 				NomorPolis: minta.NomorPolis,
+				// TYPE di header klaim sejak migrasi 023.
+				Type:       minta.Type,
 				ClaimRetro: uang.Money{Currency: minta.MataUang},
 				Peserta:    peserta,
 			},

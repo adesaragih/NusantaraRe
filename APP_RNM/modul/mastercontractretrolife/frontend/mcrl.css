@@ -1,0 +1,74 @@
+/*
+ * Gaya modul Master Contract Retro Life - SELURUH kelas berawalan `mcrl` (dijaga `gaya.test.ts`).
+ * Kerangka (panel, form-grid, tabel, tombol) memakai kelas bersama `inti/frontend/styles.css`; berkas
+ * ini hanya menambah yang khusus layar modul ini, dengan token warna tema bersama.
+ */
+
+/* Label sel tombol b8888 (`End Period`, `pyIncludeLabel` true) di sebelah tombol `Add`. */
+.mcrl-label-sel {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+/* Baris tombol `Add` + `pyGridPaginator` di atas grid. */
+.mcrl-aksi-grid {
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Ikon tutup kerangka harness popup (`pxIconCancel`). */
+.mcrl-tutup {
+  padding-inline: 6px;
+}
+
+/* Medan baca-saja kepala panel (`ID Treaty Year`, `ID Reins Type`, `Reins Type`, ...). */
+.mcrl-kepala {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin: 0 0 12px;
+}
+
+.mcrl-kepala__medan {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mcrl-kepala__medan dt {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+
+.mcrl-kepala__medan dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* `Total Share -->>` - tiket 05 AC 19: total ≠ 100 DITANDAI mencolok. */
+.mcrl-total {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+}
+
+.mcrl-total--bukan100 {
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+  color: var(--danger-text);
+}
+
+.mcrl-total__tanda {
+  font-weight: 700;
+}
+
+/* Rincian baris yang ikut terhapus di popup konfirmasi. */
+.mcrl-dampak {
+  margin: 4px 0 0;
+  padding-left: 20px;
+}

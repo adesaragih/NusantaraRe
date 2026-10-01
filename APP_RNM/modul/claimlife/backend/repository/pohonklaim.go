@@ -304,14 +304,13 @@ func (r *PohonKlaim) Simpan(ctx context.Context, tx *db.Tx, p models.PohonKlaim)
 
 	// Tingkat 1 - akar work object.
 	err = r.exec(ctx, tx, fmt.Sprintf(`INSERT INTO %s
-		(ID, COVER_KEY, LINI, PY_POSITION, SENDTO_ADMIN,
-		 SENDTO_MEDICAL, TYPE, CASE_ID, CREATE_OP, CREATE_OP_NAME, TGL_UPDATE,
+		(ID, COVER_KEY, LINI, POSITION, SENDTO_ADMIN,
+		 SENDTO_MEDICAL, CREATE_OP, CREATE_OP_NAME, TGL_UPDATE,
 		 TAHAP, TGL_CREATE)
-		VALUES (:1,:2,:3,:4,:5,:6,:7,:8,:9,:10,:11,:12,:13)`, work),
+		VALUES (:1,:2,:3,:4,:5,:6,:7,:8,:9,:10,:11)`, work),
 		p.Work.ID, db.KosongJadiNil(p.Work.CoverKey), db.KosongJadiNil(p.Work.Lini),
-		db.KosongJadiNil(p.Work.PyPosition),
+		db.KosongJadiNil(p.Work.Position),
 		db.KosongJadiNil(p.Work.SendtoAdmin), db.KosongJadiNil(p.Work.SendtoMedical),
-		db.KosongJadiNil(p.Work.Type), db.KosongJadiNil(p.Work.CaseID),
 		db.KosongJadiNil(p.Work.CreateOp), db.KosongJadiNil(p.Work.CreateOpName),
 		waktuJadiNil(p.Work.TglUpdate),
 		db.KosongJadiNil(p.Work.Tahap), waktuJadiNil(p.Work.TglCreate))
@@ -321,13 +320,15 @@ func (r *PohonKlaim) Simpan(ctx context.Context, tx *db.Tx, p models.PohonKlaim)
 
 	// Tingkat 2 - header klaim. ID-nya SAMA dengan ID work object: shared PK.
 	err = r.exec(ctx, tx, fmt.Sprintf(`INSERT INTO %s
-		(ID, CLAIM_NO, POLICY_NO, BUSINESS_NAME, STS_REJECT, CURRENCY)
-		VALUES (:1,:2,:3,:4,:5,:6)`, header),
+		(ID, CLAIM_NO, POLICY_NO, BUSINESS_NAME, STS_REJECT, CURRENCY, TYPE)
+		VALUES (:1,:2,:3,:4,:5,:6,:7)`, header),
 		p.Work.ID, db.KosongJadiNil(p.Klaim.NomorKlaim), db.KosongJadiNil(p.Klaim.NomorPolis),
 		db.KosongJadiNil(p.Klaim.NamaBisnis), db.KosongJadiNil(p.Klaim.KodeStatus),
 		// Butir z1: mata uang header, supaya ClaimRetro yang dibaca kembali
 		// punya mata uang - uang tanpa mata uang tidak bermakna.
-		db.KosongJadiNil(p.Klaim.ClaimRetro.Currency))
+		db.KosongJadiNil(p.Klaim.ClaimRetro.Currency),
+		// TYPE di header sejak migrasi 023 (keputusan work owner 01-10-2026).
+		db.KosongJadiNil(p.Klaim.Type))
 	if err != nil {
 		return err
 	}
@@ -443,7 +444,7 @@ func (r *PohonKlaim) Simpan(ctx context.Context, tx *db.Tx, p models.PohonKlaim)
 		}
 		k := KunciPesertaSumber{PLNumber: ps.NomorPremiList, Sertifikat: ps.NomorSertifikat, SumberID: ps.SumberID}
 		for _, adj := range ps.Baris {
-			if err = cermin.IsiTertanggungCermin(ctx, tx, adj.ID, p.Work.CaseID, k, p.Klaim.NomorPolis); err != nil {
+			if err = cermin.IsiTertanggungCermin(ctx, tx, adj.ID, p.Work.ID, k, p.Klaim.NomorPolis); err != nil {
 				return err
 			}
 		}
@@ -541,20 +542,19 @@ func (r *KlaimLife) SetelCerminOutstanding(ctx context.Context, tx *db.Tx, adjID
 // Rule itu meng-`INSERT` baris baru; di sini baris cerminnya sudah ada sejak
 // pendaftaran, jadi DIPERBARUI (penyimpangan yang sama dengan
 // `RekamAkhirWarisan` Komite). Kunci `ID` baris adjustment + `CASEID` klaim
-// pemilik peserta (`NVL(CASE_ID, ID)`, bentuk yang sama dengan pengecualian
-// pemeriksa ganda). Hanya cermin yang masih NULL atau masih berkode lama yang
+// pemilik peserta (`CLAIM_ID` peserta = ID klaim; CASE_ID dibuang migrasi 023,
+// CASEID = ID). Hanya cermin yang masih NULL atau masih berkode lama yang
 // ikut - cermin yang sudah ditulis jalur lain (Komite) tidak ditimpa, dan
 // cermin NULL milik klaim yang disimpan sebelum N13 ikut pulih.
-func sqlIkutkanStatusCermin(lama, work, pes string, dariKosong bool) string {
+func sqlIkutkanStatusCermin(lama, pes string, dariKosong bool) string {
 	syarat := "o.STS_REJECT IS NULL"
 	if !dariKosong {
 		syarat = "(o.STS_REJECT IS NULL OR o.STS_REJECT = :4)"
 	}
 	return fmt.Sprintf(`UPDATE %s o SET o.STS_REJECT = :1
 	 WHERE o.ID = :2
-	   AND o.CASEID = (SELECT NVL(w.CASE_ID, w.ID) FROM %s w, %s p
-	                    WHERE p.ID = :3 AND w.ID = p.CLAIM_ID)
-	   AND %s`, lama, work, pes, syarat)
+	   AND o.CASEID = (SELECT p.CLAIM_ID FROM %s p WHERE p.ID = :3)
+	   AND %s`, lama, pes, syarat)
 }
 
 // sqlIsiCedingCermin - CEDINGCO cermin dari POLIS (OQ-N2, GILIRAN-17):

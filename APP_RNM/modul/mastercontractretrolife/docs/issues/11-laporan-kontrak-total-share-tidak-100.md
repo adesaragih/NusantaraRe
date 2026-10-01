@@ -76,3 +76,17 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+---
+
+## Ralat bertanggal 30-09-2026 — sesi implementasi (paket 0)
+
+> Sumber: `RALAT-DEV-30-09-2026.md` (K1–K8 katalog DEV, R1–R12 pembacaan ulang XML) dan `PARITAS-LAYAR-DAN-AKSI.md`. Kalimat di atas **tidak dihapus**; yang berlaku adalah ralat ini.
+
+| Kalimat lama | Ralat |
+| --- | --- |
+| *"Layar laporan; tiap baris dapat dibuka ke kontraknya"* | tidak ada layar maupun tombol di Pega (brief: *"Jangan membuat menu, layar, tombol, atau aksi yang tidak ada di Pega"*) → **rute API baca saja** `GET /api/master-contract-retro-life/laporan/total-share-bukan-100` — OQ-MCRL-07 (R10) |
+
+## Status 01-10-2026 (paket 11)
+
+**Status:** ⏸️ **rute API saja** — `GET …/laporan/total-share-bukan-100` paket 4 (`c10d50f`); layar menunggu OQ-MCRL-07 (nol padanan Pega).

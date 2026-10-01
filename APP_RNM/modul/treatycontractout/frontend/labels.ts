@@ -559,10 +559,15 @@ export const HAPUS_TCO = {
   security: 'security',
   /** `[tidak ada di korpus]` */
   business: 'business',
-  /** `[tidak ada di korpus]` — AC 44: klausul milik tahun/grup/jenis, bukan milik satu kontrak. */
-  klausulTetap: 'clause rows are NOT deleted — clauses belong to the treaty year/group/reinsurance type, not to one contract.',
   /** `[tidak ada di korpus]` */
   memuatDampak: 'Counting the rows that will also be deleted…',
-  /** `[tidak ada di korpus]` — OQ-TCO-21 [keputusan work owner 29-09-2026]: hapus seperti Pega, tetapi tidak diam. */
-  bersama: 'another contract uses the same combination — its reinsurers and securities ARE deleted together with this contract; businesses of other treaty years are not.',
+  /**
+   * `[tidak ada di korpus]` — OQ-TCO-21 [keputusan work owner 29-09-2026]: hapus seperti Pega, tetapi tidak diam.
+   * Tunggal/jamak dipilih `teksBersama` [keputusan work owner 01-10-2026].
+   */
+  bersamaSatu: 'other contract uses the same combination — its reinsurers and securities ARE deleted together with this contract.',
+  /** `[tidak ada di korpus]` — pasangan jamak `bersamaSatu`. */
+  bersamaBanyak: 'other contracts use the same combination — their reinsurers and securities ARE deleted together with this contract.',
+  /** `[tidak ada di korpus]` — saringan business kaskade: `TREATYYEARID` tahun ini ATAU kosong (NULL). */
+  bersamaBusiness: 'Businesses are deleted only when they belong to this treaty year or have no treaty year.',
 } as const

@@ -9,7 +9,6 @@ package repository_test
 // Tanpa instance Oracle, seluruh test di sini MELEWATI dengan pesan.
 
 import (
-	"context"
 	"testing"
 
 	"github.com/cockroachdb/apd/v3"
@@ -32,22 +31,8 @@ func rekapUjiDB() []models.RekapMataUang {
 }
 
 func TestSummaryWarisanDitulisSepertiProsedur(t *testing.T) {
-	sqlDB, skema, err := skemauji.Buka()
-	if err != nil {
-		if !skemauji.BolehDilewati(err) {
-			t.Fatalf("skema uji menolak: %v", err)
-		}
-		t.Skipf("lewati: %v", err)
-	}
-	defer func() { _ = sqlDB.Close() }()
-	ctx := context.Background()
-	if err := sqlDB.PingContext(ctx); err != nil {
-		t.Skipf("lewati: oracle tidak terjangkau: %v", err)
-	}
-	if err := skemauji.Pasang(ctx, sqlDB, skema); err != nil {
-		t.Fatalf("memasang skema uji: %v", err)
-	}
-	defer func() { _ = skemauji.Bongkar(ctx, sqlDB, skema) }()
+	// Pintu skema uji bersama - bantu_skemauji_db_test.go.
+	sqlDB, skema, ctx := pasangSkemaUji(t)
 	for _, q := range []string{
 		`INSERT INTO ` + skema + `.T_WORK_POLIS (ID) VALUES ('UJI-POLIS-1801')`,
 		`INSERT INTO ` + skema + `.T_PREMIUM_LIST (ID, BUSINESS_NAME) VALUES ('UJI-POLIS-1801', 'UJI-COB-1')`,

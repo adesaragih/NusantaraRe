@@ -38,9 +38,13 @@ type WorkClaim struct {
 	ID string
 	// CoverKey menunjuk WorkClaim induknya. Kosong bila baris ini tidak punya
 	// induk - misalnya baris klaim, yang memang akar.
-	CoverKey   string
-	Lini       string
-	PyPosition string
+	CoverKey string
+	Lini     string
+	// Position adalah `pyPosition` - NAMA PERAN pemegang kasus
+	// (`ReasLifeAdmin` dan kerabatnya, models/tahap.go). Kolomnya
+	// `T_WORK_CLAIM.POSITION`, bernama `PY_POSITION` sampai migrasi 023
+	// (keputusan work owner 01-10-2026).
+	Position string
 	// AcceptStatus sengaja TIDAK ada di sini. Hasil akseptasi milik kasus
 	// komite, dan T_GENERAL_KOMITE.ACCEPT_STATUS sudah menyimpannya - keputusan
 	// work owner 2026-09-18, lihat STRUKTUR-TABEL-CLAIM-LIFE.md bab
@@ -48,14 +52,16 @@ type WorkClaim struct {
 	// mencantumkannya; diagram itu yang tertinggal, bukan berkas ini.
 	SendtoAdmin   string
 	SendtoMedical string
-	Type          string
-	CaseID        string
-	CreateOp      string
-	CreateOpName  string
-	TglUpdate     time.Time
+	// ⛔ `Type` dan `CaseID` TIDAK di sini sejak migrasi 023 (keputusan work
+	// owner 01-10-2026): `Type` milik header klaim (`Klaim.Type`,
+	// `T_GENERAL_CLAIM.TYPE`); `CASE_ID` dibuang - `ID` dipakai, dan
+	// migrasi klaim lama memakai CASEID warisan sebagai `ID`.
+	CreateOp     string
+	CreateOpName string
+	TglUpdate    time.Time
 	// Tahap adalah nama assignment VERBATIM `pyTaskName` - butir **at**.
 	//
-	// ⛔ Ada karena `PyPosition` TIDAK dapat membedakan Input Register
+	// ⛔ Ada karena `Position` TIDAK dapat membedakan Input Register
 	// dari Outstanding Claim: keduanya dipegang `ReasLifeAdmin`,
 	// sedangkan `Send Back to Register` membuktikan keduanya keadaan
 	// yang berbeda (`Section/InputOSClaimLife.xml:21404`).

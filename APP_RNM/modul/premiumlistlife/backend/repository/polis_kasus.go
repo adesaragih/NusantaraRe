@@ -48,14 +48,19 @@ func RakitPengenalWorkPolis(urut string) string {
 	return AwalanWorkPolis + strings.TrimSpace(urut)
 }
 
-// sqlSisipKasusPolis - baris kerja polis baru, kelima kolomnya.
+// sqlSisipKasusPolis - baris kerja polis baru.
+//
+// ⛔ Sejak 059 (seragam `T_WORK_CLAIM`): `STATUS_WORK`, pembuat, dan waktu.
+// `TGL_CREATE` = `TGL_UPDATE` = `SYSDATE` - jam basis data, sama dengan setiap
+// ubah baris kasus (polis_work.go), bukan jam mesin aplikasi.
 func sqlSisipKasusPolis(tabel string) string {
-	return fmt.Sprintf(`INSERT INTO %s (ID, LINI, POSITION, STATUS_WORK, FLAG_ONGOING_POLICY)
-		  VALUES (:1, :2, :3, :4, :5)`, tabel)
+	return fmt.Sprintf(`INSERT INTO %s (ID, LINI, POSITION, STATUS_WORK, FLAG_ONGOING_POLICY, COVER_KEY, CREATE_OP, CREATE_OP_NAME, TGL_CREATE, TGL_UPDATE)
+		  VALUES (:1, :2, :3, :4, :5, :6, :7, :8, SYSDATE, SYSDATE)`, tabel)
 }
 
 func argSisipKasusPolis(id string, k models.KasusPolisBaru) []any {
-	return []any{id, k.Lini, k.Posisi, k.Status, k.Flag}
+	return []any{id, k.Lini, k.Posisi, k.Status, k.Flag,
+		db.KosongJadiNil(k.CoverKey), db.KosongJadiNil(k.CreateOp), db.KosongJadiNil(k.CreateOpName)}
 }
 
 // sqlSisipPremiumListKosong - header polis kosong, berbagi pengenal.

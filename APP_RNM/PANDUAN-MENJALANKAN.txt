@@ -53,7 +53,7 @@ DAFTAR ISI
                     GET /api/klaim-life/{id}
                   dua flag: -migrate (bentuk tabel, keluar)
                             -migrate-down (bongkar skema uji, keluar)
-  Frontend React  satu halaman: kotak "Pengenal klaim"        localhost:5173
+  Frontend React  satu halaman: kotak "Pengenal klaim"        localhost:5174
                   dan tombol "Buka"
   Oracle          belum ada instance pengembangan.            dari env var
                   Tanpa itu backend tetap jalan; rute klaim
@@ -346,6 +346,54 @@ MENU DARI TABEL M_NAV_MENU (migrasi 900, sejak 30-09-2026)
 
   Menyembunyikan satu menu tanpa deploy: STATUS_AKTIF = '0' pada barisnya.
 
+MIGRASI 059 - T_WORK_POLIS SERAGAM DENGAN T_WORK_CLAIM (01-10-2026)
+
+  Keputusan work owner 01-10-2026. 059 (modul\premiumlistlife) menambah
+  STATUS_WORK, COVER_KEY, CREATE_OP, CREATE_OP_NAME, TGL_CREATE, TGL_UPDATE
+  ke T_WORK_POLIS, menyalin STATUS ke STATUS_WORK lalu membuang STATUS,
+  memasang FK_WORK_POLIS_COVER_KEY (tanpa ON DELETE) + IX_WORK_POLIS_COVER_KEY,
+  dan mengisi TGL_CREATE/CREATE_OP_NAME baris lama dari T_PREMIUM_LIST
+  (ID_PEGA = ID, tepat satu pasangan). CREATE_OP baris lama tetap kosong.
+
+  PENTING: -migrate dijalankan WORK OWNER, bukan executor - termasuk 059.
+  URUTAN DEPLOY: hentikan backend, -migrate 059, lalu jalankan biner dari
+  commit 3626e2b ke atas. Biner SEBELUM 3626e2b masih menulis kolom STATUS
+  (ORA-00904 sesudah 059); biner 3626e2b ke atas menulis STATUS_WORK
+  (ORA-00904 sebelum 059). Keduanya tidak dapat hidup di satu skema.
+  Data uji uji\skemauji\data_uji_tiga_modul.sql dimuat SESUDAH 059.
+
+  Pernyataan pertama 059 (ALTER ... ADD) satu-satunya yang tidak
+  berpelindung katalog. Bila 059 gagal sesudahnya, percobaan ulang berhenti
+  di ORA-01430: DBA menjalankan isi 059_seragam_kolom_t_work_polis_down.sql
+  secara manual (seluruhnya berpelindung), lalu -migrate diulang.
+
+MIGRASI 023 - T_WORK_CLAIM SERAGAM (01-10-2026)
+
+  Keputusan work owner 01-10-2026. 023 (modul\claimlife) mengganti nama
+  PY_POSITION menjadi POSITION (isinya tetap pyPosition, nama peran),
+  memindah TYPE ke header klaim T_GENERAL_CLAIM, dan membuang CASE_ID - ID
+  dipakai sebagai gantinya. TAHAP tetap.
+
+  PENGAMAN CASE_ID: pernyataan pertama 023 memasang CHECK
+  (CASE_ID IS NULL OR CASE_ID = ID). Bila satu baris saja punya CASE_ID
+  yang berbeda dari ID, -migrate berhenti di ORA-02293 SEBELUM apa pun
+  berubah. Periksa dulu:
+    SELECT ID, CASE_ID FROM <skema>.T_WORK_CLAIM
+     WHERE CASE_ID IS NOT NULL AND CASE_ID <> ID;
+  Nol baris = aman. Ada baris = keputusan work owner dan DBA lebih dulu.
+
+  PENTING: -migrate dijalankan WORK OWNER, bukan executor - termasuk 023.
+  URUTAN DEPLOY: hentikan backend, -migrate 023 (bersama 059), lalu
+  jalankan biner dari commit 16cd6b8 ke atas. Biner SEBELUM 16cd6b8 masih
+  menulis PY_POSITION, TYPE, CASE_ID di T_WORK_CLAIM (ORA-00904 sesudah
+  023); biner 16cd6b8 ke atas menulis POSITION dan T_GENERAL_CLAIM.TYPE
+  (ORA-00904 sebelum 023). Data uji dimuat SESUDAH 023.
+
+  Pernyataan 2 dan 3 023 (ALTER ... ADD) tidak berpelindung katalog. Bila
+  023 gagal sesudah pernyataan 2, DBA menjalankan isi
+  023_seragam_kolom_t_work_claim_down.sql secara manual (seluruhnya
+  berpelindung), lalu -migrate diulang.
+
 Bila sesi berikutnya butuh Oracle lagi, setel ulang ketiga variabel itu.
 Env var hilang saat jendela ditutup.
 
@@ -371,9 +419,9 @@ Jalankan server dev:
 Log yang benar:
 
   VITE v5.4.x  ready in ... ms
-  Local:   http://localhost:5173/
+  Local:   http://localhost:5174/
 
-Buka http://localhost:5173/ di browser. Berhenti: Ctrl+C.
+Buka http://localhost:5174/ di browser. Berhenti: Ctrl+C.
 
 YANG TAMPIL SEJAK F0.5
 
@@ -490,7 +538,7 @@ Env var frontend:
 5. BAGAIMANA FRONTEND DEV BICARA KE BACKEND: PROXY VITE
 ================================================================================
 
-Saat dev, halaman dilayani Vite di port 5173 dan backend Go di port 8080.
+Saat dev, halaman dilayani Vite di port 5174 dan backend Go di port 8080.
 Browser tidak boleh memanggil 8080 langsung (backend tidak mengirim header
 CORS, jadi browser memblokirnya). Jalan keluarnya: Vite MENERUSKAN permintaan
 /api/* dan /healthz ke backend, sehingga bagi browser semuanya satu alamat.
@@ -531,7 +579,7 @@ JENDELA 2 (frontend):
   . ..\muat-env.ps1         # cukup untuk PATH; proxy dibaca dari frontend\.env
   npm run dev
 
-Lalu buka http://localhost:5173/ di browser.
+Lalu buka http://localhost:5174/ di browser.
 
 Menghentikan: Ctrl+C di masing-masing jendela.
 
@@ -601,9 +649,10 @@ Gabungan yang setara "make check" (make tidak terpasang):
                                            kosong, backend      .env (bab 5),
                                            mati, atau tabel     jalankan
                                            belum ada (bab 5)    backend dulu
-  npm run dev: port 5173 dipakai           proses lain          Vite otomatis
-                                                                pindah ke 5174;
-                                                                baca lognya
+  npm run dev: port 5174 dipakai           npm run dev lain     Vite BERHENTI
+                                           masih jalan          (strictPort);
+                                                                matikan proses
+                                                                lama, ulangi
   "npm install" lambat / gagal             jaringan ke          coba lagi; tidak
                                            registry.npmjs.org   perlu di mesin
                                                                 ini (sudah ada)

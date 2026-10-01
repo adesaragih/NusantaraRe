@@ -97,3 +97,20 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+---
+
+## Ralat bertanggal 30-09-2026 — sesi implementasi (paket 0)
+
+> Sumber: `RALAT-DEV-30-09-2026.md` (K1–K8 katalog DEV, R1–R12 pembacaan ulang XML) dan `PARITAS-LAYAR-DAN-AKSI.md`. Kalimat di atas **tidak dihapus**; yang berlaku adalah ralat ini.
+
+| Kalimat lama | Ralat |
+| --- | --- |
+| *"`[data DBA]` **Keempat FK sudah terpasang** dengan mode **`ON DELETE CASCADE`**"*; *"FK `ON DELETE CASCADE` akan ikut menghapus anak"* | ⛔ DEV **nol FK** (K1). Kaskade **di Go**, satu transaksi, anak lebih dulu: (1) security, (2) reinsurer dan business, (3) kontrak — **sesudah** popup konfirmasi (K2) |
+| TAMBAHAN-TIKET: *"Test kaskade **tidak boleh** mengandaikan aplikasi yang menghapus anak"* | justru aplikasi yang menghapus anak; uji membuktikan urutan dan hasil akhirnya |
+| *"Penghapusan tercatat di **jejak audit**"* | nol tabel jejak (K6): satu baris log server berisi cacah baris terhapus per tabel, tanpa nama orang |
+| — | pesan sukses VERBATIM `"Data Berhasil di Hapus"` (kontrak/reinsurer/security) dan `"Data Dengan ID <id> Berhasil di Hapus"` (business); konfirmasi yang jumlahnya tidak lagi cocok dengan data ditolak 409 tanpa satu baris pun terhapus |
+
+## Status 01-10-2026 (paket 11)
+
+**Status:** ✅ **dibangun** — kaskade satu transaksi, cacah dikonfirmasi paket 7 (`81b78bd`), popup `Yes`/`Cancel` di keempat panel paket 9+10 (`a3c07bc`).
