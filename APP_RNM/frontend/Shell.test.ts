@@ -240,3 +240,13 @@ describe('nol halaman dirender di luar Shell', () => {
     expect(APP).not.toContain('bilah-sesi')
   })
 })
+
+// Menu profil TANPA daftar peran - permintaan work owner 01-10-2026 ("buang
+// aja, ga perlu"): nama akun, lalu Ganti sandi dan Keluar.
+describe('menu profil', () => {
+  it('tanpa daftar peran', () => {
+    expect(SUMBER).not.toContain('shell__profil-peran')
+    expect(SUMBER).not.toContain('masuk.peran.map(')
+    expect(SUMBER).toContain('<p className="shell__profil-akun">{masuk.akunID}</p>')
+  })
+})

@@ -516,15 +516,9 @@ export function Shell<H extends string>({
               </button>
               {profilBuka && (
                 <div className="shell__profil-menu" id="shell-profil">
+                  {/* Daftar peran di menu ini DIBUANG - permintaan work owner
+                      01-10-2026 ("buang aja, ga perlu"). */}
                   <p className="shell__profil-akun">{masuk.akunID}</p>
-                  <ul className="shell__profil-peran">
-                    {masuk.peran.map((p) => (
-                      <li key={p}>
-                        {PERAN_ID[p]}
-                        <span>{p}</span>
-                      </li>
-                    ))}
-                  </ul>
                   {/* Login sungguhan: Keluar dan Ganti sandi. Mode stub: identitas
                       dari env saat aplikasi menyala - tidak ada yang dikeluari. */}
                   {onKeluar ? (

@@ -5032,27 +5032,9 @@ textarea.field__input {
   box-shadow: var(--bayang-menu);
 }
 .shell__profil-akun {
-  margin: 0 0 8px;
+  margin: 0 0 12px;
   font-size: 15px;
   font-weight: 700;
-}
-.shell__profil-peran {
-  margin: 0 0 12px;
-  padding: 0;
-  list-style: none;
-}
-.shell__profil-peran li {
-  display: flex;
-  flex-direction: column;
-  padding: 8px 0;
-  border-top: 1px solid var(--border);
-  font-size: 14px;
-  font-weight: 600;
-}
-.shell__profil-peran li span {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-3);
 }
 /* Penanda mode stub (F0.6, pengganti tombol Keluar) — pil peringatan. */
 .shell__profil-stub {
