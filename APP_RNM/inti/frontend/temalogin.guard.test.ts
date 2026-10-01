@@ -1,7 +1,8 @@
 // Penjaga tema halaman login di styles.css inti (permintaan work owner 02-10-2026):
 //
-//   - latar sidebar TETAP latar lama (`var(--surface)`); blok tema sidebar hanya mewarnai butir,
-//     pembatas golongan, dan aksen, tidak menimpa latar;
+//   - latar sidebar TETAP latar lama (`var(--surface)`) dan latar topbar tetap `var(--topbar-bg)`; blok
+//     soft UI sidebar dan topbar hanya membentuk butir, tombol, kotak cari, lencana, dan pembatas golongan,
+//     dengan kontras teks WCAG AA, dan tidak menambah properti penampung `position: fixed`;
 //   - gaya soft UI Kelola User terisolasi di kelas akar `.kelola-user`, dan teksnya tetap terbaca (kontras WCAG AA);
 //   - tidak satu pun aturan `.kelola-user` memakai properti yang menjadikan elemen blok penampung bagi
 //     `position: fixed`. Popup inti (`.modal__backdrop`, `position: fixed; inset: 0`) dirender di dalam
@@ -37,25 +38,6 @@ function latar(css: string, pemilih: string[]): string[] {
     .flatMap((a) => [...a.isi.matchAll(/(?:^|[;\s])background(?:-color|-image)?\s*:\s*([^;]+)/g)].map((m) => (m[1] ?? '').trim()))
 }
 
-const AKAR_SIDEBAR = ['.shell__sidebar', ':root[data-theme="dark"] .shell__sidebar']
-
-describe('sidebar bertema login', () => {
-  it('latar sidebar tetap latar lama var(--surface), tidak ditimpa blok tema', () => {
-    expect(latar(CSS, AKAR_SIDEBAR)).toEqual(['var(--surface)'])
-  })
-
-  it('aturan latar menggigit', () => {
-    expect(latar('.shell__sidebar { color: red; background: var(--sb-latar) } .shell__butir { background: x }', AKAR_SIDEBAR)).toEqual([
-      'var(--sb-latar)',
-    ])
-  })
-
-  it('setiap golongan GROUPMENU diberi garis pembatas', () => {
-    const golongan = aturan(CSS).filter((a) => a.pemilih.includes('.shell__sidebar .shell__golongan'))
-    expect(golongan.some((a) => /border-top\s*:\s*1px solid var\(--sb-pembatas\)/.test(a.isi))).toBe(true)
-  })
-})
-
 /** Rasio kontras WCAG 2 dua warna hex `#rrggbb`. */
 function kontras(a: string, b: string): number {
   const terang = (hex: string): number => {
@@ -69,11 +51,98 @@ function kontras(a: string, b: string): number {
   return ((t ?? 0) + 0.05) / ((g ?? 0) + 0.05)
 }
 
-/** Token `--ku-*` bernilai hex dari aturan yang pemilihnya PERSIS `pemilih`. */
+/**
+ * Token bernilai hex `#rrggbb` dari SEMUA aturan yang pemilihnya PERSIS `pemilih`, digabung berurutan
+ * seperti kaskade (aturan belakangan menang).
+ */
 function token(daftar: Array<{ pemilih: string[]; isi: string }>, pemilih: string): Record<string, string> {
-  const a = daftar.find((x) => x.pemilih.length === 1 && x.pemilih[0] === pemilih)
-  return Object.fromEntries([...(a?.isi ?? '').matchAll(/(--ku-[a-z-]+)\s*:\s*(#[0-9a-f]{6})\s*;/gi)].map((m) => [m[1] ?? '', m[2] ?? '']))
+  return Object.fromEntries(
+    daftar
+      .filter((x) => x.pemilih.length === 1 && x.pemilih[0] === pemilih)
+      .flatMap((a) => [...a.isi.matchAll(/(--[a-z0-9-]+)\s*:\s*(#[0-9a-f]{6})\s*;/gi)].map((m) => [m[1] ?? '', m[2] ?? ''])),
+  )
 }
+
+/** Pasangan [teks, latar] yang kontrasnya di bawah 4,5:1, atau yang tokennya hilang. */
+function kontrasKurang(t: Record<string, string>, pasangan: ReadonlyArray<readonly [string, string]>): string[] {
+  return pasangan.flatMap(([depan, belakang]) => {
+    const a = t[depan]
+    const b = t[belakang]
+    if (a === undefined || b === undefined) return [`${depan}/${belakang} token hilang`]
+    const r = kontras(a, b)
+    return r < 4.5 ? [`${depan}/${belakang} ${r.toFixed(2)}`] : []
+  })
+}
+
+/** Aturan di antara dua kepala blok komentar (dipotong dari pembuka komentar, supaya komentar terbuang utuh). */
+function blok(dari: string, sampai: string): Array<{ pemilih: string[]; isi: string }> {
+  const awal = CSS.lastIndexOf('/*', CSS.indexOf(dari))
+  const akhir = CSS.lastIndexOf('/*', CSS.indexOf(sampai))
+  return aturan(CSS.slice(awal, akhir))
+}
+
+const AKAR_SIDEBAR = ['.shell__sidebar', ':root[data-theme="dark"] .shell__sidebar']
+const AKAR_TOPBAR = ['.shell__topbar', ':root[data-theme="dark"] .shell__topbar']
+
+describe('sidebar dan topbar bergaya soft UI', () => {
+  const shell = blok('SIDEBAR DAN TOPBAR BERGAYA SOFT UI', 'KELOLA USER BERGAYA SOFT UI')
+
+  it('latar sidebar tetap latar lama var(--surface), tidak ditimpa blok tema', () => {
+    expect(latar(CSS, AKAR_SIDEBAR)).toEqual(['var(--surface)'])
+  })
+
+  it('latar topbar tetap var(--topbar-bg), tidak ditimpa blok tema', () => {
+    expect(latar(CSS, AKAR_TOPBAR)).toEqual(['var(--topbar-bg)'])
+  })
+
+  it('aturan latar menggigit', () => {
+    expect(latar('.shell__sidebar { color: red; background: var(--sb-latar) } .shell__butir { background: x }', AKAR_SIDEBAR)).toEqual([
+      'var(--sb-latar)',
+    ])
+  })
+
+  it('setiap golongan GROUPMENU diberi garis pembatas', () => {
+    const golongan = aturan(CSS).filter((a) => a.pemilih.includes('.shell__sidebar .shell__golongan'))
+    expect(golongan.some((a) => /border-top\s*:\s*1px solid var\(--sb-pembatas\)/.test(a.isi))).toBe(true)
+  })
+
+  it('blok tidak menambah properti yang mengurung popup position: fixed', () => {
+    expect(shell.length).toBeGreaterThan(20)
+    expect(shell.flatMap((a) => penampungFixed(a.isi).map((x) => `${a.pemilih.join(', ')}: ${x}`))).toEqual([])
+  })
+
+  it('teks terbaca: kontras token teks sidebar dan topbar terhadap latarnya minimal 4,5:1, terang dan gelap', () => {
+    const semua = aturan(CSS)
+    const akar = token(semua, ':root')
+    const akarGelap = { ...akar, ...token(semua, ':root[data-theme="dark"]') }
+    const sb = token(shell, '.shell__sidebar')
+    const tb = token(shell, '.shell__topbar')
+    const terang = { ...akar, ...sb, ...tb }
+    const gelap = {
+      ...akarGelap,
+      ...sb,
+      ...tb,
+      ...token(shell, ':root[data-theme="dark"] .shell__sidebar'),
+      ...token(shell, ':root[data-theme="dark"] .shell__topbar'),
+    }
+    // `--sb-teks-redup` sengaja tidak diuji: hanya dipakai butir "belum dimigrasi" yang nonaktif
+    // (WCAG 1.4.3 mengecualikan komponen nonaktif).
+    const pasangan = [
+      ['--sb-teks', '--surface'],
+      ['--sb-judul', '--surface'],
+      ['--sb-aktif-teks', '--sb-aktif'],
+      ['--sb-aktif-teks', '--sb-hover'],
+      ['--sb-lencana-teks', '--sb-lencana'],
+      ['--sb-lencana-aktif-teks', '--sb-lencana-aktif'],
+      ['--tb-teks', '--tb-tombol'],
+      ['--tb-teks-redup', '--tb-tombol'],
+      ['--tb-teks', '--tb-cari'],
+      ['--tb-teks-redup', '--tb-cari'],
+      ['--tb-avatar-teks', '--tb-avatar'],
+    ] as const
+    expect([...kontrasKurang(terang, pasangan).map((x) => `terang ${x}`), ...kontrasKurang(gelap, pasangan).map((x) => `gelap ${x}`)]).toEqual([])
+  })
+})
 
 describe('Kelola User bergaya soft UI', () => {
   // Potong dari pembuka komentar kepala blok, supaya komentar itu ikut terbuang utuh.

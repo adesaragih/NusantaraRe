@@ -5903,31 +5903,39 @@ textarea.field__input {
 }
 
 /* ======================================================================
-   SIDEBAR BERTEMA HALAMAN LOGIN — permintaan work owner 02-10-2026:
-   "desain lagi navbarnya mengikuti tema login, dan setiap grouping
-   dikasih pembatas biar lebih rapih".
-   Warna diambil dari blok `.halaman-masuk` (lavender #d7bcfb → #b48af2,
-   aksen fokus #8b5cf6, huruf Poppins) dan DIBATASI di dalam
-   `.shell__sidebar` lewat token `--sb-*`; tidak mengubah lebar, laci
-   ponsel, mode terciut, atau perilaku apa pun. Tema gelap punya
-   padanannya sendiri di bawah.
-   LATAR sidebar sengaja TIDAK ditimpa (permintaan work owner 02-10-2026:
-   latar bergradasi dikembalikan ke latar sebelumnya, `var(--surface)`).
+   SIDEBAR DAN TOPBAR BERGAYA SOFT UI: permintaan work owner 02-10-2026
+   "sekarang ubah tema nav bar dan headernya", menyusul gaya soft UI
+   Kelola User. Bentuk soft UI yang sama: butir dan tombol kapsul timbul
+   berbayang lembut, kotak cari cekung, chip lencana bertepi tipis,
+   pembatas tipis antar golongan GROUPMENU. Kontras tetap terbaca: token
+   teks minimal 4,5:1 terhadap latarnya, dijaga temalogin.guard.test.
+   - LATAR sidebar sengaja TIDAK ditimpa (permintaan work owner
+     02-10-2026: latar bergradasi dikembalikan ke latar sebelumnya,
+     `var(--surface)`); begitu pula latar topbar (`var(--topbar-bg)`).
+   - Lebar, laci ponsel, mode terciut, dan perilaku menu tidak berubah.
+   - Blok ini TIDAK menambah backdrop-filter, filter, atau transform:
+     properti itu menjadikan elemen blok penampung bagi `position: fixed`.
+   Token `--sb-*` dibatasi di `.shell__sidebar`, `--tb-*` di
+   `.shell__topbar`; tema gelap punya padanannya sendiri.
    ====================================================================== */
 .shell__sidebar {
   --sb-garis: rgba(139, 92, 246, 0.14);
   --sb-pembatas: rgba(139, 92, 246, 0.16);
   --sb-teks: #3b3f55;
   --sb-teks-redup: #8a8fa6;
-  --sb-judul: #7c5cc4;
-  --sb-hover: rgba(139, 92, 246, 0.08);
-  --sb-aktif: linear-gradient(135deg, rgba(215, 188, 251, 0.7), rgba(180, 138, 242, 0.45));
-  --sb-aktif-teks: #3b1d78;
+  --sb-judul: #6a4cbd;
+  --sb-hover: #f5f2fd;
+  --sb-aktif: #f1edfb;
+  --sb-aktif-teks: #4c2fa3;
   --sb-aksen: #8b5cf6;
-  --sb-lencana: linear-gradient(135deg, #d7bcfb, #b48af2);
-  --sb-lencana-teks: #ffffff;
+  --sb-lencana: #f4f1fd;
+  --sb-lencana-teks: #5b3db5;
+  --sb-lencana-aktif: #6a4cbd;
+  --sb-lencana-aktif-teks: #ffffff;
+  --sb-timbul: -3px -3px 7px rgba(255, 255, 255, 0.95), 4px 4px 10px rgba(146, 154, 188, 0.38);
+  --sb-timbul-lencana: 2px 2px 6px rgba(146, 154, 188, 0.4);
   border-right: 1px solid var(--sb-garis);
-  box-shadow: 8px 0 30px -24px rgba(60, 40, 120, 0.35);
+  box-shadow: 10px 0 30px -22px rgba(146, 154, 188, 0.6);
   font-family: "Poppins", var(--font);
 }
 :root[data-theme="dark"] .shell__sidebar {
@@ -5935,11 +5943,17 @@ textarea.field__input {
   --sb-pembatas: rgba(180, 138, 242, 0.16);
   --sb-teks: #d9dbe7;
   --sb-teks-redup: #8d90a8;
-  --sb-judul: #b9a3ee;
-  --sb-hover: rgba(139, 92, 246, 0.14);
-  --sb-aktif: linear-gradient(135deg, rgba(139, 92, 246, 0.42), rgba(180, 138, 242, 0.22));
+  --sb-judul: #c4b0f5;
+  --sb-hover: #222839;
+  --sb-aktif: #2b2741;
   --sb-aktif-teks: #f3ecff;
   --sb-aksen: #b48af2;
+  --sb-lencana: #272b3c;
+  --sb-lencana-teks: #d6c6ff;
+  --sb-lencana-aktif: #6a4cbd;
+  --sb-lencana-aktif-teks: #ffffff;
+  --sb-timbul: -2px -2px 6px rgba(255, 255, 255, 0.03), 4px 4px 10px rgba(0, 0, 0, 0.45);
+  --sb-timbul-lencana: 2px 2px 6px rgba(0, 0, 0, 0.4);
   box-shadow: none;
 }
 
@@ -5950,9 +5964,9 @@ textarea.field__input {
   color: var(--sb-teks);
 }
 
-/* Tombol menu: sudut lembut, warna teks tema, aksen ungu saat aktif. */
+/* Butir menu: kapsul bersudut lembut. Aktif: kapsul TIMBUL + garis aksen kiri. */
 .shell__sidebar .shell__butir {
-  border-radius: 12px;
+  border-radius: 14px;
   color: var(--sb-teks);
 }
 .shell__sidebar .shell__butir:hover {
@@ -5963,7 +5977,7 @@ textarea.field__input {
 .shell__sidebar .shell__butir--aktif:hover {
   background: var(--sb-aktif);
   color: var(--sb-aktif-teks);
-  box-shadow: inset 0 0 0 1px var(--sb-garis);
+  box-shadow: inset 0 0 0 1px var(--sb-garis), var(--sb-timbul);
 }
 /* Garis aksen di tepi kiri tombol aktif. */
 .shell__sidebar .shell__butir--aktif::before {
@@ -5984,17 +5998,19 @@ textarea.field__input {
   outline-offset: 1px;
 }
 
-/* Lencana inisial modul: gradasi lavender panel login. */
+/* Lencana inisial modul: chip timbul kecil bertepi tipis; aktif: ungu penuh. */
 .shell__sidebar .kelompok__lencana {
-  border-radius: 8px;
+  border-radius: 9px;
   background: var(--sb-lencana);
   color: var(--sb-lencana-teks);
-  box-shadow: 0 4px 10px -6px rgba(124, 58, 237, 0.6);
+  box-shadow: inset 0 0 0 1px var(--sb-garis), var(--sb-timbul-lencana);
 }
 .shell__sidebar .shell__butir--aktif > .kelompok__lencana {
-  background: var(--sb-aksen);
-  color: #ffffff;
+  background: var(--sb-lencana-aktif);
+  color: var(--sb-lencana-aktif-teks);
+  box-shadow: var(--sb-timbul-lencana);
 }
+/* Belum dimigrasi: rata tanpa bayangan, jadi jelas tidak bisa diklik. */
 .shell__sidebar .shell__butir--nonaktif,
 .shell__sidebar .shell__butir--nonaktif:hover {
   background: none;
@@ -6026,6 +6042,122 @@ textarea.field__input {
    tidak ganda. */
 .shell--terlipat .shell__sidebar .shell__golongan-judul {
   border-top: 0;
+}
+
+/* ---------------------------------------------------------------- topbar */
+.shell__topbar {
+  --tb-garis: rgba(139, 92, 246, 0.14);
+  --tb-tepi: #dcdfeb;
+  --tb-teks: #1f2333;
+  --tb-teks-redup: #535a6e;
+  --tb-aksen: #8b5cf6;
+  --tb-hover: #f5f2fd;
+  --tb-tombol: #ffffff;
+  --tb-cari: #f3f4fa;
+  --tb-avatar: #f1edfb;
+  --tb-avatar-teks: #4c2fa3;
+  --tb-timbul: -3px -3px 7px rgba(255, 255, 255, 0.95), 4px 4px 10px rgba(146, 154, 188, 0.38);
+  --tb-cekung: inset 2px 2px 5px rgba(146, 154, 188, 0.35), inset -2px -2px 5px rgba(255, 255, 255, 0.95);
+  border-bottom: 1px solid var(--tb-garis);
+  box-shadow: 0 12px 30px -26px rgba(146, 154, 188, 0.7);
+}
+:root[data-theme="dark"] .shell__topbar {
+  --tb-garis: rgba(180, 138, 242, 0.18);
+  --tb-tepi: #323849;
+  --tb-teks: #eef0f6;
+  --tb-teks-redup: #b3b8c9;
+  --tb-aksen: #b48af2;
+  --tb-hover: #2b2741;
+  --tb-tombol: #222636;
+  --tb-cari: #1a1d29;
+  --tb-avatar: #2b2741;
+  --tb-avatar-teks: #e3d7ff;
+  --tb-timbul: -2px -2px 6px rgba(255, 255, 255, 0.03), 4px 4px 10px rgba(0, 0, 0, 0.45);
+  --tb-cekung: inset 2px 2px 5px rgba(0, 0, 0, 0.45), inset -2px -2px 5px rgba(255, 255, 255, 0.03);
+  box-shadow: 0 12px 30px -26px rgba(0, 0, 0, 0.8);
+}
+
+/* Tombol ikon (menu, mode gelap) dan pemicu cari di ponsel: bulat timbul
+   bertepi tipis. Sakelar mode gelap yang tertekan: cekung. */
+.shell__topbar .shell__ikon,
+.shell__topbar .shell__cari {
+  border: 1px solid var(--tb-tepi);
+  border-radius: 999px;
+  background: var(--tb-tombol);
+  color: var(--tb-teks-redup);
+  box-shadow: var(--tb-timbul);
+}
+.shell__topbar .shell__ikon:hover,
+.shell__topbar .shell__cari:hover {
+  background: var(--tb-hover);
+  color: var(--tb-teks);
+}
+.shell__topbar .shell__ikon[aria-pressed="true"],
+.shell__topbar .shell__ikon:active,
+.shell__topbar .shell__cari:active {
+  box-shadow: var(--tb-cekung);
+}
+.shell__topbar .shell__ikon:focus-visible,
+.shell__topbar .shell__cari:focus-visible,
+.shell__topbar .shell__profil-pemicu:focus-visible {
+  outline: 2px solid var(--tb-aksen);
+  outline-offset: 2px;
+}
+
+/* Profil: kapsul timbul berisi avatar lavender; nama dan panah baru tampil
+   mulai 1024px, jadi padding kanan ikut melebar di situ. */
+.shell__topbar .shell__profil-pemicu {
+  padding: 4px;
+  border: 1px solid var(--tb-tepi);
+  background: var(--tb-tombol);
+  color: var(--tb-teks);
+  box-shadow: var(--tb-timbul);
+}
+.shell__topbar .shell__profil-pemicu:hover {
+  background: var(--tb-hover);
+}
+.shell__topbar .shell__profil-pemicu[aria-expanded="true"] {
+  box-shadow: var(--tb-cekung);
+}
+.shell__topbar .shell__avatar {
+  background: var(--tb-avatar);
+  color: var(--tb-avatar-teks);
+  box-shadow: inset 0 0 0 1px var(--tb-garis);
+}
+.shell__topbar .shell__profil-menu {
+  border-color: var(--tb-garis);
+  border-radius: 18px;
+}
+.shell__topbar .shell__profil-menu .btn {
+  border-radius: 999px;
+}
+
+/* Mulai 640px pemicu cari berupa kotak cari: kapsul CEKUNG seperti kotak
+   cari Kelola User, dengan chip pintas Ctrl K yang timbul. */
+@media (min-width: 640px) {
+  .shell__topbar .shell__cari {
+    border-color: var(--tb-tepi);
+    background: var(--tb-cari);
+    color: var(--tb-teks-redup);
+    box-shadow: var(--tb-cekung);
+  }
+  .shell__topbar .shell__cari:hover {
+    border-color: var(--tb-aksen);
+    background: var(--tb-cari);
+    color: var(--tb-teks);
+  }
+  .shell__topbar .shell__cari kbd {
+    border-color: var(--tb-tepi);
+    border-radius: 8px;
+    background: var(--tb-tombol);
+    color: var(--tb-teks-redup);
+    box-shadow: var(--tb-timbul);
+  }
+}
+@media (min-width: 1024px) {
+  .shell__topbar .shell__profil-pemicu {
+    padding: 4px 12px 4px 4px;
+  }
 }
 
 /* ======================================================================
