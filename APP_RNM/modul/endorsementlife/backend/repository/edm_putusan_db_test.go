@@ -79,7 +79,7 @@ func TestPutuskanTerhadapOracle(t *testing.T) {
 	if err != nil || !ada || v.ID != "UJI-NB-P" || v.ProdKe != 1 {
 		gagal(err)
 	}
-	nomor, prodKe, _ := models.NomorEndorsement("UJI-PL-P", v.ProdKe)
+	nomor, prodKe, _ := models.NomorEndorsement("UJI-PL-P", v)
 	if dobel, err := g.AdaVersiResmi(ctx, tx, "UJI-PL-P", prodKe); err != nil || dobel {
 		gagal(err)
 	}
@@ -103,12 +103,12 @@ func TestPutuskanTerhadapOracle(t *testing.T) {
 		Scan(&noPolis, &noEndors, &statuss, &prod); err != nil {
 		t.Fatal(err)
 	}
-	if noPolis != "UJI-PL-P" || noEndors != "UJI-PL-P/02" || statuss != models.StatusKasusSelesai || prod != 2 {
+	if noPolis != "UJI-PL-P" || noEndors != "UJI-PL-P/01" || statuss != models.StatusKasusSelesai || prod != 2 {
 		t.Fatalf("kepala %s %s %s %d", noPolis, noEndors, statuss, prod)
 	}
 	var lama, jenis, edm string
 	if err := repo.QueryRowContext(ctx, `SELECT STATUS_OLD, STATUS, PL_NUMBER_EDM FROM `+skema+`.T_PREMIUM_LIST_DETAIL WHERE ID = 'UJI-P1'`).
-		Scan(&lama, &jenis, &edm); err != nil || lama != "1" || jenis != "1" || edm != "UJI-PL-P/02" {
+		Scan(&lama, &jenis, &edm); err != nil || lama != "1" || jenis != "1" || edm != "UJI-PL-P/01" {
 		t.Fatalf("peserta Old %s %s %s %v", lama, jenis, edm, err)
 	}
 	if err := repo.QueryRowContext(ctx, `SELECT STATUS_OLD FROM `+skema+`.T_PREMIUM_LIST_DETAIL WHERE ID = 'UJI-P2'`).Scan(&lama); err != nil || lama != "0" {

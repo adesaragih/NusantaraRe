@@ -273,7 +273,16 @@ func (g *Gudang) VersiBerjalan(_ context.Context, _ *db.Tx, nomorPolis string, s
 		resmi := p.NoPolis == nomorPolis && p.Status == models.StatusKasusSelesai
 		nb := p.EdmType == "" && g.punyaPLNumber(p.ID, nomorPolis)
 		if resmi || nb {
-			terbaik = lebihBaruTiruan(terbaik, models.Versi{Jenis: models.SumberAplikasi, ID: p.ID, ProdKe: prod, EdmType: p.EdmType})
+			// Urutan Pega (K3): NB = 0; endorsement resmi = akhiran nomornya, seperti repository.
+			up := 0
+			if resmi {
+				var err error
+				if up, err = models.UrutanDariNomor(p.PLNumberEDM); err != nil {
+					return models.Versi{}, false, err
+				}
+			}
+			terbaik = lebihBaruTiruan(terbaik, models.Versi{Jenis: models.SumberAplikasi, ID: p.ID, ProdKe: prod,
+				EdmType: p.EdmType, UrutanPega: up})
 		}
 	}
 	for _, w := range g.PolisWarisan {
@@ -282,7 +291,9 @@ func (g *Gudang) VersiBerjalan(_ context.Context, _ *db.Tx, nomorPolis string, s
 			prod = 1
 		}
 		if w.NoPolis == nomorPolis && lolos(prod) {
-			terbaik = lebihBaruTiruan(terbaik, models.Versi{Jenis: models.SumberWarisan, ID: w.IDPega, ProdKe: prod, EdmType: w.EdmType})
+			// Urutan Pega (K3): `PRODKE` mentah, kosong (0 di tiruan) = 0.
+			terbaik = lebihBaruTiruan(terbaik, models.Versi{Jenis: models.SumberWarisan, ID: w.IDPega, ProdKe: prod,
+				EdmType: w.EdmType, UrutanPega: w.ProdKe})
 		}
 	}
 	return terbaik, terbaik.ID != "", nil

@@ -9,6 +9,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"nusantarare/inti/backend/db"
@@ -325,19 +326,21 @@ func (g *Gudang) AdaRekap(ctx context.Context, tx *db.Tx, kasusID string) (bool,
 // sqlVersiEDM - versi endorsement RESMI sistem baru: `NO_POLIS` diisi saat
 // Confirm (`IDX_PL_NOPOLIS_PRODKE`, migrasi 480). `PROD_KE DESC` - satu urutan
 // (penyimpangan sadar 1, RALAT R19). `sebelum` > 0 membatasi ke versi lebih tua.
+// Kolom ke-4 = nomornya (`PL_NUMBER_EDM`): akhirannya urutan Pega versi itu (K3, `models.UrutanDariNomor`).
 func sqlVersiEDM(polis string, sebelum bool) string {
 	syarat := ""
 	if sebelum {
 		syarat = " AND NVL(p.PROD_KE, 1) < :3"
 	}
-	return fmt.Sprintf(`SELECT p.ID, NVL(p.PROD_KE, 1), p.EDM_TYPE FROM %s p
+	return fmt.Sprintf(`SELECT p.ID, NVL(p.PROD_KE, 1), p.EDM_TYPE, p.PL_NUMBER_EDM FROM %s p
 	  WHERE p.NO_POLIS = :1 AND p.STATUSS = :2%s
 	  ORDER BY NVL(p.PROD_KE, 1) DESC, p.ID FETCH FIRST 1 ROWS ONLY`, polis, syarat)
 }
 
 // sqlVersiNB - versi new business sistem baru: kepala tanpa `EDM_TYPE` yang
 // pesertanya ber-`PL_NUMBER` = nomor polis (`IDX_PLD_PL_NUMBER`, migrasi 480;
-// nomor polis = `PL_NUMBER`, RALAT R01).
+// nomor polis = `PL_NUMBER`, RALAT R01). Kolom ke-4 = urutan Pega new business: 0 (NB tanpa `PRODKE`,
+// RALAT R23 - `PROD_KE` 1 di sini hanya bawaan migrasi 480 untuk VERSI).
 func sqlVersiNB(polis, peserta string, sebelum bool) string {
 	syarat := ""
 	if sebelum {
@@ -345,7 +348,7 @@ func sqlVersiNB(polis, peserta string, sebelum bool) string {
 	}
 	// ⛔ Penampung muncul URUT (`:1` lalu `:2`): godror mengikat menurut urutan
 	// kemunculan, bukan menurut angkanya.
-	return fmt.Sprintf(`SELECT p.ID, NVL(p.PROD_KE, 1), p.EDM_TYPE FROM %s p
+	return fmt.Sprintf(`SELECT p.ID, NVL(p.PROD_KE, 1), p.EDM_TYPE, '0' FROM %s p
 	  WHERE p.ID IN (SELECT d.PREMIUM_LIST_ID FROM %s d WHERE d.PL_NUMBER = :1)
 	    AND p.EDM_TYPE IS NULL%s
 	  ORDER BY NVL(p.PROD_KE, 1) DESC, p.ID FETCH FIRST 1 ROWS ONLY`, polis, peserta, syarat)
@@ -353,14 +356,16 @@ func sqlVersiNB(polis, peserta string, sebelum bool) string {
 
 // sqlVersiWarisan - versi sistem lama: `GetProdkeNopolis` b84 (`IDPEGA … ORDER BY
 // PRODKE DESC`) dan `GetEdmTypeLife` b84 (`A.DATA_JSON.EdmType`). `PRODKE`
-// kosong dibaca 1 (E1, OQ-EDM-008). `JSON_VALUE` dipakai sebagai ganti notasi
+// kosong dibaca 1 (E1, OQ-EDM-008) untuk VERSI; kolom ke-4 = `PRODKE` mentah, kosong = 0, untuk NOMOR
+// (K3: `GenerateNoEDM_Life` `Local.Prodke` int b278). `JSON_VALUE` dipakai sebagai ganti notasi
 // titik Pega, yang menuntut constraint `IS JSON` pada kolomnya.
 func sqlVersiWarisan(jsonPolis string, sebelum bool) string {
 	syarat := ""
 	if sebelum {
 		syarat = " AND NVL(j.PRODKE, 1) < :2"
 	}
-	return fmt.Sprintf(`SELECT j.IDPEGA, NVL(j.PRODKE, 1), JSON_VALUE(j.DATA_JSON, '$.EdmType' NULL ON ERROR)
+	return fmt.Sprintf(`SELECT j.IDPEGA, NVL(j.PRODKE, 1), JSON_VALUE(j.DATA_JSON, '$.EdmType' NULL ON ERROR),
+	       TO_CHAR(NVL(j.PRODKE, 0))
 	   FROM %s j WHERE j.NOPOLIS = :1%s
 	  ORDER BY NVL(j.PRODKE, 1) DESC, j.TGL_INPUT DESC FETCH FIRST 1 ROWS ONLY`, jsonPolis, syarat)
 }
@@ -378,6 +383,8 @@ func (g *Gudang) VersiBerjalan(ctx context.Context, tx *db.Tx, nomorPolis string
 		jenis models.JenisSumber
 		q     string
 		args  []any
+		// dariNomor - kolom ke-4 adalah nomor endorsement (urutan = akhirannya), bukan angka.
+		dariNomor bool
 	}
 	argsEDM := []any{nomorPolis, models.StatusKasusSelesai}
 	argsLain := []any{nomorPolis}
@@ -386,26 +393,35 @@ func (g *Gudang) VersiBerjalan(ctx context.Context, tx *db.Tx, nomorPolis string
 		argsLain = append(argsLain, sebelumProdKe)
 	}
 	daftar := []jalur{
-		{models.SumberAplikasi, sqlVersiEDM(n[0], sebelum), argsEDM},
-		{models.SumberAplikasi, sqlVersiNB(n[0], n[1], sebelum), argsLain},
-		{models.SumberWarisan, sqlVersiWarisan(n[2], sebelum), argsLain},
+		{models.SumberAplikasi, sqlVersiEDM(n[0], sebelum), argsEDM, true},
+		{models.SumberAplikasi, sqlVersiNB(n[0], n[1], sebelum), argsLain, false},
+		{models.SumberWarisan, sqlVersiWarisan(n[2], sebelum), argsLain, false},
 	}
 	var terbaik models.Versi
 	for _, j := range daftar {
 		if err := db.PeriksaSQL(j.q); err != nil {
 			return models.Versi{}, false, err
 		}
-		var id, edm sql.NullString
+		var id, edm, urutan sql.NullString
 		var prodKe int
-		err := g.pakai(tx).QueryRowContext(ctx, j.q, j.args...).Scan(&id, &prodKe, &edm)
+		err := g.pakai(tx).QueryRowContext(ctx, j.q, j.args...).Scan(&id, &prodKe, &edm, &urutan)
 		if err == sql.ErrNoRows {
 			continue
 		}
 		if err != nil {
 			return models.Versi{}, false, fmt.Errorf("repository: membaca versi %s polis %q: %w", j.jenis, nomorPolis, err)
 		}
+		var up int
+		if j.dariNomor {
+			up, err = models.UrutanDariNomor(urutan.String)
+		} else {
+			up, err = strconv.Atoi(strings.TrimSpace(urutan.String))
+		}
+		if err != nil {
+			return models.Versi{}, false, fmt.Errorf("repository: urutan Pega versi %s %q polis %q: %w", j.jenis, id.String, nomorPolis, err)
+		}
 		terbaik = models.LebihBaru(terbaik, models.Versi{
-			Jenis: j.jenis, ID: id.String, ProdKe: prodKe, EdmType: strings.TrimSpace(edm.String),
+			Jenis: j.jenis, ID: id.String, ProdKe: prodKe, EdmType: strings.TrimSpace(edm.String), UrutanPega: up,
 		})
 	}
 	return terbaik, terbaik.ID != "", nil

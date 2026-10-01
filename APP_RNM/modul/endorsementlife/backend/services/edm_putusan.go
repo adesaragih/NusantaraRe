@@ -119,7 +119,7 @@ func (l *Layanan) Putuskan(ctx context.Context, p inti.Pelaku, id string, m Masu
 		if !ada {
 			return fmt.Errorf("%w: no current version of %q", ErrVersiBerubah, k.NomorPolis)
 		}
-		nomor, prodKe, err := models.NomorEndorsement(k.NomorPolis, v.ProdKe)
+		nomor, prodKe, err := models.NomorEndorsement(k.NomorPolis, v)
 		if err != nil {
 			return err
 		}

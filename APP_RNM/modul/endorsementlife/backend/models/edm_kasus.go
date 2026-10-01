@@ -28,8 +28,14 @@ type Versi struct {
 	Jenis JenisSumber
 	// ID - `T_PREMIUM_LIST.ID` (aplikasi) atau `JSON_POLIS.IDPEGA` (warisan).
 	ID string
-	// ProdKe - `PROD_KE`/`PRODKE`; kosong dibaca 1 (E1, RALAT R23).
+	// ProdKe - `PROD_KE`/`PRODKE`; kosong dibaca 1 (E1, RALAT R23). Urutan VERSI.
 	ProdKe int
+	// UrutanPega - `PRODKE` versi ini menurut penomoran PEGA, dasar NOMOR endorsement berikutnya
+	// (K3 keputusan work owner 01-10-2026, OQ-EDM-008): `JSON_POLIS.PRODKE` mentah, kosong = 0
+	// (`GenerateNoEDM_Life` `Local.Prodke` bertipe int b278); new business sistem baru = 0; endorsement
+	// sistem baru = akhiran nomornya (Pega menulis `PRODKE = InputData.CARI4` - `InsertJsonPolisEDM` b101 -
+	// angka yang sama dengan akhiran nomor). ⛔ Hanya untuk nomor; urutan versi tetap ProdKe.
+	UrutanPega int
 	// EdmType - maksud endorsement versi itu; kosong pada new business.
 	// Gerbang 4: memuat `3` = polis sudah pernah Batal (`GetEdmTypeLife`).
 	EdmType string

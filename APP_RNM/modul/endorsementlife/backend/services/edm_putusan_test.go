@@ -39,7 +39,7 @@ func TestPutuskanConfirmMeresmikanVersiDalamUrutan(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if h.Status != models.StatusKasusSelesai || h.NoEndorsement != "UJI-PL-1/02" || h.Peserta != 3 || h.RekapWarisan != 1 {
+	if h.Status != models.StatusKasusSelesai || h.NoEndorsement != "UJI-PL-1/01" || h.Peserta != 3 || h.RekapWarisan != 1 {
 		t.Fatalf("hasil %+v", h)
 	}
 	// AC 42: urutan pemanggilan adalah bagian kebenaran.
@@ -47,7 +47,7 @@ func TestPutuskanConfirmMeresmikanVersiDalamUrutan(t *testing.T) {
 		t.Errorf("urutan %s", got)
 	}
 	p := g.Polis["EDMLF-1"]
-	if p.NoPolis != "UJI-PL-1" || p.ProdKe != 2 || p.NoEndors != "UJI-PL-1/02" || p.PLNumberEDM != "UJI-PL-1/02" || p.Status != models.StatusKasusSelesai {
+	if p.NoPolis != "UJI-PL-1" || p.ProdKe != 2 || p.NoEndors != "UJI-PL-1/01" || p.PLNumberEDM != "UJI-PL-1/01" || p.Status != models.StatusKasusSelesai {
 		t.Errorf("kepala %+v", p)
 	}
 	for _, d := range g.Peserta[1:] {
@@ -55,12 +55,12 @@ func TestPutuskanConfirmMeresmikanVersiDalamUrutan(t *testing.T) {
 		if d.EdmStatus == models.StatusOld {
 			mauLama = "1"
 		}
-		if d.Nilai["PL_NUMBER_EDM"] != "UJI-PL-1/02" || d.Nilai["STATUS"] != "1" || d.Nilai["STATUS_OLD"] != mauLama {
+		if d.Nilai["PL_NUMBER_EDM"] != "UJI-PL-1/01" || d.Nilai["STATUS"] != "1" || d.Nilai["STATUS_OLD"] != mauLama {
 			t.Errorf("peserta %s %+v (STATUS 1 = TR, STATUS_OLD 1 = Old)", d.ID, d.Nilai)
 		}
 	}
 	w := g.RekapWarisan[0]
-	if w["PL_NUMBER"] != "UJI-PL-1" || w["PL_NUMBER_EDM"] != "UJI-PL-1/02" || w["IDPEGA"] != "EDMLF-1" || w["COB"] != "UJI-COB" ||
+	if w["PL_NUMBER"] != "UJI-PL-1" || w["PL_NUMBER_EDM"] != "UJI-PL-1/01" || w["IDPEGA"] != "EDMLF-1" || w["COB"] != "UJI-COB" ||
 		w["CURRENCY"] != "IDR" || w["PREMIUM"] != "10" {
 		t.Errorf("rekap warisan %+v", w)
 	}
@@ -71,7 +71,7 @@ func TestPutuskanConfirmMeresmikanVersiDalamUrutan(t *testing.T) {
 	if len(j.catatan) != 1 || j.catatan[0].Dari != models.TahapInputEDMLife || j.catatan[0].Ke != models.StatusKasusSelesai {
 		t.Errorf("jejak %+v", j.catatan)
 	}
-	if k, err := l.BacaKasus(ctx, pelakuUji, "EDMLF-1"); err != nil || len(k.Riwayat) != 1 || k.PLNumberEDM != "UJI-PL-1/02" {
+	if k, err := l.BacaKasus(ctx, pelakuUji, "EDMLF-1"); err != nil || len(k.Riwayat) != 1 || k.PLNumberEDM != "UJI-PL-1/01" {
 		t.Errorf("baca sesudah Confirm %+v %v", k, err)
 	}
 	// Kasus tertutup tidak dapat diputuskan ulang (AC 29) - nomor tidak lahir dua kali.
@@ -113,7 +113,8 @@ func TestPutuskanAntiDobel(t *testing.T) {
 	ctx := context.Background()
 	// Versi 2 resmi lahir sesudah kasus dibuat: salinan kasus basi.
 	g, l, _ := gudangPutusan(t)
-	g.Polis["EDMLF-0"] = &tiruan.Polis{ID: "EDMLF-0", NoPolis: "UJI-PL-1", OldPolicyNo: "UJI-PL-1", EdmType: "1", ProdKe: 2, Status: models.StatusKasusSelesai}
+	g.Polis["EDMLF-0"] = &tiruan.Polis{ID: "EDMLF-0", NoPolis: "UJI-PL-1", OldPolicyNo: "UJI-PL-1", EdmType: "1", ProdKe: 2,
+		PLNumberEDM: "UJI-PL-1/01", Status: models.StatusKasusSelesai}
 	if _, err := l.Putuskan(ctx, pelakuUji, "EDMLF-1", services.MasukanPutusan{Status: "1"}); !errors.Is(err, services.ErrVersiBerubah) {
 		t.Fatalf("versi berubah: %v", err)
 	}
@@ -159,5 +160,48 @@ func TestPutuskanDitolak(t *testing.T) {
 	}
 	if _, err := l2.Putuskan(ctx, pelakuUji, "NBLF-7", services.MasukanPutusan{Status: "1"}); !errors.Is(err, services.ErrKasusTidakAda) {
 		t.Errorf("bukan kasus EDM: %v", err)
+	}
+}
+
+// K3 keputusan work owner 01-10-2026 (OQ-EDM-008): polis NB WARISAN (`JSON_POLIS.PRODKE` kosong) →
+// endorsement pertama `<polis>/01` (versi 2, E1), kedua `<polis>/02` (versi 3) - rumus `GenerateNoEDM_Life`
+// 3–4 (`Local.Prodke` int, kosong = 0; `CARI4 = Prodke+1`; pad dua digit). Rantai Pega yang sudah punya
+// endorsement `/01` warisan (`PRODKE` 1) berlanjut ke `/02`.
+func TestNomorEndorsementPertamaDanKeduaPolisNBWarisan(t *testing.T) {
+	ctx := context.Background()
+	g := tiruan.Baru()
+	g.PolisWarisan = append(g.PolisWarisan, &tiruan.PolisWarisan{IDPega: "UJI-IDPEGA-NB", NoPolis: "UJI-PL-W", ProdKe: 0})
+	l, _ := layananJejak(g)
+	kasus := func(id string, prodKe int) {
+		g.Polis[id] = &tiruan.Polis{ID: id, OldPolicyNo: "UJI-PL-W", EdmType: models.EdmTypePerubahanData, ProdKe: prodKe,
+			Kepala: map[string]string{"TYPE": models.TypeTR, "BUSINESS_NAME": "UJI-COB"}}
+		g.Peserta = append(g.Peserta, &tiruan.Peserta{ID: "UJI-P-" + id, PolisID: id, PLNumber: "UJI-PL-W", EdmStatus: models.StatusNew,
+			Nilai: map[string]string{"CURRENCY": "IDR"}})
+		if _, err := l.Simpan(ctx, pelakuUji, id, models.PilihanHapus{}); err != nil {
+			t.Fatalf("simpan %s: %v", id, err)
+		}
+	}
+	kasus("EDMLF-11", 2)
+	h, err := l.Putuskan(ctx, pelakuUji, "EDMLF-11", services.MasukanPutusan{Status: "1"})
+	if err != nil || h.NoEndorsement != "UJI-PL-W/01" || g.Polis["EDMLF-11"].ProdKe != 2 {
+		t.Fatalf("endorsement pertama NB warisan: %+v %v (versi %d)", h, err, g.Polis["EDMLF-11"].ProdKe)
+	}
+	kasus("EDMLF-12", 3)
+	h, err = l.Putuskan(ctx, pelakuUji, "EDMLF-12", services.MasukanPutusan{Status: "1"})
+	if err != nil || h.NoEndorsement != "UJI-PL-W/02" || g.Polis["EDMLF-12"].ProdKe != 3 {
+		t.Fatalf("endorsement kedua: %+v %v (versi %d)", h, err, g.Polis["EDMLF-12"].ProdKe)
+	}
+
+	// Rantai Pega: NB (kosong) + endorsement warisan `/01` (`PRODKE` 1) → endorsement sistem baru `/02`, versi 2.
+	g = tiruan.Baru()
+	g.PolisWarisan = append(g.PolisWarisan, &tiruan.PolisWarisan{IDPega: "UJI-IDPEGA-NB", NoPolis: "UJI-PL-W", ProdKe: 0},
+		&tiruan.PolisWarisan{IDPega: "UJI-IDPEGA-E1", NoPolis: "UJI-PL-W", ProdKe: 1, EdmType: "1"})
+	l, _ = layananJejak(g)
+	kasus("EDMLF-13", 2)
+	if v, _, _ := g.VersiBerjalan(ctx, nil, "UJI-PL-W", 0); v.ID != "UJI-IDPEGA-E1" || v.UrutanPega != 1 {
+		t.Fatalf("versi berjalan rantai Pega: %+v", v)
+	}
+	if h, err := l.Putuskan(ctx, pelakuUji, "EDMLF-13", services.MasukanPutusan{Status: "1"}); err != nil || h.NoEndorsement != "UJI-PL-W/02" {
+		t.Errorf("sesudah endorsement Pega /01: %+v %v", h, err)
 	}
 }

@@ -67,29 +67,53 @@ func TestPengenalKasusTanpaPadding(t *testing.T) {
 	}
 }
 
-func TestNomorEndorsementDariPRODKE(t *testing.T) {
+// K3 keputusan work owner 01-10-2026 (OQ-EDM-008): NOMOR = rumus Pega `GenerateNoEDM_Life` 3–4
+// (`Local.Prodke` int ← `PRODKE` baris terbaru b898/b899, `CARI4 = Prodke+1` b946, pad dua digit b967);
+// VERSI tetap E1 (`NVL(PRODKE, 1)` + 1). Polis NB warisan (`PRODKE` kosong) → `/01`, lalu `/02`.
+func TestNomorEndorsementRumusPega(t *testing.T) {
 	kasus := []struct {
+		nama   string
 		polis  string
-		prodKe int
+		versi  Versi
 		nomor  string
-		baru   int
+		prodKe int
 	}{
-		{"UJI-PL-1", 1, "UJI-PL-1/02", 2}, // NB = versi 1 (E1) → endorsement pertama /02
-		{"UJI-PL-1", 8, "UJI-PL-1/09", 9},
-		{"UJI-PL-1", 9, "UJI-PL-1/10", 10}, // dua digit: tanpa pad tambahan (b967)
-		{" UJI-PL-1 ", 99, "UJI-PL-1/100", 100},
+		{"NB warisan PRODKE kosong", "UJI-PL-1", Versi{ID: "UJI-IDPEGA-1", ProdKe: 1, UrutanPega: 0}, "UJI-PL-1/01", 2},
+		{"endorsement pertama sistem baru", "UJI-PL-1", Versi{ID: "EDMLF-1", ProdKe: 2, UrutanPega: 1}, "UJI-PL-1/02", 3},
+		{"endorsement warisan Pega /01", "UJI-PL-1", Versi{ID: "UJI-IDPEGA-2", ProdKe: 1, UrutanPega: 1}, "UJI-PL-1/02", 2},
+		{"delapan", "UJI-PL-1", Versi{ID: "x", ProdKe: 9, UrutanPega: 8}, "UJI-PL-1/09", 10},
+		{"dua digit tanpa pad tambahan b967", "UJI-PL-1", Versi{ID: "x", ProdKe: 10, UrutanPega: 9}, "UJI-PL-1/10", 11},
+		{"tiga digit", " UJI-PL-1 ", Versi{ID: "x", ProdKe: 100, UrutanPega: 99}, "UJI-PL-1/100", 101},
 	}
 	for _, k := range kasus {
-		n, b, err := NomorEndorsement(k.polis, k.prodKe)
-		if err != nil || n != k.nomor || b != k.baru {
-			t.Errorf("NomorEndorsement(%q, %d) = %q, %d, %v; mau %q, %d", k.polis, k.prodKe, n, b, err, k.nomor, k.baru)
+		n, b, err := NomorEndorsement(k.polis, k.versi)
+		if err != nil || n != k.nomor || b != k.prodKe {
+			t.Errorf("%s: NomorEndorsement = %q, %d, %v; mau %q, %d", k.nama, n, b, err, k.nomor, k.prodKe)
 		}
 	}
-	if _, _, err := NomorEndorsement("", 1); err == nil {
+	if _, _, err := NomorEndorsement("", Versi{ProdKe: 1}); err == nil {
 		t.Error("nomor polis kosong diterima")
 	}
-	if _, _, err := NomorEndorsement("UJI-PL-1", 0); err == nil {
+	if _, _, err := NomorEndorsement("UJI-PL-1", Versi{ProdKe: 0}); err == nil {
 		t.Error("PRODKE 0 diterima sebagai versi")
+	}
+	if _, _, err := NomorEndorsement("UJI-PL-1", Versi{ProdKe: 1, UrutanPega: -1}); err == nil {
+		t.Error("urutan Pega negatif diterima")
+	}
+}
+
+// Urutan Pega endorsement sistem baru = akhiran nomornya: Pega menulis `JSON_POLIS.PRODKE = CARI4`
+// (`InsertJsonPolisEDM` b101), angka yang sama dengan akhiran `NOPOLIS||'/'||CARI14`.
+func TestUrutanDariNomor(t *testing.T) {
+	for nomor, mau := range map[string]int{"UJI-PL-1/01": 1, "UJI-PL-1/10": 10, "UJI/PL/1/100": 100, " UJI-PL-1/02 ": 2} {
+		if got, err := UrutanDariNomor(nomor); err != nil || got != mau {
+			t.Errorf("UrutanDariNomor(%q) = %d, %v; mau %d", nomor, got, err, mau)
+		}
+	}
+	for _, rusak := range []string{"", "UJI-PL-1", "UJI-PL-1/", "UJI-PL-1/0x", "UJI-PL-1/-1"} {
+		if _, err := UrutanDariNomor(rusak); err == nil {
+			t.Errorf("%q diterima", rusak)
+		}
 	}
 }
 

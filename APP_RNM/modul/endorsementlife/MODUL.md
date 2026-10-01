@@ -76,3 +76,9 @@ pelaku (401 tanpa), menjawab 503 bila Oracle tidak dikonfigurasi, dan galatnya b
 | `POST /kasus/{id}/csv` | `Add CSV Data` b10405 → `SaveCSVEDMLife` — baris `New`, tanpa batas baris, satu penolakan menolak seluruh berkas (422 berdaftar pesan) |
 | `POST /kasus/{id}/putuskan` | `Submit` b37494 / b38109 — `{"status":"1"\|"2"\|"7","comment":""}`: riwayat `T_VIEW_SUGGEST`; Confirm = nomor `<polis>/NN`, anti-dobel `(NO_POLIS, PROD_KE)`, versi resmi, rekap warisan; Decline = `Resolved-Rejected`; satu transaksi |
 | `POST /kasus/{id}/simpan` | `Save` b37202 → `SetPremi_EDM` — centang `.EdmBatal` / `DELETE ALL` (`{"pilih":[],"semua":false,"kecuali":[]}`), jurnal balik 32 kolom, rekap mata uang; simpan kedua 409 |
+
+## Keputusan OQ work owner 01-10-2026 (`PROMPT-LANJUTAN-TIGA-MODUL-LIFE-KEPUTUSAN-OQ.md`)
+
+| Butir | Keadaan | Bukti |
+| --- | --- | --- |
+| K3 OQ-EDM-008 nomor | endorsement pertama polis NB warisan `<polis>/01`, kedua `/02` — rumus `GenerateNoEDM_Life` 3–4 atas `PRODKE` Pega (kosong = 0); versi tetap `NVL(PRODKE, 1)` | `models.NomorEndorsement`, `models.Versi.UrutanPega`, tiket 04 bab status 01-10-2026 |
