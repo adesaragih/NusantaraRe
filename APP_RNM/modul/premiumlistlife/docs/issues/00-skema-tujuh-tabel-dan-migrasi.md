@@ -337,3 +337,14 @@ DEV, perintah audit ditulis di tiket ini saja. Executor tidak dapat memastikan a
 §0, 29-09-2026) adalah `T_MIGRASI` 29 langkah, terakhir `057` — maka jalan yang benar di kedua keadaan dipilih. Kepala
 058 menulis tanggal baca 29-09-2026, brief GILIRAN-16 menulis 28-09-2026; dicatat, tidak diputuskan executor.
 OQ-PL-17 (`PC_DATA_UNIQUEID`) tetap terbuka.
+
+## ⛔ Ralat bertanggal — 01 Oktober 2026: `T_WORK_POLIS.STATUS` → `STATUS_WORK`
+
+`[terverifikasi — katalog DEV, baca saja, 01-10-2026]` `T_WORK_POLIS` di DEV diubah DI LUAR repo:
+`STATUS` tidak ada, gantinya `STATUS_WORK`, ditambah `COVER_KEY`, `CREATE_OP`, `CREATE_OP_NAME`,
+`TGL_CREATE`, `TGL_UPDATE` (seluruhnya nullable) — pola `T_WORK_CLAIM`. Kotak masuk, buka kasus, dan
+keputusan gagal `ORA-00904: "W"."STATUS"`. `[keputusan work owner 01-10-2026]` ikuti struktur DEV:
+migrasi 050 disunting di tempat (`STATUS_WORK`), migrasi `063_t_work_polis_status_work.sql` mengganti
+nama berpelindung katalog untuk lingkungan yang memasang 050 lama (di DEV tidak berbuat apa-apa), dan
+seluruh kueri modul memakai `STATUS_WORK`. Kelima kolom tambahan TIDAK dibuat repo — penjaga melarang
+kolom baru lewat blok berpelindung, dan `ADD` biasa gagal di DEV; kode tidak memakainya.

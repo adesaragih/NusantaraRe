@@ -33,6 +33,7 @@ import {
   TAHAP_POLIS,
   type AkibatKeputusanPolis,
 } from '../api'
+import FormPenawaran from './FormPenawaran'
 
 /** Menyusun kalimat tentang akibat sebuah keputusan. */
 export function ringkasanAkibat(a: AkibatKeputusanPolis): string {
@@ -118,6 +119,15 @@ export default function InputOffer({
         </p>
       )}
       {galatPeriode !== null && <Gagal galat={galatPeriode} />}
+
+      {/*
+        Tiket 01 bagian 3 — isian `InputOfferLife.xml`, HANYA di tahap
+        penawaran (`Assignment2`). `Confirm` di tahap ini ditolak server (409)
+        selama System Reinsurance, Class of Business, dan Comment belum
+        tersimpan lewat `Save Offer`.
+      */}
+      {tahap === TAHAP_POLIS.penawaran && <FormPenawaran polisID={polisID} />}
+
       {galat !== null && <Gagal galat={galat} />}
       {akibat !== null && <p role="status">{ringkasanAkibat(akibat)}</p>}
 

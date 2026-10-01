@@ -1,0 +1,431 @@
+// Data polis layar Input Premium Detail — tiket 03 bagian 2 (bagian 1–3 layar).
+//
+// Meniru tiga kolom atas `Section/ShowLifePremiumDetail.xml`: kiri data polis
+// (produk, Type, R/I SLIP, Premium Payment Method, Marketing Officer, Annuity
+// Interest, Premium Refund Factor), tengah pihak (Ceding, Policy Holder, Billing
+// Name, Retrocessionaire), kanan tanggal-tanggal penawaran, WPC, dan status.
+//
+// ⛔ Data penawaran (tanggal, Age Limit, Coverage Period, Sum Insured,
+// Underwriting Policy, Marketing Note, dan seterusnya) DITAMPILKAN, tidak
+// diisi di sini — ia milik layar Input Offer. Insured Name dan Occupation tetap
+// disembunyikan, sama seperti di layar Input Offer (keputusan work owner).
+//
+// ⛔ `Save Data` = `SavePremiumList_Act` SAJA: simpan, lalu periksa umur dan sum
+// insured peserta terhadap batas produk; pesannya tampil, data tetap tersimpan.
+// `Calculate1_Act` TIDAK dijalankan — keputusan work owner 01-10-2026.
+
+import { useCallback, useEffect, useState } from 'react'
+
+import { Field, Gagal, Memuat, Modal, Pilih, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
+import {
+  ambilDataPolis,
+  ambilPenawaranPolis,
+  cariCedingPolis,
+  cariMarketingPolis,
+  cariProdukPolis,
+  cariRISlipPolis,
+  isiDariDataPolis,
+  simpanDataPolis,
+  tanggalMasukan,
+  type DataPolis,
+  type IsiDataPolis,
+  type PenawaranPolis,
+  type PilihanKode,
+} from '../api'
+import { KOLOM_PRODUK, LABEL_DATA_POLIS } from '../labels'
+
+/** Type yang menuntut R/I SLIP dan Billing Name (`.Type == 'TR' || 'TP'`). */
+export function typeRetro(type: string): boolean {
+  return type === 'TP' || type === 'TR'
+}
+
+/**
+ * Kolom wajib yang masih kosong — label layar, urut seperti di layar.
+ *
+ * `pyRequired` korpus: Product Name (ProtectAccept), Type, Premium Payment
+ * Method, Marketing Officer, Annuity Interest, Premium Refund Factor; R/I SLIP
+ * dan Billing Name hanya untuk TP/TR. Server memeriksa ulang dengan aturan
+ * yang sama (`models.SusunDataPolis`).
+ */
+export function kolomWajibDataPolis(isi: IsiDataPolis): string[] {
+  const periksa: [boolean, string][] = [
+    [isi.productName.trim() === '', LABEL_DATA_POLIS.productName],
+    [isi.type.trim() === '', LABEL_DATA_POLIS.type],
+    [typeRetro(isi.type) && isi.riSlipRnm.trim() === '', LABEL_DATA_POLIS.riSlip],
+    [isi.proRateType.trim() === '', LABEL_DATA_POLIS.proRateType],
+    [isi.marketingName.trim() === '', LABEL_DATA_POLIS.marketing],
+    [isi.annuityInterest.trim() === '', LABEL_DATA_POLIS.annuityInterest],
+    [isi.premiumRefundFactor.trim() === '', LABEL_DATA_POLIS.premiumRefundFactor],
+    [typeRetro(isi.type) && isi.retroName.trim() === '', LABEL_DATA_POLIS.billing],
+  ]
+  return periksa.filter(([kosong]) => kosong).map(([, label]) => label)
+}
+
+function opsi(p: PilihanKode[]): Opsi[] {
+  return p.map((x) => ({ value: x.kode, label: x.nama }))
+}
+
+/** Popup yang sedang terbuka. */
+type Popup = 'produk' | 'marketing' | 'rislip' | 'billing' | 'retro'
+
+/** Satu baris popup — apa yang tampil dan apa yang diterapkan. */
+interface BarisPopup {
+  kunci: string
+  sel: string[]
+  terapkan: (isi: IsiDataPolis) => IsiDataPolis
+}
+
+export default function FormDataPolis({
+  polisID,
+  bernomor,
+  onTersimpan,
+}: {
+  polisID: string
+  /** PL_NUMBER sudah terbit — `Choose Product Name` tampil hanya bila belum. */
+  bernomor: boolean
+  /** Dipanggil sesudah tersimpan — kepala halaman (Type) ikut dimuat ulang. */
+  onTersimpan: () => void
+}) {
+  const [data, setData] = useState<DataPolis | null>(null)
+  const [offer, setOffer] = useState<PenawaranPolis | null>(null)
+  const [isi, setIsi] = useState<IsiDataPolis | null>(null)
+  const [galatMuat, setGalatMuat] = useState<unknown>(null)
+  const [galatSimpan, setGalatSimpan] = useState<unknown>(null)
+  const [sibuk, setSibuk] = useState(false)
+  const [tersimpan, setTersimpan] = useState(false)
+  const [popup, setPopup] = useState<Popup | null>(null)
+
+  const terima = useCallback((d: DataPolis) => {
+    setData(d)
+    setIsi(isiDariDataPolis(d))
+  }, [])
+
+  useEffect(() => {
+    let hidup = true
+    void (async () => {
+      try {
+        const [d, o] = await Promise.all([ambilDataPolis(polisID), ambilPenawaranPolis(polisID)])
+        if (!hidup) return
+        terima(d)
+        setOffer(o)
+      } catch (e) {
+        if (hidup) setGalatMuat(e)
+      }
+    })()
+    return () => {
+      hidup = false
+    }
+  }, [polisID, terima])
+
+  if (galatMuat !== null) return <Gagal galat={galatMuat} />
+  if (data === null || isi === null || offer === null) return <Memuat />
+
+  const bisa = data.bolehDisimpan
+  const kurang = kolomWajibDataPolis(isi)
+  const ubah = (medan: keyof IsiDataPolis) => (v: string) => {
+    setIsi({ ...isi, [medan]: v })
+    setTersimpan(false)
+  }
+  const tampil = (label: string, nilai: string) => (
+    <Field key={label} label={label} value={nilai} onChange={() => {}} readOnly />
+  )
+
+  async function simpan(): Promise<void> {
+    if (isi === null || sibuk || kolomWajibDataPolis(isi).length > 0) return
+    setSibuk(true)
+    setGalatSimpan(null)
+    setTersimpan(false)
+    try {
+      terima(await simpanDataPolis(polisID, isi))
+      setTersimpan(true)
+      onTersimpan()
+    } catch (e) {
+      setGalatSimpan(e)
+    } finally {
+      setSibuk(false)
+    }
+  }
+
+  const tombol = (label: string, jenis: Popup) =>
+    bisa && (
+      <button type="button" className="btn--sm" onClick={() => { setPopup(jenis) }}>
+        {label}
+      </button>
+    )
+
+  return (
+    <section className="panel pl-datapolis">
+      <h3 className="panel__title">{LABEL_DATA_POLIS.judul}</h3>
+      <div className="form-grid">
+        <div>
+          {/* `Choose Product Name` tampil bila PL_NUMBER belum ada. */}
+          {!bernomor && tombol(LABEL_DATA_POLIS.pilihProduk, 'produk')}
+          <Field label={LABEL_DATA_POLIS.productName} value={isi.productName} onChange={() => {}} readOnly required />
+          {tampil(LABEL_DATA_POLIS.productNameId, isi.productNameId)}
+          <Pilih
+            label={LABEL_DATA_POLIS.type}
+            value={isi.type}
+            onChange={ubah('type')}
+            opsi={opsi(data.pilihan.type)}
+            required
+          />
+          {tampil(LABEL_DATA_POLIS.typeCeding, offer.typeCedingName)}
+          {typeRetro(isi.type) && (
+            <>
+              <Field label={LABEL_DATA_POLIS.riSlip} value={isi.riSlipRnm} onChange={() => {}} readOnly required />
+              {tombol(LABEL_DATA_POLIS.riSlip, 'rislip')}
+            </>
+          )}
+          <Pilih
+            label={LABEL_DATA_POLIS.proRateType}
+            value={isi.proRateType}
+            onChange={ubah('proRateType')}
+            opsi={opsi(data.pilihan.proRateType)}
+            required
+          />
+          <Field label={LABEL_DATA_POLIS.marketing} value={isi.marketingName} onChange={() => {}} readOnly required />
+          {tombol(LABEL_DATA_POLIS.marketing, 'marketing')}
+          {tampil(LABEL_DATA_POLIS.sumInsured, offer.sumInsured)}
+          {/* Desimal sebagai TEKS, titik sebagai pemisah — bukan input number. */}
+          <Field
+            label={LABEL_DATA_POLIS.annuityInterest}
+            value={isi.annuityInterest}
+            onChange={ubah('annuityInterest')}
+            readOnly={!bisa}
+            required
+          />
+          <Field
+            label={LABEL_DATA_POLIS.premiumRefundFactor}
+            value={isi.premiumRefundFactor}
+            onChange={ubah('premiumRefundFactor')}
+            readOnly={!bisa}
+            required
+          />
+          {offer.noOffer !== '' && tampil(LABEL_DATA_POLIS.noOffer, offer.noOffer)}
+          {tampil(LABEL_DATA_POLIS.ketentuanUnderwriting, offer.ketentuanUnderwriting)}
+        </div>
+        <div>
+          {tampil(LABEL_DATA_POLIS.ceding, isi.cedingCoName)}
+          {tampil(LABEL_DATA_POLIS.policyHolder, isi.policyHolderName)}
+          {tampil(LABEL_DATA_POLIS.jenisAsuransi, offer.jenisAsuransi)}
+          {tampil(LABEL_DATA_POLIS.businessCode, offer.businessName)}
+          {tampil(LABEL_DATA_POLIS.batasUsia, offer.batasUsiaPeserta === null ? '' : String(offer.batasUsiaPeserta))}
+          {tampil(LABEL_DATA_POLIS.periode, offer.periodePertanggungan)}
+          <p className="field__label">{LABEL_DATA_POLIS.catatanBilling}</p>
+          <Field
+            label={LABEL_DATA_POLIS.billing}
+            value={isi.retroName}
+            onChange={() => {}}
+            readOnly
+            required={typeRetro(isi.type)}
+          />
+          {tombol(LABEL_DATA_POLIS.pilihBilling, 'billing')}
+          {tampil(LABEL_DATA_POLIS.retro, isi.securityReinsurer)}
+          {tombol(LABEL_DATA_POLIS.pilihRetro, 'retro')}
+        </div>
+        <div>
+          {tampil(LABEL_DATA_POLIS.dateReceived, tanggalMasukan(offer.dateReceived))}
+          {tampil(LABEL_DATA_POLIS.tanggalPenawaran, tanggalMasukan(offer.tanggalPenawaran))}
+          {tampil(LABEL_DATA_POLIS.tanggalRespon, tanggalMasukan(offer.tanggalRespon))}
+          {tampil(LABEL_DATA_POLIS.tanggalKonfirmasi, tanggalMasukan(offer.tanggalKonfirmasi))}
+          {tampil(LABEL_DATA_POLIS.tanggalKonfirmasiBalik, tanggalMasukan(offer.tanggalKonfirmasiBalik))}
+          {tampil(LABEL_DATA_POLIS.tanggalRealisasi, tanggalMasukan(offer.tanggalRealisasi))}
+          {tampil(LABEL_DATA_POLIS.tanggalBind, tanggalMasukan(offer.tanggalBind))}
+          {offer.tbc !== null && tampil(LABEL_DATA_POLIS.tanggalTbc, tanggalMasukan(offer.tanggalTbc))}
+          {tampil(LABEL_DATA_POLIS.wpc, tanggalMasukan(data.wpc))}
+          {tampil(LABEL_DATA_POLIS.status, offer.status)}
+          {tampil(LABEL_DATA_POLIS.statusUpdate, offer.statusUpdate)}
+          {tampil(LABEL_DATA_POLIS.keteranganMarketing, offer.keteranganMarketing)}
+        </div>
+      </div>
+
+      {galatSimpan !== null && <Gagal galat={galatSimpan} />}
+      {tersimpan && <p role="status">Data polis tersimpan.</p>}
+      {/*
+        Pesan SavePremiumList_Act langkah 8.1/8.2 (umur / sum insured di luar
+        batas produk). Data TETAP tersimpan — `Obj-Save WithErrors=true`.
+      */}
+      {(data.peringatan ?? []).length > 0 && (
+        <div className="alert alert--error" role="alert">
+          {(data.peringatan ?? []).map((p, i) => (
+            <div key={i}>{p}</div>
+          ))}
+        </div>
+      )}
+      {bisa && (
+        <p>
+          <button
+            type="button"
+            className="btn--primary"
+            disabled={sibuk || kurang.length > 0}
+            onClick={() => { void simpan() }}
+          >
+            {LABEL_DATA_POLIS.simpan}
+          </button>
+          {kurang.length > 0 && <span role="status"> Wajib diisi: {kurang.join(', ')}</span>}
+        </p>
+      )}
+
+      {popup !== null && (
+        <PopupCari
+          judul={judulPopup(popup)}
+          kolom={kolomPopup(popup)}
+          cari={(teks) => cariPopup(popup, polisID, teks)}
+          onPilih={(b) => {
+            setIsi(b.terapkan(isi))
+            setTersimpan(false)
+            setPopup(null)
+          }}
+          onTutup={() => { setPopup(null) }}
+        />
+      )}
+    </section>
+  )
+}
+
+function judulPopup(p: Popup): string {
+  return {
+    produk: LABEL_DATA_POLIS.pilihProduk,
+    marketing: LABEL_DATA_POLIS.marketing,
+    rislip: LABEL_DATA_POLIS.riSlip,
+    billing: LABEL_DATA_POLIS.pilihBilling,
+    retro: LABEL_DATA_POLIS.pilihRetro,
+  }[p]
+}
+
+function kolomPopup(p: Popup): string[] {
+  if (p === 'produk') {
+    return [KOLOM_PRODUK.id, KOLOM_PRODUK.inwardName, KOLOM_PRODUK.ceding, KOLOM_PRODUK.sob, KOLOM_PRODUK.policyHolder]
+  }
+  if (p === 'rislip') return [LABEL_DATA_POLIS.riSlip]
+  return ['ID', 'Name']
+}
+
+/**
+ * Pencarian per popup, beserta penerapan pilihannya:
+ * produk → `SetProdNametoPolis` (produk, SOB, Ceding, Policy Holder);
+ * marketing → `.ID`→MOID, `.ClientID`→MarketingCode, `.ClientName`→nama;
+ * billing/retro → BrowseCedingCoLife_RD.
+ */
+export async function cariPopup(p: Popup, polisID: string, teks: string): Promise<BarisPopup[]> {
+  switch (p) {
+    case 'produk':
+      return (await cariProdukPolis(polisID, teks)).map((r) => ({
+        kunci: r.id,
+        sel: [r.id, r.inwardName, r.ceding, r.sobName, r.policyHolderName],
+        terapkan: (i) => ({
+          ...i,
+          productNameId: r.id,
+          productName: r.inwardName,
+          sourceOfBusiness: r.sobId,
+          sobName: r.sobName,
+          cedingCo: r.cedingId,
+          cedingCoName: r.ceding,
+          policyHolder: r.policyHolder,
+          policyHolderName: r.policyHolderName,
+        }),
+      }))
+    case 'marketing':
+      return (await cariMarketingPolis(teks)).map((r) => ({
+        kunci: r.id,
+        sel: [r.id, r.nama],
+        terapkan: (i) => ({ ...i, moId: r.id, marketingCode: r.kode, marketingName: r.nama }),
+      }))
+    case 'rislip':
+      return (await cariRISlipPolis(teks)).map((r) => ({
+        kunci: r.id,
+        sel: [r.nama],
+        terapkan: (i) => ({ ...i, riSlipRnm: r.id }),
+      }))
+    case 'billing':
+      return (await cariCedingPolis(teks)).map((r) => ({
+        kunci: r.id,
+        sel: [r.id, r.nama],
+        // Retrocessionaire dikosongkan; server mengisinya untuk Billing tertentu
+        // (setSecurityReinsurer_act).
+        terapkan: (i) => ({ ...i, retroId: r.id, retroName: r.nama, securityReinsurerId: '', securityReinsurer: '' }),
+      }))
+    case 'retro':
+      return (await cariCedingPolis(teks)).map((r) => ({
+        kunci: r.id,
+        sel: [r.id, r.nama],
+        terapkan: (i) => ({ ...i, securityReinsurerId: r.id, securityReinsurer: r.nama }),
+      }))
+  }
+}
+
+function PopupCari({
+  judul,
+  kolom,
+  cari,
+  onPilih,
+  onTutup,
+}: {
+  judul: string
+  kolom: string[]
+  cari: (teks: string) => Promise<BarisPopup[]>
+  onPilih: (b: BarisPopup) => void
+  onTutup: () => void
+}) {
+  const [teks, setTeks] = useState('')
+  const [hasil, setHasil] = useState<BarisPopup[] | null>(null)
+  const [galat, setGalat] = useState<unknown>(null)
+  const [sibuk, setSibuk] = useState(false)
+
+  async function jalankan(): Promise<void> {
+    if (sibuk) return
+    setSibuk(true)
+    setGalat(null)
+    try {
+      setHasil(await cari(teks))
+    } catch (e) {
+      setGalat(e)
+    } finally {
+      setSibuk(false)
+    }
+  }
+
+  return (
+    <Modal
+      judul={judul}
+      onTutup={onTutup}
+      onKirim={() => { void jalankan() }}
+      aksi={
+        <button type="submit" className="btn--primary" disabled={sibuk}>
+          Search
+        </button>
+      }
+      lebar
+    >
+      <Field label="Search" value={teks} onChange={setTeks} autoFocus />
+      {galat !== null && <Gagal galat={galat} />}
+      {hasil !== null && hasil.length === 0 && <p>Tidak ada yang cocok.</p>}
+      {hasil !== null && hasil.length > 0 && (
+        <table className="inbox__tabel">
+          <thead>
+            <tr>
+              {kolom.map((k) => (
+                <th key={k}>{k}</th>
+              ))}
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {hasil.map((b) => (
+              <tr key={b.kunci}>
+                {b.sel.map((s, i) => (
+                  <td key={i}>{s}</td>
+                ))}
+                <td>
+                  <button type="button" className="btn--sm" onClick={() => { onPilih(b) }}>
+                    Choose
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </Modal>
+  )
+}

@@ -332,3 +332,33 @@ npm run build           bersih
 ```
 
 Nol migrasi baru. Nol procedure dipanggil. Nol `COMMIT` di teks SQL.
+
+## Implementasi — tiket 03 bagian 2 (01 Oktober 2026): data polis layar Input Premium Detail
+
+`[keputusan work owner 01-10-2026]` bagian 1–3 layar `Section/ShowLifePremiumDetail.xml` lebih
+dahulu; `Save Data` (`Calculate1_Act` + `SavePremiumList_Act`), Generate Excel, dan ringkasan per mata
+uang menyusul.
+
+| Sel Pega | Kode |
+| --- | --- |
+| Choose Product Name → `ChooseProdName` / `BrowseProductForNB_Life` (Ceding kasus) → `SetProdNametoPolis` | `GET /api/polis-life/{id}/cari-produk` (`PRODUCT_LIFE`) |
+| Type* (QR/QP/TP/TR), Premium Payment Method* (1 AP / 2 PY / 3 PM, `Calculate1_Act`) | dropdown, pilihan dari server |
+| R/I SLIP RNM No.* (TP/TR) → `GetPLandNopolis_sql` (NOPOLIS RNML-Q / RNML-F) | `GET /api/polis-life/cari-rislip` (`T_PREMIUM_LIST.NO_POLIS`, JSON_POLIS dibuang) |
+| Marketing Officer* → `BrowseMarketingOfficer_RD` (MOStatus = 1) | `GET /api/polis-life/cari-marketing` (`MARKETINGOFFICER`) |
+| Annuity Interest*, Premium Refund Factor* | desimal sebagai teks |
+| Billing Name (TP/TR) / Retrocessionaire → `BrowseCedingCoLife_RD`; `setSecurityReinsurer_act` | `cari-ceding`; Retrocessionaire otomatis untuk L0000141 / L0000135 / L0000137 |
+| Data penawaran, tanggal-tanggal, WPC, Status | ditampilkan read-only |
+
+Simpan: `PUT /api/polis-life/{id}/data-polis`, hanya di tahap Input Premium Detail, menulis kolom yang
+sudah ada di `T_PREMIUM_LIST` (nol migrasi). ⚠️ `[belum terverifikasi]` kolom `PRODUCT_LIFE`
+(CEDINGID, SOBID, SOBNAME, POLICYHODER, POLICYHODERNAME, INWARDNAME) dan `MARKETINGOFFICER`
+(CLIENTID, MOSTATUS) — nama properti RD; konfirmasi DBA sebelum DEV. Kepanjangan AP/PY/PM dan teks
+dropdown Type tidak ada di korpus.
+
+**`Save Data` = `SavePremiumList_Act` saja `[keputusan work owner 01-10-2026]`** — `Calculate1_Act`
+tidak dijalankan. Langkah hidup yang dibawa: 6–7 batas produk (`PRODUCTINWARD_LIFE WHERE ID =
+ProductNameID`), 8.1 Protect Age (`ENTRY_AGE` vs MINAGE/MAXAGE), 8.2 Protect Sum Insured (dilewati
+TP/TR ber-R/I SLIP `RNML-FL`), 9 pesan, 15 simpan (`WithErrors=true`: data tetap tersimpan, pesan
+tampil sebagai peringatan). Langkah 4–5 sudah di unggah CSV (tiket 04); 8.4/8.8 di "Simpan
+permanen"; 10/12 di layar Summary; 8.3, 8.5–8.7, 8.9, 11, 13 ter-remark. ⚠️ `[belum terverifikasi]`
+kolom MINSUMINSURED/MAXSUMINSURED.

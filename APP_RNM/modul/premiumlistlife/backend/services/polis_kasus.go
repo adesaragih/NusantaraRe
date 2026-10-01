@@ -80,7 +80,7 @@ func (k *KasusPolis) Buat(ctx context.Context, pelaku inti.Pelaku, flag string,
 		if id, err = kerja.PengenalBerikut(ctx, tx); err != nil {
 			return err
 		}
-		if err := kerja.SisipKasusBaru(ctx, tx, id, awal, saat); err != nil {
+		if err := kerja.SisipKasusBaru(ctx, tx, id, awal, pelaku.AkunID, saat); err != nil {
 			return err
 		}
 		// ⛔ Kelahiran kasus ikut terekam (ADR-0007): tanpa baris ini jejak

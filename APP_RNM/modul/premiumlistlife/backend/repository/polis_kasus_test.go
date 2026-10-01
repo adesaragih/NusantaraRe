@@ -55,7 +55,7 @@ func TestSisipPremiumListKosongBerbagiPengenal(t *testing.T) {
 	// tanggal dan tanpa urutan.
 	// Penampung UNIK (pengenal dikirim dua kali): penampung berulang terbukti
 	// aman hanya untuk SELECT tanpa pembatas baris - INSERT tidak pernah diuji.
-	for _, k := range []string{"(ID, ID_PEGA, TGL_INPUT)", "VALUES (:1, :2, :3)"} {
+	for _, k := range []string{"(ID, ID_PEGA, TGL_INPUT, CREATE_OP_NAME)", "VALUES (:1, :2, :3, :4)"} {
 		if !strings.Contains(q, k) {
 			t.Errorf("bentuk %q tidak ada:\n%s", k, q)
 		}

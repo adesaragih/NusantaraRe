@@ -43,7 +43,7 @@ polis**. Bukan anak `T_PREMIUM_LIST`.
 | `ID` | teks | tidak | PK | NB + EDM | keputusan tiket 00 PremiumList |
 | `LINI` | teks | ya | | NB + EDM | keputusan tiket 00 PremiumList — "identitas polis + lini" |
 | `POSITION` | teks | ya | | NB + EDM | keputusan tiket 00 PremiumList, `spec.md` §12 — nilai connector `Confirm`/`Decline`/`Reject`/`Offer`/`Premium` |
-| `STATUS` | teks | ya | | NB + EDM | keputusan tiket 00 PremiumList, `spec.md` §12 |
+| `STATUS_WORK` | teks | ya | | NB + EDM | keputusan tiket 00 PremiumList, `spec.md` §12 — ⛔ dulu `STATUS`; diganti nama mengikuti struktur DEV (pola `T_WORK_CLAIM`), keputusan work owner 01-10-2026; 050 disunting di tempat + migrasi 063 |
 | `FLAG_ONGOING_POLICY` | teks | ya | | NB | korpus `FlagOnGoingPolicy` — `CreateInputLife` b618, VERBATIM `"0"` (Input Offer) / `"1"` (Input Premium); migrasi `057`, butir **bn** (GILIRAN-13) |
 
 ⛔ Kolom **audit** disebut tiket 00 sebagai "audit" **tanpa dinamai**, sehingga tidak ditulis di sini
@@ -121,6 +121,23 @@ versi hidup berdampingan; **versi berjalan adalah baris ber-`PROD_KE` terbesar**
 | `PROD_KE` | bilangan bulat | ya | | **EDM saja** | keputusan tiket 00 Endorsement — versi berjalan = `PRODKE` terbesar |
 | `EDM_STATUS` | teks | ya | | **EDM saja** | keputusan tiket 00 Endorsement — `Old`/`New`/`Delete`/`Batal` |
 | `STATUS_OLD` | teks | ya | | **EDM saja** | keputusan tiket 00 Endorsement |
+| `BATAS_USIA_PESERTA` | bilangan bulat | ya | | **NB saja** | korpus `.BatasUsiaPeserta` "Age Limit" — `Section/InputOfferLife.xml`; migrasi 059 |
+| `PERIODE_PERTANGGUNGAN` | teks | ya | | **NB saja** | korpus `.PeriodePertanggungan` "Coverage Period" — InputOfferLife.xml; migrasi 059 |
+| `TANGGAL_PENAWARAN` | DATE | ya | | **NB saja** | korpus `.TanggalPenawaran` "Offering Date" — InputOfferLife.xml; migrasi 059 |
+| `TANGGAL_RESPON` | DATE | ya | | **NB saja** | korpus `.TanggalRespon` "Response Date" — InputOfferLife.xml; migrasi 059 |
+| `TANGGAL_KONFIRMASI` | DATE | ya | | **NB saja** | korpus `.TanggalKonfirmasi` "Confirmation Date" — InputOfferLife.xml; migrasi 059 |
+| `TBC` | bilangan bulat | ya | | **NB saja** | korpus `.TBC` "Input TBC" — InputOfferLife.xml; migrasi 059 |
+| `TANGGAL_TBC` | DATE | ya | | **NB saja** | korpus `.TanggalTBC` "Max TBC" = TanggalKonfirmasi + TBC hari — `SetMaxTBCLife_Act`; migrasi 059 |
+| `KETERANGAN_MARKETING` | teks | ya | | **NB saja** | korpus `.KeteranganMarketing` "Marketing Note" — InputOfferLife.xml; migrasi 059 |
+| `QQ_NAME` | teks | ya | | **NB saja** | korpus `.QQName` "Insured Name" — InputOfferLife.xml; migrasi 060 |
+| `JENIS_USAHA` | teks | ya | | **NB saja** | korpus `.JenisUsaha` "Occupation" — InputOfferLife.xml; migrasi 060 |
+| `KETENTUAN_UNDERWRITING` | teks | ya | | **NB saja** | korpus `.KetentuanUnderwriting` "Underwriting Policy" — InputOfferLife.xml; migrasi 060 |
+| `TANGGAL_KONFIRMASI_BALIK` | DATE | ya | | **NB saja** | korpus `.TanggalKonfirmasiBalik` "Re-Confirmation Date" — InputOfferLife.xml; migrasi 060 |
+| `TANGGAL_REALISASI` | DATE | ya | | **NB saja** | korpus `.TanggalRealisasi` "Realization Date" — InputOfferLife.xml; migrasi 060 |
+| `TANGGAL_BIND` | DATE | ya | | **NB saja** | korpus `.TanggalBind` "Binding Date" — InputOfferLife.xml; migrasi 060 |
+| `STATUS_FINAL` | teks | ya | | **NB saja** | korpus `.StatusFinal` "Final Status" — InputOfferLife.xml; migrasi 060 |
+| `JENIS_ASURANSI` | teks | ya | | **NB saja** | korpus `.JenisAsuransi` "Reinsurance Type" — InputOfferLife.xml; turunan `SetReinsuranceType` (`TypeCeding "4"` → Non Proportional, selain itu Proportional), disimpan seperti `Obj-Save` InputOfferLife_ACT langkah 8; migrasi 061 |
+| `STATUS_PENAWARAN` | teks | ya | | **NB saja** | radio "Status" layar Input Offer (`pyWorkPage.Status` / `EmailTypePL`, kode radio) — keputusan work owner 01-10-2026, tidak berkolom di Pega; SATU BARIS PER STATUS per kasus (baris utama `ID = ID_PEGA` = status terakhir); migrasi 062 |
 
 
 `[keputusan work owner]` 2026-09-18 — **`TYPE_CEDING` adalah satu kolom.** Tiket 00 Endorsement
@@ -138,6 +155,13 @@ mendokumentasikan **domain nilainya** (`1`–`4`), bukan menambah kolom. `[terve
 
 ⚠️ `[keputusan work owner]` **Kolom `WORK_POLIS_ID` DIBUANG** — bukan diganti nama, **tidak ada**.
 Hubungan `T_WORK_POLIS` ↔ `T_PREMIUM_LIST` dijamin oleh **`ID` yang identik**.
+
+⚠️ `[keputusan work owner 01-10-2026]` **Satu baris per status penawaran** (migrasi 062): satu kasus
+dapat punya beberapa baris. **Baris utama** `ID = ID_PEGA` = nomor kasus memuat status TERAKHIR dan
+tetap satu-satunya yang dibaca kotak masuk, Premium List Detail, penomoran, summary, Claim Life, dan
+FK tabel anak. **Baris status** (`ID` = 32 heksa dari nomor kasus + status, `ID_PEGA` = nomor kasus)
+hanya salinan isian penawaran — tanpa `NO_POLIS`/`TYPE`/kolom tahap lain. Lihat
+`backend/repository/polis_barisstatus.go`.
 
 ⚠️ **Bentuk `NO_ENDORS`** `[terverifikasi]` — dicatat sebagai keterangan, **bukan** kolom baru:
 

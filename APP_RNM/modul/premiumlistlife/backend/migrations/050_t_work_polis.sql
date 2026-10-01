@@ -46,11 +46,20 @@
 -- ⛔ NOL `COMMIT` (ADR-U-0029). Batas transaksi milik Go.
 --
 -- ⚠️ Nama kolom di bawah DIBANGKITKAN dari STRUKTUR, tidak diketik ulang.
+--
+-- ⛔ RALAT 01-10-2026 - `STATUS` MENJADI `STATUS_WORK` (disunting DI TEMPAT).
+-- `[keputusan work owner 01-10-2026]` ikuti struktur DEV: di sana kolom ini
+-- sudah bernama STATUS_WORK (pola `T_WORK_CLAIM`), diubah di luar repo, dan
+-- kode yang membaca `STATUS` gagal ORA-00904. Disunting di tempat supaya skema
+-- BARU langsung benar dan penjaga DDL (yang tidak membaca RENAME) melihat nama
+-- yang benar; lingkungan yang sempat memasang 050 lama diselaraskan migrasi
+-- 063 (RENAME berpelindung katalog). DEV memuat pula COVER_KEY, CREATE_OP,
+-- CREATE_OP_NAME, TGL_CREATE, TGL_UPDATE (nullable) yang TIDAK dibuat di sini.
 CREATE TABLE {skema}.T_WORK_POLIS (
   ID       VARCHAR2(32) NOT NULL,
   LINI     VARCHAR2(255),
   POSITION VARCHAR2(255),
-  STATUS   VARCHAR2(255),
+  STATUS_WORK VARCHAR2(255),
   CONSTRAINT PK_T_WORK_POLIS PRIMARY KEY (ID)
 )
 /

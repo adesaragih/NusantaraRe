@@ -62,7 +62,7 @@ type KeadaanPolis struct {
 // sqlKeadaanPolis merakit pembacaannya.
 func sqlKeadaanPolis(tabel string) string {
 	return fmt.Sprintf(
-		`SELECT ID, LINI, POSITION, STATUS FROM %s WHERE ID = :1`, tabel)
+		`SELECT ID, LINI, POSITION, STATUS_WORK FROM %s WHERE ID = :1`, tabel)
 }
 
 // sqlBenderaPolis membaca `FLAG_ONGOING_POLICY` saja - butir bq.
@@ -133,8 +133,8 @@ func (r *WorkPolis) Keadaan(ctx context.Context, id string) (KeadaanPolis, error
 // tahapnya lagi. Pola yang sama dengan `PerbaruiStatusBaris` di Claim Life.
 func sqlPindahTahapPolis(tabel string) string {
 	return fmt.Sprintf(
-		`UPDATE %s SET STATUS = :1
-		  WHERE ID = :2 AND (STATUS = :3 OR (STATUS IS NULL AND :3 IS NULL))`, tabel)
+		`UPDATE %s SET STATUS_WORK = :1
+		  WHERE ID = :2 AND (STATUS_WORK = :3 OR (STATUS_WORK IS NULL AND :3 IS NULL))`, tabel)
 }
 
 // PindahTahap memindahkan polis ke tahap lain.
@@ -174,9 +174,9 @@ func (r *WorkPolis) PindahTahap(ctx context.Context, tx *db.Tx,
 // (temuan /code-review giliran 10: `Submit` summary).
 func sqlTutupPolis(tabel string) string {
 	return fmt.Sprintf(
-		`UPDATE %s SET STATUS = :1, POSITION = NULL
-		  WHERE ID = :2 AND (STATUS IS NULL OR STATUS NOT IN (:3, :4))
-		    AND (STATUS = :5 OR (STATUS IS NULL AND :5 IS NULL))`, tabel)
+		`UPDATE %s SET STATUS_WORK = :1, POSITION = NULL
+		  WHERE ID = :2 AND (STATUS_WORK IS NULL OR STATUS_WORK NOT IN (:3, :4))
+		    AND (STATUS_WORK = :5 OR (STATUS_WORK IS NULL AND :5 IS NULL))`, tabel)
 }
 
 // TutupKasus menutup kasus polis dengan status kerja akhirnya - hanya bila

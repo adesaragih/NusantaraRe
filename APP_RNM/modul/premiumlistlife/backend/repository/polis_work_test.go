@@ -9,6 +9,7 @@ package repository
 // kosong untuk pekerjaan yang benar-benar ada.
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 
@@ -20,7 +21,7 @@ const tabelUjiWorkPolis = "SKEMAUJI.T_WORK_POLIS"
 
 func TestPindahTahapMenulisStatusBukanPosition(t *testing.T) {
 	q := sqlPindahTahapPolis(tabelUjiWorkPolis)
-	if !strings.Contains(q, "SET STATUS = :1") {
+	if !strings.Contains(q, "SET STATUS_WORK = :1") {
 		t.Errorf("perpindahan tahap tidak menulis STATUS:\n%s", q)
 	}
 	// ⛔ POSITION TIDAK disentuh. Ia posisi layar, dan perpindahan tahap
@@ -30,7 +31,7 @@ func TestPindahTahapMenulisStatusBukanPosition(t *testing.T) {
 		t.Errorf("perpindahan tahap menyentuh POSITION:\n%s", q)
 	}
 	// Syarat optimistik atas nilai LAMA - baris dibaca di luar transaksi.
-	if !strings.Contains(q, "STATUS = :3") {
+	if !strings.Contains(q, "STATUS_WORK = :3") {
 		t.Errorf("perpindahan tanpa syarat status lama; dua permintaan "+
 			"serentak akan sama-sama menang:\n%s", q)
 	}
@@ -47,7 +48,7 @@ func TestTutupPolisMenolakPenutupanKedua(t *testing.T) {
 	// juga menyimpan nama tahap selama kasus berjalan, jadi `IS NULL` hanya
 	// benar untuk kasus yang belum pernah bertahap - dan kasus bertahap
 	// tidak akan pernah dapat ditutup.
-	if !strings.Contains(q, "STATUS NOT IN (:3, :4)") {
+	if !strings.Contains(q, "STATUS_WORK NOT IN (:3, :4)") {
 		t.Errorf("syarat penutupan tidak menolak status akhir:\n%s", q)
 	}
 	if strings.Contains(q, "AND STATUS IS NULL\n") {
@@ -86,10 +87,10 @@ func TestQueryKerjaPolisMemakaiBind(t *testing.T) {
 // asalnya menutup kasus yang sudah berpindah tahap di antara baca dan tulis.
 func TestTutupPolisDikunciTahapYangDibaca(t *testing.T) {
 	q := sqlTutupPolis("S.W")
-	if !strings.Contains(q, "(STATUS = :5 OR (STATUS IS NULL AND :5 IS NULL))") {
+	if !strings.Contains(q, "(STATUS_WORK = :5 OR (STATUS_WORK IS NULL AND :5 IS NULL))") {
 		t.Errorf("penutupan polis tidak dikunci tahap asalnya:\n%s", q)
 	}
-	if !strings.Contains(q, "STATUS NOT IN (:3, :4)") {
+	if !strings.Contains(q, "STATUS_WORK NOT IN (:3, :4)") {
 		t.Errorf("penjaga kasus tertutup hilang:\n%s", q)
 	}
 }
@@ -109,5 +110,20 @@ func TestBenderaPolisDibacaTerpisah(t *testing.T) {
 	}
 	if !strings.Contains(q, "FLAG_ONGOING_POLICY") || !strings.Contains(q, ":1") {
 		t.Errorf("pembaca bendera:\n%s", q)
+	}
+}
+
+// Struktur DEV (keputusan work owner 01-10-2026): kolom tahap T_WORK_POLIS
+// bernama STATUS_WORK - nol kueri yang masih menyebut kolom `STATUS` telanjang.
+func TestWorkPolisMemakaiStatusWork(t *testing.T) {
+	telanjang := regexp.MustCompile(`\bSTATUS\b`)
+	for nama, q := range map[string]string{
+		"keadaan": sqlKeadaanPolis("S.W"), "pindah": sqlPindahTahapPolis("S.W"),
+		"tutup": sqlTutupPolis("S.W"), "sisip": sqlSisipKasusPolis("S.W"),
+		"inbox": sqlInboxPolis("S.W", "S.P", "S.D"),
+	} {
+		if telanjang.MatchString(q) {
+			t.Errorf("%s masih menyebut kolom STATUS:\n%s", nama, q)
+		}
 	}
 }

@@ -87,8 +87,9 @@ func bacaDDLPolis(t *testing.T) (map[string]map[string]kolomDDL, map[string]map[
 	idxPola := regexp.MustCompile(`CREATE (?:UNIQUE )?INDEX \{skema\}\.\w+ ON \{skema\}\.(\w+) \(\s*(\w+)`)
 	for _, e := range entri {
 		n := e.Name()
-		// Seluruh rentang migrasi polis 05x - bukan hanya 050-056 pembuat tabel.
-		if !regexp.MustCompile(`^05[0-9]_`).MatchString(n) || strings.HasSuffix(n, "_down.sql") {
+		// Seluruh rentang migrasi polis 050-099 (MODUL.md) - bukan hanya 050-056
+		// pembuat tabel. Diperluas dari `05x` saat 060 lahir (01-10-2026).
+		if !regexp.MustCompile(`^0[5-9][0-9]_`).MatchString(n) || strings.HasSuffix(n, "_down.sql") {
 			continue
 		}
 		b, err := berkasMigrasi.ReadFile("migrations/" + n)
@@ -161,12 +162,17 @@ func TestMigrasi050Sampai056TipeNullFKIndexSesuaiStruktur(t *testing.T) {
 	// (sensus Python 28-09-2026). Pengurai yang rusak akan meluluskan apa pun.
 	// ⛔ 220 sejak GILIRAN-13: butir bn menambah T_WORK_POLIS.FLAG_ONGOING_POLICY
 	// (057, ALTER) - diperbarui dengan sadar, bukan dilonggarkan.
+	// ⛔ 228 sejak 01-10-2026: migrasi 059 menambah delapan kolom isian layar
+	// Input Offer ke T_PREMIUM_LIST (tiket 01 bagian 3) - diperbarui dengan sadar.
+	// ⛔ 235 sejak 01-10-2026: migrasi 060 menambah tujuh sel sisa layar itu.
+	// ⛔ 236 sejak 01-10-2026: migrasi 061 menambah JENIS_ASURANSI (Reinsurance Type).
+	// ⛔ 237 sejak 01-10-2026: migrasi 062 menambah STATUS_PENAWARAN.
 	total := 0
 	for _, k := range struktur {
 		total += len(k)
 	}
-	if len(struktur) != 7 || total != 220 {
-		t.Fatalf("STRUKTUR terbaca %d tabel / %d kolom, mau 7 / 220; pengurainya rusak, "+
+	if len(struktur) != 7 || total != 237 {
+		t.Fatalf("STRUKTUR terbaca %d tabel / %d kolom, mau 7 / 237; pengurainya rusak, "+
 			"atau STRUKTUR berubah - perbarui angka ini dengan sadar", len(struktur), total)
 	}
 	for tab, kol := range struktur {

@@ -50,7 +50,7 @@ func RakitPengenalWorkPolis(urut string) string {
 
 // sqlSisipKasusPolis - baris kerja polis baru, kelima kolomnya.
 func sqlSisipKasusPolis(tabel string) string {
-	return fmt.Sprintf(`INSERT INTO %s (ID, LINI, POSITION, STATUS, FLAG_ONGOING_POLICY)
+	return fmt.Sprintf(`INSERT INTO %s (ID, LINI, POSITION, STATUS_WORK, FLAG_ONGOING_POLICY)
 		  VALUES (:1, :2, :3, :4, :5)`, tabel)
 }
 
@@ -63,8 +63,12 @@ func argSisipKasusPolis(id string, k models.KasusPolisBaru) []any {
 // ⛔ `ID` = `ID_PEGA` = pengenal work. `ID` karena shared PK (050/051);
 // `ID_PEGA` karena kotak masuk menggabung `p.ID_PEGA = w.ID`. Penampung
 // unik, pengenal dikirim dua kali.
+//
+// `CREATE_OP_NAME` - padanan `pxCreateOpName` (kolom `Create Operator Name`
+// kotak masuk, InboxPremiumList b750). ⛔ Yang ditulis PENGENAL AKUN pembuat,
+// bukan nama orangnya: `inti.Pelaku` sengaja tidak membawa nama (ADR-U-0030).
 func sqlSisipPremiumListKosong(tabel string) string {
-	return fmt.Sprintf(`INSERT INTO %s (ID, ID_PEGA, TGL_INPUT) VALUES (:1, :2, :3)`, tabel)
+	return fmt.Sprintf(`INSERT INTO %s (ID, ID_PEGA, TGL_INPUT, CREATE_OP_NAME) VALUES (:1, :2, :3, :4)`, tabel)
 }
 
 // PengenalBerikut menerbitkan satu pengenal work polis dari SEQ_WORK_POLIS.
@@ -83,7 +87,7 @@ func (r *WorkPolis) PengenalBerikut(ctx context.Context, tx *db.Tx) (string, err
 // ⛔ Keduanya di transaksi PEMANGGIL: kasus tanpa header tidak tampil lengkap
 // di kotak masuk, dan header tanpa kasus adalah baris yatim.
 func (r *WorkPolis) SisipKasusBaru(ctx context.Context, tx *db.Tx, id string,
-	k models.KasusPolisBaru, saat time.Time) error {
+	k models.KasusPolisBaru, pembuat string, saat time.Time) error {
 
 	kerja, err := r.db.Qualify("T_WORK_POLIS")
 	if err != nil {
@@ -99,7 +103,7 @@ func (r *WorkPolis) SisipKasusBaru(ctx context.Context, tx *db.Tx, id string,
 		args []any
 	}{
 		{"kasus polis", sqlSisipKasusPolis(kerja), argSisipKasusPolis(id, k)},
-		{"header polis", sqlSisipPremiumListKosong(polis), []any{id, id, saat}},
+		{"header polis", sqlSisipPremiumListKosong(polis), []any{id, id, saat, db.KosongJadiNil(pembuat)}},
 	} {
 		if err := db.PeriksaSQL(l.q); err != nil {
 			return err

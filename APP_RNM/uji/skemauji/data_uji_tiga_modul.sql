@@ -125,21 +125,21 @@ BEGIN
   -- Header T_PREMIUM_LIST: ID = ID_PEGA = Case ID - Detail membaca `p.ID`,
   -- kotak masuk menggabung `p.ID_PEGA = w.ID`.
   -- ===================================================================
-  INSERT INTO &&skema_uji..T_WORK_POLIS (ID, LINI, POSITION, STATUS, FLAG_ONGOING_POLICY)
+  INSERT INTO &&skema_uji..T_WORK_POLIS (ID, LINI, POSITION, STATUS_WORK, FLAG_ONGOING_POLICY)
   VALUES ('UJI-PL-A', 'LIFE', 'Offer', 'Input Offer Life', '0');
-  INSERT INTO &&skema_uji..T_WORK_POLIS (ID, LINI, POSITION, STATUS, FLAG_ONGOING_POLICY)
+  INSERT INTO &&skema_uji..T_WORK_POLIS (ID, LINI, POSITION, STATUS_WORK, FLAG_ONGOING_POLICY)
   VALUES ('UJI-PL-E', 'LIFE', 'Offer', 'Input Offer Life', '1');
-  INSERT INTO &&skema_uji..T_WORK_POLIS (ID, LINI, POSITION, STATUS, FLAG_ONGOING_POLICY)
+  INSERT INTO &&skema_uji..T_WORK_POLIS (ID, LINI, POSITION, STATUS_WORK, FLAG_ONGOING_POLICY)
   VALUES ('UJI-PL-F', 'LIFE', 'Offer', 'Input Offer Life', NULL);
-  INSERT INTO &&skema_uji..T_WORK_POLIS (ID, LINI, POSITION, STATUS, FLAG_ONGOING_POLICY)
+  INSERT INTO &&skema_uji..T_WORK_POLIS (ID, LINI, POSITION, STATUS_WORK, FLAG_ONGOING_POLICY)
   VALUES ('UJI-PL-B', 'LIFE', 'Premium', 'Input Premium Detail', '1');
   -- Input Premium Summary tidak punya konektor masuk di flow (models,
   -- TahapPolisSummary) - hanya dapat dicapai lewat data seperti ini.
-  INSERT INTO &&skema_uji..T_WORK_POLIS (ID, LINI, POSITION, STATUS, FLAG_ONGOING_POLICY)
+  INSERT INTO &&skema_uji..T_WORK_POLIS (ID, LINI, POSITION, STATUS_WORK, FLAG_ONGOING_POLICY)
   VALUES ('UJI-PL-C', 'LIFE', 'Premium', 'Input Premium Summary', '1');
   -- Kasus tertutup: uji negatif PremiumList, DAN polis tempat klaim Claim
   -- Life di bawah berpijak (UJI-POL-0001).
-  INSERT INTO &&skema_uji..T_WORK_POLIS (ID, LINI, POSITION, STATUS, FLAG_ONGOING_POLICY)
+  INSERT INTO &&skema_uji..T_WORK_POLIS (ID, LINI, POSITION, STATUS_WORK, FLAG_ONGOING_POLICY)
   VALUES ('UJI-PL-D', 'LIFE', 'Premium', 'Resolved-Completed', '1');
 
   INSERT INTO &&skema_uji..T_PREMIUM_LIST (ID, ID_PEGA, NO_POLIS, BUSINESS_CODE, BUSINESS_NAME, CEDING_CO, CEDING_CO_NAME, DATE_RECEIVED, MARKETING_CODE, MARKETING_NAME, POLICY_HOLDER, POLICY_HOLDER_NAME, CREATE_OP_NAME, TYPE, TGL_INPUT, PRODUCT_NAME)

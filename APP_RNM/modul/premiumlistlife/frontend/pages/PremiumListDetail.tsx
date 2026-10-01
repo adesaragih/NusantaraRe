@@ -22,6 +22,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { DETAIL_POLIS, JUDUL_KOLOM_PESERTA } from '../labels'
 import { Gagal, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
+import FormDataPolis from './FormDataPolis'
 import UnggahCSVPeserta from './UnggahCSVPeserta'
 import {
   ambilKepalaPolis,
@@ -139,6 +140,19 @@ export default function PremiumListDetail({ polisID }: { polisID: string }) {
         {bernomor && <p role="status">{DETAIL_POLIS.sudahBernomor}</p>}
         {!bernomor && tanpaPeserta && <p role="status">{DETAIL_POLIS.perluPeserta}</p>}
       </header>
+
+      {/*
+        Tiket 03 bagian 2 — tiga kolom atas `ShowLifePremiumDetail` (data polis,
+        pihak, tanggal). Sesudah tersimpan kepala dimuat ulang: Type adalah bahan
+        penomoran PL.
+      */}
+      <FormDataPolis
+        polisID={polisID}
+        bernomor={bernomor}
+        onTersimpan={() => {
+          void muat()
+        }}
+      />
 
       {/*
         ⛔ UNGGAHAN BERDIRI DI LAYAR YANG SAMA dengan gridnya, dan itu bentuk

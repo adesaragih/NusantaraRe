@@ -276,3 +276,117 @@ export const GRID_REKAP: Record<string, readonly KolomRekap[]> = {
     { judul: 'BALANCE', kolom: 'BALANCE' },
   ],
 }
+
+/**
+ * Layar Input Offer — `Section/InputOfferLife.xml` (tiket 01 bagian 3).
+ *
+ * ⛔ VERBATIM `pyLabel` tiap sel, termasuk DUA radio yang sama-sama berlabel
+ * `Status` (satu tampil saat bendera "0", satu saat "1"). Dibaca dari salinan
+ * korpus `kelvin\PremiumListLife (Done)\` 30-09-2026.
+ */
+export const LABEL_PENAWARAN = {
+  judul: 'Life Business Offering',
+  noOffer: 'Confirmation Number',
+  cedingCoName: 'Ceding Name',
+  policyHolderName: 'Policy Holder',
+  pilihCeding: 'Choose Ceding Name',
+  /**
+   * ⚠️ `[dugaan]` Tombol pembuka `PolicyHolder_Harness` ber-`pyLabel` bawaan
+   * `Button` — kendali tanpa teks. Kalimat ini karangan layar baru supaya
+   * tombolnya dapat dibaca; bukan label korpus.
+   */
+  pilihPemegang: 'Choose Policy Holder',
+  typeCeding: 'System Reinsurance',
+  jenisAsuransi: 'Reinsurance Type',
+  businessCode: 'Class of Business',
+  dateReceived: 'Email Received Date',
+  status: 'Status',
+  description: 'Comment',
+  batasUsiaPeserta: 'Age Limit',
+  periodePertanggungan: 'Coverage Period',
+  sumInsured: 'Sum Insured',
+  tanggalPenawaran: 'Offering Date',
+  tanggalRespon: 'Response Date',
+  tanggalKonfirmasi: 'Confirmation Date',
+  tbc: 'Input TBC',
+  tanggalTbc: 'Max TBC',
+  statusUpdate: 'Status Update',
+  keteranganMarketing: 'Marketing Note',
+  qqName: 'Insured Name',
+  jenisUsaha: 'Occupation',
+  ketentuanUnderwriting: 'Underwriting Policy',
+  tanggalKonfirmasiBalik: 'Re-Confirmation Date',
+  tanggalRealisasi: 'Realization Date',
+  tanggalBind: 'Binding Date',
+  statusFinal: 'Final Status',
+  simpan: 'Save Offer',
+  cari: 'Search',
+  pilih: 'Choose',
+  kolomId: 'ID',
+  kolomNama: 'Name',
+  /** Grid `PolicyHolder_Section` kolom ketiga (`.BU_Note`). */
+  kolomBisnis: 'Business',
+} as const
+
+/** Judul grid riwayat penawaran — `InputOfferLife.xml` (`.OfferFacIn.ViewSuggest`). */
+export const KOLOM_RIWAYAT_PENAWARAN = {
+  dateSuggest: 'Date',
+  picSuggest: 'PIC',
+  isCedingConfirm: 'Status',
+  initialSuggest: 'Position',
+  commentSuggest: 'Comment',
+} as const
+
+/**
+ * Layar Input Premium Detail — `Section/ShowLifePremiumDetail.xml` (tiket 03
+ * bagian 2). VERBATIM `pyLabel` tiap sel; dibaca 01-10-2026.
+ */
+export const LABEL_DATA_POLIS = {
+  judul: 'Input Life Premium Detail',
+  pilihProduk: 'Choose Product Name',
+  productName: 'Product Name',
+  productNameId: 'Product Name ID',
+  type: 'Type',
+  typeCeding: 'System Reinsurance',
+  riSlip: 'R/I SLIP RNM No.',
+  proRateType: 'Premium Payment Method',
+  marketing: 'Marketing Officer',
+  sumInsured: 'Sum Insured',
+  annuityInterest: 'Annuity Interest',
+  premiumRefundFactor: 'Premium Refund Factor',
+  noOffer: 'Confirmation Number',
+  ketentuanUnderwriting: 'Underwriting Policy',
+  ceding: 'Ceding',
+  policyHolder: 'Policy Holder',
+  jenisAsuransi: 'Reinsurance Type',
+  businessCode: 'Class of Business',
+  batasUsia: 'Age Limit',
+  periode: 'Coverage Period',
+  catatanBilling: 'BILLING NAME IS MANDATORY FOR TYPE TP & TR',
+  billing: 'Billing Name',
+  pilihBilling: 'Choose Billing Name',
+  retro: 'Retrocessionaire',
+  pilihRetro: 'Choose Retrocessionaire',
+  dateReceived: 'Email Received Date',
+  tanggalPenawaran: 'Offering Date',
+  tanggalRespon: 'Response Date',
+  tanggalKonfirmasi: 'Confirmation Date',
+  tanggalKonfirmasiBalik: 'Re-Confirmation Date',
+  tanggalRealisasi: 'Realization Date',
+  tanggalBind: 'Binding Date',
+  tanggalTbc: 'Max TBC',
+  wpc: 'WPC',
+  status: 'Status',
+  statusUpdate: 'Status Update',
+  keteranganMarketing: 'Marketing Note',
+  simpan: 'Save Data',
+} as const
+
+/** Kolom grid popup Choose Product Name — `Section/ChooseProdName.xml`. */
+export const KOLOM_PRODUK = {
+  id: 'ID',
+  inwardName: 'TREATY NAME',
+  ceding: 'CEDING',
+  sob: 'SOB',
+  policyHolder: 'POLICY HOLDER',
+} as const
