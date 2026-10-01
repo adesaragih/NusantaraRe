@@ -1,0 +1,40 @@
+/* Gaya khusus modul Endorsement Life - setiap kelas berawalan `edm` (penjaga `gaya.test.ts`).
+   Kelas bersama (`panel`, `btn`, `inbox__tabel`, `pager`) milik `inti/frontend/styles.css` dan tidak
+   didefinisikan ulang di sini. */
+
+.edm-inbox,
+.edm-kasus {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.edm-gulir {
+  overflow-x: auto;
+}
+
+.edm-tautan {
+  padding: 0;
+  text-decoration: underline;
+}
+
+.edm-kepala {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 0.5rem 1.5rem;
+  margin: 0;
+}
+
+.edm-kepala__medan {
+  display: flex;
+  flex-direction: column;
+}
+
+.edm-kepala__medan dt {
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+
+.edm-kepala__medan dd {
+  margin: 0;
+}

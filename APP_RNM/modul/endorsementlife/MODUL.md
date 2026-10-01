@@ -1,11 +1,8 @@
 # Modul `endorsementlife` — Endorsement Life
 
-⚠️ **Kerangka — belum dimigrasi.** Folder ini dibuat struktur tim satu folder per modul (keputusan work
-owner 30-09-2026) supaya pemilik, rentang migrasi, dan slot menu modul ini TETAP sejak awal — satu
-modul, satu folder, satu pemilik. Belum ada kode: tanpa `backend/modul.go` modul ini tidak terdaftar
-(daftar Go bangkitan `inti/backend/daftar`, `import.meta.glob` frontend), dan kelompoknya di sidebar
-tetap "belum dimigrasi" (`M_NAV_MENU.DIMIGRASI = '0'`). Cara memulainya:
-`docs/bersama/PANDUAN-TIM-PER-MODUL.md` (akar repo) bab 4.
+Satu folder, satu modul, satu pemilik: kode backend, kode frontend, dan dokumen modul ini tinggal di
+sini (struktur tim satu folder per modul, keputusan work owner 30-09-2026). Commit Anda menyentuh
+folder ini saja; berkas di luarnya milik tim inti (`.github/CODEOWNERS`).
 
 ⛔ **Tabel di bawah dibaca penjaga** (`inti/backend/penjaga`): rentang migrasi dan slot menu. Ubah
 nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak boleh berbagi nomor.
@@ -16,10 +13,10 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | Folder korpus | `Endorsement Life` |
 | GROUPMENU | `TREATY` |
 | Pemilik | `@PEMILIK-ENDORSEMENTLIFE` |
-| Status | belum dimigrasi |
+| Status | dimigrasi |
 | Rentang migrasi | `480-519` |
 | Slot menu | `976-977` |
-| Prefix rute API | — (ditetapkan spec modul ini) |
+| Prefix rute API | `/api/endorsement-life` |
 | Kontrak disediakan | — |
 | Kontrak dipakai | — |
 
@@ -29,14 +26,37 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 
 | Folder | Isi |
 | --- | --- |
-| `docs/` | spec, tiket (`issues/`), grilling, catatan — dulu `.scratch/endorsement-life/` (dipindah dengan `git mv`, isi byte-identik) |
-| `backend/` | belum ada — lahir bersama `backend/modul.go` (`Pendaftaran()`) saat modul dimulai |
-| `frontend/` | belum ada — lahir bersama `frontend/menu.ts` dan `rute.tsx` saat modul dimulai |
+| `backend/` | `models/` `repository/` `services/` `handlers/` `tiruan/` `migrations/` `modul.go` — paket Go `nusantarare/modul/endorsementlife/backend/...` |
+| `frontend/` | `pages/` `labels.ts` `api.ts` `tampilan.ts` `endorsementlife.css` `menu.ts` `rute.tsx` dan berkas `*.test.ts` |
+| `docs/` | spec, tiket (`issues/`), grilling, PARITAS, RALAT, OQ, STRUKTUR — dulu `.scratch/endorsement-life/` |
 
 ## Migrasi
 
-Rentang `480-519` (tabel R2, urut hulu ke hilir: migrasi modul hilir yang merujuk tabel modul hulu
-selalu berjalan sesudahnya). Slot menu `976-977` hanya menyalakan `DIMIGRASI` baris modul ini (satu `UPDATE`,
-nol `INSERT` — menu datar 30-09-2026) saat modul mendapat layar pertamanya, di folder
-`backend/migrations/` modul ini sendiri — bentuk SQL-nya di `APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md`
-bab 6. Nomor selalu tiga digit.
+| Nomor | Isi |
+| --- | --- |
+| `480` | tiket 00 (ralat E1): `T_PREMIUM_LIST.PROD_KE NUMBER(5) DEFAULT 1` + isi mundur, index `IDX_PL_NOPOLIS_PRODKE`, `IDX_PL_OLD_POLICY_NO`, `IDX_PLD_PL_NUMBER` — nol kolom baru |
+| `481` | sequence `SEQ_WORK_EDM_LIFE` — pengenal kasus `EDMLF-<n>` |
+| `976` | slot menu: `UPDATE M_NAV_MENU SET DIMIGRASI = '1'` baris `endorsementlife`, nol `INSERT` |
+
+⛔ **Nol tabel baru** (spec §16, AC 55): endorsement adalah versi baru di tabel PremiumList Life. Bentuk
+SQL slot menu: `APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md` bab 6. Nomor selalu tiga digit.
+
+## Tabel yang disentuh
+
+| Tabel | Pemilik | Perlakuan |
+| --- | --- | --- |
+| `T_PREMIUM_LIST`, `T_PREMIUM_LIST_DETAIL`, `T_PREMIUM_LIST_SPREADING`, `T_PREMIUM_LIST_SPREADING_RETRO`, `T_PREMIUM_LIST_SUMMARY`, `T_VIEW_SUGGEST` | PremiumList Life (051–056) | dibaca dan ditulis — kasus EDM = baris versi `T_PREMIUM_LIST` ber-`ID` `EDMLF-<n>` |
+| `JSON_POLIS` | warisan `POOLDATA` | dibaca saja — sumber polis lama sistem lama |
+| `M_LIFE_PREMIUM_DETAIL`, `M_LIFE_PREMIUM_SUMMARY` | warisan `POOLDATA` | dibaca (sumber warisan) dan ditulis (E2, persis `SaveMasterLPDet`/`InsertPLSummary`); setiap kueri berkunci ber-index (E4) |
+| `ARASAPAS.DETAIL_INVOICE` | Arasapas | dibaca saja, satu repository (gerbang ke-5) |
+
+## Rute API
+
+Prefix `/api/endorsement-life` (`backend/handlers/rute_edm.go` `Prefix`). Setiap rute menuntut identitas
+pelaku (401 tanpa), menjawab 503 bila Oracle tidak dikonfigurasi, dan galatnya berbadan `{"galat": "..."}`.
+
+| Metode dan jalur | Layar / tombol Pega |
+| --- | --- |
+| `GET /inbox?halaman=` | `InboxEndorsementLife` grid b8284 (RD `InboxEDMLife`) |
+| `GET /kasus/{id}` | kepala `InputEDMLife` |
+| `GET /kasus/{id}/peserta?halaman=` | grid peserta `InputEDMLife` b11899 / b17500 |

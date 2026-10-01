@@ -135,7 +135,7 @@ func (g *Gudang) Inbox(ctx context.Context, halaman, ukuran int) ([]models.Baris
 		}
 		hasil = append(hasil, models.BarisInbox{
 			CaseID: v[0].String, EndorsementNo: v[1].String, PolicyNo: v[1].String,
-			Type: v[2].String, EdmType: v[3].String, Sob: v[4].String, Ceding: v[5].String,
+			Tipe: v[2].String, EdmType: v[3].String, Sob: v[4].String, Ceding: v[5].String,
 			PolicyHolder: v[6].String, MarketingName: v[7].String, CreateDate: v[8].String,
 			CreateOperator: v[9].String, Status: v[10].String,
 		})
@@ -343,10 +343,12 @@ func sqlVersiNB(polis, peserta string, sebelum bool) string {
 	if sebelum {
 		syarat = " AND NVL(p.PROD_KE, 1) < :2"
 	}
+	// ⛔ Penampung muncul URUT (`:1` lalu `:2`): godror mengikat menurut urutan
+	// kemunculan, bukan menurut angkanya.
 	return fmt.Sprintf(`SELECT p.ID, NVL(p.PROD_KE, 1), p.EDM_TYPE FROM %s p
-	  WHERE p.EDM_TYPE IS NULL%s
-	    AND p.ID IN (SELECT d.PREMIUM_LIST_ID FROM %s d WHERE d.PL_NUMBER = :1)
-	  ORDER BY NVL(p.PROD_KE, 1) DESC, p.ID FETCH FIRST 1 ROWS ONLY`, polis, syarat, peserta)
+	  WHERE p.ID IN (SELECT d.PREMIUM_LIST_ID FROM %s d WHERE d.PL_NUMBER = :1)
+	    AND p.EDM_TYPE IS NULL%s
+	  ORDER BY NVL(p.PROD_KE, 1) DESC, p.ID FETCH FIRST 1 ROWS ONLY`, polis, peserta, syarat)
 }
 
 // sqlVersiWarisan - versi sistem lama: `GetProdkeNopolis` b84 (`IDPEGA … ORDER BY

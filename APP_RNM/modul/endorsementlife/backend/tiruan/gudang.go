@@ -107,7 +107,7 @@ func (g *Gudang) Inbox(_ context.Context, halaman, ukuran int) ([]models.BarisIn
 	var hasil []models.BarisInbox
 	for _, p := range semua[awal:akhir] {
 		hasil = append(hasil, models.BarisInbox{
-			CaseID: p.ID, EndorsementNo: p.OldPolicyNo, PolicyNo: p.OldPolicyNo, Type: p.Kepala["TYPE"],
+			CaseID: p.ID, EndorsementNo: p.OldPolicyNo, PolicyNo: p.OldPolicyNo, Tipe: p.Kepala["TYPE"],
 			EdmType: p.EdmType, Sob: p.Kepala["SOB_NAME"], Ceding: p.Kepala["CEDING_CO_NAME"],
 			PolicyHolder: p.Kepala["POLICY_HOLDER_NAME"], MarketingName: p.Kepala["MARKETING_NAME"],
 			CreateDate: p.TglInput, CreateOperator: p.Pembuat, Status: p.Status,

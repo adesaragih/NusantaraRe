@@ -42,7 +42,8 @@ func PeriksaEdmType(v string) error {
 	return nil
 }
 
-// Status per peserta (`EDMStatus` → `EDM_STATUS`/`EDMSTATUS`) - spec §5.
+// Status per peserta (properti `EDMStatus` → kolom `EDM_STATUS`, dan kolom status
+// EDM tabel warisan peserta) - spec §5.
 const (
 	// StatusOld - warisan versi sebelumnya (`MappingEDMLife` 11.1 b2609).
 	StatusOld = "Old"
@@ -55,7 +56,7 @@ const (
 	StatusBatal = "Batal"
 )
 
-// StatusHidup menjawab apakah peserta ber-`EDMSTATUS` ini masih ditanggung -
+// StatusHidup menjawab apakah peserta berstatus EDM ini masih ditanggung -
 // penyaring hilir Claim Life (spec §14): kosong/NULL, `Old`, `New` hidup;
 // `Delete`, `Batal` mati. ⛔ Kosong HIDUP: baris new business tidak pernah
 // mengisi kolom ini (AC 48a).

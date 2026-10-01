@@ -137,7 +137,7 @@ func (k Kasus) Terbuka() bool { return k.Status == StatusKasusTerbuka }
 type BarisInbox struct {
 	CaseID         string `json:"caseId"`
 	EndorsementNo  string `json:"endorsementNo"`
-	Type           string `json:"type"`
+	Tipe           string `json:"type"`
 	EdmType        string `json:"edmType"`
 	PolicyNo       string `json:"policyNo"`
 	Sob            string `json:"sob"`
