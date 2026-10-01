@@ -108,3 +108,29 @@ describe('isolasi CSS modul (UI 02-10-2026)', () => {
     }
   })
 })
+
+/**
+ * Properti yang menjadikan elemen blok penampung bagi keturunan `position: fixed`. Popup inti
+ * (`.modal__backdrop`, `position: fixed; inset: 0`) dirender DI DALAM panel modul, bukan lewat portal;
+ * bila satu leluhurnya memakai salah satu properti ini, popup menempel ke panel dan tidak lagi di tengah
+ * layar (bug 02-10-2026: `backdrop-filter` pada panel tema login). `container-type: inline-size` aman
+ * (diukur di Edge: popup di dalam pembungkus tabel tetap menutup layar penuh).
+ */
+const PENAMPUNG_FIXED = /(?:^|[;{\s])((?:-webkit-)?(?:backdrop-filter|filter|transform|translate|rotate|scale|perspective|will-change|contain))\s*:/g
+
+function penampungFixed(css: string): string[] {
+  const tanpaKomentar = css.replace(/\/\*[\s\S]*?\*\//g, '')
+  return [...tanpaKomentar.matchAll(PENAMPUNG_FIXED)].map((m) => m[1] ?? '')
+}
+
+describe('popup tetap di tengah layar', () => {
+  it('mcrl.css tidak memakai properti yang mengurung popup position: fixed', () => {
+    expect(penampungFixed(CSS)).toEqual([])
+  })
+
+  it('aturan penampung menggigit', () => {
+    expect(
+      penampungFixed('.mcrl .panel { -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px) } .mcrl .a{transform: none; will-change:x} /* filter: x */ .mcrl .b { container-type: inline-size }'),
+    ).toEqual(['-webkit-backdrop-filter', 'backdrop-filter', 'transform', 'will-change'])
+  })
+})
