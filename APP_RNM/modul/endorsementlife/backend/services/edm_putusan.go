@@ -29,6 +29,7 @@ import (
 	"nusantarare/inti/backend/db"
 	"nusantarare/inti/backend/jejak"
 	"nusantarare/inti/backend/outbox"
+	"nusantarare/inti/backend/penomor"
 	"nusantarare/modul/endorsementlife/backend/models"
 	"nusantarare/modul/endorsementlife/backend/repository"
 )
@@ -93,7 +94,7 @@ func (l *Layanan) Putuskan(ctx context.Context, p inti.Pelaku, id string, m Masu
 		}
 		waktu := l.jam()
 		if err := l.gudang.SisipRiwayat(ctx, tx, models.RiwayatTulis{
-			KasusID: id, Waktu: waktu.Format("2006-01-02 15:04:05"), PIC: p.AkunID,
+			KasusID: id, Waktu: penomor.DiJakarta(waktu).Format("2006-01-02 15:04:05"), PIC: p.AkunID,
 			Status: models.LabelKeputusanRiwayat(m.Status), Komentar: komentar,
 		}); err != nil {
 			return err
@@ -128,6 +129,8 @@ func (l *Layanan) Putuskan(ctx context.Context, p inti.Pelaku, id string, m Masu
 		if k.PLNumberEDM != "" {
 			nomor = k.PLNumberEDM // nomor lahir sekali (prakondisi `PL_NUMBER_EDM==""`)
 		}
+		// Pertahanan berlapis: di jalur modul ini dobel sudah dicegah index unik
+		// kasus terbuka + kunci baris; ini menangkap versi yang ditulis jalur lain.
 		dobel, err := l.gudang.AdaVersiResmi(ctx, tx, k.NomorPolis, prodKe)
 		if err != nil {
 			return err

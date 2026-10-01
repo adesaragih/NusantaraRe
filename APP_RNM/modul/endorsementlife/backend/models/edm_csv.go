@@ -137,7 +137,9 @@ func desimalCSV(s string) (string, error) {
 	return s, nil
 }
 
-// UangCSVEDM - satu nilai uang 4.1; kosong menjadi "0".
+// UangCSVEDM - satu nilai uang 4.1; kosong menjadi "0". ⚠️ Satu pemisah
+// selalu titik desimal seperti Pega - `12.500` = 12,5 (ambigu bagi notasi
+// Indonesia, OQ-EDM-020); dua pemisah atau lebih ditolak.
 func UangCSVEDM(teks string) (string, error) {
 	s := strings.TrimSpace(teks)
 	if s == "" {

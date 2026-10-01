@@ -56,7 +56,7 @@ func TestRuteCSV(t *testing.T) {
 	}
 	w := mintaBerkas(t, h, unggah, "berkas", sah+"UJI-LAIN,UJI-PH,UJI-N2\n", true)
 	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `"total":2,"ditolak":1`) ||
-		!strings.Contains(w.Body.String(), `{"baris":2,"kolom":"PLAN","pesan":"Plan di CSV tidak sesuai, mohon di cek kembali"}`) {
+		!strings.Contains(w.Body.String(), `{"baris":3,"kolom":"PLAN","pesan":"Plan di CSV tidak sesuai, mohon di cek kembali"}`) {
 		t.Fatalf("tinjau %d %s", w.Code, w.Body)
 	}
 	if w := mintaBerkas(t, h, unggah, "berkas", "PLAN,CURRENCY\nUJI-PLAN,IDR\n", true); w.Code != http.StatusUnprocessableEntity {

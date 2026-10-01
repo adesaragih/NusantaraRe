@@ -210,8 +210,13 @@ func sqlHapusRekapWarisan(warisan string) string {
 	return fmt.Sprintf(`DELETE FROM %s w WHERE w.PL_NUMBER = :1 AND w.IDPEGA = :2`, warisan)
 }
 
-// sqlSisipRekapWarisan - satu baris per mata uang rekap kasus. ⛔ Nilai TEKS
-// bertitik seperti parameter prosedur (seluruhnya `VARCHAR2`); uang kosong "0".
+// sqlSisipRekapWarisan - satu baris per mata uang rekap kasus; uang kosong 0.
+//
+// ⛔ NUMBER langsung dari rekap kasus, BUKAN teks: parameter prosedur memang
+// `VARCHAR2`, tetapi teks desimal yang masuk kolom `NUMBER` dikonversi
+// menurut NLS sesi (`,` di sesi Indonesia) - `INSERT … SELECT` NUMBER ke
+// NUMBER kebal NLS dan eksak. ⚠️ `[belum terverifikasi]` tipe kolom uang
+// warisan: dianggap `NUMBER` seperti tiruan `uji/skemauji` dan katalog peserta.
 // Penampung :1 COB, :2 PL_NUMBER, :3 PL_NUMBER_EDM, :4 IDPEGA, :5 kasus.
 func sqlSisipRekapWarisan(warisan, urutan, rekap string) string {
 	nilai := []string{"TO_CHAR(" + urutan + ".NEXTVAL)"}
@@ -228,7 +233,7 @@ func sqlSisipRekapWarisan(warisan, urutan, rekap string) string {
 		case "CURRENCY":
 			nilai = append(nilai, "r.CURRENCY")
 		default:
-			nilai = append(nilai, "NVL("+fmt.Sprintf(db.FmtDesimal, "r."+k)+", '0')")
+			nilai = append(nilai, "NVL(r."+k+", 0)")
 		}
 	}
 	return fmt.Sprintf(`INSERT INTO %s (ID, %s) SELECT %s FROM %s r WHERE r.PREMIUM_LIST_ID = :5`,

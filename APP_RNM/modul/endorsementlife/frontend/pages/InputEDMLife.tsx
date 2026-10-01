@@ -8,7 +8,7 @@
 // Keputusan (tiket 08) - `ConfirmSection` tampil sesudah `Save` (b35518 `.IsJsonPolis=1`); Confirm
 // menutup dengan `ConfirmSubmitEDM`, Decline kembali ke kotak masuk (`finishAssignment` b38385).
 
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 
 import { Gagal, Halaman, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
 import {
@@ -142,6 +142,8 @@ export default function InputEDMLife({ kasusId, onTutup }: { kasusId: string; on
   const [menambah, setMenambah] = useState(false)
   const [disimpanCSV, setDisimpanCSV] = useState<number | null>(null)
   const [putusan, setPutusan] = useState<HasilPutusanEDM | null>(null)
+  // Berkas CSV yang berlaku sekarang - hasil baca berkas lama tidak boleh menimpa berkas yang lebih baru.
+  const berkasKini = useRef<File | null>(null)
 
   const muatKasus = useCallback(async () => {
     setGalat(null)
@@ -186,10 +188,21 @@ export default function InputEDMLife({ kasusId, onTutup }: { kasusId: string; on
   }
 
   const pilihCSV = (berkas: File, hasil: PeriksaCSVEDM) => {
+    berkasKini.current = berkas
     setBerkasCSV(berkas)
     setPeriksa(hasil)
     setDisimpanCSV(null)
-    void berkas.text().then((t) => setBarisCSV(barisUnggahan(t)))
+    setBarisCSV([])
+  }
+
+  // `View Upload`: berkas diurai di peramban baru saat popup dibuka (unggahan tanpa batas baris).
+  const bukaHasilCSV = () => {
+    setJendelaCSV('hasil')
+    const b = berkasKini.current
+    if (b === null) return
+    void b.text().then((t) => {
+      if (berkasKini.current === b) setBarisCSV(barisUnggahan(t))
+    })
   }
 
   const tambah = async () => {
@@ -204,6 +217,7 @@ export default function InputEDMLife({ kasusId, onTutup }: { kasusId: string; on
       }
       setDisimpanCSV(j.hasil.disimpan)
       setPeriksa(null)
+      berkasKini.current = null
       setBerkasCSV(null)
       setBarisCSV([])
       await muatKasus()
@@ -277,7 +291,7 @@ export default function InputEDMLife({ kasusId, onTutup }: { kasusId: string; on
           <button type="button" className="btn btn--ghost btn--sm" disabled={kasus.csvTerkunci} onClick={() => setJendelaCSV('unggah')}>
             {UNGGAH_EDM.uploadCsv}
           </button>
-          <button type="button" className="btn btn--ghost btn--sm" onClick={() => setJendelaCSV('hasil')}>
+          <button type="button" className="btn btn--ghost btn--sm" onClick={bukaHasilCSV}>
             {UNGGAH_EDM.viewUpload}
           </button>
           <button

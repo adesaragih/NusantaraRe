@@ -101,7 +101,7 @@ func telusuriCSV(berkas io.Reader, acuan models.AcuanCSV, sisip func([]models.Ba
 		return HasilPeriksaCSV{}, ErrCSVKosong
 	}
 	if err != nil {
-		return HasilPeriksaCSV{}, fmt.Errorf("%w: %w", ErrCSVRusak, err)
+		return HasilPeriksaCSV{}, galatBaca(err)
 	}
 	judul, asing, err := models.JudulCSV(append([]string{}, mentah...))
 	if err != nil {
@@ -136,21 +136,25 @@ func telusuriCSV(berkas io.Reader, acuan models.AcuanCSV, sisip func([]models.Ba
 			break
 		}
 		if err != nil {
-			return h, fmt.Errorf("%w: %w", ErrCSVRusak, err)
+			return h, galatBaca(err)
 		}
 		if strings.TrimSpace(strings.Join(rec, "")) == "" {
 			continue // baris kosong - bukan peserta
 		}
 		h.Total++
+		// Nomor baris = baris BERKAS tempat rekamannya mulai (judul = 1), seperti
+		// nomor baris spreadsheet - baris kosong dan medan berkutip-banyak-baris
+		// tidak menggeser laporan penolakan (AC 37).
+		nomor, _ := c.FieldPos(0)
 		baris := make(map[string]string, len(judul))
 		for i, v := range rec {
 			if i < len(judul) {
 				baris[judul[i]] = v
 			}
 		}
-		nilai, pesan := models.RapikanBarisCSV(h.Total, baris, acuan)
+		nilai, pesan := models.RapikanBarisCSV(nomor, baris, acuan)
 		if len(rec) > len(judul) {
-			pesan = append(pesan, models.PesanCSV{Baris: h.Total, Pesan: fmt.Sprintf("row has %d fields, header has %d", len(rec), len(judul))})
+			pesan = append(pesan, models.PesanCSV{Baris: nomor, Pesan: fmt.Sprintf("row has %d fields, header has %d", len(rec), len(judul))})
 		}
 		if len(pesan) > 0 {
 			h.Ditolak++
@@ -158,7 +162,7 @@ func telusuriCSV(berkas io.Reader, acuan models.AcuanCSV, sisip func([]models.Ba
 			continue
 		}
 		if sisip != nil && h.Ditolak == 0 {
-			kelompok = append(kelompok, models.BarisCSV{Nomor: h.Total, Nilai: nilai})
+			kelompok = append(kelompok, models.BarisCSV{Nomor: nomor, Nilai: nilai})
 			if len(kelompok) >= ukuranKelompokCSV {
 				if err := kirim(); err != nil {
 					return h, err
@@ -170,6 +174,17 @@ func telusuriCSV(berkas io.Reader, acuan models.AcuanCSV, sisip func([]models.Ba
 		return h, ErrCSVKosong
 	}
 	return h, kirim()
+}
+
+// galatBaca - rusak bentuk CSV menjadi `ErrCSVRusak` berbaris/berkolom (422);
+// galat membaca badan (putus, terlalu besar, berkas sementara) TIDAK - ia
+// bukan kesalahan berkas pengguna, dan teksnya (jalur sementara) tidak ke layar.
+func galatBaca(err error) error {
+	var pe *csv.ParseError
+	if errors.As(err, &pe) {
+		return fmt.Errorf("%w: line %d, column %d: %v", ErrCSVRusak, pe.Line, pe.Column, pe.Err)
+	}
+	return fmt.Errorf("services: reading the uploaded file: %w", err)
 }
 
 // acuanCSV membaca `PremiumListDetail(1)`.
@@ -184,20 +199,27 @@ func (l *Layanan) acuanCSV(ctx context.Context, tx *db.Tx, id string) (models.Ac
 	return a, nil
 }
 
-// PeriksaCSV - `Upload CSV`: mengurai dan memvalidasi, nol penulisan (tinjauan
-// sebelum `Add CSV Data`).
-func (l *Layanan) PeriksaCSV(ctx context.Context, p inti.Pelaku, id string, berkas io.Reader) (HasilPeriksaCSV, error) {
+// SiapCSV - gerbang kasus unggahan (identitas, kasus terbuka Perubahan Data
+// belum terkunci, ada peserta acuan). Handler memanggilnya SEBELUM berkas
+// diterima, supaya berkas peserta tidak pernah ditampung untuk kasus yang menolaknya.
+func (l *Layanan) SiapCSV(ctx context.Context, p inti.Pelaku, id string) (models.AcuanCSV, error) {
 	if err := inti.WajibIdentitas(p); err != nil {
-		return HasilPeriksaCSV{}, err
+		return models.AcuanCSV{}, err
 	}
 	k, err := l.muatKasus(ctx, id)
 	if err != nil {
-		return HasilPeriksaCSV{}, err
+		return models.AcuanCSV{}, err
 	}
 	if err := periksaKasusCSV(k); err != nil {
-		return HasilPeriksaCSV{}, err
+		return models.AcuanCSV{}, err
 	}
-	acuan, err := l.acuanCSV(ctx, nil, id)
+	return l.acuanCSV(ctx, nil, id)
+}
+
+// PeriksaCSV - `Upload CSV`: mengurai dan memvalidasi, nol penulisan (tinjauan
+// sebelum `Add CSV Data`).
+func (l *Layanan) PeriksaCSV(ctx context.Context, p inti.Pelaku, id string, berkas io.Reader) (HasilPeriksaCSV, error) {
+	acuan, err := l.SiapCSV(ctx, p, id)
 	if err != nil {
 		return HasilPeriksaCSV{}, err
 	}

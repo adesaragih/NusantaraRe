@@ -50,6 +50,7 @@ func (l *Layanan) Simpan(ctx context.Context, p inti.Pelaku, id string, pilihan 
 	if !models.KasusEDM(id) {
 		return HasilSimpan{}, fmt.Errorf("%w: %q", ErrKasusTidakAda, id)
 	}
+	pilihan = pilihan.Rapikan()
 	var hasil HasilSimpan
 	err := l.tx(ctx, func(tx *db.Tx) error {
 		k, err := l.gudang.AmbilKasus(ctx, tx, id, true)

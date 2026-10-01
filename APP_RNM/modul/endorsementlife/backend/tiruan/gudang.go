@@ -554,3 +554,32 @@ func (g *Gudang) RekapPolis(_ context.Context, nomorPolis string) ([]map[string]
 	}
 	return hasil, nil
 }
+
+// TransaksiPulih - transaksi tiruan yang MEMBATALKAN perubahan daftar peserta,
+// rekap, dan riwayat bila fn gagal (uji atomisitas). ⚠️ Isi baris yang diubah
+// di tempat (`Tandai`) tidak dipulihkan - pakai untuk jalur sisip/buang baris.
+func TransaksiPulih(g *Gudang) func(context.Context, func(*db.Tx) error) error {
+	return func(_ context.Context, fn func(tx *db.Tx) error) error {
+		g.mu.Lock()
+		peserta := append([]*Peserta{}, g.Peserta...)
+		rekap, data := map[string]int{}, map[string][]map[string]string{}
+		for k, v := range g.Rekap {
+			rekap[k] = v
+		}
+		for k, v := range g.RekapData {
+			data[k] = v
+		}
+		riwayat := map[string][]models.BarisRiwayat{}
+		for k, v := range g.RiwayatKasus {
+			riwayat[k] = append([]models.BarisRiwayat{}, v...)
+		}
+		g.mu.Unlock()
+		if err := fn(nil); err != nil {
+			g.mu.Lock()
+			g.Peserta, g.Rekap, g.RekapData, g.RiwayatKasus = peserta, rekap, data, riwayat
+			g.mu.Unlock()
+			return err
+		}
+		return nil
+	}
+}

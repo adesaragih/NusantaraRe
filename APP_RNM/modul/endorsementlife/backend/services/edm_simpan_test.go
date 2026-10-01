@@ -167,3 +167,17 @@ func TestSimpanDitolak(t *testing.T) {
 		t.Error("tanpa identitas diterima")
 	}
 }
+
+// TestSimpanPengecualianKosongDibuang - `NOT IN (NULL)` Oracle tidak pernah
+// benar; pengecualian "" dibuang sehingga DELETE ALL menandai seluruh Old.
+func TestSimpanPengecualianKosongDibuang(t *testing.T) {
+	g := gudangKasusSimpan(models.EdmTypePerubahanData)
+	l, _ := layananJejak(g)
+	h, err := l.Simpan(context.Background(), pelakuUji, "EDMLF-1", models.PilihanHapus{Semua: true, Kecuali: []string{"", " ", "UJI-D2", "UJI-D2"}})
+	if err != nil || h.Ditandai != 2 {
+		t.Fatalf("%+v %v", h, err)
+	}
+	if got := (models.PilihanHapus{Pilih: []string{" UJI-A ", "", "UJI-A"}}).Rapikan(); len(got.Pilih) != 1 || got.Pilih[0] != "UJI-A" {
+		t.Errorf("Rapikan %+v", got)
+	}
+}

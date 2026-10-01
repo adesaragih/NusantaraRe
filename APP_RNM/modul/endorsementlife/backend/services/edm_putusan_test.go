@@ -65,7 +65,7 @@ func TestPutuskanConfirmMeresmikanVersiDalamUrutan(t *testing.T) {
 		t.Errorf("rekap warisan %+v", w)
 	}
 	r := g.RiwayatKasus["EDMLF-1"]
-	if len(r) != 1 || r[0].Status != "Accept" || r[0].PIC != pelakuUji.AkunID || r[0].Komentar != "UJI-OK" || r[0].Tanggal != "2026-10-01 10:00:00" {
+	if len(r) != 1 || r[0].Status != "Accept" || r[0].PIC != pelakuUji.AkunID || r[0].Komentar != "UJI-OK" || r[0].Tanggal != "2026-10-01 17:00:00" { // 10:00 UTC = 17:00 WIB (penomor.DiJakarta)
 		t.Errorf("riwayat %+v", r)
 	}
 	if len(j.catatan) != 1 || j.catatan[0].Dari != models.TahapInputEDMLife || j.catatan[0].Ke != models.StatusKasusSelesai {
@@ -117,7 +117,9 @@ func TestPutuskanAntiDobel(t *testing.T) {
 	if _, err := l.Putuskan(ctx, pelakuUji, "EDMLF-1", services.MasukanPutusan{Status: "1"}); !errors.Is(err, services.ErrVersiBerubah) {
 		t.Fatalf("versi berubah: %v", err)
 	}
-	// (NO_POLIS, PROD_KE) sudah dipakai baris lain: penjaga menahan sebelum menulis.
+	// (NO_POLIS, PROD_KE) sudah dipakai baris yang TIDAK dihitung versi berjalan -
+	// mis. ditulis jalur lain di luar modul ini. Pertahanan berlapis: di jalur
+	// modul ini sendiri dobel sudah dicegah UX_PL_EDM_TERBUKA + FOR UPDATE.
 	g, l, _ = gudangPutusan(t)
 	g.Polis["UJI-LAIN"] = &tiruan.Polis{ID: "UJI-LAIN", NoPolis: "UJI-PL-1", EdmType: "1", ProdKe: 2, Status: models.StatusKasusDitolak}
 	if _, err := l.Putuskan(ctx, pelakuUji, "EDMLF-1", services.MasukanPutusan{Status: "1"}); !errors.Is(err, services.ErrVersiBerubah) {

@@ -280,6 +280,25 @@ type PilihanHapus struct {
 	Kecuali []string `json:"kecuali"`
 }
 
+// Rapikan membuang ID kosong dan ganda. ⛔ Oracle menyimpan teks kosong
+// sebagai NULL, dan `ID NOT IN (…, NULL)` tidak pernah benar: `DELETE ALL`
+// berpengecualian "" akan menandai NOL baris lalu mengunci `Save`.
+func (p PilihanHapus) Rapikan() PilihanHapus {
+	bersih := func(d []string) []string {
+		lihat := map[string]bool{}
+		var h []string
+		for _, id := range d {
+			id = strings.TrimSpace(id)
+			if id != "" && !lihat[id] {
+				lihat[id] = true
+				h = append(h, id)
+			}
+		}
+		return h
+	}
+	return PilihanHapus{Pilih: bersih(p.Pilih), Semua: p.Semua, Kecuali: bersih(p.Kecuali)}
+}
+
 // KolomRekapKasus - kolom rekap mata uang kasus (`T_PREMIUM_LIST_SUMMARY`)
 // yang dibaca layar; yang pertama teks, sisanya uang.
 var KolomRekapKasus = []string{

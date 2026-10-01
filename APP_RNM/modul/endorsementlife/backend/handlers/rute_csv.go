@@ -88,6 +88,12 @@ func daftarkanCSV(pasang func(string, rute)) {
 		jawabCSV(w, h, err)
 	})
 	pasang("POST "+Prefix+"/kasus/{id}/csv", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		// Gerbang kasus SEBELUM berkas diterima: kasus yang menolak unggahan
+		// tidak pernah menyebabkan data peserta ditampung di disk.
+		if _, err := l.SiapCSV(r.Context(), p, r.PathValue("id")); err != nil {
+			jawabCSV(w, nil, err)
+			return
+		}
 		berkas, ok := bagianBerkas(w, r, p)
 		if !ok {
 			return

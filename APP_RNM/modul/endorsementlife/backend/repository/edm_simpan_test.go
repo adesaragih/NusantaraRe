@@ -43,6 +43,11 @@ func TestSQLTandaiMembalikHanyaPesertaOld(t *testing.T) {
 	if penampungUnik(t, "sqlTandai kecuali", k) != 4 || !strings.HasSuffix(k, "AND d.ID NOT IN (:4)") {
 		t.Errorf("DELETE ALL berpengecualian: %s", k)
 	}
+	// 501 pengecualian: dua `NOT IN` ber-AND, penampung tetap berurutan.
+	b := sqlTandai(uPeserta, 0, 501)
+	if penampungUnik(t, "sqlTandai kecuali 501", b) != 504 || strings.Count(b, "NOT IN (") != 2 || !strings.HasSuffix(b, "AND d.ID NOT IN (:504)") {
+		t.Errorf("pengecualian besar tidak dipecah: %.120s … %s", b, b[len(b)-40:])
+	}
 }
 
 func TestSQLRekapBerkunciKasus(t *testing.T) {

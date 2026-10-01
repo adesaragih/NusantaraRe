@@ -27,6 +27,10 @@ import (
 // batasDaftarID - satu `IN (…)` Oracle menampung paling banyak 1000 nilai.
 const batasDaftarID = 500
 
+// batasKecuali - pengecualian `DELETE ALL` dalam satu pernyataan (beberapa
+// `NOT IN` ber-AND); jauh di bawah batas 65.535 penampung Oracle.
+const batasKecuali = 30000
+
 // ErrDaftarKecualiTerlaluPanjang - `DELETE ALL` lalu terlalu banyak pengecualian.
 var ErrDaftarKecualiTerlaluPanjang = errors.New("repository: daftar pengecualian melebihi batas satu pernyataan")
 
@@ -49,15 +53,18 @@ func daftarPenampung(awal, n int) string {
 }
 
 // sqlTandai - peserta `Old` kasus menjadi `Delete`/`Batal` dan dibalik tandanya.
-// `pilih` > 0: hanya ID di daftar; `kecuali` > 0: semua selain daftar; keduanya
-// nol: seluruh peserta `Old`. Penampung :1 status baru, :2 kasus, :3 'Old', :4… ID.
+// `pilih` > 0: hanya ID di daftar; `kecuali` > 0: semua selain daftar (per 500
+// dalam `NOT IN` ber-AND); keduanya nol: seluruh peserta `Old`. Penampung :1
+// status baru, :2 kasus, :3 'Old', :4… ID.
 func sqlTandai(peserta string, pilih, kecuali int) string {
 	q := fmt.Sprintf(`UPDATE %s d SET %s WHERE d.PREMIUM_LIST_ID = :2 AND d.EDM_STATUS = :3`, peserta, setJurnalBalik())
 	switch {
 	case pilih > 0:
 		q += " AND d.ID IN (" + daftarPenampung(4, pilih) + ")"
 	case kecuali > 0:
-		q += " AND d.ID NOT IN (" + daftarPenampung(4, kecuali) + ")"
+		for awal := 0; awal < kecuali; awal += batasDaftarID {
+			q += " AND d.ID NOT IN (" + daftarPenampung(4+awal, min(batasDaftarID, kecuali-awal)) + ")"
+		}
 	}
 	return q
 }
@@ -87,7 +94,7 @@ func (g *Gudang) Tandai(ctx context.Context, tx *db.Tx, kasusID, statusBaru stri
 	dasar := []any{statusBaru, kasusID, models.StatusOld}
 	switch {
 	case p.Semua:
-		if len(p.Kecuali) > batasDaftarID {
+		if len(p.Kecuali) > batasKecuali {
 			return 0, ErrDaftarKecualiTerlaluPanjang
 		}
 		args := dasar

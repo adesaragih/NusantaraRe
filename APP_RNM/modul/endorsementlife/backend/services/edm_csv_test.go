@@ -62,7 +62,8 @@ func TestPeriksaCSVTanpaMenulis(t *testing.T) {
 			t.Errorf("pesan PLAN tidak VERBATIM: %q", p.Pesan)
 		}
 	}
-	if kolom["PLAN"] != 2 || kolom["GROSS_PREMIUM"] != 2 || kolom["DOB"] != 3 {
+	// Nomor = baris BERKAS (judul = 1): baris kosong ke-4 tidak menggeser laporan.
+	if kolom["PLAN"] != 3 || kolom["GROSS_PREMIUM"] != 3 || kolom["DOB"] != 5 {
 		t.Errorf("baris/kolom penolakan %v", h.Pesan)
 	}
 }
@@ -107,7 +108,7 @@ func TestTambahCSVSatuPenolakanMenolakSeluruhBerkas(t *testing.T) {
 		"UJI-N2,UJI-PLAN,UJI-PH-LAIN,IDR,1,",
 	))
 	var gc services.GalatCSV
-	if !errors.As(err, &gc) || gc.Ditolak != 1 || gc.Total != 2 || gc.Pesan[0].Kolom != "POLICY_HOLDER" || gc.Pesan[0].Baris != 2 {
+	if !errors.As(err, &gc) || gc.Ditolak != 1 || gc.Total != 2 || gc.Pesan[0].Kolom != "POLICY_HOLDER" || gc.Pesan[0].Baris != 3 {
 		t.Fatalf("%v %+v", err, gc)
 	}
 	if len(pesertaBaru(g)) != 0 || len(j.catatan) != 0 {
@@ -155,7 +156,7 @@ func TestCSVDitolak(t *testing.T) {
 	kosong := gudangKasusCSV(models.EdmTypePerubahanData)
 	kosong.Peserta = nil
 	gagal := gudangKasusCSV(models.EdmTypePerubahanData)
-	gagal.GagalSisipKe = 1
+	gagal.GagalSisipKe = 2 // baris berkas pertama sesudah judul
 	for _, k := range []struct {
 		nama  string
 		g     *tiruan.Gudang
@@ -178,5 +179,24 @@ func TestCSVDitolak(t *testing.T) {
 	l, j := layananJejak(gagal)
 	if _, err := l.TambahCSV(ctx, pelakuUji, "EDMLF-1", csvUji("UJI-N1,UJI-PLAN,UJI-PH,IDR,1,")); err == nil || len(j.catatan) != 0 {
 		t.Errorf("galat sisip tidak diteruskan: %v", err)
+	}
+}
+
+// TestTambahCSVGagalDiTengahMembatalkanSemua - kelompok pertama (1000 baris)
+// sudah tersisip saat baris ke-1500 gagal: seluruhnya batal bersama transaksi.
+func TestTambahCSVGagalDiTengahMembatalkanSemua(t *testing.T) {
+	g := gudangKasusCSV(models.EdmTypePerubahanData)
+	g.GagalSisipKe = 1501 // baris berkas rekaman ke-1500 (judul = baris 1)
+	l := services.BaruLayanan(g, tiruan.TransaksiPulih(g), nil).DenganJejak(&jejakTiruan{})
+	var b strings.Builder
+	b.WriteString(judulCSV)
+	for i := 1; i <= 2500; i++ {
+		fmt.Fprintf(&b, "UJI-N%d,UJI-PLAN,UJI-PH,IDR,1,\n", i)
+	}
+	if _, err := l.TambahCSV(context.Background(), pelakuUji, "EDMLF-1", strings.NewReader(b.String())); err == nil {
+		t.Fatal("galat sisip di kelompok kedua tidak diteruskan")
+	}
+	if n := len(pesertaBaru(g)); n != 0 {
+		t.Fatalf("%d baris New tersisa sesudah pembatalan, mau 0", n)
 	}
 }

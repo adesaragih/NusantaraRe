@@ -46,8 +46,8 @@ func TestSQLPutusan(t *testing.T) {
 		!strings.HasSuffix(s, "WHERE r.PREMIUM_LIST_ID = :5") || strings.Contains(s, "COMMIT") {
 		t.Errorf("sisip rekap warisan: %s", s)
 	}
-	if strings.Count(s, "NVL(TO_CHAR(r.") != len(KolomRekapWarisan)-5 {
-		t.Errorf("uang rekap warisan bukan teks bertitik ber-NVL '0'")
+	if strings.Count(s, "NVL(r.") != len(KolomRekapWarisan)-5 || strings.Contains(s, "TO_CHAR(r.") {
+		t.Errorf("uang rekap warisan harus NUMBER langsung ber-NVL 0 (kebal NLS)")
 	}
 }
 

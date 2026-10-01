@@ -32,8 +32,10 @@ func TestRuteSimpan(t *testing.T) {
 	if w := minta(t, h, "POST", jalur, `{}`, true); w.Code != http.StatusConflict || !strings.Contains(w.Body.String(), `"galat"`) {
 		t.Fatalf("simpan kedua %d %s", w.Code, w.Body)
 	}
-	g.Polis["EDMLF-1"].Status = models.StatusKasusSelesai
-	if w := minta(t, h, "POST", jalur, `{}`, true); w.Code != http.StatusConflict {
+	// Kasus tertutup yang BELUM disimpan: 409 karena tertutup, bukan karena simpan kedua.
+	tutup := gudangSatuKasus()
+	tutup.Polis["EDMLF-1"].Status = models.StatusKasusSelesai
+	if w := minta(t, routerBuat(tutup), "POST", jalur, `{}`, true); w.Code != http.StatusConflict || !strings.Contains(w.Body.String(), "already decided") {
 		t.Fatalf("kasus tertutup %d %s", w.Code, w.Body)
 	}
 	if w := minta(t, h, "POST", handlers.Prefix+"/kasus/EDMLF-9/simpan", `{}`, true); w.Code != http.StatusNotFound {
