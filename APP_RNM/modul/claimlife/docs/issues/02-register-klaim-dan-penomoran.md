@@ -756,16 +756,18 @@ baris versi mana saja.
 1. Versi baris = angka sesudah `<PL_NUMBER>/` di `PL_NUMBER_EDM`; kosong — atau tidak berawalan nomor polisnya — = 0
    (new business).
 2. Per `CERTIFICATE_NO` di satu `PL_NUMBER` hanya satu baris: `ROW_NUMBER() OVER (PARTITION BY CERTIFICATE_NO ORDER
-   BY versi DESC, TGL_INPUT DESC NULLS LAST, LENGTH(ID) DESC, ID DESC) = 1`.
+   BY versi DESC, TGL_INPUT DESC NULLS LAST, LENGTH(ID) DESC NULLS LAST, ID DESC NULLS LAST) = 1`.
 3. Baris terpilih ber-`TRIM(EDMSTATUS)` `Delete`/`Batal` → sertifikat tidak tampil di `Find Insured` dan ditolak
    pendaftaran dengan pesan yang sama dengan "tidak ada" (`… tidak ada atau sudah batal/delete`).
-4. Jendela peringkat selalu di subkueri yang `WHERE`-nya `PL_NUMBER = :1` (`Cari`) atau `PL_NUMBER = :3 AND
-   CERTIFICATE_NO = :4` (`AmbilUntukKlaim`) — nol pemindaian penuh atas 66,8 juta baris.
+4. Jendela peringkat selalu di subkueri yang `WHERE`-nya `PL_NUMBER = :1` (`Cari`) atau `PL_NUMBER = :1 AND
+   CERTIFICATE_NO = :2` (`AmbilUntukKlaim`) — nol pemindaian penuh atas 66,8 juta baris. Penyaring status dan nama
+   **di luar** subkueri itu: baris `Delete` yang tersaring sebelum diperingkat membuat versi lamanya naik menjadi
+   "terakhir".
 
 ⚠️ **Dua penyimpangan dari rumus brief, disengaja.** (a) Rumus versi `REGEXP_SUBSTR(PL_NUMBER_EDM, '[0-9]+$')`
 diperketat: ia membaca angka di akhir **nomor polis sendiri** sebagai versi bila baris new business ber-`PL_NUMBER_EDM`
-= `PL_NUMBER` (polis berakhiran `-2024` → versi 2024, menang atas `/01`; kasus uji h). (b) `TGL_INPUT DESC` ditambah
-`NULLS LAST` (Oracle menaruh NULL **pertama** pada `DESC`) dan `ID` dibandingkan secara **angka** (`LENGTH` dulu —
+= `PL_NUMBER` (polis berakhiran `-2024` → versi 2024, menang atas `/01`; kasus uji h). (b) `TGL_INPUT DESC` dan `ID
+DESC` ditambah `NULLS LAST` (Oracle menaruh NULL **pertama** pada `DESC`) dan `ID` dibandingkan secara **angka** (`LENGTH` dulu —
 `ID` teks berisi `TO_CHAR(urutan.NEXTVAL)`, dan `'99' > '100'` secara teks). ⚠️ Tidak satu pun penulis korpus
 (`SaveMasterLPDet`, PremiumList, Endorsement) mengisi `TGL_INPUT`; pada baris mereka seri versi praktis diputus `ID`.
 
@@ -798,7 +800,7 @@ SELECT PL_NUMBER, POLICY_NO, CERTIFICATE_NO, NAME_OF_INSURED, CURRENCY, EDMSTATU
                ROW_NUMBER() OVER (PARTITION BY CERTIFICATE_NO ORDER BY
                  NVL(TO_NUMBER(CASE WHEN SUBSTR(TRIM(PL_NUMBER_EDM), 1, LENGTH(PL_NUMBER) + 1) = PL_NUMBER || '/'
                    THEN REGEXP_SUBSTR(SUBSTR(TRIM(PL_NUMBER_EDM), LENGTH(PL_NUMBER) + 2), '^[0-9]+$') END), 0) DESC,
-                 TGL_INPUT DESC NULLS LAST, LENGTH(ID) DESC, ID DESC) AS RN_VERSI
+                 TGL_INPUT DESC NULLS LAST, LENGTH(ID) DESC NULLS LAST, ID DESC NULLS LAST) AS RN_VERSI
           FROM POOLDATA.M_LIFE_PREMIUM_DETAIL
          WHERE PL_NUMBER = :1 [AND CERTIFICATE_NO LIKE '%'||:2||'%'])
  WHERE RN_VERSI = 1 AND (EDMSTATUS IS NULL OR TRIM(EDMSTATUS) NOT IN ('Batal','Delete'))
@@ -806,15 +808,16 @@ SELECT PL_NUMBER, POLICY_NO, CERTIFICATE_NO, NAME_OF_INSURED, CURRENCY, EDMSTATU
  ORDER BY CERTIFICATE_NO FETCH FIRST n ROWS ONLY
 ```
 
-**SQL baru `AmbilUntukKlaim`** (`<kolomSalin>` = 29 kolom, tidak berubah; bind `pl, sertifikat, pl, sertifikat`):
+**SQL baru `AmbilUntukKlaim`** (`<kolomSalin>` = 29 ekspresi, tidak berubah; `<kolom mentah>` = 29 nama kolomnya,
+diturunkan dari `kolomSalin` — bukan `*`, nol kolom KTP; bind `pl, sertifikat`; satu akses, nol ketergantungan pada
+`ID` unik atau terisi — ralat `/code-review` `617fc9d` atas bentuk `ID = (subkueri)` di `9b4c653`):
 
 ```sql
-SELECT <kolomSalin> FROM POOLDATA.M_LIFE_PREMIUM_DETAIL
- WHERE PL_NUMBER = :1 AND CERTIFICATE_NO = :2
-   AND ID = (SELECT ID FROM (SELECT ID, EDMSTATUS, <peringkat versi yang sama> AS RN_VERSI
-                               FROM POOLDATA.M_LIFE_PREMIUM_DETAIL
-                              WHERE PL_NUMBER = :3 AND CERTIFICATE_NO = :4)
-              WHERE RN_VERSI = 1 AND (EDMSTATUS IS NULL OR TRIM(EDMSTATUS) NOT IN ('Batal','Delete')))
+SELECT <kolomSalin>
+  FROM (SELECT <kolom mentah>, EDMSTATUS, <peringkat versi yang sama> AS RN_VERSI
+          FROM POOLDATA.M_LIFE_PREMIUM_DETAIL
+         WHERE PL_NUMBER = :1 AND CERTIFICATE_NO = :2)
+ WHERE RN_VERSI = 1 AND (EDMSTATUS IS NULL OR TRIM(EDMSTATUS) NOT IN ('Batal','Delete'))
  FETCH FIRST 1 ROWS ONLY
 ```
 
@@ -833,10 +836,18 @@ SELECT <kolomSalin> FROM POOLDATA.M_LIFE_PREMIUM_DETAIL
 | h | polis berakhiran angka, NB ber-`PL_NUMBER_EDM` = `PL_NUMBER`, + `/01 Delete` | tidak tampil (versi NB = 0) |
 | i | dua baris `/01` tanpa `TGL_INPUT`, `ID` 99 `Delete` dan 100 `Old` | `ID` terbesar **secara angka** → tampil |
 | j | nama lama di NB, nama baru di `/01 Old`, cari nama lama | tidak tampil |
+| k | dua baris `/01`: `Old` ber-`TGL_INPUT`, `Delete` tanpa `TGL_INPUT` (ID lebih besar) | yang ber-`TGL_INPUT` menang (`NULLS LAST`) → tampil |
+| l | `/100 Old` lawan `/99 Delete` | versi dibanding **angka** (100 > 99) → tampil |
+
+Uji `db` menambah dua yang tidak dapat dinyatakan per-sertifikat: **tiga sertifikat di satu PL** (C1 dibawa `/01 Old`,
+C2 di-`Delete`, C3 NB saja → tampil C1 dari `/01` dan C3; mengunci `PARTITION BY`) dan saringan **nama positif +
+sertifikat** atas godror (tiga penampung, `:1`/`:2` di dalam jendela, `:3` di luar).
 
 Uji gigit: pemeriksa yang sama dijalankan atas SQL termutasi — tanpa `ROW_NUMBER` kasus (c) merah; tanpa `PL_NUMBER`
-di jendela penjaga "nol pemindaian penuh" merah. Mutasi kode produksi (tanpa `ROW_NUMBER`, tanpa `PL_NUMBER` di jendela
-`Cari`/`AmbilUntukKlaim`, rumus versi naif, tanpa `NULLS LAST`, status di dalam jendela) — keenamnya merah.
+di jendela penjaga "nol pemindaian penuh" merah; status **juga** di dalam jendela (c) merah; penampung tak urut merah;
+`SELECT *` di subkueri `AmbilUntukKlaim` merah. Sebelas mutasi kode produksi — tanpa `ROW_NUMBER`, tanpa `PL_NUMBER`
+di jendela `Cari`/`AmbilUntukKlaim`, rumus versi naif, `TGL_INPUT`/`ID` tanpa `NULLS LAST`, status pindah ke / juga di
+jendela `Cari`, status juga di subkueri `AmbilUntukKlaim`, penampung tak urut, `SELECT *` — kesebelasnya merah.
 
 ⚠️ **Tiruan bersama.** `uji/skemauji` (di luar folder modul ini) belum memuat `PL_NUMBER_EDM` dan `TGL_INPUT`; uji `db`
 Claim Life menambahkannya ke **tiruan skema uji** (`ALTER TABLE <skema uji>.M_LIFE_PREMIUM_DETAIL ADD …`, ORA-01430
@@ -844,6 +855,31 @@ ditoleransi) — bukan DDL tabel warisan. Pemilik `uji/skemauji` sebaiknya memas
 
 **Di luar cakupan keputusan ini** *(dicatat, tidak diubah)*: klaim yang **sudah terdaftar** sebelum endorsement
 menghapus sertifikatnya tetap memakai baris sumber (`SOURCE_ID`) yang dipilih saat pendaftaran; nol pemeriksaan ulang
-di Save to RNM. Bila bisnis menghendakinya, itu keputusan baru. Tiket 11 Endorsement Life (di luar folder ini)
+di Save to RNM. Bila bisnis menghendakinya, itu keputusan baru.
+
+**Risiko yang ditemukan `/code-review` dan TIDAK diubah di sini** *(di luar folder ini, atau ditetapkan aturan brief)*:
+
+1. **`EM_PERCENT` versi endorsement NULL.** Penulis Endorsement — persis Pega — tidak pernah menetapkan `EM_PERCENT`
+   (dan `RISK`) di baris versinya (`nilaiPesertaWarisanEDM`, `edm_putusan.go`). Karena klaim kini selalu menyalin baris
+   versi terakhir, sertifikat yang pernah di-endorse kehilangan beban ekstra-mortalita baris new business-nya:
+   spreading membaca `(1 + 0)`. Pilihan ada pada work owner/pemilik Endorsement: biarkan (ikut Pega), atau isi
+   `EM_PERCENT` dari versi sebelumnya.
+2. **Dua baris satu sertifikat di versi yang sama** (mis. `Delete` lalu `New` sertifikat yang sama dalam satu kasus —
+   unggahan CSV Endorsement tidak menolak sertifikat ganda): pemutusnya `ID`, yang diberi `TO_CHAR(urutan.NEXTVAL)`
+   di `INSERT … SELECT` tanpa `ORDER BY` — urutannya tidak dijamin. Perbaikannya di sisi penulis (tolak ganda, atau
+   sisip berurutan).
+3. **`TGL_INPUT` jarang terisi.** Di versi yang sama, baris yang **punya** `TGL_INPUT` mengalahkan baris tanpa
+   `TGL_INPUT` meski lebih baru — urutan ini ditetapkan brief (§1 butir 1) dan dikunci kasus k.
+4. **Biaya.** `Cari` kini mengurutkan seluruh baris satu PL untuk jendela dan menghitung `REGEXP_SUBSTR` per baris
+   sebelum `FETCH FIRST` berhenti; sebelumnya urutan top-N. Tetap dikurung `INDEX4`; perlu diamati di PL kumpulan
+   besar.
+5. **Dua definisi "versi terakhir".** Kepala polis memakai `NVL(PROD_KE, 0) DESC` (`pohonklaim.go`), peserta
+   akhiran `PL_NUMBER_EDM` — sejalan selama penulis menjaga `PRODKE` dan akhiran nomor (Endorsement `edm_model.go`,
+   RALAT R19 menyebut keduanya sengaja terpisah).
+6. **Kontrak lintas modul.** Uji kontrak Endorsement yang menilai "penyaring Claim Life apa adanya"
+   (`edm_kontrak_test.go`, `edm_putusan_db_test.go`) masih memodelkan aturan per-baris; bila Endorsement mengubah
+   bentuk `PL_NUMBER_EDM`, versi terbaca 0 tanpa uji Endorsement yang merah. Milik pemilik Endorsement.
+7. **`CERTIFICATE_NO` NULL atau sama di dua `POLICY_NO` satu PL** jatuh ke satu partisi — hanya satu baris tampil.
+   Baris ber-sertifikat NULL memang tidak dapat didaftarkan (`AmbilUntukKlaim` berkunci `CERTIFICATE_NO = :2`). Tiket 11 Endorsement Life (di luar folder ini)
 **tidak** disunting — temuan B1 tertutup dari sisi pembaca di sini.
 

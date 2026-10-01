@@ -865,9 +865,12 @@ Endorsement Life (`bf45753`, `9160a8a`) menulis versi baru ke `M_LIFE_PREMIUM_DE
 `GetPesertaClaim_sql1.xml` b85 tidak menyaring versi maupun `EDMSTATUS` — ikut Pega (setiap versi tampil, termasuk
 yang dihapus) atau menyimpang? Jawabannya menyimpang, sadar. Versi = angka sesudah `<PL_NUMBER>/` di `PL_NUMBER_EDM`
 (kosong = 0); per sertifikat hanya baris versi terbesar (seri → `TGL_INPUT` terbaru, lalu `ID` terbesar secara angka);
-jendela selalu dikurung `PL_NUMBER`. Dibangun `9b4c653` (uji `16c512b`); rincian di tiket 02, bab bertanggal 1 Oktober
-2026, dan `PARITAS-LAYAR-DAN-AKSI.md` bab 01-10-2026. *(Tiket 02.)*
+jendela selalu dikurung `PL_NUMBER`. Dibangun `9b4c653` (uji `16c512b`, ralat `/code-review` `617fc9d`); rincian di
+tiket 02, bab bertanggal 1 Oktober 2026, dan `PARITAS-LAYAR-DAN-AKSI.md` bab 01-10-2026. *(Tiket 02.)*
 
 *Sisa, bukan bagian keputusan ini:* klaim yang sudah terdaftar sebelum endorsement menghapus sertifikatnya tidak
 diperiksa ulang di Save to RNM (baris sumbernya dipilih saat pendaftaran). Bila dikehendaki — keputusan baru.
+⚠️ Untuk work owner/pemilik Endorsement (tiket 02, "Risiko yang ditemukan `/code-review`" butir 1–2): baris versi
+endorsement ber-`EM_PERCENT` NULL (persis Pega), sehingga klaim atas sertifikat yang pernah di-endorse kehilangan beban
+ekstra-mortalitanya; dan sertifikat ganda dalam satu versi diputus `ID` yang urutannya tidak dijamin penulis.
 
