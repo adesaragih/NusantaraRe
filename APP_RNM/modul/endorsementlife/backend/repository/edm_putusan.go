@@ -349,3 +349,125 @@ func (g *Gudang) TulisProduksiWarisan(ctx context.Context, tx *db.Tx, r Produksi
 	}
 	return int(c), err
 }
+
+// --- peserta warisan (K5 keputusan work owner 01-10-2026, OQ-EDM-016) -----------
+
+// KolomPesertaWarisanEDM - daftar `INSERT INTO POOLDATA.M_LIFE_PREMIUM_DETAIL` `RDBList/SaveMasterLPDet.xml`
+// b86/b87, VERBATIM urutan korpus (80 kolom, `ID` pertama). Daftar yang sama dengan penulis new business
+// PremiumList (`kolomPesertaWarisan` modul itu) - DITIRU, tidak diimpor; sumber nilainya berbeda (lihat
+// nilaiPesertaWarisanEDM).
+var KolomPesertaWarisanEDM = []string{
+	"ID", "SHARE_NUSANTARA_RE", "SEX", "COMM", "FLEET_DISCOUNT", "POLICY_HOLDER", "PLAN", "PERIOD_YY", "PERIOD_MM",
+	"POLICY_NO", "NET_PREMIUM", "NAME_OF_INSURED", "DESCRIPTION", "GROSS_PREMIUM", "EXPIRED_DATE", "DOB",
+	"CERTIFICATE_NO", "BEGIN_DATE", "EFFECTIVE_DATE", "STNC", "LAPSE_DATE", "PASSED_PERIOD", "AGE", "CLAIM", "TAX",
+	"BROKERAGE_FEE", "OVR_COMM", "CURRENCY", "MEDICAL_STATUS", "SUM_INSURED", "CEDING_RETENTION", "SUM_REASURED",
+	"PROF_COMM", "GROSS_PREMIUM_REFUND", "NET_PREMIUM_REFUND", "COMM_REFUND", "BROKERAGE_FEE_REFUND",
+	"OVR_COMM_REFUND", "TAX_REFUND", "SHARE_RETRO", "GROSS_PREMIUM_RETRO", "DISCOUNT_PREMIUM_RETRO", "OVR_COMM_RETRO",
+	"BROKERAGE_FEE_RETRO", "NET_PREMIUM_RETRO", "GROSS_PREMIUM_REFUND_RETRO", "DISCOUNT_PREMIUM_REFUND_RETRO",
+	"OVR_COMM_REFUND_RETRO", "BROKERAGE_FEE_REFUND_RETRO", "NET_PREMIUM_REFUND_RETRO", "CLAIM_AMOUNT", "PL_NUMBER",
+	"PL_NUMBER_EDM", "CEDING_CO", "RATE", "PRORATETYPE", "SUM_AT_RISK_GROSS", "SUM_AT_RISK_RETRO", "RETROCEDED_SHARE",
+	"SHARE_NUSANTARA_RE_GROSS", "GROSS_VALUATION_BEGIN_DATE", "GROSS_VALUATION_EXPIRED_DATE",
+	"RETRO_VALUATION_BEGIN_DATE", "RETRO_VALUATION_EXPIRED_DATE", "WPC", "ENTRY_AGE", "CURRENT_AGE", "DEDUCTION",
+	"FACTOR", "DEDUCTION_REFUND", "RI_ADMIN_FEE_REFUND_RETRO", "RI_ADMIN_FEE_RETRO", "RI_ADMIN_FEE_REFUND",
+	"RI_ADMIN_FEE", "IDPEGA", "EDMSTATUS", "STATUSOLD", "STATUS", "EM_PERCENT", "RISK",
+}
+
+// nilaiPesertaWarisanEDM - VALUES `SaveMasterLPDet` ← `InsertJsonPolisLife_Act` 11 (ulang
+// `PremiumListSummary.PremiumListDetail`, PRE=false b2861 → selalu) 11.1 b2889 (PRE=false b2909), per peserta
+// kasus `d` (`T_PREMIUM_LIST_DETAIL`) dan kepala `p`; uji `TestPesertaWarisanEDMDariKorpus` menurunkannya ulang:
+//
+//	TempInputDetail.CARIn ← @toDecimal(.X)    NVL(d.X, 0)        `@toDecimal("")` = 0 (OQ-PL-10)
+//	TempValue.X                               d.X                teks/angka apa adanya, kosong = NULL
+//	To_date(TempValue.X, 'DD/MM/YYYY')        TRUNC(d.X)         kolom DATE 052; STNC/WPC teks → TO_DATE
+//	CARI32 / CARI34 ← pyWorkPage.CedingCo / .ProRateType          p.CEDING_CO / p.PRO_RATE_TYPE
+//	CARI47 (11.4/11.5) / CARI48 (11.2/11.3)                       d.STATUS_OLD / d.STATUS - Resmikan lebih dulu
+//	:1 PL_NUMBER ← PremiumListSummary.PL_NUMBER, :2 PL_NUMBER_EDM, :3 IDPEGA ← pzInsKey = pengenal kasus
+//
+// ⚠️ PERSIS Pega, termasuk dua kolom yang hilang: `EM_PERCENT` ← CARI49 dan `RISK` ← CARI50 TIDAK PERNAH
+// ditetapkan 11.1 jalur endorsement (CARI12 ditetapkan dua kali: `.EM_PERCENT` lalu ditimpa
+// `.GROSS_PREMIUM_REFUND`) - keduanya NULL, berbeda dari jalur new business PremiumList yang mengisinya.
+var nilaiPesertaWarisanEDM = petaNilaiPesertaWarisanEDM(map[string]string{
+	"ID": "", "PL_NUMBER": ":1", "PL_NUMBER_EDM": ":2", "IDPEGA": ":3",
+	"SEX": "d.SEX", "POLICY_HOLDER": "d.POLICY_HOLDER", "PLAN": "d.PLAN", "PERIOD_YY": "d.PERIOD_YY",
+	"PERIOD_MM": "d.PERIOD_MM", "POLICY_NO": "d.POLICY_NO", "NAME_OF_INSURED": "d.NAME_OF_INSURED",
+	"DESCRIPTION": "d.DESCRIPTION", "CERTIFICATE_NO": "d.CERTIFICATE_NO", "PASSED_PERIOD": "d.PASSED_PERIOD",
+	"AGE": "d.AGE", "CURRENCY": "d.CURRENCY", "MEDICAL_STATUS": "d.MEDICAL_STATUS", "ENTRY_AGE": "d.ENTRY_AGE",
+	"CURRENT_AGE":  "d.CURRENT_AGE",
+	"EXPIRED_DATE": "TRUNC(d.EXPIRED_DATE)", "DOB": "TRUNC(d.DOB)", "BEGIN_DATE": "TRUNC(d.BEGIN_DATE)",
+	"EFFECTIVE_DATE": "TRUNC(d.EFFECTIVE_DATE)", "LAPSE_DATE": "TRUNC(d.LAPSE_DATE)",
+	"GROSS_VALUATION_BEGIN_DATE":   "TRUNC(d.GROSS_VALUATION_BEGIN_DATE)",
+	"GROSS_VALUATION_EXPIRED_DATE": "TRUNC(d.GROSS_VALUATION_EXPIRED_DATE)",
+	// `TempValue.RETROCESSION_VALUATION_*` → kolom `RETRO_VALUATION_*` (052).
+	"RETRO_VALUATION_BEGIN_DATE":   "TRUNC(d.RETRO_VALUATION_BEGIN_DATE)",
+	"RETRO_VALUATION_EXPIRED_DATE": "TRUNC(d.RETRO_VALUATION_EXPIRED_DATE)",
+	"STNC":                         "TO_DATE(d.STNC, 'DD/MM/YYYY')", "WPC": "TO_DATE(d.WPC, 'DD/MM/YYYY')",
+	"CEDING_CO": "p.CEDING_CO", "PRORATETYPE": "p.PRO_RATE_TYPE",
+	"EDMSTATUS": "d.EDM_STATUS", "STATUSOLD": "d.STATUS_OLD", "STATUS": "d.STATUS",
+	"EM_PERCENT": "NULL", "RISK": "NULL",
+})
+
+// desimalPesertaWarisanEDM - kolom `CARIn ← @toDecimal(.X)` 11.1, nama kolom = nama properti.
+var desimalPesertaWarisanEDM = []string{
+	"SHARE_NUSANTARA_RE", "COMM", "FLEET_DISCOUNT", "NET_PREMIUM", "GROSS_PREMIUM", "CLAIM", "TAX", "BROKERAGE_FEE",
+	"OVR_COMM", "SUM_INSURED", "CEDING_RETENTION", "SUM_REASURED", "PROF_COMM", "GROSS_PREMIUM_REFUND",
+	"NET_PREMIUM_REFUND", "COMM_REFUND", "BROKERAGE_FEE_REFUND", "OVR_COMM_REFUND", "TAX_REFUND", "SHARE_RETRO",
+	"GROSS_PREMIUM_RETRO", "DISCOUNT_PREMIUM_RETRO", "OVR_COMM_RETRO", "BROKERAGE_FEE_RETRO", "NET_PREMIUM_RETRO",
+	"GROSS_PREMIUM_REFUND_RETRO", "DISCOUNT_PREMIUM_REFUND_RETRO", "OVR_COMM_REFUND_RETRO",
+	"BROKERAGE_FEE_REFUND_RETRO", "NET_PREMIUM_REFUND_RETRO", "CLAIM_AMOUNT", "RATE", "SUM_AT_RISK_GROSS",
+	"SUM_AT_RISK_RETRO", "RETROCEDED_SHARE", "SHARE_NUSANTARA_RE_GROSS", "DEDUCTION", "FACTOR", "DEDUCTION_REFUND",
+	"RI_ADMIN_FEE_REFUND_RETRO", "RI_ADMIN_FEE_RETRO", "RI_ADMIN_FEE_REFUND", "RI_ADMIN_FEE",
+}
+
+// petaNilaiPesertaWarisanEDM melengkapi peta nilai dengan kolom desimalPesertaWarisanEDM.
+func petaNilaiPesertaWarisanEDM(m map[string]string) map[string]string {
+	for _, k := range desimalPesertaWarisanEDM {
+		m[k] = "NVL(d." + k + ", 0)"
+	}
+	return m
+}
+
+// PesertaWarisanTulis - kepala baris `M_LIFE_PREMIUM_DETAIL` kasus yang diresmikan.
+type PesertaWarisanTulis struct {
+	KasusID    string
+	NomorPolis string
+	Nomor      string
+}
+
+// sqlSisipPesertaWarisanEDM - setiap peserta kasus (Old, New, Delete, Batal) satu baris warisan.
+//
+// ⛔ E4: tabel warisan ±66,8 juta baris hanya SASARAN `INSERT` - nol baca, nol pemindaian. Sumbernya peserta
+// kasus `T_PREMIUM_LIST_DETAIL` berkunci `IDX_PLD_PL` (`PREMIUM_LIST_ID`, migrasi 052) + kepalanya menurut PK.
+// Penampung :1 PL_NUMBER, :2 PL_NUMBER_EDM, :3 IDPEGA, :4 kasus - urut kemunculan.
+func sqlSisipPesertaWarisanEDM(tujuan, urutan, peserta, polis string) string {
+	nilai := make([]string, len(KolomPesertaWarisanEDM))
+	for i, k := range KolomPesertaWarisanEDM {
+		if k == "ID" {
+			nilai[i] = "TO_CHAR(" + urutan + ".NEXTVAL)"
+			continue
+		}
+		nilai[i] = nilaiPesertaWarisanEDM[k]
+	}
+	return fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s d JOIN %s p ON p.ID = d.PREMIUM_LIST_ID WHERE d.PREMIUM_LIST_ID = :4`,
+		tujuan, strings.Join(KolomPesertaWarisanEDM, ", "), strings.Join(nilai, ", "), peserta, polis)
+}
+
+// TulisPesertaWarisan menulis peserta kasus yang diresmikan ke `M_LIFE_PREMIUM_DETAIL`; mengembalikan cacah baris.
+//
+// ⛔ Seperti Pega: SISIP murni (`SaveMasterLPDet` tanpa hapus) - satu kasus diresmikan sekali (AC 29); dipanggil
+// SESUDAH Resmikan, yang menetapkan `STATUS`/`STATUS_OLD`/`PL_NUMBER_EDM` peserta (11.2–11.5).
+func (g *Gudang) TulisPesertaWarisan(ctx context.Context, tx *db.Tx, r PesertaWarisanTulis) (int, error) {
+	n, err := g.nama(tabelPesertaWarisanEDM, urutanPesertaWarisan, tabelPeserta, tabelPolis)
+	if err != nil {
+		return 0, err
+	}
+	q := sqlSisipPesertaWarisanEDM(n[0], n[1], n[2], n[3])
+	if err := db.PeriksaSQL(q); err != nil {
+		return 0, err
+	}
+	h, err := tx.ExecContext(ctx, q, r.NomorPolis, r.Nomor, r.KasusID, r.KasusID)
+	if err != nil {
+		return 0, fmt.Errorf("repository: menulis peserta warisan %q: %w", r.KasusID, err)
+	}
+	c, err := h.RowsAffected()
+	return int(c), err
+}

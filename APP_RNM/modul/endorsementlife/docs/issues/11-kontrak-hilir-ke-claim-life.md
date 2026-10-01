@@ -108,3 +108,22 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+## Status 01-10-2026 — selesai (K5 keputusan work owner 01-10-2026, OQ-EDM-016)
+
+Kalimat lama *"sebagian 01-10-2026 — rekap warisan + uji penyaring Claim Life (c83bf68); peserta warisan dan uji kontrak HTTP lintas
+modul menunggu OQ-EDM-016"* tidak berlaku lagi.
+
+| AC | Bukti |
+| --- | --- |
+| Baris endorsement — termasuk negatif — ke `M_LIFE_PREMIUM_DETAIL` **dan** `M_LIFE_PREMIUM_SUMMARY` | `TulisPesertaWarisan` + `TulisRekapWarisan`; db: baris `Delete` `GROSS_PREMIUM_REFUND` −7,25 |
+| `Batal`/`Delete` tidak muncul di jalur baca klaim; NB (NULL) tetap muncul | `TestPutuskanMenulisPesertaWarisan` (penyaring Claim Life DITIRU, tidak diimpor) + db `TestPutuskanTerhadapOracle` (`COUNT` hidup 2 dari 3) + `models.TestStatusPesertaSejalanPenyaringClaimLife` (kesetaraan dengan teks `penyaringHidup` Claim Life) |
+| `STATUS`/`STATUSOLD` bukan penanda hidup | `models.TestStatusJenisBukanPenandaHidup` |
+| Jalur akuntansi tidak menyaring | rekap 12 menjumlah seluruh peserta kasus (tidak berubah) |
+| Ditemukan lewat `PL_NUMBER_EDM` maupun `PL_NUMBER` | kedua kolom ditulis (`:1`, `:2`) |
+| Test kontrak simpan endorsement → pencarian bergaya Claim Life | seam layanan (tiruan) dan seam repository terhadap Oracle (db, SKIP tanpa `ORACLE_DSN`); seam HTTP tiruan: `TestRutePutuskan` memeriksa `pesertaWarisan` di jawaban Confirm. ⚠️ Seam HTTP terhadap Oracle **tidak** dibangun: modul ini belum punya uji `db` di lapisan handler |
+
+⚠️ **Temuan, ditiru persis:** `EM_PERCENT` ← `{TempInputDetail.CARI49}` dan `RISK` ← `{TempInputDetail.CARI50}` (`SaveMasterLPDet`
+b249/b250) tidak pernah ditetapkan `InsertJsonPolisLife_Act` 11.1 (CARI12 ditetapkan `.EM_PERCENT` lalu ditimpa
+`.GROSS_PREMIUM_REFUND`) — baris endorsement Pega di tabel warisan ber-`EM_PERCENT`/`RISK` NULL, dan begitu pula yang ditulis
+modul ini. Jalur new business PremiumList mengisi keduanya.

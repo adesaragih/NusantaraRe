@@ -43,7 +43,7 @@ func TestPutuskanConfirmMeresmikanVersiDalamUrutan(t *testing.T) {
 		t.Fatalf("hasil %+v", h)
 	}
 	// AC 42: urutan pemanggilan adalah bagian kebenaran.
-	if got := strings.Join(g.Panggilan, ","); got != "SisipRiwayat,AdaVersiResmi,TulisProduksiWarisan,Resmikan,TulisRekapWarisan" {
+	if got := strings.Join(g.Panggilan, ","); got != "SisipRiwayat,AdaVersiResmi,TulisProduksiWarisan,Resmikan,TulisPesertaWarisan,TulisRekapWarisan" {
 		t.Errorf("urutan %s", got)
 	}
 	p := g.Polis["EDMLF-1"]
@@ -215,7 +215,7 @@ func TestPutuskanMenulisProduksiWarisan(t *testing.T) {
 	if _, err := l.Putuskan(ctx, pelakuUji, "EDMLF-1", services.MasukanPutusan{Status: "1"}); err != nil {
 		t.Fatal(err)
 	}
-	if got := strings.Join(g.Panggilan, ","); got != "SisipRiwayat,AdaVersiResmi,TulisProduksiWarisan,Resmikan,TulisRekapWarisan" {
+	if got := strings.Join(g.Panggilan, ","); got != "SisipRiwayat,AdaVersiResmi,TulisProduksiWarisan,Resmikan,TulisPesertaWarisan,TulisRekapWarisan" {
 		t.Errorf("urutan %s", got)
 	}
 	if len(g.ProduksiWarisan) != 1 {
@@ -230,5 +230,61 @@ func TestPutuskanMenulisProduksiWarisan(t *testing.T) {
 	g, l, _ = gudangPutusan(t)
 	if _, err := l.Putuskan(ctx, pelakuUji, "EDMLF-1", services.MasukanPutusan{Status: "2"}); err != nil || len(g.ProduksiWarisan) != 0 {
 		t.Errorf("Decline tidak menulis LIFEINPRODUCTION: %v %d", err, len(g.ProduksiWarisan))
+	}
+}
+
+// penyaringClaimLifeTiruan - penyaring hidup Claim Life (`penyaringHidup`: NULL ATAU `TRIM(EDMSTATUS) NOT IN
+// ('Batal', 'Delete')`) DITIRU di uji ini, tidak diimpor; kesetaraannya dengan sumber Claim Life dijaga
+// `models.TestStatusPesertaSejalanPenyaringClaimLife`.
+func penyaringClaimLifeTiruan(edmstatus string) bool {
+	v := strings.TrimSpace(edmstatus)
+	return v == "" || (v != "Batal" && v != "Delete")
+}
+
+// K5 keputusan work owner 01-10-2026 (OQ-EDM-016): Confirm menulis SETIAP peserta kasus - Old, New, Delete -
+// ke `M_LIFE_PREMIUM_DETAIL` (`SaveMasterLPDet` 11.6 b5098, PRE=false b5118 → selalu jalan) sesudah 11.2–11.5
+// (STATUS/STATUSOLD) dan sebelum rekap 12; baris Delete/Batal tersimpan tetapi TIDAK lolos penyaring Claim Life.
+func TestPutuskanMenulisPesertaWarisan(t *testing.T) {
+	g, l, _ := gudangPutusan(t)
+	ctx := context.Background()
+	h, err := l.Putuskan(ctx, pelakuUji, "EDMLF-1", services.MasukanPutusan{Status: "1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.Join(g.Panggilan, ","); got != "SisipRiwayat,AdaVersiResmi,TulisProduksiWarisan,Resmikan,TulisPesertaWarisan,TulisRekapWarisan" {
+		t.Errorf("urutan %s", got)
+	}
+	if len(g.PesertaWarisanTertulis) != 3 || h.PesertaWarisan != 3 {
+		t.Fatalf("baris M_LIFE_PREMIUM_DETAIL: %d (hasil %d)", len(g.PesertaWarisanTertulis), h.PesertaWarisan)
+	}
+	lolos := map[string]bool{}
+	for _, b := range g.PesertaWarisanTertulis {
+		if b["PL_NUMBER"] != "UJI-PL-1" || b["PL_NUMBER_EDM"] != "UJI-PL-1/01" || b["IDPEGA"] != "EDMLF-1" || b["STATUS"] != "1" {
+			t.Errorf("baris %+v", b)
+		}
+		mauLama := "0"
+		if b["EDMSTATUS"] == models.StatusOld {
+			mauLama = "1"
+		}
+		if b["STATUSOLD"] != mauLama || b["EM_PERCENT"] != "" || b["RISK"] != "" {
+			t.Errorf("STATUSOLD / CARI49-50 kosong: %+v", b)
+		}
+		lolos[b["EDMSTATUS"]] = penyaringClaimLifeTiruan(b["EDMSTATUS"])
+	}
+	if !lolos[models.StatusOld] || !lolos[models.StatusNew] || lolos[models.StatusDelete] {
+		t.Errorf("penyaring Claim Life atas baris tertulis: %v", lolos)
+	}
+	for _, v := range []string{models.StatusBatal, " Batal ", models.StatusDelete} {
+		if penyaringClaimLifeTiruan(v) {
+			t.Errorf("%q lolos penyaring Claim Life", v)
+		}
+	}
+	if !penyaringClaimLifeTiruan("") {
+		t.Error("peserta new business (EDMSTATUS NULL) harus lolos")
+	}
+	// Decline: nol baris warisan.
+	g, l, _ = gudangPutusan(t)
+	if _, err := l.Putuskan(ctx, pelakuUji, "EDMLF-1", services.MasukanPutusan{Status: "2"}); err != nil || len(g.PesertaWarisanTertulis) != 0 {
+		t.Errorf("Decline: %v %d", err, len(g.PesertaWarisanTertulis))
 	}
 }

@@ -203,3 +203,124 @@ func TestProduksiWarisanDariKorpus(t *testing.T) {
 		}
 	}
 }
+
+// K5 keputusan work owner 01-10-2026 (OQ-EDM-016): peserta kasus yang diresmikan ditulis ke
+// `M_LIFE_PREMIUM_DETAIL` seperti `RDBList/SaveMasterLPDet.xml` b86/b87 - 80 kolom VERBATIM, `ID` dari
+// sequence, sumber berkunci `IDX_PLD_PL` (`PREMIUM_LIST_ID`), tabel warisan hanya SASARAN sisip (nol baca,
+// nol pemindaian), nol `COMMIT`.
+func TestSQLPesertaWarisanEDM(t *testing.T) {
+	q := sqlSisipPesertaWarisanEDM("UJISKEMA.M_LIFE_PREMIUM_DETAIL", "UJISKEMA.M_LIFE_PREMIUM_DETAIL_SEQ", uPeserta, uPolis)
+	if penampungUnik(t, "sqlSisipPesertaWarisanEDM", q) != 4 || strings.Contains(q, "COMMIT") ||
+		!strings.HasSuffix(q, "FROM "+uPeserta+" d JOIN "+uPolis+" p ON p.ID = d.PREMIUM_LIST_ID WHERE d.PREMIUM_LIST_ID = :4") {
+		t.Errorf("sisip peserta warisan: %s", q)
+	}
+	if len(KolomPesertaWarisanEDM) != 80 || KolomPesertaWarisanEDM[0] != "ID" || KolomPesertaWarisanEDM[79] != "RISK" {
+		t.Fatalf("80 kolom VERBATIM: %d", len(KolomPesertaWarisanEDM))
+	}
+	for _, w := range []string{"SELECT TO_CHAR(UJISKEMA.M_LIFE_PREMIUM_DETAIL_SEQ.NEXTVAL), NVL(d.SHARE_NUSANTARA_RE, 0), d.SEX,",
+		"TRUNC(d.EXPIRED_DATE)", "TO_DATE(d.STNC, 'DD/MM/YYYY')", "TO_DATE(d.WPC, 'DD/MM/YYYY')", ":1, :2, p.CEDING_CO,",
+		"p.PRO_RATE_TYPE", "TRUNC(d.RETRO_VALUATION_BEGIN_DATE)", ":3, d.EDM_STATUS, d.STATUS_OLD, d.STATUS, NULL, NULL FROM"} {
+		if !strings.Contains(q, w) {
+			t.Errorf("sisip peserta warisan tanpa %q:\n%s", w, q)
+		}
+	}
+	// Tabel 66,8 juta baris tidak pernah dibaca: nol `m.`, nol `WHERE` atasnya.
+	if strings.Contains(q, "m.") || strings.Count(q, "WHERE") != 1 {
+		t.Errorf("tabel warisan dibaca/dipindai: %s", q)
+	}
+}
+
+// TestPesertaWarisanEDMDariKorpus - (1) daftar kolom `INSERT` = `SaveMasterLPDet.xml` VERBATIM; (2) VALUES ke-n
+// diterjemahkan dari `InsertJsonPolisLife_Act` 11.1 (b2889): `TempInputDetail.CARIn ← @toDecimal(.X)` (penetapan
+// TERAKHIR menang - CARI12) = `NVL(d.X, 0)` (`@toDecimal("")` = 0, OQ-PL-10); `TempValue.X` = `d.X`;
+// `To_date(TempValue.X, …)` = tanggal; CARIn yang tidak pernah ditetapkan = NULL.
+func TestPesertaWarisanEDMDariKorpus(t *testing.T) {
+	b, err := os.ReadFile(akarKorpus + `\RDBList\SaveMasterLPDet.xml`)
+	if err != nil {
+		t.Skipf("korpus tidak terjangkau (%v)", err)
+	}
+	sql := html.UnescapeString(string(b))
+	sql = sql[strings.Index(sql, "INSERT INTO POOLDATA.M_LIFE_PREMIUM_DETAIL"):strings.Index(sql, "</pyBrowseSQL>")]
+	kolom := strings.FieldsFunc(sql[strings.Index(sql, "(")+1:strings.Index(sql, ")")], func(r rune) bool {
+		return r == ',' || r == ' ' || r == '\n' || r == '\t' || r == '\r'
+	})
+	if strings.Join(kolom, ",") != strings.Join(KolomPesertaWarisanEDM, ",") {
+		t.Fatalf("KolomPesertaWarisanEDM bukan urutan korpus:\n kode %v\n XML  %v", KolomPesertaWarisanEDM, kolom)
+	}
+	vals := sql[strings.Index(sql, "VALUES"):]
+	vals = vals[strings.Index(vals, "(")+1 : strings.LastIndex(vals, ")")]
+	butir := regexp.MustCompile(`(?:To_date\()?\{([\w.]+)\}|to_Char\(M_LIFE_PREMIUM_DETAIL_SEQ\.nextval\)`).FindAllStringSubmatch(vals, -1)
+	if len(butir) != 80 {
+		t.Fatalf("VALUES: %d butir, mau 80", len(butir))
+	}
+	ijp, err := os.ReadFile(akarKorpus + `\Activity\InsertJsonPolisLife_Act.xml`)
+	if err != nil {
+		t.Skipf("korpus tidak terjangkau (%v)", err)
+	}
+	isi := html.UnescapeString(string(ijp))
+	awal, akhir := strings.Index(isi, "insert nilai dari data-batch"), strings.Index(isi, "<pyStepsDescription>Status QR/QP</pyStepsDescription>")
+	if awal < 0 || akhir < awal {
+		t.Fatal("langkah 11.1 / 11.2 tidak ditemukan")
+	}
+	isi = isi[awal:akhir]
+	cari := map[string]string{}
+	for _, m := range regexp.MustCompile(`<PropertiesName>TempInputDetail\.(CARI\d+)</PropertiesName>\s*<PropertiesValue>([^<]*)</PropertiesValue>`).FindAllStringSubmatch(isi, -1) {
+		cari[m[1]] = m[2] // terakhir menang, seperti Pega
+	}
+	desimal := regexp.MustCompile(`^@toDecimal\(\.(\w+)\)$`)
+	for i, m := range butir {
+		k := KolomPesertaWarisanEDM[i]
+		got := nilaiPesertaWarisanEDM[k]
+		var mau string
+		switch {
+		case m[1] == "":
+			mau = "SEQ"
+		case strings.HasPrefix(m[0], "To_date("):
+			mau = "TANGGAL"
+		case m[1] == "TempInputDetail.CARI47":
+			mau = "d.STATUS_OLD" // 11.4/11.5: Old → 1, selain itu 0 - ditetapkan Resmikan lebih dulu
+		case m[1] == "TempInputDetail.CARI48":
+			mau = "d.STATUS" // 11.2/11.3: QR/QP → 0, TR/TP → 1 - ditetapkan Resmikan lebih dulu
+		case strings.HasPrefix(m[1], "TempInputDetail."):
+			v, ada := cari[strings.TrimPrefix(m[1], "TempInputDetail.")]
+			switch {
+			case !ada:
+				mau = "NULL"
+			case desimal.MatchString(v):
+				mau = "NVL(d." + desimal.FindStringSubmatch(v)[1] + ", 0)"
+			default:
+				mau = v
+			}
+		case strings.HasPrefix(m[1], "TempValue."):
+			mau = "d." + strings.TrimPrefix(m[1], "TempValue.")
+		default:
+			mau = m[1]
+		}
+		ok := false
+		switch mau {
+		case "SEQ":
+			ok = k == "ID" && got == ""
+		case "TANGGAL":
+			ok = strings.HasPrefix(got, "TRUNC(d.") || strings.HasPrefix(got, "TO_DATE(d.")
+		case "NULL":
+			ok = got == "NULL"
+		case "d.EDMStatus":
+			ok = got == "d.EDM_STATUS"
+		case "pyWorkPage.CedingCo":
+			ok = got == "p.CEDING_CO"
+		case "pyWorkPage.ProRateType":
+			ok = got == "p.PRO_RATE_TYPE"
+		case "pyWorkPage.PremiumListSummary.PL_NUMBER":
+			ok = got == ":1"
+		case "pyWorkPage.PremiumListSummary.PL_NUMBER_EDM":
+			ok = got == ":2"
+		case "pyWorkPage.pzInsKey":
+			ok = got == ":3"
+		default:
+			ok = got == mau
+		}
+		if !ok {
+			t.Errorf("%s: korpus %q (%s), kode %q", k, m[0], mau, got)
+		}
+	}
+}

@@ -40,6 +40,10 @@ func TestRutePutuskan(t *testing.T) {
 	if g.Polis["EDMLF-1"].Status != models.StatusKasusSelesai {
 		t.Error("kasus tidak resmi")
 	}
+	// K5 (01-10-2026): peserta kasus ikut tertulis ke tabel warisan - cacahnya di jawaban Confirm.
+	if !strings.Contains(w.Body.String(), `"pesertaWarisan":1`) || len(g.PesertaWarisanTertulis) != 1 {
+		t.Errorf("peserta warisan %s (%d baris)", w.Body, len(g.PesertaWarisanTertulis))
+	}
 	w = minta(t, h, "GET", handlers.Prefix+"/kasus/EDMLF-1", "", true)
 	if !strings.Contains(w.Body.String(), `"riwayat":[{"no":1,`) || !strings.Contains(w.Body.String(), `"status":"Accept","comment":"UJI"`) {
 		t.Errorf("riwayat tidak terbaca %s", w.Body)

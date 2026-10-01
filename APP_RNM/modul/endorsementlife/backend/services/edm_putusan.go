@@ -14,11 +14,14 @@ package services
 //	         5 anti-dobel `(NO_POLIS, PROD_KE)`
 //	         5b produksi warisan `LIFEINPRODUCTION` (10 b2663, `SaveLifeinProduction_SQL` - K4, OQ-EDM-010)
 //	         6 resmikan kepala + peserta (11.2-11.5)
+//	         6b peserta warisan `M_LIFE_PREMIUM_DETAIL` (11.6 b5098 `SaveMasterLPDet`, PRE=false - K5, OQ-EDM-016)
 //	         7 rekap warisan (12, `InsertPLSummary`)  8 jejak `Resolved-Completed` (b686)
 //	         sesudah commit: efek keluar 16 (`edm_efekkeluar.go`)
 //
-// ⛔ Penulisan peserta warisan `M_LIFE_PREMIUM_DETAIL` (11.6 `SaveMasterLPDet`)
-// BELUM: menunggu OQ-EDM-016 (RALAT R29). `JSON_POLIS` tidak ditulis (R18).
+// ⛔ Peserta warisan `M_LIFE_PREMIUM_DETAIL` (11.6 `SaveMasterLPDet`) DITULIS sejak K5
+// keputusan work owner 01-10-2026 (OQ-EDM-016, penjaga Claim Life dipersempit `6047ca8`):
+// setiap peserta kasus termasuk Delete/Batal, yang tersaring di jalur baca Claim Life.
+// `JSON_POLIS` tidak ditulis (R18).
 // `LIFEINPRODUCTION` DITULIS sejak K4 keputusan work owner 01-10-2026 (OQ-EDM-010):
 // `InsertJsonPolisLife_Act` 10 b2663 tanpa prakondisi (`pyStepsPreCondition` kosong
 // b2684, transisi WhenTrue/WhenFalse 2 b2708/b2702) - selalu jalan di jalur Confirm.
@@ -57,7 +60,9 @@ type HasilPutusan struct {
 	Status        string `json:"status"`
 	NoEndorsement string `json:"noEndorsement"`
 	Peserta       int    `json:"peserta"`
-	RekapWarisan  int    `json:"rekapWarisan"`
+	// PesertaWarisan - baris `M_LIFE_PREMIUM_DETAIL` yang ditulis (K5).
+	PesertaWarisan int `json:"pesertaWarisan"`
+	RekapWarisan   int `json:"rekapWarisan"`
 	// EfekKeluar - Arasapas sesudah Confirm (tiket 10); kosong pada Decline.
 	EfekKeluar *RingkasEfek `json:"efekKeluar,omitempty"`
 }
@@ -149,6 +154,11 @@ func (l *Layanan) Putuskan(ctx context.Context, p inti.Pelaku, id string, m Masu
 		}
 		if hasil.Peserta, err = l.gudang.Resmikan(ctx, tx, models.ResmiKasus{
 			ID: id, NomorPolis: k.NomorPolis, ProdKe: prodKe, Nomor: nomor, StatusJenis: models.StatusJenis(k.Kepala["TYPE"]),
+		}); err != nil {
+			return err
+		}
+		if hasil.PesertaWarisan, err = l.gudang.TulisPesertaWarisan(ctx, tx, repository.PesertaWarisanTulis{
+			KasusID: id, NomorPolis: k.NomorPolis, Nomor: nomor,
 		}); err != nil {
 			return err
 		}

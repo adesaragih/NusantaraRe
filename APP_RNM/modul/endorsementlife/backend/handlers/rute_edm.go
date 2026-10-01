@@ -128,11 +128,11 @@ func jawabGalat(w http.ResponseWriter, err error) bool {
 		errors.Is(err, services.ErrCSVTanpaAcuan), errors.Is(err, services.ErrCSVBukanPerubahanData):
 		// 422: JSON-nya sah, isinya ditolak gerbang - pesan VERBATIM korpus, satu per baris.
 		galat.Tulis(w, http.StatusUnprocessableEntity, services.Pesan(err))
-	case errors.Is(err, services.ErrKasusTerbukaGanda), errors.Is(err, services.ErrSumberWarisanEDM),
+	case errors.Is(err, services.ErrKasusTerbukaGanda),
 		errors.Is(err, services.ErrKasusTertutup), errors.Is(err, services.ErrSudahDisimpan), errors.Is(err, services.ErrCSVTerkunci),
 		errors.Is(err, services.ErrBelumDisimpan), errors.Is(err, services.ErrVersiBerubah):
 		// 409: keadaan DATA menolak - kasus terbuka lain lahir bersamaan, atau
-		// versi berjalan polis belum dapat disalin (OQ-EDM-016).
+		// kasus/versi berubah sejak dibaca.
 		galat.Tulis(w, http.StatusConflict, services.Pesan(err))
 	case errors.Is(err, services.ErrArasapas):
 		log.Printf("endorsement life: %v", err)

@@ -69,10 +69,11 @@ type Spreading struct {
 
 // PesertaWarisan adalah satu baris `M_LIFE_PREMIUM_DETAIL` tiruan.
 type PesertaWarisan struct {
-	ID       string
-	PLNumber string
-	IDPega   string
-	Nilai    map[string]string
+	ID        string
+	PLNumber  string
+	IDPega    string
+	EdmStatus string // `EDMSTATUS` - kosong pada new business
+	Nilai     map[string]string
 }
 
 // Gudang adalah tiruan `repository.Gudang`.
@@ -90,6 +91,8 @@ type Gudang struct {
 	RekapWarisan []map[string]string
 	// ProduksiWarisan - baris `LIFEINPRODUCTION` (kunci kolom, K4).
 	ProduksiWarisan []map[string]string
+	// PesertaWarisanTertulis - baris `M_LIFE_PREMIUM_DETAIL` yang ditulis Confirm (kunci kolom, K5).
+	PesertaWarisanTertulis []map[string]string
 	// Dibayar - nomor invoice Arasapas yang punya baris pelunasan.
 	Dibayar map[string]bool
 	// GalatArasapas - bila terisi, `SudahDibayar` mengembalikannya.
@@ -472,11 +475,9 @@ func (g *Gudang) SalinVersi(_ context.Context, _ *db.Tx, kasusID string, v model
 			g.Spreading = append(g.Spreading, salinan...)
 		}
 	case models.SumberWarisan:
-		if v.EdmType != "" {
-			return repository.Salinan{}, repository.ErrSumberWarisanEDM
-		}
 		for _, m := range g.PesertaWarisan {
-			if m.PLNumber == nomorPolis && m.IDPega == v.ID {
+			// `MappingEDMLife` 11.2: baris `Delete` versi lama dibuang (sama dengan sqlSalinPesertaWarisan).
+			if m.PLNumber == nomorPolis && m.IDPega == v.ID && m.EdmStatus != models.StatusDelete {
 				nilai := map[string]string{}
 				for kol, x := range m.Nilai {
 					nilai[kol] = x

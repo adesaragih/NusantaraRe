@@ -162,3 +162,30 @@ func (g *Gudang) TulisProduksiWarisan(_ context.Context, _ *db.Tx, r repository.
 	})
 	return 1, nil
 }
+
+// TulisPesertaWarisan meniru `sqlSisipPesertaWarisanEDM`: setiap peserta kasus satu baris, sesudah Resmikan.
+func (g *Gudang) TulisPesertaWarisan(_ context.Context, _ *db.Tx, r repository.PesertaWarisanTulis) (int, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.Galat != nil {
+		return 0, g.Galat
+	}
+	g.catat("TulisPesertaWarisan")
+	c := 0
+	for _, d := range g.Peserta {
+		if d.PolisID != r.KasusID {
+			continue
+		}
+		b := map[string]string{"PL_NUMBER": r.NomorPolis, "PL_NUMBER_EDM": r.Nomor, "IDPEGA": r.KasusID,
+			"EDMSTATUS": d.EdmStatus, "STATUSOLD": d.Nilai["STATUS_OLD"], "STATUS": d.Nilai["STATUS"],
+			"EM_PERCENT": "", "RISK": ""} // CARI49/CARI50 tidak pernah ditetapkan (Pega)
+		for k, v := range d.Nilai {
+			if _, sudah := b[k]; !sudah {
+				b[k] = v
+			}
+		}
+		g.PesertaWarisanTertulis = append(g.PesertaWarisanTertulis, b)
+		c++
+	}
+	return c, nil
+}

@@ -56,6 +56,21 @@ func TestPutuskanTerhadapOracle(t *testing.T) {
 		}
 		kolomProd = append(kolomProd, k+" "+tipe)
 	}
+	// K5: tiruan peserta warisan dibuat ulang dengan kolom EDM (pola `TestBuatKasusTerhadapOracle`).
+	_, _ = repo.ExecContext(ctx, `DROP TABLE `+skema+`.M_LIFE_PREMIUM_DETAIL PURGE`)
+	jalankan(t, repo, ddlTiruanWarisan(t, skema))
+	defer func() { _, _ = repo.ExecContext(ctx, `DROP TABLE `+skema+`.M_LIFE_PREMIUM_DETAIL PURGE`) }()
+	urutanDibuat := false
+	if _, err := repo.ExecContext(ctx, `CREATE SEQUENCE `+skema+`.M_LIFE_PREMIUM_DETAIL_SEQ START WITH 44`); err == nil {
+		urutanDibuat = true
+	} else if !strings.Contains(err.Error(), "ORA-00955") {
+		t.Fatal(err)
+	}
+	defer func() {
+		if urutanDibuat {
+			_, _ = repo.ExecContext(ctx, `DROP SEQUENCE `+skema+`.M_LIFE_PREMIUM_DETAIL_SEQ`)
+		}
+	}()
 	prodDibuat := false
 	if _, err := repo.ExecContext(ctx, `CREATE TABLE `+skema+`.LIFEINPRODUCTION (`+strings.Join(kolomProd, ", ")+`)`); err == nil {
 		prodDibuat = true
@@ -79,6 +94,9 @@ func TestPutuskanTerhadapOracle(t *testing.T) {
 		   VALUES ('UJI-P1', 'EDMLF-903', 'UJI-PL-P', 'Old', 'IDR', 10.5)`,
 		`INSERT INTO `+skema+`.T_PREMIUM_LIST_DETAIL (ID, PREMIUM_LIST_ID, PL_NUMBER, EDM_STATUS, CURRENCY, GROSS_PREMIUM_REFUND_RETRO)
 		   VALUES ('UJI-P2', 'EDMLF-903', 'UJI-PL-P', 'New', 'IDR', 2)`,
+		`INSERT INTO `+skema+`.T_PREMIUM_LIST_DETAIL (ID, PREMIUM_LIST_ID, PL_NUMBER, EDM_STATUS, CURRENCY, GROSS_PREMIUM_REFUND,
+		   STNC, DOB)
+		   VALUES ('UJI-P3', 'EDMLF-903', 'UJI-PL-P', 'Delete', 'IDR', -7.25, '31/12/2025', TO_DATE('01/02/1990 08:30', 'DD/MM/YYYY HH24:MI'))`,
 		`INSERT INTO `+skema+`.T_PREMIUM_LIST (ID, OLD_POLICY_NO, TGL_INPUT, TYPE, EDM_TYPE, PROD_KE) VALUES ('EDMLF-904', 'UJI-PL-Q', SYSDATE, 'QR', '1', 2)`,
 	)
 	g := repository.Baru(repo)
@@ -111,7 +129,10 @@ func TestPutuskanTerhadapOracle(t *testing.T) {
 		gagal(err)
 	}
 	n, err := g.Resmikan(ctx, tx, models.ResmiKasus{ID: "EDMLF-903", NomorPolis: "UJI-PL-P", ProdKe: prodKe, Nomor: nomor, StatusJenis: models.StatusJenis(models.TypeTR)})
-	if err != nil || n != 2 {
+	if err != nil || n != 3 { // Old, New, Delete (K5 menambah peserta Delete)
+		gagal(err)
+	}
+	if c, err := g.TulisPesertaWarisan(ctx, tx, repository.PesertaWarisanTulis{KasusID: "EDMLF-903", NomorPolis: "UJI-PL-P", Nomor: nomor}); err != nil || c != 3 {
 		gagal(err)
 	}
 	if c, err := g.TulisRekapWarisan(ctx, tx, repository.RekapWarisanTulis{KasusID: "EDMLF-903", NomorPolis: "UJI-PL-P", Nomor: nomor, COB: "UJI-COB"}); err != nil || c != 1 {
@@ -151,6 +172,21 @@ func TestPutuskanTerhadapOracle(t *testing.T) {
 	if err := repo.QueryRowContext(ctx, `SELECT TO_CHAR(PREMIUM, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''), COB, IDPEGA FROM `+skema+`.M_LIFE_PREMIUM_SUMMARY
 	    WHERE PL_NUMBER_EDM = 'UJI-PL-P/01'`).Scan(&premi, &cob, &idpega); err != nil || premi != "12.5" || cob != "UJI-COB" || idpega != "EDMLF-903" {
 		t.Fatalf("rekap warisan %s %s %s %v", premi, cob, idpega, err)
+	}
+	// K5: tiga peserta (Old, New, Delete) tertulis; jurnal balik negatif utuh; penyaring Claim Life (DITIRU di sini,
+	// teks `penyaringHidup` - tidak diimpor) melewatkan Old dan New, membuang Delete.
+	var semua, hidup int
+	if err := repo.QueryRowContext(ctx, `SELECT COUNT(*), COUNT(CASE WHEN EDMSTATUS IS NULL OR TRIM(EDMSTATUS) NOT IN ('Batal', 'Delete')
+	    THEN 1 END) FROM `+skema+`.M_LIFE_PREMIUM_DETAIL WHERE PL_NUMBER = 'UJI-PL-P' AND IDPEGA = 'EDMLF-903'`).Scan(&semua, &hidup); err != nil ||
+		semua != 3 || hidup != 2 {
+		t.Fatalf("peserta warisan %d, hidup %d, %v", semua, hidup, err)
+	}
+	var refund, stnc, dob, lama3, emp string
+	if err := repo.QueryRowContext(ctx, `SELECT TO_CHAR(GROSS_PREMIUM_REFUND, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''),
+	    TO_CHAR(STNC, 'YYYY-MM-DD'), TO_CHAR(DOB, 'YYYY-MM-DD HH24:MI'), STATUSOLD, NVL(TO_CHAR(EM_PERCENT), 'NULL')
+	    FROM `+skema+`.M_LIFE_PREMIUM_DETAIL WHERE PL_NUMBER = 'UJI-PL-P' AND EDMSTATUS = 'Delete'`).Scan(&refund, &stnc, &dob, &lama3, &emp); err != nil ||
+		refund != "-7.25" || stnc != "2025-12-31" || dob != "1990-02-01 00:00" || lama3 != "0" || emp != "NULL" {
+		t.Fatalf("baris Delete %s %s %s %s %s %v", refund, stnc, dob, lama3, emp, err)
 	}
 	// K4: satu baris `LIFEINPRODUCTION` seperti `SaveLifeinProduction_SQL` - tanggal tanpa jam, nama jenis ceding.
 	var nopolis, noendors, biz, namaJenis, pembuat, diterima string

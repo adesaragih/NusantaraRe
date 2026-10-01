@@ -289,14 +289,17 @@ func sqlSalinSpreadingRetro(retro, spreading, peserta string) string {
 		strings.Join(sumber, ", "), retro, spreading, peserta)
 }
 
-// sqlSalinPesertaWarisan - versi NEW BUSINESS sistem lama: seluruh peserta
-// `PL_NUMBER` + `IDPEGA` versi itu.
+// sqlSalinPesertaWarisan - versi SISTEM LAMA (new business ATAU endorsement): peserta `PL_NUMBER` +
+// `IDPEGA` versi itu, TANPA baris `Delete` - `MappingEDMLife` 10 b2339 salin halaman (PRE=false, selalu),
+// 11.1 b2583 baris selain `Delete` → `"Old"` (b2609; prakondisi b2691 `.EDMStatus=="Delete"` T=3 = lewati),
+// 11.2 b2737 buang `.EDMStatus=="Delete"` (b2831). Peserta new business (status NULL) selalu lolos.
+// Penyaring status EDM warisan ini diizinkan sejak penjaga Claim Life dipersempit ke `modul/claimlife/`
+// (K5 keputusan work owner 01-10-2026, OQ-EDM-016, `6047ca8`) - sebelumnya versi endorsement sistem lama
+// ditolak.
 //
 // ⛔ E4: kunci `PL_NUMBER = :5` → index `M_LIFE_PREMIUM_DETAIL_INDEX4`
-// (`PL_NUMBER`), `IDPEGA` penyaring sesudahnya; nol pemindaian penuh.
-// ⛔ Hanya versi NB (status EDM barisnya selalu kosong): versi endorsement
-// sistem lama menuntut penyaring baris `Delete` atas kolom status EDM warisan
-// - ditunda OQ-EDM-016 (RALAT R29). `PARENT_ID` kosong (OQ-EDM-007).
+// (`PL_NUMBER`), `IDPEGA` dan status penyaring sesudahnya; nol pemindaian penuh.
+// `PARENT_ID` kosong (OQ-EDM-007).
 func sqlSalinPesertaWarisan(peserta, warisan string) string {
 	sumber := make([]string, len(kolomNilaiPeserta))
 	for i, k := range kolomNilaiPeserta {
@@ -305,7 +308,7 @@ func sqlSalinPesertaWarisan(peserta, warisan string) string {
 	return fmt.Sprintf(`INSERT INTO %s (ID, PREMIUM_LIST_ID, PARENT_ID, ID_PEGA, PL_NUMBER, EDM_STATUS, %s)
 	SELECT %s, :2, NULL, :3, m.PL_NUMBER, :4, %s
 	  FROM %s m
-	 WHERE m.PL_NUMBER = :5 AND m.IDPEGA = :6`,
+	 WHERE m.PL_NUMBER = :5 AND m.IDPEGA = :6 AND (m.EDMSTATUS IS NULL OR m.EDMSTATUS <> :7)`,
 		peserta, strings.Join(kolomNilaiPeserta, ", "), idBaru(":1", "W", "m.ID"), strings.Join(sumber, ", "), warisan)
 }
 
@@ -348,11 +351,8 @@ func (g *Gudang) SalinVersi(ctx context.Context, tx *db.Tx, kasusID string, v mo
 			return Salinan{}, err
 		}
 	case models.SumberWarisan:
-		if v.EdmType != "" {
-			return Salinan{}, ErrSumberWarisanEDM
-		}
 		if s.Peserta, err = jalankan("peserta warisan", sqlSalinPesertaWarisan(n[0], n[3]),
-			kasusID, kasusID, kasusID, models.StatusOld, nomorPolis, v.ID); err != nil {
+			kasusID, kasusID, kasusID, models.StatusOld, nomorPolis, v.ID, models.StatusDelete); err != nil {
 			return Salinan{}, err
 		}
 	default:
@@ -360,7 +360,3 @@ func (g *Gudang) SalinVersi(ctx context.Context, tx *db.Tx, kasusID string, v mo
 	}
 	return s, nil
 }
-
-// ErrSumberWarisanEDM - versi berjalan polis adalah endorsement sistem lama;
-// menyalinnya menuntut penyaring baris `Delete` yang ditunda OQ-EDM-016.
-var ErrSumberWarisanEDM = errors.New("repository: versi berjalan polis adalah endorsement sistem lama")

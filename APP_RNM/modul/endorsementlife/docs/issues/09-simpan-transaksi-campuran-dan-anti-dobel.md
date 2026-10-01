@@ -117,3 +117,15 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+## Status 01-10-2026 — selesai (K5 keputusan work owner 01-10-2026, OQ-EDM-016)
+
+Kalimat lama *"sebagian 01-10-2026 — c83bf68; peserta warisan `M_LIFE_PREMIUM_DETAIL` menunggu OQ-EDM-016"* tidak berlaku lagi.
+
+| Butir | Bukti |
+| --- | --- |
+| Peserta warisan `M_LIFE_PREMIUM_DETAIL` ditulis di transaksi Confirm yang sama, termasuk baris negatif dan `Delete`/`Batal` | `repository.TulisPesertaWarisan` (`SaveMasterLPDet`), `TestPutuskanMenulisPesertaWarisan`, `TestPutuskanTerhadapOracle` (db: Old/New/Delete, `GROSS_PREMIUM_REFUND` −7,25 utuh) |
+| `LIFEINPRODUCTION` ditulis di transaksi yang sama (K4) | `repository.TulisProduksiWarisan` (`a76164a`) |
+| Urutan sebagai bagian kebenaran: riwayat → anti-dobel → produksi (10) → resmikan (11.2–11.5) → peserta warisan (11.6) → rekap (12) | `TestPutuskanConfirmMeresmikanVersiDalamUrutan` |
+| Satu transaksi; gagal di tengah = nol baris (tiruan memulihkan; Oracle rollback) | `TestPutuskan…` + `services.tx` |
+| Tidak ada prosedur JSON dipanggil; `JSON_POLIS` tidak ditulis (R18) | penjaga modul yang ada |

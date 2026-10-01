@@ -51,7 +51,7 @@ SQL slot menu: `APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md` bab 6. Nomor selalu
 | --- | --- | --- |
 | `T_PREMIUM_LIST`, `T_PREMIUM_LIST_DETAIL`, `T_PREMIUM_LIST_SPREADING`, `T_PREMIUM_LIST_SPREADING_RETRO`, `T_PREMIUM_LIST_SUMMARY`, `T_VIEW_SUGGEST` | PremiumList Life (051–056) | dibaca dan ditulis — kasus EDM = baris versi `T_PREMIUM_LIST` ber-`ID` `EDMLF-<n>` |
 | `JSON_POLIS` | warisan `POOLDATA` | dibaca saja — sumber polis lama sistem lama |
-| `M_LIFE_PREMIUM_DETAIL` | warisan `POOLDATA` | **dibaca** saja (sumber versi new business warisan, `_INDEX4`); penulisan E2 (`SaveMasterLPDet`) menunggu OQ-EDM-016 (RALAT R29) |
+| `M_LIFE_PREMIUM_DETAIL` | warisan `POOLDATA` | **dibaca** saja (sumber versi new business warisan, `_INDEX4`); penulisan E2 (`SaveMasterLPDet`) menunggu OQ-EDM-016 (RALAT R29) *(ralat 01-10-2026, K5 keputusan work owner 01-10-2026: juga DITULIS saat Confirm, dan dibaca untuk versi endorsement sistem lama)* |
 | `M_LIFE_PREMIUM_SUMMARY` | warisan `POOLDATA` | dibaca (rekap versi warisan) dan **ditulis** saat `Confirm` — isi prosedur `PEGA_M_LIFE_PREMIUM_SUMMARY` ditiru, prosedur tidak dipanggil (E2) |
 | `T_LOG_SERVICE_RNM` | inti (outbox) | ditulis — kegagalan efek keluar `MODUL = ENDORSEMENTLIFE` (tiket 10) |
 | `T_CLAIMLF_JEJAK` | inti (jejak) | ditulis — buat kasus, `Save`, `Add CSV Data`, keputusan |
@@ -83,4 +83,5 @@ pelaku (401 tanpa), menjawab 503 bila Oracle tidak dikonfigurasi, dan galatnya b
 | --- | --- | --- |
 | K3 OQ-EDM-008 nomor | endorsement pertama polis NB warisan `<polis>/01`, kedua `/02` — rumus `GenerateNoEDM_Life` 3–4 atas `PRODKE` Pega (kosong = 0); versi tetap `NVL(PRODKE, 1)` | `models.NomorEndorsement`, `models.Versi.UrutanPega`, tiket 04 bab status 01-10-2026 |
 | K4 OQ-EDM-010 `LIFEINPRODUCTION` | satu baris per kasus yang diresmikan, 27 kolom `SaveLifeinProduction_SQL` b86/b87 dari kepala kasus, transaksi Confirm yang sama (langkah 10 b2663, tanpa prakondisi), nol DDL | `repository.TulisProduksiWarisan`, `TestProduksiWarisanDariKorpus`, `TestPutuskanMenulisProduksiWarisan`, `TestPutuskanTerhadapOracle` (db) |
+| K5 OQ-EDM-016 `M_LIFE_PREMIUM_DETAIL` | penjaga Claim Life dipersempit (`6047ca8`); Confirm menulis setiap peserta kasus (Old/New/Delete/Batal) seperti `SaveMasterLPDet` b86/b87 sesudah 11.2–11.5 dan sebelum rekap 12; sumber `IDX_PLD_PL`, tabel warisan hanya sasaran sisip; salinan dari versi endorsement sistem lama berjalan (`Delete` dibuang) | `repository.TulisPesertaWarisan`, `TestPesertaWarisanEDMDariKorpus`, `TestPutuskanMenulisPesertaWarisan` (penyaring Claim Life ditiru) |
 | K2 OQ-EDM-003 `Calculate1_Act` | ⏸️ **terhenti** (brief §4): gerbang langkah 1 b416 membaca `IsCalculationSystem` (properti tak diekspor, nol penulis; `pyDefault` tak diekspor) → keluar (F=6) → nilai CSV apa adanya, seperti bawaan — OQ-EDM-021 | tiket 07 bab status 01-10-2026 |
