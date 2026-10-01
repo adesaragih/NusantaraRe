@@ -5,7 +5,8 @@ Keputusan work owner 30 September 2026 (`..\..\PROMPT-STRUKTUR-TIM-SATU-FOLDER-P
 dibagi ke beberapa orang, **satu orang mengerjakan satu modul**, dan saat di-push balik **tidak perlu
 merge manual dan tidak ada konflik**. Panduan ini menjelaskan bentuk yang membuat itu mungkin dan cara
 bekerja di dalamnya. Menjalankan aplikasi: `APP_RNM\PANDUAN-MENJALANKAN.txt`; deploy sebagian modul dan
-menu: `APP_RNM\PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md`.
+menu: `APP_RNM\PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md`; isi cabang `main` dan `dev`, nama cabang, arah
+merge, dan pembagian empat orang: `PANDUAN-CABANG-GIT.md`.
 
 ## 1. Bentuknya
 
