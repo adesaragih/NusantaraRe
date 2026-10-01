@@ -82,6 +82,12 @@ func bacaDDLPolis(t *testing.T) (map[string]map[string]kolomDDL, map[string]map[
 	// ⛔ Kolom yang lahir di ALTER ... ADD ikut dibaca (GILIRAN-13, 057 butir
 	// bn): tanpa itu kolom lanjutan tidak pernah diperiksa tipenya.
 	tambahPola := regexp.MustCompile(`(?s)ALTER TABLE \{skema\}\.(\w+) ADD \((.*?)\n\)`)
+	// ⛔ 059 (seragam T_WORK_CLAIM): kolom yang DIBUANG dan FK yang lahir di
+	// `ADD CONSTRAINT` ikut dibaca - keduanya di dalam blok berpelindung
+	// katalog. Tanpa itu STATUS yang sudah diganti STATUS_WORK tetap "ada", dan
+	// FK COVER_KEY tidak pernah ditagih index-nya.
+	buangPola := regexp.MustCompile(`ALTER TABLE \{skema\}\.(\w+) DROP COLUMN (\w+)`)
+	fkAlterPola := regexp.MustCompile(`ALTER TABLE \{skema\}\.(\w+) ADD CONSTRAINT \w+ FOREIGN KEY \((\w+)\)`)
 	kolomPola := regexp.MustCompile(`^([A-Z0-9_]+)\s+([A-Z0-9_]+(?:\(\d+(?:,\d+)?\))?)(.*)$`)
 	fkPola := regexp.MustCompile(`FOREIGN KEY \((\w+)\)`)
 	idxPola := regexp.MustCompile(`CREATE (?:UNIQUE )?INDEX \{skema\}\.\w+ ON \{skema\}\.(\w+) \(\s*(\w+)`)
@@ -128,6 +134,15 @@ func bacaDDLPolis(t *testing.T) (map[string]map[string]kolomDDL, map[string]map[
 				}
 			}
 		}
+		for _, m := range buangPola.FindAllStringSubmatch(teks, -1) {
+			delete(kolom[m[1]], m[2])
+		}
+		for _, m := range fkAlterPola.FindAllStringSubmatch(teks, -1) {
+			if fk[m[1]] == nil {
+				fk[m[1]] = map[string]bool{}
+			}
+			fk[m[1]][m[2]] = true
+		}
 		for _, m := range idxPola.FindAllStringSubmatch(teks, -1) {
 			if idx[m[1]] == nil {
 				idx[m[1]] = map[string]bool{}
@@ -161,12 +176,15 @@ func TestMigrasi050Sampai056TipeNullFKIndexSesuaiStruktur(t *testing.T) {
 	// (sensus Python 28-09-2026). Pengurai yang rusak akan meluluskan apa pun.
 	// ⛔ 220 sejak GILIRAN-13: butir bn menambah T_WORK_POLIS.FLAG_ONGOING_POLICY
 	// (057, ALTER) - diperbarui dengan sadar, bukan dilonggarkan.
+	// ⛔ 225 sejak 059 (seragam T_WORK_CLAIM, 01-10-2026): STATUS menjadi
+	// STATUS_WORK (nol bersih) ditambah COVER_KEY, CREATE_OP, CREATE_OP_NAME,
+	// TGL_CREATE, TGL_UPDATE.
 	total := 0
 	for _, k := range struktur {
 		total += len(k)
 	}
-	if len(struktur) != 7 || total != 220 {
-		t.Fatalf("STRUKTUR terbaca %d tabel / %d kolom, mau 7 / 220; pengurainya rusak, "+
+	if len(struktur) != 7 || total != 225 {
+		t.Fatalf("STRUKTUR terbaca %d tabel / %d kolom, mau 7 / 225; pengurainya rusak, "+
 			"atau STRUKTUR berubah - perbarui angka ini dengan sadar", len(struktur), total)
 	}
 	for tab, kol := range struktur {

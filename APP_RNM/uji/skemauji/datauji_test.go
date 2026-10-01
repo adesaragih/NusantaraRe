@@ -305,8 +305,9 @@ func TestDataUjiMenutupSetiapTahap(t *testing.T) {
 	for _, s := range sisip {
 		switch s.tabel {
 		case "T_WORK_POLIS":
-			polis[s.teks("STATUS")] = s.teks("ID")
-			if s.teks("STATUS") == premiumlistmodels.TahapPolisPenawaran {
+			// STATUS_WORK sejak 059 (seragam T_WORK_CLAIM).
+			polis[s.teks("STATUS_WORK")] = s.teks("ID")
+			if s.teks("STATUS_WORK") == premiumlistmodels.TahapPolisPenawaran {
 				benderaPenawaran[s.teks("FLAG_ONGOING_POLICY")] = true
 			}
 		case "T_WORK_CLAIM":
