@@ -1,6 +1,6 @@
 package repository
 
-// Peserta VERSI TERAKHIR - keputusan work owner 01-10-2026 (OQ-CL-VERSI, brief
+// Peserta VERSI TERAKHIR - keputusan work owner 01-10-2026 (OQ-N14, brief
 // `PROMPT-PERBAIKAN-CLAIM-LIFE-PESERTA-VERSI-TERAKHIR.md`): sertifikat yang versi polis terakhirnya
 // `Delete` atau `Batal` lewat endorsement TIDAK tampil dan TIDAK dapat diklaim. Penyimpangan sadar dari
 // `Claim Life/RDBList/GetPesertaClaim_sql1.xml` (nol saringan versi maupun `EDMSTATUS`).
@@ -24,10 +24,6 @@ import (
 	"strings"
 	"testing"
 )
-
-// versiTerakhirDibangun - saklar paket 1 -> paket 2: uji bentuk SQL di bawah sudah ditulis dan terbukti MERAH
-// atas SQL lama; ia dilewati sampai aturannya dibangun (paket 2 menghapus saklar ini).
-const versiTerakhirDibangun = false
 
 // barisUjiVersi - satu baris peserta tiruan (`UJI-`, nol data orang).
 type barisUjiVersi struct {
@@ -156,11 +152,19 @@ const (
 // TestSQLCariPesertaVersiTerakhir - bentuk SQL `Find Insured` per kasus: setiap kasus menuntut potongan yang
 // memutuskannya. Menghapus ROW_NUMBER membuat (b), (c), (d), (e), (g), (i) merah.
 func TestSQLCariPesertaVersiTerakhir(t *testing.T) {
-	if !versiTerakhirDibangun {
-		t.Skip("paket 1: terbukti merah atas SQL lama; aturan dibangun paket 2")
+	q, _ := sqlCariPeserta("S.M", "UJI-PLV", "", "", 10)
+	qn, _ := sqlCariPeserta("S.M", "UJI-PLV", "UJI-C", "lama", 10)
+	for _, g := range galatCariVersi(q, qn) {
+		t.Error(g)
 	}
-	q := rataSQL(func() string { s, _ := sqlCariPeserta("S.M", "UJI-PLV", "", "", 10); return s }())
-	qn := rataSQL(func() string { s, _ := sqlCariPeserta("S.M", "UJI-PLV", "UJI-C", "lama", 10); return s }())
+}
+
+// galatCariVersi - pelanggaran aturan versi terakhir pada SQL Find Insured (q tanpa saringan, qn dengan
+// saringan sertifikat + nama), berawalan kode kasus. Dipisah supaya uji gigit menjalankan PEMERIKSA YANG SAMA
+// atas SQL termutasi.
+func galatCariVersi(q, qn string) []string {
+	q, qn = rataSQL(q), rataSQL(qn)
+	var galat []string
 	tuntut := map[string][]string{
 		"a": {tuntutPilih},
 		"b": {tuntutPeringkat, tuntutPilih},
@@ -175,18 +179,110 @@ func TestSQLCariPesertaVersiTerakhir(t *testing.T) {
 	for kode, potongan := range tuntut {
 		for _, p := range potongan {
 			if !strings.Contains(q, p) {
-				t.Errorf("(%s) SQL tanpa %q:\n%s", kode, p, q)
+				galat = append(galat, "("+kode+") SQL tanpa "+strconv.Quote(p)+":\n"+q)
 			}
 		}
 	}
 	// (j) saringan nama di LUAR jendela (atas versi terakhir); saringan sertifikat boleh di dalam (seluruh
 	// kelompok satu sertifikat ikut atau tidak, peringkat di dalamnya tidak berubah).
 	if i := strings.Index(qn, "RN_VERSI = 1"); i < 0 || !strings.Contains(qn[i:], "UPPER(NAME_OF_INSURED) LIKE") {
-		t.Errorf("(j) saringan nama tidak berada sesudah peringkat versi:\n%s", qn)
+		galat = append(galat, "(j) saringan nama tidak berada sesudah peringkat versi:\n"+qn)
 	}
 	// §1 butir 4: jendela hanya menyentuh SATU polis - PL_NUMBER = :1 di DALAM subkueri peringkat.
-	if a, b := strings.Index(q, "FROM ("), strings.Index(q, "RN_VERSI = 1"); a < 0 || b < a ||
-		!strings.Contains(q[a:b], "WHERE PL_NUMBER = :1") {
-		t.Errorf("jendela peringkat tidak dikurung PL_NUMBER (pemindaian penuh):\n%s", q)
+	if !jendelaDikurung(q, "WHERE PL_NUMBER = :1") {
+		galat = append(galat, "(pemindaian penuh) jendela peringkat tidak dikurung PL_NUMBER:\n"+q)
+	}
+	return galat
+}
+
+// jendelaDikurung - syarat berada di DALAM subkueri peringkat (antara `FROM (` dan `RN_VERSI = 1`).
+func jendelaDikurung(q, syarat string) bool {
+	a, b := strings.Index(q, "FROM ("), strings.Index(q, "RN_VERSI = 1")
+	return a >= 0 && b > a && strings.Contains(q[a:b], syarat)
+}
+
+// TestSQLAmbilPesertaKlaimVersiTerakhir - SQL penyalin ke klaim: baris VERSI TERAKHIR yang hidup, per kasus.
+func TestSQLAmbilPesertaKlaimVersiTerakhir(t *testing.T) {
+	for _, g := range galatAmbilVersi(sqlAmbilPesertaKlaim("S.M")) {
+		t.Error(g)
+	}
+}
+
+// galatAmbilVersi - pelanggaran aturan versi terakhir pada SQL AmbilUntukKlaim (tabel uji `S.M`).
+func galatAmbilVersi(q string) []string {
+	q = rataSQL(q)
+	var galat []string
+	for kode, potongan := range map[string][]string{
+		"b-e": {tuntutPeringkat, tuntutVersi, "WHERE " + tuntutPilih + ")"},
+		"f":   {"TRIM(EDMSTATUS) NOT IN ('Batal','Delete')"},
+		"g,i": {tuntutSeri},
+		"h":   {tuntutVersi},
+	} {
+		for _, p := range potongan {
+			if !strings.Contains(q, p) {
+				galat = append(galat, "("+kode+") SQL tanpa "+strconv.Quote(p)+":\n"+q)
+			}
+		}
+	}
+	// Baris luar dikunci ID terpilih; subkueri peringkat dikurung PL_NUMBER + CERTIFICATE_NO (§1 butir 4).
+	for _, w := range []string{"WHERE PL_NUMBER = :1 AND CERTIFICATE_NO = :2 AND ID = (SELECT ID FROM (SELECT ID, EDMSTATUS,",
+		"FETCH FIRST 1 ROWS ONLY"} {
+		if !strings.Contains(q, w) {
+			galat = append(galat, "SQL tanpa "+strconv.Quote(w)+":\n"+q)
+		}
+	}
+	if !strings.Contains(q, "FROM S.M WHERE PL_NUMBER = :3 AND CERTIFICATE_NO = :4)") {
+		galat = append(galat, "(pemindaian penuh) subkueri peringkat tidak dikurung PL_NUMBER + CERTIFICATE_NO:\n"+q)
+	}
+	if !strings.HasPrefix(q, "SELECT ID, PL_NUMBER, POLICY_NO, CERTIFICATE_NO,") {
+		galat = append(galat, "daftar pilih kolomSalin berubah:\n"+q)
+	}
+	return galat
+}
+
+// TestAturanVersiTerakhirMenggigit - uji gigit §2 butir 4, PEMERIKSA YANG SAMA atas SQL yang sungguh dirakit
+// lalu dimutasi: tanpa ROW_NUMBER kasus (c) merah; tanpa `PL_NUMBER = :1` di jendela, penjaga "nol pemindaian
+// penuh" merah. SQL asli harus nol galat (pemeriksanya tidak asal menuduh).
+func TestAturanVersiTerakhirMenggigit(t *testing.T) {
+	q, _ := sqlCariPeserta("S.M", "UJI-PLV", "", "", 10)
+	qn, _ := sqlCariPeserta("S.M", "UJI-PLV", "UJI-C", "lama", 10)
+	if g := galatCariVersi(q, qn); len(g) != 0 {
+		t.Fatalf("SQL asli sudah bergalat: %v", g)
+	}
+	ada := func(galat []string, awalan string) bool {
+		for _, g := range galat {
+			if strings.HasPrefix(g, awalan) {
+				return true
+			}
+		}
+		return false
+	}
+	for _, m := range []struct{ nama, lama, baru, mauMerah string }{
+		{"tanpa ROW_NUMBER", peringkatVersi, "1", "(c)"},
+		{"tanpa PL_NUMBER di jendela", "WHERE PL_NUMBER = :1", "WHERE 1 = 1", "(pemindaian penuh)"},
+	} {
+		if !strings.Contains(q, m.lama) || !strings.Contains(qn, m.lama) {
+			t.Fatalf("%s: potongan yang dimutasi tidak ada di SQL", m.nama)
+		}
+		g := galatCariVersi(strings.Replace(q, m.lama, m.baru, 1), strings.Replace(qn, m.lama, m.baru, 1))
+		if !ada(g, m.mauMerah) {
+			t.Errorf("mutasi %s: %s tetap hijau - pemeriksanya tidak menggigit (%v)", m.nama, m.mauMerah, g)
+		}
+	}
+	// AmbilUntukKlaim: subkueri peringkatnya tanpa PL_NUMBER = jendela atas sertifikat itu di SEMUA polis.
+	ambil := sqlAmbilPesertaKlaim("S.M")
+	if g := galatAmbilVersi(ambil); len(g) != 0 {
+		t.Fatalf("SQL AmbilUntukKlaim asli sudah bergalat: %v", g)
+	}
+	for _, m := range []struct{ nama, lama, baru, mauMerah string }{
+		{"tanpa ROW_NUMBER", peringkatVersi, "1", "(b-e)"},
+		{"tanpa PL_NUMBER di subkueri", "WHERE PL_NUMBER = :3 AND ", "WHERE ", "(pemindaian penuh)"},
+	} {
+		if !strings.Contains(ambil, m.lama) {
+			t.Fatalf("%s: potongan yang dimutasi tidak ada di SQL AmbilUntukKlaim", m.nama)
+		}
+		if g := galatAmbilVersi(strings.Replace(ambil, m.lama, m.baru, 1)); !ada(g, m.mauMerah) {
+			t.Errorf("mutasi AmbilUntukKlaim %s: %s tetap hijau (%v)", m.nama, m.mauMerah, g)
+		}
 	}
 }

@@ -31,9 +31,6 @@ func lengkapiKolomVersi(t *testing.T, ctx context.Context, sqlDB *sql.DB, skema 
 }
 
 func TestDBPesertaVersiTerakhir(t *testing.T) {
-	if !repository.VersiTerakhirDibangun {
-		t.Skip("paket 1: aturan versi terakhir dibangun paket 2")
-	}
 	sqlDB, skema, err := skemauji.Buka()
 	if err != nil {
 		if !skemauji.BolehDilewati(err) {

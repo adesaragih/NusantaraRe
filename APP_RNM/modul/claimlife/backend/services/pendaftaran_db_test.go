@@ -11,6 +11,7 @@ package services_test
 
 import (
 	"context"
+	"database/sql"
 	"strings"
 	"testing"
 	"time"
@@ -50,6 +51,7 @@ func siapkanPendaftaran(t *testing.T) (*services.Service, func()) {
 	if err := skemauji.Pasang(ctx, sqlDB, skema); err != nil {
 		t.Fatalf("memasang skema uji: %v", err)
 	}
+	lengkapiKolomVersi(t, ctx, sqlDB, skema)
 	// Tiruan tabel peserta polis beserta isinya. Pendaftaran membaca peserta
 	// dari sana; tanpa fixture ini test gagal di pembacaan, bukan menguji
 	// pendaftaran.
@@ -65,6 +67,20 @@ func siapkanPendaftaran(t *testing.T) (*services.Service, func()) {
 		_ = skemauji.Bongkar(ctx, sqlDB, skema)
 		_ = db.Close()
 		_ = sqlDB.Close()
+	}
+}
+
+// lengkapiKolomVersi - salinan `repository/versiterakhir_db_test.go` (paket uji berbeda): AmbilUntukKlaim
+// memeringkat versi lewat `PL_NUMBER_EDM` dan `TGL_INPUT` (OQ-N14), yang belum dimuat tiruan bersama
+// `uji/skemauji` (di luar folder modul ini). Kolomnya ditambahkan ke TIRUAN skema uji - bukan DDL tabel
+// warisan; ORA-01430 = kolom sudah ada.
+func lengkapiKolomVersi(t *testing.T, ctx context.Context, sqlDB *sql.DB, skema string) {
+	t.Helper()
+	for _, kolom := range []string{"PL_NUMBER_EDM VARCHAR2(100)", "TGL_INPUT DATE"} {
+		if _, err := sqlDB.ExecContext(ctx, `ALTER TABLE `+skema+`.M_LIFE_PREMIUM_DETAIL ADD (`+kolom+`)`); err != nil &&
+			!strings.Contains(err.Error(), "ORA-01430") {
+			t.Fatalf("melengkapi tiruan peserta (%s): %v", kolom, err)
+		}
 	}
 }
 

@@ -15,6 +15,12 @@ package repository
 //  1. setiap query ke tabel ini menyaring dengan PL_NUMBER atau CERTIFICATE_NO
 //  2. setiap query berbatas hasil (FETCH FIRST :n ROWS ONLY)
 //
+// ⛔ VERSI TERAKHIR (keputusan work owner 01-10-2026, OQ-N14): Endorsement Life menulis versi baru polis
+// ke tabel yang SAMA (`PL_NUMBER` tetap, `PL_NUMBER_EDM` = `<polis>/01`, `/02`, …) tanpa mengubah baris versi
+// lama. Yang dapat dipilih dan diklaim adalah baris VERSI TERAKHIR tiap sertifikat - bila itu `Delete`/`Batal`,
+// sertifikatnya tidak tampil. Penyimpangan sadar dari `RDBList/GetPesertaClaim_sql1.xml` (nol saringan versi
+// maupun status). Aturannya SATU tempat: sqlVersiPeserta, peringkatVersi, pilihVersiHidup di bawah.
+//
 // Dibaca sesudah: pohonklaim.go.
 
 import (
@@ -76,6 +82,32 @@ type CalonPeserta struct {
 // "penyaringan terjadi di satu tempat" - dilanggar tanpa satu pun test gagal.
 const penyaringHidup = `(EDMSTATUS IS NULL OR TRIM(EDMSTATUS) NOT IN ('Batal','Delete'))`
 
+// sqlVersiPeserta - VERSI satu baris peserta: angka sesudah `<PL_NUMBER>/` di `PL_NUMBER_EDM`
+// (`Generate_NoEndorsmentLife` b84 `NOPOLIS||'/'||CARI14`); `PL_NUMBER_EDM` kosong, atau tidak berawalan
+// nomor polisnya, = versi 0 (new business).
+//
+// ⚠️ Diperketat dari rumus brief `REGEXP_SUBSTR(PL_NUMBER_EDM, '[0-9]+$')`: rumus itu membaca angka di akhir
+// NOMOR POLIS sendiri sebagai versi bila baris new business ber-`PL_NUMBER_EDM` = `PL_NUMBER` (mis.
+// `…-2024` → versi 2024, menang atas `/01`). Di sini hanya akhiran sesudah `<PL_NUMBER>/` yang terhitung.
+const sqlVersiPeserta = `NVL(TO_NUMBER(CASE WHEN SUBSTR(TRIM(PL_NUMBER_EDM), 1, LENGTH(PL_NUMBER) + 1) = PL_NUMBER || '/' ` +
+	`THEN REGEXP_SUBSTR(SUBSTR(TRIM(PL_NUMBER_EDM), LENGTH(PL_NUMBER) + 2), '^[0-9]+$') END), 0)`
+
+// peringkatVersi - peringkat baris dalam SATU sertifikat: versi terbesar, lalu `TGL_INPUT` terbaru (NULL
+// terakhir), lalu `ID` terbesar secara ANGKA (`LENGTH` dulu: `ID` teks berisi angka sequence, `'99' > '100'`
+// secara teks). ⚠️ Tidak satu pun penulis korpus (`SaveMasterLPDet`, PremiumList, Endorsement) mengisi
+// `TGL_INPUT` - di baris mereka seri versi praktis diputus `ID`.
+//
+// ⛔ Hanya boleh dipakai di subkueri yang `WHERE`-nya sudah `PL_NUMBER = :n` (aturan §1 butir 4): jendelanya
+// menyentuh baris SATU polis, nol pemindaian penuh atas 66,8 juta baris.
+const peringkatVersi = `ROW_NUMBER() OVER (PARTITION BY CERTIFICATE_NO ORDER BY ` + sqlVersiPeserta +
+	` DESC, TGL_INPUT DESC NULLS LAST, LENGTH(ID) DESC, ID DESC)`
+
+// pilihVersiHidup - baris versi terakhir (`RN_VERSI` dari peringkatVersi) yang masih hidup.
+const pilihVersiHidup = `RN_VERSI = 1 AND ` + penyaringHidup
+
+// kolomCari - daftar pilih `Find Insured` (kontrak kolom `TestKolomBacaClaimLifeDiisiPenulisPremiumList`).
+const kolomCari = `PL_NUMBER, POLICY_NO, CERTIFICATE_NO, NAME_OF_INSURED, CURRENCY, EDMSTATUS`
+
 // sqlCariPeserta menyusun query pencarian peserta beserta nilai bind-nya.
 //
 // Dipisah dari Cari supaya bentuk SQL-nya dapat diuji tanpa Oracle: kedua
@@ -95,31 +127,54 @@ const penyaringHidup = `(EDMSTATUS IS NULL OR TRIM(EDMSTATUS) NOT IN ('Batal','D
 // ⚠️ Isi kotak TIDAK di-escape dari `%` dan `_`, sama seperti Pega. Pemakai
 // yang mengetik `%` memperluas pencariannya sendiri, dan hasilnya tetap
 // terkurung PL_NUMBER dan batas hasil.
+//
+// ⛔ Versi terakhir (OQ-N14): subkueri memeringkat baris SATU polis (`PL_NUMBER = :1`); saringan
+// sertifikat ikut di dalamnya (menyaring seluruh kelompok satu sertifikat - peringkat di dalamnya tidak
+// berubah), saringan NAMA dan status di luar, atas baris versi terakhir saja: nama lama dari versi yang sudah
+// diganti tidak lagi menemukan pesertanya.
 func sqlCariPeserta(tabel, nomorPremiList, sertifikat, nama string, batas int) (
 	string, []any) {
-	syarat := []string{"PL_NUMBER = :1", penyaringHidup}
+	dalam := []string{"PL_NUMBER = :1"}
+	luar := []string{pilihVersiHidup}
 	arg := []any{nomorPremiList}
 
 	if s := strings.TrimSpace(sertifikat); s != "" {
 		arg = append(arg, s)
-		syarat = append(syarat,
+		dalam = append(dalam,
 			"CERTIFICATE_NO LIKE '%'||:"+strconv.Itoa(len(arg))+"||'%'")
 	}
 	if n := strings.TrimSpace(nama); n != "" {
 		// b405 `@toUpperCase`. Huruf besarnya dikerjakan di Go, bukan lewat
 		// UPPER(:bind) di SQL, supaya nilai yang dikirim dan nilai yang
 		// dibandingkan adalah satu hal yang sama dan terlihat di log bind.
+		// ⛔ Penampung muncul URUT (`:1`, `:2` di dalam, `:3` di luar): godror
+		// mengikat menurut urutan kemunculan.
 		arg = append(arg, strings.ToUpper(n))
-		syarat = append(syarat,
+		luar = append(luar,
 			"UPPER(NAME_OF_INSURED) LIKE '%'||:"+strconv.Itoa(len(arg))+"||'%'")
 	}
 
-	q := `SELECT PL_NUMBER, POLICY_NO, CERTIFICATE_NO, NAME_OF_INSURED, CURRENCY, EDMSTATUS
-		        FROM ` + tabel + `
-		        WHERE ` + strings.Join(syarat, " AND ") + `
+	q := `SELECT ` + kolomCari + `
+		        FROM (SELECT ` + kolomCari + `, ` + peringkatVersi + ` AS RN_VERSI
+		                FROM ` + tabel + `
+		               WHERE ` + strings.Join(dalam, " AND ") + `)
+		        WHERE ` + strings.Join(luar, " AND ") + `
 		        ORDER BY CERTIFICATE_NO
 		        FETCH FIRST ` + strconv.Itoa(batas) + ` ROWS ONLY`
 	return q, arg
+}
+
+// sqlAmbilPesertaKlaim - baris yang disalin ke klaim untuk SATU sertifikat: baris versi terakhirnya, hanya
+// bila hidup (OQ-N14). Subkueri memeringkat baris (PL_NUMBER, CERTIFICATE_NO) itu saja - keduanya
+// ber-index (`INDEX4`, `INDEX8`) - lalu barisnya dibaca menurut `ID` terpilih.
+// Penampung :1/:3 nomor premium list, :2/:4 sertifikat (urut kemunculan).
+func sqlAmbilPesertaKlaim(tabel string) string {
+	return fmt.Sprintf(`SELECT %s FROM %s
+		        WHERE PL_NUMBER = :1 AND CERTIFICATE_NO = :2
+		          AND ID = (SELECT ID FROM (SELECT ID, EDMSTATUS, %s AS RN_VERSI FROM %s
+		                                     WHERE PL_NUMBER = :3 AND CERTIFICATE_NO = :4)
+		                     WHERE %s)
+		        FETCH FIRST 1 ROWS ONLY`, kolomSalin, tabel, peringkatVersi, tabel, pilihVersiHidup)
 }
 
 // Cari mengembalikan calon peserta satu premium list.
@@ -311,7 +366,8 @@ func namaKolomDaftarPilih(daftar string) []string {
 // server dari sumbernya.
 //
 // Penyaringnya sama dengan Cari: ber-index pada (PL_NUMBER, CERTIFICATE_NO),
-// berbatas hasil, dan peserta batal/delete tidak pernah ikut.
+// berbatas hasil, dan hanya baris VERSI TERAKHIR yang hidup yang ikut - sertifikat yang
+// versi terakhirnya batal/delete ditolak dengan pesan "tidak ada" yang sama (OQ-N14).
 func (r *PesertaPolis) AmbilUntukKlaim(ctx context.Context, nomorPremiList string,
 	sertifikat []string) ([]models.Peserta, error) {
 	if strings.TrimSpace(nomorPremiList) == "" {
@@ -329,13 +385,11 @@ func (r *PesertaPolis) AmbilUntukKlaim(ctx context.Context, nomorPremiList strin
 	// Satu sertifikat satu query: keduanya ber-index, dan daftar IN yang
 	// panjang membuat Oracle membuat rencana baru untuk tiap panjang daftar.
 	for _, no := range sertifikat {
-		q := fmt.Sprintf(`SELECT %s FROM %s
-		        WHERE PL_NUMBER = :1 AND CERTIFICATE_NO = :2 AND %s
-		        FETCH FIRST 1 ROWS ONLY`, kolomSalin, tabel, penyaringHidup)
+		q := sqlAmbilPesertaKlaim(tabel)
 		if err := db.PeriksaSQL(q); err != nil {
 			return nil, err
 		}
-		baris := r.db.QueryRowContext(ctx, q, nomorPremiList, no)
+		baris := r.db.QueryRowContext(ctx, q, nomorPremiList, no, nomorPremiList, no)
 		sel := make([]sql.NullString, cacahKolomSalin)
 		tujuan := make([]any, len(sel))
 		for i := range sel {
