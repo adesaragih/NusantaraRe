@@ -699,3 +699,24 @@ sama seperti lima spec sebelumnya.
 **Catatan sumber.** Spec ini bersandar pada korpus Pega `D:\XML\RNM_BRD\` (READ-ONLY), artefak di
 `OUTPUT_HASIL_RNM\`, dan berkas `[data DBA]` yang diterima 2026-09-15. Sumber ADR tunggal:
 `docs/adr/ADR-0001`…`ADR-0015`.
+
+---
+
+## Ralat bertanggal 01-10-2026 — sesi implementasi (paket 0)
+
+> Sumber: `RALAT-DEV-30-09-2026.md` (P1–P6 katalog DEV, R7–R18 pembacaan ulang XML) dan `PARITAS-LAYAR-DAN-AKSI.md`. Kalimat di atas
+> **tidak dihapus**; yang berlaku adalah ralat ini. Register OQ: `OQ-MASTER-PRODUCT-NAME-LIFE.md`.
+
+| Bagian spec *(dikutip)* | Ralat |
+| --- | --- |
+| Penyimpangan sadar 1b, 2; §3 *"satu produk, SATU tabel induk, lima tabel anak"*; §7 *"Skema relasional penuh"*; AC 40–49 | **P1** — ditangguhkan (OQ-MPNL-01): JSON di dua tabel lama seperti Pega, nol tabel baru, nol DDL. AC 40–49 tidak berlaku |
+| Penyimpangan sadar 1 *"Satu transaksi atomik"*; §5 | tetap (P4) — atas dua tabel lama: `M_PRODUCT_LIFE` + `M_PRODUCTINWARD_LIFE` dalam satu transaksi; prosedur tidak dipanggil |
+| Penyimpangan sadar 5 *"Salah ketik dibuang (`POLICYHODER` → `POLICYHOLDER`) dan cabang mati `IsORS` dibuang"*; AC 51–52 | kunci JSON tetap ejaan Pega (`POLICYHODER`) — dibaca tiga view; `IsORS` **hidup** (R9). `PoductName` tetap tidak dipakai, tetapi bukan karena perilakunya: prakondisi bernama itu **PRE=false**, tak pernah dievaluasi (R7) |
+| §8 *"`SaveProductName_Act` memeriksa lima hal … Tipe & grup terisi"*; AC 11; §9 *"guard pada langkah simpan … akan mulai menolak"* | **R7**: langkah 1 adalah `Property-Set` ber-PRE=false, medan `TYPE`/`GRUP` mati (`1=2`). Validasi = empat pesan VERBATIM `Product Name Empty`, `Ceding Empty`, `Policy Holder Empty`, `SOB Empty` (R13). AC 11 tidak berlaku |
+| §8 *"Di `SaveInwardProductName_Act`, dua pemeriksaan padanannya ter-remark … menegakkan validasi yang sama di kedua sisi"*; AC 16 | **R11**: jalur inward tak terjangkau (`Inward` b75322 `1=2`) — satu jalur simpan, satu aturan |
+| Out of Scope *"Jalur `OR` … mati di balik gerbang yang selalu salah"*; *"Jalur simpan pintas — `SaveProductNameLIfeFlat` … tidak dipakai"* | **R9**: jalur OR hidup lewat checkbox `On Retention`; **R8**: `SaveProductNameLIfeFlat` jalan setiap simpan (PRE=false) |
+| §1 *"Titik masuk `Master Product Name Life/Harness/InwardProductName.xml`"* | **R11**: halaman awal = `Section/InboxProductName.xml` |
+| §3 *"`LienClause` = field skalar"*, *"`OutwardList` = dead code"* | **R10**, **P3** |
+| §6 *"Sumbernya sequence `M_PRODUCT_LIFE_SEQ` dan `M_PRODUCT_INWARD_LIFE_SEQ`"* | **P6 / R14**: `ID` inward = `ID` produk (OQ-MPNL-02) |
+| §4 *"RI Rate … master RI Rate"*; AC 19 | **R18**: sumber RI Rate menunggu OQ-MPNL-03 (503 berkalimat) |
+| §10 *"Alamat penyimpanan di-resolve runtime"* | **P5**: pengiriman berkas = stub outbox; alamat nyata tidak dipanggil dan tidak ditulis (OQ-MPNL-10, OQ-MPNL-11) |
