@@ -132,6 +132,22 @@ func (l *Layanan) Sesi(ctx context.Context, nilai string) (Profil, Token, error)
 	return p, tok.Perpanjang(l.sekarang()), nil
 }
 
+// terbitkanUlang memperbarui token sesi YANG SEDANG DIPAKAI ke versi sesi
+// akun kini - sesudah admin mengganti password-nya sendiri di Kelola User
+// (versinya naik), supaya sesi ini tidak ikut tercabut. Hanya dipanggil rute
+// yang sesinya sudah diperiksa di permintaan yang sama.
+func (l *Layanan) terbitkanUlang(ctx context.Context, tok Token) (Token, error) {
+	a, err := l.gudang.AmbilAkun(ctx, tok.Akun)
+	if err != nil {
+		return Token{}, err
+	}
+	if !a.Aktif {
+		return Token{}, ErrSesiTidakSah
+	}
+	tok.Versi = a.VersiSesi
+	return tok.Perpanjang(l.sekarang()), nil
+}
+
 // Keluar mencabut SELURUH sesi akun itu.
 func (l *Layanan) Keluar(ctx context.Context, akun string) error {
 	return l.gudang.NaikkanVersi(ctx, akun)

@@ -88,7 +88,7 @@ menampung data dari M_UNIT, M_DIVISION, M_ORGANIZATION”; “simpan aja code ny
 | `IS_ACTIVE` | teks | tidak | CHECK | login | `'1'` aktif *(bawaan)*, `'0'` nonaktif |
 | `FAILED_COUNT` | bilangan bulat | tidak | | penguncian | sandi salah beruntun; nol sesudah login berhasil |
 | `LOCKED_UNTIL` | DATE | ya | | penguncian | 15 menit sesudah salah ke-5 |
-| `MUST_CHANGE_PASSWORD` | teks | tidak | CHECK | login | `'1'` *(bawaan)* — akun baru dan sandi yang direset wajib diganti |
+| `MUST_CHANGE_PASSWORD` | teks | tidak | CHECK | login | `'1'` *(bawaan)* — wajib ganti sandi saat login berikutnya; diatur centang “Change Password Next Login” di Kelola User (tab Security) |
 | `SESSION_VERSION` | bilangan bulat | tidak | | sesi | naik saat logout, ganti sandi, nonaktif — mencabut semua cookie lama |
 | `LAST_LOGIN` | DATE | ya | | jejak | login berhasil terakhir |
 | `TGL_CREATE` | DATE | tidak | | jejak | `DEFAULT SYSDATE` |

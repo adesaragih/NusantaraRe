@@ -1,6 +1,7 @@
 // Ganti sandi - M_LOGIN_GO (keputusan work owner 01-10-2026).
 //
-// Dua jalan masuk: WAJIB (akun baru atau sandi direset - layar penuh, tanpa
+// Dua jalan masuk: WAJIB ("Change Password Next Login" dicentang admin di
+// Kelola User, atau sandi sementara `-buat-pengguna` - layar penuh, tanpa
 // Batal, sebelum aplikasi dapat dipakai) dan PILIHAN (dari menu profil).
 // Backend menegakkan aturannya; di sini hanya pemeriksaan awal supaya pemakai
 // tidak menunggu jawaban server untuk salah yang jelas. Tampilan: kerangka

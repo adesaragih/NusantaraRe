@@ -5881,9 +5881,13 @@ textarea.field__input {
   gap: 16px;
 }
 .kelola-user__catatan {
-  margin: 0;
+  margin: 4px 0 0;
   font-size: var(--fs-xs);
-  align-self: end;
+}
+.kelola-user__wajib {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
 }
 .kelola-user__centang {
   margin: 0;

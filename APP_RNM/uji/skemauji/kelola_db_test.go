@@ -53,15 +53,15 @@ func TestKelolaUserDariOracle(t *testing.T) {
 	l := login.NewLayanan(gudang, []byte("rahasia-uji-yang-panjangnya-32-byte!"))
 
 	if err := k.Buat(ctx, "UJI-LAMA", login.AkunBaru{ID: "UJI-ADM", Nama: "Uji Adm", Organisasi: "UJI-ORG",
-		Menu: []string{menu.KodeKelolaUser, "claimlife"}}, "Sandi-Admin-01"); err != nil {
+		Menu: []string{menu.KodeKelolaUser, "claimlife"}}, "Sandi-Admin-01", true); err != nil {
 		t.Fatalf("buat admin: %v", err)
 	}
 	if err := k.Buat(ctx, "UJI-ADM", login.AkunBaru{ID: "UJI-B", Nama: "Uji B", Organisasi: "UJI-ORG", Divisi: "UJI-DIV",
-		Unit: "UJI-UNIT", Workbasket: []string{"ReasLifeSPV"}, Menu: []string{"claimlife"}}, "Sandi-Admin-01"); err != nil {
+		Unit: "UJI-UNIT", Workbasket: []string{"ReasLifeSPV"}, Menu: []string{"claimlife"}}, "Sandi-Admin-01", true); err != nil {
 		t.Fatalf("buat B: %v", err)
 	}
 	if err := k.Buat(ctx, "UJI-ADM", login.AkunBaru{ID: "UJI-C", Nama: "Uji C", Menu: []string{"tidakada"}},
-		"Sandi-Admin-01"); !errors.Is(err, login.ErrMenuTidakDikenal) {
+		"Sandi-Admin-01", true); !errors.Is(err, login.ErrMenuTidakDikenal) {
 		t.Errorf("menu tak dikenal: %v", err)
 	}
 	p, _, err := l.Masuk(ctx, "UJI-B", "Sandi-Admin-01")
@@ -111,6 +111,24 @@ func TestKelolaUserDariOracle(t *testing.T) {
 	}
 	if r, err := k.BukaKunci(ctx, "UJI-ADM", "UJI-B"); err != nil || r.Terkunci {
 		t.Errorf("buka kunci: %+v %v", r, err)
+	}
+
+	// Tab Security: password baru tanpa wajib ganti - login dengan password itu,
+	// tidak wajib ganti; lalu centangnya saja dinyalakan.
+	if err := k.Buat(ctx, "UJI-ADM", login.AkunBaru{ID: "UJI-SEC", Nama: "Uji Sec"}, "Sandi-Admin-01", false); err != nil {
+		t.Fatalf("buat tanpa wajib ganti: %v", err)
+	}
+	if r, err := k.AturSandi(ctx, "UJI-ADM", "UJI-SEC", "Sandi-Baru-Oracle-1", false); err != nil || r.WajibGantiSandi {
+		t.Fatalf("atur sandi: %+v %v", r, err)
+	}
+	if p, _, err := l.Masuk(ctx, "UJI-SEC", "Sandi-Baru-Oracle-1"); err != nil || p.WajibGantiSandi {
+		t.Errorf("masuk dengan password dari admin: %+v %v", p, err)
+	}
+	if r, err := k.AturSandi(ctx, "UJI-ADM", "UJI-SEC", "", true); err != nil || !r.WajibGantiSandi {
+		t.Errorf("hanya centang: %+v %v", r, err)
+	}
+	if err := k.Hapus(ctx, "UJI-ADM", "UJI-SEC"); err != nil {
+		t.Fatalf("hapus UJI-SEC: %v", err)
 	}
 
 	// Daftar dan pilihan form.

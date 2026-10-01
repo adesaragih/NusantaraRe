@@ -1,6 +1,6 @@
 // Halaman Kelola User — daftar akun M_LOGIN_GO dan aksinya (keputusan work
-// owner 01-10-2026): Tambah, Ubah, Buka kunci, Nonaktifkan/Aktifkan, Hapus
-// permanen (dengan konfirmasi). ⛔ Reset sandi DITUNDA (perintah work owner).
+// owner 01-10-2026): Tambah, Ubah (tab Profil dan Security), Buka kunci,
+// Nonaktifkan/Aktifkan, Hapus permanen (dengan konfirmasi).
 //
 // Akun sendiri tidak punya tombol Nonaktifkan dan Hapus; backend tetap
 // menolaknya (409), dan menolak perubahan yang menyisakan nol admin aktif.

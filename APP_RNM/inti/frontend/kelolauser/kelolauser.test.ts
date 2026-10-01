@@ -5,6 +5,7 @@ import { KODE_MENU_KELOLA_USER, modulUntukAkun } from '../lib/daftarMenu'
 import {
   ambilDaftarPengguna,
   ambilPilihanPengguna,
+  aturSandiPengguna,
   buatPengguna,
   bukaKunciPengguna,
   hapusPengguna,
@@ -16,6 +17,7 @@ import {
 import {
   alihkan,
   badanBaru,
+  badanSandi,
   badanUbah,
   isianKosong,
   kelompokMenu,
@@ -23,6 +25,7 @@ import {
   saringDaftar,
   setelDivisi,
   setelOrganisasi,
+  tabGalat,
   teksJenjang,
   unitUntuk,
 } from './aturan'
@@ -76,7 +79,20 @@ describe('periksa isian', () => {
     expect(periksaIsian({ ...sah, ulangiSandi: 'lain-lain-01' }, true, 'ADMIN')).toBe(KELOLA_USER.galatUlangi)
   })
 
-  it('ubah: sandi tidak diperiksa, dan Kelola User tidak dapat dicabut dari diri sendiri', () => {
+  it('ubah: password kosong = tidak diganti; terisi = diperiksa seperti saat buat (tab Security)', () => {
+    const ubah = { ...sah, sandi: '', ulangiSandi: '', akunId: 'LAIN' }
+    expect(periksaIsian(ubah, false, 'ADMIN')).toBeNull()
+    expect(periksaIsian({ ...ubah, sandi: 'pendek', ulangiSandi: 'pendek' }, false, 'ADMIN')).toBe(KELOLA_USER.galatSandi)
+    expect(periksaIsian({ ...ubah, sandi: 'Sandi-Uji-02', ulangiSandi: 'Sandi-Uji-03' }, false, 'ADMIN')).toBe(KELOLA_USER.galatUlangi)
+    expect(periksaIsian({ ...ubah, ulangiSandi: 'Sandi-Uji-02' }, false, 'ADMIN')).toBe(KELOLA_USER.galatSandi)
+    expect(periksaIsian({ ...ubah, sandi: 'Sandi-Uji-02', ulangiSandi: 'Sandi-Uji-02' }, false, 'ADMIN')).toBeNull()
+    // Galat password membuka tab Security; galat lain tab Profil.
+    expect(tabGalat(KELOLA_USER.galatSandi)).toBe('security')
+    expect(tabGalat(KELOLA_USER.galatUlangi)).toBe('security')
+    expect(tabGalat(KELOLA_USER.galatNama)).toBe('profil')
+  })
+
+  it('ubah: Kelola User tidak dapat dicabut dari diri sendiri', () => {
     const ubah = { ...sah, sandi: '', ulangiSandi: '', akunId: 'ADMIN', menu: ['claimlife'] }
     expect(periksaIsian(ubah, false, 'ADMIN')).toBe(KELOLA_USER.menuDiriSendiri)
     expect(periksaIsian({ ...ubah, menu: [KODE_MENU_KELOLA_USER] }, false, 'ADMIN')).toBeNull()
@@ -85,11 +101,23 @@ describe('periksa isian', () => {
 })
 
 describe('badan permintaan', () => {
-  it('sandi hanya di badan buat; ubah tanpa username dan sandi', () => {
+  it('sandi hanya di badan buat dan Security; ubah tanpa username dan sandi', () => {
     const isi = { ...isianKosong(), akunId: ' UJI ', nama: ' Uji ', sandi: 'Sandi-Uji-01', ulangiSandi: 'Sandi-Uji-01', menu: ['claimlife'] }
-    expect(badanBaru(isi)).toEqual({ akunId: 'UJI', nama: 'Uji', sandi: 'Sandi-Uji-01', organisasi: '', divisi: '', unit: '', workbasket: [], menu: ['claimlife'] })
+    // User baru bawaannya wajib ganti password ("Change Password Next Login" tercentang).
+    expect(isianKosong().wajibGanti).toBe(true)
+    expect(badanBaru(isi)).toEqual({
+      akunId: 'UJI', nama: 'Uji', sandi: 'Sandi-Uji-01', wajibGanti: true, organisasi: '', divisi: '', unit: '', workbasket: [], menu: ['claimlife'],
+    })
+    expect(badanBaru({ ...isi, wajibGanti: false }).wajibGanti).toBe(false)
     const ubah = badanUbah(isi)
     expect(Object.keys(ubah).sort()).toEqual(['divisi', 'menu', 'nama', 'organisasi', 'unit', 'workbasket'])
+  })
+
+  it('Security saat ubah: dikirim hanya bila password diisi atau centangnya berubah', () => {
+    const isi = { ...isianKosong(), sandi: '', wajibGanti: false }
+    expect(badanSandi(isi, false)).toBeNull()
+    expect(badanSandi({ ...isi, wajibGanti: true }, false)).toEqual({ sandi: '', wajibGanti: true })
+    expect(badanSandi({ ...isi, sandi: 'Sandi-Uji-09' }, false)).toEqual({ sandi: 'Sandi-Uji-09', wajibGanti: false })
   })
 
   it('kotak centang: urut, tanpa ganda', () => {
@@ -144,10 +172,11 @@ describe('klien /api/admin', () => {
     )
     await ambilDaftarPengguna()
     await ambilPilihanPengguna()
-    await buatPengguna({ akunId: 'U/1', nama: 'U', sandi: 'Sandi-Uji-01', organisasi: '', divisi: '', unit: '', workbasket: [], menu: [] })
+    await buatPengguna({ akunId: 'U/1', nama: 'U', sandi: 'Sandi-Uji-01', wajibGanti: true, organisasi: '', divisi: '', unit: '', workbasket: [], menu: [] })
     await ubahPengguna('U/1', { nama: 'U', organisasi: '', divisi: '', unit: '', workbasket: [], menu: [] })
     await setelAktifPengguna('U/1', false)
     await bukaKunciPengguna('U/1')
+    await aturSandiPengguna('U/1', { sandi: '', wajibGanti: true })
     await expect(hapusPengguna('U/1')).resolves.toBeUndefined()
     expect(tertangkap.map((t) => `${t.init.method ?? 'GET'} ${t.url}`)).toEqual([
       'GET /api/admin/pengguna',
@@ -156,9 +185,11 @@ describe('klien /api/admin', () => {
       'PUT /api/admin/pengguna/U%2F1',
       'POST /api/admin/pengguna/U%2F1/aktif',
       'POST /api/admin/pengguna/U%2F1/buka-kunci',
+      'POST /api/admin/pengguna/U%2F1/sandi',
       'DELETE /api/admin/pengguna/U%2F1',
     ])
     expect(JSON.parse(String(tertangkap[4]?.init.body))).toEqual({ aktif: false })
     expect(tertangkap[5]?.init.body).toBeUndefined()
+    expect(JSON.parse(String(tertangkap[6]?.init.body))).toEqual({ sandi: '', wajibGanti: true })
   })
 })

@@ -118,3 +118,61 @@ func TestKelolaRuteAlurAdmin(t *testing.T) {
 		t.Error("admin mengubah dirinya sendiri walau ditolak")
 	}
 }
+
+// Tab Security lewat HTTP: password akun lain mencabut sesinya; password
+// SENDIRI tidak memutus sesi admin (cookie diterbitkan ulang); "Change
+// Password Next Login" saat membuat akun; nol password di jawaban.
+func TestKelolaRuteSecurity(t *testing.T) {
+	g := gudangUji(t)
+	h, c := serverKelola(t, g)
+	// Sesi UJI-KUNCI dibuka dulu (kuncinya dibuka admin), lalu passwordnya diganti admin.
+	if rec := kirim(h, "POST", "/api/admin/pengguna/UJI-KUNCI/buka-kunci", "", c); rec.Code != http.StatusOK {
+		t.Fatalf("buka kunci: %d", rec.Code)
+	}
+	cLain := cookieSesi(t, kirim(h, "POST", "/api/auth/login", `{"akun":"UJI-KUNCI","sandi":"Sandi-Benar-01"}`, nil))
+	if cLain == nil {
+		t.Fatal("login UJI-KUNCI")
+	}
+	rec := kirim(h, "POST", "/api/admin/pengguna/UJI-KUNCI/sandi", `{"sandi":"Sandi-Baru-Admin-1","wajibGanti":true}`, c)
+	if rec.Code != http.StatusOK || strings.Contains(rec.Body.String(), "Sandi-Baru-Admin-1") || !strings.Contains(rec.Body.String(), `"wajibGantiSandi":true`) {
+		t.Fatalf("atur sandi akun lain: %d %s", rec.Code, rec.Body)
+	}
+	if rec := kirim(h, "GET", "/api/auth/saya", "", cLain); rec.Code != http.StatusUnauthorized {
+		t.Errorf("sesi akun yang passwordnya diganti: %d, mau 401", rec.Code)
+	}
+	// Password sendiri: sesi admin tetap hidup dengan cookie baru.
+	rec = kirim(h, "POST", "/api/admin/pengguna/UJI-ADMIN/sandi", `{"sandi":"Sandi-Baru-Admin-2","wajibGanti":false}`, c)
+	cBaru := cookieSesi(t, rec)
+	if rec.Code != http.StatusOK || cBaru == nil {
+		t.Fatalf("atur sandi sendiri: %d %s, cookie %v", rec.Code, rec.Body, cBaru)
+	}
+	if rec := kirim(h, "GET", "/api/auth/saya", "", cBaru); rec.Code != http.StatusOK {
+		t.Errorf("sesi admin sesudah mengganti password sendiri: %d", rec.Code)
+	}
+	if rec := kirim(h, "GET", "/api/auth/saya", "", c); rec.Code != http.StatusUnauthorized {
+		t.Errorf("cookie LAMA admin sesudah ganti password: %d, mau 401", rec.Code)
+	}
+	for _, k := range []struct {
+		jalur, badan string
+		kode         int
+	}{
+		{"/api/admin/pengguna/UJI-KUNCI/sandi", `{"sandi":"pendek","wajibGanti":true}`, http.StatusBadRequest},
+		{"/api/admin/pengguna/UJI-KUNCI/sandi", `{"sandi":"Sandi-Baru-Admin-3"}`, http.StatusBadRequest},
+		{"/api/admin/pengguna/UJI-TIDAK-ADA/sandi", `{"wajibGanti":false}`, http.StatusNotFound},
+		{"/api/admin/pengguna/UJI-KUNCI/sandi", `{"wajibGanti":false}`, http.StatusOK},
+	} {
+		if rec := kirim(h, "POST", k.jalur, k.badan, cBaru); rec.Code != k.kode {
+			t.Errorf("%s %s: %d %s, mau %d", k.jalur, k.badan, rec.Code, rec.Body, k.kode)
+		}
+	}
+	// Membuat akun tanpa centang wajib ganti; tanpa medan wajibGanti = wajib (aman).
+	for _, k := range []struct {
+		id, ekor string
+		wajib    bool
+	}{{"UJI-SEC-1", `,"wajibGanti":false`, false}, {"UJI-SEC-2", ``, true}} {
+		badan := `{"akunId":"` + k.id + `","nama":"Sec","sandi":"Sandi-Admin-01"` + k.ekor + `}`
+		if rec := kirim(h, "POST", "/api/admin/pengguna", badan, cBaru); rec.Code != http.StatusCreated || g.akun[k.id].WajibGantiSandi != k.wajib {
+			t.Errorf("buat %s: %d %s, wajib %v", k.id, rec.Code, rec.Body, g.akun[k.id] != nil && g.akun[k.id].WajibGantiSandi)
+		}
+	}
+}

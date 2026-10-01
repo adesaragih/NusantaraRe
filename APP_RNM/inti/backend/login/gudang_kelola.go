@@ -66,6 +66,18 @@ func sqlBukaKunci(t string) string {
 	  WHERE LOGIN_ID = :1`, t)
 }
 
+// sqlAturSandi - password baru: :1 hash, :2 wajib ganti, :3 LOGIN_ID; sesi
+// dicabut dan kunci dibuka. sqlSetelWajibGanti - centangnya saja.
+func sqlAturSandi(t string) string {
+	return fmt.Sprintf(`UPDATE %s SET PASSWORD_HASH = :1, MUST_CHANGE_PASSWORD = :2,
+	    SESSION_VERSION = SESSION_VERSION + 1, FAILED_COUNT = 0, LOCKED_UNTIL = NULL, TGL_UPDATE = SYSDATE
+	  WHERE LOGIN_ID = :3`, t)
+}
+
+func sqlSetelWajibGanti(t string) string {
+	return fmt.Sprintf(`UPDATE %s SET MUST_CHANGE_PASSWORD = :1, TGL_UPDATE = SYSDATE WHERE LOGIN_ID = :2`, t)
+}
+
 func sqlHapusMilik(t string) string {
 	return fmt.Sprintf(`DELETE FROM %s WHERE LOGIN_ID = :1`, t)
 }
@@ -296,6 +308,31 @@ func (g *GudangOracle) BukaKunci(ctx context.Context, id string) error {
 		return err
 	}
 	n, err := g.ubah(ctx, sqlBukaKunci(t), id)
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrAkunTidakAda
+	}
+	return nil
+}
+
+// AturSandi menulis password baru (bila `hash` terisi) dan centang wajib ganti.
+func (g *GudangOracle) AturSandi(ctx context.Context, id, hash string, wajibGanti bool) error {
+	t, err := g.nama(tabelLogin)
+	if err != nil {
+		return err
+	}
+	wajib := benderaTidak
+	if wajibGanti {
+		wajib = benderaYa
+	}
+	var n int64
+	if hash != "" {
+		n, err = g.ubah(ctx, sqlAturSandi(t), hash, wajib, id)
+	} else {
+		n, err = g.ubah(ctx, sqlSetelWajibGanti(t), wajib, id)
+	}
 	if err != nil {
 		return err
 	}

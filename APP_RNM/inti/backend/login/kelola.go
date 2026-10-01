@@ -1,12 +1,15 @@
 package login
 
-// Kelola User - daftar, buat, ubah, aktif/nonaktif, buka kunci, dan hapus
-// permanen akun M_LOGIN_GO beserta workbasket dan menunya (keputusan work
-// owner 01-10-2026).
+// Kelola User - daftar, buat, ubah, aktif/nonaktif, buka kunci, atur
+// password, dan hapus permanen akun M_LOGIN_GO beserta workbasket dan
+// menunya (keputusan work owner 01-10-2026).
 //
-// ⛔ RESET SANDI DITUNDA - perintah work owner: "untuk reset sandi jangan
-// dulu". Sandi akun baru DIKETIK admin dan wajib diganti pemiliknya saat
-// login pertama.
+// Password DIKETIK admin - saat membuat akun dan di tab Security (permintaan
+// work owner 01-10-2026: "tambahkan tab security untuk mengelola password,
+// jadi bisa ganti password sendiri dan password akun lain", menggantikan
+// perintah sebelumnya "reset sandi jangan dulu"). Centang "Change Password
+// Next Login" mengisi MUST_CHANGE_PASSWORD: dicentang = wajib ganti saat login
+// berikutnya, tidak dicentang = tidak perlu.
 //
 // Penjaga (keputusan work owner):
 //   - admin tidak dapat mencabut Kelola User dari dirinya, menonaktifkan, atau
@@ -109,6 +112,9 @@ type GudangKelola interface {
 	SetelAktif(ctx context.Context, id string, aktif bool) error
 	// BukaKunci menolkan FAILED_COUNT dan mencabut LOCKED_UNTIL.
 	BukaKunci(ctx context.Context, id string) error
+	// AturSandi menulis MUST_CHANGE_PASSWORD; `hash` terisi = juga hash baru,
+	// SESSION_VERSION naik (seluruh sesinya dicabut), dan kuncinya dibuka.
+	AturSandi(ctx context.Context, id, hash string, wajibGanti bool) error
 	// HapusAkun membuang menu, workbasket, lalu akunnya - satu transaksi.
 	HapusAkun(ctx context.Context, id string) error
 	// Master - organisasi, divisi, unit, dan workbasket AKTIF (tanpa Menu).
@@ -253,9 +259,9 @@ func (k *Kelola) Pilihan(ctx context.Context) (PilihanKelola, error) {
 	return p, nil
 }
 
-// Buat membuat akun dengan sandi yang DIKETIK admin - aturan sandi berlaku,
-// dan akunnya WAJIB ganti sandi saat login pertama (keputusan work owner).
-func (k *Kelola) Buat(ctx context.Context, aktor string, a AkunBaru, sandi string) error {
+// Buat membuat akun dengan sandi yang DIKETIK admin - aturan sandi berlaku.
+// `wajibGanti` = centang "Change Password Next Login".
+func (k *Kelola) Buat(ctx context.Context, aktor string, a AkunBaru, sandi string, wajibGanti bool) error {
 	if err := PeriksaSandiBaru(sandi); err != nil {
 		return err
 	}
@@ -264,7 +270,32 @@ func (k *Kelola) Buat(ctx context.Context, aktor string, a AkunBaru, sandi strin
 	if err := k.PeriksaMenu(ctx, a.Menu); err != nil {
 		return err
 	}
-	return k.layanan.buat(ctx, a, sandi, true)
+	return k.layanan.buat(ctx, a, sandi, wajibGanti)
+}
+
+// AturSandi - tab Security. `sandi` terisi = password baru (aturan sandi
+// berlaku; seluruh sesi akun itu dicabut dan kuncinya dibuka); kosong = hanya
+// centang "Change Password Next Login" yang berubah. Password akun SENDIRI
+// boleh: rute Kelola User menerbitkan ulang cookie admin itu.
+func (k *Kelola) AturSandi(ctx context.Context, aktor, id, sandi string, wajibGanti bool) (RinciAkun, error) {
+	hash := ""
+	if sandi != "" {
+		if err := PeriksaSandiBaru(sandi); err != nil {
+			return RinciAkun{}, err
+		}
+		h, err := HashSandi(sandi)
+		if err != nil {
+			return RinciAkun{}, err
+		}
+		hash = h
+	}
+	if _, err := k.gudang.AmbilAkun(ctx, id); err != nil {
+		return RinciAkun{}, err
+	}
+	if err := k.gudang.AturSandi(ctx, id, hash, wajibGanti); err != nil {
+		return RinciAkun{}, err
+	}
+	return k.Rinci(ctx, id)
 }
 
 // Ubah menulis profil dan mengganti seluruh workbasket dan menu akun itu.

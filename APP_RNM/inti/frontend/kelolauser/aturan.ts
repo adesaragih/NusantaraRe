@@ -6,7 +6,7 @@
 
 import { KELOLA_USER, PANJANG_MIN_SANDI } from '../labels'
 import { KODE_MENU_KELOLA_USER } from '../lib/daftarMenu'
-import type { BadanBaru, BadanUbah, OpsiMaster, OpsiMenu, PilihanKelola, RingkasAkun, RinciAkun } from './api'
+import type { BadanBaru, BadanSandi, BadanUbah, OpsiMaster, OpsiMenu, PilihanKelola, RingkasAkun, RinciAkun } from './api'
 
 /** Bentuk username — sama dengan `login.polaAkun` di backend. */
 export const POLA_AKUN = /^[A-Za-z0-9._@-]{1,64}$/
@@ -27,10 +27,27 @@ export interface IsianForm {
   unit: string
   workbasket: string[]
   menu: string[]
+  /** Centang "Change Password Next Login" (tab Security). */
+  wajibGanti: boolean
 }
 
+/** Tab form tambah/ubah user. */
+export type TabForm = 'profil' | 'security'
+
 export function isianKosong(): IsianForm {
-  return { akunId: '', nama: '', sandi: '', ulangiSandi: '', organisasi: '', divisi: '', unit: '', workbasket: [], menu: [] }
+  return {
+    akunId: '',
+    nama: '',
+    sandi: '',
+    ulangiSandi: '',
+    organisasi: '',
+    divisi: '',
+    unit: '',
+    workbasket: [],
+    menu: [],
+    // User baru bawaannya WAJIB mengganti password yang diketik admin.
+    wajibGanti: true,
+  }
 }
 
 export function isianDari(r: RinciAkun): IsianForm {
@@ -44,6 +61,7 @@ export function isianDari(r: RinciAkun): IsianForm {
     unit: r.unit,
     workbasket: [...r.workbasket],
     menu: [...r.menu],
+    wajibGanti: r.wajibGantiSandi,
   }
 }
 
@@ -79,13 +97,14 @@ export function alihkan(daftar: readonly string[], kode: string, nyala: boolean)
 
 /**
  * Pemeriksaan awal; `null` = boleh dikirim. Panjang sandi dihitung KARAKTER,
- * seperti backend. `akunSaya` = akun yang sedang login.
+ * seperti backend. `akunSaya` = akun yang sedang login. Password WAJIB saat
+ * membuat user; saat mengubah, kosong = tidak diganti.
  */
 export function periksaIsian(isi: IsianForm, baru: boolean, akunSaya: string): string | null {
   if (baru && !akunSah(isi.akunId.trim())) return KELOLA_USER.galatAkun
   const nama = isi.nama.trim()
   if (nama === '' || [...nama].length > 150) return KELOLA_USER.galatNama
-  if (baru) {
+  if (baru || isi.sandi !== '' || isi.ulangiSandi !== '') {
     if ([...isi.sandi].length < PANJANG_MIN_SANDI) return KELOLA_USER.galatSandi
     if (isi.sandi !== isi.ulangiSandi) return KELOLA_USER.galatUlangi
   }
@@ -105,7 +124,21 @@ export function badanUbah(isi: IsianForm): BadanUbah {
 }
 
 export function badanBaru(isi: IsianForm): BadanBaru {
-  return { ...badanUbah(isi), akunId: isi.akunId.trim(), sandi: isi.sandi }
+  return { ...badanUbah(isi), akunId: isi.akunId.trim(), sandi: isi.sandi, wajibGanti: isi.wajibGanti }
+}
+
+/**
+ * Badan tab Security saat MENGUBAH user; `null` = tidak ada yang berubah
+ * (password kosong dan centangnya sama dengan `wajibAwal`).
+ */
+export function badanSandi(isi: IsianForm, wajibAwal: boolean): BadanSandi | null {
+  if (isi.sandi === '' && isi.wajibGanti === wajibAwal) return null
+  return { sandi: isi.sandi, wajibGanti: isi.wajibGanti }
+}
+
+/** Tab tempat galat itu harus diperbaiki. */
+export function tabGalat(pesan: string): TabForm {
+  return pesan === KELOLA_USER.galatSandi || pesan === KELOLA_USER.galatUlangi ? 'security' : 'profil'
 }
 
 /** Kotak centang menu per golongan — urutan server (urutan sidebar). */

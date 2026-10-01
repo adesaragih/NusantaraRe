@@ -96,6 +96,18 @@ func (g *gudangTiruan) SetelAktif(_ context.Context, id string, aktif bool) erro
 		g.akun[id].VersiSesi++
 	})
 }
+func (g *gudangTiruan) AturSandi(_ context.Context, id, hash string, wajibGanti bool) error {
+	a, ada := g.akun[id]
+	if !ada {
+		return ErrAkunTidakAda
+	}
+	a.WajibGantiSandi = wajibGanti
+	if hash != "" {
+		a.HashSandi, a.Terkunci = hash, false
+		a.VersiSesi++
+	}
+	return nil
+}
 func (g *gudangTiruan) BukaKunci(_ context.Context, id string) error {
 	g.akun[id].Terkunci = false
 	return nil
@@ -136,7 +148,7 @@ func TestKelolaBuatAkunDenganSandiAdminWajibGanti(t *testing.T) {
 	k := kelolaUji(g)
 	baru := AkunBaru{ID: " UJI-KELOLA-1 ", Nama: " Uji Kelola ", Organisasi: "RNM", Divisi: "TECH", Unit: "CLM",
 		Workbasket: []string{"ReasLifeSPV", "ReasLifeSPV", ""}, Menu: []string{"claimlife", "claimlife"}}
-	if err := k.Buat(ctxUji, "UJI-ADMIN", baru, "Sandi-Admin-01"); err != nil {
+	if err := k.Buat(ctxUji, "UJI-ADMIN", baru, "Sandi-Admin-01", true); err != nil {
 		t.Fatal(err)
 	}
 	a := g.akun["UJI-KELOLA-1"]
@@ -169,7 +181,7 @@ func TestKelolaBuatDitolak(t *testing.T) {
 	} {
 		a := sah
 		kasus.ubah(&a)
-		if err := k.Buat(ctxUji, "UJI-ADMIN", a, kasus.sandi); !errors.Is(err, kasus.mau) {
+		if err := k.Buat(ctxUji, "UJI-ADMIN", a, kasus.sandi, true); !errors.Is(err, kasus.mau) {
 			t.Errorf("%s: %v, mau %v", kasus.nama, err, kasus.mau)
 		}
 	}
@@ -333,8 +345,54 @@ func TestKelolaUbahMenjagaYangNonaktif(t *testing.T) {
 func TestKelolaBuatAkunTitikDitolak(t *testing.T) {
 	g := gudangUji(t)
 	for _, id := range []string{".", ".."} {
-		if err := kelolaUji(g).Buat(ctxUji, "UJI-ADMIN", AkunBaru{ID: id, Nama: "Titik"}, "Sandi-Admin-01"); !errors.Is(err, ErrAkunTidakSah) {
+		if err := kelolaUji(g).Buat(ctxUji, "UJI-ADMIN", AkunBaru{ID: id, Nama: "Titik"}, "Sandi-Admin-01", true); !errors.Is(err, ErrAkunTidakSah) {
 			t.Errorf("akun %q: %v", id, err)
+		}
+	}
+}
+
+// Tab Security (permintaan work owner 01-10-2026): "Change Password Next
+// Login" dicentang = wajib ganti, tidak dicentang = tidak perlu - saat
+// membuat akun juga.
+func TestKelolaBuatTanpaWajibGanti(t *testing.T) {
+	g := gudangUji(t)
+	if err := kelolaUji(g).Buat(ctxUji, "UJI-ADMIN", AkunBaru{ID: "UJI-BEBAS", Nama: "Bebas"}, "Sandi-Admin-01", false); err != nil {
+		t.Fatal(err)
+	}
+	if a := g.akun["UJI-BEBAS"]; a == nil || a.WajibGantiSandi {
+		t.Errorf("akun tanpa centang wajib ganti: %+v", a)
+	}
+}
+
+// Atur password akun lain: hash baru, centang wajib ganti mengikuti isian,
+// seluruh sesinya dicabut (versi naik), kuncinya dibuka. Tanpa password =
+// hanya centangnya yang berubah - hash dan sesi tetap.
+func TestKelolaAturSandi(t *testing.T) {
+	g := gudangUji(t)
+	k := kelolaUji(g)
+	hashLama, versiLama := g.akun["UJI-KUNCI"].HashSandi, g.akun["UJI-KUNCI"].VersiSesi
+	r, err := k.AturSandi(ctxUji, "UJI-ADMIN", "UJI-KUNCI", "Sandi-Baru-Admin-1", true)
+	a := g.akun["UJI-KUNCI"]
+	if err != nil || !r.WajibGantiSandi || r.Terkunci || a.VersiSesi != versiLama+1 || !CocokSandi(a.HashSandi, "Sandi-Baru-Admin-1") {
+		t.Fatalf("atur sandi: %+v %+v %v", r, a, err)
+	}
+	hashBaru, versiBaru := a.HashSandi, a.VersiSesi
+	if r, err := k.AturSandi(ctxUji, "UJI-ADMIN", "UJI-KUNCI", "", false); err != nil || r.WajibGantiSandi ||
+		a.HashSandi != hashBaru || a.VersiSesi != versiBaru {
+		t.Errorf("hanya centang: %+v %+v %v", r, a, err)
+	}
+	if hashBaru == hashLama {
+		t.Error("hash tidak berubah")
+	}
+	for _, kasus := range []struct {
+		id, sandi string
+		mau       error
+	}{
+		{"UJI-KUNCI", "pendek", ErrSandiTerlaluPendek},
+		{"UJI-TIDAK-ADA", "Sandi-Baru-Admin-1", ErrAkunTidakAda},
+	} {
+		if _, err := k.AturSandi(ctxUji, "UJI-ADMIN", kasus.id, kasus.sandi, false); !errors.Is(err, kasus.mau) {
+			t.Errorf("%s %q: %v, mau %v", kasus.id, kasus.sandi, err, kasus.mau)
 		}
 	}
 }

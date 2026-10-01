@@ -177,10 +177,10 @@ export const PANJANG_MIN_SANDI = 10
 
 /**
  * Label Kelola User — CRUD akun `M_LOGIN_GO` beserta workbasket dan menunya
- * (keputusan work owner 01-10-2026).
+ * (keputusan work owner 01-10-2026). Tab Security dan "Change Password Next
+ * Login": permintaan work owner 01-10-2026 (label tab dan centang VERBATIM).
  *
- * ⚠️ `[tidak ada di korpus]` `[kerangka aplikasi]`. ⛔ Reset sandi DITUNDA
- * (perintah work owner) — tidak ada tombolnya.
+ * ⚠️ `[tidak ada di korpus]` `[kerangka aplikasi]`.
  */
 export const KELOLA_USER = {
   judul: 'Kelola User',
@@ -211,9 +211,18 @@ export const KELOLA_USER = {
   akun: 'Username',
   akunTetap: 'Username tidak dapat diubah sesudah dibuat.',
   nama: 'Nama',
+  tabProfil: 'Profil',
+  tabSecurity: 'Security',
   sandi: 'Password awal',
   ulangiSandi: 'Ulangi password awal',
-  catatanSandi: 'Minimal 10 karakter. User wajib menggantinya saat login pertama.',
+  catatanSandi: 'Minimal 10 karakter.',
+  sandiBaru: 'Password baru',
+  ulangiSandiBaru: 'Ulangi password baru',
+  catatanSandiUbah:
+    'Kosongkan bila password tidak diganti. Password baru (minimal 10 karakter) mengakhiri semua sesi user itu dan membuka kuncinya.',
+  catatanSandiSendiri: 'Ini akun Anda: sesi yang sedang Anda pakai tetap berjalan sesudah password diganti.',
+  wajibGantiCentang: 'Change Password Next Login',
+  catatanWajibGanti: 'Dicentang: user wajib mengganti password saat login berikutnya. Tidak dicentang: tidak perlu.',
   organisasi: 'Organisasi',
   divisi: 'Divisi',
   unit: 'Unit',
@@ -234,8 +243,8 @@ export const KELOLA_USER = {
   menghapus: 'Menghapus…',
   galatAkun: 'Username hanya huruf, angka, titik, garis bawah, @, atau tanda hubung (maks. 64 karakter).',
   galatNama: 'Nama wajib diisi (maks. 150 karakter).',
-  galatSandi: 'Password awal minimal 10 karakter.',
-  galatUlangi: 'Kedua password awal tidak sama.',
+  galatSandi: 'Password minimal 10 karakter.',
+  galatUlangi: 'Kedua password tidak sama.',
   tersimpan: (akun: string) => `User ${akun} tersimpan.`,
   terhapus: (akun: string) => `User ${akun} dihapus permanen.`,
   dinonaktifkan: (akun: string) => `User ${akun} dinonaktifkan; sesinya berakhir pada permintaan berikutnya.`,

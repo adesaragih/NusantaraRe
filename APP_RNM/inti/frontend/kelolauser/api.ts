@@ -2,8 +2,8 @@
 // keputusan work owner 01-10-2026).
 //
 // ⛔ Rute ini menuntut SESI LOGIN pemegang menu Kelola User; cookie HttpOnly
-// dikirim peramban sendiri. Sandi awal hanya hidup di badan `buatPengguna`
-// dan tidak pernah kembali di jawaban mana pun. Reset sandi DITUNDA.
+// dikirim peramban sendiri. Password hanya hidup di badan `buatPengguna` dan
+// `aturSandiPengguna` (tab Security) dan tidak pernah kembali di jawaban.
 
 import { minta } from '../klien'
 
@@ -66,6 +66,14 @@ export interface BadanUbah {
 export interface BadanBaru extends BadanUbah {
   akunId: string
   sandi: string
+  /** Centang "Change Password Next Login". */
+  wajibGanti: boolean
+}
+
+/** Badan tab Security: `sandi` kosong = hanya centang yang berubah. */
+export interface BadanSandi {
+  sandi: string
+  wajibGanti: boolean
 }
 
 const DASAR = '/api/admin/pengguna'
@@ -97,6 +105,15 @@ export function setelAktifPengguna(akunId: string, aktif: boolean): Promise<Rinc
 
 export function bukaKunciPengguna(akunId: string): Promise<RinciAkun> {
   return minta<RinciAkun>(`${id(akunId)}/buka-kunci`, { metode: 'POST' })
+}
+
+/**
+ * Tab Security — password baru (sesi akun itu berakhir, kuncinya dibuka) dan/atau
+ * centang "Change Password Next Login". Password akun SENDIRI: backend
+ * menerbitkan ulang cookie, sesi ini tetap berjalan.
+ */
+export function aturSandiPengguna(akunId: string, badan: BadanSandi): Promise<RinciAkun> {
+  return minta<RinciAkun>(`${id(akunId)}/sandi`, { metode: 'POST', badan })
 }
 
 /** HAPUS PERMANEN — akun, workbasket, dan menunya. */

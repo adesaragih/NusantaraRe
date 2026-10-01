@@ -34,6 +34,8 @@ func TestSQLGudangBersihDanBerbind(t *testing.T) {
 		"ubah profil":  sqlUbahProfil("S.M_LOGIN_GO"),
 		"setel aktif":  sqlSetelAktif("S.M_LOGIN_GO"),
 		"buka kunci":   sqlBukaKunci("S.M_LOGIN_GO"),
+		"atur sandi":   sqlAturSandi("S.M_LOGIN_GO"),
+		"wajib ganti":  sqlSetelWajibGanti("S.M_LOGIN_GO"),
 		"hapus milik":  sqlHapusMilik("S.M_LOGIN_GO_MENU"),
 		"m org":        sqlMasterOrganisasi("S.M_ORGANIZATION"),
 		"m divisi":     sqlMasterDivisi("S.M_DIVISION", "S.M_ORGANIZATION"),

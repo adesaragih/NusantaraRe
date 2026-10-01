@@ -6,7 +6,8 @@ package login
 // saat AUTH_STUB=true: header stub dapat ditulis siapa saja, dan rute ini
 // mengubah akun sungguhan. Tanpa sesi 401; sesi tanpa menu itu 403.
 //
-// ⛔ RESET SANDI DITUNDA (perintah work owner): tidak ada rutenya.
+// ⛔ Password hanya di BADAN permintaan buat dan atur sandi - tidak pernah di
+// jalur, log, atau jawaban.
 
 import (
 	"encoding/json"
@@ -39,6 +40,7 @@ func (r *Rute) pasangKelola(mux *http.ServeMux) {
 	mux.HandleFunc("DELETE /api/admin/pengguna/{id}", r.hapusPengguna)
 	mux.HandleFunc("POST /api/admin/pengguna/{id}/aktif", r.aktifPengguna)
 	mux.HandleFunc("POST /api/admin/pengguna/{id}/buka-kunci", r.bukaKunciPengguna)
+	mux.HandleFunc("POST /api/admin/pengguna/{id}/sandi", r.sandiPengguna)
 	// Di luar `/pengguna/` supaya tidak menutupi akun bernama "pilihan".
 	mux.HandleFunc("GET /api/admin/pilihan-pengguna", r.pilihanPengguna)
 }
@@ -135,6 +137,8 @@ type isianPengguna struct {
 	Workbasket []string `json:"workbasket"`
 	Menu       []string `json:"menu"`
 	Sandi      string   `json:"sandi"`
+	// WajibGanti - centang "Change Password Next Login"; tidak dikirim = wajib.
+	WajibGanti *bool `json:"wajibGanti"`
 }
 
 // buatPengguna - sandi diketik admin; ⛔ tidak pernah ditulis ke log atau jawaban.
@@ -149,12 +153,13 @@ func (r *Rute) buatPengguna(w http.ResponseWriter, req *http.Request) {
 	}
 	a := AkunBaru{ID: m.AkunID, Nama: m.Nama, Organisasi: m.Organisasi, Divisi: m.Divisi, Unit: m.Unit,
 		Workbasket: m.Workbasket, Menu: m.Menu}
-	if err := r.kelola.Buat(req.Context(), aktor, a, m.Sandi); err != nil {
+	wajib := m.WajibGanti == nil || *m.WajibGanti
+	if err := r.kelola.Buat(req.Context(), aktor, a, m.Sandi, wajib); err != nil {
 		tulisGalatKelola(w, err, "membuat akun")
 		return
 	}
 	id := strings.TrimSpace(m.AkunID)
-	log.Printf("login: kelola user - %s membuat akun %s", aktor, id)
+	log.Printf("login: kelola user - %s membuat akun %s (wajib ganti password=%v)", aktor, id, wajib)
 	rinci, err := r.kelola.Rinci(req.Context(), id)
 	if err != nil {
 		tulisGalatKelola(w, err, "membaca akun baru")
@@ -222,6 +227,49 @@ func (r *Rute) bukaKunciPengguna(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	log.Printf("login: kelola user - %s membuka kunci akun %s", aktor, id)
+	galat.TulisJSON(w, rinci)
+}
+
+// sandiPengguna - tab Security: `sandi` terisi = password baru (sesi akun itu
+// dicabut, kuncinya dibuka), kosong = hanya centang "Change Password Next
+// Login". Password akun SENDIRI: cookie admin diterbitkan ulang, sesi ini
+// tetap hidup.
+func (r *Rute) sandiPengguna(w http.ResponseWriter, req *http.Request) {
+	aktor, ok := r.admin(w, req)
+	if !ok {
+		return
+	}
+	var m struct {
+		Sandi      string `json:"sandi"`
+		WajibGanti *bool  `json:"wajibGanti"`
+	}
+	if !bacaJSON(w, req, &m) {
+		return
+	}
+	if m.WajibGanti == nil {
+		galat.Tulis(w, http.StatusBadRequest, "badan wajib memuat wajibGanti: true atau false")
+		return
+	}
+	id := req.PathValue("id")
+	rinci, err := r.kelola.AturSandi(req.Context(), aktor, id, m.Sandi, *m.WajibGanti)
+	if err != nil {
+		tulisGalatKelola(w, err, "mengatur password akun")
+		return
+	}
+	if m.Sandi != "" {
+		log.Printf("login: kelola user - %s MENGGANTI PASSWORD akun %s (wajib ganti=%v)", aktor, id, *m.WajibGanti)
+	} else {
+		log.Printf("login: kelola user - %s menyetel wajib ganti password=%v akun %s", aktor, *m.WajibGanti, id)
+	}
+	if m.Sandi != "" && id == aktor {
+		s, _ := sesiDari(req.Context())
+		tok, err := r.layanan.terbitkanUlang(req.Context(), s.token)
+		if err != nil {
+			tulisGalatKelola(w, err, "memperbarui sesi")
+			return
+		}
+		r.pasangCookie(w, tok)
+	}
 	galat.TulisJSON(w, rinci)
 }
 
