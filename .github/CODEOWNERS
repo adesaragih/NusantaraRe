@@ -8,7 +8,7 @@
 # Semua yang lain milik tim inti: kode bersama, perakit, konfigurasi npm/Go,
 # penjaga, dokumen lintas modul. Menambah pustaka (go.mod, package.json), kontrak
 # lintas modul (inti/backend/kontrak), atau rentang migrasi = pull request ke tim
-# inti. Alurnya: docs/bersama/PANDUAN-TIM-PER-MODUL.md.
+# inti. Alurnya: APP_RNM/PANDUAN-TIM-PER-MODUL.md.
 #
 # Nama akun di bawah PENANDA (@TIM-INTI, @PEMILIK-<NAMA>) - work owner mengisinya.
 # Aturan yang cocok TERAKHIR menang (GitHub dan GitLab sama). GitLab membaca
@@ -32,8 +32,11 @@
 /APP_RNM/tsconfig.json              @TIM-INTI
 /APP_RNM/Makefile                   @TIM-INTI
 /APP_RNM/modul/_templat/            @TIM-INTI
-/docs/bersama/                      @TIM-INTI
-/docs/agents/                       @TIM-INTI
+/APP_RNM/inti/docs/                 @TIM-INTI
+/APP_RNM/PANDUAN-TIM-PER-MODUL.md   @TIM-INTI
+/APP_RNM/PANDUAN-CABANG-GIT.md      @TIM-INTI
+/APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md @TIM-INTI
+/APP_RNM/README-BACA-DULU.md        @TIM-INTI
 /.github/                           @TIM-INTI
 
 # Satu modul, satu pemilik - 20 folder korpus. Baris berkas bangkitan SESUDAH

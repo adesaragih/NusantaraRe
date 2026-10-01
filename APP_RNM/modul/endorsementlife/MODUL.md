@@ -1,8 +1,11 @@
 # Modul `endorsementlife` — Endorsement Life
 
-Satu folder, satu modul, satu pemilik: kode backend, kode frontend, dan dokumen modul ini tinggal di
-sini (struktur tim satu folder per modul, keputusan work owner 30-09-2026). Commit Anda menyentuh
-folder ini saja; berkas di luarnya milik tim inti (`.github/CODEOWNERS`).
+⚠️ **Kerangka — belum dimigrasi.** Folder ini dibuat struktur tim satu folder per modul (keputusan work
+owner 30-09-2026) supaya pemilik, rentang migrasi, dan slot menu modul ini TETAP sejak awal — satu
+modul, satu folder, satu pemilik. Belum ada kode: tanpa `backend/modul.go` modul ini tidak terdaftar
+(daftar Go bangkitan `inti/backend/daftar`, `import.meta.glob` frontend), dan kelompoknya di sidebar
+tetap "belum dimigrasi" (`M_NAV_MENU.DIMIGRASI = '0'`). Cara memulainya:
+`APP_RNM/PANDUAN-TIM-PER-MODUL.md` (akar repo) bab 4.
 
 ⛔ **Tabel di bawah dibaca penjaga** (`inti/backend/penjaga`): rentang migrasi dan slot menu. Ubah
 nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak boleh berbagi nomor.

@@ -5,7 +5,7 @@ owner 30-09-2026) supaya pemilik, rentang migrasi, dan slot menu modul ini TETAP
 modul, satu folder, satu pemilik. Belum ada kode: tanpa `backend/modul.go` modul ini tidak terdaftar
 (daftar Go bangkitan `inti/backend/daftar`, `import.meta.glob` frontend), dan kelompoknya di sidebar
 tetap "belum dimigrasi" (`M_NAV_MENU.DIMIGRASI = '0'`). Cara memulainya:
-`docs/bersama/PANDUAN-TIM-PER-MODUL.md` (akar repo) bab 4.
+`APP_RNM/PANDUAN-TIM-PER-MODUL.md` (akar repo) bab 4.
 
 ⛔ **Tabel di bawah dibaca penjaga** (`inti/backend/penjaga`): rentang migrasi dan slot menu. Ubah
 nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak boleh berbagi nomor.

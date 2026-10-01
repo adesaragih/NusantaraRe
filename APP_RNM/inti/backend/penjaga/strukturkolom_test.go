@@ -31,8 +31,10 @@ import (
 
 // letakStrukturInti - dokumen STRUKTUR tabel lintas modul milik `inti`
 // (900-949): M_NAV_MENU, 30-09-2026. Sejak struktur tim satu folder per modul
-// di `docs/bersama/` (dokumen lintas modul, milik tim inti; dulu `.scratch/inti/`).
-const letakStrukturInti = "../../../../docs/bersama/STRUKTUR-TABEL-INTI.md"
+// di `inti/docs/` (dokumen lintas modul, milik tim inti; dulu `docs/bersama/`,
+// sebelumnya `.scratch/inti/` - dipindah ke dalam APP_RNM saat repo dipangkas
+// hanya berisi aplikasi, 1 Oktober 2026).
+const letakStrukturInti = "../../docs/STRUKTUR-TABEL-INTI.md"
 
 // letakStruktur menunjuk SELURUH dokumen STRUKTUR yang MENGIKAT:
 // `docs/STRUKTUR-TABEL-*.md` setiap modul TERDAFTAR (punya `backend/modul.go`),

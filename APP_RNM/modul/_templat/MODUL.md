@@ -10,7 +10,7 @@ kerangka (`claimfacin`, `nbtreatyin`, ...); templat ini untuk modul yang belum a
   cadangan (`760-899` untuk migrasi, `990-999` untuk slot menu); dua modul tidak boleh berbagi nomor, dan
   nomor selalu tiga digit (`inti/backend/penjaga/rentang_test.go`).
 - Langkah memulai kode (backend/modul.go, `go generate`, frontend/menu.ts + rute.tsx, slot menu):
-  `docs/bersama/PANDUAN-TIM-PER-MODUL.md` (akar repo) bab 4–5.
+  `APP_RNM/PANDUAN-TIM-PER-MODUL.md` (akar repo) bab 4–5.
 - Slot menu: SATU `UPDATE {skema}.M_NAV_MENU SET DIMIGRASI = '1', TGL_UBAH = SYSDATE WHERE KODE = '<nama>'`
   saat modul mendapat layar pertamanya — nol `INSERT` (menu datar, keputusan work owner 30-09-2026;
   `APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md` bab 6).
@@ -18,7 +18,7 @@ kerangka (`claimfacin`, `nbtreatyin`, ...); templat ini untuk modul yang belum a
   `LINI`, `POSITION`, `STATUS_WORK`, `CREATE_OP`, `CREATE_OP_NAME`, `TGL_CREATE`, `TGL_UPDATE` dengan
   nama dan tipe seperti `T_WORK_CLAIM`. `POSITION` berisi properti posisi Pega modul ini; `TYPE` milik
   header kasus, `CASE_ID` tidak ada (`ID` dipakai). Tabel tipe dan isinya:
-  `docs/bersama/PANDUAN-TIM-PER-MODUL.md` bab 4.3.
+  `APP_RNM/PANDUAN-TIM-PER-MODUL.md` bab 4.3.
 
 ⛔ Folder `_templat` sendiri TIDAK dibaca penjaga dan TIDAK terdaftar: nilainya penanda.
 
@@ -57,4 +57,4 @@ npx vitest run modul/<nama>
 ## Pernyataan untuk penjaga
 
 Tambahkan bab `###` di sini bila modul ini membutuhkannya — jenis dan bentuk tabelnya di
-`docs/bersama/PANDUAN-TIM-PER-MODUL.md` bab 6 (contoh lengkap: `modul/claimlife/MODUL.md`).
+`APP_RNM/PANDUAN-TIM-PER-MODUL.md` bab 6 (contoh lengkap: `modul/claimlife/MODUL.md`).
