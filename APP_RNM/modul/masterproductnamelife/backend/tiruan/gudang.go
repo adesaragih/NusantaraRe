@@ -29,6 +29,8 @@ type Gudang struct {
 
 	// Master - isi tiap pemilih, urutan RD.
 	Master map[models.JenisMaster][]models.NilaiMaster
+	// Plan - isi `PRODUCT_TYPE_LIFE`.
+	Plan []models.JenisPlan
 	// CariTerakhir - kata cari terakhir yang diterima CariMaster.
 	CariTerakhir string
 	// GagalMaster - bila terisi, pembacaan master gagal dengan galat ini.
@@ -242,6 +244,33 @@ func (g *Gudang) AmbilMaster(_ context.Context, jenis models.JenisMaster, id str
 		}
 	}
 	return models.NilaiMaster{}, false, nil
+}
+
+// CariPlan - "Contains" pada CoverName atau Business.
+func (g *Gudang) CariPlan(_ context.Context, kata string) ([]models.JenisPlan, error) {
+	if g.GagalMaster != nil {
+		return nil, g.GagalMaster
+	}
+	hasil := []models.JenisPlan{}
+	for _, p := range g.Plan {
+		if strings.Contains(strings.ToUpper(p.CoverName), kata) || strings.Contains(strings.ToUpper(p.Business), kata) {
+			hasil = append(hasil, p)
+		}
+	}
+	return hasil, nil
+}
+
+// AmbilPlan - satu jenis plan menurut ID.
+func (g *Gudang) AmbilPlan(_ context.Context, id string) (models.JenisPlan, bool, error) {
+	if g.GagalMaster != nil {
+		return models.JenisPlan{}, false, g.GagalMaster
+	}
+	for _, p := range g.Plan {
+		if p.ID == id {
+			return p, true, nil
+		}
+	}
+	return models.JenisPlan{}, false, nil
 }
 
 // GalatMasterUji - galat master tak terbaca berbentuk repository (sebab "ORA-" hanya di log).

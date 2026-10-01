@@ -130,7 +130,7 @@ var sumberMaster = map[models.JenisMaster]sumber{
 
 // KolomMaster - kolom setiap master yang disebut SQL (penjaga kata cadangan).
 func KolomMaster() [][]string {
-	hasil := [][]string{}
+	hasil := [][]string{KolomJenisPlan}
 	for _, s := range sumberMaster {
 		hasil = append(hasil, s.kolom)
 	}
@@ -220,6 +220,65 @@ func (g *Gudang) AmbilMaster(ctx context.Context, jenis models.JenisMaster, id s
 	d, err := g.bacaMaster(ctx, s.objek, q, s.argAmbil(id)...)
 	if err != nil || len(d) == 0 {
 		return models.NilaiMaster{}, false, err
+	}
+	return d[0], true, nil
+}
+
+// KolomJenisPlan - kolom `PRODUCT_TYPE_LIFE` yang dibaca (`BrowseProductTypeLife_RD` b680–b710).
+var KolomJenisPlan = []string{"ID", "COVERNAME", "BUSINESS", "BENEFIT"}
+
+// sqlCariPlan - autocomplete `Plan Name`: dicari pada `.CoverName` dan `.Business`
+// (`pyUseForSearch` true), tanpa saringan RD (b530), maks 500 b664. RD tidak
+// mengurutkan (`pySortOrder` 99999) - di sini `ID ASC` supaya tetap.
+func sqlCariPlan(tabel string) string {
+	return fmt.Sprintf(`SELECT ID, COVERNAME, BUSINESS, BENEFIT FROM %s
+		WHERE UPPER(COVERNAME) LIKE :1 ESCAPE '\' OR UPPER(BUSINESS) LIKE :2 ESCAPE '\'
+		ORDER BY ID ASC FETCH FIRST 500 ROWS ONLY`, tabel)
+}
+
+func sqlAmbilPlan(tabel string) string {
+	return fmt.Sprintf(`SELECT ID, COVERNAME, BUSINESS, BENEFIT FROM %s WHERE ID = :1`, tabel)
+}
+
+func (g *Gudang) bacaPlan(ctx context.Context, q string, args ...any) ([]models.JenisPlan, error) {
+	rows, err := g.db.QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, galatMaster(MasterJenisPlan, err)
+	}
+	defer func() { _ = rows.Close() }()
+	hasil := []models.JenisPlan{}
+	for rows.Next() {
+		var id, cover, biz, benefit sql.NullString
+		if err := rows.Scan(&id, &cover, &biz, &benefit); err != nil {
+			return nil, galatMaster(MasterJenisPlan, err)
+		}
+		hasil = append(hasil, models.JenisPlan{ID: id.String, CoverName: cover.String, Business: biz.String, Benefit: benefit.String})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, galatMaster(MasterJenisPlan, err)
+	}
+	return hasil, nil
+}
+
+// CariPlan - autocomplete `Plan Name` grid `PLAN LIST`.
+func (g *Gudang) CariPlan(ctx context.Context, kata string) ([]models.JenisPlan, error) {
+	q, err := g.siapkan(MasterJenisPlan, sqlCariPlan)
+	if err != nil {
+		return nil, err
+	}
+	pola := PolaCari(kata)
+	return g.bacaPlan(ctx, q, pola, pola)
+}
+
+// AmbilPlan - satu jenis plan menurut ID (verifikasi saat simpan).
+func (g *Gudang) AmbilPlan(ctx context.Context, id string) (models.JenisPlan, bool, error) {
+	q, err := g.siapkan(MasterJenisPlan, sqlAmbilPlan)
+	if err != nil {
+		return models.JenisPlan{}, false, err
+	}
+	d, err := g.bacaPlan(ctx, q, id)
+	if err != nil || len(d) == 0 {
+		return models.JenisPlan{}, false, err
 	}
 	return d[0], true, nil
 }

@@ -234,6 +234,8 @@ func (l *Layanan) SimpanProduk(ctx context.Context, p inti.Pelaku, m models.Prod
 	periksaWajibIsi(&pk, &m)
 	periksaUmum(&pk, &m.Umum)
 	periksaInward(&pk, &m.Inward)
+	periksaPlan(&pk, m.PlanList)
+	periksaUWLimit(&pk, m.UnderwritingLimit)
 	var hasil models.Produk
 	err := l.tx(ctx, func(tx *db.Tx) error {
 		var lama *models.Produk
@@ -250,6 +252,9 @@ func (l *Layanan) SimpanProduk(ctx context.Context, p inti.Pelaku, m models.Prod
 		}
 		if err := l.periksaPilihan(ctx, &pk, append(pilihanUmum(&m, tersimpan.Umum),
 			pilihanInward(&m, tersimpan.Inward)...)); err != nil {
+			return err
+		}
+		if err := l.periksaPilihanPlan(ctx, &pk, m.PlanList, tersimpan.PlanList); err != nil {
 			return err
 		}
 		if err := pk.galat(); err != nil {

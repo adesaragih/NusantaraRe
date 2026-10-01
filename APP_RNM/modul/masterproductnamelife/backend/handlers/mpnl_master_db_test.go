@@ -47,3 +47,17 @@ func TestDBPemilihMasterSaringanRD(t *testing.T) {
 		t.Errorf("wildcard diloloskan: %d %s", kode, badan)
 	}
 }
+
+func TestDBMasterPlanCariCoverNameAtauBusiness(t *testing.T) {
+	u := pasangDB(t)
+	u.exec(t, `INSERT INTO {s}.PRODUCT_TYPE_LIFE VALUES ('P2', 'UJI COVER DUA', 'UJI KREDIT', 'UJI MANFAAT')`)
+	u.exec(t, `INSERT INTO {s}.PRODUCT_TYPE_LIFE VALUES ('P1', 'UJI COVER SATU', 'UJI LAIN', 'UJI MANFAAT')`)
+	kode, badan := u.kirim(t, "GET", pre+"/master-plan?cari=kredit", "")
+	if kode != http.StatusOK || !strings.Contains(badan, `"total":1`) || !strings.Contains(badan, `"id":"P2"`) {
+		t.Errorf("cari Business: %d %s", kode, badan)
+	}
+	kode, badan = u.kirim(t, "GET", pre+"/master-plan", "")
+	if kode != http.StatusOK || strings.Index(badan, `"id":"P1"`) > strings.Index(badan, `"id":"P2"`) {
+		t.Errorf("urut ID: %d %s", kode, badan)
+	}
+}

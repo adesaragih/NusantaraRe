@@ -193,3 +193,4 @@ menjawab 503 bila Oracle tidak dikonfigurasi, galat berbadan `{"galat": "..."}`.
 | `POST /produk` · `PUT /produk/{id}` | `Add` b71816 / `View` → `Edit` b59443 → `Save` b58998 → `SaveProductName_Confirm` → `SaveProductName_Act` (§7); nol rute hapus (korpus tanpa hapus produk) | 3 |
 | (rute yang sama) | sisi inward `SaveProductName_Act` 13–16 — `M_PRODUCTINWARD_LIFE` di transaksi yang sama (P4); uji tiga view (`db`) | 4 |
 | (rute yang sama) | wajib-isi `SaveProductName_Act` 2–5 — `Product Name Empty`, `Ceding Empty`, `Policy Holder Empty`, `SOB Empty` (422, semua sekaligus) | 5 |
+| `GET /master-plan?cari=` · `GET /rate?riRateId=` (503, OQ-MPNL-03) | autocomplete `Plan Name` b33124 · tombol `View Rate` b34067; gerbang `ProteksiPlanListLife` dan `UNDERWRITING LIMIT` di simpan | 6 |

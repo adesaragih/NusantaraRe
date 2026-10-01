@@ -28,3 +28,13 @@ type NilaiMaster struct {
 	ID   string `json:"id"`
 	Nama string `json:"nama"`
 }
+
+// JenisPlan - satu baris autocomplete `Plan Name` (`.Plan` b33124, RD
+// `BrowseProductTypeLife_RD` kelas `PRODUCT_TYPE_LIFE`): `.CoverName` → `.Plan`,
+// `.ID` → `.PlanID`, `.Business` → `.Name`, `.Benefit` → `.Benefit`.
+type JenisPlan struct {
+	ID        string `json:"id"`
+	CoverName string `json:"coverName"`
+	Business  string `json:"business"`
+	Benefit   string `json:"benefit"`
+}

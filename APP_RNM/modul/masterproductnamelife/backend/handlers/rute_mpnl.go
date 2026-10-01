@@ -6,6 +6,8 @@
 //	GET  /api/master-product-name-life/produk        grid `InboxProductName` (halaman awal)
 //	GET  /api/master-product-name-life/produk/{id}   tombol `View` b74753
 //	GET  /api/master-product-name-life/master/{jenis}?cari=  tujuh pemilih master (`Choose*`, PARITAS §4)
+//	GET  /api/master-product-name-life/master-plan?cari=     autocomplete `Plan Name` (PLAN LIST)
+//	GET  /api/master-product-name-life/rate?riRateId=        tombol `View Rate` - 503 (OQ-MPNL-03)
 package handlers
 
 import (
@@ -71,6 +73,15 @@ func daftarkanBaca(pasang func(string, rute)) {
 	// Tujuh pemilih master (paket 2): `Choose*` → section → grid RD; juga autocomplete medan form.
 	pasang("GET "+Prefix+"/master/{jenis}", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
 		d, err := l.CariMaster(r.Context(), p, models.JenisMaster(r.PathValue("jenis")), r.URL.Query().Get("cari"))
+		tulisDaftar(w, d, err)
+	})
+	// Grid `PLAN LIST` (paket 6): autocomplete `Plan Name` dan tombol `View Rate`.
+	pasang("GET "+Prefix+"/master-plan", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		d, err := l.CariPlan(r.Context(), p, r.URL.Query().Get("cari"))
+		tulisDaftar(w, d, err)
+	})
+	pasang("GET "+Prefix+"/rate", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		d, err := l.DaftarRate(r.Context(), p, r.URL.Query().Get("riRateId"))
 		tulisDaftar(w, d, err)
 	})
 }
