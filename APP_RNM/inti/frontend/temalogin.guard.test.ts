@@ -145,8 +145,7 @@ describe('sidebar dan topbar bergaya soft UI', () => {
 })
 
 describe('Kelola User bergaya soft UI', () => {
-  // Potong dari pembuka komentar kepala blok, supaya komentar itu ikut terbuang utuh.
-  const tema = aturan(CSS.slice(CSS.lastIndexOf('/*', CSS.indexOf('KELOLA USER BERGAYA SOFT UI'))))
+  const tema = blok('KELOLA USER BERGAYA SOFT UI', 'BERANDA BERGAYA SOFT UI')
 
   it('teks tetap terbaca: kontras token teks terhadap latar, kartu, dan kepala tabel minimal 4,5:1, terang dan gelap', () => {
     const terang = token(tema, '.kelola-user')
@@ -207,6 +206,42 @@ describe('Kelola User bergaya soft UI', () => {
       'backdrop-filter',
       'transform',
     ])
+  })
+})
+
+describe('Beranda bergaya soft UI', () => {
+  // Blok Beranda adalah blok terakhir styles.css.
+  const tema = aturan(CSS.slice(CSS.lastIndexOf('/*', CSS.indexOf('BERANDA BERGAYA SOFT UI'))))
+
+  it('blok ada dan setiap pemilihnya di bawah kelas akar .beranda', () => {
+    expect(tema.length).toBeGreaterThan(15)
+    const lepas = tema
+      .flatMap((a) => a.pemilih)
+      .filter((p) => {
+        const tanpaTema = p.replace(/^:root\[data-theme="dark"\]\s+/, '')
+        return tanpaTema !== '.beranda' && !tanpaTema.startsWith('.beranda ')
+      })
+    expect(lepas).toEqual([])
+  })
+
+  it('blok tidak memakai properti yang mengurung popup position: fixed', () => {
+    expect(tema.flatMap((a) => penampungFixed(a.isi).map((x) => `${a.pemilih.join(', ')}: ${x}`))).toEqual([])
+  })
+
+  it('teks terbaca: kontras token teks Beranda minimal 4,5:1, terang dan gelap', () => {
+    const terang = token(tema, '.beranda')
+    const gelap = { ...terang, ...token(tema, ':root[data-theme="dark"] .beranda') }
+    const pasangan = [
+      ['--br-teks', '--br-latar'],
+      ['--br-teks', '--br-kartu'],
+      ['--br-teks', '--br-baris-hover'],
+      ['--br-teks-redup', '--br-latar'],
+      ['--br-teks-redup', '--br-kartu'],
+      ['--br-teks-redup', '--br-kepala-tabel'],
+      ['--br-aksen-teks', '--br-kartu'],
+      ['--br-aksen-teks', '--br-ikon'],
+    ] as const
+    expect([...kontrasKurang(terang, pasangan).map((x) => `terang ${x}`), ...kontrasKurang(gelap, pasangan).map((x) => `gelap ${x}`)]).toEqual([])
   })
 })
 
