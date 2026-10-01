@@ -147,49 +147,72 @@
 
 /* ================================================================ soft UI
    Permintaan work owner 02-10-2026: "tema pada kelola user diterapkan pada beranda, treaty contract
-   out, master contract retro life, hanya pada 3 modul ini". Menggantikan blok "tema login". Gaya soft
-   UI Kelola User: latar pucat, panel sebagai kartu timbul berbayang lembut dua arah, panel di dalam
-   panel cekung, tabel rata di dalam kartu, isian cekung bertepi tipis, tombol kapsul (utama tetap
-   merah `Login`), popup bersudut lembut. Kontras: token teks minimal 4,5:1 terhadap latarnya, dijaga
-   gaya.test. TANPA backdrop-filter, filter, atau transform: properti itu mengurung popup
-   `position: fixed` (bug popup tidak di tengah 02-10-2026). Token `--mt-*` hanya di kelas akar .tco;
-   tema gelap ditimpa di `:root[data-theme="dark"] .tco`, tetap di bawah kelas akar. `--text-3` inti
-   DITIMPA di akar ini saja supaya label dan keterangan abu tetap terbaca di atas latar pucat. */
+   out, master contract retro life, hanya pada 3 modul ini", lalu "aku kurang suka coloring nya,
+   perbaiki buat lebih bagus dan menarik dan elegan". PALET ELEGAN: akar sebagai lembar putih bertepi
+   tipis dengan bayangan lembut berlapis (bukan bayangan dua arah di atas latar abu), panel sebagai
+   kartu putih, panel di dalam panel bertinta ungu lembut, tabel rata di dalam kartu, isian putih
+   bertepi tipis, tombol kapsul (utama merah bergradasi halus), aksen ungu dalam #6d4fd8. Kontras: token
+   teks minimal 4,5:1 terhadap latarnya, dijaga gaya.test. TANPA backdrop-filter, filter, atau
+   transform: properti itu mengurung popup `position: fixed` (bug popup tidak di tengah 02-10-2026).
+   Token `--mt-*` hanya di kelas akar .tco; tema gelap ditimpa di `:root[data-theme="dark"] .tco`.
+   `--text-3` inti DITIMPA di akar ini saja supaya label dan keterangan abu tetap terbaca. */
 .tco {
-  --mt-latar: #eceef6;
-  --mt-kartu: #f7f8fc;
-  --mt-teks: #1f2333;
-  --mt-teks-redup: #535a6e;
-  --mt-kepala-tabel: #eef0f8;
-  --mt-baris-hover: #f1edfb;
-  --mt-tepi: #dcdfeb;
-  --mt-terang: rgba(255, 255, 255, 0.95);
-  --mt-redup: rgba(146, 154, 188, 0.4);
-  --mt-timbul: -6px -6px 14px var(--mt-terang), 8px 8px 16px var(--mt-redup);
-  --mt-timbul-kecil: -3px -3px 7px var(--mt-terang), 4px 4px 10px var(--mt-redup);
-  --mt-cekung: inset 2px 2px 5px var(--mt-redup), inset -2px -2px 5px var(--mt-terang);
-  --mt-aksen: #8b5cf6;
-  --mt-aksen-lembut: rgba(139, 92, 246, 0.1);
+  --mt-latar: #ffffff;
+  --mt-latar-tepi: #e9ebf2;
+  --mt-kartu: #ffffff;
+  --mt-lembut: #f9f8fe;
+  --mt-lembut-tepi: #ece8fb;
+  --mt-teks: #101828;
+  --mt-teks-redup: #5b6478;
+  --mt-aksen: #6d4fd8;
+  --mt-aksen-teks: #5a3fc4;
+  --mt-aksen-lembut: #f4f1ff;
+  --mt-aksen-garis: #cfc4f7;
+  --mt-kepala-tabel: #f8f9fc;
+  --mt-baris-hover: #faf8ff;
+  --mt-garis: #eef0f5;
+  --mt-tepi: #e4e7ee;
   --mt-tombol: #d63a42;
+  --mt-tombol-ujung: #bf2f37;
   --mt-tombol-hover: #c2333b;
+  --mt-tombol-hover-ujung: #a9282f;
+  --mt-bayang-lembar: 0 1px 2px rgba(16, 24, 40, 0.04), 0 18px 40px -28px rgba(30, 27, 75, 0.22);
+  --mt-timbul: 0 1px 2px rgba(16, 24, 40, 0.05), 0 10px 28px -20px rgba(30, 27, 75, 0.2);
+  --mt-timbul-kecil: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --mt-cekung: inset 0 1px 2px rgba(16, 24, 40, 0.05);
+  --mt-cincin: 0 0 0 4px rgba(109, 79, 216, 0.14);
+  --mt-bayang-tombol: 0 1px 2px rgba(16, 24, 40, 0.08), 0 8px 16px -10px rgba(214, 58, 66, 0.7);
+  --mt-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.35);
   --text-3: var(--mt-teks-redup);
   color: var(--mt-teks);
   padding: 24px;
-  border-radius: 28px;
+  border: 1px solid var(--mt-latar-tepi);
+  border-radius: 24px;
   background: var(--mt-latar);
+  box-shadow: var(--mt-bayang-lembar);
 }
 :root[data-theme="dark"] .tco {
-  --mt-latar: #1a1d29;
-  --mt-kartu: #222636;
+  --mt-latar: #151a26;
+  --mt-latar-tepi: #252c3b;
+  --mt-kartu: #192030;
+  --mt-lembut: #1c1d33;
+  --mt-lembut-tepi: #2f2b4d;
   --mt-teks: #eef0f6;
-  --mt-teks-redup: #b3b8c9;
-  --mt-kepala-tabel: #272b3c;
-  --mt-baris-hover: #2b2741;
-  --mt-tepi: #323849;
-  --mt-terang: rgba(255, 255, 255, 0.04);
-  --mt-redup: rgba(0, 0, 0, 0.5);
-  --mt-aksen: #b48af2;
-  --mt-aksen-lembut: rgba(139, 92, 246, 0.16);
+  --mt-teks-redup: #a9b1c3;
+  --mt-aksen: #a58cff;
+  --mt-aksen-teks: #c9b8ff;
+  --mt-aksen-lembut: #241f3d;
+  --mt-aksen-garis: #4a3f80;
+  --mt-kepala-tabel: #1c2333;
+  --mt-baris-hover: #211f37;
+  --mt-garis: #252c3b;
+  --mt-tepi: #2f3749;
+  --mt-bayang-lembar: 0 1px 2px rgba(0, 0, 0, 0.4), 0 18px 40px -28px rgba(0, 0, 0, 0.8);
+  --mt-timbul: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 28px -20px rgba(0, 0, 0, 0.7);
+  --mt-timbul-kecil: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --mt-cekung: inset 0 1px 2px rgba(0, 0, 0, 0.35);
+  --mt-cincin: 0 0 0 4px rgba(165, 140, 255, 0.18);
+  --mt-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.7);
 }
 
 .tco .inbox__judul,
@@ -198,6 +221,7 @@
   color: var(--mt-teks);
   font-family: "Poppins", var(--font);
   font-weight: 600;
+  letter-spacing: -0.01em;
 }
 .tco .muted {
   color: var(--mt-teks-redup);
@@ -207,47 +231,36 @@
   outline-offset: 2px;
 }
 
-/* Panel: kartu timbul. Panel di dalam panel: cekung di atas latar, jadi jenjangnya terbaca. */
-.tco .panel {
-  background: var(--mt-kartu);
-  border: 1px solid var(--mt-tepi);
-  border-radius: 20px;
-  box-shadow: var(--mt-timbul);
-}
-.tco .panel .panel {
-  background: var(--mt-latar);
-  border-radius: 18px;
-  box-shadow: var(--mt-cekung);
-}
-
-/* Isian: cekung lembut, tepi tipis, fokus ungu. */
+/* Isian: putih bertepi tipis, fokus ungu bercincin lembut. */
 .tco .field__input {
   background: var(--mt-kartu);
   border: 1px solid var(--mt-tepi);
-  border-radius: 14px;
+  border-radius: 12px;
   box-shadow: var(--mt-cekung);
   color: var(--mt-teks);
 }
+.tco .field__input:hover:not(:disabled) {
+  border-color: var(--mt-aksen-garis);
+}
 .tco .field__input:focus {
   border-color: var(--mt-aksen);
-  box-shadow: var(--mt-cekung), 0 0 0 4px rgba(139, 92, 246, 0.18);
+  box-shadow: var(--mt-cincin);
   outline: none;
 }
 
-/* Tombol kapsul. Utama: merah penuh. Sekunder: kartu timbul bertepi tipis. Ditekan: cekung.
-   Nonaktif: rata tanpa bayangan. */
+/* Tombol kapsul. Utama: merah bergradasi halus. Sekunder: putih bertepi tipis; disorot: ungu lembut. */
 .tco .btn {
   border-radius: 999px;
 }
 .tco .btn--primary {
-  background: var(--mt-tombol);
-  border-color: var(--mt-tombol);
+  background: linear-gradient(180deg, var(--mt-tombol), var(--mt-tombol-ujung));
+  border-color: var(--mt-tombol-ujung);
   color: #ffffff;
-  box-shadow: var(--mt-timbul-kecil);
+  box-shadow: var(--mt-bayang-tombol);
 }
 .tco .btn--primary:hover:not(:disabled) {
-  background: var(--mt-tombol-hover);
-  border-color: var(--mt-tombol-hover);
+  background: linear-gradient(180deg, var(--mt-tombol-hover), var(--mt-tombol-hover-ujung));
+  border-color: var(--mt-tombol-hover-ujung);
 }
 .tco .btn--ghost {
   background: var(--mt-kartu);
@@ -257,7 +270,8 @@
 }
 .tco .btn--ghost:hover:not(:disabled) {
   background: var(--mt-aksen-lembut);
-  border-color: var(--mt-aksen);
+  border-color: var(--mt-aksen-garis);
+  color: var(--mt-aksen-teks);
 }
 .tco .btn:active:not(:disabled) {
   box-shadow: var(--mt-cekung);
@@ -266,21 +280,51 @@
   box-shadow: none;
 }
 
-/* Tabel: rata di dalam kartu panel; kepala dan sorot baris bernuansa lavender. Kolom aksi yang
-   menempel ikut warna kartu supaya tidak tampak sebagai pita putih. */
-.tco .tco-tabel {
-  border-color: var(--mt-tepi);
+/* Popup: kartu putih bersudut lembut dengan bayangan dalam. */
+.tco .modal {
+  background: var(--mt-kartu);
+  border: 1px solid var(--mt-latar-tepi);
+  border-radius: 22px;
+  box-shadow: var(--mt-bayang-popup);
+}
+.tco .modal__head,
+.tco .modal__actions {
+  border-color: var(--mt-garis);
+}
+.tco .alert {
+  border-radius: 12px;
+}
+
+/* Panel: kartu putih bertepi tipis. Panel di dalam panel: bertinta ungu lembut, jadi jenjangnya
+   terbaca tanpa bayangan bertumpuk. */
+.tco .panel {
+  background: var(--mt-kartu);
+  border: 1px solid var(--mt-latar-tepi);
+  border-radius: 18px;
+  box-shadow: var(--mt-timbul);
+}
+.tco .panel .panel {
+  background: var(--mt-lembut);
+  border-color: var(--mt-lembut-tepi);
   border-radius: 16px;
+  box-shadow: none;
+}
+
+/* Tabel: rata di dalam kartu; kepala abu sangat muda, garis baris tipis, sorot baris ungu samar. Kolom
+   aksi yang menempel ikut warna kartu supaya tidak tampak sebagai pita. */
+.tco .tco-tabel {
+  border-color: var(--mt-latar-tepi);
+  border-radius: 14px;
   background: var(--mt-kartu);
 }
 .tco .tco-tabel > .inbox__tabel thead th,
 .tco .tco-tabel th.table__actions {
   background: var(--mt-kepala-tabel);
   color: var(--mt-teks-redup);
-  border-bottom-color: var(--mt-tepi);
+  border-bottom-color: var(--mt-garis);
 }
 .tco .tco-tabel > .inbox__tabel td {
-  border-bottom-color: var(--mt-tepi);
+  border-bottom-color: var(--mt-garis);
 }
 .tco .tco-tabel td.table__actions {
   background: var(--mt-kartu);
@@ -290,20 +334,6 @@
   background: var(--mt-baris-hover);
 }
 
-/* Popup: kartu timbul bersudut lembut. */
-.tco .modal {
-  background: var(--mt-kartu);
-  border-radius: 24px;
-  box-shadow: 0 30px 60px -24px rgba(40, 30, 90, 0.4);
-}
-.tco .modal__head,
-.tco .modal__actions {
-  border-color: var(--mt-tepi);
-}
-.tco .alert {
-  border-radius: 14px;
-}
-
 @media (max-width: 640px) {
   .tco {
     padding: 14px;
@@ -311,6 +341,5 @@
   }
   .tco .panel {
     border-radius: 16px;
-    box-shadow: var(--mt-timbul-kecil);
   }
 }
