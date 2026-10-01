@@ -67,4 +67,45 @@ yang dulu dibuka butir pertama kini halaman awal modulnya: `claimlife` → `inbo
 `komiteclaimlife` → `komite`, `treatycontractout` → `tco-tahun`.
 
 **Di luar lingkup** *(dicatat, tidak dibangun)*: tabel akses per akun *(mis. `M_NAV_MENU_AKSES`: akun atau peran →
-`MENU_ID`)* dan login. Penyambungannya nanti di `SaringMenuUntukPelaku`.
+`MENU_ID`)*. Penyambungannya nanti di `SaringMenuUntukPelaku`. Login: `M_LOGIN_GO` di bawah.
+
+## M_LOGIN_GO
+
+Akun login, **satu baris per orang**. Keputusan work owner 01-10-2026 *(“nama table nya M_LOGIN_GO … kolom untuk
+menampung data dari M_UNIT, M_DIVISION, M_ORGANIZATION”; “simpan aja code nya, jangan ID”)*. Migrasi
+`902_m_login_go.sql` *(+ `_down`)*. Sandi **tidak pernah** disimpan — hanya hash bcrypt.
+
+| Kolom | Tipe | Null | Kunci | Dipakai | Sumber |
+| --- | --- | --- | --- | --- | --- |
+| `LOGIN_ID` | teks | tidak | PK | layar login, `CREATE_OP` | keputusan work owner 01-10-2026 — akun yang diketik |
+| `NAME` | teks | tidak | | `CREATE_OP_NAME`, Shell | nama tampilan |
+| `PASSWORD_HASH` | teks | tidak | | login | hash bcrypt (cost 12); sandi asli tidak disimpan |
+| `ORGANIZATION_CODE` | teks | ya | | profil | `M_ORGANIZATION.CODE` — tanpa FK, diperiksa aplikasi saat menyimpan |
+| `DIVISION_CODE` | teks | ya | | profil | `M_DIVISION.CODE` — harus milik organisasinya |
+| `UNIT_CODE` | teks | ya | | profil | `M_UNIT.CODE` — harus milik divisinya |
+| `IS_ACTIVE` | teks | tidak | CHECK | login | `'1'` aktif *(bawaan)*, `'0'` nonaktif |
+| `FAILED_COUNT` | bilangan bulat | tidak | | penguncian | sandi salah beruntun; nol sesudah login berhasil |
+| `LOCKED_UNTIL` | DATE | ya | | penguncian | 15 menit sesudah salah ke-5 |
+| `MUST_CHANGE_PASSWORD` | teks | tidak | CHECK | login | `'1'` *(bawaan)* — akun baru dan sandi yang direset wajib diganti |
+| `SESSION_VERSION` | bilangan bulat | tidak | | sesi | naik saat logout, ganti sandi, nonaktif — mencabut semua cookie lama |
+| `LAST_LOGIN` | DATE | ya | | jejak | login berhasil terakhir |
+| `TGL_CREATE` | DATE | tidak | | jejak | `DEFAULT SYSDATE` |
+| `TGL_UPDATE` | DATE | ya | | jejak | |
+
+**Index:** PK.
+
+**Relasi:** tidak ada FK ke `M_ORGANIZATION`, `M_DIVISION`, `M_UNIT` *(keputusan work owner — ketiga master tidak
+dibuat migrasi aplikasi)*. Anaknya `M_LOGIN_GO_WORKBASKET`.
+
+## M_LOGIN_GO_WORKBASKET
+
+Workbasket setiap akun — **satu orang bisa beberapa workbasket**. Workbasket adalah **peran**: `M_WORKBASKET.WORKBASKET_ID`
+berisi nama peran yang dipakai aplikasi *(`ReasLifeAdmin`, `ReasLifeSPV`, …)*, jadi tabel ini sekaligus tabel peran.
+
+| Kolom | Tipe | Null | Kunci | Dipakai | Sumber |
+| --- | --- | --- | --- | --- | --- |
+| `LOGIN_ID` | teks | tidak | PK, FK | `Pelaku.Peran` | → `M_LOGIN_GO.LOGIN_ID`, tanpa `ON DELETE` |
+| `WORKBASKET_ID` | teks | tidak | PK | `Pelaku.Peran` | `M_WORKBASKET.WORKBASKET_ID` — tanpa FK; hanya yang `IS_ACTIVE = 1` di master berlaku |
+| `TGL_CREATE` | DATE | tidak | | jejak | `DEFAULT SYSDATE` |
+
+**Index:** PK *(`LOGIN_ID`, `WORKBASKET_ID`)*; `IX_M_LOGIN_GO_WB_WORKBASKET` *(`WORKBASKET_ID`)*.
