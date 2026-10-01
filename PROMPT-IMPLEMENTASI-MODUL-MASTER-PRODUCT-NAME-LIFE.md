@@ -22,6 +22,7 @@
 | Folder repo | **`D:\XML\RNM_BRD\OUTPUT_HASIL_RNM`** — **bukan** klon lain seperti `D:\RNM SOURCE TREE` |
 | Cabang | **`dev`**. Commit dengan jalur eksplisit `git commit -o -- <jalur>`, pesan berawalan `master-product-name-life:`. **Nol `git push`, nol `git pull`, nol `git pull --rebase`** |
 | Folder boleh disunting | **`APP_RNM/modul/masterproductnamelife/**`** + `inti/backend/daftar/modul_masterproductnamelife_gen.go` hasil `go generate` |
+| Pengecualian *(ralat 01-10-2026)* | penjaga Claim Life `TestMasterViewTidakDisentuh` (`modul/claimlife/backend/repository/migrasibatas_test.go`) memindai seluruh `APP_RNM` dan melarang kode menyebut `M_PRODUCT_LIFE`/`PRODUCTINWARD_LIFE` — modul ini, sebagai **penulis**, pasti merah. Persempit pindaiannya ke `modul/claimlife/` saja, aturannya tidak berubah; satu commit sebelum paket 1. Rinciannya di `PROMPT-IMPLEMENTASI-TIGA-MODUL-LIFE-GELOMBANG-2.md` §2 |
 | Dilarang | `inti/`, modul lain *(termasuk `mastercontractretrolife` dan `claimlife`)*, `package.json`, `package-lock.json`, `go.mod`, konfigurasi root. Pola modul lain boleh ditiru, tidak boleh diimpor |
 | Nomor | rentang migrasi **140–179**, slot menu **960–961** |
 | Oracle | skema `POOLDATA`. `-migrate` oleh **work owner**. Uji `db` tanpa `ORACLE_DSN` = SKIP; **POOLDATA bukan target uji `db`**. Nol penulisan ke DEV |
