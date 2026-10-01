@@ -18,7 +18,9 @@ func TestSQLBacaMengikutiRD(t *testing.T) {
 		wajib []string
 	}{
 		{"grid BrowseProduct_Life b1094", sqlDaftarProduk("S.M_PRODUCT_LIFE"),
-			[]string{"SELECT ID, JSONDATA FROM S.M_PRODUCT_LIFE", "ORDER BY ID ASC", "FETCH FIRST 500 ROWS ONLY"}},
+			[]string{"SELECT ID, JSON_VALUE(JSONDATA, '$.CEDING'), JSON_VALUE(JSONDATA, '$.TREATYNUMBER'), " +
+				"JSON_VALUE(JSONDATA, '$.INWARDNAME'), JSON_VALUE(JSONDATA, '$.CREATEOP'), JSON_VALUE(JSONDATA, '$.UPDATEOP') " +
+				"FROM S.M_PRODUCT_LIFE", "ORDER BY ID ASC", "FETCH FIRST 500 ROWS ONLY"}},
 		{"umum BrowseUnderwritingList b61", sqlAmbilProduk("S.M_PRODUCT_LIFE", false),
 			[]string{"FROM S.M_PRODUCT_LIFE WHERE ID = :1"}},
 		{"inward BrowseProductInward b834 + kunci Claim Life", sqlAmbilInward("S.M_PRODUCTINWARD_LIFE", false),

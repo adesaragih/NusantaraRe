@@ -9,8 +9,9 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { Gagal, Kosong, Memuat, Modal } from '../../../../inti/frontend/components/ui/dasar'
+import { Gagal, Halaman, Kosong, Memuat, Modal } from '../../../../inti/frontend/components/ui/dasar'
 import { cariMaster, type JenisMaster, type NilaiMaster } from '../api'
+import { UKURAN_HALAMAN_MPNL, potongHalaman } from '../bentuk'
 import { LAIN_MPNL, PEMILIH_MPNL } from '../labels'
 
 export default function PemilihMaster({
@@ -30,11 +31,14 @@ export default function PemilihMaster({
   const [kata, setKata] = useState('')
   const [daftar, setDaftar] = useState<NilaiMaster[] | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
+  // Grid RD berhalaman (`pyGridPaginator`): hasil RD bisa puluhan ribu baris (`CLIENT`) - yang dirender satu halaman.
+  const [halaman, setHalaman] = useState(1)
 
   const muat = useCallback(
     async (cari: string) => {
       setDaftar(null)
       setGalat(null)
+      setHalaman(1)
       try {
         setDaftar((await cariMaster(jenis, cari)).daftar)
       } catch (e) {
@@ -78,6 +82,9 @@ export default function PemilihMaster({
       {daftar === null && galat === null && <Memuat />}
       {galat !== null && <Gagal galat={galat} />}
       {daftar !== null && daftar.length === 0 && <Kosong pesan={LAIN_MPNL.kosong} />}
+      {daftar !== null && daftar.length > UKURAN_HALAMAN_MPNL && (
+        <Halaman halaman={halaman} ukuran={UKURAN_HALAMAN_MPNL} total={daftar.length} onPindah={setHalaman} />
+      )}
       {daftar !== null && daftar.length > 0 && (
         <table className="inbox__tabel">
           <thead>
@@ -88,7 +95,7 @@ export default function PemilihMaster({
             </tr>
           </thead>
           <tbody>
-            {daftar.map((v) => (
+            {potongHalaman(daftar, halaman).map((v) => (
               <tr key={v.id} className="inbox__baris">
                 <td>{v.id}</td>
                 <td>{v.nama}</td>

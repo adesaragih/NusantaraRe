@@ -102,6 +102,11 @@ func sqlPungutUnggah(tabel string) string {
 		ORDER BY DIBUAT ASC FOR UPDATE SKIP LOCKED`, tabel)
 }
 
+// sqlAdaUnggahAntre - efek antre lampiran ini ada? (tanpa mengunci, tanpa menaikkan percobaan).
+func sqlAdaUnggahAntre(tabel string) string {
+	return fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE MODUL = :1 AND RUJUKAN = :2 AND STATUS = :3`, tabel)
+}
+
 func sqlStatusUnggah(tabel string) string {
 	return fmt.Sprintf(`SELECT STATUS, GALAT_TERAKHIR FROM %s
 		WHERE MODUL = :1 AND RUJUKAN = :2 ORDER BY DIBUAT DESC FETCH FIRST 1 ROWS ONLY`, tabel)
@@ -290,6 +295,19 @@ func (g *Gudang) AntreUnggah(ctx context.Context, tx *db.Tx, lampiranID, muatan 
 	_, err := outbox.NewPenyimpan(g.db).AntreEfek(ctx, tx, outbox.LiniLife, ModulOutbox, JenisEfekUnggah, lampiranID,
 		muatan, saat)
 	return err
+}
+
+// AdaUnggahAntre - lampiran punya efek berstatus antre (kirim ulang memakainya, bukan menambah).
+func (g *Gudang) AdaUnggahAntre(ctx context.Context, tx *db.Tx, lampiranID string) (bool, error) {
+	q, err := g.siapkan(TabelOutbox, sqlAdaUnggahAntre)
+	if err != nil {
+		return false, err
+	}
+	var n int
+	if err := g.kueri(tx).QueryRowContext(ctx, q, ModulOutbox, lampiranID, outbox.StatusEfekAntre).Scan(&n); err != nil {
+		return false, fmt.Errorf("repository: reading attachment %s send effects: %w", lampiranID, err)
+	}
+	return n > 0, nil
 }
 
 // PungutUnggah - efek antre milik SATU lampiran (dikunci SKIP LOCKED), ditandai jalan.

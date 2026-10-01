@@ -104,3 +104,12 @@ make check
 | (tidak disebut) autocomplete `Plan Name` b33124 | `GET /api/master-product-name-life/master-plan?cari=` — RD `BrowseProductTypeLife_RD` (kelas `PRODUCT_TYPE_LIFE`, OQ-MPNL-04): `Plan ← CoverName`, `PlanID ← ID`, `Name ← Business`, `Benefit ← Benefit`; plan yang berubah diverifikasi dan namanya dari master |
 | *"Batas bawah yang **lebih besar** dari batas atas … **ditolak**"* | ditegakkan per baris `UNDERWRITING LIMIT`: `Min Insured` ≤ `Max Insured`, `Min Age` ≤ `Max Age` (R17) |
 | (tidak disebut) ikon salin b45290 `CopyUnderWritingLimit`, tombol `Add` b43598 / `Delete` b45633 | aksi baris di layar (paket 10): salin = baris baru berisi keenam medan baris itu (`CopyUnderWritingLimit` 1 b224) |
+
+---
+
+## Ralat bertanggal 01-10-2026 — sesudah `/code-review`
+
+| Kalimat lama | Ralat |
+| --- | --- |
+| gerbang `ProteksiPlanListLife` menolak simpan (paket 6) | pemicu XML adalah onChange `.Plan` b33163 dan `Delete` baris (`PLAN LIST` b35202, `FINANCIAL UNDERWRITING` b39975, `UNDERWRITING LIMIT` b45633), **bukan** `SaveProductName_Act`. Server menjalankannya bila `PLAN LIST` berubah dari yang tersimpan atau baris salah satu grid lain berkurang — produk lama yang daftar plannya tidak disentuh tetap dapat disimpan. Duplikat diperiksa atas nama plan **sesudah** diseragamkan master `PRODUCT_TYPE_LIFE` |
+

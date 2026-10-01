@@ -15,6 +15,8 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 
 	inti "nusantarare/inti/backend"
@@ -23,13 +25,23 @@ import (
 	"nusantarare/modul/masterproductnamelife/backend/services"
 )
 
-// bacaBadan mengurai badan JSON; gagal = 400 dan true.
+// batasBadan - badan JSON terbesar yang dibaca (4 MiB): satu produk utuh dengan ketujuh
+// daftarnya; riwayat komentar milik server dan tidak perlu dikirim.
+const batasBadan = 4 << 20
+
+// bacaBadan mengurai badan JSON; terlalu besar = 413, rusak = 400; true = sudah dijawab.
 func bacaBadan(w http.ResponseWriter, r *http.Request, ke any) bool {
-	if err := json.NewDecoder(r.Body).Decode(ke); err != nil {
+	err := json.NewDecoder(http.MaxBytesReader(w, r.Body, batasBadan)).Decode(ke)
+	var besar *http.MaxBytesError
+	switch {
+	case err == nil:
+		return false
+	case errors.As(err, &besar):
+		galat.Tulis(w, http.StatusRequestEntityTooLarge, fmt.Sprintf("request body is larger than %d MiB", batasBadan>>20))
+	default:
 		galat.Tulis(w, http.StatusBadRequest, "request body is not valid JSON")
-		return true
 	}
-	return false
+	return true
 }
 
 // idJalur menyamakan id badan dengan id jalur (PUT); beda = 400 dan true.

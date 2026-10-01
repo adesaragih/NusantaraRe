@@ -243,7 +243,6 @@ func (l *Layanan) SimpanProduk(ctx context.Context, p inti.Pelaku, m models.Prod
 	periksaWajibIsi(&pk, &m)
 	periksaUmum(&pk, &m.Umum)
 	periksaInward(&pk, &m.Inward)
-	periksaPlan(&pk, m.PlanList)
 	periksaUWLimit(&pk, m.UnderwritingLimit)
 	periksaFinUW(&pk, m.FinancialUnderwriting)
 	var hasil models.Produk
@@ -273,6 +272,12 @@ func (l *Layanan) SimpanProduk(ctx context.Context, p inti.Pelaku, m models.Prod
 		if err := l.periksaPilihanPlan(ctx, &pk, m.PlanList, tersimpan.PlanList); err != nil {
 			return err
 		}
+		// `ProteksiPlanListLife` sesudah nama plan diseragamkan dengan master (duplikat atas nilai akhir),
+		// dan hanya bila XML akan menjalankannya (`gerbangPlan`).
+		if gerbangPlan(&m, tersimpan) {
+			periksaPlan(&pk, m.PlanList)
+		}
+		periksaAsli(&pk, &m, tersimpan)
 		if err := pk.galat(); err != nil {
 			return err
 		}

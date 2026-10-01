@@ -130,6 +130,16 @@ func (g *Gudang) PungutUnggah(_ context.Context, _ *db.Tx, lampiranID string, _ 
 	return "", 0, false, nil
 }
 
+// AdaUnggahAntre - efek antre lampiran ini ada (tanpa menandai jalan).
+func (g *Gudang) AdaUnggahAntre(_ context.Context, _ *db.Tx, lampiranID string) (bool, error) {
+	for _, e := range g.Outbox {
+		if e.Rujukan == lampiranID && e.Status == outbox.StatusEfekAntre {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 // TuntaskanUnggah - hasil satu percobaan.
 func (g *Gudang) TuntaskanUnggah(_ context.Context, _ *db.Tx, efekID, status string, jadwal time.Time, galat string,
 	_ time.Time) error {

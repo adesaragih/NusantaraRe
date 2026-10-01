@@ -37,9 +37,14 @@ var (
 	ErrIdentitasGanda = errors.New("repository: the same ID is used by more than one row")
 )
 
+// sqlDaftarProduk - kelima kolom grid dibaca di Oracle (`JSON_VALUE`, seperti view
+// `PRODUCT_LIFE`), bukan CLOB utuh: `CommentList` bertambah setiap simpan.
+// `JSONDATA` dijaga constraint `IS JSON`, jadi `NULL ON ERROR` bawaan tidak menyembunyikan apa pun.
 func sqlDaftarProduk(tabel string) string {
 	// Batas baris = `pyMaxRecords` 500 `BrowseProduct_Life` b1078.
-	return fmt.Sprintf(`SELECT ID, JSONDATA FROM %s ORDER BY ID ASC FETCH FIRST %d ROWS ONLY`, tabel, MaksBarisGrid)
+	return fmt.Sprintf(`SELECT ID, JSON_VALUE(JSONDATA, '$.CEDING'), JSON_VALUE(JSONDATA, '$.TREATYNUMBER'),
+		JSON_VALUE(JSONDATA, '$.INWARDNAME'), JSON_VALUE(JSONDATA, '$.CREATEOP'), JSON_VALUE(JSONDATA, '$.UPDATEOP')
+		FROM %s ORDER BY ID ASC FETCH FIRST %d ROWS ONLY`, tabel, MaksBarisGrid)
 }
 
 func sqlAmbilProduk(tabel string, kunci bool) string {
@@ -74,15 +79,12 @@ func (g *Gudang) DaftarProduk(ctx context.Context) ([]models.RingkasanProduk, er
 	defer func() { _ = rows.Close() }()
 	hasil := []models.RingkasanProduk{}
 	for rows.Next() {
-		var id, isi sql.NullString
-		if err := rows.Scan(&id, &isi); err != nil {
+		var id, ceding, nomor, nama, buat, ubah sql.NullString
+		if err := rows.Scan(&id, &ceding, &nomor, &nama, &buat, &ubah); err != nil {
 			return nil, fmt.Errorf("repository: reading %s: %w", TabelProduk, err)
 		}
-		r, err := RingkasanDari(id.String, isi.String)
-		if err != nil {
-			return nil, err
-		}
-		hasil = append(hasil, r)
+		hasil = append(hasil, models.RingkasanProduk{ID: id.String, Ceding: ceding.String, TreatyNumber: nomor.String,
+			InwardName: nama.String, CreateOp: buat.String, UpdateOp: ubah.String})
 	}
 	return hasil, rows.Err()
 }
@@ -113,6 +115,9 @@ type SimpananProduk struct {
 	ID, JSONUmum         string
 	IDInward, JSONInward string
 	AdaInward            bool
+	// InwardMilikLain - `PRODUCTID` baris inward ber-`ID` = ID produk yang ternyata
+	// milik produk LAIN (ID sequence inward warisan); kosong bila tidak ada.
+	InwardMilikLain string
 }
 
 // AmbilSimpanan membaca JSON mentah satu produk; `kunci` = `FOR UPDATE`
@@ -144,18 +149,29 @@ func (g *Gudang) AmbilSimpanan(ctx context.Context, tx *db.Tx, id string, kunci 
 	}
 	if b, ada := pilihInward(id, inward); ada {
 		s.IDInward, s.JSONInward, s.AdaInward = b.id, b.isi, true
+	} else {
+		s.InwardMilikLain = inwardMilikLain(id, inward)
 	}
 	return s, nil
 }
 
+func productIDDari(b barisJSON) string {
+	obj, err := uraiObjek(b.isi)
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(teksDari(obj[kunciProductID]))
+}
+
 // pilihInward - baris inward produk: yang ber-`PRODUCTID` = produk (Pega,
-// terakhir menang), lalu yang ber-`ID` = produk.
+// terakhir menang), lalu yang ber-`ID` = produk DAN `PRODUCTID`-nya kosong.
+// ⛔ Baris ber-`ID` = produk yang `PRODUCTID`-nya menunjuk produk lain BUKAN
+// milik produk ini (ID sequence inward warisan) - tidak pernah dipilih, dibaca, atau ditimpa.
 func pilihInward(id string, baris []barisJSON) (barisJSON, bool) {
 	var dipilih barisJSON
 	ada := false
 	for _, b := range baris {
-		obj, err := uraiObjek(b.isi)
-		if err == nil && strings.TrimSpace(teksDari(obj[kunciProductID])) == id {
+		if productIDDari(b) == id {
 			dipilih, ada = b, true
 		}
 	}
@@ -163,11 +179,21 @@ func pilihInward(id string, baris []barisJSON) (barisJSON, bool) {
 		return dipilih, true
 	}
 	for _, b := range baris {
-		if b.id == id {
+		if b.id == id && productIDDari(b) == "" {
 			return b, true
 		}
 	}
 	return barisJSON{}, false
+}
+
+// inwardMilikLain - `PRODUCTID` baris ber-`ID` = produk yang milik produk lain.
+func inwardMilikLain(id string, baris []barisJSON) string {
+	for _, b := range baris {
+		if pid := productIDDari(b); b.id == id && pid != "" && pid != id {
+			return pid
+		}
+	}
+	return ""
 }
 
 // AmbilProduk - satu produk utuh (tombol `View` b74753).

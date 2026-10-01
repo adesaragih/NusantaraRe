@@ -32,7 +32,7 @@ var (
 
 // GudangMaster - pembaca master (bagian Gudang).
 type GudangMaster interface {
-	CariMaster(ctx context.Context, jenis models.JenisMaster, kata string) ([]models.NilaiMaster, error)
+	CariMaster(ctx context.Context, jenis models.JenisMaster, kata string, batas int) ([]models.NilaiMaster, error)
 	AmbilMaster(ctx context.Context, jenis models.JenisMaster, id string) (models.NilaiMaster, bool, error)
 	CariPlan(ctx context.Context, kata string) ([]models.JenisPlan, error)
 	AmbilPlan(ctx context.Context, id string) (models.JenisPlan, bool, error)
@@ -40,14 +40,19 @@ type GudangMaster interface {
 
 // CariMaster - grid pemilih / autocomplete; kata cari dihurufbesarkan seperti
 // `SearchPolicyHolder_act` b234.
-func (l *Layanan) CariMaster(ctx context.Context, p inti.Pelaku, jenis models.JenisMaster, kata string) ([]models.NilaiMaster, error) {
+//
+// `batas` > 0 membatasi baris yang dibaca (autocomplete); 0 = seluruh hasil RD (grid pemilih).
+func (l *Layanan) CariMaster(ctx context.Context, p inti.Pelaku, jenis models.JenisMaster, kata string, batas int) ([]models.NilaiMaster, error) {
 	if err := inti.WajibIdentitas(p); err != nil {
 		return nil, err
 	}
 	if jenis == models.MasterRIRate {
 		return nil, ErrRIRateMenungguPersetujuan
 	}
-	return l.gudang.CariMaster(ctx, jenis, strings.ToUpper(strings.TrimSpace(kata)))
+	if batas < 0 {
+		return nil, GalatValidasi{Pesan: []string{"batas must not be negative"}}
+	}
+	return l.gudang.CariMaster(ctx, jenis, strings.ToUpper(strings.TrimSpace(kata)), batas)
 }
 
 // CariPlan - autocomplete `Plan Name` (`.Plan` b33124, `BrowseProductTypeLife_RD`).

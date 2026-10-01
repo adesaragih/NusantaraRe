@@ -36,7 +36,11 @@ export default function Saran<T>({ label, labelAria, nilai, onKetik, cari, teks,
   cariRef.current = cari
 
   useEffect(() => {
-    if (!buka) return
+    // Kosong = tidak membaca RD: master pemegang polis bisa ratusan ribu baris; daftar lengkap ada di `Choose*`.
+    if (!buka || nilai.trim() === '') {
+      setDaftar([])
+      return
+    }
     let batal = false
     const jam = setTimeout(() => {
       cariRef

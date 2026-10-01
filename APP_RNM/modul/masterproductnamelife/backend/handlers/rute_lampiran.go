@@ -12,6 +12,8 @@ package handlers
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -31,7 +33,16 @@ func daftarkanLampiran(pasang func(string, rute)) {
 	pasang("POST "+dasar, func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
 		r.Body = http.MaxBytesReader(w, r.Body, unggah.BatasUkuranUnggahan+galat.BatasFormulir)
 		nama, isi := "", io.Reader(nil)
-		if err := r.ParseMultipartForm(galat.BatasFormulir); err == nil {
+		var besar *http.MaxBytesError
+		switch err := r.ParseMultipartForm(galat.BatasFormulir); {
+		case errors.As(err, &besar):
+			galat.Tulis(w, http.StatusRequestEntityTooLarge, fmt.Sprintf("file exceeds %d MB", unggah.BatasUkuranUnggahan>>20))
+			return
+		case err != nil && !errors.Is(err, http.ErrNotMultipart):
+			galat.Tulis(w, http.StatusBadRequest, "request body is not a valid multipart form")
+			return
+		case err == nil:
+			// Tanpa bagian `berkas` = "Tidak ada file yg diattach" (`ProductNameSaveAttachment` 1 b290).
 			if f, hdr, err := r.FormFile("berkas"); err == nil {
 				defer func() { _ = f.Close() }()
 				nama, isi = hdr.Filename, f

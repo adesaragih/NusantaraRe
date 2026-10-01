@@ -291,9 +291,12 @@ export async function unduhGenerate(p: Produk): Promise<void> {
 // Pemilih master (paket 2, 6).
 // ---------------------------------------------------------------------------
 
+/** Saran autocomplete paling banyak sekian baris (`batas`); grid pemilih membaca seluruh hasil RD. */
+export const BATAS_SARAN = 20
+
 /** Tombol `Choose*` / autocomplete - `Search` diubah huruf besar di server (`SearchPolicyHolder_act` b234). */
-export async function cariMaster(jenis: JenisMaster, cari: string): Promise<Daftar<NilaiMaster>> {
-  return minta<Daftar<NilaiMaster>>(`${PREFIX_MPNL}/master/${e(jenis)}`, { kueri: { cari } })
+export async function cariMaster(jenis: JenisMaster, cari: string, batas?: number): Promise<Daftar<NilaiMaster>> {
+  return minta<Daftar<NilaiMaster>>(`${PREFIX_MPNL}/master/${e(jenis)}`, { kueri: { cari, batas } })
 }
 
 /** Autocomplete `Plan Name` b33124 (RD `BrowseProductTypeLife_RD`). */

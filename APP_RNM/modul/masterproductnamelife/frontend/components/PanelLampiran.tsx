@@ -136,7 +136,7 @@ export default function PanelLampiran({ produkId }: { produkId: string }) {
                   )}
                 </td>
                 <td className="table__actions">
-                  {l.status === 'gagal' && (
+                  {l.status !== 'terunggah' && (
                     <button type="button" className="btn btn--ghost btn--sm" onClick={() => void jalankan(() => ulangiLampiran(produkId, l.id))}>
                       {LAIN_MPNL.ulangi}
                     </button>

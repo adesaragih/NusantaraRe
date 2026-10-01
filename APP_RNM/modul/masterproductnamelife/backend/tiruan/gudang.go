@@ -115,9 +115,17 @@ func (g *Gudang) SisipProduk(_ context.Context, _ *db.Tx, p models.Produk) (stri
 	if _, ada := g.Inward[id]; ada {
 		return "", fmt.Errorf("%w: %s", repository.ErrIdentitasBentrok, id)
 	}
+	dasarUmum, dasarInward := "", ""
+	if p.SalinanDari != "" {
+		if _, ada := g.Umum[p.SalinanDari]; !ada {
+			return "", fmt.Errorf("%w: %s", repository.ErrTidakAda, p.SalinanDari)
+		}
+		dasarUmum = g.Umum[p.SalinanDari]
+		_, dasarInward = g.cariInward(p.SalinanDari)
+	}
 	p.ID = id
 	p.Inward.ID, p.Inward.ProductID = id, id
-	umum, err := repository.RakitUmum(p, "", true)
+	umum, err := repository.RakitUmum(p, dasarUmum, true)
 	if err != nil {
 		return "", err
 	}
@@ -129,7 +137,7 @@ func (g *Gudang) SisipProduk(_ context.Context, _ *db.Tx, p models.Produk) (stri
 	if g.GagalTulisInward != nil {
 		return "", g.GagalTulisInward
 	}
-	inward, err := repository.RakitInward(p, "")
+	inward, err := repository.RakitInward(p, dasarInward)
 	if err != nil {
 		return "", err
 	}
@@ -158,6 +166,9 @@ func (g *Gudang) PerbaruiProduk(_ context.Context, _ *db.Tx, p models.Produk) er
 	p.Inward.ProductID = p.ID
 	idIn, isiIn := g.cariInward(p.ID)
 	if idIn == "" {
+		if lain := g.milikLain(p.ID); lain != "" {
+			return fmt.Errorf("%w: inward row %s belongs to product %s", repository.ErrIdentitasBentrok, p.ID, lain)
+		}
 		idIn = p.ID
 	}
 	p.Inward.ID = idIn
@@ -219,14 +230,27 @@ func (g *Gudang) cariInward(id string) (string, string) {
 	if idPilih != "" {
 		return idPilih, isiPilih
 	}
-	if isi, ada := g.Inward[id]; ada {
+	if isi, ada := g.Inward[id]; ada && g.milikLain(id) == "" {
 		return id, isi
 	}
 	return "", ""
 }
 
+// milikLain - PRODUCTID baris inward ber-ID = id yang milik produk lain (seperti repository).
+func (g *Gudang) milikLain(id string) string {
+	isi, ada := g.Inward[id]
+	if !ada {
+		return ""
+	}
+	p, err := repository.UraiProduk("", "", id, isi)
+	if err != nil || p.Inward.ProductID == "" || p.Inward.ProductID == id {
+		return ""
+	}
+	return p.Inward.ProductID
+}
+
 // CariMaster - "Contains" tanpa membedakan huruf, urutan isian.
-func (g *Gudang) CariMaster(_ context.Context, jenis models.JenisMaster, kata string) ([]models.NilaiMaster, error) {
+func (g *Gudang) CariMaster(_ context.Context, jenis models.JenisMaster, kata string, batas int) ([]models.NilaiMaster, error) {
 	g.CariTerakhir = kata
 	if g.GagalMaster != nil {
 		return nil, g.GagalMaster
@@ -238,7 +262,7 @@ func (g *Gudang) CariMaster(_ context.Context, jenis models.JenisMaster, kata st
 	}
 	hasil := []models.NilaiMaster{}
 	for _, m := range g.Master[jenis] {
-		if strings.Contains(strings.ToUpper(m.Nama), strings.ToUpper(kata)) {
+		if (batas <= 0 || len(hasil) < batas) && strings.Contains(strings.ToUpper(m.Nama), strings.ToUpper(kata)) {
 			hasil = append(hasil, m)
 		}
 	}

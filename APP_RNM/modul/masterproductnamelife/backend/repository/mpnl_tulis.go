@@ -89,21 +89,32 @@ func (g *Gudang) exec(ctx context.Context, tx *db.Tx, objek string, susun func(s
 // SisipProduk menerbitkan ID baru (sequence) dan menulis produk baru - KEDUA
 // tabel di transaksi pemanggil (P4). Baris inward ber-`ID` = `PRODUCTID` = ID
 // produk (R14). Mengembalikan ID itu.
+//
+// Salinan (`Copy`, `p.SalinanDari`): JSON tersimpan produk asal menjadi dasar kedua
+// sisi - `CopyProduct` menyalin halaman utuh, termasuk kunci yang tidak dikelola layar.
 func (g *Gudang) SisipProduk(ctx context.Context, tx *db.Tx, p models.Produk) (string, error) {
+	var dasar SimpananProduk
+	if p.SalinanDari != "" {
+		s, err := g.AmbilSimpanan(ctx, tx, p.SalinanDari, false)
+		if err != nil {
+			return "", err
+		}
+		dasar = s
+	}
 	id, err := g.identitasBaru(ctx, tx)
 	if err != nil {
 		return "", err
 	}
 	p.ID = id
 	p.Inward.ID, p.Inward.ProductID = id, id
-	umum, err := RakitUmum(p, "", true)
+	umum, err := RakitUmum(p, dasar.JSONUmum, true)
 	if err != nil {
 		return "", err
 	}
 	if err := g.exec(ctx, tx, TabelProduk, sqlSisipUmum, argSisipUmum(p, umum)...); err != nil {
 		return "", err
 	}
-	inward, err := RakitInward(p, "")
+	inward, err := RakitInward(p, dasar.JSONInward)
 	if err != nil {
 		return "", err
 	}
@@ -132,6 +143,11 @@ func (g *Gudang) PerbaruiProduk(ctx context.Context, tx *db.Tx, p models.Produk)
 	}
 	p.Inward.ProductID = p.ID
 	if !s.AdaInward {
+		if s.InwardMilikLain != "" {
+			// Menyisipkan baris ber-ID sama akan menggandakan ID (nol PK) di samping baris produk lain.
+			return fmt.Errorf("%w: inward row %s in %s belongs to product %s", ErrIdentitasBentrok, p.ID, TabelInward,
+				s.InwardMilikLain)
+		}
 		p.Inward.ID = p.ID
 		inward, err := RakitInward(p, "")
 		if err != nil {

@@ -14,6 +14,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 
 import { Area, Field, Gagal, Kosong, Pilih, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
 import {
+  BATAS_SARAN,
   cariMaster,
   cariPlan,
   simpanProduk,
@@ -67,7 +68,7 @@ interface PemilihTerbuka {
   pilih: (v: NilaiMaster) => void
 }
 
-const cariDari = (jenis: JenisMaster) => async (kata: string) => (await cariMaster(jenis, kata)).daftar
+const cariDari = (jenis: JenisMaster) => async (kata: string) => (await cariMaster(jenis, kata, BATAS_SARAN)).daftar
 const cariJenisPlan = async (kata: string) => (await cariPlan(kata)).daftar
 
 /** `pxDateTime` - tanggal `YYYY-MM-DD`; teks lama yang bukan tanggal tampil apa adanya (tidak dibuang). */
@@ -411,7 +412,17 @@ export default function FormProduk({
         {tampilPremiumFactor(w.payment) && (
           <Field label={INWARD_MPNL.premiumFactor} value={w.premiumFactor} readOnly={lihat} onChange={medanInward('premiumFactor')} />
         )}
-        <Pilih label={INWARD_MPNL.payment} value={w.payment} opsi={[...PILIHAN_PEMBAYARAN]} onChange={medanInward('payment')} />
+        {lihat ? (
+          // `ro = ProductName.IsView=='true'` b25642 - `Pilih` bersama tidak punya mode baca-saja.
+          <Field
+            label={INWARD_MPNL.payment}
+            value={PILIHAN_PEMBAYARAN.find((o) => o.value === w.payment)?.label ?? w.payment}
+            onChange={() => undefined}
+            readOnly
+          />
+        ) : (
+          <Pilih label={INWARD_MPNL.payment} value={w.payment} opsi={[...PILIHAN_PEMBAYARAN]} onChange={medanInward('payment')} />
+        )}
         <Area label={INWARD_MPNL.subjectTo} value={w.subjectTo} onChange={lihat ? () => undefined : medanInward('subjectTo')} />
         <Field label={INWARD_MPNL.annuityInterest} value={w.annuityInterest} readOnly={lihat} onChange={medanInward('annuityInterest')} />
         <Field

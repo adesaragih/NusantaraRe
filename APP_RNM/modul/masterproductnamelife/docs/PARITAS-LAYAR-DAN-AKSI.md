@@ -246,5 +246,25 @@ tekan SAVE untuk menyimpan`. Tanpa basis data tidak teramati: `View` baris grid,
 | 8 | `1ff3091` | 08, 09 | lampiran tabel warisan, efek keluar stub lewat outbox `T_LOG_SERVICE_RNM` |
 | 9 | `14d3d48` | 10 (tambahan) | `Copy`, `On Retention` → `OutwardList`, `Generate` → `SeeDetail.csv` |
 | 10 | `1ada8d7` | semua (layar) | menu slot 960, `modul.go`, layar `InboxProductName` lengkap, `MODUL.md` dimigrasi |
-| 11 | (commit ini) | — | status tiket, daftar commit, register OQ |
+| 11 | `bb1c96e` | — | status tiket, daftar commit, register OQ |
+
+## 12. Perbaikan sesudah `/code-review` (01-10-2026)
+
+| # | Temuan | Keputusan |
+| ---: | --- | --- |
+| 1 | baris inward ber-`ID` = produk tetapi `PRODUCTID`-nya produk lain dipilih lalu ditimpa | **diperbaiki** — dipilih hanya bila `PRODUCTID` kosong/sama; sisip baris inward ber-ID itu = `ErrIdentitasBentrok` berkalimat (menyebut pemiliknya) |
+| 2 | lampiran `belum` tanpa tombol kirim ulang (modul tanpa pekerja) | **diperbaiki** — `Retry` untuk setiap status selain terunggah |
+| 3 | `Copy` membuang kunci halaman yang tidak dikelola layar | **diperbaiki** — JSON tersimpan produk asal menjadi dasar kedua sisi (`CopyProduct` menyalin halaman utuh) |
+| 4 | `ProteksiPlanListLife` ditegakkan setiap simpan atas baris lama yang tidak disentuh | **diperbaiki** — berjalan bila `PLAN LIST` berubah atau baris `FINANCIAL UNDERWRITING`/`UNDERWRITING LIMIT` berkurang (padanan onChange `.Plan` b33163 dan `Delete` b35202/b39975/b45633) |
+| 5 | konversi `@replaceAll` `SetProductNameInward` b1046 | **tidak diubah** — hasilnya hanya variabel `Local.*` yang tidak dipakai lagi; halaman menerima nilai mentah; contoh `[data DBA]` berbentuk angka polos |
+| 6 | `Download All` gagal seluruhnya bila satu lampiran lama tidak ada di stub | **diperbaiki** — berkas yang ada di-zip, yang tidak ada dicantumkan di `_not-available.txt`; nol berkas = 409 `ErrBerkasTidakDiStub` (bukan anjuran menghapus) |
+| 7 | satu `ulangi` = dua percobaan | **diperbaiki** — efek antre dipakai ulang tanpa dipungut dua kali |
+| 8 | galat multipart ditelan menjadi "Tidak ada file yg diattach" | **diperbaiki** — 413 berkalimat / 400 multipart rusak |
+| 9 | `Premium Payment Method` dapat diubah di mode lihat | **diperbaiki** — baca-saja (`ro` b25642) |
+| 10 | autocomplete/pemilih membaca hingga 100.000 baris | **diperbaiki** — `?batas=` (autocomplete 20, kosong tidak membaca), grid pemilih berhalaman 10 |
+| 11 | grid membaca CLOB utuh 500 produk | **diperbaiki** — kelima kolom grid lewat `JSON_VALUE` |
+| 12 | kirim lampiran tanpa jejak "menyerah" | **tidak diubah** — jalur jejak bersama menulis tabel jejak Claim Life; kegagalan tercatat di outbox (`gagal-permanen` + `GALAT_TERAKHIR`), tampil di layar, dapat diulang (tiket 09) |
+| 13 | duplikat plan diperiksa sebelum nama diseragamkan master | **diperbaiki** — diperiksa sesudahnya |
+| 14 | ubah membaca kedua tabel tiga kali | **tidak diubah** — performa saja, tabel ±200 baris, semuanya di satu transaksi |
+| 15 | badan JSON tanpa batas; `asli` baris dikarang klien | **diperbaiki** — 4 MiB / 413; `asli` harus sama dengan `asli` salah satu baris tersimpan (produk yang diubah atau produk asal `Copy`), selain itu 422 |
 

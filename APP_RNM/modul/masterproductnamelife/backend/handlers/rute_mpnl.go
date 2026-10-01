@@ -5,7 +5,7 @@
 //
 //	GET  /api/master-product-name-life/produk        grid `InboxProductName` (halaman awal)
 //	GET  /api/master-product-name-life/produk/{id}   tombol `View` b74753
-//	GET  /api/master-product-name-life/master/{jenis}?cari=  tujuh pemilih master (`Choose*`, PARITAS §4)
+//	GET  /api/master-product-name-life/master/{jenis}?cari=&batas=  tujuh pemilih master (`Choose*`, PARITAS §4); `batas` = autocomplete
 //	GET  /api/master-product-name-life/master-plan?cari=     autocomplete `Plan Name` (PLAN LIST)
 //	GET  /api/master-product-name-life/rate?riRateId=        tombol `View Rate` - 503 (OQ-MPNL-03)
 package handlers
@@ -14,6 +14,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strconv"
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/galat"
@@ -73,7 +74,11 @@ func daftarkanBaca(pasang func(string, rute)) {
 	})
 	// Tujuh pemilih master (paket 2): `Choose*` → section → grid RD; juga autocomplete medan form.
 	pasang("GET "+Prefix+"/master/{jenis}", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
-		d, err := l.CariMaster(r.Context(), p, models.JenisMaster(r.PathValue("jenis")), r.URL.Query().Get("cari"))
+		batas, ok := angkaKueri(w, r, "batas")
+		if !ok {
+			return
+		}
+		d, err := l.CariMaster(r.Context(), p, models.JenisMaster(r.PathValue("jenis")), r.URL.Query().Get("cari"), batas)
 		tulisDaftar(w, d, err)
 	})
 	// Grid `PLAN LIST` (paket 6): autocomplete `Plan Name` dan tombol `View Rate`.
@@ -103,6 +108,20 @@ func tulisDaftar[T any](w http.ResponseWriter, d []T, err error) {
 	galat.TulisJSON(w, jawabanDaftar[T]{Daftar: d, Total: len(d)})
 }
 
+// angkaKueri - parameter kueri bilangan bulat tak-negatif; kosong = 0; selain itu 400 dan false.
+func angkaKueri(w http.ResponseWriter, r *http.Request, nama string) (int, bool) {
+	t := r.URL.Query().Get(nama)
+	if t == "" {
+		return 0, true
+	}
+	n, err := strconv.Atoi(t)
+	if err != nil || n < 0 {
+		galat.Tulis(w, http.StatusBadRequest, nama+" must be a non-negative whole number")
+		return 0, false
+	}
+	return n, true
+}
+
 func tulis(w http.ResponseWriter, isi any, err error) {
 	if jawabGalat(w, err) {
 		return
@@ -129,7 +148,8 @@ func jawabGalat(w http.ResponseWriter, err error) bool {
 	case errors.Is(err, services.ErrLampiranTidakAda):
 		galat.Tulis(w, http.StatusNotFound, services.Pesan(err))
 	case errors.Is(err, services.ErrNamaLampiranSudahAda), errors.Is(err, services.ErrLampiranBelumTerkirim),
-		errors.Is(err, services.ErrLampiranSudahTerkirim), errors.Is(err, services.ErrBerkasSumberHilang):
+		errors.Is(err, services.ErrLampiranSudahTerkirim), errors.Is(err, services.ErrBerkasSumberHilang),
+		errors.Is(err, services.ErrBerkasTidakDiStub):
 		// 409: keadaan lampiran menolak aksi - kalimat menyebut yang harus dilakukan.
 		galat.Tulis(w, http.StatusConflict, services.Pesan(err))
 	case errors.Is(err, services.ErrOfficeStub), errors.Is(err, services.ErrPenyimpananBelumDisetel):

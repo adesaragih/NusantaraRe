@@ -56,6 +56,76 @@ func periksaPlan(pk *periksa, daftar []models.BarisPlan) {
 	}
 }
 
+// gerbangPlan - kapan `ProteksiPlanListLife` dijalankan saat simpan. Di Pega ia
+// berjalan pada onChange `.Plan` b33163 dan setiap `Delete` baris `PLAN LIST` b35202,
+// `FINANCIAL UNDERWRITING` b39975, `UNDERWRITING LIMIT` b45633 - bukan pada
+// `SaveProductName_Act`. Padanannya di sini: `PLAN LIST` berubah dari yang tersimpan
+// (baris ditambah, diubah, dihapus), atau baris salah satu grid lain berkurang.
+// Produk lama yang daftar plannya tidak disentuh tetap dapat disimpan.
+func gerbangPlan(m *models.Produk, tersimpan models.Produk) bool {
+	if len(m.FinancialUnderwriting) < len(tersimpan.FinancialUnderwriting) ||
+		len(m.UnderwritingLimit) < len(tersimpan.UnderwritingLimit) {
+		return true
+	}
+	if len(m.PlanList) != len(tersimpan.PlanList) {
+		return true
+	}
+	for i, b := range m.PlanList {
+		s := tersimpan.PlanList[i]
+		if b.Plan != s.Plan || b.PlanID != s.PlanID || b.Name != s.Name || b.Benefit != s.Benefit ||
+			b.RIRate != s.RIRate || b.RIRateID != s.RIRateID {
+			return true
+		}
+	}
+	return false
+}
+
+// Judul grid VERBATIM untuk pesan `asli`.
+const (
+	judulLien    = "LIEN CLAUSE (Potongan Manfaat Klaim)" // b12204
+	judulDokumen = "DOCUMENT CLAIM"                       // b14604
+)
+
+// pesanAsliAsing - `asli` baris (kunci JSON lama yang tidak dikelola layar) yang
+// tidak berasal dari baris tersimpan produk ini.
+const pesanAsliAsing = "carries stored keys (asli) that do not belong to any stored row of this product"
+
+// periksaAsli - `asli` hanya boleh DIKEMBALIKAN klien, tidak dikarang: setiap
+// `asli` berisi harus sama dengan `asli` salah satu baris tersimpan daftar yang
+// sama (produk yang diubah, atau produk asal `Copy`). Tanpa ini klien dapat
+// menyisipkan kunci sembarang ke `JSONDATA` - termasuk kunci yang dibaca hilir.
+func periksaAsli(pk *periksa, m *models.Produk, tersimpan models.Produk) {
+	cek := func(judul string, kiriman, simpan []string) {
+		sah := map[string]bool{}
+		for _, a := range simpan {
+			sah[a] = true
+		}
+		for i, a := range kiriman {
+			if a != "" && !sah[a] {
+				pk.baris(judul, i, "%s", pesanAsliAsing)
+			}
+		}
+	}
+	cek(judulLien, asliDari(m.LienClause, func(b models.BarisLien) string { return string(b.Asli) }),
+		asliDari(tersimpan.LienClause, func(b models.BarisLien) string { return string(b.Asli) }))
+	cek(judulDokumen, asliDari(m.DocumentClaim, func(b models.BarisDokumen) string { return string(b.Asli) }),
+		asliDari(tersimpan.DocumentClaim, func(b models.BarisDokumen) string { return string(b.Asli) }))
+	cek(judulPlan, asliDari(m.PlanList, func(b models.BarisPlan) string { return string(b.Asli) }),
+		asliDari(tersimpan.PlanList, func(b models.BarisPlan) string { return string(b.Asli) }))
+	cek(judulFinUW, asliDari(m.FinancialUnderwriting, func(b models.BarisFinUW) string { return string(b.Asli) }),
+		asliDari(tersimpan.FinancialUnderwriting, func(b models.BarisFinUW) string { return string(b.Asli) }))
+	cek(judulUWLimit, asliDari(m.UnderwritingLimit, func(b models.BarisUWLimit) string { return string(b.Asli) }),
+		asliDari(tersimpan.UnderwritingLimit, func(b models.BarisUWLimit) string { return string(b.Asli) }))
+}
+
+func asliDari[T any](daftar []T, ambil func(T) string) []string {
+	hasil := make([]string, len(daftar))
+	for i, b := range daftar {
+		hasil[i] = ambil(b)
+	}
+	return hasil
+}
+
 // periksaUWLimit - angka dan rentang baris `UNDERWRITING LIMIT`.
 func periksaUWLimit(pk *periksa, daftar []models.BarisUWLimit) {
 	for i := range daftar {

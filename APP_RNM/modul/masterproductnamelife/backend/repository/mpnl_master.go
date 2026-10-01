@@ -174,14 +174,15 @@ func PolaCari(kata string) string {
 	return "%" + k + "%"
 }
 
-func (g *Gudang) bacaMaster(ctx context.Context, objek, q string, args ...any) ([]models.NilaiMaster, error) {
+// bacaMaster membaca hasil RD; `batas` > 0 = berhenti sesudah sekian baris (autocomplete).
+func (g *Gudang) bacaMaster(ctx context.Context, objek, q string, batas int, args ...any) ([]models.NilaiMaster, error) {
 	rows, err := g.db.QueryContext(ctx, q, args...)
 	if err != nil {
 		return nil, galatMaster(objek, err)
 	}
 	defer func() { _ = rows.Close() }()
 	hasil := []models.NilaiMaster{}
-	for rows.Next() {
+	for (batas <= 0 || len(hasil) < batas) && rows.Next() {
 		var id, nama sql.NullString
 		if err := rows.Scan(&id, &nama); err != nil {
 			return nil, galatMaster(objek, err)
@@ -194,8 +195,8 @@ func (g *Gudang) bacaMaster(ctx context.Context, objek, q string, args ...any) (
 	return hasil, nil
 }
 
-// CariMaster - grid section pemilih / autocomplete medan form.
-func (g *Gudang) CariMaster(ctx context.Context, jenis models.JenisMaster, kata string) ([]models.NilaiMaster, error) {
+// CariMaster - grid section pemilih (`batas` 0 = `pyMaxRecords` RD) / autocomplete medan form (`batas` kecil).
+func (g *Gudang) CariMaster(ctx context.Context, jenis models.JenisMaster, kata string, batas int) ([]models.NilaiMaster, error) {
 	s, ada := sumberMaster[jenis]
 	if !ada {
 		return nil, fmt.Errorf("%w: %q", ErrJenisMasterTidakDikenal, jenis)
@@ -204,7 +205,7 @@ func (g *Gudang) CariMaster(ctx context.Context, jenis models.JenisMaster, kata 
 	if err != nil {
 		return nil, err
 	}
-	return g.bacaMaster(ctx, s.objek, q, s.argCari(PolaCari(kata))...)
+	return g.bacaMaster(ctx, s.objek, q, batas, s.argCari(PolaCari(kata))...)
 }
 
 // AmbilMaster - satu nilai master menurut ID dan saringan RD yang sama
@@ -218,7 +219,7 @@ func (g *Gudang) AmbilMaster(ctx context.Context, jenis models.JenisMaster, id s
 	if err != nil {
 		return models.NilaiMaster{}, false, err
 	}
-	d, err := g.bacaMaster(ctx, s.objek, q, s.argAmbil(id)...)
+	d, err := g.bacaMaster(ctx, s.objek, q, 1, s.argAmbil(id)...)
 	if err != nil || len(d) == 0 {
 		return models.NilaiMaster{}, false, err
 	}

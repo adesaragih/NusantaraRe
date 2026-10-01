@@ -47,6 +47,7 @@ type GudangLampiran interface {
 	HapusObjek(ctx context.Context, tx *db.Tx, imageID string) error
 	NamaAplikasi(ctx context.Context, tx *db.Tx) (string, error)
 	AntreUnggah(ctx context.Context, tx *db.Tx, lampiranID, muatan string, saat time.Time) error
+	AdaUnggahAntre(ctx context.Context, tx *db.Tx, lampiranID string) (bool, error)
 	PungutUnggah(ctx context.Context, tx *db.Tx, lampiranID string, saat time.Time) (string, int, bool, error)
 	TuntaskanUnggah(ctx context.Context, tx *db.Tx, efekID, status string, jadwal time.Time, galat string, saat time.Time) error
 }
@@ -92,6 +93,10 @@ var (
 	// ErrBerkasSumberHilang - isi antrean tidak ada dan penyimpanan tidak memilikinya.
 	ErrBerkasSumberHilang = errors.New("services: the attachment source file no longer exists; delete the attachment " +
 		"and upload it again")
+	// ErrBerkasTidakDiStub - rekam dan objek ada, tetapi berkasnya tidak ada di folder stub: berkas
+	// yang diunggah Pega tinggal di penyimpanan asalnya sampai pengirim nyata tersambung (409).
+	ErrBerkasTidakDiStub = errors.New("services: the attachment file is not in the storage stub; files uploaded " +
+		"before this module stay in the original storage until it is connected (OQ-MPNL-10)")
 	// ErrOfficeStub - `View Office Online` membungkus URL ke penampil kantor di luar (503, OQ-MPNL-11).
 	ErrOfficeStub = errors.New("services: View Office Online is a stub - the external office viewer is not called " +
 		"(OQ-MPNL-11); download the file instead")
@@ -254,13 +259,11 @@ func (l *Layanan) UlangiLampiran(ctx context.Context, p inti.Pelaku, produkID, i
 	}
 	saat := l.jam()
 	err = l.tx(ctx, func(tx *db.Tx) error {
-		efek, _, ada, err := l.gudang.PungutUnggah(ctx, tx, id, saat)
-		if err != nil {
+		// Efek antre yang ada dipakai ulang oleh `kirimLampiran` (satu percobaan per klik);
+		// efek baru hanya bila tidak ada lagi yang antre (gagal permanen / objek hilang).
+		ada, err := l.gudang.AdaUnggahAntre(ctx, tx, id)
+		if err != nil || ada {
 			return err
-		}
-		if ada {
-			// Efek antre yang ada dipakai ulang, dijadwalkan sekarang.
-			return l.gudang.TuntaskanUnggah(ctx, tx, efek, outbox.StatusEfekAntre, saat, "", saat)
 		}
 		return l.gudang.AntreUnggah(ctx, tx, id, `{"lampiran_id":"`+id+`"}`, saat)
 	})
@@ -292,39 +295,69 @@ func (l *Layanan) UnduhLampiran(ctx context.Context, p inti.Pelaku, produkID, id
 	}
 	isi, err := l.berkas.Buka(ctx, a.StorageID)
 	if err != nil {
-		return BerkasUnduhan{}, fmt.Errorf("%w: %v", ErrBerkasSumberHilang, err)
+		return BerkasUnduhan{}, fmt.Errorf("%w: %s: %v", ErrBerkasTidakDiStub, a.FileName, err)
 	}
 	return BerkasUnduhan{Nama: a.FileName, Mime: unggah.MimeDariNamaFile(a.FileName), Isi: isi}, nil
 }
 
+// NamaDaftarTakTersedia - entri zip yang menyebut lampiran terkirim yang berkasnya
+// tidak ada di folder stub (lampiran Pega lama) - kekurangan dinyatakan, bukan disembunyikan.
+const NamaDaftarTakTersedia = "_not-available.txt"
+
 // UnduhSemuaLampiran - tombol `Download All` b67619 → satu arsip zip lampiran
-// TERKIRIM produk ini (R15, OQ-MPNL-07). Mengembalikan jumlah berkas.
+// TERKIRIM produk ini (R15, OQ-MPNL-07). Mengembalikan jumlah berkas. Lampiran
+// yang berkasnya tidak ada di folder stub dicantumkan di `_not-available.txt`;
+// bila TIDAK SATU PUN tersedia, jawabannya 409 berkalimat.
 func (l *Layanan) UnduhSemuaLampiran(ctx context.Context, p inti.Pelaku, produkID string, ke io.Writer) (int, error) {
 	daftar, err := l.DaftarLampiran(ctx, p, produkID)
 	if err != nil {
 		return 0, err
 	}
-	z := zip.NewWriter(ke)
-	n := 0
+	type tersedia struct {
+		nama string
+		isi  io.ReadCloser
+	}
+	var ada []tersedia
+	var hilang []string
+	defer func() {
+		for _, t := range ada {
+			_ = t.isi.Close()
+		}
+	}()
 	for _, a := range daftar {
 		if a.Status != models.StatusTerunggah {
 			continue
 		}
 		isi, err := l.berkas.Buka(ctx, a.StorageID)
 		if err != nil {
-			return n, fmt.Errorf("%w: %s: %v", ErrBerkasSumberHilang, a.FileName, err)
+			hilang = append(hilang, a.FileName)
+			continue
 		}
-		w, err := z.Create(a.FileName)
-		if err == nil {
-			_, err = io.Copy(w, isi)
-		}
-		_ = isi.Close()
-		if err != nil {
-			return n, err
-		}
-		n++
+		ada = append(ada, tersedia{nama: a.FileName, isi: isi})
 	}
-	return n, z.Close()
+	if len(ada) == 0 && len(hilang) > 0 {
+		return 0, fmt.Errorf("%w: %s", ErrBerkasTidakDiStub, strings.Join(hilang, ", "))
+	}
+	z := zip.NewWriter(ke)
+	for _, t := range ada {
+		w, err := z.Create(t.nama)
+		if err == nil {
+			_, err = io.Copy(w, t.isi)
+		}
+		if err != nil {
+			return 0, err
+		}
+	}
+	if len(hilang) > 0 {
+		w, err := z.Create(NamaDaftarTakTersedia)
+		if err == nil {
+			_, err = io.WriteString(w, Pesan(ErrBerkasTidakDiStub)+":\r\n"+strings.Join(hilang, "\r\n")+"\r\n")
+		}
+		if err != nil {
+			return 0, err
+		}
+	}
+	return len(ada), z.Close()
 }
 
 // HapusLampiran - `Delete` b69663 (`DeleteAttacProdName_act`): berkas dulu (2
