@@ -54,7 +54,7 @@ export default function IlustrasiLogin() {
     </g>
     <path d="M328 208c-4-5 4-8 0-14M338 208c-4-5 4-8 0-14" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" opacity="0.75" />
 
-    <g className="halaman-masuk__melayang">
+    <g>
     <g filter="url(#masuk-shadow)">
     <rect x="44" y="60" width="104" height="48" rx="16" fill="#fff" />
     <path d="M70 106l-6 14 18-12z" fill="#fff" />
@@ -63,7 +63,7 @@ export default function IlustrasiLogin() {
     <circle cx="96" cy="84" r="5" fill="#d7bcfb" />
     <circle cx="116" cy="84" r="5" fill="#ff9aa0" />
     </g>
-    <g className="halaman-masuk__melayang halaman-masuk__melayang--tunda">
+    <g>
     <circle cx="322" cy="92" r="28" fill="#fff" filter="url(#masuk-shadow)" />
     <path d="M309 92l9 9 17-18" fill="none" stroke="#3aa872" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
     </g>

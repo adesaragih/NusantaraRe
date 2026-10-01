@@ -114,6 +114,16 @@ describe('tampilan loginbaru.html', () => {
   const login = readFileSync(join(__dirname, 'Login.tsx'), 'utf8')
   const css = readFileSync(join(__dirname, '..', 'styles.css'), 'utf8')
 
+  // ⛔ Tanpa animasi tanpa henti (laporan work owner 02-10-2026 "halaman ganti
+  // sandi masih kedip"): ilustrasi melayang menggambar ulang kartu kaca di
+  // setiap bingkai - layar login dan ganti sandi berkedip.
+  it('ilustrasi diam - nol animasi tanpa henti di layar login', () => {
+    const ilustrasi = readFileSync(join(__dirname, 'IlustrasiLogin.tsx'), 'utf8')
+    expect(ilustrasi).not.toContain('melayang')
+    expect(css).not.toContain('halaman-masuk__melayang')
+    expect(css).not.toContain('@keyframes halaman-masuk')
+  })
+
   it('teks layar login berbahasa Inggris', () => {
     // Bahasa Inggris - permintaan work owner 01-10-2026.
     expect(LOGIN.judul).toBe('Hello Again!')
