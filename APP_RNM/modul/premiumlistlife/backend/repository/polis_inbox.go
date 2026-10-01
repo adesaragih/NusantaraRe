@@ -97,7 +97,7 @@ func NewInboxPolis(db *db.DB) *InboxPolis { return &InboxPolis{db: db} }
 // menjadi 500 (uji asap baca-saja DEV, GILIRAN-12 paket 3). Penjaganya
 // `TestNolPenampungBerulangDiSQLBerpembatasBaris`.
 func sqlInboxPolis(work, polis, detail string) string {
-	return fmt.Sprintf(`SELECT w.ID, w.STATUS, w.POSITION,
+	return fmt.Sprintf(`SELECT w.ID, w.STATUS_WORK, w.POSITION,
 	        p.CREATE_OP_NAME, p.CEDING_CO_NAME, p.POLICY_HOLDER_NAME,
 	        p.RI_SLIP_RNM, p.TYPE, p.MARKETING_NAME, p.SOB_NAME,
 	        p.DATE_RECEIVED, p.TGL_INPUT,

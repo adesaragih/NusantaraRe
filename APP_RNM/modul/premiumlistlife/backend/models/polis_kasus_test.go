@@ -28,6 +28,28 @@ func TestKeduaTombolMulaiDiTahapPenawaran(t *testing.T) {
 	}
 }
 
+// TestKasusPolisBaruMembawaPembuat - brief seragam kolom 01-10-2026 §4.
+//
+// ⛔ `CREATE_OP` dan `CREATE_OP_NAME` sama-sama AKUN pelaku, seperti Claim
+// Life `pendaftaran.go`, sampai login menyediakan nama tampilan. `COVER_KEY`
+// kosong: XML PremiumList tidak memakai penunjuk induk.
+func TestKasusPolisBaruMembawaPembuat(t *testing.T) {
+	k, err := models.SusunKasusPolisBaru(models.FlagPolisPenawaran)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if k.CreateOp != "" || k.CreateOpName != "" {
+		t.Errorf("pembuat dikarang sebelum pelakunya dikenal: %+v", k)
+	}
+	b := k.DenganPembuat("UJI-AKUN")
+	if b.CreateOp != "UJI-AKUN" || b.CreateOpName != "UJI-AKUN" || b.CoverKey != "" {
+		t.Errorf("pembuat: %+v", b)
+	}
+	if b.Lini != k.Lini || b.Posisi != k.Posisi || b.Status != k.Status || b.Flag != k.Flag {
+		t.Errorf("DenganPembuat mengubah keadaan awal: %+v lawan %+v", b, k)
+	}
+}
+
 func TestBenderaDiLuarNolSatuDitolak(t *testing.T) {
 	for _, flag := range []string{"", "2", " 0", "true", "Offer"} {
 		if _, err := models.SusunKasusPolisBaru(flag); !errors.Is(err, models.ErrFlagPolisTidakSah) {
