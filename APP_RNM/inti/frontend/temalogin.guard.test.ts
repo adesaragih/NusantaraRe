@@ -2,7 +2,7 @@
 //
 //   - latar sidebar TETAP latar lama (`var(--surface)`); blok tema sidebar hanya mewarnai butir,
 //     pembatas golongan, dan aksen, tidak menimpa latar;
-//   - tema Kelola User terisolasi di kelas akar `.kelola-user`;
+//   - gaya soft UI Kelola User terisolasi di kelas akar `.kelola-user`, dan teksnya tetap terbaca (kontras WCAG AA);
 //   - tidak satu pun aturan `.kelola-user` memakai properti yang menjadikan elemen blok penampung bagi
 //     `position: fixed`. Popup inti (`.modal__backdrop`, `position: fixed; inset: 0`) dirender di dalam
 //     `.kelola-user`, bukan lewat portal; properti itu membuat popup menempel ke kotak dan tidak lagi di
@@ -56,9 +56,63 @@ describe('sidebar bertema login', () => {
   })
 })
 
-describe('Kelola User bertema login', () => {
+/** Rasio kontras WCAG 2 dua warna hex `#rrggbb`. */
+function kontras(a: string, b: string): number {
+  const terang = (hex: string): number => {
+    const [r, g, bl] = [1, 3, 5].map((i) => {
+      const v = parseInt(hex.slice(i, i + 2), 16) / 255
+      return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+    })
+    return 0.2126 * (r ?? 0) + 0.7152 * (g ?? 0) + 0.0722 * (bl ?? 0)
+  }
+  const [t, g] = [terang(a), terang(b)].sort((x, y) => y - x)
+  return ((t ?? 0) + 0.05) / ((g ?? 0) + 0.05)
+}
+
+/** Token `--ku-*` bernilai hex dari aturan yang pemilihnya PERSIS `pemilih`. */
+function token(daftar: Array<{ pemilih: string[]; isi: string }>, pemilih: string): Record<string, string> {
+  const a = daftar.find((x) => x.pemilih.length === 1 && x.pemilih[0] === pemilih)
+  return Object.fromEntries([...(a?.isi ?? '').matchAll(/(--ku-[a-z-]+)\s*:\s*(#[0-9a-f]{6})\s*;/gi)].map((m) => [m[1] ?? '', m[2] ?? '']))
+}
+
+describe('Kelola User bergaya soft UI', () => {
   // Potong dari pembuka komentar kepala blok, supaya komentar itu ikut terbuang utuh.
-  const tema = aturan(CSS.slice(CSS.lastIndexOf('/*', CSS.indexOf('KELOLA USER BERTEMA HALAMAN LOGIN'))))
+  const tema = aturan(CSS.slice(CSS.lastIndexOf('/*', CSS.indexOf('KELOLA USER BERGAYA SOFT UI'))))
+
+  it('teks tetap terbaca: kontras token teks terhadap latar, kartu, dan kepala tabel minimal 4,5:1, terang dan gelap', () => {
+    const terang = token(tema, '.kelola-user')
+    const gelap = { ...terang, ...token(tema, ':root[data-theme="dark"] .kelola-user') }
+    const pasangan = [
+      ['--ku-teks', '--ku-latar'],
+      ['--ku-teks', '--ku-kartu'],
+      ['--ku-teks-redup', '--ku-latar'],
+      ['--ku-teks-redup', '--ku-kartu'],
+      ['--ku-teks-redup', '--ku-kepala-tabel'],
+      ['--ku-aksen-teks', '--ku-kartu'],
+      ['--ku-judul-golongan', '--ku-latar'],
+    ] as const
+    const gagal = [
+      ['terang', terang],
+      ['gelap', gelap],
+    ].flatMap(([nama, t]) =>
+      pasangan
+        .map(([depan, belakang]) => {
+          const tk = t as Record<string, string>
+          const r = kontras(tk[depan] ?? '#ffffff', tk[belakang] ?? '#ffffff')
+          return { label: `${String(nama)} ${depan}/${belakang} ${r.toFixed(2)}`, r }
+        })
+        .filter((x) => x.r < 4.5)
+        .map((x) => x.label),
+    )
+    expect(Object.keys(terang).length).toBeGreaterThan(8)
+    expect(gagal).toEqual([])
+  })
+
+  it('rumus kontras menggigit: hitam/putih 21:1, #777777/putih di bawah 4,5:1', () => {
+    expect(kontras('#000000', '#ffffff')).toBeCloseTo(21, 5)
+    expect(kontras('#777777', '#ffffff')).toBeLessThan(4.5)
+    expect(kontras('#767676', '#ffffff')).toBeGreaterThanOrEqual(4.5)
+  })
 
   it('blok tema ada dan setiap pemilihnya di bawah kelas akar .kelola-user', () => {
     expect(tema.length).toBeGreaterThan(10)

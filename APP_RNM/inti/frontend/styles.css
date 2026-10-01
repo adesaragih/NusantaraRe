@@ -6029,115 +6029,234 @@ textarea.field__input {
 }
 
 /* ======================================================================
-   KELOLA USER BERTEMA HALAMAN LOGIN: permintaan work owner 02-10-2026
-   "menu Kelola User terapkan temanya seperti tema login". Token `--ku-*`
-   dibatasi di kelas akar `.kelola-user`; popup form pengguna dan popup
-   konfirmasi hapus dirender di dalam akar ini, jadi ikut bertema.
+   KELOLA USER BERGAYA SOFT UI: permintaan work owner 02-10-2026 "coba
+   implementasi dengan mengikuti rekomendasi kamu, ubah hanya menu kelola
+   user saja". Rekomendasinya: ambil BENTUK gaya soft UI (latar pucat,
+   kartu timbul berbayang lembut dua arah, chip kapsul, tab bersegmen),
+   BUKAN kontrasnya:
+   - teks tetap gelap dan tebal normal; kontras token teks terhadap latar,
+     kartu, dan kepala tabel minimal 4,5:1 (WCAG AA);
+   - tombol utama tetap merah penuh; tombol sekunder, isian, dan chip
+     punya tepi tipis, jadi tetap terbedakan dari latar;
+   - tabel rata di dalam SATU kartu timbul, baris tidak berbayang;
+   - warna tetap lavender dan merah halaman login.
+   Token `--ku-*` dibatasi di kelas akar `.kelola-user`; popup form
+   pengguna dan popup hapus dirender di dalam akar ini, jadi ikut bergaya.
    TANPA backdrop-filter, filter, atau transform pada akar dan
    keturunannya: properti itu menjadikan elemen blok penampung bagi
    `position: fixed`, sehingga popup menempel ke kotak, bukan ke layar
    (bug popup tidak di tengah 02-10-2026). Dijaga temalogin.guard.test.
    ====================================================================== */
 .kelola-user {
+  --ku-latar: #eceef6;
+  --ku-kartu: #f7f8fc;
+  --ku-teks: #1f2333;
+  --ku-teks-redup: #535a6e;
+  --ku-aksen-teks: #5b3db5;
+  --ku-judul-golongan: #6a4cbd;
+  --ku-kepala-tabel: #eef0f8;
+  --ku-baris-hover: #f1edfb;
+  --ku-tepi: #dcdfeb;
+  --ku-terang: rgba(255, 255, 255, 0.95);
+  --ku-redup: rgba(146, 154, 188, 0.4);
+  --ku-timbul: -6px -6px 14px var(--ku-terang), 8px 8px 16px var(--ku-redup);
+  --ku-timbul-kecil: -3px -3px 7px var(--ku-terang), 4px 4px 10px var(--ku-redup);
+  --ku-cekung: inset 2px 2px 5px var(--ku-redup), inset -2px -2px 5px var(--ku-terang);
   --ku-aksen: #8b5cf6;
   --ku-aksen-lembut: rgba(139, 92, 246, 0.1);
-  --ku-aksen-garis: rgba(139, 92, 246, 0.22);
   --ku-tombol: #d63a42;
   --ku-tombol-hover: #c2333b;
-  --ku-tombol-bayang: rgba(229, 72, 77, 0.55);
-  --ku-kanvas: radial-gradient(circle at 8% 0%, rgba(185, 141, 243, 0.22), transparent 42%),
-    radial-gradient(circle at 96% 100%, rgba(255, 160, 165, 0.2), transparent 40%),
-    radial-gradient(circle at 82% 0%, rgba(147, 197, 253, 0.2), transparent 36%);
-  --ku-kartu: rgba(255, 255, 255, 0.92);
-  --ku-bayang: 0 24px 48px -30px rgba(60, 40, 120, 0.4);
-  --ku-kepala-tabel: #f5f0ff;
-  --ku-baris-hover: #faf7ff;
-  --ku-judul: #1f2333;
-  --ku-judul-golongan: #7c5cc4;
-  padding: 20px;
-  border-radius: 24px;
-  background: var(--ku-kanvas);
+  color: var(--ku-teks);
+  padding: 24px;
+  border-radius: 28px;
+  background: var(--ku-latar);
+  /* Tabel yang lebih lebar dari layar, misalnya di ponsel, menggulir DI DALAM kotak ini, tidak
+     keluar dari latarnya. `overflow` tidak menjadikan kotak penampung `position: fixed`, jadi
+     popup tetap di tengah layar. Bayangan kartu tabel (jangkauan 24px) muat di padding 24px. */
+  overflow-x: auto;
 }
 :root[data-theme="dark"] .kelola-user {
+  --ku-latar: #1a1d29;
+  --ku-kartu: #222636;
+  --ku-teks: #eef0f6;
+  --ku-teks-redup: #b3b8c9;
+  --ku-aksen-teks: #d6c6ff;
+  --ku-judul-golongan: #c4b0f5;
+  --ku-kepala-tabel: #272b3c;
+  --ku-baris-hover: #2b2741;
+  --ku-tepi: #323849;
+  --ku-terang: rgba(255, 255, 255, 0.04);
+  --ku-redup: rgba(0, 0, 0, 0.5);
   --ku-aksen: #b48af2;
   --ku-aksen-lembut: rgba(139, 92, 246, 0.16);
-  --ku-aksen-garis: rgba(180, 138, 242, 0.24);
-  --ku-tombol-bayang: rgba(214, 58, 66, 0.35);
-  --ku-kanvas: radial-gradient(circle at 8% 0%, rgba(139, 92, 246, 0.18), transparent 42%),
-    radial-gradient(circle at 96% 100%, rgba(214, 58, 66, 0.12), transparent 40%);
-  --ku-kartu: rgba(30, 34, 48, 0.92);
-  --ku-bayang: 0 24px 48px -30px rgba(0, 0, 0, 0.7);
-  --ku-kepala-tabel: #251f38;
-  --ku-baris-hover: #2a2340;
-  --ku-judul: #f1f2f8;
-  --ku-judul-golongan: #b9a3ee;
 }
 
 .kelola-user .inbox__judul,
 .kelola-user .modal__title {
-  color: var(--ku-judul);
+  color: var(--ku-teks);
   font-family: "Poppins", var(--font);
   font-weight: 600;
 }
-
-/* Tabel daftar pengguna: kartu bertepi lavender, kepala dan sorot baris ikut tema. */
-.kelola-user .kelola-user__tabel {
-  background: var(--ku-kartu);
-  border-color: var(--ku-aksen-garis);
-  box-shadow: var(--ku-bayang);
-}
-.kelola-user .kelola-user__tabel thead th {
-  background: var(--ku-kepala-tabel);
-  border-bottom-color: var(--ku-aksen-garis);
-}
-.kelola-user .kelola-user__tabel tbody tr:hover {
-  background: var(--ku-baris-hover);
-}
-
-/* Popup: sudut lembut seperti kartu login. */
-.kelola-user .modal {
-  border-radius: 20px;
-}
-
-/* Tombol utama: merah tombol `Login`; tombol sekunder bersudut lembut beraksen ungu. */
-.kelola-user .btn--primary {
-  background: var(--ku-tombol);
-  border-color: var(--ku-tombol);
-  color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 12px 22px -14px var(--ku-tombol-bayang);
-}
-.kelola-user .btn--primary:hover:not(:disabled) {
-  background: var(--ku-tombol-hover);
-  border-color: var(--ku-tombol-hover);
-}
-.kelola-user .btn--ghost {
-  border-radius: 10px;
-}
-.kelola-user .btn--ghost:hover:not(:disabled) {
-  border-color: var(--ku-aksen-garis);
-  background: var(--ku-aksen-lembut);
+.kelola-user .muted {
+  color: var(--ku-teks-redup);
 }
 .kelola-user :focus-visible {
   outline: 2px solid var(--ku-aksen);
   outline-offset: 2px;
 }
 
-/* Kotak isian seperti isian login: sudut 12px, fokus ungu. */
+/* Isian (kotak cari, form): cekung lembut, tepi tipis, fokus ungu. */
 .kelola-user .field__input {
-  border-radius: 12px;
+  background: var(--ku-kartu);
+  border: 1px solid var(--ku-tepi);
+  border-radius: 14px;
+  box-shadow: var(--ku-cekung);
+  color: var(--ku-teks);
 }
 .kelola-user .field__input:focus {
   border-color: var(--ku-aksen);
-  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.18);
+  box-shadow: var(--ku-cekung), 0 0 0 4px rgba(139, 92, 246, 0.18);
   outline: none;
 }
 
-/* Form pengguna: kotak centang workbasket dan menu bertepi lavender. */
+/* Tombol kapsul. Utama: merah penuh tombol `Login`. Sekunder: kartu timbul
+   bertepi tipis. Ditekan: cekung. Nonaktif: rata tanpa bayangan. */
+.kelola-user .btn {
+  border-radius: 999px;
+}
+.kelola-user .btn--primary {
+  background: var(--ku-tombol);
+  border-color: var(--ku-tombol);
+  color: #ffffff;
+  box-shadow: var(--ku-timbul-kecil);
+}
+.kelola-user .btn--primary:hover:not(:disabled) {
+  background: var(--ku-tombol-hover);
+  border-color: var(--ku-tombol-hover);
+}
+.kelola-user .btn--ghost {
+  background: var(--ku-kartu);
+  border: 1px solid var(--ku-tepi);
+  color: var(--ku-teks);
+  box-shadow: var(--ku-timbul-kecil);
+}
+.kelola-user .btn--ghost:hover:not(:disabled) {
+  background: var(--ku-aksen-lembut);
+  border-color: var(--ku-aksen);
+}
+.kelola-user .btn:active:not(:disabled) {
+  box-shadow: var(--ku-cekung);
+}
+.kelola-user .btn:disabled {
+  box-shadow: none;
+}
+/* Sesudah aturan `.btn--ghost` supaya merah tombol Hapus tidak tertimpa. */
+.kelola-user .kelola-user__hapus {
+  color: var(--danger-text);
+}
+
+/* Tabel daftar pengguna: SATU kartu timbul; baris rata tanpa bayangan. */
+.kelola-user .kelola-user__tabel {
+  background: var(--ku-kartu);
+  border: 1px solid var(--ku-tepi);
+  border-radius: 20px;
+  box-shadow: var(--ku-timbul);
+}
+.kelola-user .kelola-user__tabel thead tr:first-child > th:first-child {
+  border-top-left-radius: 19px;
+}
+.kelola-user .kelola-user__tabel thead tr:first-child > th:last-child {
+  border-top-right-radius: 19px;
+}
+.kelola-user .kelola-user__tabel tbody tr:last-child > td:first-child {
+  border-bottom-left-radius: 19px;
+}
+.kelola-user .kelola-user__tabel tbody tr:last-child > td:last-child {
+  border-bottom-right-radius: 19px;
+}
+.kelola-user .kelola-user__tabel thead th {
+  background: var(--ku-kepala-tabel);
+  color: var(--ku-teks-redup);
+  border-bottom-color: var(--ku-tepi);
+}
+.kelola-user .kelola-user__tabel td {
+  color: var(--ku-teks);
+  border-bottom-color: var(--ku-tepi);
+}
+.kelola-user .kelola-user__tabel tbody tr:hover {
+  background: transparent;
+}
+.kelola-user .kelola-user__tabel tbody tr:hover > td {
+  background: var(--ku-baris-hover);
+}
+
+/* Status: chip kapsul bertitik warna; warna teks tetap warna status inti. */
+.kelola-user .kelola-user__status .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 8px;
+  background: var(--ku-kartu);
+  border: 1px solid var(--ku-tepi);
+  box-shadow: var(--ku-timbul-kecil);
+  letter-spacing: 0.4px;
+}
+.kelola-user .kelola-user__status .badge::before {
+  content: "";
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Popup: kartu timbul bersudut lembut. */
+.kelola-user .modal {
+  background: var(--ku-kartu);
+  border-radius: 24px;
+  box-shadow: 0 30px 60px -24px rgba(40, 30, 90, 0.4);
+}
+.kelola-user .modal__head,
+.kelola-user .modal__actions {
+  border-color: var(--ku-tepi);
+}
+
+/* Tab form pengguna: kontrol bersegmen kapsul; tab aktif timbul. */
+.kelola-user .tabs {
+  width: fit-content;
+  max-width: 100%;
+  gap: 4px;
+  padding: 4px;
+  border-bottom: 0;
+  border-radius: 22px;
+  background: var(--ku-latar);
+  box-shadow: var(--ku-cekung);
+}
+.kelola-user .tabs__item {
+  height: 36px;
+  margin-bottom: 0;
+  border-bottom: 0;
+  border-radius: 999px;
+  color: var(--ku-teks-redup);
+}
+.kelola-user .tabs__item:hover {
+  background: var(--ku-aksen-lembut);
+  color: var(--ku-teks);
+}
+.kelola-user .tabs__item--aktif,
+.kelola-user .tabs__item--aktif:hover {
+  background: var(--ku-kartu);
+  color: var(--ku-aksen-teks);
+  box-shadow: var(--ku-timbul-kecil);
+}
+
+/* Form pengguna: kotak centang workbasket dan menu sebagai panel cekung. */
 .kelola-user .kelola-user__centang,
 .kelola-user .kelola-user__wajib {
-  border-color: var(--ku-aksen-garis);
-  border-radius: 14px;
+  border: 1px solid var(--ku-tepi);
+  border-radius: 18px;
+  background: var(--ku-latar);
+  box-shadow: var(--ku-cekung);
 }
 .kelola-user .kelola-user__golongan-judul {
   color: var(--ku-judul-golongan);
@@ -6145,10 +6264,16 @@ textarea.field__input {
 .kelola-user .kelola-user__butir input {
   accent-color: var(--ku-aksen);
 }
+.kelola-user .alert {
+  border-radius: 14px;
+}
 
 @media (max-width: 640px) {
   .kelola-user {
-    padding: 10px;
-    border-radius: 16px;
+    padding: 14px;
+    border-radius: 18px;
+  }
+  .kelola-user .kelola-user__tabel {
+    box-shadow: var(--ku-timbul-kecil);
   }
 }
