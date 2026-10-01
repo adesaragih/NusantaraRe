@@ -24,13 +24,17 @@ const KOLOM = [
 
 export default function ModalRate({ riRateId, onTutup }: { riRateId: string; onTutup: () => void }) {
   const [baris, setBaris] = useState<BarisRate[] | null>(null)
+  const [terpotong, setTerpotong] = useState(false)
   const [galat, setGalat] = useState<unknown>(null)
 
   useEffect(() => {
     let batal = false
     ambilRate(riRateId)
       .then((d) => {
-        if (!batal) setBaris(d.daftar)
+        if (!batal) {
+          setBaris(d.daftar)
+          setTerpotong(d.terpotong)
+        }
       })
       .catch((e: unknown) => {
         if (!batal) setGalat(e)
@@ -55,6 +59,7 @@ export default function ModalRate({ riRateId, onTutup }: { riRateId: string; onT
       {baris === null && galat === null && <Memuat />}
       {galat !== null && <Gagal galat={galat} />}
       {baris !== null && baris.length === 0 && <Kosong pesan={LAIN_MPNL.kosong} />}
+      {terpotong && <p className="mpnl-catatan-medan">{LAIN_MPNL.terpotong}</p>}
       {baris !== null && baris.length > 0 && (
         <table className="inbox__tabel">
           <thead>

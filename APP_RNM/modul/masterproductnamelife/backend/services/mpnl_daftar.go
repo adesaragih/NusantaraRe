@@ -147,6 +147,12 @@ func periksaUWLimit(pk *periksa, daftar []models.BarisUWLimit) {
 // `RATE_LIFE_SUMMARY`; namanya = `.USEDBY` master, seperti `SetRIRate` b249 (`.RIRATE ← usedby`).
 func (l *Layanan) periksaPilihanPlan(ctx context.Context, pk *periksa, daftar []models.BarisPlan, lama []models.BarisPlan) error {
 	rateLama, planLama := map[[2]string]bool{}, map[[2]string]bool{}
+	// Satu pembacaan view per RIRATEID per simpan (code review #15) - baris plan sering ber-R/I Rate sama.
+	type hasilRate struct {
+		v   models.NilaiMaster
+		ada bool
+	}
+	rateDibaca := map[string]hasilRate{}
 	for _, b := range lama {
 		rateLama[[2]string{b.RIRateID, b.RIRate}] = true
 		planLama[[2]string{b.PlanID, b.Plan}] = true
@@ -172,10 +178,16 @@ func (l *Layanan) periksaPilihanPlan(ctx context.Context, pk *periksa, daftar []
 			continue
 		}
 		if b.RIRateID != "" {
-			v, ada, err := l.gudang.AmbilMaster(ctx, models.MasterRIRate, b.RIRateID)
-			if err != nil {
-				return err
+			r, sudah := rateDibaca[b.RIRateID]
+			if !sudah {
+				v, ada, err := l.gudang.AmbilMaster(ctx, models.MasterRIRate, b.RIRateID)
+				if err != nil {
+					return err
+				}
+				r = hasilRate{v, ada}
+				rateDibaca[b.RIRateID] = r
 			}
+			v, ada := r.v, r.ada
 			if !ada {
 				pk.baris(judulPlan, i, "R/I Rate %q is not in the master list", b.RIRateID)
 			} else {

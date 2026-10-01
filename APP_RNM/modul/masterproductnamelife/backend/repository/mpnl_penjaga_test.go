@@ -16,6 +16,9 @@ package repository
 
 import (
 	"errors"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -411,5 +414,72 @@ func TestMPNLPeriksaBacaSajaMenolakTulisanKeView(t *testing.T) {
 	}
 	if err := periksaBacaSaja(TabelProduk, "UPDATE S.T SET JSONDATA = :1 WHERE ID = :2"); err != nil {
 		t.Errorf("tabel produk modul ini boleh ditulis: %v", err)
+	}
+}
+
+// Code review 01-10-2026 (#10): periksaBacaSaja hanya menjaga SQL yang lewat siapkan. Lapis statik ini menutup
+// celahnya - SETIAP fungsi (deklarasi maupun literal) kode produksi modul ini yang menyebut konstanta view rate
+// (`MasterRate`, `MasterRIRate`) tidak boleh memuat SQL tulis maupun `ExecContext`.
+var polaTulisRate = regexp.MustCompile(`(?i)\b(INSERT\s+INTO|UPDATE\s+\S+\s+SET|DELETE\s+FROM|MERGE\s+INTO|ExecContext)\b`)
+
+// fungsiRateMenulis - nama fungsi di src yang menyebut konstanta view rate DAN memuat tulisan.
+func fungsiRateMenulis(t *testing.T, nama, src string) []string {
+	t.Helper()
+	fset := token.NewFileSet()
+	f, err := parser.ParseFile(fset, nama, src, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var hasil []string
+	ast.Inspect(f, func(n ast.Node) bool {
+		var badan *ast.BlockStmt
+		label := ""
+		switch x := n.(type) {
+		case *ast.FuncDecl:
+			badan, label = x.Body, x.Name.Name
+		case *ast.FuncLit:
+			badan, label = x.Body, "func literal"
+		}
+		if badan == nil {
+			return true
+		}
+		teks := src[fset.Position(badan.Pos()).Offset:fset.Position(badan.End()).Offset]
+		sebut := false
+		ast.Inspect(badan, func(m ast.Node) bool {
+			if id, ok := m.(*ast.Ident); ok && (id.Name == "MasterRate" || id.Name == "MasterRIRate") {
+				sebut = true
+			}
+			return true
+		})
+		if sebut && polaTulisRate.MatchString(teks) {
+			hasil = append(hasil, nama+": "+label)
+		}
+		return true
+	})
+	return hasil
+}
+
+func TestMPNLViewRateHanyaDibacaFungsiBaca(t *testing.T) {
+	diperiksa := 0
+	for jalur, isi := range kodeProduksi(t) {
+		if strings.HasSuffix(jalur, "_test.go") || !strings.HasSuffix(jalur, ".go") {
+			continue
+		}
+		diperiksa++
+		if bad := fungsiRateMenulis(t, jalur, isi); len(bad) > 0 {
+			t.Errorf("fungsi menyebut view rate DAN menulis: %v", bad)
+		}
+	}
+	if diperiksa < 10 {
+		t.Fatalf("hanya %d berkas produksi terbaca - pembacanya yang rusak", diperiksa)
+	}
+}
+
+func TestMPNLAturanViewRateMenggigit(t *testing.T) {
+	src := "package x\n\nfunc a(g *Gudang) {\n\tq, _ := g.db.Qualify(MasterRate)\n\t_, _ = g.db.ExecContext(ctx, \"UPDATE \"+q+\" SET RATE = :1\")\n}\n" +
+		"\nvar b = func() string { return fmt.Sprint(MasterRIRate, `DELETE FROM x`) }\n" +
+		"\nfunc c() string { return MasterRate }\n"
+	if bad := fungsiRateMenulis(t, "x.go", src); len(bad) != 2 {
+		t.Errorf("ExecContext/UPDATE dan DELETE FROM atas view rate harus tertangkap, pembaca murni tidak: %v", bad)
 	}
 }

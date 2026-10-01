@@ -77,6 +77,12 @@ func TestDBRIRateDanViewRateDibacaSaja(t *testing.T) {
 	} {
 		u.exec(t, q)
 	}
+	// Sidik isi kedua view sebelum dan sesudah (code review #10: cacah saja tidak melihat UPDATE).
+	sidik := func() string {
+		return u.teks(t, `SELECT (SELECT COUNT(*) || '/' || SUM(LENGTH(ID || IDUSEDBY || USEDBY || GENDER || CONTRACT || AGE || RATE))
+		    FROM {s}.RATE_LIFE) || '|' || (SELECT COUNT(*) || '/' || SUM(LENGTH(ID || USEDBY)) FROM {s}.RATE_LIFE_SUMMARY) FROM DUAL`)
+	}
+	awal := sidik()
 	kode, badan := u.kirim(t, "GET", pre+"/master/ri-rate?cari=rate", "")
 	if kode != http.StatusOK || !strings.Contains(badan, `"total":2`) || strings.Index(badan, "UJI-1") > strings.Index(badan, "UJI-2") {
 		t.Errorf("R/I Rate: %d %s", kode, badan)
@@ -85,5 +91,8 @@ func TestDBRIRateDanViewRateDibacaSaja(t *testing.T) {
 	if kode != http.StatusOK || !strings.Contains(badan, `"rate":"0,5"`) || strings.Contains(badan, "UJI-C") ||
 		strings.Index(badan, "UJI-B") > strings.Index(badan, "UJI-A") || !strings.Contains(badan, `"terpotong":false`) {
 		t.Errorf("View Rate: %d %s", kode, badan)
+	}
+	if akhir := sidik(); akhir != awal {
+		t.Errorf("view rate tersentuh: sidik %s → %s", awal, akhir)
 	}
 }

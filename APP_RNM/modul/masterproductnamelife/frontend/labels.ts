@@ -363,6 +363,11 @@ export const PESAN_MPNL = {
 export const LAIN_MPNL = {
   /** `[tidak ada di korpus]` - grid tanpa baris (ADR-U-0027: kosong dinyatakan). */
   kosong: 'No items',
+  /**
+   * `[tidak ada di korpus]` - dialog `View Rate` dipotong `BrowseRateLife_RD` `pyMaxRecords` 500; Pega memotong
+   * diam-diam, di sini potongan DINYATAKAN (code review 01-10-2026).
+   */
+  terpotong: 'Only the first 500 rows are shown.',
   /** `[tidak ada di korpus]` - ikon grid bawaan `pzPegaDefaultGridIcons` (`LIEN CLAUSE` b12373, `DOCUMENT CLAIM` b14760): tambah baris. */
   tambahBaris: 'Add row',
   /** `[tidak ada di korpus]` - ikon grid bawaan `pzPegaDefaultGridIcons`: hapus baris. */
