@@ -3,14 +3,14 @@
 // Dua jalan masuk: WAJIB (akun baru atau sandi direset - layar penuh, tanpa
 // Batal, sebelum aplikasi dapat dipakai) dan PILIHAN (dari menu profil).
 // Backend menegakkan aturannya; di sini hanya pemeriksaan awal supaya pemakai
-// tidak menunggu jawaban server untuk salah yang jelas.
+// tidak menunggu jawaban server untuk salah yang jelas. Tampilan: kerangka
+// halaman login (`KerangkaMasuk`).
 
 import { useState } from 'react'
 
 import { ApiFailure, gantiSandiLogin, type ProfilLogin } from '../klien'
 import { LOGIN, PANJANG_MIN_SANDI } from '../labels'
-import { useLatarPipeline } from './Login'
-import { FieldSandi } from './ui/dasar'
+import { IsianSandi, KerangkaMasuk } from './Login'
 
 /** Pemeriksaan awal; `null` = boleh dikirim. Panjang dihitung KARAKTER, seperti backend. */
 export function periksaSandiBaru(baru: string, ulang: string): string | null {
@@ -42,7 +42,6 @@ export default function GantiSandi({
   const [ulang, setUlang] = useState('')
   const [sibuk, setSibuk] = useState(false)
   const [galat, setGalat] = useState<string | null>(null)
-  const kanvasRef = useLatarPipeline()
 
   const kosongkan = () => {
     setLama('')
@@ -51,10 +50,9 @@ export default function GantiSandi({
   }
 
   return (
-    <div className="login">
-      <canvas ref={kanvasRef} className="login__latar" aria-hidden="true" role="presentation" />
+    <KerangkaMasuk judul={LOGIN.judulGanti} sub={wajib ? LOGIN.wajibGanti : LOGIN.minimal}>
       <form
-        className="login__card"
+        className="halaman-masuk__form"
         onSubmit={(e) => {
           e.preventDefault()
           if (sibuk) return
@@ -79,26 +77,45 @@ export default function GantiSandi({
           )
         }}
       >
-        <h1 className="login__judul">{LOGIN.judulGanti}</h1>
-        {wajib && <p className="login__sub">{LOGIN.wajibGanti}</p>}
         {galat !== null && (
           <div className="alert alert--error" role="alert">
             {galat}
           </div>
         )}
-        <FieldSandi label={LOGIN.sandiLama} value={lama} onChange={setLama} required autoFocus />
-        <FieldSandi label={LOGIN.sandiBaru} value={baru} onChange={setBaru} required />
-        <FieldSandi label={LOGIN.ulangiSandi} value={ulang} onChange={setUlang} required />
-        <p className="login__bantuan">{LOGIN.minimal}</p>
-        <button type="submit" className="btn btn--primary" disabled={sibuk || lama === '' || baru === ''}>
+        <IsianSandi
+          id="ganti-sandi-lama"
+          label={LOGIN.sandiLama}
+          placeholder={LOGIN.sandiLama}
+          value={lama}
+          onChange={setLama}
+          autoComplete="current-password"
+          autoFocus
+        />
+        <IsianSandi
+          id="ganti-sandi-baru"
+          label={LOGIN.sandiBaru}
+          placeholder={LOGIN.sandiBaru}
+          value={baru}
+          onChange={setBaru}
+          autoComplete="new-password"
+        />
+        <IsianSandi
+          id="ganti-sandi-ulang"
+          label={LOGIN.ulangiSandi}
+          placeholder={LOGIN.ulangiSandi}
+          value={ulang}
+          onChange={setUlang}
+          autoComplete="new-password"
+        />
+        <button className="halaman-masuk__tombol" type="submit" disabled={sibuk || lama === '' || baru === ''}>
           {sibuk ? LOGIN.memproses : LOGIN.simpanSandi}
         </button>
         {!wajib && onBatal && (
-          <button type="button" className="btn" onClick={onBatal} disabled={sibuk}>
+          <button type="button" className="halaman-masuk__tombol-kedua" onClick={onBatal} disabled={sibuk}>
             {LOGIN.batal}
           </button>
         )}
       </form>
-    </div>
+    </KerangkaMasuk>
   )
 }

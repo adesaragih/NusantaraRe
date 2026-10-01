@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import Beranda from './Beranda'
 import GantiSandi from '../inti/frontend/components/GantiSandi'
-import Login from '../inti/frontend/components/Login'
+import Login, { KerangkaMasuk } from '../inti/frontend/components/Login'
 import { Shell } from '../inti/frontend/components/Shell'
 import { ApiFailure, ambilMenu, ambilModulAktif, ambilSesiSaya, keluarLogin, type ProfilLogin } from '../inti/frontend/klien'
 import { LOGIN } from '../inti/frontend/labels'
@@ -95,16 +95,16 @@ export default function App() {
 
   if (!stub && galatSesi !== null) {
     return (
-      <div className="login">
-        <div className="login__card">
+      <KerangkaMasuk judul={LOGIN.masuk} sub={LOGIN.gagal}>
+        <div className="halaman-masuk__form">
           <div className="alert alert--error" role="alert">
             {galatSesi instanceof ApiFailure ? galatSesi.message : LOGIN.gagal}
           </div>
-          <button type="button" className="btn btn--primary" onClick={periksaSesi}>
+          <button type="button" className="halaman-masuk__tombol" onClick={periksaSesi}>
             {LOGIN.cobaLagi}
           </button>
         </div>
-      </div>
+      </KerangkaMasuk>
     )
   }
   if (!stub && profil === undefined) {

@@ -133,16 +133,21 @@ export const KERANGKA = {
  * Label halaman login dan ganti sandi — `M_LOGIN_GO`, keputusan work owner
  * 01-10-2026.
  *
- * ⚠️ `[tidak ada di korpus]` `[kerangka aplikasi]`: tampilannya kartu login
- * `REFERENSI_UI` (ronde 277), teksnya berbahasa Indonesia seperti `KERANGKA`.
- * Pesan gagal dipilih dari STATUS jawaban, bukan dari teks backend.
+ * ⚠️ `[tidak ada di korpus]` `[kerangka aplikasi]`: judul, keterangan,
+ * isian, dan tombol VERBATIM `loginbaru.html` (lampiran work owner
+ * 01-10-2026). Pesan gagal dipilih dari STATUS jawaban, bukan teks backend.
  */
 export const LOGIN = {
-  judul: 'Masuk',
-  sub: 'Masukkan akun dan sandi Anda.',
-  akun: 'Akun',
-  sandi: 'Sandi',
-  masuk: 'Masuk',
+  judul: 'Halo Lagi!',
+  sub: 'Selamat datang kembali, senang bertemu Anda lagi!',
+  logo: 'Nusantara Re - Login aplikasi',
+  akun: 'Username',
+  isianAkun: 'Masukkan username',
+  sandi: 'Password',
+  isianSandi: 'Password',
+  tampilkanSandi: 'Tampilkan password',
+  sembunyikanSandi: 'Sembunyikan password',
+  masuk: 'Login',
   memproses: 'Memeriksa…',
   memuatSesi: 'Memeriksa sesi…',
   bantuan: 'Lupa sandi atau belum punya akses? Hubungi IT.',

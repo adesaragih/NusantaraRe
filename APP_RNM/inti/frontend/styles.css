@@ -2388,13 +2388,6 @@ table {
   max-width: 100%;
   object-fit: contain;
 }
-/* 01-10-2026 (login M_LOGIN_GO): logo resmi sebagai gambar LATAR - pola
-   `.shell__merek-tanda`, supaya layar tidak memakai `src={...}`. PNG persegi. */
-.login__logo--latar {
-  width: 56px;
-  border-radius: 12px;
-  background: url('./assets/logo-nusantara-re.png') center / contain no-repeat;
-}
 /* §1.2 ronde 269 (A.8) — JUDUL kartu.
 
    Acuan memakai blok kop bertingkat: wordmark, lalu judul, lalu satu
@@ -5572,5 +5565,246 @@ textarea.field__input {
     grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
     gap: 24px;
     align-items: start;
+  }
+}
+
+/* ======================================================================
+   HALAMAN LOGIN M_LOGIN_GO — `loginbaru.html`, lampiran work owner
+   01-10-2026. Kartu kaca dua kolom: ilustrasi (layar lebar) + form.
+
+   Warna desain itu dipakai APA ADANYA dan DIBATASI di blok ini (token
+   `--hm-*`), tidak menjadi token aplikasi. Halaman login berwarna tetap -
+   tidak mengikuti tema gelap, sebab ilustrasi dan kacanya dirancang untuk
+   latar terang. Awalan `.halaman-masuk`: `.masuk` sudah dipakai layar stub
+   F0.2, dan `.shell` milik bingkai aplikasi.
+   ====================================================================== */
+.halaman-masuk {
+  --hm-panel-from: #d7bcfb;
+  --hm-panel-to: #b48af2;
+  --hm-btn: #d63a42;
+  --hm-btn-hover: #c2333b;
+  --hm-focus: #8b5cf6;
+  --hm-text: #1f2333;
+  --hm-muted: #6b7280;
+  --hm-line: #e6e8f0;
+  box-sizing: border-box;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  font-family: "Poppins", var(--font);
+  color: var(--hm-text);
+  background:
+    radial-gradient(circle at 93% 26%, #fff 0 6px, transparent 7px),
+    radial-gradient(circle at 5% 86%, #fff 0 5px, transparent 6px),
+    radial-gradient(circle at 12% 15%, rgba(185, 141, 243, 0.35), transparent 40%),
+    radial-gradient(circle at 88% 88%, rgba(255, 160, 165, 0.35), transparent 40%),
+    radial-gradient(circle at 78% 8%, rgba(147, 197, 253, 0.35), transparent 35%),
+    #eef0f6;
+}
+.halaman-masuk *,
+.halaman-masuk *::before,
+.halaman-masuk *::after {
+  box-sizing: border-box;
+}
+.halaman-masuk :focus-visible {
+  outline: 2px solid var(--hm-focus);
+  outline-offset: 2px;
+}
+.halaman-masuk__kartu {
+  width: 100%;
+  max-width: 980px;
+  display: grid;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 28px;
+  box-shadow: 0 30px 60px -24px rgba(60, 40, 120, 0.3);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+}
+/* Panel ilustrasi: disembunyikan di layar sempit. */
+.halaman-masuk__panel {
+  display: none;
+}
+.halaman-masuk__melayang {
+  animation: halaman-masuk-melayang 6s ease-in-out infinite;
+}
+.halaman-masuk__melayang--tunda {
+  animation-delay: -3s;
+}
+@keyframes halaman-masuk-melayang {
+  50% {
+    transform: translateY(-10px);
+  }
+}
+.halaman-masuk__sisi-form {
+  display: flex;
+  flex-direction: column;
+  padding: 40px 20px;
+  border-radius: 20px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.95), rgba(241, 244, 255, 0.75) 55%, rgba(255, 236, 238, 0.75));
+}
+.halaman-masuk__kotak-form {
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+  text-align: center;
+}
+/* Logo "Nusantara Re | Login aplikasi", tulisan hitam (PNG 450x73). Gambar
+   LATAR, pola `.shell__merek-tanda`. */
+.halaman-masuk__logo {
+  display: block;
+  width: 100%;
+  max-width: 280px;
+  aspect-ratio: 450 / 73;
+  margin: 0 auto 28px;
+  background: url('./assets/logo-login.png') center / contain no-repeat;
+}
+.halaman-masuk__judul {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--hm-text);
+}
+.halaman-masuk__sub {
+  margin: 8px 0 32px;
+  font-size: 14px;
+  color: var(--hm-muted);
+}
+.halaman-masuk__form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: left;
+}
+.halaman-masuk__input {
+  width: 100%;
+  height: 50px;
+  padding: 0 16px;
+  font: inherit;
+  font-size: 16px; /* 16px: cegah auto-zoom di iPhone */
+  color: var(--hm-text);
+  background: #fff;
+  border: 1px solid var(--hm-line);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(31, 35, 51, 0.04);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.halaman-masuk__input::placeholder {
+  color: var(--hm-muted);
+}
+.halaman-masuk__input:focus {
+  outline: none;
+  border-color: var(--hm-focus);
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.18);
+}
+.halaman-masuk__sandi {
+  position: relative;
+}
+.halaman-masuk__sandi .halaman-masuk__input {
+  padding-right: 52px;
+}
+.halaman-masuk__toggle {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  color: #8a90a3;
+  background: none;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.halaman-masuk__toggle:hover {
+  color: var(--hm-text);
+  background: #f3f4f8;
+}
+.halaman-masuk__toggle svg {
+  width: 20px;
+  height: 20px;
+}
+.halaman-masuk__tombol {
+  height: 50px;
+  margin-top: 10px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--hm-btn);
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 14px 24px -10px rgba(229, 72, 77, 0.7);
+  transition: background-color 0.2s, transform 0.1s;
+}
+.halaman-masuk__tombol:hover:not(:disabled) {
+  background: var(--hm-btn-hover);
+}
+.halaman-masuk__tombol:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.halaman-masuk__tombol:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.halaman-masuk__tombol-kedua {
+  height: 44px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--hm-text);
+  background: #fff;
+  border: 1px solid var(--hm-line);
+  border-radius: 12px;
+  cursor: pointer;
+}
+.halaman-masuk__bantuan {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  text-align: center;
+  color: var(--hm-muted);
+}
+/* Layar lebar: dua kolom. */
+@media (min-width: 860px) {
+  .halaman-masuk {
+    padding: 32px;
+  }
+  .halaman-masuk__kartu {
+    grid-template-columns: 1fr 1fr;
+    min-height: 600px;
+    padding: 14px;
+  }
+  .halaman-masuk__panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    border-radius: 20px;
+    background: linear-gradient(160deg, var(--hm-panel-from), var(--hm-panel-to));
+    overflow: hidden;
+  }
+  .halaman-masuk__panel svg {
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+  }
+  .halaman-masuk__sisi-form {
+    justify-content: center;
+    padding: 40px;
+    background: transparent;
+  }
+  .halaman-masuk__kotak-form {
+    margin: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .halaman-masuk__melayang {
+    animation: none;
+  }
+  .halaman-masuk * {
+    transition: none !important;
   }
 }

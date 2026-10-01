@@ -104,3 +104,30 @@ describe('sandi tidak pernah disimpan di layar', () => {
     }
   })
 })
+
+describe('tampilan loginbaru.html', () => {
+  const login = readFileSync(join(__dirname, 'Login.tsx'), 'utf8')
+  const css = readFileSync(join(__dirname, '..', 'styles.css'), 'utf8')
+
+  it('teks VERBATIM desain', () => {
+    expect(LOGIN.judul).toBe('Halo Lagi!')
+    expect(LOGIN.sub).toBe('Selamat datang kembali, senang bertemu Anda lagi!')
+    expect(LOGIN.isianAkun).toBe('Masukkan username')
+    expect(LOGIN.masuk).toBe('Login')
+  })
+
+  it('isian dikenali pengelola sandi peramban', () => {
+    expect(login).toContain('autoComplete="username"')
+    expect(login).toContain('autoComplete="current-password"')
+    expect(login).toContain('aria-pressed={terlihat}')
+  })
+
+  it('logo bertulisan hitam lewat gambar latar, bukan atribut sumber', () => {
+    expect(css).toContain("url('./assets/logo-login.png')")
+    expect(login).not.toMatch(/<img/)
+    // PNG 450x73 (IHDR): logo yang dikirim work owner, tulisan diubah hitam.
+    const png = readFileSync(join(__dirname, '..', 'assets', 'logo-login.png'))
+    expect(png.readUInt32BE(16)).toBe(450)
+    expect(png.readUInt32BE(20)).toBe(73)
+  })
+})
