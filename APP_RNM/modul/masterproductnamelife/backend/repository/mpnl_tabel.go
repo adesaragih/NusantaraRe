@@ -23,6 +23,7 @@ import (
 	"database/sql"
 
 	"nusantarare/inti/backend/db"
+	"nusantarare/modul/masterproductnamelife/backend/models"
 )
 
 // Dua tabel warisan produk (`dba-procedures-and-ddl.md` DDL) - ditulis dan dibaca.
@@ -42,13 +43,36 @@ var (
 	KolomInward = []string{"ID", "JSONDATA"}
 )
 
-// Lebar kolom datar `[data DBA]` - nilai yang lebih panjang ditolak services
-// dengan kalimat yang menyebut medannya, bukan dipotong Oracle.
+// Lebar kolom datar - katalog DEV `ALL_TAB_COLUMNS` (`testdata/katalog-dev.json` `lebar`, uji
+// `TestLebarKolomDatarSamaDenganKatalogDEV`). Nilai yang lebih panjang ditolak services dengan kalimat
+// yang menyebut medannya, bukan dipotong Oracle. ⚠️ Dihitung dalam BYTE: semantik BYTE/CHAR kolom DEV
+// tidak tercatat di katalog - byte adalah batas yang aman untuk keduanya.
 const (
-	LebarID       = 6
 	LebarRIRiskID = 10
 	LebarRIRisk   = 100
 )
+
+// LebarKunciView - kunci skalar yang dibaca view `PRODUCT_LIFE` / `PRODUCTINWARD_LIFE` keluar sebagai
+// VARCHAR2(4000) (`claimlife/docs/KATALOG-TABEL-PESERTA-DAN-TREATY.md`); nilai yang lebih panjang
+// dibaca view sebagai NULL (`NULL ON ERROR`) - Claim Life diam-diam kehilangan nilainya.
+const LebarKunciView = 4000
+
+// KunciViewTerlaluPanjang - kunci view skalar yang nilainya (bentuk Pega) melampaui LebarKunciView.
+func KunciViewTerlaluPanjang(p models.Produk) []string {
+	umum, inward := HalamanPega(p)
+	var hasil []string
+	for _, k := range KunciViewProduk {
+		if len(umum[k]) > LebarKunciView {
+			hasil = append(hasil, k)
+		}
+	}
+	for _, k := range KunciViewInward {
+		if len(inward[k]) > LebarKunciView {
+			hasil = append(hasil, k)
+		}
+	}
+	return hasil
+}
 
 // DaftarTabelWarisan - tabel yang ditulis modul ini (penjaga modul).
 var DaftarTabelWarisan = []string{TabelProduk, TabelInward}

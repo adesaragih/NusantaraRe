@@ -71,9 +71,9 @@ type PenyimpananBerkas interface {
 const (
 	// PesanTanpaBerkas - `ProductNameSaveAttachment` 1 b292 `Local.Err`.
 	PesanTanpaBerkas = "Tidak ada file yg diattach"
-	// KategoriLampiran - 2.1 b473.
+	// KategoriLampiran - 2.1 b475.
 	KategoriLampiran = "File"
-	// FolderLampiran / DurasiLampiran - parameter 2.4 b902.
+	// FolderLampiran / DurasiLampiran - parameter 2.4 b904.
 	FolderLampiran = "Contract"
 	DurasiLampiran = 1800
 )
@@ -116,7 +116,7 @@ func namaObjek(saat time.Time, nama string) (folder, file string) {
 	return folder, file
 }
 
-// ekstensi - `.pyFileMimeType` layar ini: ekstensi sesudah titik terakhir, huruf kecil (3 b564).
+// ekstensi - `.pyFileMimeType` layar ini: ekstensi sesudah titik terakhir, huruf kecil (3 b566).
 func ekstensi(nama string) string {
 	i := strings.LastIndex(nama, ".")
 	if i < 0 || i == len(nama)-1 {

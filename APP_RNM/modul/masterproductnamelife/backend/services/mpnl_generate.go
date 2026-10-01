@@ -52,7 +52,7 @@ func kodeKeTeks(nilai []string, lainnya string) func(string) string {
 func umumCSV(k string) kolomCSV   { return kolomCSV{judul: k, kunci: k} }
 func inwardCSV(k string) kolomCSV { return kolomCSV{judul: k, inward: true, kunci: k} }
 
-// kolomGenerate - urutan judul b1340; sumber tiap judul dari langkah 2 b330.
+// kolomGenerate - urutan judul b1340; sumber tiap judul dari langkah 2 b332.
 var kolomGenerate = []kolomCSV{
 	{judul: "TYPE", kunci: "TYPE", ubah: kodeKeTeks([]string{"Basic"}, "Rider")},              // CARI1
 	{judul: "TYPE_CEDING", kunci: "TYPE_CEDING", ubah: kodeKeTeks([]string{"QS"}, "SUPRLUS")}, // CARI2
@@ -72,7 +72,7 @@ var kolomGenerate = []kolomCSV{
 }
 
 // Generate menulis `SeeDetail.csv` dari isi form yang dikirim (tidak disimpan,
-// tidak divalidasi - langkah 2 b330 tanpa prakondisi).
+// tidak divalidasi - langkah 2 b332 tanpa prakondisi).
 func (l *Layanan) Generate(_ context.Context, p inti.Pelaku, m models.Produk, ke io.Writer) error {
 	if err := inti.WajibIdentitas(p); err != nil {
 		return err

@@ -232,7 +232,7 @@ func (g *Gudang) AmbilMaster(ctx context.Context, jenis models.JenisMaster, id s
 var KolomJenisPlan = []string{"ID", "COVERNAME", "BUSINESS", "BENEFIT"}
 
 // sqlCariPlan - autocomplete `Plan Name`: dicari pada `.CoverName` dan `.Business`
-// (`pyUseForSearch` true), tanpa saringan RD (b530), maks 500 b664. RD tidak
+// (`pyUseForSearch` true), tanpa saringan RD (b531), maks 500 b664. RD tidak
 // mengurutkan (`pySortOrder` 99999) - di sini `ID ASC` supaya tetap.
 func sqlCariPlan(tabel string) string {
 	return fmt.Sprintf(`SELECT ID, COVERNAME, BUSINESS, BENEFIT FROM %s

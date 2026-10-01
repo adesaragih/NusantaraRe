@@ -60,7 +60,7 @@ export function namaTreaty(productName: string, policyHolderName: string): strin
   return productName + ' ' + policyHolderName
 }
 
-/** Desimal dengan koma sebagai pemisah diterima seperti server (`12,5`); kosong = `0` (`local.* = 0`, b237). */
+/** Desimal dengan koma sebagai pemisah diterima seperti server (`12,5`); kosong = `0` (`local.* = 0`, b239). */
 function angka(v: string): string | null {
   const t = v.trim()
   if (t === '') return '0'

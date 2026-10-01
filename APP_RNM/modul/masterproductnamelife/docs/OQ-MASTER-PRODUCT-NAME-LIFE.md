@@ -43,7 +43,7 @@ Yang paling membatasi pemakaian hari ini:
 | OQ | Bukti DEV | Keputusan |
 | --- | --- | --- |
 | OQ-MPNL-02 | 196/196 produk punya baris inward ber-`ID` sama; 197/199 baris inward ber-`PRODUCTID` = `ID` | inward ber-`ID` = ID produk, `PRODUCTID` = `ID` (sudah begitu, `mpnl_identitas.go`); uji `TestInwardBerIDSamaDenganProduk` |
-| OQ-MPNL-04 | tabel `AGENT`, `CLIENT`; view `CURRENCY`, `CAUSEOFLOSS_LIFE`, `PRODUCT_TYPE_LIFE`, `RIRISK_LIFE_SUMMARY` | objek bernama persis itu dibaca; uji `TestObjekMasterAdaDiKatalogDEV` |
+| OQ-MPNL-04 | tabel `AGENT`, `CLIENT`; view `CURRENCY`, `CAUSEOFLOSS_LIFE`, `PRODUCT_TYPE_LIFE`, `RIRISK_LIFE_SUMMARY` | objek bernama persis itu dibaca; uji `TestObjekMasterAdaDiKatalogDEV`. ⚠️ Yang terbukti hanya NAMA objek — kolom yang dibaca pemilih (`CLIENTNAME`, `STATUSACTIVE`, `BU_NOTE`, `USEDBY`, …) dan `BrowseReinstypeOR_SQL` belum dicocokkan katalog DEV (catatan code-review) |
 | OQ-MPNL-08 | `M_PRODUCT_LIFE` hanya `ID`, `JSONDATA`, `RIRISKID`, `RIRISK` | kolom datar hanya dua (`6fd539c`) |
 | OQ-MPNL-09 | 153 produk ber-`OutwardList[0]`, 0 ber-`OVR_COMM` terisi | `OVR_COMM` kosong seperti Pega; uji `TestOutwardOvrCommDanTreatyContractIDKosong` |
 | OQ-MPNL-12 | > 60 nilai berbeda `Medical` | teks bebas; tiket 06 diralat |

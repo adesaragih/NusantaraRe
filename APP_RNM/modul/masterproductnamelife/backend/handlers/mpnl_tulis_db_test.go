@@ -58,3 +58,22 @@ func TestDBIdentitasTerpakaiDitolakTerang(t *testing.T) {
 		t.Errorf("nol baris: %d", n)
 	}
 }
+
+// Lanjutan 1 (code-review): kolom datar yang DITULIS (`RIRISKID`, `RIRISK`) dan baris inward ber-ID produk
+// diperiksa di Oracle sungguhan - bukan hanya `JSONDATA` dan bukan hanya di tiruan.
+func TestDBKolomDatarDanInwardBerIDProduk(t *testing.T) {
+	u := pasangDB(t)
+	u.isiMasterUji(t)
+	if kode, badan := u.kirim(t, "POST", pre+"/produk", badanLengkap); kode != http.StatusOK {
+		t.Fatalf("POST: %d %s", kode, badan)
+	}
+	if n := u.cacah(t, "M_PRODUCT_LIFE", "ID = '100044' AND RIRISKID = '1000117' AND RIRISK = 'UJI RISK'"); n != 1 {
+		t.Errorf("kolom datar RIRISKID, RIRISK (SaveProductNameLIfeFlat b84): %d", n)
+	}
+	if n := u.cacah(t, "M_PRODUCTINWARD_LIFE", "ID = '100044' AND JSON_VALUE(JSONDATA, '$.PRODUCTID') = '100044'"); n != 1 {
+		t.Errorf("baris inward ber-ID produk, PRODUCTID = ID (OQ-MPNL-02): %d", n)
+	}
+	if n := u.cacah(t, "M_PRODUCTINWARD_LIFE", ""); n != 1 {
+		t.Errorf("satu baris inward, nol sequence inward: %d", n)
+	}
+}

@@ -1,51 +1,71 @@
 package repository
 
-// Uji katalog (lanjutan 1, L1): setiap kolom yang DITULIS repository ada di katalog
-// DEV (`testdata/katalog-dev.json`, `ALL_TAB_COLUMNS` 01-10-2026). Kolom yang tidak
-// ada di DEV = `ORA-00904` pada setiap simpan - penjaga ini merah lebih dulu.
+// Uji katalog (lanjutan 1, L1/L3): kolom yang DITULIS repository ke kedua tabel produk ada di katalog DEV
+// (`testdata/katalog-dev.json`, `ALL_TAB_COLUMNS` 01-10-2026); lebar kolom datar = katalog; objek master
+// yang dibaca pemilih = katalog `ALL_OBJECTS`. Kolom yang tidak ada di DEV = `ORA-00904` pada setiap simpan.
+//
+// ⚠️ Batas cakupannya, dinyatakan: katalog yang diberikan brief hanya memuat kedua tabel produk dan NAMA
+// objek master. Penulis `M_ATTACHMENTPRODUCTNAME`, `T_STORAGE_IMAGE`, `T_LOG_SERVICE_RNM` dan kolom yang
+// dibaca pemilih / `BrowseReinstypeOR_SQL` belum dicocokkan katalog DEV (sumbernya dokumen DBA) - sisa
+// risiko yang dilaporkan, bukan yang dijaga uji ini.
 
 import (
 	"encoding/json"
 	"os"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 )
 
-// katalogDEV - kolom per tabel menurut katalog DEV.
-func katalogDEV(t *testing.T) map[string][]string {
+// katalog - isi `testdata/katalog-dev.json`.
+type katalog struct {
+	Tabel       map[string][]string `json:"tabel"`
+	Tipe        map[string]string   `json:"tipe"`
+	ObjekMaster map[string]string   `json:"objekMaster"`
+}
+
+func katalogDEV(t *testing.T) katalog {
 	t.Helper()
 	isi, err := os.ReadFile("testdata/katalog-dev.json")
 	if err != nil {
 		t.Fatal(err)
 	}
-	var k struct {
-		Tabel map[string][]string `json:"tabel"`
-	}
+	var k katalog
 	if err := json.Unmarshal(isi, &k); err != nil {
 		t.Fatal(err)
 	}
-	return k.Tabel
+	return k
 }
 
 var (
-	polaSisip  = regexp.MustCompile(`(?s)INSERT\s+INTO\s+\S+\s*\(([^)]*)\)`)
-	polaUbah   = regexp.MustCompile(`(?s)UPDATE\s+\S+\s+SET\s+(.*?)\s+WHERE\b`)
-	polaSetKol = regexp.MustCompile(`(?:^|,)\s*([A-Z_][A-Z0-9_]*)\s*=`)
+	polaSisip  = regexp.MustCompile(`(?is)INSERT\s+INTO\s+\S+\s*\(([^)]*)\)`)
+	polaUbah   = regexp.MustCompile(`(?is)UPDATE\s+\S+\s+SET\s+(.*?)\s+WHERE\b`)
+	polaSetKol = regexp.MustCompile(`(?:^|,)\s*("?[A-Za-z_][A-Za-z0-9_$#]*"?)\s*=`)
+	polaLebar  = regexp.MustCompile(`^VARCHAR2\((\d+)\)$`)
 )
+
+// namaKolom - pengenal Oracle: tanpa kutip = huruf besar; berkutip = apa adanya.
+func namaKolom(k string) string {
+	k = strings.TrimSpace(k)
+	if strings.HasPrefix(k, `"`) && strings.HasSuffix(k, `"`) {
+		return strings.Trim(k, `"`)
+	}
+	return strings.ToUpper(k)
+}
 
 // kolomDitulis - kolom yang disebut INSERT (daftar kolom) atau UPDATE (klausa SET).
 func kolomDitulis(q string) []string {
 	var hasil []string
 	if m := polaSisip.FindStringSubmatch(q); m != nil {
 		for _, k := range strings.Split(m[1], ",") {
-			hasil = append(hasil, strings.TrimSpace(k))
+			hasil = append(hasil, namaKolom(k))
 		}
 	}
 	if m := polaUbah.FindStringSubmatch(q); m != nil {
 		for _, s := range polaSetKol.FindAllStringSubmatch(m[1], -1) {
-			hasil = append(hasil, s[1])
+			hasil = append(hasil, namaKolom(s[1]))
 		}
 	}
 	return hasil
@@ -67,7 +87,7 @@ func kolomAsing(q string, katalog []string) []string {
 }
 
 func TestKolomDitulisAdaDiKatalogDEV(t *testing.T) {
-	kat := katalogDEV(t)
+	kat := katalogDEV(t).Tabel
 	kasus := []struct {
 		tabel string
 		sql   string
@@ -96,57 +116,71 @@ func TestKolomDitulisAdaDiKatalogDEV(t *testing.T) {
 	}
 }
 
-// Uji gigit: menambah PRODUCTNAME ke INSERT / UPDATE = merah.
+// Uji gigit: menambah PRODUCTNAME / BEGIN_DATE ke INSERT / UPDATE = merah - juga huruf kecil dan berkutip.
 func TestAturanKatalogMenggigit(t *testing.T) {
-	kat := katalogDEV(t)[TabelProduk]
-	sisip := strings.Replace(sqlSisipUmum("S.T"), "RIRISK)", "RIRISK, PRODUCTNAME)", 1)
-	if asing := kolomAsing(sisip, kat); len(asing) != 1 || asing[0] != "PRODUCTNAME" {
-		t.Errorf("INSERT ber-PRODUCTNAME harus tertangkap: %v\n%s", asing, rata(sisip))
+	kat := katalogDEV(t).Tabel[TabelProduk]
+	for _, tambahan := range []string{"PRODUCTNAME", "productname", `"PRODUCTNAME"`} {
+		sisip := strings.Replace(sqlSisipUmum("S.T"), "RIRISK)", "RIRISK, "+tambahan+")", 1)
+		if asing := kolomAsing(sisip, kat); len(asing) != 1 || asing[0] != "PRODUCTNAME" {
+			t.Errorf("INSERT ber-%s harus tertangkap: %v\n%s", tambahan, asing, rata(sisip))
+		}
 	}
-	ubah := strings.Replace(sqlPerbaruiUmum("S.T"), " WHERE", ", BEGIN_DATE = TO_DATE(:9, 'DD/MM/YYYY') WHERE", 1)
-	if asing := kolomAsing(ubah, kat); len(asing) != 1 || asing[0] != "BEGIN_DATE" {
-		t.Errorf("UPDATE ber-BEGIN_DATE harus tertangkap: %v\n%s", asing, rata(ubah))
+	for _, tambahan := range []string{"BEGIN_DATE", "begin_date", `"BEGIN_DATE"`} {
+		ubah := strings.Replace(sqlPerbaruiUmum("S.T"), " WHERE", ", "+tambahan+" = TO_DATE(:9, 'DD/MM/YYYY') WHERE", 1)
+		if asing := kolomAsing(ubah, kat); len(asing) != 1 || asing[0] != "BEGIN_DATE" {
+			t.Errorf("UPDATE ber-%s harus tertangkap: %v\n%s", tambahan, asing, rata(ubah))
+		}
 	}
 	// Butir yang jawabannya diketahui - instrumen diuji lebih dulu.
-	if got := kolomDitulis(`UPDATE S.T SET A = :1, B = TO_DATE(:2, 'DD/MM/YYYY') WHERE ID = :3`); strings.Join(got, ",") != "A,B" {
-		t.Errorf("pembaca SET: %v", got)
-	}
-	if got := kolomDitulis("INSERT INTO S.T (ID, X)\n VALUES (:1, :2)"); strings.Join(got, ",") != "ID,X" {
-		t.Errorf("pembaca INSERT: %v", got)
+	for q, mau := range map[string]string{
+		`UPDATE S.T SET A = :1, B = TO_DATE(:2, 'DD/MM/YYYY') WHERE ID = :3`: "A,B",
+		`update s.t set jsondata = :1, "Ririsk" = :2 where id = :3`:          "JSONDATA,Ririsk",
+		"INSERT INTO S.T (ID, X)\n VALUES (:1, :2)":                          "ID,X",
+		`insert into s.t (id, "x") values (:1, :2)`:                          "ID,x",
+	} {
+		if got := strings.Join(kolomDitulis(q), ","); got != mau {
+			t.Errorf("pembaca kolom %q: %s, mau %s", q, got, mau)
+		}
 	}
 }
 
-// L3 (OQ-MPNL-04 ditutup data DEV): setiap pemilih membaca objek bernama PERSIS objek
-// yang ada di DEV - tabel `AGENT`, `CLIENT`; view `CURRENCY`, `CAUSEOFLOSS_LIFE`,
-// `PRODUCT_TYPE_LIFE`, `RIRISK_LIFE_SUMMARY`.
+// Lebar kolom datar yang diperiksa services = lebar katalog DEV.
+func TestLebarKolomDatarSamaDenganKatalogDEV(t *testing.T) {
+	tipe := katalogDEV(t).Tipe
+	for kolom, lebar := range map[string]int{"RIRISKID": LebarRIRiskID, "RIRISK": LebarRIRisk} {
+		m := polaLebar.FindStringSubmatch(tipe[TabelProduk+"."+kolom])
+		if m == nil {
+			t.Fatalf("%s: katalog tanpa VARCHAR2(n): %q", kolom, tipe[TabelProduk+"."+kolom])
+		}
+		if n, _ := strconv.Atoi(m[1]); n != lebar {
+			t.Errorf("%s: lebar services %d ≠ katalog DEV %d", kolom, lebar, n)
+		}
+	}
+	if !strings.HasPrefix(tipe[TabelProduk+".ID"], "VARCHAR2(6)") {
+		t.Errorf("ID produk: %q (FormatIdentitas menulis 6 karakter)", tipe[TabelProduk+".ID"])
+	}
+}
+
+// L3 (OQ-MPNL-04 ditutup data DEV): setiap pemilih membaca objek bernama PERSIS objek yang ada di DEV -
+// tabel `AGENT`, `CLIENT`; view `CURRENCY`, `CAUSEOFLOSS_LIFE`, `PRODUCT_TYPE_LIFE`, `RIRISK_LIFE_SUMMARY`.
+// Yang dibuktikan: NAMA objek; kolom yang dibaca belum ada di katalog yang diberikan.
 func TestObjekMasterAdaDiKatalogDEV(t *testing.T) {
-	isi, err := os.ReadFile("testdata/katalog-dev.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	var k struct {
-		ObjekMaster map[string]string `json:"objekMaster"`
-	}
-	if err := json.Unmarshal(isi, &k); err != nil || len(k.ObjekMaster) != 6 {
-		t.Fatalf("katalog objek master: %v %v", k.ObjekMaster, err)
+	obj := katalogDEV(t).ObjekMaster
+	if len(obj) != 6 {
+		t.Fatalf("katalog objek master: %v", obj)
 	}
 	dibaca := map[string]string{MasterJenisPlan: "PLAN LIST"}
 	for jenis, s := range sumberMaster {
 		dibaca[s.objek] = string(jenis)
 	}
 	for objek, oleh := range dibaca {
-		if _, ada := k.ObjekMaster[objek]; !ada {
+		if _, ada := obj[objek]; !ada {
 			t.Errorf("pemilih %s membaca %s - tidak ada di katalog DEV", oleh, objek)
 		}
 	}
-	for objek := range k.ObjekMaster {
+	for objek := range obj {
 		if _, ada := dibaca[objek]; !ada {
 			t.Errorf("objek katalog %s tidak dibaca pemilih mana pun - salah satu pemilih membaca nama lain", objek)
-		}
-	}
-	for _, o := range DaftarMasterDibacaSaja {
-		if _, ada := k.ObjekMaster[o]; !ada && o != MasterKontrakTreaty && o != MasterTahunTreaty {
-			t.Errorf("DaftarMasterDibacaSaja memuat %s yang tidak ada di katalog objek master", o)
 		}
 	}
 }

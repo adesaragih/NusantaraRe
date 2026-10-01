@@ -6,8 +6,6 @@ import (
 	"context"
 	"strings"
 	"testing"
-
-	"nusantarare/modul/masterproductnamelife/backend/repository"
 )
 
 // L2 (OQ-MPNL-02): 196 dari 196 produk DEV punya baris inward ber-`ID` sama; 197 dari 199
@@ -56,5 +54,4 @@ func TestOutwardOvrCommDanTreatyContractIDKosong(t *testing.T) {
 	if n := strings.Count(g.Umum[p.ID], `"TREATYCONTRACTID":""`); n != len(p.OutwardList) {
 		t.Errorf("setiap baris membawa kunci TREATYCONTRACTID kosong: %d dari %d", n, len(p.OutwardList))
 	}
-	_ = repository.ReinsTypeOR
 }

@@ -39,7 +39,9 @@ var (
 
 // sqlDaftarProduk - kelima kolom grid dibaca di Oracle (`JSON_VALUE`, seperti view
 // `PRODUCT_LIFE`), bukan CLOB utuh: `CommentList` bertambah setiap simpan.
-// `JSONDATA` dijaga constraint `IS JSON`, jadi `NULL ON ERROR` bawaan tidak menyembunyikan apa pun.
+// `JSONDATA` dijaga constraint `IS JSON`, dan nilai yang ditulis modul ini dibatasi 4000 byte per kunci view
+// (`LebarKunciView`), jadi `NULL ON ERROR` bawaan tidak menyembunyikan nilai tulisan modul ini; baris warisan
+// yang melampauinya tampil kosong di grid, seperti di view `PRODUCT_LIFE`.
 func sqlDaftarProduk(tabel string) string {
 	// Batas baris = `pyMaxRecords` 500 `BrowseProduct_Life` b1078.
 	return fmt.Sprintf(`SELECT ID, JSON_VALUE(JSONDATA, '$.CEDING'), JSON_VALUE(JSONDATA, '$.TREATYNUMBER'),

@@ -52,16 +52,16 @@ const (
 // Pesan wajib-isi VERBATIM - `SaveProductName_Act` langkah 1 b361 menyetel
 // `local.errMsg1..4`, langkah 2–5 (PRE=true, WHEN `== ""`, F=3) memasangnya.
 const (
-	PesanProductNameKosong   = "Product Name Empty"  // b431 - langkah 2 b668, WHEN b805 `ProductName.PRODUCTNAME==""`
-	PesanCedingKosong        = "Ceding Empty"        // b452 - langkah 3 b843, WHEN b980 `ProductName.CEDING==""`
-	PesanPemegangPolisKosong = "Policy Holder Empty" // b473 - langkah 4 b1018, WHEN b1155 `ProductNameInward.POLICYHODERNAME==""`
-	PesanSOBKosong           = "SOB Empty"           // b494 - langkah 5 b1193, WHEN b1330 `ProductName.SOBNAME==""`
+	PesanProductNameKosong   = "Product Name Empty"  // b431 - langkah 2 b670, WHEN b805 `ProductName.PRODUCTNAME==""`
+	PesanCedingKosong        = "Ceding Empty"        // b452 - langkah 3 b845, WHEN b980 `ProductName.CEDING==""`
+	PesanPemegangPolisKosong = "Policy Holder Empty" // b473 - langkah 4 b1020, WHEN b1155 `ProductNameInward.POLICYHODERNAME==""`
+	PesanSOBKosong           = "SOB Empty"           // b494 - langkah 5 b1195, WHEN b1330 `ProductName.SOBNAME==""`
 )
 
 // periksaWajibIsi - SATU aturan wajib-isi untuk setiap jalur simpan (tiket 05).
 //
 // ⛔ Hanya keempat pemeriksaan HIDUP Pega. "Tipe & grup terisi" BUKAN
-// pemeriksaan: langkah 1 b359 adalah `Property-Set` ber-PRE=false, dan medan
+// pemeriksaan: langkah 1 b361 adalah `Property-Set` ber-PRE=false, dan medan
 // `TYPE`/`GRUP` mati (`1=2`) - menegakkannya membuat setiap simpan gagal (R7).
 // Pega berhenti di pesan pertama (transisi `1==1` → 6); di sini SEMUA
 // dilaporkan sekaligus (keputusan tertulis tiket 05). Spasi = kosong.
@@ -130,12 +130,21 @@ func pilihanInward(m *models.Produk, lama models.ProdukInward) []pilihan {
 	}
 }
 
-// periksaUmum - gerbang murni sisi umum (angka, panjang kolom datar `RIRISKID`
-// VARCHAR2(10), `RIRISK` VARCHAR2(100) - ditolak berkalimat SEBELUM SQL).
+// periksaUmum - gerbang murni sisi umum (angka).
 func periksaUmum(pk *periksa, u *models.ProdukUmum) {
 	pk.desimal(labelDeduction, &u.RIComm)
-	pk.panjang(labelRIRisk, u.RIRisk, repository.LebarRIRisk)
-	pk.panjang(labelRIRisk+" ID", u.RIRiskID, repository.LebarRIRiskID)
+}
+
+// periksaPanjang - lebar kolom datar `RIRISKID` VARCHAR2(10), `RIRISK` VARCHAR2(100) (katalog DEV) dan
+// kunci yang dibaca view (VARCHAR2(4000)), atas nilai AKHIR yang akan ditulis: sesudah `periksaPilihan`
+// mengganti nama dengan nama master. Ditolak berkalimat SEBELUM SQL tulis (transaksi dibatalkan, nol tulisan).
+func periksaPanjang(pk *periksa, m *models.Produk) {
+	pk.panjang(labelRIRisk, m.Umum.RIRisk, repository.LebarRIRisk)
+	pk.panjang(labelRIRisk+" ID", m.Umum.RIRiskID, repository.LebarRIRiskID)
+	for _, k := range repository.KunciViewTerlaluPanjang(*m) {
+		pk.tolak("%s is longer than %d bytes; views PRODUCT_LIFE / PRODUCTINWARD_LIFE read at most %d", k,
+			repository.LebarKunciView, repository.LebarKunciView)
+	}
 }
 
 // pilihan - satu medan yang diisi pemilih master (`Choose*` → `set*_DT`).
@@ -205,8 +214,8 @@ func lengkapiMilikServer(m *models.Produk, sumber *models.Produk, baru bool, p i
 	u.RICommID, u.OutwardName, u.OutwardNameID = su.RICommID, su.OutwardName, su.OutwardNameID
 	u.OutwardRate, u.OutwardRateID, u.OutwardComm, u.OutwardCommID = su.OutwardRate, su.OutwardRateID, su.OutwardComm, su.OutwardCommID
 	u.Benefit, u.BenefitID = su.Benefit, su.BenefitID
-	// Langkah 6 b1368: CREATEOP diisi hanya bila kosong; produk baru (termasuk
-	// salinan `Copy`) = pelaku (OQ-MPNL-13). Langkah 1 b359: UPDATEOP = pelaku.
+	// Langkah 6 b1370: CREATEOP diisi hanya bila kosong; produk baru (termasuk
+	// salinan `Copy`) = pelaku (OQ-MPNL-13). Langkah 1 b361: UPDATEOP = pelaku.
 	u.CreateOp = su.CreateOp
 	if baru || u.CreateOp == "" {
 		u.CreateOp = p.AkunID
@@ -221,7 +230,7 @@ func lengkapiMilikServer(m *models.Produk, sumber *models.Produk, baru bool, p i
 	if baru {
 		in.ID = "" // `CopyProduct` 2 b173; penulis memberi ID = ID produk (R14)
 	}
-	// Langkah 1 b359: pemegang polis disalin dari halaman inward ke halaman umum.
+	// Langkah 1 b361: pemegang polis disalin dari halaman inward ke halaman umum.
 	u.PolicyHolder, u.PolicyHolderName = m.Inward.PolicyHolder, m.Inward.PolicyHolderName
 	// Riwayat komentar dan daftar outward milik server (salinan mewarisinya, seperti Pega).
 	m.CommentList = append([]models.BarisKomentar{}, simpan.CommentList...)
@@ -278,6 +287,7 @@ func (l *Layanan) SimpanProduk(ctx context.Context, p inti.Pelaku, m models.Prod
 			periksaPlan(&pk, m.PlanList)
 		}
 		periksaAsli(&pk, &m, tersimpan)
+		periksaPanjang(&pk, &m)
 		if err := pk.galat(); err != nil {
 			return err
 		}
@@ -287,7 +297,7 @@ func (l *Layanan) SimpanProduk(ctx context.Context, p inti.Pelaku, m models.Prod
 				return err
 			}
 		}
-		// Langkah 7 b1513 `·` (tanpa prakondisi): `AddCommentList_Act` - SETIAP
+		// Langkah 7 b1515 `·` (tanpa prakondisi): `AddCommentList_Act` - SETIAP
 		// simpan menambah satu baris, juga bila komentarnya kosong (OQ-MPNL-14).
 		m.CommentList = append(m.CommentList, barisKomentar(l.jam(), p.AkunID, m.Umum.Comment))
 		if baru {

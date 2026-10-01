@@ -118,20 +118,20 @@ func TestOnRetentionDiubahMenggantiOutwardList(t *testing.T) {
 	if len(p.OutwardList) != 1 || p.OutwardList[0].ReinsTypeName != m.OutwardList[0].ReinsTypeName {
 		t.Errorf("tanpa perubahan checkbox: %+v", p.OutwardList)
 	}
-	// Checkbox diubah - JUGA saat dilepas: keempat prakondisi PRE=false (b234, b532, b723).
+	// Checkbox diubah - JUGA saat dilepas: keempat prakondisi PRE=false (`GetReinsTypeOR_Life` b236, b534, b731).
 	isi.HitungOutward, isi.Umum.IsORS = true, false
 	p, err = l.SimpanProduk(ctx, pelakuUji, isi, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if g.MintaOR != [2]string{"01/03/2026", "28/02/2027"} {
-		t.Errorf("Temp.CARI1/2 = BEGIN/MATURE dd/MM/yyyy (b381): %v", g.MintaOR)
+		t.Errorf("Temp.CARI1/2 = BEGIN/MATURE dd/MM/yyyy (`GetReinsTypeOR_Life` 2 b383): %v", g.MintaOR)
 	}
 	want := models.BarisOutward{ReinsTypeID: "10200", ReinsTypeName: "UJI OR 2025", TransactionYear: "2025", UnderwritingYear: "2025"}
 	if len(p.OutwardList) != 1 || p.OutwardList[0].ReinsTypeID != want.ReinsTypeID || p.OutwardList[0].ReinsTypeName != want.ReinsTypeName ||
 		p.OutwardList[0].TransactionYear != want.TransactionYear || p.OutwardList[0].UnderwritingYear != want.UnderwritingYear ||
 		p.OutwardList[0].TreatyContractID != "" || p.OutwardList[0].OvrComm != "" {
-		t.Errorf("OutwardList dari BrowseReinstypeOR_SQL (4.1 b768): %+v", p.OutwardList)
+		t.Errorf("OutwardList dari BrowseReinstypeOR_SQL (`GetReinsTypeOR_Life` 4.1 b770): %+v", p.OutwardList)
 	}
 	if !strings.Contains(g.Umum["100007"], `"OutwardList":[{"OVR_COMM":"","REINSTYPEID":"10200"`) {
 		t.Errorf("kunci Pega + OVR_COMM di JSON: %s", g.Umum["100007"])

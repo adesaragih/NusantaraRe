@@ -23,7 +23,7 @@ describe('CountMaxSumReasured_Act - MAXSUMREASURED = MaxSumInsured - CedingLimit
     expect(hitungMaxSumReasured('0.3', '0.1')).toBe('0.2')
   })
 
-  it('kosong = 0 (`local.* = 0` b237); hasil negatif apa adanya', () => {
+  it('kosong = 0 (`local.* = 0` b239); hasil negatif apa adanya', () => {
     expect(hitungMaxSumReasured('', '')).toBe('0')
     expect(hitungMaxSumReasured('', '5')).toBe('-5')
     expect(hitungMaxSumReasured('5', '-2')).toBe('7')
