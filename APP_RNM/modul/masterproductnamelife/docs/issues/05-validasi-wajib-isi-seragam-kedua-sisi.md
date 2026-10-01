@@ -89,3 +89,17 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+---
+
+## Ralat bertanggal 01-10-2026 — sesi implementasi (paket 5)
+
+> Sumber: `../RALAT-DEV-30-09-2026.md` (R7, R11, R13) dan `../PARITAS-LAYAR-DAN-AKSI.md` §7. Kalimat di atas **tidak dihapus**.
+
+| Kalimat lama | Ralat |
+| --- | --- |
+| tabel *"Step 1 — `ProductName.TYPE=="" ‖ ProductName.GRUP==""`"*; AC *"Produk **ditolak** bila **tipe** atau **grup** kosong"* | **R7**: langkah 1 b359 adalah `Property-Set` ber-**PRE=false** — bukan pemeriksaan; medan `TYPE` b3143 / `GRUP` b6108 mati (`1=2`). AC ini **dicabut**: menegakkannya membuat setiap simpan gagal |
+| Pesan *"error Product Name"*, *"error Ceding"*, *"error Policy Holder"*, *"error SOB"* | **R13**: itu `pyStepsDescription`. Pesan layar VERBATIM: `Product Name Empty` (b431), `Ceding Empty` (b452), `Policy Holder Empty` (b473), `SOB Empty` (b494) |
+| *"Di **`SaveInwardProductName_Act`**, dua pemeriksaan padanannya **ter-remark** … Jalur inward lebih longgar"*; AC *"berlaku SAMA pada kedua sisi"* | **R11**: jalur inward tak terjangkau (`Inward` b75322 `1=2`). Satu jalur simpan (`POST`/`PUT /produk`) memanggil satu aturan `periksaWajibIsi` — uji: baru dan ubah ditolak dengan pesan yang sama |
+| AC *"Bila **beberapa** field kurang sekaligus, **semuanya** dilaporkan"* | dibangun (keputusan tertulis): Pega berhenti di pesan pertama (transisi `1==1` → 6); di sini keempatnya dilaporkan, urutan langkah 2–5, dipisah `; `, bersama penolakan lain (angka, tanggal, pilihan master). Spasi = kosong |
+| AC *"Galat tampil di dekat field"* | amplop galat bersama hanya membawa `galat` (teks); layar memetakan pesan VERBATIM ke medannya (paket 10) |

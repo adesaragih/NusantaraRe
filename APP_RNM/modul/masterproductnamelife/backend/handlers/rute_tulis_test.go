@@ -8,7 +8,8 @@ import (
 	"testing"
 )
 
-const badanUji = `{"umum":{"productName":"UJI PRODUK","ceding":"UJI CEDING SATU","cedingId":"L0UJI1","sobName":"",
+const badanUji = `{"umum":{"productName":"UJI PRODUK","ceding":"UJI CEDING SATU","cedingId":"L0UJI1",
+  "sobName":"UJI SOB","sobId":"L0SOB",
   "riComm":"0","cause":"ANY CAUSE","causeId":"100004"},
   "inward":{"policyHolder":"UJI-ORG-1","policyHolderName":"UJI PEMEGANG","begin":"2026-03-01"}}`
 
@@ -61,3 +62,18 @@ const badanLengkap = `{"umum":{"productName":"UJI PRODUK","ceding":"UJI CEDING S
   "minAge":"22","maxAge":"70","maxSumInsured":"1175000000","currency":"IDR","currencyId":"1",
   "maxDataReceive":"90","maxExpiredClaim":"180","payment":"1","subjectTo":"UJI SYARAT","brokerage":"2.5"},
  "documentClaim":[{"document":"UJI DOK A"},{"document":"UJI DOK B"}]}`
+
+func TestHTTPWajibIsi422VerbatimBaruDanUbah(t *testing.T) {
+	u := server(t, true)
+	isiMaster(u.g)
+	kosong := `{"umum":{},"inward":{}}`
+	kode, badan := u.minta(t, "POST", pre+"/produk", kosong, true)
+	if kode != http.StatusUnprocessableEntity ||
+		!strings.Contains(badan, "Product Name Empty; Ceding Empty; Policy Holder Empty; SOB Empty") {
+		t.Errorf("POST: %d %s", kode, badan)
+	}
+	if kode, badan := u.minta(t, "PUT", pre+"/produk/UJI-001", kosong, true); kode != http.StatusUnprocessableEntity ||
+		!strings.Contains(badan, "SOB Empty") {
+		t.Errorf("PUT - aturan yang sama: %d %s", kode, badan)
+	}
+}

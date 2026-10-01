@@ -25,9 +25,7 @@ func (u *ujiDB) cacah(t *testing.T, tabel, saring string, args ...any) int {
 
 func TestDBSimpanBaruDariSequenceLaluUpsertDikunciID(t *testing.T) {
 	u := pasangDB(t)
-	u.exec(t, `INSERT INTO {s}.AGENT VALUES ('L0UJI1', 'UJI CEDING SATU', '1')`)
-	u.exec(t, `INSERT INTO {s}.CAUSEOFLOSS_LIFE VALUES ('100004', 'ANY CAUSE')`)
-	u.exec(t, `INSERT INTO {s}.CLIENT VALUES ('UJI-ORG-1', 'UJI PEMEGANG', 'LIFE')`)
+	u.isiMasterUji(t)
 	kode, badan := u.kirim(t, "POST", pre+"/produk", badanUji)
 	if kode != http.StatusOK || !strings.Contains(badan, `"id":"100044"`) {
 		t.Fatalf("POST: %d %s", kode, badan)
@@ -51,8 +49,7 @@ func TestDBSimpanBaruDariSequenceLaluUpsertDikunciID(t *testing.T) {
 func TestDBIdentitasTerpakaiDitolakTerang(t *testing.T) {
 	u := pasangDB(t)
 	u.exec(t, `INSERT INTO {s}.M_PRODUCTINWARD_LIFE (ID, JSONDATA) VALUES ('100044', '{}')`)
-	u.exec(t, `INSERT INTO {s}.AGENT VALUES ('L0UJI1', 'UJI CEDING SATU', '1')`)
-	u.exec(t, `INSERT INTO {s}.CAUSEOFLOSS_LIFE VALUES ('100004', 'ANY CAUSE')`)
+	u.isiMasterUji(t)
 	kode, badan := u.kirim(t, "POST", pre+"/produk", badanUji)
 	if kode != http.StatusInternalServerError || !strings.Contains(badan, "already used") {
 		t.Errorf("ID baru yang sudah dipakai inward harus gagal terang: %d %s", kode, badan)

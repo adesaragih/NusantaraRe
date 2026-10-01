@@ -13,6 +13,7 @@ import (
 
 func isiMaster(g *tiruan.Gudang) {
 	g.Master[models.MasterCeding] = []models.NilaiMaster{{ID: "L0UJI1", Nama: "UJI CEDING SATU"}, {ID: "L0UJI2", Nama: "UJI LAIN"}}
+	g.Master[models.MasterSOB] = []models.NilaiMaster{{ID: "L0SOB", Nama: "UJI SOB"}}
 	g.Master[models.MasterPemegangPolis] = []models.NilaiMaster{{ID: "UJI-ORG-1", Nama: "UJI PEMEGANG"}}
 	g.Master[models.MasterMataUang] = []models.NilaiMaster{{ID: "1", Nama: "IDR"}}
 	g.Master[models.MasterRIRisk] = []models.NilaiMaster{{ID: "1000117", Nama: "UJI RISK"}}

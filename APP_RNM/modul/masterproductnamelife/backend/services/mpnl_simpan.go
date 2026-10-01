@@ -20,6 +20,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	inti "nusantarare/inti/backend"
@@ -47,6 +48,37 @@ const (
 	labelRIRisk      = "R/I Risk Name" // b7430
 	labelCause       = "Cause Of Loss" // b10693
 )
+
+// Pesan wajib-isi VERBATIM - `SaveProductName_Act` langkah 1 b359 menyetel
+// `local.errMsg1..4`, langkah 2–5 (PRE=true, WHEN `== ""`, F=3) memasangnya.
+const (
+	PesanProductNameKosong   = "Product Name Empty"  // b431 - langkah 2 b668, WHEN b805 `ProductName.PRODUCTNAME==""`
+	PesanCedingKosong        = "Ceding Empty"        // b452 - langkah 3 b843, WHEN b980 `ProductName.CEDING==""`
+	PesanPemegangPolisKosong = "Policy Holder Empty" // b473 - langkah 4 b1018, WHEN b1155 `ProductNameInward.POLICYHODERNAME==""`
+	PesanSOBKosong           = "SOB Empty"           // b494 - langkah 5 b1193, WHEN b1330 `ProductName.SOBNAME==""`
+)
+
+// periksaWajibIsi - SATU aturan wajib-isi untuk setiap jalur simpan (tiket 05).
+//
+// ⛔ Hanya keempat pemeriksaan HIDUP Pega. "Tipe & grup terisi" BUKAN
+// pemeriksaan: langkah 1 b359 adalah `Property-Set` ber-PRE=false, dan medan
+// `TYPE`/`GRUP` mati (`1=2`) - menegakkannya membuat setiap simpan gagal (R7).
+// Pega berhenti di pesan pertama (transisi `1==1` → 6); di sini SEMUA
+// dilaporkan sekaligus (keputusan tertulis tiket 05). Spasi = kosong.
+func periksaWajibIsi(pk *periksa, m *models.Produk) {
+	for _, w := range []struct {
+		nilai, pesan string
+	}{
+		{m.Umum.ProductName, PesanProductNameKosong},
+		{m.Umum.Ceding, PesanCedingKosong},
+		{m.Inward.PolicyHolderName, PesanPemegangPolisKosong},
+		{m.Umum.SOBName, PesanSOBKosong},
+	} {
+		if strings.TrimSpace(w.nilai) == "" {
+			pk.tolak("%s", w.pesan)
+		}
+	}
+}
 
 // Label VERBATIM medan inward (PARITAS §3.2).
 const (
@@ -119,6 +151,11 @@ type pilihan struct {
 // tersimpan yang diperiksa (data lama yang tidak disentuh tidak ditolak).
 func (l *Layanan) periksaPilihan(ctx context.Context, pk *periksa, daftar []pilihan) error {
 	for _, c := range daftar {
+		// Spasi = kosong (sama dengan wajib-isi); ID master tidak berspasi tepi.
+		*c.id = strings.TrimSpace(*c.id)
+		if strings.TrimSpace(*c.nama) == "" {
+			*c.nama = ""
+		}
 		if *c.id == c.idLama && *c.nama == c.namaLama {
 			continue
 		}
@@ -194,6 +231,7 @@ func (l *Layanan) SimpanProduk(ctx context.Context, p inti.Pelaku, m models.Prod
 		return models.Produk{}, ErrIDDariKlien
 	}
 	var pk periksa
+	periksaWajibIsi(&pk, &m)
 	periksaUmum(&pk, &m.Umum)
 	periksaInward(&pk, &m.Inward)
 	var hasil models.Produk
