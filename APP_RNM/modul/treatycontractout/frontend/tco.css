@@ -160,7 +160,7 @@
   --mt-kanvas: radial-gradient(circle at 8% 0%, rgba(185, 141, 243, 0.22), transparent 42%),
     radial-gradient(circle at 96% 100%, rgba(255, 160, 165, 0.2), transparent 40%),
     radial-gradient(circle at 82% 0%, rgba(147, 197, 253, 0.2), transparent 36%);
-  --mt-kartu: rgba(255, 255, 255, 0.78);
+  --mt-kartu: rgba(255, 255, 255, 0.9);
   --mt-kartu-garis: rgba(255, 255, 255, 0.95);
   --mt-bayang: 0 24px 48px -30px rgba(60, 40, 120, 0.4);
   --mt-kepala-tabel: #f5f0ff;
@@ -177,7 +177,7 @@
   --mt-tombol-bayang: rgba(214, 58, 66, 0.35);
   --mt-kanvas: radial-gradient(circle at 8% 0%, rgba(139, 92, 246, 0.18), transparent 42%),
     radial-gradient(circle at 96% 100%, rgba(214, 58, 66, 0.12), transparent 40%);
-  --mt-kartu: rgba(30, 34, 48, 0.8);
+  --mt-kartu: rgba(30, 34, 48, 0.92);
   --mt-kartu-garis: rgba(180, 138, 242, 0.16);
   --mt-bayang: 0 24px 48px -30px rgba(0, 0, 0, 0.7);
   --mt-kepala-tabel: #251f38;
@@ -192,14 +192,15 @@
   font-weight: 600;
 }
 
-/* Kartu kaca seperti kartu login. */
+/* Kartu seperti kartu login, TANPA backdrop-filter: properti itu menjadikan panel
+   blok penampung elemen `position: fixed`, sehingga popup `.modal__backdrop` yang dirender
+   di dalam panel menempel ke panel, bukan ke layar (bug popup tidak di tengah 02-10-2026).
+   Dijaga gaya.test. */
 .tco .panel {
   background: var(--mt-kartu);
   border: 1px solid var(--mt-kartu-garis);
   border-radius: 20px;
   box-shadow: var(--mt-bayang);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
 }
 .tco .panel .panel {
   border-color: var(--mt-aksen-garis);
