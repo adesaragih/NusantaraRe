@@ -3,6 +3,7 @@
 > **Ralat 01-10-2026** (gelombang 2 brief, `../RALAT-DEV-01-10-2026.md` — ralat mengalahkan isi di bawah). Teks lama yang tidak berlaku:
 > - **R12** — sub-jenis `EDM Type Perubahan Data` / `EDM Type Batal` → opsinya tidak ada di korpus dan tak berkolom — tidak dibangun, OQ-EDM-005.
 > - **R13** — `Description` (`DesBatal`) → disimpan di `EDM_NOTE`.
+> - **R30** — kotak centang `.EdmBatal` hidup di baris `New` hasil CSV (Pega membalik premi yang tak pernah ditagih) → hanya peserta `Old` dapat dicentang; OQ-EDM-017.
 
 **Status:** ready-for-agent
 

@@ -203,7 +203,9 @@ Rute `GET /kasus/{id}/polis-lama`. Komponen `components/PolisLama.tsx`.
 
 ## 6. CSV — `UploadCSV_LifeEndorsement`, `ViewCSVResult_LifeEDM`, `SaveCSVEDMLife`, `SelectAllEdmLife_act`
 
-Rute `POST /kasus/{id}/unggah`, `POST /kasus/{id}/csv`. Komponen `components/UnggahCSV.tsx`.
+Rute `POST /kasus/{id}/unggah` (tinjau, nol tulis), `POST /kasus/{id}/csv` (multipart `berkas`, tanpa batas baris, dua lintasan atas
+berkas sementara). Komponen `components/UnggahCSV.tsx`, `components/HasilCSV.tsx`, pengurai tampilan `csv.ts`. Baris acuan
+`PremiumListDetail(1)` = peserta pertama di urutan grid, di luar baris `New`.
 
 | Korpus | Isi | Sistem baru | Keadaan |
 | --- | --- | --- | --- |
@@ -215,7 +217,7 @@ Rute `POST /kasus/{id}/unggah`, `POST /kasus/{id}/csv`. Komponen `components/Ung
 | `Activity/SaveCSVEDMLife.xml` 1 b264 `·`; 2 b361 `·` + 2.1 b454 `·` prakondisi b547 `.EDMStatus=="New"` → hapus baris `New` | unggah ulang mengganti | baris `New` kasus dihapus lebih dulu (AC 35) | ✅ |
 | idem 3 b629 `·` `call ASM-FW-GISFW-Work-LIFE.Calculate1_Act` | mesin hitung NB | ➖ tidak dijalankan (R05, OQ-EDM-003) |
 | idem 4 b726 `·` (b800 pesan `"Plan di CSV tidak sesuai, mohon di cek kembali"`); 4.1 b840 `·` prakondisi b2466 `.PLAN=…PremiumListDetail(1).PLAN`, b2495 `.POLICY_HOLDER=…(1).POLICY_HOLDER`, 72 penetapan `@divide(@toDecimal(@replaceAll(.X,",",".")),1,20)`; 4.2 b2541 `·` pesan; 4.3 b2689 `·` prakondisi b2791 `pyWorkPage.EdmType==1` → b2715 `"New"` | validasi + pemetaan | seluruh baris divalidasi lebih dulu, pesan VERBATIM + nomor baris/kolom (R24); desimal tanpa `float`, koma = titik desimal; `EdmType=3` ditolak (AC 13) | ✅ |
-| idem 5 b2873 `·` b2899 `.EditInput1 = 1` | kunci unggah | ada baris `New` = unggah terkunci di layar (`InputEDMLife.xml` b8965/b10403) | ✅ |
+| idem 5 b2873 `·` b2899 `.EditInput1 = 1` | kunci unggah | ada baris `New` = unggah terkunci di layar (`InputEDMLife.xml` b8965/b10403) **dan** di server (409); sesudah `Save` rekap dihitung ulang (R31) | ✅ |
 | `Activity/SelectAllEdmLife_act.xml` 1 b232 `·` b259 `@if(Select.CARI1=="","true",@if(Select.CARI1=="true","false","true"))`; 2 b431 + 2.1 b431 PRE=false (prakondisi b533 `.STS_REJECT !=""` diabaikan) → `.EdmBatal` b456 | balik centang semua | sakelar di layar atas seluruh baris yang belum terkunci | ✅ |
 
 ## 7. Penyimpanan resmi — flow `Confirm` → `Activity/InsertJsonPolisLife_Act.xml` (16 langkah, 2 `//`)

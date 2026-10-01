@@ -65,6 +65,10 @@ type Gudang interface {
 	Tandai(ctx context.Context, tx *db.Tx, kasusID, statusBaru string, p models.PilihanHapus) (int, error)
 	HitungRekap(ctx context.Context, tx *db.Tx, kasusID, tipe string) (int, error)
 	RekapKasus(ctx context.Context, tx *db.Tx, kasusID string) ([]map[string]string, error)
+	// Tiket 07 - `SaveCSVEDMLife`.
+	AcuanCSV(ctx context.Context, tx *db.Tx, kasusID string) (models.AcuanCSV, bool, error)
+	HapusPesertaBaru(ctx context.Context, tx *db.Tx, kasusID string) (int, error)
+	SisipPesertaCSV(ctx context.Context, tx *db.Tx, kasusID, plNumber string, baris []models.BarisCSV) (int, error)
 }
 
 // Layanan memegang seluruh aturan modul ini di atas satu Gudang.

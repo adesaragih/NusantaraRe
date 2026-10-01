@@ -3,16 +3,30 @@
 // Kepala seluruhnya baca-saja (sel `ro`); grid peserta b11899 (EdmType 1) / b17500 (EdmType 3).
 // `Save` b37202 → `SetPremi_EDM` (tiket 05/06): centang `.EdmBatal` b15753 dan `DELETE ALL` b13607
 // hanya di grid Perubahan Data; rekap mata uang per `.Type` (b23064 …) sesudah simpan.
+// Unggah CSV (tiket 07) - wadah b8698 `.EdmType=1 && .EditInput=1`: `Upload CSV` b8973 dan
+// `Add CSV Data` b10405 mati bila `.EditInput1=1` (b8965/b10403, ada baris `New`); `View Upload` b9340.
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 
 import { Gagal, Halaman, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
-import { ambilKasus, ambilPeserta, simpanKasus, type HalamanEDM, type KasusEDM, type PesertaEDM } from '../api'
+import {
+  ambilKasus,
+  ambilPeserta,
+  simpanKasus,
+  tambahCSV,
+  type HalamanEDM,
+  type KasusEDM,
+  type PeriksaCSVEDM,
+  type PesertaEDM,
+} from '../api'
+import HasilCSV from '../components/HasilCSV'
 import PolisLama, { tipePopup } from '../components/PolisLama'
 import RincianPeserta from '../components/RincianPeserta'
 import { TabelKorpus } from '../components/TabelKorpus'
+import UnggahCSV, { TabelPesanCSV } from '../components/UnggahCSV'
+import { barisUnggahan } from '../csv'
 import { MATA_UANG } from '../kolomKorpus'
-import { BUAT_EDM, GRID_EDM, KASUS_EDM, POLIS_LAMA_EDM, SIMPAN_EDM, UMUM_EDM } from '../labels'
+import { BUAT_EDM, GRID_EDM, KASUS_EDM, POLIS_LAMA_EDM, SIMPAN_EDM, UMUM_EDM, UNGGAH_EDM } from '../labels'
 import {
   PILIHAN_KOSONG,
   UKURAN_HALAMAN_EDM,
@@ -116,6 +130,12 @@ export default function InputEDMLife({ kasusId, onTutup }: { kasusId: string; on
   const [pilihan, setPilihan] = useState<PilihanHapusEDM>(PILIHAN_KOSONG)
   const [menyimpan, setMenyimpan] = useState(false)
   const [galatSimpan, setGalatSimpan] = useState<unknown>(null)
+  const [jendelaCSV, setJendelaCSV] = useState<'unggah' | 'hasil' | null>(null)
+  const [berkasCSV, setBerkasCSV] = useState<File | null>(null)
+  const [barisCSV, setBarisCSV] = useState<Array<Record<string, string>>>([])
+  const [periksa, setPeriksa] = useState<PeriksaCSVEDM | null>(null)
+  const [menambah, setMenambah] = useState(false)
+  const [disimpanCSV, setDisimpanCSV] = useState<number | null>(null)
 
   const muatKasus = useCallback(async () => {
     setGalat(null)
@@ -156,6 +176,36 @@ export default function InputEDMLife({ kasusId, onTutup }: { kasusId: string; on
       setGalatSimpan(e)
     } finally {
       setMenyimpan(false)
+    }
+  }
+
+  const pilihCSV = (berkas: File, hasil: PeriksaCSVEDM) => {
+    setBerkasCSV(berkas)
+    setPeriksa(hasil)
+    setDisimpanCSV(null)
+    void berkas.text().then((t) => setBarisCSV(barisUnggahan(t)))
+  }
+
+  const tambah = async () => {
+    if (berkasCSV === null) return
+    setMenambah(true)
+    setGalatSimpan(null)
+    try {
+      const j = await tambahCSV(kasusId, berkasCSV)
+      if (j.jenis === 'ditolak') {
+        setPeriksa(j.periksa)
+        return
+      }
+      setDisimpanCSV(j.hasil.disimpan)
+      setPeriksa(null)
+      setBerkasCSV(null)
+      setBarisCSV([])
+      await muatKasus()
+      await muatPeserta(halaman)
+    } catch (e) {
+      setGalatSimpan(e)
+    } finally {
+      setMenambah(false)
     }
   }
 
@@ -216,6 +266,30 @@ export default function InputEDMLife({ kasusId, onTutup }: { kasusId: string; on
           </div>
         ))}
       </dl>
+      {denganCentang && terbukaKasus && (
+        <div className="edm-aksi">
+          <button type="button" className="btn btn--ghost btn--sm" disabled={kasus.csvTerkunci} onClick={() => setJendelaCSV('unggah')}>
+            {UNGGAH_EDM.uploadCsv}
+          </button>
+          <button type="button" className="btn btn--ghost btn--sm" onClick={() => setJendelaCSV('hasil')}>
+            {UNGGAH_EDM.viewUpload}
+          </button>
+          <button
+            type="button"
+            className="btn btn--sm"
+            disabled={kasus.csvTerkunci || berkasCSV === null || menambah}
+            onClick={() => void tambah()}
+          >
+            {menambah ? UMUM_EDM.mengunggah : UNGGAH_EDM.addCsvData}
+          </button>
+          {disimpanCSV !== null && (
+            <span className="edm-catatan">
+              {UMUM_EDM.barisDisimpan}: {disimpanCSV}
+            </span>
+          )}
+        </div>
+      )}
+      {periksa !== null && jendelaCSV === null && <TabelPesanCSV hasil={periksa} />}
       {peserta !== null && peserta.baris.length === 0 && <Kosong pesan={UMUM_EDM.kosong} />}
       {peserta !== null && peserta.baris.length > 0 && (
         <div className="edm-gulir">
@@ -262,6 +336,8 @@ export default function InputEDMLife({ kasusId, onTutup }: { kasusId: string; on
       {kasus.rekap.length > 0 && (
         <TabelKorpus kolom={kolomUang} baris={kasus.rekap} kunci={(b, i) => `${b.CURRENCY ?? ''}-${i}`} />
       )}
+      {jendelaCSV === 'unggah' && <UnggahCSV kasusId={kasusId} onBerkas={pilihCSV} onTutup={() => setJendelaCSV(null)} />}
+      {jendelaCSV === 'hasil' && <HasilCSV baris={barisCSV} onTutup={() => setJendelaCSV(null)} />}
       {polisLama && <PolisLama kasusId={kasusId} tipe={k.TYPE ?? ''} onTutup={() => setPolisLama(false)} />}
     </section>
   )

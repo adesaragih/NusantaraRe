@@ -12,6 +12,8 @@
 //	POST /api/endorsement-life/kelayakan                     `SetErrorBatalEndorsement_Act` (tanpa tulis)
 //	POST /api/endorsement-life/kasus                         `Submit` b4226 → `MappingEDMLife`
 //	POST /api/endorsement-life/kasus/{id}/simpan             `Save` b37202 → `SetPremi_EDM`
+//	POST /api/endorsement-life/kasus/{id}/unggah             `Upload CSV` b8973 - tinjau, nol tulis (multipart `berkas`)
+//	POST /api/endorsement-life/kasus/{id}/csv                `Add CSV Data` b10405 → `SaveCSVEDMLife`
 package handlers
 
 import (
@@ -63,6 +65,7 @@ func daftarkan(mux *http.ServeMux, layanan func() *services.Layanan, adaDB func(
 	}
 	daftarkanBaca(pasang)
 	daftarkanTulis(pasang)
+	daftarkanCSV(pasang)
 }
 
 // angkaKueri membaca parameter kueri bilangan bulat; kosong/rusak = 0.
@@ -120,11 +123,12 @@ func jawabGalat(w http.ResponseWriter, err error) bool {
 	case errors.Is(err, services.ErrKasusTidakAda), errors.Is(err, services.ErrPesertaTidakAda):
 		galat.Tulis(w, http.StatusNotFound, services.Pesan(err))
 	case errors.As(err, new(services.GalatKelayakan)), errors.Is(err, services.ErrMasukanTidakSah),
-		errors.Is(err, services.ErrTanpaPeserta):
+		errors.Is(err, services.ErrTanpaPeserta), errors.Is(err, services.ErrCSVKosong), errors.Is(err, services.ErrCSVRusak),
+		errors.Is(err, services.ErrCSVTanpaAcuan), errors.Is(err, services.ErrCSVBukanPerubahanData):
 		// 422: JSON-nya sah, isinya ditolak gerbang - pesan VERBATIM korpus, satu per baris.
 		galat.Tulis(w, http.StatusUnprocessableEntity, services.Pesan(err))
 	case errors.Is(err, services.ErrKasusTerbukaGanda), errors.Is(err, services.ErrSumberWarisanEDM),
-		errors.Is(err, services.ErrKasusTertutup), errors.Is(err, services.ErrSudahDisimpan):
+		errors.Is(err, services.ErrKasusTertutup), errors.Is(err, services.ErrSudahDisimpan), errors.Is(err, services.ErrCSVTerkunci):
 		// 409: keadaan DATA menolak - kasus terbuka lain lahir bersamaan, atau
 		// versi berjalan polis belum dapat disalin (OQ-EDM-016).
 		galat.Tulis(w, http.StatusConflict, services.Pesan(err))

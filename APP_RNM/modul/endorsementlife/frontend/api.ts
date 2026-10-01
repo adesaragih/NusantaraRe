@@ -3,7 +3,8 @@
 //
 // ⛔ Uang dan angka TEKS sepanjang jalan - tidak pernah `Number` (ADR-0003). Kosong = `""`.
 
-import { minta } from '../../../inti/frontend/klien'
+import { kegagalanDari, minta, rakitURL } from '../../../inti/frontend/klien'
+import { headerIdentitas } from '../../../inti/frontend/store/sesi'
 import type { PilihanHapusEDM } from './tampilan'
 
 /** Prefix rute API modul ini - SAMA dengan `handlers.Prefix`. */
@@ -167,4 +168,78 @@ export interface HasilSimpanEDM {
 /** `Save` b37202 → `SetPremi_EDM`; centang `.EdmBatal` dikirim bersamanya. */
 export function simpanKasus(id: string, pilihan: PilihanHapusEDM): Promise<HasilSimpanEDM> {
   return minta<HasilSimpanEDM>(`${PREFIX_EDM}/kasus/${encodeURIComponent(id)}/simpan`, { metode: 'POST', badan: pilihan })
+}
+
+/** Satu penolakan CSV - `models.PesanCSV` (AC 37: nomor baris dan kolom). */
+export interface PesanCSVEDM {
+  baris: number
+  kolom: string
+  pesan: string
+}
+
+/** Tinjauan unggahan - `services.HasilPeriksaCSV`. */
+export interface PeriksaCSVEDM {
+  total: number
+  ditolak: number
+  pesan: PesanCSVEDM[]
+  terpotong: boolean
+  diabaikan: string[]
+}
+
+/** Hasil `Add CSV Data` - `services.HasilTambahCSV`. */
+export interface TambahCSVEDM {
+  disimpan: number
+  dibuang: number
+  rekap: Array<Record<string, string>>
+}
+
+/** Jawaban `Add CSV Data`: tersimpan, atau ditolak beserta seluruh penolakannya (422). */
+export type JawabanTambahCSVEDM =
+  | { jenis: 'tersimpan'; hasil: TambahCSVEDM }
+  | { jenis: 'ditolak'; galat: string; periksa: PeriksaCSVEDM }
+
+/**
+ * Tenggat unggahan - 10 menit. ⛔ `mintaFormulir` inti memutus pada 30 detik, dan pemutusan
+ * membatalkan transaksi `Add CSV Data` di server: unggahan tanpa batas baris (AC 36) butuh tenggat
+ * sendiri.
+ */
+export const BATAS_WAKTU_UNGGAH_MS = 600_000
+
+async function kirimBerkas(jalur: string, berkas: File): Promise<{ status: number; teks: string }> {
+  const isi = new FormData()
+  isi.append('berkas', berkas)
+  const kendali = new AbortController()
+  const jam = setTimeout(() => {
+    kendali.abort()
+  }, BATAS_WAKTU_UNGGAH_MS)
+  try {
+    const jawab = await fetch(rakitURL(jalur), { method: 'POST', headers: { ...headerIdentitas() }, body: isi, signal: kendali.signal })
+    return { status: jawab.status, teks: await jawab.text() }
+  } finally {
+    clearTimeout(jam)
+  }
+}
+
+/** `Upload CSV` b8973 - tinjau: urai dan validasi, nol tulis. */
+export async function periksaCSV(id: string, berkas: File): Promise<PeriksaCSVEDM> {
+  const j = await kirimBerkas(`${PREFIX_EDM}/kasus/${encodeURIComponent(id)}/unggah`, berkas)
+  if (j.status !== 200) throw kegagalanDari(j.status, j.teks)
+  return JSON.parse(j.teks) as PeriksaCSVEDM
+}
+
+/** `Add CSV Data` b10405 → `SaveCSVEDMLife`; 422 berdaftar pesan dikembalikan, bukan dilempar. */
+export async function tambahCSV(id: string, berkas: File): Promise<JawabanTambahCSVEDM> {
+  const j = await kirimBerkas(`${PREFIX_EDM}/kasus/${encodeURIComponent(id)}/csv`, berkas)
+  if (j.status === 200) return { jenis: 'tersimpan', hasil: JSON.parse(j.teks) as TambahCSVEDM }
+  if (j.status === 422) {
+    const b = JSON.parse(j.teks) as Partial<PeriksaCSVEDM> & { galat?: string }
+    if (Array.isArray(b.pesan)) {
+      return {
+        jenis: 'ditolak',
+        galat: b.galat ?? '',
+        periksa: { total: b.total ?? 0, ditolak: b.ditolak ?? 0, pesan: b.pesan, terpotong: b.terpotong === true, diabaikan: b.diabaikan ?? [] },
+      }
+    }
+  }
+  throw kegagalanDari(j.status, j.teks)
 }

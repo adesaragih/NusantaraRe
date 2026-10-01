@@ -84,3 +84,26 @@
 .edm-baris-rinci > td {
   background: var(--permukaan-2, transparent);
 }
+
+.edm-csv {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.edm-csv__ringkas {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem 1rem;
+  margin: 0;
+}
+
+.edm-csv__ringkas dd {
+  margin: 0;
+}
+
+.edm-csv__berkas {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}

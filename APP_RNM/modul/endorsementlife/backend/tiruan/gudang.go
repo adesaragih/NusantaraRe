@@ -94,6 +94,8 @@ type Gudang struct {
 	GalatArasapas error
 	// Galat - bila terisi, setiap metode mengembalikannya (uji jalur gagal).
 	Galat error
+	// GagalSisipKe - nomor baris CSV yang penyisipannya digagalkan (0 = tidak ada).
+	GagalSisipKe int
 }
 
 // Baru menyusun gudang kosong.

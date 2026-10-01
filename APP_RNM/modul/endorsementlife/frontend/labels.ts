@@ -20,6 +20,16 @@ export const UMUM_EDM = {
   terkunci: 'Locked: the policy and the endorsement type cannot change once the case is created. Decline the case and create a new one.',
   menyimpan: 'Saving…',
   tandaiHapus: 'Mark for deletion',
+  mengunggah: 'Uploading…',
+  pilihBerkas: 'CSV file',
+  barisDibaca: 'Rows read',
+  barisDitolak: 'Rows rejected',
+  barisDisimpan: 'Rows added',
+  kolomDiabaikan: 'Ignored columns (not saved)',
+  pesanTerpotong: 'Only the first rejections are listed.',
+  kolomBaris: 'Row',
+  kolomKolom: 'Column',
+  kolomPesan: 'Message',
 } as const
 
 /** `Section/InboxEndorsementLife.xml` - halaman awal (harness portal `InboxEndorsementLife`). */
@@ -91,6 +101,15 @@ export const GRID_EDM = {
 export const SIMPAN_EDM = {
   deleteAll: 'DELETE ALL', // b13607 → `SelectAllEdmLife_act`
   save: 'Save', // b37202 → `SetPremi_EDM`
+} as const
+
+/** Unggah CSV - wadah `InputEDMLife.xml` b8698, popup `ViewCSVResult_LifeEDM`, modal `UploadCSV_LifeEndorsement`. */
+export const UNGGAH_EDM = {
+  uploadCsv: 'Upload CSV', // b8973 → `UploadCSV_LifeEndorsement`
+  viewUpload: 'View Upload', // b9340 → `ViewCSVResult_LifeEDM`
+  addCsvData: 'Add CSV Data', // b10405 → `SaveCSVEDMLife`
+  judulModal: 'Endorsement Life - Upload CSV', // `FlowAction/UploadCSV_LifeEndorsement.xml` b191
+  generateDataDetail: 'Generate Data Detail', // `ViewCSVResult_LifeEDM.xml` b14322 → `GenerateDataDtlLife_act`
 } as const
 
 /** Label opsi `EDM Type` - spec §5 `[keputusan work owner]` (opsi properti tidak diekspor). */

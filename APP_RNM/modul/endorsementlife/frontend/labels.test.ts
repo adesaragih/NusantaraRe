@@ -10,6 +10,7 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
+import { KEPALA_UNDUH_CSV } from './csv'
 import * as KOLOM from './kolomKorpus'
 import * as LABEL from './labels'
 
@@ -20,6 +21,9 @@ const INBOX = 'Section\\InboxEndorsementLife.xml'
 const INPUT = 'Section\\InputEDMLife.xml'
 const BUAT = 'Section\\EndorsmentLife_Section.xml'
 const RINGKAS = 'Section\\ShowLifePremiumSummary_EDM.xml'
+const MODAL_CSV = 'FlowAction\\UploadCSV_LifeEndorsement.xml'
+const HASIL_CSV = 'Section\\ViewCSVResult_LifeEDM.xml'
+const UNDUH_CSV = 'Activity\\GenerateDataDtlLife_act.xml'
 
 type Bukti = readonly [kunci: string, berkas: string, baris: number, tag: string]
 
@@ -72,6 +76,11 @@ export const BUKTI: readonly Bukti[] = [
   ['GRID_EDM.expiredDate', INPUT, 13417, 'pyValue'],
   ['SIMPAN_EDM.deleteAll', INPUT, 13607, 'pyLabel'],
   ['SIMPAN_EDM.save', INPUT, 37202, 'pyLabel'],
+  ['UNGGAH_EDM.uploadCsv', INPUT, 8973, 'pyLabel'],
+  ['UNGGAH_EDM.viewUpload', INPUT, 9340, 'pyLabel'],
+  ['UNGGAH_EDM.addCsvData', INPUT, 10405, 'pyLabel'],
+  ['UNGGAH_EDM.judulModal', MODAL_CSV, 191, 'pyLabel'],
+  ['UNGGAH_EDM.generateDataDetail', HASIL_CSV, 14322, 'pyLabel'],
 ]
 
 /** Kunci tanpa baris korpus - beserta alasannya di komentar. */
@@ -86,6 +95,16 @@ export const BUKAN_KORPUS: readonly string[] = [
   'UMUM_EDM.terkunci', // pesan penjelas kunci field - spec §9 `[keputusan work owner + desain]`, AC 34
   'UMUM_EDM.menyimpan', // `Save` sedang berjalan
   'UMUM_EDM.tandaiHapus', // nama aksesibel kotak centang `.EdmBatal` b15753 (`pyLabelPreview` kosong)
+  'UMUM_EDM.mengunggah', // unggahan sedang berjalan
+  'UMUM_EDM.pilihBerkas', // isian berkas wizard `pxUploadCSVResults` (teks bawaan Pega, tidak diekspor)
+  'UMUM_EDM.barisDibaca', // ringkasan tinjauan `POST /unggah` (AC tiket 07: tinjau sebelum simpan)
+  'UMUM_EDM.barisDitolak', // idem
+  'UMUM_EDM.barisDisimpan', // hasil `Add CSV Data`
+  'UMUM_EDM.kolomDiabaikan', // judul di luar 4.1 (`STATUS`, `OVRR_COMM` b276) - diabaikan, ditampilkan
+  'UMUM_EDM.pesanTerpotong', // server mengembalikan 200 penolakan pertama
+  'UMUM_EDM.kolomBaris', // tabel penolakan (AC 37: nomor baris dan kolom)
+  'UMUM_EDM.kolomKolom', // idem
+  'UMUM_EDM.kolomPesan', // idem
 ]
 
 /** Nilai label untuk kunci `OBJEK.medan`. */
@@ -119,6 +138,12 @@ describe.skipIf(!adaKorpus)('label Endorsement Life berbukti barisnya', () => {
 
   it('nama menu = nama folder korpus', () => {
     expect(readdirSync(join(KORPUS, '..'))).toContain(LABEL.MENU_EDM.kelompok)
+  })
+
+  it('kepala Generate Data Detail = CSVPropHeaders b276, nama berkas b270 + stempel b272', () => {
+    expect(baca(UNDUH_CSV, 276)).toBe(`<CSVPropHeaders>${KEPALA_UNDUH_CSV.join(',')}</CSVPropHeaders>`)
+    expect(baca(UNDUH_CSV, 270)).toBe('<FileName>DetailUpload</FileName>')
+    expect(baca(UNDUH_CSV, 272)).toBe('<AppendTimeStampToFileName>true</AppendTimeStampToFileName>')
   })
 
   it('keempat tombol View Old Policy berlabel sama (b64965, b65522, b66083, b66640)', () => {
