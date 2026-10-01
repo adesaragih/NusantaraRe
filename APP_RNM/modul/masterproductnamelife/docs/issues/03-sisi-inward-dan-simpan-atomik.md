@@ -1,6 +1,6 @@
 # 03: Sisi inward (kolom pada satu tabel) + simpan atomik produk + anak
 
-**Status:** ready-for-agent
+**Status:** selesai (01-10-2026) — paket 4 `b179aa2`, layar paket 10 (`1ada8d7`); uji `db` ditulis dan MELEWATI di sesi implementasi (tanpa `ORACLE_DSN`; POOLDATA/DEV bukan sasaran)
 
 **Blocked by:** 02 (sisi umum harus ada — keduanya berbagi identitas yang sama)
 

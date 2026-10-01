@@ -1,6 +1,6 @@
 # 08: Lampiran — opsional, terpisah dari metadata, dengan status yang terlihat
 
-**Status:** ready-for-agent
+**Status:** selesai (01-10-2026) — paket 8 `1ff3091`, layar paket 10 (`1ada8d7`); uji `db` ditulis dan MELEWATI di sesi implementasi (tanpa `ORACLE_DSN`; POOLDATA/DEV bukan sasaran)
 
 **Blocked by:** 02 (lampiran melekat pada produk yang sudah tersimpan)
 
@@ -107,4 +107,4 @@ make check
 | (tidak disebut) `Delete` b69663 | urutan Pega dipertahankan: berkas di penyimpanan dihapus dulu (`DeleteGoogleStorage_Act`, gagal → keluar b444), lalu rekam + objek dalam satu transaksi |
 | (tidak disebut) `View Office Online` b69247 | **stub** 503 berkalimat (OQ-MPNL-11) untuk xls/xlsx/doc/docx/ppt/pptx; 422 untuk jenis lain — penampil luar tidak dipanggil, alamatnya tidak ditulis |
 
-**Status:** paket 8 — selesai di lapisan backend (uji `db` ditulis, MELEWATI tanpa `ORACLE_DSN`); panel layar paket 10.
+**Status:** paket 8 — selesai di lapisan backend (uji `db` ditulis, MELEWATI tanpa `ORACLE_DSN`); panel layar selesai paket 10 (`1ada8d7`).

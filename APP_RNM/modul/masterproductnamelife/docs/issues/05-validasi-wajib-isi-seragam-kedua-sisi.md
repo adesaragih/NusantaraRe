@@ -1,6 +1,6 @@
 # 05: Validasi wajib-isi — lima pemeriksaan, seragam di kedua sisi
 
-**Status:** ready-for-agent
+**Status:** selesai (01-10-2026) — paket 5 `6e49cc6`, layar paket 10 (`1ada8d7`)
 
 **Blocked by:** 03 (sisi inward — pemegang polis diperiksa dari sana), 04 (sumber bisnis dan ceding
 berasal dari pemilih master)

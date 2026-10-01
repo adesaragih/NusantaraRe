@@ -22,3 +22,17 @@
 | OQ-MPNL-13 | `Copy` (`CopyProduct`) mengosongkan kedua `ID` tetapi tidak `CREATEOP`; `SaveProductName_Act` 6 b1368 hanya mengisi `CREATEOP` bila kosong — salinan mewarisi pembuat produk asal. | produk **baru** (termasuk salinan) ber-`CREATEOP` = pelaku (ADR-0007); selebihnya salinan ikut XML — medan mati, `CommentList`, `OutwardList` produk asal diwarisi (paket 9) | work owner | terbuka |
 | OQ-MPNL-14 | `AddCommentList_Act` dipanggil di **setiap** simpan (`SaveProductName_Act` 7 b1513, tanpa prakondisi) — juga bila `Comment` kosong. | ikut XML: setiap simpan menambah satu baris `CommentList` (`Date`, `OperatorName` = akun pelaku, `Suggest` = komentar, boleh kosong) | work owner | terbuka |
 | OQ-MPNL-15 | `GetReinsTypeOR_Life` 4.1 b768 menyalin `.TREATYCONTRACTID` baris hasil `BrowseReinstypeOR_SQL` b84 (`SELECT tc.*, ty.*`), padahal `TREATYCONTRACT_LIFE` dan `TREATYYEAR_LIFE` tidak punya kolom bernama `TREATYCONTRACTID` (DDL `[data DBA]`) — di Pega nilainya selalu kosong. | ikut XML: `OutwardList[*].TREATYCONTRACTID = ""`; alternatifnya `tc.ID` | work owner | terbuka |
+
+## Pemeriksaan bertanggal 01-10-2026 — paket 11
+
+Kelima belas butir **terbuka**; bawaan masing-masing sudah dibangun (paket 1–10) dan dapat dibalik tanpa migrasi skema.
+Yang paling membatasi pemakaian hari ini:
+
+| OQ | Akibat bila tidak dijawab |
+| --- | --- |
+| OQ-MPNL-03 | baris `PLAN LIST` **baru** tidak dapat diberi R/I Rate, sehingga `ProteksiPlanListLife` (`RI/RATE tidak boleh kosong`) menolak simpannya — produk baru hanya dapat disimpan tanpa baris plan |
+| OQ-MPNL-10 / OQ-047 | berkas lampiran tersimpan di folder stub `UNGGAHAN_DIR`, bukan di penyimpanan nyata; `URLPUBLIC` kosong |
+| OQ-MPNL-11 | `View Office Online` menjawab 503 berkalimat |
+| OQ-MPNL-05 | `Product Name`, `Document List`, `Birthday` isian teks (daftar `associated` tidak ikut ekspor); `Premium Payment Method` hanya kode 1–4 |
+| OQ-MPNL-15 | `OutwardList[*].TREATYCONTRACTID` kosong seperti Pega |
+

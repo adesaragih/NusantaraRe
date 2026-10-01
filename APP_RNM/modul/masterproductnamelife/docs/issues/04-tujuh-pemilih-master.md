@@ -1,6 +1,6 @@
 # 04: Tujuh pemilih master — dan RI Rate yang bukan RI Risk
 
-**Status:** ready-for-agent
+**Status:** selesai (01-10-2026) — paket 2 `a94905e`, layar paket 10 (`1ada8d7`); `Choose R/I Rate` ⏸️ OQ-MPNL-03 (503 berkalimat); uji `db` ditulis dan MELEWATI di sesi implementasi (tanpa `ORACLE_DSN`; POOLDATA/DEV bukan sasaran)
 
 **Blocked by:** 02 (pemilih mengisi field pada produk)
 

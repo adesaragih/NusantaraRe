@@ -1,6 +1,6 @@
 # 01: Skema relasional penuh + migrasi JSON → kolom — **PREFACTOR**
 
-**Status:** ready-for-agent
+**Status:** ditangguhkan (01-10-2026) — RALAT P1: produk tetap JSON di dua tabel lama seperti Pega, nol DDL; menunggu OQ-MPNL-01 (paket 0 `71c35b1`)
 
 **Blocked by:** **CL-01** (kerangka aplikasi + seam API — scaffolding lintas konteks, tidak dibuat
 di sini)

@@ -231,3 +231,20 @@ false); `Save` membuka dialog berpertanyaan + `Comment` (`Cancel`/`Save`); `Choo
 tekan SAVE untuk menyimpan`. Tanpa basis data tidak teramati: `View` baris grid, `Edit` (mode lihat), `View Rate`
 (butuh `RIRATE`), panel lampiran (butuh produk tersimpan) — keempatnya dijaga `labels.test.ts`.
 
+## 11. Commit per paket (cabang `dev`)
+
+| Paket | Commit | Tiket | Isi |
+| ---: | --- | --- | --- |
+| 0 | `71c35b1` | 01 (ditangguhkan) | PARITAS, `RALAT-DEV-30-09-2026.md` P1–P6 + R7–R18, OQ-MPNL-01..14, ralat bertanggal spec dan tiket 01 |
+| 1 | `4ce0771` | 02 (baca) | kerangka backend, baca `M_PRODUCT_LIFE` + `M_PRODUCTINWARD_LIFE` lewat `JSONDATA`, rute baca, penjaga modul |
+| 2 | `a94905e` | 04 | tujuh pemilih master — saringan/urutan RD; R/I Rate ⏸️ OQ-MPNL-03 |
+| 3 | `2f39341` | 02 | sisi umum, identitas dari sequence, upsert `JSONDATA` + kolom datar, gagal terang |
+| 4 | `b179aa2` | 03 | sisi inward, simpan atomik dua tabel, uji tiga view DEV di skema uji |
+| 5 | `6e49cc6` | 05 | wajib-isi — empat pesan VERBATIM, semua sekaligus |
+| 6 | `05ca173` | 06 | `PLAN LIST`, `UNDERWRITING LIMIT`, `ProteksiPlanListLife` VERBATIM |
+| 7 | `e124f18` | 07 | komentar setiap simpan, `DOCUMENT CLAIM`, `LIEN CLAUSE`, `FINANCIAL UNDERWRITING` |
+| 8 | `1ff3091` | 08, 09 | lampiran tabel warisan, efek keluar stub lewat outbox `T_LOG_SERVICE_RNM` |
+| 9 | `14d3d48` | 10 (tambahan) | `Copy`, `On Retention` → `OutwardList`, `Generate` → `SeeDetail.csv` |
+| 10 | `1ada8d7` | semua (layar) | menu slot 960, `modul.go`, layar `InboxProductName` lengkap, `MODUL.md` dimigrasi |
+| 11 | (commit ini) | — | status tiket, daftar commit, register OQ |
+

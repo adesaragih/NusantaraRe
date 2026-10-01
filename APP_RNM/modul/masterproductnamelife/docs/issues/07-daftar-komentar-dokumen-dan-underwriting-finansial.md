@@ -1,6 +1,6 @@
 # 07: Komentar, dokumen klaim, dan underwriting finansial
 
-**Status:** ready-for-agent
+**Status:** selesai (01-10-2026) — paket 7 `e124f18`, layar paket 10 (`1ada8d7`)
 
 **Blocked by:** 03 (baris anak ikut dalam transaksi atomik produk)
 

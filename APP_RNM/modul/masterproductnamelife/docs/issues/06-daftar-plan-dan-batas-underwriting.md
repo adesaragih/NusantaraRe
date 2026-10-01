@@ -1,6 +1,6 @@
 # 06: Daftar plan dan batas underwriting
 
-**Status:** ready-for-agent
+**Status:** selesai (01-10-2026) — paket 6 `05ca173`, layar paket 10 (`1ada8d7`); `View Rate` / `Choose R/I Rate` ⏸️ OQ-MPNL-03; uji `db` ditulis dan MELEWATI di sesi implementasi (tanpa `ORACLE_DSN`; POOLDATA/DEV bukan sasaran)
 
 **Blocked by:** 03 (baris anak ikut dalam transaksi atomik produk)
 

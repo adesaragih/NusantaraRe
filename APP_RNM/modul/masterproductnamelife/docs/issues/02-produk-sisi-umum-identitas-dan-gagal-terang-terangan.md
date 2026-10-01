@@ -1,6 +1,6 @@
 # 02: Produk sisi umum — CRUD, identitas dari sequence, gagal terang-terangan
 
-**Status:** ready-for-agent
+**Status:** selesai (01-10-2026) — paket 1 `4ce0771` (baca) + paket 3 `2f39341` (tulis), layar paket 10 (`1ada8d7`); uji `db` ditulis dan MELEWATI di sesi implementasi (tanpa `ORACLE_DSN`; POOLDATA/DEV bukan sasaran)
 
 **Blocked by:** 01 (skema relasional — bentuk barunya harus ada lebih dulu)
 

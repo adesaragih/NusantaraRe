@@ -1,6 +1,6 @@
 # 10 (tambahan): aksi XML yang belum dicakup tiket 01–09
 
-**Status:** paket 9 — backend selesai; layar paket 10
+**Status:** selesai (01-10-2026) — paket 9 `14d3d48`, layar paket 10 (`1ada8d7`)
 
 **Sumber:** brief bab 5 baris *"tambahan"* — `CopyProduct`, `ViewRate`, `View Reinstype`, `Generate`, `Refresh`,
 `EditProductName_Confirm`, `SaveProductName_Confirm`: *"bila XML menunjukkan perilakunya dan tiket belum mencakupnya,

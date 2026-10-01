@@ -1,6 +1,6 @@
 # 09: Efek keluar penyimpanan berkas — resolusi alamat, token, dan pengulangan
 
-**Status:** ready-for-agent
+**Status:** selesai sebagai stub (01-10-2026) — paket 8 `1ff3091`; pengirim nyata menunggu OQ-047 / OQ-MPNL-10; uji `db` ditulis dan MELEWATI di sesi implementasi (tanpa `ORACLE_DSN`; POOLDATA/DEV bukan sasaran)
 
 **Blocked by:** 08 (lampiran harus ada lebih dulu — tiket ini mengeraskan jalur keluarnya)
 
