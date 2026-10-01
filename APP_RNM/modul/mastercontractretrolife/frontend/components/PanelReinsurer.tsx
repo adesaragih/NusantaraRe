@@ -94,6 +94,8 @@ export default function PanelReinsurer({ kontrak, onTutup }: { kontrak: Kontrak;
 
   const hapusan = useHapus('reinsurer', async (id, p) => {
     if (form?.id === id) setForm(null)
+    // Reinsurer yang Security-nya sedang terbuka ikut menutup panel Security (sama dengan Treaty Contract Out).
+    setSecurity((s) => (s?.id === id ? null : s))
     setPesan(p)
     await muat()
   })
@@ -125,19 +127,6 @@ export default function PanelReinsurer({ kontrak, onTutup }: { kontrak: Kontrak;
     } finally {
       setMenyimpan(false)
     }
-  }
-
-  // Popup `Security Reinsurer` di atas panel ini: panel ini tidak dirender, keadaannya tetap.
-  if (security !== null) {
-    return (
-      <PanelSecurity
-        key={security.id}
-        reinsurer={security}
-        onTutup={() => {
-          setSecurity(null)
-        }}
-      />
-    )
   }
 
   const induk = jawab?.kontrak ?? kontrak
@@ -278,6 +267,20 @@ export default function PanelReinsurer({ kontrak, onTutup }: { kontrak: Kontrak;
           sibuk={hapusan.sibuk}
           onYa={() => void hapusan.ya()}
           onBatal={hapusan.batal}
+        />
+      )}
+
+      {/* Keputusan work owner 02-10-2026: akses Security Reinsurer SAMA dengan Treaty Contract Out
+          (`PanelReinsurerKombinasi`) - panel Security tampil DI BAWAH daftar reinsurer, di dalam panel ini;
+          daftar reinsurer dan Total Share tetap terlihat; tombol di baris lain mengganti isinya (key).
+          Dulu: panel ini diganti seluruhnya selama Security terbuka (`showHarness` popup Pega). */}
+      {security !== null && (
+        <PanelSecurity
+          key={security.id}
+          reinsurer={security}
+          onTutup={() => {
+            setSecurity(null)
+          }}
         />
       )}
     </section>

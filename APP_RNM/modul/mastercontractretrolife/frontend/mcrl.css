@@ -95,6 +95,12 @@
   padding-left: 20px;
 }
 
+/* Panel Security Reinsurer di dalam panel Reinsurer (keputusan work owner 02-10-2026, model Treaty
+   Contract Out): berjarak dari daftar di atasnya, tanpa sisa jarak bawah ganda. */
+.mcrl .panel .panel {
+  margin: 16px 0 0;
+}
+
 /* --------------------------------------------------------------- tabel */
 /* Pembungkus gulir setiap grid: tabel yang lebih lebar dari panel menggulir DI SINI, bukan keluar dari
    panel (tangkapan layar 02-10-2026: kolom tombol `Reinsurer List` terpotong tepi panel). */
