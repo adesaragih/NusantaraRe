@@ -133,39 +133,43 @@ export const KERANGKA = {
  * Label halaman login dan ganti sandi — `M_LOGIN_GO`, keputusan work owner
  * 01-10-2026.
  *
- * ⚠️ `[tidak ada di korpus]` `[kerangka aplikasi]`: judul, keterangan,
- * isian, dan tombol VERBATIM `loginbaru.html` (lampiran work owner
- * 01-10-2026). Pesan gagal dipilih dari STATUS jawaban, bukan teks backend.
+ * ⚠️ `[tidak ada di korpus]` `[kerangka aplikasi]`: tata letak `loginbaru.html`
+ * (lampiran work owner 01-10-2026); teksnya BAHASA INGGRIS - permintaan work
+ * owner 01-10-2026: "bahasa saat login ubah ke Inggris". Berlaku untuk layar
+ * login, ganti sandi, dan periksa sesi. Pesan gagal dipilih dari STATUS
+ * jawaban (dan kalimat galat ganti sandi yang dikenal), bukan teks backend.
  */
 export const LOGIN = {
-  judul: 'Halo Lagi!',
-  sub: 'Selamat datang kembali, senang bertemu Anda lagi!',
-  logo: 'Nusantara Re - Login aplikasi',
+  judul: 'Hello Again!',
+  sub: "Welcome back, it's great to see you again!",
+  logo: 'Nusantara Re - Application login',
   akun: 'Username',
-  isianAkun: 'Masukkan username',
+  isianAkun: 'Enter your username',
   sandi: 'Password',
   isianSandi: 'Password',
-  tampilkanSandi: 'Tampilkan password',
-  sembunyikanSandi: 'Sembunyikan password',
+  tampilkanSandi: 'Show password',
+  sembunyikanSandi: 'Hide password',
   masuk: 'Login',
-  memproses: 'Memeriksa…',
-  memuatSesi: 'Memeriksa sesi…',
-  bantuan: 'Lupa sandi atau belum punya akses? Hubungi IT.',
-  salah: 'Akun atau sandi salah.',
-  terkunci: 'Akun terkunci sementara sesudah 5 kali sandi salah. Coba lagi 15 menit lagi.',
-  tidakTersedia: 'Login belum dapat dipakai di server ini. Hubungi IT.',
-  gagal: 'Login gagal. Coba lagi, atau hubungi IT bila berulang.',
-  cobaLagi: 'Coba lagi',
-  judulGanti: 'Ganti sandi',
-  wajibGanti: 'Sandi sementara harus diganti sebelum melanjutkan.',
-  sandiLama: 'Sandi saat ini',
-  sandiBaru: 'Sandi baru',
-  ulangiSandi: 'Ulangi sandi baru',
-  simpanSandi: 'Simpan sandi',
-  minimal: 'Minimal 10 karakter.',
-  tidakSama: 'Kedua sandi baru tidak sama.',
-  lamaSalah: 'Sandi saat ini salah.',
-  batal: 'Batal',
+  memproses: 'Checking…',
+  memuatSesi: 'Checking your session…',
+  bantuan: 'Forgot your password or need access? Contact IT.',
+  salah: 'Incorrect username or password.',
+  terkunci: 'Account temporarily locked after 5 incorrect passwords. Try again in 15 minutes.',
+  tidakTersedia: 'Login is not available on this server yet. Contact IT.',
+  gagal: 'Login failed. Try again, or contact IT if it keeps happening.',
+  cobaLagi: 'Try again',
+  judulGanti: 'Change password',
+  wajibGanti: 'Your temporary password must be changed before you continue.',
+  sandiLama: 'Current password',
+  sandiBaru: 'New password',
+  ulangiSandi: 'Repeat new password',
+  simpanSandi: 'Save password',
+  minimal: 'At least 10 characters.',
+  terlaluPanjang: 'Password can be at most 72 bytes.',
+  samaDenganLama: 'The new password must be different from the current one.',
+  tidakSama: 'The two new passwords do not match.',
+  lamaSalah: 'Current password is incorrect.',
+  batal: 'Cancel',
 } as const
 
 /** Panjang sandi minimal — sama dengan `login.PanjangMinSandi` di backend. */

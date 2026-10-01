@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import Beranda from './Beranda'
 import GantiSandi from '../inti/frontend/components/GantiSandi'
-import Login, { KerangkaMasuk } from '../inti/frontend/components/Login'
+import Login, { KerangkaMasuk, pesanGagalLogin } from '../inti/frontend/components/Login'
 import { Shell } from '../inti/frontend/components/Shell'
 import { ApiFailure, ambilMenu, ambilModulAktif, ambilSesiSaya, keluarLogin, type ProfilLogin } from '../inti/frontend/klien'
 import { LOGIN } from '../inti/frontend/labels'
@@ -70,8 +70,17 @@ export default function App() {
   }, [])
   // Menu dari tabel M_NAV_MENU (brief menu 30-09-2026). `null` = sedang
   // dimuat; gagal = sidebar MENAMPILKAN galatnya, bukan menu kosong.
+  //
+  // ⛔ Dibaca SESUDAH identitas diketahui, dan dibaca ULANG saat akunnya
+  // berganti (01-10-2026): menu disaring per akun, dan `GET /api/menu`
+  // tanpa sesi dijawab 401 - yang, bila dikirim sebelum login, memicu
+  // `PERISTIWA_SESI_BERAKHIR` di tengah pemeriksaan sesi dan membuat layar
+  // login berkedip.
+  const kunciMenu = stub ? 'stub' : (profil?.akunId ?? null)
   const [menuTabel, setMenuTabel] = useState<KeadaanMenuTabel>(null)
   useEffect(() => {
+    setMenuTabel(null)
+    if (kunciMenu === null) return
     let batal = false
     ambilMenu().then(
       (menu) => {
@@ -84,7 +93,7 @@ export default function App() {
     return () => {
       batal = true
     }
-  }, [])
+  }, [kunciMenu])
   // Daftar modul aktif tiba SESUDAH pemakai sempat membuka halaman modul yang
   // ternyata nonaktif (semua menu tampil selama daftarnya `null`): rute modul
   // itu dilepas, jadi halamannya kembali ke Beranda alih-alih layar kosong
@@ -95,11 +104,15 @@ export default function App() {
 
   if (!stub && galatSesi !== null) {
     return (
-      <KerangkaMasuk judul={LOGIN.masuk} sub={LOGIN.gagal}>
+      <KerangkaMasuk judul={LOGIN.masuk} sub={pesanGagalLogin(galatSesi)}>
         <div className="halaman-masuk__form">
-          <div className="alert alert--error" role="alert">
-            {galatSesi instanceof ApiFailure ? galatSesi.message : LOGIN.gagal}
-          </div>
+          {/* Kalimat backend tetap tampil KECIL di bawahnya - ia yang menyebut
+              sebab sebenarnya (mis. migrasi yang belum dijalankan) bagi IT. */}
+          {galatSesi instanceof ApiFailure && galatSesi.detail.message !== undefined && (
+            <p className="halaman-masuk__bantuan" role="alert">
+              {galatSesi.detail.message}
+            </p>
+          )}
           <button type="button" className="halaman-masuk__tombol" onClick={periksaSesi}>
             {LOGIN.cobaLagi}
           </button>
@@ -108,10 +121,15 @@ export default function App() {
     )
   }
   if (!stub && profil === undefined) {
+    // ⛔ LATAR layar login, bukan halaman putih polos: yang terakhir berganti
+    // ke kartu login bergradien sekejap kemudian - kedip di SETIAP muat ulang
+    // (laporan work owner 01-10-2026).
     return (
-      <p role="status" className="polis__catatan">
-        {LOGIN.memuatSesi}
-      </p>
+      <main className="halaman-masuk" aria-busy="true">
+        <p role="status" className="halaman-masuk__status">
+          {LOGIN.memuatSesi}
+        </p>
+      </main>
     )
   }
   if (!stub && profil === null) {

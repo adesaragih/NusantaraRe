@@ -84,7 +84,12 @@ describe('pesan layar', () => {
 
   it('ganti sandi: sandi lama salah dikenali, 401 bukan galat medan', () => {
     expect(pesanGagalGanti(new ApiFailure(400, { code: 'DITOLAK_BACKEND', message: 'sandi lama salah' }))).toBe(LOGIN.lamaSalah)
-    expect(pesanGagalGanti(new ApiFailure(400, { code: 'DITOLAK_BACKEND', message: 'sandi minimal 10 karakter' }))).toBe('sandi minimal 10 karakter')
+    // Kalimat backend DIPETAKAN ke label berbahasa Inggris (layar login berbahasa
+    // Inggris, permintaan work owner 01-10-2026); yang tak dikenal = pesan umum.
+    expect(pesanGagalGanti(new ApiFailure(400, { code: 'DITOLAK_BACKEND', message: 'sandi minimal 10 karakter' }))).toBe(LOGIN.minimal)
+    expect(pesanGagalGanti(new ApiFailure(400, { code: 'DITOLAK_BACKEND', message: 'sandi maksimal 72 byte' }))).toBe(LOGIN.terlaluPanjang)
+    expect(pesanGagalGanti(new ApiFailure(400, { code: 'DITOLAK_BACKEND', message: 'sandi baru sama dengan sandi lama' }))).toBe(LOGIN.samaDenganLama)
+    expect(pesanGagalGanti(new ApiFailure(400, { code: 'DITOLAK_BACKEND', message: 'kalimat lain' }))).toBe(LOGIN.gagal)
     expect(pesanGagalGanti(new ApiFailure(401, { code: 'DITOLAK_BACKEND', message: 'sesi sudah berakhir' }))).toBe(LOGIN.gagal)
   })
 })
@@ -109,10 +114,11 @@ describe('tampilan loginbaru.html', () => {
   const login = readFileSync(join(__dirname, 'Login.tsx'), 'utf8')
   const css = readFileSync(join(__dirname, '..', 'styles.css'), 'utf8')
 
-  it('teks VERBATIM desain', () => {
-    expect(LOGIN.judul).toBe('Halo Lagi!')
-    expect(LOGIN.sub).toBe('Selamat datang kembali, senang bertemu Anda lagi!')
-    expect(LOGIN.isianAkun).toBe('Masukkan username')
+  it('teks layar login berbahasa Inggris', () => {
+    // Bahasa Inggris - permintaan work owner 01-10-2026.
+    expect(LOGIN.judul).toBe('Hello Again!')
+    expect(LOGIN.sub).toBe("Welcome back, it's great to see you again!")
+    expect(LOGIN.isianAkun).toBe('Enter your username')
     expect(LOGIN.masuk).toBe('Login')
   })
 

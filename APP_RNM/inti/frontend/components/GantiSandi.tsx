@@ -19,10 +19,19 @@ export function periksaSandiBaru(baru: string, ulang: string): string | null {
   return null
 }
 
-/** Galat ganti sandi: 400 membawa kalimat backend; 401 = sesi berakhir. */
+/**
+ * Galat ganti sandi: 400 membawa kalimat backend (`login/rute.go`) yang
+ * DIPETAKAN ke label berbahasa Inggris - layar login berbahasa Inggris
+ * (permintaan work owner 01-10-2026); kalimat tak dikenal = pesan umum.
+ * 401 = sesi berakhir.
+ */
 export function pesanGagalGanti(galat: unknown): string {
   if (galat instanceof ApiFailure && galat.status === 400) {
-    return galat.detail.message?.includes('sandi lama salah') ? LOGIN.lamaSalah : (galat.detail.message ?? LOGIN.gagal)
+    const pesan = galat.detail.message ?? ''
+    if (pesan.includes('sandi lama salah')) return LOGIN.lamaSalah
+    if (pesan.includes('sandi minimal')) return LOGIN.minimal
+    if (pesan.includes('sandi maksimal')) return LOGIN.terlaluPanjang
+    if (pesan.includes('sama dengan sandi lama')) return LOGIN.samaDenganLama
   }
   return LOGIN.gagal
 }

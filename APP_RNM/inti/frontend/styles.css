@@ -5767,6 +5767,14 @@ textarea.field__input {
   text-align: center;
   color: var(--hm-muted);
 }
+/* Layar periksa sesi (01-10-2026, "halaman login suka kedip"): LATAR yang
+   sama dengan layar login, tanpa kartu - sebelumnya layar putih polos yang
+   berganti ke kartu bergradien sekejap kemudian. */
+.halaman-masuk__status {
+  margin: 0;
+  font-size: 14px;
+  color: var(--hm-muted);
+}
 /* Layar lebar: dua kolom. */
 @media (min-width: 860px) {
   .halaman-masuk {
