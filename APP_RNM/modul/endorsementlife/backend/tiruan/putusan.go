@@ -135,3 +135,30 @@ func (g *Gudang) TulisRekapWarisan(_ context.Context, _ *db.Tx, r repository.Rek
 	}
 	return len(g.RekapData[r.KasusID]), nil
 }
+
+// TulisProduksiWarisan meniru `sqlSisipProduksiWarisan`: satu baris dari kepala kasus.
+func (g *Gudang) TulisProduksiWarisan(_ context.Context, _ *db.Tx, r repository.ProduksiWarisanTulis) (int, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.Galat != nil {
+		return 0, g.Galat
+	}
+	g.catat("TulisProduksiWarisan")
+	p, ada := g.Polis[r.KasusID]
+	if !ada {
+		return 0, fmt.Errorf("tiruan: produksi warisan kasus %s menyentuh 0 baris", r.KasusID)
+	}
+	kp := func(k string) string { return p.Kepala[k] }
+	g.ProduksiWarisan = append(g.ProduksiWarisan, map[string]string{
+		"IDPEGA": r.KasusID, "NOPOLIS": r.NomorPolis, "NOENDORS": r.Nomor, "BUSINESSCODE": kp("BUSINESS_CODE"),
+		"BUSINESSNAME": kp("BUSINESS_NAME"), "CEDINGCO": kp("CEDING_CO"), "CEDINGCONAME": kp("CEDING_CO_NAME"),
+		"DATERECEIVED": kp("DATE_RECEIVED"), "MARKETINGCODE": kp("MARKETING_CODE"), "MARKETINGNAME": kp("MARKETING_NAME"),
+		"POLICYHOLDER": kp("POLICY_HOLDER"), "POLICYHOLDERNAME": kp("POLICY_HOLDER_NAME"), "PRORATETYPE": kp("PRO_RATE_TYPE"),
+		"CREATEOPNAME": p.Pembuat, "SOB": kp("SOB"), "SOBNAME": kp("SOB_NAME"), "TYPE": kp("TYPE"),
+		"TYPECEDING": kp("TYPE_CEDING"), "MOID": kp("MO_ID"), "NOOFFER": kp("NO_OFFER"), "RISLIPRNM": kp("RI_SLIP_RNM"),
+		"RETROID": kp("RETRO_ID"), "RETRONAME": kp("RETRO_NAME"), "TYPECEDINGNAME": models.NamaJenisCeding[kp("TYPE_CEDING")],
+		"SECURITYREINSURERID": kp("SECURITY_REINSURER_ID"), "SECURITYREINSURER": kp("SECURITY_REINSURER"),
+		"TGL_INPUT": "SYSDATE", // cap waktu basis data - tidak ditiru
+	})
+	return 1, nil
+}

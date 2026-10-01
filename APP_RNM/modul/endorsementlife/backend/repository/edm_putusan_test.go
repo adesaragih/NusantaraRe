@@ -124,3 +124,82 @@ func TestRekapWarisanDariProsedurDanKorpus(t *testing.T) {
 		}
 	}
 }
+
+const uProduksiW = "UJISKEMA.LIFEINPRODUCTION"
+
+// K4 keputusan work owner 01-10-2026 (OQ-EDM-010): `LIFEINPRODUCTION` ditulis seperti
+// `RDBList/SaveLifeinProduction_SQL.xml` b86/b87 - 27 kolom VERBATIM urutan korpus, satu baris per
+// kasus yang diresmikan, nilai dari kepala kasus `T_PREMIUM_LIST` (sumber yang sama dengan properti
+// `pyWorkPage.*` langkah 8 b1805), nol `COMMIT`.
+func TestSQLProduksiWarisan(t *testing.T) {
+	q := sqlSisipProduksiWarisan(uProduksiW, uPolis)
+	if penampungUnik(t, "sqlSisipProduksiWarisan", q) != 4 || !strings.HasSuffix(q, "FROM "+uPolis+" p WHERE p.ID = :4") ||
+		strings.Contains(q, "COMMIT") {
+		t.Errorf("sisip produksi warisan: %s", q)
+	}
+	if len(KolomProduksiWarisan) != 27 || KolomProduksiWarisan[0] != "IDPEGA" || KolomProduksiWarisan[26] != "TGL_INPUT" {
+		t.Fatalf("27 kolom VERBATIM: %v", KolomProduksiWarisan)
+	}
+	if !strings.Contains(q, "INSERT INTO "+uProduksiW+" ("+strings.Join(KolomProduksiWarisan, ", ")+")") {
+		t.Errorf("daftar kolom bukan urutan korpus: %s", q)
+	}
+	for _, w := range []string{"SELECT :1, :2, :3, p.BUSINESS_CODE,", "TRUNC(p.DATE_RECEIVED)", "p.CREATE_OP_NAME",
+		"CASE p.TYPE_CEDING WHEN '1' THEN 'QS' WHEN '2' THEN 'SURPLUS' WHEN '3' THEN 'QS + SURPLUS' WHEN '4' THEN 'XOL' END",
+		"p.SECURITY_REINSURER_ID, p.SECURITY_REINSURER, SYSDATE FROM"} {
+		if !strings.Contains(q, w) {
+			t.Errorf("sisip produksi warisan tanpa %q:\n%s", w, q)
+		}
+	}
+}
+
+// TestProduksiWarisanDariKorpus - (1) daftar kolom `INSERT` = `SaveLifeinProduction_SQL.xml` VERBATIM; (2) VALUES ke-n
+// = `{InputDataLife.CARI1}` / `{TempInputDataLife.CARIn}`; (3) `InsertJsonPolisLife_Act` 7–8: `CARIn` ← `pyWorkPage.X`,
+// dan kolom kepala sumber kode ini = kolom `KolomKepalaSalin` berproperti `X` yang sama.
+func TestProduksiWarisanDariKorpus(t *testing.T) {
+	b, err := os.ReadFile(akarKorpus + `\RDBList\SaveLifeinProduction_SQL.xml`)
+	if err != nil {
+		t.Skipf("korpus tidak terjangkau (%v)", err)
+	}
+	sql := html.UnescapeString(string(b))
+	sql = sql[strings.Index(sql, "INSERT INTO POOLDATA.LIFEINPRODUCTION"):strings.Index(sql, "</pyBrowseSQL>")]
+	kolom := strings.FieldsFunc(sql[strings.Index(sql, "(")+1:strings.Index(sql, ")")], func(r rune) bool {
+		return r == ',' || r == ' ' || r == '\n' || r == '\t'
+	})
+	if strings.Join(kolom, ",") != strings.Join(KolomProduksiWarisan, ",") {
+		t.Fatalf("KolomProduksiWarisan bukan urutan korpus:\n kode %v\n XML  %v", KolomProduksiWarisan, kolom)
+	}
+	nilai := regexp.MustCompile(`\{(InputDataLife|TempInputDataLife)\.(CARI\d+)\}|sysdate`).FindAllStringSubmatch(sql[strings.Index(sql, "VALUES"):], -1)
+	if len(nilai) != 27 {
+		t.Fatalf("VALUES: %d butir, mau 27", len(nilai))
+	}
+	ijp, err := os.ReadFile(akarKorpus + `\Activity\InsertJsonPolisLife_Act.xml`)
+	if err != nil {
+		t.Skipf("korpus tidak terjangkau (%v)", err)
+	}
+	properti := map[string]string{}
+	for _, m := range regexp.MustCompile(`<PropertiesName>((?:Temp)?InputDataLife)\.(CARI\d+)</PropertiesName>\s*<PropertiesValue>([^<]*)</PropertiesValue>`).FindAllStringSubmatch(html.UnescapeString(string(ijp)), -1) {
+		properti[m[1]+"."+m[2]] = m[3]
+	}
+	kepala := map[string]string{}
+	for _, k := range models.KolomKepalaSalin {
+		kepala["pyWorkPage."+k.Properti] = k.Kolom
+	}
+	for i, n := range nilai {
+		k := KolomProduksiWarisan[i]
+		mau := nilaiProduksiWarisan[k]
+		if n[0] == "sysdate" {
+			if mau != "SYSDATE" {
+				t.Errorf("%s: korpus sysdate, kode %q", k, mau)
+			}
+			continue
+		}
+		asal := properti[n[1]+"."+n[2]]
+		if kol, ada := kepala[asal]; ada && !strings.Contains(mau, "p."+kol) {
+			t.Errorf("%s: korpus %s ← %s (kolom kepala %s), kode %q", k, n[2], asal, kol, mau)
+		}
+		if _, ada := kepala[asal]; !ada {
+			// Bukan properti kepala: pengenal kasus, nomor polis, nomor endorsement, pembuat, nama jenis ceding.
+			t.Logf("%s ← %s %s: %s", k, n[2], asal, mau)
+		}
+	}
+}

@@ -11,13 +11,17 @@ package services
 //	3 `IsLifeAccepted` b272: `1` → Confirm, selain itu Decline (tanpa `Reject`, AC 30)
 //	Decline: 4 `STATUSS = Resolved-Rejected` (b642), 5 jejak
 //	Confirm: 4 versi berjalan + nomor `<polis>/NN` (`GenerateNoEDM_Life`, lahir sekali b1216/b1390)
-//	         5 anti-dobel `(NO_POLIS, PROD_KE)`  6 resmikan kepala + peserta (11.2-11.5)
+//	         5 anti-dobel `(NO_POLIS, PROD_KE)`
+//	         5b produksi warisan `LIFEINPRODUCTION` (10 b2663, `SaveLifeinProduction_SQL` - K4, OQ-EDM-010)
+//	         6 resmikan kepala + peserta (11.2-11.5)
 //	         7 rekap warisan (12, `InsertPLSummary`)  8 jejak `Resolved-Completed` (b686)
 //	         sesudah commit: efek keluar 16 (`edm_efekkeluar.go`)
 //
 // ⛔ Penulisan peserta warisan `M_LIFE_PREMIUM_DETAIL` (11.6 `SaveMasterLPDet`)
-// BELUM: menunggu OQ-EDM-016 (RALAT R29). `JSON_POLIS` dan `LIFEINPRODUCTION`
-// tidak ditulis (R17, R18).
+// BELUM: menunggu OQ-EDM-016 (RALAT R29). `JSON_POLIS` tidak ditulis (R18).
+// `LIFEINPRODUCTION` DITULIS sejak K4 keputusan work owner 01-10-2026 (OQ-EDM-010):
+// `InsertJsonPolisLife_Act` 10 b2663 tanpa prakondisi (`pyStepsPreCondition` kosong
+// b2684, transisi WhenTrue/WhenFalse 2 b2708/b2702) - selalu jalan di jalur Confirm.
 
 import (
 	"context"
@@ -137,6 +141,11 @@ func (l *Layanan) Putuskan(ctx context.Context, p inti.Pelaku, id string, m Masu
 		}
 		if dobel {
 			return fmt.Errorf("%w: %s version %d exists", ErrVersiBerubah, k.NomorPolis, prodKe)
+		}
+		if _, err := l.gudang.TulisProduksiWarisan(ctx, tx, repository.ProduksiWarisanTulis{
+			KasusID: id, NomorPolis: k.NomorPolis, Nomor: nomor,
+		}); err != nil {
+			return err
 		}
 		if hasil.Peserta, err = l.gudang.Resmikan(ctx, tx, models.ResmiKasus{
 			ID: id, NomorPolis: k.NomorPolis, ProdKe: prodKe, Nomor: nomor, StatusJenis: models.StatusJenis(k.Kepala["TYPE"]),

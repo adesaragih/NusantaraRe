@@ -24,7 +24,7 @@ adalah **ejaan korpus** — itu **bukti asal kolom**, bukan nama kolom.
 > | `T_VIEW_SUGGEST` | keputusan | `NO`, `DATE_SUGGEST`, `PIC_SUGGEST`, `IS_CEDING_CONFIRM`, `COMMENT_SUGGEST` |
 > | `M_LIFE_PREMIUM_SUMMARY` | `Confirm` | 37 kolom prosedur `PEGA_M_LIFE_PREMIUM_SUMMARY` |
 >
-> **Tidak ditulis:** `M_LIFE_PREMIUM_DETAIL` (OQ-EDM-016), `JSON_POLIS` (R18), `LIFEINPRODUCTION` (R17), kolom kepala
+> **Tidak ditulis:** `M_LIFE_PREMIUM_DETAIL` (OQ-EDM-016), `JSON_POLIS` (R18), `LIFEINPRODUCTION` (R17), kolom kepala *(ralat 01-10-2026, K4 keputusan work owner 01-10-2026: `LIFEINPRODUCTION` DITULIS satu baris per kasus yang diresmikan — 27 kolom `SaveLifeinProduction_SQL`, nol DDL)*
 > `T_PREMIUM_LIST.STATUS_OLD` (tak ada penulis di korpus Endorsement).
 
 ---

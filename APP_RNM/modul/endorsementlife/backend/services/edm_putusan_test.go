@@ -43,7 +43,7 @@ func TestPutuskanConfirmMeresmikanVersiDalamUrutan(t *testing.T) {
 		t.Fatalf("hasil %+v", h)
 	}
 	// AC 42: urutan pemanggilan adalah bagian kebenaran.
-	if got := strings.Join(g.Panggilan, ","); got != "SisipRiwayat,AdaVersiResmi,Resmikan,TulisRekapWarisan" {
+	if got := strings.Join(g.Panggilan, ","); got != "SisipRiwayat,AdaVersiResmi,TulisProduksiWarisan,Resmikan,TulisRekapWarisan" {
 		t.Errorf("urutan %s", got)
 	}
 	p := g.Polis["EDMLF-1"]
@@ -203,5 +203,32 @@ func TestNomorEndorsementPertamaDanKeduaPolisNBWarisan(t *testing.T) {
 	}
 	if h, err := l.Putuskan(ctx, pelakuUji, "EDMLF-13", services.MasukanPutusan{Status: "1"}); err != nil || h.NoEndorsement != "UJI-PL-W/02" {
 		t.Errorf("sesudah endorsement Pega /01: %+v %v", h, err)
+	}
+}
+
+// K4 keputusan work owner 01-10-2026 (OQ-EDM-010): Confirm menulis SATU baris `LIFEINPRODUCTION` di transaksi
+// yang sama, SEBELUM peserta diresmikan - urutan `InsertJsonPolisLife_Act` 10 b2663 (tanpa prakondisi, selalu
+// jalan) lalu 11/12; Decline tidak menulis; gagal menulis = transaksi batal.
+func TestPutuskanMenulisProduksiWarisan(t *testing.T) {
+	g, l, _ := gudangPutusan(t)
+	ctx := context.Background()
+	if _, err := l.Putuskan(ctx, pelakuUji, "EDMLF-1", services.MasukanPutusan{Status: "1"}); err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.Join(g.Panggilan, ","); got != "SisipRiwayat,AdaVersiResmi,TulisProduksiWarisan,Resmikan,TulisRekapWarisan" {
+		t.Errorf("urutan %s", got)
+	}
+	if len(g.ProduksiWarisan) != 1 {
+		t.Fatalf("baris LIFEINPRODUCTION: %d", len(g.ProduksiWarisan))
+	}
+	b := g.ProduksiWarisan[0]
+	if b["IDPEGA"] != "EDMLF-1" || b["NOPOLIS"] != "UJI-PL-1" || b["NOENDORS"] != "UJI-PL-1/01" || b["TYPE"] != models.TypeTR ||
+		b["BUSINESSNAME"] != "UJI-COB" {
+		t.Errorf("baris %+v", b)
+	}
+
+	g, l, _ = gudangPutusan(t)
+	if _, err := l.Putuskan(ctx, pelakuUji, "EDMLF-1", services.MasukanPutusan{Status: "2"}); err != nil || len(g.ProduksiWarisan) != 0 {
+		t.Errorf("Decline tidak menulis LIFEINPRODUCTION: %v %d", err, len(g.ProduksiWarisan))
 	}
 }

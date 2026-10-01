@@ -2,7 +2,7 @@
 
 > **Ralat 01-10-2026** (gelombang 2 brief, `../RALAT-DEV-01-10-2026.md` — ralat mengalahkan isi di bawah). Teks lama yang tidak berlaku:
 > - **E2** — *"Nama tabel lama (`M_LIFE_PREMIUM_DETAIL` / `_SUMMARY`) adalah sistem lama — target tulis sistem baru adalah tujuh tabel PremiumList Life"* → keduanya **juga** ditulis di transaksi yang sama (kontrak Claim Life): rekap `M_LIFE_PREMIUM_SUMMARY` ditulis; peserta `M_LIFE_PREMIUM_DETAIL` menunggu OQ-EDM-016 (**R29**).
-> - **R17/R18** — `LIFEINPRODUCTION` dan `JSON_POLIS` tidak ditulis (OQ-EDM-010; AC 54).
+> - **R17/R18** — `LIFEINPRODUCTION` dan `JSON_POLIS` tidak ditulis (OQ-EDM-010; AC 54). *(ralat 01-10-2026, K4 keputusan work owner 01-10-2026: `LIFEINPRODUCTION` DITULIS di transaksi Confirm yang sama; `JSON_POLIS` tetap tidak)*
 > - Anti-dobel `(NOPOLIS, PRODKE)` → `T_PREMIUM_LIST (NO_POLIS, PROD_KE)` index `IDX_PL_NOPOLIS_PRODKE`, ditambah pemeriksaan versi berjalan: kasus yang salinannya basi (versi lebih baru resmi sesudah kasus dibuat) ditolak 409.
 
 **Status:** sebagian 01-10-2026 — c83bf68; peserta warisan `M_LIFE_PREMIUM_DETAIL` menunggu OQ-EDM-016

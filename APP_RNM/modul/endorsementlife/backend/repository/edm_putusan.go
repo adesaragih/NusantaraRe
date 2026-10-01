@@ -262,3 +262,90 @@ func (g *Gudang) TulisRekapWarisan(ctx context.Context, tx *db.Tx, r RekapWarisa
 	c, err := h.RowsAffected()
 	return int(c), err
 }
+
+// --- produksi warisan (K4 keputusan work owner 01-10-2026, OQ-EDM-010) ----------
+
+// KolomProduksiWarisan - daftar `INSERT INTO POOLDATA.LIFEINPRODUCTION` `RDBList/SaveLifeinProduction_SQL.xml`
+// b86/b87, VERBATIM urutan korpus (27 kolom; DEV 37 kolom - sepuluh sisanya ditulis jalur new business Pega,
+// tidak oleh jalur EDM).
+var KolomProduksiWarisan = []string{
+	"IDPEGA", "NOPOLIS", "NOENDORS", "BUSINESSCODE", "BUSINESSNAME", "CEDINGCO", "CEDINGCONAME", "DATERECEIVED",
+	"MARKETINGCODE", "MARKETINGNAME", "POLICYHOLDER", "POLICYHOLDERNAME", "PRORATETYPE", "CREATEOPNAME", "SOB",
+	"SOBNAME", "TYPE", "TYPECEDING", "MOID", "NOOFFER", "RISLIPRNM", "RETROID", "RETRONAME", "TYPECEDINGNAME",
+	"SECURITYREINSURERID", "SECURITYREINSURER", "TGL_INPUT",
+}
+
+// nilaiProduksiWarisan - VALUES `SaveLifeinProduction_SQL` ← `InsertJsonPolisLife_Act` 7 b1606 / 8 b1805
+// (`InputDataLife.CARI1` b1702, `TempInputDataLife.CARI2`…`CARI27` b1878–b2382) = properti `pyWorkPage.*`,
+// diambil dari kolom kepala kasus `T_PREMIUM_LIST` yang `MappingEDMLife` 9 isi dari properti yang sama
+// (`models.KolomKepalaSalin`). Penampung: :1 `IDPEGA` ← `pzInsKey` = pengenal kasus (seperti rekap warisan),
+// :2 `NOPOLIS` ← `PolicyNo`, :3 `NOENDORS` ← `PL_NUMBER_EDM` (CARI25 b2340).
+var nilaiProduksiWarisan = map[string]string{
+	"IDPEGA": ":1", "NOPOLIS": ":2", "NOENDORS": ":3",
+	"BUSINESSCODE": "p.BUSINESS_CODE", "BUSINESSNAME": "p.BUSINESS_NAME", "CEDINGCO": "p.CEDING_CO",
+	"CEDINGCONAME": "p.CEDING_CO_NAME",
+	// `To_date({TempInputDataLife.CARI7}, 'DD/MM/YYYY')` - tanggal tanpa jam.
+	"DATERECEIVED":  "TRUNC(p.DATE_RECEIVED)",
+	"MARKETINGCODE": "p.MARKETING_CODE", "MARKETINGNAME": "p.MARKETING_NAME", "POLICYHOLDER": "p.POLICY_HOLDER",
+	"POLICYHOLDERNAME": "p.POLICY_HOLDER_NAME", "PRORATETYPE": "p.PRO_RATE_TYPE",
+	// CARI13 b2109 ← `pyWorkPage.pxCreateOpName`: pembuat kasus (`CREATE_OP_NAME`, akun pelaku - bukan nama orang).
+	"CREATEOPNAME": "p.CREATE_OP_NAME",
+	"SOB":          "p.SOB", "SOBNAME": "p.SOB_NAME", "TYPE": "p.TYPE", "TYPECEDING": "p.TYPE_CEDING", "MOID": "p.MO_ID",
+	"NOOFFER": "p.NO_OFFER", "RISLIPRNM": "p.RI_SLIP_RNM", "RETROID": "p.RETRO_ID", "RETRONAME": "p.RETRO_NAME",
+	// CARI24 b2319 `@if(TypeCeding="1","QS",@if(…="2","SURPLUS",@if(…="3","QS + SURPLUS",@if(…="4","XOL",""))))` -
+	// teks kosong Pega = NULL Oracle.
+	"TYPECEDINGNAME":      "CASE p.TYPE_CEDING " + kasusJenisCeding() + " END",
+	"SECURITYREINSURERID": "p.SECURITY_REINSURER_ID", "SECURITYREINSURER": "p.SECURITY_REINSURER",
+	"TGL_INPUT": "SYSDATE",
+}
+
+// kasusJenisCeding - cabang `WHEN` dari models.NamaJenisCeding, urut kode.
+func kasusJenisCeding() string {
+	var b strings.Builder
+	for _, k := range []string{"1", "2", "3", "4"} {
+		fmt.Fprintf(&b, "WHEN '%s' THEN '%s' ", k, models.NamaJenisCeding[k])
+	}
+	return strings.TrimSpace(b.String())
+}
+
+// ProduksiWarisanTulis - kepala baris `LIFEINPRODUCTION` kasus yang diresmikan.
+type ProduksiWarisanTulis struct {
+	KasusID    string
+	NomorPolis string
+	Nomor      string
+}
+
+// sqlSisipProduksiWarisan - satu baris dari kepala kasus. Penampung :1 IDPEGA, :2 NOPOLIS, :3 NOENDORS, :4 kasus
+// (urut kemunculan - godror mengikat menurut urutan).
+func sqlSisipProduksiWarisan(tujuan, polis string) string {
+	nilai := make([]string, len(KolomProduksiWarisan))
+	for i, k := range KolomProduksiWarisan {
+		nilai[i] = nilaiProduksiWarisan[k]
+	}
+	return fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s p WHERE p.ID = :4`,
+		tujuan, strings.Join(KolomProduksiWarisan, ", "), strings.Join(nilai, ", "), polis)
+}
+
+// TulisProduksiWarisan menulis baris `LIFEINPRODUCTION` kasus yang diresmikan; mengembalikan cacah baris (1).
+//
+// ⛔ Seperti Pega: SISIP murni, tanpa hapus-sebelum-sisip - tabelnya tanpa PK dan satu kasus diresmikan sekali
+// (kasus tertutup tidak dapat diputuskan ulang, AC 29).
+func (g *Gudang) TulisProduksiWarisan(ctx context.Context, tx *db.Tx, r ProduksiWarisanTulis) (int, error) {
+	n, err := g.nama(tabelProduksiWarisan, tabelPolis)
+	if err != nil {
+		return 0, err
+	}
+	q := sqlSisipProduksiWarisan(n[0], n[1])
+	if err := db.PeriksaSQL(q); err != nil {
+		return 0, err
+	}
+	h, err := tx.ExecContext(ctx, q, r.KasusID, r.NomorPolis, r.Nomor, r.KasusID)
+	if err != nil {
+		return 0, fmt.Errorf("repository: menulis produksi warisan %q: %w", r.KasusID, err)
+	}
+	c, err := h.RowsAffected()
+	if err == nil && c != 1 {
+		err = fmt.Errorf("repository: produksi warisan kasus %q menulis %d baris, mau 1", r.KasusID, c)
+	}
+	return int(c), err
+}

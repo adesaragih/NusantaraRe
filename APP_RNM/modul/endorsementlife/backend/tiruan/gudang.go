@@ -88,6 +88,8 @@ type Gudang struct {
 	PesertaWarisan []*PesertaWarisan
 	// RekapWarisan - baris `M_LIFE_PREMIUM_SUMMARY` (kunci kolom).
 	RekapWarisan []map[string]string
+	// ProduksiWarisan - baris `LIFEINPRODUCTION` (kunci kolom, K4).
+	ProduksiWarisan []map[string]string
 	// Dibayar - nomor invoice Arasapas yang punya baris pelunasan.
 	Dibayar map[string]bool
 	// GalatArasapas - bila terisi, `SudahDibayar` mengembalikannya.

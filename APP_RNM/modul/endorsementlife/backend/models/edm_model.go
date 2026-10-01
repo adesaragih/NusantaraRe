@@ -235,3 +235,7 @@ func LabelKeputusanRiwayat(keputusan string) string {
 	}
 	return "Decline"
 }
+
+// NamaJenisCeding - `InsertJsonPolisLife_Act` 8 b2319 `TempInputDataLife.CARI24` (→ `LIFEINPRODUCTION.TYPECEDINGNAME`):
+// `TypeCeding` 1 QS, 2 SURPLUS, 3 QS + SURPLUS, 4 XOL; selain itu kosong. VERBATIM korpus.
+var NamaJenisCeding = map[string]string{"1": "QS", "2": "SURPLUS", "3": "QS + SURPLUS", "4": "XOL"}
