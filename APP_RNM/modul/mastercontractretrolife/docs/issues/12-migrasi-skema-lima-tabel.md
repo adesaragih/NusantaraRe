@@ -1,5 +1,7 @@
 # 12: Migrasi skema — DDL lima tabel, PK, FK, dan sequence
 
+> ✅ **Dibuka kembali 01-10-2026 dan selesai sebagian** — keputusan work owner 01-10-2026: *"untuk modul Treaty Contract Retro Life aku izinkan kamu ALTER TABLE yang digunakan, perbaiki logic relasi datanya dan logic aplikasinya"*. Penyimpangan sadar 7 (PK `ID`) dan 8 (FK `ON DELETE CASCADE`) dikerjakan di migrasi `100_relasi_lima_tabel_life`, ditambah FK penjaga salinan. Bagian tiket yang menyalin atau membuat tabel baru **tetap tidak dikerjakan**: tabel warisan dipakai apa adanya.
+
 **Status:** ready-for-agent — ✅ **OQ-001 ditutup** `[data DBA]`
 
 **Blocked by:** None (can start immediately)

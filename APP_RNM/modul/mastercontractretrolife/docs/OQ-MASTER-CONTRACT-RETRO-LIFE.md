@@ -62,3 +62,7 @@ Work owner 01-10-2026: *"ikuti rekomendasi semua"* atas laporan lanjutan keputus
 | OQ | Hal | Keputusan | Status |
 | --- | --- | --- | --- |
 | OQ-MCRL-15 | Server menolak `RIRATEID` pilihan baru yang tidak ada di view `RATE_LIFE_SUMMARY`. Pega tidak memeriksanya. | **dipertahankan** — pemilih hanya menawarkan rate yang ada; pemeriksaan mencegah data rusak | ditutup 01-10-2026 |
+
+## OQ-MCRL-02 diperbarui 01-10-2026
+
+PK dan FK lima tabel tidak ada di DEV. Jawaban baru — keputusan work owner 01-10-2026: *"untuk modul Treaty Contract Retro Life aku izinkan kamu ALTER TABLE yang digunakan, perbaiki logic relasi datanya dan logic aplikasinya"*. Bawaan *"nol DDL; kaskade dan keunikan di Go"* **diganti**: PK, FK kaskade, dan FK penjaga salinan dipasang lewat migrasi 100 (lihat `RALAT-DEV-30-09-2026.md` §Ralat 01-10-2026). Ditutup.

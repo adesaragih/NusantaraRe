@@ -167,6 +167,11 @@ func jawabGalat(w http.ResponseWriter, err error) bool {
 			log.Printf("master contract retro life: required values empty: %s", strings.Join(kosong.Medan, ", "))
 		}
 		galat.Tulis(w, http.StatusUnprocessableEntity, services.Pesan(err))
+	case errors.Is(err, services.ErrRelasiDitolak):
+		// 409: basis data menolak karena relasi (FK, salinan, kunci ganda) -
+		// keadaan DATA, bukan masukan; sebab aslinya hanya di log server.
+		log.Printf("master contract retro life: %v", err)
+		galat.Tulis(w, http.StatusConflict, services.Pesan(err))
 	case errors.Is(err, services.ErrDampakBerubah):
 		// 409: keadaan DATA berubah sejak pratinjau/popup - nol baris disentuh.
 		galat.Tulis(w, http.StatusConflict, services.Pesan(err))

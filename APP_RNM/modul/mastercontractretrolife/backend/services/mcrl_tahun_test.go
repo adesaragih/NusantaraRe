@@ -7,6 +7,7 @@ package services_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -160,5 +161,22 @@ func TestTahunTanpaIdentitasDitolak(t *testing.T) {
 	g := tiruan.Baru()
 	if _, err := layananUji(g).SimpanTahun(context.Background(), noPelaku, tahunLengkap(), true); err == nil || len(g.Tahun) != 0 {
 		t.Errorf("simpan tanpa identitas: %v, %d baris", err, len(g.Tahun))
+	}
+}
+
+func TestTerjemahRelasiHanyaGalatRelasi(t *testing.T) {
+	if err := services.TerjemahRelasi(errors.New("ORA-01722: invalid number")); errors.Is(err, services.ErrRelasiDitolak) {
+		t.Errorf("galat bukan relasi ikut diterjemahkan: %v", err)
+	}
+	asal := errors.New("ORA-02292: child record found")
+	err := services.TerjemahRelasi(asal)
+	if !errors.Is(err, services.ErrRelasiDitolak) || !errors.Is(err, asal) {
+		t.Errorf("ORA-02292 tidak menjadi ErrRelasiDitolak yang membawa asalnya: %v", err)
+	}
+	if p := services.Pesan(err); strings.Contains(p, "ORA-") || p == "" {
+		t.Errorf("pesan layar memuat teks Oracle atau kosong: %q", p)
+	}
+	if services.TerjemahRelasi(nil) != nil {
+		t.Error("nil harus tetap nil")
 	}
 }

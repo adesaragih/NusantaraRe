@@ -49,7 +49,7 @@ func BaruLayanan(g Gudang, tx Transaksi, catat func(string)) *Layanan {
 	if catat == nil {
 		catat = func(string) {}
 	}
-	return &Layanan{gudang: g, tx: tx, catat: catat}
+	return &Layanan{gudang: g, tx: transaksiBerelasi(tx), catat: catat}
 }
 
 // LayananOracle menyusun Layanan di atas Oracle - satu-satunya penyusun yang
