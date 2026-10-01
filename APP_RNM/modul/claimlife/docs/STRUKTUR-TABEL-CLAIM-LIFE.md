@@ -38,15 +38,13 @@ klaim, bisa baris kasus komite.
 | `ID` | teks | tidak | PK | keputusan tiket 14 — teks berformat, **delapan awalan** (lihat di bawah) |
 | `COVER_KEY` | teks | ya | FK | keputusan tiket 14 + tiket 00 Komite — menunjuk `T_WORK_CLAIM.ID` induk |
 | `LINI` | teks | ya | | keputusan tiket 14 + **keputusan work owner 2026-09-18** — tepat satu dari `FAC` · `PROP` · `NONPROP` · `LIFE` |
-| `PY_POSITION` | teks | ya | | keputusan tiket 14 — dari work object Pega `pyPosition` |
+| `POSITION` | teks | ya | | keputusan tiket 14 — dari work object Pega `pyPosition` (NAMA PERAN); bernama `PY_POSITION` sampai migrasi `023` (**keputusan work owner 01-10-2026** — nama sama dengan `T_WORK_POLIS.POSITION`, artinya berbeda: polis menyimpan `Position` layar) |
 | `SENDTO_ADMIN` | teks | ya | | keputusan tiket 14 — dari work object Pega `SendtoAdmin` |
 | `SENDTO_MEDICAL` | teks | ya | | keputusan tiket 14 — dari work object Pega `SendtoMedical` |
-| `TYPE` | teks | ya | | korpus `TYPE` — UpdOS, InsOS |
-| `CASE_ID` | teks | ya | | korpus `CASEID` — UpdOS, InsOS |
 | `CREATE_OP` | teks | ya | | keputusan tiket 14 |
 | `CREATE_OP_NAME` | teks | ya | | korpus `CREATEOPNAME` — UpdOS, InsOS |
 | `TGL_UPDATE` | DATE | ya | | keputusan tiket 14 — waktu UBAH, ditimpa tiap perpindahan |
-| `TAHAP` | teks | ya | | **butir at** `[DIPUTUSKAN 27-09-2026]` — nama assignment VERBATIM `pyTaskName` (`Register_Flow.xml` 358 · 343 · 268 · 313). Ada karena `PY_POSITION` tidak dapat membedakan **Input Register** dari **Outstanding Claim** (keduanya `ReasLifeAdmin`), sedangkan `Send Back to Register` (`InputOSClaimLife.xml:21404`) membuktikan keadaan itu dapat dituju kembali |
+| `TAHAP` | teks | ya | | **butir at** `[DIPUTUSKAN 27-09-2026]` — nama assignment VERBATIM `pyTaskName` (`Register_Flow.xml` 358 · 343 · 268 · 313). Ada karena `POSITION` tidak dapat membedakan **Input Register** dari **Outstanding Claim** (keduanya `ReasLifeAdmin`), sedangkan `Send Back to Register` (`InputOSClaimLife.xml:21404`) membuktikan keadaan itu dapat dituju kembali |
 | `TGL_CREATE` | DATE | ya | | **butir au** — padanan `pxCreateDateTime`; kotak masuk diurutkan dengannya (`InboxPremiumList.xml:736`). `TGL_UPDATE` tidak dapat dipakai: ia ditimpa tiap perpindahan |
 | `STATUS_WORK` | teks | ya | | **butir bb** `[DIPUTUSKAN 27-09-2026]` — status kerja kasus. **Satu-satunya nilai yang ditulis: `Resolved-Completed`**, VERBATIM `Register_Flow.xml` baris 899 *(shape `End1`, `rowdata REPEATINGINDEX="End1"` baris 883, `Data-MO-Event-End` baris 901; sembilan shape lain ber-`pyWorkStatus` kosong)*. **NULL = kasus belum ditutup** — status bawaan Pega untuk kasus berjalan tidak ada di ekspor dan tidak dikarang. Saat tutup, `TAHAP` **dikosongkan** *(`FinishAssignment` tanpa parameter, `ProtectCloseClaim_act` baris 838)* |
 
@@ -99,8 +97,17 @@ sanggup** memastikan baris `TKMT-` menunjuk baris `CLMP-`, atau baris `KMTLF-` m
 Baris komite memakai **nilai yang sama** dengan baris klaim induknya, supaya Go cukup membaca
 **satu baris** untuk tahu lininya.
 
-⛔ **`LINI` bukan `TYPE`.** `T_WORK_CLAIM` sudah punya kolom **`TYPE`** yang bersumber korpus
-(UpdOS, InsOS) dan **artinya lain**. Kedua kolom itu **tidak boleh tertukar**.
+⛔ **`LINI` bukan `TYPE`.** Header klaim `T_GENERAL_CLAIM` punya kolom **`TYPE`** yang bersumber
+korpus (UpdOS, InsOS) dan **artinya lain**. Kedua kolom itu **tidak boleh tertukar**.
+
+### `TYPE` dan `CASE_ID` — KELUAR dari tabel ini (migrasi `023`)
+
+⚠️ `[keputusan work owner]` 2026-10-01 — **`TYPE` pindah ke `T_GENERAL_CLAIM`** (dibaca
+`TypeKlaim`, kontrak `inti/backend/kontrak/klaim.go`), dan **`CASE_ID` dibuang** — `ID` dipakai
+sebagai gantinya: kasus baru memang `CASE_ID = ID`, dan migrasi klaim lama memakai `CASEID`
+warisan sebagai `ID`. Migrasi `023` menolak berjalan (ORA-02293) bila satu baris saja punya
+`CASE_ID` yang berbeda dari `ID`. Baris Komite (`KMTLF-`) tidak lagi menyimpan `TYPE`:
+salinannya dulu tidak pernah dibaca — `TypeKlaim` membaca klaim induknya.
 
 ### `ACCEPT_STATUS` — DIBUANG dari tabel ini
 
@@ -147,6 +154,7 @@ Header klaim Life. Satu baris mewakili **satu klaim**. `ID`-nya **sama persis** 
 | `POLICY_NO` | teks | ya | | keputusan tiket 14 (ganti nama dari `PL_NUMBER`); korpus `POLICY_NO` — UpdOS, InsOS |
 | `ENDORSMENT_NO` | teks | ya | | keputusan tiket 14 — penunjuk polis |
 | `BUSINESS_CODE` | teks | ya | | **temuan audit A0**, A1 — nomor akseptasi memuatnya (`Generate_NoAccept_Life` 85), model relasional tidak menyimpannya |
+| `TYPE` | teks | ya | | korpus `TYPE` — UpdOS, InsOS; pindah dari `T_WORK_CLAIM` (migrasi `023`, **keputusan work owner 01-10-2026**). **Bukan** `LINI` |
 
 **Index:** tidak ada di luar PK.
 
@@ -501,9 +509,9 @@ TINGKAT 1   T_WORK_CLAIM ──────────────────�
             PK  ID   TEKS BERFORMAT, 8 awalan: klaim CLM- CLMP- CLMNP- CLMLF-
                                         komite KMT- TKMT- KMTNP- KMTLF-
             FK  COVER_KEY → T_WORK_CLAIM.ID   (menunjuk dirinya sendiri; NULL bila tak punya induk)
-            LINI (FAC/PROP/NONPROP/LIFE) · PY_POSITION · SENDTO_ADMIN
-            SENDTO_MEDICAL · TYPE   <- TYPE bukan LINI, artinya lain
-            CASE_ID · CREATE_OP · CREATE_OP_NAME · TGL_UPDATE
+            LINI (FAC/PROP/NONPROP/LIFE) · POSITION (pyPosition) · SENDTO_ADMIN
+            SENDTO_MEDICAL · CREATE_OP · CREATE_OP_NAME · TGL_UPDATE
+            TAHAP · TGL_CREATE · STATUS_WORK
             |
    +--------+-------------------------------------------+
    | baris KLAIM  COVER_KEY = NULL                      | baris KOMITE  COVER_KEY = ID baris klaim

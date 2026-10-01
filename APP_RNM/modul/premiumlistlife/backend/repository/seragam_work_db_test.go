@@ -23,7 +23,7 @@ func TestMigrasi059KatalogDanPengisianBarisLama(t *testing.T) {
 	sqlDB, skema, ctx := pasangSkemaUji(t)
 
 	// Katalog = DDL: nama dan tipe setiap kolom T_WORK_POLIS sesudah 059.
-	baris, err := sqlDB.QueryContext(ctx, `SELECT COLUMN_NAME, DATA_TYPE, DATA_LENGTH FROM SYS.ALL_TAB_COLUMNS
+	baris, err := sqlDB.QueryContext(ctx, `SELECT COLUMN_NAME, DATA_TYPE, CHAR_LENGTH FROM SYS.ALL_TAB_COLUMNS
 		WHERE OWNER = UPPER(:1) AND TABLE_NAME = 'T_WORK_POLIS'`, skema)
 	if err != nil {
 		t.Fatal(err)

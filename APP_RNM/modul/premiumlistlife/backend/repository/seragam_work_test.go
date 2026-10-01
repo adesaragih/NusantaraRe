@@ -11,8 +11,9 @@ package repository_test
 // `COVER_KEY`, `CREATE_OP`, `CREATE_OP_NAME`, `TGL_CREATE`, `TGL_UPDATE`.
 // `STATUS_WORK` dan `LINI` sama NAMA, tetapi polis tetap VARCHAR2(255):
 // memperkecil kolom dapat gagal pada data yang lebih panjang (brief §2).
-// `POSITION` TIDAK menjadi `PY_POSITION` - dua properti Pega yang berbeda
-// (brief §1).
+// `POSITION` sama NAMA sejak migrasi Claim Life 023 (keputusan work owner
+// 01-10-2026, membalik brief §1), ARTINYA berbeda: klaim `pyPosition`
+// (peran), polis `Position` (layar) - lebarnya pun berbeda.
 //
 // Dibaca sesudah: migrations/059_seragam_kolom_t_work_polis.sql.
 
@@ -84,9 +85,10 @@ func TestMigrasi059WorkPolisSeragamDenganWorkClaim(t *testing.T) {
 	b := bentukAkhirTabelKerja(t)
 	polis, klaim := b["T_WORK_POLIS"], b["T_WORK_CLAIM"]
 	// ⚠️ Instrumen diuji atas jawaban yang diketahui: klaim 001 + 016 + 017
-	// (brief §0) = 14 kolom. Pengurai yang rusak akan meluluskan apa pun.
-	if len(klaim) != 14 {
-		t.Fatalf("T_WORK_CLAIM terbaca %d kolom, mau 14 (brief §0): %v", len(klaim), klaim)
+	// (brief §0) = 14 kolom, dikurangi TYPE dan CASE_ID (Claim Life 023,
+	// PY_POSITION -> POSITION) = 12. Pengurai yang rusak meluluskan apa pun.
+	if len(klaim) != 12 {
+		t.Fatalf("T_WORK_CLAIM terbaca %d kolom, mau 12 (brief §0 + 023): %v", len(klaim), klaim)
 	}
 	mau := map[string]string{
 		"ID": "VARCHAR2(32)", "LINI": "VARCHAR2(255)", "POSITION": "VARCHAR2(255)",
@@ -102,7 +104,7 @@ func TestMigrasi059WorkPolisSeragamDenganWorkClaim(t *testing.T) {
 			t.Errorf("%s: polis %q, klaim %q - nama dan tipe wajib sama", k, polis[k], klaim[k])
 		}
 	}
-	for _, k := range []string{"STATUS_WORK", "LINI"} {
+	for _, k := range []string{"STATUS_WORK", "LINI", "POSITION"} {
 		if klaim[k] == "" || polis[k] == "" {
 			t.Errorf("%s wajib ada di kedua tabel kerja (polis %q, klaim %q)", k, polis[k], klaim[k])
 		}
@@ -110,8 +112,10 @@ func TestMigrasi059WorkPolisSeragamDenganWorkClaim(t *testing.T) {
 	if _, ada := polis["STATUS"]; ada {
 		t.Error("T_WORK_POLIS.STATUS masih ada; namanya STATUS_WORK sejak 059")
 	}
-	if _, ada := polis["PY_POSITION"]; ada {
-		t.Error("POSITION polis tidak boleh menjadi PY_POSITION - properti Pega berbeda (brief §1)")
+	for _, k := range []string{"PY_POSITION", "TYPE", "CASE_ID"} {
+		if _, ada := klaim[k]; ada {
+			t.Errorf("T_WORK_CLAIM.%s masih ada; dibuang/diganti nama Claim Life 023", k)
+		}
 	}
 }
 
