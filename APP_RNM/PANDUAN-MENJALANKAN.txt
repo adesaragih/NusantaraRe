@@ -394,6 +394,54 @@ MIGRASI 023 - T_WORK_CLAIM SERAGAM (01-10-2026)
   023_seragam_kolom_t_work_claim_down.sql secara manual (seluruhnya
   berpelindung), lalu -migrate diulang.
 
+LOGIN SUNGGUHAN - M_LOGIN_GO (MIGRASI 902, 01-10-2026)
+
+  Keputusan work owner 01-10-2026. Akun dan hash sandi (bcrypt) di
+  M_LOGIN_GO; organisasi, divisi, unit disimpan sebagai CODE master.
+  Peran = workbasket di M_LOGIN_GO_WORKBASKET (WORKBASKET_ID = nama peran,
+  mis. ReasLifeAdmin); hanya workbasket IS_ACTIVE = 1 di M_WORKBASKET
+  yang berlaku. Tanpa tabel sesi: cookie rnm_sesi ditandatangani.
+
+  Menyalakan (urutan):
+    1. -migrate (termasuk 902) - oleh WORK OWNER.
+    2. APP_RNM\.env:
+         SESI_RAHASIA=<minimal 32 karakter acak>
+         SESI_COOKIE_SECURE=true
+       Membuat rahasianya:
+         py -c "import secrets; print(secrets.token_urlsafe(48))"
+       !! Nilainya TIDAK PERNAH ditulis di repo atau di percakapan.
+       Mengganti nilainya mencabut SEMUA sesi yang sedang berjalan.
+       SESI_COOKIE_SECURE=false hanya untuk server http tanpa TLS di
+       jaringan uji (localhost tetap jalan dengan true); ditolak bila
+       IS_PEGA_PROD=true.
+    3. AUTH_STUB=false (APP_RNM\.env) dan VITE_AUTH_STUB bukan true
+       (frontend\.env) - layar login tampil saat aplikasi dibuka.
+    4. Akun pertama, dari folder APP_RNM:
+         go run ./cmd/api -buat-pengguna <akun> -nama "<nama tampilan>" `
+           -organisasi RNM -divisi TECH -unit CLM `
+           -workbasket ReasLifeAdmin,ReasLifeSPV
+       CODE organisasi/divisi/unit dan WORKBASKET_ID diperiksa: harus ada,
+       aktif, dan berjenjang (unit milik divisinya, divisi milik
+       organisasinya); boleh kosong dari bawah. Sandi sementara dicetak
+       SEKALI dan WAJIB diganti saat login pertama.
+
+  Aturan: kunci 15 menit sesudah 5 kali sandi salah; sesi habis bila 30
+  menit tidak dipakai, paling lama 10 jam sejak login; sandi minimal 10
+  karakter. Logout dan ganti sandi mencabut SEMUA sesi akun itu.
+
+  Tanpa Oracle atau tanpa SESI_RAHASIA: POST /api/auth/login menjawab
+  503 yang menyebut sebabnya; layar login menampilkan "Login belum dapat
+  dipakai di server ini".
+
+  Perintah DBA (sampai layar kelola pengguna ada):
+    membuka kunci   UPDATE <skema>.M_LOGIN_GO SET FAILED_COUNT = 0,
+                      LOCKED_UNTIL = NULL WHERE LOGIN_ID = '<akun>';
+    menonaktifkan   UPDATE <skema>.M_LOGIN_GO SET IS_ACTIVE = '0',
+                      SESSION_VERSION = SESSION_VERSION + 1
+                      WHERE LOGIN_ID = '<akun>';
+    reset sandi     belum ada perintahnya - menyusul bersama layar
+                      kelola pengguna.
+
 Bila sesi berikutnya butuh Oracle lagi, setel ulang ketiga variabel itu.
 Env var hilang saat jendela ditutup.
 
@@ -425,10 +473,14 @@ Buka http://localhost:5174/ di browser. Berhenti: Ctrl+C.
 
 YANG TAMPIL SEJAK F0.5
 
-  1. IDENTITAS STUB - TIDAK ADA FORM LOGIN.
+  0. LOGIN SUNGGUHAN (sejak 01-10-2026) - bab 3 "LOGIN SUNGGUHAN".
+     Bila VITE_AUTH_STUB bukan true, aplikasi membuka layar login;
+     sesudah masuk, Keluar dan Ganti sandi ada di menu profil.
 
-     Aplikasi membuka Inbox LANGSUNG. Identitas dibentuk saat menyala
-     dari frontend\.env:
+  1. IDENTITAS STUB (PENGEMBANGAN) - TANPA LAYAR LOGIN.
+
+     Dengan stub menyala, aplikasi membuka Inbox LANGSUNG. Identitas
+     dibentuk saat menyala dari frontend\.env:
 
        VITE_AUTH_STUB=true    WAJIB; selain itu tidak ada identitas
        VITE_STUB_PELAKU=      kosong -> UJI-ADMIN
