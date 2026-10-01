@@ -205,74 +205,81 @@
 }
 
 /* ================================================================ soft UI
-   Permintaan work owner 02-10-2026: "tema pada kelola user diterapkan pada beranda, treaty contract
-   out, master contract retro life, hanya pada 3 modul ini", lalu "aku kurang suka coloring nya,
-   perbaiki buat lebih bagus dan menarik dan elegan", lalu "ganti/perbaiki warna yg pake ungu atau
-   lavender di semua menu". PALET ELEGAN: akar sebagai lembar putih bertepi
-   tipis dengan bayangan lembut berlapis (bukan bayangan dua arah di atas latar abu), panel sebagai
-   kartu putih, panel di dalam panel bertinta biru lembut, tabel rata di dalam kartu, isian putih
-   bertepi tipis, tombol kapsul (utama merah bergradasi halus), aksen biru navy template #2b44b0. Kontras: token
-   teks minimal 4,5:1 terhadap latarnya, dijaga gaya.test. TANPA backdrop-filter, filter, atau
-   transform: properti itu mengurung popup `position: fixed` (bug popup tidak di tengah 02-10-2026).
-   Token `--mt-*` hanya di kelas akar .mcrl; tema gelap ditimpa di `:root[data-theme="dark"] .mcrl`.
-   `--text-3` inti DITIMPA di akar ini saja supaya label dan keterangan abu tetap terbaca. */
+   NEUMORFISME RAPI dengan warna aktif. Permintaan work owner 02-10-2026, berurutan: tema Kelola User untuk Beranda, Treaty Contract
+   Out, dan Master Contract Retro Life; "perbaiki buat lebih bagus dan menarik dan elegan"; "ganti
+   warna yg pake ungu atau lavender di semua menu"; lalu "soft UI atau neumorfisme kok hilang ya?? aku
+   mau itu tetep ada, tapi warna pake yg aktif sekarang aja. untuk neumorfisme ada yg timbul keluar ada
+   yang timbul kedalam juga, buat yang rapih dan elegan", "terapkan di beranda, treaty contract out,
+   master contract retro dan menu user".
+   Alas abu kebiruan sangat muda #eef1f6, supaya bayangan terang dan gelap sama-sama terlihat. TIMBUL
+   KELUAR: panel, tombol. TIMBUL KE DALAM: isian, wadah tabel, panel di dalam panel, tombol ditekan.
+   Aksen biru navy template #2b44b0; tombol utama merah bergradasi halus. Kontras: token teks minimal
+   4,5:1 terhadap latarnya, dijaga gaya.test. TANPA backdrop-filter, filter, atau transform: properti
+   itu mengurung popup `position: fixed` (bug popup tidak di tengah 02-10-2026). Token `--mt-*` hanya di
+   kelas akar .mcrl; tema gelap ditimpa di `:root[data-theme="dark"] .mcrl`. `--text-3` inti DITIMPA
+   di akar ini saja supaya label dan keterangan abu tetap terbaca. */
 .mcrl {
-  --mt-latar: #ffffff;
-  --mt-latar-tepi: #e9ebf2;
-  --mt-kartu: #ffffff;
-  --mt-lembut: #f7f9fd;
-  --mt-lembut-tepi: #e3e8f5;
+  --mt-latar: #eef1f6;
+  --mt-latar-tepi: #e2e7ef;
+  --mt-kartu: #eef1f6;
+  --mt-lembut: #e9edf3;
+  --mt-lembut-tepi: #dde3ec;
   --mt-teks: #101828;
-  --mt-teks-redup: #5b6478;
+  --mt-teks-redup: #4f586b;
   --mt-aksen: #2b44b0;
   --mt-aksen-teks: #2339a3;
-  --mt-aksen-lembut: #eef1fb;
-  --mt-aksen-garis: #c3cdf2;
-  --mt-kepala-tabel: #f8f9fc;
-  --mt-baris-hover: #f6f8fd;
-  --mt-garis: #eef0f5;
-  --mt-tepi: #e4e7ee;
+  --mt-aksen-lembut: #e3e8f6;
+  --mt-aksen-garis: #b9c5ee;
+  --mt-kepala-tabel: #eaeef4;
+  --mt-baris-hover: #e6ebf3;
+  --mt-garis: #dfe4ec;
+  --mt-tepi: #d5dce7;
   --mt-tombol: #d63a42;
   --mt-tombol-ujung: #bf2f37;
   --mt-tombol-hover: #c2333b;
   --mt-tombol-hover-ujung: #a9282f;
-  --mt-bayang-lembar: 0 1px 2px rgba(16, 24, 40, 0.04), 0 18px 40px -28px rgba(16, 24, 60, 0.2);
-  --mt-timbul: 0 1px 2px rgba(16, 24, 40, 0.05), 0 10px 28px -20px rgba(16, 24, 60, 0.18);
-  --mt-timbul-kecil: 0 1px 2px rgba(16, 24, 40, 0.06);
-  --mt-cekung: inset 0 1px 2px rgba(16, 24, 40, 0.05);
-  --mt-cincin: 0 0 0 4px rgba(43, 68, 176, 0.14);
-  --mt-bayang-tombol: 0 1px 2px rgba(16, 24, 40, 0.08), 0 8px 16px -10px rgba(214, 58, 66, 0.7);
-  --mt-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.35);
+  --mt-terang: rgba(255, 255, 255, 0.92);
+  --mt-gelap: rgba(163, 177, 198, 0.55);
+  --mt-kilau: rgba(255, 255, 255, 0.7);
+  --mt-timbul: 8px 8px 18px var(--mt-gelap), -8px -8px 18px var(--mt-terang);
+  --mt-timbul-kecil: 4px 4px 9px var(--mt-gelap), -4px -4px 9px var(--mt-terang);
+  --mt-cekung: inset 3px 3px 7px var(--mt-gelap), inset -3px -3px 7px var(--mt-terang);
+  --mt-cekung-kecil: inset 2px 2px 4px var(--mt-gelap), inset -2px -2px 4px var(--mt-terang);
+  --mt-cincin: 0 0 0 3px rgba(43, 68, 176, 0.18);
+  --mt-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--mt-terang);
+  --mt-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.4);
+  --mt-bayang-lembar: 0 1px 2px rgba(16, 24, 40, 0.04), 0 22px 50px -32px rgba(16, 24, 60, 0.28);
   --text-3: var(--mt-teks-redup);
   color: var(--mt-teks);
   padding: 24px;
   border: 1px solid var(--mt-latar-tepi);
-  border-radius: 24px;
+  border-radius: 26px;
   background: var(--mt-latar);
   box-shadow: var(--mt-bayang-lembar);
 }
 :root[data-theme="dark"] .mcrl {
-  --mt-latar: #151a26;
-  --mt-latar-tepi: #252c3b;
-  --mt-kartu: #192030;
-  --mt-lembut: #1a2033;
-  --mt-lembut-tepi: #2a3555;
+  --mt-latar: #1b2130;
+  --mt-latar-tepi: #252c3c;
+  --mt-kartu: #1b2130;
+  --mt-lembut: #181d2a;
+  --mt-lembut-tepi: #242b3a;
   --mt-teks: #eef0f6;
-  --mt-teks-redup: #a9b1c3;
+  --mt-teks-redup: #aab2c4;
   --mt-aksen: #8ea2f5;
   --mt-aksen-teks: #aebcff;
-  --mt-aksen-lembut: #1c2546;
+  --mt-aksen-lembut: #222b45;
   --mt-aksen-garis: #3a4b8f;
-  --mt-kepala-tabel: #1c2333;
-  --mt-baris-hover: #1c2338;
-  --mt-garis: #252c3b;
-  --mt-tepi: #2f3749;
-  --mt-bayang-lembar: 0 1px 2px rgba(0, 0, 0, 0.4), 0 18px 40px -28px rgba(0, 0, 0, 0.8);
-  --mt-timbul: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 28px -20px rgba(0, 0, 0, 0.7);
-  --mt-timbul-kecil: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --mt-cekung: inset 0 1px 2px rgba(0, 0, 0, 0.35);
-  --mt-cincin: 0 0 0 4px rgba(142, 162, 245, 0.18);
-  --mt-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.7);
+  --mt-kepala-tabel: #1d2433;
+  --mt-baris-hover: #212a3c;
+  --mt-garis: #283042;
+  --mt-tepi: #2d3546;
+  --mt-terang: rgba(255, 255, 255, 0.045);
+  --mt-gelap: rgba(0, 0, 0, 0.55);
+  --mt-kilau: rgba(255, 255, 255, 0.04);
+  --mt-cincin: 0 0 0 3px rgba(142, 162, 245, 0.25);
+  --mt-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--mt-terang);
+  --mt-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.75);
+  --mt-bayang-lembar: 0 1px 2px rgba(0, 0, 0, 0.4), 0 22px 50px -32px rgba(0, 0, 0, 0.8);
 }
 
 .mcrl .inbox__judul,
@@ -291,12 +298,12 @@
   outline-offset: 2px;
 }
 
-/* Isian: putih bertepi tipis, fokus biru bercincin lembut. */
+/* Isian: TIMBUL KE DALAM (cekung) bertepi tipis; fokus biru navy bercincin lembut. */
 .mcrl .field__input {
-  background: var(--mt-kartu);
+  background: var(--mt-latar);
   border: 1px solid var(--mt-tepi);
   border-radius: 12px;
-  box-shadow: var(--mt-cekung);
+  box-shadow: var(--mt-cekung-kecil);
   color: var(--mt-teks);
 }
 .mcrl .field__input:hover:not(:disabled) {
@@ -304,11 +311,11 @@
 }
 .mcrl .field__input:focus {
   border-color: var(--mt-aksen);
-  box-shadow: var(--mt-cincin);
+  box-shadow: var(--mt-cekung-kecil), var(--mt-cincin);
   outline: none;
 }
 
-/* Tombol kapsul. Utama: merah bergradasi halus. Sekunder: putih bertepi tipis; disorot: biru lembut. */
+/* Tombol kapsul TIMBUL KELUAR; ditekan: TIMBUL KE DALAM. Utama: merah bergradasi halus. */
 .mcrl .btn {
   border-radius: 999px;
 }
@@ -322,28 +329,29 @@
   background: linear-gradient(180deg, var(--mt-tombol-hover), var(--mt-tombol-hover-ujung));
   border-color: var(--mt-tombol-hover-ujung);
 }
+.mcrl .btn--primary:active:not(:disabled) {
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+}
 .mcrl .btn--ghost {
-  background: var(--mt-kartu);
-  border: 1px solid var(--mt-tepi);
+  background: var(--mt-latar);
+  border: 1px solid var(--mt-kilau);
   color: var(--mt-teks);
   box-shadow: var(--mt-timbul-kecil);
 }
 .mcrl .btn--ghost:hover:not(:disabled) {
-  background: var(--mt-aksen-lembut);
-  border-color: var(--mt-aksen-garis);
   color: var(--mt-aksen-teks);
 }
-.mcrl .btn:active:not(:disabled) {
-  box-shadow: var(--mt-cekung);
+.mcrl .btn--ghost:active:not(:disabled) {
+  box-shadow: var(--mt-cekung-kecil);
 }
 .mcrl .btn:disabled {
   box-shadow: none;
 }
 
-/* Popup: kartu putih bersudut lembut dengan bayangan dalam. */
+/* Popup: kartu alas bersudut lembut; isinya ikut neumorfisme. */
 .mcrl .modal {
-  background: var(--mt-kartu);
-  border: 1px solid var(--mt-latar-tepi);
+  background: var(--mt-latar);
+  border: 1px solid var(--mt-kilau);
   border-radius: 22px;
   box-shadow: var(--mt-bayang-popup);
 }
@@ -355,27 +363,27 @@
   border-radius: 12px;
 }
 
-/* Panel: kartu putih bertepi tipis. Panel di dalam panel: bertinta biru lembut, jadi jenjangnya
-   terbaca tanpa bayangan bertumpuk. */
+/* Panel: TIMBUL KELUAR. Panel di dalam panel: TIMBUL KE DALAM, jadi jenjangnya terbaca. */
 .mcrl .panel {
-  background: var(--mt-kartu);
-  border: 1px solid var(--mt-latar-tepi);
-  border-radius: 18px;
+  background: var(--mt-latar);
+  border: 1px solid var(--mt-kilau);
+  border-radius: 20px;
   box-shadow: var(--mt-timbul);
 }
 .mcrl .panel .panel {
   background: var(--mt-lembut);
   border-color: var(--mt-lembut-tepi);
   border-radius: 16px;
-  box-shadow: none;
+  box-shadow: var(--mt-cekung);
 }
 
-/* Tabel: rata di dalam kartu; kepala abu sangat muda, garis baris tipis, sorot baris biru samar. Kolom
-   aksi yang menempel ikut warna kartu supaya tidak tampak sebagai pita. */
+/* Wadah tabel: TIMBUL KE DALAM (baki); baris rata, garis tipis, sorot baris biru samar. Kolom aksi
+   yang menempel ikut warna alas supaya tidak tampak sebagai pita. */
 .mcrl .mcrl-tabel {
-  border-color: var(--mt-latar-tepi);
-  border-radius: 14px;
-  background: var(--mt-kartu);
+  border-color: var(--mt-lembut-tepi);
+  border-radius: 16px;
+  background: var(--mt-latar);
+  box-shadow: var(--mt-cekung);
 }
 .mcrl .mcrl-tabel > .inbox__tabel thead th,
 .mcrl .mcrl-tabel th.table__actions {
@@ -387,7 +395,7 @@
   border-bottom-color: var(--mt-garis);
 }
 .mcrl .mcrl-tabel td.table__actions {
-  background: var(--mt-kartu);
+  background: var(--mt-latar);
 }
 .mcrl .mcrl-tabel > .inbox__tabel > tbody > tr:hover > td,
 .mcrl .mcrl-tabel tr:hover > td.table__actions {
@@ -401,5 +409,6 @@
   }
   .mcrl .panel {
     border-radius: 16px;
+    box-shadow: var(--mt-timbul-kecil);
   }
 }
