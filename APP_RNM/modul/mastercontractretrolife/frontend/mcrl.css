@@ -22,7 +22,8 @@
   gap: 8px 16px;
 }
 
-/* Label sel tombol b8888 (`End Period`, `pyIncludeLabel` true) di sebelah tombol `Add`. */
+/* Teks keterangan kecil di baris tombol (dulu juga label sel `End Period` b8927, yang sejak 02-10-2026
+   tidak ditampilkan atas keputusan work owner; kini dipakai `ModalRate`). */
 .mcrl .mcrl-label-sel {
   color: var(--muted);
   font-size: var(--fs-sm);

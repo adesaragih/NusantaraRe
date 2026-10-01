@@ -5,7 +5,8 @@
 // masuk; `GridRetrocessionLife` tidak dirujuk rule mana pun di korpus modul (PARITAS §1).
 //
 // Urutan XML: form `Input New Data` (wadah b774 `DATASHOW3 = 1`) → wadah grid b8631 (`IsFire`
-// ber-`ALWAYS` → selalu tampil, RALAT R6): tombol b8888 (label sel `End Period`, teks `Add`, tooltip
+// ber-`ALWAYS` → selalu tampil, RALAT R6): tombol b8888 (label sel `End Period` - TIDAK ditampilkan
+// sejak 02-10-2026, keputusan work owner; teks `Add`, tooltip
 // `Add New Data` → `NewInputTreatyYear_Life_Act`), `pyGridPaginator` b9192, grid b9375 RD
 // `BrowseTreatyYear_Life_RD` (urut `.ID ASC` - server; 10 baris/halaman) dengan tombol baris `Edit`
 // b11645 (`SetTreatyYearLife_Act`) dan `ReinsType` b11988 (`showHarness` `InboxRetroLimitReinsurers`).
@@ -175,7 +176,8 @@ export default function MasterContractRetroLife() {
       )}
 
       <div className="aksi-baris mcrl-aksi-grid">
-        <span className="mcrl-label-sel">{TAHUN_MCRL.labelSelAdd}</span>
+        {/* Label sel `End Period` (b8927, `TAHUN_MCRL.labelSelAdd`) SENGAJA tidak ditampilkan -
+            keputusan work owner 02-10-2026 ("tulisan end period di hapus"); RALAT 02-10-2026. */}
         <button
           type="button"
           className="btn btn--primary"
