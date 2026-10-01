@@ -8,7 +8,19 @@ package repository
 //	                urut `.ClientName ASC` b745; isi `REINSURERID ← .ID`
 //	BUSINESS NAME   `BrowseBusinessLife_RD` b651 `.OLDID StartsWith "L"`, urut `.ID ASC` b1057; tampil `.Note`,
 //	                isi `BIZCODE ← .ID`, kolom tampil `.OLDID`
-//	R/I RATE, Rate List  TIDAK dibaca - menunggu persetujuan (OQ-MCRL-13, lihat mcrl_tabel.go)
+//	R/I RATE        `BrowseRateLifeSummary` (view `RATE_LIFE_SUMMARY`) `A AND B`: `.ID = param.id` b794,
+//	                `.USEDBY Contains param.idusedby` b809 - autocomplete b4534/b4542 mengirim keduanya
+//	                KOSONG, jadi kedua saringan gugur; kata yang diketik dicari di `.USEDBY` (medan cari
+//	                b4494, pola autocomplete modul ini); urut `.ID ASC` b692; isi `RIRATEID ← .ID` b4527
+//	Rate List       `BrowseRateLife_RD` (view `RATE_LIFE`) `.IDUSEDBY = Param.idusedby` b860/b868
+//	                (`ViewRate.xml` b1055 `ParamID.RIRATEID`); urut `.ID DESC` b747, `.RATE ASC` b784;
+//	                `pyMaxRecords` 500 b729
+//
+// ⛔ K1 (keputusan work owner 01-10-2026, OQ-MCRL-13 + OQ-MCRL-05): kedua view rate dibaca SAJA, kolom
+// yang dibaca RD XML saja - autocomplete `ID`, `USEDBY`; Rate List enam kolom yang ditampilkan grid
+// `ViewRate`. Nol `SELECT *`, nol `JSONDATA`. Kolom `RATE_LIFE` VARCHAR2(4000) (katalog Claim Life
+// `KATALOG-TABEL-PESERTA-DAN-TREATY.md`): dibaca teks apa adanya. Rate List berkunci `IDUSEDBY` (view
+// atas CLOB tanpa index) - `IDUSEDBY` kosong ditolak layanan, nol pembacaan tanpa kunci.
 //
 // ⛔ Kolom fisik AGENT (`ID`, `CLIENTNAME`, `STATUSACTIVE`) dan BUSINESS
 // (`ID`, `NOTE`) sama dengan yang dibaca Treaty Contract Out; `OLDID` dari
@@ -88,6 +100,26 @@ func sqlCariBusiness(t string) string {
 
 func sqlAmbilBusiness(t string) string {
 	return fmt.Sprintf(`SELECT ID, NOTE, OLDID FROM %s WHERE ID = :1`, t)
+}
+
+// BatasRate - `BrowseRateLife_RD` b729 `pyMaxRecords` 500. Satu baris lebih dibaca untuk mengetahui
+// daftar terpotong (Pega memotong diam-diam).
+const BatasRate = 500
+
+func sqlCariRingkasanRate(t string) string {
+	return fmt.Sprintf(`SELECT ID, USEDBY FROM %s
+	 WHERE UPPER(USEDBY) LIKE :1 ESCAPE '\'
+	 ORDER BY ID ASC FETCH FIRST %d ROWS ONLY`, t, BatasPilihan)
+}
+
+func sqlAmbilRingkasanRate(t string) string {
+	return fmt.Sprintf(`SELECT ID, USEDBY FROM %s WHERE ID = :1`, t)
+}
+
+func sqlDaftarRate(t string) string {
+	return fmt.Sprintf(`SELECT ID, USEDBY, GENDER, CONTRACT, AGE, RATE FROM %s
+	 WHERE IDUSEDBY = :1
+	 ORDER BY ID DESC, RATE ASC FETCH FIRST %d ROWS ONLY`, t, BatasRate+1)
 }
 
 // Argumen saringan tetap - nilai VERBATIM RD (flag dan status di models).
@@ -190,4 +222,46 @@ func (g *Gudang) AmbilMasterBusiness(ctx context.Context, id string) (models.Mas
 		return models.MasterBusiness{}, false, err
 	}
 	return models.MasterBusiness{ID: bb[0].s("ID"), Note: bb[0].s("NOTE"), OldID: bb[0].s("OLDID")}, true, nil
+}
+
+// CariRingkasanRate - pilihan autocomplete `R/I RATE`.
+func (g *Gudang) CariRingkasanRate(ctx context.Context, kata string) ([]models.RingkasanRate, error) {
+	bb, err := g.bacaMaster(ctx, MasterRingkasanRate, sqlCariRingkasanRate, []string{"ID", "USEDBY"}, PolaCari(kata))
+	if err != nil {
+		return nil, err
+	}
+	hasil := make([]models.RingkasanRate, 0, len(bb))
+	for _, b := range bb {
+		hasil = append(hasil, models.RingkasanRate{ID: b.s("ID"), UsedBy: b.s("USEDBY")})
+	}
+	return hasil, nil
+}
+
+// AmbilRingkasanRate - satu tabel rate menurut ID (pilihan BARU diperiksa layanan).
+func (g *Gudang) AmbilRingkasanRate(ctx context.Context, id string) (models.RingkasanRate, bool, error) {
+	bb, err := g.bacaMaster(ctx, MasterRingkasanRate, sqlAmbilRingkasanRate, []string{"ID", "USEDBY"}, id)
+	if err != nil || len(bb) == 0 {
+		return models.RingkasanRate{}, false, err
+	}
+	return models.RingkasanRate{ID: bb[0].s("ID"), UsedBy: bb[0].s("USEDBY")}, true, nil
+}
+
+// DaftarRate - section `Rate List` satu `IDUSEDBY` (= `RIRATEID`), paling banyak BatasRate baris;
+// `terpotong` benar bila view memuat lebih.
+func (g *Gudang) DaftarRate(ctx context.Context, idUsedBy string) ([]models.BarisRate, bool, error) {
+	kolom := []string{"ID", "USEDBY", "GENDER", "CONTRACT", "AGE", "RATE"}
+	bb, err := g.bacaMaster(ctx, MasterRate, sqlDaftarRate, kolom, idUsedBy)
+	if err != nil {
+		return nil, false, err
+	}
+	terpotong := len(bb) > BatasRate
+	if terpotong {
+		bb = bb[:BatasRate]
+	}
+	hasil := make([]models.BarisRate, 0, len(bb))
+	for _, b := range bb {
+		hasil = append(hasil, models.BarisRate{ID: b.s("ID"), UsedBy: b.s("USEDBY"), Gender: b.s("GENDER"),
+			Contract: b.s("CONTRACT"), Age: b.s("AGE"), Rate: b.s("RATE")})
+	}
+	return hasil, terpotong, nil
 }

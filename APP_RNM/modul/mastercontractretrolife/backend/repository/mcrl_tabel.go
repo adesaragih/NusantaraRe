@@ -16,6 +16,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -40,18 +41,24 @@ const (
 	MasterReinsurer = "AGENT"
 	// MasterBusiness - kelas `ASM-FW-GISFW-Int-BUSINESS` (`BrowseBusinessLife_RD`).
 	MasterBusiness = "BUSINESS"
-	// ⛔ Kedua sumber tabel rate (autocomplete `R/I RATE`, section `Rate List`)
-	// TIDAK dibaca: kelasnya view atas JSON produk rate, yang pembacaannya
-	// menuntut persetujuan manusia (penjaga Claim Life
-	// `TestMasterViewTidakDisentuh`, OQ-M7) - OQ-MCRL-13. Namanya sengaja
-	// tidak ditulis di kode.
+	// MasterRingkasanRate - kelas `ASM-FW-GISFW-Int-RATE_LIFE_SUMMARY` (`BrowseRateLifeSummary` b40),
+	// sumber autocomplete `R/I RATE`; view DEV `RATE_LIFE_SUMMARY` (6 kolom).
+	// MasterRate - kelas `ASM-FW-GISFW-Int-M_RATE_LIFE` (`BrowseRateLife_RD` b39), section `Rate List`;
+	// view DEV `RATE_LIFE` (8 kolom, atas `M_RATE_LIFE.JSONDATA`) - nama fisik kelas itu terbukti
+	// `NB FacIn/RDBList/BrowseLifeRate_SQL.xml` b85 `… FROM RATE_LIFE WHERE IDUSEDBY= …`.
+	//
+	// ⛔ K1 keputusan work owner 01-10-2026 (OQ-MCRL-13 + OQ-MCRL-05): kedua view dibaca SAJA - kolom
+	// yang dibaca RD XML saja, nol `SELECT *`, nol `JSONDATA`, nol tulisan (`periksaBacaSaja`).
+	MasterRingkasanRate = "RATE_LIFE_SUMMARY"
+	MasterRate          = "RATE_LIFE"
 )
 
 // DaftarTabelWarisan - lima tabel yang ditulis modul ini (penjaga modul).
 var DaftarTabelWarisan = []string{TabelTahun, TabelKontrak, TabelReinsurer, TabelSecurity, TabelBusiness}
 
 // DaftarMasterDibacaSaja - objek yang dibaca tetapi tidak pernah ditulis.
-var DaftarMasterDibacaSaja = []string{MasterJenisReasuransi, MasterReinsurer, MasterBusiness}
+var DaftarMasterDibacaSaja = []string{MasterJenisReasuransi, MasterReinsurer, MasterBusiness,
+	MasterRingkasanRate, MasterRate}
 
 // Kolom tiap tabel warisan, urutan DDL `[data DBA]`.
 var (
@@ -128,5 +135,22 @@ func (g *Gudang) siapkan(objek string, susun func(tabel string) string) (string,
 	if err := db.PeriksaSQL(q); err != nil {
 		return "", err
 	}
+	if err := periksaBacaSaja(objek, q); err != nil {
+		return "", err
+	}
 	return q, nil
+}
+
+// ErrMasterBacaSaja - SQL yang bukan SELECT diarahkan ke objek master/view yang dibaca saja.
+var ErrMasterBacaSaja = errors.New("repository: reference master is read-only")
+
+// periksaBacaSaja - lapis kedua penjaga modul `TestMCRLMasterDibacaSaja`: objek di
+// DaftarMasterDibacaSaja hanya menerima SELECT, sebelum teks SQL apa pun sampai ke Oracle.
+func periksaBacaSaja(objek, q string) error {
+	for _, m := range DaftarMasterDibacaSaja {
+		if m == objek && !strings.HasPrefix(strings.ToUpper(strings.TrimSpace(q)), "SELECT ") {
+			return fmt.Errorf("%w: %s", ErrMasterBacaSaja, objek)
+		}
+	}
+	return nil
 }

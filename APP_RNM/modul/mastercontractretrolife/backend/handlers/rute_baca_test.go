@@ -146,3 +146,27 @@ func TestJenisReasuransiUrutRD(t *testing.T) {
 		t.Errorf("jenis (urut ID DESC dari gudang): %d %s", kode, badan)
 	}
 }
+
+// K1 (01-10-2026, OQ-MCRL-13): kedua rute rate yang dulu 503 kini 200 berisi data view.
+func TestRuteRateMenjawab200(t *testing.T) {
+	u := server(t, true)
+	u.g.RingkasanRate = append(u.g.RingkasanRate, models.RingkasanRate{ID: "UJI-RATE-2", UsedBy: "UJI RATE DUA"})
+	u.g.Rate["UJI-RATE"] = []models.BarisRate{{ID: "UJI-R1", UsedBy: "UJI R", Gender: "U", Contract: "10", Age: "30", Rate: "0,5"}}
+	kode, badan := u.minta(t, "GET", handlers.Prefix+"/ringkasan-rate?cari=uji", true)
+	if kode != http.StatusOK || !strings.Contains(badan, `"usedBy":"UJI RATE DUA"`) || !strings.Contains(badan, `"total":2`) {
+		t.Errorf("ringkasan-rate: %d %s", kode, badan)
+	}
+	kode, badan = u.minta(t, "GET", handlers.Prefix+"/rate?idusedby=UJI-RATE", true)
+	var j struct {
+		Daftar    []map[string]string `json:"daftar"`
+		Total     int                 `json:"total"`
+		Terpotong bool                `json:"terpotong"`
+	}
+	if err := json.Unmarshal([]byte(badan), &j); kode != http.StatusOK || err != nil || j.Total != 1 || j.Terpotong ||
+		j.Daftar[0]["rate"] != "0,5" || j.Daftar[0]["gender"] != "U" || j.Daftar[0]["contract"] != "10" || j.Daftar[0]["age"] != "30" {
+		t.Errorf("rate: %d %s (%v)", kode, badan, err)
+	}
+	if kode, badan := u.minta(t, "GET", handlers.Prefix+"/rate?idusedby=", true); kode != http.StatusBadRequest {
+		t.Errorf("idusedby kosong: %d %s", kode, badan)
+	}
+}

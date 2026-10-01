@@ -49,7 +49,7 @@ Nol kontrak lintas modul: master rujukan dibaca langsung dari tabelnya.
 | `GET /jenis-reasuransi` | dropdown `REINS TYPE` (master `REINSURANCETYPE` `.Flag = 1`) |
 | `GET /master-reinsurer?cari=` | autocomplete `REINSURER NAME` / `SECURITY REINSURER NAME` |
 | `GET /master-business?cari=` | autocomplete `BUSINESS NAME` |
-| `GET /ringkasan-rate?cari=` · `GET /rate?idusedby=` | autocomplete `R/I RATE` · `View Rate` (`Rate List`) — 503 berkalimat sampai OQ-MCRL-13 |
+| `GET /ringkasan-rate?cari=` · `GET /rate?idusedby=` | autocomplete `R/I RATE` (view `RATE_LIFE_SUMMARY`) · `View Rate` (`Rate List`, view `RATE_LIFE`) — baca saja sejak K1 keputusan work owner 01-10-2026 (OQ-MCRL-13) |
 | `GET /laporan/total-share-bukan-100?tahun=` | tanpa layar (tiket 11, OQ-MCRL-07) |
 
 ## Migrasi
@@ -87,7 +87,7 @@ kepemilikan tabel berpindah — keputusan work owner.
 
 | Butir | Keadaan | Bukti |
 | --- | --- | --- |
-| A1 OQ-MCRL-13 rate | izin work owner **belum** tercatat — `GET /ringkasan-rate`, `GET /rate` tetap **503** berkalimat | `0f71e05`, `docs/OQ-MASTER-CONTRACT-RETRO-LIFE.md` |
+| A1 OQ-MCRL-13 rate | izin work owner **belum** tercatat — `GET /ringkasan-rate`, `GET /rate` tetap **503** berkalimat *(ralat 01-10-2026: izin K1 tercatat; kedua rute 200 — lihat bab Keputusan OQ 01-10-2026)* | `0f71e05`, `docs/OQ-MASTER-CONTRACT-RETRO-LIFE.md` |
 | A2 `bNNN` dihitung ulang | PARITAS dan RALAT dapat diulang dengan perintah brief §1.2 (`sed` pemecah tag lalu `grep -n`) | `8eb57c9` |
 | A3 OQ-MCRL-07 | tetap rute API tanpa layar (`GET /laporan/total-share-bukan-100`) | bab Rute API |
 | A4 uji manual | **sebagian**: backend + `npm run dev` + seluruh rute baca kelima layar terhadap DEV, nol tulis; klik di peramban menunggu work owner | `docs/LAPORAN-UJI-MANUAL.md` |
@@ -104,3 +104,10 @@ npx vitest run modul/mastercontractretrolife
 
 `npx tsc --noEmit` memeriksa seluruh aplikasi sekaligus — tipe tidak dapat diperiksa per folder.
 Sebelum pull request, jalankan gerbang lengkap (`APP_RNM/PANDUAN-TIM-PER-MODUL.md` di akar repo, bab 8).
+
+## Keputusan OQ work owner 01-10-2026 (`PROMPT-LANJUTAN-TIGA-MODUL-LIFE-KEPUTUSAN-OQ.md`)
+
+| Butir | Keadaan | Bukti |
+| --- | --- | --- |
+| K1 OQ-MCRL-13 + OQ-MCRL-05 rate | view `RATE_LIFE_SUMMARY` (autocomplete `R/I RATE`) dan `RATE_LIFE` (`Rate List`) dibaca **saja**, kolom RD saja; business baru dapat disimpan (RIRATEID pilihan baru wajib ada di view ringkasan). DEV baca-saja: `GET /ringkasan-rate` 200 (100 saran), `GET /rate` 200 (1 dan 59 baris, ±0,35 detik), nol tulisan | `repository/mcrl_master.go`, uji `TestRateDibacaKolomRDSaja`, `TestPeriksaBacaSajaMenolakTulisanKeView`, `TestMCRLMasterHanyaDibacaSelect` |
+

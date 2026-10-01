@@ -107,7 +107,7 @@ func daftarkanBaca(pasang func(string, rute)) {
 	})
 	pasang("GET "+Prefix+"/rate", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
 		d, err := l.DaftarRate(r.Context(), p, r.URL.Query().Get("idusedby"))
-		tulisDaftar(w, d, err)
+		tulis(w, d, err)
 	})
 	// Tiket 11 - kemampuan BARU tanpa padanan Pega: rute baca saja, nol layar (OQ-MCRL-07).
 	pasang("GET "+Prefix+"/laporan/total-share-bukan-100", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
@@ -170,9 +170,6 @@ func jawabGalat(w http.ResponseWriter, err error) bool {
 	case errors.Is(err, services.ErrDampakBerubah):
 		// 409: keadaan DATA berubah sejak pratinjau/popup - nol baris disentuh.
 		galat.Tulis(w, http.StatusConflict, services.Pesan(err))
-	case errors.Is(err, services.ErrRateMenungguPersetujuan):
-		// 503 berkalimat: sumber tabel rate menunggu persetujuan (OQ-MCRL-13).
-		galat.Tulis(w, http.StatusServiceUnavailable, services.Pesan(err))
 	case errors.Is(err, services.ErrMasterTidakTerbaca):
 		// 503: keadaan server - master rujukan tidak terbaca atau kosong -
 		// dan pesannya MENYEBUT objeknya (ADR-0015).

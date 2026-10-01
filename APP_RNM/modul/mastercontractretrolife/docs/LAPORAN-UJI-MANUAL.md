@@ -59,4 +59,21 @@
 2. Klik setiap tombol kelima layar menurut PARITAS §2–§6 (31 tombol unik) — terutama `Add`/`Edit`/`Save`, `ReinsType`,
    `Reinsurer List`, `Total Share -->>`, `Security Reinsurer`, `Business List`, `Copy to all Reinstype`, `Delete`, `View Rate`.
 3. Simpan dan hapus hanya dengan data `UJI-` di skema yang boleh ditulisi — **bukan** DEV.
-4. `R/I RATE` dan `View Rate` tetap 503 sampai OQ-MCRL-13 diizinkan.
+4. `R/I RATE` dan `View Rate` tetap 503 sampai OQ-MCRL-13 diizinkan. *(Ralat 01-10-2026: diizinkan K1 — lihat bab 6.)*
+
+## 6. Ulang baca-saja 01-10-2026 — K1 keputusan work owner 01-10-2026 (OQ-MCRL-13)
+
+Backend modul ini saja (`MODUL_AKTIF=mastercontractretrolife`, port sendiri 18082, `.env` hanya di proses itu) terhadap DEV;
+hanya `GET`; log server nol `INSERT`/`UPDATE`/`DELETE`/`MERGE`. Nilai nama tabel rate tidak disalin ke laporan ini.
+
+| Layar / aksi | Rute | Hasil |
+| --- | --- | --- |
+| §6 autocomplete `R/I RATE` | `GET /ringkasan-rate?cari=` | **200** — 100 saran (batas `BatasPilihan`), urut `ID ASC` (`1000004`, `1000005`, `1000006`, …) |
+| §6 autocomplete `R/I RATE` | `GET /ringkasan-rate?cari=a` | 200 — 0,03 detik |
+| `View Rate` (`Rate List`) | `GET /rate?idusedby=1000004` | **200** — 1 baris, kunci `id, usedBy, gender, contract, age, rate`, `RATE` teks apa adanya (`13,32`) |
+| `View Rate` (`Rate List`) | `GET /rate?idusedby=1000005` | 200 — 59 baris, urut `ID DESC` (`1000102`, `1000101`, `1000100`), `terpotong` false, 0,35 detik |
+| `View Rate` tanpa rate | `GET /rate?idusedby=UJI-TIDAK-ADA` | 200 — `{"daftar":[],"total":0,"terpotong":false}` |
+
+Simpan business baru **tidak** dicoba di DEV (nol tulisan); jalurnya diuji tiruan (`TestBusinessRateBaruWajibAdaDiRingkasan`) dan
+uji `db` (`TestDBSalinSemuaKeJenisBerbedaSatuTransaksi`, `TestDBRateDibacaSaja` — SKIP tanpa `ORACLE_DSN`).
+

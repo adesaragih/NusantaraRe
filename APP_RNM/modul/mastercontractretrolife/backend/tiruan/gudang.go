@@ -33,6 +33,9 @@ type Gudang struct {
 	Jenis     []models.JenisReasuransi
 	MasterRe  []models.MasterReinsurer
 	MasterBiz []models.MasterBusiness
+	// RingkasanRate - view `RATE_LIFE_SUMMARY` tiruan; Rate - view `RATE_LIFE` per `IDUSEDBY`.
+	RingkasanRate []models.RingkasanRate
+	Rate          map[string][]models.BarisRate
 
 	// GalatMaster - bila terisi, setiap pembacaan master gagal dengan galat ini.
 	GalatMaster error
@@ -418,6 +421,9 @@ func Baru() *Gudang {
 		Reinsurer: map[string]models.Reinsurer{}, Security: map[string]models.SecurityReinsurer{},
 		Business: map[string]models.Business{}, Seq: map[string]int64{},
 		Jam: time.Date(2026, 9, 30, 10, 0, 0, 0, time.UTC), GagalTulis: map[string]error{}, hitung: map[string]int{},
+		// Satu tabel rate bawaan: business baru di uji memilih `UJI-RATE` (pilihan baru wajib ada di view).
+		RingkasanRate: []models.RingkasanRate{{ID: "UJI-RATE", UsedBy: "UJI R"}},
+		Rate:          map[string][]models.BarisRate{},
 	}
 }
 
@@ -567,6 +573,46 @@ func (g *Gudang) AmbilMasterBusiness(_ context.Context, id string) (models.Maste
 		}
 	}
 	return models.MasterBusiness{}, false, g.galatMaster(repository.MasterBusiness)
+}
+
+// CariRingkasanRate - `Contains` atas USEDBY, urut `ID ASC` (`BrowseRateLifeSummary` b692).
+func (g *Gudang) CariRingkasanRate(_ context.Context, kata string) ([]models.RingkasanRate, error) {
+	var hasil []models.RingkasanRate
+	for _, m := range g.RingkasanRate {
+		if strings.Contains(strings.ToUpper(m.UsedBy), strings.ToUpper(strings.TrimSpace(kata))) {
+			hasil = append(hasil, m)
+		}
+	}
+	sort.SliceStable(hasil, func(i, j int) bool { return hasil[i].ID < hasil[j].ID })
+	return hasil, g.galatMaster(repository.MasterRingkasanRate)
+}
+
+// AmbilRingkasanRate - menurut ID.
+func (g *Gudang) AmbilRingkasanRate(_ context.Context, id string) (models.RingkasanRate, bool, error) {
+	for _, m := range g.RingkasanRate {
+		if m.ID == id {
+			return m, true, g.galatMaster(repository.MasterRingkasanRate)
+		}
+	}
+	return models.RingkasanRate{}, false, g.galatMaster(repository.MasterRingkasanRate)
+}
+
+// DaftarRate - satu `IDUSEDBY`, urut `ID DESC, RATE ASC` (`BrowseRateLife_RD` b747, b784), dipotong
+// `repository.BatasRate`.
+func (g *Gudang) DaftarRate(_ context.Context, idUsedBy string) ([]models.BarisRate, bool, error) {
+	g.catat("rate", idUsedBy)
+	d := append([]models.BarisRate{}, g.Rate[idUsedBy]...)
+	sort.SliceStable(d, func(i, j int) bool {
+		if d[i].ID != d[j].ID {
+			return d[i].ID > d[j].ID
+		}
+		return d[i].Rate < d[j].Rate
+	})
+	terpotong := len(d) > repository.BatasRate
+	if terpotong {
+		d = d[:repository.BatasRate]
+	}
+	return d, terpotong, g.galatMaster(repository.MasterRate)
 }
 
 // Transaksi meniru `inti.Dasar.DalamTransaksi` untuk `services.BaruLayanan`:

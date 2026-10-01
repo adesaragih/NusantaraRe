@@ -302,8 +302,8 @@ export async function cariMasterBusiness(cari: string): Promise<Daftar<MasterBus
 }
 
 /**
- * Autocomplete `R/I RATE`. ⚠️ OQ-MCRL-13: sumber tabel rate belum dibaca -
- * server menjawab 503 berkalimat; pesannya tampil apa adanya.
+ * Autocomplete `R/I RATE` - view `RATE_LIFE_SUMMARY`, baca saja (K1 keputusan work owner 01-10-2026,
+ * OQ-MCRL-13). View tak terbaca = 503 berkalimat yang menyebut view-nya; pesannya tampil apa adanya.
  */
 export async function cariRingkasanRate(cari: string): Promise<Daftar<{ id: string; usedBy: string }>> {
   return minta<Daftar<{ id: string; usedBy: string }>>(`${PREFIX_MCRL}/ringkasan-rate`, { kueri: { cari } })
@@ -319,9 +319,12 @@ export interface BarisRate {
   rate: string
 }
 
-/** Tombol `View Rate` - `idusedby` = `RIRATEID`. ⚠️ OQ-MCRL-13: 503 berkalimat. */
-export async function ambilRate(idusedby: string): Promise<Daftar<BarisRate>> {
-  return minta<Daftar<BarisRate>>(`${PREFIX_MCRL}/rate`, { kueri: { idusedby } })
+/**
+ * Tombol `View Rate` - `idusedby` = `RIRATEID`, view `RATE_LIFE` baca saja (K1, OQ-MCRL-13).
+ * `terpotong` = view memuat lebih dari 500 baris (`BrowseRateLife_RD` `pyMaxRecords` 500, seperti Pega).
+ */
+export async function ambilRate(idusedby: string): Promise<Daftar<BarisRate> & { terpotong: boolean }> {
+  return minta<Daftar<BarisRate> & { terpotong: boolean }>(`${PREFIX_MCRL}/rate`, { kueri: { idusedby } })
 }
 
 // ---------------------------------------------------------------------------

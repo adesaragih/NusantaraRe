@@ -1,10 +1,10 @@
 // Section `ViewRate` (`Rate List`) - dibuka tombol `View Rate` form (`localAction ViewRate`, pre-processing
 // `SetParamRate`: `ParamID.RIRATEID ← InputBusinessLife.RIRATEID`) dan tombol `View Rate` baris
 // (`SetParamRateTable` `RIRATEID ← .RIRATEID` + `localAction ViewRateTable`). Grid RD `BrowseRateLife_RD`
-// param `idusedby = ParamID.RIRATEID` (`ViewRate.xml` b1061); tanpa penomoran.
+// param `idusedby = ParamID.RIRATEID` (`ViewRate.xml` b1055); tanpa penomoran.
 //
-// ⚠️ OQ-MCRL-13: sumber tabel rate menunggu persetujuan work owner - server menjawab 503 berkalimat,
-// dan kalimat itu yang tampil (bukan daftar kosong yang membuat pengguna mengira tidak ada rate).
+// K1 keputusan work owner 01-10-2026 (OQ-MCRL-13): view `RATE_LIFE` dibaca saja. View tak terbaca =
+// 503 berkalimat yang menyebut view-nya, dan kalimat itu yang tampil (bukan daftar kosong).
 
 import { useEffect, useState } from 'react'
 
