@@ -5916,15 +5916,14 @@ textarea.field__input {
    "desain lagi navbarnya mengikuti tema login, dan setiap grouping
    dikasih pembatas biar lebih rapih".
    Warna diambil dari blok `.halaman-masuk` (lavender #d7bcfb → #b48af2,
-   aksen fokus #8b5cf6, kaca putih, huruf Poppins) dan DIBATASI di dalam
+   aksen fokus #8b5cf6, huruf Poppins) dan DIBATASI di dalam
    `.shell__sidebar` lewat token `--sb-*`; tidak mengubah lebar, laci
    ponsel, mode terciut, atau perilaku apa pun. Tema gelap punya
    padanannya sendiri di bawah.
+   LATAR sidebar sengaja TIDAK ditimpa (permintaan work owner 02-10-2026:
+   latar bergradasi dikembalikan ke latar sebelumnya, `var(--surface)`).
    ====================================================================== */
 .shell__sidebar {
-  --sb-latar: radial-gradient(circle at 0% 0%, rgba(185, 141, 243, 0.22), transparent 45%),
-    radial-gradient(circle at 100% 100%, rgba(255, 160, 165, 0.18), transparent 45%),
-    linear-gradient(170deg, rgba(255, 255, 255, 0.98), rgba(244, 241, 255, 0.96) 55%, rgba(255, 241, 243, 0.96));
   --sb-garis: rgba(139, 92, 246, 0.14);
   --sb-pembatas: rgba(139, 92, 246, 0.16);
   --sb-teks: #3b3f55;
@@ -5936,15 +5935,11 @@ textarea.field__input {
   --sb-aksen: #8b5cf6;
   --sb-lencana: linear-gradient(135deg, #d7bcfb, #b48af2);
   --sb-lencana-teks: #ffffff;
-  background: var(--sb-latar);
   border-right: 1px solid var(--sb-garis);
   box-shadow: 8px 0 30px -24px rgba(60, 40, 120, 0.35);
   font-family: "Poppins", var(--font);
 }
 :root[data-theme="dark"] .shell__sidebar {
-  --sb-latar: radial-gradient(circle at 0% 0%, rgba(139, 92, 246, 0.2), transparent 45%),
-    radial-gradient(circle at 100% 100%, rgba(214, 58, 66, 0.12), transparent 45%),
-    linear-gradient(170deg, #1b1f2e, #1e1a30 55%, #241a28);
   --sb-garis: rgba(180, 138, 242, 0.18);
   --sb-pembatas: rgba(180, 138, 242, 0.16);
   --sb-teks: #d9dbe7;
@@ -6040,4 +6035,129 @@ textarea.field__input {
    tidak ganda. */
 .shell--terlipat .shell__sidebar .shell__golongan-judul {
   border-top: 0;
+}
+
+/* ======================================================================
+   KELOLA USER BERTEMA HALAMAN LOGIN: permintaan work owner 02-10-2026
+   "menu Kelola User terapkan temanya seperti tema login". Token `--ku-*`
+   dibatasi di kelas akar `.kelola-user`; popup form pengguna dan popup
+   konfirmasi hapus dirender di dalam akar ini, jadi ikut bertema.
+   TANPA backdrop-filter, filter, atau transform pada akar dan
+   keturunannya: properti itu menjadikan elemen blok penampung bagi
+   `position: fixed`, sehingga popup menempel ke kotak, bukan ke layar
+   (bug popup tidak di tengah 02-10-2026). Dijaga temalogin.guard.test.
+   ====================================================================== */
+.kelola-user {
+  --ku-aksen: #8b5cf6;
+  --ku-aksen-lembut: rgba(139, 92, 246, 0.1);
+  --ku-aksen-garis: rgba(139, 92, 246, 0.22);
+  --ku-tombol: #d63a42;
+  --ku-tombol-hover: #c2333b;
+  --ku-tombol-bayang: rgba(229, 72, 77, 0.55);
+  --ku-kanvas: radial-gradient(circle at 8% 0%, rgba(185, 141, 243, 0.22), transparent 42%),
+    radial-gradient(circle at 96% 100%, rgba(255, 160, 165, 0.2), transparent 40%),
+    radial-gradient(circle at 82% 0%, rgba(147, 197, 253, 0.2), transparent 36%);
+  --ku-kartu: rgba(255, 255, 255, 0.92);
+  --ku-bayang: 0 24px 48px -30px rgba(60, 40, 120, 0.4);
+  --ku-kepala-tabel: #f5f0ff;
+  --ku-baris-hover: #faf7ff;
+  --ku-judul: #1f2333;
+  --ku-judul-golongan: #7c5cc4;
+  padding: 20px;
+  border-radius: 24px;
+  background: var(--ku-kanvas);
+}
+:root[data-theme="dark"] .kelola-user {
+  --ku-aksen: #b48af2;
+  --ku-aksen-lembut: rgba(139, 92, 246, 0.16);
+  --ku-aksen-garis: rgba(180, 138, 242, 0.24);
+  --ku-tombol-bayang: rgba(214, 58, 66, 0.35);
+  --ku-kanvas: radial-gradient(circle at 8% 0%, rgba(139, 92, 246, 0.18), transparent 42%),
+    radial-gradient(circle at 96% 100%, rgba(214, 58, 66, 0.12), transparent 40%);
+  --ku-kartu: rgba(30, 34, 48, 0.92);
+  --ku-bayang: 0 24px 48px -30px rgba(0, 0, 0, 0.7);
+  --ku-kepala-tabel: #251f38;
+  --ku-baris-hover: #2a2340;
+  --ku-judul: #f1f2f8;
+  --ku-judul-golongan: #b9a3ee;
+}
+
+.kelola-user .inbox__judul,
+.kelola-user .modal__title {
+  color: var(--ku-judul);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+}
+
+/* Tabel daftar pengguna: kartu bertepi lavender, kepala dan sorot baris ikut tema. */
+.kelola-user .kelola-user__tabel {
+  background: var(--ku-kartu);
+  border-color: var(--ku-aksen-garis);
+  box-shadow: var(--ku-bayang);
+}
+.kelola-user .kelola-user__tabel thead th {
+  background: var(--ku-kepala-tabel);
+  border-bottom-color: var(--ku-aksen-garis);
+}
+.kelola-user .kelola-user__tabel tbody tr:hover {
+  background: var(--ku-baris-hover);
+}
+
+/* Popup: sudut lembut seperti kartu login. */
+.kelola-user .modal {
+  border-radius: 20px;
+}
+
+/* Tombol utama: merah tombol `Login`; tombol sekunder bersudut lembut beraksen ungu. */
+.kelola-user .btn--primary {
+  background: var(--ku-tombol);
+  border-color: var(--ku-tombol);
+  color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 12px 22px -14px var(--ku-tombol-bayang);
+}
+.kelola-user .btn--primary:hover:not(:disabled) {
+  background: var(--ku-tombol-hover);
+  border-color: var(--ku-tombol-hover);
+}
+.kelola-user .btn--ghost {
+  border-radius: 10px;
+}
+.kelola-user .btn--ghost:hover:not(:disabled) {
+  border-color: var(--ku-aksen-garis);
+  background: var(--ku-aksen-lembut);
+}
+.kelola-user :focus-visible {
+  outline: 2px solid var(--ku-aksen);
+  outline-offset: 2px;
+}
+
+/* Kotak isian seperti isian login: sudut 12px, fokus ungu. */
+.kelola-user .field__input {
+  border-radius: 12px;
+}
+.kelola-user .field__input:focus {
+  border-color: var(--ku-aksen);
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.18);
+  outline: none;
+}
+
+/* Form pengguna: kotak centang workbasket dan menu bertepi lavender. */
+.kelola-user .kelola-user__centang,
+.kelola-user .kelola-user__wajib {
+  border-color: var(--ku-aksen-garis);
+  border-radius: 14px;
+}
+.kelola-user .kelola-user__golongan-judul {
+  color: var(--ku-judul-golongan);
+}
+.kelola-user .kelola-user__butir input {
+  accent-color: var(--ku-aksen);
+}
+
+@media (max-width: 640px) {
+  .kelola-user {
+    padding: 10px;
+    border-radius: 16px;
+  }
 }
