@@ -190,10 +190,13 @@ func pilihanUmum(m *models.Produk, lama models.ProdukUmum) []pilihan {
 
 // lengkapiMilikServer menimpa medan milik server dari baris tersimpan (lama
 // nil = produk baru).
-func lengkapiMilikServer(m *models.Produk, lama *models.Produk, p inti.Pelaku) {
+//
+// `sumber` = produk tersimpan (ubah) atau produk asal `Copy` (baru, `CopyProduct`
+// b138/b161 hanya mengosongkan kedua ID - medan lain ikut tersalin); nil = baru.
+func lengkapiMilikServer(m *models.Produk, sumber *models.Produk, baru bool, p inti.Pelaku) {
 	var simpan models.Produk
-	if lama != nil {
-		simpan = *lama
+	if sumber != nil {
+		simpan = *sumber
 	}
 	u, su := &m.Umum, simpan.Umum
 	// Medan layar mati (`OTHER 1=2`) - kuncinya dibaca view, nilainya dari JSON lama.
@@ -205,7 +208,7 @@ func lengkapiMilikServer(m *models.Produk, lama *models.Produk, p inti.Pelaku) {
 	// Langkah 6 b1368: CREATEOP diisi hanya bila kosong; produk baru (termasuk
 	// salinan `Copy`) = pelaku (OQ-MPNL-13). Langkah 1 b359: UPDATEOP = pelaku.
 	u.CreateOp = su.CreateOp
-	if lama == nil || u.CreateOp == "" {
+	if baru || u.CreateOp == "" {
 		u.CreateOp = p.AkunID
 	}
 	u.UpdateOp = p.AkunID
@@ -215,9 +218,12 @@ func lengkapiMilikServer(m *models.Produk, lama *models.Produk, p inti.Pelaku) {
 	in.CedingRetentionPct, in.CedingLimitXPN, in.RNMLimitPct = si.CedingRetentionPct, si.CedingLimitXPN, si.RNMLimitPct
 	in.LienClause, in.Months = si.LienClause, si.Months
 	in.ID, in.ProductID = si.ID, m.ID
+	if baru {
+		in.ID = "" // `CopyProduct` 2 b161; penulis memberi ID = ID produk (R14)
+	}
 	// Langkah 1 b359: pemegang polis disalin dari halaman inward ke halaman umum.
 	u.PolicyHolder, u.PolicyHolderName = m.Inward.PolicyHolder, m.Inward.PolicyHolderName
-	// Riwayat komentar dan daftar outward milik server.
+	// Riwayat komentar dan daftar outward milik server (salinan mewarisinya, seperti Pega).
 	m.CommentList = append([]models.BarisKomentar{}, simpan.CommentList...)
 	m.OutwardList = append([]models.BarisOutward{}, simpan.OutwardList...)
 }
@@ -229,6 +235,9 @@ func (l *Layanan) SimpanProduk(ctx context.Context, p inti.Pelaku, m models.Prod
 	}
 	if baru && m.ID != "" {
 		return models.Produk{}, ErrIDDariKlien
+	}
+	if !baru && m.SalinanDari != "" {
+		return models.Produk{}, ErrSalinanPadaUbah
 	}
 	var pk periksa
 	periksaWajibIsi(&pk, &m)
@@ -246,6 +255,12 @@ func (l *Layanan) SimpanProduk(ctx context.Context, p inti.Pelaku, m models.Prod
 				return err
 			}
 			lama = &s
+		} else if m.SalinanDari != "" {
+			s, err := l.gudang.AmbilProduk(ctx, tx, m.SalinanDari)
+			if err != nil {
+				return tidakAda(err, ErrSalinanTidakAda, m.SalinanDari)
+			}
+			lama = &s
 		}
 		var tersimpan models.Produk
 		if lama != nil {
@@ -261,7 +276,12 @@ func (l *Layanan) SimpanProduk(ctx context.Context, p inti.Pelaku, m models.Prod
 		if err := pk.galat(); err != nil {
 			return err
 		}
-		lengkapiMilikServer(&m, lama, p)
+		lengkapiMilikServer(&m, lama, baru, p)
+		if perluHitungOutward(&m, baru) {
+			if err := l.hitungOutward(ctx, tx, &m); err != nil {
+				return err
+			}
+		}
 		// Langkah 7 b1513 `·` (tanpa prakondisi): `AddCommentList_Act` - SETIAP
 		// simpan menambah satu baris, juga bila komentarnya kosong (OQ-MPNL-14).
 		m.CommentList = append(m.CommentList, barisKomentar(l.jam(), p.AkunID, m.Umum.Comment))

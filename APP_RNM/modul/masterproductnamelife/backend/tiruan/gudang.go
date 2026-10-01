@@ -53,6 +53,11 @@ type Gudang struct {
 	AppName       string
 	nomorLampiran int
 
+	// KontrakOR - `TREATYCONTRACT_LIFE` × `TREATYYEAR_LIFE` (paket 9, `outward.go`).
+	KontrakOR []KontrakOR
+	// MintaOR - tanggal (`dd/MM/yyyy`) yang diterima DaftarReinstypeOR terakhir.
+	MintaOR [2]string
+
 	// Komit mencacah transaksi yang ditutup sukses.
 	Komit int
 	// GagalBaca - bila terisi, setiap pembacaan gagal dengan galat ini.

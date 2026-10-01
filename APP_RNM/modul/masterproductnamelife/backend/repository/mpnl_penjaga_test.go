@@ -211,7 +211,8 @@ func kolomCadangan(kolom []string) []string {
 
 // semuaKolomFisik - kolom tabel yang disebut SQL modul ini (bertambah tiap paket).
 func semuaKolomFisik() [][]string {
-	return append([][]string{KolomProduk, KolomInward, KolomLampiran, KolomObjek, KolomOutbox}, KolomMaster()...)
+	return append([][]string{KolomProduk, KolomInward, KolomLampiran, KolomObjek, KolomOutbox,
+		KolomKontrakTreaty, KolomTahunTreaty}, KolomMaster()...)
 }
 
 func TestMPNLNolKataCadanganOracle(t *testing.T) {

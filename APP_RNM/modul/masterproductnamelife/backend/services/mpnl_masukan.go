@@ -25,6 +25,10 @@ import (
 var (
 	// ErrIDDariKlien - produk baru membawa ID (400).
 	ErrIDDariKlien = errors.New("services: a new product must not carry an id; the server assigns it")
+	// ErrSalinanPadaUbah - `salinanDari` hanya untuk produk baru (400).
+	ErrSalinanPadaUbah = errors.New("services: salinanDari applies only to a new product (Copy)")
+	// ErrSalinanTidakAda - produk asal `Copy` tidak ada (404).
+	ErrSalinanTidakAda = errors.New("services: the product being copied does not exist")
 	// ErrMasukanTidakSah - nilai tidak dapat diterima (422).
 	ErrMasukanTidakSah = errors.New("services: value is not valid")
 )

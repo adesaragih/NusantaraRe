@@ -555,3 +555,20 @@ func RakitInward(p models.Produk, lama string) (string, error) {
 	}
 	return rakitObjek(obj)
 }
+
+// HalamanPega - medan skalar halaman `ProductName` dan `ProductNameInward`
+// berkunci Pega, sebagai teks (tanggal `dd/MM/yyyy`) - sumber `Generate`
+// (`GenerateUpload_Act` 2 b330 membaca halaman clipboard apa adanya).
+func HalamanPega(p models.Produk) (umum, inward map[string]string) {
+	u, i := map[string]json.RawMessage{}, map[string]json.RawMessage{}
+	tulisMedan(u, medanUmum, &p.Umum)
+	tulisMedan(i, medanInward, &p.Inward)
+	umum, inward = map[string]string{}, map[string]string{}
+	for k, v := range u {
+		umum[k] = teksDari(v)
+	}
+	for k, v := range i {
+		inward[k] = teksDari(v)
+	}
+	return umum, inward
+}

@@ -30,6 +30,15 @@ type Produk struct {
 	UnderwritingLimit     []BarisUWLimit  `json:"underwritingLimit"`
 	OutwardList           []BarisOutward  `json:"outwardList"`
 	CommentList           []BarisKomentar `json:"commentList"`
+
+	// Penanda PERMINTAAN simpan (paket 9) - tidak disimpan, tidak pernah dijawab.
+	//
+	// SalinanDari - `Copy` b59812 (`CopyProduct` b138/b161 hanya mengosongkan kedua
+	// ID): produk baru mewarisi medan milik server produk asal ini.
+	SalinanDari string `json:"salinanDari,omitempty"`
+	// HitungOutward - checkbox `On Retention` b47303 diubah dalam sesi sunting
+	// ini: `GetReinsTypeOR_Life` b47476 mengisi ulang `OutwardList` (OQ-MPNL-09).
+	HitungOutward bool `json:"hitungOutward,omitempty"`
 }
 
 // ProdukUmum - halaman `ProductName` (`M_PRODUCT_LIFE.JSONDATA`).

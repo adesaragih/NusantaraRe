@@ -22,6 +22,7 @@ type Gudang interface {
 	GudangMaster
 	GudangTulis
 	GudangLampiran
+	GudangOutward
 }
 
 var (

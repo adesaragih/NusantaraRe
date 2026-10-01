@@ -35,7 +35,8 @@ const (
 )
 
 // DaftarMasterDibacaSaja - objek yang dibaca tetapi tidak pernah ditulis.
-var DaftarMasterDibacaSaja = []string{MasterAgent, MasterClient, MasterCurrency, MasterRIRisk, MasterCause, MasterJenisPlan}
+var DaftarMasterDibacaSaja = []string{MasterAgent, MasterClient, MasterCurrency, MasterRIRisk, MasterCause, MasterJenisPlan,
+	MasterKontrakTreaty, MasterTahunTreaty}
 
 // Nilai saringan VERBATIM RD.
 const (

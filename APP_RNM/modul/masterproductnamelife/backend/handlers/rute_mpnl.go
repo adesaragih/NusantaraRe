@@ -123,7 +123,8 @@ func jawabGalat(w http.ResponseWriter, err error) bool {
 		galat.Tulis(w, http.StatusUnauthorized, "request without user identity is rejected")
 	case errors.Is(err, inti.ErrTanpaWewenang):
 		galat.Tulis(w, http.StatusForbidden, "insufficient permission")
-	case errors.Is(err, services.ErrProdukTidakAda), errors.Is(err, services.ErrJenisMasterTidakDikenal):
+	case errors.Is(err, services.ErrProdukTidakAda), errors.Is(err, services.ErrJenisMasterTidakDikenal),
+		errors.Is(err, services.ErrSalinanTidakAda):
 		galat.Tulis(w, http.StatusNotFound, services.Pesan(err))
 	case errors.Is(err, services.ErrLampiranTidakAda):
 		galat.Tulis(w, http.StatusNotFound, services.Pesan(err))
@@ -141,7 +142,8 @@ func jawabGalat(w http.ResponseWriter, err error) bool {
 		// 503: master rujukan tidak terbaca - pesannya MENYEBUT objeknya, sebab Oracle hanya di log.
 		log.Printf("master product name life: %v", err)
 		galat.Tulis(w, http.StatusServiceUnavailable, services.Pesan(err))
-	case errors.Is(err, services.ErrIDDariKlien), errors.Is(err, services.ErrBarisAsliRusak):
+	case errors.Is(err, services.ErrIDDariKlien), errors.Is(err, services.ErrBarisAsliRusak),
+		errors.Is(err, services.ErrSalinanPadaUbah):
 		galat.Tulis(w, http.StatusBadRequest, services.Pesan(err))
 	case errors.Is(err, services.ErrMasukanTidakSah):
 		// 422: JSON-nya sah, isinya ditolak - kalimat menyebut label medan VERBATIM; semua penolakan sekaligus.
