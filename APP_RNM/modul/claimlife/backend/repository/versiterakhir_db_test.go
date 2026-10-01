@@ -49,17 +49,32 @@ func TestDBPesertaVersiTerakhir(t *testing.T) {
 	defer func() { _ = skemauji.Bongkar(ctx, sqlDB, skema) }()
 	lengkapiKolomVersi(t, ctx, sqlDB, skema)
 
+	// sisip - satu baris fixture; ID berawalan PL (unik antarkasus).
+	sisip := func(kode, pl, sertifikat, id, edm, status, tgl, nama string, i int) {
+		t.Helper()
+		if _, err := sqlDB.ExecContext(ctx, `INSERT INTO `+skema+`.M_LIFE_PREMIUM_DETAIL
+		    (ID, PL_NUMBER, POLICY_NO, CERTIFICATE_NO, CURRENCY, EDMSTATUS, PL_NUMBER_EDM, TGL_INPUT, NAME_OF_INSURED, SUM_INSURED)
+		    VALUES (:1, :2, 'UJI-POL', :3, 'IDR', :4, :5, TO_DATE(:6, 'YYYY-MM-DD HH24:MI:SS'), :7, :8)`,
+			pl+"-"+id, pl, sertifikat, nilaiAtauNil(status), nilaiAtauNil(edm), nilaiAtauNil(tgl), nilaiAtauNil(nama),
+			1000*(i+1)); err != nil {
+			t.Fatalf("(%s) fixture: %v", kode, err)
+		}
+	}
 	kasus := repository.KasusVersiTerakhir()
 	for _, k := range kasus {
 		for i, b := range k.Baris {
-			if _, err := sqlDB.ExecContext(ctx, `INSERT INTO `+skema+`.M_LIFE_PREMIUM_DETAIL
-			    (ID, PL_NUMBER, POLICY_NO, CERTIFICATE_NO, CURRENCY, EDMSTATUS, PL_NUMBER_EDM, TGL_INPUT, NAME_OF_INSURED, SUM_INSURED)
-			    VALUES (:1, :2, 'UJI-POL', :3, 'IDR', :4, :5, TO_DATE(:6, 'YYYY-MM-DD HH24:MI:SS'), :7, :8)`,
-				k.PL+"-"+b.ID, k.PL, k.Sertifikat, nilaiAtauNil(b.EDMStatus), nilaiAtauNil(b.PLNumberEDM),
-				nilaiAtauNil(b.TglInput), nilaiAtauNil(b.Nama), 1000*(i+1)); err != nil {
-				t.Fatalf("(%s) fixture: %v", k.Kode, err)
-			}
+			sisip(k.Kode, k.PL, k.Sertifikat, b.ID, b.PLNumberEDM, b.EDMStatus, b.TglInput, b.Nama, i)
 		}
+	}
+	// Partisi: TIGA sertifikat di satu PL - satu dibawa Old, satu di-Delete, satu NB saja. Kasus (a)-(l)
+	// masing-masing satu sertifikat per PL, sehingga kunci PARTITION BY tidak teruji tanpa ini.
+	const plPartisi = "UJI-PLV-P"
+	for i, b := range []struct{ sertifikat, id, edm, status, nama string }{
+		{"UJI-C1", "101", "", "", "UJI-P1-LAMA"}, {"UJI-C1", "102", plPartisi + "/01", "Old", "UJI-P1-BARU"},
+		{"UJI-C2", "103", "", "", "UJI-P2"}, {"UJI-C2", "104", plPartisi + "/01", "Delete", "UJI-P2"},
+		{"UJI-C3", "105", "", "", "UJI-P3"},
+	} {
+		sisip("partisi", plPartisi, b.sertifikat, b.id, b.edm, b.status, "", b.nama, i)
 	}
 	repoDB, err := skemauji.BukaRepositori()
 	if err != nil {
@@ -93,6 +108,39 @@ func TestDBPesertaVersiTerakhir(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("partisi", func(t *testing.T) {
+		daftar, err := r.Cari(ctx, plPartisi, "", "", 10)
+		if err != nil {
+			t.Fatalf("Cari: %v", err)
+		}
+		var dapat []string
+		for _, c := range daftar {
+			dapat = append(dapat, c.NomorSertifikat+"="+c.NamaTertanggung)
+		}
+		if got, mau := strings.Join(dapat, ","), "UJI-C1=UJI-P1-BARU,UJI-C3=UJI-P3"; got != mau {
+			t.Errorf("Cari %s = %s, mau %s (C2 di-Delete /01, C1 dari /01)", plPartisi, got, mau)
+		}
+	})
+
+	// Tiga penampung (:1 PL dan :2 sertifikat di dalam jendela, :3 nama di luar) atas godror - kasus (j)
+	// hanya menuntut NOL baris, sehingga saringan nama yang tidak pernah cocok pun lolos tanpa ini.
+	t.Run("nama-dan-sertifikat", func(t *testing.T) {
+		for _, c := range []struct {
+			sertifikat, nama string
+			tampil           bool
+		}{
+			{"C1", "baru", true}, {"", "baru", true}, {"C1", "lama", false}, {"C9", "baru", false}, {"C1", "", true},
+		} {
+			daftar, err := r.Cari(ctx, "UJI-PLV-J", c.sertifikat, c.nama, 10)
+			if err != nil {
+				t.Fatalf("Cari(%q, %q): %v", c.sertifikat, c.nama, err)
+			}
+			if tampil := len(daftar) == 1 && daftar[0].NamaTertanggung == "UJI-NAMA-BARU"; tampil != c.tampil || len(daftar) > 1 {
+				t.Errorf("Cari(%q, %q) = %+v, mau tampil %v", c.sertifikat, c.nama, daftar, c.tampil)
+			}
+		}
+	})
 }
 
 // nilaiAtauNil - teks kosong menjadi NULL (Oracle), seperti baris new business.

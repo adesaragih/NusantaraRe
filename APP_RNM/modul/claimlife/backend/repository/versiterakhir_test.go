@@ -20,6 +20,7 @@ package repository
 // `db` atas SQL sungguhan (`versiterakhir_db_test.go`, MELEWATI tanpa ORACLE_DSN).
 
 import (
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -70,9 +71,18 @@ func kasusVersiTerakhir() []kasusVersi {
 				{ID: "100", PLNumberEDM: "UJI-PLV-I/01", EDMStatus: "Old"}},
 			Tampil: true, IDTerpilih: "100"},
 		{Kode: "j", Nama: "saringan nama Find Insured atas versi TERAKHIR, bukan versi lama", PL: "UJI-PLV-J", Sertifikat: "UJI-C1",
-			Baris: []barisUjiVersi{{ID: "101", Nama: "UJI NAMA LAMA"},
-				{ID: "102", PLNumberEDM: "UJI-PLV-J/01", EDMStatus: "Old", Nama: "UJI NAMA BARU"}},
+			Baris: []barisUjiVersi{{ID: "101", Nama: "UJI-NAMA-LAMA"},
+				{ID: "102", PLNumberEDM: "UJI-PLV-J/01", EDMStatus: "Old", Nama: "UJI-NAMA-BARU"}},
 			CariNama: "lama"},
+		{Kode: "k", Nama: "versi sama, TGL_INPUT terisi lawan NULL: yang terisi menang (NULLS LAST), bukan ID terbesar", PL: "UJI-PLV-K", Sertifikat: "UJI-C1",
+			Baris: []barisUjiVersi{{ID: "101"},
+				{ID: "102", PLNumberEDM: "UJI-PLV-K/01", EDMStatus: "Old", TglInput: "2026-01-01 08:00:00"},
+				{ID: "103", PLNumberEDM: "UJI-PLV-K/01", EDMStatus: "Delete"}},
+			Tampil: true, IDTerpilih: "102"},
+		{Kode: "l", Nama: "versi dibanding ANGKA: /100 menang atas /99 (teks: '99' > '100')", PL: "UJI-PLV-L", Sertifikat: "UJI-C1",
+			Baris: []barisUjiVersi{{ID: "101", PLNumberEDM: "UJI-PLV-L/100", EDMStatus: "Old"},
+				{ID: "102", PLNumberEDM: "UJI-PLV-L/99", EDMStatus: "Delete"}},
+			Tampil: true, IDTerpilih: "101"},
 	}
 }
 
@@ -120,7 +130,7 @@ func pilihAcuan(k kasusVersi) (barisUjiVersi, bool) {
 	return terpilih, PesertaHidup(terpilih.EDMStatus)
 }
 
-// TestAturanVersiTerakhirAcuan - jawaban kasus (a)-(j) menurut acuan aturan; PesertaHidup PRODUKSI menilai
+// TestAturanVersiTerakhirAcuan - jawaban kasus (a)-(l) menurut acuan aturan; PesertaHidup PRODUKSI menilai
 // baris terpilih. Tabel kasusnya juga yang dijalankan uji `db` atas SQL sungguhan.
 func TestAturanVersiTerakhirAcuan(t *testing.T) {
 	for _, k := range kasusVersiTerakhir() {
@@ -145,7 +155,7 @@ const (
 	tuntutPeringkat = "ROW_NUMBER() OVER (PARTITION BY CERTIFICATE_NO ORDER BY"
 	tuntutVersi     = "NVL(TO_NUMBER(CASE WHEN SUBSTR(TRIM(PL_NUMBER_EDM), 1, LENGTH(PL_NUMBER) + 1) = PL_NUMBER || '/' " +
 		"THEN REGEXP_SUBSTR(SUBSTR(TRIM(PL_NUMBER_EDM), LENGTH(PL_NUMBER) + 2), '^[0-9]+$') END), 0) DESC"
-	tuntutSeri  = "TGL_INPUT DESC NULLS LAST, LENGTH(ID) DESC, ID DESC)"
+	tuntutSeri  = "TGL_INPUT DESC NULLS LAST, LENGTH(ID) DESC NULLS LAST, ID DESC NULLS LAST)"
 	tuntutPilih = "RN_VERSI = 1 AND (EDMSTATUS IS NULL OR TRIM(EDMSTATUS) NOT IN ('Batal','Delete'))"
 )
 
@@ -175,6 +185,8 @@ func galatCariVersi(q, qn string) []string {
 		"g": {tuntutPeringkat, tuntutSeri},
 		"h": {tuntutVersi},
 		"i": {tuntutSeri},
+		"k": {tuntutSeri},
+		"l": {tuntutVersi},
 	}
 	for kode, potongan := range tuntut {
 		for _, p := range potongan {
@@ -188,17 +200,64 @@ func galatCariVersi(q, qn string) []string {
 	if i := strings.Index(qn, "RN_VERSI = 1"); i < 0 || !strings.Contains(qn[i:], "UPPER(NAME_OF_INSURED) LIKE") {
 		galat = append(galat, "(j) saringan nama tidak berada sesudah peringkat versi:\n"+qn)
 	}
+	for _, x := range []string{q, qn} {
+		galat = append(galat, galatJendela(x)...)
+	}
 	// §1 butir 4: jendela hanya menyentuh SATU polis - PL_NUMBER = :1 di DALAM subkueri peringkat.
-	if !jendelaDikurung(q, "WHERE PL_NUMBER = :1") {
+	if !strings.Contains(segmenJendela(q), "WHERE PL_NUMBER = :1") {
 		galat = append(galat, "(pemindaian penuh) jendela peringkat tidak dikurung PL_NUMBER:\n"+q)
+	}
+	galat = append(galat, galatPenampung(q, 1)...)
+	galat = append(galat, galatPenampung(qn, 3)...)
+	return galat
+}
+
+// segmenJendela - subkueri peringkat: dari `FROM (` sampai `WHERE` luar yang memilih `RN_VERSI = 1`.
+func segmenJendela(q string) string {
+	a, b := strings.Index(q, "FROM ("), strings.Index(q, "RN_VERSI = 1")
+	if a < 0 || b <= a {
+		return ""
+	}
+	return q[a:b]
+}
+
+// galatJendela - penyaring status atau nama di DALAM jendela: baris yang tersaring sebelum diperingkat membuat
+// versi lamanya naik menjadi "terakhir" - `/01 Delete` disaring, NB-nya tampil lagi (c); nama lama tetap
+// menemukan pesertanya (j). Kehadiran potongan yang benar di luar tidak menebus kehadirannya di dalam.
+func galatJendela(q string) []string {
+	var galat []string
+	j := segmenJendela(q)
+	for kode, terlarang := range map[string][]string{
+		"c": {"EDMSTATUS IS NULL", "NOT IN ('Batal','Delete')"},
+		"j": {"NAME_OF_INSURED) LIKE"},
+	} {
+		for _, x := range terlarang {
+			if strings.Contains(j, x) {
+				galat = append(galat, "("+kode+") "+strconv.Quote(x)+" di DALAM jendela peringkat:\n"+q)
+			}
+		}
 	}
 	return galat
 }
 
-// jendelaDikurung - syarat berada di DALAM subkueri peringkat (antara `FROM (` dan `RN_VERSI = 1`).
-func jendelaDikurung(q, syarat string) bool {
-	a, b := strings.Index(q, "FROM ("), strings.Index(q, "RN_VERSI = 1")
-	return a >= 0 && b > a && strings.Contains(q[a:b], syarat)
+// polaPenampung - penampung bind `:n`. `:MI`/`:SS` format TO_CHAR bukan angka, tidak tercocok.
+var polaPenampung = regexp.MustCompile(`:([0-9]+)`)
+
+// galatPenampung - godror mengikat menurut URUTAN KEMUNCULAN, bukan nomor: penampung harus muncul :1, :2, …, :n
+// berurutan di teks, tepat n buah - sama dengan urutan nilai bind yang dirakit.
+func galatPenampung(q string, n int) []string {
+	var dapat []string
+	for _, m := range polaPenampung.FindAllStringSubmatch(q, -1) {
+		dapat = append(dapat, m[1])
+	}
+	var mau []string
+	for i := 1; i <= n; i++ {
+		mau = append(mau, strconv.Itoa(i))
+	}
+	if strings.Join(dapat, ",") != strings.Join(mau, ",") {
+		return []string{"(bind) penampung muncul " + strings.Join(dapat, ",") + ", mau " + strings.Join(mau, ",") + ":\n" + q}
+	}
+	return nil
 }
 
 // TestSQLAmbilPesertaKlaimVersiTerakhir - SQL penyalin ke klaim: baris VERSI TERAKHIR yang hidup, per kasus.
@@ -213,10 +272,10 @@ func galatAmbilVersi(q string) []string {
 	q = rataSQL(q)
 	var galat []string
 	for kode, potongan := range map[string][]string{
-		"b-e": {tuntutPeringkat, tuntutVersi, "WHERE " + tuntutPilih + ")"},
+		"b-e": {tuntutPeringkat, tuntutVersi, "WHERE " + tuntutPilih + " FETCH FIRST 1 ROWS ONLY"},
 		"f":   {"TRIM(EDMSTATUS) NOT IN ('Batal','Delete')"},
 		"g,i": {tuntutSeri},
-		"h":   {tuntutVersi},
+		"h,l": {tuntutVersi},
 	} {
 		for _, p := range potongan {
 			if !strings.Contains(q, p) {
@@ -224,25 +283,30 @@ func galatAmbilVersi(q string) []string {
 			}
 		}
 	}
-	// Baris luar dikunci ID terpilih; subkueri peringkat dikurung PL_NUMBER + CERTIFICATE_NO (§1 butir 4).
-	for _, w := range []string{"WHERE PL_NUMBER = :1 AND CERTIFICATE_NO = :2 AND ID = (SELECT ID FROM (SELECT ID, EDMSTATUS,",
-		"FETCH FIRST 1 ROWS ONLY"} {
-		if !strings.Contains(q, w) {
-			galat = append(galat, "SQL tanpa "+strconv.Quote(w)+":\n"+q)
-		}
-	}
-	if !strings.Contains(q, "FROM S.M WHERE PL_NUMBER = :3 AND CERTIFICATE_NO = :4)") {
+	// Subkueri peringkat dikurung PL_NUMBER + CERTIFICATE_NO (§1 butir 4).
+	if !strings.Contains(segmenJendela(q), "FROM S.M WHERE PL_NUMBER = :1 AND CERTIFICATE_NO = :2)") {
 		galat = append(galat, "(pemindaian penuh) subkueri peringkat tidak dikurung PL_NUMBER + CERTIFICATE_NO:\n"+q)
 	}
-	if !strings.HasPrefix(q, "SELECT ID, PL_NUMBER, POLICY_NO, CERTIFICATE_NO,") {
+	galat = append(galat, galatJendela(q)...)
+	galat = append(galat, galatPenampung(q, 2)...)
+	// Daftar pilih luar = kolomSalin (posisi dikunci salinKePeserta); subkueri membawa kolom mentahnya, bukan `*`.
+	if !strings.HasPrefix(q, "SELECT ID, PL_NUMBER, POLICY_NO, CERTIFICATE_NO, CURRENCY, TO_CHAR(STNC,") {
 		galat = append(galat, "daftar pilih kolomSalin berubah:\n"+q)
+	}
+	if !strings.Contains(q, "FROM (SELECT ID, PL_NUMBER, POLICY_NO, CERTIFICATE_NO, CURRENCY, STNC, ") ||
+		!strings.Contains(q, ", CLAIM_AMOUNT, EDMSTATUS, ROW_NUMBER()") {
+		galat = append(galat, "(kolom) subkueri tidak membawa kolom mentah kolomSalin + EDMSTATUS:\n"+q)
+	}
+	if strings.Contains(q, "*") {
+		galat = append(galat, "(KTP) `*` membaca seluruh kolom, termasuk KTP:\n"+q)
 	}
 	return galat
 }
 
 // TestAturanVersiTerakhirMenggigit - uji gigit §2 butir 4, PEMERIKSA YANG SAMA atas SQL yang sungguh dirakit
 // lalu dimutasi: tanpa ROW_NUMBER kasus (c) merah; tanpa `PL_NUMBER = :1` di jendela, penjaga "nol pemindaian
-// penuh" merah. SQL asli harus nol galat (pemeriksanya tidak asal menuduh).
+// penuh" merah; status di dalam jendela (c) merah; penampung tak urut (bind) merah. SQL asli harus nol galat
+// (pemeriksanya tidak asal menuduh).
 func TestAturanVersiTerakhirMenggigit(t *testing.T) {
 	q, _ := sqlCariPeserta("S.M", "UJI-PLV", "", "", 10)
 	qn, _ := sqlCariPeserta("S.M", "UJI-PLV", "UJI-C", "lama", 10)
@@ -257,31 +321,46 @@ func TestAturanVersiTerakhirMenggigit(t *testing.T) {
 		}
 		return false
 	}
-	for _, m := range []struct{ nama, lama, baru, mauMerah string }{
-		{"tanpa ROW_NUMBER", peringkatVersi, "1", "(c)"},
-		{"tanpa PL_NUMBER di jendela", "WHERE PL_NUMBER = :1", "WHERE 1 = 1", "(pemindaian penuh)"},
+	ganti := func(lama, baru string) func(string) string {
+		return func(x string) string { return strings.Replace(x, lama, baru, 1) }
+	}
+	for _, m := range []struct {
+		nama     string
+		ubah     func(string) string
+		mauMerah string
+	}{
+		{"tanpa ROW_NUMBER", ganti(peringkatVersi, "1"), "(c)"},
+		{"tanpa PL_NUMBER di jendela", ganti("WHERE PL_NUMBER = :1", "WHERE 1 = 1"), "(pemindaian penuh)"},
+		{"status JUGA di dalam jendela", ganti("WHERE PL_NUMBER = :1", "WHERE PL_NUMBER = :1 AND "+penyaringHidup), "(c)"},
+		{"penampung tak urut", strings.NewReplacer(":2", ":3", ":3", ":2").Replace, "(bind)"},
 	} {
-		if !strings.Contains(q, m.lama) || !strings.Contains(qn, m.lama) {
-			t.Fatalf("%s: potongan yang dimutasi tidak ada di SQL", m.nama)
+		mq, mqn := m.ubah(q), m.ubah(qn)
+		if mq == q && mqn == qn {
+			t.Fatalf("%s: mutasi tidak mengubah SQL", m.nama)
 		}
-		g := galatCariVersi(strings.Replace(q, m.lama, m.baru, 1), strings.Replace(qn, m.lama, m.baru, 1))
-		if !ada(g, m.mauMerah) {
+		if g := galatCariVersi(mq, mqn); !ada(g, m.mauMerah) {
 			t.Errorf("mutasi %s: %s tetap hijau - pemeriksanya tidak menggigit (%v)", m.nama, m.mauMerah, g)
 		}
 	}
-	// AmbilUntukKlaim: subkueri peringkatnya tanpa PL_NUMBER = jendela atas sertifikat itu di SEMUA polis.
 	ambil := sqlAmbilPesertaKlaim("S.M")
 	if g := galatAmbilVersi(ambil); len(g) != 0 {
 		t.Fatalf("SQL AmbilUntukKlaim asli sudah bergalat: %v", g)
 	}
-	for _, m := range []struct{ nama, lama, baru, mauMerah string }{
-		{"tanpa ROW_NUMBER", peringkatVersi, "1", "(b-e)"},
-		{"tanpa PL_NUMBER di subkueri", "WHERE PL_NUMBER = :3 AND ", "WHERE ", "(pemindaian penuh)"},
+	for _, m := range []struct {
+		nama     string
+		ubah     func(string) string
+		mauMerah string
+	}{
+		{"tanpa ROW_NUMBER", ganti(peringkatVersi, "1"), "(b-e)"},
+		{"tanpa PL_NUMBER di subkueri", ganti("WHERE PL_NUMBER = :1 AND ", "WHERE "), "(pemindaian penuh)"},
+		{"status JUGA di subkueri", ganti("CERTIFICATE_NO = :2)", "CERTIFICATE_NO = :2 AND "+penyaringHidup+")"), "(c)"},
+		{"subkueri SELECT *", ganti(kolomMentahSalin+", EDMSTATUS,", "T.*,"), "(KTP)"},
 	} {
-		if !strings.Contains(ambil, m.lama) {
-			t.Fatalf("%s: potongan yang dimutasi tidak ada di SQL AmbilUntukKlaim", m.nama)
+		mut := m.ubah(ambil)
+		if mut == ambil {
+			t.Fatalf("%s: mutasi tidak mengubah SQL AmbilUntukKlaim", m.nama)
 		}
-		if g := galatAmbilVersi(strings.Replace(ambil, m.lama, m.baru, 1)); !ada(g, m.mauMerah) {
+		if g := galatAmbilVersi(mut); !ada(g, m.mauMerah) {
 			t.Errorf("mutasi AmbilUntukKlaim %s: %s tetap hijau (%v)", m.nama, m.mauMerah, g)
 		}
 	}

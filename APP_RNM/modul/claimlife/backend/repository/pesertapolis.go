@@ -92,15 +92,18 @@ const penyaringHidup = `(EDMSTATUS IS NULL OR TRIM(EDMSTATUS) NOT IN ('Batal','D
 const sqlVersiPeserta = `NVL(TO_NUMBER(CASE WHEN SUBSTR(TRIM(PL_NUMBER_EDM), 1, LENGTH(PL_NUMBER) + 1) = PL_NUMBER || '/' ` +
 	`THEN REGEXP_SUBSTR(SUBSTR(TRIM(PL_NUMBER_EDM), LENGTH(PL_NUMBER) + 2), '^[0-9]+$') END), 0)`
 
-// peringkatVersi - peringkat baris dalam SATU sertifikat: versi terbesar, lalu `TGL_INPUT` terbaru (NULL
-// terakhir), lalu `ID` terbesar secara ANGKA (`LENGTH` dulu: `ID` teks berisi angka sequence, `'99' > '100'`
-// secara teks). ⚠️ Tidak satu pun penulis korpus (`SaveMasterLPDet`, PremiumList, Endorsement) mengisi
+// peringkatVersi - peringkat baris dalam SATU sertifikat: versi terbesar, lalu `TGL_INPUT` terbaru, lalu `ID`
+// terbesar secara ANGKA (`LENGTH` dulu: `ID` teks berisi `TO_CHAR(urutan.NEXTVAL)`, `'99' > '100'` secara
+// teks). `NULLS LAST` di ketiganya: Oracle menaruh NULL PERTAMA pada `DESC`, dan NULL bukan "terbaru" maupun
+// "terbesar". ⚠️ Tidak satu pun penulis korpus (`SaveMasterLPDet`, PremiumList, Endorsement) mengisi
 // `TGL_INPUT` - di baris mereka seri versi praktis diputus `ID`.
 //
 // ⛔ Hanya boleh dipakai di subkueri yang `WHERE`-nya sudah `PL_NUMBER = :n` (aturan §1 butir 4): jendelanya
-// menyentuh baris SATU polis, nol pemindaian penuh atas 66,8 juta baris.
+// menyentuh baris SATU polis, nol pemindaian penuh atas 66,8 juta baris. ⛔ Penyaring status dan nama TIDAK
+// boleh masuk subkueri itu: baris `Delete` yang tersaring sebelum diperingkat membuat versi lamanya naik
+// menjadi "terakhir" (kasus c).
 const peringkatVersi = `ROW_NUMBER() OVER (PARTITION BY CERTIFICATE_NO ORDER BY ` + sqlVersiPeserta +
-	` DESC, TGL_INPUT DESC NULLS LAST, LENGTH(ID) DESC, ID DESC)`
+	` DESC, TGL_INPUT DESC NULLS LAST, LENGTH(ID) DESC NULLS LAST, ID DESC NULLS LAST)`
 
 // pilihVersiHidup - baris versi terakhir (`RN_VERSI` dari peringkatVersi) yang masih hidup.
 const pilihVersiHidup = `RN_VERSI = 1 AND ` + penyaringHidup
@@ -164,17 +167,21 @@ func sqlCariPeserta(tabel, nomorPremiList, sertifikat, nama string, batas int) (
 	return q, arg
 }
 
+// kolomMentahSalin - kolom mentah yang dibaca ekspresi kolomSalin, DITURUNKAN darinya (bukan diketik ulang):
+// daftar pilih subkueri sqlAmbilPesertaKlaim. ⛔ Bukan `*` - kolom KTP tidak pernah dibaca.
+var kolomMentahSalin = strings.Join(namaKolomDaftarPilih(kolomSalin), ", ")
+
 // sqlAmbilPesertaKlaim - baris yang disalin ke klaim untuk SATU sertifikat: baris versi terakhirnya, hanya
-// bila hidup (OQ-N14). Subkueri memeringkat baris (PL_NUMBER, CERTIFICATE_NO) itu saja - keduanya
-// ber-index (`INDEX4`, `INDEX8`) - lalu barisnya dibaca menurut `ID` terpilih.
-// Penampung :1/:3 nomor premium list, :2/:4 sertifikat (urut kemunculan).
+// bila hidup (OQ-N14). Satu akses: subkueri memeringkat baris (PL_NUMBER, CERTIFICATE_NO) itu saja -
+// keduanya ber-index (`INDEX4`, `INDEX8`) - dan baris luarnya baris peringkat 1 itu sendiri, tanpa
+// bergantung `ID` unik atau terisi.
 func sqlAmbilPesertaKlaim(tabel string) string {
-	return fmt.Sprintf(`SELECT %s FROM %s
-		        WHERE PL_NUMBER = :1 AND CERTIFICATE_NO = :2
-		          AND ID = (SELECT ID FROM (SELECT ID, EDMSTATUS, %s AS RN_VERSI FROM %s
-		                                     WHERE PL_NUMBER = :3 AND CERTIFICATE_NO = :4)
-		                     WHERE %s)
-		        FETCH FIRST 1 ROWS ONLY`, kolomSalin, tabel, peringkatVersi, tabel, pilihVersiHidup)
+	return fmt.Sprintf(`SELECT %s
+		        FROM (SELECT %s, EDMSTATUS, %s AS RN_VERSI
+		                FROM %s
+		               WHERE PL_NUMBER = :1 AND CERTIFICATE_NO = :2)
+		        WHERE %s
+		        FETCH FIRST 1 ROWS ONLY`, kolomSalin, kolomMentahSalin, peringkatVersi, tabel, pilihVersiHidup)
 }
 
 // Cari mengembalikan calon peserta satu premium list.
@@ -381,15 +388,15 @@ func (r *PesertaPolis) AmbilUntukKlaim(ctx context.Context, nomorPremiList strin
 		return nil, err
 	}
 
+	q := sqlAmbilPesertaKlaim(tabel)
+	if err := db.PeriksaSQL(q); err != nil {
+		return nil, err
+	}
 	var out []models.Peserta
 	// Satu sertifikat satu query: keduanya ber-index, dan daftar IN yang
 	// panjang membuat Oracle membuat rencana baru untuk tiap panjang daftar.
 	for _, no := range sertifikat {
-		q := sqlAmbilPesertaKlaim(tabel)
-		if err := db.PeriksaSQL(q); err != nil {
-			return nil, err
-		}
-		baris := r.db.QueryRowContext(ctx, q, nomorPremiList, no, nomorPremiList, no)
+		baris := r.db.QueryRowContext(ctx, q, nomorPremiList, no)
 		sel := make([]sql.NullString, cacahKolomSalin)
 		tujuan := make([]any, len(sel))
 		for i := range sel {
