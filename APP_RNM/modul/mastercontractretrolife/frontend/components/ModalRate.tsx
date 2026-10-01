@@ -53,30 +53,32 @@ export default function ModalRate({ idusedby, onTutup }: { idusedby: string; onT
       {daftar !== null && daftar.length === 0 && <Kosong pesan={UMUM_MCRL.kosong} />}
       {terpotong && <p className="mcrl-label-sel">{UMUM_MCRL.terpotong}</p>}
       {daftar !== null && daftar.length > 0 && (
-        <table className="inbox__tabel">
-          <thead>
-            <tr>
-              <th>{RATE_MCRL.kolomId}</th>
-              <th>{RATE_MCRL.kolomUsedBy}</th>
-              <th>{RATE_MCRL.kolomGender}</th>
-              <th>{RATE_MCRL.kolomContract}</th>
-              <th>{RATE_MCRL.kolomAge}</th>
-              <th>{RATE_MCRL.kolomRate}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {daftar.map((r) => (
-              <tr key={r.id} className="inbox__baris">
-                <td>{sel(r.id)}</td>
-                <td>{sel(r.usedBy)}</td>
-                <td>{sel(r.gender)}</td>
-                <td>{sel(r.contract)}</td>
-                <td>{sel(r.age)}</td>
-                <td>{sel(r.rate)}</td>
+        <div className="mcrl-tabel">
+          <table className="inbox__tabel">
+            <thead>
+              <tr>
+                <th>{RATE_MCRL.kolomId}</th>
+                <th>{RATE_MCRL.kolomUsedBy}</th>
+                <th>{RATE_MCRL.kolomGender}</th>
+                <th>{RATE_MCRL.kolomContract}</th>
+                <th>{RATE_MCRL.kolomAge}</th>
+                <th>{RATE_MCRL.kolomRate}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {daftar.map((r) => (
+                <tr key={r.id} className="inbox__baris">
+                  <td>{sel(r.id)}</td>
+                  <td>{sel(r.usedBy)}</td>
+                  <td>{sel(r.gender)}</td>
+                  <td>{sel(r.contract)}</td>
+                  <td>{sel(r.age)}</td>
+                  <td>{sel(r.rate)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </Modal>
   )

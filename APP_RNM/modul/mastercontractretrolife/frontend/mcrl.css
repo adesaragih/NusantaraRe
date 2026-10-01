@@ -1,55 +1,77 @@
 /*
- * Gaya modul Master Contract Retro Life - SELURUH kelas berawalan `mcrl` (dijaga `gaya.test.ts`).
- * Kerangka (panel, form-grid, tabel, tombol) memakai kelas bersama `inti/frontend/styles.css`; berkas
- * ini hanya menambah yang khusus layar modul ini, dengan token warna tema bersama.
+ * Gaya modul Master Contract Retro Life.
+ *
+ * ⛔ TERISOLASI: SETIAP pemilih diawali kelas akar `.mcrl` (dipasang di `<section className="inbox mcrl">`
+ * halaman awal; panel dan popup modul dirender di dalamnya, Modal inti tanpa portal). Kelas khusus modul
+ * berawalan `mcrl-`. Kelas bersama `inti` (panel, btn, inbox__tabel, table__actions, form-grid, modal)
+ * hanya DITIMPA di bawah `.mcrl`, tidak pernah didefinisikan ulang secara global. Dijaga `gaya.test.ts`.
+ * Warna dari token tema bersama, jadi tema gelap ikut.
  */
 
+/* Akar: boleh menyusut di dalam kolom flex/grid kerangka, sehingga tabel lebar menggulir di
+   pembungkusnya sendiri, bukan mendorong halaman melebar. */
+.mcrl {
+  min-width: 0;
+}
+
+.mcrl .inbox__kepala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
 /* Label sel tombol b8888 (`End Period`, `pyIncludeLabel` true) di sebelah tombol `Add`. */
-.mcrl-label-sel {
+.mcrl .mcrl-label-sel {
   color: var(--muted);
   font-size: var(--fs-sm);
   font-weight: 600;
 }
 
 /* Baris tombol `Add` + `pyGridPaginator` di atas grid. */
-.mcrl-aksi-grid {
+.mcrl .mcrl-aksi-grid {
+  display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px 12px;
   flex-wrap: wrap;
 }
 
 /* Ikon tutup kerangka harness popup (`pxIconCancel`). */
-.mcrl-tutup {
+.mcrl .mcrl-tutup {
   padding-inline: 6px;
 }
 
 /* Medan baca-saja kepala panel (`ID Treaty Year`, `ID Reins Type`, `Reins Type`, ...). */
-.mcrl-kepala {
+.mcrl .mcrl-kepala {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 24px;
   margin: 0 0 12px;
 }
 
-.mcrl-kepala__medan {
+.mcrl .mcrl-kepala__medan {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
 
-.mcrl-kepala__medan dt {
+.mcrl .mcrl-kepala__medan dt {
   color: var(--muted);
   font-size: var(--fs-xs);
 }
 
-.mcrl-kepala__medan dd {
+.mcrl .mcrl-kepala__medan dd {
   margin: 0;
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 /* `Total Share -->>` - tiket 05 AC 19: total ≠ 100 DITANDAI mencolok. */
-.mcrl-total {
+.mcrl .mcrl-total {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   margin: 8px 0 0;
@@ -57,18 +79,120 @@
   border-radius: var(--radius-sm);
 }
 
-.mcrl-total--bukan100 {
+.mcrl .mcrl-total--bukan100 {
   background: var(--danger-bg);
   border: 1px solid var(--danger-border);
   color: var(--danger-text);
 }
 
-.mcrl-total__tanda {
+.mcrl .mcrl-total__tanda {
   font-weight: 700;
 }
 
 /* Rincian baris yang ikut terhapus di popup konfirmasi. */
-.mcrl-dampak {
+.mcrl .mcrl-dampak {
   margin: 4px 0 0;
   padding-left: 20px;
+}
+
+/* --------------------------------------------------------------- tabel */
+/* Pembungkus gulir setiap grid: tabel yang lebih lebar dari panel menggulir DI SINI, bukan keluar dari
+   panel (tangkapan layar 02-10-2026: kolom tombol `Reinsurer List` terpotong tepi panel). */
+.mcrl .mcrl-tabel {
+  width: 100%;
+  max-width: 100%;
+  margin-top: 16px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.mcrl .mcrl-tabel > .inbox__tabel {
+  width: 100%;
+  margin-top: 0;
+}
+
+.mcrl .mcrl-tabel > .inbox__tabel thead th {
+  white-space: nowrap;
+}
+
+/* Kolom tombol baris (Edit, Business List, Reinsurer List, Delete) menempel di kanan saat tabel
+   digulir, sehingga aksi baris selalu terlihat. */
+.mcrl .mcrl-tabel th.table__actions,
+.mcrl .mcrl-tabel td.table__actions {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  box-shadow: -1px 0 0 var(--border);
+}
+
+.mcrl .mcrl-tabel th.table__actions {
+  background: var(--bg);
+}
+
+.mcrl .mcrl-tabel td.table__actions {
+  background: var(--surface);
+  white-space: nowrap;
+}
+
+.mcrl .mcrl-tabel tr:hover > td.table__actions {
+  background: var(--hover-baris);
+}
+
+.mcrl .mcrl-tabel td.table__actions > .btn + .btn {
+  margin-left: 6px;
+}
+
+/* Grid di dalam popup (Rate List, pratinjau salin) dibatasi tingginya dan menggulir di dalam. */
+.mcrl .modal .mcrl-tabel {
+  max-height: 50vh;
+  overflow: auto;
+}
+
+/* ------------------------------------------------- tablet, laptop kecil */
+@media (max-width: 1024px) {
+  .mcrl .panel {
+    padding: 16px;
+  }
+}
+
+/* ---------------------------------------------------------------- ponsel */
+@media (max-width: 640px) {
+  .mcrl .panel {
+    padding: 12px;
+    border-radius: var(--radius-sm);
+  }
+
+  .mcrl .mcrl-kepala {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 12px;
+  }
+
+  .mcrl .aksi-baris > .btn {
+    flex: 1 1 auto;
+  }
+
+  .mcrl .mcrl-tabel > .inbox__tabel th,
+  .mcrl .mcrl-tabel > .inbox__tabel td {
+    padding: 8px 10px;
+  }
+
+  /* Ponsel: kolom tombol TIDAK menempel - di layar sempit ia menutupi hampir seluruh kolom data.
+     Data tampil lebih dulu; tombol dijangkau dengan menggeser tabel di dalam panel. */
+  .mcrl .mcrl-tabel th.table__actions,
+  .mcrl .mcrl-tabel td.table__actions {
+    position: static;
+    box-shadow: none;
+  }
+
+  .mcrl .modal__actions {
+    flex-wrap: wrap;
+  }
+
+  .mcrl .modal__actions > .btn {
+    flex: 1 1 auto;
+  }
 }

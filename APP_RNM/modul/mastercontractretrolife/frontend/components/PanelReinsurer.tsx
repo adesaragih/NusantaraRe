@@ -206,57 +206,59 @@ export default function PanelReinsurer({ kontrak, onTutup }: { kontrak: Kontrak;
       {galat !== null && <Gagal galat={galat} />}
       {jawab !== null && daftar.length === 0 && <Kosong pesan={UMUM_MCRL.kosong} />}
       {daftar.length > 0 && (
-        <table className="inbox__tabel">
-          <thead>
-            <tr>
-              <th>{REINSURER_MCRL.kolomId}</th>
-              <th>{REINSURER_MCRL.kolomReinsurerName}</th>
-              <th>{REINSURER_MCRL.kolomShare}</th>
-              <th>{REINSURER_MCRL.kolomDiscount}</th>
-              <th>{REINSURER_MCRL.kolomOvrComm}</th>
-              <th>{REINSURER_MCRL.kolomInputor}</th>
-              <th>{REINSURER_MCRL.kolomUpdateDate}</th>
-              <th className="table__actions" />
-            </tr>
-          </thead>
-          <tbody>
-            {potongHalaman(daftar, halaman).map((r) => (
-              <tr key={r.id} className="inbox__baris">
-                <td>{sel(r.id)}</td>
-                <td>{sel(r.reinsurerName)}</td>
-                <td>{selAngka(r.pctShare)}</td>
-                <td>{selAngka(r.komisi)}</td>
-                <td>{selAngka(r.ovrComm)}</td>
-                <td>{sel(r.userId)}</td>
-                <td>{selWaktu(r.tglUpdate)}</td>
-                <td className="table__actions">
-                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => buka(formReinsurerDari(r, operatorKini()))}>
-                    {REINSURER_MCRL.edit}
-                  </button>{' '}
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    onClick={() => {
-                      setSecurity(r)
-                    }}
-                  >
-                    {REINSURER_MCRL.securityReinsurer}
-                  </button>{' '}
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    onClick={() => {
-                      setPesan(null)
-                      hapusan.minta(r.id, r.reinsurerName || r.id)
-                    }}
-                  >
-                    {REINSURER_MCRL.delete}
-                  </button>
-                </td>
+        <div className="mcrl-tabel">
+          <table className="inbox__tabel">
+            <thead>
+              <tr>
+                <th>{REINSURER_MCRL.kolomId}</th>
+                <th>{REINSURER_MCRL.kolomReinsurerName}</th>
+                <th>{REINSURER_MCRL.kolomShare}</th>
+                <th>{REINSURER_MCRL.kolomDiscount}</th>
+                <th>{REINSURER_MCRL.kolomOvrComm}</th>
+                <th>{REINSURER_MCRL.kolomInputor}</th>
+                <th>{REINSURER_MCRL.kolomUpdateDate}</th>
+                <th className="table__actions" />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {potongHalaman(daftar, halaman).map((r) => (
+                <tr key={r.id} className="inbox__baris">
+                  <td>{sel(r.id)}</td>
+                  <td>{sel(r.reinsurerName)}</td>
+                  <td>{selAngka(r.pctShare)}</td>
+                  <td>{selAngka(r.komisi)}</td>
+                  <td>{selAngka(r.ovrComm)}</td>
+                  <td>{sel(r.userId)}</td>
+                  <td>{selWaktu(r.tglUpdate)}</td>
+                  <td className="table__actions">
+                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => buka(formReinsurerDari(r, operatorKini()))}>
+                      {REINSURER_MCRL.edit}
+                    </button>{' '}
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => {
+                        setSecurity(r)
+                      }}
+                    >
+                      {REINSURER_MCRL.securityReinsurer}
+                    </button>{' '}
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => {
+                        setPesan(null)
+                        hapusan.minta(r.id, r.reinsurerName || r.id)
+                      }}
+                    >
+                      {REINSURER_MCRL.delete}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
       {jawab !== null && (
         <p className={kelasTotal(jawab.totalBukan100)} role={jawab.totalBukan100 ? 'alert' : undefined}>

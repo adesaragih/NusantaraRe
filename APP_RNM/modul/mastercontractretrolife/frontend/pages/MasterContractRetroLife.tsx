@@ -123,7 +123,7 @@ export default function MasterContractRetroLife() {
   // Popup di atas halaman awal: tabel tidak dirender, keadaannya (halaman, form) tetap.
   if (kontrakDari !== null) {
     return (
-      <section className="inbox">
+      <section className="inbox mcrl">
         <PanelKontrak
           key={kontrakDari.id}
           tahun={kontrakDari}
@@ -138,7 +138,7 @@ export default function MasterContractRetroLife() {
   const semua = daftar ?? []
 
   return (
-    <section className="inbox">
+    <section className="inbox mcrl">
       <header className="inbox__kepala">
         <h2 className="inbox__judul">{TAHUN_MCRL.judul}</h2>
       </header>
@@ -190,48 +190,50 @@ export default function MasterContractRetroLife() {
       {galat !== null && <Gagal galat={galat} />}
       {daftar !== null && semua.length === 0 && <Kosong pesan={UMUM_MCRL.kosong} />}
       {semua.length > 0 && (
-        <table className="inbox__tabel">
-          <thead>
-            <tr>
-              <th>{TAHUN_MCRL.kolomId}</th>
-              <th>{TAHUN_MCRL.kolomUnderwritingYear}</th>
-              <th>{TAHUN_MCRL.kolomTransactionYear}</th>
-              <th>{TAHUN_MCRL.kolomStartDate}</th>
-              <th>{TAHUN_MCRL.kolomEndDate}</th>
-              <th className="table__actions" />
-            </tr>
-          </thead>
-          <tbody>
-            {potongHalaman(semua, halaman).map((t) => (
-              <tr key={t.id} className="inbox__baris">
-                <td>{sel(t.id)}</td>
-                <td>{sel(t.underwritingYear)}</td>
-                <td>{sel(t.treatyYear)}</td>
-                <td>{selTanggal(t.startDate)}</td>
-                <td>{selTanggal(t.endDate)}</td>
-                <td className="table__actions">
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    title={TAHUN_MCRL.tooltipEdit}
-                    onClick={() => buka(formTahunDari(t, operatorKini(), waktuKini(new Date())))}
-                  >
-                    {TAHUN_MCRL.edit}
-                  </button>{' '}
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    onClick={() => {
-                      setKontrakDari(t)
-                    }}
-                  >
-                    {TAHUN_MCRL.reinsType}
-                  </button>
-                </td>
+        <div className="mcrl-tabel">
+          <table className="inbox__tabel">
+            <thead>
+              <tr>
+                <th>{TAHUN_MCRL.kolomId}</th>
+                <th>{TAHUN_MCRL.kolomUnderwritingYear}</th>
+                <th>{TAHUN_MCRL.kolomTransactionYear}</th>
+                <th>{TAHUN_MCRL.kolomStartDate}</th>
+                <th>{TAHUN_MCRL.kolomEndDate}</th>
+                <th className="table__actions" />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {potongHalaman(semua, halaman).map((t) => (
+                <tr key={t.id} className="inbox__baris">
+                  <td>{sel(t.id)}</td>
+                  <td>{sel(t.underwritingYear)}</td>
+                  <td>{sel(t.treatyYear)}</td>
+                  <td>{selTanggal(t.startDate)}</td>
+                  <td>{selTanggal(t.endDate)}</td>
+                  <td className="table__actions">
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      title={TAHUN_MCRL.tooltipEdit}
+                      onClick={() => buka(formTahunDari(t, operatorKini(), waktuKini(new Date())))}
+                    >
+                      {TAHUN_MCRL.edit}
+                    </button>{' '}
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => {
+                        setKontrakDari(t)
+                      }}
+                    >
+                      {TAHUN_MCRL.reinsType}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </section>
   )

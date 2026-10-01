@@ -46,10 +46,13 @@ describe('kelas CSS modul', () => {
     expect(readFileSync(join(AKAR, 'pages', 'MasterContractRetroLife.tsx'), 'utf8')).toContain("import '../mcrl.css'")
   })
 
-  it('setiap kelas di mcrl.css berawalan mcrl', () => {
+  it('kelas di mcrl.css berawalan mcrl, kecuali kelas bersama inti yang DITIMPA di bawah .mcrl', () => {
+    // UI 02-10-2026: kelas bersama boleh ditimpa HANYA di bawah kelas akar `.mcrl` (dijaga "isolasi CSS
+    // modul" di bawah) dan hanya kelas kerangka inti yang memang dipakai layar modul ini.
+    const BERSAMA = new Set(['inbox__kepala', 'panel', 'inbox__tabel', 'table__actions', 'btn', 'aksi-baris', 'modal', 'modal__actions'])
     const kelas = [...kelasCSS()]
     expect(kelas.length).toBeGreaterThan(5)
-    expect(kelas.filter((k) => !k.startsWith('mcrl'))).toEqual([])
+    expect(kelas.filter((k) => !k.startsWith('mcrl') && !BERSAMA.has(k))).toEqual([])
   })
 
   it('setiap kelas mcrl yang dipakai layar didefinisikan di mcrl.css', () => {
@@ -57,5 +60,42 @@ describe('kelas CSS modul', () => {
     const dipakai = [...kelasTSX()]
     expect(dipakai.length).toBeGreaterThan(5)
     expect(dipakai.filter((k) => !didefinisikan.has(k))).toEqual([])
+  })
+})
+
+/** Pemilih CSS tingkat atas (tanpa komentar; isi @media ikut, kepala @media tidak). */
+function pemilihCSS(css: string): string[] {
+  const tanpaKomentar = css.replace(/\/\*[\s\S]*?\*\//g, '')
+  return [...tanpaKomentar.matchAll(/([^{};]+)\{/g)]
+    .map((m) => (m[1] ?? '').trim())
+    .filter((p) => p !== '' && !p.startsWith('@'))
+    .flatMap((p) => p.split(',').map((s) => s.trim()))
+}
+
+describe('isolasi CSS modul (UI 02-10-2026)', () => {
+  it('SETIAP pemilih di mcrl.css diawali kelas akar .mcrl - nol pemilih global', () => {
+    const pemilih = pemilihCSS(CSS)
+    expect(pemilih.length).toBeGreaterThan(20)
+    expect(pemilih.filter((p) => p !== '.mcrl' && !p.startsWith('.mcrl '))).toEqual([])
+  })
+
+  it('aturan isolasi menggigit: pemilih global tertangkap', () => {
+    const pemilih = pemilihCSS('table { x: 1 } .mcrl .a, .btn { y: 2 } @media (max-width: 640px) { .mcrl-b { z: 3 } }')
+    expect(pemilih.filter((p) => p !== '.mcrl' && !p.startsWith('.mcrl '))).toEqual(['table', '.btn', '.mcrl-b'])
+  })
+
+  it('halaman awal memasang kelas akar mcrl di kedua cabangnya', () => {
+    const kode = readFileSync(join(AKAR, 'pages', 'MasterContractRetroLife.tsx'), 'utf8')
+    expect(kode.match(/<section className="inbox mcrl">/g)?.length).toBe(2)
+    expect(kode).not.toContain('<section className="inbox">')
+  })
+
+  it('setiap tabel modul berada di pembungkus gulir mcrl-tabel', () => {
+    for (const f of berkas().filter((x) => x.endsWith('.tsx'))) {
+      const kode = readFileSync(f, 'utf8')
+      const tabel = kode.match(/<table\b/g)?.length ?? 0
+      const bungkus = kode.match(/<div className="mcrl-tabel">\s*<table\b/g)?.length ?? 0
+      expect(`${f.slice(AKAR.length + 1)}: ${bungkus}/${tabel}`).toBe(`${f.slice(AKAR.length + 1)}: ${tabel}/${tabel}`)
+    }
   })
 })
