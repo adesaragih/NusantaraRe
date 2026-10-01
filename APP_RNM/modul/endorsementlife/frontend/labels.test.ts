@@ -24,6 +24,9 @@ const RINGKAS = 'Section\\ShowLifePremiumSummary_EDM.xml'
 const MODAL_CSV = 'FlowAction\\UploadCSV_LifeEndorsement.xml'
 const HASIL_CSV = 'Section\\ViewCSVResult_LifeEDM.xml'
 const UNDUH_CSV = 'Activity\\GenerateDataDtlLife_act.xml'
+const PUTUSAN = 'Section\\ConfirmSection.xml'
+const TERIMA = 'Section\\ConfirmSubmitEDM.xml'
+const RIWAYAT = 'Activity\\AddHistorySuggest.xml'
 
 type Bukti = readonly [kunci: string, berkas: string, baris: number, tag: string]
 
@@ -81,6 +84,16 @@ export const BUKTI: readonly Bukti[] = [
   ['UNGGAH_EDM.addCsvData', INPUT, 10405, 'pyLabel'],
   ['UNGGAH_EDM.judulModal', MODAL_CSV, 191, 'pyLabel'],
   ['UNGGAH_EDM.generateDataDetail', HASIL_CSV, 14322, 'pyLabel'],
+  ['PUTUSAN_EDM.status', PUTUSAN, 496, 'pyLabelFieldValue'],
+  ['PUTUSAN_EDM.comment', PUTUSAN, 829, 'pyLabelFieldValue'],
+  ['PUTUSAN_EDM.kolomDate', PUTUSAN, 1984, 'pyValue'],
+  ['PUTUSAN_EDM.kolomPic', PUTUSAN, 2125, 'pyValue'],
+  ['PUTUSAN_EDM.kolomStatus', PUTUSAN, 2263, 'pyValue'],
+  ['PUTUSAN_EDM.kolomComment', PUTUSAN, 2399, 'pyValue'],
+  ['PUTUSAN_EDM.submit', INPUT, 37494, 'pyLabel'],
+  ['TERIMA_EDM.terimaKasih', TERIMA, 526, 'pyValue'],
+  ['TERIMA_EDM.noEndorsement', TERIMA, 654, 'pyLabelFieldValue'],
+  ['TERIMA_EDM.close', TERIMA, 1366, 'pyLabel'],
 ]
 
 /** Kunci tanpa baris korpus - beserta alasannya di komentar. */
@@ -105,6 +118,7 @@ export const BUKAN_KORPUS: readonly string[] = [
   'UMUM_EDM.kolomBaris', // tabel penolakan (AC 37: nomor baris dan kolom)
   'UMUM_EDM.kolomKolom', // idem
   'UMUM_EDM.kolomPesan', // idem
+  'UMUM_EDM.memutuskan', // keputusan sedang dikirim
 ]
 
 /** Nilai label untuk kunci `OBJEK.medan`. */
@@ -144,6 +158,13 @@ describe.skipIf(!adaKorpus)('label Endorsement Life berbukti barisnya', () => {
     expect(baca(UNDUH_CSV, 276)).toBe(`<CSVPropHeaders>${KEPALA_UNDUH_CSV.join(',')}</CSVPropHeaders>`)
     expect(baca(UNDUH_CSV, 270)).toBe('<FileName>DetailUpload</FileName>')
     expect(baca(UNDUH_CSV, 272)).toBe('<AppendTimeStampToFileName>true</AppendTimeStampToFileName>')
+  })
+
+  it('kedua Submit berlabel sama (b37494 Confirm, b38109 Decline); opsi radio dari AddHistorySuggest b353', () => {
+    expect(baca(INPUT, 38109)).toBe('<pyLabel>Submit</pyLabel>')
+    const b353 = baca(RIWAYAT, 353)
+    expect(b353).toContain(`.EmailTypePL=1,"${LABEL.OPSI_KEPUTUSAN['1']}","${LABEL.OPSI_KEPUTUSAN['2']}"`)
+    expect(Object.keys(LABEL.OPSI_KEPUTUSAN)).toEqual(['1', '2'])
   })
 
   it('keempat tombol View Old Policy berlabel sama (b64965, b65522, b66083, b66640)', () => {

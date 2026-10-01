@@ -5,6 +5,8 @@
 // hanya di grid Perubahan Data; rekap mata uang per `.Type` (b23064 …) sesudah simpan.
 // Unggah CSV (tiket 07) - wadah b8698 `.EdmType=1 && .EditInput=1`: `Upload CSV` b8973 dan
 // `Add CSV Data` b10405 mati bila `.EditInput1=1` (b8965/b10403, ada baris `New`); `View Upload` b9340.
+// Keputusan (tiket 08) - `ConfirmSection` tampil sesudah `Save` (b35518 `.IsJsonPolis=1`); Confirm
+// menutup dengan `ConfirmSubmitEDM`, Decline kembali ke kotak masuk (`finishAssignment` b38385).
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 
@@ -20,9 +22,11 @@ import {
   type PesertaEDM,
 } from '../api'
 import HasilCSV from '../components/HasilCSV'
+import KeputusanEDM from '../components/KeputusanEDM'
 import PolisLama, { tipePopup } from '../components/PolisLama'
 import RincianPeserta from '../components/RincianPeserta'
 import { TabelKorpus } from '../components/TabelKorpus'
+import TerimaKasih from '../components/TerimaKasih'
 import UnggahCSV, { TabelPesanCSV } from '../components/UnggahCSV'
 import { barisUnggahan } from '../csv'
 import { MATA_UANG } from '../kolomKorpus'
@@ -136,6 +140,7 @@ export default function InputEDMLife({ kasusId, onTutup }: { kasusId: string; on
   const [periksa, setPeriksa] = useState<PeriksaCSVEDM | null>(null)
   const [menambah, setMenambah] = useState(false)
   const [disimpanCSV, setDisimpanCSV] = useState<number | null>(null)
+  const [nomorTerbit, setNomorTerbit] = useState<string | null>(null)
 
   const muatKasus = useCallback(async () => {
     setGalat(null)
@@ -336,6 +341,14 @@ export default function InputEDMLife({ kasusId, onTutup }: { kasusId: string; on
       {kasus.rekap.length > 0 && (
         <TabelKorpus kolom={kolomUang} baris={kasus.rekap} kunci={(b, i) => `${b.CURRENCY ?? ''}-${i}`} />
       )}
+      {terbukaKasus && kasus.sudahSimpan && (
+        <KeputusanEDM
+          kasusId={kasusId}
+          riwayat={kasus.riwayat}
+          onSelesai={(h) => (h.noEndorsement !== '' ? setNomorTerbit(h.noEndorsement) : onTutup())}
+        />
+      )}
+      {nomorTerbit !== null && <TerimaKasih noEndorsement={nomorTerbit} onTutup={onTutup} />}
       {jendelaCSV === 'unggah' && <UnggahCSV kasusId={kasusId} onBerkas={pilihCSV} onTutup={() => setJendelaCSV(null)} />}
       {jendelaCSV === 'hasil' && <HasilCSV baris={barisCSV} onTutup={() => setJendelaCSV(null)} />}
       {polisLama && <PolisLama kasusId={kasusId} tipe={k.TYPE ?? ''} onTutup={() => setPolisLama(false)} />}

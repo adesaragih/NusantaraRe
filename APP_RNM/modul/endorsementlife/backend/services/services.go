@@ -69,6 +69,13 @@ type Gudang interface {
 	AcuanCSV(ctx context.Context, tx *db.Tx, kasusID string) (models.AcuanCSV, bool, error)
 	HapusPesertaBaru(ctx context.Context, tx *db.Tx, kasusID string) (int, error)
 	SisipPesertaCSV(ctx context.Context, tx *db.Tx, kasusID, plNumber string, baris []models.BarisCSV) (int, error)
+	// Tiket 08/04/09/11 - keputusan.
+	Riwayat(ctx context.Context, tx *db.Tx, kasusID string) ([]models.BarisRiwayat, error)
+	SisipRiwayat(ctx context.Context, tx *db.Tx, r models.RiwayatTulis) error
+	AdaVersiResmi(ctx context.Context, tx *db.Tx, nomorPolis string, prodKe int) (bool, error)
+	Resmikan(ctx context.Context, tx *db.Tx, r models.ResmiKasus) (int, error)
+	Tolak(ctx context.Context, tx *db.Tx, kasusID string) error
+	TulisRekapWarisan(ctx context.Context, tx *db.Tx, r repository.RekapWarisanTulis) (int, error)
 }
 
 // Layanan memegang seluruh aturan modul ini di atas satu Gudang.

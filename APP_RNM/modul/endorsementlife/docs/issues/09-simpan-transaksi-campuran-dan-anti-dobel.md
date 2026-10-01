@@ -1,5 +1,10 @@
 # 09: Simpan endorsement — batas transaksi campuran dan penjaga anti-dobel
 
+> **Ralat 01-10-2026** (gelombang 2 brief, `../RALAT-DEV-01-10-2026.md` — ralat mengalahkan isi di bawah). Teks lama yang tidak berlaku:
+> - **E2** — *"Nama tabel lama (`M_LIFE_PREMIUM_DETAIL` / `_SUMMARY`) adalah sistem lama — target tulis sistem baru adalah tujuh tabel PremiumList Life"* → keduanya **juga** ditulis di transaksi yang sama (kontrak Claim Life): rekap `M_LIFE_PREMIUM_SUMMARY` ditulis; peserta `M_LIFE_PREMIUM_DETAIL` menunggu OQ-EDM-016 (**R29**).
+> - **R17/R18** — `LIFEINPRODUCTION` dan `JSON_POLIS` tidak ditulis (OQ-EDM-010; AC 54).
+> - Anti-dobel `(NOPOLIS, PRODKE)` → `T_PREMIUM_LIST (NO_POLIS, PROD_KE)` index `IDX_PL_NOPOLIS_PRODKE`, ditambah pemeriksaan versi berjalan: kasus yang salinannya basi (versi lebih baru resmi sesudah kasus dibuat) ditolak 409.
+
 **Status:** ready-for-agent
 
 **Blocked by:** **00 (kolom EDM + PARENT_ID — PREFACTOR)**, 04 (nomor endorsement), 06 (nilai baris, termasuk yang negatif)

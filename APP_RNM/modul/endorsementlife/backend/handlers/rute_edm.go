@@ -14,6 +14,7 @@
 //	POST /api/endorsement-life/kasus/{id}/simpan             `Save` b37202 → `SetPremi_EDM`
 //	POST /api/endorsement-life/kasus/{id}/unggah             `Upload CSV` b8973 - tinjau, nol tulis (multipart `berkas`)
 //	POST /api/endorsement-life/kasus/{id}/csv                `Add CSV Data` b10405 → `SaveCSVEDMLife`
+//	POST /api/endorsement-life/kasus/{id}/putuskan           `Submit` b37494 / b38109 → `IsLifeAccepted` (Confirm/Decline)
 package handlers
 
 import (
@@ -128,7 +129,8 @@ func jawabGalat(w http.ResponseWriter, err error) bool {
 		// 422: JSON-nya sah, isinya ditolak gerbang - pesan VERBATIM korpus, satu per baris.
 		galat.Tulis(w, http.StatusUnprocessableEntity, services.Pesan(err))
 	case errors.Is(err, services.ErrKasusTerbukaGanda), errors.Is(err, services.ErrSumberWarisanEDM),
-		errors.Is(err, services.ErrKasusTertutup), errors.Is(err, services.ErrSudahDisimpan), errors.Is(err, services.ErrCSVTerkunci):
+		errors.Is(err, services.ErrKasusTertutup), errors.Is(err, services.ErrSudahDisimpan), errors.Is(err, services.ErrCSVTerkunci),
+		errors.Is(err, services.ErrBelumDisimpan), errors.Is(err, services.ErrVersiBerubah):
 		// 409: keadaan DATA menolak - kasus terbuka lain lahir bersamaan, atau
 		// versi berjalan polis belum dapat disalin (OQ-EDM-016).
 		galat.Tulis(w, http.StatusConflict, services.Pesan(err))

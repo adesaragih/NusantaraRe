@@ -96,6 +96,10 @@ type Gudang struct {
 	Galat error
 	// GagalSisipKe - nomor baris CSV yang penyisipannya digagalkan (0 = tidak ada).
 	GagalSisipKe int
+	// RiwayatKasus - baris `T_VIEW_SUGGEST` per kasus.
+	RiwayatKasus map[string][]models.BarisRiwayat
+	// Panggilan - urutan metode tulis keputusan (uji AC 42).
+	Panggilan []string
 }
 
 // Baru menyusun gudang kosong.

@@ -67,4 +67,5 @@ pelaku (401 tanpa), menjawab 503 bila Oracle tidak dikonfigurasi, dan galatnya b
 | `POST /kasus` | `Submit` b4226 → `MappingEDMLife` (kasus `EDMLF-<n>` + salinan versi berjalan + jejak) |
 | `POST /kasus/{id}/unggah` | `Upload CSV` b8973 — tinjau CSV (multipart `berkas`): cacah, penolakan berbaris/berkolom, judul diabaikan; nol tulis |
 | `POST /kasus/{id}/csv` | `Add CSV Data` b10405 → `SaveCSVEDMLife` — baris `New`, tanpa batas baris, satu penolakan menolak seluruh berkas (422 berdaftar pesan) |
+| `POST /kasus/{id}/putuskan` | `Submit` b37494 / b38109 — `{"status":"1"\|"2"\|"7","comment":""}`: riwayat `T_VIEW_SUGGEST`; Confirm = nomor `<polis>/NN`, anti-dobel `(NO_POLIS, PROD_KE)`, versi resmi, rekap warisan; Decline = `Resolved-Rejected`; satu transaksi |
 | `POST /kasus/{id}/simpan` | `Save` b37202 → `SetPremi_EDM` — centang `.EdmBatal` / `DELETE ALL` (`{"pilih":[],"semua":false,"kecuali":[]}`), jurnal balik 32 kolom, rekap mata uang; simpan kedua 409 |

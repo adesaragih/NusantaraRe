@@ -74,4 +74,12 @@ func daftarkanTulis(pasang func(string, rute)) {
 		h, err := l.Simpan(r.Context(), p, r.PathValue("id"), m)
 		tulis(w, h, err)
 	})
+	pasang("POST "+Prefix+"/kasus/{id}/putuskan", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		var m services.MasukanPutusan
+		if bacaBadan(w, r, p, &m, batasBadan) {
+			return
+		}
+		h, err := l.Putuskan(r.Context(), p, r.PathValue("id"), m)
+		tulis(w, h, err)
+	})
 }

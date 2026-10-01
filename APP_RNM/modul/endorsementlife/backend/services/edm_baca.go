@@ -68,6 +68,12 @@ func (l *Layanan) muatKasus(ctx context.Context, id string) (models.Kasus, error
 	if k.Rekap == nil {
 		k.Rekap = []map[string]string{}
 	}
+	if k.Riwayat, err = l.gudang.Riwayat(ctx, nil, id); err != nil {
+		return models.Kasus{}, err
+	}
+	if k.Riwayat == nil {
+		k.Riwayat = []models.BarisRiwayat{}
+	}
 	return k, nil
 }
 

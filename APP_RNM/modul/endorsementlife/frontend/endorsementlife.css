@@ -107,3 +107,23 @@
   flex-direction: column;
   gap: 0.25rem;
 }
+
+.edm-putusan {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.edm-putusan__status {
+  display: flex;
+  gap: 1rem;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.edm-putusan__komentar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}

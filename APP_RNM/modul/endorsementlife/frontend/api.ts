@@ -53,7 +53,18 @@ export interface KasusEDM {
   cacah: Record<string, number>
   /** Rekap mata uang `T_PREMIUM_LIST_SUMMARY` - kolom `models.KolomRekapKasus`. */
   rekap: Array<Record<string, string>>
+  /** Riwayat keputusan `T_VIEW_SUGGEST`, `NO DESC` - grid `ConfirmSection` b1856. */
+  riwayat: RiwayatEDM[]
   sumber: 'aplikasi' | 'warisan' | ''
+}
+
+/** Satu baris riwayat - `models.BarisRiwayat`. */
+export interface RiwayatEDM {
+  no: number
+  date: string
+  pic: string
+  status: string
+  comment: string
 }
 
 /** Satu peserta - `models.Peserta`. `nilai` berkunci nama kolom `T_PREMIUM_LIST_DETAIL`. */
@@ -242,4 +253,23 @@ export async function tambahCSV(id: string, berkas: File): Promise<JawabanTambah
     }
   }
   throw kegagalanDari(j.status, j.teks)
+}
+
+/** Keputusan - `services.MasukanPutusan` (radio `EmailTypePL` + `Comment`). */
+export interface MasukanPutusanEDM {
+  status: string
+  comment: string
+}
+
+/** Hasil keputusan - `services.HasilPutusan`. */
+export interface HasilPutusanEDM {
+  status: string
+  noEndorsement: string
+  peserta: number
+  rekapWarisan: number
+}
+
+/** `Submit` b37494 / b38109 → `IsLifeAccepted`: Confirm meresmikan versi, Decline menutup kasus. */
+export function putuskanKasus(id: string, m: MasukanPutusanEDM): Promise<HasilPutusanEDM> {
+  return minta<HasilPutusanEDM>(`${PREFIX_EDM}/kasus/${encodeURIComponent(id)}/putuskan`, { metode: 'POST', badan: m })
 }

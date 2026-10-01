@@ -30,6 +30,7 @@ export const UMUM_EDM = {
   kolomBaris: 'Row',
   kolomKolom: 'Column',
   kolomPesan: 'Message',
+  memutuskan: 'Submitting…',
 } as const
 
 /** `Section/InboxEndorsementLife.xml` - halaman awal (harness portal `InboxEndorsementLife`). */
@@ -111,6 +112,33 @@ export const UNGGAH_EDM = {
   judulModal: 'Endorsement Life - Upload CSV', // `FlowAction/UploadCSV_LifeEndorsement.xml` b191
   generateDataDetail: 'Generate Data Detail', // `ViewCSVResult_LifeEDM.xml` b14322 → `GenerateDataDtlLife_act`
 } as const
+
+/** Keputusan - `Section/ConfirmSection.xml` (wadah `InputEDMLife.xml` b35518 `.IsJsonPolis=1`). */
+export const PUTUSAN_EDM = {
+  status: 'Status', // b496 radio `EmailTypePL`
+  comment: 'Comment', // b829 `.Description`
+  kolomDate: 'Date', // b1984
+  kolomPic: 'PIC', // b2125
+  kolomStatus: 'Status', // b2263
+  kolomComment: 'Comment', // b2399
+  submit: 'Submit', // `InputEDMLife.xml` b37494 (Confirm) dan b38109 (Decline)
+} as const
+
+/** `Section/ConfirmSubmitEDM.xml` - FlowAction `SetJsonPolisEDMLife_Confirm`. */
+export const TERIMA_EDM = {
+  terimaKasih: 'Thank you for Submit !', // b526
+  noEndorsement: 'No. Endorsement', // b654 `.PremiumListSummary.PL_NUMBER_EDM`
+  close: 'Close', // b1366 → `finishAssignment`
+} as const
+
+/**
+ * Opsi radio `Status` - properti `EmailTypePL` tidak diekspor (R14, OQ-EDM-006); label dari
+ * `Activity/AddHistorySuggest.xml` b353 `@if(.EmailTypePL=1,"Accept","Decline")`. Nilai `7` tidak ditawarkan.
+ */
+export const OPSI_KEPUTUSAN: Readonly<Record<string, string>> = {
+  '1': 'Accept',
+  '2': 'Decline',
+}
 
 /** Label opsi `EDM Type` - spec §5 `[keputusan work owner]` (opsi properti tidak diekspor). */
 export const OPSI_EDM_TYPE: Readonly<Record<string, string>> = {

@@ -127,6 +127,8 @@ type Kasus struct {
 	// Rekap - rekap mata uang kasus (`T_PREMIUM_LIST_SUMMARY`), kunci kolom
 	// `KolomRekapKasus` - grid `InputEDMLife` b23064 / b26077 / b29076 / b32075.
 	Rekap []map[string]string `json:"rekap"`
+	// Riwayat - keputusan sebelumnya (`T_VIEW_SUGGEST`, `NO DESC`), grid `ConfirmSection` b1856.
+	Riwayat []BarisRiwayat `json:"riwayat"`
 	// Sumber - jalur versi lama yang disalin (bab 4 RALAT).
 	Sumber JenisSumber `json:"sumber"`
 	// SumberID - `T_PREMIUM_LIST.ID` versi lama, atau `JSON_POLIS.IDPEGA`.
