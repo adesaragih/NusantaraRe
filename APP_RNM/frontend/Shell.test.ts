@@ -202,10 +202,12 @@ describe('perilaku shell yang ditiru referensi', () => {
 describe('nol halaman dirender di luar Shell', () => {
   it('App merender halaman hanya sebagai anak Shell', () => {
     const app = tanpaKomentar(APP)
-    // ⛔ Sejak F0.6 satu-satunya yang boleh di luar Shell adalah
-    // pernyataan "identitas tidak ada". Form login DIBUANG.
+    // ⛔ Login sungguhan (M_LOGIN_GO, keputusan work owner 01-10-2026): yang
+    // boleh di luar Shell HANYA layar login dan ganti sandi - tidak satu pun
+    // halaman modul.
     const luar = app.slice(0, app.indexOf('<Shell'))
-    expect(luar).toContain('<BelumTersedia')
+    expect(luar).toContain('<Login')
+    expect(luar).toContain('<GantiSandi')
     expect(luar).not.toContain('<RegisterKlaim')
     expect(luar).not.toContain('<KlaimLife')
     expect(luar).not.toContain('<InboxClaimLife')
@@ -215,16 +217,20 @@ describe('nol halaman dirender di luar Shell', () => {
     expect(app.slice(app.indexOf('<Shell'))).toContain('<m.Rute')
   })
 
-  it('nol form login — identitas datang dari env', () => {
-    // `[perintah work owner 27-09-2026]`. Layar masuk tanpa sandi bukan
-    // autentikasi; mempertahankannya hanya menambah langkah yang tidak
-    // memutuskan apa pun.
-    expect(APP).not.toContain('Masuk')
+  it('login sungguhan: sesi dari /api/auth/saya, stub tetap dari env', () => {
+    // Keputusan work owner 01-10-2026 menggantikan perintah 27-09-2026 (tanpa
+    // form login): kini ada akun dan sandi sungguhan (M_LOGIN_GO). Mode stub
+    // tetap untuk pengembangan, tanpa layar login.
+    expect(APP).toContain('ambilSesiSaya()')
+    expect(APP).toContain('bolehMasukStub()')
     expect(APP).toContain('pelakuStub()')
+    // 401 di tengah pemakaian kembali ke layar login.
+    expect(APP).toContain('PERISTIWA_SESI_BERAKHIR')
   })
 
-  it('nol tombol Keluar di Shell — tanpa masuk tidak ada keluar', () => {
-    expect(kode).not.toContain('onKeluar')
+  it('tombol Keluar hanya di login sungguhan — mode stub tidak punya yang dikeluari', () => {
+    expect(kode).toContain('onKeluar ? (')
+    expect(APP).toMatch(/onKeluar=\{\s*stub\s*\?\s*undefined/)
     expect(kode).not.toContain('sesi.hapus')
   })
 

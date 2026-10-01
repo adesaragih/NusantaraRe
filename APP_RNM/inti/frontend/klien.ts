@@ -16,7 +16,7 @@
 // ============================================================================
 
 import { bentukMenuTabel, type MenuTabel } from './lib/daftarMenu'
-import { headerIdentitas } from './store/sesi'
+import { bolehMasukStub, headerIdentitas, PERISTIWA_SESI_BERAKHIR } from './store/sesi'
 
 /** Jawaban GET /healthz. */
 export interface Kesehatan {
@@ -135,6 +135,11 @@ function bukanJSON(status: number): ApiFailure {
  * GILIRAN-12: tiga salinan dalam satu berkas lolos dari penjaga per berkas).
  */
 export function kegagalanDari(status: number, teks: string): ApiFailure {
+  // Login sungguhan: 401 di tengah pemakaian = sesi berakhir (diam 30 menit,
+  // 10 jam, logout di tempat lain, sandi diganti). App kembali ke layar login.
+  if (status === 401 && !bolehMasukStub() && typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(PERISTIWA_SESI_BERAKHIR))
+  }
   let isi: unknown
   if (teks.trim() !== '') {
     try {
@@ -410,4 +415,42 @@ export async function unduhBerkasBeridentitas(jalur: string, namaBerkas: string)
   // Temuan /code-review: mencabut URL di tik yang sama dengan klik dapat membatalkan
   // unduhan (Firefox, Safari) - dicabut sesudah peramban mulai mengunduh.
   setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+// ---------------------------------------------------------------------------
+// Login sungguhan - M_LOGIN_GO (keputusan work owner 01-10-2026). Cookie sesi
+// HttpOnly dipasang dan dibaca backend; layar tidak pernah menyentuhnya, dan
+// sandi tidak pernah disimpan di sisi ini.
+// ---------------------------------------------------------------------------
+
+/** Profil sesi - `inti/backend/login.Profil`. */
+export interface ProfilLogin {
+  akunId: string
+  nama: string
+  /** Workbasket aktif akun itu = perannya. */
+  peran: string[]
+  organisasi: string
+  divisi: string
+  unit: string
+  wajibGantiSandi: boolean
+}
+
+/** `GET /api/auth/saya` - 401 bila belum login atau sesi berakhir. */
+export function ambilSesiSaya(): Promise<ProfilLogin> {
+  return minta<ProfilLogin>('/api/auth/saya')
+}
+
+/** `POST /api/auth/login`. */
+export function masukLogin(akun: string, sandi: string): Promise<ProfilLogin> {
+  return minta<ProfilLogin>('/api/auth/login', { metode: 'POST', badan: { akun, sandi } })
+}
+
+/** `POST /api/auth/logout` - mencabut SEMUA sesi akun itu. */
+export async function keluarLogin(): Promise<void> {
+  await minta<undefined>('/api/auth/logout', { metode: 'POST' })
+}
+
+/** `POST /api/auth/ganti-sandi` - galat sandi dijawab 400, bukan 401. */
+export function gantiSandiLogin(sandiLama: string, sandiBaru: string): Promise<ProfilLogin> {
+  return minta<ProfilLogin>('/api/auth/ganti-sandi', { metode: 'POST', badan: { sandiLama, sandiBaru } })
 }

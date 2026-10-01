@@ -2388,6 +2388,13 @@ table {
   max-width: 100%;
   object-fit: contain;
 }
+/* 01-10-2026 (login M_LOGIN_GO): logo resmi sebagai gambar LATAR - pola
+   `.shell__merek-tanda`, supaya layar tidak memakai `src={...}`. PNG persegi. */
+.login__logo--latar {
+  width: 56px;
+  border-radius: 12px;
+  background: url('./assets/logo-nusantara-re.png') center / contain no-repeat;
+}
 /* §1.2 ronde 269 (A.8) — JUDUL kartu.
 
    Acuan memakai blok kop bertingkat: wordmark, lalu judul, lalu satu

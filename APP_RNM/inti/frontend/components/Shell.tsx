@@ -118,6 +118,13 @@ export interface ShellProps<H extends string> {
   menu: readonly EntriMenu<H>[]
   /** Pembacaan `GET /api/menu` (M_NAV_MENU): `null` = memuat. */
   menuTabel: KeadaanMenuTabel
+  /**
+   * Login sungguhan (M_LOGIN_GO, 01-10-2026): tombol Keluar dan Ganti sandi
+   * di menu profil. Tidak diberikan = mode stub - identitas dari env, tidak
+   * ada yang dapat dikeluari.
+   */
+  onKeluar?: () => void
+  onGantiSandi?: () => void
 }
 
 export function Shell<H extends string>({
@@ -127,6 +134,8 @@ export function Shell<H extends string>({
   children,
   menu,
   menuTabel,
+  onKeluar,
+  onGantiSandi,
 }: ShellProps<H>) {
   // Menu tabel dipotong modul frontend - SATU hasil untuk sidebar dan palet.
   const tersusun = useMemo(
@@ -497,7 +506,7 @@ export function Shell<H extends string>({
                   {inisial(masuk.akunID)}
                 </span>
                 <span className="shell__profil-teks" aria-hidden="true">
-                  <strong>{masuk.akunID}</strong>
+                  <strong>{masuk.nama ?? masuk.akunID}</strong>
                   <span>{sebutanPeran}</span>
                 </span>
                 <span className="shell__profil-panah" aria-hidden="true">
@@ -515,9 +524,22 @@ export function Shell<H extends string>({
                       </li>
                     ))}
                   </ul>
-                  {/* ⛔ Tombol Keluar DIBUANG: tanpa masuk tidak ada keluar.
-                      Identitas datang dari env saat aplikasi menyala. */}
-                  <p className="shell__profil-stub">{KERANGKA.modeStub}</p>
+                  {/* Login sungguhan: Keluar dan Ganti sandi. Mode stub: identitas
+                      dari env saat aplikasi menyala - tidak ada yang dikeluari. */}
+                  {onKeluar ? (
+                    <div className="shell__profil-aksi">
+                      {onGantiSandi && (
+                        <button type="button" className="btn" onClick={onGantiSandi}>
+                          {KERANGKA.gantiSandi}
+                        </button>
+                      )}
+                      <button type="button" className="btn" onClick={onKeluar}>
+                        {KERANGKA.keluar}
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="shell__profil-stub">{KERANGKA.modeStub}</p>
+                  )}
                 </div>
               )}
             </div>

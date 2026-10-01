@@ -119,11 +119,52 @@ export const KERANGKA = {
   profil: 'Profil',
   keBeranda: 'ke Beranda',
   modeStub: 'mode stub',
+  /** `[tidak ada di korpus]` — login M_LOGIN_GO (keputusan work owner 01-10-2026). */
+  keluar: 'Keluar',
+  /** `[tidak ada di korpus]` */
+  gantiSandi: 'Ganti sandi',
   /** `[tidak ada di korpus]` — `GET /api/menu` sedang dibaca (menu dari M_NAV_MENU). */
   memuatMenu: 'Memuat menu…',
   /** `[tidak ada di korpus]` — `GET /api/menu` menjawab, tetapi tak satu baris pun dapat tampil. */
   menuKosong: 'Menu kosong — M_NAV_MENU tidak memuat baris aktif yang dapat dibuka di sini.',
 } as const
+
+/**
+ * Label halaman login dan ganti sandi — `M_LOGIN_GO`, keputusan work owner
+ * 01-10-2026.
+ *
+ * ⚠️ `[tidak ada di korpus]` `[kerangka aplikasi]`: tampilannya kartu login
+ * `REFERENSI_UI` (ronde 277), teksnya berbahasa Indonesia seperti `KERANGKA`.
+ * Pesan gagal dipilih dari STATUS jawaban, bukan dari teks backend.
+ */
+export const LOGIN = {
+  judul: 'Masuk',
+  sub: 'Masukkan akun dan sandi Anda.',
+  akun: 'Akun',
+  sandi: 'Sandi',
+  masuk: 'Masuk',
+  memproses: 'Memeriksa…',
+  memuatSesi: 'Memeriksa sesi…',
+  bantuan: 'Lupa sandi atau belum punya akses? Hubungi IT.',
+  salah: 'Akun atau sandi salah.',
+  terkunci: 'Akun terkunci sementara sesudah 5 kali sandi salah. Coba lagi 15 menit lagi.',
+  tidakTersedia: 'Login belum dapat dipakai di server ini. Hubungi IT.',
+  gagal: 'Login gagal. Coba lagi, atau hubungi IT bila berulang.',
+  cobaLagi: 'Coba lagi',
+  judulGanti: 'Ganti sandi',
+  wajibGanti: 'Sandi sementara harus diganti sebelum melanjutkan.',
+  sandiLama: 'Sandi saat ini',
+  sandiBaru: 'Sandi baru',
+  ulangiSandi: 'Ulangi sandi baru',
+  simpanSandi: 'Simpan sandi',
+  minimal: 'Minimal 10 karakter.',
+  tidakSama: 'Kedua sandi baru tidak sama.',
+  lamaSalah: 'Sandi saat ini salah.',
+  batal: 'Batal',
+} as const
+
+/** Panjang sandi minimal — sama dengan `login.PanjangMinSandi` di backend. */
+export const PANJANG_MIN_SANDI = 10
 
 // ---------------------------------------------------------------------------
 // Peran dan nama produk - refactor bentuk B (30-09-2026): pindah apa adanya
