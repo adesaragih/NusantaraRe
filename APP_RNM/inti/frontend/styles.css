@@ -5908,9 +5908,10 @@ textarea.field__input {
 /* ======================================================================
    SIDEBAR DAN TOPBAR BERGAYA SOFT UI: permintaan work owner 02-10-2026
    "sekarang ubah tema nav bar dan headernya", lalu "aku kurang suka
-   coloring nya, perbaiki buat lebih bagus dan menarik dan elegan".
-   PALET ELEGAN: putih bersih bertepi tipis, butir aktif bertinta ungu
-   lembut dengan garis aksen #6d4fd8, lencana chip bertinta, tombol topbar
+   coloring nya, perbaiki buat lebih bagus dan menarik dan elegan", lalu "ganti/perbaiki warna yg pake ungu atau
+   lavender di semua menu".
+   PALET ELEGAN: putih bersih bertepi tipis, butir aktif bertinta biru
+   lembut dengan garis aksen biru navy #2b44b0, lencana chip bertinta, tombol topbar
    putih bertepi tipis berbayang halus, kotak cari kapsul abu sangat muda.
    Kontras token teks minimal 4,5:1 terhadap latarnya, dijaga
    temalogin.guard.test.
@@ -5928,16 +5929,16 @@ textarea.field__input {
   --sb-pembatas: #eef0f5;
   --sb-teks: #344054;
   --sb-teks-redup: #98a2b3;
-  --sb-judul: #6a5ac0;
-  --sb-hover: #f6f5fb;
-  --sb-aktif: #f4f1ff;
-  --sb-aktif-tepi: #e6e0fb;
-  --sb-aktif-teks: #4b32b8;
-  --sb-aksen: #6d4fd8;
-  --sb-lencana: #f4f3f9;
-  --sb-lencana-tepi: #e9e5f7;
-  --sb-lencana-teks: #5a3fc4;
-  --sb-lencana-aktif: #6d4fd8;
+  --sb-judul: #4a5aa8;
+  --sb-hover: #f5f7fc;
+  --sb-aktif: #eef1fb;
+  --sb-aktif-tepi: #dbe2f7;
+  --sb-aktif-teks: #1f3592;
+  --sb-aksen: #2b44b0;
+  --sb-lencana: #f2f4fa;
+  --sb-lencana-tepi: #e2e7f3;
+  --sb-lencana-teks: #2339a3;
+  --sb-lencana-aktif: #2b44b0;
   --sb-lencana-aktif-teks: #ffffff;
   --sb-timbul: 0 1px 2px rgba(16, 24, 40, 0.06);
   border-right: 1px solid var(--sb-garis);
@@ -5949,16 +5950,16 @@ textarea.field__input {
   --sb-pembatas: #232a3a;
   --sb-teks: #d9dbe7;
   --sb-teks-redup: #7d8598;
-  --sb-judul: #b9a8f5;
+  --sb-judul: #9fb0f0;
   --sb-hover: #1d2232;
-  --sb-aktif: #241f3d;
-  --sb-aktif-tepi: #3a3266;
-  --sb-aktif-teks: #e9e2ff;
-  --sb-aksen: #a58cff;
+  --sb-aktif: #1c2546;
+  --sb-aktif-tepi: #33437f;
+  --sb-aktif-teks: #e3e9ff;
+  --sb-aksen: #8ea2f5;
   --sb-lencana: #222839;
   --sb-lencana-tepi: #2f3749;
-  --sb-lencana-teks: #c9b8ff;
-  --sb-lencana-aktif: #6d4fd8;
+  --sb-lencana-teks: #aebcff;
+  --sb-lencana-aktif: #3b55c9;
   --sb-lencana-aktif-teks: #ffffff;
   --sb-timbul: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
@@ -5970,7 +5971,7 @@ textarea.field__input {
   color: var(--sb-teks);
 }
 
-/* Butir menu: kapsul bersudut lembut. Aktif: bertinta ungu lembut + garis aksen kiri. */
+/* Butir menu: kapsul bersudut lembut. Aktif: bertinta biru lembut + garis aksen kiri. */
 .shell__sidebar .shell__butir {
   border-radius: 12px;
   color: var(--sb-teks);
@@ -6004,7 +6005,7 @@ textarea.field__input {
   outline-offset: 1px;
 }
 
-/* Lencana inisial modul: chip bertinta bertepi tipis; aktif: ungu penuh. */
+/* Lencana inisial modul: chip bertinta bertepi tipis; aktif: biru navy penuh. */
 .shell__sidebar .kelompok__lencana {
   border-radius: 8px;
   background: var(--sb-lencana);
@@ -6014,7 +6015,7 @@ textarea.field__input {
 .shell__sidebar .shell__butir--aktif > .kelompok__lencana {
   background: var(--sb-lencana-aktif);
   color: var(--sb-lencana-aktif-teks);
-  box-shadow: 0 2px 6px -2px rgba(109, 79, 216, 0.6);
+  box-shadow: 0 2px 6px -2px rgba(43, 68, 176, 0.5);
 }
 /* Belum dimigrasi: rata tanpa bayangan, jadi jelas tidak bisa diklik. */
 .shell__sidebar .shell__butir--nonaktif,
@@ -6056,13 +6057,13 @@ textarea.field__input {
   --tb-tepi: #e4e7ee;
   --tb-teks: #101828;
   --tb-teks-redup: #5b6478;
-  --tb-aksen: #6d4fd8;
-  --tb-aksen-garis: #cfc4f7;
-  --tb-hover: #f6f5fb;
+  --tb-aksen: #2b44b0;
+  --tb-aksen-garis: #c3cdf2;
+  --tb-hover: #f5f7fc;
   --tb-tombol: #ffffff;
   --tb-cari: #f7f8fa;
-  --tb-avatar: #f4f1ff;
-  --tb-avatar-teks: #4b32b8;
+  --tb-avatar: #eef1fb;
+  --tb-avatar-teks: #1f3592;
   --tb-timbul: 0 1px 2px rgba(16, 24, 40, 0.06);
   --tb-cekung: inset 0 1px 2px rgba(16, 24, 40, 0.06);
   border-bottom: 1px solid var(--tb-garis);
@@ -6073,19 +6074,19 @@ textarea.field__input {
   --tb-tepi: #2f3749;
   --tb-teks: #eef0f6;
   --tb-teks-redup: #a9b1c3;
-  --tb-aksen: #a58cff;
-  --tb-aksen-garis: #4a3f80;
+  --tb-aksen: #8ea2f5;
+  --tb-aksen-garis: #3a4b8f;
   --tb-hover: #1d2232;
   --tb-tombol: #192030;
   --tb-cari: #141927;
-  --tb-avatar: #241f3d;
-  --tb-avatar-teks: #e9e2ff;
+  --tb-avatar: #1c2546;
+  --tb-avatar-teks: #e3e9ff;
   --tb-timbul: 0 1px 2px rgba(0, 0, 0, 0.4);
   --tb-cekung: inset 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 
 /* Tombol ikon (menu, mode gelap) dan pemicu cari di ponsel: bulat putih
-   bertepi tipis. Sakelar mode gelap yang tertekan: bertinta ungu. */
+   bertepi tipis. Sakelar mode gelap yang tertekan: bertinta biru. */
 .shell__topbar .shell__ikon,
 .shell__topbar .shell__cari {
   border: 1px solid var(--tb-tepi);
@@ -6116,7 +6117,7 @@ textarea.field__input {
   outline-offset: 2px;
 }
 
-/* Profil: kapsul putih berisi avatar lavender; nama dan panah baru tampil
+/* Profil: kapsul putih berisi avatar biru muda; nama dan panah baru tampil
    mulai 1024px, jadi padding kanan ikut melebar di situ. */
 .shell__topbar .shell__profil-pemicu {
   padding: 4px;
@@ -6177,11 +6178,12 @@ textarea.field__input {
    KELOLA USER BERGAYA SOFT UI: permintaan work owner 02-10-2026 "coba
    implementasi dengan mengikuti rekomendasi kamu, ubah hanya menu kelola
    user saja", lalu "aku kurang suka coloring nya, perbaiki buat lebih
-   bagus dan menarik dan elegan". PALET ELEGAN: akar sebagai lembar putih
+   bagus dan menarik dan elegan", lalu "ganti/perbaiki warna yg pake
+   ungu atau lavender di semua menu". PALET ELEGAN: akar sebagai lembar putih
    bertepi tipis dengan bayangan lembut berlapis; tabel sebagai SATU kartu
    putih, baris rata; isian putih bertepi tipis; tombol kapsul, utama merah
    bergradasi halus; status sebagai chip bertinta warna statusnya; tab form
-   sebagai kontrol bersegmen; aksen ungu dalam #6d4fd8.
+   sebagai kontrol bersegmen; aksen biru navy template #2b44b0.
    - teks tetap gelap dan tebal normal; kontras token teks dan chip
      minimal 4,5:1 (WCAG AA);
    - tombol sekunder, isian, dan chip punya tepi tipis, jadi tetap
@@ -6197,27 +6199,27 @@ textarea.field__input {
   --ku-latar: #ffffff;
   --ku-latar-tepi: #e9ebf2;
   --ku-kartu: #ffffff;
-  --ku-lembut: #f9f8fe;
-  --ku-lembut-tepi: #ece8fb;
+  --ku-lembut: #f7f9fd;
+  --ku-lembut-tepi: #e3e8f5;
   --ku-teks: #101828;
   --ku-teks-redup: #5b6478;
-  --ku-aksen: #6d4fd8;
-  --ku-aksen-teks: #5a3fc4;
-  --ku-aksen-lembut: #f4f1ff;
-  --ku-aksen-garis: #cfc4f7;
+  --ku-aksen: #2b44b0;
+  --ku-aksen-teks: #2339a3;
+  --ku-aksen-lembut: #eef1fb;
+  --ku-aksen-garis: #c3cdf2;
   --ku-kepala-tabel: #f8f9fc;
-  --ku-baris-hover: #faf8ff;
+  --ku-baris-hover: #f6f8fd;
   --ku-garis: #eef0f5;
   --ku-tepi: #e4e7ee;
   --ku-tombol: #d63a42;
   --ku-tombol-ujung: #bf2f37;
   --ku-tombol-hover: #c2333b;
   --ku-tombol-hover-ujung: #a9282f;
-  --ku-bayang-lembar: 0 1px 2px rgba(16, 24, 40, 0.04), 0 18px 40px -28px rgba(30, 27, 75, 0.22);
-  --ku-timbul: 0 1px 2px rgba(16, 24, 40, 0.05), 0 10px 28px -20px rgba(30, 27, 75, 0.2);
+  --ku-bayang-lembar: 0 1px 2px rgba(16, 24, 40, 0.04), 0 18px 40px -28px rgba(16, 24, 60, 0.2);
+  --ku-timbul: 0 1px 2px rgba(16, 24, 40, 0.05), 0 10px 28px -20px rgba(16, 24, 60, 0.18);
   --ku-timbul-kecil: 0 1px 2px rgba(16, 24, 40, 0.06);
   --ku-cekung: inset 0 1px 2px rgba(16, 24, 40, 0.05);
-  --ku-cincin: 0 0 0 4px rgba(109, 79, 216, 0.14);
+  --ku-cincin: 0 0 0 4px rgba(43, 68, 176, 0.14);
   --ku-bayang-tombol: 0 1px 2px rgba(16, 24, 40, 0.08), 0 8px 16px -10px rgba(214, 58, 66, 0.7);
   --ku-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.35);
   --ku-sukses-latar: #ecfdf3;
@@ -6232,7 +6234,7 @@ textarea.field__input {
   --ku-waspada-latar: #fffaeb;
   --ku-waspada-tepi: #fedf89;
   --ku-waspada-teks: #b54708;
-  --ku-judul-golongan: #5a3fc4;
+  --ku-judul-golongan: #2339a3;
   --text-3: var(--ku-teks-redup);
   color: var(--ku-teks);
   padding: 24px;
@@ -6247,23 +6249,23 @@ textarea.field__input {
   --ku-latar: #151a26;
   --ku-latar-tepi: #252c3b;
   --ku-kartu: #192030;
-  --ku-lembut: #1c1d33;
-  --ku-lembut-tepi: #2f2b4d;
+  --ku-lembut: #1a2033;
+  --ku-lembut-tepi: #2a3555;
   --ku-teks: #eef0f6;
   --ku-teks-redup: #a9b1c3;
-  --ku-aksen: #a58cff;
-  --ku-aksen-teks: #c9b8ff;
-  --ku-aksen-lembut: #241f3d;
-  --ku-aksen-garis: #4a3f80;
+  --ku-aksen: #8ea2f5;
+  --ku-aksen-teks: #aebcff;
+  --ku-aksen-lembut: #1c2546;
+  --ku-aksen-garis: #3a4b8f;
   --ku-kepala-tabel: #1c2333;
-  --ku-baris-hover: #211f37;
+  --ku-baris-hover: #1c2338;
   --ku-garis: #252c3b;
   --ku-tepi: #2f3749;
   --ku-bayang-lembar: 0 1px 2px rgba(0, 0, 0, 0.4), 0 18px 40px -28px rgba(0, 0, 0, 0.8);
   --ku-timbul: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 28px -20px rgba(0, 0, 0, 0.7);
   --ku-timbul-kecil: 0 1px 2px rgba(0, 0, 0, 0.35);
   --ku-cekung: inset 0 1px 2px rgba(0, 0, 0, 0.35);
-  --ku-cincin: 0 0 0 4px rgba(165, 140, 255, 0.18);
+  --ku-cincin: 0 0 0 4px rgba(142, 162, 245, 0.18);
   --ku-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.7);
   --ku-sukses-latar: #0d2a1f;
   --ku-sukses-tepi: #1d5c40;
@@ -6277,7 +6279,7 @@ textarea.field__input {
   --ku-waspada-latar: #2b2112;
   --ku-waspada-tepi: #6b4d17;
   --ku-waspada-teks: #fec84b;
-  --ku-judul-golongan: #c9b8ff;
+  --ku-judul-golongan: #aebcff;
 }
 
 .kelola-user .inbox__judul,
@@ -6295,7 +6297,7 @@ textarea.field__input {
   outline-offset: 2px;
 }
 
-/* Isian: putih bertepi tipis, fokus ungu bercincin lembut. */
+/* Isian: putih bertepi tipis, fokus biru bercincin lembut. */
 .kelola-user .field__input {
   background: var(--ku-kartu);
   border: 1px solid var(--ku-tepi);
@@ -6312,7 +6314,7 @@ textarea.field__input {
   outline: none;
 }
 
-/* Tombol kapsul. Utama: merah bergradasi halus. Sekunder: putih bertepi tipis; disorot: ungu lembut. */
+/* Tombol kapsul. Utama: merah bergradasi halus. Sekunder: putih bertepi tipis; disorot: biru lembut. */
 .kelola-user .btn {
   border-radius: 999px;
 }
@@ -6499,11 +6501,12 @@ textarea.field__input {
    BERANDA BERGAYA SOFT UI: permintaan work owner 02-10-2026 "tema pada
    kelola user diterapkan pada beranda, treaty contract out, master
    contract retro life, hanya pada 3 modul ini", lalu "aku kurang suka
-   coloring nya, perbaiki buat lebih bagus dan menarik dan elegan".
+   coloring nya, perbaiki buat lebih bagus dan menarik dan elegan", lalu "ganti/perbaiki warna yg pake ungu atau
+   lavender di semua menu".
    PALET ELEGAN: akar sebagai lembar putih bertepi tipis; kotak angka
    antrean, kartu Modul, dan kartu Peran sebagai kartu putih berbayang
    lembut; tabel rata di dalam kartu; status sebagai chip bertinta; tautan
-   modul sebagai tombol kapsul; ikon peran lavender; aksen ungu #6d4fd8.
+   modul sebagai tombol kapsul; ikon peran biru muda; aksen biru navy template #2b44b0.
    Kontras token teks dan chip minimal 4,5:1 (WCAG AA). Token `--br-*`
    dibatasi di kelas akar `.beranda`; `--text-3` inti ditimpa di akar ini
    saja. TANPA backdrop-filter, filter, atau transform. Dijaga
@@ -6513,27 +6516,27 @@ textarea.field__input {
   --br-latar: #ffffff;
   --br-latar-tepi: #e9ebf2;
   --br-kartu: #ffffff;
-  --br-lembut: #f9f8fe;
-  --br-lembut-tepi: #ece8fb;
+  --br-lembut: #f7f9fd;
+  --br-lembut-tepi: #e3e8f5;
   --br-teks: #101828;
   --br-teks-redup: #5b6478;
-  --br-aksen: #6d4fd8;
-  --br-aksen-teks: #5a3fc4;
-  --br-aksen-lembut: #f4f1ff;
-  --br-aksen-garis: #cfc4f7;
+  --br-aksen: #2b44b0;
+  --br-aksen-teks: #2339a3;
+  --br-aksen-lembut: #eef1fb;
+  --br-aksen-garis: #c3cdf2;
   --br-kepala-tabel: #f8f9fc;
-  --br-baris-hover: #faf8ff;
+  --br-baris-hover: #f6f8fd;
   --br-garis: #eef0f5;
   --br-tepi: #e4e7ee;
   --br-tombol: #d63a42;
   --br-tombol-ujung: #bf2f37;
   --br-tombol-hover: #c2333b;
   --br-tombol-hover-ujung: #a9282f;
-  --br-bayang-lembar: 0 1px 2px rgba(16, 24, 40, 0.04), 0 18px 40px -28px rgba(30, 27, 75, 0.22);
-  --br-timbul: 0 1px 2px rgba(16, 24, 40, 0.05), 0 10px 28px -20px rgba(30, 27, 75, 0.2);
+  --br-bayang-lembar: 0 1px 2px rgba(16, 24, 40, 0.04), 0 18px 40px -28px rgba(16, 24, 60, 0.2);
+  --br-timbul: 0 1px 2px rgba(16, 24, 40, 0.05), 0 10px 28px -20px rgba(16, 24, 60, 0.18);
   --br-timbul-kecil: 0 1px 2px rgba(16, 24, 40, 0.06);
   --br-cekung: inset 0 1px 2px rgba(16, 24, 40, 0.05);
-  --br-cincin: 0 0 0 4px rgba(109, 79, 216, 0.14);
+  --br-cincin: 0 0 0 4px rgba(43, 68, 176, 0.14);
   --br-bayang-tombol: 0 1px 2px rgba(16, 24, 40, 0.08), 0 8px 16px -10px rgba(214, 58, 66, 0.7);
   --br-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.35);
   --br-sukses-latar: #ecfdf3;
@@ -6548,7 +6551,7 @@ textarea.field__input {
   --br-waspada-latar: #fffaeb;
   --br-waspada-tepi: #fedf89;
   --br-waspada-teks: #b54708;
-  --br-ikon: #f4f1ff;
+  --br-ikon: #eef1fb;
   --text-3: var(--br-teks-redup);
   color: var(--br-teks);
   padding: 24px;
@@ -6561,23 +6564,23 @@ textarea.field__input {
   --br-latar: #151a26;
   --br-latar-tepi: #252c3b;
   --br-kartu: #192030;
-  --br-lembut: #1c1d33;
-  --br-lembut-tepi: #2f2b4d;
+  --br-lembut: #1a2033;
+  --br-lembut-tepi: #2a3555;
   --br-teks: #eef0f6;
   --br-teks-redup: #a9b1c3;
-  --br-aksen: #a58cff;
-  --br-aksen-teks: #c9b8ff;
-  --br-aksen-lembut: #241f3d;
-  --br-aksen-garis: #4a3f80;
+  --br-aksen: #8ea2f5;
+  --br-aksen-teks: #aebcff;
+  --br-aksen-lembut: #1c2546;
+  --br-aksen-garis: #3a4b8f;
   --br-kepala-tabel: #1c2333;
-  --br-baris-hover: #211f37;
+  --br-baris-hover: #1c2338;
   --br-garis: #252c3b;
   --br-tepi: #2f3749;
   --br-bayang-lembar: 0 1px 2px rgba(0, 0, 0, 0.4), 0 18px 40px -28px rgba(0, 0, 0, 0.8);
   --br-timbul: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 28px -20px rgba(0, 0, 0, 0.7);
   --br-timbul-kecil: 0 1px 2px rgba(0, 0, 0, 0.35);
   --br-cekung: inset 0 1px 2px rgba(0, 0, 0, 0.35);
-  --br-cincin: 0 0 0 4px rgba(165, 140, 255, 0.18);
+  --br-cincin: 0 0 0 4px rgba(142, 162, 245, 0.18);
   --br-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.7);
   --br-sukses-latar: #0d2a1f;
   --br-sukses-tepi: #1d5c40;
@@ -6591,7 +6594,7 @@ textarea.field__input {
   --br-waspada-latar: #2b2112;
   --br-waspada-tepi: #6b4d17;
   --br-waspada-teks: #fec84b;
-  --br-ikon: #241f3d;
+  --br-ikon: #1c2546;
 }
 
 
@@ -6617,7 +6620,7 @@ textarea.field__input {
   border-radius: 18px;
   box-shadow: var(--br-timbul);
 }
-/* Kotak angka antrean: angka besar tegas, ikon tahap ungu. */
+/* Kotak angka antrean: angka besar tegas, ikon tahap biru. */
 .beranda .beranda__antrean-angka {
   color: var(--br-teks);
   font-family: "Poppins", var(--font);
@@ -6661,7 +6664,7 @@ textarea.field__input {
   color: var(--br-netral-teks);
 }
 
-/* Tautan modul: tombol kapsul putih berteks ungu. */
+/* Tautan modul: tombol kapsul putih berteks biru. */
 .beranda .beranda__kartu-tautan {
   margin: 0;
   padding: 6px 14px;
@@ -6677,7 +6680,7 @@ textarea.field__input {
   text-decoration: none;
 }
 
-/* Kartu Peran: garis antar peran tipis, ikon perisai lavender. */
+/* Kartu Peran: garis antar peran tipis, ikon perisai biru muda. */
 .beranda .beranda__peran-daftar li {
   border-top-color: var(--br-garis);
 }

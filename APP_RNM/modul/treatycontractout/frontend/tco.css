@@ -148,10 +148,11 @@
 /* ================================================================ soft UI
    Permintaan work owner 02-10-2026: "tema pada kelola user diterapkan pada beranda, treaty contract
    out, master contract retro life, hanya pada 3 modul ini", lalu "aku kurang suka coloring nya,
-   perbaiki buat lebih bagus dan menarik dan elegan". PALET ELEGAN: akar sebagai lembar putih bertepi
+   perbaiki buat lebih bagus dan menarik dan elegan", lalu "ganti/perbaiki warna yg pake ungu atau
+   lavender di semua menu". PALET ELEGAN: akar sebagai lembar putih bertepi
    tipis dengan bayangan lembut berlapis (bukan bayangan dua arah di atas latar abu), panel sebagai
-   kartu putih, panel di dalam panel bertinta ungu lembut, tabel rata di dalam kartu, isian putih
-   bertepi tipis, tombol kapsul (utama merah bergradasi halus), aksen ungu dalam #6d4fd8. Kontras: token
+   kartu putih, panel di dalam panel bertinta biru lembut, tabel rata di dalam kartu, isian putih
+   bertepi tipis, tombol kapsul (utama merah bergradasi halus), aksen biru navy template #2b44b0. Kontras: token
    teks minimal 4,5:1 terhadap latarnya, dijaga gaya.test. TANPA backdrop-filter, filter, atau
    transform: properti itu mengurung popup `position: fixed` (bug popup tidak di tengah 02-10-2026).
    Token `--mt-*` hanya di kelas akar .tco; tema gelap ditimpa di `:root[data-theme="dark"] .tco`.
@@ -160,27 +161,27 @@
   --mt-latar: #ffffff;
   --mt-latar-tepi: #e9ebf2;
   --mt-kartu: #ffffff;
-  --mt-lembut: #f9f8fe;
-  --mt-lembut-tepi: #ece8fb;
+  --mt-lembut: #f7f9fd;
+  --mt-lembut-tepi: #e3e8f5;
   --mt-teks: #101828;
   --mt-teks-redup: #5b6478;
-  --mt-aksen: #6d4fd8;
-  --mt-aksen-teks: #5a3fc4;
-  --mt-aksen-lembut: #f4f1ff;
-  --mt-aksen-garis: #cfc4f7;
+  --mt-aksen: #2b44b0;
+  --mt-aksen-teks: #2339a3;
+  --mt-aksen-lembut: #eef1fb;
+  --mt-aksen-garis: #c3cdf2;
   --mt-kepala-tabel: #f8f9fc;
-  --mt-baris-hover: #faf8ff;
+  --mt-baris-hover: #f6f8fd;
   --mt-garis: #eef0f5;
   --mt-tepi: #e4e7ee;
   --mt-tombol: #d63a42;
   --mt-tombol-ujung: #bf2f37;
   --mt-tombol-hover: #c2333b;
   --mt-tombol-hover-ujung: #a9282f;
-  --mt-bayang-lembar: 0 1px 2px rgba(16, 24, 40, 0.04), 0 18px 40px -28px rgba(30, 27, 75, 0.22);
-  --mt-timbul: 0 1px 2px rgba(16, 24, 40, 0.05), 0 10px 28px -20px rgba(30, 27, 75, 0.2);
+  --mt-bayang-lembar: 0 1px 2px rgba(16, 24, 40, 0.04), 0 18px 40px -28px rgba(16, 24, 60, 0.2);
+  --mt-timbul: 0 1px 2px rgba(16, 24, 40, 0.05), 0 10px 28px -20px rgba(16, 24, 60, 0.18);
   --mt-timbul-kecil: 0 1px 2px rgba(16, 24, 40, 0.06);
   --mt-cekung: inset 0 1px 2px rgba(16, 24, 40, 0.05);
-  --mt-cincin: 0 0 0 4px rgba(109, 79, 216, 0.14);
+  --mt-cincin: 0 0 0 4px rgba(43, 68, 176, 0.14);
   --mt-bayang-tombol: 0 1px 2px rgba(16, 24, 40, 0.08), 0 8px 16px -10px rgba(214, 58, 66, 0.7);
   --mt-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.35);
   --text-3: var(--mt-teks-redup);
@@ -195,23 +196,23 @@
   --mt-latar: #151a26;
   --mt-latar-tepi: #252c3b;
   --mt-kartu: #192030;
-  --mt-lembut: #1c1d33;
-  --mt-lembut-tepi: #2f2b4d;
+  --mt-lembut: #1a2033;
+  --mt-lembut-tepi: #2a3555;
   --mt-teks: #eef0f6;
   --mt-teks-redup: #a9b1c3;
-  --mt-aksen: #a58cff;
-  --mt-aksen-teks: #c9b8ff;
-  --mt-aksen-lembut: #241f3d;
-  --mt-aksen-garis: #4a3f80;
+  --mt-aksen: #8ea2f5;
+  --mt-aksen-teks: #aebcff;
+  --mt-aksen-lembut: #1c2546;
+  --mt-aksen-garis: #3a4b8f;
   --mt-kepala-tabel: #1c2333;
-  --mt-baris-hover: #211f37;
+  --mt-baris-hover: #1c2338;
   --mt-garis: #252c3b;
   --mt-tepi: #2f3749;
   --mt-bayang-lembar: 0 1px 2px rgba(0, 0, 0, 0.4), 0 18px 40px -28px rgba(0, 0, 0, 0.8);
   --mt-timbul: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 28px -20px rgba(0, 0, 0, 0.7);
   --mt-timbul-kecil: 0 1px 2px rgba(0, 0, 0, 0.35);
   --mt-cekung: inset 0 1px 2px rgba(0, 0, 0, 0.35);
-  --mt-cincin: 0 0 0 4px rgba(165, 140, 255, 0.18);
+  --mt-cincin: 0 0 0 4px rgba(142, 162, 245, 0.18);
   --mt-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.7);
 }
 
@@ -231,7 +232,7 @@
   outline-offset: 2px;
 }
 
-/* Isian: putih bertepi tipis, fokus ungu bercincin lembut. */
+/* Isian: putih bertepi tipis, fokus biru bercincin lembut. */
 .tco .field__input {
   background: var(--mt-kartu);
   border: 1px solid var(--mt-tepi);
@@ -248,7 +249,7 @@
   outline: none;
 }
 
-/* Tombol kapsul. Utama: merah bergradasi halus. Sekunder: putih bertepi tipis; disorot: ungu lembut. */
+/* Tombol kapsul. Utama: merah bergradasi halus. Sekunder: putih bertepi tipis; disorot: biru lembut. */
 .tco .btn {
   border-radius: 999px;
 }
@@ -295,7 +296,7 @@
   border-radius: 12px;
 }
 
-/* Panel: kartu putih bertepi tipis. Panel di dalam panel: bertinta ungu lembut, jadi jenjangnya
+/* Panel: kartu putih bertepi tipis. Panel di dalam panel: bertinta biru lembut, jadi jenjangnya
    terbaca tanpa bayangan bertumpuk. */
 .tco .panel {
   background: var(--mt-kartu);
@@ -310,7 +311,7 @@
   box-shadow: none;
 }
 
-/* Tabel: rata di dalam kartu; kepala abu sangat muda, garis baris tipis, sorot baris ungu samar. Kolom
+/* Tabel: rata di dalam kartu; kepala abu sangat muda, garis baris tipis, sorot baris biru samar. Kolom
    aksi yang menempel ikut warna kartu supaya tidak tampak sebagai pita. */
 .tco .tco-tabel {
   border-color: var(--mt-latar-tepi);
