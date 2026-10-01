@@ -411,14 +411,15 @@ func (g *Gudang) VersiBerjalan(ctx context.Context, tx *db.Tx, nomorPolis string
 		if err != nil {
 			return models.Versi{}, false, fmt.Errorf("repository: membaca versi %s polis %q: %w", j.jenis, nomorPolis, err)
 		}
-		var up int
+		// Urutan Pega hanya bahan NOMOR (K3): yang tak terurai = -1 (tidak diketahui), BUKAN galat - gerbang,
+		// pembuatan kasus, dan popup polis lama tetap berjalan; `models.NomorEndorsement` yang menolaknya.
+		up := models.UrutanPegaTakDiketahui
 		if j.dariNomor {
-			up, err = models.UrutanDariNomor(urutan.String)
-		} else {
-			up, err = strconv.Atoi(strings.TrimSpace(urutan.String))
-		}
-		if err != nil {
-			return models.Versi{}, false, fmt.Errorf("repository: urutan Pega versi %s %q polis %q: %w", j.jenis, id.String, nomorPolis, err)
+			if n, e := models.UrutanDariNomor(urutan.String); e == nil {
+				up = n
+			}
+		} else if n, e := strconv.Atoi(strings.TrimSpace(urutan.String)); e == nil {
+			up = n
 		}
 		terbaik = models.LebihBaru(terbaik, models.Versi{
 			Jenis: j.jenis, ID: id.String, ProdKe: prodKe, EdmType: strings.TrimSpace(edm.String), UrutanPega: up,

@@ -293,6 +293,9 @@ func sqlSalinSpreadingRetro(retro, spreading, peserta string) string {
 // `IDPEGA` versi itu, TANPA baris `Delete` - `MappingEDMLife` 10 b2339 salin halaman (PRE=false, selalu),
 // 11.1 b2583 baris selain `Delete` → `"Old"` (b2609; prakondisi b2691 `.EDMStatus=="Delete"` T=3 = lewati),
 // 11.2 b2737 buang `.EDMStatus=="Delete"` (b2831). Peserta new business (status NULL) selalu lolos.
+// ⚠️ Dibandingkan sesudah `TRIM`, seperti penyaring hidup Claim Life (`TRIM(EDMSTATUS)`): Pega membandingkan
+// nilai halaman apa adanya, tetapi baris warisan ber-`'Delete '` berspasi ada - tanpa `TRIM` peserta yang
+// sudah dihapus hidup kembali sebagai `Old`, sementara Claim Life menganggapnya mati.
 // Penyaring status EDM warisan ini diizinkan sejak penjaga Claim Life dipersempit ke `modul/claimlife/`
 // (K5 keputusan work owner 01-10-2026, OQ-EDM-016, `6047ca8`) - sebelumnya versi endorsement sistem lama
 // ditolak.
@@ -308,7 +311,7 @@ func sqlSalinPesertaWarisan(peserta, warisan string) string {
 	return fmt.Sprintf(`INSERT INTO %s (ID, PREMIUM_LIST_ID, PARENT_ID, ID_PEGA, PL_NUMBER, EDM_STATUS, %s)
 	SELECT %s, :2, NULL, :3, m.PL_NUMBER, :4, %s
 	  FROM %s m
-	 WHERE m.PL_NUMBER = :5 AND m.IDPEGA = :6 AND (m.EDMSTATUS IS NULL OR m.EDMSTATUS <> :7)`,
+	 WHERE m.PL_NUMBER = :5 AND m.IDPEGA = :6 AND NVL(TRIM(m.EDMSTATUS), '-') <> :7`,
 		peserta, strings.Join(kolomNilaiPeserta, ", "), idBaru(":1", "W", "m.ID"), strings.Join(sumber, ", "), warisan)
 }
 

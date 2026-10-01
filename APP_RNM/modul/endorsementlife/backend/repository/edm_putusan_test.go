@@ -182,7 +182,16 @@ func TestProduksiWarisanDariKorpus(t *testing.T) {
 	}
 	kepala := map[string]string{}
 	for _, k := range models.KolomKepalaSalin {
-		kepala["pyWorkPage."+k.Properti] = k.Kolom
+		if k.Tanggal {
+			kepala["pyWorkPage."+k.Properti] = "TRUNC(p." + k.Kolom + ")" // To_date(…, 'DD/MM/YYYY')
+		} else {
+			kepala["pyWorkPage."+k.Properti] = "p." + k.Kolom
+		}
+	}
+	// Butir yang bukan properti kepala: penampung, pembuat, dan rumus CARI24.
+	lain := map[string]string{
+		"pyWorkPage.pzInsKey": ":1", "pyWorkPage.PolicyNo": ":2", "pyWorkPage.PremiumListSummary.PL_NUMBER_EDM": ":3",
+		"pyWorkPage.pxCreateOpName": "p.CREATE_OP_NAME",
 	}
 	for i, n := range nilai {
 		k := KolomProduksiWarisan[i]
@@ -194,12 +203,24 @@ func TestProduksiWarisanDariKorpus(t *testing.T) {
 			continue
 		}
 		asal := properti[n[1]+"."+n[2]]
-		if kol, ada := kepala[asal]; ada && !strings.Contains(mau, "p."+kol) {
-			t.Errorf("%s: korpus %s ← %s (kolom kepala %s), kode %q", k, n[2], asal, kol, mau)
+		harap, ada := kepala[asal]
+		if !ada {
+			harap, ada = lain[asal]
 		}
-		if _, ada := kepala[asal]; !ada {
-			// Bukan properti kepala: pengenal kasus, nomor polis, nomor endorsement, pembuat, nama jenis ceding.
-			t.Logf("%s ← %s %s: %s", k, n[2], asal, mau)
+		if !ada && strings.HasPrefix(asal, "@if(pyWorkPage.TypeCeding=") {
+			harap, ada = "CASE p.TYPE_CEDING "+kasusJenisCeding()+" END", true
+			for kode, nama := range models.NamaJenisCeding {
+				if !strings.Contains(asal, `TypeCeding="`+kode+`","`+nama+`"`) {
+					t.Errorf("CARI24 tanpa %s → %s: %s", kode, nama, asal)
+				}
+			}
+		}
+		if !ada {
+			t.Errorf("%s ← %s %q: sumber tak dikenal uji ini", k, n[2], asal)
+			continue
+		}
+		if mau != harap {
+			t.Errorf("%s: korpus %s ← %s, mau %q, kode %q", k, n[2], asal, harap, mau)
 		}
 	}
 }
@@ -276,7 +297,13 @@ func TestPesertaWarisanEDMDariKorpus(t *testing.T) {
 		case m[1] == "":
 			mau = "SEQ"
 		case strings.HasPrefix(m[0], "To_date("):
-			mau = "TANGGAL"
+			x := strings.TrimPrefix(m[1], "TempValue.")
+			x = strings.Replace(x, "RETROCESSION_VALUATION_", "RETRO_VALUATION_", 1) // nama kolom 052
+			if x == "STNC" || x == "WPC" {
+				mau = "TO_DATE(d." + x + ", 'DD/MM/YYYY')" // teks dd/mm/yyyy di 052
+			} else {
+				mau = "TRUNC(d." + x + ")"
+			}
 		case m[1] == "TempInputDetail.CARI47":
 			mau = "d.STATUS_OLD" // 11.4/11.5: Old → 1, selain itu 0 - ditetapkan Resmikan lebih dulu
 		case m[1] == "TempInputDetail.CARI48":
@@ -300,8 +327,6 @@ func TestPesertaWarisanEDMDariKorpus(t *testing.T) {
 		switch mau {
 		case "SEQ":
 			ok = k == "ID" && got == ""
-		case "TANGGAL":
-			ok = strings.HasPrefix(got, "TRUNC(d.") || strings.HasPrefix(got, "TO_DATE(d.")
 		case "NULL":
 			ok = got == "NULL"
 		case "d.EDMStatus":

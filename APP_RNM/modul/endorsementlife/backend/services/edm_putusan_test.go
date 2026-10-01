@@ -194,11 +194,14 @@ func TestNomorEndorsementPertamaDanKeduaPolisNBWarisan(t *testing.T) {
 
 	// Rantai Pega: NB (kosong) + endorsement warisan `/01` (`PRODKE` 1) → endorsement sistem baru `/02`, versi 2.
 	g = tiruan.Baru()
-	g.PolisWarisan = append(g.PolisWarisan, &tiruan.PolisWarisan{IDPega: "UJI-IDPEGA-NB", NoPolis: "UJI-PL-W", ProdKe: 0},
-		&tiruan.PolisWarisan{IDPega: "UJI-IDPEGA-E1", NoPolis: "UJI-PL-W", ProdKe: 1, EdmType: "1"})
+	// ⚠️ Kedua baris sama-sama versi 1 (NVL): pemenangnya TGL_INPUT terbaru (sqlVersiWarisan), bukan ID terkecil -
+	// ID-nya sengaja diurutkan berlawanan.
+	g.PolisWarisan = append(g.PolisWarisan, &tiruan.PolisWarisan{IDPega: "UJI-IDPEGA-A", NoPolis: "UJI-PL-W", ProdKe: 0,
+		TglInput: "2026-01-01 08:00:00"},
+		&tiruan.PolisWarisan{IDPega: "UJI-IDPEGA-Z", NoPolis: "UJI-PL-W", ProdKe: 1, EdmType: "1", TglInput: "2026-03-01 08:00:00"})
 	l, _ = layananJejak(g)
 	kasus("EDMLF-13", 2)
-	if v, _, _ := g.VersiBerjalan(ctx, nil, "UJI-PL-W", 0); v.ID != "UJI-IDPEGA-E1" || v.UrutanPega != 1 {
+	if v, _, _ := g.VersiBerjalan(ctx, nil, "UJI-PL-W", 0); v.ID != "UJI-IDPEGA-Z" || v.UrutanPega != 1 {
 		t.Fatalf("versi berjalan rantai Pega: %+v", v)
 	}
 	if h, err := l.Putuskan(ctx, pelakuUji, "EDMLF-13", services.MasukanPutusan{Status: "1"}); err != nil || h.NoEndorsement != "UJI-PL-W/02" {
@@ -233,14 +236,6 @@ func TestPutuskanMenulisProduksiWarisan(t *testing.T) {
 	}
 }
 
-// penyaringClaimLifeTiruan - penyaring hidup Claim Life (`penyaringHidup`: NULL ATAU `TRIM(EDMSTATUS) NOT IN
-// ('Batal', 'Delete')`) DITIRU di uji ini, tidak diimpor; kesetaraannya dengan sumber Claim Life dijaga
-// `models.TestStatusPesertaSejalanPenyaringClaimLife`.
-func penyaringClaimLifeTiruan(edmstatus string) bool {
-	v := strings.TrimSpace(edmstatus)
-	return v == "" || (v != "Batal" && v != "Delete")
-}
-
 // K5 keputusan work owner 01-10-2026 (OQ-EDM-016): Confirm menulis SETIAP peserta kasus - Old, New, Delete -
 // ke `M_LIFE_PREMIUM_DETAIL` (`SaveMasterLPDet` 11.6 b5098, PRE=false b5118 → selalu jalan) sesudah 11.2–11.5
 // (STATUS/STATUSOLD) dan sebelum rekap 12; baris Delete/Batal tersimpan tetapi TIDAK lolos penyaring Claim Life.
@@ -266,25 +261,47 @@ func TestPutuskanMenulisPesertaWarisan(t *testing.T) {
 		if b["EDMSTATUS"] == models.StatusOld {
 			mauLama = "1"
 		}
-		if b["STATUSOLD"] != mauLama || b["EM_PERCENT"] != "" || b["RISK"] != "" {
-			t.Errorf("STATUSOLD / CARI49-50 kosong: %+v", b)
+		if b["STATUSOLD"] != mauLama {
+			t.Errorf("STATUSOLD: %+v", b)
 		}
-		lolos[b["EDMSTATUS"]] = penyaringClaimLifeTiruan(b["EDMSTATUS"])
+		// Penyaring Claim Life DITIRU lewat `models.StatusHidup` - kesetaraannya dengan teks `penyaringHidup`
+		// Claim Life dijaga `models.TestStatusPesertaSejalanPenyaringClaimLife` (dibaca dari sumbernya, tidak diimpor).
+		lolos[b["EDMSTATUS"]] = models.StatusHidup(b["EDMSTATUS"])
 	}
 	if !lolos[models.StatusOld] || !lolos[models.StatusNew] || lolos[models.StatusDelete] {
 		t.Errorf("penyaring Claim Life atas baris tertulis: %v", lolos)
 	}
 	for _, v := range []string{models.StatusBatal, " Batal ", models.StatusDelete} {
-		if penyaringClaimLifeTiruan(v) {
+		if models.StatusHidup(v) {
 			t.Errorf("%q lolos penyaring Claim Life", v)
 		}
 	}
-	if !penyaringClaimLifeTiruan("") {
+	if !models.StatusHidup("") {
 		t.Error("peserta new business (EDMSTATUS NULL) harus lolos")
 	}
 	// Decline: nol baris warisan.
 	g, l, _ = gudangPutusan(t)
 	if _, err := l.Putuskan(ctx, pelakuUji, "EDMLF-1", services.MasukanPutusan{Status: "2"}); err != nil || len(g.PesertaWarisanTertulis) != 0 {
 		t.Errorf("Decline: %v %d", err, len(g.PesertaWarisanTertulis))
+	}
+}
+
+// Code review 01-10-2026: versi resmi berakhiran nomor tak terurai TIDAK menggagalkan gerbang/pembacaan versi
+// (dulu VersiBerjalan galat untuk semua pemanggil); hanya penomoran Confirm yang menolak, dengan kalimat.
+func TestUrutanPegaTakDiketahuiHanyaMenahanNomor(t *testing.T) {
+	ctx := context.Background()
+	g, l, _ := gudangPutusan(t)
+	g.Polis["EDMLF-0"] = &tiruan.Polis{ID: "EDMLF-0", NoPolis: "UJI-PL-1", OldPolicyNo: "UJI-PL-1", EdmType: "1", ProdKe: 1,
+		PLNumberEDM: "UJI-PL-1/A", Status: models.StatusKasusSelesai}
+	v, ada, err := g.VersiBerjalan(ctx, nil, "UJI-PL-1", 0)
+	if err != nil || !ada || v.UrutanPega != models.UrutanPegaTakDiketahui {
+		t.Fatalf("versi berjalan: %+v %v %v", v, ada, err)
+	}
+	if k, err := l.Kelayakan(ctx, pelakuUji, services.MasukanKelayakan{NomorPolis: "UJI-PL-1", EdmType: "1"}); err != nil {
+		t.Errorf("kelayakan tidak boleh gagal: %+v %v", k, err)
+	}
+	if _, err := l.Putuskan(ctx, pelakuUji, "EDMLF-1", services.MasukanPutusan{Status: "1"}); err == nil ||
+		!strings.Contains(err.Error(), "next endorsement number cannot be derived") {
+		t.Errorf("Confirm: %v", err)
 	}
 }

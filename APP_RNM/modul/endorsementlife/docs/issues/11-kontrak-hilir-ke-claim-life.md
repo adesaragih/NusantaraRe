@@ -117,7 +117,7 @@ modul menunggu OQ-EDM-016"* tidak berlaku lagi.
 | AC | Bukti |
 | --- | --- |
 | Baris endorsement — termasuk negatif — ke `M_LIFE_PREMIUM_DETAIL` **dan** `M_LIFE_PREMIUM_SUMMARY` | `TulisPesertaWarisan` + `TulisRekapWarisan`; db: baris `Delete` `GROSS_PREMIUM_REFUND` −7,25 |
-| `Batal`/`Delete` tidak muncul di jalur baca klaim; NB (NULL) tetap muncul | `TestPutuskanMenulisPesertaWarisan` (penyaring Claim Life DITIRU, tidak diimpor) + db `TestPutuskanTerhadapOracle` (`COUNT` hidup 2 dari 3) + `models.TestStatusPesertaSejalanPenyaringClaimLife` (kesetaraan dengan teks `penyaringHidup` Claim Life) |
+| `Batal`/`Delete` tidak muncul di jalur baca klaim; NB (NULL) tetap muncul | `TestPutuskanMenulisPesertaWarisan` (penyaring Claim Life DITIRU, tidak diimpor) + db `TestPutuskanTerhadapOracle` (`COUNT` hidup 2 dari 3) + `models.TestStatusPesertaSejalanPenyaringClaimLife` (kesetaraan dengan teks `penyaringHidup` Claim Life) *(diperjelas code review 01-10-2026: yang dibuktikan adalah baris yang DITULIS modul ini — uji `db` menghitung baris ber-`IDPEGA` kasus itu saja)* |
 | `STATUS`/`STATUSOLD` bukan penanda hidup | `models.TestStatusJenisBukanPenandaHidup` |
 | Jalur akuntansi tidak menyaring | rekap 12 menjumlah seluruh peserta kasus (tidak berubah) |
 | Ditemukan lewat `PL_NUMBER_EDM` maupun `PL_NUMBER` | kedua kolom ditulis (`:1`, `:2`) |
@@ -127,3 +127,12 @@ modul menunggu OQ-EDM-016"* tidak berlaku lagi.
 b249/b250) tidak pernah ditetapkan `InsertJsonPolisLife_Act` 11.1 (CARI12 ditetapkan `.EM_PERCENT` lalu ditimpa
 `.GROSS_PREMIUM_REFUND`) — baris endorsement Pega di tabel warisan ber-`EM_PERCENT`/`RISK` NULL, dan begitu pula yang ditulis
 modul ini. Jalur new business PremiumList mengisi keduanya.
+
+⚠️ **Risiko hilir untuk pemilik Claim Life (code review 01-10-2026, tidak diperbaiki di modul ini):** seperti Pega,
+Confirm hanya MENYISIP baris versi baru (`SaveMasterLPDet` satu-satunya rule korpus Endorsement yang menyentuh
+`M_LIFE_PREMIUM_DETAIL`; nol `UPDATE`/`DELETE` atas baris versi lama). Baris versi sebelumnya — new business ber-`EDMSTATUS`
+NULL, atau `Old`/`New` endorsement lama — tetap HIDUP bagi penyaring Claim Life. Akibatnya pencarian peserta klaim berkunci
+`PL_NUMBER` (+ `CERTIFICATE_NO`, `AmbilUntukKlaim` `FETCH FIRST 1 ROWS ONLY` tanpa `ORDER BY`) dapat memilih baris pra-endorsement,
+dan sertifikat yang di-`Delete` endorsement tetap terlihat lewat baris NB-nya. Ini sudah berlaku untuk endorsement buatan Pega
+di DEV; pemilihan versi di jalur baca klaim milik konteks Claim Life (kontrak §14) — diserahkan, bukan ditebak di sini.
+

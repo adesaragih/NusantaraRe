@@ -59,8 +59,12 @@ const (
 // StatusHidup menjawab apakah peserta berstatus EDM ini masih ditanggung -
 // penyaring hilir Claim Life (spec §14): kosong/NULL, `Old`, `New` hidup;
 // `Delete`, `Batal` mati. ⛔ Kosong HIDUP: baris new business tidak pernah
-// mengisi kolom ini (AC 48a).
-func StatusHidup(s string) bool { return s != StatusDelete && s != StatusBatal }
+// mengisi kolom ini (AC 48a). Dibandingkan sesudah TRIM, seperti `TRIM(EDMSTATUS)` penyaring Claim Life
+// (code review 01-10-2026: `" Batal "` berspasi dulu terbaca hidup di sini, mati di Claim Life).
+func StatusHidup(s string) bool {
+	v := strings.TrimSpace(s)
+	return v != StatusDelete && v != StatusBatal
+}
 
 // Status kerja kasus (`pyStatusWork` → `T_PREMIUM_LIST.STATUSS`, RALAT R20).
 // Kosong = terbuka; kedua nilai akhir VERBATIM `Flow/InputEDMLife.xml`.
@@ -160,6 +164,11 @@ var KolomJurnalBalik = []string{
 // `NVL(PRODKE, 1)`) - TERPISAH dari nomor, sehingga NB warisan ber-`PRODKE` kosong (versi 1) bernomor
 // pertama `/01`, bukan `/02`.
 //
+// ⚠️ Yang PERSIS Pega adalah rumus sesudah versi berjalan dipilih. Versi berjalan sendiri dipilih
+// `PRODKE DESC` (lalu `TGL_INPUT DESC`), bukan `TGL_INPUT desc` `GetProdKeOldData_SQL` - penyimpangan sadar 1
+// (RALAT R19): bila `PRODKE` warisan tidak sejalan dengan urutan sisip, kedua pembaca Pega sendiri memberi
+// `PRODKE` berbeda, dan sistem ini memakai satu urutan.
+//
 // ⛔ BUKAN dari `PROC_GENERATE_SEQUENCE_NUMBER` (ADR-0006 tidak berlaku).
 // Mengembalikan nomor dan `PRODKE` versi baru.
 func NomorEndorsement(nomorPolis string, v Versi) (string, int, error) {
@@ -171,7 +180,8 @@ func NomorEndorsement(nomorPolis string, v Versi) (string, int, error) {
 		return "", 0, fmt.Errorf("models: current production number %d is not a version", v.ProdKe)
 	}
 	if v.UrutanPega < 0 {
-		return "", 0, fmt.Errorf("models: current Pega production number %d is negative", v.UrutanPega)
+		return "", 0, fmt.Errorf("models: the Pega production number of the current version %q is unknown "+
+			"(its endorsement number has no numeric suffix); the next endorsement number cannot be derived", v.ID)
 	}
 	cari14 := strconv.Itoa(v.UrutanPega + 1)
 	if len(cari14) == 1 {
@@ -179,6 +189,9 @@ func NomorEndorsement(nomorPolis string, v Versi) (string, int, error) {
 	}
 	return np + "/" + cari14, v.ProdKe + 1, nil
 }
+
+// UrutanPegaTakDiketahui - Versi.UrutanPega bila akhiran nomor versi itu tak terurai.
+const UrutanPegaTakDiketahui = -1
 
 // UrutanDariNomor - urutan Pega endorsement sistem baru = akhiran nomornya (angka sesudah `/` terakhir).
 // Nomor tanpa akhiran angka = galat (data rusak), bukan nol diam-diam.

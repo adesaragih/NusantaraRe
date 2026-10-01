@@ -35,6 +35,7 @@ type Versi struct {
 	// (`GenerateNoEDM_Life` `Local.Prodke` bertipe int b278); new business sistem baru = 0; endorsement
 	// sistem baru = akhiran nomornya (Pega menulis `PRODKE = InputData.CARI4` - `InsertJsonPolisEDM` b101 -
 	// angka yang sama dengan akhiran nomor). ⛔ Hanya untuk nomor; urutan versi tetap ProdKe.
+	// UrutanPegaTakDiketahui bila akhiran nomor versi itu tak terurai.
 	UrutanPega int
 	// EdmType - maksud endorsement versi itu; kosong pada new business.
 	// Gerbang 4: memuat `3` = polis sudah pernah Batal (`GetEdmTypeLife`).
