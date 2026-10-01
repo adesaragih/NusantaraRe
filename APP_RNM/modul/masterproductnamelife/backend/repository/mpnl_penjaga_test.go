@@ -211,7 +211,7 @@ func kolomCadangan(kolom []string) []string {
 
 // semuaKolomFisik - kolom tabel yang disebut SQL modul ini (bertambah tiap paket).
 func semuaKolomFisik() [][]string {
-	return [][]string{KolomProduk, KolomInward}
+	return append([][]string{KolomProduk, KolomInward}, KolomMaster()...)
 }
 
 func TestMPNLNolKataCadanganOracle(t *testing.T) {
@@ -290,5 +290,53 @@ func TestMPNLAturanTiruanMenggigit(t *testing.T) {
 	}
 	if imporTiruan("../../backend/services/x_test.go", isi) {
 		t.Error("impor tiruan dari uji sah")
+	}
+}
+
+// --- master dibaca saja; sumber rate tidak dibaca ------------------------------
+
+var polaTulis = regexp.MustCompile(`(?i)\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|DELETE|MERGE\s+INTO)\b`)
+
+// tulisMaster - fungsi yang menulis DAN menyebut objek master.
+func tulisMaster(isi string) []string {
+	var hasil []string
+	for _, blok := range strings.Split(isi, "\nfunc ") {
+		if !polaTulis.MatchString(blok) {
+			continue
+		}
+		for _, m := range DaftarMasterDibacaSaja {
+			if regexp.MustCompile(`\b` + m + `\b`).MatchString(blok) {
+				hasil = append(hasil, m)
+			}
+		}
+	}
+	return hasil
+}
+
+func TestMPNLMasterDibacaSaja(t *testing.T) {
+	for jalur, isi := range kodeProduksi(t) {
+		if !strings.Contains(jalur, "/repository/") {
+			continue
+		}
+		if m := tulisMaster(isi); len(m) > 0 {
+			t.Errorf("%s menulis master %v - master rujukan dibaca saja", jalur, m)
+		}
+	}
+}
+
+func TestMPNLAturanMasterMenggigit(t *testing.T) {
+	isi := "\nfunc sqlX(t string) string {\n\treturn fmt.Sprintf(`UPDATE %s SET NAME = :1`, t) // CLIENT\n}\n"
+	if len(tulisMaster(isi)) == 0 {
+		t.Error("UPDATE yang menyebut CLIENT seharusnya tertangkap")
+	}
+}
+
+// TestMPNLNolPembacaSumberRate - OQ-MPNL-03: view atas JSON rate tidak dibaca
+// sampai disetujui (`RATE_LIFE`, `RATE_LIFE_SUMMARY`, `M_RATE_LIFE`).
+func TestMPNLNolPembacaSumberRate(t *testing.T) {
+	for jalur, isi := range kodeProduksi(t) {
+		if strings.Contains(isi, "RATE_LIFE") {
+			t.Errorf("%s menyebut RATE_LIFE - sumber R/I Rate dan View Rate menunggu persetujuan (OQ-MPNL-03)", jalur)
+		}
 	}
 }

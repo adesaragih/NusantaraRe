@@ -5,6 +5,7 @@
 //
 //	GET  /api/master-product-name-life/produk        grid `InboxProductName` (halaman awal)
 //	GET  /api/master-product-name-life/produk/{id}   tombol `View` b74753
+//	GET  /api/master-product-name-life/master/{jenis}?cari=  tujuh pemilih master (`Choose*`, PARITAS §4)
 package handlers
 
 import (
@@ -14,6 +15,7 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/galat"
+	"nusantarare/modul/masterproductnamelife/backend/models"
 	"nusantarare/modul/masterproductnamelife/backend/services"
 )
 
@@ -65,6 +67,11 @@ func daftarkanBaca(pasang func(string, rute)) {
 		pr, err := l.AmbilProduk(r.Context(), p, r.PathValue("id"))
 		tulis(w, pr, err)
 	})
+	// Tujuh pemilih master (paket 2): `Choose*` → section → grid RD; juga autocomplete medan form.
+	pasang("GET "+Prefix+"/master/{jenis}", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		d, err := l.CariMaster(r.Context(), p, models.JenisMaster(r.PathValue("jenis")), r.URL.Query().Get("cari"))
+		tulisDaftar(w, d, err)
+	})
 }
 
 // jawabanDaftar adalah badan jawaban daftar sederhana.
@@ -103,8 +110,15 @@ func jawabGalat(w http.ResponseWriter, err error) bool {
 		galat.Tulis(w, http.StatusUnauthorized, "request without user identity is rejected")
 	case errors.Is(err, inti.ErrTanpaWewenang):
 		galat.Tulis(w, http.StatusForbidden, "insufficient permission")
-	case errors.Is(err, services.ErrProdukTidakAda):
+	case errors.Is(err, services.ErrProdukTidakAda), errors.Is(err, services.ErrJenisMasterTidakDikenal):
 		galat.Tulis(w, http.StatusNotFound, services.Pesan(err))
+	case errors.Is(err, services.ErrRIRateMenungguPersetujuan):
+		// 503 berkalimat: sumber R/I Rate menunggu persetujuan (OQ-MPNL-03).
+		galat.Tulis(w, http.StatusServiceUnavailable, services.Pesan(err))
+	case errors.Is(err, services.ErrMasterTidakTerbaca):
+		// 503: master rujukan tidak terbaca - pesannya MENYEBUT objeknya, sebab Oracle hanya di log.
+		log.Printf("master product name life: %v", err)
+		galat.Tulis(w, http.StatusServiceUnavailable, services.Pesan(err))
 	case errors.Is(err, services.ErrIdentitasGanda), errors.Is(err, services.ErrJSONRusak):
 		// 500 berkalimat: keadaan DATA yang harus diperbaiki DBA, disebut terang.
 		log.Printf("master product name life: %v", err)

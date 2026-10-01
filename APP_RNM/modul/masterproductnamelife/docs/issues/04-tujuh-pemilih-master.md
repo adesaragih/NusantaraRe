@@ -90,3 +90,16 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+---
+
+## Ralat bertanggal 01-10-2026 — sesi implementasi (paket 2)
+
+> Sumber: `../RALAT-DEV-30-09-2026.md` (R18) dan `../PARITAS-LAYAR-DAN-AKSI.md` §4. Kalimat di atas **tidak dihapus**.
+
+| Kalimat lama | Ralat |
+| --- | --- |
+| *"Ketujuh nilai dipilih dari **masternya masing-masing**"*; *"Ketujuh daftar dibaca dari basis data"* | enam dibangun dari RD-nya (`GET /api/master-product-name-life/master/{ceding,sob,pemegang-polis,mata-uang,ri-risk,penyebab}?cari=`), saringan dan urutan VERBATIM RD, batas baris = `pyMaxRecords`. **R/I Rate** (`BrowseRateLifeSummary`, view atas JSON rate) menjawab **503 berkalimat** sampai OQ-MPNL-03 dijawab (R18) |
+| *"Pemilih pemegang polis dapat **dicari**"* | ketujuh pemilih punya medan `Search` (`SearchPolicyHolder.CARI1`), dihurufbesarkan `SearchPolicyHolder_act` b234 — bukan hanya pemegang polis |
+| Tabel sumber tidak disebut | objek fisik = nama kelas (`AGENT`, `CLIENT`, `CURRENCY`, `RIRISK_LIFE_SUMMARY`, `CAUSEOFLOSS_LIFE`) — OQ-MPNL-04; objek yang tidak ada = 503 yang menyebut objeknya |
+| *"Pilihan yang **tidak ada** di master **ditolak**"*; *"Nama … dapat **dibangun ulang** dari identitasnya"* | ditegakkan saat simpan (paket 3–4): nilai yang **berubah** dari yang tersimpan diperiksa ke masternya dan namanya ditulis dari master |

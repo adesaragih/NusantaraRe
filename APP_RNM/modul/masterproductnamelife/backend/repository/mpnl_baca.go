@@ -26,6 +26,9 @@ import (
 	"nusantarare/modul/masterproductnamelife/backend/models"
 )
 
+// MaksBarisGrid - `pyMaxRecords` RD `BrowseProduct_Life` b1078.
+const MaksBarisGrid = 500
+
 var (
 	// ErrTidakAda - produk tidak ada di `M_PRODUCT_LIFE`.
 	ErrTidakAda = errors.New("repository: product not found")
@@ -35,7 +38,8 @@ var (
 )
 
 func sqlDaftarProduk(tabel string) string {
-	return fmt.Sprintf(`SELECT ID, JSONDATA FROM %s ORDER BY ID ASC`, tabel)
+	// Batas baris = `pyMaxRecords` 500 `BrowseProduct_Life` b1078.
+	return fmt.Sprintf(`SELECT ID, JSONDATA FROM %s ORDER BY ID ASC FETCH FIRST %d ROWS ONLY`, tabel, MaksBarisGrid)
 }
 
 func sqlAmbilProduk(tabel string, kunci bool) string {

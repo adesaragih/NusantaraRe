@@ -19,6 +19,7 @@ import (
 type Gudang interface {
 	DaftarProduk(ctx context.Context) ([]models.RingkasanProduk, error)
 	AmbilProduk(ctx context.Context, tx *db.Tx, id string) (models.Produk, error)
+	GudangMaster
 }
 
 var (

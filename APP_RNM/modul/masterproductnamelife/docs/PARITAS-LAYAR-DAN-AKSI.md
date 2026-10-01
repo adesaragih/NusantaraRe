@@ -189,3 +189,4 @@ menjawab 503 bila Oracle tidak dikonfigurasi, galat berbadan `{"galat": "..."}`.
 | --- | --- | --- |
 | `GET /produk` | grid `InboxProductName` mode daftar (b71246, RD `BrowseProduct_Life`) | 1 |
 | `GET /produk/{id}` | tombol `View` b74753 (`SetProductName` + `SetProductNameInward`) | 1 |
+| `GET /master/{jenis}?cari=` — `ceding`, `sob`, `pemegang-polis`, `mata-uang`, `ri-risk`, `penyebab`; `ri-rate` = 503 (OQ-MPNL-03) | tombol `Choose*` → section pemilih → grid RD (§4); autocomplete medan form | 2 |

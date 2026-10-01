@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 
 	"nusantarare/inti/backend/db"
 	"nusantarare/modul/masterproductnamelife/backend/models"
@@ -26,6 +27,13 @@ type Gudang struct {
 	// Inward - `M_PRODUCTINWARD_LIFE`: ID baris → JSONDATA.
 	Inward map[string]string
 
+	// Master - isi tiap pemilih, urutan RD.
+	Master map[models.JenisMaster][]models.NilaiMaster
+	// CariTerakhir - kata cari terakhir yang diterima CariMaster.
+	CariTerakhir string
+	// GagalMaster - bila terisi, pembacaan master gagal dengan galat ini.
+	GagalMaster error
+
 	// Komit mencacah transaksi yang ditutup sukses.
 	Komit int
 	// GagalBaca - bila terisi, setiap pembacaan gagal dengan galat ini.
@@ -34,7 +42,8 @@ type Gudang struct {
 
 // Baru menyusun gudang kosong.
 func Baru() *Gudang {
-	return &Gudang{Umum: map[string]string{}, Inward: map[string]string{}}
+	return &Gudang{Umum: map[string]string{}, Inward: map[string]string{},
+		Master: map[models.JenisMaster][]models.NilaiMaster{}}
 }
 
 // Transaksi - tiruan `DalamTransaksi`: fn(nil); sukses = Komit++.
@@ -100,6 +109,44 @@ func (g *Gudang) cariInward(id string) (string, string) {
 		return id, isi
 	}
 	return "", ""
+}
+
+// CariMaster - "Contains" tanpa membedakan huruf, urutan isian.
+func (g *Gudang) CariMaster(_ context.Context, jenis models.JenisMaster, kata string) ([]models.NilaiMaster, error) {
+	g.CariTerakhir = kata
+	if g.GagalMaster != nil {
+		return nil, g.GagalMaster
+	}
+	if _, dikenal := map[models.JenisMaster]bool{models.MasterCeding: true, models.MasterSOB: true,
+		models.MasterPemegangPolis: true, models.MasterMataUang: true, models.MasterRIRisk: true,
+		models.MasterPenyebab: true}[jenis]; !dikenal {
+		return nil, fmt.Errorf("%w: %q", repository.ErrJenisMasterTidakDikenal, jenis)
+	}
+	hasil := []models.NilaiMaster{}
+	for _, m := range g.Master[jenis] {
+		if strings.Contains(strings.ToUpper(m.Nama), strings.ToUpper(kata)) {
+			hasil = append(hasil, m)
+		}
+	}
+	return hasil, nil
+}
+
+// AmbilMaster - satu nilai menurut ID.
+func (g *Gudang) AmbilMaster(_ context.Context, jenis models.JenisMaster, id string) (models.NilaiMaster, bool, error) {
+	if g.GagalMaster != nil {
+		return models.NilaiMaster{}, false, g.GagalMaster
+	}
+	for _, m := range g.Master[jenis] {
+		if m.ID == id {
+			return m, true, nil
+		}
+	}
+	return models.NilaiMaster{}, false, nil
+}
+
+// GalatMasterUji - galat master tak terbaca berbentuk repository (sebab "ORA-" hanya di log).
+func GalatMasterUji(objek string) error {
+	return repository.GalatMaster{Objek: objek, Sebab: errors.New("ORA-00942: table or view does not exist")}
 }
 
 // ErrTiruan - galat buatan uji.
