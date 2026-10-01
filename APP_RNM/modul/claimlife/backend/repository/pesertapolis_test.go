@@ -280,10 +280,9 @@ func TestPenyaringPesertaHanyaSatuTempat(t *testing.T) {
 	}
 }
 
-// dalamLingkupPenyaringPeserta - berkas yang diperiksa TestPenyaringPesertaHanyaSatuTempat.
-func dalamLingkupPenyaringPeserta(nama string) bool {
-	return strings.Contains(filepath.ToSlash(nama), "/modul/claimlife/")
-}
+// dalamLingkupPenyaringPeserta - berkas yang diperiksa TestPenyaringPesertaHanyaSatuTempat: lingkup
+// Claim Life yang SAMA dengan `dalamLingkupMasterView` (`migrasibatas_test.go`) - satu aturan, satu tempat.
+func dalamLingkupPenyaringPeserta(nama string) bool { return dalamLingkupMasterView(nama) }
 
 // penyaringTersebut - bentuk PENYARING EDMSTATUS yang ada di isi.
 //
