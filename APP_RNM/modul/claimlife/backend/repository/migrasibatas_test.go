@@ -317,9 +317,36 @@ func izinViewProduk(t *testing.T, isi string) {
 	}
 }
 
+// dalamLingkupMasterView - berkas yang diperiksa TestMasterViewTidakDisentuh.
+//
+// ⛔ DIPERSEMPIT 01-10-2026 - pengecualian gelombang 2 rumpun Life
+// (`PROMPT-IMPLEMENTASI-TIGA-MODUL-LIFE-GELOMBANG-2.md` §2, keputusan work owner): larangan ini milik
+// Claim Life sebagai PEMBACA (AC 38, OQ-M7). Sejak satu folder per modul, `akarModul` adalah seluruh
+// `APP_RNM`, sehingga penjaga ini ikut melarang Master Product Name Life - PENULIS `M_PRODUCT_LIFE`/
+// `PRODUCTINWARD_LIFE` - dan Master Contract Retro Life - pembaca `RATE_LIFE` dengan izin modulnya
+// sendiri. Yang dipersempit hanya LINGKUP pindaiannya; aturan, daftar master, dan daftar izin Claim Life
+// tidak berubah.
+func dalamLingkupMasterView(nama string) bool {
+	return strings.Contains(filepath.ToSlash(nama), "/modul/claimlife/")
+}
+
+// masterTersebut - master terlarang yang disebut kode, selain `izinkan` (satu master berizin berkas itu).
+func masterTersebut(kode, izinkan string) []string {
+	var hasil []string
+	for _, master := range masterYangTidakDisentuh {
+		if master != izinkan && strings.Contains(kode, master) {
+			hasil = append(hasil, master)
+		}
+	}
+	return hasil
+}
+
 func TestMasterViewTidakDisentuh(t *testing.T) {
 	diperiksa := 0
 	for nama, isi := range berkasSumberProduksi(t) {
+		if !dalamLingkupMasterView(nama) {
+			continue
+		}
 		diperiksa++
 		// ⛔ Komentar dibuang lebih dulu. Menjelaskan MENGAPA sebuah master
 		// tidak disentuh menuntut menyebut namanya - dan ronde pertama
@@ -336,16 +363,11 @@ func TestMasterViewTidakDisentuh(t *testing.T) {
 				izinkan = izin.master
 			}
 		}
-		for _, master := range masterYangTidakDisentuh {
-			if master == izinkan {
-				continue
-			}
-			if strings.Contains(kode, master) {
-				t.Errorf("%s menyebut %q. Kedua master pertama VIEW atas JSONDATA "+
-					"dan tidak diperlakukan sebagai tabel relasional; JSON produk "+
-					"dibaca dari `product_life` relasional, dan membacanya langsung "+
-					"menuntut persetujuan manusia", nama, master)
-			}
+		for _, master := range masterTersebut(kode, izinkan) {
+			t.Errorf("%s menyebut %q. Kedua master pertama VIEW atas JSONDATA "+
+				"dan tidak diperlakukan sebagai tabel relasional; JSON produk "+
+				"dibaca dari `product_life` relasional, dan membacanya langsung "+
+				"menuntut persetujuan manusia", nama, master)
 		}
 	}
 	if diperiksa < 30 {
@@ -471,5 +493,35 @@ func TestSimpanMengisiTertanggungCermin(t *testing.T) {
 	simpan := potongFungsi(buangKomentarGo(isi), "func (r *PohonKlaim) Simpan(")
 	if !strings.Contains(simpan, ".IsiTertanggungCermin(ctx, tx,") {
 		t.Error("Simpan tidak mengisi NAME_OF_INSURED/DOB/CEDINGCO cermin (OQ-N2)")
+	}
+}
+
+// TestMasterViewLingkupClaimLifeMenggigit - uji gigit pengecualian gelombang 2 (01-10-2026):
+// pindaian dipersempit ke `modul/claimlife/`, aturannya tidak.
+func TestMasterViewLingkupClaimLifeMenggigit(t *testing.T) {
+	for _, nama := range []string{
+		"../../../../modul/claimlife/backend/repository/x.go",
+		"../../../../modul/claimlife/backend/migrations/099_x.sql",
+	} {
+		if !dalamLingkupMasterView(nama) {
+			t.Errorf("%s harus diperiksa", nama)
+		}
+	}
+	for _, nama := range []string{
+		"../../../../modul/masterproductnamelife/backend/repository/x.go",
+		"../../../../modul/mastercontractretrolife/backend/repository/x.go",
+		"../../../../modul/claimlifeplus/backend/x.go",
+		"../../../../uji/skemauji/skemauji.go",
+	} {
+		if dalamLingkupMasterView(nama) {
+			t.Errorf("%s di luar Claim Life - larangan pembaca bukan miliknya", nama)
+		}
+	}
+	// Kode Claim Life yang menyebut master tetap MERAH, termasuk yang berizin satu master lain.
+	if got := masterTersebut("SELECT JSONDATA FROM %s -- M_PRODUCT_LIFE", ""); len(got) == 0 {
+		t.Error("Claim Life menyebut M_PRODUCT_LIFE harus terbaca pelanggaran")
+	}
+	if got := masterTersebut("RATE_LIFE dan PRODUCTINWARD_LIFE", "RATE_LIFE"); len(got) != 1 || got[0] != "PRODUCTINWARD_LIFE" {
+		t.Errorf("berkas berizin RATE_LIFE tetap dilarang menyebut master lain: %q", got)
 	}
 }
