@@ -56,6 +56,7 @@ func daftarkan(mux *http.ServeMux, layanan func() *services.Layanan, adaDB func(
 		})
 	}
 	daftarkanBaca(pasang)
+	daftarkanTulis(pasang)
 }
 
 func daftarkanBaca(pasang func(string, rute)) {
@@ -119,7 +120,13 @@ func jawabGalat(w http.ResponseWriter, err error) bool {
 		// 503: master rujukan tidak terbaca - pesannya MENYEBUT objeknya, sebab Oracle hanya di log.
 		log.Printf("master product name life: %v", err)
 		galat.Tulis(w, http.StatusServiceUnavailable, services.Pesan(err))
-	case errors.Is(err, services.ErrIdentitasGanda), errors.Is(err, services.ErrJSONRusak):
+	case errors.Is(err, services.ErrIDDariKlien), errors.Is(err, services.ErrBarisAsliRusak):
+		galat.Tulis(w, http.StatusBadRequest, services.Pesan(err))
+	case errors.Is(err, services.ErrMasukanTidakSah):
+		// 422: JSON-nya sah, isinya ditolak - kalimat menyebut label medan VERBATIM; semua penolakan sekaligus.
+		galat.Tulis(w, http.StatusUnprocessableEntity, services.Pesan(err))
+	case errors.Is(err, services.ErrIdentitasGanda), errors.Is(err, services.ErrJSONRusak),
+		errors.Is(err, services.ErrIdentitasMelampauiLebar), errors.Is(err, services.ErrIdentitasBentrok):
 		// 500 berkalimat: keadaan DATA yang harus diperbaiki DBA, disebut terang.
 		log.Printf("master product name life: %v", err)
 		galat.Tulis(w, http.StatusInternalServerError, services.Pesan(err))

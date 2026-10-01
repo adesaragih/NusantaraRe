@@ -1,0 +1,109 @@
+package repository
+
+// Penulis produk (paket 3: sisi umum; paket 4: sisi inward, satu transaksi).
+//
+//	SaveProductName_Act 8 b1623 `·` PRE=false  DATAPEGA ← @GetPageJSONString() halaman ProductName
+//	                    9 b1831 `·` PRE=false  RDB SaveProductNameLIfe → PEGA_M_PRODUCT_LIFE (TIDAK dipanggil)
+//	                   10 b2019 `·` PRE=false  RDB SaveProductNameLIfeFlat: UPDATE … SET RIRISKID, RIRISK WHERE ID
+//
+// ⛔ Prosedur ditiru: upsert dikunci `ID`, `ID` baru dari sequence; kolom datar
+// `RIRISKID`, `RIRISK` (langkah 10, hidup - RALAT R8) dan `PRODUCTNAME`,
+// `BEGIN_DATE` (P1, OQ-MPNL-08) ditulis di pernyataan YANG SAMA dengan
+// `JSONDATA`, di transaksi pemanggil. Nol COMMIT.
+// ⛔ `JSONDATA` diikat sebagai CLOB (`go_ora.Clob`): daftar komentar tumbuh
+// setiap simpan dan dapat melampaui batas VARCHAR2 bind.
+// ⛔ go-ora mengikat menurut URUTAN KEMUNCULAN placeholder - nomor placeholder
+// di setiap SQL di bawah = urutan argumennya.
+
+import (
+	"context"
+	"errors"
+	"fmt"
+
+	go_ora "github.com/sijms/go-ora/v2"
+
+	"nusantarare/inti/backend/db"
+	"nusantarare/modul/masterproductnamelife/backend/models"
+)
+
+func sqlSisipUmum(tabel string) string {
+	return fmt.Sprintf(`INSERT INTO %s (ID, JSONDATA, RIRISKID, RIRISK, PRODUCTNAME, BEGIN_DATE)
+		VALUES (:1, :2, :3, :4, :5, TO_DATE(:6, 'DD/MM/YYYY'))`, tabel)
+}
+
+func sqlPerbaruiUmum(tabel string) string {
+	return fmt.Sprintf(`UPDATE %s SET JSONDATA = :1, RIRISKID = :2, RIRISK = :3, PRODUCTNAME = :4,
+		BEGIN_DATE = TO_DATE(:5, 'DD/MM/YYYY') WHERE ID = :6`, tabel)
+}
+
+func clob(teks string) go_ora.Clob { return go_ora.Clob{String: teks, Valid: true} }
+
+// datar - kolom datar `M_PRODUCT_LIFE` dari produk.
+func datar(p models.Produk) []any {
+	return []any{db.KosongJadiNil(p.Umum.RIRiskID), db.KosongJadiNil(p.Umum.RIRisk),
+		db.KosongJadiNil(p.Umum.ProductName), db.KosongJadiNil(TanggalKePega(p.Inward.Begin))}
+}
+
+func argSisipUmum(p models.Produk, jsonUmum string) []any {
+	return append([]any{p.ID, clob(jsonUmum)}, datar(p)...)
+}
+
+func argPerbaruiUmum(p models.Produk, jsonUmum string) []any {
+	return append(append([]any{clob(jsonUmum)}, datar(p)...), p.ID)
+}
+
+// KunciProduk - produk utuh, barisnya dikunci `FOR UPDATE` (di dalam simpan).
+func (g *Gudang) KunciProduk(ctx context.Context, tx *db.Tx, id string) (models.Produk, error) {
+	s, err := g.AmbilSimpanan(ctx, tx, id, true)
+	if err != nil {
+		return models.Produk{}, err
+	}
+	return UraiProduk(s.ID, s.JSONUmum, s.IDInward, s.JSONInward)
+}
+
+func (g *Gudang) exec(ctx context.Context, tx *db.Tx, objek string, susun func(string) string, args ...any) error {
+	if !tx.Terisi() {
+		return errors.New("repository: writing a product requires a transaction")
+	}
+	q, err := g.siapkan(objek, susun)
+	if err != nil {
+		return err
+	}
+	hasil, err := tx.ExecContext(ctx, q, args...)
+	if err != nil {
+		return fmt.Errorf("repository: writing %s: %w", objek, err)
+	}
+	return db.PastikanSatuBaris(hasil, "writing "+objek)
+}
+
+// SisipProduk menerbitkan ID baru (sequence) dan menulis produk baru.
+// Mengembalikan ID itu.
+func (g *Gudang) SisipProduk(ctx context.Context, tx *db.Tx, p models.Produk) (string, error) {
+	id, err := g.identitasBaru(ctx, tx)
+	if err != nil {
+		return "", err
+	}
+	p.ID = id
+	umum, err := RakitUmum(p, "", true)
+	if err != nil {
+		return "", err
+	}
+	if err := g.exec(ctx, tx, TabelProduk, sqlSisipUmum, argSisipUmum(p, umum)...); err != nil {
+		return "", err
+	}
+	return id, nil
+}
+
+// PerbaruiProduk menulis ulang produk yang ada; kunci JSON yang tidak
+// dikelola dipertahankan dari JSON tersimpan (dibaca di transaksi yang sama).
+func (g *Gudang) PerbaruiProduk(ctx context.Context, tx *db.Tx, p models.Produk) error {
+	s, err := g.AmbilSimpanan(ctx, tx, p.ID, true)
+	if err != nil {
+		return err
+	}
+	umum, err := RakitUmum(p, s.JSONUmum, false)
+	if err != nil {
+		return err
+	}
+	return g.exec(ctx, tx, TabelProduk, sqlPerbaruiUmum, argPerbaruiUmum(p, umum)...)
+}

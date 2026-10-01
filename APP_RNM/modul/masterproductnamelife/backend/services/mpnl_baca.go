@@ -20,6 +20,7 @@ type Gudang interface {
 	DaftarProduk(ctx context.Context) ([]models.RingkasanProduk, error)
 	AmbilProduk(ctx context.Context, tx *db.Tx, id string) (models.Produk, error)
 	GudangMaster
+	GudangTulis
 }
 
 var (
@@ -29,6 +30,11 @@ var (
 	ErrIdentitasGanda = repository.ErrIdentitasGanda
 	// ErrJSONRusak - JSONDATA tidak terbaca: 500 berkalimat.
 	ErrJSONRusak = repository.ErrJSONRusak
+	// ErrIdentitasMelampauiLebar / ErrIdentitasBentrok - sequence harus ditinjau DBA (500 berkalimat).
+	ErrIdentitasMelampauiLebar = repository.ErrIdentitasMelampauiLebar
+	ErrIdentitasBentrok        = repository.ErrIdentitasBentrok
+	// ErrBarisAsliRusak - medan `asli` baris tidak terbaca (400).
+	ErrBarisAsliRusak = repository.ErrBarisAsliRusak
 )
 
 // tidakAda menerjemahkan ErrTidakAda repository menjadi galat entitasnya.

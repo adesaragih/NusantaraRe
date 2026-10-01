@@ -92,3 +92,18 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+---
+
+## Ralat bertanggal 01-10-2026 — sesi implementasi (paket 3)
+
+> Sumber: `../RALAT-DEV-30-09-2026.md` (P1, P6, R7, R8, R14) dan `../PARITAS-LAYAR-DAN-AKSI.md` §3, §7. Kalimat di atas **tidak dihapus**.
+
+| Kalimat lama | Ralat |
+| --- | --- |
+| *"Area codebase … Tulis/baca `product_life`"* | **P1**: tulis/baca `M_PRODUCT_LIFE.JSONDATA` berkunci Pega + kolom datar `RIRISKID`, `RIRISK`, `PRODUCTNAME`, `BEGIN_DATE` (pernyataan yang sama, satu transaksi). Nol tabel baru |
+| *"⚠️ Membuangnya **mengubah perilaku**: guard yang selama ini mungkin tak pernah menyala akan **mulai menolak**"* | **R7**: prakondisi ber-`PoductName` di `SaveProductName_Act` 8–11, 13–16 ber-**PRE=false** — tidak pernah dievaluasi; tidak ada perilaku yang berubah. Kode baru tetap tanpa `PoductName` |
+| Identitas *"'1' + lima digit"* | tetap (**P6**): `'1' ‖ LPAD(M_PRODUCT_LIFE_SEQ.NEXTVAL, 5, '0')`; nomor > 5 digit dan ID yang sudah dipakai salah satu tabel **ditolak terang** (500 berkalimat), tidak dipotong/digandakan |
+| (tidak disebut) medan `Product Code` b3928 dapat disunting dan terikat `ProductName.ID` | **R14**: baca-saja; `POST` yang membawa `id` ditolak 400 (ADR-0006) |
+| *"Penyimpanan mencatat **siapa** pembuat dan **siapa** pengubah terakhir"* | `CREATEOP` = pelaku untuk produk baru — termasuk salinan `Copy`, yang di Pega mewarisi pembuat asal (OQ-MPNL-13); tetap untuk ubah. `UPDATEOP` = pelaku setiap simpan (`SaveProductName_Act` 1 b359, 6 b1368) |
+| *"Endpoint CRUD produk"* | `POST /api/master-product-name-life/produk` (baru), `PUT /produk/{id}` (ubah). **Nol** rute hapus: korpus tidak punya tombol/aktivitas hapus produk |

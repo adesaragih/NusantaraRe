@@ -433,3 +433,104 @@ func jsonTanpaLolos(v any) ([]byte, error) {
 	}
 	return bytes.TrimRight(buf.Bytes(), "\n"), nil
 }
+
+// ErrBarisAsliRusak - medan `asli` baris yang dikirim klien bukan objek JSON (400).
+var ErrBarisAsliRusak = errors.New("repository: a list row carries unreadable original data (asli)")
+
+// teksJSON - nilai skalar Pega selalu TEKS.
+func teksJSON(v string) json.RawMessage {
+	b, _ := jsonTanpaLolos(v)
+	return b
+}
+
+func tulisMedan[T any](obj map[string]json.RawMessage, medan []medanTeks[T], dari *T) {
+	for _, m := range medan {
+		v := *m.ambil(dari)
+		if m.tanggal {
+			v = TanggalKePega(v)
+		}
+		obj[m.kunci] = teksJSON(v)
+	}
+}
+
+// rakitBaris - satu larik; tiap baris = kunci aslinya (`Asli`) + kunci dikelola.
+func rakitBaris[T any](daftar []T, k kodekBaris[T]) (json.RawMessage, error) {
+	var b strings.Builder
+	b.WriteByte('[')
+	for i := range daftar {
+		baris := daftar[i]
+		obj, err := uraiObjek(*k.asli(&baris))
+		if err != nil {
+			return nil, fmt.Errorf("%w: row %d: %v", ErrBarisAsliRusak, i+1, err)
+		}
+		tulisMedan(obj, k.medan, &baris)
+		teks, err := rakitObjek(obj)
+		if err != nil {
+			return nil, err
+		}
+		if i > 0 {
+			b.WriteByte(',')
+		}
+		b.WriteString(teks)
+	}
+	b.WriteByte(']')
+	return json.RawMessage(b.String()), nil
+}
+
+// bendera - TrueFalse Pega; tipe nilai lama dipertahankan (boolean JSON tetap
+// boolean), selain itu teks `"true"`/`"false"`.
+func bendera(lama json.RawMessage, v bool) json.RawMessage {
+	teks := "false"
+	if v {
+		teks = "true"
+	}
+	if t := strings.TrimSpace(string(lama)); t == "true" || t == "false" {
+		return json.RawMessage(teks)
+	}
+	return teksJSON(teks)
+}
+
+// RakitUmum menulis `M_PRODUCT_LIFE.JSONDATA` - padanan `@GetPageJSONString()`
+// halaman `ProductName` (`SaveProductName_Act` 8 b1623). `lama` = JSON
+// tersimpan (kosong untuk produk baru): kunci yang tidak dikelola layar
+// dipertahankan; setiap kunci yang dibaca view `PRODUCT_LIFE` dijamin ada.
+//
+// `IsView`: produk baru tidak membawanya (`NewProductLife` tidak mengisinya);
+// simpan sesudah `Edit` menulisnya `false` (`SetViewEdit` b145).
+func RakitUmum(p models.Produk, lama string, baru bool) (string, error) {
+	obj, err := uraiObjek(lama)
+	if err != nil {
+		return "", fmt.Errorf("%w: %s %s: %v", ErrJSONRusak, TabelProduk, p.ID, err)
+	}
+	obj[kunciID] = teksJSON(p.ID)
+	tulisMedan(obj, medanUmum, &p.Umum)
+	obj[kunciIsORS] = bendera(obj[kunciIsORS], p.Umum.IsORS)
+	if !baru {
+		obj[kunciIsView] = bendera(obj[kunciIsView], false)
+	}
+	larik := []struct {
+		kunci string
+		rakit func() (json.RawMessage, error)
+	}{
+		{kunciLien, func() (json.RawMessage, error) { return rakitBaris(p.LienClause, kodekLien) }},
+		{kunciDokumen, func() (json.RawMessage, error) { return rakitBaris(p.DocumentClaim, kodekDokumen) }},
+		{kunciPlan, func() (json.RawMessage, error) { return rakitBaris(p.PlanList, kodekPlan) }},
+		{kunciFinUW, func() (json.RawMessage, error) { return rakitBaris(p.FinancialUnderwriting, kodekFinUW) }},
+		{kunciUWLimit, func() (json.RawMessage, error) { return rakitBaris(p.UnderwritingLimit, kodekUWLimit) }},
+		{kunciOutward, func() (json.RawMessage, error) { return rakitBaris(p.OutwardList, kodekOutward) }},
+		{kunciKomentar, func() (json.RawMessage, error) { return rakitBaris(p.CommentList, kodekKomentar) }},
+	}
+	for _, l := range larik {
+		raw, err := l.rakit()
+		if err != nil {
+			return "", err
+		}
+		obj[l.kunci] = raw
+	}
+	for _, k := range KunciViewProduk {
+		if _, ada := obj[k]; !ada {
+			obj[k] = teksJSON("")
+		}
+	}
+	return rakitObjek(obj)
+}

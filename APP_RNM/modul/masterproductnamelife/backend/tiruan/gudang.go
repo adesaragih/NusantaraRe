@@ -34,6 +34,14 @@ type Gudang struct {
 	// GagalMaster - bila terisi, pembacaan master gagal dengan galat ini.
 	GagalMaster error
 
+	// Seq - nomor urut berikut `M_PRODUCT_LIFE_SEQ` (bawaan 44, seperti `START WITH 44`).
+	Seq int64
+	// Datar - kolom datar `M_PRODUCT_LIFE`: RIRISKID, RIRISK, PRODUCTNAME, BEGIN_DATE (`dd/MM/yyyy`).
+	Datar map[string][4]string
+	// GagalTulis - bila terisi, setiap penulis menulis LALU gagal dengan galat
+	// ini (uji: transaksi gagal = nol tulisan).
+	GagalTulis error
+
 	// Komit mencacah transaksi yang ditutup sukses.
 	Komit int
 	// GagalBaca - bila terisi, setiap pembacaan gagal dengan galat ini.
@@ -43,16 +51,80 @@ type Gudang struct {
 // Baru menyusun gudang kosong.
 func Baru() *Gudang {
 	return &Gudang{Umum: map[string]string{}, Inward: map[string]string{},
-		Master: map[models.JenisMaster][]models.NilaiMaster{}}
+		Master: map[models.JenisMaster][]models.NilaiMaster{}, Seq: 44, Datar: map[string][4]string{}}
 }
 
-// Transaksi - tiruan `DalamTransaksi`: fn(nil); sukses = Komit++.
+// Transaksi - tiruan `DalamTransaksi`: fn(nil); sukses = Komit++, gagal =
+// seluruh isi dipulihkan (rollback).
 func (g *Gudang) Transaksi(_ context.Context, fn func(tx *db.Tx) error) error {
+	umum, inward, datar, seq := salin(g.Umum), salin(g.Inward), map[string][4]string{}, g.Seq
+	for k, v := range g.Datar {
+		datar[k] = v
+	}
 	if err := fn(nil); err != nil {
+		g.Umum, g.Inward, g.Datar, g.Seq = umum, inward, datar, seq
 		return err
 	}
 	g.Komit++
 	return nil
+}
+
+func salin(m map[string]string) map[string]string {
+	h := make(map[string]string, len(m))
+	for k, v := range m {
+		h[k] = v
+	}
+	return h
+}
+
+// KunciProduk - tiruan `FOR UPDATE`: sama dengan AmbilProduk.
+func (g *Gudang) KunciProduk(ctx context.Context, tx *db.Tx, id string) (models.Produk, error) {
+	return g.AmbilProduk(ctx, tx, id)
+}
+
+func (g *Gudang) tulisDatar(p models.Produk) {
+	g.Datar[p.ID] = [4]string{p.Umum.RIRiskID, p.Umum.RIRisk, p.Umum.ProductName, repository.TanggalKePega(p.Inward.Begin)}
+}
+
+// SisipProduk - ID dari Seq lewat `repository.FormatIdentitas`; ID terpakai = bentrok.
+func (g *Gudang) SisipProduk(_ context.Context, _ *db.Tx, p models.Produk) (string, error) {
+	id, err := repository.FormatIdentitas(g.Seq)
+	if err != nil {
+		return "", err
+	}
+	g.Seq++
+	if _, ada := g.Umum[id]; ada {
+		return "", fmt.Errorf("%w: %s", repository.ErrIdentitasBentrok, id)
+	}
+	if _, ada := g.Inward[id]; ada {
+		return "", fmt.Errorf("%w: %s", repository.ErrIdentitasBentrok, id)
+	}
+	p.ID = id
+	umum, err := repository.RakitUmum(p, "", true)
+	if err != nil {
+		return "", err
+	}
+	g.Umum[id] = umum
+	g.tulisDatar(p)
+	if g.GagalTulis != nil {
+		return "", g.GagalTulis
+	}
+	return id, nil
+}
+
+// PerbaruiProduk - kunci JSON lama dipertahankan lewat `repository.RakitUmum`.
+func (g *Gudang) PerbaruiProduk(_ context.Context, _ *db.Tx, p models.Produk) error {
+	lama, ada := g.Umum[p.ID]
+	if !ada {
+		return fmt.Errorf("%w: %s", repository.ErrTidakAda, p.ID)
+	}
+	umum, err := repository.RakitUmum(p, lama, false)
+	if err != nil {
+		return err
+	}
+	g.Umum[p.ID] = umum
+	g.tulisDatar(p)
+	return g.GagalTulis
 }
 
 // DaftarProduk - urut ID.
