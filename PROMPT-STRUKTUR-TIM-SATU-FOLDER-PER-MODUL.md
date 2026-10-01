@@ -36,8 +36,8 @@ Gambaran pohon lengkap *(akar repo sampai 20 folder modul)* yang disetujui work 
 | TREATY | `treatyin` | 400–439 | 972–973 |
 | TREATY | `treatyinadjustment` | 440–479 | 974–975 |
 | TREATY | `endorsementlife` | 480–519 | 976–977 |
-| KLAIM | `claimfacin` | 520–559 | 978–979 |
-| KLAIM | `claimprop` | 560–599 | 980–981 |
+| KLAIM | `claimfacin` | ~~520–559~~ **560–599** *(ralat 01-10-2026)* | 978–979 |
+| KLAIM | `claimprop` | ~~560–599~~ **520–559** *(ralat 01-10-2026: skema Claim Fac In bergantung pada tabel lini PROP, jadi Prop harus berjalan lebih dulu)* | 980–981 |
 | KLAIM | `claimnonprop` | 600–639 | 982–983 |
 | KLAIM | `komiteclaimfacin` | 640–679 | 984–985 |
 | KLAIM | `komiteclaimprop` | 680–719 | 986–987 |
