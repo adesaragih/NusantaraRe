@@ -1,6 +1,7 @@
 package login
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -20,6 +21,10 @@ func serverUji(t *testing.T, g *gudangTiruan, saat time.Time) http.Handler {
 	r.Pasang(mux)
 	mux.HandleFunc("GET /api/uji/pelaku", func(w http.ResponseWriter, req *http.Request) {
 		_ = json.NewEncoder(w).Encode(inti.PelakuDari(req, false))
+	})
+	mux.HandleFunc("GET /api/uji/menu", func(w http.ResponseWriter, req *http.Request) {
+		kode, ada := inti.AksesMenuDari(req.Context())
+		_ = json.NewEncoder(w).Encode(map[string]any{"kode": kode, "ada": ada})
 	})
 	return r.Middleware(mux)
 }
@@ -185,4 +190,48 @@ func TestCookiePalsuDibuang(t *testing.T) {
 	if c := cookieSesi(t, rec); rec.Code != http.StatusUnauthorized || c == nil || c.MaxAge >= 0 {
 		t.Errorf("cookie palsu: %d %+v", rec.Code, c)
 	}
+}
+
+// Middleware menaruh menu akun di context bersama pelakunya - dan TIDAK bagi
+// akun yang wajib ganti sandi (bukan pelaku, bukan pemegang menu).
+func TestMiddlewareMenaruhAksesMenu(t *testing.T) {
+	g := gudangUji(t)
+	h := serverUji(t, g, saatUji)
+	for _, k := range []struct {
+		akun string
+		mau  string
+	}{
+		{"UJI-ADMIN", `{"ada":true,"kode":["claimlife","kelolauser"]}`},
+		{"UJI-BARU", `{"ada":false,"kode":null}`},
+	} {
+		c := cookieSesi(t, kirim(h, "POST", "/api/auth/login", `{"akun":"`+k.akun+`","sandi":"Sandi-Benar-01"}`, nil))
+		if c == nil {
+			t.Fatalf("%s: login tanpa cookie", k.akun)
+		}
+		if dapat := strings.TrimSpace(kirim(h, "GET", "/api/uji/menu", "", c).Body.String()); dapat != k.mau {
+			t.Errorf("%s: %s, mau %s", k.akun, dapat, k.mau)
+		}
+	}
+	if dapat := strings.TrimSpace(kirim(h, "GET", "/api/uji/menu", "", nil).Body.String()); dapat != `{"ada":false,"kode":null}` {
+		t.Errorf("tanpa cookie: %s", dapat)
+	}
+}
+
+// Migrasi 903 belum dijalankan: login 503 yang MENYEBUT sebabnya - bukan 500
+// "rinciannya di log server" yang membuat orang menebak.
+func TestLoginTanpaTabelMenu503(t *testing.T) {
+	g := &gudangTanpaMenu{gudangUji(t)}
+	r := NewRute(NewLayanan(g, rahasiaUji).DenganJam(func() time.Time { return saatUji }), true)
+	mux := http.NewServeMux()
+	r.Pasang(mux)
+	rec := kirim(r.Middleware(mux), "POST", "/api/auth/login", `{"akun":"UJI-ADMIN","sandi":"Sandi-Benar-01"}`, nil)
+	if rec.Code != http.StatusServiceUnavailable || !strings.Contains(rec.Body.String(), "903") || cookieSesi(t, rec) != nil {
+		t.Errorf("login tanpa M_LOGIN_GO_MENU: %d %s", rec.Code, rec.Body)
+	}
+}
+
+type gudangTanpaMenu struct{ *gudangTiruan }
+
+func (gudangTanpaMenu) Menu(context.Context, string) ([]string, error) {
+	return nil, ErrMenuBelumDimigrasi
 }

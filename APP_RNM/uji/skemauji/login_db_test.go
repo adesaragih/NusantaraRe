@@ -16,6 +16,8 @@ package skemauji_test
 // ⛔ Melewati bila Oracle belum dikonfigurasi. Melewati bukan lulus.
 
 import (
+	"context"
+	"database/sql"
 	"errors"
 	"testing"
 
@@ -25,31 +27,7 @@ import (
 
 func TestLoginDariOracle(t *testing.T) {
 	sqlDB, skema, ctx := pasangSkemaInti(t)
-	jalan := func(q string) {
-		t.Helper()
-		if _, err := sqlDB.ExecContext(ctx, q); err != nil {
-			t.Fatalf("%s: %v", q, err)
-		}
-	}
-	tiruan := []string{"M_UNIT", "M_DIVISION", "M_ORGANIZATION", "M_WORKBASKET"}
-	t.Cleanup(func() {
-		for _, n := range tiruan {
-			_, _ = sqlDB.ExecContext(ctx, `DROP TABLE `+skema+`.`+n+` CASCADE CONSTRAINTS`)
-		}
-	})
-	for _, q := range []string{
-		`CREATE TABLE ` + skema + `.M_ORGANIZATION (ORGANIZATION_ID NUMBER(5) PRIMARY KEY, CODE VARCHAR2(20) UNIQUE, NAME VARCHAR2(150), IS_ACTIVE NUMBER(1))`,
-		`CREATE TABLE ` + skema + `.M_DIVISION (DIVISION_ID NUMBER(10) PRIMARY KEY, ORGANIZATION_ID NUMBER(5), CODE VARCHAR2(20) UNIQUE, NAME VARCHAR2(150), SORT_ORDER NUMBER(5), IS_ACTIVE NUMBER(1))`,
-		`CREATE TABLE ` + skema + `.M_UNIT (UNIT_ID NUMBER(10) PRIMARY KEY, DIVISION_ID NUMBER(10), CODE VARCHAR2(20) UNIQUE, NAME VARCHAR2(150), SORT_ORDER NUMBER(5), IS_ACTIVE NUMBER(1))`,
-		`CREATE TABLE ` + skema + `.M_WORKBASKET (WORKBASKET_ID VARCHAR2(64) PRIMARY KEY, NAME VARCHAR2(150), IS_ACTIVE NUMBER(1))`,
-		`INSERT INTO ` + skema + `.M_ORGANIZATION VALUES (1, 'UJI-ORG', 'Uji Organisasi', 1)`,
-		`INSERT INTO ` + skema + `.M_DIVISION VALUES (11, 1, 'UJI-DIV', 'Uji Divisi', 1, 1)`,
-		`INSERT INTO ` + skema + `.M_UNIT VALUES (111, 11, 'UJI-UNIT', 'Uji Unit', 1, 1)`,
-		`INSERT INTO ` + skema + `.M_WORKBASKET VALUES ('ReasLifeAdmin', 'Uji Admin', 1)`,
-		`INSERT INTO ` + skema + `.M_WORKBASKET VALUES ('ReasLifeSPV', 'Uji SPV', 1)`,
-	} {
-		jalan(q)
-	}
+	jalan := pasangMasterTiruan(t, sqlDB, skema, ctx)
 	repo, err := skemauji.BukaRepositori()
 	if err != nil {
 		t.Fatal(err)
@@ -107,4 +85,37 @@ func TestLoginDariOracle(t *testing.T) {
 	if err != nil || p.WajibGantiSandi {
 		t.Errorf("masuk dengan sandi baru: %+v %v", p, err)
 	}
+}
+
+// pasangMasterTiruan membuat M_ORGANIZATION, M_DIVISION, M_UNIT, dan
+// M_WORKBASKET tiruan di skema uji (master itu tidak dibuat migrasi
+// aplikasi), membuangnya sesudah test, dan mengembalikan penjalan SQL.
+func pasangMasterTiruan(t *testing.T, sqlDB *sql.DB, skema string, ctx context.Context) func(string) {
+	t.Helper()
+	jalan := func(q string) {
+		t.Helper()
+		if _, err := sqlDB.ExecContext(ctx, q); err != nil {
+			t.Fatalf("%s: %v", q, err)
+		}
+	}
+	tiruan := []string{"M_UNIT", "M_DIVISION", "M_ORGANIZATION", "M_WORKBASKET"}
+	t.Cleanup(func() {
+		for _, n := range tiruan {
+			_, _ = sqlDB.ExecContext(ctx, `DROP TABLE `+skema+`.`+n+` CASCADE CONSTRAINTS`)
+		}
+	})
+	for _, q := range []string{
+		`CREATE TABLE ` + skema + `.M_ORGANIZATION (ORGANIZATION_ID NUMBER(5) PRIMARY KEY, CODE VARCHAR2(20) UNIQUE, NAME VARCHAR2(150), IS_ACTIVE NUMBER(1))`,
+		`CREATE TABLE ` + skema + `.M_DIVISION (DIVISION_ID NUMBER(10) PRIMARY KEY, ORGANIZATION_ID NUMBER(5), CODE VARCHAR2(20) UNIQUE, NAME VARCHAR2(150), SORT_ORDER NUMBER(5), IS_ACTIVE NUMBER(1))`,
+		`CREATE TABLE ` + skema + `.M_UNIT (UNIT_ID NUMBER(10) PRIMARY KEY, DIVISION_ID NUMBER(10), CODE VARCHAR2(20) UNIQUE, NAME VARCHAR2(150), SORT_ORDER NUMBER(5), IS_ACTIVE NUMBER(1))`,
+		`CREATE TABLE ` + skema + `.M_WORKBASKET (WORKBASKET_ID VARCHAR2(64) PRIMARY KEY, NAME VARCHAR2(150), IS_ACTIVE NUMBER(1))`,
+		`INSERT INTO ` + skema + `.M_ORGANIZATION VALUES (1, 'UJI-ORG', 'Uji Organisasi', 1)`,
+		`INSERT INTO ` + skema + `.M_DIVISION VALUES (11, 1, 'UJI-DIV', 'Uji Divisi', 1, 1)`,
+		`INSERT INTO ` + skema + `.M_UNIT VALUES (111, 11, 'UJI-UNIT', 'Uji Unit', 1, 1)`,
+		`INSERT INTO ` + skema + `.M_WORKBASKET VALUES ('ReasLifeAdmin', 'Uji Admin', 1)`,
+		`INSERT INTO ` + skema + `.M_WORKBASKET VALUES ('ReasLifeSPV', 'Uji SPV', 1)`,
+	} {
+		jalan(q)
+	}
+	return jalan
 }

@@ -66,8 +66,10 @@ Di 900 butir mewarisi `GROUPMENU`, `MODUL`, dan `DIMIGRASI` dari induknya — di
 yang dulu dibuka butir pertama kini halaman awal modulnya: `claimlife` → `inbox`, `premiumlistlife` → `premiumlist`,
 `komiteclaimlife` → `komite`, `treatycontractout` → `tco-tahun`.
 
-**Di luar lingkup** *(dicatat, tidak dibangun)*: tabel akses per akun *(mis. `M_NAV_MENU_AKSES`: akun atau peran →
-`MENU_ID`)*. Penyambungannya nanti di `SaringMenuUntukPelaku`. Login: `M_LOGIN_GO` di bawah.
+**Akses per akun** *(Kelola User, keputusan work owner 01-10-2026)*: `M_LOGIN_GO_MENU` di bawah — KODE menu per akun.
+`GET /api/menu` mengirim hanya menu akun yang login (`SaringMenuUntukAkun`), dan rute modul yang menunya tidak dimiliki
+dijawab 403 oleh `cmd/api`. Menu **Kelola User** (`kelolauser`, golongan `ADMIN`) **bukan** baris tabel ini — tabel ini
+tetap dua puluh baris, satu per folder modul korpus; ia hidup di kode (`menu.MenuAplikasi`) seperti Beranda.
 
 ## M_LOGIN_GO
 
@@ -95,7 +97,8 @@ menampung data dari M_UNIT, M_DIVISION, M_ORGANIZATION”; “simpan aja code ny
 **Index:** PK.
 
 **Relasi:** tidak ada FK ke `M_ORGANIZATION`, `M_DIVISION`, `M_UNIT` *(keputusan work owner — ketiga master tidak
-dibuat migrasi aplikasi)*. Anaknya `M_LOGIN_GO_WORKBASKET`.
+dibuat migrasi aplikasi)*. Anaknya `M_LOGIN_GO_WORKBASKET` dan `M_LOGIN_GO_MENU` — **Hapus permanen** di Kelola User
+membuang keduanya lebih dulu, lalu akunnya, dalam satu transaksi *(FK tanpa `ON DELETE`)*.
 
 ## M_LOGIN_GO_WORKBASKET
 
@@ -109,3 +112,22 @@ berisi nama peran yang dipakai aplikasi *(`ReasLifeAdmin`, `ReasLifeSPV`, …)*,
 | `TGL_CREATE` | DATE | tidak | | jejak | `DEFAULT SYSDATE` |
 
 **Index:** PK *(`LOGIN_ID`, `WORKBASKET_ID`)*; `IX_M_LOGIN_GO_WB_WORKBASKET` *(`WORKBASKET_ID`)*.
+
+## M_LOGIN_GO_MENU
+
+Menu yang boleh dibuka setiap akun — **akses per akun** *(Kelola User, keputusan work owner 01-10-2026: “tambahkan menu
+apa aja yang bisa diakses sama user nya”)*. Migrasi `903_m_login_go_menu.sql` *(+ `_down`)*. Menu yang tidak dimiliki
+**disembunyikan** di sidebar **dan ditolak** server *(403)*; perubahan berlaku pada permintaan berikutnya.
+
+| Kolom | Tipe | Null | Kunci | Dipakai | Sumber |
+| --- | --- | --- | --- | --- | --- |
+| `LOGIN_ID` | teks | tidak | PK, FK | sidebar, gerbang 403 | → `M_LOGIN_GO.LOGIN_ID`, tanpa `ON DELETE` |
+| `MENU_KODE` | teks | tidak | PK | sidebar, gerbang 403 | `M_NAV_MENU.KODE` (nama modul) atau menu aplikasi `kelolauser` — tanpa FK; diperiksa aplikasi saat menyimpan |
+| `TGL_CREATE` | DATE | tidak | | jejak | `DEFAULT SYSDATE` |
+
+**Index:** PK *(`LOGIN_ID`, `MENU_KODE`)*.
+
+**Isi awal 903:** setiap akun yang sudah ada mendapat **semua** menu — dua puluh modul dan `kelolauser` *(keputusan work
+owner)*; daftarnya dijaga `TestIsiAwalMenuAkunMemuatSemuaMenu`. Pemegang `kelolauser` adalah admin. Kelola User menolak
+admin membuang `kelolauser` dari dirinya sendiri, menonaktifkan atau menghapus dirinya, dan perubahan yang menyisakan
+nol akun aktif ber-`kelolauser`.

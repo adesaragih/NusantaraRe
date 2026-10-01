@@ -22,8 +22,8 @@ APP_RNM/
       kontrak/          antarmuka lintas modul, TANPA implementasi (PembacaPolis, KlaimKomite)
       perakit.go        menyambung kontrak menurut Pendaftaran() setiap modul
       daftar/           daftar modul BANGKITAN (go generate): modul_<nama>_gen.go per modul
-      menu/             GET /api/menu: pembaca M_NAV_MENU, pohon GROUPMENU, SaringMenuUntukPelaku
-      migrations/       tabel lintas modul 900-949: M_NAV_MENU (900)
+      menu/             GET /api/menu: pembaca M_NAV_MENU, pohon GROUPMENU, SaringMenuUntukAkun
+      migrations/       tabel lintas modul 900-949: M_NAV_MENU (900), M_LOGIN_GO (902), M_LOGIN_GO_MENU (903)
       penjaga/          uji penjaga SELURUH aplikasi - membaca modul/* dan MODUL.md, nol nama modul
     frontend/           kerangka React bersama: Shell, ui/dasar, klien.ts, lib/, hooks/, store/, labels.ts
   modul/
@@ -336,7 +336,10 @@ melihat perubahan data semacam itu. Slot menu modul **tidak** dapat melakukannya
 `UPDATE DIMIGRASI`); bila menu itu memang dibuang untuk seterusnya, itu keputusan work owner yang
 dikerjakan tim inti — migrasi `inti` baru beserta perubahan penjaga `TestMenuHanyaDi900DanSlotMenuModulnya`.
 
-**Di luar lingkup hari ini** (dicatat, tidak dibangun): tabel akses per akun (mis. `M_NAV_MENU_AKSES`:
-akun atau peran → `MENU_ID`) dan login. Titik sambungnya sudah ada: `inti/backend/menu`
-`SaringMenuUntukPelaku(pelaku, menu)` — hari ini meneruskan semua — dipanggil `GET /api/menu` untuk
-setiap permintaan.
+**Akses per akun** (Kelola User, keputusan work owner 01-10-2026): tabel `M_LOGIN_GO_MENU` (migrasi
+inti 903) — KODE menu per akun. `GET /api/menu` mengirim hanya menu akun yang login
+(`inti/backend/menu` `SaringMenuUntukAkun`), dan `cmd/api` menjawab 403 untuk rute modul yang menunya tidak
+dipegang. ⛔ Layar modul yang memanggil rute modul LAIN wajib didaftarkan di `cmd/api/rakit.go`
+`ruteDipinjam` — `TestPanggilanLintasModulTerdaftar` menagihnya; tanpanya pemegang menu layar itu mendapat
+403. Modul yang baru dimigrasi (`DIMIGRASI = '1'` di slot menunya) tampil HANYA bagi akun yang memegang
+menunya — akun yang ada saat 903 berjalan memegang semua; akun lain diberi admin lewat Kelola User.

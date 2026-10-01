@@ -175,6 +175,76 @@ export const LOGIN = {
 /** Panjang sandi minimal — sama dengan `login.PanjangMinSandi` di backend. */
 export const PANJANG_MIN_SANDI = 10
 
+/**
+ * Label Kelola User — CRUD akun `M_LOGIN_GO` beserta workbasket dan menunya
+ * (keputusan work owner 01-10-2026).
+ *
+ * ⚠️ `[tidak ada di korpus]` `[kerangka aplikasi]`. ⛔ Reset sandi DITUNDA
+ * (perintah work owner) — tidak ada tombolnya.
+ */
+export const KELOLA_USER = {
+  judul: 'Kelola User',
+  sub: 'Akun login, workbasket, dan menu yang boleh dibuka setiap user. Perubahan berlaku pada permintaan berikutnya.',
+  tambah: 'Tambah user',
+  cari: 'Cari username atau nama',
+  kosong: 'Belum ada user.',
+  tidakCocok: 'Tidak ada user yang cocok dengan pencarian.',
+  kolomAkun: 'Username',
+  kolomNama: 'Nama',
+  kolomJenjang: 'Organisasi / Divisi / Unit',
+  kolomStatus: 'Status',
+  kolomLogin: 'Login terakhir',
+  kolomAksi: 'Aksi',
+  belumLogin: 'belum pernah',
+  aktif: 'Aktif',
+  nonaktif: 'Nonaktif',
+  terkunci: 'Terkunci',
+  wajibGanti: 'Wajib ganti sandi',
+  anda: 'Anda',
+  ubah: 'Ubah',
+  bukaKunci: 'Buka kunci',
+  nonaktifkan: 'Nonaktifkan',
+  aktifkan: 'Aktifkan',
+  hapus: 'Hapus',
+  judulBaru: 'Tambah user',
+  judulUbah: 'Ubah user',
+  akun: 'Username',
+  akunTetap: 'Username tidak dapat diubah sesudah dibuat.',
+  nama: 'Nama',
+  sandi: 'Password awal',
+  ulangiSandi: 'Ulangi password awal',
+  catatanSandi: 'Minimal 10 karakter. User wajib menggantinya saat login pertama.',
+  organisasi: 'Organisasi',
+  divisi: 'Divisi',
+  unit: 'Unit',
+  tidakDiisi: '— tidak diisi —',
+  workbasket: 'Workbasket',
+  menu: 'Menu yang boleh dibuka',
+  dipilih: (n: number, dari: number) => `${n} dari ${dari} dipilih`,
+  pilihSemua: 'Pilih semua',
+  kosongkan: 'Kosongkan',
+  menuDiriSendiri: 'Kelola User tidak dapat dicabut dari akun Anda sendiri.',
+  simpan: 'Simpan',
+  menyimpan: 'Menyimpan…',
+  batal: 'Batal',
+  judulHapus: 'Hapus user permanen',
+  tanyaHapus: (akun: string) =>
+    `Hapus user ${akun} beserta seluruh workbasket dan menunya? Tindakan ini tidak dapat dibatalkan.`,
+  hapusPermanen: 'Hapus permanen',
+  menghapus: 'Menghapus…',
+  galatAkun: 'Username hanya huruf, angka, titik, garis bawah, @, atau tanda hubung (maks. 64 karakter).',
+  galatNama: 'Nama wajib diisi (maks. 150 karakter).',
+  galatSandi: 'Password awal minimal 10 karakter.',
+  galatUlangi: 'Kedua password awal tidak sama.',
+  tersimpan: (akun: string) => `User ${akun} tersimpan.`,
+  terhapus: (akun: string) => `User ${akun} dihapus permanen.`,
+  dinonaktifkan: (akun: string) => `User ${akun} dinonaktifkan; sesinya berakhir pada permintaan berikutnya.`,
+  diaktifkan: (akun: string) => `User ${akun} diaktifkan.`,
+  dibukaKunci: (akun: string) => `Kunci user ${akun} dibuka.`,
+  memuat: 'Memuat daftar user…',
+  memuatPilihan: 'Memuat pilihan…',
+} as const
+
 // ---------------------------------------------------------------------------
 // Peran dan nama produk - refactor bentuk B (30-09-2026): pindah apa adanya
 // dari `labels.claimlife.ts`. Dipakai LEBIH DARI SATU modul (identitas sesi,

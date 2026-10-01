@@ -1,0 +1,319 @@
+// Form tambah/ubah user — Kelola User (keputusan work owner 01-10-2026).
+//
+// Username tidak dapat diubah sesudah dibuat. Sandi awal DIKETIK admin
+// (hanya saat tambah) dan wajib diganti pemiliknya saat login pertama.
+// Organisasi → Divisi → Unit berjenjang dari master aktif; workbasket dan
+// menu berupa kotak centang. ⛔ Reset sandi DITUNDA (perintah work owner).
+
+import { useEffect, useState } from 'react'
+
+import { Field, Gagal, Memuat, Modal, Pilih, type Opsi } from '../components/ui/dasar'
+import { KELOLA_USER, KETERANGAN_BELUM_DIMIGRASI } from '../labels'
+import { KODE_MENU_KELOLA_USER } from '../lib/daftarMenu'
+import {
+  ambilPengguna,
+  ambilPilihanPengguna,
+  buatPengguna,
+  ubahPengguna,
+  type OpsiMaster,
+  type PilihanKelola,
+  type RinciAkun,
+} from './api'
+import {
+  alihkan,
+  badanBaru,
+  badanUbah,
+  divisiUntuk,
+  isianDari,
+  isianKosong,
+  kelompokMenu,
+  periksaIsian,
+  setelDivisi,
+  setelOrganisasi,
+  unitUntuk,
+  type IsianForm,
+} from './aturan'
+
+const keOpsi = (daftar: readonly OpsiMaster[]): Opsi[] =>
+  daftar.map((o) => ({ value: o.kode, label: o.nama === '' ? o.kode : `${o.nama} (${o.kode})` }))
+
+/** Kotak sandi tanpa isian otomatis peramban: sandi admin yang tersimpan tidak boleh masuk ke akun baru. */
+function IsianSandiBaru({ id, label, value, onChange }: { id: string; label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="field">
+      <label className="field__label" htmlFor={id}>
+        {label}
+        <span className="field__req">*</span>
+      </label>
+      <input
+        className="field__input"
+        id={id}
+        type="password"
+        autoComplete="new-password"
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value)
+        }}
+      />
+    </div>
+  )
+}
+
+export default function FormPengguna({
+  akunId,
+  akunSaya,
+  onTutup,
+  onTersimpan,
+}: {
+  /** `null` = tambah user. */
+  akunId: string | null
+  /** Akun yang sedang login - Kelola User miliknya tidak dapat dicabut. */
+  akunSaya: string
+  onTutup: () => void
+  onTersimpan: (r: RinciAkun) => void
+}) {
+  const baru = akunId === null
+  const [pilihan, setPilihan] = useState<PilihanKelola | null>(null)
+  const [isi, setIsi] = useState<IsianForm>(isianKosong)
+  const [galatMuat, setGalatMuat] = useState<unknown>(null)
+  const [galatLokal, setGalatLokal] = useState<string | null>(null)
+  const [galatSimpan, setGalatSimpan] = useState<unknown>(null)
+  const [sibuk, setSibuk] = useState(false)
+
+  useEffect(() => {
+    let hidup = true
+    Promise.all([ambilPilihanPengguna(), akunId === null ? Promise.resolve(null) : ambilPengguna(akunId)]).then(
+      ([p, r]) => {
+        if (!hidup) return
+        setPilihan(p)
+        if (r !== null) setIsi(isianDari(r))
+      },
+      (g: unknown) => {
+        if (hidup) setGalatMuat(g)
+      },
+    )
+    return () => {
+      hidup = false
+    }
+  }, [akunId])
+
+  const diriSendiri = !baru && akunId === akunSaya
+  const ubah = (sebagian: Partial<IsianForm>) => {
+    setIsi((x) => ({ ...x, ...sebagian }))
+  }
+
+  const kirim = () => {
+    if (sibuk || pilihan === null) return
+    const awal = periksaIsian(isi, baru, akunSaya)
+    setGalatLokal(awal)
+    setGalatSimpan(null)
+    if (awal !== null) return
+    setSibuk(true)
+    const janji = akunId === null ? buatPengguna(badanBaru(isi)) : ubahPengguna(akunId, badanUbah(isi))
+    janji.then(
+      (r) => {
+        setSibuk(false)
+        onTersimpan(r)
+      },
+      (g: unknown) => {
+        setSibuk(false)
+        setGalatSimpan(g)
+      },
+    )
+  }
+
+  return (
+    <Modal
+      judul={baru ? KELOLA_USER.judulBaru : `${KELOLA_USER.judulUbah} — ${akunId}`}
+      onTutup={onTutup}
+      onKirim={kirim}
+      labelBatal={KELOLA_USER.batal}
+      lebar
+      aksi={
+        <button type="submit" className="btn btn--primary" disabled={sibuk || pilihan === null}>
+          {sibuk ? KELOLA_USER.menyimpan : KELOLA_USER.simpan}
+        </button>
+      }
+    >
+      {galatMuat !== null && <Gagal galat={galatMuat} />}
+      {pilihan === null && galatMuat === null && <Memuat pesan={KELOLA_USER.memuatPilihan} />}
+      {pilihan !== null && (
+        <div className="kelola-user__form">
+          {galatLokal !== null && (
+            <div className="alert alert--error" role="alert">
+              {galatLokal}
+            </div>
+          )}
+          {galatSimpan !== null && <Gagal galat={galatSimpan} />}
+          <div className="form-grid">
+            <Field
+              label={KELOLA_USER.akun}
+              value={isi.akunId}
+              onChange={(v) => {
+                ubah({ akunId: v })
+              }}
+              required={baru}
+              readOnly={!baru}
+              autoFocus={baru}
+            />
+            <Field
+              label={KELOLA_USER.nama}
+              value={isi.nama}
+              onChange={(v) => {
+                ubah({ nama: v })
+              }}
+              required
+              autoFocus={!baru}
+            />
+            {!baru && <p className="muted kelola-user__catatan">{KELOLA_USER.akunTetap}</p>}
+            {baru && (
+              <>
+                <IsianSandiBaru
+                  id="kelola-user-sandi"
+                  label={KELOLA_USER.sandi}
+                  value={isi.sandi}
+                  onChange={(v) => {
+                    ubah({ sandi: v })
+                  }}
+                />
+                <IsianSandiBaru
+                  id="kelola-user-ulangi"
+                  label={KELOLA_USER.ulangiSandi}
+                  value={isi.ulangiSandi}
+                  onChange={(v) => {
+                    ubah({ ulangiSandi: v })
+                  }}
+                />
+                <p className="muted kelola-user__catatan">{KELOLA_USER.catatanSandi}</p>
+              </>
+            )}
+            <Pilih
+              label={KELOLA_USER.organisasi}
+              value={isi.organisasi}
+              opsi={keOpsi(pilihan.organisasi)}
+              kosong={KELOLA_USER.tidakDiisi}
+              onChange={(v) => {
+                setIsi((x) => setelOrganisasi(x, v, pilihan))
+              }}
+            />
+            <Pilih
+              label={KELOLA_USER.divisi}
+              value={isi.divisi}
+              opsi={keOpsi(divisiUntuk(pilihan, isi.organisasi))}
+              kosong={KELOLA_USER.tidakDiisi}
+              onChange={(v) => {
+                setIsi((x) => setelDivisi(x, v, pilihan))
+              }}
+            />
+            <Pilih
+              label={KELOLA_USER.unit}
+              value={isi.unit}
+              opsi={keOpsi(unitUntuk(pilihan, isi.divisi))}
+              kosong={KELOLA_USER.tidakDiisi}
+              onChange={(v) => {
+                ubah({ unit: v })
+              }}
+            />
+          </div>
+
+          <fieldset className="kelola-user__centang">
+            <legend>
+              {KELOLA_USER.workbasket}{' '}
+              <span className="muted">{KELOLA_USER.dipilih(isi.workbasket.length, pilihan.workbasket.length)}</span>
+            </legend>
+            <div className="kelola-user__aksi-centang">
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                onClick={() => {
+                  ubah({ workbasket: pilihan.workbasket.map((w) => w.kode).sort() })
+                }}
+              >
+                {KELOLA_USER.pilihSemua}
+              </button>
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                onClick={() => {
+                  ubah({ workbasket: [] })
+                }}
+              >
+                {KELOLA_USER.kosongkan}
+              </button>
+            </div>
+            <div className="kelola-user__kisi">
+              {pilihan.workbasket.map((w) => (
+                <label key={w.kode} className="kelola-user__butir">
+                  <input
+                    type="checkbox"
+                    checked={isi.workbasket.includes(w.kode)}
+                    onChange={(e) => {
+                      ubah({ workbasket: alihkan(isi.workbasket, w.kode, e.target.checked) })
+                    }}
+                  />
+                  <span>
+                    {w.kode}
+                    {w.nama !== '' && w.nama !== w.kode && <span className="muted"> — {w.nama}</span>}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          <fieldset className="kelola-user__centang">
+            <legend>
+              {KELOLA_USER.menu} <span className="muted">{KELOLA_USER.dipilih(isi.menu.length, pilihan.menu.length)}</span>
+            </legend>
+            <div className="kelola-user__aksi-centang">
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                onClick={() => {
+                  ubah({ menu: pilihan.menu.map((m) => m.kode).sort() })
+                }}
+              >
+                {KELOLA_USER.pilihSemua}
+              </button>
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                onClick={() => {
+                  ubah({ menu: diriSendiri ? [KODE_MENU_KELOLA_USER] : [] })
+                }}
+              >
+                {KELOLA_USER.kosongkan}
+              </button>
+            </div>
+            {kelompokMenu(pilihan.menu).map((g) => (
+              <div key={g.golongan} className="kelola-user__golongan">
+                <p className="kelola-user__golongan-judul">{g.golongan}</p>
+                <div className="kelola-user__kisi">
+                  {g.menu.map((m) => {
+                    const terkunci = diriSendiri && m.kode === KODE_MENU_KELOLA_USER
+                    return (
+                      <label key={m.kode} className="kelola-user__butir" title={terkunci ? KELOLA_USER.menuDiriSendiri : undefined}>
+                        <input
+                          type="checkbox"
+                          checked={isi.menu.includes(m.kode)}
+                          disabled={terkunci}
+                          onChange={(e) => {
+                            ubah({ menu: alihkan(isi.menu, m.kode, e.target.checked) })
+                          }}
+                        />
+                        <span>
+                          {m.label}
+                          {!m.dimigrasi && <span className="muted"> — {KETERANGAN_BELUM_DIMIGRASI}</span>}
+                        </span>
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+            {diriSendiri && <p className="muted kelola-user__catatan">{KELOLA_USER.menuDiriSendiri}</p>}
+          </fieldset>
+        </div>
+      )}
+    </Modal>
+  )
+}

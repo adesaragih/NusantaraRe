@@ -20,8 +20,18 @@ describe('App: pemeriksaan sesi tanpa kedip', () => {
   })
 
   it('menu dibaca sesudah identitas diketahui, ulang bila akunnya berganti', () => {
-    expect(APP).toContain("const kunciMenu = stub ? 'stub' : (profil?.akunId ?? null)")
+    // Akun yang wajib ganti sandi TIDAK membaca menu (401 -> kembali ke login).
+    expect(APP).toContain("const kunciMenu = stub ? 'stub' : profil && !profil.wajibGantiSandi ? profil.akunId : null")
     expect(APP).toContain('if (kunciMenu === null) return')
-    expect(APP).toContain('}, [kunciMenu])')
+    expect(APP).toContain('}, [kunciMenu, versiMenu])')
+  })
+
+  // Kelola User (01-10-2026): modul dipasang menurut menu akun, dan halaman
+  // Kelola User hanya bagi pemegangnya.
+  it('modul dan Kelola User dipasang menurut menu akun', () => {
+    expect(APP).toContain('MODUL_FRONTEND.filter((m) => modulDipasang(m.nama, modulBoleh))')
+    expect(APP).toContain('modulAktif={modulBoleh}')
+    expect(APP).toContain('{halaman === HALAMAN_KELOLA_USER && bolehKelola && <KelolaUser')
+    expect(APP).not.toContain('modulDipasang(m.nama, modulAktif)')
   })
 })

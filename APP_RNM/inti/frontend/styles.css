@@ -5816,3 +5816,97 @@ textarea.field__input {
     transition: none !important;
   }
 }
+
+/* ======================================================================
+   KELOLA USER — daftar akun dan form tambah/ubah (keputusan work owner
+   01-10-2026). Token yang sudah ada saja; nol warna baru.
+   ====================================================================== */
+.kelola-user__sub {
+  margin: -4px 0 14px;
+}
+.kelola-user__cari {
+  width: min(320px, 100%);
+}
+.kelola-user__status {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.kelola-user__badge--aktif {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+.kelola-user__badge--nonaktif {
+  background: var(--surface-2);
+  color: var(--text-3);
+}
+.kelola-user__badge--terkunci {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+.kelola-user__badge--wajib {
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
+.kelola-user__aksi {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+}
+.kelola-user__hapus {
+  color: var(--danger-text);
+}
+.kelola-user__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.kelola-user__catatan {
+  margin: 0;
+  font-size: var(--fs-xs);
+  align-self: end;
+}
+.kelola-user__centang {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+.kelola-user__centang legend {
+  padding: 0 6px;
+  font-weight: 600;
+}
+.kelola-user__aksi-centang {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.kelola-user__golongan + .kelola-user__golongan {
+  margin-top: 10px;
+}
+.kelola-user__golongan-judul {
+  margin: 0 0 6px;
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  color: var(--text-3);
+}
+.kelola-user__kisi {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 6px 16px;
+}
+.kelola-user__butir {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+.kelola-user__butir input {
+  margin-top: 2px;
+}
+.kelola-user__butir:has(input:disabled) {
+  cursor: not-allowed;
+}

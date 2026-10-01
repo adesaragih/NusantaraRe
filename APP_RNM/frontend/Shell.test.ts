@@ -63,7 +63,9 @@ describe('menu hanya yang berbukti korpus', () => {
     // inbox, register, premiumlist, komite, tco-tahun DICABUT; tombol modul
     // membuka halaman awalnya. Beranda TIDAK dihitung - ia kerangka aplikasi.
     // Menggantikan "kelima butir menu lama tetap, dan seluruhnya berbukti".
-    const modul = ENTRI_MENU.filter((e) => e.modul !== 'beranda')
+    // Kelola User (01-10-2026) juga TIDAK dihitung - ia menu aplikasi, bukan
+    // modul korpus (`daftar.kelolauser.test.ts`).
+    const modul = ENTRI_MENU.filter((e) => e.modul !== 'beranda' && e.modul !== 'kelolauser')
     // Lima sejak tiket 03 Treaty Contract Out. Sempat tujuh (tiket 04, 08);
     // tco5 [keputusan work owner 29-09-2026]: kelompok Treaty Contract Out
     // SATU butir "Treaty Contract Out" - ReinsType dan Description popup form

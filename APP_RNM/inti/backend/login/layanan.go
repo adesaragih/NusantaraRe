@@ -57,8 +57,15 @@ func (l *Layanan) profil(ctx context.Context, a Akun) (Profil, error) {
 	if peran == nil {
 		peran = []string{}
 	}
+	menu, err := l.gudang.Menu(ctx, a.ID)
+	if err != nil {
+		return Profil{}, err
+	}
+	if menu == nil {
+		menu = []string{}
+	}
 	return Profil{AkunID: a.ID, Nama: a.Nama, Peran: peran, Organisasi: a.Organisasi,
-		Divisi: a.Divisi, Unit: a.Unit, WajibGantiSandi: a.WajibGantiSandi}, nil
+		Divisi: a.Divisi, Unit: a.Unit, WajibGantiSandi: a.WajibGantiSandi, Menu: menu}, nil
 }
 
 // Masuk memeriksa akun dan sandi lalu menerbitkan token sesi.

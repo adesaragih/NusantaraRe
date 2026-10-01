@@ -79,12 +79,19 @@ func pilihModulAktif(terdaftar []inti.Modul, namaLama map[string]string, diminta
 // `GET /api/menu` (M_NAV_MENU, brief menu 30-09-2026) milik aplikasi: ia
 // dipasang walau modul mana pun nonaktif, dan butir modul nonaktif tidak
 // dikirimnya. `stubPelaku` = AUTH_STUB, diteruskan ke saringan per akun
-// (`menu.SaringMenuUntukPelaku`, hari ini meneruskan semua).
+// (`menu.SaringMenuUntukAkun`).
 //
-// `masuk` (login, keputusan work owner 01-10-2026) memasang `/api/auth/*`
-// dan membungkus SELURUH handler dengan middleware sesinya: pelaku hasil
-// login dibaca `inti.PelakuDari` tanpa satu pun modul diubah. nil = tanpa
-// login (uji).
+// `masuk` (login, keputusan work owner 01-10-2026) memasang `/api/auth/*` dan
+// Kelola User `/api/admin/*`, dan membungkus SELURUH handler dengan
+// middleware sesinya: pelaku hasil login dibaca `inti.PelakuDari` tanpa satu
+// pun modul diubah. nil = tanpa login (uji) - dan tanpa gerbang menu.
+//
+// ⛔ GERBANG MENU (Kelola User, keputusan work owner 01-10-2026): rute milik
+// modul AKTIF hanya dilayani bila akun yang login memegang menu modul itu
+// (`M_LOGIN_GO_MENU`) - atau rute itu dipinjam modul yang dipegangnya
+// (`ruteDipinjam`). Sesi tanpa menunya 403; tanpa sesi 401, kecuali
+// AUTH_STUB=true (pengembangan, tanpa login). Pemilik rute dikenali dari
+// mux terpisah per modul - nol modul diubah.
 func rakitMux(dasar *inti.Dasar, terdaftar, aktif []inti.Modul, stubPelaku bool, masuk *login.Rute) http.Handler {
 	bungkus := func(h http.Handler) http.Handler { return h }
 	mux := http.NewServeMux()
@@ -96,30 +103,26 @@ func rakitMux(dasar *inti.Dasar, terdaftar, aktif []inti.Modul, stubPelaku bool,
 	mux.HandleFunc("GET /api/modul-aktif", modulAktif(aktif))
 	mux.HandleFunc("GET /api/menu", ruteMenu(dasar, aktif, stubPelaku))
 	dipasang := map[string]bool{}
+	var milikAktif []ruteModul
 	for _, m := range aktif {
 		m.DaftarkanRute(mux)
 		dipasang[m.Nama()] = true
-	}
-	type ruteNonaktif struct {
-		nama string
-		mux  *http.ServeMux
-	}
-	var nonaktif []ruteNonaktif
-	for _, m := range terdaftar {
-		if dipasang[m.Nama()] {
-			continue
+		if masuk != nil {
+			milikAktif = append(milikAktif, kenali(m))
 		}
-		// Rutenya didaftarkan ke mux TERPISAH yang hanya dipakai untuk
-		// mengenali jalurnya - handler-nya tidak pernah dipanggil.
-		kenal := http.NewServeMux()
-		m.DaftarkanRute(kenal)
-		nonaktif = append(nonaktif, ruteNonaktif{nama: m.Nama(), mux: kenal})
 	}
-	if len(nonaktif) == 0 {
+	var nonaktif []ruteModul
+	for _, m := range terdaftar {
+		if !dipasang[m.Nama()] {
+			nonaktif = append(nonaktif, kenali(m))
+		}
+	}
+	if len(nonaktif) == 0 && len(milikAktif) == 0 {
 		return bungkus(mux)
 	}
 	return bungkus(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if _, pola := mux.Handler(r); pola == "" {
+		_, pola := mux.Handler(r)
+		if pola == "" {
 			for _, n := range nonaktif {
 				if _, p := n.mux.Handler(r); p != "" {
 					galat.Tulis(w, http.StatusNotFound,
@@ -128,18 +131,81 @@ func rakitMux(dasar *inti.Dasar, terdaftar, aktif []inti.Modul, stubPelaku bool,
 				}
 			}
 		}
+		if pemilik := pemilikPola(milikAktif, r, pola); pemilik != "" && !izinMenu(w, r, stubPelaku, pemilik, ruteDipinjam[pola]) {
+			return
+		}
 		mux.ServeHTTP(w, r)
 	}))
 }
 
-// rakitLogin menyusun rute login. Tanpa Oracle atau tanpa SESI_RAHASIA ia
-// tetap terpasang dan menjawab 503 yang menyebut sebabnya.
+// ruteModul - rute satu modul, didaftarkan ke mux TERPISAH yang hanya dipakai
+// untuk mengenali jalurnya; handler-nya tidak pernah dipanggil.
+type ruteModul struct {
+	nama string
+	mux  *http.ServeMux
+}
+
+func kenali(m inti.Modul) ruteModul {
+	kenal := http.NewServeMux()
+	m.DaftarkanRute(kenal)
+	return ruteModul{nama: m.Nama(), mux: kenal}
+}
+
+// pemilikPola - modul aktif yang mendaftarkan `pola` (pola yang dipilih mux
+// aplikasi untuk permintaan ini); kosong = rute milik aplikasi.
+func pemilikPola(milik []ruteModul, r *http.Request, pola string) string {
+	if pola == "" {
+		return ""
+	}
+	for _, m := range milik {
+		if _, p := m.mux.Handler(r); p == pola {
+			return m.nama
+		}
+	}
+	return ""
+}
+
+// ruteDipinjam - rute modul yang DIPANGGIL LAYAR modul lain, menurut pola mux
+// pemiliknya: pemegang menu peminjam boleh memakainya walau tidak memegang
+// menu pemiliknya. Daftarnya dijaga dua arah (`TestPanggilanLintasModulTerdaftar`).
+var ruteDipinjam = map[string][]string{
+	// Panel Data Polis Claim Life membaca polis versi berjalan dari PremiumList
+	// Life (`modul/claimlife/frontend/api.ts`, butir av).
+	"GET /api/polis-life/ringkas": {"claimlife"},
+}
+
+// izinMenu menjawab apakah permintaan ini boleh memakai rute milik `pemilik`,
+// atau menulis penolakannya.
+func izinMenu(w http.ResponseWriter, r *http.Request, stubPelaku bool, pemilik string, peminjam []string) bool {
+	kode, sesi := inti.AksesMenuDari(r.Context())
+	if !sesi {
+		if stubPelaku {
+			return true
+		}
+		galat.Tulis(w, http.StatusUnauthorized, "belum login atau sesi sudah berakhir")
+		return false
+	}
+	if inti.PunyaMenu(kode, pemilik) {
+		return true
+	}
+	for _, p := range peminjam {
+		if inti.PunyaMenu(kode, p) {
+			return true
+		}
+	}
+	galat.Tulis(w, http.StatusForbidden, fmt.Sprintf("akun ini tidak punya akses ke menu %s", pemilik))
+	return false
+}
+
+// rakitLogin menyusun rute login dan Kelola User. Tanpa Oracle atau tanpa
+// SESI_RAHASIA keduanya tetap terpasang dan menjawab 503 yang menyebut sebabnya.
 func rakitLogin(dasar *inti.Dasar, cfg config.Config) *login.Rute {
 	if !dasar.PunyaDatabase() || cfg.SesiRahasia == "" {
 		return login.NewRute(nil, cfg.SesiCookieAman)
 	}
-	l := login.NewLayanan(login.NewGudangOracle(dasar.DB()), []byte(cfg.SesiRahasia))
-	return login.NewRute(l, cfg.SesiCookieAman)
+	gudang := login.NewGudangOracle(dasar.DB())
+	l := login.NewLayanan(gudang, []byte(cfg.SesiRahasia))
+	return login.NewRute(l, cfg.SesiCookieAman).DenganKelola(login.NewKelola(gudang, menu.NewPembaca(dasar.DB())))
 }
 
 // jawabanModulAktif adalah badan GET /api/modul-aktif.

@@ -39,6 +39,36 @@ func DenganPelakuSesi(ctx context.Context, p Pelaku) context.Context {
 	return context.WithValue(ctx, kunciPelakuSesi{}, p)
 }
 
+type kunciAksesMenu struct{}
+
+// DenganAksesMenu menaruh KODE menu akun hasil login (`M_LOGIN_GO_MENU`,
+// Kelola User 01-10-2026) di context permintaan - hanya middleware login yang
+// memanggilnya, untuk sesi yang juga mendapat pelaku.
+//
+// ⛔ Terpisah dari `Pelaku`: menu menjawab "layar mana yang boleh dibuka"
+// (sidebar dan gerbang 403 `cmd/api`), bukan "peran apa yang dipegang". Aturan
+// dagang modul tetap membaca PERAN.
+func DenganAksesMenu(ctx context.Context, kode []string) context.Context {
+	return context.WithValue(ctx, kunciAksesMenu{}, append([]string{}, kode...))
+}
+
+// AksesMenuDari membaca menu akun hasil login. `ada` false = permintaan tanpa
+// sesi login - BUKAN akun tanpa menu (yang `ada` true dengan daftar kosong).
+func AksesMenuDari(ctx context.Context) (kode []string, ada bool) {
+	kode, ada = ctx.Value(kunciAksesMenu{}).([]string)
+	return kode, ada
+}
+
+// PunyaMenu menjawab apakah `kode` ada di daftar menu.
+func PunyaMenu(daftar []string, kode string) bool {
+	for _, k := range daftar {
+		if k == kode {
+			return true
+		}
+	}
+	return false
+}
+
 // pelakuDari membaca pelaku permintaan.
 //
 // Tanpa stub, ia mengembalikan pelaku KOSONG - bukan pelaku istimewa. Jalur

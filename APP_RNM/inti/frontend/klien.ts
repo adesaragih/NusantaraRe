@@ -433,6 +433,11 @@ export interface ProfilLogin {
   divisi: string
   unit: string
   wajibGantiSandi: boolean
+  /**
+   * KODE menu yang boleh dibuka (`M_LOGIN_GO_MENU`, Kelola User 01-10-2026):
+   * nama modul, dan `kelolauser` bagi admin.
+   */
+  menu: string[]
 }
 
 /** `GET /api/auth/saya` - 401 bila belum login atau sesi berakhir. */

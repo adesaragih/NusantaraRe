@@ -1,12 +1,19 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import Beranda from './Beranda'
 import GantiSandi from '../inti/frontend/components/GantiSandi'
 import Login, { KerangkaMasuk, pesanGagalLogin } from '../inti/frontend/components/Login'
 import { Shell } from '../inti/frontend/components/Shell'
 import { ApiFailure, ambilMenu, ambilModulAktif, ambilSesiSaya, keluarLogin, type ProfilLogin } from '../inti/frontend/klien'
+import KelolaUser from '../inti/frontend/kelolauser/KelolaUser'
 import { LOGIN } from '../inti/frontend/labels'
-import { modulDipasang, type KeadaanMenuTabel } from '../inti/frontend/lib/daftarMenu'
+import {
+  HALAMAN_KELOLA_USER,
+  KODE_MENU_KELOLA_USER,
+  modulDipasang,
+  modulUntukAkun,
+  type KeadaanMenuTabel,
+} from '../inti/frontend/lib/daftarMenu'
 import { bolehMasukStub, PERISTIWA_SESI_BERAKHIR, pelakuStub, sesiDariProfil, type Sesi } from '../inti/frontend/store/sesi'
 import { ENTRI_MENU, halamanAktif, MODUL_FRONTEND, type Halaman } from './daftar'
 
@@ -76,7 +83,14 @@ export default function App() {
   // tanpa sesi dijawab 401 - yang, bila dikirim sebelum login, memicu
   // `PERISTIWA_SESI_BERAKHIR` di tengah pemeriksaan sesi dan membuat layar
   // login berkedip.
-  const kunciMenu = stub ? 'stub' : (profil?.akunId ?? null)
+  //
+  // ⛔ Akun yang WAJIB ganti sandi bukan pemegang menu (backend tidak menaruh
+  // menunya di context): menunya dibaca SESUDAH sandi diganti. Membacanya di
+  // layar ganti sandi dijawab 401, dan 401 itu melempar akun baru kembali ke
+  // layar login berulang-ulang (temuan /code-review).
+  const kunciMenu = stub ? 'stub' : profil && !profil.wajibGantiSandi ? profil.akunId : null
+  // Naik saat admin mengubah akunnya SENDIRI di Kelola User: menu dibaca ulang.
+  const [versiMenu, setVersiMenu] = useState(0)
   const [menuTabel, setMenuTabel] = useState<KeadaanMenuTabel>(null)
   useEffect(() => {
     setMenuTabel(null)
@@ -93,14 +107,35 @@ export default function App() {
     return () => {
       batal = true
     }
-  }, [kunciMenu])
+  }, [kunciMenu, versiMenu])
+  // Menu akun (M_LOGIN_GO_MENU, Kelola User 01-10-2026): modul yang menunya
+  // tidak dipegang TIDAK DIPASANG - layarnya tidak ada dan tidak satu pun
+  // permintaannya berangkat (backend menjawabnya 403). `null` = mode stub,
+  // tanpa saringan akun - juga bila backend (versi lama) tidak mengirim medan
+  // `menu`: backend itu memang belum menyaring per akun.
+  const menuAkun = !stub && profil && Array.isArray(profil.menu) ? profil.menu : null
+  const modulBoleh = useMemo(
+    () => modulUntukAkun(modulAktif, menuAkun, MODUL_FRONTEND.map((m) => m.nama)),
+    [modulAktif, menuAkun],
+  )
+  const bolehKelola = menuAkun !== null && menuAkun.includes(KODE_MENU_KELOLA_USER)
+  // Admin mengubah akunnya sendiri: profil (menu) dan sidebar dibaca ulang.
+  const segarkanDiri = useCallback(() => {
+    ambilSesiSaya().then(setProfil, () => {
+      // 401 sudah memicu PERISTIWA_SESI_BERAKHIR; galat lain menunggu muat ulang.
+    })
+    setVersiMenu((v) => v + 1)
+  }, [])
   // Daftar modul aktif tiba SESUDAH pemakai sempat membuka halaman modul yang
   // ternyata nonaktif (semua menu tampil selama daftarnya `null`): rute modul
   // itu dilepas, jadi halamannya kembali ke Beranda alih-alih layar kosong
-  // (temuan /code-review). Tanpa MODUL_AKTIF tidak pernah terjadi.
+  // (temuan /code-review). Tanpa MODUL_AKTIF tidak pernah terjadi. Sama bila
+  // menu akunnya dicabut, dan bila Kelola User tidak (lagi) dipegang.
   useEffect(() => {
-    if (!halamanAktif(halaman, modulAktif)) setHalaman('beranda')
-  }, [halaman, modulAktif])
+    if (!halamanAktif(halaman, modulBoleh) || (halaman === HALAMAN_KELOLA_USER && !bolehKelola)) {
+      setHalaman('beranda')
+    }
+  }, [halaman, modulBoleh, bolehKelola])
 
   if (!stub && galatSesi !== null) {
     return (
@@ -181,7 +216,8 @@ export default function App() {
             }
       }
     >
-      {halaman === 'beranda' && <Beranda masuk={masuk} onBuka={setHalaman} modulAktif={modulAktif} />}
+      {halaman === 'beranda' && <Beranda masuk={masuk} onBuka={setHalaman} modulAktif={modulBoleh} />}
+      {halaman === HALAMAN_KELOLA_USER && bolehKelola && <KelolaUser akunSaya={masuk.akunID} onDiriBerubah={segarkanDiri} />}
       {/*
         Refactor bentuk B (30-09-2026): setiap modul AKTIF merender halamannya
         sendiri (`modul/<nama>/rute.tsx`) dan menyimpan keadaannya sendiri -
@@ -189,7 +225,7 @@ export default function App() {
         terpasang selama modulnya aktif, jadi keadaan itu bertahan saat pemakai
         pindah halaman, persis seperti ketika ia hidup di sini.
       */}
-      {MODUL_FRONTEND.filter((m) => modulDipasang(m.nama, modulAktif)).map((m) => (
+      {MODUL_FRONTEND.filter((m) => modulDipasang(m.nama, modulBoleh)).map((m) => (
         <m.Rute key={m.nama} halaman={halaman} masuk={masuk} onPindah={setHalaman} />
       ))}
     </Shell>

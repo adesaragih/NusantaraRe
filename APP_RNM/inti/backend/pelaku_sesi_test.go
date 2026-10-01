@@ -24,3 +24,25 @@ func TestPelakuSesiMendahuluiStub(t *testing.T) {
 		}
 	}
 }
+
+// Menu akun hasil login dibawa context TERPISAH dari Pelaku: ia menjawab
+// "layar mana yang boleh dibuka", bukan "peran apa yang dipegang". Tanpa sesi
+// tidak ada daftar sama sekali - bukan daftar kosong yang sah.
+func TestAksesMenuSesi(t *testing.T) {
+	r := httptest.NewRequest("GET", "/", nil)
+	if kode, ada := AksesMenuDari(r.Context()); ada || kode != nil {
+		t.Errorf("tanpa sesi: %v %v", kode, ada)
+	}
+	ctx := DenganAksesMenu(r.Context(), []string{"claimlife", "kelolauser"})
+	kode, ada := AksesMenuDari(ctx)
+	if !ada || len(kode) != 2 || kode[0] != "claimlife" || kode[1] != "kelolauser" {
+		t.Errorf("dengan sesi: %v %v", kode, ada)
+	}
+	if !PunyaMenu(kode, "kelolauser") || PunyaMenu(kode, "premiumlistlife") {
+		t.Errorf("PunyaMenu %v", kode)
+	}
+	// Sesi tanpa satu pun menu tetap SESI: semua ditolak, bukan semua boleh.
+	if kode, ada := AksesMenuDari(DenganAksesMenu(r.Context(), nil)); !ada || len(kode) != 0 {
+		t.Errorf("sesi tanpa menu: %v %v", kode, ada)
+	}
+}

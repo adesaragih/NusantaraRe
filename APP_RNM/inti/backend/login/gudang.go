@@ -23,6 +23,7 @@ const (
 	masterAktif  = 1
 	tabelLogin   = "M_LOGIN_GO"
 	tabelLoginWB = "M_LOGIN_GO_WORKBASKET"
+	tabelLoginMn = "M_LOGIN_GO_MENU"
 	tabelWB      = "M_WORKBASKET"
 	tabelUnit    = "M_UNIT"
 	tabelDivisi  = "M_DIVISION"
@@ -47,6 +48,14 @@ func sqlAmbilAkun(t string) string {
 func sqlWorkbasket(login, wb string) string {
 	return fmt.Sprintf(`SELECT l.WORKBASKET_ID FROM %s l JOIN %s w ON w.WORKBASKET_ID = l.WORKBASKET_ID
 	  WHERE l.LOGIN_ID = :1 AND w.IS_ACTIVE = :2 ORDER BY l.WORKBASKET_ID`, login, wb)
+}
+
+func sqlWorkbasketSemua(t string) string {
+	return fmt.Sprintf(`SELECT WORKBASKET_ID FROM %s WHERE LOGIN_ID = :1 ORDER BY WORKBASKET_ID`, t)
+}
+
+func sqlMenu(t string) string {
+	return fmt.Sprintf(`SELECT MENU_KODE FROM %s WHERE LOGIN_ID = :1 ORDER BY MENU_KODE`, t)
 }
 
 // sqlCatatGagal - atomik di satu pernyataan, jadi dua percobaan serentak
@@ -111,6 +120,10 @@ func sqlSisipWorkbasket(t string) string {
 	return fmt.Sprintf(`INSERT INTO %s (LOGIN_ID, WORKBASKET_ID) VALUES (:1, :2)`, t)
 }
 
+func sqlSisipMenu(t string) string {
+	return fmt.Sprintf(`INSERT INTO %s (LOGIN_ID, MENU_KODE) VALUES (:1, :2)`, t)
+}
+
 func (g *GudangOracle) nama(logis string) (string, error) { return g.db.Qualify(logis) }
 
 func (g *GudangOracle) baris(ctx context.Context, q string, args []any, tujuan ...any) error {
@@ -153,22 +166,49 @@ func (g *GudangOracle) Workbasket(ctx context.Context, id string) ([]string, err
 	if err != nil {
 		return nil, err
 	}
-	q := sqlWorkbasket(l, w)
+	return g.daftarTeks(ctx, "workbasket", sqlWorkbasket(l, w), id, masterAktif)
+}
+
+// WorkbasketSemua membaca SELURUH WORKBASKET_ID akun itu, juga yang nonaktif
+// di master - Kelola User mempertahankannya saat mengubah akun.
+func (g *GudangOracle) WorkbasketSemua(ctx context.Context, id string) ([]string, error) {
+	l, err := g.nama(tabelLoginWB)
+	if err != nil {
+		return nil, err
+	}
+	return g.daftarTeks(ctx, "workbasket", sqlWorkbasketSemua(l), id)
+}
+
+// Menu membaca KODE menu akun itu. Tabelnya belum ada = `ErrMenuBelumDimigrasi`.
+func (g *GudangOracle) Menu(ctx context.Context, id string) ([]string, error) {
+	t, err := g.nama(tabelLoginMn)
+	if err != nil {
+		return nil, err
+	}
+	out, err := g.daftarTeks(ctx, "menu", sqlMenu(t), id)
+	if err != nil && strings.Contains(err.Error(), "ORA-00942") {
+		return nil, fmt.Errorf("%w: %v", ErrMenuBelumDimigrasi, err)
+	}
+	return out, err
+}
+
+// daftarTeks membaca satu kolom teks banyak baris; daftar kosong, bukan nil.
+func (g *GudangOracle) daftarTeks(ctx context.Context, apa, q string, args ...any) ([]string, error) {
 	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := g.db.QueryContext(ctx, q, id, masterAktif)
+	rows, err := g.db.QueryContext(ctx, q, args...)
 	if err != nil {
-		return nil, fmt.Errorf("login: membaca workbasket: %w", err)
+		return nil, fmt.Errorf("login: membaca %s: %w", apa, err)
 	}
 	defer func() { _ = rows.Close() }()
 	out := []string{}
 	for rows.Next() {
-		var wb string
-		if err := rows.Scan(&wb); err != nil {
+		var v string
+		if err := rows.Scan(&v); err != nil {
 			return nil, err
 		}
-		out = append(out, wb)
+		out = append(out, v)
 	}
 	return out, rows.Err()
 }
@@ -292,13 +332,17 @@ func (g *GudangOracle) WorkbasketAktif(ctx context.Context, id string) (bool, er
 	return aktif == masterAktif, err
 }
 
-// BuatAkun menulis akun dan workbasket-nya dalam satu transaksi.
+// BuatAkun menulis akun, workbasket, dan menunya dalam satu transaksi.
 func (g *GudangOracle) BuatAkun(ctx context.Context, a AkunBaru, hash string, wajibGanti bool) (err error) {
 	t, err := g.nama(tabelLogin)
 	if err != nil {
 		return err
 	}
 	l, err := g.nama(tabelLoginWB)
+	if err != nil {
+		return err
+	}
+	mn, err := g.nama(tabelLoginMn)
 	if err != nil {
 		return err
 	}
@@ -325,6 +369,12 @@ func (g *GudangOracle) BuatAkun(ctx context.Context, a AkunBaru, hash string, wa
 			q    string
 			args []any
 		}{sqlSisipWorkbasket(l), []any{a.ID, w}})
+	}
+	for _, m := range a.Menu {
+		langkah = append(langkah, struct {
+			q    string
+			args []any
+		}{sqlSisipMenu(mn), []any{a.ID, m}})
 	}
 	for _, s := range langkah {
 		if err = db.PeriksaSQL(s.q); err != nil {

@@ -9,6 +9,7 @@ import (
 	"errors"
 	"math/big"
 	"regexp"
+	"strings"
 	"sync"
 	"unicode/utf8"
 
@@ -26,8 +27,10 @@ var (
 // Tanpa spasi dan tanpa `|` (pemisah isi cookie sesi).
 var polaAkun = regexp.MustCompile(`^[A-Za-z0-9._@-]{1,64}$`)
 
-// AkunSah menjawab apakah bentuk LOGIN_ID dapat dipakai.
-func AkunSah(akun string) bool { return polaAkun.MatchString(akun) }
+// AkunSah menjawab apakah bentuk LOGIN_ID dapat dipakai. Titik saja ditolak:
+// sebagai segmen jalur `.`/`..` dibersihkan peramban dan mux, jadi akun itu
+// tidak dapat dibuka di Kelola User.
+func AkunSah(akun string) bool { return polaAkun.MatchString(akun) && strings.Trim(akun, ".") != "" }
 
 // PeriksaSandiBaru menegakkan aturan sandi.
 func PeriksaSandiBaru(sandi string) error {

@@ -21,18 +21,21 @@ type Rute struct {
 	layanan *Layanan
 	// cookieAman - atribut Secure (SESI_COOKIE_SECURE, bawaan true).
 	cookieAman bool
+	// kelola - Kelola User (`DenganKelola`); nil = rute `/api/admin/*` 503.
+	kelola *Kelola
 }
 
 // NewRute menyusunnya. `l` nil = login belum dapat dipakai (tanpa Oracle atau
 // tanpa SESI_RAHASIA): rutenya tetap ada dan menjawab 503 yang menjelaskan diri.
 func NewRute(l *Layanan, cookieAman bool) *Rute { return &Rute{layanan: l, cookieAman: cookieAman} }
 
-// Pasang mendaftarkan rute `/api/auth/*`.
+// Pasang mendaftarkan rute `/api/auth/*` dan Kelola User `/api/admin/*`.
 func (r *Rute) Pasang(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/auth/login", r.masuk)
 	mux.HandleFunc("POST /api/auth/logout", r.keluar)
 	mux.HandleFunc("GET /api/auth/saya", r.saya)
 	mux.HandleFunc("POST /api/auth/ganti-sandi", r.gantiSandi)
+	r.pasangKelola(mux)
 }
 
 type kunciSesi struct{}
@@ -86,8 +89,12 @@ func (r *Rute) hapusCookie(w http.ResponseWriter) {
 // diteruskan TANPA pelaku - jalur beridentitas menolaknya sendiri. Galat
 // Oracle tidak membuang cookie: sesinya mungkin masih sah.
 //
-// ⛔ Akun yang wajib ganti sandi mendapat sesi, tetapi BUKAN pelaku: hanya
-// `/api/auth/*` yang melayaninya sampai sandinya diganti.
+// ⛔ Akun yang wajib ganti sandi mendapat sesi, tetapi BUKAN pelaku dan BUKAN
+// pemegang menu: hanya `/api/auth/*` yang melayaninya sampai sandinya diganti.
+//
+// Menu akun (`inti.DenganAksesMenu`) dibaca ulang dari Oracle di SETIAP
+// permintaan, bersama workbasket-nya: perubahan di Kelola User berlaku pada
+// permintaan berikutnya, tanpa login ulang.
 func (r *Rute) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		c, err := req.Cookie(NamaCookie)
@@ -109,6 +116,7 @@ func (r *Rute) Middleware(next http.Handler) http.Handler {
 		ctx := context.WithValue(req.Context(), kunciSesi{}, sesiPermintaan{profil: p, token: tok})
 		if !p.WajibGantiSandi {
 			ctx = inti.DenganPelakuSesi(ctx, inti.Pelaku{AkunID: p.AkunID, Peran: p.Peran})
+			ctx = inti.DenganAksesMenu(ctx, p.Menu)
 		}
 		next.ServeHTTP(w, req.WithContext(ctx))
 	})
@@ -117,11 +125,16 @@ func (r *Rute) Middleware(next http.Handler) http.Handler {
 // bacaJSON - hanya `application/json` (formulir lintas situs tidak dapat
 // mengirimnya), badan maksimal 4 KiB.
 func bacaJSON(w http.ResponseWriter, req *http.Request, tujuan any) bool {
+	return bacaJSONBatas(w, req, tujuan, 4096)
+}
+
+// bacaJSONBatas - `bacaJSON` dengan batas badan `batas` byte.
+func bacaJSONBatas(w http.ResponseWriter, req *http.Request, tujuan any, batas int64) bool {
 	if !strings.HasPrefix(strings.ToLower(req.Header.Get("Content-Type")), "application/json") {
 		galat.Tulis(w, http.StatusUnsupportedMediaType, "badan permintaan wajib application/json")
 		return false
 	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, req.Body, 4096)).Decode(tujuan); err != nil {
+	if err := json.NewDecoder(http.MaxBytesReader(w, req.Body, batas)).Decode(tujuan); err != nil {
 		galat.Tulis(w, http.StatusBadRequest, "badan permintaan tidak dapat dibaca")
 		return false
 	}
@@ -153,6 +166,8 @@ func (r *Rute) masuk(w http.ResponseWriter, req *http.Request) {
 		galat.Tulis(w, http.StatusLocked, "akun terkunci sementara sesudah 5 kali sandi salah; coba lagi 15 menit lagi")
 	case errors.Is(err, ErrTanpaRahasia):
 		galat.Tulis(w, http.StatusServiceUnavailable, "login belum dapat dipakai: SESI_RAHASIA belum disetel")
+	case errors.Is(err, ErrMenuBelumDimigrasi):
+		galat.Tulis(w, http.StatusServiceUnavailable, "login belum dapat dipakai: "+strings.TrimPrefix(err.Error(), "login: "))
 	case err != nil:
 		log.Printf("login: masuk: %v", err)
 		galat.Tulis(w, http.StatusInternalServerError, "login gagal; rinciannya di log server")

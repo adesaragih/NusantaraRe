@@ -403,7 +403,8 @@ LOGIN SUNGGUHAN - M_LOGIN_GO (MIGRASI 902, 01-10-2026)
   yang berlaku. Tanpa tabel sesi: cookie rnm_sesi ditandatangani.
 
   Menyalakan (urutan):
-    1. -migrate (termasuk 902) - oleh WORK OWNER.
+    1. -migrate (termasuk 902 dan 903) - oleh WORK OWNER. Tanpa 903
+       (M_LOGIN_GO_MENU) login menjawab 503 "migrasi 903 belum dijalankan".
     2. APP_RNM\.env:
          SESI_RAHASIA=<minimal 32 karakter acak>
          SESI_COOKIE_SECURE=true
@@ -419,7 +420,11 @@ LOGIN SUNGGUHAN - M_LOGIN_GO (MIGRASI 902, 01-10-2026)
     4. Akun pertama, dari folder APP_RNM:
          go run ./cmd/api -buat-pengguna <akun> -nama "<nama tampilan>" `
            -organisasi RNM -divisi TECH -unit CLM `
-           -workbasket ReasLifeAdmin,ReasLifeSPV
+           -workbasket ReasLifeAdmin,ReasLifeSPV `
+           -menu claimlife,kelolauser
+       -menu = KODE menu dipisah koma (nama modul, dan kelolauser untuk
+       admin); kosong = akun tanpa satu layar pun. KODE tak dikenal ditolak.
+       Akun yang SUDAH ADA saat 903 dijalankan mendapat SEMUA menu.
        CODE organisasi/divisi/unit dan WORKBASKET_ID diperiksa: harus ada,
        aktif, dan berjenjang (unit milik divisinya, divisi milik
        organisasinya); boleh kosong dari bawah. Sandi sementara dicetak
@@ -434,17 +439,38 @@ LOGIN SUNGGUHAN - M_LOGIN_GO (MIGRASI 902, 01-10-2026)
   karakter. Logout dan ganti sandi mencabut SEMUA sesi akun itu.
 
   Tanpa Oracle atau tanpa SESI_RAHASIA: POST /api/auth/login menjawab
-  503 yang menyebut sebabnya; layar login menampilkan "Login belum dapat
-  dipakai di server ini".
+  503 yang menyebut sebabnya; layar login menampilkan "Login is not
+  available on this server yet" (layar login berbahasa Inggris sejak
+  01-10-2026).
 
-  Perintah DBA (sampai layar kelola pengguna ada):
+KELOLA USER - M_LOGIN_GO_MENU (MIGRASI 903, 01-10-2026)
+
+  Keputusan work owner 01-10-2026. Menu sidebar kelompok ADMIN, hanya bagi
+  akun yang memegang menu "kelolauser" (= admin). Isinya: daftar user,
+  Tambah (admin MENGETIK password awal, minimal 10 karakter; user WAJIB
+  menggantinya saat login pertama), Ubah (nama, Organisasi -> Divisi ->
+  Unit, kotak centang workbasket dan menu; username tetap), Buka kunci,
+  Nonaktifkan/Aktifkan (mencabut sesinya), dan Hapus permanen (akun +
+  workbasket + menunya, dengan konfirmasi). Reset sandi BELUM ADA -
+  ditunda atas perintah work owner.
+
+  Akses PER AKUN (M_LOGIN_GO_MENU): menu yang tidak dipegang DISEMBUNYIKAN
+  di sidebar dan DITOLAK server - rute modulnya dijawab 403, tanpa sesi
+  401 (kecuali AUTH_STUB=true). Perubahan berlaku pada permintaan
+  berikutnya, tanpa login ulang. Satu rute dipinjam lintas modul:
+  GET /api/polis-life/ringkas (PremiumList Life) juga dilayani bagi
+  pemegang Claim Life - panel Data Polis (cmd/api ruteDipinjam).
+
+  Penjaga: admin tidak dapat mencabut Kelola User dari dirinya,
+  menonaktifkan, atau menghapus dirinya sendiri; dan perubahan yang
+  menyisakan NOL akun aktif ber-Kelola User ditolak (409).
+
+  Perintah DBA (darurat, mis. semua admin terkunci):
     membuka kunci   UPDATE <skema>.M_LOGIN_GO SET FAILED_COUNT = 0,
                       LOCKED_UNTIL = NULL WHERE LOGIN_ID = '<akun>';
-    menonaktifkan   UPDATE <skema>.M_LOGIN_GO SET IS_ACTIVE = '0',
-                      SESSION_VERSION = SESSION_VERSION + 1
-                      WHERE LOGIN_ID = '<akun>';
-    reset sandi     belum ada perintahnya - menyusul bersama layar
-                      kelola pengguna.
+    menjadikan admin INSERT INTO <skema>.M_LOGIN_GO_MENU (LOGIN_ID,
+                      MENU_KODE) VALUES ('<akun>', 'kelolauser');
+    reset sandi     belum ada - ditunda atas perintah work owner.
 
 Bila sesi berikutnya butuh Oracle lagi, setel ulang ketiga variabel itu.
 Env var hilang saat jendela ditutup.

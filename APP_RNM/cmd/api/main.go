@@ -33,6 +33,7 @@ import (
 	"nusantarare/inti/backend/daftar"
 	intidb "nusantarare/inti/backend/db"
 	"nusantarare/inti/backend/login"
+	"nusantarare/inti/backend/menu"
 	"nusantarare/inti/backend/migrasi"
 )
 
@@ -41,7 +42,7 @@ func main() {
 	bongkar := flag.Bool("migrate-down", false,
 		"BONGKAR skema uji lalu keluar - MENGHAPUS tabel; perlu ORACLE_SKEMA_UJI=true")
 	var baru login.AkunBaru
-	var wb string
+	var wb, mn string
 	flag.StringVar(&baru.ID, "buat-pengguna", "",
 		"buat akun M_LOGIN_GO lalu keluar; sandi sementara DICETAK SEKALI dan wajib diganti saat login pertama")
 	flag.StringVar(&baru.Nama, "nama", "", "nama tampilan akun (-buat-pengguna)")
@@ -49,6 +50,7 @@ func main() {
 	flag.StringVar(&baru.Divisi, "divisi", "", "M_DIVISION.CODE (-buat-pengguna)")
 	flag.StringVar(&baru.Unit, "unit", "", "M_UNIT.CODE (-buat-pengguna)")
 	flag.StringVar(&wb, "workbasket", "", "WORKBASKET_ID dipisah koma (-buat-pengguna)")
+	flag.StringVar(&mn, "menu", "", "KODE menu dipisah koma, mis. claimlife,kelolauser (-buat-pengguna); kosong = tanpa layar")
 	sandiStdin := flag.Bool("sandi-dari-stdin", false,
 		"-buat-pengguna dengan sandi dari baris pertama stdin (tidak dicetak, tidak wajib diganti) alih-alih sandi sementara")
 	flag.Parse()
@@ -105,6 +107,11 @@ func main() {
 				baru.Workbasket = append(baru.Workbasket, w)
 			}
 		}
+		for _, m := range strings.Split(mn, ",") {
+			if m = strings.TrimSpace(m); m != "" {
+				baru.Menu = append(baru.Menu, m)
+			}
+		}
 		buatPengguna(dasar, baru, *sandiStdin)
 		return
 	}
@@ -159,8 +166,9 @@ func main() {
 }
 
 // buatPengguna adalah titik masuk `-buat-pengguna` (login, keputusan work
-// owner 01-10-2026): akun pertama dan akun berikutnya sampai layar kelola
-// pengguna ada.
+// owner 01-10-2026) - jalan masuk DARURAT di samping layar Kelola User,
+// mis. akun admin pertama. `-menu` memberi KODE menunya (M_LOGIN_GO_MENU);
+// KODE yang tidak dikenal ditolak sebelum apa pun ditulis.
 //
 // ⛔ Sandi sementara dicetak ke stdout SEKALI dan tidak disimpan di mana pun
 // selain sebagai hash; akunnya wajib ganti sandi saat login pertama.
@@ -171,7 +179,11 @@ func buatPengguna(svc *inti.Dasar, a login.AkunBaru, dariStdin bool) {
 	if !svc.PunyaDatabase() {
 		log.Fatal("buat-pengguna: ORACLE_DSN wajib terisi")
 	}
-	lay := login.NewLayanan(login.NewGudangOracle(svc.DB()), nil)
+	gudang := login.NewGudangOracle(svc.DB())
+	lay := login.NewLayanan(gudang, nil)
+	if err := login.NewKelola(gudang, menu.NewPembaca(svc.DB())).PeriksaMenu(context.Background(), a.Menu); err != nil {
+		log.Fatalf("buat-pengguna: %v", err)
+	}
 	if dariStdin {
 		baris, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		if err != nil && baris == "" {

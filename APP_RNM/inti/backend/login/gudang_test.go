@@ -24,6 +24,21 @@ func TestSQLGudangBersihDanBerbind(t *testing.T) {
 		"wb aktif":   sqlWorkbasketAktif("S.M_WORKBASKET"),
 		"sisip":      sqlSisipAkun("S.M_LOGIN_GO"),
 		"sisip wb":   sqlSisipWorkbasket("S.M_LOGIN_GO_WORKBASKET"),
+		"menu":       sqlMenu("S.M_LOGIN_GO_MENU"),
+		"wb semua":   sqlWorkbasketSemua("S.M_LOGIN_GO_WORKBASKET"),
+		"sisip menu": sqlSisipMenu("S.M_LOGIN_GO_MENU"),
+		// Kelola User (01-10-2026).
+		"ringkas":      sqlDaftarAkun("S.M_LOGIN_GO", true),
+		"kunci admin":  sqlKunciAdmin("S.M_LOGIN_GO", "S.M_LOGIN_GO_MENU"),
+		"hitung admin": sqlHitungAdmin("S.M_LOGIN_GO", "S.M_LOGIN_GO_MENU"),
+		"ubah profil":  sqlUbahProfil("S.M_LOGIN_GO"),
+		"setel aktif":  sqlSetelAktif("S.M_LOGIN_GO"),
+		"buka kunci":   sqlBukaKunci("S.M_LOGIN_GO"),
+		"hapus milik":  sqlHapusMilik("S.M_LOGIN_GO_MENU"),
+		"m org":        sqlMasterOrganisasi("S.M_ORGANIZATION"),
+		"m divisi":     sqlMasterDivisi("S.M_DIVISION", "S.M_ORGANIZATION"),
+		"m unit":       sqlMasterUnit("S.M_UNIT", "S.M_DIVISION"),
+		"m wb":         sqlMasterWorkbasket("S.M_WORKBASKET"),
 	} {
 		if err := db.PeriksaSQL(q); err != nil {
 			t.Errorf("%s: %v", nama, err)
@@ -68,5 +83,33 @@ func TestGantiSandiDikunciVersi(t *testing.T) {
 	q := sqlGantiSandi("S.M_LOGIN_GO")
 	if !strings.Contains(q, "SESSION_VERSION = SESSION_VERSION + 1") || !strings.Contains(q, "AND SESSION_VERSION = :4") {
 		t.Errorf("ganti sandi:\n%s", q)
+	}
+}
+
+// Daftar akun tanpa bind (seluruh baris) - tetap bersih dari literal dan COMMIT,
+// dan nol kolom rahasia.
+func TestSQLDaftarAkunTanpaRahasia(t *testing.T) {
+	q := sqlDaftarAkun("S.M_LOGIN_GO", false)
+	if err := db.PeriksaSQL(q); err != nil {
+		t.Error(err)
+	}
+	for _, w := range []string{"PASSWORD_HASH", "SESSION_VERSION", "'"} {
+		if strings.Contains(q, w) {
+			t.Errorf("daftar akun memuat %q:\n%s", w, q)
+		}
+	}
+}
+
+// Penjaga admin terakhir: kunci baris admin aktif lebih dulu (FOR UPDATE),
+// hitung sesudah perubahan - keduanya atas bendera aktif dan KODE Kelola User.
+func TestSQLAdminTerakhirMengunciLaluMenghitung(t *testing.T) {
+	k := sqlKunciAdmin("S.M_LOGIN_GO", "S.M_LOGIN_GO_MENU")
+	h := sqlHitungAdmin("S.M_LOGIN_GO", "S.M_LOGIN_GO_MENU")
+	syarat := "WHERE l.IS_ACTIVE = :1 AND EXISTS (SELECT 1 FROM S.M_LOGIN_GO_MENU m WHERE m.LOGIN_ID = l.LOGIN_ID AND m.MENU_KODE = :2)"
+	if !strings.Contains(k, syarat) || !strings.Contains(k, "ORDER BY l.LOGIN_ID") || !strings.HasSuffix(strings.TrimSpace(k), "FOR UPDATE") {
+		t.Errorf("kunci admin:\n%s", k)
+	}
+	if !strings.Contains(h, syarat) || !strings.HasPrefix(h, "SELECT COUNT(*) FROM S.M_LOGIN_GO l") {
+		t.Errorf("hitung admin:\n%s", h)
 	}
 }

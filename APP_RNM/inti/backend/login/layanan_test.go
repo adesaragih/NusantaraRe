@@ -12,6 +12,7 @@ import (
 type gudangTiruan struct {
 	akun       map[string]*Akun
 	workbasket map[string][]string
+	menu       map[string][]string
 	// master organisasi: unit -> divisi, divisi -> organisasi; aktif.
 	unit, divisi     map[string]string
 	organisasi       map[string]bool
@@ -38,6 +39,7 @@ func gudangUji(t *testing.T) *gudangTiruan {
 			"UJI-BARU":     {ID: "UJI-BARU", Nama: "Uji Baru", HashSandi: h, Aktif: true, WajibGantiSandi: true, VersiSesi: 1},
 		},
 		workbasket:       map[string][]string{"UJI-ADMIN": {"ReasLifeAdmin", "ReasLifeSPV"}},
+		menu:             map[string][]string{"UJI-ADMIN": {"claimlife", "kelolauser"}, "UJI-BARU": {"claimlife"}},
 		unit:             map[string]string{"CLM": "TECH", "TAX": "FIN"},
 		divisi:           map[string]string{"TECH": "RNM", "FIN": "RNM"},
 		organisasi:       map[string]bool{"RNM": true},
@@ -53,8 +55,22 @@ func (g *gudangTiruan) AmbilAkun(_ context.Context, id string) (Akun, error) {
 	}
 	return *a, nil
 }
+
+// Workbasket - seperti Oracle: hanya yang AKTIF di master (bukan nonaktif).
 func (g *gudangTiruan) Workbasket(_ context.Context, id string) ([]string, error) {
+	var out []string
+	for _, w := range g.workbasket[id] {
+		if aktif, ada := g.masterWorkbasket[w]; !ada || aktif {
+			out = append(out, w)
+		}
+	}
+	return out, nil
+}
+func (g *gudangTiruan) WorkbasketSemua(_ context.Context, id string) ([]string, error) {
 	return g.workbasket[id], nil
+}
+func (g *gudangTiruan) Menu(_ context.Context, id string) ([]string, error) {
+	return g.menu[id], nil
 }
 func (g *gudangTiruan) CatatGagal(_ context.Context, id string) error {
 	g.gagal = append(g.gagal, id)
@@ -106,6 +122,7 @@ func (g *gudangTiruan) WorkbasketAktif(_ context.Context, id string) (bool, erro
 }
 func (g *gudangTiruan) BuatAkun(_ context.Context, a AkunBaru, hash string, wajibGanti bool) error {
 	g.dibuat = append(g.dibuat, a)
+	g.workbasket[a.ID], g.menu[a.ID] = a.Workbasket, a.Menu
 	g.akun[a.ID] = &Akun{ID: a.ID, Nama: a.Nama, HashSandi: hash, Aktif: true, WajibGantiSandi: wajibGanti, VersiSesi: 1}
 	return nil
 }
@@ -309,5 +326,20 @@ func TestBuatPenggunaDenganSandi(t *testing.T) {
 	}
 	if err := l.BuatPenggunaDenganSandi(context.Background(), AkunBaru{ID: "UJI-C3", Nama: "Uji", Unit: "CLM"}, "Sandi-Uji-Tetap-1"); !errors.Is(err, ErrJenjangTidakCocok) {
 		t.Errorf("jenjang tetap diperiksa: %v", err)
+	}
+}
+
+// Profil membawa KODE menu akunnya (M_LOGIN_GO_MENU) - daftar KOSONG, bukan
+// null, untuk akun tanpa menu.
+func TestProfilMembawaMenu(t *testing.T) {
+	g := gudangUji(t)
+	p, _, err := layananUji(g, saatUji).Masuk(context.Background(), "UJI-ADMIN", "Sandi-Benar-01")
+	if err != nil || len(p.Menu) != 2 || p.Menu[0] != "claimlife" || p.Menu[1] != "kelolauser" {
+		t.Errorf("profil %+v %v", p, err)
+	}
+	delete(g.menu, "UJI-ADMIN")
+	p, _, err = layananUji(g, saatUji).Masuk(context.Background(), "UJI-ADMIN", "Sandi-Benar-01")
+	if err != nil || p.Menu == nil || len(p.Menu) != 0 {
+		t.Errorf("tanpa menu: %+v %v", p, err)
 	}
 }

@@ -70,6 +70,9 @@ func TestPolaAkun(t *testing.T) {
 	for akun, sah := range map[string]bool{
 		"ade.saragih": true, "UJI-ADMIN": true, "u_1@rnm": true,
 		"": false, "ada spasi": false, "a|b": false, strings.Repeat("a", 65): false, strings.Repeat("a", 64): true,
+		// Titik saja: jalur `/api/admin/pengguna/..` dibersihkan peramban dan mux
+		// menjadi `/api/admin/` - akunnya tidak dapat dikelola (temuan /code-review).
+		".": false, "..": false, "...": false, "a..b": true, ".a": true,
 	} {
 		if got := AkunSah(akun); got != sah {
 			t.Errorf("AkunSah(%q) = %v, mau %v", akun, got, sah)

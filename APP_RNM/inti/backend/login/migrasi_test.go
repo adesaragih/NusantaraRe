@@ -84,3 +84,44 @@ func TestMigrasi902Mundur(t *testing.T) {
 		t.Errorf("902_down:\n dapat %q\n mau   %q", p, mau)
 	}
 }
+
+// Migrasi 903 - M_LOGIN_GO_MENU (Kelola User, keputusan work owner
+// 01-10-2026): menu per akun, lalu SETIAP akun yang sudah ada mendapat SEMUA
+// menu - termasuk Kelola User - supaya tak seorang pun kehilangan layarnya
+// dan selalu ada admin. Isi daftarnya dijaga penjaga menu (`penjaga`).
+func TestMigrasi903MenuPerAkun(t *testing.T) {
+	p := baca902(t, "903_m_login_go_menu.sql")
+	if len(p) != 2 {
+		t.Fatalf("903 terbaca %d pernyataan, mau 2 (tabel, isi awal)", len(p))
+	}
+	tabel, kolom := migrasi.KolomCreateTable(p[0])
+	if tabel != "M_LOGIN_GO_MENU" || !reflect.DeepEqual(kolom, []string{"LOGIN_ID", "MENU_KODE", "TGL_CREATE"}) {
+		t.Errorf("M_LOGIN_GO_MENU: %s %v", tabel, kolom)
+	}
+	for _, w := range []string{
+		"LOGIN_ID   VARCHAR2(64) NOT NULL",
+		"MENU_KODE  VARCHAR2(64) NOT NULL",
+		"CONSTRAINT PK_M_LOGIN_GO_MENU PRIMARY KEY (LOGIN_ID, MENU_KODE)",
+		"CONSTRAINT FK_M_LOGIN_GO_MENU_LOGIN FOREIGN KEY (LOGIN_ID) REFERENCES {skema}.M_LOGIN_GO (LOGIN_ID)",
+	} {
+		if !strings.Contains(p[0], w) {
+			t.Errorf("M_LOGIN_GO_MENU tanpa %q", w)
+		}
+	}
+	if !strings.HasPrefix(p[1], "INSERT INTO {skema}.M_LOGIN_GO_MENU (LOGIN_ID, MENU_KODE)\nSELECT l.LOGIN_ID, k.KODE\n  FROM {skema}.M_LOGIN_GO l\n CROSS JOIN (") {
+		t.Errorf("isi awal 903: %q", p[1])
+	}
+	semua := strings.Join(p, "\n")
+	for _, w := range []string{"ON DELETE", "COMMIT"} {
+		if strings.Contains(semua, w) {
+			t.Errorf("903 memuat %q", w)
+		}
+	}
+}
+
+func TestMigrasi903Mundur(t *testing.T) {
+	p := baca902(t, "903_m_login_go_menu_down.sql")
+	if mau := []string{"DROP TABLE {skema}.M_LOGIN_GO_MENU CASCADE CONSTRAINTS"}; !reflect.DeepEqual(p, mau) {
+		t.Errorf("903_down:\n dapat %q\n mau   %q", p, mau)
+	}
+}

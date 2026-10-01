@@ -20,11 +20,13 @@ type Akun struct {
 	VersiSesi       int64
 }
 
-// AkunBaru adalah isian `-buat-pengguna`.
+// AkunBaru adalah isian `-buat-pengguna` dan Kelola User.
 type AkunBaru struct {
 	ID, Nama                 string
 	Organisasi, Divisi, Unit string
 	Workbasket               []string
+	// Menu - KODE menu (`M_LOGIN_GO_MENU`); kosong = akun tanpa satu layar pun.
+	Menu []string
 }
 
 // Profil adalah identitas yang dikirim ke layar (`GET /api/auth/saya`).
@@ -38,6 +40,9 @@ type Profil struct {
 	Divisi          string   `json:"divisi"`
 	Unit            string   `json:"unit"`
 	WajibGantiSandi bool     `json:"wajibGantiSandi"`
+	// Menu - KODE menu yang boleh dibuka (`M_LOGIN_GO_MENU`, Kelola User
+	// 01-10-2026): modul, dan `kelolauser` bagi admin.
+	Menu []string `json:"menu"`
 }
 
 var (
@@ -45,6 +50,9 @@ var (
 	ErrAkunTidakAda = errors.New("login: akun tidak ada")
 	// ErrMasterTidakAda - CODE organisasi atau WORKBASKET_ID tidak ada, atau nonaktif.
 	ErrMasterTidakAda = errors.New("login: data master tidak ada atau nonaktif")
+	// ErrMenuBelumDimigrasi - tabel M_LOGIN_GO_MENU belum ada: migrasi 903
+	// belum dijalankan. Login menjawab 503 yang menyebutnya.
+	ErrMenuBelumDimigrasi = errors.New("login: tabel M_LOGIN_GO_MENU belum ada - migrasi 903 belum dijalankan (-migrate, oleh work owner)")
 )
 
 // Gudang membaca dan menulis M_LOGIN_GO, M_LOGIN_GO_WORKBASKET, dan membaca
@@ -53,6 +61,8 @@ type Gudang interface {
 	AmbilAkun(ctx context.Context, id string) (Akun, error)
 	// Workbasket - WORKBASKET_ID akun itu yang masih aktif di M_WORKBASKET.
 	Workbasket(ctx context.Context, id string) ([]string, error)
+	// Menu - KODE menu akun itu (M_LOGIN_GO_MENU), berurutan.
+	Menu(ctx context.Context, id string) ([]string, error)
 	// CatatGagal menaikkan FAILED_COUNT dan mengunci sesudah BatasGagal.
 	CatatGagal(ctx context.Context, id string) error
 	// CatatBerhasil menolkan FAILED_COUNT, mencabut kunci, mengisi LAST_LOGIN.
@@ -68,7 +78,7 @@ type Gudang interface {
 	InfoDivisi(ctx context.Context, code string) (organisasi string, aktif bool, err error)
 	InfoOrganisasi(ctx context.Context, code string) (aktif bool, err error)
 	WorkbasketAktif(ctx context.Context, id string) (bool, error)
-	// BuatAkun menulis akun dan workbasket-nya dalam SATU transaksi;
+	// BuatAkun menulis akun, workbasket, dan menunya dalam SATU transaksi;
 	// `wajibGanti` mengisi MUST_CHANGE_PASSWORD.
 	BuatAkun(ctx context.Context, a AkunBaru, hash string, wajibGanti bool) error
 }
