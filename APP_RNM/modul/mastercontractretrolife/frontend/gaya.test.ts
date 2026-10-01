@@ -49,7 +49,7 @@ describe('kelas CSS modul', () => {
   it('kelas di mcrl.css berawalan mcrl, kecuali kelas bersama inti yang DITIMPA di bawah .mcrl', () => {
     // UI 02-10-2026: kelas bersama boleh ditimpa HANYA di bawah kelas akar `.mcrl` (dijaga "isolasi CSS
     // modul" di bawah) dan hanya kelas kerangka inti yang memang dipakai layar modul ini.
-    const BERSAMA = new Set(['inbox__kepala', 'panel', 'inbox__tabel', 'table__actions', 'btn', 'aksi-baris', 'modal', 'modal__actions', 'inbox__judul', 'panel__title', 'btn--primary', 'btn--ghost', 'field__input'])
+    const BERSAMA = new Set(['inbox__kepala', 'panel', 'inbox__tabel', 'table__actions', 'btn', 'aksi-baris', 'modal', 'modal__actions', 'inbox__judul', 'panel__title', 'btn--primary', 'btn--ghost', 'field__input', 'modal__title', 'modal__head', 'muted', 'alert'])
     const kelas = [...kelasCSS()]
     expect(kelas.length).toBeGreaterThan(5)
     expect(kelas.filter((k) => !k.startsWith('mcrl') && !BERSAMA.has(k))).toEqual([])
@@ -132,5 +132,58 @@ describe('popup tetap di tengah layar', () => {
     expect(
       penampungFixed('.mcrl .panel { -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px) } .mcrl .a{transform: none; will-change:x} /* filter: x */ .mcrl .b { container-type: inline-size }'),
     ).toEqual(['-webkit-backdrop-filter', 'backdrop-filter', 'transform', 'will-change'])
+  })
+})
+
+/** Rasio kontras WCAG 2 dua warna hex `#rrggbb`. */
+function kontras(a: string, b: string): number {
+  const terang = (hex: string): number => {
+    const [r, g, bl] = [1, 3, 5].map((i) => {
+      const v = parseInt(hex.slice(i, i + 2), 16) / 255
+      return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+    })
+    return 0.2126 * (r ?? 0) + 0.7152 * (g ?? 0) + 0.0722 * (bl ?? 0)
+  }
+  const [t, g] = [terang(a), terang(b)].sort((x, y) => y - x)
+  return ((t ?? 0) + 0.05) / ((g ?? 0) + 0.05)
+}
+
+/** Token `--mt-*` bernilai hex dari aturan yang pemilihnya PERSIS `pemilih`. */
+function tokenMt(css: string, pemilih: string): Record<string, string> {
+  const tanpaKomentar = css.replace(/\/\*[\s\S]*?\*\//g, '')
+  return Object.fromEntries(
+    [...tanpaKomentar.matchAll(/([^{};]+)\{([^{}]*)\}/g)]
+      .filter((m) => (m[1] ?? '').trim() === pemilih)
+      .flatMap((m) => [...(m[2] ?? '').matchAll(/(--mt-[a-z-]+)\s*:\s*(#[0-9a-f]{6})\s*;/gi)].map((x) => [x[1] ?? '', x[2] ?? ''])),
+  )
+}
+
+describe('soft UI: teks tetap terbaca (02-10-2026)', () => {
+  it('kontras token teks --mt-* terhadap latar, kartu, kepala tabel, dan sorot baris minimal 4,5:1, terang dan gelap', () => {
+    const terang = tokenMt(CSS, '.mcrl')
+    const gelap = { ...terang, ...tokenMt(CSS, ':root[data-theme="dark"] .mcrl') }
+    const pasangan = [
+      ['--mt-teks', '--mt-latar'],
+      ['--mt-teks', '--mt-kartu'],
+      ['--mt-teks', '--mt-baris-hover'],
+      ['--mt-teks-redup', '--mt-latar'],
+      ['--mt-teks-redup', '--mt-kartu'],
+      ['--mt-teks-redup', '--mt-kepala-tabel'],
+    ] as const
+    const kurang = (t: Record<string, string>, nama: string): string[] =>
+      pasangan.flatMap(([a, b]) => {
+        const x = t[a]
+        const y = t[b]
+        if (x === undefined || y === undefined) return [`${nama} ${a}/${b} token hilang`]
+        const r = kontras(x, y)
+        return r < 4.5 ? [`${nama} ${a}/${b} ${r.toFixed(2)}`] : []
+      })
+    expect(Object.keys(terang).length).toBeGreaterThan(6)
+    expect([...kurang(terang, 'terang'), ...kurang(gelap, 'gelap')]).toEqual([])
+  })
+
+  it('rumus kontras menggigit: hitam/putih 21:1, #777777/putih di bawah 4,5:1', () => {
+    expect(kontras('#000000', '#ffffff')).toBeCloseTo(21, 5)
+    expect(kontras('#777777', '#ffffff')).toBeLessThan(4.5)
   })
 })
