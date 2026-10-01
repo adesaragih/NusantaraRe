@@ -158,6 +158,11 @@ describe('Kelola User bergaya soft UI', () => {
       ['--ku-teks-redup', '--ku-kepala-tabel'],
       ['--ku-aksen-teks', '--ku-kartu'],
       ['--ku-judul-golongan', '--ku-latar'],
+      ['--ku-aksen-teks', '--ku-aksen-lembut'],
+      ['--ku-sukses-teks', '--ku-sukses-latar'],
+      ['--ku-netral-teks', '--ku-netral-latar'],
+      ['--ku-bahaya-teks', '--ku-bahaya-latar'],
+      ['--ku-waspada-teks', '--ku-waspada-latar'],
     ] as const
     const gagal = [
       ['terang', terang],
@@ -240,6 +245,8 @@ describe('Beranda bergaya soft UI', () => {
       ['--br-teks-redup', '--br-kepala-tabel'],
       ['--br-aksen-teks', '--br-kartu'],
       ['--br-aksen-teks', '--br-ikon'],
+      ['--br-sukses-teks', '--br-sukses-latar'],
+      ['--br-netral-teks', '--br-netral-latar'],
     ] as const
     expect([...kontrasKurang(terang, pasangan).map((x) => `terang ${x}`), ...kontrasKurang(gelap, pasangan).map((x) => `gelap ${x}`)]).toEqual([])
   })
