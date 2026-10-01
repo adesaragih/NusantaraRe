@@ -31,6 +31,8 @@ export const UMUM_EDM = {
   kolomKolom: 'Column',
   kolomPesan: 'Message',
   memutuskan: 'Submitting…',
+  efekDilewati: 'Not sent to Arasapas: this is not the production environment.',
+  efekGagal: 'The endorsement is saved, but sending it onward failed and needs attention:',
 } as const
 
 /** `Section/InboxEndorsementLife.xml` - halaman awal (harness portal `InboxEndorsementLife`). */

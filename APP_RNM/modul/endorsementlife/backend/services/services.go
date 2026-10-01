@@ -88,6 +88,8 @@ type Layanan struct {
 	// gagal terang (`jejak.JejakBelumDiputuskan`), `LayananOracle` menyuntikkan
 	// perekam `T_CLAIMLF_JEJAK`.
 	jejak jejak.Jejak
+	// penyalur - efek keluar sesudah `Confirm` (tiket 10); bawaannya bukan produksi (dilewati).
+	penyalur Penyalur
 }
 
 // BaruLayanan menyusun Layanan - dipakai uji dengan gudang tiruan dan
@@ -96,7 +98,13 @@ func BaruLayanan(g Gudang, tx Transaksi, catat func(string)) *Layanan {
 	if catat == nil {
 		catat = func(string) {}
 	}
-	return &Layanan{gudang: g, tx: tx, catat: catat, jam: time.Now, jejak: jejak.JejakBelumDiputuskan{}}
+	return &Layanan{gudang: g, tx: tx, catat: catat, jam: time.Now, jejak: jejak.JejakBelumDiputuskan{}, penyalur: penyalurBawaan()}
+}
+
+// DenganPenyalur mengganti penyalur efek keluar (uji: penyalur tiruan).
+func (l *Layanan) DenganPenyalur(p Penyalur) *Layanan {
+	l.penyalur = p
+	return l
 }
 
 // DenganJejak mengganti perekam jejak (uji: perekam tiruan).
@@ -115,7 +123,7 @@ func (l *Layanan) DenganJam(jam func() time.Time) *Layanan {
 // dipakai handlers (handlers tidak mengimpor repository).
 func LayananOracle(s *Service) *Layanan {
 	return BaruLayanan(repository.Baru(s.DB()), s.DalamTransaksi, func(baris string) { log.Print(baris) }).
-		DenganJejak(jejak.PerekamJejakOracle(s))
+		DenganJejak(jejak.PerekamJejakOracle(s)).DenganPenyalur(PenyalurOracle(s))
 }
 
 // UkuranHalaman - baris per halaman grid (`pyGridPaginator`).

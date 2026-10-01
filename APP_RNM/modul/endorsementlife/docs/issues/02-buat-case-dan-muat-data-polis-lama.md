@@ -7,7 +7,7 @@
 > - **R10** — baris `Delete` dihapus di perulangan → disaring tanpa melewati baris lain.
 > - **R11** — pembuat kasus `CreateCaseEMDL` → jalurnya (panel Inbox `InData.CARI1==1`) tak terjangkau; pembuat kasus hidup = `MappingEDMLife`.
 
-**Status:** ready-for-agent
+**Status:** done 01-10-2026 — bbdc658 (salinan dari versi endorsement **warisan** ditolak sampai OQ-EDM-016)
 
 **Blocked by:** **00 (kolom EDM + PARENT_ID — PREFACTOR)**, 01 (gerbang kelayakan — case hanya dibuat setelah kelimanya lolos)
 

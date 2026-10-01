@@ -6,7 +6,7 @@
 > - **R15** — gerbang sebagai pemeriksaan berurutan → Pega mengumpulkan **seluruh** pesan (3.1–3.10), lalu `Protect.CARI1 = 1` (3.11 b2359).
 > - **R26** — *"lookup pembayaran Arasapas"* → nomor invoice = nomor polis tanpa titik (b464), `IVD_JR_ID = '5'`, hanya bila `EdmType=3`.
 
-**Status:** ready-for-agent
+**Status:** done 01-10-2026 — bbdc658
 
 **Blocked by:** **00 (kolom EDM + PARENT_ID — PREFACTOR)**, **CL-01** (kerangka aplikasi + seam API — scaffolding lintas konteks; tidak dibuat di
 sini)

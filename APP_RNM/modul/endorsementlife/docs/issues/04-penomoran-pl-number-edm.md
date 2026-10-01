@@ -4,7 +4,7 @@
 > - **R01** — *"`<nomor polis>`"* → nomor polis = `PL_NUMBER` (`InsertJsonPolisEDM` b102).
 > - **R23** — `PRODKE` NB warisan kosong → dianggap versi 1 (E1) → nomor pertama `<polis>/02`; Pega memberi `/01` — OQ-EDM-008.
 
-**Status:** ready-for-agent
+**Status:** done 01-10-2026 — c83bf68 (nomor lahir di `Confirm`)
 
 **Blocked by:** **00 (kolom EDM + PARENT_ID — PREFACTOR)**, 02 (nomor dirakit dari nomor polis lama + `PRODKE` yang dibaca saat pemetaan)
 

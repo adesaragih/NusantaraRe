@@ -5,7 +5,7 @@
 > - **R13** — `Description` (`DesBatal`) → disimpan di `EDM_NOTE`.
 > - **R30** — kotak centang `.EdmBatal` hidup di baris `New` hasil CSV (Pega membalik premi yang tak pernah ditagih) → hanya peserta `Old` dapat dicentang; OQ-EDM-017.
 
-**Status:** ready-for-agent
+**Status:** done 01-10-2026 — f44ce9b
 
 **Blocked by:** **00 (kolom EDM + PARENT_ID — PREFACTOR)**, 02 (baris peserta harus sudah tersalin dan bertanda `Old`)
 

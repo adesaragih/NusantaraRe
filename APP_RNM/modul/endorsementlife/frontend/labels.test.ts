@@ -119,6 +119,8 @@ export const BUKAN_KORPUS: readonly string[] = [
   'UMUM_EDM.kolomKolom', // idem
   'UMUM_EDM.kolomPesan', // idem
   'UMUM_EDM.memutuskan', // keputusan sedang dikirim
+  'UMUM_EDM.efekDilewati', // gerbang `IsPEGAPROD` b7230 - efek keluar hanya di produksi (tiket 10)
+  'UMUM_EDM.efekGagal', // alarm di layar menggantikan `SendEmailNotification` 15 `//` (E5)
 ]
 
 /** Nilai label untuk kunci `OBJEK.medan`. */

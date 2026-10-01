@@ -4,7 +4,7 @@
 > - **R06** — jurnal balik `× -1` sebagai pembalikan di tempat → diturunkan dari nilai sumber — idempoten; simpan kedua ditolak.
 > - **R08** — rekap mata uang memakai mesin PremiumList → versi Endorsement `AppendCurrencySummary_DT` tanpa pembulatan 4 desimal dan tanpa empat kolom SUM.
 
-**Status:** ready-for-agent
+**Status:** done 01-10-2026 — f44ce9b
 
 **Blocked by:** **00 (kolom EDM + PARENT_ID — PREFACTOR)**, 05 (penandaan `EDMStatus` harus sudah berjalan)
 

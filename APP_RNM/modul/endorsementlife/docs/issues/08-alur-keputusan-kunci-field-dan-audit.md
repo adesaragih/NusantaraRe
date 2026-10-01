@@ -3,7 +3,7 @@
 > **Ralat 01-10-2026** (gelombang 2 brief, `../RALAT-DEV-01-10-2026.md` — ralat mengalahkan isi di bawah). Teks lama yang tidak berlaku:
 > - **R14** — keputusan `Confirm`/`Decline` → radio `Status` `EmailTypePL`: `1` Accept → Confirm; `2` (dan `7`) Decline — OQ-EDM-006.
 
-**Status:** ready-for-agent
+**Status:** done 01-10-2026 — c83bf68
 
 **Blocked by:** **00 (kolom EDM + PARENT_ID — PREFACTOR)**, 01 (gerbang — `Decline` harus membebaskan polis untuk di-endorse ulang),
 02 (case + kunci field ter-set saat pemetaan)

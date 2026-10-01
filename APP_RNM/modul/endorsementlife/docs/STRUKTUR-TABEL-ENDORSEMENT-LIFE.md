@@ -8,6 +8,25 @@ Berkas ini menggambarkan BENTUK, bukan alasan — alasannya ada di `spec.md` dan
 `[keputusan work owner 2026-09-18]`. Ejaan yang muncul di `spec.md`, `issues/`, dan `revisi-*.md`
 adalah **ejaan korpus** — itu **bukti asal kolom**, bukan nama kolom.
 
+> **Catatan implementasi 01-10-2026** (gelombang 2–7, `RALAT-DEV-01-10-2026.md`). Nol tabel baru: migrasi 480–482 hanya
+> `PROD_KE DEFAULT 1`, tiga index pencari versi, `SEQ_WORK_EDM_LIFE`, dan index unik `UX_PL_EDM_TERBUKA`. Kolom yang **ditulis** jalur
+> endorsement:
+>
+> | Tabel | Saat | Kolom |
+> | --- | --- | --- |
+> | `T_PREMIUM_LIST` | buat kasus | `ID` `EDMLF-<n>`, `OLD_POLICY_NO`, `EDM_TYPE`, `EDM_NOTE`, `EDM_DATE`, `PROD_KE`, `CREATE_OP_NAME`, `TGL_INPUT` + 24 kolom kepala salinan (`models.KolomKepalaSalin`) |
+> | `T_PREMIUM_LIST` | `Confirm` | `NO_POLIS`, `PROD_KE`, `NO_ENDORS` = `PL_NUMBER_EDM`, `STATUSS` `Resolved-Completed` (`Decline`: `STATUSS` `Resolved-Rejected` saja) |
+> | `T_PREMIUM_LIST_DETAIL` | buat kasus / CSV | salinan versi lama ber-`PARENT_ID` + `EDM_STATUS` `Old`; baris CSV `New` |
+> | `T_PREMIUM_LIST_DETAIL` | `Save` | `EDM_STATUS` `Delete`/`Batal` + 32 kolom uang dibalik tandanya |
+> | `T_PREMIUM_LIST_DETAIL` | `Confirm` | `PL_NUMBER_EDM`, `STATUS_OLD`, `STATUS` |
+> | `T_PREMIUM_LIST_SPREADING`, `_RETRO` | buat kasus | salinan apa adanya (OQ-EDM-015) |
+> | `T_PREMIUM_LIST_SUMMARY` | `Save`, CSV sesudah `Save` | rekap per mata uang dihitung ulang (tanpa empat kolom SUM) |
+> | `T_VIEW_SUGGEST` | keputusan | `NO`, `DATE_SUGGEST`, `PIC_SUGGEST`, `IS_CEDING_CONFIRM`, `COMMENT_SUGGEST` |
+> | `M_LIFE_PREMIUM_SUMMARY` | `Confirm` | 37 kolom prosedur `PEGA_M_LIFE_PREMIUM_SUMMARY` |
+>
+> **Tidak ditulis:** `M_LIFE_PREMIUM_DETAIL` (OQ-EDM-016), `JSON_POLIS` (R18), `LIFEINPRODUCTION` (R17), kolom kepala
+> `T_PREMIUM_LIST.STATUS_OLD` (tak ada penulis di korpus Endorsement).
+
 ---
 
 ## Endorsement tidak punya tabel sendiri

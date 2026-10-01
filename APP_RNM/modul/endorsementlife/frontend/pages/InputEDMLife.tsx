@@ -17,6 +17,7 @@ import {
   simpanKasus,
   tambahCSV,
   type HalamanEDM,
+  type HasilPutusanEDM,
   type KasusEDM,
   type PeriksaCSVEDM,
   type PesertaEDM,
@@ -140,7 +141,7 @@ export default function InputEDMLife({ kasusId, onTutup }: { kasusId: string; on
   const [periksa, setPeriksa] = useState<PeriksaCSVEDM | null>(null)
   const [menambah, setMenambah] = useState(false)
   const [disimpanCSV, setDisimpanCSV] = useState<number | null>(null)
-  const [nomorTerbit, setNomorTerbit] = useState<string | null>(null)
+  const [putusan, setPutusan] = useState<HasilPutusanEDM | null>(null)
 
   const muatKasus = useCallback(async () => {
     setGalat(null)
@@ -345,10 +346,10 @@ export default function InputEDMLife({ kasusId, onTutup }: { kasusId: string; on
         <KeputusanEDM
           kasusId={kasusId}
           riwayat={kasus.riwayat}
-          onSelesai={(h) => (h.noEndorsement !== '' ? setNomorTerbit(h.noEndorsement) : onTutup())}
+          onSelesai={(h) => (h.noEndorsement !== '' ? setPutusan(h) : onTutup())}
         />
       )}
-      {nomorTerbit !== null && <TerimaKasih noEndorsement={nomorTerbit} onTutup={onTutup} />}
+      {putusan !== null && <TerimaKasih hasil={putusan} onTutup={onTutup} />}
       {jendelaCSV === 'unggah' && <UnggahCSV kasusId={kasusId} onBerkas={pilihCSV} onTutup={() => setJendelaCSV(null)} />}
       {jendelaCSV === 'hasil' && <HasilCSV baris={barisCSV} onTutup={() => setJendelaCSV(null)} />}
       {polisLama && <PolisLama kasusId={kasusId} tipe={k.TYPE ?? ''} onTutup={() => setPolisLama(false)} />}

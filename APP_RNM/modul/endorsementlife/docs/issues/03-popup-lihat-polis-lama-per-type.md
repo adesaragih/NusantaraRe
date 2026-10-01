@@ -5,7 +5,7 @@
 > - **R03** — *"`QP`, `TP`, `TR` memakai"* varian masing-masing → di Pega ketiga varian kosong (wadah luar `.Type = 'QR'`); grid dalamnya dibangun.
 > - **A2** — nomor baris `65043, 65282` … `67068` → baris awal elemen; nomor yang dapat di-grep: `View Old Policy` b64965/b65522/b66083/b66640.
 
-**Status:** ready-for-agent
+**Status:** done 01-10-2026 — bbdc658
 
 **Blocked by:** **00 (kolom EDM + PARENT_ID — PREFACTOR)**, 02 (case endorsement harus sudah memegang rujukan polis lama)
 

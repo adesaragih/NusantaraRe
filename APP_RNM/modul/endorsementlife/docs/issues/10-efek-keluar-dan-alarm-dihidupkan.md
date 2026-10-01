@@ -2,8 +2,9 @@
 
 > **Ralat 01-10-2026** (gelombang 2 brief, `../RALAT-DEV-01-10-2026.md` — ralat mengalahkan isi di bawah). Teks lama yang tidak berlaku:
 > - **E5** — *"Email terkirim **hanya** bila pembacaan balik menunjukkan penyimpanan **gagal**"* → alarm = **pesan di layar + log tanpa alamat**; Arasapas dan email tetap stub outbox (panggilan nyata OQ-EDM-013).
+> - **R33** — *"Deteksi keadaan separuh"* → keputusan satu transaksi; alarm menyala pada kegagalan efek keluar (pola PremiumList); baca-balik `_INDEX21` menunggu OQ-EDM-016.
 
-**Status:** ready-for-agent
+**Status:** done (stub) 01-10-2026 — gelombang 7; panggilan nyata Arasapas/email menunggu OQ-EDM-013
 
 **Blocked by:** **00 (kolom EDM + PARENT_ID — PREFACTOR)**, 09 (efek keluar berjalan setelah penyimpanan selesai dan keadaannya diketahui)
 

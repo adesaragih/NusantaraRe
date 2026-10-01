@@ -5,7 +5,7 @@
 > - **E1** — *"**Blocked by:** **PremiumList Life tiket `00`**"* → blok terpenuhi — tidak ada pemblokir.
 > - **R21** — *"Versi berjalan sebuah polis dapat ditemukan sebagai baris ber-**`PRODKE` terbesar**"* → tetap berlaku; STRUKTUR menuntut index `NO_POLIS` · `PROD_KE` yang belum dibuat 051 — dibuat 480 (`IDX_PL_NOPOLIS_PRODKE`, `IDX_PL_OLD_POLICY_NO`, `IDX_PLD_PL_NUMBER`).
 
-**Status:** ready-for-agent
+**Status:** done 01-10-2026 — migrasi 480 (64fe767), 481 + 482 (bbdc658), slot menu 976; berlaku sesudah `-migrate` oleh work owner
 
 **Blocked by:** **PremiumList Life tiket `00`** (skema tujuh tabel — tabel yang di-ALTER harus ada
 lebih dulu)

@@ -48,7 +48,11 @@ SQL slot menu: `APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md` bab 6. Nomor selalu
 | --- | --- | --- |
 | `T_PREMIUM_LIST`, `T_PREMIUM_LIST_DETAIL`, `T_PREMIUM_LIST_SPREADING`, `T_PREMIUM_LIST_SPREADING_RETRO`, `T_PREMIUM_LIST_SUMMARY`, `T_VIEW_SUGGEST` | PremiumList Life (051–056) | dibaca dan ditulis — kasus EDM = baris versi `T_PREMIUM_LIST` ber-`ID` `EDMLF-<n>` |
 | `JSON_POLIS` | warisan `POOLDATA` | dibaca saja — sumber polis lama sistem lama |
-| `M_LIFE_PREMIUM_DETAIL`, `M_LIFE_PREMIUM_SUMMARY` | warisan `POOLDATA` | dibaca (sumber warisan) dan ditulis (E2, persis `SaveMasterLPDet`/`InsertPLSummary`); setiap kueri berkunci ber-index (E4) |
+| `M_LIFE_PREMIUM_DETAIL` | warisan `POOLDATA` | **dibaca** saja (sumber versi new business warisan, `_INDEX4`); penulisan E2 (`SaveMasterLPDet`) menunggu OQ-EDM-016 (RALAT R29) |
+| `M_LIFE_PREMIUM_SUMMARY` | warisan `POOLDATA` | dibaca (rekap versi warisan) dan **ditulis** saat `Confirm` — isi prosedur `PEGA_M_LIFE_PREMIUM_SUMMARY` ditiru, prosedur tidak dipanggil (E2) |
+| `T_LOG_SERVICE_RNM` | inti (outbox) | ditulis — kegagalan efek keluar `MODUL = ENDORSEMENTLIFE` (tiket 10) |
+| `T_CLAIMLF_JEJAK` | inti (jejak) | ditulis — buat kasus, `Save`, `Add CSV Data`, keputusan |
+| `M_LINK_SERVICE` | inti (layanan) | dibaca saat jalan — kunci `Production` / `convertJsonNusareToProduction`; alamat tidak pernah dikutip |
 | `ARASAPAS.DETAIL_INVOICE` | Arasapas | dibaca saja, satu repository (gerbang ke-5) |
 
 ## Rute API

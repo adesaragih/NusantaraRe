@@ -267,6 +267,8 @@ export interface HasilPutusanEDM {
   noEndorsement: string
   peserta: number
   rekapWarisan: number
+  /** Efek keluar sesudah Confirm (tiket 10) - `services.RingkasEfek`; tidak ada pada Decline. */
+  efekKeluar?: { dilewati: boolean; gagal: string[]; tidakDiantre: string[] }
 }
 
 /** `Submit` b37494 / b38109 → `IsLifeAccepted`: Confirm meresmikan versi, Decline menutup kasus. */

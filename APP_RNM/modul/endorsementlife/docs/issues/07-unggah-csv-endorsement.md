@@ -6,7 +6,7 @@
 > - **R31** — *"Unggah ulang mengganti"* (AC 35) → unggahan kedua sesudah `Add CSV Data` ditolak 409 (kunci `.EditInput1`), pembuangan baris `New` 2.1 tetap berjalan; CSV sesudah `Save` menghitung ulang rekap.
 > - **R32** — judul di luar 4.1 diabaikan dan ditampilkan (bukan ditolak); `UW_STATUS`, `SUM_AT_RISK`, `REMAINING_PERIOD` tidak disimpan — OQ-EDM-018.
 
-**Status:** ready-for-agent
+**Status:** done 01-10-2026 — e5621e6
 
 **Blocked by:** **00 (kolom EDM + PARENT_ID — PREFACTOR)**, 05 (baris `New` menuntut mesin `EDMStatus` sudah berjalan)
 

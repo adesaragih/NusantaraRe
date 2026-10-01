@@ -13,6 +13,7 @@ package services
 //	Confirm: 4 versi berjalan + nomor `<polis>/NN` (`GenerateNoEDM_Life`, lahir sekali b1216/b1390)
 //	         5 anti-dobel `(NO_POLIS, PROD_KE)`  6 resmikan kepala + peserta (11.2-11.5)
 //	         7 rekap warisan (12, `InsertPLSummary`)  8 jejak `Resolved-Completed` (b686)
+//	         sesudah commit: efek keluar 16 (`edm_efekkeluar.go`)
 //
 // ⛔ Penulisan peserta warisan `M_LIFE_PREMIUM_DETAIL` (11.6 `SaveMasterLPDet`)
 // BELUM: menunggu OQ-EDM-016 (RALAT R29). `JSON_POLIS` dan `LIFEINPRODUCTION`
@@ -27,6 +28,7 @@ import (
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/db"
 	"nusantarare/inti/backend/jejak"
+	"nusantarare/inti/backend/outbox"
 	"nusantarare/modul/endorsementlife/backend/models"
 	"nusantarare/modul/endorsementlife/backend/repository"
 )
@@ -51,6 +53,8 @@ type HasilPutusan struct {
 	NoEndorsement string `json:"noEndorsement"`
 	Peserta       int    `json:"peserta"`
 	RekapWarisan  int    `json:"rekapWarisan"`
+	// EfekKeluar - Arasapas sesudah Confirm (tiket 10); kosong pada Decline.
+	EfekKeluar *RingkasEfek `json:"efekKeluar,omitempty"`
 }
 
 // Putuskan menjalankan keputusan kasus dalam satu transaksi.
@@ -146,6 +150,14 @@ func (l *Layanan) Putuskan(ctx context.Context, p inti.Pelaku, id string, m Masu
 	})
 	if err != nil {
 		return HasilPutusan{}, err
+	}
+	if hasil.Status == models.StatusKasusSelesai {
+		// Sesudah commit: kegagalan tercatat di outbox dan tampil, versi resmi tidak dibatalkan.
+		r := ringkas(l.penyalur.Salurkan(ctx, outbox.MuatanEfek{KlaimID: id, AkunID: p.AkunID, Waktu: l.jam()}))
+		for _, g := range append(append([]string{}, r.Gagal...), r.TidakDiantre...) {
+			l.catat("endorsement life: alarm efek keluar kasus " + id + ": " + g)
+		}
+		hasil.EfekKeluar = &r
 	}
 	return hasil, nil
 }
