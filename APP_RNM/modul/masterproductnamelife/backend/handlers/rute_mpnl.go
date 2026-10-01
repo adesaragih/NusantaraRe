@@ -59,6 +59,7 @@ func daftarkan(mux *http.ServeMux, layanan func() *services.Layanan, adaDB func(
 	}
 	daftarkanBaca(pasang)
 	daftarkanTulis(pasang)
+	daftarkanLampiran(pasang)
 }
 
 func daftarkanBaca(pasang func(string, rute)) {
@@ -124,6 +125,15 @@ func jawabGalat(w http.ResponseWriter, err error) bool {
 		galat.Tulis(w, http.StatusForbidden, "insufficient permission")
 	case errors.Is(err, services.ErrProdukTidakAda), errors.Is(err, services.ErrJenisMasterTidakDikenal):
 		galat.Tulis(w, http.StatusNotFound, services.Pesan(err))
+	case errors.Is(err, services.ErrLampiranTidakAda):
+		galat.Tulis(w, http.StatusNotFound, services.Pesan(err))
+	case errors.Is(err, services.ErrNamaLampiranSudahAda), errors.Is(err, services.ErrLampiranBelumTerkirim),
+		errors.Is(err, services.ErrLampiranSudahTerkirim), errors.Is(err, services.ErrBerkasSumberHilang):
+		// 409: keadaan lampiran menolak aksi - kalimat menyebut yang harus dilakukan.
+		galat.Tulis(w, http.StatusConflict, services.Pesan(err))
+	case errors.Is(err, services.ErrOfficeStub), errors.Is(err, services.ErrPenyimpananBelumDisetel):
+		// 503: penampil kantor luar tidak dipanggil (OQ-MPNL-11) / folder stub belum disetel.
+		galat.Tulis(w, http.StatusServiceUnavailable, services.Pesan(err))
 	case errors.Is(err, services.ErrRIRateMenungguPersetujuan):
 		// 503 berkalimat: sumber R/I Rate menunggu persetujuan (OQ-MPNL-03).
 		galat.Tulis(w, http.StatusServiceUnavailable, services.Pesan(err))

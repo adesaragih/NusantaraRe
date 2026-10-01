@@ -46,6 +46,13 @@ type Gudang struct {
 	// GagalTulisInward - penulis sisi inward gagal SESUDAH sisi umum tertulis (uji P4).
 	GagalTulisInward error
 
+	// Lampiran, Objek, Outbox, AppName - tabel lampiran (paket 8, `lampiran.go`).
+	Lampiran      map[string]models.Lampiran
+	Objek         map[string]models.ObjekPenyimpanan
+	Outbox        []Efek
+	AppName       string
+	nomorLampiran int
+
 	// Komit mencacah transaksi yang ditutup sukses.
 	Komit int
 	// GagalBaca - bila terisi, setiap pembacaan gagal dengan galat ini.

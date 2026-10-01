@@ -96,3 +96,21 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+---
+
+## Ralat bertanggal 01-10-2026 — sesi implementasi (paket 8)
+
+> Sumber: `../RALAT-DEV-30-09-2026.md` (P5) dan brief bab 1 (`ServiceGoogle`, `LinkService`, View Office Online = **stub**). Kalimat di atas **tidak dihapus**.
+
+| Kalimat lama | Ralat |
+| --- | --- |
+| *"Alamat penyimpanan di-resolve runtime dari konfigurasi"*; *"pengambilan dan cache token"* | **stub**: `ServiceGoogle`, `LinkService`/`GetLinkService`, `GetTokenStorage_SQL` **tidak dipanggil**; nol klien HTTP; alamat nyata tidak ditulis ke berkas mana pun (OQ-MPNL-10). Penjaga `TestMPNLNolAlamatLayanan` memindai `.go/.sql/.ts/.tsx/.css` modul ini; penjaga inti `TestNolAlamatLayananDiKode` tetap berlaku |
+| *"Token di-cache … berlaku 1 menit"* | gugur selama stub — tidak ada token. Diaktifkan bersama pengirim nyata (keputusan work owner) |
+| Area `internal/clients` | antarmuka `services.PenyimpananBerkas` (`SimpanAntrean`, `BuangAntrean`, `Kirim`, `Buka`, `Hapus`); bawaan `PenyimpananLokal(UNGGAHAN_DIR)` = folder `master-product-name-life/{antre,simpan}`; `UNGGAHAN_DIR` kosong → 503 berkalimat |
+| *"Kegagalan unggah tercatat dan dapat diulang; pengulangan tidak menggandakan berkas"* | outbox bersama `T_LOG_SERVICE_RNM` (`MODUL = 'MASTERPRODUCTNAMELIFE'`, `JENIS_EFEK = 'unggah-lampiran'`, `RUJUKAN` = ID lampiran) — efek diantre di transaksi rekam; gagal → `antre` + `outbox.Backoff`, sesudah `outbox.PercobaanMaksimum` → `gagal-permanen` + galat. `POST …/lampiran/{lid}/ulangi` mengirim ulang; `Kirim` idempoten dan `T_STORAGE_IMAGE` dicatat sekali (cek `IMAGEID`) |
+| *"Rekam … dan berkas … tetap sejalan: rekam tanpa berkas terdeteksi"* | status `terunggah` hanya bila objek `T_STORAGE_IMAGE` ada; unduh atau kirim ulang berkas yang hilang dari stub → 409 berkalimat (`the attachment source file no longer exists; delete the attachment and upload it again`) |
+| *"Penghapusan berkas yang sudah tidak ada … tidak menggagalkan penghapusan rekamnya"* | dibangun — `Hapus` stub menganggap berkas tak ada sebagai sukses |
+| (tidak disebut) nama objek | `InsertGoogleStorage_Act` 8 b1337: folder `Contract/Doc/YYYY/MM/`, berkas `yyyyMMdd-hhmmss-S - <nama>` zona Asia/Jakarta, `EXPDATE = SYSDATE + 1800 detik`, `APPNAME` dari `T_FOLDER_IMAGE` (`GetAppName_SQL` b58); `ImageID` dari `unggah.ImageIDBaru` (pengganti MD5 `GenerateImageID_SQL` b79) |
+
+**Status:** paket 8 — selesai sebagai stub outbox; pengirim nyata menunggu keputusan alamat (OQ-047 / OQ-MPNL-10).

@@ -43,8 +43,10 @@ type Layanan struct {
 	gudang Gudang
 	tx     Transaksi
 	catat  func(string)
-	// jam - `@CurrentDateTime()` (tanggal baris komentar).
+	// jam - `@CurrentDateTime()` (tanggal baris komentar, waktu lampiran).
 	jam func() time.Time
+	// berkas - penyimpanan berkas lampiran (stub lokal; tiruan di uji).
+	berkas PenyimpananBerkas
 }
 
 // BaruLayanan menyusun Layanan - dipakai uji dengan gudang tiruan dan
@@ -53,7 +55,14 @@ func BaruLayanan(g Gudang, tx Transaksi, catat func(string)) *Layanan {
 	if catat == nil {
 		catat = func(string) {}
 	}
-	return &Layanan{gudang: g, tx: tx, catat: catat, jam: time.Now}
+	return &Layanan{gudang: g, tx: tx, catat: catat, jam: time.Now, berkas: penyimpananBelumDisetel{}}
+}
+
+// DenganPenyimpanan mengganti penyimpanan berkas (uji, atau stub lokal).
+func (l *Layanan) DenganPenyimpanan(b PenyimpananBerkas) *Layanan {
+	salinan := *l
+	salinan.berkas = b
+	return &salinan
 }
 
 // DenganJam mengganti jam layanan (uji).
@@ -66,5 +75,6 @@ func (l *Layanan) DenganJam(jam func() time.Time) *Layanan {
 // LayananOracle menyusun Layanan di atas Oracle - satu-satunya penyusun yang
 // dipakai handlers (handlers tidak mengimpor repository).
 func LayananOracle(s *Service) *Layanan {
-	return BaruLayanan(repository.Baru(s.DB()), s.DalamTransaksi, func(baris string) { log.Print(baris) })
+	return BaruLayanan(repository.Baru(s.DB()), s.DalamTransaksi, func(baris string) { log.Print(baris) }).
+		DenganPenyimpanan(PenyimpananLokal(s.UnggahanDir()))
 }

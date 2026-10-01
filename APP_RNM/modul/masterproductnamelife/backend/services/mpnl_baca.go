@@ -21,6 +21,7 @@ type Gudang interface {
 	AmbilProduk(ctx context.Context, tx *db.Tx, id string) (models.Produk, error)
 	GudangMaster
 	GudangTulis
+	GudangLampiran
 }
 
 var (
