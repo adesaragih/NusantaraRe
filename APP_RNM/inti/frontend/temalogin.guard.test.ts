@@ -209,3 +209,20 @@ describe('Kelola User bergaya soft UI', () => {
     ])
   })
 })
+
+describe('area kerja dilebarkan (permintaan work owner 02-10-2026)', () => {
+  /** Nilai `prop` dari setiap aturan yang pemilihnya PERSIS `.shell__isi` (aturan di @media ikut). */
+  const nilai = (css: string, prop: string): string[] =>
+    aturan(css)
+      .filter((a) => a.pemilih.includes('.shell__isi'))
+      .flatMap((a) => [...a.isi.matchAll(new RegExp(`(?:^|[;\\s])${prop}\\s*:\\s*([^;]+)`, 'g'))].map((m) => (m[1] ?? '').trim()))
+
+  it('.shell__isi berbatas lebar 1600px, padding samping paling lebar 20px', () => {
+    expect(nilai(CSS, 'max-width')).toEqual(['1600px'])
+    expect(nilai(CSS, 'padding-inline')).toEqual(['20px'])
+  })
+
+  it('aturan nilai menggigit', () => {
+    expect(nilai('.shell__isi { max-width: 1400px; } @media (min-width: 1px) { .shell__isi { padding-inline: 32px } }', 'max-width')).toEqual(['1400px'])
+  })
+})
