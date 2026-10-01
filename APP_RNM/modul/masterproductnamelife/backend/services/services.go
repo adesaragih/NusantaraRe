@@ -14,6 +14,7 @@ package services
 import (
 	"context"
 	"log"
+	"time"
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/db"
@@ -42,6 +43,8 @@ type Layanan struct {
 	gudang Gudang
 	tx     Transaksi
 	catat  func(string)
+	// jam - `@CurrentDateTime()` (tanggal baris komentar).
+	jam func() time.Time
 }
 
 // BaruLayanan menyusun Layanan - dipakai uji dengan gudang tiruan dan
@@ -50,7 +53,14 @@ func BaruLayanan(g Gudang, tx Transaksi, catat func(string)) *Layanan {
 	if catat == nil {
 		catat = func(string) {}
 	}
-	return &Layanan{gudang: g, tx: tx, catat: catat}
+	return &Layanan{gudang: g, tx: tx, catat: catat, jam: time.Now}
+}
+
+// DenganJam mengganti jam layanan (uji).
+func (l *Layanan) DenganJam(jam func() time.Time) *Layanan {
+	salinan := *l
+	salinan.jam = jam
+	return &salinan
 }
 
 // LayananOracle menyusun Layanan di atas Oracle - satu-satunya penyusun yang

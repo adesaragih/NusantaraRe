@@ -15,6 +15,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"nusantarare/modul/masterproductnamelife/backend/models"
 )
@@ -101,4 +102,32 @@ func (l *Layanan) periksaPilihanPlan(ctx context.Context, pk *periksa, daftar []
 		}
 	}
 	return nil
+}
+
+// Judul grid VERBATIM paket 7.
+const judulFinUW = "FINANCIAL UNDERWRITING" // b37151
+
+// periksaFinUW - angka dan rentang baris `FINANCIAL UNDERWRITING` (`Min Insured`
+// b37674, `Max Insured` b37822 = `pxNumber`; `Employee`, `Non-Employee` teks).
+func periksaFinUW(pk *periksa, daftar []models.BarisFinUW) {
+	for i := range daftar {
+		b := &daftar[i]
+		var sub periksa
+		minSI, maxSI := sub.desimal("Min Insured", &b.MinInsured), sub.desimal("Max Insured", &b.MaxInsured)
+		sub.tidakLebihBesar("Min Insured", minSI, "Max Insured", maxSI)
+		for _, s := range sub.pesan {
+			pk.baris(judulFinUW, i, "%s", s)
+		}
+	}
+}
+
+// bentukWaktuPega - `@CurrentDateTime()` Pega (`YYYYMMDDTHHMMSS.SSS GMT`).
+const bentukWaktuPega = "20060102T150405.000 GMT"
+
+// barisKomentar - `AddCommentList_Act` 1 b233 `·`: `Date = @CurrentDateTime()`,
+// `OperatorName = OperatorID.pxInsName` (akun pelaku), `IsApproved = param.status`
+// (tidak dikirim `SaveProductName_Act` 7 b1513 → kosong), `Suggest = param.comment`
+// (`ProductName.Comment`).
+func barisKomentar(saat time.Time, akun, komentar string) models.BarisKomentar {
+	return models.BarisKomentar{Date: saat.UTC().Format(bentukWaktuPega), OperatorName: akun, Suggest: komentar}
 }

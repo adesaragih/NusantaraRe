@@ -236,6 +236,7 @@ func (l *Layanan) SimpanProduk(ctx context.Context, p inti.Pelaku, m models.Prod
 	periksaInward(&pk, &m.Inward)
 	periksaPlan(&pk, m.PlanList)
 	periksaUWLimit(&pk, m.UnderwritingLimit)
+	periksaFinUW(&pk, m.FinancialUnderwriting)
 	var hasil models.Produk
 	err := l.tx(ctx, func(tx *db.Tx) error {
 		var lama *models.Produk
@@ -261,6 +262,9 @@ func (l *Layanan) SimpanProduk(ctx context.Context, p inti.Pelaku, m models.Prod
 			return err
 		}
 		lengkapiMilikServer(&m, lama, p)
+		// Langkah 7 b1513 `·` (tanpa prakondisi): `AddCommentList_Act` - SETIAP
+		// simpan menambah satu baris, juga bila komentarnya kosong (OQ-MPNL-14).
+		m.CommentList = append(m.CommentList, barisKomentar(l.jam(), p.AkunID, m.Umum.Comment))
 		if baru {
 			id, err := l.gudang.SisipProduk(ctx, tx, m)
 			if err != nil {
