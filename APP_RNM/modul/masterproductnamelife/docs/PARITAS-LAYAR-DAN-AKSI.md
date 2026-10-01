@@ -10,7 +10,7 @@
 > DataTransform = `<pyPropertiesName>`, kolom RD = `<pyFieldName>`, saringan RD = `<pyFilterValue>`/`<pyFilterOperation>`; WHEN, SQL,
 > label FlowAction = baris tagnya sendiri. *Kalimat lama dikutip:* nomor sebelumnya menunjuk baris STRUKTURAL (`<pyFormat>` sel,
 > `<rowdata>` langkah/aksi) — benar menurut penomoran `sed`, tetapi bergeser 2–65 baris dari baris yang `grep -n` atas teksnya temukan
-> (mis. `Inward` b75322 → `<pyLabel>Inward</pyLabel>` b75368). 871 nomor di 60 berkas modul diganti; diverifikasi dua cara: peta
+> (mis. `Inward` b75322 → `<pyLabel>Inward</pyLabel>` b75368). 871 nomor di 60 berkas modul diganti (putaran kedua sesudah `/code-review`: 26 lagi, total 897); diverifikasi dua cara: peta
 > pengurai (baris struktural → tag) dan pembacaan ulang setiap nomor baru dengan perintah standar (0 salah).
 > Setiap langkah activity yang dikutip mencetak `pyStepsBlockName` — `·` = kosong (langkah hidup), `//` = ter-remark (tidak pernah jalan).
 > Prakondisi dibaca dari urutan aksi: `WhenTrue 2` = lanjut, `3` = lewati langkah; `T=-` = kosong = lanjut; **`PRE=false` = prakondisi
@@ -285,4 +285,5 @@ tekan SAVE untuk menyimpan`. Tanpa basis data tidak teramati: `View` baris grid,
 | 2 | `6209638` | L2/L3/L5/L7 — inward ber-ID produk, objek master DEV, `OVR_COMM` dan `TREATYCONTRACTID` kosong |
 | 3 | — | L8 tidak dijalankan: register OQ tidak memuat izin bertanggal work owner untuk OQ-MPNL-03 — `R/I Rate`/`View Rate` tetap 503 |
 | 4 | `e1ff8b8` | uji manual baca-saja terhadap DEV (`LAPORAN-UJI-MANUAL.md`) |
-| 5 | (commit ini) | dokumen §2, L6 (`Medical` teks bebas), L9 (nomor `bNNN` perintah standar) |
+| 5 | `7b0fa8e` | dokumen §2, L6 (`Medical` teks bebas), L9 (nomor `bNNN` perintah standar) |
+| tinjauan | `43816c2` | perbaikan `/code-review`: panjang atas nilai akhir, batas 4000 byte kunci view, katalog bertipe, DDL tiruan = katalog, uji `db` kolom datar + inward; L9 putaran kedua **26** nomor langkah yang tertinggal (pesan commit-nya keliru menulis 23) |
