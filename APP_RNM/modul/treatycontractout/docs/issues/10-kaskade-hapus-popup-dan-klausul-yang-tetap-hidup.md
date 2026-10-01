@@ -63,8 +63,9 @@ dan **milik level tahun/grup/jenis**, dipakai bersama lintas kontrak. Ketidakiku
 - [ ] ⚠️ **`PROPORTIONALARRG` (klausul) TIDAK ikut terhapus** dan tetap dapat dibaca setelah
       kontrak dihapus. Test yang menemukan klausul ikut terhapus **gagal**. *(AC 44 spec;
       User story 23; `[fakta bisnis — work owner]` — desain, bukan bug)*
-- [ ] Popup **menyebut secara eksplisit** bahwa klausul **tidak** akan terhapus, supaya pengguna
-      tidak menyangka sebaliknya. *(turunan AC 43, 44)*
+- [ ] ~~Popup **menyebut secara eksplisit** bahwa klausul **tidak** akan terhapus, supaya pengguna
+      tidak menyangka sebaliknya. *(turunan AC 43, 44)*~~ **Gugur 01-10-2026** — lihat
+      *Keputusan work owner 01-10-2026*. AC 44 (klausul tidak terhapus) tetap berlaku.
 - [ ] Seluruh kaskade berjalan dalam **satu transaksi**; kegagalan di langkah mana pun
       **membatalkan seluruhnya**. *(AC 45 spec; tiket 09)*
 - [ ] Jumlah yang ditampilkan popup **sama** dengan jumlah yang benar-benar terhapus — dihitung dari
@@ -167,3 +168,15 @@ Nomor baris = baris mentah berkas korpus `Treaty Contract Out/`.
 - Empat DELETE `DeleteFromTREATYCONTRACT_SQL` b79 kini atas tabel warisan `TREATYCONTRACT`, `TREATYBUSINESS`,
   `MTREATYSECURITY`, `TREATYREINSURER` — sama teksnya dengan RDB (tanpa `COMMIT`). OQ-TCO-20/21 tetap.
 - **Jejak hapus gugur** (nol tabel jejak modul).
+
+## Keputusan work owner 01-10-2026 — popup hapus kontrak
+
+- **Catatan klausul dibuang dari popup.** Jawaban: *"aku mau itu di hapus aja, selama tidak akan menghasilkan
+  kekeliruan dan bug"*. Kalimat `HAPUS_TCO.klausulTetap` ("N clause rows are NOT deleted …") tidak lagi tampil.
+  Kaskade **tidak berubah**: klausul tetap tidak dihapus (AC 44, `TestLangkahHapusKontrakTanpaKlausul`); server masih
+  menghitung dan mengirim `klausulTetap` (OQ-TCO-20), hanya tidak ditampilkan.
+- **Peringatan kontrak lain (OQ-TCO-21) dipertahankan** — tanpanya reinsurer/security kontrak lain terhapus tanpa
+  disadari. Teksnya dibetulkan: tunggal/jamak mengikuti cacah (`teksBersama`: "1 other contract uses" / "2 other
+  contracts use", bukan "1 another contract uses"), dan kalimat business kini menyebut saringan sebenarnya —
+  business terhapus bila `TREATYYEARID`-nya tahun ini **atau kosong (NULL)**, termasuk milik kontrak lain.
+  Cacah `bersama` tetap ikut dikonfirmasi (`DELETE …?bersama=`, 409 bila berubah).
