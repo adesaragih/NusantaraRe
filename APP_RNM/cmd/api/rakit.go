@@ -18,7 +18,9 @@ import (
 	"time"
 
 	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/config"
 	"nusantarare/inti/backend/galat"
+	"nusantarare/inti/backend/login"
 	"nusantarare/inti/backend/menu"
 )
 
@@ -78,8 +80,18 @@ func pilihModulAktif(terdaftar []inti.Modul, namaLama map[string]string, diminta
 // dipasang walau modul mana pun nonaktif, dan butir modul nonaktif tidak
 // dikirimnya. `stubPelaku` = AUTH_STUB, diteruskan ke saringan per akun
 // (`menu.SaringMenuUntukPelaku`, hari ini meneruskan semua).
-func rakitMux(dasar *inti.Dasar, terdaftar, aktif []inti.Modul, stubPelaku bool) http.Handler {
+//
+// `masuk` (login, keputusan work owner 01-10-2026) memasang `/api/auth/*`
+// dan membungkus SELURUH handler dengan middleware sesinya: pelaku hasil
+// login dibaca `inti.PelakuDari` tanpa satu pun modul diubah. nil = tanpa
+// login (uji).
+func rakitMux(dasar *inti.Dasar, terdaftar, aktif []inti.Modul, stubPelaku bool, masuk *login.Rute) http.Handler {
+	bungkus := func(h http.Handler) http.Handler { return h }
 	mux := http.NewServeMux()
+	if masuk != nil {
+		masuk.Pasang(mux)
+		bungkus = masuk.Middleware
+	}
 	mux.HandleFunc("GET /healthz", healthz(dasar))
 	mux.HandleFunc("GET /api/modul-aktif", modulAktif(aktif))
 	mux.HandleFunc("GET /api/menu", ruteMenu(dasar, aktif, stubPelaku))
@@ -104,9 +116,9 @@ func rakitMux(dasar *inti.Dasar, terdaftar, aktif []inti.Modul, stubPelaku bool)
 		nonaktif = append(nonaktif, ruteNonaktif{nama: m.Nama(), mux: kenal})
 	}
 	if len(nonaktif) == 0 {
-		return mux
+		return bungkus(mux)
 	}
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return bungkus(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if _, pola := mux.Handler(r); pola == "" {
 			for _, n := range nonaktif {
 				if _, p := n.mux.Handler(r); p != "" {
@@ -117,7 +129,17 @@ func rakitMux(dasar *inti.Dasar, terdaftar, aktif []inti.Modul, stubPelaku bool)
 			}
 		}
 		mux.ServeHTTP(w, r)
-	})
+	}))
+}
+
+// rakitLogin menyusun rute login. Tanpa Oracle atau tanpa SESI_RAHASIA ia
+// tetap terpasang dan menjawab 503 yang menyebut sebabnya.
+func rakitLogin(dasar *inti.Dasar, cfg config.Config) *login.Rute {
+	if !dasar.PunyaDatabase() || cfg.SesiRahasia == "" {
+		return login.NewRute(nil, cfg.SesiCookieAman)
+	}
+	l := login.NewLayanan(login.NewGudangOracle(dasar.DB()), []byte(cfg.SesiRahasia))
+	return login.NewRute(l, cfg.SesiCookieAman)
 }
 
 // jawabanModulAktif adalah badan GET /api/modul-aktif.

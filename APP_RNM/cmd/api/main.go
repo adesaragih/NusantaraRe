@@ -18,9 +18,11 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -28,6 +30,7 @@ import (
 	"nusantarare/inti/backend/config"
 	"nusantarare/inti/backend/daftar"
 	intidb "nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/login"
 	"nusantarare/inti/backend/migrasi"
 )
 
@@ -35,6 +38,15 @@ func main() {
 	migrasi := flag.Bool("migrate", false, "jalankan migrasi lalu keluar")
 	bongkar := flag.Bool("migrate-down", false,
 		"BONGKAR skema uji lalu keluar - MENGHAPUS tabel; perlu ORACLE_SKEMA_UJI=true")
+	var baru login.AkunBaru
+	var wb string
+	flag.StringVar(&baru.ID, "buat-pengguna", "",
+		"buat akun M_LOGIN_GO lalu keluar; sandi sementara DICETAK SEKALI dan wajib diganti saat login pertama")
+	flag.StringVar(&baru.Nama, "nama", "", "nama tampilan akun (-buat-pengguna)")
+	flag.StringVar(&baru.Organisasi, "organisasi", "", "M_ORGANIZATION.CODE (-buat-pengguna)")
+	flag.StringVar(&baru.Divisi, "divisi", "", "M_DIVISION.CODE (-buat-pengguna)")
+	flag.StringVar(&baru.Unit, "unit", "", "M_UNIT.CODE (-buat-pengguna)")
+	flag.StringVar(&wb, "workbasket", "", "WORKBASKET_ID dipisah koma (-buat-pengguna)")
 	flag.Parse()
 
 	cfg, err := config.Load()
@@ -83,6 +95,15 @@ func main() {
 		jalankanMigrasi(dasar)
 		return
 	}
+	if baru.ID != "" {
+		for _, w := range strings.Split(wb, ",") {
+			if w = strings.TrimSpace(w); w != "" {
+				baru.Workbasket = append(baru.Workbasket, w)
+			}
+		}
+		buatPengguna(dasar, baru)
+		return
+	}
 
 	catat := func(s string) { log.Print(s) }
 	// Refactor bentuk B: modul yang dipasang dipilih MODUL_AKTIF (kosong =
@@ -104,7 +125,7 @@ func main() {
 
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddr,
-		Handler:           rakitMux(dasar, terdaftar, aktif, cfg.AuthStub),
+		Handler:           rakitMux(dasar, terdaftar, aktif, cfg.AuthStub, rakitLogin(dasar, cfg)),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
@@ -131,6 +152,23 @@ func main() {
 	// ⛔ Ditunggu SEBELUM db ditutup (defer di atas): putaran yang sedang
 	// berjalan menuntaskan atau membatalkan transaksinya sendiri.
 	tungguPekerja(tutup, pekerja, catat)
+}
+
+// buatPengguna adalah titik masuk `-buat-pengguna` (login, keputusan work
+// owner 01-10-2026): akun pertama dan akun berikutnya sampai layar kelola
+// pengguna ada.
+//
+// ⛔ Sandi sementara dicetak ke stdout SEKALI dan tidak disimpan di mana pun
+// selain sebagai hash; akunnya wajib ganti sandi saat login pertama.
+func buatPengguna(svc *inti.Dasar, a login.AkunBaru) {
+	if !svc.PunyaDatabase() {
+		log.Fatal("buat-pengguna: ORACLE_DSN wajib terisi")
+	}
+	sandi, err := login.NewLayanan(login.NewGudangOracle(svc.DB()), nil).BuatPengguna(context.Background(), a)
+	if err != nil {
+		log.Fatalf("buat-pengguna: %v", err)
+	}
+	fmt.Printf("akun %s dibuat. Sandi sementara (tampil SEKALI, wajib diganti saat login pertama): %s\n", a.ID, sandi)
 }
 
 // bongkarMigrasi adalah titik masuk `-migrate-down`.

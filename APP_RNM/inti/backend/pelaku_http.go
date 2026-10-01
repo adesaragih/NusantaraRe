@@ -18,12 +18,26 @@ package backend
 //  3. seluruh uji wewenang berjalan di seam services dengan Pelaku langsung,
 //     sehingga aturannya tidak bergantung pada jalur ini sama sekali
 //
+// ⭐ LOGIN SUNGGUHAN (keputusan work owner 01-10-2026): pelaku hasil login
+// (`inti/backend/login`, cookie sesi + `M_LOGIN_GO`) ditaruh di context
+// permintaan oleh middleware login, dan `PelakuDari` MENDAHULUKANNYA. Stub
+// header di bawah tetap ada untuk pengembangan, hanya bila tidak ada sesi.
+//
 // Dibaca sesudah: handlers.go.
 
 import (
+	"context"
 	"net/http"
 	"strings"
 )
+
+type kunciPelakuSesi struct{}
+
+// DenganPelakuSesi menaruh pelaku hasil login di context permintaan - hanya
+// middleware login yang memanggilnya.
+func DenganPelakuSesi(ctx context.Context, p Pelaku) context.Context {
+	return context.WithValue(ctx, kunciPelakuSesi{}, p)
+}
 
 // pelakuDari membaca pelaku permintaan.
 //
@@ -37,6 +51,9 @@ import (
 // Router(svc, false) dan masih hidup. Test menjadi bergantung urutan, dan
 // `go test -race` menandainya sebagai tulis-baca serentak.
 func PelakuDari(r *http.Request, stubAktif bool) Pelaku {
+	if p, ok := r.Context().Value(kunciPelakuSesi{}).(Pelaku); ok {
+		return p
+	}
 	if !stubAktif {
 		return Pelaku{}
 	}

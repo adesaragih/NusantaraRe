@@ -40,7 +40,7 @@ func muxUji(t *testing.T, diminta []string) (http.Handler, []inti.Modul) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return rakitMux(inti.NewDasar(nil), terdaftar, aktif, false), aktif
+	return rakitMux(inti.NewDasar(nil), terdaftar, aktif, false, rakitLogin(inti.NewDasar(nil), config.Config{})), aktif
 }
 
 // modulTerdaftar - setiap modul terdaftar, dirakit tanpa Oracle.
@@ -227,5 +227,24 @@ func TestMigrasiTetapLengkapSaatModulNonaktif(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join("..", "..", "modul", "treatycontractout", "backend", "migrations")); err == nil {
 		t.Error("modul treatycontractout kini punya folder migrations - tco4 menyatakan nol tabel baru")
+	}
+}
+
+// Login (keputusan work owner 01-10-2026): /api/auth/* terpasang walau tanpa
+// Oracle, dan menjawab 503 yang menyebut sebabnya - bukan 404 yang terbaca
+// "backend tidak terjangkau".
+func TestRuteLoginTerpasangTanpaOracle(t *testing.T) {
+	h, _ := muxUji(t, nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/login", strings.NewReader(`{"akun":"UJI","sandi":"x"}`))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusServiceUnavailable || !strings.Contains(rec.Body.String(), "SESI_RAHASIA") {
+		t.Errorf("POST /api/auth/login tanpa Oracle: %d %s", rec.Code, rec.Body)
+	}
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/auth/saya", nil))
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("GET /api/auth/saya tanpa sesi: %d", rec.Code)
 	}
 }
