@@ -1,5 +1,9 @@
 # 05: Maksud endorsement (`EdmType`) dan status per baris (`EDMStatus`)
 
+> **Ralat 01-10-2026** (gelombang 2 brief, `../RALAT-DEV-01-10-2026.md` — ralat mengalahkan isi di bawah). Teks lama yang tidak berlaku:
+> - **R12** — sub-jenis `EDM Type Perubahan Data` / `EDM Type Batal` → opsinya tidak ada di korpus dan tak berkolom — tidak dibangun, OQ-EDM-005.
+> - **R13** — `Description` (`DesBatal`) → disimpan di `EDM_NOTE`.
+
 **Status:** ready-for-agent
 
 **Blocked by:** **00 (kolom EDM + PARENT_ID — PREFACTOR)**, 02 (baris peserta harus sudah tersalin dan bertanda `Old`)

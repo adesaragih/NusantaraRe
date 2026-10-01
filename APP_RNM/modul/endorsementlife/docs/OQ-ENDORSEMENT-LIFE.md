@@ -1,0 +1,23 @@
+# Pertanyaan terbuka — Endorsement Life
+
+> Register OQ modul `endorsementlife`, dibuka 01-10-2026 (gelombang 1 brief `PROMPT-IMPLEMENTASI-TIGA-MODUL-LIFE-GELOMBANG-2.md`).
+> Setiap OQ punya **bawaan** yang dibangun sampai work owner menjawab. Jawaban dicatat di kolom *Jawaban* **bertanggal**, sebelum butir
+> yang bergantung padanya dikerjakan ulang. Bukti `bNNN` mengikuti aturan kepala `PARITAS-LAYAR-DAN-AKSI.md`; temuan `Rnn` di
+> `RALAT-DEV-01-10-2026.md`.
+
+| OQ | Pertanyaan | Bukti | Bawaan sampai dijawab | Pemilik | Jawaban |
+| --- | --- | --- | --- | --- | --- |
+| OQ-EDM-001 | Data endorsement lama di `JSON_POLIS` dipindah ke tabel aplikasi? | brief §10; tiket 12 (E3) | **tidak** — `JSON_POLIS` hanya dibaca sebagai sumber polis lama (R22) | work owner | — |
+| OQ-EDM-002 | Kasus endorsement yang di-`Decline` (`Resolved-Rejected`) masih memblokir endorsement baru atas polis yang sama? Di Pega **ya** | `ReportDefinition/FilterProteksiEDMLife.xml` b526 `Resolved-Completed` `!=` saja (R04); spec AC 31 `[keputusan work owner]` | **tidak memblokir** — keputusan work owner di spec; hanya kasus terbuka yang memblokir | work owner | — |
+| OQ-EDM-003 | `SaveCSVEDMLife` langkah 3 b629 memanggil `Calculate1_Act` (langkah hidup `·`). Tetap tidak dijalankan? | R05; spec §1, AC 53 | **tidak dijalankan**; nilai uang CSV dipakai apa adanya | work owner + arsitek Pega | — |
+| OQ-EDM-004 | Layar `ShowLifePremiumSummary_EDM` yatim di flow (assignment `Input EDM Summary` b859 tanpa konektor masuk). Tombol `View Old Policy` dipindah ke `InputEDMLife`? Popup varian `_QP`/`_TP`/`_TR` kosong di Pega (wadah luar `.Type = 'QR'`) — tetap diisi? | R02, R03 | tombol `View Old Policy` di kepala `InputEDMLife`, satu per `Type` seperti XML; popup diisi grid dalamnya | work owner | — |
+| OQ-EDM-005 | Opsi dan tempat simpan `EDM Type Perubahan Data` dan `EDM Type Batal` | `Section/EndorsmentLife_Section.xml` b1645, b1937 (`pyListSource` `associated`, properti tidak diekspor); `T_PREMIUM_LIST` tanpa kolom (R12) | **tidak dibangun** — kedua dropdown dan kolom Inbox `EDM Type Batal` (`InboxEndorsementLife.xml` b9916) kosong | work owner + DBA | — |
+| OQ-EDM-006 | Label radio `Status` (`EmailTypePL`); arti nilai `7` | `Section/ConfirmSection.xml` b496; `InputEDMLife.xml` b38109; `AddHistorySuggest` b353 (R14) | radio `1` **Accept**, `2` **Decline**; `7` diterima API sebagai Decline, tidak ditawarkan | work owner | — |
+| OQ-EDM-007 | Peserta yang disalin dari sumber warisan (`M_LIFE_PREMIUM_DETAIL`) tidak dapat ber-`PARENT_ID` — FK menunjuk `T_PREMIUM_LIST_DETAIL`. Perlukah penunjuk ke baris warisan? | R22; `052_t_premium_list_detail.sql` `FK_PLD_PARENT` | `PARENT_ID` kosong; selisih new − old untuk polis warisan dibaca dari baris salinan itu sendiri | work owner + DBA | — |
+| OQ-EDM-008 | Polis new business warisan ber-`PRODKE` kosong. Pega menomori endorsement pertamanya `<polis>/01`; E1 menetapkan NB = versi 1 sehingga nomor pertama `<polis>/02` | R23; `GenerateNoEDM_Life` b946, b967 | `NVL(PRODKE, 1)` — nomor pertama `/02` | work owner | — |
+| OQ-EDM-009 | Nilai awal sequence `SEQ_WORK_EDM_LIFE` (pengenal `EDMLF-<n>`) | spec §16 *"`EDMLF-<n>` fakta bisnis — nol kecocokan di korpus"*; migrasi 481 | `START WITH 1` — DBA menyetel ulang bila pengenal warisan ternyata berbentuk sama (pola migrasi 058 PremiumList) | DBA | — |
+| OQ-EDM-010 | `LIFEINPRODUCTION` tetap ditulis endorsement? | R17; `RDBList/SaveLifeinProduction_SQL.xml` b87 | **tidak ditulis** | work owner | — |
+| OQ-EDM-011 | Status kerja kasus disimpan di `T_PREMIUM_LIST.STATUSS` (spec §16: *"status proses endorsement"*) | R20; `Flow/InputEDMLife.xml` b642, b686 | `STATUSS`: kosong = terbuka, `Resolved-Completed`, `Resolved-Rejected` | work owner | — |
+| OQ-EDM-012 | Akun aplikasi boleh membaca `ARASAPAS.DETAIL_INVOICE` (gerbang ke-5)? | R26; `RDBList/SearcStatusBayarArasaps_SQL.xml` b58 | dibaca hanya bila `EdmType=3`; bila tidak dapat dibaca → **503** dengan pesan, kasus Batal tidak dibuat (gagal tertutup) | DBA + pemilik Arasapas | — |
+| OQ-EDM-013 | Panggilan nyata `convertJsonNusareToProduction` dan email alarm | E5; `serviceInsertArasapasLife_act` langkah 5 b864 `Connect-REST` | stub outbox yang gagal terang di produksi, dilewati di luar produksi; alarm = pesan layar + log tanpa alamat | work owner + pemilik Arasapas | — |
+| OQ-EDM-014 | Kolom header `Product Name` / `Product Name ID` / `WPC` disalin ke versi EDM (R09), padahal STRUKTUR menyebutnya *"NB saja"* | `MappingEDMLife` 9 b2205, b2226, b2247 | disalin (XML) | work owner | — |

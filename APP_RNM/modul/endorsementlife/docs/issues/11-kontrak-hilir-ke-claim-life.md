@@ -1,5 +1,9 @@
 # 11: Kontrak hilir ke Claim Life — satu tabel, dua sudut pandang
 
+> **Ralat 01-10-2026** (gelombang 2 brief, `../RALAT-DEV-01-10-2026.md` — ralat mengalahkan isi di bawah). Teks lama yang tidak berlaku:
+> - **E2** — *"Penegakannya milik konteks Claim Life"* → Claim Life sudah menyaring; tiket ini menjadi: Endorsement **menulis** `M_LIFE_PREMIUM_DETAIL` persis `SaveMasterLPDet` (`EDMSTATUS` Old/New/Delete/Batal) dan summary seperti `InsertPLSummary`, nol perubahan kode Claim Life/PremiumList, uji meniru penyaring Claim Life.
+> - **E4** — kueri ke `M_LIFE_PREMIUM_DETAIL` → selalu berkunci ber-index yang disebut (`_INDEX4` `PL_NUMBER`, `_INDEX21` `PL_NUMBER_EDM`), nol pemindaian penuh.
+
 **Status:** ready-for-agent
 
 **Blocked by:** **00 (kolom EDM + PARENT_ID — PREFACTOR)**, 09 (baris — termasuk yang negatif — harus sudah tertulis)

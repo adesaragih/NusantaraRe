@@ -1,5 +1,9 @@
 # 06: Jurnal balik — `Delete` selektif dan `Batal` menyeluruh
 
+> **Ralat 01-10-2026** (gelombang 2 brief, `../RALAT-DEV-01-10-2026.md` — ralat mengalahkan isi di bawah). Teks lama yang tidak berlaku:
+> - **R06** — jurnal balik `× -1` sebagai pembalikan di tempat → diturunkan dari nilai sumber — idempoten; simpan kedua ditolak.
+> - **R08** — rekap mata uang memakai mesin PremiumList → versi Endorsement `AppendCurrencySummary_DT` tanpa pembulatan 4 desimal dan tanpa empat kolom SUM.
+
 **Status:** ready-for-agent
 
 **Blocked by:** **00 (kolom EDM + PARENT_ID — PREFACTOR)**, 05 (penandaan `EDMStatus` harus sudah berjalan)

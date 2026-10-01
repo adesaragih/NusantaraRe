@@ -1,5 +1,8 @@
 # 08: Alur keputusan `Confirm`/`Decline`, kunci field permanen, dan jejak audit
 
+> **Ralat 01-10-2026** (gelombang 2 brief, `../RALAT-DEV-01-10-2026.md` — ralat mengalahkan isi di bawah). Teks lama yang tidak berlaku:
+> - **R14** — keputusan `Confirm`/`Decline` → radio `Status` `EmailTypePL`: `1` Accept → Confirm; `2` (dan `7`) Decline — OQ-EDM-006.
+
 **Status:** ready-for-agent
 
 **Blocked by:** **00 (kolom EDM + PARENT_ID — PREFACTOR)**, 01 (gerbang — `Decline` harus membebaskan polis untuk di-endorse ulang),

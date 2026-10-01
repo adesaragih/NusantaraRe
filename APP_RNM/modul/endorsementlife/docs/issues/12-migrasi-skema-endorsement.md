@@ -1,5 +1,8 @@
 # 12: Migrasi skema — tabel premium Life dan kolom penanda `EDMSTATUS`
 
+> **Ralat 01-10-2026** (gelombang 2 brief, `../RALAT-DEV-01-10-2026.md` — ralat mengalahkan isi di bawah). Teks lama yang tidak berlaku:
+> - **E3** — *"**Status:** wontfix — **digantikan tiket 00 + PremiumList Life tiket 00**"* → **di luar lingkup gelombang 2, tetap `needs-info`** — keputusan memindah `JSON_POLIS` belum ada (OQ-EDM-001, bawaan tidak dipindah).
+
 **Status:** wontfix — **digantikan tiket 00 + PremiumList Life tiket 00**
 
 **Blocked by:** —

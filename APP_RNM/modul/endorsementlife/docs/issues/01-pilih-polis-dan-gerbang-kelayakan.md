@@ -1,5 +1,11 @@
 # 01: Pilih polis new business + lima gerbang kelayakan endorsement
 
+> **Ralat 01-10-2026** (gelombang 2 brief, `../RALAT-DEV-01-10-2026.md` — ralat mengalahkan isi di bawah). Teks lama yang tidak berlaku:
+> - **R22** — *"Lookup polis di `JSON_POLIS`"* → polis dicari di dua sumber: versi sistem baru (`T_PREMIUM_LIST`) dan warisan (`JSON_POLIS`).
+> - **R04** — gerbang 3 menurut Pega (`FilterProteksiEDMLife` b526 hanya `!= Resolved-Completed`) juga menahan kasus `Decline` → ikut keputusan work owner (AC 31): hanya kasus terbuka yang memblokir — OQ-EDM-002.
+> - **R15** — gerbang sebagai pemeriksaan berurutan → Pega mengumpulkan **seluruh** pesan (3.1–3.10), lalu `Protect.CARI1 = 1` (3.11 b2359).
+> - **R26** — *"lookup pembayaran Arasapas"* → nomor invoice = nomor polis tanpa titik (b464), `IVD_JR_ID = '5'`, hanya bila `EdmType=3`.
+
 **Status:** ready-for-agent
 
 **Blocked by:** **00 (kolom EDM + PARENT_ID — PREFACTOR)**, **CL-01** (kerangka aplikasi + seam API — scaffolding lintas konteks; tidak dibuat di

@@ -1,5 +1,8 @@
 # 10: Efek keluar Arasapas + alarm yang dihidupkan
 
+> **Ralat 01-10-2026** (gelombang 2 brief, `../RALAT-DEV-01-10-2026.md` — ralat mengalahkan isi di bawah). Teks lama yang tidak berlaku:
+> - **E5** — *"Email terkirim **hanya** bila pembacaan balik menunjukkan penyimpanan **gagal**"* → alarm = **pesan di layar + log tanpa alamat**; Arasapas dan email tetap stub outbox (panggilan nyata OQ-EDM-013).
+
 **Status:** ready-for-agent
 
 **Blocked by:** **00 (kolom EDM + PARENT_ID — PREFACTOR)**, 09 (efek keluar berjalan setelah penyimpanan selesai dan keadaannya diketahui)

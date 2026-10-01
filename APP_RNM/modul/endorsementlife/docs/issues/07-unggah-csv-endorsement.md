@@ -1,5 +1,9 @@
 # 07: Unggah CSV endorsement — tanpa batas baris, mengganti bukan menumpuk
 
+> **Ralat 01-10-2026** (gelombang 2 brief, `../RALAT-DEV-01-10-2026.md` — ralat mengalahkan isi di bawah). Teks lama yang tidak berlaku:
+> - **R05** — *"`call ASM-FW-GISFW-Work-LIFE.Calculate1_Act` | ⚠️ lintas class — **tidak direplikasi**"* → tetap tidak dijalankan, padahal langkahnya hidup (b629 `·`) — dicatat sebagai OQ-EDM-003.
+> - **R24** — validasi `PLAN`/`POLICY_HOLDER` per baris → seluruh baris diperiksa lebih dulu; sesudah `Add CSV Data` tombol unggah mati (`.EditInput1=1`).
+
 **Status:** ready-for-agent
 
 **Blocked by:** **00 (kolom EDM + PARENT_ID — PREFACTOR)**, 05 (baris `New` menuntut mesin `EDMStatus` sudah berjalan)
