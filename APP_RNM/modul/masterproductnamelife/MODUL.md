@@ -90,3 +90,4 @@ npx vitest run modul/masterproductnamelife
 | Butir | Keadaan | Bukti |
 | --- | --- | --- |
 | K1 OQ-MPNL-03 R/I Rate dan View Rate | view `RATE_LIFE_SUMMARY` (`Choose R/I Rate`) dan `RATE_LIFE` (`View Rate`) dibaca **saja**, kolom RD saja; baris `PLAN LIST` baru dapat diberi R/I Rate (pilihan baru wajib ada di view, nama dari master). DEV baca-saja: `GET /master/ri-rate` 200 (346 baris), `GET /rate` 200 (59 baris, 0,35 detik), nol tulisan | `repository/mpnl_master.go`, uji `TestMPNLRateDibacaKolomRDSaja`, `TestMPNLSetiapSQLMasterAdalahSelect`, `TestPlanRIRateBaruDariViewRingkasan` |
+| §2 delapan OQ | OQ-MPNL-01 (JSON seperti Pega; tiket 01 tetap ditangguhkan), 05, 06, 07, 10, 11, 13, 14 **ditutup** dengan bawaan yang dibangun; konfirmasi menyusul OQ-MPNL-05 (pemilik ekspor Pega). OQ terbuka: nol | `docs/OQ-MASTER-PRODUCT-NAME-LIFE.md` bab keputusan 01-10-2026; tiket 01, 06 |

@@ -207,3 +207,8 @@ make check
 | Kalimat lama | Ralat |
 | --- | --- |
 | *"`JSONDATA` (constraint `IS JSON`) + empat kolom hasil flatten: `RIRISKID`, `RIRISK`, `PRODUCTNAME`, `BEGIN_DATE`"* | DEV `M_PRODUCT_LIFE` hanya `ID`, `JSONDATA`, `RIRISKID`, `RIRISK` — **dua** kolom datar; `PRODUCTNAME`/`BEGIN_DATE` tidak ada dan tidak ditulis (OQ-MPNL-08 ditutup, `6fd539c`) |
+
+## Status 01-10-2026 — OQ-MPNL-01 ditutup (`PROMPT-LANJUTAN-TIGA-MODUL-LIFE-KEPUTUSAN-OQ.md` §2)
+
+**ditutup 01-10-2026 — keputusan work owner: ikut rekomendasi asisten (bawaan dipertahankan)**: produk tetap **JSON seperti Pega** di `M_PRODUCT_LIFE` / `M_PRODUCTINWARD_LIFE` (P1); tiket ini **tetap
+ditangguhkan** — nol tabel relasional baru, nol migrasi JSON.
