@@ -83,6 +83,15 @@ kepemilikan tabel berpindah — keputusan work owner.
 | `TREATYSECURITYREINSURER_LIFE` | tabel warisan POOLDATA yang Master Contract Retro Life tulis dan baca tanpa membuatnya (K1, preseden tco4) |
 | `TREATYBUSINESS_LIFE` | tabel warisan POOLDATA yang Master Contract Retro Life tulis dan baca tanpa membuatnya (K1, preseden tco4) |
 
+## Gelombang 2 brief rumpun Life (01-10-2026)
+
+| Butir | Keadaan | Bukti |
+| --- | --- | --- |
+| A1 OQ-MCRL-13 rate | izin work owner **belum** tercatat — `GET /ringkasan-rate`, `GET /rate` tetap **503** berkalimat | `0f71e05`, `docs/OQ-MASTER-CONTRACT-RETRO-LIFE.md` |
+| A2 `bNNN` dihitung ulang | PARITAS dan RALAT dapat diulang dengan perintah brief §1.2 (`sed` pemecah tag lalu `grep -n`) | `8eb57c9` |
+| A3 OQ-MCRL-07 | tetap rute API tanpa layar (`GET /laporan/total-share-bukan-100`) | bab Rute API |
+| A4 uji manual | **sebagian**: backend + `npm run dev` + seluruh rute baca kelima layar terhadap DEV, nol tulis; klik di peramban menunggu work owner | `docs/LAPORAN-UJI-MANUAL.md` |
+
 ## Menjalankan uji modul ini saja
 
 Dari folder `APP_RNM/`:
