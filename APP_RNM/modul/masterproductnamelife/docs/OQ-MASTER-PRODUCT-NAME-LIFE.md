@@ -73,3 +73,12 @@ view rate, `628c148`). Status lama dikutip:
 `Birthday`, `Document List`; kode `PAYMENT = 5` di DEV).
 
 Masih terbuka: **nol** OQ modul ini.
+
+## Keputusan work owner 01-10-2026 atas laporan K1 — penyimpangan sadar
+
+Work owner 01-10-2026: *"ikuti rekomendasi semua"* atas laporan lanjutan keputusan OQ (commit `d0c7b0a`, `628c148`, `a64828f`, `9af0be9`).
+
+| OQ | Hal | Keputusan | Status |
+| --- | --- | --- | --- |
+| OQ-MPNL-16 | `View Rate` menyaring dengan `RIRATEID` baris plan. Di XML grid menyaring `ParamID.OUTWARDRATEID` (`ViewRate` b1024) yang tidak pernah diisi rule mana pun, sehingga di Pega dialog itu selalu kosong. | **dipertahankan** — meniru dialog yang selalu kosong tidak berguna | ditutup 01-10-2026 |
+| OQ-MPNL-17 | Server menolak `RIRATEID` pilihan baru yang tidak ada di view `RATE_LIFE_SUMMARY`. Pega tidak memeriksanya. | **dipertahankan** — pemilih hanya menawarkan rate yang ada; pemeriksaan mencegah data rusak | ditutup 01-10-2026 |

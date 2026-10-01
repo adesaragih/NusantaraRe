@@ -54,3 +54,11 @@ dibaca saja, `d0c7b0a`). Status lama dikutip:
 (PK/FK kelima tabel warisan); OQ-MCRL-04 — pemilik ekspor Pega (teks `SetErrorMessageBetween`).
 
 Masih terbuka: **nol** OQ modul ini.
+
+## Keputusan work owner 01-10-2026 atas laporan K1 — penyimpangan sadar
+
+Work owner 01-10-2026: *"ikuti rekomendasi semua"* atas laporan lanjutan keputusan OQ (commit `d0c7b0a`, `628c148`, `a64828f`, `9af0be9`).
+
+| OQ | Hal | Keputusan | Status |
+| --- | --- | --- | --- |
+| OQ-MCRL-15 | Server menolak `RIRATEID` pilihan baru yang tidak ada di view `RATE_LIFE_SUMMARY`. Pega tidak memeriksanya. | **dipertahankan** — pemilih hanya menawarkan rate yang ada; pemeriksaan mencegah data rusak | ditutup 01-10-2026 |
