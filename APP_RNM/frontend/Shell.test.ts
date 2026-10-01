@@ -75,8 +75,8 @@ describe('menu hanya yang berbukti korpus', () => {
     // menambah butir bersamaan berkonflik di baris itu. Yang dijaga tidak
     // hilang, ia BERPINDAH: butir baru hanya lahir dari baris M_NAV_MENU di
     // slot menu modulnya (`frontend/daftar.menuTabel.test.ts` menagih kedua
-    // arah), dan berkas slot `9*` di folder migrasi modul ditinjau tim inti
-    // (`.github/CODEOWNERS`) - menu tetap keputusan yang ditinjau, bukan
+    // arah), dan berkas slot `9*` di folder migrasi modul tetap ditinjau tim
+    // inti lewat pull request - menu tetap keputusan yang ditinjau, bukan
     // keputusan sepi.
     const label = modul.map((e) => e.label)
     expect(modul).toHaveLength(MODUL_FRONTEND.length)

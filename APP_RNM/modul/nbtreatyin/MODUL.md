@@ -23,7 +23,9 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | Kontrak disediakan | — |
 | Kontrak dipakai | — |
 
-`Pemilik` adalah penanda; akun sebenarnya diisi work owner di `.github/CODEOWNERS`.
+`Pemilik` adalah penanda pemegang modul. Wilayah berkas yang boleh disentuh cabang
+`module/<nama>` dijaga `.github/workflows/penjaga-wilayah-cabang.yml` - CODEOWNERS
+dipensiunkan 1 Oktober 2026.
 
 ## Isi folder
 

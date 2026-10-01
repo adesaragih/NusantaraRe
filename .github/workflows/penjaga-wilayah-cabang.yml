@@ -1,0 +1,81 @@
+# Penjaga wilayah cabang - lapis yang mengikat.
+# Pull request dari cabang module/<nama> ditolak bila menyentuh berkas di luar
+# folder modulnya. Pasangan lokalnya: .githooks/pre-commit.
+#
+# Berkas ini menggantikan .github/CODEOWNERS, yang dipensiunkan 1 Oktober 2026.
+# CODEOWNERS hanya MEMINTA persetujuan pemilik - ia tidak pernah menolak cabang
+# modul yang menyentuh berkas bersama. Penjaga ini menolaknya.
+# Lihat APP_RNM/PANDUAN-CABANG-GIT.md.
+name: Penjaga wilayah cabang
+
+on:
+  pull_request:
+    branches: [dev, main]
+
+jobs:
+  wilayah:
+    name: Periksa wilayah berkas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Periksa berkas yang disentuh
+        env:
+          CABANG: ${{ github.head_ref }}
+          DASAR: ${{ github.base_ref }}
+        run: |
+          set -eu
+
+          case "$CABANG" in
+            module/*) ;;
+            *)
+              echo "Cabang '$CABANG' bukan cabang modul - tidak dibatasi."
+              exit 0
+              ;;
+          esac
+
+          nama=${CABANG#module/}
+          nama=${nama%%/*}
+          gen="APP_RNM/inti/backend/daftar/modul_${nama}_gen.go"
+
+          if [ ! -d "APP_RNM/modul/${nama}" ]; then
+            echo "::error::Modul '${nama}' tidak ada di APP_RNM/modul/. Nama cabang salah ketik?"
+            exit 1
+          fi
+
+          git fetch --no-tags --depth=0 origin "$DASAR"
+          disentuh=$(git diff --name-only --diff-filter=ACMRD "origin/${DASAR}...HEAD")
+
+          pelanggar=$(printf '%s\n' "$disentuh" \
+            | grep -v "^APP_RNM/modul/${nama}/" \
+            | grep -vx "${gen}" || true)
+
+          if [ -z "$pelanggar" ]; then
+            echo "Wilayah bersih - semua berkas ada di dalam modul '${nama}'."
+            exit 0
+          fi
+
+          echo "::error::Cabang '${CABANG}' menyentuh berkas di luar wilayah modul '${nama}'."
+          printf '%s\n' "$pelanggar" | while IFS= read -r berkas; do
+            echo "::error file=${berkas}::Di luar wilayah modul '${nama}'. Perubahan berkas bersama masuk lewat cabang inti/<topik> ke dev."
+          done
+
+          {
+            echo "## Penjaga wilayah cabang - DITOLAK"
+            echo ""
+            echo "Cabang \`${CABANG}\` hanya boleh menyentuh:"
+            echo ""
+            echo "- \`APP_RNM/modul/${nama}/\`"
+            echo "- \`${gen}\`"
+            echo ""
+            echo "Berkas di luar wilayah:"
+            echo ""
+            printf '%s\n' "$pelanggar" | sed 's/^/- `/; s/$/`/'
+            echo ""
+            echo "Perubahan berkas bersama masuk lewat cabang \`inti/<topik>\` langsung ke \`dev\`,"
+            echo "tidak dibonceng di pull request modul. Lihat \`APP_RNM/PANDUAN-CABANG-GIT.md\` bab 4."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          exit 1
