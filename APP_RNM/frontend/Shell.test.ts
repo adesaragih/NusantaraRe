@@ -249,4 +249,12 @@ describe('menu profil', () => {
     expect(SUMBER).not.toContain('masuk.peran.map(')
     expect(SUMBER).toContain('<p className="shell__profil-akun">{masuk.akunID}</p>')
   })
+
+  // Pemicu menu profil di topbar: nama saja - "tulisan dibawah namanya dihapus"
+  // (work owner 01-10-2026, dulu "Admin Klaim Jiwa +2").
+  it('pemicu topbar tanpa keterangan peran di bawah nama', () => {
+    expect(SUMBER).not.toContain('sebutanPeran')
+    expect(SUMBER).not.toContain('PERAN_ID')
+    expect(SUMBER).toContain('<strong>{masuk.nama ?? masuk.akunID}</strong>\n                </span>')
+  })
 })

@@ -38,7 +38,6 @@ import {
   KERANGKA,
   KETERANGAN_BELUM_DIMIGRASI,
   MENU,
-  PERAN_ID,
   PRODUK,
 } from '../labels'
 import {
@@ -275,12 +274,6 @@ export function Shell<H extends string>({
       : KERANGKA.ciutkanMenu
     : KERANGKA.bukaMenu
 
-  const peranUtama = masuk.peran[0]
-  const sebutanPeran =
-    peranUtama === undefined
-      ? ''
-      : PERAN_ID[peranUtama] + (masuk.peran.length > 1 ? ` +${masuk.peran.length - 1}` : '')
-
   // Logo resmi perusahaan (diserahkan work owner 30-09-2026) menggantikan
   // kotak berinisial; gambarnya dipasang di CSS (`.shell__merek-tanda`),
   // bukan `src={...}`, supaya penjaga "nol src dinamis" tetap utuh.
@@ -506,9 +499,10 @@ export function Shell<H extends string>({
                 <span className="shell__avatar" aria-hidden="true">
                   {inisial(masuk.akunID)}
                 </span>
+                {/* Nama saja - keterangan peran di bawahnya DIBUANG, permintaan
+                    work owner 01-10-2026 ("tulisan dibawah namanya dihapus"). */}
                 <span className="shell__profil-teks" aria-hidden="true">
                   <strong>{masuk.nama ?? masuk.akunID}</strong>
-                  <span>{sebutanPeran}</span>
                 </span>
                 <span className="shell__profil-panah" aria-hidden="true">
                   <IkonChevron />

@@ -5010,10 +5010,6 @@ textarea.field__input {
   display: block;
   font-size: 14px;
 }
-.shell__profil-teks span {
-  font-size: 12px;
-  color: var(--text-3);
-}
 .shell__profil-panah {
   display: none;
   padding-right: 6px;
