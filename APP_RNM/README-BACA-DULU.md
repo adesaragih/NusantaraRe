@@ -132,7 +132,7 @@ $env:Path = 'C:\Program Files\Go\bin;C:\Program Files\nodejs;' + $env:Path
 | Jalankan backend | `go run ./cmd/api` | log `http: mendengarkan di :8080`; `MODUL_AKTIF=claimlife,komiteclaimlife` memasang sebagian modul |
 | Periksa tipe frontend | `npm run typecheck` — dari `APP_RNM/`, bukan `frontend/` *(sejak 30-09-2026)* | tidak mencetak galat |
 | Uji frontend | `npm test` | seluruh berkas uji `passed` |
-| Jalankan frontend | `npm run dev` | buka `http://localhost:5173/` |
+| Jalankan frontend | `npm run dev` | buka `http://localhost:5174/` |
 | Bangun frontend | `npm run build` | menjalankan `tsc` dulu, lalu Vite membuat `dist/` |
 
 ⛔ **`go test -tags=db` MENGHAPUS tabel di skema yang ditunjuk `ORACLE_SCHEMA`** — termasuk
