@@ -43,7 +43,7 @@ function kelasCSS(): Set<string> {
   return new Set(pemilihCSS(CSS).flatMap((p) => [...p.matchAll(/\.([a-zA-Z0-9_-]+)/g)].map((m) => m[1] ?? '')))
 }
 
-const KELAS_BERSAMA = new Set(['inbox__kepala', 'panel', 'inbox__tabel', 'inbox__rinci', 'table__actions', 'btn', 'aksi-baris', 'modal', 'modal__actions', 'inbox__judul', 'panel__title', 'btn--primary', 'btn--ghost', 'field__input'])
+const KELAS_BERSAMA = new Set(['inbox__kepala', 'panel', 'inbox__tabel', 'inbox__rinci', 'table__actions', 'btn', 'aksi-baris', 'modal', 'modal__actions', 'inbox__judul', 'panel__title', 'btn--primary', 'btn--ghost', 'field__input', 'modal__title', 'modal__head', 'muted', 'alert'])
 
 describe('isolasi CSS modul Treaty Contract Out', () => {
   it('satu-satunya berkas CSS modul adalah tco.css, dan rute.tsx mengimpornya', () => {
@@ -115,5 +115,58 @@ describe('popup tetap di tengah layar', () => {
     expect(
       penampungFixed('.tco .panel { -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px) } .tco .a{transform: none; will-change:x} /* filter: x */ .tco .b { container-type: inline-size }'),
     ).toEqual(['-webkit-backdrop-filter', 'backdrop-filter', 'transform', 'will-change'])
+  })
+})
+
+/** Rasio kontras WCAG 2 dua warna hex `#rrggbb`. */
+function kontras(a: string, b: string): number {
+  const terang = (hex: string): number => {
+    const [r, g, bl] = [1, 3, 5].map((i) => {
+      const v = parseInt(hex.slice(i, i + 2), 16) / 255
+      return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+    })
+    return 0.2126 * (r ?? 0) + 0.7152 * (g ?? 0) + 0.0722 * (bl ?? 0)
+  }
+  const [t, g] = [terang(a), terang(b)].sort((x, y) => y - x)
+  return ((t ?? 0) + 0.05) / ((g ?? 0) + 0.05)
+}
+
+/** Token `--mt-*` bernilai hex dari aturan yang pemilihnya PERSIS `pemilih`. */
+function tokenMt(css: string, pemilih: string): Record<string, string> {
+  const tanpaKomentar = css.replace(/\/\*[\s\S]*?\*\//g, '')
+  return Object.fromEntries(
+    [...tanpaKomentar.matchAll(/([^{};]+)\{([^{}]*)\}/g)]
+      .filter((m) => (m[1] ?? '').trim() === pemilih)
+      .flatMap((m) => [...(m[2] ?? '').matchAll(/(--mt-[a-z-]+)\s*:\s*(#[0-9a-f]{6})\s*;/gi)].map((x) => [x[1] ?? '', x[2] ?? ''])),
+  )
+}
+
+describe('soft UI: teks tetap terbaca (02-10-2026)', () => {
+  it('kontras token teks --mt-* terhadap latar, kartu, kepala tabel, dan sorot baris minimal 4,5:1, terang dan gelap', () => {
+    const terang = tokenMt(CSS, '.tco')
+    const gelap = { ...terang, ...tokenMt(CSS, ':root[data-theme="dark"] .tco') }
+    const pasangan = [
+      ['--mt-teks', '--mt-latar'],
+      ['--mt-teks', '--mt-kartu'],
+      ['--mt-teks', '--mt-baris-hover'],
+      ['--mt-teks-redup', '--mt-latar'],
+      ['--mt-teks-redup', '--mt-kartu'],
+      ['--mt-teks-redup', '--mt-kepala-tabel'],
+    ] as const
+    const kurang = (t: Record<string, string>, nama: string): string[] =>
+      pasangan.flatMap(([a, b]) => {
+        const x = t[a]
+        const y = t[b]
+        if (x === undefined || y === undefined) return [`${nama} ${a}/${b} token hilang`]
+        const r = kontras(x, y)
+        return r < 4.5 ? [`${nama} ${a}/${b} ${r.toFixed(2)}`] : []
+      })
+    expect(Object.keys(terang).length).toBeGreaterThan(6)
+    expect([...kurang(terang, 'terang'), ...kurang(gelap, 'gelap')]).toEqual([])
+  })
+
+  it('rumus kontras menggigit: hitam/putih 21:1, #777777/putih di bawah 4,5:1', () => {
+    expect(kontras('#000000', '#ffffff')).toBeCloseTo(21, 5)
+    expect(kontras('#777777', '#ffffff')).toBeLessThan(4.5)
   })
 })

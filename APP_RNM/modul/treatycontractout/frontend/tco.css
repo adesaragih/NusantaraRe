@@ -145,122 +145,172 @@
   }
 }
 
-/* ================================================================ tema login
-   Permintaan work owner 02-10-2026: "ikuti tema seperti halaman login". Warna dari blok `.halaman-masuk`
-   inti (kanvas bergradasi lavender, merah muda, dan biru muda; kartu kaca; tombol merah #d63a42; aksen fokus
-   ungu #8b5cf6; huruf Poppins), sebagai token `--mt-*` di kelas akar modul ini saja. Tema gelap: token
-   ditimpa di `:root[data-theme="dark"] .tco`, tetap di bawah kelas akar. */
+/* ================================================================ soft UI
+   Permintaan work owner 02-10-2026: "tema pada kelola user diterapkan pada beranda, treaty contract
+   out, master contract retro life, hanya pada 3 modul ini". Menggantikan blok "tema login". Gaya soft
+   UI Kelola User: latar pucat, panel sebagai kartu timbul berbayang lembut dua arah, panel di dalam
+   panel cekung, tabel rata di dalam kartu, isian cekung bertepi tipis, tombol kapsul (utama tetap
+   merah `Login`), popup bersudut lembut. Kontras: token teks minimal 4,5:1 terhadap latarnya, dijaga
+   gaya.test. TANPA backdrop-filter, filter, atau transform: properti itu mengurung popup
+   `position: fixed` (bug popup tidak di tengah 02-10-2026). Token `--mt-*` hanya di kelas akar .tco;
+   tema gelap ditimpa di `:root[data-theme="dark"] .tco`, tetap di bawah kelas akar. `--text-3` inti
+   DITIMPA di akar ini saja supaya label dan keterangan abu tetap terbaca di atas latar pucat. */
 .tco {
+  --mt-latar: #eceef6;
+  --mt-kartu: #f7f8fc;
+  --mt-teks: #1f2333;
+  --mt-teks-redup: #535a6e;
+  --mt-kepala-tabel: #eef0f8;
+  --mt-baris-hover: #f1edfb;
+  --mt-tepi: #dcdfeb;
+  --mt-terang: rgba(255, 255, 255, 0.95);
+  --mt-redup: rgba(146, 154, 188, 0.4);
+  --mt-timbul: -6px -6px 14px var(--mt-terang), 8px 8px 16px var(--mt-redup);
+  --mt-timbul-kecil: -3px -3px 7px var(--mt-terang), 4px 4px 10px var(--mt-redup);
+  --mt-cekung: inset 2px 2px 5px var(--mt-redup), inset -2px -2px 5px var(--mt-terang);
   --mt-aksen: #8b5cf6;
   --mt-aksen-lembut: rgba(139, 92, 246, 0.1);
-  --mt-aksen-garis: rgba(139, 92, 246, 0.2);
   --mt-tombol: #d63a42;
   --mt-tombol-hover: #c2333b;
-  --mt-tombol-bayang: rgba(229, 72, 77, 0.55);
-  --mt-kanvas: radial-gradient(circle at 8% 0%, rgba(185, 141, 243, 0.22), transparent 42%),
-    radial-gradient(circle at 96% 100%, rgba(255, 160, 165, 0.2), transparent 40%),
-    radial-gradient(circle at 82% 0%, rgba(147, 197, 253, 0.2), transparent 36%);
-  --mt-kartu: rgba(255, 255, 255, 0.9);
-  --mt-kartu-garis: rgba(255, 255, 255, 0.95);
-  --mt-bayang: 0 24px 48px -30px rgba(60, 40, 120, 0.4);
-  --mt-kepala-tabel: #f5f0ff;
-  --mt-baris-hover: #faf7ff;
-  --mt-judul: #1f2333;
-  padding: 20px;
-  border-radius: 24px;
-  background: var(--mt-kanvas);
+  --text-3: var(--mt-teks-redup);
+  color: var(--mt-teks);
+  padding: 24px;
+  border-radius: 28px;
+  background: var(--mt-latar);
 }
 :root[data-theme="dark"] .tco {
+  --mt-latar: #1a1d29;
+  --mt-kartu: #222636;
+  --mt-teks: #eef0f6;
+  --mt-teks-redup: #b3b8c9;
+  --mt-kepala-tabel: #272b3c;
+  --mt-baris-hover: #2b2741;
+  --mt-tepi: #323849;
+  --mt-terang: rgba(255, 255, 255, 0.04);
+  --mt-redup: rgba(0, 0, 0, 0.5);
   --mt-aksen: #b48af2;
   --mt-aksen-lembut: rgba(139, 92, 246, 0.16);
-  --mt-aksen-garis: rgba(180, 138, 242, 0.24);
-  --mt-tombol-bayang: rgba(214, 58, 66, 0.35);
-  --mt-kanvas: radial-gradient(circle at 8% 0%, rgba(139, 92, 246, 0.18), transparent 42%),
-    radial-gradient(circle at 96% 100%, rgba(214, 58, 66, 0.12), transparent 40%);
-  --mt-kartu: rgba(30, 34, 48, 0.92);
-  --mt-kartu-garis: rgba(180, 138, 242, 0.16);
-  --mt-bayang: 0 24px 48px -30px rgba(0, 0, 0, 0.7);
-  --mt-kepala-tabel: #251f38;
-  --mt-baris-hover: #2a2340;
-  --mt-judul: #f1f2f8;
 }
 
 .tco .inbox__judul,
-.tco .panel__title {
-  color: var(--mt-judul);
+.tco .panel__title,
+.tco .modal__title {
+  color: var(--mt-teks);
   font-family: "Poppins", var(--font);
   font-weight: 600;
 }
-
-/* Kartu seperti kartu login, TANPA backdrop-filter: properti itu menjadikan panel
-   blok penampung elemen `position: fixed`, sehingga popup `.modal__backdrop` yang dirender
-   di dalam panel menempel ke panel, bukan ke layar (bug popup tidak di tengah 02-10-2026).
-   Dijaga gaya.test. */
-.tco .panel {
-  background: var(--mt-kartu);
-  border: 1px solid var(--mt-kartu-garis);
-  border-radius: 20px;
-  box-shadow: var(--mt-bayang);
-}
-.tco .panel .panel {
-  border-color: var(--mt-aksen-garis);
-  box-shadow: none;
-}
-
-/* Tombol utama: merah tombol `Login`; tombol sekunder bersudut lembut beraksen ungu. */
-.tco .btn--primary {
-  background: var(--mt-tombol);
-  border-color: var(--mt-tombol);
-  color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 12px 22px -14px var(--mt-tombol-bayang);
-}
-.tco .btn--primary:hover:not(:disabled) {
-  background: var(--mt-tombol-hover);
-  border-color: var(--mt-tombol-hover);
-}
-.tco .btn--ghost {
-  border-radius: 10px;
-}
-.tco .btn--ghost:hover:not(:disabled) {
-  border-color: var(--mt-aksen-garis);
-  background: var(--mt-aksen-lembut);
+.tco .muted {
+  color: var(--mt-teks-redup);
 }
 .tco :focus-visible {
   outline: 2px solid var(--mt-aksen);
   outline-offset: 2px;
 }
 
-/* Kotak isian seperti isian login: sudut 12px, fokus ungu. */
+/* Panel: kartu timbul. Panel di dalam panel: cekung di atas latar, jadi jenjangnya terbaca. */
+.tco .panel {
+  background: var(--mt-kartu);
+  border: 1px solid var(--mt-tepi);
+  border-radius: 20px;
+  box-shadow: var(--mt-timbul);
+}
+.tco .panel .panel {
+  background: var(--mt-latar);
+  border-radius: 18px;
+  box-shadow: var(--mt-cekung);
+}
+
+/* Isian: cekung lembut, tepi tipis, fokus ungu. */
 .tco .field__input {
-  border-radius: 12px;
+  background: var(--mt-kartu);
+  border: 1px solid var(--mt-tepi);
+  border-radius: 14px;
+  box-shadow: var(--mt-cekung);
+  color: var(--mt-teks);
 }
 .tco .field__input:focus {
   border-color: var(--mt-aksen);
-  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.18);
+  box-shadow: var(--mt-cekung), 0 0 0 4px rgba(139, 92, 246, 0.18);
   outline: none;
 }
 
-/* Tabel: tepi dan kepala bernuansa lavender; baris yang disorot ikut tema. */
+/* Tombol kapsul. Utama: merah penuh. Sekunder: kartu timbul bertepi tipis. Ditekan: cekung.
+   Nonaktif: rata tanpa bayangan. */
+.tco .btn {
+  border-radius: 999px;
+}
+.tco .btn--primary {
+  background: var(--mt-tombol);
+  border-color: var(--mt-tombol);
+  color: #ffffff;
+  box-shadow: var(--mt-timbul-kecil);
+}
+.tco .btn--primary:hover:not(:disabled) {
+  background: var(--mt-tombol-hover);
+  border-color: var(--mt-tombol-hover);
+}
+.tco .btn--ghost {
+  background: var(--mt-kartu);
+  border: 1px solid var(--mt-tepi);
+  color: var(--mt-teks);
+  box-shadow: var(--mt-timbul-kecil);
+}
+.tco .btn--ghost:hover:not(:disabled) {
+  background: var(--mt-aksen-lembut);
+  border-color: var(--mt-aksen);
+}
+.tco .btn:active:not(:disabled) {
+  box-shadow: var(--mt-cekung);
+}
+.tco .btn:disabled {
+  box-shadow: none;
+}
+
+/* Tabel: rata di dalam kartu panel; kepala dan sorot baris bernuansa lavender. Kolom aksi yang
+   menempel ikut warna kartu supaya tidak tampak sebagai pita putih. */
 .tco .tco-tabel {
-  border-color: var(--mt-aksen-garis);
-  border-radius: 14px;
+  border-color: var(--mt-tepi);
+  border-radius: 16px;
+  background: var(--mt-kartu);
 }
 .tco .tco-tabel > .inbox__tabel thead th,
 .tco .tco-tabel th.table__actions {
   background: var(--mt-kepala-tabel);
+  color: var(--mt-teks-redup);
+  border-bottom-color: var(--mt-tepi);
 }
-.tco .tco-tabel > .inbox__tabel tbody tr:hover,
+.tco .tco-tabel > .inbox__tabel td {
+  border-bottom-color: var(--mt-tepi);
+}
+.tco .tco-tabel td.table__actions {
+  background: var(--mt-kartu);
+}
+.tco .tco-tabel > .inbox__tabel > tbody > tr:not(.inbox__rinci):hover > td,
 .tco .tco-tabel tr:hover > td.table__actions {
   background: var(--mt-baris-hover);
 }
 
+/* Popup: kartu timbul bersudut lembut. */
+.tco .modal {
+  background: var(--mt-kartu);
+  border-radius: 24px;
+  box-shadow: 0 30px 60px -24px rgba(40, 30, 90, 0.4);
+}
+.tco .modal__head,
+.tco .modal__actions {
+  border-color: var(--mt-tepi);
+}
+.tco .alert {
+  border-radius: 14px;
+}
+
 @media (max-width: 640px) {
   .tco {
-    padding: 10px;
-    border-radius: 16px;
+    padding: 14px;
+    border-radius: 18px;
   }
   .tco .panel {
     border-radius: 16px;
+    box-shadow: var(--mt-timbul-kecil);
   }
 }
