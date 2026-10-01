@@ -39,8 +39,10 @@ func TestSQLPenulisTahun(t *testing.T) {
 		"sisip": {sqlSisipTahun("S.TREATYYEAR_LIFE"), []string{"INSERT INTO S.TREATYYEAR_LIFE",
 			"VALUES (:1, :2, :3, :4, SYSDATE, TO_DATE(:5, 'YYYY-MM-DD'), TO_DATE(:6, 'YYYY-MM-DD'))"}},
 		"perbarui": {sqlPerbaruiTahun("S.TREATYYEAR_LIFE"), []string{"TGLUPDATE = SYSDATE", "WHERE ID = :6"}},
-		"salin business": {sqlSalinTahunKeBusiness("S.TREATYBUSINESS_LIFE"), []string{"SET TREATYYEAR = :1",
-			"WHERE TREATYYEARID = :3 AND DECODE(TREATYYEAR, :4, 0, 1) = 1"}},
+		"salin business": {sqlSalinTahunKeBusiness("S.TREATYBUSINESS_LIFE", "S.TREATYCONTRACT_LIFE"), []string{"SET TREATYYEAR = :1",
+			"WHERE TREATYYEARID = :3 AND DECODE(TREATYYEAR, :4, 0, 1) = 1",
+			// perbaikan 01-10-2026: business yatim (kontraknya dihapus datar di Pega) tidak disentuh
+			"AND TREATYCONTRACTID IN (SELECT ID FROM S.TREATYCONTRACT_LIFE WHERE IDTREATYYEAR = :5)"}},
 		"salin kontrak": {sqlSalinTahunKeKontrak("S.TREATYCONTRACT_LIFE"), []string{"WHERE IDTREATYYEAR = :4",
 			"DECODE(TREATYSTARTDATE, TO_DATE(:5, 'YYYY-MM-DD'), 0, 1) = 1"}},
 		"sequence": {sqlNomorBerikut("S.TREATYYEAR_LIFE_SEQ"), []string{"SELECT S.TREATYYEAR_LIFE_SEQ.NEXTVAL FROM DUAL"}},

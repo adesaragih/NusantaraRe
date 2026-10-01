@@ -398,6 +398,11 @@ func (g *Gudang) TotalSharePerKontrak(_ context.Context, tahunID string) ([]mode
 func (g *Gudang) SalinTahunKeAnak(_ context.Context, _ *db.Tx, t models.TahunTreaty) (int64, error) {
 	var n int64
 	for id, b := range g.Business {
+		// Hanya business yang kontrak induknya ada di tahun itu (perbaikan 01-10-2026, sama dengan SQL-nya).
+		induk, ada := g.Kontrak[b.TreatyContractID]
+		if !ada || induk.IDTreatyYear != t.ID {
+			continue
+		}
 		if b.TreatyYearID == t.ID && b.TreatyYear != t.TreatyYear {
 			b.TreatyYear, b.UserID, b.TglUpdate = t.TreatyYear, t.UserID, g.Jam
 			g.Business[id] = b
