@@ -55,6 +55,9 @@ Hasil grilling: `modul/masterproductnamelife/docs/` — `spec.md`, `grilling-ron
 | Sequence | `M_PRODUCT_LIFE_SEQ`, `M_PRODUCT_INWARD_LIFE_SEQ`, `M_PRODUCT_TYPE_LIFE_SEQ` |
 | Lampiran | `M_ATTACHMENTPRODUCTNAME` 2 baris, `T_STORAGE_IMAGE` 517, `T_FOLDER_IMAGE` 1 — tabel warisan |
 
+> ⛔ **RALAT ASISTEN 01-10-2026:** P1 di bawah menyebut empat kolom datar `RIRISKID`, `RIRISK`, `PRODUCTNAME`, `BEGIN_DATE`. **Keliru.** Di DEV
+> `M_PRODUCT_LIFE` hanya punya `ID`, `JSONDATA`, `RIRISKID`, `RIRISK`. Perbaikannya di `PROMPT-LANJUTAN-MASTER-PRODUCT-NAME-LIFE-1.md` L1.
+
 ## 4. RALAT — mengalahkan spec dan tiket bila bertentangan
 
 | # | Klaim di dokumen | Fakta | Menjadi |

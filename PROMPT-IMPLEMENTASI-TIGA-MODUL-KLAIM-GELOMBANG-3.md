@@ -1,5 +1,7 @@
 # PROMPT — GELOMBANG 3, TIGA MODUL KLAIM SEKALIGUS: **Claim Prop · Komite Claim Prop · Claim Fac In** *(sesi baru, folder `D:\XML\RNM_BRD\OUTPUT_HASIL_RNM`, cabang **`dev`**)*
 
+> ⛔ **DITAHAN 01-10-2026** — modul ini dipilih asisten tanpa diminta work owner. Jangan dijalankan sebelum work owner memilih modulnya.
+
 > Permintaan work owner 01-10-2026: *"kerjakan 3 modul besar sekaligus, jangan hanya 1 tiket, jangan banyak yang di-skip, baca ulang XML, ambil logic,
 > button, dan method yang benar dari XML, jangan membuat menu yang tidak ada di Pega; XML patokan dasar; tiket = hasil grilling; tiket yang salah
 > diperbaiki di dokumennya."*
