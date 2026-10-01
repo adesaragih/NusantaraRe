@@ -89,7 +89,7 @@ type ProdukUmum struct {
 
 // ProdukInward - halaman `ProductNameInward` (`M_PRODUCTINWARD_LIFE.JSONDATA`).
 type ProdukInward struct {
-	// ID baris inward - sama dengan ID produk untuk produk baru (R14, OQ-MPNL-02).
+	// ID baris inward - sama dengan ID produk untuk produk baru (R14; OQ-MPNL-02 ditutup data DEV).
 	ID        string `json:"id"`
 	ProductID string `json:"productId"` // `SaveProductName_Act` 13 b2528
 
@@ -198,7 +198,7 @@ type BarisOutward struct {
 	TreatyContractID string `json:"treatyContractId"`
 	UnderwritingYear string `json:"underwritingYear"`
 	// OvrComm - dibaca view `PRODUCT_LIFE` (`OutwardList[0].OVR_COMM`); korpus
-	// tidak punya penulisnya (OQ-MPNL-09).
+	// tidak punya penulisnya; DEV: 0 dari 153 `OutwardList[0]` terisi - ditulis kosong (OQ-MPNL-09 ditutup).
 	OvrComm string `json:"ovrComm"`
 	Asli    Asli   `json:"asli,omitempty"`
 }

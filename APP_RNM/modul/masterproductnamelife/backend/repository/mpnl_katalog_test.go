@@ -115,3 +115,38 @@ func TestAturanKatalogMenggigit(t *testing.T) {
 		t.Errorf("pembaca INSERT: %v", got)
 	}
 }
+
+// L3 (OQ-MPNL-04 ditutup data DEV): setiap pemilih membaca objek bernama PERSIS objek
+// yang ada di DEV - tabel `AGENT`, `CLIENT`; view `CURRENCY`, `CAUSEOFLOSS_LIFE`,
+// `PRODUCT_TYPE_LIFE`, `RIRISK_LIFE_SUMMARY`.
+func TestObjekMasterAdaDiKatalogDEV(t *testing.T) {
+	isi, err := os.ReadFile("testdata/katalog-dev.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var k struct {
+		ObjekMaster map[string]string `json:"objekMaster"`
+	}
+	if err := json.Unmarshal(isi, &k); err != nil || len(k.ObjekMaster) != 6 {
+		t.Fatalf("katalog objek master: %v %v", k.ObjekMaster, err)
+	}
+	dibaca := map[string]string{MasterJenisPlan: "PLAN LIST"}
+	for jenis, s := range sumberMaster {
+		dibaca[s.objek] = string(jenis)
+	}
+	for objek, oleh := range dibaca {
+		if _, ada := k.ObjekMaster[objek]; !ada {
+			t.Errorf("pemilih %s membaca %s - tidak ada di katalog DEV", oleh, objek)
+		}
+	}
+	for objek := range k.ObjekMaster {
+		if _, ada := dibaca[objek]; !ada {
+			t.Errorf("objek katalog %s tidak dibaca pemilih mana pun - salah satu pemilih membaca nama lain", objek)
+		}
+	}
+	for _, o := range DaftarMasterDibacaSaja {
+		if _, ada := k.ObjekMaster[o]; !ada && o != MasterKontrakTreaty && o != MasterTahunTreaty {
+			t.Errorf("DaftarMasterDibacaSaja memuat %s yang tidak ada di katalog objek master", o)
+		}
+	}
+}

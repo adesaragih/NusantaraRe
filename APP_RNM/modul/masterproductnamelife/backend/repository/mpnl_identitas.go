@@ -3,7 +3,7 @@ package repository
 // Identitas produk baru - tiruan `PEGA_M_PRODUCT_LIFE` (prosedur TIDAK
 // dipanggil, P6): `concat('1', lpad(M_PRODUCT_LIFE_SEQ.nextval, 5, '0'))`
 // (`docs/dba-procedures-and-ddl.md` §1; dipicu `SaveProductNameLIfe` b58 dengan
-// `IDPEGA` kosong). Baris inward memakai ID yang SAMA (R14, OQ-MPNL-02) -
+// `IDPEGA` kosong). Baris inward memakai ID yang SAMA (R14; OQ-MPNL-02 ditutup data DEV 01-10-2026: 196/196 produk) -
 // `M_PRODUCT_INWARD_LIFE_SEQ` tidak dipakai.
 //
 // ⛔ PENYIMPANGAN SADAR KECIL dari `LPAD` (preseden Retro Life / Treaty

@@ -4,9 +4,11 @@ package repository
 //
 // Setiap pemilih: section `*_Section` → RD (PARITAS §4) berparam `CARI1`
 // (`SearchPolicyHolder.CARI1`, dihurufbesarkan `SearchPolicyHolder_act` 1 b234).
-// Tabel fisik = nama kelas `ASM-FW-GISFW-Int-<X>` (konvensi; preseden Retro
-// Life `AGENT`) - tidak terbukti di katalog (OQ-MPNL-04): objek yang tidak ada
-// dijawab 503 yang MENYEBUT objeknya, bukan daftar kosong.
+// Objek fisik = nama kelas `ASM-FW-GISFW-Int-<X>` - TERBUKTI di katalog DEV
+// `ALL_OBJECTS` 01-10-2026 (OQ-MPNL-04 ditutup, lanjutan 1 L3): tabel `AGENT`,
+// `CLIENT`; view `CURRENCY`, `CAUSEOFLOSS_LIFE`, `PRODUCT_TYPE_LIFE`,
+// `RIRISK_LIFE_SUMMARY` (uji `TestObjekMasterAdaDiKatalogDEV`). Objek yang tidak
+// terbaca di skema yang dikonfigurasi dijawab 503 yang MENYEBUT objeknya.
 //
 // ⛔ R/I Rate (`BrowseRateLifeSummary`, kelas `RATE_LIFE_SUMMARY`) TIDAK
 // dibaca: view atas JSON rate - membacanya menunggu persetujuan work owner
@@ -157,7 +159,7 @@ func (g GalatMaster) Error() string {
 
 // PesanLayar - kalimat layar tanpa sebab Oracle.
 func (g GalatMaster) PesanLayar() string {
-	return fmt.Sprintf("master data %s cannot be read; check that the object exists in the configured schema (OQ-MPNL-04)", g.Objek)
+	return fmt.Sprintf("master data %s cannot be read; check that the object exists in the configured schema", g.Objek)
 }
 
 // Is membuat errors.Is(err, ErrMasterTidakTerbaca) benar.

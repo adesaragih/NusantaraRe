@@ -20,7 +20,7 @@ package repository
 //
 // ⚠️ `tc.*, ty.*` tidak memuat kolom bernama `TREATYCONTRACTID` (DDL kedua tabel,
 // `mastercontractretrolife/docs/ddl-tables-from-dba.md`): di Pega `.TREATYCONTRACTID`
-// baris hasil selalu kosong. Ditiru - `""` (OQ-MPNL-15). Kolom dipilih menurut
+// baris hasil selalu kosong. Ditiru - `""` (OQ-MPNL-15 ditutup 01-10-2026: kolom itu tidak ada di DEV). Kolom dipilih menurut
 // nama, bukan `*`; `ORDER BY tc.ID` ditambahkan agar urutan pasti (RDB tanpa urutan).
 
 import (
