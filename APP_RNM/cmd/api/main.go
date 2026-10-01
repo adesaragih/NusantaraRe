@@ -15,12 +15,14 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"os/signal"
 	"strings"
 	"syscall"
@@ -47,6 +49,8 @@ func main() {
 	flag.StringVar(&baru.Divisi, "divisi", "", "M_DIVISION.CODE (-buat-pengguna)")
 	flag.StringVar(&baru.Unit, "unit", "", "M_UNIT.CODE (-buat-pengguna)")
 	flag.StringVar(&wb, "workbasket", "", "WORKBASKET_ID dipisah koma (-buat-pengguna)")
+	sandiStdin := flag.Bool("sandi-dari-stdin", false,
+		"-buat-pengguna dengan sandi dari baris pertama stdin (tidak dicetak, tidak wajib diganti) alih-alih sandi sementara")
 	flag.Parse()
 
 	cfg, err := config.Load()
@@ -101,7 +105,7 @@ func main() {
 				baru.Workbasket = append(baru.Workbasket, w)
 			}
 		}
-		buatPengguna(dasar, baru)
+		buatPengguna(dasar, baru, *sandiStdin)
 		return
 	}
 
@@ -160,11 +164,26 @@ func main() {
 //
 // ⛔ Sandi sementara dicetak ke stdout SEKALI dan tidak disimpan di mana pun
 // selain sebagai hash; akunnya wajib ganti sandi saat login pertama.
-func buatPengguna(svc *inti.Dasar, a login.AkunBaru) {
+//
+// `-sandi-dari-stdin`: sandi dibaca dari baris pertama stdin - tidak pernah
+// di argumen (riwayat shell, daftar proses) dan tidak dicetak.
+func buatPengguna(svc *inti.Dasar, a login.AkunBaru, dariStdin bool) {
 	if !svc.PunyaDatabase() {
 		log.Fatal("buat-pengguna: ORACLE_DSN wajib terisi")
 	}
-	sandi, err := login.NewLayanan(login.NewGudangOracle(svc.DB()), nil).BuatPengguna(context.Background(), a)
+	lay := login.NewLayanan(login.NewGudangOracle(svc.DB()), nil)
+	if dariStdin {
+		baris, err := bufio.NewReader(os.Stdin).ReadString('\n')
+		if err != nil && baris == "" {
+			log.Fatalf("buat-pengguna: membaca sandi dari stdin: %v", err)
+		}
+		if err := lay.BuatPenggunaDenganSandi(context.Background(), a, strings.TrimRight(baris, "\r\n")); err != nil {
+			log.Fatalf("buat-pengguna: %v", err)
+		}
+		fmt.Printf("akun %s dibuat dengan sandi dari stdin (tidak dicetak, tidak wajib diganti).\n", a.ID)
+		return
+	}
+	sandi, err := lay.BuatPengguna(context.Background(), a)
 	if err != nil {
 		log.Fatalf("buat-pengguna: %v", err)
 	}

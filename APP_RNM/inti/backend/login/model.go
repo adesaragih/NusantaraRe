@@ -68,6 +68,7 @@ type Gudang interface {
 	InfoDivisi(ctx context.Context, code string) (organisasi string, aktif bool, err error)
 	InfoOrganisasi(ctx context.Context, code string) (aktif bool, err error)
 	WorkbasketAktif(ctx context.Context, id string) (bool, error)
-	// BuatAkun menulis akun dan workbasket-nya dalam SATU transaksi.
-	BuatAkun(ctx context.Context, a AkunBaru, hash string) error
+	// BuatAkun menulis akun dan workbasket-nya dalam SATU transaksi;
+	// `wajibGanti` mengisi MUST_CHANGE_PASSWORD.
+	BuatAkun(ctx context.Context, a AkunBaru, hash string, wajibGanti bool) error
 }

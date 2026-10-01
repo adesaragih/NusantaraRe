@@ -293,7 +293,7 @@ func (g *GudangOracle) WorkbasketAktif(ctx context.Context, id string) (bool, er
 }
 
 // BuatAkun menulis akun dan workbasket-nya dalam satu transaksi.
-func (g *GudangOracle) BuatAkun(ctx context.Context, a AkunBaru, hash string) (err error) {
+func (g *GudangOracle) BuatAkun(ctx context.Context, a AkunBaru, hash string, wajibGanti bool) (err error) {
 	t, err := g.nama(tabelLogin)
 	if err != nil {
 		return err
@@ -311,11 +311,15 @@ func (g *GudangOracle) BuatAkun(ctx context.Context, a AkunBaru, hash string) (e
 			_ = tx.Rollback()
 		}
 	}()
+	wajib := benderaTidak
+	if wajibGanti {
+		wajib = benderaYa
+	}
 	langkah := []struct {
 		q    string
 		args []any
 	}{{sqlSisipAkun(t), []any{a.ID, a.Nama, hash, db.KosongJadiNil(a.Organisasi), db.KosongJadiNil(a.Divisi),
-		db.KosongJadiNil(a.Unit), benderaYa, benderaYa}}}
+		db.KosongJadiNil(a.Unit), benderaYa, wajib}}}
 	for _, w := range a.Workbasket {
 		langkah = append(langkah, struct {
 			q    string

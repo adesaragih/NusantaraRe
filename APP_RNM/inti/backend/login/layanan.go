@@ -218,28 +218,42 @@ func (l *Layanan) periksaJenjang(ctx context.Context, a AkunBaru) error {
 // BuatPengguna membuat akun dengan sandi sementara - dikembalikan SEKALI
 // untuk dicetak; akunnya wajib ganti sandi saat login pertama.
 func (l *Layanan) BuatPengguna(ctx context.Context, a AkunBaru) (string, error) {
-	a.ID, a.Nama = strings.TrimSpace(a.ID), strings.TrimSpace(a.Nama)
-	if !AkunSah(a.ID) || a.Nama == "" || len(a.Nama) > 150 {
-		return "", ErrAkunTidakSah
-	}
-	if _, err := l.gudang.AmbilAkun(ctx, a.ID); err == nil {
-		return "", ErrAkunSudahAda
-	} else if !errors.Is(err, ErrAkunTidakAda) {
-		return "", err
-	}
-	if err := l.periksaJenjang(ctx, a); err != nil {
-		return "", err
-	}
 	sandi, err := SandiSementara()
 	if err != nil {
 		return "", err
 	}
-	hash, err := HashSandi(sandi)
-	if err != nil {
-		return "", err
-	}
-	if err := l.gudang.BuatAkun(ctx, a, hash); err != nil {
+	if err := l.buat(ctx, a, sandi, true); err != nil {
 		return "", err
 	}
 	return sandi, nil
+}
+
+// BuatPenggunaDenganSandi membuat akun dengan sandi yang DITETAPKAN operator
+// (`-sandi-dari-stdin`) - aturan sandi tetap berlaku, dan karena sandinya
+// bukan sementara, akunnya tidak wajib ganti sandi.
+func (l *Layanan) BuatPenggunaDenganSandi(ctx context.Context, a AkunBaru, sandi string) error {
+	if err := PeriksaSandiBaru(sandi); err != nil {
+		return err
+	}
+	return l.buat(ctx, a, sandi, false)
+}
+
+func (l *Layanan) buat(ctx context.Context, a AkunBaru, sandi string, wajibGanti bool) error {
+	a.ID, a.Nama = strings.TrimSpace(a.ID), strings.TrimSpace(a.Nama)
+	if !AkunSah(a.ID) || a.Nama == "" || len(a.Nama) > 150 {
+		return ErrAkunTidakSah
+	}
+	if _, err := l.gudang.AmbilAkun(ctx, a.ID); err == nil {
+		return ErrAkunSudahAda
+	} else if !errors.Is(err, ErrAkunTidakAda) {
+		return err
+	}
+	if err := l.periksaJenjang(ctx, a); err != nil {
+		return err
+	}
+	hash, err := HashSandi(sandi)
+	if err != nil {
+		return err
+	}
+	return l.gudang.BuatAkun(ctx, a, hash, wajibGanti)
 }

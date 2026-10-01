@@ -424,6 +424,10 @@ LOGIN SUNGGUHAN - M_LOGIN_GO (MIGRASI 902, 01-10-2026)
        aktif, dan berjenjang (unit milik divisinya, divisi milik
        organisasinya); boleh kosong dari bawah. Sandi sementara dicetak
        SEKALI dan WAJIB diganti saat login pertama.
+       Sandi DITETAPKAN sendiri: tambahkan -sandi-dari-stdin lalu ketik
+       sandinya di baris pertama masukan (tidak tampil di argumen dan tidak
+       dicetak; aturan minimal 10 karakter tetap berlaku; tidak wajib
+       diganti).
 
   Aturan: kunci 15 menit sesudah 5 kali sandi salah; sesi habis bila 30
   menit tidak dipakai, paling lama 10 jam sejak login; sandi minimal 10

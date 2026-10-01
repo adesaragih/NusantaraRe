@@ -104,9 +104,9 @@ func (g *gudangTiruan) WorkbasketAktif(_ context.Context, id string) (bool, erro
 	}
 	return aktif, nil
 }
-func (g *gudangTiruan) BuatAkun(_ context.Context, a AkunBaru, hash string) error {
+func (g *gudangTiruan) BuatAkun(_ context.Context, a AkunBaru, hash string, wajibGanti bool) error {
 	g.dibuat = append(g.dibuat, a)
-	g.akun[a.ID] = &Akun{ID: a.ID, Nama: a.Nama, HashSandi: hash, Aktif: true, WajibGantiSandi: true, VersiSesi: 1}
+	g.akun[a.ID] = &Akun{ID: a.ID, Nama: a.Nama, HashSandi: hash, Aktif: true, WajibGantiSandi: wajibGanti, VersiSesi: 1}
 	return nil
 }
 
@@ -282,5 +282,32 @@ func TestLayananTanpaRahasiaTidakMenerbitkanSesi(t *testing.T) {
 	g := gudangUji(t)
 	if _, _, err := NewLayanan(g, nil).Masuk(context.Background(), "UJI-ADMIN", "Sandi-Benar-01"); !errors.Is(err, ErrTanpaRahasia) {
 		t.Errorf("tanpa SESI_RAHASIA: %v", err)
+	}
+}
+
+// Sandi DITETAPKAN operator (`-sandi-dari-stdin`): aturan sandi tetap berlaku,
+// hash tersimpan, dan akunnya tidak wajib ganti - sandinya bukan sementara.
+func TestBuatPenggunaDenganSandi(t *testing.T) {
+	g := gudangUji(t)
+	l := NewLayanan(g, rahasiaUji)
+	if err := l.BuatPenggunaDenganSandi(context.Background(), AkunBaru{ID: "UJI-C1", Nama: "Uji C1"}, "pendek"); !errors.Is(err, ErrSandiTerlaluPendek) {
+		t.Errorf("sandi pendek: %v", err)
+	}
+	if len(g.dibuat) != 0 {
+		t.Fatal("akun dibuat walau sandinya ditolak")
+	}
+	a := AkunBaru{ID: "UJI-C2", Nama: "Uji C2", Organisasi: "RNM", Divisi: "TECH", Unit: "CLM", Workbasket: []string{"ReasLifeAdmin"}}
+	if err := l.BuatPenggunaDenganSandi(context.Background(), a, "Sandi-Uji-Tetap-1"); err != nil {
+		t.Fatal(err)
+	}
+	if !CocokSandi(g.akun["UJI-C2"].HashSandi, "Sandi-Uji-Tetap-1") || g.akun["UJI-C2"].WajibGantiSandi {
+		t.Errorf("akun bersandi tetap: %+v", g.akun["UJI-C2"])
+	}
+	p, _, err := l.Masuk(context.Background(), "UJI-C2", "Sandi-Uji-Tetap-1")
+	if err != nil || p.WajibGantiSandi {
+		t.Errorf("masuk dengan sandi tetap: %+v %v", p, err)
+	}
+	if err := l.BuatPenggunaDenganSandi(context.Background(), AkunBaru{ID: "UJI-C3", Nama: "Uji", Unit: "CLM"}, "Sandi-Uji-Tetap-1"); !errors.Is(err, ErrJenjangTidakCocok) {
+		t.Errorf("jenjang tetap diperiksa: %v", err)
 	}
 }
