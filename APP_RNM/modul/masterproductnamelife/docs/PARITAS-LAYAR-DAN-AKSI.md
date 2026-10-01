@@ -182,4 +182,10 @@ Kunci yang sudah ada di JSON lama dan tidak dikelola layar **dipertahankan** apa
 
 ## 9. Rute API dan komponen
 
-Diisi paket 1–10; ringkasan akhir di paket 11.
+Prefix `/api/master-product-name-life` (`backend/handlers/rute_mpnl.go` `Prefix`). Setiap rute menuntut identitas pelaku (401 tanpa),
+menjawab 503 bila Oracle tidak dikonfigurasi, galat berbadan `{"galat": "..."}`.
+
+| Metode dan jalur | Layar / tombol Pega | Paket |
+| --- | --- | --- |
+| `GET /produk` | grid `InboxProductName` mode daftar (b71246, RD `BrowseProduct_Life`) | 1 |
+| `GET /produk/{id}` | tombol `View` b74753 (`SetProductName` + `SetProductNameInward`) | 1 |
