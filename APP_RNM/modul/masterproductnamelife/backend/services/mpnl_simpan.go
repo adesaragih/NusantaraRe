@@ -130,10 +130,10 @@ func pilihanInward(m *models.Produk, lama models.ProdukInward) []pilihan {
 	}
 }
 
-// periksaUmum - gerbang murni sisi umum (angka, panjang kolom datar).
+// periksaUmum - gerbang murni sisi umum (angka, panjang kolom datar `RIRISKID`
+// VARCHAR2(10), `RIRISK` VARCHAR2(100) - ditolak berkalimat SEBELUM SQL).
 func periksaUmum(pk *periksa, u *models.ProdukUmum) {
 	pk.desimal(labelDeduction, &u.RIComm)
-	pk.panjang(labelProductName, u.ProductName, repository.LebarProductName)
 	pk.panjang(labelRIRisk, u.RIRisk, repository.LebarRIRisk)
 	pk.panjang(labelRIRisk+" ID", u.RIRiskID, repository.LebarRIRiskID)
 }

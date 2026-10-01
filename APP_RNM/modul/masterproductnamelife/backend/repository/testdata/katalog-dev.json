@@ -1,0 +1,7 @@
+{
+  "sumber": "ALL_TAB_COLUMNS skema DEV, dibaca asisten 01-10-2026, urut COLUMN_ID (brief PROMPT-LANJUTAN-MASTER-PRODUCT-NAME-LIFE-1.md §1). Baca-saja; nol nilai baris.",
+  "tabel": {
+    "M_PRODUCT_LIFE": ["ID", "JSONDATA", "RIRISKID", "RIRISK"],
+    "M_PRODUCTINWARD_LIFE": ["ID", "JSONDATA"]
+  }
+}

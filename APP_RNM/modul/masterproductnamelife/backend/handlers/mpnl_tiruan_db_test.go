@@ -6,10 +6,10 @@ package handlers_test
 // bertag `db`). Tanpa ORACLE_DSN seluruhnya MELEWATI. ⛔ POOLDATA bukan
 // sasaran uji `db` (brief bab 1) - skema uji dipagari `uji/skemauji`.
 //
-// ⛔ Tipe kolom PERSIS DDL `[data DBA]` (`docs/dba-procedures-and-ddl.md`):
-// `ID VARCHAR2(6)`, `JSONDATA CLOB` + constraint `IS JSON`, kolom datar
-// `RIRISKID VARCHAR2(10)`, `RIRISK VARCHAR2(100)`, `PRODUCTNAME VARCHAR2(1000)`,
-// `BEGIN_DATE DATE`; NOL PK (DEV nol PK).
+// ⛔ Kolom dan tipe PERSIS katalog DEV `ALL_TAB_COLUMNS` 01-10-2026
+// (`repository/testdata/katalog-dev.json`): `ID VARCHAR2(6)`, `JSONDATA CLOB` +
+// constraint `IS JSON`, kolom datar `RIRISKID VARCHAR2(10)`, `RIRISK VARCHAR2(100)` -
+// hanya dua (lanjutan 1 L1: `PRODUCTNAME`/`BEGIN_DATE` tidak ada di DEV); NOL PK.
 //
 // Jalankan per paket: `go test -tags db -p 1 ./modul/masterproductnamelife/...`.
 
@@ -30,7 +30,7 @@ import (
 // ddlTiruan - kolom dan tipe per tabel (urutan pembuatan).
 var ddlTiruan = []struct{ nama, kolom string }{
 	{"M_PRODUCT_LIFE", `ID VARCHAR2(6), JSONDATA CLOB CONSTRAINT UJI_MPL_JSON CHECK (JSONDATA IS JSON),
-		RIRISKID VARCHAR2(10), RIRISK VARCHAR2(100), PRODUCTNAME VARCHAR2(1000), BEGIN_DATE DATE`},
+		RIRISKID VARCHAR2(10), RIRISK VARCHAR2(100)`},
 	{"M_PRODUCTINWARD_LIFE", `ID VARCHAR2(6), JSONDATA CLOB CONSTRAINT UJI_MPIL_JSON CHECK (JSONDATA IS JSON)`},
 	// Master pendukung - kolom yang dibaca modul ini saja, VARCHAR2 generik (paket 2).
 	{"AGENT", `ID VARCHAR2(100), CLIENTNAME VARCHAR2(1000), STATUSACTIVE VARCHAR2(10)`},

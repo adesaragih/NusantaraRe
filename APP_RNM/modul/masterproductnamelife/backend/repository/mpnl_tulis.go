@@ -7,9 +7,9 @@ package repository
 //	                   10 b2019 `·` PRE=false  RDB SaveProductNameLIfeFlat: UPDATE … SET RIRISKID, RIRISK WHERE ID
 //
 // ⛔ Prosedur ditiru: upsert dikunci `ID`, `ID` baru dari sequence; kolom datar
-// `RIRISKID`, `RIRISK` (langkah 10, hidup - RALAT R8) dan `PRODUCTNAME`,
-// `BEGIN_DATE` (P1, OQ-MPNL-08) ditulis di pernyataan YANG SAMA dengan
-// `JSONDATA`, di transaksi pemanggil. Nol COMMIT.
+// `RIRISKID`, `RIRISK` (langkah 10, hidup - RALAT R8) ditulis di pernyataan YANG
+// SAMA dengan `JSONDATA`, di transaksi pemanggil. Nol COMMIT. Hanya dua kolom
+// datar itu - persis `SaveProductNameLIfeFlat` b84 dan katalog DEV (lanjutan 1 L1).
 // ⛔ `JSONDATA` diikat sebagai CLOB (`go_ora.Clob`): daftar komentar tumbuh
 // setiap simpan dan dapat melampaui batas VARCHAR2 bind.
 // ⛔ go-ora mengikat menurut URUTAN KEMUNCULAN placeholder - nomor placeholder
@@ -27,13 +27,11 @@ import (
 )
 
 func sqlSisipUmum(tabel string) string {
-	return fmt.Sprintf(`INSERT INTO %s (ID, JSONDATA, RIRISKID, RIRISK, PRODUCTNAME, BEGIN_DATE)
-		VALUES (:1, :2, :3, :4, :5, TO_DATE(:6, 'DD/MM/YYYY'))`, tabel)
+	return fmt.Sprintf(`INSERT INTO %s (ID, JSONDATA, RIRISKID, RIRISK) VALUES (:1, :2, :3, :4)`, tabel)
 }
 
 func sqlPerbaruiUmum(tabel string) string {
-	return fmt.Sprintf(`UPDATE %s SET JSONDATA = :1, RIRISKID = :2, RIRISK = :3, PRODUCTNAME = :4,
-		BEGIN_DATE = TO_DATE(:5, 'DD/MM/YYYY') WHERE ID = :6`, tabel)
+	return fmt.Sprintf(`UPDATE %s SET JSONDATA = :1, RIRISKID = :2, RIRISK = :3 WHERE ID = :4`, tabel)
 }
 
 func sqlSisipInward(tabel string) string {
@@ -48,10 +46,9 @@ func argPerbaruiInward(id, jsonInward string) []any { return []any{clob(jsonInwa
 
 func clob(teks string) go_ora.Clob { return go_ora.Clob{String: teks, Valid: true} }
 
-// datar - kolom datar `M_PRODUCT_LIFE` dari produk.
+// datar - kolom datar `M_PRODUCT_LIFE` dari produk (`SaveProductNameLIfeFlat` b84).
 func datar(p models.Produk) []any {
-	return []any{db.KosongJadiNil(p.Umum.RIRiskID), db.KosongJadiNil(p.Umum.RIRisk),
-		db.KosongJadiNil(p.Umum.ProductName), db.KosongJadiNil(TanggalKePega(p.Inward.Begin))}
+	return []any{db.KosongJadiNil(p.Umum.RIRiskID), db.KosongJadiNil(p.Umum.RIRisk)}
 }
 
 func argSisipUmum(p models.Produk, jsonUmum string) []any {

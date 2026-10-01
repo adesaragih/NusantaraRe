@@ -38,8 +38,8 @@ type Gudang struct {
 
 	// Seq - nomor urut berikut `M_PRODUCT_LIFE_SEQ` (bawaan 44, seperti `START WITH 44`).
 	Seq int64
-	// Datar - kolom datar `M_PRODUCT_LIFE`: RIRISKID, RIRISK, PRODUCTNAME, BEGIN_DATE (`dd/MM/yyyy`).
-	Datar map[string][4]string
+	// Datar - kolom datar `M_PRODUCT_LIFE`: RIRISKID, RIRISK (katalog DEV, lanjutan 1 L1).
+	Datar map[string][2]string
 	// GagalTulis - bila terisi, setiap penulis menulis LALU gagal dengan galat
 	// ini (uji: transaksi gagal = nol tulisan).
 	GagalTulis error
@@ -67,13 +67,13 @@ type Gudang struct {
 // Baru menyusun gudang kosong.
 func Baru() *Gudang {
 	return &Gudang{Umum: map[string]string{}, Inward: map[string]string{},
-		Master: map[models.JenisMaster][]models.NilaiMaster{}, Seq: 44, Datar: map[string][4]string{}}
+		Master: map[models.JenisMaster][]models.NilaiMaster{}, Seq: 44, Datar: map[string][2]string{}}
 }
 
 // Transaksi - tiruan `DalamTransaksi`: fn(nil); sukses = Komit++, gagal =
 // seluruh isi dipulihkan (rollback).
 func (g *Gudang) Transaksi(_ context.Context, fn func(tx *db.Tx) error) error {
-	umum, inward, datar, seq := salin(g.Umum), salin(g.Inward), map[string][4]string{}, g.Seq
+	umum, inward, datar, seq := salin(g.Umum), salin(g.Inward), map[string][2]string{}, g.Seq
 	for k, v := range g.Datar {
 		datar[k] = v
 	}
@@ -99,7 +99,7 @@ func (g *Gudang) KunciProduk(ctx context.Context, tx *db.Tx, id string) (models.
 }
 
 func (g *Gudang) tulisDatar(p models.Produk) {
-	g.Datar[p.ID] = [4]string{p.Umum.RIRiskID, p.Umum.RIRisk, p.Umum.ProductName, repository.TanggalKePega(p.Inward.Begin)}
+	g.Datar[p.ID] = [2]string{p.Umum.RIRiskID, p.Umum.RIRisk}
 }
 
 // SisipProduk - ID dari Seq lewat `repository.FormatIdentitas`; ID terpakai = bentrok.

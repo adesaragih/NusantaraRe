@@ -61,8 +61,8 @@ func TestSimpanBaruIdentitasDariSequenceDanJejakPelaku(t *testing.T) {
 	if g.Komit != 1 || !strings.Contains(g.Umum["100044"], `"POLICYHODER":"UJI-ORG-1"`) {
 		t.Errorf("tersimpan satu transaksi berkunci Pega: komit %d %s", g.Komit, g.Umum["100044"])
 	}
-	if g.Datar["100044"] != [4]string{"1000117", "UJI RISK", "UJI PRODUK", "01/03/2026"} {
-		t.Errorf("kolom datar RIRISKID, RIRISK, PRODUCTNAME, BEGIN_DATE: %v", g.Datar["100044"])
+	if g.Datar["100044"] != [2]string{"1000117", "UJI RISK"} {
+		t.Errorf("kolom datar RIRISKID, RIRISK: %v", g.Datar["100044"])
 	}
 }
 
@@ -153,13 +153,35 @@ func TestAngkaTidakSahDitolakDanUangTidakBerubah(t *testing.T) {
 	}
 }
 
+// Kolom datar `RIRISKID` VARCHAR2(10), `RIRISK` VARCHAR2(100) (katalog DEV): nilai yang lebih
+// panjang ditolak berkalimat SEBELUM SQL - nol tulisan, nol transaksi - bukan dipotong Oracle.
 func TestPanjangKolomDatarDitolakBukanDipotong(t *testing.T) {
+	kasus := []struct {
+		nama, label string
+		isi         func(m *models.Produk)
+	}{
+		{"RIRISKID 11", "R/I Risk Name ID", func(m *models.Produk) { m.Umum.RIRiskID = strings.Repeat("1", 11) }},
+		{"RIRISK 101", "R/I Risk Name", func(m *models.Produk) { m.Umum.RIRisk = strings.Repeat("R", 101) }},
+	}
+	for _, k := range kasus {
+		l, g := layananMaster()
+		m := produkMasuk()
+		k.isi(&m)
+		_, err := l.SimpanProduk(context.Background(), pelakuUji, m, true)
+		if !errors.Is(err, services.ErrMasukanTidakSah) || !strings.Contains(services.Pesan(err), k.label) ||
+			!strings.Contains(services.Pesan(err), "at most") {
+			t.Errorf("%s: %v", k.nama, err)
+		}
+		if g.Komit != 0 || len(g.Umum) != 0 || len(g.Datar) != 0 {
+			t.Errorf("%s: ditolak sebelum SQL - nol transaksi, nol tulisan (komit %d)", k.nama, g.Komit)
+		}
+	}
+	// Kolom datar PRODUCTNAME tidak ada di DEV: `Product Name` tidak lagi dibatasi 1000 byte.
 	l, _ := layananMaster()
 	m := produkMasuk()
 	m.Umum.ProductName = strings.Repeat("X", 1001)
-	if _, err := l.SimpanProduk(context.Background(), pelakuUji, m, true); !errors.Is(err, services.ErrMasukanTidakSah) ||
-		!strings.Contains(services.Pesan(err), "Product Name") {
-		t.Errorf("PRODUCTNAME VARCHAR2(1000): %v", err)
+	if _, err := l.SimpanProduk(context.Background(), pelakuUji, m, true); err != nil && strings.Contains(services.Pesan(err), "Product Name is") {
+		t.Errorf("Product Name tidak lagi dibatasi kolom datar yang tidak ada: %v", err)
 	}
 }
 

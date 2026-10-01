@@ -109,29 +109,27 @@ func TestRakitUmumBolakBalik(t *testing.T) {
 func TestArgSimpanUmumMengikatClobDanKolomDatar(t *testing.T) {
 	p := produkUji()
 	args := argSisipUmum(p, `{"ID":"100044"}`)
-	if len(args) != 6 {
-		t.Fatalf("6 bind: %v", args)
+	if len(args) != 4 {
+		t.Fatalf("4 bind: %v", args)
 	}
 	if c, ok := args[1].(go_ora.Clob); !ok || !c.Valid || c.String != `{"ID":"100044"}` {
 		t.Errorf("JSONDATA wajib diikat sebagai CLOB: %#v", args[1])
 	}
-	if args[2] != "1000117" || args[3] != "UJI RISK" || args[4] != "UJI <PRODUK> & CO" || args[5] != "01/03/2026" {
-		t.Errorf("kolom datar RIRISKID, RIRISK, PRODUCTNAME, BEGIN_DATE: %v", args)
+	// `SaveProductNameLIfeFlat` b84 hanya RIRISKID, RIRISK (katalog DEV, lanjutan 1 L1).
+	if args[2] != "1000117" || args[3] != "UJI RISK" {
+		t.Errorf("kolom datar RIRISKID, RIRISK: %v", args)
 	}
 	q := rata(sqlSisipUmum("S.M_PRODUCT_LIFE"))
-	for _, w := range []string{"INSERT INTO S.M_PRODUCT_LIFE (ID, JSONDATA, RIRISKID, RIRISK, PRODUCTNAME, BEGIN_DATE)",
-		"TO_DATE(:6, 'DD/MM/YYYY')"} {
-		if !strings.Contains(q, w) {
-			t.Errorf("SQL tanpa %q: %s", w, q)
-		}
+	if !strings.Contains(q, "INSERT INTO S.M_PRODUCT_LIFE (ID, JSONDATA, RIRISKID, RIRISK) VALUES (:1, :2, :3, :4)") {
+		t.Errorf("INSERT: %s", q)
 	}
 	// ⛔ go-ora mengikat menurut URUTAN KEMUNCULAN: nomor placeholder = urutan argumen.
 	u := rata(sqlPerbaruiUmum("S.M_PRODUCT_LIFE"))
-	if !strings.Contains(u, "SET JSONDATA = :1, RIRISKID = :2, RIRISK = :3, PRODUCTNAME = :4, BEGIN_DATE = TO_DATE(:5, 'DD/MM/YYYY') WHERE ID = :6") {
+	if !strings.Contains(u, "SET JSONDATA = :1, RIRISKID = :2, RIRISK = :3 WHERE ID = :4") {
 		t.Errorf("UPDATE dikunci ID: %s", u)
 	}
 	ua := argPerbaruiUmum(p, `{}`)
-	if ua[5] != "100044" {
+	if len(ua) != 4 || ua[3] != "100044" {
 		t.Errorf("ID adalah argumen terakhir UPDATE: %v", ua)
 	}
 }

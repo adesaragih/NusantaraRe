@@ -31,20 +31,23 @@ const (
 	TabelInward = "M_PRODUCTINWARD_LIFE"
 )
 
-// Kolom fisik kedua tabel `[data DBA]`. `M_PRODUCT_LIFE`: `JSONDATA` CLOB
-// (`IS JSON`) + empat kolom datar; `M_PRODUCTINWARD_LIFE`: `ID` + `JSONDATA`.
+// Kolom fisik kedua tabel - katalog DEV `ALL_TAB_COLUMNS` 01-10-2026
+// (`testdata/katalog-dev.json`, uji `TestKolomDitulisAdaDiKatalogDEV`). `M_PRODUCT_LIFE`:
+// `JSONDATA` CLOB (`IS JSON`) + DUA kolom datar `RIRISKID`, `RIRISK` - penulisnya di
+// korpus hanya `SaveProductNameLIfeFlat` b84. ⛔ `PRODUCTNAME` dan `BEGIN_DATE` TIDAK ADA
+// di DEV (ralat lanjutan 1 L1; `dba-procedures-and-ddl.md` keliru menyebut empat).
+// `M_PRODUCTINWARD_LIFE`: `ID` + `JSONDATA`.
 var (
-	KolomProduk = []string{"ID", "JSONDATA", "RIRISKID", "RIRISK", "PRODUCTNAME", "BEGIN_DATE"}
+	KolomProduk = []string{"ID", "JSONDATA", "RIRISKID", "RIRISK"}
 	KolomInward = []string{"ID", "JSONDATA"}
 )
 
 // Lebar kolom datar `[data DBA]` - nilai yang lebih panjang ditolak services
 // dengan kalimat yang menyebut medannya, bukan dipotong Oracle.
 const (
-	LebarID          = 6
-	LebarRIRiskID    = 10
-	LebarRIRisk      = 100
-	LebarProductName = 1000
+	LebarID       = 6
+	LebarRIRiskID = 10
+	LebarRIRisk   = 100
 )
 
 // DaftarTabelWarisan - tabel yang ditulis modul ini (penjaga modul).

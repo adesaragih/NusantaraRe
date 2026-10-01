@@ -30,9 +30,9 @@ func TestDBSimpanBaruDariSequenceLaluUpsertDikunciID(t *testing.T) {
 	if kode != http.StatusOK || !strings.Contains(badan, `"id":"100044"`) {
 		t.Fatalf("POST: %d %s", kode, badan)
 	}
-	if n := u.cacah(t, "M_PRODUCT_LIFE", "ID = '100044' AND PRODUCTNAME = 'UJI PRODUK' AND BEGIN_DATE = DATE '2026-03-01' "+
+	if n := u.cacah(t, "M_PRODUCT_LIFE", "ID = '100044' AND JSON_VALUE(JSONDATA, '$.PRODUCTNAME') = 'UJI PRODUK' "+
 		"AND JSON_VALUE(JSONDATA, '$.POLICYHODER') = 'UJI-ORG-1' AND JSON_VALUE(JSONDATA, '$.CREATEOP') = 'UJI-PELAKU'"); n != 1 {
-		t.Errorf("baris baru + kolom datar + JSON: %d", n)
+		t.Errorf("baris baru + JSON: %d", n)
 	}
 	kode, badan = u.kirim(t, "PUT", pre+"/produk/100044", strings.Replace(badanUji, "UJI PRODUK", "UJI UBAH", 1))
 	if kode != http.StatusOK {
@@ -41,8 +41,8 @@ func TestDBSimpanBaruDariSequenceLaluUpsertDikunciID(t *testing.T) {
 	if n := u.cacah(t, "M_PRODUCT_LIFE", ""); n != 1 {
 		t.Errorf("upsert dikunci ID: %d baris, mau 1", n)
 	}
-	if got := u.teks(t, `SELECT PRODUCTNAME FROM {s}.M_PRODUCT_LIFE WHERE ID = '100044'`); got != "UJI UBAH" {
-		t.Errorf("kolom datar PRODUCTNAME ikut diperbarui: %q", got)
+	if got := u.teks(t, `SELECT JSON_VALUE(JSONDATA, '$.PRODUCTNAME') FROM {s}.M_PRODUCT_LIFE WHERE ID = '100044'`); got != "UJI UBAH" {
+		t.Errorf("PRODUCTNAME JSON ikut diperbarui: %q", got)
 	}
 }
 
