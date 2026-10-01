@@ -49,7 +49,7 @@ describe('kelas CSS modul', () => {
   it('kelas di mcrl.css berawalan mcrl, kecuali kelas bersama inti yang DITIMPA di bawah .mcrl', () => {
     // UI 02-10-2026: kelas bersama boleh ditimpa HANYA di bawah kelas akar `.mcrl` (dijaga "isolasi CSS
     // modul" di bawah) dan hanya kelas kerangka inti yang memang dipakai layar modul ini.
-    const BERSAMA = new Set(['inbox__kepala', 'panel', 'inbox__tabel', 'table__actions', 'btn', 'aksi-baris', 'modal', 'modal__actions'])
+    const BERSAMA = new Set(['inbox__kepala', 'panel', 'inbox__tabel', 'table__actions', 'btn', 'aksi-baris', 'modal', 'modal__actions', 'inbox__judul', 'panel__title', 'btn--primary', 'btn--ghost', 'field__input'])
     const kelas = [...kelasCSS()]
     expect(kelas.length).toBeGreaterThan(5)
     expect(kelas.filter((k) => !k.startsWith('mcrl') && !BERSAMA.has(k))).toEqual([])
@@ -72,16 +72,25 @@ function pemilihCSS(css: string): string[] {
     .flatMap((p) => p.split(',').map((s) => s.trim()))
 }
 
+/** Pemilih terisolasi: kelas akar .mcrl, keturunannya, atau varian tema gelap di bawah kelas akar. */
+function terisolasi(p: string): boolean {
+  const tanpaTema = p.replace(/^:root\[data-theme="dark"\]\s+/, '')
+  return tanpaTema === '.mcrl' || tanpaTema.startsWith('.mcrl ')
+}
+
 describe('isolasi CSS modul (UI 02-10-2026)', () => {
   it('SETIAP pemilih di mcrl.css diawali kelas akar .mcrl - nol pemilih global', () => {
     const pemilih = pemilihCSS(CSS)
     expect(pemilih.length).toBeGreaterThan(20)
-    expect(pemilih.filter((p) => p !== '.mcrl' && !p.startsWith('.mcrl '))).toEqual([])
+    expect(pemilih.filter((p) => !terisolasi(p))).toEqual([])
   })
 
   it('aturan isolasi menggigit: pemilih global tertangkap', () => {
     const pemilih = pemilihCSS('table { x: 1 } .mcrl .a, .btn { y: 2 } @media (max-width: 640px) { .mcrl-b { z: 3 } }')
-    expect(pemilih.filter((p) => p !== '.mcrl' && !p.startsWith('.mcrl '))).toEqual(['table', '.btn', '.mcrl-b'])
+    expect(pemilih.filter((p) => !terisolasi(p))).toEqual(['table', '.btn', '.mcrl-b'])
+    // Tema gelap boleh, HANYA di bawah kelas akar; :root tanpa .mcrl tetap ditolak.
+    expect(terisolasi(':root[data-theme="dark"] .mcrl')).toBe(true)
+    expect(terisolasi(':root[data-theme="dark"] .panel')).toBe(false)
   })
 
   it('halaman awal memasang kelas akar mcrl di kedua cabangnya', () => {
