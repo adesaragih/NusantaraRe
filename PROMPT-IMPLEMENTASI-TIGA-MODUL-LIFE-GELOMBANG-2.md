@@ -8,9 +8,9 @@
 > **Mengapa bukan NB Treaty In:** 92 activity, 75 when, rancangan penyimpanan 984 baris yang masih menimbang tabel baru, dan pertanyaan untuk DBA,
 > Finance, IAM, dan Product belum dijawab. Modul itu butuh satu sesi tersendiri sesudah keputusan penyimpanannya diambil.
 
-> ⛔ **Syarat mulai (01-10-2026):** `PROMPT-SERAGAM-KOLOM-T_WORK_POLIS-DAN-T_WORK_CLAIM.md` sudah selesai di `dev`. Sejak itu kolom
-> `T_WORK_POLIS.STATUS` bernama **`STATUS_WORK`**, dan tabel itu punya `COVER_KEY`, `CREATE_OP`, `CREATE_OP_NAME`, `TGL_CREATE`, `TGL_UPDATE`.
-> Endorsement yang membuat atau mengubah kasus polis wajib mengisi kolom pembuat dan waktu seperti PremiumList.
+> ℹ️ **Catatan 01-10-2026:** sesi gelombang ini sudah berjalan sebelum `PROMPT-SERAGAM-KOLOM-T_WORK_POLIS-DAN-T_WORK_CLAIM.md` ditulis.
+> Gelombang ini tetap memakai nama kolom lama `T_WORK_POLIS.STATUS`. Brief seragam dijalankan **sesudah** gelombang ini selesai dan ikut
+> menyesuaikan SQL Endorsement.
 
 ## 0. VERIFIKASI SESI RETRO LIFE *(asisten, 01-10-2026)*
 

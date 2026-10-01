@@ -3,9 +3,9 @@
 > Keputusan work owner 01-10-2026: *"samakan kolom antara T_WORK_POLIS dan T_WORK_CLAIM: CREATE_OP, CREATE_OP_NAME, TGL_UPDATE, TGL_CREATE. Ikuti saran
 > asisten. Nama sama antara T_WORK_POLIS dan T_WORK_CLAIM. COVER_KEY tetap ada, jangan dihapus, di dua tabel itu."*
 >
-> ⛔ **Jalankan SEBELUM `PROMPT-IMPLEMENTASI-TIGA-MODUL-LIFE-GELOMBANG-2.md`**, atau tunggu sampai sesi itu selesai — modul Endorsement di gelombang itu
-> menulis kasus polis, dan harus memakai nama kolom yang baru. Commit dengan jalur eksplisit `git commit -o -- <jalur>`. **Nol `git push`, nol
-> `git pull`, nol `-migrate`** *(dijalankan work owner)*.
+> ⛔ **Jalankan SESUDAH sesi `PROMPT-IMPLEMENTASI-TIGA-MODUL-LIFE-GELOMBANG-2.md` selesai dan melapor** *(sesi itu sudah berjalan 01-10-2026 dan
+> memakai nama lama `STATUS`)*. Pohon kerja harus bersih sebelum mulai. Commit dengan jalur eksplisit `git commit -o -- <jalur>`. **Nol `git push`,
+> nol `git pull`, nol `-migrate`** *(dijalankan work owner)*.
 
 ## 0. KEADAAN DEV *(asisten 01-10-2026, katalog baca-saja)*
 
@@ -66,7 +66,7 @@ pemeriksaan katalog supaya aman diulang. Nol `COMMIT`. Penjaga kata cadangan Ora
 
 | Bagian | Ubah |
 | --- | --- |
-| Semua SQL `T_WORK_POLIS` | `STATUS` → `STATUS_WORK` *(`polis_work.go`, `polis_inbox.go`, `polis_kasus.go`, dan setiap tempat lain — cari semua)*; JSON API dan teks layar **tidak berubah** |
+| Semua SQL `T_WORK_POLIS` | `STATUS` → `STATUS_WORK` *(`polis_work.go`, `polis_inbox.go`, `polis_kasus.go`, setiap tempat lain di PremiumList, **dan setiap SQL `T_WORK_POLIS` di `modul/endorsementlife/`** — cari semua dengan `grep -rn T_WORK_POLIS APP_RNM/modul`)*; JSON API dan teks layar **tidak berubah** |
 | Buat kasus *(`Input Offer`, `Input Premium`)* | isi `CREATE_OP` = akun pelaku, `CREATE_OP_NAME` = akun pelaku *(sama dengan Claim Life `pendaftaran.go` sampai login menyediakan nama tampilan)*, `TGL_CREATE` = `SYSDATE`, `TGL_UPDATE` = `SYSDATE`, `COVER_KEY` = NULL |
 | Setiap ubah baris kasus | `TGL_UPDATE = SYSDATE` di pernyataan yang sama |
 | Urutan inbox | **tidak berubah** — tetap mengikuti RD XML |
@@ -80,7 +80,7 @@ menurut properti Pega yang disimpannya *(`PY_POSITION` untuk `pyPosition`)*.
 
 ## 6. BATAS FOLDER
 
-Boleh: `APP_RNM/modul/premiumlistlife/**`, `docs/bersama/PANDUAN-TIM-PER-MODUL.md`, `APP_RNM/modul/_templat/MODUL.md`, dan `APP_RNM/PANDUAN-MENJALANKAN.txt`
+Boleh: `APP_RNM/modul/premiumlistlife/**`, **`APP_RNM/modul/endorsementlife/**` hanya untuk SQL `T_WORK_POLIS`** *(`STATUS` → `STATUS_WORK`, dan mengisi pembuat serta waktu bila Endorsement membuat atau mengubah kasus polis, sama dengan PremiumList)*, `docs/bersama/PANDUAN-TIM-PER-MODUL.md`, `APP_RNM/modul/_templat/MODUL.md`, dan `APP_RNM/PANDUAN-MENJALANKAN.txt`
 *(pengingat `-migrate` 059)*. Dilarang: `inti/`, modul lain, `T_WORK_CLAIM`, konfigurasi root.
 
 ## 7. URUTAN — satu commit per paket
