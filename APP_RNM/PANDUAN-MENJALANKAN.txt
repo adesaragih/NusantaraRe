@@ -346,6 +346,27 @@ MENU DARI TABEL M_NAV_MENU (migrasi 900, sejak 30-09-2026)
 
   Menyembunyikan satu menu tanpa deploy: STATUS_AKTIF = '0' pada barisnya.
 
+MIGRASI 059 - T_WORK_POLIS SERAGAM DENGAN T_WORK_CLAIM (01-10-2026)
+
+  Keputusan work owner 01-10-2026. 059 (modul\premiumlistlife) menambah
+  STATUS_WORK, COVER_KEY, CREATE_OP, CREATE_OP_NAME, TGL_CREATE, TGL_UPDATE
+  ke T_WORK_POLIS, menyalin STATUS ke STATUS_WORK lalu membuang STATUS,
+  memasang FK_WORK_POLIS_COVER_KEY (tanpa ON DELETE) + IX_WORK_POLIS_COVER_KEY,
+  dan mengisi TGL_CREATE/CREATE_OP_NAME baris lama dari T_PREMIUM_LIST
+  (ID_PEGA = ID, tepat satu pasangan). CREATE_OP baris lama tetap kosong.
+
+  PENTING: -migrate dijalankan WORK OWNER, bukan executor - termasuk 059.
+  URUTAN DEPLOY: hentikan backend, -migrate 059, lalu jalankan biner dari
+  commit 3626e2b ke atas. Biner SEBELUM 3626e2b masih menulis kolom STATUS
+  (ORA-00904 sesudah 059); biner 3626e2b ke atas menulis STATUS_WORK
+  (ORA-00904 sebelum 059). Keduanya tidak dapat hidup di satu skema.
+  Data uji uji\skemauji\data_uji_tiga_modul.sql dimuat SESUDAH 059.
+
+  Pernyataan pertama 059 (ALTER ... ADD) satu-satunya yang tidak
+  berpelindung katalog. Bila 059 gagal sesudahnya, percobaan ulang berhenti
+  di ORA-01430: DBA menjalankan isi 059_seragam_kolom_t_work_polis_down.sql
+  secara manual (seluruhnya berpelindung), lalu -migrate diulang.
+
 Bila sesi berikutnya butuh Oracle lagi, setel ulang ketiga variabel itu.
 Env var hilang saat jendela ditutup.
 
