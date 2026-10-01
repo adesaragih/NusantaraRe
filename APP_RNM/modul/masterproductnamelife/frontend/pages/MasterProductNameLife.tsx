@@ -1,12 +1,12 @@
 // Halaman awal modul - `Section/InboxProductName.xml` (PARITAS §1–§2).
 //
 // ⭐ Pintu masuk: `InboxProductName` tidak dibuka rule mana pun di korpus (dibuka portal); harness satu-satunya,
-// `InwardProductName`, hanya dibuka tombol `Inward` b75322 yang `OTHER 1=2` (RALAT R11).
+// `InwardProductName`, hanya dibuka tombol `Inward` b75368 yang `OTHER 1=2` (RALAT R11).
 //
-// Mode daftar (wadah b71246 `DATASHOW != 1`): tombol b71816 (label sel `End Period`, teks `Add`, tooltip
-// `Add New Data` → `NewProductLife`), `pyGridPaginator` b72105 (10 baris/halaman, `pyRDLPageSize` b71371), grid
+// Mode daftar (wadah b71246 `DATASHOW != 1`): tombol b71865 (label sel `End Period`, teks `Add`, tooltip
+// `Add New Data` → `NewProductLife`), `pyGridPaginator` b72103 (10 baris/halaman, `pyRDLPageSize` b71371), grid
 // RD `BrowseProduct_Life` (urut `.ID ASC` - server) dengan kolom `ID` · `Ceding` · `Treaty Number` · `Treaty Name`
-// · `Create Operator` · `Last Updated Operator` dan tombol baris `View` b74753 (`SetProductName` → mode lihat).
+// · `Create Operator` · `Last Updated Operator` dan tombol baris `View` b74798 (`SetProductName` → mode lihat).
 // Mode form (`DATASHOW = 1`): `FormProduk`. Wadah grid b71574 ber-`IsFire` dengan `ALWAYS` → selalu tampil.
 
 import { useCallback, useEffect, useState } from 'react'
@@ -57,7 +57,7 @@ export default function MasterProductNameLife() {
   async function lihatProduk(id: string): Promise<void> {
     setGalatBuka(null)
     try {
-      // `View` b74753 → `SetProductName` (+ `SetProductNameInward`), 8 b2145 `IsView = true`.
+      // `View` b74798 → `SetProductName` (+ `SetProductNameInward`), 8 b2147 `IsView = true`.
       buka(await ambilProduk(id), true)
     } catch (e) {
       setGalatBuka(e)
@@ -65,7 +65,7 @@ export default function MasterProductNameLife() {
   }
 
   function tutup(): void {
-    // `Close` b58728 → `HideCreateLife`: `DATASHOW = 0`; refresh section membaca ulang grid.
+    // `Close` b58770 → `HideCreateLife`: `DATASHOW = 0`; refresh section membaca ulang grid.
     setForm(null)
     void muat()
   }

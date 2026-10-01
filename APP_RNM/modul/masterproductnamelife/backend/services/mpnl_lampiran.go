@@ -2,13 +2,13 @@ package services
 
 // Lampiran produk (paket 8, tiket 08–09, PARITAS §6).
 //
-//	`Add attachment` b64698 → `ProductNameAttachContent` (submit `Attach` b24) → `ProductNameSaveAttachment`:
-//	   2.1 b473 `·` `.pyCategory = "File"`
-//	   2.4 b902 `·` `InsertGoogleStorage_Act` (Durasi 1800, Folder "Contract"; gagal → keluar b935)
-//	       3 b564 `.ext = @toLowerCase(Ext)`; 4 b712 `GetMimeType`; 5 b854 Exit bila ext kosong / octet-stream
-//	   2.6 b1199 `·` PRE `CARI51==""` T=3 → `InsertAttachProdName_Sql` hanya bila objek terkirim
-//	`Refresh` b65223 / `View` → `LoadAttachmentProdName`;  nama berkas b68857 → `DownloadAttProdName_Act`
-//	`Delete` b69663 → `DeleteAttacProdName_act`: 2 b409 `DeleteGoogleStorage_Act` (gagal → keluar), 3 b526 hapus rekam
+//	`Add attachment` b64747 → `ProductNameAttachContent` (submit `Attach` b24) → `ProductNameSaveAttachment`:
+//	   2.1 b475 `·` `.pyCategory = "File"`
+//	   2.4 b904 `·` `InsertGoogleStorage_Act` (Durasi 1800, Folder "Contract"; gagal → keluar b935)
+//	       3 b566 `.ext = @toLowerCase(Ext)`; 4 b714 `GetMimeType`; 5 b856 Exit bila ext kosong / octet-stream
+//	   2.6 b1201 `·` PRE `CARI51==""` T=3 → `InsertAttachProdName_Sql` hanya bila objek terkirim
+//	`Refresh` b65270 / `View` → `LoadAttachmentProdName`;  nama berkas b68903 → `DownloadAttProdName_Act`
+//	`Delete` b69714 → `DeleteAttacProdName_act`: 2 b411 `DeleteGoogleStorage_Act` (gagal → keluar), 3 b528 hapus rekam
 //
 // ⛔ PENYIMPANGAN SADAR (P5, tiket 08–09 `[keputusan work owner]`): Pega
 // mengirim berkas DULU lalu merekam; di sini rekam + antrean outbox lebih dulu
@@ -17,7 +17,7 @@ package services
 // ikut batal. Pengirimnya STUB (folder lokal `UNGGAHAN_DIR`): `ServiceGoogle`,
 // `LinkService`, token storage TIDAK dipanggil, alamatnya tidak ditulis.
 // ⛔ Berkas berjenis tak dikenal tabel `GetMimeType` DITOLAK berkalimat - di Pega
-// ia diam-diam tidak diunggah (Exit-Activity 5 b854) dan tidak direkam.
+// ia diam-diam tidak diunggah (Exit-Activity 5 b856) dan tidak direkam.
 
 import (
 	"archive/zip"
@@ -69,7 +69,7 @@ type PenyimpananBerkas interface {
 
 // Pesan VERBATIM dan nilai korpus.
 const (
-	// PesanTanpaBerkas - `ProductNameSaveAttachment` 1 b290 `Local.Err`.
+	// PesanTanpaBerkas - `ProductNameSaveAttachment` 1 b292 `Local.Err`.
 	PesanTanpaBerkas = "Tidak ada file yg diattach"
 	// KategoriLampiran - 2.1 b473.
 	KategoriLampiran = "File"
@@ -78,7 +78,7 @@ const (
 	DurasiLampiran = 1800
 )
 
-// ekstensiOffice - syarat tautan `View Office Online` b69247.
+// ekstensiOffice - syarat tautan `View Office Online` b69291.
 var ekstensiOffice = map[string]bool{"xls": true, "xlsx": true, "doc": true, "docx": true, "ppt": true, "pptx": true}
 
 var (
@@ -107,7 +107,7 @@ var (
 // zonaJakarta - `@CurrentDate(…, "Asia/Jakarta")`; WIB tanpa musim panas.
 var zonaJakarta = time.FixedZone("WIB", 7*3600)
 
-// namaObjek - `InsertGoogleStorage_Act` 8 b1337: Folder dan Namafile.
+// namaObjek - `InsertGoogleStorage_Act` 8 b1339: Folder dan Namafile.
 func namaObjek(saat time.Time, nama string) (folder, file string) {
 	w := saat.In(zonaJakarta)
 	folder = FolderLampiran + "/Doc/" + w.Format("2006") + "/" + w.Format("01") + "/"
@@ -125,7 +125,7 @@ func ekstensi(nama string) string {
 	return strings.ToLower(nama[i+1:])
 }
 
-// DaftarLampiran - `LoadAttachmentProdName` (`Refresh` b65223, `View` b74954).
+// DaftarLampiran - `LoadAttachmentProdName` (`Refresh` b65270, `View` b74973).
 func (l *Layanan) DaftarLampiran(ctx context.Context, p inti.Pelaku, produkID string) ([]models.Lampiran, error) {
 	if err := inti.WajibIdentitas(p); err != nil {
 		return nil, err
@@ -281,7 +281,7 @@ type BerkasUnduhan struct {
 	Isi  io.ReadCloser
 }
 
-// UnduhLampiran - tautan nama berkas b68857 (`DownloadAttProdName_Act` 6 b951).
+// UnduhLampiran - tautan nama berkas b68903 (`DownloadAttProdName_Act` 6 b953).
 func (l *Layanan) UnduhLampiran(ctx context.Context, p inti.Pelaku, produkID, id string) (BerkasUnduhan, error) {
 	if err := inti.WajibIdentitas(p); err != nil {
 		return BerkasUnduhan{}, err
@@ -304,7 +304,7 @@ func (l *Layanan) UnduhLampiran(ctx context.Context, p inti.Pelaku, produkID, id
 // tidak ada di folder stub (lampiran Pega lama) - kekurangan dinyatakan, bukan disembunyikan.
 const NamaDaftarTakTersedia = "_not-available.txt"
 
-// UnduhSemuaLampiran - tombol `Download All` b67619 → satu arsip zip lampiran
+// UnduhSemuaLampiran - tombol `Download All` b67657 → satu arsip zip lampiran
 // TERKIRIM produk ini (R15, OQ-MPNL-07). Mengembalikan jumlah berkas. Lampiran
 // yang berkasnya tidak ada di folder stub dicantumkan di `_not-available.txt`;
 // bila TIDAK SATU PUN tersedia, jawabannya 409 berkalimat.
@@ -360,8 +360,8 @@ func (l *Layanan) UnduhSemuaLampiran(ctx context.Context, p inti.Pelaku, produkI
 	return len(ada), z.Close()
 }
 
-// HapusLampiran - `Delete` b69663 (`DeleteAttacProdName_act`): berkas dulu (2
-// b409; gagal = rekam tetap), lalu objek dan rekam (3 b526) di satu transaksi.
+// HapusLampiran - `Delete` b69714 (`DeleteAttacProdName_act`): berkas dulu (2
+// b411; gagal = rekam tetap), lalu objek dan rekam (3 b528) di satu transaksi.
 // Berkas yang sudah tidak ada di penyimpanan bukan galat (tiket 09 AC).
 func (l *Layanan) HapusLampiran(ctx context.Context, p inti.Pelaku, produkID, id string) error {
 	if err := inti.WajibIdentitas(p); err != nil {
@@ -397,7 +397,7 @@ func (l *Layanan) HapusLampiran(ctx context.Context, p inti.Pelaku, produkID, id
 	})
 }
 
-// LihatOffice - tautan `View Office Online` b69247 (stub, OQ-MPNL-11).
+// LihatOffice - tautan `View Office Online` b69291 (stub, OQ-MPNL-11).
 func (l *Layanan) LihatOffice(ctx context.Context, p inti.Pelaku, produkID, id string) error {
 	if err := inti.WajibIdentitas(p); err != nil {
 		return err

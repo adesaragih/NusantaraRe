@@ -53,7 +53,7 @@ func TestSimpanBaruIdentitasDariSequenceDanJejakPelaku(t *testing.T) {
 		t.Errorf("medan mati tidak pernah dari klien: %+v", p.Umum)
 	}
 	if p.Umum.PolicyHolder != "UJI-ORG-1" || p.Umum.PolicyHolderName != "UJI PEMEGANG" {
-		t.Errorf("SaveProductName_Act 1 b359: POLICYHODER disalin dari inward: %+v", p.Umum)
+		t.Errorf("SaveProductName_Act 1 b361: POLICYHODER disalin dari inward: %+v", p.Umum)
 	}
 	if p.Umum.RIComm != "12.5" {
 		t.Errorf("koma desimal diterima sebagai titik: %q", p.Umum.RIComm)

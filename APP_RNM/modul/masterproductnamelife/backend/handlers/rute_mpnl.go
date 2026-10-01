@@ -4,7 +4,7 @@
 // Nol aturan dagang di sini; nol impor repository.
 //
 //	GET  /api/master-product-name-life/produk        grid `InboxProductName` (halaman awal)
-//	GET  /api/master-product-name-life/produk/{id}   tombol `View` b74753
+//	GET  /api/master-product-name-life/produk/{id}   tombol `View` b74798
 //	GET  /api/master-product-name-life/master/{jenis}?cari=&batas=  tujuh pemilih master (`Choose*`, PARITAS §4); `batas` = autocomplete
 //	GET  /api/master-product-name-life/master-plan?cari=     autocomplete `Plan Name` (PLAN LIST)
 //	GET  /api/master-product-name-life/rate?riRateId=        tombol `View Rate` - 503 (OQ-MPNL-03)

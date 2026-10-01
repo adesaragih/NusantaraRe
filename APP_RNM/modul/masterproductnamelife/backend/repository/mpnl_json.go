@@ -491,12 +491,12 @@ func bendera(lama json.RawMessage, v bool) json.RawMessage {
 }
 
 // RakitUmum menulis `M_PRODUCT_LIFE.JSONDATA` - padanan `@GetPageJSONString()`
-// halaman `ProductName` (`SaveProductName_Act` 8 b1623). `lama` = JSON
+// halaman `ProductName` (`SaveProductName_Act` 8 b1625). `lama` = JSON
 // tersimpan (kosong untuk produk baru): kunci yang tidak dikelola layar
 // dipertahankan; setiap kunci yang dibaca view `PRODUCT_LIFE` dijamin ada.
 //
 // `IsView`: produk baru tidak membawanya (`NewProductLife` tidak mengisinya);
-// simpan sesudah `Edit` menulisnya `false` (`SetViewEdit` b145).
+// simpan sesudah `Edit` menulisnya `false` (`SetViewEdit` b151).
 func RakitUmum(p models.Produk, lama string, baru bool) (string, error) {
 	obj, err := uraiObjek(lama)
 	if err != nil {
@@ -537,7 +537,7 @@ func RakitUmum(p models.Produk, lama string, baru bool) (string, error) {
 
 // RakitInward menulis `M_PRODUCTINWARD_LIFE.JSONDATA` - padanan
 // `@GetPageJSONString()` halaman `ProductNameInward` (`SaveProductName_Act` 14
-// b2717). `lama` = JSON tersimpan (kosong untuk baris baru): kunci yang tidak
+// b2719). `lama` = JSON tersimpan (kosong untuk baris baru): kunci yang tidak
 // dikelola layar dipertahankan; setiap kunci yang dibaca view
 // `PRODUCTINWARD_LIFE` dijamin ada.
 func RakitInward(p models.Produk, lama string) (string, error) {
@@ -558,7 +558,7 @@ func RakitInward(p models.Produk, lama string) (string, error) {
 
 // HalamanPega - medan skalar halaman `ProductName` dan `ProductNameInward`
 // berkunci Pega, sebagai teks (tanggal `dd/MM/yyyy`) - sumber `Generate`
-// (`GenerateUpload_Act` 2 b330 membaca halaman clipboard apa adanya).
+// (`GenerateUpload_Act` 2 b332 membaca halaman clipboard apa adanya).
 func HalamanPega(p models.Produk) (umum, inward map[string]string) {
 	u, i := map[string]json.RawMessage{}, map[string]json.RawMessage{}
 	tulisMedan(u, medanUmum, &p.Umum)

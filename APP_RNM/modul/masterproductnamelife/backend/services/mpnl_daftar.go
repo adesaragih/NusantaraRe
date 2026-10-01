@@ -2,11 +2,11 @@ package services
 
 // Daftar bersarang produk (paket 6–7) - gerbang per baris.
 //
-//	PLAN LIST b31560           `ProteksiPlanListLife` (onChange `.Plan` b33163, setiap `Delete` baris):
-//	                           2.1.1 b563 `·` `.Plan==""`  → "Plan tidak boleh kosong" (b442)
-//	                           2.1.2 b713 `·` plan sama di baris lain → "Plan tidak boleh sama" (b421)
-//	                           2.1.3 b874 `·` `.RIRATE==""` → "RI/RATE tidak boleh kosong" (b463)
-//	UNDERWRITING LIMIT b42078  angka desimal, Min ≤ Max (R17); `Medical` teks bebas (R16)
+//	PLAN LIST b31557           `ProteksiPlanListLife` (onChange `.Plan` b33163, setiap `Delete` baris):
+//	                           2.1.1 b565 `·` `.Plan==""`  → "Plan tidak boleh kosong" (b442)
+//	                           2.1.2 b715 `·` plan sama di baris lain → "Plan tidak boleh sama" (b421)
+//	                           2.1.3 b876 `·` `.RIRATE==""` → "RI/RATE tidak boleh kosong" (b463)
+//	UNDERWRITING LIMIT b42075  angka desimal, Min ≤ Max (R17); `Medical` teks bebas (R16)
 //
 // ⛔ Pesan Pega dipasang di medan barisnya; di sini diawali judul grid dan
 // nomor baris (mulai 1) supaya layar dapat menunjuknya.
@@ -20,7 +20,7 @@ import (
 	"nusantarare/modul/masterproductnamelife/backend/models"
 )
 
-// Pesan VERBATIM `ProteksiPlanListLife` 2 b345.
+// Pesan VERBATIM `ProteksiPlanListLife` 2 b347.
 const (
 	PesanPlanSama         = "Plan tidak boleh sama"      // b421
 	PesanPlanKosong       = "Plan tidak boleh kosong"    // b442
@@ -29,8 +29,8 @@ const (
 
 // Judul grid VERBATIM.
 const (
-	judulPlan    = "PLAN LIST"          // b31560
-	judulUWLimit = "UNDERWRITING LIMIT" // b42078
+	judulPlan    = "PLAN LIST"          // b31557
+	judulUWLimit = "UNDERWRITING LIMIT" // b42075
 )
 
 func (pk *periksa) baris(judul string, i int, format string, a ...any) {
@@ -57,8 +57,8 @@ func periksaPlan(pk *periksa, daftar []models.BarisPlan) {
 }
 
 // gerbangPlan - kapan `ProteksiPlanListLife` dijalankan saat simpan. Di Pega ia
-// berjalan pada onChange `.Plan` b33163 dan setiap `Delete` baris `PLAN LIST` b35202,
-// `FINANCIAL UNDERWRITING` b39975, `UNDERWRITING LIMIT` b45633 - bukan pada
+// berjalan pada onChange `.Plan` b33163 dan setiap `Delete` baris `PLAN LIST` b35214,
+// `FINANCIAL UNDERWRITING` b40024, `UNDERWRITING LIMIT` b45682 - bukan pada
 // `SaveProductName_Act`. Padanannya di sini: `PLAN LIST` berubah dari yang tersimpan
 // (baris ditambah, diubah, dihapus), atau baris salah satu grid lain berkurang.
 // Produk lama yang daftar plannya tidak disentuh tetap dapat disimpan.
@@ -82,8 +82,8 @@ func gerbangPlan(m *models.Produk, tersimpan models.Produk) bool {
 
 // Judul grid VERBATIM untuk pesan `asli`.
 const (
-	judulLien    = "LIEN CLAUSE (Potongan Manfaat Klaim)" // b12204
-	judulDokumen = "DOCUMENT CLAIM"                       // b14604
+	judulLien    = "LIEN CLAUSE (Potongan Manfaat Klaim)" // b12201
+	judulDokumen = "DOCUMENT CLAIM"                       // b14601
 )
 
 // pesanAsliAsing - `asli` baris (kunci JSON lama yang tidak dikelola layar) yang
@@ -175,10 +175,10 @@ func (l *Layanan) periksaPilihanPlan(ctx context.Context, pk *periksa, daftar []
 }
 
 // Judul grid VERBATIM paket 7.
-const judulFinUW = "FINANCIAL UNDERWRITING" // b37151
+const judulFinUW = "FINANCIAL UNDERWRITING" // b37148
 
 // periksaFinUW - angka dan rentang baris `FINANCIAL UNDERWRITING` (`Min Insured`
-// b37674, `Max Insured` b37822 = `pxNumber`; `Employee`, `Non-Employee` teks).
+// b37670, `Max Insured` b37818 = `pxNumber`; `Employee`, `Non-Employee` teks).
 func periksaFinUW(pk *periksa, daftar []models.BarisFinUW) {
 	for i := range daftar {
 		b := &daftar[i]
@@ -194,9 +194,9 @@ func periksaFinUW(pk *periksa, daftar []models.BarisFinUW) {
 // bentukWaktuPega - `@CurrentDateTime()` Pega (`YYYYMMDDTHHMMSS.SSS GMT`).
 const bentukWaktuPega = "20060102T150405.000 GMT"
 
-// barisKomentar - `AddCommentList_Act` 1 b233 `·`: `Date = @CurrentDateTime()`,
+// barisKomentar - `AddCommentList_Act` 1 b235 `·`: `Date = @CurrentDateTime()`,
 // `OperatorName = OperatorID.pxInsName` (akun pelaku), `IsApproved = param.status`
-// (tidak dikirim `SaveProductName_Act` 7 b1513 → kosong), `Suggest = param.comment`
+// (tidak dikirim `SaveProductName_Act` 7 b1515 → kosong), `Suggest = param.comment`
 // (`ProductName.Comment`).
 func barisKomentar(saat time.Time, akun, komentar string) models.BarisKomentar {
 	return models.BarisKomentar{Date: saat.UTC().Format(bentukWaktuPega), OperatorName: akun, Suggest: komentar}

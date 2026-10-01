@@ -1,9 +1,9 @@
 // Panel lampiran - `InboxProductName` wadah b64133 (PARITAS §6), grid `TempData.AttachmentList`.
 //
-//  `Add attachment` b64698 → `ProductNameAttachContent` (submit `Attach` b24, `Cancel` b22) → `ProductNameSaveAttachment`
-//  `Refresh` b65223 → `LoadAttachmentProdName`;  `Download All` b67619 (zip lampiran produk ini, RALAT R15)
-//  tautan nama berkas b68857 → `DownloadAttProdName_Act`;  `View Office Online` b69247 (stub 503, OQ-MPNL-11)
-//  `Delete` b69663 → `DeleteAttacProdName_act`.  `Download` b67338 (`OTHER FALSE`) mati - tidak dirender.
+//  `Add attachment` b64747 → `ProductNameAttachContent` (submit `Attach` b24, `Cancel` b22) → `ProductNameSaveAttachment`
+//  `Refresh` b65270 → `LoadAttachmentProdName`;  `Download All` b67657 (zip lampiran produk ini, RALAT R15)
+//  tautan nama berkas b68903 → `DownloadAttProdName_Act`;  `View Office Online` b69291 (stub 503, OQ-MPNL-11)
+//  `Delete` b69714 → `DeleteAttacProdName_act`.  `Download` b67376 (`OTHER FALSE`) mati - tidak dirender.
 //
 // ⛔ Lampiran melekat pada produk TERSIMPAN (tiket 08: produk dulu, lampiran menyusul) - panel ini dirender
 // hanya untuk produk ber-ID. Status per lampiran (terunggah / gagal / belum) dan kirim ulang: tiket 08–09.

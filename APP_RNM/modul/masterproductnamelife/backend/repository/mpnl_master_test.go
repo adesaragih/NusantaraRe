@@ -17,21 +17,21 @@ func TestSQLMasterMengikutiRD(t *testing.T) {
 		wajib []string
 		binds int
 	}{
-		// BrowseCedingCoLife_RD: B AND A AND C - ID Contains "L0" b565, ClientName Contains b584, StatusActive = 1 b601;
-		// urut ClientName ASC b745; maks 10000 b723.
+		// BrowseCedingCoLife_RD: B AND A AND C - ID Contains "L0" b570, ClientName Contains b587, StatusActive = 1 b607;
+		// urut ClientName ASC b747; maks 10000 b723.
 		{models.MasterCeding, []string{"FROM S.AGENT", "ID LIKE :1", "UPPER(CLIENTNAME) LIKE :2", "STATUSACTIVE = :3",
 			"ORDER BY CLIENTNAME ASC", "FETCH FIRST 10000 ROWS ONLY"}, 3},
 		{models.MasterSOB, []string{"FROM S.AGENT", "ID LIKE :1", "UPPER(CLIENTNAME) LIKE :2", "STATUSACTIVE = :3"}, 3},
-		// BrowseClientNusaRe_RD: Name Contains b549, Name != "-" b565, Name IS NOT NULL b583; urut Name, BU_Note; maks 100000.
+		// BrowseClientNusaRe_RD: Name Contains b556, Name != "-" b570, Name IS NOT NULL b597; urut Name, BU_Note; maks 100000.
 		{models.MasterPemegangPolis, []string{"FROM S.CLIENT", "UPPER(NAME) LIKE :1", "NAME <> :2", "NAME IS NOT NULL",
 			"ORDER BY NAME ASC, BU_NOTE ASC", "FETCH FIRST 100000 ROWS ONLY"}, 2},
-		// BrowseCurrencyLIFE_RD: Currency != "ITL" b534, Currency Contains b549; urut Currency ASC b755; maks 500.
+		// BrowseCurrencyLIFE_RD: Currency != "ITL" b541, Currency Contains b553; urut Currency ASC b757; maks 500.
 		{models.MasterMataUang, []string{"FROM S.CURRENCY", "CURRENCY <> :1", "UPPER(CURRENCY) LIKE :2",
 			"ORDER BY CURRENCY ASC", "FETCH FIRST 500 ROWS ONLY"}, 2},
-		// BrowseRIRiskSummary: USEDBY Contains Param.SearchUsedby b550; urut ID ASC b680.
+		// BrowseRIRiskSummary: USEDBY Contains Param.SearchUsedby b555; urut ID ASC b682.
 		{models.MasterRIRisk, []string{"FROM S.RIRISK_LIFE_SUMMARY", "UPPER(USEDBY) LIKE :1", "ORDER BY ID ASC",
 			"FETCH FIRST 500 ROWS ONLY"}, 1},
-		// BrowseCauseofLossLife_RD: CauseofLoss Contains b496; urut ID ASC b596.
+		// BrowseCauseofLossLife_RD: CauseofLoss Contains b502; urut ID ASC b598.
 		{models.MasterPenyebab, []string{"FROM S.CAUSEOFLOSS_LIFE", "UPPER(CAUSEOFLOSS) LIKE :1", "ORDER BY ID ASC"}, 1},
 	}
 	for _, k := range kasus {

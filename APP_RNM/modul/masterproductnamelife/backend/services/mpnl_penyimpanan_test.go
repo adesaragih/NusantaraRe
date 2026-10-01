@@ -53,7 +53,7 @@ func TestPenyimpananLokalKirimIdempotenHapusTanpaGalat(t *testing.T) {
 }
 
 func TestNamaObjekPolaPega(t *testing.T) {
-	// `InsertGoogleStorage_Act` 8 b1337: Asia/Jakarta, `yyyyMMdd-hhmmss-S` (jam 12-an, milidetik tanpa nol depan).
+	// `InsertGoogleStorage_Act` 8 b1339: Asia/Jakarta, `yyyyMMdd-hhmmss-S` (jam 12-an, milidetik tanpa nol depan).
 	folder, file := namaObjek(time.Date(2026, 1, 5, 17, 4, 5, 7_000_000, time.UTC), "x.pdf")
 	if folder != "Contract/Doc/2026/01/" || file != "20260106-120405-7 - x.pdf" {
 		t.Errorf("%q %q", folder, file)

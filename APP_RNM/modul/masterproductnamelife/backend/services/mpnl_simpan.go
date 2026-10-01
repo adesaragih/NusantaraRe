@@ -1,15 +1,15 @@
 package services
 
-// Simpan produk (paket 3: sisi umum, tiket 02) - padanan tombol `Save` b58998
+// Simpan produk (paket 3: sisi umum, tiket 02) - padanan tombol `Save` b59041
 // → `SaveProductName_Confirm` (submit `Save` b34) → `SaveProductName_Act`
 // (`pyLocalActionActivity` b101) TANPA prosedur `PEGA_M_PRODUCT_LIFE`:
 //
-//	1  b359  `·` PRE=false  UPDATEOP ← operator; POLICYHODER/POLICYHODERNAME ← inward
-//	6  b1368 `·` PRE=true `@PropertyHasValue(CREATEOP)` T=3 F=2  CREATEOP ← operator bila kosong
-//	8  b1623 `·` PRE=false  JSON halaman ProductName
-//	9  b1831 `·` PRE=false  simpan JSON - ID baru '1' ‖ LPAD(M_PRODUCT_LIFE_SEQ, 5) (P6)
-//	10 b2019 `·` PRE=false  kolom datar RIRISKID, RIRISK (R8)
-//	11 b2207 `·` PRE=false  ID dikembalikan, form ditutup
+//	1  b361  `·` PRE=false  UPDATEOP ← operator; POLICYHODER/POLICYHODERNAME ← inward
+//	6  b1370 `·` PRE=true `@PropertyHasValue(CREATEOP)` T=3 F=2  CREATEOP ← operator bila kosong
+//	8  b1625 `·` PRE=false  JSON halaman ProductName
+//	9  b1833 `·` PRE=false  simpan JSON - ID baru '1' ‖ LPAD(M_PRODUCT_LIFE_SEQ, 5) (P6)
+//	10 b2021 `·` PRE=false  kolom datar RIRISKID, RIRISK (R8)
+//	11 b2209 `·` PRE=false  ID dikembalikan, form ditutup
 //
 // ⛔ Baru = POST, ubah = PUT: identitas tidak pernah dari klien (ADR-0006).
 // ⛔ Medan milik server (pembuat, pengubah, medan layar mati, riwayat
@@ -41,15 +41,15 @@ type GudangTulis interface {
 
 // Label VERBATIM medan form (PARITAS §3) - dipakai kalimat penolakan.
 const (
-	labelProductName = "Product Name"  // b3652
-	labelCeding      = "Ceding"        // b4107
-	labelSOB         = "SOB"           // b4495
-	labelDeduction   = "Deduction (%)" // b7137
-	labelRIRisk      = "R/I Risk Name" // b7430
-	labelCause       = "Cause Of Loss" // b10693
+	labelProductName = "Product Name"  // b3620
+	labelCeding      = "Ceding"        // b4075
+	labelSOB         = "SOB"           // b4463
+	labelDeduction   = "Deduction (%)" // b7104
+	labelRIRisk      = "R/I Risk Name" // b7398
+	labelCause       = "Cause Of Loss" // b10661
 )
 
-// Pesan wajib-isi VERBATIM - `SaveProductName_Act` langkah 1 b359 menyetel
+// Pesan wajib-isi VERBATIM - `SaveProductName_Act` langkah 1 b361 menyetel
 // `local.errMsg1..4`, langkah 2–5 (PRE=true, WHEN `== ""`, F=3) memasangnya.
 const (
 	PesanProductNameKosong   = "Product Name Empty"  // b431 - langkah 2 b668, WHEN b805 `ProductName.PRODUCTNAME==""`
@@ -82,11 +82,11 @@ func periksaWajibIsi(pk *periksa, m *models.Produk) {
 
 // Label VERBATIM medan inward (PARITAS §3.2).
 const (
-	labelPolicyHolder = "Policy Holder" // b17129
-	labelCurrency     = "Currency"      // b28173
-	labelBegin        = "Begin Date"    // b22001
-	labelSTNC         = "STNC"          // b22336
-	labelMature       = "Expired Date"  // b27282
+	labelPolicyHolder = "Policy Holder" // b17097
+	labelCurrency     = "Currency"      // b28140
+	labelBegin        = "Begin Date"    // b21969
+	labelSTNC         = "STNC"          // b22304
+	labelMature       = "Expired Date"  // b27250
 	labelMinAge       = "Minimum Age (Years)"
 	labelMaxAge       = "Maximum Age (Years)"
 	labelMinSI        = "Min Sum Insured"
@@ -192,7 +192,7 @@ func pilihanUmum(m *models.Produk, lama models.ProdukUmum) []pilihan {
 // nil = produk baru).
 //
 // `sumber` = produk tersimpan (ubah) atau produk asal `Copy` (baru, `CopyProduct`
-// b138/b161 hanya mengosongkan kedua ID - medan lain ikut tersalin); nil = baru.
+// b144/b173 hanya mengosongkan kedua ID - medan lain ikut tersalin); nil = baru.
 func lengkapiMilikServer(m *models.Produk, sumber *models.Produk, baru bool, p inti.Pelaku) {
 	var simpan models.Produk
 	if sumber != nil {
@@ -219,7 +219,7 @@ func lengkapiMilikServer(m *models.Produk, sumber *models.Produk, baru bool, p i
 	in.LienClause, in.Months = si.LienClause, si.Months
 	in.ID, in.ProductID = si.ID, m.ID
 	if baru {
-		in.ID = "" // `CopyProduct` 2 b161; penulis memberi ID = ID produk (R14)
+		in.ID = "" // `CopyProduct` 2 b173; penulis memberi ID = ID produk (R14)
 	}
 	// Langkah 1 b359: pemegang polis disalin dari halaman inward ke halaman umum.
 	u.PolicyHolder, u.PolicyHolderName = m.Inward.PolicyHolder, m.Inward.PolicyHolderName

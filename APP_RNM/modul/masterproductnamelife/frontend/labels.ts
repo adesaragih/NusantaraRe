@@ -340,7 +340,7 @@ export const LAMPIRAN_MPNL = {
   cancel: 'Cancel',
 } as const
 
-/** Pilihan `Premium Payment Method` b25642 - daftarnya `associated` (tidak ikut ekspor); teks dan kodenya dari
+/** Pilihan `Premium Payment Method` b25611 - daftarnya `associated` (tidak ikut ekspor); teks dan kodenya dari
  *  ekspresi `@if` `GenerateUpload_Act.xml` b1141 (`CARI37`). Kode `Single` tidak diketahui (OQ-MPNL-05). */
 export const PEMBAYARAN_MPNL = {
   /** `GenerateUpload_Act.xml` b1141 - `PAYMENT==1`. */
@@ -363,11 +363,11 @@ export const PESAN_MPNL = {
 export const LAIN_MPNL = {
   /** `[tidak ada di korpus]` - grid tanpa baris (ADR-U-0027: kosong dinyatakan). */
   kosong: 'No items',
-  /** `[tidak ada di korpus]` - ikon grid bawaan `pzPegaDefaultGridIcons` (`LIEN CLAUSE` b12339, `DOCUMENT CLAIM` b14726): tambah baris. */
+  /** `[tidak ada di korpus]` - ikon grid bawaan `pzPegaDefaultGridIcons` (`LIEN CLAUSE` b12373, `DOCUMENT CLAIM` b14760): tambah baris. */
   tambahBaris: 'Add row',
   /** `[tidak ada di korpus]` - ikon grid bawaan `pzPegaDefaultGridIcons`: hapus baris. */
   hapusBaris: 'Delete row',
-  /** `[tidak ada di korpus]` - ikon `pxIcon` tanpa tooltip b39632 (`CopyFinancialWriting`) / b45290 (`CopyUnderWritingLimit`). */
+  /** `[tidak ada di korpus]` - ikon `pxIcon` tanpa tooltip b39697 (`CopyFinancialWriting`) / b45355 (`CopyUnderWritingLimit`). */
   salinBaris: 'Copy row',
   /** `[tidak ada di korpus]` - status lampiran tiket 08 AC 4 (`terunggah`). */
   terunggah: 'Uploaded',

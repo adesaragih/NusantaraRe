@@ -1,11 +1,11 @@
 package services
 
-// `Generate` b60081 → `GenerateUpload_Act` b60216 (paket 9, PARITAS §3.3):
+// `Generate` b60122 → `GenerateUpload_Act` b60228 (paket 9, PARITAS §3.3):
 //
-//	1 b224 `·` Page-Remove `TempWorkpage1`
-//	2 b330 `·` satu baris `pxResults` - `CARI1..CARI40` dari halaman `ProductName`
+//	1 b226 `·` Page-Remove `TempWorkpage1`
+//	2 b332 `·` satu baris `pxResults` - `CARI1..CARI40` dari halaman `ProductName`
 //	           dan `ProductNameInward` di clipboard (isi form saat itu, tanpa simpan)
-//	3 b1283 `·` `pxConvertResultsToCSV` `FileName=SeeDetail` b1335,
+//	3 b1285 `·` `pxConvertResultsToCSV` `FileName=SeeDetail` b1335,
 //	           `CSVPropHeaders` b1340 (39 judul), `CSVProperties` b1343 (40 properti)
 //
 // ⚠️ OQ-MPNL-06: 39 judul untuk 40 properti, dan properti ke-12 tertulis `CARI2`

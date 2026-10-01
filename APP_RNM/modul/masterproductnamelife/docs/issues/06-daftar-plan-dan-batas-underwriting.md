@@ -98,12 +98,12 @@ make check
 | Kalimat lama | Ralat |
 | --- | --- |
 | *"Tulis/baca kedua tabel anak **di dalam transaksi produk**"* | **P1**: bukan tabel anak — larik `PlanList` dan `UnderwritingLimitList` di `M_PRODUCT_LIFE.JSONDATA`, ditulis bersama produk di satu transaksi; urutan baris dipertahankan, daftar kosong = `[]` |
-| *"Status medis hanya menerima **`FCL`**, **`NM`**, atau **`MEDIS`**; nilai lain **ditolak**"* | **R16**: tidak ditegakkan — `.Medical` b44817 teks bebas; tiga nilai itu tebakan dari satu contoh (OQ-MPNL-12) |
-| *"**RI Rate pada baris plan** berasal dari master RI Rate"* | **R18**: sumbernya view atas JSON rate — `Choose R/I Rate` b34548 dan `View Rate` b34067 menjawab 503 berkalimat sampai OQ-MPNL-03; pasangan `RIRATE`/`RIRATEID` yang sudah tersimpan diterima, yang **baru** ditolak 422 menyebut OQ-MPNL-03. ⚠️ Akibatnya baris plan baru belum dapat disimpan (`RI/RATE tidak boleh kosong`) |
+| *"Status medis hanya menerima **`FCL`**, **`NM`**, atau **`MEDIS`**; nilai lain **ditolak**"* | **R16**: tidak ditegakkan — `.Medical` b44814 teks bebas; tiga nilai itu tebakan dari satu contoh (OQ-MPNL-12) |
+| *"**RI Rate pada baris plan** berasal dari master RI Rate"* | **R18**: sumbernya view atas JSON rate — `Choose R/I Rate` b34589 dan `View Rate` b34113 menjawab 503 berkalimat sampai OQ-MPNL-03; pasangan `RIRATE`/`RIRATEID` yang sudah tersimpan diterima, yang **baru** ditolak 422 menyebut OQ-MPNL-03. ⚠️ Akibatnya baris plan baru belum dapat disimpan (`RI/RATE tidak boleh kosong`) |
 | Rule sumber `ProteksiPlanListLife` *"daftar plan"* | gerbang VERBATIM per baris: `Plan tidak boleh kosong` (b442), `Plan tidak boleh sama` (b421), `RI/RATE tidak boleh kosong` (b463), diawali `PLAN LIST row N:`. Pega menjalankannya pada onChange `.Plan` b33163 dan setiap `Delete` baris; di sini saat simpan (pesan di halaman memblokir submit Pega dengan efek yang sama) |
-| (tidak disebut) autocomplete `Plan Name` b33124 | `GET /api/master-product-name-life/master-plan?cari=` — RD `BrowseProductTypeLife_RD` (kelas `PRODUCT_TYPE_LIFE`, OQ-MPNL-04): `Plan ← CoverName`, `PlanID ← ID`, `Name ← Business`, `Benefit ← Benefit`; plan yang berubah diverifikasi dan namanya dari master |
+| (tidak disebut) autocomplete `Plan Name` b33121 | `GET /api/master-product-name-life/master-plan?cari=` — RD `BrowseProductTypeLife_RD` (kelas `PRODUCT_TYPE_LIFE`, OQ-MPNL-04): `Plan ← CoverName`, `PlanID ← ID`, `Name ← Business`, `Benefit ← Benefit`; plan yang berubah diverifikasi dan namanya dari master |
 | *"Batas bawah yang **lebih besar** dari batas atas … **ditolak**"* | ditegakkan per baris `UNDERWRITING LIMIT`: `Min Insured` ≤ `Max Insured`, `Min Age` ≤ `Max Age` (R17) |
-| (tidak disebut) ikon salin b45290 `CopyUnderWritingLimit`, tombol `Add` b43598 / `Delete` b45633 | aksi baris di layar (paket 10): salin = baris baru berisi keenam medan baris itu (`CopyUnderWritingLimit` 1 b224) |
+| (tidak disebut) ikon salin b45355 `CopyUnderWritingLimit`, tombol `Add` b43643 / `Delete` b45682 | aksi baris di layar (paket 10): salin = baris baru berisi keenam medan baris itu (`CopyUnderWritingLimit` 1 b226) |
 
 ---
 
@@ -111,5 +111,14 @@ make check
 
 | Kalimat lama | Ralat |
 | --- | --- |
-| gerbang `ProteksiPlanListLife` menolak simpan (paket 6) | pemicu XML adalah onChange `.Plan` b33163 dan `Delete` baris (`PLAN LIST` b35202, `FINANCIAL UNDERWRITING` b39975, `UNDERWRITING LIMIT` b45633), **bukan** `SaveProductName_Act`. Server menjalankannya bila `PLAN LIST` berubah dari yang tersimpan atau baris salah satu grid lain berkurang — produk lama yang daftar plannya tidak disentuh tetap dapat disimpan. Duplikat diperiksa atas nama plan **sesudah** diseragamkan master `PRODUCT_TYPE_LIFE` |
+| gerbang `ProteksiPlanListLife` menolak simpan (paket 6) | pemicu XML adalah onChange `.Plan` b33163 dan `Delete` baris (`PLAN LIST` b35214, `FINANCIAL UNDERWRITING` b40024, `UNDERWRITING LIMIT` b45682), **bukan** `SaveProductName_Act`. Server menjalankannya bila `PLAN LIST` berubah dari yang tersimpan atau baris salah satu grid lain berkurang — produk lama yang daftar plannya tidak disentuh tetap dapat disimpan. Duplikat diperiksa atas nama plan **sesudah** diseragamkan master `PRODUCT_TYPE_LIFE` |
 
+---
+
+## Ralat bertanggal 01-10-2026 — lanjutan 1 (L6, data DEV)
+
+> Sumber: brief `PROMPT-LANJUTAN-MASTER-PRODUCT-NAME-LIFE-1.md` §1–§2 (katalog DEV `ALL_TAB_COLUMNS`/`ALL_OBJECTS` dan agregat `JSONDATA`, dibaca asisten, baca-saja).
+
+| Kalimat lama | Ralat |
+| --- | --- |
+| *"Status medis hanya menerima **`FCL`**, **`NM`**, atau **`MEDIS`**; nilai lain **ditolak**"* | **keliru** — DEV memuat lebih dari 60 nilai berbeda di `UnderwritingLimitList[*].Medical` (NM, FCL, A–H, kombinasi ME/MU/ECG, …); `.Medical` b44814 di XML teks bebas. **Teks bebas** (R16) — OQ-MPNL-12 ditutup |

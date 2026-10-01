@@ -121,9 +121,17 @@ make check
 | Kalimat lama | Ralat |
 | --- | --- |
 | *"**digabung jadi satu tabel `product_life`**"*; *"Go menulis **satu baris `product_life`**"* | **P1/P4**: dua tabel lama tetap — `M_PRODUCT_LIFE` dan `M_PRODUCTINWARD_LIFE` — ditulis dalam **satu transaksi**; gagal sisi inward membatalkan sisi umum (uji `TestSimpanAtomikDuaTabel`, tiruan dan `db`) |
-| Judul *"Sisi inward (kolom pada satu tabel)"*; rule sumber `SaveInwardProductName_Act` | **R11**: harness/section `InwardProductName` tak terjangkau (`Inward` b75322 `1=2`); medan inward diisi di `InboxProductName` dan disimpan `SaveProductName_Act` 13–16 — satu jalur simpan |
+| Judul *"Sisi inward (kolom pada satu tabel)"*; rule sumber `SaveInwardProductName_Act` | **R11**: harness/section `InwardProductName` tak terjangkau (`Inward` b75368 `1=2`); medan inward diisi di `InboxProductName` dan disimpan `SaveProductName_Act` 13–16 — satu jalur simpan |
 | *"Sisi inward dapat diisi dengan **keempat puluh field**"* | 40 kunci view `PRODUCTINWARD_LIFE` ditulis (yang tanpa medan form dari JSON lama, `""` untuk baris baru), ditambah medan form di luar view (`EXPIRYAGE`, `PREMIUMFACTOR`, `AnnuityInterest`, `PremiumRefundFactor`, `CURRENCYID`) — Pega menulisnya lewat `@GetPageJSONString()` tetapi tidak memuatnya kembali; di sini dimuat dari `JSONDATA` sendiri (P2) |
 | *"Tanggal (`BEGIN`, `MATURE`, `STNC`) tersimpan sebagai **tanggal**, bukan teks"* | **P1**: di `JSONDATA` teks `dd/MM/yyyy` seperti Pega (`BrowseReinstypeOR_SQL` b84); kolom datar `BEGIN_DATE` bertipe `DATE` (OQ-MPNL-08). Masukan diperiksa sebagai tanggal |
 | *"Menyimpan produk yang sudah ada memperbarui **kedua** sisi"* | tetap: baris inward lama diperbarui menurut **ID-nya sendiri** (data lama ber-ID sequence inward, bertaut `PRODUCTID`); produk tanpa baris inward mendapat baris ber-ID produk. ID inward produk baru = ID produk (**R14**, OQ-MPNL-02) |
 | *"Kolom pemegang polis bernama **`POLICYHOLDER`**"* | kunci JSON tetap `POLICYHODER` (dibaca view); nilainya dari pemilih `Policy Holder` (master `CLIENT`) dan disalin ke JSON umum |
 | *"Batas bawah yang **lebih besar** dari batas atas … **ditolak**"* | ditegakkan (**R17**): `Minimum Age (Years)` ≤ `Maximum Age (Years)`, `Min Sum Insured` ≤ `Max Sum Insured` |
+
+---
+
+## Ralat bertanggal 01-10-2026 — lanjutan 1 (katalog DEV)
+
+| Kalimat lama | Ralat |
+| --- | --- |
+| ralat paket 4 *"kolom datar `BEGIN_DATE` bertipe `DATE` (OQ-MPNL-08)"* | kolom datar hanya `RIRISKID`, `RIRISK` (DEV `ALL_TAB_COLUMNS`); `PRODUCTNAME` dan `BEGIN_DATE` tidak ada dan tidak ditulis — `6fd539c`. Tanggal tetap teks `dd/MM/yyyy` di `JSONDATA` |

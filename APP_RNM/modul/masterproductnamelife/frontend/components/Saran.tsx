@@ -1,5 +1,5 @@
-// Autocomplete `pxAutoComplete` - medan `Ceding` b4107, `SOB` b4495, `R/I Risk Name` b7430, `Policy Holder`
-// b17129, `Currency` b28173, dan `Plan Name` b33124 (grid `PLAN LIST`).
+// Autocomplete `pxAutoComplete` - medan `Ceding` b4075, `SOB` b4463, `R/I Risk Name` b7398, `Policy Holder`
+// b17097, `Currency` b28140, dan `Plan Name` b33121 (grid `PLAN LIST`).
 //
 // Pega: mengetik menyaring RD sumbernya (`Contains`), memilih satu baris menyalin ID + nama (`set*_DT`).
 // Di sini: mengetik mengubah nama dan MENGOSONGKAN pasangan ID-nya (pemanggil) - server menolak nama tanpa ID

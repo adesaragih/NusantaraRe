@@ -19,10 +19,10 @@ type Lampiran struct {
 	ID string `json:"id"` // `TO_CHAR(SYSTIMESTAMP, 'YYYYMMDDHH24MISSFF3')`
 	// ProdukID - kolom `TREATYID` (= `ProductName.ID`).
 	ProdukID string `json:"produkId"`
-	Category string `json:"category"` // `"File"` (`ProductNameSaveAttachment` 2.1 b473)
-	FileName string `json:"fileName"` // `File Name` b68430 (`.pyFileName`)
+	Category string `json:"category"` // `"File"` (`ProductNameSaveAttachment` 2.1 b475)
+	FileName string `json:"fileName"` // `File Name` b68426 (`.pyFileName`)
 	// FileMimeType - `.pyFileMimeType`: EKSTENSI berkas (huruf kecil), bentuk yang
-	// dibandingkan syarat `View Office Online` b69247 (`'xls'`, `'docx'`, ...).
+	// dibandingkan syarat `View Office Online` b69291 (`'xls'`, `'docx'`, ...).
 	FileMimeType string `json:"fileMimeType"`
 	UserName     string `json:"userName"`
 	// StorageID - kolom `T_STORAGE_ID` (= `IMAGEID`, `.type` di grid).
@@ -35,9 +35,9 @@ type Lampiran struct {
 // ObjekPenyimpanan - satu baris `T_STORAGE_IMAGE` (`Insert_T_Storage_SQL` b85).
 type ObjekPenyimpanan struct {
 	ImageID   string
-	AppFolder string // `Folder + "/Doc/" + YYYY + "/" + MM + "/"` (`InsertGoogleStorage_Act` 8 b1337)
-	FileName  string // `yyyyMMdd-hhmmss-S - <nama>` (8 b1337)
+	AppFolder string // `Folder + "/Doc/" + YYYY + "/" + MM + "/"` (`InsertGoogleStorage_Act` 8 b1339)
+	FileName  string // `yyyyMMdd-hhmmss-S - <nama>` (8 b1339)
 	AppName   string // `T_FOLDER_IMAGE.APPNAME` (`GetAppName_SQL` b58)
-	// DurasiDetik - `Durasi="1800"` (`ProductNameSaveAttachment` 2.4 b902) → `EXPDATE`.
+	// DurasiDetik - `Durasi="1800"` (`ProductNameSaveAttachment` 2.4 b904) → `EXPDATE`.
 	DurasiDetik int
 }

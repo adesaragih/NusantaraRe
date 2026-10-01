@@ -44,7 +44,7 @@ func TestCopyProdukBaruMewarisiMedanServerPembuatPelaku(t *testing.T) {
 		t.Fatal(err)
 	}
 	if p.ID != "100044" || p.Inward.ID != "100044" || p.Inward.ProductID != "100044" {
-		t.Errorf("salinan = produk baru, kedua ID dari sequence (CopyProduct b138/b161): %q %q %q", p.ID, p.Inward.ID, p.Inward.ProductID)
+		t.Errorf("salinan = produk baru, kedua ID dari sequence (CopyProduct b144/b173): %q %q %q", p.ID, p.Inward.ID, p.Inward.ProductID)
 	}
 	if p.Umum.CreateOp != "UJI-PELAKU" {
 		t.Errorf("CREATEOP salinan = pelaku (OQ-MPNL-13): %q", p.Umum.CreateOp)

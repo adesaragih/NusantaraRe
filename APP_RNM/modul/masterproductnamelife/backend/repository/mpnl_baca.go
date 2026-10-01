@@ -3,12 +3,12 @@ package repository
 // Pembaca produk (paket 1) - grid daftar dan satu produk utuh.
 //
 //	grid      `BrowseProduct_Life` (`InboxProductName.xml` b76658): view `PRODUCT_LIFE`,
-//	          tanpa saringan b681, urut `.ID ASC` b1094 - di sini `M_PRODUCT_LIFE`
+//	          tanpa saringan b682, urut `.ID ASC` b1096 - di sini `M_PRODUCT_LIFE`
 //	          sendiri (P2), kunci yang sama dengan yang dibaca view
 //	umum      `BrowseUnderwritingList` b61 `select JSONDATA … where ID = {ProductName.ID}`
-//	          (`SetProductName` 3 b780 `·`, lalu `adoptJSONObject` 4 b957 `·`)
-//	inward    `BrowseProductInward` saringan b834 `.PRODUCTID = Param.ProductID`
-//	          (`SetProductNameInward` 2 b826 `·`, 3.1 b1046 `·` - baris TERAKHIR menang)
+//	          (`SetProductName` 3 b782 `·`, lalu `adoptJSONObject` 4 b959 `·`)
+//	inward    `BrowseProductInward` saringan b840 `.PRODUCTID = Param.ProductID`
+//	          (`SetProductNameInward` 2 b828 `·`, 3.1 b1048 `·` - baris TERAKHIR menang)
 //
 // ⛔ Baris inward juga dicari lewat `ID` = ID produk: itulah kunci yang
 // dipakai Claim Life (`GetProductName.xml` `WHERE ID = …ProductNameID`) dan
@@ -196,7 +196,7 @@ func inwardMilikLain(id string, baris []barisJSON) string {
 	return ""
 }
 
-// AmbilProduk - satu produk utuh (tombol `View` b74753).
+// AmbilProduk - satu produk utuh (tombol `View` b74798).
 func (g *Gudang) AmbilProduk(ctx context.Context, tx *db.Tx, id string) (models.Produk, error) {
 	s, err := g.AmbilSimpanan(ctx, tx, id, false)
 	if err != nil {

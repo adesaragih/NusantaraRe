@@ -2,11 +2,11 @@ package handlers
 
 // Rute tulis modul Master Product Name Life.
 //
-//	POST /api/master-product-name-life/produk        produk BARU - `Add` b71816 → … → `Save` (paket 3)
-//	PUT  /api/master-product-name-life/produk/{id}   ubah - `View` → `Edit` b59443 → `Save` (paket 3)
-//	POST /api/master-product-name-life/produk/generate  `Generate` b60081 → `SeeDetail.csv` (paket 9)
+//	POST /api/master-product-name-life/produk        produk BARU - `Add` b71865 → … → `Save` (paket 3)
+//	PUT  /api/master-product-name-life/produk/{id}   ubah - `View` → `Edit` b59489 → `Save` (paket 3)
+//	POST /api/master-product-name-life/produk/generate  `Generate` b60122 → `SeeDetail.csv` (paket 9)
 //
-//	`Copy` b59812 = POST dengan `salinanDari`; `On Retention` diubah = `hitungOutward` (paket 9).
+//	`Copy` b59854 = POST dengan `salinanDari`; `On Retention` diubah = `hitungOutward` (paket 9).
 //
 // ⛔ POST dan PUT terpisah walau Pega punya satu `Save` ber-upsert: identitas
 // baru tidak pernah datang dari klien (ADR-0006), dan badan PUT yang membawa
@@ -72,7 +72,7 @@ func daftarkanTulis(pasang func(string, rute)) {
 		hasil, err := l.SimpanProduk(r.Context(), p, m, false)
 		tulis(w, hasil, err)
 	})
-	// `Generate` b60081 - CSV dari isi form saat itu (paket 9).
+	// `Generate` b60122 - CSV dari isi form saat itu (paket 9).
 	pasang("POST "+Prefix+"/produk/generate", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
 		var m models.Produk
 		if bacaBadan(w, r, &m) {

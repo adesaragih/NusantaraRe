@@ -1,7 +1,7 @@
 package services
 
 // Jalur baca produk (paket 1): grid daftar `InboxProductName` (mode daftar,
-// wadah b71246) dan satu produk utuh (tombol `View` b74753 → `SetProductName`
+// wadah b71246) dan satu produk utuh (tombol `View` b74798 → `SetProductName`
 // + `SetProductNameInward`).
 
 import (

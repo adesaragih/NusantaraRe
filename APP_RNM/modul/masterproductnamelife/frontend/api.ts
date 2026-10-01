@@ -189,9 +189,9 @@ export interface Produk {
   underwritingLimit: BarisUWLimit[]
   outwardList: BarisOutward[]
   commentList: BarisKomentar[]
-  /** Permintaan simpan saja: `Copy` b59812 - produk asal yang medan milik server-nya diwarisi. */
+  /** Permintaan simpan saja: `Copy` b59854 - produk asal yang medan milik server-nya diwarisi. */
   salinanDari?: string
-  /** Permintaan simpan saja: checkbox `On Retention` b47303 diubah - `OutwardList` dihitung ulang server. */
+  /** Permintaan simpan saja: checkbox `On Retention` b47312 diubah - `OutwardList` dihitung ulang server. */
   hitungOutward?: boolean
 }
 
@@ -204,7 +204,7 @@ export interface NilaiMaster {
 /** Jenis pemilih master - SAMA dengan `models.JenisMaster`. */
 export type JenisMaster = 'ceding' | 'sob' | 'pemegang-polis' | 'mata-uang' | 'ri-risk' | 'ri-rate' | 'penyebab'
 
-/** Satu jenis plan `PRODUCT_TYPE_LIFE` - autocomplete `Plan Name` b33124. */
+/** Satu jenis plan `PRODUCT_TYPE_LIFE` - autocomplete `Plan Name` b33121. */
 export interface JenisPlan {
   id: string
   coverName: string
@@ -221,7 +221,7 @@ export interface Lampiran {
   produkId: string
   category: string
   fileName: string
-  /** Ekstensi huruf kecil (`InsertGoogleStorage_Act` 3 b564). */
+  /** Ekstensi huruf kecil (`InsertGoogleStorage_Act` 3 b566). */
   fileMimeType: string
   userName: string
   storageId: string
@@ -246,7 +246,7 @@ export async function ambilDaftarProduk(): Promise<Daftar<RingkasanProduk>> {
   return minta<Daftar<RingkasanProduk>>(`${PREFIX_MPNL}/produk`)
 }
 
-/** Tombol `View` b74753 - satu produk, kedua sisi dan ketujuh daftar. */
+/** Tombol `View` b74798 - satu produk, kedua sisi dan ketujuh daftar. */
 export async function ambilProduk(id: string): Promise<Produk> {
   return minta<Produk>(`${PREFIX_MPNL}/produk/${e(id)}`)
 }
@@ -255,7 +255,7 @@ export async function ambilProduk(id: string): Promise<Produk> {
 // Tulis (paket 3-9).
 // ---------------------------------------------------------------------------
 
-/** `Save` b58998 → `SaveProductName_Act`: baru = POST (tanpa id), ubah = PUT `/{id}`. */
+/** `Save` b59041 → `SaveProductName_Act`: baru = POST (tanpa id), ubah = PUT `/{id}`. */
 export async function simpanProduk(p: Produk): Promise<Produk> {
   if (p.id === '') return minta<Produk>(`${PREFIX_MPNL}/produk`, { metode: 'POST', badan: p })
   return minta<Produk>(`${PREFIX_MPNL}/produk/${e(p.id)}`, { metode: 'PUT', badan: p })
@@ -265,7 +265,7 @@ export async function simpanProduk(p: Produk): Promise<Produk> {
 export const BERKAS_GENERATE = 'SeeDetail.csv'
 
 /**
- * `Generate` b60081 → `GenerateUpload_Act`: CSV dari isi form saat itu (POST ber-badan, jadi bukan
+ * `Generate` b60122 → `GenerateUpload_Act`: CSV dari isi form saat itu (POST ber-badan, jadi bukan
  * `unduhBerkasBeridentitas` yang hanya GET; preseden `ambilIsiDokumen` Claim Life). Galat = amplop `{galat}`.
  */
 export async function unduhGenerate(p: Produk): Promise<void> {
@@ -294,17 +294,17 @@ export async function unduhGenerate(p: Produk): Promise<void> {
 /** Saran autocomplete paling banyak sekian baris (`batas`); grid pemilih membaca seluruh hasil RD. */
 export const BATAS_SARAN = 20
 
-/** Tombol `Choose*` / autocomplete - `Search` diubah huruf besar di server (`SearchPolicyHolder_act` b234). */
+/** Tombol `Choose*` / autocomplete - `Search` diubah huruf besar di server (`SearchPolicyHolder_act` b236). */
 export async function cariMaster(jenis: JenisMaster, cari: string, batas?: number): Promise<Daftar<NilaiMaster>> {
   return minta<Daftar<NilaiMaster>>(`${PREFIX_MPNL}/master/${e(jenis)}`, { kueri: { cari, batas } })
 }
 
-/** Autocomplete `Plan Name` b33124 (RD `BrowseProductTypeLife_RD`). */
+/** Autocomplete `Plan Name` b33121 (RD `BrowseProductTypeLife_RD`). */
 export async function cariPlan(cari: string): Promise<Daftar<JenisPlan>> {
   return minta<Daftar<JenisPlan>>(`${PREFIX_MPNL}/master-plan`, { kueri: { cari } })
 }
 
-/** `View Rate` b34067 - menunggu OQ-MPNL-03 (server menjawab 503 berkalimat). */
+/** `View Rate` b34113 - menunggu OQ-MPNL-03 (server menjawab 503 berkalimat). */
 export async function ambilRate(riRateId: string): Promise<Daftar<Record<string, string>>> {
   return minta<Daftar<Record<string, string>>>(`${PREFIX_MPNL}/rate`, { kueri: { riRateId } })
 }
@@ -315,12 +315,12 @@ export async function ambilRate(riRateId: string): Promise<Daftar<Record<string,
 
 const lampiran = (produkID: string): string => `${PREFIX_MPNL}/produk/${e(produkID)}/lampiran`
 
-/** `Refresh` b65223 / `View` → `LoadAttachmentProdName`. */
+/** `Refresh` b65270 / `View` → `LoadAttachmentProdName`. */
 export async function ambilLampiran(produkID: string): Promise<Daftar<Lampiran>> {
   return minta<Daftar<Lampiran>>(lampiran(produkID))
 }
 
-/** `Add attachment` b64698 → `Attach` b24 (`ProductNameSaveAttachment`) - multipart `berkas`. */
+/** `Add attachment` b64747 → `Attach` b24 (`ProductNameSaveAttachment`) - multipart `berkas`. */
 export async function unggahLampiran(produkID: string, berkas: File | null): Promise<Lampiran> {
   const isi = new FormData()
   if (berkas !== null) isi.append('berkas', berkas)
@@ -332,22 +332,22 @@ export async function ulangiLampiran(produkID: string, id: string): Promise<Lamp
   return minta<Lampiran>(`${lampiran(produkID)}/${e(id)}/ulangi`, { metode: 'POST' })
 }
 
-/** Tautan nama berkas b68857 (`DownloadAttProdName_Act`). */
+/** Tautan nama berkas b68903 (`DownloadAttProdName_Act`). */
 export async function unduhLampiran(produkID: string, l: Lampiran): Promise<void> {
   return unduhBerkasBeridentitas(`${lampiran(produkID)}/${e(l.id)}/unduh`, l.fileName)
 }
 
-/** `Download All` b67619 - zip lampiran produk ini (RALAT R15). */
+/** `Download All` b67657 - zip lampiran produk ini (RALAT R15). */
 export async function unduhSemuaLampiran(produkID: string): Promise<void> {
   return unduhBerkasBeridentitas(`${lampiran(produkID)}/unduh-semua`, `lampiran-${produkID}.zip`)
 }
 
-/** `View Office Online` b69247 - stub: server menjawab 503 berkalimat (OQ-MPNL-11). */
+/** `View Office Online` b69291 - stub: server menjawab 503 berkalimat (OQ-MPNL-11). */
 export async function lihatOffice(produkID: string, id: string): Promise<void> {
   await minta<unknown>(`${lampiran(produkID)}/${e(id)}/office`)
 }
 
-/** `Delete` b69663 (`DeleteAttacProdName_act`). */
+/** `Delete` b69714 (`DeleteAttacProdName_act`). */
 export async function hapusLampiran(produkID: string, id: string): Promise<void> {
   await minta<unknown>(`${lampiran(produkID)}/${e(id)}`, { metode: 'DELETE' })
 }

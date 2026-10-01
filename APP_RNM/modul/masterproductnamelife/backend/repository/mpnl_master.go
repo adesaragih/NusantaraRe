@@ -3,7 +3,7 @@ package repository
 // Pembaca ketujuh master pendukung (paket 2, tiket 04) - DIBACA SAJA.
 //
 // Setiap pemilih: section `*_Section` → RD (PARITAS §4) berparam `CARI1`
-// (`SearchPolicyHolder.CARI1`, dihurufbesarkan `SearchPolicyHolder_act` 1 b234).
+// (`SearchPolicyHolder.CARI1`, dihurufbesarkan `SearchPolicyHolder_act` 1 b236).
 // Objek fisik = nama kelas `ASM-FW-GISFW-Int-<X>` - TERBUKTI di katalog DEV
 // `ALL_OBJECTS` 01-10-2026 (OQ-MPNL-04 ditutup, lanjutan 1 L3): tabel `AGENT`,
 // `CLIENT`; view `CURRENCY`, `CAUSEOFLOSS_LIFE`, `PRODUCT_TYPE_LIFE`,
@@ -42,10 +42,10 @@ var DaftarMasterDibacaSaja = []string{MasterAgent, MasterClient, MasterCurrency,
 
 // Nilai saringan VERBATIM RD.
 const (
-	saringIDCeding  = "%L0%" // `BrowseCedingCoLife_RD` b565 `.ID Contains "L0"`
-	saringAktif     = "1"    // b601 `.StatusActive = 1`
-	saringNamaStrip = "-"    // `BrowseClientNusaRe_RD` b565 `.Name != "-"`
-	saringBukanITL  = "ITL"  // `BrowseCurrencyLIFE_RD` b534 `.Currency != "ITL"`
+	saringIDCeding  = "%L0%" // `BrowseCedingCoLife_RD` b570 `.ID Contains "L0"`
+	saringAktif     = "1"    // b607 `.StatusActive = 1`
+	saringNamaStrip = "-"    // `BrowseClientNusaRe_RD` b570 `.Name != "-"`
+	saringBukanITL  = "ITL"  // `BrowseCurrencyLIFE_RD` b541 `.Currency != "ITL"`
 )
 
 // sumber - satu master: SQL cari, SQL ambil-satu, dan argumennya.
@@ -228,7 +228,7 @@ func (g *Gudang) AmbilMaster(ctx context.Context, jenis models.JenisMaster, id s
 	return d[0], true, nil
 }
 
-// KolomJenisPlan - kolom `PRODUCT_TYPE_LIFE` yang dibaca (`BrowseProductTypeLife_RD` b680–b710).
+// KolomJenisPlan - kolom `PRODUCT_TYPE_LIFE` yang dibaca (`BrowseProductTypeLife_RD` b682–b712).
 var KolomJenisPlan = []string{"ID", "COVERNAME", "BUSINESS", "BENEFIT"}
 
 // sqlCariPlan - autocomplete `Plan Name`: dicari pada `.CoverName` dan `.Business`

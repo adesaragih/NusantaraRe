@@ -18,12 +18,12 @@
 | Tombol (bNNN) | Layar yang terbuka | Hasil |
 | --- | --- | --- |
 | menu **Master Product Name Life** | grid `InboxProductName` mode daftar | 10 baris per halaman (`pyRDLPageSize`), tombol `Add` + `View` per baris + penomoran; total 196 produk = katalog DEV |
-| **`View`** b74753 (baris `100003`) | form mode lihat | 16 medan dibandingkan dengan `GET …/produk/100003`: `Product Code`, `Product Name`, `Ceding`, `SOB`, `Deduction (%)`, `R/I Risk Name`, `Treaty Name`, `Treaty Number`, `Policy Holder`, `Insured`, `Begin Date`, `Expired Date`, `Ceding's Limit`, `Max Sum Insured`, `Max Sum Reasured`, `Currency` — **16 cocok, 0 beda**. 46 medan baca-saja (`ro = IsView=='true'`). Tombol tampil: `Close`, `Edit`, `Copy`, `Generate` (tanpa `Save`, tanpa `Choose*`), `PLAN LIST` `Add` + `View Rate`/`Delete` per baris (vis `ALWAYS` / `.RIRATE!=''`) |
+| **`View`** b74798 (baris `100003`) | form mode lihat | 16 medan dibandingkan dengan `GET …/produk/100003`: `Product Code`, `Product Name`, `Ceding`, `SOB`, `Deduction (%)`, `R/I Risk Name`, `Treaty Name`, `Treaty Number`, `Policy Holder`, `Insured`, `Begin Date`, `Expired Date`, `Ceding's Limit`, `Max Sum Insured`, `Max Sum Reasured`, `Currency` — **16 cocok, 0 beda**. 46 medan baca-saja (`ro = IsView=='true'`). Tombol tampil: `Close`, `Edit`, `Copy`, `Generate` (tanpa `Save`, tanpa `Choose*`), `PLAN LIST` `Add` + `View Rate`/`Delete` per baris (vis `ALWAYS` / `.RIRATE!=''`) |
 | (grid bersarang) | — | `PLAN LIST` 4 baris = `JSONDATA` 4; komentar 7 baris = 7; `LIEN CLAUSE`, `DOCUMENT CLAIM`, `FINANCIAL UNDERWRITING`, `UNDERWRITING LIMIT` kosong = `JSONDATA` kosong |
-| panel lampiran (wadah b64133) | daftar `GetAttachmentProdName_Sql` | 2 baris, status **Uploaded** keduanya (objek `T_STORAGE_IMAGE` ada); tautan nama berkas, `Delete` per baris, `Add attachment`, `Refresh`, `Download All`. **`View Office Online`** b69247 tampil untuk berkas `.pptx` dan **tidak** untuk `.jpg` — sesuai syarat `.pyFileMimeType` |
-| **`Refresh`** b65223 | — | daftar dibaca ulang (`GET …/lampiran`) |
-| **`View Rate`** b34067 | dialog `ViewRate` (`Outward List`, `Cancel`/`Submit`) | jawaban 503 berkalimat yang menyebut OQ-MPNL-03 tampil — L8 tidak diizinkan (register OQ tanpa izin bertanggal), tetap 503 |
-| **`Edit`** b59443 | dialog `EditProductName_Confirm` | pertanyaan `Do you want to Edit the data?` + `Cancel` / `Edit`; sesudah `Edit`: `Save` tampil (tidak ditekan), keenam `Choose*`, `Choose R/I Rate`, ikon grid; medan baca-saja tinggal 1 (`Product Code`, R14) |
+| panel lampiran (wadah b64133) | daftar `GetAttachmentProdName_Sql` | 2 baris, status **Uploaded** keduanya (objek `T_STORAGE_IMAGE` ada); tautan nama berkas, `Delete` per baris, `Add attachment`, `Refresh`, `Download All`. **`View Office Online`** b69291 tampil untuk berkas `.pptx` dan **tidak** untuk `.jpg` — sesuai syarat `.pyFileMimeType` |
+| **`Refresh`** b65270 | — | daftar dibaca ulang (`GET …/lampiran`) |
+| **`View Rate`** b34113 | dialog `ViewRate` (`Outward List`, `Cancel`/`Submit`) | jawaban 503 berkalimat yang menyebut OQ-MPNL-03 tampil — L8 tidak diizinkan (register OQ tanpa izin bertanggal), tetap 503 |
+| **`Edit`** b59489 | dialog `EditProductName_Confirm` | pertanyaan `Do you want to Edit the data?` + `Cancel` / `Edit`; sesudah `Edit`: `Save` tampil (tidak ditekan), keenam `Choose*`, `Choose R/I Rate`, ikon grid; medan baca-saja tinggal 1 (`Product Code`, R14) |
 
 ## Jaringan
 

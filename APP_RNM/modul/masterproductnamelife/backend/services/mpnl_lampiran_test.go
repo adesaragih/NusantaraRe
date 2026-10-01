@@ -101,7 +101,7 @@ func TestUnggahMerekamLaluMengirimLewatStub(t *testing.T) {
 		t.Errorf("rekam InsertAttachProdName_Sql + status: %+v", a)
 	}
 	o, ada := objek()[a.StorageID]
-	// InsertGoogleStorage_Act 8 b1337 (Asia/Jakarta, 12 jam): Folder + "/Doc/YYYY/MM/", "yyyyMMdd-hhmmss-S - nama".
+	// InsertGoogleStorage_Act 8 b1339 (Asia/Jakarta, 12 jam): Folder + "/Doc/YYYY/MM/", "yyyyMMdd-hhmmss-S - nama".
 	if !ada || o.AppFolder != "Contract/Doc/2026/10/" || o.FileName != "20261001-080203-456 - UJI Nota.PDF" ||
 		o.AppName != "UJI-APP" || o.DurasiDetik != 1800 {
 		t.Errorf("objek T_STORAGE_IMAGE: %+v %v", o, ada)
@@ -215,6 +215,6 @@ func TestViewOfficeOnlineStub(t *testing.T) {
 		t.Errorf("xlsx: penampil luar tidak dipanggil, 503 berkalimat: %v", err)
 	}
 	if err := l.LihatOffice(context.Background(), pelakuUji, "100007", p.ID); !errors.Is(err, services.ErrMasukanTidakSah) {
-		t.Errorf("pdf: tautan hanya untuk xls/xlsx/doc/docx/ppt/pptx (b69247): %v", err)
+		t.Errorf("pdf: tautan hanya untuk xls/xlsx/doc/docx/ppt/pptx (b69291): %v", err)
 	}
 }

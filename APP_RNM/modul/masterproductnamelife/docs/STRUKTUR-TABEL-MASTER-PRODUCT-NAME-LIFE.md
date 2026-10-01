@@ -18,8 +18,8 @@ Sumber tipe: `docs/dba-procedures-and-ddl.md` `[data DBA]`. ⛔ Procedure **tida
 
 ## M_PRODUCT_LIFE
 
-Sisi umum produk — halaman Pega `ProductName`. Penulis Pega `SaveProductName_Act` 9 b1831 (`SaveProductNameLIfe` →
-`PEGA_M_PRODUCT_LIFE`) dan 10 b2019 (`SaveProductNameLIfeFlat`). Dibaca view `PRODUCT_LIFE` dan `DOCUMENTCLAIM_LIFE`.
+Sisi umum produk — halaman Pega `ProductName`. Penulis Pega `SaveProductName_Act` 9 b1833 (`SaveProductNameLIfe` →
+`PEGA_M_PRODUCT_LIFE`) dan 10 b2021 (`SaveProductNameLIfeFlat`). Dibaca view `PRODUCT_LIFE` dan `DOCUMENTCLAIM_LIFE`.
 
 | Kolom | Tipe katalog | Isi |
 | --- | --- | --- |
@@ -27,12 +27,14 @@ Sisi umum produk — halaman Pega `ProductName`. Penulis Pega `SaveProductName_A
 | `JSONDATA` | CLOB, `IS JSON` | halaman `ProductName` berkunci Pega (`POLICYHODER`, `UnderwritingLimitList`, `OutwardList`, …); kunci yang dibaca view dijamin ada; kunci lama yang tidak dikelola layar dipertahankan |
 | `RIRISKID` | VARCHAR2(10) | = JSON `RIRISKID` (`SaveProductNameLIfeFlat` b84) |
 | `RIRISK` | VARCHAR2(100) | = JSON `RIRISK` |
-| `PRODUCTNAME` | VARCHAR2(1000) | = JSON `PRODUCTNAME` (OQ-MPNL-08) |
-| `BEGIN_DATE` | DATE | = `BEGIN` inward `dd/MM/yyyy` → `DATE`; NULL bila kosong (OQ-MPNL-08) |
+
+⭐ **Ralat 01-10-2026 (lanjutan 1 L1):** dua baris lama dikutip — *"`PRODUCTNAME` | VARCHAR2(1000) | = JSON `PRODUCTNAME` (OQ-MPNL-08)"*,
+*"`BEGIN_DATE` | DATE | = `BEGIN` inward `dd/MM/yyyy` → `DATE`; NULL bila kosong (OQ-MPNL-08)"* — dicabut: katalog DEV `ALL_TAB_COLUMNS`
+`M_PRODUCT_LIFE` hanya empat kolom di atas (`testdata/katalog-dev.json`, uji `TestKolomDitulisAdaDiKatalogDEV`).
 
 ## M_PRODUCTINWARD_LIFE
 
-Sisi inward — halaman Pega `ProductNameInward`. Penulis Pega `SaveProductName_Act` 15 b2862
+Sisi inward — halaman Pega `ProductNameInward`. Penulis Pega `SaveProductName_Act` 15 b2864
 (`SaveProductNameInwardLIfe` → `PEGA_M_PRODUCT_INWARD_LIFE`). Dibaca view `PRODUCTINWARD_LIFE` (Claim Life).
 
 | Kolom | Tipe katalog | Isi |
@@ -49,9 +51,9 @@ Rekam lampiran produk. Penulis Pega `InsertAttachProdName_Sql` b84, penghapus `D
 | --- | --- | --- |
 | `ID` | — | `TO_CHAR(SYSTIMESTAMP, 'YYYYMMDDHH24MISSFF3')` (dicoba ulang bila bentrok) |
 | `TREATYID` | — | ID produk (`ProductName.ID`) |
-| `CATEGORY` | — | `File` (`ProductNameSaveAttachment` 2.1 b473) |
+| `CATEGORY` | — | `File` (`ProductNameSaveAttachment` 2.1 b475) |
 | `FILENAME` | — | nama berkas asli |
-| `FILEMIMETYPE` | — | ekstensi huruf kecil (`InsertGoogleStorage_Act` 3 b564) |
+| `FILEMIMETYPE` | — | ekstensi huruf kecil (`InsertGoogleStorage_Act` 3 b566) |
 | `DATA_JSON` | — | NULL (`""` di Pega) |
 | `USERNAME` | — | akun pelaku |
 | `T_STORAGE_ID` | — | `ImageID` objek penyimpanan |

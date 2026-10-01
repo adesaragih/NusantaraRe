@@ -84,7 +84,7 @@ func TestRakitUmumMempertahankanKunciLama(t *testing.T) {
 		t.Errorf("IsORS lama boolean → ditulis boolean:\n%s", teks)
 	}
 	if !strings.Contains(teks, `"IsView":"false"`) {
-		t.Errorf("simpan sesudah Edit: IsView = \"false\" (SetViewEdit b145):\n%s", teks)
+		t.Errorf("simpan sesudah Edit: IsView = \"false\" (SetViewEdit b151):\n%s", teks)
 	}
 }
 

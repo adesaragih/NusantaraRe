@@ -1,5 +1,5 @@
-// `View Rate` b34067 (grid `PLAN LIST`, vis `OTHER .RIRATE!=''`) → `SetParamRate` b34299 + `localAction ViewRate`
-// b34332: FlowAction `ViewRate` (submit `Submit` b18, `Cancel` b20), section `ViewRate` - judul `Outward List`
+// `View Rate` b34113 (grid `PLAN LIST`, vis `OTHER .RIRATE!=''`) → `SetParamRate` b34310 + `localAction ViewRate`
+// b34354: FlowAction `ViewRate` (submit `Submit` b18, `Cancel` b20), section `ViewRate` - judul `Outward List`
 // b843, grid `ID` · `USEDBY` · `GENDER` · `CONTRACT` · `AGE` · `RATE` (RD atas `RATE_LIFE`).
 //
 // ⏸️ OQ-MPNL-03: sumber rate (view atas JSON) belum disetujui - server menjawab 503 berkalimat dan dialog

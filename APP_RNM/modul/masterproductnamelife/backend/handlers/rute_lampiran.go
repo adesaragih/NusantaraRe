@@ -2,13 +2,13 @@ package handlers
 
 // Rute lampiran (paket 8, PARITAS §6).
 //
-//	GET    /api/master-product-name-life/produk/{id}/lampiran                 `Refresh` b65223 / `View`
-//	POST   /api/master-product-name-life/produk/{id}/lampiran                 `Add attachment` b64698 → `Attach` (multipart `berkas`)
+//	GET    /api/master-product-name-life/produk/{id}/lampiran                 `Refresh` b65270 / `View`
+//	POST   /api/master-product-name-life/produk/{id}/lampiran                 `Add attachment` b64747 → `Attach` (multipart `berkas`)
 //	POST   /api/master-product-name-life/produk/{id}/lampiran/{lid}/ulangi    kirim ulang (tiket 09)
-//	GET    /api/master-product-name-life/produk/{id}/lampiran/{lid}/unduh     tautan nama berkas b68857
-//	GET    /api/master-product-name-life/produk/{id}/lampiran/unduh-semua     `Download All` b67619 (zip)
-//	GET    /api/master-product-name-life/produk/{id}/lampiran/{lid}/office    `View Office Online` b69247 - 503 stub
-//	DELETE /api/master-product-name-life/produk/{id}/lampiran/{lid}           `Delete` b69663
+//	GET    /api/master-product-name-life/produk/{id}/lampiran/{lid}/unduh     tautan nama berkas b68903
+//	GET    /api/master-product-name-life/produk/{id}/lampiran/unduh-semua     `Download All` b67657 (zip)
+//	GET    /api/master-product-name-life/produk/{id}/lampiran/{lid}/office    `View Office Online` b69291 - 503 stub
+//	DELETE /api/master-product-name-life/produk/{id}/lampiran/{lid}           `Delete` b69714
 
 import (
 	"bytes"
@@ -42,7 +42,7 @@ func daftarkanLampiran(pasang func(string, rute)) {
 			galat.Tulis(w, http.StatusBadRequest, "request body is not a valid multipart form")
 			return
 		case err == nil:
-			// Tanpa bagian `berkas` = "Tidak ada file yg diattach" (`ProductNameSaveAttachment` 1 b290).
+			// Tanpa bagian `berkas` = "Tidak ada file yg diattach" (`ProductNameSaveAttachment` 1 b292).
 			if f, hdr, err := r.FormFile("berkas"); err == nil {
 				defer func() { _ = f.Close() }()
 				nama, isi = hdr.Filename, f

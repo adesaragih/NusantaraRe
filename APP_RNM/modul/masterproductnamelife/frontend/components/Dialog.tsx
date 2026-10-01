@@ -1,10 +1,10 @@
 // Dialog konfirmasi tombol bawah form (PARITAS §3.3).
 //
-//  `Save` b58998 → `localAction SaveProductName_Confirm` b59237: FlowAction submit `Save` b34, `Cancel` b33;
-//     section b519 `Do you want to save the data?`, area teks b1058 `Comment` (`ProductName.Comment`) - dipakai
-//     `AddCommentList_Act` (`SaveProductName_Act` 7 b1513).
-//  `Edit` b59443 → `localAction EditProductName_Confirm` b59639: FlowAction submit `Edit` b19, `Cancel` b18;
-//     section b496 `Do you want to Edit the data?`; transform `SetViewEdit` b71 → 1 b145 `IsView := "false"`.
+//  `Save` b59041 → `localAction SaveProductName_Confirm` b59259: FlowAction submit `Save` b34, `Cancel` b33;
+//     section b519 `Do you want to save the data?`, area teks b1025 `Comment` (`ProductName.Comment`) - dipakai
+//     `AddCommentList_Act` (`SaveProductName_Act` 7 b1515).
+//  `Edit` b59489 → `localAction EditProductName_Confirm` b59663: FlowAction submit `Edit` b19, `Cancel` b18;
+//     section b496 `Do you want to Edit the data?`; transform `SetViewEdit` b71 → 1 b151 `IsView := "false"`.
 
 import { Area, Modal } from '../../../../inti/frontend/components/ui/dasar'
 import { EDIT_MPNL, SIMPAN_MPNL, TOMBOL_MPNL } from '../labels'

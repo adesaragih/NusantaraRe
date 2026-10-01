@@ -2,7 +2,7 @@
 // `ChooseCurrency`, `ChooseRIRisk`, `ChooseRIRate`, `ChooseCauseOfLoss` → section `*_Section`.
 //
 // Isi section (sama di ketujuhnya): medan `Search` (`SearchPolicyHolder.CARI1`), Enter →
-// `SearchPolicyHolder_act` 1 b234 `CARI1 = @toUpperCase(CARI1)` (server); grid RD berparam `CARI1` dengan kolom
+// `SearchPolicyHolder_act` 1 b236 `CARI1 = @toUpperCase(CARI1)` (server); grid RD berparam `CARI1` dengan kolom
 // `ID` / `Name` (`RIRate Name` untuk R/I Rate) dan tombol baris `Choose` → `set*_DT` + `closeContainer`.
 // Kaki FlowAction: `Submit` / `Cancel` (b32 / b31 `ChooseCeding.xml`) - keduanya menutup tanpa memilih.
 // Grid terbuka dengan `CARI1` kosong = seluruh baris (`Contains ""`).

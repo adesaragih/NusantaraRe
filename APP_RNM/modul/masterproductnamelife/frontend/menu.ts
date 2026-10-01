@@ -16,7 +16,7 @@ export const NAMA_MPNL = 'masterproductnamelife'
 
 /**
  * Halaman modul ini - SATU: `InboxProductName` (grid produk; form, pemilih, dan dialog dibuka dari dalamnya).
- * Harness `InwardProductName` tidak dibangun (tombol `Inward` b75322 `OTHER 1=2`, RALAT R11).
+ * Harness `InwardProductName` tidak dibangun (tombol `Inward` b75368 `OTHER 1=2`, RALAT R11).
  */
 export const HALAMAN_MPNL = ['mpnl-produk'] as const
 export type HalamanMPNL = (typeof HALAMAN_MPNL)[number]
@@ -26,7 +26,7 @@ export type HalamanMPNL = (typeof HALAMAN_MPNL)[number]
  * ia hanya dirujuk sebagai sasaran `refresh otherSection` oleh enam section pemilih (`Ceding_Section.xml` b2285,
  * `SOB_Section.xml` b2300, `PolicyHolder_Section.xml` b2318, `Currency_Section.xml` b2323, `RIRISK_Section.xml`
  * b2307, `CauseOfLoss_Section.xml` b2242). Satu-satunya harness, `InwardProductName`, dibuka hanya oleh tombol
- * `Inward` b75322 yang bervisibilitas `OTHER 1=2` (PARITAS §1).
+ * `Inward` b75368 yang bervisibilitas `OTHER 1=2` (PARITAS §1).
  */
 export const HALAMAN_AWAL_MPNL: HalamanMPNL = 'mpnl-produk'
 

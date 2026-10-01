@@ -2,7 +2,7 @@ package services
 
 // Tujuh pemilih master (paket 2, tiket 04, PARITAS §4).
 //
-//	medan `Search` (`SearchPolicyHolder.CARI1`) → Enter → `SearchPolicyHolder_act` 1 b234 `·`
+//	medan `Search` (`SearchPolicyHolder.CARI1`) → Enter → `SearchPolicyHolder_act` 1 b236 `·`
 //	`CARI1 = @toUpperCase(CARI1)` → grid RD berparam CARI1 → `Choose` → `set*_DT`
 //
 // ⛔ R/I Rate menunggu OQ-MPNL-03: 503 berkalimat, bukan daftar kosong.
@@ -39,7 +39,7 @@ type GudangMaster interface {
 }
 
 // CariMaster - grid pemilih / autocomplete; kata cari dihurufbesarkan seperti
-// `SearchPolicyHolder_act` b234.
+// `SearchPolicyHolder_act` b236.
 //
 // `batas` > 0 membatasi baris yang dibaca (autocomplete); 0 = seluruh hasil RD (grid pemilih).
 func (l *Layanan) CariMaster(ctx context.Context, p inti.Pelaku, jenis models.JenisMaster, kata string, batas int) ([]models.NilaiMaster, error) {
@@ -55,7 +55,7 @@ func (l *Layanan) CariMaster(ctx context.Context, p inti.Pelaku, jenis models.Je
 	return l.gudang.CariMaster(ctx, jenis, strings.ToUpper(strings.TrimSpace(kata)), batas)
 }
 
-// CariPlan - autocomplete `Plan Name` (`.Plan` b33124, `BrowseProductTypeLife_RD`).
+// CariPlan - autocomplete `Plan Name` (`.Plan` b33121, `BrowseProductTypeLife_RD`).
 func (l *Layanan) CariPlan(ctx context.Context, p inti.Pelaku, kata string) ([]models.JenisPlan, error) {
 	if err := inti.WajibIdentitas(p); err != nil {
 		return nil, err
@@ -63,7 +63,7 @@ func (l *Layanan) CariPlan(ctx context.Context, p inti.Pelaku, kata string) ([]m
 	return l.gudang.CariPlan(ctx, strings.ToUpper(strings.TrimSpace(kata)))
 }
 
-// DaftarRate - tombol `View Rate` b34067 (`SetParamRate` + `localAction ViewRate`,
+// DaftarRate - tombol `View Rate` b34113 (`SetParamRate` + `localAction ViewRate`,
 // section `ViewRate` RD `BrowseRateLife_RD`): view atas JSON rate - menunggu
 // OQ-MPNL-03, 503 berkalimat.
 func (l *Layanan) DaftarRate(ctx context.Context, p inti.Pelaku, riRateID string) ([]models.NilaiMaster, error) {

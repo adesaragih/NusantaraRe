@@ -3,12 +3,12 @@ package repository
 // Kontrak On Retention untuk `OutwardList` (paket 9, RALAT R9/P3) - satu-satunya
 // pembaca `TREATYCONTRACT_LIFE` / `TREATYYEAR_LIFE` di modul ini (R12), dibaca saja.
 //
-//	checkbox `On Retention` b47303 → onChange `GetReinsTypeOR_Life` b47476:
-//	  1 b234 `·` PRE=false Property-Remove `ProductName.OutwardList`
-//	  2 b381 `·` `Temp.CARI1/2 ← ProductNameInward.BEGIN/MATURE`
-//	  3 b532 `·` PRE=false RDB-List `BrowseReinstypeOR_SQL`
-//	  4 b723 `·` PRE=false ulang `Reinstype.pxResults`
-//	  4.1 b768 `·` `OutwardList(<APPEND>)` ← REINSTYPEID, REINSTYPENAME, TREATYYEAR,
+//	checkbox `On Retention` b47312 → onChange `GetReinsTypeOR_Life` b47488:
+//	  1 b236 `·` PRE=false Property-Remove `ProductName.OutwardList`
+//	  2 b383 `·` `Temp.CARI1/2 ← ProductNameInward.BEGIN/MATURE`
+//	  3 b534 `·` PRE=false RDB-List `BrowseReinstypeOR_SQL`
+//	  4 b731 `·` PRE=false ulang `Reinstype.pxResults`
+//	  4.1 b770 `·` `OutwardList(<APPEND>)` ← REINSTYPEID, REINSTYPENAME, TREATYYEAR,
 //	        TREATYCONTRACTID, UNDERWRITINGYEAR
 //
 //	BrowseReinstypeOR_SQL b84:

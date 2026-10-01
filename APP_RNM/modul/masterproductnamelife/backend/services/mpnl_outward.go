@@ -2,7 +2,7 @@ package services
 
 // `On Retention` → `OutwardList` (paket 9, RALAT R9/P3, OQ-MPNL-09).
 //
-// Di Pega checkbox b47303 memanggil `GetReinsTypeOR_Life` b47476 SAAT DIUBAH -
+// Di Pega checkbox b47312 memanggil `GetReinsTypeOR_Life` b47488 SAAT DIUBAH -
 // keempat prakondisi langkahnya PRE=false, jadi daftar diganti setiap kali,
 // dicentang maupun tidak. Di sini penggantian terjadi SAAT SIMPAN bila klien
 // menandai checkbox diubah (`hitungOutward`), memakai `BEGIN`/`MATURE` yang

@@ -4,7 +4,7 @@ package services
 //
 // ⛔ Angka diperiksa sebagai DESIMAL presisi arbitrer dan disimpan sebagai
 // teksnya (ADR-0003); koma diterima sebagai titik desimal (Pega membersihkan
-// koma dengan `@replaceAll(…, ",", ".")`, `SetProductNameInward` 3.1 b1046),
+// koma dengan `@replaceAll(…, ",", ".")`, `SetProductNameInward` 3.1 b1048),
 // koma DAN titik sekaligus ditolak. Lebih dari 38 digit bermakna DITOLAK,
 // tidak dibulatkan Oracle diam-diam.
 // ⛔ Tanggal `YYYY-MM-DD` (API) atau `dd/MM/yyyy` (bentuk Pega).

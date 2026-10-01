@@ -26,7 +26,7 @@ func TestHTTPPemilihMasterMencariHurufBesar(t *testing.T) {
 	kode, badan := u.minta(t, "GET", pre+"/master/ceding?cari=satu", "", true)
 	if kode != http.StatusOK || !strings.Contains(badan, `"id":"L0UJI1"`) || strings.Contains(badan, "L0UJI2") ||
 		!strings.Contains(badan, `"total":1`) {
-		t.Errorf("cari ceding (SearchPolicyHolder_act b234 huruf besar): %d %s", kode, badan)
+		t.Errorf("cari ceding (SearchPolicyHolder_act b236 huruf besar): %d %s", kode, badan)
 	}
 	if u.g.CariTerakhir != "SATU" {
 		t.Errorf("kata cari harus dikirim huruf besar ke gudang: %q", u.g.CariTerakhir)

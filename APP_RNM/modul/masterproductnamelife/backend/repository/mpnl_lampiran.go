@@ -150,7 +150,7 @@ func (g *Gudang) lengkapiStatus(ctx context.Context, tx *db.Tx, l *models.Lampir
 	return nil
 }
 
-// DaftarLampiran - grid lampiran produk (`LoadAttachmentProdName` 2 b370), beserta status.
+// DaftarLampiran - grid lampiran produk (`LoadAttachmentProdName` 2 b372), beserta status.
 func (g *Gudang) DaftarLampiran(ctx context.Context, produkID string) ([]models.Lampiran, error) {
 	q, err := g.siapkan(TabelLampiran, sqlDaftarLampiran)
 	if err != nil {
@@ -273,7 +273,7 @@ func (g *Gudang) HapusObjek(ctx context.Context, tx *db.Tx, imageID string) erro
 	return nil
 }
 
-// NamaAplikasi - `GetAppName_SQL` b58 (`InsertGoogleStorage_Act` 6 b958, PRE=false → selalu).
+// NamaAplikasi - `GetAppName_SQL` b58 (`InsertGoogleStorage_Act` 6 b960, PRE=false → selalu).
 func (g *Gudang) NamaAplikasi(ctx context.Context, tx *db.Tx) (string, error) {
 	q, err := g.siapkan(TabelFolder, sqlNamaAplikasi)
 	if err != nil {

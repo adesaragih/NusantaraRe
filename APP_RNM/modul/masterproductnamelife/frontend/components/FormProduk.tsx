@@ -5,7 +5,7 @@
 //   b61044 grid komentar (baca-saja)                                       (PARITAS §5)
 //   b64133 lampiran                                                        (PARITAS §6)
 //
-// Mode lihat (`ProductName.IsView == 'true'`, sesudah `View` b74753 → `SetProductName` 8 b2145): medan ber-`ro`
+// Mode lihat (`ProductName.IsView == 'true'`, sesudah `View` b74798 → `SetProductName` 8 b2147): medan ber-`ro`
 // baca-saja, tombol `Choose*` (wadah `IsView!='true'`) dan `Save` tersembunyi, `Edit` tampil. Autocomplete,
 // dropdown `Cause Of Loss`, checkbox `On Retention`, dan tombol `Add`/`Delete` grid tidak ber-`ro` di XML.
 // Grid `OUTWARD` (wadah `1==2`) tidak dirender; isinya ditulis server (`hitungOutward`).
@@ -136,7 +136,7 @@ export default function FormProduk({
   const [penyebab, setPenyebab] = useState<NilaiMaster[]>([])
   const [galatPenyebab, setGalatPenyebab] = useState<unknown>(null)
 
-  // `Cause Of Loss` b10693: dropdown RD `BrowseCauseofLossLife_RD` b10781 (nilai/tampil `.CauseofLoss`).
+  // `Cause Of Loss` b10661: dropdown RD `BrowseCauseofLossLife_RD` b10781 (nilai/tampil `.CauseofLoss`).
   useEffect(() => {
     let batal = false
     cariMaster('penyebab', '')
@@ -189,7 +189,7 @@ export default function FormProduk({
     try {
       await simpanProduk(p)
       setDialog(null)
-      // `SaveProductName_Act` 11 b2207: `DATASHOW = 0` - form tertutup, grid dimuat ulang.
+      // `SaveProductName_Act` 11 b2209: `DATASHOW = 0` - form tertutup, grid dimuat ulang.
       onTersimpan()
     } catch (e) {
       setDialog(null)
@@ -330,7 +330,7 @@ export default function FormProduk({
       </div>
       {galatPenyebab !== null && <Gagal galat={galatPenyebab} />}
 
-      {/* `LIEN CLAUSE` b12204 - ikon grid bawaan b12339 (vis `IsView!='true'`). */}
+      {/* `LIEN CLAUSE` b12201 - ikon grid bawaan b12373 (vis `IsView!='true'`). */}
       <h4 className="mpnl-judul-grid">{LIEN_MPNL.judul}</h4>
       <GridSederhana<BarisLien>
         baris={p.lienClause}
@@ -345,7 +345,7 @@ export default function FormProduk({
         }}
       />
 
-      {/* `DOCUMENT CLAIM` b14604 - `Document List` dropdown `associated` (daftar tak ikut ekspor, OQ-MPNL-05). */}
+      {/* `DOCUMENT CLAIM` b14601 - `Document List` dropdown `associated` (daftar tak ikut ekspor, OQ-MPNL-05). */}
       <h4 className="mpnl-judul-grid">{DOKUMEN_MPNL.judul}</h4>
       <GridSederhana<BarisDokumen>
         baris={p.documentClaim}
@@ -413,7 +413,7 @@ export default function FormProduk({
           <Field label={INWARD_MPNL.premiumFactor} value={w.premiumFactor} readOnly={lihat} onChange={medanInward('premiumFactor')} />
         )}
         {lihat ? (
-          // `ro = ProductName.IsView=='true'` b25642 - `Pilih` bersama tidak punya mode baca-saja.
+          // `ro = ProductName.IsView=='true'` b25611 - `Pilih` bersama tidak punya mode baca-saja.
           <Field
             label={INWARD_MPNL.payment}
             value={PILIHAN_PEMBAYARAN.find((o) => o.value === w.payment)?.label ?? w.payment}
@@ -433,7 +433,7 @@ export default function FormProduk({
         />
         <Field label={INWARD_MPNL.maxDataReceive} value={w.maxDataReceive} readOnly={lihat} onChange={medanInward('maxDataReceive')} />
         <MedanTanggal label={INWARD_MPNL.mature} value={w.mature} readOnly={lihat} onChange={medanInward('mature')} />
-        {/* `Birthday` b27992 - radio `associated` (pilihan tak ikut ekspor, OQ-MPNL-05): isian teks. */}
+        {/* `Birthday` b27960 - radio `associated` (pilihan tak ikut ekspor, OQ-MPNL-05): isian teks. */}
         <Field label={INWARD_MPNL.birthday} value={w.birthday} readOnly={lihat} onChange={medanInward('birthday')} />
         {medanMaster(
           INWARD_MPNL.currency,
@@ -547,7 +547,7 @@ export default function FormProduk({
                           PLAN_MPNL.chooseRiRate,
                           'ri-rate',
                           (v) => {
-                            // `SetRIRate` 1 b247: `.RIRATEID ← id`, `.RIRATE ← usedby`.
+                            // `SetRIRate` 1 b249: `.RIRATEID ← id`, `.RIRATE ← usedby`.
                             setP((x) => ({ ...x, planList: ganti<BarisPlan>(x.planList, i, { riRate: v.nama, riRateId: v.id }) }))
                           },
                           PEMILIH_MPNL.kolomRiRateName,
@@ -573,7 +573,7 @@ export default function FormProduk({
         </table>
       )}
 
-      {/* `FINANCIAL UNDERWRITING` b37151. */}
+      {/* `FINANCIAL UNDERWRITING` b37148. */}
       <h4 className="mpnl-judul-grid">{FINUW_MPNL.judul}</h4>
       <GridBerangka<BarisFinUW>
         baris={p.financialUnderwriting}
@@ -611,7 +611,7 @@ export default function FormProduk({
         }}
       />
 
-      {/* `UNDERWRITING LIMIT` b42078 - `Medical` teks bebas (R16). */}
+      {/* `UNDERWRITING LIMIT` b42075 - `Medical` teks bebas (R16). */}
       <h4 className="mpnl-judul-grid">{UWLIMIT_MPNL.judul}</h4>
       <GridBerangka<BarisUWLimit>
         baris={p.underwritingLimit}
@@ -654,7 +654,7 @@ export default function FormProduk({
         }}
       />
 
-      {/* Checkbox `On Retention` b47303 - onChange `GetReinsTypeOR_Life` b47476 (dihitung server saat simpan). */}
+      {/* Checkbox `On Retention` b47312 - onChange `GetReinsTypeOR_Life` b47488 (dihitung server saat simpan). */}
       <label className="mpnl-centang">
         <input
           type="checkbox"
@@ -698,7 +698,7 @@ export default function FormProduk({
           type="button"
           className="btn btn--ghost"
           onClick={() => {
-            // DataTransform `CopyProduct` b59949; pesan 4 b236 di wadah b1269 (`STSSAVE==99`).
+            // DataTransform `CopyProduct` b59965; pesan 4 b236 di wadah b1269 (`STSSAVE==99`).
             setP((x) => salinProduk(x))
             setPesan(PESAN_MPNL.copy)
             setGalat(null)
@@ -750,7 +750,7 @@ export default function FormProduk({
       {dialog === 'edit' && (
         <DialogEdit
           onEdit={() => {
-            // `SetViewEdit` 1 b145: `IsView := "false"`.
+            // `SetViewEdit` 1 b151: `IsView := "false"`.
             setLihat(false)
             setDialog(null)
           }}

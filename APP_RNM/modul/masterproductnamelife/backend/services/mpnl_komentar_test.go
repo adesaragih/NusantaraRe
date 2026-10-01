@@ -28,7 +28,7 @@ func TestSetiapSimpanMenambahSatuKomentarAddCommentList(t *testing.T) {
 	}
 	k := p.CommentList[0]
 	if k.Date != "20261001T010203.456 GMT" || k.OperatorName != "UJI-PELAKU" || k.Suggest != "UJI pertimbangan" || k.IsApproved != "" {
-		t.Errorf("AddCommentList_Act b233: Date @CurrentDateTime, OperatorName pxInsName, Suggest comment: %+v", k)
+		t.Errorf("AddCommentList_Act b235: Date @CurrentDateTime, OperatorName pxInsName, Suggest comment: %+v", k)
 	}
 	// Ubah: riwayat lama tetap di depan, baris baru di belakang - juga bila komentar kosong (OQ-MPNL-14).
 	m2 := produkMasuk()

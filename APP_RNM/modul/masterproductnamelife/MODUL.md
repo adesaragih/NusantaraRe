@@ -63,14 +63,14 @@ Nilainya DIBACA dari sumber konstantanya, tidak diketik ulang.
 
 | Paket | Konstanta | Alasan |
 | --- | --- | --- |
-| `backend/services` | `labelPolicyHolder` | label medan VERBATIM `Policy Holder` (`InboxProductName.xml` b17129) - dipakai kalimat penolakan, bukan nama orang. |
+| `backend/services` | `labelPolicyHolder` | label medan VERBATIM `Policy Holder` (`InboxProductName.xml` b17097) - dipakai kalimat penolakan, bukan nama orang. |
 
 ## Kontrak modul
 
 | Hal | Isi |
 | --- | --- |
 | Rute | `GET /produk`, `GET /produk/{id}`, `POST /produk`, `PUT /produk/{id}`, `POST /produk/generate`, `GET /master/{jenis}`, `GET /master-plan`, `GET /rate` (503, OQ-MPNL-03), `GET`/`POST /produk/{id}/lampiran`, `POST …/{lid}/ulangi`, `GET …/{lid}/unduh`, `GET …/unduh-semua`, `GET …/{lid}/office` (503, OQ-MPNL-11), `DELETE …/{lid}` — rincian `docs/PARITAS-LAYAR-DAN-AKSI.md` §9 |
-| Tabel ditulis | `M_PRODUCT_LIFE` (`JSONDATA` + kolom datar), `M_PRODUCTINWARD_LIFE` (`JSONDATA`), `M_ATTACHMENTPRODUCTNAME`, `T_STORAGE_IMAGE` (pelaksana stub), outbox bersama `T_LOG_SERVICE_RNM` (`MODUL = 'MASTERPRODUCTNAMELIFE'`) |
+| Tabel ditulis | `M_PRODUCT_LIFE` (`JSONDATA` + kolom datar `RIRISKID`, `RIRISK` — katalog DEV), `M_PRODUCTINWARD_LIFE` (`JSONDATA`), `M_ATTACHMENTPRODUCTNAME`, `T_STORAGE_IMAGE` (pelaksana stub), outbox bersama `T_LOG_SERVICE_RNM` (`MODUL = 'MASTERPRODUCTNAMELIFE'`) |
 | Tabel dibaca saja | `AGENT`, `CLIENT`, `CURRENCY`, `RIRISK_LIFE_SUMMARY`, `CAUSEOFLOSS_LIFE`, `PRODUCT_TYPE_LIFE`, `T_FOLDER_IMAGE`, `TREATYCONTRACT_LIFE`, `TREATYYEAR_LIFE` |
 | Pembaca hilir | view `PRODUCT_LIFE`, `PRODUCTINWARD_LIFE`, `DOCUMENTCLAIM_LIFE` (Claim Life) — setiap kunci yang dibacanya dijamin ada di `JSONDATA` (`docs/dba-view-produk-life.md`) |
 | Prosedur | `PEGA_M_PRODUCT_LIFE`, `PEGA_M_PRODUCT_INWARD_LIFE` **tidak** dipanggil (isinya ditiru di Go, satu transaksi, nol `COMMIT` di teks SQL) |

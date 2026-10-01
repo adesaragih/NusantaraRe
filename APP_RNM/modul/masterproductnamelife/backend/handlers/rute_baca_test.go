@@ -77,7 +77,7 @@ func TestHTTPGridProdukUrutIDDenganKolomGrid(t *testing.T) {
 		t.Fatal(err)
 	}
 	if j.Total != 2 || j.Daftar[0]["id"] != "UJI-001" || j.Daftar[1]["id"] != "UJI-002" {
-		t.Errorf("urut ID ASC (BrowseProduct_Life b1094): %s", badan)
+		t.Errorf("urut ID ASC (BrowseProduct_Life b1096): %s", badan)
 	}
 	if j.Daftar[1]["ceding"] != "UJI CEDING B" || j.Daftar[1]["treatyNumber"] != "UJI/2" ||
 		j.Daftar[1]["inwardName"] != "UJI B" || j.Daftar[1]["updateOp"] != "UJI-OP2" {

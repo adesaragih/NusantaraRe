@@ -312,7 +312,7 @@ describe('tombol layar = tombol korpus', () => {
     for (const t of tombol) {
       const kunci = kunciTeks(t.isi)
       if (kunci.length === 0) {
-        // Tautan nama berkas b68857 menampilkan `.pyFileName` - nilai data, bukan label.
+        // Tautan nama berkas b68903 menampilkan `.pyFileName` - nilai data, bukan label.
         if (!t.isi.includes('{l.fileName}')) langgar.push(`${t.berkas}: tombol tanpa teks label: ${t.isi.slice(0, 80)}`)
         continue
       }

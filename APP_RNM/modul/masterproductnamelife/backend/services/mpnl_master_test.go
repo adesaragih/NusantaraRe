@@ -15,7 +15,7 @@ func TestCariMasterHurufBesarDanRIRateMenunggu(t *testing.T) {
 	g.Master[models.MasterRIRisk] = []models.NilaiMaster{{ID: "1", Nama: "UJI RISK"}}
 	d, err := l.CariMaster(context.Background(), pelakuUji, models.MasterRIRisk, "  risk ", 0)
 	if err != nil || len(d) != 1 || g.CariTerakhir != "RISK" {
-		t.Errorf("SearchPolicyHolder_act b234 huruf besar: %v %v %q", d, err, g.CariTerakhir)
+		t.Errorf("SearchPolicyHolder_act b236 huruf besar: %v %v %q", d, err, g.CariTerakhir)
 	}
 	if _, err := l.CariMaster(context.Background(), pelakuUji, models.MasterRIRate, "", 0); !errors.Is(err, services.ErrRIRateMenungguPersetujuan) {
 		t.Errorf("R/I Rate: %v", err)

@@ -33,7 +33,7 @@ function inwardKosong(): ProdukInward {
   }
 }
 
-/** `Add` b71816 → `NewProductLife`: 1 b232 Page-New `ProductName`, 3 b577 hapus `ProductNameInward` - halaman kosong. */
+/** `Add` b71865 → `NewProductLife`: 1 b234 Page-New `ProductName`, 3 b579 hapus `ProductNameInward` - halaman kosong. */
 export function produkBaru(): Produk {
   return {
     id: '', umum: umumKosong(), inward: inwardKosong(), lienClause: [], documentClaim: [], planList: [],
@@ -42,7 +42,7 @@ export function produkBaru(): Produk {
 }
 
 /**
- * `Copy` b59812 → DataTransform `CopyProduct`: 1 b138 `ProductName.ID := ""`, 2 b161 `ProductNameInward.ID := ""`;
+ * `Copy` b59854 → DataTransform `CopyProduct`: 1 b144 `ProductName.ID := ""`, 2 b173 `ProductNameInward.ID := ""`;
  * selebihnya halaman tetap. Server mewarisi medan milik server dari produk asal (`salinanDari`).
  */
 export function salinProduk(p: Produk): Produk {
@@ -55,7 +55,7 @@ export function salinProduk(p: Produk): Produk {
   }
 }
 
-/** `SetTreatyName_Act` 2 b434: `INWARDNAME = PRODUCTNAME + " " + POLICYHODERNAME` (tanpa pemangkasan, seperti Pega). */
+/** `SetTreatyName_Act` 2 b436: `INWARDNAME = PRODUCTNAME + " " + POLICYHODERNAME` (tanpa pemangkasan, seperti Pega). */
 export function namaTreaty(productName: string, policyHolderName: string): string {
   return productName + ' ' + policyHolderName
 }
@@ -76,7 +76,7 @@ function negasi(v: string): string {
 
 /**
  * `CountMaxSumReasured_Act` (onChange `Ceding's Limit` b22725 dan `Max Sum Insured` b24024):
- * 1 b237 `local.MaxSumInsured = 0`, `local.CedingLimit = 0`, lalu nilai medan; 2 b434
+ * 1 b239 `local.MaxSumInsured = 0`, `local.CedingLimit = 0`, lalu nilai medan; 2 b436
  * `MAXSUMREASURED = local.MaxSumInsured - local.CedingLimit`. Isian yang bukan angka = `null` (medan dibiarkan).
  */
 export function hitungMaxSumReasured(maxSumInsured: string, cedingLimit: string): string | null {
@@ -86,7 +86,7 @@ export function hitungMaxSumReasured(maxSumInsured: string, cedingLimit: string)
   return jumlahDesimal([a, negasi(b)]).total
 }
 
-/** Pilihan `Premium Payment Method` b25642 - kode dan teks dari `GenerateUpload_Act` b1141 (OQ-MPNL-05). */
+/** Pilihan `Premium Payment Method` b25611 - kode dan teks dari `GenerateUpload_Act` b1141 (OQ-MPNL-05). */
 export const PILIHAN_PEMBAYARAN: readonly Opsi[] = [
   { value: '1', label: PEMBAYARAN_MPNL.annual },
   { value: '2', label: PEMBAYARAN_MPNL.semiAnnual },
@@ -94,17 +94,17 @@ export const PILIHAN_PEMBAYARAN: readonly Opsi[] = [
   { value: '4', label: PEMBAYARAN_MPNL.monthly },
 ]
 
-/** `Premium Factor (%)` b25430 - visibilitas `OTHER ProductNameInward.PAYMENT==3`. */
+/** `Premium Factor (%)` b25398 - visibilitas `OTHER ProductNameInward.PAYMENT==3`. */
 export function tampilPremiumFactor(payment: string): boolean {
   return payment.trim() === '3'
 }
 
-/** `View Office Online` b69247 - visibilitas `OTHER .pyFileMimeType = xls/xlsx/doc/docx/ppt/pptx`. */
+/** `View Office Online` b69291 - visibilitas `OTHER .pyFileMimeType = xls/xlsx/doc/docx/ppt/pptx`. */
 export function tampilViewOffice(ekstensi: string): boolean {
   return ['xls', 'xlsx', 'doc', 'docx', 'ppt', 'pptx'].includes(ekstensi)
 }
 
-/** `View Rate` b34067 - visibilitas `OTHER .RIRATE!=''`. */
+/** `View Rate` b34113 - visibilitas `OTHER .RIRATE!=''`. */
 export function tampilViewRate(riRate: string): boolean {
   return riRate !== ''
 }
@@ -123,7 +123,7 @@ export function jepitHalaman(halaman: number, total: number): number {
   return Math.min(Math.max(1, halaman), Math.max(1, Math.ceil(total / UKURAN_HALAMAN_MPNL)))
 }
 
-/** `CopyFinancialWriting` 1 b223 / `CopyUnderWritingLimit` 1 b224: baris salinan ditambah di akhir daftar. */
+/** `CopyFinancialWriting` 1 b225 / `CopyUnderWritingLimit` 1 b226: baris salinan ditambah di akhir daftar. */
 export function salinBaris<T extends { asli?: string }>(daftar: readonly T[], i: number): T[] {
   const b = daftar[i]
   if (b === undefined) return [...daftar]

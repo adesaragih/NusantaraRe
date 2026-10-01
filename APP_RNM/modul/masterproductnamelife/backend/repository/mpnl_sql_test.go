@@ -17,13 +17,13 @@ func TestSQLBacaMengikutiRD(t *testing.T) {
 		sql   string
 		wajib []string
 	}{
-		{"grid BrowseProduct_Life b1094", sqlDaftarProduk("S.M_PRODUCT_LIFE"),
+		{"grid BrowseProduct_Life b1096", sqlDaftarProduk("S.M_PRODUCT_LIFE"),
 			[]string{"SELECT ID, JSON_VALUE(JSONDATA, '$.CEDING'), JSON_VALUE(JSONDATA, '$.TREATYNUMBER'), " +
 				"JSON_VALUE(JSONDATA, '$.INWARDNAME'), JSON_VALUE(JSONDATA, '$.CREATEOP'), JSON_VALUE(JSONDATA, '$.UPDATEOP') " +
 				"FROM S.M_PRODUCT_LIFE", "ORDER BY ID ASC", "FETCH FIRST 500 ROWS ONLY"}},
 		{"umum BrowseUnderwritingList b61", sqlAmbilProduk("S.M_PRODUCT_LIFE", false),
 			[]string{"FROM S.M_PRODUCT_LIFE WHERE ID = :1"}},
-		{"inward BrowseProductInward b834 + kunci Claim Life", sqlAmbilInward("S.M_PRODUCTINWARD_LIFE", false),
+		{"inward BrowseProductInward b840 + kunci Claim Life", sqlAmbilInward("S.M_PRODUCTINWARD_LIFE", false),
 			[]string{"JSON_VALUE(JSONDATA, '$.PRODUCTID') = :1 OR ID = :2", "ORDER BY ID ASC"}},
 	}
 	for _, k := range kasus {

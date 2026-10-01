@@ -2,9 +2,9 @@ package repository
 
 // Penulis produk (paket 3: sisi umum; paket 4: sisi inward, satu transaksi).
 //
-//	SaveProductName_Act 8 b1623 `·` PRE=false  DATAPEGA ← @GetPageJSONString() halaman ProductName
-//	                    9 b1831 `·` PRE=false  RDB SaveProductNameLIfe → PEGA_M_PRODUCT_LIFE (TIDAK dipanggil)
-//	                   10 b2019 `·` PRE=false  RDB SaveProductNameLIfeFlat: UPDATE … SET RIRISKID, RIRISK WHERE ID
+//	SaveProductName_Act 8 b1625 `·` PRE=false  DATAPEGA ← @GetPageJSONString() halaman ProductName
+//	                    9 b1833 `·` PRE=false  RDB SaveProductNameLIfe → PEGA_M_PRODUCT_LIFE (TIDAK dipanggil)
+//	                   10 b2021 `·` PRE=false  RDB SaveProductNameLIfeFlat: UPDATE … SET RIRISKID, RIRISK WHERE ID
 //
 // ⛔ Prosedur ditiru: upsert dikunci `ID`, `ID` baru dari sequence; kolom datar
 // `RIRISKID`, `RIRISK` (langkah 10, hidup - RALAT R8) ditulis di pernyataan YANG
