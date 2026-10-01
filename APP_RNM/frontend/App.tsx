@@ -156,12 +156,14 @@ export default function App() {
     )
   }
   if (!stub && profil === undefined) {
-    // ⛔ LATAR layar login, bukan halaman putih polos: yang terakhir berganti
-    // ke kartu login bergradien sekejap kemudian - kedip di SETIAP muat ulang
-    // (laporan work owner 01-10-2026).
+    // ⛔ Layar NETRAL - latar halaman, tanpa kartu, teksnya baru tampak bila
+    // pemeriksaan lebih dari 600 ms (laporan work owner 01-10-2026 "halaman
+    // login kedip"). Tujuannya belum diketahui: kartu login (ungu) ATAU Shell
+    // (terang). Layar antara yang meniru salah satunya berkedip bagi yang lain -
+    // dulu teks polos sebelum kartu login, lalu latar ungu sebelum Shell.
     return (
-      <main className="halaman-masuk" aria-busy="true">
-        <p role="status" className="halaman-masuk__status">
+      <main className="periksa-sesi" aria-busy="true">
+        <p role="status" className="periksa-sesi__status">
           {LOGIN.memuatSesi}
         </p>
       </main>

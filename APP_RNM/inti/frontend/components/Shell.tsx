@@ -339,7 +339,8 @@ export function Shell<H extends string>({
             </li>
 
             {menuTabel === null && (
-              <li className="shell__menu-keadaan">
+              /* Tertunda 600 ms (CSS): pembacaan yang cepat tidak berkedip. */
+              <li className="shell__menu-keadaan shell__menu-keadaan--tunda">
                 <Memuat pesan={KERANGKA.memuatMenu} />
               </li>
             )}

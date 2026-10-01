@@ -5767,13 +5767,31 @@ textarea.field__input {
   text-align: center;
   color: var(--hm-muted);
 }
-/* Layar periksa sesi (01-10-2026, "halaman login suka kedip"): LATAR yang
-   sama dengan layar login, tanpa kartu - sebelumnya layar putih polos yang
-   berganti ke kartu bergradien sekejap kemudian. */
-.halaman-masuk__status {
+/* Layar periksa sesi dan "Memuat menu" sidebar (laporan work owner 01-10-2026,
+   "halaman login kedip"): NETRAL - latar halaman, tanpa kartu - dan teksnya
+   baru tampak bila menunggu lebih dari 600 ms. Pemeriksaan yang cepat tidak
+   menampilkan layar antara apa pun: dulu kilat putih sebelum kartu login,
+   lalu kilat ungu sebelum Shell. */
+.periksa-sesi {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+.periksa-sesi__status {
   margin: 0;
   font-size: 14px;
-  color: var(--hm-muted);
+  color: var(--text-3);
+  opacity: 0;
+  animation: tampak-tertunda 0.2s ease 0.6s forwards;
+}
+.shell__menu-keadaan--tunda {
+  opacity: 0;
+  animation: tampak-tertunda 0.2s ease 0.6s forwards;
+}
+@keyframes tampak-tertunda {
+  to {
+    opacity: 1;
+  }
 }
 /* Layar lebar: dua kolom. */
 @media (min-width: 860px) {

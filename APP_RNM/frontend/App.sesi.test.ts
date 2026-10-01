@@ -7,16 +7,28 @@ import { describe, expect, it } from 'vitest'
 // kedip kedip"). Penjaga statik atas App.tsx - dua sebab yang ditemukan:
 //
 //   1. Pemeriksaan sesi dulu merender paragraf polos di halaman putih, lalu
-//      berganti ke kartu login bergradien: kedip di SETIAP muat ulang.
+//      berganti ke kartu login bergradien: kedip di SETIAP muat ulang. Latar
+//      login sebagai gantinya ganti berkedip UNGU sebelum Shell bagi yang sudah
+//      login (teramati di Chrome headless, 01-10-2026) - layarnya kini NETRAL
+//      dan teksnya tertunda.
 //   2. `GET /api/menu` dikirim saat App menyala, SEBELUM login. Tanpa sesi ia
 //      dijawab 401, dan 401 memicu `PERISTIWA_SESI_BERAKHIR` di tengah
 //      pemeriksaan sesi.
 const APP = readFileSync(join(__dirname, 'App.tsx'), 'utf8')
+const SHELL = readFileSync(join(__dirname, '..', 'inti', 'frontend', 'components', 'Shell.tsx'), 'utf8')
+const CSS = readFileSync(join(__dirname, '..', 'inti', 'frontend', 'styles.css'), 'utf8')
 
 describe('App: pemeriksaan sesi tanpa kedip', () => {
-  it('layar periksa sesi memakai latar layar login', () => {
-    expect(APP).toContain('<main className="halaman-masuk" aria-busy="true">')
+  it('layar periksa sesi netral: tanpa latar login, teks tertunda', () => {
+    expect(APP).toContain('<main className="periksa-sesi" aria-busy="true">')
+    expect(APP).not.toContain('<main className="halaman-masuk" aria-busy="true">')
     expect(APP).not.toContain('className="polis__catatan"')
+    expect(CSS).toMatch(/\.periksa-sesi__status \{[^}]*opacity: 0;[^}]*animation: tampak-tertunda 0\.2s ease 0\.6s forwards;/)
+  })
+
+  it('"Memuat menu" sidebar tertunda - menu dibaca sesudah sesi', () => {
+    expect(SHELL).toContain('<li className="shell__menu-keadaan shell__menu-keadaan--tunda">')
+    expect(CSS).toMatch(/\.shell__menu-keadaan--tunda \{[^}]*animation: tampak-tertunda 0\.2s ease 0\.6s forwards;/)
   })
 
   it('menu dibaca sesudah identitas diketahui, ulang bila akunnya berganti', () => {
