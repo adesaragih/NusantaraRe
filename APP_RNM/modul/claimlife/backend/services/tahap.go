@@ -147,11 +147,11 @@ func (tl *TahapLayanan) Pindah(ctx context.Context, pelaku inti.Pelaku,
 	// berperan Admin, yang justru bukan dia. Orang memindahkan pekerjaan yang
 	// SEDANG IA PEGANG.
 	baca := repository.NewKlaimLife(tl.svc.DB())
-	// ⛔ BUTIR at: TAHAP dan PY_POSITION dibaca BERSAMA. Yang tersimpan
-	// di PY_POSITION adalah NAMA PERAN, bukan pengenal shape - ronde
+	// ⛔ BUTIR at: TAHAP dan POSITION dibaca BERSAMA. Yang tersimpan
+	// di POSITION adalah NAMA PERAN, bukan pengenal shape - ronde
 	// pertama menganggapnya `"Assignment<n>"` dan setiap pembacaan baris
 	// nyata berakhir "tidak dikenal".
-	// ⚠️ Kolom TAHAP menang; PY_POSITION hanya CADANGAN untuk baris lama.
+	// ⚠️ Kolom TAHAP menang; POSITION hanya CADANGAN untuk baris lama.
 	// Baris lama yang sebenarnya di Input Register akan tampak Outstanding
 	// sampai kolomnya terisi - diterima, dan dicatat di models.TahapDariPeran.
 	asal, err := tahapKasus(ctx, baca, klaimID)

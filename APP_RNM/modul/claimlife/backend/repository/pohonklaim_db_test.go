@@ -80,10 +80,11 @@ func contohPohon(t *testing.T) models.PohonKlaim {
 	}
 	return models.PohonKlaim{
 		Work: models.WorkClaim{
-			ID: "CLM-UJI900", Lini: inti.LiniLife, Type: "UJI-TYPE", CaseID: "UJI-CASE-900",
+			// CASE_ID dibuang migrasi 023: CASEID baris datar = ID; TYPE di header.
+			ID: "CLM-UJI900", Lini: inti.LiniLife,
 		},
 		Klaim: models.Klaim{
-			ID: "CLM-UJI900", NomorKlaim: "UJI-CLM-9", NomorPolis: "UJI-POL-9",
+			ID: "CLM-UJI900", NomorKlaim: "UJI-CLM-9", NomorPolis: "UJI-POL-9", Type: "UJI-TYPE",
 			NamaBisnis: "UJI BISNIS", KodeStatus: "0",
 			Peserta: []models.Peserta{{
 				ID: "UJI-P-1", NomorSertifikat: "006", MataUang: "IDR",
@@ -228,7 +229,7 @@ func TestSimpanPohonMenulisDuaTempatDalamSatuTransaksi(t *testing.T) {
 	}
 
 	// Penulisan kedua benar-benar terjadi: satu baris datar per baris adjustment.
-	n, err := repo.CacahBarisLama(ctx, p.Work.CaseID)
+	n, err := repo.CacahBarisLama(ctx, p.Work.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -254,7 +255,7 @@ func TestBacaSampaiCicit(t *testing.T) {
 	// Sesudah hapus, SETIAP tingkat wajib nol - diperiksa satu per satu,
 	// bukan lewat satu angka total yang dapat menutupi satu tingkat yang
 	// tertinggal.
-	sesudah, err := repo.Dampak(ctx, p.Work.ID, p.Work.CaseID)
+	sesudah, err := repo.Dampak(ctx, p.Work.ID, p.Work.ID)
 	if err != nil {
 		t.Fatalf("mencacah dampak sesudah hapus: %v", err)
 	}
@@ -340,7 +341,7 @@ func TestHapusMengkaskadeSampaiCicit(t *testing.T) {
 	// benar-benar hilang. Itulah satu-satunya cara membuktikan AC "jumlah yang
 	// ditampilkan popup sama persis dengan yang benar-benar terhapus" -
 	// membandingkan angka dengan dirinya sendiri tidak membuktikan apa pun.
-	sebelum, err := repo.Dampak(ctx, p.Work.ID, p.Work.CaseID)
+	sebelum, err := repo.Dampak(ctx, p.Work.ID, p.Work.ID)
 	if err != nil {
 		t.Fatalf("mencacah dampak: %v", err)
 	}
@@ -359,7 +360,7 @@ func TestHapusMengkaskadeSampaiCicit(t *testing.T) {
 	}
 
 	tx2, _ := db.Mulai(ctx)
-	if err := repo.HapusFisik(ctx, tx2, p.Work.ID, p.Work.CaseID); err != nil {
+	if err := repo.HapusFisik(ctx, tx2, p.Work.ID, p.Work.ID); err != nil {
 		_ = tx2.Rollback()
 		t.Fatalf("menghapus pohon: %v", err)
 	}
@@ -374,7 +375,7 @@ func TestHapusMengkaskadeSampaiCicit(t *testing.T) {
 	if len(spr) != 0 {
 		t.Errorf("sesudah hapus masih ada %d kelompok spreading - kaskade tidak sampai cicit", len(spr))
 	}
-	n, err := repo.CacahBarisLama(ctx, p.Work.CaseID)
+	n, err := repo.CacahBarisLama(ctx, p.Work.ID)
 	if err != nil {
 		t.Fatal(err)
 	}

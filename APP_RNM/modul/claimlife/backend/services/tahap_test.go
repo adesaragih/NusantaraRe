@@ -131,7 +131,7 @@ func TestSerahTerimaDanJalurBalik(t *testing.T) {
 // ⛔ Perjalanan bolak-balik. Kolom `TAHAP` menyimpan nama yang `String()`
 // hasilkan; bila `TahapDariNama` tidak dapat membacanya kembali, kasus yang
 // sudah tersimpan menjadi tak terbaca - dan gerbang tangganya diam-diam
-// jatuh ke cadangan `PY_POSITION` yang tidak dapat membedakan kedua tahap
+// jatuh ke cadangan `POSITION` yang tidak dapat membedakan kedua tahap
 // Admin.
 func TestTahapDariNamaKebalikanString(t *testing.T) {
 	semua := []models.Tahap{
@@ -189,7 +189,7 @@ func TestPindahTahapMenjagaPagarnya(t *testing.T) {
 		err, galat.ErrPermintaanTidakSah) {
 		t.Errorf("pengenal kosong: galat = %v, mau ErrPermintaanTidakSah", err)
 	}
-	// ⚠️ Gerbang perannya menuntut pembacaan PY_POSITION, jadi tanpa Oracle ia
+	// ⚠️ Gerbang perannya menuntut pembacaan POSITION, jadi tanpa Oracle ia
 	// berhenti di sana. Peran per tahap sendiri diuji langsung di atas.
 	if err := svc.Tahap().Pindah(ctx, pelakuBerperan(inti.PeranAdmin),
 		"CLM-1", models.TahapMedicalCheck, saatUji); !errors.Is(

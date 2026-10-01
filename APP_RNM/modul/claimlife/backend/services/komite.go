@@ -266,9 +266,13 @@ func (RosterBelumDiputuskan) AmbilAnggota(context.Context, uang.Money, string) (
 type MuatanKomite struct {
 	KlaimID      string
 	AdjustmentID string
-	// Lini dan Type diperlukan work object anaknya (`pxAddChildWork`).
+	// Lini diperlukan work object anaknya (`pxAddChildWork`).
+	//
+	// ⛔ Type TIDAK lagi: sejak migrasi 023 (keputusan work owner
+	// 01-10-2026) TYPE milik header klaim `T_GENERAL_CLAIM`, dan baris
+	// kerja Komite tidak menyimpannya - wewenang Komite membaca
+	// `TypeKlaim` klaim induknya.
 	Lini string
-	Type string
 	// Anggota adalah tangga yang roster tentukan, urut menaik.
 	//
 	// ⛔ Ia ADA di muatan sebab `CreateKMTLife_Act` menulis tangganya BERSAMA
@@ -446,7 +450,6 @@ func (p *Penyerahan) Serahkan(ctx context.Context, pelaku inti.Pelaku,
 			KlaimID:       klaimID,
 			AdjustmentID:  adjID,
 			Lini:          inti.LiniLife,
-			Type:          tipe,
 			Anggota:       anggota,
 			JumlahKlaim:   baris.JumlahKlaim,
 			KodeStatus:    baris.KodeStatus,
@@ -581,5 +584,5 @@ func (k kasusOracle) Buat(ctx context.Context, tx *db.Tx,
 		})
 	}
 	return k.pohon.BuatKasusKomite(ctx, tx,
-		m.KlaimID, m.AdjustmentID, m.Lini, m.Type, anggota, m.Waktu)
+		m.KlaimID, m.AdjustmentID, m.Lini, anggota, m.Waktu)
 }

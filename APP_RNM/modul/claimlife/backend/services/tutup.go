@@ -173,7 +173,7 @@ func (t *TutupKlaim) Tutup(ctx context.Context, pelaku inti.Pelaku, klaimID stri
 	}
 
 	// ⛔ Tahap ASAL, sama seperti perpindahan: orang menutup kasus yang
-	// SEDANG IA PEGANG. Kolom TAHAP menang; PY_POSITION cadangan baris lama.
+	// SEDANG IA PEGANG. Kolom TAHAP menang; POSITION cadangan baris lama.
 	asal, err := tahapKasus(ctx, baca, klaimID)
 	if err != nil {
 		return err

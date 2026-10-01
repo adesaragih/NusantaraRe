@@ -8,7 +8,8 @@ package models
 //
 // Dibaca sesudah: statusklaim.go.
 //
-// ⛔ RALAT BESAR 27-09-2026. Ronde pertama menganggap kolom `PY_POSITION`
+// ⛔ RALAT BESAR 27-09-2026. Ronde pertama menganggap kolom `PY_POSITION` (kini
+// `POSITION`, migrasi 023)
 // menyimpan pengenal shape (`"Assignment2"`). **Ia menyimpan NAMA PERAN.**
 // `[terverifikasi]` `Flow/Register_Flow.xml` berkas pecahan baris 582, 605,
 // 628, 668, dan 731: seluruhnya menyetel `pyWorkPage.pyPosition` ke
@@ -41,7 +42,8 @@ const (
 	TahapClaimAnalis
 )
 
-// Nama peran - satu tempat, dipakai kolom `PY_POSITION` apa adanya.
+// Nama peran - satu tempat, dipakai kolom `POSITION` apa adanya (bernama
+// `PY_POSITION` sampai migrasi 023, keputusan work owner 01-10-2026).
 const (
 	PeranAdminLife   = "ReasLifeAdmin"
 	PeranSPVLife     = "ReasLifeSPV"
@@ -95,7 +97,7 @@ func PeranPemegangTahap(t Tahap) (string, bool) {
 	return peran, ada
 }
 
-// TahapDariPeran menerjemahkan nilai kolom `PY_POSITION` menjadi tahap.
+// TahapDariPeran menerjemahkan nilai kolom `POSITION` menjadi tahap.
 //
 // ⛔ CADANGAN, bukan sumber - sejak butir **at** (27-09-2026). Sumber tahap
 // adalah kolom `TAHAP`; fungsi ini hanya dipakai untuk baris LAMA yang
@@ -103,7 +105,7 @@ func PeranPemegangTahap(t Tahap) (string, bool) {
 //
 // ⚠️ TIDAK TUNGGAL bagi Admin, dan di situlah batasnya: `ReasLifeAdmin`
 // memegang DUA tahap - Input Register dan Outstanding Claim - sehingga
-// `PY_POSITION` sendirian tidak dapat membedakan keduanya. Yang
+// `POSITION` sendirian tidak dapat membedakan keduanya. Yang
 // dikembalikan Outstanding, tahap Admin yang lebih jauh di tangga; baris
 // lama yang sebenarnya berada di Input Register karena itu akan tampak
 // Outstanding sampai kolom `TAHAP`-nya terisi. Itu diterima dan dicatat,
@@ -140,7 +142,7 @@ func TahapDariPeran(peran string) Tahap {
 // di tangga. Tangga yang setiap anaknya dapat dilompati bukan tangga.
 //
 // ⚠️ Input Register ⇄ Outstanding Claim keduanya dipegang `ReasLifeAdmin`,
-// sehingga `PY_POSITION` TIDAK berubah pada perpindahan itu - yang berubah
+// sehingga `POSITION` TIDAK berubah pada perpindahan itu - yang berubah
 // hanya `TAHAP`. Itulah sebabnya peta ini tidak dapat lagi berupa peta peran.
 var serahTerimaSah = map[Tahap]map[Tahap]bool{
 	TahapInputRegister: {TahapOutstanding: true},
@@ -185,7 +187,7 @@ func JalurBalikTahap(dari, ke Tahap) (keAdmin, keMedical bool) {
 // TahapBerlaku adalah tahap BERLAKU sebuah kasus - SATU sumber aturan
 // cadangannya (GILIRAN-11 paket 4; sebelumnya tersalin di lima layanan).
 //
-// Kolom `TAHAP` menang; `PY_POSITION` hanya CADANGAN untuk baris lama yang
+// Kolom `TAHAP` menang; `POSITION` hanya CADANGAN untuk baris lama yang
 // kolomnya masih kosong (butir at) - dengan batas yang TahapDariPeran
 // nyatakan. Hasil tak dikenal dikembalikan apa adanya: pemanggil yang memutus
 // apakah itu galat.

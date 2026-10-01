@@ -300,7 +300,7 @@ func TestPendaftaranMengisiTahapDanWaktuBuat(t *testing.T) {
 		"models.TahapOutstanding.String()",
 		"models.PeranAdminLife",
 		"Tahap:",
-		"PyPosition:",
+		"Position:",
 		"TglCreate:",
 		"CreateOp:",
 	} {

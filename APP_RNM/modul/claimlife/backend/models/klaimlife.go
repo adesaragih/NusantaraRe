@@ -406,6 +406,11 @@ type Klaim struct {
 	NomorKlaim string
 	NomorPolis string
 	NamaBisnis string
+	// Type adalah `Type` klaim (`QP`, `QR`, `TP`, `TR`, ...) - SATU-SATUNYA
+	// rumah tersimpannya: `T_GENERAL_CLAIM.TYPE` sejak migrasi 023 (pindah
+	// dari `T_WORK_CLAIM`, keputusan work owner 01-10-2026). Dibaca
+	// `TypeKlaim` (`inti/backend/kontrak/klaim.go`). BUKAN `Lini`.
+	Type string
 	// KodeBisnis adalah `BUSINESSID` - kode produk, bukan namanya.
 	//
 	// ⛔ TEMUAN AUDIT A0, 27-09-2026: nomor akseptasi memuatnya

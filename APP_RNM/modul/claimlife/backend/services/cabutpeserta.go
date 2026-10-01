@@ -91,10 +91,10 @@ func (st *Status) CabutPeserta(ctx context.Context, pelaku inti.Pelaku,
 	if err != nil {
 		return err
 	}
-	caseID, err := baca.CaseIDKlaim(ctx, klaimID)
-	if err != nil {
-		return err
-	}
+	// CASEID baris datar warisan = ID klaim (migrasi 023, keputusan work
+	// owner 01-10-2026): kolom CASE_ID dibuang, dan migrasi klaim lama
+	// memakai CASEID warisan sebagai ID.
+	caseID := klaimID
 	// ⛔ Penanda, cermin, dan jejaknya dalam SATU transaksi (ADR-U-0007).
 	return st.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		if err := baca.CabutPeserta(ctx, tx, klaimID, pesertaID); err != nil {

@@ -52,9 +52,9 @@ func TestSaveRNMMenyetelCerminSehinggaKlaimGandaTertangkap(t *testing.T) {
 	daftar := func(id string) string {
 		t.Helper()
 		p := models.PohonKlaim{
-			Work: models.WorkClaim{ID: id, CaseID: id, Lini: inti.LiniLife, Type: "QP"},
+			Work: models.WorkClaim{ID: id, Lini: inti.LiniLife},
 			Klaim: models.Klaim{
-				NomorKlaim: "UJI-" + id, NomorPolis: "UJI-POL-0001",
+				NomorKlaim: "UJI-" + id, NomorPolis: "UJI-POL-0001", Type: "QP",
 				Peserta: []models.Peserta{{
 					NomorPremiList: "UJI-PL-1", NomorSertifikat: "006", SumberID: "UJI-SRC-1", MataUang: "IDR",
 					Baris: []models.BarisAdjustment{{}},
