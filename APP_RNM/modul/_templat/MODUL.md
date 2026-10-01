@@ -15,9 +15,10 @@ kerangka (`claimfacin`, `nbtreatyin`, ...); templat ini untuk modul yang belum a
   saat modul mendapat layar pertamanya — nol `INSERT` (menu datar, keputusan work owner 30-09-2026;
   `APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md` bab 6).
 - Tabel kerja `T_WORK_<…>` baru (keputusan work owner 01-10-2026): WAJIB memuat `ID`, `COVER_KEY`,
-  `LINI`, `STATUS_WORK`, `CREATE_OP`, `CREATE_OP_NAME`, `TGL_CREATE`, `TGL_UPDATE` dengan nama dan tipe
-  seperti `T_WORK_CLAIM`; kolom posisi dinamai menurut properti Pega yang disimpannya (`PY_POSITION`
-  untuk `pyPosition`). Tabel tipe dan isinya: `docs/bersama/PANDUAN-TIM-PER-MODUL.md` bab 4.3.
+  `LINI`, `POSITION`, `STATUS_WORK`, `CREATE_OP`, `CREATE_OP_NAME`, `TGL_CREATE`, `TGL_UPDATE` dengan
+  nama dan tipe seperti `T_WORK_CLAIM`. `POSITION` berisi properti posisi Pega modul ini; `TYPE` milik
+  header kasus, `CASE_ID` tidak ada (`ID` dipakai). Tabel tipe dan isinya:
+  `docs/bersama/PANDUAN-TIM-PER-MODUL.md` bab 4.3.
 
 ⛔ Folder `_templat` sendiri TIDAK dibaca penjaga dan TIDAK terdaftar: nilainya penanda.
 

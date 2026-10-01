@@ -367,6 +367,33 @@ MIGRASI 059 - T_WORK_POLIS SERAGAM DENGAN T_WORK_CLAIM (01-10-2026)
   di ORA-01430: DBA menjalankan isi 059_seragam_kolom_t_work_polis_down.sql
   secara manual (seluruhnya berpelindung), lalu -migrate diulang.
 
+MIGRASI 023 - T_WORK_CLAIM SERAGAM (01-10-2026)
+
+  Keputusan work owner 01-10-2026. 023 (modul\claimlife) mengganti nama
+  PY_POSITION menjadi POSITION (isinya tetap pyPosition, nama peran),
+  memindah TYPE ke header klaim T_GENERAL_CLAIM, dan membuang CASE_ID - ID
+  dipakai sebagai gantinya. TAHAP tetap.
+
+  PENGAMAN CASE_ID: pernyataan pertama 023 memasang CHECK
+  (CASE_ID IS NULL OR CASE_ID = ID). Bila satu baris saja punya CASE_ID
+  yang berbeda dari ID, -migrate berhenti di ORA-02293 SEBELUM apa pun
+  berubah. Periksa dulu:
+    SELECT ID, CASE_ID FROM <skema>.T_WORK_CLAIM
+     WHERE CASE_ID IS NOT NULL AND CASE_ID <> ID;
+  Nol baris = aman. Ada baris = keputusan work owner dan DBA lebih dulu.
+
+  PENTING: -migrate dijalankan WORK OWNER, bukan executor - termasuk 023.
+  URUTAN DEPLOY: hentikan backend, -migrate 023 (bersama 059), lalu
+  jalankan biner dari commit 16cd6b8 ke atas. Biner SEBELUM 16cd6b8 masih
+  menulis PY_POSITION, TYPE, CASE_ID di T_WORK_CLAIM (ORA-00904 sesudah
+  023); biner 16cd6b8 ke atas menulis POSITION dan T_GENERAL_CLAIM.TYPE
+  (ORA-00904 sebelum 023). Data uji dimuat SESUDAH 023.
+
+  Pernyataan 2 dan 3 023 (ALTER ... ADD) tidak berpelindung katalog. Bila
+  023 gagal sesudah pernyataan 2, DBA menjalankan isi
+  023_seragam_kolom_t_work_claim_down.sql secara manual (seluruhnya
+  berpelindung), lalu -migrate diulang.
+
 Bila sesi berikutnya butuh Oracle lagi, setel ulang ketiga variabel itu.
 Env var hilang saat jendela ditutup.
 

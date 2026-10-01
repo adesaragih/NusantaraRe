@@ -144,23 +144,28 @@ perintah ini.
 `backend/modul.go` (`TestKolomDDLCocokDenganStruktur`).
 
 **Tabel kerja `T_WORK_<…>`** `[keputusan work owner 01-10-2026]` — setiap tabel kerja baru (satu baris per
-work object, padanan kasus Pega) memuat delapan kolom ini, dengan **nama dan tipe seperti `T_WORK_CLAIM`**:
+work object, padanan kasus Pega) memuat sembilan kolom ini, dengan **nama dan tipe seperti `T_WORK_CLAIM`**:
 
 | Kolom | Tipe | Isi |
 | --- | --- | --- |
 | `ID` | `VARCHAR2(32) NOT NULL`, PK | pengenal kasus (`pyID`, tanpa awalan kelas) |
 | `COVER_KEY` | `VARCHAR2(32)`, FK ke `ID` tabel itu sendiri **tanpa `ON DELETE`**, ber-index | kasus induk; kosong bila XML tidak memakai penunjuk induk |
 | `LINI` | `VARCHAR2(16)` | lini |
+| `POSITION` | `VARCHAR2(64)` | posisi kasus menurut properti Pega yang disimpannya — `pyPosition` (peran) di klaim, `Position` (layar) di polis |
 | `STATUS_WORK` | `VARCHAR2(32)` | `pyWorkStatus` VERBATIM |
 | `CREATE_OP` | `VARCHAR2(64)` | akun pembuat (`pxCreateOperator`) |
 | `CREATE_OP_NAME` | `VARCHAR2(128)` | nama pembuat — akun pelaku sampai login menyediakan nama tampilan |
 | `TGL_CREATE` | `DATE` | waktu lahir kasus, `SYSDATE` |
 | `TGL_UPDATE` | `DATE` | waktu ubah terakhir, `SYSDATE` di **setiap** pernyataan yang mengubah baris kasus |
 
-Kolom posisi dinamai menurut properti Pega yang disimpannya: `PY_POSITION` untuk `pyPosition` (peran,
-`T_WORK_CLAIM`), `POSITION` untuk `Position` (layar `Offer`/`Premium`, `T_WORK_POLIS`) — dua properti
-berbeda tidak diberi satu nama. Contoh: `modul/claimlife/backend/migrations/001_t_work_claim.sql` (+ 016,
-017) dan `modul/premiumlistlife/backend/migrations/059_seragam_kolom_t_work_polis.sql`; `LINI` dan
+Kolom posisi selalu bernama **`POSITION`** `[keputusan work owner 01-10-2026, migrasi Claim Life 023]` —
+isinya mengikuti properti Pega modul itu, jadi **jangan membandingkan `POSITION` antartabel kerja**:
+klaim menyimpan `pyPosition` (nama peran), polis menyimpan `Position` (layar `Offer`/`Premium`).
+**Bukan kolom tabel kerja:** `TYPE` milik header kasus (`T_GENERAL_CLAIM.TYPE` sejak 023), dan `CASE_ID`
+tidak ada — `ID` adalah pengenal kasus (migrasi data lama memakai CASEID warisan sebagai `ID`). Kolom
+khusus modul tetap boleh (`TAHAP`, `SENDTO_*` klaim; `FLAG_ONGOING_POLICY` polis). Contoh:
+`modul/claimlife/backend/migrations/001_t_work_claim.sql` (+ 016, 017, 023) dan
+`modul/premiumlistlife/backend/migrations/059_seragam_kolom_t_work_polis.sql`; `LINI`, `POSITION`, dan
 `STATUS_WORK` `T_WORK_POLIS` tetap `VARCHAR2(255)` karena datanya sudah ada (memperkecil dapat gagal).
 
 **4.4 Frontend** — `modul/nbtreatyin/frontend/menu.ts`:

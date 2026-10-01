@@ -1840,3 +1840,17 @@ berkunci **pengenal dokumen**, lewat satu fungsi yang dipakai penulis dan pembac
 
 **AC:** tidak ada AC tiket ini yang berubah centangnya. Yang bertambah **satu kolom** dengan jalur
 mundurnya, dan **satu rumus** yang sebelumnya salah.
+
+## Keputusan work owner 01-10-2026 — migrasi 023, `T_WORK_CLAIM` seragam
+
+Jawaban work owner atas `select * from t_work_claim`, lanjutan brief seragam kolom `T_WORK_POLIS`:
+
+| Kolom | Keputusan | Bukti |
+| --- | --- | --- |
+| `PY_POSITION` | diganti nama **`POSITION`**; isinya tetap `pyPosition` (nama peran) | `migrations/023_seragam_kolom_t_work_claim.sql` |
+| `TYPE` | **pindah ke `T_GENERAL_CLAIM`**; `TypeKlaim` membaca header; baris Komite tidak lagi menyimpannya | `TestTypeKlaimMembacaHeaderKlaim` |
+| `CASE_ID` | **dibuang**, `ID` dipakai; migrasi klaim lama memakai CASEID warisan sebagai `ID`; 023 menolak berjalan bila ada `CASE_ID` ≠ `ID` | `TestMigrasi023LangkahMaju`, `TestMigrasi023KatalogDanPengamanCaseID` `[db]` |
+| `TAHAP` | **tetap** | — |
+
+Diagram dan AC di atas yang menyebut `PY_POSITION`, `TYPE`, atau `CASE_ID` di `T_WORK_CLAIM` adalah
+keadaan sebelum 023. Acuan nama kolom: `docs/STRUKTUR-TABEL-CLAIM-LIFE.md`. AC 23 kini tanpa `CASE_ID`.
