@@ -12,6 +12,7 @@ import type { HalamanTreaty } from './menu'
 import InboxTreatyContract from './pages/InboxTreatyContract'
 import InboxTreatyContractDescription from './pages/InboxTreatyContractDescription'
 import InboxTreatyContractReinsType from './pages/InboxTreatyContractReinsType'
+import './tco.css'
 
 export function RuteTreaty({ halaman }: PropsRute<HalamanTreaty>) {
   return (

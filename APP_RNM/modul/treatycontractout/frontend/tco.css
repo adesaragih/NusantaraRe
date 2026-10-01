@@ -1,0 +1,146 @@
+/*
+ * Gaya modul Treaty Contract Out.
+ *
+ * ⛔ TERISOLASI: SETIAP pemilih diawali kelas akar `.tco` (dipasang di akar ketiga halaman modul:
+ * `InboxTreatyContract`, `InboxTreatyContractReinsType`, `InboxTreatyContractDescription`; panel dan
+ * popup modul dirender di dalamnya, Modal inti tanpa portal). Kelas khusus modul berawalan `tco-`.
+ * Kelas bersama `inti` (panel, btn, inbox__tabel, table__actions, form-grid, modal) hanya DITIMPA di
+ * bawah `.tco`, tidak pernah didefinisikan ulang secara global. Dijaga `gaya.test.ts`. Warna dari token
+ * tema bersama, jadi tema gelap ikut. Diimpor sekali oleh `rute.tsx`.
+ */
+
+/* Akar: boleh menyusut di dalam kolom flex/grid kerangka, sehingga tabel lebar menggulir di
+   pembungkusnya sendiri, bukan mendorong halaman melebar. */
+.tco {
+  min-width: 0;
+}
+
+.tco .inbox__kepala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+/* --------------------------------------------------------------- tabel */
+/* Pembungkus gulir setiap grid: tabel yang lebih lebar dari panel menggulir DI SINI, bukan keluar dari
+   panel atau mendorong halaman melebar. */
+.tco .tco-tabel {
+  width: 100%;
+  max-width: 100%;
+  margin-top: 16px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  /* Acuan ukuran isi baris rinci (`cqi` di bawah) = lebar area gulir yang TERLIHAT. */
+  container-type: inline-size;
+}
+
+.tco .tco-tabel > .inbox__tabel {
+  width: 100%;
+  margin-top: 0;
+}
+
+.tco .tco-tabel > .inbox__tabel thead th {
+  white-space: nowrap;
+}
+
+/* Kolom tombol baris menempel di kanan saat tabel digulir, sehingga aksi baris selalu terlihat. */
+.tco .tco-tabel th.table__actions,
+.tco .tco-tabel td.table__actions {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  box-shadow: -1px 0 0 var(--border);
+}
+
+.tco .tco-tabel th.table__actions {
+  background: var(--bg);
+}
+
+.tco .tco-tabel td.table__actions {
+  background: var(--surface);
+  white-space: nowrap;
+}
+
+.tco .tco-tabel tr:hover > td.table__actions {
+  background: var(--hover-baris);
+}
+
+.tco .tco-tabel td.table__actions > .btn + .btn {
+  margin-left: 6px;
+}
+
+/* Baris RINCI (panel Business, Reinsurer, Security dibuka di bawah barisnya): isinya menempel di kiri
+   area gulir dan tidak lebih lebar dari layar, sehingga panel di dalamnya tetap terbaca utuh walau
+   tabel kontraknya digulir menyamping. */
+.tco .tco-tabel tr.inbox__rinci > td {
+  padding: 12px;
+}
+
+.tco .tco-tabel tr.inbox__rinci > td > * {
+  position: sticky;
+  left: 12px;
+  /* Cadangan peramban tanpa container query, lalu batas tepat selebar area gulir. */
+  max-width: calc(100vw - 48px);
+  max-width: calc(100cqi - 24px);
+}
+
+/* Grid di dalam popup dibatasi tingginya dan menggulir di dalam. */
+.tco .modal .tco-tabel {
+  max-height: 50vh;
+  overflow: auto;
+}
+
+/* ------------------------------------------------- tablet, laptop kecil */
+@media (max-width: 1024px) {
+  .tco .panel {
+    padding: 16px;
+  }
+}
+
+/* ---------------------------------------------------------------- ponsel */
+@media (max-width: 640px) {
+  .tco .panel {
+    padding: 12px;
+    border-radius: var(--radius-sm);
+  }
+
+  .tco .aksi-baris > .btn {
+    flex: 1 1 auto;
+  }
+
+  .tco .tco-tabel > .inbox__tabel th,
+  .tco .tco-tabel > .inbox__tabel td {
+    padding: 8px 10px;
+  }
+
+  .tco .tco-tabel tr.inbox__rinci > td {
+    padding: 8px;
+  }
+
+  .tco .tco-tabel tr.inbox__rinci > td > * {
+    left: 8px;
+    max-width: calc(100vw - 32px);
+    max-width: calc(100cqi - 16px);
+  }
+
+  /* Ponsel: kolom tombol TIDAK menempel - di layar sempit ia menutupi hampir seluruh kolom data.
+     Data tampil lebih dulu; tombol dijangkau dengan menggeser tabel di dalam panel. */
+  .tco .tco-tabel th.table__actions,
+  .tco .tco-tabel td.table__actions {
+    position: static;
+    box-shadow: none;
+  }
+
+  .tco .modal__actions {
+    flex-wrap: wrap;
+  }
+
+  .tco .modal__actions > .btn {
+    flex: 1 1 auto;
+  }
+}

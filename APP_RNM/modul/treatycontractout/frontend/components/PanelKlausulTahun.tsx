@@ -62,35 +62,37 @@ export default function PanelKlausulTahun({ tahun, onTutup }: { tahun: TahunTrea
         {daftar === null && galat === null && <Memuat />}
         {daftar !== null && daftar.length === 0 && <Kosong pesan={KLAUSUL_TCO.kosong} />}
         {daftar !== null && daftar.length > 0 && (
-          <table className="inbox__tabel">
-            <thead>
-              <tr>
-                <th>{KLAUSUL_TCO.kolomId}</th>
-                <th>{KLAUSUL_TCO.kolomDescriptionName}</th>
-                <th className="table__actions" />
-              </tr>
-            </thead>
-            <tbody>
-              {daftar.map((j) => (
-                <tr key={j.id} className={j.id === terbuka ? 'inbox__baris belah__baris--aktif' : 'inbox__baris'}>
-                  <td>{j.id}</td>
-                  <td>{j.descName}</td>
-                  <td className="table__actions">
-                    <button
-                      type="button"
-                      className="btn btn--ghost btn--sm"
-                      aria-haspopup="dialog"
-                      onClick={() => {
-                        setTerbuka((t) => alihJenisTunggal(t, j.id))
-                      }}
-                    >
-                      {KLAUSUL_TCO.show}
-                    </button>
-                  </td>
+          <div className="tco-tabel">
+            <table className="inbox__tabel">
+              <thead>
+                <tr>
+                  <th>{KLAUSUL_TCO.kolomId}</th>
+                  <th>{KLAUSUL_TCO.kolomDescriptionName}</th>
+                  <th className="table__actions" />
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {daftar.map((j) => (
+                  <tr key={j.id} className={j.id === terbuka ? 'inbox__baris belah__baris--aktif' : 'inbox__baris'}>
+                    <td>{j.id}</td>
+                    <td>{j.descName}</td>
+                    <td className="table__actions">
+                      <button
+                        type="button"
+                        className="btn btn--ghost btn--sm"
+                        aria-haspopup="dialog"
+                        onClick={() => {
+                          setTerbuka((t) => alihJenisTunggal(t, j.id))
+                        }}
+                      >
+                        {KLAUSUL_TCO.show}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
       {jenis !== undefined && (

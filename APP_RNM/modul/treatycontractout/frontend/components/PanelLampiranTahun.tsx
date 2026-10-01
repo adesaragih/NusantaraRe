@@ -183,66 +183,68 @@ export default function PanelLampiranTahun({ tahunID }: { tahunID: string }) {
       {daftar === null && galat === null && <Memuat />}
       {daftar !== null && baris.length === 0 && <Kosong pesan={LAMPIRAN_TCO.kosong} />}
       {baris.length > 0 && (
-        <table className="inbox__tabel">
-          <thead>
-            <tr>
-              <th scope="col">{LAMPIRAN_TCO.kolomFileName}</th>
-              <th scope="col">{LAMPIRAN_TCO.kolomType}</th>
-              <th scope="col">{LAMPIRAN_TCO.kolomStatus}</th>
-              <th scope="col" aria-label={LAMPIRAN_TCO.kolomAksi} />
-            </tr>
-          </thead>
-          <tbody>
-            {baris.map((l) => (
-              <tr key={l.id}>
-                <td>
-                  {bolehUnduh(l) ? (
-                    <button
-                      type="button"
-                      className="btn btn--link"
-                      disabled={sibuk}
-                      onClick={() =>
-                        void jalankan(async () => {
-                          await unduhBerkasBeridentitas(jalurIsiLampiran(tahunID, l.id), l.fileName)
-                          return undefined
-                        })
-                      }
-                    >
-                      {l.fileName}
-                    </button>
-                  ) : (
-                    l.fileName
-                  )}
-                </td>
-                <td>{l.category}</td>
-                <td title={l.galat !== '' ? l.galat : undefined}>
-                  {labelStatusLampiran(l.status)}
-                  {l.galat !== '' && <small> — {l.galat}</small>}
-                </td>
-                <td>
-                  {bolehUlangi(l) && (
+        <div className="tco-tabel">
+          <table className="inbox__tabel">
+            <thead>
+              <tr>
+                <th scope="col">{LAMPIRAN_TCO.kolomFileName}</th>
+                <th scope="col">{LAMPIRAN_TCO.kolomType}</th>
+                <th scope="col">{LAMPIRAN_TCO.kolomStatus}</th>
+                <th scope="col" aria-label={LAMPIRAN_TCO.kolomAksi} />
+              </tr>
+            </thead>
+            <tbody>
+              {baris.map((l) => (
+                <tr key={l.id}>
+                  <td>
+                    {bolehUnduh(l) ? (
+                      <button
+                        type="button"
+                        className="btn btn--link"
+                        disabled={sibuk}
+                        onClick={() =>
+                          void jalankan(async () => {
+                            await unduhBerkasBeridentitas(jalurIsiLampiran(tahunID, l.id), l.fileName)
+                            return undefined
+                          })
+                        }
+                      >
+                        {l.fileName}
+                      </button>
+                    ) : (
+                      l.fileName
+                    )}
+                  </td>
+                  <td>{l.category}</td>
+                  <td title={l.galat !== '' ? l.galat : undefined}>
+                    {labelStatusLampiran(l.status)}
+                    {l.galat !== '' && <small> — {l.galat}</small>}
+                  </td>
+                  <td>
+                    {bolehUlangi(l) && (
+                      <button
+                        type="button"
+                        className="btn btn--ghost btn--sm"
+                        disabled={sibuk}
+                        onClick={() => void jalankan(async () => (await ulangiLampiranTahun(tahunID, l.id)).peringatan)}
+                      >
+                        {LAMPIRAN_TCO.ulangi}
+                      </button>
+                    )}{' '}
                     <button
                       type="button"
                       className="btn btn--ghost btn--sm"
                       disabled={sibuk}
-                      onClick={() => void jalankan(async () => (await ulangiLampiranTahun(tahunID, l.id)).peringatan)}
+                      onClick={() => void jalankan(async () => (await hapusLampiranTahun(tahunID, l.id)).peringatan)}
                     >
-                      {LAMPIRAN_TCO.ulangi}
+                      {LAMPIRAN_TCO.delete}
                     </button>
-                  )}{' '}
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    disabled={sibuk}
-                    onClick={() => void jalankan(async () => (await hapusLampiranTahun(tahunID, l.id)).peringatan)}
-                  >
-                    {LAMPIRAN_TCO.delete}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </section>
   )

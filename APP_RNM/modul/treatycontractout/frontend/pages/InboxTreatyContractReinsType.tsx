@@ -38,7 +38,7 @@ export default function InboxTreatyContractReinsType() {
   const terpilih = tahun?.find((t) => t.id === pilih) ?? null
 
   return (
-    <div className="inbox">
+    <div className="inbox tco">
       <header className="inbox__kepala">
         <h2 className="inbox__judul">{KONTRAK_TCO.judul}</h2>
       </header>

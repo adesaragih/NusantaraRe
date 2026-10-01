@@ -33,7 +33,7 @@ export default function InboxTreatyContractDescription() {
   const terpilih = tahun?.find((t) => t.id === pilih) ?? null
 
   return (
-    <div className="inbox">
+    <div className="inbox tco">
       <header className="inbox__kepala">
         <h2 className="inbox__judul">{MENU_TCO.inboxTreatyContractDescription}</h2>
       </header>

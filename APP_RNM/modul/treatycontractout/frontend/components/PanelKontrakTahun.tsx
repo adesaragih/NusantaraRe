@@ -260,80 +260,82 @@ export default function PanelKontrakTahun({ tahun, onTutup }: { tahun: TahunTrea
       {daftar === null && galat === null && <Memuat />}
       {daftar !== null && daftar.length === 0 && <Kosong pesan={KONTRAK_TCO.kosong} />}
       {daftar !== null && daftar.length > 0 && (
-        <table className="inbox__tabel">
-          <thead>
-            <tr>
-              <th>{KONTRAK_TCO.kolomReinsType}</th>
-              <th>{KONTRAK_TCO.kolomTreatyStart}</th>
-              <th>{KONTRAK_TCO.kolomTreatyEnd}</th>
-              <th className="table__actions" />
-            </tr>
-          </thead>
-          <tbody>
-            {daftar.map((k) => (
-              <Fragment key={k.id}>
-                <tr className={rinci?.kontrakID === k.id ? 'inbox__baris belah__baris--aktif' : 'inbox__baris'}>
-                  <td>{sel(k.reinsTypeName)}</td>
-                  <td>{sel(formatDate(k.treatyStartDate))}</td>
-                  <td>{sel(formatDate(k.treatyEndDate))}</td>
-                  <td className="table__actions">
-                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => buka(denganTanggalTahun(formKontrakDari(k), tahun))}>
-                      {KONTRAK_TCO.edit}
-                    </button>{' '}
-                    <button
-                      type="button"
-                      className="btn btn--ghost btn--sm"
-                      aria-expanded={rinci?.daftar === 'business' && rinci.kontrakID === k.id}
-                      onClick={() => {
-                        setRinci((r) => alihRinci(r, 'business', k.id))
-                      }}
-                    >
-                      {KONTRAK_TCO.businessList}
-                    </button>{' '}
-                    <button
-                      type="button"
-                      className="btn btn--ghost btn--sm"
-                      aria-expanded={rinci?.daftar === 'reinsurer' && rinci.kontrakID === k.id}
-                      onClick={() => {
-                        setRinci((r) => alihRinci(r, 'reinsurer', k.id))
-                      }}
-                    >
-                      {KONTRAK_TCO.reinsurerList}
-                    </button>{' '}
-                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => mintaHapus(k)}>
-                      {KONTRAK_TCO.delete}
-                    </button>
-                  </td>
-                </tr>
-                {rinci?.kontrakID === k.id && (
-                  <tr className="inbox__rinci">
-                    <td colSpan={4}>
-                      {rinci.daftar === 'business' ? (
-                        <PanelBusinessKombinasi
-                          key={`business/${k.id}`}
-                          tahunID={tahun.id}
-                          kontrakID={k.id}
-                          onTutup={() => {
-                            setRinci(null)
-                          }}
-                        />
-                      ) : (
-                        <PanelReinsurerKombinasi
-                          key={`reinsurer/${k.id}`}
-                          tahunID={tahun.id}
-                          kontrakID={k.id}
-                          onTutup={() => {
-                            setRinci(null)
-                          }}
-                        />
-                      )}
+        <div className="tco-tabel">
+          <table className="inbox__tabel">
+            <thead>
+              <tr>
+                <th>{KONTRAK_TCO.kolomReinsType}</th>
+                <th>{KONTRAK_TCO.kolomTreatyStart}</th>
+                <th>{KONTRAK_TCO.kolomTreatyEnd}</th>
+                <th className="table__actions" />
+              </tr>
+            </thead>
+            <tbody>
+              {daftar.map((k) => (
+                <Fragment key={k.id}>
+                  <tr className={rinci?.kontrakID === k.id ? 'inbox__baris belah__baris--aktif' : 'inbox__baris'}>
+                    <td>{sel(k.reinsTypeName)}</td>
+                    <td>{sel(formatDate(k.treatyStartDate))}</td>
+                    <td>{sel(formatDate(k.treatyEndDate))}</td>
+                    <td className="table__actions">
+                      <button type="button" className="btn btn--ghost btn--sm" onClick={() => buka(denganTanggalTahun(formKontrakDari(k), tahun))}>
+                        {KONTRAK_TCO.edit}
+                      </button>{' '}
+                      <button
+                        type="button"
+                        className="btn btn--ghost btn--sm"
+                        aria-expanded={rinci?.daftar === 'business' && rinci.kontrakID === k.id}
+                        onClick={() => {
+                          setRinci((r) => alihRinci(r, 'business', k.id))
+                        }}
+                      >
+                        {KONTRAK_TCO.businessList}
+                      </button>{' '}
+                      <button
+                        type="button"
+                        className="btn btn--ghost btn--sm"
+                        aria-expanded={rinci?.daftar === 'reinsurer' && rinci.kontrakID === k.id}
+                        onClick={() => {
+                          setRinci((r) => alihRinci(r, 'reinsurer', k.id))
+                        }}
+                      >
+                        {KONTRAK_TCO.reinsurerList}
+                      </button>{' '}
+                      <button type="button" className="btn btn--ghost btn--sm" onClick={() => mintaHapus(k)}>
+                        {KONTRAK_TCO.delete}
+                      </button>
                     </td>
                   </tr>
-                )}
-              </Fragment>
-            ))}
-          </tbody>
-        </table>
+                  {rinci?.kontrakID === k.id && (
+                    <tr className="inbox__rinci">
+                      <td colSpan={4}>
+                        {rinci.daftar === 'business' ? (
+                          <PanelBusinessKombinasi
+                            key={`business/${k.id}`}
+                            tahunID={tahun.id}
+                            kontrakID={k.id}
+                            onTutup={() => {
+                              setRinci(null)
+                            }}
+                          />
+                        ) : (
+                          <PanelReinsurerKombinasi
+                            key={`reinsurer/${k.id}`}
+                            tahunID={tahun.id}
+                            kontrakID={k.id}
+                            onTutup={() => {
+                              setRinci(null)
+                            }}
+                          />
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {konfirmasi !== null && (
