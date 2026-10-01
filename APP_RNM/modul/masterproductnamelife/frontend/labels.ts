@@ -294,7 +294,7 @@ export const PEMILIH_MPNL = {
   kolomRiRateName: 'RIRate Name',
 } as const
 
-/** Dialog `View Rate` - FlowAction + section `ViewRate` (datanya menunggu OQ-MPNL-03). */
+/** Dialog `View Rate` - FlowAction + section `ViewRate` (view `RATE_LIFE`, K1 01-10-2026). */
 export const RATE_MPNL = {
   /** `ViewRate.xml` b843 `<pyValue>`. */
   judul: 'Outward List',

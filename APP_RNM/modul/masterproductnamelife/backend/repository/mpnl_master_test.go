@@ -33,6 +33,9 @@ func TestSQLMasterMengikutiRD(t *testing.T) {
 			"FETCH FIRST 500 ROWS ONLY"}, 1},
 		// BrowseCauseofLossLife_RD: CauseofLoss Contains b502; urut ID ASC b598.
 		{models.MasterPenyebab, []string{"FROM S.CAUSEOFLOSS_LIFE", "UPPER(CAUSEOFLOSS) LIKE :1", "ORDER BY ID ASC"}, 1},
+		// BrowseRateLifeSummary (K1 01-10-2026): USEDBY Contains CARI1 b807; urut ID ASC b694; maks 500 b674.
+		{models.MasterRIRate, []string{"SELECT ID, USEDBY FROM S.RATE_LIFE_SUMMARY", "UPPER(USEDBY) LIKE :1",
+			"ORDER BY ID ASC", "FETCH FIRST 500 ROWS ONLY"}, 1},
 	}
 	for _, k := range kasus {
 		s, ada := sumberMaster[k.jenis]
@@ -54,9 +57,6 @@ func TestSQLMasterMengikutiRD(t *testing.T) {
 		if !strings.Contains(rata(s.sqlAmbil("S."+s.objek)), "ID = :1") {
 			t.Errorf("%s: pembaca satu nilai tidak dikunci ID", k.jenis)
 		}
-	}
-	if _, ada := sumberMaster[models.MasterRIRate]; ada {
-		t.Error("R/I Rate menunggu OQ-MPNL-03 - sumbernya tidak boleh dibaca")
 	}
 }
 

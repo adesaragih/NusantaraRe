@@ -109,7 +109,7 @@ Setiap section pemilih: medan **`Search`** (`SearchPolicyHolder.CARI1`), Enter �
 | Policy Holder | `ChoosePolicyHolder` b91 → `PolicyHolder_Section` | `BrowseClientNusaRe_RD` b2561 (kelas `CLIENT`): `.Name Contains param.PolicyHolderName` b556, `.Name != "-"` b570, `.Name IS NOT NULL` b597, `.BU_Note = Param.Business` b603 (param tidak dikirim → abaikan); urut `.Name ASC` b747, `.BU_Note ASC` b760 | `ID` b1532 · `Name` b1673 | `Choose` b2298 → `setPolicyHolder_DT` b2416: `ProductNameInward.POLICYHODER ← id`, `POLICYHODERNAME ← name` | `GET …/master/pemegang-polis?cari=` | ✅ paket 2 |
 | Currency | `ChooseCurrency` b91 → `Currency_Section` | `BrowseCurrencyLIFE_RD` b2569 (kelas `CURRENCY`): `.Currency != "ITL"` b541, `.Currency Contains Param.Currency` b553; urut `.Currency ASC` b757 | `ID` b1540 · `Name` b1681 → `.ID`, `.Currency` | `Choose` b2303 → `setCurrency_DT` b2424: `ProductNameInward.CURRENCYID ← id`, `CURRENCY ← currency` | `GET …/master/mata-uang?cari=` | ✅ paket 2 |
 | R/I Risk | `ChooseRIRisk` b86 → `RIRISK_Section` | `BrowseRIRiskSummary` b2555 (kelas `RIRISK_LIFE_SUMMARY`): `.ID = param.id` b524, `.USEDBY = param.usedby` b537 (tidak dikirim), `.USEDBY Contains Param.SearchUsedby` b555 (= `CARI1`); urut `.ID ASC` b682 | `ID` b1524 · `Name` b1665 → `.ID`, `.USEDBY` | `Choose` b2287 → `setRIRISK_DT` b2410: `RIRISK ← usedby`, `RIRISKID ← id` | `GET …/master/ri-risk?cari=` | ✅ paket 2 (OQ-MPNL-04) |
-| R/I Rate | `ChooseRIRate` (kelas `ASM-FW-GISFW-Data-Plan`) b96 → `RIRate_Section` | `BrowseRateLifeSummary` b2707 (kelas `RATE_LIFE_SUMMARY`): `.ID = param.id`, `.USEDBY Contains param.idusedby` (= `CARI1`); urut `.ID ASC` b692 | `ID` b1590 · `RIRate Name` b1739 → `.ID`, `.USEDBY` | `Choose` b2424 → `SetRIRate` b2556: 1 b249 `·` baris plan `.RIRATEID ← id`, `.RIRATE ← usedby` | `GET …/master/ri-rate?cari=` | ⏸️ paket 2 — **OQ-MPNL-03** (view atas JSON rate; 503 berkalimat, preseden OQ-MCRL-13) |
+| R/I Rate | `ChooseRIRate` (kelas `ASM-FW-GISFW-Data-Plan`) b96 → `RIRate_Section` | `BrowseRateLifeSummary` b2707 (kelas `RATE_LIFE_SUMMARY`): `.ID = param.id`, `.USEDBY Contains param.idusedby` (= `CARI1`); urut `.ID ASC` b692 | `ID` b1590 · `RIRate Name` b1739 → `.ID`, `.USEDBY` | `Choose` b2424 → `SetRIRate` b2556: 1 b249 `·` baris plan `.RIRATEID ← id`, `.RIRATE ← usedby` | `GET …/master/ri-rate?cari=` | ⏸️ paket 2 — **OQ-MPNL-03** (view atas JSON rate; 503 berkalimat, preseden OQ-MCRL-13) *(ralat 01-10-2026, K1 keputusan work owner 01-10-2026: view DEV `RATE_LIFE_SUMMARY` dibaca saja `SELECT ID, USEDBY`, `UPPER(USEDBY) LIKE`, urut `ID ASC`, 500 baris b674; `Choose` → `.RIRATEID ← .ID`, `.RIRATE ← .USEDBY` master; ✅ OQ-MPNL-03 ditutup)* |
 | Cause Of Loss | `ChooseCauseOfLoss` b91 → `CauseOfLoss_Section` | `BrowseCauseofLossLife_RD` b2489 (kelas `CAUSEOFLOSS_LIFE`): `.CauseofLoss Contains Param.CauseOfLoss` b502; urut `.ID ASC` b598 | `ID` b1459 · `Name` b1600 → `.ID`, `.CauseofLoss` | `Choose` b2222 → `setCauseOfLoss_DT` b2345: `CAUSEID ← id`, `CAUSE ← cause` | `GET …/master/penyebab?cari=` | ✅ paket 2 |
 
 Tabel fisik = nama kelas `ASM-FW-GISFW-Int-<X>` (konvensi; preseden Retro Life `AGENT`, `BUSINESS`, `REINSURANCETYPE`) — objek yang tidak ada dijawab 503 yang menyebut objeknya (OQ-MPNL-04).
@@ -186,7 +186,7 @@ Kunci yang sudah ada di JSON lama dan tidak dikelola layar **dipertahankan** apa
 | `SetTreatyIn_Act`, `TreatyInInputVis`, `CheckDuplicateOffer`, `GetCountClaim`, `GetCurrentDate`, `BrowseTreatyIn`, `SaveTreatyIn`, `BrowseTREATY_IN`, `TreatySetReinstatement`, `SetReinstatementPct`, `ConvertHistoryDate`, `LoadAttachment`, `GetAttachment2_Sql`, `TreatyInDownloadAll`, `DownloadAll_Act`, `GetAllAttachment2_Sql`, `TreatyInIDSetPyPortal` | jalur treaty inward (kelas `Data-Portal` / `TREATY_IN`) — **salah ekspor** (OQ-056 `[keputusan work owner]`); satu-satunya pemicu di layar produk adalah `Download All` b67657 (§6) | ➖ |
 | `SaveInwardProductName_Act`, harness + section `InwardProductName` | hanya dibuka `Inward` b75368 `OTHER 1=2` | ➖ |
 | `CountMaxReasured_Act` | dipanggil hanya `TYPE_CEDING` b3385 (`OTHER 1=2`) | ➖ |
-| `SetParamRate` (`ParamID.RIRATEID ← InputBusinessLife.RIRATEID`, kelas `@baseclass`) | halaman `InputBusinessLife` milik Retro Life — di layar ini `ParamID` diisi baris plan (`View Rate` b34310) | ⏸️ `View Rate` OQ-MPNL-03 |
+| `SetParamRate` (`ParamID.RIRATEID ← InputBusinessLife.RIRATEID`, kelas `@baseclass`) | halaman `InputBusinessLife` milik Retro Life — di layar ini `ParamID` diisi baris plan (`View Rate` b34310) | ⏸️ `View Rate` OQ-MPNL-03 *(ralat 01-10-2026, K1 keputusan work owner 01-10-2026: ✅ `View Rate` membaca view `RATE_LIFE` disaring `RIRATEID` baris plan. ⚠️ Penyimpangan sadar: grid `ViewRate.xml` b1024 menyaring `ParamID.OUTWARDRATEID`, yang tidak diisi rule korpus mana pun — `SetParamRate` b259 hanya mengisi `ParamID.RIRATEID` dari halaman Retro — sehingga di Pega dialog ini tidak pernah menampilkan rate baris plan)* |
 | `When/recordEvent`, `SetCategoryAttachTreatyin` + `CategoryAttach_SQL` | `recordEvent` nol pemanggil; kategori lampiran ditimpa `"File"` (`ProductNameSaveAttachment` 2.1 b475) sesudah `SetCategory_act` mengisi daftar kategori treaty-in | ➖ |
 
 ## 9. Rute API dan komponen
@@ -198,11 +198,11 @@ menjawab 503 bila Oracle tidak dikonfigurasi, galat berbadan `{"galat": "..."}`.
 | --- | --- | --- |
 | `GET /produk` | grid `InboxProductName` mode daftar (b71246, RD `BrowseProduct_Life`) | 1 |
 | `GET /produk/{id}` | tombol `View` b74798 (`SetProductName` + `SetProductNameInward`) | 1 |
-| `GET /master/{jenis}?cari=` — `ceding`, `sob`, `pemegang-polis`, `mata-uang`, `ri-risk`, `penyebab`; `ri-rate` = 503 (OQ-MPNL-03) | tombol `Choose*` → section pemilih → grid RD (§4); autocomplete medan form | 2 |
+| `GET /master/{jenis}?cari=` — `ceding`, `sob`, `pemegang-polis`, `mata-uang`, `ri-risk`, `penyebab`; `ri-rate` = 503 (OQ-MPNL-03) | tombol `Choose*` → section pemilih → grid RD (§4); autocomplete medan form | 2 *(ralat 01-10-2026, K1 keputusan work owner 01-10-2026: `ri-rate` = 200, view `RATE_LIFE_SUMMARY`)* |
 | `POST /produk` · `PUT /produk/{id}` | `Add` b71865 / `View` → `Edit` b59489 → `Save` b59041 → `SaveProductName_Confirm` → `SaveProductName_Act` (§7); nol rute hapus (korpus tanpa hapus produk) | 3 |
 | (rute yang sama) | sisi inward `SaveProductName_Act` 13–16 — `M_PRODUCTINWARD_LIFE` di transaksi yang sama (P4); uji tiga view (`db`) | 4 |
 | (rute yang sama) | wajib-isi `SaveProductName_Act` 2–5 — `Product Name Empty`, `Ceding Empty`, `Policy Holder Empty`, `SOB Empty` (422, semua sekaligus) | 5 |
-| `GET /master-plan?cari=` · `GET /rate?riRateId=` (503, OQ-MPNL-03) | autocomplete `Plan Name` b33121 · tombol `View Rate` b34113; gerbang `ProteksiPlanListLife` dan `UNDERWRITING LIMIT` di simpan | 6 |
+| `GET /master-plan?cari=` · `GET /rate?riRateId=` (503, OQ-MPNL-03) | autocomplete `Plan Name` b33121 · tombol `View Rate` b34113; gerbang `ProteksiPlanListLife` dan `UNDERWRITING LIMIT` di simpan | 6 *(ralat 01-10-2026, K1 keputusan work owner 01-10-2026: `GET /rate?riRateId=` = 200, view `RATE_LIFE`, `{daftar, total, terpotong}`, 500 baris `BrowseRateLife_RD` b730)* |
 | (rute yang sama) | `AddCommentList_Act` setiap simpan; `LIEN CLAUSE`, `DOCUMENT CLAIM`, `FINANCIAL UNDERWRITING` disimpan bersama produk | 7 |
 | `GET /produk/{id}/lampiran` · `POST /produk/{id}/lampiran` (multipart `berkas`) | `Refresh` b65270 / `View` · `Add attachment` b64747 → `Attach` b24 (`ProductNameSaveAttachment`) | 8 |
 | `POST /produk/{id}/lampiran/{lid}/ulangi` | (tiket 09) kirim ulang efek outbox yang gagal | 8 |
@@ -222,7 +222,7 @@ menjawab 503 bila Oracle tidak dikonfigurasi, galat berbadan `{"galat": "..."}`.
 | `components/Saran.tsx` | `pxAutoComplete` `Ceding`, `SOB`, `R/I Risk Name`, `Policy Holder`, `Currency`, `Plan Name` |
 | `components/PemilihMaster.tsx` | ketujuh `Choose*` → `Search` / grid `ID` · `Name` (`RIRate Name`) / `Choose` / `Submit` · `Cancel` (§4) |
 | `components/Dialog.tsx` | `SaveProductName_Confirm` (`Do you want to save the data?`, `Comment`, `Save` · `Cancel`), `EditProductName_Confirm` (`Do you want to Edit the data?`, `Edit` · `Cancel`) |
-| `components/ModalRate.tsx` | `View Rate` → `ViewRate` (`Outward List`, `ID` · `USEDBY` · `GENDER` · `CONTRACT` · `AGE` · `RATE`, `Submit` · `Cancel`) — data ⏸️ OQ-MPNL-03 |
+| `components/ModalRate.tsx` | `View Rate` → `ViewRate` (`Outward List`, `ID` · `USEDBY` · `GENDER` · `CONTRACT` · `AGE` · `RATE`, `Submit` · `Cancel`) — data ⏸️ OQ-MPNL-03 *(ralat 01-10-2026, K1 keputusan work owner 01-10-2026: data view `RATE_LIFE` ✅)* |
 | `components/PanelLampiran.tsx` | §6 — hanya untuk produk ber-ID (tiket 08: produk dulu, lampiran menyusul) |
 
 ⛔ Penjaga: `labels.test.ts` membuka korpus pada 131 baris tag label + 5 baris ekspresi/nilai berkutip, memastikan setiap
@@ -287,3 +287,14 @@ tekan SAVE untuk menyimpan`. Tanpa basis data tidak teramati: `View` baris grid,
 | 4 | `e1ff8b8` | uji manual baca-saja terhadap DEV (`LAPORAN-UJI-MANUAL.md`) |
 | 5 | `7b0fa8e` | dokumen §2, L6 (`Medical` teks bebas), L9 (nomor `bNNN` perintah standar) |
 | tinjauan | `43816c2` | perbaikan `/code-review`: panjang atas nilai akhir, batas 4000 byte kunci view, katalog bertipe, DDL tiruan = katalog, uji `db` kolom datar + inward; L9 putaran kedua **26** nomor langkah yang tertinggal (pesan commit-nya keliru menulis 23) |
+
+## Keputusan OQ work owner 01-10-2026 — K1 (`PROMPT-LANJUTAN-TIGA-MODUL-LIFE-KEPUTUSAN-OQ.md` §1)
+
+Nomor `bNNN` di bab ini dari `sed -e 's/></>\n</g' "Master Product Name Life/<Tipe>/<Rule>.xml" | grep -n '<teks>'`.
+
+| Unsur | Rule / baris | Dibangun |
+| --- | --- | --- |
+| `Choose R/I Rate` b34589 → `RIRate_Section` | grid RD `BrowseRateLifeSummary` b2707; param `id` kosong b1461, `idusedby = SearchPolicyHolder.CARI1` b1466; RD `.USEDBY Contains` b807, urut `.ID ASC` b694, `pyMaxRecords` 500 b674; `Choose` b2424 → `SetRIRate` b2448 (`.ID` b2463, `.USEDBY` b2469) | `GET /master/ri-rate?cari=` — view `RATE_LIFE_SUMMARY`, `SELECT ID, USEDBY` |
+| `View Rate` b34113 (`SetParamRate` b34310, `localAction ViewRate` b34354) | section `ViewRate` judul b843, grid RD `BrowseRateLife_RD` b3032; param b1024 `ParamID.OUTWARDRATEID`; RD `.IDUSEDBY = Param.idusedby` b859/b868, urut `.ID DESC` b748, `.RATE ASC` b786, `pyMaxRecords` 500 b730; kolom grid b2035–b2809 | `GET /rate?riRateId=` — view `RATE_LIFE`, enam kolom, `IDUSEDBY = :1`, 500 baris + `terpotong`; disaring `RIRATEID` baris plan (penyimpangan sadar, bab 6 baris `SetParamRate`) |
+| Simpan baris `PLAN LIST` | `ProteksiPlanListLife` (`RI/RATE tidak boleh kosong`) | pasangan R/I Rate **baru** wajib ada di `RATE_LIFE_SUMMARY`; nama = `.USEDBY` master; ID di luar view / nama ketikan tanpa pilihan = 422 berkalimat |
+| Penjaga | — | `periksaBacaSaja` (runtime, setiap objek `DaftarMasterDibacaSaja`), `TestMPNLSetiapSQLMasterAdalahSelect`, `TestMPNLRateDibacaKolomRDSaja`, gigit `TestMPNLPeriksaBacaSajaMenolakTulisanKeView`; mutasi `SELECT *` dan `UPDATE` = merah |

@@ -1,5 +1,5 @@
 {
-  "sumber": "ALL_TAB_COLUMNS dan ALL_OBJECTS skema DEV, dibaca asisten 01-10-2026 (brief PROMPT-LANJUTAN-MASTER-PRODUCT-NAME-LIFE-1.md §1, §2 L3). Baca-saja; nol nilai baris.",
+  "sumber": "ALL_TAB_COLUMNS dan ALL_OBJECTS skema DEV, dibaca asisten 01-10-2026 (brief PROMPT-LANJUTAN-MASTER-PRODUCT-NAME-LIFE-1.md §1, §2 L3). Baca-saja; nol nilai baris. RATE_LIFE_SUMMARY (6 kolom) dan RATE_LIFE (8 kolom): brief PROMPT-LANJUTAN-TIGA-MODUL-LIFE-KEPUTUSAN-OQ.md §1 K1, 01-10-2026.",
   "tabel": {
     "M_PRODUCT_LIFE": ["ID", "JSONDATA", "RIRISKID", "RIRISK"],
     "M_PRODUCTINWARD_LIFE": ["ID", "JSONDATA"]
@@ -18,6 +18,8 @@
     "CURRENCY": "VIEW",
     "CAUSEOFLOSS_LIFE": "VIEW",
     "PRODUCT_TYPE_LIFE": "VIEW",
-    "RIRISK_LIFE_SUMMARY": "VIEW"
+    "RIRISK_LIFE_SUMMARY": "VIEW",
+    "RATE_LIFE_SUMMARY": "VIEW",
+    "RATE_LIFE": "VIEW"
   }
 }
