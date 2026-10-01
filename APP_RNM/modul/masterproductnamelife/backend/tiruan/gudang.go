@@ -41,6 +41,8 @@ type Gudang struct {
 	// GagalTulis - bila terisi, setiap penulis menulis LALU gagal dengan galat
 	// ini (uji: transaksi gagal = nol tulisan).
 	GagalTulis error
+	// GagalTulisInward - penulis sisi inward gagal SESUDAH sisi umum tertulis (uji P4).
+	GagalTulisInward error
 
 	// Komit mencacah transaksi yang ditutup sukses.
 	Komit int
@@ -100,6 +102,7 @@ func (g *Gudang) SisipProduk(_ context.Context, _ *db.Tx, p models.Produk) (stri
 		return "", fmt.Errorf("%w: %s", repository.ErrIdentitasBentrok, id)
 	}
 	p.ID = id
+	p.Inward.ID, p.Inward.ProductID = id, id
 	umum, err := repository.RakitUmum(p, "", true)
 	if err != nil {
 		return "", err
@@ -109,6 +112,14 @@ func (g *Gudang) SisipProduk(_ context.Context, _ *db.Tx, p models.Produk) (stri
 	if g.GagalTulis != nil {
 		return "", g.GagalTulis
 	}
+	if g.GagalTulisInward != nil {
+		return "", g.GagalTulisInward
+	}
+	inward, err := repository.RakitInward(p, "")
+	if err != nil {
+		return "", err
+	}
+	g.Inward[id] = inward
 	return id, nil
 }
 
@@ -124,7 +135,24 @@ func (g *Gudang) PerbaruiProduk(_ context.Context, _ *db.Tx, p models.Produk) er
 	}
 	g.Umum[p.ID] = umum
 	g.tulisDatar(p)
-	return g.GagalTulis
+	if g.GagalTulis != nil {
+		return g.GagalTulis
+	}
+	if g.GagalTulisInward != nil {
+		return g.GagalTulisInward
+	}
+	p.Inward.ProductID = p.ID
+	idIn, isiIn := g.cariInward(p.ID)
+	if idIn == "" {
+		idIn = p.ID
+	}
+	p.Inward.ID = idIn
+	inward, err := repository.RakitInward(p, isiIn)
+	if err != nil {
+		return err
+	}
+	g.Inward[idIn] = inward
+	return nil
 }
 
 // DaftarProduk - urut ID.

@@ -36,6 +36,16 @@ func sqlPerbaruiUmum(tabel string) string {
 		BEGIN_DATE = TO_DATE(:5, 'DD/MM/YYYY') WHERE ID = :6`, tabel)
 }
 
+func sqlSisipInward(tabel string) string {
+	return fmt.Sprintf(`INSERT INTO %s (ID, JSONDATA) VALUES (:1, :2)`, tabel)
+}
+
+func sqlPerbaruiInward(tabel string) string {
+	return fmt.Sprintf(`UPDATE %s SET JSONDATA = :1 WHERE ID = :2`, tabel)
+}
+
+func argPerbaruiInward(id, jsonInward string) []any { return []any{clob(jsonInward), id} }
+
 func clob(teks string) go_ora.Clob { return go_ora.Clob{String: teks, Valid: true} }
 
 // datar - kolom datar `M_PRODUCT_LIFE` dari produk.
@@ -76,14 +86,16 @@ func (g *Gudang) exec(ctx context.Context, tx *db.Tx, objek string, susun func(s
 	return db.PastikanSatuBaris(hasil, "writing "+objek)
 }
 
-// SisipProduk menerbitkan ID baru (sequence) dan menulis produk baru.
-// Mengembalikan ID itu.
+// SisipProduk menerbitkan ID baru (sequence) dan menulis produk baru - KEDUA
+// tabel di transaksi pemanggil (P4). Baris inward ber-`ID` = `PRODUCTID` = ID
+// produk (R14). Mengembalikan ID itu.
 func (g *Gudang) SisipProduk(ctx context.Context, tx *db.Tx, p models.Produk) (string, error) {
 	id, err := g.identitasBaru(ctx, tx)
 	if err != nil {
 		return "", err
 	}
 	p.ID = id
+	p.Inward.ID, p.Inward.ProductID = id, id
 	umum, err := RakitUmum(p, "", true)
 	if err != nil {
 		return "", err
@@ -91,11 +103,21 @@ func (g *Gudang) SisipProduk(ctx context.Context, tx *db.Tx, p models.Produk) (s
 	if err := g.exec(ctx, tx, TabelProduk, sqlSisipUmum, argSisipUmum(p, umum)...); err != nil {
 		return "", err
 	}
+	inward, err := RakitInward(p, "")
+	if err != nil {
+		return "", err
+	}
+	if err := g.exec(ctx, tx, TabelInward, sqlSisipInward, id, clob(inward)); err != nil {
+		return "", err
+	}
 	return id, nil
 }
 
-// PerbaruiProduk menulis ulang produk yang ada; kunci JSON yang tidak
-// dikelola dipertahankan dari JSON tersimpan (dibaca di transaksi yang sama).
+// PerbaruiProduk menulis ulang produk yang ada - kedua tabel; kunci JSON yang
+// tidak dikelola dipertahankan dari JSON tersimpan (dibaca di transaksi yang
+// sama). Baris inward lama diperbarui menurut ID-NYA sendiri (data lama dapat
+// ber-ID sequence inward); produk tanpa baris inward mendapat baris baru ber-ID
+// produk.
 func (g *Gudang) PerbaruiProduk(ctx context.Context, tx *db.Tx, p models.Produk) error {
 	s, err := g.AmbilSimpanan(ctx, tx, p.ID, true)
 	if err != nil {
@@ -105,5 +127,22 @@ func (g *Gudang) PerbaruiProduk(ctx context.Context, tx *db.Tx, p models.Produk)
 	if err != nil {
 		return err
 	}
-	return g.exec(ctx, tx, TabelProduk, sqlPerbaruiUmum, argPerbaruiUmum(p, umum)...)
+	if err := g.exec(ctx, tx, TabelProduk, sqlPerbaruiUmum, argPerbaruiUmum(p, umum)...); err != nil {
+		return err
+	}
+	p.Inward.ProductID = p.ID
+	if !s.AdaInward {
+		p.Inward.ID = p.ID
+		inward, err := RakitInward(p, "")
+		if err != nil {
+			return err
+		}
+		return g.exec(ctx, tx, TabelInward, sqlSisipInward, p.ID, clob(inward))
+	}
+	p.Inward.ID = s.IDInward
+	inward, err := RakitInward(p, s.JSONInward)
+	if err != nil {
+		return err
+	}
+	return g.exec(ctx, tx, TabelInward, sqlPerbaruiInward, argPerbaruiInward(s.IDInward, inward)...)
 }

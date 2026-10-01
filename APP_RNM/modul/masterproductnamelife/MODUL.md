@@ -40,3 +40,18 @@ selalu berjalan sesudahnya). Slot menu `960-961` hanya menyalakan `DIMIGRASI` ba
 nol `INSERT` — menu datar 30-09-2026) saat modul mendapat layar pertamanya, di folder
 `backend/migrations/` modul ini sendiri — bentuk SQL-nya di `APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md`
 bab 6. Nomor selalu tiga digit.
+
+## Pernyataan untuk penjaga
+
+⛔ **Dibaca penjaga** `inti/backend/penjaga` — satu jenis pernyataan per judul `###`, satu baris per
+butir. Judul yang tidak ada berarti modul ini tidak menyatakan apa pun untuk jenis itu. Nilai di dalam
+`` ` `` dibaca apa adanya.
+
+### Pesan verbatim yang bukan nama orang
+
+Konstanta teks yang cocok dengan pola nama orang tetapi BUKAN nama orang (`TestNolNamaOrangDiKode`).
+Nilainya DIBACA dari sumber konstantanya, tidak diketik ulang.
+
+| Paket | Konstanta | Alasan |
+| --- | --- | --- |
+| `backend/services` | `labelPolicyHolder` | label medan VERBATIM `Policy Holder` (`InboxProductName.xml` b17129) - dipakai kalimat penolakan, bukan nama orang. |

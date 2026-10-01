@@ -50,3 +50,14 @@ func TestHTTPSimpanGalatBerkalimat(t *testing.T) {
 		t.Errorf("tanpa identitas: %d", kode)
 	}
 }
+
+// badanLengkap - produk UJI- lengkap (medan wajib terisi, pilihan ada di master uji).
+const badanLengkap = `{"umum":{"productName":"UJI PRODUK","ceding":"UJI CEDING SATU","cedingId":"L0UJI1",
+  "sobName":"UJI SOB","sobId":"L0SOB","riComm":"12,5","riRisk":"UJI RISK","riRiskId":"1000117",
+  "inwardName":"UJI PRODUK UJI PEMEGANG","treatyNumber":"UJI/001","cause":"ANY CAUSE","causeId":"100004",
+  "comment":"UJI komentar"},
+ "inward":{"policyHolder":"UJI-ORG-1","policyHolderName":"UJI PEMEGANG","insured":"UJI TERTANGGUNG",
+  "begin":"2026-03-01","mature":"2027-02-28","stnc":"2026-03-26","cedingLimit":"150000000.123456789",
+  "minAge":"22","maxAge":"70","maxSumInsured":"1175000000","currency":"IDR","currencyId":"1",
+  "maxDataReceive":"90","maxExpiredClaim":"180","payment":"1","subjectTo":"UJI SYARAT","brokerage":"2.5"},
+ "documentClaim":[{"document":"UJI DOK A"},{"document":"UJI DOK B"}]}`

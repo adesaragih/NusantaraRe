@@ -534,3 +534,24 @@ func RakitUmum(p models.Produk, lama string, baru bool) (string, error) {
 	}
 	return rakitObjek(obj)
 }
+
+// RakitInward menulis `M_PRODUCTINWARD_LIFE.JSONDATA` - padanan
+// `@GetPageJSONString()` halaman `ProductNameInward` (`SaveProductName_Act` 14
+// b2717). `lama` = JSON tersimpan (kosong untuk baris baru): kunci yang tidak
+// dikelola layar dipertahankan; setiap kunci yang dibaca view
+// `PRODUCTINWARD_LIFE` dijamin ada.
+func RakitInward(p models.Produk, lama string) (string, error) {
+	obj, err := uraiObjek(lama)
+	if err != nil {
+		return "", fmt.Errorf("%w: %s %s: %v", ErrJSONRusak, TabelInward, p.Inward.ID, err)
+	}
+	obj[kunciID] = teksJSON(p.Inward.ID)
+	obj[kunciProductID] = teksJSON(p.Inward.ProductID)
+	tulisMedan(obj, medanInward, &p.Inward)
+	for _, k := range KunciViewInward {
+		if _, ada := obj[k]; !ada {
+			obj[k] = teksJSON("")
+		}
+	}
+	return rakitObjek(obj)
+}

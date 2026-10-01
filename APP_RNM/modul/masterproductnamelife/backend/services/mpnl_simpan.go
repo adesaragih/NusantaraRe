@@ -48,6 +48,56 @@ const (
 	labelCause       = "Cause Of Loss" // b10693
 )
 
+// Label VERBATIM medan inward (PARITAS §3.2).
+const (
+	labelPolicyHolder = "Policy Holder" // b17129
+	labelCurrency     = "Currency"      // b28173
+	labelBegin        = "Begin Date"    // b22001
+	labelSTNC         = "STNC"          // b22336
+	labelMature       = "Expired Date"  // b27282
+	labelMinAge       = "Minimum Age (Years)"
+	labelMaxAge       = "Maximum Age (Years)"
+	labelMinSI        = "Min Sum Insured"
+	labelMaxSI        = "Max Sum Insured"
+)
+
+// periksaInward - gerbang murni sisi inward: setiap medan `pxNumber` desimal,
+// ketiga tanggal, dan rentang (R17).
+func periksaInward(pk *periksa, i *models.ProdukInward) {
+	angka := []struct {
+		label string
+		v     *string
+	}{
+		{"Addendum No.", &i.AddendumNo}, {"Amandement No.", &i.AmandementNo},
+		{"Max Notification Claim Expired", &i.MaxExpiredClaim}, {"Ceding Retention (%)", &i.CedingRetentionNum},
+		{"Ceding's Limit", &i.CedingLimit}, {"Brokerage Fee (%)", &i.Brokerage}, {"Expiry Age (Years)", &i.ExpiryAge},
+		{"Extra Premium", &i.ExtraPremi}, {"Max Sum Reasured", &i.MaxSumReasured}, {"Nusantara Re Share (%)", &i.RNMShare},
+		{"Nusantara Re's Limit", &i.RNMLimitNum}, {"Premium Factor (%)", &i.PremiumFactor},
+		{"Annuity Interest (%)", &i.AnnuityInterest}, {"Premium Refund Factor (%)", &i.PremiumRefundFactor},
+		{"Max Production Data Receive", &i.MaxDataReceive}, {"Extra Mortality (%)", &i.ExtraMortality},
+		{"Max Contract (year)", &i.MaxContract}, {"Proportional Table", &i.ProportionalTable},
+	}
+	for _, a := range angka {
+		pk.desimal(a.label, a.v)
+	}
+	minUsia, maxUsia := pk.desimal(labelMinAge, &i.MinAge), pk.desimal(labelMaxAge, &i.MaxAge)
+	minSI, maxSI := pk.desimal(labelMinSI, &i.MinSumInsured), pk.desimal(labelMaxSI, &i.MaxSumInsured)
+	pk.tidakLebihBesar(labelMinAge, minUsia, labelMaxAge, maxUsia)
+	pk.tidakLebihBesar(labelMinSI, minSI, labelMaxSI, maxSI)
+	pk.tanggal(labelBegin, &i.Begin)
+	pk.tanggal(labelSTNC, &i.STNC)
+	pk.tanggal(labelMature, &i.Mature)
+}
+
+// pilihanInward - kedua pemilih sisi inward.
+func pilihanInward(m *models.Produk, lama models.ProdukInward) []pilihan {
+	return []pilihan{
+		{models.MasterPemegangPolis, labelPolicyHolder, &m.Inward.PolicyHolder, &m.Inward.PolicyHolderName,
+			lama.PolicyHolder, lama.PolicyHolderName},
+		{models.MasterMataUang, labelCurrency, &m.Inward.CurrencyID, &m.Inward.Currency, lama.CurrencyID, lama.Currency},
+	}
+}
+
 // periksaUmum - gerbang murni sisi umum (angka, panjang kolom datar).
 func periksaUmum(pk *periksa, u *models.ProdukUmum) {
 	pk.desimal(labelDeduction, &u.RIComm)
@@ -122,6 +172,12 @@ func lengkapiMilikServer(m *models.Produk, lama *models.Produk, p inti.Pelaku) {
 		u.CreateOp = p.AkunID
 	}
 	u.UpdateOp = p.AkunID
+	// Sisi inward: identitas dan kunci view tanpa medan form milik server.
+	in, si := &m.Inward, simpan.Inward
+	in.Ceding, in.TreatyNumber, in.InwardTreatyNm = si.Ceding, si.TreatyNumber, si.InwardTreatyNm
+	in.CedingRetentionPct, in.CedingLimitXPN, in.RNMLimitPct = si.CedingRetentionPct, si.CedingLimitXPN, si.RNMLimitPct
+	in.LienClause, in.Months = si.LienClause, si.Months
+	in.ID, in.ProductID = si.ID, m.ID
 	// Langkah 1 b359: pemegang polis disalin dari halaman inward ke halaman umum.
 	u.PolicyHolder, u.PolicyHolderName = m.Inward.PolicyHolder, m.Inward.PolicyHolderName
 	// Riwayat komentar dan daftar outward milik server.
@@ -139,6 +195,7 @@ func (l *Layanan) SimpanProduk(ctx context.Context, p inti.Pelaku, m models.Prod
 	}
 	var pk periksa
 	periksaUmum(&pk, &m.Umum)
+	periksaInward(&pk, &m.Inward)
 	var hasil models.Produk
 	err := l.tx(ctx, func(tx *db.Tx) error {
 		var lama *models.Produk
@@ -149,11 +206,12 @@ func (l *Layanan) SimpanProduk(ctx context.Context, p inti.Pelaku, m models.Prod
 			}
 			lama = &s
 		}
-		var su models.ProdukUmum
+		var tersimpan models.Produk
 		if lama != nil {
-			su = lama.Umum
+			tersimpan = *lama
 		}
-		if err := l.periksaPilihan(ctx, &pk, pilihanUmum(&m, su)); err != nil {
+		if err := l.periksaPilihan(ctx, &pk, append(pilihanUmum(&m, tersimpan.Umum),
+			pilihanInward(&m, tersimpan.Inward)...)); err != nil {
 			return err
 		}
 		if err := pk.galat(); err != nil {
