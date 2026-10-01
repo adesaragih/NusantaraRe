@@ -80,6 +80,12 @@ func TestDBRateDibacaSaja(t *testing.T) {
 		u.exec(t, `INSERT INTO `+s+`.RATE_LIFE (ID, IDUSEDBY, USEDBY, GENDER, CONTRACT, AGE, RATE)
 			VALUES (:1, :2, 'UJI', 'U', '10', '30', :3)`, r[0], r[1], r[2])
 	}
+	// Sidik isi kedua view sebelum dan sesudah (code review #10: cacah saja tidak melihat UPDATE).
+	sidik := func() string {
+		return u.teks(t, `SELECT (SELECT COUNT(*) || '/' || SUM(LENGTH(ID || IDUSEDBY || USEDBY || GENDER || CONTRACT || AGE || RATE))
+		    FROM {s}.RATE_LIFE) || '|' || (SELECT COUNT(*) || '/' || SUM(LENGTH(ID || USEDBY)) FROM {s}.RATE_LIFE_SUMMARY) FROM DUAL`)
+	}
+	awal := sidik()
 	kode, badan := u.get(t, "/api/master-contract-retro-life/ringkasan-rate?cari=RATE")
 	if kode != http.StatusOK || !strings.Contains(badan, `"total":2`) || strings.Index(badan, "UJI-1") > strings.Index(badan, "UJI-2") {
 		t.Errorf("ringkasan rate: %d %s", kode, badan)
@@ -89,8 +95,8 @@ func TestDBRateDibacaSaja(t *testing.T) {
 		strings.Index(badan, "UJI-B") > strings.Index(badan, "UJI-A") || !strings.Contains(badan, `"terpotong":false`) {
 		t.Errorf("rate list: %d %s", kode, badan)
 	}
-	if n := u.cacah(t, "RATE_LIFE", ""); n != 3 {
-		t.Errorf("view rate tersentuh: %d baris", n)
+	if n := u.cacah(t, "RATE_LIFE", ""); n != 3 || sidik() != awal {
+		t.Errorf("view rate tersentuh: %d baris, sidik %s → %s", n, awal, sidik())
 	}
 }
 

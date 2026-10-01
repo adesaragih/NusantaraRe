@@ -15,13 +15,17 @@ import { Gagal, Kosong, Memuat, Modal } from '../../../../inti/frontend/componen
 
 export default function ModalRate({ idusedby, onTutup }: { idusedby: string; onTutup: () => void }) {
   const [daftar, setDaftar] = useState<BarisRate[] | null>(null)
+  const [terpotong, setTerpotong] = useState(false)
   const [galat, setGalat] = useState<unknown>(null)
 
   useEffect(() => {
     let hidup = true
     ambilRate(idusedby)
       .then((d) => {
-        if (hidup) setDaftar(d.daftar)
+        if (hidup) {
+          setDaftar(d.daftar)
+          setTerpotong(d.terpotong)
+        }
       })
       .catch((e: unknown) => {
         if (hidup) setGalat(e)
@@ -47,6 +51,7 @@ export default function ModalRate({ idusedby, onTutup }: { idusedby: string; onT
       {daftar === null && galat === null && <Memuat />}
       {galat !== null && <Gagal galat={galat} />}
       {daftar !== null && daftar.length === 0 && <Kosong pesan={UMUM_MCRL.kosong} />}
+      {terpotong && <p className="mcrl-label-sel">{UMUM_MCRL.terpotong}</p>}
       {daftar !== null && daftar.length > 0 && (
         <table className="inbox__tabel">
           <thead>

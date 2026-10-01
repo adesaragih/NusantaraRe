@@ -29,6 +29,11 @@ export const UMUM_MCRL = {
   tutup: 'Close',
   /** `[tidak ada di korpus]` - grid tanpa baris (ADR-U-0027: kosong dinyatakan). */
   kosong: 'No items',
+  /**
+   * `[tidak ada di korpus]` - `Rate List` dipotong `BrowseRateLife_RD` `pyMaxRecords` 500; Pega memotong diam-diam,
+   * di sini potongan DINYATAKAN (code review 01-10-2026).
+   */
+  terpotong: 'Only the first 500 rows are shown.',
 } as const
 
 /** Halaman awal - `Section/GridRetrocessionLife.xml` + `InputRetrocessionLife.xml` + `InputDtlRetrocessionLife.xml`. */
