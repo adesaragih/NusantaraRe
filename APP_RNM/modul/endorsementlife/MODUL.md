@@ -82,3 +82,4 @@ pelaku (401 tanpa), menjawab 503 bila Oracle tidak dikonfigurasi, dan galatnya b
 | Butir | Keadaan | Bukti |
 | --- | --- | --- |
 | K3 OQ-EDM-008 nomor | endorsement pertama polis NB warisan `<polis>/01`, kedua `/02` — rumus `GenerateNoEDM_Life` 3–4 atas `PRODKE` Pega (kosong = 0); versi tetap `NVL(PRODKE, 1)` | `models.NomorEndorsement`, `models.Versi.UrutanPega`, tiket 04 bab status 01-10-2026 |
+| K2 OQ-EDM-003 `Calculate1_Act` | ⏸️ **terhenti** (brief §4): gerbang langkah 1 b416 membaca `IsCalculationSystem` (properti tak diekspor, nol penulis; `pyDefault` tak diekspor) → keluar (F=6) → nilai CSV apa adanya, seperti bawaan — OQ-EDM-021 | tiket 07 bab status 01-10-2026 |
