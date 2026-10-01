@@ -40,3 +40,44 @@ export function labelEdmType(v: string): string {
 export function labelTypeCeding(v: string): string {
   return OPSI_TYPE_CEDING[v] ?? sel(v)
 }
+
+/** Pilihan hapus yang dikirim bersama `Save` - `models.PilihanHapus`. */
+export interface PilihanHapusEDM {
+  pilih: readonly string[]
+  semua: boolean
+  kecuali: readonly string[]
+}
+
+export const PILIHAN_KOSONG: PilihanHapusEDM = { pilih: [], semua: false, kecuali: [] }
+
+/**
+ * `DELETE ALL` b13607 → `SelectAllEdmLife_act` b259: sakelar `CARI1` - seluruh baris ikut nilai
+ * barunya, centang satu per satu sebelumnya dibuang.
+ */
+export function alihSemua(p: PilihanHapusEDM): PilihanHapusEDM {
+  return p.semua ? PILIHAN_KOSONG : { pilih: [], semua: true, kecuali: [] }
+}
+
+function alih(daftar: readonly string[], id: string): string[] {
+  return daftar.includes(id) ? daftar.filter((x) => x !== id) : [...daftar, id]
+}
+
+/** Kotak centang `.EdmBatal` b15753 satu baris; sesudah `DELETE ALL` ia mengisi pengecualian. */
+export function alihBaris(p: PilihanHapusEDM, id: string): PilihanHapusEDM {
+  return p.semua ? { ...p, kecuali: alih(p.kecuali, id) } : { ...p, pilih: alih(p.pilih, id) }
+}
+
+export function tercentang(p: PilihanHapusEDM, id: string): boolean {
+  return p.semua ? !p.kecuali.includes(id) : p.pilih.includes(id)
+}
+
+/**
+ * Kotak centang hidup: kasus `Perubahan Data` (grid b11899; grid Batal b17500 tanpa kotak) yang
+ * terbuka dan belum disimpan (`Save` mati sesudahnya, b37200), atas peserta `Old` saja (R30).
+ */
+export function bolehCentang(
+  p: { edmStatus: string },
+  k: { status: string; sudahSimpan: boolean; edmType: string },
+): boolean {
+  return k.status === '' && !k.sudahSimpan && k.edmType === '1' && p.edmStatus === 'Old'
+}

@@ -130,8 +130,8 @@ Rute `GET /kasus/{id}`, `POST /kasus/{id}/simpan`, `POST /kasus/{id}/putuskan`. 
 | Korpus | Data | Sistem baru | Keadaan |
 | --- | --- | --- | --- |
 | wadah b11431 `pyWorkPage.EdmType=1 && .EditInput=1`; grid b11899 `.PremiumListSummary.PremiumListDetail` (`pyPageListProperty` b11860) | kepala `POLICY NO` b12035 · `POLICY HOLDER` b12177 · `CERTIFICATE NO` b12320 · `NAME OF INSURED` b12463 · `SEX` b12602 · `DATE OF BIRTH` b12738 · `ENTRY AGE` b12874 · `PLAN` b13010 · `BEGIN DATE` b13146 · `EFFECTIVE DATE` b13282 · `EXPIRED DATE` b13417; sel `.POLICY_NO` b13836 … `.EXPIRED_DATE` b15587 | `T_PREMIUM_LIST_DETAIL` versi kasus | ✅ |
-| kotak centang `.EdmBatal` b15753, `pyDisabledWhen` b15763 `.EditInput==1` | tanda hapus per peserta | centang dikirim bersama `Save`; baris yang sudah `Delete` terkunci | ✅ |
-| tombol **`DELETE ALL`** b13607 → `SelectAllEdmLife_act` b13688 | bab 6 | balik centang seluruh baris di layar | ✅ |
+| kotak centang `.EdmBatal` b15753, `pyDisabledWhen` b15763 `.EditInput==1` | tanda hapus per peserta | centang dikirim bersama `Save`; hanya peserta `Old` yang dapat dicentang — baris `Delete`/`New` terkunci (R30, OQ-EDM-017); mati sesudah simpan | ✅ |
+| tombol **`DELETE ALL`** b13607 → `SelectAllEdmLife_act` b13688 | bab 6 | sakelar: seluruh peserta `Old` kasus tercentang (juga di halaman grid lain), centang yang lalu dilepas menjadi pengecualian | ✅ |
 | `pyEditAction` `PL_DetailAction` (`InputEDMLife.xml` b16187, b20938) → FlowAction `PL_DetailAction` b170 `PL_Detail_Sec` | rincian peserta per `Type` (wadah `pyWorkPage.Type = 'QR'` b320, `'QP'` b12819, `'TR'` b21495, `'TP'` b33772) + grid retro (`Treaty Type` b11001, `Retroceded Share` b11147) | `GET /kasus/{id}/peserta/{pesertaId}`, `components/RincianPeserta.tsx` | ✅ |
 | `PL_Detail_Sec.xml` `pyEditAction` `RetroLife` (b11653, b32606, b44911) → FlowAction `RetroLife` b94 `RetroDetailLife` | `Reinsurer Name` b1333 · `Percent Share (%)` b1484 · `Total Share` b1637 · `Rate` b1790 · `Gross Premium` b1943 · `1st Year Discount (%)` b2096 · `RI Admin Fee (%)` b2249 · `Net Premium` b2402 | `T_PREMIUM_LIST_SPREADING` + `_SPREADING_RETRO` versi kasus | ✅ |
 | wadah b17034 `pyWorkPage.EdmType=3 && .EditInput=1`; grid b17500 | kepala `POLICY NO` b17636 · `CERTIFICATE NO` b17774 · `NAME OF INSURED` b17910 · `SEX` b18046 · `DATE OF BIRTH` b18182 · `ENTRY AGE` b18318 · `PLAN` b18454 · `BEGIN DATE` b18590 · `EFFECTIVE DATE` b18726 · `EXPIRED DATE` b18861 — **tanpa** kotak centang | seluruh peserta Batal | ✅ |
@@ -163,7 +163,7 @@ Tabel `T_PREMIUM_LIST_SUMMARY` (dihitung ulang dari peserta versi kasus, R08).
 | 6 b4574 `·` `AppendCurrencySummary_DT` (b4623) | rekap mata uang | `T_PREMIUM_LIST_SUMMARY` dihitung ulang (R08); ✅ |
 | 7 b4746 `·` | salin rekap sementara | — |
 | 8 b5573 `·` b5600 `.IsJsonPolis = 1` | tanda sudah simpan | ada rekap kasus = sudah simpan; simpan kedua ditolak 409; ✅ |
-| 9 b5707 `·` `Obj-Save` | — | satu transaksi; jejak `Save`; ✅ |
+| 9 b5707 `·` `Obj-Save` | — | satu transaksi; jejak `InputEDMLife` → `InputEDMLife` berkomentar `Save` (siapa/kapan jurnal balik); ✅ |
 
 ### 4f. Keputusan — `Section/ConfirmSection.xml` (wadah `InputEDMLife.xml` b35518 `.IsJsonPolis=1`)
 

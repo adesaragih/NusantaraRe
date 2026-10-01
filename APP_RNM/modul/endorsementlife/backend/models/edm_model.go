@@ -73,6 +73,10 @@ const (
 	panjangMaksPengenal = 32                   // `T_PREMIUM_LIST.ID VARCHAR2(32)`
 )
 
+// AksiSimpan - komentar jejak `Save` (label tombol b37202): tahap tidak berpindah,
+// tetapi jurnal balik dicatat siapa dan kapan (`T_PREMIUM_LIST` tanpa kolom pengubah).
+const AksiSimpan = "Save"
+
 // RakitPengenalKasus menyusun `EDMLF-<n>` dari angka sequence, tanpa padding
 // - sejajar `NBLF-<n>` PremiumList.
 func RakitPengenalKasus(urut string) (string, error) {

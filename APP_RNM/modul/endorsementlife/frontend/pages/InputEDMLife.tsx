@@ -1,15 +1,32 @@
 // Layar kasus Endorsement Life - FlowAction `InputEDMLife` (b166) → `Section/InputEDMLife.xml`.
 //
 // Kepala seluruhnya baca-saja (sel `ro`); grid peserta b11899 (EdmType 1) / b17500 (EdmType 3).
+// `Save` b37202 → `SetPremi_EDM` (tiket 05/06): centang `.EdmBatal` b15753 dan `DELETE ALL` b13607
+// hanya di grid Perubahan Data; rekap mata uang per `.Type` (b23064 …) sesudah simpan.
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 
 import { Gagal, Halaman, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
-import { ambilKasus, ambilPeserta, type HalamanEDM, type KasusEDM, type PesertaEDM } from '../api'
-import PolisLama from '../components/PolisLama'
+import { ambilKasus, ambilPeserta, simpanKasus, type HalamanEDM, type KasusEDM, type PesertaEDM } from '../api'
+import PolisLama, { tipePopup } from '../components/PolisLama'
 import RincianPeserta from '../components/RincianPeserta'
-import { BUAT_EDM, GRID_EDM, KASUS_EDM, POLIS_LAMA_EDM, UMUM_EDM } from '../labels'
-import { UKURAN_HALAMAN_EDM, labelEdmType, labelTypeCeding, sel, selAngka, selTanggal } from '../tampilan'
+import { TabelKorpus } from '../components/TabelKorpus'
+import { MATA_UANG } from '../kolomKorpus'
+import { BUAT_EDM, GRID_EDM, KASUS_EDM, POLIS_LAMA_EDM, SIMPAN_EDM, UMUM_EDM } from '../labels'
+import {
+  PILIHAN_KOSONG,
+  UKURAN_HALAMAN_EDM,
+  alihBaris,
+  alihSemua,
+  bolehCentang,
+  labelEdmType,
+  labelTypeCeding,
+  sel,
+  selAngka,
+  selTanggal,
+  tercentang,
+  type PilihanHapusEDM,
+} from '../tampilan'
 import '../endorsementlife.css'
 
 /** Kolom grid peserta, urut korpus; `holder` false = grid Batal b17500 (tanpa `POLICY HOLDER`). */
@@ -44,12 +61,15 @@ function isiSel(p: PesertaEDM, kolom: string, jenis: 't' | 'd' | 'n'): string {
 function Baris({
   p,
   kolom,
+  centang,
   terbuka,
   onBuka,
   children,
 }: {
   p: PesertaEDM
   kolom: ReturnType<typeof kolomGrid>
+  /** `null` = grid Batal b17500, tanpa kolom kotak centang. */
+  centang: { boleh: boolean; aktif: boolean; onAlih: () => void } | null
   terbuka: boolean
   onBuka: () => void
   children: ReactNode
@@ -57,6 +77,17 @@ function Baris({
   return (
     <>
       <tr>
+        {centang !== null && (
+          <td>
+            <input
+              type="checkbox"
+              aria-label={UMUM_EDM.tandaiHapus}
+              checked={centang.boleh ? centang.aktif : p.edmStatus === 'Delete'}
+              disabled={!centang.boleh}
+              onChange={centang.onAlih}
+            />
+          </td>
+        )}
         {kolom.map(([label, kol, jenis]) => (
           <td key={label}>{isiSel(p, kol, jenis)}</td>
         ))}
@@ -68,7 +99,7 @@ function Baris({
       </tr>
       {terbuka && (
         <tr className="edm-baris-rinci">
-          <td colSpan={kolom.length + 1}>{children}</td>
+          <td colSpan={kolom.length + (centang === null ? 1 : 2)}>{children}</td>
         </tr>
       )}
     </>
@@ -82,6 +113,9 @@ export default function InputEDMLife({ kasusId, onTutup }: { kasusId: string; on
   const [galat, setGalat] = useState<unknown>(null)
   const [buka, setBuka] = useState('')
   const [polisLama, setPolisLama] = useState(false)
+  const [pilihan, setPilihan] = useState<PilihanHapusEDM>(PILIHAN_KOSONG)
+  const [menyimpan, setMenyimpan] = useState(false)
+  const [galatSimpan, setGalatSimpan] = useState<unknown>(null)
 
   const muatKasus = useCallback(async () => {
     setGalat(null)
@@ -110,6 +144,21 @@ export default function InputEDMLife({ kasusId, onTutup }: { kasusId: string; on
     void muatPeserta(halaman)
   }, [muatPeserta, halaman])
 
+  const simpan = async () => {
+    setMenyimpan(true)
+    setGalatSimpan(null)
+    try {
+      await simpanKasus(kasusId, pilihan)
+      setPilihan(PILIHAN_KOSONG)
+      await muatKasus()
+      await muatPeserta(halaman)
+    } catch (e) {
+      setGalatSimpan(e)
+    } finally {
+      setMenyimpan(false)
+    }
+  }
+
   if (galat !== null) return <Gagal galat={galat} />
   if (kasus === null) return <Memuat pesan={UMUM_EDM.memuat} />
 
@@ -131,6 +180,11 @@ export default function InputEDMLife({ kasusId, onTutup }: { kasusId: string; on
     [BUAT_EDM.edmDate, selTanggal(kasus.edmDate)],
   ]
   const kolom = kolomGrid(kasus.edmType !== '3')
+  const denganCentang = kasus.edmType === '1'
+  const terbukaKasus = kasus.status === ''
+  // `DELETE ALL` mengikuti kotak centang: hidup selama kasus terbuka dan belum disimpan.
+  const bolehHapus = bolehCentang({ edmStatus: 'Old' }, kasus)
+  const kolomUang = MATA_UANG[tipePopup(k.TYPE ?? '')]
 
   return (
     <section className="panel edm-kasus">
@@ -141,11 +195,18 @@ export default function InputEDMLife({ kasusId, onTutup }: { kasusId: string; on
           <button type="button" className="btn btn--ghost btn--sm" onClick={() => setPolisLama(true)}>
             {POLIS_LAMA_EDM.viewOldPolicy}
           </button>
+          {/* `Save` b37202: `VIS .EditInput=1` (kasus terbuka), mati bila `.IsJsonPolis=1` b37200. */}
+          {terbukaKasus && (
+            <button type="button" className="btn btn--sm" disabled={kasus.sudahSimpan || menyimpan} onClick={() => void simpan()}>
+              {menyimpan ? UMUM_EDM.menyimpan : SIMPAN_EDM.save}
+            </button>
+          )}
           <button type="button" className="btn btn--ghost btn--sm" onClick={onTutup}>
             {UMUM_EDM.kembali}
           </button>
         </div>
       </header>
+      {galatSimpan !== null && <Gagal galat={galatSimpan} />}
       <p className="edm-catatan">{UMUM_EDM.terkunci}</p>
       <dl className="edm-kepala">
         {medan.map(([label, nilai]) => (
@@ -161,6 +222,13 @@ export default function InputEDMLife({ kasusId, onTutup }: { kasusId: string; on
           <table className="inbox__tabel">
             <thead>
               <tr>
+                {denganCentang && (
+                  <th>
+                    <button type="button" className="btn btn--ghost btn--sm" disabled={!bolehHapus} onClick={() => setPilihan(alihSemua(pilihan))}>
+                      {SIMPAN_EDM.deleteAll}
+                    </button>
+                  </th>
+                )}
                 {kolom.map(([label]) => (
                   <th key={label}>{label}</th>
                 ))}
@@ -169,7 +237,18 @@ export default function InputEDMLife({ kasusId, onTutup }: { kasusId: string; on
             </thead>
             <tbody>
               {peserta.baris.map((p) => (
-                <Baris key={p.id} p={p} kolom={kolom} terbuka={buka === p.id} onBuka={() => setBuka(buka === p.id ? '' : p.id)}>
+                <Baris
+                  key={p.id}
+                  p={p}
+                  kolom={kolom}
+                  centang={
+                    denganCentang
+                      ? { boleh: bolehCentang(p, kasus), aktif: tercentang(pilihan, p.id), onAlih: () => setPilihan(alihBaris(pilihan, p.id)) }
+                      : null
+                  }
+                  terbuka={buka === p.id}
+                  onBuka={() => setBuka(buka === p.id ? '' : p.id)}
+                >
                   <RincianPeserta kasusId={kasusId} pesertaId={p.id} tipe={k.TYPE ?? ''} />
                 </Baris>
               ))}
@@ -179,6 +258,9 @@ export default function InputEDMLife({ kasusId, onTutup }: { kasusId: string; on
       )}
       {peserta !== null && peserta.total > 0 && (
         <Halaman halaman={halaman} ukuran={UKURAN_HALAMAN_EDM} total={peserta.total} onPindah={setHalaman} />
+      )}
+      {kasus.rekap.length > 0 && (
+        <TabelKorpus kolom={kolomUang} baris={kasus.rekap} kunci={(b, i) => `${b.CURRENCY ?? ''}-${i}`} />
       )}
       {polisLama && <PolisLama kasusId={kasusId} tipe={k.TYPE ?? ''} onTutup={() => setPolisLama(false)} />}
     </section>

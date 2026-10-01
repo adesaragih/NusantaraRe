@@ -18,6 +18,8 @@ export const UMUM_EDM = {
   memeriksa: 'Checking…',
   rinci: 'Details',
   terkunci: 'Locked: the policy and the endorsement type cannot change once the case is created. Decline the case and create a new one.',
+  menyimpan: 'Saving…',
+  tandaiHapus: 'Mark for deletion',
 } as const
 
 /** `Section/InboxEndorsementLife.xml` - halaman awal (harness portal `InboxEndorsementLife`). */
@@ -83,6 +85,12 @@ export const GRID_EDM = {
   beginDate: 'BEGIN DATE', // b13146
   effectiveDate: 'EFFECTIVE DATE', // b13282
   expiredDate: 'EXPIRED DATE', // b13417
+} as const
+
+/** Tombol simpan `InputEDMLife.xml` - kotak centang `.EdmBatal` b15753 tanpa teks di korpus. */
+export const SIMPAN_EDM = {
+  deleteAll: 'DELETE ALL', // b13607 → `SelectAllEdmLife_act`
+  save: 'Save', // b37202 → `SetPremi_EDM`
 } as const
 
 /** Label opsi `EDM Type` - spec §5 `[keputusan work owner]` (opsi properti tidak diekspor). */

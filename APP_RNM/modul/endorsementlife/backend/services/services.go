@@ -60,6 +60,11 @@ type Gudang interface {
 	RincianPeserta(ctx context.Context, kasusID, pesertaID string) (models.RincianPeserta, error)
 	PesertaVersi(ctx context.Context, v models.Versi, nomorPolis string, halaman, ukuran int) ([]models.Peserta, int, error)
 	RekapPolis(ctx context.Context, nomorPolis string) ([]map[string]string, error)
+
+	// Simpan - `SetPremi_EDM` (tiket 05-06).
+	Tandai(ctx context.Context, tx *db.Tx, kasusID, statusBaru string, p models.PilihanHapus) (int, error)
+	HitungRekap(ctx context.Context, tx *db.Tx, kasusID, tipe string) (int, error)
+	RekapKasus(ctx context.Context, tx *db.Tx, kasusID string) ([]map[string]string, error)
 }
 
 // Layanan memegang seluruh aturan modul ini di atas satu Gudang.

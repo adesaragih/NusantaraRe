@@ -62,6 +62,12 @@ func (l *Layanan) muatKasus(ctx context.Context, id string) (models.Kasus, error
 	if k.SudahSimpan, err = l.gudang.AdaRekap(ctx, nil, id); err != nil {
 		return models.Kasus{}, err
 	}
+	if k.Rekap, err = l.gudang.RekapKasus(ctx, nil, id); err != nil {
+		return models.Kasus{}, err
+	}
+	if k.Rekap == nil {
+		k.Rekap = []map[string]string{}
+	}
 	return k, nil
 }
 

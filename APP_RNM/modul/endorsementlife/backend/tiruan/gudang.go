@@ -77,11 +77,13 @@ type PesertaWarisan struct {
 
 // Gudang adalah tiruan `repository.Gudang`.
 type Gudang struct {
-	mu             sync.Mutex
-	Polis          map[string]*Polis
-	Peserta        []*Peserta
-	Spreading      []*Spreading
-	Rekap          map[string]int // PREMIUM_LIST_ID → cacah baris rekap
+	mu        sync.Mutex
+	Polis     map[string]*Polis
+	Peserta   []*Peserta
+	Spreading []*Spreading
+	Rekap     map[string]int // PREMIUM_LIST_ID → cacah baris rekap
+	// RekapData - baris rekap mata uang per kasus (kunci `models.KolomRekapKasus`).
+	RekapData      map[string][]map[string]string
 	PolisWarisan   []*PolisWarisan
 	PesertaWarisan []*PesertaWarisan
 	// RekapWarisan - baris `M_LIFE_PREMIUM_SUMMARY` (kunci kolom).

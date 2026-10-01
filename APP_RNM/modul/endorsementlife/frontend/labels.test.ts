@@ -70,6 +70,8 @@ export const BUKTI: readonly Bukti[] = [
   ['GRID_EDM.beginDate', INPUT, 13146, 'pyValue'],
   ['GRID_EDM.effectiveDate', INPUT, 13282, 'pyValue'],
   ['GRID_EDM.expiredDate', INPUT, 13417, 'pyValue'],
+  ['SIMPAN_EDM.deleteAll', INPUT, 13607, 'pyLabel'],
+  ['SIMPAN_EDM.save', INPUT, 37202, 'pyLabel'],
 ]
 
 /** Kunci tanpa baris korpus - beserta alasannya di komentar. */
@@ -82,6 +84,8 @@ export const BUKAN_KORPUS: readonly string[] = [
   'UMUM_EDM.memeriksa', // gerbang sedang berjalan
   'UMUM_EDM.rinci', // tombol buka rincian baris (`pyEditingMode` `expandPane`, tanpa teks di korpus)
   'UMUM_EDM.terkunci', // pesan penjelas kunci field - spec §9 `[keputusan work owner + desain]`, AC 34
+  'UMUM_EDM.menyimpan', // `Save` sedang berjalan
+  'UMUM_EDM.tandaiHapus', // nama aksesibel kotak centang `.EdmBatal` b15753 (`pyLabelPreview` kosong)
 ]
 
 /** Nilai label untuk kunci `OBJEK.medan`. */

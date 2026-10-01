@@ -124,6 +124,9 @@ type Kasus struct {
 	CSVTerkunci bool `json:"csvTerkunci"`
 	// Cacah - jumlah peserta per `EDM_STATUS`.
 	Cacah map[string]int `json:"cacah"`
+	// Rekap - rekap mata uang kasus (`T_PREMIUM_LIST_SUMMARY`), kunci kolom
+	// `KolomRekapKasus` - grid `InputEDMLife` b23064 / b26077 / b29076 / b32075.
+	Rekap []map[string]string `json:"rekap"`
 	// Sumber - jalur versi lama yang disalin (bab 4 RALAT).
 	Sumber JenisSumber `json:"sumber"`
 	// SumberID - `T_PREMIUM_LIST.ID` versi lama, atau `JSON_POLIS.IDPEGA`.
@@ -264,4 +267,24 @@ type PolisLama struct {
 	Peserta []Peserta           `json:"peserta"`
 	Total   int                 `json:"total"`
 	Rekap   []map[string]string `json:"rekap"`
+}
+
+// PilihanHapus - kotak centang `.EdmBatal` (`InputEDMLife.xml` b15753) yang
+// dikirim bersama `Save`. `DELETE ALL` b13607 (`SelectAllEdmLife_act`) =
+// `Semua` dengan pengecualian baris yang lalu dilepas centangnya.
+type PilihanHapus struct {
+	Pilih   []string `json:"pilih"`
+	Semua   bool     `json:"semua"`
+	Kecuali []string `json:"kecuali"`
+}
+
+// KolomRekapKasus - kolom rekap mata uang kasus (`T_PREMIUM_LIST_SUMMARY`)
+// yang dibaca layar; yang pertama teks, sisanya uang.
+var KolomRekapKasus = []string{
+	"CURRENCY", "PREMIUM", "BALANCE", "COMMISSION", "DEDUCTION", "BROKERAGE_FEE", "OVR_COMM", "TAX", "PROF_COMM",
+	"CLAIM", "CLAIM_AMOUNT", "RI_ADMIN_FEE", "GROSS_PREMIUM_REFUND", "NET_PREMIUM_REFUND", "DEDUCTION_REFUND",
+	"BROKERAGE_FEE_REFUND", "RI_ADMIN_FEE_REFUND", "TAX_REFUND", "COMM_REFUND", "OVR_COMM_REFUND", "SHARE_RETRO",
+	"GROSS_PREMIUM_RETRO", "NET_PREMIUM_RETRO", "DISCOUNT_PREMIUM_RETRO", "BROKERAGE_FEE_RETRO", "RI_ADMIN_FEE_RETRO",
+	"OVR_COMM_RETRO", "GROSS_PREMIUM_REFUND_RETRO", "NET_PREMIUM_REFUND_RETRO", "DISCOUNT_PREMIUM_REFUND_RETRO",
+	"BROKERAGE_FEE_REFUND_RETRO", "RI_ADMIN_FEE_REFUND_RETRO", "OVR_COMM_REFUND_RETRO",
 }

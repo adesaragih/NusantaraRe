@@ -13,11 +13,16 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/galat"
+	"nusantarare/modul/endorsementlife/backend/models"
 	"nusantarare/modul/endorsementlife/backend/services"
 )
 
 // batasBadan - badan JSON terbesar yang dibaca (64 KiB).
 const batasBadan = 64 << 10
+
+// batasBadanSimpan - `Save` membawa daftar ID peserta tercentang (32 heksa
+// per ID); 4 MiB ≈ 100.000 ID.
+const batasBadanSimpan = 4 << 20
 
 // bacaBadan mengurai badan JSON SESUDAH identitas diperiksa (401 lebih dulu);
 // terlalu besar = 413, rusak = 400. Mengembalikan true bila SUDAH dijawab.
@@ -60,5 +65,13 @@ func daftarkanTulis(pasang func(string, rute)) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		_ = json.NewEncoder(w).Encode(h)
+	})
+	pasang("POST "+Prefix+"/kasus/{id}/simpan", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		var m models.PilihanHapus
+		if bacaBadan(w, r, p, &m, batasBadanSimpan) {
+			return
+		}
+		h, err := l.Simpan(r.Context(), p, r.PathValue("id"), m)
+		tulis(w, h, err)
 	})
 }

@@ -4,6 +4,7 @@
 // ⛔ Uang dan angka TEKS sepanjang jalan - tidak pernah `Number` (ADR-0003). Kosong = `""`.
 
 import { minta } from '../../../inti/frontend/klien'
+import type { PilihanHapusEDM } from './tampilan'
 
 /** Prefix rute API modul ini - SAMA dengan `handlers.Prefix`. */
 export const PREFIX_EDM = '/api/endorsement-life'
@@ -49,6 +50,8 @@ export interface KasusEDM {
   sudahSimpan: boolean
   csvTerkunci: boolean
   cacah: Record<string, number>
+  /** Rekap mata uang `T_PREMIUM_LIST_SUMMARY` - kolom `models.KolomRekapKasus`. */
+  rekap: Array<Record<string, string>>
   sumber: 'aplikasi' | 'warisan' | ''
 }
 
@@ -152,4 +155,16 @@ export function ambilRincian(id: string, pesertaId: string): Promise<RincianPese
 /** Popup polis lama - `GET /kasus/{id}/polis-lama`. */
 export function ambilPolisLama(id: string, halaman: number): Promise<PolisLamaEDM> {
   return minta<PolisLamaEDM>(`${PREFIX_EDM}/kasus/${encodeURIComponent(id)}/polis-lama`, { kueri: { halaman } })
+}
+
+/** Hasil `Save` - `services.HasilSimpan`. */
+export interface HasilSimpanEDM {
+  ditandai: number
+  status: string
+  rekap: Array<Record<string, string>>
+}
+
+/** `Save` b37202 → `SetPremi_EDM`; centang `.EdmBatal` dikirim bersamanya. */
+export function simpanKasus(id: string, pilihan: PilihanHapusEDM): Promise<HasilSimpanEDM> {
+  return minta<HasilSimpanEDM>(`${PREFIX_EDM}/kasus/${encodeURIComponent(id)}/simpan`, { metode: 'POST', badan: pilihan })
 }

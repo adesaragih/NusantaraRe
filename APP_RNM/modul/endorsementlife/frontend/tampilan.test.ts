@@ -1,7 +1,20 @@
 import { describe, expect, it } from 'vitest'
 
 import { OPSI_EDM_TYPE, OPSI_TYPE_CEDING } from './labels'
-import { UKURAN_HALAMAN_EDM, labelEdmType, labelTypeCeding, sel, selAngka, selTanggal, selWaktu } from './tampilan'
+import {
+  PILIHAN_KOSONG,
+  UKURAN_HALAMAN_EDM,
+  alihBaris,
+  alihSemua,
+  bolehCentang,
+  labelEdmType,
+  labelTypeCeding,
+  sel,
+  selAngka,
+  selTanggal,
+  selWaktu,
+  tercentang,
+} from './tampilan'
 
 describe('pembantu tampilan Endorsement Life', () => {
   it('sel kosong ditandai, bukan dibiarkan kosong', () => {
@@ -40,5 +53,37 @@ describe('pembantu tampilan Endorsement Life', () => {
 
   it('ukuran halaman = services.UkuranHalaman', () => {
     expect(UKURAN_HALAMAN_EDM).toBe(20)
+  })
+})
+
+describe('kotak centang .EdmBatal dan DELETE ALL (SelectAllEdmLife_act)', () => {
+  it('DELETE ALL sakelar: kosong → semua, semua → kosong (b259)', () => {
+    const semua = alihSemua(PILIHAN_KOSONG)
+    expect(semua).toEqual({ pilih: [], semua: true, kecuali: [] })
+    expect(tercentang(semua, 'UJI-D9')).toBe(true)
+    expect(alihSemua(alihBaris(semua, 'UJI-D1'))).toEqual(PILIHAN_KOSONG)
+    // Centang satu per satu lalu DELETE ALL: seluruh baris tercentang, pilihan lama dibuang.
+    expect(alihSemua(alihBaris(PILIHAN_KOSONG, 'UJI-D1'))).toEqual({ pilih: [], semua: true, kecuali: [] })
+  })
+
+  it('centang baris: daftar pilihan, atau pengecualian sesudah DELETE ALL', () => {
+    const satu = alihBaris(PILIHAN_KOSONG, 'UJI-D1')
+    expect(satu.pilih).toEqual(['UJI-D1'])
+    expect(tercentang(satu, 'UJI-D1')).toBe(true)
+    expect(tercentang(satu, 'UJI-D2')).toBe(false)
+    expect(alihBaris(satu, 'UJI-D1')).toEqual(PILIHAN_KOSONG)
+    const kecuali = alihBaris(alihSemua(PILIHAN_KOSONG), 'UJI-D2')
+    expect(kecuali).toEqual({ pilih: [], semua: true, kecuali: ['UJI-D2'] })
+    expect(tercentang(kecuali, 'UJI-D2')).toBe(false)
+    expect(tercentang(alihBaris(kecuali, 'UJI-D2'), 'UJI-D2')).toBe(true)
+  })
+
+  it('hanya peserta Old pada kasus Perubahan Data terbuka yang belum disimpan (R30, b15763, b37200)', () => {
+    const kasus = { status: '', sudahSimpan: false, edmType: '1' }
+    expect(bolehCentang({ edmStatus: 'Old' }, kasus)).toBe(true)
+    for (const s of ['New', 'Delete', 'Batal', '']) expect(bolehCentang({ edmStatus: s }, kasus), s).toBe(false)
+    expect(bolehCentang({ edmStatus: 'Old' }, { ...kasus, sudahSimpan: true })).toBe(false)
+    expect(bolehCentang({ edmStatus: 'Old' }, { ...kasus, edmType: '3' })).toBe(false)
+    expect(bolehCentang({ edmStatus: 'Old' }, { ...kasus, status: 'Resolved-Completed' })).toBe(false)
   })
 })
