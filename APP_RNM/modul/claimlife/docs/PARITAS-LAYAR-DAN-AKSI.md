@@ -103,8 +103,8 @@ Kolom **keadaan**: `ada` · `A3` *(dikerjakan paket ini)* · `tidak ditiru + buk
 | 8 | `UpdateDateClaimLife_Act` | `Property-Set`, `RDB-List` | **ya²** | `Tanggal.Ubah` | `PUT …/peserta/{pid}/tanggal-kejadian` | — | **ada** *(kontrol React belum)* |
 | 9 | `ValidasiDOL_Act` | `Page-Clear-Messages`, `Property-Set`, `Property-Set-Messages` | tidak | `PeriksaDOL` | *(di dalam `Tanggal.Ubah`)* | — | **ada** |
 | 10 | `DeletePesertaClaimLife` | `Property-Set` ×2 *(dua loop `EMBEDDED`)*, `Obj-Save` | **ya** | — | — | — | ⛔ **RALAT** — ia **tidak menghapus**; ia mengindeks ulang `.AdjustmentList(*).IndexPremiumList` lalu menyimpan *(b225, b314, b337, b417, b583, b443)*. Yang menghapus barisnya **klien**: `pyAction = deleteRow` b18017, tanpa konfirmasi b18021. Tombolnya di layar **Outstanding** *(b17909, b18039)*, dan hanya tampil saat `CLAIM_NO` kosong *(b18082)*. Rute `DELETE` bergerbang tahap **tidak dibangun** |
-| 11 | `LoadDataPeserta_Act` | `Property-Set`, `RDB-List` | tidak | `PesertaPolis.AmbilUntukKlaim` | `GET /api/peserta-life` | `RegisterKlaim.tsx` | **ada** |
-| 12 | `LoadDataPesertaSpesifik_Act` | `Page-Remove`, `Property-Set`, `RDB-List`, `Property-Set` ber-ULANG | tidak | `PesertaPolis.Cari` | `GET /api/peserta-life?pl=&sertifikat=&nama=` | kotak `Certificate No` + `Name of Insured` + tombol `Search` | **ada** — **tiga** kriteria *(`GetPesertaClaim_sql1.xml:85`)*; `+7 jam` b738—b904 **tidak ditiru** *(tambalan zona waktu JDBC)*; `LIKE` bersyarat = penyimpangan sadar **OQ-E** |
+| 11 | `LoadDataPeserta_Act` | `Property-Set`, `RDB-List` | tidak | `PesertaPolis.AmbilUntukKlaim` | `GET /api/peserta-life` | `RegisterKlaim.tsx` | **ada** — baris **versi polis terakhir** yang hidup, penyimpangan sadar **OQ-N14** (01-10-2026) |
+| 12 | `LoadDataPesertaSpesifik_Act` | `Page-Remove`, `Property-Set`, `RDB-List`, `Property-Set` ber-ULANG | tidak | `PesertaPolis.Cari` | `GET /api/peserta-life?pl=&sertifikat=&nama=` | kotak `Certificate No` + `Name of Insured` + tombol `Search` | **ada** — **tiga** kriteria *(`GetPesertaClaim_sql1.xml:85`)*; `+7 jam` b738—b904 **tidak ditiru** *(tambalan zona waktu JDBC)*; `LIKE` bersyarat = penyimpangan sadar **OQ-E**; hanya **versi polis terakhir** tiap sertifikat, `Delete`/`Batal` tidak tampil = penyimpangan sadar **OQ-N14** (01-10-2026) |
 | 13 | `SelectAllClaimLife_act` | `Property-Set`, `Property-Set` ber-ULANG `EMBEDDED` | tidak | — | — | `lib/pilihSemua.ts` *(belum ada pemanggil)* | ⛔ **RALAT layar**: **Outstanding** *(b16633, b16710, b24489)*, bukan Register — nol `Select All` dan nol `IsAccept` di section Register. Penjungkit **tiga** keadaan b247 sudah ditulis + diuji; menunggu **grid peserta Outstanding** |
 | 14 | `SearchPolicyHolder_act` | `Property-Set` | tidak | — | — | — | **A3 — Register** |
 | 15 | `ValidasiClaimReceived_Act` | `RDB-List`, `Property-Set` | tidak | `models.PenandaBatasHari` | — | — | **dipindah ke A3 — Detail & Tutup** *(sheet b115)*. Aturannya **ada**; ambang `MAXEXPIREDCLAIM` **menunggu modul PremiumList Life** *(`GetProductName.xml:84` lewat `PolicyDataLife.ProductNameID`)*. Tiga cacat rule dilaporkan **OQ-G** |
@@ -505,7 +505,7 @@ seluruh label panel.
 | `GetLinkStorage_SQL` | RDBList | `Activity/DeleteGoogleStorage_Act.xml:692`, `Activity/GetUrlGoogleStorage_Act.xml:736` | `frontend/src/services/api.ts:1232`, `internal/handlers/dokumen.go:13` | ✅ **ada** |
 | `getMaxPagination_sql` | RDBList | `Activity/getMaxPagination_Act.xml:283` | — | ⛔ **MILIK MODUL PREMIUMLIST** — Dipanggil `getMaxPagination_Act` b283 saja |
 | `GetPesertaClaim_sql` | RDBList | `Activity/LoadDataPesertaSpesifik_Act.xml:545`, `Activity/LoadDataPeserta_Act.xml:892` | `frontend/src/services/api.ts:447`, `internal/repository/caripeserta_test.go:15` | ✅ **ada** |
-| `GetPesertaClaim_sql1` | RDBList | `Activity/LoadDataPesertaSpesifik_Act.xml:545` | `frontend/src/services/api.ts:447`, `internal/repository/caripeserta_test.go:15` | ✅ **ada** |
+| `GetPesertaClaim_sql1` | RDBList | `Activity/LoadDataPesertaSpesifik_Act.xml:545` | `frontend/src/services/api.ts:447`, `internal/repository/caripeserta_test.go:15` | ✅ **ada** — ⚠️ menyimpang sadar: versi polis terakhir (OQ-N14, 01-10-2026) |
 | `GetProductLife` | RDBList | `Activity/SpreadingClaimLife_Act.xml:673` | — | ✅ **tidak ditiru sebagai rule** (AC 38) — mengurai `M_PRODUCT_LIFE.JSONDATA` b84-86 dengan Java b1016; pengurai JSON produk dilarang (`repository/ambangproduk.go:21`). ⚠️ NILAI yang dicarinya (`OUTWARDRATEID`, b1416-b1604) tetap dibutuhkan Spreading — sumber penggantinya **OQ-M7** |
 | `GetProductName` | RDBList | `Activity/ValidasiClaimReceived_Act.xml:306`, `Activity/ValidasiSTNC_Act.xml:333` | `internal/models/validasitanggal.go:29`, `internal/models/validasitanggal_test.go:9` | ✅ **ada** |
 | `GetRateRetro` | RDBList | `Activity/SpreadingClaimLife_Act.xml:1750` | `internal/repository/ratelife.go` (`RateLife.Baca`, GILIRAN-17), `internal/services/spreading.go:107` | ✅ **ada** — pembaca sempit lima kolom (OQ-M7); nol pemanggil sampai `OUTWARDRATEID` ada |
@@ -598,3 +598,22 @@ hapus fisik, ADR-U-0031 melarangnya di jalur pengguna, dan `T_CLAIMLF_ADJUSTMENT
 padanan logisnya. GILIRAN-13 sempat merendernya sebagai tombol mati; dibuang, sebab tombol yang tidak pernah dapat
 ditekan menjanjikan aksi yang tidak ada. Sunting sel baris adjustment pun tidak berlaku (butir br — semua sel
 `Read-only`).
+
+## 01-10-2026 — peserta versi polis terakhir: penyimpangan sadar dari `GetPesertaClaim_sql1` (OQ-N14)
+
+`[keputusan work owner 01-10-2026]` `Claim Life/RDBList/GetPesertaClaim_sql1.xml` b85 *(nomor baris dari `sed -e
+'s/></>\n</g' GetPesertaClaim_sql1.xml | grep -n …`)*:
+
+```sql
+SELECT * FROM POOLDATA.M_LIFE_PREMIUM_DETAIL WHERE PL_NUMBER = {…PremiumListSummary.PL_NUMBER}
+  AND CERTIFICATE_NO LIKE '%'||{SearchPolicyHolder.CARI2}||'%'  AND UPPER(NAME_OF_INSURED) LIKE '%'||{SearchPolicyHolder.CARI3}||'%'
+```
+
+**Nol saringan versi dan nol saringan `EDMSTATUS`** — di Pega setiap baris versi satu sertifikat (new business,
+`/01`, `/02`, …) tampil, termasuk yang `Delete`/`Batal`. Sistem ini menampilkan dan menyalin **hanya baris versi
+terakhir** tiap sertifikat, dan menyembunyikannya bila baris itu `Delete`/`Batal` (`repository/pesertapolis.go`:
+`sqlCariPeserta`, `sqlAmbilPesertaKlaim`). Versi = angka sesudah `<PL_NUMBER>/` di `PL_NUMBER_EDM` (rumus penulisnya
+`Endorsement Life/RDBList/Generate_NoEndorsmentLife.xml` b84 `NOPOLIS||'/'||CARI14`); seri → `TGL_INPUT` terbaru, lalu
+`ID` terbesar secara angka. Baris `11` dan `12` tabel aksi serta baris `GetPesertaClaim_sql1` sensus di atas ditandai.
+Rincian, SQL lama/baru, dan sepuluh kasus ujinya: tiket 02, bab *"Keputusan bertanggal — 1 Oktober 2026 (OQ-N14)"*.
+

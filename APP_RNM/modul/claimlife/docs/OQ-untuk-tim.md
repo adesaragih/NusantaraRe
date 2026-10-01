@@ -856,3 +856,18 @@ Keputusan work owner ("rekomendasi"). Ringkasan status; rinciannya di blok ✅ t
 | PremiumList Life | **PL-09** — `M_LIFE_PREMIUM_SUMMARY` ditiru dari badan `PEGA_M_LIFE_PREMIUM_SUMMARY` (`0021df1`) | §1 DBA |
 
 Keputusan work owner yang masih terbuka di ketiga konteks: **nol**. Sisa butir menunggu penerimanya di daftar serah terima.
+
+## 1 Oktober 2026 — OQ-N14 (peserta versi polis terakhir; temuan B1 Endorsement Life)
+
+**OQ-N14** — ✅ **DITUTUP 01-10-2026** (work owner, "ikuti rekomendasi semua"): peserta yang **versi polis terakhirnya**
+`Delete` atau `Batal` lewat endorsement **tidak tampil** di `Find Insured` dan **tidak dapat diklaim**. Pertanyaannya:
+Endorsement Life (`bf45753`, `9160a8a`) menulis versi baru ke `M_LIFE_PREMIUM_DETAIL` tanpa mengubah baris lama, dan
+`GetPesertaClaim_sql1.xml` b85 tidak menyaring versi maupun `EDMSTATUS` — ikut Pega (setiap versi tampil, termasuk
+yang dihapus) atau menyimpang? Jawabannya menyimpang, sadar. Versi = angka sesudah `<PL_NUMBER>/` di `PL_NUMBER_EDM`
+(kosong = 0); per sertifikat hanya baris versi terbesar (seri → `TGL_INPUT` terbaru, lalu `ID` terbesar secara angka);
+jendela selalu dikurung `PL_NUMBER`. Dibangun `9b4c653` (uji `16c512b`); rincian di tiket 02, bab bertanggal 1 Oktober
+2026, dan `PARITAS-LAYAR-DAN-AKSI.md` bab 01-10-2026. *(Tiket 02.)*
+
+*Sisa, bukan bagian keputusan ini:* klaim yang sudah terdaftar sebelum endorsement menghapus sertifikatnya tidak
+diperiksa ulang di Save to RNM (baris sumbernya dipilih saat pendaftaran). Bila dikehendaki — keputusan baru.
+
