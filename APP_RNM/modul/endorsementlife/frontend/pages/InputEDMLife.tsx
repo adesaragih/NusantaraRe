@@ -2,11 +2,13 @@
 //
 // Kepala seluruhnya baca-saja (sel `ro`); grid peserta b11899 (EdmType 1) / b17500 (EdmType 3).
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 
 import { Gagal, Halaman, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
 import { ambilKasus, ambilPeserta, type HalamanEDM, type KasusEDM, type PesertaEDM } from '../api'
-import { BUAT_EDM, GRID_EDM, KASUS_EDM, UMUM_EDM } from '../labels'
+import PolisLama from '../components/PolisLama'
+import RincianPeserta from '../components/RincianPeserta'
+import { BUAT_EDM, GRID_EDM, KASUS_EDM, POLIS_LAMA_EDM, UMUM_EDM } from '../labels'
 import { UKURAN_HALAMAN_EDM, labelEdmType, labelTypeCeding, sel, selAngka, selTanggal } from '../tampilan'
 import '../endorsementlife.css'
 
@@ -35,11 +37,51 @@ function isiSel(p: PesertaEDM, kolom: string, jenis: 't' | 'd' | 'n'): string {
   return sel(v)
 }
 
+/**
+ * Satu baris grid peserta; `Details` membuka rincian di bawahnya (`pyEditingMode` `expandPane`,
+ * `pyEditAction` `PL_DetailAction`).
+ */
+function Baris({
+  p,
+  kolom,
+  terbuka,
+  onBuka,
+  children,
+}: {
+  p: PesertaEDM
+  kolom: ReturnType<typeof kolomGrid>
+  terbuka: boolean
+  onBuka: () => void
+  children: ReactNode
+}) {
+  return (
+    <>
+      <tr>
+        {kolom.map(([label, kol, jenis]) => (
+          <td key={label}>{isiSel(p, kol, jenis)}</td>
+        ))}
+        <td>
+          <button type="button" className="btn btn--ghost btn--sm" aria-expanded={terbuka} onClick={onBuka}>
+            {UMUM_EDM.rinci}
+          </button>
+        </td>
+      </tr>
+      {terbuka && (
+        <tr className="edm-baris-rinci">
+          <td colSpan={kolom.length + 1}>{children}</td>
+        </tr>
+      )}
+    </>
+  )
+}
+
 export default function InputEDMLife({ kasusId, onTutup }: { kasusId: string; onTutup: () => void }) {
   const [kasus, setKasus] = useState<KasusEDM | null>(null)
   const [peserta, setPeserta] = useState<HalamanEDM<PesertaEDM> | null>(null)
   const [halaman, setHalaman] = useState(1)
   const [galat, setGalat] = useState<unknown>(null)
+  const [buka, setBuka] = useState('')
+  const [polisLama, setPolisLama] = useState(false)
 
   const muatKasus = useCallback(async () => {
     setGalat(null)
@@ -94,10 +136,17 @@ export default function InputEDMLife({ kasusId, onTutup }: { kasusId: string; on
     <section className="panel edm-kasus">
       <header className="inbox__kepala">
         <h2 className="inbox__judul">{KASUS_EDM.judul}</h2>
-        <button type="button" className="btn btn--ghost btn--sm" onClick={onTutup}>
-          {UMUM_EDM.kembali}
-        </button>
+        <div className="edm-aksi">
+          {/* `View Old Policy` - dipindah dari `ShowLifePremiumSummary_EDM` (R02); popup sesuai `.Type`. */}
+          <button type="button" className="btn btn--ghost btn--sm" onClick={() => setPolisLama(true)}>
+            {POLIS_LAMA_EDM.viewOldPolicy}
+          </button>
+          <button type="button" className="btn btn--ghost btn--sm" onClick={onTutup}>
+            {UMUM_EDM.kembali}
+          </button>
+        </div>
       </header>
+      <p className="edm-catatan">{UMUM_EDM.terkunci}</p>
       <dl className="edm-kepala">
         {medan.map(([label, nilai]) => (
           <div key={label} className="edm-kepala__medan">
@@ -115,15 +164,14 @@ export default function InputEDMLife({ kasusId, onTutup }: { kasusId: string; on
                 {kolom.map(([label]) => (
                   <th key={label}>{label}</th>
                 ))}
+                <th aria-label={UMUM_EDM.rinci} />
               </tr>
             </thead>
             <tbody>
               {peserta.baris.map((p) => (
-                <tr key={p.id}>
-                  {kolom.map(([label, kol, jenis]) => (
-                    <td key={label}>{isiSel(p, kol, jenis)}</td>
-                  ))}
-                </tr>
+                <Baris key={p.id} p={p} kolom={kolom} terbuka={buka === p.id} onBuka={() => setBuka(buka === p.id ? '' : p.id)}>
+                  <RincianPeserta kasusId={kasusId} pesertaId={p.id} tipe={k.TYPE ?? ''} />
+                </Baris>
               ))}
             </tbody>
           </table>
@@ -132,6 +180,7 @@ export default function InputEDMLife({ kasusId, onTutup }: { kasusId: string; on
       {peserta !== null && peserta.total > 0 && (
         <Halaman halaman={halaman} ukuran={UKURAN_HALAMAN_EDM} total={peserta.total} onPindah={setHalaman} />
       )}
+      {polisLama && <PolisLama kasusId={kasusId} tipe={k.TYPE ?? ''} onTutup={() => setPolisLama(false)} />}
     </section>
   )
 }

@@ -15,6 +15,9 @@ export const UMUM_EDM = {
   tutup: 'Close',
   kembali: 'Back',
   memuat: 'Loading…',
+  memeriksa: 'Checking…',
+  rinci: 'Details',
+  terkunci: 'Locked: the policy and the endorsement type cannot change once the case is created. Decline the case and create a new one.',
 } as const
 
 /** `Section/InboxEndorsementLife.xml` - halaman awal (harness portal `InboxEndorsementLife`). */
@@ -56,7 +59,15 @@ export const KASUS_EDM = {
 /** `Section/EndorsmentLife_Section.xml` - label yang `InputEDMLife` ambil dari deskripsi properti. */
 export const BUAT_EDM = {
   policyNo: 'Policy No', // b1075 (`InputEDMLife.xml` b3126 memakai deskripsi properti yang sama)
+  edmType: 'EDM Type', // b1347
+  description: 'Description', // b2140
   edmDate: 'EDM Date', // b3160
+  submit: 'Submit', // b4226
+} as const
+
+/** `Section/ShowLifePremiumSummary_EDM.xml` - tombol yang dipindah ke `InputEDMLife` (RALAT R02). */
+export const POLIS_LAMA_EDM = {
+  viewOldPolicy: 'View Old Policy', // b64965 (QR), b65522 (QP), b66083 (TR), b66640 (TP)
 } as const
 
 /** Grid peserta `InputEDMLife.xml` b11899 (EdmType 1) / b17500 (EdmType 3). */

@@ -216,3 +216,52 @@ var polaKolom = regexp.MustCompile(`^[A-Z][A-Z0-9_]*$`)
 
 // KolomSah menjawab apakah sebuah nama kolom boleh dirakit ke SQL.
 func KolomSah(nama string) bool { return polaKolom.MatchString(nama) }
+
+// RincianPeserta - `PL_Detail_Sec` satu peserta beserta spreading dan retronya.
+type RincianPeserta struct {
+	Peserta   Peserta     `json:"peserta"`
+	Spreading []Spreading `json:"spreading"`
+}
+
+// Spreading - satu baris grid `Treaty Type` / `Retroceded Share`
+// (`PL_Detail_Sec.xml` b11001/b11147; `pyEditAction` `RetroLife`).
+type Spreading struct {
+	ID              string           `json:"id"`
+	TreatyTypeName  string           `json:"treatyTypeName"`
+	RetrocadedShare string           `json:"retrocadedShare"`
+	Retro           []SpreadingRetro `json:"retro"`
+}
+
+// SpreadingRetro - satu baris `RetroDetailLife` grid b1205.
+type SpreadingRetro struct {
+	ReinsurerName        string `json:"reinsurerName"`
+	PercentShare         string `json:"percentShare"`
+	Amount               string `json:"amount"`
+	Rate                 string `json:"rate"`
+	PremiumSpreadedGross string `json:"premiumSpreadedGross"`
+	Commision            string `json:"commision"`
+	OvrComm              string `json:"ovrComm"`
+	PremiumSpreadedNet   string `json:"premiumSpreadedNet"`
+}
+
+// KolomRekapPolisLama - kolom rekap popup polis lama (`ViewOldPolicy_EDM*`,
+// RD `BrowsePremiumList_RD`). Empat pertama teks, sisanya uang.
+var KolomRekapPolisLama = []string{
+	"COB", "PL_NUMBER", "PL_NUMBER_EDM", "CURRENCY",
+	"PREMIUM", "COMMISSION", "DEDUCTION", "BROKERAGE_FEE", "OVR_COMM", "RI_ADMIN_FEE", "TAX", "PROF_COMM",
+	"CLAIM", "BALANCE", "GROSS_PREMIUM_REFUND", "DEDUCTION_REFUND", "RI_ADMIN_FEE_REFUND",
+	"BROKERAGE_FEE_REFUND", "TAX_REFUND", "CLAIM_AMOUNT", "NET_PREMIUM_REFUND", "SHARE_RETRO",
+	"GROSS_PREMIUM_RETRO", "BROKERAGE_FEE_RETRO", "DISCOUNT_PREMIUM_RETRO", "RI_ADMIN_FEE_RETRO",
+	"GROSS_PREMIUM_REFUND_RETRO", "BROKERAGE_FEE_REFUND_RETRO", "DISCOUNT_PREMIUM_REFUND_RETRO",
+	"RI_ADMIN_FEE_REFUND_RETRO",
+}
+
+// PolisLama - isi popup `View Old Policy` (bab 5 PARITAS).
+type PolisLama struct {
+	Sumber  JenisSumber         `json:"sumber"`
+	ProdKe  int                 `json:"prodKe"`
+	Tipe    string              `json:"type"`
+	Peserta []Peserta           `json:"peserta"`
+	Total   int                 `json:"total"`
+	Rekap   []map[string]string `json:"rekap"`
+}

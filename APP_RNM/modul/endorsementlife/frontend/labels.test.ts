@@ -10,6 +10,7 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
+import * as KOLOM from './kolomKorpus'
 import * as LABEL from './labels'
 
 const KORPUS = 'D:\\XML\\RNM_BRD\\Endorsement Life'
@@ -18,6 +19,7 @@ const adaKorpus = existsSync(KORPUS)
 const INBOX = 'Section\\InboxEndorsementLife.xml'
 const INPUT = 'Section\\InputEDMLife.xml'
 const BUAT = 'Section\\EndorsmentLife_Section.xml'
+const RINGKAS = 'Section\\ShowLifePremiumSummary_EDM.xml'
 
 type Bukti = readonly [kunci: string, berkas: string, baris: number, tag: string]
 
@@ -52,7 +54,11 @@ export const BUKTI: readonly Bukti[] = [
   ['KASUS_EDM.edmType', INPUT, 6910, 'pyLabelFieldValue'],
   ['KASUS_EDM.description', INPUT, 7697, 'pyLabelFieldValue'],
   ['BUAT_EDM.policyNo', BUAT, 1075, 'pyLabelFieldValue'],
+  ['BUAT_EDM.edmType', BUAT, 1347, 'pyLabelFieldValue'],
+  ['BUAT_EDM.description', BUAT, 2140, 'pyLabelFieldValue'],
   ['BUAT_EDM.edmDate', BUAT, 3160, 'pyLabelFieldValue'],
+  ['BUAT_EDM.submit', BUAT, 4226, 'pyLabel'],
+  ['POLIS_LAMA_EDM.viewOldPolicy', RINGKAS, 64965, 'pyLabel'],
   ['GRID_EDM.policyNo', INPUT, 12035, 'pyValue'],
   ['GRID_EDM.policyHolder', INPUT, 12177, 'pyValue'],
   ['GRID_EDM.certificateNo', INPUT, 12320, 'pyValue'],
@@ -73,6 +79,9 @@ export const BUKAN_KORPUS: readonly string[] = [
   'UMUM_EDM.tutup', // ikon tutup harness `pxIconCancel` tanpa teks
   'UMUM_EDM.kembali', // kembali dari layar kasus ke kotak masuk (`finishAssignment`)
   'UMUM_EDM.memuat', // teks bawaan muat
+  'UMUM_EDM.memeriksa', // gerbang sedang berjalan
+  'UMUM_EDM.rinci', // tombol buka rincian baris (`pyEditingMode` `expandPane`, tanpa teks di korpus)
+  'UMUM_EDM.terkunci', // pesan penjelas kunci field - spec §9 `[keputusan work owner + desain]`, AC 34
 ]
 
 /** Nilai label untuk kunci `OBJEK.medan`. */
@@ -106,6 +115,27 @@ describe.skipIf(!adaKorpus)('label Endorsement Life berbukti barisnya', () => {
 
   it('nama menu = nama folder korpus', () => {
     expect(readdirSync(join(KORPUS, '..'))).toContain(LABEL.MENU_EDM.kelompok)
+  })
+
+  it('keempat tombol View Old Policy berlabel sama (b64965, b65522, b66083, b66640)', () => {
+    for (const n of [64965, 65522, 66083, 66640]) expect(baca(RINGKAS, n)).toBe('<pyLabel>View Old Policy</pyLabel>')
+  })
+
+  // Setiap kolom terbangkitkan (`kolomKorpus.ts`) berbukti barisnya: label VERBATIM pada tag yang disebut.
+  const semuaKolom = Object.entries(KOLOM).flatMap(([nama, isi]) => {
+    if (Array.isArray(isi)) return (isi as KOLOM.KolomKorpus[]).map((k) => [nama, k] as const)
+    if (typeof isi === 'object' && isi !== null) {
+      return Object.entries(isi as unknown as Record<string, readonly KOLOM.KolomKorpus[]>).flatMap(([tipe, d]) => d.map((k) => [`${nama}.${tipe}`, k] as const))
+    }
+    return []
+  })
+
+  it('kolom terbangkitkan cukup banyak (pembacanya tidak rusak)', () => {
+    expect(semuaKolom.length).toBeGreaterThan(250)
+  })
+
+  it.each(semuaKolom.map(([nama, k]) => [nama, k.label, k.berkas, k.baris, k.tag]))('%s %s = %s:%i <%s>', (_, label, berkas, nomor, tag) => {
+    expect(baca(berkas as string, nomor as number)).toBe(`<${tag}>${xml(label as string)}</${tag}>`)
   })
 
   it('halaman awal = satu-satunya harness portal (kelas Data-Portal)', () => {

@@ -7,6 +7,10 @@
 //	GET  /api/endorsement-life/inbox?halaman=&ukuran=        kotak masuk `InboxEndorsementLife`
 //	GET  /api/endorsement-life/kasus/{id}                    kepala `InputEDMLife`
 //	GET  /api/endorsement-life/kasus/{id}/peserta?halaman=   grid peserta b11899 / b17500
+//	GET  /api/endorsement-life/kasus/{id}/peserta/{pid}      rincian `PL_Detail_Sec` + `RetroDetailLife`
+//	GET  /api/endorsement-life/kasus/{id}/polis-lama?halaman= popup `View Old Policy`
+//	POST /api/endorsement-life/kelayakan                     `SetErrorBatalEndorsement_Act` (tanpa tulis)
+//	POST /api/endorsement-life/kasus                         `Submit` b4226 → `MappingEDMLife`
 package handlers
 
 import (
@@ -57,6 +61,7 @@ func daftarkan(mux *http.ServeMux, layanan func() *services.Layanan, adaDB func(
 		})
 	}
 	daftarkanBaca(pasang)
+	daftarkanTulis(pasang)
 }
 
 // angkaKueri membaca parameter kueri bilangan bulat; kosong/rusak = 0.
@@ -81,6 +86,14 @@ func daftarkanBaca(pasang func(string, rute)) {
 		h, err := l.DaftarPeserta(r.Context(), p, r.PathValue("id"), angkaKueri(r, "halaman"), angkaKueri(r, "ukuran"))
 		tulis(w, h, err)
 	})
+	pasang("GET "+Prefix+"/kasus/{id}/peserta/{pid}", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		d, err := l.RincianPeserta(r.Context(), p, r.PathValue("id"), r.PathValue("pid"))
+		tulis(w, d, err)
+	})
+	pasang("GET "+Prefix+"/kasus/{id}/polis-lama", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		d, err := l.PolisLama(r.Context(), p, r.PathValue("id"), angkaKueri(r, "halaman"), angkaKueri(r, "ukuran"))
+		tulis(w, d, err)
+	})
 }
 
 func tulis(w http.ResponseWriter, isi any, err error) {
@@ -103,8 +116,18 @@ func jawabGalat(w http.ResponseWriter, err error) bool {
 		galat.Tulis(w, http.StatusUnauthorized, "request without user identity is rejected")
 	case errors.Is(err, inti.ErrTanpaWewenang):
 		galat.Tulis(w, http.StatusForbidden, "insufficient permission")
-	case errors.Is(err, services.ErrKasusTidakAda):
+	case errors.Is(err, services.ErrKasusTidakAda), errors.Is(err, services.ErrPesertaTidakAda):
 		galat.Tulis(w, http.StatusNotFound, services.Pesan(err))
+	case errors.As(err, new(services.GalatKelayakan)), errors.Is(err, services.ErrMasukanTidakSah):
+		// 422: JSON-nya sah, isinya ditolak gerbang - pesan VERBATIM korpus, satu per baris.
+		galat.Tulis(w, http.StatusUnprocessableEntity, services.Pesan(err))
+	case errors.Is(err, services.ErrKasusTerbukaGanda), errors.Is(err, services.ErrSumberWarisanEDM):
+		// 409: keadaan DATA menolak - kasus terbuka lain lahir bersamaan, atau
+		// versi berjalan polis belum dapat disalin (OQ-EDM-016).
+		galat.Tulis(w, http.StatusConflict, services.Pesan(err))
+	case errors.Is(err, services.ErrArasapas):
+		log.Printf("endorsement life: %v", err)
+		galat.Tulis(w, http.StatusServiceUnavailable, services.Pesan(err))
 	default:
 		log.Printf("endorsement life: %v", err)
 		galat.Tulis(w, http.StatusInternalServerError, "failed to process the endorsement life request")

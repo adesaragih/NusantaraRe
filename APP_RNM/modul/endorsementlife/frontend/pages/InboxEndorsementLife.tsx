@@ -28,7 +28,7 @@ const KOLOM: readonly string[] = [
   INBOX_EDM.kolomStatus,
 ]
 
-export default function InboxEndorsementLife({ onBuka }: { onBuka: (id: string) => void }) {
+export default function InboxEndorsementLife({ onBuka, onBuat }: { onBuka: (id: string) => void; onBuat: () => void }) {
   const [halaman, setHalaman] = useState(1)
   const [isi, setIsi] = useState<HalamanEDM<BarisInbox> | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
@@ -50,6 +50,10 @@ export default function InboxEndorsementLife({ onBuka }: { onBuka: (id: string) 
     <section className="inbox edm-inbox">
       <header className="inbox__kepala">
         <h2 className="inbox__judul">{INBOX_EDM.judul}</h2>
+        {/* `Create Addendum` b6620 → `showHarness` b6984 `EndorsmentLife_harnes` (`pyTarget=current`). */}
+        <button type="button" className="btn btn--primary btn--sm" onClick={onBuat}>
+          {INBOX_EDM.createAddendum}
+        </button>
       </header>
       {galat !== null && <Gagal galat={galat} />}
       {isi === null && galat === null && <Memuat pesan={UMUM_EDM.memuat} />}

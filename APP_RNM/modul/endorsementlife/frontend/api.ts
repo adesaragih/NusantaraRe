@@ -75,3 +75,81 @@ export function ambilKasus(id: string): Promise<KasusEDM> {
 export function ambilPeserta(id: string, halaman: number): Promise<HalamanEDM<PesertaEDM>> {
   return minta<HalamanEDM<PesertaEDM>>(`${PREFIX_EDM}/kasus/${encodeURIComponent(id)}/peserta`, { kueri: { halaman } })
 }
+
+/** Jawaban gerbang - `models.Kelayakan`. */
+export interface KelayakanEDM {
+  pesan: string[]
+  boleh: boolean
+}
+
+/** Isian `EndorsmentLife_Section` - `services.MasukanKasus`. Tanggal `YYYY-MM-DD`. */
+export interface MasukanKasusEDM {
+  policyNo: string
+  edmType: string
+  edmDate: string
+  description: string
+}
+
+/** Kasus baru - `services.HasilBuat`. */
+export interface HasilBuatEDM {
+  id: string
+  peserta: number
+  spreading: number
+  spreadingRetro: number
+}
+
+/** Gerbang kelayakan tanpa tulis - `POST /kelayakan` (`SetErrorBatalEndorsement_Act`). */
+export function cekKelayakan(policyNo: string, edmType: string): Promise<KelayakanEDM> {
+  return minta<KelayakanEDM>(`${PREFIX_EDM}/kelayakan`, { metode: 'POST', badan: { policyNo, edmType } })
+}
+
+/** Buat kasus - `POST /kasus` (`Submit` b4226 → `MappingEDMLife`). */
+export function buatKasus(m: MasukanKasusEDM): Promise<HasilBuatEDM> {
+  return minta<HasilBuatEDM>(`${PREFIX_EDM}/kasus`, { metode: 'POST', badan: m })
+}
+
+/** Satu baris spreading retro - `models.SpreadingRetro`. */
+export interface SpreadingRetroEDM {
+  reinsurerName: string
+  percentShare: string
+  amount: string
+  rate: string
+  premiumSpreadedGross: string
+  commision: string
+  ovrComm: string
+  premiumSpreadedNet: string
+}
+
+/** Satu baris spreading - `models.Spreading`. */
+export interface SpreadingEDM {
+  id: string
+  treatyTypeName: string
+  retrocadedShare: string
+  retro: SpreadingRetroEDM[]
+}
+
+/** Rincian peserta - `models.RincianPeserta`. */
+export interface RincianPesertaEDM {
+  peserta: PesertaEDM
+  spreading: SpreadingEDM[]
+}
+
+/** Isi popup polis lama - `models.PolisLama`. */
+export interface PolisLamaEDM {
+  sumber: 'aplikasi' | 'warisan' | ''
+  prodKe: number
+  type: string
+  peserta: PesertaEDM[]
+  total: number
+  rekap: Record<string, string>[]
+}
+
+/** Rincian peserta - `GET /kasus/{id}/peserta/{pid}`. */
+export function ambilRincian(id: string, pesertaId: string): Promise<RincianPesertaEDM> {
+  return minta<RincianPesertaEDM>(`${PREFIX_EDM}/kasus/${encodeURIComponent(id)}/peserta/${encodeURIComponent(pesertaId)}`)
+}
+
+/** Popup polis lama - `GET /kasus/{id}/polis-lama`. */
+export function ambilPolisLama(id: string, halaman: number): Promise<PolisLamaEDM> {
+  return minta<PolisLamaEDM>(`${PREFIX_EDM}/kasus/${encodeURIComponent(id)}/polis-lama`, { kueri: { halaman } })
+}

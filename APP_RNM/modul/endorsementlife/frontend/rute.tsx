@@ -11,16 +11,23 @@ import { useState } from 'react'
 import { BahasaUI } from '../../../inti/frontend/components/ui/bahasaUI'
 import type { PropsRute, RuteModul } from '../../../inti/frontend/modul'
 import type { HalamanEDM } from './menu'
+import BuatEndorsement from './pages/BuatEndorsement'
 import InboxEndorsementLife from './pages/InboxEndorsementLife'
 import InputEDMLife from './pages/InputEDMLife'
 
+/** Layar yang tampil di halaman menu: kotak masuk, harness buat endorsement, atau kasus. */
+type Layar = { jenis: 'inbox' } | { jenis: 'buat' } | { jenis: 'kasus'; id: string }
+
 export function RuteEDM({ halaman }: PropsRute<HalamanEDM>) {
-  const [kasusId, setKasusId] = useState('')
+  const [layar, setLayar] = useState<Layar>({ jenis: 'inbox' })
   if (halaman !== 'edm-inbox') return null
+  const keInbox = () => setLayar({ jenis: 'inbox' })
+  const keKasus = (id: string) => setLayar({ jenis: 'kasus', id })
   return (
     <BahasaUI.Provider value="en">
-      {kasusId === '' && <InboxEndorsementLife onBuka={setKasusId} />}
-      {kasusId !== '' && <InputEDMLife kasusId={kasusId} onTutup={() => setKasusId('')} />}
+      {layar.jenis === 'inbox' && <InboxEndorsementLife onBuka={keKasus} onBuat={() => setLayar({ jenis: 'buat' })} />}
+      {layar.jenis === 'buat' && <BuatEndorsement onTutup={keInbox} onDibuat={keKasus} />}
+      {layar.jenis === 'kasus' && <InputEDMLife kasusId={layar.id} onTutup={keInbox} />}
     </BahasaUI.Provider>
   )
 }

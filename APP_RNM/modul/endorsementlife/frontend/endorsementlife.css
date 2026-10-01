@@ -38,3 +38,49 @@
 .edm-kepala__medan dd {
   margin: 0;
 }
+
+.edm-buat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.edm-buat__isian {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  gap: 0.5rem 1.5rem;
+}
+
+.edm-aksi {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.edm-catatan {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.edm-pesan {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--bahaya, #b42318);
+}
+
+.edm-angka {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.edm-rinci {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.edm-baris-rinci > td {
+  background: var(--permukaan-2, transparent);
+}

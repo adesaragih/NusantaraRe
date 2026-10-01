@@ -36,6 +36,7 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | --- | --- |
 | `480` | tiket 00 (ralat E1): `T_PREMIUM_LIST.PROD_KE NUMBER(5) DEFAULT 1` + isi mundur, index `IDX_PL_NOPOLIS_PRODKE`, `IDX_PL_OLD_POLICY_NO`, `IDX_PLD_PL_NUMBER` — nol kolom baru |
 | `481` | sequence `SEQ_WORK_EDM_LIFE` — pengenal kasus `EDMLF-<n>` |
+| `482` | index unik berfungsi `UX_PL_EDM_TERBUKA` — satu kasus endorsement terbuka per polis (AC 3) |
 | `976` | slot menu: `UPDATE M_NAV_MENU SET DIMIGRASI = '1'` baris `endorsementlife`, nol `INSERT` |
 
 ⛔ **Nol tabel baru** (spec §16, AC 55): endorsement adalah versi baru di tabel PremiumList Life. Bentuk
@@ -60,3 +61,7 @@ pelaku (401 tanpa), menjawab 503 bila Oracle tidak dikonfigurasi, dan galatnya b
 | `GET /inbox?halaman=` | `InboxEndorsementLife` grid b8284 (RD `InboxEDMLife`) |
 | `GET /kasus/{id}` | kepala `InputEDMLife` |
 | `GET /kasus/{id}/peserta?halaman=` | grid peserta `InputEDMLife` b11899 / b17500 |
+| `GET /kasus/{id}/peserta/{pid}` | rincian `PL_Detail_Sec` (`pyEditAction` `PL_DetailAction`) + `RetroDetailLife` |
+| `GET /kasus/{id}/polis-lama?halaman=` | popup `View Old Policy` (`ViewOldPolicy_EDM`, `_QP`, `_TP`, `_TR`) |
+| `POST /kelayakan` | `SetErrorBatalEndorsement_Act` — lima gerbang, tanpa tulis |
+| `POST /kasus` | `Submit` b4226 → `MappingEDMLife` (kasus `EDMLF-<n>` + salinan versi berjalan + jejak) |

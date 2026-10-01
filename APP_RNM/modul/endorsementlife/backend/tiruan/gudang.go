@@ -10,6 +10,7 @@ package tiruan
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -57,20 +58,45 @@ type PolisWarisan struct {
 	Kepala   map[string]string // properti `DATA_JSON` → nilai
 }
 
+// Spreading adalah satu baris `T_PREMIUM_LIST_SPREADING` tiruan beserta retronya.
+type Spreading struct {
+	ID       string
+	DetailID string
+	Nama     string
+	Share    string
+	Retro    []models.SpreadingRetro
+}
+
+// PesertaWarisan adalah satu baris `M_LIFE_PREMIUM_DETAIL` tiruan.
+type PesertaWarisan struct {
+	ID       string
+	PLNumber string
+	IDPega   string
+	Nilai    map[string]string
+}
+
 // Gudang adalah tiruan `repository.Gudang`.
 type Gudang struct {
-	mu           sync.Mutex
-	Polis        map[string]*Polis
-	Peserta      []*Peserta
-	Rekap        map[string]int // PREMIUM_LIST_ID → cacah baris rekap
-	PolisWarisan []*PolisWarisan
+	mu             sync.Mutex
+	Polis          map[string]*Polis
+	Peserta        []*Peserta
+	Spreading      []*Spreading
+	Rekap          map[string]int // PREMIUM_LIST_ID → cacah baris rekap
+	PolisWarisan   []*PolisWarisan
+	PesertaWarisan []*PesertaWarisan
+	// RekapWarisan - baris `M_LIFE_PREMIUM_SUMMARY` (kunci kolom).
+	RekapWarisan []map[string]string
+	// Dibayar - nomor invoice Arasapas yang punya baris pelunasan.
+	Dibayar map[string]bool
+	// GalatArasapas - bila terisi, `SudahDibayar` mengembalikannya.
+	GalatArasapas error
 	// Galat - bila terisi, setiap metode mengembalikannya (uji jalur gagal).
 	Galat error
 }
 
 // Baru menyusun gudang kosong.
 func Baru() *Gudang {
-	return &Gudang{Polis: map[string]*Polis{}, Rekap: map[string]int{}}
+	return &Gudang{Polis: map[string]*Polis{}, Rekap: map[string]int{}, Dibayar: map[string]bool{}}
 }
 
 // Transaksi menjalankan fn tanpa transaksi sungguhan (uji services).
@@ -286,4 +312,237 @@ func (g *Gudang) urutanBerikut() string {
 		}
 	}
 	return strconv.Itoa(n + 1)
+}
+
+// AdaKasusTerbuka meniru `sqlKasusTerbuka`.
+func (g *Gudang) AdaKasusTerbuka(_ context.Context, _ *db.Tx, nomorPolis string) (bool, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.Galat != nil {
+		return false, g.Galat
+	}
+	for _, p := range g.Polis {
+		if models.KasusEDM(p.ID) && p.Status == "" && p.OldPolicyNo == nomorPolis {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// SudahDibayar meniru `sqlSudahDibayar`.
+func (g *Gudang) SudahDibayar(_ context.Context, nomorInvoice string) (bool, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.GalatArasapas != nil {
+		return false, g.GalatArasapas
+	}
+	return g.Dibayar[nomorInvoice], nil
+}
+
+// PengenalKasusBaru meniru `SEQ_WORK_EDM_LIFE`.
+func (g *Gudang) PengenalKasusBaru(_ context.Context, _ *db.Tx) (string, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.Galat != nil {
+		return "", g.Galat
+	}
+	return models.RakitPengenalKasus(g.urutanBerikut())
+}
+
+// KepalaSumber meniru `sqlKepalaAplikasi` / `sqlKepalaWarisan`.
+func (g *Gudang) KepalaSumber(_ context.Context, _ *db.Tx, v models.Versi, nomorPolis string) (map[string]string, []string, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.Galat != nil {
+		return nil, nil, g.Galat
+	}
+	kepala := map[string]string{}
+	switch v.Jenis {
+	case models.SumberAplikasi:
+		p, ada := g.Polis[v.ID]
+		if !ada {
+			return nil, nil, repository.ErrTidakAda
+		}
+		for _, k := range models.KolomKepalaSalin {
+			kepala[k.Kolom] = p.Kepala[k.Kolom]
+		}
+		return kepala, nil, nil
+	case models.SumberWarisan:
+		for _, w := range g.PolisWarisan {
+			if w.IDPega == v.ID && w.NoPolis == nomorPolis {
+				var rusak []string
+				for _, k := range models.KolomKepalaSalin {
+					s := w.Kepala[k.Properti]
+					if k.Tanggal {
+						iso, ok := repository.TanggalPega(s)
+						if !ok {
+							rusak = append(rusak, k.Kolom)
+						}
+						s = iso
+					}
+					kepala[k.Kolom] = s
+				}
+				return kepala, rusak, nil
+			}
+		}
+		return nil, nil, repository.ErrTidakAda
+	}
+	return nil, nil, fmt.Errorf("tiruan: sumber %q", v.Jenis)
+}
+
+// SisipKasus meniru `sqlSisipKasus` + index unik `UX_PL_EDM_TERBUKA` (482).
+func (g *Gudang) SisipKasus(_ context.Context, _ *db.Tx, k repository.KasusTulis) error {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.Galat != nil {
+		return g.Galat
+	}
+	for _, p := range g.Polis {
+		if models.KasusEDM(p.ID) && p.Status == "" && p.OldPolicyNo == k.NomorPolis {
+			return fmt.Errorf("%w: %s", repository.ErrKasusTerbukaGanda, k.NomorPolis)
+		}
+	}
+	kepala := map[string]string{}
+	for kol, v := range k.Kepala {
+		kepala[kol] = v
+	}
+	g.Polis[k.ID] = &Polis{
+		ID: k.ID, OldPolicyNo: k.NomorPolis, EdmType: k.EdmType, EdmDate: k.EdmDate, EdmNote: k.EdmNote,
+		ProdKe: k.ProdKe, Pembuat: k.Pembuat, TglInput: "2026-10-01 12:00:00", Kepala: kepala,
+	}
+	return nil
+}
+
+// SalinVersi meniru `sqlSalinPesertaAplikasi` (+ spreading) dan
+// `sqlSalinPesertaWarisan`: baris `Delete` tidak disalin, sisanya `Old`.
+func (g *Gudang) SalinVersi(_ context.Context, _ *db.Tx, kasusID string, v models.Versi, nomorPolis string) (repository.Salinan, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.Galat != nil {
+		return repository.Salinan{}, g.Galat
+	}
+	var s repository.Salinan
+	switch v.Jenis {
+	case models.SumberAplikasi:
+		var lama []*Peserta
+		for _, d := range g.Peserta {
+			if d.PolisID == v.ID && d.EdmStatus != models.StatusDelete {
+				lama = append(lama, d)
+			}
+		}
+		for _, d := range lama {
+			nilai := map[string]string{}
+			for kol, x := range d.Nilai {
+				nilai[kol] = x
+			}
+			baru := &Peserta{ID: kasusID + "/D/" + d.ID, PolisID: kasusID, ParentID: d.ID, PLNumber: d.PLNumber,
+				EdmStatus: models.StatusOld, Nilai: nilai}
+			g.Peserta = append(g.Peserta, baru)
+			s.Peserta++
+			var salinan []*Spreading
+			for _, sp := range g.Spreading {
+				if sp.DetailID == d.ID {
+					salinan = append(salinan, &Spreading{ID: kasusID + "/S/" + sp.ID, DetailID: baru.ID, Nama: sp.Nama,
+						Share: sp.Share, Retro: append([]models.SpreadingRetro(nil), sp.Retro...)})
+					s.Spreading++
+					s.SpreadingRetro += len(sp.Retro)
+				}
+			}
+			g.Spreading = append(g.Spreading, salinan...)
+		}
+	case models.SumberWarisan:
+		if v.EdmType != "" {
+			return repository.Salinan{}, repository.ErrSumberWarisanEDM
+		}
+		for _, m := range g.PesertaWarisan {
+			if m.PLNumber == nomorPolis && m.IDPega == v.ID {
+				nilai := map[string]string{}
+				for kol, x := range m.Nilai {
+					nilai[kol] = x
+				}
+				g.Peserta = append(g.Peserta, &Peserta{ID: kasusID + "/W/" + m.ID, PolisID: kasusID, PLNumber: m.PLNumber,
+					EdmStatus: models.StatusOld, Nilai: nilai})
+				s.Peserta++
+			}
+		}
+	}
+	return s, nil
+}
+
+// RincianPeserta meniru `sqlRincianPeserta` + `sqlSpreadingPeserta`.
+func (g *Gudang) RincianPeserta(_ context.Context, kasusID, pesertaID string) (models.RincianPeserta, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.Galat != nil {
+		return models.RincianPeserta{}, g.Galat
+	}
+	for _, d := range g.Peserta {
+		if d.ID != pesertaID || d.PolisID != kasusID {
+			continue
+		}
+		nilai := map[string]string{}
+		for _, k := range models.KolomPesertaRinci {
+			nilai[k.Nama] = d.Nilai[k.Nama]
+		}
+		r := models.RincianPeserta{
+			Peserta: models.Peserta{ID: d.ID, ParentID: d.ParentID, EdmStatus: d.EdmStatus, Nilai: nilai,
+				Terkunci: d.EdmStatus == models.StatusDelete || d.EdmStatus == models.StatusBatal},
+			Spreading: []models.Spreading{},
+		}
+		for _, sp := range g.Spreading {
+			if sp.DetailID == d.ID {
+				r.Spreading = append(r.Spreading, models.Spreading{ID: sp.ID, TreatyTypeName: sp.Nama,
+					RetrocadedShare: sp.Share, Retro: append([]models.SpreadingRetro{}, sp.Retro...)})
+			}
+		}
+		return r, nil
+	}
+	return models.RincianPeserta{}, repository.ErrTidakAda
+}
+
+// PesertaVersi meniru `PesertaVersi` repository.
+func (g *Gudang) PesertaVersi(_ context.Context, v models.Versi, nomorPolis string, halaman, ukuran int) ([]models.Peserta, int, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.Galat != nil {
+		return nil, 0, g.Galat
+	}
+	var semua []models.Peserta
+	switch v.Jenis {
+	case models.SumberAplikasi:
+		for _, d := range g.pesertaKasus(v.ID) {
+			semua = append(semua, models.Peserta{ID: d.ID, ParentID: d.ParentID, EdmStatus: d.EdmStatus, Nilai: d.Nilai})
+		}
+	case models.SumberWarisan:
+		for _, m := range g.PesertaWarisan {
+			if m.PLNumber == nomorPolis && m.IDPega == v.ID {
+				semua = append(semua, models.Peserta{ID: m.ID, Nilai: m.Nilai})
+			}
+		}
+	}
+	awal := (halaman - 1) * ukuran
+	if awal > len(semua) {
+		awal = len(semua)
+	}
+	akhir := awal + ukuran
+	if akhir > len(semua) {
+		akhir = len(semua)
+	}
+	return semua[awal:akhir], len(semua), nil
+}
+
+// RekapPolis meniru `sqlRekapPolis` (seluruh versi bernomor PL itu).
+func (g *Gudang) RekapPolis(_ context.Context, nomorPolis string) ([]map[string]string, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.Galat != nil {
+		return nil, g.Galat
+	}
+	var hasil []map[string]string
+	for _, r := range g.RekapWarisan {
+		if r["PL_NUMBER"] == nomorPolis {
+			hasil = append(hasil, r)
+		}
+	}
+	return hasil, nil
 }

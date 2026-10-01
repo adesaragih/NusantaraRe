@@ -33,11 +33,12 @@ const (
 const (
 	// tabelPolisWarisan - rekam polis Pega; DIBACA saja (RALAT R18).
 	tabelPolisWarisan = "JSON_POLIS"
-	// tabelPesertaWarisanEDM - ⛔ sengaja BUKAN identifier `namaTabelPeserta`:
-	// penjaga Claim Life memeriksa berkas yang memuat nama itu dengan aturan
-	// kueri BACA berbatas hasil; penyalinan himpunan di sini berkunci
-	// `PL_NUMBER` tetapi tidak berbatas baris (seluruh peserta satu polis).
-	// Penjaganya sendiri: `TestKueriWarisanBerindex`.
+	// tabelPesertaWarisanEDM - tabel peserta warisan (±66,8 juta baris).
+	// Konstanta modul ini sendiri, bukan konstanta pembaca Claim Life: aturan
+	// kueri BACA berbatas hasil milik penjaga Claim Life berlaku bagi
+	// pembacanya; penyalinan himpunan modul ini (`INSERT … SELECT`) berkunci
+	// `PL_NUMBER` tetapi memindahkan seluruh peserta satu versi polis tanpa
+	// membacanya ke Go. Penjaga E4 modul ini: `TestKueriWarisanBerindex`.
 	tabelPesertaWarisanEDM = "M_LIFE_PREMIUM_DETAIL"
 	urutanPesertaWarisan   = "M_LIFE_PREMIUM_DETAIL_SEQ" // `SaveMasterLPDet` VALUES butir 1
 	tabelRekapWarisan      = "M_LIFE_PREMIUM_SUMMARY"
