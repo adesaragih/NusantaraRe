@@ -144,3 +144,122 @@
     flex: 1 1 auto;
   }
 }
+
+/* ================================================================ tema login
+   Permintaan work owner 02-10-2026: "ikuti tema seperti halaman login". Warna dari blok `.halaman-masuk`
+   inti (kanvas bergradasi lavender, merah muda, dan biru muda; kartu kaca; tombol merah #d63a42; aksen fokus
+   ungu #8b5cf6; huruf Poppins), sebagai token `--mt-*` di kelas akar modul ini saja. Tema gelap: token
+   ditimpa di `:root[data-theme="dark"] .tco`, tetap di bawah kelas akar. */
+.tco {
+  --mt-aksen: #8b5cf6;
+  --mt-aksen-lembut: rgba(139, 92, 246, 0.1);
+  --mt-aksen-garis: rgba(139, 92, 246, 0.2);
+  --mt-tombol: #d63a42;
+  --mt-tombol-hover: #c2333b;
+  --mt-tombol-bayang: rgba(229, 72, 77, 0.55);
+  --mt-kanvas: radial-gradient(circle at 8% 0%, rgba(185, 141, 243, 0.22), transparent 42%),
+    radial-gradient(circle at 96% 100%, rgba(255, 160, 165, 0.2), transparent 40%),
+    radial-gradient(circle at 82% 0%, rgba(147, 197, 253, 0.2), transparent 36%);
+  --mt-kartu: rgba(255, 255, 255, 0.78);
+  --mt-kartu-garis: rgba(255, 255, 255, 0.95);
+  --mt-bayang: 0 24px 48px -30px rgba(60, 40, 120, 0.4);
+  --mt-kepala-tabel: #f5f0ff;
+  --mt-baris-hover: #faf7ff;
+  --mt-judul: #1f2333;
+  padding: 20px;
+  border-radius: 24px;
+  background: var(--mt-kanvas);
+}
+:root[data-theme="dark"] .tco {
+  --mt-aksen: #b48af2;
+  --mt-aksen-lembut: rgba(139, 92, 246, 0.16);
+  --mt-aksen-garis: rgba(180, 138, 242, 0.24);
+  --mt-tombol-bayang: rgba(214, 58, 66, 0.35);
+  --mt-kanvas: radial-gradient(circle at 8% 0%, rgba(139, 92, 246, 0.18), transparent 42%),
+    radial-gradient(circle at 96% 100%, rgba(214, 58, 66, 0.12), transparent 40%);
+  --mt-kartu: rgba(30, 34, 48, 0.8);
+  --mt-kartu-garis: rgba(180, 138, 242, 0.16);
+  --mt-bayang: 0 24px 48px -30px rgba(0, 0, 0, 0.7);
+  --mt-kepala-tabel: #251f38;
+  --mt-baris-hover: #2a2340;
+  --mt-judul: #f1f2f8;
+}
+
+.tco .inbox__judul,
+.tco .panel__title {
+  color: var(--mt-judul);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+}
+
+/* Kartu kaca seperti kartu login. */
+.tco .panel {
+  background: var(--mt-kartu);
+  border: 1px solid var(--mt-kartu-garis);
+  border-radius: 20px;
+  box-shadow: var(--mt-bayang);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+.tco .panel .panel {
+  border-color: var(--mt-aksen-garis);
+  box-shadow: none;
+}
+
+/* Tombol utama: merah tombol `Login`; tombol sekunder bersudut lembut beraksen ungu. */
+.tco .btn--primary {
+  background: var(--mt-tombol);
+  border-color: var(--mt-tombol);
+  color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 12px 22px -14px var(--mt-tombol-bayang);
+}
+.tco .btn--primary:hover:not(:disabled) {
+  background: var(--mt-tombol-hover);
+  border-color: var(--mt-tombol-hover);
+}
+.tco .btn--ghost {
+  border-radius: 10px;
+}
+.tco .btn--ghost:hover:not(:disabled) {
+  border-color: var(--mt-aksen-garis);
+  background: var(--mt-aksen-lembut);
+}
+.tco :focus-visible {
+  outline: 2px solid var(--mt-aksen);
+  outline-offset: 2px;
+}
+
+/* Kotak isian seperti isian login: sudut 12px, fokus ungu. */
+.tco .field__input {
+  border-radius: 12px;
+}
+.tco .field__input:focus {
+  border-color: var(--mt-aksen);
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.18);
+  outline: none;
+}
+
+/* Tabel: tepi dan kepala bernuansa lavender; baris yang disorot ikut tema. */
+.tco .tco-tabel {
+  border-color: var(--mt-aksen-garis);
+  border-radius: 14px;
+}
+.tco .tco-tabel > .inbox__tabel thead th,
+.tco .tco-tabel th.table__actions {
+  background: var(--mt-kepala-tabel);
+}
+.tco .tco-tabel > .inbox__tabel tbody tr:hover,
+.tco .tco-tabel tr:hover > td.table__actions {
+  background: var(--mt-baris-hover);
+}
+
+@media (max-width: 640px) {
+  .tco {
+    padding: 10px;
+    border-radius: 16px;
+  }
+  .tco .panel {
+    border-radius: 16px;
+  }
+}

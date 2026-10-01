@@ -15,7 +15,7 @@
 
 import { useEffect, useState } from 'react'
 
-import { KLAUSUL_TCO, MENU_TCO } from '../labels'
+import { JUDUL_TAMPIL_TCO, KLAUSUL_TCO } from '../labels'
 import { formatDate } from '../../../../inti/frontend/lib/format'
 import { ambilJenisKlausul, type JenisKlausul, type TahunTreaty } from '../api'
 import { Field, Gagal, Kosong, Memuat, Modal } from '../../../../inti/frontend/components/ui/dasar'
@@ -40,7 +40,7 @@ export default function PanelKlausulTahun({ tahun, onTutup }: { tahun: TahunTrea
   return (
     <section className="panel">
       <header className="inbox__kepala">
-        <h2 className="inbox__judul">{MENU_TCO.inboxTreatyContractDescription}</h2>
+        <h2 className="inbox__judul">{JUDUL_TAMPIL_TCO.deskripsi}</h2>
         {onTutup !== undefined && (
           <button type="button" className="btn btn--ghost btn--sm" onClick={onTutup}>
             {KLAUSUL_TCO.tutup}

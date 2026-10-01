@@ -24,7 +24,7 @@
 
 import { Fragment, useCallback, useEffect, useState } from 'react'
 
-import { JENIS_REASURANSI_TCO, KONTRAK_TCO } from '../labels'
+import { JENIS_REASURANSI_TCO, JUDUL_TAMPIL_TCO, KONTRAK_TCO } from '../labels'
 import { formatDate } from '../../../../inti/frontend/lib/format'
 import { keInputTanggal } from '../../../../inti/frontend/lib/tanggalInput'
 import {
@@ -198,7 +198,7 @@ export default function PanelKontrakTahun({ tahun, onTutup }: { tahun: TahunTrea
   return (
     <section className="panel">
       <header className="inbox__kepala">
-        <h3 className="panel__title">{KONTRAK_TCO.judul}</h3>
+        <h3 className="panel__title">{JUDUL_TAMPIL_TCO.reinsType}</h3>
         {onTutup !== undefined && (
           <button type="button" className="btn btn--ghost btn--sm" onClick={onTutup}>
             {KONTRAK_TCO.tutup}

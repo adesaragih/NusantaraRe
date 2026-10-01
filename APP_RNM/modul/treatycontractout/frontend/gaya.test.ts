@@ -31,7 +31,11 @@ function pemilihCSS(css: string): string[] {
 }
 
 function tidakTerisolasi(css: string): string[] {
-  return pemilihCSS(css).filter((p) => p !== '.tco' && !p.startsWith('.tco '))
+  return pemilihCSS(css).filter((p) => {
+    // Tema gelap boleh, HANYA di bawah kelas akar.
+    const tanpaTema = p.replace(/^:root\[data-theme="dark"\]\s+/, '')
+    return tanpaTema !== '.tco' && !tanpaTema.startsWith('.tco ')
+  })
 }
 
 /** Kelas yang disebut pemilih di `tco.css`. */
@@ -39,7 +43,7 @@ function kelasCSS(): Set<string> {
   return new Set(pemilihCSS(CSS).flatMap((p) => [...p.matchAll(/\.([a-zA-Z0-9_-]+)/g)].map((m) => m[1] ?? '')))
 }
 
-const KELAS_BERSAMA = new Set(['inbox__kepala', 'panel', 'inbox__tabel', 'inbox__rinci', 'table__actions', 'btn', 'aksi-baris', 'modal', 'modal__actions'])
+const KELAS_BERSAMA = new Set(['inbox__kepala', 'panel', 'inbox__tabel', 'inbox__rinci', 'table__actions', 'btn', 'aksi-baris', 'modal', 'modal__actions', 'inbox__judul', 'panel__title', 'btn--primary', 'btn--ghost', 'field__input'])
 
 describe('isolasi CSS modul Treaty Contract Out', () => {
   it('satu-satunya berkas CSS modul adalah tco.css, dan rute.tsx mengimpornya', () => {
@@ -57,6 +61,9 @@ describe('isolasi CSS modul Treaty Contract Out', () => {
       'table',
       '.btn',
       '.tco-b',
+    ])
+    expect(tidakTerisolasi(':root[data-theme="dark"] .tco { a: 1 } :root[data-theme="dark"] .panel { b: 2 }')).toEqual([
+      ':root[data-theme="dark"] .panel',
     ])
   })
 
