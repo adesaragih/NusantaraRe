@@ -1,0 +1,63 @@
+/*
+ * Gaya modul Treaty In.
+ *
+ * ⛔ TERISOLASI: SETIAP pemilih diawali kelas akar `.treatyin` (dipasang `rute.tsx` pada pembungkus
+ * seluruh halaman modul, `display: contents` sehingga tata letak tidak berubah). Modul ini sebelumnya
+ * TIDAK punya berkas gaya sama sekali - ia bukan dipindah dari inti seperti tujuh modul lain, ia baru
+ * lahir 02-10-2026 memenuhi perintah work owner ("untuk css style per modul tidak ada lagi menumpang
+ * per inti"). Dijaga `gaya.test.ts`.
+ *
+ * ⛔ Nol rona baru. Seluruh warna di sini `var(--…)` dari palet inti, jadi kedua tema ikut sendiri.
+ *
+ * ⚠️ `--aksen-trin` yang diminta briefing TIDAK dibuat, dan itu disengaja. Alasannya: premisnya sudah
+ * tidak berlaku. `--accent` BUKAN lagi satu-satunya token tanpa varian gelap - `styles.css` baris 192
+ * sudah menetapkan `#e2af50` di bawah `:root[data-theme="dark"]`, lengkap dengan angka kontrasnya
+ * (9,18:1 di atas --bg). Menambahkan `--aksen-trin: var(--accent)` beserta penimpa gelapnya hanya
+ * menyalin nilai yang sudah benar, dan salinan itu akan membeku bila inti mengubah emasnya nanti.
+ * `var(--accent)` dipakai langsung.
+ */
+
+/* Pembungkus akar: tanpa kotak sendiri, jadi halaman modul tetap anak tata letak kerangka. */
+.treatyin {
+  display: contents;
+}
+
+/* Kalimat penjelas di bawah judul - satu baris penuh di bawah judul, bukan di sebelahnya
+   (`.inbox__kepala` adalah flex yang melipat). Sama bentuknya dengan `.komiteclaimlife .inbox__aturan`. */
+.treatyin .trin__aturan {
+  flex-basis: 100%;
+  order: 1;
+  margin: -6px 0 0;
+  color: var(--text-2);
+}
+
+/* Emas sebagai penanda judul kartu.
+   ⚠️ MURNI HIASAN: nama himpunannya dibawa teks `--text` di sebelahnya, jadi garis ini tidak pernah
+   menjadi satu-satunya pembawa makna - `--accent` di atas `--surface` hanya 2,2:1 di tema terang dan
+   tidak layak memikul informasi sendirian. Pola yang sama sudah dipakai `.tabs__item--aktif`. */
+.treatyin .panel__title {
+  padding-left: 10px;
+  border-left: 3px solid var(--accent);
+}
+
+/* Lencana kolom "Aktif". Netral dulu; hijau hanya untuk nilai yang memang hidup - lihat
+   `LencanaAktif` di `pages/AcuanTreatyIn.tsx` soal kenapa teksnya nilai apa adanya. */
+.treatyin .trin__lencana {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+  background: var(--surface-2);
+  color: var(--text-2);
+  border: 1px solid var(--border);
+}
+
+/* --success-text di atas --success-bg: 5,79:1 terang (#166a43 / #e3f4eb), 7,78:1 gelap
+   (#6fd6a2 / #0f3324). Netralnya --text-2 di atas --surface-2: 6,72:1 terang, 7,52:1 gelap.
+   Keempatnya lolos AA teks biasa (4,5:1). */
+.treatyin .trin__lencana--aktif {
+  background: var(--success-bg);
+  color: var(--success-text);
+  border-color: var(--success-border);
+}

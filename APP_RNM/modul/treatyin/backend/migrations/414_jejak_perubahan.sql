@@ -25,8 +25,24 @@
 -- berspesifikasi (`L-4`) - dan nol trigger (ADR-0056) berarti ia tidak akan
 -- terisi sendiri. DITAGIH: tiket lapisan aplikasi.
 --
--- INV-18 - TANPA "ON DELETE": menghapus versi yang berjejak harus GAGAL,
--- bukan menghapus jejaknya.
+-- ---------------------------------------------------------------------
+-- INV-18 - PERILAKU HAPUS DITETAPKAN SADAR. ⚠️ RALAT 2 Oktober 2026.
+-- ---------------------------------------------------------------------
+--   Berkas ini pernah menyebut INV-18 sambil MEMBIARKAN bawaan Oracle. Itu
+--   membaca INV-18 terbalik: ia menuntut perilaku hapus "DITETAPKAN SADAR,
+--   TIDAK DIBIARKAN BAWAAN", dan bawaan yang kebetulan cocok bukan keputusan.
+--   Sumber keputusannya `4-erd-dan-tabel-datar/ERD.md` §2 - dokumen MENGIKAT
+--   yang tidak pernah dibuka sampai hari ini.
+--
+--   ERD.md §2.3: VERSI_KONTRAK 1--< JEJAK_PERUBAHAN **[hapus: TOLAK]**, dan
+--   alasannya ditulis di sana dalam satu kalimat yang layak dikutip utuh:
+--
+--     "CATATAN_PERSETUJUAN dan JEJAK_PERUBAHAN memuat siapa melakukan apa dan
+--      kapan. Menghapusnya bersama induknya akan menghapus jejak, dan jejak
+--      yang dapat dihapus bersama bendanya bukan jejak."
+--
+--   Ia salah satu dari HANYA DUA anak langsung versi yang tidak berkaskade -
+--   sepuluh sisanya ikut hapus. Perbedaan itu disengaja, bukan kelalaian.
 CREATE TABLE {skema}.JEJAK_PERUBAHAN (
   ID_JEJAK_PERUBAHAN  NUMBER(19)          NOT NULL,
   ID_VERSI_KONTRAK    NUMBER(19)          NOT NULL,

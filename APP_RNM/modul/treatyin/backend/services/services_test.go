@@ -19,9 +19,43 @@ import (
 // gudangTiruan menjawab dari peta, dan MENCATAT himpunan yang diterimanya -
 // supaya uji dapat membuktikan services tidak meneruskan yang tidak sah.
 type gudangTiruan struct {
-	isi     map[models.Himpunan][]models.Acuan
-	diminta []models.Himpunan
-	galat   error
+	isi         map[models.Himpunan][]models.Acuan
+	diminta     []models.Himpunan
+	galat       error
+	dibuat      []models.Kontrak
+	versiDibuat []models.VersiKontrak
+	dibaca      []int64
+	kontrak     models.KontrakDenganVersi
+	serupa      []int64
+	warisan     []models.Kontrak
+	diperbarui  []models.Kontrak
+	versiBaru   []models.VersiKontrak
+	cariWarisan []string
+	adaQS       bool
+	dicatat     []string
+
+	// Tiket 32 - apa yang SAMPAI ke gudang, supaya uji dapat membuktikan
+	// masukan yang ditolak tidak pernah diteruskan.
+	pemulihan    [][]models.PemulihanLimit
+	layerDicatat []int64
+	// Tiket 40 - nil berarti versinya yang pertama.
+	versiDasar *models.VersiKontrak
+}
+
+// Tiket 32.
+func (g *gudangTiruan) CatatPemulihanLimit(_ context.Context, idLayer int64, baris []models.PemulihanLimit) error {
+	g.layerDicatat = append(g.layerDicatat, idLayer)
+	g.pemulihan = append(g.pemulihan, baris)
+	return g.galat
+}
+
+// Tiket 40.
+func (g *gudangTiruan) BacaVersiDasar(_ context.Context, id int64) (*models.VersiKontrak, error) {
+	g.dibaca = append(g.dibaca, id)
+	if g.galat != nil {
+		return nil, g.galat
+	}
+	return g.versiDasar, nil
 }
 
 func (g *gudangTiruan) DaftarAcuan(_ context.Context, h models.Himpunan) ([]models.Acuan, error) {
@@ -30,6 +64,25 @@ func (g *gudangTiruan) DaftarAcuan(_ context.Context, h models.Himpunan) ([]mode
 		return nil, g.galat
 	}
 	return g.isi[h], nil
+}
+
+// Tiket 14. `dibuat` MENCATAT apa yang sampai ke gudang, supaya uji dapat
+// membuktikan masukan yang ditolak tidak pernah diteruskan.
+func (g *gudangTiruan) BuatKontrakDenganVersiPertama(_ context.Context, k models.Kontrak, v models.VersiKontrak) (int64, int64, error) {
+	g.dibuat = append(g.dibuat, k)
+	g.versiDibuat = append(g.versiDibuat, v)
+	if g.galat != nil {
+		return 0, 0, g.galat
+	}
+	return 777, 888, nil
+}
+
+func (g *gudangTiruan) BacaKontrak(_ context.Context, id int64) (models.KontrakDenganVersi, error) {
+	g.dibaca = append(g.dibaca, id)
+	if g.galat != nil {
+		return models.KontrakDenganVersi{}, g.galat
+	}
+	return g.kontrak, nil
 }
 
 var pelakuAda = inti.Pelaku{AkunID: "AKUN-UJI"}
@@ -133,4 +186,49 @@ func TestBersusunHanyaJenisReasuransi(t *testing.T) {
 			t.Errorf("%q tidak bersusun tetapi Bersusun() true", h)
 		}
 	}
+}
+
+// Tiket 16, 17, 18, 19.
+func (g *gudangTiruan) CariKontrakSerupa(context.Context, models.Kontrak) ([]int64, error) {
+	if g.galat != nil {
+		return nil, g.galat
+	}
+	return g.serupa, nil
+}
+
+func (g *gudangTiruan) CariKontrakLewatNomorWarisan(_ context.Context, nomor string) ([]models.Kontrak, error) {
+	g.cariWarisan = append(g.cariWarisan, nomor)
+	if g.galat != nil {
+		return nil, g.galat
+	}
+	return g.warisan, nil
+}
+
+func (g *gudangTiruan) PerbaruiKontrak(_ context.Context, k models.Kontrak) error {
+	g.diperbarui = append(g.diperbarui, k)
+	return g.galat
+}
+
+func (g *gudangTiruan) TambahVersi(_ context.Context, _ int64, v models.VersiKontrak) (int64, error) {
+	g.versiBaru = append(g.versiBaru, v)
+	if g.galat != nil {
+		return 0, g.galat
+	}
+	return 999, nil
+}
+
+// Tiket 35 dan 36.
+func (g *gudangTiruan) AdaQuotaSharePadaVersi(context.Context, int64) (bool, error) {
+	if g.galat != nil {
+		return false, g.galat
+	}
+	return g.adaQS, nil
+}
+
+func (g *gudangTiruan) CatatKetentuanProporsional(_ context.Context, _, _, _ int64, jenis, _ string, _ *int64) error {
+	if g.galat != nil {
+		return g.galat
+	}
+	g.dicatat = append(g.dicatat, jenis)
+	return nil
 }

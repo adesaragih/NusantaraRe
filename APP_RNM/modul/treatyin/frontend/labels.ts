@@ -24,7 +24,12 @@ export const ACUAN_TREATYIN = {
   kolomNama: 'Nama',
   kolomAktif: 'Aktif',
   kolomInduk: 'Induk',
-  kosong: 'Tabel acuan ini belum berisi. Pemindahan isinya dari sistem lama adalah tiket 44.',
+  // Dua kalimat, dua medan `Kosong` yang berbeda: `pesan` menyatakan KEADAAN
+  // (tabelnya memang belum berisi), `petunjuk` menyatakan SIAPA yang akan
+  // mengisinya. Digabung jadi satu paragraf, yang kedua terbaca sebagai alasan
+  // kosongnya - padahal ia jadwal, bukan sebab.
+  kosong: 'Tabel acuan ini belum berisi.',
+  kosongPetunjuk: 'Pemindahan isinya dari sistem lama adalah tiket 44.',
   keterangan:
     'Enam himpunan yang dapat bertambah (tiket 15, ADR-0038). Menambah satu baris tidak menyentuh kontrak yang sudah tercatat dan tidak menuntut perubahan skema.',
 } as const

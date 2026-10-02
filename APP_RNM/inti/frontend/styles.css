@@ -11,15 +11,37 @@
      keputusan pemilik proyek: "warna dan huruf persis template"). Nama
      template dipakai apa adanya untuk aturan baru.
 
-     ⚠️ `--bg` kini LATAR HALAMAN (#f4f6fa), seperti di template. Sebelum
+     ⚠️ `--bg` kini LATAR HALAMAN, seperti di template. Sebelum
      29-09-2026 `--bg` berarti permukaan putih; seluruh pemakaian lama sudah
-     dipindah ke `--surface`, jadi `var(--bg)` di aturan lama tidak ada lagi. */
+     dipindah ke `--surface`, jadi `var(--bg)` di aturan lama tidak ada lagi.
+
+     02-10-2026 (permintaan pemilik proses "kurang berwarna"): `--bg`
+     #f4f6fa -> #eef1f8, sedikit lebih dalam dan lebih biru, supaya kartu
+     putih terangkat dari latar (1,08:1 -> 1,13:1). Batasnya `--text-3`:
+     di atas #eef1f8 masih 4,60:1; satu tingkat lebih gelap (#ebeef6)
+     sudah 4,48:1 dan gagal AA. */
   --primary: #2b44b0;
   --primary-hover: #233a9b;
   --primary-soft: #eceffb;
   --primary-text: #2339a3;
+  /* Teks dan ikon DI ATAS --primary (tombol utama, tautan lewati). Sama di
+     kedua tema: 8,21:1 di atas --primary terang, 5,16:1 di atas gelap. */
+  --on-primary: #ffffff;
+  /* Biru PENANDA: ikon butir aktif, garis fokus, aksen blok soft UI. Di
+     terang ia --primary; di gelap --primary (#4a63d8) hanya 2,7:1 di atas
+     latar lembut, jadi ia naik ke biru muda. Dulu ditulis ulang empat kali
+     (--sb-aksen, --tb-aksen, --ku-aksen, --br-aksen) beserta empat
+     pasangan gelapnya. */
+  --primary-tanda: var(--primary);
+  /* EMAS sebagai PENANDA, bukan bidang: garis butir navigasi aktif, garis
+     bawah tab terpilih, garis bawah angka antrean Beranda. Di atas putih
+     ia hanya 2,17:1 — karena itu ia TIDAK pernah menjadi satu-satunya
+     penanda keadaan, dan tidak pernah menjadi warna teks. Untuk ikon dan
+     teks emas pakai --accent-text (5,62:1 di atas putih, 4,97:1 di atas
+     --surface-2). */
   --accent: #e8a317;
-  --bg: #f4f6fa;
+  --accent-text: #8f5d00;
+  --bg: #eef1f8;
   --surface: #ffffff;
   --surface-2: #eef1f6;
   --border: #e1e6ee;
@@ -42,7 +64,14 @@
   --info-border: #d3daf5;
   --success-border: #bfe3cf;
   --warning-border: #f3dfae;
-  --hover-baris: #fafbfd;
+  /* Sorot baris. 02-10-2026: #fafbfd (nyaris putih, tak terlihat) ->
+     tinta --primary yang lembut, supaya sorotan berbeda RONA dari zebra
+     abu (--alt-row). --text-3 di atasnya 4,52:1. */
+  --hover-baris: #ebeffb;
+  /* Tepi kartu dan panel. Di terang batasnya BAYANGAN (--sh-2) dan beda
+     permukaan, bukan garis abu; di gelap bayangan nyaris tak terlihat di
+     atas latar gelap, jadi garisnya kembali. */
+  --tepi-kartu: transparent;
   --topbar-bg: rgba(255, 255, 255, 0.9);
   --kilau-sorot: #e3e8f0;
   --bayang-lapis: 0 16px 40px rgba(23, 32, 51, 0.25);
@@ -153,7 +182,15 @@
   --primary-hover: #5b73e3;
   --primary-soft: #1f2a55;
   --primary-text: #aebcff;
-  --accent: #e8a317;
+  --on-primary: #ffffff;
+  --primary-tanda: #8ea2f5;
+  /* Emas gelap: #e8a317 (HSL 39° 82% 50%) menyilaukan di atas #0f1420.
+     Rona sama, lebih terang dan kurang jenuh (39° 72% 60%): 9,18:1 di
+     atas --bg, 8,41:1 di atas --surface, 7,17:1 di atas --surface-2. Di
+     gelap ia cukup terang untuk menjadi teks/ikon, jadi --accent-text
+     memakai nilai yang sama. */
+  --accent: #e2af50;
+  --accent-text: #e2af50;
   --bg: #0f1420;
   --surface: #171d2b;
   --surface-2: #222a3b;
@@ -172,7 +209,8 @@
   --info-border: #33427f;
   --success-border: #1d5a3f;
   --warning-border: #6a5217;
-  --hover-baris: #1c2333;
+  --hover-baris: #232c4a;
+  --tepi-kartu: var(--border);
   --topbar-bg: rgba(23, 29, 43, 0.9);
   --kilau-sorot: #2a3345;
   --bayang-lapis: 0 16px 40px rgba(0, 0, 0, 0.55);
@@ -344,6 +382,11 @@ table {
 }
 :where(tbody tr:last-child > td:last-child) {
   border-bottom-right-radius: calc(var(--radius) - 1px);
+}
+/* Zebra SEBELUM sorot: spesifisitas keduanya nol, jadi urutanlah yang
+   membuat baris genap yang disorot tetap berganti warna. */
+:where(tbody tr:nth-child(even)) {
+  background: var(--alt-row);
 }
 :where(tbody tr:hover) {
   background: var(--hover-baris);
@@ -1458,12 +1501,20 @@ table {
    TV2-327 menahan garis itu agar tidak ikut tercabut.
 
    Hover (di bawah) menjadi satu-satunya penanda baris, dan itu memang
-   yang acuan lakukan. */
+   yang acuan lakukan.
+
+   ZEBRA DIPASANG KEMBALI 02-10-2026 (pemilik proses: "kurang berwarna"),
+   kini dengan token --alt-row, bukan rgba lepas yang tidak ikut tema
+   gelap. Sorot pindah dari rgba(43, 68, 176, .06) ke --hover-baris:
+   rona biru yang berbeda dari zebra abu, dan punya pasangan gelap. */
 .table tbody tr {
   transition: background var(--t);
 }
+.table tbody tr:nth-child(even) {
+  background: var(--alt-row);
+}
 .table tbody tr:hover {
-  background: rgba(43, 68, 176, 0.06);
+  background: var(--hover-baris);
 }
 /* Jarak dikurangi dari 44px menjadi 22px: isinya sekarang blok `.kosong` yang
    membawa jarak dan ikonnya sendiri, sehingga 44px membuat tabel kosong
@@ -1677,7 +1728,7 @@ table {
 .btn--primary {
   background: var(--primary);
   border-color: transparent;
-  color: #fff;
+  color: var(--on-primary);
 }
 .btn--primary:hover:not(:disabled) {
   background: var(--blue-dark);
@@ -1932,6 +1983,19 @@ table {
   border-color: var(--info-border);
   border-left-color: var(--primary);
   color: var(--primary-text);
+}
+/* PERINGATAN — dipakai `Gagal` untuk "backend tidak terhubung" dan oleh
+   konfirmasi hapus Treaty Contract Out. Sampai 02-10-2026 kelas ini TIDAK
+   punya aturan: panelnya tampil sebagai kotak polos bertepi warna teks,
+   tanpa latar — layar yang kosong karena backend mati tampak nyaris sama
+   dengan layar yang kosong karena memang belum ada data. Kini ia berwarna
+   waspada (amber), terpisah dari galat (merah) dan dari `.kosong` (netral).
+   --warning-text di atas --warning-bg: 5,47:1 terang, 8,19:1 gelap. */
+.alert--warn {
+  background: var(--warning-bg);
+  border-color: var(--warning-border);
+  border-left-color: var(--warning-text);
+  color: var(--warning-text);
 }
 /* Hasil BERHASIL. Ronde 101: sebelumnya tidak ada varian ini — satu-satunya
    kabar baik yang pernah ditampilkan adalah ketiadaan galat, dan ketiadaan
@@ -3194,10 +3258,13 @@ table {
   background: var(--surface-2);
   color: var(--navy);
 }
+/* Garis bawah EMAS (02-10-2026). Ia penanda tambahan: tab terpilih tetap
+   dikenali dari teks --primary-text yang menebal, sebab emas di atas putih
+   hanya 2,17:1. */
 .tabs__item--aktif {
   color: var(--primary-text);
   font-weight: 600;
-  border-bottom-color: var(--primary);
+  border-bottom-color: var(--accent);
 }
 .tabs__item:focus-visible {
   outline: none;
@@ -3222,8 +3289,12 @@ table {
   /* 29-09-2026 — `.card` workpage-template: tepi 1px, sudut 12px, TANPA
      bayangan. Menggantikan keputusan ronde 246/247 ("berbayang lembut,
      BUKAN border tegas") atas keputusan pemilik proyek yang lebih baru:
-     rupa persis template. */
-  border: 1px solid var(--border);
+     rupa persis template.
+     02-10-2026 (pemilik proses: "kurang berwarna") — di terang garis abu
+     diganti bayangan halus + beda permukaan dari --bg; di gelap garisnya
+     tetap (lihat --tepi-kartu). */
+  border: 1px solid var(--tepi-kartu);
+  box-shadow: var(--sh-2);
   border-radius: var(--radius);
   background: var(--surface);
   animation: panel-masuk 160ms ease;
@@ -3601,7 +3672,11 @@ textarea.field__input {
   height: 54px;
   border-radius: var(--r-pill);
   background: var(--surface-2);
-  color: var(--text-3);
+  /* Ikon emas di lingkaran netral (02-10-2026): kosong yang WAJAR terasa
+     tenang, dan tetap berbeda dari kosong karena galat, yang tampil sebagai
+     panel `.alert--error` (merah) atau `.alert--warn` (amber, bertepi kiri
+     tebal). --accent-text di atas --surface-2: 4,97:1 terang, 7,17:1 gelap. */
+  color: var(--accent-text);
 }
 .kosong__pesan {
   font-size: 15px;
@@ -3959,6 +4034,15 @@ textarea.field__input {
   z-index: 1;
   background: var(--surface);
   box-shadow: 1px 0 0 var(--border);
+}
+/* Sel yang menempel butuh latar PEJAL (isi yang digulir lewat di bawahnya),
+   jadi ia tidak dapat mewarisi latar baris: zebra dan sorot ditulis ulang
+   di sini supaya kolom pertama tidak tertinggal putih. */
+.table--kunci-kolom1 tbody tr:nth-child(even) > td:first-child {
+  background: var(--alt-row);
+}
+.table--kunci-kolom1 tbody tr:hover > td:first-child {
+  background: var(--hover-baris);
 }
 .table--kunci-kolom1 thead th:first-child {
   position: sticky;
@@ -4363,7 +4447,7 @@ textarea.field__input {
   padding: 10px 16px;
   border-radius: var(--radius-sm);
   background: var(--primary);
-  color: #fff;
+  color: var(--on-primary);
   font-weight: 600;
   text-decoration: none;
 }
@@ -4920,7 +5004,9 @@ textarea.field__input {
 .kartu {
   min-width: 0;
   background: var(--surface);
-  border: 1px solid var(--border);
+  /* Bayangan + beda permukaan di terang, garis di gelap — sama dengan `.panel`. */
+  border: 1px solid var(--tepi-kartu);
+  box-shadow: var(--sh-2);
   border-radius: var(--radius);
 }
 .kartu__kepala {
@@ -5249,7 +5335,7 @@ textarea.field__input {
      lencananya — seperti badge yang menjadi titik di template. */
   .shell--terlipat .shell__butir--aktif > .kelompok__lencana {
     background: var(--primary);
-    color: #fff;
+    color: var(--on-primary);
   }
 }
 
@@ -5662,7 +5748,7 @@ textarea.field__input {
   --sb-aktif: #eef1fb;
   --sb-aktif-tepi: #dbe2f7;
   --sb-aktif-teks: #1f3592;
-  --sb-aksen: #2b44b0;
+  --sb-aksen: var(--primary-tanda);
   --sb-lencana: #f2f4fa;
   --sb-lencana-tepi: #e2e7f3;
   --sb-lencana-teks: #2339a3;
@@ -5683,7 +5769,6 @@ textarea.field__input {
   --sb-aktif: #1c2546;
   --sb-aktif-tepi: #33437f;
   --sb-aktif-teks: #e3e9ff;
-  --sb-aksen: #8ea2f5;
   --sb-lencana: #222839;
   --sb-lencana-tepi: #2f3749;
   --sb-lencana-teks: #aebcff;
@@ -5714,7 +5799,9 @@ textarea.field__input {
   color: var(--sb-aktif-teks);
   box-shadow: inset 0 0 0 1px var(--sb-aktif-tepi), var(--sb-timbul);
 }
-/* Garis aksen di tepi kiri tombol aktif. */
+/* Garis aksen di tepi kiri tombol aktif: EMAS (02-10-2026, pemilik proses
+   "kurang berwarna"). Penanda tambahan — butir aktif sudah dikenali dari
+   latar --sb-aktif dan teks --sb-aktif-teks. */
 .shell__sidebar .shell__butir--aktif::before {
   content: "";
   position: absolute;
@@ -5723,7 +5810,7 @@ textarea.field__input {
   left: 4px;
   width: 3px;
   border-radius: 3px;
-  background: var(--sb-aksen);
+  background: var(--accent);
 }
 .shell__sidebar .shell__butir--aktif > svg {
   color: var(--sb-aksen);
@@ -5785,7 +5872,7 @@ textarea.field__input {
   --tb-tepi: #e4e7ee;
   --tb-teks: #101828;
   --tb-teks-redup: #5b6478;
-  --tb-aksen: #2b44b0;
+  --tb-aksen: var(--primary-tanda);
   --tb-aksen-garis: #c3cdf2;
   --tb-hover: #f5f7fc;
   --tb-tombol: #ffffff;
@@ -5802,7 +5889,6 @@ textarea.field__input {
   --tb-tepi: #2f3749;
   --tb-teks: #eef0f6;
   --tb-teks-redup: #a9b1c3;
-  --tb-aksen: #8ea2f5;
   --tb-aksen-garis: #3a4b8f;
   --tb-hover: #1d2232;
   --tb-tombol: #192030;
@@ -5933,7 +6019,7 @@ textarea.field__input {
   --ku-lembut-tepi: #dde3ec;
   --ku-teks: #101828;
   --ku-teks-redup: #4f586b;
-  --ku-aksen: #2b44b0;
+  --ku-aksen: var(--primary-tanda);
   --ku-aksen-teks: #2339a3;
   --ku-aksen-lembut: #e3e8f6;
   --ku-aksen-garis: #b9c5ee;
@@ -5987,7 +6073,6 @@ textarea.field__input {
   --ku-lembut-tepi: #242b3a;
   --ku-teks: #eef0f6;
   --ku-teks-redup: #aab2c4;
-  --ku-aksen: #8ea2f5;
   --ku-aksen-teks: #aebcff;
   --ku-aksen-lembut: #222b45;
   --ku-aksen-garis: #3a4b8f;
@@ -6056,7 +6141,8 @@ textarea.field__input {
 .kelola-user .btn--primary {
   background: linear-gradient(180deg, var(--ku-tombol), var(--ku-tombol-ujung));
   border-color: var(--ku-tombol-ujung);
-  color: #ffffff;
+  /* 4,62:1 di atas ujung terang gradien (#d63a42), 5,71:1 di ujung gelapnya. */
+  color: var(--on-primary);
   box-shadow: var(--ku-bayang-tombol);
 }
 .kelola-user .btn--primary:hover:not(:disabled) {
@@ -6133,6 +6219,16 @@ textarea.field__input {
 }
 .kelola-user .kelola-user__tabel tbody tr:hover {
   background: transparent;
+}
+/* Zebra dengan alas cekung --ku-lembut, bukan --alt-row inti: di terang
+   --alt-row sama persis dengan --ku-latar dan tak terlihat. Di sel, bukan
+   di baris, supaya sudut bawah yang membulat ikut. --ku-teks-redup di
+   atasnya 6,08:1 terang, 7,91:1 gelap. */
+.kelola-user .kelola-user__tabel tbody tr:nth-child(even) {
+  background: transparent;
+}
+.kelola-user .kelola-user__tabel tbody tr:nth-child(even) > td {
+  background: var(--ku-lembut);
 }
 .kelola-user .kelola-user__tabel tbody tr:hover > td {
   background: var(--ku-baris-hover);
@@ -6254,7 +6350,7 @@ textarea.field__input {
   --br-lembut-tepi: #dde3ec;
   --br-teks: #101828;
   --br-teks-redup: #4f586b;
-  --br-aksen: #2b44b0;
+  --br-aksen: var(--primary-tanda);
   --br-aksen-teks: #2339a3;
   --br-aksen-lembut: #e3e8f6;
   --br-aksen-garis: #b9c5ee;
@@ -6306,7 +6402,6 @@ textarea.field__input {
   --br-lembut-tepi: #242b3a;
   --br-teks: #eef0f6;
   --br-teks-redup: #aab2c4;
-  --br-aksen: #8ea2f5;
   --br-aksen-teks: #aebcff;
   --br-aksen-lembut: #222b45;
   --br-aksen-garis: #3a4b8f;
@@ -6368,6 +6463,17 @@ textarea.field__input {
 .beranda .beranda__antrean-nama svg {
   color: var(--br-aksen);
 }
+/* Penegas angka antrean: garis pendek EMAS di bawah angka (02-10-2026).
+   Hiasan, bukan pembawa informasi — angkanya sendiri yang dibaca. */
+.beranda .beranda__antrean-angka::after {
+  content: "";
+  display: block;
+  width: 28px;
+  height: 3px;
+  margin-top: 6px;
+  border-radius: 3px;
+  background: var(--accent);
+}
 
 /* Tabel Modul: rata di dalam kartu; sudut bawah dipotong mengikuti kartu. */
 .beranda .kartu__tabel {
@@ -6383,6 +6489,13 @@ textarea.field__input {
 }
 .beranda .beranda__kartu tbody tr:hover {
   background: transparent;
+}
+/* Zebra dengan --br-lembut — alasan sama dengan tabel Kelola User. */
+.beranda .beranda__kartu tbody tr:nth-child(even) {
+  background: transparent;
+}
+.beranda .beranda__kartu tbody tr:nth-child(even) > td {
+  background: var(--br-lembut);
 }
 .beranda .beranda__kartu tbody tr:hover > td {
   background: var(--br-baris-hover);

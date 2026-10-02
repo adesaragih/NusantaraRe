@@ -32,6 +32,35 @@ func (s *Service) PunyaDatabase() bool { return s != nil && s.Dasar.PunyaDatabas
 // Gudang adalah seluruh sentuhan basis data yang Layanan butuhkan.
 type Gudang interface {
 	DaftarAcuan(ctx context.Context, h models.Himpunan) ([]models.Acuan, error)
+
+	// Tiket 14. Keduanya menulis dan membaca KONTRAK + VERSI_KONTRAK.
+	// Pembuatan berjalan dalam SATU transaksi: kontrak tanpa versi pertamanya
+	// bukan keadaan yang sah menurut tiket 14, dan dua pernyataan terpisah
+	// dapat meninggalkannya bila yang kedua gagal.
+	BuatKontrakDenganVersiPertama(ctx context.Context, k models.Kontrak, v models.VersiKontrak) (int64, int64, error)
+	BacaKontrak(ctx context.Context, id int64) (models.KontrakDenganVersi, error)
+
+	// Tiket 16, 17, 18, 19 - identitas kontrak.
+	CariKontrakSerupa(ctx context.Context, k models.Kontrak) ([]int64, error)
+	CariKontrakLewatNomorWarisan(ctx context.Context, nomor string) ([]models.Kontrak, error)
+	PerbaruiKontrak(ctx context.Context, k models.Kontrak) error
+	TambahVersi(ctx context.Context, idKontrak int64, v models.VersiKontrak) (int64, error)
+
+	// Tiket 35 dan 36 - ketentuan proporsional.
+	AdaQuotaSharePadaVersi(ctx context.Context, idVersi int64) (bool, error)
+	CatatKetentuanProporsional(ctx context.Context, idVersi, idLayer, idKelompok int64, jenis, persenQS string, lines *int64) error
+
+	// Tiket 32 - syarat berbeda tiap pemulihan limit. SELURUH daftar sekaligus:
+	// nomor urut kembar hanya terlihat bila barisnya dilihat bersama.
+	CatatPemulihanLimit(ctx context.Context, idLayer int64, baris []models.PemulihanLimit) error
+
+	// Tiket 40 - versi DASAR dibaca lewat ID_VERSI_KONTRAK_DASAR, bukan dari
+	// salinan. Nil tanpa galat berarti versinya yang pertama.
+	BacaVersiDasar(ctx context.Context, idVersi int64) (*models.VersiKontrak, error)
+
+	// Tiket 41 TIDAK menambah apa pun di sini: identitas bentuk lama
+	// DITURUNKAN di services dari BacaKontrak. Menambah kueri tersendiri
+	// berarti dua pembaca untuk kolom yang sama (INV-60).
 }
 
 // Layanan memegang aturan modul ini di atas satu Gudang.

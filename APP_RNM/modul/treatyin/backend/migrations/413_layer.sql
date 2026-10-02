@@ -11,7 +11,21 @@
 -- artefak ("LAYER, PEMULIHAN_LIMIT, dan kedua tabel anak paket uang").
 --
 -- Penyelarasan presisi dan skema: `docs/KEPUTUSAN-PENYELARASAN-REPO.md`.
--- INV-18 - TANPA "ON DELETE" di keempatnya.
+--
+-- ---------------------------------------------------------------------
+-- INV-18 - PERILAKU HAPUS DITETAPKAN SADAR. ⚠️ RALAT 2 Oktober 2026.
+-- ---------------------------------------------------------------------
+--   Berkas ini pernah menyebut INV-18 sambil MEMBIARKAN bawaan Oracle. Itu
+--   membaca INV-18 terbalik: ia menuntut perilaku hapus "DITETAPKAN SADAR,
+--   TIDAK DIBIARKAN BAWAAN", dan bawaan yang kebetulan cocok bukan keputusan.
+--   Sumber keputusannya `4-erd-dan-tabel-datar/ERD.md` §2 - dokumen MENGIKAT
+--   yang tidak pernah dibuka sampai hari ini.
+--
+--   Keempat kunci asing berkas ini **IKUT HAPUS**, dan keempatnya disebut
+--   ERD.md: LAYER di §2.4, PEMULIHAN_LIMIT di §2.3b, NILAI_MDP dan
+--   NILAI_MDP_MINIMUM di §2.3c - "sebuah nilai per mata uang tidak punya arti
+--   tanpa induknya". Berkas ini sebelumnya menulis TANPA ON DELETE pada
+--   keempatnya; itu keliru di keempatnya.
 --
 -- INV-05: satu layer per (versi, nomor layer, bagian layer).
 --
@@ -42,26 +56,28 @@
 --   DITAGIH    : ketika jawaban T-3 kembali dari teknik treaty.
 --
 -- ---------------------------------------------------------------------
--- ⛔ UQ_LAYER TIDAK MENEGAKKAN INV-05 SEPENUHNYA, dan itu harus dibaca
--- sebelum seseorang mengira ia menegakkannya.
+-- ✅ UQ_LAYER MENEGAKKAN INV-05 — TERVERIFIKASI DI ORACLE 02-10-2026
 -- ---------------------------------------------------------------------
---   APA     : BAGIAN_LAYER BOLEH KOSONG, dan Oracle memperlakukan NULL
---             sebagai TIDAK SAMA DENGAN NULL di dalam kunci unik komposit.
---             Akibatnya `UQ_LAYER` menerima baris (versi, 1, NULL) BERULANG
---             tanpa batas - persis keadaan layer yang tidak berbagian, yang
---             justru keadaan paling lazim.
---   KENAPA  : bentuk ini DIAMBIL APA ADANYA dari `Z00_KUNCI_ALAMI.sql`, yang
---             menulis `UNIQUE (ID_VERSI_KONTRAK, NOMOR_LAYER, BAGIAN_LAYER)`.
---             Lubangnya ada di spec, bukan dibuat di sini. Menambalnya
---             sendiri - mis. index fungsional atas NVL(BAGIAN_LAYER,-1) -
---             mengubah arti kunci alami tanpa wewenang, dan dapat MENOLAK
---             data yang sah bila "tanpa bagian" ternyata boleh berulang.
---   AKIBAT  : daftar periksa tiket 31 "INV-05 terpasang atas NOMOR_LAYER +
---             BAGIAN_LAYER di dalam satu versi" TIDAK terpenuhi untuk layer
---             tanpa bagian. Jangan menandainya selesai.
---   DITAGIH : pemilik `SPEC-INVARIAN.md` - satu kalimat: bolehkah dua layer
---             bernomor sama tanpa bagian pada satu versi? Bila tidak,
---             `Z00_KUNCI_ALAMI.sql` perlu bentuk yang menangkapnya.
+--   ⚠️ RALAT. Baris ini pernah berbunyi "UQ_LAYER TIDAK menegakkan INV-05
+--   sepenuhnya", dengan alasan BAGIAN_LAYER boleh kosong dan Oracle
+--   memperlakukan NULL sebagai tidak sama dengan NULL. ITU KELIRU, dan
+--   kekeliruannya hanya ketahuan karena diuji terhadap Oracle sungguhan.
+--
+--   Aturan Oracle yang sebenarnya: sebuah entri DILEWATI indeks unik hanya
+--   bila SELURUH kolom kuncinya NULL. Di sini ID_VERSI_KONTRAK dan
+--   NOMOR_LAYER selalu terisi, sehingga barisnya DIINDEKS - dan dua baris
+--   (versi, 1, NULL) ditolak.
+--
+--   Bukti: menyisipkan baris kedua (9000001, 1, NULL) menghasilkan
+--     ORA-00001: unique constraint (UQ_LAYER) violated
+--   Uji kendali, layer berbagian (versi, 2, 1) ganda, juga ditolak UQ_LAYER.
+--   Keduanya dijalankan 02-10-2026, lalu ROLLBACK.
+--
+--   Pelajaran yang layak disimpan: penalaran tentang semantik NULL Oracle
+--   GAGAL dua kali di berkas ini - sekali oleh penulisnya, sekali oleh
+--   peninjaunya - dan yang memperbaikinya bukan argumen, melainkan satu
+--   INSERT. Jangan menulis pernyataan keputusan tentang perilaku basis data
+--   yang belum dijalankan.
 --
 -- ⛔ INV-49 BELUM TERTULIS. Daftar periksa tiket 31 menuntut "INV-49 tertulis
 -- sebagai pengecualian bernama terhadap INV-47 - bukan dibiarkan terbaca

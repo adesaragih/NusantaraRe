@@ -74,12 +74,24 @@ CREATE TABLE {skema}.BAHAYA (
 -- (tiket 15; artinya dipakai pertama kali oleh tiket 38). Kolomnya ikut di sini,
 -- susunannya belum dipakai.
 --
--- TANPA "ON DELETE" - perilaku hapus DITETAPKAN SADAR, bukan dibiarkan bawaan
--- terbaca sebagai kelalaian. Aturan hapus bawaan Oracle adalah MENOLAK, dan
--- menolak memang yang dikehendaki: ID_INDUK penunjuk KE ATAS, bukan
--- kepemilikan, sehingga menghapus induk tidak boleh ikut menghapus anaknya.
--- Menghapus baris yang masih ditunjuk akan gagal dengan ORA-02292, bukan
--- diam-diam membuat penunjuk yatim.
+-- ---------------------------------------------------------------------
+-- INV-18 - PERILAKU HAPUS DITETAPKAN SADAR. ⚠️ RALAT 2 Oktober 2026.
+-- ---------------------------------------------------------------------
+--   Berkas ini pernah menyebut INV-18 sambil MEMBIARKAN bawaan Oracle. Itu
+--   membaca INV-18 terbalik: ia menuntut perilaku hapus "DITETAPKAN SADAR,
+--   TIDAK DIBIARKAN BAWAAN", dan bawaan yang kebetulan cocok bukan keputusan.
+--   Sumber keputusannya `4-erd-dan-tabel-datar/ERD.md` §2 - dokumen MENGIKAT
+--   yang tidak pernah dibuka sampai hari ini.
+--
+--   ⛔ RELASI INI TIDAK ADA DI ERD.md §2. `JENIS_REASURANSI.ID_INDUK` lahir
+--   dari tiket 15 ("JENIS_REASURANSI bersusun"), sesudah §2 ditulis, dan §2.3c
+--   yang menambahkan delapan relasi susulan pun tidak memuatnya.
+--   DIPUTUSKAN DI SINI: **tolak** - TANPA klausa ON DELETE. Alasannya diambil
+--   dari aturan kelompok yang §2.7 nyatakan untuk seluruh tabel acuan: "baris
+--   acuan yang sudah dipakai tidak dapat hilang". Menghapus jenis reasuransi
+--   induk yang masih punya turunan akan gagal ORA-02292.
+--   DITAGIH: pemilik `ERD.md` - satu baris di §2.7, supaya keputusan ini
+--   berpindah dari sini ke dokumen yang mengikat.
 CREATE TABLE {skema}.JENIS_REASURANSI (
   ID_JENIS_REASURANSI  NUMBER(19)          NOT NULL,
   KODE                 VARCHAR2(1000 CHAR) NOT NULL,

@@ -100,14 +100,26 @@ CREATE TABLE {skema}.KONTRAK (
 --                kunci asingnya.
 --
 -- ---------------------------------------------------------------------
--- INV-18 - perilaku hapus FK_VERSI_KONTRAK_1, DITETAPKAN SADAR
+-- INV-18 - PERILAKU HAPUS DITETAPKAN SADAR. ⚠️ RALAT 2 Oktober 2026.
 -- ---------------------------------------------------------------------
---   TANPA "ON DELETE". Aturan hapus bawaan Oracle adalah MENOLAK, dan menolak
---   memang yang dikehendaki: menghapus sebuah KONTRAK yang masih punya versi
---   akan gagal dengan ORA-02292, bukan diam-diam membawa versinya ikut hilang.
---   Lapisan beku sebuah kontrak dibagi oleh SELURUH versinya tanpa disalin;
---   kaskade di sini berarti satu perintah hapus dapat menghilangkan riwayat
---   persetujuan yang tiket 54 catat.
+--   Berkas ini pernah menyebut INV-18 sambil MEMBIARKAN bawaan Oracle. Itu
+--   membaca INV-18 terbalik: ia menuntut perilaku hapus "DITETAPKAN SADAR,
+--   TIDAK DIBIARKAN BAWAAN", dan bawaan yang kebetulan cocok bukan keputusan.
+--   Sumber keputusannya `4-erd-dan-tabel-datar/ERD.md` §2 - dokumen MENGIKAT
+--   yang tidak pernah dibuka sampai hari ini.
+--
+--   Perilaku hapus ketiga kunci asing berkas ini, menurut ERD.md:
+--
+--   FK_VERSI_KONTRAK_1        KONTRAK 1--< VERSI_KONTRAK      §2.1  TOLAK
+--     "kontrak yang punya versi tidak boleh hilang, karena versinya memuat
+--      angka yang pernah dibukukan."
+--   FK_VERSI_KONTRAK_MATA_UANG  VERSI >o--1 MATA_UANG         §2.7  TOLAK
+--     "baris acuan yang sudah dipakai tidak dapat hilang."
+--   FK_KONTRAK_DISALIN_DARI   KONTRAK 1--o< KONTRAK           §2.1  PUTUS
+--     satu-satunya `putus` di modul ini - lihat di dalam CREATE TABLE.
+--
+--   TOLAK diwujudkan dengan TIDAK menulis klausa ON DELETE - bentuk yang sama
+--   dengan bawaan, tetapi kini DIPILIH dan sumbernya disebut.
 CREATE TABLE {skema}.VERSI_KONTRAK (
   ID_VERSI_KONTRAK              NUMBER(19)          NOT NULL,
   ID_KONTRAK                    NUMBER(19)          NOT NULL,

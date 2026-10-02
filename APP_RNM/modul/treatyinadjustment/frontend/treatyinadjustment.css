@@ -1,0 +1,48 @@
+/*
+ * Gaya modul Treaty In Adjustment.
+ *
+ * ⛔ TERISOLASI: SETIAP pemilih diawali kelas akar `.treatyinadjustment` (dipasang `rute.tsx` pada
+ * pembungkus seluruh halaman modul, `display: contents` sehingga tata letak tidak berubah). Modul ini
+ * sebelumnya TIDAK punya berkas gaya sama sekali - ia bukan dipindah dari inti seperti tujuh modul
+ * lain, ia baru lahir 02-10-2026 memenuhi perintah work owner ("untuk css style per modul tidak ada
+ * lagi menumpang per inti"). Dijaga `gaya.test.ts`.
+ *
+ * ⛔ Nol rona baru. Seluruh warna di sini `var(--…)` dari palet inti, jadi kedua tema ikut sendiri.
+ *
+ * ⚠️ `--aksen-tria` yang diminta briefing TIDAK dibuat - alasannya sama dengan yang tertulis di
+ * `modul/treatyin/frontend/treatyin.css`: `--accent` SUDAH punya varian gelap sendiri di inti
+ * (`styles.css` baris 192, `#e2af50`), jadi menyalinnya ke token modul hanya membekukan nilai yang
+ * sudah benar.
+ */
+
+/* Pembungkus akar: tanpa kotak sendiri, jadi halaman modul tetap anak tata letak kerangka. */
+.treatyinadjustment {
+  display: contents;
+}
+
+/* Kalimat penjelas di bawah judul - satu baris penuh di bawah judul, bukan di sebelahnya
+   (`.inbox__kepala` adalah flex yang melipat). --text-2: 6,73:1 di atas --bg terang, 9,64:1 gelap. */
+.treatyinadjustment .tria__aturan {
+  flex-basis: 100%;
+  order: 1;
+  margin: -6px 0 0;
+  color: var(--text-2);
+}
+
+/* Emas sebagai penanda judul kartu.
+   ⚠️ MURNI HIASAN: nama kontraknya dibawa teks `--text` di sebelahnya, jadi garis ini tidak pernah
+   menjadi satu-satunya pembawa makna - `--accent` di atas `--surface` hanya 2,17:1 di tema terang.
+   Pola yang sama sudah dipakai `.tabs__item--aktif` di inti. */
+.treatyinadjustment .panel__title {
+  padding-left: 10px;
+  border-left: 3px solid var(--accent);
+}
+
+/* Sel yang kosong karena memang tidak punya nilai: "versi pertama", "belum dinomori".
+   ⚠️ Redup, BUKAN tersembunyi, dan tetap lolos AA: --text-3 di atas --surface 5,20:1 terang dan
+   5,66:1 gelap; di atas baris zebra --alt-row 4,59:1 terang dan 4,83:1 gelap. Keterangan yang jatuh
+   di bawah 4,5:1 berhenti menjadi keterangan dan menjadi sel yang tampak kosong. */
+.treatyinadjustment .tria__redup {
+  color: var(--text-3);
+  font-style: italic;
+}

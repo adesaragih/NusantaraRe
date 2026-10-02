@@ -56,3 +56,33 @@ selalu berjalan sesudahnya). Slot menu `974-975` hanya menyalakan `DIMIGRASI` ba
 nol `INSERT` — menu datar 30-09-2026) saat modul mendapat layar pertamanya, di folder
 `backend/migrations/` modul ini sendiri — bentuk SQL-nya di `APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md`
 bab 6. Nomor selalu tiga digit.
+
+## Pernyataan untuk penjaga
+
+### Kaskade ON DELETE CASCADE
+
+**Nol kaskade di modul ini**, dan itu keputusan yang dikutip, bukan bawaan yang dibiarkan.
+
+Modul ini punya satu kunci asing sendiri: `VERSI_KONTRAK.ID_VERSI_KONTRAK_DASAR` →
+`VERSI_KONTRAK` (migrasi `440`). `4-erd-dan-tabel-datar/ERD.md` §2.2 menyatakannya **[hapus: tolak]**
+— *"menghapus versi dasar akan membuat seluruh baris selisih kehilangan artinya"* — sehingga ia
+berdiri tanpa klausa `ON DELETE`.
+
+| Awalan berkas | Relasi |
+| --- | --- |
+
+Tabel di atas **sengaja kosong**, dan itu bukan kelalaian: tabel kosong menyatakan **nol berkas
+modul ini yang boleh memuat `ON DELETE CASCADE`**, dan `TestKaskadeHanyaPadaRelasiTerdaftar` akan
+menolak yang pertama kali menambahkannya tanpa mendaftarkannya di sini.
+
+⚠️ **Relasi kedua modul ini akan punya belum dapat dibuat.** `ERD.md` §2.6 menyatakan dua relasi
+yang melintasi sekat, dan **keduanya** menuju `NILAI_SELISIH`:
+
+```
+VERSI_KONTRAK             1--o<  NILAI_SELISIH   [hapus: ikut hapus]   SEKAT
+BESARAN_DAPAT_DISESUAIKAN 1--<   NILAI_SELISIH   [hapus: tolak]        SEKAT
+```
+
+`NILAI_SELISIH` **tidak ada di `ddl-usulan/` maupun `KAMUS-KOLOM.md`** — kolomnya belum diputuskan
+siapa pun. Tiket `06` dan `13` bersandar padanya. Begitu tabelnya lahir, yang pertama masuk tabel di
+atas sebagai kaskade.

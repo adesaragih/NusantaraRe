@@ -13,6 +13,7 @@ package backend
 import (
 	"io/fs"
 	"regexp"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -68,9 +69,20 @@ func majuSaja(t *testing.T) map[string]string {
 
 func gabungan(t *testing.T) string {
 	t.Helper()
+	maju := majuSaja(t)
+	nama := make([]string, 0, len(maju))
+	for n := range maju {
+		nama = append(nama, n)
+	}
+	// ⛔ DIURUTKAN. Peta Go tidak berurut, dan urutan menentukan siapa menimpa
+	// siapa: migrasi 420 membongkar lalu membuat ulang kunci asing yang
+	// 403-418 definisikan. Menggabungkan dalam urutan acak membuat uji
+	// perilaku hapus hijau atau merah bergantung iterasi peta.
+	sort.Strings(nama)
 	var b strings.Builder
-	for _, isi := range majuSaja(t) {
-		b.WriteString(isi)
+	for _, n := range nama {
+		b.WriteString(maju[n])
+		b.WriteByte('\n')
 	}
 	return b.String()
 }
@@ -207,35 +219,111 @@ func TestNolCheckDaftarNilai(t *testing.T) {
 	}
 }
 
-// INV-18: perilaku hapus setiap kunci asing ditetapkan SADAR.
+// INV-18 - perilaku hapus tiap kunci asing DITETAPKAN SADAR, dan di sini ia
+// diadu dengan sumber yang menetapkannya.
 //
-// Tidak ada ON DELETE di modul ini: bawaan Oracle MENOLAK, dan menolak memang
-// yang dikehendaki. Uji ini menjaga keputusan itu tetap terbaca - kaskade yang
-// disisipkan diam-diam akan menghilangkan riwayat persetujuan tiket 54.
-func TestNolKaskadeHapus(t *testing.T) {
-	for nama, isi := range majuSaja(t) {
-		if strings.Contains(strings.ToUpper(tanpaKomentar(isi)), "ON DELETE") {
-			t.Errorf("INV-18: %s memuat ON DELETE; kebijakan modul ini adalah MENOLAK, tanpa klausa", nama)
+// ⚠️ RALAT 2 Oktober 2026. Uji ini pernah bernama TestNolKaskadeHapus dan
+// menuntut NOL `ON DELETE` di seluruh modul, dengan alasan "kebijakan modul
+// ini MENOLAK". Itu membaca INV-18 terbalik: invariannya menuntut keputusan
+// yang DINYATAKAN, bukan bawaan yang kebetulan cocok — dan keputusannya sudah
+// ada, mengikat, di `4-erd-dan-tabel-datar/ERD.md` §2. Uji lama membekukan
+// kekeliruan itu dan akan menolak setiap perbaikannya.
+//
+// Tabel di bawah DISALIN dari ERD.md §2, satu baris per kunci asing yang
+// modul ini punya. Relasi yang tabelnya belum dibuat tidak ada di sini.
+func TestPerilakuHapusSesuaiERD(t *testing.T) {
+	// "" berarti TOLAK: diwujudkan dengan TIDAK menulis klausa ON DELETE.
+	const tolak = ""
+	mau := map[string]string{
+		// §2.1 tulang punggung
+		"FK_VERSI_KONTRAK_1":      tolak,
+		"FK_KONTRAK_DISALIN_DARI": "ON DELETE SET NULL",
+		// §2.3 anak langsung versi — sepuluh ikut hapus, dua tolak
+		"FK_MATA_UANG_KONTRAK_1": "ON DELETE CASCADE",
+		"FK_RETENSI_CEDANT_1":    "ON DELETE CASCADE",
+		"FK_EGNPI_1":             "ON DELETE CASCADE",
+		"FK_PORTOFOLIO_1":        "ON DELETE CASCADE",
+		"FK_PERIODE_PELAPORAN_1": "ON DELETE CASCADE",
+		"FK_PERIODE_AKUMULASI_1": "ON DELETE CASCADE",
+		"FK_TERMIN_1":            "ON DELETE CASCADE",
+		"FK_SKALA_KOASURANSI_1":  "ON DELETE CASCADE",
+		"FK_BATAS_PER_BAHAYA_1":  "ON DELETE CASCADE",
+		"FK_DOKUMEN_KONTRAK_1":   "ON DELETE CASCADE",
+		"FK_JEJAK_PERUBAHAN_1":   tolak,
+		// §2.4 cabang
+		"FK_LAYER_1":               "ON DELETE CASCADE",
+		"FK_DETAIL_PROPORSIONAL_1": "ON DELETE CASCADE",
+		"FK_BAGIAN_1":              "ON DELETE CASCADE",
+		// §2.5 potongan — dua pelekatan, keduanya ikut hapus
+		"FK_POTONGAN_1": "ON DELETE CASCADE",
+		"FK_POTONGAN_2": "ON DELETE CASCADE",
+		// §2.3b dan §2.3c — tabel anak paket uang, seluruhnya ikut hapus
+		"FK_PEMULIHAN_LIMIT_1":       "ON DELETE CASCADE",
+		"FK_NILAI_MDP_1":             "ON DELETE CASCADE",
+		"FK_NILAI_MDP_MINIMUM_1":     "ON DELETE CASCADE",
+		"FK_NILAI_PREMI_BRUTO_1":     "ON DELETE CASCADE",
+		"FK_NILAI_PREMI_BRUTO_MIN_1": "ON DELETE CASCADE",
+		"FK_NILAI_CADANGAN_PREMI_1":  "ON DELETE CASCADE",
+		// §2.7 tabel acuan — seluruhnya tolak
+		"FK_MATA_UANG_KONTRAK_2":     tolak,
+		"FK_RETENSI_CEDANT_2":        tolak,
+		"FK_EGNPI_2":                 tolak,
+		"FK_EGNPI_3":                 tolak,
+		"FK_BATAS_PER_BAHAYA_2":      tolak,
+		"FK_DETAIL_PROPORSIONAL_2":   tolak,
+		"FK_POTONGAN_3":              tolak,
+		"FK_VERSI_KONTRAK_MATA_UANG": tolak,
+		// Tidak ada di ERD §2 — diputuskan di migrasi 400, ditagih ke pemilik ERD.
+		"FK_JENIS_REASURANSI_INDUK": tolak,
+	}
+
+	sql := gabungan(t)
+	// Potong tiap definisi kunci asing sampai akhir baris REFERENCES-nya.
+	pola := regexp.MustCompile(`(?is)CONSTRAINT\s+(FK_\w+)\s+FOREIGN KEY\s*\([^)]*\)\s*REFERENCES\s+\{skema\}\.\w+\s*\([^)]*\)([^,\n]*)`)
+	// ⛔ YANG TERAKHIR MENANG. Migrasi 420 membongkar lalu membuat ulang kunci
+	// asing yang 403-418 definisikan, jadi bentuk yang BERLAKU adalah definisi
+	// terakhir di urutan migrasi - bukan yang pertama ditemukan. Membaca yang
+	// pertama membuat uji ini menilai bentuk yang sudah diganti.
+	akhir := map[string]string{}
+	urut := []string{}
+	for _, m := range pola.FindAllStringSubmatch(tanpaKomentar(sql), -1) {
+		nama := m[1]
+		if _, pernah := akhir[nama]; !pernah {
+			urut = append(urut, nama)
+		}
+		akhir[nama] = strings.ToUpper(strings.TrimSpace(m[2]))
+	}
+	lihat := map[string]bool{}
+	for _, nama := range urut {
+		harap, dikenal := mau[nama]
+		if !dikenal {
+			t.Errorf("kunci asing %s tidak ada di tabel ERD uji ini; "+
+				"tiap kunci asing BARU wajib menyebut keputusan ERD.md §2-nya", nama)
+			continue
+		}
+		lihat[nama] = true
+		if akhir[nama] != strings.ToUpper(harap) {
+			t.Errorf("%s: perilaku hapus %q, ERD.md menuntut %q", nama, akhir[nama], harap)
 		}
 	}
-	// Dan kunci asingnya memang ada - tanpa ini uji di atas lulus pada modul
-	// yang tidak punya kunci asing sama sekali.
-	sql := gabungan(t)
-	for _, fk := range []string{
-		"FK_VERSI_KONTRAK_1", "FK_VERSI_KONTRAK_MATA_UANG", "FK_JENIS_REASURANSI_INDUK",
-		"FK_MATA_UANG_KONTRAK_1", "FK_MATA_UANG_KONTRAK_2", "FK_RETENSI_CEDANT_1",
-		"FK_RETENSI_CEDANT_2", "FK_EGNPI_1", "FK_EGNPI_2", "FK_EGNPI_3", "FK_PORTOFOLIO_1",
-		"FK_PERIODE_PELAPORAN_1", "FK_PERIODE_AKUMULASI_1", "FK_TERMIN_1",
-		"FK_SKALA_KOASURANSI_1", "FK_BATAS_PER_BAHAYA_1", "FK_BATAS_PER_BAHAYA_2",
-		"FK_DOKUMEN_KONTRAK_1", "FK_LAYER_1", "FK_NILAI_MDP_1", "FK_NILAI_MDP_MINIMUM_1",
-		"FK_PEMULIHAN_LIMIT_1", "FK_JEJAK_PERUBAHAN_1",
-		"FK_BAGIAN_1", "FK_NILAI_PREMI_BRUTO_1", "FK_NILAI_PREMI_BRUTO_MIN_1",
-		"FK_DETAIL_PROPORSIONAL_1", "FK_DETAIL_PROPORSIONAL_2", "FK_NILAI_CADANGAN_PREMI_1",
-		"FK_POTONGAN_1", "FK_POTONGAN_2", "FK_POTONGAN_3",
-	} {
-		if !strings.Contains(sql, "CONSTRAINT "+fk+" FOREIGN KEY") {
-			t.Errorf("kunci asing %s tidak ada", fk)
+	for nama := range mau {
+		if !lihat[nama] {
+			t.Errorf("kunci asing %s didaftar uji ini tetapi tidak ada di DDL", nama)
 		}
+	}
+}
+
+// Dua puluh satu relasi IKUT HAPUS, dan cacahnya dijaga.
+//
+// ERD.md §2 menyatakan 28 relasi `ikut hapus`; tujuh di antaranya menyentuh
+// tabel yang modul ini BELUM buat (PENYEBARAN, RINCIAN_PENYEBARAN,
+// NILAI_PENYEBARAN, NILAI_SELISIH, PERISTIWA_KONTRAK, RETRO_KELUAR, dan
+// PENYEBARAN cabang kedua). Angka di bawah naik bersama tabelnya.
+func TestCacahKaskadeSesuaiTabelYangAda(t *testing.T) {
+	n := strings.Count(strings.ToUpper(tanpaKomentar(gabungan(t))), "ON DELETE CASCADE")
+	if n != 21 {
+		t.Errorf("ON DELETE CASCADE ditemukan %d, mau 21 (ERD.md §2: 28 relasi ikut hapus, "+
+			"7 di antaranya tabelnya belum dibuat)", n)
 	}
 }
 
@@ -305,8 +393,18 @@ func TestKunciAlamiTabelAnak(t *testing.T) {
 //
 // Yang uji ini jaga hanya satu hal: tidak ada yang MENYISIPKAN UNIQUE diam-diam
 // sebelum nomor invariannya turun. Ia tidak menyatakan ketiadaannya benar.
+// rapatkanSpasi mengubah tiap deret spasi putih menjadi satu spasi tunggal,
+// sehingga pemilih berbentuk teks tidak bergantung pada tata letak berkasnya.
+func rapatkanSpasi(s string) string { return strings.Join(strings.Fields(s), " ") }
+
 func TestTabelTanpaKunciAlamiTidakDiberiDiamDiam(t *testing.T) {
-	sql := gabungan(t)
+	// ⚠️ Spasi DIRAPATKAN lebih dulu. Bentuk harfiah "CONSTRAINT UQ_X UNIQUE"
+	// dapat dihindari - tanpa sengaja maupun tidak - hanya dengan memenggal
+	// barisnya di antara nama constraint dan kata UNIQUE, dan penjaga yang
+	// dapat dihindari dengan satu baris baru tidak menjaga apa pun.
+	// (2 Oktober 2026: itu sungguh terjadi, pada percobaan memasang
+	// UQ_PEMULIHAN_LIMIT untuk tiket 32.)
+	sql := rapatkanSpasi(gabungan(t))
 	for _, tabel := range []string{"JEJAK_PERUBAHAN", "NILAI_MDP", "NILAI_MDP_MINIMUM", "PEMULIHAN_LIMIT"} {
 		if strings.Contains(sql, "CONSTRAINT UQ_"+tabel+" UNIQUE") {
 			t.Errorf("%s diberi kunci alami tanpa nomor invarian; sebabnya berbeda per tabel - "+

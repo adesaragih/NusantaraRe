@@ -4,6 +4,7 @@ package backend
 
 import (
 	"io/fs"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -122,11 +123,47 @@ func TestNolTriggerProcedureDanCommit(t *testing.T) {
 	}
 }
 
-// INV-18: nol kaskade hapus - bawaan Oracle MENOLAK, dan menolak yang dikehendaki.
-func TestNolKaskadeHapus(t *testing.T) {
+// gabungan menyatukan seluruh langkah maju menjadi satu teks.
+func gabungan(t *testing.T) string {
+	t.Helper()
+	var b strings.Builder
+	for _, isi := range majuSaja(t) {
+		b.WriteString(isi)
+	}
+	return b.String()
+}
+
+// INV-18 - perilaku hapus DITETAPKAN SADAR, diadu dengan ERD.md §2.
+//
+// ⚠️ RALAT 2 Oktober 2026. Uji ini pernah bernama TestNolKaskadeHapus dan
+// menuntut nol `ON DELETE` dengan alasan "kebijakan modul ini MENOLAK". Itu
+// membaca INV-18 terbalik — invariannya menuntut keputusan yang DINYATAKAN,
+// bukan bawaan yang kebetulan cocok, dan sumbernya `ERD.md` §2.
+//
+// Modul ini punya SATU kunci asing sendiri, dan §2.2 menyatakannya
+// [hapus: tolak]: "menghapus versi dasar akan membuat seluruh baris selisih
+// kehilangan artinya." TOLAK diwujudkan dengan tidak menulis klausa ON DELETE.
+func TestPerilakuHapusSesuaiERD(t *testing.T) {
+	pola := regexp.MustCompile(`(?is)CONSTRAINT\s+(FK_\w+)\s+FOREIGN KEY\s*\([^)]*\)\s*REFERENCES\s+\{skema\}\.\w+\s*\([^)]*\)([^,\n]*)`)
+	cocok := pola.FindAllStringSubmatch(tanpaKomentar(gabungan(t)), -1)
+	if len(cocok) != 1 {
+		t.Fatalf("mau tepat 1 kunci asing di modul ini, dapat %d", len(cocok))
+	}
+	nama, ekor := cocok[0][1], strings.ToUpper(strings.TrimSpace(cocok[0][2]))
+	if nama != "FK_VERSI_KONTRAK_DASAR" {
+		t.Errorf("kunci asing tak terduga: %s", nama)
+	}
+	if ekor != "" {
+		t.Errorf("%s berperilaku %q; ERD.md §2.2 menuntut TOLAK, yaitu tanpa klausa ON DELETE", nama, ekor)
+	}
+}
+
+// Nol kaskade, dan `MODUL.md` menyatakannya dengan tabel kosong — sehingga
+// `TestKaskadeHanyaPadaRelasiTerdaftar` menolak yang pertama menambahkannya.
+func TestNolKaskadeDiModulIni(t *testing.T) {
 	for nama, isi := range majuSaja(t) {
 		if strings.Contains(strings.ToUpper(tanpaKomentar(isi)), "ON DELETE") {
-			t.Errorf("INV-18: %s memuat ON DELETE; kebijakan modul ini MENOLAK, tanpa klausa", nama)
+			t.Errorf("%s memuat ON DELETE; modul ini menyatakan NOL kaskade di MODUL.md", nama)
 		}
 	}
 }

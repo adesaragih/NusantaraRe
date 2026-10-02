@@ -6,8 +6,8 @@ dikerjakan saja**, disalin apa adanya supaya kode dan tiketnya ditinjau bersama.
 
 | # | Tiket | Keadaan |
 | --- | --- | --- |
-| `14` | Kontrak dan versi pertamanya berdiri | skema selesai |
-| `15` | Himpunan acuan bertambah tanpa mengubah arti | skema selesai |
+| `14` | Kontrak dan versi pertamanya berdiri | skema **terbukti di Oracle** + lapisan aplikasi (`POST`/`GET /kontrak`); `INV-53` dan `INV-29` ditegakkan |
+| `15` | Himpunan acuan bertambah tanpa mengubah arti | skema **terbukti di Oracle**; `INV-68` dan `INV-44` terbukti menolak |
 | `20` | Beberapa mata uang berlaku, masing-masing berkurs dan berperiode | skema selesai |
 | `22` | Retensi cedant per kelompok treaty per mata uang | skema selesai |
 | `23` | EGNPI per kelompok treaty per mata uang | skema selesai |
@@ -82,3 +82,72 @@ Memasangnya sekarang — tanpa Oracle yang dapat dijangkau (`L-3`) untuk menguji
 migrasi `416`, `417`, dan `418`, bukan dipasang.
 
 **Urutannya: pemantau kebasian lebih dulu, MV sesudahnya.** Pemiliknya pemilik `F-13`.
+
+## Bukti perilaku — 2 Oktober 2026
+
+`L-3` **sudah usang**. Ke-22 langkah migrasi kedua modul sudah dijalankan Oracle tanpa satu `ORA-`
+pun, dan sembilan constraint sudah dibuktikan **sungguh menolak** lewat `INSERT` + `ROLLBACK`.
+Rincian lengkapnya, termasuk satu klaim saya yang terbukti keliru dan dicabut, ada di
+[`../VERIFIKASI-ORACLE-2026-10-02.md`](../VERIFIKASI-ORACLE-2026-10-02.md).
+
+Buktinya diabadikan sebagai uji otomatis di
+`backend/repository/invarian_db_test.go` (`make test-db`). Ia **melewati** bila `ORACLE_DSN` kosong
+dan **gagal** bila `ORACLE_SCHEMA` bukan skema uji — penolakan yang disengaja, sebab `Pasang`/`Bongkar`
+menghapus tabel di skema yang ditunjuk.
+
+---
+
+## Hitung ulang — 2 Oktober 2026
+
+Papan ini pernah mencetak *"Yang sebenarnya dapat dimulai: 2 — `14`, `15`"*, dan itu basi sejak
+keduanya mendarat. Ia meramalkan angka barunya sendiri: *"Begitu keduanya mendarat, yang dapat
+dimulai melompat ke tiga belas."*
+
+**Yang sebenarnya dapat dimulai sekarang: 11.**
+
+Papan menuntut cara memeriksanya, dan di bawah ia dipatuhi harfiah: **untuk tiap tiket, entitas yang
+disentuhnya disebut, dan tiket yang membuat entitas itu ditunjuk.** *"Tabelnya sudah ada"* tanpa
+menunjuk tiketnya adalah andaian — dan papan ini sudah pernah tertipu olehnya.
+
+| # | Entitas yang disentuhnya | Dibuat tiket | Keadaan |
+|---|---|---|---|
+| `16` | `KONTRAK` | `14` ✅ | dapat dimulai — perilaku, nol tabel baru |
+| `17` | `KONTRAK.NOMOR_KONTRAK_WARISAN` | `14` ✅ | dapat dimulai |
+| `18` | `KONTRAK` lapisan beku | `14` ✅ | dapat dimulai |
+| `19` | `KONTRAK` + `VERSI_KONTRAK` | `14` ✅ | dapat dimulai |
+| `21` | `MATA_UANG_KONTRAK.KURS` | `20` ✅ | dapat dimulai |
+| `32` | `PEMULIHAN_LIMIT` | `31` ✅ | dapat dimulai |
+| `35` | `DETAIL_PROPORSIONAL` | `34` ✅ | dapat dimulai |
+| `36` | `DETAIL_PROPORSIONAL` | `34` ✅ | dapat dimulai |
+| `40` | `VERSI_KONTRAK.ID_VERSI_KONTRAK_DASAR` | `01` papan Adjustment ✅ | dapat dimulai — tepi lintas papan ini kini LEPAS |
+| `41` | `KONTRAK` + `VERSI_KONTRAK` | `14` ✅ | dapat dimulai |
+| `43` | nol entitas — sakelar penegakan | — | dapat dimulai. **`L-3` tutup**, jadi ia tidak lagi menunggui ujinya |
+
+### Yang TIDAK dapat dimulai, dan entitas yang menahannya
+
+| # | Entitas yang disentuhnya | Dibuat tiket | Keadaan tiket itu |
+|---|---|---|---|
+| `42` | tabel arsip JSON warisan | **nol tiket** | tabelnya belum dirancang siapa pun |
+| `45` | himpunan nilai `KEADAAN_SIKLUS_HIDUP` | dirinya sendiri | **dapat dimulai** — lihat catatan di bawah |
+| `44` | keenam tabel acuan | `15` ✅ | tertahan `KTV-A`, dan **bertenggat**: ia memuat data pertama |
+| `38` | `PENYEBARAN` dan dua anaknya | dirinya sendiri | tertahan `Uji AD`. `L-3` **sudah tutup**, jadi penahannya tinggal satu |
+| `46`–`64` | `CATATAN_PERSETUJUAN`, daftar keadaan | `54`, `45` | keduanya belum berdiri |
+
+⚠️ **`45` sebenarnya nomor dua belas.** Ia hanya menyentuh kolom `KEADAAN_SIKLUS_HIDUP` yang tiket
+`14` sudah buat, dan membuat **artinya** — itu pekerjaannya sendiri, bukan penahannya. Ia ditaruh
+terpisah di atas sebab ia satu-satunya yang menuntut **tabel baru** (`CATATAN_PERSETUJUAN` ikut
+berdiri bersama `54`, yang `45` lepaskan). Hitungan jujurnya: **11 tanpa tabel baru, 12 dengan `45`.**
+
+### Pencacah
+
+| | Sebelum | Sekarang |
+|---|---:|---:|
+| aktif | 46 | 46 |
+| tertahan | 5 | **3** — `38` kehilangan `L-3`, `43` kehilangan `L-3`, `44` tetap |
+| selesai | 0 | **0** — status milik pemilik proses, bukan papan ini |
+| mati | 0 | 0 |
+| **dapat dimulai** | **2** | **11** |
+
+**Yang melepaskan apa:** `14` melepas `16 17 18 19 41`; `14`+`01` melepas `40`; `20` melepas `21`;
+`31` melepas `32`; `34` melepas `35 36`; **`L-3` tutup** melepas `43` dan memangkas penahan `38`
+menjadi satu.

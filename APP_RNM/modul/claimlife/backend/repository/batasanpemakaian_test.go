@@ -240,7 +240,12 @@ func TestSetiapPemanggilBukaMemeriksaBolehDilewati(t *testing.T) {
 	// LIMA BELAS sejak perbaikan peserta versi terakhir (01-10-2026):
 	// versiterakhir_db_test.go menambah kolom versi ke tiruan peserta skema uji
 	// dan mengisi fixture kasus (a)-(j) lewat koneksi mentah.
-	const mau = 15
+	// ENAM BELAS sejak verifikasi Oracle Treaty In (02-10-2026):
+	// treatyin/repository/invarian_db_test.go membuka koneksinya sendiri untuk
+	// mengadu constraint migrasi 400-419 dengan Oracle - ia menyuruh Oracle
+	// MENOLAK lalu memeriksa nama constraint yang menolaknya, sesuatu yang
+	// tidak dapat dipinjam dari uji db modul lain.
+	const mau = 16
 	if diperiksa != mau {
 		t.Errorf("pemanggil skemauji.Buka() ditemukan %d, mau %d; "+
 			"bila memang bertambah, perbarui angkanya di sini", diperiksa, mau)

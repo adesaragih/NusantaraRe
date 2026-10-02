@@ -15,10 +15,45 @@ import (
 	"nusantarare/modul/treatyin/backend/services"
 )
 
-type gudangTiruan struct{ isi []models.Acuan }
+type gudangTiruan struct {
+	isi     []models.Acuan
+	kontrak models.KontrakDenganVersi
+	warisan []models.Kontrak
+	adaQS   bool
+	galat   error
+	// Tiket 40 - nil berarti versinya yang pertama.
+	versiDasar *models.VersiKontrak
+}
+
+// Tiket 32.
+func (g gudangTiruan) CatatPemulihanLimit(context.Context, int64, []models.PemulihanLimit) error {
+	return g.galat
+}
+
+// Tiket 40.
+func (g gudangTiruan) BacaVersiDasar(context.Context, int64) (*models.VersiKontrak, error) {
+	if g.galat != nil {
+		return nil, g.galat
+	}
+	return g.versiDasar, nil
+}
 
 func (g gudangTiruan) DaftarAcuan(context.Context, models.Himpunan) ([]models.Acuan, error) {
 	return g.isi, nil
+}
+
+func (g gudangTiruan) BuatKontrakDenganVersiPertama(context.Context, models.Kontrak, models.VersiKontrak) (int64, int64, error) {
+	if g.galat != nil {
+		return 0, 0, g.galat
+	}
+	return 777, 888, nil
+}
+
+func (g gudangTiruan) BacaKontrak(context.Context, int64) (models.KontrakDenganVersi, error) {
+	if g.galat != nil {
+		return models.KontrakDenganVersi{}, g.galat
+	}
+	return g.kontrak, nil
 }
 
 func minta(t *testing.T, h http.Handler, jalur, pelaku string) *httptest.ResponseRecorder {
@@ -110,4 +145,40 @@ func TestDaftarKosongTerkirimSebagaiLarikKosong(t *testing.T) {
 	if got := w.Body.String(); got != "[]\n" && got != "[]" {
 		t.Fatalf("mau badan `[]`, dapat %q", got)
 	}
+}
+
+func (g gudangTiruan) CariKontrakSerupa(context.Context, models.Kontrak) ([]int64, error) {
+	return nil, g.galat
+}
+
+func (g gudangTiruan) CariKontrakLewatNomorWarisan(context.Context, string) ([]models.Kontrak, error) {
+	if g.galat != nil {
+		return nil, g.galat
+	}
+	return g.warisan, nil
+}
+
+func (g gudangTiruan) PerbaruiKontrak(context.Context, models.Kontrak) error { return g.galat }
+
+func (g gudangTiruan) TambahVersi(context.Context, int64, models.VersiKontrak) (int64, error) {
+	if g.galat != nil {
+		return 0, g.galat
+	}
+	return 999, nil
+}
+
+// Tiket 35 dan 36.
+func (g gudangTiruan) AdaQuotaSharePadaVersi(context.Context, int64) (bool, error) {
+	if g.galat != nil {
+		return false, g.galat
+	}
+	return g.adaQS, nil
+}
+
+func (g gudangTiruan) CatatKetentuanProporsional(_ context.Context, _, _, _ int64, jenis, _ string, _ *int64) error {
+	if g.galat != nil {
+		return g.galat
+	}
+	_ = jenis
+	return nil
 }

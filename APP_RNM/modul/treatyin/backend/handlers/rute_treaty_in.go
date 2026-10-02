@@ -52,6 +52,9 @@ func daftarkan(mux *http.ServeMux, layanan func() *services.Layanan, adaDB func(
 		})
 	}
 	daftarkanAcuan(pasang)
+	daftarkanKontrak(pasang)
+	daftarkanIdentitas(pasang)
+	daftarkanWarisan(pasang)
 }
 
 // daftarkanAcuan - jalur baca keenam tabel acuan (tiket 15).
@@ -84,6 +87,25 @@ func jawabGalat(w http.ResponseWriter, err error) bool {
 		galat.Tulis(w, http.StatusUnauthorized, "request without user identity is rejected")
 	case errors.Is(err, inti.ErrTanpaWewenang):
 		galat.Tulis(w, http.StatusForbidden, "insufficient permission")
+	case errors.Is(err, services.ErrMasukanTidakSah):
+		// 422: JSON-nya sah, isinya ditolak gerbang - INV-29, INV-53, ruas
+		// wajib. Pesannya memuat SELURUH pelanggaran, bukan yang pertama.
+		galat.Tulis(w, http.StatusUnprocessableEntity, services.Pesan(err))
+	case errors.Is(err, services.ErrPemulihanTidakSah):
+		// 422: JSON-nya sah, isinya ditolak gerbang tiket 32 - INV-41 dan
+		// nomor urut kembar. Pesannya menyebut BARIS KE BERAPA dan nilainya,
+		// sebab daftar pemulihan dikirim sekaligus dan "ditolak" saja
+		// membuat pengirimnya memeriksa seluruh baris satu per satu.
+		galat.Tulis(w, http.StatusUnprocessableEntity, services.Pesan(err))
+	case errors.Is(err, services.ErrRuasBekuBerubah), errors.Is(err, services.ErrVersiMenyimpang):
+		// 422: JSON-nya sah, isinya ditolak gerbang identitas. INV-19 dan
+		// ADR-0040: pesannya menyebut RUAS mana, bukan sekadar "ditolak".
+		galat.Tulis(w, http.StatusUnprocessableEntity, services.Pesan(err))
+	case errors.Is(err, services.ErrNomorUrutVersiGanda):
+		// 409: keadaan DATA menolak - INV-04. Pesannya menyebut nomornya.
+		galat.Tulis(w, http.StatusConflict, services.Pesan(err))
+	case errors.Is(err, services.ErrKontrakTidakAda):
+		galat.Tulis(w, http.StatusNotFound, services.Pesan(err))
 	case errors.Is(err, services.ErrHimpunanTidakAda):
 		// 404: himpunan yang diminta bukan salah satu dari enam. Pesannya
 		// menyebut yang diminta - penolakan yang tidak menyebut apa yang

@@ -44,10 +44,23 @@
 --   DITAGIH    : tiket lapisan aplikasi, yang menulis jalur simpannya; daftar
 --                periksa tiket 01 menuntut keempat penolakan itu diuji di sana.
 --
--- INV-18 - perilaku hapus DITETAPKAN SADAR. TANPA "ON DELETE": aturan bawaan
--- Oracle MENOLAK, dan menolak memang yang dikehendaki - kolom ini penunjuk ke
--- baris SEJARAH, bukan kepemilikan. Menghapus versi yang masih menjadi dasar
--- versi lain akan gagal dengan ORA-02292, bukan diam-diam memutus rantainya.
+-- ---------------------------------------------------------------------
+-- INV-18 - PERILAKU HAPUS DITETAPKAN SADAR. ⚠️ RALAT 2 Oktober 2026.
+-- ---------------------------------------------------------------------
+--   Baris ini pernah menyebut INV-18 sambil MEMBIARKAN bawaan Oracle, tanpa
+--   merujuk sumber keputusannya sama sekali. INV-18 menuntut perilaku hapus
+--   "ditetapkan sadar, TIDAK dibiarkan bawaan"; bawaan yang kebetulan cocok
+--   bukan keputusan.
+--
+--   Sumbernya `4-erd-dan-tabel-datar/ERD.md` §2.2 - dokumen MENGIKAT yang
+--   tidak pernah dibuka sampai hari ini - dan ia menyatakan relasi ini
+--   **[hapus: TOLAK]** beserta alasannya:
+--
+--     "tolak, karena menghapus versi dasar akan membuat seluruh baris selisih
+--      kehilangan artinya."
+--
+--   TOLAK diwujudkan dengan TIDAK menulis klausa ON DELETE - bentuknya sama
+--   dengan bawaan, tetapi kini DIPILIH dan sumbernya disebut.
 ALTER TABLE {skema}.VERSI_KONTRAK ADD (
   ID_VERSI_KONTRAK_DASAR  NUMBER(19)
 )

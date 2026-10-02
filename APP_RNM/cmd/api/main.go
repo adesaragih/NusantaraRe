@@ -98,7 +98,7 @@ func main() {
 		return
 	}
 	if *migrasi {
-		jalankanMigrasi(dasar)
+		jalankanMigrasi(dasar, cfg)
 		return
 	}
 	if baru.ID != "" {
@@ -245,10 +245,42 @@ func bongkarMigrasi(svc *inti.Dasar, cfg config.Config) {
 // Fase 0 tidak punya migrasi: nol DDL, nol aturan dagang. Berkas migrasi lahir
 // bersama tiket yang memilikinya, dan ⛔ tidak pernah dijalankan terhadap
 // instance produksi.
-func jalankanMigrasi(svc *inti.Dasar) {
+// jalankanMigrasi adalah titik masuk `-migrate`.
+//
+// ⚠️ PAGARNYA DITAMBAHKAN 2 Oktober 2026, dan sebabnya layak dibaca.
+//
+// Jalur ini dulu TANPA pagar sama sekali, sementara `-migrate-down`
+// (`bongkarMigrasi`) menolak `IS_PEGA_PROD=true` DAN menolak skema yang bukan
+// skema uji. Asimetri itu punya akibat yang tidak dapat dibatalkan:
+//
+//	migrasi MAJU boleh menulis ke POOLDATA;
+//	migrasi MUNDUR menolak membongkarnya dari sana.
+//
+// Pada 2 Oktober 2026 itu terjadi: 29 tabel Treaty In berdiri di POOLDATA,
+// skema warisan Pega berisi 816 tabel sungguhan, dan `-migrate-down` tidak
+// dapat membuangnya. Pembersihannya menuntut DROP tulis tangan.
+//
+// ⚠️ RALAT 2 Oktober 2026, sore. Pagar ini sempat JUGA menolak skema warisan
+// (POOLDATA). Pemilik proses kemudian menyatakan POOLDATA adalah SKEMA SASARAN
+// - tabel Treaty In memang dibuat di sana dengan sengaja - sehingga penolakan
+// itu mematikan `make migrate` sama sekali. Penolakan skema warisan DICABUT
+// dari jalur maju.
+//
+// ⛔ Yang TETAP, dan asimetrinya disengaja: operasi MERUSAK atas POOLDATA
+// tetap terlarang. `-migrate-down` dan `uji/skemauji` tetap menolaknya lewat
+// `PastikanSkemaUji`/`PagarSkemaUji`, sebab keduanya MENGHAPUS tabel dan
+// POOLDATA memuat 816 tabel warisan sungguhan. Migrasi MAJU ke sana
+// dikehendaki; membongkar dari sana tidak. Jangan ratakan asimetri itu.
+//
+// Yang tersisa di sini: penolakan `IS_PEGA_PROD=true` (ADR-U-0005).
+func jalankanMigrasi(svc *inti.Dasar, cfg config.Config) {
 	if !svc.PunyaDatabase() {
 		log.Fatal("migrasi: ORACLE_DSN wajib terisi")
 	}
+	if cfg.IsPegaProd {
+		log.Fatal("migrasi: menolak berjalan saat IS_PEGA_PROD=true (ADR-U-0005)")
+	}
+
 	ctx, batal := context.WithTimeout(context.Background(), 30*time.Second)
 	defer batal()
 	if err := svc.CekKesehatan(ctx); err != nil {

@@ -159,11 +159,14 @@ Tabelnya milik modul ini; satu kolomnya dibawa modul itu. Sebabnya: papan tiket 
 `TestTabelTanpaKunciAlamiTidakDiberiDiamDiam` menjaga satu hal saja: tidak ada yang **menyisipkan**
 `UNIQUE` sebelum nomor invariannya turun. Ia **tidak** menyatakan ketiadaannya benar.
 
-⛔ **`UQ_LAYER` tidak menegakkan INV-05 sepenuhnya.** `BAGIAN_LAYER` boleh kosong, dan Oracle
-memperlakukan NULL sebagai **tidak sama dengan** NULL di kunci unik komposit — sehingga baris
-`(versi, 1, NULL)` diterima berulang, yaitu keadaan layer tanpa bagian, yang justru paling lazim.
-Lubang itu ada di `Z00_KUNCI_ALAMI.sql`, bukan dibuat di sini; uraian dan tagihannya di dalam
-migrasi `413`. **Daftar periksa tiket `31` "INV-05 terpasang" belum terpenuhi.**
+✅ **`UQ_LAYER` MENEGAKKAN INV-05 — terverifikasi di Oracle 2 Oktober 2026.**
+
+> ⚠️ **RALAT.** Bagian ini pernah menyatakan `UQ_LAYER` **tidak** menegakkan INV-05 sepenuhnya,
+> sebab `BAGIAN_LAYER` boleh kosong dan Oracle memperlakukan NULL sebagai tidak sama dengan NULL.
+> **Itu keliru.** Aturan Oracle yang sebenarnya: sebuah entri dilewati indeks unik hanya bila
+> **SELURUH** kolom kuncinya NULL. Di sini `ID_VERSI_KONTRAK` dan `NOMOR_LAYER` selalu terisi, jadi
+> barisnya terindeks dan duplikatnya ditolak — `ORA-00001: unique constraint (UQ_LAYER) violated`.
+> Yang memperbaiki kekeliruan ini bukan argumen, melainkan satu `INSERT`.
 
 ⛔ **`KONTRAK` sengaja TIDAK berkunci alami.** Cedant + asal bisnis + periode + sifat proporsi adalah
 kunci alaminya, dan ADR-0040 §2 **MEMPERINGATKAN, tidak melarang** — ketiadaan nomor INV-nya
