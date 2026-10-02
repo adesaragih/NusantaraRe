@@ -1,11 +1,25 @@
 # Modul `treatyinadjustment` — Treaty In Adjustment
 
-⚠️ **Kerangka — belum dimigrasi.** Folder ini dibuat struktur tim satu folder per modul (keputusan work
-owner 30-09-2026) supaya pemilik, rentang migrasi, dan slot menu modul ini TETAP sejak awal — satu
-modul, satu folder, satu pemilik. Belum ada kode: tanpa `backend/modul.go` modul ini tidak terdaftar
-(daftar Go bangkitan `inti/backend/daftar`, `import.meta.glob` frontend), dan kelompoknya di sidebar
-tetap "belum dimigrasi" (`M_NAV_MENU.DIMIGRASI = '0'`). Cara memulainya:
-`APP_RNM/PANDUAN-TIM-PER-MODUL.md` (akar repo) bab 4.
+⚠️ **Terdaftar 1 Oktober 2026 — LAPISAN SKEMA tiket `01` dan `05`.** `backend/modul.go` ada,
+`inti/backend/daftar/modul_treatyinadjustment_gen.go` bangkit, dan slot menu `974` menyalakan
+`M_NAV_MENU.DIMIGRASI`.
+
+⛔ **Modul ini TIDAK membuat satu tabel pun**, dan itu bukan kelalaian. Model datanya **satu** dengan
+Treaty In — pemisahan 25-09-2026 memindahkan papan tiketnya, bukan `SPEC-MODEL-DATA.md`-nya. Migrasi
+`440` dan `441` **mengubah `VERSI_KONTRAK` milik modul `treatyin`**: menambah
+`ID_VERSI_KONTRAK_DASAR` (tiket `01`) dan melonggarkan `NOMOR_URUT_VERSI` menjadi boleh kosong
+(tiket `05`, langkah PERLUAS).
+
+⛔ **Tiket `01` BELUM selesai sebagai tiket**: keempat penolakannya — versi penyesuaian tanpa dasar,
+versi pertama berdasar, dasar berkeadaan `DITOLAK`, dasar berkeadaan `DIBATALKAN` — menuntut jalur
+simpan yang belum ada. Yang selesai artefak skemanya.
+
+⛔ **Tiket `02` dan `03` masih punya sisa pekerjaan SKEMA**, bukan hanya penegakan: dua nilai
+`SIFAT_MATERIAL_ADDENDUM` (`02`) dan **bawaan** `TANGGAL_BERLAKU_ADDENDUM` (`03`) belum dinyatakan di
+mana pun. Uraiannya di [`docs/KEPUTUSAN-TIKET-02-03.md`](docs/KEPUTUSAN-TIKET-02-03.md).
+
+ℹ️ **Layar modul ini ada karena mendaftarkan modul menuntutnya** `[keputusan work owner 01-10-2026]` —
+baca-saja, nol alur karangan (`L-4`).
 
 ⛔ **Tabel di bawah dibaca penjaga** (`inti/backend/penjaga`): rentang migrasi dan slot menu. Ubah
 nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak boleh berbagi nomor.
@@ -16,10 +30,10 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | Folder korpus | `Treaty In Adjustment` |
 | GROUPMENU | `TREATY` |
 | Pemilik | `@PEMILIK-TREATYINADJUSTMENT` |
-| Status | belum dimigrasi |
+| Status | dimigrasi |
 | Rentang migrasi | `440-479` |
 | Slot menu | `974-975` |
-| Prefix rute API | — (ditetapkan spec modul ini) |
+| Prefix rute API | `/api/treaty-in-adjustment` |
 | Kontrak disediakan | — |
 | Kontrak dipakai | — |
 
@@ -31,9 +45,9 @@ dipensiunkan 1 Oktober 2026.
 
 | Folder | Isi |
 | --- | --- |
-| `docs/` | belum ada — tidak ada dokumen `.scratch/` untuk modul ini. Buat saat grilling/spec dimulai. |
-| `backend/` | belum ada — lahir bersama `backend/modul.go` (`Pendaftaran()`) saat modul dimulai |
-| `frontend/` | belum ada — lahir bersama `frontend/menu.ts` dan `rute.tsx` saat modul dimulai |
+| `docs/` | `STRUKTUR-TABEL-TREATY-IN-ADJUSTMENT.md`, `KEPUTUSAN-TIKET-02-03.md`, `issues/` (tiket `01`, `02`, `03`, `05`) |
+| `backend/` | `modul.go` (`Pendaftaran()`), `models/`, `repository/`, `services/`, `handlers/`, `migrations/` |
+| `frontend/` | `menu.ts`, `rute.tsx`, `api.ts`, `labels.ts`, `pages/RantaiVersi.tsx` |
 
 ## Migrasi
 

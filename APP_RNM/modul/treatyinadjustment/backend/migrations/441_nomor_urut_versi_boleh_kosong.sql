@@ -1,0 +1,50 @@
+-- VERSI_KONTRAK.NOMOR_URUT_VERSI boleh kosong - langkah PERLUAS
+--
+-- Migrasi tiket 05 Treaty In Adjustment. Satu berkas = satu langkah migrasi.
+--
+-- Asal: `D:\XML_NURE\_migration-docs\treaty-in-adjustment\5-tiket\issues\05-*.md`,
+-- `GRL-17`, `ADR-0042`, `ADR-0043`.
+--
+-- ---------------------------------------------------------------------
+-- PERTENTANGAN ANTAR-TIKET YANG DISELESAIKAN DI SINI, bukan disamarkan
+-- ---------------------------------------------------------------------
+--   Tiket 14 membangun NOMOR_URUT_VERSI `NOT NULL`, sebab `KAMUS-KOLOM.md`
+--   §10.2 menuliskannya `N` dan tiket 14 menyatakan kamus itu MENGIKAT.
+--   Tiket 05 menyatakan sebaliknya, dan menyatakannya sebagai jalur gagal:
+--   "Kolom berdiri NOT NULL -> setiap baris warisan gagal dimuat. Ia WAJIB
+--   BOLEH KOSONG pada tahap ini, dan itu pokok bentuk perluas."
+--
+--   DIPUTUSKAN: tiket 05 menang, dan ia menang DI SINI - sebagai langkah
+--   migrasi tersendiri, bukan dengan menyunting berkas 401 milik tiket 14.
+--   Alasannya: keduanya kemudian benar menurut bunyinya sendiri. Tiket 14
+--   membangun persis yang kamus tulis; tiket 05 melakukan PERLUAS atasnya, dan
+--   perluas memang berarti melonggarkan bentuk yang sudah berdiri. Menyunting
+--   401 akan menghapus jejak bahwa pertentangan itu pernah ada.
+--
+--   Ini langkah PERTAMA dari tiga (perluas - pindahkan - kerutkan):
+--     perluas    tiket 05 - kolomnya boleh kosong          <- berkas ini
+--     pindahkan  tiket 10 - nilainya diisi menurut kronologi
+--     kerutkan   tiket 12 - urutan tidak lagi diturunkan dari pengenal
+--
+--   DITAGIH: tiket 12, yang boleh mengetatkannya kembali SESUDAH tiket 10
+--   mengisi seluruh barisnya - dan hanya sesudah itu.
+--
+--   UTANG HULU, dicatat supaya tidak hilang: sesudah berkas ini, bentuk yang
+--   BERLAKU tidak lagi sama dengan `KAMUS-KOLOM.md` sec 10.2, yang masih
+--   menulis NOMOR_URUT_VERSI sebagai `N` (wajib isi). Kamus itu berkas
+--   BANGKITAN di luar repo; yang perlu diperbarui adalah SPEC-MODEL-DATA.md
+--   sec 10.2 yang menjadi sumbernya. Sampai itu terjadi, pembaca kamus akan
+--   melihat bentuk yang sudah usang - dan tiket 14 yang menyatakan kamus
+--   MENGIKAT hanya benar bila dinilai pada migrasi 401, bukan pada bentuk akhir.
+--
+-- Pengenal warisan `<kontrak>/Rnn` TIDAK disentuh sama sekali; ia dilestarikan
+-- apa adanya (`GRL-09`). Tidak ada pembaca yang berubah oleh berkas ini.
+--
+-- INV-04 tetap berlaku: UQ_VERSI_KONTRAK (ID_KONTRAK, NOMOR_URUT_VERSI) tidak
+-- disentuh. Oracle tidak membandingkan NULL di kunci unik, sehingga beberapa
+-- baris warisan bernomor kosong pada satu kontrak tetap diterima - dan itu
+-- memang yang dikehendaki sampai tiket 10 mengisinya.
+ALTER TABLE {skema}.VERSI_KONTRAK MODIFY (
+  NOMOR_URUT_VERSI  NUMBER(10) NULL
+)
+/
