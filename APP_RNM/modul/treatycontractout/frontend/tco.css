@@ -145,6 +145,31 @@
   }
 }
 
+/* --------------------------------------------- baris dibuka dan baris rinci */
+/* Dulu menumpang di inti (`.belah__baris--aktif`, `.inbox__rinci`); dipindah 02-10-2026. */
+/* Baris yang sedang dibuka. Memakai token yang SUDAH ada (--alt-row untuk
+   latar, --navy untuk penanda tepi): nol hex baru, §8.8.
+
+   Penanda tepi kiri dipilih, bukan latar pekat: latar pekat akan melawan
+   zebra baris dan menurunkan kontras teksnya, sementara tepi berdiri di
+   luar sel sehingga rasio teks tidak berubah sama sekali. */
+.tco .tco-baris--aktif > td {
+  background: var(--alt-row);
+}
+.tco .tco-baris--aktif > td:first-child {
+  box-shadow: inset 3px 0 0 0 var(--navy);
+}
+
+/* Baris RINCI di bawah satu baris tabel (panel yang dibuka dari barisnya):
+   isinya panel berkalimat, jadi `nowrap` sel tabel TIDAK diwarisi, dan
+   baris ini tidak menyala saat kursor lewat seperti baris data. */
+.tco .inbox__tabel tr.inbox__rinci > td {
+  white-space: normal;
+}
+.tco .inbox__rinci:hover {
+  background: transparent;
+}
+
 /* ================================================================ soft UI
    NEUMORFISME RAPI dengan warna aktif. Permintaan work owner 02-10-2026, berurutan: tema Kelola User untuk Beranda, Treaty Contract
    Out, dan Master Contract Retro Life; "perbaiki buat lebih bagus dan menarik dan elegan"; "ganti

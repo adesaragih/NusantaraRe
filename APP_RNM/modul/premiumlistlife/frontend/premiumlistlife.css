@@ -1,0 +1,56 @@
+/*
+ * Gaya modul PremiumList Life.
+ *
+ * ⛔ TERISOLASI: SETIAP pemilih diawali kelas akar `.premiumlistlife` (dipasang `rute.tsx` pada pembungkus
+ * seluruh halaman modul, `display: contents` sehingga tata letak tidak berubah). Aturan di sini DULU
+ * menumpang di `inti/frontend/styles.css`; dipindah 02-10-2026 atas permintaan work owner ("untuk css
+ * style per modul tidak ada lagi menumpang per inti"), isinya tidak berubah selain awalan akar. Dijaga
+ * `gaya.test.ts`.
+ */
+
+/* Pembungkus akar: tanpa kotak sendiri, jadi halaman modul tetap anak tata letak kerangka. */
+.premiumlistlife {
+  display: contents;
+}
+
+/* Tombol layar modul yang berkelas tetapi belum punya gaya: rupa `.btn` template (dulu satu aturan
+   dengan `.inbox__ekspor` di inti; kelasnya milik modul ini). */
+.premiumlistlife .pl-detail__terbitkan,
+.premiumlistlife .pl-summary__submit,
+.premiumlistlife .unggah-csv__simpan {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+/* Tiga yang MENJALANKAN keputusan (Generate PL Number, Submit, Simpan
+   permanen) = `.btn-primary` template. */
+.premiumlistlife .pl-detail__terbitkan,
+.premiumlistlife .pl-summary__submit,
+.premiumlistlife .unggah-csv__simpan {
+  border-color: transparent;
+  background: var(--primary);
+  color: #fff;
+}
+.premiumlistlife .pl-detail__terbitkan:hover:not(:disabled),
+.premiumlistlife .pl-summary__submit:hover:not(:disabled),
+.premiumlistlife .unggah-csv__simpan:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.premiumlistlife :is(.pl-detail__terbitkan, .pl-summary__submit, .unggah-csv__simpan):disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
