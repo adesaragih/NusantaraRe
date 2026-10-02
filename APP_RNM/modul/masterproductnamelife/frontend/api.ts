@@ -296,10 +296,10 @@ export async function unduhGenerate(p: Produk): Promise<void> {
 // Pemilih master (paket 2, 6).
 // ---------------------------------------------------------------------------
 
-/** Saran autocomplete paling banyak sekian baris (`batas`); grid pemilih membaca seluruh hasil RD. */
+/** Saran autocomplete paling banyak sekian baris (`batas`); dropdown master memakai `BATAS_DROPDOWN` (`bentuk.ts`). */
 export const BATAS_SARAN = 20
 
-/** Tombol `Choose*` / autocomplete - `Search` diubah huruf besar di server (`SearchPolicyHolder_act` b236). */
+/** Dropdown master (pengganti `Choose*`) / autocomplete - `Search` diubah huruf besar di server (`SearchPolicyHolder_act` b236). */
 export async function cariMaster(jenis: JenisMaster, cari: string, batas?: number): Promise<Daftar<NilaiMaster>> {
   return minta<Daftar<NilaiMaster>>(`${PREFIX_MPNL}/master/${e(jenis)}`, { kueri: { cari, batas } })
 }

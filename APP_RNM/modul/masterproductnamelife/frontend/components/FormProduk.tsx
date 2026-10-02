@@ -6,13 +6,15 @@
 //   b64133 lampiran                                                        (PARITAS §6)
 //
 // Mode lihat (`ProductName.IsView == 'true'`, sesudah `View` b74798 → `SetProductName` 8 b2147): medan ber-`ro`
-// baca-saja, tombol `Choose*` (wadah `IsView!='true'`) dan `Save` tersembunyi, `Edit` tampil. Checkbox
-// `On Retention` dan tombol `Add`/`Delete` grid tidak ber-`ro` di XML.
+// baca-saja, dropdown master (pengganti tombol `Choose*`, wadah `IsView!='true'`) dan `Save` tidak dapat dipakai,
+// `Edit` tampil. Checkbox `On Retention` dan tombol `Add`/`Delete` grid tidak ber-`ro` di XML.
 // ⛔ Audit 02-10-2026: enam medan pemilih master SELALU baca-saja di XML (`pyReadOnly` true, `pyEditOptions`
 // Read-only, `pyReadOnlyCondition` KOSONG - beda dengan `Product Name` b3585 yang bersyarat `IsView`): Ceding
 // b4040, SOB b4428, R/I Risk Name b7362, Cause Of Loss b10626, Policy Holder b17062, Currency b28105. Nilainya
-// hanya diisi tombol `Choose*` → `set*_DT`. Begitu pula sel `Bussines` (`.Name` b33504) dan `Benefit` b33658
-// grid `PLAN LIST`: diisi autocomplete `Plan Name`, tidak diketik.
+// hanya dari daftar master → `set*_DT`, tidak diketik. Begitu pula sel `Bussines` (`.Name` b33504) dan `Benefit`
+// b33658 grid `PLAN LIST`: diisi autocomplete `Plan Name`, tidak diketik.
+// Keputusan work owner 02-10-2026 ("perubahan pada tampilan untuk semua Choose ubah jadi dropdown saja"): ketujuh
+// tombol `Choose*` + popup FlowAction-nya diganti `DropdownMaster` (termasuk `Choose R/I Rate` baris `PLAN LIST`).
 // Grid `OUTWARD` (wadah `1==2`) tidak dirender; isinya ditulis server (`hitungOutward`).
 
 import { useState, type ReactNode } from 'react'
@@ -27,9 +29,7 @@ import {
   type BarisLien,
   type BarisPlan,
   type BarisUWLimit,
-  type JenisMaster,
   type JenisPlan,
-  type NilaiMaster,
   type Produk,
   type ProdukInward,
   type ProdukUmum,
@@ -59,18 +59,10 @@ import {
   UWLIMIT_MPNL,
 } from '../labels'
 import { DialogEdit, DialogSimpan } from './Dialog'
+import DropdownMaster from './DropdownMaster'
 import ModalRate from './ModalRate'
 import PanelLampiran from './PanelLampiran'
-import PemilihMaster from './PemilihMaster'
 import Saran from './Saran'
-
-/** Pemilih yang sedang terbuka: tombol pembukanya, jenis RD, dan penerima `set*_DT`. */
-interface PemilihTerbuka {
-  judul: string
-  jenis: JenisMaster
-  kolomNama?: string
-  pilih: (v: NilaiMaster) => void
-}
 
 const cariJenisPlan = async (kata: string) => (await cariPlan(kata)).daftar
 
@@ -134,7 +126,6 @@ export default function FormProduk({
   const [galat, setGalat] = useState<unknown>(null)
   const [menyimpan, setMenyimpan] = useState(false)
   const [dialog, setDialog] = useState<'simpan' | 'edit' | null>(null)
-  const [pemilih, setPemilih] = useState<PemilihTerbuka | null>(null)
   const [rate, setRate] = useState<string | null>(null)
 
   const u = p.umum
@@ -164,10 +155,6 @@ export default function FormProduk({
     }
   }
 
-  function bukaPemilih(judul: string, jenis: JenisMaster, pilih: (v: NilaiMaster) => void, kolomNama?: string): void {
-    setPemilih({ judul, jenis, pilih, kolomNama })
-  }
-
   async function simpan(): Promise<void> {
     if (menyimpan) return
     setMenyimpan(true)
@@ -194,19 +181,6 @@ export default function FormProduk({
     }
   }
 
-  /**
-   * Medan pemilih master: SELALU baca-saja (kepala berkas), diisi hanya lewat tombol `Choose*` (wadah
-   * `IsView!='true'`, tersembunyi di mode lihat) → penerima `set*_DT`.
-   */
-  function medanMaster(label: string, nilai: string, tombol: ReactNode) {
-    return (
-      <div className="mpnl-medan-pilih">
-        <Field label={label} value={nilai} onChange={() => undefined} readOnly />
-        {!lihat && tombol}
-      </div>
-    )
-  }
-
   return (
     <section className="panel">
       {pesan !== null && <p className="mpnl-pesan">{pesan}</p>}
@@ -226,70 +200,46 @@ export default function FormProduk({
           }}
         />
         <Field label={UMUM_MPNL.productCode} value={p.id} onChange={() => undefined} readOnly />
-        {medanMaster(
-          UMUM_MPNL.ceding,
-          u.ceding,
-          <button
-            type="button"
-            className="btn btn--ghost btn--sm"
-            onClick={() => {
-              bukaPemilih(UMUM_MPNL.chooseCeding, 'ceding', (v) => {
-              ubahUmum({ ceding: v.nama, cedingId: v.id })
-              })
-            }}
-          >
-            {UMUM_MPNL.chooseCeding}
-          </button>,
-        )}
-        {medanMaster(
-          UMUM_MPNL.sob,
-          u.sobName,
-          <button
-            type="button"
-            className="btn btn--ghost btn--sm"
-            onClick={() => {
-              bukaPemilih(UMUM_MPNL.chooseSob, 'sob', (v) => {
-              ubahUmum({ sobName: v.nama, sobId: v.id })
-              })
-            }}
-          >
-            {UMUM_MPNL.chooseSob}
-          </button>,
-        )}
+        <DropdownMaster
+          label={UMUM_MPNL.ceding}
+          jenis="ceding"
+          nilai={u.ceding}
+          lihat={lihat}
+          onPilih={(v) => {
+            ubahUmum({ ceding: v.nama, cedingId: v.id })
+          }}
+        />
+        <DropdownMaster
+          label={UMUM_MPNL.sob}
+          jenis="sob"
+          nilai={u.sobName}
+          lihat={lihat}
+          onPilih={(v) => {
+            ubahUmum({ sobName: v.nama, sobId: v.id })
+          }}
+        />
         <Field label={UMUM_MPNL.deduction} value={u.riComm} readOnly={lihat} onChange={medanUmum('riComm')} />
-        {medanMaster(
-          UMUM_MPNL.riRisk,
-          u.riRisk,
-          <button
-            type="button"
-            className="btn btn--ghost btn--sm"
-            onClick={() => {
-              bukaPemilih(UMUM_MPNL.chooseRiRisk, 'ri-risk', (v) => {
-              ubahUmum({ riRisk: v.nama, riRiskId: v.id })
-              })
-            }}
-          >
-            {UMUM_MPNL.chooseRiRisk}
-          </button>,
-        )}
+        <DropdownMaster
+          label={UMUM_MPNL.riRisk}
+          jenis="ri-risk"
+          nilai={u.riRisk}
+          lihat={lihat}
+          onPilih={(v) => {
+            ubahUmum({ riRisk: v.nama, riRiskId: v.id })
+          }}
+        />
         <Field label={UMUM_MPNL.treatyName} value={u.inwardName} readOnly={lihat} onChange={medanUmum('inwardName')} />
         <Field label={UMUM_MPNL.treatyNumber} value={u.treatyNumber} readOnly={lihat} onChange={medanUmum('treatyNumber')} />
-        {/* `Cause Of Loss` b10626: dropdown SELALU baca-saja - diisi `Choose Cause Of Loss` → `setCauseofLoss_DT`. */}
-        {medanMaster(
-          UMUM_MPNL.causeOfLoss,
-          u.cause,
-          <button
-            type="button"
-            className="btn btn--ghost btn--sm"
-            onClick={() => {
-              bukaPemilih(UMUM_MPNL.chooseCause, 'penyebab', (v) => {
-              ubahUmum({ cause: v.nama, causeId: v.id })
-              })
-            }}
-          >
-            {UMUM_MPNL.chooseCause}
-          </button>,
-        )}
+        {/* `Cause Of Loss` b10626: SELALU baca-saja - diisi dari daftar master → `setCauseofLoss_DT`. */}
+        <DropdownMaster
+          label={UMUM_MPNL.causeOfLoss}
+          jenis="penyebab"
+          nilai={u.cause}
+          lihat={lihat}
+          onPilih={(v) => {
+            ubahUmum({ cause: v.nama, causeId: v.id })
+          }}
+        />
       </div>
 
       {/* `LIEN CLAUSE` b12201 - ikon grid bawaan b12373 (vis `IsView!='true'`). */}
@@ -321,23 +271,17 @@ export default function FormProduk({
 
       {/* ---- sisi inward (halaman `ProductNameInward`) ---- */}
       <div className="form-grid mpnl-bagian">
-        {/* `Choose Policy Holder` → `setPolicyHolder_DT` b2416 - TANPA `SetTreatyName_Act` (onChange b17168 milik
+        {/* Pilihan Policy Holder → `setPolicyHolder_DT` b2416 - TANPA `SetTreatyName_Act` (onChange b17168 milik
             autocomplete yang selalu baca-saja, jadi tidak pernah terpicu). */}
-        {medanMaster(
-          INWARD_MPNL.policyHolder,
-          w.policyHolderName,
-          <button
-            type="button"
-            className="btn btn--ghost btn--sm"
-            onClick={() => {
-              bukaPemilih(INWARD_MPNL.choosePolicyHolder, 'pemegang-polis', (v) => {
-              ubahInward({ policyHolderName: v.nama, policyHolder: v.id })
-              })
-            }}
-          >
-            {INWARD_MPNL.choosePolicyHolder}
-          </button>,
-        )}
+        <DropdownMaster
+          label={INWARD_MPNL.policyHolder}
+          jenis="pemegang-polis"
+          nilai={w.policyHolderName}
+          lihat={lihat}
+          onPilih={(v) => {
+            ubahInward({ policyHolderName: v.nama, policyHolder: v.id })
+          }}
+        />
         <Field label={INWARD_MPNL.insured} value={w.insured} readOnly={lihat} onChange={medanInward('insured')} />
         <Field label={INWARD_MPNL.addendumNo} value={w.addendumNo} readOnly={lihat} onChange={medanInward('addendumNo')} />
         <Field label={INWARD_MPNL.addendum} value={w.addendumWord} readOnly={lihat} onChange={medanInward('addendumWord')} />
@@ -386,21 +330,15 @@ export default function FormProduk({
         <MedanTanggal label={INWARD_MPNL.mature} value={w.mature} readOnly={lihat} onChange={medanInward('mature')} />
         {/* `Birthday` b27960 - radio `associated` (pilihan tak ikut ekspor, OQ-MPNL-05): isian teks. */}
         <Field label={INWARD_MPNL.birthday} value={w.birthday} readOnly={lihat} onChange={medanInward('birthday')} />
-        {medanMaster(
-          INWARD_MPNL.currency,
-          w.currency,
-          <button
-            type="button"
-            className="btn btn--ghost btn--sm"
-            onClick={() => {
-              bukaPemilih(INWARD_MPNL.chooseCurrency, 'mata-uang', (v) => {
-              ubahInward({ currency: v.nama, currencyId: v.id })
-              })
-            }}
-          >
-            {INWARD_MPNL.chooseCurrency}
-          </button>,
-        )}
+        <DropdownMaster
+          label={INWARD_MPNL.currency}
+          jenis="mata-uang"
+          nilai={w.currency}
+          lihat={lihat}
+          onPilih={(v) => {
+            ubahInward({ currency: v.nama, currencyId: v.id })
+          }}
+        />
         <Field label={INWARD_MPNL.extraMortality} value={w.extraMortality} readOnly={lihat} onChange={medanInward('extraMortality')} />
         <Field label={INWARD_MPNL.maxContract} value={w.maxContract} readOnly={lihat} onChange={medanInward('maxContract')} />
         <Field label={INWARD_MPNL.proportionalTable} value={w.proportionalTable} readOnly={lihat} onChange={medanInward('proportionalTable')} />
@@ -458,7 +396,19 @@ export default function FormProduk({
                 {/* `Bussines` (`.Name` b33504) dan `Benefit` b33658 SELALU baca-saja: diisi autocomplete `Plan Name`. */}
                 <td>{b.name}</td>
                 <td>{b.benefit}</td>
-                <td>{b.riRate}</td>
+                <td>
+                  {/* `Choose R/I Rate` → `SetRIRate` 1 b249: `.RIRATEID ← id`, `.RIRATE ← usedby`. */}
+                  <DropdownMaster
+                    labelAria={PLAN_MPNL.riRate}
+                    jenis="ri-rate"
+                    kolomNama={PEMILIH_MPNL.kolomRiRateName}
+                    nilai={b.riRate}
+                    lihat={lihat}
+                    onPilih={(v) => {
+                      setP((x) => ({ ...x, planList: ganti<BarisPlan>(x.planList, i, { riRate: v.nama, riRateId: v.id }) }))
+                    }}
+                  />
+                </td>
                 <td className="table__actions">
                   {tampilViewRate(b.riRate) && (
                     <button
@@ -469,25 +419,6 @@ export default function FormProduk({
                       }}
                     >
                       {PLAN_MPNL.viewRate}
-                    </button>
-                  )}{' '}
-                  {!lihat && (
-                    <button
-                      type="button"
-                      className="btn btn--ghost btn--sm"
-                      onClick={() =>
-                        bukaPemilih(
-                          PLAN_MPNL.chooseRiRate,
-                          'ri-rate',
-                          (v) => {
-                            // `SetRIRate` 1 b249: `.RIRATEID ← id`, `.RIRATE ← usedby`.
-                            setP((x) => ({ ...x, planList: ganti<BarisPlan>(x.planList, i, { riRate: v.nama, riRateId: v.id }) }))
-                          },
-                          PEMILIH_MPNL.kolomRiRateName,
-                        )
-                      }
-                    >
-                      {PLAN_MPNL.chooseRiRate}
                     </button>
                   )}{' '}
                   <button
@@ -689,17 +620,6 @@ export default function FormProduk({
           }}
           onTutup={() => {
             setDialog(null)
-          }}
-        />
-      )}
-      {pemilih !== null && (
-        <PemilihMaster
-          judul={pemilih.judul}
-          jenis={pemilih.jenis}
-          kolomNama={pemilih.kolomNama}
-          onPilih={pemilih.pilih}
-          onTutup={() => {
-            setPemilih(null)
           }}
         />
       )}

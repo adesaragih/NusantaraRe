@@ -20,16 +20,116 @@
   flex-wrap: wrap;
 }
 
-/* Medan + tombol `Choose*` berdampingan (sel b4107 + b5181, ...). */
-.mpnl .mpnl-medan-pilih {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
+/* Dropdown master - pengganti tombol `Choose*` (keputusan work owner 02-10-2026). Pemicunya berkelas
+   `field__input` (tinggi, tepi, fokus sama dengan isian lain); panel daftar di bawahnya, rata kanan bila
+   ruang di kanan tidak cukup (`mpnl-dropdown--kanan`, dihitung saat dibuka). */
+.mpnl .mpnl-dropdown {
+  position: relative;
+  min-width: 0;
 }
 
-.mpnl .mpnl-medan-pilih > :first-child {
+.mpnl .mpnl-dropdown__pemicu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.mpnl .mpnl-dropdown__nilai {
   flex: 1 1 auto;
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Medan kosong tetap setinggi satu baris teks. */
+.mpnl .mpnl-dropdown__nilai::before {
+  content: "\200b";
+}
+
+.mpnl .mpnl-dropdown__panah {
+  flex: none;
+  color: var(--mt-teks-redup);
+  font-size: 1.25em;
+  line-height: 1;
+}
+
+/* Sel grid (`R/I Rate` baris `PLAN LIST`): lebar tetap terbaca walau nilainya kosong. */
+.mpnl .mpnl-dropdown--sel {
+  min-width: 12em;
+}
+
+.mpnl .mpnl-dropdown__panel {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 100%;
+  width: max-content;
+  max-width: min(440px, 90vw);
+  padding: 8px;
+  background: var(--mt-isi);
+  border: 1px solid var(--mt-tepi);
+  border-radius: 12px;
+  box-shadow: var(--mt-timbul-kecil);
+}
+
+.mpnl .mpnl-dropdown--kanan > .mpnl-dropdown__panel {
+  left: auto;
+  right: 0;
+}
+
+.mpnl .mpnl-dropdown__kepala,
+.mpnl .mpnl-dropdown__butir {
+  display: grid;
+  grid-template-columns: 7em minmax(0, 1fr);
+  gap: 12px;
+  padding: 6px 10px;
+}
+
+.mpnl .mpnl-dropdown__kepala {
+  margin-top: 8px;
+  border-radius: 8px;
+  background: var(--mt-kepala-tabel);
+  color: var(--mt-kepala-teks);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.mpnl .mpnl-dropdown__daftar {
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mpnl .mpnl-dropdown__butir {
+  border-radius: 8px;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.mpnl .mpnl-dropdown__butir--aktif {
+  background: var(--mt-baris-hover);
+  color: var(--mt-aksen-teks);
+}
+
+.mpnl .mpnl-dropdown__id {
+  color: var(--mt-teks-redup);
+  font-variant-numeric: tabular-nums;
+}
+
+.mpnl .mpnl-dropdown__butir--aktif > .mpnl-dropdown__id {
+  color: inherit;
+}
+
+.mpnl .mpnl-dropdown__catatan {
+  margin: 6px 2px 0;
+  color: var(--mt-teks-redup);
+  font-size: var(--fs-sm);
 }
 
 /* Autocomplete `pxAutoComplete` - daftar saran di bawah medan. */

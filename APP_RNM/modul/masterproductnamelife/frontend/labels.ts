@@ -276,7 +276,12 @@ export const EDIT_MPNL = {
   cancel: 'Cancel',
 } as const
 
-/** Tujuh pemilih master `Choose*` - teks sama di ketujuh section (`Ceding_Section` sebagai bukti; uji memeriksa ketujuhnya). */
+/**
+ * Tujuh pemilih master `Choose*` - teks sama di ketujuh section (`Ceding_Section` sebagai bukti; uji memeriksa ketujuhnya).
+ * Sejak keputusan work owner 02-10-2026 pemilihnya dropdown (`DropdownMaster`): `search` = isian saring, `kolom*` =
+ * kepala kolom daftar; `choose` / `submit` / `cancel` - dan ketujuh tombol `choose*` di objek medan - tetap berbukti
+ * korpus tetapi tidak dirender.
+ */
 export const PEMILIH_MPNL = {
   /** `Ceding_Section.xml` b513 `<pyLabelFieldValue>`. */
   search: 'Search',
@@ -382,4 +387,9 @@ export const LAIN_MPNL = {
   belum: 'Pending',
   /** `[tidak ada di korpus]` - kirim ulang lampiran gagal, tiket 08 AC 3 / tiket 09 AC 4 (`POST …/ulangi`). */
   ulangi: 'Retry',
+  /**
+   * `[tidak ada di korpus]` - dropdown master (pengganti tombol `Choose*`, keputusan work owner 02-10-2026) memuat
+   * paling banyak `BATAS_DROPDOWN` baris; potongan DINYATAKAN, sisanya dicapai lewat `Search`.
+   */
+  dropdownTerpotong: 'Only the first 200 rows are shown. Type in Search to narrow the list.',
 } as const

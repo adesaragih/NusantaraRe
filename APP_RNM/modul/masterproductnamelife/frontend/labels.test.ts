@@ -5,8 +5,9 @@
 //   - setiap kunci label berbukti XML ATAU terdaftar `[tidak ada di korpus]` - tidak keduanya, tidak nol;
 //   - setiap tombol/tautan yang layar render bertekskan label berbukti `pyLabel` / `pySubmitLabel` (atau teks
 //     bukan-korpus yang beralasan di `labels.ts`);
-//   - ke-25 tombol hidup `InboxProductName` + tautan `View Office Online` + tombol pemilih dan dialog SEMUANYA
-//     dirender - tidak ada aksi XML yang dilewati; ketujuh tombol mati beralasan di PARITAS.
+//   - ke-25 tombol hidup `InboxProductName` + tautan `View Office Online` + tombol dialog SEMUANYA dirender - tidak
+//     ada aksi XML yang dilewati; ketujuh tombol mati beralasan di PARITAS; tombol `Choose*` dan tombol popup
+//     pemilihnya sengaja TIDAK dirender (diganti dropdown, keputusan work owner 02-10-2026).
 // Korpus READ-ONLY - hanya dibaca. Bila korpus tidak terjangkau, uji korpus DILEWATI, bukan gagal.
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
@@ -191,6 +192,7 @@ const BUKAN_KORPUS: readonly string[] = [
   'LAIN_MPNL.gagal',
   'LAIN_MPNL.belum',
   'LAIN_MPNL.ulangi',
+  'LAIN_MPNL.dropdownTerpotong',
 ]
 
 /** Nilai label untuk kunci `OBJEK.medan`. */
@@ -303,6 +305,21 @@ describe('tombol layar = tombol korpus', () => {
   )
   // Ikon grid bawaan / salin baris / kirim ulang - beralasan di `labels.ts` (`LAIN_MPNL`).
   const tambahanSah = new Set(['LAIN_MPNL.tambahBaris', 'LAIN_MPNL.hapusBaris', 'LAIN_MPNL.salinBaris', 'LAIN_MPNL.ulangi'])
+  // Keputusan work owner 02-10-2026 ("perubahan pada tampilan untuk semua Choose ubah jadi dropdown saja"): ketujuh
+  // tombol `Choose*` dan tombol popup FlowAction `Choose*` (`Choose` baris, `Submit`, `Cancel`) diganti dropdown
+  // master (`DropdownMaster`). Labelnya tetap berbukti korpus; tombolnya sengaja TIDAK dirender.
+  const digantiDropdown = new Set([
+    'UMUM_MPNL.chooseCeding',
+    'UMUM_MPNL.chooseSob',
+    'UMUM_MPNL.chooseRiRisk',
+    'UMUM_MPNL.chooseCause',
+    'INWARD_MPNL.choosePolicyHolder',
+    'INWARD_MPNL.chooseCurrency',
+    'PLAN_MPNL.chooseRiRate',
+    'PEMILIH_MPNL.choose',
+    'PEMILIH_MPNL.submit',
+    'PEMILIH_MPNL.cancel',
+  ])
 
   it('terbaca: ada tombol di layar', () => {
     expect(tombol.length).toBeGreaterThan(25)
@@ -324,10 +341,16 @@ describe('tombol layar = tombol korpus', () => {
 
   it('setiap tombol korpus hidup dirender - tidak ada aksi XML yang dilewati', () => {
     const dirender = new Set([...tombol.flatMap((t) => kunciTeks(t.isi)), ...kunciBatal()])
-    const hilang = [...berbuktiTombol].filter((k) => !dirender.has(k))
+    const hilang = [...berbuktiTombol].filter((k) => !dirender.has(k) && !digantiDropdown.has(k))
     expect(hilang).toEqual([])
     // 25 pxButton hidup InboxProductName + pxLink `View Office Online` + `Choose` pemilih + 10 tombol FlowAction
     // (`Save`/`Cancel`, `Edit`/`Cancel`, `Submit`/`Cancel` pemilih, `Submit`/`Cancel` View Rate, `Attach`/`Cancel`).
     expect(berbuktiTombol.size).toBe(25 + 1 + 1 + 10)
+  })
+
+  it('tombol Choose* dan tombol popup pemilih tidak dirender - diganti dropdown (keputusan work owner 02-10-2026)', () => {
+    const dirender = new Set([...tombol.flatMap((t) => kunciTeks(t.isi)), ...kunciBatal()])
+    expect([...digantiDropdown].filter((k) => !berbuktiTombol.has(k))).toEqual([])
+    expect([...digantiDropdown].filter((k) => dirender.has(k))).toEqual([])
   })
 })

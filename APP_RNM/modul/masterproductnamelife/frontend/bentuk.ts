@@ -146,3 +146,21 @@ export function salinBaris<T extends { asli?: string }>(daftar: readonly T[], i:
   delete salin.asli
   return [...daftar, salin]
 }
+
+/**
+ * Dropdown master (pengganti tombol `Choose*`, keputusan work owner 02-10-2026): baris yang dirender paling banyak.
+ * Server diminta satu baris lebih untuk mengetahui daftar terpotong - master besar (`CLIENT` ratusan ribu baris)
+ * disaring lewat `Search` di dalam dropdown, bukan dimuat utuh.
+ */
+export const BATAS_DROPDOWN = 200
+
+/** Potong jawaban server (`batas` = BATAS_DROPDOWN + 1): `lebih` = masih ada baris yang tidak dirender. */
+export function potongPilihan<T>(daftar: readonly T[]): { tampil: T[]; lebih: boolean } {
+  return { tampil: daftar.slice(0, BATAS_DROPDOWN), lebih: daftar.length > BATAS_DROPDOWN }
+}
+
+/** Indeks aktif sesudah panah/Home/End (`langkah` ±1 / ±Infinity), dijepit ke daftar; daftar kosong = -1. */
+export function geserAktif(aktif: number, langkah: number, n: number): number {
+  if (n <= 0) return -1
+  return Math.min(n - 1, Math.max(0, aktif + langkah))
+}

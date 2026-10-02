@@ -3,11 +3,14 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  BATAS_DROPDOWN,
   PILIHAN_PEMBAYARAN,
+  geserAktif,
   hitungMaxSumReasured,
   jepitHalaman,
   namaTreaty,
   potongHalaman,
+  potongPilihan,
   produkBaru,
   salinBaris,
   salinProduk,
@@ -16,6 +19,7 @@ import {
   tampilViewRate,
   waktuPega,
 } from './bentuk'
+import { LAIN_MPNL } from './labels'
 
 describe('CountMaxSumReasured_Act - MAXSUMREASURED = MaxSumInsured - CedingLimit (eksak)', () => {
   it('mengurangi per digit, tanpa float', () => {
@@ -108,3 +112,26 @@ describe('waktuPega - `.Date` History b62561 (pxDateTime)', () => {
     expect(waktuPega('bukan stempel', 420)).toBe('bukan stempel')
   })
 })
+
+describe('dropdown master - pengganti tombol Choose* (keputusan work owner 02-10-2026)', () => {
+  it('server diminta BATAS_DROPDOWN + 1 baris: baris lebih = daftar terpotong, dinyatakan', () => {
+    const semua = Array.from({ length: BATAS_DROPDOWN + 1 }, (_, i) => i)
+    expect(potongPilihan(semua)).toEqual({ tampil: semua.slice(0, BATAS_DROPDOWN), lebih: true })
+    expect(potongPilihan(semua.slice(0, BATAS_DROPDOWN))).toEqual({ tampil: semua.slice(0, BATAS_DROPDOWN), lebih: false })
+    expect(potongPilihan([])).toEqual({ tampil: [], lebih: false })
+    // Kalimat potongan menyebut batas yang sama.
+    expect(LAIN_MPNL.dropdownTerpotong).toContain(String(BATAS_DROPDOWN))
+  })
+
+  it('panah atas/bawah dan PageUp/PageDown menggeser pilihan aktif tanpa keluar daftar', () => {
+    expect(geserAktif(-1, 1, 3)).toBe(0)
+    expect(geserAktif(0, 1, 3)).toBe(1)
+    expect(geserAktif(2, 1, 3)).toBe(2)
+    expect(geserAktif(0, -1, 3)).toBe(0)
+    expect(geserAktif(1, -Infinity, 3)).toBe(0)
+    expect(geserAktif(1, Infinity, 3)).toBe(2)
+    expect(geserAktif(5, 0, 3)).toBe(2)
+    expect(geserAktif(0, 1, 0)).toBe(-1)
+  })
+})
+
