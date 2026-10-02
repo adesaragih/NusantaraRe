@@ -111,3 +111,12 @@ membaca view `RATE_LIFE`, baca saja, kolom RD saja (`GET /master/ri-rate`, `GET 
 diberi R/I Rate; pilihan baru wajib ada di view dan namanya diambil dari master (`SetRIRate` b2448). `View Rate` disaring
 `RIRATEID` baris plan — penyimpangan sadar dari `ViewRate.xml` b1024 (`ParamID.OUTWARDRATEID` tidak pernah diisi; PARITAS bab
 keputusan OQ 01-10-2026).
+
+## Keputusan work owner 02-10-2026 — pemilih menjadi dropdown
+
+Kalimat work owner dikutip: *"IKUTI REKOMENDASI! PERUBAHAN PADA TAMPILAN UNUK SEMUA CHOOSE UBAH JADI DROPDOWN SAJA"*. Kalimat lama tiket ini **tidak dihapus**; yang berubah
+hanya tampilan: ketujuh tombol `Choose*` + popup FlowAction-nya diganti dropdown master (`components/DropdownMaster.tsx`).
+Aturan tiket ini tetap: tujuh master dari RD-nya, `Search` dihurufbesarkan, nilai hanya dari master, pilihan yang tidak ada
+di master ditolak saat simpan. Daftar dropdown memuat paling banyak 200 baris; potongan dinyatakan dan sisanya dicapai lewat
+`Search` (`PARITAS-LAYAR-DAN-AKSI.md` §4, cek peramban §10).
+
