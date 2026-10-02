@@ -220,7 +220,10 @@
    di akar ini saja supaya label dan keterangan abu tetap terbaca. */
 .mcrl {
   --mt-latar: #eef1f6;
-  --mt-latar-tepi: #e2e7ef;
+  --mt-latar-tepi: #cfd7e5;
+  --mt-latar-atas: #f9fafd;
+  --mt-latar-bawah: #e4e9f3;
+  --mt-bayang-akar: 0 2px 6px rgba(30, 45, 90, 0.08), 0 16px 40px -12px rgba(30, 45, 90, 0.24);
   --mt-kartu: #eef1f6;
   --mt-lembut: #e9edf3;
   --mt-lembut-tepi: #dde3ec;
@@ -230,10 +233,14 @@
   --mt-aksen-teks: #2339a3;
   --mt-aksen-lembut: #e3e8f6;
   --mt-aksen-garis: #b9c5ee;
-  --mt-kepala-tabel: #eaeef4;
-  --mt-baris-hover: #e6ebf3;
-  --mt-garis: #dfe4ec;
-  --mt-tepi: #d5dce7;
+  --mt-kepala-tabel: #dde4f2;
+  --mt-kepala-teks: #22326b;
+  --mt-kepala-garis: #c3cde2;
+  --mt-isi: #ffffff;
+  --mt-zebra: #f5f7fb;
+  --mt-baris-hover: #e6ecfa;
+  --mt-garis: #e1e6ef;
+  --mt-tepi: #c8d1e1;
   --mt-tombol: #d63a42;
   --mt-tombol-ujung: #bf2f37;
   --mt-tombol-hover: #c2333b;
@@ -254,12 +261,17 @@
   padding: 24px;
   border: 1px solid var(--mt-latar-tepi);
   border-radius: 26px;
-  background: var(--mt-latar);
-  box-shadow: var(--mt-bayang-lembar);
+  /* Gradasi TERLIHAT dan bayangan di SEMUA sisi - gaya Kelola User (02-10-2026): alas #eef1f6 dulu
+     nyaris lebur dengan latar halaman #f4f6fa, tepinya pucat, bayangannya hanya di bawah. */
+  background: linear-gradient(180deg, var(--mt-latar-atas) 0%, var(--mt-latar-bawah) 100%);
+  box-shadow: var(--mt-bayang-akar);
 }
 :root[data-theme="dark"] .mcrl {
   --mt-latar: #1b2130;
-  --mt-latar-tepi: #252c3c;
+  --mt-latar-tepi: #323b50;
+  --mt-latar-atas: #222a3b;
+  --mt-latar-bawah: #161b27;
+  --mt-bayang-akar: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.75);
   --mt-kartu: #1b2130;
   --mt-lembut: #181d2a;
   --mt-lembut-tepi: #242b3a;
@@ -269,10 +281,14 @@
   --mt-aksen-teks: #aebcff;
   --mt-aksen-lembut: #222b45;
   --mt-aksen-garis: #3a4b8f;
-  --mt-kepala-tabel: #1d2433;
-  --mt-baris-hover: #212a3c;
-  --mt-garis: #283042;
-  --mt-tepi: #2d3546;
+  --mt-kepala-tabel: #273152;
+  --mt-kepala-teks: #dbe2ff;
+  --mt-kepala-garis: #3a4670;
+  --mt-isi: #1f2638;
+  --mt-zebra: #232b3f;
+  --mt-baris-hover: #2b3554;
+  --mt-garis: #2c3447;
+  --mt-tepi: #3a4459;
   --mt-terang: rgba(255, 255, 255, 0.045);
   --mt-gelap: rgba(0, 0, 0, 0.55);
   --mt-kilau: rgba(255, 255, 255, 0.04);
@@ -298,9 +314,10 @@
   outline-offset: 2px;
 }
 
-/* Isian: TIMBUL KE DALAM (cekung) bertepi tipis; fokus biru navy bercincin lembut. */
+/* Isian: TIMBUL KE DALAM (cekung), PUTIH bertepi jelas di atas alas abu kebiruan (02-10-2026, gaya
+   Kelola User); fokus biru navy bercincin lembut. */
 .mcrl .field__input {
-  background: var(--mt-latar);
+  background: var(--mt-isi);
   border: 1px solid var(--mt-tepi);
   border-radius: 12px;
   box-shadow: var(--mt-cekung-kecil);
@@ -313,6 +330,14 @@
   border-color: var(--mt-aksen);
   box-shadow: var(--mt-cekung-kecil), var(--mt-cincin);
   outline: none;
+}
+/* Isian hanya-baca: abu lembut bertulisan redup, jadi terbedakan dari isian yang dapat diketik. */
+.mcrl .field__input--readonly,
+.mcrl .field__input--readonly:hover {
+  background: var(--mt-lembut);
+  border-color: var(--mt-lembut-tepi);
+  color: var(--mt-teks-redup);
+  box-shadow: none;
 }
 
 /* Tombol kapsul TIMBUL KELUAR; ditekan: TIMBUL KE DALAM. Utama: merah bergradasi halus. */
@@ -333,12 +358,15 @@
   box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
 }
 .mcrl .btn--ghost {
-  background: var(--mt-latar);
-  border: 1px solid var(--mt-kilau);
-  color: var(--mt-teks);
+  background: var(--mt-isi);
+  border: 1px solid var(--mt-tepi);
+  color: var(--mt-aksen-teks);
+  font-weight: 600;
   box-shadow: var(--mt-timbul-kecil);
 }
 .mcrl .btn--ghost:hover:not(:disabled) {
+  background: var(--mt-aksen-lembut);
+  border-color: var(--mt-aksen-garis);
   color: var(--mt-aksen-teks);
 }
 .mcrl .btn--ghost:active:not(:disabled) {
@@ -371,34 +399,40 @@
   box-shadow: var(--mt-timbul);
 }
 .mcrl .panel .panel {
-  background: var(--mt-lembut);
-  border-color: var(--mt-lembut-tepi);
+  background: var(--mt-isi);
+  border-color: var(--mt-tepi);
   border-radius: 16px;
-  box-shadow: var(--mt-cekung);
+  box-shadow: var(--mt-cekung-kecil);
 }
 
-/* Wadah tabel: TIMBUL KE DALAM (baki); baris rata, garis tipis, sorot baris biru samar. Kolom aksi
-   yang menempel ikut warna alas supaya tidak tampak sebagai pita. */
+/* Wadah tabel: TIMBUL KE DALAM (baki) - isinya PUTIH di atas alas abu kebiruan, kepala tabel biru
+   navy muda bertulisan navy, baris berbelang, sorot baris biru muda (gaya Kelola User 02-10-2026:
+   alas, kepala, baris, dan sorot dulu abu yang nyaris sama). Kolom aksi yang menempel ikut warna
+   barisnya supaya tidak tampak sebagai pita. */
 .mcrl .mcrl-tabel {
-  border-color: var(--mt-lembut-tepi);
+  border-color: var(--mt-tepi);
   border-radius: 16px;
-  background: var(--mt-latar);
+  background: var(--mt-isi);
   box-shadow: var(--mt-cekung);
 }
 .mcrl .mcrl-tabel > .inbox__tabel thead th,
 .mcrl .mcrl-tabel th.table__actions {
   background: var(--mt-kepala-tabel);
-  color: var(--mt-teks-redup);
-  border-bottom-color: var(--mt-garis);
+  color: var(--mt-kepala-teks);
+  font-weight: 700;
+  border-bottom: 1px solid var(--mt-kepala-garis);
 }
 .mcrl .mcrl-tabel > .inbox__tabel td {
   border-bottom-color: var(--mt-garis);
 }
+.mcrl .mcrl-tabel > .inbox__tabel > tbody > tr > td,
 .mcrl .mcrl-tabel td.table__actions {
-  background: var(--mt-latar);
+  background: var(--mt-isi);
 }
-.mcrl .mcrl-tabel > .inbox__tabel > tbody > tr:hover > td,
-.mcrl .mcrl-tabel tr:hover > td.table__actions {
+.mcrl .mcrl-tabel > .inbox__tabel > tbody > tr:nth-child(even) > td {
+  background: var(--mt-zebra);
+}
+.mcrl .mcrl-tabel > .inbox__tabel > tbody > tr:hover > td {
   background: var(--mt-baris-hover);
 }
 
