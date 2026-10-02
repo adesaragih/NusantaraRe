@@ -197,18 +197,17 @@ func (m *MasterJenisReasuransi) DaftarNonLife(ctx context.Context) ([]JenisReasu
 //
 // `[keputusan work owner 30-09-2026]` "12 jenis porsi + induknya": pilihan
 // anak = baris Flag active yang BERAWALAN salah satu dari dua belas awalan
-// (StartsWith - pelengkap tepat NotStartsWith induk, tanpa saringan Type),
-// ditambah ReinsType induknya sendiri.
+// (StartsWith - pelengkap tepat NotStartsWith induk, tanpa saringan Type).
+// ⛔ `[keputusan work owner 02-10-2026]` ReinsType INDUK TIDAK ikut ("kenapa
+// ReinsType di child ada nambah induknya") - pilihan anak = porsi SAJA, untuk
+// SEMUA grid anak.
 // ---------------------------------------------------------------------------
 
-// LolosSaringanAnakTreatyLimitTCO adalah tabel kebenaran pilihan anak Treaty
-// Limit, di Go - acuan SQL di bawah. `induk` kosong = porsi saja.
-func LolosSaringanAnakTreatyLimitTCO(id, flag, induk string) bool {
+// LolosSaringanAnakTreatyLimitTCO adalah tabel kebenaran pilihan anak, di Go -
+// acuan SQL di bawah: jenis porsi aktif saja, induk tidak pernah.
+func LolosSaringanAnakTreatyLimitTCO(id, flag string) bool {
 	if flag != FlagJenisReasuransiAktif {
 		return false
-	}
-	if induk != "" && id == induk {
-		return true
 	}
 	for _, awalan := range BlacklistJenisReasuransiNonLife {
 		if strings.HasPrefix(id, awalan) {
@@ -220,31 +219,33 @@ func LolosSaringanAnakTreatyLimitTCO(id, flag, induk string) bool {
 
 // sqlJenisReasuransiAnakTreatyLimitTCO merakit pembacaan pilihan anak.
 //
-// Bind: :1 flag; :2 ID induk; :3-:14 awalan porsi berakhiran '%'. Urutan
-// `NOTE ASC, ID ASC` sama dengan daftar induk.
+// Bind: :1 flag; :2-:13 awalan porsi berakhiran '%'. Urutan `NOTE ASC, ID ASC`
+// sama dengan daftar induk.
 func sqlJenisReasuransiAnakTreatyLimitTCO(tabel string) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "SELECT ID, NOTE, TYPE FROM %s\n WHERE FLAG = :1\n   AND (ID = :2", tabel)
+	fmt.Fprintf(&b, "SELECT ID, NOTE, TYPE FROM %s\n WHERE FLAG = :1\n   AND (", tabel)
 	for i := range BlacklistJenisReasuransiNonLife {
-		fmt.Fprintf(&b, "\n        OR ID LIKE :%d", 3+i)
+		if i > 0 {
+			b.WriteString("\n        OR ")
+		}
+		fmt.Fprintf(&b, "ID LIKE :%d", 2+i)
 	}
 	b.WriteString(")\n ORDER BY NOTE ASC, ID ASC")
 	return b.String()
 }
 
 // argJenisReasuransiAnakTreatyLimitTCO menyusun argumen bind dalam urutan yang sama.
-func argJenisReasuransiAnakTreatyLimitTCO(induk string) []any {
-	arg := []any{FlagJenisReasuransiAktif, induk}
+func argJenisReasuransiAnakTreatyLimitTCO() []any {
+	arg := []any{FlagJenisReasuransiAktif}
 	for _, awalan := range BlacklistJenisReasuransiNonLife {
 		arg = append(arg, awalan+"%")
 	}
 	return arg
 }
 
-// DaftarAnakTreatyLimit membaca pilihan ReinsType baris anak Treaty Limit di
-// bawah induk `induk`. Daftar kosong dikembalikan APA ADANYA (services yang
-// memutuskan).
-func (m *MasterJenisReasuransi) DaftarAnakTreatyLimit(ctx context.Context, induk string) ([]JenisReasuransiTCO, error) {
+// DaftarAnakTreatyLimit membaca pilihan ReinsType baris anak (porsi saja).
+// Daftar kosong dikembalikan APA ADANYA (services yang memutuskan).
+func (m *MasterJenisReasuransi) DaftarAnakTreatyLimit(ctx context.Context) ([]JenisReasuransiTCO, error) {
 	tabel, err := m.db.Qualify(MasterJenisReasuransiTCO)
 	if err != nil {
 		return nil, err
@@ -253,7 +254,7 @@ func (m *MasterJenisReasuransi) DaftarAnakTreatyLimit(ctx context.Context, induk
 	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := bacaTCO(ctx, m.db).QueryContext(ctx, q, argJenisReasuransiAnakTreatyLimitTCO(induk)...)
+	rows, err := bacaTCO(ctx, m.db).QueryContext(ctx, q, argJenisReasuransiAnakTreatyLimitTCO()...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: reading Treaty Limit child reinsurance types: %w", err)
 	}

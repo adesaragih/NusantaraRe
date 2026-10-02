@@ -73,7 +73,7 @@ export default function PanelKlausulTahun({ tahun, onTutup }: { tahun: TahunTrea
               </thead>
               <tbody>
                 {daftar.map((j) => (
-                  <tr key={j.id} className={j.id === terbuka ? 'inbox__baris belah__baris--aktif' : 'inbox__baris'}>
+                  <tr key={j.id} className={j.id === terbuka ? 'inbox__baris tco-baris--aktif' : 'inbox__baris'}>
                     <td>{j.id}</td>
                     <td>{j.descName}</td>
                     <td className="table__actions">

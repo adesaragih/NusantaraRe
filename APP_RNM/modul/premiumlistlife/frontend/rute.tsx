@@ -10,13 +10,15 @@ import InboxPremiumList from './pages/InboxPremiumList'
 import InputOffer from './pages/InputOffer'
 import PremiumListDetail from './pages/PremiumListDetail'
 import PremiumListSummary from './pages/PremiumListSummary'
+import './premiumlistlife.css'
 
 export function RutePremiumList({ halaman }: PropsRute<HalamanPremiumList>) {
   // Polis yang sedang dibuka, beserta tahapnya - tiket 01 PremiumList.
   const [polis, setPolis] = useState({ id: '', tahap: '' })
 
   return (
-    <>
+    // Akar gaya modul: semua aturan `premiumlistlife.css` diawali `.premiumlistlife` (`display: contents`).
+    <div className="premiumlistlife">
       {halaman === 'premiumlist' && polis.id === '' && (
         <InboxPremiumList
           onBuka={(caseID, tahap) => {
@@ -49,7 +51,7 @@ export function RutePremiumList({ halaman }: PropsRute<HalamanPremiumList>) {
           }}
         />
       )}
-    </>
+    </div>
   )
 }
 

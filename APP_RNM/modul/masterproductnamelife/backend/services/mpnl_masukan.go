@@ -106,7 +106,7 @@ func (p *periksa) tanggal(label string, v *string) {
 	p.tolak("%s %q is not a date (YYYY-MM-DD)", label, s)
 }
 
-// panjang - kolom datar bertipe VARCHAR2(n) `[data DBA]`.
+// panjang - kolom bertipe VARCHAR2(n), lebar dalam BYTE (tabel flat, tiket 01 bab 02-10-2026).
 func (p *periksa) panjang(label, v string, maks int) {
 	if n := len(v); n > maks {
 		p.tolak("%s is %d bytes long; the column holds at most %d", label, n, maks)

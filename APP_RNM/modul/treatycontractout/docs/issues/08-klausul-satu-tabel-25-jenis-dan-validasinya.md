@@ -315,3 +315,91 @@ sendiri**. Induk Treaty Limit dan anak jenis lain tidak berubah (OQ-TCO-15).
 - handler `GET /api/treaty-contract-out/jenis-reasuransi/anak-treaty-limit?induk=`.
 - frontend: ReinsType induk dan anak Treaty Limit memakai `PilihSaring` (XML `pxAutoComplete`, dicari pada nama; anak
   menampilkan ID sebagai keterangan — `.CARI1` pyShow true); jenis lain tetap dropdown.
+
+## ⛔ Keputusan work owner bertanggal — 02-10-2026 (ReinsType anak SEMUA jenis)
+
+*Permintaan: "pada Treaty Desc, semua ReinsType yang berperan sebagai child, tolong samain dengan child yang di Treaty Limit".*
+
+**Sebelumnya.** Hanya anak Treaty Limit (`TreatyLimitChild`) yang memilih ReinsType dari daftar anak (12 jenis porsi +
+induknya, keputusan 30-09-2026 di atas); enam grid anak lain — `PLAList`, `CashLossLimitList`, `FacInList`,
+`ExGratiaChildList`, `EpiList`, `ClaimCoorpChild` — memakai dropdown daftar induk tiket 02 (XML: `D_EnumerationList`, tidak
+diekspor), sehingga anak berporsi ditolak simpan dan jenis induk lain diterima.
+
+**Keputusan.** ReinsType **setiap** baris anak = pilihan anak Treaty Limit: porsi + ReinsType induknya sendiri, jenis induk
+lain ditolak; pemilihnya `PilihSaring` yang dapat difilter (ID tampil sebagai keterangan). ReinsType **induk** semua jenis
+tidak berubah (daftar induk tiket 02). Peringatan spreading (`TreatyTestChildTotal_Act`) tetap hanya Treaty Limit — ia
+bukan soal ReinsType.
+
+**Yang diubah.**
+- models: konstruktor `anak` memasang `PilihanReins = anak-treaty-limit` untuk ketujuh aturan anak; uji
+  `TestSemuaAnakMemakaiPilihanAnakTreatyLimit`.
+- services: `namaReinsType` (validasi simpan) otomatis memakai daftar anak untuk setiap anak; uji anak EPI berporsi
+  diterima, jenis induk lain ditolak, induk EPI berporsi tetap ditolak.
+- frontend: tanpa perubahan logika — pemilih mengikuti penanda aturan; uji `PanelJenisKlausul.test.ts` diperbarui.
+- Rute `GET …/jenis-reasuransi/anak-treaty-limit?induk=` dan nama konstanta dipertahankan (sumbernya tetap daftar anak
+  Treaty Limit).
+
+## ⛔ Keputusan work owner bertanggal — 02-10-2026 (Minimum LOL, Max Coins Panel, Minimum LOL MB: satu baris)
+
+*Permintaan: "Minimum LOL MB, Max Coins Panel, Minimum LOL — untuk 3 menu ini hanya diisi 1 row saja, cek lagi XML-nya untuk
+memvalidasi".*
+
+**Validasi XML — benar, satu baris per tahun treaty.**
+- Tombol `Add` ketiga grid hanya tampil bila form belum memuat baris: `Section/GridTreatyArrangementMinLOL.xml` b2232
+  `OutputParam.DATASHOW ='' && InputTreatyMinimumLOL.ID == ''`; `GridTreatyArrangementMaxCoinsPanel.xml` b2212
+  (`InputTreatyMaxCoinsPanel.ID == ''`); `GridTreatyArrangementMInLOLMB.xml` b2262 (`InputTreatyMinimumLOLMB.ID == ''`).
+- Pembacanya memuat baris yang ada ke form: `Activity/GetMinimumLOL.xml` langkah 2 `Obj-Browse` saringan `.TreatyYearID`
+  b384 + `.TreatyDescID` b483, langkah 3 b750 `ID ← TempPropArrg.pxResults(1).ID`; `GetMaxCoinsPanel.xml` b748;
+  `GetMinimumLOLMB.xml` b750. Begitu ada satu baris, `ID` terisi dan `Add` hilang — yang tersisa `Edit`.
+- `SaveTreatyArrMinLOL` (8 langkah, nol `//`) sendiri tidak menghitung baris; penjaganya layar tadi.
+
+**Yang dibangun.**
+- models `AturanKlausul.SatuBaris` pada `MinLOL` (10015), `MaxCoinsPanel` (10016), `MinLOLMB` (10018); uji
+  `TestSatuBarisHanyaTigaJenis`.
+- services: simpan baris BARU ketiga jenis itu ditolak bila tahun itu sudah berisi (`ErrKlausulSatuBaris`, 409, menyebut ID
+  baris yang ada), dibaca di transaksi yang mengunci tahun; `Edit` baris yang ada tetap boleh. `AturanTampil.satuBaris`
+  dikirim ke layar. Uji `TestKlausulSatuBarisPerTahun`.
+- frontend: `addTampil` — `Add` disembunyikan selama daftar belum dimuat atau sudah berisi (seperti Pega).
+
+## ⛔ Keputusan work owner bertanggal — 02-10-2026 (10013 Exclusion Treaty: dropdown dan tab)
+
+*Permintaan: "ExclutionTreaty — Occupation: dropdown ID Occupation tidak bisa; Search ID Occupation hapus aja. ExclutionTreaty —
+Clause: dropdown ID Clause tidak bisa; Search ID Clause hapus aja. Tampilan 10013 — Exclusion Treaty dibuat tab aja, jangan
+nyecrol ke bawah".*
+
+**Cacat.** Dropdown ID Occupation / ID Clause hanya diisi hasil kotak `Search` terpisah, dan kotak itu baru memanggil server
+sesudah dua huruf — dropdown yang dibuka langsung kosong. Keempat subjenis (Occupation, Clause, Object, Periode) bertumpuk
+ke bawah dalam satu popup.
+
+**XML.** `ID_Occupation` input teks (`GridTreatyArrangementExclutionTreatyOccupation.xml` b2038) yang diisi Autocomplete nama
+(RD `BrowseOccupationFIRE_RD`, tampil `.Name`, target `.ID_Occupation` b2470); Clause sama (`…ExclutionTreatyClausule.xml`
+tampil `.Info`, target `.ID_Clause` b2501).
+
+**Yang dibangun.**
+- frontend `components/PilihMasterKlausul.tsx`: satu dropdown `PilihSaring` yang dapat difilter — terisi begitu dibuka (100
+  baris pertama berurut nama, `cari` kosong), ketikan di dalamnya disaring di server (jeda 250 ms) sehingga seluruh master
+  FIRE terjangkau; ID tampil sebagai keterangan; memilih ID ikut mengisi nama (`Occupation` / `Clause`, hanya dibaca). Nama
+  yang tersimpan tetap dibaca server dari master (`lengkapiDariMaster`). Kotak `Search` dan label `cariPilihan` dibuang.
+- frontend `PanelJenisKlausul`: jenis berinduk lebih dari satu (`tabSubjenis` — 10013) tampil sebagai tab `StripTab` inti,
+  satu grid subjenis per tab.
+- Server tanpa perubahan: `GET /klausul-pilihan/{master}?cari=` sudah menerima `cari` kosong.
+- Uji: `PilihMasterKlausul.test.ts`, `PanelJenisKlausul.test.ts` (tab, nol kotak Search).
+
+## ⛔ Koreksi work owner bertanggal — 02-10-2026 (ReinsType anak TANPA induk)
+
+*Permintaan: "kenapa ReinsType di child ada nambah induknya".*
+
+**Mengoreksi** keputusan 30-09-2026 ("12 jenis porsi + induknya") dan blok 02-10-2026 di atas yang menyalinnya ke semua anak:
+pilihan ReinsType baris anak **semua** grid `Show Child` (termasuk Treaty Limit, agar tetap sama) = **dua belas jenis porsi
+saja**; ReinsType induk tidak pernah ikut.
+
+**Yang diubah.**
+- repository: `LolosSaringanAnakTreatyLimitTCO(id, flag)` tanpa induk; SQL `FLAG = :1 AND (ID LIKE :2 … :13)` (tanpa
+  `ID = :induk`).
+- services/handler/frontend: parameter `induk` dihapus dari `DaftarAnakTreatyLimit` dan rute
+  `GET …/jenis-reasuransi/anak-treaty-limit` (tanpa `?induk=`); pemilih anak menerima `anak={true}`.
+- Validasi simpan: baris anak BARU ber-ReinsType induk ditolak (`ErrJenisReasuransiDiLuarDaftar`). ⚠️ Baris anak LAMA yang
+  terlanjur ber-ReinsType induk (data DEV: ORS di bawah ORS) tetap dapat di-Edit selama ReinsType-nya tidak diganti —
+  menggantinya wajib memakai jenis porsi.
+- Uji: tabel kebenaran repository (induk tidak pernah lolos), SQL tanpa `ID = :`, layanan (induk ditolak untuk anak Treaty
+  Limit dan EPI), `TestKlausulAnakLamaBerReinsIndukTetapDapatDiedit`, uji pemilih frontend.

@@ -19,7 +19,7 @@ const produkBerplan = `{"ID":"100007","PRODUCTNAME":"LAMA","CEDING":"UJI CEDING"
 
 func layananPlan() (*services.Layanan, func(models.Produk) error) {
 	l, g := layananMaster()
-	g.Umum["100007"] = produkBerplan
+	g.IsiJSON("100007", produkBerplan, "")
 	g.Plan = []models.JenisPlan{{ID: "P1", CoverName: "UJI COVER", Business: "UJI BIZ", Benefit: "UJI MANFAAT"},
 		{ID: "P2", CoverName: "UJI COVER DUA", Business: "UJI BIZ 2", Benefit: "UJI MANFAAT 2"}}
 	// View `RATE_LIFE_SUMMARY` tiruan (K1 01-10-2026): R1 sengaja TIDAK ada - pasangan tersimpan tidak diperiksa ulang.
@@ -48,14 +48,29 @@ func TestPlanPesanVerbatimProteksiPlanListLife(t *testing.T) {
 	m := produkMasuk()
 	m.PlanList = []models.BarisPlan{{}, planTersimpan, planTersimpan}
 	pesan := services.Pesan(simpan(m))
+	// Audit 02-10-2026: loop dalam 2.1 b524 + PRE b836 menandai KEDUA baris pasangan ganda.
 	for _, w := range []string{"PLAN LIST row 1: Plan tidak boleh kosong", "PLAN LIST row 1: RI/RATE tidak boleh kosong",
-		"PLAN LIST row 3: Plan tidak boleh sama"} {
+		"PLAN LIST row 2: Plan tidak boleh sama", "PLAN LIST row 3: Plan tidak boleh sama"} {
 		if !strings.Contains(pesan, w) {
 			t.Errorf("tanpa %q: %s", w, pesan)
 		}
 	}
-	if strings.Contains(pesan, "row 2: Plan tidak boleh sama") {
-		t.Errorf("baris pertama nilai itu bukan duplikat: %s", pesan)
+	if strings.Contains(pesan, "row 1: Plan tidak boleh sama") {
+		t.Errorf("satu baris kosong tidak punya pasangan, jadi bukan duplikat: %s", pesan)
+	}
+}
+
+// Dua baris kosong: `local.plan` "" == `.Plan` "" di baris lain - keduanya "kosong" DAN "sama".
+func TestPlanDuaBarisKosongKeduanyaSama(t *testing.T) {
+	_, simpan := layananPlan()
+	m := produkMasuk()
+	m.PlanList = []models.BarisPlan{{}, {}}
+	pesan := services.Pesan(simpan(m))
+	for _, w := range []string{"PLAN LIST row 1: Plan tidak boleh kosong", "PLAN LIST row 1: Plan tidak boleh sama",
+		"PLAN LIST row 2: Plan tidak boleh kosong", "PLAN LIST row 2: Plan tidak boleh sama"} {
+		if !strings.Contains(pesan, w) {
+			t.Errorf("tanpa %q: %s", w, pesan)
+		}
 	}
 }
 

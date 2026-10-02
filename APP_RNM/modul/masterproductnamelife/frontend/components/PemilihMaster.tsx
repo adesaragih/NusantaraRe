@@ -7,7 +7,7 @@
 // Kaki FlowAction: `Submit` / `Cancel` (b32 / b31 `ChooseCeding.xml`) - keduanya menutup tanpa memilih.
 // Grid terbuka dengan `CARI1` kosong = seluruh baris (`Contains ""`).
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { Gagal, Halaman, Kosong, Memuat, Modal } from '../../../../inti/frontend/components/ui/dasar'
 import { cariMaster, type JenisMaster, type NilaiMaster } from '../api'
@@ -34,15 +34,20 @@ export default function PemilihMaster({
   // Grid RD berhalaman (`pyGridPaginator`): hasil RD bisa puluhan ribu baris (`CLIENT`) - yang dirender satu halaman.
   const [halaman, setHalaman] = useState(1)
 
+  // Nomor permintaan terakhir: jawaban yang tiba SESUDAH permintaan yang lebih baru diabaikan (audit
+  // 02-10-2026 - daftar penuh `CLIENT` yang lambat dulu dapat menimpa hasil pencarian yang lebih cepat).
+  const terakhir = useRef(0)
   const muat = useCallback(
     async (cari: string) => {
+      const nomor = ++terakhir.current
       setDaftar(null)
       setGalat(null)
       setHalaman(1)
       try {
-        setDaftar((await cariMaster(jenis, cari)).daftar)
+        const d = await cariMaster(jenis, cari)
+        if (nomor === terakhir.current) setDaftar(d.daftar)
       } catch (e) {
-        setGalat(e)
+        if (nomor === terakhir.current) setGalat(e)
       }
     },
     [jenis],

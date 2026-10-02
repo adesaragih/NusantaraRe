@@ -17,6 +17,8 @@ import {
   keMasukKlausul,
   labelMedan,
   pemilihReinsType,
+  addTampil,
+  tabSubjenis,
   rencanaKonversi,
 } from './PanelJenisKlausul'
 
@@ -153,25 +155,71 @@ describe('tampilan desimal berpemisah ribuan (keputusan work owner 30-09-2026)',
 
 // ReinsType Treaty Limit ikut XML: `pxAutoComplete` di grid induk
 // (`GridTreatyArrangementTreatyLimit.xml` b3025, RD induk) dan anak
-// (`GridTreatyArrTreatyLimitList.xml` b2892, porsi + induknya
-// [keputusan work owner 30-09-2026]). Jenis lain tidak berubah.
+// (`GridTreatyArrTreatyLimitList.xml` b2892, jenis porsi, tanpa induk
+// [keputusan work owner 30-09-2026]). Anak SETIAP jenis memakai pilihan yang
+// sama [keputusan work owner 02-10-2026]; induk jenis lain tetap dropdown.
 describe('pemilih ReinsType per aturan', () => {
   it('Treaty Limit induk: dapat difilter, daftar induk', () => {
     expect(pemilihReinsType(aturan({ jenis: 'TreatyLimit' }))).toBe('saring-induk')
   })
-  it('anak Treaty Limit: dapat difilter, daftar porsi + induknya - dari penanda ATURAN', () => {
+  it('anak Treaty Limit: dapat difilter, daftar porsi - dari penanda ATURAN', () => {
     expect(pemilihReinsType(aturan({ jenis: 'TreatyLimitChild', anak: true, pilihanReins: 'anak-treaty-limit' }))).toBe('saring-anak')
     // Penandanya yang menentukan, bukan nama jenis.
     expect(pemilihReinsType(aturan({ jenis: 'TreatyLimitChild', anak: true }))).toBe('dropdown')
   })
-  it('jenis lain tetap dropdown daftar induk', () => {
-    for (const jenis of ['EPI', 'EpiList', 'PLA', 'CashLossLimit', 'Ricomm']) {
+  it('induk jenis lain tetap dropdown daftar induk', () => {
+    for (const jenis of ['EPI', 'PLA', 'CashLossLimit', 'FacIn', 'ExGratia', 'ClaimCoorp', 'Ricomm']) {
       expect(pemilihReinsType(aturan({ jenis })), jenis).toBe('dropdown')
     }
   })
-  it('form anak menerima induknya', () => {
-    expect(KODE).toContain('induk={induk}')
-    expect(KODE).toContain("anakTreatyLimitDari={pemilih === 'saring-anak' ? induk : undefined}")
+  it('anak SETIAP jenis = anak Treaty Limit: dapat difilter, jenis porsi saja', () => {
+    for (const jenis of ['PLAList', 'CashLossLimitList', 'FacInList', 'ExGratiaChildList', 'EpiList', 'ClaimCoorpChild']) {
+      expect(pemilihReinsType(aturan({ jenis, anak: true, pilihanReins: 'anak-treaty-limit' })), jenis).toBe('saring-anak')
+    }
+  })
+  it('pemilih anak tidak menerima induk - daftar porsi saja [keputusan work owner 02-10-2026]', () => {
+    expect(KODE).toContain("anak={pemilih === 'saring-anak'}")
+    expect(KODE).not.toContain('anakTreatyLimitDari')
   })
 })
 
+// Minimum LOL, Max Coins Panel, Minimum LOL MB: satu baris per tahun - `Add` hanya bila `ID == ''`
+// (`GridTreatyArrangementMinLOL.xml` b2232 …) [keputusan work owner 02-10-2026].
+describe('Add jenis satu baris', () => {
+  it('hilang begitu jenis berisi satu baris, dan selama daftar belum dimuat', () => {
+    const satu = aturan({ jenis: 'MinLOL', satuBaris: true })
+    expect(addTampil(satu, true, 0)).toBe(true)
+    expect(addTampil(satu, true, 1)).toBe(false)
+    expect(addTampil(satu, false, 0)).toBe(false)
+  })
+  it('jenis lain tidak dibatasi', () => {
+    expect(addTampil(aturan({ jenis: 'EPI' }), true, 3)).toBe(true)
+  })
+  it('tombol Add dirender lewat penjaga itu', () => {
+    expect(KODE).toContain('{addTampil(aturan, daftar !== null, baris.length) && (')
+  })
+})
+
+// 10013 Exclusion Treaty [keputusan work owner 02-10-2026]: subjenis sebagai tab; ID Occupation /
+// ID Clause satu dropdown yang dapat difilter, tanpa kotak Search terpisah.
+describe('10013 Exclusion Treaty', () => {
+  const exclusion: JenisKlausul = {
+    id: '10013', descName: 'UJI EXCLUSION', isXol: '0', statusAktif: '', catatan: '',
+    aturan: ['Occupation', 'Clause', 'Object', 'Periode'].map((subjenis) => aturan({ jenis: 'ExclutionTreaty', subjenis })),
+  }
+  it('subjenis tampil sebagai tab, urut aturan', () => {
+    expect(tabSubjenis(exclusion)).toEqual(['Occupation', 'Clause', 'Object', 'Periode'])
+  })
+  it('jenis berinduk satu tanpa tab', () => {
+    const epi: JenisKlausul = { ...exclusion, id: '10009', aturan: [aturan({}), aturan({ jenis: 'EpiList', anak: true })] }
+    expect(tabSubjenis(epi)).toEqual([])
+  })
+  it('hanya grid tab aktif yang dirender, lewat StripTab inti', () => {
+    expect(KODE).toContain('<StripTab tab={tab} aktif={tabAktif} onPilih={setTabAktif} />')
+    expect(KODE).toContain(".filter((a) => tab.length === 0 || a.subjenis === tabAktif)")
+  })
+  it('ID Occupation / ID Clause: PilihMasterKlausul, nol kotak Search', () => {
+    expect(KODE).toContain('<PilihMasterKlausul')
+    expect(KODE).not.toMatch(/cariPilihan\b|setCari|KLAUSUL_TCO\.cariPilihan/)
+  })
+})

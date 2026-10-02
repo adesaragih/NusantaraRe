@@ -16,26 +16,28 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/modul/masterproductnamelife/backend/models"
+	"nusantarare/modul/masterproductnamelife/backend/repository"
 	"nusantarare/modul/masterproductnamelife/backend/services"
 	"nusantarare/modul/masterproductnamelife/backend/tiruan"
 )
 
-const jsonAsal = `{"ID":"100007","PRODUCTNAME":"UJI ASAL","TYPE":"1","GRUP":"2","PRODUCTCODE":"UJI-KODE",` +
-	`"CREATEOP":"UJI-ASAL","IsORS":true,` +
+// jsonAsal - produk asal `Copy` (bentuk JSON lama, dipindah ke flat lewat `IsiJSON`). Sejak tabel flat (02-10-2026)
+// tanpa medan layar mati (`TYPE`, `GRUP`, `PRODUCTCODE`): tidak berkolom, 0 terisi di DEV.
+const jsonAsal = `{"ID":"100007","PRODUCTNAME":"UJI ASAL","CREATEOP":"UJI-ASAL","IsORS":true,` +
 	`"CommentList":[{"Date":"20260101T000000.000 GMT","OperatorName":"UJI-ASAL","IsApproved":"","Suggest":"UJI KOMENTAR ASAL"}],` +
 	`"OutwardList":[{"REINSTYPEID":"10200","REINSTYPENAME":"UJI OR","TRANSACTIONYEAR":"2025","TREATYCONTRACTID":"","UNDERWRITINGYEAR":"2025","OVR_COMM":""}]}`
 
-const jsonAsalInward = `{"ID":"100007","PRODUCTID":"100007","MONTHS":"UJI-BULAN","LIENCLAUSE":"UJI-LIEN"}`
+const jsonAsalInward = `{"ID":"100007","PRODUCTID":"100007","EXPIRYAGE":"75"}`
 
 func layananSalin() (*services.Layanan, *tiruan.Gudang) {
 	l, g := layananMaster()
-	g.Umum["100007"] = jsonAsal
-	g.Inward["100007"] = jsonAsalInward
+	g.IsiJSON("100007", jsonAsal, jsonAsalInward)
 	return l, g
 }
 
 func TestCopyProdukBaruMewarisiMedanServerPembuatPelaku(t *testing.T) {
 	l, g := layananSalin()
+	asal := g.Produk["100007"]
 	m := produkMasuk()
 	m.SalinanDari = "100007"
 	m.Umum.IsORS = true
@@ -49,9 +51,9 @@ func TestCopyProdukBaruMewarisiMedanServerPembuatPelaku(t *testing.T) {
 	if p.Umum.CreateOp != "UJI-PELAKU" {
 		t.Errorf("CREATEOP salinan = pelaku (OQ-MPNL-13): %q", p.Umum.CreateOp)
 	}
-	if p.Umum.TypeBasicRider != "1" || p.Umum.Grup != "2" || p.Umum.ProductCode != "UJI-KODE" ||
-		p.Inward.Months != "UJI-BULAN" || p.Inward.LienClause != "UJI-LIEN" {
-		t.Errorf("medan mati ikut tersalin seperti halaman Pega: %+v %+v", p.Umum, p.Inward)
+	if p.Umum.TypeBasicRider != "" || p.Umum.Grup != "" || p.Umum.ProductCode != "" || p.Inward.Months != "" ||
+		p.Inward.LienClause != "" {
+		t.Errorf("medan mati tanpa kolom flat: kosong, tidak dari klien (02-10-2026): %+v %+v", p.Umum, p.Inward)
 	}
 	if len(p.CommentList) != 2 || p.CommentList[0].Suggest != "UJI KOMENTAR ASAL" {
 		t.Errorf("riwayat komentar asal + satu baris simpan: %+v", p.CommentList)
@@ -62,10 +64,10 @@ func TestCopyProdukBaruMewarisiMedanServerPembuatPelaku(t *testing.T) {
 	if g.MintaOR != [2]string{} {
 		t.Errorf("salinan tanpa perubahan checkbox tidak membaca kontrak: %v", g.MintaOR)
 	}
-	if g.Umum["100007"] != jsonAsal {
-		t.Error("produk asal tidak tersentuh")
+	if beda := repository.BedaProduk(asal, g.Produk["100007"]); len(beda) != 0 {
+		t.Errorf("produk asal tidak tersentuh: %+v", beda)
 	}
-	if strings.Contains(g.Umum["100044"], "salinanDari") || strings.Contains(g.Umum["100044"], "hitungOutward") {
+	if s := g.Produk["100044"]; s.SalinanDari != "" || s.HitungOutward {
 		t.Error("penanda permintaan tidak pernah disimpan")
 	}
 }
@@ -133,8 +135,8 @@ func TestOnRetentionDiubahMenggantiOutwardList(t *testing.T) {
 		p.OutwardList[0].TreatyContractID != "" || p.OutwardList[0].OvrComm != "" {
 		t.Errorf("OutwardList dari BrowseReinstypeOR_SQL (`GetReinsTypeOR_Life` 4.1 b770): %+v", p.OutwardList)
 	}
-	if !strings.Contains(g.Umum["100007"], `"OutwardList":[{"OVR_COMM":"","REINSTYPEID":"10200"`) {
-		t.Errorf("kunci Pega + OVR_COMM di JSON: %s", g.Umum["100007"])
+	if s := g.Produk["100007"].OutwardList; len(s) != 1 || s[0].ReinsTypeID != "10200" || s[0].OvrComm != "" {
+		t.Errorf("baris M_PRODUCTNAME_LIFE_OUTWARD tersimpan, OVR_COMM kosong: %+v", s)
 	}
 	// Tanggal kosong: TO_DATE NULL - nol baris.
 	isi.Inward.Mature = ""

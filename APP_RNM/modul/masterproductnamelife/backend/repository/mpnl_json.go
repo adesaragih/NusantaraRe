@@ -1,14 +1,15 @@
 package repository
 
-// Kodek `JSONDATA` - pemetaan SATU-SATUNYA antara struct bernama (models) dan
-// kunci JSON Pega. Bukti setiap kunci: `docs/PARITAS-LAYAR-DAN-AKSI.md` §3–§5.
+// Kodek `JSONDATA` - PEMBACA kunci JSON Pega kedua tabel warisan menjadi struct bernama (models). Bukti setiap
+// kunci: `docs/PARITAS-LAYAR-DAN-AKSI.md` §3–§5.
 //
-// ⛔ Kunci peka huruf besar-kecil, ejaan Pega dipertahankan (`POLICYHODER`,
-// `Non_Employee`, `UnderwritingLimitList`) - ketiga view membacanya persis.
+// ⭐ Sejak 02-10-2026 (K5, tiket 01 bab bertanggal) produk disimpan di tabel FLAT; kodek ini tinggal untuk ALAT PINDAH
+// (`mpnl_pindah.go`, sumbernya kedua tabel JSON) dan `HalamanPega` (bentuk halaman Pega untuk `Generate`). Penulis
+// JSON (`RakitUmum`/`RakitInward`) dibuang - tidak ada lagi yang menulis `JSONDATA`.
+// ⛔ Kunci peka huruf besar-kecil, ejaan Pega (`POLICYHODER`, `Non_Employee`, `UnderwritingLimitList`).
 // ⛔ Nilai skalar Pega adalah TEKS. Pembaca menerima teks, angka JSON, boolean,
 // dan null (data lama); angka tidak pernah melewati float (`json.Number`).
-// ⛔ Kunci yang tidak dikelola layar DIPERTAHANKAN: di tingkat halaman lewat
-// JSON lama yang dibaca ulang saat menulis, di tingkat baris lewat `Asli`.
+// ⛔ Kunci baris yang tidak dikelola layar terbaca ke `Asli` - alat pindah mencacahnya (dibuang, D2).
 
 import (
 	"bytes"
@@ -379,23 +380,7 @@ func UraiProduk(id, jsonUmum, idInward, jsonInward string) (models.Produk, error
 	return p, nil
 }
 
-// RingkasanDari - satu baris grid daftar (`BrowseProduct_Life`) dari JSON umum.
-func RingkasanDari(id, jsonUmum string) (models.RingkasanProduk, error) {
-	obj, err := uraiObjek(jsonUmum)
-	if err != nil {
-		return models.RingkasanProduk{}, fmt.Errorf("%w: %s %s: %v", ErrJSONRusak, TabelProduk, id, err)
-	}
-	return models.RingkasanProduk{
-		ID:           id,
-		Ceding:       teksDari(obj["CEDING"]),
-		TreatyNumber: teksDari(obj["TREATYNUMBER"]),
-		InwardName:   teksDari(obj["INWARDNAME"]),
-		CreateOp:     teksDari(obj["CREATEOP"]),
-		UpdateOp:     teksDari(obj["UPDATEOP"]),
-	}, nil
-}
-
-// --- menulis (bersama) ------------------------------------------------------
+// --- bentuk halaman Pega (HalamanPega, Generate) dan Asli baris ------------------------
 
 // rakitObjek menulis objek JSON berkunci urut tanpa meloloskan `<`, `>`, `&`
 // (Pega menulis teks apa adanya).
@@ -434,9 +419,6 @@ func jsonTanpaLolos(v any) ([]byte, error) {
 	return bytes.TrimRight(buf.Bytes(), "\n"), nil
 }
 
-// ErrBarisAsliRusak - medan `asli` baris yang dikirim klien bukan objek JSON (400).
-var ErrBarisAsliRusak = errors.New("repository: a list row carries unreadable original data (asli)")
-
 // teksJSON - nilai skalar Pega selalu TEKS.
 func teksJSON(v string) json.RawMessage {
 	b, _ := jsonTanpaLolos(v)
@@ -451,109 +433,6 @@ func tulisMedan[T any](obj map[string]json.RawMessage, medan []medanTeks[T], dar
 		}
 		obj[m.kunci] = teksJSON(v)
 	}
-}
-
-// rakitBaris - satu larik; tiap baris = kunci aslinya (`Asli`) + kunci dikelola.
-func rakitBaris[T any](daftar []T, k kodekBaris[T]) (json.RawMessage, error) {
-	var b strings.Builder
-	b.WriteByte('[')
-	for i := range daftar {
-		baris := daftar[i]
-		obj, err := uraiObjek(*k.asli(&baris))
-		if err != nil {
-			return nil, fmt.Errorf("%w: row %d: %v", ErrBarisAsliRusak, i+1, err)
-		}
-		tulisMedan(obj, k.medan, &baris)
-		teks, err := rakitObjek(obj)
-		if err != nil {
-			return nil, err
-		}
-		if i > 0 {
-			b.WriteByte(',')
-		}
-		b.WriteString(teks)
-	}
-	b.WriteByte(']')
-	return json.RawMessage(b.String()), nil
-}
-
-// bendera - TrueFalse Pega; tipe nilai lama dipertahankan (boolean JSON tetap
-// boolean), selain itu teks `"true"`/`"false"`.
-func bendera(lama json.RawMessage, v bool) json.RawMessage {
-	teks := "false"
-	if v {
-		teks = "true"
-	}
-	if t := strings.TrimSpace(string(lama)); t == "true" || t == "false" {
-		return json.RawMessage(teks)
-	}
-	return teksJSON(teks)
-}
-
-// RakitUmum menulis `M_PRODUCT_LIFE.JSONDATA` - padanan `@GetPageJSONString()`
-// halaman `ProductName` (`SaveProductName_Act` 8 b1625). `lama` = JSON
-// tersimpan (kosong untuk produk baru): kunci yang tidak dikelola layar
-// dipertahankan; setiap kunci yang dibaca view `PRODUCT_LIFE` dijamin ada.
-//
-// `IsView`: produk baru tidak membawanya (`NewProductLife` tidak mengisinya);
-// simpan sesudah `Edit` menulisnya `false` (`SetViewEdit` b151).
-func RakitUmum(p models.Produk, lama string, baru bool) (string, error) {
-	obj, err := uraiObjek(lama)
-	if err != nil {
-		return "", fmt.Errorf("%w: %s %s: %v", ErrJSONRusak, TabelProduk, p.ID, err)
-	}
-	obj[kunciID] = teksJSON(p.ID)
-	tulisMedan(obj, medanUmum, &p.Umum)
-	obj[kunciIsORS] = bendera(obj[kunciIsORS], p.Umum.IsORS)
-	if !baru {
-		obj[kunciIsView] = bendera(obj[kunciIsView], false)
-	}
-	larik := []struct {
-		kunci string
-		rakit func() (json.RawMessage, error)
-	}{
-		{kunciLien, func() (json.RawMessage, error) { return rakitBaris(p.LienClause, kodekLien) }},
-		{kunciDokumen, func() (json.RawMessage, error) { return rakitBaris(p.DocumentClaim, kodekDokumen) }},
-		{kunciPlan, func() (json.RawMessage, error) { return rakitBaris(p.PlanList, kodekPlan) }},
-		{kunciFinUW, func() (json.RawMessage, error) { return rakitBaris(p.FinancialUnderwriting, kodekFinUW) }},
-		{kunciUWLimit, func() (json.RawMessage, error) { return rakitBaris(p.UnderwritingLimit, kodekUWLimit) }},
-		{kunciOutward, func() (json.RawMessage, error) { return rakitBaris(p.OutwardList, kodekOutward) }},
-		{kunciKomentar, func() (json.RawMessage, error) { return rakitBaris(p.CommentList, kodekKomentar) }},
-	}
-	for _, l := range larik {
-		raw, err := l.rakit()
-		if err != nil {
-			return "", err
-		}
-		obj[l.kunci] = raw
-	}
-	for _, k := range KunciViewProduk {
-		if _, ada := obj[k]; !ada {
-			obj[k] = teksJSON("")
-		}
-	}
-	return rakitObjek(obj)
-}
-
-// RakitInward menulis `M_PRODUCTINWARD_LIFE.JSONDATA` - padanan
-// `@GetPageJSONString()` halaman `ProductNameInward` (`SaveProductName_Act` 14
-// b2719). `lama` = JSON tersimpan (kosong untuk baris baru): kunci yang tidak
-// dikelola layar dipertahankan; setiap kunci yang dibaca view
-// `PRODUCTINWARD_LIFE` dijamin ada.
-func RakitInward(p models.Produk, lama string) (string, error) {
-	obj, err := uraiObjek(lama)
-	if err != nil {
-		return "", fmt.Errorf("%w: %s %s: %v", ErrJSONRusak, TabelInward, p.Inward.ID, err)
-	}
-	obj[kunciID] = teksJSON(p.Inward.ID)
-	obj[kunciProductID] = teksJSON(p.Inward.ProductID)
-	tulisMedan(obj, medanInward, &p.Inward)
-	for _, k := range KunciViewInward {
-		if _, ada := obj[k]; !ada {
-			obj[k] = teksJSON("")
-		}
-	}
-	return rakitObjek(obj)
 }
 
 // HalamanPega - medan skalar halaman `ProductName` dan `ProductNameInward`

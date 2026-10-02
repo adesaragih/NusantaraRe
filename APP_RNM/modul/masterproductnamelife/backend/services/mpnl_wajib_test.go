@@ -25,14 +25,14 @@ func TestWajibIsiEmpatPesanVerbatimSekaligus(t *testing.T) {
 	if got := services.Pesan(err); got != "Product Name Empty; Ceding Empty; Policy Holder Empty; SOB Empty" {
 		t.Errorf("urutan langkah 2-5, VERBATIM, semua sekaligus: %q", got)
 	}
-	if g.Komit != 0 || len(g.Umum) != 0 {
+	if g.Komit != 0 || len(g.Produk) != 0 {
 		t.Error("nol tulisan")
 	}
 }
 
 func TestWajibIsiBerlakuJugaSaatUbah(t *testing.T) {
 	l, g := layananMaster()
-	g.Umum["100007"] = `{"ID":"100007","PRODUCTNAME":"LAMA","CEDING":"UJI CEDING","CEDINGID":"L0UJI"}`
+	g.IsiJSON("100007", `{"ID":"100007","PRODUCTNAME":"LAMA","CEDING":"UJI CEDING","CEDINGID":"L0UJI"}`, "")
 	m := produkMasuk()
 	m.ID = "100007"
 	m.Umum.ProductName = ""
