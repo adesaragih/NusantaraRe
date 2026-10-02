@@ -158,6 +158,22 @@
   min-width: 0;
   overflow-x: auto;
 }
+/* Pembungkus gulir grid `mpnl-tabel` (layar memakainya sejak b53a9f9b; aturannya hilang di penggabungan
+   beeb6750): tabel yang lebih lebar dari panel menggulir di sini. Hanya tata letak - rupa tabel tetap dari
+   `.mpnl .inbox__tabel` di bawah. Grid di dalam popup (Rate List, lampiran) dibatasi tingginya. */
+.mpnl .mpnl-tabel {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+.mpnl .mpnl-tabel > .inbox__tabel {
+  width: 100%;
+}
+.mpnl .modal .mpnl-tabel {
+  max-height: 50vh;
+  overflow: auto;
+}
 .mpnl {
   --mt-latar: #eef1f6;
   --mt-latar-tepi: #cfd7e5;
