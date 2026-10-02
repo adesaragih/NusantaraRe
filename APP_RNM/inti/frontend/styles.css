@@ -350,13 +350,13 @@ table {
 }
 /* Tabel di DALAM kartu: kartunya yang bertepi. Tepi kedua di dalamnya
    terbaca sebagai bingkai ganda. */
-:where(.kartu, .panel, .polis, .modal) :where(table) {
+:where(.kartu, .panel, .modal) :where(table) {
   border: 0;
   border-radius: 0;
   /* Latar putih bersudut siku menutupi sudut kartu yang membulat. */
   background: transparent;
 }
-:where(.kartu, .panel, .polis, .modal) :where(th) {
+:where(.kartu, .panel, .modal) :where(th) {
   border-top: 1px solid var(--border);
   border-radius: 0;
 }
@@ -4028,18 +4028,6 @@ textarea.field__input {
   color: var(--navy);
 }
 
-/* Baris yang sedang dibuka. Memakai token yang SUDAH ada (--alt-row untuk
-   latar, --navy untuk penanda tepi): nol hex baru, §8.8.
-
-   Penanda tepi kiri dipilih, bukan latar pekat: latar pekat akan melawan
-   zebra baris dan menurunkan kontras teksnya, sementara tepi berdiri di
-   luar sel sehingga rasio teks tidak berubah sama sekali. */
-.belah__baris--aktif > td {
-  background: var(--alt-row);
-}
-.belah__baris--aktif > td:first-child {
-  box-shadow: inset 3px 0 0 0 var(--navy);
-}
 
 /* Layar sempit: dua kolom kurus lebih buruk daripada dua kolom bertumpuk.
    Ambang 1100px MENGIKUTI `.xol` (:2648) — bukan angka baru. */
@@ -4314,101 +4302,7 @@ textarea.field__input {
 .inbox__judul {
   margin: 0 auto 0 0;
 }
-/* Kalimat penjelas di bawah judul, seperti `.page-head p` template. */
-.inbox__aturan {
-  flex-basis: 100%;
-  order: 1;
-  margin: -6px 0 0;
-  color: var(--text-2);
-}
 
-.inbox__register {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  height: 44px;
-  padding: 0 18px;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: var(--primary);
-  color: #fff;
-  font: inherit;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.15s;
-}
-.inbox__register:hover {
-  background: var(--primary-hover);
-}
-
-.inbox__register:focus-visible {
-  outline: none;
-  box-shadow: var(--ring);
-}
-
-.inbox__tab {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  border-bottom: 1px solid var(--border);
-}
-
-.inbox__tab-butir {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 44px;
-  margin-bottom: -1px;
-  padding: 0 16px;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-  background: transparent;
-  color: var(--text-2);
-  font: inherit;
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    color 0.15s,
-    background-color 0.15s;
-}
-.inbox__tab-butir:hover {
-  background: var(--surface-2);
-  color: var(--text);
-}
-
-.inbox__tab-butir--aktif {
-  border-bottom-color: var(--primary);
-  color: var(--primary-text);
-  font-weight: 600;
-}
-
-/* Terjemahan berdiri DI SAMPING judul VERBATIM, tidak menggantikannya. */
-.inbox__tab-id {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-3);
-}
-
-.inbox__lencana {
-  /* `.badge` template. */
-  display: inline-grid;
-  place-items: center;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 7px;
-  border-radius: 999px;
-  background: var(--primary-soft);
-  color: var(--primary-text);
-  font-size: 12px;
-  font-weight: 700;
-}
-.inbox__tab-butir--aktif .inbox__lencana {
-  background: var(--primary);
-  color: #fff;
-}
 
 .inbox__tabel {
   /* Rupa tabelnya dari dasar `:where(table)` — kartu bertepi, kepala abu. */
@@ -4423,99 +4317,17 @@ textarea.field__input {
 }
 
 
-
 .inbox__baris {
   cursor: pointer;
 }
 
-/* Baris RINCI di bawah satu baris tabel (panel yang dibuka dari barisnya):
-   isinya panel berkalimat, jadi `nowrap` sel tabel TIDAK diwarisi, dan
-   baris ini tidak menyala saat kursor lewat seperti baris data. */
-.inbox__tabel tr.inbox__rinci > td {
-  white-space: normal;
-}
-.inbox__rinci:hover {
-  background: transparent;
-}
 
 .inbox__baris:hover {
   background: var(--surface-2);
 }
 
-.inbox__halaman {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 16px;
-  font-size: 14px;
-  color: var(--text-2);
-}
 
-.inbox__halaman button {
-  height: 36px;
-  padding: 0 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.inbox__halaman button:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-/* ============================================== PANEL DATA POLIS (Register) */
-.polis {
-  margin: 16px 0;
-  padding: 20px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
-}
-
-.polis__judul {
-  margin: 0 0 14px;
-  font-size: 17px;
-}
-
-.polis__daftar {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 0 24px;
-  margin: 0;
-}
-
-.polis__medan {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border);
-  font-size: 14px;
-}
-
-.polis__medan dt {
-  color: var(--muted);
-}
-
-.polis__medan dd {
-  margin: 0;
-  font-weight: 600;
-}
-
-/* Medan yang belum bersumber terlihat BERBEDA — supaya tidak ada yang
-   mengira nilainya memang kosong di sistem polis. */
-.polis__medan--belum dd {
-  color: var(--muted);
-  font-weight: 400;
-  font-style: italic;
-}
-
+/* Catatan peringatan berbingkai, dipakai lebih dari satu layar. */
 .polis__catatan {
   margin: 12px 0 0;
   padding: 12px 16px;
@@ -4528,73 +4340,6 @@ textarea.field__input {
   line-height: 1.5;
 }
 
-/* ====================================================== OUTSTANDING CLAIM */
-.os__kepala {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px 16px;
-  margin-bottom: 16px;
-}
-
-.os__judul {
-  margin: 0;
-}
-
-.os__detail {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  height: 44px;
-  padding: 0 18px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.os__aksi {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 16px;
-}
-
-.os__tombol {
-  display: inline-flex;
-  align-items: center;
-  height: 44px;
-  padding: 0 18px;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: var(--primary);
-  color: #fff;
-  font: inherit;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.15s;
-}
-.os__tombol:hover:not(:disabled) {
-  background: var(--primary-hover);
-}
-.os__detail:hover {
-  background: var(--surface-2);
-}
-
-.os__tombol:disabled {
-  opacity: 0.55;
-  cursor: default;
-}
-
-.os__tombol:focus-visible {
-  outline: none;
-  box-shadow: var(--ring);
-}
 
 /* ======================================================================
    KERANGKA — sidebar, topbar, menu profil, palet Ctrl+K, Beranda.
@@ -5257,10 +5002,7 @@ textarea.field__input {
 
 /* Tombol layar modul yang berkelas tetapi belum punya gaya: rupa `.btn`
    template. Kelasnya tetap milik halamannya. */
-.inbox__ekspor,
-.pl-detail__terbitkan,
-.pl-summary__submit,
-.unggah-csv__simpan {
+.inbox__ekspor {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -5280,21 +5022,7 @@ textarea.field__input {
 .inbox__ekspor:hover:not(:disabled) {
   background: var(--surface-2);
 }
-/* Tiga yang MENJALANKAN keputusan (Generate PL Number, Submit, Simpan
-   permanen) = `.btn-primary` template. */
-.pl-detail__terbitkan,
-.pl-summary__submit,
-.unggah-csv__simpan {
-  border-color: transparent;
-  background: var(--primary);
-  color: #fff;
-}
-.pl-detail__terbitkan:hover:not(:disabled),
-.pl-summary__submit:hover:not(:disabled),
-.unggah-csv__simpan:hover:not(:disabled) {
-  background: var(--primary-hover);
-}
-:is(.inbox__ekspor, .pl-detail__terbitkan, .pl-summary__submit, .unggah-csv__simpan):disabled {
+.inbox__ekspor:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }

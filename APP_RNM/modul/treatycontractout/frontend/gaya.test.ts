@@ -82,6 +82,16 @@ describe('isolasi CSS modul Treaty Contract Out', () => {
     }
   })
 
+  it('kelas baris dibuka dan baris rinci tidak lagi menumpang di inti (02-10-2026)', () => {
+    const inti = readFileSync(join(AKAR, '..', '..', '..', 'inti', 'frontend', 'styles.css'), 'utf8')
+    const pemilihInti = pemilihCSS(inti)
+    for (const k of ['inbox__rinci', 'belah__baris--aktif', 'tco-baris--aktif']) {
+      expect(pemilihInti.filter((p) => new RegExp(`\\.${k}(?![\\w-])`).test(p))).toEqual([])
+    }
+    expect(pemilihCSS(CSS)).toContain('.tco .tco-baris--aktif > td')
+    expect(pemilihCSS(CSS)).toContain('.tco .inbox__tabel tr.inbox__rinci > td')
+  })
+
   it('setiap tabel modul berada di pembungkus gulir tco-tabel', () => {
     for (const f of berkas().filter((x) => x.endsWith('.tsx'))) {
       const kode = readFileSync(f, 'utf8')

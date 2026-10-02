@@ -110,7 +110,8 @@ describe('Business List / Reinsurer List — satu panel rinci (keputusan work ow
     // `.inbox__tabel td { white-space: nowrap }` diwarisi isi sel: tanpa aturan
     // ini seluruh kalimat panel Business/Reinsurer/Security (dan popup hapus di
     // dalamnya) tidak membungkus.
-    const css = readFileSync(join(AKAR_APLIKASI, 'inti', 'frontend', 'styles.css'), 'utf8')
-    expect(css).toMatch(/\.inbox__tabel tr\.inbox__rinci > td \{\s*white-space: normal;/)
+    // Sejak 02-10-2026 aturannya milik modul (`tco.css`, berawalan `.tco`), tidak lagi menumpang di inti.
+    const css = readFileSync(join(AKAR_APLIKASI, 'modul', 'treatycontractout', 'frontend', 'tco.css'), 'utf8')
+    expect(css).toMatch(/\.tco \.inbox__tabel tr\.inbox__rinci > td \{\s*white-space: normal;/)
   })
 })

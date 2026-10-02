@@ -7,13 +7,15 @@ import type { PropsRute, RuteModul } from '../../../inti/frontend/modul'
 import type { HalamanKomite } from './menu'
 import InboxKomite from './pages/InboxKomite'
 import KasusKomite from './pages/KasusKomite'
+import './komiteclaimlife.css'
 
 export function RuteKomite({ halaman, masuk }: PropsRute<HalamanKomite>) {
   // Kasus komite yang sedang dibuka dari Inbox Komite; kosong = daftar.
   const [kasusKomite, setKasusKomite] = useState('')
 
   return (
-    <>
+    // Akar gaya modul: semua aturan `komiteclaimlife.css` diawali `.komiteclaimlife` (`display: contents`).
+    <div className="komiteclaimlife">
       {/* Komite Claim Life tiket 01 — Inbox Komite, lalu satu kasus dari baris. */}
       {halaman === 'komite' && kasusKomite === '' && <InboxKomite onBuka={setKasusKomite} peran={masuk.peran} />}
       {halaman === 'komite' && kasusKomite !== '' && (
@@ -25,7 +27,7 @@ export function RuteKomite({ halaman, masuk }: PropsRute<HalamanKomite>) {
           }}
         />
       )}
-    </>
+    </div>
   )
 }
 
