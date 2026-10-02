@@ -285,3 +285,14 @@ ulang di **transaksi yang sama** dengan induk. Kolom dan tipe persisnya: `STRUKT
 - [ ] Nilai yang tidak muat kolomnya (teks melebihi lebar, angka > 8 desimal atau > 30 digit bulat, bilangan `NUMBER(5)` tidak bulat)
       ditolak services **berkalimat** sebelum SQL tulis — tidak pernah dipotong atau dibulatkan Oracle diam-diam.
 
+### Pelaksanaan 02-10-2026
+
+| Paket | Commit | Isi |
+| ---: | --- | --- |
+| 1 | `95ccb0c` | baca ulang XML + bab ini, spec, OQ, RALAT, dba-view |
+| 2 | `873ebee` | DDL 140–147 + penjaga rentang + STRUKTUR + kaskade `MODUL.md` |
+| 3 | `bf9c4e0` | pemetaan flat, alat `pindahflat` (`-uji`/`-jalankan`), rekonsiliasi |
+| 4 | `353f9e80` *(sebagian terbawa commit kerja bersama `1e22ecd8`, `8914ad7e`)* | gudang, services, tiruan, uji ke tabel flat |
+| 5 | — | **dibatalkan** (K7: view tidak dibangun ulang) |
+| 6 | commit dokumen ini | `PANDUAN-PINDAH-FLAT.md`, `LAPORAN-MIGRASI-FLAT.md` (uji kering DEV: 0 gagal, menunggu OQ-FLAT-07) |
+
