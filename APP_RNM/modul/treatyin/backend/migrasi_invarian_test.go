@@ -87,6 +87,9 @@ func TestSetiapTabelBerkunciUtama(t *testing.T) {
 		"PERIODE_AKUMULASI", "TERMIN", "SKALA_KOASURANSI", "BATAS_PER_BAHAYA",
 		"DOKUMEN_KONTRAK", "LAYER", "NILAI_MDP", "NILAI_MDP_MINIMUM", "PEMULIHAN_LIMIT",
 		"JEJAK_PERUBAHAN",
+		// tiket 33, 34, 37
+		"BAGIAN", "NILAI_PREMI_BRUTO", "NILAI_PREMI_BRUTO_MINIMUM",
+		"DETAIL_PROPORSIONAL", "NILAI_CADANGAN_PREMI", "POTONGAN",
 	}
 	for _, n := range tabel {
 		if !strings.Contains(sql, "CREATE TABLE {skema}."+n+" (") {
@@ -114,6 +117,8 @@ func TestSequenceAdaDanTanpaCycle(t *testing.T) {
 		"SEQ_TRIN_TERMIN", "SEQ_TRIN_SKALA_KOASURANSI", "SEQ_TRIN_BATAS_PER_BAHAYA",
 		"SEQ_TRIN_DOKUMEN_KONTRAK", "SEQ_TRIN_LAYER", "SEQ_TRIN_NILAI_MDP",
 		"SEQ_TRIN_NILAI_MDP_MINIMUM", "SEQ_TRIN_PEMULIHAN_LIMIT", "SEQ_TRIN_JEJAK_PERUBAHAN",
+		"SEQ_TRIN_BAGIAN", "SEQ_TRIN_NILAI_PREMI_BRUTO", "SEQ_TRIN_NILAI_PB_MINIMUM",
+		"SEQ_TRIN_DETAIL_PROPORSIONAL", "SEQ_TRIN_NILAI_CADANGAN_PREMI", "SEQ_TRIN_POTONGAN",
 	}
 	for _, n := range seq {
 		awal := "CREATE SEQUENCE {skema}." + n + " "
@@ -159,51 +164,46 @@ func TestKodeUnikDiKeenamTabelAcuan(t *testing.T) {
 
 // INV-62 dan ADR-0038: nol CHECK berisi DAFTAR NILAI - bukan nol CHECK.
 //
-// ⛔ Uji ini pernah melarang SETIAP `CHECK (`, dan itu terlalu luas.
+// ⛔ Uji ini pernah melarang SETIAP "CHECK (", dan itu terlalu luas.
 // `ddl-usulan/` sendiri memuat dua CHECK - `CK_POTONGAN_INDUK` dan
-// `CK_PENYEBARAN_INDUK` (tiket 38) - dan keduanya SAH: ia menyatakan BENTUK
-// baris (induk polimorfik, tepat satu kolom induk terisi), bukan nilai apa
-// yang boleh masuk sebuah kolom.
+// `CK_PENYEBARAN_INDUK` (tiket 38) - dan keduanya SAH: keduanya menyatakan
+// BENTUK baris (induk polimorfik, tepat satu kolom induk terisi), bukan nilai
+// apa yang boleh masuk sebuah kolom.
 //
 // Yang dilarang adalah CHECK yang MENGENUMERASI nilai, sebab itulah bentuk
 // yang ADR-0038 buang: himpunan yang dapat bertambah disimpan sebagai DATA,
-// bukan sebagai nama kolom dan bukan sebagai CHECK. Sebuah bahaya kesembilan
-// tidak boleh menuntut perubahan skema.
+// bukan sebagai CHECK. Bahaya kesembilan tidak boleh menuntut perubahan skema.
 //
-// Larangan atas TRIGGER dan PROCEDURE ada terpisah, di
+// Larangan atas TRIGGER dan PROCEDURE berdiri terpisah, di
 // TestNolTriggerProcedureDanCommit - ADR-0056 melarang keduanya, bukan CHECK.
 func TestNolCheckDaftarNilai(t *testing.T) {
-	// CHECK yang SAH: namanya terdaftar di sini, satu per satu, beserta
-	// sebabnya. Yang tidak terdaftar ditolak - daftar putih yang tumbuh
-	// diam-diam bukan daftar putih.
+	// CHECK yang SAH disebut satu per satu beserta sebabnya. Yang tidak
+	// terdaftar ditolak: daftar putih yang tumbuh diam-diam bukan daftar putih.
 	sah := map[string]string{
-		"CK_POTONGAN_INDUK": "KTV-B - induk polimorfik, tepat satu dari ID_BAGIAN " +
-			"dan ID_DETAIL_PROPORSIONAL terisi; menyatakan BENTUK baris, bukan daftar nilai",
+		"CK_POTONGAN_INDUK": "KTV-B - induk polimorfik, tepat satu dari ID_BAGIAN dan " +
+			"ID_DETAIL_PROPORSIONAL terisi; menyatakan BENTUK baris, bukan daftar nilai",
 	}
-	pola := regexp.MustCompile(`(?is)CONSTRAINT\s+(\w+)\s+CHECK\s*\(`)
-	ditemukan := 0
+	bernama := regexp.MustCompile(`(?is)CONSTRAINT\s+(\w+)\s+CHECK\s*\(`)
+	semua := regexp.MustCompile(`(?is)CHECK\s*\(`)
 	for nama, isi := range majuSaja(t) {
 		bersih := tanpaKomentar(isi)
-		for _, m := range pola.FindAllStringSubmatch(bersih, -1) {
-			ditemukan++
+		cocok := bernama.FindAllStringSubmatch(bersih, -1)
+		for _, m := range cocok {
 			if sebab, ok := sah[m[1]]; ok {
 				t.Logf("%s: CHECK %s sah - %s", nama, m[1], sebab)
 				continue
 			}
-			t.Errorf("%s: CHECK %s tidak terdaftar sebagai CHECK yang sah.
-"+
-				"CHECK berisi DAFTAR NILAI dilarang ADR-0038; CHECK yang menyatakan BENTUK "+
-				"baris boleh, tetapi harus didaftar di uji ini beserta sebabnya.", nama, m[1])
+			t.Errorf("%s: CHECK %s tidak terdaftar sebagai CHECK yang sah. "+
+				"CHECK berisi DAFTAR NILAI dilarang ADR-0038; CHECK yang menyatakan "+
+				"BENTUK baris boleh, tetapi didaftar di uji ini beserta sebabnya.",
+				nama, m[1])
 		}
-		// CHECK tanpa nama tidak dapat diadili, dan tidak dapat dicabut
-		// dengan tepat kelak.
-		if regexp.MustCompile(`(?is)[^_\w]CHECK\s*\(`).MatchString(
-			regexp.MustCompile(`(?is)CONSTRAINT\s+\w+\s+CHECK\s*\(`).ReplaceAllString(bersih, "")) {
-			t.Errorf("%s memuat CHECK tanpa CONSTRAINT bernama; ia tidak dapat diadili", nama)
+		// CHECK tanpa CONSTRAINT bernama tidak dapat diadili di sini, dan
+		// tidak dapat dicabut dengan tepat kelak.
+		if n := len(semua.FindAllString(bersih, -1)); n != len(cocok) {
+			t.Errorf("%s memuat %d CHECK tetapi hanya %d yang bernama; "+
+				"CHECK tanpa nama tidak dapat diadili", nama, n, len(cocok))
 		}
-	}
-	if ditemukan == 0 {
-		t.Log("nol CHECK di migrasi modul ini")
 	}
 }
 
@@ -229,6 +229,9 @@ func TestNolKaskadeHapus(t *testing.T) {
 		"FK_SKALA_KOASURANSI_1", "FK_BATAS_PER_BAHAYA_1", "FK_BATAS_PER_BAHAYA_2",
 		"FK_DOKUMEN_KONTRAK_1", "FK_LAYER_1", "FK_NILAI_MDP_1", "FK_NILAI_MDP_MINIMUM_1",
 		"FK_PEMULIHAN_LIMIT_1", "FK_JEJAK_PERUBAHAN_1",
+		"FK_BAGIAN_1", "FK_NILAI_PREMI_BRUTO_1", "FK_NILAI_PREMI_BRUTO_MIN_1",
+		"FK_DETAIL_PROPORSIONAL_1", "FK_DETAIL_PROPORSIONAL_2", "FK_NILAI_CADANGAN_PREMI_1",
+		"FK_POTONGAN_1", "FK_POTONGAN_2", "FK_POTONGAN_3",
 	} {
 		if !strings.Contains(sql, "CONSTRAINT "+fk+" FOREIGN KEY") {
 			t.Errorf("kunci asing %s tidak ada", fk)
@@ -270,6 +273,12 @@ func TestKunciAlamiTabelAnak(t *testing.T) {
 		{"INV-14", "UQ_BATAS_PER_BAHAYA", "(ID_VERSI_KONTRAK, ID_BAHAYA)"},
 		{"INV-66", "UQ_PORTOFOLIO", "(ID_VERSI_KONTRAK, ARAH_PORTOFOLIO, JENIS_PORTOFOLIO)"},
 		{"INV-67", "UQ_DOKUMEN_KONTRAK", "(ID_VERSI_KONTRAK, ID_DOKUMEN)"},
+		{"INV-64", "UQ_BAGIAN", "(ID_LAYER)"},
+		{"INV-06", "UQ_DETAIL_PROPORSIONAL", "(ID_LAYER, ID_KELOMPOK_TREATY)"},
+		// INV-15 terpasang sebagai DUA UNIQUE, satu per pelekatan - bukan satu
+		// yang mencampur keduanya. Daftar periksa tiket 37 menuntutnya begitu.
+		{"INV-15", "UQ_POTONGAN", "(ID_BAGIAN, ID_JENIS_POTONGAN)"},
+		{"INV-15", "UQ_POTONGAN_2", "(ID_DETAIL_PROPORSIONAL, ID_JENIS_POTONGAN)"},
 	}
 	for _, m := range mau {
 		if !strings.Contains(sql, "CONSTRAINT "+m.constraint+" UNIQUE "+m.kolom) {
@@ -328,6 +337,8 @@ func TestSetiapKunciAsingTerlayaniIndex(t *testing.T) {
 		// kunci asing ke tabel acuan - tidak pernah memimpin kunci alami
 		"IX_MATA_UANG_KONTRAK_MU", "IX_RETENSI_CEDANT_KLP",
 		"IX_EGNPI_KELOMPOK", "IX_EGNPI_KELAS_BISNIS", "IX_BATAS_PER_BAHAYA_BHY",
+		"IX_DETAIL_PROP_KLP", "IX_POTONGAN_JENIS",
+		"IX_NILAI_PB_BAGIAN", "IX_NILAI_PB_MIN_BAGIAN", "IX_NILAI_CAD_PREMI_DP",
 	} {
 		if !strings.Contains(sql, "CREATE INDEX {skema}."+ix+" ") {
 			t.Errorf("index %s tidak ada; kunci asingnya tidak terlayani index mana pun", ix)
