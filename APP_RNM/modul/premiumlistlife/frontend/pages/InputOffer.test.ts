@@ -102,3 +102,11 @@ describe('judul halaman', () => {
     expect(judulKeputusan(TAHAP_POLIS.detail)).toBe('Input Premium Detail')
   })
 })
+
+describe('period di tahap Input Premium Detail (02-10-2026)', () => {
+  it('panel Decision tidak lagi memuat period; ia tampil di kepala Premium List Detail', () => {
+    const io = readFileSync(join(__dirname, 'InputOffer.tsx'), 'utf8')
+    expect(io).not.toContain('pl-keputusan__meta')
+    expect(io).toContain('{!diDetail && galatPeriode !== null')
+  })
+})

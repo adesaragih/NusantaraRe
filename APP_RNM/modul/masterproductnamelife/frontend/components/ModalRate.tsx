@@ -61,24 +61,26 @@ export default function ModalRate({ riRateId, onTutup }: { riRateId: string; onT
       {baris !== null && baris.length === 0 && <Kosong pesan={LAIN_MPNL.kosong} />}
       {terpotong && <p className="mpnl-catatan-medan">{LAIN_MPNL.terpotong}</p>}
       {baris !== null && baris.length > 0 && (
-        <table className="inbox__tabel">
-          <thead>
-            <tr>
-              {KOLOM.map(([k, l]) => (
-                <th key={k}>{l}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {baris.map((b, i) => (
-              <tr key={i} className="inbox__baris">
-                {KOLOM.map(([k]) => (
-                  <td key={k}>{b[k]}</td>
+        <div className="mpnl-tabel">
+          <table className="inbox__tabel">
+            <thead>
+              <tr>
+                {KOLOM.map(([k, l]) => (
+                  <th key={k}>{l}</th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {baris.map((b, i) => (
+                <tr key={i} className="inbox__baris">
+                  {KOLOM.map(([k]) => (
+                    <td key={k}>{b[k]}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </Modal>
   )

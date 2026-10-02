@@ -31,10 +31,12 @@ import {
   ambilKotakMasukPolis,
   buatKasusPolis,
   FLAG_POLIS,
+  kasusBisaDibuka,
   type BarisInboxPolis,
   type FlagPolis,
   type HalamanInboxPolis,
 } from '../api'
+import { tanggalTampil } from '../tanggal'
 
 /**
  * Kolom ekspor — TEPAT yang tampil, berurutan sama.
@@ -42,20 +44,20 @@ import {
  * ⚠️ Tanggal keluar apa adanya (`YYYY-MM-DD`), yang sudah terurut benar
  * sebagai teks — berbeda dengan kotak masuk Claim Life, yang menampilkan
  * `DD-MM-YYYY` dan karena itu harus mengekspor bentuk ISO-nya.
+ *
+ * ⛔ PolicyHolderName, MarketingName, SobName, dan DateReceived SENGAJA tidak
+ * ditampilkan (keputusan work owner 02-10-2026) — tabel dan ekspornya.
+ * Urutannya juga keputusan work owner 02-10-2026.
  */
 export const KOLOM_EKSPOR_POLIS: KolomEksporXlsx<BarisInboxPolis>[] = [
   { kunci: 'caseId', label: KOLOM_INBOX_POLIS.caseId },
   { kunci: 'tglCreate', label: KOLOM_INBOX_POLIS.tglCreate },
-  { kunci: 'createOpName', label: KOLOM_INBOX_POLIS.createOpName },
-  { kunci: 'statusWork', label: KOLOM_INBOX_POLIS.statusWork },
-  { kunci: 'cedingCoName', label: KOLOM_INBOX_POLIS.cedingCoName },
-  { kunci: 'policyHolderName', label: KOLOM_INBOX_POLIS.policyHolderName },
   { kunci: 'plNumber', label: KOLOM_INBOX_POLIS.plNumber },
   { kunci: 'riSlipRnm', label: KOLOM_INBOX_POLIS.riSlipRnm },
   { kunci: 'type', label: KOLOM_INBOX_POLIS.type },
-  { kunci: 'marketingName', label: KOLOM_INBOX_POLIS.marketingName },
-  { kunci: 'sobName', label: KOLOM_INBOX_POLIS.sobName },
-  { kunci: 'dateReceived', label: KOLOM_INBOX_POLIS.dateReceived },
+  { kunci: 'cedingCoName', label: KOLOM_INBOX_POLIS.cedingCoName },
+  { kunci: 'createOpName', label: KOLOM_INBOX_POLIS.createOpName },
+  { kunci: 'statusWork', label: KOLOM_INBOX_POLIS.statusWork },
 ]
 
 /** Sel kosong ditandai, bukan dibiarkan kosong (ADR-U-0027). */
@@ -164,7 +166,10 @@ export default function InboxPremiumList({
             </tr>
           </thead>
           <tbody>
-            {hal.baris.map((b) => (
+            {hal.baris.map((b) =>
+              // Kasus tertutup tetap terdaftar, tetapi TIDAK dapat dibuka
+              // (keputusan work owner 02-10-2026) — `kasusBisaDibuka`.
+              kasusBisaDibuka(b.statusWork) ? (
               <tr
                 key={b.caseId}
                 className="inbox__baris"
@@ -173,10 +178,17 @@ export default function InboxPremiumList({
                 }}
               >
                 {KOLOM_EKSPOR_POLIS.map((k) => (
-                  <td key={String(k.kunci)}>{sel(b[k.kunci])}</td>
+                  <td key={String(k.kunci)}>{sel(tanggalTampil(b[k.kunci]))}</td>
                 ))}
               </tr>
-            ))}
+              ) : (
+                <tr key={b.caseId} className="pl-inbox__tutup" title="Case closed — cannot be opened">
+                  {KOLOM_EKSPOR_POLIS.map((k) => (
+                    <td key={String(k.kunci)}>{sel(tanggalTampil(b[k.kunci]))}</td>
+                  ))}
+                </tr>
+              ),
+            )}
           </tbody>
         </table>
       )}

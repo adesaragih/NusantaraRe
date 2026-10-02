@@ -472,105 +472,107 @@ export default function FormProduk({
       {p.planList.length === 0 ? (
         <Kosong pesan={LAIN_MPNL.kosong} />
       ) : (
-        <table className="inbox__tabel">
-          <thead>
-            <tr>
-              <th>{PLAN_MPNL.planName}</th>
-              <th>{PLAN_MPNL.bussines}</th>
-              <th>{PLAN_MPNL.benefit}</th>
-              <th>{PLAN_MPNL.riRate}</th>
-              <th className="table__actions" />
-            </tr>
-          </thead>
-          <tbody>
-            {p.planList.map((b, i) => (
-              <tr key={i} className="inbox__baris">
-                <td>
-                  <Saran<JenisPlan>
-                    labelAria={PLAN_MPNL.planName}
-                    nilai={b.plan}
-                    readOnly={lihat}
-                    onKetik={(v) => {
-                      setP((x) => ({ ...x, planList: ganti<BarisPlan>(x.planList, i, { plan: v, planId: '' }) }))
-                    }}
-                    cari={cariJenisPlan}
-                    teks={(t) => t.coverName}
-                    kunci={(t) => t.id}
-                    onPilih={(t) => {
-                      // Autocomplete b33198: `.CoverName` → `.Plan`, `.ID` → `.PlanID`, `.Business` → `.Name`, `.Benefit` → `.Benefit`.
-                      setP((x) => ({
-                        ...x,
-                        planList: ganti<BarisPlan>(x.planList, i, { plan: t.coverName, planId: t.id, name: t.business, benefit: t.benefit }),
-                      }))
-                    }}
-                  />
-                </td>
-                <td>
-                  <SelIsi
-                    label={PLAN_MPNL.bussines}
-                    nilai={b.name}
-                    readOnly={lihat}
-                    onUbah={(v) => {
-                      setP((x) => ({ ...x, planList: ganti<BarisPlan>(x.planList, i, { name: v }) }))
-                    }}
-                  />
-                </td>
-                <td>
-                  <SelIsi
-                    label={PLAN_MPNL.benefit}
-                    nilai={b.benefit}
-                    readOnly={lihat}
-                    onUbah={(v) => {
-                      setP((x) => ({ ...x, planList: ganti<BarisPlan>(x.planList, i, { benefit: v }) }))
-                    }}
-                  />
-                </td>
-                <td>{b.riRate}</td>
-                <td className="table__actions">
-                  {tampilViewRate(b.riRate) && (
+        <div className="mpnl-tabel">
+          <table className="inbox__tabel">
+            <thead>
+              <tr>
+                <th>{PLAN_MPNL.planName}</th>
+                <th>{PLAN_MPNL.bussines}</th>
+                <th>{PLAN_MPNL.benefit}</th>
+                <th>{PLAN_MPNL.riRate}</th>
+                <th className="table__actions" />
+              </tr>
+            </thead>
+            <tbody>
+              {p.planList.map((b, i) => (
+                <tr key={i} className="inbox__baris">
+                  <td>
+                    <Saran<JenisPlan>
+                      labelAria={PLAN_MPNL.planName}
+                      nilai={b.plan}
+                      readOnly={lihat}
+                      onKetik={(v) => {
+                        setP((x) => ({ ...x, planList: ganti<BarisPlan>(x.planList, i, { plan: v, planId: '' }) }))
+                      }}
+                      cari={cariJenisPlan}
+                      teks={(t) => t.coverName}
+                      kunci={(t) => t.id}
+                      onPilih={(t) => {
+                        // Autocomplete b33198: `.CoverName` → `.Plan`, `.ID` → `.PlanID`, `.Business` → `.Name`, `.Benefit` → `.Benefit`.
+                        setP((x) => ({
+                          ...x,
+                          planList: ganti<BarisPlan>(x.planList, i, { plan: t.coverName, planId: t.id, name: t.business, benefit: t.benefit }),
+                        }))
+                      }}
+                    />
+                  </td>
+                  <td>
+                    <SelIsi
+                      label={PLAN_MPNL.bussines}
+                      nilai={b.name}
+                      readOnly={lihat}
+                      onUbah={(v) => {
+                        setP((x) => ({ ...x, planList: ganti<BarisPlan>(x.planList, i, { name: v }) }))
+                      }}
+                    />
+                  </td>
+                  <td>
+                    <SelIsi
+                      label={PLAN_MPNL.benefit}
+                      nilai={b.benefit}
+                      readOnly={lihat}
+                      onUbah={(v) => {
+                        setP((x) => ({ ...x, planList: ganti<BarisPlan>(x.planList, i, { benefit: v }) }))
+                      }}
+                    />
+                  </td>
+                  <td>{b.riRate}</td>
+                  <td className="table__actions">
+                    {tampilViewRate(b.riRate) && (
+                      <button
+                        type="button"
+                        className="btn btn--ghost btn--sm"
+                        onClick={() => {
+                          setRate(b.riRateId)
+                        }}
+                      >
+                        {PLAN_MPNL.viewRate}
+                      </button>
+                    )}{' '}
+                    {!lihat && (
+                      <button
+                        type="button"
+                        className="btn btn--ghost btn--sm"
+                        onClick={() =>
+                          bukaPemilih(
+                            PLAN_MPNL.chooseRiRate,
+                            'ri-rate',
+                            (v) => {
+                              // `SetRIRate` 1 b249: `.RIRATEID ← id`, `.RIRATE ← usedby`.
+                              setP((x) => ({ ...x, planList: ganti<BarisPlan>(x.planList, i, { riRate: v.nama, riRateId: v.id }) }))
+                            },
+                            PEMILIH_MPNL.kolomRiRateName,
+                          )
+                        }
+                      >
+                        {PLAN_MPNL.chooseRiRate}
+                      </button>
+                    )}{' '}
                     <button
                       type="button"
                       className="btn btn--ghost btn--sm"
                       onClick={() => {
-                        setRate(b.riRateId)
+                        setP((x) => ({ ...x, planList: buang(x.planList, i) }))
                       }}
                     >
-                      {PLAN_MPNL.viewRate}
+                      {PLAN_MPNL.delete}
                     </button>
-                  )}{' '}
-                  {!lihat && (
-                    <button
-                      type="button"
-                      className="btn btn--ghost btn--sm"
-                      onClick={() =>
-                        bukaPemilih(
-                          PLAN_MPNL.chooseRiRate,
-                          'ri-rate',
-                          (v) => {
-                            // `SetRIRate` 1 b249: `.RIRATEID ← id`, `.RIRATE ← usedby`.
-                            setP((x) => ({ ...x, planList: ganti<BarisPlan>(x.planList, i, { riRate: v.nama, riRateId: v.id }) }))
-                          },
-                          PEMILIH_MPNL.kolomRiRateName,
-                        )
-                      }
-                    >
-                      {PLAN_MPNL.chooseRiRate}
-                    </button>
-                  )}{' '}
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    onClick={() => {
-                      setP((x) => ({ ...x, planList: buang(x.planList, i) }))
-                    }}
-                  >
-                    {PLAN_MPNL.delete}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {/* `FINANCIAL UNDERWRITING` b37148. */}
@@ -713,24 +715,26 @@ export default function FormProduk({
 
       {/* ---- wadah b61044: komentar (baca-saja) ---- */}
       {p.commentList.length > 0 && (
-        <table className="inbox__tabel mpnl-bagian">
-          <thead>
-            <tr>
-              <th>{KOMENTAR_MPNL.date}</th>
-              <th>{KOMENTAR_MPNL.pic}</th>
-              <th>{KOMENTAR_MPNL.comment}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {p.commentList.map((k, i) => (
-              <tr key={i} className="inbox__baris">
-                <td>{k.date}</td>
-                <td>{k.operatorName}</td>
-                <td>{k.suggest}</td>
+        <div className="mpnl-tabel">
+          <table className="inbox__tabel mpnl-bagian">
+            <thead>
+              <tr>
+                <th>{KOMENTAR_MPNL.date}</th>
+                <th>{KOMENTAR_MPNL.pic}</th>
+                <th>{KOMENTAR_MPNL.comment}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {p.commentList.map((k, i) => (
+                <tr key={i} className="inbox__baris">
+                  <td>{k.date}</td>
+                  <td>{k.operatorName}</td>
+                  <td>{k.suggest}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {/* ---- wadah b64133: lampiran (produk tersimpan) ---- */}
@@ -808,39 +812,41 @@ function GridSederhana<T extends { asli?: string }>({
       {baris.length === 0 ? (
         <Kosong pesan={LAIN_MPNL.kosong} />
       ) : (
-        <table className="inbox__tabel">
-          <thead>
-            <tr>
-              {kolom.map(([l]) => (
-                <th key={l}>{l}</th>
-              ))}
-              <th className="table__actions" />
-            </tr>
-          </thead>
-          <tbody>
-            {baris.map((b, i) => (
-              <tr key={i} className="inbox__baris">
-                {kolom.map(([l, m]) => (
-                  <td key={m}>
-                    <SelIsi
-                      label={l}
-                      nilai={String(b[m] ?? '')}
-                      readOnly={lihat}
-                      onUbah={(v) => onUbah(ganti<T>(baris, i, { [m]: v } as Partial<T>))}
-                    />
-                  </td>
+        <div className="mpnl-tabel">
+          <table className="inbox__tabel">
+            <thead>
+              <tr>
+                {kolom.map(([l]) => (
+                  <th key={l}>{l}</th>
                 ))}
-                <td className="table__actions">
-                  {!lihat && (
-                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => onUbah(buang(baris, i))}>
-                      {LAIN_MPNL.hapusBaris}
-                    </button>
-                  )}
-                </td>
+                <th className="table__actions" />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {baris.map((b, i) => (
+                <tr key={i} className="inbox__baris">
+                  {kolom.map(([l, m]) => (
+                    <td key={m}>
+                      <SelIsi
+                        label={l}
+                        nilai={String(b[m] ?? '')}
+                        readOnly={lihat}
+                        onUbah={(v) => onUbah(ganti<T>(baris, i, { [m]: v } as Partial<T>))}
+                      />
+                    </td>
+                  ))}
+                  <td className="table__actions">
+                    {!lihat && (
+                      <button type="button" className="btn btn--ghost btn--sm" onClick={() => onUbah(buang(baris, i))}>
+                        {LAIN_MPNL.hapusBaris}
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </>
   )
@@ -868,38 +874,40 @@ function GridBerangka<T extends { asli?: string }>({
       {baris.length === 0 ? (
         <Kosong pesan={LAIN_MPNL.kosong} />
       ) : (
-        <table className="inbox__tabel">
-          <thead>
-            <tr>
-              {kolom.map(([l]) => (
-                <th key={l}>{l}</th>
-              ))}
-              <th className="table__actions" />
-            </tr>
-          </thead>
-          <tbody>
-            {baris.map((b, i) => (
-              <tr key={i} className="inbox__baris">
-                {kolom.map(([l, m]) => (
-                  <td key={m}>
-                    <SelIsi
-                      label={l}
-                      nilai={String(b[m] ?? '')}
-                      readOnly={lihat}
-                      onUbah={(v) => onUbah(ganti<T>(baris, i, { [m]: v } as Partial<T>))}
-                    />
-                  </td>
+        <div className="mpnl-tabel">
+          <table className="inbox__tabel">
+            <thead>
+              <tr>
+                {kolom.map(([l]) => (
+                  <th key={l}>{l}</th>
                 ))}
-                <td className="table__actions">
-                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => onUbah(salinBaris(baris, i))}>
-                    {LAIN_MPNL.salinBaris}
-                  </button>{' '}
-                  {hapus(i)}
-                </td>
+                <th className="table__actions" />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {baris.map((b, i) => (
+                <tr key={i} className="inbox__baris">
+                  {kolom.map(([l, m]) => (
+                    <td key={m}>
+                      <SelIsi
+                        label={l}
+                        nilai={String(b[m] ?? '')}
+                        readOnly={lihat}
+                        onUbah={(v) => onUbah(ganti<T>(baris, i, { [m]: v } as Partial<T>))}
+                      />
+                    </td>
+                  ))}
+                  <td className="table__actions">
+                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => onUbah(salinBaris(baris, i))}>
+                      {LAIN_MPNL.salinBaris}
+                    </button>{' '}
+                    {hapus(i)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </>
   )

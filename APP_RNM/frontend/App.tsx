@@ -204,7 +204,9 @@ export default function App() {
     <Shell
       masuk={masuk}
       halaman={halaman}
-      onPindah={setHalaman}
+      onPindah={(h) => {
+        pilihDariMenu(h)
+      }}
       menu={ENTRI_MENU}
       menuTabel={menuTabel}
       onKeluar={
@@ -236,7 +238,7 @@ export default function App() {
         pindah halaman, persis seperti ketika ia hidup di sini.
       */}
       {MODUL_FRONTEND.filter((m) => modulDipasang(m.nama, modulBoleh)).map((m) => (
-        <m.Rute key={m.nama} halaman={halaman} masuk={masuk} onPindah={setHalaman} />
+        <m.Rute key={m.nama} halaman={halaman} masuk={masuk} onPindah={setHalaman} ketukMenu={ketukMenu} />
       ))}
     </Shell>
   )

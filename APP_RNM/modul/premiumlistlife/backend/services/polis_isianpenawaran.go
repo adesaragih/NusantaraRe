@@ -277,6 +277,7 @@ func (p *Penawaran) periksaPenawaranLengkap(ctx context.Context, polisID string)
 	if kurang := models.KekuranganPenawaran(models.WajibPenawaran{
 		CedingCoName: isi.CedingCoName, PolicyHolderName: isi.PolicyHolderName,
 		TypeCeding: isi.TypeCeding, BusinessCode: isi.BusinessCode, Description: isi.Description,
+		DateReceived: isi.DateReceived,
 	}); len(kurang) > 0 {
 		return fmt.Errorf("%w: %s", ErrPenawaranBelumLengkap, models.GabungPesanPenawaran(kurang))
 	}

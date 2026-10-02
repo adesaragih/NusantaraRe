@@ -30,6 +30,8 @@ import {
   type PilihanKode,
 } from '../api'
 import { KOLOM_RIWAYAT_PENAWARAN, LABEL_PENAWARAN, TEKS_PILIH } from '../labels'
+import IsianTanggal from '../components/IsianTanggal'
+import { tanggalJamTampil } from '../tanggal'
 import '../premiumlistlife.css'
 
 /** Popup yang sedang terbuka. */
@@ -54,10 +56,9 @@ export function terapkanPilihan(
   return { ...isi, policyHolder: baris.id, policyHolderName: baris.nama }
 }
 
-/** Tanggal riwayat untuk layar — `YYYY-MM-DD HH:MM`, tanpa menebak zona. */
+/** Tanggal riwayat untuk layar — `dd/mm/yyyy HH:MM` (02-10-2026), tanpa menebak zona. */
 export function tanggalRiwayat(iso: string): string {
-  if (iso === '' || iso.startsWith('0001-')) return '—'
-  return iso.slice(0, 16).replace('T', ' ')
+  return tanggalJamTampil(iso) || '—'
 }
 
 export default function FormPenawaran({ polisID }: { polisID: string }) {
@@ -112,9 +113,11 @@ export default function FormPenawaran({ polisID }: { polisID: string }) {
     setTersimpan(false)
   }
   const bisa = data.bolehDisimpan
-  // Sel penawaran ber-`pyReadOnlyCondition pyWorkPage.FlagOnGoingPolicy='1'`:
-  // kasus Input Premium hanya menampilkannya.
-  const kunci = !bisa || data.flag === '1'
+  // ⛔ [keputusan work owner 02-10-2026] Kasus Input Premium (FlagOnGoingPolicy
+  // '1') TETAP DAPAT MENGUBAH isian penawaran. Di Pega sel-sel ini ber-
+  // `pyReadOnlyCondition pyWorkPage.FlagOnGoingPolicy='1'`; penyimpangan ini
+  // disengaja. Yang mengunci kini hanya tahapnya (`bolehDisimpan`).
+  const kunci = !bisa
   const kurang = kolomWajibKosong(isi)
 
   return (
@@ -247,7 +250,15 @@ export default function FormPenawaran({ polisID }: { polisID: string }) {
                 ['tanggalBind', LABEL_PENAWARAN.tanggalBind],
               ] as const
             ).map(([medan, label]) => (
-              <Field key={medan} label={label} type="date" value={isi[medan]} onChange={ubah(medan)} readOnly={kunci} />
+              <IsianTanggal
+                key={medan}
+                label={label}
+                value={isi[medan]}
+                onChange={ubah(medan)}
+                readOnly={kunci}
+                // Email Received Date wajib — keputusan work owner 02-10-2026.
+                required={medan === 'dateReceived'}
+              />
             ))}
           </div>
           <div className="pl-offer__pasangan">
@@ -536,6 +547,7 @@ export function kolomWajibKosong(isi: IsiPenawaranPolis): string[] {
     [isi.policyHolderName, LABEL_PENAWARAN.policyHolderName],
     [isi.typeCeding, LABEL_PENAWARAN.typeCeding],
     [isi.businessCode, LABEL_PENAWARAN.businessCode],
+    [isi.dateReceived, LABEL_PENAWARAN.dateReceived],
     [isi.status, LABEL_PENAWARAN.status],
     [isi.description, LABEL_PENAWARAN.description],
   ]

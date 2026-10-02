@@ -26,6 +26,7 @@ package services
 // Dibaca sesudah: models/polis_unggah.go (aturannya).
 
 import (
+	"bufio"
 	"context"
 	"encoding/csv"
 	"errors"
@@ -82,6 +83,45 @@ var (
 // di tengah berkas Go ditolak pengurainya sendiri.
 var tandaUrutanBita = string(rune(0xFEFF))
 
+// ukuranIntipJudul - jendela bita awal berkas yang diintip untuk menebak
+// pemisah kolom. Cukup untuk baris judul ratusan kolom.
+const ukuranIntipJudul = 64 * 1024
+
+// PemisahCSV menebak pemisah kolom dari BARIS JUDUL: titik koma (`;`) bila
+// judulnya memuat lebih banyak `;` daripada `,` di luar tanda kutip, selain
+// itu koma.
+//
+// ⛔ [keputusan work owner 02-10-2026] Excel berlokal Indonesia menyimpan
+// CSV dengan `;`. Tanpa tebakan ini seluruh baris judul terbaca SATU kolom,
+// dan berkas yang benar ditolak dengan pesan "kehilangan kolom wajib" untuk
+// SETIAP kolom - pesan yang menuduh kolom yang jelas terlihat di berkasnya.
+//
+// ⚠️ Ditebak dari judul SAJA: nama kolom tidak pernah memuat koma maupun
+// titik koma, sedangkan isi baris data (nama, angka berkoma) bisa memuat
+// keduanya.
+func PemisahCSV(awal string) rune {
+	if i := strings.IndexAny(awal, "\r\n"); i >= 0 {
+		awal = awal[:i]
+	}
+	var koma, titikKoma int
+	kutip := false
+	for _, r := range awal {
+		switch {
+		case r == '"':
+			kutip = !kutip
+		case kutip:
+		case r == ',':
+			koma++
+		case r == ';':
+			titikKoma++
+		}
+	}
+	if titikKoma > koma {
+		return ';'
+	}
+	return ','
+}
+
 // BacaCSVUnggah mengurai berkas CSV menjadi baris bernama kolom.
 //
 // ⛔ Baris judul WAJIB, dan namanya dinaikkan menjadi huruf besar - kolom CSV
@@ -95,7 +135,13 @@ var tandaUrutanBita = string(rune(0xFEFF))
 // satu, dan meleset satu di berkas seribu baris lebih buruk daripada tidak
 // ada nomor sama sekali.
 func BacaCSVUnggah(r io.Reader) ([]models.BarisUnggah, error) {
-	c := csv.NewReader(io.LimitReader(r, BatasUkuranUnggahCSV))
+	br := bufio.NewReaderSize(io.LimitReader(r, BatasUkuranUnggahCSV), ukuranIntipJudul)
+	// Galat Peek (berkas lebih pendek dari jendela) bukan galat: yang dipakai
+	// hanya bita yang sempat terbaca.
+	awal, _ := br.Peek(ukuranIntipJudul)
+	pemisah := PemisahCSV(string(awal))
+	c := csv.NewReader(br)
+	c.Comma = pemisah
 	// ⛔ Cacah medan TIDAK dipatok: baris yang kependekan atau kepanjangan
 	// dilaporkan sebagai penolakan kolomnya sendiri, bukan sebagai galat
 	// berkas yang membatalkan seluruhnya.
@@ -118,6 +164,11 @@ func BacaCSVUnggah(r io.Reader) ([]models.BarisUnggah, error) {
 		}
 		lihat[k] = true
 		nama[i] = k
+	}
+	// `SHARE_NUSANTARA_RE_GROSS` memenuhi kolom wajib `SHARE_NUSANTARA_RE`
+	// (keputusan work owner 02-10-2026) - lihat `models.TerapkanAliasShare`.
+	if lihat[models.KolomShareNusantaraReGross] {
+		lihat[models.KolomShareNusantaraRe] = true
 	}
 
 	// ⛔ JUDUL DIPERIKSA LEBIH DAHULU. Kolom yang HILANG SAMA SEKALI dari
@@ -156,6 +207,10 @@ func BacaCSVUnggah(r io.Reader) ([]models.BarisUnggah, error) {
 				continue
 			}
 			nilai[k] = rec[i]
+		}
+		models.TerapkanAliasShare(nilai)
+		if pemisah == ';' {
+			models.NormalisasiDesimalKoma(nilai)
 		}
 		baris = append(baris, models.BarisUnggah{Nomor: len(baris) + 1, Nilai: nilai})
 	}

@@ -26,13 +26,14 @@ import {
   cariRISlipPolis,
   isiDariDataPolis,
   simpanDataPolis,
-  tanggalMasukan,
   type DataPolis,
   type IsiDataPolis,
   type PenawaranPolis,
   type PilihanKode,
 } from '../api'
-import { KOLOM_PRODUK, LABEL_DATA_POLIS, TEKS_PILIH } from '../labels'
+import { KOLOM_PRODUK, LABEL_DATA_POLIS, TEKS_PILIH, TEKS_TOMBOL_PILIH } from '../labels'
+import IsianTanggal from '../components/IsianTanggal'
+import { tanggalTampil } from '../tanggal'
 import '../premiumlistlife.css'
 
 /** Type yang menuntut R/I SLIP dan Billing Name (`.Type == 'TR' || 'TP'`). */
@@ -59,6 +60,8 @@ export function kolomWajibDataPolis(isi: IsiDataPolis): string[] {
     [isi.premiumRefundFactor.trim() === '', LABEL_DATA_POLIS.premiumRefundFactor],
     [typeRetro(isi.type) && isi.retroName.trim() === '', LABEL_DATA_POLIS.billing],
     [typeRetro(isi.type) && isi.securityReinsurer.trim() === '', LABEL_DATA_POLIS.retro],
+    // Wajib di layar ini — keputusan work owner 02-10-2026.
+    [isi.dateReceived.trim() === '', LABEL_DATA_POLIS.dateReceived],
   ]
   return periksa.filter(([kosong]) => kosong).map(([, label]) => label)
 }
@@ -148,11 +151,19 @@ export default function FormDataPolis({
     }
   }
 
-  // Tombol pilih di samping isiannya — pola layar Input Offer Life.
+  // Tombol pilih MENEMPEL di kanan kotak isiannya (`pl-dp-pilih`), jadi kotak
+  // + tombol selebar satu sel grid seperti isian lain. Teks tombol pendek
+  // ("Choose"); nama lengkapnya di `aria-label` dan `title`.
   const tombol = (label: string, jenis: Popup) =>
     bisa && (
-      <button type="button" className="btn btn--ghost" onClick={() => { setPopup(jenis) }}>
-        {label}
+      <button
+        type="button"
+        className="btn btn--ghost"
+        aria-label={label}
+        title={label}
+        onClick={() => { setPopup(jenis) }}
+      >
+        {TEKS_TOMBOL_PILIH}
       </button>
     )
 
@@ -160,19 +171,23 @@ export default function FormDataPolis({
     <section className="panel pl-datapolis">
       <h3 className="panel__title">{LABEL_DATA_POLIS.judul}</h3>
       {/*
-        TIGA KOLOM (premiumlistlife.css), urutan sel `ShowLifePremiumDetail`:
-        kiri data polis, tengah pihak, kanan tanggal dan status. Isian yang
-        dipilih dari master memakai tombol di sampingnya; tanggal berpasangan.
+        TIGA KOLOM BERDAMPINGAN (permintaan work owner 02-10-2026: "3 baris ke
+        samping seperti sebelumnya, namun lebih rapih"): kiri Policy Data,
+        tengah Parties & Coverage (+ Retrocession untuk TP/TR), kanan Dates &
+        Status. SETIAP kolom satu grid DUA sel sama lebar (premiumlistlife.css);
+        isian teks panjang dan isian bertombol pilih selebar kolom
+        (`pl-dp-lebar`), sehingga semua kotak lurus. Urutan isian tetap urutan
+        sel `ShowLifePremiumDetail`.
       */}
-      <div className="pl-datapolis__kolom-tiga">
-        <div>
+      <div className="pl-dp-kolom-tiga">
+        <div className="pl-dp-bagian">
           <h4 className="pl-offer__subjudul">Policy Data</h4>
-          <div className="pl-offer__pilih">
-            <Field label={LABEL_DATA_POLIS.productName} value={isi.productName} onChange={() => {}} readOnly required />
-            {/* `Choose Product Name` tampil bila PL_NUMBER belum ada. */}
-            {!bernomor && tombol(LABEL_DATA_POLIS.pilihProduk, 'produk')}
-          </div>
-          <div className="pl-offer__pasangan">
+          <div className="pl-dp-grid">
+            <div className="pl-dp-pilih pl-dp-lebar">
+              <Field label={LABEL_DATA_POLIS.productName} value={isi.productName} onChange={() => {}} readOnly required />
+              {/* `Choose Product Name` tampil bila PL_NUMBER belum ada. */}
+              {!bernomor && tombol(LABEL_DATA_POLIS.pilihProduk, 'produk')}
+            </div>
             {tampil(LABEL_DATA_POLIS.productNameId, isi.productNameId)}
             <Pilih
               kosong={TEKS_PILIH}
@@ -182,8 +197,6 @@ export default function FormDataPolis({
               opsi={opsi(data.pilihan.type)}
               required
             />
-          </div>
-          <div className="pl-offer__pasangan">
             {tampil(LABEL_DATA_POLIS.typeCeding, offer.typeCedingName)}
             <Pilih
               kosong={TEKS_PILIH}
@@ -193,20 +206,13 @@ export default function FormDataPolis({
               opsi={opsi(data.pilihan.proRateType)}
               required
             />
-          </div>
-          {typeRetro(isi.type) && (
-            <div className="pl-offer__pilih">
-              <Field label={LABEL_DATA_POLIS.riSlip} value={isi.riSlipRnm} onChange={() => {}} readOnly required />
-              {tombol(LABEL_DATA_POLIS.riSlip, 'rislip')}
+            <div className="pl-dp-pilih pl-dp-lebar">
+              <Field label={LABEL_DATA_POLIS.marketing} value={isi.marketingName} onChange={() => {}} readOnly required />
+              {tombol(LABEL_DATA_POLIS.marketing, 'marketing')}
             </div>
-          )}
-          <div className="pl-offer__pilih">
-            <Field label={LABEL_DATA_POLIS.marketing} value={isi.marketingName} onChange={() => {}} readOnly required />
-            {tombol(LABEL_DATA_POLIS.marketing, 'marketing')}
-          </div>
-          {tampil(LABEL_DATA_POLIS.sumInsured, offer.sumInsured)}
-          {/* Desimal sebagai TEKS, titik sebagai pemisah — bukan input number. */}
-          <div className="pl-offer__pasangan">
+            {tampil(LABEL_DATA_POLIS.sumInsured, offer.sumInsured)}
+            {offer.noOffer !== '' && tampil(LABEL_DATA_POLIS.noOffer, offer.noOffer)}
+            {/* Desimal sebagai TEKS, titik sebagai pemisah — bukan input number. */}
             <Field
               label={LABEL_DATA_POLIS.annuityInterest}
               value={isi.annuityInterest}
@@ -221,71 +227,85 @@ export default function FormDataPolis({
               readOnly={!bisa}
               required
             />
+            <div className="pl-dp-lebar">
+              {tampil(LABEL_DATA_POLIS.ketentuanUnderwriting, offer.ketentuanUnderwriting)}
+            </div>
           </div>
-          {offer.noOffer !== '' && tampil(LABEL_DATA_POLIS.noOffer, offer.noOffer)}
-          {tampil(LABEL_DATA_POLIS.ketentuanUnderwriting, offer.ketentuanUnderwriting)}
         </div>
+
+        {/* Kolom tengah: pihak polis dan cakupan (dibaca dari Input Offer), lalu Retrocession. */}
         <div>
-          <h4 className="pl-offer__subjudul">Parties</h4>
-          {tampil(LABEL_DATA_POLIS.ceding, isi.cedingCoName)}
-          {tampil(LABEL_DATA_POLIS.policyHolder, isi.policyHolderName)}
-          <div className="pl-offer__pasangan">
-            {tampil(LABEL_DATA_POLIS.jenisAsuransi, offer.jenisAsuransi)}
-            {tampil(LABEL_DATA_POLIS.businessCode, offer.businessName)}
+          <div className="pl-dp-bagian">
+            <h4 className="pl-offer__subjudul">Parties &amp; Coverage</h4>
+            <div className="pl-dp-grid">
+              <div className="pl-dp-lebar">{tampil(LABEL_DATA_POLIS.ceding, isi.cedingCoName)}</div>
+              <div className="pl-dp-lebar">{tampil(LABEL_DATA_POLIS.policyHolder, isi.policyHolderName)}</div>
+              {tampil(LABEL_DATA_POLIS.jenisAsuransi, offer.jenisAsuransi)}
+              {tampil(LABEL_DATA_POLIS.businessCode, offer.businessName)}
+              {tampil(LABEL_DATA_POLIS.batasUsia, offer.batasUsiaPeserta === null ? '' : String(offer.batasUsiaPeserta))}
+              {tampil(LABEL_DATA_POLIS.periode, offer.periodePertanggungan)}
+            </div>
           </div>
-          <div className="pl-offer__pasangan">
-            {tampil(LABEL_DATA_POLIS.batasUsia, offer.batasUsiaPeserta === null ? '' : String(offer.batasUsiaPeserta))}
-            {tampil(LABEL_DATA_POLIS.periode, offer.periodePertanggungan)}
-          </div>
+
           {/*
             Billing Name dan Retrocessionaire HANYA untuk Type TP/TR (keputusan
             work owner 01-10-2026) — selain itu disembunyikan, dan server
-            mengosongkannya saat Save Data (`models.SusunDataPolis`).
+            mengosongkannya saat Save Data (`models.SusunDataPolis`). R/I SLIP
+            RNM No. di bawah catatan dan di atas Billing Name (permintaan work
+            owner 02-10-2026).
           */}
           {typeRetro(isi.type) && (
-            <>
+            <div className="pl-dp-bagian">
+              <h4 className="pl-offer__subjudul">Retrocession</h4>
               <p className="pl-datapolis__catatan" role="note">
                 {LABEL_DATA_POLIS.catatanBilling}
               </p>
-              {/* Satu grid untuk keduanya — kotak isian sama lebar. */}
-              <div className={bisa ? 'pl-offer__pilih-grup' : 'pl-offer__pilih-grup pl-offer__pilih-grup--baca'}>
-                <Field
-                  label={LABEL_DATA_POLIS.billing}
-                  value={isi.retroName}
-                  onChange={() => {}}
-                  readOnly
-                  required
-                />
-                {tombol(LABEL_DATA_POLIS.pilihBilling, 'billing')}
+              <div className="pl-dp-grid">
+                <div className="pl-dp-pilih pl-dp-lebar">
+                  <Field label={LABEL_DATA_POLIS.riSlip} value={isi.riSlipRnm} onChange={() => {}} readOnly required />
+                  {tombol(LABEL_DATA_POLIS.riSlip, 'rislip')}
+                </div>
+                <div className="pl-dp-pilih pl-dp-lebar">
+                  <Field label={LABEL_DATA_POLIS.billing} value={isi.retroName} onChange={() => {}} readOnly required />
+                  {tombol(LABEL_DATA_POLIS.pilihBilling, 'billing')}
+                </div>
                 {/* Wajib untuk TP/TR — keputusan work owner 01-10-2026. */}
-                <Field
-                  label={LABEL_DATA_POLIS.retro}
-                  value={isi.securityReinsurer}
-                  onChange={() => {}}
-                  readOnly
-                  required
-                />
-                {tombol(LABEL_DATA_POLIS.pilihRetro, 'retro')}
+                <div className="pl-dp-pilih pl-dp-lebar">
+                  <Field label={LABEL_DATA_POLIS.retro} value={isi.securityReinsurer} onChange={() => {}} readOnly required />
+                  {tombol(LABEL_DATA_POLIS.pilihRetro, 'retro')}
+                </div>
               </div>
-            </>
+            </div>
           )}
         </div>
-        <div>
+
+        <div className="pl-dp-bagian">
           <h4 className="pl-offer__subjudul">Dates &amp; Status</h4>
-          <div className="pl-offer__pasangan">
-            {tampil(LABEL_DATA_POLIS.dateReceived, tanggalMasukan(offer.dateReceived))}
-            {tampil(LABEL_DATA_POLIS.tanggalPenawaran, tanggalMasukan(offer.tanggalPenawaran))}
-            {tampil(LABEL_DATA_POLIS.tanggalRespon, tanggalMasukan(offer.tanggalRespon))}
-            {tampil(LABEL_DATA_POLIS.tanggalKonfirmasi, tanggalMasukan(offer.tanggalKonfirmasi))}
-            {tampil(LABEL_DATA_POLIS.tanggalRealisasi, tanggalMasukan(offer.tanggalRealisasi))}
-            {tampil(LABEL_DATA_POLIS.tanggalKonfirmasiBalik, tanggalMasukan(offer.tanggalKonfirmasiBalik))}
-            {tampil(LABEL_DATA_POLIS.tanggalBind, tanggalMasukan(offer.tanggalBind))}
-            {offer.tbc !== null && tampil(LABEL_DATA_POLIS.tanggalTbc, tanggalMasukan(offer.tanggalTbc))}
-            {tampil(LABEL_DATA_POLIS.wpc, tanggalMasukan(data.wpc))}
-            {tampil(LABEL_DATA_POLIS.status, offer.status)}
+          <div className="pl-dp-grid">
+            {/* DAPAT DIISI dan WAJIB di layar ini (keputusan work owner 02-10-2026). */}
+            <IsianTanggal
+              label={LABEL_DATA_POLIS.dateReceived}
+              value={isi.dateReceived}
+              onChange={ubah('dateReceived')}
+              readOnly={!bisa}
+              required
+            />
+            {tampil(LABEL_DATA_POLIS.tanggalPenawaran, tanggalTampil(offer.tanggalPenawaran))}
+            {tampil(LABEL_DATA_POLIS.tanggalRespon, tanggalTampil(offer.tanggalRespon))}
+            {tampil(LABEL_DATA_POLIS.tanggalKonfirmasi, tanggalTampil(offer.tanggalKonfirmasi))}
+            {tampil(LABEL_DATA_POLIS.tanggalRealisasi, tanggalTampil(offer.tanggalRealisasi))}
+            {tampil(LABEL_DATA_POLIS.tanggalKonfirmasiBalik, tanggalTampil(offer.tanggalKonfirmasiBalik))}
+            {tampil(LABEL_DATA_POLIS.tanggalBind, tanggalTampil(offer.tanggalBind))}
+            {offer.tbc !== null && tampil(LABEL_DATA_POLIS.tanggalTbc, tanggalTampil(offer.tanggalTbc))}
+            {tampil(LABEL_DATA_POLIS.wpc, tanggalTampil(data.wpc))}
+            {/*
+              `Status` penawaran SENGAJA tidak ditampilkan di sini (keputusan
+              work owner 02-10-2026) — tetap diisi dan dilihat di Input Offer
+              Life.
+            */}
+            <div className="pl-dp-lebar">{tampil(LABEL_DATA_POLIS.statusUpdate, offer.statusUpdate)}</div>
+            <div className="pl-dp-lebar">{tampil(LABEL_DATA_POLIS.keteranganMarketing, offer.keteranganMarketing)}</div>
           </div>
-          {tampil(LABEL_DATA_POLIS.statusUpdate, offer.statusUpdate)}
-          {tampil(LABEL_DATA_POLIS.keteranganMarketing, offer.keteranganMarketing)}
         </div>
       </div>
 

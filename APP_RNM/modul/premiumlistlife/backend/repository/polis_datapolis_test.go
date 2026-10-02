@@ -23,18 +23,19 @@ func TestSqlDataPolis(t *testing.T) {
 			t.Errorf("baca tanpa %q", k)
 		}
 	}
-	for _, k := range []string{"TYPE = :1", "PRO_RATE_TYPE = :11", "SECURITY_REINSURER = :20", "WHERE ID = :21"} {
+	for _, k := range []string{"TYPE = :1", "PRO_RATE_TYPE = :11", "SECURITY_REINSURER = :20", "DATE_RECEIVED = :21", "WHERE ID = :22"} {
 		if !strings.Contains(simpan, k) {
 			t.Errorf("simpan tanpa %q", k)
 		}
 	}
-	// Data penawaran (tanggal, Comment, dll.) dan nomor tidak tertimpa.
+	// Data penawaran (tanggal, Comment, dll.) dan nomor tidak tertimpa - KECUALI
+	// DATE_RECEIVED, yang dapat diisi di layar ini (keputusan work owner 02-10-2026).
 	for _, k := range []string{"DESCRIPTION", "TANGGAL_", "NO_POLIS", "WPC", "BUSINESS_CODE"} {
 		if strings.Contains(simpan, k) {
 			t.Errorf("simpan menimpa %s", k)
 		}
 	}
-	if arg := argSimpanDataPolis("NBLF-1", models.IsianDataPolis{}); len(arg) != 21 || arg[20] != "NBLF-1" || arg[14] != nil {
+	if arg := argSimpanDataPolis("NBLF-1", models.IsianDataPolis{}); len(arg) != 22 || arg[21] != "NBLF-1" || arg[20] != nil || arg[14] != nil {
 		t.Errorf("argumen %v", arg)
 	}
 }

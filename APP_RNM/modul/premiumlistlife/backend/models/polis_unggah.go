@@ -45,7 +45,9 @@ package models
 // MENGGANTI SETIAP KOMA, tanpa membedakan pemisah desimal dari pemisah
 // ribuan. `1,234,567.89` menjadi `1.234.567.89`, yang bukan angka sama
 // sekali, dan hasilnya tersimpan sebagai uang. Kami MENOLAK komanya alih-alih
-// menggantinya - lihat `UangCSV`.
+// menggantinya - lihat `UangCSV`. ⚠️ Pengecualian sempit sejak 02-10-2026:
+// berkas berpemisah `;` (Excel lokal Indonesia) memakai koma DESIMAL, dan
+// SATU koma itu diubah menjadi titik - lihat `DesimalKomaKeTitik`.
 //
 // Dibaca sesudah: polis_nomor.go, polis_detail.go.
 
@@ -278,14 +280,74 @@ var kolomTanggalWajib = []struct{ Kolom, Pesan string }{
 	{"DOB", PesanDOB},
 	{"BEGIN_DATE", PesanBeginDate},
 	{"EXPIRED_DATE", PesanExpiredDate},
-	{"START_DATE", PesanStartDate},
-	{"EFFECTIVE_DATE", PesanEffectiveDate},
-	{"STNC", PesanSTNC},
 	{"WPC", PesanWPC},
 	{"GROSS_VALUATION_BEGIN_DATE", PesanGrossValMulai},
 	{"GROSS_VALUATION_EXPIRED_DATE", PesanGrossValSelesai},
+}
+
+// kolomTanggalOpsional adalah kolom tanggal yang BOLEH tidak ada.
+//
+// ⛔ [keputusan work owner 02-10-2026] Format unggah ceding yang dipakai
+// sekarang tidak memuat empat di antaranya, dan STNC boleh kosong -
+// padahal `ValidasiUploadPL_act` langkah 9 mewajibkan kelimanya.
+// Kolom yang ADA tetap diperiksa bentuknya dan disimpan; kolom yang tidak
+// ada atau kosong disimpan NULL - TIDAK diisi dari kolom lain, karena tanggal
+// karangan lebih buruk daripada tanggal kosong.
+var kolomTanggalOpsional = []struct{ Kolom, Pesan string }{
+	// STNC tidak wajib sejak 02-10-2026 (keputusan work owner).
+	{"STNC", PesanSTNC},
+	{"START_DATE", PesanStartDate},
+	{"EFFECTIVE_DATE", PesanEffectiveDate},
 	{"RETROCESSION_VALUATION_BEGIN_DATE", PesanRetroValMulai},
 	{"RETROCESSION_VALUATION_EXPIRED_DATE", PesanRetroValSelesai},
+}
+
+// KolomShareNusantaraRe dan KolomShareNusantaraReGross - dua nama kolom CSV
+// untuk Share Nusantara Re.
+//
+// ⛔ [keputusan work owner 02-10-2026] `SHARE_NUSANTARA_RE_GROSS` DIDAHULUKAN;
+// bila kolom itu tidak ada atau kosong, `SHARE_NUSANTARA_RE` yang dipakai.
+// Keduanya berakhir di `SHARE_NUSANTARA_RE` - lihat `TerapkanAliasShare`.
+const (
+	KolomShareNusantaraRe      = "SHARE_NUSANTARA_RE"
+	KolomShareNusantaraReGross = "SHARE_NUSANTARA_RE_GROSS"
+)
+
+// TerapkanAliasShare mengisi `SHARE_NUSANTARA_RE` dari
+// `SHARE_NUSANTARA_RE_GROSS` bila yang terakhir terisi.
+func TerapkanAliasShare(nilai map[string]string) {
+	if v := strings.TrimSpace(nilai[KolomShareNusantaraReGross]); v != "" {
+		nilai[KolomShareNusantaraRe] = v
+	}
+}
+
+// DesimalKomaKeTitik mengubah SATU koma desimal menjadi titik: `10,5` →
+// `10.5`.
+//
+// ⛔ HANYA untuk berkas berpemisah titik koma (`;`) - bentuk simpan Excel
+// berlokal Indonesia, yang memakai koma sebagai pemisah DESIMAL
+// (keputusan work owner 02-10-2026). Di berkas berpemisah koma, koma di
+// dalam angka tetap DITOLAK `UangCSV`: di sana `1,234` bisa berarti seribu.
+//
+// ⛔ BUKAN `@replaceAll` Pega (lihat kepala berkas): nilai yang memuat titik
+// DAN koma (`1.234,56`), atau lebih dari satu koma, DIBIARKAN apa adanya,
+// sehingga `UangCSV` menolaknya - pemisah ribuan tetap tidak diterima.
+func DesimalKomaKeTitik(teks string) string {
+	s := strings.TrimSpace(teks)
+	if strings.Count(s, ",") != 1 || strings.ContainsRune(s, '.') {
+		return teks
+	}
+	return strings.Replace(s, ",", ".", 1)
+}
+
+// NormalisasiDesimalKoma menerapkan `DesimalKomaKeTitik` pada setiap kolom
+// uang satu baris. Hanya untuk berkas berpemisah `;`.
+func NormalisasiDesimalKoma(nilai map[string]string) {
+	for _, k := range KolomUangUnggah {
+		if v, ada := nilai[k]; ada {
+			nilai[k] = DesimalKomaKeTitik(v)
+		}
+	}
 }
 
 // kolomTeksWajib adalah kolom teks yang harus ada isinya.
@@ -377,6 +439,18 @@ func ValidasiUnggah(baris []BarisUnggah) HasilUnggah {
 			v := ambil(w.Kolom)
 			if v == "" {
 				tolak(b.Nomor, w.Kolom, w.Pesan, "kolom kosong")
+				continue
+			}
+			if _, err := TanggalCSV(v); err != nil {
+				tolak(b.Nomor, w.Kolom, w.Pesan,
+					fmt.Sprintf("%q bukan dd/mm/yyyy", v))
+			}
+		}
+
+		// Tanggal opsional: kosong diterima, terisi tetap harus berbentuk.
+		for _, w := range kolomTanggalOpsional {
+			v := ambil(w.Kolom)
+			if v == "" {
 				continue
 			}
 			if _, err := TanggalCSV(v); err != nil {

@@ -86,35 +86,37 @@ export default function PemilihMaster({
         <Halaman halaman={halaman} ukuran={UKURAN_HALAMAN_MPNL} total={daftar.length} onPindah={setHalaman} />
       )}
       {daftar !== null && daftar.length > 0 && (
-        <table className="inbox__tabel">
-          <thead>
-            <tr>
-              <th>{PEMILIH_MPNL.kolomId}</th>
-              <th>{kolomNama}</th>
-              <th className="table__actions" />
-            </tr>
-          </thead>
-          <tbody>
-            {potongHalaman(daftar, halaman).map((v) => (
-              <tr key={v.id} className="inbox__baris">
-                <td>{v.id}</td>
-                <td>{v.nama}</td>
-                <td className="table__actions">
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    onClick={() => {
-                      onPilih(v)
-                      onTutup()
-                    }}
-                  >
-                    {PEMILIH_MPNL.choose}
-                  </button>
-                </td>
+        <div className="mpnl-tabel">
+          <table className="inbox__tabel">
+            <thead>
+              <tr>
+                <th>{PEMILIH_MPNL.kolomId}</th>
+                <th>{kolomNama}</th>
+                <th className="table__actions" />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {potongHalaman(daftar, halaman).map((v) => (
+                <tr key={v.id} className="inbox__baris">
+                  <td>{v.id}</td>
+                  <td>{v.nama}</td>
+                  <td className="table__actions">
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => {
+                        onPilih(v)
+                        onTutup()
+                      }}
+                    >
+                      {PEMILIH_MPNL.choose}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </Modal>
   )

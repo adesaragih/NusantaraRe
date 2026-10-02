@@ -125,12 +125,35 @@ export const JUDUL_KOLOM_PESERTA: Record<string, string> = {
   RI_ADMIN_FEE_RETRO: 'RI Admin Fee Retro',
   GROSS_PREMIUM_RETRO: 'Gross Premium Retro',
   NET_PREMIUM_RETRO: 'Net Premium Retro',
+  // Kolom tambahan di luar PL_Detail_Sec (keputusan work owner 02-10-2026,
+  // `models.KolomGridTambahan`).
+  NAME_OF_INSURED: 'Name Of Insured',
+  DOB: 'DOB',
+  GROSS_VALUATION_BEGIN_DATE: 'Gross Valuation Begin Date',
+  GROSS_VALUATION_EXPIRED_DATE: 'Gross Valuation Expired Date',
 }
+
+/**
+ * KUNCI URUT kolom grid peserta — urutan kolom berkas CSV unggahan ceding
+ * (permintaan work owner 02-10-2026). Bukan daftar kolom: kolom yang tidak
+ * dimuat grid server dilewati, dan kolom server yang tidak ada di sini tetap
+ * tampil sesudahnya (`susunKolom`).
+ */
+export const URUTAN_KOLOM_PESERTA: readonly string[] = [
+  'POLICY_NO', 'POLICY_HOLDER', 'CERTIFICATE_NO', 'NAME_OF_INSURED', 'SEX', 'DOB', 'ENTRY_AGE', 'CURRENT_AGE',
+  'PLAN', 'BEGIN_DATE', 'EXPIRED_DATE', 'GROSS_VALUATION_BEGIN_DATE', 'GROSS_VALUATION_EXPIRED_DATE',
+  'PERIOD_MM', 'UW_STATUS', 'EM_PERCENT', 'CURRENCY', 'SUM_INSURED', 'CEDING_RETENTION',
+  'SUM_REASURED', 'SHARE_NUSANTARA_RE_GROSS', 'SUM_AT_RISK_GROSS', 'GROSS_PREMIUM', 'DEDUCTION',
+  'RI_ADMIN_FEE', 'BROKERAGE_FEE', 'NET_PREMIUM', 'FACTOR',
+]
+
+/** Kolom grid peserta yang selalu PALING KANAN, urut seperti ini (02-10-2026). */
+export const KOLOM_PALING_KANAN = ['STNC', 'WPC'] as const
 
 /** Label layar Premium List Detail — tiket 03. */
 export const DETAIL_POLIS = {
   judul: 'Premium List Detail',
-  nomor: 'PL_NUMBER',
+  nomor: 'PL Number',
   belumBernomor: 'Not yet numbered',
   terbitkan: 'Generate PL Number',
   /**
@@ -162,9 +185,10 @@ export const UNGGAH_CSV = {
    * aturannya setelah berkasnya ditolak.
    */
   aturanPemisah:
-    'Numbers use a DOT (.) as the decimal separator, with no thousands separator. ' +
-    'Example: 1234567.89 — not 1,234,567.89 and not 1.234.567,89. ' +
-    'Dates use the dd/mm/yyyy format.',
+    'Columns: separated by a comma (,) or semicolon (;). ' +
+    'Numbers: no thousands separator; decimals use a DOT (1234567.89), or a comma ' +
+    '(1234567,89) in semicolon files. Not 1,234,567.89 or 1.234.567,89. ' +
+    'Dates: dd/mm/yyyy.',
   perbaikiDulu:
     'Fix the rejected rows first, then preview again. While any row is ' +
     'rejected, no row is saved.',
@@ -397,3 +421,9 @@ export const KOLOM_PRODUK = {
  * bawaan inti (`-- pilih --`) untuk modul lain tidak berubah.
  */
 export const TEKS_PILIH = '-- choose --'
+
+/**
+ * Teks tombol pilih yang menempel di kotak isian Premium List Detail (02-10-2026).
+ * Nama lengkapnya (mis. "Choose Product Name") tetap di `aria-label` dan `title`.
+ */
+export const TEKS_TOMBOL_PILIH = 'Choose'

@@ -18,6 +18,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/cockroachdb/apd/v3"
 
@@ -50,6 +51,8 @@ type isiDataPolis struct {
 	RetroName           string `json:"retroName"`
 	SecurityReinsurerID string `json:"securityReinsurerId"`
 	SecurityReinsurer   string `json:"securityReinsurer"`
+	// DateReceived - `YYYY-MM-DD` (masukan `type="date"`); kosong = tidak diisi.
+	DateReceived string `json:"dateReceived"`
 }
 
 func (i isiDataPolis) keIsian() (models.IsianDataPolis, error) {
@@ -62,6 +65,13 @@ func (i isiDataPolis) keIsian() (models.IsianDataPolis, error) {
 		MarketingCode: i.MarketingCode, MarketingName: i.MarketingName,
 		RetroID: i.RetroID, RetroName: i.RetroName,
 		SecurityReinsurerID: i.SecurityReinsurerID, SecurityReinsurer: i.SecurityReinsurer,
+	}
+	if v := strings.TrimSpace(i.DateReceived); v != "" {
+		d, err := time.Parse("2006-01-02", v)
+		if err != nil {
+			return hasil, errors.New("dateReceived harus berbentuk YYYY-MM-DD")
+		}
+		hasil.DateReceived = &d
 	}
 	for _, d := range []struct {
 		medan, nilai string

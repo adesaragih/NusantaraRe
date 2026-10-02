@@ -26,9 +26,28 @@ const SUMBER = BERKAS.split('\n')
   .join('\n')
 
 describe('kolom kotak masuk', () => {
-  it('SEBELAS kolom dari InboxPremiumList.xml, plus tanggal terima', () => {
-    // Tiga belas terdaftar di RD; dua sengaja tidak ada.
-    expect(KOLOM_EKSPOR_POLIS).toHaveLength(12)
+  it('DELAPAN kolom: sebelas dari InboxPremiumList.xml + tanggal terima, dikurangi empat', () => {
+    // Tiga belas terdaftar di RD; dua sengaja tidak ada. Sejak 02-10-2026
+    // PolicyHolderName, MarketingName, SobName, dan DateReceived juga tidak
+    // ditampilkan (keputusan work owner).
+    expect(KOLOM_EKSPOR_POLIS).toHaveLength(8)
+    const kunci = KOLOM_EKSPOR_POLIS.map((k) => String(k.kunci))
+    for (const k of ['policyHolderName', 'marketingName', 'sobName', 'dateReceived']) {
+      expect(kunci).not.toContain(k)
+    }
+  })
+
+  it('urutan kolom keputusan work owner 02-10-2026', () => {
+    expect(KOLOM_EKSPOR_POLIS.map((k) => String(k.kunci))).toEqual([
+      'caseId',
+      'tglCreate',
+      'plNumber',
+      'riSlipRnm',
+      'type',
+      'cedingCoName',
+      'createOpName',
+      'statusWork',
+    ])
   })
 
   it('label datang dari labels.premiumlist, tidak diketik ulang', () => {
@@ -83,5 +102,24 @@ describe('dua tombol portal', () => {
     // CreateInputLife b982 "ASSIGN-WORKLIST <pzInsKey>!InputPolicyHolder":
     // Pega langsung menyerahkan assignment tahap pertamanya.
     expect(SUMBER).toContain('onBuka(hasil.caseId, hasil.statusWork)')
+  })
+})
+
+describe('kasus tertutup tidak dapat dibuka (02-10-2026)', () => {
+  it('hanya tiga tahap aktif yang dapat dibuka', async () => {
+    const { kasusBisaDibuka } = await import('../api')
+    expect(kasusBisaDibuka('Input Offer Life')).toBe(true)
+    expect(kasusBisaDibuka('Input Premium Detail')).toBe(true)
+    expect(kasusBisaDibuka('Input Premium Summary')).toBe(true)
+    expect(kasusBisaDibuka('Resolved-Completed')).toBe(false)
+    expect(kasusBisaDibuka('Resolved-Rejected')).toBe(false)
+    expect(kasusBisaDibuka('')).toBe(false)
+  })
+
+  it('baris tertutup tanpa onClick, dan rute tidak merender layar keputusannya', () => {
+    expect(SUMBER).toContain('kasusBisaDibuka(b.statusWork) ? (')
+    expect(SUMBER).toContain('className="pl-inbox__tutup"')
+    const rute = readFileSync(join(__dirname, '..', 'rute.tsx'), 'utf8')
+    expect(rute).toContain("polis.id !== '' && kasusBisaDibuka(polis.tahap) && (")
   })
 })

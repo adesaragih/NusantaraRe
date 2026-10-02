@@ -157,6 +157,9 @@ const (
 	PesanCedingKosong       = "Ceding Name can't null"
 	PesanPolicyHolderKosong = "Policy Holder can't null"
 	PesanStatusKosong       = "Status can't null"
+	// PesanDateReceivedPenawaranKosong - Email Received Date wajib di Input
+	// Offer Life (keputusan work owner 02-10-2026; di Pega tidak ber-pyRequired).
+	PesanDateReceivedPenawaranKosong = "Email Received Date can't null"
 )
 
 var (
@@ -311,6 +314,7 @@ func SusunPenawaran(flag string, isi IsianPenawaran) (PenawaranTersimpan, error)
 		CedingCoName: isi.CedingCoName, PolicyHolderName: isi.PolicyHolderName,
 		TypeCeding: isi.TypeCeding, BusinessCode: isi.BusinessCode,
 		Status: isi.Status, Description: isi.Description, PeriksaStatus: true,
+		DateReceived: isi.DateReceived,
 	}); len(kurang) > 0 {
 		return PenawaranTersimpan{}, fmt.Errorf("%w: %s", ErrIsianPenawaranBelumLengkap, GabungPesanPenawaran(kurang))
 	}
@@ -330,7 +334,10 @@ func SusunPenawaran(flag string, isi IsianPenawaran) (PenawaranTersimpan, error)
 // dari data tersimpan hanya kelima lainnya. Saat menyimpan ia SELALU diperiksa.
 type WajibPenawaran struct {
 	CedingCoName, PolicyHolderName, TypeCeding, BusinessCode, Status, Description string
-	PeriksaStatus                                                                 bool
+	// DateReceived - Email Received Date; wajib sejak 02-10-2026 (keputusan
+	// work owner, bukan korpus).
+	DateReceived  *time.Time
+	PeriksaStatus bool
 }
 
 // KekuranganPenawaran - sel wajib yang kosong, berurutan seperti di layar.
@@ -348,6 +355,7 @@ func KekuranganPenawaran(w WajibPenawaran) []string {
 		{w.PolicyHolderName, PesanPolicyHolderKosong, true},
 		{w.TypeCeding, PesanTypeCedingKosong, true},
 		{w.BusinessCode, PesanBusinessCodeKosong, true},
+		{tandaTanggal(w.DateReceived), PesanDateReceivedPenawaranKosong, true},
 		{w.Status, PesanStatusKosong, w.PeriksaStatus},
 		{w.Description, PesanCommentKosong, true},
 	} {
@@ -413,4 +421,13 @@ func rapikan(i IsianPenawaran) IsianPenawaran {
 		*s = strings.TrimSpace(*s)
 	}
 	return i
+}
+
+// tandaTanggal - "" bila tanggalnya kosong, selain itu penanda tak kosong;
+// supaya tanggal ikut diperiksa `KekuranganPenawaran` seperti sel teks.
+func tandaTanggal(t *time.Time) string {
+	if t == nil || t.IsZero() {
+		return ""
+	}
+	return "ada"
 }

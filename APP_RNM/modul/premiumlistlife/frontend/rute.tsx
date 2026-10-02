@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 import type { PropsRute, RuteModul } from '../../../inti/frontend/modul'
-import { TAHAP_POLIS } from './api'
+import { kasusBisaDibuka, TAHAP_POLIS } from './api'
 import { HALAMAN_AWAL_PREMIUMLIST, type HalamanPremiumList } from './menu'
 import InboxPremiumList from './pages/InboxPremiumList'
 import InputOffer from './pages/InputOffer'
@@ -66,7 +66,8 @@ export function RutePremiumList({ halaman, ketukMenu }: PropsRute<HalamanPremium
       {halaman === 'premiumlist' &&
         polis.id !== '' &&
         polis.tahap === TAHAP_POLIS.summary && <PremiumListSummary polisID={polis.id} />}
-      {halaman === 'premiumlist' && polis.id !== '' && (
+      {/* Kasus tertutup tidak punya layar keputusan (keputusan work owner 02-10-2026). */}
+      {halaman === 'premiumlist' && polis.id !== '' && kasusBisaDibuka(polis.tahap) && (
         <InputOffer
           polisID={polis.id}
           tahap={polis.tahap}

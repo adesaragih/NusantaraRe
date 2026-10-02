@@ -62,6 +62,7 @@ type JawabanDataPolis struct {
 	SecurityReinsurerID string     `json:"securityReinsurerId"`
 	SecurityReinsurer   string     `json:"securityReinsurer"`
 	WPC                 *time.Time `json:"wpc"`
+	DateReceived        *time.Time `json:"dateReceived"`
 	// Peringatan - pesan langkah 9 SavePremiumList_Act sesudah Save Data; kosong
 	// saat membaca.
 	Peringatan []string `json:"peringatan"`
@@ -115,7 +116,8 @@ func (f *FormDataPolis) Baca(ctx context.Context, pelaku inti.Pelaku, polisID st
 		AnnuityInterest: teksUang(d.AnnuityInterest), PremiumRefundFactor: teksUang(d.PremiumRefundFactor),
 		RetroID: d.RetroID, RetroName: d.RetroName,
 		SecurityReinsurerID: d.SecurityReinsurerID, SecurityReinsurer: d.SecurityReinsurer,
-		WPC: d.WPC,
+		WPC:          d.WPC,
+		DateReceived: d.DateReceived,
 	}
 	j.Pilihan.Type = models.PilihanTypePolis
 	j.Pilihan.ProRateType = models.PilihanProRateType

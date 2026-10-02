@@ -111,7 +111,8 @@ export default function InputOffer({
 
   // ⛔ Di tahap Input Premium Detail layar ini berdiri DI BAWAH Premium List
   // Detail (rute.tsx), yang sudah punya kepala sendiri — kepala kedua dibuang,
-  // periode pindah ke panel Decision.
+  // dan periodenya tampil di kepala Premium List Detail (02-10-2026), bukan di
+  // panel Decision.
   const diDetail = tahap === TAHAP_POLIS.detail
   const lencanaPeriode = periode !== '' && (
     <span className="pl-kepala__chip" role="status">
@@ -136,7 +137,7 @@ export default function InputOffer({
           </div>
         </header>
       )}
-      {galatPeriode !== null && <Gagal galat={galatPeriode} />}
+      {!diDetail && galatPeriode !== null && <Gagal galat={galatPeriode} />}
 
       {/*
         Tiket 01 bagian 3 — isian `InputOfferLife.xml`, HANYA di tahap
@@ -148,7 +149,6 @@ export default function InputOffer({
 
       <section className="panel pl-keputusan">
         <h3 className="panel__title">Decision</h3>
-        {diDetail && <div className="pl-kepala__meta pl-keputusan__meta">{lencanaPeriode}</div>}
         {galat !== null && <Gagal galat={galat} />}
         {akibat !== null && (
           <p className="pl-offer__tersimpan" role="status">

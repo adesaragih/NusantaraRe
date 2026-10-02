@@ -120,6 +120,20 @@ export const TAHAP_POLIS = {
 } as const
 
 /**
+ * Apakah kasus ber-`statusWork` ini dapat DIBUKA dari kotak masuk: hanya bila
+ * statusnya salah satu tahap aktif (`TAHAP_POLIS`).
+ *
+ * ⛔ [keputusan work owner 02-10-2026] Kasus tertutup (`Resolved-Completed`,
+ * `Resolved-Rejected`, dan status lain di luar tahap aktif) TIDAK dibuka:
+ * layar keputusannya hanya menawarkan tombol yang server tolak ("kasus polis
+ * sudah ditutup"). Daftar putih, bukan daftar hitam — status penutup baru
+ * pun otomatis tidak dapat dibuka.
+ */
+export function kasusBisaDibuka(statusWork: string): boolean {
+  return (Object.values(TAHAP_POLIS) as string[]).includes(statusWork.trim())
+}
+
+/**
  * Apakah `Reject` punya jalur dari tahap ini.
  *
  * ⛔ `Reject` muncul TEPAT SEKALI di seluruh flow — `Transition9` b2306 pada
@@ -587,6 +601,8 @@ export interface DataPolis {
   retroName: string
   securityReinsurerId: string
   securityReinsurer: string
+  /** Email Received Date — ISO; DAPAT DIISI dan WAJIB di layar ini (02-10-2026). */
+  dateReceived: string | null
   /** Dibaca saja (WPCLife_Act belum dibawa). */
   wpc: string | null
   /** Pesan SavePremiumList_Act langkah 9 sesudah Save Data (data tetap tersimpan). */
@@ -595,7 +611,13 @@ export interface DataPolis {
 }
 
 /** Badan `PUT .../data-polis`. */
-export type IsiDataPolis = Omit<DataPolis, 'caseId' | 'tahap' | 'bolehDisimpan' | 'wpc' | 'peringatan' | 'pilihan'>
+export type IsiDataPolis = Omit<
+  DataPolis,
+  'caseId' | 'tahap' | 'bolehDisimpan' | 'wpc' | 'peringatan' | 'pilihan' | 'dateReceived'
+> & {
+  /** `YYYY-MM-DD` (masukan `type="date"`); kosong = belum diisi. */
+  dateReceived: string
+}
 
 /** Satu baris popup Choose Product Name. */
 export interface BarisProdukPolis {
@@ -649,5 +671,5 @@ export async function cariRISlipPolis(cari: string): Promise<BarisRujukanPolis[]
 /** Data polis → badan simpan. */
 export function isiDariDataPolis(d: DataPolis): IsiDataPolis {
   const { caseId: _c, tahap: _t, bolehDisimpan: _b, wpc: _w, peringatan: _r, pilihan: _p, ...isi } = d
-  return isi
+  return { ...isi, dateReceived: tanggalMasukan(d.dateReceived) }
 }

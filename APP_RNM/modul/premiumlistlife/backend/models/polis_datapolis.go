@@ -40,6 +40,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/cockroachdb/apd/v3"
 )
@@ -84,6 +85,9 @@ const (
 	PesanRetroKosong           = "Retrocessionaire can't null"
 	PesanAnnuityInterestKosong = "Annuity Interest can't null"
 	PesanPremiumRefundKosong   = "Premium Refund Factor can't null"
+	// PesanDateReceivedKosong - Email Received Date wajib di Input Premium
+	// Detail (keputusan work owner 02-10-2026).
+	PesanDateReceivedKosong = "Email Received Date can't null"
 )
 
 // ErrDataPolisTidakSah - isian di luar pilihan tertutupnya.
@@ -116,6 +120,10 @@ type IsianDataPolis struct {
 	RetroName           string
 	SecurityReinsurerID string
 	SecurityReinsurer   string
+	// DateReceived - `Email Received Date` (`DATE_RECEIVED`, sel Input Offer).
+	// ⛔ [keputusan work owner 02-10-2026] DAPAT DIISI dan WAJIB di layar
+	// Input Premium Detail; kolomnya sama dengan yang ditulis Save Offer.
+	DateReceived *time.Time
 }
 
 // TypeRetro - Type yang menuntut R/I SLIP dan Billing Name.
@@ -191,6 +199,7 @@ func SusunDataPolis(isi IsianDataPolis) (IsianDataPolis, error) {
 	tambah(isi.SourceOfBusiness == "", PesanSOBKosong)
 	tambah(TypeRetro(isi.Type) && isi.RetroName == "", PesanBillingKosong)
 	tambah(TypeRetro(isi.Type) && isi.SecurityReinsurer == "", PesanRetroKosong)
+	tambah(isi.DateReceived == nil, PesanDateReceivedKosong)
 	if len(kurang) > 0 {
 		return isi, fmt.Errorf("%w: %s", ErrDataPolisBelumLengkap, GabungPesanPenawaran(kurang))
 	}

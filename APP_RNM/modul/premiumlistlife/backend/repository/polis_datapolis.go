@@ -41,7 +41,7 @@ var kolomDataPolis = []string{
 	"TYPE", "PRODUCT_NAME_ID", "PRODUCT_NAME", "SOB", "SOB_NAME", "CEDING_CO", "CEDING_CO_NAME",
 	"POLICY_HOLDER", "POLICY_HOLDER_NAME", "RI_SLIP_RNM", "PRO_RATE_TYPE", "MO_ID", "MARKETING_CODE",
 	"MARKETING_NAME", "ANNUITY_INTEREST", "PREMIUM_REFUND_FACTOR", "RETRO_ID", "RETRO_NAME",
-	"SECURITY_REINSURER_ID", "SECURITY_REINSURER", "WPC",
+	"SECURITY_REINSURER_ID", "SECURITY_REINSURER", "WPC", "DATE_RECEIVED",
 }
 
 func sqlBacaDataPolis(polis string) string {
@@ -50,7 +50,7 @@ func sqlBacaDataPolis(polis string) string {
 		switch k {
 		case "ANNUITY_INTEREST", "PREMIUM_REFUND_FACTOR":
 			bagian[i] = fmt.Sprintf(db.FmtDesimal, "p."+k)
-		case "WPC":
+		case "WPC", "DATE_RECEIVED":
 			bagian[i] = fmt.Sprintf(db.FmtTanggalOracle, "p."+k)
 		default:
 			bagian[i] = "p." + k
@@ -112,6 +112,9 @@ func uraiDataPolis(n []sql.NullString) (DataPolisTersimpan, error) {
 	if h.WPC, err = uraiTanggalOracle(v["WPC"], "WPC"); err != nil {
 		return h, err
 	}
+	if h.DateReceived, err = uraiTanggalOracle(v["DATE_RECEIVED"], "DATE_RECEIVED"); err != nil {
+		return h, err
+	}
 	return h, nil
 }
 
@@ -125,8 +128,9 @@ func sqlSimpanDataPolis(polis string) string {
 	        CEDING_CO = :6, CEDING_CO_NAME = :7, POLICY_HOLDER = :8, POLICY_HOLDER_NAME = :9,
 	        RI_SLIP_RNM = :10, PRO_RATE_TYPE = :11, MO_ID = :12, MARKETING_CODE = :13,
 	        MARKETING_NAME = :14, ANNUITY_INTEREST = :15, PREMIUM_REFUND_FACTOR = :16,
-	        RETRO_ID = :17, RETRO_NAME = :18, SECURITY_REINSURER_ID = :19, SECURITY_REINSURER = :20
-	  WHERE ID = :21`, polis)
+	        RETRO_ID = :17, RETRO_NAME = :18, SECURITY_REINSURER_ID = :19, SECURITY_REINSURER = :20,
+	        DATE_RECEIVED = :21
+	  WHERE ID = :22`, polis)
 }
 
 func argSimpanDataPolis(id string, d models.IsianDataPolis) []any {
@@ -142,7 +146,8 @@ func argSimpanDataPolis(id string, d models.IsianDataPolis) []any {
 		k(d.CedingCo), k(d.CedingCoName), k(d.PolicyHolder), k(d.PolicyHolderName),
 		k(d.RISlipRNM), k(d.ProRateType), k(d.MoID), k(d.MarketingCode), k(d.MarketingName),
 		desimal(d.AnnuityInterest), desimal(d.PremiumRefundFactor),
-		k(d.RetroID), k(d.RetroName), k(d.SecurityReinsurerID), k(d.SecurityReinsurer), id,
+		k(d.RetroID), k(d.RetroName), k(d.SecurityReinsurerID), k(d.SecurityReinsurer),
+		tanggalAtauNil(d.DateReceived), id,
 	}
 }
 
@@ -259,4 +264,12 @@ func (r *Penawaran) PesertaBatas(ctx context.Context, polisID string) ([]models.
 		hasil = append(hasil, p)
 	}
 	return hasil, rows.Err()
+}
+
+// tanggalAtauNil - tanggal kosong menjadi NULL.
+func tanggalAtauNil(t *time.Time) any {
+	if t == nil {
+		return nil
+	}
+	return *t
 }

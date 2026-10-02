@@ -36,6 +36,7 @@ const contoh: DataPolis = {
   retroName: '',
   securityReinsurerId: '',
   securityReinsurer: '',
+  dateReceived: '2026-10-01T00:00:00Z',
   wpc: null,
   peringatan: null,
   pilihan: { type: [], proRateType: [] },
@@ -55,6 +56,14 @@ describe('kolom wajib data polis', () => {
     ])
     expect(typeRetro('TR')).toBe(true)
     expect(typeRetro('QP')).toBe(false)
+  })
+
+  it('Email Received Date wajib, dikirim YYYY-MM-DD (02-10-2026)', () => {
+    expect(isiDariDataPolis(contoh).dateReceived).toBe('2026-10-01')
+    const kosong = isiDariDataPolis({ ...contoh, dateReceived: null })
+    expect(kosong.dateReceived).toBe('')
+    expect(kolomWajibDataPolis(kosong)).toEqual([LABEL_DATA_POLIS.dateReceived])
+    expect(BERKAS).toContain("onChange={ubah('dateReceived')}")
   })
 
   it('badan simpan tanpa medan milik server', () => {
@@ -88,8 +97,9 @@ describe('struktur layar', () => {
 
 describe('Billing Name dan Retrocessionaire', () => {
   it('hanya tampil untuk Type TP/TR', () => {
-    const blok = BERKAS.slice(BERKAS.indexOf('{typeRetro(isi.type) && (\n            <>\n              <p className="pl-datapolis__catatan"'))
-    expect(blok.length).toBeGreaterThan(0)
+    const awal = BERKAS.search(/\{typeRetro\(isi\.type\) && \(\s*<div className="pl-dp-bagian">/)
+    expect(awal).toBeGreaterThan(-1)
+    const blok = BERKAS.slice(awal)
     expect(blok).toContain('LABEL_DATA_POLIS.billing')
     expect(blok).toContain('LABEL_DATA_POLIS.retro')
   })
@@ -103,6 +113,50 @@ describe('Retrocessionaire wajib (TP/TR) dan lebar kolom seragam', () => {
   })
 
   it('Billing dan Retrocessionaire berbagi satu grid', () => {
-    expect(BERKAS).toContain('pl-offer__pilih-grup')
+    expect(BERKAS).toContain('pl-dp-grid')
+  })
+
+  it('R/I SLIP RNM No. di bawah catatan Billing dan di atas Billing Name', () => {
+    const catatan = BERKAS.indexOf('LABEL_DATA_POLIS.catatanBilling')
+    const riSlip = BERKAS.indexOf('label={LABEL_DATA_POLIS.riSlip}')
+    const billing = BERKAS.indexOf('label={LABEL_DATA_POLIS.billing}')
+    expect(catatan).toBeGreaterThan(-1)
+    expect(riSlip).toBeGreaterThan(catatan)
+    expect(billing).toBeGreaterThan(riSlip)
+  })
+})
+
+describe('tata letak seragam Premium List Detail (02-10-2026)', () => {
+  it('Status penawaran tidak ditampilkan (keputusan work owner 02-10-2026)', () => {
+    expect(BERKAS).not.toContain('tampil(LABEL_DATA_POLIS.status,')
+    expect(BERKAS).not.toContain('offer.status)')
+  })
+
+  it('setiap bagian memakai grid seragam; tiga kolom lama tidak dipakai lagi', () => {
+    // Empat bagian tetap + satu bagian Retrocession (TP/TR).
+    expect(BERKAS.match(/className="pl-dp-grid"/g)?.length).toBe(4)
+    expect(BERKAS).not.toContain('pl-datapolis__kolom-tiga')
+    expect(BERKAS).not.toContain('pl-offer__pasangan')
+  })
+
+  it('tombol pilih menempel di kotaknya dan tetap bernama lengkap untuk pembaca layar', () => {
+    expect(BERKAS.match(/className="pl-dp-pilih pl-dp-lebar"/g)?.length).toBe(5)
+    expect(BERKAS).toContain('aria-label={label}')
+    expect(BERKAS).toContain('{TEKS_TOMBOL_PILIH}')
+  })
+
+  it('System Reinsurance di kiri Premium Payment Method (02-10-2026)', () => {
+    const sistem = BERKAS.indexOf('tampil(LABEL_DATA_POLIS.typeCeding,')
+    const bayar = BERKAS.indexOf('label={LABEL_DATA_POLIS.proRateType}')
+    expect(sistem).toBeGreaterThan(-1)
+    expect(bayar).toBeGreaterThan(sistem)
+  })
+
+  it('tiga kolom berdampingan; di dalamnya grid dua sel, isian panjang selebar kolom (02-10-2026)', () => {
+    const css = readFileSync(join(__dirname, '..', 'premiumlistlife.css'), 'utf8')
+    expect(css).toMatch(/\.pl-dp-kolom-tiga \{[^}]*repeat\(3, minmax\(0, 1fr\)\)/)
+    expect(css).toMatch(/\.pl-dp-grid \{[^}]*repeat\(2, minmax\(0, 1fr\)\)/)
+    expect(css).toMatch(/\.pl-dp-lebar \{[^}]*grid-column: 1 \/ -1/)
+    expect(BERKAS.match(/className="pl-dp-kolom-tiga"/g)?.length).toBe(1)
   })
 })

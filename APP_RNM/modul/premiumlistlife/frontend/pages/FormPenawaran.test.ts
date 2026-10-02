@@ -89,7 +89,7 @@ describe('popup pilihan (setCeding_act / setPolicyHolder_act)', () => {
 describe('riwayat', () => {
   it('tanggal nol Go tampil sebagai tanda kosong', () => {
     expect(tanggalRiwayat('0001-01-01T00:00:00Z')).toBe('—')
-    expect(tanggalRiwayat('2026-09-30T10:15:00Z')).toBe('2026-09-30 10:15')
+    expect(tanggalRiwayat('2026-09-30T10:15:00Z')).toBe('30/09/2026 10:15')
   })
 })
 
@@ -131,8 +131,10 @@ describe('sel penawaran migrasi 059', () => {
     expect(BERKAS).not.toMatch(/sumInsured[\s\S]{0,120}type="number"/)
   })
 
-  it('kasus Input Premium mengunci sel penawaran', () => {
-    expect(BERKAS).toContain("data.flag === '1'")
+  it('kasus Input Premium TETAP dapat mengubah sel penawaran (keputusan work owner 02-10-2026)', () => {
+    // Yang mengunci hanya tahapnya; FlagOnGoingPolicy tidak lagi mengunci.
+    expect(BERKAS).toContain('const kunci = !bisa\n')
+    expect(BERKAS).not.toContain("kunci = !bisa || data.flag === '1'")
   })
 })
 
@@ -220,6 +222,15 @@ describe('kolom wajib dan tombol Save Offer', () => {
       'Status',
       'Comment',
     ])
+  })
+
+  it('Email Received Date wajib (keputusan work owner 02-10-2026)', () => {
+    expect(kolomWajibKosong({ ...lengkap, dateReceived: '' })).toEqual([LABEL_PENAWARAN.dateReceived])
+    expect(kolomWajibKosong({ ...lengkap, dateReceived: '', status: '' })).toEqual([
+      LABEL_PENAWARAN.dateReceived,
+      'Status',
+    ])
+    expect(BERKAS).toContain("required={medan === 'dateReceived'}")
   })
 
   it('Status wajib — radio belum dipilih menahan simpan', () => {

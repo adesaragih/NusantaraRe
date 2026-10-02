@@ -6,6 +6,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/cockroachdb/apd/v3"
 )
@@ -16,7 +17,13 @@ func dataPolisLengkap() IsianDataPolis {
 		SourceOfBusiness: "UJI-S1", SobName: "UJI-SOB",
 		ProRateType: "1", MoID: "UJI-M1", MarketingCode: "UJI-MC", MarketingName: "UJI-MARKETING",
 		AnnuityInterest: apd.New(5, -2), PremiumRefundFactor: apd.New(1, 0),
+		DateReceived: tanggalUji(),
 	}
+}
+
+func tanggalUji() *time.Time {
+	t := time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)
+	return &t
 }
 
 func TestDataPolisWajibIsiDilaporkanSekaligus(t *testing.T) {
@@ -26,7 +33,7 @@ func TestDataPolisWajibIsiDilaporkanSekaligus(t *testing.T) {
 	}
 	for _, p := range []string{PesanProductNameKosong, PesanRISlipKosong, PesanProRateTypeKosong,
 		PesanMarketingKosong, PesanAnnuityInterestKosong, PesanPremiumRefundKosong, PesanSOBKosong, PesanBillingKosong,
-		PesanRetroKosong} {
+		PesanRetroKosong, PesanDateReceivedKosong} {
 		if !strings.Contains(err.Error(), p) {
 			t.Errorf("pesan %q tidak dilaporkan: %v", p, err)
 		}

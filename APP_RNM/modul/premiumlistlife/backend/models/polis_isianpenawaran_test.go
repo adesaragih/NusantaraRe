@@ -14,7 +14,13 @@ func isianLengkap() IsianPenawaran {
 		CedingCo: "UJI-L01", CedingCoName: "UJI-CEDING",
 		PolicyHolder: "UJI-C1", PolicyHolderName: "UJI-PEMEGANG",
 		TypeCeding: "2", BusinessCode: "L3", Status: "Pending", Description: "UJI-KOMENTAR",
+		DateReceived: tanggalTerimaUji(),
 	}
+}
+
+func tanggalTerimaUji() *time.Time {
+	t := time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)
+	return &t
 }
 
 // Nama turunan dari kode - VERBATIM InputOfferLife_ACT langkah 3 dan SetCoBName_Act.
@@ -58,18 +64,18 @@ func TestSusunPenawaranMelaporkanSeluruhKekurangan(t *testing.T) {
 		t.Fatalf("galat = %v", err)
 	}
 	for _, pesan := range []string{PesanCedingKosong, PesanPolicyHolderKosong, PesanTypeCedingKosong,
-		PesanBusinessCodeKosong, PesanStatusKosong, PesanCommentKosong} {
+		PesanBusinessCodeKosong, PesanDateReceivedPenawaranKosong, PesanStatusKosong, PesanCommentKosong} {
 		if !strings.Contains(err.Error(), pesan) {
 			t.Errorf("pesan %q tidak dilaporkan: %v", pesan, err)
 		}
 	}
 	// Gerbang Confirm tidak memeriksa Status - kolomnya tidak ada di header.
 	k := KekuranganPenawaran(WajibPenawaran{CedingCoName: "UJI-C", PolicyHolderName: "UJI-P",
-		TypeCeding: "1", BusinessCode: "L1", Description: "UJI"})
+		TypeCeding: "1", BusinessCode: "L1", Description: "UJI", DateReceived: tanggalTerimaUji()})
 	if len(k) != 0 {
 		t.Errorf("Confirm tanpa Status ditolak: %v", k)
 	}
-	if k := KekuranganPenawaran(WajibPenawaran{PeriksaStatus: true}); len(k) != 6 || k[0] != PesanCedingKosong {
+	if k := KekuranganPenawaran(WajibPenawaran{PeriksaStatus: true}); len(k) != 7 || k[0] != PesanCedingKosong || k[4] != PesanDateReceivedPenawaranKosong {
 		t.Errorf("urutan pesan bukan urutan layar: %v", k)
 	}
 }
