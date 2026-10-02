@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -183,5 +184,26 @@ func TestIsiMedanKlausulTCO(t *testing.T) {
 	}
 	if err := IsiMedanKlausulTCO(a, &k, map[string]string{"Pct": "1.000,5"}); !errors.Is(err, ErrPersenBukanDesimal) {
 		t.Errorf("desimal salah: %v", err)
+	}
+}
+
+// TestSemuaAnakMemakaiPilihanAnakTreatyLimit - ketujuh grid `Show Child`
+// memilih ReinsType dari daftar anak Treaty Limit (porsi + induknya); induk
+// tidak [keputusan work owner 02-10-2026].
+func TestSemuaAnakMemakaiPilihanAnakTreatyLimit(t *testing.T) {
+	var anak []string
+	for _, a := range AturanKlausulTCO {
+		mau := ""
+		if a.Anak {
+			mau = PilihanReinsAnakTreatyLimit
+			anak = append(anak, a.Jenis)
+		}
+		if a.PilihanReins != mau {
+			t.Errorf("%s: PilihanReins %q, mau %q", a.Jenis, a.PilihanReins, mau)
+		}
+	}
+	sort.Strings(anak)
+	if got := strings.Join(anak, ","); got != "CashLossLimitList,ClaimCoorpChild,EpiList,ExGratiaChildList,FacInList,PLAList,TreatyLimitChild" {
+		t.Errorf("aturan anak %s, mau ketujuh grid Show Child", got)
 	}
 }

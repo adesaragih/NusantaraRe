@@ -1,4 +1,6 @@
-// Pemilih jenis reasuransi yang DAPAT DIFILTER — ReinsType Treaty Limit.
+// Pemilih jenis reasuransi yang DAPAT DIFILTER — ReinsType induk Treaty Limit
+// dan ReinsType SETIAP baris anak (ketujuh grid `Show Child`, pilihan anak
+// Treaty Limit [keputusan work owner 02-10-2026]).
 //
 // `[terverifikasi]` Kedua grid Treaty Limit memakai `pxAutoComplete`, bukan
 // dropdown biasa:

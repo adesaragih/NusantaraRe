@@ -170,7 +170,7 @@ Nomor baris = `Harness/InboxTreatyContractDescription.xml` kecuali disebut lain.
 | `For Non XOL` b4880 / `For XOL` b7971 (`BrowseTreatyDesc_RD`, `IsXOL` 0/1) · `ID` b5440 · `Description Name` b5549 | `GET /jenis-klausul?isXol=` dari `TREATYDESC` (baca-saja) | ✅ AC 26/27 |
 | `Show` b6059 → `BrowseDescriptionLimit` + `testingKurs` + `SetKirimIDDesc` + `PanggilID` | membuka `PanelJenisKlausul`; beberapa jenis boleh terbuka bersamaan | ✅ AC 29; kurs ✅ tiket 11 |
 | 18 section induk: `Add` / `Edit` / `Save` (`GridTreatyArrangementEpi.xml` b8980/b10917/b5501) → `SaveTreatyArr*_Act` → `SaveMasterProportionalArrg` | `POST`/`PUT /tahun/{id}/klausul` → `PROPORTIONALARRG`, aturan per jenis dari server | ✅ AC 24/33/35, prosedur tidak dipanggil |
-| 7 section anak: `Show Child` b11200 → `Browse*ParentList`; `Close Child` (`GridTreatyArrTreatyEpiList.xml` b8657) → `Save*List_Act` → `SaveMasterProportionalArrgChild` | grid anak per induk; Rp/Usd turunan; total Pct + peringatan | ✅ AC 25/28 |
+| 7 section anak: `Show Child` b11200 → `Browse*ParentList`; `Close Child` (`GridTreatyArrTreatyEpiList.xml` b8657) → `Save*List_Act` → `SaveMasterProportionalArrgChild` | grid anak per induk; Rp/Usd turunan; total Pct + peringatan; ReinsType anak ketujuh grid = pilihan anak Treaty Limit (porsi + induknya, dapat difilter) [keputusan work owner 02-10-2026] | ✅ AC 25/28 |
 | `HitungRpUsd` | `RpUsdAnakTCO` di server | ✅ |
 | `TreatyTestChildTotal_Act` (TreatyLimitChild) | peringatan `Please make sure spreading is 100%` sesudah simpan | ✅ ralat 4 |
 | ExclutionTreaty: empat sub-bagian (`Param.Type`) + pemilih `BrowseOccupationFIRE_RD` / `BrowseFireClauseFacIn_RD` | satu jenis, empat subjenis; `GET /klausul-pilihan/{occupation,clause}` | ✅ OQ-TCO-14/16 |

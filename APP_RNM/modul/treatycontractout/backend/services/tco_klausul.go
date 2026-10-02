@@ -386,9 +386,9 @@ func (l *KlausulTCO) Daftar(ctx context.Context, pelaku inti.Pelaku, tahunID, de
 }
 
 // namaReinsType memeriksa ID jenis reasuransi di daftar pilihan jenisnya:
-// bawaan daftar tersaring tiket 02 [keputusan work owner 29-09-2026]
-// (OQ-TCO-15, ditutup); anak Treaty Limit - porsi + induknya (`induk`)
-// [keputusan work owner 30-09-2026].
+// induk - daftar tersaring tiket 02 [keputusan work owner 29-09-2026]
+// (OQ-TCO-15, ditutup); SETIAP anak - porsi + induknya (`induk`), sama dengan
+// anak Treaty Limit [keputusan work owner 30-09-2026, diperluas 02-10-2026].
 func (l *KlausulTCO) namaReinsType(ctx context.Context, a models.AturanKlausul, id, induk string) (string, error) {
 	var daftar []repository.JenisReasuransiTCO
 	var err error

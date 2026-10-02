@@ -247,7 +247,8 @@ func TestKlausulAnakTurunanDanTotal(t *testing.T) {
 		return services.KlausulMasuk{DescID: "10009", Anak: true, ParentReinsTypeID: "10003",
 			Medan: map[string]string{"ReinsTypeID": reins, "Pct": pct}}
 	}
-	h, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", anak("10005", "25"))
+	// Anak = porsi atau induknya sendiri, seperti anak Treaty Limit [keputusan work owner 02-10-2026].
+	h, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", anak("10004", "25"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -262,7 +263,7 @@ func TestKlausulAnakTurunanDanTotal(t *testing.T) {
 	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", anak("10003", "75.00000001")); !errors.Is(err, models.ErrTotalPctAnakMelebihi100) {
 		t.Errorf("total > 100: %v", err)
 	}
-	yatim := anak("10003", "10")
+	yatim := anak("10004", "10")
 	yatim.ParentReinsTypeID = "10005"
 	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", yatim); !errors.Is(err, services.ErrKlausulTidakAda) {
 		t.Errorf("anak tanpa induk: %v", err)
@@ -356,7 +357,7 @@ func TestKlausulPerbarui(t *testing.T) {
 		t.Errorf("pindah jenis: %v", err)
 	}
 	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", services.KlausulMasuk{DescID: "10009", Anak: true,
-		ParentReinsTypeID: "10003", Medan: map[string]string{"ReinsTypeID": "10005", "Pct": "10"}}); err != nil {
+		ParentReinsTypeID: "10003", Medan: map[string]string{"ReinsTypeID": "10004", "Pct": "10"}}); err != nil {
 		t.Fatal(err)
 	}
 	ganti := epi("10005", "200")
@@ -376,7 +377,7 @@ func TestKlausulTanpaKursDitolak(t *testing.T) {
 		t.Errorf("induk tanpa kurs: %v", err)
 	}
 	_, err = l.Simpan(context.Background(), pelakuUjiTCO, "1000001", services.KlausulMasuk{DescID: "10009", Anak: true,
-		ParentReinsTypeID: "10003", Medan: map[string]string{"ReinsTypeID": "10005", "Pct": "10"}})
+		ParentReinsTypeID: "10003", Medan: map[string]string{"ReinsTypeID": "10004", "Pct": "10"}})
 	if !errors.Is(err, services.ErrKursTidakAda) {
 		t.Errorf("anak tanpa kurs: %v", err)
 	}
@@ -406,7 +407,7 @@ func TestKlausulIndukBerubahMenghitungUlangAnak(t *testing.T) {
 		t.Fatal(err)
 	}
 	a, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", services.KlausulMasuk{DescID: "10009", Anak: true,
-		ParentReinsTypeID: "10003", Medan: map[string]string{"ReinsTypeID": "10005", "Pct": "25"}})
+		ParentReinsTypeID: "10003", Medan: map[string]string{"ReinsTypeID": "10004", "Pct": "25"}})
 	if err != nil || a.Klausul.Medan["Rp"] != "250.00000000" {
 		t.Fatalf("anak: %+v %v", a, err)
 	}
@@ -424,8 +425,8 @@ func TestKlausulIndukBerubahMenghitungUlangAnak(t *testing.T) {
 // Anak Treaty Limit - `Show Child` `GridTreatyArrTreatyLimitList.xml` b2975
 // (`TreatyContractSetReinsTypeList`, tak diekspor) [keputusan work owner
 // 30-09-2026]: ReinsType anak = porsi (10004, 10028, ...) atau induknya
-// sendiri; jenis induk LAIN ditolak. Induk dan anak jenis lain tetap memakai
-// daftar induk tiket 02.
+// sendiri; jenis induk LAIN ditolak. ⛔ SAMA untuk anak SETIAP jenis
+// [keputusan work owner 02-10-2026]; induk tetap memakai daftar induk tiket 02.
 func TestKlausulAnakTreatyLimitMemakaiPilihanPorsi(t *testing.T) {
 	g, n := gudangKlausulKosong(), 0
 	l := layananKlausul(g, &n)
@@ -452,36 +453,55 @@ func TestKlausulAnakTreatyLimitMemakaiPilihanPorsi(t *testing.T) {
 		services.KlausulMasuk{DescID: "10001", Medan: map[string]string{"ReinsTypeID": "10004", "Rp": "1"}}); !errors.Is(err, services.ErrJenisReasuransiDiLuarDaftar) {
 		t.Errorf("induk berporsi: %v", err)
 	}
-	// Anak jenis LAIN (EpiList) tetap memakai daftar induk: porsi ditolak.
+	// Anak jenis LAIN (EpiList) memakai daftar yang SAMA [keputusan work owner 02-10-2026]:
+	// porsi dan induknya diterima, jenis induk lain ditolak.
 	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", epi("10003", "100")); err != nil {
 		t.Fatalf("induk EPI: %v", err)
 	}
-	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", services.KlausulMasuk{DescID: "10009", Anak: true,
-		ParentReinsTypeID: "10003", Medan: map[string]string{"ReinsTypeID": "10004", "Pct": "10"}}); !errors.Is(err, services.ErrJenisReasuransiDiLuarDaftar) {
-		t.Errorf("anak EPI berporsi: %v", err)
+	anakEpi := func(reins, pct string) services.KlausulMasuk {
+		return services.KlausulMasuk{DescID: "10009", Anak: true, ParentReinsTypeID: "10003",
+			Medan: map[string]string{"ReinsTypeID": reins, "Pct": pct}}
+	}
+	if h, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", anakEpi("10028", "10")); err != nil || h.Klausul.ReinsTypeName != "UJI QS (OR)" {
+		t.Errorf("anak EPI berporsi: %+v %v", h.Klausul, err)
+	}
+	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", anakEpi("10003", "10")); err != nil {
+		t.Errorf("anak EPI = induknya sendiri: %v", err)
+	}
+	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", anakEpi("10005", "10")); !errors.Is(err, services.ErrJenisReasuransiDiLuarDaftar) {
+		t.Errorf("anak EPI berjenis induk lain: %v", err)
+	}
+	// Induk EPI tetap daftar induk tiket 02: porsi ditolak.
+	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", epi("10004", "1")); !errors.Is(err, services.ErrJenisReasuransiDiLuarDaftar) {
+		t.Errorf("induk EPI berporsi: %v", err)
 	}
 }
 
-// Layar membaca sumber pilihan ReinsType dari ATURAN, bukan dari nama jenis.
+// Layar membaca sumber pilihan ReinsType dari ATURAN, bukan dari nama jenis:
+// SETIAP aturan anak = pilihan anak Treaty Limit, setiap induk = daftar induk
+// [keputusan work owner 02-10-2026].
 func TestAturanTampilMenyebutPilihanReinsAnakTreatyLimit(t *testing.T) {
 	g, n := gudangKlausulKosong(), 0
 	d, err := layananKlausul(g, &n).JenisKlausul(context.Background(), pelakuUjiTCO, "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	dilihat := 0
+	var anak []string
 	for _, j := range d {
 		for _, a := range j.Aturan {
 			mau := ""
-			if a.Jenis == "TreatyLimitChild" {
-				mau, dilihat = models.PilihanReinsAnakTreatyLimit, dilihat+1
+			if a.Anak {
+				mau = models.PilihanReinsAnakTreatyLimit
+				anak = append(anak, a.Jenis)
 			}
 			if a.PilihanReins != mau {
 				t.Errorf("%s: pilihanReins %q, mau %q", a.Jenis, a.PilihanReins, mau)
 			}
 		}
 	}
-	if dilihat != 1 {
-		t.Errorf("TreatyLimitChild terlihat %d kali di jenis klausul, mau 1", dilihat)
+	sort.Strings(anak)
+	// Master jenis uji memuat Treaty Limit dan EPI; ketujuh jenis dikunci di models.
+	if strings.Join(anak, ",") != "EpiList,TreatyLimitChild" {
+		t.Errorf("aturan anak di jenis klausul: %v", anak)
 	}
 }

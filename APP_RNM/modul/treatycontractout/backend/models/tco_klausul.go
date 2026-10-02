@@ -112,13 +112,19 @@ type AturanKlausul struct {
 	// Sumber - aktivitas Pega VERBATIM.
 	Sumber string
 	// PilihanReins - sumber pilihan `ReinsTypeID`: kosong = daftar jenis
-	// reasuransi tersaring tiket 02 (RD induk, OQ-TCO-15);
-	// `PilihanReinsAnakTreatyLimit` = porsi + induknya.
+	// reasuransi tersaring tiket 02 (RD induk, OQ-TCO-15) - SELURUH aturan
+	// induk; `PilihanReinsAnakTreatyLimit` = porsi + induknya - SELURUH aturan
+	// anak (konstruktor `anak`).
 	PilihanReins string
 }
 
-// PilihanReinsAnakTreatyLimit - ReinsType baris anak Treaty Limit dipilih dari
-// dua belas jenis porsi + ReinsType induknya [keputusan work owner 30-09-2026].
+// PilihanReinsAnakTreatyLimit - ReinsType baris anak dipilih dari dua belas
+// jenis porsi + ReinsType induknya [keputusan work owner 30-09-2026 untuk anak
+// Treaty Limit]. ⛔ Berlaku untuk SEMUA baris anak - ketujuh grid `Show Child`
+// [keputusan work owner 02-10-2026: "semua ReinsType yang berperan sebagai
+// child, samain dengan child yang di Treaty Limit"]. Di XML keenam anak lain
+// memakai `D_EnumerationList` (tidak diekspor); nama konstanta dipertahankan
+// karena sumbernya tetap daftar anak Treaty Limit.
 //
 // `[terverifikasi]` `GridTreatyArrTreatyLimitList.xml` b2892-b3019: SATU-
 // SATUNYA grid klausul yang ReinsType-nya tidak dari RD induk maupun
@@ -156,23 +162,18 @@ func induk(jenis, desc, sumber string) AturanKlausul {
 		Turunan: turunanIndukKurs, KunciDobel: kunciReins, Berkurs: true, Konversi: KonversiRpKeUsd, Sumber: sumber}
 }
 
-// denganPilihanReins memasang sumber pilihan ReinsTypeID yang bukan bawaan.
-func denganPilihanReins(a AturanKlausul, pilihan string) AturanKlausul {
-	a.PilihanReins = pilihan
-	return a
-}
-
+// anak - aturan baris anak (`Show Child`). ReinsType-nya SAMA untuk ketujuh
+// jenis: daftar anak Treaty Limit, porsi + induknya [keputusan work owner 02-10-2026].
 func anak(jenis, desc, sumber string, peringatan bool) AturanKlausul {
 	return AturanKlausul{Jenis: jenis, DescID: desc, Anak: true, Medan: medanAnak, Wajib: wajibAnak,
 		Turunan: turunanAnak, KunciDobel: kunciReins, BatasTotalAnak: true, PeringatanSpreading: peringatan,
-		Berkurs: true, Sumber: sumber}
+		Berkurs: true, Sumber: sumber, PilihanReins: PilihanReinsAnakTreatyLimit}
 }
 
 // AturanKlausulTCO - SELURUH jenis. Satu tempat, di kode (AC 34).
 var AturanKlausulTCO = []AturanKlausul{
 	induk("TreatyLimit", DescTreatyLimit, "SaveTreatyArrTreatyLimit_Act"),
-	denganPilihanReins(anak("TreatyLimitChild", DescTreatyLimit, "SaveTreatyArrTreatyLimitChild_Act", true),
-		PilihanReinsAnakTreatyLimit),
+	anak("TreatyLimitChild", DescTreatyLimit, "SaveTreatyArrTreatyLimitChild_Act", true),
 	{Jenis: "Portfolio", DescID: DescPortfolio, Medan: []string{MedanMethod},
 		// Bentuk penyimpanan daftar bersarangnya juga masih OQ - tidak disebut di layar.
 		Ditahan: fmt.Sprintf(alasanDitahan, "Portfolio"),

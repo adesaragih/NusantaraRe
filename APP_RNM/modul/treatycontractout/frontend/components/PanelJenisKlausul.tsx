@@ -124,7 +124,9 @@ export function rencanaKonversi(
  * Pemilih ReinsTypeID satu aturan. Treaty Limit ikut XML: `pxAutoComplete` di
  * grid induk (`GridTreatyArrangementTreatyLimit.xml` b3025, daftar induk) dan
  * anak (`GridTreatyArrTreatyLimitList.xml` b2892, porsi + induknya — dari
- * penanda aturan `pilihanReins`). Jenis lain: dropdown daftar induk tiket 02.
+ * penanda aturan `pilihanReins`). ⛔ SETIAP baris anak membawa penanda itu
+ * [keputusan work owner 02-10-2026: ReinsType anak semua jenis = anak Treaty
+ * Limit]. Induk jenis lain: dropdown daftar induk tiket 02.
  */
 export function pemilihReinsType(a: AturanKlausul): 'saring-induk' | 'saring-anak' | 'dropdown' {
   if (a.pilihanReins === PILIHAN_REINS_ANAK_TREATY_LIMIT) return 'saring-anak'

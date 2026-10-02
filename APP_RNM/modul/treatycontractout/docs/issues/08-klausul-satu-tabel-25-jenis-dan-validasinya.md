@@ -315,3 +315,26 @@ sendiri**. Induk Treaty Limit dan anak jenis lain tidak berubah (OQ-TCO-15).
 - handler `GET /api/treaty-contract-out/jenis-reasuransi/anak-treaty-limit?induk=`.
 - frontend: ReinsType induk dan anak Treaty Limit memakai `PilihSaring` (XML `pxAutoComplete`, dicari pada nama; anak
   menampilkan ID sebagai keterangan — `.CARI1` pyShow true); jenis lain tetap dropdown.
+
+## ⛔ Keputusan work owner bertanggal — 02-10-2026 (ReinsType anak SEMUA jenis)
+
+*Permintaan: "pada Treaty Desc, semua ReinsType yang berperan sebagai child, tolong samain dengan child yang di Treaty Limit".*
+
+**Sebelumnya.** Hanya anak Treaty Limit (`TreatyLimitChild`) yang memilih ReinsType dari daftar anak (12 jenis porsi +
+induknya, keputusan 30-09-2026 di atas); enam grid anak lain — `PLAList`, `CashLossLimitList`, `FacInList`,
+`ExGratiaChildList`, `EpiList`, `ClaimCoorpChild` — memakai dropdown daftar induk tiket 02 (XML: `D_EnumerationList`, tidak
+diekspor), sehingga anak berporsi ditolak simpan dan jenis induk lain diterima.
+
+**Keputusan.** ReinsType **setiap** baris anak = pilihan anak Treaty Limit: porsi + ReinsType induknya sendiri, jenis induk
+lain ditolak; pemilihnya `PilihSaring` yang dapat difilter (ID tampil sebagai keterangan). ReinsType **induk** semua jenis
+tidak berubah (daftar induk tiket 02). Peringatan spreading (`TreatyTestChildTotal_Act`) tetap hanya Treaty Limit — ia
+bukan soal ReinsType.
+
+**Yang diubah.**
+- models: konstruktor `anak` memasang `PilihanReins = anak-treaty-limit` untuk ketujuh aturan anak; uji
+  `TestSemuaAnakMemakaiPilihanAnakTreatyLimit`.
+- services: `namaReinsType` (validasi simpan) otomatis memakai daftar anak untuk setiap anak; uji anak EPI berporsi
+  diterima, jenis induk lain ditolak, induk EPI berporsi tetap ditolak.
+- frontend: tanpa perubahan logika — pemilih mengikuti penanda aturan; uji `PanelJenisKlausul.test.ts` diperbarui.
+- Rute `GET …/jenis-reasuransi/anak-treaty-limit?induk=` dan nama konstanta dipertahankan (sumbernya tetap daftar anak
+  Treaty Limit).
