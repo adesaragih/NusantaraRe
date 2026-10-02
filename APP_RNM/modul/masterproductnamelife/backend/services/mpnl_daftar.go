@@ -100,8 +100,8 @@ const pesanAsliAsing = "carries stored keys (asli) that do not belong to any sto
 
 // periksaAsli - `asli` hanya boleh DIKEMBALIKAN klien, tidak dikarang: setiap
 // `asli` berisi harus sama dengan `asli` salah satu baris tersimpan daftar yang
-// sama (produk yang diubah, atau produk asal `Copy`). Tanpa ini klien dapat
-// menyisipkan kunci sembarang ke `JSONDATA` - termasuk kunci yang dibaca hilir.
+// sama (produk yang diubah, atau produk asal `Copy`). Tanpa ini klien dapat menyisipkan kunci sembarang. Sejak tabel
+// flat (D2, 02-10-2026) baris tersimpan tidak membawa `asli` - setiap `asli` berisi dari klien ditolak.
 func periksaAsli(pk *periksa, m *models.Produk, tersimpan models.Produk) {
 	cek := func(judul string, kiriman, simpan []string) {
 		sah := map[string]bool{}

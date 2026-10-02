@@ -168,3 +168,18 @@ func (u *ujiDB) teks(t *testing.T, q string, args ...any) string {
 	}
 	return v.String
 }
+
+// isiMasterUji - satu nilai per pemilih master yang dipakai `badanUji` / `badanLengkap` (UJI-).
+func (u *ujiDB) isiMasterUji(t *testing.T) {
+	t.Helper()
+	for _, q := range []string{
+		`INSERT INTO {s}.AGENT VALUES ('L0UJI1', 'UJI CEDING SATU', '1')`,
+		`INSERT INTO {s}.AGENT VALUES ('L0SOB', 'UJI SOB', '1')`,
+		`INSERT INTO {s}.CLIENT VALUES ('UJI-ORG-1', 'UJI PEMEGANG', 'LIFE')`,
+		`INSERT INTO {s}.CURRENCY VALUES ('1', 'IDR')`,
+		`INSERT INTO {s}.RIRISK_LIFE_SUMMARY VALUES ('1000117', 'UJI RISK')`,
+		`INSERT INTO {s}.CAUSEOFLOSS_LIFE VALUES ('100004', 'ANY CAUSE')`,
+	} {
+		u.exec(t, q)
+	}
+}

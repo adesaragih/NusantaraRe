@@ -368,10 +368,37 @@ func kolomCadangan(kolom []string) []string {
 	return hasil
 }
 
-// semuaKolomFisik - kolom tabel yang disebut SQL modul ini (bertambah tiap paket).
+// semuaKolomFisik - kolom tabel yang disebut SQL modul ini (bertambah tiap paket; tabel flat sejak 02-10-2026).
 func semuaKolomFisik() [][]string {
-	return append([][]string{KolomProduk, KolomInward, KolomLampiran, KolomObjek, KolomOutbox,
-		KolomKontrakTreaty, KolomTahunTreaty, KolomRate}, KolomMaster()...)
+	return append(append([][]string{KolomProduk, KolomInward, KolomLampiran, KolomObjek, KolomOutbox,
+		KolomKontrakTreaty, KolomTahunTreaty, KolomRate}, KolomMaster()...), kolomFlatSemua()...)
+}
+
+// kolomFlatSemua - nama kolom kedelapan tabel flat menurut spesifikasi Go (= DDL, TestKolomFlatCocokDenganDDL).
+func kolomFlatSemua() [][]string {
+	nama := func(n ...string) []string { return n }
+	induk := nama(KolomIDFlat, KolomIsORS)
+	for _, k := range KolomFlatInduk {
+		induk = append(induk, k.Nama)
+	}
+	hasil := [][]string{induk}
+	tambah := func(kolom []string) { hasil = append(hasil, append(nama(KolomProductID, KolomUrut), kolom...)) }
+	tambah(namaKolomFlat(AnakLien.Kolom))
+	tambah(namaKolomFlat(AnakDokumen.Kolom))
+	tambah(namaKolomFlat(AnakPlan.Kolom))
+	tambah(namaKolomFlat(AnakFinUW.Kolom))
+	tambah(namaKolomFlat(AnakUWLimit.Kolom))
+	tambah(namaKolomFlat(AnakOutward.Kolom))
+	tambah(namaKolomFlat(AnakKomentar.Kolom))
+	return hasil
+}
+
+func namaKolomFlat[T any](kolom []KolomFlat[T]) []string {
+	var hasil []string
+	for _, k := range kolom {
+		hasil = append(hasil, k.Nama)
+	}
+	return hasil
 }
 
 func TestMPNLNolKataCadanganOracle(t *testing.T) {

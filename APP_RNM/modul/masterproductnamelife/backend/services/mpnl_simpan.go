@@ -6,9 +6,9 @@ package services
 //
 //	1  b361  `·` PRE=false  UPDATEOP ← operator; POLICYHODER/POLICYHODERNAME ← inward
 //	6  b1370 `·` PRE=true `@PropertyHasValue(CREATEOP)` T=3 F=2  CREATEOP ← operator bila kosong
-//	8  b1625 `·` PRE=false  JSON halaman ProductName
-//	9  b1833 `·` PRE=false  simpan JSON - ID baru '1' ‖ LPAD(M_PRODUCT_LIFE_SEQ, 5) (P6)
-//	10 b2021 `·` PRE=false  kolom datar RIRISKID, RIRISK (R8)
+//	8  b1625 `·` PRE=false  JSON halaman ProductName → kini kolom induk + anak tabel flat (02-10-2026)
+//	9  b1833 `·` PRE=false  simpan - ID baru '1' ‖ LPAD(M_PRODUCT_LIFE_SEQ, 5) (P6)
+//	10 b2021 `·` PRE=false  kolom datar RIRISKID, RIRISK (R8) → kolom induk yang sama
 //	11 b2209 `·` PRE=false  ID dikembalikan, form ditutup
 //
 // ⛔ Baru = POST, ubah = PUT: identitas tidak pernah dari klien (ADR-0006).

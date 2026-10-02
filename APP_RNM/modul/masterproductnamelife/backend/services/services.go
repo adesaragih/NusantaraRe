@@ -6,7 +6,7 @@
 //
 // ⛔ Prosedur `PEGA_M_PRODUCT_LIFE` dan `PEGA_M_PRODUCT_INWARD_LIFE` TIDAK
 // dipanggil (brief bab 1): logikanya ditiru di sini dan di repository -
-// upsert dikunci `ID`, `ID` baru dari sequence, kedua tabel dalam SATU
+// upsert dikunci `ID`, `ID` baru dari sequence, baris induk flat dan ketujuh anaknya dalam SATU
 // transaksi (P4). Transaksi dibuka di sini (`inti.Dasar.DalamTransaksi`),
 // satu per permintaan, nol COMMIT di SQL.
 package services

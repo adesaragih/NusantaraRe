@@ -1,22 +1,20 @@
 // Package models memuat bentuk data modul Master Product Name Life.
 //
-// Satu produk = halaman Pega `ProductName` (sisi umum, `M_PRODUCT_LIFE`) +
-// `ProductNameInward` (sisi inward, `M_PRODUCTINWARD_LIFE`) + tujuh daftar
-// bersarang di halaman umum. Bentuk ini struct BERNAMA; kunci JSON Pega
-// (`POLICYHODER`, `UnderwritingLimitList`, `Non_Employee`, ...) hanya dikenal
-// repository (P1, `docs/RALAT-DEV-30-09-2026.md`).
+// Satu produk = halaman Pega `ProductName` (sisi umum) + `ProductNameInward` (sisi inward) + tujuh daftar
+// bersarang di halaman umum - sejak 02-10-2026 SATU baris induk `M_PRODUCTNAME_LIFE` + tujuh tabel anak (tiket 01
+// bab bertanggal; dulu dua dokumen JSON `M_PRODUCT_LIFE`/`M_PRODUCTINWARD_LIFE`). Bentuk ini struct BERNAMA; kolom
+// flat dan kunci JSON Pega lama (`POLICYHODER`, `UnderwritingLimitList`, `Non_Employee`, ...) hanya dikenal repository.
 //
-// ⛔ Angka (uang, persen, usia, hari) TEKS sepanjang jalan - tidak pernah
-// float (ADR-0003); services memeriksanya sebagai desimal dan menyimpannya
-// apa adanya. Tanggal `YYYY-MM-DD` di API; repository menulisnya `dd/MM/yyyy`
-// seperti Pega (`BrowseReinstypeOR_SQL` b84 `TO_DATE(…, 'DD/MM/YYYY')`).
+// ⛔ Angka (uang, persen, usia, hari) TEKS sepanjang jalan - tidak pernah float (ADR-0003); services memeriksanya
+// sebagai desimal, repository menyimpannya di NUMBER(38,8)/NUMBER(5) dan membacanya kembali dalam bentuk kanonik
+// (tanpa nol ekor). Tanggal `YYYY-MM-DD` di API dan di kolom DATE.
 //
 // Bukti tiap medan: `docs/PARITAS-LAYAR-DAN-AKSI.md` §3–§5.
 package models
 
 // Produk adalah satu produk life utuh.
 type Produk struct {
-	// ID - `M_PRODUCT_LIFE.ID` (`'1' ‖ LPAD(M_PRODUCT_LIFE_SEQ, 5, '0')`),
+	// ID - `M_PRODUCTNAME_LIFE.ID` (`'1' ‖ LPAD(M_PRODUCT_LIFE_SEQ, 5, '0')`),
 	// tampil sebagai `Product Code` b3894. Tidak pernah dari klien untuk produk baru.
 	ID     string       `json:"id"`
 	Umum   ProdukUmum   `json:"umum"`
@@ -41,7 +39,7 @@ type Produk struct {
 	HitungOutward bool `json:"hitungOutward,omitempty"`
 }
 
-// ProdukUmum - halaman `ProductName` (`M_PRODUCT_LIFE.JSONDATA`).
+// ProdukUmum - halaman `ProductName` (kolom induk `M_PRODUCTNAME_LIFE`; dulu `M_PRODUCT_LIFE.JSONDATA`).
 type ProdukUmum struct {
 	ProductName      string `json:"productName"`      // `Product Name` b3620
 	Ceding           string `json:"ceding"`           // `Ceding` b4075
@@ -87,7 +85,7 @@ type ProdukUmum struct {
 	BenefitID      string `json:"benefitId"`
 }
 
-// ProdukInward - halaman `ProductNameInward` (`M_PRODUCTINWARD_LIFE.JSONDATA`).
+// ProdukInward - halaman `ProductNameInward` (kolom induk `M_PRODUCTNAME_LIFE`; dulu `M_PRODUCTINWARD_LIFE.JSONDATA`).
 type ProdukInward struct {
 	// ID baris inward - sama dengan ID produk untuk produk baru (R14; OQ-MPNL-02 ditutup data DEV).
 	ID        string `json:"id"`

@@ -69,6 +69,12 @@ func TestDBIdentitasTerpakaiDiTabelWarisanDilewati(t *testing.T) {
 	if got := u.teks(t, `SELECT JSONDATA FROM {s}.M_PRODUCTINWARD_LIFE WHERE ID = '100044'`); got != "{}" {
 		t.Errorf("baris warisan tidak tersentuh: %q", got)
 	}
+	// Tabel JSON warisan yang sudah dibuang DBA (ORA-00942) bukan galat penerbitan ID: diperiksa "bila masih ada".
+	u.exec(t, `DROP TABLE {s}.M_PRODUCTINWARD_LIFE PURGE`)
+	u.exec(t, `DROP TABLE {s}.M_PRODUCT_LIFE PURGE`)
+	if kode, badan := u.kirim(t, "POST", pre+"/produk", badanUji); kode != http.StatusOK || !strings.Contains(badan, `"id":"100046"`) {
+		t.Errorf("tanpa tabel warisan: produk baru tetap terbit: %d %s", kode, badan)
+	}
 }
 
 // Kolom induk dan baris anak ditulis di Oracle sungguhan - bukan hanya di tiruan.
