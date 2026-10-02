@@ -43,7 +43,7 @@ function kelasCSS(): Set<string> {
   return new Set(pemilihCSS(CSS).flatMap((p) => [...p.matchAll(/\.([a-zA-Z0-9_-]+)/g)].map((m) => m[1] ?? '')))
 }
 
-const KELAS_BERSAMA = new Set(['inbox__kepala', 'panel', 'inbox__tabel', 'inbox__rinci', 'table__actions', 'btn', 'aksi-baris', 'modal', 'modal__actions', 'inbox__judul', 'panel__title', 'btn--primary', 'btn--ghost', 'field__input', 'modal__title', 'modal__head', 'muted', 'alert'])
+const KELAS_BERSAMA = new Set(['inbox__kepala', 'panel', 'inbox__tabel', 'inbox__rinci', 'table__actions', 'btn', 'aksi-baris', 'modal', 'modal__actions', 'inbox__judul', 'panel__title', 'btn--primary', 'btn--ghost', 'field__input', 'field__input--readonly', 'modal__title', 'modal__head', 'muted', 'alert'])
 
 describe('isolasi CSS modul Treaty Contract Out', () => {
   it('satu-satunya berkas CSS modul adalah tco.css, dan rute.tsx mengimpornya', () => {
@@ -162,6 +162,20 @@ describe('soft UI: teks tetap terbaca (02-10-2026)', () => {
       ['--mt-teks-redup', '--mt-latar'],
       ['--mt-teks-redup', '--mt-kartu'],
       ['--mt-teks-redup', '--mt-kepala-tabel'],
+      // Gaya Kelola User (02-10-2026): isi putih, belang, kepala navy, baris dibuka, tombol sekunder,
+      // isian hanya-baca, dan kedua ujung gradasi kotak akar.
+      ['--mt-teks', '--mt-isi'],
+      ['--mt-teks', '--mt-zebra'],
+      ['--mt-teks', '--mt-aksen-lembut'],
+      ['--mt-teks-redup', '--mt-isi'],
+      ['--mt-teks-redup', '--mt-lembut'],
+      ['--mt-kepala-teks', '--mt-kepala-tabel'],
+      ['--mt-aksen-teks', '--mt-isi'],
+      ['--mt-aksen-teks', '--mt-aksen-lembut'],
+      ['--mt-teks', '--mt-latar-atas'],
+      ['--mt-teks', '--mt-latar-bawah'],
+      ['--mt-teks-redup', '--mt-latar-atas'],
+      ['--mt-teks-redup', '--mt-latar-bawah'],
     ] as const
     const kurang = (t: Record<string, string>, nama: string): string[] =>
       pasangan.flatMap(([a, b]) => {

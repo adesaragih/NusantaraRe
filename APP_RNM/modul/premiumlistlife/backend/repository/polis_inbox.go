@@ -83,6 +83,10 @@ func NewInboxPolis(db *db.DB) *InboxPolis { return &InboxPolis{db: db} }
 
 // sqlInboxPolis merakit pembacaan satu halaman.
 //
+// ⛔ HANYA BARIS UTAMA header (`p.ID = p.ID_PEGA`). Sejak migrasi 062 satu
+// kasus dapat punya beberapa baris T_PREMIUM_LIST - satu per status penawaran
+// (polis_barisstatus.go); tanpa syarat ini kasusnya tampil berulang.
+//
 // ⛔ `LEFT JOIN` ke detail, bukan `JOIN`: polis yang CSV-nya belum diunggah
 // belum punya baris detail sama sekali, dan ia justru yang paling perlu
 // tampil di kotak masuk - pekerjaannya belum selesai.
@@ -103,7 +107,7 @@ func sqlInboxPolis(work, polis, detail string) string {
 	        p.DATE_RECEIVED, p.TGL_INPUT,
 	        (SELECT MAX(d.PL_NUMBER) FROM %s d
 	          WHERE d.PREMIUM_LIST_ID = p.ID) AS PL_NUMBER
-	   FROM %s w LEFT JOIN %s p ON p.ID_PEGA = w.ID
+	   FROM %s w LEFT JOIN %s p ON p.ID_PEGA = w.ID AND p.ID = p.ID_PEGA
 	  WHERE (:1 IS NULL OR w.POSITION = :2)
 	  ORDER BY p.TGL_INPUT DESC, w.ID
 	  OFFSET :3 ROWS FETCH NEXT :4 ROWS ONLY`, detail, work, polis)

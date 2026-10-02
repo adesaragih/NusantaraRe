@@ -80,3 +80,33 @@ describe('label VERBATIM', () => {
     expect(KEPUTUSAN_POLIS.decline).toBe('Decline')
   })
 })
+
+describe('periode produksi mm/yyyy', () => {
+  it('YYYY-MM dari server tampil sebagai MM/YYYY', async () => {
+    const { periodeTampil } = await import('./InputOffer')
+    expect(periodeTampil('2026-10')).toBe('10/2026')
+    expect(periodeTampil('2026-3')).toBe('03/2026')
+  })
+
+  it('bentuk asing ditampilkan apa adanya', async () => {
+    const { periodeTampil } = await import('./InputOffer')
+    expect(periodeTampil('Q4 2026')).toBe('Q4 2026')
+    expect(periodeTampil('')).toBe('')
+  })
+})
+
+describe('judul halaman', () => {
+  it('tahap penawaran berjudul "Input Offer Life", tahap detail "Input Premium Detail"', async () => {
+    const { judulKeputusan } = await import('./InputOffer')
+    expect(judulKeputusan(TAHAP_POLIS.penawaran)).toBe('Input Offer Life')
+    expect(judulKeputusan(TAHAP_POLIS.detail)).toBe('Input Premium Detail')
+  })
+})
+
+describe('period di tahap Input Premium Detail (02-10-2026)', () => {
+  it('panel Decision tidak lagi memuat period; ia tampil di kepala Premium List Detail', () => {
+    const io = readFileSync(join(__dirname, 'InputOffer.tsx'), 'utf8')
+    expect(io).not.toContain('pl-keputusan__meta')
+    expect(io).toContain('{!diDetail && galatPeriode !== null')
+  })
+})

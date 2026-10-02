@@ -1,4 +1,6 @@
-// Pemilih jenis reasuransi yang DAPAT DIFILTER — ReinsType Treaty Limit.
+// Pemilih jenis reasuransi yang DAPAT DIFILTER — ReinsType induk Treaty Limit
+// dan ReinsType SETIAP baris anak (ketujuh grid `Show Child`, pilihan anak
+// Treaty Limit [keputusan work owner 02-10-2026]).
 //
 // `[terverifikasi]` Kedua grid Treaty Limit memakai `pxAutoComplete`, bukan
 // dropdown biasa:
@@ -7,8 +9,8 @@
 //     dicari dan ditampilkan `.Note` (b3119-b3122), `.ID` tersembunyi (b3133)
 //   - anak `GridTreatyArrTreatyLimitList.xml` b2892: `ReinsTypeList` dari
 //     `TreatyContractSetReinsTypeList` (tak diekspor) — dicari `.CARI2` (nama,
-//     b3004), `.CARI1` (ID) ikut TAMPIL (b3017). Isinya porsi + induknya
-//     [keputusan work owner 30-09-2026], disaring server.
+//     b3004), `.CARI1` (ID) ikut TAMPIL (b3017). Isinya jenis porsi saja, TANPA
+//     induk [keputusan work owner 30-09-2026, dikoreksi 02-10-2026], disaring server.
 //
 // ⛔ Saringan di sini HANYA teks ketikan atas nama — aturan daftar (porsi,
 // blacklist, Flag) tetap milik server.
@@ -43,14 +45,14 @@ export default function PilihJenisReasuransiSaring({
   value,
   onChange,
   required,
-  anakTreatyLimitDari,
+  anak = false,
 }: {
   label: string
   value: string
   onChange: (v: string) => void
   required?: boolean
-  /** Diisi = pilihan anak Treaty Limit di bawah induk ini; kosong = daftar induk. */
-  anakTreatyLimitDari?: string
+  /** true = pilihan ReinsType baris anak (porsi saja); false = daftar induk tiket 02. */
+  anak?: boolean
 }) {
   const [daftar, setDaftar] = useState<JenisReasuransiTreaty[] | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
@@ -60,10 +62,7 @@ export default function PilihJenisReasuransiSaring({
     let hidup = true
     setDaftar(null)
     setGalat(null)
-    const baca =
-      anakTreatyLimitDari === undefined
-        ? ambilJenisReasuransiTreaty()
-        : ambilJenisReasuransiAnakTreatyLimit(anakTreatyLimitDari)
+    const baca = anak ? ambilJenisReasuransiAnakTreatyLimit() : ambilJenisReasuransiTreaty()
     baca.then(
       (h) => {
         if (hidup) setDaftar(h.daftar)
@@ -75,7 +74,7 @@ export default function PilihJenisReasuransiSaring({
     return () => {
       hidup = false
     }
-  }, [anakTreatyLimitDari])
+  }, [anak])
 
   if (galat !== null) return <Gagal galat={galat} />
   const terpilih = daftar?.find((j) => j.id === value)
@@ -84,7 +83,7 @@ export default function PilihJenisReasuransiSaring({
       label={label}
       value={value}
       teksTerpilih={terpilih?.note ?? value}
-      opsi={daftar === null ? [] : opsiSaringJenisReasuransi(daftar, kata, anakTreatyLimitDari !== undefined)}
+      opsi={daftar === null ? [] : opsiSaringJenisReasuransi(daftar, kata, anak)}
       memuat={daftar === null}
       onCari={setKata}
       onPilih={(o) => {

@@ -56,6 +56,14 @@ export default function App() {
   // yang sudah ada dan mana yang belum. Membuka langsung ke Inbox membuat
   // aplikasi tampak hanya punya satu modul.
   const [halaman, setHalaman] = useState<Halaman>('beranda')
+  // Penghitung pilihan menu - `PropsRute.ketukMenu`. Memilih menu halaman yang
+  // SEDANG tampil tidak mengubah `halaman`, jadi rute modul tidak akan tahu
+  // menunya diklik ulang tanpa sinyal kedua ini.
+  const [ketukMenu, setKetukMenu] = useState(0)
+  const pilihDariMenu = useCallback((h: Halaman) => {
+    setHalaman(h)
+    setKetukMenu((k) => k + 1)
+  }, [])
   // Modul yang dipasang backend (MODUL_AKTIF, refactor bentuk B). `null` =
   // belum terbaca atau gagal dibaca: SEMUA menu tampil, persis seperti
   // sebelum MODUL_AKTIF ada - satu pembacaan yang gagal tidak mengosongkan
@@ -196,7 +204,9 @@ export default function App() {
     <Shell
       masuk={masuk}
       halaman={halaman}
-      onPindah={setHalaman}
+      onPindah={(h) => {
+        pilihDariMenu(h)
+      }}
       menu={ENTRI_MENU}
       menuTabel={menuTabel}
       onKeluar={
@@ -228,7 +238,7 @@ export default function App() {
         pindah halaman, persis seperti ketika ia hidup di sini.
       */}
       {MODUL_FRONTEND.filter((m) => modulDipasang(m.nama, modulBoleh)).map((m) => (
-        <m.Rute key={m.nama} halaman={halaman} masuk={masuk} onPindah={setHalaman} />
+        <m.Rute key={m.nama} halaman={halaman} masuk={masuk} onPindah={setHalaman} ketukMenu={ketukMenu} />
       ))}
     </Shell>
   )

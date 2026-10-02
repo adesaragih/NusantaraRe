@@ -34,12 +34,12 @@ import {
 /** Ringkasan satu tinjauan, dalam satu kalimat. */
 export function ringkasanTinjau(h: HasilTinjauUnggah): string {
   if (h.lolos) {
-    return `${String(h.cacahBaris)} baris terbaca, semuanya lolos.`
+    return `${String(h.cacahBaris)} rows read, all passed.`
   }
   const baris = new Set(h.ditolak.map((p) => p.baris)).size
   return (
-    `${String(h.cacahBaris)} baris terbaca; ${String(baris)} baris ditolak ` +
-    `dengan ${String(h.cacahDitolak)} alasan. Tidak ada yang tersimpan.`
+    `${String(h.cacahBaris)} rows read; ${String(baris)} rows rejected ` +
+    `for ${String(h.cacahDitolak)} reasons. Nothing was saved.`
   )
 }
 
@@ -95,9 +95,9 @@ export default function UnggahCSVPeserta({
     try {
       const h = await simpanUnggahPolis(polisID, berkas)
       setKabar(
-        `${String(h.cacahDisimpan)} peserta tersimpan` +
+        `${String(h.cacahDisimpan)} participants saved` +
           (h.cacahDihapus > 0
-            ? `, menggantikan ${String(h.cacahDihapus)} baris sebelumnya.`
+            ? `, replacing ${String(h.cacahDihapus)} previous rows.`
             : '.'),
       )
       setTinjau(null)
@@ -114,35 +114,37 @@ export default function UnggahCSVPeserta({
   const bolehSimpan = tinjau !== null && tinjau.lolos && !sibuk
 
   return (
-    <section className="unggah-csv">
-      <h3 className="unggah-csv__judul">{UNGGAH_CSV.judul}</h3>
+    <section className="panel pl-unggah">
+      <h3 className="panel__title">{UNGGAH_CSV.judul}</h3>
 
-      <p className="unggah-csv__aturan" role="note">
+      <p className="panel__note" role="note">
         {UNGGAH_CSV.aturanPemisah}
       </p>
 
-      <p className="unggah-csv__pilih">
+      <div className="pl-unggah__baris">
         <input
           ref={pilih}
+          className="pl-unggah__berkas"
           type="file"
           accept=".csv,text/csv"
           aria-label={UNGGAH_CSV.pilihBerkas}
           onChange={(e) => {
             pilihBerkas(e.target.files?.[0] ?? null)
           }}
-        />{' '}
+        />
         <button
           type="button"
+          className="btn btn--ghost"
           disabled={berkas === null || sibuk}
           onClick={() => {
             void jalankanTinjau()
           }}
         >
           {UNGGAH_CSV.tinjau}
-        </button>{' '}
+        </button>
         <button
           type="button"
-          className="unggah-csv__simpan"
+          className="btn btn--primary"
           disabled={!bolehSimpan}
           onClick={() => {
             void jalankanSimpan()
@@ -150,20 +152,24 @@ export default function UnggahCSVPeserta({
         >
           {UNGGAH_CSV.simpan}
         </button>
-      </p>
+      </div>
 
       {galat !== null && <Gagal galat={galat} />}
-      {kabar !== '' && <p role="status">{kabar}</p>}
+      {kabar !== '' && (
+        <p className="pl-offer__tersimpan" role="status">
+          {kabar}
+        </p>
+      )}
 
       {tinjau !== null && (
         <>
-          <p className="unggah-csv__ringkas" role="status">
+          <p className={tinjau.lolos ? 'pl-offer__tersimpan' : 'pl-offer__kurang'} role="status">
             {ringkasanTinjau(tinjau)}
           </p>
           {/* ⛔ Sebab tombol simpan mati DIKATAKAN, bukan dibiarkan ditebak. */}
           {!tinjau.lolos && <p role="note">{UNGGAH_CSV.perbaikiDulu}</p>}
           {tinjau.ditolak.length > 0 && (
-            <table className="unggah-csv__tabel">
+            <table className="inbox__tabel">
               <thead>
                 <tr>
                   <th>{UNGGAH_CSV.kolomBaris}</th>

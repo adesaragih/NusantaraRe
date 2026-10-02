@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import { DETAIL_POLIS, JUDUL_KOLOM_PESERTA } from '../labels'
-import { judulKolom, kalimatNomor, selPeserta } from './PremiumListDetail'
+import { judulKolom, kalimatNomor, kolomBerisi, selPeserta, susunKolom } from './PremiumListDetail'
 
 // Uji layar Premium List Detail — tiket 03.
 
@@ -26,7 +26,7 @@ const SUMBER = BERKAS.split('\n')
 describe('kolom grid peserta', () => {
   it('daftar kolom datang dari server, tidak diketik ulang di layar', () => {
     // ⛔ Layar merender `hal.kolom`, bukan sebuah array literalnya sendiri.
-    expect(SUMBER).toContain('hal.kolom.map')
+    expect(SUMBER).toContain('susunKolom(kolomBerisi(hal.kolom, hal.baris))')
     expect(SUMBER).not.toContain("'CERTIFICATE_NO'")
     expect(SUMBER).not.toContain("'SUM_INSURED'")
   })
@@ -57,9 +57,60 @@ describe('kolom grid peserta', () => {
     expect(JUDUL_KOLOM_PESERTA.RetrocadedShare).toBeUndefined()
   })
 
-  it('NAME_OF_INSURED tidak punya judul — nol nama orang di grid', () => {
-    expect(JUDUL_KOLOM_PESERTA.NAME_OF_INSURED).toBeUndefined()
+  it('NAME_OF_INSURED, DOB, dan dua Gross Valuation tampil (keputusan work owner 02-10-2026)', () => {
+    // Kolomnya tetap DATANG DARI SERVER (`models.KolomGridTambahan`); layar
+    // hanya memberi judul dan urutan, dan tidak mengetik namanya di berkas layar.
+    expect(JUDUL_KOLOM_PESERTA.NAME_OF_INSURED).toBe('Name Of Insured')
+    expect(JUDUL_KOLOM_PESERTA.DOB).toBe('DOB')
+    expect(JUDUL_KOLOM_PESERTA.GROSS_VALUATION_BEGIN_DATE).toBe('Gross Valuation Begin Date')
+    expect(JUDUL_KOLOM_PESERTA.GROSS_VALUATION_EXPIRED_DATE).toBe('Gross Valuation Expired Date')
     expect(SUMBER).not.toContain('NAME_OF_INSURED')
+    expect(susunKolom(['NAME_OF_INSURED', 'PLAN', 'CERTIFICATE_NO'])).toEqual(['CERTIFICATE_NO', 'NAME_OF_INSURED', 'PLAN'])
+  })
+})
+
+describe('hanya kolom yang berisi (02-10-2026)', () => {
+  const baris = [
+    { nilai: { PLAN: 'UJI-PLAN', STNC: '', CLAIM: '0' } },
+    { nilai: { PLAN: '', STNC: '   ', CLAIM: '0' } },
+  ]
+
+  it('kolom kosong di semua baris disembunyikan, urutan server tetap', () => {
+    expect(kolomBerisi(['STNC', 'PLAN', 'LAPSE_DATE', 'CLAIM'], baris)).toEqual(['PLAN'])
+  })
+
+  it('kolom yang seluruhnya nol disembunyikan (keputusan work owner 02-10-2026)', () => {
+    expect(kolomBerisi(['CLAIM'], baris)).toEqual([])
+    const ragam = [{ nilai: { A: '0.00', B: '-0', C: '.0', D: '0.5', E: '10', F: '100.00' } }]
+    expect(kolomBerisi(['A', 'B', 'C', 'D', 'E', 'F'], ragam)).toEqual(['D', 'E', 'F'])
+  })
+
+  it('kolom tampil bila SATU baris saja bukan nol; sel nolnya tetap ditulis 0', () => {
+    expect(kolomBerisi(['CLAIM'], [...baris, { nilai: { CLAIM: '12.5' } }])).toEqual(['CLAIM'])
+    expect(selPeserta('0')).toBe('0')
+  })
+
+  it('jumlah kolom tersembunyi dinyatakan di layar', () => {
+    expect(SUMBER).toContain('empty columns hidden')
+  })
+})
+
+describe('STNC dan WPC paling kanan (02-10-2026)', () => {
+  it('urutan kolom CSV ceding, kolom lain sesudahnya, STNC lalu WPC di ujung kanan', () => {
+    expect(susunKolom(['BEGIN_DATE', 'WPC', 'PLAN', 'STNC', 'RATE', 'POLICY_HOLDER', 'GROSS_PREMIUM'])).toEqual([
+      'POLICY_HOLDER',
+      'PLAN',
+      'BEGIN_DATE',
+      'GROSS_PREMIUM',
+      'RATE',
+      'STNC',
+      'WPC',
+    ])
+  })
+
+  it('kolom yang tersembunyi tidak dimunculkan kembali', () => {
+    expect(susunKolom(['PLAN', 'WPC'])).toEqual(['PLAN', 'WPC'])
+    expect(susunKolom(['PLAN'])).toEqual(['PLAN'])
   })
 })
 
@@ -113,25 +164,26 @@ describe('nomor PL', () => {
     expect(kalimatNomor(null)).toBe('')
   })
 
-  it('tombol mati bila sudah bernomor atau belum punya peserta', () => {
-    // ⛔ Tombol yang tetap hidup tetapi selalu menjawab hal yang sama
-    // mengajari orang mengabaikan jawabannya.
-    expect(SUMBER).toContain('disabled={sibuk || terbit || bernomor || tanpaPeserta}')
+  it('kepala HANYA nomor kasus, Period, dan PL Number (02-10-2026)', () => {
+    expect(SUMBER).toContain('kepala.polisId')
+    expect(SUMBER).toContain('periodeTampil(periode)')
+    expect(SUMBER).toContain('DETAIL_POLIS.nomor')
+    expect(SUMBER).not.toContain('kepala.type')
+    expect(SUMBER).not.toContain('kepala.businessCode')
   })
 
-  it('sebab tombolnya mati DIKATAKAN, bukan dibiarkan ditebak', () => {
-    expect(SUMBER).toContain('DETAIL_POLIS.sudahBernomor')
-    expect(SUMBER).toContain('DETAIL_POLIS.perluPeserta')
-    // Kalimatnya menyebut apa yang harus dikerjakan lebih dahulu.
-    expect(DETAIL_POLIS.perluPeserta).toContain('Unggah rincian peserta')
+  it('TANPA tombol Generate PL Number (keputusan work owner 01-10-2026)', () => {
+    // Nomor PL terbit saat polis disimpan, bukan lewat tombol; di
+    // ShowLifePremiumDetail sel PL_NUMBER pun `pyVisible never`.
+    expect(SUMBER).not.toContain('DETAIL_POLIS.terbitkan')
+    expect(SUMBER).not.toContain('terbitkanNomorPL')
   })
 
-  it('selisih kolom dijawab di layar, bukan hanya di komentar Go', () => {
-    // ⛔ Siapa pun yang menghitung kolomnya akan bertanya kenapa empat puluh
-    // medan layar lama menjadi tiga puluh delapan; jawaban yang hanya ada di
-    // kode bukan jawaban bagi yang bertanya.
-    expect(SUMBER).toContain('kepala.medanTanpaKolom')
-    expect(SUMBER).toContain('medan layar lama tidak ditampilkan')
+  it('selisih kolom vs PL_Detail_Sec TIDAK ditampilkan (keputusan work owner 02-10-2026)', () => {
+    // Catatan pengembang, bukan informasi pemakai; jawabannya tetap di
+    // `models.MedanGridTanpaKolom`.
+    expect(SUMBER).not.toContain('legacy screen fields not shown')
+    expect(SUMBER).not.toContain('pl-detail__absen')
   })
 
   it('layar TIDAK merakit bentuk nomor sendiri', () => {

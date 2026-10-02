@@ -1,56 +1,425 @@
-/*
- * Gaya modul PremiumList Life.
- *
- * ⛔ TERISOLASI: SETIAP pemilih diawali kelas akar `.premiumlistlife` (dipasang `rute.tsx` pada pembungkus
- * seluruh halaman modul, `display: contents` sehingga tata letak tidak berubah). Aturan di sini DULU
- * menumpang di `inti/frontend/styles.css`; dipindah 02-10-2026 atas permintaan work owner ("untuk css
- * style per modul tidak ada lagi menumpang per inti"), isinya tidak berubah selain awalan akar. Dijaga
- * `gaya.test.ts`.
- */
+/* Gaya khusus modul PremiumList Life — setiap kelas berawalan `pl-`.
+   Kelas bersama (`panel`, `btn`, `field`, `form-grid`, `inbox__tabel`, `alert`)
+   milik `inti/frontend/styles.css` dan tidak didefinisikan ulang di sini;
+   warna dan ukuran memakai token `:root` inti, nol nilai heksa. */
 
-/* Pembungkus akar: tanpa kotak sendiri, jadi halaman modul tetap anak tata letak kerangka. */
-.premiumlistlife {
-  display: contents;
+/* ——— Form penawaran (layar Input Offer) ——— */
+
+/* DUA kolom tetap. `.form-grid` inti menjadi tiga kolom di ≥1400px, dan form
+   yang hanya mengisi dua kolom menyisakan kolom ketiga kosong. */
+.pl-offer__kolom-dua {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 32px;
+  align-items: start;
 }
 
-/* Tombol layar modul yang berkelas tetapi belum punya gaya: rupa `.btn` template (dulu satu aturan
-   dengan `.inbox__ekspor` di inti; kelasnya milik modul ini). */
-.premiumlistlife .pl-detail__terbitkan,
-.premiumlistlife .pl-summary__submit,
-.premiumlistlife .unggah-csv__simpan {
+@media (max-width: 960px) {
+  .pl-offer__kolom-dua {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Subjudul kelompok isian — pemindaian cepat tanpa membaca setiap label. */
+.pl-offer__subjudul {
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* Dua isian pendek berdampingan di dalam satu kolom. */
+.pl-offer__pasangan {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 16px;
+}
+
+@media (max-width: 560px) {
+  .pl-offer__pasangan {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Isian read-only + tombol pilih di sampingnya: tombol sejajar dengan kotak
+   isian (bukan dengan label), tinggi target klik 42px seperti kotak isian. */
+.pl-offer__pilih {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.pl-offer__pilih > .field {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.pl-offer__pilih > .btn {
+  flex: 0 0 auto;
+  height: 42px;
+  margin-bottom: 16px; /* sejajar dengan `.field { margin-bottom: 16px }` */
+}
+
+/* Bagian bawah: Status dan Comment selebar panel. */
+.pl-offer__bawah {
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+/* Radio Status TERSUSUN KE BAWAH (permintaan work owner 01-10-2026): radio
+   bawaan terlihat, satu pilihan per baris, seluruh baris dapat diklik. */
+.pl-offer__status {
+  margin: 0 0 16px;
+  padding: 0;
+  border: 0;
+}
+
+.pl-offer__status-pilihan {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.pl-offer__pil {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  height: 44px;
-  padding: 0 18px;
-  border: 1px solid var(--border);
+  gap: 8px;
+  min-height: 26px;
+  padding: 0 6px;
   border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: var(--fs-md);
+  cursor: pointer;
+}
+
+.pl-offer__pil:hover {
+  background: var(--hover-baris);
+}
+
+.pl-offer__pil input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.pl-offer__pil:has(input:checked) {
+  font-weight: 600;
+}
+
+.pl-offer__pil:has(input:disabled) {
+  cursor: default;
+  opacity: 0.7;
+}
+
+/* Bar aksi: tombol utama, lalu keterangan kolom wajib yang belum diisi. */
+.pl-offer__aksi {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.pl-offer__kurang {
+  font-size: var(--fs-md);
+  color: var(--danger-text);
+}
+
+.pl-offer__tersimpan {
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--success-text);
+}
+
+/* Riwayat penawaran. */
+.pl-offer__riwayat {
+  margin-top: 24px;
+}
+
+.pl-offer__riwayat-gulir {
+  overflow-x: auto;
+}
+
+.pl-offer__kosong {
+  color: var(--text-3);
+  text-align: center;
+}
+
+/* ——— Kepala halaman kasus (Input Offer / Input Premium Detail) ——— */
+
+.pl-kepala {
+  margin-bottom: 20px;
+}
+
+.pl-kepala__judul {
+  margin: 0 0 10px;
+}
+
+/* Nomor kasus dan periode sebagai lencana sebaris — terbaca sekilas,
+   tidak menghabiskan dua baris paragraf. */
+.pl-kepala__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pl-kepala__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
   background: var(--surface);
   color: var(--text);
-  font: inherit;
-  font-size: 15px;
+  font-size: var(--fs-base);
   font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background-color 0.15s;
 }
 
-/* Tiga yang MENJALANKAN keputusan (Generate PL Number, Submit, Simpan
-   permanen) = `.btn-primary` template. */
-.premiumlistlife .pl-detail__terbitkan,
-.premiumlistlife .pl-summary__submit,
-.premiumlistlife .unggah-csv__simpan {
-  border-color: transparent;
-  background: var(--primary);
-  color: #fff;
-}
-.premiumlistlife .pl-detail__terbitkan:hover:not(:disabled),
-.premiumlistlife .pl-summary__submit:hover:not(:disabled),
-.premiumlistlife .unggah-csv__simpan:hover:not(:disabled) {
-  background: var(--primary-hover);
+.pl-kepala__label {
+  color: var(--text-3);
+  font-weight: 500;
 }
 
-.premiumlistlife :is(.pl-detail__terbitkan, .pl-summary__submit, .unggah-csv__simpan):disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
+/* Isian tanggal dd/mm/yyyy (`components/IsianTanggal`): kotak teks + tombol
+   kalender menempel di kanannya, selebar satu isian biasa. */
+.pl-tanggal {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.pl-tanggal--baca {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.pl-tanggal:not(.pl-tanggal--baca) > .field__input {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.pl-tanggal__tombol {
+  height: 42px;
+  margin-left: -1px;
+  padding: 0 12px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+/* Masukan tanggal bawaan peramban — hanya sebagai kalender (`showPicker`),
+   tidak terlihat dan tidak dapat difokus; ditambatkan di bawah kotak supaya
+   kalendernya terbuka di tempat yang benar. */
+.pl-tanggal__asli {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Nomor kasus (NBLF) — lencana utama, tebal. */
+.pl-kepala__chip--utama {
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+/* "Not yet numbered" — keadaan, bukan nilai: redup dan miring. */
+.pl-kepala__belum {
+  color: var(--text-3);
+  font-style: italic;
+}
+
+/* ——— Halaman Premium List Detail ——— */
+
+/* TIGA KOLOM BERDAMPINGAN (permintaan work owner 02-10-2026: "3 baris ke
+   samping seperti sebelumnya, namun lebih rapih"): Policy Data | Parties &
+   Coverage (+ Retrocession) | Dates & Status. Kolom sama lebar, dipisah garis
+   tipis. Dua kolom di laptop kecil, satu di tablet/ponsel. */
+.pl-dp-kolom-tiga {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+}
+
+.pl-dp-kolom-tiga > * {
+  min-width: 0;
+  padding: 0 24px;
+}
+
+.pl-dp-kolom-tiga > :first-child {
+  padding-left: 0;
+}
+
+.pl-dp-kolom-tiga > :last-child {
+  padding-right: 0;
+}
+
+.pl-dp-kolom-tiga > * + * {
+  border-left: 1px solid var(--border);
+}
+
+/* Retrocession di bawah Parties & Coverage, dalam kolom yang sama. */
+.pl-dp-bagian + .pl-dp-bagian {
+  margin-top: 12px;
+}
+
+/* Di DALAM setiap kolom: grid DUA sel sama lebar — kotak isian lurus dari
+   atas ke bawah. */
+.pl-dp-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 16px;
+  align-items: start;
+}
+
+/* Isian teks panjang dan isian bertombol pilih: selebar kolom. */
+.pl-dp-lebar {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+@media (max-width: 1280px) {
+  .pl-dp-kolom-tiga {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 8px;
+  }
+
+  /* Kolom ketiga turun ke baris kedua, selebar penuh, tanpa garis kiri. */
+  .pl-dp-kolom-tiga > :last-child {
+    grid-column: 1 / -1;
+    padding: 16px 0 0;
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+}
+
+@media (max-width: 960px) {
+  .pl-dp-kolom-tiga {
+    grid-template-columns: 1fr;
+  }
+
+  .pl-dp-kolom-tiga > * {
+    padding: 0;
+  }
+
+  .pl-dp-kolom-tiga > * + * {
+    padding-top: 16px;
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+}
+
+@media (max-width: 560px) {
+  .pl-dp-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Isian + tombol pilih MENEMPEL (input group): kotak dan tombol bersama
+   selebar SATU sel, sama dengan isian lain. Tinggi tombol = kotak (42px). */
+.pl-dp-pilih {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  min-width: 0;
+}
+
+.pl-dp-pilih > .field {
+  min-width: 0;
+}
+
+/* Sudut kanan kotak lurus HANYA bila tombolnya ada (layar baca-saja: tanpa tombol). */
+.pl-dp-pilih > .field:not(:last-child) .field__input {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.pl-dp-pilih > .btn {
+  height: 42px;
+  margin-bottom: 16px; /* sejajar dengan `.field { margin-bottom: 16px }` */
+  margin-left: -1px;
+  padding: 0 14px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+/* Catatan wajib Billing Name (TP/TR) — kotak keterangan, bukan label. */
+.pl-datapolis__catatan {
+  margin: 4px 0 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius-sm);
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+/* Unggah CSV: pemilih berkas + tombol sebaris. */
+.pl-unggah__baris {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.pl-unggah__berkas {
+  flex: 1 1 260px;
+  min-width: 0;
+  font-size: var(--fs-base);
+}
+
+.pl-detail__cacah {
+  margin: 8px 0 0;
+}
+
+/* Baris kotak masuk untuk kasus TERTUTUP — terdaftar, tetapi tidak dapat
+   dibuka (keputusan work owner 02-10-2026): teks redup, kursor biasa. */
+.pl-inbox__tutup > td {
+  color: var(--text-3);
+  cursor: default;
+}
+
+/* Panel keputusan (Confirm / Reject / Decline). */
+.pl-keputusan__aksi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Beberapa isian + tombol pilih yang BERSUSUN berbagi SATU grid: kolom tombol
+   selebar tombol terpanjang, sehingga semua kotak isian dalam kelompok sama
+   lebar (mis. "Choose Billing Name" vs "Choose Retrocessionaire"). */
+.pl-offer__pilih-grup {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 8px;
+  align-items: end;
+}
+
+.pl-offer__pilih-grup > .btn {
+  width: 100%;
+  height: 42px;
+  margin-bottom: 16px; /* sejajar dengan `.field { margin-bottom: 16px }` */
+}
+
+/* Tanpa tombol (layar hanya menampilkan): satu kolom. */
+.pl-offer__pilih-grup--baca {
+  grid-template-columns: minmax(0, 1fr);
 }

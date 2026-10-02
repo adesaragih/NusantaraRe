@@ -112,13 +112,25 @@ type AturanKlausul struct {
 	// Sumber - aktivitas Pega VERBATIM.
 	Sumber string
 	// PilihanReins - sumber pilihan `ReinsTypeID`: kosong = daftar jenis
-	// reasuransi tersaring tiket 02 (RD induk, OQ-TCO-15);
-	// `PilihanReinsAnakTreatyLimit` = porsi + induknya.
+	// reasuransi tersaring tiket 02 (RD induk, OQ-TCO-15) - SELURUH aturan
+	// induk; `PilihanReinsAnakTreatyLimit` = jenis porsi saja (tanpa induk) -
+	// SELURUH aturan anak (konstruktor `anak`).
 	PilihanReins string
+	// SatuBaris - jenis berisi SATU baris per tahun treaty: `Add` hanya tampil
+	// bila form belum memuat baris (`OutputParam.DATASHOW ='' &&
+	// InputTreaty*.ID == ''`), dan `Get*` memuat baris yang ada ke form
+	// (`pxResults(1).ID`). Baris kedua ditolak server; `Edit` tetap boleh.
+	SatuBaris bool
 }
 
-// PilihanReinsAnakTreatyLimit - ReinsType baris anak Treaty Limit dipilih dari
-// dua belas jenis porsi + ReinsType induknya [keputusan work owner 30-09-2026].
+// PilihanReinsAnakTreatyLimit - ReinsType baris anak dipilih dari dua belas
+// jenis porsi [keputusan work owner 30-09-2026 untuk anak Treaty Limit].
+// ⛔ Berlaku untuk SEMUA baris anak - ketujuh grid `Show Child` [keputusan work
+// owner 02-10-2026: "semua ReinsType yang berperan sebagai child, samain dengan
+// child yang di Treaty Limit"] - dan ReinsType INDUK TIDAK ikut [keputusan work
+// owner 02-10-2026: "kenapa ReinsType di child ada nambah induknya"]. Di XML keenam anak lain
+// memakai `D_EnumerationList` (tidak diekspor); nama konstanta dipertahankan
+// karena sumbernya tetap daftar anak Treaty Limit.
 //
 // `[terverifikasi]` `GridTreatyArrTreatyLimitList.xml` b2892-b3019: SATU-
 // SATUNYA grid klausul yang ReinsType-nya tidak dari RD induk maupun
@@ -156,23 +168,18 @@ func induk(jenis, desc, sumber string) AturanKlausul {
 		Turunan: turunanIndukKurs, KunciDobel: kunciReins, Berkurs: true, Konversi: KonversiRpKeUsd, Sumber: sumber}
 }
 
-// denganPilihanReins memasang sumber pilihan ReinsTypeID yang bukan bawaan.
-func denganPilihanReins(a AturanKlausul, pilihan string) AturanKlausul {
-	a.PilihanReins = pilihan
-	return a
-}
-
+// anak - aturan baris anak (`Show Child`). ReinsType-nya SAMA untuk ketujuh
+// jenis: jenis porsi saja, tanpa induk [keputusan work owner 02-10-2026].
 func anak(jenis, desc, sumber string, peringatan bool) AturanKlausul {
 	return AturanKlausul{Jenis: jenis, DescID: desc, Anak: true, Medan: medanAnak, Wajib: wajibAnak,
 		Turunan: turunanAnak, KunciDobel: kunciReins, BatasTotalAnak: true, PeringatanSpreading: peringatan,
-		Berkurs: true, Sumber: sumber}
+		Berkurs: true, Sumber: sumber, PilihanReins: PilihanReinsAnakTreatyLimit}
 }
 
 // AturanKlausulTCO - SELURUH jenis. Satu tempat, di kode (AC 34).
 var AturanKlausulTCO = []AturanKlausul{
 	induk("TreatyLimit", DescTreatyLimit, "SaveTreatyArrTreatyLimit_Act"),
-	denganPilihanReins(anak("TreatyLimitChild", DescTreatyLimit, "SaveTreatyArrTreatyLimitChild_Act", true),
-		PilihanReinsAnakTreatyLimit),
+	anak("TreatyLimitChild", DescTreatyLimit, "SaveTreatyArrTreatyLimitChild_Act", true),
 	{Jenis: "Portfolio", DescID: DescPortfolio, Medan: []string{MedanMethod},
 		// Bentuk penyimpanan daftar bersarangnya juga masih OQ - tidak disebut di layar.
 		Ditahan: fmt.Sprintf(alasanDitahan, "Portfolio"),
@@ -222,15 +229,20 @@ var AturanKlausulTCO = []AturanKlausul{
 	{Jenis: "CoinsPanel", DescID: DescCoinsPanel, Medan: []string{MedanCoInsMin, MedanCoInsMax, MedanTreatyLimit},
 		Wajib: []string{MedanCoInsMin, MedanCoInsMax, MedanTreatyLimit}, KunciDobel: []string{MedanCoInsMin, MedanCoInsMax},
 		Sumber: "SaveTreatyArrCoinsPanel_Act"},
+	// MinLOL, MaxCoinsPanel, MinLOLMB - SATU baris per tahun [keputusan work owner 02-10-2026,
+	// divalidasi XML]: `GridTreatyArrangementMinLOL.xml` b2232, `…MaxCoinsPanel.xml` b2212,
+	// `…MInLOLMB.xml` b2262 (`Add` hanya bila `ID == ''`); `GetMinimumLOL` b750,
+	// `GetMaxCoinsPanel` b748, `GetMinimumLOLMB` b750 (`ID ← pxResults(1).ID`, saringan
+	// `TreatyYearID` + `TreatyDescID`).
 	{Jenis: "MinLOL", DescID: DescMinLOL, Medan: []string{MedanPct}, Wajib: []string{MedanPct},
-		KunciDobel: []string{MedanPct}, Sumber: "SaveTreatyArrMinLOL"},
+		KunciDobel: []string{MedanPct}, SatuBaris: true, Sumber: "SaveTreatyArrMinLOL"},
 	{Jenis: "MaxCoinsPanel", DescID: DescMaxCoinsPanel, Medan: []string{MedanCoInsMax}, Wajib: []string{MedanCoInsMax},
-		KunciDobel: []string{MedanCoInsMax}, Sumber: "SaveTreatyArrMaxCoinsPanel"},
+		KunciDobel: []string{MedanCoInsMax}, SatuBaris: true, Sumber: "SaveTreatyArrMaxCoinsPanel"},
 	{Jenis: "LimitMB", DescID: DescLimitMB, Ditahan: fmt.Sprintf(alasanDitahan, "LimitMB"),
 		Medan:  []string{MedanIDOccupation, MedanPct, MedanPctMe, MedanRp, MedanUsd, MedanTerritorialLimit},
 		Sumber: "SaveTreatyArrLimitMB_Act"},
 	{Jenis: "MinLOLMB", DescID: DescMinLOLMB, Medan: []string{MedanPct}, Wajib: []string{MedanPct},
-		KunciDobel: []string{MedanPct}, Sumber: "SaveTreatyArrMinLOLMB"},
+		KunciDobel: []string{MedanPct}, SatuBaris: true, Sumber: "SaveTreatyArrMinLOLMB"},
 }
 
 var (

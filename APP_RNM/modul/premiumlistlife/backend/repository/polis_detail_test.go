@@ -48,7 +48,7 @@ func kolomTabelPeserta(t *testing.T) map[string]bool {
 // TestKolomGridPesertaAdaDiMigrasi052 - setiap kolom grid punya kolom tabel.
 func TestKolomGridPesertaAdaDiMigrasi052(t *testing.T) {
 	ada := kolomTabelPeserta(t)
-	for _, k := range models.KolomGridPeserta {
+	for _, k := range models.KolomGridTampil() {
 		if !ada[strings.ToUpper(k.Nama)] {
 			t.Errorf("kolom grid %q tidak ada di migrasi 052.\n"+
 				"Kolom layar tanpa kolom tabel baru gagal di Oracle sungguhan "+
@@ -113,6 +113,9 @@ func TestMedanTanpaKolomDinyatakan(t *testing.T) {
 // fixture, tiket, atau log, dan grid yang membawanya membawanya ke ekspor
 // xlsx juga.
 func TestNamaTertanggungTidakAdaDiGrid(t *testing.T) {
+	// ⚠️ Yang dijaga TIRUAN PL_Detail_Sec saja. Sejak 02-10-2026 NAME_OF_INSURED
+	// tampil lewat models.KolomGridTambahan (keputusan work owner) - lihat
+	// TestKolomGridTambahanTerpisahDariTiruan.
 	for _, k := range models.KolomGridPeserta {
 		if strings.EqualFold(k.Nama, "NAME_OF_INSURED") {
 			t.Error("NAME_OF_INSURED ada di grid peserta; Pega pun tidak " +
@@ -193,6 +196,36 @@ func TestBatasUkuranHalamanPesertaMenjepit(t *testing.T) {
 	} {
 		if got := BatasUkuranHalamanPeserta(k.minta); got != k.mau {
 			t.Errorf("ukuran %d -> %d, mau %d", k.minta, got, k.mau)
+		}
+	}
+}
+
+// TestKolomGridTambahanTerpisahDariTiruan - empat kolom tambahan work owner
+// (02-10-2026) dibaca dan dikirim ke layar, TANPA mengubah tiruan
+// PL_Detail_Sec, dan dengan pembungkus jenisnya.
+func TestKolomGridTambahanTerpisahDariTiruan(t *testing.T) {
+	tampil := models.NamaKolomGridTampil()
+	for _, k := range models.KolomGridTambahan {
+		for _, p := range models.KolomGridPeserta {
+			if p.Nama == k.Nama {
+				t.Errorf("kolom tambahan %q juga ada di tiruan PL_Detail_Sec", k.Nama)
+			}
+		}
+		found := false
+		for _, n := range tampil {
+			found = found || n == k.Nama
+		}
+		if !found {
+			t.Errorf("kolom tambahan %q tidak dikirim ke layar", k.Nama)
+		}
+	}
+	if len(tampil) != len(models.KolomGridPeserta)+len(models.KolomGridTambahan) {
+		t.Errorf("kolom tampil %d, mau tiruan + tambahan", len(tampil))
+	}
+	ekspresi := ekspresiKolomPeserta(models.KolomGridTampil())
+	for _, kolom := range []string{"d.DOB", "d.GROSS_VALUATION_BEGIN_DATE", "d.GROSS_VALUATION_EXPIRED_DATE"} {
+		if !strings.Contains(ekspresi, fmt.Sprintf(db.FmtTanggalOracle, kolom)) {
+			t.Errorf("%s tidak dibungkus TO_CHAR berpola tanggal", kolom)
 		}
 	}
 }

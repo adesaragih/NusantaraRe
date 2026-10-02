@@ -1,0 +1,94 @@
+[
+  {
+    "kasus": "kasus PA metode 1 #1",
+    "input": {
+      "LiniBisnis": "PA",
+      "CalculateMethod": "1",
+      "TSI": "14000000000",
+      "Rate": "0.8987180682",
+      "ProRatePercent": "99.72602739726027397300"
+    },
+    "premi": "12547581.572054794520597928703500"
+  },
+  {
+    "kasus": "kasus PA metode 3 #1",
+    "input": {
+      "LiniBisnis": "PA",
+      "CalculateMethod": "3",
+      "TSI": "22132500000",
+      "Rate": "3.70140612076",
+      "ProRatePercent": "200.00000000000000000000"
+    },
+    "premi": "81921370.9677"
+  },
+  {
+    "kasus": "kasus PA metode 3 #2",
+    "input": {
+      "LiniBisnis": "PA",
+      "CalculateMethod": "3",
+      "TSI": "67365000000",
+      "Rate": "7.48506571087",
+      "ProRatePercent": "300.27397260273972602700"
+    },
+    "premi": "504231451.6128"
+  },
+  {
+    "kasus": "kasus PA metode 3 #3",
+    "input": {
+      "LiniBisnis": "PA",
+      "CalculateMethod": "3",
+      "TSI": "2787500000",
+      "Rate": "13.47311827957",
+      "ProRatePercent": "400.27397260273972602700"
+    },
+    "premi": "37556317.2043"
+  },
+  {
+    "kasus": "kasus MBU #1 coverage 1",
+    "input": {
+      "LiniBisnis": "MBU",
+      "MataUang": "IDR",
+      "TSI": "296100000",
+      "Rate": "2.08",
+      "Loading": "",
+      "ProRatePercentCoverage": "100.00000000000000000000"
+    },
+    "premi": "6158880.0000"
+  },
+  {
+    "kasus": "kasus MBU #1 coverage 2",
+    "input": {
+      "LiniBisnis": "MBU",
+      "MataUang": "IDR",
+      "TSI": "10000000",
+      "Rate": "3.75",
+      "Loading": "",
+      "ProRatePercentCoverage": "100.00000000000000000000"
+    },
+    "premi": "375000.0000"
+  },
+  {
+    "kasus": "kasus MBU #1 coverage 3",
+    "input": {
+      "LiniBisnis": "MBU",
+      "MataUang": "IDR",
+      "TSI": "296100000",
+      "Rate": "0.1",
+      "Loading": "",
+      "ProRatePercentCoverage": "100.00000000000000000000"
+    },
+    "premi": "296100.0000"
+  },
+  {
+    "kasus": "kasus MBU lain, pro-rata \"100\"",
+    "input": {
+      "LiniBisnis": "MBU",
+      "MataUang": "IDR",
+      "TSI": "1980000000",
+      "Rate": "1.45",
+      "Loading": "",
+      "ProRatePercentCoverage": "100"
+    },
+    "premi": "28710000.0000"
+  }
+]

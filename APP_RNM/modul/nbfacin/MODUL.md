@@ -16,11 +16,11 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | Folder korpus | `NB FacIn` |
 | GROUPMENU | `FACULTATIVE` |
 | Pemilik | `@PEMILIK-NBFACIN` |
-| Status | belum dimigrasi |
+| Status | dimigrasi |
 | Rentang migrasi | `180-219` |
 | Slot menu | `962-963` |
-| Prefix rute API | — (ditetapkan spec modul ini) |
-| Kontrak disediakan | — |
+| Prefix rute API | `/api/nbfacin` |
+| Kontrak disediakan | `kontrak.PenilaiPredikatFacIn`, `kontrak.MesinPremiFacIn` (lewat `Pendaftaran()`); `kontrak.TanggaAkseptasiFacIn` **belum** disediakan (butuh tabel limit per permintaan) — modul lain belum dapat memakainya: mengimpor `modul/nbfacin` terlarang (CLAUDE.md §5), sisa A32 |
 | Kontrak dipakai | — |
 
 `Pemilik` adalah penanda pemegang modul. Wilayah berkas yang boleh disentuh cabang
@@ -31,9 +31,9 @@ dipensiunkan 1 Oktober 2026.
 
 | Folder | Isi |
 | --- | --- |
-| `docs/` | belum ada — tidak ada dokumen `.scratch/` untuk modul ini. Buat saat grilling/spec dimulai. |
-| `backend/` | belum ada — lahir bersama `backend/modul.go` (`Pendaftaran()`) saat modul dimulai |
-| `frontend/` | belum ada — lahir bersama `frontend/menu.ts` dan `rute.tsx` saat modul dimulai |
+| `docs/` | spec, tiket (`issues/`), discovery, grilling — dipindah dari `jefri/OUTPUT FIX/` 30-09-2026 (`git mv`, isi tidak diubah). Asal tiap berkas dan tujuan tautan lamanya: `docs/PETA-ASAL.md` |
+| `backend/` | `modul.go`; `models/`, `repository/` (tabel limit `POOLDATA.M_LIMIT_*`, baca saja), `services/` (layanan + mesin: `premium`, `acceptance`, `rules`, `pembayaran`, `rekonsiliasi`, `kontrakfacin`; `loader` = seam `loader.Flatten` data lama, murni, tiket 22), `handlers/` (`POST /api/nbfacin/premi`, `POST /api/nbfacin/akseptasi/langkah`), `migrations/` (slot menu 962) |
+| `frontend/` | `menu.ts`, `rute.tsx`, `labels.ts` (verbatim korpus, diuji), `api.ts`, `pages/CoverageCargo.tsx` |
 
 ## Migrasi
 
@@ -42,3 +42,24 @@ selalu berjalan sesudahnya). Slot menu `962-963` hanya menyalakan `DIMIGRASI` ba
 nol `INSERT` — menu datar 30-09-2026) saat modul mendapat layar pertamanya, di folder
 `backend/migrations/` modul ini sendiri — bentuk SQL-nya di `APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md`
 bab 6. Nomor selalu tiga digit.
+
+## Pernyataan untuk penjaga
+
+⛔ **Dibaca penjaga** `inti/backend/penjaga` — satu jenis pernyataan per judul `###`, satu baris per
+butir. Judul yang tidak ada berarti modul ini tidak menyatakan apa pun untuk jenis itu. Nilai di dalam
+`` ` `` dibaca apa adanya.
+
+### Tabel warisan: dibaca, tidak dibuat
+
+Tabel yang `docs/STRUKTUR-TABEL-NB-FACIN.md` gambarkan tetapi SENGAJA tidak dibuat migrasi mana pun
+(`TestKolomDDLCocokDenganStruktur`, `TestTabelBukanMilikKitaTidakDibuat`). Mencabut satu baris =
+kepemilikan tabel berpindah — keputusan work owner.
+
+| Tabel | Alasan |
+| --- | --- |
+| `M_LIMIT_PROPERTYY` | tabel limit akseptasi warisan POOLDATA; NB hanya MEMBACA empat kolom (tiket 20) |
+| `M_LIMIT_PROPERTY_NON_PREFERREDD` | tabel limit akseptasi warisan POOLDATA; NB hanya MEMBACA empat kolom (tiket 20) |
+| `M_LIMIT_PROPERTY_PREFERRED_COMMERCIALL` | tabel limit akseptasi warisan POOLDATA; NB hanya MEMBACA empat kolom (tiket 20) |
+| `M_LIMIT_ENGINEERINGG` | tabel limit akseptasi warisan POOLDATA; NB hanya MEMBACA empat kolom (tiket 20) |
+| `M_LIMIT_NONPROPANDENGG` | tabel limit akseptasi warisan POOLDATA; NB hanya MEMBACA empat kolom (tiket 20) |
+| `M_LIMIT_FINANCIALINS` | tabel limit akseptasi bentuk B warisan POOLDATA; NB hanya MEMBACA empat kolom (tiket 20) |

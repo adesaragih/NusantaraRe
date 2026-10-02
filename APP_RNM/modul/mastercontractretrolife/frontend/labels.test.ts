@@ -269,7 +269,9 @@ describe('tombol layar = tombol korpus', () => {
   // `pyLabel` = teks `pxButton` section; `pySubmitLabel` = tombol dialog FlowAction `ViewRate`.
   const berbuktiTombol = new Set(BUKTI.filter((b) => b[3] === 'pyLabel' || b[3] === 'pySubmitLabel').map((b) => b[0]))
   // Penyimpangan sadar 3 (popup hapus) dan 5 (pratinjau salin): `Yes`; `Cancel` popup = label XML panelnya.
-  const tambahanSah = new Set(['HAPUS_MCRL.ya', 'SALIN_MCRL.ya'])
+  // `Close` kepala panel: tombol teks seperti Treaty Contract Out, pengganti ikon `pxIconCancel` tanpa teks
+  // (keputusan work owner 02-10-2026, tampilan saja).
+  const tambahanSah = new Set(['HAPUS_MCRL.ya', 'SALIN_MCRL.ya', 'UMUM_MCRL.tutup'])
 
   it('terbaca: ada tombol di layar', () => {
     expect(tombol.length).toBeGreaterThan(25)

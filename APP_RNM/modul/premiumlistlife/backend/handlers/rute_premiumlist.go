@@ -136,7 +136,9 @@ func putuskanPenawaran(svc *services.Service, stubPelaku bool) http.HandlerFunc 
 			DenganPenyalur(services.PenyalurPremiumListOracle(svc)).
 			Putuskan(r.Context(), inti.PelakuDari(r, stubPelaku),
 				r.PathValue("id"), isi.Keputusan, time.Now())
-		if jawabGalatPolis(w, err) {
+		// jawabGalatPenawaran: `Confirm` di tahap penawaran dapat ditolak
+		// karena isian Input Offer belum lengkap (tiket 01 bagian 3).
+		if jawabGalatPenawaran(w, err) {
 			return
 		}
 		tulisAkibat(w, akibat)
@@ -404,6 +406,18 @@ func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	// pemanggil adalah permukaan yang tidak seorang pun uji.
 	// Butir pl4/av - kontrak hilir ke Claim Life.
 	mux.HandleFunc("GET /api/polis-life/ringkas", ringkasPolis(svc, stubPelaku))
+	// Tiket 01 bagian 3 - form penawaran (layar Input Offer) dan kedua popup
+	// pilihannya. Lihat rute_penawaran.go untuk sebab pencarian satu segmen.
+	mux.HandleFunc("GET /api/polis-life/cari-ceding", cariCedingPolis(svc, stubPelaku))
+	mux.HandleFunc("GET /api/polis-life/cari-pemegang-polis", cariPemegangPolis(svc, stubPelaku))
+	mux.HandleFunc("GET /api/polis-life/{id}/penawaran", bacaPenawaranPolis(svc, stubPelaku))
+	mux.HandleFunc("PUT /api/polis-life/{id}/penawaran", simpanPenawaranPolis(svc, stubPelaku))
+	// Tiket 03 bagian 2 - data polis layar Input Premium Detail (rute_datapolis.go).
+	mux.HandleFunc("GET /api/polis-life/cari-marketing", cariMarketingPolis(svc, stubPelaku))
+	mux.HandleFunc("GET /api/polis-life/cari-rislip", cariRISlipPolis(svc, stubPelaku))
+	mux.HandleFunc("GET /api/polis-life/{id}/data-polis", bacaDataPolis(svc, stubPelaku))
+	mux.HandleFunc("PUT /api/polis-life/{id}/data-polis", simpanDataPolis(svc, stubPelaku))
+	mux.HandleFunc("GET /api/polis-life/{id}/cari-produk", cariProdukPolis(svc, stubPelaku))
 	mux.HandleFunc("GET /api/polis-life/{id}", kepalaPolis(svc, stubPelaku))
 	mux.HandleFunc("GET /api/polis-life/{id}/peserta",
 		pesertaPolis(svc, stubPelaku))

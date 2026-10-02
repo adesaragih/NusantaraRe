@@ -1,7 +1,7 @@
 package handlers_test
 
-// Seam HTTP rute baca (paket 1) di atas gudang tiruan - tanpa Oracle. Tiruan
-// menyimpan JSONDATA mentah dan memakai kodek repository sungguhan.
+// Seam HTTP rute baca (paket 1) di atas gudang tiruan - tanpa Oracle. Tiruan menyimpan produk berbentuk flat
+// lewat pemetaan repository sungguhan; fixture JSON lama diisi `IsiJSON` (seperti alat pindah).
 
 import (
 	"bytes"
@@ -19,10 +19,11 @@ import (
 
 func gudangHTTP() *tiruan.Gudang {
 	g := tiruan.Baru()
-	g.Umum["UJI-002"] = `{"ID":"UJI-002","CEDING":"UJI CEDING B","TREATYNUMBER":"UJI/2","INWARDNAME":"UJI B",
-		"CREATEOP":"UJI-OP","UPDATEOP":"UJI-OP2","POLICYHODERNAME":"UJI PEMEGANG"}`
-	g.Umum["UJI-001"] = `{"ID":"UJI-001","CEDING":"UJI CEDING A","PlanList":[{"Plan":"UJI PLAN","RIRATE":"UJI RATE"}]}`
-	g.Inward["UJI-001"] = `{"ID":"UJI-001","PRODUCTID":"UJI-001","BEGIN":"01/03/2026","CEDINGLIMIT":"150000000.5"}`
+	g.IsiJSON("UJI-002", `{"ID":"UJI-002","CEDING":"UJI CEDING B","TREATYNUMBER":"UJI/2","INWARDNAME":"UJI B",
+		"CREATEOP":"UJI-OP","UPDATEOP":"UJI-OP2","POLICYHODERNAME":"UJI PEMEGANG"}`,
+		`{"ID":"UJI-002","PRODUCTID":"UJI-002","POLICYHODERNAME":"UJI PEMEGANG"}`)
+	g.IsiJSON("UJI-001", `{"ID":"UJI-001","CEDING":"UJI CEDING A","PlanList":[{"Plan":"UJI PLAN","RIRATE":"UJI RATE"}]}`,
+		`{"ID":"UJI-001","PRODUCTID":"UJI-001","BEGIN":"01/03/2026","CEDINGLIMIT":"150000000.5"}`)
 	return g
 }
 
@@ -108,11 +109,13 @@ func TestHTTPGalatBerkalimat(t *testing.T) {
 	if kode, _ := u.minta(t, "GET", pre+"/produk", "", false); kode != http.StatusUnauthorized {
 		t.Errorf("tanpa identitas harus 401, dapat %d", kode)
 	}
-	u.g.Umum["UJI-RUSAK"] = `{"PRODUCTNAME":`
-	if kode, badan := u.minta(t, "GET", pre+"/produk/UJI-RUSAK", "", true); kode != http.StatusInternalServerError ||
-		!strings.Contains(badan, "JSONDATA cannot be read") {
-		t.Errorf("JSON rusak harus 500 berkalimat: %d %s", kode, badan)
+	// Tabel flat (02-10-2026): pembacaan tidak lagi mengurai JSON; galat baca Oracle = 500 kalimat tetap, sebabnya di log.
+	u.g.GagalBaca = tiruan.ErrTiruan
+	if kode, badan := u.minta(t, "GET", pre+"/produk/UJI-001", "", true); kode != http.StatusInternalServerError ||
+		!strings.Contains(badan, "failed to process the master product name life request") || strings.Contains(badan, "injected") {
+		t.Errorf("galat baca harus 500 berkalimat tanpa sebab teknis: %d %s", kode, badan)
 	}
+	u.g.GagalBaca = nil
 	mati := server(t, false)
 	if kode, badan := mati.minta(t, "GET", pre+"/produk", "", true); kode != http.StatusServiceUnavailable ||
 		!strings.Contains(badan, "database is not configured") {

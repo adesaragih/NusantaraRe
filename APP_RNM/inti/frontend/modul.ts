@@ -73,6 +73,16 @@ export interface PropsRute<H extends string> {
   halaman: string
   masuk: Sesi
   onPindah: (h: H) => void
+  /**
+   * Bertambah SETIAP KALI pemakai memilih menu (sidebar atau palet), termasuk
+   * menu halaman yang sedang tampil. Rute yang ingin kembali ke layar awalnya
+   * saat menunya diklik ulang membandingkannya dengan nilai sebelumnya —
+   * `halaman` saja tidak cukup: memilih halaman yang sama tidak mengubahnya.
+   *
+   * Opsional dan aditif (01-10-2026, permintaan PremiumList Life): rute yang
+   * tidak membacanya tetap seperti sebelumnya.
+   */
+  ketukMenu?: number
 }
 
 /** Satu modul frontend terdaftar. */

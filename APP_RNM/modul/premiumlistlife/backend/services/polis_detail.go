@@ -145,7 +145,7 @@ func (d *DetailPolis) Peserta(ctx context.Context, pelaku inti.Pelaku, polisID s
 		return HalamanPesertaPolis{}, err
 	}
 	return HalamanPesertaPolis{
-		Kolom:   models.NamaKolomGridPeserta(),
+		Kolom:   models.NamaKolomGridTampil(),
 		Baris:   hal.Baris,
 		Total:   hal.Total,
 		Halaman: halaman,

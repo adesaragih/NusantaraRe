@@ -1,8 +1,9 @@
 package repository
 
-// Uji katalog (lanjutan 1, L1/L3): kolom yang DITULIS repository ke kedua tabel produk ada di katalog DEV
-// (`testdata/katalog-dev.json`, `ALL_TAB_COLUMNS` 01-10-2026); lebar kolom datar = katalog; objek master
-// yang dibaca pemilih = katalog `ALL_OBJECTS`. Kolom yang tidak ada di DEV = `ORA-00904` pada setiap simpan.
+// Uji katalog (lanjutan 1, L1/L3): kolom yang DIBACA alat pindah dari kedua tabel JSON warisan ada di katalog DEV
+// (`testdata/katalog-dev.json`, `ALL_TAB_COLUMNS` 01-10-2026; sejak 02-10-2026 tabel itu tidak ditulis lagi - tabel
+// flat); kolom flat yang menampung kolom datar warisan selebar katalog; objek master yang dibaca pemilih = katalog
+// `ALL_OBJECTS`. Kolom yang tidak ada di DEV = `ORA-00904`.
 //
 // ⚠️ Batas cakupannya, dinyatakan: katalog yang diberikan brief hanya memuat kedua tabel produk dan NAMA
 // objek master. Penulis `M_ATTACHMENTPRODUCTNAME`, `T_STORAGE_IMAGE`, `T_LOG_SERVICE_RNM` dan kolom yang
@@ -86,23 +87,37 @@ func kolomAsing(q string, katalog []string) []string {
 	return asing
 }
 
-func TestKolomDitulisAdaDiKatalogDEV(t *testing.T) {
-	kat := katalogDEV(t).Tabel
-	kasus := []struct {
-		tabel string
-		sql   string
-	}{
-		{TabelProduk, sqlSisipUmum("S.T")},
-		{TabelProduk, sqlPerbaruiUmum("S.T")},
-		{TabelInward, sqlSisipInward("S.T")},
-		{TabelInward, sqlPerbaruiInward("S.T")},
+// polaKolomSelect - kolom daftar SELECT sederhana (`SELECT A, B FROM`).
+var polaKolomSelect = regexp.MustCompile(`(?is)^SELECT\s+(.*?)\s+FROM\s`)
+
+func kolomDibaca(q string) []string {
+	m := polaKolomSelect.FindStringSubmatch(strings.TrimSpace(q))
+	if m == nil {
+		return nil
 	}
-	for _, k := range kasus {
-		if len(kolomDitulis(k.sql)) == 0 {
-			t.Errorf("%s: pembaca kolom tidak menemukan kolom apa pun - instrumennya yang rusak:\n%s", k.tabel, rata(k.sql))
+	var hasil []string
+	for _, k := range strings.Split(m[1], ",") {
+		hasil = append(hasil, strings.ToUpper(strings.Trim(strings.TrimSpace(k), `"`)))
+	}
+	return hasil
+}
+
+func TestKolomDibacaAdaDiKatalogDEV(t *testing.T) {
+	kat := katalogDEV(t).Tabel
+	for _, tabel := range []string{TabelProduk, TabelInward} {
+		q := sqlSemuaJSON("S.T")
+		kolom := kolomDibaca(q)
+		if len(kolom) == 0 {
+			t.Fatalf("pembaca kolom tidak menemukan kolom apa pun - instrumennya yang rusak:\n%s", rata(q))
 		}
-		if asing := kolomAsing(k.sql, kat[k.tabel]); len(asing) > 0 {
-			t.Errorf("%s: kolom %v tidak ada di katalog DEV %v (ORA-00904):\n%s", k.tabel, asing, kat[k.tabel], rata(k.sql))
+		ada := map[string]bool{}
+		for _, k := range kat[tabel] {
+			ada[k] = true
+		}
+		for _, k := range kolom {
+			if !ada[k] {
+				t.Errorf("%s: alat pindah membaca %s yang tidak ada di katalog DEV %v (ORA-00904)", tabel, k, kat[tabel])
+			}
 		}
 	}
 	// Daftar kolom penjaga kata cadangan = katalog persis.
@@ -116,20 +131,24 @@ func TestKolomDitulisAdaDiKatalogDEV(t *testing.T) {
 	}
 }
 
-// Uji gigit: menambah PRODUCTNAME / BEGIN_DATE ke INSERT / UPDATE = merah - juga huruf kecil dan berkutip.
+// Uji gigit: kolom yang tidak ada di DEV (dulu PRODUCTNAME / BEGIN_DATE) di INSERT / UPDATE = merah - juga huruf
+// kecil dan berkutip (instrumen kolomAsing tetap dipakai pembaca katalog di atas).
 func TestAturanKatalogMenggigit(t *testing.T) {
 	kat := katalogDEV(t).Tabel[TabelProduk]
 	for _, tambahan := range []string{"PRODUCTNAME", "productname", `"PRODUCTNAME"`} {
-		sisip := strings.Replace(sqlSisipUmum("S.T"), "RIRISK)", "RIRISK, "+tambahan+")", 1)
+		sisip := "INSERT INTO S.T (ID, JSONDATA, RIRISKID, RIRISK, " + tambahan + ") VALUES (:1, :2, :3, :4, :5)"
 		if asing := kolomAsing(sisip, kat); len(asing) != 1 || asing[0] != "PRODUCTNAME" {
 			t.Errorf("INSERT ber-%s harus tertangkap: %v\n%s", tambahan, asing, rata(sisip))
 		}
 	}
 	for _, tambahan := range []string{"BEGIN_DATE", "begin_date", `"BEGIN_DATE"`} {
-		ubah := strings.Replace(sqlPerbaruiUmum("S.T"), " WHERE", ", "+tambahan+" = TO_DATE(:9, 'DD/MM/YYYY') WHERE", 1)
+		ubah := "UPDATE S.T SET JSONDATA = :1, " + tambahan + " = TO_DATE(:2, 'DD/MM/YYYY') WHERE ID = :3"
 		if asing := kolomAsing(ubah, kat); len(asing) != 1 || asing[0] != "BEGIN_DATE" {
 			t.Errorf("UPDATE ber-%s harus tertangkap: %v\n%s", tambahan, asing, rata(ubah))
 		}
+	}
+	if k := kolomDibaca("SELECT ID, JSONDATA, \"Ririsk\" FROM S.T"); strings.Join(k, ",") != "ID,JSONDATA,RIRISK" {
+		t.Errorf("pembaca kolom SELECT: %v", k)
 	}
 	// Butir yang jawabannya diketahui - instrumen diuji lebih dulu.
 	for q, mau := range map[string]string{
@@ -144,10 +163,14 @@ func TestAturanKatalogMenggigit(t *testing.T) {
 	}
 }
 
-// Lebar kolom datar yang diperiksa services = lebar katalog DEV.
+// Kolom flat yang menampung kolom datar warisan (`RIRISKID`, `RIRISK`) TIDAK lebih sempit dari katalog DEV - sama.
 func TestLebarKolomDatarSamaDenganKatalogDEV(t *testing.T) {
 	tipe := katalogDEV(t).Tipe
-	for kolom, lebar := range map[string]int{"RIRISKID": LebarRIRiskID, "RIRISK": LebarRIRisk} {
+	lebarFlat := map[string]int{}
+	for _, k := range KolomFlatInduk {
+		lebarFlat[k.Nama] = k.Lebar
+	}
+	for kolom, lebar := range map[string]int{"RIRISKID": lebarFlat["RIRISKID"], "RIRISK": lebarFlat["RIRISK"]} {
 		m := polaLebar.FindStringSubmatch(tipe[TabelProduk+"."+kolom])
 		if m == nil {
 			t.Fatalf("%s: katalog tanpa VARCHAR2(n): %q", kolom, tipe[TabelProduk+"."+kolom])

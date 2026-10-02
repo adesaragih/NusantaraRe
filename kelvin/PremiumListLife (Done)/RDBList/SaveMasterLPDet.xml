@@ -1,0 +1,456 @@
+<?xml version="1.0"?>
+
+<pagedata>
+<pyRuleName>ASM-FW-GISFW-Int-LIFE_PREMIUM_DETAIL ASM SaveMasterLPDet</pyRuleName>
+<pxUpdateSystemID>pegadevnusare2</pxUpdateSystemID>
+<pyValueChanged>false</pyValueChanged>
+<pxUpdateDateTime>20260211T064412.717 GMT</pxUpdateDateTime>
+<pzRuleSetVersionMinor>01</pzRuleSetVersionMinor>
+<pxOriginalCreateSystemID>pegaprdnusare</pxOriginalCreateSystemID>
+<pyMemo>SAVE</pyMemo>
+<pyUsage/>
+<pzRuleSetVersionMajor>01</pzRuleSetVersionMajor>
+<pyJavaStream/>
+<pxCreateDateTime>20260211T064352.573 GMT</pxCreateDateTime>
+<pxOriginalCreateDateTime>20250507T041250.857 GMT</pxOriginalCreateDateTime>
+<pxOriginalCreateOpName>KELVIN JUSLIM</pxOriginalCreateOpName>
+<pyInterface/>
+<pxInstanceLockedCreateDateTime/>
+<pxInstanceLockedBy/>
+<pyBaseRule>false</pyBaseRule>
+<pxInsName>ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL!ASM!SAVEMASTERLPDET</pxInsName>
+<pyFormPost/>
+<pxSaveDateTime>20260211T064412.730 GMT</pxSaveDateTime>
+<pyCircumstanceProp/>
+<pyDocumentTitle/>
+<pzInsKey>RULE-CONNECT-SQL ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL ASM!SAVEMASTERLPDET #20260211T064352.573 GMT</pzInsKey>
+<pyTemplate/>
+<pyLabelOld>SaveMasterLPDet</pyLabelOld>
+<pyRelativePath/>
+<pzIsPrivateCheckOut>true</pzIsPrivateCheckOut>
+<pxInsId>ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL!ASM!SAVEMASTERLPDET</pxInsId>
+<pyIsStaleRuleCheckEnabled>false</pyIsStaleRuleCheckEnabled>
+<pyRuleParamsStreamName/>
+<pyWorkKey/>
+<pySpecialtyComponentData/>
+<pyRuleSetVersion>01-01-91</pyRuleSetVersion>
+<pzDocumentKey>RULE-CONNECT-SQL ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL ASM!SAVEMASTERLPDET #20260211T064352.573 GMT</pzDocumentKey>
+<pxUpdateOpName>KELVIN JUSLIM</pxUpdateOpName>
+<pyWindowTitle/>
+<pxOriginalCreateOperator>KELVINJUSLIM</pxOriginalCreateOperator>
+<pxUpdateOperator>KELVINJUSLIM</pxUpdateOperator>
+<pyObjClassLabel>Connect SQL</pyObjClassLabel>
+<pxSiblingCount/>
+<pxMoveFromSystem/>
+<pzChecksum>-556137346</pzChecksum>
+<pxMoveImportOperId>ADESAMUEL</pxMoveImportOperId>
+<pyHandlerFlow/>
+<pyDisplayMode>clone</pyDisplayMode>
+<pxInstanceLockedKey/>
+<pxTabLabel>ASM-FW-GISFW-Int-LIFE_PREMIUM_DETAIL ASM SaveMasterLPDet</pxTabLabel>
+<pxObjClass>Rule-Connect-SQL</pxObjClass>
+<pyCircumstanceDate/>
+<pyTemplateInputBox/>
+<pyRWAccess>ASM</pyRWAccess>
+<pxCreateSystemID>pegadevnusare2</pxCreateSystemID>
+<pzOriginalInstanceKey>RULE-CONNECT-SQL ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL ASM!SAVEMASTERLPDET #20190110T103204.167 GMT</pzOriginalInstanceKey>
+<pxCommitDateTime>20260402T021737.000 GMT</pxCommitDateTime>
+<pyStreamName/>
+<pyRuleAvailable>Yes</pyRuleAvailable>
+<pyClassName>ASM-FW-GISFW-Int-LIFE_PREMIUM_DETAIL</pyClassName>
+<pxMoveImportOperName>ADE SAMUEL TUA SARAGIH</pxMoveImportOperName>
+<pySortDateCircumWithinRSMajor>true</pySortDateCircumWithinRSMajor>
+<pyRuleFormStatusTime>20260915T070331.684 GMT</pyRuleFormStatusTime>
+<pzRuleSetVersionPatch>91</pzRuleSetVersionPatch>
+<pxHostId>jboss1073</pxHostId>
+<pyRuleFormType>Harness</pyRuleFormType>
+<pyOpenSQL/>
+<pyCircumstanceDefinition/>
+<pyRuleSet>GISFW</pyRuleSet>
+<pyRuleHarness>RuleForm</pyRuleHarness>
+<pxMoveOriginalRuleSetVersion>01-01-82</pxMoveOriginalRuleSetVersion>
+<pyCircumstanceVal/>
+<pyCircumstanceDateProp/>
+<pyDeleteMemo>done</pyDeleteMemo>
+<pyShowJavaWindowName>GeneratedJava20260915T070331.713 GMT</pyShowJavaWindowName>
+<pyMethodStatus/>
+<pxInstanceLockedRuleSetVersion/>
+<pyIsFromManageChangeLP/>
+<pxInstanceLockedDateTime/>
+<pySPRuleSetName>GISFW</pySPRuleSetName>
+<pyRuleFormStatus>Good</pyRuleFormStatus>
+<pxOriginalRuleSet>GISFW</pxOriginalRuleSet>
+<pxInstanceLockedRuleSet/>
+<pyTemplateDisplayText>No ruleset versions available</pyTemplateDisplayText>
+<pyStepPageReference>RH_1</pyStepPageReference>
+<pyBrowseSQL>BEGIN 
+    INSERT INTO POOLDATA.M_LIFE_PREMIUM_DETAIL
+                ( 
+ID,
+SHARE_NUSANTARA_RE,
+SEX,
+COMM,
+FLEET_DISCOUNT,
+POLICY_HOLDER,
+PLAN,
+PERIOD_YY,
+PERIOD_MM,
+POLICY_NO,
+NET_PREMIUM,
+NAME_OF_INSURED,
+DESCRIPTION,
+GROSS_PREMIUM,
+EXPIRED_DATE,
+DOB,
+CERTIFICATE_NO,
+BEGIN_DATE,
+EFFECTIVE_DATE,
+STNC,
+LAPSE_DATE,
+PASSED_PERIOD,
+AGE,
+CLAIM,
+TAX,
+BROKERAGE_FEE,
+OVR_COMM,
+CURRENCY,
+MEDICAL_STATUS,
+SUM_INSURED,
+CEDING_RETENTION,
+SUM_REASURED,
+PROF_COMM,
+GROSS_PREMIUM_REFUND,
+NET_PREMIUM_REFUND,
+COMM_REFUND,
+BROKERAGE_FEE_REFUND,
+OVR_COMM_REFUND,
+TAX_REFUND,
+SHARE_RETRO,
+GROSS_PREMIUM_RETRO,
+DISCOUNT_PREMIUM_RETRO,
+OVR_COMM_RETRO,
+BROKERAGE_FEE_RETRO,
+NET_PREMIUM_RETRO,
+GROSS_PREMIUM_REFUND_RETRO,
+DISCOUNT_PREMIUM_REFUND_RETRO,
+OVR_COMM_REFUND_RETRO,
+BROKERAGE_FEE_REFUND_RETRO,
+NET_PREMIUM_REFUND_RETRO,
+CLAIM_AMOUNT,
+PL_NUMBER,
+PL_NUMBER_EDM,
+CEDING_CO,
+RATE,
+PRORATETYPE,
+SUM_AT_RISK_GROSS,
+SUM_AT_RISK_RETRO,
+RETROCEDED_SHARE,
+SHARE_NUSANTARA_RE_GROSS,
+GROSS_VALUATION_BEGIN_DATE,
+GROSS_VALUATION_EXPIRED_DATE,
+RETRO_VALUATION_BEGIN_DATE,
+RETRO_VALUATION_EXPIRED_DATE,
+WPC,
+ENTRY_AGE,
+CURRENT_AGE,
+DEDUCTION,
+FACTOR,
+DEDUCTION_REFUND,
+RI_ADMIN_FEE_REFUND_RETRO,
+RI_ADMIN_FEE_RETRO,
+RI_ADMIN_FEE_REFUND,
+RI_ADMIN_FEE,
+IDPEGA,
+EDMSTATUS,
+STATUSOLD,
+STATUS,
+EM_PERCENT,
+RISK
+)
+     VALUES      (
+          to_Char(M_LIFE_PREMIUM_DETAIL_SEQ.nextval),
+          {TempInputDetail.CARI3},
+          {TempValue.SEX},
+          {TempInputDetail.CARI18},
+          {TempInputDetail.CARI31},
+          {TempValue.POLICY_HOLDER},
+          {TempValue.PLAN},
+          {TempValue.PERIOD_YY},
+          {TempValue.PERIOD_MM},
+          {TempValue.POLICY_NO},
+          {TempInputDetail.CARI1},
+          {TempValue.NAME_OF_INSURED}, 
+          {TempValue.DESCRIPTION}, 
+          {TempInputDetail.CARI2},
+          To_date({TempValue.EXPIRED_DATE}, 'DD/MM/YYYY'),	
+          To_date({TempValue.DOB}, 'DD/MM/YYYY'),	
+          {TempValue.CERTIFICATE_NO},
+          To_date({TempValue.BEGIN_DATE}, 'DD/MM/YYYY'),	
+          To_date({TempValue.EFFECTIVE_DATE}, 'DD/MM/YYYY'),	
+          To_date({TempValue.STNC}, 'DD/MM/YYYY'),
+          To_date({TempValue.LAPSE_DATE}, 'DD/MM/YYYY'),	
+          {TempValue.PASSED_PERIOD},
+          {TempValue.AGE}, 
+          {TempInputDetail.CARI7},
+          {TempInputDetail.CARI8},
+          {TempInputDetail.CARI9},
+          {TempInputDetail.CARI10},
+          {TempValue.CURRENCY},
+          {TempValue.MEDICAL_STATUS},
+          {TempInputDetail.CARI4},
+          {TempInputDetail.CARI5},
+          {TempInputDetail.CARI6}, 
+          {TempInputDetail.CARI11},
+          {TempInputDetail.CARI12},
+          {TempInputDetail.CARI13},
+          {TempInputDetail.CARI14},
+          {TempInputDetail.CARI15},
+          {TempInputDetail.CARI16},
+          {TempInputDetail.CARI17},
+          {TempInputDetail.CARI19},
+          {TempInputDetail.CARI20},
+          {TempInputDetail.CARI21},
+          {TempInputDetail.CARI22}, 
+          {TempInputDetail.CARI23},
+          {TempInputDetail.CARI24},
+          {TempInputDetail.CARI25},
+          {TempInputDetail.CARI26},
+          {TempInputDetail.CARI27},
+          {TempInputDetail.CARI28},
+          {TempInputDetail.CARI29},
+          {TempInputDetail.CARI30},
+          {pyWorkPage.PremiumListSummary.PL_NUMBER},
+          {pyWorkPage.PremiumListSummary.PL_NUMBER_EDM},
+          {TempInputDetail.CARI32},
+          {TempInputDetail.CARI33},
+          {TempInputDetail.CARI34},
+          {TempInputDetail.CARI35},
+          {TempInputDetail.CARI36},
+          {TempInputDetail.CARI37},
+          {TempInputDetail.CARI38},
+          To_date({TempValue.GROSS_VALUATION_BEGIN_DATE}, 'DD/MM/YYYY'),
+          To_date({TempValue.GROSS_VALUATION_EXPIRED_DATE}, 'DD/MM/YYYY'),	
+          To_date({TempValue.RETROCESSION_VALUATION_BEGIN_DATE}, 'DD/MM/YYYY'),	
+          To_date({TempValue.RETROCESSION_VALUATION_EXPIRED_DATE}, 'DD/MM/YYYY'),	
+          To_date({TempValue.WPC}, 'DD/MM/YYYY'),	
+          {TempValue.ENTRY_AGE},
+          {TempValue.CURRENT_AGE},
+          {TempInputDetail.CARI39},
+          {TempInputDetail.CARI40},
+          {TempInputDetail.CARI41},
+          {TempInputDetail.CARI42},
+          {TempInputDetail.CARI43},
+          {TempInputDetail.CARI44},
+          {TempInputDetail.CARI45},
+          {pyWorkPage.pzInsKey},
+          {TempValue.EDMStatus},
+          {TempInputDetail.CARI47},
+          {TempInputDetail.CARI48},
+          {TempInputDetail.CARI49},
+          {TempInputDetail.CARI50}
+          );
+    COMMIT;
+END;</pyBrowseSQL>
+<pyCircumstanceType/>
+<pyDeleteSQL/>
+<pxMergeSynchronized>20250602T040443.278 GMT</pxMergeSynchronized>
+<pyStatus/>
+<pyDescription/>
+<pyHistoryObject/>
+<pxMoveOriginalRuleSet>GISFW</pxMoveOriginalRuleSet>
+<pyRequestType>SaveMasterLPDet</pyRequestType>
+<pxMoveOriginalKey>RULE-CONNECT-SQL ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL ASM!SAVEMASTERLPDET #20250507T041250.857 GMT</pxMoveOriginalKey>
+<pxMoveImportDateTime>20260402T021736.733 GMT</pxMoveImportDateTime>
+<pyTaskID/>
+<pySaveSQL/>
+<pyCheckInRuleSet/>
+<pxCreateOperator>KELVINJUSLIM</pxCreateOperator>
+<pyRuleStarts/>
+<pyRuleEnds/>
+<pxLimitedAccess>Dev</pxLimitedAccess>
+<pyLabel>SaveMasterLPDet</pyLabel>
+<pyCircumstanceTemplate/>
+<pxCreateOpName>KELVIN JUSLIM</pxCreateOpName>
+<pzStatus>valid</pzStatus>
+<pyRuleVersionsList REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pxListSubscript>1</pxListSubscript>
+<pyMenuTooltip/>
+<pzInsKey>RULE-CONNECT-SQL ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL ASM!SAVEMASTERLPDET #20260211T064352.573 GMT</pzInsKey>
+<pyLabel>01-01-91 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pyMenuTooltip/>
+<pxListSubscript>2</pxListSubscript>
+<pzInsKey>RULE-CONNECT-SQL ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL ASM!SAVEMASTERLPDET #20250602T040443.278 GMT</pzInsKey>
+<pyLabel>01-01-83 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="3">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pxListSubscript>3</pxListSubscript>
+<pyMenuTooltip/>
+<pzInsKey>RULE-CONNECT-SQL ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL ASM!SAVEMASTERLPDET #20250507T041120.282 GMT</pzInsKey>
+<pyLabel>01-01-82 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="4">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pyMenuTooltip/>
+<pxListSubscript>4</pxListSubscript>
+<pzInsKey>RULE-CONNECT-SQL ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL ASM!SAVEMASTERLPDET #20241016T041402.401 GMT</pzInsKey>
+<pyLabel>01-01-81 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="5">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pyMenuTooltip/>
+<pxListSubscript>5</pxListSubscript>
+<pzInsKey>RULE-CONNECT-SQL ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL ASM!SAVEMASTERLPDET #20230803T083617.287 GMT</pzInsKey>
+<pyLabel>01-01-73 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="6">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pyMenuTooltip/>
+<pxListSubscript>6</pxListSubscript>
+<pzInsKey>RULE-CONNECT-SQL ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL ASM!SAVEMASTERLPDET #20230223T094752.592 GMT</pzInsKey>
+<pyLabel>01-01-70 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="7">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pxListSubscript>7</pxListSubscript>
+<pyMenuTooltip/>
+<pzInsKey>RULE-CONNECT-SQL ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL ASM!SAVEMASTERLPDET #20221227T073827.935 GMT</pzInsKey>
+<pyLabel>01-01-69 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="8">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pyMenuTooltip/>
+<pxListSubscript>8</pxListSubscript>
+<pzInsKey>RULE-CONNECT-SQL ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL ASM!SAVEMASTERLPDET #20221107T090038.164 GMT</pzInsKey>
+<pyLabel>01-01-68 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="9">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pyMenuTooltip/>
+<pxListSubscript>9</pxListSubscript>
+<pzInsKey>RULE-CONNECT-SQL ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL ASM!SAVEMASTERLPDET #20220804T063915.382 GMT</pzInsKey>
+<pyLabel>01-01-65 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="10">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pyMenuTooltip/>
+<pxListSubscript>10</pxListSubscript>
+<pzInsKey>RULE-CONNECT-SQL ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL ASM!SAVEMASTERLPDET #20220412T044943.680 GMT</pzInsKey>
+<pyLabel>01-01-64 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="11">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pxListSubscript>11</pxListSubscript>
+<pyMenuTooltip/>
+<pzInsKey>RULE-CONNECT-SQL ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL ASM!SAVEMASTERLPDET #20220202T105217.601 GMT</pzInsKey>
+<pyLabel>01-01-63 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="12">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pxListSubscript>12</pxListSubscript>
+<pyMenuTooltip/>
+<pzInsKey>RULE-CONNECT-SQL ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL ASM!SAVEMASTERLPDET #20200701T070318.415 GMT</pzInsKey>
+<pyLabel>01-01-56 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="13">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pyMenuTooltip/>
+<pxListSubscript>13</pxListSubscript>
+<pzInsKey>RULE-CONNECT-SQL ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL ASM!SAVEMASTERLPDET #20190326T080011.791 GMT</pzInsKey>
+<pyLabel>01-01-55 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="14">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pyMenuTooltip/>
+<pxListSubscript>14</pxListSubscript>
+<pzInsKey>RULE-CONNECT-SQL ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL ASM!SAVEMASTERLPDET #20190110T103204.167 GMT</pzInsKey>
+<pyLabel>01-01-54 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="15">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pyMenuTooltip/>
+<pxListSubscript>15</pxListSubscript>
+<pzInsKey>RULE-CONNECT-SQL ASM-FW-GISFW-INT-LIFE_PREMIUM_DETAIL ASM!SAVEMASTERLPDET #20180808T071257.427 GMT</pzInsKey>
+<pyLabel>01-01-53 (Available)</pyLabel>
+</rowdata>
+</pyRuleVersionsList>
+<pyRMAction>
+<pxObjClass>Embed-RuleManagement</pxObjClass>
+<pyAction>load</pyAction>
+</pyRMAction>
+<pyCustomFields REPEATINGTYPE="PageGroup">
+<rowdata REPEATINGINDEX="empty">
+<pxObjClass>Embed-CustomFieldsList</pxObjClass>
+<pyCFieldValue/>
+<pyCFileKey/>
+<pyCFieldName/>
+<pyCFileRelativePath/>
+<pxSubscript>empty</pxSubscript>
+<pyCFieldType/>
+</rowdata>
+</pyCustomFields>
+<pyPagesAndClasses REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-PagesAndClasses</pxObjClass>
+<pyPagesAndClassesClass/>
+<pyPagesAndClassesPage/>
+</rowdata>
+</pyPagesAndClasses>
+<pyToolBarSettings>
+<pyFavorites>true</pyFavorites>
+<pxCanJustifyWarnings>true</pxCanJustifyWarnings>
+<pyRecover>false</pyRecover>
+<pyForward>true</pyForward>
+<pyRestore>false</pyRestore>
+<pyBranchOut>false</pyBranchOut>
+<pySave>false</pySave>
+<pyLaunch>true</pyLaunch>
+<pyHasQualifiers>false</pyHasQualifiers>
+<pyRequiresCheckOut>true</pyRequiresCheckOut>
+<pyCheckIn>false</pyCheckIn>
+<pySiblings>true</pySiblings>
+<pyAvailability>false</pyAvailability>
+<pyHelpRef>/rule-/rule-connect-/rule-connect-sql/main</pyHelpRef>
+<pyDelegates>false</pyDelegates>
+<pyRefresh>true</pyRefresh>
+<pyPreview>false</pyPreview>
+<pyCheckOut>true</pyCheckOut>
+<pyRun>false</pyRun>
+<pyRuleData>true</pyRuleData>
+<pyVersionSecure>true</pyVersionSecure>
+<pyRuleResolution>true</pyRuleResolution>
+<pyCurrentlyOpen>true</pyCurrentlyOpen>
+<pxObjClass>Embed-WBSettings-ToolBar</pxObjClass>
+<pyShowJava>false</pyShowJava>
+<pyDelete>false</pyDelete>
+<pyNew>true</pyNew>
+<pyBack>true</pyBack>
+<pyCompareVersion/>
+<pyHelpURI>https://community.pega.com/help_v88/rule-/rule-connect-/rule-connect-sql/main</pyHelpURI>
+<pySaveAs>true</pySaveAs>
+<pyPropertyPane>false</pyPropertyPane>
+<pyUsesInheritance>false</pyUsesInheritance>
+</pyToolBarSettings>
+<pxWarnings REPEATINGTYPE="PageList"/>
+<pxWarningsToDisplay REPEATINGTYPE="PageList"/>
+</pagedata>

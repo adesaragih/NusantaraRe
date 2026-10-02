@@ -142,6 +142,14 @@ func (p *Penawaran) Putuskan(ctx context.Context, pelaku inti.Pelaku,
 	if err != nil {
 		return models.AkibatKeputusan{}, err
 	}
+	// ⛔ Tiket 01 bagian 3: `Confirm` di tahap penawaran menuntut isian wajib
+	// layar Input Offer SUDAH tersimpan (services/polis_isianpenawaran.go).
+	// `Decline` tidak digerbangi: penawaran yang ditolak tidak perlu lengkap.
+	if keadaan.Status == models.TahapPolisPenawaran && keputusan == models.KeputusanConfirm {
+		if err := p.periksaPenawaranLengkap(ctx, keadaan.ID); err != nil {
+			return models.AkibatKeputusan{}, err
+		}
+	}
 	sebab := keputusan
 	if akibat.KeDecision3 {
 		flag, err := repository.NewWorkPolis(p.svc.DB()).Bendera(ctx, keadaan.ID)

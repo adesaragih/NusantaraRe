@@ -123,7 +123,7 @@ func (r *GridPeserta) Ambil(ctx context.Context, polisID string, halaman, ukuran
 		return HalamanPeserta{}, fmt.Errorf("repository: mencacah peserta polis: %w", err)
 	}
 
-	kolom := models.KolomGridPeserta
+	kolom := models.KolomGridTampil()
 	q := sqlGridPeserta(detail, kolom)
 	if err := db.PeriksaSQL(q); err != nil {
 		return HalamanPeserta{}, err

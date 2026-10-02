@@ -218,11 +218,25 @@ func (l *Layanan) kirimLampiran(ctx context.Context, produkID, lampiranID string
 		if percobaan >= outbox.PercobaanMaksimum || errors.Is(gagal, ErrBerkasSumberHilang) {
 			status, jadwal = outbox.StatusEfekGagalPermanen, time.Time{}
 		}
-		return l.gudang.TuntaskanUnggah(ctx, tx, efek, status, jadwal, Pesan(gagal), saat)
+		return l.gudang.TuntaskanUnggah(ctx, tx, efek, status, jadwal, l.pesanKirim(lampiranID, gagal), saat)
 	})
 	if err != nil {
 		l.catat(fmt.Sprintf("master product name life: recording attachment %s send result failed: %v", lampiranID, err))
 	}
+}
+
+// PesanKirimGagal - kalimat layar galat kirim lampiran yang bukan galat bernama: teks Oracle dan
+// jalur folder stub tidak pernah disimpan di `GALAT_TERAKHIR` atau tampil di layar (audit 02-10-2026).
+const PesanKirimGagal = "sending the attachment to storage failed; the details are in the server log"
+
+// pesanKirim - kalimat galat kirim yang DISIMPAN dan ditampilkan: galat bernama dengan kalimatnya
+// sendiri, selain itu kalimat tetap; galat aslinya ke log.
+func (l *Layanan) pesanKirim(lampiranID string, gagal error) string {
+	if errors.Is(gagal, ErrBerkasSumberHilang) || errors.Is(gagal, ErrPenyimpananBelumDisetel) {
+		return Pesan(gagal)
+	}
+	l.catat(fmt.Sprintf("master product name life: sending attachment %s failed: %v", lampiranID, gagal))
+	return PesanKirimGagal
 }
 
 func (l *Layanan) kirimSatu(ctx context.Context, tx *db.Tx, produkID, lampiranID string, saat time.Time) error {
@@ -295,7 +309,12 @@ func (l *Layanan) UnduhLampiran(ctx context.Context, p inti.Pelaku, produkID, id
 	}
 	isi, err := l.berkas.Buka(ctx, a.StorageID)
 	if err != nil {
-		return BerkasUnduhan{}, fmt.Errorf("%w: %s: %v", ErrBerkasTidakDiStub, a.FileName, err)
+		if errors.Is(err, ErrPenyimpananBelumDisetel) {
+			return BerkasUnduhan{}, err // 503, bukan 409
+		}
+		// Jalur folder stub dan kunci objek hanya di log, tidak di layar (audit 02-10-2026).
+		l.catat(fmt.Sprintf("master product name life: opening attachment %s (storage %s) failed: %v", id, a.StorageID, err))
+		return BerkasUnduhan{}, fmt.Errorf("%w: %s", ErrBerkasTidakDiStub, a.FileName)
 	}
 	return BerkasUnduhan{Nama: a.FileName, Mime: unggah.MimeDariNamaFile(a.FileName), Isi: isi}, nil
 }

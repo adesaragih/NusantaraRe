@@ -43,9 +43,10 @@ package models
 // kosong", bukan "kami tidak punya datanya", dan kolom yang ditebak isinya
 // lebih buruk lagi.
 //
-// ⛔ NAME_OF_INSURED SENGAJA TIDAK ADA di grid ini. Pega pun tidak
-// menampilkannya di sini - ia hidup di `ShowLifePremiumDetail`, bukan di
-// gridnya. Ia nama orang: tidak pernah masuk fixture, tiket, atau log.
+// ⛔ NAME_OF_INSURED TIDAK ADA di `KolomGridPeserta` (tiruan PL_Detail_Sec):
+// Pega tidak menampilkannya di grid ini. Sejak 02-10-2026 ia tampil lewat
+// `KolomGridTambahan` atas keputusan work owner. Ia nama orang: tidak pernah
+// masuk fixture, tiket, atau log.
 //
 // ⛔ SELURUH KOLOM UANG KELUAR SEBAGAI TEKS (ADR-U-0003, ADR-U-0016). Tidak
 // satu pun melewati `float64`, termasuk saat hanya ditampilkan - pembulatan
@@ -167,6 +168,43 @@ func NamaKolomGridPeserta() []string {
 	nama := make([]string, 0, len(KolomGridPeserta))
 	for _, k := range KolomGridPeserta {
 		nama = append(nama, k.Nama)
+	}
+	return nama
+}
+
+// KolomGridTambahan adalah kolom grid di LUAR `PL_Detail_Sec` - ditambahkan
+// atas keputusan work owner 02-10-2026 ("tampilkan NAME_OF_INSURED, DOB,
+// GROSS_VALUATION_BEGIN_DATE, GROSS_VALUATION_EXPIRED_DATE").
+//
+// ⛔ DAFTAR TERPISAH, bukan disisipkan ke `KolomGridPeserta`: daftar itu
+// tiruan `PL_Detail_Sec` (cacah dan urutannya dijaga uji paritas), dan
+// mencampurnya membuat paritas itu tidak lagi dapat diperiksa.
+//
+// ⚠️ NAME_OF_INSURED adalah nama orang. Ia tampil di layar karena keputusan
+// work owner, tetapi aturan lainnya TETAP: tidak pernah masuk fixture,
+// tiket, atau log.
+var KolomGridTambahan = []KolomPeserta{
+	{"NAME_OF_INSURED", KolomPesertaTeks},
+	{"DOB", KolomPesertaTanggal},
+	{"GROSS_VALUATION_BEGIN_DATE", KolomPesertaTanggal},
+	{"GROSS_VALUATION_EXPIRED_DATE", KolomPesertaTanggal},
+}
+
+// KolomGridTampil mengembalikan kolom yang benar-benar dibaca dan dikirim ke
+// layar: `KolomGridPeserta` lalu `KolomGridTambahan`. Urutan tampilnya
+// disusun layar (`susunKolom`).
+func KolomGridTampil() []KolomPeserta {
+	k := make([]KolomPeserta, 0, len(KolomGridPeserta)+len(KolomGridTambahan))
+	k = append(k, KolomGridPeserta...)
+	return append(k, KolomGridTambahan...)
+}
+
+// NamaKolomGridTampil - nama kolom `KolomGridTampil`, urut.
+func NamaKolomGridTampil() []string {
+	k := KolomGridTampil()
+	nama := make([]string, 0, len(k))
+	for _, x := range k {
+		nama = append(nama, x.Nama)
 	}
 	return nama
 }

@@ -7,7 +7,7 @@
 // Kaki FlowAction: `Submit` / `Cancel` (b32 / b31 `ChooseCeding.xml`) - keduanya menutup tanpa memilih.
 // Grid terbuka dengan `CARI1` kosong = seluruh baris (`Contains ""`).
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { Gagal, Halaman, Kosong, Memuat, Modal } from '../../../../inti/frontend/components/ui/dasar'
 import { cariMaster, type JenisMaster, type NilaiMaster } from '../api'
@@ -34,15 +34,20 @@ export default function PemilihMaster({
   // Grid RD berhalaman (`pyGridPaginator`): hasil RD bisa puluhan ribu baris (`CLIENT`) - yang dirender satu halaman.
   const [halaman, setHalaman] = useState(1)
 
+  // Nomor permintaan terakhir: jawaban yang tiba SESUDAH permintaan yang lebih baru diabaikan (audit
+  // 02-10-2026 - daftar penuh `CLIENT` yang lambat dulu dapat menimpa hasil pencarian yang lebih cepat).
+  const terakhir = useRef(0)
   const muat = useCallback(
     async (cari: string) => {
+      const nomor = ++terakhir.current
       setDaftar(null)
       setGalat(null)
       setHalaman(1)
       try {
-        setDaftar((await cariMaster(jenis, cari)).daftar)
+        const d = await cariMaster(jenis, cari)
+        if (nomor === terakhir.current) setDaftar(d.daftar)
       } catch (e) {
-        setGalat(e)
+        if (nomor === terakhir.current) setGalat(e)
       }
     },
     [jenis],
@@ -86,35 +91,37 @@ export default function PemilihMaster({
         <Halaman halaman={halaman} ukuran={UKURAN_HALAMAN_MPNL} total={daftar.length} onPindah={setHalaman} />
       )}
       {daftar !== null && daftar.length > 0 && (
-        <table className="inbox__tabel">
-          <thead>
-            <tr>
-              <th>{PEMILIH_MPNL.kolomId}</th>
-              <th>{kolomNama}</th>
-              <th className="table__actions" />
-            </tr>
-          </thead>
-          <tbody>
-            {potongHalaman(daftar, halaman).map((v) => (
-              <tr key={v.id} className="inbox__baris">
-                <td>{v.id}</td>
-                <td>{v.nama}</td>
-                <td className="table__actions">
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    onClick={() => {
-                      onPilih(v)
-                      onTutup()
-                    }}
-                  >
-                    {PEMILIH_MPNL.choose}
-                  </button>
-                </td>
+        <div className="mpnl-tabel">
+          <table className="inbox__tabel">
+            <thead>
+              <tr>
+                <th>{PEMILIH_MPNL.kolomId}</th>
+                <th>{kolomNama}</th>
+                <th className="table__actions" />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {potongHalaman(daftar, halaman).map((v) => (
+                <tr key={v.id} className="inbox__baris">
+                  <td>{v.id}</td>
+                  <td>{v.nama}</td>
+                  <td className="table__actions">
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => {
+                        onPilih(v)
+                        onTutup()
+                      }}
+                    >
+                      {PEMILIH_MPNL.choose}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </Modal>
   )

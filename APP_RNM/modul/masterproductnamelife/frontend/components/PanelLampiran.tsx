@@ -94,61 +94,63 @@ export default function PanelLampiran({ produkId }: { produkId: string }) {
       {galat !== null && <Gagal galat={galat} />}
       {daftar !== null && daftar.length === 0 && <Kosong pesan={LAIN_MPNL.kosong} />}
       {daftar !== null && daftar.length > 0 && (
-        <table className="inbox__tabel">
-          <thead>
-            <tr>
-              <th>{LAMPIRAN_MPNL.fileName}</th>
-              <th />
-              <th className="table__actions" />
-            </tr>
-          </thead>
-          <tbody>
-            {daftar.map((l) => (
-              <tr key={l.id} className="inbox__baris">
-                <td>
-                  <a
-                    href="#"
-                    className="mpnl-tautan"
-                    onClick={(e) => {
-                      e.preventDefault()
-                      void jalankan(() => unduhLampiran(produkId, l), false)
-                    }}
-                  >
-                    {l.fileName}
-                  </a>{' '}
-                  <span className={'mpnl-status' + (l.status === 'gagal' ? ' mpnl-status--gagal' : l.status === 'belum' ? ' mpnl-status--belum' : '')}>
-                    {teksStatus(l)}
-                  </span>
-                  {l.galat !== undefined && l.galat !== '' && <div className="muted">{l.galat}</div>}
-                </td>
-                <td>
-                  {tampilViewOffice(l.fileMimeType) && (
+        <div className="mpnl-tabel">
+          <table className="inbox__tabel">
+            <thead>
+              <tr>
+                <th>{LAMPIRAN_MPNL.fileName}</th>
+                <th />
+                <th className="table__actions" />
+              </tr>
+            </thead>
+            <tbody>
+              {daftar.map((l) => (
+                <tr key={l.id} className="inbox__baris">
+                  <td>
                     <a
                       href="#"
                       className="mpnl-tautan"
                       onClick={(e) => {
                         e.preventDefault()
-                        void jalankan(() => lihatOffice(produkId, l.id), false)
+                        void jalankan(() => unduhLampiran(produkId, l), false)
                       }}
                     >
-                      {LAMPIRAN_MPNL.viewOffice}
-                    </a>
-                  )}
-                </td>
-                <td className="table__actions">
-                  {l.status !== 'terunggah' && (
-                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => void jalankan(() => ulangiLampiran(produkId, l.id))}>
-                      {LAIN_MPNL.ulangi}
+                      {l.fileName}
+                    </a>{' '}
+                    <span className={'mpnl-status' + (l.status === 'gagal' ? ' mpnl-status--gagal' : l.status === 'belum' ? ' mpnl-status--belum' : '')}>
+                      {teksStatus(l)}
+                    </span>
+                    {l.galat !== undefined && l.galat !== '' && <div className="muted">{l.galat}</div>}
+                  </td>
+                  <td>
+                    {tampilViewOffice(l.fileMimeType) && (
+                      <a
+                        href="#"
+                        className="mpnl-tautan"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          void jalankan(() => lihatOffice(produkId, l.id), false)
+                        }}
+                      >
+                        {LAMPIRAN_MPNL.viewOffice}
+                      </a>
+                    )}
+                  </td>
+                  <td className="table__actions">
+                    {l.status !== 'terunggah' && (
+                      <button type="button" className="btn btn--ghost btn--sm" onClick={() => void jalankan(() => ulangiLampiran(produkId, l.id))}>
+                        {LAIN_MPNL.ulangi}
+                      </button>
+                    )}{' '}
+                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => void jalankan(() => hapusLampiran(produkId, l.id))}>
+                      {LAMPIRAN_MPNL.delete}
                     </button>
-                  )}{' '}
-                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => void jalankan(() => hapusLampiran(produkId, l.id))}>
-                    {LAMPIRAN_MPNL.delete}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {unggah && (

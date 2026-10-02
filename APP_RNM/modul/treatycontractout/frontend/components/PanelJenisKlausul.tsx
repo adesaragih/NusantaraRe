@@ -25,7 +25,6 @@ import { KLAUSUL_TCO, KURS_TCO, LABEL_MEDAN_KHUSUS, LABEL_MEDAN_KLAUSUL } from '
 import {
   ambilKlausul,
   ambilKursTahun,
-  cariPilihanKlausul,
   konversiKurs,
   PILIHAN_REINS_ANAK_TREATY_LIMIT,
   simpanKlausul,
@@ -35,11 +34,11 @@ import {
   type Klausul,
   type KlausulMasuk,
   type KursTahun,
-  type PilihanKlausul,
 } from '../api'
-import { Field, Gagal, Kosong, Memuat, Pilih } from '../../../../inti/frontend/components/ui/dasar'
+import { Field, Gagal, Kosong, Memuat, StripTab } from '../../../../inti/frontend/components/ui/dasar'
 import PilihJenisReasuransi from './PilihJenisReasuransi'
 import PilihJenisReasuransiSaring from './PilihJenisReasuransiSaring'
+import PilihMasterKlausul from './PilihMasterKlausul'
 
 /** Label medan: penimpaan per jenis/subjenis, lalu bawaan, lalu nama medan. */
 export function labelMedan(a: Pick<AturanKlausul, 'jenis' | 'subjenis'>, medan: string): string {
@@ -95,6 +94,16 @@ export function aturanInduk(j: JenisKlausul): AturanKlausul[] {
   return j.aturan.filter((a) => !a.anak)
 }
 
+/**
+ * Tab subjenis: jenis berinduk lebih dari satu (10013 Exclusion Treaty — Occupation, Clause, Object,
+ * Periode) tampil sebagai tab, bukan bertumpuk ke bawah [keputusan work owner 02-10-2026]. Kosong =
+ * tanpa tab.
+ */
+export function tabSubjenis(j: JenisKlausul): string[] {
+  const induk = aturanInduk(j)
+  return induk.length > 1 ? induk.map((a) => a.subjenis) : []
+}
+
 /** Aturan anak jenis, bila ada. */
 export function aturanAnak(j: JenisKlausul): AturanKlausul | undefined {
   return j.aturan.find((a) => a.anak)
@@ -123,30 +132,36 @@ export function rencanaKonversi(
 /**
  * Pemilih ReinsTypeID satu aturan. Treaty Limit ikut XML: `pxAutoComplete` di
  * grid induk (`GridTreatyArrangementTreatyLimit.xml` b3025, daftar induk) dan
- * anak (`GridTreatyArrTreatyLimitList.xml` b2892, porsi + induknya — dari
- * penanda aturan `pilihanReins`). Jenis lain: dropdown daftar induk tiket 02.
+ * anak (`GridTreatyArrTreatyLimitList.xml` b2892, jenis porsi saja tanpa induk —
+ * dari penanda aturan `pilihanReins`). ⛔ SETIAP baris anak membawa penanda itu
+ * [keputusan work owner 02-10-2026: ReinsType anak semua jenis = anak Treaty
+ * Limit]. Induk jenis lain: dropdown daftar induk tiket 02.
  */
 export function pemilihReinsType(a: AturanKlausul): 'saring-induk' | 'saring-anak' | 'dropdown' {
   if (a.pilihanReins === PILIHAN_REINS_ANAK_TREATY_LIMIT) return 'saring-anak'
   return a.jenis === 'TreatyLimit' ? 'saring-induk' : 'dropdown'
 }
 
+/**
+ * `Add` tampil? Jenis satu baris (`satuBaris`: `GridTreatyArrangementMinLOL.xml` b2232,
+ * `…MaxCoinsPanel.xml` b2212, `…MInLOLMB.xml` b2262 — `Add` hanya bila `ID == ''`) menyembunyikannya
+ * selama daftarnya belum dimuat atau sudah berisi; barisnya diubah lewat `Edit`.
+ */
+export function addTampil(a: Pick<AturanKlausul, 'satuBaris'>, dimuat: boolean, cacahBaris: number): boolean {
+  return a.satuBaris !== true || (dimuat && cacahBaris === 0)
+}
+
 function FormMedan({
   tahunID,
   aturan,
   form,
-  induk,
   onUbah,
 }: {
   tahunID: string
   aturan: AturanKlausul
   form: FormKlausul
-  /** ReinsTypeID induk (baris anak) atau '00'. */
-  induk: string
   onUbah: (medan: string, nilai: string) => void
 }) {
-  const [cari, setCari] = useState('')
-  const [pilihan, setPilihan] = useState<PilihanKlausul[]>([])
   const turunan = new Set(aturan.turunan ?? [])
   // Hanya jawaban konversi TERAKHIR yang dipakai (ketikan cepat).
   const urutan = useRef(0)
@@ -178,33 +193,26 @@ function FormMedan({
               label={label}
               value={form.medan[m] ?? ''}
               onChange={(v) => onUbah(m, v)}
-              anakTreatyLimitDari={pemilih === 'saring-anak' ? induk : undefined}
+              anak={pemilih === 'saring-anak'}
             />
           )
         }
         if (m === 'ID_Occupation' || m === 'ID_Clause') {
-          const master = m === 'ID_Occupation' ? 'occupation' : 'clause'
+          // Satu dropdown yang dapat difilter, tanpa kotak Search terpisah [keputusan work owner 02-10-2026].
+          const namaMedan = m === 'ID_Occupation' ? 'Occupation' : 'Clause'
           return (
-            <div key={m}>
-              <Field
-                label={`${KLAUSUL_TCO.cariPilihan} ${label}`}
-                value={cari}
-                onChange={(t) => {
-                  setCari(t)
-                  if (t.trim().length < 2) return
-                  cariPilihanKlausul(master, t)
-                    .then(setPilihan)
-                    .catch(() => setPilihan([]))
-                }}
-              />
-              <Pilih
-                label={label}
-                value={form.medan[m] ?? ''}
-                onChange={(v) => onUbah(m, v)}
-                opsi={pilihan.map((p) => ({ value: p.id, label: p.nama }))}
-                required
-              />
-            </div>
+            <PilihMasterKlausul
+              key={m}
+              master={m === 'ID_Occupation' ? 'occupation' : 'clause'}
+              label={label}
+              value={form.medan[m] ?? ''}
+              nama={form.medan[namaMedan] ?? ''}
+              onPilih={(id, nama) => {
+                onUbah(m, id)
+                onUbah(namaMedan, nama)
+              }}
+              required
+            />
           )
         }
         if (m === 'Occupation' || m === 'Clause') {
@@ -305,7 +313,6 @@ function GridAturan({
             tahunID={tahunID}
             aturan={aturan}
             form={form}
-            induk={induk}
             onUbah={(m, v) => {
               setForm((f) => (f === null ? f : { ...f, medan: { ...f.medan, [m]: v } }))
             }}
@@ -328,17 +335,19 @@ function GridAturan({
         </>
       )}
       <div className="aksi-baris">
-        <button
-          type="button"
-          className="btn btn--primary"
-          disabled={aturan.berkurs && !kursAda}
-          onClick={() => {
-            setInfo(null)
-            setForm(formKlausulKosong(aturan))
-          }}
-        >
-          {KLAUSUL_TCO.add}
-        </button>
+        {addTampil(aturan, daftar !== null, baris.length) && (
+          <button
+            type="button"
+            className="btn btn--primary"
+            disabled={aturan.berkurs && !kursAda}
+            onClick={() => {
+              setInfo(null)
+              setForm(formKlausulKosong(aturan))
+            }}
+          >
+            {KLAUSUL_TCO.add}
+          </button>
+        )}
         {aturan.anak && daftar !== null && (
           <span>
             {' '}
@@ -408,6 +417,8 @@ export default function PanelJenisKlausul({
 }) {
   const [indukTerpilih, setIndukTerpilih] = useState<Klausul | null>(null)
   const anak = aturanAnak(jenis)
+  const tab = tabSubjenis(jenis)
+  const [tabAktif, setTabAktif] = useState(tab[0] ?? '')
   const berkurs = jenisBerkurs(jenis)
   const [kurs, setKurs] = useState<KursTahun | null>(null)
   const [galatKurs, setGalatKurs] = useState<unknown>(null)
@@ -442,17 +453,20 @@ export default function PanelJenisKlausul({
         </p>
       )}
       {berkurs && galatKurs !== null && <Gagal galat={galatKurs} />}
-      {aturanInduk(jenis).map((a) => (
-        <GridAturan
-          key={`${a.jenis}/${a.subjenis}`}
-          tahunID={tahunID}
-          jenis={jenis}
-          aturan={a}
-          induk="00"
-          kursAda={kurs !== null}
-          onShowChild={anak !== undefined ? (k) => setIndukTerpilih(k) : undefined}
-        />
-      ))}
+      {tab.length > 0 && <StripTab tab={tab} aktif={tabAktif} onPilih={setTabAktif} />}
+      {aturanInduk(jenis)
+        .filter((a) => tab.length === 0 || a.subjenis === tabAktif)
+        .map((a) => (
+          <GridAturan
+            key={`${a.jenis}/${a.subjenis}`}
+            tahunID={tahunID}
+            jenis={jenis}
+            aturan={a}
+            induk="00"
+            kursAda={kurs !== null}
+            onShowChild={anak !== undefined ? (k) => setIndukTerpilih(k) : undefined}
+          />
+        ))}
       {anak !== undefined && indukTerpilih !== null && (
         <div>
           <GridAturan

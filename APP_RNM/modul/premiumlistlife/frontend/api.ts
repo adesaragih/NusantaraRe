@@ -120,6 +120,20 @@ export const TAHAP_POLIS = {
 } as const
 
 /**
+ * Apakah kasus ber-`statusWork` ini dapat DIBUKA dari kotak masuk: hanya bila
+ * statusnya salah satu tahap aktif (`TAHAP_POLIS`).
+ *
+ * ⛔ [keputusan work owner 02-10-2026] Kasus tertutup (`Resolved-Completed`,
+ * `Resolved-Rejected`, dan status lain di luar tahap aktif) TIDAK dibuka:
+ * layar keputusannya hanya menawarkan tombol yang server tolak ("kasus polis
+ * sudah ditutup"). Daftar putih, bukan daftar hitam — status penutup baru
+ * pun otomatis tidak dapat dibuka.
+ */
+export function kasusBisaDibuka(statusWork: string): boolean {
+  return (Object.values(TAHAP_POLIS) as string[]).includes(statusWork.trim())
+}
+
+/**
  * Apakah `Reject` punya jalur dari tahap ini.
  *
  * ⛔ `Reject` muncul TEPAT SEKALI di seluruh flow — `Transition9` b2306 pada
@@ -372,4 +386,290 @@ export async function submitRekapPolis(polisID: string): Promise<HasilSubmitReka
     `/api/polis-life/${encodeURIComponent(polisID)}/summary`,
     { metode: 'POST' },
   )
+}
+
+// ——— Tiket 01 bagian 3: form penawaran (layar Input Offer) ———
+
+/** Satu pilihan tertutup — kode yang disimpan, nama yang tampil. */
+export interface PilihanKode {
+  kode: string
+  nama: string
+}
+
+/** Satu baris riwayat penawaran — `T_VIEW_SUGGEST` (`AddHistorySuggest`). */
+export interface BarisRiwayatPenawaran {
+  no: number
+  /** ISO dari server. */
+  dateSuggest: string
+  picSuggest: string
+  isCedingConfirm: string
+  commentSuggest: string
+  /** `Offer` atau `Bind`. */
+  initialSuggest: string
+}
+
+/** Isi layar Input Offer — `GET /api/polis-life/{id}/penawaran`. */
+export interface PenawaranPolis {
+  caseId: string
+  /** `FlagOnGoingPolicy` — menentukan radio Status mana yang tampil. */
+  flag: string
+  tahap: string
+  /** False di luar tahap `Input Offer Life`: layar hanya menampilkan. */
+  bolehDisimpan: boolean
+  noOffer: string
+  cedingCo: string
+  cedingCoName: string
+  policyHolder: string
+  policyHolderName: string
+  typeCeding: string
+  typeCedingName: string
+  /** "Reinsurance Type" — turunan System Reinsurance (`SetReinsuranceType`), dihitung server. */
+  jenisAsuransi: string
+  businessCode: string
+  businessName: string
+  /** ISO dari server; `null` bila belum diisi. */
+  dateReceived: string | null
+  description: string
+  /** Sel penawaran migrasi 059 (+ SUM_INSURED, STATUS_UPDATE). */
+  batasUsiaPeserta: number | null
+  periodePertanggungan: string
+  /** Uang sebagai TEKS — jangan `Number(...)` (ADR-U-0003). */
+  sumInsured: string
+  tanggalPenawaran: string | null
+  tanggalRespon: string | null
+  tanggalKonfirmasi: string | null
+  tbc: number | null
+  /** "Max TBC" — dihitung server (`SetMaxTBCLife_Act`). */
+  tanggalTbc: string | null
+  statusUpdate: string
+  keteranganMarketing: string
+  /** Sel migrasi 060. */
+  qqName: string
+  jenisUsaha: string
+  ketentuanUnderwriting: string
+  tanggalKonfirmasiBalik: string | null
+  tanggalRealisasi: string | null
+  tanggalBind: string | null
+  statusFinal: string
+  /** Status TERAKHIR disimpan (`STATUS_PENAWARAN` baris utama, migrasi 062). */
+  status: string
+  riwayat: BarisRiwayatPenawaran[]
+  /**
+   * ⛔ Pilihan tertutup DATANG DARI SERVER — satu daftar di Go, nol salinan
+   * di sini. Dua daftar akan berselisih, dan selisihnya menyimpan kode yang
+   * server tolak.
+   */
+  pilihan: {
+    typeCeding: PilihanKode[]
+    classOfBusiness: PilihanKode[]
+    status: PilihanKode[]
+  }
+}
+
+/** Badan `PUT /api/polis-life/{id}/penawaran` — kode, bukan nama. */
+export interface IsiPenawaranPolis {
+  cedingCo: string
+  cedingCoName: string
+  policyHolder: string
+  policyHolderName: string
+  typeCeding: string
+  businessCode: string
+  /** `YYYY-MM-DD` atau kosong. */
+  dateReceived: string
+  description: string
+  status: string
+  /** Angka dikirim sebagai TEKS; kosong berarti tidak diisi. */
+  batasUsiaPeserta: string
+  periodePertanggungan: string
+  sumInsured: string
+  tanggalPenawaran: string
+  tanggalRespon: string
+  tanggalKonfirmasi: string
+  tbc: string
+  statusUpdate: string
+  keteranganMarketing: string
+  qqName: string
+  jenisUsaha: string
+  ketentuanUnderwriting: string
+  tanggalKonfirmasiBalik: string
+  tanggalRealisasi: string
+  tanggalBind: string
+  statusFinal: string
+}
+
+/** Satu baris popup pilihan master. */
+export interface BarisRujukanPolis {
+  id: string
+  nama: string
+  keterangan?: string
+}
+
+/** Membaca isi layar Input Offer. */
+export async function ambilPenawaranPolis(polisID: string): Promise<PenawaranPolis> {
+  return minta<PenawaranPolis>(`/api/polis-life/${encodeURIComponent(polisID)}/penawaran`)
+}
+
+/**
+ * `Save Offer` — menyimpan isian dan menambah satu baris riwayat.
+ *
+ * Menjawab isi layar TERBARU (nama turunan dan riwayat dihitung server).
+ * ⚠️ **400** bila isian wajib kosong — pesannya kalimat Pega, satu per baris.
+ */
+export async function simpanPenawaranPolis(
+  polisID: string,
+  isi: IsiPenawaranPolis,
+): Promise<PenawaranPolis> {
+  return minta<PenawaranPolis>(`/api/polis-life/${encodeURIComponent(polisID)}/penawaran`, {
+    metode: 'PUT',
+    badan: isi,
+  })
+}
+
+/** Popup `Choose Ceding Name` — `BrowseCedingCoLife_RD`. */
+export async function cariCedingPolis(cari: string): Promise<BarisRujukanPolis[]> {
+  return minta<BarisRujukanPolis[]>('/api/polis-life/cari-ceding', { kueri: { cari } })
+}
+
+/** Popup Policy Holder — `BrowseClientNusaRe_RD`. */
+export async function cariPemegangPolis(cari: string): Promise<BarisRujukanPolis[]> {
+  return minta<BarisRujukanPolis[]>('/api/polis-life/cari-pemegang-polis', { kueri: { cari } })
+}
+
+/** ISO dari server → `YYYY-MM-DD` untuk `<input type="date">`. */
+export function tanggalMasukan(iso: string | null): string {
+  if (iso === null || iso === '') return ''
+  return iso.slice(0, 10)
+}
+
+/** Isi layar → badan simpan, dengan isian yang sedang diketik. */
+export function isiDariPenawaran(p: PenawaranPolis): IsiPenawaranPolis {
+  return {
+    cedingCo: p.cedingCo,
+    cedingCoName: p.cedingCoName,
+    policyHolder: p.policyHolder,
+    policyHolderName: p.policyHolderName,
+    typeCeding: p.typeCeding,
+    businessCode: p.businessCode,
+    dateReceived: tanggalMasukan(p.dateReceived),
+    description: p.description,
+    status: p.status,
+    batasUsiaPeserta: p.batasUsiaPeserta === null ? '' : String(p.batasUsiaPeserta),
+    periodePertanggungan: p.periodePertanggungan,
+    sumInsured: p.sumInsured,
+    tanggalPenawaran: tanggalMasukan(p.tanggalPenawaran),
+    tanggalRespon: tanggalMasukan(p.tanggalRespon),
+    tanggalKonfirmasi: tanggalMasukan(p.tanggalKonfirmasi),
+    tbc: p.tbc === null ? '' : String(p.tbc),
+    statusUpdate: p.statusUpdate,
+    keteranganMarketing: p.keteranganMarketing,
+    qqName: p.qqName,
+    jenisUsaha: p.jenisUsaha,
+    ketentuanUnderwriting: p.ketentuanUnderwriting,
+    tanggalKonfirmasiBalik: tanggalMasukan(p.tanggalKonfirmasiBalik),
+    tanggalRealisasi: tanggalMasukan(p.tanggalRealisasi),
+    tanggalBind: tanggalMasukan(p.tanggalBind),
+    statusFinal: p.statusFinal,
+  }
+}
+
+// ——— Tiket 03 bagian 2: data polis layar Input Premium Detail ———
+
+/** Data polis — `GET /api/polis-life/{id}/data-polis`. */
+export interface DataPolis {
+  caseId: string
+  tahap: string
+  /** False di luar tahap Input Premium Detail: layar hanya menampilkan. */
+  bolehDisimpan: boolean
+  type: string
+  productNameId: string
+  productName: string
+  sourceOfBusiness: string
+  sobName: string
+  cedingCo: string
+  cedingCoName: string
+  policyHolder: string
+  policyHolderName: string
+  riSlipRnm: string
+  proRateType: string
+  moId: string
+  marketingCode: string
+  marketingName: string
+  /** Desimal sebagai TEKS (ADR-U-0003); kosong bila belum diisi. */
+  annuityInterest: string
+  premiumRefundFactor: string
+  retroId: string
+  retroName: string
+  securityReinsurerId: string
+  securityReinsurer: string
+  /** Email Received Date — ISO; DAPAT DIISI dan WAJIB di layar ini (02-10-2026). */
+  dateReceived: string | null
+  /** Dibaca saja (WPCLife_Act belum dibawa). */
+  wpc: string | null
+  /** Pesan SavePremiumList_Act langkah 9 sesudah Save Data (data tetap tersimpan). */
+  peringatan: string[] | null
+  pilihan: { type: PilihanKode[]; proRateType: PilihanKode[] }
+}
+
+/** Badan `PUT .../data-polis`. */
+export type IsiDataPolis = Omit<
+  DataPolis,
+  'caseId' | 'tahap' | 'bolehDisimpan' | 'wpc' | 'peringatan' | 'pilihan' | 'dateReceived'
+> & {
+  /** `YYYY-MM-DD` (masukan `type="date"`); kosong = belum diisi. */
+  dateReceived: string
+}
+
+/** Satu baris popup Choose Product Name. */
+export interface BarisProdukPolis {
+  id: string
+  inwardName: string
+  cedingId: string
+  ceding: string
+  sobId: string
+  sobName: string
+  policyHolder: string
+  policyHolderName: string
+}
+
+/** Satu pilihan Marketing Officer. */
+export interface BarisMarketingPolis {
+  id: string
+  kode: string
+  nama: string
+}
+
+/** Membaca data polis. */
+export async function ambilDataPolis(polisID: string): Promise<DataPolis> {
+  return minta<DataPolis>(`/api/polis-life/${encodeURIComponent(polisID)}/data-polis`)
+}
+
+/** Menyimpan data polis (tanpa perhitungan premi). Menjawab isi terbaru. */
+export async function simpanDataPolis(polisID: string, isi: IsiDataPolis): Promise<DataPolis> {
+  return minta<DataPolis>(`/api/polis-life/${encodeURIComponent(polisID)}/data-polis`, {
+    metode: 'PUT',
+    badan: isi,
+  })
+}
+
+/** Popup Choose Product Name — produk milik Ceding kasus. */
+export async function cariProdukPolis(polisID: string, cari: string): Promise<BarisProdukPolis[]> {
+  return minta<BarisProdukPolis[]>(`/api/polis-life/${encodeURIComponent(polisID)}/cari-produk`, {
+    kueri: { cari },
+  })
+}
+
+/** Autocomplete Marketing Officer. */
+export async function cariMarketingPolis(cari: string): Promise<BarisMarketingPolis[]> {
+  return minta<BarisMarketingPolis[]>('/api/polis-life/cari-marketing', { kueri: { cari } })
+}
+
+/** Autocomplete R/I SLIP RNM No. — nomor polis RNML-Q / RNML-F. */
+export async function cariRISlipPolis(cari: string): Promise<BarisRujukanPolis[]> {
+  return minta<BarisRujukanPolis[]>('/api/polis-life/cari-rislip', { kueri: { cari } })
+}
+
+/** Data polis → badan simpan. */
+export function isiDariDataPolis(d: DataPolis): IsiDataPolis {
+  const { caseId: _c, tahap: _t, bolehDisimpan: _b, wpc: _w, peringatan: _r, pilihan: _p, ...isi } = d
+  return { ...isi, dateReceived: tanggalMasukan(d.dateReceived) }
 }

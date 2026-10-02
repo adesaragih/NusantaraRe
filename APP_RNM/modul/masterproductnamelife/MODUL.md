@@ -54,9 +54,24 @@ kepemilikan tabel berpindah — keputusan work owner.
 
 | Tabel | Alasan |
 | --- | --- |
-| `M_PRODUCT_LIFE` | tabel warisan POOLDATA yang Master Product Name Life tulis dan baca sebagai JSON seperti Pega tanpa membuatnya (P1, OQ-MPNL-01) |
-| `M_PRODUCTINWARD_LIFE` | tabel warisan POOLDATA yang Master Product Name Life tulis dan baca sebagai JSON seperti Pega tanpa membuatnya (P1, P4) |
+| `M_PRODUCT_LIFE` | tabel warisan POOLDATA berisi produk JSON seperti Pega; sejak 02-10-2026 (OQ-MPNL-01 flat, K5) hanya CADANGAN dan sumber alat pindah `backend/alat/pindahflat` - dibaca, tidak dibuat, tidak diubah migrasi mana pun |
+| `M_PRODUCTINWARD_LIFE` | tabel warisan POOLDATA berisi sisi inward JSON seperti Pega; sejak 02-10-2026 hanya CADANGAN dan sumber alat pindah - dibaca, tidak dibuat, tidak diubah migrasi mana pun |
 | `M_ATTACHMENTPRODUCTNAME` | tabel warisan POOLDATA tempat Master Product Name Life merekam lampiran tanpa membuatnya (P5) |
+
+### Kaskade ON DELETE CASCADE
+
+Kaskade HANYA pada berkas migrasi modul ini yang berawalan di bawah; berkas lain modul ini (induk `140_`, slot menu `960_`)
+tanpa `ON DELETE CASCADE` (`TestKaskadeHanyaPadaRelasiTerdaftar`). Mendaftarkan yang baru menuntut bukti.
+
+| Awalan berkas | Relasi |
+| --- | --- |
+| `141_` | `M_PRODUCTNAME_LIFE_LIEN` → `M_PRODUCTNAME_LIFE`: baris `LienClause` hidup DI DALAM halaman produk (grid b12201); simpan menulis ulang seluruh anak satu produk |
+| `142_` | `M_PRODUCTNAME_LIFE_DOCCLAIM` → induk: `DocumentClaim` (grid b14601), alasan sama |
+| `143_` | `M_PRODUCTNAME_LIFE_PLAN` → induk: `PlanList` (grid b31557), alasan sama |
+| `144_` | `M_PRODUCTNAME_LIFE_FINUW` → induk: `FinancialUnderwritingList` (grid b37148), alasan sama |
+| `145_` | `M_PRODUCTNAME_LIFE_UWLIMIT` → induk: `UnderwritingLimitList` (grid b42075), alasan sama |
+| `146_` | `M_PRODUCTNAME_LIFE_OUTWARD` → induk: `OutwardList` (`GetReinsTypeOR_Life`), alasan sama |
+| `147_` | `M_PRODUCTNAME_LIFE_COMMENT` → induk: `CommentList` (`AddCommentList_Act`), alasan sama |
 
 ### Pesan verbatim yang bukan nama orang
 

@@ -125,13 +125,36 @@ export const JUDUL_KOLOM_PESERTA: Record<string, string> = {
   RI_ADMIN_FEE_RETRO: 'RI Admin Fee Retro',
   GROSS_PREMIUM_RETRO: 'Gross Premium Retro',
   NET_PREMIUM_RETRO: 'Net Premium Retro',
+  // Kolom tambahan di luar PL_Detail_Sec (keputusan work owner 02-10-2026,
+  // `models.KolomGridTambahan`).
+  NAME_OF_INSURED: 'Name Of Insured',
+  DOB: 'DOB',
+  GROSS_VALUATION_BEGIN_DATE: 'Gross Valuation Begin Date',
+  GROSS_VALUATION_EXPIRED_DATE: 'Gross Valuation Expired Date',
 }
+
+/**
+ * KUNCI URUT kolom grid peserta — urutan kolom berkas CSV unggahan ceding
+ * (permintaan work owner 02-10-2026). Bukan daftar kolom: kolom yang tidak
+ * dimuat grid server dilewati, dan kolom server yang tidak ada di sini tetap
+ * tampil sesudahnya (`susunKolom`).
+ */
+export const URUTAN_KOLOM_PESERTA: readonly string[] = [
+  'POLICY_NO', 'POLICY_HOLDER', 'CERTIFICATE_NO', 'NAME_OF_INSURED', 'SEX', 'DOB', 'ENTRY_AGE', 'CURRENT_AGE',
+  'PLAN', 'BEGIN_DATE', 'EXPIRED_DATE', 'GROSS_VALUATION_BEGIN_DATE', 'GROSS_VALUATION_EXPIRED_DATE',
+  'PERIOD_MM', 'UW_STATUS', 'EM_PERCENT', 'CURRENCY', 'SUM_INSURED', 'CEDING_RETENTION',
+  'SUM_REASURED', 'SHARE_NUSANTARA_RE_GROSS', 'SUM_AT_RISK_GROSS', 'GROSS_PREMIUM', 'DEDUCTION',
+  'RI_ADMIN_FEE', 'BROKERAGE_FEE', 'NET_PREMIUM', 'FACTOR',
+]
+
+/** Kolom grid peserta yang selalu PALING KANAN, urut seperti ini (02-10-2026). */
+export const KOLOM_PALING_KANAN = ['STNC', 'WPC'] as const
 
 /** Label layar Premium List Detail — tiket 03. */
 export const DETAIL_POLIS = {
   judul: 'Premium List Detail',
-  nomor: 'PL_NUMBER',
-  belumBernomor: 'Belum bernomor',
+  nomor: 'PL Number',
+  belumBernomor: 'Not yet numbered',
   terbitkan: 'Generate PL Number',
   /**
    * ⛔ Kalimatnya MENYEBUT apa yang harus dikerjakan lebih dahulu. "Tidak
@@ -152,9 +175,9 @@ export const DETAIL_POLIS = {
  */
 export const UNGGAH_CSV = {
   judul: 'Upload CSV Premium List Detail',
-  pilihBerkas: 'Berkas CSV',
-  tinjau: 'Tinjau',
-  simpan: 'Simpan permanen',
+  pilihBerkas: 'CSV file',
+  tinjau: 'Preview',
+  simpan: 'Save',
   /**
    * ⛔ Aturan pemisah DINYATAKAN DI MUKA, bukan hanya saat menolak. Korpus
    * menyebutnya enam kali di nama langkahnya ("SEPARATOR MENGGUNAKAN TITIK")
@@ -162,16 +185,17 @@ export const UNGGAH_CSV = {
    * aturannya setelah berkasnya ditolak.
    */
   aturanPemisah:
-    'Angka memakai TITIK sebagai pemisah desimal, dan tanpa pemisah ribuan. ' +
-    'Contoh: 1234567.89 — bukan 1,234,567.89 dan bukan 1.234.567,89. ' +
-    'Tanggal berformat dd/mm/yyyy.',
+    'Columns: separated by a comma (,) or semicolon (;). ' +
+    'Numbers: no thousands separator; decimals use a DOT (1234567.89), or a comma ' +
+    '(1234567,89) in semicolon files. Not 1,234,567.89 or 1.234.567,89. ' +
+    'Dates: dd/mm/yyyy.',
   perbaikiDulu:
-    'Perbaiki dulu baris yang ditolak, lalu tinjau ulang. Selama masih ada ' +
-    'penolakan, tidak ada satu baris pun yang disimpan.',
-  kolomBaris: 'Baris',
-  kolomKolom: 'Kolom',
-  kolomPesan: 'Pesan',
-  kolomSebab: 'Sebab',
+    'Fix the rejected rows first, then preview again. While any row is ' +
+    'rejected, no row is saved.',
+  kolomBaris: 'Row',
+  kolomKolom: 'Column',
+  kolomPesan: 'Message',
+  kolomSebab: 'Reason',
 } as const
 
 /**
@@ -276,3 +300,130 @@ export const GRID_REKAP: Record<string, readonly KolomRekap[]> = {
     { judul: 'BALANCE', kolom: 'BALANCE' },
   ],
 }
+
+/**
+ * Layar Input Offer — `Section/InputOfferLife.xml` (tiket 01 bagian 3).
+ *
+ * ⛔ VERBATIM `pyLabel` tiap sel, termasuk DUA radio yang sama-sama berlabel
+ * `Status` (satu tampil saat bendera "0", satu saat "1"). Dibaca dari salinan
+ * korpus `kelvin\PremiumListLife (Done)\` 30-09-2026.
+ */
+export const LABEL_PENAWARAN = {
+  judul: 'Life Business Offering',
+  noOffer: 'Confirmation Number',
+  cedingCoName: 'Ceding Name',
+  policyHolderName: 'Policy Holder',
+  pilihCeding: 'Choose Ceding Name',
+  /**
+   * ⚠️ `[dugaan]` Tombol pembuka `PolicyHolder_Harness` ber-`pyLabel` bawaan
+   * `Button` — kendali tanpa teks. Kalimat ini karangan layar baru supaya
+   * tombolnya dapat dibaca; bukan label korpus.
+   */
+  pilihPemegang: 'Choose Policy Holder',
+  typeCeding: 'System Reinsurance',
+  jenisAsuransi: 'Reinsurance Type',
+  businessCode: 'Class of Business',
+  dateReceived: 'Email Received Date',
+  status: 'Status',
+  description: 'Comment',
+  batasUsiaPeserta: 'Age Limit',
+  periodePertanggungan: 'Coverage Period',
+  sumInsured: 'Sum Insured',
+  tanggalPenawaran: 'Offering Date',
+  tanggalRespon: 'Response Date',
+  tanggalKonfirmasi: 'Confirmation Date',
+  tbc: 'Input TBC',
+  tanggalTbc: 'Max TBC',
+  statusUpdate: 'Status Update',
+  keteranganMarketing: 'Marketing Note',
+  qqName: 'Insured Name',
+  jenisUsaha: 'Occupation',
+  ketentuanUnderwriting: 'Underwriting Policy',
+  tanggalKonfirmasiBalik: 'Re-Confirmation Date',
+  tanggalRealisasi: 'Realization Date',
+  tanggalBind: 'Binding Date',
+  statusFinal: 'Final Status',
+  simpan: 'Save Offer',
+  cari: 'Search',
+  pilih: 'Choose',
+  kolomId: 'ID',
+  kolomNama: 'Name',
+  /** Grid `PolicyHolder_Section` kolom ketiga (`.BU_Note`). */
+  kolomBisnis: 'Business',
+} as const
+
+/** Judul grid riwayat penawaran — `InputOfferLife.xml` (`.OfferFacIn.ViewSuggest`). */
+export const KOLOM_RIWAYAT_PENAWARAN = {
+  dateSuggest: 'Date',
+  picSuggest: 'PIC',
+  isCedingConfirm: 'Status',
+  initialSuggest: 'Position',
+  commentSuggest: 'Comment',
+} as const
+
+/**
+ * Layar Input Premium Detail — `Section/ShowLifePremiumDetail.xml` (tiket 03
+ * bagian 2). VERBATIM `pyLabel` tiap sel; dibaca 01-10-2026.
+ */
+export const LABEL_DATA_POLIS = {
+  judul: 'Input Life Premium Detail',
+  pilihProduk: 'Choose Product Name',
+  productName: 'Product Name',
+  productNameId: 'Product Name ID',
+  type: 'Type',
+  typeCeding: 'System Reinsurance',
+  riSlip: 'R/I SLIP RNM No.',
+  proRateType: 'Premium Payment Method',
+  marketing: 'Marketing Officer',
+  sumInsured: 'Sum Insured',
+  annuityInterest: 'Annuity Interest',
+  premiumRefundFactor: 'Premium Refund Factor',
+  noOffer: 'Confirmation Number',
+  ketentuanUnderwriting: 'Underwriting Policy',
+  ceding: 'Ceding',
+  policyHolder: 'Policy Holder',
+  jenisAsuransi: 'Reinsurance Type',
+  businessCode: 'Class of Business',
+  batasUsia: 'Age Limit',
+  periode: 'Coverage Period',
+  catatanBilling: 'BILLING NAME IS MANDATORY FOR TYPE TP & TR',
+  billing: 'Billing Name',
+  pilihBilling: 'Choose Billing Name',
+  retro: 'Retrocessionaire',
+  pilihRetro: 'Choose Retrocessionaire',
+  dateReceived: 'Email Received Date',
+  tanggalPenawaran: 'Offering Date',
+  tanggalRespon: 'Response Date',
+  tanggalKonfirmasi: 'Confirmation Date',
+  tanggalKonfirmasiBalik: 'Re-Confirmation Date',
+  tanggalRealisasi: 'Realization Date',
+  tanggalBind: 'Binding Date',
+  tanggalTbc: 'Max TBC',
+  wpc: 'WPC',
+  status: 'Status',
+  statusUpdate: 'Status Update',
+  keteranganMarketing: 'Marketing Note',
+  simpan: 'Save Data',
+} as const
+
+/** Kolom grid popup Choose Product Name — `Section/ChooseProdName.xml`. */
+export const KOLOM_PRODUK = {
+  id: 'ID',
+  inwardName: 'TREATY NAME',
+  ceding: 'CEDING',
+  sob: 'SOB',
+  policyHolder: 'POLICY HOLDER',
+} as const
+
+/**
+ * Teks pilihan kosong dropdown modul ini — bahasa Inggris (permintaan work owner
+ * 01-10-2026). Diteruskan lewat prop `kosong` komponen `Pilih` inti, sehingga
+ * bawaan inti (`-- pilih --`) untuk modul lain tidak berubah.
+ */
+export const TEKS_PILIH = '-- choose --'
+
+/**
+ * Teks tombol pilih yang menempel di kotak isian Premium List Detail (02-10-2026).
+ * Nama lengkapnya (mis. "Choose Product Name") tetap di `aria-label` dan `title`.
+ */
+export const TEKS_TOMBOL_PILIH = 'Choose'

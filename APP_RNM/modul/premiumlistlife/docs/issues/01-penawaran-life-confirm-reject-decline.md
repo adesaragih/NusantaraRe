@@ -1,6 +1,6 @@
 # 01: Penawaran Life — Confirm / Reject / Decline, dan percabangan Offer / Premium
 
-**Status:** sebagian — input + simpan data penawaran (relasional) dan riwayat `T_VIEW_SUGGEST` belum dibangun; gerbang `ProtectAccept` belum tersambung ke rute (sensus remark 28-09-2026); tombol portal `Input Offer`/`Input Premium` **membuat kasus sejak GILIRAN-13** (`POST /api/polis-life`); **Decision3 dirutekan dari bendera sejak GILIRAN-14** (butir bq, OQ-PL-16 ditutup); pengenal kasus baru mulai `NBLF-22374` **sesudah migrasi 058 dijalankan work owner** (GILIRAN-15, OQ-PL-15 ditutup)
+**Status:** sebagian — **form penawaran + `Save Offer` + riwayat `T_VIEW_SUGGEST` dibangun 30-09-2026 (bagian 3)**; kolom `CLIENT.NAME`/`BU_NOTE` popup Policy Holder menunggu konfirmasi DBA; keputusan dari radio Status (`SetStatusAkseptasi`) belum menggantikan tombol Confirm/Decline; tombol portal `Input Offer`/`Input Premium` **membuat kasus sejak GILIRAN-13** (`POST /api/polis-life`); **Decision3 dirutekan dari bendera sejak GILIRAN-14** (butir bq, OQ-PL-16 ditutup); pengenal kasus baru mulai `NBLF-22374` **sesudah migrasi 058 dijalankan work owner** (GILIRAN-15, OQ-PL-15 ditutup)
 
 **Blocked by:** **00 (skema tujuh tabel — PREFACTOR)**
 
@@ -364,3 +364,76 @@ Resolved-Completed tanpa rincian premi (Transition11 tidak lewat `Utility1`); `I
 
 ⚠️ Kasus yang lahir **sebelum** 057 (kolom bendera kosong) tidak dapat di-`Confirm` di tahap penawaran sampai
 benderanya terisi — keadaan yang sama dengan Pega, yang tidak punya konektor untuk hasil `Decline`.
+
+## Implementasi — tiket 01 bagian 3 (30 September 2026): form penawaran
+
+Sumber: salinan korpus `kelvin\PremiumListLife (Done)\`, dibaca sebagai pohon (pengurai sel section
+dan pengurai langkah activity di scratchpad sesi — bukan berkas repo).
+
+| Layar Pega | Kode |
+| --- | --- |
+| `Section/InputOfferLife.xml` sel dapat-diisi: `TypeCeding` (req), `BusinessCode` (req), `DateReceived`, radio `Status` (bendera "0") / `EmailTypePL` (bendera "1"), `Description` (req) | `models/polis_isianpenawaran.go`, `frontend/pages/FormPenawaran.tsx` |
+| `Ceding_Harness` → `BrowseCedingCoLife_RD` → `setCeding_act` | `GET /api/polis-life/cari-ceding`, `repository/polis_rujukan.go` (`AGENT`) |
+| `PolicyHolder_Harness` → `BrowseClientNusaRe_RD` → `setPolicyHolder_act` | `GET /api/polis-life/cari-pemegang-polis` (`CLIENT`) |
+| `Save Offer` → `AddHistorySuggest` + `InputOfferLife_ACT` 2–8 | `PUT /api/polis-life/{id}/penawaran` — header + satu baris `T_VIEW_SUGGEST`, SATU transaksi |
+| `SetCoBName_Act`, `SetReinsuranceType`, `InputOfferLife_ACT` 3 CARI8 | nama turunan dihitung server |
+| `pyRequired` sel saat `finishAssignment` | `Confirm` tahap penawaran → **409** bila isian wajib belum tersimpan |
+
+**Yang BELUM / tidak dibawa, dan sebabnya:**
+
+- ⚠️ `[belum terverifikasi]` kolom fisik `CLIENT.NAME` dan `CLIENT.BU_NOTE` — diturunkan dari nama
+  properti RD (pola `AGENT.CLIENTNAME` yang terbukti). Konfirmasi DBA/work owner sebelum DEV.
+- ⚠️ `[dugaan]` daftar radio `Status` (Accept/Pending/Bind/Decline/Closed) dan kode "3" = Decline
+  pada `EmailTypePL`: pilihan kedua radio milik rule properti yang tidak diekspor.
+- Radio Status **tidak disimpan** di header (tidak ada kolomnya); ia tercatat di riwayat
+  (`IS_CEDING_CONFIRM`). Di Pega radio itu menentukan keputusan lewat `SetStatusAkseptasi`
+  (`Bind` → 1 Confirm, `Decline`/`Closed` → 7; bendera "1": `EmailTypePL`); aplikasi ini masih
+  memakai tombol Confirm/Decline — penyelarasan menunggu keputusan work owner.
+- Sel read-only (Insured Name … Underwriting Policy, TBC) dan tombol `Following Offer`
+  (`GetOfferLife_Act` membaca `JSON_OFFER_LIFE`, spec §12) tidak dibawa. `NO_OFFER` tetap kosong
+  untuk kasus baru (`GetIdOffer_SQL` membaca `JSON_OFFER_LIFE`).
+- `CREATE_OP_NAME` kini diisi saat kasus lahir — berisi **pengenal akun**, bukan nama (ADR-U-0030).
+
+### ⛔ Ralat 01-10-2026 — sel penawaran yang terisi di layar lama dikembalikan (migrasi 059)
+
+Bagian 3 menyimpulkan sel `pyReadOnly true` di `InputOfferLife.xml` tidak dapat diisi. **Keliru**:
+layar Pega lama yang ditunjukkan work owner berisi ketikan pada sel-sel itu; read-only hanya lewat
+`pyReadOnlyCondition` (`FlagOnGoingPolicy='1'`, kasus Input Premium). `[keputusan work owner
+01-10-2026]` "kembalikan kolom yang ada isinya": Age Limit, Coverage Period, Sum Insured, Offering /
+Response / Confirmation Date, Input TBC, Max TBC (`SetMaxTBCLife_Act`: Confirmation Date + TBC hari,
+dihitung server), Status Update, Marketing Note. Migrasi `059_t_premium_list_isian_penawaran.sql`
+menambah delapan kolom (SUM_INSURED dan STATUS_UPDATE sudah ada); STRUKTUR diperbarui (220 → 228
+kolom). Sel yang kosong di layar itu (Insured Name, Occupation, Underwriting Policy,
+Re-Confirmation/Realization/Binding Date, Final Status) belum dibawa.
+
+`[keputusan work owner 01-10-2026]` "tampilkan semua kolom di gambar, nanti baru saya filter": tujuh
+sel sisa (Insured Name, Occupation, Underwriting Policy, Re-Confirmation / Realization / Binding Date,
+Final Status) ikut dibawa lewat migrasi `060_t_premium_list_isian_penawaran_lanjut.sql` — migrasi
+terpisah, sebab 059 mungkin sudah terpasang. STRUKTUR 228 → 235 kolom. Penjaga
+`TestMigrasi050Sampai056TipeNullFKIndexSesuaiStruktur` kini membaca seluruh rentang 050–099.
+
+⛔ **Penyimpangan sadar `[keputusan work owner 01-10-2026]` — Reinsurance Type dipilih.** Di Pega
+`.JenisAsuransi` diturunkan dari System Reinsurance (`SetReinsuranceType` / InputOfferLife_ACT
+langkah 7: `TypeCeding "4"` → Non Proportional, selain itu Proportional) dan ditimpa setiap simpan.
+Di aplikasi ini pemakai memilih `Proportional` / `Non Proportional`, bawaannya Proportional; disimpan
+di `JENIS_ASURANSI` (migrasi `061_t_premium_list_jenis_asuransi.sql`). STRUKTUR 235 → 236 kolom.
+
+⚠️ **Dibatalkan di hari yang sama `[keputusan work owner 01-10-2026]`:** Reinsurance Type kembali
+**turunan System Reinsurance** seperti Pega (read-only; XOL → Non Proportional, selain itu
+Proportional). Penyimpangan di atas tidak berlaku lagi. Kolom `JENIS_ASURANSI` (061) tetap dipakai
+untuk MENYIMPAN nilai turunan itu, padanan `Obj-Save` InputOfferLife_ACT langkah 8; nilainya tidak
+pernah diterima dari klien.
+
+**Kolom wajib `[keputusan work owner 01-10-2026]`.** Selain `pyRequired` korpus (System Reinsurance,
+Class of Business, Comment), **Ceding Name, Policy Holder, dan Status** kini wajib — bukan dari
+korpus. Tombol `Save Offer` terkunci di layar selama ada yang kosong (`kolomWajibKosong`), dan server
+tetap menolak (400, `models.KekuranganPenawaran`). Gerbang `Confirm` ikut menuntut Ceding Name dan
+Policy Holder tersimpan; Status tidak diperiksa di sana karena kolomnya tidak ada di header.
+
+**Satu baris T_PREMIUM_LIST per status `[keputusan work owner 01-10-2026]`** (migrasi
+`062_t_premium_list_status_penawaran.sql`, kolom `STATUS_PENAWARAN`). Save Offer dengan status yang
+sama → baris itu diperbarui; status berbeda → isian lama baris utama dipindah ke baris status lamanya
+(`ID` = 32 heksa dari nomor kasus + status, `ID_PEGA` = nomor kasus), lalu baris utama mengambil status
+dan isian baru. Baris utama (`ID = ID_PEGA` = nomor kasus) selalu status terakhir dan tetap satu-satunya
+yang dibaca bagian lain; kotak masuk kini menyaring `p.ID = p.ID_PEGA`. Radio Status di layar terisi
+dari status terakhir yang tersimpan. Riwayat `T_VIEW_SUGGEST` tetap bertambah setiap simpan.

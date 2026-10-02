@@ -1,0 +1,816 @@
+[
+ {
+  "kasus": "kasus MBU NB #1",
+  "urutanMasterMataUang": [
+   "IDR"
+  ],
+  "coverage": [
+   {
+    "TSI": "296100000",
+    "Rate": "2.08",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "10000000",
+    "Rate": "3.75",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "296100000",
+    "Rate": "0.1",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "296100000",
+    "Rate": "0.1",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "296100000",
+    "Rate": "0.05",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "296100000",
+    "Rate": "0.05",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "10000000",
+    "Rate": "0.5",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "40000000",
+    "Rate": "0.1",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "296100000",
+    "Rate": "2.08",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "10000000",
+    "Rate": "3.75",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "296100000",
+    "Rate": "0.1",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "296100000",
+    "Rate": "0.1",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "296100000",
+    "Rate": "0.05",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "296100000",
+    "Rate": "0.05",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "10000000",
+    "Rate": "0.5",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "40000000",
+    "Rate": "0.1",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "296100000",
+    "Rate": "2.08",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "10000000",
+    "Rate": "3.75",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "296100000",
+    "Rate": "0.1",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "296100000",
+    "Rate": "0.1",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "296100000",
+    "Rate": "0.05",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "296100000",
+    "Rate": "0.05",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "10000000",
+    "Rate": "0.5",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "40000000",
+    "Rate": "0.1",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   }
+  ],
+  "currencyList": [
+   {
+    "Name": "IDR",
+    "Premium": "22536540"
+   }
+  ]
+ },
+ {
+  "kasus": "kasus MBU NB #2",
+  "urutanMasterMataUang": [
+   "IDR"
+  ],
+  "coverage": [
+   {
+    "TSI": "253800000",
+    "Rate": "2.08",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "10000000",
+    "Rate": "3.75",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "253800000",
+    "Rate": "0.1",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "253800000",
+    "Rate": "0.1",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "253800000",
+    "Rate": "0.05",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "253800000",
+    "Rate": "0.05",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "10000000",
+    "Rate": "0.5",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "40000000",
+    "Rate": "0.1",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "253800000",
+    "Rate": "2.08",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "10000000",
+    "Rate": "3.75",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "253800000",
+    "Rate": "0.1",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "253800000",
+    "Rate": "0.1",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "253800000",
+    "Rate": "0.05",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "253800000",
+    "Rate": "0.05",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "10000000",
+    "Rate": "0.5",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "40000000",
+    "Rate": "0.1",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "253800000",
+    "Rate": "2.08",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "10000000",
+    "Rate": "3.75",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "253800000",
+    "Rate": "0.1",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "253800000",
+    "Rate": "0.1",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "253800000",
+    "Rate": "0.05",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "253800000",
+    "Rate": "0.05",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "10000000",
+    "Rate": "0.5",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "40000000",
+    "Rate": "0.1",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   }
+  ],
+  "currencyList": [
+   {
+    "Name": "IDR",
+    "Premium": "19516320"
+   }
+  ]
+ },
+ {
+  "kasus": "kasus MBU NB #3",
+  "urutanMasterMataUang": [
+   "IDR"
+  ],
+  "coverage": [
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "268100000",
+    "Rate": "2.38",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   }
+  ],
+  "currencyList": [
+   {
+    "Name": "IDR",
+    "Premium": "242469640"
+   }
+  ]
+ },
+ {
+  "kasus": "kasus MBU NB #4",
+  "urutanMasterMataUang": [
+   "IDR"
+  ],
+  "coverage": [
+   {
+    "TSI": "1980000000",
+    "Rate": "1.45",
+    "Loading": "",
+    "ProRatePercentCoverage": "100",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   }
+  ],
+  "currencyList": [
+   {
+    "Name": "IDR",
+    "Premium": "28710000"
+   }
+  ]
+ },
+ {
+  "kasus": "kasus MBU NB #5",
+  "urutanMasterMataUang": [
+   "IDR"
+  ],
+  "coverage": [
+   {
+    "TSI": "4084920000",
+    "Rate": "0.88",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "4084920000",
+    "Rate": "0.88",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "3676336000",
+    "Rate": "0.88",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "3676336000",
+    "Rate": "0.88",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "3676337000",
+    "Rate": "0.88",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   },
+   {
+    "TSI": "3676336000",
+    "Rate": "0.88",
+    "Loading": "",
+    "ProRatePercentCoverage": "100.00000000000000000000",
+    "MataUang": "IDR",
+    "FlagDelete": ""
+   }
+  ],
+  "currencyList": [
+   {
+    "Name": "IDR",
+    "Premium": "309703644.8"
+   }
+  ]
+ }
+]

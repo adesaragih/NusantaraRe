@@ -1,134 +1,395 @@
 /*
- * Gaya modul Master Product Name Life - SELURUH kelas berawalan `mpnl` (dijaga `gaya.test.ts`).
+ * Gaya modul Master Product Name Life - kelas khusus modul berawalan `mpnl` (dijaga `gaya.test.ts`).
  * Kerangka (panel, form-grid, tabel, tombol, medan) memakai kelas bersama `inti/frontend/styles.css`; berkas
- * ini hanya menambah yang khusus layar modul ini, dengan token warna tema bersama. Diimpor `rute.tsx`.
+ * ini menambah yang khusus layar modul ini, dan blok soft UI di bawah MENIMPA kelas bersama itu HANYA di
+ * bawah kelas akar `.mpnl` (tema sama dengan Treaty Contract Out, 02-10-2026). Diimpor `rute.tsx`.
  */
 
 /* Label sel tombol b71816 (`End Period`, `pyIncludeLabel` true) di sebelah tombol `Add`. */
-.mpnl-label-sel {
-  color: var(--muted);
+.mpnl .mpnl-label-sel {
+  color: var(--mt-teks-redup);
   font-size: var(--fs-sm);
   font-weight: 600;
 }
 
 /* Baris tombol `Add` + `pyGridPaginator` di atas grid produk. */
-.mpnl-aksi-grid {
+.mpnl .mpnl-aksi-grid {
+  display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px 12px;
   flex-wrap: wrap;
 }
 
 /* Medan + tombol `Choose*` berdampingan (sel b4107 + b5181, ...). */
-.mpnl-medan-pilih {
+.mpnl .mpnl-medan-pilih {
   display: flex;
   align-items: flex-end;
   gap: 8px;
 }
 
-.mpnl-medan-pilih > :first-child {
+.mpnl .mpnl-medan-pilih > :first-child {
   flex: 1 1 auto;
+  min-width: 0;
 }
 
 /* Autocomplete `pxAutoComplete` - daftar saran di bawah medan. */
-.mpnl-saran {
+.mpnl .mpnl-saran {
   position: relative;
 }
 
-.mpnl-saran__daftar {
+.mpnl .mpnl-saran__daftar {
   position: absolute;
   z-index: 20;
   left: 0;
   right: 0;
   max-height: 220px;
   overflow-y: auto;
-  margin: 2px 0 0;
-  padding: 4px 0;
+  margin: 4px 0 0;
+  padding: 6px 0;
   list-style: none;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  box-shadow: var(--bayang-menu);
+  background: var(--mt-latar);
+  border: 1px solid var(--mt-kilau);
+  border-radius: 12px;
+  box-shadow: var(--mt-timbul-kecil);
 }
 
-.mpnl-saran__butir {
-  padding: 4px 10px;
+.mpnl .mpnl-saran__butir {
+  padding: 6px 12px;
   cursor: pointer;
 }
 
-.mpnl-saran__butir:hover {
-  background: var(--surface-2);
+.mpnl .mpnl-saran__butir:hover {
+  background: var(--mt-baris-hover);
+  color: var(--mt-aksen-teks);
 }
 
 /* Judul grid bersarang (`LIEN CLAUSE (Potongan Manfaat Klaim)`, `PLAN LIST`, ...). */
-.mpnl-judul-grid {
-  margin: 16px 0 6px;
+.mpnl .mpnl-judul-grid {
+  margin: 24px 0 8px;
+  color: var(--mt-teks);
+  font-family: "Poppins", var(--font);
   font-size: var(--fs-sm);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.02em;
 }
 
 /* Sel grid bersarang yang dapat disunting. */
-.mpnl-sel-isi {
+.mpnl .mpnl-sel-isi {
   width: 100%;
   min-width: 90px;
 }
 
 /* Checkbox `On Retention` b47303 (`pyCheckboxCaption` b47312). */
-.mpnl-centang {
+.mpnl .mpnl-centang {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin: 8px 0;
+  margin: 12px 0;
 }
 
 /* Label statik `OF SUM REASURED` b24882 di samping `Nusantara Re Share (%)`. */
-.mpnl-catatan-medan {
+.mpnl .mpnl-catatan-medan {
   align-self: end;
   padding-bottom: 8px;
-  color: var(--muted);
+  color: var(--mt-teks-redup);
   font-size: var(--fs-sm);
 }
 
 /* Pesan `OutputParam.ERRMSG` (wadah b1269 `STSSAVE==99`, `CopyProduct`). */
-.mpnl-pesan {
+.mpnl .mpnl-pesan {
   margin: 0 0 12px;
-  padding: 8px 12px;
-  border-radius: var(--radius-sm);
-  background: var(--surface-2);
+  padding: 10px 14px;
+  border: 1px solid var(--mt-aksen-garis);
+  border-radius: 12px;
+  background: var(--mt-aksen-lembut);
+  color: var(--mt-teks);
 }
 
 /* Peringatan nama berkas lampiran (b66074, b66233). */
-.mpnl-peringatan {
+.mpnl .mpnl-peringatan {
   margin: 4px 0;
-  color: var(--muted);
+  color: var(--mt-teks-redup);
   font-size: var(--fs-sm);
 }
 
 /* Status lampiran (tiket 08 AC 4). */
-.mpnl-status {
+.mpnl .mpnl-status {
   font-size: var(--fs-xs);
   font-weight: 600;
 }
 
-.mpnl-status--gagal {
+.mpnl .mpnl-status--gagal {
   color: var(--danger);
 }
 
-.mpnl-status--belum {
-  color: var(--muted);
+.mpnl .mpnl-status--belum {
+  color: var(--mt-teks-redup);
 }
 
 /* Tautan nama berkas b68857 / `View Office Online` b69247 (`pxLink`). */
-.mpnl-tautan {
+.mpnl .mpnl-tautan {
   padding: 0;
   border: 0;
   background: none;
-  color: var(--accent);
+  color: var(--mt-aksen-teks);
   cursor: pointer;
   text-decoration: underline;
 }
 
 /* Bagian form (umum / inward / daftar / lampiran). */
-.mpnl-bagian {
+.mpnl .mpnl-bagian {
   margin-top: 18px;
+}
+
+/* ================================================================ soft UI
+   TEMA SAMA DENGAN TREATY CONTRACT OUT - permintaan work owner 02-10-2026: "tema nya masih ga
+   sesuai, tolong samain tema nya untuk productname life, samain dengan treaty contract out".
+   Blok token dan aturan ini SALINAN blok soft UI `modul/treatycontractout/frontend/tco.css`
+   (neumorfisme rapi, gaya Kelola User: kotak akar bergradasi, isi putih, kepala tabel navy muda,
+   tombol sekunder putih bertepi) dengan kelas akar `.mpnl` (dipasang di akar halaman
+   `MasterProductNameLife.tsx`). Kelas bersama inti hanya DITIMPA di bawah `.mpnl` (dijaga
+   `gaya.test.ts`); popup form dan dialog dirender di dalam akar, jadi ikut bertema.
+   TANPA backdrop-filter, filter, atau transform: properti itu mengurung popup `position: fixed`.
+   Token `--mt-*` hanya di kelas akar; tema gelap ditimpa di `:root[data-theme="dark"] .mpnl`. */
+
+/* Tabel produk lebih lebar dari kotak menggulir DI DALAM kotak akar, tidak menembus tepinya (Treaty
+   Contract Out: pembungkus `tco-tabel`). `overflow` tidak mengurung popup `position: fixed`. */
+.mpnl {
+  min-width: 0;
+  overflow-x: auto;
+}
+.mpnl {
+  --mt-latar: #eef1f6;
+  --mt-latar-tepi: #cfd7e5;
+  --mt-latar-atas: #f9fafd;
+  --mt-latar-bawah: #e4e9f3;
+  --mt-bayang-akar: 0 2px 6px rgba(30, 45, 90, 0.08), 0 16px 40px -12px rgba(30, 45, 90, 0.24);
+  --mt-kartu: #eef1f6;
+  --mt-lembut: #e9edf3;
+  --mt-lembut-tepi: #dde3ec;
+  --mt-teks: #101828;
+  --mt-teks-redup: #4f586b;
+  --mt-aksen: #2b44b0;
+  --mt-aksen-teks: #2339a3;
+  --mt-aksen-lembut: #e3e8f6;
+  --mt-aksen-garis: #b9c5ee;
+  --mt-kepala-tabel: #dde4f2;
+  --mt-kepala-teks: #22326b;
+  --mt-kepala-garis: #c3cde2;
+  --mt-isi: #ffffff;
+  --mt-zebra: #f5f7fb;
+  --mt-baris-hover: #e6ecfa;
+  --mt-garis: #e1e6ef;
+  --mt-tepi: #c8d1e1;
+  --mt-tombol: #d63a42;
+  --mt-tombol-ujung: #bf2f37;
+  --mt-tombol-hover: #c2333b;
+  --mt-tombol-hover-ujung: #a9282f;
+  --mt-terang: rgba(255, 255, 255, 0.92);
+  --mt-gelap: rgba(163, 177, 198, 0.55);
+  --mt-kilau: rgba(255, 255, 255, 0.7);
+  --mt-timbul: 8px 8px 18px var(--mt-gelap), -8px -8px 18px var(--mt-terang);
+  --mt-timbul-kecil: 4px 4px 9px var(--mt-gelap), -4px -4px 9px var(--mt-terang);
+  --mt-cekung: inset 3px 3px 7px var(--mt-gelap), inset -3px -3px 7px var(--mt-terang);
+  --mt-cekung-kecil: inset 2px 2px 4px var(--mt-gelap), inset -2px -2px 4px var(--mt-terang);
+  --mt-cincin: 0 0 0 3px rgba(43, 68, 176, 0.18);
+  --mt-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--mt-terang);
+  --mt-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.4);
+  --mt-bayang-lembar: 0 1px 2px rgba(16, 24, 40, 0.04), 0 22px 50px -32px rgba(16, 24, 60, 0.28);
+  --text-3: var(--mt-teks-redup);
+  color: var(--mt-teks);
+  padding: 24px;
+  border: 1px solid var(--mt-latar-tepi);
+  border-radius: 26px;
+  /* Gradasi TERLIHAT dan bayangan di SEMUA sisi - gaya Kelola User (02-10-2026): alas #eef1f6 dulu
+     nyaris lebur dengan latar halaman #f4f6fa, tepinya pucat, bayangannya hanya di bawah. */
+  background: linear-gradient(180deg, var(--mt-latar-atas) 0%, var(--mt-latar-bawah) 100%);
+  box-shadow: var(--mt-bayang-akar);
+}
+:root[data-theme="dark"] .mpnl {
+  --mt-latar: #1b2130;
+  --mt-latar-tepi: #323b50;
+  --mt-latar-atas: #222a3b;
+  --mt-latar-bawah: #161b27;
+  --mt-bayang-akar: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.75);
+  --mt-kartu: #1b2130;
+  --mt-lembut: #181d2a;
+  --mt-lembut-tepi: #242b3a;
+  --mt-teks: #eef0f6;
+  --mt-teks-redup: #aab2c4;
+  --mt-aksen: #8ea2f5;
+  --mt-aksen-teks: #aebcff;
+  --mt-aksen-lembut: #222b45;
+  --mt-aksen-garis: #3a4b8f;
+  --mt-kepala-tabel: #273152;
+  --mt-kepala-teks: #dbe2ff;
+  --mt-kepala-garis: #3a4670;
+  --mt-isi: #1f2638;
+  --mt-zebra: #232b3f;
+  --mt-baris-hover: #2b3554;
+  --mt-garis: #2c3447;
+  --mt-tepi: #3a4459;
+  --mt-terang: rgba(255, 255, 255, 0.045);
+  --mt-gelap: rgba(0, 0, 0, 0.55);
+  --mt-kilau: rgba(255, 255, 255, 0.04);
+  --mt-cincin: 0 0 0 3px rgba(142, 162, 245, 0.25);
+  --mt-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--mt-terang);
+  --mt-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.75);
+  --mt-bayang-lembar: 0 1px 2px rgba(0, 0, 0, 0.4), 0 22px 50px -32px rgba(0, 0, 0, 0.8);
+}
+
+.mpnl .inbox__judul,
+.mpnl .panel__title,
+.mpnl .modal__title {
+  color: var(--mt-teks);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.mpnl .muted {
+  color: var(--mt-teks-redup);
+}
+.mpnl :focus-visible {
+  outline: 2px solid var(--mt-aksen);
+  outline-offset: 2px;
+}
+
+/* Isian: TIMBUL KE DALAM (cekung), PUTIH bertepi jelas di atas alas abu kebiruan (02-10-2026, gaya
+   Kelola User); fokus biru navy bercincin lembut. */
+.mpnl .field__input {
+  background: var(--mt-isi);
+  border: 1px solid var(--mt-tepi);
+  border-radius: 12px;
+  box-shadow: var(--mt-cekung-kecil);
+  color: var(--mt-teks);
+}
+.mpnl .field__input:hover:not(:disabled) {
+  border-color: var(--mt-aksen-garis);
+}
+.mpnl .field__input:focus {
+  border-color: var(--mt-aksen);
+  box-shadow: var(--mt-cekung-kecil), var(--mt-cincin);
+  outline: none;
+}
+/* Isian hanya-baca: abu lembut bertulisan redup, jadi terbedakan dari isian yang dapat diketik. */
+.mpnl .field__input--readonly,
+.mpnl .field__input--readonly:hover {
+  background: var(--mt-lembut);
+  border-color: var(--mt-lembut-tepi);
+  color: var(--mt-teks-redup);
+  box-shadow: none;
+}
+
+/* Tombol kapsul TIMBUL KELUAR; ditekan: TIMBUL KE DALAM. Utama: merah bergradasi halus. */
+.mpnl .btn {
+  border-radius: 999px;
+}
+.mpnl .btn--primary {
+  background: linear-gradient(180deg, var(--mt-tombol), var(--mt-tombol-ujung));
+  border-color: var(--mt-tombol-ujung);
+  color: #ffffff;
+  box-shadow: var(--mt-bayang-tombol);
+}
+.mpnl .btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--mt-tombol-hover), var(--mt-tombol-hover-ujung));
+  border-color: var(--mt-tombol-hover-ujung);
+}
+.mpnl .btn--primary:active:not(:disabled) {
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+}
+.mpnl .btn--ghost {
+  background: var(--mt-isi);
+  border: 1px solid var(--mt-tepi);
+  color: var(--mt-aksen-teks);
+  font-weight: 600;
+  box-shadow: var(--mt-timbul-kecil);
+}
+.mpnl .btn--ghost:hover:not(:disabled) {
+  background: var(--mt-aksen-lembut);
+  border-color: var(--mt-aksen-garis);
+  color: var(--mt-aksen-teks);
+}
+.mpnl .btn--ghost:active:not(:disabled) {
+  box-shadow: var(--mt-cekung-kecil);
+}
+.mpnl .btn:disabled {
+  box-shadow: none;
+}
+
+/* Popup: kartu alas bersudut lembut; isinya ikut neumorfisme. */
+.mpnl .modal {
+  background: var(--mt-latar);
+  border: 1px solid var(--mt-kilau);
+  border-radius: 22px;
+  box-shadow: var(--mt-bayang-popup);
+}
+.mpnl .modal__head,
+.mpnl .modal__actions {
+  border-color: var(--mt-garis);
+}
+.mpnl .alert {
+  border-radius: 12px;
+}
+
+/* Panel: TIMBUL KELUAR. Panel di dalam panel: TIMBUL KE DALAM, jadi jenjangnya terbaca. */
+.mpnl .panel {
+  background: var(--mt-latar);
+  border: 1px solid var(--mt-kilau);
+  border-radius: 20px;
+  box-shadow: var(--mt-timbul);
+}
+.mpnl .panel .panel {
+  background: var(--mt-isi);
+  border-color: var(--mt-tepi);
+  border-radius: 16px;
+  box-shadow: var(--mt-cekung-kecil);
+}
+
+/* Tabel: kartu PUTIH bertepi jelas di atas alas, kepala biru navy muda bertulisan navy tebal, baris
+   berbelang, sorot baris biru muda - pola Treaty Contract Out. Tabel modul ini tanpa pembungkus
+   gulir, jadi tabelnya sendiri yang ditata (`:where(table)` inti sudah `border-collapse: separate`). */
+.mpnl .inbox__tabel {
+  background: var(--mt-isi);
+  border: 1px solid var(--mt-tepi);
+  border-radius: 16px;
+  box-shadow: var(--mt-cekung-kecil);
+}
+.mpnl .inbox__tabel thead tr:first-child > th:first-child {
+  border-top-left-radius: 15px;
+}
+.mpnl .inbox__tabel thead tr:first-child > th:last-child {
+  border-top-right-radius: 15px;
+}
+.mpnl .inbox__tabel tbody tr:last-child > td:first-child {
+  border-bottom-left-radius: 15px;
+}
+.mpnl .inbox__tabel tbody tr:last-child > td:last-child {
+  border-bottom-right-radius: 15px;
+}
+.mpnl .inbox__tabel thead th {
+  background: var(--mt-kepala-tabel);
+  color: var(--mt-kepala-teks);
+  font-weight: 700;
+  border-bottom: 1px solid var(--mt-kepala-garis);
+}
+.mpnl .inbox__tabel td {
+  background: var(--mt-isi);
+  border-bottom-color: var(--mt-garis);
+}
+.mpnl .inbox__tabel tbody tr:nth-child(even) > td {
+  background: var(--mt-zebra);
+}
+.mpnl .inbox__tabel tbody tr:hover > td {
+  background: var(--mt-baris-hover);
+}
+
+@media (max-width: 640px) {
+  .mpnl {
+    padding: 14px;
+    border-radius: 18px;
+  }
+  .mpnl .panel {
+    border-radius: 16px;
+    box-shadow: var(--mt-timbul-kecil);
+  }
 }

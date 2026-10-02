@@ -9,7 +9,7 @@
 // · `Create Operator` · `Last Updated Operator` dan tombol baris `View` b74798 (`SetProductName` → mode lihat).
 // Mode form (`DATASHOW = 1`): `FormProduk`. Wadah grid b71574 ber-`IsFire` dengan `ALWAYS` → selalu tampil.
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { Gagal, Halaman, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
 import { ambilDaftarProduk, ambilProduk, type Produk, type RingkasanProduk } from '../api'
@@ -31,7 +31,8 @@ export default function MasterProductNameLife() {
   const [halaman, setHalaman] = useState(1)
   const [form, setForm] = useState<FormTerbuka | null>(null)
   const [galatBuka, setGalatBuka] = useState<unknown>(null)
-  const [ke, setKe] = useState(0)
+  // Kunci pemasangan ulang form, dan nomor pembukaan terakhir (`Add`/`View`).
+  const ke = useRef(0)
 
   const muat = useCallback(async () => {
     try {
@@ -49,18 +50,21 @@ export default function MasterProductNameLife() {
     void muat()
   }, [muat])
 
-  function buka(produk: Produk, lihat: boolean): void {
-    setKe((k) => k + 1)
-    setForm({ produk, lihat, ke: ke + 1 })
+  // Audit 02-10-2026: setiap pembukaan mendapat nomor baru SAAT diminta; jawaban `View` yang tiba sesudah
+  // pembukaan lain (View berikutnya atau `Add`) diabaikan, jadi form tidak pernah menampilkan produk yang salah.
+  function buka(produk: Produk, lihat: boolean, nomor = ++ke.current): void {
+    if (nomor !== ke.current) return
+    setForm({ produk, lihat, ke: nomor })
   }
 
   async function lihatProduk(id: string): Promise<void> {
+    const nomor = ++ke.current
     setGalatBuka(null)
     try {
       // `View` b74798 → `SetProductName` (+ `SetProductNameInward`), 8 b2147 `IsView = true`.
-      buka(await ambilProduk(id), true)
+      buka(await ambilProduk(id), true, nomor)
     } catch (e) {
-      setGalatBuka(e)
+      if (nomor === ke.current) setGalatBuka(e)
     }
   }
 
@@ -73,7 +77,7 @@ export default function MasterProductNameLife() {
   const semua = daftar ?? []
 
   return (
-    <section className="inbox">
+    <section className="inbox mpnl">
       <header className="inbox__kepala">
         <h2 className="inbox__judul">{MENU_MPNL.kelompok}</h2>
       </header>
@@ -96,36 +100,38 @@ export default function MasterProductNameLife() {
           {galat !== null && <Gagal galat={galat} />}
           {daftar !== null && semua.length === 0 && <Kosong pesan={LAIN_MPNL.kosong} />}
           {semua.length > 0 && (
-            <table className="inbox__tabel">
-              <thead>
-                <tr>
-                  <th>{GRID_MPNL.kolomId}</th>
-                  <th>{GRID_MPNL.kolomCeding}</th>
-                  <th>{GRID_MPNL.kolomTreatyNumber}</th>
-                  <th>{GRID_MPNL.kolomTreatyName}</th>
-                  <th>{GRID_MPNL.kolomCreateOp}</th>
-                  <th>{GRID_MPNL.kolomUpdateOp}</th>
-                  <th className="table__actions" />
-                </tr>
-              </thead>
-              <tbody>
-                {potongHalaman(semua, halaman).map((r) => (
-                  <tr key={r.id} className="inbox__baris">
-                    <td>{r.id}</td>
-                    <td>{r.ceding}</td>
-                    <td>{r.treatyNumber}</td>
-                    <td>{r.inwardName}</td>
-                    <td>{r.createOp}</td>
-                    <td>{r.updateOp}</td>
-                    <td className="table__actions">
-                      <button type="button" className="btn btn--ghost btn--sm" onClick={() => void lihatProduk(r.id)}>
-                        {GRID_MPNL.view}
-                      </button>
-                    </td>
+            <div className="mpnl-tabel">
+              <table className="inbox__tabel">
+                <thead>
+                  <tr>
+                    <th>{GRID_MPNL.kolomId}</th>
+                    <th>{GRID_MPNL.kolomCeding}</th>
+                    <th>{GRID_MPNL.kolomTreatyNumber}</th>
+                    <th>{GRID_MPNL.kolomTreatyName}</th>
+                    <th>{GRID_MPNL.kolomCreateOp}</th>
+                    <th>{GRID_MPNL.kolomUpdateOp}</th>
+                    <th className="table__actions" />
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {potongHalaman(semua, halaman).map((r) => (
+                    <tr key={r.id} className="inbox__baris">
+                      <td>{r.id}</td>
+                      <td>{r.ceding}</td>
+                      <td>{r.treatyNumber}</td>
+                      <td>{r.inwardName}</td>
+                      <td>{r.createOp}</td>
+                      <td>{r.updateOp}</td>
+                      <td className="table__actions">
+                        <button type="button" className="btn btn--ghost btn--sm" onClick={() => void lihatProduk(r.id)}>
+                          {GRID_MPNL.view}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </>
       )}

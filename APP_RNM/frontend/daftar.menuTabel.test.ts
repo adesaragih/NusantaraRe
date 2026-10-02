@@ -86,8 +86,9 @@ describe('hasil bersih M_NAV_MENU ↔ daftar.ts, dua arah', () => {
   it('uji gigit: modul frontend tanpa baris, atau berbaris DIMIGRASI=0', () => {
     const tiruan = { nama: 'modultiruan', kelompok: 'Modul Tiruan', halaman: ['t'], halamanAwal: 't' }
     expect(selisihMenuModul(BERSIH.baris, [...MODUL_FRONTEND, tiruan])).toEqual(['modul frontend modultiruan tanpa baris M_NAV_MENU'])
-    const nbfacin = { nama: 'nbfacin', kelompok: 'NB FacIn', halaman: ['nb'], halamanAwal: 'nb' }
-    expect(selisihMenuModul(BERSIH.baris, [...MODUL_FRONTEND, nbfacin])).toEqual(["modul frontend nbfacin: barisnya DIMIGRASI='0'"])
+    // Contoh modul berbaris DIMIGRASI='0' - nbtreatyin (nbfacin menyala 02-10-2026, tiket 21).
+    const nbtreatyin = { nama: 'nbtreatyin', kelompok: 'NB Treaty In', halaman: ['nb'], halamanAwal: 'nb' }
+    expect(selisihMenuModul(BERSIH.baris, [...MODUL_FRONTEND, nbtreatyin])).toEqual(["modul frontend nbtreatyin: barisnya DIMIGRASI='0'"])
   })
 
   it('uji gigit: HALAMAN_AWAL di luar halaman modul, dan nama ≠ LABEL', () => {

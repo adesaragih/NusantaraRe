@@ -1,0 +1,2965 @@
+<?xml version="1.0"?>
+
+<pagedata>
+<pyModelerGuideModeON>true</pyModelerGuideModeON>
+<pyShowROIcon>false</pyShowROIcon>
+<pxUpdateSystemID>pegadevnusare2</pxUpdateSystemID>
+<pyRuleName>InputPolicyHolder</pyRuleName>
+<pyXMLSignature>&lt;?xml version="1.0"?&gt;&lt;methodSignature&gt;&lt;pyStepsCallParams&gt;&lt;/pyStepsCallParams&gt;&lt;pyParamArray&gt;&lt;rowdata&gt;&lt;/rowdata&gt;&lt;/pyParamArray&gt;&lt;/methodSignature&gt;</pyXMLSignature>
+<pyValueChanged>false</pyValueChanged>
+<pxUpdateDateTime>20260316T024417.618 GMT</pxUpdateDateTime>
+<pzRuleSetVersionMinor>01</pzRuleSetVersionMinor>
+<pyCoveredByCount>0</pyCoveredByCount>
+<pySystemFlow>false</pySystemFlow>
+<pxOriginalCreateSystemID/>
+<pyAcceptConversion>true</pyAcceptConversion>
+<pyUsage/>
+<pyMemo>draf mode off</pyMemo>
+<pzRuleSetVersionMajor>01</pzRuleSetVersionMajor>
+<pyShowGrid>true</pyShowGrid>
+<pyJavaStream/>
+<pySkipNewHarness>true</pySkipNewHarness>
+<pxCreateDateTime>20260316T024407.708 GMT</pxCreateDateTime>
+<pxOriginalCreateDateTime/>
+<pyCanCreateWorkObjectOld>false</pyCanCreateWorkObjectOld>
+<pxOriginalCreateOpName/>
+<pyAssociatedImage/>
+<pyInterface/>
+<pzCaseTypeExistsInCoverClass/>
+<pyModifiedWithPM>true</pyModifiedWithPM>
+<pxInstanceLockedCreateDateTime/>
+<pxInstanceLockedBy/>
+<pyBaseRule>false</pyBaseRule>
+<pxInsName>ASM-FW-GISFW-WORK-LIFE!INPUTPOLICYHOLDER</pxInsName>
+<pyFormPost/>
+<pxSaveDateTime>20260316T024417.713 GMT</pxSaveDateTime>
+<pyNextAssignment>true</pyNextAssignment>
+<pyCircumstanceProp/>
+<pyDocumentTitle/>
+<pzInsKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzInsKey>
+<pyTemplate/>
+<pyPostVisio2000Saved>false</pyPostVisio2000Saved>
+<pyPageOrientation>Landscape</pyPageOrientation>
+<pyLabelOld>InputPolicyHolder</pyLabelOld>
+<pyProcessModel/>
+<pyAlphaSortLocalActions>false</pyAlphaSortLocalActions>
+<pyRelativePath/>
+<pyVisioJpeg/>
+<pyPlaceGlobalLocalsAtTop>false</pyPlaceGlobalLocalsAtTop>
+<pzIsPrivateCheckOut>true</pzIsPrivateCheckOut>
+<pxInsId>!INPUTPOLICYHOLDER</pxInsId>
+<pyIsReadOnly>true</pyIsReadOnly>
+<pyStartingHarnessOld>New</pyStartingHarnessOld>
+<pyIsStaleRuleCheckEnabled>false</pyIsStaleRuleCheckEnabled>
+<pyOverlayView>None</pyOverlayView>
+<pyWorkKey/>
+<pyRuleParamsStreamName/>
+<pySpecialtyComponentData/>
+<pyRuleSetVersion>01-01-91</pyRuleSetVersion>
+<pzDocumentKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzDocumentKey>
+<pyDoHarvesting>true</pyDoHarvesting>
+<pyHideLockIcon>true</pyHideLockIcon>
+<pyRegenStartingFlows>3</pyRegenStartingFlows>
+<pyStartingModelOld>pyDefault</pyStartingModelOld>
+<pxUpdateOpName>ADE SAMUEL TUA SARAGIH</pxUpdateOpName>
+<pyWindowTitle/>
+<pxUpdateOperator>ADESAMUEL</pxUpdateOperator>
+<pxOriginalCreateOperator/>
+<pyObjClassLabel>Flow</pyObjClassLabel>
+<pxSiblingCount/>
+<pyCurrentViewMode>modeler</pyCurrentViewMode>
+<pxMoveFromSystem/>
+<pyStartActivity>Start1</pyStartActivity>
+<pzChecksum>-1833740601</pzChecksum>
+<pyCanStartInteractively>false</pyCanStartInteractively>
+<pxMoveImportOperId>ADESAMUEL</pxMoveImportOperId>
+<pyVisioDocVersion/>
+<pyDisplayMode>clone</pyDisplayMode>
+<pxInstanceLockedKey/>
+<pyDeferErrors>false</pyDeferErrors>
+<pxTabLabel>InputPolicyHolder</pxTabLabel>
+<pyCategory>FlowStandard</pyCategory>
+<pxObjClass>Rule-Obj-Flow</pxObjClass>
+<pyTemplateInputBox/>
+<pyCircumstanceDate/>
+<pyVisioRFB>RULE-FILE-BINARY WEBWB ASM_FW_GISFW_WORK_LIFEINPUTPOLICYHOLDER20190301T085744_956_GMT!JPG #20260316T024407.750 GMT</pyVisioRFB>
+<pyWorkClass>ASM-FW-GISFW-Work-LIFE</pyWorkClass>
+<pxCreateSystemID>pegadevnusare2</pxCreateSystemID>
+<pzOriginalInstanceKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20180807T032319.287 GMT</pzOriginalInstanceKey>
+<pxCommitDateTime>20260402T021805.000 GMT</pxCommitDateTime>
+<pyCanCreateWorkObject>false</pyCanCreateWorkObject>
+<pyStreamName/>
+<pyModelerDefaultClickMode>Pan</pyModelerDefaultClickMode>
+<pyRuleAvailable>Yes</pyRuleAvailable>
+<pyJavaClassName>Rule_Obj_Flow_ASM_FW_GISFW_Work_LIFE_InputPolicyHolder_Action_20260316T024407_708_GMT</pyJavaClassName>
+<pzIndexCount>104</pzIndexCount>
+<pySubCategory/>
+<pyClassName>ASM-FW-GISFW-Work-LIFE</pyClassName>
+<pyNextAssignmentWorkBasket>false</pyNextAssignmentWorkBasket>
+<pxMoveImportOperName>ADE SAMUEL TUA SARAGIH</pxMoveImportOperName>
+<pySortDateCircumWithinRSMajor>true</pySortDateCircumWithinRSMajor>
+<pyRuleFormStatusTime>20260907T095443.295 GMT</pyRuleFormStatusTime>
+<pyModifiers/>
+<pzRuleSetVersionPatch>91</pzRuleSetVersionPatch>
+<pxHostId>jboss1073</pxHostId>
+<pyRuleFormType>Harness</pyRuleFormType>
+<pyRuleSet>GISFW</pyRuleSet>
+<pyCircumstanceDefinition/>
+<pyRuleHarness>RuleForm</pyRuleHarness>
+<pyScreenFlowHarness/>
+<pyDraftModeON>false</pyDraftModeON>
+<pySelected>false</pySelected>
+<pyCircumstanceVal/>
+<pyCircumstanceDateProp/>
+<pyDeleteMemo>add pyWorkPage.FlagOnGoingPolicy</pyDeleteMemo>
+<pyShowJavaWindowName>GeneratedJava20260907T095443.349 GMT</pyShowJavaWindowName>
+<pyMethodStatus/>
+<pxInstanceLockedRuleSetVersion/>
+<pyPurpose>false</pyPurpose>
+<pyIsFromManageChangeLP/>
+<pxInstanceLockedDateTime/>
+<pyJavaGenerateVersion>5.5</pyJavaGenerateVersion>
+<pyTaskStatusXml>&lt;pagedata&gt;&lt;TaskStatus&gt;&lt;/TaskStatus&gt;&lt;TaskStatus&gt;&lt;/TaskStatus&gt;&lt;/pagedata&gt;</pyTaskStatusXml>
+<pyForecasterAvailable>unavailable</pyForecasterAvailable>
+<pzIsAutoGenerated>false</pzIsAutoGenerated>
+<pyWorkPartiesRule>Default</pyWorkPartiesRule>
+<pySPRuleSetName>GISFW</pySPRuleSetName>
+<pyConfirmChoice>Harness</pyConfirmChoice>
+<pzImplVersion>06.02.01</pzImplVersion>
+<pyRuleFormStatus>Good</pyRuleFormStatus>
+<pxOriginalRuleSet>GISFW</pxOriginalRuleSet>
+<pyOriginalRFB>RULE-FILE-BINARY WEBWB ASM_FW_GISFW_WORK_LIFEINPUTPOLICYHOLDER20180807T090213_179_GMT!JPG #20180807T090213.140 GMT</pyOriginalRFB>
+<pxInstanceLockedRuleSet/>
+<pyTemplateDisplayText>No ruleset versions available</pyTemplateDisplayText>
+<pyVisioJpegName>asm_fw_gisfw_work_lifeinputpolicyholder20190301t085744_956_gmt.jpg</pyVisioJpegName>
+<pyModelerGridModeON>false</pyModelerGridModeON>
+<pyDeferCommit>false</pyDeferCommit>
+<pyStepPageReference>RH_1</pyStepPageReference>
+<pyIsShapeSelected>false</pyIsShapeSelected>
+<pyCircumstanceType/>
+<pxMergeSynchronized>20240711T064036.206 GMT</pxMergeSynchronized>
+<pyStatus/>
+<pzCaseTypeExistsInClass>true</pzCaseTypeExistsInClass>
+<pyDescription/>
+<pyHistoryObject>false</pyHistoryObject>
+<pyNextAssignmentWorkBasketAdhoc>false</pyNextAssignmentWorkBasketAdhoc>
+<pySLAName/>
+<pyStartingModel>pyDefault</pyStartingModel>
+<pyShowLikelihoods>Hide</pyShowLikelihoods>
+<pyStructureType>Complex</pyStructureType>
+<pyNextAssignmentAdhoc>true</pyNextAssignmentAdhoc>
+<pxMoveImportDateTime>20260402T021804.821 GMT</pxMoveImportDateTime>
+<pyStartingHarness>New</pyStartingHarness>
+<pyCheckInRuleSet/>
+<pyVisioCompatFlag>false</pyVisioCompatFlag>
+<pxCreateOperator>ADESAMUEL</pxCreateOperator>
+<pyRuleEnds/>
+<pyRuleStarts/>
+<pyCreatesTemporaryObject>false</pyCreatesTemporaryObject>
+<pyVisioScaleFactor>100</pyVisioScaleFactor>
+<pyConfirmHarness>Confirm</pyConfirmHarness>
+<pxLimitedAccess>Dev</pxLimitedAccess>
+<pyCircumstanceTemplate/>
+<pyLabel>InputPolicyHolder</pyLabel>
+<pxCreateOpName>ADE SAMUEL TUA SARAGIH</pxCreateOpName>
+<pyFlowType>InputPolicyHolder</pyFlowType>
+<pzStatus>valid</pzStatus>
+<pyStencils REPEATINGTYPE="PropertyList">
+<rowdata REPEATINGINDEX="1"/>
+</pyStencils>
+<pyRuleVersionsList REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pyMenuTooltip/>
+<pxListSubscript>1</pxListSubscript>
+<pzInsKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzInsKey>
+<pyLabel>01-01-91 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pyMenuTooltip/>
+<pxListSubscript>2</pxListSubscript>
+<pzInsKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20240607T035813.925 GMT</pzInsKey>
+<pyLabel>01-01-79 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="3">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pyMenuTooltip/>
+<pxListSubscript>3</pxListSubscript>
+<pzInsKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20220719T032657.302 GMT</pzInsKey>
+<pyLabel>01-01-65 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="4">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pxListSubscript>4</pxListSubscript>
+<pyMenuTooltip/>
+<pzInsKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20201020T033119.872 GMT</pzInsKey>
+<pyLabel>01-01-56 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="5">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pyMenuTooltip/>
+<pxListSubscript>5</pxListSubscript>
+<pzInsKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20190301T085744.214 GMT</pzInsKey>
+<pyLabel>01-01-54 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="6">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pyMenuTooltip/>
+<pxListSubscript>6</pxListSubscript>
+<pzInsKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20180807T032319.287 GMT</pzInsKey>
+<pyLabel>01-01-53 (Available)</pyLabel>
+</rowdata>
+</pyRuleVersionsList>
+<pyTaskInfo REPEATINGTYPE="PageGroup">
+</pyTaskInfo>
+<pyParameters REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-MethodParams</pxObjClass>
+<pyParametersParamIntelliValidateAs/>
+<pyParametersParamSize/>
+<pyParametersParamName/>
+<pyParametersParamIntelliRule/>
+<pyParametersParamDesc/>
+<pyParametersParamIntelliBaseClass>PageClass</pyParametersParamIntelliBaseClass>
+<pyParametersParamInOut/>
+<pyParametersParamType>BOOLEAN</pyParametersParamType>
+<pyParametersParamReq>0</pyParametersParamReq>
+</rowdata>
+</pyParameters>
+<pyWhensList REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-Rule-Whens</pxObjClass>
+<pyWhenName/>
+</rowdata>
+</pyWhensList>
+<pyRMAction>
+<pxObjClass>Embed-RuleManagement</pxObjClass>
+<pyAction>load</pyAction>
+</pyRMAction>
+<pyCustomFields REPEATINGTYPE="PageGroup">
+<rowdata REPEATINGINDEX="empty">
+<pyCFieldValue/>
+<pxObjClass>Embed-CustomFieldsList</pxObjClass>
+<pyCFileKey/>
+<pyCFieldName/>
+<pyCFileRelativePath/>
+<pxSubscript>empty</pxSubscript>
+<pyCFieldType/>
+</rowdata>
+</pyCustomFields>
+<pyUseCaseLinks REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxLinkedRefTo>InsertJsonPolisLife_Act</pxLinkedRefTo>
+<pyImplementationType/>
+<pyTaskName>InsertJsonPolisLife</pyTaskName>
+<pyApplicationName>GISFW</pyApplicationName>
+<pyWorkTypeName>LIFE</pyWorkTypeName>
+<pyUseCaseName>InsertJsonPolisLife</pyUseCaseName>
+<pxLinkedClassTo>Rule-Obj-Activity</pxLinkedClassTo>
+<pyTaskID>Utility1</pyTaskID>
+<pyLinkedClassName>ASM-FW-GISFW-Work-LIFE</pyLinkedClassName>
+<pxObjClass>Link-UseCase</pxObjClass>
+<pyFlowKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pyFlowKey>
+<pyLabel>Application Link</pyLabel>
+<pyFlowType>InputPolicyHolder</pyFlowType>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pxLinkedRefTo>IsFlagOnGoingPolicy</pxLinkedRefTo>
+<pyImplementationType/>
+<pyTaskName>FlagOnGoingPolicy</pyTaskName>
+<pyApplicationName>GISFW</pyApplicationName>
+<pyUseCaseName>Decision</pyUseCaseName>
+<pyWorkTypeName>LIFE</pyWorkTypeName>
+<pxLinkedClassTo>Rule-Declare-DecisionTable</pxLinkedClassTo>
+<pxObjClass>Link-UseCase</pxObjClass>
+<pyLinkedClassName>ASM-FW-GISFW-Work-LIFE</pyLinkedClassName>
+<pyTaskID>Decision3</pyTaskID>
+<pyFlowKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pyFlowKey>
+<pyLabel>Application Link</pyLabel>
+<pyFlowType>InputPolicyHolder</pyFlowType>
+</rowdata>
+<rowdata REPEATINGINDEX="3">
+<pxLinkedRefTo>IsLifeAccepted</pxLinkedRefTo>
+<pyImplementationType/>
+<pyTaskName>Accept</pyTaskName>
+<pyApplicationName>GISFW</pyApplicationName>
+<pyUseCaseName>Decision</pyUseCaseName>
+<pyWorkTypeName>LIFE</pyWorkTypeName>
+<pxLinkedClassTo>Rule-Declare-DecisionTable</pxLinkedClassTo>
+<pxObjClass>Link-UseCase</pxObjClass>
+<pyTaskID>Decision2</pyTaskID>
+<pyLinkedClassName>ASM-FW-GISFW-Work-LIFE</pyLinkedClassName>
+<pyFlowKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pyFlowKey>
+<pyLabel>Application Link</pyLabel>
+<pyFlowType>InputPolicyHolder</pyFlowType>
+</rowdata>
+<rowdata REPEATINGINDEX="4">
+<pxLinkedRefTo>Input Premium List Detail</pxLinkedRefTo>
+<pyImplementationType/>
+<pyTaskName>Input Premium List Detail</pyTaskName>
+<pyApplicationName>GISFW</pyApplicationName>
+<pyUseCaseName>InputPolicyHolder</pyUseCaseName>
+<pyWorkTypeName>LIFE</pyWorkTypeName>
+<pxLinkedClassTo>Data-MO-Activity-Assignment</pxLinkedClassTo>
+<pyTaskID>ASSIGNMENT63</pyTaskID>
+<pxObjClass>Link-UseCase</pxObjClass>
+<pyLinkedClassName>ASM-FW-GISFW-Work-LIFE</pyLinkedClassName>
+<pyFlowKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pyFlowKey>
+<pyLabel>Application Link</pyLabel>
+<pyFlowType>InputPolicyHolder</pyFlowType>
+</rowdata>
+<rowdata REPEATINGINDEX="5">
+<pxLinkedRefTo>Input Premium List Summary</pxLinkedRefTo>
+<pyImplementationType/>
+<pyTaskName>Input Premium List Summary</pyTaskName>
+<pyApplicationName>GISFW</pyApplicationName>
+<pyUseCaseName>InputPremiumListSummary</pyUseCaseName>
+<pyWorkTypeName>LIFE</pyWorkTypeName>
+<pxLinkedClassTo>Data-MO-Activity-Assignment</pxLinkedClassTo>
+<pyLinkedClassName>ASM-FW-GISFW-Work-LIFE</pyLinkedClassName>
+<pxObjClass>Link-UseCase</pxObjClass>
+<pyTaskID>Assignment1</pyTaskID>
+<pyFlowKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pyFlowKey>
+<pyLabel>Application Link</pyLabel>
+<pyFlowType>InputPolicyHolder</pyFlowType>
+</rowdata>
+<rowdata REPEATINGINDEX="6">
+<pxLinkedRefTo>IsLifeAccepted</pxLinkedRefTo>
+<pyImplementationType/>
+<pyTaskName>Accept</pyTaskName>
+<pyApplicationName>GISFW</pyApplicationName>
+<pyWorkTypeName>LIFE</pyWorkTypeName>
+<pyUseCaseName>Decision</pyUseCaseName>
+<pxLinkedClassTo>Rule-Declare-DecisionTable</pxLinkedClassTo>
+<pxObjClass>Link-UseCase</pxObjClass>
+<pyLinkedClassName>ASM-FW-GISFW-Work-LIFE</pyLinkedClassName>
+<pyTaskID>Decision1</pyTaskID>
+<pyFlowKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pyFlowKey>
+<pyLabel>Application Link</pyLabel>
+<pyFlowType>InputPolicyHolder</pyFlowType>
+</rowdata>
+<rowdata REPEATINGINDEX="7">
+<pxLinkedRefTo>Input Offer</pxLinkedRefTo>
+<pyImplementationType/>
+<pyTaskName>Input Offer</pyTaskName>
+<pyApplicationName>GISFW</pyApplicationName>
+<pyUseCaseName>InputOfferLife</pyUseCaseName>
+<pyWorkTypeName>LIFE</pyWorkTypeName>
+<pxLinkedClassTo>Data-MO-Activity-Assignment</pxLinkedClassTo>
+<pyTaskID>Assignment2</pyTaskID>
+<pxObjClass>Link-UseCase</pxObjClass>
+<pyLinkedClassName>ASM-FW-GISFW-Work-LIFE</pyLinkedClassName>
+<pyFlowKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pyFlowKey>
+<pyLabel>Application Link</pyLabel>
+<pyFlowType>InputPolicyHolder</pyFlowType>
+</rowdata>
+<rowdata REPEATINGINDEX="8">
+<pxLinkedRefTo>InputDataOfferLife</pxLinkedRefTo>
+<pyImplementationType/>
+<pyTaskName>InputDataOfferLife</pyTaskName>
+<pyApplicationName>GISFW</pyApplicationName>
+<pyUseCaseName>InputDataOfferLife</pyUseCaseName>
+<pyWorkTypeName>LIFE</pyWorkTypeName>
+<pxLinkedClassTo>Rule-Obj-FlowAction</pxLinkedClassTo>
+<pxObjClass>Link-UseCase</pxObjClass>
+<pyTaskID>Transition3</pyTaskID>
+<pyLinkedClassName>ASM-FW-GISFW-Work-LIFE</pyLinkedClassName>
+<pyFlowKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pyFlowKey>
+<pyLabel>Application Link</pyLabel>
+<pyFlowType>InputPolicyHolder</pyFlowType>
+</rowdata>
+</pyUseCaseLinks>
+<pxDataReferences REPEATINGTYPE="PageList"/>
+<pyPagesAndClasses REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-PagesAndClasses</pxObjClass>
+<pyPagesAndClassesClass>ASM-FW-GISFW-Work-LIFE</pyPagesAndClassesClass>
+<pyPagesAndClassesPage>pyWorkPage</pyPagesAndClassesPage>
+<pyPagesAndClassesMode/>
+</rowdata>
+</pyPagesAndClasses>
+<pyPreviousValues>
+<pxObjClass>Rule-Obj-Flow</pxObjClass>
+<pyRuleAvailable>Yes</pyRuleAvailable>
+<pyLabel>InputPolicyHolder</pyLabel>
+<pyCanCreateWorkObject>false</pyCanCreateWorkObject>
+<pyPrivilegeList REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-Rule-PrivilegeSecurity</pxObjClass>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20190301T085744.214 GMT</pzIndexOwnerKey>
+<pyPrivilegeName/>
+<pyPrivilegeClass>ASM-FW-GISFW-Work-LIFE</pyPrivilegeClass>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="Privileges">26</rowdata>
+</pzIndexes>
+</rowdata>
+</pyPrivilegeList>
+</pyPreviousValues>
+<pxNamedPageReferences REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-Reference-NamedPage</pxObjClass>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxPageName>pyWorkPage</pxPageName>
+<pxPageClass>ASM-FW-GISFW-Work-LIFE</pxPageClass>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="NamedPageReference">54</rowdata>
+</pzIndexes>
+</rowdata>
+</pxNamedPageReferences>
+<pyPrivilegeList REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-Rule-PrivilegeSecurity</pxObjClass>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pyPrivilegeName/>
+<pyPrivilegeClass>ASM-FW-GISFW-Work-LIFE</pyPrivilegeClass>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="Privileges">53</rowdata>
+</pzIndexes>
+</rowdata>
+</pyPrivilegeList>
+<pyLocalActions REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-Pega-AssignAction</pxObjClass>
+<pyUseCaseApplication/>
+<pyUseCaseName/>
+<pyUseCaseWorkType/>
+<pyActionName/>
+</rowdata>
+</pyLocalActions>
+<pyFromTasks REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-Rule-Obj-Flow-FromTasks</pxObjClass>
+<pyFromTaskName>ASSIGNMENT63</pyFromTaskName>
+<pyToTasks REPEATINGTYPE="PageGroup">
+<rowdata REPEATINGINDEX="Decision2">
+<pyID>TRANSITION54</pyID>
+<pxObjClass>Embed-Rule-Obj-Flow-FromToTask</pxObjClass>
+<pyHistoryText/>
+<pyTaskWhen>ShowLifePremiumDetail</pyTaskWhen>
+<pyTaskStatusOrWhen>STATUS</pyTaskStatusOrWhen>
+<pyTaskStatus>ShowLifePremiumDetail</pyTaskStatus>
+<pxSubscript>Decision2</pxSubscript>
+<pyLikelihood>100</pyLikelihood>
+<pyPropertySet REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-ModelParams</pxObjClass>
+<pyPropertiesName/>
+<pyPropertiesValue/>
+</rowdata>
+</pyPropertySet>
+</rowdata>
+</pyToTasks>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pxObjClass>Embed-Rule-Obj-Flow-FromTasks</pxObjClass>
+<pyFromTaskName>Decision1</pyFromTaskName>
+<pyToTasks REPEATINGTYPE="PageGroup">
+<rowdata REPEATINGINDEX="End1">
+<pxObjClass>Embed-Rule-Obj-Flow-FromToTask</pxObjClass>
+<pyID>Transition5</pyID>
+<pyHistoryText/>
+<pyTaskWhen>Decline</pyTaskWhen>
+<pyTaskStatusOrWhen>STATUS</pyTaskStatusOrWhen>
+<pyTaskStatus>Decline</pyTaskStatus>
+<pxSubscript>End1</pxSubscript>
+<pyLikelihood>100</pyLikelihood>
+<pyPropertySet REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-ModelParams</pxObjClass>
+<pyPropertiesName/>
+<pyPropertiesValue/>
+</rowdata>
+</pyPropertySet>
+</rowdata>
+<rowdata REPEATINGINDEX="Decision3">
+<pxObjClass>Embed-Rule-Obj-Flow-FromToTask</pxObjClass>
+<pyID>Transition4</pyID>
+<pyHistoryText/>
+<pyTaskStatusOrWhen>STATUS</pyTaskStatusOrWhen>
+<pyTaskWhen>Confirm</pyTaskWhen>
+<pyTaskStatus>Confirm</pyTaskStatus>
+<pxSubscript>Decision3</pxSubscript>
+<pyLikelihood>100</pyLikelihood>
+<pyPropertySet REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pyExpanded>true</pyExpanded>
+<pyActionName>SET</pyActionName>
+<pyRelationNameUpdatepage/>
+<pxObjClass>Embed-ModelParams</pxObjClass>
+<pyRelationNameWhen/>
+<pxCreateOperator>AdeSamuelTuaSaragih</pxCreateOperator>
+<pyRelationNameAppend/>
+<pxCreateDateTime>20240711T041828.697 GMT</pxCreateDateTime>
+<pyPropertiesName/>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pyPropertiesValue/>
+<pxCreateOpName>Ade Samuel Tua Saragih</pxCreateOpName>
+<pyProperties REPEATINGTYPE="PageList"/>
+</rowdata>
+</pyPropertySet>
+</rowdata>
+</pyToTasks>
+</rowdata>
+<rowdata REPEATINGINDEX="3">
+<pxObjClass>Embed-Rule-Obj-Flow-FromTasks</pxObjClass>
+<pyFromTaskName>Decision3</pyFromTaskName>
+<pyToTasks REPEATINGTYPE="PageGroup">
+<rowdata REPEATINGINDEX="END52">
+<pyID>Transition11</pyID>
+<pxObjClass>Embed-Rule-Obj-Flow-FromToTask</pxObjClass>
+<pyHistoryText/>
+<pyTaskStatusOrWhen>STATUS</pyTaskStatusOrWhen>
+<pyTaskWhen>Offer</pyTaskWhen>
+<pyTaskStatus>Offer</pyTaskStatus>
+<pyLikelihood>100</pyLikelihood>
+<pxSubscript>END52</pxSubscript>
+<pyPropertySet REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-ModelParams</pxObjClass>
+<pyPropertiesName/>
+<pyPropertiesValue/>
+</rowdata>
+</pyPropertySet>
+</rowdata>
+<rowdata REPEATINGINDEX="ASSIGNMENT63">
+<pxObjClass>Embed-Rule-Obj-Flow-FromToTask</pxObjClass>
+<pyID>Transition10</pyID>
+<pyHistoryText/>
+<pyTaskWhen>Premium</pyTaskWhen>
+<pyTaskStatusOrWhen>STATUS</pyTaskStatusOrWhen>
+<pyTaskStatus>Premium</pyTaskStatus>
+<pxSubscript>ASSIGNMENT63</pxSubscript>
+<pyLikelihood>100</pyLikelihood>
+<pyPropertySet REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pyExpanded>true</pyExpanded>
+<pyRelationNameUpdatepage/>
+<pyActionName>SET</pyActionName>
+<pxObjClass>Embed-ModelParams</pxObjClass>
+<pyRelationNameWhen/>
+<pxCreateOperator>AdeSamuelTuaSaragih</pxCreateOperator>
+<pyRelationNameAppend/>
+<pxCreateDateTime>20240711T064029.029 GMT</pxCreateDateTime>
+<pyPropertiesName/>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pyPropertiesValue/>
+<pxCreateOpName>Ade Samuel Tua Saragih</pxCreateOpName>
+<pyProperties REPEATINGTYPE="PageList"/>
+</rowdata>
+</pyPropertySet>
+</rowdata>
+</pyToTasks>
+</rowdata>
+<rowdata REPEATINGINDEX="4">
+<pxObjClass>Embed-Rule-Obj-Flow-FromTasks</pxObjClass>
+<pyFromTaskName>Assignment2</pyFromTaskName>
+<pyToTasks REPEATINGTYPE="PageGroup">
+<rowdata REPEATINGINDEX="Decision1">
+<pxObjClass>Embed-Rule-Obj-Flow-FromToTask</pxObjClass>
+<pyID>Transition3</pyID>
+<pyHistoryText/>
+<pyTaskWhen>InputDataOfferLife</pyTaskWhen>
+<pyTaskStatusOrWhen>STATUS</pyTaskStatusOrWhen>
+<pyTaskStatus>InputDataOfferLife</pyTaskStatus>
+<pyLikelihood>100</pyLikelihood>
+<pxSubscript>Decision1</pxSubscript>
+<pyPropertySet REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-ModelParams</pxObjClass>
+<pyPropertiesName/>
+<pyPropertiesValue/>
+</rowdata>
+</pyPropertySet>
+</rowdata>
+</pyToTasks>
+</rowdata>
+<rowdata REPEATINGINDEX="5">
+<pxObjClass>Embed-Rule-Obj-Flow-FromTasks</pxObjClass>
+<pyFromTaskName>Assignment1</pyFromTaskName>
+<pyToTasks REPEATINGTYPE="PageGroup">
+<rowdata REPEATINGINDEX="END52">
+<pxObjClass>Embed-Rule-Obj-Flow-FromToTask</pxObjClass>
+<pyID>Transition2</pyID>
+<pyHistoryText/>
+<pyTaskStatusOrWhen>STATUS</pyTaskStatusOrWhen>
+<pyTaskWhen>ShowLifePremiumSummary</pyTaskWhen>
+<pyTaskStatus>ShowLifePremiumSummary</pyTaskStatus>
+<pyLikelihood>100</pyLikelihood>
+<pxSubscript>END52</pxSubscript>
+<pyPropertySet REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-ModelParams</pxObjClass>
+<pyPropertiesName/>
+<pyPropertiesValue/>
+</rowdata>
+</pyPropertySet>
+</rowdata>
+</pyToTasks>
+</rowdata>
+<rowdata REPEATINGINDEX="6">
+<pxObjClass>Embed-Rule-Obj-Flow-FromTasks</pxObjClass>
+<pyFromTaskName>Start1</pyFromTaskName>
+<pyToTasks REPEATINGTYPE="PageGroup">
+<rowdata REPEATINGINDEX="Assignment2">
+<pyID>Transition1</pyID>
+<pxObjClass>Embed-Rule-Obj-Flow-FromToTask</pxObjClass>
+<pyHistoryText/>
+<pyTaskStatusOrWhen>ALWAYS</pyTaskStatusOrWhen>
+<pyTaskWhen/>
+<pyTaskStatus/>
+<pxSubscript>Assignment2</pxSubscript>
+<pyLikelihood>100</pyLikelihood>
+<pyPropertySet REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pyExpanded>true</pyExpanded>
+<pyActionName>SET</pyActionName>
+<pyRelationNameUpdatepage/>
+<pxObjClass>Embed-ModelParams</pxObjClass>
+<pyRelationNameWhen/>
+<pxCreateOperator>AdeSamuelTuaSaragih</pxCreateOperator>
+<pyRelationNameAppend/>
+<pxCreateDateTime>20240711T064022.229 GMT</pxCreateDateTime>
+<pyPropertiesName/>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pxCreateOpName>Ade Samuel Tua Saragih</pxCreateOpName>
+<pyPropertiesValue/>
+<pyProperties REPEATINGTYPE="PageList"/>
+</rowdata>
+</pyPropertySet>
+</rowdata>
+</pyToTasks>
+</rowdata>
+<rowdata REPEATINGINDEX="7">
+<pxObjClass>Embed-Rule-Obj-Flow-FromTasks</pxObjClass>
+<pyFromTaskName>Utility1</pyFromTaskName>
+<pyToTasks REPEATINGTYPE="PageGroup">
+<rowdata REPEATINGINDEX="END52">
+<pxObjClass>Embed-Rule-Obj-Flow-FromToTask</pxObjClass>
+<pyID>Transition8</pyID>
+<pyHistoryText/>
+<pyTaskWhen/>
+<pyTaskStatusOrWhen>ALWAYS</pyTaskStatusOrWhen>
+<pyTaskStatus/>
+<pyLikelihood>100</pyLikelihood>
+<pxSubscript>END52</pxSubscript>
+<pyPropertySet REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-ModelParams</pxObjClass>
+<pyPropertiesName/>
+<pyPropertiesValue/>
+</rowdata>
+</pyPropertySet>
+</rowdata>
+</pyToTasks>
+</rowdata>
+<rowdata REPEATINGINDEX="8">
+<pxObjClass>Embed-Rule-Obj-Flow-FromTasks</pxObjClass>
+<pyFromTaskName>Decision2</pyFromTaskName>
+<pyToTasks REPEATINGTYPE="PageGroup">
+<rowdata REPEATINGINDEX="Utility1">
+<pyID>Transition7</pyID>
+<pxObjClass>Embed-Rule-Obj-Flow-FromToTask</pxObjClass>
+<pyHistoryText/>
+<pyTaskWhen>Confirm</pyTaskWhen>
+<pyTaskStatusOrWhen>STATUS</pyTaskStatusOrWhen>
+<pyTaskStatus>Confirm</pyTaskStatus>
+<pyLikelihood>100</pyLikelihood>
+<pxSubscript>Utility1</pxSubscript>
+<pyPropertySet REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-ModelParams</pxObjClass>
+<pyPropertiesName/>
+<pyPropertiesValue/>
+</rowdata>
+</pyPropertySet>
+</rowdata>
+<rowdata REPEATINGINDEX="End1">
+<pxObjClass>Embed-Rule-Obj-Flow-FromToTask</pxObjClass>
+<pyID>Transition6</pyID>
+<pyHistoryText/>
+<pyTaskStatusOrWhen>STATUS</pyTaskStatusOrWhen>
+<pyTaskWhen>Decline</pyTaskWhen>
+<pyTaskStatus>Decline</pyTaskStatus>
+<pxSubscript>End1</pxSubscript>
+<pyLikelihood>100</pyLikelihood>
+<pyPropertySet REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-ModelParams</pxObjClass>
+<pyPropertiesName/>
+<pyPropertiesValue/>
+</rowdata>
+</pyPropertySet>
+</rowdata>
+<rowdata REPEATINGINDEX="Assignment2">
+<pyID>Transition9</pyID>
+<pxObjClass>Embed-Rule-Obj-Flow-FromToTask</pxObjClass>
+<pyHistoryText/>
+<pyTaskStatusOrWhen>STATUS</pyTaskStatusOrWhen>
+<pyTaskWhen>Reject</pyTaskWhen>
+<pyTaskStatus>Reject</pyTaskStatus>
+<pyLikelihood>100</pyLikelihood>
+<pxSubscript>Assignment2</pxSubscript>
+<pyPropertySet REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-ModelParams</pxObjClass>
+<pyPropertiesName>pyWorkPage.Position</pyPropertiesName>
+<pyPropertiesValue>"Offer"</pyPropertiesValue>
+</rowdata>
+</pyPropertySet>
+</rowdata>
+</pyToTasks>
+</rowdata>
+</pyFromTasks>
+<pyToolBarSettings>
+<pyFavorites>true</pyFavorites>
+<pxCanJustifyWarnings>true</pxCanJustifyWarnings>
+<pyRecover>false</pyRecover>
+<pyForward>true</pyForward>
+<pyBranchOut>false</pyBranchOut>
+<pyRestore>false</pyRestore>
+<pySave>false</pySave>
+<pyLaunch>true</pyLaunch>
+<pyHasQualifiers>false</pyHasQualifiers>
+<pySiblings>true</pySiblings>
+<pyRequiresCheckOut>true</pyRequiresCheckOut>
+<pyCheckIn>false</pyCheckIn>
+<pyAvailability>false</pyAvailability>
+<pyHelpRef>/rule-/rule-obj-/rule-obj-flow/main</pyHelpRef>
+<pyDelegates>false</pyDelegates>
+<pyRefresh>true</pyRefresh>
+<pyStandardUser>false</pyStandardUser>
+<pyPreview>false</pyPreview>
+<pyRun>false</pyRun>
+<pyCheckOut>true</pyCheckOut>
+<pyRuleData>true</pyRuleData>
+<pyVersionSecure>true</pyVersionSecure>
+<pyRuleResolution>true</pyRuleResolution>
+<pyCurrentlyOpen>true</pyCurrentlyOpen>
+<pxObjClass>Embed-WBSettings-ToolBar</pxObjClass>
+<pyDelete>false</pyDelete>
+<pyShowJava>true</pyShowJava>
+<pyNew>true</pyNew>
+<pyBack>true</pyBack>
+<pyCompareVersion/>
+<pyHelpURI>https://community.pega.com/help_v88/rule-/rule-obj-/rule-obj-flow/main</pyHelpURI>
+<pySaveAs>true</pySaveAs>
+<pyPropertyPane>false</pyPropertyPane>
+<pyUsesInheritance>true</pyUsesInheritance>
+</pyToolBarSettings>
+<pyModelProcess>
+<pxObjClass>Embed-Rule-Obj-Flow-ProcessModel</pxObjClass>
+<pyRefreshViewHint>true</pyRefreshViewHint>
+<pyShapes REPEATINGTYPE="PageGroup">
+<rowdata REPEATINGINDEX="Utility1">
+<pzRuleParametersShowSkills>false</pzRuleParametersShowSkills>
+<pyActivityType>ACTIVITY</pyActivityType>
+<pyClassName>ASM-FW-GISFW-Work-LIFE</pyClassName>
+<pzIsAPI>false</pzIsAPI>
+<pyMOId>Utility1</pyMOId>
+<pyDisplayLink>false</pyDisplayLink>
+<pyWidth>0.96</pyWidth>
+<pyDisableLinkWhen/>
+<pyContainerRef/>
+<pxCreateDateTime>20240626T032737.214 GMT</pxCreateDateTime>
+<pyCoordX>6.733825669381381</pyCoordX>
+<pyAuditNote/>
+<pyCoordY>0.096</pyCoordY>
+<pyUseCaseWorkType>LIFE</pyUseCaseWorkType>
+<pyFAProcessOnJump>false</pyFAProcessOnJump>
+<pyTypeMismatch>false</pyTypeMismatch>
+<pyHeight>0.48</pyHeight>
+<pyShouldReload>No</pyShouldReload>
+<pyShapeDisplayName/>
+<pyWorkStatus/>
+<pyUseCaseName>InsertJsonPolisLife</pyUseCaseName>
+<pyMOName>InsertJsonPolisLife</pyMOName>
+<pxObjClass>Data-MO-Activity-Utility</pxObjClass>
+<pyCategory>FlowStandard</pyCategory>
+<pxCreateOperator>AdeSamuelTuaSaragih</pxCreateOperator>
+<pyTemplateInputBox/>
+<pyShapeType>Data-MO-Activity-Utility</pyShapeType>
+<pyUseCaseApplication>GISFW</pyUseCaseApplication>
+<pyOnlyGoingBack>false</pyOnlyGoingBack>
+<pyImplementation>InsertJsonPolisLife_Act</pyImplementation>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pyRuleParamsStreamName/>
+<pyBaseClass>ASM-FW-GISFW-Work-LIFE</pyBaseClass>
+<pxCreateOpName>Ade Samuel Tua Saragih</pxCreateOpName>
+<pyFromMODefName>Utility</pyFromMODefName>
+<pyLane/>
+<pxSubscript>Utility1</pxSubscript>
+<pyTicketShapes REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Data-MO-Event-Exception</pxObjClass>
+<pyShapeDisplayName/>
+<pyMOName/>
+</rowdata>
+</pyTicketShapes>
+<pyCallParams>
+</pyCallParams>
+<pyPageAliases>
+</pyPageAliases>
+<pzRuleParameters REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-MethodParams</pxObjClass>
+<pyParametersParamIntelliValidateAs/>
+<pyParametersParamName/>
+<pyParametersParamDefaultValue/>
+<pyParametersParamIntelliRule/>
+<pyParametersParamDesc/>
+<pyParametersParamIntelliBaseClass>PageClass</pyParametersParamIntelliBaseClass>
+<pyParametersParamInOut>IN</pyParametersParamInOut>
+<pyParametersParamType>STRING</pyParametersParamType>
+<pyParametersParamReq>0</pyParametersParamReq>
+</rowdata>
+</pzRuleParameters>
+<pyContextRefs REPEATINGTYPE="PageList"/>
+<pyModifierRefs REPEATINGTYPE="PropertyGroup">
+</pyModifierRefs>
+<pyRouterProp>
+<pxObjClass>Data-MO-Activity-Router</pxObjClass>
+</pyRouterProp>
+</rowdata>
+<rowdata REPEATINGINDEX="End1">
+<pyClassName>ASM-FW-GISFW-Work-LIFE</pyClassName>
+<pyMOId>End1</pyMOId>
+<pyDisplayLink>false</pyDisplayLink>
+<pyWidth>0.48</pyWidth>
+<pyContainerRef/>
+<pyStatus/>
+<pyDisableLinkWhen/>
+<pyTriggerType>None</pyTriggerType>
+<pxCreateDateTime>20240625T025825.035 GMT</pxCreateDateTime>
+<pyCoordX>-0.0070964312487557775</pyCoordX>
+<pyAuditNote/>
+<pyCoordY>1.434487876852362</pyCoordY>
+<pyUseCaseWorkType>LIFE</pyUseCaseWorkType>
+<pyFAProcessOnJump>false</pyFAProcessOnJump>
+<pyHeight>0.48</pyHeight>
+<pyShouldReload>No</pyShouldReload>
+<pyShapeDisplayName/>
+<pyWorkStatus>Resolved-Rejected</pyWorkStatus>
+<pyUseCaseName/>
+<pyMOName/>
+<pxObjClass>Data-MO-Event-End</pxObjClass>
+<pyCategory>FlowStandard</pyCategory>
+<pyTemplateInputBox/>
+<pxCreateOperator>AdeSamuelTuaSaragih</pxCreateOperator>
+<pyUseCaseApplication/>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pxCreateOpName>Ade Samuel Tua Saragih</pxCreateOpName>
+<pyFromMODefName>End</pyFromMODefName>
+<pyLane/>
+<pxSubscript>End1</pxSubscript>
+<pyTicketShapes REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Data-MO-Event-Exception</pxObjClass>
+<pyShapeDisplayName/>
+<pyMOName/>
+</rowdata>
+</pyTicketShapes>
+<pyCallParams>
+</pyCallParams>
+<pyContextRefs REPEATINGTYPE="PageList"/>
+<pyModifierRefs REPEATINGTYPE="PropertyGroup">
+</pyModifierRefs>
+<pyRouterProp>
+<pxObjClass>Data-MO-Activity-Router</pxObjClass>
+</pyRouterProp>
+</rowdata>
+<rowdata REPEATINGINDEX="Decision3">
+<pyClassName>ASM-FW-GISFW-Work-LIFE</pyClassName>
+<pyMOId>Decision3</pyMOId>
+<pyRowHeader/>
+<pyDisplayLink>false</pyDisplayLink>
+<pyWidth>0.96</pyWidth>
+<pyContainerRef/>
+<pyDisableLinkWhen/>
+<pxCreateDateTime>20240711T021810.833 GMT</pxCreateDateTime>
+<pyAuditNote/>
+<pyCoordX>1.6541289256466407</pyCoordX>
+<pyCoordY>0.096</pyCoordY>
+<pyUseCaseWorkType>LIFE</pyUseCaseWorkType>
+<pyCompareOperator>=</pyCompareOperator>
+<pyFAProcessOnJump>false</pyFAProcessOnJump>
+<pyStoreProperty/>
+<pyTypeMismatch>false</pyTypeMismatch>
+<pyHeight>0.48</pyHeight>
+<pyShouldReload>No</pyShouldReload>
+<pyShapeDisplayName/>
+<pyWorkStatus/>
+<pyUseCaseName>Decision</pyUseCaseName>
+<pyColumnHeader/>
+<pyMOName>FlagOnGoingPolicy</pyMOName>
+<pxObjClass>Data-MO-Gateway-Decision</pxObjClass>
+<pyCategory>FlowStandard</pyCategory>
+<pyTemplateInputBox/>
+<pxCreateOperator>KELVINJUSLIM</pxCreateOperator>
+<pyShapeType>Data-MO-Gateway-Decision</pyShapeType>
+<pyUseCaseApplication>GISFW</pyUseCaseApplication>
+<pyOnlyGoingBack>false</pyOnlyGoingBack>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pyImplementation>IsFlagOnGoingPolicy</pyImplementation>
+<pxCreateOpName>Kelvin Juslim</pxCreateOpName>
+<pyFromMODefName>Decision</pyFromMODefName>
+<pyColumnHeaderType/>
+<pyLane/>
+<pxSubscript>Decision3</pxSubscript>
+<pyDecisionClass>Rule-Declare-DecisionTable</pyDecisionClass>
+<pyTicketShapes REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Data-MO-Event-Exception</pxObjClass>
+<pyShapeDisplayName/>
+<pyMOName/>
+</rowdata>
+</pyTicketShapes>
+<pyCallParams>
+</pyCallParams>
+<pyContextRefs REPEATINGTYPE="PageList"/>
+<pyModifierRefs REPEATINGTYPE="PropertyGroup">
+</pyModifierRefs>
+<pyRouterProp>
+<pxObjClass>Data-MO-Activity-Router</pxObjClass>
+</pyRouterProp>
+</rowdata>
+<rowdata REPEATINGINDEX="END52">
+<pyClassName>ASM-FW-GISFW-Work-LIFE</pyClassName>
+<pyMOId>END52</pyMOId>
+<pyDisplayLink>false</pyDisplayLink>
+<pyWidth>0.48</pyWidth>
+<pyContainerRef/>
+<pyDisableLinkWhen/>
+<pyStatus/>
+<pyTriggerType>None</pyTriggerType>
+<pyAuditNote/>
+<pyCoordX>8.15928237173832</pyCoordX>
+<pyCoordY>0.096</pyCoordY>
+<pyUseCaseWorkType>LIFE</pyUseCaseWorkType>
+<pyHeight>0.48</pyHeight>
+<pyShouldReload>No</pyShouldReload>
+<pyWorkStatus>Resolved-Completed</pyWorkStatus>
+<pyMOName/>
+<pxObjClass>Data-MO-Event-End</pxObjClass>
+<pyCategory>FlowStandard</pyCategory>
+<pyTemplateInputBox/>
+<pyFromMODefName>End</pyFromMODefName>
+<pxSubscript>END52</pxSubscript>
+<pyTicketShapes REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Data-MO-Event-Exception</pxObjClass>
+<pyShapeDisplayName>CloseCase</pyShapeDisplayName>
+<pyMOId>Ticket1</pyMOId>
+<pxSubscript>Ticket1</pxSubscript>
+<pyMOName>CloseCase</pyMOName>
+</rowdata>
+</pyTicketShapes>
+<pyCallParams>
+</pyCallParams>
+<pyContextRefs REPEATINGTYPE="PageList"/>
+<pyModifierRefs REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="Ticket1">Data-MO-Event-Exception</rowdata>
+</pyModifierRefs>
+<pyRouterProp>
+<pxObjClass>Data-MO-Activity-Router</pxObjClass>
+</pyRouterProp>
+</rowdata>
+<rowdata REPEATINGINDEX="Decision2">
+<pyClassName>ASM-FW-GISFW-Work-LIFE</pyClassName>
+<pyMOId>Decision2</pyMOId>
+<pyRowHeader/>
+<pyDisplayLink>false</pyDisplayLink>
+<pyWidth>0.96</pyWidth>
+<pyContainerRef/>
+<pyDisableLinkWhen/>
+<pxCreateDateTime>20240625T025556.714 GMT</pxCreateDateTime>
+<pyCoordX>5.042941690825744</pyCoordX>
+<pyAuditNote/>
+<pyCoordY>0.096</pyCoordY>
+<pyUseCaseWorkType>LIFE</pyUseCaseWorkType>
+<pyFAProcessOnJump>false</pyFAProcessOnJump>
+<pyCompareOperator>=</pyCompareOperator>
+<pyStoreProperty/>
+<pyTypeMismatch>false</pyTypeMismatch>
+<pyHeight>0.48</pyHeight>
+<pyShouldReload>No</pyShouldReload>
+<pyShapeDisplayName/>
+<pyWorkStatus/>
+<pyUseCaseName>Decision</pyUseCaseName>
+<pyColumnHeader/>
+<pyMOName>Accept</pyMOName>
+<pxObjClass>Data-MO-Gateway-Decision</pxObjClass>
+<pyCategory>FlowStandard</pyCategory>
+<pyTemplateInputBox/>
+<pxCreateOperator>AdeSamuelTuaSaragih</pxCreateOperator>
+<pyShapeType>Data-MO-Gateway-Decision</pyShapeType>
+<pyUseCaseApplication>GISFW</pyUseCaseApplication>
+<pyOnlyGoingBack>false</pyOnlyGoingBack>
+<pyImplementation>IsLifeAccepted</pyImplementation>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pxCreateOpName>Ade Samuel Tua Saragih</pxCreateOpName>
+<pyFromMODefName>Decision</pyFromMODefName>
+<pxSubscript>Decision2</pxSubscript>
+<pyColumnHeaderType/>
+<pyDecisionClass>Rule-Declare-DecisionTable</pyDecisionClass>
+<pyTicketShapes REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Data-MO-Event-Exception</pxObjClass>
+<pyShapeDisplayName/>
+<pyMOName/>
+</rowdata>
+</pyTicketShapes>
+<pyCallParams>
+</pyCallParams>
+<pyContextRefs REPEATINGTYPE="PageList"/>
+<pyModifierRefs REPEATINGTYPE="PropertyGroup">
+</pyModifierRefs>
+<pyRouterProp>
+<pxObjClass>Data-MO-Activity-Router</pxObjClass>
+</pyRouterProp>
+</rowdata>
+<rowdata REPEATINGINDEX="ASSIGNMENT63">
+<pzShapeProprtyPanelWrapper/>
+<pzPegaDefaultGridIcons/>
+<pzTicketListWrapper/>
+<pyClassName>ASM-FW-GISFW-Work-LIFE</pyClassName>
+<pyDoNotPerform>false</pyDoNotPerform>
+<pyMOId>ASSIGNMENT63</pyMOId>
+<pySkipAssignment>false</pySkipAssignment>
+<pzLocalActions/>
+<pyWidth>0.96</pyWidth>
+<pzEnableDisableProxyPM/>
+<pyContainerRef/>
+<pyPreviousRule>Task</pyPreviousRule>
+<pyCoordX>3.2693514307103224</pyCoordX>
+<pyHarnessPurpose>Perform</pyHarnessPurpose>
+<pyCoordY>0.096</pyCoordY>
+<pyUseCaseWorkType>LIFE</pyUseCaseWorkType>
+<pyFAProcessOnJump>false</pyFAProcessOnJump>
+<pzSkipAssignmentParams/>
+<pzSpecificationQuickViewRedirect/>
+<pyMOName>Input Premium List Detail</pyMOName>
+<pzAssignmentTabInner/>
+<pyOperator/>
+<pzRouteTo/>
+<pyEffortCost/>
+<pyImplementation>WorkList</pyImplementation>
+<pzModalAction/>
+<pyFromMODefName>Assignment</pyFromMODefName>
+<pySLA/>
+<pyWorkBasket/>
+<pzRuleParametersShowSkills>false</pzRuleParametersShowSkills>
+<pyUseCurOperIfBasketNotFound>false</pyUseCurOperIfBasketNotFound>
+<pyDisplayLink>true</pyDisplayLink>
+<pyDisableLinkWhen/>
+<pyStatus/>
+<pyAuditNote/>
+<pzNotifications/>
+<pzScreenNavigation/>
+<pyTypeMismatch>true</pyTypeMismatch>
+<pyHeight>0.48</pyHeight>
+<pyShouldReload>No</pyShouldReload>
+<pzAssignmentConfiguration/>
+<pyWorkStatus>Input Premium Detail</pyWorkStatus>
+<pyUseCaseName>InputPolicyHolder</pyUseCaseName>
+<pzPropertyPanelTitle/>
+<pxObjClass>Data-MO-Activity-Assignment</pxObjClass>
+<pyCategory>FlowStandard</pyCategory>
+<pyTemplateInputBox/>
+<pzOptimizationTab/>
+<pyShapeType>Data-MO-Activity-Assignment</pyShapeType>
+<pyUseCaseApplication>GISFW</pyUseCaseApplication>
+<pyRouteTo>Current operator</pyRouteTo>
+<pyOnlyGoingBack>false</pyOnlyGoingBack>
+<pzAssignmentTabInnerLayout/>
+<pzTicketList/>
+<pxSubscript>ASSIGNMENT63</pxSubscript>
+<pyLane/>
+<pzAssignmentParams_LocalAction/>
+<pyBusinessLogicDecisionTree/>
+<pyNotifyProp>
+<pxObjClass>Data-MO-Activity-Notify</pxObjClass>
+<pzRuleParametersShowSkills>false</pzRuleParametersShowSkills>
+<pySendNotification>USE_CASE_POLICY</pySendNotification>
+<pyImplementation/>
+<pyMOId/>
+<pyMOName/>
+<pzRuleParameters REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-MethodParams</pxObjClass>
+<pyParametersParamName/>
+</rowdata>
+</pzRuleParameters>
+<pyCallParams>
+</pyCallParams>
+</pyNotifyProp>
+<pyTicketShapes REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Data-MO-Event-Exception</pxObjClass>
+<pyShapeDisplayName/>
+<pyMOName/>
+</rowdata>
+</pyTicketShapes>
+<pyPageAliases>
+</pyPageAliases>
+<pzRuleParameters REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-MethodParams</pxObjClass>
+<pyParametersParamName/>
+</rowdata>
+</pzRuleParameters>
+<pyRouterProp>
+<pxObjClass>Data-MO-Activity-Router</pxObjClass>
+<pzRuleParametersShowSkills>false</pzRuleParametersShowSkills>
+<pyInLane>false</pyInLane>
+<pyImplementation>ToCurrentOperator</pyImplementation>
+<pyMOName/>
+<pzRuleParameters REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-MethodParams</pxObjClass>
+<pyParametersParamName/>
+</rowdata>
+</pzRuleParameters>
+<pySkills REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-Rule-Obj-Flow-RoutingSkills</pxObjClass>
+<pySkillName/>
+<pySkillRequired>true</pySkillRequired>
+<pySkillLevel>1</pySkillLevel>
+</rowdata>
+</pySkills>
+<pyPageAliases>
+</pyPageAliases>
+</pyRouterProp>
+<pyLocalActionsPL REPEATINGTYPE="PageList"/>
+<pySkipAssignmentParams REPEATINGTYPE="PageList"/>
+<pyCallParams>
+<HarnessPurpose>Perform</HarnessPurpose>
+<StatusWork/>
+<DoNotPerform>false</DoNotPerform>
+<StatusAssign/>
+<Instructions/>
+<ViewPolicy/>
+<ConfirmationNote>pyStepRoutedConfirmation</ConfirmationNote>
+</pyCallParams>
+<pyContextRefs REPEATINGTYPE="PageList"/>
+<pyModifierRefs REPEATINGTYPE="PropertyGroup">
+</pyModifierRefs>
+<pzOptimizationAttributes REPEATINGTYPE="PageList"/>
+<pxWarningsToDisplay REPEATINGTYPE="PageList"/>
+</rowdata>
+<rowdata REPEATINGINDEX="Decision1">
+<pyClassName>ASM-FW-GISFW-Work-LIFE</pyClassName>
+<pyMOId>Decision1</pyMOId>
+<pyRowHeader/>
+<pyDisplayLink>false</pyDisplayLink>
+<pyWidth>0.96</pyWidth>
+<pyContainerRef/>
+<pyDisableLinkWhen/>
+<pxCreateDateTime>20240625T025556.714 GMT</pxCreateDateTime>
+<pyAuditNote/>
+<pyCoordX>-0.24709643124875588</pyCoordX>
+<pyCoordY>0.096</pyCoordY>
+<pyUseCaseWorkType>LIFE</pyUseCaseWorkType>
+<pyFAProcessOnJump>false</pyFAProcessOnJump>
+<pyCompareOperator>=</pyCompareOperator>
+<pyTypeMismatch>false</pyTypeMismatch>
+<pyStoreProperty/>
+<pyHeight>0.48</pyHeight>
+<pyShouldReload>No</pyShouldReload>
+<pyShapeDisplayName/>
+<pyWorkStatus/>
+<pyUseCaseName>Decision</pyUseCaseName>
+<pyColumnHeader/>
+<pyMOName>Accept</pyMOName>
+<pxObjClass>Data-MO-Gateway-Decision</pxObjClass>
+<pyCategory>FlowStandard</pyCategory>
+<pyTemplateInputBox/>
+<pxCreateOperator>AdeSamuelTuaSaragih</pxCreateOperator>
+<pyShapeType>Data-MO-Gateway-Decision</pyShapeType>
+<pyUseCaseApplication>GISFW</pyUseCaseApplication>
+<pyOnlyGoingBack>false</pyOnlyGoingBack>
+<pyImplementation>IsLifeAccepted</pyImplementation>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pxCreateOpName>Ade Samuel Tua Saragih</pxCreateOpName>
+<pyFromMODefName>Decision</pyFromMODefName>
+<pyColumnHeaderType/>
+<pyLane/>
+<pxSubscript>Decision1</pxSubscript>
+<pyDecisionClass>Rule-Declare-DecisionTable</pyDecisionClass>
+<pyTicketShapes REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Data-MO-Event-Exception</pxObjClass>
+<pyShapeDisplayName/>
+<pyMOName/>
+</rowdata>
+</pyTicketShapes>
+<pyCallParams>
+</pyCallParams>
+<pyContextRefs REPEATINGTYPE="PageList"/>
+<pyModifierRefs REPEATINGTYPE="PropertyGroup">
+</pyModifierRefs>
+<pyRouterProp>
+<pxObjClass>Data-MO-Activity-Router</pxObjClass>
+</pyRouterProp>
+</rowdata>
+<rowdata REPEATINGINDEX="Assignment1">
+<pyClassName>ASM-FW-GISFW-Work-LIFE</pyClassName>
+<pyDoNotPerform>false</pyDoNotPerform>
+<pyMOId>Assignment1</pyMOId>
+<pyDisplayLink>true</pyDisplayLink>
+<pySkipAssignment>false</pySkipAssignment>
+<pyWidth>0.96</pyWidth>
+<pyDisableLinkWhen/>
+<pyContainerRef/>
+<pxCreateDateTime>20180807T032517.219 GMT</pxCreateDateTime>
+<pyCoordX>7.92</pyCoordX>
+<pyAuditNote/>
+<pyHarnessPurpose>Perform</pyHarnessPurpose>
+<pyCoordY>-1.2089218151417713</pyCoordY>
+<pyUseCaseWorkType>LIFE</pyUseCaseWorkType>
+<pyFAProcessOnJump>false</pyFAProcessOnJump>
+<pyTypeMismatch>true</pyTypeMismatch>
+<pyHeight>0.48</pyHeight>
+<pyShouldReload>No</pyShouldReload>
+<pyShapeDisplayName/>
+<pyWorkStatus>Input Premium Summary</pyWorkStatus>
+<pyUseCaseName>InputPremiumListSummary</pyUseCaseName>
+<pyMOName>Input Premium List Summary</pyMOName>
+<pxObjClass>Data-MO-Activity-Assignment</pxObjClass>
+<pyCategory>FlowStandard</pyCategory>
+<pyTemplateInputBox/>
+<pxCreateOperator>DANIELWISESA</pxCreateOperator>
+<pyShapeType>Data-MO-Activity-Assignment</pyShapeType>
+<pyUseCaseApplication>GISFW</pyUseCaseApplication>
+<pyEffortCost/>
+<pyRouteTo>Current operator</pyRouteTo>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pyImplementation>WorkList</pyImplementation>
+<pxCreateOpName>Daniel Suhana</pxCreateOpName>
+<pySLA/>
+<pyFromMODefName>Assignment</pyFromMODefName>
+<pxSubscript>Assignment1</pxSubscript>
+<pyLane/>
+<pyBusinessLogicDecisionTree/>
+<pyNotifyProp>
+<pxObjClass>Data-MO-Activity-Notify</pxObjClass>
+<pySendNotification>USE_CASE_POLICY</pySendNotification>
+<pyImplementation/>
+<pyMOName/>
+<pzRuleParameters REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-MethodParams</pxObjClass>
+<pyParametersParamName/>
+</rowdata>
+</pzRuleParameters>
+<pyCallParams>
+</pyCallParams>
+</pyNotifyProp>
+<pyTicketShapes REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Data-MO-Event-Exception</pxObjClass>
+<pyShapeDisplayName/>
+<pyMOName/>
+</rowdata>
+</pyTicketShapes>
+<pyCallParams>
+<HarnessPurpose>Perform</HarnessPurpose>
+<StatusWork/>
+<DoNotPerform/>
+<Instructions/>
+<StatusAssign/>
+<ViewPolicy/>
+<ConfirmationNote>pyStepRoutedConfirmation</ConfirmationNote>
+</pyCallParams>
+<pyContextRefs REPEATINGTYPE="PageList"/>
+<pyModifierRefs REPEATINGTYPE="PropertyGroup">
+</pyModifierRefs>
+<pyRouterProp>
+<pxObjClass>Data-MO-Activity-Router</pxObjClass>
+<pyInLane>false</pyInLane>
+<pyIsCustomRouter>false</pyIsCustomRouter>
+<pyImplementation>ToCurrentOperator</pyImplementation>
+<pyMOName/>
+<pySkills REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-Rule-Obj-Flow-RoutingSkills</pxObjClass>
+<pySkillName/>
+<pySkillRequired>true</pySkillRequired>
+<pySkillLevel>1</pySkillLevel>
+</rowdata>
+</pySkills>
+<pyPageAliases>
+</pyPageAliases>
+</pyRouterProp>
+<pzOptimizationAttributes REPEATINGTYPE="PageList"/>
+<pyLocalActionsPL REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-Pega-AssignAction</pxObjClass>
+<pyProductName/>
+<pyUseCaseName/>
+<pyActionName/>
+<pyOwner/>
+</rowdata>
+</pyLocalActionsPL>
+<pySkipAssignmentParams REPEATINGTYPE="PageList"/>
+</rowdata>
+<rowdata REPEATINGINDEX="Assignment2">
+<pyDoNotPerform>false</pyDoNotPerform>
+<pyClassName>ASM-FW-GISFW-Work-LIFE</pyClassName>
+<pyMOId>Assignment2</pyMOId>
+<pySkipAssignment>false</pySkipAssignment>
+<pyWidth>0.96</pyWidth>
+<pyContainerRef/>
+<pxCreateDateTime>20201020T033147.682 GMT</pxCreateDateTime>
+<pyCoordX>-2.1279999999999997</pyCoordX>
+<pyCoordY>0.096</pyCoordY>
+<pyHarnessPurpose>Perform</pyHarnessPurpose>
+<pyUseCaseWorkType>LIFE</pyUseCaseWorkType>
+<pyFAProcessOnJump>false</pyFAProcessOnJump>
+<pyShapeDisplayName/>
+<pyMOName>Input Offer</pyMOName>
+<pyOperator/>
+<pyEffortCost/>
+<pyImplementation>WorkList</pyImplementation>
+<pyFromMODefName>Assignment</pyFromMODefName>
+<pySLA/>
+<pyWorkBasket/>
+<pyDisplayLink>true</pyDisplayLink>
+<pyDisableLinkWhen/>
+<pyAuditNote/>
+<pyTypeMismatch>true</pyTypeMismatch>
+<pyHeight>0.48</pyHeight>
+<pyShouldReload>No</pyShouldReload>
+<pyWorkStatus>Input Offer Life</pyWorkStatus>
+<pyUseCaseName>InputOfferLife</pyUseCaseName>
+<pxObjClass>Data-MO-Activity-Assignment</pxObjClass>
+<pyCategory>FlowStandard</pyCategory>
+<pyTemplateInputBox/>
+<pxCreateOperator>REVIRUNDUPADANG</pxCreateOperator>
+<pyShapeType>Data-MO-Activity-Assignment</pyShapeType>
+<pyRouteTo>Current operator</pyRouteTo>
+<pyUseCaseApplication>GISFW</pyUseCaseApplication>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pxCreateOpName>Revi Rundupadang</pxCreateOpName>
+<pyLane/>
+<pxSubscript>Assignment2</pxSubscript>
+<pyBusinessLogicDecisionTree/>
+<pyNotifyProp>
+<pxObjClass>Data-MO-Activity-Notify</pxObjClass>
+<pySendNotification>USE_CASE_POLICY</pySendNotification>
+<pyImplementation/>
+<pyMOName/>
+<pzRuleParameters REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-MethodParams</pxObjClass>
+<pyParametersParamName/>
+</rowdata>
+</pzRuleParameters>
+<pyCallParams>
+</pyCallParams>
+</pyNotifyProp>
+<pyTicketShapes REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Data-MO-Event-Exception</pxObjClass>
+<pyShapeDisplayName/>
+<pyMOName/>
+</rowdata>
+</pyTicketShapes>
+<pyRouterProp>
+<pxObjClass>Data-MO-Activity-Router</pxObjClass>
+<pyIsCustomRouter>false</pyIsCustomRouter>
+<pyInLane>false</pyInLane>
+<pyImplementation>ToCurrentOperator</pyImplementation>
+<pyMOName/>
+<pySkills REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-Rule-Obj-Flow-RoutingSkills</pxObjClass>
+<pySkillName/>
+<pySkillRequired>true</pySkillRequired>
+<pySkillLevel>1</pySkillLevel>
+</rowdata>
+</pySkills>
+<pyPageAliases>
+</pyPageAliases>
+</pyRouterProp>
+<pySkipAssignmentParams REPEATINGTYPE="PageList"/>
+<pyLocalActionsPL REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-Pega-AssignAction</pxObjClass>
+<pyProductName/>
+<pyUseCaseName/>
+<pyActionName/>
+<pyOwner/>
+</rowdata>
+</pyLocalActionsPL>
+<pyCallParams>
+<HarnessPurpose>Perform</HarnessPurpose>
+<StatusWork/>
+<DoNotPerform/>
+<Instructions/>
+<StatusAssign/>
+<ViewPolicy/>
+<ConfirmationNote>pyStepRoutedConfirmation</ConfirmationNote>
+</pyCallParams>
+<pyContextRefs REPEATINGTYPE="PageList"/>
+<pyModifierRefs REPEATINGTYPE="PropertyGroup">
+</pyModifierRefs>
+<pzOptimizationAttributes REPEATINGTYPE="PageList"/>
+</rowdata>
+<rowdata REPEATINGINDEX="Start1">
+<pyClassName>ASM-FW-GISFW-Work-LIFE</pyClassName>
+<pyMOId>Start1</pyMOId>
+<pyDisplayLink>false</pyDisplayLink>
+<pyWidth>0.48</pyWidth>
+<pyDisableLinkWhen/>
+<pyContainerRef/>
+<pyTriggerType>None</pyTriggerType>
+<pxCreateDateTime>20130611T102704.022 GMT</pxCreateDateTime>
+<pyCoordX>-3.375999999999999</pyCoordX>
+<pyAuditNote/>
+<pyCoordY>0.096</pyCoordY>
+<pyUseCaseWorkType/>
+<pyFAProcessOnJump>false</pyFAProcessOnJump>
+<pyHeight>0.48</pyHeight>
+<pyShapeDisplayName/>
+<pyUseCaseName/>
+<pyMOName/>
+<pyStartingHarness>NewSample</pyStartingHarness>
+<pxObjClass>Data-MO-Event-Start</pxObjClass>
+<pxCreateOperator>kotil</pxCreateOperator>
+<pyUseCaseApplication/>
+<pxCreateSystemID>SLSHYD</pxCreateSystemID>
+<pxCreateOpName>Venkat</pxCreateOpName>
+<pyFromMODefName>Start</pyFromMODefName>
+<pyLane/>
+<pxSubscript>Start1</pxSubscript>
+<pyTicketShapes REPEATINGTYPE="PageList"/>
+<pyCallParams>
+</pyCallParams>
+<pyContextRefs REPEATINGTYPE="PageList"/>
+<pyModifierRefs REPEATINGTYPE="PropertyGroup">
+</pyModifierRefs>
+<pyRouterProp>
+<pxObjClass>Data-MO-Activity-Router</pxObjClass>
+</pyRouterProp>
+</rowdata>
+</pyShapes>
+<pyModifiers REPEATINGTYPE="PageGroup">
+<rowdata REPEATINGINDEX="Ticket1">
+<pyMOId>Ticket1</pyMOId>
+<pyDisplayLink>false</pyDisplayLink>
+<pyWidth/>
+<pyDisableLinkWhen/>
+<pyContainerRef/>
+<pxCreateDateTime>20190301T085757.769 GMT</pxCreateDateTime>
+<pyAuditNote/>
+<pyCoordX/>
+<pyCoordY/>
+<pyUseCaseWorkType/>
+<pyFAProcessOnJump>false</pyFAProcessOnJump>
+<pyHeight/>
+<pyShapeDisplayName/>
+<pyUseCaseName/>
+<pyMOName>CloseCase</pyMOName>
+<pxObjClass>Data-MO-Event-Exception</pxObjClass>
+<pxCreateOperator>sandy</pxCreateOperator>
+<pyUseCaseApplication/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pxCreateOpName>SANDY</pxCreateOpName>
+<pyFromMODefName>Ticket</pyFromMODefName>
+<pyLane/>
+<pxSubscript>Ticket1</pxSubscript>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="WorkBasket">55</rowdata>
+</pzIndexes>
+<pyModifierRefs REPEATINGTYPE="PropertyGroup">
+</pyModifierRefs>
+</rowdata>
+</pyModifiers>
+<pyConnectors REPEATINGTYPE="PageGroup">
+<rowdata REPEATINGINDEX="TRANSITION54">
+<pyClassName>ASM-FW-GISFW-Work-LIFE</pyClassName>
+<pyLastExpression>ActionStub</pyLastExpression>
+<pyMOId>TRANSITION54</pyMOId>
+<pyDisplayLink>false</pyDisplayLink>
+<pyTo>Decision2</pyTo>
+<pyFromClass>Data-MO-Activity-Assignment</pyFromClass>
+<pyWidth>1.097</pyWidth>
+<pyContainerRef/>
+<pyDisableLinkWhen/>
+<pyPreviousRule>ShowLifePremiumDetail</pyPreviousRule>
+<pyCoordX>3.131</pyCoordX>
+<pyAuditNote/>
+<pyCoordY>1.970</pyCoordY>
+<pyUseCaseWorkType>LIFE</pyUseCaseWorkType>
+<pyFAProcessOnJump>false</pyFAProcessOnJump>
+<pyTypeMismatch>false</pyTypeMismatch>
+<pyExpression>ShowLifePremiumDetail</pyExpression>
+<pyHeight>0.235</pyHeight>
+<pyMONameOrig>[Flow Action]</pyMONameOrig>
+<pyPropertiesOrModel>Set Properties</pyPropertiesOrModel>
+<pyShouldReload>No</pyShouldReload>
+<pyIsFork>false</pyIsFork>
+<pyWorkStatus>Input Premium Detail</pyWorkStatus>
+<pyUseCaseName/>
+<pyConditionType>Action</pyConditionType>
+<pyMOName>ShowLifePremiumDetail</pyMOName>
+<pxObjClass>Data-MO-Connector-Transition</pxObjClass>
+<pyCategory>FlowStandard</pyCategory>
+<pyTemplateInputBox/>
+<pyShapeType>Data-MO-Connector-Transition</pyShapeType>
+<pyUseCaseApplication>GISFW</pyUseCaseApplication>
+<pyFrom>ASSIGNMENT63</pyFrom>
+<pyLabel>Step Name</pyLabel>
+<pyFromMODefName>Transition</pyFromMODefName>
+<pyFlowType>FlowStandard</pyFlowType>
+<pyLikelihood>100</pyLikelihood>
+<pyLane/>
+<pxSubscript>TRANSITION54</pxSubscript>
+<pySourceConstraintPoint>
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>0.5</pyPointY>
+<pyPointX>1</pyPointX>
+</pySourceConstraintPoint>
+<pyModifierRefs REPEATINGTYPE="PropertyGroup">
+</pyModifierRefs>
+<pyConnectorPoints REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>42</pyPointY>
+<pyPointX>216</pyPointX>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>300</pyPointY>
+<pyPointX>409</pyPointX>
+</rowdata>
+</pyConnectorPoints>
+<pyPropertyAssigns REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-ModelParams</pxObjClass>
+<pyPropertiesName/>
+<pyPropertiesValue/>
+</rowdata>
+</pyPropertyAssigns>
+<pyTargetConstraintPoint>
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+</pyTargetConstraintPoint>
+<pxWarningsToDisplay REPEATINGTYPE="PageList"/>
+</rowdata>
+<rowdata REPEATINGINDEX="Transition4">
+<pyClassName>ASM-FW-GISFW-Work-LIFE</pyClassName>
+<pyMOId>Transition4</pyMOId>
+<pyDisplayLink>false</pyDisplayLink>
+<pyTo>Decision3</pyTo>
+<pyWidth/>
+<pyFromClass>Data-MO-Gateway-Decision</pyFromClass>
+<pyContainerRef/>
+<pyDisableLinkWhen/>
+<pyPreviousRule>Confirm</pyPreviousRule>
+<pxCreateDateTime>20240625T025612.628 GMT</pxCreateDateTime>
+<pyCoordX/>
+<pyAuditNote/>
+<pyCoordY/>
+<pyUseCaseWorkType>LIFE</pyUseCaseWorkType>
+<pyFAProcessOnJump>false</pyFAProcessOnJump>
+<pyExpression>Confirm</pyExpression>
+<pyTypeMismatch>false</pyTypeMismatch>
+<pyHeight/>
+<pyMONameOrig>Confirm</pyMONameOrig>
+<pyPropertiesOrModel>Set Properties</pyPropertiesOrModel>
+<pyShouldReload>No</pyShouldReload>
+<pyShapeDisplayName/>
+<pyIsFork>false</pyIsFork>
+<pyConnectorType>Transition</pyConnectorType>
+<pyUseCaseName>Confirm</pyUseCaseName>
+<pyConditionType>Status</pyConditionType>
+<pyMOName>Confirm</pyMOName>
+<pxObjClass>Data-MO-Connector-Transition</pxObjClass>
+<pyCategory>FlowStandard</pyCategory>
+<pyTemplateInputBox/>
+<pxCreateOperator>AdeSamuelTuaSaragih</pxCreateOperator>
+<pyShapeType>Data-MO-Connector-Transition</pyShapeType>
+<pyUseCaseApplication>GISFW</pyUseCaseApplication>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pyFrom>Decision1</pyFrom>
+<pxCreateOpName>Ade Samuel Tua Saragih</pxCreateOpName>
+<pyFromMODefName>Transition</pyFromMODefName>
+<pyLikelihood>100</pyLikelihood>
+<pyLane/>
+<pxSubscript>Transition4</pxSubscript>
+<pySourceConstraintPoint>
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>0.5</pyPointY>
+<pyPointX>1</pyPointX>
+</pySourceConstraintPoint>
+<pyModifierRefs REPEATINGTYPE="PropertyGroup">
+</pyModifierRefs>
+<pyConnectorPoints REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>42</pyPointY>
+<pyPointX>31</pyPointX>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>125</pyPointY>
+<pyPointX>185</pyPointX>
+</rowdata>
+</pyConnectorPoints>
+<pyPropertyAssigns REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pyExpanded>true</pyExpanded>
+<pyRelationNameUpdatepage/>
+<pyActionName>SET</pyActionName>
+<pxObjClass>Embed-ModelParams</pxObjClass>
+<pyRelationNameWhen/>
+<pxCreateOperator>AdeSamuelTuaSaragih</pxCreateOperator>
+<pyRelationNameAppend/>
+<pxCreateDateTime>20240711T041828.697 GMT</pxCreateDateTime>
+<pyPropertiesName/>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pxCreateOpName>Ade Samuel Tua Saragih</pxCreateOpName>
+<pyPropertiesValue/>
+<pyProperties REPEATINGTYPE="PageList"/>
+</rowdata>
+</pyPropertyAssigns>
+<pyTargetConstraintPoint>
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>0.5</pyPointY>
+<pyPointX>0</pyPointX>
+</pyTargetConstraintPoint>
+</rowdata>
+<rowdata REPEATINGINDEX="Transition10">
+<pyClassName>ASM-FW-GISFW-Work-LIFE</pyClassName>
+<pyMOId>Transition10</pyMOId>
+<pyDisplayLink>false</pyDisplayLink>
+<pyTo>ASSIGNMENT63</pyTo>
+<pyWidth/>
+<pyFromClass>Data-MO-Gateway-Decision</pyFromClass>
+<pyDisableLinkWhen/>
+<pyContainerRef/>
+<pyPreviousRule>Premium</pyPreviousRule>
+<pxCreateDateTime>20240711T021820.594 GMT</pxCreateDateTime>
+<pyCoordX/>
+<pyAuditNote/>
+<pyCoordY/>
+<pyUseCaseWorkType>LIFE</pyUseCaseWorkType>
+<pyFAProcessOnJump>false</pyFAProcessOnJump>
+<pyTypeMismatch>false</pyTypeMismatch>
+<pyExpression>Premium</pyExpression>
+<pyHeight/>
+<pyPropertiesOrModel>Set Properties</pyPropertiesOrModel>
+<pyMONameOrig>IfPremium=next</pyMONameOrig>
+<pyShouldReload>No</pyShouldReload>
+<pyShapeDisplayName/>
+<pyIsFork>false</pyIsFork>
+<pyConnectorType>Transition</pyConnectorType>
+<pyUseCaseName>Offer</pyUseCaseName>
+<pyConditionType>Status</pyConditionType>
+<pyMOName>IfPremium=next</pyMOName>
+<pxObjClass>Data-MO-Connector-Transition</pxObjClass>
+<pyCategory>FlowStandard</pyCategory>
+<pxCreateOperator>KELVINJUSLIM</pxCreateOperator>
+<pyTemplateInputBox/>
+<pyShapeType>Data-MO-Connector-Transition</pyShapeType>
+<pyUseCaseApplication>GISFW</pyUseCaseApplication>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pyFrom>Decision3</pyFrom>
+<pxCreateOpName>Kelvin Juslim</pxCreateOpName>
+<pyFromMODefName>Transition</pyFromMODefName>
+<pxSubscript>Transition10</pxSubscript>
+<pyLane/>
+<pyLikelihood>100</pyLikelihood>
+<pySourceConstraintPoint>
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>0.5</pyPointY>
+<pyPointX>1</pyPointX>
+</pySourceConstraintPoint>
+<pyModifierRefs REPEATINGTYPE="PropertyGroup">
+</pyModifierRefs>
+<pyConnectorPoints REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>125</pyPointY>
+<pyPointX>185</pyPointX>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>42</pyPointY>
+<pyPointX>358</pyPointX>
+</rowdata>
+</pyConnectorPoints>
+<pyPropertyAssigns REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pyExpanded>true</pyExpanded>
+<pyRelationNameUpdatepage/>
+<pyActionName>SET</pyActionName>
+<pxObjClass>Embed-ModelParams</pxObjClass>
+<pyRelationNameWhen/>
+<pxCreateOperator>AdeSamuelTuaSaragih</pxCreateOperator>
+<pyRelationNameAppend/>
+<pxCreateDateTime>20240711T064029.029 GMT</pxCreateDateTime>
+<pyPropertiesName/>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pyPropertiesValue/>
+<pxCreateOpName>Ade Samuel Tua Saragih</pxCreateOpName>
+<pyProperties REPEATINGTYPE="PageList"/>
+</rowdata>
+</pyPropertyAssigns>
+</rowdata>
+<rowdata REPEATINGINDEX="Transition3">
+<pyClassName>ASM-FW-GISFW-Work-LIFE</pyClassName>
+<pyMOId>Transition3</pyMOId>
+<pyDisplayLink>false</pyDisplayLink>
+<pyTo>Decision1</pyTo>
+<pyWidth/>
+<pyFromClass>Data-MO-Activity-Assignment</pyFromClass>
+<pyDisableLinkWhen/>
+<pyContainerRef/>
+<pyPreviousRule>InputDataOfferLife</pyPreviousRule>
+<pxCreateDateTime>20201020T033222.581 GMT</pxCreateDateTime>
+<pyAuditNote/>
+<pyCoordX/>
+<pyCoordY/>
+<pyUseCaseWorkType>LIFE</pyUseCaseWorkType>
+<pyFAProcessOnJump>false</pyFAProcessOnJump>
+<pyExpression>InputDataOfferLife</pyExpression>
+<pyTypeMismatch>false</pyTypeMismatch>
+<pyHeight/>
+<pyPropertiesOrModel>Set Properties</pyPropertiesOrModel>
+<pyMONameOrig>InputDataOfferLife</pyMONameOrig>
+<pyShouldReload>No</pyShouldReload>
+<pyShapeDisplayName/>
+<pyIsFork>false</pyIsFork>
+<pyConnectorType>Transition</pyConnectorType>
+<pyWorkStatus>Input Offer Life</pyWorkStatus>
+<pyUseCaseName>InputDataOfferLife</pyUseCaseName>
+<pyConditionType>Action</pyConditionType>
+<pyMOName>InputDataOfferLife</pyMOName>
+<pxObjClass>Data-MO-Connector-Transition</pxObjClass>
+<pyCategory>FlowStandard</pyCategory>
+<pyTemplateInputBox/>
+<pxCreateOperator>REVIRUNDUPADANG</pxCreateOperator>
+<pyShapeType>Data-MO-Connector-Transition</pyShapeType>
+<pyUseCaseApplication>GISFW</pyUseCaseApplication>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pyFrom>Assignment2</pyFrom>
+<pxCreateOpName>Revi Rundupadang</pxCreateOpName>
+<pyFromMODefName>Transition</pyFromMODefName>
+<pyLane/>
+<pxSubscript>Transition3</pxSubscript>
+<pyLikelihood>100</pyLikelihood>
+<pySourceConstraintPoint>
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>0.5</pyPointY>
+<pyPointX>1</pyPointX>
+</pySourceConstraintPoint>
+<pyModifierRefs REPEATINGTYPE="PropertyGroup">
+</pyModifierRefs>
+<pyConnectorPoints REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>42</pyPointY>
+<pyPointX>-117</pyPointX>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>270</pyPointY>
+<pyPointX>3</pyPointX>
+</rowdata>
+</pyConnectorPoints>
+<pyPropertyAssigns REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-ModelParams</pxObjClass>
+<pyPropertiesName/>
+<pyPropertiesValue/>
+</rowdata>
+</pyPropertyAssigns>
+<pyTargetConstraintPoint>
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+</pyTargetConstraintPoint>
+</rowdata>
+<rowdata REPEATINGINDEX="Transition11">
+<pyClassName>ASM-FW-GISFW-Work-LIFE</pyClassName>
+<pyMOId>Transition11</pyMOId>
+<pyDisplayLink>false</pyDisplayLink>
+<pyTo>END52</pyTo>
+<pyFromClass>Data-MO-Gateway-Decision</pyFromClass>
+<pyWidth/>
+<pyContainerRef/>
+<pyDisableLinkWhen/>
+<pyPreviousRule>Offer</pyPreviousRule>
+<pxCreateDateTime>20240711T022250.475 GMT</pxCreateDateTime>
+<pyCoordX/>
+<pyAuditNote/>
+<pyCoordY/>
+<pyUseCaseWorkType>LIFE</pyUseCaseWorkType>
+<pyFAProcessOnJump>false</pyFAProcessOnJump>
+<pyExpression>Offer</pyExpression>
+<pyTypeMismatch>false</pyTypeMismatch>
+<pyHeight/>
+<pyPropertiesOrModel>Set Properties</pyPropertiesOrModel>
+<pyMONameOrig>[Result]</pyMONameOrig>
+<pyShouldReload>No</pyShouldReload>
+<pyShapeDisplayName/>
+<pyIsFork>false</pyIsFork>
+<pyConnectorType>Transition</pyConnectorType>
+<pyUseCaseName>IfOfferResolved</pyUseCaseName>
+<pyConditionType>Status</pyConditionType>
+<pyMOName>IfOffer=Resolved</pyMOName>
+<pxObjClass>Data-MO-Connector-Transition</pxObjClass>
+<pyCategory>FlowStandard</pyCategory>
+<pxCreateOperator>KELVINJUSLIM</pxCreateOperator>
+<pyTemplateInputBox/>
+<pyShapeType>Data-MO-Connector-Transition</pyShapeType>
+<pyUseCaseApplication>GISFW</pyUseCaseApplication>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pyFrom>Decision3</pyFrom>
+<pxCreateOpName>Kelvin Juslim</pxCreateOpName>
+<pyFromMODefName>Transition</pyFromMODefName>
+<pxSubscript>Transition11</pxSubscript>
+<pyLane/>
+<pyLikelihood>100</pyLikelihood>
+<pySourceConstraintPoint>
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>1</pyPointY>
+<pyPointX>0.5</pyPointX>
+</pySourceConstraintPoint>
+<pyModifierRefs REPEATINGTYPE="PropertyGroup">
+</pyModifierRefs>
+<pyConnectorPoints REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>42</pyPointY>
+<pyPointX>255</pyPointX>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>42</pyPointY>
+<pyPointX>1050</pyPointX>
+</rowdata>
+</pyConnectorPoints>
+<pyPropertyAssigns REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-ModelParams</pxObjClass>
+<pyPropertiesName/>
+<pyPropertiesValue/>
+</rowdata>
+</pyPropertyAssigns>
+<pyTargetConstraintPoint>
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>1</pyPointY>
+<pyPointX>0.5</pyPointX>
+</pyTargetConstraintPoint>
+</rowdata>
+<rowdata REPEATINGINDEX="Transition2">
+<pyClassName>ASM-FW-GISFW-Work-LIFE</pyClassName>
+<pyMOId>Transition2</pyMOId>
+<pyDisplayLink>false</pyDisplayLink>
+<pyTo>END52</pyTo>
+<pyWidth/>
+<pyFromClass>Data-MO-Activity-Assignment</pyFromClass>
+<pyContainerRef/>
+<pyDisableLinkWhen/>
+<pyPreviousRule>ShowLifePremiumSummary</pyPreviousRule>
+<pxCreateDateTime>20180807T032526.138 GMT</pxCreateDateTime>
+<pyCoordX/>
+<pyAuditNote/>
+<pyCoordY/>
+<pyUseCaseWorkType>LIFE</pyUseCaseWorkType>
+<pyFAProcessOnJump>false</pyFAProcessOnJump>
+<pyTypeMismatch>false</pyTypeMismatch>
+<pyExpression>ShowLifePremiumSummary</pyExpression>
+<pyHeight/>
+<pyPropertiesOrModel>Set Properties</pyPropertiesOrModel>
+<pyMONameOrig>[Flow Action]</pyMONameOrig>
+<pyShouldReload>No</pyShouldReload>
+<pyShapeDisplayName/>
+<pyIsFork>false</pyIsFork>
+<pyWorkStatus>Input Premium Summary</pyWorkStatus>
+<pyConnectorType>Transition</pyConnectorType>
+<pyUseCaseName/>
+<pyConditionType>Action</pyConditionType>
+<pyMOName>ShowLifePremiumSummary</pyMOName>
+<pxObjClass>Data-MO-Connector-Transition</pxObjClass>
+<pyCategory>FlowStandard</pyCategory>
+<pyTemplateInputBox/>
+<pxCreateOperator>DANIELWISESA</pxCreateOperator>
+<pyShapeType>Data-MO-Connector-Transition</pyShapeType>
+<pyUseCaseApplication>GISFW</pyUseCaseApplication>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pyFrom>Assignment1</pyFrom>
+<pxCreateOpName>Daniel Suhana</pxCreateOpName>
+<pyFromMODefName>Transition</pyFromMODefName>
+<pyLikelihood>100</pyLikelihood>
+<pyLane/>
+<pxSubscript>Transition2</pxSubscript>
+<pySourceConstraintPoint>
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+</pySourceConstraintPoint>
+<pyModifierRefs REPEATINGTYPE="PropertyGroup">
+</pyModifierRefs>
+<pyConnectorPoints REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>-120</pyPointY>
+<pyPointX>721</pyPointX>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>42</pyPointY>
+<pyPointX>721</pyPointX>
+</rowdata>
+</pyConnectorPoints>
+<pyPropertyAssigns REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-ModelParams</pxObjClass>
+<pyPropertiesName/>
+<pyPropertiesValue/>
+</rowdata>
+</pyPropertyAssigns>
+<pyTargetConstraintPoint>
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+</pyTargetConstraintPoint>
+</rowdata>
+<rowdata REPEATINGINDEX="Transition1">
+<pyClassName>ASM-FW-GISFW-Work-LIFE</pyClassName>
+<pyMOId>Transition1</pyMOId>
+<pyDisplayLink>false</pyDisplayLink>
+<pyTo>Assignment2</pyTo>
+<pyFromClass>Data-MO-Event-Start</pyFromClass>
+<pyWidth/>
+<pyDisableLinkWhen/>
+<pyContainerRef/>
+<pxCreateDateTime>20130611T102711.417 GMT</pxCreateDateTime>
+<pyAuditNote/>
+<pyCoordX/>
+<pyCoordY/>
+<pyUseCaseWorkType>LIFE</pyUseCaseWorkType>
+<pyFAProcessOnJump>false</pyFAProcessOnJump>
+<pyExpression/>
+<pyTypeMismatch>false</pyTypeMismatch>
+<pyHeight/>
+<pyMONameOrig>[Always]</pyMONameOrig>
+<pyPropertiesOrModel>Set Properties</pyPropertiesOrModel>
+<pyShouldReload>No</pyShouldReload>
+<pyShapeDisplayName/>
+<pyIsFork>false</pyIsFork>
+<pyConnectorType>Transition</pyConnectorType>
+<pyUseCaseName/>
+<pyConditionType>Always</pyConditionType>
+<pyMOName>[Always]</pyMOName>
+<pxObjClass>Data-MO-Connector-Transition</pxObjClass>
+<pyCategory>FlowStandard</pyCategory>
+<pyTemplateInputBox/>
+<pxCreateOperator>kotil</pxCreateOperator>
+<pyShapeType>Data-MO-Connector-Transition</pyShapeType>
+<pyUseCaseApplication>GISFW</pyUseCaseApplication>
+<pxCreateSystemID>SLSHYD</pxCreateSystemID>
+<pyFrom>Start1</pyFrom>
+<pxCreateOpName>Venkat</pxCreateOpName>
+<pyFromMODefName>Transition</pyFromMODefName>
+<pyLikelihood>100</pyLikelihood>
+<pyLane/>
+<pxSubscript>Transition1</pxSubscript>
+<pySourceConstraintPoint>
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+</pySourceConstraintPoint>
+<pyModifierRefs REPEATINGTYPE="PropertyGroup">
+</pyModifierRefs>
+<pyConnectorPoints REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>42</pyPointY>
+<pyPointX>-415</pyPointX>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>42</pyPointY>
+<pyPointX>-117</pyPointX>
+</rowdata>
+</pyConnectorPoints>
+<pyPropertyAssigns REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pyExpanded>true</pyExpanded>
+<pyRelationNameUpdatepage/>
+<pyActionName>SET</pyActionName>
+<pyRelationNameWhen/>
+<pxObjClass>Embed-ModelParams</pxObjClass>
+<pxCreateOperator>AdeSamuelTuaSaragih</pxCreateOperator>
+<pyRelationNameAppend/>
+<pxCreateDateTime>20240711T064022.229 GMT</pxCreateDateTime>
+<pyPropertiesName/>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pxCreateOpName>Ade Samuel Tua Saragih</pxCreateOpName>
+<pyPropertiesValue/>
+<pyProperties REPEATINGTYPE="PageList"/>
+</rowdata>
+</pyPropertyAssigns>
+<pyTargetConstraintPoint>
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>0.5</pyPointY>
+<pyPointX>0</pyPointX>
+</pyTargetConstraintPoint>
+</rowdata>
+<rowdata REPEATINGINDEX="Transition8">
+<pyClassName>ASM-FW-GISFW-Work-LIFE</pyClassName>
+<pyMOId>Transition8</pyMOId>
+<pyDisplayLink>false</pyDisplayLink>
+<pyTo>END52</pyTo>
+<pyWidth/>
+<pyFromClass>Data-MO-Activity-Utility</pyFromClass>
+<pyContainerRef/>
+<pyDisableLinkWhen/>
+<pxCreateDateTime>20240626T032742.961 GMT</pxCreateDateTime>
+<pyAuditNote/>
+<pyCoordX/>
+<pyCoordY/>
+<pyUseCaseWorkType/>
+<pyFAProcessOnJump>false</pyFAProcessOnJump>
+<pyExpression/>
+<pyHeight/>
+<pyShapeDisplayName/>
+<pyConnectorType>Transition</pyConnectorType>
+<pyUseCaseName/>
+<pyConditionType>Always</pyConditionType>
+<pyMOName>[Always]</pyMOName>
+<pxObjClass>Data-MO-Connector-Transition</pxObjClass>
+<pxCreateOperator>AdeSamuelTuaSaragih</pxCreateOperator>
+<pyUseCaseApplication/>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pyFrom>Utility1</pyFrom>
+<pxCreateOpName>Ade Samuel Tua Saragih</pxCreateOpName>
+<pyFromMODefName>Transition</pyFromMODefName>
+<pyLikelihood>100</pyLikelihood>
+<pyLane/>
+<pxSubscript>Transition8</pxSubscript>
+<pySourceConstraintPoint>
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+</pySourceConstraintPoint>
+<pyModifierRefs REPEATINGTYPE="PropertyGroup">
+</pyModifierRefs>
+<pyConnectorPoints REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>42</pyPointY>
+<pyPointX>721</pyPointX>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>42</pyPointY>
+<pyPointX>937</pyPointX>
+</rowdata>
+</pyConnectorPoints>
+<pyPropertyAssigns REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-ModelParams</pxObjClass>
+<pyPropertiesName/>
+<pyPropertiesValue/>
+</rowdata>
+</pyPropertyAssigns>
+<pyTargetConstraintPoint>
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+</pyTargetConstraintPoint>
+</rowdata>
+<rowdata REPEATINGINDEX="Transition7">
+<pyClassName>ASM-FW-GISFW-Work-LIFE</pyClassName>
+<pyMOId>Transition7</pyMOId>
+<pyDisplayLink>false</pyDisplayLink>
+<pyTo>Utility1</pyTo>
+<pyWidth/>
+<pyFromClass>Data-MO-Gateway-Decision</pyFromClass>
+<pyContainerRef/>
+<pyDisableLinkWhen/>
+<pyPreviousRule>Confirm</pyPreviousRule>
+<pxCreateDateTime>20240625T030714.103 GMT</pxCreateDateTime>
+<pyCoordX/>
+<pyAuditNote/>
+<pyCoordY/>
+<pyUseCaseWorkType>LIFE</pyUseCaseWorkType>
+<pyFAProcessOnJump>false</pyFAProcessOnJump>
+<pyExpression>Confirm</pyExpression>
+<pyTypeMismatch>false</pyTypeMismatch>
+<pyHeight/>
+<pyPropertiesOrModel>Set Properties</pyPropertiesOrModel>
+<pyMONameOrig>[Result]</pyMONameOrig>
+<pyShouldReload>No</pyShouldReload>
+<pyShapeDisplayName/>
+<pyIsFork>false</pyIsFork>
+<pyConnectorType>Transition</pyConnectorType>
+<pyUseCaseName/>
+<pyConditionType>Status</pyConditionType>
+<pyMOName>Confirm</pyMOName>
+<pxObjClass>Data-MO-Connector-Transition</pxObjClass>
+<pyCategory>FlowStandard</pyCategory>
+<pxCreateOperator>AdeSamuelTuaSaragih</pxCreateOperator>
+<pyTemplateInputBox/>
+<pyShapeType>Data-MO-Connector-Transition</pyShapeType>
+<pyUseCaseApplication>GISFW</pyUseCaseApplication>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pyFrom>Decision2</pyFrom>
+<pxCreateOpName>Ade Samuel Tua Saragih</pxCreateOpName>
+<pyFromMODefName>Transition</pyFromMODefName>
+<pxSubscript>Transition7</pxSubscript>
+<pyLikelihood>100</pyLikelihood>
+<pyLane/>
+<pySourceConstraintPoint>
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>0.5</pyPointY>
+<pyPointX>1</pyPointX>
+</pySourceConstraintPoint>
+<pyModifierRefs REPEATINGTYPE="PropertyGroup">
+</pyModifierRefs>
+<pyConnectorPoints REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>210</pyPointY>
+<pyPointX>407</pyPointX>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>210</pyPointY>
+<pyPointX>827</pyPointX>
+</rowdata>
+</pyConnectorPoints>
+<pyPropertyAssigns REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-ModelParams</pxObjClass>
+<pyPropertiesName/>
+<pyPropertiesValue/>
+</rowdata>
+</pyPropertyAssigns>
+<pyTargetConstraintPoint>
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+</pyTargetConstraintPoint>
+</rowdata>
+<rowdata REPEATINGINDEX="Transition6">
+<pyClassName>ASM-FW-GISFW-Work-LIFE</pyClassName>
+<pyMOId>Transition6</pyMOId>
+<pyDisplayLink>false</pyDisplayLink>
+<pyTo>End1</pyTo>
+<pyFromClass>Data-MO-Gateway-Decision</pyFromClass>
+<pyWidth/>
+<pyDisableLinkWhen/>
+<pyContainerRef/>
+<pyPreviousRule>Decline</pyPreviousRule>
+<pxCreateDateTime>20240625T030705.144 GMT</pxCreateDateTime>
+<pyCoordX/>
+<pyAuditNote/>
+<pyCoordY/>
+<pyUseCaseWorkType>LIFE</pyUseCaseWorkType>
+<pyFAProcessOnJump>false</pyFAProcessOnJump>
+<pyTypeMismatch>false</pyTypeMismatch>
+<pyExpression>Decline</pyExpression>
+<pyHeight/>
+<pyPropertiesOrModel>Set Properties</pyPropertiesOrModel>
+<pyMONameOrig>[Result]</pyMONameOrig>
+<pyShouldReload>No</pyShouldReload>
+<pyShapeDisplayName/>
+<pyIsFork>false</pyIsFork>
+<pyConnectorType>Transition</pyConnectorType>
+<pyUseCaseName/>
+<pyConditionType>Status</pyConditionType>
+<pyMOName>Decline</pyMOName>
+<pxObjClass>Data-MO-Connector-Transition</pxObjClass>
+<pyCategory>FlowStandard</pyCategory>
+<pxCreateOperator>AdeSamuelTuaSaragih</pxCreateOperator>
+<pyTemplateInputBox/>
+<pyShapeType>Data-MO-Connector-Transition</pyShapeType>
+<pyUseCaseApplication>GISFW</pyUseCaseApplication>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pyFrom>Decision2</pyFrom>
+<pxCreateOpName>Ade Samuel Tua Saragih</pxCreateOpName>
+<pyFromMODefName>Transition</pyFromMODefName>
+<pxSubscript>Transition6</pxSubscript>
+<pyLane/>
+<pyLikelihood>100</pyLikelihood>
+<pySourceConstraintPoint>
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>1</pyPointY>
+<pyPointX>0.5</pyPointX>
+</pySourceConstraintPoint>
+<pyModifierRefs REPEATINGTYPE="PropertyGroup">
+</pyModifierRefs>
+<pyConnectorPoints REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>42</pyPointY>
+<pyPointX>541</pyPointX>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>280</pyPointY>
+<pyPointX>31</pyPointX>
+</rowdata>
+</pyConnectorPoints>
+<pyPropertyAssigns REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-ModelParams</pxObjClass>
+<pyPropertiesName/>
+<pyPropertiesValue/>
+</rowdata>
+</pyPropertyAssigns>
+<pyTargetConstraintPoint>
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>0.5</pyPointY>
+<pyPointX>1</pyPointX>
+</pyTargetConstraintPoint>
+</rowdata>
+<rowdata REPEATINGINDEX="Transition5">
+<pyClassName>ASM-FW-GISFW-Work-LIFE</pyClassName>
+<pyMOId>Transition5</pyMOId>
+<pyDisplayLink>false</pyDisplayLink>
+<pyTo>End1</pyTo>
+<pyWidth/>
+<pyFromClass>Data-MO-Gateway-Decision</pyFromClass>
+<pyDisableLinkWhen/>
+<pyContainerRef/>
+<pyPreviousRule>Decline</pyPreviousRule>
+<pxCreateDateTime>20240625T025838.626 GMT</pxCreateDateTime>
+<pyAuditNote/>
+<pyCoordX/>
+<pyCoordY/>
+<pyUseCaseWorkType>LIFE</pyUseCaseWorkType>
+<pyFAProcessOnJump>false</pyFAProcessOnJump>
+<pyTypeMismatch>false</pyTypeMismatch>
+<pyExpression>Decline</pyExpression>
+<pyHeight/>
+<pyMONameOrig>Decline</pyMONameOrig>
+<pyPropertiesOrModel>Set Properties</pyPropertiesOrModel>
+<pyShouldReload>No</pyShouldReload>
+<pyShapeDisplayName/>
+<pyIsFork>false</pyIsFork>
+<pyConnectorType>Transition</pyConnectorType>
+<pyUseCaseName>Decline</pyUseCaseName>
+<pyConditionType>Status</pyConditionType>
+<pyMOName>Decline</pyMOName>
+<pxObjClass>Data-MO-Connector-Transition</pxObjClass>
+<pyCategory>FlowStandard</pyCategory>
+<pyTemplateInputBox/>
+<pxCreateOperator>AdeSamuelTuaSaragih</pxCreateOperator>
+<pyShapeType>Data-MO-Connector-Transition</pyShapeType>
+<pyUseCaseApplication>GISFW</pyUseCaseApplication>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pyFrom>Decision1</pyFrom>
+<pxCreateOpName>Ade Samuel Tua Saragih</pxCreateOpName>
+<pyFromMODefName>Transition</pyFromMODefName>
+<pxSubscript>Transition5</pxSubscript>
+<pyLikelihood>100</pyLikelihood>
+<pyLane/>
+<pySourceConstraintPoint>
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+</pySourceConstraintPoint>
+<pyModifierRefs REPEATINGTYPE="PropertyGroup">
+</pyModifierRefs>
+<pyConnectorPoints REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>42</pyPointY>
+<pyPointX>29</pyPointX>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>209</pyPointY>
+<pyPointX>29</pyPointX>
+</rowdata>
+</pyConnectorPoints>
+<pyPropertyAssigns REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-ModelParams</pxObjClass>
+<pyPropertiesName/>
+<pyPropertiesValue/>
+</rowdata>
+</pyPropertyAssigns>
+<pyTargetConstraintPoint>
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>0</pyPointY>
+<pyPointX>0.5</pyPointX>
+</pyTargetConstraintPoint>
+</rowdata>
+<rowdata REPEATINGINDEX="Transition9">
+<pyClassName>ASM-FW-GISFW-Work-LIFE</pyClassName>
+<pyMOId>Transition9</pyMOId>
+<pyDisplayLink>false</pyDisplayLink>
+<pyTo>Assignment2</pyTo>
+<pyWidth/>
+<pyFromClass>Data-MO-Gateway-Decision</pyFromClass>
+<pyContainerRef/>
+<pyDisableLinkWhen/>
+<pyPreviousRule>Reject</pyPreviousRule>
+<pxCreateDateTime>20240626T033022.843 GMT</pxCreateDateTime>
+<pyCoordX/>
+<pyAuditNote/>
+<pyCoordY/>
+<pyUseCaseWorkType>LIFE</pyUseCaseWorkType>
+<pyFAProcessOnJump>false</pyFAProcessOnJump>
+<pyTypeMismatch>false</pyTypeMismatch>
+<pyExpression>Reject</pyExpression>
+<pyHeight/>
+<pyMONameOrig>Reject</pyMONameOrig>
+<pyPropertiesOrModel>Set Properties</pyPropertiesOrModel>
+<pyShouldReload>No</pyShouldReload>
+<pyShapeDisplayName/>
+<pyIsFork>false</pyIsFork>
+<pyConnectorType>Transition</pyConnectorType>
+<pyUseCaseName>Reject</pyUseCaseName>
+<pyConditionType>Status</pyConditionType>
+<pyMOName>Reject</pyMOName>
+<pxObjClass>Data-MO-Connector-Transition</pxObjClass>
+<pyCategory>FlowStandard</pyCategory>
+<pyTemplateInputBox/>
+<pxCreateOperator>AdeSamuelTuaSaragih</pxCreateOperator>
+<pyShapeType>Data-MO-Connector-Transition</pyShapeType>
+<pyUseCaseApplication>GISFW</pyUseCaseApplication>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pyFrom>Decision2</pyFrom>
+<pxCreateOpName>Ade Samuel Tua Saragih</pxCreateOpName>
+<pyFromMODefName>Transition</pyFromMODefName>
+<pxSubscript>Transition9</pxSubscript>
+<pyLikelihood>100</pyLikelihood>
+<pyLane/>
+<pySourceConstraintPoint>
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>0</pyPointY>
+<pyPointX>0.5</pyPointX>
+</pySourceConstraintPoint>
+<pyModifierRefs REPEATINGTYPE="PropertyGroup">
+</pyModifierRefs>
+<pyConnectorPoints REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>42</pyPointY>
+<pyPointX>541</pyPointX>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>42</pyPointY>
+<pyPointX>-206</pyPointX>
+</rowdata>
+</pyConnectorPoints>
+<pyPropertyAssigns REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-ModelParams</pxObjClass>
+<pyPropertiesName>pyWorkPage.Position</pyPropertiesName>
+<pyPropertiesValue>"Offer"</pyPropertiesValue>
+</rowdata>
+</pyPropertyAssigns>
+<pyTargetConstraintPoint>
+<pxObjClass>Embed-MO-Coordinates</pxObjClass>
+<pyPointY>0</pyPointY>
+<pyPointX>0.5</pyPointX>
+</pyTargetConstraintPoint>
+</rowdata>
+</pyConnectors>
+<pyAnnotationShapes REPEATINGTYPE="PageGroup">
+</pyAnnotationShapes>
+<pyContexts REPEATINGTYPE="PageGroup">
+</pyContexts>
+</pyModelProcess>
+<pxAPIMethodReferences REPEATINGTYPE="PageList"/>
+<pyCoveredBy REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-Rule-Obj-Flow-CoveredBy</pxObjClass>
+<pySubTaskModel/>
+<pyCoveringWorkClass/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pySubTaskHarness/>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="AddWorkProcesses">52</rowdata>
+</pzIndexes>
+</rowdata>
+</pyCoveredBy>
+<pxWarnings REPEATINGTYPE="PageList"/>
+<pyEndingActivities REPEATINGTYPE="PropertyList">
+<rowdata REPEATINGINDEX="1">End1</rowdata>
+<rowdata REPEATINGINDEX="2">END52</rowdata>
+</pyEndingActivities>
+<pxRuleReferences REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>pyCaption InputPolicyHolder</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FieldValue</pxRuleObjClass>
+<pxRuleFamilyName>PYCAPTION!INPUTPOLICYHOLDER</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">56</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>pyActionPrompt Input Premium List Summary</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FieldValue</pxRuleObjClass>
+<pxRuleFamilyName>PYACTIONPROMPT!INPUT PREMIUM LIST SUMMARY</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">57</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="3">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>ToCurrentOperator</pyRuleName>
+<pyMethodStatus>API</pyMethodStatus>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-Activity</pxRuleObjClass>
+<pxRuleFamilyName>TOCURRENTOPERATOR</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">58</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="4">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName/>
+<pyRuleName>GISFW LIFE InputPolicyHolder</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Application-UseCase</pxRuleObjClass>
+<pxRuleFamilyName>GISFW!LIFE!INPUTPOLICYHOLDER</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">59</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="5">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>@baseclass</pxRuleClassName>
+<pyRuleName>pyCaption Input Premium List Detail</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FieldValue</pxRuleObjClass>
+<pxRuleFamilyName>PYCAPTION!INPUT PREMIUM LIST DETAIL</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">60</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="6">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>pyCaption Input Premium List Detail</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FieldValue</pxRuleObjClass>
+<pxRuleFamilyName>PYCAPTION!INPUT PREMIUM LIST DETAIL</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">61</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="7">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>InputDataOfferLife</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FlowAction</pxRuleObjClass>
+<pxRuleFamilyName>INPUTDATAOFFERLIFE</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">62</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="8">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>pyConfirmationNote</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-Property</pxRuleObjClass>
+<pxRuleFamilyName>PYCONFIRMATIONNOTE</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">63</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="9">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>pyButtonLabel Input Premium List Detail</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FieldValue</pxRuleObjClass>
+<pxRuleFamilyName>PYBUTTONLABEL!INPUT PREMIUM LIST DETAIL</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">64</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="10">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>pyActionPrompt InsertJsonPolisLife</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FieldValue</pxRuleObjClass>
+<pxRuleFamilyName>PYACTIONPROMPT!INSERTJSONPOLISLIFE</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">65</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="11">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>pyActionPrompt FlagOnGoingPolicy</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FieldValue</pxRuleObjClass>
+<pxRuleFamilyName>PYACTIONPROMPT!FLAGONGOINGPOLICY</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">66</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="12">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>Position</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-Property</pxRuleObjClass>
+<pxRuleFamilyName>POSITION</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">67</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="13">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>ASM-FW-GISFW-Work-LIFE</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-Class</pxRuleObjClass>
+<pxRuleFamilyName>ASM-FW-GISFW-WORK-LIFE</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">68</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="14">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>pyButtonLabel [End]</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FieldValue</pxRuleObjClass>
+<pxRuleFamilyName>PYBUTTONLABEL![END]</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">69</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="15">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName/>
+<pyRuleName>GISFW LIFE InsertJsonPolisLife</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Application-UseCase</pxRuleObjClass>
+<pxRuleFamilyName>GISFW!LIFE!INSERTJSONPOLISLIFE</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">70</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="16">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>CloseCase</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-Ticket</pxRuleObjClass>
+<pxRuleFamilyName>CLOSECASE</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">71</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="17">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>pyCaption Input Offer</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FieldValue</pxRuleObjClass>
+<pxRuleFamilyName>PYCAPTION!INPUT OFFER</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">72</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="18">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>pyButtonLabel Accept</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FieldValue</pxRuleObjClass>
+<pxRuleFamilyName>PYBUTTONLABEL!ACCEPT</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">73</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="19">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>ShowLifePremiumDetail</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FlowAction</pxRuleObjClass>
+<pxRuleFamilyName>SHOWLIFEPREMIUMDETAIL</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">74</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="20">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>ShowLifePremiumSummary</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FlowAction</pxRuleObjClass>
+<pxRuleFamilyName>SHOWLIFEPREMIUMSUMMARY</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">75</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="21">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>@baseclass</pxRuleClassName>
+<pyRuleName>pyCaption Input Premium List Summary</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FieldValue</pxRuleObjClass>
+<pxRuleFamilyName>PYCAPTION!INPUT PREMIUM LIST SUMMARY</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">76</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="22">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>WorkList</pyRuleName>
+<pyMethodStatus>API</pyMethodStatus>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-Activity</pxRuleObjClass>
+<pxRuleFamilyName>WORKLIST</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">77</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="23">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName/>
+<pyRuleName>GISFW LIFE Decision</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Application-UseCase</pxRuleObjClass>
+<pxRuleFamilyName>GISFW!LIFE!DECISION</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">78</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="24">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>@baseclass</pxRuleClassName>
+<pyRuleName>pyCaption Input Offer</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FieldValue</pxRuleObjClass>
+<pxRuleFamilyName>PYCAPTION!INPUT OFFER</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">79</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="25">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>pyCaption FlagOnGoingPolicy</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FieldValue</pxRuleObjClass>
+<pxRuleFamilyName>PYCAPTION!FLAGONGOINGPOLICY</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">80</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="26">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>InsertJsonPolisLife_Act</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-Activity</pxRuleObjClass>
+<pxRuleFamilyName>INSERTJSONPOLISLIFE_ACT</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">81</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="27">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>IsFlagOnGoingPolicy</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Declare-DecisionTable</pxRuleObjClass>
+<pxRuleFamilyName>ISFLAGONGOINGPOLICY</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">82</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="28">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>pyButtonLabel FlagOnGoingPolicy</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FieldValue</pxRuleObjClass>
+<pxRuleFamilyName>PYBUTTONLABEL!FLAGONGOINGPOLICY</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">83</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="29">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>pyButtonLabel InputPolicyHolder</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FieldValue</pxRuleObjClass>
+<pxRuleFamilyName>PYBUTTONLABEL!INPUTPOLICYHOLDER</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">84</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="30">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>Perform</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-HTML-Harness</pxRuleObjClass>
+<pxRuleFamilyName>PERFORM</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">85</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="31">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>pyActionPrompt Accept</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FieldValue</pxRuleObjClass>
+<pxRuleFamilyName>PYACTIONPROMPT!ACCEPT</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">86</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="32">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName/>
+<pyRuleName>GISFW LIFE InputPremiumListSummary</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Application-UseCase</pxRuleObjClass>
+<pxRuleFamilyName>GISFW!LIFE!INPUTPREMIUMLISTSUMMARY</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">87</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="33">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>pyButtonLabel InsertJsonPolisLife</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FieldValue</pxRuleObjClass>
+<pxRuleFamilyName>PYBUTTONLABEL!INSERTJSONPOLISLIFE</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">88</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="34">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>pyActionPrompt [End]</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FieldValue</pxRuleObjClass>
+<pxRuleFamilyName>PYACTIONPROMPT![END]</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">89</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="35">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>pyConfirmationNote pyStepRoutedConfirmation</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FieldValue</pxRuleObjClass>
+<pxRuleFamilyName>PYCONFIRMATIONNOTE!PYSTEPROUTEDCONFIRMATION</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">90</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="36">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>pyActionPrompt Input Premium List Detail</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FieldValue</pxRuleObjClass>
+<pxRuleFamilyName>PYACTIONPROMPT!INPUT PREMIUM LIST DETAIL</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">91</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="37">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>IsLifeAccepted</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Declare-DecisionTable</pxRuleObjClass>
+<pxRuleFamilyName>ISLIFEACCEPTED</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">92</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="38">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>pyButtonLabel Input Premium List Summary</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FieldValue</pxRuleObjClass>
+<pxRuleFamilyName>PYBUTTONLABEL!INPUT PREMIUM LIST SUMMARY</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">93</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="39">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName/>
+<pyRuleName>GISFW LIFE InputDataOfferLife</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Application-UseCase</pxRuleObjClass>
+<pxRuleFamilyName>GISFW!LIFE!INPUTDATAOFFERLIFE</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">94</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="40">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>pyCaption Accept</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FieldValue</pxRuleObjClass>
+<pxRuleFamilyName>PYCAPTION!ACCEPT</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">95</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="41">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>pyButtonLabel Input Offer</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FieldValue</pxRuleObjClass>
+<pxRuleFamilyName>PYBUTTONLABEL!INPUT OFFER</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">96</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="42">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>pyActionPrompt Input Offer</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FieldValue</pxRuleObjClass>
+<pxRuleFamilyName>PYACTIONPROMPT!INPUT OFFER</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">97</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="43">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>pyCaption [End]</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FieldValue</pxRuleObjClass>
+<pxRuleFamilyName>PYCAPTION![END]</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">98</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="44">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName/>
+<pyRuleName>GISFW LIFE InputOfferLife</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Application-UseCase</pxRuleObjClass>
+<pxRuleFamilyName>GISFW!LIFE!INPUTOFFERLIFE</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">99</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="45">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>pyCaption Input Premium List Summary</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FieldValue</pxRuleObjClass>
+<pxRuleFamilyName>PYCAPTION!INPUT PREMIUM LIST SUMMARY</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">100</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="46">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>@baseclass</pxRuleClassName>
+<pyRuleName>@baseclass</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-Class</pxRuleObjClass>
+<pxRuleFamilyName>@BASECLASS</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">101</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="47">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>pyCaption InsertJsonPolisLife</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FieldValue</pxRuleObjClass>
+<pxRuleFamilyName>PYCAPTION!INSERTJSONPOLISLIFE</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">102</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="48">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>@baseclass</pxRuleClassName>
+<pyRuleName>pyLabel InputPolicyHolder</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-FLOW ASM-FW-GISFW-WORK-LIFE INPUTPOLICYHOLDER #20260316T024407.708 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-FieldValue</pxRuleObjClass>
+<pxRuleFamilyName>PYLABEL!INPUTPOLICYHOLDER</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">103</rowdata>
+</pzIndexes>
+</rowdata>
+</pxRuleReferences>
+<pxWarningsToDisplay REPEATINGTYPE="PageList"/>
+</pagedata>

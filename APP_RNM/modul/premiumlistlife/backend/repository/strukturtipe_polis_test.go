@@ -93,8 +93,9 @@ func bacaDDLPolis(t *testing.T) (map[string]map[string]kolomDDL, map[string]map[
 	idxPola := regexp.MustCompile(`CREATE (?:UNIQUE )?INDEX \{skema\}\.\w+ ON \{skema\}\.(\w+) \(\s*(\w+)`)
 	for _, e := range entri {
 		n := e.Name()
-		// Seluruh rentang migrasi polis 05x - bukan hanya 050-056 pembuat tabel.
-		if !regexp.MustCompile(`^05[0-9]_`).MatchString(n) || strings.HasSuffix(n, "_down.sql") {
+		// Seluruh rentang migrasi polis 050-099 (MODUL.md) - bukan hanya 050-056
+		// pembuat tabel. Diperluas dari `05x` saat 060 lahir (01-10-2026).
+		if !regexp.MustCompile(`^0[5-9][0-9]_`).MatchString(n) || strings.HasSuffix(n, "_down.sql") {
 			continue
 		}
 		b, err := berkasMigrasi.ReadFile("migrations/" + n)
@@ -179,12 +180,14 @@ func TestMigrasi050Sampai056TipeNullFKIndexSesuaiStruktur(t *testing.T) {
 	// ⛔ 225 sejak 059 (seragam T_WORK_CLAIM, 01-10-2026): STATUS menjadi
 	// STATUS_WORK (nol bersih) ditambah COVER_KEY, CREATE_OP, CREATE_OP_NAME,
 	// TGL_CREATE, TGL_UPDATE.
+	// ⛔ 242 sejak 059-062 isian penawaran (01-10-2026): +17 kolom T_PREMIUM_LIST
+	// (8 di 059 isian, 7 di 060, JENIS_ASURANSI 061, STATUS_PENAWARAN 062).
 	total := 0
 	for _, k := range struktur {
 		total += len(k)
 	}
-	if len(struktur) != 7 || total != 225 {
-		t.Fatalf("STRUKTUR terbaca %d tabel / %d kolom, mau 7 / 225; pengurainya rusak, "+
+	if len(struktur) != 7 || total != 242 {
+		t.Fatalf("STRUKTUR terbaca %d tabel / %d kolom, mau 7 / 242; pengurainya rusak, "+
 			"atau STRUKTUR berubah - perbarui angka ini dengan sadar", len(struktur), total)
 	}
 	for tab, kol := range struktur {
