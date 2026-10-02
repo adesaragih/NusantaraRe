@@ -32,7 +32,7 @@ dipensiunkan 1 Oktober 2026.
 | Folder | Isi |
 | --- | --- |
 | `docs/` | spec, tiket (`issues/`), discovery, grilling — dipindah dari `jefri/OUTPUT FIX/` 30-09-2026 (`git mv`, isi tidak diubah). Asal tiap berkas dan tujuan tautan lamanya: `docs/PETA-ASAL.md` |
-| `backend/` | `modul.go`; `models/`, `repository/` (tabel limit `POOLDATA.M_LIMIT_*`, baca saja), `services/` (layanan + mesin: `premium`, `acceptance`, `rules`, `pembayaran`, `rekonsiliasi`, `kontrakfacin`; `loader` = seam `loader.Flatten` data lama, murni, tiket 22), `handlers/` (`POST /api/nbfacin/premi`, `POST /api/nbfacin/akseptasi/langkah`), `migrations/` (slot menu 962) |
+| `backend/` | `modul.go`; `models/`, `repository/` (tabel limit `POOLDATA.M_LIMIT_*` dan akun `POOLDATA.T_M_ACCOUNT`, bisnis `POOLDATA.BUSINESS`, baca saja), `services/` (layanan + mesin: `premium`, `acceptance`, `rules`, `pembayaran`, `rekonsiliasi`, `kontrakfacin`; `loader` = seam `loader.Flatten` data lama, murni, tiket 22), `handlers/` (`POST /api/nbfacin/premi`, `POST /api/nbfacin/akseptasi/langkah`, `GET /api/nbfacin/account`, `GET /api/nbfacin/class-of-business`), `migrations/` (slot menu 962) |
 | `frontend/` | `menu.ts`, `rute.tsx`, `labels.ts` (verbatim korpus, diuji), `api.ts`, `pages/CoverageCargo.tsx` |
 
 ## Migrasi
@@ -63,3 +63,5 @@ kepemilikan tabel berpindah — keputusan work owner.
 | `M_LIMIT_ENGINEERINGG` | tabel limit akseptasi warisan POOLDATA; NB hanya MEMBACA empat kolom (tiket 20) |
 | `M_LIMIT_NONPROPANDENGG` | tabel limit akseptasi warisan POOLDATA; NB hanya MEMBACA empat kolom (tiket 20) |
 | `M_LIMIT_FINANCIALINS` | tabel limit akseptasi bentuk B warisan POOLDATA; NB hanya MEMBACA empat kolom (tiket 20) |
+| `T_M_ACCOUNT` | tabel akun warisan POOLDATA; NB hanya MEMBACA lima kolom untuk popup ChooseAccount (tiket 27) |
+| `BUSINESS` | tabel bisnis warisan POOLDATA; NB hanya MEMBACA tiga kolom untuk pilihan Class Of Business (tiket 28) |

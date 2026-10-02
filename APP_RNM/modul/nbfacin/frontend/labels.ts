@@ -173,8 +173,8 @@ export const OPSI_OPPORTUNITY_SOURCE = [
 /**
  * Popup tombol `Search Group Business` - VERBATIM dari tangkapan layar Pega kiriman work owner 02-10-2026
  * (md5 e4944778178e583eeac1ce1b7d87b0f3; gambar TIDAK disalin ke repo karena memuat nama pelanggan).
- * Rule-nya (`ChooseAccount`) tidak ada di korpus. Sumber data menurut work owner: tabel `T_M_ACCOUNT` -
- * DDL-nya belum ada di `D:\migrasi\RNM\DDL\`, jadi daftar belum dapat dimuat.
+ * Rule-nya (`ChooseAccount`) tidak ada di korpus. Sumber data menurut work owner: tabel `T_M_ACCOUNT`
+ * (DDL `D:\migrasi\RNM\DDL\T_M_ACCOUNT.txt`), lewat `GET /api/nbfacin/account` (tiket 27).
  */
 export const POPUP_CHOOSE_ACCOUNT = {
   judul: 'ChooseAccount',
@@ -184,8 +184,14 @@ export const POPUP_CHOOSE_ACCOUNT = {
   pilih: 'Choose',
 } as const
 
+/** Teks sistem baru untuk Group Business sesudah Choose - BUKAN dari Pega. */
+export const TEKS_GRUP_BISNIS = {
+  /** Nama aksesibel ikon roda gigi di samping Group Business terpilih (gambar 02-10-2026). */
+  ganti: 'Ganti Group Business',
+} as const
+
 /** Teks sistem baru - BUKAN dari Pega. */
 export const TEKS_FORM_OPPORTUNITY = {
-  /** Untuk `BelumTersedia`: daftar account belum punya endpoint (DDL `T_M_ACCOUNT` belum ada). */
-  daftarAccount: 'Daftar account',
+  /** Pencarian berhasil tetapi tidak ada baris yang cocok. */
+  tanpaAccount: 'Tidak ada account yang cocok.',
 } as const

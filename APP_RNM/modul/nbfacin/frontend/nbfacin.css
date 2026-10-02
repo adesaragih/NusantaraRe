@@ -57,6 +57,16 @@
   display: grid;
   gap: 14px;
 }
+/* Group Business terpilih: teks + ikon roda gigi (gambar sesudah Choose, 02-10-2026). */
+.nbfacin .nbf-opp__grup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+/* Class Of Business: kotak sempit seperti gambar (sekitar sepertiga kolom kiri). */
+.nbfacin .nbf-opp__cob {
+  max-width: 240px;
+}
 /* Owner: teks tampil, bukan kotak isian. */
 .nbfacin .nbf-opp__owner {
   padding: 6px 0;

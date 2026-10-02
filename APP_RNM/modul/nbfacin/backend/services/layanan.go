@@ -8,6 +8,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"unicode/utf8"
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/kontrak"
@@ -40,7 +42,8 @@ func DariDasar(d *inti.Dasar) *Service {
 	if !d.PunyaDatabase() {
 		return Baru(nil)
 	}
-	return Baru(repository.NewLimitOracle(d.DB()))
+	return Baru(repository.NewLimitOracle(d.DB())).DenganAkun(repository.NewAkunOracle(d.DB())).
+		DenganKelasBisnis(repository.NewKelasBisnisOracle(d.DB()))
 }
 
 // Service - layanan NB Fac In.
@@ -49,6 +52,19 @@ type Service struct {
 	// tangga - tangga yang dirakit pemanggil (BaruDenganTangga); nil = disusun dari
 	// tabel limit repository setiap permintaan.
 	tangga kontrak.TanggaAkseptasiFacIn
+	// akun - pembaca POOLDATA.T_M_ACCOUNT (tiket 27); nil = tanpa basis data (503).
+	akun repository.PembacaAkun
+	// kelasBisnis - pembaca POOLDATA.BUSINESS (tiket 28); nil = tanpa basis data (503).
+	kelasBisnis repository.PembacaKelasBisnis
+}
+
+// DenganAkun memasang pembaca tabel akun (tiket 27).
+func (s *Service) DenganAkun(a repository.PembacaAkun) *Service { s.akun = a; return s }
+
+// DenganKelasBisnis memasang pembaca tabel bisnis (tiket 28).
+func (s *Service) DenganKelasBisnis(k repository.PembacaKelasBisnis) *Service {
+	s.kelasBisnis = k
+	return s
 }
 
 // BaruDenganTangga merakit layanan atas tangga yang sudah dirakit (uji HTTP, atau
@@ -162,4 +178,72 @@ func susunTangga(a []models.BarisLimitA, b []models.BarisLimitB) (kontrakfacin.T
 		t.BentukA = nil
 	}
 	return t, nil
+}
+
+// --- Lookup akun ChooseAccount (tiket 27) ---
+
+// UkuranHalamanAkun - keputusan work owner 02-10-2026 "15 baris per halaman" (A71 diubah;
+// semula 20 = UKURAN_HALAMAN inti frontend).
+const UkuranHalamanAkun = 15
+
+// batasCari - A73: kolom terpanjang T_M_ACCOUNT 255 karakter.
+const batasCari = 255
+
+// halamanMaks - offset (halaman-1)*ukuran tetap dalam int32 (bind Oracle), tidak meluap.
+const halamanMaks = (1<<31-1)/UkuranHalamanAkun + 1
+
+// ErrMasukanAkun - halaman bukan bilangan bulat >= 1 atau cari terlalu panjang. 400.
+var ErrMasukanAkun = fmt.Errorf("services: halaman harus bilangan bulat >= 1 dan cari paling banyak %d karakter", batasCari)
+
+// ErrAkunTanpaDatabase - layanan dirakit tanpa basis data: tabel akun tidak terbaca. 503.
+var ErrAkunTanpaDatabase = errors.New("services: basis data tidak dikonfigurasi, tabel akun T_M_ACCOUNT tidak terbaca")
+
+// HasilCariAkun - satu halaman lookup akun.
+type HasilCariAkun struct {
+	Baris          []models.Akun
+	Total, Halaman int
+	Ukuran         int
+}
+
+// CariAkun - halaman ke-`halaman` (mulai 1) baris T_M_ACCOUNT yang "mengandung" `cari`
+// (PEKA huruf besar-kecil, keputusan work owner) di INSUREDID, INSUREDNAME, atau
+// GROUPBUSINESS (A69); `cari` kosong = semua baris. Urutan INSUREDID, ID (A72).
+func (s *Service) CariAkun(ctx context.Context, cari string, halaman int) (HasilCariAkun, error) {
+	if halaman < 1 || halaman > halamanMaks || utf8.RuneCountInString(cari) > batasCari {
+		return HasilCariAkun{}, ErrMasukanAkun
+	}
+	if s.akun == nil {
+		return HasilCariAkun{}, ErrAkunTanpaDatabase
+	}
+	baris, total, err := s.akun.CariAkun(ctx, cari, (halaman-1)*UkuranHalamanAkun, UkuranHalamanAkun)
+	if err != nil {
+		return HasilCariAkun{}, err
+	}
+	return HasilCariAkun{Baris: baris, Total: total, Halaman: halaman, Ukuran: UkuranHalamanAkun}, nil
+}
+
+// --- Class Of Business (tiket 28) ---
+
+// batasGroupBusiness - A76: BUSINESSGROUPID VARCHAR2(4000 BYTE); masukan lebih panjang
+// tidak mungkin cocok.
+const batasGroupBusiness = 4000
+
+// ErrMasukanKelasBisnis - groupBusinessId kosong atau terlalu panjang. 400.
+var ErrMasukanKelasBisnis = fmt.Errorf("services: groupBusinessId wajib diisi, paling banyak %d byte", batasGroupBusiness)
+
+// ErrKelasBisnisTanpaDatabase - layanan dirakit tanpa basis data: tabel bisnis tidak
+// terbaca. 503.
+var ErrKelasBisnisTanpaDatabase = errors.New("services: basis data tidak dikonfigurasi, tabel bisnis BUSINESS tidak terbaca")
+
+// KelasBisnis - semua pilihan Class Of Business milik group business `groupBusinessID`
+// (diteruskan apa adanya, tidak dipangkas); kosong/spasi saja = 400. Urutan dari
+// repository (A74, A75).
+func (s *Service) KelasBisnis(ctx context.Context, groupBusinessID string) ([]models.KelasBisnis, error) {
+	if strings.TrimSpace(groupBusinessID) == "" || len(groupBusinessID) > batasGroupBusiness {
+		return nil, ErrMasukanKelasBisnis
+	}
+	if s.kelasBisnis == nil {
+		return nil, ErrKelasBisnisTanpaDatabase
+	}
+	return s.kelasBisnis.KelasBisnis(ctx, groupBusinessID)
 }

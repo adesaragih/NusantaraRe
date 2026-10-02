@@ -13,7 +13,6 @@ import {
   NILAI_AWAL_OPPORTUNITY as AWAL,
   OPSI_OPPORTUNITY_SOURCE,
   POPUP_CHOOSE_ACCOUNT as POPUP,
-  TEKS_FORM_OPPORTUNITY as TEKS,
   TOMBOL_FORM_OPPORTUNITY as TOMBOL,
 } from '../labels'
 import FormOpportunity, { PopupChooseAccount } from './FormOpportunity'
@@ -23,7 +22,7 @@ const HTML = renderToStaticMarkup(<FormOpportunity pemilik={PEMILIK} />)
 const SUMBER = readFileSync(join(__dirname, 'FormOpportunity.tsx'), 'utf8').replace(/\r\n/g, '\n')
 
 /** Label medan berurutan, dengan penanda wajib. */
-const label = [...HTML.matchAll(/<(?:label|span) class="field__label">([^<]*)(<span class="field__req">\*<\/span>)?/g)].map((m) => ({
+const label = [...HTML.matchAll(/<(?:label|span) class="field__label"[^>]*>([^<]*)(<span class="field__req">\*<\/span>)?/g)].map((m) => ({
   teks: m[1],
   wajib: m[2] !== undefined,
 }))
@@ -102,6 +101,27 @@ describe('FormOpportunity = gambar Pega (keadaan awal)', () => {
     expect(HTML).toMatch(new RegExp(`<input[^>]*readonly=""[^>]*value="${AWAL.stage}"`))
   })
 
+  it('sesudah Choose: tiga tombol diganti teks Group Business terpilih + roda gigi yang membuka popup lagi (C-10)', () => {
+    const blok = SUMBER.slice(SUMBER.indexOf('{grup ? ('), SUMBER.indexOf(') : (', SUMBER.indexOf('{grup ? (')))
+    expect(blok).toContain('<span>{grup.groupBusiness}</span>')
+    expect(blok).toContain('aria-label={TEKS_GRUP_BISNIS.ganti}')
+    expect(blok).toContain('onClick={() => setCariGrup(true)}')
+    expect(blok).not.toMatch(/TOMBOL\./)
+    expect(SUMBER).toMatch(/onPilih=\{\(b\) => \{[\s\S]{0,120}setGrup\(b\)\s*setCariGrup\(false\)/)
+  })
+
+  it('Class Of Business = kotak isian dengan saran BUSINESS.NOTE untuk group terpilih (C-11)', () => {
+    expect(HTML).toMatch(/<input[^>]*id="nbfacin-class-of-business"[^>]*list="nbfacin-saran-cob"/)
+    expect(HTML).toContain('<datalist id="nbfacin-saran-cob"></datalist>')
+    // Saran dimuat ulang setiap Group Business berganti, jawaban untuk group lama dibuang.
+    expect(SUMBER).toContain('daftarClassOfBusiness(idGrup)')
+    expect(SUMBER).toMatch(/\}, \[idGrup\]\)/)
+    expect(SUMBER).toContain('if (!batal) setSaranCOB(h.baris)')
+    expect(SUMBER).toContain('<option key={s.id} value={s.note} />')
+    // Group berganti = isian Class Of Business lama dikosongkan.
+    expect(SUMBER).toContain("if (b.groupBusinessId !== grup?.groupBusinessId) setClassOfBusiness('')")
+  })
+
   it('tiga tombol Group Business berurutan; Search Group Business hidup, dua lainnya nonaktif (C-2, C-8)', () => {
     const tombol = [...HTML.matchAll(/<button([^>]*)>([^<]*)<\/button>/g)].map((m) => ({ teks: m[2], nonaktif: (m[1] ?? '').includes('disabled') }))
     expect(tombol).toEqual([
@@ -123,13 +143,15 @@ describe('FormOpportunity = gambar Pega (keadaan awal)', () => {
   })
 })
 
-describe('PopupChooseAccount = tangkapan layar Search Group Business (C-8)', () => {
-  const P = renderToStaticMarkup(<PopupChooseAccount onTutup={() => {}} />)
+describe('PopupChooseAccount = tangkapan layar Search Group Business (C-8, C-9)', () => {
+  const P = renderToStaticMarkup(<PopupChooseAccount onTutup={() => {}} onPilih={() => {}} />)
+  const POP = SUMBER
 
-  it('judul ChooseAccount, kotak Search, tombol Search', () => {
+  it('judul ChooseAccount, kotak Search dapat diisi, tombol Search mengirim form', () => {
     expect(P).toContain(POPUP.judul)
     expect(P).toMatch(new RegExp(`class="field__label">${POPUP.cari}<`))
-    expect(P).toMatch(new RegExp(`<button[^>]*disabled=""[^>]*>${POPUP.tombolCari}</button>`))
+    expect(P).toMatch(new RegExp(`<button type="submit"[^>]*>${POPUP.tombolCari}</button>`))
+    expect(P).not.toMatch(/<input[^>]*readonly/)
   })
 
   it('kolom grid berurutan: nomor, Insured ID, Insured Name, Group Business, kolom Choose', () => {
@@ -137,8 +159,22 @@ describe('PopupChooseAccount = tangkapan layar Search Group Business (C-8)', () 
     expect(kolom).toEqual(['', ...POPUP.kolom, ''])
   })
 
-  it('daftar belum punya sumber data = BelumTersedia, bukan tabel kosong', () => {
-    expect(P).toContain(`${TEKS.daftarAccount} tidak dapat dimuat saat ini.`)
+  it('baris: nomor berlanjut antar halaman, tiga kolom data, tombol Choose memanggil onPilih', () => {
+    expect(POP).toContain('<td>{awal + i + 1}</td>')
+    expect(POP).toMatch(/<td>\{b\.insuredId\}<\/td>\s*<td>\{b\.insuredName\}<\/td>\s*<td>\{b\.groupBusiness\}<\/td>/)
+    expect(POP).toContain('onClick={() => onPilih(b)}')
+    expect(POP).toContain('{POPUP.pilih}')
+  })
+
+  it('daftar dimuat saat dibuka dengan kotak kosong; Search memuat ulang dari halaman 1; paging memakai kata cari terakhir', () => {
+    expect(POP).toMatch(/useEffect\(\(\) => \{\s*void muat\('', 1\)/)
+    expect(POP).toContain('onKirim={() => void muat(kotak, 1)}')
+    expect(POP).toContain('onPindah={(h) => void muat(kunciCari.current, h)}')
+  })
+
+  it('jawaban lama dibuang (nomor permintaan); galat ditampilkan apa adanya; tabel tanpa tbody sebelum data datang', () => {
+    expect(POP).toContain('if (nomor === nomorPermintaan.current) setHasil(h)')
     expect(P).not.toContain('<tbody')
+    expect(POP).toContain('<Gagal galat={galat} />')
   })
 })

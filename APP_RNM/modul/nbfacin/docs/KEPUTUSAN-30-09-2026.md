@@ -1019,6 +1019,39 @@ baris, sama dengan posisi induk 1 dari 104.
 | ---: | --- | --- |
 | 67 | Penjaga claimlife `TestKolomTakDibawaHanyaAdaDiKatalog` (lingkup tertulis claimlife, pindaian seluruh `APP_RNM`) menuduh loader NB atas `STS_KONVERSI`/`TGL_KONVERSI` | **"FOKUS KE NB FACIN SAJA"** — claimlife tidak disunting; `go test ./...` aplikasi tetap merah di paket itu sampai pemiliknya memutuskan |
 
+## Keputusan work owner — 2 Oktober 2026, lookup akun tiket 27, diteruskan sesi `nusantarare-0f`
+
+Diteruskan sesi agent `nusantarare-0f` dengan kutipan jawaban work owner **"harus peka besar kecil dong, 15 baris per
+halaman"** atas keputusan agent A69–A73 (`issues/27-lookup-akun-choose-account.md`).
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 73.1 | A70 — peka huruf besar-kecil pencarian `GET /api/nbfacin/account` | **DIUBAH: PEKA huruf.** "Mengandung" tanpa `UPPER` di `INSUREDID`, `INSUREDNAME`, `GROUPBUSINESS` apa adanya; escape `\` `%` `_` tetap |
+| 73.2 | A71 — ukuran halaman | **DIUBAH: 15** (semula 20) |
+| 73.3 | A69 (tiga kolom dicari), A72 (urut `INSUREDID`, `ID`), A73 (`cari` > 255 → 400) | **Belum diputus** — tetap keputusan agent, menunggu konfirmasi |
+
+**Penerapan:** `repository/akun.go` (`PolaCari` tanpa `ToUpper`, `saringAkun` tanpa `UPPER`), `services/layanan.go`
+(`UkuranHalamanAkun = 15`); uji `TestSQLAkun` (menolak `UPPER`/`LOWER`), `TestPolaCari` (`uji` ≠ `UJI`), `TestCariAkun`
+services (halaman 3 → offset 30) dan handlers (`"ukuran":15`). `[dugaan]` peka-huruf `LIKE` bergantung `NLS_COMP` instance
+— `belum terverifikasi`.
+
+## Keputusan agent A74–A78 — tiket 28 Class Of Business, menunggu konfirmasi
+
+Atas brief sesi `nusantarare-0f` dan DDL `BUSINESS.txt` dari work owner (`issues/28-pilihan-class-of-business.md`).
+`GET /api/nbfacin/class-of-business?groupBusinessId=` → `{"baris":[{"id","note"}]}`, semua baris, tanpa paging.
+
+| # | Keputusan | Dasar |
+| --- | --- | --- |
+| A74 | Urut `NOTE`, **bukan** `.ID` DESC seperti RD `BrowseBusiness_RD` | brief sesi 0f; tangkapan layar Pega tampak alfabetis NOTE |
+| A75 | `ID` pemutus seri sesudah `NOTE` | urutan deterministik (pola A72) |
+| A76 | `groupBusinessId` kosong/spasi atau > 4000 byte → 400; nilai tidak dipangkas | brief (kosong); lebar `BUSINESSGROUPID` (pola A73) |
+| A77 | Hanya filter C RD (`.BusinessGroupID = Param.Group`) yang dibangun; filter A/B tidak | brief "semua baris"; di satu-satunya section pemakai di folder `NB FacIn` (`InputLossRecord_Sec`) parameter `ID`/`Note`/`Group` kosong (`RNW Fac In` punya salinan bernama sama, tidak dibandingkan) |
+| A78 | `NOTE IS NOT NULL` | brief sesi 0f; **tidak ada di RD** — selisih dengan Pega, dicatat |
+
+**Ralat atas brief** `[terverifikasi]` `BrowseBusiness_RD.xml`: filter B adalah `.Note Contains Param.Note` dengan
+`pyCaseInsensitive` true — bukan `=`. `[dugaan]` `groupBusinessId` = `T_M_ACCOUNT.GROUPBUSINESSID` akun terpilih — belum
+terverifikasi dari korpus (section form Opportunity pemakai RD tidak ada di folder `NB FacIn`).
+
 ## Yang belum diputuskan
 
 

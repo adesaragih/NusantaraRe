@@ -1,6 +1,7 @@
 # Struktur Tabel — NB FacIn: PETA TABEL WARISAN yang dibaca
 
-Modul ini **tidak membuat satu tabel pun** (tiket 20). Ia hanya **membaca** enam tabel limit akseptasi yang sudah ada
+Modul ini **tidak membuat satu tabel pun** (tiket 20). Ia hanya **membaca** delapan tabel yang sudah ada — enam tabel limit
+akseptasi (tiket 20), tabel akun `T_M_ACCOUNT` (tiket 27), dan tabel bisnis `BUSINESS` (tiket 28). Enam tabel limit akseptasi yang sudah ada
 di `POOLDATA`, dengan nama tabel dan kolom **verbatim**. Berkas ini **peta**, bukan DDL: hanya kolom yang dibaca
 repository (`backend/repository/limit.go`). Ke-enamnya dinyatakan di `MODUL.md` bab "Tabel warisan: dibaca, tidak
 dibuat".
@@ -62,3 +63,28 @@ Kolom lain di DDL (`ID`, `MAX_LIMIT_*`, `BATAS_WAKTU`, `TGL_UPDATE`, `EFFECTIVE_
 | `LIMITBOND_BOTTOM` | NUMBER(*,0) | limit Bond |
 | `LIMITCREDITCL_BOTTOM` | NUMBER(*,0) | limit Kredit CL (juga Trade Credit, A26) |
 | `LIMITCREDITNCL_BOTTOM` | NUMBER(*,0) | limit Kredit NCL |
+
+## T_M_ACCOUNT
+
+Tiket 27 (popup ChooseAccount). Sumber tipe `[terverifikasi]`: DDL `D:\migrasi\RNM\DDL\T_M_ACCOUNT.txt` (ditambahkan work
+owner 02-10-2026); kelima kolom DDL dibaca — tidak ada kolom lain.
+
+| Kolom | Tipe DDL | Dibaca untuk |
+| --- | --- | --- |
+| `ID` | VARCHAR2(255 CHAR) | identitas baris akun |
+| `GROUPBUSINESSID` | VARCHAR2(32 CHAR) | id group business |
+| `GROUPBUSINESS` | VARCHAR2(64 CHAR) | kolom layar Group Business; dicari (A69) |
+| `INSUREDID` | VARCHAR2(255 CHAR) | kolom layar Insured ID; dicari; urutan (A72) |
+| `INSUREDNAME` | VARCHAR2(64 CHAR) | kolom layar Insured Name; dicari |
+
+## BUSINESS
+
+Tiket 28 (pilihan Class Of Business). Sumber tipe `[terverifikasi]`: DDL `D:\migrasi\RNM\DDL\BUSINESS.txt`
+(`POOLDATA.BUSINESS`, 18 kolom). **Hanya tiga kolom di bawah yang dibaca**; 15 kolom lain tidak disentuh dan tidak
+didaftar di sini (tabel warisan — penjaga kolom tidak membandingkannya).
+
+| Kolom | Tipe DDL | Dibaca untuk |
+| --- | --- | --- |
+| `ID` | VARCHAR2(4000 BYTE) | identitas pilihan; pemutus seri urutan (A75) |
+| `NOTE` | VARCHAR2(4000 BYTE) | teks pilihan yang tampil (`pyDisplayProperty .Note` di section `InputLossRecord_Sec`); NULL dibuang (A78); urutan (A74) |
+| `BUSINESSGROUPID` | VARCHAR2(4000 BYTE) | saringan `= :1` (RD filter C `.BusinessGroupID = Param.Group`) |
