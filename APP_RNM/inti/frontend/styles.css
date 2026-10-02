@@ -5927,7 +5927,10 @@ textarea.field__input {
    ====================================================================== */
 .kelola-user {
   --ku-latar: #eef1f6;
-  --ku-latar-tepi: #e2e7ef;
+  --ku-latar-tepi: #cfd7e5;
+  --ku-latar-atas: #f9fafd;
+  --ku-latar-bawah: #e4e9f3;
+  --ku-bayang-akar: 0 2px 6px rgba(30, 45, 90, 0.08), 0 16px 40px -12px rgba(30, 45, 90, 0.24);
   --ku-kartu: #eef1f6;
   --ku-lembut: #e9edf3;
   --ku-lembut-tepi: #dde3ec;
@@ -5981,12 +5984,17 @@ textarea.field__input {
   overflow-x: auto;
   border: 1px solid var(--ku-latar-tepi);
   border-radius: 26px;
-  background: var(--ku-latar);
-  box-shadow: var(--ku-bayang-lembar);
+  /* Gradasi TERLIHAT dan bayangan di SEMUA sisi (02-10-2026: tepi kotak nyaris lebur dengan latar
+     halaman #f4f6fa - alasnya #eef1f6, tepinya pucat, bayangannya hanya di bawah). */
+  background: linear-gradient(180deg, var(--ku-latar-atas) 0%, var(--ku-latar-bawah) 100%);
+  box-shadow: var(--ku-bayang-akar);
 }
 :root[data-theme="dark"] .kelola-user {
   --ku-latar: #1b2130;
-  --ku-latar-tepi: #252c3c;
+  --ku-latar-tepi: #323b50;
+  --ku-latar-atas: #222a3b;
+  --ku-latar-bawah: #161b27;
+  --ku-bayang-akar: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.75);
   --ku-kartu: #1b2130;
   --ku-lembut: #181d2a;
   --ku-lembut-tepi: #242b3a;

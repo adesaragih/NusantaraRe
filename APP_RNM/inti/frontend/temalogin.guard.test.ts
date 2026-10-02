@@ -173,6 +173,11 @@ describe('Kelola User bergaya soft UI', () => {
       ['--ku-aksen-teks', '--ku-isi'],
       ['--ku-bahaya-teks', '--ku-isi'],
       ['--ku-teks-redup', '--ku-lembut'],
+      // Gradasi kotak akar (02-10-2026): teks terbaca di kedua ujungnya.
+      ['--ku-teks', '--ku-latar-atas'],
+      ['--ku-teks', '--ku-latar-bawah'],
+      ['--ku-teks-redup', '--ku-latar-atas'],
+      ['--ku-teks-redup', '--ku-latar-bawah'],
     ] as const
     const gagal = [
       ['terang', terang],
