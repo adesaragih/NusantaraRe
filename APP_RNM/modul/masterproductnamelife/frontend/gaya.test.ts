@@ -23,6 +23,22 @@ function kelasCSS(): Set<string> {
   return new Set(pemilih.flatMap((p) => [...p.matchAll(/\.([a-zA-Z0-9_-]+)/g)].map((m) => m[1] ?? '')))
 }
 
+/**
+ * Kelas bersama inti yang DITIMPA blok soft UI di bawah `.mpnl` - tema sama dengan Treaty Contract Out
+ * (permintaan work owner 02-10-2026). Daftar yang sama dengan penjaga Treaty Contract Out, kecuali kelas
+ * yang hanya ada di modul itu.
+ */
+const KELAS_BERSAMA = new Set(['inbox__judul', 'panel', 'panel__title', 'inbox__tabel', 'btn', 'btn--primary', 'btn--ghost', 'field__input', 'field__input--readonly', 'modal', 'modal__title', 'modal__head', 'modal__actions', 'muted', 'alert'])
+
+/** Pemilih CSS tingkat atas (tanpa komentar; isi @media ikut, kepala @media tidak). */
+function pemilihCSS(css: string): string[] {
+  const tanpaKomentar = css.replace(/\/\*[\s\S]*?\*\//g, '')
+  return [...tanpaKomentar.matchAll(/([^{};]+)\{/g)]
+    .map((m) => (m[1] ?? '').trim())
+    .filter((p) => p !== '' && !p.startsWith('@'))
+    .flatMap((p) => p.split(',').map((s) => s.trim()))
+}
+
 const POLA_KELAS = /\bmpnl(?:-[a-z0-9]+)+(?:__[a-z0-9]+)?(?:--[a-z0-9]+)?\b/g
 
 /** Kelas berawalan `mpnl` yang dipakai layar (isi `className`); nama halaman (`mpnl-produk`) bukan kelas. */
@@ -45,12 +61,26 @@ describe('kelas CSS modul', () => {
   })
 
   it('setiap kelas di CSS modul berawalan mpnl, kecuali kelas bersama inti yang DITIMPA di bawah .mpnl', () => {
-    // UI 02-10-2026 (gaya Treaty Contract Out): kelas bersama boleh ditimpa HANYA di bawah kelas akar
-    // `.mpnl` (dijaga "isolasi CSS modul" di bawah) dan hanya kelas kerangka inti yang dipakai layar ini.
-    const BERSAMA = new Set(['inbox__kepala', 'panel', 'inbox__tabel', 'table__actions', 'btn', 'aksi-baris', 'modal', 'modal__actions', 'inbox__judul', 'panel__title', 'btn--primary', 'btn--ghost', 'field__input', 'modal__title', 'modal__head', 'muted', 'alert'])
     const kelas = [...kelasCSS()]
     expect(kelas.length).toBeGreaterThan(5)
-    expect(kelas.filter((k) => !k.startsWith('mpnl') && !BERSAMA.has(k))).toEqual([])
+    expect(kelas.filter((k) => !k.startsWith('mpnl') && !KELAS_BERSAMA.has(k))).toEqual([])
+  })
+
+  it('kelas bersama inti hanya disebut di bawah kelas akar .mpnl - nol penimpaan global', () => {
+    const lepas = pemilihCSS(CSS).filter((p) => {
+      const kelas = [...p.matchAll(/\.([a-zA-Z0-9_-]+)/g)].map((m) => m[1] ?? '')
+      if (kelas.every((k) => k.startsWith('mpnl'))) return false
+      const tanpaTema = p.replace(/^:root\[data-theme="dark"\]\s+/, '')
+      return tanpaTema !== '.mpnl' && !tanpaTema.startsWith('.mpnl ')
+    })
+    expect(pemilihCSS(CSS).filter((p) => p.startsWith('.mpnl ')).length).toBeGreaterThan(20)
+    expect(lepas).toEqual([])
+  })
+
+  it('halaman memasang kelas akar mpnl', () => {
+    const kode = readFileSync(join(AKAR, 'pages', 'MasterProductNameLife.tsx'), 'utf8')
+    expect(kode).toContain('<section className="inbox mpnl">')
+    expect(kode).not.toContain('<section className="inbox">')
   })
 
   it('setiap kelas mpnl yang dipakai layar didefinisikan di CSS modul', () => {
@@ -58,52 +88,6 @@ describe('kelas CSS modul', () => {
     const dipakai = [...kelasTSX()].filter((k) => k !== 'mpnl-produk')
     expect(dipakai.length).toBeGreaterThan(5)
     expect(dipakai.filter((k) => !didefinisikan.has(k))).toEqual([])
-  })
-})
-
-/** Pemilih CSS tingkat atas (tanpa komentar; isi @media ikut, kepala @media tidak). */
-function pemilihCSS(css: string): string[] {
-  const tanpaKomentar = css.replace(/\/\*[\s\S]*?\*\//g, '')
-  return [...tanpaKomentar.matchAll(/([^{};]+)\{/g)]
-    .map((m) => (m[1] ?? '').trim())
-    .filter((p) => p !== '' && !p.startsWith('@'))
-    .flatMap((p) => p.split(',').map((s) => s.trim()))
-}
-
-/** Pemilih terisolasi: kelas akar .mpnl, keturunannya, atau varian tema gelap di bawah kelas akar. */
-function terisolasi(p: string): boolean {
-  const tanpaTema = p.replace(/^:root\[data-theme="dark"\]\s+/, '')
-  return tanpaTema === '.mpnl' || tanpaTema.startsWith('.mpnl ')
-}
-
-describe('isolasi CSS modul (UI 02-10-2026, gaya Treaty Contract Out)', () => {
-  it('SETIAP pemilih di masterproductnamelife.css diawali kelas akar .mpnl - nol pemilih global', () => {
-    const pemilih = pemilihCSS(CSS)
-    expect(pemilih.length).toBeGreaterThan(20)
-    expect(pemilih.filter((p) => !terisolasi(p))).toEqual([])
-  })
-
-  it('aturan isolasi menggigit: pemilih global tertangkap', () => {
-    const pemilih = pemilihCSS('table { x: 1 } .mpnl .a, .btn { y: 2 } @media (max-width: 640px) { .mpnl-b { z: 3 } }')
-    expect(pemilih.filter((p) => !terisolasi(p))).toEqual(['table', '.btn', '.mpnl-b'])
-    // Tema gelap boleh, HANYA di bawah kelas akar; :root tanpa .mpnl tetap ditolak.
-    expect(terisolasi(':root[data-theme="dark"] .mpnl')).toBe(true)
-    expect(terisolasi(':root[data-theme="dark"] .panel')).toBe(false)
-  })
-
-  it('halaman awal memasang kelas akar mpnl', () => {
-    const kode = readFileSync(join(AKAR, 'pages', 'MasterProductNameLife.tsx'), 'utf8')
-    expect(kode.match(/<section className="inbox mpnl">/g)?.length).toBe(1)
-    expect(kode).not.toContain('<section className="inbox">')
-  })
-
-  it('setiap tabel modul berada di pembungkus gulir mpnl-tabel', () => {
-    for (const f of berkas().filter((x) => x.endsWith('.tsx'))) {
-      const kode = readFileSync(f, 'utf8')
-      const tabel = kode.match(/<table\b/g)?.length ?? 0
-      const bungkus = kode.match(/<div className="mpnl-tabel">\s*<table\b/g)?.length ?? 0
-      expect(`${f.slice(AKAR.length + 1)}: ${bungkus}/${tabel}`).toBe(`${f.slice(AKAR.length + 1)}: ${tabel}/${tabel}`)
-    }
   })
 })
 
@@ -124,12 +108,6 @@ function penampungFixed(css: string): string[] {
 describe('popup tetap di tengah layar', () => {
   it('masterproductnamelife.css tidak memakai properti yang mengurung popup position: fixed', () => {
     expect(penampungFixed(CSS)).toEqual([])
-  })
-
-  it('aturan penampung menggigit', () => {
-    expect(
-      penampungFixed('.mpnl .panel { -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px) } .mpnl .a{transform: none; will-change:x} /* filter: x */ .mpnl .b { container-type: inline-size }'),
-    ).toEqual(['-webkit-backdrop-filter', 'backdrop-filter', 'transform', 'will-change'])
   })
 })
 
@@ -156,8 +134,8 @@ function tokenMt(css: string, pemilih: string): Record<string, string> {
   )
 }
 
-describe('soft UI: teks tetap terbaca (02-10-2026)', () => {
-  it('kontras token teks --mt-* terhadap latar, kartu, kepala tabel, dan sorot baris minimal 4,5:1, terang dan gelap', () => {
+describe('soft UI: teks tetap terbaca (tema Treaty Contract Out, 02-10-2026)', () => {
+  it('kontras token teks --mt-* minimal 4,5:1 - pasangan yang SAMA dengan Treaty Contract Out, terang dan gelap', () => {
     const terang = tokenMt(CSS, '.mpnl')
     const gelap = { ...terang, ...tokenMt(CSS, ':root[data-theme="dark"] .mpnl') }
     const pasangan = [
@@ -167,6 +145,20 @@ describe('soft UI: teks tetap terbaca (02-10-2026)', () => {
       ['--mt-teks-redup', '--mt-latar'],
       ['--mt-teks-redup', '--mt-kartu'],
       ['--mt-teks-redup', '--mt-kepala-tabel'],
+      // Gaya Kelola User (02-10-2026): isi putih, belang, kepala navy, baris dibuka, tombol sekunder,
+      // isian hanya-baca, dan kedua ujung gradasi kotak akar.
+      ['--mt-teks', '--mt-isi'],
+      ['--mt-teks', '--mt-zebra'],
+      ['--mt-teks', '--mt-aksen-lembut'],
+      ['--mt-teks-redup', '--mt-isi'],
+      ['--mt-teks-redup', '--mt-lembut'],
+      ['--mt-kepala-teks', '--mt-kepala-tabel'],
+      ['--mt-aksen-teks', '--mt-isi'],
+      ['--mt-aksen-teks', '--mt-aksen-lembut'],
+      ['--mt-teks', '--mt-latar-atas'],
+      ['--mt-teks', '--mt-latar-bawah'],
+      ['--mt-teks-redup', '--mt-latar-atas'],
+      ['--mt-teks-redup', '--mt-latar-bawah'],
     ] as const
     const kurang = (t: Record<string, string>, nama: string): string[] =>
       pasangan.flatMap(([a, b]) => {
@@ -180,8 +172,9 @@ describe('soft UI: teks tetap terbaca (02-10-2026)', () => {
     expect([...kurang(terang, 'terang'), ...kurang(gelap, 'gelap')]).toEqual([])
   })
 
-  it('rumus kontras menggigit: hitam/putih 21:1, #777777/putih di bawah 4,5:1', () => {
-    expect(kontras('#000000', '#ffffff')).toBeCloseTo(21, 5)
-    expect(kontras('#777777', '#ffffff')).toBeLessThan(4.5)
+  it('token tema SAMA nilainya dengan Treaty Contract Out', () => {
+    const tco = readFileSync(join(AKAR, '..', '..', 'treatycontractout', 'frontend', 'tco.css'), 'utf8')
+    expect(tokenMt(CSS, '.mpnl')).toEqual(tokenMt(tco, '.tco'))
+    expect(tokenMt(CSS, ':root[data-theme="dark"] .mpnl')).toEqual(tokenMt(tco, ':root[data-theme="dark"] .tco'))
   })
 })

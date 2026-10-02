@@ -1,0 +1,22 @@
+/*
+ * Gaya modul Komite Claim Life.
+ *
+ * ⛔ TERISOLASI: SETIAP pemilih diawali kelas akar `.komiteclaimlife` (dipasang `rute.tsx` pada pembungkus
+ * seluruh halaman modul, `display: contents` sehingga tata letak tidak berubah). Aturan di sini DULU
+ * menumpang di `inti/frontend/styles.css`; dipindah 02-10-2026 atas permintaan work owner ("untuk css
+ * style per modul tidak ada lagi menumpang per inti"), isinya tidak berubah selain awalan akar. Dijaga
+ * `gaya.test.ts`.
+ */
+
+/* Pembungkus akar: tanpa kotak sendiri, jadi halaman modul tetap anak tata letak kerangka. */
+.komiteclaimlife {
+  display: contents;
+}
+
+/* Kalimat penjelas di bawah judul, seperti `.page-head p` template. */
+.komiteclaimlife .inbox__aturan {
+  flex-basis: 100%;
+  order: 1;
+  margin: -6px 0 0;
+  color: var(--text-2);
+}

@@ -116,34 +116,33 @@ func TestSaringanNonLifeTCOVerbatimTerhadapKorpus(t *testing.T) {
 	}
 }
 
-// Anak Treaty Limit [keputusan work owner 30-09-2026]: dua belas jenis porsi
-// (awalan yang RD induk singkirkan) + ReinsType induknya sendiri, Flag active.
+// Pilihan ReinsType anak [keputusan work owner 30-09-2026]: dua belas jenis
+// porsi (awalan yang RD induk singkirkan), Flag active. ⛔ ReinsType induk
+// TIDAK ikut [keputusan work owner 02-10-2026] - untuk semua grid anak.
 func TestSaringanAnakTreatyLimitTCOTabelKebenaran(t *testing.T) {
 	kasus := []struct {
-		id, flag, induk string
-		mau             bool
+		id, flag string
+		mau      bool
 	}{
-		{"10004", "active", "10260", true},    // QS (R/I)
-		{"10028", "active", "10260", true},    // QS (OR)
-		{"10248", "active", "10260", true},    // SPL (OR)
-		{"10217", "active", "10260", true},    // porsi terakhir
-		{"100041", "active", "10260", true},   // StartsWith - pelengkap NotStartsWith induk
-		{"10260", "active", "10260", true},    // induknya sendiri
-		{"10007", "active", "10007", true},    // ORS -> ORS
-		{"10259", "active", "10260", false},   // jenis induk LAIN
-		{"10004", "inactive", "10260", false}, // Flag bukan active
-		{"10260", "inactive", "10260", false}, // induk nonaktif pun tidak
-		{"10259", "active", "", false},        // tanpa induk: porsi saja
+		{"10004", "active", true},    // QS (R/I)
+		{"10028", "active", true},    // QS (OR)
+		{"10248", "active", true},    // SPL (OR)
+		{"10217", "active", true},    // porsi terakhir
+		{"100041", "active", true},   // StartsWith - pelengkap NotStartsWith induk
+		{"10260", "active", false},   // jenis induk - tidak pernah jadi pilihan anak
+		{"10007", "active", false},   // ORS - jenis induk
+		{"10259", "active", false},   // jenis induk lain
+		{"10004", "inactive", false}, // Flag bukan active
 	}
 	for _, k := range kasus {
-		if dapat := LolosSaringanAnakTreatyLimitTCO(k.id, k.flag, k.induk); dapat != k.mau {
-			t.Errorf("(%q,%q,induk %q) = %v, mau %v", k.id, k.flag, k.induk, dapat, k.mau)
+		if dapat := LolosSaringanAnakTreatyLimitTCO(k.id, k.flag); dapat != k.mau {
+			t.Errorf("(%q,%q) = %v, mau %v", k.id, k.flag, dapat, k.mau)
 		}
 	}
 	// Pelengkap tepat: di antara baris Flag active, satu ID lolos saringan
 	// induk (tipe 1/2/3) ATAU berawalan porsi - tidak pernah keduanya.
 	for _, id := range []string{"10003", "10004", "10028", "10260", "100041"} {
-		if LolosSaringanNonLifeTCO(id, "active", "1") && LolosSaringanAnakTreatyLimitTCO(id, "active", "") {
+		if LolosSaringanNonLifeTCO(id, "active", "1") && LolosSaringanAnakTreatyLimitTCO(id, "active") {
 			t.Errorf("%s lolos kedua saringan - porsi harus pelengkap daftar induk", id)
 		}
 	}
@@ -155,7 +154,7 @@ func TestSQLJenisReasuransiAnakTreatyLimitTCO(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, mau := range []string{"SELECT ID, NOTE, TYPE FROM S.REINSURANCETYPE",
-		"FLAG = :1", "(ID = :2", "OR ID LIKE :3", "OR ID LIKE :14)", "ORDER BY NOTE ASC, ID ASC"} {
+		"FLAG = :1", "AND (ID LIKE :2", "OR ID LIKE :13)", "ORDER BY NOTE ASC, ID ASC"} {
 		if !strings.Contains(q, mau) {
 			t.Errorf("SQL tanpa %q:\n%s", mau, q)
 		}
@@ -163,8 +162,11 @@ func TestSQLJenisReasuransiAnakTreatyLimitTCO(t *testing.T) {
 	if strings.Count(q, " LIKE ") != 12 || strings.Contains(q, "NOT LIKE") || strings.Contains(q, "TYPE IN") {
 		t.Errorf("mau 12 LIKE, tanpa NOT LIKE dan tanpa saringan TYPE:\n%s", q)
 	}
-	arg := argJenisReasuransiAnakTreatyLimitTCO("10260")
-	if len(arg) != 14 || arg[0] != "active" || arg[1] != "10260" || arg[2] != "10004%" || arg[13] != "10217%" {
+	if strings.Contains(q, "ID = :") {
+		t.Errorf("SQL masih memasukkan ReinsType induk:\n%s", q)
+	}
+	arg := argJenisReasuransiAnakTreatyLimitTCO()
+	if len(arg) != 13 || arg[0] != "active" || arg[1] != "10004%" || arg[12] != "10217%" {
 		t.Errorf("argumen tidak urut: %v", arg)
 	}
 	for _, id := range BlacklistJenisReasuransiNonLife {

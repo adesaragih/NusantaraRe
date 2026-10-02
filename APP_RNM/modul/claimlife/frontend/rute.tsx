@@ -9,13 +9,15 @@ import InboxClaimLife from './pages/InboxClaimLife'
 import KlaimLife from './pages/KlaimLife'
 import OutstandingClaimLife from './pages/OutstandingClaimLife'
 import RegisterKlaim from './pages/RegisterKlaim'
+import './claimlife.css'
 
 export function RuteClaimLife({ halaman, masuk, onPindah }: PropsRute<HalamanClaimLife>) {
   // Kasus yang sedang dibuka. Kosong berarti belum ada yang dipilih.
   const [kasus, setKasus] = useState('')
 
   return (
-    <>
+    // Akar gaya modul: semua aturan `claimlife.css` diawali `.claimlife` (`display: contents`).
+    <div className="claimlife">
       {halaman === 'inbox' && (
         <InboxClaimLife
           peran={masuk.peran}
@@ -44,7 +46,7 @@ export function RuteClaimLife({ halaman, masuk, onPindah }: PropsRute<HalamanCla
       )}
       {halaman === 'register' && <RegisterKlaim />}
       {halaman === 'detail' && <KlaimLife />}
-    </>
+    </div>
   )
 }
 

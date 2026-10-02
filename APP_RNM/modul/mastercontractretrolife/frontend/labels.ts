@@ -24,7 +24,8 @@ export const UMUM_MCRL = {
    * `[tidak ada di korpus]` - keterangan ikon `pxIconCancel` kerangka harness popup
    * (`Harness/InboxRetroLimitReinsurers.xml` b694, `InboxRetroLifeReinsurersList.xml` b692,
    * `InboxSecurityReinsurerLife.xml` b697, `InboxBusinessLifeReinsurers.xml` b691): kontrol bawaan
-   * Pega tanpa teks yang menutup harness popup.
+   * Pega tanpa teks yang menutup harness popup. Sejak 02-10-2026 tampil sebagai tombol TEKS `Close`
+   * seperti Treaty Contract Out - penyimpangan sadar tampilan, keputusan work owner.
    */
   tutup: 'Close',
   /** `[tidak ada di korpus]` - grid tanpa baris (ADR-U-0027: kosong dinyatakan). */

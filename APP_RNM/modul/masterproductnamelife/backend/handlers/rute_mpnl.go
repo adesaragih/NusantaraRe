@@ -159,10 +159,9 @@ func jawabGalat(w http.ResponseWriter, err error) bool {
 		// 503: master rujukan tidak terbaca - pesannya MENYEBUT objeknya, sebab Oracle hanya di log.
 		log.Printf("master product name life: %v", err)
 		galat.Tulis(w, http.StatusServiceUnavailable, services.Pesan(err))
-	case errors.Is(err, services.ErrIDDariKlien), errors.Is(err, services.ErrBarisAsliRusak),
-		errors.Is(err, services.ErrSalinanPadaUbah):
+	case errors.Is(err, services.ErrIDDariKlien), errors.Is(err, services.ErrSalinanPadaUbah):
 		galat.Tulis(w, http.StatusBadRequest, services.Pesan(err))
-	case errors.Is(err, services.ErrMasukanTidakSah):
+	case errors.Is(err, services.ErrMasukanTidakSah), errors.Is(err, services.ErrNilaiTidakMuat):
 		// 422: JSON-nya sah, isinya ditolak - kalimat menyebut label medan VERBATIM; semua penolakan sekaligus.
 		galat.Tulis(w, http.StatusUnprocessableEntity, services.Pesan(err))
 	case errors.Is(err, services.ErrIdentitasGanda), errors.Is(err, services.ErrJSONRusak),

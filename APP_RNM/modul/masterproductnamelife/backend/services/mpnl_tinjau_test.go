@@ -17,42 +17,32 @@ import (
 	"nusantarare/modul/masterproductnamelife/backend/services"
 )
 
-// #1 - baris inward ber-ID = produk tetapi milik produk lain tidak dibaca, tidak ditimpa.
-func TestInwardMilikProdukLainTidakDibacaTidakDitimpa(t *testing.T) {
-	l, g := layananMaster()
-	g.Umum["100005"] = `{"ID":"100005"}`
-	g.Umum["100003"] = `{"ID":"100003"}`
-	milik := `{"ID":"100005","PRODUCTID":"100003","INSURED":"UJI MILIK 100003"}`
-	g.Inward["100005"] = milik
-	p, err := l.AmbilProduk(context.Background(), pelakuUji, "100005")
-	if err != nil || p.Inward.Insured != "" {
-		t.Fatalf("produk 100005 tidak menampilkan inward produk 100003: %+v %v", p.Inward, err)
-	}
-	m := produkMasuk()
-	m.ID = "100005"
-	if _, err := l.SimpanProduk(context.Background(), pelakuUji, m, false); !errors.Is(err, services.ErrIdentitasBentrok) ||
-		!strings.Contains(err.Error(), "100003") {
-		t.Errorf("menyisipkan inward ber-ID sama ditolak terang: %v", err)
-	}
-	if g.Inward["100005"] != milik {
-		t.Error("baris inward produk 100003 tidak tersentuh")
-	}
-}
+// #1 (dipindah 02-10-2026) - baris inward JSON milik produk lain kini urusan ALAT PINDAH: lihat repository
+// `TestRekonsiliasiInwardMilikProdukLainTidakBersilang`. Di tabel flat sisi inward ada di baris induk produknya sendiri.
 
-// #3 - `Copy` menyalin halaman utuh, termasuk kunci yang tidak dikelola layar.
-func TestCopyMempertahankanKunciTakDikelola(t *testing.T) {
+// #3 (diganti 02-10-2026) - `Copy` (`CopyProduct` menyalin halaman utuh) menyalin baris induk DAN seluruh anak produk
+// asal: daftar milik server (komentar, outward) dari baris tersimpan, daftar form dari kiriman klien; kunci JSON tak
+// dikelola tidak ada lagi (D2).
+func TestCopyMenyalinIndukDanSeluruhAnak(t *testing.T) {
 	l, g := layananSalin()
-	g.Umum["100007"] = strings.Replace(jsonAsal, `"ID":"100007",`, `"ID":"100007","UJI_KUNCI_LAMA":"x",`, 1)
-	g.Inward["100007"] = `{"ID":"100007","PRODUCTID":"100007","UJI_INWARD_LAMA":"y"}`
 	m := produkMasuk()
 	m.SalinanDari = "100007"
+	m.DocumentClaim = []models.BarisDokumen{{Document: "UJI DOK"}}
+	m.UnderwritingLimit = []models.BarisUWLimit{{MinInsured: "1", MaxInsured: "2", MinAge: "18", MaxAge: "65"}}
+	m.CommentList = []models.BarisKomentar{{Suggest: "DIKARANG KLIEN"}}
+	m.OutwardList = []models.BarisOutward{{ReinsTypeID: "KLIEN"}}
 	p, err := l.SimpanProduk(context.Background(), pelakuUji, m, true)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(g.Umum[p.ID], `"UJI_KUNCI_LAMA":"x"`) || !strings.Contains(g.Inward[p.ID], `"UJI_INWARD_LAMA":"y"`) ||
-		!strings.Contains(g.Inward[p.ID], `"PRODUCTID":"100044"`) {
-		t.Errorf("kunci tak dikelola produk asal ikut tersalin:\n%s\n%s", g.Umum[p.ID], g.Inward[p.ID])
+	s := g.Produk[p.ID]
+	if s.Inward.ProductID != p.ID || len(s.DocumentClaim) != 1 || len(s.UnderwritingLimit) != 1 ||
+		s.UnderwritingLimit[0].MaxAge != "65" {
+		t.Errorf("induk + anak form tersimpan di salinan: %+v", s)
+	}
+	if len(s.CommentList) != 2 || s.CommentList[0].Suggest != "UJI KOMENTAR ASAL" || len(s.OutwardList) != 1 ||
+		s.OutwardList[0].ReinsTypeID != "10200" {
+		t.Errorf("COMMENT dan OUTWARD produk asal tersalin, kiriman klien diabaikan: %+v %+v", s.CommentList, s.OutwardList)
 	}
 }
 
@@ -61,8 +51,8 @@ func TestProteksiPlanHanyaBilaDaftarPlanBerubah(t *testing.T) {
 	l, g := layananMaster()
 	g.Plan = []models.JenisPlan{{ID: "P1", CoverName: "UJI COVER", Business: "UJI BIZ", Benefit: "UJI MANFAAT"},
 		{ID: "P2", CoverName: "UJI COVER DUA", Business: "UJI BIZ 2", Benefit: "UJI MANFAAT 2"}}
-	g.Umum["100007"] = `{"ID":"100007","PlanList":[{"Plan":"UJI COVER","PlanID":"P1","Name":"UJI BIZ","Benefit":"UJI MANFAAT",` +
-		`"RIRATE":"","RIRATEID":""}]}`
+	g.IsiJSON("100007", `{"ID":"100007","PlanList":[{"Plan":"UJI COVER","PlanID":"P1","Name":"UJI BIZ","Benefit":"UJI MANFAAT",`+
+		`"RIRATE":"","RIRATEID":""}]}`, "")
 	simpan := func(m models.Produk) error {
 		m.ID = "100007"
 		_, err := l.SimpanProduk(context.Background(), pelakuUji, m, false)
@@ -90,13 +80,15 @@ func TestPlanSamaSesudahDiseragamkanMaster(t *testing.T) {
 	}
 }
 
-// #15 - `asli` hanya boleh dikembalikan dari baris tersimpan, tidak dikarang.
+// #15 - `asli` hanya boleh dikembalikan dari baris tersimpan, tidak dikarang. Sejak tabel flat (D2, 02-10-2026) baris
+// tersimpan tidak membawa kunci JSON lama sama sekali: `asli` tersimpan selalu kosong, setiap `asli` berisi dari klien
+// ditolak.
 func TestAsliBarisHarusDariBarisTersimpan(t *testing.T) {
 	l, g := layananMaster()
-	g.Umum["100007"] = `{"ID":"100007","LienClause":[{"Usia":"60","Manfaat":"50","UJI_LAMA":"1"}]}`
+	g.IsiJSON("100007", `{"ID":"100007","LienClause":[{"Usia":"60","Manfaat":"50","UJI_LAMA":"1"}]}`, "")
 	asal, err := l.AmbilProduk(context.Background(), pelakuUji, "100007")
-	if err != nil || len(asal.LienClause) != 1 || asal.LienClause[0].Asli == "" {
-		t.Fatalf("asli terbaca: %+v %v", asal.LienClause, err)
+	if err != nil || len(asal.LienClause) != 1 || asal.LienClause[0].Asli != "" {
+		t.Fatalf("kunci baris JSON lama tidak pindah ke tabel flat: %+v %v", asal.LienClause, err)
 	}
 	m := produkMasuk()
 	m.ID = "100007"
@@ -110,15 +102,15 @@ func TestAsliBarisHarusDariBarisTersimpan(t *testing.T) {
 	if _, err := l.SimpanProduk(context.Background(), pelakuUji, m, false); err != nil {
 		t.Fatalf("baris tersimpan yang diubah membawa asli-nya: %v", err)
 	}
-	if !strings.Contains(g.Umum["100007"], `"UJI_LAMA":"1"`) || strings.Contains(g.Umum["100007"], "UJI-SUSUP") {
-		t.Errorf("JSONDATA: %s", g.Umum["100007"])
+	if s := g.Produk["100007"].LienClause; len(s) != 1 || s[0].Manfaat != "40" || s[0].Asli != "" {
+		t.Errorf("baris LIEN tersimpan tanpa kunci karangan: %+v", s)
 	}
 }
 
 // #7 - satu kirim ulang = satu percobaan.
 func TestUlangiSatuKaliSatuPercobaan(t *testing.T) {
 	l, g := layananMaster()
-	g.Umum["100007"] = `{"ID":"100007"}`
+	g.IsiJSON("100007", `{"ID":"100007"}`, "")
 	g.AppName = "UJI-APP"
 	b := baruBerkasPalsu()
 	l = l.DenganJam(func() time.Time { return jamLampiran }).DenganPenyimpanan(b)

@@ -78,7 +78,8 @@ describe('simpan (paket 3-9)', () => {
 
   it('galat server tampil dengan kalimatnya (amplop {galat})', async () => {
     rekamFetch({ galat: 'Product Name Empty; Ceding Empty' }, 422)
-    await expect(simpanProduk(produkBaru())).rejects.toThrow()
+    // Audit 02-10-2026: kalimatnya sendiri yang sampai ke layar, bukan sekadar "ada galat".
+    await expect(simpanProduk(produkBaru())).rejects.toThrow('Product Name Empty; Ceding Empty')
   })
 })
 

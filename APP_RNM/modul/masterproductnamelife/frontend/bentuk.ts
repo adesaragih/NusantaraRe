@@ -104,6 +104,21 @@ export function tampilViewOffice(ekstensi: string): boolean {
   return ['xls', 'xlsx', 'doc', 'docx', 'ppt', 'pptx'].includes(ekstensi)
 }
 
+/**
+ * `.Date` grid History b62561 (`pxDateTime`): stempel `@CurrentDateTime()` Pega `YYYYMMDDTHHMMSS.SSS GMT`
+ * tampil sebagai tanggal-jam LOKAL `DD-MM-YYYY HH:mm` (format tanggal seragam NFR-14 ditambah jam); teks
+ * lain tampil apa adanya. `selisihMenit` = zona lokal terhadap GMT (bawaan: zona peramban). Audit 02-10-2026:
+ * dulu stempel mentah yang tampil.
+ */
+export function waktuPega(teks: string, selisihMenit = -new Date().getTimezoneOffset()): string {
+  const m = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(?:\.\d+)?\s*GMT$/.exec(teks.trim())
+  if (!m) return teks
+  const n = (i: number) => Number(m[i] ?? '')
+  const d = new Date(Date.UTC(n(1), n(2) - 1, n(3), n(4), n(5), n(6)) + selisihMenit * 60_000)
+  const p = (x: number) => String(x).padStart(2, '0')
+  return `${p(d.getUTCDate())}-${p(d.getUTCMonth() + 1)}-${d.getUTCFullYear()} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`
+}
+
 /** `View Rate` b34113 - visibilitas `OTHER .RIRATE!=''`. */
 export function tampilViewRate(riRate: string): boolean {
   return riRate !== ''

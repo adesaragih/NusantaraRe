@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -183,5 +184,42 @@ func TestIsiMedanKlausulTCO(t *testing.T) {
 	}
 	if err := IsiMedanKlausulTCO(a, &k, map[string]string{"Pct": "1.000,5"}); !errors.Is(err, ErrPersenBukanDesimal) {
 		t.Errorf("desimal salah: %v", err)
+	}
+}
+
+// TestSemuaAnakMemakaiPilihanAnakTreatyLimit - ketujuh grid `Show Child`
+// memilih ReinsType dari daftar anak Treaty Limit (porsi + induknya); induk
+// tidak [keputusan work owner 02-10-2026].
+func TestSemuaAnakMemakaiPilihanAnakTreatyLimit(t *testing.T) {
+	var anak []string
+	for _, a := range AturanKlausulTCO {
+		mau := ""
+		if a.Anak {
+			mau = PilihanReinsAnakTreatyLimit
+			anak = append(anak, a.Jenis)
+		}
+		if a.PilihanReins != mau {
+			t.Errorf("%s: PilihanReins %q, mau %q", a.Jenis, a.PilihanReins, mau)
+		}
+	}
+	sort.Strings(anak)
+	if got := strings.Join(anak, ","); got != "CashLossLimitList,ClaimCoorpChild,EpiList,ExGratiaChildList,FacInList,PLAList,TreatyLimitChild" {
+		t.Errorf("aturan anak %s, mau ketujuh grid Show Child", got)
+	}
+}
+
+// TestSatuBarisHanyaTigaJenis - Minimum LOL, Max Coins Panel, Minimum LOL MB
+// (`GridTreatyArrangementMinLOL.xml` b2232, `…MaxCoinsPanel.xml` b2212,
+// `…MInLOLMB.xml` b2262).
+func TestSatuBarisHanyaTigaJenis(t *testing.T) {
+	var satu []string
+	for _, a := range AturanKlausulTCO {
+		if a.SatuBaris {
+			satu = append(satu, a.Jenis+"/"+a.DescID)
+		}
+	}
+	sort.Strings(satu)
+	if got := strings.Join(satu, ","); got != "MaxCoinsPanel/10016,MinLOL/10015,MinLOLMB/10018" {
+		t.Errorf("jenis satu baris: %s", got)
 	}
 }

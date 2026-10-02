@@ -46,13 +46,11 @@ export async function ambilJenisReasuransiTreaty(): Promise<DaftarJenisReasurans
 export const PILIHAN_REINS_ANAK_TREATY_LIMIT = 'anak-treaty-limit'
 
 /**
- * Pilihan ReinsType baris anak Treaty Limit (`Show Child`) di bawah induk
- * `induk`: dua belas jenis porsi + induknya [keputusan work owner 30-09-2026].
+ * Pilihan ReinsType baris anak SEMUA grid `Show Child`: dua belas jenis porsi, TANPA induk
+ * [keputusan work owner 30-09-2026, dikoreksi 02-10-2026].
  */
-export async function ambilJenisReasuransiAnakTreatyLimit(induk: string): Promise<DaftarJenisReasuransiTreaty> {
-  return minta<DaftarJenisReasuransiTreaty>('/api/treaty-contract-out/jenis-reasuransi/anak-treaty-limit', {
-    kueri: { induk },
-  })
+export async function ambilJenisReasuransiAnakTreatyLimit(): Promise<DaftarJenisReasuransiTreaty> {
+  return minta<DaftarJenisReasuransiTreaty>('/api/treaty-contract-out/jenis-reasuransi/anak-treaty-limit')
 }
 
 // ---------------------------------------------------------------------------
@@ -482,6 +480,8 @@ export interface AturanKlausul {
   sumber: string
   /** Sumber pilihan ReinsTypeID: '' = daftar induk tiket 02; `PILIHAN_REINS_ANAK_TREATY_LIMIT`. */
   pilihanReins?: string
+  /** Satu baris per tahun (Minimum LOL, Max Coins Panel, Minimum LOL MB) — `Add` hilang begitu ada baris. */
+  satuBaris?: boolean
 }
 
 /** Satu baris grid jenis (`BrowseTreatyDesc_RD`) beserta aturannya. */

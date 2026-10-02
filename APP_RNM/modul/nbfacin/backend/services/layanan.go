@@ -1,0 +1,165 @@
+// Package services memuat layanan modul NB Fac In yang dipanggil handlers (tiket
+// 20). Perilakunya tetap mesin yang sudah diport - premium, acceptance, rules -
+// lewat penyedia kontrak `kontrakfacin`; paket ini hanya menyambung repository
+// dan memilah galat.
+package services
+
+import (
+	"context"
+	"errors"
+	"fmt"
+
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/kontrak"
+	"nusantarare/inti/backend/uang"
+	"nusantarare/modul/nbfacin/backend/models"
+	"nusantarare/modul/nbfacin/backend/repository"
+	"nusantarare/modul/nbfacin/backend/services/acceptance"
+	"nusantarare/modul/nbfacin/backend/services/kontrakfacin"
+	"nusantarare/modul/nbfacin/backend/services/premium"
+	"nusantarare/modul/nbfacin/backend/services/rules"
+)
+
+// ErrTidakDapatDiproses - masukan atau kasus yang mesin tolak (angka tak terbaca,
+// rumus belum diport, keadaan tangga tak pasti, predikat belum diport). Handler
+// menjawabnya 422. ErrTanpaDatabase dan ErrTabelLimitTakTersedia 503; galat lain
+// (repository, bug program) 500.
+var ErrTidakDapatDiproses = errors.New("services: masukan tidak dapat diproses mesin NB")
+
+// ErrTanpaDatabase - layanan dirakit tanpa basis data: tangga akseptasi butuh tabel
+// limit Oracle. Hitung premi tidak terdampak. Handler menjawabnya 503.
+var ErrTanpaDatabase = errors.New("services: basis data tidak dikonfigurasi, tabel limit akseptasi tidak terbaca")
+
+// ErrTabelLimitTakTersedia - keenam tabel limit terbaca tetapi kosong: tangga tidak
+// boleh "selesai tanpa approver" karena datanya belum tersambung. Handler 503.
+var ErrTabelLimitTakTersedia = errors.New("services: tabel limit akseptasi kosong atau belum tersambung")
+
+// DariDasar merakit layanan dari dasar aplikasi: pembaca tabel limit Oracle bila
+// basis data tersedia, tanpa pembaca bila tidak.
+func DariDasar(d *inti.Dasar) *Service {
+	if !d.PunyaDatabase() {
+		return Baru(nil)
+	}
+	return Baru(repository.NewLimitOracle(d.DB()))
+}
+
+// Service - layanan NB Fac In.
+type Service struct {
+	limit repository.PembacaLimit
+	// tangga - tangga yang dirakit pemanggil (BaruDenganTangga); nil = disusun dari
+	// tabel limit repository setiap permintaan.
+	tangga kontrak.TanggaAkseptasiFacIn
+}
+
+// BaruDenganTangga merakit layanan atas tangga yang sudah dirakit (uji HTTP, atau
+// pemakai yang memegang tabel limit sendiri) - tanpa repository.
+func BaruDenganTangga(tangga kontrak.TanggaAkseptasiFacIn) *Service { return &Service{tangga: tangga} }
+
+// Baru merakit layanan.
+func Baru(limit repository.PembacaLimit) *Service { return &Service{limit: limit} }
+
+// HasilPremi - premi satu coverage dan rule asal rumusnya.
+type HasilPremi struct {
+	Premi     uang.Money
+	AsalRumus string
+}
+
+// HitungPremi - premium.Calculate lewat kontrakfacin.Premi. Lini yang tidak ada di
+// peta K-018 ditolak lebih dulu (SatuanRate akan panic).
+//
+// Panic mesin dipilah lewat TIPE (galatDariPanic): `premium.PanikLini` = masukan (422),
+// selain itu bug program (500). Pra-cek LiniDikenal tetap ada sebagai pesan yang jelas.
+func (s *Service) HitungPremi(in kontrak.MasukanPremiFacIn) (hasil HasilPremi, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			hasil, err = HasilPremi{}, galatDariPanic(r)
+		}
+	}()
+	if !premium.LiniDikenal(premium.LiniBisnis(in.LiniBisnis)) {
+		return HasilPremi{}, fmt.Errorf("%w: lini bisnis %q tidak dikenal", ErrTidakDapatDiproses, in.LiniBisnis)
+	}
+	mesin := kontrakfacin.Premi{}
+	premi, err := mesin.Hitung(in)
+	if err != nil {
+		return HasilPremi{}, fmt.Errorf("%w: %w", ErrTidakDapatDiproses, err)
+	}
+	return HasilPremi{Premi: premi, AsalRumus: mesin.AsalRumus(in)}, nil
+}
+
+// LangkahAkseptasi - satu langkah tangga (bentuk A, beralih ke B) atas tabel limit
+// dari repository. Predikat bersikap panic (belum diport, termasuk pembanding data
+// identitas) menjadi ErrTidakDapatDiproses, bukan jawaban 500 tanpa sebab.
+func (s *Service) LangkahAkseptasi(ctx context.Context, k kontrak.KasusFacIn, p kontrak.PenggunaFacIn) (tr kontrak.TransisiFacIn, err error) {
+	tangga := s.tangga
+	if tangga == nil {
+		if s.limit == nil {
+			return kontrak.TransisiFacIn{}, ErrTanpaDatabase
+		}
+		a, b, err := s.limit.MuatLimit(ctx)
+		if err != nil {
+			return kontrak.TransisiFacIn{}, err
+		}
+		if tangga, err = susunTangga(a, b); err != nil {
+			return kontrak.TransisiFacIn{}, err
+		}
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			tr, err = kontrak.TransisiFacIn{}, galatDariPanic(r)
+		}
+	}()
+	tr, err = tangga.Langkah(k, p)
+	switch {
+	case errors.Is(err, kontrakfacin.ErrTabelLimitKosong):
+		return kontrak.TransisiFacIn{}, fmt.Errorf("%w: %w", ErrTabelLimitTakTersedia, err)
+	case err != nil:
+		return kontrak.TransisiFacIn{}, fmt.Errorf("%w: %w", ErrTidakDapatDiproses, err)
+	}
+	return tr, nil
+}
+
+// galatDariPanic - panic yang TIPE-nya menandai keadaan yang diketahui -
+// rules.PanikSikap (predikat belum diport) dan premium.PanikLini (lini di luar peta
+// skala) - menjadi ErrTidakDapatDiproses (422). Panic lain = bug program → galat
+// biasa (500, dicatat handler), bukan disamarkan sebagai galat masukan.
+func galatDariPanic(r any) error {
+	if e, ok := r.(error); ok {
+		var sikap rules.PanikSikap
+		var lini premium.PanikLini
+		if errors.As(e, &sikap) || errors.As(e, &lini) {
+			return fmt.Errorf("%w: %w", ErrTidakDapatDiproses, e)
+		}
+	}
+	return fmt.Errorf("services: panic mesin NB: %v", r)
+}
+
+// tabelDikenal - lima tabel bentuk A, ejaan repository = ejaan acceptance.
+var tabelDikenal = map[string]acceptance.NamaTabel{
+	string(acceptance.TabelProperty):                    acceptance.TabelProperty,
+	string(acceptance.TabelPropertyNonPreferred):        acceptance.TabelPropertyNonPreferred,
+	string(acceptance.TabelPropertyPreferredCommercial): acceptance.TabelPropertyPreferredCommercial,
+	string(acceptance.TabelEngineering):                 acceptance.TabelEngineering,
+	string(acceptance.TabelNonPropEng):                  acceptance.TabelNonPropEng,
+}
+
+// susunTangga - baris repository → kontrakfacin.Tangga. Tabel tak dikenal = galat
+// konfigurasi, bukan diabaikan.
+func susunTangga(a []models.BarisLimitA, b []models.BarisLimitB) (kontrakfacin.Tangga, error) {
+	t := kontrakfacin.Tangga{BentukA: acceptance.TabelLimit{}}
+	for _, r := range a {
+		nama, ada := tabelDikenal[r.Tabel]
+		if !ada {
+			return kontrakfacin.Tangga{}, fmt.Errorf("services: tabel limit %q tidak dikenal tangga", r.Tabel)
+		}
+		t.BentukA[nama] = append(t.BentukA[nama], acceptance.BarisLimit{Jabatan: acceptance.Jabatan(r.Jabatan),
+			TeamGroup: r.TeamGroup, LimitBottom: r.LimitBottom, LimitBottom2: r.LimitBottom2})
+	}
+	for _, r := range b {
+		t.BentukB = append(t.BentukB, acceptance.BarisFinancial{Jabatan: acceptance.Jabatan(r.Jabatan),
+			LimitBond: r.LimitBond, LimitCreditCL: r.LimitCreditCL, LimitCreditNCL: r.LimitCreditNCL})
+	}
+	if len(t.BentukA) == 0 {
+		t.BentukA = nil
+	}
+	return t, nil
+}

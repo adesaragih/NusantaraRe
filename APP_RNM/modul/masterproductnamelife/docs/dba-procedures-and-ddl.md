@@ -202,7 +202,7 @@ List bersarang → tabel anak: `CommentList`, `DocumentClaim`, `PlanList`, `Unde
    kolom** (bukan visibilitas Section).
 2. **Field yang HANYA muncul di Section dengan visibilitas `1=2` / `1==2` / `never` dan TIDAK di-set
    di Activity = JANGAN AMBIL** — tampilan mati, bukan data.
-3. 28 field inward di atas **semuanya di-set di `SetProductNameInward`** → **semua diambil**.
+3. Field inward di atas **semuanya di-set di `SetProductNameInward`** → **semua diambil** *(ralat audit 02-10-2026: dulu tertulis "28"; sensus korpus di atas = 40)*.
    Visibilitas mati Section tidak mengurangi daftar ini.
 
 ### Aturan migrasi mengikat `[keputusan work owner]`

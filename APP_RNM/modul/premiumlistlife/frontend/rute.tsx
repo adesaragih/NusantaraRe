@@ -10,6 +10,7 @@ import InboxPremiumList from './pages/InboxPremiumList'
 import InputOffer from './pages/InputOffer'
 import PremiumListDetail from './pages/PremiumListDetail'
 import PremiumListSummary from './pages/PremiumListSummary'
+import './premiumlistlife.css'
 
 /**
  * Apakah menu PremiumList Life baru saja dipilih (ulang).
@@ -42,7 +43,8 @@ export function RutePremiumList({ halaman, ketukMenu }: PropsRute<HalamanPremium
   }, [ketukMenu, halaman])
 
   return (
-    <>
+    // Akar gaya modul: semua aturan `premiumlistlife.css` diawali `.premiumlistlife` (`display: contents`).
+    <div className="premiumlistlife">
       {halaman === 'premiumlist' && polis.id === '' && (
         <InboxPremiumList
           onBuka={(caseID, tahap) => {
@@ -76,7 +78,7 @@ export function RutePremiumList({ halaman, ketukMenu }: PropsRute<HalamanPremium
           }}
         />
       )}
-    </>
+    </div>
   )
 }
 

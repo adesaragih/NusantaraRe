@@ -21,7 +21,7 @@ import (
 func serverLampiran(t *testing.T) (*httptest.Server, *tiruan.Gudang) {
 	t.Helper()
 	g := tiruan.Baru()
-	g.Umum["100007"] = `{"ID":"100007"}`
+	g.IsiJSON("100007", `{"ID":"100007"}`, "")
 	g.AppName = "UJI-APP"
 	l := services.BaruLayanan(g, g.Transaksi, nil).DenganPenyimpanan(services.PenyimpananLokal(t.TempDir()))
 	srv := httptest.NewServer(handlers.RouterDengan(l, true, true))

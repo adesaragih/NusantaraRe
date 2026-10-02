@@ -135,15 +135,55 @@ func periksaUmum(pk *periksa, u *models.ProdukUmum) {
 	pk.desimal(labelDeduction, &u.RIComm)
 }
 
-// periksaPanjang - lebar kolom datar `RIRISKID` VARCHAR2(10), `RIRISK` VARCHAR2(100) (katalog DEV) dan
-// kunci yang dibaca view (VARCHAR2(4000)), atas nilai AKHIR yang akan ditulis: sesudah `periksaPilihan`
-// mengganti nama dengan nama master. Ditolak berkalimat SEBELUM SQL tulis (transaksi dibatalkan, nol tulisan).
+// periksaPanjang - setiap nilai AKHIR yang akan ditulis muat kolom flatnya (tiket 01 bab 02-10-2026: lebar VARCHAR2
+// dalam byte, NUMBER(38,8) paling banyak 8 desimal dan 30 digit bulat, NUMBER(5) bilangan bulat ≤ 5 digit) - sesudah
+// `periksaPilihan` mengganti nama dengan nama master, sesudah medan milik server dilengkapi, dan sesudah baris komentar
+// simpan ini ditambahkan. Ditolak berkalimat SEBELUM SQL tulis (transaksi dibatalkan, nol tulisan): Oracle tidak
+// pernah memotong atau membulatkan diam-diam. Medan yang tidak terurai sebagai angka/tanggal sudah ditolak gerbang
+// medannya (`desimal`, `tanggal`) dengan kalimatnya sendiri - tidak dilaporkan dua kali.
 func periksaPanjang(pk *periksa, m *models.Produk) {
-	pk.panjang(labelRIRisk, m.Umum.RIRisk, repository.LebarRIRisk)
-	pk.panjang(labelRIRisk+" ID", m.Umum.RIRiskID, repository.LebarRIRiskID)
-	for _, k := range repository.KunciViewTerlaluPanjang(*m) {
-		pk.tolak("%s is longer than %d bytes; views PRODUCT_LIFE / PRODUCTINWARD_LIFE read at most %d", k,
-			repository.LebarKunciView, repository.LebarKunciView)
+	for _, n := range repository.MasalahFlat(*m) {
+		label := n.Label
+		if n.Urut > 0 {
+			label = fmt.Sprintf("%s row %d: %s", judulGrid(n.Tabel), n.Urut, n.Label)
+		}
+		switch n.Jenis {
+		case repository.MasalahTerlaluPanjang:
+			pk.panjang(label, n.Nilai, n.Batas)
+		case repository.MasalahSkala:
+			pk.tolak("%s %q has more than %d decimal places", label, n.Nilai, repository.SkalaDesimalFlat)
+		case repository.MasalahDigitBulat:
+			pk.tolak("%s %q has more than %d digits before the decimal point", label, n.Nilai, repository.DigitBulatFlat)
+		case repository.MasalahBukanBulat:
+			pk.tolak("%s %q must be a whole number", label, n.Nilai)
+		case repository.MasalahDigitKecil:
+			pk.tolak("%s %q has more than %d digits", label, n.Nilai, repository.DigitKecilFlat)
+		case repository.MasalahBukanAngka, repository.MasalahBukanTanggal:
+			// Sudah ditolak gerbang medannya (`desimal`, `tanggal`) dengan kalimatnya sendiri - setiap medan angka dan
+			// tanggal yang dikirim klien melewati gerbang itu. Lolos ke penulis = ErrNilaiTidakMuat (422), lapis kedua.
+		default:
+			pk.tolak("%s %q is not valid", label, n.Nilai)
+		}
+	}
+}
+
+// judulGrid - judul grid VERBATIM tabel anak (pesan baris).
+func judulGrid(tabel string) string {
+	switch tabel {
+	case repository.TabelFlatLien:
+		return judulLien
+	case repository.TabelFlatDokumen:
+		return judulDokumen
+	case repository.TabelFlatPlan:
+		return judulPlan
+	case repository.TabelFlatFinUW:
+		return judulFinUW
+	case repository.TabelFlatUWLimit:
+		return judulUWLimit
+	case repository.TabelFlatKomentar:
+		return judulKomentar
+	default:
+		return judulOutward
 	}
 }
 
@@ -287,19 +327,22 @@ func (l *Layanan) SimpanProduk(ctx context.Context, p inti.Pelaku, m models.Prod
 			periksaPlan(&pk, m.PlanList)
 		}
 		periksaAsli(&pk, &m, tersimpan)
+		// Medan milik server dilengkapi SEBELUM panjang diukur: yang diukur nilai yang benar-benar ditulis,
+		// bukan kiriman klien (audit 02-10-2026). Pengisian ini murni, tanpa efek keluar.
+		lengkapiMilikServer(&m, lama, baru, p)
+		// Langkah 7 b1515 `·` (tanpa prakondisi): `AddCommentList_Act` - SETIAP
+		// simpan menambah satu baris, juga bila komentarnya kosong (OQ-MPNL-14). Ditambahkan SEBELUM panjang
+		// diukur (02-10-2026): baris komentar ini pun harus muat kolom `M_PRODUCTNAME_LIFE_COMMENT`.
+		m.CommentList = append(m.CommentList, barisKomentar(l.jam(), p.AkunID, m.Umum.Comment))
 		periksaPanjang(&pk, &m)
 		if err := pk.galat(); err != nil {
 			return err
 		}
-		lengkapiMilikServer(&m, lama, baru, p)
 		if perluHitungOutward(&m, baru) {
 			if err := l.hitungOutward(ctx, tx, &m); err != nil {
 				return err
 			}
 		}
-		// Langkah 7 b1515 `·` (tanpa prakondisi): `AddCommentList_Act` - SETIAP
-		// simpan menambah satu baris, juga bila komentarnya kosong (OQ-MPNL-14).
-		m.CommentList = append(m.CommentList, barisKomentar(l.jam(), p.AkunID, m.Umum.Comment))
 		if baru {
 			id, err := l.gudang.SisipProduk(ctx, tx, m)
 			if err != nil {

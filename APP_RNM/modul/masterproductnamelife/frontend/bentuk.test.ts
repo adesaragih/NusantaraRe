@@ -14,6 +14,7 @@ import {
   tampilPremiumFactor,
   tampilViewOffice,
   tampilViewRate,
+  waktuPega,
 } from './bentuk'
 
 describe('CountMaxSumReasured_Act - MAXSUMREASURED = MaxSumInsured - CedingLimit (eksak)', () => {
@@ -91,5 +92,19 @@ describe('pyGridPaginator - 10 baris per halaman', () => {
     expect(potongHalaman(semua, 3)).toEqual([20, 21, 22])
     expect(jepitHalaman(9, 23)).toBe(3)
     expect(jepitHalaman(0, 0)).toBe(1)
+  })
+})
+
+describe('waktuPega - `.Date` History b62561 (pxDateTime)', () => {
+  it('stempel Pega GMT tampil DD-MM-YYYY HH:mm waktu lokal (audit 02-10-2026)', () => {
+    // WIB = GMT+7 (420 menit), dan GMT sendiri.
+    expect(waktuPega('20261002T031500.000 GMT', 420)).toBe('02-10-2026 10:15')
+    expect(waktuPega('20261002T031500.000 GMT', 0)).toBe('02-10-2026 03:15')
+    // Lewat tengah malam: tanggalnya ikut maju.
+    expect(waktuPega('20261001T200000.000 GMT', 420)).toBe('02-10-2026 03:00')
+  })
+  it('teks lain tampil apa adanya', () => {
+    expect(waktuPega('', 420)).toBe('')
+    expect(waktuPega('bukan stempel', 420)).toBe('bukan stempel')
   })
 })

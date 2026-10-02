@@ -87,7 +87,7 @@ func (j jenisKontrakUji) DaftarNonLife(context.Context) ([]repository.JenisReasu
 }
 
 // DaftarAnakTreatyLimit - kontrak tidak memakainya.
-func (j jenisKontrakUji) DaftarAnakTreatyLimit(context.Context, string) ([]repository.JenisReasuransiTCO, error) {
+func (j jenisKontrakUji) DaftarAnakTreatyLimit(context.Context) ([]repository.JenisReasuransiTCO, error) {
 	return nil, nil
 }
 

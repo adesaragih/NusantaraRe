@@ -61,6 +61,20 @@ func (g GalatKlausulDobel) Error() string {
 // Is membuat `errors.Is(err, ErrKlausulDobel)` benar.
 func (GalatKlausulDobel) Is(target error) bool { return target == ErrKlausulDobel }
 
+// ErrKlausulSatuBaris - jenis satu baris (`models.AturanKlausul.SatuBaris`)
+// sudah berisi; ubah lewat `Edit` (409).
+var ErrKlausulSatuBaris = errors.New("services: this clause type holds a single row per treaty year")
+
+// GalatKlausulSatuBaris menyebut baris yang sudah ada.
+type GalatKlausulSatuBaris struct{ IDAda, Jenis string }
+
+func (g GalatKlausulSatuBaris) Error() string {
+	return fmt.Sprintf("%s only holds one row per treaty year; row %s already exists - use Edit", g.Jenis, g.IDAda)
+}
+
+// Is membuat `errors.Is(err, ErrKlausulSatuBaris)` benar.
+func (GalatKlausulSatuBaris) Is(target error) bool { return target == ErrKlausulSatuBaris }
+
 // GudangKlausulTCO membaca dan menulis klausul.
 type GudangKlausulTCO interface {
 	Daftar(ctx context.Context, tahunID, descID, parentReinsTypeID string) ([]models.KlausulTreaty, error)
@@ -164,6 +178,8 @@ type AturanTampil struct {
 	// PilihanReins - `models.AturanKlausul.PilihanReins`: layar memilih
 	// pemilih ReinsType dari sini, bukan dari nama jenis.
 	PilihanReins string `json:"pilihanReins"`
+	// SatuBaris - `Add` hilang begitu jenis ini berisi satu baris.
+	SatuBaris bool `json:"satuBaris"`
 }
 
 // JenisKlausulTampil adalah satu baris grid jenis + aturannya.
@@ -321,7 +337,7 @@ func (l *KlausulTCO) DenganTransaksi(f func(ctx context.Context, fn func(tx *db.
 func tampilAturan(a models.AturanKlausul) AturanTampil {
 	return AturanTampil{Jenis: a.Jenis, Anak: a.Anak, Subjenis: a.Subjenis, Medan: a.Medan, Wajib: a.Wajib,
 		Turunan: a.Turunan, Ditahan: a.Ditahan, Berkurs: a.Berkurs, Konversi: a.Konversi, Sumber: a.Sumber,
-		PilihanReins: a.PilihanReins}
+		PilihanReins: a.PilihanReins, SatuBaris: a.SatuBaris}
 }
 
 // JenisKlausul membaca grid jenis (`BrowseTreatyDesc_RD`) + aturan tiap jenis.
@@ -386,15 +402,15 @@ func (l *KlausulTCO) Daftar(ctx context.Context, pelaku inti.Pelaku, tahunID, de
 }
 
 // namaReinsType memeriksa ID jenis reasuransi di daftar pilihan jenisnya:
-// bawaan daftar tersaring tiket 02 [keputusan work owner 29-09-2026]
-// (OQ-TCO-15, ditutup); anak Treaty Limit - porsi + induknya (`induk`)
-// [keputusan work owner 30-09-2026].
-func (l *KlausulTCO) namaReinsType(ctx context.Context, a models.AturanKlausul, id, induk string) (string, error) {
+// induk - daftar tersaring tiket 02 [keputusan work owner 29-09-2026]
+// (OQ-TCO-15, ditutup); SETIAP anak - jenis porsi saja, induknya tidak
+// [keputusan work owner 30-09-2026, diperluas dan dikoreksi 02-10-2026].
+func (l *KlausulTCO) namaReinsType(ctx context.Context, a models.AturanKlausul, id string) (string, error) {
 	var daftar []repository.JenisReasuransiTCO
 	var err error
 	kosong := ErrMasterJenisReasuransiKosong
 	if a.PilihanReins == models.PilihanReinsAnakTreatyLimit {
-		daftar, err = l.jenis.DaftarAnakTreatyLimit(ctx, induk)
+		daftar, err = l.jenis.DaftarAnakTreatyLimit(ctx)
 		kosong = ErrPilihanAnakTreatyLimitKosong
 	} else {
 		daftar, err = l.jenis.DaftarNonLife(ctx)
@@ -481,7 +497,7 @@ func (l *KlausulTCO) Simpan(ctx context.Context, pelaku inti.Pelaku, tahunID str
 	if err := models.IsiMedanKlausulTCO(a, &k, m.Medan); err != nil {
 		return HasilKlausulTampil{}, err
 	}
-	if err := l.lengkapiDariMaster(ctx, a, &k); err != nil {
+	if err := l.lengkapiDariMaster(ctx, a, &k, lama); err != nil {
 		return HasilKlausulTampil{}, err
 	}
 	// Tiket 11: form berkurs menuntut kurs berlaku (`NewTreatyArr*`); induk
@@ -522,6 +538,15 @@ func (l *KlausulTCO) Simpan(ctx context.Context, pelaku inti.Pelaku, tahunID str
 		}
 		if lain != "" {
 			return GalatKlausulDobel{IDLain: lain, Jenis: a.Jenis}
+		}
+		if a.SatuBaris && k.ID == "" {
+			ada, err := l.gudang.Daftar(repository.DenganBacaTxTCO(ctx, tx), tahunID, a.DescID, parent)
+			if err != nil {
+				return err
+			}
+			if len(ada) > 0 {
+				return GalatKlausulSatuBaris{IDAda: ada[0].ID, Jenis: a.Jenis}
+			}
 		}
 		if a.BatasTotalAnak {
 			pctLain, err := l.gudang.PctAnakLain(ctx, tx, tahunID, a.DescID, parent, k.ID)
@@ -567,7 +592,12 @@ func (l *KlausulTCO) Simpan(ctx context.Context, pelaku inti.Pelaku, tahunID str
 
 // lengkapiDariMaster mengisi nama dari master: jenis reasuransi (tiket 02),
 // occupation, clause - klien hanya memilih ID.
-func (l *KlausulTCO) lengkapiDariMaster(ctx context.Context, a models.AturanKlausul, k *models.KlausulTreaty) error {
+//
+// `lama` - baris sebelum Edit (kosong untuk baris baru). ReinsType baris anak
+// lama yang TIDAK diganti tetap boleh walau di luar pilihan anak sekarang
+// (data lama ber-ReinsType induk, mis. ORS di bawah ORS) - Edit Pct-nya tidak
+// terkunci; menggantinya wajib memakai pilihan porsi.
+func (l *KlausulTCO) lengkapiDariMaster(ctx context.Context, a models.AturanKlausul, k *models.KlausulTreaty, lama models.KlausulTreaty) error {
 	punya := func(m string) bool {
 		for _, x := range a.Medan {
 			if x == m {
@@ -578,7 +608,9 @@ func (l *KlausulTCO) lengkapiDariMaster(ctx context.Context, a models.AturanKlau
 	}
 	var err error
 	if punya(models.MedanReinsTypeID) && k.ReinsTypeID != "" {
-		if k.ReinsTypeName, err = l.namaReinsType(ctx, a, k.ReinsTypeID, k.ParentReinsTypeID); err != nil {
+		if a.Anak && lama.ID != "" && lama.ReinsTypeID == k.ReinsTypeID {
+			k.ReinsTypeName = lama.ReinsTypeName
+		} else if k.ReinsTypeName, err = l.namaReinsType(ctx, a, k.ReinsTypeID); err != nil {
 			return err
 		}
 	}

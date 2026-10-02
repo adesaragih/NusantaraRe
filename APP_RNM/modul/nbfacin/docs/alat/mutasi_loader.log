@@ -1,0 +1,63 @@
+TERTANGKAP V-28b sufiks Old tidak dibuang
+TERTANGKAP V-19 OldData tidak dibuang
+TERTANGKAP V-28 Total* tidak dibuang
+TERTANGKAP V-16 Aneka mendahului FIRE
+TERTANGKAP V-16 larik kosong dihitung ada
+TERTANGKAP V-16 AnekaList dicari dari akar (ikut Fac Retro)
+TERTANGKAP V-16 langkah 5 menerima BusinessType apa pun yang dikenal
+TERTANGKAP K-069 warisan UNKNOWN tidak terhitung
+TERTANGKAP K-063 (c) pewarisan dimatikan
+TERTANGKAP K-069 sentinel tidak dipasang
+TERTANGKAP BAHAN §7 koma desimal tidak dinormalkan
+TERTANGKAP BAHAN §7 koma desimal tidak terhitung
+TERTANGKAP angka > 38 digit tidak terhitung
+TERTANGKAP V-22 medan Policy sendiri ikut dilipat
+TERTANGKAP V-22b awalan Pay hilang
+TERTANGKAP V-24b CargoList/PolicyData tidak dilipat
+TERTANGKAP BAHAN §0 CURRENCY_CODE dari Name dimatikan
+TERTANGKAP V-49 SOURCE_ID dimatikan
+TERTANGKAP V-27 cabang kosong tetap lahir
+TERTANGKAP V-41 SEQ_NO mulai nol
+TERTANGKAP PARENT_TABLE berisi tabel sendiri
+TERTANGKAP SRC_PATH kosong
+TERTANGKAP medan tak terpetakan tidak terhitung
+TERTANGKAP butir 68.1 teks menyimpang diurai sebagai angka
+TERTANGKAP butir 68.3 kode dari Currency/Name dimatikan
+TERTANGKAP butir 69 kembaran FR dimatikan
+TERTANGKAP ralat 69 >38 digit dihitung dari koefisien mentah
+TERTANGKAP K-069 7b IsCedingConfirm tidak diselamatkan
+TERTANGKAP K-069 7b medan diselamatkan terhitung dua kali
+TERTANGKAP butir 68.3 T_ANEKALIST dimatikan
+TERTANGKAP butir 69 T_FR_ANEKALIST dimatikan
+TERTANGKAP butir 68.3 kode berbeda menimpa diam-diam
+TERTANGKAP ADR-0023 medan tak dikenal tidak masuk penampung
+TERTANGKAP ADR-0023 subpohon tidak masuk penampung
+TERTANGKAP ADR-0023 catatTak tanpa nilai
+TERTANGKAP ADR-0023 penanda Penunjuk hilang
+TERTANGKAP V-27 entri penampung baris batal tidak pindah
+TERTANGKAP butir 68.3 Currency ganda saling timpa
+TERTANGKAP ADR-0023 penampung tanpa nilai
+TERTANGKAP subpohon tak terpetakan tidak terhitung
+TERTANGKAP V-16 langkah 2 ikut cabang dibuang
+TERTANGKAP V-30 SEQ_NO opsi tanpa celah
+TERTANGKAP pesan galat sintaks menyalin isi
+TERTANGKAP unsur larik bernilai tidak terhitung
+TERTANGKAP V-30 opsi tidak terhitung Terpetakan
+TERTANGKAP ROW_UID tanpa IDPEGA
+TERTANGKAP V-48 medan kerja tidak ke T_WORK_POLIS
+TERTANGKAP V-17b ganti nama dimatikan
+TERTANGKAP V-30 faktor tak dikenali
+TERTANGKAP kunci ganda diterima
+TERTANGKAP JENIS_WORK apa pun diterima
+TERTANGKAP kolom ganda menimpa
+TERTANGKAP asal kolom V-47 dianggap medan
+TERTANGKAP P1 COVERAGE_INITIAL dicabut
+TERTANGKAP P2-P3 jalur T_ADDITIONALSHIP dicabut
+TERTANGKAP P2-P3 ADDITIONAL_SHIP_REF_ID dicabut
+TERTANGKAP P5 CURRENCY_REF_ID dicabut
+TERTANGKAP P6 POLICY_TSI dicabut
+TERTANGKAP butir 71 penunjuk dibuang diam-diam
+TERTANGKAP butir 72 kolom INDEX_CARGO dicabut
+TERTANGKAP butir 72 penunjuk diurai sebagai angka
+TERTANGKAP pembaca xlsx menggeser sel kosong
+HASIL: 62/62 tertangkap; berkas asli pulih: ya

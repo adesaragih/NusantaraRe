@@ -2,9 +2,13 @@
 
 package handlers_test
 
-// Tiruan tabel WARISAN Master Product Name Life di skema uji Oracle (uji
-// bertag `db`). Tanpa ORACLE_DSN seluruhnya MELEWATI. ⛔ POOLDATA bukan
-// sasaran uji `db` (brief bab 1) - skema uji dipagari `uji/skemauji`.
+// Skema uji Oracle Master Product Name Life (uji bertag `db`): tabel FLAT dari berkas migrasi 140–147 yang SAMA dengan
+// produksi (tiket 01 AC 49, dibaca `migrasi.Daftar`), ditambah tiruan tabel WARISAN yang tidak dibuat migrasi mana pun.
+// Tanpa ORACLE_DSN seluruhnya MELEWATI. ⛔ POOLDATA bukan sasaran uji `db` (brief bab 1) - skema uji dipagari
+// `uji/skemauji`.
+//
+// Sejak 02-10-2026 kedua tabel JSON warisan tidak ditulis lagi; tiruannya tetap ada karena `PilihIdentitasBebas`
+// memeriksa ID-nya.
 //
 // ⛔ Kolom dan tipe PERSIS katalog DEV `ALL_TAB_COLUMNS` 01-10-2026
 // (`repository/testdata/katalog-dev.json`): `ID VARCHAR2(6)`, `JSONDATA CLOB` +
@@ -18,10 +22,14 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+	"testing/fstest"
 
 	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/migrasi"
 	"nusantarare/modul/masterproductnamelife/backend/handlers"
 	"nusantarare/modul/masterproductnamelife/backend/services"
 	"nusantarare/uji/skemauji"
@@ -75,6 +83,9 @@ func pasangDB(t *testing.T) *ujiDB {
 	}
 	u := &ujiDB{mentah: repoDB, skema: repoDB.Skema(), ctx: ctx}
 	u.bongkar(t)
+	for _, q := range ddlFlat(t, false, u.skema) {
+		u.exec(t, q)
+	}
 	for _, d := range ddlTiruan {
 		u.exec(t, fmt.Sprintf(`CREATE TABLE %s.%s (%s)`, u.skema, d.nama, d.kolom))
 	}
@@ -90,8 +101,43 @@ func pasangDB(t *testing.T) *ujiDB {
 	return u
 }
 
+// ddlFlat - pernyataan berkas migrasi 140–147 modul ini (maju atau mundur), `{skema}` diganti skema uji.
+func ddlFlat(t *testing.T, mundur bool, skema string) []string {
+	t.Helper()
+	entri, err := os.ReadDir(filepath.Join("..", "migrations"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	sumber := fstest.MapFS{}
+	for _, e := range entri {
+		if strings.HasPrefix(e.Name(), "14") {
+			isi, err := os.ReadFile(filepath.Join("..", "migrations", e.Name()))
+			if err != nil {
+				t.Fatal(err)
+			}
+			sumber["migrations/"+e.Name()] = &fstest.MapFile{Data: isi}
+		}
+	}
+	langkah, err := migrasi.Daftar(mundur, sumber)
+	if err != nil || len(langkah) == 0 {
+		t.Fatalf("membaca migrasi flat: %d langkah, %v", len(langkah), err)
+	}
+	var hasil []string
+	for _, l := range langkah {
+		for _, q := range l.Pernyataan {
+			hasil = append(hasil, strings.ReplaceAll(q, "{skema}", skema))
+		}
+	}
+	return hasil
+}
+
 func (u *ujiDB) bongkar(t *testing.T) {
 	t.Helper()
+	for _, q := range ddlFlat(t, true, u.skema) {
+		if _, err := u.mentah.ExecContext(u.ctx, q); err != nil && !strings.Contains(err.Error(), "ORA-00942") {
+			t.Fatalf("membongkar tabel flat: %v", err)
+		}
+	}
 	for _, d := range ddlTiruan {
 		if _, err := u.mentah.ExecContext(u.ctx, fmt.Sprintf(`DROP TABLE %s.%s PURGE`, u.skema, d.nama)); err != nil &&
 			!strings.Contains(err.Error(), "ORA-00942") {

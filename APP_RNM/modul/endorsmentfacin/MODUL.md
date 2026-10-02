@@ -29,7 +29,7 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 
 | Folder | Isi |
 | --- | --- |
-| `docs/` | belum ada — tidak ada dokumen `.scratch/` untuk modul ini. Buat saat grilling/spec dimulai. |
+| `docs/` | spec, tiket (`issues/`), discovery, grilling — dipindah dari `jefri/OUTPUT FIX/` 30-09-2026 (`git mv`, isi tidak diubah). Asal tiap berkas dan tujuan tautan lamanya: `docs/PETA-ASAL.md` |
 | `backend/` | belum ada — lahir bersama `backend/modul.go` (`Pendaftaran()`) saat modul dimulai |
 | `frontend/` | belum ada — lahir bersama `frontend/menu.ts` dan `rute.tsx` saat modul dimulai |
 

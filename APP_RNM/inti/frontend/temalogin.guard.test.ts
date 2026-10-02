@@ -163,6 +163,21 @@ describe('Kelola User bergaya soft UI', () => {
       ['--ku-netral-teks', '--ku-netral-latar'],
       ['--ku-bahaya-teks', '--ku-bahaya-latar'],
       ['--ku-waspada-teks', '--ku-waspada-latar'],
+      // Pewarnaan terbedakan (02-10-2026): isi putih, belang, sorot, kepala navy, jalur tab, tombol Hapus.
+      ['--ku-teks', '--ku-isi'],
+      ['--ku-teks', '--ku-zebra'],
+      ['--ku-teks', '--ku-baris-hover'],
+      ['--ku-teks-redup', '--ku-isi'],
+      ['--ku-teks-redup', '--ku-jalur-tab'],
+      ['--ku-kepala-teks', '--ku-kepala-tabel'],
+      ['--ku-aksen-teks', '--ku-isi'],
+      ['--ku-bahaya-teks', '--ku-isi'],
+      ['--ku-teks-redup', '--ku-lembut'],
+      // Gradasi kotak akar (02-10-2026): teks terbaca di kedua ujungnya.
+      ['--ku-teks', '--ku-latar-atas'],
+      ['--ku-teks', '--ku-latar-bawah'],
+      ['--ku-teks-redup', '--ku-latar-atas'],
+      ['--ku-teks-redup', '--ku-latar-bawah'],
     ] as const
     const gagal = [
       ['terang', terang],
@@ -247,6 +262,17 @@ describe('Beranda bergaya soft UI', () => {
       ['--br-aksen-teks', '--br-ikon'],
       ['--br-sukses-teks', '--br-sukses-latar'],
       ['--br-netral-teks', '--br-netral-latar'],
+      // Gaya Kelola User (02-10-2026): kartu putih, belang, sorot, kepala navy, tautan modul, gradasi akar.
+      ['--br-teks', '--br-isi'],
+      ['--br-teks', '--br-zebra'],
+      ['--br-teks-redup', '--br-isi'],
+      ['--br-kepala-teks', '--br-kepala-tabel'],
+      ['--br-aksen-teks', '--br-isi'],
+      ['--br-aksen-teks', '--br-aksen-lembut'],
+      ['--br-teks', '--br-latar-atas'],
+      ['--br-teks', '--br-latar-bawah'],
+      ['--br-teks-redup', '--br-latar-atas'],
+      ['--br-teks-redup', '--br-latar-bawah'],
     ] as const
     expect([...kontrasKurang(terang, pasangan).map((x) => `terang ${x}`), ...kontrasKurang(gelap, pasangan).map((x) => `gelap ${x}`)]).toEqual([])
   })

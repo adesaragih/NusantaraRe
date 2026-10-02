@@ -273,7 +273,7 @@ export default function PanelKontrakTahun({ tahun, onTutup }: { tahun: TahunTrea
             <tbody>
               {daftar.map((k) => (
                 <Fragment key={k.id}>
-                  <tr className={rinci?.kontrakID === k.id ? 'inbox__baris belah__baris--aktif' : 'inbox__baris'}>
+                  <tr className={rinci?.kontrakID === k.id ? 'inbox__baris tco-baris--aktif' : 'inbox__baris'}>
                     <td>{sel(k.reinsTypeName)}</td>
                     <td>{sel(formatDate(k.treatyStartDate))}</td>
                     <td>{sel(formatDate(k.treatyEndDate))}</td>

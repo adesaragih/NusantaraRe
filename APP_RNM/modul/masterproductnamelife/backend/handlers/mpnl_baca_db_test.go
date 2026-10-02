@@ -2,7 +2,7 @@
 
 package handlers_test
 
-// Seam HTTP rute baca terhadap skema uji Oracle NYATA (paket 1).
+// Seam HTTP rute baca terhadap skema uji Oracle NYATA (paket 1) - sejak 02-10-2026 atas tabel FLAT.
 // Tanpa ORACLE_DSN seluruhnya MELEWATI dengan pesan.
 
 import (
@@ -33,26 +33,29 @@ func (u *ujiDB) kirim(t *testing.T, metode, jalur, badan string) (int, string) {
 	return res.StatusCode, string(b)
 }
 
-func TestDBBacaProdukDariJSONDATAKeduaTabel(t *testing.T) {
+func TestDBBacaProdukDariTabelFlat(t *testing.T) {
 	u := pasangDB(t)
-	u.exec(t, `INSERT INTO {s}.M_PRODUCT_LIFE (ID, JSONDATA) VALUES ('100002', :1)`,
-		`{"ID":"100002","CEDING":"UJI CEDING B","TREATYNUMBER":"UJI/2"}`)
-	u.exec(t, `INSERT INTO {s}.M_PRODUCT_LIFE (ID, JSONDATA) VALUES ('100001', :1)`,
-		`{"ID":"100001","CEDING":"UJI CEDING A","UnderwritingLimitList":[{"MaxInsured":1175000000.123456789}]}`)
-	// Inward lama ber-ID sequence sendiri, bertaut lewat PRODUCTID (Pega).
-	u.exec(t, `INSERT INTO {s}.M_PRODUCTINWARD_LIFE (ID, JSONDATA) VALUES ('100009', :1)`,
-		`{"PRODUCTID":"100001","BEGIN":"01/03/2026","MAXEXPIREDCLAIM":"180"}`)
+	u.exec(t, `INSERT INTO {s}.M_PRODUCTNAME_LIFE (ID, CEDING, TREATYNUMBER) VALUES ('100002', 'UJI CEDING B', 'UJI/2')`)
+	u.exec(t, `INSERT INTO {s}.M_PRODUCTNAME_LIFE (ID, CEDING, BEGIN_DATE, MAXEXPIREDCLAIM, RICOMM, IS_ORS)
+		VALUES ('100001', 'UJI CEDING A', DATE '2026-03-01', 180, 0.5, 1)`)
+	u.exec(t, `INSERT INTO {s}.M_PRODUCTNAME_LIFE_UWLIMIT (PRODUCTID, URUT, MAXINSURED, MINAGE)
+		VALUES ('100001', 1, 1175000000.12345678, 18)`)
+	u.exec(t, `INSERT INTO {s}.M_PRODUCTNAME_LIFE_COMMENT (PRODUCTID, URUT, TANGGAL, OPERATORNAME)
+		VALUES ('100001', 1, TIMESTAMP '2024-12-02 06:54:50.847', 'UJI-A')`)
 
 	kode, badan := u.kirim(t, "GET", pre+"/produk", "")
-	if kode != http.StatusOK || strings.Index(badan, "100001") > strings.Index(badan, "100002") {
-		t.Fatalf("grid urut ID: %d %s", kode, badan)
+	if kode != http.StatusOK || strings.Index(badan, "100001") > strings.Index(badan, "100002") ||
+		!strings.Contains(badan, "UJI CEDING B") {
+		t.Fatalf("grid urut ID dari induk: %d %s", kode, badan)
 	}
 	kode, badan = u.kirim(t, "GET", pre+"/produk/100001", "")
 	if kode != http.StatusOK {
 		t.Fatalf("produk: %d %s", kode, badan)
 	}
-	for _, w := range []string{`"maxInsured":"1175000000.123456789"`, `"id":"100009"`, `"begin":"2026-03-01"`,
-		`"maxExpiredClaim":"180"`} {
+	// Bentuk kanonik dari Oracle: desimal di bawah satu berawalan 0 (TM9 menulis `.5`), tanggal YYYY-MM-DD, ID inward =
+	// ID produk, stempel komentar Pega GMT.
+	for _, w := range []string{`"maxInsured":"1175000000.12345678"`, `"minAge":"18"`, `"id":"100001"`, `"productId":"100001"`,
+		`"begin":"2026-03-01"`, `"maxExpiredClaim":"180"`, `"riComm":"0.5"`, `"isOrs":true`, `"date":"20241202T065450.847 GMT"`} {
 		if !strings.Contains(badan, w) {
 			t.Errorf("tanpa %s: %s", w, badan)
 		}

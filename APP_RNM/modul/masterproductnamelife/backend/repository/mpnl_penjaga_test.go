@@ -3,8 +3,9 @@ package repository
 // Penjaga MODUL Master Product Name Life (pola penjaga Retro Life ditiru,
 // tidak diimpor).
 //
-//	P1  nol migrasi di rentang 140–179, nol DDL, nol tabel baru
-//	    (tiket 01 ditangguhkan; slot menu 960–961 hanya UPDATE DIMIGRASI)
+//	K5  rentang 140–179 hanya CREATE/DROP tabel flat `M_PRODUCTNAME_LIFE*` (tiket 01 bab 02-10-2026; dulu P1
+//	    "rentang kosong"), nol sentuhan tabel JSON warisan dan view; nol DDL di kode Go;
+//	    slot menu 960–961 hanya UPDATE DIMIGRASI
 //	-   prosedur PEGA_M_PRODUCT_LIFE / PEGA_M_PRODUCT_INWARD_LIFE tidak dipanggil
 //	-   nol COMMIT di teks kode
 //	-   nol kata cadangan Oracle sebagai nama kolom
@@ -88,47 +89,194 @@ func kodeProduksi(t *testing.T) map[string]string {
 	return hasil
 }
 
-// --- P1: nol migrasi di rentang, nol DDL --------------------------------------
+// --- migrasi: rentang 140–179 hanya tabel flat; nol DDL di kode Go -------------
+//
+// ⭐ Diganti 02-10-2026 (K5, tiket 01 bab bertanggal): dulu `TestMPNLNolMigrasiDiRentang` - rentang wajib KOSONG (P1).
+// Kini rentang membuat tabel flat `M_PRODUCTNAME_LIFE*` dan HANYA itu: nol sentuhan atas kedua tabel JSON warisan
+// (cadangan, sumber alat pindah) maupun ketiga view (K7 - tidak dibangun ulang), nol DML.
 
 var polaNomorMigrasi = regexp.MustCompile(`^(\d{3})_.*\.sql$`)
 
-func pelanggaranMigrasi(nama string) string {
+// pelanggaranNamaMigrasi - nomor berkas: rentang 140–179 atau slot menu 960–961 (`MODUL.md`).
+func pelanggaranNamaMigrasi(nama string) string {
 	m := polaNomorMigrasi.FindStringSubmatch(nama)
 	if m == nil {
 		return "berkas migrasi tanpa nomor tiga digit"
 	}
 	n, _ := strconv.Atoi(m[1])
 	switch {
-	case n >= 140 && n <= 179:
-		return "P1: rentang 140-179 tetap kosong (tiket 01 ditangguhkan, nol DDL)"
-	case n == 960 || n == 961:
+	case n >= 140 && n <= 179, n == 960 || n == 961:
 		return ""
 	default:
 		return "nomor di luar rentang dan slot menu modul ini"
 	}
 }
 
-func TestMPNLNolMigrasiDiRentang(t *testing.T) {
-	berkas, err := filepath.Glob(filepath.Join(akarModul, "backend", "migrations", "*.sql"))
-	if err != nil {
-		t.Fatal(err)
+// Bentuk pernyataan yang sah di rentang 140–179 - semuanya atas objek berawalan `M_PRODUCTNAME_LIFE`.
+var polaPernyataanFlat = []*regexp.Regexp{
+	regexp.MustCompile(`(?is)^CREATE\s+TABLE\s+\{skema\}\.M_PRODUCTNAME_LIFE\w*\s*\(`),
+	regexp.MustCompile(`(?is)^CREATE\s+(UNIQUE\s+)?INDEX\s+\{skema\}\.\w+\s+ON\s+\{skema\}\.M_PRODUCTNAME_LIFE\w*\s*\(`),
+	regexp.MustCompile(`(?is)^DROP\s+TABLE\s+\{skema\}\.M_PRODUCTNAME_LIFE\w*(\s+CASCADE\s+CONSTRAINTS)?(\s+PURGE)?$`),
+}
+
+// polaObjekWarisanProduk - kedua tabel JSON warisan dan ketiga view: tidak pernah disebut migrasi rentang ini.
+var polaObjekWarisanProduk = regexp.MustCompile(
+	`(?i)\b(M_PRODUCT_LIFE|M_PRODUCTINWARD_LIFE|PRODUCT_LIFE|PRODUCTINWARD_LIFE|DOCUMENTCLAIM_LIFE)\b`)
+
+// pernyataanSQL - pernyataan satu berkas (pemisah baris `/`, baris komentar `--` dibuang), seperti pelari migrasi.
+func pernyataanSQL(isi string) []string {
+	var hasil, kini []string
+	simpan := func() {
+		if p := strings.TrimSpace(strings.Join(kini, "\n")); p != "" {
+			hasil = append(hasil, p)
+		}
+		kini = nil
 	}
+	for _, b := range strings.Split(isi, "\n") {
+		switch t := strings.TrimSpace(b); {
+		case t == "/":
+			simpan()
+		case strings.HasPrefix(t, "--"):
+		default:
+			kini = append(kini, b)
+		}
+	}
+	simpan()
+	return hasil
+}
+
+// pelanggaranIsiMigrasi - isi satu berkas migrasi modul ini.
+func pelanggaranIsiMigrasi(nama, isi string) []string {
+	m := polaNomorMigrasi.FindStringSubmatch(nama)
+	if m == nil {
+		return nil
+	}
+	if n, _ := strconv.Atoi(m[1]); n < 140 || n > 179 {
+		return nil
+	}
+	var hasil []string
+	for _, p := range pernyataanSQL(isi) {
+		if w := polaObjekWarisanProduk.FindString(p); w != "" {
+			hasil = append(hasil, "menyebut "+w+" - rentang flat tidak menyentuh tabel JSON warisan maupun view (K7)")
+		}
+		sah := false
+		for _, pola := range polaPernyataanFlat {
+			sah = sah || pola.MatchString(p)
+		}
+		if !sah {
+			kata := strings.Fields(p)
+			hasil = append(hasil, "pernyataan di luar CREATE/DROP objek M_PRODUCTNAME_LIFE*: "+
+				strings.Join(kata[:min(3, len(kata))], " "))
+		}
+	}
+	return hasil
+}
+
+func berkasMigrasiModul(t *testing.T) map[string]string {
+	t.Helper()
+	berkas, err := filepath.Glob(filepath.Join(akarModul, "backend", "migrations", "*.sql"))
+	if err != nil || len(berkas) == 0 {
+		t.Fatalf("nol berkas migrasi terbaca: %v", err)
+	}
+	hasil := map[string]string{}
 	for _, b := range berkas {
-		if p := pelanggaranMigrasi(filepath.Base(b)); p != "" {
-			t.Errorf("%s: %s", filepath.Base(b), p)
+		isi, err := os.ReadFile(b)
+		if err != nil {
+			t.Fatal(err)
+		}
+		hasil[filepath.Base(b)] = string(isi)
+	}
+	return hasil
+}
+
+func TestMPNLRentangHanyaTabelFlat(t *testing.T) {
+	for nama, isi := range berkasMigrasiModul(t) {
+		if p := pelanggaranNamaMigrasi(nama); p != "" {
+			t.Errorf("%s: %s", nama, p)
+		}
+		for _, p := range pelanggaranIsiMigrasi(nama, isi) {
+			t.Errorf("%s: %s", nama, p)
 		}
 	}
 }
 
 func TestMPNLAturanMigrasiMenggigit(t *testing.T) {
-	for _, nama := range []string{"140_m_product_life.sql", "179_x_down.sql", "300_x.sql", "tanpa_nomor.sql"} {
-		if pelanggaranMigrasi(nama) == "" {
+	for _, nama := range []string{"300_x.sql", "139_x.sql", "180_x_down.sql", "tanpa_nomor.sql"} {
+		if pelanggaranNamaMigrasi(nama) == "" {
 			t.Errorf("%s seharusnya ditolak", nama)
 		}
 	}
-	for _, nama := range []string{"960_menu_masterproductnamelife.sql", "960_menu_masterproductnamelife_down.sql"} {
-		if p := pelanggaranMigrasi(nama); p != "" {
+	for _, nama := range []string{"140_m_productname_life.sql", "179_x_down.sql", "960_menu_masterproductnamelife.sql",
+		"960_menu_masterproductnamelife_down.sql"} {
+		if p := pelanggaranNamaMigrasi(nama); p != "" {
 			t.Errorf("%s seharusnya sah: %s", nama, p)
+		}
+	}
+	for _, buruk := range []string{
+		"DROP TABLE {skema}.M_PRODUCT_LIFE\n/\n",
+		"ALTER TABLE {skema}.M_PRODUCTINWARD_LIFE ADD (X VARCHAR2(1))\n/\n",
+		"INSERT INTO {skema}.M_PRODUCTNAME_LIFE (ID) VALUES ('1')\n/\n",
+		"DELETE FROM {skema}.M_PRODUCTNAME_LIFE_PLAN\n/\n",
+		"CREATE TABLE {skema}.T_LAIN (\n  A VARCHAR2(1)\n)\n/\n",
+		"CREATE OR REPLACE VIEW {skema}.PRODUCT_LIFE AS SELECT ID FROM {skema}.M_PRODUCTNAME_LIFE\n/\n",
+		"CREATE TABLE {skema}.M_PRODUCTNAME_LIFE_X (\n  A VARCHAR2(6),\n  CONSTRAINT FK_X FOREIGN KEY (A) REFERENCES {skema}.M_PRODUCT_LIFE (ID)\n)\n/\n",
+		"CREATE INDEX {skema}.IX_X ON {skema}.M_PRODUCTINWARD_LIFE (ID)\n/\n",
+	} {
+		if len(pelanggaranIsiMigrasi("150_uji.sql", buruk)) == 0 {
+			t.Errorf("seharusnya ditolak: %q", buruk)
+		}
+	}
+	for _, baik := range []string{
+		"-- komentar\nCREATE TABLE {skema}.M_PRODUCTNAME_LIFE_X (\n  A VARCHAR2(6)\n)\n/\nCREATE INDEX {skema}.IX_X ON {skema}.M_PRODUCTNAME_LIFE_X (A)\n/\n",
+		"DROP TABLE {skema}.M_PRODUCTNAME_LIFE_X CASCADE CONSTRAINTS\n/\n",
+	} {
+		if p := pelanggaranIsiMigrasi("150_uji.sql", baik); len(p) != 0 {
+			t.Errorf("seharusnya sah: %q: %v", baik, p)
+		}
+	}
+	// Di luar rentang (slot menu) aturan isi ini tidak berlaku.
+	if p := pelanggaranIsiMigrasi("960_menu.sql", "UPDATE {skema}.M_NAV_MENU SET DIMIGRASI = '1'\n/\n"); len(p) != 0 {
+		t.Errorf("slot menu bukan urusan aturan isi rentang: %v", p)
+	}
+}
+
+// polaTabelDibuat / polaTabelDibuang - nama tabel per berkas, untuk kontrak DaftarTabelFlat.
+var (
+	polaTabelDibuat  = regexp.MustCompile(`(?i)CREATE\s+TABLE\s+\{skema\}\.(\w+)`)
+	polaTabelDibuang = regexp.MustCompile(`(?i)DROP\s+TABLE\s+\{skema\}\.(\w+)`)
+	polaFKInduk      = regexp.MustCompile(`(?is)FOREIGN\s+KEY\s*\(\s*PRODUCTID\s*\)\s*REFERENCES\s+\{skema\}\.` +
+		TabelFlatInduk + `\s*\(\s*ID\s*\)\s*ON\s+DELETE\s+CASCADE`)
+	polaPKAnak = regexp.MustCompile(`(?is)PRIMARY\s+KEY\s*\(\s*PRODUCTID\s*,\s*URUT\s*\)`)
+)
+
+// TestMPNLMigrasiMembuatTabelFlat - kontrak dua sisi: migrasi maju membuat PERSIS DaftarTabelFlat (induk + tujuh anak),
+// jalur mundur membuang semuanya; setiap anak ber-PK (PRODUCTID, URUT) dan ber-FK ke induk `ON DELETE CASCADE`.
+func TestMPNLMigrasiMembuatTabelFlat(t *testing.T) {
+	dibuat, dibuang := map[string]string{}, map[string]bool{}
+	for nama, isi := range berkasMigrasiModul(t) {
+		for _, p := range pernyataanSQL(isi) {
+			if m := polaTabelDibuat.FindStringSubmatch(p); m != nil && !strings.HasSuffix(nama, "_down.sql") {
+				dibuat[strings.ToUpper(m[1])] = p
+			}
+			if m := polaTabelDibuang.FindStringSubmatch(p); m != nil && strings.HasSuffix(nama, "_down.sql") {
+				dibuang[strings.ToUpper(m[1])] = true
+			}
+		}
+	}
+	if len(dibuat) != len(DaftarTabelFlat) || len(dibuang) != len(DaftarTabelFlat) {
+		t.Errorf("dibuat %d, dibuang %d tabel; mau %d (%v)", len(dibuat), len(dibuang), len(DaftarTabelFlat), DaftarTabelFlat)
+	}
+	for _, tabel := range DaftarTabelFlat {
+		p, ada := dibuat[tabel]
+		if !ada || !dibuang[tabel] {
+			t.Errorf("%s: dibuat %v, dibuang %v", tabel, ada, dibuang[tabel])
+			continue
+		}
+		if tabel == TabelFlatInduk {
+			continue
+		}
+		if !polaPKAnak.MatchString(p) || !polaFKInduk.MatchString(p) {
+			t.Errorf("%s: anak wajib PK (PRODUCTID, URUT) dan FK PRODUCTID -> %s(ID) berkaskade", tabel, TabelFlatInduk)
 		}
 	}
 }
@@ -137,10 +285,15 @@ var polaDDL = regexp.MustCompile(`(?i)\b(CREATE|ALTER|DROP|TRUNCATE)\s+(TABLE|SE
 
 func adaDDL(teks string) bool { return polaDDL.MatchString(teks) }
 
+// TestMPNLNolDDL - kode Go modul ini (termasuk alat pindah) nol DDL: struktur hanya lewat berkas migrasi, yang
+// diperiksa TestMPNLRentangHanyaTabelFlat (sejak 02-10-2026 berkas .sql tidak lagi ikut di sini).
 func TestMPNLNolDDL(t *testing.T) {
 	for jalur, isi := range kodeProduksi(t) {
+		if strings.HasSuffix(jalur, ".sql") {
+			continue
+		}
 		if adaDDL(isi) {
-			t.Errorf("%s memuat DDL - P1: nol DDL, nol tabel baru", jalur)
+			t.Errorf("%s memuat DDL - struktur hanya lewat berkas migrasi", jalur)
 		}
 	}
 }

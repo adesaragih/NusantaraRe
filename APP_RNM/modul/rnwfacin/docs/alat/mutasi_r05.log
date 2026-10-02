@@ -1,0 +1,19 @@
+# Uji mutasi R05 - 2026-10-01 19:47
+# 14 mutan
+baseline: hijau
+TERTANGKAP        tanpa filter selesai
+TERTANGKAP        tanpa filter ditolak
+TERTANGKAP        tanpa filter pembuat
+TERTANGKAP        pembuat tanpa peka huruf
+TERTANGKAP        tanpa filter team
+TERTANGKAP        urut naik
+TERTANGKAP        pyID naik
+TERTANGKAP        batas 499
+TERTANGKAP        terpotong >=
+TERTANGKAP        pembuat kosong diterima
+TERTANGKAP        team kosong diterima
+TERTANGKAP        status kosong diterima
+LOLOS             pesan pembuat memuat login  [ekuivalen: di cabang ini PembuatID kosong, tidak ada login yang bocor]
+TERTANGKAP        pesan team memuat login
+HASIL: 13/14 tertangkap; lolos ['pesan pembuat memuat login']; tak terkompilasi []
+berkas asli pulih: ya

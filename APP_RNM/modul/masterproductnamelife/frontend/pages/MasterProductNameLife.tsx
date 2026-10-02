@@ -9,7 +9,7 @@
 // · `Create Operator` · `Last Updated Operator` dan tombol baris `View` b74798 (`SetProductName` → mode lihat).
 // Mode form (`DATASHOW = 1`): `FormProduk`. Wadah grid b71574 ber-`IsFire` dengan `ALWAYS` → selalu tampil.
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { Gagal, Halaman, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
 import { ambilDaftarProduk, ambilProduk, type Produk, type RingkasanProduk } from '../api'
@@ -31,7 +31,8 @@ export default function MasterProductNameLife() {
   const [halaman, setHalaman] = useState(1)
   const [form, setForm] = useState<FormTerbuka | null>(null)
   const [galatBuka, setGalatBuka] = useState<unknown>(null)
-  const [ke, setKe] = useState(0)
+  // Kunci pemasangan ulang form, dan nomor pembukaan terakhir (`Add`/`View`).
+  const ke = useRef(0)
 
   const muat = useCallback(async () => {
     try {
@@ -49,18 +50,21 @@ export default function MasterProductNameLife() {
     void muat()
   }, [muat])
 
-  function buka(produk: Produk, lihat: boolean): void {
-    setKe((k) => k + 1)
-    setForm({ produk, lihat, ke: ke + 1 })
+  // Audit 02-10-2026: setiap pembukaan mendapat nomor baru SAAT diminta; jawaban `View` yang tiba sesudah
+  // pembukaan lain (View berikutnya atau `Add`) diabaikan, jadi form tidak pernah menampilkan produk yang salah.
+  function buka(produk: Produk, lihat: boolean, nomor = ++ke.current): void {
+    if (nomor !== ke.current) return
+    setForm({ produk, lihat, ke: nomor })
   }
 
   async function lihatProduk(id: string): Promise<void> {
+    const nomor = ++ke.current
     setGalatBuka(null)
     try {
       // `View` b74798 → `SetProductName` (+ `SetProductNameInward`), 8 b2147 `IsView = true`.
-      buka(await ambilProduk(id), true)
+      buka(await ambilProduk(id), true, nomor)
     } catch (e) {
-      setGalatBuka(e)
+      if (nomor === ke.current) setGalatBuka(e)
     }
   }
 

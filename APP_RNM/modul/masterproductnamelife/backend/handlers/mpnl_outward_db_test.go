@@ -65,10 +65,10 @@ func TestDBOnRetentionOutwardListDariKontrakOR(t *testing.T) {
 	if !strings.Contains(jawab, `"reinsTypeName":"UJI OR"`) || strings.Contains(jawab, "UJI QS") {
 		t.Errorf("OutwardList: %s", jawab)
 	}
-	if v := u.teks(t, `SELECT JSON_VALUE(JSONDATA, '$.OutwardList[0].REINSTYPEID') FROM {s}.M_PRODUCT_LIFE WHERE ID = '100044'`); v != "10200" {
-		t.Errorf("OutwardList[0].REINSTYPEID di JSONDATA: %q", v)
+	if v := u.teks(t, `SELECT REINSTYPEID FROM {s}.M_PRODUCTNAME_LIFE_OUTWARD WHERE PRODUCTID = '100044' AND URUT = 1`); v != "10200" {
+		t.Errorf("baris OUTWARD pertama REINSTYPEID: %q", v)
 	}
-	if v := u.teks(t, `SELECT JSON_VALUE(JSONDATA, '$.OutwardList[0].TRANSACTIONYEAR') FROM {s}.M_PRODUCT_LIFE WHERE ID = '100044'`); v != "2025" {
+	if v := u.teks(t, `SELECT TO_CHAR(TRANSACTIONYEAR) FROM {s}.M_PRODUCTNAME_LIFE_OUTWARD WHERE PRODUCTID = '100044' AND URUT = 1`); v != "2025" {
 		t.Errorf("TRANSACTIONYEAR ← TREATYYEAR: %q", v)
 	}
 }

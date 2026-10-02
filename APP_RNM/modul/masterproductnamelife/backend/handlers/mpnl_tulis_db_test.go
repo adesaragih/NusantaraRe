@@ -2,7 +2,8 @@
 
 package handlers_test
 
-// Seam HTTP simpan produk terhadap skema uji Oracle NYATA (paket 3).
+// Seam HTTP simpan produk terhadap skema uji Oracle NYATA (paket 3) - sejak 02-10-2026 ke tabel FLAT; kedua tabel
+// JSON warisan tidak pernah ditulis.
 
 import (
 	"net/http"
@@ -30,50 +31,60 @@ func TestDBSimpanBaruDariSequenceLaluUpsertDikunciID(t *testing.T) {
 	if kode != http.StatusOK || !strings.Contains(badan, `"id":"100044"`) {
 		t.Fatalf("POST: %d %s", kode, badan)
 	}
-	if n := u.cacah(t, "M_PRODUCT_LIFE", "ID = '100044' AND JSON_VALUE(JSONDATA, '$.PRODUCTNAME') = 'UJI PRODUK' "+
-		"AND JSON_VALUE(JSONDATA, '$.POLICYHODER') = 'UJI-ORG-1' AND JSON_VALUE(JSONDATA, '$.CREATEOP') = 'UJI-PELAKU'"); n != 1 {
-		t.Errorf("baris baru + JSON: %d", n)
+	if n := u.cacah(t, "M_PRODUCTNAME_LIFE", "ID = '100044' AND PRODUCTNAME = 'UJI PRODUK' "+
+		"AND POLICYHOLDER = 'UJI-ORG-1' AND CREATEOP = 'UJI-PELAKU'"); n != 1 {
+		t.Errorf("baris induk baru: %d", n)
 	}
 	kode, badan = u.kirim(t, "PUT", pre+"/produk/100044", strings.Replace(badanUji, "UJI PRODUK", "UJI UBAH", 1))
 	if kode != http.StatusOK {
 		t.Fatalf("PUT: %d %s", kode, badan)
 	}
-	if n := u.cacah(t, "M_PRODUCT_LIFE", ""); n != 1 {
+	if n := u.cacah(t, "M_PRODUCTNAME_LIFE", ""); n != 1 {
 		t.Errorf("upsert dikunci ID: %d baris, mau 1", n)
 	}
-	if got := u.teks(t, `SELECT JSON_VALUE(JSONDATA, '$.PRODUCTNAME') FROM {s}.M_PRODUCT_LIFE WHERE ID = '100044'`); got != "UJI UBAH" {
-		t.Errorf("PRODUCTNAME JSON ikut diperbarui: %q", got)
+	if got := u.teks(t, `SELECT PRODUCTNAME FROM {s}.M_PRODUCTNAME_LIFE WHERE ID = '100044'`); got != "UJI UBAH" {
+		t.Errorf("PRODUCTNAME diperbarui: %q", got)
+	}
+	// Setiap simpan menambah satu baris komentar (OQ-MPNL-14): dua simpan = URUT 1 dan 2.
+	if n := u.cacah(t, "M_PRODUCTNAME_LIFE_COMMENT", "PRODUCTID = '100044'"); n != 2 {
+		t.Errorf("baris komentar: %d, mau 2", n)
+	}
+	if n := u.cacah(t, "M_PRODUCT_LIFE", "") + u.cacah(t, "M_PRODUCTINWARD_LIFE", ""); n != 0 {
+		t.Errorf("tabel JSON warisan tidak ditulis lagi: %d baris", n)
 	}
 }
 
-func TestDBIdentitasTerpakaiDitolakTerang(t *testing.T) {
+// ID yang dipakai tabel JSON warisan dilewati (audit 02-10-2026, `PilihIdentitasBebas`) - tidak ditimpa, tidak gagal.
+func TestDBIdentitasTerpakaiDiTabelWarisanDilewati(t *testing.T) {
 	u := pasangDB(t)
 	u.exec(t, `INSERT INTO {s}.M_PRODUCTINWARD_LIFE (ID, JSONDATA) VALUES ('100044', '{}')`)
 	u.isiMasterUji(t)
 	kode, badan := u.kirim(t, "POST", pre+"/produk", badanUji)
-	if kode != http.StatusInternalServerError || !strings.Contains(badan, "already used") {
-		t.Errorf("ID baru yang sudah dipakai inward harus gagal terang: %d %s", kode, badan)
+	if kode != http.StatusOK || !strings.Contains(badan, `"id":"100045"`) {
+		t.Errorf("ID 100044 dipakai tabel warisan: produk baru 100045: %d %s", kode, badan)
 	}
-	if n := u.cacah(t, "M_PRODUCT_LIFE", ""); n != 0 {
-		t.Errorf("nol baris: %d", n)
+	if n := u.cacah(t, "M_PRODUCTNAME_LIFE", ""); n != 1 {
+		t.Errorf("satu baris induk: %d", n)
+	}
+	if got := u.teks(t, `SELECT JSONDATA FROM {s}.M_PRODUCTINWARD_LIFE WHERE ID = '100044'`); got != "{}" {
+		t.Errorf("baris warisan tidak tersentuh: %q", got)
 	}
 }
 
-// Lanjutan 1 (code-review): kolom datar yang DITULIS (`RIRISKID`, `RIRISK`) dan baris inward ber-ID produk
-// diperiksa di Oracle sungguhan - bukan hanya `JSONDATA` dan bukan hanya di tiruan.
-func TestDBKolomDatarDanInwardBerIDProduk(t *testing.T) {
+// Kolom induk dan baris anak ditulis di Oracle sungguhan - bukan hanya di tiruan.
+func TestDBKolomFlatDanBarisAnak(t *testing.T) {
 	u := pasangDB(t)
 	u.isiMasterUji(t)
 	if kode, badan := u.kirim(t, "POST", pre+"/produk", badanLengkap); kode != http.StatusOK {
 		t.Fatalf("POST: %d %s", kode, badan)
 	}
-	if n := u.cacah(t, "M_PRODUCT_LIFE", "ID = '100044' AND RIRISKID = '1000117' AND RIRISK = 'UJI RISK'"); n != 1 {
-		t.Errorf("kolom datar RIRISKID, RIRISK (SaveProductNameLIfeFlat b84): %d", n)
+	if n := u.cacah(t, "M_PRODUCTNAME_LIFE", "ID = '100044' AND RIRISKID = '1000117' AND RIRISK = 'UJI RISK'"); n != 1 {
+		t.Errorf("kolom RIRISKID, RIRISK: %d", n)
 	}
-	if n := u.cacah(t, "M_PRODUCTINWARD_LIFE", "ID = '100044' AND JSON_VALUE(JSONDATA, '$.PRODUCTID') = '100044'"); n != 1 {
-		t.Errorf("baris inward ber-ID produk, PRODUCTID = ID (OQ-MPNL-02): %d", n)
+	if n := u.cacah(t, "M_PRODUCTNAME_LIFE_DOCCLAIM", "PRODUCTID = '100044'"); n != 2 {
+		t.Errorf("dua baris DOCUMENT CLAIM: %d", n)
 	}
-	if n := u.cacah(t, "M_PRODUCTINWARD_LIFE", ""); n != 1 {
-		t.Errorf("satu baris inward, nol sequence inward: %d", n)
+	if got := u.teks(t, `SELECT DOCUMENT FROM {s}.M_PRODUCTNAME_LIFE_DOCCLAIM WHERE PRODUCTID = '100044' AND URUT = 2`); got != "UJI DOK B" {
+		t.Errorf("urutan baris grid = URUT: %q", got)
 	}
 }

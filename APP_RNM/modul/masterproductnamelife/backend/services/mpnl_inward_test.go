@@ -1,6 +1,6 @@
 package services_test
 
-// Sisi inward + simpan atomik dua tabel (paket 4, tiket 03).
+// Sisi inward + simpan atomik (paket 4, tiket 03) - sejak 02-10-2026 satu baris induk flat + tujuh anak.
 
 import (
 	"context"
@@ -23,21 +23,23 @@ func TestSimpanBaruMenulisInwardBerIDProduk(t *testing.T) {
 	if p.Inward.ID != "100044" || p.Inward.ProductID != "100044" {
 		t.Errorf("R14: ID inward = PRODUCTID = ID produk: %+v", p.Inward)
 	}
-	isi := g.Inward["100044"]
-	for _, w := range []string{`"PRODUCTID":"100044"`, `"CEDINGLIMIT":"150000000.5"`, `"BEGIN":"01/03/2026"`, `"POLICYHODER":"UJI-ORG-1"`} {
-		if !strings.Contains(isi, w) {
-			t.Errorf("JSON inward tanpa %s: %s", w, isi)
-		}
+	s := g.Produk["100044"].Inward
+	if s.ProductID != "100044" || s.CedingLimit != "150000000.5" || s.Begin != "2026-03-01" || s.PolicyHolder != "UJI-ORG-1" ||
+		s.MaxExpiredClaim != "180" {
+		t.Errorf("sisi inward di baris induk flat: %+v", s)
 	}
 	if g.Komit != 1 {
-		t.Errorf("kedua tabel satu transaksi: %d komit", g.Komit)
+		t.Errorf("induk dan anak satu transaksi: %d komit", g.Komit)
 	}
 }
 
-func TestUbahMemperbaruiBarisInwardLamaBerIDSendiri(t *testing.T) {
+// Produk lama yang baris inward JSON-nya ber-ID lain (100009 → PRODUCTID 100007) dipindah alat pindah ke baris
+// produknya sendiri: ID inward = ID produk (tiket 01 bab 02-10-2026). Medan inward tanpa form (tanpa kolom flat)
+// tetap tidak pernah dari klien.
+func TestUbahProdukHasilPindahInwardBerIDProduk(t *testing.T) {
 	l, g := layananMaster()
-	g.Umum["100007"] = `{"ID":"100007","PRODUCTNAME":"LAMA","CREATEOP":"UJI-A"}`
-	g.Inward["100009"] = `{"ID":"100009","PRODUCTID":"100007","CEDING":"UJI CEDING LAMA","EXPIRYAGE":"75"}`
+	g.IsiJSON("100007", `{"ID":"100007","PRODUCTNAME":"LAMA","CREATEOP":"UJI-A"}`,
+		`{"ID":"100009","PRODUCTID":"100007","EXPIRYAGE":"75"}`)
 	m := produkMasuk()
 	m.ID = "100007"
 	m.Inward.Ceding = "KLIEN" // medan tanpa form - tidak dari klien
@@ -45,34 +47,36 @@ func TestUbahMemperbaruiBarisInwardLamaBerIDSendiri(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(g.Inward) != 1 || p.Inward.ID != "100009" || p.Inward.ProductID != "100007" || p.Inward.Ceding != "UJI CEDING LAMA" {
-		t.Errorf("baris inward lama diperbarui, tidak digandakan: %+v %v", p.Inward, g.Inward)
+	if len(g.Produk) != 1 || p.Inward.ID != "100007" || p.Inward.ProductID != "100007" || p.Inward.Ceding != "" ||
+		g.Produk["100007"].Inward.Ceding != "" {
+		t.Errorf("satu baris produk, inward ber-ID produk, medan tanpa form bukan dari klien: %+v", p.Inward)
 	}
 }
 
 func TestUbahProdukTanpaInwardMenyisipInwardBerIDProduk(t *testing.T) {
 	l, g := layananMaster()
-	g.Umum["100007"] = `{"ID":"100007","PRODUCTNAME":"LAMA"}`
+	g.IsiJSON("100007", `{"ID":"100007","PRODUCTNAME":"LAMA"}`, "")
 	m := produkMasuk()
 	m.ID = "100007"
 	if _, err := l.SimpanProduk(context.Background(), pelakuUji, m, false); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(g.Inward["100007"], `"PRODUCTID":"100007"`) {
-		t.Errorf("inward baru ber-ID produk: %v", g.Inward)
+	if s := g.Produk["100007"].Inward; s.ProductID != "100007" || s.PolicyHolder != "UJI-ORG-1" {
+		t.Errorf("sisi inward produk tanpa inward lama ditulis ber-ID produk: %+v", s)
 	}
 }
 
-func TestSimpanAtomikDuaTabel(t *testing.T) {
+func TestSimpanAtomikIndukDanAnak(t *testing.T) {
 	l, g := layananMaster()
-	g.GagalTulisInward = tiruan.ErrTiruan
+	g.GagalTulisAnak = tiruan.ErrTiruan
 	_, err := l.SimpanProduk(context.Background(), pelakuUji, produkMasuk(), true)
 	if !errors.Is(err, tiruan.ErrTiruan) {
-		t.Fatalf("galat inward diteruskan: %v", err)
+		t.Fatalf("galat penulis anak diteruskan: %v", err)
 	}
-	if len(g.Umum) != 0 || len(g.Inward) != 0 || g.Komit != 0 || g.Seq != 44 {
-		t.Errorf("P4: gagal sisi inward membatalkan sisi umum juga: umum %d inward %d komit %d seq %d",
-			len(g.Umum), len(g.Inward), g.Komit, g.Seq)
+	// `NEXTVAL` tidak ikut rollback (Oracle): nomor 44 terpakai, celahnya tetap - seperti DEV.
+	if len(g.Produk) != 0 || g.Komit != 0 || g.Seq != 45 {
+		t.Errorf("P4: gagal menulis anak membatalkan baris induk juga: produk %d komit %d seq %d",
+			len(g.Produk), g.Komit, g.Seq)
 	}
 }
 

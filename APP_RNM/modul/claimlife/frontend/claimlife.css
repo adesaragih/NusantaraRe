@@ -1,0 +1,256 @@
+/*
+ * Gaya modul Claim Life.
+ *
+ * ⛔ TERISOLASI: SETIAP pemilih diawali kelas akar `.claimlife` (dipasang `rute.tsx` pada pembungkus
+ * seluruh halaman modul, `display: contents` sehingga tata letak tidak berubah). Aturan di sini DULU
+ * menumpang di `inti/frontend/styles.css`; dipindah 02-10-2026 atas permintaan work owner ("untuk css
+ * style per modul tidak ada lagi menumpang per inti"), isinya tidak berubah selain awalan akar. Dijaga
+ * `gaya.test.ts`.
+ */
+
+/* Pembungkus akar: tanpa kotak sendiri, jadi halaman modul tetap anak tata letak kerangka. */
+.claimlife {
+  display: contents;
+}
+
+.claimlife .inbox__register {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: #fff;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+.claimlife .inbox__register:hover {
+  background: var(--primary-hover);
+}
+
+.claimlife .inbox__register:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.claimlife .inbox__tab {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.claimlife .inbox__tab-butir {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  margin-bottom: -1px;
+  padding: 0 16px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: transparent;
+  color: var(--text-2);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background-color 0.15s;
+}
+.claimlife .inbox__tab-butir:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.claimlife .inbox__tab-butir--aktif {
+  border-bottom-color: var(--primary);
+  color: var(--primary-text);
+  font-weight: 600;
+}
+
+/* Terjemahan berdiri DI SAMPING judul VERBATIM, tidak menggantikannya. */
+.claimlife .inbox__tab-id {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-3);
+}
+
+.claimlife .inbox__lencana {
+  /* `.badge` template. */
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary-text);
+  font-size: 12px;
+  font-weight: 700;
+}
+.claimlife .inbox__tab-butir--aktif .inbox__lencana {
+  background: var(--primary);
+  color: #fff;
+}
+
+.claimlife .inbox__halaman {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  font-size: 14px;
+  color: var(--text-2);
+}
+
+.claimlife .inbox__halaman button {
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.claimlife .inbox__halaman button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ============================================== PANEL DATA POLIS (Register) */
+.claimlife .polis {
+  margin: 16px 0;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.claimlife .polis__judul {
+  margin: 0 0 14px;
+  font-size: 17px;
+}
+
+.claimlife .polis__daftar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 0 24px;
+  margin: 0;
+}
+
+.claimlife .polis__medan {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.claimlife .polis__medan dt {
+  color: var(--muted);
+}
+
+.claimlife .polis__medan dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* Medan yang belum bersumber terlihat BERBEDA — supaya tidak ada yang
+   mengira nilainya memang kosong di sistem polis. */
+.claimlife .polis__medan--belum dd {
+  color: var(--muted);
+  font-weight: 400;
+  font-style: italic;
+}
+
+/* ====================================================== OUTSTANDING CLAIM */
+.claimlife .os__kepala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.claimlife .os__judul {
+  margin: 0;
+}
+
+.claimlife .os__detail {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.claimlife .os__aksi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.claimlife .os__tombol {
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: #fff;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+.claimlife .os__tombol:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+.claimlife .os__detail:hover {
+  background: var(--surface-2);
+}
+
+.claimlife .os__tombol:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.claimlife .os__tombol:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+/* Tabel di DALAM panel data polis: panelnya yang bertepi (dulu bagian `:where(.kartu, .panel, .polis,
+   .modal)` inti). Tetap `:where` supaya kekhususannya nol seperti semula. */
+:where(.claimlife .polis) :where(table) {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+:where(.claimlife .polis) :where(th) {
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+}
