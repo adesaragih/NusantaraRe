@@ -138,10 +138,10 @@ func (j jenisKlausulUji) DaftarNonLife(context.Context) ([]repository.JenisReasu
 	return out, nil
 }
 
-func (j jenisKlausulUji) DaftarAnakTreatyLimit(_ context.Context, induk string) ([]repository.JenisReasuransiTCO, error) {
+func (j jenisKlausulUji) DaftarAnakTreatyLimit(context.Context) ([]repository.JenisReasuransiTCO, error) {
 	var out []repository.JenisReasuransiTCO
 	for _, x := range j {
-		if repository.LolosSaringanAnakTreatyLimitTCO(x.ID, repository.FlagJenisReasuransiAktif, induk) {
+		if repository.LolosSaringanAnakTreatyLimitTCO(x.ID, repository.FlagJenisReasuransiAktif) {
 			out = append(out, x)
 		}
 	}
@@ -257,12 +257,12 @@ func TestKlausulAnakTurunanDanTotal(t *testing.T) {
 	if h.Klausul.Medan["Rp"] != "250.00000000" || h.Klausul.Medan["Usd"] != "20.00000000" || h.TotalPct != "25" || h.Peringatan != "" {
 		t.Errorf("turunan: %+v total %s peringatan %q", h.Klausul.Medan, h.TotalPct, h.Peringatan)
 	}
-	m := anak("10003", "10")
+	m := anak("10028", "10")
 	m.Medan["Rp"] = "1"
 	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", m); !errors.Is(err, models.ErrMedanBukanMilikJenis) {
 		t.Errorf("Rp dari klien: %v", err)
 	}
-	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", anak("10003", "75.00000001")); !errors.Is(err, models.ErrTotalPctAnakMelebihi100) {
+	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", anak("10028", "75.00000001")); !errors.Is(err, models.ErrTotalPctAnakMelebihi100) {
 		t.Errorf("total > 100: %v", err)
 	}
 	yatim := anak("10004", "10")
@@ -291,7 +291,7 @@ func TestKlausulPeringatanSpreadingTreatyLimitChild(t *testing.T) {
 	if err != nil || h.Peringatan != "Please make sure spreading is 100%" {
 		t.Fatalf("60%%: %+v %v", h, err)
 	}
-	anak.Medan = map[string]string{"ReinsTypeID": "10003", "Pct": "40"}
+	anak.Medan = map[string]string{"ReinsTypeID": "10028", "Pct": "40"}
 	if h, err = l.Simpan(context.Background(), pelakuUjiTCO, "1000001", anak); err != nil || h.Peringatan != "" || h.TotalPct != "100" {
 		t.Errorf("100%%: %+v %v", h, err)
 	}
@@ -426,8 +426,8 @@ func TestKlausulIndukBerubahMenghitungUlangAnak(t *testing.T) {
 
 // Anak Treaty Limit - `Show Child` `GridTreatyArrTreatyLimitList.xml` b2975
 // (`TreatyContractSetReinsTypeList`, tak diekspor) [keputusan work owner
-// 30-09-2026]: ReinsType anak = porsi (10004, 10028, ...) atau induknya
-// sendiri; jenis induk LAIN ditolak. ⛔ SAMA untuk anak SETIAP jenis
+// 30-09-2026, dikoreksi 02-10-2026]: ReinsType anak = porsi (10004, 10028,
+// ...) saja; induknya sendiri dan jenis induk lain ditolak. ⛔ SAMA untuk anak SETIAP jenis
 // [keputusan work owner 02-10-2026]; induk tetap memakai daftar induk tiket 02.
 func TestKlausulAnakTreatyLimitMemakaiPilihanPorsi(t *testing.T) {
 	g, n := gudangKlausulKosong(), 0
@@ -444,7 +444,8 @@ func TestKlausulAnakTreatyLimitMemakaiPilihanPorsi(t *testing.T) {
 	if err != nil || h.Klausul.ReinsTypeName != "UJI QS (OR)" {
 		t.Fatalf("porsi QS (OR): %+v %v", h.Klausul, err)
 	}
-	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", anak("10003", "30")); err != nil {
+	// ⛔ Induknya sendiri BUKAN pilihan anak [keputusan work owner 02-10-2026].
+	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", anak("10003", "30")); !errors.Is(err, services.ErrJenisReasuransiDiLuarDaftar) {
 		t.Errorf("induknya sendiri: %v", err)
 	}
 	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", anak("10005", "10")); !errors.Is(err, services.ErrJenisReasuransiDiLuarDaftar) {
@@ -456,7 +457,7 @@ func TestKlausulAnakTreatyLimitMemakaiPilihanPorsi(t *testing.T) {
 		t.Errorf("induk berporsi: %v", err)
 	}
 	// Anak jenis LAIN (EpiList) memakai daftar yang SAMA [keputusan work owner 02-10-2026]:
-	// porsi dan induknya diterima, jenis induk lain ditolak.
+	// porsi diterima; induknya sendiri dan jenis induk lain ditolak.
 	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", epi("10003", "100")); err != nil {
 		t.Fatalf("induk EPI: %v", err)
 	}
@@ -467,7 +468,7 @@ func TestKlausulAnakTreatyLimitMemakaiPilihanPorsi(t *testing.T) {
 	if h, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", anakEpi("10028", "10")); err != nil || h.Klausul.ReinsTypeName != "UJI QS (OR)" {
 		t.Errorf("anak EPI berporsi: %+v %v", h.Klausul, err)
 	}
-	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", anakEpi("10003", "10")); err != nil {
+	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", anakEpi("10003", "10")); !errors.Is(err, services.ErrJenisReasuransiDiLuarDaftar) {
 		t.Errorf("anak EPI = induknya sendiri: %v", err)
 	}
 	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", anakEpi("10005", "10")); !errors.Is(err, services.ErrJenisReasuransiDiLuarDaftar) {
@@ -546,5 +547,34 @@ func TestKlausulSatuBarisPerTahun(t *testing.T) {
 				t.Errorf("%s (%s): satuBaris %v, mau %v", a.Jenis, jk.ID, a.SatuBaris, mau)
 			}
 		}
+	}
+}
+
+// Baris anak LAMA yang terlanjur ber-ReinsType induk (data DEV: ORS di bawah
+// ORS) tetap dapat di-Edit selama ReinsType-nya tidak diganti; baris baru
+// ber-ReinsType induk ditolak [keputusan work owner 02-10-2026].
+func TestKlausulAnakLamaBerReinsIndukTetapDapatDiedit(t *testing.T) {
+	g, n := gudangKlausulKosong(), 0
+	l := layananKlausul(g, &n)
+	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001",
+		services.KlausulMasuk{DescID: "10001", Medan: map[string]string{"ReinsTypeID": "10003", "Rp": "100"}}); err != nil {
+		t.Fatal(err)
+	}
+	g.baris["UJI-LAMA"] = models.KlausulTreaty{ID: "UJI-LAMA", TreatyYearID: "1000001", TreatyDescID: "10001",
+		ReinsTypeID: "10003", ReinsTypeName: "UJI QUOTA SHARE", ParentReinsTypeID: "10003"}
+	edit := services.KlausulMasuk{ID: "UJI-LAMA", DescID: "10001", Anak: true, ParentReinsTypeID: "10003",
+		Medan: map[string]string{"ReinsTypeID": "10003", "Pct": "20"}}
+	h, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", edit)
+	if err != nil || h.Klausul.ReinsTypeName != "UJI QUOTA SHARE" {
+		t.Fatalf("Edit baris lama tanpa mengganti ReinsType: %+v %v", h.Klausul, err)
+	}
+	edit.Medan = map[string]string{"ReinsTypeID": "10005", "Pct": "20"}
+	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", edit); !errors.Is(err, services.ErrJenisReasuransiDiLuarDaftar) {
+		t.Errorf("mengganti ke jenis induk: %v", err)
+	}
+	baru := edit
+	baru.ID, baru.Medan = "", map[string]string{"ReinsTypeID": "10003", "Pct": "5"}
+	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", baru); !errors.Is(err, services.ErrJenisReasuransiDiLuarDaftar) {
+		t.Errorf("baris baru ber-ReinsType induk: %v", err)
 	}
 }

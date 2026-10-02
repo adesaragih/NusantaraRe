@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	inti "nusantarare/inti/backend"
-	"nusantarare/inti/backend/galat"
 	"nusantarare/modul/treatycontractout/backend/repository"
 	"nusantarare/modul/treatycontractout/backend/services"
 )
@@ -17,18 +16,13 @@ type pembacaUji struct {
 	baris []repository.JenisReasuransiTCO
 	anak  []repository.JenisReasuransiTCO
 	err   error
-	// induk - induk yang diminta DaftarAnakTreatyLimit terakhir.
-	induk *string
 }
 
 func (p pembacaUji) DaftarNonLife(context.Context) ([]repository.JenisReasuransiTCO, error) {
 	return p.baris, p.err
 }
 
-func (p pembacaUji) DaftarAnakTreatyLimit(_ context.Context, induk string) ([]repository.JenisReasuransiTCO, error) {
-	if p.induk != nil {
-		*p.induk = induk
-	}
+func (p pembacaUji) DaftarAnakTreatyLimit(context.Context) ([]repository.JenisReasuransiTCO, error) {
 	return p.anak, p.err
 }
 
@@ -88,29 +82,24 @@ func TestJenisReasuransiMembawaTigaMedanApaAdanya(t *testing.T) {
 	}
 }
 
-// Anak Treaty Limit [keputusan work owner 30-09-2026]: pilihan dari pembaca
-// porsi + induk, induk wajib, kosong = gagal terang.
+// Pilihan ReinsType anak: porsi saja, tanpa induk [keputusan work owner
+// 02-10-2026]; kosong = gagal terang.
 func TestJenisReasuransiAnakTreatyLimit(t *testing.T) {
-	var diminta string
 	svc := services.New(nil).JenisReasuransiTreaty().DenganPembaca(pembacaUji{
-		anak:  []repository.JenisReasuransiTCO{{ID: "10004", Note: "UJI QS (R/I)", Tipe: "4"}, {ID: "10003", Note: "UJI QS", Tipe: "1"}},
-		induk: &diminta,
+		anak: []repository.JenisReasuransiTCO{{ID: "10004", Note: "UJI QS (R/I)", Tipe: "4"}, {ID: "10028", Note: "UJI QS (OR)", Tipe: "4"}},
 	})
-	d, err := svc.DaftarAnakTreatyLimit(context.Background(), pelakuUjiTCO, " 10003 ")
-	if err != nil || len(d) != 2 || d[0].ID != "10004" || d[0].Note != "UJI QS (R/I)" || diminta != "10003" {
-		t.Errorf("daftar %+v, induk %q, galat %v", d, diminta, err)
+	d, err := svc.DaftarAnakTreatyLimit(context.Background(), pelakuUjiTCO)
+	if err != nil || len(d) != 2 || d[0].ID != "10004" || d[0].Note != "UJI QS (R/I)" {
+		t.Errorf("daftar %+v, galat %v", d, err)
 	}
-	if _, err := svc.DaftarAnakTreatyLimit(context.Background(), inti.Pelaku{}, "10003"); !errors.Is(err, inti.ErrTanpaIdentitas) {
+	if _, err := svc.DaftarAnakTreatyLimit(context.Background(), inti.Pelaku{}); !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("tanpa identitas: %v", err)
 	}
-	if _, err := svc.DaftarAnakTreatyLimit(context.Background(), pelakuUjiTCO, " "); !errors.Is(err, galat.ErrPermintaanTidakSah) {
-		t.Errorf("tanpa induk: %v", err)
-	}
 	kosong := services.New(nil).JenisReasuransiTreaty().DenganPembaca(pembacaUji{})
-	if _, err := kosong.DaftarAnakTreatyLimit(context.Background(), pelakuUjiTCO, "10003"); !errors.Is(err, services.ErrPilihanAnakTreatyLimitKosong) {
+	if _, err := kosong.DaftarAnakTreatyLimit(context.Background(), pelakuUjiTCO); !errors.Is(err, services.ErrPilihanAnakTreatyLimitKosong) {
 		t.Errorf("kosong: %v", err)
 	}
-	if _, err := services.New(nil).JenisReasuransiTreaty().DaftarAnakTreatyLimit(context.Background(), pelakuUjiTCO, "10003"); !errors.Is(err, services.ErrPembacaJenisReasuransiBelumDisuntik) {
+	if _, err := services.New(nil).JenisReasuransiTreaty().DaftarAnakTreatyLimit(context.Background(), pelakuUjiTCO); !errors.Is(err, services.ErrPembacaJenisReasuransiBelumDisuntik) {
 		t.Errorf("bawaan harus gagal terang: %v", err)
 	}
 }

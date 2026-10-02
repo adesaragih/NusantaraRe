@@ -53,8 +53,8 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	mux.HandleFunc("GET /api/treaty-contract-out/jenis-reasuransi",
 		jenisReasuransiTreaty(svc, stubPelaku))
-	// Pilihan ReinsType baris anak Treaty Limit (`Show Child`) - porsi + induknya
-	// [keputusan work owner 30-09-2026]; `?induk=` = ReinsTypeID induk.
+	// Pilihan ReinsType baris anak SEMUA grid `Show Child` - jenis porsi saja,
+	// tanpa induk [keputusan work owner 30-09-2026, dikoreksi 02-10-2026].
 	mux.HandleFunc("GET /api/treaty-contract-out/jenis-reasuransi/anak-treaty-limit",
 		jenisReasuransiAnakTreatyLimit(svc, stubPelaku))
 	mux.HandleFunc("GET /api/treaty-contract-out/grup-treaty",
@@ -112,7 +112,7 @@ func jenisReasuransiTreaty(svc *services.Service, stubPelaku bool) http.HandlerF
 }
 
 // jenisReasuransiAnakTreatyLimit melayani GET
-// /api/treaty-contract-out/jenis-reasuransi/anak-treaty-limit?induk={ReinsTypeID}.
+// /api/treaty-contract-out/jenis-reasuransi/anak-treaty-limit - pilihan ReinsType baris anak (porsi saja).
 func jenisReasuransiAnakTreatyLimit(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
@@ -121,7 +121,7 @@ func jenisReasuransiAnakTreatyLimit(svc *services.Service, stubPelaku bool) http
 		}
 		daftar, err := svc.JenisReasuransiTreaty().
 			DenganPembaca(services.PembacaJenisReasuransiOracle(svc)).
-			DaftarAnakTreatyLimit(r.Context(), inti.PelakuDari(r, stubPelaku), r.URL.Query().Get("induk"))
+			DaftarAnakTreatyLimit(r.Context(), inti.PelakuDari(r, stubPelaku))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}

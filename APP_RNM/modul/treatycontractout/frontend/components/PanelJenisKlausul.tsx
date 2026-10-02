@@ -132,8 +132,8 @@ export function rencanaKonversi(
 /**
  * Pemilih ReinsTypeID satu aturan. Treaty Limit ikut XML: `pxAutoComplete` di
  * grid induk (`GridTreatyArrangementTreatyLimit.xml` b3025, daftar induk) dan
- * anak (`GridTreatyArrTreatyLimitList.xml` b2892, porsi + induknya — dari
- * penanda aturan `pilihanReins`). ⛔ SETIAP baris anak membawa penanda itu
+ * anak (`GridTreatyArrTreatyLimitList.xml` b2892, jenis porsi saja tanpa induk —
+ * dari penanda aturan `pilihanReins`). ⛔ SETIAP baris anak membawa penanda itu
  * [keputusan work owner 02-10-2026: ReinsType anak semua jenis = anak Treaty
  * Limit]. Induk jenis lain: dropdown daftar induk tiket 02.
  */
@@ -155,14 +155,11 @@ function FormMedan({
   tahunID,
   aturan,
   form,
-  induk,
   onUbah,
 }: {
   tahunID: string
   aturan: AturanKlausul
   form: FormKlausul
-  /** ReinsTypeID induk (baris anak) atau '00'. */
-  induk: string
   onUbah: (medan: string, nilai: string) => void
 }) {
   const turunan = new Set(aturan.turunan ?? [])
@@ -196,7 +193,7 @@ function FormMedan({
               label={label}
               value={form.medan[m] ?? ''}
               onChange={(v) => onUbah(m, v)}
-              anakTreatyLimitDari={pemilih === 'saring-anak' ? induk : undefined}
+              anak={pemilih === 'saring-anak'}
             />
           )
         }
@@ -316,7 +313,6 @@ function GridAturan({
             tahunID={tahunID}
             aturan={aturan}
             form={form}
-            induk={induk}
             onUbah={(m, v) => {
               setForm((f) => (f === null ? f : { ...f, medan: { ...f.medan, [m]: v } }))
             }}

@@ -403,14 +403,14 @@ func (l *KlausulTCO) Daftar(ctx context.Context, pelaku inti.Pelaku, tahunID, de
 
 // namaReinsType memeriksa ID jenis reasuransi di daftar pilihan jenisnya:
 // induk - daftar tersaring tiket 02 [keputusan work owner 29-09-2026]
-// (OQ-TCO-15, ditutup); SETIAP anak - porsi + induknya (`induk`), sama dengan
-// anak Treaty Limit [keputusan work owner 30-09-2026, diperluas 02-10-2026].
-func (l *KlausulTCO) namaReinsType(ctx context.Context, a models.AturanKlausul, id, induk string) (string, error) {
+// (OQ-TCO-15, ditutup); SETIAP anak - jenis porsi saja, induknya tidak
+// [keputusan work owner 30-09-2026, diperluas dan dikoreksi 02-10-2026].
+func (l *KlausulTCO) namaReinsType(ctx context.Context, a models.AturanKlausul, id string) (string, error) {
 	var daftar []repository.JenisReasuransiTCO
 	var err error
 	kosong := ErrMasterJenisReasuransiKosong
 	if a.PilihanReins == models.PilihanReinsAnakTreatyLimit {
-		daftar, err = l.jenis.DaftarAnakTreatyLimit(ctx, induk)
+		daftar, err = l.jenis.DaftarAnakTreatyLimit(ctx)
 		kosong = ErrPilihanAnakTreatyLimitKosong
 	} else {
 		daftar, err = l.jenis.DaftarNonLife(ctx)
@@ -497,7 +497,7 @@ func (l *KlausulTCO) Simpan(ctx context.Context, pelaku inti.Pelaku, tahunID str
 	if err := models.IsiMedanKlausulTCO(a, &k, m.Medan); err != nil {
 		return HasilKlausulTampil{}, err
 	}
-	if err := l.lengkapiDariMaster(ctx, a, &k); err != nil {
+	if err := l.lengkapiDariMaster(ctx, a, &k, lama); err != nil {
 		return HasilKlausulTampil{}, err
 	}
 	// Tiket 11: form berkurs menuntut kurs berlaku (`NewTreatyArr*`); induk
@@ -592,7 +592,12 @@ func (l *KlausulTCO) Simpan(ctx context.Context, pelaku inti.Pelaku, tahunID str
 
 // lengkapiDariMaster mengisi nama dari master: jenis reasuransi (tiket 02),
 // occupation, clause - klien hanya memilih ID.
-func (l *KlausulTCO) lengkapiDariMaster(ctx context.Context, a models.AturanKlausul, k *models.KlausulTreaty) error {
+//
+// `lama` - baris sebelum Edit (kosong untuk baris baru). ReinsType baris anak
+// lama yang TIDAK diganti tetap boleh walau di luar pilihan anak sekarang
+// (data lama ber-ReinsType induk, mis. ORS di bawah ORS) - Edit Pct-nya tidak
+// terkunci; menggantinya wajib memakai pilihan porsi.
+func (l *KlausulTCO) lengkapiDariMaster(ctx context.Context, a models.AturanKlausul, k *models.KlausulTreaty, lama models.KlausulTreaty) error {
 	punya := func(m string) bool {
 		for _, x := range a.Medan {
 			if x == m {
@@ -603,7 +608,9 @@ func (l *KlausulTCO) lengkapiDariMaster(ctx context.Context, a models.AturanKlau
 	}
 	var err error
 	if punya(models.MedanReinsTypeID) && k.ReinsTypeID != "" {
-		if k.ReinsTypeName, err = l.namaReinsType(ctx, a, k.ReinsTypeID, k.ParentReinsTypeID); err != nil {
+		if a.Anak && lama.ID != "" && lama.ReinsTypeID == k.ReinsTypeID {
+			k.ReinsTypeName = lama.ReinsTypeName
+		} else if k.ReinsTypeName, err = l.namaReinsType(ctx, a, k.ReinsTypeID); err != nil {
 			return err
 		}
 	}

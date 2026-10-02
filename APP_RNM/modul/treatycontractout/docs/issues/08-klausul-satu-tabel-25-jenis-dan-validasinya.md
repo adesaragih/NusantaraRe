@@ -384,3 +384,22 @@ tampil `.Info`, target `.ID_Clause` b2501).
   satu grid subjenis per tab.
 - Server tanpa perubahan: `GET /klausul-pilihan/{master}?cari=` sudah menerima `cari` kosong.
 - Uji: `PilihMasterKlausul.test.ts`, `PanelJenisKlausul.test.ts` (tab, nol kotak Search).
+
+## ⛔ Koreksi work owner bertanggal — 02-10-2026 (ReinsType anak TANPA induk)
+
+*Permintaan: "kenapa ReinsType di child ada nambah induknya".*
+
+**Mengoreksi** keputusan 30-09-2026 ("12 jenis porsi + induknya") dan blok 02-10-2026 di atas yang menyalinnya ke semua anak:
+pilihan ReinsType baris anak **semua** grid `Show Child` (termasuk Treaty Limit, agar tetap sama) = **dua belas jenis porsi
+saja**; ReinsType induk tidak pernah ikut.
+
+**Yang diubah.**
+- repository: `LolosSaringanAnakTreatyLimitTCO(id, flag)` tanpa induk; SQL `FLAG = :1 AND (ID LIKE :2 … :13)` (tanpa
+  `ID = :induk`).
+- services/handler/frontend: parameter `induk` dihapus dari `DaftarAnakTreatyLimit` dan rute
+  `GET …/jenis-reasuransi/anak-treaty-limit` (tanpa `?induk=`); pemilih anak menerima `anak={true}`.
+- Validasi simpan: baris anak BARU ber-ReinsType induk ditolak (`ErrJenisReasuransiDiLuarDaftar`). ⚠️ Baris anak LAMA yang
+  terlanjur ber-ReinsType induk (data DEV: ORS di bawah ORS) tetap dapat di-Edit selama ReinsType-nya tidak diganti —
+  menggantinya wajib memakai jenis porsi.
+- Uji: tabel kebenaran repository (induk tidak pernah lolos), SQL tanpa `ID = :`, layanan (induk ditolak untuk anak Treaty
+  Limit dan EPI), `TestKlausulAnakLamaBerReinsIndukTetapDapatDiedit`, uji pemilih frontend.

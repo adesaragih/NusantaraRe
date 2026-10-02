@@ -113,8 +113,8 @@ type AturanKlausul struct {
 	Sumber string
 	// PilihanReins - sumber pilihan `ReinsTypeID`: kosong = daftar jenis
 	// reasuransi tersaring tiket 02 (RD induk, OQ-TCO-15) - SELURUH aturan
-	// induk; `PilihanReinsAnakTreatyLimit` = porsi + induknya - SELURUH aturan
-	// anak (konstruktor `anak`).
+	// induk; `PilihanReinsAnakTreatyLimit` = jenis porsi saja (tanpa induk) -
+	// SELURUH aturan anak (konstruktor `anak`).
 	PilihanReins string
 	// SatuBaris - jenis berisi SATU baris per tahun treaty: `Add` hanya tampil
 	// bila form belum memuat baris (`OutputParam.DATASHOW ='' &&
@@ -124,10 +124,11 @@ type AturanKlausul struct {
 }
 
 // PilihanReinsAnakTreatyLimit - ReinsType baris anak dipilih dari dua belas
-// jenis porsi + ReinsType induknya [keputusan work owner 30-09-2026 untuk anak
-// Treaty Limit]. ⛔ Berlaku untuk SEMUA baris anak - ketujuh grid `Show Child`
-// [keputusan work owner 02-10-2026: "semua ReinsType yang berperan sebagai
-// child, samain dengan child yang di Treaty Limit"]. Di XML keenam anak lain
+// jenis porsi [keputusan work owner 30-09-2026 untuk anak Treaty Limit].
+// ⛔ Berlaku untuk SEMUA baris anak - ketujuh grid `Show Child` [keputusan work
+// owner 02-10-2026: "semua ReinsType yang berperan sebagai child, samain dengan
+// child yang di Treaty Limit"] - dan ReinsType INDUK TIDAK ikut [keputusan work
+// owner 02-10-2026: "kenapa ReinsType di child ada nambah induknya"]. Di XML keenam anak lain
 // memakai `D_EnumerationList` (tidak diekspor); nama konstanta dipertahankan
 // karena sumbernya tetap daftar anak Treaty Limit.
 //
@@ -168,7 +169,7 @@ func induk(jenis, desc, sumber string) AturanKlausul {
 }
 
 // anak - aturan baris anak (`Show Child`). ReinsType-nya SAMA untuk ketujuh
-// jenis: daftar anak Treaty Limit, porsi + induknya [keputusan work owner 02-10-2026].
+// jenis: jenis porsi saja, tanpa induk [keputusan work owner 02-10-2026].
 func anak(jenis, desc, sumber string, peringatan bool) AturanKlausul {
 	return AturanKlausul{Jenis: jenis, DescID: desc, Anak: true, Medan: medanAnak, Wajib: wajibAnak,
 		Turunan: turunanAnak, KunciDobel: kunciReins, BatasTotalAnak: true, PeringatanSpreading: peringatan,

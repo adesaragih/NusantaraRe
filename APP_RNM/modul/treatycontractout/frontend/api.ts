@@ -46,13 +46,11 @@ export async function ambilJenisReasuransiTreaty(): Promise<DaftarJenisReasurans
 export const PILIHAN_REINS_ANAK_TREATY_LIMIT = 'anak-treaty-limit'
 
 /**
- * Pilihan ReinsType baris anak Treaty Limit (`Show Child`) di bawah induk
- * `induk`: dua belas jenis porsi + induknya [keputusan work owner 30-09-2026].
+ * Pilihan ReinsType baris anak SEMUA grid `Show Child`: dua belas jenis porsi, TANPA induk
+ * [keputusan work owner 30-09-2026, dikoreksi 02-10-2026].
  */
-export async function ambilJenisReasuransiAnakTreatyLimit(induk: string): Promise<DaftarJenisReasuransiTreaty> {
-  return minta<DaftarJenisReasuransiTreaty>('/api/treaty-contract-out/jenis-reasuransi/anak-treaty-limit', {
-    kueri: { induk },
-  })
+export async function ambilJenisReasuransiAnakTreatyLimit(): Promise<DaftarJenisReasuransiTreaty> {
+  return minta<DaftarJenisReasuransiTreaty>('/api/treaty-contract-out/jenis-reasuransi/anak-treaty-limit')
 }
 
 // ---------------------------------------------------------------------------
