@@ -307,7 +307,7 @@ diputuskan; K3 kini 1 nilai.
 ### Keputusan work owner 02-10-2026 malam — *"ikuti rekomendasi"* (OQ-FLAT-01/02/07/08/09)
 
 K4 diralat: yang tidak dipindah hanya objek `OutwardList` yang **seluruh** kuncinya kosong; objek reasuradur outward
-(`OUTWARDNAMEID`, `OUTWARDNAME`, `OUTWARDRATEID`, `OUTWARDRATE` — empat kolom baru `M_PRODUCTNAME_LIFE_OUTWARD`, migrasi 146)
+(`OUTWARDNAMEID`, `OUTWARDNAME`, `OUTWARDRATEID`, `OUTWARDRATE` — empat kolom baru `M_PRODUCTNAME_LIFE_OUTWARD`, migrasi 146 *(Ralat 02-10-2026 malam: keempat kolom itu ditambah migrasi BARU `148_m_productname_life_outward_kolom` (`ALTER TABLE ... ADD`), bukan di 146 - 146 ternyata sudah dijalankan di DEV pukul 15:39 (`T_MIGRASI`), sehingga isinya dikembalikan ke bentuk yang dijalankan.)*)
 dipindah. K3 diralat: tanggal inward berbentuk lain **dikonversi** (OQ-FLAT-09), hanya nilai yang tidak terbaca yang
 di-NULL-kan. Uji kering DEV 20:46: gagal 0, OUTWARD 191 baris (`LAPORAN-MIGRASI-FLAT.md`).
 

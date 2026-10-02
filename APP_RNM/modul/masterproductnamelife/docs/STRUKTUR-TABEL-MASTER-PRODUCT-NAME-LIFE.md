@@ -4,7 +4,7 @@
 >
 > ⭐ **Ralat 02-10-2026 (keputusan work owner, K5 — OQ-MPNL-01 flat):** kalimat P1 di bawah (*"modul ini **tidak membuat
 > satu tabel, sequence, maupun constraint pun**"*, *"Rentang migrasi `140`–`179` sengaja kosong"*) **tidak berlaku lagi**.
-> Migrasi 140–147 membuat tabel flat `M_PRODUCTNAME_LIFE` + tujuh anak — bab *"Tabel FLAT produk"* di ekor dokumen ini.
+> Migrasi 140–147 membuat tabel flat `M_PRODUCTNAME_LIFE` + tujuh anak (148 menambah empat kolom `OUTWARD*` ke anak outward) — bab *"Tabel FLAT produk"* di ekor dokumen ini.
 > Kedua tabel JSON di bawah tetap **dibaca, tidak dibuat** (`MODUL.md`), kini sebagai cadangan dan sumber alat pindah.
 
 **P1 (`RALAT-DEV-30-09-2026.md`)** — modul ini **tidak membuat satu tabel, sequence, maupun constraint pun**. Produk
@@ -78,7 +78,7 @@ saling membatalkan (`TestDokumenSTRUKTURSepakatAtasTabelBersama`).
 
 ---
 
-# Tabel FLAT produk — dibuat migrasi 140–147 *(keputusan work owner 02-10-2026, tiket 01 bab bertanggal)*
+# Tabel FLAT produk — dibuat migrasi 140–147, kolom outward tambahan migrasi 148 *(keputusan work owner 02-10-2026, tiket 01 bab bertanggal)*
 
 Kolom dan tipe di bawah dibaca penjaga inti `TestKolomDDLCocokDenganStruktur` / `TestGolonganTipeDDLCocokDenganStruktur`
 (kolom **Tipe**: golongan; kolom **DDL**: tipe fisik). Seluruh kolom NULLABLE kecuali kunci. Sumber = kunci halaman
@@ -210,7 +210,7 @@ Anak (migrasi 145) — `UnderwritingLimitList[*]` - grid b42075. PK (`PRODUCTID`
 
 ## M_PRODUCTNAME_LIFE_OUTWARD
 
-Anak (migrasi 146) — `OutwardList[*]` berisi - `GetReinsTypeOR_Life` 4.1 b770 (objek kosong tidak dipindah, K4). PK (`PRODUCTID`, `URUT`); FK `PRODUCTID` → `M_PRODUCTNAME_LIFE(ID)` `ON DELETE CASCADE`.
+Anak (migrasi 146; `OUTWARDNAMEID`, `OUTWARDNAME`, `OUTWARDRATEID`, `OUTWARDRATE` migrasi 148) — `OutwardList[*]` berisi - `GetReinsTypeOR_Life` 4.1 b770 (objek kosong tidak dipindah, K4). PK (`PRODUCTID`, `URUT`); FK `PRODUCTID` → `M_PRODUCTNAME_LIFE(ID)` `ON DELETE CASCADE`.
 
 | Kolom | Tipe | DDL | Sumber / isi |
 | --- | --- | --- | --- |

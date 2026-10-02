@@ -107,7 +107,7 @@ Pega**; tiket 01 tetap ditangguhkan"*, dikutip). Keputusan grilling D2 dan Q1b b
 | OQ-FLAT-01 | FK lampiran → induk flat **tidak** ditambahkan | — |
 | OQ-FLAT-02 | ekspor flat → JSON **tidak** dibangun | — |
 | OQ-FLAT-07 | 2 normalisasi `RICOMM` (koma desimal, nol depan) **diterima** | `-terima-normalisasi="koma desimal,nol depan"` di panduan langkah 4 |
-| OQ-FLAT-08 | 189 objek outward bukan-OR **dipindah** | empat kolom `OUTWARDNAMEID`, `OUTWARDNAME`, `OUTWARDRATEID`, `OUTWARDRATE` di migrasi 146; K4 hanya objek yang SEMUA kuncinya kosong |
+| OQ-FLAT-08 | 189 objek outward bukan-OR **dipindah** | empat kolom `OUTWARDNAMEID`, `OUTWARDNAME`, `OUTWARDRATEID`, `OUTWARDRATE` di migrasi 146; K4 hanya objek yang SEMUA kuncinya kosong *(Ralat 02-10-2026 malam: keempat kolom itu ditambah migrasi BARU `148_m_productname_life_outward_kolom` (`ALTER TABLE ... ADD`), bukan di 146 - 146 ternyata sudah dijalankan di DEV pukul 15:39 (`T_MIGRASI`), sehingga isinya dikembalikan ke bentuk yang dijalankan.)* |
 | OQ-FLAT-09 | tanggal inward berbentuk lain **dikonversi** (dicatat per produk dan kolom) | alat pindah; `MATURE` produk 100175 (`dd-MM-yyyy`) |
 
 Masih terbuka: **OQ-FLAT-03** (siapa dan kapan Pega berhenti menulis) dan **OQ-FLAT-04** (pembaca Claim Life atas view

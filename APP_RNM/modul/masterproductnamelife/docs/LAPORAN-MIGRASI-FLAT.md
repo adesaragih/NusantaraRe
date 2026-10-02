@@ -187,3 +187,21 @@ pindahflat -uji
 `-jalankan` kini hanya menunggu syarat peralihan di luar alat: OQ-FLAT-03 (Pega berhenti menulis) dan migrasi 140–147 di
 skema sasaran (`PANDUAN-PINDAH-FLAT.md`).
 
+## Ralat 02-10-2026 malam — migrasi 140–147 sudah dijalankan di DEV
+
+Kalimat kepala laporan ini dikutip: *"tabel flat belum ada di DEV (migrasi 140–147 belum dijalankan)"*. Pemeriksaan katalog
+DEV sesudah work owner menjalankan `-migrate` (SELECT saja): `T_MIGRASI` mencatat `140_…`–`147_…` pada **02-10-2026
+15:39:32** — sebelum keputusan OQ-FLAT-08. Akibatnya `M_PRODUCTNAME_LIFE_OUTWARD` di DEV dibuat TANPA keempat kolom
+`OUTWARDNAMEID`, `OUTWARDNAME`, `OUTWARDRATEID`, `OUTWARDRATE`, dan `-migrate` ulang tidak menambahkannya (nama 146 sudah
+tercatat). Perbaikan: 146 dikembalikan ke isi yang dijalankan; keempat kolom ditambah migrasi baru
+`148_m_productname_life_outward_kolom` (`ALTER TABLE ... ADD`).
+
+| Pemeriksaan DEV (SELECT saja) | Hasil |
+| --- | --- |
+| Tujuh dari delapan tabel flat | kolom, tipe, PK, FK berkaskade cocok dengan spesifikasi Go; 0 baris |
+| `M_PRODUCTNAME_LIFE_OUTWARD` | 8 dari 12 kolom — kurang keempat kolom `OUTWARD*` (menunggu 148) |
+| Migrasi tertunda seluruh aplikasi | hanya `148_m_productname_life_outward_kolom` |
+| Tabel JSON sumber | `M_PRODUCT_LIFE` 196, `M_PRODUCTINWARD_LIFE` 196 — tidak berubah |
+
+Sebelum 148 dijalankan: `-jalankan` alat pindah gagal di baris outward dan seluruh transaksinya batal (nol tulisan), dan
+aplikasi versi flat gagal membaca/menyimpan produk yang punya baris outward.

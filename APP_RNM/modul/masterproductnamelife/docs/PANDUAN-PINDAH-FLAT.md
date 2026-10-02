@@ -36,7 +36,7 @@ Konfigurasi alat sama dengan `cmd/api`: `ORACLE_DSN`, `ORACLE_SCHEMA` (skema ber
 | # | Langkah | Perintah / pemeriksaan | Lolos bila |
 | ---: | --- | --- | --- |
 | 1 | Hentikan penulisan Pega | (OQ-FLAT-03) | tidak ada simpan produk di Pega sejak titik ini |
-| 2 | Buat tabel flat | `go run ./cmd/api -migrate` — menjalankan migrasi 140–147 (dan migrasi lain yang belum tercatat `T_MIGRASI`) | `T_MIGRASI` mencatat `140_m_productname_life` … `147_m_productname_life_comment` |
+| 2 | Buat tabel flat | `go run ./cmd/api -migrate` — menjalankan migrasi 140–148 (dan migrasi lain yang belum tercatat `T_MIGRASI`). *DEV 02-10-2026: 140–147 tercatat 15:39; yang tertunda tinggal `148_m_productname_life_outward_kolom` — jalankan `-migrate` sekali lagi* | `T_MIGRASI` mencatat `140_m_productname_life` … `148_m_productname_life_outward_kolom`; sebelumnya `147_m_productname_life_comment` |
 | 3 | Uji kering | `go run ./modul/masterproductnamelife/backend/alat/pindahflat -terima-normalisasi="koma desimal,nol depan"` (mode `-uji`, hanya SELECT) | baris `gagal: 0`; cacah per tabel dan daftar K3/K4 sama dengan `LAPORAN-MIGRASI-FLAT.md` atau selisihnya dijelaskan |
 | 4 | Pindahkan | `go run ./modul/masterproductnamelife/backend/alat/pindahflat -jalankan -terima-normalisasi="koma desimal,nol depan"` — kedua jenis diputuskan work owner 02-10-2026 (OQ-FLAT-07); jenis lain tetap menahan | baris terakhir `ditulis: true`; satu transaksi yang lebih dulu mengunci tabel induk (gagal di mana pun = nol tulisan) |
 | 5 | Periksa agregat | `SELECT COUNT(*)` tiap tabel flat = baris "baris yang (akan) ditulis" laporan; `SELECT COUNT(*) FROM M_PRODUCT_LIFE` = 196 (atau cacah sumber saat itu) — tabel JSON tidak berubah | semua cacah sama |
