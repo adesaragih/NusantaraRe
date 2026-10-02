@@ -3,18 +3,24 @@
 // Pega membuka `InboxRetroLimitReinsurers`, `InboxRetroLifeReinsurersList`,
 // `InboxSecurityReinsurerLife`, dan `InboxBusinessLifeReinsurers` sebagai POPUP (`showHarness`
 // `pyTarget=popup`) di atas layar pemanggilnya. Di sini: panel yang menggantikan layar pemanggil
-// selama terbuka, dan ikon tutup kerangka harness (`pxIconCancel`) mengembalikannya - keadaan layar
-// pemanggil tetap (komponennya tidak dilepas).
+// selama terbuka, dan tombol tutup mengembalikannya - keadaan layar pemanggil tetap (komponennya
+// tidak dilepas).
+//
+// ⚠️ PENYIMPANGAN SADAR TAMPILAN (keputusan work owner 02-10-2026: "perbaiki tampilannya sama seperti
+// treaty contract out", lingkup tampilan saja): kepala panel meniru Treaty Contract Out - tombol TEKS
+// `Close` (Pega: ikon `pxIconCancel` tanpa teks) dan medan baca-saja sebagai kotak isian hanya-baca
+// (`Field readOnly` di `form-grid`, Pega: `pyLabelFieldValue`). Label tetap VERBATIM; alur, pager,
+// dan judul kolom (huruf besar Pega) tidak berubah.
 //
 // ⚠️ Kecuali `InboxSecurityReinsurerLife` sejak 02-10-2026 (keputusan work owner: akses Security Reinsurer
 // SAMA dengan Treaty Contract Out): panel Security tampil di bawah daftar reinsurer, di dalam panel
 // Reinsurer, tanpa menggantikannya - lihat `PanelReinsurer.tsx`.
 
-import { Halaman, IkonTutup } from '../../../../inti/frontend/components/ui/dasar'
+import { Field, Halaman } from '../../../../inti/frontend/components/ui/dasar'
 import { UMUM_MCRL } from '../labels'
 import { UKURAN_HALAMAN_MCRL, sel } from '../tampilan'
 
-/** Kepala panel: judul section + medan baca-saja (label VERBATIM) + ikon tutup harness. */
+/** Kepala panel: judul section + tombol `Close` + medan baca-saja (label VERBATIM) - pola Treaty Contract Out. */
 export function KepalaPanel({
   judul,
   medan,
@@ -28,18 +34,15 @@ export function KepalaPanel({
     <>
       <header className="inbox__kepala">
         <h3 className="panel__title">{judul}</h3>
-        <button type="button" className="btn btn--ghost btn--sm mcrl-tutup" aria-label={UMUM_MCRL.tutup} title={UMUM_MCRL.tutup} onClick={onTutup}>
-          <IkonTutup />
+        <button type="button" className="btn btn--ghost btn--sm" onClick={onTutup}>
+          {UMUM_MCRL.tutup}
         </button>
       </header>
-      <dl className="mcrl-kepala">
+      <div className="form-grid">
         {medan.map(([label, nilai]) => (
-          <div key={label} className="mcrl-kepala__medan">
-            <dt>{label}</dt>
-            <dd>{sel(nilai)}</dd>
-          </div>
+          <Field key={label} label={label} value={sel(nilai)} onChange={() => undefined} readOnly />
         ))}
-      </dl>
+      </div>
     </>
   )
 }

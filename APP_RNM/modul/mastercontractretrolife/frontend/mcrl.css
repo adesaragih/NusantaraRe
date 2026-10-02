@@ -38,37 +38,6 @@
   flex-wrap: wrap;
 }
 
-/* Ikon tutup kerangka harness popup (`pxIconCancel`). */
-.mcrl .mcrl-tutup {
-  padding-inline: 6px;
-}
-
-/* Medan baca-saja kepala panel (`ID Treaty Year`, `ID Reins Type`, `Reins Type`, ...). */
-.mcrl .mcrl-kepala {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 24px;
-  margin: 0 0 12px;
-}
-
-.mcrl .mcrl-kepala__medan {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.mcrl .mcrl-kepala__medan dt {
-  color: var(--muted);
-  font-size: var(--fs-xs);
-}
-
-.mcrl .mcrl-kepala__medan dd {
-  margin: 0;
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
-
 /* `Total Share -->>` - tiket 05 AC 19: total ≠ 100 DITANDAI mencolok. */
 .mcrl .mcrl-total {
   display: flex;
@@ -170,12 +139,6 @@
   .mcrl .panel {
     padding: 12px;
     border-radius: var(--radius-sm);
-  }
-
-  .mcrl .mcrl-kepala {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px 12px;
   }
 
   .mcrl .aksi-baris > .btn {
