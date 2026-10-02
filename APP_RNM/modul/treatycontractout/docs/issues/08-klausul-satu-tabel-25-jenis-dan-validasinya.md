@@ -360,3 +360,27 @@ memvalidasi".*
   baris yang ada), dibaca di transaksi yang mengunci tahun; `Edit` baris yang ada tetap boleh. `AturanTampil.satuBaris`
   dikirim ke layar. Uji `TestKlausulSatuBarisPerTahun`.
 - frontend: `addTampil` — `Add` disembunyikan selama daftar belum dimuat atau sudah berisi (seperti Pega).
+
+## ⛔ Keputusan work owner bertanggal — 02-10-2026 (10013 Exclusion Treaty: dropdown dan tab)
+
+*Permintaan: "ExclutionTreaty — Occupation: dropdown ID Occupation tidak bisa; Search ID Occupation hapus aja. ExclutionTreaty —
+Clause: dropdown ID Clause tidak bisa; Search ID Clause hapus aja. Tampilan 10013 — Exclusion Treaty dibuat tab aja, jangan
+nyecrol ke bawah".*
+
+**Cacat.** Dropdown ID Occupation / ID Clause hanya diisi hasil kotak `Search` terpisah, dan kotak itu baru memanggil server
+sesudah dua huruf — dropdown yang dibuka langsung kosong. Keempat subjenis (Occupation, Clause, Object, Periode) bertumpuk
+ke bawah dalam satu popup.
+
+**XML.** `ID_Occupation` input teks (`GridTreatyArrangementExclutionTreatyOccupation.xml` b2038) yang diisi Autocomplete nama
+(RD `BrowseOccupationFIRE_RD`, tampil `.Name`, target `.ID_Occupation` b2470); Clause sama (`…ExclutionTreatyClausule.xml`
+tampil `.Info`, target `.ID_Clause` b2501).
+
+**Yang dibangun.**
+- frontend `components/PilihMasterKlausul.tsx`: satu dropdown `PilihSaring` yang dapat difilter — terisi begitu dibuka (100
+  baris pertama berurut nama, `cari` kosong), ketikan di dalamnya disaring di server (jeda 250 ms) sehingga seluruh master
+  FIRE terjangkau; ID tampil sebagai keterangan; memilih ID ikut mengisi nama (`Occupation` / `Clause`, hanya dibaca). Nama
+  yang tersimpan tetap dibaca server dari master (`lengkapiDariMaster`). Kotak `Search` dan label `cariPilihan` dibuang.
+- frontend `PanelJenisKlausul`: jenis berinduk lebih dari satu (`tabSubjenis` — 10013) tampil sebagai tab `StripTab` inti,
+  satu grid subjenis per tab.
+- Server tanpa perubahan: `GET /klausul-pilihan/{master}?cari=` sudah menerima `cari` kosong.
+- Uji: `PilihMasterKlausul.test.ts`, `PanelJenisKlausul.test.ts` (tab, nol kotak Search).

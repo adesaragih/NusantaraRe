@@ -18,6 +18,7 @@ import {
   labelMedan,
   pemilihReinsType,
   addTampil,
+  tabSubjenis,
   rencanaKonversi,
 } from './PanelJenisKlausul'
 
@@ -196,5 +197,29 @@ describe('Add jenis satu baris', () => {
   })
   it('tombol Add dirender lewat penjaga itu', () => {
     expect(KODE).toContain('{addTampil(aturan, daftar !== null, baris.length) && (')
+  })
+})
+
+// 10013 Exclusion Treaty [keputusan work owner 02-10-2026]: subjenis sebagai tab; ID Occupation /
+// ID Clause satu dropdown yang dapat difilter, tanpa kotak Search terpisah.
+describe('10013 Exclusion Treaty', () => {
+  const exclusion: JenisKlausul = {
+    id: '10013', descName: 'UJI EXCLUSION', isXol: '0', statusAktif: '', catatan: '',
+    aturan: ['Occupation', 'Clause', 'Object', 'Periode'].map((subjenis) => aturan({ jenis: 'ExclutionTreaty', subjenis })),
+  }
+  it('subjenis tampil sebagai tab, urut aturan', () => {
+    expect(tabSubjenis(exclusion)).toEqual(['Occupation', 'Clause', 'Object', 'Periode'])
+  })
+  it('jenis berinduk satu tanpa tab', () => {
+    const epi: JenisKlausul = { ...exclusion, id: '10009', aturan: [aturan({}), aturan({ jenis: 'EpiList', anak: true })] }
+    expect(tabSubjenis(epi)).toEqual([])
+  })
+  it('hanya grid tab aktif yang dirender, lewat StripTab inti', () => {
+    expect(KODE).toContain('<StripTab tab={tab} aktif={tabAktif} onPilih={setTabAktif} />')
+    expect(KODE).toContain(".filter((a) => tab.length === 0 || a.subjenis === tabAktif)")
+  })
+  it('ID Occupation / ID Clause: PilihMasterKlausul, nol kotak Search', () => {
+    expect(KODE).toContain('<PilihMasterKlausul')
+    expect(KODE).not.toMatch(/cariPilihan\b|setCari|KLAUSUL_TCO\.cariPilihan/)
   })
 })

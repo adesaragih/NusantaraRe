@@ -25,7 +25,6 @@ import { KLAUSUL_TCO, KURS_TCO, LABEL_MEDAN_KHUSUS, LABEL_MEDAN_KLAUSUL } from '
 import {
   ambilKlausul,
   ambilKursTahun,
-  cariPilihanKlausul,
   konversiKurs,
   PILIHAN_REINS_ANAK_TREATY_LIMIT,
   simpanKlausul,
@@ -35,11 +34,11 @@ import {
   type Klausul,
   type KlausulMasuk,
   type KursTahun,
-  type PilihanKlausul,
 } from '../api'
-import { Field, Gagal, Kosong, Memuat, Pilih } from '../../../../inti/frontend/components/ui/dasar'
+import { Field, Gagal, Kosong, Memuat, StripTab } from '../../../../inti/frontend/components/ui/dasar'
 import PilihJenisReasuransi from './PilihJenisReasuransi'
 import PilihJenisReasuransiSaring from './PilihJenisReasuransiSaring'
+import PilihMasterKlausul from './PilihMasterKlausul'
 
 /** Label medan: penimpaan per jenis/subjenis, lalu bawaan, lalu nama medan. */
 export function labelMedan(a: Pick<AturanKlausul, 'jenis' | 'subjenis'>, medan: string): string {
@@ -93,6 +92,16 @@ export function barisSubjenis(daftar: Klausul[], subjenis: string): Klausul[] {
 /** Aturan induk jenis (satu, atau satu per subjenis ExclutionTreaty). */
 export function aturanInduk(j: JenisKlausul): AturanKlausul[] {
   return j.aturan.filter((a) => !a.anak)
+}
+
+/**
+ * Tab subjenis: jenis berinduk lebih dari satu (10013 Exclusion Treaty — Occupation, Clause, Object,
+ * Periode) tampil sebagai tab, bukan bertumpuk ke bawah [keputusan work owner 02-10-2026]. Kosong =
+ * tanpa tab.
+ */
+export function tabSubjenis(j: JenisKlausul): string[] {
+  const induk = aturanInduk(j)
+  return induk.length > 1 ? induk.map((a) => a.subjenis) : []
 }
 
 /** Aturan anak jenis, bila ada. */
@@ -156,8 +165,6 @@ function FormMedan({
   induk: string
   onUbah: (medan: string, nilai: string) => void
 }) {
-  const [cari, setCari] = useState('')
-  const [pilihan, setPilihan] = useState<PilihanKlausul[]>([])
   const turunan = new Set(aturan.turunan ?? [])
   // Hanya jawaban konversi TERAKHIR yang dipakai (ketikan cepat).
   const urutan = useRef(0)
@@ -194,28 +201,21 @@ function FormMedan({
           )
         }
         if (m === 'ID_Occupation' || m === 'ID_Clause') {
-          const master = m === 'ID_Occupation' ? 'occupation' : 'clause'
+          // Satu dropdown yang dapat difilter, tanpa kotak Search terpisah [keputusan work owner 02-10-2026].
+          const namaMedan = m === 'ID_Occupation' ? 'Occupation' : 'Clause'
           return (
-            <div key={m}>
-              <Field
-                label={`${KLAUSUL_TCO.cariPilihan} ${label}`}
-                value={cari}
-                onChange={(t) => {
-                  setCari(t)
-                  if (t.trim().length < 2) return
-                  cariPilihanKlausul(master, t)
-                    .then(setPilihan)
-                    .catch(() => setPilihan([]))
-                }}
-              />
-              <Pilih
-                label={label}
-                value={form.medan[m] ?? ''}
-                onChange={(v) => onUbah(m, v)}
-                opsi={pilihan.map((p) => ({ value: p.id, label: p.nama }))}
-                required
-              />
-            </div>
+            <PilihMasterKlausul
+              key={m}
+              master={m === 'ID_Occupation' ? 'occupation' : 'clause'}
+              label={label}
+              value={form.medan[m] ?? ''}
+              nama={form.medan[namaMedan] ?? ''}
+              onPilih={(id, nama) => {
+                onUbah(m, id)
+                onUbah(namaMedan, nama)
+              }}
+              required
+            />
           )
         }
         if (m === 'Occupation' || m === 'Clause') {
@@ -421,6 +421,8 @@ export default function PanelJenisKlausul({
 }) {
   const [indukTerpilih, setIndukTerpilih] = useState<Klausul | null>(null)
   const anak = aturanAnak(jenis)
+  const tab = tabSubjenis(jenis)
+  const [tabAktif, setTabAktif] = useState(tab[0] ?? '')
   const berkurs = jenisBerkurs(jenis)
   const [kurs, setKurs] = useState<KursTahun | null>(null)
   const [galatKurs, setGalatKurs] = useState<unknown>(null)
@@ -455,17 +457,20 @@ export default function PanelJenisKlausul({
         </p>
       )}
       {berkurs && galatKurs !== null && <Gagal galat={galatKurs} />}
-      {aturanInduk(jenis).map((a) => (
-        <GridAturan
-          key={`${a.jenis}/${a.subjenis}`}
-          tahunID={tahunID}
-          jenis={jenis}
-          aturan={a}
-          induk="00"
-          kursAda={kurs !== null}
-          onShowChild={anak !== undefined ? (k) => setIndukTerpilih(k) : undefined}
-        />
-      ))}
+      {tab.length > 0 && <StripTab tab={tab} aktif={tabAktif} onPilih={setTabAktif} />}
+      {aturanInduk(jenis)
+        .filter((a) => tab.length === 0 || a.subjenis === tabAktif)
+        .map((a) => (
+          <GridAturan
+            key={`${a.jenis}/${a.subjenis}`}
+            tahunID={tahunID}
+            jenis={jenis}
+            aturan={a}
+            induk="00"
+            kursAda={kurs !== null}
+            onShowChild={anak !== undefined ? (k) => setIndukTerpilih(k) : undefined}
+          />
+        ))}
       {anak !== undefined && indukTerpilih !== null && (
         <div>
           <GridAturan

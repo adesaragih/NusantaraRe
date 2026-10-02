@@ -173,7 +173,7 @@ Nomor baris = `Harness/InboxTreatyContractDescription.xml` kecuali disebut lain.
 | 7 section anak: `Show Child` b11200 → `Browse*ParentList`; `Close Child` (`GridTreatyArrTreatyEpiList.xml` b8657) → `Save*List_Act` → `SaveMasterProportionalArrgChild` | grid anak per induk; Rp/Usd turunan; total Pct + peringatan; ReinsType anak ketujuh grid = pilihan anak Treaty Limit (porsi + induknya, dapat difilter) [keputusan work owner 02-10-2026] | ✅ AC 25/28 |
 | `HitungRpUsd` | `RpUsdAnakTCO` di server | ✅ |
 | `TreatyTestChildTotal_Act` (TreatyLimitChild) | peringatan `Please make sure spreading is 100%` sesudah simpan | ✅ ralat 4 |
-| ExclutionTreaty: empat sub-bagian (`Param.Type`) + pemilih `BrowseOccupationFIRE_RD` / `BrowseFireClauseFacIn_RD` | satu jenis, empat subjenis; `GET /klausul-pilihan/{occupation,clause}` | ✅ OQ-TCO-14/16 |
+| ExclutionTreaty: empat sub-bagian (`Param.Type`) + pemilih `BrowseOccupationFIRE_RD` / `BrowseFireClauseFacIn_RD` | satu jenis, empat subjenis — tampil sebagai **tab** (`StripTab`); ID Occupation / ID Clause = satu dropdown yang dapat difilter (`PilihMasterKlausul`, tanpa kotak Search) atas `GET /klausul-pilihan/{occupation,clause}` [keputusan work owner 02-10-2026] | ✅ OQ-TCO-14/16 |
 | `SaveTreatyArrLimitMB_Act`, `SaveTreatyArrPortfolio_Act` | ditahan: 422 + alasan di layar | ⏸ AC 36 (Product + UW) |
 | 16 `CancelActivity*` | `Cancel` per panel membuang isian panel itu saja | ✅ AC 29 |
 | `NitipKurs` b3882 / `testingKurs` | baris kurs berlaku di panel jenis berkurs (`GET /tahun/{id}/kurs`) | ✅ tiket 11 |

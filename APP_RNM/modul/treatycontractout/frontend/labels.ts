@@ -422,8 +422,6 @@ export const KLAUSUL_TCO = {
   /** `[tidak ada di korpus]` */
   tersimpan: 'Clause saved.',
   /** `[tidak ada di korpus]` */
-  cariPilihan: 'Search',
-  /** `[tidak ada di korpus]` */
   pilihTahun: 'Treaty year',
 } as const
 

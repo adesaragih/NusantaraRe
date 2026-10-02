@@ -316,7 +316,7 @@ describe('label yang tidak bergantung korpus', () => {
   })
   it('yang tidak ada di korpus ditandai begitu', () => {
     const sumber = readFileSync(join(__dirname, 'labels.ts'), 'utf8')
-    for (const kunci of ['masterKosong', 'belumDipilih', 'kosong:', 'menungguTiket', 'cariPilihan']) {
+    for (const kunci of ['masterKosong', 'belumDipilih', 'kosong:', 'menungguTiket']) {
       const i = sumber.indexOf(kunci)
       expect(i, kunci).toBeGreaterThan(0)
       expect(sumber.slice(sumber.lastIndexOf('/**', i), i)).toContain('[tidak ada di korpus]')
