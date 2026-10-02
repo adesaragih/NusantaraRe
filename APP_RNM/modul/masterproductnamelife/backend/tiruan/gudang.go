@@ -74,14 +74,15 @@ func Baru() *Gudang {
 }
 
 // Transaksi - tiruan `DalamTransaksi`: fn(nil); sukses = Komit++, gagal =
-// seluruh isi dipulihkan (rollback).
+// isi tabel dipulihkan (rollback). `Seq` TIDAK dipulihkan: `NEXTVAL` Oracle tidak ikut
+// rollback, jadi simpan yang gagal meninggalkan celah nomor (audit 02-10-2026).
 func (g *Gudang) Transaksi(_ context.Context, fn func(tx *db.Tx) error) error {
-	umum, inward, datar, seq := salin(g.Umum), salin(g.Inward), map[string][2]string{}, g.Seq
+	umum, inward, datar := salin(g.Umum), salin(g.Inward), map[string][2]string{}
 	for k, v := range g.Datar {
 		datar[k] = v
 	}
 	if err := fn(nil); err != nil {
-		g.Umum, g.Inward, g.Datar, g.Seq = umum, inward, datar, seq
+		g.Umum, g.Inward, g.Datar = umum, inward, datar
 		return err
 	}
 	g.Komit++
@@ -105,18 +106,23 @@ func (g *Gudang) tulisDatar(p models.Produk) {
 	g.Datar[p.ID] = [2]string{p.Umum.RIRiskID, p.Umum.RIRisk}
 }
 
-// SisipProduk - ID dari Seq lewat `repository.FormatIdentitas`; ID terpakai = bentrok.
+// SisipProduk - ID dari Seq lewat `repository.PilihIdentitasBebas` (aturan yang sama dengan
+// gudang Oracle): ID terpakai di salah satu tabel dilewati, batasnya gagal terang.
 func (g *Gudang) SisipProduk(_ context.Context, _ *db.Tx, p models.Produk) (string, error) {
-	id, err := repository.FormatIdentitas(g.Seq)
+	id, _, err := repository.PilihIdentitasBebas(
+		func() (int64, error) {
+			n := g.Seq
+			g.Seq++
+			return n, nil
+		},
+		func(id string) (bool, error) {
+			_, umum := g.Umum[id]
+			_, inward := g.Inward[id]
+			return umum || inward, nil
+		},
+	)
 	if err != nil {
 		return "", err
-	}
-	g.Seq++
-	if _, ada := g.Umum[id]; ada {
-		return "", fmt.Errorf("%w: %s", repository.ErrIdentitasBentrok, id)
-	}
-	if _, ada := g.Inward[id]; ada {
-		return "", fmt.Errorf("%w: %s", repository.ErrIdentitasBentrok, id)
 	}
 	dasarUmum, dasarInward := "", ""
 	if p.SalinanDari != "" {

@@ -165,11 +165,19 @@ func productIDDari(b barisJSON) string {
 	return strings.TrimSpace(teksDari(obj[kunciProductID]))
 }
 
-// pilihInward - baris inward produk: yang ber-`PRODUCTID` = produk (Pega,
-// terakhir menang), lalu yang ber-`ID` = produk DAN `PRODUCTID`-nya kosong.
+// pilihInward - baris inward produk: lebih dulu baris ber-`ID` = `PRODUCTID` = produk (baris
+// yang dibaca pembaca hilir `WHERE ID = produk`; audit 02-10-2026 - dulu baris lain ber-`PRODUCTID`
+// sama dapat terpilih dan diperbarui sementara pembaca hilir tetap membaca baris lama), lalu yang
+// ber-`PRODUCTID` = produk (Pega `SetProductNameInward` 3.1 b1048, terakhir menang), lalu yang
+// ber-`ID` = produk DAN `PRODUCTID`-nya kosong.
 // ⛔ Baris ber-`ID` = produk yang `PRODUCTID`-nya menunjuk produk lain BUKAN
 // milik produk ini (ID sequence inward warisan) - tidak pernah dipilih, dibaca, atau ditimpa.
 func pilihInward(id string, baris []barisJSON) (barisJSON, bool) {
+	for _, b := range baris {
+		if b.id == id && productIDDari(b) == id {
+			return b, true
+		}
+	}
 	var dipilih barisJSON
 	ada := false
 	for _, b := range baris {

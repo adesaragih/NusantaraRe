@@ -19,13 +19,14 @@ import (
 	"nusantarare/modul/masterproductnamelife/backend/services"
 )
 
-// berkasPalsu - penyimpanan di memori; `Gagal` membuat Kirim gagal.
+// berkasPalsu - penyimpanan di memori; `Gagal` membuat Kirim gagal, `BukaGagal` membuat Buka gagal.
 type berkasPalsu struct {
-	mu     sync.Mutex
-	antre  map[string][]byte
-	simpan map[string][]byte
-	Gagal  error
-	kirim  int
+	mu        sync.Mutex
+	antre     map[string][]byte
+	simpan    map[string][]byte
+	Gagal     error
+	BukaGagal error
+	kirim     int
 }
 
 func baruBerkasPalsu() *berkasPalsu {
@@ -61,6 +62,9 @@ func (b *berkasPalsu) Kirim(_ context.Context, id string) error {
 }
 
 func (b *berkasPalsu) Buka(_ context.Context, id string) (io.ReadCloser, error) {
+	if b.BukaGagal != nil {
+		return nil, b.BukaGagal
+	}
 	d, ada := b.simpan[id]
 	if !ada {
 		return nil, os.ErrNotExist
@@ -118,8 +122,10 @@ func TestUnggahGagalTercatatTerlihatLaluDiulangTanpaGanda(t *testing.T) {
 	if err != nil {
 		t.Fatalf("kegagalan efek keluar TIDAK membatalkan rekam lampiran: %v", err)
 	}
-	if a.Status != models.StatusGagal || !strings.Contains(a.Galat, "tidak terjangkau") {
-		t.Errorf("gagal tercatat dan terlihat: %+v", a)
+	// Audit 02-10-2026: yang tersimpan dan tampil kalimat tetap; teks galat aslinya (bisa berisi ORA- atau jalur
+	// folder stub) hanya di log.
+	if a.Status != models.StatusGagal || a.Galat != services.PesanKirimGagal || strings.Contains(a.Galat, "tidak terjangkau") {
+		t.Errorf("gagal tercatat dan terlihat dengan kalimat tetap: %+v", a)
 	}
 	if _, err := l.UnduhLampiran(context.Background(), pelakuUji, "100007", a.ID); !errors.Is(err, services.ErrLampiranBelumTerkirim) {
 		t.Errorf("unduh sebelum terkirim: %v", err)
@@ -216,5 +222,26 @@ func TestViewOfficeOnlineStub(t *testing.T) {
 	}
 	if err := l.LihatOffice(context.Background(), pelakuUji, "100007", p.ID); !errors.Is(err, services.ErrMasukanTidakSah) {
 		t.Errorf("pdf: tautan hanya untuk xls/xlsx/doc/docx/ppt/pptx (b69291): %v", err)
+	}
+}
+
+// Audit 02-10-2026: unduhan yang gagal tidak membawa jalur folder stub atau kunci objek ke layar, dan folder
+// stub yang belum disetel tetap 503 (`ErrPenyimpananBelumDisetel`), bukan 409 "tidak di stub".
+func TestUnduhGagalTanpaJalurServerDanBelumDisetelTetap503(t *testing.T) {
+	l, b, _ := layananLampiran(t)
+	a, err := unggah(l, "UJI.pdf", "isi")
+	if err != nil || a.Status != models.StatusTerunggah {
+		t.Fatalf("unggah: %+v %v", a, err)
+	}
+	b.BukaGagal = errors.New("open UJI-DIR/master-product-name-life/simpan/" + a.StorageID + ": not found")
+	_, err = l.UnduhLampiran(context.Background(), pelakuUji, "100007", a.ID)
+	if !errors.Is(err, services.ErrBerkasTidakDiStub) || strings.Contains(services.Pesan(err), "UJI-DIR") ||
+		strings.Contains(services.Pesan(err), a.StorageID) || !strings.Contains(services.Pesan(err), "UJI.pdf") {
+		t.Errorf("kalimat layar tanpa jalur server, menyebut nama berkas: %q %v", services.Pesan(err), err)
+	}
+	b.BukaGagal = services.ErrPenyimpananBelumDisetel
+	if _, err = l.UnduhLampiran(context.Background(), pelakuUji, "100007", a.ID); !errors.Is(err, services.ErrPenyimpananBelumDisetel) ||
+		errors.Is(err, services.ErrBerkasTidakDiStub) {
+		t.Errorf("folder stub belum disetel = 503, bukan 409: %v", err)
 	}
 }

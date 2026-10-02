@@ -9,16 +9,26 @@ package repository
 // ⛔ PENYIMPANGAN SADAR KECIL dari `LPAD` (preseden Retro Life / Treaty
 // Contract Out): nomor urut lebih dari 5 digit dipotong Oracle diam-diam dan
 // melahirkan identitas bertabrakan; di sini ia GAGAL TERANG. ID yang sudah
-// dipakai salah satu tabel (nol PK di DEV) juga ditolak, bukan digandakan.
+// dipakai salah satu tabel (nol PK di DEV) tidak pernah digandakan atau ditimpa.
+//
+// ⛔ Audit 02-10-2026 (RALAT 02-10-2026): di DEV `M_PRODUCT_LIFE_SEQ` tertinggal dari data
+// (nilai berikut 200, ID `100202` sudah ada). `MERGE` prosedur Pega akan MENIMPA produk itu
+// diam-diam; dulu modul ini gagal 500 pada produk baru ketiga. Kini nomor yang ID-nya sudah
+// dipakai DILEWATI ke nomor berikut (paling banyak `MaksLewatiIdentitas` berturut-turut, setiap
+// lompatan dicatat di log supaya DBA melihatnya); lebih dari itu tetap gagal terang.
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 
 	"nusantarare/inti/backend/db"
 )
+
+// MaksLewatiIdentitas - batas ID terpakai yang dilewati berturut-turut dalam satu penerbitan.
+const MaksLewatiIdentitas = 100
 
 // SeqProduk - sequence identitas produk.
 const SeqProduk = "M_PRODUCT_LIFE_SEQ"
@@ -48,36 +58,69 @@ func sqlCacahID(tabel string) string {
 	return fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE ID = :1`, tabel)
 }
 
+// PilihIdentitasBebas mengambil nomor sequence berikut sampai ID-nya belum dipakai: ID terpakai
+// dilewati (dikembalikan di `dilewati`), paling banyak `MaksLewatiIdentitas` berturut-turut.
+// Nomor yang tidak muat 5 digit tetap gagal terang (`ErrIdentitasMelampauiLebar`).
+func PilihIdentitasBebas(berikut func() (int64, error), terpakai func(id string) (bool, error)) (id string, dilewati []string, err error) {
+	for range MaksLewatiIdentitas + 1 {
+		n, err := berikut()
+		if err != nil {
+			return "", dilewati, err
+		}
+		calon, err := FormatIdentitas(n)
+		if err != nil {
+			return "", dilewati, err
+		}
+		pakai, err := terpakai(calon)
+		if err != nil {
+			return "", dilewati, err
+		}
+		if !pakai {
+			return calon, dilewati, nil
+		}
+		dilewati = append(dilewati, calon)
+	}
+	return "", dilewati, fmt.Errorf("%w: %d consecutive IDs from %s are already used (%s to %s)", ErrIdentitasBentrok,
+		len(dilewati), SeqProduk, dilewati[0], dilewati[len(dilewati)-1])
+}
+
 // identitasBaru menerbitkan ID produk baru di dalam transaksi pemanggil dan
-// memastikan ID itu belum dipakai kedua tabel.
+// memastikan ID itu belum dipakai kedua tabel (ID terpakai dilewati, lihat kepala berkas).
 func (g *Gudang) identitasBaru(ctx context.Context, tx *db.Tx) (string, error) {
 	if !tx.Terisi() {
 		return "", errors.New("repository: a new product identity requires a transaction")
 	}
-	nomor, err := g.db.NomorBerikut(ctx, tx, SeqProduk)
-	if err != nil {
-		return "", err
-	}
-	n, err := strconv.ParseInt(nomor, 10, 64)
-	if err != nil {
-		return "", fmt.Errorf("repository: %s returned %q: %w", SeqProduk, nomor, err)
-	}
-	id, err := FormatIdentitas(n)
-	if err != nil {
-		return "", err
-	}
-	for _, tabel := range []string{TabelProduk, TabelInward} {
-		q, err := g.siapkan(tabel, sqlCacahID)
+	berikut := func() (int64, error) {
+		nomor, err := g.db.NomorBerikut(ctx, tx, SeqProduk)
 		if err != nil {
-			return "", err
+			return 0, err
 		}
-		var c int
-		if err := tx.QueryRowContext(ctx, q, id).Scan(&c); err != nil {
-			return "", fmt.Errorf("repository: checking %s %s: %w", tabel, id, err)
+		n, err := strconv.ParseInt(nomor, 10, 64)
+		if err != nil {
+			return 0, fmt.Errorf("repository: %s returned %q: %w", SeqProduk, nomor, err)
 		}
-		if c > 0 {
-			return "", fmt.Errorf("%w: %s in %s", ErrIdentitasBentrok, id, tabel)
-		}
+		return n, nil
 	}
-	return id, nil
+	terpakai := func(id string) (bool, error) {
+		for _, tabel := range []string{TabelProduk, TabelInward} {
+			q, err := g.siapkan(tabel, sqlCacahID)
+			if err != nil {
+				return false, err
+			}
+			var c int
+			if err := tx.QueryRowContext(ctx, q, id).Scan(&c); err != nil {
+				return false, fmt.Errorf("repository: checking %s %s: %w", tabel, id, err)
+			}
+			if c > 0 {
+				return true, nil
+			}
+		}
+		return false, nil
+	}
+	id, dilewati, err := PilihIdentitasBebas(berikut, terpakai)
+	if len(dilewati) > 0 {
+		log.Printf("master product name life: %s issued %d already used ID(s) %v; skipped - the sequence is behind the data and should be reviewed by the DBA",
+			SeqProduk, len(dilewati), dilewati)
+	}
+	return id, err
 }

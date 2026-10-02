@@ -37,18 +37,24 @@ func (pk *periksa) baris(judul string, i int, format string, a ...any) {
 	pk.tolak("%s row %d: %s", judul, i+1, fmt.Sprintf(format, a...))
 }
 
-// periksaPlan - gerbang murni `ProteksiPlanListLife`. Duplikat hanya untuk nilai
-// berisi (dua baris kosong sudah ditolak "kosong").
+// periksaPlan - gerbang murni `ProteksiPlanListLife`. Loop luar 2 b347 `·` memegang
+// `local.plan` satu baris; loop dalam 2.1 b524 `·` menelusuri SELURUH daftar dan 2.1.2 b715
+// `·` (PRE b836 `local.plan==.Plan && local.idx!=.pxListSubscript`) memasang "sama" di baris
+// dalam. Akibatnya SETIAP baris yang plannya muncul di baris lain ditandai - kedua baris
+// pasangan ganda, termasuk dua baris yang sama-sama kosong (audit 02-10-2026; dulu hanya
+// kemunculan kedua dan seterusnya, baris kosong dilewati).
 func periksaPlan(pk *periksa, daftar []models.BarisPlan) {
-	pertama := map[string]int{}
+	jumlah := map[string]int{}
+	for _, b := range daftar {
+		jumlah[strings.TrimSpace(b.Plan)]++
+	}
 	for i, b := range daftar {
 		plan := strings.TrimSpace(b.Plan)
 		if plan == "" {
 			pk.baris(judulPlan, i, "%s", PesanPlanKosong)
-		} else if _, ada := pertama[plan]; ada {
+		}
+		if jumlah[plan] > 1 {
 			pk.baris(judulPlan, i, "%s", PesanPlanSama)
-		} else {
-			pertama[plan] = i
 		}
 		if strings.TrimSpace(b.RIRate) == "" {
 			pk.baris(judulPlan, i, "%s", PesanRIRatePlanKosong)

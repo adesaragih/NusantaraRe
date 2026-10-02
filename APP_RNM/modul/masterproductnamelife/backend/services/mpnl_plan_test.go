@@ -48,14 +48,29 @@ func TestPlanPesanVerbatimProteksiPlanListLife(t *testing.T) {
 	m := produkMasuk()
 	m.PlanList = []models.BarisPlan{{}, planTersimpan, planTersimpan}
 	pesan := services.Pesan(simpan(m))
+	// Audit 02-10-2026: loop dalam 2.1 b524 + PRE b836 menandai KEDUA baris pasangan ganda.
 	for _, w := range []string{"PLAN LIST row 1: Plan tidak boleh kosong", "PLAN LIST row 1: RI/RATE tidak boleh kosong",
-		"PLAN LIST row 3: Plan tidak boleh sama"} {
+		"PLAN LIST row 2: Plan tidak boleh sama", "PLAN LIST row 3: Plan tidak boleh sama"} {
 		if !strings.Contains(pesan, w) {
 			t.Errorf("tanpa %q: %s", w, pesan)
 		}
 	}
-	if strings.Contains(pesan, "row 2: Plan tidak boleh sama") {
-		t.Errorf("baris pertama nilai itu bukan duplikat: %s", pesan)
+	if strings.Contains(pesan, "row 1: Plan tidak boleh sama") {
+		t.Errorf("satu baris kosong tidak punya pasangan, jadi bukan duplikat: %s", pesan)
+	}
+}
+
+// Dua baris kosong: `local.plan` "" == `.Plan` "" di baris lain - keduanya "kosong" DAN "sama".
+func TestPlanDuaBarisKosongKeduanyaSama(t *testing.T) {
+	_, simpan := layananPlan()
+	m := produkMasuk()
+	m.PlanList = []models.BarisPlan{{}, {}}
+	pesan := services.Pesan(simpan(m))
+	for _, w := range []string{"PLAN LIST row 1: Plan tidak boleh kosong", "PLAN LIST row 1: Plan tidak boleh sama",
+		"PLAN LIST row 2: Plan tidak boleh kosong", "PLAN LIST row 2: Plan tidak boleh sama"} {
+		if !strings.Contains(pesan, w) {
+			t.Errorf("tanpa %q: %s", w, pesan)
+		}
 	}
 }
 

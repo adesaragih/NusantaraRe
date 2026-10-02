@@ -116,6 +116,15 @@ func TestPilihInwardPRODUCTIDLaluID(t *testing.T) {
 	if b, ada := pilihInward("100002", baris); !ada || b.id != "100003" {
 		t.Errorf("PRODUCTID cocok, terakhir menang: %+v %v", b, ada)
 	}
+	// Audit 02-10-2026: baris ber-ID = PRODUCTID = produk (yang dibaca pembaca hilir `WHERE ID = produk`)
+	// menang atas baris lain ber-PRODUCTID sama, walau ID-nya lebih kecil.
+	sendiri := []barisJSON{
+		{id: "100002", isi: `{"PRODUCTID":"100002"}`},
+		{id: "100005", isi: `{"PRODUCTID":"100002"}`},
+	}
+	if b, ada := pilihInward("100002", sendiri); !ada || b.id != "100002" {
+		t.Errorf("baris milik sendiri ber-ID produk didahulukan: %+v %v", b, ada)
+	}
 	// Baris ber-ID = produk tetapi PRODUCTID-nya produk LAIN (ID sequence inward warisan): bukan milik produk ini.
 	if b, ada := pilihInward("100002", baris[1:2]); ada {
 		t.Errorf("baris milik produk 100009 tidak boleh dipilih untuk 100002: %+v", b)

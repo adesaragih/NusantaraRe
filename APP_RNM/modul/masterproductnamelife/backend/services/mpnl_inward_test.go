@@ -70,7 +70,8 @@ func TestSimpanAtomikDuaTabel(t *testing.T) {
 	if !errors.Is(err, tiruan.ErrTiruan) {
 		t.Fatalf("galat inward diteruskan: %v", err)
 	}
-	if len(g.Umum) != 0 || len(g.Inward) != 0 || g.Komit != 0 || g.Seq != 44 {
+	// `NEXTVAL` tidak ikut rollback (Oracle): nomor 44 terpakai, celahnya tetap - seperti DEV.
+	if len(g.Umum) != 0 || len(g.Inward) != 0 || g.Komit != 0 || g.Seq != 45 {
 		t.Errorf("P4: gagal sisi inward membatalkan sisi umum juga: umum %d inward %d komit %d seq %d",
 			len(g.Umum), len(g.Inward), g.Komit, g.Seq)
 	}

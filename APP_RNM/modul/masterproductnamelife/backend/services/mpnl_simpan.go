@@ -287,11 +287,13 @@ func (l *Layanan) SimpanProduk(ctx context.Context, p inti.Pelaku, m models.Prod
 			periksaPlan(&pk, m.PlanList)
 		}
 		periksaAsli(&pk, &m, tersimpan)
+		// Medan milik server dilengkapi SEBELUM panjang diukur: yang diukur nilai yang benar-benar ditulis,
+		// bukan kiriman klien (audit 02-10-2026). Pengisian ini murni, tanpa efek keluar.
+		lengkapiMilikServer(&m, lama, baru, p)
 		periksaPanjang(&pk, &m)
 		if err := pk.galat(); err != nil {
 			return err
 		}
-		lengkapiMilikServer(&m, lama, baru, p)
 		if perluHitungOutward(&m, baru) {
 			if err := l.hitungOutward(ctx, tx, &m); err != nil {
 				return err
