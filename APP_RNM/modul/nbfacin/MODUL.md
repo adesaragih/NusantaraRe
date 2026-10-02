@@ -30,7 +30,7 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | Folder | Isi |
 | --- | --- |
 | `docs/` | spec, tiket (`issues/`), discovery, grilling — dipindah dari `jefri/OUTPUT FIX/` 30-09-2026 (`git mv`, isi tidak diubah). Asal tiap berkas dan tujuan tautan lamanya: `docs/PETA-ASAL.md` |
-| `backend/` | `modul.go`; `models/`, `repository/` (tabel limit `POOLDATA.M_LIMIT_*`, baca saja), `services/` (layanan + mesin: `premium`, `acceptance`, `rules`, `pembayaran`, `rekonsiliasi`, `kontrakfacin`), `handlers/` (`POST /api/nbfacin/premi`, `POST /api/nbfacin/akseptasi/langkah`), `migrations/` (slot menu 962) |
+| `backend/` | `modul.go`; `models/`, `repository/` (tabel limit `POOLDATA.M_LIMIT_*`, baca saja), `services/` (layanan + mesin: `premium`, `acceptance`, `rules`, `pembayaran`, `rekonsiliasi`, `kontrakfacin`; `loader` = seam `loader.Flatten` data lama, murni, tiket 22), `handlers/` (`POST /api/nbfacin/premi`, `POST /api/nbfacin/akseptasi/langkah`), `migrations/` (slot menu 962) |
 | `frontend/` | `menu.ts`, `rute.tsx`, `labels.ts` (verbatim korpus, diuji), `api.ts`, `pages/CoverageCargo.tsx` |
 
 ## Migrasi

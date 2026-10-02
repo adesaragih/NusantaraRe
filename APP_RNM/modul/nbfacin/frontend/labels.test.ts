@@ -1,4 +1,4 @@
-// Penjaga bukti label NB FacIn - tiket 21.
+// Penjaga bukti label NB FacIn - tiket 21; portal Opportunity tiket 25.
 //
 // ⛔ Komentar bukti yang tidak pernah diperiksa adalah HIASAN. Berkas ini membuka
 // section korpus dan memastikan setiap sel yang disebut `labels.ts` memang berlabel
@@ -10,10 +10,13 @@ import { existsSync, readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
-import { MEDAN_COVERAGE_CARGO, TOMBOL_COVERAGE_CARGO } from './labels'
+import { KEPALA_PORTAL, KOLOM_PORTAL, MEDAN_COVERAGE_CARGO, SARING_PORTAL, TOMBOL_COVERAGE_CARGO } from './labels'
 
 const SECTION = 'D:\\migrasi\\RNM\\NB FacIn\\Section\\InputCoverageCargo_FacIn.xml'
 const ada = existsSync(SECTION)
+const KEPALA = 'D:\\migrasi\\RNM\\NB FacIn\\Section\\SFAPortalOpportunitiesHeader.xml'
+const DAFTAR = 'D:\\migrasi\\RNM\\NB FacIn\\Section\\SFAPortal_OpportunitiesList.xml'
+const adaPortal = existsSync(KEPALA) && existsSync(DAFTAR)
 
 /**
  * Isi elemen sel ber-`pyCellId` tertentu: `rowdata` terdalam yang terbuka saat
@@ -59,5 +62,49 @@ describe.skipIf(!ada)('label NB FacIn = korpus InputCoverageCargo_FacIn', () => 
 if (!ada) {
   it('korpus tidak terjangkau - bukti label dilewati', () => {
     console.warn(`korpus tidak ada di ${SECTION}; uji bukti label NB FacIn dilewati`)
+  })
+}
+
+describe.skipIf(!adaPortal)('label portal Opportunity = korpus SFAPortalOpportunitiesHeader + SFAPortal_OpportunitiesList', () => {
+  const kepala = adaPortal ? readFileSync(KEPALA, 'utf-8') : ''
+  const daftar = adaPortal ? readFileSync(DAFTAR, 'utf-8') : ''
+  /** Sel itu SATU di berkasnya, dan teksnya ada di tag yang disebut. */
+  const ditemukan = (xml: string, u: { sel: string; tag: string; label: string }) => {
+    const blok = blokSel(xml, u.sel)
+    return blok.length === 1 && blok[0]!.includes(`<${u.tag}>${u.label}</${u.tag}>`)
+  }
+
+  it.each(Object.entries(KEPALA_PORTAL))('kepala %s', (_, u) => {
+    expect(ditemukan(kepala, u)).toBe(true)
+  })
+
+  it.each(Object.entries(SARING_PORTAL))('saring %s', (_, u) => {
+    expect(ditemukan(daftar, u)).toBe(true)
+  })
+
+  it.each(KOLOM_PORTAL.map((k) => [k.sel, k] as const))('judul kolom sel %s', (_, k) => {
+    const blok = blokSel(daftar, k.sel)
+    expect(blok).toHaveLength(1)
+    if (k.label === '') {
+      // Kolom berjudul kosong: sel judulnya tanpa `pyValue` berisi.
+      expect(blok[0]).not.toMatch(/<pyValue>[^<]+<\/pyValue>/)
+    } else {
+      expect(blok[0]).toContain(`<pyValue>${k.label}</pyValue>`)
+    }
+  })
+
+  it('kolom berurutan = sel 89..96 (grid GetListOpportunityF)', () => {
+    expect(KOLOM_PORTAL.map((k) => k.sel)).toEqual(['89', '90', '91', '92', '93', '94', '95', '96'])
+  })
+
+  it('uji ini menggigit: label salah tidak ditemukan', () => {
+    expect(ditemukan(kepala, { sel: '72', tag: 'pyLabel', label: 'Create Opportunity' })).toBe(false)
+    expect(ditemukan(daftar, { sel: '89', tag: 'pyValue', label: 'Offer No.' })).toBe(false)
+  })
+})
+
+if (!adaPortal) {
+  it('korpus portal tidak terjangkau - bukti label portal dilewati', () => {
+    console.warn(`korpus tidak ada di ${KEPALA} / ${DAFTAR}; uji bukti label portal dilewati`)
   })
 }

@@ -1,0 +1,96 @@
+/*
+ * Gaya modul NB FacIn - tiket 25/26 (halaman depan).
+ *
+ * ⛔ TERISOLASI (pola `tco.css`): SETIAP pemilih diawali kelas akar `.nbfacin`, yang dipasang di akar
+ * halaman portal dan form Opportunity. Kelas khusus modul berawalan `nbf-`. Hanya TATA LETAK - warna
+ * dari token tema bersama, jadi tema gelap ikut. Diimpor sekali oleh `rute.tsx`; dijaga `gaya.test.ts`.
+ */
+
+.nbfacin {
+  min-width: 0;
+}
+
+/* ------------------------------------------------------------ portal */
+/* Baris judul: `Opportunity` di kiri, `Create opportunity` di kanan (Header sel 57 / 72). */
+.nbfacin .nbf-kepala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 12px;
+}
+
+/* Kotak saring + ikon hapus + Filter berdampingan (List sel 9 / 10 / 13). */
+.nbfacin .nbf-saring {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.nbfacin .nbf-saring__kotak {
+  width: 260px;
+  max-width: 100%;
+}
+
+/* ------------------------------------------------------- form Opportunity */
+/* Tangkapan layar: Estimated Closing Date sendirian di baris atas, lalu dua kolom (kiri lebar, kanan
+   sempit), lalu Description selebar form. */
+/* Baris atas: Estimated Closing Date + Owner (`HALAMAN DEPAN NB.JPG`), dipisah garis tegak. */
+.nbfacin .nbf-opp__atas {
+  display: grid;
+  grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+  gap: 14px 24px;
+  align-items: start;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.nbfacin .nbf-opp__kolom {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 14px 32px;
+  align-items: start;
+}
+.nbfacin .nbf-opp__tumpuk {
+  display: grid;
+  gap: 14px;
+}
+/* Owner: teks tampil, bukan kotak isian. */
+.nbfacin .nbf-opp__owner {
+  padding: 6px 0;
+}
+/* Popup ChooseAccount: kotak Search lalu tombol Search di bawahnya (tangkapan layar). */
+.nbfacin .nbf-popup__cari {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  margin-bottom: 12px;
+}
+.nbfacin .nbf-popup__kotak {
+  width: 100%;
+}
+/* Type Of Inward dan Type Of Facultative berdampingan dalam satu baris. */
+.nbfacin .nbf-opp__pasangan {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.nbfacin .nbf-opp__tombol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.nbfacin .nbf-opp__bawah {
+  margin-top: 14px;
+}
+
+/* Layar sempit: satu kolom (sama dengan `.form-grid` inti). */
+@media (max-width: 860px) {
+  .nbfacin .nbf-opp__atas,
+  .nbfacin .nbf-opp__kolom,
+  .nbfacin .nbf-opp__pasangan {
+    grid-template-columns: 1fr;
+  }
+}

@@ -721,6 +721,304 @@ rekomendasinya (pola yang sama dengan butir 56, yang work owner konfirmasi langs
 model itu cocok **2/2 lokasi** (`edm-fire-1` akar + `OldData`; eksak 0/2, `double` murni 0/2 — verifikasi independen
 sesi `nusantarare-0f`), dari **satu kasus** saja.
 
+## Ralat kelima — 2 Oktober 2026 (tiket 17 tidak menunggu tabel flat)
+
+Laporan agent 02-10 menulis "tiket 17 menunggu keputusan tabel flat dari work owner". **Keliru.** Register NB
+`00-KEPUTUSAN-WORK-OWNER.md` sudah menutupnya: **K-069** ("seluruh butir rekonsiliasi tabel flat TERTUTUP"; 78 tabel,
+1.329 kolom, DDL draf lolos delapan pemeriksaan), **K-073** (Jalan B disetujui), **K-074** (seam `loader.Flatten`
+disetujui; seam `repository` "kini aktif"); `_DAFTAR-ISSUE-TERBUKA.md` **F-3**: empat tiket yang dulu terhalang struktur
+tabel flat "kini tidak terhalang lagi". **Cara yang keliru:** agent bersandar pada baris "Blocked by" tiket 17 tanpa
+memeriksa register; dan spec pemuatan (`04-spec\11-spec-pemuatan-data-lama.md`) beserta bahannya (`08-flat\`) **tidak
+ikut dipindah** ke `nbfacin/docs` saat struktur satu folder per modul, sehingga tidak terbaca dari folder modul.
+
+**Sumber yang ditetapkan work owner (02-10-2026, diteruskan sesi `nusantarare-0f`), READ-ONLY:**
+`D:\migrasi\RNM\OUTPUT\04-spec\11-spec-pemuatan-data-lama.md` (md5 `0d0e3c6a…`), `08-flat\BAHAN-SPEC-PEMUATAN.md`
+(md5 `0905233f…`), `08-flat\DDL-tabel-flat-draf.sql`, `08-flat\Tabel-Flat-Lintas-Siklus.xlsx` — `[terverifikasi]` md5
+kedua berkas pertama cocok dengan yang disebut; DDL 78 `CREATE TABLE`, 78 PK, 64 FK, 77 indeks (dua cara: grep baris dan
+urai pernyataan; cocok K-069). ⚠️ Salinan `jefri/OUTPUT FIX/` sempat hilang dan disalin ulang dari `D:\migrasi\RNM\OUTPUT\`
+(md5 cocok 19/19, menurut sesi `nusantarare-0f`); versi yang hilang mungkin sempat berubah sesudah 16–25 September.
+
+**Dua sumber skema berselisih — dicatat, tidak dipilih:** DDL draf diturunkan dari `Tabel-Flat-Lintas-Siklus.xlsx`
+(**78** tabel, **1.329** kolom); `D:\migrasi\RNM\Claude outputs\Tabel-Flat-per-Grup-Bisnis.xlsx` (sumber menurut K-065)
+memuat **75** tabel, **1.290** kolom (lembar `Daftar Tabel` dan `Kolom`, dibaca langsung dari XML xlsx). `[terverifikasi]`
+lembar `BACA-INI` workbook pertama menyatakan dirinya "Turunan dari `Claude outputs\Tabel-Flat-per-Grup-Bisnis.xlsx`",
+ditambah dimensi siklus dan cabang retro (3 wadah, 24-09). `[pertanyaan terbuka]` mana yang mengikat bila keduanya
+dipakai bersamaan.
+
+> **Diukur 02-10-2026 (tiket 22), dua cara — pengurai xlsx vs pencacah baris DDL:** `Tabel-Flat-Lintas-Siklus.xlsx` =
+> `DDL-tabel-flat-draf.sql` **persis** (78 / 1.329, selisih nol dua arah). `Claude outputs` (75 / 1.290) adalah
+> **himpunan bagian murni**: 39 kolom selisih = 3 tabel wadah V-27 (20 kolom sistem) + 18 `CURRENCY_CODE`
+> (K-063/K-069) + `OLD_POLIS_ID` (K-068); **nol** kolom ke arah sebaliknya. Perselisihan "75 lawan 78" karena itu
+> **bukan dua rancangan berbeda**, melainkan rancangan lama dan rancangan sesudah keputusan 24–25 September. Pertanyaan
+> "mana yang mengikat" tetap terbuka secara resmi; generator `loader` membaca Lintas-Siklus karena itulah yang
+> ditetapkan bersama DDL draf (bab ini, paragraf sumber).
+
+## Keputusan work owner — 2 Oktober 2026, presisi DDL tabel flat (AskUserQuestion)
+
+| # | Pertanyaan | Jawaban |
+| ---: | --- | --- |
+| 66 | DDL draf memakai 415 kolom `NUMBER` polos + 1 `NUMBER(3)`; penjaga inti `TestNolNumberTanpaPresisi` hanya mengizinkan `NUMBER(38,8)`/`(5)`/`(10)`/`(19)`; uang `NUMBER(38,8)` memotong premi FIRE 20 desimal | **"Flatten dulu, migrasi ditahan."** `loader.Flatten` (murni) dikerjakan; berkas migrasi 180–219 ditulis setelah tim inti memutuskan presisi tabel flat. Penjaga inti tidak diubah |
+
+## Keputusan agent A49–A65 — DIKONFIRMASI work owner 2 Oktober 2026 (butir 68.7) (tiket 22 `loader.Flatten`)
+
+| # | Tiket | Keputusan agent | Dasar |
+| --- | ---: | --- | --- |
+| A49 | 22 | `ROW_UID` fase 1 **deterministik**: UUID v5 (SHA-1) atas `IDPEGA` + tabel + posisi mentah | K-073 hanya menyebut "dibangkitkan, sementara"; deterministik menjaga Flatten murni dan uji repository "dapat diulang" (spec 11). Larangan K-073 (tidak dijadikan sandaran di luar tabel flat) tetap |
+| A50 | 22 | `SEQ_NO` = **posisi di larik sumber**; unsur yang dibatalkan V-27 meninggalkan celah | V-40 menjodohkan versi menurut posisi; V-43 baris tidak pernah dihapus. Penomoran ulang akan menggeser pasangan |
+| A51 | 22 | V-16 "ada" = **larik dengan ≥ 1 unsur** | `[dugaan]` V-16 diukur di XML; di JSON larik kosong lazim (`nb-marinecargo-1`: `LocationList`, `VehicleList` kosong). Hasil 115 contoh cocok lembar Grup Bisnis |
+| A52 | 22 | BusinessType yang mengikat = `QuotationData.BusinessType` **akar** | Kemunculan lain di fixture seluruhnya di `OldData` (V-19); 128 = 115 + 13 berkas EDM `[dugaan]` |
+| A53 | 22 | Medan milik `CurrencyList/Policy` **tidak** dilipat; hanya `Policy/Payment` (awalan `Pay`) | V-22 melipat Policy karena "nol kolom terisi" — tidak memutuskan medannya. `[terverifikasi]` `FacOfferList/CurrencyList/Policy.TSI` 15 unsur menimpa `CurrencyList.TSI` bila dilipat |
+| A54 | 22 | `T_FR_CURRENCYLIST` mendapat lipatan `Policy/Payment` yang sama | Rancangannya memuat sembilan kolom `PAY_` yang sama dengan `T_CURRENCYLIST` |
+| A55 | 22 | V-33: `ASMCoverage` di bawah `PersonList` → `T_COVERAGELIST` | `[dugaan]` lokasi dari Jalur Sumber "PersonList/CoverageList \| Life PA"; nol fixture PA |
+| A56 | 22 | V-30: `FACTOR_GROUP` / `FACTOR_NAME` = **nama halaman apa adanya** | Peta "23 faktor" (lembar ScoringRisk) tidak ada di kedua workbook; data memuat **24** objek faktor |
+| A57 | 22 | Medan `py*` dibuang sebagai metadata | Lembar Kolom memuat **nol** FIELD ASLI ber-awalan `py`; terhitung `Dibuang` |
+| A58 | 22 | Angka > 38 digit **tidak dibulatkan**, hanya dihitung | ADR-0005; bahan keputusan presisi (butir 66) |
+| A59 | 22 | Bentuk masukan XML (spec 11 uji 11) **tidak dibangun** | K-066 masukan produksi JSON; contoh XML tidak boleh masuk repositori |
+| A60 | 22 | `CurrencyList.ID` **tidak** dipetakan ke `CURRENCY_CODE`; `CURRENCY_CODE ← Name` | `[terverifikasi]` `ID` 5/116 terisi, seluruhnya angka lima digit; `Name` kode tiga huruf 116/116 — bunyi V-22 tidak cocok dengan data |
+| A61 | 22 | Berhenti keras spec 11 "kode enumerasi yang artinya belum dijawab tercapai" (`BusinessCode`, `BusinessOldId`) dibaca: berlaku bila sebuah langkah **menafsirkan** kode itu. Flatten tidak menafsirkannya — disimpan apa adanya (V-6) — jadi tidak berhenti | `[dugaan]` atas maksud spec; tafsir harfiah (berhenti setiap kali kode muncul) menghentikan hampir setiap dokumen. Temuan code review sumbu spec |
+| A62 | 22 | V-16 langkah 5: BusinessType **dikenal tetapi bukan Life/PA** → `ErrLiniBisnis` | V-16 "sisanya → Life atau PA" tidak memberi kelompok untuk 16 nilai lainnya; menebak kelompok dilarang |
+| A63 | 22 | Metadata dibuang menurut **awalan** `px`/`pz` (+`py`, A57), bukan daftar "23 tag" | Rujukan BAHAN "kontrak 23 tag K-042/K-043" tidak dapat ditelusuri: K-042/K-043 di register NB soal lingkup EDM. Semua yang dibuang terhitung |
+| A64 | 22 | Empat berhenti keras di luar tabel spec: `ErrIDPega`, `ErrDokumen`, `ErrKolomGanda`, `ErrBentuk` | Keadaan mesin yang hanya dapat "diselesaikan" dengan menebak (IDPEGA tak berbentuk, JSON rusak, satu kolom dua nilai, bentuk simpul salah) |
+| A65 | 22 | Keluaran Flatten **generik** (`map` kolom → `Nilai{Teks, Angka}`); pasangan uang–mata uang lewat `CURRENCY_CODE` baris; bentuk baris per tabel di `models` diserahkan ke tiket 24 | Spec 11 *Modul yang dibangun* menyebut `models` diperluas; 78 tabel × 1.329 kolom sebagai struct tangan = data clump besar tanpa pemakai sebelum repository ada |
+
+**Temuan tiket 22 yang menunggu work owner** (rinci di tiket 22 bab *Butir terbuka*): ⛔ tipe `NUMBER` delapan kolom yang
+isinya teks — Flatten berhenti keras di **106 dari 115** contoh dan di kelima fixture; pembawa mata uang
+`T_COVERAGELIST`/`T_ANEKALIST` (`Name` sendiri tidak ada); `T_PROPERTY.CURRENCY_CODE` selalu UNKNOWN; 29 FK V-47 tanpa
+aturan isi; `TSI_TOP_RISK` tanpa rumus; medan JSON yang tidak ada di rancangan (`CoverageInitial`, `AdditionalShip`);
+induk ganda 12 vs 13 (Daftar Relasi tanpa tiga tabel wadah); **K-069 (7b) `IsCedingConfirm` "kolom sendiri" tidak ada
+di 78 tabel maupun DDL draf** — medannya di `ViewSuggest`, yang V-31 arahkan ke `HISTORYAKSEPTASIPRODUCTION`.
+
+**Ralat agent (tiket 22, sebelum dilaporkan):** hitungan tangan "26 kolom FK V-47" keliru — **29** (tertangkap
+`TestSetiapKolomBerasal`); pembaca xlsx pertama menggeser sel kosong (tertangkap saat analisis, diperbaiki, diuji
+`TestLembarMenempatkanSelMenurutKolom`); cara kedua `EDM_CHARGE_FEE` memberi 0 karena ejaan `EDMChargeFee` (benar:
+`EdmChargeFee`, jebakan sensus no. 4).
+
+## Keputusan work owner — 2 Oktober 2026, butir terbuka tiket 22, diteruskan sesi `nusantarare-0f`
+
+Diteruskan sesi agent `nusantarare-0f` dengan kutipan jawaban work owner **"setuju"** atas rekomendasinya (pola butir
+56 dan 63–65). Aturan `PROMPT-LANJUT-IMPLEMENT-NB-SAJA.md` tetap berlaku.
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 68.1 | Delapan kolom `NUMBER` berisi teks | **`VARCHAR2`, teks apa adanya** — `%` tidak ditafsirkan, koma desimal tidak dinormalkan, spasi di ujung `PctLimit` **tidak** dipangkas. Penyimpangan sadar dari DDL draf, baris DDL-nya di tiket 22 |
+| 68.2 | Presisi tabel flat | **Tetap keputusan tim inti.** Agent menulis usulan (`docs/USULAN-PRESISI-TABEL-FLAT.md`): teks mentah untuk kolom uang/rate yang dapat > 38 digit atau > 8 desimal, `NUMBER` turunan bila perlu; preseden ADR-0034. Tiket 23 tetap ditahan |
+| 68.3 | Kode mata uang `T_COVERAGELIST` / `T_ANEKALIST` (dan `T_PROPERTY` bila leluhurnya punya halaman Currency) | **dari `Currency/Name`** |
+| 68.4 | 29 FK V-47, `TSI_TOP_RISK` | **dibiarkan kosong** sampai aturannya tertulis |
+| 68.5 | `CoverageInitial`, `AdditionalShip` | **ke penampung medan tak dikenal (ADR-0023)**, tidak dibuang |
+| 68.6 | Induk ganda / V-30 | **ikuti data (24 faktor)**; selisih 23 vs 24 dicatat sebagai ralat V-30 |
+| 68.7 | A49–A65 | **Dikonfirmasi** |
+| 68.8 | Tiket 24, penawaran gagal | **lewati, catat galat, lanjut; ringkasan di akhir muat.** Medan tak terpetakan ke penampung, bukan alasan menolak muat. J-16 tetap pertanyaan terbuka |
+
+**Cara agent menerapkannya** (tiket 22): 68.3 **hanya** dua tabel yang disebut — kembaran `T_FR_*` tidak diperluas
+(pelajaran A53: ekstrapolasi ke cabang FR pernah keliru). `T_PROPERTY`: syaratnya `[terverifikasi]` tidak terpenuhi —
+nol halaman `Currency` di bawah `LocationList` (5 fixture; 115 contoh) — jadi tetap UNKNOWN. *(Ralat butir 69: rumusan
+itu terlalu luas — di bawah `PropertyItemList`/`DeductibleList`/`AnekaList` ada halaman `Currency`. Yang benar: nol
+halaman `Currency` sebagai anak langsung `LocationList` maupun `LocationList/Property` — 0/4 fixture, 0/297 korpus;
+`Currency` di akar ada, 3/5 dan 41/115, tetapi `Name`-nya tidak pernah terisi.)* 68.5: **semua** medan tak
+terpetakan masuk penampung (ADR-0023 akibat 1 berlaku umum), termasuk penunjuk `Idx*`/`Index*` V-47 yang belum
+dikonversi, agar nilainya tidak hilang. ⚠️ Usulan 68.2 **melampaui** ADR-0034: tabel ADR itu menyimpan uang di kolom basis
+data sebagai desimal berskala tetap — dicatat terang di usulan.
+
+**Keputusan agent — menunggu konfirmasi (sesudah butir 68):**
+
+| # | Tiket | Keputusan agent | Dasar |
+| --- | ---: | --- | --- |
+| A66 | 22 | 68.3: kode `CURRENCY_CODE` milik baris sendiri yang **berbeda** dari `Currency/Name` anaknya, atau dua halaman `Currency` berkode berbeda di bawah satu baris → `ErrKolomGanda` (penawaran dilewati menurut 68.8) | 68.3 tidak menyebut keadaan itu; memilih salah satu = menebak. Temuan code review sumbu spec · **dikonfirmasi work owner 02-10-2026 (butir 69)** |
+
+**Ralat V-30 (68.6):** teks V-30 menyebut "23 tabel faktor"; `[terverifikasi]` data memuat **24** objek faktor per
+`DataScoringRiskList` (kelima fixture ber-skoring: 2 × 24; termasuk `Others/TotalSumInsured`, yang V-28 sebut "faktor
+skoring FIRE"). Peta "23 faktor" (lembar ScoringRisk) tidak ada di kedua workbook. Yang berlaku: data.
+
+**Ralat jendela (verifikasi independen sesi `nusantarare-0f`, dicek ulang agent):** (a) "dua kolom" vs "delapan kolom"
+konflik tipe — benar keduanya, jendela berbeda: 5 fixture **2** kolom (`PPN_CHECK` 5/5, `SHARE_OF_CEDING` 4 — di
+`edm-fire-1` hanya terisi di bawah `OldData`), 115 contoh korpus **8** kolom; (b) bukti A60 "`CurrencyList.ID` angka
+lima digit" hanya dari **korpus** — di fixture `CurrencyList` tidak punya medan `ID`; (c) `NET_RATE` > 38 digit 185 di
+korpus (wadah `LocationList/Property/PropertyItemList/CoverageList`), **0** di fixture; fixture `edm-fire-1` > 38 digit
+di `T_CURRENCYLIST.PAY_EDM_PREMI_MENJADI`, `PAY_NET_PREMIUM`, `SUM_TOTAL_PAYMENT` (masing-masing 1). Ketiganya
+diperiksa ulang agent 02-10-2026 dan cocok. *(Butir (c) kemudian diralat butir 69: angka itu koefisien mentah termasuk
+nol ujung; dalam digit bermakna hanya `PAY_NET_PREMIUM` — 3 di korpus, 1 di fixture.)* **Instrumen agent yang sempat keliru:** ukuran "> 8 desimal" putaran pertama
+ikut menghitung nol di belakang (`0.000…0`); usulan memakai putaran kedua (koefisien dinormalkan).
+
+## Keputusan work owner — 2 Oktober 2026, verifikasi loader putaran 2, diteruskan sesi `nusantarare-0f`
+
+Diteruskan sesi agent `nusantarare-0f` dengan kutipan jawaban work owner **"mau"** atas rekomendasinya. Setiap klaim
+verifikasinya diperiksa ulang agent ke berkas sebelum ditulis.
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 69.1 | A66 | **Dikonfirmasi** — berhenti keras; saat muat dilewati dan dicatat (68.8) |
+| 69.2 | Tempat penampung di Oracle | **Tidak disimpan di Oracle** (ADR-0023: penampung bukan tempat simpan akhir). Setiap medannya harus mendapat kolom atau keputusan "dibuang" eksplisit. Untuk `CoverageInitial` dan `AdditionalShip` agent mengajukan usulan kolom — **tidak** menambah kolom sendiri (`docs/USULAN-KOLOM-PENAMPUNG.md`) |
+| 69.3 | Kembaran FR `T_FR_COVERAGELIST` / `T_FR_ANEKALIST` | **Ikut 68.3** (kode dari `Currency/Name`), supaya konsisten |
+| 69.4 | `IsCedingConfirm` | Jalankan K-069 (7b) "kolom sendiri"; bila K-069 tidak menyebut tabel/tipe, tulis usulan, tandai menunggu work owner, jangan menebak. Migrasi tetap tidak ditulis/dijalankan |
+| 69.5 | Presisi | Tetap tim inti, sesudah tabel B usulan dibetulkan |
+| 69.6 | J-16 | Tetap pertanyaan terbuka untuk work owner |
+
+**Cara agent menerapkannya:** 69.4 — `[terverifikasi]` K-069 (7b) hanya berbunyi "kolom sendiri", tanpa tabel dan
+tipe. *(Ralat butir 70: catatan semula "rujukan L3788–3794 di pesan sesi 0f tidak cocok dengan berkas yang dibaca agent"
+**keliru sebabnya** — ada **dua salinan** register. Agent membaca salinan lama `D:\migrasi\RNM\OUTPUT\` (K-069 7b di
+L3770–3782); sesi 0f mengutip salinan repo `docs/00-KEPUTUSAN-WORK-OWNER.md` (L3788–3798). Kutipannya benar.)* Kolom karena itu **belum** ditambahkan ke peta; yang dijalankan: `IsCedingConfirm` **tidak lagi terbuang** bersama
+`ViewSuggest` (V-31) — masuk penampung (`medanDiselamatkan`), fixture 34 nilai = pengurai Python independen; usulan P4
+memuat tiga pilihan tabel. 69.3 — kembaran FR membaca baris `T_FR_CURRENCY`; `T_FR_SPREADINGLIST` ikut mewarisi.
+
+**Ralat butir 68.8** — rekomendasi sesi 0f yang lama "medan tak terpetakan masuk penampung, **bukan alasan menolak
+muat**" **kurang tepat**, menurut koreksi sesi 0f sendiri: ADR-0023 "Penampung itu wajib kosong sebelum pekerjaan
+dinyatakan selesai" dan akibat 2 "Penampung berisi = pekerjaan belum selesai". Yang berlaku: **muat untuk uji boleh**
+dengan penampung berisi; **muat produksi / fase 1 baru boleh dinyatakan selesai bila penampung kosong** (tiket 24).
+
+**Ralat tabel B usulan presisi** — `[terverifikasi]` diukur ulang agent: cara hitung lama memakai **koefisien mentah
+termasuk nol di belakang koma** (217 nilai korpus, 3 fixture). Dengan nol ujung dibuang hanya
+`T_CURRENCYLIST.PAY_NET_PREMIUM` yang sungguh > 38 digit bermakna: **3** di korpus, **1** di fixture. Kalimat
+"`NUMBER` polos pun membulatkannya" keliru untuk 214 dari 217 nilai itu (`[dugaan]` atas perilaku Oracle, tidak diuji
+ke Oracle). `Diagnostik.LebihDari38Digit` Flatten diralat sama.
+
+**Ralat agent — artefak instrumen:** medan korpus "tak ada di rancangan" `LocationList.TableOfLimit` (186),
+`…OfferFacIn` (22), `LocationList/Property.Property` (3), `…SurveyAgent` (2) yang dilaporkan sebelumnya **bukan data**.
+`[terverifikasi]` semuanya elemen XML kosong berisi spasi saja (316 / 34 / 4 / 2), yang diubah pengubah XML→JSON agent
+menjadi medan bernilai spasi.
+
+## Keputusan work owner — 2 Oktober 2026, usulan kolom penampung, diteruskan sesi `nusantarare-0f`
+
+Diteruskan sesi agent `nusantarare-0f` dengan kutipan jawaban work owner **"setuju"** atas rekomendasinya, atas
+`docs/USULAN-KOLOM-PENAMPUNG.md`.
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 70.P1 | `CoverageInitial` | **Setuju** `T_COVERAGELIST.COVERAGE_INITIAL VARCHAR2(500)` |
+| 70.P2–P3 | `AdditionalShip` | **Setuju** tabel baru `T_ADDITIONALSHIP` (anak `T_SHIP`, berulang: `SEQ_NO`, `ROW_UID`; `DWT`/`GRT`/`NRT` `VARCHAR2(50)`, `ADDITIONAL_SHIP_REF_ID VARCHAR2(50)`) — **bukan** dilipat ke `T_SHIP`, karena di sumber ia daftar berulang (`AdditionalShip[n]`) |
+| 70.P4 | `IsCedingConfirm` | **Pilihan (b)**: kolom sendiri di `POOLDATA.HISTORYAKSEPTASIPRODUCTION`, di samping `POSISI`. ⚠️ **Tafsiran** atas K-069 (7b), bukan kutipan — lihat catatan di bawah. Tabel lama: **menunggu DBA** (nama kolom + tipe); agent **tidak** menulis DDL/migrasi |
+| 70.P5 | `CurrencyList.ID` | **Setuju** `T_CURRENCYLIST.CURRENCY_REF_ID VARCHAR2(50)` |
+| 70.P6 | FR `CurrencyList/Policy.TSI` | **Setuju** `T_FR_CURRENCYLIST.POLICY_TSI`, tipe mengikuti keputusan presisi tim inti |
+| 70.P7 | penunjuk `Idx*`/`Index*` | **Setuju** klasifikasi menurut V-47: penunjuk induk langsung dibuang; penunjuk leluhur → FK, menunggu aturan |
+| 70.R | Rancangan | DDL draf / workbook `D:\migrasi\RNM\OUTPUT\08-flat\` tetap **READ-ONLY**; kolom/tabel baru dicatat sebagai **amandemen rancangan** (tiket 22/23, register). Flatten + generator dikembangkan untuk P1, P2–P3, P5, P6, P7; P4 tetap di penampung sampai DBA menjawab |
+
+**Catatan P4 — dasar tafsiran** (salinan repo `docs/00-KEPUTUSAN-WORK-OWNER.md`): pertanyaan asal 7b (L3790–3791)
+adalah usul V-32 memetakan `IsCedingConfirm` ke `HISTORYAKSEPTASIPRODUCTION.POSISI`; keputusannya (L3793) "kolom
+sendiri", dengan alasan "satu kolom tidak boleh memikul dua arti" (L3795); L3796–3797 menyebut juga
+`T_WORK_POLIS.POSISI` — kedua tabel itu yang tersangkut. Alasan menolak pilihan lain, dari usulan agent sendiri: (a)
+`T_WORK_POLIS.IS_CEDING_CONFIRM` menyimpan satu nilai per polis sehingga **riwayat per baris hilang**; (c) tabel riwayat
+flat baru bertentangan dengan V-31 — `[terverifikasi]` dibaca ulang 02-10-2026: "riwayat akseptasi memakai tabel lama
+POOLDATA.HISTORYAKSEPTASIPRODUCTION, jadi T_VIEWSUGGEST tidak dibuat". ⚠️ Teks V-31 **tidak ada** di register (salinan
+mana pun); sumbernya lembar BACA-INI `D:\migrasi\RNM\Claude outputs\Tabel-Flat-per-Grup-Bisnis.xlsx`, yang tidak punya
+salinan di repositori.
+
+**Cara agent menerapkannya** (tiket 22 bab *Amandemen rancangan*): `loader/amandemen.go` menggabungkan kolom/tabel baru
+ke skema bangkitan saat paket dimuat — `skema_gen.go` dan workbook tidak disunting. P6: tipe ditulis `NUMBER` tanpa
+presisi sebagai **penanda** "menunggu tim inti"; nilainya desimal eksak. *(Penerapan P7 di bawah **dicabut butir 71**: tidak satu pun penunjuk dibuang.)* P7: generator kini juga membaca lembar
+**Kandidat Hapus** (`Claude outputs`), baris penunjuk — status "SUDAH DIHAPUS" → dibuang (yang berstatus tunggal ini
+hanya **R1 indeks-diri**, 13 kunci — A67); "SUDAH JADI FK (V-47)" (R3) → dibuang bila sasarannya induk langsung (A68),
+selain itu tetap di penampung. `[terverifikasi]` lembar itu **berselisih** untuk **dua** kunci —
+`T_FR_ANEKALIST.IdxOccupation` dan `T_FR_DEDUCTIBLELIST.IndexProperty` (R2 "SUDAH DIHAPUS" dan R3 "SUDAH JADI FK") —
+tidak dipilih, tetap di penampung. R3b "DIPERTAHANKAN" (tiga kunci) sudah berkolom kunci di rancangan
+(`IDX_LOCATION`/`INDEX_LOCATION`), jadi tidak masuk penampung. `[dugaan]` tabel sasaran penunjuk dibaca dari namanya, melanjutkan contoh V-47 ("dan seterusnya").
+
+**Ralat sumber — dua salinan register** (`[terverifikasi]` 02-10-2026): salinan repo
+`APP_RNM/modul/nbfacin/docs/00-KEPUTUSAN-WORK-OWNER.md` (4.383 baris, 1 Okt 17:34) **lebih baru** daripada
+`D:\migrasi\RNM\OUTPUT\00-KEPUTUSAN-WORK-OWNER.md` (4.365 baris, 25 Sep): `diff` (tanpa CR) — 18 baris hanya di salinan
+repo, tiga sisipan (sesudah L794, L829, L1263 salinan lama) = amandemen 1 Oktober butir 30, 34/A4, 46. **Mulai sekarang
+register dibaca HANYA dari salinan repo**; `D:\migrasi\RNM\OUTPUT\` tetap untuk spec 11 dan berkas `08-flat`. Rujukan
+nomor baris ke salinan lama yang ditemukan dan dibetulkan: catatan 69.4 di register ini; `docs/USULAN-KOLOM-PENAMPUNG.md`
+P4; komentar `backend/services/loader/aturan.go` (`medanDiselamatkan`). Rujukan lain ke register di tiket 22–24 dan register
+ini tidak memakai nomor baris (K-0xx saja), dan isi K-0xx yang dirujuk tidak termasuk 18 baris yang berbeda.
+
+**Keputusan agent — menunggu konfirmasi (sesudah butir 70; temuan code review sumbu spec):**
+
+| # | Tiket | Keputusan agent | Dasar |
+| --- | ---: | --- | --- |
+| A67 | 22 | ~~P7: penunjuk **R1 indeks-diri** berstatus "SUDAH DIHAPUS" (13 kunci) ikut **dibuang**~~ → **dicabut butir 71.2** (korpus 39 beda) | Teks P7 hanya "penunjuk induk langsung dibuang"; dasar R1 adalah V-50/V-41 (lembar Kandidat Hapus "SUDAH DIHAPUS", "sudah diwakili kolom urutan baris") — keputusan rancangan, bukan teks butir 70. 69.2 menuntut keputusan "dibuang" eksplisit; ini dibaca sebagai eksplisit |
+| A68 | 22 | ~~P7: penunjuk R3 yang sasarannya **induk langsung** (16 kunci) **dibuang**~~ → **dicabut butir 71.1** (fixture 103 beda, korpus 8), walau **15** di antaranya punya kolom FK di rancangan (mis. `T_COVERAGELIST.IndexCargo` → `CARGO_ID`, `T_PROPERTYITEMLIST.IndexProperty` → `PROPERTY_ID`) | ⚠️ **Pertentangan** teks P7/V-47 ("INDUK LANGSUNG dibuang karena PARENT_ID sudah menyatakan hal yang sama") dengan rancangan (kolom FK untuk induk langsung, terutama di tabel berinduk ganda). Nilai FK itu dapat diturunkan dari `PARENT_ID` + `PARENT_TABLE` bila aturan isi FK ditulis — jadi tidak hilang; tetapi **nilai penunjuk mentahnya** hilang. Bila work owner memilih menyimpannya, 15 kunci itu kembali ke penampung (satu baris kode) |
+
+## Keputusan work owner — 2 Oktober 2026, verifikasi butir 70, diteruskan sesi `nusantarare-0f`
+
+Diteruskan sesi agent `nusantarare-0f` dengan kutipan jawaban work owner **"setuju"** atas rekomendasinya. Setiap
+angka diperiksa ulang agent dua cara (mesin Go vs pengurai Python atas pohon mentah) sebelum ditulis.
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 71.1 | A68 — penunjuk induk langsung | **Jangan dibuang dulu.** Ke-16 kunci (15 berkolom FK di rancangan) kembali ke penampung. Data membantah premis V-47 (BACA-INI **r32**: "Yang menunjuk INDUK LANGSUNG dibuang karena PARENT_ID sudah menyatakan hal yang sama"). Diajukan ke work owner: apakah V-47 diubah. Arti penunjuk **tidak** ditafsirkan |
+| 71.2 | A67 — R1 indeks-diri (Kandidat Hapus r2–r14) | **Ukur dulu**; bila selalu sama dengan posisi baris → boleh dibuang, bila ada yang beda → kembali ke penampung. Catat: V-50 (BACA-INI **r19**) hanya mencatat status per kelompok, tidak menyebut R1 khusus |
+| 71.3 | Dua kunci berselisih | Tetap di penampung |
+
+**Hasil pengukuran** (02-10-2026; jendela fixture 5 kasus dan korpus 115 contoh, cabang yang dibuang tidak ikut; "posisi"
+= `SEQ_NO` = posisi di larik sumber, 1-based):
+
+| | Fixture | Korpus |
+| --- | --- | --- |
+| A68 induk langsung — sama dengan posisi induk | 105 | 5.658 |
+| A68 — **beda** | **103** — seluruhnya `T_COVERAGELIST.IndexCargo` di kasus marine (104 unsur, 1 sama; 1 lagi sama bila 0-based) | **8** — `T_ANEKALIST.IdxOccupation` 2, `T_COVERAGELIST.IndexCargo` 1, `T_DEDUCTIBLELIST.IndexCoverage` 5 |
+| A68 — induk berupa halaman tanpa `SEQ_NO` (`PropertyItemList.IndexProperty`, induknya `Property`) | 11 | 472 |
+| A68 — jumlah | 219 | 6.138 (= jumlah yang dibuang butir 70) |
+| A67 R1 — sama dengan `SEQ_NO` sendiri | 227 | 6.094 |
+| A67 R1 — **beda** | **0** | **39** — `IndexCoverage` 18, `OccupationList.IdxOccupation` 16, `IndexDeductible` 5 |
+
+⚠️ **Dua definisi, dua angka — dicatat, tidak dipilih:** sesi 0f menghitung "sama" fixture **116** dan korpus **6.130**;
+agent **105** dan **5.658**. Selisihnya tepat baris yang induknya halaman tanpa `SEQ_NO` (11 dan 472): sesi 0f
+menghitungnya "sama", agent "tak terbandingkan". Angka "beda" kedua pihak sama (fixture 103 vs sesi 0f "cocok 1 dari 104"
+di marine; korpus 8). ⚠️ **Cara Go per kunci sempat keliru** untuk `T_FR_CARGOLIST.IdxFacRetro` (5, karena ikut jalur
+`FacOfferList/CargoList` yang induknya bukan `FacRetroList`); dibatasi ke jalur yang induknya tabel sasaran → 3, sama
+dengan Python.
+
+**Akibatnya:** A68 — penunjuk induk langsung ke penampung. A67 — **ada yang beda** (korpus 39) → R1 juga ke penampung
+(seluruh 13 kunci; rincian per kunci untuk keputusan per kunci bila work owner mau). **Tidak satu pun penunjuk dibuang**
+lagi; P7 butir 70 dicabut penerapannya. Bukti dikunci `TestKasusPenunjukBukanPosisi` (fixture: `IndexCargo` 1/103, R1
+227/0).
+
+**Ralat (verifikasi sesi 0f, diperiksa ulang agent):** (1) "penunjuk leluhur V-47 8.752" (sisa butir 70) = **8.723**
+penunjuk leluhur R3 + **25** dua kunci berselisih + **4** `T_FR_PERSONLIST.IdxPerson` yang **tidak tercantum** di lembar
+Kandidat Hapus. (2) "0 di fixture" untuk `CurrencyList.ID` dan FR `Policy.TSI` tidak membuktikan apa pun — kedua medan
+**tidak ada** di fixture; buktinya hanya korpus (5 dan 15 kemunculan di luar `OldData`, penampung 0). (3)
+`mutasi_loader.log` butir 70 lebih tua dari suntingan terakhir `aturan.go`; mutasi dijalankan ulang sesudah perubahan
+butir 71 — **60/60**. Rujukan BACA-INI sesi 0f (r19, r32, r53) `[terverifikasi]` = baris Excel; pembaca agent menomori
+elemen `<row>` (17, 30, 51) karena Excel melewatkan baris kosong.
+
+## Keputusan work owner — 2 Oktober 2026, satu aturan untuk semua penunjuk, diteruskan sesi `nusantarare-0f`
+
+Diteruskan sesi agent `nusantarare-0f` dengan kutipan jawaban work owner **"setuju"** atas rekomendasinya, sesudah
+verifikasi independen butir 71 (semua klaim terbukti, dua cara).
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 72.1 | **V-47 diubah** — penunjuk induk langsung (16 kunci) | **Tidak dibuang**; disimpan APA ADANYA sebagai kolom teks mentah di tabel barisnya, tidak ditafsirkan. Amandemen V-47 (BACA-INI r32) dengan dasar data A68: premis "PARENT_ID menyatakan hal yang sama" dibantah — fixture 103 beda, korpus 8 beda |
+| 72.2 | R1 indeks-diri (13 kunci) | Sama — kolom teks mentah; **tidak** diputuskan per kunci. Dasar: A67 korpus 39 beda |
+| 72.3 | Penunjuk leluhur | Sama — kolom teks mentah |
+| 72.4 | Dua kunci berselisih, `T_FR_PERSONLIST.IdxPerson` | Sama — kolom teks mentah |
+| 72.5 | Kolom FK V-47 | **Tidak berubah** — tetap kosong sampai aturan isinya tertulis (68.4). Kolom penunjuk mentah **bukan** pengganti FK dan **tidak** dipakai mengisinya |
+
+**Fakta tambahan (verifikasi sesi 0f, diperiksa ulang agent dengan Python, tidak ditafsirkan):** ke-483 penunjuk
+`IndexProperty` yang induknya `T_PROPERTY` / `T_FR_PROPERTY` (fixture 11, korpus 470 + 2 FR) **selalu sama** dengan posisi
+unsur `LocationList` kakeknya (483 / 483); nilainya 1..181, 181 nilai berbeda — bukan konstan.
+
+**Penerapan** (`loader/amandemen.go`, `amandemenPenunjuk`): **48 kolom** = tepat 48 kunci penunjuk yang teramati di
+penampung, `[terverifikasi]` 5 fixture + 115 contoh korpus (47 kunci lembar Kandidat Hapus + `T_FR_PERSONLIST.IdxPerson`;
+tiga kunci lembar lainnya — R3b — sudah berkolom kunci di rancangan). Per kelompok: R1 indeks-diri **13**, R3 induk
+langsung **16**, R3 leluhur **16**, berselisih **2**, `IdxPerson` **1**. Nama: SNAKE_CASE dari FIELD ASLI — pola kolom kunci
+rancangan yang sudah ada (`IdxLocation` → `IDX_LOCATION`, `IndexPropertyItem` → `INDEX_PROPERTY_ITEM`); nama terpanjang 19
+karakter (V-20). Tipe: **`VARCHAR2(50)`** — bentuk nilai terukur seluruhnya bilangan bulat, terpanjang **3** karakter;
+"teks mentah" menurut keputusan, pola V-6 kolom kode. ⚠️ Pola V-49 (`*_REF_ID`) **tidak** dipakai: ia untuk medan Pega
+bernama `ID`, bukan penunjuk. Sebaran per tabel:
+
+| Tabel | Kolom baru |
+| --- | ---: |
+| `T_COVERAGELIST` | 8 |
+| `T_DEDUCTIBLELIST` | 6 |
+| `T_FR_COVERAGELIST` | 6 |
+| `T_FR_DEDUCTIBLELIST` | 4 |
+| `T_ANEKALIST`, `T_FR_ANEKALIST`, `T_SPREADINGLIST` | 3 masing-masing |
+| `T_ADDITIONALCOVERAGE`, `T_FR_CARGOLIST`, `T_FR_PERSONLIST`, `T_FR_PROPERTYITEMLIST`, `T_OCCUPATIONLIST`, `T_PROPERTYITEMLIST` | 2 masing-masing |
+| `T_CARGOLIST`, `T_FR_OCCUPATIONLIST`, `T_VEHICLELIST` | 1 masing-masing |
+| **16 tabel** | **48** |
+
+Hasil: kelima fixture — terpetakan naik tepat sebanyak penunjuknya (600); korpus 21.023 nilai penunjuk masuk kolom.
+**Sisa penampung: hanya `IsCedingConfirm`** — fixture 34, korpus 805 (menunggu DBA; P4). Di korpus juga 214 entri
+bernilai spasi — artefak pengubah XML→JSON agent, bukan data (butir 69). Skema sesudah amandemen: 79 tabel, **1.390**
+kolom (1.329 + 61). Bukti `IndexCargo` dikunci `TestKasusPenunjukBukanPosisi`: teks "7" tersimpan apa adanya di 104
+baris, sama dengan posisi induk 1 dari 104.
+
+## Keputusan work owner — 2 Oktober 2026, penjaga claimlife (AskUserQuestion)
+
+| # | Pertanyaan | Jawaban |
+| ---: | --- | --- |
+| 67 | Penjaga claimlife `TestKolomTakDibawaHanyaAdaDiKatalog` (lingkup tertulis claimlife, pindaian seluruh `APP_RNM`) menuduh loader NB atas `STS_KONVERSI`/`TGL_KONVERSI` | **"FOKUS KE NB FACIN SAJA"** — claimlife tidak disunting; `go test ./...` aplikasi tetap merah di paket itu sampai pemiliknya memutuskan |
+
 ## Yang belum diputuskan
 
 

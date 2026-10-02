@@ -1,6 +1,6 @@
-# Indeks Tiket — Lima Modul Terverifikasi (21 tiket; tiket 18–21 disusun agent)
+# Indeks Tiket — Lima Modul Terverifikasi (24 tiket; tiket 18–24 disusun agent)
 
-> ⚠️ **1 Oktober 2026:** judul semula "16 tiket"; tiket **17** `hitungan-uang-tanpa-mata-uang` ditambahkan saat NB-02 ditutup (butir 34). Kalimat "16 tiket" di bawah adalah catatan breakdown 17 September, dipertahankan. Tiket **18**–**21** disusun agent dari XML/spec atas perintah work owner (01–02 Oktober 2026), bukan hasil `/to-tickets`.
+> ⚠️ **1 Oktober 2026:** judul semula "16 tiket"; tiket **17** `hitungan-uang-tanpa-mata-uang` ditambahkan saat NB-02 ditutup (butir 34). Kalimat "16 tiket" di bawah adalah catatan breakdown 17 September, dipertahankan. Tiket **18**–**24** disusun agent dari XML/spec atas perintah work owner (01–02 Oktober 2026), bukan hasil `/to-tickets`.
 
 > ## 🗺️ Peta indeks — empat modul, **60 tiket**
 >
@@ -59,6 +59,9 @@
 | 19 | `pembayaran-premi-marine-unggah-csv` | 18 | ⚠️ *Disusun agent dari XML, 01-10-2026.* `.Policy.Payment.Premium`/`.Diskon` MARINE CARGO NB lewat jalur unggah CSV (`PremiPaymentMarine` langkah 1) |
 | 20 | `modul-berjalan-backend` | 11, 12, 18 | ⚠️ *Disusun agent, 02-10-2026.* `modul.go`, tabel limit Oracle (baca saja), `POST /api/nbfacin/premi` dan `/akseptasi/langkah` (jabatan dari isian — butir 58, tidak aman untuk produksi) |
 | 21 | `layar-coverage-cargo` | 20 | ⚠️ *Disusun agent, 02-10-2026.* Halaman awal: blok pertama `InputCoverageCargo_FacIn` + isian uji premi (butir 61) |
+| 22 | `loader-flatten` | — (F-3) | ⚠️ *Disusun agent, 02-10-2026.* Seam `loader.Flatten` spec 11: satu dokumen → baris 78 tabel, murni; skema dibangkitkan dari workbook rancangan. Butir 68: delapan kolom teks apa adanya (penyimpangan sadar DDL), kode mata uang dari `Currency/Name`, penampung ADR-0023 |
+| 23 | `migrasi-tabel-flat` | 22 | ⚠️ *Disusun agent, 02-10-2026.* ⏸ **Ditahan** (butir 66): presisi tabel flat menunggu tim inti; tidak satu berkas migrasi ditulis |
+| 24 | `pemuat-repository` | 22, 23 | ⚠️ *Disusun agent, 02-10-2026.* Seam `repository`: satu transaksi per penawaran, versi terakhir fase 1, `PROD_KE` teks → angka; laporan tiket 17 |
 
 ---
 
