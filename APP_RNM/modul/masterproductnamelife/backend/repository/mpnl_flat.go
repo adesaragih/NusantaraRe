@@ -14,6 +14,7 @@ package repository
 // dipotong atau dibulatkan diam-diam. Tidak satu angka pun melewati float (ADR-0003).
 
 import (
+	"sort"
 	"strings"
 	"time"
 
@@ -159,7 +160,8 @@ const (
 	KolomUrut      = "URUT"
 )
 
-// AnakFlat - satu tabel anak: nama, label daftar (kalimat penolakan), kolom isi (urutan DDL, sesudah PRODUCTID, URUT).
+// AnakFlat - satu tabel anak: nama, judul grid VERBATIM (kalimat penolakan services), kolom isi (urutan DDL, sesudah
+// PRODUCTID, URUT).
 type AnakFlat[T any] struct {
 	Tabel, Label string
 	Kolom        []KolomFlat[T]
@@ -167,18 +169,18 @@ type AnakFlat[T any] struct {
 }
 
 var (
-	AnakLien = AnakFlat[models.BarisLien]{Tabel: TabelFlatLien, Label: "Lien Clause",
+	AnakLien = AnakFlat[models.BarisLien]{Tabel: TabelFlatLien, Label: "LIEN CLAUSE (Potongan Manfaat Klaim)", // b12201
 		daftar: func(p *pr) *[]models.BarisLien { return &p.LienClause },
 		Kolom: []KolomFlat[models.BarisLien]{
 			teks("USIA", 200, "Usia saat Klaim", func(b *models.BarisLien) *string { return &b.Usia }),
 			teks("MANFAAT", 200, "% Manfaat yang dibayarkan", func(b *models.BarisLien) *string { return &b.Manfaat }),
 		}}
-	AnakDokumen = AnakFlat[models.BarisDokumen]{Tabel: TabelFlatDokumen, Label: "Document Claim",
+	AnakDokumen = AnakFlat[models.BarisDokumen]{Tabel: TabelFlatDokumen, Label: "DOCUMENT CLAIM", // b14601
 		daftar: func(p *pr) *[]models.BarisDokumen { return &p.DocumentClaim },
 		Kolom: []KolomFlat[models.BarisDokumen]{
 			teks("DOCUMENT", 500, "Document List", func(b *models.BarisDokumen) *string { return &b.Document }),
 		}}
-	AnakPlan = AnakFlat[models.BarisPlan]{Tabel: TabelFlatPlan, Label: "Plan List",
+	AnakPlan = AnakFlat[models.BarisPlan]{Tabel: TabelFlatPlan, Label: "PLAN LIST", // b31557
 		daftar: func(p *pr) *[]models.BarisPlan { return &p.PlanList },
 		Kolom: []KolomFlat[models.BarisPlan]{
 			teks("PLANID", 10, "Plan Name ID", func(b *models.BarisPlan) *string { return &b.PlanID }),
@@ -188,7 +190,7 @@ var (
 			teks("RIRATEID", 10, "R/I Rate ID", func(b *models.BarisPlan) *string { return &b.RIRateID }),
 			teks("RIRATE", 500, "R/I Rate", func(b *models.BarisPlan) *string { return &b.RIRate }),
 		}}
-	AnakFinUW = AnakFlat[models.BarisFinUW]{Tabel: TabelFlatFinUW, Label: "Financial Underwriting",
+	AnakFinUW = AnakFlat[models.BarisFinUW]{Tabel: TabelFlatFinUW, Label: "FINANCIAL UNDERWRITING", // b37148
 		daftar: func(p *pr) *[]models.BarisFinUW { return &p.FinancialUnderwriting },
 		Kolom: []KolomFlat[models.BarisFinUW]{
 			desimal("MININSURED", "Min Insured", func(b *models.BarisFinUW) *string { return &b.MinInsured }),
@@ -196,7 +198,7 @@ var (
 			teks("EMPLOYEE", 1000, "Employee", func(b *models.BarisFinUW) *string { return &b.Employee }),
 			teks("NON_EMPLOYEE", 1000, "Non-Employee", func(b *models.BarisFinUW) *string { return &b.NonEmployee }),
 		}}
-	AnakUWLimit = AnakFlat[models.BarisUWLimit]{Tabel: TabelFlatUWLimit, Label: "Underwriting Limit",
+	AnakUWLimit = AnakFlat[models.BarisUWLimit]{Tabel: TabelFlatUWLimit, Label: "UNDERWRITING LIMIT", // b42075
 		daftar: func(p *pr) *[]models.BarisUWLimit { return &p.UnderwritingLimit },
 		Kolom: []KolomFlat[models.BarisUWLimit]{
 			desimal("MININSURED", "Min Insured", func(b *models.BarisUWLimit) *string { return &b.MinInsured }),
@@ -206,7 +208,7 @@ var (
 			teks("MEDICAL", 200, "Medical", func(b *models.BarisUWLimit) *string { return &b.Medical }),
 			teks("DESCRIPTION", 1000, "Description", func(b *models.BarisUWLimit) *string { return &b.Description }),
 		}}
-	AnakOutward = AnakFlat[models.BarisOutward]{Tabel: TabelFlatOutward, Label: "Outward List",
+	AnakOutward = AnakFlat[models.BarisOutward]{Tabel: TabelFlatOutward, Label: "On Retention", // checkbox b47312
 		daftar: func(p *pr) *[]models.BarisOutward { return &p.OutwardList },
 		Kolom: []KolomFlat[models.BarisOutward]{
 			teks("REINSTYPEID", 100, "Reins Type ID", func(b *models.BarisOutward) *string { return &b.ReinsTypeID }),
@@ -216,7 +218,7 @@ var (
 			bulat("UNDERWRITINGYEAR", "Underwriting Year", func(b *models.BarisOutward) *string { return &b.UnderwritingYear }),
 			desimal("OVR_COMM", "Override Commission", func(b *models.BarisOutward) *string { return &b.OvrComm }),
 		}}
-	AnakKomentar = AnakFlat[models.BarisKomentar]{Tabel: TabelFlatKomentar, Label: "Comment List",
+	AnakKomentar = AnakFlat[models.BarisKomentar]{Tabel: TabelFlatKomentar, Label: "Comment", // popup b1025
 		daftar: func(p *pr) *[]models.BarisKomentar { return &p.CommentList },
 		Kolom: []KolomFlat[models.BarisKomentar]{
 			{Nama: "TANGGAL", Jenis: FlatStempel, Label: "Date",
@@ -244,7 +246,8 @@ const (
 // saja, brief T2); services boleh mengutipnya kembali kepada pengirimnya sendiri.
 type MasalahNilai struct {
 	Tabel, Kolom, Label string
-	Urut                int // 0 = induk; n = baris ke-n daftar
+	Judul               string // judul grid VERBATIM tabel anak (kosong untuk induk)
+	Urut                int    // 0 = induk; n = baris ke-n daftar
 	Jenis               string
 	Nilai               string
 	Batas               int // FlatTeks: lebar kolom
@@ -324,8 +327,9 @@ func NilaiKanonik(jenis JenisKolomFlat, lebar int, v string) (string, string) {
 		}
 		return k, ""
 	case FlatTanggal:
+		// Tahun 0 diterima time.Parse, ditolak DATE Oracle (ORA-01841).
 		t, err := time.Parse(bentukTanggalAPI, strings.TrimSpace(v))
-		if err != nil {
+		if err != nil || t.Year() < 1 {
 			return "", MasalahBukanTanggal
 		}
 		return t.Format(bentukTanggalAPI), ""
@@ -339,13 +343,13 @@ func NilaiKanonik(jenis JenisKolomFlat, lebar int, v string) (string, string) {
 	return v, ""
 }
 
-func normalkanMedan[T any](kolom []KolomFlat[T], tabel string, urut int, b *T, masalah *[]MasalahNilai) {
+func normalkanMedan[T any](kolom []KolomFlat[T], tabel, judul string, urut int, b *T, masalah *[]MasalahNilai) {
 	for _, k := range kolom {
 		v := k.ambil(b)
 		baru, m := NilaiKanonik(k.Jenis, k.Lebar, *v)
 		if m != "" {
-			*masalah = append(*masalah, MasalahNilai{Tabel: tabel, Kolom: k.Nama, Label: k.Label, Urut: urut, Jenis: m,
-				Nilai: *v, Batas: k.Lebar})
+			*masalah = append(*masalah, MasalahNilai{Tabel: tabel, Kolom: k.Nama, Label: k.Label, Judul: judul, Urut: urut,
+				Jenis: m, Nilai: *v, Batas: k.Lebar})
 		}
 		*v = baru
 	}
@@ -356,7 +360,7 @@ func normalkanAnak[T any](a AnakFlat[T], p *models.Produk, masalah *[]MasalahNil
 	salinan := make([]T, len(daftar))
 	copy(salinan, daftar)
 	for i := range salinan {
-		normalkanMedan(a.Kolom, a.Tabel, i+1, &salinan[i], masalah)
+		normalkanMedan(a.Kolom, a.Tabel, a.Label, i+1, &salinan[i], masalah)
 	}
 	*a.daftar(p) = salinan
 }
@@ -373,7 +377,7 @@ func NormalkanFlat(p models.Produk) (models.Produk, []MasalahNilai) {
 		*k.ambil(&n) = *k.ambil(&p)
 	}
 	n.Umum.IsORS = p.Umum.IsORS
-	normalkanMedan(KolomFlatInduk, TabelFlatInduk, 0, &n, &masalah)
+	normalkanMedan(KolomFlatInduk, TabelFlatInduk, "", 0, &n, &masalah)
 	n.Umum.PolicyHolder, n.Umum.PolicyHolderName = n.Inward.PolicyHolder, n.Inward.PolicyHolderName
 	n.Inward.ID, n.Inward.ProductID = p.ID, p.ID
 	normalkanAnak(AnakLien, &n, &masalah)
@@ -408,7 +412,8 @@ func buangAsli(p *models.Produk) {
 		p.OutwardList[i].Asli = ""
 	}
 	for i := range p.CommentList {
-		p.CommentList[i].Asli = ""
+		// `IsApproved` tanpa kolom (0 terisi di DEV; MedanTanpaKolom menggagalkan pindah bila terisi).
+		p.CommentList[i].Asli, p.CommentList[i].IsApproved = "", ""
 	}
 }
 
@@ -420,7 +425,7 @@ func MasalahFlat(p models.Produk) []MasalahNilai {
 }
 
 // MedanTanpaKolom - medan model yang TIDAK menjadi kolom flat (tiket 01 bab 02-10-2026 "Tidak menjadi kolom"): medan
-// layar mati sisi umum dan kunci inward warisan - 0 terisi di DEV. Nama = kunci Pega; nilai terisi = nilainya hilang
+// layar mati sisi umum, kunci inward warisan, dan `CommentList[*].IsApproved` - 0 terisi di DEV. Nama = kunci Pega; nilai terisi = nilainya hilang
 // bila dipindah (alat pindah GAGAL). `Comment`/`IsView` bukan di sini: keadaan layar dan masukan, bukan data.
 func MedanTanpaKolom(p models.Produk) []string {
 	var hasil []string
@@ -439,5 +444,13 @@ func MedanTanpaKolom(p models.Produk) []string {
 			hasil = append(hasil, kunci)
 		}
 	}
+	// Medan baris tanpa kolom: `CommentList[*].IsApproved` (`param.status`, tidak dikirim; 0 terisi di DEV).
+	for _, b := range p.CommentList {
+		if strings.TrimSpace(b.IsApproved) != "" {
+			hasil = append(hasil, "CommentList.IsApproved")
+			break
+		}
+	}
+	sort.Strings(hasil)
 	return hasil
 }

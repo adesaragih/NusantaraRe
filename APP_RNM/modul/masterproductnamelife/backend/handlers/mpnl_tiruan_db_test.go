@@ -118,9 +118,12 @@ func ddlFlat(t *testing.T, mundur bool, skema string) []string {
 			sumber["migrations/"+e.Name()] = &fstest.MapFile{Data: isi}
 		}
 	}
+	// Delapan langkah - induk + tujuh anak (repository.DaftarTabelFlat; paket uji ini tidak mengimpor repository,
+	// penjaga inti TestHandlersTidakMengimporRepository). Kurang dari itu = skema uji sebagian: gagal, bukan diam.
+	const langkahFlat = 8
 	langkah, err := migrasi.Daftar(mundur, sumber)
-	if err != nil || len(langkah) == 0 {
-		t.Fatalf("membaca migrasi flat: %d langkah, %v", len(langkah), err)
+	if err != nil || len(langkah) != langkahFlat {
+		t.Fatalf("membaca migrasi flat: %d langkah (mau %d), %v", len(langkah), langkahFlat, err)
 	}
 	var hasil []string
 	for _, l := range langkah {

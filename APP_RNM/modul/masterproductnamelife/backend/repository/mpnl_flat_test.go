@@ -3,6 +3,7 @@ package repository
 // Pemetaan flat dan rekonsiliasi pindah - TANPA Oracle (uji `db`: `mpnl_flat_db_test.go`).
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -143,6 +144,7 @@ func TestNilaiKanonik(t *testing.T) {
 		{FlatTanggal, 0, "2026-03-01", "2026-03-01", ""},
 		{FlatTanggal, 0, "01/03/2026", "", MasalahBukanTanggal},
 		{FlatTanggal, 0, "UJI", "", MasalahBukanTanggal},
+		{FlatTanggal, 0, "0000-01-01", "", MasalahBukanTanggal}, // ORA-01841 di Oracle
 		{FlatStempel, 0, "20241202T065450.847 GMT", "20241202T065450.847 GMT", ""},
 		{FlatStempel, 0, "2024-12-02", "", MasalahBukanStempel},
 		{FlatTeks, 3, "abc", "abc", ""},
@@ -214,8 +216,13 @@ func TestMedanTanpaKolom(t *testing.T) {
 		t.Fatalf("produk uji: %v", m)
 	}
 	p.Umum.Grup, p.Inward.Months = "2", "12"
-	if m := MedanTanpaKolom(p); len(m) != 2 {
-		t.Errorf("GRUP dan inward.MONTHS terisi: %v", m)
+	p.CommentList[0].IsApproved = "1"
+	if m := MedanTanpaKolom(p); strings.Join(m, ",") != "CommentList.IsApproved,GRUP,inward.MONTHS" {
+		t.Errorf("GRUP, inward.MONTHS, CommentList.IsApproved terisi: %v", m)
+	}
+	// Tiruan = Oracle: IsApproved tanpa kolom, tidak terbaca kembali.
+	if n, _ := NormalkanFlat(p); n.CommentList[0].IsApproved != "" {
+		t.Error("NormalkanFlat harus mengosongkan IsApproved (tanpa kolom)")
 	}
 }
 
@@ -310,7 +317,7 @@ func TestRekonsiliasiLolosDanKanonik(t *testing.T) {
 		t.Errorf("inward: %+v", lap)
 	}
 	if lap.DibuangD2["kunci halaman umum pxObjClass"] != 1 || lap.DibuangD2["IsView (keadaan layar)"] != 1 ||
-		lap.DibuangD2["baris DocumentClaim berkunci internal Pega"] != 1 || lap.DibuangD2["baris CommentList berkunci internal Pega"] != 0 {
+		lap.DibuangD2["baris DocumentClaim kunci pxObjClass"] != 1 || len(lap.DibuangD2) != 3 {
 		t.Errorf("dibuang D2: %v", lap.DibuangD2)
 	}
 	if produk[0].ID != "100044" || produk[0].Inward.Begin != "2026-03-01" || !produk[0].Umum.IsORS ||
@@ -360,8 +367,10 @@ func TestRekonsiliasiMenolak(t *testing.T) {
 			if lap.Lolos() == (k.gagal || k.normalisasi != "") {
 				t.Errorf("Lolos() = %v", lap.Lolos())
 			}
-			// -terima-normalisasi meloloskan normalisasi, TIDAK PERNAH kegagalan.
-			lap.TerimaNormalisasi = true
+			// -terima-normalisasi atas SEMUA jenis yang ditemukan meloloskan normalisasi, TIDAK PERNAH kegagalan.
+			for j := range lap.NormalisasiJenis {
+				lap.TerimaNormalisasi = append(lap.TerimaNormalisasi, j)
+			}
 			if lap.BolehDitulis() == k.gagal {
 				t.Errorf("BolehDitulis() dengan -terima-normalisasi = %v, gagal %v", lap.BolehDitulis(), k.gagal)
 			}
@@ -414,5 +423,83 @@ func TestRekonsiliasiInwardMilikProdukLainTidakBersilang(t *testing.T) {
 		if p.Inward.Insured != mau || p.Inward.ID != p.ID {
 			t.Errorf("%s: insured %q (mau %q), ID inward %q", p.ID, p.Inward.Insured, mau, p.Inward.ID)
 		}
+	}
+}
+
+// Temuan /code-review 02-10-2026: kerugian data yang dulu lolos diam-diam kini GAGAL.
+func TestRekonsiliasiKehilanganDataGagal(t *testing.T) {
+	for _, k := range []struct {
+		nama, umum, inward string
+		gagal              bool
+		k3                 int
+	}{
+		{"MATURE berbentuk tanggal lain - dapat diselamatkan, bukan K3", `{"ID":"100044"}`,
+			`{"ID":"100044","PRODUCTID":"100044","MATURE":"1/3/2027"}`, true, 0},
+		{"MaxInsured berpemisah ribuan - dapat diselamatkan, bukan K3", `{"ID":"100044","UnderwritingLimitList":[{"MaxInsured":"1.000.000"}]}`,
+			`{"ID":"100044","PRODUCTID":"100044"}`, true, 0},
+		{"kunci baris bukan internal Pega dan berisi", `{"ID":"100044","PlanList":[{"Plan":"UJI P","OUTWARDRATEID":"R9"}]}`,
+			`{"ID":"100044","PRODUCTID":"100044"}`, true, 0},
+		{"kunci halaman bukan internal Pega dan berisi", `{"ID":"100044","UJI_KUNCI_DATA":"x"}`,
+			`{"ID":"100044","PRODUCTID":"100044"}`, true, 0},
+		{"IsApproved komentar terisi", `{"ID":"100044","CommentList":[{"Date":"20241202T065450.847 GMT","IsApproved":"1"}]}`,
+			`{"ID":"100044","PRODUCTID":"100044"}`, true, 0},
+		{"kunci internal Pega dan kunci kosong = D2", `{"ID":"100044","pxObjClass":"UJI","UJI_KOSONG":"",` +
+			`"PlanList":[{"Plan":"UJI P","pxObjClass":"UJI","OUTWARDRATEID":""}]}`, `{"ID":"100044","PRODUCTID":"100044"}`, false, 0},
+		{"K3 MATURE sampah", `{"ID":"100044"}`, `{"ID":"100044","PRODUCTID":"100044","MATURE":"UJI"}`, false, 1},
+	} {
+		t.Run(k.nama, func(t *testing.T) {
+			lap, _ := rekonsiliasi([]barisJSON{barisJ("100044", k.umum)}, []barisJSON{barisJ("100044", k.inward)})
+			if (len(lap.Gagal) > 0) != k.gagal || len(lap.K3) != k.k3 {
+				t.Errorf("gagal %v (mau %v), K3 %d (mau %d):\n%s", lap.Gagal, k.gagal, len(lap.K3), k.k3, lap.Teks())
+			}
+			if strings.Contains(lap.Teks(), "R9") || strings.Contains(lap.Teks(), "1/3/2027") {
+				t.Error("laporan memuat nilai data")
+			}
+		})
+	}
+	// Kolom datar M_PRODUCT_LIFE berbeda dari kunci JSON-nya = gagal; sama = lolos.
+	u := barisJSON{id: "100044", isi: `{"ID":"100044","RIRISKID":"1000117","RIRISK":"UJI RISK"}`,
+		datar: [2]string{"1000117", "UJI RISK"}, adaDatar: true}
+	in := barisJ("100044", `{"ID":"100044","PRODUCTID":"100044"}`)
+	if lap, _ := rekonsiliasi([]barisJSON{u}, []barisJSON{in}); !lap.Lolos() {
+		t.Errorf("kolom datar = JSON: lolos:\n%s", lap.Teks())
+	}
+	u.datar[1] = "UJI RISK LAIN"
+	if lap, _ := rekonsiliasi([]barisJSON{u}, []barisJSON{in}); lap.Lolos() {
+		t.Error("kolom datar berbeda dari JSON harus gagal")
+	}
+}
+
+// -terima-normalisasi menerima JENIS: menerima satu jenis tidak menerima jenis lain (koma desimal dapat berarti ribuan).
+func TestTerimaNormalisasiPerJenis(t *testing.T) {
+	lap, _ := rekonsiliasi([]barisJSON{barisJ("100044", `{"ID":"100044","RICOMM":"12.50"}`)},
+		[]barisJSON{barisJ("100044", `{"ID":"100044","PRODUCTID":"100044","CEDINGLIMIT":"1,000"}`)})
+	if len(lap.NormalisasiJenis) != 2 || lap.BolehDitulis() {
+		t.Fatalf("dua jenis, belum diterima: %v", lap.NormalisasiJenis)
+	}
+	lap.TerimaNormalisasi = []string{"nol ekor desimal"}
+	if lap.BolehDitulis() {
+		t.Error("koma desimal belum diterima - tidak boleh ditulis")
+	}
+	lap.TerimaNormalisasi = []string{"nol ekor desimal", " koma desimal "}
+	if !lap.BolehDitulis() || !strings.Contains(lap.Teks(), "jenis diterima operator") {
+		t.Errorf("kedua jenis diterima:\n%s", lap.Teks())
+	}
+}
+
+// Laporan tetap terbaca: kegagalan lebih dari MaksBarisGagalDicetak dicacah, tidak dicetak semua.
+func TestTeksLaporanMembatasiBarisGagal(t *testing.T) {
+	lap := laporanBaru()
+	for i := range 20 {
+		lap.Gagal = append(lap.Gagal, fmt.Sprintf("UJI-%03d: baris OutwardList kunci X %s", i, pesanTanpaKolom))
+	}
+	for i := range MaksBarisGagalDicetak + 7 {
+		lap.Gagal = append(lap.Gagal, fmt.Sprintf("UJI-%03d: gagal", i))
+	}
+	teks := lap.Teks()
+	// Kegagalan unik dicetak lebih dulu walau datang sesudah kegagalan "tanpa kolom" yang berulang.
+	if !strings.Contains(teks, "UJI-024: gagal") || strings.Contains(teks, "UJI-025: gagal") || !strings.Contains(teks, "dan 7 lainnya") ||
+		!strings.Contains(teks, "dan 12 lainnya tanpa kolom flat") || strings.Index(teks, "UJI-000: gagal") > strings.Index(teks, "kunci X") {
+		t.Errorf("baris gagal dibatasi dan diurutkan:\n%s", teks)
 	}
 }

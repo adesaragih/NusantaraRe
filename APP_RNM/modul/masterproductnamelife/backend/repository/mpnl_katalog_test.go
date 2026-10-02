@@ -104,8 +104,7 @@ func kolomDibaca(q string) []string {
 
 func TestKolomDibacaAdaDiKatalogDEV(t *testing.T) {
 	kat := katalogDEV(t).Tabel
-	for _, tabel := range []string{TabelProduk, TabelInward} {
-		q := sqlSemuaJSON("S.T")
+	for tabel, q := range map[string]string{TabelProduk: sqlSemuaJSONUmum("S.T"), TabelInward: sqlSemuaJSON("S.T")} {
 		kolom := kolomDibaca(q)
 		if len(kolom) == 0 {
 			t.Fatalf("pembaca kolom tidak menemukan kolom apa pun - instrumennya yang rusak:\n%s", rata(q))

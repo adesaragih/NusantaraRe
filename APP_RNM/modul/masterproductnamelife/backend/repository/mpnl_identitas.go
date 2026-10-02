@@ -113,6 +113,8 @@ func (g *Gudang) identitasBaru(ctx context.Context, tx *db.Tx) (string, error) {
 			var c int
 			if err := tx.QueryRowContext(ctx, q, id).Scan(&c); err != nil {
 				if tabel != TabelFlatInduk && strings.Contains(err.Error(), "ORA-00942") {
+					// ⚠️ ORA-00942 juga berarti hak SELECT dicabut: dicatat, supaya pemeriksaan yang dilewati terlihat DBA.
+					log.Printf("master product name life: %s not readable (%v); its IDs are not checked for %s", tabel, err, id)
 					continue
 				}
 				return false, fmt.Errorf("repository: checking %s %s: %w", tabel, id, err)

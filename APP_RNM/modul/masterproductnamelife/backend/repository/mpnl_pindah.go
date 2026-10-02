@@ -6,11 +6,13 @@ package repository
 // penjaga inti. Pengurainya kodek yang sudah teruji (`UraiProduk`), pemetaannya `NormalkanFlat`.
 //
 //	-uji       (bawaan) hanya SELECT atas kedua tabel JSON; nol tulisan; laporan.
-//	-terima-normalisasi  (bawaan mati) normalisasi teks yang SUDAH diputuskan work owner (OQ-FLAT-07) tidak menahan
-//	           -jalankan; tetap dicetak laporan. Kegagalan tidak pernah dapat diterima.
-//	-jalankan  menolak IS_PEGA_PROD=true dan rekonsiliasi yang tidak lolos; SATU transaksi: isi tabel flat dihapus lalu
-//	           diisi ulang, dibaca ulang dan dibandingkan sebelum ditutup. Aman diulang - dan MENOLAK bila tabel flat
-//	           memuat produk yang berbeda dari sumber JSON (tulisan baru sesudah peralihan tidak pernah ditimpa).
+//	-terima-normalisasi=<jenis,…>  (bawaan kosong) JENIS normalisasi teks yang SUDAH diputuskan work owner (OQ-FLAT-07)
+//	           tidak menahan -jalankan; jenis lain tetap menahan; tetap dicetak laporan. Kegagalan tidak pernah diterima.
+//	-jalankan  menolak IS_PEGA_PROD=true dan rekonsiliasi yang tidak lolos; SATU transaksi yang lebih dulu MENGUNCI tabel
+//	           induk (`LOCK TABLE … IN EXCLUSIVE MODE` - aplikasi yang berjalan tidak dapat menulis produk selama pindah):
+//	           produk bersumber JSON dihapus lalu diisi ulang, dibaca ulang dan dibandingkan sebelum ditutup. Aman diulang.
+//	           Produk yang HANYA ada di tabel flat (tulisan baru aplikasi) dibiarkan utuh; produk bersumber JSON yang
+//	           isinya di tabel flat sudah BERBEDA (diubah sesudah peralihan) menolak seluruh putaran - tidak pernah ditimpa.
 //
 // Rekonsiliasi - SETIAP medan setiap produk, teks demi teks (JSON → model → bentuk flat): beda yang bukan K3/K4 =
 // GAGAL; normalisasi teks (mis. nol ekor angka) dicatat per kolom dan menghentikan `-jalankan` untuk keputusan work
@@ -18,11 +20,13 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"nusantarare/modul/masterproductnamelife/backend/models"
 )
@@ -71,7 +75,9 @@ type LaporanPindah struct {
 	DibuangD2           map[string]int
 	Gagal               []string
 	TulisanFlatBerbeda  int
-	TerimaNormalisasi   bool // -terima-normalisasi (OQ-FLAT-07)
+	ProdukFlatSaja      int      // produk yang hanya ada di tabel flat (tulisan baru aplikasi) - dibiarkan utuh
+	TerimaNormalisasi   []string // jenis normalisasi yang diterima operator (-terima-normalisasi, OQ-FLAT-07)
+	NormalisasiJenis    map[string]int
 	Ditulis             bool
 	ContohNormalisasi   []Temuan
 }
@@ -79,14 +85,28 @@ type LaporanPindah struct {
 // Lolos - nol kegagalan DAN nol normalisasi (normalisasi menunggu keputusan work owner, brief T3).
 func (l LaporanPindah) Lolos() bool { return len(l.Gagal) == 0 && len(l.Normalisasi) == 0 }
 
-// BolehDitulis - nol kegagalan, dan normalisasi nol ATAU diterima operator sesudah keputusan work owner (OQ-FLAT-07).
+// BolehDitulis - nol kegagalan, dan setiap JENIS normalisasi yang ditemukan diterima operator sesudah keputusan work
+// owner (OQ-FLAT-07). Menerima satu jenis tidak pernah menerima jenis lain (mis. `koma desimal` dapat berarti pemisah
+// ribuan).
 func (l LaporanPindah) BolehDitulis() bool {
-	return len(l.Gagal) == 0 && (len(l.Normalisasi) == 0 || l.TerimaNormalisasi)
+	if len(l.Gagal) > 0 {
+		return false
+	}
+	diterima := map[string]bool{}
+	for _, j := range l.TerimaNormalisasi {
+		diterima[strings.TrimSpace(j)] = true
+	}
+	for j := range l.NormalisasiJenis {
+		if !diterima[j] {
+			return false
+		}
+	}
+	return true
 }
 
 func laporanBaru() LaporanPindah {
 	return LaporanPindah{Baris: map[string]int{}, Normalisasi: map[string]int{}, MedanTanpaKolom: map[string]int{},
-		DibuangD2: map[string]int{}}
+		DibuangD2: map[string]int{}, NormalisasiJenis: map[string]int{}}
 }
 
 // Beda - satu medan yang berbeda antara dua produk.
@@ -198,10 +218,64 @@ func JenisNormalisasi(asal string) string {
 	}
 }
 
-// k3Dibolehkan - K3 keputusan work owner 02-10-2026: hanya dua bentuk nilai tidak sah yang di-NULL-kan.
+// k3Dibolehkan - K3 keputusan work owner 02-10-2026: hanya dua bentuk nilai tidak sah yang di-NULL-kan - dan hanya bila
+// nilainya memang tidak terbaca. Tanggal berbentuk lain (`1/3/2027`, `01-03-2027`, `2027/03/01`) dan angka berpemisah
+// ribuan (`1.000.000`) DAPAT diselamatkan: keduanya GAGAL (menunggu keputusan), tidak di-NULL-kan diam-diam (temuan
+// /code-review 02-10-2026).
 func k3Dibolehkan(m MasalahNilai) bool {
+	switch {
+	case m.Tabel == TabelFlatInduk && m.Kolom == "MATURE" && m.Jenis == MasalahBukanTanggal:
+		return !tanggalBentukLain(m.Nilai)
+	case m.Tabel == TabelFlatUWLimit && m.Kolom == "MAXINSURED" && m.Jenis == MasalahBukanAngka:
+		return !angkaBerpemisah(m.Nilai)
+	}
+	return false
+}
+
+// k3Bentuk - kolom dan jenis masalahnya bentuk K3 (terlepas dari dapat-tidaknya diselamatkan).
+func k3Bentuk(m MasalahNilai) bool {
 	return (m.Tabel == TabelFlatInduk && m.Kolom == "MATURE" && m.Jenis == MasalahBukanTanggal) ||
 		(m.Tabel == TabelFlatUWLimit && m.Kolom == "MAXINSURED" && m.Jenis == MasalahBukanAngka)
+}
+
+// tanggalBentukLain - teks yang terbaca sebagai tanggal dalam salah satu bentuk lazim selain `dd/MM/yyyy`.
+func tanggalBentukLain(v string) bool {
+	v = strings.TrimSpace(v)
+	for _, b := range []string{"2/1/2006", "02-01-2006", "2-1-2006", "2006/01/02", "2006/1/2", "2006-1-2", "02.01.2006",
+		"2/1/06", "02/01/06"} {
+		if t, err := time.Parse(b, v); err == nil && t.Year() >= 1 {
+			return true
+		}
+	}
+	return false
+}
+
+// angkaBerpemisah - teks yang menjadi bilangan bila titik, koma, dan spasi pemisahnya dibuang.
+func angkaBerpemisah(v string) bool {
+	t := strings.TrimPrefix(strings.NewReplacer(".", "", ",", "", " ", "").Replace(strings.TrimSpace(v)), "-")
+	if t == "" {
+		return false
+	}
+	for _, c := range t {
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+// kunciInternalPega - kunci sistem Pega (`px*`, `py*`, `pz*`): bukan data (D2).
+func kunciInternalPega(k string) bool {
+	return strings.HasPrefix(k, "px") || strings.HasPrefix(k, "py") || strings.HasPrefix(k, "pz")
+}
+
+// rawTerisi - nilai JSON berisi (bukan absen, null, teks kosong, larik/objek kosong).
+func rawTerisi(raw json.RawMessage) bool {
+	switch strings.TrimSpace(string(raw)) {
+	case "", "null", `""`, "[]", "{}":
+		return false
+	}
+	return true
 }
 
 // outwardKosong - objek OutwardList tanpa satu pun medan terisi (K4).
@@ -253,6 +327,11 @@ func rekonsiliasi(umum, inward []barisJSON) (LaporanPindah, []models.Produk) {
 	gagal := func(format string, a ...any) { lap.Gagal = append(lap.Gagal, fmt.Sprintf(format, a...)) }
 	dipilih := map[int]bool{}
 	sudah := map[string]bool{}
+	// PRODUCTID setiap baris inward diurai SEKALI (dulu sekali per pasangan produk × baris).
+	pid := make([]string, len(inward))
+	for i, b := range inward {
+		pid[i] = productIDDari(b)
+	}
 	var hasil []models.Produk
 	for _, u := range umum {
 		if sudah[u.id] {
@@ -263,7 +342,7 @@ func rekonsiliasi(umum, inward []barisJSON) (LaporanPindah, []models.Produk) {
 		var kandidat []barisJSON
 		var indeks []int
 		for i, b := range inward {
-			if b.id == u.id || productIDDari(b) == u.id {
+			if b.id == u.id || pid[i] == u.id {
 				kandidat, indeks = append(kandidat, b), append(indeks, i)
 			}
 		}
@@ -284,7 +363,12 @@ func rekonsiliasi(umum, inward []barisJSON) (LaporanPindah, []models.Produk) {
 			gagal("%s: JSON tidak terbaca", u.id)
 			continue
 		}
-		hitungDibuang(&lap, u.isi, in.isi, p)
+		hitungDibuang(&lap, u.id, u.isi, in.isi, p)
+		// Kolom datar `M_PRODUCT_LIFE` (`SaveProductNameLIfeFlat` b84) sama dengan kunci JSON-nya - bila beda, mana yang
+		// benar adalah keputusan, bukan pilihan diam-diam alat ini.
+		if u.adaDatar && (u.datar[0] != p.Umum.RIRiskID || u.datar[1] != p.Umum.RIRisk) {
+			gagal("%s: kolom datar RIRISKID/RIRISK %s berbeda dari kunci JSON-nya", u.id, TabelProduk)
+		}
 		// K4: objek outward kosong tidak dipindah.
 		var outward []models.BarisOutward
 		for _, b := range p.OutwardList {
@@ -300,7 +384,7 @@ func rekonsiliasi(umum, inward []barisJSON) (LaporanPindah, []models.Produk) {
 		p.OutwardList = outward
 		for _, k := range MedanTanpaKolom(p) {
 			lap.MedanTanpaKolom[k]++
-			gagal("%s: %s terisi tetapi tidak punya kolom flat", u.id, k)
+			gagal("%s: %s %s", u.id, k, pesanTanpaKolom)
 		}
 		n, masalah := NormalkanFlat(p)
 		dijelaskan := map[Beda]bool{}
@@ -309,6 +393,10 @@ func rekonsiliasi(umum, inward []barisJSON) (LaporanPindah, []models.Produk) {
 			dijelaskan[Beda{Tabel: m.Tabel, Kolom: m.Kolom, Urut: m.Urut}] = true
 			if k3Dibolehkan(m) {
 				lap.K3 = append(lap.K3, t)
+				continue
+			}
+			if k3Bentuk(m) {
+				gagal("%s (bentuk lain yang dapat diselamatkan - bukan K3, menunggu keputusan)", t)
 				continue
 			}
 			gagal("%s", t)
@@ -321,7 +409,9 @@ func rekonsiliasi(umum, inward []barisJSON) (LaporanPindah, []models.Produk) {
 				gagal("%s: pemegang polis sisi umum berbeda dari sisi inward", u.id)
 				continue
 			}
-			lap.Normalisasi[b.Tabel+"."+b.Kolom+" ("+JenisNormalisasi(nilaiMedan(p, b))+")"]++
+			jenis := JenisNormalisasi(nilaiMedan(p, b))
+			lap.Normalisasi[b.Tabel+"."+b.Kolom+" ("+jenis+")"]++
+			lap.NormalisasiJenis[jenis]++
 			if len(lap.ContohNormalisasi) < 20 {
 				lap.ContohNormalisasi = append(lap.ContohNormalisasi, Temuan{ProdukID: u.id, Tabel: b.Tabel,
 					Kolom: b.Kolom, Urut: b.Urut})
@@ -380,24 +470,32 @@ func periksaCacahAnak(lap *LaporanPindah, id, jsonUmum string, n models.Produk) 
 	}
 }
 
-// hitungDibuang - yang tidak pindah karena D2 (bukan data): kunci internal Pega halaman dan baris, `IsView`, `Comment`.
-func hitungDibuang(lap *LaporanPindah, jsonUmum, jsonInward string, p models.Produk) {
-	if obj, err := uraiObjek(jsonUmum); err == nil {
-		for k := range obj {
-			if !kunciUmumDikelola[k] {
-				lap.DibuangD2["kunci halaman umum "+k]++
+// hitungDibuang - kunci yang tidak dipindah. Kunci internal Pega (`px*`/`py*`/`pz*`), `IsView` (keadaan layar), dan
+// `Comment` (masukan popup) = dibuang D2, dicacah. Kunci LAIN yang tidak dikelola kodek dan BERISI = data tanpa kolom:
+// GAGAL (temuan /code-review 02-10-2026 - dulu seluruh kunci baris tak dikelola dicacah "internal Pega").
+func hitungDibuang(lap *LaporanPindah, id, jsonUmum, jsonInward string, p models.Produk) {
+	periksaKunci := func(asal string, obj map[string]json.RawMessage, dikelola map[string]bool) {
+		for k, v := range obj {
+			switch {
+			case dikelola[k]:
+			case kunciInternalPega(k):
+				lap.DibuangD2[asal+" "+k]++
+			case rawTerisi(v):
+				lap.MedanTanpaKolom[asal+" "+k]++
+				lap.Gagal = append(lap.Gagal, fmt.Sprintf("%s: %s %s %s", id, asal, k, pesanTanpaKolom))
+			default:
+				lap.DibuangD2[asal+" "+k+" (kosong)"]++
 			}
 		}
+	}
+	if obj, err := uraiObjek(jsonUmum); err == nil {
+		periksaKunci("kunci halaman umum", obj, kunciUmumDikelola)
 		if _, ada := obj[kunciIsView]; ada {
 			lap.DibuangD2["IsView (keadaan layar)"]++
 		}
 	}
 	if obj, err := uraiObjek(jsonInward); err == nil {
-		for k := range obj {
-			if !kunciInwardDikelola[k] {
-				lap.DibuangD2["kunci halaman inward "+k]++
-			}
-		}
+		periksaKunci("kunci halaman inward", obj, kunciInwardDikelola)
 	}
 	if strings.TrimSpace(p.Umum.Comment) != "" {
 		lap.DibuangD2["Comment (masukan popup; isinya sudah baris CommentList)"]++
@@ -414,8 +512,10 @@ func hitungDibuang(lap *LaporanPindah, jsonUmum, jsonInward string, p models.Pro
 		{kunciOutward, asliDari(p.OutwardList, func(b models.BarisOutward) string { return b.Asli })},
 		{kunciKomentar, asliDari(p.CommentList, func(b models.BarisKomentar) string { return b.Asli })},
 	} {
-		if len(c.asli) > 0 {
-			lap.DibuangD2["baris "+c.daftar+" berkunci internal Pega"] += len(c.asli)
+		for _, a := range c.asli {
+			if obj, err := uraiObjek(a); err == nil {
+				periksaKunci("baris "+c.daftar+" kunci", obj, map[string]bool{})
+			}
 		}
 	}
 }
@@ -429,6 +529,15 @@ func asliDari[T any](daftar []T, asli func(T) string) []string {
 	}
 	return hasil
 }
+
+// Batas baris laporan (laporan tetap terbaca): kegagalan unik dan contoh kegagalan "tanpa kolom flat".
+const (
+	MaksBarisGagalDicetak = 25
+	MaksContohTanpaKolom  = 8
+)
+
+// pesanTanpaKolom - akhir kalimat kegagalan nilai yang tidak punya kolom flat.
+const pesanTanpaKolom = "terisi tetapi tidak punya kolom flat"
 
 // Teks - laporan untuk manusia (agregat; tidak satu nilai data pun).
 func (l LaporanPindah) Teks() string {
@@ -447,16 +556,44 @@ func (l LaporanPindah) Teks() string {
 	}
 	fmt.Fprintf(&b, "  K4 objek OutwardList kosong dibuang: %d\n", l.K4OutwardKosong)
 	tulisPeta(&b, "  normalisasi teks (menunggu keputusan work owner)", l.Normalisasi)
+	if len(l.TerimaNormalisasi) > 0 {
+		fmt.Fprintf(&b, "    jenis diterima operator (-terima-normalisasi): %s\n", strings.Join(l.TerimaNormalisasi, ", "))
+	}
 	for _, t := range l.ContohNormalisasi {
 		fmt.Fprintf(&b, "    contoh: %s\n", t)
 	}
 	tulisPeta(&b, "  medan tanpa kolom yang terisi", l.MedanTanpaKolom)
 	tulisPeta(&b, "  dibuang D2 (bukan data)", l.DibuangD2)
 	if l.TulisanFlatBerbeda > 0 {
-		fmt.Fprintf(&b, "  tabel flat sudah memuat %d produk yang berbeda dari sumber JSON\n", l.TulisanFlatBerbeda)
+		fmt.Fprintf(&b, "  tabel flat sudah memuat %d produk bersumber JSON yang isinya berbeda (diubah sesudah peralihan)\n",
+			l.TulisanFlatBerbeda)
 	}
-	fmt.Fprintf(&b, "  gagal: %d\n", len(l.Gagal))
+	if l.ProdukFlatSaja > 0 {
+		fmt.Fprintf(&b, "  produk yang hanya ada di tabel flat (tulisan baru aplikasi, dibiarkan): %d\n", l.ProdukFlatSaja)
+	}
+	// Kegagalan unik lebih dulu; kegagalan "tanpa kolom flat" berulang per baris dan sudah dicacah per kunci di atas,
+	// jadi hanya contohnya yang dicetak.
+	var unik, tanpaKolom []string
 	for _, g := range l.Gagal {
+		if strings.HasSuffix(g, pesanTanpaKolom) {
+			tanpaKolom = append(tanpaKolom, g)
+		} else {
+			unik = append(unik, g)
+		}
+	}
+	fmt.Fprintf(&b, "  gagal: %d (%d tanpa kolom flat)\n", len(l.Gagal), len(tanpaKolom))
+	for i, g := range unik {
+		if i == MaksBarisGagalDicetak {
+			fmt.Fprintf(&b, "    ... dan %d lainnya\n", len(unik)-MaksBarisGagalDicetak)
+			break
+		}
+		fmt.Fprintf(&b, "    %s\n", g)
+	}
+	for i, g := range tanpaKolom {
+		if i == MaksContohTanpaKolom {
+			fmt.Fprintf(&b, "    ... dan %d lainnya tanpa kolom flat (cacah per kunci di atas)\n", len(tanpaKolom)-MaksContohTanpaKolom)
+			break
+		}
 		fmt.Fprintf(&b, "    %s\n", g)
 	}
 	status := "LOLOS"
@@ -490,30 +627,54 @@ func sqlSemuaJSON(tabel string) string {
 	return fmt.Sprintf(`SELECT ID, JSONDATA FROM %s ORDER BY ID ASC`, tabel)
 }
 
-func sqlHapusSemua(tabel string) string { return fmt.Sprintf(`DELETE FROM %s`, tabel) }
+// sqlSemuaJSONUmum - `M_PRODUCT_LIFE` beserta kolom datarnya (direkonsiliasi dengan kunci JSON-nya).
+func sqlSemuaJSONUmum(tabel string) string {
+	return fmt.Sprintf(`SELECT ID, JSONDATA, RIRISKID, RIRISK FROM %s ORDER BY ID ASC`, tabel)
+}
+
+// sqlKunciInduk - tabel induk dikunci selama pindah: penulis aplikasi mulai dari induk, jadi ia menunggu.
+func sqlKunciInduk(tabel string) string { return fmt.Sprintf(`LOCK TABLE %s IN EXCLUSIVE MODE`, tabel) }
+
+// sqlHapusInduk - satu produk; anak ikut terhapus (FK `ON DELETE CASCADE`, migrasi 141–147).
+func sqlHapusInduk(tabel string) string { return fmt.Sprintf(`DELETE FROM %s WHERE ID = :1`, tabel) }
 
 // bacaSumberJSON - seluruh baris kedua tabel JSON warisan (SELECT saja).
 func (g *Gudang) bacaSumberJSON(ctx context.Context) (umum, inward []barisJSON, err error) {
-	for _, s := range []struct {
-		tabel string
-		ke    *[]barisJSON
-	}{{TabelProduk, &umum}, {TabelInward, &inward}} {
-		q, err := g.siapkan(s.tabel, sqlSemuaJSON)
-		if err != nil {
-			return nil, nil, err
+	q, err := g.siapkan(TabelProduk, sqlSemuaJSONUmum)
+	if err != nil {
+		return nil, nil, err
+	}
+	rows, err := g.db.QueryContext(ctx, q)
+	if err != nil {
+		return nil, nil, fmt.Errorf("repository: reading %s: %w", TabelProduk, err)
+	}
+	for rows.Next() {
+		var id, isi, riskID, risk sql.NullString
+		if err := rows.Scan(&id, &isi, &riskID, &risk); err != nil {
+			_ = rows.Close()
+			return nil, nil, fmt.Errorf("repository: reading %s: %w", TabelProduk, err)
 		}
-		baris, err := g.bacaBaris(ctx, nil, q)
-		if err != nil {
-			return nil, nil, fmt.Errorf("repository: reading %s: %w", s.tabel, err)
-		}
-		*s.ke = baris
+		umum = append(umum, barisJSON{id: id.String, isi: isi.String, datar: [2]string{riskID.String, risk.String},
+			adaDatar: true})
+	}
+	if err := rows.Err(); err != nil {
+		_ = rows.Close()
+		return nil, nil, fmt.Errorf("repository: reading %s: %w", TabelProduk, err)
+	}
+	_ = rows.Close()
+	qi, err := g.siapkan(TabelInward, sqlSemuaJSON)
+	if err != nil {
+		return nil, nil, err
+	}
+	if inward, err = g.bacaBaris(ctx, nil, qi); err != nil {
+		return nil, nil, fmt.Errorf("repository: reading %s: %w", TabelInward, err)
 	}
 	return umum, inward, nil
 }
 
-// PindahFlat - satu putaran alat pindah (`jalankan` = `-jalankan`, selain itu `-uji`; `terimaNormalisasi` =
+// PindahFlat - satu putaran alat pindah (`jalankan` = `-jalankan`, selain itu `-uji`; `terima` = jenis normalisasi
 // `-terima-normalisasi`).
-func (g *Gudang) PindahFlat(ctx context.Context, jalankan, terimaNormalisasi bool) (LaporanPindah, error) {
+func (g *Gudang) PindahFlat(ctx context.Context, jalankan bool, terima []string) (LaporanPindah, error) {
 	mode := "uji"
 	if jalankan {
 		mode = "jalankan"
@@ -526,7 +687,7 @@ func (g *Gudang) PindahFlat(ctx context.Context, jalankan, terimaNormalisasi boo
 		return LaporanPindah{Mode: mode}, err
 	}
 	lap, produk := rekonsiliasi(umum, inward)
-	lap.Mode, lap.TerimaNormalisasi = mode, terimaNormalisasi
+	lap.Mode, lap.TerimaNormalisasi = mode, terima
 	if !jalankan {
 		return lap, nil
 	}
@@ -538,6 +699,11 @@ func (g *Gudang) PindahFlat(ctx context.Context, jalankan, terimaNormalisasi boo
 		return lap, err
 	}
 	defer func() { _ = tx.Rollback() }()
+	// ⛔ Kunci induk LEBIH DULU (temuan /code-review 02-10-2026): tanpa ini produk yang dibuat aplikasi di antara
+	// pemeriksaan dan penulisan dapat hilang. Penulis aplikasi menunggu sampai transaksi ini ditutup.
+	if err := g.eksekusi(ctx, tx, TabelFlatInduk, sqlKunciInduk, false); err != nil {
+		return lap, err
+	}
 	menurutID := map[string]models.Produk{}
 	for _, p := range produk {
 		menurutID[p.ID] = p
@@ -549,10 +715,10 @@ func (g *Gudang) PindahFlat(ctx context.Context, jalankan, terimaNormalisasi boo
 	for _, id := range ada {
 		p, dariJSON := menurutID[id]
 		if !dariJSON {
-			lap.TulisanFlatBerbeda++
+			lap.ProdukFlatSaja++
 			continue
 		}
-		f, err := g.bacaFlat(ctx, tx, id, true)
+		f, err := g.bacaFlat(ctx, tx, id, false)
 		if err != nil {
 			return lap, err
 		}
@@ -563,13 +729,11 @@ func (g *Gudang) PindahFlat(ctx context.Context, jalankan, terimaNormalisasi boo
 	if lap.TulisanFlatBerbeda > 0 {
 		return lap, fmt.Errorf("%w (%d products)", ErrTulisanFlatBaru, lap.TulisanFlatBerbeda)
 	}
-	// Anak lebih dulu (FK), lalu induk.
-	for i := len(DaftarTabelFlat) - 1; i >= 0; i-- {
-		if err := g.eksekusi(ctx, tx, DaftarTabelFlat[i], sqlHapusSemua, false); err != nil {
+	// Hanya produk bersumber JSON: produk yang hanya ada di tabel flat tidak disentuh.
+	for _, p := range produk {
+		if err := g.eksekusi(ctx, tx, TabelFlatInduk, sqlHapusInduk, false, p.ID); err != nil {
 			return lap, err
 		}
-	}
-	for _, p := range produk {
 		if err := g.tulisFlat(ctx, tx, p, true); err != nil {
 			return lap, err
 		}

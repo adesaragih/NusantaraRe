@@ -155,20 +155,21 @@ func TestDBPindahFlatUjiJalankanDanUlang(t *testing.T) {
 
 	// Normalisasi menghentikan -jalankan, nol tulisan.
 	u.exec(t, `INSERT INTO {s}.M_PRODUCT_LIFE (ID, JSONDATA) VALUES ('100046', '{"ID":"100046","RICOMM":"12.50"}')`)
-	lap, err := g.PindahFlat(u.ctx, true, false)
+	lap, err := g.PindahFlat(u.ctx, true, nil)
 	if !errors.Is(err, repository.ErrPindahTidakLolos) || lap.Normalisasi["M_PRODUCTNAME_LIFE.RICOMM (nol ekor desimal)"] != 1 ||
 		u.cacah(t, repository.TabelFlatInduk) != 0 {
 		t.Fatalf("normalisasi harus menolak tanpa tulisan: %v\n%s", err, lap.Teks())
 	}
-	// -terima-normalisasi: normalisasi tidak menahan; kegagalan tetap menahan (lihat uji murni).
-	if lap, err = g.PindahFlat(u.ctx, true, true); err != nil || !lap.Ditulis || u.cacah(t, repository.TabelFlatInduk) != 3 {
+	// -terima-normalisasi: jenis yang diterima tidak menahan; kegagalan tetap menahan (lihat uji murni).
+	if lap, err = g.PindahFlat(u.ctx, true, []string{"nol ekor desimal"}); err != nil || !lap.Ditulis ||
+		u.cacah(t, repository.TabelFlatInduk) != 3 {
 		t.Fatalf("-terima-normalisasi: %v\n%s", err, lap.Teks())
 	}
 	u.exec(t, `DELETE FROM {s}.M_PRODUCTNAME_LIFE`)
 	u.exec(t, `DELETE FROM {s}.M_PRODUCT_LIFE WHERE ID = '100046'`)
 
 	// -uji: nol tulisan.
-	lap, err = g.PindahFlat(u.ctx, false, false)
+	lap, err = g.PindahFlat(u.ctx, false, nil)
 	if err != nil || !lap.Lolos() || lap.Ditulis || u.cacah(t, repository.TabelFlatInduk) != 0 {
 		t.Fatalf("-uji: %v\n%s", err, lap.Teks())
 	}
@@ -177,7 +178,7 @@ func TestDBPindahFlatUjiJalankanDanUlang(t *testing.T) {
 	}
 
 	// -jalankan: tertulis, cacah sama dengan laporan, baca ulang = bentuk kanonik.
-	lap, err = g.PindahFlat(u.ctx, true, false)
+	lap, err = g.PindahFlat(u.ctx, true, nil)
 	if err != nil || !lap.Ditulis {
 		t.Fatalf("-jalankan: %v\n%s", err, lap.Teks())
 	}
@@ -200,13 +201,19 @@ func TestDBPindahFlatUjiJalankanDanUlang(t *testing.T) {
 		t.Errorf("inward ber-ID lain pindah ke baris produknya: %+v %v", q.Inward, err)
 	}
 
-	// Aman diulang: isi sama → tertulis ulang tanpa beda.
-	if lap, err = g.PindahFlat(u.ctx, true, false); err != nil || !lap.Ditulis {
+	// Aman diulang: isi sama → tertulis ulang tanpa beda. Produk yang HANYA ada di tabel flat (tulisan baru aplikasi)
+	// dibiarkan utuh, tidak menolak putaran (temuan /code-review 02-10-2026).
+	u.exec(t, `INSERT INTO {s}.M_PRODUCTNAME_LIFE (ID, PRODUCTNAME) VALUES ('100250', 'UJI BARU APLIKASI')`)
+	u.exec(t, `INSERT INTO {s}.M_PRODUCTNAME_LIFE_COMMENT (PRODUCTID, URUT, SUGGEST) VALUES ('100250', 1, 'UJI')`)
+	if lap, err = g.PindahFlat(u.ctx, true, nil); err != nil || !lap.Ditulis || lap.ProdukFlatSaja != 1 {
 		t.Fatalf("ulang: %v\n%s", err, lap.Teks())
+	}
+	if u.cacah(t, repository.TabelFlatInduk) != 3 || u.cacah(t, repository.TabelFlatKomentar) != lap.Baris[repository.TabelFlatKomentar]+1 {
+		t.Error("produk 100250 dan baris anaknya dibiarkan utuh")
 	}
 	// Tulisan baru di tabel flat → ditolak, tidak ditimpa.
 	u.exec(t, `UPDATE {s}.M_PRODUCTNAME_LIFE SET PRODUCTNAME = 'UJI UBAH' WHERE ID = '100045'`)
-	if lap, err = g.PindahFlat(u.ctx, true, true); !errors.Is(err, repository.ErrTulisanFlatBaru) || lap.TulisanFlatBerbeda != 1 {
+	if lap, err = g.PindahFlat(u.ctx, true, []string{"nol ekor desimal"}); !errors.Is(err, repository.ErrTulisanFlatBaru) || lap.TulisanFlatBerbeda != 1 {
 		t.Errorf("tulisan flat baru harus menolak: %v\n%s", err, lap.Teks())
 	}
 	var nama string

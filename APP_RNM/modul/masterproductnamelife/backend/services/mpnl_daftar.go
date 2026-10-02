@@ -86,12 +86,10 @@ func gerbangPlan(m *models.Produk, tersimpan models.Produk) bool {
 	return false
 }
 
-// Judul grid VERBATIM untuk pesan `asli` dan pesan kolom flat.
+// Judul grid VERBATIM untuk pesan `asli` (pesan kolom flat memakai judul `repository.Anak*.Label` yang sama).
 const (
-	judulLien     = "LIEN CLAUSE (Potongan Manfaat Klaim)" // b12201
-	judulDokumen  = "DOCUMENT CLAIM"                       // b14601
-	judulKomentar = "Comment"                              // popup `SaveProductName_Confirm` b1025
-	judulOutward  = "On Retention"                         // checkbox b47312 → `GetReinsTypeOR_Life`
+	judulLien    = "LIEN CLAUSE (Potongan Manfaat Klaim)" // b12201
+	judulDokumen = "DOCUMENT CLAIM"                       // b14601
 )
 
 // pesanAsliAsing - `asli` baris (kunci JSON lama yang tidak dikelola layar) yang
