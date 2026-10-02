@@ -44,6 +44,8 @@ export const GRID_MPNL = {
 
 /** Form sisi umum - halaman `ProductName` (PARITAS §3.1). */
 export const UMUM_MPNL = {
+  /** `InboxProductName.xml` b2934 `<pyTitle>` - judul kartu sisi umum. */
+  judul: 'TREATY NAME',
   /** `InboxProductName.xml` b3620 `<pyLabelFieldValue>`. */
   productName: 'Product Name',
   /** `InboxProductName.xml` b3894 `<pyLabelFieldValue>`. */
@@ -76,6 +78,8 @@ export const UMUM_MPNL = {
 
 /** Form sisi inward - halaman `ProductNameInward` (PARITAS §3.2). */
 export const INWARD_MPNL = {
+  /** `InboxProductName.xml` b16621 `<pyTitle>` - judul kartu sisi inward. */
+  judul: 'INWARD',
   /** `InboxProductName.xml` b17097 `<pyLabelFieldValue>`. */
   policyHolder: 'Policy Holder',
   /** `InboxProductName.xml` b17827 `<pyLabel>`. */

@@ -188,11 +188,195 @@
 }
 
 /* Label statik `OF SUM REASURED` b24882 di samping `Nusantara Re Share (%)`. */
+/* `OF SUM REASURED` b24880 - keterangan di kanan nilai `Nusantara Re Share (%)`. */
 .mpnl .mpnl-catatan-medan {
-  align-self: end;
-  padding-bottom: 8px;
+  flex: none;
   color: var(--mt-teks-redup);
   font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------ tata letak form produk
+   Foto layar Pega work owner 02-10-2026: kartu TREATY NAME (b2934) di kiri - sisi umum, LIEN CLAUSE, DOCUMENT
+   CLAIM; kartu INWARD (b16621) di kanan - baris atas lalu kolom kiri b21723 dan kanan b27004. Label di kiri,
+   nilai di kanan; angka rata kanan. Lebar dihitung dari kotak form sendiri (container query, `container-type`
+   tidak mengurung popup `position: fixed`), bukan dari layar - sidebar ikut memakan lebar. */
+.mpnl .mpnl-form {
+  container-type: inline-size;
+}
+
+.mpnl .mpnl-tata {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+  gap: 20px;
+  align-items: start;
+}
+
+/* Kartu = wadah container query sendiri: dua kolom INWARD dan baris label-kiri menyesuaikan lebar kartu. */
+.mpnl .mpnl-kartu {
+  container-type: inline-size;
+  min-width: 0;
+  padding: 18px 20px 20px;
+  border: 1px solid var(--mt-tepi);
+  border-radius: 16px;
+  background: var(--mt-isi);
+  box-shadow: var(--mt-timbul-kecil);
+}
+
+.mpnl .mpnl-kartu__judul {
+  margin: 0 0 8px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--mt-aksen-garis);
+  color: var(--mt-aksen-teks);
+  font-family: "Poppins", var(--font);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.mpnl .mpnl-dua-kolom {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 28px;
+  align-items: start;
+}
+
+/* Dua kolom bawah INWARD: garis tipis di antara kolom, seperti dua wadah Pega yang berdampingan. */
+.mpnl .mpnl-dua-kolom--pisah {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--mt-garis);
+}
+
+.mpnl .mpnl-kolom {
+  min-width: 0;
+}
+
+/* Kartu INWARD: label baris selebar kartu (Policy Holder, Insured) sejajar dengan label kedua kolom di bawahnya -
+   42% dari satu kolom = 21% dari (lebar - celah kolom). */
+.mpnl .mpnl-kartu--lebar > .mpnl-medan {
+  grid-template-columns: minmax(6.5rem, calc((100% - 28px) * 0.21)) minmax(0, 1fr);
+}
+
+/* Judul grid pertama di dalam kartu tidak berjarak atas. */
+.mpnl .mpnl-kartu > .mpnl-judul-grid:first-child {
+  margin-top: 0;
+}
+
+/* Satu baris: label kiri, nilai/isian kanan. */
+.mpnl .mpnl-medan {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, 42%) minmax(0, 1fr);
+  gap: 4px 12px;
+  align-items: center;
+  min-width: 0;
+  padding: 5px 0;
+}
+
+/* Mode lihat: daftar label-nilai bergaris tipis, nilai rata atas bila teksnya panjang. */
+.mpnl .mpnl-medan--lihat {
+  align-items: baseline;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--mt-garis);
+}
+
+.mpnl .mpnl-medan__label {
+  color: var(--mt-teks-redup);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+/* Keterangan (`OF SUM REASURED`) turun ke baris berikut bila isian tidak muat - isian tidak pernah terjepit. */
+.mpnl .mpnl-medan__isi {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  min-width: 0;
+}
+
+.mpnl .mpnl-medan__isi > .field__input,
+.mpnl .mpnl-medan__isi > .mpnl-dropdown {
+  flex: 1 1 6rem;
+  min-width: 0;
+}
+
+.mpnl .mpnl-medan__isi > .field__input {
+  padding-inline: 10px;
+}
+
+.mpnl .mpnl-nilai {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--mt-teks);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+/* Angka tidak pernah dipecah per digit: lebarnya mengikuti isi, rata kanan di sisa ruang. */
+.mpnl .mpnl-nilai--angka {
+  flex: 1 0 auto;
+  text-align: right;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  font-variant-numeric: tabular-nums;
+}
+
+.mpnl .mpnl-nilai--kosong {
+  color: var(--mt-teks-redup);
+}
+
+/* `Product Code` - identitas, berbingkai seperti kotak baca-saja Pega. */
+.mpnl .mpnl-kode {
+  flex: 0 1 auto;
+  padding: 4px 10px;
+  border: 1px solid var(--mt-lembut-tepi);
+  border-radius: 8px;
+  background: var(--mt-lembut);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
+}
+
+.mpnl .mpnl-wajib {
+  margin-left: 2px;
+  color: var(--mt-tombol);
+}
+
+.mpnl .mpnl-isian--angka {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.mpnl .mpnl-area {
+  min-height: 4.5em;
+  resize: vertical;
+}
+
+/* Kotak form sempit (< 880px): kartu bertumpuk. Kartu sempit (< 540px): kolom INWARD bertumpuk; lebih sempit lagi
+   (< 260px): label di atas nilai. Wadah terdekat `.mpnl-tata` = `.mpnl-form`; `.mpnl-dua-kolom`/`.mpnl-medan` = kartu. */
+@container (max-width: 880px) {
+  .mpnl .mpnl-tata {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@container (max-width: 540px) {
+  .mpnl .mpnl-dua-kolom {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mpnl .mpnl-kartu--lebar > .mpnl-medan {
+    grid-template-columns: minmax(6.5rem, 42%) minmax(0, 1fr);
+  }
+}
+
+@container (max-width: 260px) {
+  .mpnl .mpnl-medan {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* Pesan `OutputParam.ERRMSG` (wadah b1269 `STSSAVE==99`, `CopyProduct`). */

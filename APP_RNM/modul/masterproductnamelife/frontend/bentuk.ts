@@ -164,3 +164,20 @@ export function geserAktif(aktif: number, langkah: number, n: number): number {
   if (n <= 0) return -1
   return Math.min(n - 1, Math.max(0, aktif + langkah))
 }
+
+/**
+ * Mode lihat - angka seperti layar Pega (`Ceding's Limit` 250.000.000): pemisah ribuan titik, desimal koma. Dihitung
+ * dari TEKS kanonik (`-?digit[.digit]`), tanpa float; teks lain (data lama) tampil apa adanya.
+ */
+export function tampilAngka(teks: string): string {
+  const m = /^(-?)(\d+)(?:\.(\d+))?$/.exec(teks.trim())
+  if (m === null) return teks
+  const bulat = (m[2] ?? '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  return `${m[1] ?? ''}${bulat}${m[3] !== undefined ? `,${m[3]}` : ''}`
+}
+
+/** Mode lihat - tanggal `YYYY-MM-DD` tampil `DD/MM/YYYY` (`Begin Date` 01/08/2023 di Pega); teks lain apa adanya. */
+export function tampilTanggal(teks: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(teks.trim())
+  return m === null ? teks : `${m[3]}/${m[2]}/${m[1]}`
+}

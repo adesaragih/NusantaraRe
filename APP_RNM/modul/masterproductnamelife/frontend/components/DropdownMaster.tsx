@@ -5,13 +5,14 @@
 // Yang TETAP seperti XML: nilai HANYA dari daftar master - medannya tidak dapat diketik (`pyReadOnly` true b4040,
 // b4428, b7362, b10626, b17062, b28105); kata `Search` dihurufbesarkan server (`SearchPolicyHolder_act` 1 b236) dan
 // dicocokkan "Contains"; memilih menyalin ID + nama (`set*_DT`); kolom daftar `ID` / `Name` (`RIRate Name` untuk
-// R/I Rate); mode lihat (`IsView`) tidak dapat dibuka - medan tampil baca-saja seperti sebelumnya.
+// R/I Rate); mode lihat (`IsView`) tidak dapat dibuka - nama tampil sebagai teks (di form, baris `Medan` yang
+// menampilkannya; dropdown hanya dirender di mode sunting).
 // Yang BERUBAH: daftar dibuka dari medannya sendiri, memuat paling banyak BATAS_DROPDOWN baris (master `CLIENT`
 // ratusan ribu baris) - potongan dinyatakan, sisanya dicapai lewat `Search` di dalam dropdown.
 
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
 
-import { Field, Gagal, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
+import { Gagal, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
 import { cariMaster, type JenisMaster, type NilaiMaster } from '../api'
 import { BATAS_DROPDOWN, geserAktif, potongPilihan } from '../bentuk'
 import { LAIN_MPNL, PEMILIH_MPNL } from '../labels'
@@ -24,7 +25,6 @@ const LEBAR_PANEL = 440
 const LANGKAH_HALAMAN = 10
 
 export default function DropdownMaster({
-  label,
   labelAria,
   jenis,
   nilai,
@@ -32,10 +32,8 @@ export default function DropdownMaster({
   lihat,
   onPilih,
 }: {
-  /** Label medan VERBATIM; kosong untuk sel grid (label = kepala kolom). */
-  label?: string
-  /** Label untuk pembaca layar bila `label` kosong. */
-  labelAria?: string
+  /** Label VERBATIM medan / kepala kolom - untuk pembaca layar (label tampilnya milik `Medan` / kepala grid). */
+  labelAria: string
   jenis: JenisMaster
   /** Nama yang tampil (`.Ceding`, `.SOBName`, ...). */
   nilai: string
@@ -47,7 +45,6 @@ export default function DropdownMaster({
   onPilih: (v: NilaiMaster) => void
 }) {
   const id = useId()
-  const idLabel = `${id}-label`
   const idDaftar = `${id}-daftar`
   const idButir = (i: number): string => `${id}-butir-${i}`
 
@@ -109,9 +106,7 @@ export default function DropdownMaster({
     if (buka && aktif >= 0) document.getElementById(idButir(aktif))?.scrollIntoView({ block: 'nearest' })
   }, [buka, aktif])
 
-  if (lihat) {
-    return label ? <Field label={label} value={nilai} onChange={() => undefined} readOnly /> : <span>{nilai}</span>
-  }
+  if (lihat) return <span>{nilai}</span>
 
   function bukaDaftar(): void {
     const r = pemicu.current?.getBoundingClientRect()
@@ -163,15 +158,10 @@ export default function DropdownMaster({
     }
   }
 
-  const kelas = ['mpnl-dropdown', label ? 'field' : 'mpnl-dropdown--sel', rataKanan ? 'mpnl-dropdown--kanan' : ''].filter((k) => k !== '').join(' ')
+  const kelas = rataKanan ? 'mpnl-dropdown mpnl-dropdown--sel mpnl-dropdown--kanan' : 'mpnl-dropdown mpnl-dropdown--sel'
 
   return (
     <div className={kelas} ref={akar}>
-      {label ? (
-        <label className="field__label" id={idLabel}>
-          {label}
-        </label>
-      ) : null}
       <div
         ref={pemicu}
         className="field__input mpnl-dropdown__pemicu"
@@ -180,8 +170,7 @@ export default function DropdownMaster({
         aria-haspopup="listbox"
         aria-expanded={buka}
         aria-controls={idDaftar}
-        aria-labelledby={label ? idLabel : undefined}
-        aria-label={label ? undefined : labelAria}
+        aria-label={labelAria}
         onClick={() => {
           if (buka) setBuka(false)
           else bukaDaftar()
@@ -218,7 +207,7 @@ export default function DropdownMaster({
                 <span>{PEMILIH_MPNL.kolomId}</span>
                 <span>{kolomNama}</span>
               </div>
-              <ul className="mpnl-dropdown__daftar" id={idDaftar} role="listbox" aria-label={label ?? labelAria}>
+              <ul className="mpnl-dropdown__daftar" id={idDaftar} role="listbox" aria-label={labelAria}>
                 {daftar.map((v, i) => (
                   <li
                     key={`${v.id}-${i}`}

@@ -16,6 +16,8 @@ import {
   salinProduk,
   tampilPremiumFactor,
   tampilViewOffice,
+  tampilAngka,
+  tampilTanggal,
   tampilViewRate,
   waktuPega,
 } from './bentuk'
@@ -132,6 +134,26 @@ describe('dropdown master - pengganti tombol Choose* (keputusan work owner 02-10
     expect(geserAktif(1, Infinity, 3)).toBe(2)
     expect(geserAktif(5, 0, 3)).toBe(2)
     expect(geserAktif(0, 1, 0)).toBe(-1)
+  })
+})
+
+describe('mode lihat - nilai tampil seperti layar Pega (foto layar work owner 02-10-2026)', () => {
+  it('angka: pemisah ribuan titik, desimal koma - eksak dari teks, tanpa float', () => {
+    expect(tampilAngka('250000000')).toBe('250.000.000')
+    expect(tampilAngka('1000000000.30')).toBe('1.000.000.000,30')
+    expect(tampilAngka('9007199254740993')).toBe('9.007.199.254.740.993')
+    expect(tampilAngka('-1234.5')).toBe('-1.234,5')
+    expect(tampilAngka('180')).toBe('180')
+    expect(tampilAngka('0')).toBe('0')
+    // Teks yang bukan angka kanonik (data lama) tampil apa adanya - tidak ditebak.
+    expect(tampilAngka('12,5')).toBe('12,5')
+    expect(tampilAngka('')).toBe('')
+  })
+
+  it('tanggal YYYY-MM-DD tampil DD/MM/YYYY (`Begin Date` 01/08/2023 di Pega)', () => {
+    expect(tampilTanggal('2023-08-01')).toBe('01/08/2023')
+    expect(tampilTanggal('')).toBe('')
+    expect(tampilTanggal('bukan tanggal')).toBe('bukan tanggal')
   })
 })
 
