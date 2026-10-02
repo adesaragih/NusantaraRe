@@ -126,6 +126,29 @@ func TestPRODKESatuUrutan(t *testing.T) {
 	}
 }
 
+// K3 keputusan work owner 01-10-2026 (OQ-EDM-008): kolom ke-4 setiap jalur versi = bahan NOMOR menurut
+// Pega, terpisah dari urutan VERSI (`NVL(…, 1)`): warisan `PRODKE` mentah kosong = 0 (`Local.Prodke` int
+// b278), NB sistem baru 0, endorsement sistem baru nomornya (akhiran = `CARI4`, `InsertJsonPolisEDM` b101).
+func TestVersiMembawaUrutanPega(t *testing.T) {
+	// Daftar SELECT dirapikan; kolom terakhirnya harus PERSIS bahan nomor (koma di dalam NVL membuat
+	// pemisahan per koma tidak dapat dipakai).
+	pilihan := func(q string) string {
+		return strings.Join(strings.Fields(q[len("SELECT "):strings.Index(q, " FROM ")]), " ")
+	}
+	for nama, k := range map[string][2]string{
+		"sqlVersiEDM":     {sqlVersiEDM(uPolis, false), "p.PL_NUMBER_EDM"},
+		"sqlVersiNB":      {sqlVersiNB(uPolis, uPeserta, false), "'0'"},
+		"sqlVersiWarisan": {sqlVersiWarisan(uJSON, false), "TO_CHAR(NVL(j.PRODKE, 0))"},
+	} {
+		if got := pilihan(k[0]); !strings.HasSuffix(got, ", "+k[1]) {
+			t.Errorf("%s: daftar SELECT %q tidak berakhir dengan kolom urutan Pega %q", nama, got, k[1])
+		}
+		if !strings.Contains(k[0], ", 1)") {
+			t.Errorf("%s: versi tidak lagi NVL(…, 1) (E1 tetap)", nama)
+		}
+	}
+}
+
 func TestRapikanAngkaTM9(t *testing.T) {
 	for masuk, mau := range map[string]string{".5": "0.5", "-.25": "-0.25", "1234.5": "1234.5", "-1000": "-1000", "": "", "0": "0"} {
 		g, err := rapikanAngka("X", nullString(masuk))

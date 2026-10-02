@@ -76,6 +76,10 @@ type Gudang interface {
 	Resmikan(ctx context.Context, tx *db.Tx, r models.ResmiKasus) (int, error)
 	Tolak(ctx context.Context, tx *db.Tx, kasusID string) error
 	TulisRekapWarisan(ctx context.Context, tx *db.Tx, r repository.RekapWarisanTulis) (int, error)
+	// TulisPesertaWarisan - peserta kasus ke `M_LIFE_PREMIUM_DETAIL` (K5, `SaveMasterLPDet`).
+	TulisPesertaWarisan(ctx context.Context, tx *db.Tx, r repository.PesertaWarisanTulis) (int, error)
+	// TulisProduksiWarisan - satu baris `LIFEINPRODUCTION` (K4, `SaveLifeinProduction_SQL`).
+	TulisProduksiWarisan(ctx context.Context, tx *db.Tx, r repository.ProduksiWarisanTulis) (int, error)
 }
 
 // Layanan memegang seluruh aturan modul ini di atas satu Gudang.

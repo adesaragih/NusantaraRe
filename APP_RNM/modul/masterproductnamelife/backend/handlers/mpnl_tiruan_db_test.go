@@ -39,6 +39,11 @@ var ddlTiruan = []struct{ nama, kolom string }{
 	{"RIRISK_LIFE_SUMMARY", `ID VARCHAR2(100), USEDBY VARCHAR2(1000)`},
 	{"CAUSEOFLOSS_LIFE", `ID VARCHAR2(100), CAUSEOFLOSS VARCHAR2(1000)`},
 	{"PRODUCT_TYPE_LIFE", `ID VARCHAR2(100), COVERNAME VARCHAR2(1000), BUSINESS VARCHAR2(1000), BENEFIT VARCHAR2(4000)`},
+	// Dua view rate (K1 01-10-2026) ditiru sebagai TABEL berkolom yang dibaca; `RATE_LIFE` bertipe katalog
+	// Claim Life (`ID VARCHAR2(10)`, sisanya VARCHAR2(4000)). Tidak ditulis modul - hanya fixture uji.
+	{"RATE_LIFE_SUMMARY", `ID VARCHAR2(10), USEDBY VARCHAR2(4000)`},
+	{"RATE_LIFE", `ID VARCHAR2(10), IDUSEDBY VARCHAR2(4000), USEDBY VARCHAR2(4000), GENDER VARCHAR2(4000),
+		CONTRACT VARCHAR2(4000), AGE VARCHAR2(4000), RATE VARCHAR2(4000)`},
 }
 
 // sequenceTiruan - sequence yang dipakai penulis modul (P6).

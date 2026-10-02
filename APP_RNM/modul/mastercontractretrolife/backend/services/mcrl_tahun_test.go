@@ -7,6 +7,7 @@ package services_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -105,6 +106,37 @@ func TestTahunUbahMemperbaruiSalinanAnak(t *testing.T) {
 	}
 }
 
+// TestTahunUbahTidakMenyentuhBusinessYatim - perbaikan 01-10-2026. Penghapus
+// kontrak Pega (`DeleteTreatyLimit_SQL`) datar, jadi DEV menyimpan baris
+// business yang TREATYCONTRACTID-nya sudah tidak ada (mis. kontrak yang
+// dihapus di Pega). Baris itu tidak tampil di layar mana pun (daftar business
+// dikunci TREATYYEARID + TREATYCONTRACTID, `BrowseTreatyBusiness_Life_RD`),
+// maka salinan TREATYYEAR (K4) tidak boleh menimpanya - termasuk USERID dan
+// TGLUPDATE-nya.
+func TestTahunUbahTidakMenyentuhBusinessYatim(t *testing.T) {
+	g := tiruan.Baru()
+	g.Tahun["1000044"] = models.TahunTreaty{ID: "1000044", TreatyYear: "2025", UnderwritingYear: "2025",
+		StartDate: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC), EndDate: time.Date(2025, 12, 31, 0, 0, 0, 0, time.UTC),
+		UserID: "UJI-LAMA"}
+	g.Kontrak["UJI-K1"] = models.Kontrak{ID: "UJI-K1", IDTreatyYear: "1000044",
+		TreatyStartDate: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC), TreatyEndDate: time.Date(2025, 12, 31, 0, 0, 0, 0, time.UTC)}
+	g.Business["UJI-B1"] = models.Business{ID: "UJI-B1", TreatyYearID: "1000044", TreatyContractID: "UJI-K1"}
+	g.Business["UJI-YATIM"] = models.Business{ID: "UJI-YATIM", TreatyYearID: "1000044",
+		TreatyContractID: "UJI-K-DIHAPUS-PEGA", UserID: "UJI-LAMA"}
+
+	m := tahunLengkap()
+	m.ID = "1000044"
+	if _, err := layananUji(g).SimpanTahun(context.Background(), pelaku, m, false); err != nil {
+		t.Fatal(err)
+	}
+	if b := g.Business["UJI-B1"]; b.TreatyYear != "2026" {
+		t.Errorf("business berinduk tidak ikut tahun: %+v", b)
+	}
+	if b := g.Business["UJI-YATIM"]; b.TreatyYear != "" || b.UserID != "UJI-LAMA" {
+		t.Errorf("business yatim ikut disentuh salinan tahun: %+v", b)
+	}
+}
+
 func TestTahunUbahYangTidakAda404(t *testing.T) {
 	m := tahunLengkap()
 	m.ID = "UJI-TIDAK-ADA"
@@ -129,5 +161,22 @@ func TestTahunTanpaIdentitasDitolak(t *testing.T) {
 	g := tiruan.Baru()
 	if _, err := layananUji(g).SimpanTahun(context.Background(), noPelaku, tahunLengkap(), true); err == nil || len(g.Tahun) != 0 {
 		t.Errorf("simpan tanpa identitas: %v, %d baris", err, len(g.Tahun))
+	}
+}
+
+func TestTerjemahRelasiHanyaGalatRelasi(t *testing.T) {
+	if err := services.TerjemahRelasi(errors.New("ORA-01722: invalid number")); errors.Is(err, services.ErrRelasiDitolak) {
+		t.Errorf("galat bukan relasi ikut diterjemahkan: %v", err)
+	}
+	asal := errors.New("ORA-02292: child record found")
+	err := services.TerjemahRelasi(asal)
+	if !errors.Is(err, services.ErrRelasiDitolak) || !errors.Is(err, asal) {
+		t.Errorf("ORA-02292 tidak menjadi ErrRelasiDitolak yang membawa asalnya: %v", err)
+	}
+	if p := services.Pesan(err); strings.Contains(p, "ORA-") || p == "" {
+		t.Errorf("pesan layar memuat teks Oracle atau kosong: %q", p)
+	}
+	if services.TerjemahRelasi(nil) != nil {
+		t.Error("nil harus tetap nil")
 	}
 }

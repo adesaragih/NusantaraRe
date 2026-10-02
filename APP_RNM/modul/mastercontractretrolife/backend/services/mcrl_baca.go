@@ -38,6 +38,11 @@ type Gudang interface {
 	AmbilMasterReinsurer(ctx context.Context, id string) (models.MasterReinsurer, bool, error)
 	CariMasterBusiness(ctx context.Context, kata string) ([]models.MasterBusiness, error)
 	AmbilMasterBusiness(ctx context.Context, id string) (models.MasterBusiness, bool, error)
+	// Dua view rate, baca saja (K1 01-10-2026, OQ-MCRL-13). DaftarRate: `terpotong` = lebih dari
+	// repository.BatasRate baris.
+	CariRingkasanRate(ctx context.Context, kata string) ([]models.RingkasanRate, error)
+	AmbilRingkasanRate(ctx context.Context, id string) (models.RingkasanRate, bool, error)
+	DaftarRate(ctx context.Context, idUsedBy string) ([]models.BarisRate, bool, error)
 
 	// Penulis tahun treaty (paket 2). `USERID` dari model, `TGLUPDATE` =
 	// SYSDATE, ID baru dari sequence - ketiganya di dalam gudang.
@@ -95,12 +100,6 @@ var (
 	ErrMasterTidakTerbaca = repository.ErrMasterTidakTerbaca
 	// ErrParameterWajib - parameter kueri wajib kosong (400).
 	ErrParameterWajib = errors.New("services: a required query parameter is empty")
-	// ErrRateMenungguPersetujuan - sumber tabel rate (autocomplete `R/I RATE`,
-	// section `Rate List`) adalah view atas JSON produk rate; membacanya
-	// menuntut persetujuan manusia (OQ-MCRL-13). 503: keadaan server, bukan
-	// permintaan yang salah.
-	ErrRateMenungguPersetujuan = errors.New("services: the life rate tables are not read yet - reading them " +
-		"requires work owner approval (OQ-MCRL-13)")
 )
 
 // tidakAda menerjemahkan ErrTidakAda repository menjadi galat entitasnya.
@@ -271,27 +270,41 @@ func (l *Layanan) CariMasterBusiness(ctx context.Context, p inti.Pelaku, kata st
 	return kosongBukanNil(d), err
 }
 
-// CariRingkasanRate - autocomplete `R/I RATE` (`BrowseRateLifeSummary`).
+// CariRingkasanRate - autocomplete `R/I RATE` (`BrowseRateLifeSummary`, view `RATE_LIFE_SUMMARY`).
 //
-// ⛔ Menunggu persetujuan (OQ-MCRL-13): galat terang, bukan daftar kosong
-// yang membuat pengguna mengira tidak ada tabel rate.
-func (l *Layanan) CariRingkasanRate(_ context.Context, p inti.Pelaku, _ string) ([]struct{}, error) {
+// K1 keputusan work owner 01-10-2026 (OQ-MCRL-13): dibaca saja. View tak terbaca = 503 yang menyebut
+// objeknya (ErrMasterTidakTerbaca), bukan daftar kosong.
+func (l *Layanan) CariRingkasanRate(ctx context.Context, p inti.Pelaku, kata string) ([]models.RingkasanRate, error) {
 	if err := inti.WajibIdentitas(p); err != nil {
 		return nil, err
 	}
-	return nil, ErrRateMenungguPersetujuan
+	d, err := l.gudang.CariRingkasanRate(ctx, kata)
+	return kosongBukanNil(d), err
+}
+
+// JawabanRate - section `Rate List`. `Terpotong` benar bila view memuat lebih dari
+// repository.BatasRate baris (`BrowseRateLife_RD` b729 `pyMaxRecords` 500: Pega memotong diam-diam).
+type JawabanRate struct {
+	Daftar    []models.BarisRate `json:"daftar"`
+	Total     int                `json:"total"`
+	Terpotong bool               `json:"terpotong"`
 }
 
 // DaftarRate - section `ViewRate` (`Rate List`) untuk satu `RIRATEID`
-// (`ViewRate.xml` b1061 `idusedby = ParamID.RIRATEID`).
-func (l *Layanan) DaftarRate(_ context.Context, p inti.Pelaku, idUsedBy string) ([]struct{}, error) {
+// (`ViewRate.xml` b1055 `idusedby = ParamID.RIRATEID`), view `RATE_LIFE`, baca saja.
+func (l *Layanan) DaftarRate(ctx context.Context, p inti.Pelaku, idUsedBy string) (JawabanRate, error) {
 	if err := inti.WajibIdentitas(p); err != nil {
-		return nil, err
+		return JawabanRate{}, err
 	}
 	if strings.TrimSpace(idUsedBy) == "" {
-		return nil, fmt.Errorf("%w: idusedby", ErrParameterWajib)
+		return JawabanRate{}, fmt.Errorf("%w: idusedby", ErrParameterWajib)
 	}
-	return nil, ErrRateMenungguPersetujuan
+	d, terpotong, err := l.gudang.DaftarRate(ctx, idUsedBy)
+	if err != nil {
+		return JawabanRate{}, err
+	}
+	d = kosongBukanNil(d)
+	return JawabanRate{Daftar: d, Total: len(d), Terpotong: terpotong}, nil
 }
 
 // kosongBukanNil - JSON `[]`, bukan `null`, untuk daftar kosong.

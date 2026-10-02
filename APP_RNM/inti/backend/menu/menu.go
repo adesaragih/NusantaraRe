@@ -108,13 +108,54 @@ func Susun(baris []Baris, modulAktif []string) Menu {
 	return m
 }
 
-// SaringMenuUntukPelaku adalah TITIK SAMBUNG saringan menu per akun.
+// GolonganAdmin adalah kepala bagian menu APLIKASI - di bawah golongan tabel.
 //
-// ⛔ Akses per akun menyusul: hari ini ia meneruskan SEMUA, untuk pelaku siapa
-// pun. Tabel aksesnya (mis. `M_NAV_MENU_AKSES`: akun atau peran -> MENU_ID)
-// dan login berada di luar lingkup brief menu 30-09-2026 - dicatat, tidak
-// dibangun. Sesudah keduanya ada, saringannya disambung di sini, dan
-// `GET /api/menu` sudah memanggilnya.
-func SaringMenuUntukPelaku(_ inti.Pelaku, m Menu) Menu {
-	return m
+// ⛔ BUKAN isi CHECK `GROUPMENU`: menu aplikasi bukan baris `M_NAV_MENU`, yang
+// dijaga tepat dua puluh baris, satu per folder modul korpus (keputusan work
+// owner 30-09-2026, "1 modul 1 menu").
+const GolonganAdmin = "ADMIN"
+
+// KodeKelolaUser adalah KODE menu Kelola User (keputusan work owner
+// 01-10-2026) - nilai `M_LOGIN_GO_MENU.MENU_KODE` yang membuka layar dan API
+// kelola pengguna. Pemegangnya adalah admin.
+const KodeKelolaUser = "kelolauser"
+
+// MenuAplikasi adalah menu milik aplikasi, bukan modul korpus: hidup di kode
+// seperti Beranda, tampil di golongan `GolonganAdmin` hanya bagi akun yang
+// memegang KODE-nya.
+var MenuAplikasi = []Modul{
+	{Kode: KodeKelolaUser, Label: "Kelola User", Modul: KodeKelolaUser, Urutan: 1, Dimigrasi: true},
+}
+
+// SaringMenuUntukAkun menyisakan menu yang KODE-nya dimiliki akun
+// (`M_LOGIN_GO_MENU`, Kelola User 01-10-2026): modul lain tidak dikirim,
+// golongan yang kosong hilang, lalu menu aplikasi yang dimiliki menyusul di
+// golongan `GolonganAdmin`. Menu asalnya tidak diubah.
+//
+// ⛔ Ini saringan TAMPILAN. Penegaknya gerbang 403 di `cmd/api` (rute modul)
+// dan rute Kelola User sendiri - menu yang disembunyikan di sini tetap ditolak
+// di sana bila jalurnya diketik langsung.
+func SaringMenuUntukAkun(m Menu, kode []string) Menu {
+	hasil := Menu{Golongan: []BagianGolongan{}}
+	for _, g := range m.Golongan {
+		var modul []Modul
+		for _, x := range g.Modul {
+			if inti.PunyaMenu(kode, x.Kode) {
+				modul = append(modul, x)
+			}
+		}
+		if len(modul) > 0 {
+			hasil.Golongan = append(hasil.Golongan, BagianGolongan{Kode: g.Kode, Modul: modul})
+		}
+	}
+	var aplikasi []Modul
+	for _, x := range MenuAplikasi {
+		if inti.PunyaMenu(kode, x.Kode) {
+			aplikasi = append(aplikasi, x)
+		}
+	}
+	if len(aplikasi) > 0 {
+		hasil.Golongan = append(hasil.Golongan, BagianGolongan{Kode: GolonganAdmin, Modul: aplikasi})
+	}
+	return hasil
 }

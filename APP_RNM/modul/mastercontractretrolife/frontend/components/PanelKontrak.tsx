@@ -223,68 +223,70 @@ export default function PanelKontrak({ tahun, onTutup }: { tahun: TahunTreaty; o
       {galat !== null && <Gagal galat={galat} />}
       {jawab !== null && daftar.length === 0 && <Kosong pesan={UMUM_MCRL.kosong} />}
       {daftar.length > 0 && (
-        <table className="inbox__tabel">
-          <thead>
-            <tr>
-              <th>{KONTRAK_MCRL.kolomId}</th>
-              <th>{KONTRAK_MCRL.kolomReinsType}</th>
-              <th>{KONTRAK_MCRL.kolomTreatyStart}</th>
-              <th>{KONTRAK_MCRL.kolomTreatyEnd}</th>
-              <th>{KONTRAK_MCRL.kolomMinIdr}</th>
-              <th>{KONTRAK_MCRL.kolomMaxIdr}</th>
-              <th>{KONTRAK_MCRL.kolomMinUsd}</th>
-              <th>{KONTRAK_MCRL.kolomMaxUsd}</th>
-              <th className="table__actions" />
-            </tr>
-          </thead>
-          <tbody>
-            {potongHalaman(daftar, halaman).map((k) => (
-              <tr key={k.id} className="inbox__baris">
-                <td>{sel(k.id)}</td>
-                <td>{sel(k.reinsTypeName)}</td>
-                <td>{selTanggal(k.treatyStartDate)}</td>
-                <td>{selTanggal(k.treatyEndDate)}</td>
-                <td>{selAngka(k.bIdr)}</td>
-                <td>{selAngka(k.idr)}</td>
-                <td>{selAngka(k.bUsd)}</td>
-                <td>{selAngka(k.usd)}</td>
-                <td className="table__actions">
-                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => buka(formKontrakDari(k, operatorKini(), waktuKini(new Date())))}>
-                    {KONTRAK_MCRL.edit}
-                  </button>{' '}
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    onClick={() => {
-                      setAnak({ jenis: 'business', kontrak: k })
-                    }}
-                  >
-                    {KONTRAK_MCRL.businessList}
-                  </button>{' '}
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    onClick={() => {
-                      setAnak({ jenis: 'reinsurer', kontrak: k })
-                    }}
-                  >
-                    {KONTRAK_MCRL.reinsurerList}
-                  </button>{' '}
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    onClick={() => {
-                      setPesan(null)
-                      hapusan.minta(k.id, k.reinsTypeName || k.id)
-                    }}
-                  >
-                    {KONTRAK_MCRL.delete}
-                  </button>
-                </td>
+        <div className="mcrl-tabel">
+          <table className="inbox__tabel">
+            <thead>
+              <tr>
+                <th>{KONTRAK_MCRL.kolomId}</th>
+                <th>{KONTRAK_MCRL.kolomReinsType}</th>
+                <th>{KONTRAK_MCRL.kolomTreatyStart}</th>
+                <th>{KONTRAK_MCRL.kolomTreatyEnd}</th>
+                <th>{KONTRAK_MCRL.kolomMinIdr}</th>
+                <th>{KONTRAK_MCRL.kolomMaxIdr}</th>
+                <th>{KONTRAK_MCRL.kolomMinUsd}</th>
+                <th>{KONTRAK_MCRL.kolomMaxUsd}</th>
+                <th className="table__actions" />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {potongHalaman(daftar, halaman).map((k) => (
+                <tr key={k.id} className="inbox__baris">
+                  <td>{sel(k.id)}</td>
+                  <td>{sel(k.reinsTypeName)}</td>
+                  <td>{selTanggal(k.treatyStartDate)}</td>
+                  <td>{selTanggal(k.treatyEndDate)}</td>
+                  <td>{selAngka(k.bIdr)}</td>
+                  <td>{selAngka(k.idr)}</td>
+                  <td>{selAngka(k.bUsd)}</td>
+                  <td>{selAngka(k.usd)}</td>
+                  <td className="table__actions">
+                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => buka(formKontrakDari(k, operatorKini(), waktuKini(new Date())))}>
+                      {KONTRAK_MCRL.edit}
+                    </button>{' '}
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => {
+                        setAnak({ jenis: 'business', kontrak: k })
+                      }}
+                    >
+                      {KONTRAK_MCRL.businessList}
+                    </button>{' '}
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => {
+                        setAnak({ jenis: 'reinsurer', kontrak: k })
+                      }}
+                    >
+                      {KONTRAK_MCRL.reinsurerList}
+                    </button>{' '}
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => {
+                        setPesan(null)
+                        hapusan.minta(k.id, k.reinsTypeName || k.id)
+                      }}
+                    >
+                      {KONTRAK_MCRL.delete}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {hapusan.konfirmasi !== null && (

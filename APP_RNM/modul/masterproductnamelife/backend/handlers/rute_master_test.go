@@ -38,11 +38,13 @@ func TestHTTPPemilihMasterMencariHurufBesar(t *testing.T) {
 	}
 }
 
-func TestHTTPRIRateMenungguPersetujuan(t *testing.T) {
+// K1 01-10-2026 (OQ-MPNL-03): pemilih R/I Rate yang dulu 503 kini 200 berisi view `RATE_LIFE_SUMMARY`.
+func TestHTTPRIRateDariViewRingkasan(t *testing.T) {
 	u := server(t, true)
-	kode, badan := u.minta(t, "GET", pre+"/master/ri-rate?cari=x", "", true)
-	if kode != http.StatusServiceUnavailable || !strings.Contains(badan, "OQ-MPNL-03") {
-		t.Errorf("R/I Rate harus 503 berkalimat: %d %s", kode, badan)
+	u.g.Master[models.MasterRIRate] = []models.NilaiMaster{{ID: "R1", Nama: "UJI RATE"}}
+	kode, badan := u.minta(t, "GET", pre+"/master/ri-rate?cari=rate", "", true)
+	if kode != http.StatusOK || !strings.Contains(badan, `"nama":"UJI RATE"`) {
+		t.Errorf("R/I Rate: %d %s", kode, badan)
 	}
 }
 

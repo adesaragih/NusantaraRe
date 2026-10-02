@@ -43,8 +43,9 @@ func TestStatusPesertaSejalanPenyaringClaimLife(t *testing.T) {
 	if !bolehNull {
 		t.Fatal("penyaring Claim Life membuang peserta new business (status NULL) - AC 48a")
 	}
-	claim := func(v string) bool { return v == "" || !mati[strings.TrimSpace(v)] }
-	for _, v := range []string{"", StatusOld, StatusNew, StatusDelete, StatusBatal} {
+	claim := func(v string) bool { return strings.TrimSpace(v) == "" || !mati[strings.TrimSpace(v)] }
+	// Nilai berspasi ikut: penyaring Claim Life memakai TRIM(EDMSTATUS).
+	for _, v := range []string{"", " ", StatusOld, StatusNew, StatusDelete, StatusBatal, " Batal ", "Delete ", " Old"} {
 		if claim(v) != StatusHidup(v) {
 			t.Errorf("status %q: Claim Life %v, modul ini %v", v, claim(v), StatusHidup(v))
 		}

@@ -95,22 +95,24 @@ export default function PratinjauSalin({
               <p>
                 {SALIN_MCRL.akanDitulis} <strong>{pratinjau.sasaran.length}</strong>
               </p>
-              <table className="inbox__tabel">
-                <thead>
-                  <tr>
-                    <th>{KONTRAK_MCRL.kolomId}</th>
-                    <th>{KONTRAK_MCRL.kolomReinsType}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pratinjau.sasaran.map((k) => (
-                    <tr key={k.id} className="inbox__baris">
-                      <td>{sel(k.id)}</td>
-                      <td>{sel(k.reinsTypeName)}</td>
+              <div className="mcrl-tabel">
+                <table className="inbox__tabel">
+                  <thead>
+                    <tr>
+                      <th>{KONTRAK_MCRL.kolomId}</th>
+                      <th>{KONTRAK_MCRL.kolomReinsType}</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {pratinjau.sasaran.map((k) => (
+                      <tr key={k.id} className="inbox__baris">
+                        <td>{sel(k.id)}</td>
+                        <td>{sel(k.reinsTypeName)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </>
           ) : (
             <p role="status">{SALIN_MCRL.nol}</p>

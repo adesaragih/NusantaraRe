@@ -15,12 +15,18 @@ package repository
 // tidak menjaga apa pun.
 
 import (
+	"errors"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 	"testing"
+
+	"nusantarare/modul/masterproductnamelife/backend/models"
 )
 
 // akarModul - folder modul ini dari folder paket repository.
@@ -212,7 +218,7 @@ func kolomCadangan(kolom []string) []string {
 // semuaKolomFisik - kolom tabel yang disebut SQL modul ini (bertambah tiap paket).
 func semuaKolomFisik() [][]string {
 	return append([][]string{KolomProduk, KolomInward, KolomLampiran, KolomObjek, KolomOutbox,
-		KolomKontrakTreaty, KolomTahunTreaty}, KolomMaster()...)
+		KolomKontrakTreaty, KolomTahunTreaty, KolomRate}, KolomMaster()...)
 }
 
 func TestMPNLNolKataCadanganOracle(t *testing.T) {
@@ -332,12 +338,148 @@ func TestMPNLAturanMasterMenggigit(t *testing.T) {
 	}
 }
 
-// TestMPNLNolPembacaSumberRate - OQ-MPNL-03: view atas JSON rate tidak dibaca
-// sampai disetujui (`RATE_LIFE`, `RATE_LIFE_SUMMARY`, `M_RATE_LIFE`).
-func TestMPNLNolPembacaSumberRate(t *testing.T) {
-	for jalur, isi := range kodeProduksi(t) {
-		if strings.Contains(isi, "RATE_LIFE") {
-			t.Errorf("%s menyebut RATE_LIFE - sumber R/I Rate dan View Rate menunggu persetujuan (OQ-MPNL-03)", jalur)
+// TestMPNLRateDibacaKolomRDSaja - K1 keputusan work owner 01-10-2026 (OQ-MPNL-03): kedua view rate dibaca
+// SAJA, kolom RD saja (`BrowseRateLifeSummary` b692–b717, `BrowseRateLife_RD` b747–b791), nol `SELECT *`,
+// nol `JSONDATA`; `View Rate` berkunci `IDUSEDBY`, urut dan batas RD.
+func TestMPNLRateDibacaKolomRDSaja(t *testing.T) {
+	kolomRD := map[string][]string{
+		MasterRIRate: {"ID", "USEDBY", "OPERATORID", "MODIFIEDDATE", "TYPE"},
+		MasterRate:   {"ID", "IDUSEDBY", "USEDBY", "GENDER", "CONTRACT", "AGE", "RATE", "TYPE"},
+	}
+	s := sumberMaster[models.MasterRIRate]
+	kasus := []struct{ objek, q string }{
+		{MasterRIRate, s.sqlCari("S.V")},
+		{MasterRIRate, s.sqlAmbil("S.V")},
+		{MasterRate, sqlDaftarRate("S.V")},
+	}
+	for _, k := range kasus {
+		q := strings.Join(strings.Fields(k.q), " ")
+		if strings.Contains(q, "*") || strings.Contains(strings.ToUpper(q), "JSONDATA") {
+			t.Errorf("%s: SELECT * / JSONDATA dilarang: %s", k.objek, q)
 		}
+		for _, kol := range strings.Split(q[len("SELECT "):strings.Index(q, " FROM ")], ",") {
+			ada := false
+			for _, r := range kolomRD[k.objek] {
+				ada = ada || r == strings.TrimSpace(kol)
+			}
+			if !ada {
+				t.Errorf("%s: kolom %s bukan kolom RD %v", k.objek, kol, kolomRD[k.objek])
+			}
+		}
+	}
+	q := strings.Join(strings.Fields(sqlDaftarRate("S.V")), " ")
+	for _, w := range []string{"WHERE IDUSEDBY = :1", "ORDER BY ID DESC, RATE ASC", "FETCH FIRST 501 ROWS ONLY"} {
+		if !strings.Contains(q, w) {
+			t.Errorf("View Rate tanpa %q: %s", w, q)
+		}
+	}
+	if BatasRate != 500 || strings.Join(KolomRate, ",") != "ID,USEDBY,GENDER,CONTRACT,AGE,RATE" {
+		t.Errorf("BatasRate %d / KolomRate %v", BatasRate, KolomRate)
+	}
+}
+
+// TestMPNLSetiapSQLMasterAdalahSelect - setiap SQL yang disusun untuk objek di DaftarMasterDibacaSaja (ketujuh
+// pemilih, PLAN LIST, kedua view rate) berawal SELECT dan lolos penjaga runtime periksaBacaSaja.
+func TestMPNLSetiapSQLMasterAdalahSelect(t *testing.T) {
+	kasus := map[string]string{"plan cari": sqlCariPlan("S.V"), "plan ambil": sqlAmbilPlan("S.V"), "rate": sqlDaftarRate("S.V")}
+	objek := map[string]string{"plan cari": MasterJenisPlan, "plan ambil": MasterJenisPlan, "rate": MasterRate}
+	for jenis, s := range sumberMaster {
+		kasus[string(jenis)+" cari"], objek[string(jenis)+" cari"] = s.sqlCari("S.V"), s.objek
+		kasus[string(jenis)+" ambil"], objek[string(jenis)+" ambil"] = s.sqlAmbil("S.V"), s.objek
+	}
+	if len(kasus) < 17 {
+		t.Fatalf("hanya %d SQL master terbaca - pembacanya yang rusak", len(kasus))
+	}
+	for nama, q := range kasus {
+		if err := periksaBacaSaja(objek[nama], q); err != nil {
+			t.Errorf("%s: %v", nama, err)
+		}
+	}
+}
+
+// Uji gigit K1: tulisan ke view rate (dan master lain) ditolak SEBELUM sampai ke Oracle; tabel produk
+// milik modul ini tetap boleh ditulis.
+func TestMPNLPeriksaBacaSajaMenolakTulisanKeView(t *testing.T) {
+	for _, objek := range []string{MasterRate, MasterRIRate, MasterAgent} {
+		for _, q := range []string{
+			"UPDATE S.V SET RATE = :1 WHERE ID = :2",
+			"insert into S.V (ID) values (:1)",
+			"  DELETE FROM S.V WHERE ID = :1",
+			"MERGE INTO S.V USING DUAL ON (1 = 1) WHEN MATCHED THEN UPDATE SET RATE = :1",
+		} {
+			if err := periksaBacaSaja(objek, q); !errors.Is(err, ErrMasterBacaSaja) {
+				t.Errorf("%s: %q harus ditolak: %v", objek, q, err)
+			}
+		}
+	}
+	if err := periksaBacaSaja(TabelProduk, "UPDATE S.T SET JSONDATA = :1 WHERE ID = :2"); err != nil {
+		t.Errorf("tabel produk modul ini boleh ditulis: %v", err)
+	}
+}
+
+// Code review 01-10-2026 (#10): periksaBacaSaja hanya menjaga SQL yang lewat siapkan. Lapis statik ini menutup
+// celahnya - SETIAP fungsi (deklarasi maupun literal) kode produksi modul ini yang menyebut konstanta view rate
+// (`MasterRate`, `MasterRIRate`) tidak boleh memuat SQL tulis maupun `ExecContext`.
+var polaTulisRate = regexp.MustCompile(`(?i)\b(INSERT\s+INTO|UPDATE\s+\S+\s+SET|DELETE\s+FROM|MERGE\s+INTO|ExecContext)\b`)
+
+// fungsiRateMenulis - nama fungsi di src yang menyebut konstanta view rate DAN memuat tulisan.
+func fungsiRateMenulis(t *testing.T, nama, src string) []string {
+	t.Helper()
+	fset := token.NewFileSet()
+	f, err := parser.ParseFile(fset, nama, src, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var hasil []string
+	ast.Inspect(f, func(n ast.Node) bool {
+		var badan *ast.BlockStmt
+		label := ""
+		switch x := n.(type) {
+		case *ast.FuncDecl:
+			badan, label = x.Body, x.Name.Name
+		case *ast.FuncLit:
+			badan, label = x.Body, "func literal"
+		}
+		if badan == nil {
+			return true
+		}
+		teks := src[fset.Position(badan.Pos()).Offset:fset.Position(badan.End()).Offset]
+		sebut := false
+		ast.Inspect(badan, func(m ast.Node) bool {
+			if id, ok := m.(*ast.Ident); ok && (id.Name == "MasterRate" || id.Name == "MasterRIRate") {
+				sebut = true
+			}
+			return true
+		})
+		if sebut && polaTulisRate.MatchString(teks) {
+			hasil = append(hasil, nama+": "+label)
+		}
+		return true
+	})
+	return hasil
+}
+
+func TestMPNLViewRateHanyaDibacaFungsiBaca(t *testing.T) {
+	diperiksa := 0
+	for jalur, isi := range kodeProduksi(t) {
+		if strings.HasSuffix(jalur, "_test.go") || !strings.HasSuffix(jalur, ".go") {
+			continue
+		}
+		diperiksa++
+		if bad := fungsiRateMenulis(t, jalur, isi); len(bad) > 0 {
+			t.Errorf("fungsi menyebut view rate DAN menulis: %v", bad)
+		}
+	}
+	if diperiksa < 10 {
+		t.Fatalf("hanya %d berkas produksi terbaca - pembacanya yang rusak", diperiksa)
+	}
+}
+
+func TestMPNLAturanViewRateMenggigit(t *testing.T) {
+	src := "package x\n\nfunc a(g *Gudang) {\n\tq, _ := g.db.Qualify(MasterRate)\n\t_, _ = g.db.ExecContext(ctx, \"UPDATE \"+q+\" SET RATE = :1\")\n}\n" +
+		"\nvar b = func() string { return fmt.Sprint(MasterRIRate, `DELETE FROM x`) }\n" +
+		"\nfunc c() string { return MasterRate }\n"
+	if bad := fungsiRateMenulis(t, "x.go", src); len(bad) != 2 {
+		t.Errorf("ExecContext/UPDATE dan DELETE FROM atas view rate harus tertangkap, pembaca murni tidak: %v", bad)
 	}
 }

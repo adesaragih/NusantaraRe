@@ -1,55 +1,78 @@
 /*
- * Gaya modul Master Contract Retro Life - SELURUH kelas berawalan `mcrl` (dijaga `gaya.test.ts`).
- * Kerangka (panel, form-grid, tabel, tombol) memakai kelas bersama `inti/frontend/styles.css`; berkas
- * ini hanya menambah yang khusus layar modul ini, dengan token warna tema bersama.
+ * Gaya modul Master Contract Retro Life.
+ *
+ * ⛔ TERISOLASI: SETIAP pemilih diawali kelas akar `.mcrl` (dipasang di `<section className="inbox mcrl">`
+ * halaman awal; panel dan popup modul dirender di dalamnya, Modal inti tanpa portal). Kelas khusus modul
+ * berawalan `mcrl-`. Kelas bersama `inti` (panel, btn, inbox__tabel, table__actions, form-grid, modal)
+ * hanya DITIMPA di bawah `.mcrl`, tidak pernah didefinisikan ulang secara global. Dijaga `gaya.test.ts`.
+ * Warna dari token tema bersama, jadi tema gelap ikut.
  */
 
-/* Label sel tombol b8888 (`End Period`, `pyIncludeLabel` true) di sebelah tombol `Add`. */
-.mcrl-label-sel {
+/* Akar: boleh menyusut di dalam kolom flex/grid kerangka, sehingga tabel lebar menggulir di
+   pembungkusnya sendiri, bukan mendorong halaman melebar. */
+.mcrl {
+  min-width: 0;
+}
+
+.mcrl .inbox__kepala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+/* Teks keterangan kecil di baris tombol (dulu juga label sel `End Period` b8927, yang sejak 02-10-2026
+   tidak ditampilkan atas keputusan work owner; kini dipakai `ModalRate`). */
+.mcrl .mcrl-label-sel {
   color: var(--muted);
   font-size: var(--fs-sm);
   font-weight: 600;
 }
 
 /* Baris tombol `Add` + `pyGridPaginator` di atas grid. */
-.mcrl-aksi-grid {
+.mcrl .mcrl-aksi-grid {
+  display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px 12px;
   flex-wrap: wrap;
 }
 
 /* Ikon tutup kerangka harness popup (`pxIconCancel`). */
-.mcrl-tutup {
+.mcrl .mcrl-tutup {
   padding-inline: 6px;
 }
 
 /* Medan baca-saja kepala panel (`ID Treaty Year`, `ID Reins Type`, `Reins Type`, ...). */
-.mcrl-kepala {
+.mcrl .mcrl-kepala {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 24px;
   margin: 0 0 12px;
 }
 
-.mcrl-kepala__medan {
+.mcrl .mcrl-kepala__medan {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
 
-.mcrl-kepala__medan dt {
+.mcrl .mcrl-kepala__medan dt {
   color: var(--muted);
   font-size: var(--fs-xs);
 }
 
-.mcrl-kepala__medan dd {
+.mcrl .mcrl-kepala__medan dd {
   margin: 0;
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 /* `Total Share -->>` - tiket 05 AC 19: total ≠ 100 DITANDAI mencolok. */
-.mcrl-total {
+.mcrl .mcrl-total {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   margin: 8px 0 0;
@@ -57,18 +80,335 @@
   border-radius: var(--radius-sm);
 }
 
-.mcrl-total--bukan100 {
+.mcrl .mcrl-total--bukan100 {
   background: var(--danger-bg);
   border: 1px solid var(--danger-border);
   color: var(--danger-text);
 }
 
-.mcrl-total__tanda {
+.mcrl .mcrl-total__tanda {
   font-weight: 700;
 }
 
 /* Rincian baris yang ikut terhapus di popup konfirmasi. */
-.mcrl-dampak {
+.mcrl .mcrl-dampak {
   margin: 4px 0 0;
   padding-left: 20px;
+}
+
+/* Panel Security Reinsurer di dalam panel Reinsurer (keputusan work owner 02-10-2026, model Treaty
+   Contract Out): berjarak dari daftar di atasnya, tanpa sisa jarak bawah ganda. */
+.mcrl .panel .panel {
+  margin: 16px 0 0;
+}
+
+/* --------------------------------------------------------------- tabel */
+/* Pembungkus gulir setiap grid: tabel yang lebih lebar dari panel menggulir DI SINI, bukan keluar dari
+   panel (tangkapan layar 02-10-2026: kolom tombol `Reinsurer List` terpotong tepi panel). */
+.mcrl .mcrl-tabel {
+  width: 100%;
+  max-width: 100%;
+  margin-top: 16px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.mcrl .mcrl-tabel > .inbox__tabel {
+  width: 100%;
+  margin-top: 0;
+}
+
+.mcrl .mcrl-tabel > .inbox__tabel thead th {
+  white-space: nowrap;
+}
+
+/* Kolom tombol baris (Edit, Business List, Reinsurer List, Delete) menempel di kanan saat tabel
+   digulir, sehingga aksi baris selalu terlihat. */
+.mcrl .mcrl-tabel th.table__actions,
+.mcrl .mcrl-tabel td.table__actions {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  box-shadow: -1px 0 0 var(--border);
+}
+
+.mcrl .mcrl-tabel th.table__actions {
+  background: var(--bg);
+}
+
+.mcrl .mcrl-tabel td.table__actions {
+  background: var(--surface);
+  white-space: nowrap;
+}
+
+.mcrl .mcrl-tabel tr:hover > td.table__actions {
+  background: var(--hover-baris);
+}
+
+.mcrl .mcrl-tabel td.table__actions > .btn + .btn {
+  margin-left: 6px;
+}
+
+/* Grid di dalam popup (Rate List, pratinjau salin) dibatasi tingginya dan menggulir di dalam. */
+.mcrl .modal .mcrl-tabel {
+  max-height: 50vh;
+  overflow: auto;
+}
+
+/* ------------------------------------------------- tablet, laptop kecil */
+@media (max-width: 1024px) {
+  .mcrl .panel {
+    padding: 16px;
+  }
+}
+
+/* ---------------------------------------------------------------- ponsel */
+@media (max-width: 640px) {
+  .mcrl .panel {
+    padding: 12px;
+    border-radius: var(--radius-sm);
+  }
+
+  .mcrl .mcrl-kepala {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 12px;
+  }
+
+  .mcrl .aksi-baris > .btn {
+    flex: 1 1 auto;
+  }
+
+  .mcrl .mcrl-tabel > .inbox__tabel th,
+  .mcrl .mcrl-tabel > .inbox__tabel td {
+    padding: 8px 10px;
+  }
+
+  /* Ponsel: kolom tombol TIDAK menempel - di layar sempit ia menutupi hampir seluruh kolom data.
+     Data tampil lebih dulu; tombol dijangkau dengan menggeser tabel di dalam panel. */
+  .mcrl .mcrl-tabel th.table__actions,
+  .mcrl .mcrl-tabel td.table__actions {
+    position: static;
+    box-shadow: none;
+  }
+
+  .mcrl .modal__actions {
+    flex-wrap: wrap;
+  }
+
+  .mcrl .modal__actions > .btn {
+    flex: 1 1 auto;
+  }
+}
+
+/* ================================================================ soft UI
+   NEUMORFISME RAPI dengan warna aktif. Permintaan work owner 02-10-2026, berurutan: tema Kelola User untuk Beranda, Treaty Contract
+   Out, dan Master Contract Retro Life; "perbaiki buat lebih bagus dan menarik dan elegan"; "ganti
+   warna yg pake ungu atau lavender di semua menu"; lalu "soft UI atau neumorfisme kok hilang ya?? aku
+   mau itu tetep ada, tapi warna pake yg aktif sekarang aja. untuk neumorfisme ada yg timbul keluar ada
+   yang timbul kedalam juga, buat yang rapih dan elegan", "terapkan di beranda, treaty contract out,
+   master contract retro dan menu user".
+   Alas abu kebiruan sangat muda #eef1f6, supaya bayangan terang dan gelap sama-sama terlihat. TIMBUL
+   KELUAR: panel, tombol. TIMBUL KE DALAM: isian, wadah tabel, panel di dalam panel, tombol ditekan.
+   Aksen biru navy template #2b44b0; tombol utama merah bergradasi halus. Kontras: token teks minimal
+   4,5:1 terhadap latarnya, dijaga gaya.test. TANPA backdrop-filter, filter, atau transform: properti
+   itu mengurung popup `position: fixed` (bug popup tidak di tengah 02-10-2026). Token `--mt-*` hanya di
+   kelas akar .mcrl; tema gelap ditimpa di `:root[data-theme="dark"] .mcrl`. `--text-3` inti DITIMPA
+   di akar ini saja supaya label dan keterangan abu tetap terbaca. */
+.mcrl {
+  --mt-latar: #eef1f6;
+  --mt-latar-tepi: #e2e7ef;
+  --mt-kartu: #eef1f6;
+  --mt-lembut: #e9edf3;
+  --mt-lembut-tepi: #dde3ec;
+  --mt-teks: #101828;
+  --mt-teks-redup: #4f586b;
+  --mt-aksen: #2b44b0;
+  --mt-aksen-teks: #2339a3;
+  --mt-aksen-lembut: #e3e8f6;
+  --mt-aksen-garis: #b9c5ee;
+  --mt-kepala-tabel: #eaeef4;
+  --mt-baris-hover: #e6ebf3;
+  --mt-garis: #dfe4ec;
+  --mt-tepi: #d5dce7;
+  --mt-tombol: #d63a42;
+  --mt-tombol-ujung: #bf2f37;
+  --mt-tombol-hover: #c2333b;
+  --mt-tombol-hover-ujung: #a9282f;
+  --mt-terang: rgba(255, 255, 255, 0.92);
+  --mt-gelap: rgba(163, 177, 198, 0.55);
+  --mt-kilau: rgba(255, 255, 255, 0.7);
+  --mt-timbul: 8px 8px 18px var(--mt-gelap), -8px -8px 18px var(--mt-terang);
+  --mt-timbul-kecil: 4px 4px 9px var(--mt-gelap), -4px -4px 9px var(--mt-terang);
+  --mt-cekung: inset 3px 3px 7px var(--mt-gelap), inset -3px -3px 7px var(--mt-terang);
+  --mt-cekung-kecil: inset 2px 2px 4px var(--mt-gelap), inset -2px -2px 4px var(--mt-terang);
+  --mt-cincin: 0 0 0 3px rgba(43, 68, 176, 0.18);
+  --mt-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--mt-terang);
+  --mt-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.4);
+  --mt-bayang-lembar: 0 1px 2px rgba(16, 24, 40, 0.04), 0 22px 50px -32px rgba(16, 24, 60, 0.28);
+  --text-3: var(--mt-teks-redup);
+  color: var(--mt-teks);
+  padding: 24px;
+  border: 1px solid var(--mt-latar-tepi);
+  border-radius: 26px;
+  background: var(--mt-latar);
+  box-shadow: var(--mt-bayang-lembar);
+}
+:root[data-theme="dark"] .mcrl {
+  --mt-latar: #1b2130;
+  --mt-latar-tepi: #252c3c;
+  --mt-kartu: #1b2130;
+  --mt-lembut: #181d2a;
+  --mt-lembut-tepi: #242b3a;
+  --mt-teks: #eef0f6;
+  --mt-teks-redup: #aab2c4;
+  --mt-aksen: #8ea2f5;
+  --mt-aksen-teks: #aebcff;
+  --mt-aksen-lembut: #222b45;
+  --mt-aksen-garis: #3a4b8f;
+  --mt-kepala-tabel: #1d2433;
+  --mt-baris-hover: #212a3c;
+  --mt-garis: #283042;
+  --mt-tepi: #2d3546;
+  --mt-terang: rgba(255, 255, 255, 0.045);
+  --mt-gelap: rgba(0, 0, 0, 0.55);
+  --mt-kilau: rgba(255, 255, 255, 0.04);
+  --mt-cincin: 0 0 0 3px rgba(142, 162, 245, 0.25);
+  --mt-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--mt-terang);
+  --mt-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.75);
+  --mt-bayang-lembar: 0 1px 2px rgba(0, 0, 0, 0.4), 0 22px 50px -32px rgba(0, 0, 0, 0.8);
+}
+
+.mcrl .inbox__judul,
+.mcrl .panel__title,
+.mcrl .modal__title {
+  color: var(--mt-teks);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.mcrl .muted {
+  color: var(--mt-teks-redup);
+}
+.mcrl :focus-visible {
+  outline: 2px solid var(--mt-aksen);
+  outline-offset: 2px;
+}
+
+/* Isian: TIMBUL KE DALAM (cekung) bertepi tipis; fokus biru navy bercincin lembut. */
+.mcrl .field__input {
+  background: var(--mt-latar);
+  border: 1px solid var(--mt-tepi);
+  border-radius: 12px;
+  box-shadow: var(--mt-cekung-kecil);
+  color: var(--mt-teks);
+}
+.mcrl .field__input:hover:not(:disabled) {
+  border-color: var(--mt-aksen-garis);
+}
+.mcrl .field__input:focus {
+  border-color: var(--mt-aksen);
+  box-shadow: var(--mt-cekung-kecil), var(--mt-cincin);
+  outline: none;
+}
+
+/* Tombol kapsul TIMBUL KELUAR; ditekan: TIMBUL KE DALAM. Utama: merah bergradasi halus. */
+.mcrl .btn {
+  border-radius: 999px;
+}
+.mcrl .btn--primary {
+  background: linear-gradient(180deg, var(--mt-tombol), var(--mt-tombol-ujung));
+  border-color: var(--mt-tombol-ujung);
+  color: #ffffff;
+  box-shadow: var(--mt-bayang-tombol);
+}
+.mcrl .btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--mt-tombol-hover), var(--mt-tombol-hover-ujung));
+  border-color: var(--mt-tombol-hover-ujung);
+}
+.mcrl .btn--primary:active:not(:disabled) {
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+}
+.mcrl .btn--ghost {
+  background: var(--mt-latar);
+  border: 1px solid var(--mt-kilau);
+  color: var(--mt-teks);
+  box-shadow: var(--mt-timbul-kecil);
+}
+.mcrl .btn--ghost:hover:not(:disabled) {
+  color: var(--mt-aksen-teks);
+}
+.mcrl .btn--ghost:active:not(:disabled) {
+  box-shadow: var(--mt-cekung-kecil);
+}
+.mcrl .btn:disabled {
+  box-shadow: none;
+}
+
+/* Popup: kartu alas bersudut lembut; isinya ikut neumorfisme. */
+.mcrl .modal {
+  background: var(--mt-latar);
+  border: 1px solid var(--mt-kilau);
+  border-radius: 22px;
+  box-shadow: var(--mt-bayang-popup);
+}
+.mcrl .modal__head,
+.mcrl .modal__actions {
+  border-color: var(--mt-garis);
+}
+.mcrl .alert {
+  border-radius: 12px;
+}
+
+/* Panel: TIMBUL KELUAR. Panel di dalam panel: TIMBUL KE DALAM, jadi jenjangnya terbaca. */
+.mcrl .panel {
+  background: var(--mt-latar);
+  border: 1px solid var(--mt-kilau);
+  border-radius: 20px;
+  box-shadow: var(--mt-timbul);
+}
+.mcrl .panel .panel {
+  background: var(--mt-lembut);
+  border-color: var(--mt-lembut-tepi);
+  border-radius: 16px;
+  box-shadow: var(--mt-cekung);
+}
+
+/* Wadah tabel: TIMBUL KE DALAM (baki); baris rata, garis tipis, sorot baris biru samar. Kolom aksi
+   yang menempel ikut warna alas supaya tidak tampak sebagai pita. */
+.mcrl .mcrl-tabel {
+  border-color: var(--mt-lembut-tepi);
+  border-radius: 16px;
+  background: var(--mt-latar);
+  box-shadow: var(--mt-cekung);
+}
+.mcrl .mcrl-tabel > .inbox__tabel thead th,
+.mcrl .mcrl-tabel th.table__actions {
+  background: var(--mt-kepala-tabel);
+  color: var(--mt-teks-redup);
+  border-bottom-color: var(--mt-garis);
+}
+.mcrl .mcrl-tabel > .inbox__tabel td {
+  border-bottom-color: var(--mt-garis);
+}
+.mcrl .mcrl-tabel td.table__actions {
+  background: var(--mt-latar);
+}
+.mcrl .mcrl-tabel > .inbox__tabel > tbody > tr:hover > td,
+.mcrl .mcrl-tabel tr:hover > td.table__actions {
+  background: var(--mt-baris-hover);
+}
+
+@media (max-width: 640px) {
+  .mcrl {
+    padding: 14px;
+    border-radius: 18px;
+  }
+  .mcrl .panel {
+    border-radius: 16px;
+    box-shadow: var(--mt-timbul-kecil);
+  }
 }

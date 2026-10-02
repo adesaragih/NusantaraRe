@@ -7,7 +7,7 @@
 //	GET  /api/master-product-name-life/produk/{id}   tombol `View` b74798
 //	GET  /api/master-product-name-life/master/{jenis}?cari=&batas=  tujuh pemilih master (`Choose*`, PARITAS §4); `batas` = autocomplete
 //	GET  /api/master-product-name-life/master-plan?cari=     autocomplete `Plan Name` (PLAN LIST)
-//	GET  /api/master-product-name-life/rate?riRateId=        tombol `View Rate` - 503 (OQ-MPNL-03)
+//	GET  /api/master-product-name-life/rate?riRateId=        tombol `View Rate` - view `RATE_LIFE` (K1)
 package handlers
 
 import (
@@ -88,7 +88,7 @@ func daftarkanBaca(pasang func(string, rute)) {
 	})
 	pasang("GET "+Prefix+"/rate", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
 		d, err := l.DaftarRate(r.Context(), p, r.URL.Query().Get("riRateId"))
-		tulisDaftar(w, d, err)
+		tulis(w, d, err)
 	})
 }
 
@@ -154,9 +154,6 @@ func jawabGalat(w http.ResponseWriter, err error) bool {
 		galat.Tulis(w, http.StatusConflict, services.Pesan(err))
 	case errors.Is(err, services.ErrOfficeStub), errors.Is(err, services.ErrPenyimpananBelumDisetel):
 		// 503: penampil kantor luar tidak dipanggil (OQ-MPNL-11) / folder stub belum disetel.
-		galat.Tulis(w, http.StatusServiceUnavailable, services.Pesan(err))
-	case errors.Is(err, services.ErrRIRateMenungguPersetujuan):
-		// 503 berkalimat: sumber R/I Rate menunggu persetujuan (OQ-MPNL-03).
 		galat.Tulis(w, http.StatusServiceUnavailable, services.Pesan(err))
 	case errors.Is(err, services.ErrMasterTidakTerbaca):
 		// 503: master rujukan tidak terbaca - pesannya MENYEBUT objeknya, sebab Oracle hanya di log.

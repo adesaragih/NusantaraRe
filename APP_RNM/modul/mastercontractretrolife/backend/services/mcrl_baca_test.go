@@ -7,6 +7,7 @@ package services_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -143,14 +144,56 @@ func TestMasterJenisKosongAdalahKeadaanServer(t *testing.T) {
 	}
 }
 
-// ⛔ OQ-MCRL-13: sumber tabel rate belum dibaca - galat terang, bukan daftar
-// kosong yang membuat pengguna mengira tidak ada tabel rate.
-func TestRateMenungguPersetujuanBukanDaftarKosong(t *testing.T) {
-	l := layananUji(tiruan.Baru())
-	if _, err := l.DaftarRate(context.Background(), pelaku, "UJI-RATE"); !errors.Is(err, services.ErrRateMenungguPersetujuan) {
+// K1 keputusan work owner 01-10-2026 (OQ-MCRL-13): kedua view rate dibaca. Autocomplete = `Contains`
+// atas USEDBY urut `ID ASC`; Rate List satu IDUSEDBY urut `ID DESC, RATE ASC`, RATE teks apa adanya.
+func TestRateDibacaDariViewRate(t *testing.T) {
+	g := tiruan.Baru()
+	g.RingkasanRate = []models.RingkasanRate{{ID: "UJI-3", UsedBy: "UJI RATE TIGA"}, {ID: "UJI-1", UsedBy: "uji rate satu"},
+		{ID: "UJI-2", UsedBy: "LAIN"}}
+	g.Rate["UJI-1"] = []models.BarisRate{{ID: "UJI-A", Rate: "0,5"}, {ID: "UJI-B", Rate: "1.25"}, {ID: "UJI-B", Rate: "0,75"}}
+	l := layananUji(g)
+	ctx := context.Background()
+	d, err := l.CariRingkasanRate(ctx, pelaku, " rate ")
+	if err != nil || len(d) != 2 || d[0].ID != "UJI-1" || d[1].ID != "UJI-3" {
+		t.Errorf("CariRingkasanRate: %v %+v", err, d)
+	}
+	r, err := l.DaftarRate(ctx, pelaku, "UJI-1")
+	urut := []string{}
+	for _, b := range r.Daftar {
+		urut = append(urut, b.ID+"="+b.Rate)
+	}
+	if err != nil || strings.Join(urut, " ") != "UJI-B=0,75 UJI-B=1.25 UJI-A=0,5" || r.Total != 3 || r.Terpotong {
+		t.Errorf("DaftarRate: %v %v %+v", err, urut, r)
+	}
+	// IDUSEDBY tanpa baris = daftar kosong 200, bukan galat.
+	if r, err := l.DaftarRate(ctx, pelaku, "UJI-9"); err != nil || r.Daftar == nil || len(r.Daftar) != 0 {
+		t.Errorf("rate kosong: %v %+v", err, r)
+	}
+}
+
+// `BrowseRateLife_RD` b729 `pyMaxRecords` 500: baris ke-501 tidak tampil, dan itu DINYATAKAN.
+func TestRateDipotong500Dinyatakan(t *testing.T) {
+	g := tiruan.Baru()
+	for i := 0; i < 501; i++ {
+		g.Rate["UJI-1"] = append(g.Rate["UJI-1"], models.BarisRate{ID: fmt.Sprintf("UJI-%04d", i), Rate: "1"})
+	}
+	r, err := layananUji(g).DaftarRate(context.Background(), pelaku, "UJI-1")
+	if err != nil || len(r.Daftar) != 500 || r.Total != 500 || !r.Terpotong || r.Daftar[0].ID != "UJI-0500" {
+		t.Errorf("501 baris: %v len %d terpotong %v", err, len(r.Daftar), r.Terpotong)
+	}
+}
+
+// View rate tak terbaca = ErrMasterTidakTerbaca yang menyebut objeknya (503), bukan daftar kosong.
+func TestRateTakTerbacaMenyebutView(t *testing.T) {
+	g := tiruan.Baru()
+	g.GalatMaster = errors.New("ORA-00942")
+	l := layananUji(g)
+	if _, err := l.DaftarRate(context.Background(), pelaku, "UJI-1"); !errors.Is(err, services.ErrMasterTidakTerbaca) ||
+		!strings.Contains(services.Pesan(err), "RATE_LIFE") {
 		t.Errorf("DaftarRate: %v", err)
 	}
-	if _, err := l.CariRingkasanRate(context.Background(), pelaku, "UJI"); !errors.Is(err, services.ErrRateMenungguPersetujuan) {
+	if _, err := l.CariRingkasanRate(context.Background(), pelaku, ""); !errors.Is(err, services.ErrMasterTidakTerbaca) ||
+		!strings.Contains(services.Pesan(err), "RATE_LIFE_SUMMARY") {
 		t.Errorf("CariRingkasanRate: %v", err)
 	}
 }

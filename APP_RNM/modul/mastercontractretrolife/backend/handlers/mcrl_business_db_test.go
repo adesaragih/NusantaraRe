@@ -20,6 +20,7 @@ func TestDBSalinSemuaKeJenisBerbedaSatuTransaksi(t *testing.T) {
 			VALUES (:1, '1000001', :2, 'UJI')`, k[0], k[1])
 	}
 	u.exec(t, `INSERT INTO `+s+`.BUSINESS (ID, NOTE, OLDID) VALUES ('UJI-B01', 'UJI BUSINESS', 'L01')`)
+	u.exec(t, `INSERT INTO `+s+`.RATE_LIFE_SUMMARY (ID, USEDBY) VALUES ('UJI-RATE', 'UJI R')`)
 	kode, badan := u.kirim(t, "POST", "/api/master-contract-retro-life/kontrak/1000002/business",
 		`{"bizCode":"UJI-B01","bizName":"x","riRateId":"UJI-RATE","riRate":" UJI R, 0,5% "}`)
 	if kode != http.StatusOK || !strings.Contains(badan, `"id":"1000044"`) {

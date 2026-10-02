@@ -173,46 +173,48 @@ export default function PanelSecurity({ reinsurer, onTutup }: { reinsurer: Reins
       {galat !== null && <Gagal galat={galat} />}
       {jawab !== null && daftar.length === 0 && <Kosong pesan={UMUM_MCRL.kosong} />}
       {daftar.length > 0 && (
-        <table className="inbox__tabel">
-          <thead>
-            <tr>
-              <th>{SECURITY_MCRL.kolomId}</th>
-              <th>{SECURITY_MCRL.kolomReinsurerName}</th>
-              <th>{SECURITY_MCRL.kolomShare}</th>
-              <th>{SECURITY_MCRL.kolomEksposur}</th>
-              <th>{SECURITY_MCRL.kolomInputor}</th>
-              <th>{SECURITY_MCRL.kolomUpdateDate}</th>
-              <th className="table__actions" />
-            </tr>
-          </thead>
-          <tbody>
-            {potongHalaman(daftar, halaman).map((s) => (
-              <tr key={s.id} className="inbox__baris">
-                <td>{sel(s.id)}</td>
-                <td>{sel(s.reinsurerName)}</td>
-                <td>{selAngka(s.pctShare)}</td>
-                <td>{selAngka(jawab?.eksposur[s.id] ?? '')}</td>
-                <td>{sel(s.userId)}</td>
-                <td>{selWaktu(s.tglUpdate)}</td>
-                <td className="table__actions">
-                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => buka(formSecurityDari(s))}>
-                    {SECURITY_MCRL.edit}
-                  </button>{' '}
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    onClick={() => {
-                      setPesan(null)
-                      hapusan.minta(s.id, s.reinsurerName || s.id)
-                    }}
-                  >
-                    {SECURITY_MCRL.delete}
-                  </button>
-                </td>
+        <div className="mcrl-tabel">
+          <table className="inbox__tabel">
+            <thead>
+              <tr>
+                <th>{SECURITY_MCRL.kolomId}</th>
+                <th>{SECURITY_MCRL.kolomReinsurerName}</th>
+                <th>{SECURITY_MCRL.kolomShare}</th>
+                <th>{SECURITY_MCRL.kolomEksposur}</th>
+                <th>{SECURITY_MCRL.kolomInputor}</th>
+                <th>{SECURITY_MCRL.kolomUpdateDate}</th>
+                <th className="table__actions" />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {potongHalaman(daftar, halaman).map((s) => (
+                <tr key={s.id} className="inbox__baris">
+                  <td>{sel(s.id)}</td>
+                  <td>{sel(s.reinsurerName)}</td>
+                  <td>{selAngka(s.pctShare)}</td>
+                  <td>{selAngka(jawab?.eksposur[s.id] ?? '')}</td>
+                  <td>{sel(s.userId)}</td>
+                  <td>{selWaktu(s.tglUpdate)}</td>
+                  <td className="table__actions">
+                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => buka(formSecurityDari(s))}>
+                      {SECURITY_MCRL.edit}
+                    </button>{' '}
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => {
+                        setPesan(null)
+                        hapusan.minta(s.id, s.reinsurerName || s.id)
+                      }}
+                    >
+                      {SECURITY_MCRL.delete}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {hapusan.konfirmasi !== null && (

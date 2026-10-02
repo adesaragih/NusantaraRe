@@ -101,3 +101,31 @@ func TestSetiapRuteMenjawabLewatJawabGalat(t *testing.T) {
 		}
 	}
 }
+
+// Relasi di basis data (migrasi 100, keputusan work owner 01-10-2026): FK,
+// FK penjaga salinan yang ditunda sampai COMMIT, dan kunci ganda dijawab 409
+// berkalimat - bukan 500 - dan teks Oracle-nya hanya di log server.
+func TestPenolakanRelasiOracleDijawab409Berkalimat(t *testing.T) {
+	kasus := []struct{ nama, galatOracle, kalimat string }{
+		{"induk tidak ada", "ORA-02291: integrity constraint (UJI.FK_TRL_KONTRAK) violated - parent key not found", "parent row no longer exists"},
+		{"salinan berbeda saat COMMIT", "ORA-02091: transaction rolled back\nORA-02291: integrity constraint (UJI.FK_TBL_SALINAN) violated - parent key not found", "copied column no longer matches"},
+		{"anak masih ada", "ORA-02292: integrity constraint (UJI.FK_TCL_TAHUN) violated - child record found", "still has child rows"},
+		{"kunci ganda", "ORA-00001: unique constraint (UJI.PK_TREATYBUSINESS_LIFE) violated", "same key already exists"},
+	}
+	for _, k := range kasus {
+		u := serverBusiness(t)
+		u.g.GagalTulis["SisipBusiness"] = errors.New(k.galatOracle)
+		catatan := tangkapLog(t)
+		kode, badan := u.kirim(t, "POST", handlers.Prefix+"/kontrak/UJI-K1/business",
+			`{"bizCode":"UJI-B01","bizName":"x","riRateId":"UJI-RATE","riRate":"UJI R"}`)
+		if kode != http.StatusConflict || !strings.Contains(badan, k.kalimat) {
+			t.Errorf("%s: mau 409 berkalimat %q, dapat %d %s", k.nama, k.kalimat, kode, badan)
+		}
+		if strings.Contains(badan, "ORA-") || strings.Contains(badan, "UJI.") {
+			t.Errorf("%s: teks mentah Oracle bocor ke API: %s", k.nama, badan)
+		}
+		if !strings.Contains(catatan.String(), "ORA-") {
+			t.Errorf("%s: galat asli tidak tercatat di log server: %q", k.nama, catatan.String())
+		}
+	}
+}

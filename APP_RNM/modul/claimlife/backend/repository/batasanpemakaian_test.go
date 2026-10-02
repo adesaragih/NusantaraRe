@@ -236,7 +236,11 @@ func TestSetiapPemanggilBukaMemeriksaBolehDilewati(t *testing.T) {
 	// EMPAT BELAS sejak brief menu (30-09-2026): uji/skemauji/menu_db_test.go
 	// mengadu isi awal M_NAV_MENU (migrasi 900) dengan Oracle - ia mengulang
 	// INSERT-nya lewat koneksi mentah untuk membuktikan idempotensinya.
-	const mau = 14
+	//
+	// LIMA BELAS sejak perbaikan peserta versi terakhir (01-10-2026):
+	// versiterakhir_db_test.go menambah kolom versi ke tiruan peserta skema uji
+	// dan mengisi fixture kasus (a)-(j) lewat koneksi mentah.
+	const mau = 15
 	if diperiksa != mau {
 		t.Errorf("pemanggil skemauji.Buka() ditemukan %d, mau %d; "+
 			"bila memang bertambah, perbarui angkanya di sini", diperiksa, mau)

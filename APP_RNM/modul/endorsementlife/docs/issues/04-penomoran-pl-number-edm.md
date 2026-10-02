@@ -94,3 +94,35 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+## Status 01-10-2026 — K3 keputusan work owner 01-10-2026 (OQ-EDM-008)
+
+Kalimat lama *"`PRODKE` NB warisan kosong → dianggap versi 1 (E1) → nomor pertama `<polis>/02`; Pega memberi `/01` — OQ-EDM-008"*
+tidak berlaku lagi untuk NOMOR. Versi tetap E1; nomor mengikuti Pega.
+
+`Activity/GenerateNoEDM_Life.xml` (nol langkah `//`; `pyStepsBlockName` kosong di ketujuh langkah):
+
+| Langkah | Baris tag (`sed -e 's/></>\n</g' … \| grep -n`) | Isi |
+| --- | --- | --- |
+| 1 | b290 `Property-Set`, b447 | `TempPolis.CARI4 ← pyWorkPage.PolicyNo` |
+| 3 | b680 `RDB-List`, **PRE=false** b698 (prakondisi dimatikan → selalu jalan), b733 | `GetProdKeOldData_SQL` b84: `select PRODKE as HASIL2 from pooldata.json_polis where NOPOLIS= {TempPolis.CARI4} order by TGL_INPUT desc` |
+| 4 | b872 `Property-Set`; lokal `Prodke` bertipe **int** b276/b278 | b898/b899 `Local.Prodke = OldData.pxResults(1).HASIL2` (kosong → 0); b945/b946 `InputData.CARI4 = Local.Prodke+1`; b966/b967 `InputData.CARI14 = @if(@length(InputData.CARI4)=1,"0"+InputData.CARI4,InputData.CARI4)` |
+| 5 | b1068 `RDB-List`, prakondisi b1216 `PL_NUMBER_EDM==""` | `Generate_NoEndorsmentLife` b1126 → b84 `SELECT NOPOLIS\|\|'/'\|\|{InputData.CARI14} AS HASIL1 FROM POOLDATA.JSON_POLIS WHERE NOPOLIS = {pyWorkPage.PolicyNo} ORDER BY PRODKE DESC` |
+| 6 | b1264, prakondisi b1390 | b1291/b1337 `PL_NUMBER_EDM ← InputEDM.pxResults(1).HASIL1` |
+
+**Rumus:** `nomor = <polis> + "/" + CARI14`, `CARI4 = PRODKE_Pega(versi berjalan) + 1`, `CARI14` = CARI4 berawalan `0` bila satu digit.
+`PRODKE_Pega` = `JSON_POLIS.PRODKE` mentah (kosong = 0) untuk versi warisan; 0 untuk new business sistem baru; akhiran nomor untuk
+endorsement sistem baru (Pega menulis `JSON_POLIS.PRODKE = InputData.CARI4` - `RDBList/InsertJsonPolisEDM.xml` b101 - angka yang sama
+dengan akhiran nomornya; `InsertJsonPolisLife_Act` 3 b856 / 4 b1048 menghitung CARI4 dengan rumus yang sama).
+**Versi** tetap E1: `NVL(PRODKE, 1)` (migrasi 480), versi baru = versi berjalan + 1 - TERPISAH dari nomor.
+
+| Polis | Versi berjalan (E1) | `PRODKE_Pega` | Nomor baru | Versi baru |
+| --- | ---: | ---: | --- | ---: |
+| NB warisan, `PRODKE` kosong | 1 | 0 | `<polis>/01` | 2 |
+| sesudah endorsement pertama sistem baru (`…/01`) | 2 | 1 | `<polis>/02` | 3 |
+| NB + endorsement warisan Pega `…/01` (`PRODKE` 1) | 1 | 1 | `<polis>/02` | 2 |
+| NB sistem baru (`PROD_KE` bawaan 1) | 1 | 0 | `<polis>/01` | 2 |
+
+Uji: `TestNomorEndorsementRumusPega`, `TestUrutanDariNomor` (model), `TestVersiMembawaUrutanPega` (SQL murni),
+`TestNomorEndorsementPertamaDanKeduaPolisNBWarisan` (layanan: NB warisan → `/01` lalu `/02`; rantai Pega `/01` → `/02`),
+`TestPutuskanTerhadapOracle` bertag `db` (NB sistem baru → `UJI-PL-P/01`, SKIP tanpa `ORACLE_DSN`).

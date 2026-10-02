@@ -5,7 +5,8 @@
 // masuk; `GridRetrocessionLife` tidak dirujuk rule mana pun di korpus modul (PARITAS §1).
 //
 // Urutan XML: form `Input New Data` (wadah b774 `DATASHOW3 = 1`) → wadah grid b8631 (`IsFire`
-// ber-`ALWAYS` → selalu tampil, RALAT R6): tombol b8888 (label sel `End Period`, teks `Add`, tooltip
+// ber-`ALWAYS` → selalu tampil, RALAT R6): tombol b8888 (label sel `End Period` - TIDAK ditampilkan
+// sejak 02-10-2026, keputusan work owner; teks `Add`, tooltip
 // `Add New Data` → `NewInputTreatyYear_Life_Act`), `pyGridPaginator` b9192, grid b9375 RD
 // `BrowseTreatyYear_Life_RD` (urut `.ID ASC` - server; 10 baris/halaman) dengan tombol baris `Edit`
 // b11645 (`SetTreatyYearLife_Act`) dan `ReinsType` b11988 (`showHarness` `InboxRetroLimitReinsurers`).
@@ -123,7 +124,7 @@ export default function MasterContractRetroLife() {
   // Popup di atas halaman awal: tabel tidak dirender, keadaannya (halaman, form) tetap.
   if (kontrakDari !== null) {
     return (
-      <section className="inbox">
+      <section className="inbox mcrl">
         <PanelKontrak
           key={kontrakDari.id}
           tahun={kontrakDari}
@@ -138,7 +139,7 @@ export default function MasterContractRetroLife() {
   const semua = daftar ?? []
 
   return (
-    <section className="inbox">
+    <section className="inbox mcrl">
       <header className="inbox__kepala">
         <h2 className="inbox__judul">{TAHUN_MCRL.judul}</h2>
       </header>
@@ -175,7 +176,8 @@ export default function MasterContractRetroLife() {
       )}
 
       <div className="aksi-baris mcrl-aksi-grid">
-        <span className="mcrl-label-sel">{TAHUN_MCRL.labelSelAdd}</span>
+        {/* Label sel `End Period` (b8927, `TAHUN_MCRL.labelSelAdd`) SENGAJA tidak ditampilkan -
+            keputusan work owner 02-10-2026 ("tulisan end period di hapus"); RALAT 02-10-2026. */}
         <button
           type="button"
           className="btn btn--primary"
@@ -190,48 +192,50 @@ export default function MasterContractRetroLife() {
       {galat !== null && <Gagal galat={galat} />}
       {daftar !== null && semua.length === 0 && <Kosong pesan={UMUM_MCRL.kosong} />}
       {semua.length > 0 && (
-        <table className="inbox__tabel">
-          <thead>
-            <tr>
-              <th>{TAHUN_MCRL.kolomId}</th>
-              <th>{TAHUN_MCRL.kolomUnderwritingYear}</th>
-              <th>{TAHUN_MCRL.kolomTransactionYear}</th>
-              <th>{TAHUN_MCRL.kolomStartDate}</th>
-              <th>{TAHUN_MCRL.kolomEndDate}</th>
-              <th className="table__actions" />
-            </tr>
-          </thead>
-          <tbody>
-            {potongHalaman(semua, halaman).map((t) => (
-              <tr key={t.id} className="inbox__baris">
-                <td>{sel(t.id)}</td>
-                <td>{sel(t.underwritingYear)}</td>
-                <td>{sel(t.treatyYear)}</td>
-                <td>{selTanggal(t.startDate)}</td>
-                <td>{selTanggal(t.endDate)}</td>
-                <td className="table__actions">
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    title={TAHUN_MCRL.tooltipEdit}
-                    onClick={() => buka(formTahunDari(t, operatorKini(), waktuKini(new Date())))}
-                  >
-                    {TAHUN_MCRL.edit}
-                  </button>{' '}
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    onClick={() => {
-                      setKontrakDari(t)
-                    }}
-                  >
-                    {TAHUN_MCRL.reinsType}
-                  </button>
-                </td>
+        <div className="mcrl-tabel">
+          <table className="inbox__tabel">
+            <thead>
+              <tr>
+                <th>{TAHUN_MCRL.kolomId}</th>
+                <th>{TAHUN_MCRL.kolomUnderwritingYear}</th>
+                <th>{TAHUN_MCRL.kolomTransactionYear}</th>
+                <th>{TAHUN_MCRL.kolomStartDate}</th>
+                <th>{TAHUN_MCRL.kolomEndDate}</th>
+                <th className="table__actions" />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {potongHalaman(semua, halaman).map((t) => (
+                <tr key={t.id} className="inbox__baris">
+                  <td>{sel(t.id)}</td>
+                  <td>{sel(t.underwritingYear)}</td>
+                  <td>{sel(t.treatyYear)}</td>
+                  <td>{selTanggal(t.startDate)}</td>
+                  <td>{selTanggal(t.endDate)}</td>
+                  <td className="table__actions">
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      title={TAHUN_MCRL.tooltipEdit}
+                      onClick={() => buka(formTahunDari(t, operatorKini(), waktuKini(new Date())))}
+                    >
+                      {TAHUN_MCRL.edit}
+                    </button>{' '}
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => {
+                        setKontrakDari(t)
+                      }}
+                    >
+                      {TAHUN_MCRL.reinsType}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </section>
   )

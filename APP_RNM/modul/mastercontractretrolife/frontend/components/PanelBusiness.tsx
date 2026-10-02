@@ -9,9 +9,9 @@
 // `Save` b5739, `Cancel` b5954. Baris: `Edit` b10824, `Delete` b11154, `View Rate` b11469,
 // `Copy to all Reinstype` b12020. `Add` b8484.
 //
-// ⚠️ OQ-MCRL-13: `R/I RATE` dan `Rate List` menunggu persetujuan sumber tabel rate - server menjawab
-// 503 berkalimat; business BARU karena itu belum dapat disimpan (`RIRATEID` wajib, `SaveBusinessLife_Act`
-// b589), business lama tetap dapat diubah (nilai `R/I RATE`-nya ikut dari baris).
+// K1 keputusan work owner 01-10-2026 (OQ-MCRL-13): `R/I RATE` (view `RATE_LIFE_SUMMARY`) dan `Rate List`
+// (view `RATE_LIFE`) dibaca saja; business BARU dapat disimpan (`RIRATEID` wajib, `SaveBusinessLife_Act`
+// b589, diisi autocomplete). Server menolak RIRATEID pilihan baru yang tidak ada di view ringkasan.
 
 import { useCallback, useEffect, useState } from 'react'
 
@@ -210,61 +210,63 @@ export default function PanelBusiness({ kontrak, onTutup }: { kontrak: Kontrak; 
       {galat !== null && <Gagal galat={galat} />}
       {jawab !== null && daftar.length === 0 && <Kosong pesan={UMUM_MCRL.kosong} />}
       {daftar.length > 0 && (
-        <table className="inbox__tabel">
-          <thead>
-            <tr>
-              <th>{BUSINESS_MCRL.kolomBusinessName}</th>
-              <th>{BUSINESS_MCRL.kolomRiRate}</th>
-              <th>{BUSINESS_MCRL.kolomInputor}</th>
-              <th>{BUSINESS_MCRL.kolomUpdateDate}</th>
-              <th className="table__actions" />
-            </tr>
-          </thead>
-          <tbody>
-            {potongHalaman(daftar, halaman).map((b) => (
-              <tr key={b.id} className="inbox__baris">
-                <td>{sel(b.bizName)}</td>
-                <td>{sel(b.riRate)}</td>
-                <td>{sel(b.userId)}</td>
-                <td>{selWaktu(b.tglUpdate)}</td>
-                <td className="table__actions">
-                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => buka(formBusinessDari(b, operatorKini()))}>
-                    {BUSINESS_MCRL.edit}
-                  </button>{' '}
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    onClick={() => {
-                      setPesan(null)
-                      hapusan.minta(b.id, b.bizName || b.id)
-                    }}
-                  >
-                    {BUSINESS_MCRL.delete}
-                  </button>{' '}
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    onClick={() => {
-                      setRate(b.riRateId)
-                    }}
-                  >
-                    {BUSINESS_MCRL.viewRate}
-                  </button>{' '}
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    onClick={() => {
-                      setPesan(null)
-                      setSalin(b)
-                    }}
-                  >
-                    {BUSINESS_MCRL.copyToAll}
-                  </button>
-                </td>
+        <div className="mcrl-tabel">
+          <table className="inbox__tabel">
+            <thead>
+              <tr>
+                <th>{BUSINESS_MCRL.kolomBusinessName}</th>
+                <th>{BUSINESS_MCRL.kolomRiRate}</th>
+                <th>{BUSINESS_MCRL.kolomInputor}</th>
+                <th>{BUSINESS_MCRL.kolomUpdateDate}</th>
+                <th className="table__actions" />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {potongHalaman(daftar, halaman).map((b) => (
+                <tr key={b.id} className="inbox__baris">
+                  <td>{sel(b.bizName)}</td>
+                  <td>{sel(b.riRate)}</td>
+                  <td>{sel(b.userId)}</td>
+                  <td>{selWaktu(b.tglUpdate)}</td>
+                  <td className="table__actions">
+                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => buka(formBusinessDari(b, operatorKini()))}>
+                      {BUSINESS_MCRL.edit}
+                    </button>{' '}
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => {
+                        setPesan(null)
+                        hapusan.minta(b.id, b.bizName || b.id)
+                      }}
+                    >
+                      {BUSINESS_MCRL.delete}
+                    </button>{' '}
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => {
+                        setRate(b.riRateId)
+                      }}
+                    >
+                      {BUSINESS_MCRL.viewRate}
+                    </button>{' '}
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => {
+                        setPesan(null)
+                        setSalin(b)
+                      }}
+                    >
+                      {BUSINESS_MCRL.copyToAll}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {rate !== null && (

@@ -173,11 +173,6 @@ func TestBuatKasusDitolak(t *testing.T) {
 	if _, err := l.BuatKasus(ctx, pelakuUji, services.MasukanKasus{NomorPolis: "UJI-TIDAK-ADA", EdmType: "1"}); !errors.As(err, &gk) {
 		t.Errorf("polis tak dikenal: %v", err)
 	}
-	// Versi berjalan polis warisan adalah endorsement sistem lama → ditunda OQ-EDM-016.
-	g.PolisWarisan = append(g.PolisWarisan, &tiruan.PolisWarisan{IDPega: "UJI-IDPEGA-EDM", NoPolis: "UJI-PL-W", ProdKe: 2, EdmType: "1"})
-	if _, err := l.BuatKasus(ctx, pelakuUji, services.MasukanKasus{NomorPolis: "UJI-PL-W", EdmType: "1"}); !errors.Is(err, services.ErrSumberWarisanEDM) {
-		t.Errorf("sumber warisan EDM: %v", err)
-	}
 	// Polis yang versi terakhirnya Batal ditolak gerbang 4.
 	g.PolisWarisan = append(g.PolisWarisan, &tiruan.PolisWarisan{IDPega: "UJI-IDPEGA-BTL", NoPolis: "UJI-PL-B", ProdKe: 3, EdmType: "3"})
 	if _, err := l.BuatKasus(ctx, pelakuUji, services.MasukanKasus{NomorPolis: "UJI-PL-B", EdmType: "1"}); !errors.As(err, &gk) ||
@@ -230,5 +225,27 @@ func TestPolisLamaDanRincianPeserta(t *testing.T) {
 	g.Polis[h.ID].NoPolis = "UJI-PL-NB"
 	if pl, err = l.PolisLama(ctx, pelakuUji, h.ID, 1, 20); err != nil || pl.ProdKe != 1 || !strings.HasPrefix(pl.Peserta[0].ID, "UJI-NB-") {
 		t.Errorf("polis lama kasus resmi = %+v, %v", pl, err)
+	}
+}
+
+// K5 keputusan work owner 01-10-2026 (OQ-EDM-016): versi berjalan polis warisan adalah endorsement sistem lama →
+// pesertanya DISALIN seperti `MappingEDMLife` 11.1/11.2 (baris `Delete` dibuang, sisanya `Old`) - dulu ditolak.
+func TestBuatKasusDariVersiEndorsementWarisan(t *testing.T) {
+	ctx := context.Background()
+	g2 := gudangPolisNB()
+	g2.PolisWarisan = append(g2.PolisWarisan, &tiruan.PolisWarisan{IDPega: "UJI-IDPEGA-EDM", NoPolis: "UJI-PL-W", ProdKe: 2, EdmType: "1"})
+	g2.PesertaWarisan = append(g2.PesertaWarisan,
+		&tiruan.PesertaWarisan{ID: "UJI-E1", PLNumber: "UJI-PL-W", IDPega: "UJI-IDPEGA-EDM", EdmStatus: models.StatusOld, Nilai: map[string]string{"CERTIFICATE_NO": "UJI-EC1"}},
+		&tiruan.PesertaWarisan{ID: "UJI-E2", PLNumber: "UJI-PL-W", IDPega: "UJI-IDPEGA-EDM", EdmStatus: models.StatusNew, Nilai: map[string]string{"CERTIFICATE_NO": "UJI-EC2"}},
+		&tiruan.PesertaWarisan{ID: "UJI-E3", PLNumber: "UJI-PL-W", IDPega: "UJI-IDPEGA-EDM", EdmStatus: models.StatusDelete, Nilai: map[string]string{"CERTIFICATE_NO": "UJI-EC3"}})
+	lw, _ := layananJejak(g2)
+	h, err := lw.BuatKasus(ctx, pelakuUji, services.MasukanKasus{NomorPolis: "UJI-PL-W", EdmType: "1"})
+	if err != nil || h.Peserta != 2 {
+		t.Fatalf("sumber warisan EDM: %+v %v", h, err)
+	}
+	for _, d := range g2.Peserta {
+		if d.PolisID == h.ID && (d.EdmStatus != models.StatusOld || d.Nilai["CERTIFICATE_NO"] == "UJI-EC3") {
+			t.Errorf("salinan versi endorsement lama: %+v", d)
+		}
 	}
 }

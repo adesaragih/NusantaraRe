@@ -99,3 +99,9 @@ make check
 ## Status 01-10-2026 (paket 11)
 
 **Status:** ⏸️ tetap `[menunggu OQ-MCRL-01]` — gerbang tidak ditegakkan, di backend maupun layar (ikut Pega, K7).
+
+## Status 01-10-2026 — OQ-MCRL-01 ditutup (`PROMPT-LANJUTAN-TIGA-MODUL-LIFE-KEPUTUSAN-OQ.md` §2)
+
+Kalimat lama *"ralat bertanggal `[menunggu OQ-MCRL-01]`"* tidak berlaku lagi: **ditutup 01-10-2026 — keputusan work owner: ikut rekomendasi asisten (bawaan dipertahankan)** — gerbang tahun (tahun tanggal
+mulai kontrak = tahun treaty) **ikut Pega, tidak ditegakkan** (langkahnya `PRE=false` di `SaveSecurityLife_Act` 4·5·6,
+`SaveSecurityReinsurerLife_Act` 4·5·6, `SaveBusinessLife_Act` 6). Bawaan yang sudah dibangun (K7) dipertahankan; tiket ini final.

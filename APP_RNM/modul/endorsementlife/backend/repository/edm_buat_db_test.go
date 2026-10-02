@@ -31,7 +31,9 @@ func ddlTiruanWarisan(t *testing.T, skema string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	kolom := []string{"ID VARCHAR2(50)", "PL_NUMBER VARCHAR2(255)", "IDPEGA VARCHAR2(255)"}
+	// Kolom EDM `SaveMasterLPDet` (K5): nomor endorsement dan ketiga penanda - nama warisan, bukan nama 052.
+	kolom := []string{"ID VARCHAR2(50)", "PL_NUMBER VARCHAR2(255)", "IDPEGA VARCHAR2(255)", "PL_NUMBER_EDM VARCHAR2(255)",
+		"EDMSTATUS VARCHAR2(255)", "STATUSOLD VARCHAR2(255)", "STATUS VARCHAR2(255)"}
 	lewati := map[string]bool{"ID": true, "PREMIUM_LIST_ID": true, "PARENT_ID": true, "ID_PEGA": true, "PL_NUMBER": true,
 		"PL_NUMBER_EDM": true, "EDM_STATUS": true, "STATUS_OLD": true, "STATUS": true}
 	for _, baris := range strings.Split(string(b), "\n") {

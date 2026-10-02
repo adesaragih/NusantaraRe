@@ -90,3 +90,8 @@ make check
 ## Status 01-10-2026 (paket 11)
 
 **Status:** ⏸️ **rute API saja** — `GET …/laporan/total-share-bukan-100` paket 4 (`c10d50f`); layar menunggu OQ-MCRL-07 (nol padanan Pega).
+
+## Status 01-10-2026 — OQ-MCRL-07 ditutup (`PROMPT-LANJUTAN-TIGA-MODUL-LIFE-KEPUTUSAN-OQ.md` §2)
+
+**ditutup 01-10-2026 — keputusan work owner: ikut rekomendasi asisten (bawaan dipertahankan)**: laporan kontrak total share ≠ 100 tetap **rute API baca saja**
+`GET /api/master-contract-retro-life/laporan/total-share-bukan-100`, **tanpa layar dan tanpa tombol** — final.

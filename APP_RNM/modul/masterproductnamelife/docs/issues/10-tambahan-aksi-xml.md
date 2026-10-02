@@ -35,3 +35,11 @@ Nomor baris `bNNN` = `sed -e 's/></>\n</g'`; blok langkah `·` = `pyStepsBlockNa
 go test ./modul/masterproductnamelife/...
 go test -tags db -p 1 ./modul/masterproductnamelife/...   (MELEWATI tanpa ORACLE_DSN)
 ```
+
+## Status 01-10-2026 — K1 keputusan work owner 01-10-2026 (OQ-MPNL-03)
+
+Kalimat lama *"`GET /rate` = 503 berkalimat"* tidak berlaku lagi: `Choose R/I Rate` membaca view `RATE_LIFE_SUMMARY` dan `View Rate`
+membaca view `RATE_LIFE`, baca saja, kolom RD saja (`GET /master/ri-rate`, `GET /rate` = 200). Baris `PLAN LIST` baru dapat
+diberi R/I Rate; pilihan baru wajib ada di view dan namanya diambil dari master (`SetRIRate` b2448). `View Rate` disaring
+`RIRATEID` baris plan — penyimpangan sadar dari `ViewRate.xml` b1024 (`ParamID.OUTWARDRATEID` tidak pernah diisi; PARITAS bab
+keputusan OQ 01-10-2026).

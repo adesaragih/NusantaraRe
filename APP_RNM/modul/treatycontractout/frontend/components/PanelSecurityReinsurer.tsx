@@ -159,33 +159,35 @@ export default function PanelSecurityReinsurer({
       {daftar === null && galat === null && <Memuat />}
       {daftar !== null && daftar.daftar.length === 0 && <Kosong pesan={SECURITY_TCO.kosong} />}
       {daftar !== null && daftar.daftar.length > 0 && (
-        <table className="inbox__tabel">
-          <thead>
-            <tr>
-              <th>{SECURITY_TCO.kolomReasSecurity}</th>
-              <th>{SECURITY_TCO.kolomSecurityName}</th>
-              <th>{SECURITY_TCO.kolomPercentShare}</th>
-              <th className="table__actions" />
-            </tr>
-          </thead>
-          <tbody>
-            {daftar.daftar.map((s) => (
-              <tr key={s.id} className="inbox__baris">
-                <td>{s.reasSecurity}</td>
-                <td>{s.clientName}</td>
-                <td>{formatNumber(s.pctShare, DESIMAL_TAK_DIBATASI)}</td>
-                <td className="table__actions">
-                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => buka(formSecurityDari(s))}>
-                    {SECURITY_TCO.edit}
-                  </button>{' '}
-                  <button type="button" className="btn btn--ghost btn--sm" disabled={sibuk} onClick={() => void hapus(s)}>
-                    {SECURITY_TCO.delete}
-                  </button>
-                </td>
+        <div className="tco-tabel">
+          <table className="inbox__tabel">
+            <thead>
+              <tr>
+                <th>{SECURITY_TCO.kolomReasSecurity}</th>
+                <th>{SECURITY_TCO.kolomSecurityName}</th>
+                <th>{SECURITY_TCO.kolomPercentShare}</th>
+                <th className="table__actions" />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {daftar.daftar.map((s) => (
+                <tr key={s.id} className="inbox__baris">
+                  <td>{s.reasSecurity}</td>
+                  <td>{s.clientName}</td>
+                  <td>{formatNumber(s.pctShare, DESIMAL_TAK_DIBATASI)}</td>
+                  <td className="table__actions">
+                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => buka(formSecurityDari(s))}>
+                      {SECURITY_TCO.edit}
+                    </button>{' '}
+                    <button type="button" className="btn btn--ghost btn--sm" disabled={sibuk} onClick={() => void hapus(s)}>
+                      {SECURITY_TCO.delete}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {form !== null && (

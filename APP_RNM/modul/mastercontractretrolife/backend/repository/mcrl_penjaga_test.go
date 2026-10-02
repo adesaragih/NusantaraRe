@@ -3,8 +3,8 @@ package repository
 // Penjaga MODUL Master Contract Retro Life (pola `TestTCONolTabelBaru` Treaty
 // Contract Out ditiru, tidak diimpor).
 //
-//	K1  nol migrasi di rentang 100–139, nol DDL, nol tabel baru
-//	    (tiket 12 dicabut; slot menu 958–959 hanya UPDATE DIMIGRASI)
+//	K1  nol tabel baru; DDL hanya constraint dan indeks di migrasi 100–139
+//	    (keputusan work owner 01-10-2026; slot menu 958–959 hanya UPDATE)
 //	-   master rujukan dibaca saja
 //	-   nol kata cadangan Oracle sebagai nama kolom telanjang
 //	-   paket `tiruan` hanya diimpor uji
@@ -63,7 +63,9 @@ func pelanggaranMigrasi(nama string) string {
 	n, _ := strconv.Atoi(m[1])
 	switch {
 	case n >= 100 && n <= 139:
-		return "K1: rentang 100-139 tetap kosong (tiket 12 dicabut, nol DDL)"
+		// Keputusan work owner 01-10-2026: ALTER TABLE diizinkan untuk relasi
+		// (constraint dan indeks) - isinya dijaga TestMCRLDDLHanyaRelasi.
+		return ""
 	case n == 958 || n == 959:
 		return ""
 	default:
@@ -84,12 +86,13 @@ func TestMCRLNolMigrasiDiRentang(t *testing.T) {
 }
 
 func TestMCRLAturanMigrasiMenggigit(t *testing.T) {
-	for _, nama := range []string{"100_treatyyear_life.sql", "139_x_down.sql", "300_x.sql", "tanpa_nomor.sql"} {
+	for _, nama := range []string{"140_x.sql", "099_x_down.sql", "300_x.sql", "tanpa_nomor.sql"} {
 		if pelanggaranMigrasi(nama) == "" {
 			t.Errorf("%s seharusnya ditolak", nama)
 		}
 	}
-	for _, nama := range []string{"958_menu_mastercontractretrolife.sql", "958_menu_mastercontractretrolife_down.sql"} {
+	for _, nama := range []string{"100_relasi_lima_tabel_life.sql", "139_x_down.sql",
+		"958_menu_mastercontractretrolife.sql", "958_menu_mastercontractretrolife_down.sql"} {
 		if p := pelanggaranMigrasi(nama); p != "" {
 			t.Errorf("%s seharusnya sah: %s", nama, p)
 		}
@@ -105,8 +108,57 @@ func TestMCRLNolDDL(t *testing.T) {
 		if strings.HasSuffix(jalur, "_test.go") {
 			continue // tiruan skema uji `db` membuat tabel TIRUAN di skema uji
 		}
+		if strings.Contains(jalur, "/migrations/1") {
+			continue // migrasi relasi 100-139 dijaga TestMCRLDDLHanyaRelasi
+		}
 		if adaDDL(buangKomentarGo(isi)) {
-			t.Errorf("%s memuat DDL - K1: nol DDL, nol tabel baru", jalur)
+			t.Errorf("%s memuat DDL - kode modul tidak pernah menjalankan DDL", jalur)
+		}
+	}
+}
+
+// --- Relasi (keputusan work owner 01-10-2026): DDL hanya constraint dan indeks
+
+// polaDDLTerlarang - DDL yang tetap dilarang di migrasi relasi: tabel baru atau
+// dibuang, kolom ditambah, dibuang, atau diganti nama, dan TRUNCATE. Prosedur
+// Pega masih membaca dan menulis setiap kolom lima tabel warisan.
+var polaDDLTerlarang = regexp.MustCompile(`(?i)\b(CREATE\s+TABLE|DROP\s+TABLE|TRUNCATE|DROP\s+COLUMN|RENAME|ADD\s*\(|CREATE\s+(SEQUENCE|VIEW|SYNONYM)|DROP\s+(SEQUENCE|VIEW|SYNONYM))\b`)
+
+func pelanggaranDDLRelasi(teks string) string {
+	if m := polaDDLTerlarang.FindString(teks); m != "" {
+		return "DDL di luar relasi: " + m
+	}
+	return ""
+}
+
+func TestMCRLDDLHanyaRelasi(t *testing.T) {
+	n := 0
+	for jalur, isi := range berkasModul(t, ".sql") {
+		if !strings.Contains(jalur, "/migrations/1") {
+			continue
+		}
+		n++
+		if p := pelanggaranDDLRelasi(isi); p != "" {
+			t.Errorf("%s: %s", jalur, p)
+		}
+	}
+	if n == 0 {
+		t.Fatal("nol berkas migrasi relasi 100-139 terbaca - penjaga lulus hampa")
+	}
+}
+
+func TestMCRLAturanDDLRelasiMenggigit(t *testing.T) {
+	for _, s := range []string{"CREATE TABLE {skema}.X (ID NUMBER)", "ALTER TABLE {skema}.X ADD (Y NUMBER)",
+		"ALTER TABLE {skema}.X DROP COLUMN Y", "DROP TABLE {skema}.X", "ALTER TABLE {skema}.X RENAME COLUMN A TO B"} {
+		if pelanggaranDDLRelasi(s) == "" {
+			t.Errorf("%q seharusnya ditolak", s)
+		}
+	}
+	for _, s := range []string{"ALTER TABLE {skema}.X ADD CONSTRAINT PK_X PRIMARY KEY (ID)",
+		"ALTER TABLE {skema}.X MODIFY (A NOT NULL)", "CREATE INDEX {skema}.IX_X ON {skema}.X (A)",
+		"ALTER TABLE {skema}.X DROP CONSTRAINT PK_X", "DROP INDEX {skema}.IX_X"} {
+		if p := pelanggaranDDLRelasi(s); p != "" {
+			t.Errorf("%q seharusnya sah: %s", s, p)
 		}
 	}
 }

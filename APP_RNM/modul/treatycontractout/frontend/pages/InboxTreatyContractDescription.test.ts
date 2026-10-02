@@ -12,8 +12,9 @@ describe('layar klausul dari menu', () => {
     expect(KODE).toContain("import PanelKlausulTahun from '../components/PanelKlausulTahun'")
     expect(KODE).toContain('<PanelKlausulTahun key={terpilih.id} tahun={terpilih} />')
   })
-  it('judul = pyLabel harness; label pilihan tahun sama dengan tiket 04', () => {
-    expect(KODE).toContain('MENU_TCO.inboxTreatyContractDescription')
+  it('judul = judul tampilan (keputusan work owner 02-10-2026, bukan nama harness); label pilihan tahun sama dengan tiket 04', () => {
+    expect(KODE).toContain('JUDUL_TAMPIL_TCO.deskripsi')
+    expect(KODE).not.toContain('{MENU_TCO.inboxTreatyContractDescription}')
     expect(KODE).toContain("import { labelTahun } from './InboxTreatyContractReinsType'")
   })
 })

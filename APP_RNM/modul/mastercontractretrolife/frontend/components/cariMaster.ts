@@ -4,7 +4,8 @@
 //       b3840, `InputSecurityReinsurerLife.xml` b3922): tampil `.ClientName`, isi `REINSURERID ← .ID`;
 //   `BUSINESS NAME` - RD `BrowseBusinessLife_RD` (`InputBusinessLifeReinsurers.xml` b4022): tampil `.Note`,
 //       isi `BIZCODE ← .ID`, kolom tambahan `.OLDID`;
-//   `R/I RATE` - RD `BrowseRateLifeSummary` (b4471): tampil `.USEDBY`, isi `RIRATEID ← .ID` - ⚠️ OQ-MCRL-13.
+//   `R/I RATE` - RD `BrowseRateLifeSummary` (b4477): tampil `.USEDBY` b4494, isi `RIRATEID ← .ID` b4527 -
+//       view `RATE_LIFE_SUMMARY` baca saja (K1 01-10-2026, OQ-MCRL-13).
 //
 // Setiap ketikan dicari ke server (`PilihSaring.onCari`) karena server memotong jawaban. Hanya
 // jawaban TERAKHIR yang dipakai - sukses MAUPUN gagal - dan `reset` (form lain dibuka) membatalkan

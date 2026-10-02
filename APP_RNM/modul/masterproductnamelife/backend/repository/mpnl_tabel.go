@@ -21,6 +21,9 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"fmt"
+	"strings"
 
 	"nusantarare/inti/backend/db"
 	"nusantarare/modul/masterproductnamelife/backend/models"
@@ -131,5 +134,23 @@ func (g *Gudang) siapkan(objek string, susun func(tabel string) string) (string,
 	if err := db.PeriksaSQL(q); err != nil {
 		return "", err
 	}
+	if err := periksaBacaSaja(objek, q); err != nil {
+		return "", err
+	}
 	return q, nil
+}
+
+// ErrMasterBacaSaja - SQL yang bukan SELECT diarahkan ke objek master/view yang dibaca saja.
+var ErrMasterBacaSaja = errors.New("repository: reference master is read-only")
+
+// periksaBacaSaja - lapis kedua penjaga modul `TestMPNLMasterDibacaSaja`: objek di
+// DaftarMasterDibacaSaja (termasuk kedua view rate, K1 01-10-2026) hanya menerima SELECT, sebelum
+// teks SQL apa pun sampai ke Oracle.
+func periksaBacaSaja(objek, q string) error {
+	for _, m := range DaftarMasterDibacaSaja {
+		if m == objek && !strings.HasPrefix(strings.ToUpper(strings.TrimSpace(q)), "SELECT ") {
+			return fmt.Errorf("%w: %s", ErrMasterBacaSaja, objek)
+		}
+	}
+	return nil
 }

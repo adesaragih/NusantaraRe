@@ -28,6 +28,19 @@
  * modul (30-09-2026) inilah satu-satunya tempatnya (`menu.ts`
  * `KELOMPOK_TREATY`); dulu juga `MODUL.treatyContractOut` di `inti/labels.ts`.
  */
+/**
+ * Judul LAYAR yang dibaca manusia - keputusan work owner 02-10-2026: "header dengan tulisan
+ * InboxTreatyContractDescription dan ReinsType diperbaiki tulisannya". Label korpus aslinya TETAP di
+ * `MENU_TCO.inboxTreatyContractDescription` dan `KONTRAK_TCO.judul` sebagai bukti XML (dijaga labels.test.ts);
+ * yang tampil sebagai judul adalah nilai di sini.
+ */
+export const JUDUL_TAMPIL_TCO = {
+  /** Pengganti nama harness `InboxTreatyContractDescription` (b359) sebagai judul layar dan panel klausul. */
+  deskripsi: 'Treaty Contract Description',
+  /** Pengganti `ReinsType` (`InboxTreatyContractReinsType.xml` b1670) sebagai judul layar dan panel kontrak. */
+  reinsType: 'Reins Type',
+} as const
+
 export const MENU_TCO = {
   /** Nama folder korpus `D:\XML\RNM_BRD\Treaty Contract Out`. */
   kelompok: 'Treaty Contract Out',

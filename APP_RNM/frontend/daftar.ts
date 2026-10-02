@@ -18,7 +18,14 @@
 // `modul/<nama>/backend/modul.go` - dijaga `rakitModulFrontend` di bawah dan
 // `daftar.modulAktif.test.ts`.
 
-import { HALAMAN_BERANDA, modulDipasang, type EntriMenu } from '../inti/frontend/lib/daftarMenu'
+import { KELOLA_USER } from '../inti/frontend/labels'
+import {
+  HALAMAN_BERANDA,
+  HALAMAN_KELOLA_USER,
+  KODE_MENU_KELOLA_USER,
+  modulDipasang,
+  type EntriMenu,
+} from '../inti/frontend/lib/daftarMenu'
 import type { HalamanTerdaftar, MenuModul, ModulFrontend, RuteModul } from '../inti/frontend/modul'
 
 /**
@@ -29,7 +36,7 @@ import type { HalamanTerdaftar, MenuModul, ModulFrontend, RuteModul } from '../i
  * memeriksa bentuk. Union memindahkan penjagaannya ke kompiler — lebih
  * awal, dan tanpa pagar tambahan.
  */
-export type Halaman = typeof HALAMAN_BERANDA | HalamanTerdaftar
+export type Halaman = typeof HALAMAN_BERANDA | typeof HALAMAN_KELOLA_USER | HalamanTerdaftar
 
 /** Berkas `menu.ts` dan `rute.tsx` satu modul, berkunci jalur glob. */
 export type BerkasMenu = Record<string, { PENDAFTARAN_MENU: MenuModul }>
@@ -97,6 +104,9 @@ export const MODUL_FRONTEND: readonly ModulFrontend<Halaman>[] = rakitModulFront
  */
 export const ENTRI_MENU: readonly EntriMenu<Halaman>[] = [
   { modul: HALAMAN_BERANDA, label: 'Beranda', kelompok: 'Beranda', pemilik: null },
+  // Kelola User (01-10-2026): menu APLIKASI, bukan modul - `pemilik` adalah KODE
+  // menunya, yang `GET /api/menu` kirim di golongan ADMIN hanya bagi pemegangnya.
+  { modul: HALAMAN_KELOLA_USER, label: KELOLA_USER.judul, kelompok: KELOLA_USER.judul, pemilik: KODE_MENU_KELOLA_USER },
   ...MODUL_FRONTEND.map((m) => ({
     modul: m.halamanAwal,
     label: m.kelompok,
@@ -113,6 +123,8 @@ export const ENTRI_MENU: readonly EntriMenu<Halaman>[] = [
  */
 export const MODUL_BACKEND: Readonly<Record<Halaman, string | null>> = Object.fromEntries([
   [HALAMAN_BERANDA, null],
+  // Milik aplikasi - tidak tunduk pada MODUL_AKTIF; aksesnya dijaga menu akun.
+  [HALAMAN_KELOLA_USER, null],
   ...MODUL_FRONTEND.flatMap((m) => m.halaman.map((h) => [h, m.nama])),
 ]) as Record<Halaman, string | null>
 

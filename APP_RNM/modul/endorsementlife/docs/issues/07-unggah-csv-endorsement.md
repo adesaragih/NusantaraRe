@@ -106,3 +106,38 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+## Status 01-10-2026 — K2 keputusan work owner 01-10-2026 (OQ-EDM-003) — ⏸️ terhenti, OQ-EDM-021
+
+Keputusan *"jalankan `Calculate1_Act` saat simpan CSV"* dicatat. `Activity/Calculate1_Act.xml` dibaca langkah demi langkah
+(`pyStepsBlockName` kosong di seluruh langkah; langkah 7.12 b3626 berlabel `AA` b3636 = sasaran lompatan, bukan `//`):
+
+| Langkah | Baris | Isi | Arah prakondisi (1 lompat · 2 lanjut · 3 lewati · 6 keluar activity) |
+| --- | --- | --- | --- |
+| 1 | b416 | tanpa metode — gerbang | `.IsCalculationSystem` b476 T=2 **F=6**; `.Type=="QR"` b499 T=2 **F=6** |
+| 2–3 | b539, b678 | buang `InData`/`DataProduct`; `InData.CARI1/2/21/26` dari kepala polis | — |
+| 4 | b924 | `GetProductDtlPL`: `PRODUCT_LIFE` × `PRODUCTINWARD_LIFE` × `rate_life_summary` menurut ceding, jenis ceding, policy holder, `PRODUCTTYPE` | — |
+| 5 | b1101 | retensi/limit ceding, `ShareRNM` dari produk | — |
+| 6, 8 | b1361, b5575 | `DeleteTempUploadDataLife` (`delete from M_TEMPUPLOADLIFE where idpega = …`) | — |
+| 7 | b1538 | ulang `TempWorkPage.ListLifePremiumDetailUpload` (b5554) | — |
+| 7.2 / 7.3 | b1796 / b1978 | QS / SP: `CEDING_RETENTION`, `SUM_REASURED`, `SHARE_NUSANTARA_RE` | `TypeCeding=="1"` / `"2"` |
+| 7.5–7.11 | b2480–b3452 | `CekDoubleInsured` + `InsertDataUploadLife` (temp `M_TEMPUPLOADLIFE`) | 7.6 b2706 `TypeCeding=="2"` **F=1 → lompat `AA`** |
+| 7.13–7.20 | b3707–b5123 | prorata, `SelectComm_SQL`, `GetRateLifePM` (`RATE_LIFE`), `GROSS_PREMIUM`, `COMM`, `BROKERAGE_FEE`, `NET_PREMIUM` | 7.14 b4072/b4103, 7.15 b4325, 7.16 b4487 |
+
+**Mengapa terhenti (brief §4 K2):** gerbang langkah 1 membaca `.IsCalculationSystem` — `Rule-Obj-Property` kelas
+`ASM-FW-GISFW-Work-LIFE` (b6722/b6725) yang tidak diekspor; nol rule di korpus mengisinya; satu-satunya sumber yang mungkin,
+`pyDefault` (model awal flow `InputEDMLife` b140), juga tidak diekspor. Tanpa nilai, Pega keluar di langkah 1 (F=6) — sehingga
+perilaku yang terbukti dari XML sama dengan bawaan yang sudah dibangun: nilai uang CSV dipakai apa adanya. Membangun langkah 2–8
+di belakang gerbang yang tidak pernah terbuka = kode mati. Pertanyaan ke pemilik ekspor Pega: **OQ-EDM-021**.
+
+**Temuan tambahan bila gerbang ternyata terbuka** (untuk pembangun berikutnya): `InsertDataUploadLife` b58 menyisip
+`M_TEMPUPLOADLIFE` **tanpa** kolom `IDPEGA`, sedangkan `DeleteTempUploadDataLife` b78 dan `SUM(CEDING_RETENTION)` di
+`CekDoubleInsured` menyaring `idpega = …` — keduanya tidak pernah mengena baris yang baru disisip (kecuali ada bawaan/trigger
+kolom, data DBA); `COUNT`/`MIN(NO)` `CekDoubleInsured` tidak menyaring `idpega` sama sekali. `SelectComm_SQL` (7.18) mengisi
+`HasilComm` yang tidak dibaca langkah mana pun (7.20 memakai `HasilProductName.RICOMM`).
+
+**Selisih `Calculate1_Act` Endorsement vs PremiumList:** NOL selisih logika. Keduanya rule yang SAMA
+(`pzInsKey` `RULE-OBJ-ACTIVITY ASM-FW-GISFW-WORK-LIFE CALCULATE1_ACT #20210907T082034.453 GMT`, versi `01-01-60`,
+`pxUpdateDateTime` `20210927T081024.226 GMT`) yang diekspor dua kali (cap ekspor 07-09 vs 08-09-2026). Yang berbeda hanya cap
+waktu ekspor, urutan elemen parameter langkah 4/6/7.5/7.11/7.18/7.19/8, dan karenanya nomor baris definisi ulang langkah 7
+(b5554 Endorsement, b5555 PremiumList) serta memo (b13 vs b12). 24 langkah `pyStepsActivityName` di keduanya.

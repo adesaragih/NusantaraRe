@@ -69,7 +69,7 @@ Nilainya DIBACA dari sumber konstantanya, tidak diketik ulang.
 
 | Hal | Isi |
 | --- | --- |
-| Rute | `GET /produk`, `GET /produk/{id}`, `POST /produk`, `PUT /produk/{id}`, `POST /produk/generate`, `GET /master/{jenis}`, `GET /master-plan`, `GET /rate` (503, OQ-MPNL-03), `GET`/`POST /produk/{id}/lampiran`, `POST …/{lid}/ulangi`, `GET …/{lid}/unduh`, `GET …/unduh-semua`, `GET …/{lid}/office` (503, OQ-MPNL-11), `DELETE …/{lid}` — rincian `docs/PARITAS-LAYAR-DAN-AKSI.md` §9 |
+| Rute | `GET /produk`, `GET /produk/{id}`, `POST /produk`, `PUT /produk/{id}`, `POST /produk/generate`, `GET /master/{jenis}`, `GET /master-plan`, `GET /rate` (503, OQ-MPNL-03), `GET`/`POST /produk/{id}/lampiran`, `POST …/{lid}/ulangi`, `GET …/{lid}/unduh`, `GET …/unduh-semua`, `GET …/{lid}/office` (503, OQ-MPNL-11), `DELETE …/{lid}` — rincian `docs/PARITAS-LAYAR-DAN-AKSI.md` §9 *(ralat 01-10-2026, K1 keputusan work owner 01-10-2026: `GET /rate` dan `GET /master/ri-rate` = 200, view rate baca saja)* |
 | Tabel ditulis | `M_PRODUCT_LIFE` (`JSONDATA` + kolom datar `RIRISKID`, `RIRISK` — katalog DEV), `M_PRODUCTINWARD_LIFE` (`JSONDATA`), `M_ATTACHMENTPRODUCTNAME`, `T_STORAGE_IMAGE` (pelaksana stub), outbox bersama `T_LOG_SERVICE_RNM` (`MODUL = 'MASTERPRODUCTNAMELIFE'`) |
 | Tabel dibaca saja | `AGENT`, `CLIENT`, `CURRENCY`, `RIRISK_LIFE_SUMMARY`, `CAUSEOFLOSS_LIFE`, `PRODUCT_TYPE_LIFE`, `T_FOLDER_IMAGE`, `TREATYCONTRACT_LIFE`, `TREATYYEAR_LIFE` |
 | Pembaca hilir | view `PRODUCT_LIFE`, `PRODUCTINWARD_LIFE`, `DOCUMENTCLAIM_LIFE` (Claim Life) — setiap kunci yang dibacanya dijamin ada di `JSONDATA` (`docs/dba-view-produk-life.md`) |
@@ -84,3 +84,10 @@ go test ./modul/masterproductnamelife/...
 go test -tags db -p 1 ./modul/masterproductnamelife/...    # tanpa ORACLE_DSN: uji db SKIP dengan pesan
 npx vitest run modul/masterproductnamelife
 ```
+
+## Keputusan OQ work owner 01-10-2026 (`PROMPT-LANJUTAN-TIGA-MODUL-LIFE-KEPUTUSAN-OQ.md`)
+
+| Butir | Keadaan | Bukti |
+| --- | --- | --- |
+| K1 OQ-MPNL-03 R/I Rate dan View Rate | view `RATE_LIFE_SUMMARY` (`Choose R/I Rate`) dan `RATE_LIFE` (`View Rate`) dibaca **saja**, kolom RD saja; baris `PLAN LIST` baru dapat diberi R/I Rate (pilihan baru wajib ada di view, nama dari master). DEV baca-saja: `GET /master/ri-rate` 200 (346 baris), `GET /rate` 200 (59 baris, 0,35 detik), nol tulisan | `repository/mpnl_master.go`, uji `TestMPNLRateDibacaKolomRDSaja`, `TestMPNLSetiapSQLMasterAdalahSelect`, `TestPlanRIRateBaruDariViewRingkasan` |
+| §2 delapan OQ | OQ-MPNL-01 (JSON seperti Pega; tiket 01 tetap ditangguhkan), 05, 06, 07, 10, 11, 13, 14 **ditutup** dengan bawaan yang dibangun; konfirmasi menyusul OQ-MPNL-05 (pemilik ekspor Pega). OQ terbuka: nol | `docs/OQ-MASTER-PRODUCT-NAME-LIFE.md` bab keputusan 01-10-2026; tiket 01, 06 |

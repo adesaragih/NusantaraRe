@@ -14,6 +14,11 @@ require (
 	// [usulan] Driver Oracle murni Go, tanpa Instant Client. BELUM pernah
 	// diputuskan lewat ADR; boleh diganti lewat keputusan tertulis.
 	github.com/sijms/go-ora/v2 v2.8.19
+
+	// bcrypt untuk hash sandi login M_LOGIN_GO (keputusan work owner
+	// 01-10-2026). v0.33.0: rilis terakhir yang menuntut go 1.20 - rilis
+	// sesudahnya menuntut go 1.23 dan akan menaikkan baris `go` di atas.
+	golang.org/x/crypto v0.33.0
 )
 
 // [usulan] Router memakai net/http bawaan Go 1.22 (pola "GET /path"),
