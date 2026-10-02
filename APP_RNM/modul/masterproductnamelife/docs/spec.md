@@ -730,3 +730,16 @@ sama seperti lima spec sebelumnya.
 | Kalimat lama | Ralat |
 | --- | --- |
 | *"`JSONDATA` (dengan constraint `IS JSON`) + empat kolom hasil flatten: `RIRISKID`, `RIRISK`, `PRODUCTNAME`, `BEGIN_DATE`"* (tabel induk `M_PRODUCT_LIFE`) | DEV `M_PRODUCT_LIFE` hanya `ID`, `JSONDATA`, `RIRISKID`, `RIRISK` — **dua** kolom datar; `PRODUCTNAME`/`BEGIN_DATE` tidak ada dan tidak ditulis (OQ-MPNL-08 ditutup, `6fd539c`) |
+
+## Ralat bertanggal 02-10-2026 — penyimpanan FLAT (§3, §7) `[keputusan work owner 02-10-2026]`
+
+> Sumber: brief `PROMPT-PINDAH-FLAT-MASTER-PRODUCT-NAME-LIFE.md` dan tiket 01 bab *"Keputusan bertanggal 02-10-2026"*. Kalimat lama
+> dikutip; ralat 01-10-2026 (P1, *"Nol tabel baru, nol DDL"*) **dicabut untuk penyimpanan produk**.
+
+| Kalimat lama | Ralat |
+| --- | --- |
+| §3 *"Entitas — satu produk, SATU tabel induk, lima tabel anak"* | satu produk = **satu** baris `M_PRODUCTNAME_LIFE` + **tujuh** tabel anak `M_PRODUCTNAME_LIFE_{LIEN,DOCCLAIM,PLAN,FINUW,UWLIMIT,OUTWARD,COMMENT}` (FK `ON DELETE CASCADE`, PK `PRODUCTID`+`URUT`) |
+| §7 tipe *"desimal presisi arbitrer"* | `NUMBER(38,8)` untuk uang/persen/rate/faktor, `NUMBER(5)` untuk bilangan kecil — penjaga inti `TestNolNumberTanpaPresisi`, jawaban work owner 02-10-2026 (K6). Tetap nol float |
+| §1/§7 *"tiga view … membaca"* | **ketiga view tidak dibangun ulang** (K7, jawaban work owner 02-10-2026): modul ini menulis dan membaca tabel flat saja. Pembaca hilir view `PRODUCTINWARD_LIFE` (Claim Life) → OQ-FLAT-04 |
+| §7 *"Aturan migrasi"* | data pindah lewat alat Go `backend/alat/pindahflat` (`-uji` / `-jalankan`), rekonsiliasi teks demi teks; tabel JSON tetap ada sebagai cadangan, tidak pernah disentuh |
+

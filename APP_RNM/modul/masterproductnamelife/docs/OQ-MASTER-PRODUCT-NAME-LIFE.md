@@ -82,3 +82,18 @@ Work owner 01-10-2026: *"ikuti rekomendasi semua"* atas laporan lanjutan keputus
 | --- | --- | --- | --- |
 | OQ-MPNL-16 | `View Rate` menyaring dengan `RIRATEID` baris plan. Di XML grid menyaring `ParamID.OUTWARDRATEID` (`ViewRate` b1024) yang tidak pernah diisi rule mana pun, sehingga di Pega dialog itu selalu kosong. | **dipertahankan** — meniru dialog yang selalu kosong tidak berguna | ditutup 01-10-2026 |
 | OQ-MPNL-17 | Server menolak `RIRATEID` pilihan baru yang tidak ada di view `RATE_LIFE_SUMMARY`. Pega tidak memeriksanya. | **dipertahankan** — pemilih hanya menawarkan rate yang ada; pemeriksaan mencegah data rusak | ditutup 01-10-2026 |
+
+## Keputusan work owner 02-10-2026 — pindah ke tabel flat (`PROMPT-PINDAH-FLAT-MASTER-PRODUCT-NAME-LIFE.md`)
+
+**OQ-MPNL-01 dibuka ulang dan ditutup 02-10-2026: FLAT** (K5) — menggantikan penutupan 01-10-2026 (*"produk tetap **JSON seperti
+Pega**; tiket 01 tetap ditangguhkan"*, dikutip). Keputusan grilling D2 dan Q1b berlaku lagi; rinciannya tiket 01 bab bertanggal 02-10-2026.
+
+| OQ | Pertanyaan | Bawaan / keputusan | Pemilik | Status |
+| --- | --- | --- | --- | --- |
+| OQ-FLAT-01 | FK `M_ATTACHMENTPRODUCTNAME.TREATYID` → `M_PRODUCTNAME_LIFE.ID` ditambahkan? Tabel lampiran bukan milik migrasi ini | tidak | work owner | terbuka |
+| OQ-FLAT-02 | Ekspor flat → JSON untuk jalur mundur **sesudah** ada tulisan baru dibangun? | tidak (jalur mundur hanya sebelum tulisan baru: `-migrate-down` + versi aplikasi lama) | work owner | terbuka |
+| OQ-FLAT-03 | Siapa dan kapan menghentikan penulisan Pega ke layar Product Name Life (syarat peralihan)? | — | work owner | terbuka |
+| OQ-FLAT-04 | Claim Life `ambangproduk.go` membaca view `PRODUCTINWARD_LIFE` atas `M_PRODUCTINWARD_LIFE.JSONDATA`; sesudah peralihan tabel JSON tidak diperbarui lagi dan view **tidak** dibangun ulang (K7). Claim Life dialihkan membaca `M_PRODUCTNAME_LIFE` (brief Claim Life), atau view dibangun ulang oleh DBA? | belum ada — di luar folder modul ini | work owner / pemilik Claim Life | terbuka |
+| OQ-FLAT-05 | Tipe angka: rancangan `NUMBER` tanpa presisi dan `NUMBER(1/3/4)` ditolak penjaga inti `TestNolNumberTanpaPresisi` | **patuhi penjaga**: `NUMBER(38,8)` / `NUMBER(5)` (K6) | work owner | ✅ ditutup 02-10-2026 |
+| OQ-FLAT-06 | View `CREATE OR REPLACE VIEW` di migrasi ditolak penjaga inti `TestSeluruhCreateDapatDibacaNamanya` | *"tidak ada table view yang dipake, semua simpan dan baca dari table flat"* — view tidak dibangun ulang (K7) | work owner | ✅ ditutup 02-10-2026 |
+

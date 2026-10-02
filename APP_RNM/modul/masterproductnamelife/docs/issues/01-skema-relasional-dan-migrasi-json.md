@@ -1,6 +1,6 @@
 # 01: Skema relasional penuh + migrasi JSON → kolom — **PREFACTOR**
 
-**Status:** ditangguhkan (01-10-2026) — RALAT P1: produk tetap JSON di dua tabel lama seperti Pega, nol DDL; menunggu OQ-MPNL-01 (paket 0 `71c35b1`)
+**Status:** ⭐ **aktif (02-10-2026)** — OQ-MPNL-01 dibuka ulang dan ditutup **flat** (K5 keputusan work owner 02-10-2026); rinciannya di bab *"Keputusan bertanggal 02-10-2026"* di ekor tiket ini. *(Status lama dikutip: "ditangguhkan (01-10-2026) — RALAT P1: produk tetap JSON di dua tabel lama seperti Pega, nol DDL; menunggu OQ-MPNL-01 (paket 0 `71c35b1`)")*
 
 **Blocked by:** **CL-01** (kerangka aplikasi + seam API — scaffolding lintas konteks, tidak dibuat
 di sini)
@@ -212,3 +212,76 @@ make check
 
 **ditutup 01-10-2026 — keputusan work owner: ikut rekomendasi asisten (bawaan dipertahankan)**: produk tetap **JSON seperti Pega** di `M_PRODUCT_LIFE` / `M_PRODUCTINWARD_LIFE` (P1); tiket ini **tetap
 ditangguhkan** — nol tabel relasional baru, nol migrasi JSON.
+
+---
+
+## Keputusan bertanggal 02-10-2026 — pindah ke tabel FLAT `[keputusan work owner 02-10-2026]`
+
+> Sumber: brief `PROMPT-PINDAH-FLAT-MASTER-PRODUCT-NAME-LIFE.md` (bab 0–2: katalog dan agregat DEV 02-10-2026, SELECT saja), jawaban
+> work owner 02-10-2026 atas dua penolakan penjaga inti (di bawah), dan pembacaan ulang XML 02-10-2026. Keputusan grilling **D2**
+> (relasional penuh) dan **Q1b** (dua tabel induk digabung, `grilling-ronde-1-jawaban.md`) **berlaku lagi**; RALAT P1 dicabut untuk
+> penyimpanan produk. Kalimat di atas tidak dihapus — yang berlaku bab ini.
+
+### Keputusan
+
+| # | Keputusan |
+| ---: | --- |
+| K1 | Hanya modul ini. Treaty Contract Retro Life tidak — kelima tabelnya sudah flat |
+| K2 | Tabel induk **`M_PRODUCTNAME_LIFE`** (sisi umum + sisi inward digabung, Q1b); tabel anak berawalan `M_PRODUCTNAME_LIFE_`. Nama `PRODUCT_LIFE` sudah dipakai view DEV |
+| K3 | Nilai lama tidak sah — 1 `MATURE` bukan tanggal, 1 `UnderwritingLimitList[*].MaxInsured` bukan angka (DEV): **kolom NULL + dicatat di laporan pindah** (ID produk + nama kunci, tanpa nilainya); tabel JSON lama tetap ada sebagai cadangan |
+| K4 | `OutwardList`: objek **kosong** tidak dipindahkan (DEV: 2 baris berisi dari 191); cacah yang dibuang dicatat |
+| K5 | OQ-MPNL-01 dibuka ulang dan **ditutup flat** (menggantikan penutupan 01-10-2026); tiket ini tidak lagi ditangguhkan |
+| K6 | ⛔ Penjaga inti `TestNolNumberTanpaPresisi` menolak `NUMBER` tanpa presisi dan `NUMBER(1)`/`(3)`/`(4)` rancangan brief §2 (dibuktikan di salinan `git archive`). Jawaban work owner: **patuhi penjaga** — uang, persen, rate, faktor → `NUMBER(38,8)` (bentuk uang sah, keputusan work owner c 26-09-2026); bilangan kecil (usia, nomor addendum/amandemen, hari, kontrak, tahun, `URUT`, `IS_ORS`) → `NUMBER(5)` |
+| K7 | ⛔ Penjaga inti `TestSeluruhCreateDapatDibacaNamanya` menolak `CREATE OR REPLACE VIEW` di berkas migrasi (pola `migrasi.NamaObjekDibuat` hanya `TABLE`/`INDEX`/`SEQUENCE`). Jawaban work owner: *"tidak ada table view yang dipake, semua simpan dan baca dari table flat"* — **ketiga view tidak dibangun ulang** (T5 brief dibatalkan); modul ini menulis dan membaca tabel flat saja |
+
+⚠️ **Akibat K7 di hilir** (dicatat, tidak diubah — di luar folder modul ini): Claim Life `repository/ambangproduk.go` membaca view
+`PRODUCTINWARD_LIFE` (`NamaViewProdukLife`) — view itu tetap membaca `M_PRODUCTINWARD_LIFE.JSONDATA`, yang **berhenti diperbarui**
+sesudah peralihan. Produk baru dan ubahan sesudah peralihan tidak terlihat di sana → **OQ-FLAT-04** (register OQ).
+
+### Bentuk baru — satu induk, TUJUH anak
+
+```
+M_PRODUCTNAME_LIFE                  (PK ID; sisi umum + sisi inward)
+  ├─ M_PRODUCTNAME_LIFE_LIEN        ← LienClause[*]                (Usia, Manfaat — teks)
+  ├─ M_PRODUCTNAME_LIFE_DOCCLAIM    ← DocumentClaim[*]             (Document)
+  ├─ M_PRODUCTNAME_LIFE_PLAN        ← PlanList[*]                  (PlanID, Plan, Name, Benefit, RIRATEID, RIRATE)
+  ├─ M_PRODUCTNAME_LIFE_FINUW       ← FinancialUnderwritingList[*] (MinInsured, MaxInsured, Employee, Non_Employee)
+  ├─ M_PRODUCTNAME_LIFE_UWLIMIT     ← UnderwritingLimitList[*]     (MinInsured, MaxInsured, MinAge, MaxAge, Medical, Description)
+  ├─ M_PRODUCTNAME_LIFE_OUTWARD     ← OutwardList[*] berisi (K4)   (REINSTYPEID, REINSTYPENAME, TRANSACTIONYEAR, TREATYCONTRACTID, UNDERWRITINGYEAR, OVR_COMM)
+  └─ M_PRODUCTNAME_LIFE_COMMENT     ← CommentList[*]               (Date → TANGGAL, OperatorName, Suggest)
+```
+
+Setiap anak: `PRODUCTID` VARCHAR2(6) NOT NULL FK → induk `ON DELETE CASCADE` · `URUT` NUMBER(5) NOT NULL (urutan baris grid,
+mulai 1) · PK (`PRODUCTID`, `URUT`) — index PK berawalan `PRODUCTID` sekaligus melayani FK. Simpan = baris anak satu produk ditulis
+ulang di **transaksi yang sama** dengan induk. Kolom dan tipe persisnya: `STRUKTUR-TABEL-MASTER-PRODUCT-NAME-LIFE.md`.
+
+| Kalimat lama (dikutip) | Ralat 02-10-2026 |
+| --- | --- |
+| *"DDL **satu tabel induk** `product_life` + **lima** tabel anak + sequence"*; *"**Lima tabel anak.**"* | **TUJUH** anak: `LienClause` daftar hidup (R10, grid b12201) dan `OutwardList` daftar hidup (R9, `On Retention` b47312 → `GetReinsTypeOR_Life`). Nama induk `M_PRODUCTNAME_LIFE` (K2). Sequence **tidak** dibuat — `M_PRODUCT_LIFE_SEQ` warisan dipakai terus |
+| *"**`LienClause` → BUKAN tabel**"*, *"**`OutwardList` → BUKAN tabel**"* | dicabut (R9, R10 — `RALAT-DEV-30-09-2026.md`) |
+| *"Kolom sisi umum — **20 field** `[terverifikasi]` Dari `SetProductName`"* | ⛔ **Keliru: kedua puluh medan itu dari langkah ter-remark.** Baca ulang 02-10-2026 (`sed -e 's/></>\n</g' Activity/SetProductName.xml`, `pyStepsBlockName` dicetak): langkah 5 `Page-Copy` b1067 dan langkah 6 `Property-Set` b1206 ber-**`//`** — tidak pernah jalan; daftar `BENEFIT … TYPE` (b1279–b1636) ada di langkah 6. Jalur hidup: langkah 3 `RDB-List` b782 (`BrowseUnderwritingList`) + langkah 4 `Java` b959 mengadopsi **seluruh** JSON halaman `ProductName`; langkah 8 b2147 `IsView ← true`. Kolom sisi umum karena itu = kunci yang **ditulis** `SaveProductName_Act` (langkah 8 b1651 `@GetPageJSONString()`, halaman utuh) **dan terisi di DEV** (brief bab 0), bukan daftar langkah 6 |
+| *"Kolom sisi inward — **40 field** `[terverifikasi]` … yang **di-SET** di `SetProductNameInward`"* | Benar untuk **pembaca**: langkah 3.1 b1048 menyalin 39 kunci (b1074–b1860, `pyStepsBlockName` kosong, hidup) dari `BrowseProductInward`, ditambah `PRODUCTID` langkah 1 b746 = 40. Tetapi ia hanya kunci yang ada di view `PRODUCTINWARD_LIFE`: lima medan layar hidup **tidak** di sana — `EXPIRYAGE`, `PREMIUMFACTOR`, `AnnuityInterest`, `PremiumRefundFactor`, `CURRENCYID` — dan tetap menjadi kolom. Sebaliknya delapan kunci warisan (`CEDING`, `TREATYNUMBER`, `INWARDTREATYNM`, `CEDINGRETENTIONPCT`, `CEDINGLIMITXPN`, `RNMLIMITPCT`, `LIENCLAUSE`, `MONTHS`) **0 terisi di DEV** dan tanpa medan form → **bukan** kolom |
+| *"Field yang muncul di kedua sisi (`ID`, `CEDING`, `POLICYHOLDER`, `POLICYHODERNAME`, `BIRTHDAY`, `TREATYNUMBER`) → **satu kolom**"* | `POLICYHODER`/`POLICYHODERNAME` sama persis di 196 produk DEV → satu pasang kolom `POLICYHOLDER`/`POLICYHOLDERNAME` (sumbernya sisi inward, `SaveProductName_Act` 1 b535/b556). `CEDING`/`TREATYNUMBER`: kolom sisi umum (inward 0 terisi). `BIRTHDAY` hanya sisi inward |
+| Tipe: *"Uang … **desimal presisi arbitrer**"*, *"Persen … desimal"*, *"Usia, jumlah hari, jumlah kontrak — bilangan bulat"*, *"Tanggal: `BEGIN`, `MATURE`, `STNC`, `BIRTHDAY` — `DATE`"* | uang/persen/rate/faktor `NUMBER(38,8)`, bilangan kecil `NUMBER(5)` (K6; desimal tetap tidak pernah float — ADR-0003); tanggal `DATE` untuk `BEGIN` (kolom `BEGIN_DATE`), `STNC`, `MATURE`. ⛔ **`BIRTHDAY` bukan tanggal**: DEV 40 terisi, panjang 1, semuanya angka — kolom `VARCHAR2(1)` (pilihan `associated`, OQ-MPNL-05) |
+| AC *"⚠️ **Tidak ada kolom `IsORS`** di skema baru."* (AC 52) | dicabut: `IsORS` medan HIDUP (R9, checkbox `On Retention` b47312) → kolom `IS_ORS` NUMBER(5) `CHECK (IS_ORS IN (0, 1))` |
+| AC *"Sequence `M_PRODUCT_LIFE_SEQ` dan `M_PRODUCT_INWARD_LIFE_SEQ` pindah dengan **nilai berjalan yang benar**"* (AC 47) | tidak ada sequence baru: `M_PRODUCT_LIFE_SEQ` warisan dipakai terus (`PilihIdentitasBebas` melewati ID terpakai di induk baru **dan** kedua tabel JSON); `M_PRODUCT_INWARD_LIFE_SEQ` tidak dipakai (R14, OQ-MPNL-02). ID inward = ID produk: pasangan bersilang DEV 100079 ↔ 100081 (inward dicari lewat `PRODUCTID`) pindah ke baris produknya |
+| AC *"Migrasi dapat **dijalankan ulang dengan aman** dan punya **jalur mundur yang diuji**."* (AC 48) | DDL: berkas `_down` membuang ketujuh anak lalu induk. Data: **bukan berkas migrasi** — alat Go `backend/alat/pindahflat` (mode `-uji` baca-saja, `-jalankan` satu transaksi: hapus isi tabel flat lalu isi ulang dari JSON — aman diulang). Tabel JSON tidak pernah disentuh |
+| AC *"Nilai uang pindah **tanpa berubah satu digit pun**; rekonsiliasi membandingkan **secara tepat**"* (AC 46) | tetap, diperketat: **setiap** medan setiap produk dibandingkan **teks demi teks** (JSON → model → baris flat → model); beda yang bukan K3/K4/pasangan bersilang = gagal. Normalisasi teks angka (mis. nol ekor) dicatat per kunci dan menghentikan `-jalankan` untuk keputusan work owner |
+| *"Kunci asing tiap baris (`Asli`) dibawa bolak-balik"* (model, R-baca ulang) | dibuang (D2: JSON dibuang): kunci internal Pega baris (`pxObjClass`, jejak `pxCreate*`, …) dan kunci halaman yang tidak menjadi kolom tidak pindah; cacahnya dicatat laporan pindah |
+
+### Tidak menjadi kolom *(0 terisi di DEV, keadaan layar, atau masukan)*
+
+`TYPE` `TYPE_CEDING` `GRUP` `PRODUCTCODE` `PRODUCTTYPE` `PRODUCTTYPEID` `RICOMMID` `OUTWARDNAME(ID)` `OUTWARDRATE(ID)` `OUTWARDCOMM(ID)`
+`BENEFIT(ID)` (medan layar mati, 0 terisi) · `IsView` (keadaan layar, `SetViewEdit`) · `Comment` (masukan popup; isinya menjadi baris
+`_COMMENT` lewat `AddCommentList_Act`, langkah 7 b1515) · kunci inward warisan (delapan di atas) · `PRODUCTID` dan `ID` inward (satu baris
+= satu produk). ⛔ Alat pindah **gagal** bila salah satunya ternyata terisi pada produk mana pun — kehilangan nilai tidak pernah diam-diam.
+
+### Acceptance criteria tambahan 02-10-2026
+
+- [ ] Rentang migrasi 140–179 hanya membuat/membuang objek `M_PRODUCTNAME_LIFE*`; **nol** `DROP`/`ALTER`/DML atas `M_PRODUCT_LIFE` /
+      `M_PRODUCTINWARD_LIFE` (penjaga modul pengganti `TestMPNLNolMigrasiDiRentang`).
+- [ ] Penulis dan pembaca modul hanya menyentuh tabel flat; `PilihIdentitasBebas` memeriksa induk baru dan kedua tabel JSON.
+- [ ] Alat pindah: `-uji` nol tulisan; `-jalankan` menolak `IS_PEGA_PROD=true`, satu transaksi, aman diulang; laporan agregat saja.
+- [ ] Nilai yang tidak muat kolomnya (teks melebihi lebar, angka > 8 desimal atau > 30 digit bulat, bilangan `NUMBER(5)` tidak bulat)
+      ditolak services **berkalimat** sebelum SQL tulis — tidak pernah dipotong atau dibulatkan Oracle diam-diam.
+

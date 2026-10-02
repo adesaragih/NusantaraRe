@@ -107,3 +107,12 @@ SELECT a.ID,
       a.JSONDATA.UPDATEOP
       FROM M_PRODUCT_LIFE a
 ```
+
+## Catatan 02-10-2026 — view TIDAK dibangun ulang di atas tabel flat `[keputusan work owner 02-10-2026]`
+
+Rancangan brief `PROMPT-PINDAH-FLAT-MASTER-PRODUCT-NAME-LIFE.md` §2.3/T5 (ketiga view di atas tabel flat, berkas migrasi) ditolak penjaga
+inti `TestSeluruhCreateDapatDibacaNamanya`; jawaban work owner: *"tidak ada table view yang dipake, semua simpan dan baca dari table
+flat"*. Definisi di atas karena itu **tetap** definisi yang berlaku di DEV: ketiga view terus membaca `JSONDATA` kedua tabel lama, yang
+berhenti diperbarui sesudah peralihan. Satu-satunya pembaca kode di luar modul ini: Claim Life `repository/ambangproduk.go`
+(`PRODUCTINWARD_LIFE`) — OQ-FLAT-04. `DOCUMENTCLAIM_LIFE` dan `PRODUCT_LIFE` tidak dibaca kode mana pun (hanya disebut di komentar).
+
