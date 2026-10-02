@@ -433,8 +433,8 @@ func TestRekonsiliasiKehilanganDataGagal(t *testing.T) {
 		gagal              bool
 		k3                 int
 	}{
-		{"MATURE berbentuk tanggal lain - dapat diselamatkan, bukan K3", `{"ID":"100044"}`,
-			`{"ID":"100044","PRODUCTID":"100044","MATURE":"1/3/2027"}`, true, 0},
+		{"BEGIN berbentuk lain yang tidak terbaca pun - bukan K3, gagal", `{"ID":"100044"}`,
+			`{"ID":"100044","PRODUCTID":"100044","BEGIN":"UJI"}`, true, 0},
 		{"MaxInsured berpemisah ribuan - dapat diselamatkan, bukan K3", `{"ID":"100044","UnderwritingLimitList":[{"MaxInsured":"1.000.000"}]}`,
 			`{"ID":"100044","PRODUCTID":"100044"}`, true, 0},
 		{"kunci baris bukan internal Pega dan berisi", `{"ID":"100044","PlanList":[{"Plan":"UJI P","OUTWARDRATEID":"R9"}]}`,
@@ -501,5 +501,29 @@ func TestTeksLaporanMembatasiBarisGagal(t *testing.T) {
 	if !strings.Contains(teks, "UJI-024: gagal") || strings.Contains(teks, "UJI-025: gagal") || !strings.Contains(teks, "dan 7 lainnya") ||
 		!strings.Contains(teks, "dan 12 lainnya tanpa kolom flat") || strings.Index(teks, "UJI-000: gagal") > strings.Index(teks, "kunci X") {
 		t.Errorf("baris gagal dibatasi dan diurutkan:\n%s", teks)
+	}
+}
+
+// OQ-FLAT-08 dan OQ-FLAT-09 (keputusan work owner 02-10-2026 "ikuti rekomendasi"): objek outward bukan-OR DIPINDAH ke
+// keempat kolom barunya (K4 hanya objek yang SEMUA kuncinya kosong); tanggal inward berbentuk lain DIKONVERSI dan dicatat.
+func TestRekonsiliasiOutwardBukanORDanKonversiTanggal(t *testing.T) {
+	lap, produk := rekonsiliasi([]barisJSON{barisJ("100044", `{"ID":"100044","OutwardList":[`+
+		`{"REINSTYPEID":"","OVR_COMM":"","OUTWARDNAMEID":"1000001","OUTWARDNAME":"UJI RE","OUTWARDRATEID":"1000002","OUTWARDRATE":"UJI RATE"},`+
+		`{"REINSTYPEID":"","OVR_COMM":""}]}`)},
+		[]barisJSON{barisJ("100044", `{"ID":"100044","PRODUCTID":"100044","MATURE":"1/3/2027","BEGIN":"01/03/2026"}`)})
+	if !lap.Lolos() || len(produk) != 1 {
+		t.Fatalf("mau lolos:\n%s", lap.Teks())
+	}
+	o := produk[0].OutwardList
+	if lap.K4OutwardKosong != 1 || len(o) != 1 || o[0].OutwardName != "UJI RE" || o[0].OutwardRate != "UJI RATE" ||
+		o[0].OutwardNameID != "1000001" || lap.Baris[TabelFlatOutward] != 1 {
+		t.Errorf("objek outward bukan-OR dipindah, objek kosong total dibuang: %+v\n%s", o, lap.Teks())
+	}
+	if produk[0].Inward.Mature != "2027-03-01" || len(lap.TanggalDikonversi) != 1 ||
+		lap.TanggalDikonversi[0].String() != "100044 M_PRODUCTNAME_LIFE.MATURE: dari bentuk d/M/yyyy" {
+		t.Errorf("MATURE dikonversi d/M/yyyy dan dicatat: %q %+v", produk[0].Inward.Mature, lap.TanggalDikonversi)
+	}
+	if strings.Contains(lap.Teks(), "1/3/2027") || strings.Contains(lap.Teks(), "UJI RE") {
+		t.Error("laporan memuat nilai data")
 	}
 }

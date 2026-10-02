@@ -77,6 +77,7 @@ type LaporanPindah struct {
 	TulisanFlatBerbeda  int
 	ProdukFlatSaja      int      // produk yang hanya ada di tabel flat (tulisan baru aplikasi) - dibiarkan utuh
 	TerimaNormalisasi   []string // jenis normalisasi yang diterima operator (-terima-normalisasi, OQ-FLAT-07)
+	TanggalDikonversi   []Temuan // tanggal inward berbentuk lain yang dikonversi (OQ-FLAT-09)
 	NormalisasiJenis    map[string]int
 	Ditulis             bool
 	ContohNormalisasi   []Temuan
@@ -238,16 +239,36 @@ func k3Bentuk(m MasalahNilai) bool {
 		(m.Tabel == TabelFlatUWLimit && m.Kolom == "MAXINSURED" && m.Jenis == MasalahBukanAngka)
 }
 
-// tanggalBentukLain - teks yang terbaca sebagai tanggal dalam salah satu bentuk lazim selain `dd/MM/yyyy`.
-func tanggalBentukLain(v string) bool {
+// bentukTanggalLain - bentuk lazim selain `dd/MM/yyyy` (urutan hari-bulan seperti Pega; tahun-bulan-hari bila tahun
+// di depan). Nama bentuk dicetak laporan (bukan nilainya).
+var bentukTanggalLain = []struct{ tata, nama string }{
+	{"2/1/2006", "d/M/yyyy"}, {"02-01-2006", "dd-MM-yyyy"}, {"2-1-2006", "d-M-yyyy"}, {"2006/01/02", "yyyy/MM/dd"},
+	{"2006/1/2", "yyyy/M/d"}, {"2006-1-2", "yyyy-M-d"}, {"02.01.2006", "dd.MM.yyyy"}, {"2/1/06", "d/M/yy"},
+	{"02/01/06", "dd/MM/yy"},
+}
+
+// konversiTanggalBentukLain - teks tanggal dalam bentuk lain → `YYYY-MM-DD` dan nama bentuknya; ok = terkonversi.
+// Kosong atau sudah `YYYY-MM-DD` = tidak ada yang dikonversi.
+func konversiTanggalBentukLain(v string) (string, string, bool) {
 	v = strings.TrimSpace(v)
-	for _, b := range []string{"2/1/2006", "02-01-2006", "2-1-2006", "2006/01/02", "2006/1/2", "2006-1-2", "02.01.2006",
-		"2/1/06", "02/01/06"} {
-		if t, err := time.Parse(b, v); err == nil && t.Year() >= 1 {
-			return true
+	if v == "" {
+		return "", "", false
+	}
+	if _, err := time.Parse(bentukTanggalAPI, v); err == nil {
+		return "", "", false
+	}
+	for _, b := range bentukTanggalLain {
+		if t, err := time.Parse(b.tata, v); err == nil && t.Year() >= 1 {
+			return t.Format(bentukTanggalAPI), b.nama, true
 		}
 	}
-	return false
+	return "", "", false
+}
+
+// tanggalBentukLain - teks yang terbaca sebagai tanggal dalam salah satu bentuk lazim selain `dd/MM/yyyy`.
+func tanggalBentukLain(v string) bool {
+	_, _, ok := konversiTanggalBentukLain(v)
+	return ok
 }
 
 // angkaBerpemisah - teks yang menjadi bilangan bila titik, koma, dan spasi pemisahnya dibuang.
@@ -382,6 +403,18 @@ func rekonsiliasi(umum, inward []barisJSON) (LaporanPindah, []models.Produk) {
 			outward = []models.BarisOutward{}
 		}
 		p.OutwardList = outward
+		// OQ-FLAT-09 (keputusan work owner 02-10-2026 "konversi"): tanggal inward berbentuk lain dikonversi ke tanggal
+		// yang sama, dicatat per produk dan kolom (bentuknya, bukan nilainya) - tidak di-NULL-kan.
+		for _, k := range []struct {
+			kolom string
+			v     *string
+		}{{"BEGIN_DATE", &p.Inward.Begin}, {"STNC", &p.Inward.STNC}, {"MATURE", &p.Inward.Mature}} {
+			if api, bentuk, ok := konversiTanggalBentukLain(*k.v); ok {
+				*k.v = api
+				lap.TanggalDikonversi = append(lap.TanggalDikonversi, Temuan{ProdukID: u.id, Tabel: TabelFlatInduk,
+					Kolom: k.kolom, Jenis: "dari bentuk " + bentuk})
+			}
+		}
 		for _, k := range MedanTanpaKolom(p) {
 			lap.MedanTanpaKolom[k]++
 			gagal("%s: %s %s", u.id, k, pesanTanpaKolom)
@@ -555,6 +588,10 @@ func (l LaporanPindah) Teks() string {
 		fmt.Fprintf(&b, "    %s\n", t)
 	}
 	fmt.Fprintf(&b, "  K4 objek OutwardList kosong dibuang: %d\n", l.K4OutwardKosong)
+	fmt.Fprintf(&b, "  tanggal bentuk lain dikonversi (OQ-FLAT-09): %d\n", len(l.TanggalDikonversi))
+	for _, t := range l.TanggalDikonversi {
+		fmt.Fprintf(&b, "    %s\n", t)
+	}
 	tulisPeta(&b, "  normalisasi teks (menunggu keputusan work owner)", l.Normalisasi)
 	if len(l.TerimaNormalisasi) > 0 {
 		fmt.Fprintf(&b, "    jenis diterima operator (-terima-normalisasi): %s\n", strings.Join(l.TerimaNormalisasi, ", "))

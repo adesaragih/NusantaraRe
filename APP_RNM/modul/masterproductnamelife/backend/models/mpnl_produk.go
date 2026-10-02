@@ -198,7 +198,14 @@ type BarisOutward struct {
 	// OvrComm - dibaca view `PRODUCT_LIFE` (`OutwardList[0].OVR_COMM`); korpus
 	// tidak punya penulisnya; DEV: 0 dari 153 `OutwardList[0]` terisi - ditulis kosong (OQ-MPNL-09 ditutup).
 	OvrComm string `json:"ovrComm"`
-	Asli    Asli   `json:"asli,omitempty"`
+	// OutwardNameID … OutwardRate - objek `OutwardList` yang BUKAN baris `On Retention`: reasuradur outward dan
+	// rate-nya (DEV 02-10-2026: 189 objek, 4 nama dan 3 rate berbeda; nol di objek ber-`REINSTYPEID`). Keputusan work
+	// owner 02-10-2026 OQ-FLAT-08 "pindahkan". Milik server seperti seluruh daftar ini - tidak pernah dari klien.
+	OutwardNameID string `json:"outwardNameId"`
+	OutwardName   string `json:"outwardName"`
+	OutwardRateID string `json:"outwardRateId"`
+	OutwardRate   string `json:"outwardRate"`
+	Asli          Asli   `json:"asli,omitempty"`
 }
 
 // BarisKomentar - `ProductName.CommentList` (`AddCommentList_Act` 1 b235).

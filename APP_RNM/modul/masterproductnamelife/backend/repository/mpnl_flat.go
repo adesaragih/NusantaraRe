@@ -217,6 +217,11 @@ var (
 			teks("TREATYCONTRACTID", 100, "Treaty Contract ID", func(b *models.BarisOutward) *string { return &b.TreatyContractID }),
 			bulat("UNDERWRITINGYEAR", "Underwriting Year", func(b *models.BarisOutward) *string { return &b.UnderwritingYear }),
 			desimal("OVR_COMM", "Override Commission", func(b *models.BarisOutward) *string { return &b.OvrComm }),
+			// OQ-FLAT-08 (keputusan work owner 02-10-2026): objek outward bukan-OR - DEV maks 7 / 11 / 7 / 21 karakter.
+			teks("OUTWARDNAMEID", 100, "Outward Name ID", func(b *models.BarisOutward) *string { return &b.OutwardNameID }),
+			teks("OUTWARDNAME", 1000, "Outward Name", func(b *models.BarisOutward) *string { return &b.OutwardName }),
+			teks("OUTWARDRATEID", 100, "Outward Rate ID", func(b *models.BarisOutward) *string { return &b.OutwardRateID }),
+			teks("OUTWARDRATE", 500, "Outward Rate", func(b *models.BarisOutward) *string { return &b.OutwardRate }),
 		}}
 	AnakKomentar = AnakFlat[models.BarisKomentar]{Tabel: TabelFlatKomentar, Label: "Comment", // popup b1025
 		daftar: func(p *pr) *[]models.BarisKomentar { return &p.CommentList },

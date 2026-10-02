@@ -167,6 +167,11 @@ export interface BarisOutward extends Asli {
   treatyContractId: string
   underwritingYear: string
   ovrComm: string
+  /** Objek outward bukan-OR (OQ-FLAT-08, 02-10-2026): reasuradur outward dan rate-nya - milik server. */
+  outwardNameId: string
+  outwardName: string
+  outwardRateId: string
+  outwardRate: string
 }
 
 export interface BarisKomentar extends Asli {

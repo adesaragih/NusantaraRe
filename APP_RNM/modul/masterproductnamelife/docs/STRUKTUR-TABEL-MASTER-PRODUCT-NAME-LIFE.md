@@ -222,6 +222,10 @@ Anak (migrasi 146) — `OutwardList[*]` berisi - `GetReinsTypeOR_Life` 4.1 b770 
 | `TREATYCONTRACTID` | teks | VARCHAR2(100) | `TREATYCONTRACTID` |
 | `UNDERWRITINGYEAR` | bilangan bulat | NUMBER(5) | `UNDERWRITINGYEAR` |
 | `OVR_COMM` | angka desimal | NUMBER(38,8) | `OVR_COMM` - tanpa penulis di korpus, kosong (OQ-MPNL-09) |
+| `OUTWARDNAMEID` | teks | VARCHAR2(100) | `OUTWARDNAMEID` - objek outward bukan-OR (OQ-FLAT-08, keputusan work owner 02-10-2026); DEV angka ≤ 7 |
+| `OUTWARDNAME` | teks | VARCHAR2(1000) | `OUTWARDNAME` - reasuradur outward; DEV 4 nama berbeda ≤ 11 karakter |
+| `OUTWARDRATEID` | teks | VARCHAR2(100) | `OUTWARDRATEID` - DEV angka ≤ 7 |
+| `OUTWARDRATE` | teks | VARCHAR2(500) | `OUTWARDRATE` - DEV 3 rate berbeda ≤ 21 karakter |
 
 ## M_PRODUCTNAME_LIFE_COMMENT
 
