@@ -332,8 +332,17 @@ func (l *KlausulTCO) DenganTransaksi(f func(ctx context.Context, fn func(tx *db.
 	return s
 }
 
+// larik - nil menjadi larik kosong: layar membaca `medan`/`wajib` sebagai larik
+// (`aturan.wajib.includes`), dan jenis tanpa wajib-isi (LimitMB) mengirim null.
+func larik(s []string) []string {
+	if s == nil {
+		return []string{}
+	}
+	return s
+}
+
 func tampilAturan(a models.AturanKlausul) AturanTampil {
-	return AturanTampil{Jenis: a.Jenis, Anak: a.Anak, Subjenis: a.Subjenis, Medan: a.Medan, Wajib: a.Wajib,
+	return AturanTampil{Jenis: a.Jenis, Anak: a.Anak, Subjenis: a.Subjenis, Medan: larik(a.Medan), Wajib: larik(a.Wajib),
 		Turunan: a.Turunan, Ditahan: a.Ditahan, Berkurs: a.Berkurs, Konversi: a.Konversi, Sumber: a.Sumber,
 		PilihanReins: a.PilihanReins, SatuBaris: a.SatuBaris}
 }

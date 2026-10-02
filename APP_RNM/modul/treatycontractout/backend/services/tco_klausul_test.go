@@ -4,6 +4,7 @@ package services_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"sort"
 	"strings"
@@ -706,5 +707,28 @@ func TestKlausulLimitMBMengikutiXML(t *testing.T) {
 	p, err := l.Pilihan(context.Background(), pelakuUjiTCO, "occupation-limitmb", "")
 	if err != nil || len(p) != 4 || p[0].ID != "01" || p[0].Nama != "RESIDENTIAL RISK" || p[3].Nama != "AGRICULTURAL RISK" {
 		t.Errorf("pilihan occupation MB: %+v %v", p, err)
+	}
+}
+
+// Kontrak layar: `medan` dan `wajib` SETIAP aturan larik, tidak pernah null - jenis tanpa wajib-isi
+// (LimitMB, keputusan work owner 02-10-2026) pernah mengirim `"wajib":null` dan layar Add jatuh
+// ("Cannot read properties of null (reading 'includes')").
+func TestAturanTampilTanpaNull(t *testing.T) {
+	n := 0
+	d, err := layananKlausul(gudangKlausulKosong(), &n).JenisKlausul(context.Background(), pelakuUjiTCO, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := json.Marshal(d)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, buruk := range []string{`"medan":null`, `"wajib":null`} {
+		if strings.Contains(string(b), buruk) {
+			t.Errorf("jawaban jenis klausul memuat %s", buruk)
+		}
+	}
+	if !strings.Contains(string(b), `"jenis":"LimitMB"`) {
+		t.Fatal("LimitMB tidak ada di jawaban - uji tidak menggigit")
 	}
 }
