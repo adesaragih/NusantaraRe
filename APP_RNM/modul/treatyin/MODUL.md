@@ -1,22 +1,29 @@
 # Modul `treatyin` — Treaty In
 
-⚠️ **Terdaftar 1 Oktober 2026 — LAPISAN SKEMA empat belas tiket, bukan tiketnya.**
+⚠️ **Terdaftar 1 Oktober 2026 — LAPISAN SKEMA tujuh belas tiket, bukan tiketnya.**
 `backend/modul.go` ada, `inti/backend/daftar/modul_treatyin_gen.go` bangkit, dan slot menu `972`
 menyalakan `M_NAV_MENU.DIMIGRASI`.
 
-Yang berdiri (migrasi `400`–`415`): **23 tabel, 192 kolom, 23 sequence** — tiket `14` `15` `20`
-`22`–`31` `39`. Ditambah satu jalur baca atas tabel acuan. Cacah kolom tiap tabel **sama persis**
+Yang berdiri (migrasi `400`–`419`): **29 tabel, 230 kolom, 29 sequence** — tiket `14` `15` `20`
+`22`–`31` `33` `34` `37` `39`. Ditambah satu jalur baca atas tabel acuan. Cacah kolom tiap tabel **sama persis**
 dengan `KAMUS-KOLOM.md`, kecuali `VERSI_KONTRAK` yang bertambah satu kolom dari tiket `01` papan
 Adjustment.
 
-⛔ **KEEMPAT BELAS TIKET ITU BELUM SELESAI**, dan ini bukan formalitas. Papan tiketnya menetapkan ukuran
+⛔ **KETUJUH BELAS TIKET ITU BELUM SELESAI**, dan ini bukan formalitas. Papan tiketnya menetapkan ukuran
 selesai: *"tiap tiket membawa uji negatif DAN uji positif"*, sebab *"'dapat diperagakan' tidak
 tersedia sebagai bukti"*. Uji di modul ini **membaca teks DDL dan gudang tiruan** — tidak satu pun
 menjalankan Oracle (`L-3`). Yang BELUM terbukti: versi yatim ditolak, nomor urut ganda ditolak,
 tanggal terbalik ditolak, dan uji positif *"satu kontrak dengan tiga versi diterima, lapisan bekunya
 tidak disalin"*. Daftarnya di [`docs/issues/README.md`](docs/issues/README.md).
 
-⛔ **Sembilan invarian tabelnya berdiri tetapi BELUM ditegakkan di mana pun** — `INV-29`, `INV-38`,
+⛔ **Tiga invarian tertahan `F-13`** — `INV-32`, `INV-33`, dan `INV-52`. Ketiganya bergolongan
+*indeks unik*, yang di Oracle berarti materialized view ber-`REFRESH ON COMMIT`, dan
+`F-13-MV-TANPA-PEMANTAU-KEBASIAN.md` menyatakan penegakan lewat MV di modul ini **belum punya
+pemantau kebasian**: *"MV yang gagal me-refresh berhenti menegakkan tanpa satu galat pun."*
+Memasangnya tanpa Oracle yang dapat diuji (`L-3`) menanam constraint yang terlihat terpasang dan
+tidak menolak apa pun. **Urutannya: pemantau kebasian lebih dulu.**
+
+⛔ **Lima belas invarian tabelnya berdiri tetapi BELUM ditegakkan di mana pun** — `INV-29`, `INV-38`,
 `INV-39`, `INV-40`, `INV-53`, `INV-55`, `INV-56`, `INV-57`, dan `INV-49` yang bahkan belum punya
 tempat berdiri. Sebagian besar membandingkan baris di tabel BERBEDA, yang `CHECK` Oracle tidak dapat
 nyatakan; `INV-29` dan `INV-38` **dapat**, dan yang menahannya hanya ADR-0056. Seluruhnya menunggu

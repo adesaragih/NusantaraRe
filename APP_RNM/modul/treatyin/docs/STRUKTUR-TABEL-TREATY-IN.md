@@ -36,8 +36,11 @@ adalah BENTUKNYA — nama, tipe, dan constraint yang tertulis — bukan bahwa Or
 | Tanggungan | `SKALA_KOASURANSI`, `BATAS_PER_BAHAYA`, `DOKUMEN_KONTRAK` | 15 | `28` `29` `30` |
 | Layer | `LAYER`, `NILAI_MDP`, `NILAI_MDP_MINIMUM`, `PEMULIHAN_LIMIT` | 38 | `31` |
 | Jejak | `JEJAK_PERUBAHAN` | 8 | `39` |
+| Bagian NuRe *(non-proporsional)* | `BAGIAN`, `NILAI_PREMI_BRUTO`, `NILAI_PREMI_BRUTO_MINIMUM` | 16 | `33` |
+| Ketentuan proporsional | `DETAIL_PROPORSIONAL`, `NILAI_CADANGAN_PREMI` | 16 | `34` |
+| Potongan | `POTONGAN` | 6 | `37` |
 
-**23 tabel, 192 kolom.** Cacah kolom tiap tabel **sama persis** dengan yang `KAMUS-KOLOM.md` tulis di
+**29 tabel, 230 kolom.** Cacah kolom tiap tabel **sama persis** dengan yang `KAMUS-KOLOM.md` tulis di
 judul §-nya masing-masing — kecuali `VERSI_KONTRAK`, yang bertambah satu (lihat di bawah).
 
 `KONTRAK` 8 kolom dan `VERSI_KONTRAK` **49** kolom. Ke-48 pertamanya **sama persis** dengan cacah yang
@@ -52,7 +55,13 @@ berkas `415`: `SEQ_TRIN_MATA_UANG_KONTRAK`, `SEQ_TRIN_RETENSI_CEDANT`, `SEQ_TRIN
 `SEQ_TRIN_PORTOFOLIO`, `SEQ_TRIN_PERIODE_PELAPORAN`, `SEQ_TRIN_PERIODE_AKUMULASI`, `SEQ_TRIN_TERMIN`,
 `SEQ_TRIN_SKALA_KOASURANSI`, `SEQ_TRIN_BATAS_PER_BAHAYA`, `SEQ_TRIN_DOKUMEN_KONTRAK`,
 `SEQ_TRIN_LAYER`, `SEQ_TRIN_NILAI_MDP`, `SEQ_TRIN_NILAI_MDP_MINIMUM`, `SEQ_TRIN_PEMULIHAN_LIMIT`,
-`SEQ_TRIN_JEJAK_PERUBAHAN`. **Dua puluh tiga**, seluruhnya `NOCACHE NOCYCLE` (INV-02, INV-03).
+`SEQ_TRIN_JEJAK_PERUBAHAN`; dan di berkas `419`: `SEQ_TRIN_BAGIAN`, `SEQ_TRIN_NILAI_PREMI_BRUTO`,
+`SEQ_TRIN_NILAI_PB_MINIMUM`, `SEQ_TRIN_DETAIL_PROPORSIONAL`, `SEQ_TRIN_NILAI_CADANGAN_PREMI`,
+`SEQ_TRIN_POTONGAN`. **Dua puluh sembilan**, seluruhnya `NOCACHE NOCYCLE` (INV-02, INV-03).
+
+⚠️ `SEQ_TRIN_NILAI_PB_MINIMUM` **disingkat**: bentuk penuhnya 34 bita, melewati batas 30 (§16).
+Singkatannya jatuh di `NILAI_PREMI_BRUTO` → `NILAI_PB`, bukan di `MINIMUM` — tanpa "MINIMUM" kedua
+sequence tidak dapat dibedakan.
 
 ⛔ **Belum satu pun terpakai.** Tidak ada jalur tulis di modul ini, sehingga tuntutan tiket `14`
 *"tidak ada jalur lain yang dapat memberi pengenal"* benar secara hampa. Ia ditegakkan bersama jalur
@@ -61,7 +70,8 @@ simpan.
 **Index:** `IX_VERSI_KONTRAK_KONTRAK` · `IX_VERSI_KONTRAK_DASAR` *(dipasang migrasi `440` modul
 `treatyinadjustment`)* · `IX_NILAI_MDP_LAYER` · `IX_NILAI_MDP_MIN_LAYER` · `IX_PEMULIHAN_LIMIT_LAYER` ·
 `IX_JEJAK_PERUBAHAN_VERSI` · `IX_MATA_UANG_KONTRAK_MU` · `IX_RETENSI_CEDANT_KLP` ·
-`IX_EGNPI_KELOMPOK` · `IX_EGNPI_KELAS_BISNIS` · `IX_BATAS_PER_BAHAYA_BHY`.
+`IX_EGNPI_KELOMPOK` · `IX_EGNPI_KELAS_BISNIS` · `IX_BATAS_PER_BAHAYA_BHY` · `IX_DETAIL_PROP_KLP` ·
+`IX_POTONGAN_JENIS` · `IX_NILAI_PB_BAGIAN` · `IX_NILAI_PB_MIN_BAGIAN` · `IX_NILAI_CAD_PREMI_DP`.
 
 ℹ️ **Kenapa sebagian kunci asing ber-index sendiri dan sebagian tidak.** Oracle membuat index untuk
 setiap `UNIQUE`, dan index itu **melayani** sebuah kunci asing bila kolom kunci asingnya **memimpin**
@@ -94,7 +104,11 @@ anak, dan pada sebagian versi Oracle menguncinya. Dicatat di
 | `EGNPI` | `ID_VERSI_KONTRAK` · `ID_KELOMPOK_TREATY` · `ID_KELAS_BISNIS` | `VERSI_KONTRAK` · `KELOMPOK_TREATY` · `KELAS_BISNIS` | **tanpa** | INV-18 |
 | `PORTOFOLIO` · `PERIODE_PELAPORAN` · `PERIODE_AKUMULASI` · `TERMIN` · `SKALA_KOASURANSI` · `DOKUMEN_KONTRAK` · `LAYER` · `JEJAK_PERUBAHAN` | `ID_VERSI_KONTRAK` | `VERSI_KONTRAK` | **tanpa** | INV-18 |
 | `BATAS_PER_BAHAYA` | `ID_VERSI_KONTRAK` · `ID_BAHAYA` | `VERSI_KONTRAK` · `BAHAYA` | **tanpa** | INV-18 |
-| `NILAI_MDP` · `NILAI_MDP_MINIMUM` · `PEMULIHAN_LIMIT` | `ID_LAYER` | `LAYER` | **tanpa** | INV-18 |
+| `NILAI_MDP` · `NILAI_MDP_MINIMUM` · `PEMULIHAN_LIMIT` · `BAGIAN` · `DETAIL_PROPORSIONAL` | `ID_LAYER` | `LAYER` | **tanpa** | INV-18 |
+| `DETAIL_PROPORSIONAL` | `ID_KELOMPOK_TREATY` | `KELOMPOK_TREATY` | **tanpa** | INV-18 |
+| `NILAI_PREMI_BRUTO` · `NILAI_PREMI_BRUTO_MINIMUM` | `ID_BAGIAN` | `BAGIAN` | **tanpa** | INV-18 |
+| `NILAI_CADANGAN_PREMI` | `ID_DETAIL_PROPORSIONAL` | `DETAIL_PROPORSIONAL` | **tanpa** | INV-18 |
+| `POTONGAN` | `ID_BAGIAN` · `ID_DETAIL_PROPORSIONAL` · `ID_JENIS_POTONGAN` | `BAGIAN` · `DETAIL_PROPORSIONAL` · `JENIS_POTONGAN` | **tanpa** | INV-18 · KTV-B |
 
 ⛔ **Nol `ON DELETE` di seluruh modul** — bawaan Oracle MENOLAK, dan menolak yang dikehendaki.
 Menghapus versi kontrak yang masih punya layer, termin, atau jejak akan gagal dengan ORA-02292,
@@ -122,6 +136,9 @@ Tabelnya milik modul ini; satu kolomnya dibawa modul itu. Sebabnya: papan tiket 
 | `BATAS_PER_BAHAYA` | `ID_VERSI_KONTRAK` + `ID_BAHAYA` | INV-14 |
 | `PORTOFOLIO` | `ID_VERSI_KONTRAK` + `ARAH_PORTOFOLIO` + `JENIS_PORTOFOLIO` | INV-66 |
 | `DOKUMEN_KONTRAK` | `ID_VERSI_KONTRAK` + `ID_DOKUMEN` | INV-67 |
+| `BAGIAN` | `ID_LAYER` — satu bagian per layer | INV-64 |
+| `DETAIL_PROPORSIONAL` | `ID_LAYER` + `ID_KELOMPOK_TREATY` — **di dalam LAYER**, bukan versi | INV-06 |
+| `POTONGAN` | `ID_BAGIAN` + `ID_JENIS_POTONGAN` **dan** `ID_DETAIL_PROPORSIONAL` + `ID_JENIS_POTONGAN` — **dua** `UNIQUE` | INV-15 |
 
 ⛔ **Mata uang IKUT di dalam kunci alami INV-08, INV-09, dan INV-12**, dan itu bukan hiasan:
 `Z00_KUNCI_ALAMI.sql` memperingatkan bahwa menulisnya TANPA mata uang mengubah artinya menjadi
@@ -161,8 +178,6 @@ disengaja. Peringatan ganda itu pekerjaan tiket `16`.
 | Peringatan kunci alami kontrak ganda | `16` |
 | Pencarian lewat `NOMOR_KONTRAK_WARISAN` | `17` |
 | Pembekuan kunci alami sesudah kontrak lahir | `18` |
-| `BAGIAN`, `DETAIL_PROPORSIONAL` | `33`, `34` |
-| `POTONGAN` | `37` |
 | `PENYEBARAN`, `RINCIAN_PENYEBARAN`, `NILAI_PENYEBARAN` | `38` (tertahan `Uji AD`, `L-3`) |
 | `CATATAN_PERSETUJUAN` | `54` |
 | `PERISTIWA_KONTRAK` | **nol tiket menyebutnya** — yatim, ditagih pemilik proses |
@@ -186,6 +201,17 @@ simpan yang sama.
 | `INV-05` | nomor layer + bagian unik di dalam versi — **sebagian**, lihat di atas | `413` |
 | `INV-39` · `INV-40` | paket uang dipasangkan dengan tingkat pencatatannya | `404` dan seterusnya |
 | `INV-49` | pengecualian bernama terhadap `INV-47` | menunggu tiket `47` |
+| `INV-30` | `JENIS_TREATY` dua nilai | `417` |
+| `INV-32` · `INV-33` | cabang proporsional/non-proporsional dipisahkan | `417` · `416` — **tertahan `F-13`** |
+| `INV-41` · `INV-36` | paket uang terisi menuntut mata uangnya | `417` · `416` |
+| `INV-52` | premi bruto dikurangi potongan sama dengan premi bersih | `418` — **tertahan `F-13`** |
+| `INV-63` | rumus potongan tepat satu kali di seluruh basis kode | `418` — tinjauan kode, bukan constraint |
+
+⛔ **`INV-32`, `INV-33`, dan `INV-52` tertahan satu hal yang sama: `F-13`.** Ketiganya bergolongan
+**indeks unik**, yang di Oracle berarti *materialized view* ber-`REFRESH ON COMMIT`, dan
+`F-13-MV-TANPA-PEMANTAU-KEBASIAN.md` menyatakan penegakan lewat MV di modul ini belum punya pemantau
+kebasian — *"MV yang gagal me-refresh berhenti menegakkan tanpa satu galat pun."* Uraiannya di dalam
+migrasi `416`.
 
 ⚠️ **`INV-29` dan `INV-38` BERBEDA dari yang lain di tabel ini**: keduanya membandingkan kolom pada
 **baris yang sama**, sehingga `CHECK` Oracle dapat menyatakannya. Yang menahan keduanya hanya
@@ -500,3 +526,71 @@ invarian sebaris, keduanya calon pertama.
 | `RUAS_YANG_BERUBAH` | teks | tidak |  | keputusan tiket 39 — **baru**, tidak ada di sistem lama |
 | `NILAI_SEBELUM` | teks | ya |  | keputusan tiket 39 — **baru**, tidak ada di sistem lama — teks, karena ruasnya beragam tipe |
 | `NILAI_SESUDAH` | teks | ya |  | keputusan tiket 39 — **baru**, tidak ada di sistem lama — idem |
+
+## BAGIAN
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID_BAGIAN` | bilangan bulat | tidak | PK | keputusan tiket 33 — **baru**, tidak ada di sistem lama |
+| `ID_LAYER` | bilangan bulat | tidak | FK UQ | keputusan tiket 33 — **baru**, tidak ada di sistem lama — **relasi**, bukan salinan — §12.2 |
+| `CAKUPAN` | teks | ya |  | korpus `Cover` — tetap atribut bagian (§12.2) |
+| `PERSEN_BAGIAN_NURE` | angka desimal | ya |  | korpus `Share[].RNMShare` — terisi bila `BAGIAN_NURE_SERAGAM` mati; berbeda dari atribut senama pada versi (§10.2) yang berlaku seragam |
+| `PREMI_BRUTO` | angka desimal | tidak |  | korpus `GrossPremiumList[]` — tingkat **BELUM DITENTUKAN** — §10.23 |
+| `PREMI_BRUTO_MINIMUM` | angka desimal | ya |  | korpus `GrossPremiumMinList[]` — **BARU** — tidak pernah terlihat pohon |
+| `ID_SUSUNAN_RETRO` | bilangan bulat | ya |  | korpus `SpreadingTypeIDXOL` — penunjuk susunan baku yang menyemai penyebaran — **syarat INV-58**, §10.4a |
+| `PERSEN_BAGIAN_DIPAKAI` | angka desimal | ya |  | keputusan tiket 33 — **baru**, tidak ada di sistem lama — wajib bila paket uangnya bertingkat `BAGIAN_NURE` (INV-40) |
+
+## NILAI_PREMI_BRUTO
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID_NILAI_PREMI_BRUTO` | bilangan bulat | tidak | PK | keputusan tiket 33 — **baru**, tidak ada di sistem lama |
+| `ID_BAGIAN` | bilangan bulat | tidak | FK | keputusan tiket 33 — **baru**, tidak ada di sistem lama — induknya — paket uang ini asalnya **daftar per mata uang** di sistem lama |
+| `KODE_MATA_UANG` | teks | tidak |  | korpus `Currency` pada baris daftarnya` — **kunci alami** di dalam induknya — belum bernomor |
+| `NILAI` | angka desimal | tidak |  | korpus `Value` pada baris daftarnya` |
+
+## NILAI_PREMI_BRUTO_MINIMUM
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID_NILAI_PREMI_BRUTO_MINIMUM` | bilangan bulat | tidak | PK | keputusan tiket 33 — **baru**, tidak ada di sistem lama |
+| `ID_BAGIAN` | bilangan bulat | tidak | FK | keputusan tiket 33 — **baru**, tidak ada di sistem lama — induknya — paket uang ini asalnya **daftar per mata uang** di sistem lama |
+| `KODE_MATA_UANG` | teks | tidak |  | korpus `Currency` pada baris daftarnya` — **kunci alami** di dalam induknya — belum bernomor |
+| `NILAI` | angka desimal | tidak |  | korpus `Value` pada baris daftarnya` |
+
+## DETAIL_PROPORSIONAL
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID_DETAIL_PROPORSIONAL` | bilangan bulat | tidak | PK | keputusan tiket 34 — **baru**, tidak ada di sistem lama |
+| `ID_LAYER` | bilangan bulat | tidak | FK UQ | keputusan tiket 34 — **baru**, tidak ada di sistem lama |
+| `ID_KELOMPOK_TREATY` | bilangan bulat | tidak | FK UQ | korpus `TreatyGroupID` — **kunci alami** di dalam **`LAYER`** — INV-06 |
+| `JENIS_TREATY` | teks | tidak |  | korpus `TreatyType` — `QUOTA_SHARE` / `SURPLUS` |
+| `PERSEN_QUOTA_SHARE` | angka desimal | ya |  | korpus `QSPct` — terisi hanya bila `JENIS_TREATY = QUOTA_SHARE` |
+| `JUMLAH_LINES_SURPLUS` | bilangan bulat | ya |  | korpus `Surplus` — terisi hanya bila `JENIS_TREATY = SURPLUS` |
+| `PERSEN_KOMISI_KOTOR` | angka desimal | ya |  | korpus `RIOGR` — kepanjangan **belum diketahui** |
+| `PERSEN_KOMISI_BERSIH` | angka desimal | ya |  | korpus `RIONR` — kepanjangan **belum diketahui** |
+| `PERSEN_CADANGAN_PREMI` | angka desimal | ya |  | korpus `PremiumReservePct` — dari inventaris kelas Pega |
+| `CADANGAN_PREMI` | angka desimal | ya |  | korpus `ReserveList[]` — **BARU** — pasangan nilai dari persentase di atas; persentase tanpa nilainya adalah setengah fakta. Tingkat **BELUM DITENTUKAN** |
+| `PERSEN_KAPASITAS_SURPLUS` | angka desimal | ya |  | korpus `IOOPct` — **BARU** |
+| `ID_SUSUNAN_RETRO` | bilangan bulat | ya |  | korpus `SpreadingTypeID` — **BARU — penunjuk susunan baku yang menyemai penyebaran.** Syarat berdirinya `RINCIAN_PENYEBARAN` sebagai fakta terbukukan (INV-58); lihat §10.4a |
+
+## NILAI_CADANGAN_PREMI
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID_NILAI_CADANGAN_PREMI` | bilangan bulat | tidak | PK | keputusan tiket 34 — **baru**, tidak ada di sistem lama |
+| `ID_DETAIL_PROPORSIONAL` | bilangan bulat | tidak | FK | keputusan tiket 34 — **baru**, tidak ada di sistem lama — induknya — paket uang ini asalnya **daftar per mata uang** di sistem lama |
+| `KODE_MATA_UANG` | teks | tidak |  | korpus `Currency` pada baris daftarnya` — **kunci alami** di dalam induknya — belum bernomor |
+| `NILAI` | angka desimal | tidak |  | korpus `Value` pada baris daftarnya` |
+
+## POTONGAN
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID_POTONGAN` | bilangan bulat | tidak | PK | keputusan tiket 37 — **baru**, tidak ada di sistem lama — §14.2 |
+| `ID_BAGIAN` | bilangan bulat | ya | FK UQ | keputusan tiket 37 — **baru**, tidak ada di sistem lama — `KTV-B` — salah satu dari **dua** pelekatan. **Tepat satu** dari kedua kolom terisi, dijaga `CHECK`. Menggantikan `ID_INDUK_POTONGAN`, yang tidak dapat punya kunci asing karena sasarannya bergantung nilai kolom lain (INV-17) |
+| `ID_DETAIL_PROPORSIONAL` | bilangan bulat | ya | FK UQ | keputusan tiket 37 — **baru**, tidak ada di sistem lama — `KTV-B` — salah satu dari **dua** pelekatan. **Tepat satu** dari kedua kolom terisi, dijaga `CHECK`. Menggantikan `ID_INDUK_POTONGAN`, yang tidak dapat punya kunci asing karena sasarannya bergantung nilai kolom lain (INV-17) |
+| `ID_JENIS_POTONGAN` | bilangan bulat | tidak | FK UQ | korpus `Comment` — §14.2 |
+| `DASAR_PERHITUNGAN` | teks | tidak |  | keputusan tiket 37 — **baru**, tidak ada di sistem lama — §14.2 |
+| `PERSEN_POTONGAN` | angka desimal | tidak |  | korpus `DeductionPct` — §14.2 |
