@@ -48,3 +48,15 @@ describe('form produk - medan yang di XML selalu baca-saja', () => {
     expect(KODE).not.toMatch(/label=\{PLAN_MPNL\.(bussines|benefit)\}/)
   })
 })
+
+describe('form produk - tanda wajib (keputusan work owner 02-10-2026)', () => {
+  it('empat medan ber-pyRequired true di XML bertanda wajib *', () => {
+    // Product Name b3585, Premium Factor (%) b25362, Annuity Interest (%) b26054, Premium Refund Factor (%) b26268.
+    for (const label of ['UMUM_MPNL.productName', 'INWARD_MPNL.premiumFactor', 'INWARD_MPNL.annuityInterest', 'INWARD_MPNL.premiumRefundFactor']) {
+      const i = KODE.indexOf(`label={${label}}`)
+      expect(i, label).toBeGreaterThan(-1)
+      const medan = KODE.slice(i, KODE.indexOf('/>', i))
+      expect(medan, label).toMatch(/\brequired\b/)
+    }
+  })
+})

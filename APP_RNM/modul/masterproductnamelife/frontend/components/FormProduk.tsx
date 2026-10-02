@@ -214,9 +214,11 @@ export default function FormProduk({
 
       {/* ---- wadah b2573: sisi umum ---- */}
       <div className="form-grid">
+        {/* `pyRequired` true b3585 (Product Name), b25362, b26054, b26268: tanda wajib `*` (keputusan work owner 02-10-2026). */}
         <Field
           label={UMUM_MPNL.productName}
           value={u.productName}
+          required
           readOnly={lihat}
           onChange={(v) => {
             // onChange `SetTreatyName_Act` b3686.
@@ -358,7 +360,7 @@ export default function FormProduk({
         <span className="mpnl-catatan-medan">{INWARD_MPNL.ofSumReasured}</span>
         <Field label={INWARD_MPNL.rnmLimit} value={w.rnmLimitNum} readOnly={lihat} onChange={medanInward('rnmLimitNum')} />
         {tampilPremiumFactor(w.payment) && (
-          <Field label={INWARD_MPNL.premiumFactor} value={w.premiumFactor} readOnly={lihat} onChange={medanInward('premiumFactor')} />
+          <Field label={INWARD_MPNL.premiumFactor} value={w.premiumFactor} required readOnly={lihat} onChange={medanInward('premiumFactor')} />
         )}
         {lihat ? (
           // `ro = ProductName.IsView=='true'` b25611 - `Pilih` bersama tidak punya mode baca-saja.
@@ -372,10 +374,11 @@ export default function FormProduk({
           <Pilih label={INWARD_MPNL.payment} value={w.payment} opsi={[...PILIHAN_PEMBAYARAN]} onChange={medanInward('payment')} />
         )}
         <Area label={INWARD_MPNL.subjectTo} value={w.subjectTo} onChange={lihat ? () => undefined : medanInward('subjectTo')} />
-        <Field label={INWARD_MPNL.annuityInterest} value={w.annuityInterest} readOnly={lihat} onChange={medanInward('annuityInterest')} />
+        <Field label={INWARD_MPNL.annuityInterest} value={w.annuityInterest} required readOnly={lihat} onChange={medanInward('annuityInterest')} />
         <Field
           label={INWARD_MPNL.premiumRefundFactor}
           value={w.premiumRefundFactor}
+          required
           readOnly={lihat}
           onChange={medanInward('premiumRefundFactor')}
         />
