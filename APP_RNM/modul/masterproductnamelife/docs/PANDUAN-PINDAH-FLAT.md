@@ -14,11 +14,14 @@
 ⚠️ **Pembaca hilir yang terdampak:** Claim Life `repository/ambangproduk.go` membaca view `PRODUCTINWARD_LIFE`
 (ambang `MAXEXPIREDCLAIM`/`MAXDATARECEIVE`). Produk baru atau produk yang diubah sesudah peralihan **tidak terlihat**
 di sana sampai OQ-FLAT-04 diputuskan (Claim Life dialihkan membaca `M_PRODUCTNAME_LIFE`, atau view dibangun ulang DBA).
+*(02-10-2026: OQ-FLAT-04 ditunda — keputusan work owner *"OQ-FLAT-04 :  BIARKAN SAJA, NANTI PAS DEVELOP BAGIAN ITU AKAN DIPEERBAIKI!"* Celah ini diterima sampai bagian
+Claim Life itu dikembangkan; bukan syarat peralihan.)*
 
 ## Syarat sebelum mulai
 
 1. **Penulisan Pega ke layar Product Name Life dihentikan** (OQ-FLAT-03 — siapa dan kapan). Selama Pega masih menulis
-   JSON, isi tabel flat tertinggal.
+   JSON, isi tabel flat tertinggal. Layarnya: aplikasi Pega LAMA, menu MASTER → **Master Product Name Life**, tombol
+   `Save` (`SaveProductName_Act`) — bukan menu bernama sama di aplikasi baru.
 2. ✅ Keputusan work owner 02-10-2026 atas OQ-FLAT-07/08/09 sudah dibangun (`LAPORAN-MIGRASI-FLAT.md`, putaran 20:46:
    gagal 0). Bila uji kering pada hari peralihan menemukan jenis normalisasi atau kegagalan BARU, berhenti dan minta
    keputusan lagi.
