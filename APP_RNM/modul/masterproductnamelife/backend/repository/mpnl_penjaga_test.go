@@ -670,3 +670,73 @@ func TestMPNLAturanViewRateMenggigit(t *testing.T) {
 		t.Errorf("ExecContext/UPDATE dan DELETE FROM atas view rate harus tertangkap, pembaca murni tidak: %v", bad)
 	}
 }
+
+// --- aplikasi hanya tabel flat (keputusan work owner 02-10-2026) ---------------
+//
+// Kalimat work owner dikutip: "UBAH SEMUA JANGAN ADA YANG SIMPAN KE TABLE JSON SIMPAN KE TABLE FLAT SEMUA. DAN JANGAN
+// GUNAKAN TABLE VIEW NYA" (sebelumnya K7: "semua simpan dan baca dari table flat"). Kode aplikasi - layar, services,
+// repository - tidak menyebut kedua tabel JSON warisan; satu-satunya pengecualian alat pindah (sumber salinan sekali
+// jalan ke tabel flat) dan nama konstantanya. Ketiga view produk tidak disebut kode mana pun.
+
+// polaTabelJSONProduk - kedua tabel JSON warisan, sebagai nama Oracle atau konstanta Go (`M_PRODUCT_LIFE_SEQ` -
+// sequence identitas - bukan tabel JSON dan tidak cocok `\b`).
+var polaTabelJSONProduk = regexp.MustCompile(`\b(M_PRODUCT_LIFE|M_PRODUCTINWARD_LIFE|TabelProduk|TabelInward|KolomProduk|KolomInward)\b`)
+
+// polaViewProduk - ketiga view DEV atas tabel JSON produk (K7: tidak dipakai, tidak dibangun ulang).
+var polaViewProduk = regexp.MustCompile(`\b(PRODUCT_LIFE|PRODUCTINWARD_LIFE|DOCUMENTCLAIM_LIFE)\b`)
+
+// boleh menyebut tabel JSON: definisi namanya, alat pindah, dan kodek JSON alat pindah (`UraiProduk` - nama tabel
+// hanya di kalimat galat; nol akses tabel).
+var bolehTabelJSON = []string{"/backend/repository/mpnl_tabel.go", "/backend/repository/mpnl_pindah.go",
+	"/backend/repository/mpnl_json.go"}
+
+func pelanggaranTabelJSON(jalur, isi string) []string {
+	var hasil []string
+	if w := polaViewProduk.FindString(isi); w != "" {
+		hasil = append(hasil, "menyebut view "+w)
+	}
+	for _, b := range bolehTabelJSON {
+		if strings.HasSuffix(jalur, b) {
+			return hasil
+		}
+	}
+	if w := polaTabelJSONProduk.FindString(isi); w != "" {
+		hasil = append(hasil, "menyebut tabel JSON "+w+" - aplikasi hanya membaca dan menulis tabel flat")
+	}
+	return hasil
+}
+
+func TestMPNLAplikasiHanyaTabelFlat(t *testing.T) {
+	n := 0
+	for jalur, isi := range kodeProduksi(t) {
+		n++
+		for _, p := range pelanggaranTabelJSON(jalur, isi) {
+			t.Errorf("%s: %s", jalur, p)
+		}
+	}
+	if n < 10 {
+		t.Fatalf("hanya %d berkas terbaca; pembacanya yang rusak", n)
+	}
+}
+
+func TestMPNLAturanTabelFlatMenggigit(t *testing.T) {
+	for _, k := range []struct{ jalur, isi string }{
+		{"x/backend/repository/mpnl_identitas.go", "for _, tabel := range []string{TabelFlatInduk, TabelProduk} {"},
+		{"x/backend/services/mpnl_simpan.go", "q := `SELECT 1 FROM POOLDATA.M_PRODUCTINWARD_LIFE`"},
+		{"x/backend/repository/mpnl_baca.go", "q := `SELECT ID FROM S.PRODUCT_LIFE`"},
+		{"x/backend/repository/mpnl_pindah.go", "q := `SELECT * FROM S.PRODUCTINWARD_LIFE`"},
+	} {
+		if len(pelanggaranTabelJSON(k.jalur, k.isi)) == 0 {
+			t.Errorf("seharusnya ditolak: %s %q", k.jalur, k.isi)
+		}
+	}
+	for _, k := range []struct{ jalur, isi string }{
+		{"x/backend/repository/mpnl_pindah.go", "q, err := g.siapkan(TabelProduk, sqlSemuaJSONUmum)"},
+		{"x/backend/repository/mpnl_identitas.go", "const SeqProduk = \"M_PRODUCT_LIFE_SEQ\""},
+		{"x/backend/repository/mpnl_flat.go", "TabelFlatInduk = \"M_PRODUCTNAME_LIFE\""},
+	} {
+		if p := pelanggaranTabelJSON(k.jalur, k.isi); len(p) != 0 {
+			t.Errorf("seharusnya sah: %s %q: %v", k.jalur, k.isi, p)
+		}
+	}
+}

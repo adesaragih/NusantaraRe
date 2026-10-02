@@ -9,7 +9,11 @@ package repository
 // ⛔ PENYIMPANGAN SADAR KECIL dari `LPAD` (preseden Retro Life / Treaty
 // Contract Out): nomor urut lebih dari 5 digit dipotong Oracle diam-diam dan
 // melahirkan identitas bertabrakan; di sini ia GAGAL TERANG. ID yang sudah
-// dipakai salah satu tabel (nol PK di DEV) tidak pernah digandakan atau ditimpa.
+// dipakai induk flat tidak pernah digandakan atau ditimpa.
+//
+// ⭐ Keputusan work owner 02-10-2026 ("simpan ke table flat semua", "semua simpan dan baca dari table flat"): yang
+// diperiksa HANYA induk flat `M_PRODUCTNAME_LIFE`. Kedua tabel JSON warisan tidak lagi dibaca aplikasi - ID produk
+// lama sampai di induk flat lewat alat pindah, jadi alat pindah dijalankan SEBELUM aplikasi dipakai.
 //
 // ⛔ Audit 02-10-2026 (RALAT 02-10-2026): di DEV `M_PRODUCT_LIFE_SEQ` tertinggal dari data
 // (nilai berikut 200, ID `100202` sudah ada). `MERGE` prosedur Pega akan MENIMPA produk itu
@@ -23,7 +27,6 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-	"strings"
 
 	"nusantarare/inti/backend/db"
 )
@@ -86,7 +89,7 @@ func PilihIdentitasBebas(berikut func() (int64, error), terpakai func(id string)
 }
 
 // identitasBaru menerbitkan ID produk baru di dalam transaksi pemanggil dan
-// memastikan ID itu belum dipakai induk flat maupun kedua tabel JSON warisan (ID terpakai dilewati, lihat kepala berkas).
+// memastikan ID itu belum dipakai induk flat (ID terpakai dilewati, lihat kepala berkas).
 func (g *Gudang) identitasBaru(ctx context.Context, tx *db.Tx) (string, error) {
 	if !tx.Terisi() {
 		return "", errors.New("repository: a new product identity requires a transaction")
@@ -102,28 +105,16 @@ func (g *Gudang) identitasBaru(ctx context.Context, tx *db.Tx) (string, error) {
 		}
 		return n, nil
 	}
+	q, err := g.siapkan(TabelFlatInduk, sqlCacahID)
+	if err != nil {
+		return "", err
+	}
 	terpakai := func(id string) (bool, error) {
-		// Induk flat lebih dulu; lalu kedua tabel JSON warisan BILA MASIH ADA (02-10-2026, tiket 01 bab bertanggal):
-		// ID yang pernah dipakai produk JSON tidak diterbitkan ulang, dan tabel warisan yang sudah dibuang DBA bukan galat.
-		for _, tabel := range []string{TabelFlatInduk, TabelProduk, TabelInward} {
-			q, err := g.siapkan(tabel, sqlCacahID)
-			if err != nil {
-				return false, err
-			}
-			var c int
-			if err := tx.QueryRowContext(ctx, q, id).Scan(&c); err != nil {
-				if tabel != TabelFlatInduk && strings.Contains(err.Error(), "ORA-00942") {
-					// ⚠️ ORA-00942 juga berarti hak SELECT dicabut: dicatat, supaya pemeriksaan yang dilewati terlihat DBA.
-					log.Printf("master product name life: %s not readable (%v); its IDs are not checked for %s", tabel, err, id)
-					continue
-				}
-				return false, fmt.Errorf("repository: checking %s %s: %w", tabel, id, err)
-			}
-			if c > 0 {
-				return true, nil
-			}
+		var c int
+		if err := tx.QueryRowContext(ctx, q, id).Scan(&c); err != nil {
+			return false, fmt.Errorf("repository: checking %s %s: %w", TabelFlatInduk, id, err)
 		}
-		return false, nil
+		return c > 0, nil
 	}
 	id, dilewati, err := PilihIdentitasBebas(berikut, terpakai)
 	if len(dilewati) > 0 {

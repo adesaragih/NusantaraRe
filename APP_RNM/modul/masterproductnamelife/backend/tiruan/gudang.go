@@ -25,8 +25,6 @@ import (
 type Gudang struct {
 	// Produk - tabel flat `M_PRODUCTNAME_LIFE` + tujuh anak: ID → produk berbentuk flat (NormalkanFlat).
 	Produk map[string]models.Produk
-	// IDWarisan - ID yang masih dipakai kedua tabel JSON warisan; `PilihIdentitasBebas` melewatinya seperti Oracle.
-	IDWarisan map[string]bool
 
 	// Master - isi tiap pemilih, urutan RD.
 	Master map[models.JenisMaster][]models.NilaiMaster
@@ -67,7 +65,7 @@ type Gudang struct {
 
 // Baru menyusun gudang kosong.
 func Baru() *Gudang {
-	return &Gudang{Produk: map[string]models.Produk{}, IDWarisan: map[string]bool{},
+	return &Gudang{Produk: map[string]models.Produk{},
 		Master: map[models.JenisMaster][]models.NilaiMaster{}, Seq: 44, Rate: map[string][]models.BarisRate{}}
 }
 
@@ -163,7 +161,7 @@ func (g *Gudang) SisipProduk(_ context.Context, _ *db.Tx, p models.Produk) (stri
 		},
 		func(id string) (bool, error) {
 			_, flat := g.Produk[id]
-			return flat || g.IDWarisan[id], nil
+			return flat, nil
 		},
 	)
 	if err != nil {

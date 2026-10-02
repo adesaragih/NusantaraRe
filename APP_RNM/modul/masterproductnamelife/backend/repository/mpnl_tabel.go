@@ -6,8 +6,9 @@
 //
 // ⭐ Sejak 02-10-2026 (K5, OQ-MPNL-01 flat; tiket 01 bab bertanggal): produk disimpan di tabel FLAT
 // `M_PRODUCTNAME_LIFE` + tujuh anak (`mpnl_flat.go`). Kedua tabel warisan `M_PRODUCT_LIFE` dan
-// `M_PRODUCTINWARD_LIFE` (P1 lama: JSON seperti Pega) TIDAK ditulis lagi - cadangan dan sumber alat pindah, dibaca
-// `mpnl_pindah.go` dan diperiksa `PilihIdentitasBebas`. Ketiga view DEV tidak dibangun ulang (K7).
+// `M_PRODUCTINWARD_LIFE` (P1 lama: JSON seperti Pega) TIDAK ditulis dan TIDAK dibaca aplikasi lagi - cadangan dan
+// sumber alat pindah saja (`mpnl_pindah.go`). Ketiga view DEV tidak dipakai dan tidak dibangun ulang (K7). Dijaga
+// `TestMPNLAplikasiHanyaTabelFlat` (keputusan work owner 02-10-2026).
 // ⛔ Setiap query menyebut skemanya lewat `db.Qualify` dan diperiksa
 // `db.PeriksaSQL` (nol COMMIT). Prosedur `PEGA_M_PRODUCT_LIFE` dan
 // `PEGA_M_PRODUCT_INWARD_LIFE` TIDAK dipanggil (logikanya ditiru).
@@ -25,7 +26,7 @@ import (
 	"nusantarare/inti/backend/db"
 )
 
-// Dua tabel warisan produk (`dba-procedures-and-ddl.md` DDL) - sejak 02-10-2026 hanya DIBACA (alat pindah, identitas).
+// Dua tabel warisan produk (`dba-procedures-and-ddl.md` DDL) - sejak 02-10-2026 hanya DIBACA alat pindah.
 const (
 	TabelProduk = "M_PRODUCT_LIFE"
 	TabelInward = "M_PRODUCTINWARD_LIFE"
