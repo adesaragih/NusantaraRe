@@ -18,6 +18,7 @@ import {
   HAPUS_TCO,
   KURS_TCO,
   LABEL_MEDAN_KHUSUS,
+  JUDUL_GRID_KLAUSUL,
   LABEL_MEDAN_KLAUSUL,
   LAMPIRAN_TCO,
   MENU_TCO,
@@ -260,6 +261,16 @@ describe.skipIf(!adaKorpus)('label Treaty Contract Out berbukti barisnya', () =>
     for (const [b, n, v] of medan) expect(baris(sec(b), n).trim(), `${b} ${n}`).toBe(lf(v))
     expect(baris(sec('ExclutionTreatyObject'), 566).trim().replace(/&gt;/g, '>')).toBe(lf(LABEL_MEDAN_KHUSUS['ExclutionTreaty/Object'].Pct))
     expect(baris(sec('ExclutionTreaty'), 955).trim()).toBe(nilai(KLAUSUL_TCO.exclusionTreaty))
+    // 10014 Co-Ins Scale: judul bagian, dua judul grid, kolom, Add/Edit kedua grid.
+    const judul = (v: string) => `<pyTitle>${v}</pyTitle>`
+    for (const [n, v] of [[917, nilai(KLAUSUL_TCO.coInsScale)],
+      [8708, judul(JUDUL_GRID_KLAUSUL['CoinsPanel/Less Than'])], [12971, judul(JUDUL_GRID_KLAUSUL['CoinsPanel/More Than'])],
+      [10180, nilai(KLAUSUL_TCO.coInsuranceShare)], [14445, nilai(KLAUSUL_TCO.coInsuranceShare)],
+      [10340, nilai(LABEL_MEDAN_KLAUSUL.TreatyLimit)], [14605, nilai(LABEL_MEDAN_KLAUSUL.TreatyLimit)],
+      [10554, tombol(KLAUSUL_TCO.add)], [14815, tombol(KLAUSUL_TCO.add)], [11254, tombol(KLAUSUL_TCO.edit)],
+      [9982, '<pyFieldValueForNoRows>pzRDLNoResults</pyFieldValueForNoRows>']] as [number, string][]) {
+      expect(baris(sec('Coins'), n).trim(), `Coins ${n}`).toBe(v)
+    }
   })
 
   it('tiket 06: grid dan form security VERBATIM, aksi tombolnya terbukti', () => {

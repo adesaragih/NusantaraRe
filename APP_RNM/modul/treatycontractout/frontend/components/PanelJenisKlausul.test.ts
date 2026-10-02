@@ -20,6 +20,10 @@ import {
   addTampil,
   tabSubjenis,
   rencanaKonversi,
+  gridCoInsScale,
+  judulBagianJenis,
+  judulGridAturan,
+  kolomGridAturan,
 } from './PanelJenisKlausul'
 
 const KODE = readFileSync(join(__dirname, 'PanelJenisKlausul.tsx'), 'utf8')
@@ -196,7 +200,10 @@ describe('Add jenis satu baris', () => {
     expect(addTampil(aturan({ jenis: 'EPI' }), true, 3)).toBe(true)
   })
   it('tombol Add dirender lewat penjaga itu', () => {
-    expect(KODE).toContain('{addTampil(aturan, daftar !== null, baris.length) && (')
+    expect(KODE).toContain('const tombolAdd = addTampil(aturan, daftar !== null, baris.length) && (')
+    // Satu tombol, dua tempat: baris aksi (jenis lain) atau kepala kolom aksi (Co-Ins Scale).
+    expect(KODE.match(/\{KLAUSUL_TCO\.add\}/g)?.length).toBe(1)
+    expect(KODE.match(/tombolAdd\b/g)?.length).toBe(3)
   })
 })
 
@@ -221,5 +228,48 @@ describe('10013 Exclusion Treaty', () => {
   it('ID Occupation / ID Clause: PilihMasterKlausul, nol kotak Search', () => {
     expect(KODE).toContain('<PilihMasterKlausul')
     expect(KODE).not.toMatch(/cariPilihan\b|setCari|KLAUSUL_TCO\.cariPilihan/)
+  })
+})
+
+// 10014 Co-Ins Scale (`GridTreatyArrangementCoins.xml`) seperti tangkapan layar work owner 02-10-2026: judul
+// b917, DUA grid bertumpuk yang dapat dilipat (b8708 / b12971, `Param.Type` "Less Than" / "More Than"),
+// kolom Co Insurance Share (`DetailCoinsShare`: `.CoIns_Min` - `.CoIns_Max`) + Treaty Limit, `Add` di kepala.
+describe('10014 Co-Ins Scale', () => {
+  const coins: JenisKlausul = {
+    id: '10014', descName: 'UJI COINS PANEL', isXol: '0', statusAktif: '', catatan: '',
+    aturan: ['Less Than', 'More Than'].map((subjenis) =>
+      aturan({ jenis: 'CoinsPanel', subjenis, medan: ['CoIns_Min', 'CoIns_Max', 'TreatyLimit'], wajib: ['CoIns_Min', 'CoIns_Max', 'TreatyLimit'] })),
+  }
+  const epi: JenisKlausul = { ...coins, id: '10009', aturan: [aturan({}), aturan({ jenis: 'EpiList', anak: true })] }
+  it('dua grid bertumpuk, bukan tab', () => {
+    expect(tabSubjenis(coins)).toEqual([])
+    expect(aturanInduk(coins).map((a) => a.subjenis)).toEqual(['Less Than', 'More Than'])
+  })
+  it('judul bagian dan judul grid VERBATIM; jenis lain tetap', () => {
+    expect(judulBagianJenis(coins)).toBe('Co-Ins Scale')
+    expect(judulBagianJenis(epi)).toBe('')
+    expect(judulGridAturan(coins.aturan[0]!)).toBe('Risk with Sum Insured less than USD 100.000.000')
+    expect(judulGridAturan(coins.aturan[1]!)).toBe('Risk with Sum Insured more than USD 100.000.000')
+    expect(judulGridAturan(aturan({ jenis: 'ExclutionTreaty', subjenis: 'Clause' }))).toBe('ExclutionTreaty — Clause')
+    expect(judulGridAturan(aturan({}))).toBe('EPI')
+  })
+  it('kolom Co Insurance Share (From - To) dan Treaty Limit, tanpa Modified Date', () => {
+    const kolom = kolomGridAturan(coins.aturan[0]!)
+    expect(kolom.map((c) => c.label)).toEqual(['Co Insurance Share', 'Treaty Limit'])
+    const k = klausul({ subjenis: 'Less Than', medan: { CoIns_Min: '0', CoIns_Max: '12.5', TreatyLimit: '5000000' } })
+    expect(kolom.map((c) => c.isi(k))).toEqual(['0 - 12,5', '5.000.000'])
+  })
+  it('jenis lain: kolom medan + Modified Date, seperti sebelumnya', () => {
+    const kolom = kolomGridAturan(aturan({}))
+    expect(kolom.map((c) => c.label)).toEqual(['ReinsType', 'Line', 'Rp', 'Usd', 'Modified Date'])
+    expect(kolom[0]!.isi(klausul({}))).toBe('UJI QS')
+    expect(kolom[2]!.isi(klausul({ medan: { Rp: '1000000' } }))).toBe('1.000.000')
+  })
+  it('grid dapat dilipat (terbuka), Add di kepala kolom aksi, No items di dalam tabel', () => {
+    expect(gridCoInsScale(coins.aturan[0]!)).toBe(true)
+    expect(gridCoInsScale(aturan({}))).toBe(false)
+    expect(KODE).toContain('<details className="panel tco-lipat" open>')
+    expect(KODE).toContain('<th className="table__actions">{coins ? tombolAdd : null}</th>')
+    expect(KODE).toContain('{KLAUSUL_TCO.noItems}')
   })
 })

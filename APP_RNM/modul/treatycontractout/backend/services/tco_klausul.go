@@ -235,10 +235,7 @@ func TampilKlausul(k models.KlausulTreaty) KlausulTampil {
 			medan[m] = v
 		}
 	}
-	sub := ""
-	if k.TreatyDescID == models.DescExclutionTreaty {
-		sub = models.SubjenisExclusionTCO(k)
-	}
+	sub := models.SubjenisKlausulTCO(k)
 	return KlausulTampil{ID: k.ID, TreatyYear: k.TreatyYear, TreatyYearID: k.TreatyYearID,
 		TreatyGroupID: k.TreatyGroupID, TreatyDescID: k.TreatyDescID, TreatyDescName: k.TreatyDescName,
 		ReinsTypeID: k.ReinsTypeID, ReinsTypeName: k.ReinsTypeName, ParentReinsTypeID: k.ParentReinsTypeID,
@@ -382,6 +379,9 @@ func (l *KlausulTCO) Daftar(ctx context.Context, pelaku inti.Pelaku, tahunID, de
 	if err != nil {
 		return DaftarKlausulTampil{}, err
 	}
+	if strings.TrimSpace(descID) == models.DescCoinsPanel {
+		models.UrutCoInsScaleTCO(baris)
+	}
 	hasil := DaftarKlausulTampil{Daftar: make([]KlausulTampil, 0, len(baris)), Total: len(baris)}
 	var pct []*apd.Decimal
 	for _, b := range baris {
@@ -483,8 +483,17 @@ func (l *KlausulTCO) Simpan(ctx context.Context, pelaku inti.Pelaku, tahunID str
 		if lama.TreatyDescID != a.DescID || lama.ParentReinsTypeID != parent {
 			return HasilKlausulTampil{}, fmt.Errorf("%w: row %s", ErrKlausulJenisBerubah, id)
 		}
+		// Co-Ins Scale: baris tidak pindah grid (`SetTreatyArrExclustionCoins_Act`
+		// membaca `.SpreadingOrder` barisnya sendiri, b721/b1049).
+		if a.DescID == models.DescCoinsPanel && models.SubjenisKlausulTCO(lama) != a.Subjenis {
+			return HasilKlausulTampil{}, fmt.Errorf("%w: row %s belongs to grid %q", ErrKlausulJenisBerubah, id, lama.SpreadingOrder)
+		}
 		// Medan di luar form (Kurs, Layer*, SpreadingOrder, ...) dipertahankan.
 		k = lama
+	}
+	if a.DescID == models.DescCoinsPanel {
+		// `NewTreatyArrCoins` b405/b406: `.SpreadingOrder = Param.Type` grid tombol Add-nya.
+		k.SpreadingOrder = a.Subjenis
 	}
 	k.ID, k.TreatyYear, k.TreatyYearID = id, tahun.TreatyYear, tahunID
 	k.TreatyGroupID, k.TreatyGroupName = tahun.TreatyGroupID, tahun.TreatyGroupName

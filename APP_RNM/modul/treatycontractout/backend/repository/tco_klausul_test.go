@@ -162,14 +162,19 @@ func TestMedanSamaKlausulTCO(t *testing.T) {
 		v, _, _ := UraiDesimalWarisanTCO(teks)
 		return v
 	}
-	a := models.KlausulTreaty{Pct: d("12.5"), Layer: "UJI-L1"}
-	b := models.KlausulTreaty{Pct: d("12,50"), Layer: " UJI-L1 "}
+	a := models.KlausulTreaty{Pct: d("12.5"), Layer: "UJI-L1", SpreadingOrder: "Less Than"}
+	b := models.KlausulTreaty{Pct: d("12,50"), Layer: " UJI-L1 ", SpreadingOrder: "Less Than"}
 	for medan, mau := range map[string]bool{models.MedanPct: true, models.MedanLayer: true, models.MedanRp: false,
-		models.MedanMethod: false} {
+		models.MedanMethod: false, models.MedanSpreadingOrder: true} {
 		sama, err := medanSamaKlausulTCO(a, b, medan)
 		if err != nil || sama != mau {
 			t.Errorf("%s: %v %v, mau %v", medan, sama, err, mau)
 		}
+	}
+	// Co-Ins Scale: grid lain (SpreadingOrder lain) bukan dobel.
+	b.SpreadingOrder = "More Than"
+	if sama, err := medanSamaKlausulTCO(a, b, models.MedanSpreadingOrder); err != nil || sama {
+		t.Errorf("Less Than vs More Than: %v %v", sama, err)
 	}
 	if _, err := medanSamaKlausulTCO(a, b, "JSONDATA"); err == nil {
 		t.Error("kunci dobel di luar daftar putih diterima")

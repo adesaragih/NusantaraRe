@@ -23,6 +23,7 @@ package models
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/cockroachdb/apd/v3"
@@ -81,6 +82,20 @@ const (
 	SubjenisObject     = "Object"
 	SubjenisPeriode    = "Periode"
 )
+
+// Subjenis CoinsPanel - Co-Ins Scale (`GridTreatyArrangementCoins.xml`) berisi DUA
+// grid: "Risk with Sum Insured less than USD 100.000.000" b8708 dan "... more than ..."
+// b12971. Nilainya `Param.Type` VERBATIM (b10055 / b14320, tombol `Add` b10554 ->
+// `NewTreatyArrCoins`), yang b405/b406 simpan di `.SpreadingOrder`; grid menyaring
+// `.SpreadingOrder = Param.Type` (`BrowseTreatyArrangement_CoinsPanel_RD.xml` b610/b612).
+const (
+	SubjenisCoinsLessThan = "Less Than"
+	SubjenisCoinsMoreThan = "More Than"
+)
+
+// MedanSpreadingOrder - kolom `SPREADINGORDER`: BUKAN medan form (klien tidak
+// mengirimnya; server mengisinya dari subjenis CoinsPanel), hanya kunci dobel.
+const MedanSpreadingOrder = "SpreadingOrder"
 
 // AturanKlausul adalah aturan satu jenis klausul.
 type AturanKlausul struct {
@@ -169,6 +184,15 @@ func anak(jenis, desc, sumber string, peringatan bool) AturanKlausul {
 		Berkurs: true, Sumber: sumber, PilihanReins: PilihanReinsAnakTreatyLimit}
 }
 
+// coinsPanel - satu grid Co-Ins Scale (subjenis = `Param.Type` = `.SpreadingOrder`).
+func coinsPanel(subjenis string) AturanKlausul {
+	return AturanKlausul{Jenis: "CoinsPanel", DescID: DescCoinsPanel, Subjenis: subjenis,
+		Medan:      []string{MedanCoInsMin, MedanCoInsMax, MedanTreatyLimit},
+		Wajib:      []string{MedanCoInsMin, MedanCoInsMax, MedanTreatyLimit},
+		KunciDobel: []string{MedanSpreadingOrder, MedanCoInsMin, MedanCoInsMax},
+		Sumber:     "SaveTreatyArrCoinsPanel_Act"}
+}
+
 // AturanKlausulTCO - SELURUH jenis. Satu tempat, di kode (AC 34).
 var AturanKlausulTCO = []AturanKlausul{
 	induk("TreatyLimit", DescTreatyLimit, "SaveTreatyArrTreatyLimit_Act"),
@@ -219,9 +243,13 @@ var AturanKlausulTCO = []AturanKlausul{
 	{Jenis: "ExclutionTreaty", DescID: DescExclutionTreaty, Subjenis: SubjenisPeriode,
 		Medan: []string{MedanLayer}, Wajib: []string{MedanLayer}, KunciDobel: []string{MedanLayer},
 		Sumber: "SaveTreatyArrExclutionTreaty_Act"},
-	{Jenis: "CoinsPanel", DescID: DescCoinsPanel, Medan: []string{MedanCoInsMin, MedanCoInsMax, MedanTreatyLimit},
-		Wajib: []string{MedanCoInsMin, MedanCoInsMax, MedanTreatyLimit}, KunciDobel: []string{MedanCoInsMin, MedanCoInsMax},
-		Sumber: "SaveTreatyArrCoinsPanel_Act"},
+	// CoinsPanel - dua grid Co-Ins Scale, satu subjenis per grid [keputusan work owner
+	// 02-10-2026: tampilan seperti Pega]. Kunci dobel PER GRID (`SpreadingOrder` ikut):
+	// rentang share yang sama boleh ada di kedua grid dengan Treaty Limit berbeda -
+	// `[asumsi]` gerbang dobel Pega ada di prosedur `SaveMasterProportionalArrg`
+	// (`OutputData.HASILD7`, `SaveTreatyArrCoinsPanel_Act` b1483) yang tidak ada di korpus.
+	coinsPanel(SubjenisCoinsLessThan),
+	coinsPanel(SubjenisCoinsMoreThan),
 	// MinLOL, MaxCoinsPanel, MinLOLMB - SATU baris per tahun [keputusan work owner 02-10-2026,
 	// divalidasi XML]: `GridTreatyArrangementMinLOL.xml` b2232, `…MaxCoinsPanel.xml` b2212,
 	// `…MInLOLMB.xml` b2262 (`Add` hanya bila `ID == ''`); `GetMinimumLOL` b750,
@@ -264,10 +292,11 @@ func CariAturanKlausul(descID string, anak bool, subjenis string) (AturanKlausul
 	return AturanKlausul{}, false
 }
 
-// AturanJenisKlausul mencari aturan menurut nama jenis VERBATIM.
+// AturanJenisKlausul mencari aturan menurut nama jenis VERBATIM; subjenis kosong
+// = subjenis PERTAMA jenis itu (Occupation, Less Than).
 func AturanJenisKlausul(jenis, subjenis string) (AturanKlausul, bool) {
 	for _, a := range AturanKlausulTCO {
-		if a.Jenis == jenis && (a.Subjenis == subjenis || (subjenis == "" && a.Subjenis == SubjenisOccupation)) {
+		if a.Jenis == jenis && (a.Subjenis == subjenis || subjenis == "") {
 			return a, true
 		}
 	}
@@ -320,6 +349,8 @@ func NilaiMedanKlausul(k KlausulTreaty, medan string) string {
 		return d(k.CoinsMax)
 	case MedanTreatyLimit:
 		return d(k.TreatyLimit)
+	case MedanSpreadingOrder:
+		return k.SpreadingOrder
 	case MedanIDOccupation:
 		return k.IDOccupation
 	case MedanOccupation:
@@ -512,6 +543,34 @@ func SubjenisExclusionTCO(k KlausulTreaty) string {
 		return SubjenisObject
 	}
 	return ""
+}
+
+// SubjenisKlausulTCO menurunkan subjenis satu baris: ExclutionTreaty dari
+// medannya; CoinsPanel dari `.SpreadingOrder` - persis "Less Than"/"More Than"
+// (saringan RD `=`), selain itu tanpa grid (tidak tampil, seperti Pega).
+func SubjenisKlausulTCO(k KlausulTreaty) string {
+	switch k.TreatyDescID {
+	case DescExclutionTreaty:
+		return SubjenisExclusionTCO(k)
+	case DescCoinsPanel:
+		if s := strings.TrimSpace(k.SpreadingOrder); s == SubjenisCoinsLessThan || s == SubjenisCoinsMoreThan {
+			return s
+		}
+	}
+	return ""
+}
+
+// UrutCoInsScaleTCO - urutan grid Co-Ins Scale: `.TreatyLimit DESC`
+// (`BrowseTreatyArrangement_CoinsPanel_RD.xml` b653/b655; `TREATYLIMIT` NUMBER),
+// kosong lebih dulu seperti Oracle `DESC` (NULLS FIRST); seri tetap urut masukan.
+func UrutCoInsScaleTCO(baris []KlausulTreaty) {
+	sort.SliceStable(baris, func(i, j int) bool {
+		a, b := baris[i].TreatyLimit, baris[j].TreatyLimit
+		if a == nil || b == nil {
+			return a == nil && b != nil
+		}
+		return a.Cmp(b) > 0
+	})
 }
 
 // KlausulAnakTCO - baris anak adalah baris dengan induk (bukan sentinel "00").

@@ -410,6 +410,12 @@ export const KLAUSUL_TCO = {
   closeChild: 'Close Child',
   /** `Section/GridTreatyArrangementExclutionTreaty.xml` b955. */
   exclusionTreaty: 'Exclusion Treaty',
+  /** `Section/GridTreatyArrangementCoins.xml` b917 — judul bagian 10014. */
+  coInsScale: 'Co-Ins Scale',
+  /** `GridTreatyArrangementCoins.xml` b10180 / b14445 — sel `DetailCoinsShare` (`.CoIns_Min` - `.CoIns_Max`). */
+  coInsuranceShare: 'Co Insurance Share',
+  /** Grid kosong: pesan platform Pega `pzRDLNoResults` (b9982 / b14247) — teksnya dari tangkapan layar work owner 02-10-2026. */
+  noItems: 'No items',
 
   /** `[tidak ada di korpus]` */
   cancel: 'Cancel',
@@ -467,6 +473,14 @@ export const LABEL_MEDAN_KLAUSUL = {
   Clause: 'Clause',
   /** `GridTreatyArrangementExclutionTreatyPeriode.xml` b500 "Max Periode (Month)" — diterjemahkan [keputusan work owner 30-09-2026: bahasa Inggris]. */
   Layer: 'Max Period (Month)',
+} as const satisfies Readonly<Record<string, string>>
+
+/** Judul grid per `jenis/subjenis` — selain ini judulnya nama jenis (dan subjenis). */
+export const JUDUL_GRID_KLAUSUL = {
+  /** `GridTreatyArrangementCoins.xml` b8708 (`Param.Type` "Less Than" b10055). */
+  'CoinsPanel/Less Than': 'Risk with Sum Insured less than USD 100.000.000',
+  /** b12971 (`Param.Type` "More Than" b14320). */
+  'CoinsPanel/More Than': 'Risk with Sum Insured more than USD 100.000.000',
 } as const satisfies Readonly<Record<string, string>>
 
 /** Penimpaan label per `jenis` atau `jenis/subjenis`. */

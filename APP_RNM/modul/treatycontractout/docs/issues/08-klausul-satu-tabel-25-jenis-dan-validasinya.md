@@ -435,3 +435,49 @@ sel anak terikat `.ReinsTypeName` (b2935, nama = `.CARI2`), `.CARI1` → `ReinsT
 - rute `GET …/jenis-reasuransi/anak-treaty-limit?namaInduk=`; frontend mengirim nama ReinsType baris induk.
 - Uji: models (tabel + korpus), services (`TestKlausulAnakMengikutiTreatyContractSetReinsTypeList`, Treaty Limit + EPI),
   uji Oracle `tco_klausul_db_test.go` (induk "UJI QS TREATY", anak QS (OR)), frontend.
+
+## ⛔ Keputusan work owner bertanggal — 02-10-2026 (10014 Co-Ins Scale: dua grid seperti Pega)
+
+*Permintaan: "perbaiki yang Coins Scale, harusnya seperti pada gambar ini" — tangkapan layar Pega: judul `Co-Ins Scale`, dua
+grid yang dapat dilipat `Risk with Sum Insured less than USD 100.000.000` / `… more than …`, kolom `Co Insurance Share` dan
+`Treaty Limit`, tombol `Add` di kepala grid, `No items`, tombol `Close`. Sebelumnya layar kita SATU grid `CoinsPanel` berkolom
+`From`/`To`/`Treaty Limit`/`Modified Date`, dan `.SpreadingOrder` tidak pernah diisi.*
+
+**XML.**
+- `Section/GridTreatyArrangementCoins.xml`: judul b917; grid 1 b8708 dan grid 2 b12971, `pyExpanded` true.
+- Tiap grid menerima `Type` = `"Less Than"` b10055 / `"More Than"` b14320 (`TreatyDescID`, `TreatyYearID`, `Type`).
+- Kolom: `Co Insurance Share` b10180 / b14445 (sub-section `DetailCoinsShare`: `.CoIns_Min` b517 - `.CoIns_Max` b1272) dan
+  `Treaty Limit` b10340 / b14605.
+- Tombol: `Add` b10554 / b14815 di kepala kolom aksi → `NewTreatyArrCoins` (`Type`); `Edit` b11254 →
+  `SetTreatyArrExclustionCoins_Act` (`ID`).
+- `Activity/NewTreatyArrCoins.xml` b405/b406: `InputTreatyCoins.SpreadingOrder = Param.Type`. `SaveTreatyArrCoinsPanel_Act`
+  menyalin halaman itu utuh ke `SaveMasterProportionalArrg`.
+- `SetTreatyArrExclustionCoins_Act`: membaca `.SpreadingOrder` barisnya sendiri (b721/b1049).
+- `ReportDefinition/BrowseTreatyArrangement_CoinsPanel_RD.xml`: `C AND F2 AND F1` b564, `.SpreadingOrder = Param.Type`
+  b610/b612, urut `.TreatyLimit DESC` b653/b655.
+
+**Yang dibangun.**
+- models: `SubjenisCoinsLessThan`/`SubjenisCoinsMoreThan` (nilai `Param.Type` VERBATIM).
+- models: dua aturan `CoinsPanel` (wajib `CoIns_Min`, `CoIns_Max`, `TreatyLimit` tetap).
+- models: `SubjenisKlausulTCO` (CoinsPanel dari `.SpreadingOrder`, persis seperti saringan RD `=`) dan `UrutCoInsScaleTCO`
+  (`TreatyLimit` turun, kosong lebih dulu seperti Oracle `DESC`).
+- services: baris baru `SPREADINGORDER` = subjenis grid tombol `Add`-nya. Klien tidak dapat mengirim `SpreadingOrder`
+  (`ErrMedanBukanMilikJenis`); Edit tidak memindah baris ke grid lain (`ErrKlausulJenisBerubah`).
+- repository: `SpreadingOrder` menjadi kunci dobel (`SPREADINGORDER`).
+- frontend: judul bagian `Co-Ins Scale`; kedua grid BERTUMPUK (bukan tab, berbeda dengan 10013), masing-masing
+  `<details open>`.
+- frontend: kolom `Co Insurance Share` (`From - To`) + `Treaty Limit`; `Add` di kepala kolom aksi; `No items` di dalam tabel.
+  Form `From`/`To`/`Treaty Limit` tetap.
+
+⚠️ `[asumsi]` **Kunci dobel per grid** (`SpreadingOrder`, `CoIns_Min`, `CoIns_Max`): rentang share yang sama boleh ada di kedua
+grid dengan Treaty Limit berbeda. Gerbang dobel Pega ada di prosedur `SaveMasterProportionalArrg` (`OutputData.HASILD7`,
+`SaveTreatyArrCoinsPanel_Act` b1483), yang tidak ada di korpus — **konfirmasi work owner**.
+
+⚠️ Baris `CoinsPanel` dengan `.SpreadingOrder` kosong atau di luar kedua nilai tidak tampil di grid mana pun — sama seperti Pega.
+Contohnya baris yang disimpan layar kita sebelum perbaikan ini.
+
+**Uji.**
+- models: `TestCoinsPanelDuaGridCoInsScale`, `TestCoinsPanelKorpus` (baris korpus), `TestUrutCoInsScaleTCO`.
+- repository: `TestMedanSamaKlausulTCO`.
+- services: `TestKlausulCoInsScaleDuaGrid`.
+- frontend: `10014 Co-Ins Scale` dan `labels.test` (judul, kolom, Add/Edit kedua grid terhadap XML).

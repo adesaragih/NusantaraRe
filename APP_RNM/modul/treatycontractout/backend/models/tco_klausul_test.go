@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -44,8 +45,11 @@ func TestAturanKlausulDuaPuluhLimaJenis(t *testing.T) {
 }
 
 func subjenisBawaan(id string) string {
-	if id == DescExclutionTreaty {
+	switch id {
+	case DescExclutionTreaty:
 		return SubjenisOccupation
+	case DescCoinsPanel:
+		return SubjenisCoinsLessThan
 	}
 	return ""
 }
@@ -221,5 +225,93 @@ func TestSatuBarisHanyaTigaJenis(t *testing.T) {
 	sort.Strings(satu)
 	if got := strings.Join(satu, ","); got != "MaxCoinsPanel/10016,MinLOL/10015,MinLOLMB/10018" {
 		t.Errorf("jenis satu baris: %s", got)
+	}
+}
+
+// TestCoinsPanelDuaGridCoInsScale - Co-Ins Scale (`GridTreatyArrangementCoins.xml`) = DUA grid,
+// dibedakan `Param.Type` "Less Than" (b10055) / "More Than" (b14320) yang `NewTreatyArrCoins` b406
+// simpan di `.SpreadingOrder`; kunci dobel per grid.
+func TestCoinsPanelDuaGridCoInsScale(t *testing.T) {
+	for _, sub := range []string{SubjenisCoinsLessThan, SubjenisCoinsMoreThan} {
+		a, ok := CariAturanKlausul(DescCoinsPanel, false, sub)
+		if !ok {
+			t.Fatalf("CoinsPanel/%s tidak ada", sub)
+		}
+		if a.Jenis != "CoinsPanel" || strings.Join(a.Medan, ",") != "CoIns_Min,CoIns_Max,TreatyLimit" ||
+			strings.Join(a.Wajib, ",") != "CoIns_Min,CoIns_Max,TreatyLimit" ||
+			strings.Join(a.KunciDobel, ",") != "SpreadingOrder,CoIns_Min,CoIns_Max" {
+			t.Errorf("CoinsPanel/%s: %+v", sub, a)
+		}
+	}
+	if SubjenisCoinsLessThan != "Less Than" || SubjenisCoinsMoreThan != "More Than" {
+		t.Error("subjenis Co-Ins Scale bukan nilai Param.Type VERBATIM")
+	}
+	if _, ok := CariAturanKlausul(DescCoinsPanel, false, ""); ok {
+		t.Error("CoinsPanel tanpa subjenis diterima - grid mana?")
+	}
+	for k, mau := range map[string]string{"Less Than": "Less Than", "More Than": "More Than", "": "",
+		"less than": "", " More Than ": "More Than", "Lainnya": ""} {
+		if got := SubjenisKlausulTCO(KlausulTreaty{TreatyDescID: DescCoinsPanel, SpreadingOrder: k}); got != mau {
+			t.Errorf("SpreadingOrder %q -> %q, mau %q", k, got, mau)
+		}
+	}
+	if got := SubjenisKlausulTCO(KlausulTreaty{TreatyDescID: DescExclutionTreaty, IDClause: "UJI-1"}); got != SubjenisClause {
+		t.Errorf("exclusion: %q", got)
+	}
+	if got := SubjenisKlausulTCO(KlausulTreaty{TreatyDescID: DescEPI, SpreadingOrder: "Less Than"}); got != "" {
+		t.Errorf("jenis lain bersubjenis %q", got)
+	}
+	k := KlausulTreaty{SpreadingOrder: "More Than"}
+	if NilaiMedanKlausul(k, MedanSpreadingOrder) != "More Than" {
+		t.Error("SpreadingOrder tidak terbaca sebagai kunci dobel")
+	}
+}
+
+// TestCoinsPanelKorpus - nilai Type, simpanannya, saringan grid, dan urutannya ada di korpus.
+func TestCoinsPanelKorpus(t *testing.T) {
+	baris := func(rel string, n int) string {
+		b, err := os.ReadFile(akarKorpusTCO + `\` + rel)
+		if err != nil {
+			t.Skipf("korpus tidak terjangkau (%v)", err)
+		}
+		return strings.TrimSpace(strings.Split(strings.ReplaceAll(string(b), "\r\n", "\n"), "\n")[n-1])
+	}
+	grid := `Section\GridTreatyArrangementCoins.xml`
+	rd := `ReportDefinition\BrowseTreatyArrangement_CoinsPanel_RD.xml`
+	for _, c := range []struct {
+		rel string
+		n   int
+		mau string
+	}{
+		{grid, 10055, `<pyValue>"` + SubjenisCoinsLessThan + `"</pyValue>`},
+		{grid, 14320, `<pyValue>"` + SubjenisCoinsMoreThan + `"</pyValue>`},
+		{`Activity\NewTreatyArrCoins.xml`, 405, `<PropertiesName>InputTreatyCoins.SpreadingOrder</PropertiesName>`},
+		{`Activity\NewTreatyArrCoins.xml`, 406, `<PropertiesValue>Param.Type</PropertiesValue>`},
+		{rd, 610, `<pyFilterName>.SpreadingOrder</pyFilterName>`},
+		{rd, 612, `<pyFilterValue>Param.Type</pyFilterValue>`},
+		{rd, 653, `<pyFieldName>.TreatyLimit</pyFieldName>`},
+		{rd, 655, `<pySortType>DESC</pySortType>`},
+	} {
+		if got := baris(c.rel, c.n); got != c.mau {
+			t.Errorf("%s b%d: %s, mau %s", c.rel, c.n, got, c.mau)
+		}
+	}
+}
+
+// TestUrutCoInsScaleTCO - `TreatyLimit DESC`, kosong lebih dulu (Oracle NULLS FIRST), seri stabil.
+func TestUrutCoInsScaleTCO(t *testing.T) {
+	d := func(s string) *apd.Decimal {
+		v, _, _ := apd.NewFromString(s)
+		return v
+	}
+	b := []KlausulTreaty{{ID: "1", TreatyLimit: d("500")}, {ID: "2", TreatyLimit: d("1000.5")}, {ID: "3"},
+		{ID: "4", TreatyLimit: d("500.00")}, {ID: "5", TreatyLimit: d("99")}}
+	UrutCoInsScaleTCO(b)
+	var id []string
+	for _, k := range b {
+		id = append(id, k.ID)
+	}
+	if got := strings.Join(id, ","); got != "3,2,1,4,5" {
+		t.Errorf("urutan %s, mau 3,2,1,4,5", got)
 	}
 }
