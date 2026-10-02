@@ -116,6 +116,11 @@ type AturanKlausul struct {
 	// induk; `PilihanReinsAnakTreatyLimit` = porsi + induknya - SELURUH aturan
 	// anak (konstruktor `anak`).
 	PilihanReins string
+	// SatuBaris - jenis berisi SATU baris per tahun treaty: `Add` hanya tampil
+	// bila form belum memuat baris (`OutputParam.DATASHOW ='' &&
+	// InputTreaty*.ID == ''`), dan `Get*` memuat baris yang ada ke form
+	// (`pxResults(1).ID`). Baris kedua ditolak server; `Edit` tetap boleh.
+	SatuBaris bool
 }
 
 // PilihanReinsAnakTreatyLimit - ReinsType baris anak dipilih dari dua belas
@@ -223,15 +228,20 @@ var AturanKlausulTCO = []AturanKlausul{
 	{Jenis: "CoinsPanel", DescID: DescCoinsPanel, Medan: []string{MedanCoInsMin, MedanCoInsMax, MedanTreatyLimit},
 		Wajib: []string{MedanCoInsMin, MedanCoInsMax, MedanTreatyLimit}, KunciDobel: []string{MedanCoInsMin, MedanCoInsMax},
 		Sumber: "SaveTreatyArrCoinsPanel_Act"},
+	// MinLOL, MaxCoinsPanel, MinLOLMB - SATU baris per tahun [keputusan work owner 02-10-2026,
+	// divalidasi XML]: `GridTreatyArrangementMinLOL.xml` b2232, `…MaxCoinsPanel.xml` b2212,
+	// `…MInLOLMB.xml` b2262 (`Add` hanya bila `ID == ''`); `GetMinimumLOL` b750,
+	// `GetMaxCoinsPanel` b748, `GetMinimumLOLMB` b750 (`ID ← pxResults(1).ID`, saringan
+	// `TreatyYearID` + `TreatyDescID`).
 	{Jenis: "MinLOL", DescID: DescMinLOL, Medan: []string{MedanPct}, Wajib: []string{MedanPct},
-		KunciDobel: []string{MedanPct}, Sumber: "SaveTreatyArrMinLOL"},
+		KunciDobel: []string{MedanPct}, SatuBaris: true, Sumber: "SaveTreatyArrMinLOL"},
 	{Jenis: "MaxCoinsPanel", DescID: DescMaxCoinsPanel, Medan: []string{MedanCoInsMax}, Wajib: []string{MedanCoInsMax},
-		KunciDobel: []string{MedanCoInsMax}, Sumber: "SaveTreatyArrMaxCoinsPanel"},
+		KunciDobel: []string{MedanCoInsMax}, SatuBaris: true, Sumber: "SaveTreatyArrMaxCoinsPanel"},
 	{Jenis: "LimitMB", DescID: DescLimitMB, Ditahan: fmt.Sprintf(alasanDitahan, "LimitMB"),
 		Medan:  []string{MedanIDOccupation, MedanPct, MedanPctMe, MedanRp, MedanUsd, MedanTerritorialLimit},
 		Sumber: "SaveTreatyArrLimitMB_Act"},
 	{Jenis: "MinLOLMB", DescID: DescMinLOLMB, Medan: []string{MedanPct}, Wajib: []string{MedanPct},
-		KunciDobel: []string{MedanPct}, Sumber: "SaveTreatyArrMinLOLMB"},
+		KunciDobel: []string{MedanPct}, SatuBaris: true, Sumber: "SaveTreatyArrMinLOLMB"},
 }
 
 var (

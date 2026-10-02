@@ -61,6 +61,20 @@ func (g GalatKlausulDobel) Error() string {
 // Is membuat `errors.Is(err, ErrKlausulDobel)` benar.
 func (GalatKlausulDobel) Is(target error) bool { return target == ErrKlausulDobel }
 
+// ErrKlausulSatuBaris - jenis satu baris (`models.AturanKlausul.SatuBaris`)
+// sudah berisi; ubah lewat `Edit` (409).
+var ErrKlausulSatuBaris = errors.New("services: this clause type holds a single row per treaty year")
+
+// GalatKlausulSatuBaris menyebut baris yang sudah ada.
+type GalatKlausulSatuBaris struct{ IDAda, Jenis string }
+
+func (g GalatKlausulSatuBaris) Error() string {
+	return fmt.Sprintf("%s only holds one row per treaty year; row %s already exists - use Edit", g.Jenis, g.IDAda)
+}
+
+// Is membuat `errors.Is(err, ErrKlausulSatuBaris)` benar.
+func (GalatKlausulSatuBaris) Is(target error) bool { return target == ErrKlausulSatuBaris }
+
 // GudangKlausulTCO membaca dan menulis klausul.
 type GudangKlausulTCO interface {
 	Daftar(ctx context.Context, tahunID, descID, parentReinsTypeID string) ([]models.KlausulTreaty, error)
@@ -164,6 +178,8 @@ type AturanTampil struct {
 	// PilihanReins - `models.AturanKlausul.PilihanReins`: layar memilih
 	// pemilih ReinsType dari sini, bukan dari nama jenis.
 	PilihanReins string `json:"pilihanReins"`
+	// SatuBaris - `Add` hilang begitu jenis ini berisi satu baris.
+	SatuBaris bool `json:"satuBaris"`
 }
 
 // JenisKlausulTampil adalah satu baris grid jenis + aturannya.
@@ -321,7 +337,7 @@ func (l *KlausulTCO) DenganTransaksi(f func(ctx context.Context, fn func(tx *db.
 func tampilAturan(a models.AturanKlausul) AturanTampil {
 	return AturanTampil{Jenis: a.Jenis, Anak: a.Anak, Subjenis: a.Subjenis, Medan: a.Medan, Wajib: a.Wajib,
 		Turunan: a.Turunan, Ditahan: a.Ditahan, Berkurs: a.Berkurs, Konversi: a.Konversi, Sumber: a.Sumber,
-		PilihanReins: a.PilihanReins}
+		PilihanReins: a.PilihanReins, SatuBaris: a.SatuBaris}
 }
 
 // JenisKlausul membaca grid jenis (`BrowseTreatyDesc_RD`) + aturan tiap jenis.
@@ -522,6 +538,15 @@ func (l *KlausulTCO) Simpan(ctx context.Context, pelaku inti.Pelaku, tahunID str
 		}
 		if lain != "" {
 			return GalatKlausulDobel{IDLain: lain, Jenis: a.Jenis}
+		}
+		if a.SatuBaris && k.ID == "" {
+			ada, err := l.gudang.Daftar(repository.DenganBacaTxTCO(ctx, tx), tahunID, a.DescID, parent)
+			if err != nil {
+				return err
+			}
+			if len(ada) > 0 {
+				return GalatKlausulSatuBaris{IDAda: ada[0].ID, Jenis: a.Jenis}
+			}
 		}
 		if a.BatasTotalAnak {
 			pctLain, err := l.gudang.PctAnakLain(ctx, tx, tahunID, a.DescID, parent, k.ID)

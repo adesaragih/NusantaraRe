@@ -133,6 +133,15 @@ export function pemilihReinsType(a: AturanKlausul): 'saring-induk' | 'saring-ana
   return a.jenis === 'TreatyLimit' ? 'saring-induk' : 'dropdown'
 }
 
+/**
+ * `Add` tampil? Jenis satu baris (`satuBaris`: `GridTreatyArrangementMinLOL.xml` b2232,
+ * `…MaxCoinsPanel.xml` b2212, `…MInLOLMB.xml` b2262 — `Add` hanya bila `ID == ''`) menyembunyikannya
+ * selama daftarnya belum dimuat atau sudah berisi; barisnya diubah lewat `Edit`.
+ */
+export function addTampil(a: Pick<AturanKlausul, 'satuBaris'>, dimuat: boolean, cacahBaris: number): boolean {
+  return a.satuBaris !== true || (dimuat && cacahBaris === 0)
+}
+
 function FormMedan({
   tahunID,
   aturan,
@@ -330,17 +339,19 @@ function GridAturan({
         </>
       )}
       <div className="aksi-baris">
-        <button
-          type="button"
-          className="btn btn--primary"
-          disabled={aturan.berkurs && !kursAda}
-          onClick={() => {
-            setInfo(null)
-            setForm(formKlausulKosong(aturan))
-          }}
-        >
-          {KLAUSUL_TCO.add}
-        </button>
+        {addTampil(aturan, daftar !== null, baris.length) && (
+          <button
+            type="button"
+            className="btn btn--primary"
+            disabled={aturan.berkurs && !kursAda}
+            onClick={() => {
+              setInfo(null)
+              setForm(formKlausulKosong(aturan))
+            }}
+          >
+            {KLAUSUL_TCO.add}
+          </button>
+        )}
         {aturan.anak && daftar !== null && (
           <span>
             {' '}

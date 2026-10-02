@@ -17,6 +17,7 @@ import {
   keMasukKlausul,
   labelMedan,
   pemilihReinsType,
+  addTampil,
   rencanaKonversi,
 } from './PanelJenisKlausul'
 
@@ -181,3 +182,19 @@ describe('pemilih ReinsType per aturan', () => {
   })
 })
 
+// Minimum LOL, Max Coins Panel, Minimum LOL MB: satu baris per tahun - `Add` hanya bila `ID == ''`
+// (`GridTreatyArrangementMinLOL.xml` b2232 …) [keputusan work owner 02-10-2026].
+describe('Add jenis satu baris', () => {
+  it('hilang begitu jenis berisi satu baris, dan selama daftar belum dimuat', () => {
+    const satu = aturan({ jenis: 'MinLOL', satuBaris: true })
+    expect(addTampil(satu, true, 0)).toBe(true)
+    expect(addTampil(satu, true, 1)).toBe(false)
+    expect(addTampil(satu, false, 0)).toBe(false)
+  })
+  it('jenis lain tidak dibatasi', () => {
+    expect(addTampil(aturan({ jenis: 'EPI' }), true, 3)).toBe(true)
+  })
+  it('tombol Add dirender lewat penjaga itu', () => {
+    expect(KODE).toContain('{addTampil(aturan, daftar !== null, baris.length) && (')
+  })
+})

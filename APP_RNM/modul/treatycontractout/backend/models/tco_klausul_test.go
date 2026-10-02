@@ -207,3 +207,19 @@ func TestSemuaAnakMemakaiPilihanAnakTreatyLimit(t *testing.T) {
 		t.Errorf("aturan anak %s, mau ketujuh grid Show Child", got)
 	}
 }
+
+// TestSatuBarisHanyaTigaJenis - Minimum LOL, Max Coins Panel, Minimum LOL MB
+// (`GridTreatyArrangementMinLOL.xml` b2232, `…MaxCoinsPanel.xml` b2212,
+// `…MInLOLMB.xml` b2262).
+func TestSatuBarisHanyaTigaJenis(t *testing.T) {
+	var satu []string
+	for _, a := range AturanKlausulTCO {
+		if a.SatuBaris {
+			satu = append(satu, a.Jenis+"/"+a.DescID)
+		}
+	}
+	sort.Strings(satu)
+	if got := strings.Join(satu, ","); got != "MaxCoinsPanel/10016,MinLOL/10015,MinLOLMB/10018" {
+		t.Errorf("jenis satu baris: %s", got)
+	}
+}

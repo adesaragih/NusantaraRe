@@ -78,6 +78,8 @@ func (masterKlausulUji) JenisKlausul(_ context.Context, isXOL string) ([]reposit
 	semua := []repository.JenisKlausulMasterTCO{
 		{ID: "10001", DescName: "UJI TREATY LIMIT", IsXOL: "0"}, {ID: "10009", DescName: "UJI EPI", IsXOL: "0"},
 		{ID: "10013", DescName: "UJI EXCLUSION", IsXOL: "0"}, {ID: "10017", DescName: "UJI LIMIT MB", IsXOL: "1"},
+		{ID: "10015", DescName: "UJI MINIMUM LOL", IsXOL: "0"}, {ID: "10016", DescName: "UJI MAX COINS PANEL", IsXOL: "0"},
+		{ID: "10018", DescName: "UJI MINIMUM LOL MB", IsXOL: "1"},
 		{ID: "10099", DescName: "UJI JENIS BARU", IsXOL: "1"},
 	}
 	var hasil []repository.JenisKlausulMasterTCO
@@ -182,7 +184,7 @@ func TestKlausulTanpaIdentitasDanBawaan(t *testing.T) {
 func TestJenisKlausulDariMasterDenganAturan(t *testing.T) {
 	n := 0
 	d, err := layananKlausul(gudangKlausulKosong(), &n).JenisKlausul(context.Background(), pelakuUjiTCO, "0")
-	if err != nil || len(d) != 3 {
+	if err != nil || len(d) != 5 { // 10001, 10009, 10013, 10015, 10016
 		t.Fatalf("non-XOL: %+v %v", d, err)
 	}
 	for _, j := range d {
@@ -503,5 +505,46 @@ func TestAturanTampilMenyebutPilihanReinsAnakTreatyLimit(t *testing.T) {
 	// Master jenis uji memuat Treaty Limit dan EPI; ketujuh jenis dikunci di models.
 	if strings.Join(anak, ",") != "EpiList,TreatyLimitChild" {
 		t.Errorf("aturan anak di jenis klausul: %v", anak)
+	}
+}
+
+// Minimum LOL, Max Coins Panel, Minimum LOL MB - SATU baris per tahun treaty
+// (`Add` hanya bila `ID == ”`, `Get*` memuat `pxResults(1)`) [keputusan work
+// owner 02-10-2026]: baris baru kedua ditolak, `Edit` baris yang ada boleh.
+func TestKlausulSatuBarisPerTahun(t *testing.T) {
+	for _, j := range []struct{ desc, medan, nilai1, nilai2 string }{
+		{"10015", "Pct", "10", "20"}, {"10016", "CoIns_Max", "5", "6"}, {"10018", "Pct", "30", "40"},
+	} {
+		g, n := gudangKlausulKosong(), 0
+		l := layananKlausul(g, &n)
+		masuk := func(id, nilai string) services.KlausulMasuk {
+			return services.KlausulMasuk{ID: id, DescID: j.desc, Medan: map[string]string{j.medan: nilai}}
+		}
+		h, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", masuk("", j.nilai1))
+		if err != nil {
+			t.Fatalf("%s baris pertama: %v", j.desc, err)
+		}
+		if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", masuk("", j.nilai2)); !errors.Is(err, services.ErrKlausulSatuBaris) ||
+			!strings.Contains(err.Error(), h.Klausul.ID) {
+			t.Errorf("%s baris kedua: %v", j.desc, err)
+		}
+		if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", masuk(h.Klausul.ID, j.nilai2)); err != nil {
+			t.Errorf("%s Edit baris yang ada: %v", j.desc, err)
+		}
+		if len(g.baris) != 1 {
+			t.Errorf("%s: %d baris, mau 1", j.desc, len(g.baris))
+		}
+	}
+	d, err := layananKlausul(gudangKlausulKosong(), new(int)).JenisKlausul(context.Background(), pelakuUjiTCO, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, jk := range d {
+		for _, a := range jk.Aturan {
+			mau := jk.ID == "10015" || jk.ID == "10016" || jk.ID == "10018"
+			if a.SatuBaris != mau {
+				t.Errorf("%s (%s): satuBaris %v, mau %v", a.Jenis, jk.ID, a.SatuBaris, mau)
+			}
+		}
 	}
 }

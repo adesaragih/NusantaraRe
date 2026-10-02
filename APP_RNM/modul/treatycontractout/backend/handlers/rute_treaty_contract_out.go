@@ -307,7 +307,7 @@ func jawabGalatTreatyContractOut(w http.ResponseWriter, err error) bool {
 	case errors.Is(err, services.ErrKlausulTidakAda):
 		galat.Tulis(w, http.StatusNotFound, pesanTCO(err))
 	case errors.Is(err, services.ErrKlausulDobel),
-		errors.Is(err, services.ErrKlausulIndukBeranak):
+		errors.Is(err, services.ErrKlausulIndukBeranak), errors.Is(err, services.ErrKlausulSatuBaris):
 		galat.Tulis(w, http.StatusConflict, pesanTCO(err))
 	case errors.Is(err, services.ErrKlausulJenisBerubah):
 		galat.Tulis(w, http.StatusBadRequest, pesanTCO(err))

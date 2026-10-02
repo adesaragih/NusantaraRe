@@ -338,3 +338,25 @@ bukan soal ReinsType.
 - frontend: tanpa perubahan logika — pemilih mengikuti penanda aturan; uji `PanelJenisKlausul.test.ts` diperbarui.
 - Rute `GET …/jenis-reasuransi/anak-treaty-limit?induk=` dan nama konstanta dipertahankan (sumbernya tetap daftar anak
   Treaty Limit).
+
+## ⛔ Keputusan work owner bertanggal — 02-10-2026 (Minimum LOL, Max Coins Panel, Minimum LOL MB: satu baris)
+
+*Permintaan: "Minimum LOL MB, Max Coins Panel, Minimum LOL — untuk 3 menu ini hanya diisi 1 row saja, cek lagi XML-nya untuk
+memvalidasi".*
+
+**Validasi XML — benar, satu baris per tahun treaty.**
+- Tombol `Add` ketiga grid hanya tampil bila form belum memuat baris: `Section/GridTreatyArrangementMinLOL.xml` b2232
+  `OutputParam.DATASHOW ='' && InputTreatyMinimumLOL.ID == ''`; `GridTreatyArrangementMaxCoinsPanel.xml` b2212
+  (`InputTreatyMaxCoinsPanel.ID == ''`); `GridTreatyArrangementMInLOLMB.xml` b2262 (`InputTreatyMinimumLOLMB.ID == ''`).
+- Pembacanya memuat baris yang ada ke form: `Activity/GetMinimumLOL.xml` langkah 2 `Obj-Browse` saringan `.TreatyYearID`
+  b384 + `.TreatyDescID` b483, langkah 3 b750 `ID ← TempPropArrg.pxResults(1).ID`; `GetMaxCoinsPanel.xml` b748;
+  `GetMinimumLOLMB.xml` b750. Begitu ada satu baris, `ID` terisi dan `Add` hilang — yang tersisa `Edit`.
+- `SaveTreatyArrMinLOL` (8 langkah, nol `//`) sendiri tidak menghitung baris; penjaganya layar tadi.
+
+**Yang dibangun.**
+- models `AturanKlausul.SatuBaris` pada `MinLOL` (10015), `MaxCoinsPanel` (10016), `MinLOLMB` (10018); uji
+  `TestSatuBarisHanyaTigaJenis`.
+- services: simpan baris BARU ketiga jenis itu ditolak bila tahun itu sudah berisi (`ErrKlausulSatuBaris`, 409, menyebut ID
+  baris yang ada), dibaca di transaksi yang mengunci tahun; `Edit` baris yang ada tetap boleh. `AturanTampil.satuBaris`
+  dikirim ke layar. Uji `TestKlausulSatuBarisPerTahun`.
+- frontend: `addTampil` — `Add` disembunyikan selama daftar belum dimuat atau sudah berisi (seperti Pega).

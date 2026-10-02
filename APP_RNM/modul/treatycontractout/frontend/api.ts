@@ -482,6 +482,8 @@ export interface AturanKlausul {
   sumber: string
   /** Sumber pilihan ReinsTypeID: '' = daftar induk tiket 02; `PILIHAN_REINS_ANAK_TREATY_LIMIT`. */
   pilihanReins?: string
+  /** Satu baris per tahun (Minimum LOL, Max Coins Panel, Minimum LOL MB) — `Add` hilang begitu ada baris. */
+  satuBaris?: boolean
 }
 
 /** Satu baris grid jenis (`BrowseTreatyDesc_RD`) beserta aturannya. */
