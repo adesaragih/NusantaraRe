@@ -113,8 +113,9 @@ type AturanKlausul struct {
 	Sumber string
 	// PilihanReins - sumber pilihan `ReinsTypeID`: kosong = daftar jenis
 	// reasuransi tersaring tiket 02 (RD induk, OQ-TCO-15) - SELURUH aturan
-	// induk; `PilihanReinsAnakTreatyLimit` = jenis porsi saja (tanpa induk) -
-	// SELURUH aturan anak (konstruktor `anak`).
+	// induk; `PilihanReinsAnakTreatyLimit` = `TreatyContractSetReinsTypeList`
+	// atas nama ReinsType induk (`PilihanReinsAnakDari`) - SELURUH aturan anak
+	// (konstruktor `anak`).
 	PilihanReins string
 	// SatuBaris - jenis berisi SATU baris per tahun treaty: `Add` hanya tampil
 	// bila form belum memuat baris (`OutputParam.DATASHOW ='' &&
@@ -123,21 +124,13 @@ type AturanKlausul struct {
 	SatuBaris bool
 }
 
-// PilihanReinsAnakTreatyLimit - ReinsType baris anak dipilih dari dua belas
-// jenis porsi [keputusan work owner 30-09-2026 untuk anak Treaty Limit].
-// ⛔ Berlaku untuk SEMUA baris anak - ketujuh grid `Show Child` [keputusan work
-// owner 02-10-2026: "semua ReinsType yang berperan sebagai child, samain dengan
-// child yang di Treaty Limit"] - dan ReinsType INDUK TIDAK ikut [keputusan work
-// owner 02-10-2026: "kenapa ReinsType di child ada nambah induknya"]. Di XML keenam anak lain
-// memakai `D_EnumerationList` (tidak diekspor); nama konstanta dipertahankan
-// karena sumbernya tetap daftar anak Treaty Limit.
-//
-// `[terverifikasi]` `GridTreatyArrTreatyLimitList.xml` b2892-b3019: SATU-
-// SATUNYA grid klausul yang ReinsType-nya tidak dari RD induk maupun
-// `D_EnumerationList`, melainkan `ReinsTypeList.pxResults` dari pre-activity
-// `TreatyContractSetReinsTypeList` - aktivitas yang tidak diekspor. Isinya
-// diputuskan dari data DEV (118/120 anak berporsi, 2 ORS di bawah ORS);
-// saringannya `repository.LolosSaringanAnakTreatyLimitTCO`.
+// PilihanReinsAnakTreatyLimit - ReinsType baris anak SEMUA grid `Show Child`
+// dipilih dari `TreatyContractSetReinsTypeList` atas nama ReinsType baris
+// induknya (`PilihanReinsAnakDari`, tco_pilihan_anak.go) [keputusan work owner
+// 02-10-2026: "untuk child-nya ikuti XML-nya TreatyContractSetReinsTypeList,
+// untuk semua child pada Treaty Desc"]. `[terverifikasi]` activity itu
+// pre-activity `GridTreatyArrTreatyLimitList.xml` b2975; di XML keenam anak
+// lain memakai `D_EnumerationList` - disamakan atas keputusan tadi.
 const PilihanReinsAnakTreatyLimit = "anak-treaty-limit"
 
 var (
@@ -169,7 +162,7 @@ func induk(jenis, desc, sumber string) AturanKlausul {
 }
 
 // anak - aturan baris anak (`Show Child`). ReinsType-nya SAMA untuk ketujuh
-// jenis: jenis porsi saja, tanpa induk [keputusan work owner 02-10-2026].
+// jenis: `TreatyContractSetReinsTypeList` atas nama induk [keputusan work owner 02-10-2026].
 func anak(jenis, desc, sumber string, peringatan bool) AturanKlausul {
 	return AturanKlausul{Jenis: jenis, DescID: desc, Anak: true, Medan: medanAnak, Wajib: wajibAnak,
 		Turunan: turunanAnak, KunciDobel: kunciReins, BatasTotalAnak: true, PeringatanSpreading: peringatan,

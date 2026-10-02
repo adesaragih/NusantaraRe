@@ -53,8 +53,8 @@ func Router(svc *services.Service, stubPelaku bool) http.Handler {
 func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	mux.HandleFunc("GET /api/treaty-contract-out/jenis-reasuransi",
 		jenisReasuransiTreaty(svc, stubPelaku))
-	// Pilihan ReinsType baris anak SEMUA grid `Show Child` - jenis porsi saja,
-	// tanpa induk [keputusan work owner 30-09-2026, dikoreksi 02-10-2026].
+	// Pilihan ReinsType baris anak SEMUA grid `Show Child` -
+	// `TreatyContractSetReinsTypeList` atas `?namaInduk=` [keputusan work owner 02-10-2026].
 	mux.HandleFunc("GET /api/treaty-contract-out/jenis-reasuransi/anak-treaty-limit",
 		jenisReasuransiAnakTreatyLimit(svc, stubPelaku))
 	mux.HandleFunc("GET /api/treaty-contract-out/grup-treaty",
@@ -112,7 +112,8 @@ func jenisReasuransiTreaty(svc *services.Service, stubPelaku bool) http.HandlerF
 }
 
 // jenisReasuransiAnakTreatyLimit melayani GET
-// /api/treaty-contract-out/jenis-reasuransi/anak-treaty-limit - pilihan ReinsType baris anak (porsi saja).
+// /api/treaty-contract-out/jenis-reasuransi/anak-treaty-limit?namaInduk= - pilihan ReinsType baris
+// anak: `TreatyContractSetReinsTypeList` atas nama ReinsType baris induk.
 func jenisReasuransiAnakTreatyLimit(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
@@ -120,8 +121,7 @@ func jenisReasuransiAnakTreatyLimit(svc *services.Service, stubPelaku bool) http
 			return
 		}
 		daftar, err := svc.JenisReasuransiTreaty().
-			DenganPembaca(services.PembacaJenisReasuransiOracle(svc)).
-			DaftarAnakTreatyLimit(r.Context(), inti.PelakuDari(r, stubPelaku))
+			DaftarAnakTreatyLimit(r.Context(), inti.PelakuDari(r, stubPelaku), r.URL.Query().Get("namaInduk"))
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}
@@ -237,7 +237,6 @@ func jawabGalatTreatyContractOut(w http.ResponseWriter, err error) bool {
 	case errors.Is(err, inti.ErrTanpaWewenang):
 		galat.Tulis(w, http.StatusForbidden, "insufficient permission")
 	case errors.Is(err, services.ErrMasterJenisReasuransiKosong),
-		errors.Is(err, services.ErrPilihanAnakTreatyLimitKosong),
 		errors.Is(err, services.ErrMasterGrupTreatyKosong):
 		// ⛔ 503, dan pesannya MENYEBUT MASTERNYA: keadaan server yang belum
 		// siap - master rujukan kosong atau tersaring habis - bukan

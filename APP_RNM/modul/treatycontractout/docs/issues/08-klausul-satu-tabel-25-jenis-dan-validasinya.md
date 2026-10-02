@@ -403,3 +403,35 @@ saja**; ReinsType induk tidak pernah ikut.
   menggantinya wajib memakai jenis porsi.
 - Uji: tabel kebenaran repository (induk tidak pernah lolos), SQL tanpa `ID = :`, layanan (induk ditolak untuk anak Treaty
   Limit dan EPI), `TestKlausulAnakLamaBerReinsIndukTetapDapatDiedit`, uji pemilih frontend.
+
+## ⛔ Keputusan work owner bertanggal — 02-10-2026 (ReinsType anak = `TreatyContractSetReinsTypeList`)
+
+*Permintaan: "untuk child-nya ikuti XML-nya `TreatyContractSetReinsTypeList`, untuk semua child pada Treaty Desc". Activity itu
+diekspor work owner 02-10-2026 ke `Activity/TreatyContractSetReinsTypeList.xml` — menggantikan kedua blok 02-10-2026 di atas
+(porsi + induk, lalu porsi saja), yang hanya tebakan dari data DEV selama activity itu tidak ada.*
+
+**XML** (`@baseclass`, 4 langkah, nol `//`). 1 b267 `Page-Remove ReinsTypeList`; 2 b418 satu putaran, setiap anak langkah menimpa
+`ReinsTypeList.pxResults(n)`:
+
+| Langkah | Syarat | `.CARI1` / `.CARI2` |
+| --- | --- | --- |
+| 2.1 b418 | `@contains(InputData.CARIDESCFACIN," QS ")` b628 | 10028 QS (OR) · 10004 QS (R/I) · 10007 ORS |
+| 2.2 b668 | `" SPL "` b878 | 10248 SPL (OR) · 10249 SPL (RI) · 10007 ORS |
+| 2.3 b918 | `" XOL "` b1120 | 10028 QS (OR) · 10004 QS (R/I) · 10217 XL |
+| 2.4 b1160 | `"ORS"` b1284 | 10007 ORS |
+
+`InputData.CARIDESCFACIN` = `.ReinsTypeName` baris INDUK yang di-`Show Child` (`BrowseTreatyArrLimitParentList` langkah 1
+b368/b369). Pre-activity dipanggil tanpa parameter (`GridTreatyArrTreatyLimitList.xml` b2975, `pyHasActivityParam=false`);
+sel anak terikat `.ReinsTypeName` (b2935, nama = `.CARI2`), `.CARI1` → `ReinsTypeID` (b3019).
+
+**Yang dibangun.**
+- models `PilihanReinsAnakDari(namaInduk)` — tabel langkah 2.1–2.4 VERBATIM, semantik timpa-indeks Pega, `@contains` peka
+  huruf besar-kecil (spasi bagian dari kata); ID berulang tampil sekali. Uji `TestPilihanReinsAnakDariKorpus` menurunkan
+  ulang kata dan pasangan `.CARI1`/`.CARI2` dari XML.
+- services: `DaftarAnakTreatyLimit(ctx, pelaku, namaInduk)` tanpa baca master; nama tanpa kata yang cocok = daftar KOSONG
+  (seperti Pega). Simpan anak: baris induk dibaca dulu, `ReinsTypeID` wajib di daftar dari NAMA induk, nama tersimpan =
+  `.CARI2`. Baris anak lama yang ReinsType-nya tidak diganti tetap dapat di-Edit.
+- repository: saringan + SQL porsi dari master dibuang.
+- rute `GET …/jenis-reasuransi/anak-treaty-limit?namaInduk=`; frontend mengirim nama ReinsType baris induk.
+- Uji: models (tabel + korpus), services (`TestKlausulAnakMengikutiTreatyContractSetReinsTypeList`, Treaty Limit + EPI),
+  uji Oracle `tco_klausul_db_test.go` (induk "UJI QS TREATY", anak QS (OR)), frontend.

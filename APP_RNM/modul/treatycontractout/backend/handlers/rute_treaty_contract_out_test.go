@@ -118,7 +118,6 @@ func TestJawabGalatTreatyContractOut(t *testing.T) {
 		{inti.ErrTanpaIdentitas, http.StatusUnauthorized},
 		{inti.ErrTanpaWewenang, http.StatusForbidden},
 		{services.ErrMasterJenisReasuransiKosong, http.StatusServiceUnavailable},
-		{services.ErrPilihanAnakTreatyLimitKosong, http.StatusServiceUnavailable},
 		{services.ErrMasterGrupTreatyKosong, http.StatusServiceUnavailable},
 		{services.ErrTahunTreatyTidakAda, http.StatusNotFound},
 		{services.GalatTahunTreatyDobel{IDLain: "1000005"}, http.StatusConflict},

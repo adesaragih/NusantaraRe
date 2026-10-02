@@ -132,8 +132,8 @@ export function rencanaKonversi(
 /**
  * Pemilih ReinsTypeID satu aturan. Treaty Limit ikut XML: `pxAutoComplete` di
  * grid induk (`GridTreatyArrangementTreatyLimit.xml` b3025, daftar induk) dan
- * anak (`GridTreatyArrTreatyLimitList.xml` b2892, jenis porsi saja tanpa induk —
- * dari penanda aturan `pilihanReins`). ⛔ SETIAP baris anak membawa penanda itu
+ * anak (`GridTreatyArrTreatyLimitList.xml` b2892, `TreatyContractSetReinsTypeList` atas nama
+ * ReinsType induk — dari penanda aturan `pilihanReins`). ⛔ SETIAP baris anak membawa penanda itu
  * [keputusan work owner 02-10-2026: ReinsType anak semua jenis = anak Treaty
  * Limit]. Induk jenis lain: dropdown daftar induk tiket 02.
  */
@@ -155,9 +155,12 @@ function FormMedan({
   tahunID,
   aturan,
   form,
+  namaInduk,
   onUbah,
 }: {
   tahunID: string
+  /** Nama ReinsType baris induk (baris anak) - masukan `TreatyContractSetReinsTypeList`. */
+  namaInduk: string
   aturan: AturanKlausul
   form: FormKlausul
   onUbah: (medan: string, nilai: string) => void
@@ -193,7 +196,7 @@ function FormMedan({
               label={label}
               value={form.medan[m] ?? ''}
               onChange={(v) => onUbah(m, v)}
-              anak={pemilih === 'saring-anak'}
+              namaIndukAnak={pemilih === 'saring-anak' ? namaInduk : undefined}
             />
           )
         }
@@ -243,6 +246,7 @@ function GridAturan({
   jenis,
   aturan,
   induk,
+  namaInduk = '',
   kursAda,
   onShowChild,
 }: {
@@ -250,6 +254,8 @@ function GridAturan({
   jenis: JenisKlausul
   aturan: AturanKlausul
   induk: string
+  /** Nama ReinsType baris induk (grid anak) — pilihan ReinsType anak dihitung darinya. */
+  namaInduk?: string
   /** Tiket 11: false = jenis berkurs tanpa kurs berlaku — `Add` nonaktif. */
   kursAda: boolean
   onShowChild?: (k: Klausul) => void
@@ -313,6 +319,7 @@ function GridAturan({
             tahunID={tahunID}
             aturan={aturan}
             form={form}
+            namaInduk={namaInduk}
             onUbah={(m, v) => {
               setForm((f) => (f === null ? f : { ...f, medan: { ...f.medan, [m]: v } }))
             }}
@@ -475,6 +482,7 @@ export default function PanelJenisKlausul({
             jenis={jenis}
             aturan={anak}
             induk={indukTerpilih.reinsTypeId}
+            namaInduk={indukTerpilih.reinsTypeName}
             kursAda={kurs !== null}
           />
           <button type="button" className="btn btn--ghost btn--sm" onClick={() => setIndukTerpilih(null)}>

@@ -403,23 +403,25 @@ func (l *KlausulTCO) Daftar(ctx context.Context, pelaku inti.Pelaku, tahunID, de
 
 // namaReinsType memeriksa ID jenis reasuransi di daftar pilihan jenisnya:
 // induk - daftar tersaring tiket 02 [keputusan work owner 29-09-2026]
-// (OQ-TCO-15, ditutup); SETIAP anak - jenis porsi saja, induknya tidak
-// [keputusan work owner 30-09-2026, diperluas dan dikoreksi 02-10-2026].
-func (l *KlausulTCO) namaReinsType(ctx context.Context, a models.AturanKlausul, id string) (string, error) {
-	var daftar []repository.JenisReasuransiTCO
-	var err error
-	kosong := ErrMasterJenisReasuransiKosong
+// (OQ-TCO-15, ditutup); SETIAP anak - `TreatyContractSetReinsTypeList` atas
+// nama ReinsType baris induknya (`namaInduk`), nama tersimpan = `.CARI2`
+// [keputusan work owner 02-10-2026].
+func (l *KlausulTCO) namaReinsType(ctx context.Context, a models.AturanKlausul, id, namaInduk string) (string, error) {
 	if a.PilihanReins == models.PilihanReinsAnakTreatyLimit {
-		daftar, err = l.jenis.DaftarAnakTreatyLimit(ctx)
-		kosong = ErrPilihanAnakTreatyLimitKosong
-	} else {
-		daftar, err = l.jenis.DaftarNonLife(ctx)
+		for _, p := range models.PilihanReinsAnakDari(namaInduk) {
+			if p.ID == id {
+				return p.Nama, nil
+			}
+		}
+		return "", fmt.Errorf("%w: ReinsTypeID %q is not a child option of parent %q (TreatyContractSetReinsTypeList)",
+			ErrJenisReasuransiDiLuarDaftar, id, namaInduk)
 	}
+	daftar, err := l.jenis.DaftarNonLife(ctx)
 	if err != nil {
 		return "", err
 	}
 	if len(daftar) == 0 {
-		return "", kosong
+		return "", ErrMasterJenisReasuransiKosong
 	}
 	for _, j := range daftar {
 		if j.ID == id {
@@ -497,9 +499,6 @@ func (l *KlausulTCO) Simpan(ctx context.Context, pelaku inti.Pelaku, tahunID str
 	if err := models.IsiMedanKlausulTCO(a, &k, m.Medan); err != nil {
 		return HasilKlausulTampil{}, err
 	}
-	if err := l.lengkapiDariMaster(ctx, a, &k, lama); err != nil {
-		return HasilKlausulTampil{}, err
-	}
 	// Tiket 11: form berkurs menuntut kurs berlaku (`NewTreatyArr*`); induk
 	// ber-Rp/Usd menurunkan `Usd = Rp / Kurs` (`HitungRpUsd_depan`) dan
 	// menyimpan kurs yang dipakai di `KURS` [keputusan work owner 29-09-2026] (OQ-TCO-18).
@@ -515,11 +514,17 @@ func (l *KlausulTCO) Simpan(ctx context.Context, pelaku inti.Pelaku, tahunID str
 			}
 		}
 	}
+	// Baris induk lebih dulu: pilihan ReinsType anak dihitung dari NAMANYA.
+	var induk models.KlausulTreaty
 	if a.Anak {
-		induk, err := l.gudang.Induk(ctx, tahunID, a.DescID, parent)
-		if err != nil {
+		if induk, err = l.gudang.Induk(ctx, tahunID, a.DescID, parent); err != nil {
 			return HasilKlausulTampil{}, err
 		}
+	}
+	if err := l.lengkapiDariMaster(ctx, a, &k, lama, induk.ReinsTypeName); err != nil {
+		return HasilKlausulTampil{}, err
+	}
+	if a.Anak {
 		if k.Rp, k.Usd, err = models.RpUsdAnakTCO(k.Pct, induk.Rp, induk.Usd); err != nil {
 			return HasilKlausulTampil{}, err
 		}
@@ -596,8 +601,9 @@ func (l *KlausulTCO) Simpan(ctx context.Context, pelaku inti.Pelaku, tahunID str
 // `lama` - baris sebelum Edit (kosong untuk baris baru). ReinsType baris anak
 // lama yang TIDAK diganti tetap boleh walau di luar pilihan anak sekarang
 // (data lama ber-ReinsType induk, mis. ORS di bawah ORS) - Edit Pct-nya tidak
-// terkunci; menggantinya wajib memakai pilihan porsi.
-func (l *KlausulTCO) lengkapiDariMaster(ctx context.Context, a models.AturanKlausul, k *models.KlausulTreaty, lama models.KlausulTreaty) error {
+// terkunci; menggantinya wajib memakai pilihan anak `TreatyContractSetReinsTypeList`.
+func (l *KlausulTCO) lengkapiDariMaster(ctx context.Context, a models.AturanKlausul, k *models.KlausulTreaty,
+	lama models.KlausulTreaty, namaInduk string) error {
 	punya := func(m string) bool {
 		for _, x := range a.Medan {
 			if x == m {
@@ -610,7 +616,7 @@ func (l *KlausulTCO) lengkapiDariMaster(ctx context.Context, a models.AturanKlau
 	if punya(models.MedanReinsTypeID) && k.ReinsTypeID != "" {
 		if a.Anak && lama.ID != "" && lama.ReinsTypeID == k.ReinsTypeID {
 			k.ReinsTypeName = lama.ReinsTypeName
-		} else if k.ReinsTypeName, err = l.namaReinsType(ctx, a, k.ReinsTypeID); err != nil {
+		} else if k.ReinsTypeName, err = l.namaReinsType(ctx, a, k.ReinsTypeID, namaInduk); err != nil {
 			return err
 		}
 	}
