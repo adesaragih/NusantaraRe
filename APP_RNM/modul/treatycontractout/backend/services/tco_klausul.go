@@ -230,7 +230,8 @@ func TampilKlausul(k models.KlausulTreaty) KlausulTampil {
 	for _, m := range []string{models.MedanReinsTypeID, models.MedanLine, models.MedanRp, models.MedanUsd,
 		models.MedanPct, models.MedanPctMe, models.MedanYdcf, models.MedanMethod, models.MedanTerritorialLimit,
 		models.MedanCoInsMin, models.MedanCoInsMax, models.MedanTreatyLimit, models.MedanIDOccupation,
-		models.MedanOccupation, models.MedanIDClause, models.MedanClause, models.MedanLayer} {
+		models.MedanOccupation, models.MedanIDClause, models.MedanClause, models.MedanLayer, models.MedanMoreRp,
+		models.MedanMoreUsd} {
 		if v := models.NilaiMedanKlausul(k, m); v != "" {
 			medan[m] = v
 		}
@@ -629,7 +630,18 @@ func (l *KlausulTCO) lengkapiDariMaster(ctx context.Context, a models.AturanKlau
 			return err
 		}
 	}
-	if punya(models.MedanIDOccupation) && k.IDOccupation != "" {
+	if a.DescID == models.DescLimitMB {
+		// MB Capacity: nama dari `SetOccupationLimitMB` (empat ID tetap), bukan master FIRE.
+		k.Occupation = ""
+		if k.IDOccupation != "" {
+			nama, ok := models.NamaOccupationLimitMB(k.IDOccupation)
+			if !ok {
+				return fmt.Errorf("%w: ID_Occupation %q is not an MB Capacity occupation (SetOccupationLimitMB)",
+					ErrPilihanDiLuarMaster, k.IDOccupation)
+			}
+			k.Occupation = nama
+		}
+	} else if punya(models.MedanIDOccupation) && k.IDOccupation != "" {
 		p, err := l.master.AmbilPilihan(ctx, repository.MasterOccupationTCO, k.IDOccupation)
 		if err != nil {
 			return err
@@ -653,6 +665,13 @@ func (l *KlausulTCO) Pilihan(ctx context.Context, pelaku inti.Pelaku, master, ca
 	}
 	var tabel string
 	switch master {
+	case "occupation-limitmb":
+		// MB Capacity - empat pilihan `SetOccupationLimitMB`, tanpa baca master.
+		hasil := make([]PilihanTampil, 0, len(models.PilihanOccupationLimitMB))
+		for _, p := range models.PilihanOccupationLimitMB {
+			hasil = append(hasil, PilihanTampil{ID: p.ID, Nama: p.Nama})
+		}
+		return hasil, nil
 	case "occupation":
 		tabel = repository.MasterOccupationTCO
 	case "clause":

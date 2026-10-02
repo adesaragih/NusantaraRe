@@ -571,7 +571,10 @@ export async function simpanKlausul(tahunID: string, masuk: KlausulMasuk): Promi
 }
 
 /** Pemilih ExclutionTreaty — `occupation` (BrowseOccupationFIRE_RD) atau `clause` (BrowseFireClauseFacIn_RD). */
-export async function cariPilihanKlausul(master: 'occupation' | 'clause', cari: string): Promise<PilihanKlausul[]> {
+export async function cariPilihanKlausul(
+  master: 'occupation' | 'clause' | 'occupation-limitmb',
+  cari: string,
+): Promise<PilihanKlausul[]> {
   const j = await minta<{ daftar: PilihanKlausul[] | null }>(
     `/api/treaty-contract-out/klausul-pilihan/${master}`,
     { kueri: { cari } },

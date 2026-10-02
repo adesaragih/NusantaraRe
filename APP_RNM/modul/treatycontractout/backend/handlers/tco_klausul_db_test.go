@@ -71,8 +71,14 @@ func TestKlausulLingkaranPenuh(t *testing.T) {
 		!strings.Contains(badan, "Rp") {
 		t.Errorf("wajib: %d %s", kode, badan)
 	}
-	if kode, _ := u.minta(t, http.MethodPost, dasar, map[string]any{"descId": "10017", "medan": map[string]string{}}, true); kode != http.StatusUnprocessableEntity {
-		t.Errorf("LimitMB: %d", kode)
+	// MB Capacity mengikuti XML [keputusan work owner 02-10-2026]: tanpa wajib-isi; MORERP/MOREUSD NUMBER.
+	if kode, badan := u.minta(t, http.MethodPost, dasar, map[string]any{"descId": "10017", "medan": map[string]string{
+		"ID_Occupation": "01", "MoreRp": "5000000.5", "MoreUsd": "325.25", "TerritorialLimit": "UJI GRUP"}}, true); kode != http.StatusOK ||
+		!strings.Contains(badan, `"Occupation":"RESIDENTIAL RISK"`) || !strings.Contains(badan, `"MoreRp":"5000000.5"`) {
+		t.Errorf("LimitMB: %d %s", kode, badan)
+	}
+	if kode, _ := u.minta(t, http.MethodPost, dasar, map[string]any{"descId": "10002", "medan": map[string]string{}}, true); kode != http.StatusUnprocessableEntity {
+		t.Errorf("Portfolio tetap ditahan: %d", kode)
 	}
 	// Anak EpiList: Rp/Usd turunan; sembilan kolom khusus induk NULL di Oracle.
 	kode, badan = u.minta(t, http.MethodPost, dasar, map[string]any{"descId": "10009", "anak": true,

@@ -19,6 +19,7 @@ import {
   KURS_TCO,
   LABEL_MEDAN_KHUSUS,
   JUDUL_GRID_KLAUSUL,
+  KOLOM_GRID_KLAUSUL,
   LABEL_MEDAN_KLAUSUL,
   LAMPIRAN_TCO,
   MENU_TCO,
@@ -270,6 +271,21 @@ describe.skipIf(!adaKorpus)('label Treaty Contract Out berbukti barisnya', () =>
       [10554, tombol(KLAUSUL_TCO.add)], [14815, tombol(KLAUSUL_TCO.add)], [11254, tombol(KLAUSUL_TCO.edit)],
       [9982, '<pyFieldValueForNoRows>pzRDLNoResults</pyFieldValueForNoRows>']] as [number, string][]) {
       expect(baris(sec('Coins'), n).trim(), `Coins ${n}`).toBe(v)
+    }
+    // 10017 MB Capacity: judul, label form, kepala dan sel grid, tombol, teks Choose.
+    const mb = LABEL_MEDAN_KHUSUS.LimitMB
+    const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    const kolomMB: Record<string, string> = Object.fromEntries(KOLOM_GRID_KLAUSUL.LimitMB)
+    for (const [n, v] of [[872, nilai(JUDUL_GRID_KLAUSUL.LimitMB)], [1586, lf(mb.ID_Occupation)], [1928, lf(mb.Pct)],
+      [2169, lf(mb.PctMe)], [2410, lf(mb.Rp)], [2651, lf(mb.Usd)], [2892, lf(mb.MoreRp)], [3133, lf(mb.MoreUsd)],
+      [3374, lf(`.${mb.TerritorialLimit}`)], [1696, `<pyNoSelectionText>${KLAUSUL_TCO.choose}</pyNoSelectionText>`],
+      [8045, nilai(kolomMB.Occupation ?? '')], [8205, nilai(esc(kolomMB.Pct ?? ''))], [8361, nilai(esc(kolomMB.PctMe ?? ''))],
+      [8517, nilai(esc(kolomMB.Usd ?? ''))], [8673, nilai(esc(kolomMB.MoreUsd ?? ''))], [8829, nilai(kolomMB.TerritorialLimit ?? '')],
+      [9281, nilai('.Occupation')], [9451, nilai('.Pct')], [9640, nilai('.PctMe')], [9829, nilai('.Usd')],
+      [10018, nilai('.MoreUsd')], [10207, nilai('.TerritorialLimit')],
+      [5082, tombol(KLAUSUL_TCO.save)], [5361, tombol(KLAUSUL_TCO.cancel)], [9041, tombol(KLAUSUL_TCO.add)],
+      [10428, tombol(KLAUSUL_TCO.edit)]] as [number, string][]) {
+      expect(baris(sec('LIMITMB'), n).trim(), `LIMITMB ${n}`).toBe(v)
     }
   })
 

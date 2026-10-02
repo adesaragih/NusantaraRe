@@ -21,6 +21,7 @@ import {
   tabSubjenis,
   rencanaKonversi,
   gridCoInsScale,
+  addDiKepala,
   judulBagianJenis,
   judulGridAturan,
   kolomGridAturan,
@@ -269,7 +270,50 @@ describe('10014 Co-Ins Scale', () => {
     expect(gridCoInsScale(coins.aturan[0]!)).toBe(true)
     expect(gridCoInsScale(aturan({}))).toBe(false)
     expect(KODE).toContain('<details className="panel tco-lipat" open>')
-    expect(KODE).toContain('<th className="table__actions">{coins ? tombolAdd : null}</th>')
+    expect(KODE).toContain('<th className="table__actions">{kepala ? tombolAdd : null}</th>')
     expect(KODE).toContain('{KLAUSUL_TCO.noItems}')
+  })
+})
+
+// 10017 MB Capacity (`GridTreatyArrangementLIMITMB.xml`) mengikuti XML [keputusan work owner 02-10-2026]: delapan medan
+// form, dropdown Occupation `Choose`, autocomplete TerritorialLimit atas grup treaty, grid enam kolom, `Add` di kepala.
+describe('10017 MB Capacity', () => {
+  const mb = aturan({
+    jenis: 'LimitMB',
+    medan: ['ID_Occupation', 'Pct', 'PctMe', 'Rp', 'Usd', 'MoreRp', 'MoreUsd', 'TerritorialLimit'],
+    wajib: [],
+  })
+  it('label form VERBATIM', () => {
+    expect(mb.medan.map((m) => labelMedan(mb, m))).toEqual([
+      'Occupation', '% TSI MB of TSI Property From', '% TSI MB of TSI Property To', 'RNM TSI From (IDR)',
+      'RNM TSI From (USD)', 'RNM TSI To (IDR)', 'RNM TSI To (USD)', 'TerritorialLimit',
+    ])
+  })
+  it('judul grid dan kolom grid VERBATIM; RNM TSI IDR tidak tampil di grid', () => {
+    expect(judulGridAturan(mb)).toBe('MB Capacity')
+    const kolom = kolomGridAturan(mb)
+    expect(kolom.map((c) => c.label)).toEqual([
+      'Occupation', '% TSI MB Of Property From >', '<= % TSI MB Of Property To', 'RNM TSI From (USD) >',
+      '<= RNM TSI To (USD)', 'Limit Treaty Group',
+    ])
+    const k = klausul({ medan: { Occupation: 'INDUSTRIAL RISK', Pct: '10', PctMe: '25.5', Usd: '1000', MoreUsd: '325000.5',
+      TerritorialLimit: 'UJI GRUP' } })
+    expect(kolom.map((c) => c.isi(k))).toEqual(['INDUSTRIAL RISK', '10', '25,5', '1.000', '325.000,5', 'UJI GRUP'])
+  })
+  it('MoreRp / MoreUsd desimal berpemisah ribuan', () => {
+    expect(tampilMedanKlausul('MoreRp', '5000000')).toBe('5.000.000')
+    expect(tampilMedanKlausul('MoreUsd', '325.25')).toBe('325,25')
+  })
+  it('Add di kepala kolom aksi seperti Co-Ins Scale, tanpa grid lipat', () => {
+    expect(addDiKepala(mb)).toBe(true)
+    expect(addDiKepala(aturan({ jenis: 'CoinsPanel' }))).toBe(true)
+    expect(addDiKepala(aturan({}))).toBe(false)
+    expect(gridCoInsScale(mb)).toBe(false)
+  })
+  it('Occupation = dropdown Choose; TerritorialLimit = autocomplete grup treaty', () => {
+    expect(KODE).toContain('<PilihOccupationMB')
+    expect(KODE).toContain('<PilihGrupTreatyNama')
+    expect(KODE).toContain("aturan.jenis === 'LimitMB' && m === 'ID_Occupation'")
+    expect(KODE).toContain("aturan.jenis === 'LimitMB' && m === 'TerritorialLimit'")
   })
 })

@@ -50,7 +50,37 @@ const (
 	MedanIDClause         = "ID_Clause"
 	MedanClause           = "Clause"
 	MedanLayer            = "Layer"
+	// MoreRp / MoreUsd - "RNM TSI To (IDR/USD)" MB Capacity (`GridTreatyArrangementLIMITMB.xml` b2892/b3133).
+	MedanMoreRp  = "MoreRp"
+	MedanMoreUsd = "MoreUsd"
 )
+
+// OccupationLimitMB - pilihan Occupation MB Capacity. `[terverifikasi]`
+// `Activity/SetOccupationLimitMB.xml` (dipanggil saat dropdown `ID_Occupation`
+// berubah, `GridTreatyArrangementLIMITMB.xml` b1669): `ID_Occupation=="01"` b322 ->
+// `Occupation = "RESIDENTIAL RISK"` b246; "02" b459/b383; "03" b596/b520; "04" b733/b657.
+// ⚠️ Dropdown Pega membaca `OccupLimitMB.pxResults` (tampil `.KDClassOccupation`,
+// b1723) yang pengisinya tidak ada di korpus - pilihannya di sini keempat ID yang
+// activity itu kenal, tampil dengan namanya.
+type OccupationLimitMB struct {
+	ID   string
+	Nama string
+}
+
+// PilihanOccupationLimitMB - urut langkah `SetOccupationLimitMB` 1-4.
+var PilihanOccupationLimitMB = []OccupationLimitMB{
+	{"01", "RESIDENTIAL RISK"}, {"02", "INDUSTRIAL RISK"}, {"03", "COMMERCIAL RISK"}, {"04", "AGRICULTURAL RISK"},
+}
+
+// NamaOccupationLimitMB - nama untuk satu ID (`SetOccupationLimitMB`); false = ID di luar daftar.
+func NamaOccupationLimitMB(id string) (string, bool) {
+	for _, p := range PilihanOccupationLimitMB {
+		if p.ID == strings.TrimSpace(id) {
+			return p.Nama, true
+		}
+	}
+	return "", false
+}
 
 // DescID master `TREATYDESC` - `SetKirimIDDesc.xml` (`InputData.CARIDESC == ...`).
 const (
@@ -259,8 +289,14 @@ var AturanKlausulTCO = []AturanKlausul{
 		KunciDobel: []string{MedanPct}, SatuBaris: true, Sumber: "SaveTreatyArrMinLOL"},
 	{Jenis: "MaxCoinsPanel", DescID: DescMaxCoinsPanel, Medan: []string{MedanCoInsMax}, Wajib: []string{MedanCoInsMax},
 		KunciDobel: []string{MedanCoInsMax}, SatuBaris: true, Sumber: "SaveTreatyArrMaxCoinsPanel"},
-	{Jenis: "LimitMB", DescID: DescLimitMB, Ditahan: fmt.Sprintf(alasanDitahan, "LimitMB"),
-		Medan:  []string{MedanIDOccupation, MedanPct, MedanPctMe, MedanRp, MedanUsd, MedanTerritorialLimit},
+	// LimitMB - MB Capacity (`GridTreatyArrangementLIMITMB.xml` b809) MENGIKUTI XML [keputusan work
+	// owner 02-10-2026: "ikuti xml-nya aja"; menutup AC 36 untuk jenis ini]. Delapan medan form urut
+	// b1547-b3335; `SaveTreatyArrLimitMB_Act` NOL `Property-Set-Messages` -> nol wajib-isi; gerbang
+	// dobel Pega hanya di prosedur `SaveMasterProportionalArrg` (b754, `HASILD7` b1178), tidak di
+	// korpus -> tanpa kunci dobel. Nama Occupation dari `SetOccupationLimitMB` (server).
+	{Jenis: "LimitMB", DescID: DescLimitMB,
+		Medan: []string{MedanIDOccupation, MedanPct, MedanPctMe, MedanRp, MedanUsd, MedanMoreRp, MedanMoreUsd,
+			MedanTerritorialLimit},
 		Sumber: "SaveTreatyArrLimitMB_Act"},
 	{Jenis: "MinLOLMB", DescID: DescMinLOLMB, Medan: []string{MedanPct}, Wajib: []string{MedanPct},
 		KunciDobel: []string{MedanPct}, SatuBaris: true, Sumber: "SaveTreatyArrMinLOLMB"},
@@ -305,7 +341,7 @@ func AturanJenisKlausul(jenis, subjenis string) (AturanKlausul, bool) {
 
 // medanDesimal - medan berkolom NUMBER(38,8) (AC 51, 52).
 var medanDesimal = map[string]bool{MedanRp: true, MedanUsd: true, MedanPct: true, MedanPctMe: true,
-	MedanTreatyLimit: true, MedanCoInsMin: true, MedanCoInsMax: true}
+	MedanTreatyLimit: true, MedanCoInsMin: true, MedanCoInsMax: true, MedanMoreRp: true, MedanMoreUsd: true}
 
 func (a AturanKlausul) punya(medan string) bool {
 	for _, m := range a.Medan {
@@ -347,6 +383,10 @@ func NilaiMedanKlausul(k KlausulTreaty, medan string) string {
 		return d(k.CoinsMin)
 	case MedanCoInsMax:
 		return d(k.CoinsMax)
+	case MedanMoreRp:
+		return d(k.MoreRp)
+	case MedanMoreUsd:
+		return d(k.MoreUsd)
 	case MedanTreatyLimit:
 		return d(k.TreatyLimit)
 	case MedanSpreadingOrder:
@@ -396,6 +436,10 @@ func IsiMedanKlausulTCO(a AturanKlausul, k *KlausulTreaty, masuk map[string]stri
 				k.CoinsMin = d
 			case MedanCoInsMax:
 				k.CoinsMax = d
+			case MedanMoreRp:
+				k.MoreRp = d
+			case MedanMoreUsd:
+				k.MoreUsd = d
 			}
 			continue
 		}

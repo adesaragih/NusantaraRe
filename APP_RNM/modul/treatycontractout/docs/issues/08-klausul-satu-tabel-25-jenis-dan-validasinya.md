@@ -75,7 +75,7 @@ kebenaran untuk AC validasi**:
 | `TerrLimit` | `TerritorialLimit` |
 | `ExclutionTreaty` | `ID_Occupation`, `TerritorialLimit` |
 | `BordereAux` | `Method` |
-| **`LimitMB`** | `[terbuka]` — hari ini **nol validasi** |
+| **`LimitMB`** | nol validasi — **dilepas mengikuti XML** (keputusan 02-10-2026, di bawah) |
 | **`Portfolio`** | `[terbuka]` — hari ini **nol validasi** |
 
 ## ADR terkait
@@ -110,7 +110,8 @@ kebenaran untuk AC validasi**:
 - [ ] Pesan penolakan **menyebut field** yang kurang. *(AC 35 spec)*
 - [ ] `[terbuka]` Jenis **`LimitMB`** dan **`Portfolio`** **tidak** dinyatakan selesai sebelum
       aturan wajib-isinya ditetapkan Product + UW. Keduanya **tidak** dilepas sebagai "tanpa
-      validasi". *(AC 36 spec)*
+      validasi". *(AC 36 spec)* ⛔ **LimitMB ditutup 02-10-2026**: work owner memutuskan "ikuti XML-nya" —
+      nol wajib-isi seperti Pega (blok keputusan di bawah). Portfolio tetap ditahan.
 - [ ] ⚠️ Nilai uang (`Rp`, `Usd`, `MoreRp`, `MoreUsd`, `TreatyLimit`, `CoIns_Min`, `CoIns_Max`) dan
       persen (`Pct`, `PctMe`) bertipe **desimal**, bukan teks. *(AC 51, 52 spec; **ADR-0003**;
       penyimpangan sadar 6)*
@@ -481,3 +482,54 @@ Contohnya baris yang disimpan layar kita sebelum perbaikan ini.
 - repository: `TestMedanSamaKlausulTCO`.
 - services: `TestKlausulCoInsScaleDuaGrid`.
 - frontend: `10014 Co-Ins Scale` dan `labels.test` (judul, kolom, Add/Edit kedua grid terhadap XML).
+
+## ⛔ Keputusan work owner bertanggal — 02-10-2026 (10017 MB Capacity / LimitMB: ikuti XML)
+
+*Pertanyaan: "MB Capacity kenapa enggak bisa?" — layar menampilkan "type LimitMB cannot be filled in yet: its required-field
+rules have not been set" (ditahan AC 36). Ditawarkan empat aturan wajib-isi; jawaban: **"ikuti XML-nya aja"**, disertai tangkapan
+layar form Pega.*
+
+**XML.**
+- Judul: `Section/GridTreatyArrangementLIMITMB.xml` `MB Capacity` b872.
+- Form (`OutputParam.DATASHOW` b1358), delapan medan:
+  - `Occupation` = dropdown `ID_Occupation` b1547 berteks `Choose` b1696, sumber `OccupLimitMB.pxResults` b1723. Saat berubah →
+    `SetOccupationLimitMB` b1669.
+  - `% TSI MB of TSI Property From` `.Pct` b1928 dan `… To` `.PctMe` b2169.
+  - `RNM TSI From (IDR)` `.Rp` b2410 dan `(USD)` `.Usd` b2651.
+  - `RNM TSI To (IDR)` `.MoreRp` b2892 dan `(USD)` `.MoreUsd` b3133.
+  - `.TerritorialLimit` b3374: Autocomplete atas `BrowseTreatyGroup_RD` b3485 yang menampilkan **dan menyimpan**
+    `.TreatyGroupName`.
+- Grid: enam kolom b8045–b8829 (`Occupation`, `% TSI MB Of Property From >`, `<= % TSI MB Of Property To`,
+  `RNM TSI From (USD) >`, `<= RNM TSI To (USD)`, `Limit Treaty Group`). `Add` b9041 di kepala, `Edit` b10428.
+- `Activity/SaveTreatyArrLimitMB_Act.xml`: **nol** `Property-Set-Messages`. Step 2 b379 keluar hanya bila halaman sudah
+  bermasalah; sisanya `Page-Copy` b620 → `SaveMasterProportionalArrg` b754.
+- `Activity/SetOccupationLimitMB.xml`: `"01"` b322 → `RESIDENTIAL RISK` b246, `"02"` b459 → `INDUSTRIAL RISK` b383, `"03"` b596
+  → `COMMERCIAL RISK` b520, `"04"` b733 → `AGRICULTURAL RISK` b657.
+- `NewTreatyArrLimitMB` tidak memeriksa kurs, dan form tidak punya aksi konversi.
+
+**Yang dibangun.**
+- models: aturan LimitMB tanpa `Ditahan`; `Medan` delapan urut XML; `Wajib` dan `KunciDobel` KOSONG.
+  - Gerbang dobel Pega hanya ada di prosedur, yang tidak ada di korpus.
+- models: `MedanMoreRp` / `MedanMoreUsd` (desimal, kolom `MORERP`/`MOREUSD` NUMBER yang sudah dibaca/ditulis repository);
+  `PilihanOccupationLimitMB` + `NamaOccupationLimitMB`.
+- services: nama Occupation MB diisi dari peta `SetOccupationLimitMB`, bukan master FIRE; ID di luar 01–04 ditolak
+  (`ErrPilihanDiLuarMaster`); ID kosong mengosongkan namanya.
+- services: `Pilihan("occupation-limitmb")` — empat pilihan tanpa baca DB.
+- frontend: `PilihOccupationMB` (dropdown inti `Choose`) dan `PilihGrupTreatyNama` (`PilihSaring` atas `GET /grup-treaty`,
+  nilai = nama, ID sebagai keterangan).
+- frontend: label form dan kepala grid VERBATIM (`LABEL_MEDAN_KHUSUS.LimitMB`, `KOLOM_GRID_KLAUSUL.LimitMB`); judul
+  `MB Capacity`.
+- frontend: `Add` di kepala dan `No items` (`addDiKepala`, sama dengan Co-Ins Scale); kepala kolom boleh terbungkus
+  (`tco-grid-rapat`) supaya keenam kolom muat.
+
+⚠️ `[asumsi]` Opsi dropdown Occupation = keempat ID yang dikenal `SetOccupationLimitMB`, ditampilkan dengan namanya.
+Dropdown Pega membaca `OccupLimitMB.pxResults` (tampil `.KDClassOccupation`), yang pengisinya tidak ada di korpus.
+
+⚠️ Baris kosong dapat disimpan — persis Pega. Data DEV `LimitMB` tidak dibaca untuk perubahan ini.
+
+**Uji.**
+- models: `TestLimitMBMengikutiXML`, `TestLimitMBKorpus` (nol `Property-Set-Messages`, peta Occupation per baris);
+  `TestPortfolioDitahan`.
+- services: `TestKlausulLimitMBMengikutiXML`.
+- Oracle: `tco_klausul_db_test.go` (LimitMB 200 + `MoreRp`; Portfolio 422) — dilewati tanpa Oracle.
+- frontend: `10017 MB Capacity`, `PilihMBCapacity.test.ts`, dan `labels.test` (26 baris XML).

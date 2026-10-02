@@ -416,6 +416,8 @@ export const KLAUSUL_TCO = {
   coInsuranceShare: 'Co Insurance Share',
   /** Grid kosong: pesan platform Pega `pzRDLNoResults` (b9982 / b14247) — teksnya dari tangkapan layar work owner 02-10-2026. */
   noItems: 'No items',
+  /** `Section/GridTreatyArrangementLIMITMB.xml` b1696 `pyNoSelectionText` — dropdown Occupation MB Capacity. */
+  choose: 'Choose',
 
   /** `[tidak ada di korpus]` */
   cancel: 'Cancel',
@@ -481,6 +483,8 @@ export const JUDUL_GRID_KLAUSUL = {
   'CoinsPanel/Less Than': 'Risk with Sum Insured less than USD 100.000.000',
   /** b12971 (`Param.Type` "More Than" b14320). */
   'CoinsPanel/More Than': 'Risk with Sum Insured more than USD 100.000.000',
+  /** `GridTreatyArrangementLIMITMB.xml` b872 — 10017. */
+  LimitMB: 'MB Capacity',
 } as const satisfies Readonly<Record<string, string>>
 
 /** Penimpaan label per `jenis` atau `jenis/subjenis`. */
@@ -493,6 +497,20 @@ export const LABEL_MEDAN_KHUSUS = {
   MaxCoinsPanel: { CoIns_Max: 'Max Coins Panel' },
   /** `GridTreatyArrangementExclutionTreatyOccupation.xml` b2745 / b2935 / b3222. */
   'ExclutionTreaty/Occupation': { Line: 'Class of Contruction', Usd: 'TSI Less Than (USD)', Rp: 'TSI Less Than (IDR)' },
+  /**
+   * `GridTreatyArrangementLIMITMB.xml` form b1586–b3374. `.TerritorialLimit` b3374 adalah label RUJUKAN properti —
+   * yang tampil nama propertinya, seperti layar Pega.
+   */
+  LimitMB: {
+    ID_Occupation: 'Occupation',
+    Pct: '% TSI MB of TSI Property From',
+    PctMe: '% TSI MB of TSI Property To',
+    Rp: 'RNM TSI From (IDR)',
+    Usd: 'RNM TSI From (USD)',
+    MoreRp: 'RNM TSI To (IDR)',
+    MoreUsd: 'RNM TSI To (USD)',
+    TerritorialLimit: 'TerritorialLimit',
+  },
   /** `GridTreatyArrangementExclutionTreatyObject.xml` b566 (`TSI BI &gt;`). */
   'ExclutionTreaty/Object': { Pct: 'TSI BI >' },
 } as const satisfies Readonly<Record<string, Readonly<Record<string, string>>>>
@@ -596,3 +614,19 @@ export const HAPUS_TCO = {
   /** `[tidak ada di korpus]` — saringan business kaskade: `TREATYYEARID` tahun ini ATAU kosong (NULL). */
   bersamaBusiness: 'Businesses are deleted only when they belong to this treaty year or have no treaty year.',
 } as const
+
+/**
+ * Kolom grid per jenis bila BERBEDA dari label form — `[medan, label]`, urut XML.
+ * MB Capacity: `GridTreatyArrangementLIMITMB.xml` kepala b8045–b8829, sel b9281–b10207 (`.Occupation`, `.Pct`,
+ * `.PctMe`, `.Usd`, `.MoreUsd`, `.TerritorialLimit`; RNM TSI IDR tidak tampil di grid).
+ */
+export const KOLOM_GRID_KLAUSUL = {
+  LimitMB: [
+    ['Occupation', 'Occupation'],
+    ['Pct', '% TSI MB Of Property From >'],
+    ['PctMe', '<= % TSI MB Of Property To'],
+    ['Usd', 'RNM TSI From (USD) >'],
+    ['MoreUsd', '<= RNM TSI To (USD)'],
+    ['TerritorialLimit', 'Limit Treaty Group'],
+  ],
+} as const satisfies Readonly<Record<string, readonly (readonly [string, string])[]>>

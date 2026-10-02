@@ -195,8 +195,9 @@ func TestJenisKlausulDariMasterDenganAturan(t *testing.T) {
 		if j.ID == "10099" && j.Catatan == "" {
 			t.Error("jenis master tanpa aturan tidak ditandai")
 		}
-		if j.ID == "10017" && j.Aturan[0].Ditahan == "" {
-			t.Error("LimitMB tidak ditahan")
+		// LimitMB dilepas mengikuti XML [keputusan work owner 02-10-2026].
+		if j.ID == "10017" && (j.Aturan[0].Ditahan != "" || len(j.Aturan[0].Medan) != 8 || len(j.Aturan[0].Wajib) != 0) {
+			t.Errorf("LimitMB: %+v", j.Aturan[0])
 		}
 	}
 }
@@ -300,7 +301,7 @@ func TestKlausulDobelDanDitahan(t *testing.T) {
 	if !errors.Is(err, services.ErrKlausulDobel) || !strings.Contains(err.Error(), "Data has already been entered") || !strings.Contains(err.Error(), "10000009") {
 		t.Errorf("dobel: %v", err)
 	}
-	for _, desc := range []string{"10017", "10002"} {
+	for _, desc := range []string{"10002"} {
 		_, err := layananKlausul(gudangKlausulKosong(), &n).Simpan(context.Background(), pelakuUjiTCO, "1000001",
 			services.KlausulMasuk{DescID: desc, Medan: map[string]string{}})
 		if !errors.Is(err, models.ErrKlausulDitahan) {
@@ -666,5 +667,44 @@ func TestKlausulCoInsScaleDuaGrid(t *testing.T) {
 	}
 	if got := strings.Join(urut, ","); got != "Less Than=,Less Than=9000000,Less Than=6000000,More Than=2500000" {
 		t.Errorf("urutan grid: %s", got)
+	}
+}
+
+// MB Capacity (LimitMB 10017) mengikuti XML [keputusan work owner 02-10-2026]: nol wajib-isi
+// (`SaveTreatyArrLimitMB_Act`), nama Occupation dari `SetOccupationLimitMB`, MoreRp/MoreUsd tersimpan.
+func TestKlausulLimitMBMengikutiXML(t *testing.T) {
+	g, n := gudangKlausulKosong(), 0
+	l := layananKlausul(g, &n)
+	mb := func(medan map[string]string) services.KlausulMasuk {
+		return services.KlausulMasuk{DescID: "10017", Medan: medan}
+	}
+	if h, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", mb(map[string]string{})); err != nil || h.Klausul.ID == "" {
+		t.Fatalf("baris kosong (Pega menyimpannya): %+v %v", h, err)
+	}
+	h, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", mb(map[string]string{
+		"ID_Occupation": "02", "Pct": "10", "PctMe": "25,5", "Rp": "1000000", "Usd": "65", "MoreRp": "5000000",
+		"MoreUsd": "325.5", "TerritorialLimit": "UJI GRUP TREATY"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	k := h.Klausul
+	if k.Medan["Occupation"] != "INDUSTRIAL RISK" || k.Medan["MoreRp"] != "5000000" || k.Medan["MoreUsd"] != "325.5" ||
+		k.Medan["PctMe"] != "25.5" || k.Medan["TerritorialLimit"] != "UJI GRUP TREATY" || k.TreatyDescName != "UJI LIMIT MB" || k.Kurs != "" {
+		t.Errorf("MB: %+v", k)
+	}
+	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", mb(map[string]string{"ID_Occupation": "05"})); !errors.Is(err, services.ErrPilihanDiLuarMaster) {
+		t.Errorf("occupation di luar daftar: %v", err)
+	}
+	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", mb(map[string]string{"Occupation": "KARANGAN"})); !errors.Is(err, models.ErrMedanBukanMilikJenis) {
+		t.Errorf("nama occupation dari klien: %v", err)
+	}
+	ubah := mb(map[string]string{"ID_Occupation": "", "Pct": "10"})
+	ubah.ID = k.ID
+	if h, err = l.Simpan(context.Background(), pelakuUjiTCO, "1000001", ubah); err != nil || h.Klausul.Medan["Occupation"] != "" {
+		t.Errorf("occupation dikosongkan: %+v %v", h, err)
+	}
+	p, err := l.Pilihan(context.Background(), pelakuUjiTCO, "occupation-limitmb", "")
+	if err != nil || len(p) != 4 || p[0].ID != "01" || p[0].Nama != "RESIDENTIAL RISK" || p[3].Nama != "AGRICULTURAL RISK" {
+		t.Errorf("pilihan occupation MB: %+v %v", p, err)
 	}
 }
