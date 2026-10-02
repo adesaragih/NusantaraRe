@@ -1,5 +1,0 @@
-# Akhiran baris dikunci LF hanya untuk dua jenis berkas kode.
-# Sengaja BUKAN "text=auto" global: repositori ini memuat ribuan berkas
-# dokumen, dan normalisasi menyeluruh akan mengubah semuanya sekaligus.
-*.sql text eol=lf
-*.go text eol=lf
