@@ -163,6 +163,16 @@ describe('Kelola User bergaya soft UI', () => {
       ['--ku-netral-teks', '--ku-netral-latar'],
       ['--ku-bahaya-teks', '--ku-bahaya-latar'],
       ['--ku-waspada-teks', '--ku-waspada-latar'],
+      // Pewarnaan terbedakan (02-10-2026): isi putih, belang, sorot, kepala navy, jalur tab, tombol Hapus.
+      ['--ku-teks', '--ku-isi'],
+      ['--ku-teks', '--ku-zebra'],
+      ['--ku-teks', '--ku-baris-hover'],
+      ['--ku-teks-redup', '--ku-isi'],
+      ['--ku-teks-redup', '--ku-jalur-tab'],
+      ['--ku-kepala-teks', '--ku-kepala-tabel'],
+      ['--ku-aksen-teks', '--ku-isi'],
+      ['--ku-bahaya-teks', '--ku-isi'],
+      ['--ku-teks-redup', '--ku-lembut'],
     ] as const
     const gagal = [
       ['terang', terang],

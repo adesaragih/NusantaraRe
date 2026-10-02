@@ -5937,10 +5937,15 @@ textarea.field__input {
   --ku-aksen-teks: #2339a3;
   --ku-aksen-lembut: #e3e8f6;
   --ku-aksen-garis: #b9c5ee;
-  --ku-kepala-tabel: #eaeef4;
-  --ku-baris-hover: #e6ebf3;
-  --ku-garis: #dfe4ec;
-  --ku-tepi: #d5dce7;
+  --ku-kepala-tabel: #dde4f2;
+  --ku-kepala-teks: #22326b;
+  --ku-kepala-garis: #c3cde2;
+  --ku-isi: #ffffff;
+  --ku-zebra: #f5f7fb;
+  --ku-baris-hover: #e6ecfa;
+  --ku-garis: #e1e6ef;
+  --ku-tepi: #c8d1e1;
+  --ku-jalur-tab: #dfe5ef;
   --ku-tombol: #d63a42;
   --ku-tombol-ujung: #bf2f37;
   --ku-tombol-hover: #c2333b;
@@ -5991,10 +5996,15 @@ textarea.field__input {
   --ku-aksen-teks: #aebcff;
   --ku-aksen-lembut: #222b45;
   --ku-aksen-garis: #3a4b8f;
-  --ku-kepala-tabel: #1d2433;
-  --ku-baris-hover: #212a3c;
-  --ku-garis: #283042;
-  --ku-tepi: #2d3546;
+  --ku-kepala-tabel: #273152;
+  --ku-kepala-teks: #dbe2ff;
+  --ku-kepala-garis: #3a4670;
+  --ku-isi: #1f2638;
+  --ku-zebra: #232b3f;
+  --ku-baris-hover: #2b3554;
+  --ku-garis: #2c3447;
+  --ku-tepi: #3a4459;
+  --ku-jalur-tab: #151a26;
   --ku-terang: rgba(255, 255, 255, 0.045);
   --ku-gelap: rgba(0, 0, 0, 0.55);
   --ku-kilau: rgba(255, 255, 255, 0.04);
@@ -6032,9 +6042,10 @@ textarea.field__input {
   outline-offset: 2px;
 }
 
-/* Isian: TIMBUL KE DALAM (cekung) bertepi tipis; fokus biru navy bercincin lembut. */
+/* Isian: TIMBUL KE DALAM (cekung), PUTIH bertepi jelas di atas alas abu kebiruan (02-10-2026
+   "ga terlalu kelihatan perbedaan warnanya"); fokus biru navy bercincin lembut. */
 .kelola-user .field__input {
-  background: var(--ku-latar);
+  background: var(--ku-isi);
   border: 1px solid var(--ku-tepi);
   border-radius: 12px;
   box-shadow: var(--ku-cekung-kecil);
@@ -6047,6 +6058,15 @@ textarea.field__input {
   border-color: var(--ku-aksen);
   box-shadow: var(--ku-cekung-kecil), var(--ku-cincin);
   outline: none;
+}
+/* Isian hanya-baca (username sesudah dibuat): abu lembut bertulisan redup, jadi terbedakan dari isian
+   yang dapat diketik. */
+.kelola-user .field__input--readonly,
+.kelola-user .field__input--readonly:hover {
+  background: var(--ku-lembut);
+  border-color: var(--ku-lembut-tepi);
+  color: var(--ku-teks-redup);
+  box-shadow: none;
 }
 
 /* Tombol kapsul TIMBUL KELUAR; ditekan: TIMBUL KE DALAM. Utama: merah bergradasi halus. */
@@ -6067,12 +6087,15 @@ textarea.field__input {
   box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
 }
 .kelola-user .btn--ghost {
-  background: var(--ku-latar);
-  border: 1px solid var(--ku-kilau);
-  color: var(--ku-teks);
+  background: var(--ku-isi);
+  border: 1px solid var(--ku-tepi);
+  color: var(--ku-aksen-teks);
+  font-weight: 600;
   box-shadow: var(--ku-timbul-kecil);
 }
 .kelola-user .btn--ghost:hover:not(:disabled) {
+  background: var(--ku-aksen-lembut);
+  border-color: var(--ku-aksen-garis);
   color: var(--ku-aksen-teks);
 }
 .kelola-user .btn--ghost:active:not(:disabled) {
@@ -6103,10 +6126,12 @@ textarea.field__input {
   color: var(--ku-bahaya-teks);
 }
 
-/* Tabel daftar pengguna: SATU kartu TIMBUL KELUAR; baris rata. */
+/* Tabel daftar pengguna: SATU kartu TIMBUL KELUAR - isinya PUTIH, kepala tabel biru navy muda
+   bertulisan navy, baris berbelang, sorot baris biru muda (02-10-2026: alas, kepala, baris, dan
+   sorot dulu abu yang nyaris sama). */
 .kelola-user .kelola-user__tabel {
-  background: var(--ku-latar);
-  border: 1px solid var(--ku-kilau);
+  background: var(--ku-isi);
+  border: 1px solid var(--ku-tepi);
   border-radius: 18px;
   box-shadow: var(--ku-timbul);
 }
@@ -6124,12 +6149,17 @@ textarea.field__input {
 }
 .kelola-user .kelola-user__tabel thead th {
   background: var(--ku-kepala-tabel);
-  color: var(--ku-teks-redup);
-  border-bottom-color: var(--ku-garis);
+  color: var(--ku-kepala-teks);
+  font-weight: 700;
+  border-bottom: 1px solid var(--ku-kepala-garis);
 }
 .kelola-user .kelola-user__tabel td {
   color: var(--ku-teks);
+  background: var(--ku-isi);
   border-bottom-color: var(--ku-garis);
+}
+.kelola-user .kelola-user__tabel tbody tr:nth-child(even) > td {
+  background: var(--ku-zebra);
 }
 .kelola-user .kelola-user__tabel tbody tr:hover {
   background: transparent;
@@ -6185,7 +6215,7 @@ textarea.field__input {
   padding: 5px;
   border: 0;
   border-radius: 22px;
-  background: var(--ku-lembut);
+  background: var(--ku-jalur-tab);
   box-shadow: var(--ku-cekung);
 }
 .kelola-user .tabs__item {
@@ -6200,18 +6230,19 @@ textarea.field__input {
 }
 .kelola-user .tabs__item--aktif,
 .kelola-user .tabs__item--aktif:hover {
-  background: var(--ku-latar);
+  background: var(--ku-isi);
   color: var(--ku-aksen-teks);
   box-shadow: var(--ku-timbul-kecil);
 }
 
-/* Form pengguna: kotak centang workbasket dan menu TIMBUL KE DALAM. */
+/* Form pengguna: kotak centang workbasket dan menu TIMBUL KE DALAM - putih bertepi jelas di atas
+   alas popup. */
 .kelola-user .kelola-user__centang,
 .kelola-user .kelola-user__wajib {
-  border: 1px solid var(--ku-lembut-tepi);
+  border: 1px solid var(--ku-tepi);
   border-radius: 16px;
-  background: var(--ku-lembut);
-  box-shadow: var(--ku-cekung);
+  background: var(--ku-isi);
+  box-shadow: var(--ku-cekung-kecil);
 }
 .kelola-user .kelola-user__golongan-judul {
   color: var(--ku-judul-golongan);
