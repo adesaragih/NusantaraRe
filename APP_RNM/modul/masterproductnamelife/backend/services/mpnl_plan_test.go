@@ -19,7 +19,7 @@ const produkBerplan = `{"ID":"100007","PRODUCTNAME":"LAMA","CEDING":"UJI CEDING"
 
 func layananPlan() (*services.Layanan, func(models.Produk) error) {
 	l, g := layananMaster()
-	g.Umum["100007"] = produkBerplan
+	g.IsiJSON("100007", produkBerplan, "")
 	g.Plan = []models.JenisPlan{{ID: "P1", CoverName: "UJI COVER", Business: "UJI BIZ", Benefit: "UJI MANFAAT"},
 		{ID: "P2", CoverName: "UJI COVER DUA", Business: "UJI BIZ 2", Benefit: "UJI MANFAAT 2"}}
 	// View `RATE_LIFE_SUMMARY` tiruan (K1 01-10-2026): R1 sengaja TIDAK ada - pasangan tersimpan tidak diperiksa ulang.

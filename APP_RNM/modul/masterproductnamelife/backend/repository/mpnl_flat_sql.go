@@ -229,6 +229,11 @@ func (g *Gudang) eksekusi(ctx context.Context, tx *db.Tx, objek string, susun fu
 	return nil
 }
 
+// exec - satu pernyataan tulis yang menyentuh TEPAT satu baris (lampiran, induk).
+func (g *Gudang) exec(ctx context.Context, tx *db.Tx, objek string, susun func(string) string, args ...any) error {
+	return g.eksekusi(ctx, tx, objek, susun, true, args...)
+}
+
 func tulisAnak[T any](ctx context.Context, g *Gudang, tx *db.Tx, a AnakFlat[T], n *models.Produk) error {
 	if err := g.eksekusi(ctx, tx, a.Tabel, sqlHapusAnak, false, n.ID); err != nil {
 		return err

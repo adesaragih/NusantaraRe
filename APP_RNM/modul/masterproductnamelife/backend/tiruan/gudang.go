@@ -2,9 +2,10 @@
 // HANYA untuk uji services dan handlers (tidak diimpor kode produksi; penjaga
 // modul `TestMPNLTiruanHanyaDiUji`).
 //
-// ⭐ Tiruan menyimpan `JSONDATA` MENTAH dan memakai kodek repository yang
-// sungguhan (`repository.UraiProduk`, `RingkasanDari`), sehingga uji services
-// dan handlers ikut menguji bentuk JSON Pega - bukan bentuk karangan tiruan.
+// ⭐ Sejak 02-10-2026 (tabel flat, tiket 01 bab bertanggal) tiruan menyimpan produk BERBENTUK FLAT lewat pemetaan
+// repository yang sungguhan (`repository.NormalkanFlat`): angka kanonik, nilai tak muat = `ErrNilaiTidakMuat`, medan
+// tanpa kolom kosong - persis yang dibaca kembali dari Oracle (`mpnl_flat_db_test.go` membuktikan kesamaannya).
+// Fixture berbentuk JSON lama diisi lewat `IsiJSON` (kodek `repository.UraiProduk`, seperti alat pindah).
 // Fixture selalu berawalan `UJI-`.
 package tiruan
 
@@ -22,10 +23,10 @@ import (
 
 // Gudang adalah pengganti `repository.Gudang` di memori.
 type Gudang struct {
-	// Umum - `M_PRODUCT_LIFE`: ID → JSONDATA.
-	Umum map[string]string
-	// Inward - `M_PRODUCTINWARD_LIFE`: ID baris → JSONDATA.
-	Inward map[string]string
+	// Produk - tabel flat `M_PRODUCTNAME_LIFE` + tujuh anak: ID → produk berbentuk flat (NormalkanFlat).
+	Produk map[string]models.Produk
+	// IDWarisan - ID yang masih dipakai kedua tabel JSON warisan; `PilihIdentitasBebas` melewatinya seperti Oracle.
+	IDWarisan map[string]bool
 
 	// Master - isi tiap pemilih, urutan RD.
 	Master map[models.JenisMaster][]models.NilaiMaster
@@ -40,13 +41,11 @@ type Gudang struct {
 
 	// Seq - nomor urut berikut `M_PRODUCT_LIFE_SEQ` (bawaan 44, seperti `START WITH 44`).
 	Seq int64
-	// Datar - kolom datar `M_PRODUCT_LIFE`: RIRISKID, RIRISK (katalog DEV, lanjutan 1 L1).
-	Datar map[string][2]string
 	// GagalTulis - bila terisi, setiap penulis menulis LALU gagal dengan galat
 	// ini (uji: transaksi gagal = nol tulisan).
 	GagalTulis error
-	// GagalTulisInward - penulis sisi inward gagal SESUDAH sisi umum tertulis (uji P4).
-	GagalTulisInward error
+	// GagalTulisAnak - penulis tabel anak gagal SESUDAH baris induk tertulis (uji P4: satu transaksi).
+	GagalTulisAnak error
 
 	// Lampiran, Objek, Outbox, AppName - tabel lampiran (paket 8, `lampiran.go`).
 	Lampiran      map[string]models.Lampiran
@@ -68,33 +67,79 @@ type Gudang struct {
 
 // Baru menyusun gudang kosong.
 func Baru() *Gudang {
-	return &Gudang{Umum: map[string]string{}, Inward: map[string]string{},
-		Master: map[models.JenisMaster][]models.NilaiMaster{}, Seq: 44, Datar: map[string][2]string{},
-		Rate: map[string][]models.BarisRate{}}
+	return &Gudang{Produk: map[string]models.Produk{}, IDWarisan: map[string]bool{},
+		Master: map[models.JenisMaster][]models.NilaiMaster{}, Seq: 44, Rate: map[string][]models.BarisRate{}}
 }
 
 // Transaksi - tiruan `DalamTransaksi`: fn(nil); sukses = Komit++, gagal =
 // isi tabel dipulihkan (rollback). `Seq` TIDAK dipulihkan: `NEXTVAL` Oracle tidak ikut
 // rollback, jadi simpan yang gagal meninggalkan celah nomor (audit 02-10-2026).
 func (g *Gudang) Transaksi(_ context.Context, fn func(tx *db.Tx) error) error {
-	umum, inward, datar := salin(g.Umum), salin(g.Inward), map[string][2]string{}
-	for k, v := range g.Datar {
-		datar[k] = v
+	produk := make(map[string]models.Produk, len(g.Produk))
+	for k, v := range g.Produk {
+		produk[k] = v
 	}
 	if err := fn(nil); err != nil {
-		g.Umum, g.Inward, g.Datar = umum, inward, datar
+		g.Produk = produk
 		return err
 	}
 	g.Komit++
 	return nil
 }
 
-func salin(m map[string]string) map[string]string {
-	h := make(map[string]string, len(m))
-	for k, v := range m {
-		h[k] = v
+// IsiJSON - fixture produk dari JSON lama kedua tabel (`jsonInward` kosong = tanpa baris inward), dipindah seperti alat
+// pindah: kodek `repository.UraiProduk` lalu bentuk flat. Medan tanpa kolom yang terisi atau nilai tak muat = panik
+// (fixture yang keliru, bukan keadaan yang diuji).
+func (g *Gudang) IsiJSON(id, jsonUmum, jsonInward string) models.Produk {
+	idInward := ""
+	if jsonInward != "" {
+		idInward = id
 	}
-	return h
+	p, err := repository.UraiProduk(id, jsonUmum, idInward, jsonInward)
+	if err != nil {
+		panic(fmt.Sprintf("tiruan: fixture %s: %v", id, err))
+	}
+	if m := repository.MedanTanpaKolom(p); len(m) > 0 {
+		panic(fmt.Sprintf("tiruan: fixture %s mengisi medan tanpa kolom flat %v", id, m))
+	}
+	n, masalah := repository.NormalkanFlat(p)
+	if len(masalah) > 0 {
+		panic(fmt.Sprintf("tiruan: fixture %s: %+v", id, masalah))
+	}
+	g.Produk[id] = n
+	return salinProduk(n)
+}
+
+// salinProduk - salinan dalam (daftar baru), supaya pemanggil tidak mengubah isi tabel tiruan.
+func salinProduk(p models.Produk) models.Produk {
+	p.LienClause = append([]models.BarisLien{}, p.LienClause...)
+	p.DocumentClaim = append([]models.BarisDokumen{}, p.DocumentClaim...)
+	p.PlanList = append([]models.BarisPlan{}, p.PlanList...)
+	p.FinancialUnderwriting = append([]models.BarisFinUW{}, p.FinancialUnderwriting...)
+	p.UnderwritingLimit = append([]models.BarisUWLimit{}, p.UnderwritingLimit...)
+	p.OutwardList = append([]models.BarisOutward{}, p.OutwardList...)
+	p.CommentList = append([]models.BarisKomentar{}, p.CommentList...)
+	return p
+}
+
+// tulis - satu produk ke tabel flat tiruan (induk + anak), seperti `tulisFlat` repository.
+func (g *Gudang) tulis(p models.Produk) error {
+	n, masalah := repository.NormalkanFlat(p)
+	if len(masalah) > 0 {
+		return fmt.Errorf("%w: %s.%s (%s)", repository.ErrNilaiTidakMuat, masalah[0].Tabel, masalah[0].Kolom, masalah[0].Jenis)
+	}
+	induk := n
+	induk.LienClause, induk.DocumentClaim, induk.PlanList = nil, nil, nil
+	induk.FinancialUnderwriting, induk.UnderwritingLimit, induk.OutwardList, induk.CommentList = nil, nil, nil, nil
+	g.Produk[n.ID] = induk
+	if g.GagalTulis != nil {
+		return g.GagalTulis
+	}
+	if g.GagalTulisAnak != nil {
+		return g.GagalTulisAnak
+	}
+	g.Produk[n.ID] = n
+	return nil
 }
 
 // KunciProduk - tiruan `FOR UPDATE`: sama dengan AmbilProduk.
@@ -102,13 +147,14 @@ func (g *Gudang) KunciProduk(ctx context.Context, tx *db.Tx, id string) (models.
 	return g.AmbilProduk(ctx, tx, id)
 }
 
-func (g *Gudang) tulisDatar(p models.Produk) {
-	g.Datar[p.ID] = [2]string{p.Umum.RIRiskID, p.Umum.RIRisk}
-}
-
-// SisipProduk - ID dari Seq lewat `repository.PilihIdentitasBebas` (aturan yang sama dengan
-// gudang Oracle): ID terpakai di salah satu tabel dilewati, batasnya gagal terang.
+// SisipProduk - ID dari Seq lewat `repository.PilihIdentitasBebas` (aturan yang sama dengan gudang Oracle): ID yang
+// dipakai induk flat ATAU tabel JSON warisan dilewati, batasnya gagal terang.
 func (g *Gudang) SisipProduk(_ context.Context, _ *db.Tx, p models.Produk) (string, error) {
+	if p.SalinanDari != "" {
+		if _, ada := g.Produk[p.SalinanDari]; !ada {
+			return "", fmt.Errorf("%w: %s", repository.ErrTidakAda, p.SalinanDari)
+		}
+	}
 	id, _, err := repository.PilihIdentitasBebas(
 		func() (int64, error) {
 			n := g.Seq
@@ -116,146 +162,59 @@ func (g *Gudang) SisipProduk(_ context.Context, _ *db.Tx, p models.Produk) (stri
 			return n, nil
 		},
 		func(id string) (bool, error) {
-			_, umum := g.Umum[id]
-			_, inward := g.Inward[id]
-			return umum || inward, nil
+			_, flat := g.Produk[id]
+			return flat || g.IDWarisan[id], nil
 		},
 	)
 	if err != nil {
 		return "", err
 	}
-	dasarUmum, dasarInward := "", ""
-	if p.SalinanDari != "" {
-		if _, ada := g.Umum[p.SalinanDari]; !ada {
-			return "", fmt.Errorf("%w: %s", repository.ErrTidakAda, p.SalinanDari)
-		}
-		dasarUmum = g.Umum[p.SalinanDari]
-		_, dasarInward = g.cariInward(p.SalinanDari)
-	}
 	p.ID = id
 	p.Inward.ID, p.Inward.ProductID = id, id
-	umum, err := repository.RakitUmum(p, dasarUmum, true)
-	if err != nil {
+	if err := g.tulis(p); err != nil {
 		return "", err
 	}
-	g.Umum[id] = umum
-	g.tulisDatar(p)
-	if g.GagalTulis != nil {
-		return "", g.GagalTulis
-	}
-	if g.GagalTulisInward != nil {
-		return "", g.GagalTulisInward
-	}
-	inward, err := repository.RakitInward(p, dasarInward)
-	if err != nil {
-		return "", err
-	}
-	g.Inward[id] = inward
 	return id, nil
 }
 
-// PerbaruiProduk - kunci JSON lama dipertahankan lewat `repository.RakitUmum`.
+// PerbaruiProduk - baris induk diperbarui (harus ada), anak ditulis ulang.
 func (g *Gudang) PerbaruiProduk(_ context.Context, _ *db.Tx, p models.Produk) error {
-	lama, ada := g.Umum[p.ID]
-	if !ada {
+	if _, ada := g.Produk[p.ID]; !ada {
 		return fmt.Errorf("%w: %s", repository.ErrTidakAda, p.ID)
 	}
-	umum, err := repository.RakitUmum(p, lama, false)
-	if err != nil {
-		return err
-	}
-	g.Umum[p.ID] = umum
-	g.tulisDatar(p)
-	if g.GagalTulis != nil {
-		return g.GagalTulis
-	}
-	if g.GagalTulisInward != nil {
-		return g.GagalTulisInward
-	}
-	p.Inward.ProductID = p.ID
-	idIn, isiIn := g.cariInward(p.ID)
-	if idIn == "" {
-		if lain := g.milikLain(p.ID); lain != "" {
-			return fmt.Errorf("%w: inward row %s belongs to product %s", repository.ErrIdentitasBentrok, p.ID, lain)
-		}
-		idIn = p.ID
-	}
-	p.Inward.ID = idIn
-	inward, err := repository.RakitInward(p, isiIn)
-	if err != nil {
-		return err
-	}
-	g.Inward[idIn] = inward
-	return nil
+	p.Inward.ID, p.Inward.ProductID = p.ID, p.ID
+	return g.tulis(p)
 }
 
-// DaftarProduk - urut ID.
+// DaftarProduk - urut ID, kelima kolom grid dari induk.
 func (g *Gudang) DaftarProduk(context.Context) ([]models.RingkasanProduk, error) {
 	if g.GagalBaca != nil {
 		return nil, g.GagalBaca
 	}
-	id := make([]string, 0, len(g.Umum))
-	for k := range g.Umum {
+	id := make([]string, 0, len(g.Produk))
+	for k := range g.Produk {
 		id = append(id, k)
 	}
 	sort.Strings(id)
 	hasil := []models.RingkasanProduk{}
 	for _, k := range id {
-		r, err := repository.RingkasanDari(k, g.Umum[k])
-		if err != nil {
-			return nil, err
-		}
-		hasil = append(hasil, r)
+		u := g.Produk[k].Umum
+		hasil = append(hasil, models.RingkasanProduk{ID: k, Ceding: u.Ceding, TreatyNumber: u.TreatyNumber,
+			InwardName: u.InwardName, CreateOp: u.CreateOp, UpdateOp: u.UpdateOp})
 	}
 	return hasil, nil
 }
 
-// AmbilProduk - kedua sisi; inward dicari lewat `PRODUCTID` lalu `ID`, seperti repository.
+// AmbilProduk - satu produk utuh (salinan).
 func (g *Gudang) AmbilProduk(_ context.Context, _ *db.Tx, id string) (models.Produk, error) {
 	if g.GagalBaca != nil {
 		return models.Produk{}, g.GagalBaca
 	}
-	umum, ada := g.Umum[id]
+	p, ada := g.Produk[id]
 	if !ada {
 		return models.Produk{}, fmt.Errorf("%w: %s", repository.ErrTidakAda, id)
 	}
-	idIn, isiIn := g.cariInward(id)
-	return repository.UraiProduk(id, umum, idIn, isiIn)
-}
-
-func (g *Gudang) cariInward(id string) (string, string) {
-	kunci := make([]string, 0, len(g.Inward))
-	for k := range g.Inward {
-		kunci = append(kunci, k)
-	}
-	sort.Strings(kunci)
-	idPilih, isiPilih := "", ""
-	for _, k := range kunci {
-		p, err := repository.UraiProduk("", "", k, g.Inward[k])
-		if err == nil && p.Inward.ProductID == id {
-			idPilih, isiPilih = k, g.Inward[k]
-		}
-	}
-	if idPilih != "" {
-		return idPilih, isiPilih
-	}
-	if isi, ada := g.Inward[id]; ada && g.milikLain(id) == "" {
-		return id, isi
-	}
-	return "", ""
-}
-
-// milikLain - PRODUCTID baris inward ber-ID = id yang milik produk lain (seperti repository).
-func (g *Gudang) milikLain(id string) string {
-	isi, ada := g.Inward[id]
-	if !ada {
-		return ""
-	}
-	p, err := repository.UraiProduk("", "", id, isi)
-	if err != nil || p.Inward.ProductID == "" || p.Inward.ProductID == id {
-		return ""
-	}
-	return p.Inward.ProductID
+	return salinProduk(p), nil
 }
 
 // CariMaster - "Contains" tanpa membedakan huruf, urutan isian.

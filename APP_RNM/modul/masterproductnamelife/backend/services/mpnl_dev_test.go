@@ -4,7 +4,6 @@ package services_test
 
 import (
 	"context"
-	"strings"
 	"testing"
 )
 
@@ -19,12 +18,13 @@ func TestInwardBerIDSamaDenganProduk(t *testing.T) {
 	if p.Inward.ID != p.ID || p.Inward.ProductID != p.ID {
 		t.Errorf("inward ID = PRODUCTID = ID produk: %q %q %q", p.ID, p.Inward.ID, p.Inward.ProductID)
 	}
-	isi, ada := g.Inward[p.ID]
-	if !ada || !strings.Contains(isi, `"ID":"`+p.ID+`"`) || !strings.Contains(isi, `"PRODUCTID":"`+p.ID+`"`) {
-		t.Errorf("baris M_PRODUCTINWARD_LIFE ber-ID produk: %v %s", ada, isi)
+	// Tabel flat (02-10-2026): sisi inward di baris induk produk itu sendiri.
+	simpan, ada := g.Produk[p.ID]
+	if !ada || simpan.Inward.ID != p.ID || simpan.Inward.ProductID != p.ID {
+		t.Errorf("sisi inward ber-ID produk: %v %+v", ada, simpan.Inward)
 	}
-	if len(g.Inward) != 1 {
-		t.Errorf("satu baris inward, nol sequence inward: %d", len(g.Inward))
+	if len(g.Produk) != 1 || g.Seq != 45 {
+		t.Errorf("satu baris induk, satu nomor sequence (nol sequence inward): %d %d", len(g.Produk), g.Seq)
 	}
 }
 
@@ -48,10 +48,7 @@ func TestOutwardOvrCommDanTreatyContractIDKosong(t *testing.T) {
 			t.Errorf("baris %d: OVR_COMM %q TREATYCONTRACTID %q", i, b.OvrComm, b.TreatyContractID)
 		}
 	}
-	if n := strings.Count(g.Umum[p.ID], `"OVR_COMM":""`); n != len(p.OutwardList) {
-		t.Errorf("setiap baris membawa kunci OVR_COMM kosong (dibaca view PRODUCT_LIFE): %d dari %d", n, len(p.OutwardList))
-	}
-	if n := strings.Count(g.Umum[p.ID], `"TREATYCONTRACTID":""`); n != len(p.OutwardList) {
-		t.Errorf("setiap baris membawa kunci TREATYCONTRACTID kosong: %d dari %d", n, len(p.OutwardList))
+	if simpan := g.Produk[p.ID].OutwardList; len(simpan) != len(p.OutwardList) {
+		t.Errorf("setiap baris outward satu baris M_PRODUCTNAME_LIFE_OUTWARD: %d dari %d", len(simpan), len(p.OutwardList))
 	}
 }

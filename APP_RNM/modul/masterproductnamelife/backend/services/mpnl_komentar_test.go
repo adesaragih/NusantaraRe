@@ -42,8 +42,9 @@ func TestSetiapSimpanMenambahSatuKomentarAddCommentList(t *testing.T) {
 	if len(p2.CommentList) != 2 || p2.CommentList[0].Suggest != "UJI pertimbangan" || p2.CommentList[1].Suggest != "" {
 		t.Errorf("komentar tidak dapat diubah klien; setiap simpan menambah satu baris: %+v", p2.CommentList)
 	}
-	if !strings.Contains(g.Umum[p.ID], `"Comment":""`) {
-		t.Errorf("medan Comment halaman ikut tersimpan seperti Pega: %s", g.Umum[p.ID])
+	// Tabel flat (D2, 02-10-2026): `Comment` masukan popup, bukan kolom - isinya hanya baris COMMENT.
+	if s := g.Produk[p.ID]; s.Umum.Comment != "" || len(s.CommentList) != 2 {
+		t.Errorf("Comment bukan kolom; riwayat tersimpan dua baris: %q %d", s.Umum.Comment, len(s.CommentList))
 	}
 }
 

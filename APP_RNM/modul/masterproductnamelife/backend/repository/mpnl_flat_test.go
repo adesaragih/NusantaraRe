@@ -398,3 +398,21 @@ func TestRekonsiliasiInwardYatimDanProdukTanpaInward(t *testing.T) {
 		t.Error("JSON rusak harus gagal")
 	}
 }
+
+// TestRekonsiliasiInwardMilikProdukLainTidakBersilang - dipindah dari services 02-10-2026 (#1 /code-review 01-10-2026):
+// baris inward ber-ID = produk 100005 tetapi ber-PRODUCTID 100003 MILIK produk 100003; produk 100005 tidak mendapat
+// isinya, produk 100003 mendapatnya di baris induknya sendiri.
+func TestRekonsiliasiInwardMilikProdukLainTidakBersilang(t *testing.T) {
+	lap, produk := rekonsiliasi(
+		[]barisJSON{barisJ("100005", `{"ID":"100005"}`), barisJ("100003", `{"ID":"100003"}`)},
+		[]barisJSON{barisJ("100005", `{"ID":"100005","PRODUCTID":"100003","INSURED":"UJI MILIK 100003"}`)})
+	if !lap.Lolos() || len(produk) != 2 || lap.ProdukTanpaInward != 1 || lap.InwardBerIDLain != 1 {
+		t.Fatalf("laporan:\n%s", lap.Teks())
+	}
+	for _, p := range produk {
+		mau := map[string]string{"100003": "UJI MILIK 100003", "100005": ""}[p.ID]
+		if p.Inward.Insured != mau || p.Inward.ID != p.ID {
+			t.Errorf("%s: insured %q (mau %q), ID inward %q", p.ID, p.Inward.Insured, mau, p.Inward.ID)
+		}
+	}
+}

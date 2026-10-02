@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 
 	"nusantarare/inti/backend/db"
 )
@@ -85,7 +86,7 @@ func PilihIdentitasBebas(berikut func() (int64, error), terpakai func(id string)
 }
 
 // identitasBaru menerbitkan ID produk baru di dalam transaksi pemanggil dan
-// memastikan ID itu belum dipakai kedua tabel (ID terpakai dilewati, lihat kepala berkas).
+// memastikan ID itu belum dipakai induk flat maupun kedua tabel JSON warisan (ID terpakai dilewati, lihat kepala berkas).
 func (g *Gudang) identitasBaru(ctx context.Context, tx *db.Tx) (string, error) {
 	if !tx.Terisi() {
 		return "", errors.New("repository: a new product identity requires a transaction")
@@ -102,13 +103,18 @@ func (g *Gudang) identitasBaru(ctx context.Context, tx *db.Tx) (string, error) {
 		return n, nil
 	}
 	terpakai := func(id string) (bool, error) {
-		for _, tabel := range []string{TabelProduk, TabelInward} {
+		// Induk flat lebih dulu; lalu kedua tabel JSON warisan BILA MASIH ADA (02-10-2026, tiket 01 bab bertanggal):
+		// ID yang pernah dipakai produk JSON tidak diterbitkan ulang, dan tabel warisan yang sudah dibuang DBA bukan galat.
+		for _, tabel := range []string{TabelFlatInduk, TabelProduk, TabelInward} {
 			q, err := g.siapkan(tabel, sqlCacahID)
 			if err != nil {
 				return false, err
 			}
 			var c int
 			if err := tx.QueryRowContext(ctx, q, id).Scan(&c); err != nil {
+				if tabel != TabelFlatInduk && strings.Contains(err.Error(), "ORA-00942") {
+					continue
+				}
 				return false, fmt.Errorf("repository: checking %s %s: %w", tabel, id, err)
 			}
 			if c > 0 {

@@ -33,7 +33,7 @@ func TestHTTPGenerateSeeDetailCSV(t *testing.T) {
 		!strings.Contains(string(b), "\r\nRider,SUPRLUS,UJI CEDING SATU,HEALTH,UJI PRODUK,") {
 		t.Errorf("Generate: %d %v\n%s", res.StatusCode, res.Header, b)
 	}
-	if len(u.g.Umum) != 2 || u.g.Komit != 0 {
+	if len(u.g.Produk) != 2 || u.g.Komit != 0 {
 		t.Error("Generate tidak menyimpan apa pun")
 	}
 	if kode, badan := u.minta(t, "POST", pre+"/produk/generate", "{", true); kode != http.StatusBadRequest {
@@ -51,8 +51,9 @@ func TestHTTPCopyDanOnRetention(t *testing.T) {
 	}
 	// Daftar yang dapat disunting datang dari badan form (klien menyalin halaman);
 	// produk asal tidak tersentuh.
-	if !strings.Contains(u.g.Umum["100044"], `"CREATEOP":"UJI-PELAKU"`) || !strings.Contains(u.g.Umum["UJI-001"], `"Plan":"UJI PLAN"`) {
-		t.Errorf("salinan: %s", u.g.Umum["100044"])
+	if s, asal := u.g.Produk["100044"], u.g.Produk["UJI-001"]; s.Umum.CreateOp != "UJI-PELAKU" || len(asal.PlanList) != 1 ||
+		asal.PlanList[0].Plan != "UJI PLAN" {
+		t.Errorf("salinan: %+v / asal %+v", s.Umum, asal.PlanList)
 	}
 	if kode, badan := u.minta(t, "POST", pre+"/produk", strings.Replace(salin, "UJI-001", "UJI-999", 1), true); kode != http.StatusNotFound ||
 		!strings.Contains(badan, "UJI-999") {

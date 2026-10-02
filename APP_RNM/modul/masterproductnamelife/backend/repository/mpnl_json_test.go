@@ -87,17 +87,6 @@ func TestUraiProdukJSONRusakGagalTerang(t *testing.T) {
 	}
 }
 
-func TestRingkasanDariKunciGrid(t *testing.T) {
-	r, err := RingkasanDari("UJI-01", jsonUmumUji)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if r.Ceding != "UJI CEDING" || r.TreatyNumber != "UJI/001" || r.InwardName != "UJI PRODUK UJI PEMEGANG" ||
-		r.CreateOp != "UJI-OP" || r.UpdateOp != "UJI-OP" {
-		t.Errorf("ringkasan: %+v", r)
-	}
-}
-
 func TestTanggalPegaBolakBalik(t *testing.T) {
 	if TanggalKeAPI("01/03/2026") != "2026-03-01" || TanggalKePega("2026-03-01") != "01/03/2026" {
 		t.Error("dd/MM/yyyy ↔ YYYY-MM-DD")
@@ -129,11 +118,8 @@ func TestPilihInwardPRODUCTIDLaluID(t *testing.T) {
 	if b, ada := pilihInward("100002", baris[1:2]); ada {
 		t.Errorf("baris milik produk 100009 tidak boleh dipilih untuk 100002: %+v", b)
 	}
-	if pid := inwardMilikLain("100002", baris[1:2]); pid != "100009" {
-		t.Errorf("pemilik baris ber-ID sama: %q", pid)
-	}
 	kosong := []barisJSON{{id: "100002", isi: `{"ID":"100002"}`}}
-	if b, ada := pilihInward("100002", kosong); !ada || b.id != "100002" || inwardMilikLain("100002", kosong) != "" {
+	if b, ada := pilihInward("100002", kosong); !ada || b.id != "100002" {
 		t.Errorf("tanpa PRODUCTID, ID = produk: %+v %v", b, ada)
 	}
 	if _, ada := pilihInward("100005", baris); ada {

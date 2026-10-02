@@ -11,8 +11,8 @@ import (
 )
 
 // Keadaan DEV 02-10-2026: 45 dari 103 produk ber-UNDERWRITING LIMIT melampaui 4000 byte (terpanjang 84 baris; view
-// PRODUCT_LIFE membacanya NULL sejak era Pega). Produk seperti itu TETAP dapat disimpan - penjaga panjang hanya
-// untuk kunci view skalar (regresi audit 02-10-2026 dicabut).
+// PRODUCT_LIFE membacanya NULL sejak era Pega). Produk seperti itu TETAP dapat disimpan - sejak tabel flat
+// (02-10-2026) setiap baris satu baris `M_PRODUCTNAME_LIFE_UWLIMIT`, tanpa batas 4000 byte larik.
 func TestUWLimitPanjangSepertiDEVTetapDapatDisimpan(t *testing.T) {
 	l, g := layananMaster()
 	m := produkMasuk()
@@ -24,7 +24,7 @@ func TestUWLimitPanjangSepertiDEVTetapDapatDisimpan(t *testing.T) {
 	if err != nil {
 		t.Fatalf("produk ber-UW limit 84 baris tersimpan seperti di Pega: %v", err)
 	}
-	if !strings.Contains(g.Umum[p.ID], `"UnderwritingLimitList":[`) || len(p.UnderwritingLimit) != 84 {
+	if len(g.Produk[p.ID].UnderwritingLimit) != 84 || len(p.UnderwritingLimit) != 84 {
 		t.Errorf("84 baris UW limit tersimpan utuh: %d", len(p.UnderwritingLimit))
 	}
 }
@@ -33,9 +33,8 @@ func TestUWLimitPanjangSepertiDEVTetapDapatDisimpan(t *testing.T) {
 // tidak menimpa produk yang ada: ID terpakai dilewati ke nomor bebas berikut.
 func TestProdukBaruMelewatiIDTerpakaiSaatSequenceTertinggal(t *testing.T) {
 	l, g := layananMaster()
-	asli := `{"ID":"100044","UJI":"milik produk lama"}`
-	g.Umum["100044"] = asli
-	g.Inward["100045"] = `{"ID":"100045","PRODUCTID":"100045"}`
+	lama := g.IsiJSON("100044", `{"ID":"100044","PRODUCTNAME":"UJI LAMA"}`, "")
+	g.IDWarisan["100045"] = true // ID baris JSON warisan (tabel inward) - juga tidak diterbitkan ulang
 	p, err := l.SimpanProduk(context.Background(), pelakuUji, produkMasuk(), true)
 	if err != nil {
 		t.Fatalf("produk baru tersimpan walau sequence tertinggal: %v", err)
@@ -43,7 +42,7 @@ func TestProdukBaruMelewatiIDTerpakaiSaatSequenceTertinggal(t *testing.T) {
 	if p.ID != "100046" {
 		t.Errorf("ID terpakai di salah satu tabel dilewati: dapat %q, mau 100046", p.ID)
 	}
-	if g.Umum["100044"] != asli {
+	if g.Produk["100044"].Umum.ProductName != lama.Umum.ProductName || len(g.Produk) != 2 {
 		t.Error("produk lama ber-ID nomor sequence tidak tersentuh")
 	}
 }

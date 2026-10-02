@@ -83,7 +83,7 @@ var jamLampiran = time.Date(2026, 10, 1, 13, 2, 3, 456_000_000, time.UTC)
 func layananLampiran(t *testing.T) (*services.Layanan, *berkasPalsu, func() map[string]models.ObjekPenyimpanan) {
 	t.Helper()
 	l, g := layananMaster()
-	g.Umum["100007"] = `{"ID":"100007"}`
+	g.IsiJSON("100007", `{"ID":"100007"}`, "")
 	g.AppName = "UJI-APP"
 	b := baruBerkasPalsu()
 	return l.DenganJam(func() time.Time { return jamLampiran }).DenganPenyimpanan(b), b,

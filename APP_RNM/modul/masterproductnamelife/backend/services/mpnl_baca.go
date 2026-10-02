@@ -28,15 +28,16 @@ type Gudang interface {
 var (
 	// ErrProdukTidakAda - produk tidak ada (404); handler tidak mengimpor repository.
 	ErrProdukTidakAda = errors.New("services: product not found")
-	// ErrIdentitasGanda - satu ID dipakai beberapa baris (nol PK di DEV): 500 berkalimat.
+	// ErrIdentitasGanda - satu ID dipakai beberapa baris: 500 berkalimat.
 	ErrIdentitasGanda = repository.ErrIdentitasGanda
-	// ErrJSONRusak - JSONDATA tidak terbaca: 500 berkalimat.
+	// ErrJSONRusak - JSONDATA tabel warisan tidak terbaca (alat pindah): 500 berkalimat.
 	ErrJSONRusak = repository.ErrJSONRusak
 	// ErrIdentitasMelampauiLebar / ErrIdentitasBentrok - sequence harus ditinjau DBA (500 berkalimat).
 	ErrIdentitasMelampauiLebar = repository.ErrIdentitasMelampauiLebar
 	ErrIdentitasBentrok        = repository.ErrIdentitasBentrok
-	// ErrBarisAsliRusak - medan `asli` baris tidak terbaca (400).
-	ErrBarisAsliRusak = repository.ErrBarisAsliRusak
+	// ErrNilaiTidakMuat - nilai tidak muat kolom flatnya (422). Services menolaknya lebih dulu berkalimat
+	// (`periksaPanjang`); galat ini lapis kedua penulis.
+	ErrNilaiTidakMuat = repository.ErrNilaiTidakMuat
 )
 
 // tidakAda menerjemahkan ErrTidakAda repository menjadi galat entitasnya.
