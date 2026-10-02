@@ -1,0 +1,65 @@
+# Uji mutasi tiket 18/19 + A44 - 2026-10-02 10:18
+# 60 mutan
+baseline: hijau (./modul/nbfacin/backend/services/acceptance/ ./modul/nbfacin/backend/services/pembayaran/ ./modul/nbfacin/backend/services/premium/ ./modul/nbfacin/backend/services/rekonsiliasi/)
+TERTANGKAP        FIRE NetRate "0" dipakai
+TERTANGKAP        FIRE NetRate diabaikan
+TERTANGKAP        FIRE NetRate 0.0 diterima
+TERTANGKAP        FIRE LossLimit teks → angka
+TERTANGKAP        FIRE LossLimit 0.0 diterima
+TERTANGKAP        FIRE LossLimit tanpa bawaan
+TERTANGKAP        FIRE FirstScale diabaikan
+TERTANGKAP        FIRE PctAdjustment diabaikan
+TERTANGKAP        FIRE presisi 4
+TERTANGKAP        FIRE basis 3/4 ditolak
+TERTANGKAP        FIRE basis 5 diterima
+TERTANGKAP        FIRE basis tak dikenal = belum diport
+TERTANGKAP        ANEKA metode 3 = pro-rata
+TERTANGKAP        ANEKA metode 2 = pro-rata
+TERTANGKAP        ANEKA 14.1 berlaku untuk GOLF
+TERTANGKAP        ANEKA 14.1 hilang
+TERTANGKAP        ANEKA indemnity tanpa MBD
+TERTANGKAP        ANEKA MBD tanpa cek indemnity
+TERTANGKAP        ANEKA loading dibuang
+TERTANGKAP        ANEKA pokok presisi 8
+TERTANGKAP        ANEKA LossLimit diabaikan
+TERTANGKAP        ANEKA LossLimit 0.0 bukan bawaan
+TERTANGKAP        skala pembilang tidak dipulihkan
+TERTANGKAP        tanpa Reduce
+TERTANGKAP        MARINE master policy diabaikan
+TERTANGKAP        MARINE presisi 2
+TERTANGKAP        premi setengah-genap
+TERTANGKAP        bulatNol setengah-genap
+TERTANGKAP        rekon: master policy tidak pernah
+TERTANGKAP        rekon: LossLimit dari kunci lain
+TERTANGKAP        rekon: IsMBD selalu false
+TERTANGKAP        rekon: pro-rata dari coverage
+TERTANGKAP        rekon: GOLF memakai jalur ANEKA
+TERTANGKAP        rekon: ANEKA tanpa OccupationList
+TERTANGKAP        rekon: catatan EDM hilang
+TERTANGKAP        rekon: EDM lini lain dibandingkan
+TERTANGKAP        rekon: beda EDM tidak dicek
+TERTANGKAP        rekon: tanda [dugaan] TSI item hilang
+TERTANGKAP        rekon: TSI item jadi galat lagi
+TERTANGKAP        rekon: FlagDelete item diabaikan
+TERTANGKAP        rekon: baris pembayaran hilang
+TERTANGKAP        rekon: pembayaran dinyatakan cocok
+TERTANGKAP        total: Rate ×100
+TERTANGKAP        total: seri @divide diterima
+TERTANGKAP        total: TSI 0 tidak dijaga
+TERTANGKAP        total: entri baru tanpa premi
+TERTANGKAP        total: premi entri lama tak ditambah
+TERTANGKAP        total: mata uang kosong diterima
+TERTANGKAP        rekon: TSI total dibanding teks
+TERTANGKAP        rekon: entri LewatDouble dibandingkan
+TERTANGKAP        total: LewatDouble tak ditandai
+TERTANGKAP        rekon: catatan TSI item dibanding teks
+TERTANGKAP        bayar: tanpa gerbang marine
+TERTANGKAP        bayar: cabang EDM dihitung
+TERTANGKAP        bayar: tanpa cabang dihitung
+TERTANGKAP        bayar: diskon tidak dijumlah
+TERTANGKAP        bayar: premi tidak dijumlah
+LOLOS             bayar: kosong diterima  [ekuivalen: utils.ParseDecimal("") juga gagal, masukan kosong tetap ditolak lewat ErrMasukan]
+TERTANGKAP        bayar: mata uang kosong diterima (A46)
+TERTANGKAP        bayar: tanpa coverage diterima
+HASIL: 59/60 tertangkap; lolos 1: ['bayar: kosong diterima']; tak terkompilasi 0: []
+berkas asli pulih: ya

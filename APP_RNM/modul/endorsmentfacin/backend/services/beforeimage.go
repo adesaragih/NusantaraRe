@@ -73,8 +73,7 @@ type HasilBeforeImage struct {
 	// lama. Halamannya bukan milik modul ini; penulisannya milik pemanggil.
 	InputDataCreditCARI6 string
 	// GalatPorsiPeriode - langkah 15 tidak dapat dihitung tanpa menebak
-	// (`ErrModePembulatanBelumTerverifikasi`,
-	// `ErrSatuanSelisihWaktuBelumTerverifikasi`,
+	// (`ErrSatuanSelisihWaktuBelumTerverifikasi`,
 	// `ErrTanggalPorsiPeriodeKosong`). Bila tidak nil, `ProrateStartEDM` dan
 	// `ProrateEDMEnd` KOSONG; sisa agregat tetap sah.
 	GalatPorsiPeriode error

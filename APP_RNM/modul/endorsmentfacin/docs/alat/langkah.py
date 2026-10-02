@@ -13,10 +13,13 @@ ekspresi `...When` memuat nama orang dan alamat email. Keduanya TIDAK dibaca.
 
 Pemakaian (pemanggil `py`, awali PYTHONIOENCODING=utf-8 - CLAUDE.md §4a):
   py langkah.py <berkas.xml>          cetak pohon langkah
+  py langkah.py --dt <berkas.xml>     aksi DataTransform
+  py langkah.py --lokasi-pola <xml>   cacah pola nomor polis per tag (nilai tak dicetak)
   py langkah.py --uji <folder-korpus>  uji instrumen atas angka yang sudah
                                        diketahui (folder `Endorsment Fac In`)
 """
 import os
+import re
 import sys
 import xml.etree.ElementTree as ET
 
@@ -46,18 +49,42 @@ def penugasan(row):
             yield (n.text or "").strip(), teks(p, "PropertiesValue")
 
 
+# Pola nomor polis produksi, TIDAK peka huruf (jebakan sensus §4a no. 4).
+POLA_NOPOLIS = re.compile(r"RNM-[A-Z0-9.\-]+", re.IGNORECASE)
+
+
+def samar(s):
+    """Nomor polis produksi (pola `RNM-…`) tidak pernah dicetak (CLAUDE.md §4.10)."""
+    return POLA_NOPOLIS.sub("<NOPOLIS>", s)
+
+
 def cetak(berkas):
     for nomor, row in langkah(ET.parse(berkas).getroot()):
         ind = "  " * nomor.count(".")
         pre = row.find("pyStepsPreCondParams/rowdata")
-        when = [(w.text or "").strip() for w in row.findall("pyStepsPreCondParams/rowdata/pyStepsPreCondParamsWhen") if w.text]
+        # Setiap baris prakondisi: ekspresi, WhenTrue(->target), WhenFalse(->target).
+        baris = []
+        for r in row.findall("pyStepsPreCondParams/rowdata"):
+            w = teks(r, "pyStepsPreCondParamsWhen")
+            if w:
+                tt, ft = teks(r, "pyStepsPreCondParamsWhenTruePrms"), teks(r, "pyStepsPreCondParamsWhenFalsePrms")
+                baris.append(f"{samar(w)} T={teks(r, 'pyStepsPreCondParamsWhenTrue')}{'->' + tt if tt else ''}"
+                             f" F={teks(r, 'pyStepsPreCondParamsWhenFalse')}{'->' + ft if ft else ''}")
+        when = baris
         wt = teks(pre, "pyStepsPreCondParamsWhenTrue") if pre is not None else ""
         wf = teks(pre, "pyStepsPreCondParamsWhenFalse") if pre is not None else ""
-        print(f"{ind}[{nomor}] {teks(row, 'pyStepsActivityName')} obj={teks(row, 'pyStepsObjectName')!r} "
-              f"class={teks(row, 'pyStepsClassName')!r} desc={teks(row, 'pyStepsDescription')!r} "
-              f"pre={teks(row, 'pyStepsPreCondition')!r} when={when} T={wt} F={wf}")
+        label = teks(row, 'pyStepsBlockName')
+        label = f" label={label!r}" if label else ""
+        print(f"{ind}[{nomor}]{label} {teks(row, 'pyStepsActivityName')} obj={teks(row, 'pyStepsObjectName')!r} "
+              f"class={teks(row, 'pyStepsClassName')!r} desc={samar(teks(row, 'pyStepsDescription'))!r} "
+              f"pre={teks(row, 'pyStepsPreCondition')!r} when={when}")
+        # Langkah tanpa metode (`pyStepsActivityName` kosong, mis. loop EMBEDDED):
+        # pasangan pyParamArray-nya mungkin sisa yang TIDAK dieksekusi (temuan sesi
+        # nbfacin 01-10-2026) - ditandai, bukan dicetak sebagai SET biasa.
+        tanda = "SET" if teks(row, 'pyStepsActivityName') else "SET? (langkah tanpa metode)"
         for n, v in penugasan(row):
-            print(f"{ind}    SET {n} = {v}")
+            if n:
+                print(f"{ind}    {tanda} {samar(n)} = {samar(v)}")
 
 
 def uji(folder):
@@ -89,8 +116,51 @@ def uji(folder):
     sys.exit(1 if gagal else 0)
 
 
+def cetak_dt(berkas):
+    """Rule-Obj-Model (DataTransform): baris aksi berurutan, bertingkat.
+    `pyDisabled=true` = dilewati (K-048, keputusan work owner)."""
+    def jalan(el, ind):
+        for row in el.findall("rowdata"):
+            aksi = teks(row, "pyActionName")
+            if aksi:
+                mati = " [pyDisabled]" if teks(row, "pyDisabled") == "true" else ""
+                print(f"{'  ' * ind}{aksi}{mati}: {samar(teks(row, 'pyPropertiesName'))} = {samar(teks(row, 'pyPropertiesValue'))}")
+            for anak in row:
+                if anak.tag != "pyExpressionGadget" and anak.findall("rowdata"):
+                    jalan(anak, ind + 1)
+    for el in ET.parse(berkas).getroot():
+        if el.findall("rowdata") and el.tag not in ("pyPagesAndClasses", "pyRuleVersionsList"):
+            jalan(el, 0)
+
+
+def lokasi_pola(berkas):
+    """Cacah kemunculan pola nomor polis per NAMA TAG tempatnya tinggal - nilai
+    tidak pernah dicetak. Membedakan logika yang dieksekusi
+    (`pyStepsPreCondParamsWhen`, `PropertiesValue`) dari cache editor
+    (`pyExpressionGadget/...`)."""
+    import collections
+    c = collections.Counter()
+
+    def jalan(el, jalur):
+        for ch in el:
+            p = jalur + "/" + ch.tag
+            if ch.text:
+                n = len(POLA_NOPOLIS.findall(ch.text))
+                if n:
+                    c[p.replace("/rowdata", "")] += n
+            jalan(ch, p)
+    jalan(ET.parse(berkas).getroot(), "")
+    for jalur, n in c.most_common():
+        print(n, jalur)
+    print("total", sum(c.values()))
+
+
 if __name__ == "__main__":
-    if len(sys.argv) == 3 and sys.argv[1] == "--uji":
+    if len(sys.argv) == 3 and sys.argv[1] == "--lokasi-pola":
+        lokasi_pola(sys.argv[2])
+    elif len(sys.argv) == 3 and sys.argv[1] == "--dt":
+        cetak_dt(sys.argv[2])
+    elif len(sys.argv) == 3 and sys.argv[1] == "--uji":
         uji(sys.argv[2])
     elif len(sys.argv) == 2:
         cetak(sys.argv[1])

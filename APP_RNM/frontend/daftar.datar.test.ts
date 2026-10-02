@@ -24,10 +24,11 @@ const SEMUA = susunMenu(menuTabelDariMigrasi(null), ENTRI_MENU)
 const TOMBOL = SEMUA.golongan.flatMap((g) => g.modul)
 
 describe('sidebar satu tombol per modul, dikelompokkan GROUPMENU', () => {
-  it('tepat satu tombol per modul yang dimigrasi dan aktif - kini empat', () => {
+  // Kini lima: nbfacin menyala 02-10-2026 (tiket 21; suntingan disetujui work owner, ditinjau tim inti).
+  it('tepat satu tombol per modul yang dimigrasi dan aktif - kini lima', () => {
     const aktif = TOMBOL.filter((t) => t.halaman !== null)
     expect(aktif.map((t) => t.kode).sort()).toEqual(MODUL_FRONTEND.map((m) => m.nama).sort())
-    expect(aktif).toHaveLength(4)
+    expect(aktif).toHaveLength(5)
     expect(new Set(TOMBOL.map((t) => t.kode)).size).toBe(TOMBOL.length)
   })
 

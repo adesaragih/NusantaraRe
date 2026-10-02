@@ -285,23 +285,44 @@ func porsiPeriode(t *testing.T, mulai, akhir, tanggalEdm string) services.HasilB
 	return h
 }
 
-// TestPorsiPeriodeTakEksakDitolak - @Math.divide(…,20) membulatkan; mode
-// pembulatannya belum terverifikasi, jadi hasil yang membuang digit DITOLAK.
-// ⛔ Galat porsi periode TIDAK menggagalkan lapis A/B/C: kedua rasio kosong,
-// sisa agregat tetap terisi.
-func TestPorsiPeriodeTakEksakDitolak(t *testing.T) {
-	h := porsiPeriode(t, "2026-01-01 00:00", "2026-01-04 00:00", "2026-01-02 00:00") // 1/3
-	if !errors.Is(h.GalatPorsiPeriode, services.ErrModePembulatanBelumTerverifikasi) {
-		t.Fatalf("GalatPorsiPeriode %v, mau ErrModePembulatanBelumTerverifikasi", h.GalatPorsiPeriode)
+// TestPorsiPeriodeSetengahKeAtas - `@Math.divide(…,20)` = HALF_UP (A37,
+// dikonfirmasi work owner 01-10-2026): 1/3 → …333 (bawah setengah), 2/3 →
+// …667 (atas setengah) pada 20 desimal.
+func TestPorsiPeriodeSetengahKeAtas(t *testing.T) {
+	h := porsiPeriode(t, "2026-01-01 00:00", "2026-01-04 00:00", "2026-01-02 00:00") // 1/3 dan 2/3
+	if h.GalatPorsiPeriode != nil {
+		t.Fatalf("GalatPorsiPeriode %v", h.GalatPorsiPeriode)
 	}
 	o := h.Kasus.OfferFacIn
-	if !o.ProrateStartEDM.Kosong() || !o.ProrateEDMEnd.Kosong() {
-		t.Errorf("rasio terisi padahal tak eksak: %s / %s", o.ProrateStartEDM, o.ProrateEDMEnd)
+	samaRasio(t, "ProrateStartEDM", o.ProrateStartEDM, uang.Ratio{Value: rasio(t, "0.33333333333333333333").Value, Scale: 20})
+	samaRasio(t, "ProrateEDMEnd", o.ProrateEDMEnd, uang.Ratio{Value: rasio(t, "0.66666666666666666667").Value, Scale: 20})
+	if o.ProrateEDMEnd.String() != "0.66666666666666666667" {
+		t.Errorf("teks %q, mau tepat 20 desimal", o.ProrateEDMEnd.String())
 	}
-	if o.QuotationData.BusinessCode != "UJI-BC" || len(o.LocationList) != 1 ||
-		o.LocationList[0].Property.PropertyItemList[0].TSIObjectItemOld.Kosong() {
-		t.Errorf("lapis A/B/C ikut gagal: %+v", o.QuotationData)
+}
+
+// TestPorsiPeriodeNegatifSetengahMenjauhiNol - HALF_UP Java membulatkan
+// setengah MENJAUHI nol; tanggal endorsement sesudah akhir periode memberi
+// porsi sisa negatif. −1/3 → −0.33333333333333333333; −2/3 →
+// −0.66666666666666666667.
+//
+// ⚠️ Ralat 01-10-2026: kasus 151/150 di bawah memakai tanggal BUATAN, bukan
+// tanggal kasus nyata - yang sama dengan fixture NB-15 hanya BENTUK angkanya.
+// Dan 151/150 pada 20 desimal memberi hasil yang sama untuk HALF_UP dan
+// HALF_EVEN (hanya pemotongan yang tersingkir), jadi ia BUKAN bukti HALF_UP.
+// Tanggal kasus nyata: TestPorsiPeriodeKasusNyataEDMFire (rekonsiliasi_test.go).
+func TestPorsiPeriodeNegatifSetengahMenjauhiNol(t *testing.T) {
+	h := porsiPeriode(t, "2026-01-01 00:00", "2026-01-04 00:00", "2026-01-05 00:00") // 4/3 dan −1/3
+	if h.GalatPorsiPeriode != nil {
+		t.Fatalf("GalatPorsiPeriode %v", h.GalatPorsiPeriode)
 	}
+	samaRasio(t, "ProrateStartEDM", h.Kasus.OfferFacIn.ProrateStartEDM, uang.Ratio{Value: rasio(t, "1.33333333333333333333").Value, Scale: 20})
+	samaRasio(t, "ProrateEDMEnd", h.Kasus.OfferFacIn.ProrateEDMEnd, uang.Ratio{Value: rasio(t, "-0.33333333333333333333").Value, Scale: 20})
+	h = porsiPeriode(t, "2026-01-01 00:00", "2026-01-04 00:00", "2026-01-06 00:00") // 5/3 dan −2/3
+	samaRasio(t, "5/3", h.Kasus.OfferFacIn.ProrateStartEDM, uang.Ratio{Value: rasio(t, "1.66666666666666666667").Value, Scale: 20})
+	samaRasio(t, "−2/3", h.Kasus.OfferFacIn.ProrateEDMEnd, uang.Ratio{Value: rasio(t, "-0.66666666666666666667").Value, Scale: 20})
+	h = porsiPeriode(t, "2025-10-01 00:00", "2026-02-28 00:00", "2026-03-01 00:00") // 151/150, tanggal buatan
+	samaRasio(t, "151/150", h.Kasus.OfferFacIn.ProrateStartEDM, uang.Ratio{Value: rasio(t, "1.00666666666666666667").Value, Scale: 20})
 }
 
 // TestPorsiPeriodeBukanHariBulatDitolak - lokal Pega bertipe int dan satuannya

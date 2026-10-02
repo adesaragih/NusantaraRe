@@ -39,6 +39,55 @@ const NilaiOld = "old"
 // `newWorkPage.OfferFacIn.IsProRate = "Prorate"`.
 const NilaiProrate = "Prorate"
 
+// NilaiShortPeriod - `OfferFacIn.IsProRate` yang membuka 1.3
+// `CountPaymentEdmTSIObj_Act` ([terverifikasi] `.IsProRate=="ShortPeriod"`).
+const NilaiShortPeriod = "ShortPeriod"
+
+// NilaiFixRate - `ProtectSpreading.CARI2` yang menandai tarif tetap
+// ([terverifikasi] `CountPaymentEdm_Act` langkah 9 menyetel `"FIX RATE"`).
+const NilaiFixRate = "FIX RATE"
+
+// FlagDihapus - `.FlagDelete` baris yang dihapus. [terverifikasi]
+// `CalculatePremiFire` membandingkannya sebagai teks (`=="1"`, 7.x/10.x) DAN
+// sebagai angka (`!=1`, 6.2.x).
+const FlagDihapus = "1"
+
+// FlagPolisBerjalan - `pyWorkPage.FlagOnGoingPolicy` polis yang periodenya
+// sudah berjalan ([terverifikasi] deskripsi langkah 10 `CalculatePremiFire`:
+// "loop saat periode polis sudah berjalan", prakondisi `==1`).
+const FlagPolisBerjalan = "1"
+
+// NilaiBenar - literal boolean berkutip `"true"` (`.IsAdjustableFlag`).
+const NilaiBenar = "true"
+
+// CalculateMethodProRata - `.CalculateMethod` yang disetel
+// `SetLocalNonMbuProrate` langkah 1. [terverifikasi] deskripsi langkah 9.1:
+// "Perhitungan dengan menggunakan PRO RATA (1)".
+const CalculateMethodProRata = "1"
+
+// StatusBusinessEDM - `QuotationData.StatusBusiness` kasus endorsement:
+// `DataToEDM` menyetel `"3"`, dan `When/IsEDM` menguji `= 3`. Keluarga
+// diskriminator siklus K-029: 1 = NB, 2 = RNW, 3 = EDM.
+const StatusBusinessEDM = "3"
+
+// StatusEDMPolisBatal - `OutputData1.pxResults(1).CARI20` (`GetEdmStatus`) yang
+// membuat `SetValueToEDMWork` langkah 4-6 menolak: polis sudah dibatalkan
+// lewat endorsement. Arti nilai lain kolom itu: OQ-020.
+const StatusEDMPolisBatal = "1"
+
+// JenisEndorsemen - `EdmType`, enumerasi TERKUNCI K-029. Nilai teks apa
+// adanya dari Pega.
+type JenisEndorsemen string
+
+const (
+	EdmBatalSejakSemula JenisEndorsemen = "1" // K-029
+	EdmBatalProrata     JenisEndorsemen = "2" // K-029
+	// EdmUsang3 - kode usang; cabangnya tetap diport apa adanya (K-029, K-046).
+	EdmUsang3 JenisEndorsemen = "3"
+	// EdmPerubahan - penambahan / pengurangan / perubahan (K-029).
+	EdmPerubahan JenisEndorsemen = "4"
+)
+
 // JenisPenyesuaian - nilai `QuotationData.Type` sebuah kasus endorsement,
 // apa adanya dari Pega (teks; arti tiap kode: OQ-020).
 //
@@ -51,6 +100,21 @@ type JenisPenyesuaian string
 // KasusEndorsement - `newWorkPage`, objek kerja endorsement
 // (kelas `ASM-FW-GISFW-Work-Endorsement`).
 type KasusEndorsement struct {
+	// Kelas, PrefiksID - kelas kerja dan awalan ID kasus (`SetValueToEDMWork`
+	// langkah 7: `param.classname`, `param.IDPrefix`).
+	Kelas, PrefiksID string
+	// PxInsName, PzInsKey - identitas kasus (dari pembuat kasus, `svcAddWorkObject`).
+	PxInsName, PzInsKey string
+	// PyLabel - `= pxInsName` (`DataToEDM`).
+	PyLabel string
+	// EndorsementID - handle kasus PORTAL (`DataToEDM`: `= .pzInsKey` portal).
+	EndorsementID string
+	// PolicyNumber - `curWorkPage.PolicyNumber = .PolicyNo` (langkah 7).
+	PolicyNumber string
+	// Lima properti konektor `Start2 → Assignment7` flow
+	// `InputAddendumFacultativeIn` (+ `NBStatusNew`).
+	FlagOnGoingPolicy, IsCedingConfirm, Position, PositionNote, NBStatus, NBStatusNew string
+
 	OfferFacIn OfferFacIn
 	// Quotation - `newWorkPage.Quotation`, salinan halaman
 	// `OfferFacIn.QuotationData` (SetValueToEDMWork 14.3).
@@ -69,7 +133,9 @@ type KasusEndorsement struct {
 
 // Polis - `newWorkPage.Policy`.
 type Polis struct {
-	Payment Pembayaran
+	// PolicyNo - `.Policy.PolicyNo = .PolicyNo` (`DataToEDM`).
+	PolicyNo string
+	Payment  Pembayaran
 }
 
 // OfferFacIn - agregat penawaran (kelas `ASM-FW-GISFW-Data-OfferFacIn`).
@@ -122,6 +188,8 @@ type OfferFacIn struct {
 	ProrateEDMEnd   uang.Ratio
 
 	EndorsmentReason string
+	// IsBanding - `DataToEDM`: `.OfferFacIn.IsBanding = false` (teks apa adanya).
+	IsBanding string
 
 	OldData *OfferFacIn
 }
@@ -161,6 +229,16 @@ type Quotation struct {
 	EdmDate time.Time
 	// OldPolicyNo - kunci pemuatan lapis A (`GetEDMOldData_SQL`).
 	OldPolicyNo string
+
+	// Diisi `DataToEDM` dari kasus portal (arti kode: OQ-020; `EdmType`
+	// terkunci K-029).
+	EdmSource, EdmSourceNote, EdmNote string
+	EdmType                           JenisEndorsemen
+	// EdmTypeNew - pilihan `SetEdmType`: 1 penambahan, 2 pengurangan, 3
+	// perubahan (deskripsi daftar pilihannya); BUKAN enumerasi K-029.
+	EdmTypeNew, EdmStatus    string
+	EdmChargeFee, EdmSurvey  string
+	EndorsementInternalRetro string
 }
 
 // PolicyData - `OfferFacIn.PolicyData`.

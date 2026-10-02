@@ -31,7 +31,7 @@ describe('sidebar ↔ palet, dua arah', () => {
   it('palet = Beranda + satu entri per tombol modul yang dapat dibuka, urutan sidebar', () => {
     const dariSidebar = PALET.golongan.flatMap((g) => g.modul.flatMap((t) => (t.halaman === null ? [] : [[t.halaman, t.label]])))
     expect(PALET.entri.map((e) => [e.modul, e.label])).toEqual([['beranda', 'Beranda'], ...dariSidebar])
-    expect(dariSidebar).toHaveLength(4)
+    expect(dariSidebar).toHaveLength(5) // nbfacin menyala 02-10-2026 (tiket 21)
     // Label entri palet = LABEL tabel = nama folder korpus.
     const sah = new Set<string>(Object.values(FOLDER_KORPUS))
     for (const e of PALET.entri.slice(1)) expect(sah.has(e.label), e.label).toBe(true)

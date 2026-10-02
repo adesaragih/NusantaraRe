@@ -22,9 +22,13 @@ package services
 //     `@Math.divide((…EndDateTime-…StartDateTime),365,20)*100`). Cara Pega
 //     memotong pecahan hari ke `int` tidak diketahui - selisih yang bukan
 //     hari bulat DITOLAK.
-//  2. Mode pembulatan `@Math.divide(…, …, 20)`. Hasil yang tidak eksak pada 20
-//     desimal DITOLAK - sikap yang sama dengan keputusan work owner
-//     30-09-2026 untuk premi NB.
+//
+// ✅ Mode pembulatan `@Math.divide(…, …, 20)` = HALF_UP - A37, DIKONFIRMASI work
+// owner 01-10-2026 (bukti sesi nbfacin: dua nilai seri tepat di desimal ke-21
+// pada kasus EDM nyata, keduanya dibulatkan ke atas). Nilai negatif: lihat
+// bagiHalfUp (pembagian.go), `[dugaan]`. Dihitung EKSAK dengan bilangan bulat
+// (`round_half_up(p·10²⁰ / q)`): pembilang dan penyebutnya hari bulat, jadi
+// tidak ada pembulatan ganda.
 
 import (
 	"errors"
@@ -34,7 +38,6 @@ import (
 	"github.com/cockroachdb/apd/v3"
 
 	"nusantarare/inti/backend/uang"
-	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/endorsmentfacin/backend/models"
 )
 
@@ -46,10 +49,6 @@ const desimalPorsiPeriode = 20
 const sehari = 24 * time.Hour
 
 var (
-	// ErrModePembulatanBelumTerverifikasi - membagi ke 20 desimal akan
-	// membuang digit bukan-nol, padahal mode pembulatan `@Math.divide` Pega
-	// (half-up, half-even, potong) belum terverifikasi.
-	ErrModePembulatanBelumTerverifikasi = errors.New("endorsement: porsi periode tidak eksak pada 20 desimal, padahal mode pembulatan @Math.divide belum terverifikasi")
 	// ErrSatuanSelisihWaktuBelumTerverifikasi - selisih tanggal bukan hari
 	// bulat, sehingga hasil Pega bergantung pada satuan selisih DateTime dan
 	// cara pemotongannya ke `int`, keduanya belum terverifikasi.
@@ -117,25 +116,12 @@ func hariBulat(d time.Duration) (int64, error) {
 	return int64(d / sehari), nil
 }
 
-// bagiPorsi - pembilang ÷ penyebut tepat pada 20 desimal, atau galat.
+// bagiPorsi - pembilang ÷ penyebut, HALF_UP pada 20 desimal (A37); lihat
+// bagiHalfUp (premifire.go).
 func bagiPorsi(pembilang, penyebut int64) (uang.Ratio, error) {
-	ctx := utils.DecimalContext()
-	hasil := new(apd.Decimal)
-	kondisi, err := ctx.Quo(hasil, apd.New(pembilang, 0), apd.New(penyebut, 0))
+	d, err := bagiHalfUp(apd.New(pembilang, 0), apd.New(penyebut, 0), desimalPorsiPeriode)
 	if err != nil {
 		return uang.Ratio{}, err
 	}
-	// Tak eksak pada presisi 38 berarti pecahan berulang atau terlalu
-	// panjang - tidak muat di 20 desimal tanpa pembulatan.
-	if kondisi.Inexact() {
-		return uang.Ratio{}, ErrModePembulatanBelumTerverifikasi
-	}
-	kondisi, err = ctx.Quantize(hasil, hasil, -desimalPorsiPeriode)
-	if err != nil {
-		return uang.Ratio{}, err
-	}
-	if kondisi.Inexact() {
-		return uang.Ratio{}, ErrModePembulatanBelumTerverifikasi
-	}
-	return uang.Ratio{Value: hasil, Scale: desimalPorsiPeriode}, nil
+	return uang.Ratio{Value: d, Scale: desimalPorsiPeriode}, nil
 }

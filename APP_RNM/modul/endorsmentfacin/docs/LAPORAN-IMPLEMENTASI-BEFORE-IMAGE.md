@@ -1,5 +1,9 @@
 # Laporan implementasi — before-image EDM (E06–E11)
 
+> 🔁 **Dilanjutkan** oleh `LAPORAN-IMPLEMENTASI-EDM-01-10-2026.md` (E03–E05, E18, E20, rekonsiliasi E06,
+> label `//`, porsi periode hari bulat). Bagian yang berubah sejak laporan ini: §4 butir 1–2 (porsi
+> periode), §6 (sisa pekerjaan).
+
 > 01-10-2026. Irisan pertama kode `endorsmentfacin`: Seam 4, tanpa Oracle, tanpa layar, tanpa
 > `backend/modul.go` (modul belum terdaftar; `MODUL.md` tetap "belum dimigrasi").
 > Sumber kebenaran: korpus `D:\migrasi\RNM\Endorsment Fac In\` (READ-ONLY). Label mengikuti
