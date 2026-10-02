@@ -254,7 +254,7 @@ export default function InboxTreatyContract() {
       if (typeof window !== 'undefined') window.requestAnimationFrame(() => window.scrollTo({ top: y }))
     }
     return (
-      <section className="inbox">
+      <section className="inbox tco">
         {rinci.jenis === 'kontrak' ? (
           <PanelKontrakTahun key={rinci.tahun.id} tahun={rinci.tahun} onTutup={tutup} />
         ) : (
@@ -265,7 +265,7 @@ export default function InboxTreatyContract() {
   }
 
   return (
-    <section className="inbox">
+    <section className="inbox tco">
       <header className="inbox__kepala">
         <h2 className="inbox__judul">{TAHUN_TCO.judul}</h2>
         <button
@@ -340,62 +340,64 @@ export default function InboxTreatyContract() {
       {galat !== null && <Gagal galat={galat} />}
       {hal !== null && hal.baris.length === 0 && <Kosong pesan={TAHUN_TCO.kosong} />}
       {hal !== null && hal.baris.length > 0 && (
-        <table className="inbox__tabel">
-          <thead>
-            <tr>
-              <th>{TAHUN_TCO.kolomUnderwritingYear}</th>
-              <th>{TAHUN_TCO.kolomTransactionYear}</th>
-              <th>{TAHUN_TCO.kolomStartDate}</th>
-              <th>{TAHUN_TCO.kolomEndDate}</th>
-              <th>{TAHUN_TCO.kolomTreatyGroup}</th>
-              <th>{TAHUN_TCO.kolomReinsuranceType}</th>
-              <th className="table__actions" />
-            </tr>
-          </thead>
-          <tbody>
-            {hal.baris.map((b) => (
-              <tr key={b.id} className="inbox__baris">
-                <td>{selTahun(b.underwritingYear)}</td>
-                <td>{selTahun(b.treatyYear)}</td>
-                <td>{selTahun(formatDate(b.startDate))}</td>
-                <td>{selTahun(formatDate(b.endDate))}</td>
-                <td>{selTahun(b.treatyGroupName)}</td>
-                <td>{selTahun(labelProporsi(b.proportion))}</td>
-                <td className="table__actions">
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    onClick={() => {
-                      setGalatSimpan(null)
-                      setInfo(null)
-                      setForm(formDari(b))
-                    }}
-                  >
-                    {TAHUN_TCO.edit}
-                  </button>{' '}
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    onClick={() => {
-                      bukaRinci({ jenis: 'kontrak', tahun: b })
-                    }}
-                  >
-                    {TAHUN_TCO.reinsType}
-                  </button>{' '}
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    onClick={() => {
-                      bukaRinci({ jenis: 'klausul', tahun: b })
-                    }}
-                  >
-                    {TAHUN_TCO.listDescription}
-                  </button>
-                </td>
+        <div className="tco-tabel">
+          <table className="inbox__tabel">
+            <thead>
+              <tr>
+                <th>{TAHUN_TCO.kolomUnderwritingYear}</th>
+                <th>{TAHUN_TCO.kolomTransactionYear}</th>
+                <th>{TAHUN_TCO.kolomStartDate}</th>
+                <th>{TAHUN_TCO.kolomEndDate}</th>
+                <th>{TAHUN_TCO.kolomTreatyGroup}</th>
+                <th>{TAHUN_TCO.kolomReinsuranceType}</th>
+                <th className="table__actions" />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {hal.baris.map((b) => (
+                <tr key={b.id} className="inbox__baris">
+                  <td>{selTahun(b.underwritingYear)}</td>
+                  <td>{selTahun(b.treatyYear)}</td>
+                  <td>{selTahun(formatDate(b.startDate))}</td>
+                  <td>{selTahun(formatDate(b.endDate))}</td>
+                  <td>{selTahun(b.treatyGroupName)}</td>
+                  <td>{selTahun(labelProporsi(b.proportion))}</td>
+                  <td className="table__actions">
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => {
+                        setGalatSimpan(null)
+                        setInfo(null)
+                        setForm(formDari(b))
+                      }}
+                    >
+                      {TAHUN_TCO.edit}
+                    </button>{' '}
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => {
+                        bukaRinci({ jenis: 'kontrak', tahun: b })
+                      }}
+                    >
+                      {TAHUN_TCO.reinsType}
+                    </button>{' '}
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => {
+                        bukaRinci({ jenis: 'klausul', tahun: b })
+                      }}
+                    >
+                      {TAHUN_TCO.listDescription}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
       {hal !== null && (
         <Halaman halaman={hal.halaman} ukuran={hal.ukuran} total={hal.total} onPindah={setHalaman} />

@@ -69,10 +69,11 @@ type Spreading struct {
 
 // PesertaWarisan adalah satu baris `M_LIFE_PREMIUM_DETAIL` tiruan.
 type PesertaWarisan struct {
-	ID       string
-	PLNumber string
-	IDPega   string
-	Nilai    map[string]string
+	ID        string
+	PLNumber  string
+	IDPega    string
+	EdmStatus string // `EDMSTATUS` - kosong pada new business
+	Nilai     map[string]string
 }
 
 // Gudang adalah tiruan `repository.Gudang`.
@@ -88,6 +89,10 @@ type Gudang struct {
 	PesertaWarisan []*PesertaWarisan
 	// RekapWarisan - baris `M_LIFE_PREMIUM_SUMMARY` (kunci kolom).
 	RekapWarisan []map[string]string
+	// ProduksiWarisan - baris `LIFEINPRODUCTION` (kunci kolom, K4).
+	ProduksiWarisan []map[string]string
+	// PesertaWarisanTertulis - baris `M_LIFE_PREMIUM_DETAIL` yang ditulis Confirm (kunci kolom, K5).
+	PesertaWarisanTertulis []map[string]string
 	// Dibayar - nomor invoice Arasapas yang punya baris pelunasan.
 	Dibayar map[string]bool
 	// GalatArasapas - bila terisi, `SudahDibayar` mengembalikannya.
@@ -273,17 +278,48 @@ func (g *Gudang) VersiBerjalan(_ context.Context, _ *db.Tx, nomorPolis string, s
 		resmi := p.NoPolis == nomorPolis && p.Status == models.StatusKasusSelesai
 		nb := p.EdmType == "" && g.punyaPLNumber(p.ID, nomorPolis)
 		if resmi || nb {
-			terbaik = lebihBaruTiruan(terbaik, models.Versi{Jenis: models.SumberAplikasi, ID: p.ID, ProdKe: prod, EdmType: p.EdmType})
+			// Urutan Pega (K3): NB = 0; endorsement resmi = akhiran nomornya, seperti repository.
+			up := 0
+			if resmi {
+				up = models.UrutanPegaTakDiketahui
+				if n, err := models.UrutanDariNomor(p.PLNumberEDM); err == nil {
+					up = n
+				}
+			}
+			terbaik = lebihBaruTiruan(terbaik, models.Versi{Jenis: models.SumberAplikasi, ID: p.ID, ProdKe: prod,
+				EdmType: p.EdmType, UrutanPega: up})
 		}
 	}
+	// Warisan: `ORDER BY NVL(PRODKE, 1) DESC, TGL_INPUT DESC` (sqlVersiWarisan) - pemutus seri TGL_INPUT, bukan ID.
+	var warisan *PolisWarisan
 	for _, w := range g.PolisWarisan {
 		prod := w.ProdKe
 		if prod == 0 {
 			prod = 1
 		}
-		if w.NoPolis == nomorPolis && lolos(prod) {
-			terbaik = lebihBaruTiruan(terbaik, models.Versi{Jenis: models.SumberWarisan, ID: w.IDPega, ProdKe: prod, EdmType: w.EdmType})
+		if w.NoPolis != nomorPolis || !lolos(prod) {
+			continue
 		}
+		if warisan == nil {
+			warisan = w
+			continue
+		}
+		pw := warisan.ProdKe
+		if pw == 0 {
+			pw = 1
+		}
+		if prod > pw || (prod == pw && w.TglInput > warisan.TglInput) {
+			warisan = w
+		}
+	}
+	if warisan != nil {
+		prod := warisan.ProdKe
+		if prod == 0 {
+			prod = 1
+		}
+		// Urutan Pega (K3): `PRODKE` mentah, kosong (0 di tiruan) = 0.
+		terbaik = models.LebihBaru(terbaik, models.Versi{Jenis: models.SumberWarisan, ID: warisan.IDPega, ProdKe: prod,
+			EdmType: warisan.EdmType, UrutanPega: warisan.ProdKe})
 	}
 	return terbaik, terbaik.ID != "", nil
 }
@@ -459,11 +495,9 @@ func (g *Gudang) SalinVersi(_ context.Context, _ *db.Tx, kasusID string, v model
 			g.Spreading = append(g.Spreading, salinan...)
 		}
 	case models.SumberWarisan:
-		if v.EdmType != "" {
-			return repository.Salinan{}, repository.ErrSumberWarisanEDM
-		}
 		for _, m := range g.PesertaWarisan {
-			if m.PLNumber == nomorPolis && m.IDPega == v.ID {
+			// `MappingEDMLife` 11.2: baris `Delete` versi lama dibuang (sama dengan sqlSalinPesertaWarisan).
+			if m.PLNumber == nomorPolis && m.IDPega == v.ID && strings.TrimSpace(m.EdmStatus) != models.StatusDelete {
 				nilai := map[string]string{}
 				for kol, x := range m.Nilai {
 					nilai[kol] = x

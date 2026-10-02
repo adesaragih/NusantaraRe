@@ -18,6 +18,7 @@ import (
 func gudangBusiness() *tiruan.Gudang {
 	g := gudangReinsurer()
 	g.MasterBiz = []models.MasterBusiness{{ID: "UJI-B01", Note: "UJI BUSINESS SATU", OldID: "L01"}}
+	g.RingkasanRate = append(g.RingkasanRate, models.RingkasanRate{ID: "UJI-RATE-7", UsedBy: "UJI TABEL RATE"})
 	return g
 }
 
@@ -63,6 +64,38 @@ func TestBusinessRIRateTeksApaAdanyaDanSalinanInduk(t *testing.T) {
 	m.BizCode = "UJI-TAK-ADA"
 	if _, err := layananUji(g).SimpanBusiness(context.Background(), pelaku, "UJI-K1", m); !errors.Is(err, services.ErrMasukanTidakSah) {
 		t.Errorf("business di luar master: %v", err)
+	}
+}
+
+// K1 (01-10-2026): RIRATEID pilihan BARU wajib ada di `RATE_LIFE_SUMMARY`; nilai lama yang tidak
+// diganti tidak diperiksa ulang; RIRATE tetap teks ketikan (R7), tidak diganti USEDBY view.
+func TestBusinessRateBaruWajibAdaDiRingkasan(t *testing.T) {
+	g := gudangBusiness()
+	m := businessLengkap()
+	m.RIRateID = "UJI-RATE-TAK-ADA"
+	_, err := layananUji(g).SimpanBusiness(context.Background(), pelaku, "UJI-K1", m)
+	if !errors.Is(err, services.ErrMasukanTidakSah) || !strings.Contains(services.Pesan(err), "RATE_LIFE_SUMMARY") ||
+		len(g.Business) != 0 || g.Komit != 0 {
+		t.Errorf("rate di luar view: %v (%d baris, komit %d)", err, len(g.Business), g.Komit)
+	}
+	// Baris warisan dengan RIRATEID yang kini tidak ada di view: ubah medan lain tetap jalan.
+	g.Business["UJI-BW"] = models.Business{ID: "UJI-BW", TreatyYearID: "UJI-T1", TreatyContractID: "UJI-K1",
+		BizCode: "UJI-B01", BizName: "UJI BUSINESS SATU", RIRateID: "UJI-RATE-LAMA", RIRate: "UJI LAMA"}
+	m = businessLengkap()
+	m.ID, m.RIRateID, m.RIRate = "UJI-BW", "UJI-RATE-LAMA", "UJI LAMA DIUBAH"
+	if b, err := layananUji(g).SimpanBusiness(context.Background(), pelaku, "UJI-K1", m); err != nil || b.RIRate != "UJI LAMA DIUBAH" {
+		t.Errorf("baris warisan, rate tak diganti: %v %+v", err, b)
+	}
+	// ... tetapi menggantinya ke ID di luar view ditolak.
+	m.RIRateID = "UJI-RATE-TAK-ADA"
+	if _, err := layananUji(g).SimpanBusiness(context.Background(), pelaku, "UJI-K1", m); !errors.Is(err, services.ErrMasukanTidakSah) {
+		t.Errorf("rate diganti ke luar view: %v", err)
+	}
+	// View tak terbaca saat simpan = 503 menyebut view, nol tulisan.
+	g = gudangBusiness()
+	g.GalatMaster = errors.New("ORA-00942")
+	if _, err := layananUji(g).SimpanBusiness(context.Background(), pelaku, "UJI-K1", businessLengkap()); !errors.Is(err, services.ErrMasterTidakTerbaca) || len(g.Business) != 0 {
+		t.Errorf("view tak terbaca: %v", err)
 	}
 }
 

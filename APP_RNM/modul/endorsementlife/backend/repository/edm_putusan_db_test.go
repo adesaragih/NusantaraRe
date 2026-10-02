@@ -8,6 +8,8 @@ package repository_test
 // ⚠️ Tiruan `M_LIFE_PREMIUM_SUMMARY` dibuat bila belum ada (bentuk kolom dari
 // `repository.KolomRekapWarisan`: uang NUMBER, teks VARCHAR2) dan HANYA yang
 // dibuat uji ini yang dibuang lagi - tiruan bersama `skemauji` tidak disentuh.
+// Sama untuk tiruan `LIFEINPRODUCTION` (K4, 27 kolom `repository.KolomProduksiWarisan`;
+// `DATERECEIVED`/`TGL_INPUT` DATE, sisanya VARCHAR2 - tipe DEV `[belum terverifikasi]`).
 
 import (
 	"context"
@@ -46,15 +48,55 @@ func TestPutuskanTerhadapOracle(t *testing.T) {
 			_, _ = repo.ExecContext(ctx, `DELETE FROM `+skema+`.M_LIFE_PREMIUM_SUMMARY WHERE IDPEGA = 'EDMLF-903'`)
 		}
 	}()
+	var kolomProd []string
+	for _, k := range repository.KolomProduksiWarisan {
+		tipe := "VARCHAR2(4000)"
+		if k == "DATERECEIVED" || k == "TGL_INPUT" {
+			tipe = "DATE"
+		}
+		kolomProd = append(kolomProd, k+" "+tipe)
+	}
+	// K5: tiruan peserta warisan dibuat ulang dengan kolom EDM (pola `TestBuatKasusTerhadapOracle`).
+	_, _ = repo.ExecContext(ctx, `DROP TABLE `+skema+`.M_LIFE_PREMIUM_DETAIL PURGE`)
+	jalankan(t, repo, ddlTiruanWarisan(t, skema))
+	defer func() { _, _ = repo.ExecContext(ctx, `DROP TABLE `+skema+`.M_LIFE_PREMIUM_DETAIL PURGE`) }()
+	urutanDibuat := false
+	if _, err := repo.ExecContext(ctx, `CREATE SEQUENCE `+skema+`.M_LIFE_PREMIUM_DETAIL_SEQ START WITH 44`); err == nil {
+		urutanDibuat = true
+	} else if !strings.Contains(err.Error(), "ORA-00955") {
+		t.Fatal(err)
+	}
+	defer func() {
+		if urutanDibuat {
+			_, _ = repo.ExecContext(ctx, `DROP SEQUENCE `+skema+`.M_LIFE_PREMIUM_DETAIL_SEQ`)
+		}
+	}()
+	prodDibuat := false
+	if _, err := repo.ExecContext(ctx, `CREATE TABLE `+skema+`.LIFEINPRODUCTION (`+strings.Join(kolomProd, ", ")+`)`); err == nil {
+		prodDibuat = true
+	} else if !strings.Contains(err.Error(), "ORA-00955") {
+		t.Fatal(err)
+	}
+	defer func() {
+		if prodDibuat {
+			_, _ = repo.ExecContext(ctx, `DROP TABLE `+skema+`.LIFEINPRODUCTION PURGE`)
+		} else {
+			_, _ = repo.ExecContext(ctx, `DELETE FROM `+skema+`.LIFEINPRODUCTION WHERE IDPEGA = 'EDMLF-903'`)
+		}
+	}()
 	jalankan(t, repo,
 		`INSERT INTO `+skema+`.T_PREMIUM_LIST (ID, ID_PEGA, TGL_INPUT, TYPE) VALUES ('UJI-NB-P', 'UJI-NB-P', SYSDATE, 'TR')`,
 		`INSERT INTO `+skema+`.T_PREMIUM_LIST_DETAIL (ID, PREMIUM_LIST_ID, PL_NUMBER) VALUES ('UJI-NBD-P', 'UJI-NB-P', 'UJI-PL-P')`,
-		`INSERT INTO `+skema+`.T_PREMIUM_LIST (ID, OLD_POLICY_NO, TGL_INPUT, TYPE, EDM_TYPE, PROD_KE, BUSINESS_NAME)
-		   VALUES ('EDMLF-903', 'UJI-PL-P', SYSDATE, 'TR', '1', 2, 'UJI-COB')`,
+		`INSERT INTO `+skema+`.T_PREMIUM_LIST (ID, OLD_POLICY_NO, TGL_INPUT, TYPE, EDM_TYPE, PROD_KE, BUSINESS_NAME,
+		   TYPE_CEDING, DATE_RECEIVED, CREATE_OP_NAME)
+		   VALUES ('EDMLF-903', 'UJI-PL-P', SYSDATE, 'TR', '1', 2, 'UJI-COB', '3', TO_DATE('30/09/2026 13:45', 'DD/MM/YYYY HH24:MI'), 'UJI-AKUN-1')`,
 		`INSERT INTO `+skema+`.T_PREMIUM_LIST_DETAIL (ID, PREMIUM_LIST_ID, PL_NUMBER, EDM_STATUS, CURRENCY, GROSS_PREMIUM_REFUND_RETRO)
 		   VALUES ('UJI-P1', 'EDMLF-903', 'UJI-PL-P', 'Old', 'IDR', 10.5)`,
 		`INSERT INTO `+skema+`.T_PREMIUM_LIST_DETAIL (ID, PREMIUM_LIST_ID, PL_NUMBER, EDM_STATUS, CURRENCY, GROSS_PREMIUM_REFUND_RETRO)
 		   VALUES ('UJI-P2', 'EDMLF-903', 'UJI-PL-P', 'New', 'IDR', 2)`,
+		`INSERT INTO `+skema+`.T_PREMIUM_LIST_DETAIL (ID, PREMIUM_LIST_ID, PL_NUMBER, EDM_STATUS, CURRENCY, GROSS_PREMIUM_REFUND,
+		   STNC, DOB)
+		   VALUES ('UJI-P3', 'EDMLF-903', 'UJI-PL-P', 'Delete', 'IDR', -7.25, '31/12/2025', TO_DATE('01/02/1990 08:30', 'DD/MM/YYYY HH24:MI'))`,
 		`INSERT INTO `+skema+`.T_PREMIUM_LIST (ID, OLD_POLICY_NO, TGL_INPUT, TYPE, EDM_TYPE, PROD_KE) VALUES ('EDMLF-904', 'UJI-PL-Q', SYSDATE, 'QR', '1', 2)`,
 	)
 	g := repository.Baru(repo)
@@ -79,12 +121,18 @@ func TestPutuskanTerhadapOracle(t *testing.T) {
 	if err != nil || !ada || v.ID != "UJI-NB-P" || v.ProdKe != 1 {
 		gagal(err)
 	}
-	nomor, prodKe, _ := models.NomorEndorsement("UJI-PL-P", v.ProdKe)
+	nomor, prodKe, _ := models.NomorEndorsement("UJI-PL-P", v)
 	if dobel, err := g.AdaVersiResmi(ctx, tx, "UJI-PL-P", prodKe); err != nil || dobel {
 		gagal(err)
 	}
+	if c, err := g.TulisProduksiWarisan(ctx, tx, repository.ProduksiWarisanTulis{KasusID: "EDMLF-903", NomorPolis: "UJI-PL-P", Nomor: nomor}); err != nil || c != 1 {
+		gagal(err)
+	}
 	n, err := g.Resmikan(ctx, tx, models.ResmiKasus{ID: "EDMLF-903", NomorPolis: "UJI-PL-P", ProdKe: prodKe, Nomor: nomor, StatusJenis: models.StatusJenis(models.TypeTR)})
-	if err != nil || n != 2 {
+	if err != nil || n != 3 { // Old, New, Delete (K5 menambah peserta Delete)
+		gagal(err)
+	}
+	if c, err := g.TulisPesertaWarisan(ctx, tx, repository.PesertaWarisanTulis{KasusID: "EDMLF-903", NomorPolis: "UJI-PL-P", Nomor: nomor}); err != nil || c != 3 {
 		gagal(err)
 	}
 	if c, err := g.TulisRekapWarisan(ctx, tx, repository.RekapWarisanTulis{KasusID: "EDMLF-903", NomorPolis: "UJI-PL-P", Nomor: nomor, COB: "UJI-COB"}); err != nil || c != 1 {
@@ -103,12 +151,12 @@ func TestPutuskanTerhadapOracle(t *testing.T) {
 		Scan(&noPolis, &noEndors, &statuss, &prod); err != nil {
 		t.Fatal(err)
 	}
-	if noPolis != "UJI-PL-P" || noEndors != "UJI-PL-P/02" || statuss != models.StatusKasusSelesai || prod != 2 {
+	if noPolis != "UJI-PL-P" || noEndors != "UJI-PL-P/01" || statuss != models.StatusKasusSelesai || prod != 2 {
 		t.Fatalf("kepala %s %s %s %d", noPolis, noEndors, statuss, prod)
 	}
 	var lama, jenis, edm string
 	if err := repo.QueryRowContext(ctx, `SELECT STATUS_OLD, STATUS, PL_NUMBER_EDM FROM `+skema+`.T_PREMIUM_LIST_DETAIL WHERE ID = 'UJI-P1'`).
-		Scan(&lama, &jenis, &edm); err != nil || lama != "1" || jenis != "1" || edm != "UJI-PL-P/02" {
+		Scan(&lama, &jenis, &edm); err != nil || lama != "1" || jenis != "1" || edm != "UJI-PL-P/01" {
 		t.Fatalf("peserta Old %s %s %s %v", lama, jenis, edm, err)
 	}
 	if err := repo.QueryRowContext(ctx, `SELECT STATUS_OLD FROM `+skema+`.T_PREMIUM_LIST_DETAIL WHERE ID = 'UJI-P2'`).Scan(&lama); err != nil || lama != "0" {
@@ -122,8 +170,31 @@ func TestPutuskanTerhadapOracle(t *testing.T) {
 	}
 	var premi, cob, idpega string
 	if err := repo.QueryRowContext(ctx, `SELECT TO_CHAR(PREMIUM, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''), COB, IDPEGA FROM `+skema+`.M_LIFE_PREMIUM_SUMMARY
-	    WHERE PL_NUMBER_EDM = 'UJI-PL-P/02'`).Scan(&premi, &cob, &idpega); err != nil || premi != "12.5" || cob != "UJI-COB" || idpega != "EDMLF-903" {
+	    WHERE PL_NUMBER_EDM = 'UJI-PL-P/01'`).Scan(&premi, &cob, &idpega); err != nil || premi != "12.5" || cob != "UJI-COB" || idpega != "EDMLF-903" {
 		t.Fatalf("rekap warisan %s %s %s %v", premi, cob, idpega, err)
+	}
+	// K5: tiga peserta (Old, New, Delete) tertulis; jurnal balik negatif utuh; penyaring Claim Life (DITIRU di sini,
+	// teks `penyaringHidup` - tidak diimpor) melewatkan Old dan New, membuang Delete.
+	var semua, hidup int
+	if err := repo.QueryRowContext(ctx, `SELECT COUNT(*), COUNT(CASE WHEN EDMSTATUS IS NULL OR TRIM(EDMSTATUS) NOT IN ('Batal', 'Delete')
+	    THEN 1 END) FROM `+skema+`.M_LIFE_PREMIUM_DETAIL WHERE PL_NUMBER = 'UJI-PL-P' AND IDPEGA = 'EDMLF-903'`).Scan(&semua, &hidup); err != nil ||
+		semua != 3 || hidup != 2 {
+		t.Fatalf("peserta warisan %d, hidup %d, %v", semua, hidup, err)
+	}
+	var refund, stnc, dob, lama3, emp string
+	if err := repo.QueryRowContext(ctx, `SELECT TO_CHAR(GROSS_PREMIUM_REFUND, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''),
+	    TO_CHAR(STNC, 'YYYY-MM-DD'), TO_CHAR(DOB, 'YYYY-MM-DD HH24:MI'), STATUSOLD, NVL(TO_CHAR(EM_PERCENT), 'NULL')
+	    FROM `+skema+`.M_LIFE_PREMIUM_DETAIL WHERE PL_NUMBER = 'UJI-PL-P' AND EDMSTATUS = 'Delete'`).Scan(&refund, &stnc, &dob, &lama3, &emp); err != nil ||
+		refund != "-7.25" || stnc != "2025-12-31" || dob != "1990-02-01 00:00" || lama3 != "0" || emp != "NULL" {
+		t.Fatalf("baris Delete %s %s %s %s %s %v", refund, stnc, dob, lama3, emp, err)
+	}
+	// K4: satu baris `LIFEINPRODUCTION` seperti `SaveLifeinProduction_SQL` - tanggal tanpa jam, nama jenis ceding.
+	var nopolis, noendors, biz, namaJenis, pembuat, diterima string
+	if err := repo.QueryRowContext(ctx, `SELECT NOPOLIS, NOENDORS, BUSINESSNAME, TYPECEDINGNAME, CREATEOPNAME,
+	    TO_CHAR(DATERECEIVED, 'YYYY-MM-DD HH24:MI') FROM `+skema+`.LIFEINPRODUCTION WHERE IDPEGA = 'EDMLF-903'`).
+		Scan(&nopolis, &noendors, &biz, &namaJenis, &pembuat, &diterima); err != nil || nopolis != "UJI-PL-P" || noendors != "UJI-PL-P/01" ||
+		biz != "UJI-COB" || namaJenis != "QS + SURPLUS" || pembuat != "UJI-AKUN-1" || diterima != "2026-09-30 00:00" {
+		t.Fatalf("produksi warisan %s %s %s %s %s %s %v", nopolis, noendors, biz, namaJenis, pembuat, diterima, err)
 	}
 	r, err := g.Riwayat(ctx, nil, "EDMLF-903")
 	if err != nil || len(r) != 2 || r[0].No != 2 || r[0].Status != "Accept" || r[1].Status != "Decline" || r[0].Tanggal != "2026-10-01 10:00:00" {

@@ -117,3 +117,11 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+## Status 01-10-2026 — K5 keputusan work owner 01-10-2026 (OQ-EDM-016)
+
+Kalimat lama *"salinan dari versi endorsement **warisan** ditolak sampai OQ-EDM-016"* tidak berlaku lagi: versi endorsement sistem
+lama disalin dari `M_LIFE_PREMIUM_DETAIL` (`PL_NUMBER` + `IDPEGA` versi itu, `_INDEX4`) seperti `MappingEDMLife` 10 b2339 (salin
+halaman, PRE=false), 11.1 b2583 (selain `Delete` → `"Old"` b2609, prakondisi b2691 T=3) dan 11.2 b2737 (buang `Delete`, b2831);
+peserta new business (status NULL) tetap tersalin. `ErrSumberWarisanEDM` dicabut. Uji: `TestBuatKasusDariVersiEndorsementWarisan` (tiruan: Old+New tersalin,
+Delete tidak), `TestSQLSalinVersiWarisanBerindex` (penampung `:7` = `Delete`).

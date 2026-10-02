@@ -43,6 +43,9 @@ const (
 	urutanPesertaWarisan   = "M_LIFE_PREMIUM_DETAIL_SEQ" // `SaveMasterLPDet` VALUES butir 1
 	tabelRekapWarisan      = "M_LIFE_PREMIUM_SUMMARY"
 	urutanRekapWarisan     = "M_LIFE_PREMIUM_SUMMARY_SEQ"
+	// tabelProduksiWarisan - produksi polis Pega (DEV 37 kolom, nol PK); DITULIS satu baris per kasus yang
+	// diresmikan (K4 keputusan work owner 01-10-2026, OQ-EDM-010; `SaveLifeinProduction_SQL`). Nol DDL.
+	tabelProduksiWarisan = "LIFEINPRODUCTION"
 )
 
 // tabelArasapas - gerbang ke-5, lintas skema (spec §13, RALAT R26): satu-satunya

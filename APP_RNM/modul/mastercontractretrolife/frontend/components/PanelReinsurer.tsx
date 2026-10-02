@@ -94,6 +94,8 @@ export default function PanelReinsurer({ kontrak, onTutup }: { kontrak: Kontrak;
 
   const hapusan = useHapus('reinsurer', async (id, p) => {
     if (form?.id === id) setForm(null)
+    // Reinsurer yang Security-nya sedang terbuka ikut menutup panel Security (sama dengan Treaty Contract Out).
+    setSecurity((s) => (s?.id === id ? null : s))
     setPesan(p)
     await muat()
   })
@@ -125,19 +127,6 @@ export default function PanelReinsurer({ kontrak, onTutup }: { kontrak: Kontrak;
     } finally {
       setMenyimpan(false)
     }
-  }
-
-  // Popup `Security Reinsurer` di atas panel ini: panel ini tidak dirender, keadaannya tetap.
-  if (security !== null) {
-    return (
-      <PanelSecurity
-        key={security.id}
-        reinsurer={security}
-        onTutup={() => {
-          setSecurity(null)
-        }}
-      />
-    )
   }
 
   const induk = jawab?.kontrak ?? kontrak
@@ -206,57 +195,59 @@ export default function PanelReinsurer({ kontrak, onTutup }: { kontrak: Kontrak;
       {galat !== null && <Gagal galat={galat} />}
       {jawab !== null && daftar.length === 0 && <Kosong pesan={UMUM_MCRL.kosong} />}
       {daftar.length > 0 && (
-        <table className="inbox__tabel">
-          <thead>
-            <tr>
-              <th>{REINSURER_MCRL.kolomId}</th>
-              <th>{REINSURER_MCRL.kolomReinsurerName}</th>
-              <th>{REINSURER_MCRL.kolomShare}</th>
-              <th>{REINSURER_MCRL.kolomDiscount}</th>
-              <th>{REINSURER_MCRL.kolomOvrComm}</th>
-              <th>{REINSURER_MCRL.kolomInputor}</th>
-              <th>{REINSURER_MCRL.kolomUpdateDate}</th>
-              <th className="table__actions" />
-            </tr>
-          </thead>
-          <tbody>
-            {potongHalaman(daftar, halaman).map((r) => (
-              <tr key={r.id} className="inbox__baris">
-                <td>{sel(r.id)}</td>
-                <td>{sel(r.reinsurerName)}</td>
-                <td>{selAngka(r.pctShare)}</td>
-                <td>{selAngka(r.komisi)}</td>
-                <td>{selAngka(r.ovrComm)}</td>
-                <td>{sel(r.userId)}</td>
-                <td>{selWaktu(r.tglUpdate)}</td>
-                <td className="table__actions">
-                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => buka(formReinsurerDari(r, operatorKini()))}>
-                    {REINSURER_MCRL.edit}
-                  </button>{' '}
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    onClick={() => {
-                      setSecurity(r)
-                    }}
-                  >
-                    {REINSURER_MCRL.securityReinsurer}
-                  </button>{' '}
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    onClick={() => {
-                      setPesan(null)
-                      hapusan.minta(r.id, r.reinsurerName || r.id)
-                    }}
-                  >
-                    {REINSURER_MCRL.delete}
-                  </button>
-                </td>
+        <div className="mcrl-tabel">
+          <table className="inbox__tabel">
+            <thead>
+              <tr>
+                <th>{REINSURER_MCRL.kolomId}</th>
+                <th>{REINSURER_MCRL.kolomReinsurerName}</th>
+                <th>{REINSURER_MCRL.kolomShare}</th>
+                <th>{REINSURER_MCRL.kolomDiscount}</th>
+                <th>{REINSURER_MCRL.kolomOvrComm}</th>
+                <th>{REINSURER_MCRL.kolomInputor}</th>
+                <th>{REINSURER_MCRL.kolomUpdateDate}</th>
+                <th className="table__actions" />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {potongHalaman(daftar, halaman).map((r) => (
+                <tr key={r.id} className="inbox__baris">
+                  <td>{sel(r.id)}</td>
+                  <td>{sel(r.reinsurerName)}</td>
+                  <td>{selAngka(r.pctShare)}</td>
+                  <td>{selAngka(r.komisi)}</td>
+                  <td>{selAngka(r.ovrComm)}</td>
+                  <td>{sel(r.userId)}</td>
+                  <td>{selWaktu(r.tglUpdate)}</td>
+                  <td className="table__actions">
+                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => buka(formReinsurerDari(r, operatorKini()))}>
+                      {REINSURER_MCRL.edit}
+                    </button>{' '}
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => {
+                        setSecurity(r)
+                      }}
+                    >
+                      {REINSURER_MCRL.securityReinsurer}
+                    </button>{' '}
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => {
+                        setPesan(null)
+                        hapusan.minta(r.id, r.reinsurerName || r.id)
+                      }}
+                    >
+                      {REINSURER_MCRL.delete}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
       {jawab !== null && (
         <p className={kelasTotal(jawab.totalBukan100)} role={jawab.totalBukan100 ? 'alert' : undefined}>
@@ -276,6 +267,20 @@ export default function PanelReinsurer({ kontrak, onTutup }: { kontrak: Kontrak;
           sibuk={hapusan.sibuk}
           onYa={() => void hapusan.ya()}
           onBatal={hapusan.batal}
+        />
+      )}
+
+      {/* Keputusan work owner 02-10-2026: akses Security Reinsurer SAMA dengan Treaty Contract Out
+          (`PanelReinsurerKombinasi`) - panel Security tampil DI BAWAH daftar reinsurer, di dalam panel ini;
+          daftar reinsurer dan Total Share tetap terlihat; tombol di baris lain mengganti isinya (key).
+          Dulu: panel ini diganti seluruhnya selama Security terbuka (`showHarness` popup Pega). */}
+      {security !== null && (
+        <PanelSecurity
+          key={security.id}
+          reinsurer={security}
+          onTutup={() => {
+            setSecurity(null)
+          }}
         />
       )}
     </section>

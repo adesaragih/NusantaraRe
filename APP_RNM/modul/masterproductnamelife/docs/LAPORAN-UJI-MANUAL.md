@@ -22,7 +22,7 @@
 | (grid bersarang) | — | `PLAN LIST` 4 baris = `JSONDATA` 4; komentar 7 baris = 7; `LIEN CLAUSE`, `DOCUMENT CLAIM`, `FINANCIAL UNDERWRITING`, `UNDERWRITING LIMIT` kosong = `JSONDATA` kosong |
 | panel lampiran (wadah b64133) | daftar `GetAttachmentProdName_Sql` | 2 baris, status **Uploaded** keduanya (objek `T_STORAGE_IMAGE` ada); tautan nama berkas, `Delete` per baris, `Add attachment`, `Refresh`, `Download All`. **`View Office Online`** b69291 tampil untuk berkas `.pptx` dan **tidak** untuk `.jpg` — sesuai syarat `.pyFileMimeType` |
 | **`Refresh`** b65270 | — | daftar dibaca ulang (`GET …/lampiran`) |
-| **`View Rate`** b34113 | dialog `ViewRate` (`Outward List`, `Cancel`/`Submit`) | jawaban 503 berkalimat yang menyebut OQ-MPNL-03 tampil — L8 tidak diizinkan (register OQ tanpa izin bertanggal), tetap 503 |
+| **`View Rate`** b34113 | dialog `ViewRate` (`Outward List`, `Cancel`/`Submit`) | jawaban 503 berkalimat yang menyebut OQ-MPNL-03 tampil — L8 tidak diizinkan (register OQ tanpa izin bertanggal), tetap 503 *(ralat 01-10-2026, K1 keputusan work owner 01-10-2026: kini 200 — lihat bab ulang 01-10-2026 di bawah)* |
 | **`Edit`** b59489 | dialog `EditProductName_Confirm` | pertanyaan `Do you want to Edit the data?` + `Cancel` / `Edit`; sesudah `Edit`: `Save` tampil (tidak ditekan), keenam `Choose*`, `Choose R/I Rate`, ikon grid; medan baca-saja tinggal 1 (`Product Code`, R14) |
 
 ## Jaringan
@@ -35,3 +35,16 @@
 - DEV memuat `PAYMENT = 5` (contoh produk `100023`) — kode di luar 1–4 `GenerateUpload_Act` b1141; dropdown menampilkannya sebagai nilai
   di luar daftar (tidak dibuang). Bukti tambahan untuk OQ-MPNL-05 (kode `Single`).
 - Tidak teramati di DEV: unduh berkas lampiran lama — berkas Pega tinggal di penyimpanan asal, bukan di folder stub (OQ-MPNL-10); tidak diklik.
+
+## Ulang baca-saja 01-10-2026 — K1 keputusan work owner 01-10-2026 (OQ-MPNL-03)
+
+Backend modul ini saja (`MODUL_AKTIF=masterproductnamelife`, port sendiri 18083, `.env` hanya di proses itu) terhadap DEV;
+hanya `GET`; log server 2 baris, nol `INSERT`/`UPDATE`/`DELETE`/`MERGE`. Nama tabel rate tidak disalin.
+
+| Aksi | Rute | Hasil |
+| --- | --- | --- |
+| `Choose R/I Rate` b34589 (grid `RIRate_Section`) | `GET /master/ri-rate?cari=` | **200** — 346 baris, urut `ID ASC` (`1000004`, `1000005`, `1000006`, …), 0,07 detik |
+| `View Rate` b34113 | `GET /rate?riRateId=1000005` | **200** — 59 baris, kunci `id, usedBy, gender, contract, age, rate`, urut `ID DESC` (`1000102`, `1000101`, `1000100`), `terpotong` false, 0,35 detik |
+
+Simpan baris `PLAN LIST` ber-R/I Rate baru **tidak** dicoba di DEV (nol tulisan, `Save` tidak ditekan); jalurnya diuji tiruan
+(`TestPlanRIRateBaruDariViewRingkasan`) dan uji `db` (`TestDBRIRateDanViewRateDibacaSaja` — SKIP tanpa `ORACLE_DSN`).

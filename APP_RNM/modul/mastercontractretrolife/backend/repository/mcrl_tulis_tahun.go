@@ -42,10 +42,17 @@ func sqlPerbaruiTahun(t string) string {
 
 // sqlSalinTahunKeBusiness - K4: salinan `TREATYYEAR` business; hanya baris yang
 // BERBEDA (`DECODE` menganggap NULL = NULL) yang disentuh.
-func sqlSalinTahunKeBusiness(t string) string {
+//
+// ⛔ Perbaikan 01-10-2026: hanya business yang kontrak induknya ADA di tahun
+// itu. Penghapus kontrak Pega (`DeleteTreatyLimit_SQL`) datar, jadi DEV
+// menyimpan business yatim (TREATYCONTRACTID menunjuk kontrak yang sudah
+// tidak ada). Baris itu tidak tampil di layar mana pun, dan salinan tahun
+// dulu menimpa TREATYYEAR, USERID, dan TGLUPDATE-nya.
+func sqlSalinTahunKeBusiness(t, kontrak string) string {
 	return fmt.Sprintf(`UPDATE %s
 	   SET TREATYYEAR = :1, USERID = :2, TGLUPDATE = SYSDATE
-	 WHERE TREATYYEARID = :3 AND DECODE(TREATYYEAR, :4, 0, 1) = 1`, t)
+	 WHERE TREATYYEARID = :3 AND DECODE(TREATYYEAR, :4, 0, 1) = 1
+	   AND TREATYCONTRACTID IN (SELECT ID FROM %s WHERE IDTREATYYEAR = :5)`, t, kontrak)
 }
 
 // sqlSalinTahunKeKontrak - R5: tanggal kontrak = salinan tanggal tahun.
@@ -91,11 +98,15 @@ func (g *Gudang) PerbaruiTahun(ctx context.Context, tx *db.Tx, t models.TahunTre
 
 // SalinTahunKeAnak - lihat services.Gudang.
 func (g *Gudang) SalinTahunKeAnak(ctx context.Context, tx *db.Tx, t models.TahunTreaty) (int64, error) {
-	qb, err := g.siapkan(TabelBusiness, sqlSalinTahunKeBusiness)
+	kontrak, err := g.db.Qualify(TabelKontrak)
 	if err != nil {
 		return 0, err
 	}
-	hb, err := tx.ExecContext(ctx, qb, t.TreatyYear, t.UserID, t.ID, t.TreatyYear)
+	qb, err := g.siapkan(TabelBusiness, func(t string) string { return sqlSalinTahunKeBusiness(t, kontrak) })
+	if err != nil {
+		return 0, err
+	}
+	hb, err := tx.ExecContext(ctx, qb, t.TreatyYear, t.UserID, t.ID, t.TreatyYear, t.ID)
 	if err != nil {
 		return 0, fmt.Errorf("repository: copying treaty year to business rows: %w", err)
 	}

@@ -304,9 +304,22 @@ export async function cariPlan(cari: string): Promise<Daftar<JenisPlan>> {
   return minta<Daftar<JenisPlan>>(`${PREFIX_MPNL}/master-plan`, { kueri: { cari } })
 }
 
-/** `View Rate` b34113 - menunggu OQ-MPNL-03 (server menjawab 503 berkalimat). */
-export async function ambilRate(riRateId: string): Promise<Daftar<Record<string, string>>> {
-  return minta<Daftar<Record<string, string>>>(`${PREFIX_MPNL}/rate`, { kueri: { riRateId } })
+/** Satu baris dialog `View Rate` - kolom ID, USEDBY, GENDER, CONTRACT, AGE, RATE (teks apa adanya). */
+export interface BarisRate {
+  id: string
+  usedBy: string
+  gender: string
+  contract: string
+  age: string
+  rate: string
+}
+
+/**
+ * `View Rate` b34113 - view `RATE_LIFE` baca saja (K1 keputusan work owner 01-10-2026, OQ-MPNL-03), disaring
+ * `RIRATEID` baris plan. `terpotong` = view memuat lebih dari 500 baris (`pyMaxRecords` 500, seperti Pega).
+ */
+export async function ambilRate(riRateId: string): Promise<Daftar<BarisRate> & { terpotong: boolean }> {
+  return minta<Daftar<BarisRate> & { terpotong: boolean }>(`${PREFIX_MPNL}/rate`, { kueri: { riRateId } })
 }
 
 // ---------------------------------------------------------------------------

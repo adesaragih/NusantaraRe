@@ -15,8 +15,14 @@ func TestHTTPMasterPlanDanViewRate(t *testing.T) {
 	if kode != http.StatusOK || !strings.Contains(badan, `"coverName":"UJI COVER"`) {
 		t.Errorf("master plan: %d %s", kode, badan)
 	}
+	// K1 01-10-2026 (OQ-MPNL-03): `View Rate` yang dulu 503 kini 200 berisi view `RATE_LIFE`.
+	u.g.Rate["R1"] = []models.BarisRate{{ID: "UJI-1", UsedBy: "UJI RATE", Gender: "U", Contract: "10", Age: "30", Rate: "0,5"}}
 	kode, badan = u.minta(t, "GET", pre+"/rate?riRateId=R1", "", true)
-	if kode != http.StatusServiceUnavailable || !strings.Contains(badan, "OQ-MPNL-03") {
-		t.Errorf("View Rate menunggu OQ-MPNL-03: %d %s", kode, badan)
+	if kode != http.StatusOK || !strings.Contains(badan, `"rate":"0,5"`) || !strings.Contains(badan, `"terpotong":false`) ||
+		!strings.Contains(badan, `"total":1`) {
+		t.Errorf("View Rate: %d %s", kode, badan)
+	}
+	if kode, badan := u.minta(t, "GET", pre+"/rate?riRateId=", "", true); kode != http.StatusUnprocessableEntity {
+		t.Errorf("View Rate tanpa RIRATEID: %d %s", kode, badan)
 	}
 }

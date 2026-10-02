@@ -31,6 +31,8 @@ type Gudang struct {
 	Master map[models.JenisMaster][]models.NilaiMaster
 	// Plan - isi `PRODUCT_TYPE_LIFE`.
 	Plan []models.JenisPlan
+	// Rate - view `RATE_LIFE` per IDUSEDBY (dialog `View Rate`, K1 01-10-2026).
+	Rate map[string][]models.BarisRate
 	// CariTerakhir - kata cari terakhir yang diterima CariMaster.
 	CariTerakhir string
 	// GagalMaster - bila terisi, pembacaan master gagal dengan galat ini.
@@ -67,7 +69,8 @@ type Gudang struct {
 // Baru menyusun gudang kosong.
 func Baru() *Gudang {
 	return &Gudang{Umum: map[string]string{}, Inward: map[string]string{},
-		Master: map[models.JenisMaster][]models.NilaiMaster{}, Seq: 44, Datar: map[string][2]string{}}
+		Master: map[models.JenisMaster][]models.NilaiMaster{}, Seq: 44, Datar: map[string][2]string{},
+		Rate: map[string][]models.BarisRate{}}
 }
 
 // Transaksi - tiruan `DalamTransaksi`: fn(nil); sukses = Komit++, gagal =
@@ -257,7 +260,7 @@ func (g *Gudang) CariMaster(_ context.Context, jenis models.JenisMaster, kata st
 	}
 	if _, dikenal := map[models.JenisMaster]bool{models.MasterCeding: true, models.MasterSOB: true,
 		models.MasterPemegangPolis: true, models.MasterMataUang: true, models.MasterRIRisk: true,
-		models.MasterPenyebab: true}[jenis]; !dikenal {
+		models.MasterPenyebab: true, models.MasterRIRate: true}[jenis]; !dikenal {
 		return nil, fmt.Errorf("%w: %q", repository.ErrJenisMasterTidakDikenal, jenis)
 	}
 	hasil := []models.NilaiMaster{}
@@ -307,6 +310,26 @@ func (g *Gudang) AmbilPlan(_ context.Context, id string) (models.JenisPlan, bool
 		}
 	}
 	return models.JenisPlan{}, false, nil
+}
+
+// DaftarRate - satu IDUSEDBY, urut `ID DESC, RATE ASC` (`BrowseRateLife_RD` b748, b786), dipotong
+// `repository.BatasRate`.
+func (g *Gudang) DaftarRate(_ context.Context, idUsedBy string) ([]models.BarisRate, bool, error) {
+	if g.GagalMaster != nil {
+		return nil, false, g.GagalMaster
+	}
+	d := append([]models.BarisRate{}, g.Rate[idUsedBy]...)
+	sort.SliceStable(d, func(i, j int) bool {
+		if d[i].ID != d[j].ID {
+			return d[i].ID > d[j].ID
+		}
+		return d[i].Rate < d[j].Rate
+	})
+	terpotong := len(d) > repository.BatasRate
+	if terpotong {
+		d = d[:repository.BatasRate]
+	}
+	return d, terpotong, nil
 }
 
 // GalatMasterUji - galat master tak terbaca berbentuk repository (sebab "ORA-" hanya di log).

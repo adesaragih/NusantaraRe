@@ -8,7 +8,7 @@ import { menuTabelDariMigrasi } from '../inti/frontend/uji/menuBersih'
 import { FOLDER_KORPUS } from './katalogKorpus'
 import { kartuModul } from './Beranda'
 import { ambilModulAktif } from '../inti/frontend/klien'
-import { daftarPalet, susunMenu } from '../inti/frontend/lib/daftarMenu'
+import { daftarPalet, KODE_MENU_KELOLA_USER, susunMenu } from '../inti/frontend/lib/daftarMenu'
 import { ENTRI_MENU, halamanAktif, MODUL_BACKEND, MODUL_FRONTEND } from './daftar'
 
 // MODUL_AKTIF di frontend - refactor bentuk B paket 6.
@@ -59,7 +59,9 @@ describe('menu modul nonaktif hilang', () => {
     const beranda = readFileSync(join(SRC, 'Beranda.tsx'), 'utf8')
     expect(beranda).toContain('const claimLifeAktif = modulDipasang(NAMA_CLAIMLIFE, modulAktif)')
     expect(beranda).toContain('if (!claimLifeAktif) {')
-    expect(readFileSync(join(SRC, 'App.tsx'), 'utf8')).toContain('<Beranda masuk={masuk} onBuka={setHalaman} modulAktif={modulAktif} />')
+    // Sejak Kelola User (01-10-2026) Beranda menerima modul aktif yang menunya
+    // DIPEGANG akun (`modulBoleh` = `modulUntukAkun(modulAktif, ...)`).
+    expect(readFileSync(join(SRC, 'App.tsx'), 'utf8')).toContain('<Beranda masuk={masuk} onBuka={setHalaman} modulAktif={modulBoleh} />')
   })
 
   it('null = semua rute terpasang, persis seperti sebelum MODUL_AKTIF', () => {
@@ -106,7 +108,9 @@ describe('nama modul sama dengan backend', () => {
   it('setiap entri menu punya pemilik yang terdaftar', () => {
     for (const e of ENTRI_MENU) {
       expect(Object.keys(MODUL_BACKEND)).toContain(e.modul)
-      expect(e.pemilik).toBe(MODUL_BACKEND[e.modul])
+      // Menu aplikasi Kelola User: `pemilik` adalah KODE menunya, bukan modul
+      // backend - ia tidak tunduk pada MODUL_AKTIF (`daftar.kelolauser.test.ts`).
+      expect(e.pemilik === KODE_MENU_KELOLA_USER ? null : e.pemilik).toBe(MODUL_BACKEND[e.modul])
     }
   })
 })
@@ -142,7 +146,9 @@ describe('GET /api/modul-aktif', () => {
   it('App membacanya untuk rute dan Beranda; menunya disaring backend', () => {
     const app = readFileSync(join(SRC, 'App.tsx'), 'utf8')
     expect(app).toContain('ambilModulAktif()')
-    expect(app).toContain('modulAktif={modulAktif}')
+    // Modul aktif DISARING menu akun sebelum dipakai (Kelola User 01-10-2026).
+    expect(app).toContain('modulUntukAkun(modulAktif, menuAkun, MODUL_FRONTEND.map((m) => m.nama))')
+    expect(app).toContain('modulAktif={modulBoleh}')
     // Sejak menu dari tabel (30-09-2026) Shell tidak lagi menyaring modul
     // aktif: GET /api/menu tidak mengirim modul dimigrasi yang nonaktif
     // (cmd/api meneruskan daftar modul aktif ke rute menu).
@@ -152,7 +158,7 @@ describe('GET /api/modul-aktif', () => {
     expect(rakit).toContain('mux.HandleFunc("GET /api/menu", ruteMenu(dasar, aktif, stubPelaku))')
     // Dan rute modul nonaktif tidak dipasang (paket 7: App merakit dari modul),
     // dan halaman modul yang ternyata nonaktif kembali ke Beranda.
-    expect(app).toContain('MODUL_FRONTEND.filter((m) => modulDipasang(m.nama, modulAktif))')
-    expect(app).toContain("if (!halamanAktif(halaman, modulAktif)) setHalaman('beranda')")
+    expect(app).toContain('MODUL_FRONTEND.filter((m) => modulDipasang(m.nama, modulBoleh))')
+    expect(app).toContain('if (!halamanAktif(halaman, modulBoleh) || (halaman === HALAMAN_KELOLA_USER && !bolehKelola)) {')
   })
 })

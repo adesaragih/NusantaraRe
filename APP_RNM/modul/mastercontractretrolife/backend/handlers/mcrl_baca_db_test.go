@@ -68,6 +68,38 @@ func TestDBGridDibacaDenganSaringanDanUrutRD(t *testing.T) {
 	}
 }
 
+// K1 (01-10-2026, OQ-MCRL-13): kedua view rate dibaca dari Oracle - autocomplete `Contains` USEDBY urut
+// `ID ASC`; Rate List satu IDUSEDBY urut `ID DESC, RATE ASC`, RATE teks apa adanya; nol tulisan.
+func TestDBRateDibacaSaja(t *testing.T) {
+	u := pasangDB(t)
+	s := u.skema
+	for _, r := range [][2]string{{"UJI-2", "UJI RATE DUA"}, {"UJI-1", "uji rate satu"}, {"UJI-3", "LAIN"}} {
+		u.exec(t, `INSERT INTO `+s+`.RATE_LIFE_SUMMARY (ID, USEDBY) VALUES (:1, :2)`, r[0], r[1])
+	}
+	for _, r := range [][3]string{{"UJI-A", "UJI-1", "0,5"}, {"UJI-B", "UJI-1", "1.25"}, {"UJI-C", "UJI-2", "9"}} {
+		u.exec(t, `INSERT INTO `+s+`.RATE_LIFE (ID, IDUSEDBY, USEDBY, GENDER, CONTRACT, AGE, RATE)
+			VALUES (:1, :2, 'UJI', 'U', '10', '30', :3)`, r[0], r[1], r[2])
+	}
+	// Sidik isi kedua view sebelum dan sesudah (code review #10: cacah saja tidak melihat UPDATE).
+	sidik := func() string {
+		return u.teks(t, `SELECT (SELECT COUNT(*) || '/' || SUM(LENGTH(ID || IDUSEDBY || USEDBY || GENDER || CONTRACT || AGE || RATE))
+		    FROM {s}.RATE_LIFE) || '|' || (SELECT COUNT(*) || '/' || SUM(LENGTH(ID || USEDBY)) FROM {s}.RATE_LIFE_SUMMARY) FROM DUAL`)
+	}
+	awal := sidik()
+	kode, badan := u.get(t, "/api/master-contract-retro-life/ringkasan-rate?cari=RATE")
+	if kode != http.StatusOK || !strings.Contains(badan, `"total":2`) || strings.Index(badan, "UJI-1") > strings.Index(badan, "UJI-2") {
+		t.Errorf("ringkasan rate: %d %s", kode, badan)
+	}
+	kode, badan = u.get(t, "/api/master-contract-retro-life/rate?idusedby=UJI-1")
+	if kode != http.StatusOK || !strings.Contains(badan, `"rate":"0,5"`) || strings.Contains(badan, "UJI-C") ||
+		strings.Index(badan, "UJI-B") > strings.Index(badan, "UJI-A") || !strings.Contains(badan, `"terpotong":false`) {
+		t.Errorf("rate list: %d %s", kode, badan)
+	}
+	if n := u.cacah(t, "RATE_LIFE", ""); n != 3 || sidik() != awal {
+		t.Errorf("view rate tersentuh: %d baris, sidik %s → %s", n, awal, sidik())
+	}
+}
+
 func TestDBMasterJenisHanyaLife(t *testing.T) {
 	u := pasangDB(t)
 	s := u.skema

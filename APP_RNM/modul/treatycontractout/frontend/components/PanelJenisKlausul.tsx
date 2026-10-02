@@ -350,43 +350,45 @@ function GridAturan({
       {daftar === null && galat === null && <Memuat />}
       {daftar !== null && baris.length === 0 && <Kosong pesan={KLAUSUL_TCO.kosong} />}
       {baris.length > 0 && (
-        <table className="inbox__tabel">
-          <thead>
-            <tr>
-              {aturan.medan.map((m) => (
-                <th key={m}>{labelMedan(aturan, m)}</th>
-              ))}
-              <th>{KLAUSUL_TCO.formModifiedDate}</th>
-              <th className="table__actions" />
-            </tr>
-          </thead>
-          <tbody>
-            {baris.map((k) => (
-              <tr key={k.id} className="inbox__baris">
+        <div className="tco-tabel">
+          <table className="inbox__tabel">
+            <thead>
+              <tr>
                 {aturan.medan.map((m) => (
-                  <td key={m}>{m === 'ReinsTypeID' ? k.reinsTypeName || k.reinsTypeId : tampilMedanKlausul(m, k.medan[m] ?? '')}</td>
+                  <th key={m}>{labelMedan(aturan, m)}</th>
                 ))}
-                <td>{k.tglUpdate}</td>
-                <td className="table__actions">
-                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => {
-                      setInfo(null)
-                      setForm(formKlausulDari(aturan, k))
-                    }}>
-                    {KLAUSUL_TCO.edit}
-                  </button>
-                  {onShowChild !== undefined && (
-                    <>
-                      {' '}
-                      <button type="button" className="btn btn--ghost btn--sm" onClick={() => onShowChild(k)}>
-                        {KLAUSUL_TCO.showChild}
-                      </button>
-                    </>
-                  )}
-                </td>
+                <th>{KLAUSUL_TCO.formModifiedDate}</th>
+                <th className="table__actions" />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {baris.map((k) => (
+                <tr key={k.id} className="inbox__baris">
+                  {aturan.medan.map((m) => (
+                    <td key={m}>{m === 'ReinsTypeID' ? k.reinsTypeName || k.reinsTypeId : tampilMedanKlausul(m, k.medan[m] ?? '')}</td>
+                  ))}
+                  <td>{k.tglUpdate}</td>
+                  <td className="table__actions">
+                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => {
+                        setInfo(null)
+                        setForm(formKlausulDari(aturan, k))
+                      }}>
+                      {KLAUSUL_TCO.edit}
+                    </button>
+                    {onShowChild !== undefined && (
+                      <>
+                        {' '}
+                        <button type="button" className="btn btn--ghost btn--sm" onClick={() => onShowChild(k)}>
+                          {KLAUSUL_TCO.showChild}
+                        </button>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   )

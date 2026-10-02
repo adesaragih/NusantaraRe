@@ -143,9 +143,16 @@ func periksaUWLimit(pk *periksa, daftar []models.BarisUWLimit) {
 
 // periksaPilihanPlan - tiket 06: R/I Rate baris plan dari master R/I Rate (bukan
 // R/I Risk); plan dari master `PRODUCT_TYPE_LIFE`. Pasangan yang sudah tersimpan
-// diterima apa adanya; R/I Rate BARU tidak dapat diverifikasi sampai OQ-MPNL-03.
+// diterima apa adanya. R/I Rate BARU (K1 keputusan work owner 01-10-2026, OQ-MPNL-03) wajib ada di view
+// `RATE_LIFE_SUMMARY`; namanya = `.USEDBY` master, seperti `SetRIRate` b249 (`.RIRATE ← usedby`).
 func (l *Layanan) periksaPilihanPlan(ctx context.Context, pk *periksa, daftar []models.BarisPlan, lama []models.BarisPlan) error {
 	rateLama, planLama := map[[2]string]bool{}, map[[2]string]bool{}
+	// Satu pembacaan view per RIRATEID per simpan (code review #15) - baris plan sering ber-R/I Rate sama.
+	type hasilRate struct {
+		v   models.NilaiMaster
+		ada bool
+	}
+	rateDibaca := map[string]hasilRate{}
 	for _, b := range lama {
 		rateLama[[2]string{b.RIRateID, b.RIRate}] = true
 		planLama[[2]string{b.PlanID, b.Plan}] = true
@@ -166,9 +173,28 @@ func (l *Layanan) periksaPilihanPlan(ctx context.Context, pk *periksa, daftar []
 		} else if b.PlanID == "" && strings.TrimSpace(b.Plan) != "" && !planLama[[2]string{b.PlanID, b.Plan}] {
 			pk.baris(judulPlan, i, "Plan Name %q must be chosen from the master list", b.Plan)
 		}
-		if strings.TrimSpace(b.RIRate) != "" && !rateLama[[2]string{b.RIRateID, b.RIRate}] {
-			pk.baris(judulPlan, i, "R/I Rate %q cannot be chosen until reading the R/I Rate master is approved (OQ-MPNL-03)",
-				b.RIRate)
+		b.RIRateID = strings.TrimSpace(b.RIRateID)
+		if rateLama[[2]string{b.RIRateID, b.RIRate}] {
+			continue
+		}
+		if b.RIRateID != "" {
+			r, sudah := rateDibaca[b.RIRateID]
+			if !sudah {
+				v, ada, err := l.gudang.AmbilMaster(ctx, models.MasterRIRate, b.RIRateID)
+				if err != nil {
+					return err
+				}
+				r = hasilRate{v, ada}
+				rateDibaca[b.RIRateID] = r
+			}
+			v, ada := r.v, r.ada
+			if !ada {
+				pk.baris(judulPlan, i, "R/I Rate %q is not in the master list", b.RIRateID)
+			} else {
+				b.RIRate = v.Nama
+			}
+		} else if strings.TrimSpace(b.RIRate) != "" {
+			pk.baris(judulPlan, i, "R/I Rate %q must be chosen from the master list", b.RIRate)
 		}
 	}
 	return nil

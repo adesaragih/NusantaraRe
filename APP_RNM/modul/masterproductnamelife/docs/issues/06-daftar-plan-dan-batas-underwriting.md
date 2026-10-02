@@ -122,3 +122,11 @@ make check
 | Kalimat lama | Ralat |
 | --- | --- |
 | *"Status medis hanya menerima **`FCL`**, **`NM`**, atau **`MEDIS`**; nilai lain **ditolak**"* | **keliru** — DEV memuat lebih dari 60 nilai berbeda di `UnderwritingLimitList[*].Medical` (NM, FCL, A–H, kombinasi ME/MU/ECG, …); `.Medical` b44814 di XML teks bebas. **Teks bebas** (R16) — OQ-MPNL-12 ditutup |
+
+## Status 01-10-2026 — K1 keputusan work owner 01-10-2026 (OQ-MPNL-03)
+
+Kalimat lama *"`View Rate` / `Choose R/I Rate` ⏸️ OQ-MPNL-03"* tidak berlaku lagi: `Choose R/I Rate` membaca view `RATE_LIFE_SUMMARY` dan `View Rate`
+membaca view `RATE_LIFE`, baca saja, kolom RD saja (`GET /master/ri-rate`, `GET /rate` = 200). Baris `PLAN LIST` baru dapat
+diberi R/I Rate; pilihan baru wajib ada di view dan namanya diambil dari master (`SetRIRate` b2448). `View Rate` disaring
+`RIRATEID` baris plan — penyimpangan sadar dari `ViewRate.xml` b1024 (`ParamID.OUTWARDRATEID` tidak pernah diisi; PARITAS bab
+keputusan OQ 01-10-2026).

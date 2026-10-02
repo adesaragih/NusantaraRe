@@ -36,11 +36,6 @@ func (g GalatKelayakan) PesanLayar() string { return strings.Join(g.Pesan, "\n")
 // ditolak index unik (migrasi 482). Pesannya pesan gerbang 3.
 var ErrKasusTerbukaGanda = errors.New(models.PesanEDMBelumSelesai)
 
-// ErrSumberWarisanEDM - versi berjalan polis adalah endorsement sistem lama
-// (RALAT R29, OQ-EDM-016).
-var ErrSumberWarisanEDM = errors.New("services: the policy's current version is an endorsement from the old system; " +
-	"copying its participants waits for OQ-EDM-016")
-
 // ErrArasapas - gerbang 5 tidak dapat membaca pembayaran (OQ-EDM-012).
 var ErrArasapas = errors.New("services: payment status in Arasapas cannot be read; a Batal endorsement cannot be checked")
 
@@ -164,9 +159,6 @@ func (l *Layanan) BuatKasus(ctx context.Context, p inti.Pelaku, m MasukanKasus) 
 			return err
 		}
 		s, err := l.gudang.SalinVersi(ctx, tx, id, v, np)
-		if errors.Is(err, repository.ErrSumberWarisanEDM) {
-			return ErrSumberWarisanEDM
-		}
 		if err != nil {
 			return err
 		}

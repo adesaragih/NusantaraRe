@@ -38,7 +38,6 @@ import {
   KERANGKA,
   KETERANGAN_BELUM_DIMIGRASI,
   MENU,
-  PERAN_ID,
   PRODUK,
 } from '../labels'
 import {
@@ -118,6 +117,13 @@ export interface ShellProps<H extends string> {
   menu: readonly EntriMenu<H>[]
   /** Pembacaan `GET /api/menu` (M_NAV_MENU): `null` = memuat. */
   menuTabel: KeadaanMenuTabel
+  /**
+   * Login sungguhan (M_LOGIN_GO, 01-10-2026): tombol Keluar dan Ganti sandi
+   * di menu profil. Tidak diberikan = mode stub - identitas dari env, tidak
+   * ada yang dapat dikeluari.
+   */
+  onKeluar?: () => void
+  onGantiSandi?: () => void
 }
 
 export function Shell<H extends string>({
@@ -127,6 +133,8 @@ export function Shell<H extends string>({
   children,
   menu,
   menuTabel,
+  onKeluar,
+  onGantiSandi,
 }: ShellProps<H>) {
   // Menu tabel dipotong modul frontend - SATU hasil untuk sidebar dan palet.
   const tersusun = useMemo(
@@ -266,12 +274,6 @@ export function Shell<H extends string>({
       : KERANGKA.ciutkanMenu
     : KERANGKA.bukaMenu
 
-  const peranUtama = masuk.peran[0]
-  const sebutanPeran =
-    peranUtama === undefined
-      ? ''
-      : PERAN_ID[peranUtama] + (masuk.peran.length > 1 ? ` +${masuk.peran.length - 1}` : '')
-
   // Logo resmi perusahaan (diserahkan work owner 30-09-2026) menggantikan
   // kotak berinisial; gambarnya dipasang di CSS (`.shell__merek-tanda`),
   // bukan `src={...}`, supaya penjaga "nol src dinamis" tetap utuh.
@@ -330,7 +332,8 @@ export function Shell<H extends string>({
             </li>
 
             {menuTabel === null && (
-              <li className="shell__menu-keadaan">
+              /* Tertunda 600 ms (CSS): pembacaan yang cepat tidak berkedip. */
+              <li className="shell__menu-keadaan shell__menu-keadaan--tunda">
                 <Memuat pesan={KERANGKA.memuatMenu} />
               </li>
             )}
@@ -496,9 +499,10 @@ export function Shell<H extends string>({
                 <span className="shell__avatar" aria-hidden="true">
                   {inisial(masuk.akunID)}
                 </span>
+                {/* Nama saja - keterangan peran di bawahnya DIBUANG, permintaan
+                    work owner 01-10-2026 ("tulisan dibawah namanya dihapus"). */}
                 <span className="shell__profil-teks" aria-hidden="true">
-                  <strong>{masuk.akunID}</strong>
-                  <span>{sebutanPeran}</span>
+                  <strong>{masuk.nama ?? masuk.akunID}</strong>
                 </span>
                 <span className="shell__profil-panah" aria-hidden="true">
                   <IkonChevron />
@@ -506,18 +510,25 @@ export function Shell<H extends string>({
               </button>
               {profilBuka && (
                 <div className="shell__profil-menu" id="shell-profil">
+                  {/* Daftar peran di menu ini DIBUANG - permintaan work owner
+                      01-10-2026 ("buang aja, ga perlu"). */}
                   <p className="shell__profil-akun">{masuk.akunID}</p>
-                  <ul className="shell__profil-peran">
-                    {masuk.peran.map((p) => (
-                      <li key={p}>
-                        {PERAN_ID[p]}
-                        <span>{p}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  {/* ⛔ Tombol Keluar DIBUANG: tanpa masuk tidak ada keluar.
-                      Identitas datang dari env saat aplikasi menyala. */}
-                  <p className="shell__profil-stub">{KERANGKA.modeStub}</p>
+                  {/* Login sungguhan: Keluar dan Ganti sandi. Mode stub: identitas
+                      dari env saat aplikasi menyala - tidak ada yang dikeluari. */}
+                  {onKeluar ? (
+                    <div className="shell__profil-aksi">
+                      {onGantiSandi && (
+                        <button type="button" className="btn" onClick={onGantiSandi}>
+                          {KERANGKA.gantiSandi}
+                        </button>
+                      )}
+                      <button type="button" className="btn" onClick={onKeluar}>
+                        {KERANGKA.keluar}
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="shell__profil-stub">{KERANGKA.modeStub}</p>
+                  )}
                 </div>
               )}
             </div>

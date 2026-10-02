@@ -22,6 +22,8 @@ func layananPlan() (*services.Layanan, func(models.Produk) error) {
 	g.Umum["100007"] = produkBerplan
 	g.Plan = []models.JenisPlan{{ID: "P1", CoverName: "UJI COVER", Business: "UJI BIZ", Benefit: "UJI MANFAAT"},
 		{ID: "P2", CoverName: "UJI COVER DUA", Business: "UJI BIZ 2", Benefit: "UJI MANFAAT 2"}}
+	// View `RATE_LIFE_SUMMARY` tiruan (K1 01-10-2026): R1 sengaja TIDAK ada - pasangan tersimpan tidak diperiksa ulang.
+	g.Master[models.MasterRIRate] = []models.NilaiMaster{{ID: "R2", Nama: "UJI RATE DUA"}}
 	return l, func(m models.Produk) error {
 		m.ID = "100007"
 		_, err := l.SimpanProduk(context.Background(), pelakuUji, m, false)
@@ -57,15 +59,33 @@ func TestPlanPesanVerbatimProteksiPlanListLife(t *testing.T) {
 	}
 }
 
-func TestPlanRIRateBaruMenungguOQ(t *testing.T) {
-	_, simpan := layananPlan()
+// K1 keputusan work owner 01-10-2026 (OQ-MPNL-03): baris PLAN LIST baru dapat diberi R/I Rate dari view
+// `RATE_LIFE_SUMMARY`; nama = `.USEDBY` master (`SetRIRate` b249), ID di luar view dan nama ketikan tanpa
+// pilihan ditolak.
+func TestPlanRIRateBaruDariViewRingkasan(t *testing.T) {
+	l, simpan := layananPlan()
 	m := produkMasuk()
 	baru := planTersimpan
-	baru.RIRateID, baru.RIRate = "R9", "RATE LAIN"
+	baru.RIRateID, baru.RIRate = " R2 ", "DIKETIK"
 	m.PlanList = []models.BarisPlan{baru}
-	err := simpan(m)
-	if !errors.Is(err, services.ErrMasukanTidakSah) || !strings.Contains(services.Pesan(err), "OQ-MPNL-03") {
-		t.Errorf("R/I Rate baru tidak dapat diverifikasi sampai OQ-MPNL-03: %v", err)
+	if err := simpan(m); err != nil {
+		t.Fatalf("R/I Rate baru dari view: %v", err)
+	}
+	p, _ := l.AmbilProduk(context.Background(), pelakuUji, "100007")
+	if got := p.PlanList[0]; got.RIRateID != "R2" || got.RIRate != "UJI RATE DUA" {
+		t.Errorf("SetRIRate: RIRATEID ← id, RIRATE ← usedby master: %+v", got)
+	}
+	for _, k := range []struct {
+		id, nama, pesan string
+	}{
+		{"R9", "RATE LAIN", `PLAN LIST row 1: R/I Rate "R9" is not in the master list`},
+		{"", "RATE KETIKAN", `PLAN LIST row 1: R/I Rate "RATE KETIKAN" must be chosen from the master list`},
+	} {
+		baru.RIRateID, baru.RIRate = k.id, k.nama
+		m.PlanList = []models.BarisPlan{baru}
+		if err := simpan(m); !errors.Is(err, services.ErrMasukanTidakSah) || !strings.Contains(services.Pesan(err), k.pesan) {
+			t.Errorf("%q/%q: %v", k.id, k.nama, err)
+		}
 	}
 }
 

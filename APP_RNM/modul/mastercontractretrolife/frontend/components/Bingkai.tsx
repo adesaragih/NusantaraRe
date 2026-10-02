@@ -5,6 +5,10 @@
 // `pyTarget=popup`) di atas layar pemanggilnya. Di sini: panel yang menggantikan layar pemanggil
 // selama terbuka, dan ikon tutup kerangka harness (`pxIconCancel`) mengembalikannya - keadaan layar
 // pemanggil tetap (komponennya tidak dilepas).
+//
+// ⚠️ Kecuali `InboxSecurityReinsurerLife` sejak 02-10-2026 (keputusan work owner: akses Security Reinsurer
+// SAMA dengan Treaty Contract Out): panel Security tampil di bawah daftar reinsurer, di dalam panel
+// Reinsurer, tanpa menggantikannya - lihat `PanelReinsurer.tsx`.
 
 import { Halaman, IkonTutup } from '../../../../inti/frontend/components/ui/dasar'
 import { UMUM_MCRL } from '../labels'

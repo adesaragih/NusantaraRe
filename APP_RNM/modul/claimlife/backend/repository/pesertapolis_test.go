@@ -245,40 +245,94 @@ func dibandingkan(teks, kolom string) bool {
 }
 
 // AC 29: penyaringan terjadi di SATU tempat.
+//
+// ⛔ DIPERSEMPIT 01-10-2026 - keputusan work owner K5 (`PROMPT-LANJUTAN-TIGA-MODUL-LIFE-KEPUTUSAN-OQ.md`
+// §1, OQ-EDM-016): pindaian semula seluruh `APP_RNM` lewat `berkasGoSelainTest`, sehingga Endorsement Life -
+// PENULIS baris `M_LIFE_PREMIUM_DETAIL` ber-`EDMSTATUS` (`RDBList/SaveMasterLPDet.xml`) - terhitung sebagai
+// "penyaring" kedua. Aturan ini milik Claim Life sebagai PEMBACA peserta. Yang dipersempit hanya LINGKUP
+// pindaiannya (pola `dalamLingkupMasterView`, `e13ad9e`); pola penyaring dan tempat tunggalnya tidak berubah.
 func TestPenyaringPesertaHanyaSatuTempat(t *testing.T) {
 	// ⚠️ Yang dilarang adalah MENYARING, bukan menyebut. Skema uji membuat
 	// tabel tiruan yang punya kolom EDMSTATUS dan mengisinya - itu deklarasi
 	// bentuk, bukan aturan kedua. Penjaga yang tidak membedakan keduanya akan
 	// memaksa tabel tiruan dibuat tanpa kolom itu, dan penyaringnya justru
 	// tidak pernah teruji terhadap Oracle.
-	// ⚠️ Hanya bentuk PENYARING. "EDMSTATUS)" sempat ikut dan itu keliru: ia
-	// cocok dengan daftar kolom INSERT tiruan, yang bukan aturan sama sekali.
-	penyaring := []string{"EDMSTATUS IS ", "EDMSTATUS NOT IN",
-		"EDMSTATUS IN", "EDMSTATUS ="}
 	ketemu := 0
 	for nama, isi := range berkasGoSelainTest(t) {
-		if !strings.Contains(isi, "EDMSTATUS") {
+		if !dalamLingkupPenyaringPeserta(nama) || !strings.Contains(isi, "EDMSTATUS") {
 			continue
 		}
 		ketemu++
 		if strings.HasSuffix(nama, "/pesertapolis.go") {
 			continue
 		}
-		atas := strings.ToUpper(isi)
-		for _, pola := range penyaring {
-			if strings.Contains(atas, pola) {
-				t.Errorf("%s menyaring dengan %q; penyaringnya harus satu tempat (AC 29)",
-					nama, pola)
-			}
+		for _, pola := range penyaringTersebut(isi) {
+			t.Errorf("%s menyaring dengan %q; penyaringnya harus satu tempat (AC 29)",
+				nama, pola)
 		}
 	}
-	// Tiga berkas menyebutnya: pembacanya, skema uji yang membuat tiruannya,
-	// dan - sejak tiket 05a bagian 2 (pl2) - penulis salinan warisan
-	// polis_warisan.go, yang menyebutnya di DAFTAR KOLOM `INSERT`, bukan
-	// sebagai penyaring. Pola penyaring di atas tetap berlaku bagi ketiganya.
-	const mau = 3
+	// Di dalam Claim Life hanya pembacanya yang menyebut EDMSTATUS. Skema uji
+	// (`uji/skemauji`) dan penulis salinan warisan (kini `modul/premiumlistlife`)
+	// berada di luar lingkup sejak penyempitan 01-10-2026; dulu cacahnya 3.
+	const mau = 1
 	if ketemu != mau {
-		t.Errorf("berkas yang menyebut EDMSTATUS = %d, mau %d", ketemu, mau)
+		t.Errorf("berkas Claim Life yang menyebut EDMSTATUS = %d, mau %d", ketemu, mau)
+	}
+}
+
+// dalamLingkupPenyaringPeserta - berkas yang diperiksa TestPenyaringPesertaHanyaSatuTempat: lingkup
+// Claim Life yang SAMA dengan `dalamLingkupMasterView` (`migrasibatas_test.go`) - satu aturan, satu tempat.
+func dalamLingkupPenyaringPeserta(nama string) bool { return dalamLingkupMasterView(nama) }
+
+// penyaringTersebut - bentuk PENYARING EDMSTATUS yang ada di isi.
+//
+// ⚠️ Hanya bentuk PENYARING. "EDMSTATUS)" sempat ikut dan itu keliru: ia
+// cocok dengan daftar kolom INSERT tiruan, yang bukan aturan sama sekali.
+func penyaringTersebut(isi string) []string {
+	atas := strings.ToUpper(isi)
+	var hasil []string
+	for _, pola := range []string{"EDMSTATUS IS ", "EDMSTATUS NOT IN", "EDMSTATUS IN", "EDMSTATUS ="} {
+		if strings.Contains(atas, pola) {
+			hasil = append(hasil, pola)
+		}
+	}
+	return hasil
+}
+
+// TestPenyaringPesertaLingkupClaimLifeMenggigit - uji gigit penyempitan K5 (01-10-2026):
+// lingkupnya dipersempit ke `modul/claimlife/`, aturannya tidak.
+func TestPenyaringPesertaLingkupClaimLifeMenggigit(t *testing.T) {
+	for _, nama := range []string{
+		"../../../../modul/claimlife/backend/repository/x.go",
+		"../../../../modul/claimlife/backend/services/y.go",
+	} {
+		if !dalamLingkupPenyaringPeserta(nama) {
+			t.Errorf("%s harus diperiksa", nama)
+		}
+	}
+	for _, nama := range []string{
+		"../../../../modul/endorsementlife/backend/repository/x.go",
+		"../../../../modul/premiumlistlife/backend/repository/polis_warisan.go",
+		"../../../../modul/claimlifeplus/backend/x.go",
+		"../../../../uji/skemauji/skemauji.go",
+	} {
+		if dalamLingkupPenyaringPeserta(nama) {
+			t.Errorf("%s di luar Claim Life - larangan pembaca bukan miliknya", nama)
+		}
+	}
+	// Penyaring kedua di Claim Life tetap MERAH, dalam huruf apa pun; daftar kolom INSERT tidak.
+	for _, kode := range []string{
+		"WHERE EDMSTATUS = 'Old'",
+		"where edmstatus is null",
+		"AND EDMSTATUS NOT IN ('Batal', 'Delete')",
+		"AND edmstatus in (:1)",
+	} {
+		if len(penyaringTersebut(kode)) == 0 {
+			t.Errorf("%q harus terbaca penyaring", kode)
+		}
+	}
+	if got := penyaringTersebut("INSERT INTO %s (ID, EDMSTATUS) VALUES (:1, :2)"); len(got) != 0 {
+		t.Errorf("daftar kolom INSERT bukan penyaring: %q", got)
 	}
 }
 

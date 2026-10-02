@@ -156,6 +156,7 @@ const BUKAN_KORPUS: readonly string[] = [
   'MENU_MCRL.kelompok', // nama FOLDER korpus, dibuktikan terpisah di bawah
   'UMUM_MCRL.tutup',
   'UMUM_MCRL.kosong',
+  'UMUM_MCRL.terpotong',
   'REINSURER_MCRL.totalBukan100',
   'SECURITY_MCRL.kolomEksposur',
   'HAPUS_MCRL.pertanyaan',

@@ -10,9 +10,10 @@ package repository
 // `RIRISK_LIFE_SUMMARY` (uji `TestObjekMasterAdaDiKatalogDEV`). Objek yang tidak
 // terbaca di skema yang dikonfigurasi dijawab 503 yang MENYEBUT objeknya.
 //
-// ⛔ R/I Rate (`BrowseRateLifeSummary`, kelas `RATE_LIFE_SUMMARY`) TIDAK
-// dibaca: view atas JSON rate - membacanya menunggu persetujuan work owner
-// (OQ-MPNL-03, preseden OQ-MCRL-13). Namanya sengaja tidak ada di sini.
+// ⛔ R/I Rate (`BrowseRateLifeSummary`, kelas `RATE_LIFE_SUMMARY`) dan `View Rate`
+// (`BrowseRateLife_RD`, kelas `M_RATE_LIFE` = view `RATE_LIFE`): K1 keputusan work owner 01-10-2026
+// (OQ-MPNL-03) - kedua view rate dibaca SAJA, kolom RD saja, nol `SELECT *`, nol
+// `JSONDATA`, nol tulisan (`periksaBacaSaja`).
 // ⛔ "Contains" Pega = `LIKE '%…%'`; kata cari kosong = semua baris. Batas
 // baris = `pyMaxRecords` RD.
 
@@ -34,11 +35,15 @@ const (
 	MasterRIRisk    = "RIRISK_LIFE_SUMMARY" // BrowseRIRiskSummary
 	MasterCause     = "CAUSEOFLOSS_LIFE"    // BrowseCauseofLossLife_RD
 	MasterJenisPlan = "PRODUCT_TYPE_LIFE"   // BrowseProductTypeLife_RD (paket 6)
+	MasterRIRate    = "RATE_LIFE_SUMMARY"   // BrowseRateLifeSummary b40 (pemilih `Choose R/I Rate`)
+	// MasterRate - view `RATE_LIFE` atas `M_RATE_LIFE.JSONDATA` (dialog `View Rate`, `BrowseRateLife_RD`
+	// b39); nama fisik kelasnya: `NB FacIn/RDBList/BrowseLifeRate_SQL.xml` b85 `… FROM RATE_LIFE …`.
+	MasterRate = "RATE_LIFE"
 )
 
 // DaftarMasterDibacaSaja - objek yang dibaca tetapi tidak pernah ditulis.
 var DaftarMasterDibacaSaja = []string{MasterAgent, MasterClient, MasterCurrency, MasterRIRisk, MasterCause, MasterJenisPlan,
-	MasterKontrakTreaty, MasterTahunTreaty}
+	MasterKontrakTreaty, MasterTahunTreaty, MasterRIRate, MasterRate}
 
 // Nilai saringan VERBATIM RD.
 const (
@@ -73,7 +78,7 @@ var sumberAgent = sumber{
 	kolom:    []string{"ID", "CLIENTNAME", "STATUSACTIVE"},
 }
 
-// sumberMaster - pemilih → sumbernya. R/I Rate sengaja tidak ada (OQ-MPNL-03).
+// sumberMaster - pemilih → sumbernya.
 var sumberMaster = map[models.JenisMaster]sumber{
 	models.MasterCeding: sumberAgent,
 	models.MasterSOB:    sumberAgent,
@@ -107,6 +112,21 @@ var sumberMaster = map[models.JenisMaster]sumber{
 	},
 	models.MasterRIRisk: {
 		objek: MasterRIRisk,
+		sqlCari: func(t string) string {
+			return fmt.Sprintf(`SELECT ID, USEDBY FROM %s
+				WHERE UPPER(USEDBY) LIKE :1 ESCAPE '\'
+				ORDER BY ID ASC FETCH FIRST 500 ROWS ONLY`, t)
+		},
+		argCari:  func(pola string) []any { return []any{pola} },
+		sqlAmbil: func(t string) string { return fmt.Sprintf(`SELECT ID, USEDBY FROM %s WHERE ID = :1`, t) },
+		argAmbil: func(id string) []any { return []any{id} },
+		kolom:    []string{"ID", "USEDBY"},
+	},
+	// `RIRate_Section` grid RD `BrowseRateLifeSummary` b2707: `id` kosong b1461 → saringan `.ID = param.id`
+	// gugur; `idusedby` = `SearchPolicyHolder.CARI1` b1466 → `.USEDBY Contains` b807; urut `.ID ASC` b694;
+	// `pyMaxRecords` 500 b674. `Choose` → `SetRIRate` b2448 (`.RIRATEID ← .ID`, `.RIRATE ← .USEDBY`).
+	models.MasterRIRate: {
+		objek: MasterRIRate,
 		sqlCari: func(t string) string {
 			return fmt.Sprintf(`SELECT ID, USEDBY FROM %s
 				WHERE UPPER(USEDBY) LIKE :1 ESCAPE '\'
@@ -285,4 +305,50 @@ func (g *Gudang) AmbilPlan(ctx context.Context, id string) (models.JenisPlan, bo
 		return models.JenisPlan{}, false, err
 	}
 	return d[0], true, nil
+}
+
+// BatasRate - `BrowseRateLife_RD` b730 `pyMaxRecords` 500; satu baris lebih dibaca untuk mengetahui
+// dialog terpotong (Pega memotong diam-diam).
+const BatasRate = 500
+
+// KolomRate - kolom `RATE_LIFE` yang dibaca: enam kolom grid `ViewRate` (subset kolom RD b747–b791).
+var KolomRate = []string{"ID", "USEDBY", "GENDER", "CONTRACT", "AGE", "RATE"}
+
+// sqlDaftarRate - `BrowseRateLife_RD`: `.IDUSEDBY = Param.idusedby` b859/b868, urut `.ID DESC` b748,
+// `.RATE ASC` b786. Berkunci `IDUSEDBY` (view atas CLOB tanpa index - nol pembacaan tanpa kunci).
+func sqlDaftarRate(t string) string {
+	return fmt.Sprintf(`SELECT ID, USEDBY, GENDER, CONTRACT, AGE, RATE FROM %s
+		WHERE IDUSEDBY = :1
+		ORDER BY ID DESC, RATE ASC FETCH FIRST %d ROWS ONLY`, t, BatasRate+1)
+}
+
+// DaftarRate - dialog `View Rate` satu R/I Rate (`IDUSEDBY` = `RIRATEID` baris plan), paling banyak
+// BatasRate baris; `terpotong` benar bila view memuat lebih.
+func (g *Gudang) DaftarRate(ctx context.Context, idUsedBy string) ([]models.BarisRate, bool, error) {
+	q, err := g.siapkan(MasterRate, sqlDaftarRate)
+	if err != nil {
+		return nil, false, err
+	}
+	rows, err := g.db.QueryContext(ctx, q, idUsedBy)
+	if err != nil {
+		return nil, false, galatMaster(MasterRate, err)
+	}
+	defer func() { _ = rows.Close() }()
+	hasil := []models.BarisRate{}
+	for rows.Next() {
+		var n [6]sql.NullString
+		if err := rows.Scan(&n[0], &n[1], &n[2], &n[3], &n[4], &n[5]); err != nil {
+			return nil, false, galatMaster(MasterRate, err)
+		}
+		hasil = append(hasil, models.BarisRate{ID: n[0].String, UsedBy: n[1].String, Gender: n[2].String,
+			Contract: n[3].String, Age: n[4].String, Rate: n[5].String})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, false, galatMaster(MasterRate, err)
+	}
+	terpotong := len(hasil) > BatasRate
+	if terpotong {
+		hasil = hasil[:BatasRate]
+	}
+	return hasil, terpotong, nil
 }

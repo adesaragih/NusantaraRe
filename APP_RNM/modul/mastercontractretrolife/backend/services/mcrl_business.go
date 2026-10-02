@@ -6,7 +6,8 @@ package services
 //
 //	langkah 3 b589   wajib BIZCODE, BIZNAME, RIRATEID, RIRATE -> "All value cannot be empty." (b293)
 //	BUSINESS NAME    autocomplete `BrowseBusinessLife_RD` mengisi BIZCODE; nama = master NOTE
-//	R/I RATE         `RIRATE` = nama tabel rate, TEKS apa adanya (R7); sumbernya menunggu OQ-MCRL-13
+//	R/I RATE         `RIRATE` = nama tabel rate, TEKS apa adanya (R7); autocomplete `BrowseRateLifeSummary`
+//	                 (view `RATE_LIFE_SUMMARY`, K1 01-10-2026) mengisi RIRATEID; pilihan BARU wajib ada di view itu
 //	salin-semua 1    CARI1 <- TREATYYEARID (tahun kontrak asal)
 //	salin-semua 2    `GetTreatyContract_life`: kontrak `idtreatyyear =` tahun itu
 //	salin-semua 3.1  `.REINSTYPEID == Param.REINSTYPEID` WhenTrue 3 = LEWATI -> sasaran = jenis BERBEDA (R2)
@@ -80,6 +81,27 @@ func (l *Layanan) namaBusiness(ctx context.Context, kode string, pilihanBaru boo
 	return m.Note, nil
 }
 
+// periksaRate - RIRATEID pilihan BARU (business baru, atau RIRATEID yang diganti) wajib ada di
+// `RATE_LIFE_SUMMARY`. ⚠️ Penyimpangan sadar: Pega tidak memeriksa - di layarnya satu-satunya pengisi
+// RIRATEID adalah autocomplete (`InputBusinessLifeReinsurers.xml` b4527 `pyPropertyTarget`
+// `InputBusinessLife.RIRATEID`), jadi ID di luar view hanya mungkin dari klien lain. Nilai yang sudah
+// tersimpan tidak diperiksa ulang.
+// `RIRATE` tetap teks apa adanya (R7) - tidak diganti nama view.
+func (l *Layanan) periksaRate(ctx context.Context, id string, pilihanBaru bool) error {
+	if !pilihanBaru {
+		return nil
+	}
+	_, ada, err := l.gudang.AmbilRingkasanRate(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !ada {
+		return fmt.Errorf("%w: RIRATEID %q is not in the rate summary %s", ErrMasukanTidakSah, id,
+			repository.MasterRingkasanRate)
+	}
+	return nil
+}
+
 // salinanInduk menulis salinan kontrak dan tahun ke baris business (K4).
 func salinanInduk(b *models.Business, k models.Kontrak, th models.TahunTreaty) {
 	b.TreatyYearID, b.TreatyYear, b.TreatyContractID = k.IDTreatyYear, th.TreatyYear, k.ID
@@ -98,7 +120,7 @@ func (l *Layanan) SimpanBusiness(ctx context.Context, p inti.Pelaku, kontrakID s
 	}
 	err := l.tx(ctx, func(tx *db.Tx) error {
 		ubah := m.ID != ""
-		var kodeLama string
+		var kodeLama, rateLama string
 		if ubah {
 			lama, err := l.gudang.AmbilBusiness(ctx, tx, m.ID)
 			if err != nil {
@@ -107,7 +129,7 @@ func (l *Layanan) SimpanBusiness(ctx context.Context, p inti.Pelaku, kontrakID s
 			if kontrakID != "" && lama.TreatyContractID != kontrakID {
 				return fmt.Errorf("%w: %s in treaty contract %s", ErrBusinessTidakAda, m.ID, kontrakID)
 			}
-			kontrakID, kodeLama = lama.TreatyContractID, lama.BizCode
+			kontrakID, kodeLama, rateLama = lama.TreatyContractID, lama.BizCode, lama.RIRateID
 		}
 		// ⛔ Induk dikunci lebih dulu - kaskade hapus kontrak yang bersamaan menunggu (K2 tanpa FK).
 		if err := l.kunci(ctx, tx, HapusKontrak, kontrakID); err != nil {
@@ -126,6 +148,9 @@ func (l *Layanan) SimpanBusiness(ctx context.Context, p inti.Pelaku, kontrakID s
 			return err
 		}
 		if b.BizName, err = l.namaBusiness(ctx, b.BizCode, !ubah || b.BizCode != kodeLama); err != nil {
+			return err
+		}
+		if err := l.periksaRate(ctx, b.RIRateID, !ubah || b.RIRateID != rateLama); err != nil {
 			return err
 		}
 		salinanInduk(&b, k, th)

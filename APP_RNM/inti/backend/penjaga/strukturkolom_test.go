@@ -754,6 +754,10 @@ var pasanganLebarKolom = []struct{ anakTabel, anakKolom, indukTabel, indukKolom 
 	{"T_KOMITE_KOMITELIST", "DATA_KOMITE_ID", "T_GENERAL_KOMITE", "ID"},
 	{"T_CLAIMLF_ADJUSTMENT", "KOMITE_ID", "T_WORK_CLAIM", "ID"},
 	{"T_WORK_CLAIM", "COVER_KEY", "T_WORK_CLAIM", "ID"},
+	// Menu per akun (Kelola User, 01-10-2026): akun dan KODE menu yang ditunjuknya.
+	{"M_LOGIN_GO_MENU", "LOGIN_ID", "M_LOGIN_GO", "LOGIN_ID"},
+	{"M_LOGIN_GO_MENU", "MENU_KODE", "M_NAV_MENU", "KODE"},
+	{"M_LOGIN_GO_WORKBASKET", "LOGIN_ID", "M_LOGIN_GO", "LOGIN_ID"},
 }
 
 func TestLebarKolomPenunjukSamaDenganIndukNya(t *testing.T) {

@@ -38,3 +38,14 @@ type JenisPlan struct {
 	Business  string `json:"business"`
 	Benefit   string `json:"benefit"`
 }
+
+// BarisRate - satu baris dialog `View Rate` (section `ViewRate`, RD `BrowseRateLife_RD`): enam kolom
+// grid (`ViewRate.xml` b2035–b2809). ⛔ TEKS apa adanya - `RATE` di view berdesimal koma maupun titik.
+type BarisRate struct {
+	ID       string `json:"id"`
+	UsedBy   string `json:"usedBy"`
+	Gender   string `json:"gender"`
+	Contract string `json:"contract"`
+	Age      string `json:"age"`
+	Rate     string `json:"rate"`
+}

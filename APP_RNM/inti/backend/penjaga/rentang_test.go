@@ -336,8 +336,10 @@ func TestSlotMenuBerjalanSesudah900(t *testing.T) {
 		urut = append(urut, l.Nama)
 	}
 	// 901 (menu datar, milik inti) berjalan sesudah 900 dan SEBELUM slot mana
-	// pun - slot menu karena itu melihat tabel yang sudah datar.
-	if mau := []string{"030_tiruan.sql", "900_m_nav_menu.sql", "901_m_nav_menu_datar.sql", "952_menu_tiruan.sql"}; strings.Join(urut, ",") != strings.Join(mau, ",") {
+	// pun - slot menu karena itu melihat tabel yang sudah datar. 902 (login,
+	// M_LOGIN_GO, 01-10-2026) dan 903 (menu per akun, M_LOGIN_GO_MENU) juga
+	// milik inti dan juga sebelum slot.
+	if mau := []string{"030_tiruan.sql", "900_m_nav_menu.sql", "901_m_nav_menu_datar.sql", "902_m_login_go.sql", "903_m_login_go_menu.sql", "952_menu_tiruan.sql"}; strings.Join(urut, ",") != strings.Join(mau, ",") {
 		t.Errorf("urutan pelari %v, mau %v", urut, mau)
 	}
 }

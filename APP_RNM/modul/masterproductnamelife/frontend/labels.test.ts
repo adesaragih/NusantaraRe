@@ -183,6 +183,7 @@ const BUKTI_SEBAGIAN: ReadonlyArray<readonly [kunci: string, berkas: string, bar
 const BUKAN_KORPUS: readonly string[] = [
   'MENU_MPNL.kelompok', // nama FOLDER korpus, dibuktikan terpisah di bawah
   'LAIN_MPNL.kosong',
+  'LAIN_MPNL.terpotong',
   'LAIN_MPNL.tambahBaris',
   'LAIN_MPNL.hapusBaris',
   'LAIN_MPNL.salinBaris',

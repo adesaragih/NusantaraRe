@@ -73,10 +73,10 @@ func TestSQLSalinVersiAplikasi(t *testing.T) {
 
 func TestSQLSalinVersiWarisanBerindex(t *testing.T) {
 	q := sqlSalinPesertaWarisan(uPeserta, uWarisan)
-	if n := penampungUnik(t, "sqlSalinPesertaWarisan", q); n != 6 {
+	if n := penampungUnik(t, "sqlSalinPesertaWarisan", q); n != 7 {
 		t.Fatalf("%d penampung", n)
 	}
-	for _, wajib := range []string{"m.PL_NUMBER = :5 AND m.IDPEGA = :6", ":2, NULL, :3", "m.PRORATETYPE",
+	for _, wajib := range []string{"m.PL_NUMBER = :5 AND m.IDPEGA = :6 AND NVL(TRIM(m.EDMSTATUS), '-') <> :7", ":2, NULL, :3", "m.PRORATETYPE",
 		"TO_CHAR(m.STNC, 'DD/MM/YYYY')", "TO_CHAR(m.WPC, 'DD/MM/YYYY')"} {
 		if !strings.Contains(q, wajib) {
 			t.Errorf("salin warisan tanpa %q", wajib)

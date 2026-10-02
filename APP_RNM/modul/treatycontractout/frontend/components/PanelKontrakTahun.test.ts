@@ -38,7 +38,9 @@ describe('form kontrak', () => {
 
 describe('paritas layar kontrak', () => {
   it('seluruh label dari KONTRAK_TCO, tidak diketik ulang', () => {
-    for (const k of ['judul', 'headerUnderwritingYear', 'headerReinsType', 'formStartDate', 'formEndDate', 'save',
+    // Judul panel memakai JUDUL_TAMPIL_TCO.reinsType sejak 02-10-2026 (keputusan work owner), bukan KONTRAK_TCO.judul.
+    expect(KODE).toContain('JUDUL_TAMPIL_TCO.reinsType')
+    for (const k of ['headerUnderwritingYear', 'headerReinsType', 'formStartDate', 'formEndDate', 'save',
       'formModifiedDate', 'formUsername', 'undo', 'information', 'add', 'kolomReinsType', 'kolomTreatyStart',
       'kolomTreatyEnd', 'edit', 'businessList', 'reinsurerList', 'delete'] as const) {
       expect(KODE).toContain(`KONTRAK_TCO.${k}`)

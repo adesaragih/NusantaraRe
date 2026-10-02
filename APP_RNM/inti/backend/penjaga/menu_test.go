@@ -690,3 +690,39 @@ func TestSkemaTiruanMenangkapLangkahTanpaPelindung(t *testing.T) {
 		t.Error("UPDATE atas modul yang tidak ada diterima")
 	}
 }
+
+// ⛔ Isi awal 903 (M_LOGIN_GO_MENU, Kelola User 01-10-2026): setiap akun yang
+// sudah ada mendapat SEMUA menu. "Semua" = KODE setiap baris modul HASIL
+// BERSIH menu (900 + 901 + slot) ditambah setiap menu aplikasi
+// (`menu.MenuAplikasi`) - persis, tanpa ganda. Daftarnya tertulis harfiah di
+// 903 karena langkah inti selain 900/901 tidak boleh menyebut tabel menu
+// (`TestMenuHanyaDi900DanSlotMenuModulnya`); penjaga inilah yang menahannya
+// tetap sama.
+func TestIsiAwalMenuAkunMemuatSemuaMenu(t *testing.T) {
+	var isi string
+	for _, p := range langkahInti(t, "903_m_login_go_menu.sql") {
+		if strings.HasPrefix(p, "INSERT INTO {skema}.M_LOGIN_GO_MENU ") {
+			isi = p
+		}
+	}
+	if isi == "" {
+		t.Fatal("903 tanpa INSERT isi awal M_LOGIN_GO_MENU")
+	}
+	var dapat []string
+	for _, m := range regexp.MustCompile(`SELECT '([^']+)'(?: AS KODE)? FROM DUAL`).FindAllStringSubmatch(isi, -1) {
+		dapat = append(dapat, m[1])
+	}
+	kelompok, _ := isiMenu(t, false)
+	var mau []string
+	for _, k := range kelompok {
+		mau = append(mau, k.kode)
+	}
+	for _, a := range menu.MenuAplikasi {
+		mau = append(mau, a.Kode)
+	}
+	sort.Strings(dapat)
+	sort.Strings(mau)
+	if len(mau) != 21 || !reflect.DeepEqual(dapat, mau) {
+		t.Errorf("isi awal 903 menyebut %v,\nmau %v (dua puluh modul + menu aplikasi)", dapat, mau)
+	}
+}

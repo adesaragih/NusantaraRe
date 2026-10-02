@@ -146,6 +146,25 @@ type MasterBusiness struct {
 // Life - saringan `BrowseBusinessLife_RD` b651 `.OLDID StartsWith "L"`.
 func (m MasterBusiness) Life() bool { return strings.HasPrefix(m.OldID, AwalanBusinessLife) }
 
+// RingkasanRate - satu pilihan autocomplete `R/I RATE` (`BrowseRateLifeSummary`): tampil `.USEDBY`,
+// isi `RIRATEID ← .ID` (`InputBusinessLifeReinsurers.xml` b4494, b4527). Teks apa adanya.
+type RingkasanRate struct {
+	ID     string `json:"id"`
+	UsedBy string `json:"usedBy"`
+}
+
+// BarisRate - satu baris section `ViewRate` (`Rate List`, `BrowseRateLife_RD`): enam kolom yang
+// ditampilkan grid (`ViewRate.xml` b2066–b2840). ⛔ Seluruhnya TEKS apa adanya - `RATE` di view
+// berdesimal koma maupun titik dan tidak diurai di sini (popup murni tampilan, AC 27).
+type BarisRate struct {
+	ID       string `json:"id"`
+	UsedBy   string `json:"usedBy"`
+	Gender   string `json:"gender"`
+	Contract string `json:"contract"`
+	Age      string `json:"age"`
+	Rate     string `json:"rate"`
+}
+
 // Nilai saringan master VERBATIM RD - di models karena bernama kode/status
 // (penjaga Claim Life `TestKodeStatusLiteralHanyaDiModels`).
 const (

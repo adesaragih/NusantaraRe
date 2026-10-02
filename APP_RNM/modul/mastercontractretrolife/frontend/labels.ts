@@ -29,6 +29,11 @@ export const UMUM_MCRL = {
   tutup: 'Close',
   /** `[tidak ada di korpus]` - grid tanpa baris (ADR-U-0027: kosong dinyatakan). */
   kosong: 'No items',
+  /**
+   * `[tidak ada di korpus]` - `Rate List` dipotong `BrowseRateLife_RD` `pyMaxRecords` 500; Pega memotong diam-diam,
+   * di sini potongan DINYATAKAN (code review 01-10-2026).
+   */
+  terpotong: 'Only the first 500 rows are shown.',
 } as const
 
 /** Halaman awal - `Section/GridRetrocessionLife.xml` + `InputRetrocessionLife.xml` + `InputDtlRetrocessionLife.xml`. */
@@ -248,7 +253,7 @@ export const BUSINESS_MCRL = {
   formBusinessCode: 'BUSINESS CODE',
   /** b3898 `<pyLabelFieldValue>` - autocomplete `BrowseBusinessLife_RD`. */
   formBusinessName: 'BUSINESS NAME',
-  /** b4351 `<pyLabelFieldValue>` - autocomplete `BrowseRateLifeSummary` (OQ-MCRL-13). */
+  /** b4351 `<pyLabelFieldValue>` - autocomplete `BrowseRateLifeSummary` (view `RATE_LIFE_SUMMARY`, K1). */
   formRiRate: 'R/I RATE',
   /** b4849 `<pyLabel>` - tombol b4732, tampil bila `RIRATEID != ''` (`localAction ViewRate`). */
   viewRateForm: 'View Rate',

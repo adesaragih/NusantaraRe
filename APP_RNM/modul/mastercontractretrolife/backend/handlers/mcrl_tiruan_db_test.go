@@ -48,6 +48,12 @@ var ddlTiruan = map[string]string{
 	repository.MasterJenisReasuransi: `ID VARCHAR2(100), NOTE VARCHAR2(1000), FLAG VARCHAR2(100)`,
 	repository.MasterReinsurer:       `ID VARCHAR2(100), CLIENTNAME VARCHAR2(1000), STATUSACTIVE VARCHAR2(10)`,
 	repository.MasterBusiness:        `ID VARCHAR2(100), NOTE VARCHAR2(1000), OLDID VARCHAR2(100)`,
+	// Dua view rate (K1 01-10-2026) ditiru sebagai TABEL berkolom RD; `RATE_LIFE` bertipe katalog Claim
+	// Life (`ID VARCHAR2(10)`, sisanya VARCHAR2(4000)). Tidak ditulis modul - hanya fixture uji.
+	repository.MasterRingkasanRate: `ID VARCHAR2(10), USEDBY VARCHAR2(4000), OPERATORID VARCHAR2(4000),
+		MODIFIEDDATE VARCHAR2(4000), TYPE VARCHAR2(4000)`,
+	repository.MasterRate: `ID VARCHAR2(10), IDUSEDBY VARCHAR2(4000), USEDBY VARCHAR2(4000), TYPE VARCHAR2(4000),
+		GENDER VARCHAR2(4000), CONTRACT VARCHAR2(4000), AGE VARCHAR2(4000), RATE VARCHAR2(4000)`,
 }
 
 // sequenceTiruan - lima sequence yang ditiru penulis modul (K3).

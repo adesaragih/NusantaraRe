@@ -15,12 +15,16 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -28,6 +32,8 @@ import (
 	"nusantarare/inti/backend/config"
 	"nusantarare/inti/backend/daftar"
 	intidb "nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/login"
+	"nusantarare/inti/backend/menu"
 	"nusantarare/inti/backend/migrasi"
 )
 
@@ -35,6 +41,18 @@ func main() {
 	migrasi := flag.Bool("migrate", false, "jalankan migrasi lalu keluar")
 	bongkar := flag.Bool("migrate-down", false,
 		"BONGKAR skema uji lalu keluar - MENGHAPUS tabel; perlu ORACLE_SKEMA_UJI=true")
+	var baru login.AkunBaru
+	var wb, mn string
+	flag.StringVar(&baru.ID, "buat-pengguna", "",
+		"buat akun M_LOGIN_GO lalu keluar; sandi sementara DICETAK SEKALI dan wajib diganti saat login pertama")
+	flag.StringVar(&baru.Nama, "nama", "", "nama tampilan akun (-buat-pengguna)")
+	flag.StringVar(&baru.Organisasi, "organisasi", "", "M_ORGANIZATION.CODE (-buat-pengguna)")
+	flag.StringVar(&baru.Divisi, "divisi", "", "M_DIVISION.CODE (-buat-pengguna)")
+	flag.StringVar(&baru.Unit, "unit", "", "M_UNIT.CODE (-buat-pengguna)")
+	flag.StringVar(&wb, "workbasket", "", "WORKBASKET_ID dipisah koma (-buat-pengguna)")
+	flag.StringVar(&mn, "menu", "", "KODE menu dipisah koma, mis. claimlife,kelolauser (-buat-pengguna); kosong = tanpa layar")
+	sandiStdin := flag.Bool("sandi-dari-stdin", false,
+		"-buat-pengguna dengan sandi dari baris pertama stdin (tidak dicetak, tidak wajib diganti) alih-alih sandi sementara")
 	flag.Parse()
 
 	cfg, err := config.Load()
@@ -83,6 +101,20 @@ func main() {
 		jalankanMigrasi(dasar)
 		return
 	}
+	if baru.ID != "" {
+		for _, w := range strings.Split(wb, ",") {
+			if w = strings.TrimSpace(w); w != "" {
+				baru.Workbasket = append(baru.Workbasket, w)
+			}
+		}
+		for _, m := range strings.Split(mn, ",") {
+			if m = strings.TrimSpace(m); m != "" {
+				baru.Menu = append(baru.Menu, m)
+			}
+		}
+		buatPengguna(dasar, baru, *sandiStdin)
+		return
+	}
 
 	catat := func(s string) { log.Print(s) }
 	// Refactor bentuk B: modul yang dipasang dipilih MODUL_AKTIF (kosong =
@@ -104,7 +136,7 @@ func main() {
 
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddr,
-		Handler:           rakitMux(dasar, terdaftar, aktif, cfg.AuthStub),
+		Handler:           rakitMux(dasar, terdaftar, aktif, cfg.AuthStub, rakitLogin(dasar, cfg)),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
@@ -131,6 +163,43 @@ func main() {
 	// ⛔ Ditunggu SEBELUM db ditutup (defer di atas): putaran yang sedang
 	// berjalan menuntaskan atau membatalkan transaksinya sendiri.
 	tungguPekerja(tutup, pekerja, catat)
+}
+
+// buatPengguna adalah titik masuk `-buat-pengguna` (login, keputusan work
+// owner 01-10-2026) - jalan masuk DARURAT di samping layar Kelola User,
+// mis. akun admin pertama. `-menu` memberi KODE menunya (M_LOGIN_GO_MENU);
+// KODE yang tidak dikenal ditolak sebelum apa pun ditulis.
+//
+// ⛔ Sandi sementara dicetak ke stdout SEKALI dan tidak disimpan di mana pun
+// selain sebagai hash; akunnya wajib ganti sandi saat login pertama.
+//
+// `-sandi-dari-stdin`: sandi dibaca dari baris pertama stdin - tidak pernah
+// di argumen (riwayat shell, daftar proses) dan tidak dicetak.
+func buatPengguna(svc *inti.Dasar, a login.AkunBaru, dariStdin bool) {
+	if !svc.PunyaDatabase() {
+		log.Fatal("buat-pengguna: ORACLE_DSN wajib terisi")
+	}
+	gudang := login.NewGudangOracle(svc.DB())
+	lay := login.NewLayanan(gudang, nil)
+	if err := login.NewKelola(gudang, menu.NewPembaca(svc.DB())).PeriksaMenu(context.Background(), a.Menu); err != nil {
+		log.Fatalf("buat-pengguna: %v", err)
+	}
+	if dariStdin {
+		baris, err := bufio.NewReader(os.Stdin).ReadString('\n')
+		if err != nil && baris == "" {
+			log.Fatalf("buat-pengguna: membaca sandi dari stdin: %v", err)
+		}
+		if err := lay.BuatPenggunaDenganSandi(context.Background(), a, strings.TrimRight(baris, "\r\n")); err != nil {
+			log.Fatalf("buat-pengguna: %v", err)
+		}
+		fmt.Printf("akun %s dibuat dengan sandi dari stdin (tidak dicetak, tidak wajib diganti).\n", a.ID)
+		return
+	}
+	sandi, err := lay.BuatPengguna(context.Background(), a)
+	if err != nil {
+		log.Fatalf("buat-pengguna: %v", err)
+	}
+	fmt.Printf("akun %s dibuat. Sandi sementara (tampil SEKALI, wajib diganti saat login pertama): %s\n", a.ID, sandi)
 }
 
 // bongkarMigrasi adalah titik masuk `-migrate-down`.
