@@ -108,3 +108,82 @@ pindahflat -uji
 | OQ-FLAT-07 | 2 normalisasi `RICOMM` (koma desimal, nol depan) diterima dalam bentuk kanonik? | terima kedua jenis (`-terima-normalisasi="koma desimal,nol depan"`): nilai sama, `RICOMM` persen ≤ 5 karakter |
 | OQ-FLAT-08 | 189 objek `OutwardList` ber-`OUTWARDNAME`/`OUTWARDRATE` (bukan baris OR): dipindah atau dibuang? | **pindahkan**: tambah empat kolom `OUTWARDNAMEID`, `OUTWARDNAME`, `OUTWARDRATEID`, `OUTWARDRATE` ke `M_PRODUCTNAME_LIFE_OUTWARD` (migrasi 146, belum pernah dijalankan di DEV) dan K4 hanya membuang objek yang SEMUA kuncinya kosong |
 | OQ-FLAT-09 | `MATURE` produk 100175 berbentuk tanggal lain: dikonversi ke tanggal atau di-NULL-kan (K3)? | **konversi** (nilai terselamatkan); bila work owner tetap memilih NULL, K3 tetap dicatat |
+
+## Sesudah keputusan work owner 02-10-2026 malam (*"ikuti rekomendasi"*) — putaran 20:46
+
+`-uji -terima-normalisasi="koma desimal,nol depan"` (SELECT saja), sesudah OQ-FLAT-08 (empat kolom outward) dan
+OQ-FLAT-09 (konversi tanggal) dibangun:
+
+```
+pindahflat -uji
+  sumber: M_PRODUCT_LIFE 196 baris, M_PRODUCTINWARD_LIFE 196 baris
+  produk tanpa inward: 0; inward ber-ID lain (dicari lewat PRODUCTID): 2; inward yatim: 0
+  baris yang (akan) ditulis:
+    M_PRODUCTNAME_LIFE             196
+    M_PRODUCTNAME_LIFE_LIEN        5
+    M_PRODUCTNAME_LIFE_DOCCLAIM    1129
+    M_PRODUCTNAME_LIFE_PLAN        287
+    M_PRODUCTNAME_LIFE_FINUW       52
+    M_PRODUCTNAME_LIFE_UWLIMIT     2169
+    M_PRODUCTNAME_LIFE_OUTWARD     191
+    M_PRODUCTNAME_LIFE_COMMENT     191
+  K3 nilai tidak sah di-NULL-kan: 1
+    100017 M_PRODUCTNAME_LIFE_UWLIMIT[25].MAXINSURED: bukan angka
+  K4 objek OutwardList kosong dibuang: 0
+  tanggal bentuk lain dikonversi (OQ-FLAT-09): 1
+    100175 M_PRODUCTNAME_LIFE.MATURE: dari bentuk dd-MM-yyyy
+  normalisasi teks (menunggu keputusan work owner): 2
+    M_PRODUCTNAME_LIFE.RICOMM (koma desimal)                   1
+    M_PRODUCTNAME_LIFE.RICOMM (nol depan)                      1
+    jenis diterima operator (-terima-normalisasi): koma desimal, nol depan
+    contoh: 100119 M_PRODUCTNAME_LIFE.RICOMM
+    contoh: 100174 M_PRODUCTNAME_LIFE.RICOMM
+  medan tanpa kolom yang terisi: 0
+  dibuang D2 (bukan data): 12561
+    Comment (masukan popup; isinya sudah baris CommentList)    66
+    IsView (keadaan layar)                                     181
+    baris CommentList kunci pxObjClass                         191
+    baris DocumentClaim kunci pxCreateDateTime                 1129
+    baris DocumentClaim kunci pxCreateOpName                   1129
+    baris DocumentClaim kunci pxCreateOperator                 1129
+    baris DocumentClaim kunci pxCreateSystemID                 1129
+    baris DocumentClaim kunci pxObjClass                       1129
+    baris FinancialUnderwritingList kunci pxCreateDateTime     42
+    baris FinancialUnderwritingList kunci pxCreateOpName       42
+    baris FinancialUnderwritingList kunci pxCreateOperator     42
+    baris FinancialUnderwritingList kunci pxCreateSystemID     42
+    baris FinancialUnderwritingList kunci pxObjClass           52
+    baris LienClause kunci pxCreateDateTime                    5
+    baris LienClause kunci pxCreateOpName                      5
+    baris LienClause kunci pxCreateOperator                    5
+    baris LienClause kunci pxCreateSystemID                    5
+    baris LienClause kunci pxObjClass                          5
+    baris OutwardList kunci pxObjClass                         191
+    baris PlanList kunci pxCreateDateTime                      287
+    baris PlanList kunci pxCreateOpName                        287
+    baris PlanList kunci pxCreateOperator                      287
+    baris PlanList kunci pxCreateSystemID                      287
+    baris PlanList kunci pxListSubscript                       286
+    baris PlanList kunci pxObjClass                            287
+    baris UnderwritingLimitList kunci pxCreateDateTime         440
+    baris UnderwritingLimitList kunci pxCreateOpName           440
+    baris UnderwritingLimitList kunci pxCreateOperator         440
+    baris UnderwritingLimitList kunci pxCreateSystemID         440
+    baris UnderwritingLimitList kunci pxObjClass               2169
+    kunci halaman inward pxObjClass                            196
+    kunci halaman umum pxObjClass                              196
+  gagal: 0 (0 tanpa kolom flat)
+  rekonsiliasi: LOLOS DENGAN NORMALISASI DITERIMA OPERATOR (-terima-normalisasi, OQ-FLAT-07); ditulis: false
+```
+
+| Hal | Hasil |
+| --- | --- |
+| Gagal | **0** — rekonsiliasi **lolos** (kode keluar 0) |
+| OUTWARD | 191 baris = 2 baris `On Retention` + 189 baris reasuradur outward; K4 0 (tidak ada objek yang seluruh kuncinya kosong) |
+| `MATURE` 100175 | dikonversi dari bentuk `dd-MM-yyyy` |
+| K3 | 1 — `MaxInsured` UW produk 100017 baris 25 (tidak terbaca sebagai angka) |
+| Normalisasi | 2 `RICOMM`, kedua jenisnya diterima (OQ-FLAT-07) |
+
+`-jalankan` kini hanya menunggu syarat peralihan di luar alat: OQ-FLAT-03 (Pega berhenti menulis) dan migrasi 140–147 di
+skema sasaran (`PANDUAN-PINDAH-FLAT.md`).
+

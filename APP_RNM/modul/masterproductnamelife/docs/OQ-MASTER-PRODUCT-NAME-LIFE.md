@@ -90,13 +90,26 @@ Pega**; tiket 01 tetap ditangguhkan"*, dikutip). Keputusan grilling D2 dan Q1b b
 
 | OQ | Pertanyaan | Bawaan / keputusan | Pemilik | Status |
 | --- | --- | --- | --- | --- |
-| OQ-FLAT-01 | FK `M_ATTACHMENTPRODUCTNAME.TREATYID` → `M_PRODUCTNAME_LIFE.ID` ditambahkan? Tabel lampiran bukan milik migrasi ini | tidak | work owner | terbuka |
-| OQ-FLAT-02 | Ekspor flat → JSON untuk jalur mundur **sesudah** ada tulisan baru dibangun? | tidak (jalur mundur hanya sebelum tulisan baru: `-migrate-down` + versi aplikasi lama) | work owner | terbuka |
+| OQ-FLAT-01 | FK `M_ATTACHMENTPRODUCTNAME.TREATYID` → `M_PRODUCTNAME_LIFE.ID` ditambahkan? Tabel lampiran bukan milik migrasi ini | tidak | work owner | ✅ ditutup 02-10-2026 — keputusan work owner: *"ikuti rekomendasi"* |
+| OQ-FLAT-02 | Ekspor flat → JSON untuk jalur mundur **sesudah** ada tulisan baru dibangun? | tidak (jalur mundur hanya sebelum tulisan baru: `-migrate-down` + versi aplikasi lama) | work owner | ✅ ditutup 02-10-2026 — keputusan work owner: *"ikuti rekomendasi"* |
 | OQ-FLAT-03 | Siapa dan kapan menghentikan penulisan Pega ke layar Product Name Life (syarat peralihan)? | — | work owner | terbuka |
 | OQ-FLAT-04 | Claim Life `ambangproduk.go` membaca view `PRODUCTINWARD_LIFE` atas `M_PRODUCTINWARD_LIFE.JSONDATA`; sesudah peralihan tabel JSON tidak diperbarui lagi dan view **tidak** dibangun ulang (K7). Claim Life dialihkan membaca `M_PRODUCTNAME_LIFE` (brief Claim Life), atau view dibangun ulang oleh DBA? | belum ada — di luar folder modul ini | work owner / pemilik Claim Life | terbuka |
-| OQ-FLAT-07 | Uji kering DEV 02-10-2026 (`LAPORAN-MIGRASI-FLAT.md`): 2 nilai `RICOMM` berubah teks bila dipindah ke NUMBER(38,8) — 1 berkoma desimal, 1 bernol depan; nilai angkanya sama. Diterima dalam bentuk kanonik? | **terima** (rekomendasi): services sendiri sudah menyimpan koma sebagai titik saat simpan; nilai uang tidak berubah. Jalankan `-jalankan -terima-normalisasi="koma desimal,nol depan"` (per JENIS: menerima satu jenis tidak menerima jenis lain) | work owner | terbuka |
-| OQ-FLAT-08 | Uji kering DEV 02-10-2026 18:50: 189 objek `OutwardList` yang dianggap K4 "kosong" (keenam kunci OR kosong) berisi `OUTWARDNAME`/`OUTWARDNAMEID` (189) dan `OUTWARDRATE`/`OUTWARDRATEID` (187) - 4 nama dan 3 rate berbeda; nol di kedua objek OR. Premis K4 keliru. Dipindah atau dibuang? | **pindahkan**: empat kolom baru di `M_PRODUCTNAME_LIFE_OUTWARD` (migrasi 146, belum dijalankan di DEV); K4 hanya objek yang SEMUA kuncinya kosong. Sampai diputuskan, alat menolak `-jalankan` (752 nilai tanpa kolom) | work owner | terbuka |
-| OQ-FLAT-09 | `MATURE` produk 100175 (K3 "bukan tanggal") ternyata tanggal dalam bentuk lain (bukan `dd/MM/yyyy`) - dapat diselamatkan. Dikonversi atau di-NULL-kan? | **konversi**; alat menolak `-jalankan` sampai diputuskan | work owner | terbuka |
+| OQ-FLAT-07 | Uji kering DEV 02-10-2026 (`LAPORAN-MIGRASI-FLAT.md`): 2 nilai `RICOMM` berubah teks bila dipindah ke NUMBER(38,8) — 1 berkoma desimal, 1 bernol depan; nilai angkanya sama. Diterima dalam bentuk kanonik? | **terima** (rekomendasi): services sendiri sudah menyimpan koma sebagai titik saat simpan; nilai uang tidak berubah. Jalankan `-jalankan -terima-normalisasi="koma desimal,nol depan"` (per JENIS: menerima satu jenis tidak menerima jenis lain) | work owner | ✅ ditutup 02-10-2026 — keputusan work owner: *"ikuti rekomendasi"* |
+| OQ-FLAT-08 | Uji kering DEV 02-10-2026 18:50: 189 objek `OutwardList` yang dianggap K4 "kosong" (keenam kunci OR kosong) berisi `OUTWARDNAME`/`OUTWARDNAMEID` (189) dan `OUTWARDRATE`/`OUTWARDRATEID` (187) - 4 nama dan 3 rate berbeda; nol di kedua objek OR. Premis K4 keliru. Dipindah atau dibuang? | **pindahkan**: empat kolom baru di `M_PRODUCTNAME_LIFE_OUTWARD` (migrasi 146, belum dijalankan di DEV); K4 hanya objek yang SEMUA kuncinya kosong. Sampai diputuskan, alat menolak `-jalankan` (752 nilai tanpa kolom) | work owner | ✅ ditutup 02-10-2026 — keputusan work owner: *"ikuti rekomendasi"* |
+| OQ-FLAT-09 | `MATURE` produk 100175 (K3 "bukan tanggal") ternyata tanggal dalam bentuk lain (bukan `dd/MM/yyyy`) - dapat diselamatkan. Dikonversi atau di-NULL-kan? | **konversi**; alat menolak `-jalankan` sampai diputuskan | work owner | ✅ ditutup 02-10-2026 — keputusan work owner: *"ikuti rekomendasi"* |
 | OQ-FLAT-05 | Tipe angka: rancangan `NUMBER` tanpa presisi dan `NUMBER(1/3/4)` ditolak penjaga inti `TestNolNumberTanpaPresisi` | **patuhi penjaga**: `NUMBER(38,8)` / `NUMBER(5)` (K6) | work owner | ✅ ditutup 02-10-2026 |
 | OQ-FLAT-06 | View `CREATE OR REPLACE VIEW` di migrasi ditolak penjaga inti `TestSeluruhCreateDapatDibacaNamanya` | *"tidak ada table view yang dipake, semua simpan dan baca dari table flat"* — view tidak dibangun ulang (K7) | work owner | ✅ ditutup 02-10-2026 |
+
+### Keputusan work owner 02-10-2026 malam — *"ikuti rekomendasi"*
+
+| OQ | Keputusan | Dibangun |
+| --- | --- | --- |
+| OQ-FLAT-01 | FK lampiran → induk flat **tidak** ditambahkan | — |
+| OQ-FLAT-02 | ekspor flat → JSON **tidak** dibangun | — |
+| OQ-FLAT-07 | 2 normalisasi `RICOMM` (koma desimal, nol depan) **diterima** | `-terima-normalisasi="koma desimal,nol depan"` di panduan langkah 4 |
+| OQ-FLAT-08 | 189 objek outward bukan-OR **dipindah** | empat kolom `OUTWARDNAMEID`, `OUTWARDNAME`, `OUTWARDRATEID`, `OUTWARDRATE` di migrasi 146; K4 hanya objek yang SEMUA kuncinya kosong |
+| OQ-FLAT-09 | tanggal inward berbentuk lain **dikonversi** (dicatat per produk dan kolom) | alat pindah; `MATURE` produk 100175 (`dd-MM-yyyy`) |
+
+Masih terbuka: **OQ-FLAT-03** (siapa dan kapan Pega berhenti menulis) dan **OQ-FLAT-04** (pembaca Claim Life atas view
+`PRODUCTINWARD_LIFE`) — keduanya tanpa rekomendasi tunggal.
 

@@ -19,9 +19,9 @@ di sana sampai OQ-FLAT-04 diputuskan (Claim Life dialihkan membaca `M_PRODUCTNAM
 
 1. **Penulisan Pega ke layar Product Name Life dihentikan** (OQ-FLAT-03 — siapa dan kapan). Selama Pega masih menulis
    JSON, isi tabel flat tertinggal.
-2. Keputusan work owner atas **OQ-FLAT-07** (normalisasi teks angka), **OQ-FLAT-08** (objek `OutwardList` ber-`OUTWARD*`)
-   dan **OQ-FLAT-09** (`MATURE` produk 100175) — lihat `LAPORAN-MIGRASI-FLAT.md`. Selama OQ-FLAT-08/09 terbuka alat
-   menolak `-jalankan`; keputusan "pindahkan"/"konversi" menuntut perubahan kode/migrasi 146 lebih dulu.
+2. ✅ Keputusan work owner 02-10-2026 atas OQ-FLAT-07/08/09 sudah dibangun (`LAPORAN-MIGRASI-FLAT.md`, putaran 20:46:
+   gagal 0). Bila uji kering pada hari peralihan menemukan jenis normalisasi atau kegagalan BARU, berhenti dan minta
+   keputusan lagi.
 3. Lingkungan sasaran bukan produksi Pega: `IS_PEGA_PROD` harus `false`. Alat menolak `-jalankan` bila `true`.
 4. Cadangan basis data menurut prosedur DBA.
 
@@ -34,8 +34,8 @@ Konfigurasi alat sama dengan `cmd/api`: `ORACLE_DSN`, `ORACLE_SCHEMA` (skema ber
 | ---: | --- | --- | --- |
 | 1 | Hentikan penulisan Pega | (OQ-FLAT-03) | tidak ada simpan produk di Pega sejak titik ini |
 | 2 | Buat tabel flat | `go run ./cmd/api -migrate` — menjalankan migrasi 140–147 (dan migrasi lain yang belum tercatat `T_MIGRASI`) | `T_MIGRASI` mencatat `140_m_productname_life` … `147_m_productname_life_comment` |
-| 3 | Uji kering | `go run ./modul/masterproductnamelife/backend/alat/pindahflat` (mode `-uji`, hanya SELECT) | baris `gagal: 0`; cacah per tabel dan daftar K3/K4 sama dengan `LAPORAN-MIGRASI-FLAT.md` atau selisihnya dijelaskan |
-| 4 | Pindahkan | `go run ./modul/masterproductnamelife/backend/alat/pindahflat -jalankan` — tambahkan `-terima-normalisasi="<jenis>,…"` **hanya** untuk jenis yang diputuskan work owner (OQ-FLAT-07; jenis lain tetap menahan) | baris terakhir `ditulis: true`; satu transaksi yang lebih dulu mengunci tabel induk (gagal di mana pun = nol tulisan) |
+| 3 | Uji kering | `go run ./modul/masterproductnamelife/backend/alat/pindahflat -terima-normalisasi="koma desimal,nol depan"` (mode `-uji`, hanya SELECT) | baris `gagal: 0`; cacah per tabel dan daftar K3/K4 sama dengan `LAPORAN-MIGRASI-FLAT.md` atau selisihnya dijelaskan |
+| 4 | Pindahkan | `go run ./modul/masterproductnamelife/backend/alat/pindahflat -jalankan -terima-normalisasi="koma desimal,nol depan"` — kedua jenis diputuskan work owner 02-10-2026 (OQ-FLAT-07); jenis lain tetap menahan | baris terakhir `ditulis: true`; satu transaksi yang lebih dulu mengunci tabel induk (gagal di mana pun = nol tulisan) |
 | 5 | Periksa agregat | `SELECT COUNT(*)` tiap tabel flat = baris "baris yang (akan) ditulis" laporan; `SELECT COUNT(*) FROM M_PRODUCT_LIFE` = 196 (atau cacah sumber saat itu) — tabel JSON tidak berubah | semua cacah sama |
 | 6 | Pakai aplikasi versi flat | deploy biner `cmd/api` dari commit yang memuat tabel flat | layar Product Name Life menampilkan produk; simpan menulis tabel flat |
 
