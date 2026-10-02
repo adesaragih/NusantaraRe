@@ -19,7 +19,9 @@ di sana sampai OQ-FLAT-04 diputuskan (Claim Life dialihkan membaca `M_PRODUCTNAM
 
 1. **Penulisan Pega ke layar Product Name Life dihentikan** (OQ-FLAT-03 — siapa dan kapan). Selama Pega masih menulis
    JSON, isi tabel flat tertinggal.
-2. Keputusan work owner atas **OQ-FLAT-07** (normalisasi teks angka — lihat `LAPORAN-MIGRASI-FLAT.md`).
+2. Keputusan work owner atas **OQ-FLAT-07** (normalisasi teks angka), **OQ-FLAT-08** (objek `OutwardList` ber-`OUTWARD*`)
+   dan **OQ-FLAT-09** (`MATURE` produk 100175) — lihat `LAPORAN-MIGRASI-FLAT.md`. Selama OQ-FLAT-08/09 terbuka alat
+   menolak `-jalankan`; keputusan "pindahkan"/"konversi" menuntut perubahan kode/migrasi 146 lebih dulu.
 3. Lingkungan sasaran bukan produksi Pega: `IS_PEGA_PROD` harus `false`. Alat menolak `-jalankan` bila `true`.
 4. Cadangan basis data menurut prosedur DBA.
 
@@ -33,13 +35,14 @@ Konfigurasi alat sama dengan `cmd/api`: `ORACLE_DSN`, `ORACLE_SCHEMA` (skema ber
 | 1 | Hentikan penulisan Pega | (OQ-FLAT-03) | tidak ada simpan produk di Pega sejak titik ini |
 | 2 | Buat tabel flat | `go run ./cmd/api -migrate` — menjalankan migrasi 140–147 (dan migrasi lain yang belum tercatat `T_MIGRASI`) | `T_MIGRASI` mencatat `140_m_productname_life` … `147_m_productname_life_comment` |
 | 3 | Uji kering | `go run ./modul/masterproductnamelife/backend/alat/pindahflat` (mode `-uji`, hanya SELECT) | baris `gagal: 0`; cacah per tabel dan daftar K3/K4 sama dengan `LAPORAN-MIGRASI-FLAT.md` atau selisihnya dijelaskan |
-| 4 | Pindahkan | `go run ./modul/masterproductnamelife/backend/alat/pindahflat -jalankan` — tambahkan `-terima-normalisasi` **hanya** bila OQ-FLAT-07 diputuskan "terima" | baris terakhir `ditulis: true`; satu transaksi (gagal di mana pun = nol tulisan) |
+| 4 | Pindahkan | `go run ./modul/masterproductnamelife/backend/alat/pindahflat -jalankan` — tambahkan `-terima-normalisasi="<jenis>,…"` **hanya** untuk jenis yang diputuskan work owner (OQ-FLAT-07; jenis lain tetap menahan) | baris terakhir `ditulis: true`; satu transaksi yang lebih dulu mengunci tabel induk (gagal di mana pun = nol tulisan) |
 | 5 | Periksa agregat | `SELECT COUNT(*)` tiap tabel flat = baris "baris yang (akan) ditulis" laporan; `SELECT COUNT(*) FROM M_PRODUCT_LIFE` = 196 (atau cacah sumber saat itu) — tabel JSON tidak berubah | semua cacah sama |
 | 6 | Pakai aplikasi versi flat | deploy biner `cmd/api` dari commit yang memuat tabel flat | layar Product Name Life menampilkan produk; simpan menulis tabel flat |
 
-**Aman diulang:** langkah 3 boleh diulang kapan saja. Langkah 4 menghapus isi tabel flat lalu mengisinya ulang dari JSON
-— tetapi **menolak** bila tabel flat sudah memuat produk yang berbeda dari sumber JSON (artinya sudah ada tulisan baru
-dari aplikasi): tulisan baru tidak pernah ditimpa.
+**Aman diulang:** langkah 3 boleh diulang kapan saja. Langkah 4 mengunci tabel induk (aplikasi yang berjalan menunggu),
+menghapus lalu mengisi ulang produk **bersumber JSON** saja: produk yang hanya ada di tabel flat (dibuat aplikasi) dibiarkan
+utuh, dan putaran **ditolak** bila produk bersumber JSON di tabel flat isinya sudah berbeda (diubah aplikasi sesudah
+peralihan) — tulisan baru tidak pernah ditimpa.
 
 **Isi laporan alat** (agregat — ID produk dan nama kolom, tidak pernah nilainya): cacah sumber; produk tanpa inward;
 inward ber-ID lain (dicari lewat `PRODUCTID`); baris per tabel; K3 (nilai tidak sah yang menjadi NULL); K4 (objek

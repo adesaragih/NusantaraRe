@@ -296,3 +296,11 @@ ulang di **transaksi yang sama** dengan induk. Kolom dan tipe persisnya: `STRUKT
 | 5 | — | **dibatalkan** (K7: view tidak dibangun ulang) |
 | 6 | commit dokumen ini | `PANDUAN-PINDAH-FLAT.md`, `LAPORAN-MIGRASI-FLAT.md` (uji kering DEV: 0 gagal, menunggu OQ-FLAT-07) |
 
+### Ralat 02-10-2026 sesudah `/code-review` — premis K3 dan K4 keliru (uji kering DEV 18:50)
+
+Kalimat brief bab 0 dikutip: *"`OutwardList` 191 / 153 / maks 4 — **hanya 2 baris berisi**, 189 objek kosong"* dan K3
+*"1 `MATURE` bukan tanggal"*. Uji kering dengan aturan yang diperketat `/code-review` (`LAPORAN-MIGRASI-FLAT.md`): 189 objek
+itu kosong HANYA pada keenam kunci OR — keempat kunci `OUTWARDNAME`/`OUTWARDNAMEID`/`OUTWARDRATE`/`OUTWARDRATEID` berisi
+(OQ-FLAT-08); `MATURE` produk 100175 tanggal dalam bentuk lain (OQ-FLAT-09). Alat menahan `-jalankan` sampai keduanya
+diputuskan; K3 kini 1 nilai.
+
