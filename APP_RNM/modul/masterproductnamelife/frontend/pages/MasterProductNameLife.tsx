@@ -77,7 +77,7 @@ export default function MasterProductNameLife() {
   const semua = daftar ?? []
 
   return (
-    <section className="inbox">
+    <section className="inbox mpnl">
       <header className="inbox__kepala">
         <h2 className="inbox__judul">{MENU_MPNL.kelompok}</h2>
       </header>
