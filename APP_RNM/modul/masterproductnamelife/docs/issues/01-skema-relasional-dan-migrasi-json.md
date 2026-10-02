@@ -311,3 +311,22 @@ K4 diralat: yang tidak dipindah hanya objek `OutwardList` yang **seluruh** kunci
 dipindah. K3 diralat: tanggal inward berbentuk lain **dikonversi** (OQ-FLAT-09), hanya nilai yang tidak terbaca yang
 di-NULL-kan. Uji kering DEV 20:46: gagal 0, OUTWARD 191 baris (`LAPORAN-MIGRASI-FLAT.md`).
 
+### Keputusan work owner 02-10-2026 malam — aplikasi hanya tabel flat, tanpa view
+
+Kalimat work owner dikutip: *"HANYA MODUL PRODUCTNAME LIFE!! UBAH SEMUA JANGAN ADA YANG SIMPAN KE TABLE JSON SIMPAN KE TABLE FLAT SEMUA. DAN JANGAN GUNAKAN TABLE VIEW NYA"*.
+
+| Jalur | Sebelum | Sesudah |
+| --- | --- | --- |
+| Simpan produk (Add / Edit / Copy → Save), komentar, baris outward | tabel flat | tabel flat (tidak berubah) |
+| Baca produk (grid, View) | tabel flat | tabel flat (tidak berubah) |
+| Penerbitan ID produk baru | induk flat **+ kedua tabel JSON** (ID terpakai dilewati) | **induk flat saja** |
+| Ketiga view produk (`PRODUCT_LIFE`, `PRODUCTINWARD_LIFE`, `DOCUMENTCLAIM_LIFE`) | tidak dipakai (K7) | tidak dipakai — kini dijaga uji |
+| Lampiran `M_ATTACHMENTPRODUCTNAME.DATA_JSON` | `NULL` | `NULL` (tidak berubah; isi lampiran bukan JSON) |
+| Alat pindah `backend/alat/pindahflat` | membaca tabel JSON, menulis tabel flat | sama — satu-satunya jalan 196 produk lama ke tabel flat |
+
+Penjaga `TestMPNLAplikasiHanyaTabelFlat`: kode produksi modul tidak menyebut kedua tabel JSON (kecuali definisi nama,
+alat pindah, dan kodek JSON-nya) dan tidak menyebut ketiga view produk. Akibatnya alat pindah wajib dijalankan sebelum
+aplikasi dipakai: ID produk lama baru terlihat oleh penerbitan ID setelah berada di induk flat. View master milik master
+lain (`CURRENCY`, `CAUSEOFLOSS_LIFE`, `PRODUCT_TYPE_LIFE`, `RIRISK_LIFE_SUMMARY`, `RATE_LIFE_SUMMARY`, `RATE_LIFE`) tetap
+dibaca untuk pilihan dropdown — bukan view produk modul ini.
+

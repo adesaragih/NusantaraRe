@@ -40,7 +40,7 @@ Konfigurasi alat sama dengan `cmd/api`: `ORACLE_DSN`, `ORACLE_SCHEMA` (skema ber
 | 3 | Uji kering | `go run ./modul/masterproductnamelife/backend/alat/pindahflat -terima-normalisasi="koma desimal,nol depan"` (mode `-uji`, hanya SELECT) | baris `gagal: 0`; cacah per tabel dan daftar K3/K4 sama dengan `LAPORAN-MIGRASI-FLAT.md` atau selisihnya dijelaskan |
 | 4 | Pindahkan | `go run ./modul/masterproductnamelife/backend/alat/pindahflat -jalankan -terima-normalisasi="koma desimal,nol depan"` — kedua jenis diputuskan work owner 02-10-2026 (OQ-FLAT-07); jenis lain tetap menahan | baris terakhir `ditulis: true`; satu transaksi yang lebih dulu mengunci tabel induk (gagal di mana pun = nol tulisan) |
 | 5 | Periksa agregat | `SELECT COUNT(*)` tiap tabel flat = baris "baris yang (akan) ditulis" laporan; `SELECT COUNT(*) FROM M_PRODUCT_LIFE` = 196 (atau cacah sumber saat itu) — tabel JSON tidak berubah | semua cacah sama |
-| 6 | Pakai aplikasi versi flat | deploy biner `cmd/api` dari commit yang memuat tabel flat | layar Product Name Life menampilkan produk; simpan menulis tabel flat |
+| 6 | Pakai aplikasi versi flat — **hanya sesudah langkah 4**: aplikasi membaca dan menulis tabel flat saja, termasuk saat menerbitkan ID produk baru (tabel JSON tidak diperiksa lagi, keputusan work owner 02-10-2026) | deploy biner `cmd/api` dari commit yang memuat tabel flat | layar Product Name Life menampilkan produk; simpan menulis tabel flat |
 
 **Aman diulang:** langkah 3 boleh diulang kapan saja. Langkah 4 mengunci tabel induk (aplikasi yang berjalan menunggu),
 menghapus lalu mengisi ulang produk **bersumber JSON** saja: produk yang hanya ada di tabel flat (dibuat aplikasi) dibiarkan
